@@ -268,16 +268,16 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   void SetGraphImpl(MediaTrackGraph* aGraph);
 
   
-  virtual void AddAudioOutput(void* aKey);
-  virtual void SetAudioOutputVolume(void* aKey, float aVolume);
-  virtual void RemoveAudioOutput(void* aKey);
+  void AddAudioOutput(void* aKey);
+  void SetAudioOutputVolume(void* aKey, float aVolume);
+  void RemoveAudioOutput(void* aKey);
   
   
   
   
   
-  virtual void Suspend();
-  virtual void Resume();
+  void Suspend();
+  void Resume();
   
   virtual void AddListener(MediaTrackListener* aListener);
   virtual RefPtr<GenericPromise> RemoveListener(MediaTrackListener* aListener);
@@ -289,7 +289,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
 
 
-  virtual void AddDirectListener(DirectMediaTrackListener* aListener);
+  void AddDirectListener(DirectMediaTrackListener* aListener);
 
   
 
@@ -298,7 +298,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
 
 
-  virtual void RemoveDirectListener(DirectMediaTrackListener* aListener);
+  void RemoveDirectListener(DirectMediaTrackListener* aListener);
 
   
   
