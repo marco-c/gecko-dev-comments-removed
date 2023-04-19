@@ -77,6 +77,9 @@ pub struct DistributionData {
 
     
     pub sum: i64,
+
+    
+    pub count: i64,
 }
 
 

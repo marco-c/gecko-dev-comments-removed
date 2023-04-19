@@ -1,19 +1,23 @@
 {%- let e = ci.get_error_definition(name).unwrap() %}
-class {{ type_name }}(Exception):
-    {%- if e.is_flat() %}
 
-    
-    
-    {%- for variant in e.variants() %}
-    class {{ variant.name()|class_name }}(Exception):
+
+
+
+
+
+
+class UniFFIExceptionTmpNamespace:
+    class {{ type_name }}(Exception):
         pass
-    {%- endfor %}
+    {% for variant in e.variants() %}
+    {%- let variant_type_name = variant.name()|class_name %}
 
+    {%- if e.is_flat() %}
+    class {{ variant_type_name }}({{ type_name }}):
+        def __str__(self):
+            return "{{ type_name }}.{{ variant_type_name }}({})".format(repr(super().__str__()))
     {%- else %}
-
-    
-    {%- for variant in e.variants() %}
-    class {{ variant.name()|class_name }}(Exception):
+    class {{ variant_type_name }}({{ type_name }}):
         def __init__(self{% for field in variant.fields() %}, {{ field.name()|var_name }}{% endfor %}):
             {%- if variant.has_fields() %}
             {%- for field in variant.fields() %}
@@ -30,13 +34,17 @@ class {{ type_name }}(Exception):
                 '{{ field.name()|var_name }}={!r}'.format(self.{{ field.name()|var_name }}),
                 {%- endfor %}
             ]
-            return "{{ type_name }}.{{ variant.name()|class_name }}({})".format(', '.join(field_parts))
+            return "{{ type_name }}.{{ variant_type_name }}({})".format(', '.join(field_parts))
             {%- else %}
-            return "{{ type_name }}.{{ variant.name()|class_name }}"
+            return "{{ type_name }}.{{ variant_type_name }}()"
             {%- endif %}
-
-    {%- endfor %}
     {%- endif %}
+
+    {{ type_name }}.{{ variant_type_name }} = {{ variant_type_name }}
+    {%- endfor %}
+{{ type_name }} = UniFFIExceptionTmpNamespace.{{ type_name }}
+del UniFFIExceptionTmpNamespace
+
 
 class {{ ffi_converter_name }}(FfiConverterRustBuffer):
     @staticmethod

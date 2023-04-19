@@ -17,7 +17,6 @@ def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
     {% let method_name = format!("invoke_{}", meth.name())|fn_name %}
     def {{ method_name }}(python_callback, args):
         {
-        rval = None
         {%- if meth.arguments().len() != 0 -%}
         {
         with args.consumeWithStream() as buf:
@@ -40,8 +39,6 @@ def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
         {%- else -%}
         return RustBuffer.alloc(0)
         {% endmatch -%}
-        
-        
     {% endfor %}
 
     cb = {{ ffi_converter_name }}.lift(handle)
@@ -57,10 +54,35 @@ def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
     {% for meth in cbi.methods() -%}
     {% let method_name = format!("invoke_{}", meth.name())|fn_name -%}
     if method == {{ loop.index }}:
-        buf_ptr[0] = {{ method_name }}(cb, args)
         
         
-        return 1
+        try:
+            {%- match meth.throws_type() %}
+            {%- when Some(err) %}
+            try:
+                
+                buf_ptr[0] = {{ method_name }}(cb, args)
+                return 1
+            except {{ err|type_name }} as e:
+                
+                with RustBuffer.allocWithBuilder() as builder:
+                    {{ err|write_fn }}(e, builder)
+                    buf_ptr[0] = builder.finalize()
+                return -2
+            {%- else %}
+            
+            buf_ptr[0] = {{ method_name }}(cb, args)
+            return 1
+            {%- endmatch %}
+        except BaseException as e:
+            
+            try:
+                
+                buf_ptr[0] = {{ Type::String.borrow()|lower_fn }}(repr(e))
+            except:
+                
+                pass
+            return -1
     {% endfor %}
 
     

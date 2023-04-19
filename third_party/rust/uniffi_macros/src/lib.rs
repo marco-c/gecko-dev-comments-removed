@@ -9,25 +9,33 @@
 
 
 use camino::{Utf8Path, Utf8PathBuf};
+use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use std::env;
-use syn::{bracketed, punctuated::Punctuated, LitStr, Token};
+use syn::{bracketed, parse_macro_input, punctuated::Punctuated, LitStr, Token};
+use util::rewrite_self_type;
 
 mod export;
+mod object;
+mod record;
 mod util;
 
-use self::export::expand_export;
+use self::{export::expand_export, object::expand_object, record::expand_record};
 
 #[proc_macro_attribute]
-pub fn export(
-    _attr: proc_macro::TokenStream,
-    input: proc_macro::TokenStream,
-) -> proc_macro::TokenStream {
+pub fn export(_attr: TokenStream, input: TokenStream) -> TokenStream {
     let input2 = proc_macro2::TokenStream::from(input.clone());
 
     let gen_output = || {
         let mod_path = util::mod_path()?;
-        let item = syn::parse(input)?;
+        let mut item = syn::parse(input)?;
+
+        
+        
+        
+        
+        rewrite_self_type(&mut item);
+
         let metadata = export::gen_metadata(item, &mod_path)?;
         Ok(expand_export(metadata, &mod_path))
     };
@@ -38,6 +46,28 @@ pub fn export(
         #output
     }
     .into()
+}
+
+#[proc_macro_derive(Record)]
+pub fn derive_record(input: TokenStream) -> TokenStream {
+    let mod_path = match util::mod_path() {
+        Ok(p) => p,
+        Err(e) => return e.into_compile_error().into(),
+    };
+    let input = parse_macro_input!(input);
+
+    expand_record(input, mod_path).into()
+}
+
+#[proc_macro_derive(Object)]
+pub fn derive_object(input: TokenStream) -> TokenStream {
+    let mod_path = match util::mod_path() {
+        Ok(p) => p,
+        Err(e) => return e.into_compile_error().into(),
+    };
+    let input = parse_macro_input!(input);
+
+    expand_object(input, mod_path).into()
 }
 
 
@@ -55,7 +85,7 @@ pub fn export(
 
 
 #[proc_macro]
-pub fn build_foreign_language_testcases(paths: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn build_foreign_language_testcases(paths: TokenStream) -> TokenStream {
     let paths = syn::parse_macro_input!(paths as FilePaths);
     
     let pkg_dir = env::var("CARGO_MANIFEST_DIR")
@@ -102,7 +132,7 @@ pub fn build_foreign_language_testcases(paths: proc_macro::TokenStream) -> proc_
     let test_module = quote! {
         #(#test_functions)*
     };
-    proc_macro::TokenStream::from(test_module)
+    TokenStream::from(test_module)
 }
 
 
@@ -160,7 +190,7 @@ impl syn::parse::Parse for FilePaths {
 
 
 #[proc_macro]
-pub fn include_scaffolding(component_name: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn include_scaffolding(component_name: TokenStream) -> TokenStream {
     let name = syn::parse_macro_input!(component_name as syn::LitStr);
     if std::env::var("OUT_DIR").is_err() {
         quote! {
@@ -185,9 +215,7 @@ pub fn include_scaffolding(component_name: proc_macro::TokenStream) -> proc_macr
 
 
 #[proc_macro]
-pub fn generate_and_include_scaffolding(
-    udl_file: proc_macro::TokenStream,
-) -> proc_macro::TokenStream {
+pub fn generate_and_include_scaffolding(udl_file: TokenStream) -> TokenStream {
     let udl_file = syn::parse_macro_input!(udl_file as syn::LitStr);
     let udl_file_string = udl_file.value();
     let udl_file_path = Utf8Path::new(&udl_file_string);

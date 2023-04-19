@@ -47,6 +47,7 @@ fn serializer_should_correctly_serialize_timing_distribution() {
             .get_value(&glean, "store1")
             .expect("Value should be stored");
 
+        assert_eq!(snapshot.count, 1);
         assert_eq!(snapshot.sum, duration as i64);
     }
 
@@ -168,6 +169,9 @@ fn the_accumulate_samples_api_correctly_stores_timing_values() {
     assert_eq!(snapshot.sum, 6 * seconds_to_nanos);
 
     
+    assert_eq!(snapshot.count, 3);
+
+    
     
     
     assert_eq!(1, snapshot.values[&984625593]);
@@ -203,6 +207,9 @@ fn the_accumulate_samples_api_correctly_handles_negative_values() {
 
     
     assert_eq!(snapshot.sum, 6);
+
+    
+    assert_eq!(snapshot.count, 3);
 
     
     assert_eq!(1, snapshot.values[&1]);
@@ -244,6 +251,9 @@ fn the_accumulate_samples_api_correctly_handles_overflowing_values() {
 
     
     assert_eq!(snapshot.sum as u64, MAX_SAMPLE_TIME + 6);
+
+    
+    assert_eq!(snapshot.count, 4);
 
     
     assert_eq!(1, snapshot.values[&1]);
@@ -344,6 +354,9 @@ fn the_accumulate_raw_samples_api_correctly_stores_timing_values() {
     assert_eq!(snapshot.sum, 6 * seconds_to_nanos as i64);
 
     
+    assert_eq!(snapshot.count, 3);
+
+    
     
     
     assert_eq!(1, snapshot.values[&984625593]);
@@ -388,6 +401,9 @@ fn raw_samples_api_error_cases() {
 
     
     assert_eq!(snapshot.sum, 2 + max_sample_time as i64);
+
+    
+    assert_eq!(snapshot.count, 3);
 
     
     

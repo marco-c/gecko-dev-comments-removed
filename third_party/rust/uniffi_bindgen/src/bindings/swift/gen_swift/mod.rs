@@ -325,6 +325,9 @@ impl SwiftCodeOracle {
             Type::Map(key, value) => Box::new(compounds::MapCodeType::new(*key, *value)),
             Type::External { .. } => panic!("no support for external types yet"),
             Type::Custom { name, .. } => Box::new(custom::CustomCodeType::new(name)),
+            Type::Unresolved { .. } => {
+                unreachable!("Type must be resolved before calling create_code_type")
+            }
         }
     }
 }
@@ -341,22 +344,22 @@ impl CodeOracle for SwiftCodeOracle {
 
     
     fn fn_name(&self, nm: &str) -> String {
-        nm.to_string().to_lower_camel_case()
+        format!("`{}`", nm.to_string().to_lower_camel_case())
     }
 
     
     fn var_name(&self, nm: &str) -> String {
-        nm.to_string().to_lower_camel_case()
+        format!("`{}`", nm.to_string().to_lower_camel_case())
     }
 
     
     fn enum_variant_name(&self, nm: &str) -> String {
-        nm.to_string().to_lower_camel_case()
+        format!("`{}`", nm.to_string().to_lower_camel_case())
     }
 
     
     fn error_name(&self, nm: &str) -> String {
-        self.class_name(nm)
+        format!("`{}`", self.class_name(nm))
     }
 
     fn ffi_type_label(&self, ffi_type: &FFIType) -> String {
@@ -468,14 +471,5 @@ pub mod filters {
     
     pub fn enum_variant_swift(nm: &str) -> Result<String, askama::Error> {
         Ok(oracle().enum_variant_name(nm))
-    }
-
-    
-    
-    
-    
-    
-    pub fn exception_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(oracle().error_name(nm))
     }
 }

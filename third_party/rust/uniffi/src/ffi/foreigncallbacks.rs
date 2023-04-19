@@ -114,8 +114,13 @@
 
 
 use super::RustBuffer;
+use std::fmt;
 use std::os::raw::c_int;
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+
+
+
 
 
 
@@ -195,3 +200,30 @@ impl ForeignCallbackInternals {
         unsafe { std::mem::transmute::<usize, Option<ForeignCallback>>(ptr_value) }
     }
 }
+
+
+
+
+
+#[derive(Debug)]
+pub struct UnexpectedUniFFICallbackError {
+    pub reason: String,
+}
+
+impl UnexpectedUniFFICallbackError {
+    pub fn from_reason(reason: String) -> Self {
+        Self { reason }
+    }
+}
+
+impl fmt::Display for UnexpectedUniFFICallbackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "UnexpectedUniFFICallbackError(reason: {:?})",
+            self.reason
+        )
+    }
+}
+
+impl std::error::Error for UnexpectedUniFFICallbackError {}
