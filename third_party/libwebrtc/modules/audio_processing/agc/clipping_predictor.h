@@ -48,21 +48,21 @@ class ClippingPredictor {
 
 std::unique_ptr<ClippingPredictor> CreateClippingEventPredictor(
     int num_channels,
-    const AudioProcessing::Config::GainController1 ::AnalogGainController::
+    const AudioProcessing::Config::GainController1::AnalogGainController::
         ClippingPredictor& config);
 
 
 
 std::unique_ptr<ClippingPredictor> CreateFixedStepClippingPeakPredictor(
     int num_channels,
-    const AudioProcessing::Config::GainController1 ::AnalogGainController::
+    const AudioProcessing::Config::GainController1::AnalogGainController::
         ClippingPredictor& config);
 
 
 
 std::unique_ptr<ClippingPredictor> CreateAdaptiveStepClippingPeakPredictor(
     int num_channels,
-    const AudioProcessing::Config::GainController1 ::AnalogGainController::
+    const AudioProcessing::Config::GainController1::AnalogGainController::
         ClippingPredictor& config);
 
 }  
