@@ -31,26 +31,6 @@ class FifoBuffer final : public StreamInterface {
   ~FifoBuffer() override;
   
   bool GetBuffered(size_t* data_len) const;
-  
-  bool SetCapacity(size_t length);
-
-  
-  
-  
-  
-  StreamResult ReadOffset(void* buffer,
-                          size_t bytes,
-                          size_t offset,
-                          size_t* bytes_read);
-
-  
-  
-  
-  
-  StreamResult WriteOffset(const void* buffer,
-                           size_t bytes,
-                           size_t offset,
-                           size_t* bytes_written);
 
   
   StreamState GetState() const override;
@@ -95,10 +75,6 @@ class FifoBuffer final : public StreamInterface {
   void* GetWriteBuffer(size_t* buf_len);
   void ConsumeWriteBuffer(size_t used);
 
-  
-  
-  bool GetWriteRemaining(size_t* size) const;
-
  private:
   void PostEvent(int events, int err) {
     owner_->PostTask(webrtc::ToQueuedTask(task_safety_, [this, events, err]() {
@@ -108,18 +84,14 @@ class FifoBuffer final : public StreamInterface {
 
   
   
-  StreamResult ReadOffsetLocked(void* buffer,
-                                size_t bytes,
-                                size_t offset,
-                                size_t* bytes_read)
+  StreamResult ReadLocked(void* buffer, size_t bytes, size_t* bytes_read)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
-  StreamResult WriteOffsetLocked(const void* buffer,
-                                 size_t bytes,
-                                 size_t offset,
-                                 size_t* bytes_written)
+  StreamResult WriteLocked(const void* buffer,
+                           size_t bytes,
+                           size_t* bytes_written)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   webrtc::ScopedTaskSafety task_safety_;
@@ -129,7 +101,7 @@ class FifoBuffer final : public StreamInterface {
   
   std::unique_ptr<char[]> buffer_ RTC_GUARDED_BY(mutex_);
   
-  size_t buffer_length_ RTC_GUARDED_BY(mutex_);
+  const size_t buffer_length_;
   
   size_t data_length_ RTC_GUARDED_BY(mutex_);
   
