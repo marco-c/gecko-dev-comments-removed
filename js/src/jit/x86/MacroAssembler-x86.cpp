@@ -975,17 +975,16 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
 
 template <typename T>
 void MacroAssembler::storeUnboxedValue(const ConstantOrRegister& value,
-                                       MIRType valueType, const T& dest,
-                                       MIRType slotType) {
+                                       MIRType valueType, const T& dest) {
+  MOZ_ASSERT(valueType < MIRType::Value);
+
   if (valueType == MIRType::Double) {
     storeDouble(value.reg().typedReg().fpu(), dest);
     return;
   }
 
   
-  if (valueType != slotType) {
-    storeTypeTag(ImmType(ValueTypeFromMIRType(valueType)), Operand(dest));
-  }
+  storeTypeTag(ImmType(ValueTypeFromMIRType(valueType)), Operand(dest));
 
   
   if (value.constant()) {
@@ -997,11 +996,10 @@ void MacroAssembler::storeUnboxedValue(const ConstantOrRegister& value,
 
 template void MacroAssembler::storeUnboxedValue(const ConstantOrRegister& value,
                                                 MIRType valueType,
-                                                const Address& dest,
-                                                MIRType slotType);
+                                                const Address& dest);
 template void MacroAssembler::storeUnboxedValue(
     const ConstantOrRegister& value, MIRType valueType,
-    const BaseObjectElementIndex& dest, MIRType slotType);
+    const BaseObjectElementIndex& dest);
 
 
 
