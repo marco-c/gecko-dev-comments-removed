@@ -1,0 +1,8 @@
+
+
+
+
+
+add_task(async function worker() {
+  await run_test_in_worker("worker/test_fileSystemDirectoryHandle_worker.js");
+});
