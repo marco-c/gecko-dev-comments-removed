@@ -4370,6 +4370,12 @@ const BrowserSearch = {
     );
   },
 
+  pasteAndSearch(event) {
+    BrowserSearch.searchBar.select();
+    goDoCommand("cmd_paste");
+    BrowserSearch.searchBar.handleSearchCommand(event);
+  },
+
   
 
 

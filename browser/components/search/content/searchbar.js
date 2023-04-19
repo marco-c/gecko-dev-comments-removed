@@ -9,17 +9,6 @@
 
 
 {
-  const lazy = {};
-
-  ChromeUtils.defineESModuleGetters(lazy, {
-    SearchSuggestionController:
-      "resource://gre/modules/SearchSuggestionController.sys.mjs",
-  });
-
-  XPCOMUtils.defineLazyModuleGetters(lazy, {
-    FormHistory: "resource://gre/modules/FormHistory.jsm",
-  });
-
   
 
 
@@ -111,6 +100,13 @@
       this._initTextbox();
 
       window.addEventListener("unload", this.destroy);
+
+      this.FormHistory = ChromeUtils.import(
+        "resource://gre/modules/FormHistory.jsm"
+      ).FormHistory;
+      this.SearchSuggestionController = ChromeUtils.importESModule(
+        "resource://gre/modules/SearchSuggestionController.sys.mjs"
+      ).SearchSuggestionController;
 
       Services.obs.addObserver(this.observer, "browser-search-engine-modified");
       Services.obs.addObserver(this.observer, "browser-search-service");
@@ -394,11 +390,11 @@
       if (
         aData &&
         !PrivateBrowsingUtils.isWindowPrivate(window) &&
-        lazy.FormHistory.enabled &&
+        this.FormHistory.enabled &&
         aData.length <=
-          lazy.SearchSuggestionController.SEARCH_HISTORY_MAX_VALUE_LENGTH
+          this.SearchSuggestionController.SEARCH_HISTORY_MAX_VALUE_LENGTH
       ) {
-        lazy.FormHistory.update(
+        this.FormHistory.update(
           {
             op: "bump",
             fieldname: textBox.getAttribute("autocompletesearchparam"),
@@ -605,7 +601,7 @@
           this._buildContextMenu();
         }
 
-        this._textbox.closePopup();
+        BrowserSearch.searchBar._textbox.closePopup();
 
         
         
@@ -880,13 +876,14 @@
       this._menupopup.addEventListener("command", event => {
         switch (event.originalTarget) {
           case this._pasteAndSearchMenuItem:
-            this.select();
-            goDoCommand("cmd_paste");
-            this.handleSearchCommand(event);
+            BrowserSearch.pasteAndSearch(event);
             break;
           case clearHistoryItem:
             let param = this.textbox.getAttribute("autocompletesearchparam");
-            lazy.FormHistory.update({ op: "remove", fieldname: param }, null);
+            BrowserSearch.searchBar.FormHistory.update(
+              { op: "remove", fieldname: param },
+              null
+            );
             this.textbox.value = "";
             break;
           default:
