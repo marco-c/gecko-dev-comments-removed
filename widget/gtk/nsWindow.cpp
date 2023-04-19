@@ -6415,15 +6415,6 @@ void nsWindow::EnsureGrabs(void) {
   }
 }
 
-void nsWindow::CleanLayerManagerRecursive(void) {
-  if (mWindowRenderer) {
-    mWindowRenderer->Destroy();
-    mWindowRenderer = nullptr;
-  }
-
-  DestroyCompositor();
-}
-
 void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
   bool isTransparent = aMode == eTransparencyTransparent;
 
@@ -6453,7 +6444,7 @@ void nsWindow::SetTransparencyMode(nsTransparencyMode aMode) {
     
     
     
-    CleanLayerManagerRecursive();
+    DestroyLayerManager();
   }
 }
 
