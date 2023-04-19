@@ -47,6 +47,7 @@ module.exports = {
       globals: {
         
         allowContentIter: "readonly",
+        allowContentIterWith: "readonly",
         callContentFunction: "readonly",
         callFunction: "readonly",
         constructContentFunction: "readonly",

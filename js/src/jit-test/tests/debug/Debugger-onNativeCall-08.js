@@ -17,8 +17,6 @@ Array.from([1, 2, 3]);
 `);
 assertEqArray(rv, [
   "from",
-  
-  "IteratorMethod",
   "values",
   "next", "next", "next", "next",
 ]);

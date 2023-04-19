@@ -830,13 +830,10 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
     var A = IsConstructor(C) ? constructContentFunction(C, C) : [];
 
     
-    var iterator = MakeIteratorWrapper(items, usingIterator);
-
-    
     var k = 0;
 
     
-    for (var nextValue of allowContentIter(iterator)) {
+    for (var nextValue of allowContentIterWith(items, usingIterator)) {
       
       
       
@@ -895,21 +892,6 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
 
   
   return A;
-}
-
-function MakeIteratorWrapper(items, method) {
-  assert(IsCallable(method), "method argument is a function");
-
-  
-  
-  
-  return {
-    
-    
-    [GetBuiltinSymbol("iterator")]: function IteratorMethod() {
-      return callContentFunction(method, items);
-    },
-  };
 }
 
 

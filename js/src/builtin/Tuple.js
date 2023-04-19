@@ -653,10 +653,7 @@ function TupleFrom(items ) {
       k++;
     };
     
-    
-    var iteratorRecord = MakeIteratorWrapper(items, usingIterator);
-
-    for (var nextValue of allowContentIter(iteratorRecord)) {
+    for (var nextValue of allowContentIterWith(items, usingIterator)) {
       adder(nextValue);
     }
     

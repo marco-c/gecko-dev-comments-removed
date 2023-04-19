@@ -5106,25 +5106,31 @@ bool BytecodeEmitter::emitBigIntOp(BigIntLiteral* bigint) {
 }
 
 bool BytecodeEmitter::emitIterator(
-    SelfHostedIter selfHostedIter ) {
+    SelfHostedIter selfHostedIter ,
+    bool isIteratorMethodOnStack ) {
   MOZ_ASSERT(selfHostedIter == SelfHostedIter::Allow ||
                  emitterMode != BytecodeEmitter::SelfHosting,
              "[Symbol.iterator]() call is prohibited in self-hosted code "
              "because it can run user-modifiable iteration code");
 
-  
-  if (!emit1(JSOp::Dup)) {
+  if (!isIteratorMethodOnStack) {
     
-    return false;
-  }
-  if (!emit2(JSOp::Symbol, uint8_t(JS::SymbolCode::iterator))) {
+
     
-    return false;
+    if (!emit1(JSOp::Dup)) {
+      
+      return false;
+    }
+    if (!emit2(JSOp::Symbol, uint8_t(JS::SymbolCode::iterator))) {
+      
+      return false;
+    }
+    if (!emitElemOpBase(JSOp::GetElem)) {
+      
+      return false;
+    }
   }
-  if (!emitElemOpBase(JSOp::GetElem)) {
-    
-    return false;
-  }
+
   if (!emit1(JSOp::Swap)) {
     
     return false;
@@ -5476,7 +5482,29 @@ bool BytecodeEmitter::emitForOf(ForNode* forOfLoop,
                forOfTarget->isKind(ParseNodeKind::ConstDecl));
   }
 
-  if (!forOf.emitInitialize(forOfHead->pn_pos.begin)) {
+  bool isIteratorMethodOnStack = false;
+  if (emitterMode == BytecodeEmitter::SelfHosting &&
+      forHeadExpr->isKind(ParseNodeKind::CallExpr) &&
+      forHeadExpr->as<BinaryNode>().left()->isName(
+          TaggedParserAtomIndex::WellKnown::allowContentIterWith())) {
+    
+    
+    
+    
+    
+    
+    
+    
+    ListNode* argsList = &forHeadExpr->as<BinaryNode>().right()->as<ListNode>();
+    if (!emitTree(argsList->head()->pn_next)) {
+      
+      return false;
+    }
+
+    isIteratorMethodOnStack = true;
+  }
+
+  if (!forOf.emitInitialize(forOfHead->pn_pos.begin, isIteratorMethodOnStack)) {
     
     return false;
   }
@@ -7238,6 +7266,15 @@ bool BytecodeEmitter::emitSelfHostedAllowContentIter(CallNode* callNode) {
   return emitTree(argsList->head());
 }
 
+bool BytecodeEmitter::emitSelfHostedAllowContentIterWith(CallNode* callNode) {
+  ListNode* argsList = &callNode->right()->as<ListNode>();
+
+  MOZ_ASSERT(argsList->count() == 2);
+
+  
+  return emitTree(argsList->head());
+}
+
 bool BytecodeEmitter::emitSelfHostedDefineDataProperty(CallNode* callNode) {
   ListNode* argsList = &callNode->right()->as<ListNode>();
 
@@ -7945,6 +7982,10 @@ bool BytecodeEmitter::emitCallOrNew(
     }
     if (calleeName == TaggedParserAtomIndex::WellKnown::allowContentIter()) {
       return emitSelfHostedAllowContentIter(callNode);
+    }
+    if (calleeName ==
+        TaggedParserAtomIndex::WellKnown::allowContentIterWith()) {
+      return emitSelfHostedAllowContentIterWith(callNode);
     }
     if (calleeName ==
             TaggedParserAtomIndex::WellKnown::defineDataPropertyIntrinsic() &&
@@ -11716,8 +11757,10 @@ bool BytecodeEmitter::intoScriptStencil(ScriptIndex scriptIndex) {
 SelfHostedIter BytecodeEmitter::getSelfHostedIterFor(ParseNode* parseNode) {
   if (emitterMode == BytecodeEmitter::SelfHosting &&
       parseNode->isKind(ParseNodeKind::CallExpr) &&
-      parseNode->as<BinaryNode>().left()->isName(
-          TaggedParserAtomIndex::WellKnown::allowContentIter())) {
+      (parseNode->as<BinaryNode>().left()->isName(
+           TaggedParserAtomIndex::WellKnown::allowContentIter()) ||
+       parseNode->as<BinaryNode>().left()->isName(
+           TaggedParserAtomIndex::WellKnown::allowContentIterWith()))) {
     return SelfHostedIter::Allow;
   }
 
