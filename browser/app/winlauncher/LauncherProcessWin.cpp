@@ -37,6 +37,10 @@
 #  include "SameBinary.h"
 #endif  
 
+#if defined(MOZ_SANDBOX)
+#  include "mozilla/sandboxing/SandboxInitialization.h"
+#endif
+
 namespace mozilla {
 
 
@@ -319,6 +323,11 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
       MOZ_ASSERT(setOk);
     }
   }
+
+#if defined(MOZ_SANDBOX)
+  
+  mozilla::sandboxing::ApplyParentProcessMitigations();
+#endif
 
   mozilla::UseParentConsole();
 

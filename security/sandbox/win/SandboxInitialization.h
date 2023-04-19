@@ -45,6 +45,11 @@ sandbox::BrokerServices* GetInitializedBrokerServices();
 
 PermissionsService* GetPermissionsService();
 
+
+
+
+void ApplyParentProcessMitigations();
+
 }  
 }  
 
