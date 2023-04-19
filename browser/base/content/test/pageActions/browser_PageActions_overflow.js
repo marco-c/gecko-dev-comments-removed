@@ -105,7 +105,7 @@ add_task(async function bookmark() {
 
   
   let bookmarkButton = win.document.getElementById("pageAction-panel-bookmark");
-  Assert.equal(bookmarkButton.label, "Bookmark Current Tab");
+  Assert.equal(bookmarkButton.label, "Bookmark Current Tab…");
   Assert.ok(!bookmarkButton.hasAttribute("starred"));
 
   
@@ -123,7 +123,7 @@ add_task(async function bookmark() {
   await promisePageActionPanelOpen(win);
 
   
-  Assert.equal(bookmarkButton.label, "Edit This Bookmark");
+  Assert.equal(bookmarkButton.label, "Edit This Bookmark…");
   Assert.ok(bookmarkButton.hasAttribute("starred"));
   Assert.equal(bookmarkButton.getAttribute("starred"), "true");
 
@@ -150,7 +150,7 @@ add_task(async function bookmark() {
   await promisePageActionPanelOpen(win);
 
   
-  Assert.equal(bookmarkButton.label, "Bookmark Current Tab");
+  Assert.equal(bookmarkButton.label, "Bookmark Current Tab…");
   Assert.ok(!bookmarkButton.hasAttribute("starred"));
 
   

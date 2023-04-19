@@ -1865,10 +1865,7 @@ var BookmarkingUI = {
     let isStarred = !forceReset && this._itemGuids.size > 0;
     
     
-    let menuItemL10nId = isStarred
-      ? "menu-bookmark-edit"
-      : "menu-bookmark-current-tab";
-
+    let menuItemL10nId = isStarred ? "menu-edit-bookmark" : "menu-bookmark-tab";
     let menuItem = document.getElementById("menu_bookmarkThisPage");
     if (menuItem) {
       
@@ -1876,8 +1873,8 @@ var BookmarkingUI = {
     }
 
     let panelMenuItemL10nId = isStarred
-      ? "bookmarks-bookmark-edit-panel"
-      : "bookmarks-current-tab";
+      ? "bookmarks-subview-edit-bookmark"
+      : "bookmarks-subview-bookmark-tab";
     let panelMenuToolbarButton = PanelMultiView.getViewNode(
       document,
       "panelMenuBookmarkThisPage"
@@ -1892,8 +1889,8 @@ var BookmarkingUI = {
     if (contextItem) {
       if (AppConstants.platform == "macosx") {
         let contextItemL10nId = isStarred
-          ? "main-context-menu-bookmark-edit-mac"
-          : "main-context-menu-bookmark-add-mac";
+          ? "main-context-menu-edit-bookmark-mac"
+          : "main-context-menu-bookmark-page-mac";
         document.l10n.setAttributes(contextItem, contextItemL10nId);
       } else {
         let shortcutElem = document.getElementById(
@@ -1902,14 +1899,14 @@ var BookmarkingUI = {
         if (shortcutElem) {
           let shortcut = ShortcutUtils.prettifyShortcut(shortcutElem);
           let contextItemL10nId = isStarred
-            ? "main-context-menu-bookmark-change-with-shortcut"
-            : "main-context-menu-bookmark-add-with-shortcut";
+            ? "main-context-menu-edit-bookmark-with-shortcut"
+            : "main-context-menu-bookmark-page-with-shortcut";
           let l10nArgs = { shortcut };
           document.l10n.setAttributes(contextItem, contextItemL10nId, l10nArgs);
         } else {
           let contextItemL10nId = isStarred
-            ? "main-context-menu-bookmark-change"
-            : "main-context-menu-bookmark-add";
+            ? "main-context-menu-edit-bookmark"
+            : "main-context-menu-bookmark-page";
           document.l10n.setAttributes(contextItem, contextItemL10nId);
         }
       }
