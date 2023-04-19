@@ -71,11 +71,6 @@ static_assert(kCepstralCoeffsHistorySize > 2,
 
 constexpr int kFeatureVectorSize = 42;
 
-enum class Optimization { kNone, kSse2, kNeon };
-
-
-Optimization DetectOptimization();
-
 }  
 }  
 

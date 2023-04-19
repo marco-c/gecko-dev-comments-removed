@@ -152,9 +152,6 @@ class PitchTestData {
   std::array<float, kPitchTestDataSize> test_data_;
 };
 
-
-bool IsOptimizationAvailable(Optimization optimization);
-
 }  
 }  
 }  

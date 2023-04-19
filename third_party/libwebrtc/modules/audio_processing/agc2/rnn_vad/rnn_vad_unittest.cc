@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "common_audio/resampler/push_sinc_resampler.h"
+#include "modules/audio_processing/agc2/cpu_features.h"
 #include "modules/audio_processing/agc2/rnn_vad/features_extraction.h"
 #include "modules/audio_processing/agc2/rnn_vad/rnn.h"
 #include "modules/audio_processing/agc2/rnn_vad/test_utils.h"
@@ -57,13 +58,17 @@ TEST(RnnVadTest, CheckWriteComputedOutputIsFalse) {
       << "Cannot land if kWriteComputedOutput is true.";
 }
 
+class RnnVadProbabilityParametrization
+    : public ::testing::TestWithParam<AvailableCpuFeatures> {};
 
 
-TEST(RnnVadTest, RnnVadProbabilityWithinTolerance) {
+
+TEST_P(RnnVadProbabilityParametrization, RnnVadProbabilityWithinTolerance) {
   
   PushSincResampler decimator(kFrameSize10ms48kHz, kFrameSize10ms24kHz);
-  FeaturesExtractor features_extractor;
-  RnnBasedVad rnn_vad;
+  const AvailableCpuFeatures cpu_features = GetParam();
+  FeaturesExtractor features_extractor(cpu_features);
+  RnnBasedVad rnn_vad(cpu_features);
 
   
   auto samples_reader = CreatePcmSamplesReader(kFrameSize10ms48kHz);
@@ -111,7 +116,7 @@ TEST(RnnVadTest, RnnVadProbabilityWithinTolerance) {
 
 
 
-TEST(RnnVadTest, DISABLED_RnnVadPerformance) {
+TEST_P(RnnVadProbabilityParametrization, DISABLED_RnnVadPerformance) {
   
   auto samples_reader = CreatePcmSamplesReader(kFrameSize10ms48kHz);
   const int num_frames = samples_reader.second;
@@ -127,9 +132,10 @@ TEST(RnnVadTest, DISABLED_RnnVadPerformance) {
                        kFrameSize10ms24kHz);
   }
   
-  FeaturesExtractor features_extractor;
+  const AvailableCpuFeatures cpu_features = GetParam();
+  FeaturesExtractor features_extractor(cpu_features);
   std::array<float, kFeatureVectorSize> feature_vector;
-  RnnBasedVad rnn_vad;
+  RnnBasedVad rnn_vad(cpu_features);
   constexpr int number_of_tests = 100;
   ::webrtc::test::PerformanceTimer perf_timer(number_of_tests);
   for (int k = 0; k < number_of_tests; ++k) {
@@ -151,6 +157,27 @@ TEST(RnnVadTest, DISABLED_RnnVadPerformance) {
                 perf_timer.GetDurationAverage(),
                 perf_timer.GetDurationStandardDeviation());
 }
+
+
+std::vector<AvailableCpuFeatures> GetCpuFeaturesToTest() {
+  std::vector<AvailableCpuFeatures> v;
+  v.push_back({false, false, false});
+  AvailableCpuFeatures available = GetAvailableCpuFeatures();
+  if (available.sse2) {
+    AvailableCpuFeatures features(
+        {true, false, false});
+    v.push_back(features);
+  }
+  return v;
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    RnnVadTest,
+    RnnVadProbabilityParametrization,
+    ::testing::ValuesIn(GetCpuFeaturesToTest()),
+    [](const ::testing::TestParamInfo<AvailableCpuFeatures>& info) {
+      return info.param.ToString();
+    });
 
 }  
 }  
