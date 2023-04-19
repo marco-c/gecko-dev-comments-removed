@@ -18,55 +18,13 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "api/function_view.h"
 #include "modules/audio_processing/agc2/cpu_features.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
 #include "modules/audio_processing/agc2/rnn_vad/rnn_fc.h"
-#include "rtc_base/system/arch.h"
+#include "modules/audio_processing/agc2/rnn_vad/rnn_gru.h"
 
 namespace webrtc {
 namespace rnn_vad {
-
-
-constexpr int kGruLayerMaxUnits = 24;
-
-
-
-
-class GatedRecurrentLayer {
- public:
-  
-  GatedRecurrentLayer(int input_size,
-                      int output_size,
-                      rtc::ArrayView<const int8_t> bias,
-                      rtc::ArrayView<const int8_t> weights,
-                      rtc::ArrayView<const int8_t> recurrent_weights);
-  GatedRecurrentLayer(const GatedRecurrentLayer&) = delete;
-  GatedRecurrentLayer& operator=(const GatedRecurrentLayer&) = delete;
-  ~GatedRecurrentLayer();
-
-  
-  int input_size() const { return input_size_; }
-  
-  const float* data() const { return state_.data(); }
-  
-  int size() const { return output_size_; }
-
-  
-  void Reset();
-  
-  void ComputeOutput(rtc::ArrayView<const float> input);
-
- private:
-  const int input_size_;
-  const int output_size_;
-  const std::vector<float> bias_;
-  const std::vector<float> weights_;
-  const std::vector<float> recurrent_weights_;
-  
-  
-  std::array<float, kGruLayerMaxUnits> state_;
-};
 
 
 
