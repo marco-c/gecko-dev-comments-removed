@@ -44,60 +44,6 @@ async function openAboutWelcome(json) {
   return tab.linkedBrowser;
 }
 
-async function testAboutWelcomeLogoFor(logo = {}) {
-  info(`Testing logo: ${JSON.stringify(logo)}`);
-
-  let screens = [makeTestContent("TEST_LOGO_SELECTION_STEP", { logo })];
-
-  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
-    featureId: "aboutwelcome",
-    value: { enabled: true, screens },
-  });
-
-  let browser = await openAboutWelcome(JSON.stringify(screens));
-
-  let expected = [
-    `.brand-logo[src="${logo.imageURL ??
-      "chrome://branding/content/about-logo.svg"}"][alt="${logo.alt ?? ""}"]${
-      logo.height ? `[style*="height"]` : ""
-    }${logo.alt ? "" : `[role="presentation"]`}`,
-  ];
-  let unexpected = [];
-  if (!logo.height) {
-    unexpected.push(`.brand-logo[style*="height"]`);
-  }
-  if (logo.alt) {
-    unexpected.push(`.brand-logo[role="presentation"]`);
-  }
-  (logo.darkModeImageURL ? expected : unexpected).push(
-    `.logo-container source[media="(prefers-color-scheme: dark)"]${
-      logo.darkModeImageURL ? `[srcset="${logo.darkModeImageURL}"]` : ""
-    }`
-  );
-  (logo.reducedMotionImageURL ? expected : unexpected).push(
-    `.logo-container source[media="(prefers-reduced-motion: reduce)"]${
-      logo.reducedMotionImageURL
-        ? `[srcset="${logo.reducedMotionImageURL}"]`
-        : ""
-    }`
-  );
-  (logo.darkModeReducedMotionImageURL ? expected : unexpected).push(
-    `.logo-container source[media="(prefers-color-scheme: dark) and (prefers-reduced-motion: reduce)"]${
-      logo.darkModeReducedMotionImageURL
-        ? `[srcset="${logo.darkModeReducedMotionImageURL}"]`
-        : ""
-    }`
-  );
-  await test_screen_content(
-    browser,
-    "renders screen with passed logo",
-    expected,
-    unexpected
-  );
-
-  await doExperimentCleanup();
-}
-
 
 
 
@@ -556,33 +502,46 @@ add_task(async function test_aboutwelcome_history_updates_disabled() {
 
 
 
+add_task(async function test_aboutwelcome_with_dark_mode_logo() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["ui.systemUsesDarkTheme", 1],
+    ],
+  });
 
-add_task(async function test_aboutwelcome_logo_selection() {
+  let screens = [];
   
-  await testAboutWelcomeLogoFor({
-    imageURL: "chrome://branding/content/icon16.png",
-    darkModeImageURL: "chrome://branding/content/icon32.png",
-    reducedMotionImageURL: "chrome://branding/content/icon64.png",
-    darkModeReducedMotionImageURL: "chrome://branding/content/icon128.png",
-    alt: "TEST_LOGO_SELECTION_ALT",
-    height: "16px",
+  for (let i = 0; i < 2; i++) {
+    screens.push(
+      makeTestContent("TEST_TEXT_COLOR_OVERRIDE_STEP", {
+        logo: {
+          darkModeImageURL:
+            "chrome://activity-stream/content/data/content/assets/heart.webp",
+        },
+      })
+    );
+  }
+
+  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+    featureId: "aboutwelcome",
+    value: {
+      enabled: true,
+      screens,
+    },
   });
-  
-  await testAboutWelcomeLogoFor({
-    imageURL: "chrome://branding/content/icon16.png",
-    darkModeImageURL: "chrome://branding/content/icon32.png",
-  });
-  
-  await testAboutWelcomeLogoFor({
-    imageURL: "chrome://branding/content/icon16.png",
-    reducedMotionImageURL: "chrome://branding/content/icon64.png",
-  });
-  
-  await testAboutWelcomeLogoFor({
-    imageURL: "chrome://branding/content/icon16.png",
-  });
-  
-  await testAboutWelcomeLogoFor();
+  let browser = await openAboutWelcome(JSON.stringify(screens));
+
+  await test_screen_content(
+    browser,
+    "renders screen with dark mode logo",
+    
+    [
+      '.logo-container source[srcset="chrome://activity-stream/content/data/content/assets/heart.webp"]',
+    ]
+  );
+
+  await doExperimentCleanup();
 });
 
 

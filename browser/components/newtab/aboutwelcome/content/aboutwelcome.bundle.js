@@ -668,24 +668,16 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
 
   renderLogo({
     imageURL = "chrome://branding/content/about-logo.svg",
-    darkModeImageURL,
-    reducedMotionImageURL,
-    darkModeReducedMotionImageURL,
     alt = "",
+    darkModeImageURL,
     height
   }) {
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("picture", {
       className: "logo-container"
-    }, darkModeReducedMotionImageURL ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
-      srcSet: darkModeReducedMotionImageURL,
-      media: "(prefers-color-scheme: dark) and (prefers-reduced-motion: reduce)"
-    }) : null, darkModeImageURL ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
       srcSet: darkModeImageURL,
       media: "(prefers-color-scheme: dark)"
-    }) : null, reducedMotionImageURL ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
-      srcSet: reducedMotionImageURL,
-      media: "(prefers-reduced-motion: reduce)"
-    }) : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("img", {
+    }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("img", {
       className: "brand-logo",
       style: {
         height
