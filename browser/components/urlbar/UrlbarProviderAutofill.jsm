@@ -778,16 +778,20 @@ class ProviderAutofill extends UrlbarProvider {
       queryType != QUERYTYPE.AUTOFILL_ORIGIN &&
       queryContext.searchString.length == autofilledValue.length
     ) {
+      
+      
+      
+      
+      
       const originalCompleteValue = new URL(finalCompleteValue).href;
-      
-      
-      
-      
+      let strippedAutofilledValue = autofilledValue.substring(
+        this._strippedPrefix.length
+      );
       finalCompleteValue = new URL(
         finalCompleteValue.substring(
           0,
-          finalCompleteValue.length - autofilledValue.length
-        ) + autofilledValue
+          finalCompleteValue.length - strippedAutofilledValue.length
+        ) + strippedAutofilledValue
       ).href;
 
       
