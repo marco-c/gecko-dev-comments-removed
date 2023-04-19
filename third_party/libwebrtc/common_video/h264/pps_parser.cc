@@ -11,6 +11,7 @@
 #include "common_video/h264/pps_parser.h"
 
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "absl/numeric/bits.h"
@@ -116,7 +117,12 @@ absl::optional<PpsParser::PpsState> PpsParser::ParseInternal(
 
       
       
-      reader.ConsumeBits(slice_group_id_bits * pic_size_in_map_units);
+      int64_t bits_to_consume =
+          int64_t{slice_group_id_bits} * pic_size_in_map_units;
+      if (!reader.Ok() || bits_to_consume > std::numeric_limits<int>::max()) {
+        return absl::nullopt;
+      }
+      reader.ConsumeBits(bits_to_consume);
     }
   }
   
