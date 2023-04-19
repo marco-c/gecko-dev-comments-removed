@@ -234,12 +234,6 @@ function createSourceObject({
     
     
     
-    
-    relativeUrl: url,
-
-    
-    
-    
     extensionName,
 
     
