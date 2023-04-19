@@ -487,7 +487,7 @@ async function promiseNativeTouchpadPanEventAndWaitForObserver(
   aDeltaY,
   aPhase
 ) {
-  if (getPlatform() != "windows") {
+  if (getPlatform() != "windows" && getPlatform() != "linux") {
     throw new Error(
       `promiseNativeTouchpadPanEventAndWaitForObserver doesn't work on ${getPlatform()}`
     );
