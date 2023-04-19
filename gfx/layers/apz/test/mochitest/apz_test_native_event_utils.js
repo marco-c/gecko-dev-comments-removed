@@ -77,6 +77,18 @@ function nativeArrowDownKey() {
   );
 }
 
+function nativeArrowUpKey() {
+  switch (getPlatform()) {
+    case "windows":
+      return WIN_VK_UP;
+    case "mac":
+      return MAC_VK_UpArrow;
+  }
+  throw new Error(
+    "Native key events not supported on platform " + getPlatform()
+  );
+}
+
 
 function windowForTarget(aTarget) {
   if (aTarget.Window && aTarget instanceof aTarget.Window) {
