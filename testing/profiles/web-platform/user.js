@@ -78,3 +78,5 @@ user_pref("dom.workers.requestAnimationFrame", true);
 user_pref("layout.css.font-loading-api.workers.enabled", true);
 
 user_pref("remote.experimental.enabled", true);
+
+user_pref("privacy.partition.always_partition_third_party_non_cookie_storage", false);
