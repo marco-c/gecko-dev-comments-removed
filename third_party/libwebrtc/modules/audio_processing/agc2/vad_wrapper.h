@@ -43,6 +43,7 @@ class VoiceActivityDetectorWrapper {
   
   
   
+  
   VoiceActivityDetectorWrapper(int vad_reset_period_ms,
                                const AvailableCpuFeatures& cpu_features);
   
@@ -55,10 +56,19 @@ class VoiceActivityDetectorWrapper {
   ~VoiceActivityDetectorWrapper();
 
   
+  
+  void Initialize(int sample_rate_hz);
+
+  
+  
+  
   float Analyze(AudioFrameView<const float> frame);
 
  private:
   const int vad_reset_period_frames_;
+  
+  bool initialized_;
+  int frame_size_;
   int time_to_vad_reset_;
   PushResampler<float> resampler_;
   std::unique_ptr<MonoVad> vad_;
