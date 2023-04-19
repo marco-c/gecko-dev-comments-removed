@@ -36,7 +36,12 @@ const WindowId kNullWindowId = 0;
 
 
 
-typedef intptr_t ScreenId;
+
+#if defined(CHROMEOS)
+  typedef int64_t ScreenId;
+#else
+  typedef intptr_t ScreenId;
+#endif
 
 
 const ScreenId kFullDesktopScreenId = -1;
