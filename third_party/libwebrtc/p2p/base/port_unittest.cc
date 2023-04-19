@@ -672,8 +672,8 @@ class PortTest : public ::testing::Test, public sigslot::has_slots<> {
     
     
     
-    tcp_conn1->socket()->SignalClose(tcp_conn1->socket(), 0);
-    tcp_conn2->socket()->SignalClose(tcp_conn2->socket(), 0);
+    tcp_conn1->socket()->NotifyClosedForTest(0);
+    tcp_conn2->socket()->NotifyClosedForTest(0);
 
     
     
@@ -1625,7 +1625,7 @@ TEST_F(PortTest, TestDisableInterfaceOfTcpPort) {
   lconn->Ping(0);
 
   
-  socket->SignalClose(socket, 1);
+  socket->NotifyClosedForTest(1);
 
   
   socket_factory.set_next_client_tcp_socket(nullptr);
