@@ -208,7 +208,7 @@ class ScriptModule extends Module {
     }
 
     const realm = this.#getRealmInfoFromTarget({ contextId, realmId, sandbox });
-    const { result } = await this.messageHandler.forwardCommand({
+    const evaluationResult = await this.messageHandler.forwardCommand({
       moduleName: "script",
       commandName: "evaluateExpression",
       destination: {
@@ -221,10 +221,22 @@ class ScriptModule extends Module {
       },
     });
 
-    return {
-      result,
-      realm: realm.realm,
-    };
+    const rv = { realm: realm.realm };
+    switch (evaluationResult.evaluationStatus) {
+      
+      case "normal":
+        rv.result = evaluationResult.result;
+        break;
+      
+      case "throw":
+        rv.exceptionDetails = evaluationResult.exceptionDetails;
+        break;
+      default:
+        throw new lazy.error.UnsupportedOperationError(
+          `Unsupported evaluation status ${evaluationResult.evaluationStatus}`
+        );
+    }
+    return rv;
   }
 
   #getRealmInfoFromTarget({ contextId, realmId, sandbox }) {
