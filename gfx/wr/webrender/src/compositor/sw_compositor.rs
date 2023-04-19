@@ -728,10 +728,7 @@ pub struct SwCompositor {
     
     
     
-    
-    
-    
-    depth_id: Option<u32>,
+    depth_id: u32,
     
     
     composite_thread: Option<Arc<SwCompositeThread>>,
@@ -747,6 +744,7 @@ impl SwCompositor {
         compositor: Box<dyn MappableCompositor>,
         use_native_compositor: bool,
     ) -> Self {
+        let depth_id = gl.gen_textures(1)[0];
         
         
         
@@ -768,7 +766,7 @@ impl SwCompositor {
                 y: 0,
             },
             max_tile_size: DeviceIntSize::zero(),
-            depth_id: None,
+            depth_id,
             composite_thread,
             locked_framebuffer: None,
             is_compositing: false,
@@ -1157,10 +1155,6 @@ impl Compositor for SwCompositor {
             self.max_tile_size.width.max(tile_size.width),
             self.max_tile_size.height.max(tile_size.height),
         );
-        if self.surfaces.is_empty() {
-            assert!(self.depth_id.is_none());
-            self.depth_id = Some(self.gl.gen_textures(1)[0]);
-        }
         self.surfaces.insert(id, SwSurface::new(tile_size, is_opaque));
     }
 
@@ -1183,11 +1177,6 @@ impl Compositor for SwCompositor {
         if self.use_native_compositor {
             self.compositor.destroy_surface(id);
         }
-        if self.surfaces.is_empty() {
-            if let Some(depth_id) = self.depth_id.take() {
-                self.gl.delete_textures(&[depth_id]);
-            }
-        }
     }
 
     fn deinit(&mut self) {
@@ -1199,9 +1188,7 @@ impl Compositor for SwCompositor {
             self.deinit_surface(surface);
         }
 
-        if let Some(depth_id) = self.depth_id.take() {
-            self.gl.delete_textures(&[depth_id]);
-        }
+        self.gl.delete_textures(&[self.depth_id]);
 
         if self.use_native_compositor {
             self.compositor.deinit();
@@ -1232,7 +1219,7 @@ impl Compositor for SwCompositor {
                 gl::DRAW_FRAMEBUFFER,
                 gl::DEPTH_ATTACHMENT,
                 gl::TEXTURE_2D,
-                self.depth_id.expect("depth texture should be initialized"),
+                self.depth_id,
                 0,
             );
             self.gl.bind_framebuffer(gl::DRAW_FRAMEBUFFER, prev_fbo[0] as gl::GLuint);
@@ -1323,7 +1310,7 @@ impl Compositor for SwCompositor {
                 
                 
                 self.gl.set_texture_buffer(
-                    self.depth_id.expect("depth texture should be initialized"),
+                    self.depth_id,
                     gl::DEPTH_COMPONENT,
                     valid_rect.width(),
                     valid_rect.height(),
