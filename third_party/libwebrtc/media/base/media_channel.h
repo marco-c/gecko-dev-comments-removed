@@ -679,14 +679,6 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   absl::optional<webrtc::TimingFrameInfo> timing_frame_info;
 };
 
-struct DataSenderInfo : public MediaSenderInfo {
-  uint32_t ssrc = 0;
-};
-
-struct DataReceiverInfo : public MediaReceiverInfo {
-  uint32_t ssrc = 0;
-};
-
 struct BandwidthEstimationInfo {
   int available_send_bandwidth = 0;
   int available_recv_bandwidth = 0;
@@ -738,17 +730,6 @@ struct VideoMediaInfo {
   std::vector<VideoReceiverInfo> receivers;
   RtpCodecParametersMap send_codecs;
   RtpCodecParametersMap receive_codecs;
-};
-
-struct DataMediaInfo {
-  DataMediaInfo();
-  ~DataMediaInfo();
-  void Clear() {
-    senders.clear();
-    receivers.clear();
-  }
-  std::vector<DataSenderInfo> senders;
-  std::vector<DataReceiverInfo> receivers;
 };
 
 struct RtcpParameters {
@@ -992,46 +973,6 @@ struct SendDataParams {
 };
 
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
-
-struct DataSendParameters : RtpSendParameters<DataCodec> {};
-
-struct DataRecvParameters : RtpParameters<DataCodec> {};
-
-class DataMediaChannel : public MediaChannel {
- public:
-  DataMediaChannel();
-  explicit DataMediaChannel(const MediaConfig& config);
-  ~DataMediaChannel() override;
-
-  cricket::MediaType media_type() const override;
-  virtual bool SetSendParameters(const DataSendParameters& params) = 0;
-  virtual bool SetRecvParameters(const DataRecvParameters& params) = 0;
-
-  
-  webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const override;
-  webrtc::RTCError SetRtpSendParameters(
-      uint32_t ssrc,
-      const webrtc::RtpParameters& parameters) override;
-
-  
-  virtual bool GetStats(DataMediaInfo* info);
-
-  virtual bool SetSend(bool send) = 0;
-  virtual bool SetReceive(bool receive) = 0;
-
-  void OnNetworkRouteChanged(const std::string& transport_name,
-                             const rtc::NetworkRoute& network_route) override {}
-
-  virtual bool SendData(const SendDataParams& params,
-                        const rtc::CopyOnWriteBuffer& payload,
-                        SendDataResult* result = NULL) = 0;
-  
-  sigslot::signal3<const ReceiveDataParams&, const char*, size_t>
-      SignalDataReceived;
-  
-  
-  sigslot::signal1<bool> SignalReadyToSend;
-};
 
 }  
 
