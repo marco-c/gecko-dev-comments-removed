@@ -354,7 +354,16 @@ NetworkGeolocationProvider.prototype = {
     this.started = false;
   },
 
-  setHighAccuracy(enable) {},
+  setHighAccuracy(enable) {
+    
+    if (Services.prefs.getBoolPref("geo.provider.testing")) {
+      Services.obs.notifyObservers(
+        null,
+        "testing-geolocation-high-accuracy",
+        enable
+      );
+    }
+  },
 
   onChange(accessPoints) {
     
