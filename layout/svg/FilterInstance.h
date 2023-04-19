@@ -123,9 +123,9 @@ class FilterInstance {
 
 
 
-  static Maybe<nsRect> GetPostFilterBounds(
-      nsIFrame* aFilteredFrame, const gfxRect* aOverrideBBox = nullptr,
-      const nsRect* aPreFilterBounds = nullptr);
+  static nsRect GetPostFilterBounds(nsIFrame* aFilteredFrame,
+                                    const gfxRect* aOverrideBBox = nullptr,
+                                    const nsRect* aPreFilterBounds = nullptr);
 
   
 
@@ -136,7 +136,8 @@ class FilterInstance {
   static bool BuildWebRenderFilters(
       nsIFrame* aFilteredFrame,
       mozilla::Span<const mozilla::StyleFilter> aFilters,
-      WrFiltersHolder& aWrFilters, bool& aInitialized);
+      WrFiltersHolder& aWrFilters, mozilla::Maybe<nsRect>& aPostFilterClip,
+      bool& aInitialized);
 
  private:
   
@@ -177,7 +178,8 @@ class FilterInstance {
   static bool BuildWebRenderFiltersImpl(
       nsIFrame* aFilteredFrame,
       mozilla::Span<const mozilla::StyleFilter> aFilters,
-      WrFiltersHolder& aWrFilters, bool& aInitialized);
+      WrFiltersHolder& aWrFilters, mozilla::Maybe<nsRect>& aPostFilterClip,
+      bool& aInitialized);
 
   
 
