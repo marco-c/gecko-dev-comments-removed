@@ -365,6 +365,9 @@ var ctrlTab = {
       return;
     }
 
+    
+    this.detachTab(aTab);
+
     if (aPos == 0) {
       this._recentlyUsedTabs.unshift(aTab);
     } else if (aPos) {
@@ -566,7 +569,6 @@ var ctrlTab = {
         }
         break;
       case "TabSelect":
-        this.detachTab(event.target);
         this.attachTab(event.target, 0);
         
         
