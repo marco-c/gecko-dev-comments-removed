@@ -59,9 +59,11 @@ elif not CONFIG["MOZ_SYSTEM_NSS"]:
     ]
     gyp_vars["nspr_libs"] = "nspr"
 else:
-    
     gyp_vars["nspr_libs"] = "nspr"
-    gyp_vars["mozpkix_only"] = 1
+    if not CONFIG["ENABLE_TESTS"]:
+        
+        
+        gyp_vars["mozpkix_only"] = 1
 
 
 gyp_vars["mozilla_client"] = 1
