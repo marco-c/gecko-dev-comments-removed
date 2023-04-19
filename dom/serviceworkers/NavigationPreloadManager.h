@@ -30,13 +30,11 @@ class NavigationPreloadManager final : public nsISupports,
 
   static bool IsEnabled(JSContext* aCx, JSObject* aGlobal);
 
-  explicit NavigationPreloadManager(
-      RefPtr<ServiceWorkerRegistration>& aServiceWorkerRegistration);
+  NavigationPreloadManager(nsCOMPtr<nsIGlobalObject>&& aGlobal,
+                           RefPtr<ServiceWorkerRegistration::Inner>& aInner);
 
   
-  nsIGlobalObject* GetParentObject() const {
-    return mServiceWorkerRegistration->GetParentObject();
-  }
+  nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -57,7 +55,8 @@ class NavigationPreloadManager final : public nsISupports,
   
   already_AddRefed<Promise> SetEnabled(bool aEnabled, ErrorResult& aError);
 
-  RefPtr<ServiceWorkerRegistration> mServiceWorkerRegistration;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
+  RefPtr<ServiceWorkerRegistration::Inner> mInner;
 };
 
 }  
