@@ -51,7 +51,9 @@ namespace wr {
 class DCTile;
 class DCSurface;
 class DCSurfaceVideo;
+class DCSurfaceHandle;
 class RenderTextureHost;
+class RenderDcompSurfaceTextureHost;
 
 struct GpuOverlayInfo {
   bool mSupportsOverlays = false;
@@ -247,7 +249,16 @@ class DCSurface {
   void UpdateAllocatedRect();
   void DirtyAllocatedRect();
 
+  
+  virtual void AttachExternalImage(wr::ExternalImageId aExternalImage) {
+    MOZ_RELEASE_ASSERT(true, "Not support attaching external image");
+  }
+  virtual void PresentExternalSurface(gfx::Matrix& aTransform) {
+    MOZ_RELEASE_ASSERT(true, "Not support presenting external surface");
+  }
+
   virtual DCSurfaceVideo* AsDCSurfaceVideo() { return nullptr; }
+  virtual DCSurfaceHandle* AsDCSurfaceHandle() { return nullptr; }
 
  protected:
   DCLayerTree* mDCLayerTree;
@@ -272,11 +283,41 @@ class DCSurface {
   RefPtr<IDCompositionVirtualSurface> mVirtualSurface;
 };
 
+
+
+
+class DCExternalSurfaceWrapper : public DCSurface {
+ public:
+  DCExternalSurfaceWrapper(bool aIsOpaque, DCLayerTree* aDCLayerTree)
+      : DCSurface(wr::DeviceIntSize{}, wr::DeviceIntPoint{}, false ,
+                  aDCLayerTree),
+        mIsOpaque(aIsOpaque) {}
+  ~DCExternalSurfaceWrapper() = default;
+
+  void AttachExternalImage(wr::ExternalImageId aExternalImage) override;
+
+  void PresentExternalSurface(gfx::Matrix& aTransform) override;
+
+  DCSurfaceVideo* AsDCSurfaceVideo() override {
+    return mSurface ? mSurface->AsDCSurfaceVideo() : nullptr;
+  }
+
+  DCSurfaceHandle* AsDCSurfaceHandle() override {
+    return mSurface ? mSurface->AsDCSurfaceHandle() : nullptr;
+  }
+
+ private:
+  DCSurface* EnsureSurfaceForExternalImage(wr::ExternalImageId aExternalImage);
+
+  UniquePtr<DCSurface> mSurface;
+  const bool mIsOpaque;
+};
+
 class DCSurfaceVideo : public DCSurface {
  public:
   DCSurfaceVideo(bool aIsOpaque, DCLayerTree* aDCLayerTree);
 
-  void AttachExternalImage(wr::ExternalImageId aExternalImage);
+  void AttachExternalImage(wr::ExternalImageId aExternalImage) override;
   bool CalculateSwapChainSize(gfx::Matrix& aTransform);
   void PresentVideo();
 
@@ -299,6 +340,28 @@ class DCSurfaceVideo : public DCSurface {
   bool mFailedYuvSwapChain = false;
   RefPtr<RenderTextureHost> mRenderTextureHost;
   RefPtr<RenderTextureHost> mPrevTexture;
+};
+
+
+
+
+
+
+class DCSurfaceHandle : public DCSurface {
+ public:
+  DCSurfaceHandle(bool aIsOpaque, DCLayerTree* aDCLayerTree);
+  ~DCSurfaceHandle() = default;
+
+  void AttachExternalImage(wr::ExternalImageId aExternalImage) override;
+  void PresentSurfaceHandle();
+
+  DCSurfaceHandle* AsDCSurfaceHandle() override { return this; }
+
+ protected:
+  HANDLE GetSurfaceHandle() const;
+  IDCompositionSurface* EnsureSurface();
+
+  RefPtr<RenderDcompSurfaceTextureHost> mDcompTextureHost;
 };
 
 class DCTile {
