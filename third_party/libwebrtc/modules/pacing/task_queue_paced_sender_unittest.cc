@@ -157,6 +157,7 @@ namespace test {
     pacer.SetPacingRates(
         DataRate::BitsPerSec(kDefaultPacketSize * 8 * kPacketsToSend),
         DataRate::Zero());
+    pacer.EnsureStarted();
     pacer.EnqueuePackets(
         GeneratePackets(RtpPacketMediaType::kVideo, kPacketsToSend));
 
@@ -196,6 +197,7 @@ namespace test {
     const DataRate kPacingRate =
         DataRate::BitsPerSec(kDefaultPacketSize * 8 * kPacketsPerSecond);
     pacer.SetPacingRates(kPacingRate, DataRate::Zero());
+    pacer.EnsureStarted();
 
     
     EXPECT_CALL(packet_router, SendPacket).Times(kPacketsPerSecond);
@@ -247,6 +249,7 @@ namespace test {
     const TimeDelta kPacketPacingTime = kPacketSize / kPacingDataRate;
 
     pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+    pacer.EnsureStarted();
 
     
     EXPECT_CALL(packet_router, SendPacket);
@@ -280,6 +283,7 @@ namespace test {
     const DataRate kPacingDataRate = kPacketSize / kPacketPacingTime;
 
     pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+    pacer.EnsureStarted();
 
     
     
@@ -316,6 +320,7 @@ namespace test {
     const DataRate kPacingDataRate = kPacketSize / kPacketPacingTime;
 
     pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+    pacer.EnsureStarted();
 
     
     
@@ -342,6 +347,7 @@ namespace test {
         kCoalescingWindow);
     const DataRate kPacingDataRate = DataRate::KilobitsPerSec(300);
     pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+    pacer.EnsureStarted();
 
     const TimeDelta kMinTimeBetweenStatsUpdates = TimeDelta::Millis(1);
 
@@ -388,6 +394,7 @@ namespace test {
     size_t num_expected_stats_updates = 0;
     EXPECT_EQ(pacer.num_stats_updates_, num_expected_stats_updates);
     pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+    pacer.EnsureStarted();
     time_controller.AdvanceTime(kMinTimeBetweenStatsUpdates);
     
     EXPECT_EQ(pacer.num_stats_updates_, ++num_expected_stats_updates);
@@ -443,6 +450,7 @@ namespace test {
     const TimeDelta kPacketPacingTime = TimeDelta::Millis(4);
     const DataRate kPacingDataRate = kPacketSize / kPacketPacingTime;
     pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+    pacer.EnsureStarted();
     EXPECT_CALL(packet_router, FetchFec).WillRepeatedly([]() {
       return std::vector<std::unique_ptr<RtpPacketToSend>>();
     });
@@ -514,6 +522,7 @@ namespace test {
     const TimeDelta kPacketPacingTime = TimeDelta::Millis(4);
     const DataRate kPacingDataRate = kPacketSize / kPacketPacingTime;
     pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+    pacer.EnsureStarted();
     EXPECT_CALL(packet_router, FetchFec).WillRepeatedly([]() {
       return std::vector<std::unique_ptr<RtpPacketToSend>>();
     });
@@ -551,6 +560,34 @@ namespace test {
     
     EXPECT_EQ(data_sent,
               kProbingRate * TimeDelta::Millis(1) + DataSize::Bytes(1));
+  }
+
+  TEST(TaskQueuePacedSenderTest, NoStatsUpdatesBeforeStart) {
+    const TimeDelta kCoalescingWindow = TimeDelta::Millis(5);
+    GlobalSimulatedTimeController time_controller(Timestamp::Millis(1234));
+    MockPacketRouter packet_router;
+    TaskQueuePacedSenderForTest pacer(
+        time_controller.GetClock(), &packet_router,
+        nullptr,
+        nullptr, time_controller.GetTaskQueueFactory(),
+        kCoalescingWindow);
+    const DataRate kPacingDataRate = DataRate::KilobitsPerSec(300);
+    pacer.SetPacingRates(kPacingDataRate, DataRate::Zero());
+
+    const TimeDelta kMinTimeBetweenStatsUpdates = TimeDelta::Millis(1);
+
+    
+    EXPECT_EQ(pacer.num_stats_updates_, 0u);
+
+    
+    pacer.EnqueuePackets(GeneratePackets(RtpPacketMediaType::kVideo, 1));
+    time_controller.AdvanceTime(TimeDelta::Zero());
+    EXPECT_EQ(pacer.num_stats_updates_, 0u);
+
+    
+    
+    time_controller.AdvanceTime(kMinTimeBetweenStatsUpdates);
+    EXPECT_EQ(pacer.num_stats_updates_, 0u);
   }
 }  
 }  
