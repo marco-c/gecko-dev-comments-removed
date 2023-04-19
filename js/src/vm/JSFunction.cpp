@@ -1421,7 +1421,8 @@ bool JSFunction::delazifyLazilyInterpretedFunction(JSContext* cx,
 
   
   MainThreadErrorContext ec(cx);
-  if (!frontend::DelazifyCanonicalScriptedFunction(cx, &ec, fun)) {
+  if (!frontend::DelazifyCanonicalScriptedFunction(
+          cx, &ec, cx->stackLimitForCurrentPrincipal(), fun)) {
     
     
     MOZ_ASSERT(fun->baseScript() == lazy);

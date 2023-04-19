@@ -14,6 +14,7 @@
 
 #include "frontend/FunctionSyntaxKind.h"
 #include "js/SourceText.h"
+#include "js/Stack.h"      
 #include "js/UniquePtr.h"  
 
 
@@ -118,27 +119,29 @@ class TaggedParserAtomIndex;
 
 
 ModuleObject* CompileModule(JSContext* cx, ErrorContext* ec,
+                            JS::NativeStackLimit stackLimit,
                             const JS::ReadOnlyCompileOptions& options,
                             JS::SourceText<char16_t>& srcBuf);
 ModuleObject* CompileModule(JSContext* cx, ErrorContext* ec,
+                            JS::NativeStackLimit stackLimit,
                             const JS::ReadOnlyCompileOptions& options,
                             JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
 
 
 already_AddRefed<CompilationStencil> ParseModuleToStencil(
-    JSContext* cx, ErrorContext* ec, CompilationInput& input,
-    JS::SourceText<char16_t>& srcBuf);
+    JSContext* cx, ErrorContext* ec, JS::NativeStackLimit stackLimit,
+    CompilationInput& input, JS::SourceText<char16_t>& srcBuf);
 already_AddRefed<CompilationStencil> ParseModuleToStencil(
-    JSContext* cx, ErrorContext* ec, CompilationInput& input,
-    JS::SourceText<mozilla::Utf8Unit>& srcBuf);
+    JSContext* cx, ErrorContext* ec, JS::NativeStackLimit stackLimit,
+    CompilationInput& input, JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
 UniquePtr<ExtensibleCompilationStencil> ParseModuleToExtensibleStencil(
-    JSContext* cx, ErrorContext* ec, CompilationInput& input,
-    JS::SourceText<char16_t>& srcBuf);
+    JSContext* cx, ErrorContext* ec, JS::NativeStackLimit stackLimit,
+    CompilationInput& input, JS::SourceText<char16_t>& srcBuf);
 UniquePtr<ExtensibleCompilationStencil> ParseModuleToExtensibleStencil(
-    JSContext* cx, ErrorContext* ec, CompilationInput& input,
-    JS::SourceText<mozilla::Utf8Unit>& srcBuf);
+    JSContext* cx, ErrorContext* ec, JS::NativeStackLimit stackLimit,
+    CompilationInput& input, JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
 
 
