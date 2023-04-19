@@ -119,6 +119,16 @@ struct Params {
   
   absl::optional<std::string> aec_dump_path;
 
+  bool use_ulp_fec = false;
+  bool use_flex_fec = false;
+  
+  
+  
+  
+  
+  
+  double video_encoder_bitrate_multiplier = 1.0;
+
   PeerConnectionInterface::RTCConfiguration rtc_configuration;
   BitrateSettings bitrate_settings;
   std::vector<PeerConnectionE2EQualityTestFixture::VideoCodecConfig>

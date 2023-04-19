@@ -94,7 +94,7 @@ class PeerConnectionE2EQualityTest
   
   void SetupCallOnSignalingThread(const RunParams& run_params);
   void TearDownCallOnSignalingThread();
-  void SetPeerCodecPreferences(TestPeer* peer, const RunParams& run_params);
+  void SetPeerCodecPreferences(TestPeer* peer);
   std::unique_ptr<SignalingInterceptor> CreateSignalingInterceptor(
       const RunParams& run_params);
   void WaitUntilIceCandidatesGathered(rtc::Thread* signaling_thread);

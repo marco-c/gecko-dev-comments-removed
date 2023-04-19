@@ -148,6 +148,18 @@ class PeerConfigurerImpl final
     params_->audio_config = std::move(config);
     return this;
   }
+  PeerConfigurer* SetUseUlpFEC(bool value) override {
+    params_->use_ulp_fec = value;
+    return this;
+  }
+  PeerConfigurer* SetUseFlexFEC(bool value) override {
+    params_->use_flex_fec = value;
+    return this;
+  }
+  PeerConfigurer* SetVideoEncoderBitrateMultiplier(double multiplier) override {
+    params_->video_encoder_bitrate_multiplier = multiplier;
+    return this;
+  }
   PeerConfigurer* SetNetEqFactory(
       std::unique_ptr<NetEqFactory> neteq_factory) override {
     components_->pcf_dependencies->neteq_factory = std::move(neteq_factory);
@@ -187,6 +199,7 @@ class PeerConfigurerImpl final
 
   InjectableComponents* components() { return components_.get(); }
   Params* params() { return params_.get(); }
+  const Params& params() const { return *params_; }
   std::vector<VideoSource>* video_sources() { return &video_sources_; }
 
   
@@ -219,6 +232,56 @@ class PeerConfigurerImpl final
   std::vector<VideoSource> video_sources_;
 };
 
+class DefaultNamesProvider {
+ public:
+  
+  
+  explicit DefaultNamesProvider(
+      absl::string_view prefix,
+      rtc::ArrayView<const absl::string_view> default_names = {});
+
+  void MaybeSetName(absl::optional<std::string>& name);
+
+ private:
+  std::string GenerateName();
+
+  std::string GenerateNameInternal();
+
+  const std::string prefix_;
+  const rtc::ArrayView<const absl::string_view> default_names_;
+
+  std::set<std::string> known_names_;
+  size_t counter_ = 0;
+};
+
+class PeerParamsPreprocessor {
+ public:
+  PeerParamsPreprocessor();
+
+  
+  
+  
+  
+  
+  void SetDefaultValuesForMissingParams(PeerConfigurerImpl& peer);
+
+  
+  
+  void ValidateParams(const PeerConfigurerImpl& peer);
+
+ private:
+  DefaultNamesProvider peer_names_provider;
+
+  std::set<std::string> peer_names;
+  std::set<std::string> video_labels;
+  std::set<std::string> audio_labels;
+  std::set<std::string> video_sync_groups;
+  std::set<std::string> audio_sync_groups;
+  int media_streams_count = 0;
+};
+
+
+
 
 
 
@@ -227,6 +290,8 @@ class PeerConfigurerImpl final
 void SetDefaultValuesForMissingParams(
     PeerConnectionE2EQualityTestFixture::RunParams* run_params,
     std::vector<std::unique_ptr<PeerConfigurerImpl>>* peers);
+
+
 
 
 void ValidateParams(

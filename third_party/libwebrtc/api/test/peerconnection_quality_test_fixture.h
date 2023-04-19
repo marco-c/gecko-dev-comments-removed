@@ -396,6 +396,22 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     virtual PeerConfigurer* SetAudioConfig(AudioConfig config) = 0;
+
+    
+    virtual PeerConfigurer* SetUseUlpFEC(bool value) = 0;
+    
+    
+    
+    virtual PeerConfigurer* SetUseFlexFEC(bool value) = 0;
+    
+    
+    
+    
+    
+    
+    virtual PeerConfigurer* SetVideoEncoderBitrateMultiplier(
+        double multiplier) = 0;
+
     
     
     virtual PeerConfigurer* SetRtcEventLogPath(std::string path) = 0;
@@ -427,8 +443,17 @@ class PeerConnectionE2EQualityTestFixture {
     
     TimeDelta run_duration;
 
+    
+    
+    bool enable_flex_fec_support = false;
+    
+    
     bool use_ulp_fec = false;
+    
+    
     bool use_flex_fec = false;
+    
+    
     
     
     
