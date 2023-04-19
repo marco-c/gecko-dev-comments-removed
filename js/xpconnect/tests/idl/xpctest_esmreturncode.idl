@@ -16,15 +16,15 @@
 #include "nsISupports.idl"
 
 
-[scriptable, uuid(479e4532-95cf-48b8-a99b-8a5881e47138)]
-interface nsIXPCTestReturnCodeParent : nsISupports {
+[scriptable, uuid(494f9336-ad06-46ad-bbb4-b0010e27e12d)]
+interface nsIXPCTestESMReturnCodeParent : nsISupports {
   
   
   nsresult callChild(in long childBehavior);
 };
 
-[scriptable, uuid(672cfd34-1fd1-455d-9901-d879fa6fdb95)]
-interface nsIXPCTestReturnCodeChild : nsISupports {
+[scriptable, uuid(dee07408-75d8-4968-a37c-fe0d48ccd1ac)]
+interface nsIXPCTestESMReturnCodeChild : nsISupports {
   void doIt(in long behavior);
 
   

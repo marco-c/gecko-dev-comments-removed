@@ -19,6 +19,9 @@ namespace loader {
 nsresult ImportModule(const char* aURI, const char* aExportName,
                       const nsIID& aIID, void** aResult, bool aInfallible);
 
+nsresult ImportESModule(const char* aURI, const char* aExportName,
+                        const nsIID& aIID, void** aResult, bool aInfallible);
+
 }  
 }  
 
@@ -128,6 +131,109 @@ template <size_t N, size_t N2>
 inline nsImportModule do_ImportModule(const char (&aURI)[N],
                                       const char (&aExportName)[N2],
                                       nsresult* aRv) {
+  return {aURI, aExportName, aRv,  false};
+}
+
+class MOZ_STACK_CLASS nsImportESModule final : public nsCOMPtr_helper {
+ public:
+  nsImportESModule(const char* aURI, const char* aExportName,
+                   nsresult* aErrorPtr, bool aInfallible)
+      : mURI(aURI),
+        mExportName(aExportName),
+        mErrorPtr(aErrorPtr),
+        mInfallible(aInfallible) {
+    MOZ_ASSERT_IF(mErrorPtr, !mInfallible);
+  }
+
+  virtual nsresult NS_FASTCALL operator()(const nsIID& aIID,
+                                          void** aResult) const override {
+    nsresult rv = ::mozilla::loader::ImportESModule(mURI, mExportName, aIID,
+                                                    aResult, mInfallible);
+    if (mErrorPtr) {
+      *mErrorPtr = rv;
+    }
+    return rv;
+  }
+
+ private:
+  const char* mURI;
+  const char* mExportName;
+  nsresult* mErrorPtr;
+  bool mInfallible;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <size_t N>
+inline nsImportESModule do_ImportESModule(const char (&aURI)[N]) {
+  return {aURI, nullptr, nullptr,  true};
+}
+
+template <size_t N>
+inline nsImportESModule do_ImportESModule(const char (&aURI)[N],
+                                          const mozilla::fallible_t&) {
+  return {aURI, nullptr, nullptr,  false};
+}
+
+template <size_t N>
+inline nsImportESModule do_ImportESModule(const char (&aURI)[N],
+                                          nsresult* aRv) {
+  return {aURI, nullptr, aRv,  false};
+}
+
+template <size_t N, size_t N2>
+inline nsImportESModule do_ImportESModule(const char (&aURI)[N],
+                                          const char (&aExportName)[N2]) {
+  return {aURI, aExportName, nullptr,  true};
+}
+
+template <size_t N, size_t N2>
+inline nsImportESModule do_ImportESModule(const char (&aURI)[N],
+                                          const char (&aExportName)[N2],
+                                          const mozilla::fallible_t&) {
+  return {aURI, aExportName, nullptr,  false};
+}
+
+template <size_t N, size_t N2>
+inline nsImportESModule do_ImportESModule(const char (&aURI)[N],
+                                          const char (&aExportName)[N2],
+                                          nsresult* aRv) {
   return {aURI, aExportName, aRv,  false};
 }
 
