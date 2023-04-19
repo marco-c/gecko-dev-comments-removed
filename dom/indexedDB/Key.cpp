@@ -7,6 +7,7 @@
 #include "Key.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <stdint.h>          
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
@@ -31,6 +32,7 @@
 #include "mozIStorageStatement.h"
 #include "mozIStorageValueArray.h"
 #include "nsJSUtils.h"
+#include "nsTStringRepr.h"
 #include "ReportInternalError.h"
 #include "xpcpublic.h"
 
@@ -555,20 +557,22 @@ Result<Ok, nsresult> Key::EncodeString(const Span<const T> aInput,
   return EncodeAsString(aInput, eString + aTypeOffset);
 }
 
+
+
+#define KEY_MAXIMUM_BUFFER_LENGTH \
+  ::mozilla::detail::nsTStringLengthStorage<char>::kMax
+
 template <typename T>
 Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
                                          uint8_t aType) {
   
-  if (NS_WARN_IF(UINT32_MAX - 2 < uintptr_t(aInput.Length()))) {
-    IDB_REPORT_INTERNAL_ERR();
-    return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
-  }
+  
+  
+  
 
   
   
-  CheckedUint32 size = 2;
-
-  MOZ_ASSERT(size.isValid());
+  uint32_t size = 2;
 
   
   
@@ -577,15 +581,15 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
   const auto inputRange = mozilla::detail::IteratorRange(
       aInput.Elements(), aInput.Elements() + aInput.Length());
 
-  CheckedUint32 payloadSize = aInput.Length();
+  uint32_t payloadSize = aInput.Length();
   bool anyMultibyte = false;
-  for (const auto val : inputRange) {
+  for (const T val : inputRange) {
     if (val > ONE_BYTE_LIMIT) {
       anyMultibyte = true;
       payloadSize += char16_t(val) > TWO_BYTE_LIMIT ? 2 : 1;
-      if (!payloadSize.isValid()) {
+      if (payloadSize > KEY_MAXIMUM_BUFFER_LENGTH) {
         IDB_REPORT_INTERNAL_ERR();
-        return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+        return Err(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
       }
     }
   }
@@ -596,13 +600,13 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
   uint32_t oldLen = mBuffer.Length();
   size += oldLen;
 
-  if (!size.isValid()) {
+  if (size > KEY_MAXIMUM_BUFFER_LENGTH) {
     IDB_REPORT_INTERNAL_ERR();
-    return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+    return Err(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
   }
 
   char* buffer;
-  if (!mBuffer.GetMutableData(&buffer, size.value())) {
+  if (!mBuffer.GetMutableData(&buffer, size)) {
     IDB_REPORT_INTERNAL_ERR();
     return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
   }
@@ -634,7 +638,7 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
     
     
     
-    const auto inputLen = std::distance(inputRange.cbegin(), inputRange.cend());
+    uint32_t inputLen = std::distance(inputRange.cbegin(), inputRange.cend());
     MOZ_ASSERT(inputLen == payloadSize);
     std::transform(inputRange.cbegin(), inputRange.cend(), buffer,
                    [](auto value) { return value + ONE_BYTE_ADJUST; });
