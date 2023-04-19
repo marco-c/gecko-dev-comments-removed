@@ -243,6 +243,24 @@ const ExtensionScriptingStore = {
   async initExtension(extension) {
     let scripts;
 
+    
+    
+    switch (extension.startupReason) {
+      case "ADDON_INSTALL":
+      case "ADDON_UPGRADE":
+      case "ADDON_DOWNGRADE":
+        
+        
+        
+        
+        StartupCache.general.set(
+          [extension.id, extension.version, "scripting", "hasPersistedScripts"],
+          false
+        );
+        store.deleteAll(extension.id);
+        return;
+    }
+
     const hasPersistedScripts = await StartupCache.get(
       extension,
       ["scripting", "hasPersistedScripts"],
