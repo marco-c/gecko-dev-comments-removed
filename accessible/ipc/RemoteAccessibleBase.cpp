@@ -693,6 +693,43 @@ Relation RemoteAccessibleBase<Derived>::RelationByType(
     return Relation();
   }
 
+  if (aType == RelationType::LINKS_TO && Role() == roles::LINK) {
+    Pivot p = Pivot(mDoc);
+    nsString href;
+    Value(href);
+    if (!href.IsEmpty()) {
+      
+      
+      for (auto s : href.Split('#')) {
+        href = s;
+      }
+      MustPruneSameDocRule rule;
+      Accessible* nameMatch = nullptr;
+      for (Accessible* match = p.Next(mDoc, rule); match;
+           match = p.Next(match, rule)) {
+        nsString currID;
+        match->DOMNodeID(currID);
+        MOZ_ASSERT(match->IsRemote());
+        if (href.Equals(currID)) {
+          return Relation(match->AsRemote());
+        }
+        if (!nameMatch) {
+          nsString currName = match->AsRemote()->GetCachedHTMLNameAttribute();
+          if (match->TagName() == nsGkAtoms::a && href.Equals(currName)) {
+            
+            
+            
+            
+            nameMatch = match;
+          }
+        }
+      }
+      return nameMatch ? Relation(nameMatch->AsRemote()) : Relation();
+    }
+
+    return Relation();
+  }
+
   
   
   
@@ -1007,15 +1044,13 @@ RemoteAccessibleBase<Derived>::GetCachedARIAAttributes() const {
 }
 
 template <class Derived>
-nsString RemoteAccessibleBase<Derived>::GetCachedHTMLRadioNameAttribute()
-    const {
+nsString RemoteAccessibleBase<Derived>::GetCachedHTMLNameAttribute() const {
   if (mCachedFields) {
     if (auto maybeName =
-            mCachedFields->GetAttribute<nsString>(nsGkAtoms::radioLabel)) {
+            mCachedFields->GetAttribute<nsString>(nsGkAtoms::attributeName)) {
       return *maybeName;
     }
   }
-
   return nsString();
 }
 

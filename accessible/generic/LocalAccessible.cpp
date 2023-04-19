@@ -1369,7 +1369,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
 
   if (aAttribute == nsGkAtoms::href) {
     mDoc->QueueCacheUpdate(this, CacheDomain::Value);
-    mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
   }
 
   if (aAttribute == nsGkAtoms::aria_controls ||
@@ -1431,6 +1430,13 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
 
   if (aAttribute == nsGkAtoms::accesskey) {
     mDoc->QueueCacheUpdate(this, CacheDomain::Actions);
+  }
+
+  if (aAttribute == nsGkAtoms::name &&
+      (mContent && mContent->IsHTMLElement(nsGkAtoms::a))) {
+    
+    
+    mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
   }
 }
 
@@ -3618,18 +3624,21 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   }
 
   if (aCacheDomain & CacheDomain::Relations && mContent) {
-    if (IsHTMLRadioButton()) {
+    if (IsHTMLRadioButton() ||
+        (mContent->IsElement() &&
+         mContent->AsElement()->IsHTMLElement(nsGkAtoms::a))) {
+      
       
       
       
       nsString name;
       mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
       if (!name.IsEmpty()) {
-        fields->SetAttribute(nsGkAtoms::radioLabel, std::move(name));
+        fields->SetAttribute(nsGkAtoms::attributeName, std::move(name));
       } else if (aUpdateType != CacheUpdateType::Initial) {
         
         
-        fields->SetAttribute(nsGkAtoms::radioLabel, DeleteEntry());
+        fields->SetAttribute(nsGkAtoms::attributeName, DeleteEntry());
       }
     }
 
@@ -3646,10 +3655,6 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                 dom::HTMLLabelElement::FromNode(mContent)) {
           rel.AppendTarget(mDoc, labelEl->GetControl());
         }
-      } else if (data.mType == RelationType::LINKS_TO) {
-        
-        
-        rel = RelationByType(RelationType::LINKS_TO);
       } else {
         
         
