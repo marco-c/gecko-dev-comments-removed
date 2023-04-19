@@ -1340,11 +1340,14 @@
       
       
       let left = style.direction == "rtl" ? cellRect.x : textRect.x;
+      let scrollbarWidth = window.windowUtils.getBoundsWithoutFlushing(
+        this.shadowRoot.querySelector("scrollbar[orient='vertical']")
+      ).width;
       
       
       
       
-      let widthdiff = Math.abs(textRect.x - cellRect.x);
+      let widthdiff = Math.abs(textRect.x - cellRect.x) - scrollbarWidth;
 
       input.style.left = `${left}px`;
       input.style.height = `${textRect.height +
