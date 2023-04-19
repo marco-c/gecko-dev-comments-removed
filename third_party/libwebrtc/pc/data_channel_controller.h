@@ -115,12 +115,8 @@ class DataChannelController : public RtpDataChannelProviderInterface,
   
   cricket::DataChannelType data_channel_type() const;
   void set_data_channel_type(cricket::DataChannelType type);
-  cricket::RtpDataChannel* rtp_data_channel() const {
-    return rtp_data_channel_;
-  }
-  void set_rtp_data_channel(cricket::RtpDataChannel* channel) {
-    rtp_data_channel_ = channel;
-  }
+  cricket::RtpDataChannel* rtp_data_channel() const;
+  void set_rtp_data_channel(cricket::RtpDataChannel* channel);
   DataChannelTransportInterface* data_channel_transport() const;
   void set_data_channel_transport(DataChannelTransportInterface* transport);
   const std::map<std::string, rtc::scoped_refptr<RtpDataChannel>>*
@@ -203,9 +199,9 @@ class DataChannelController : public RtpDataChannelProviderInterface,
 
   
   
+  
+  
   cricket::RtpDataChannel* rtp_data_channel_ = nullptr;
-  
-  
 
   SctpSidAllocator sid_allocator_ ;
   std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_

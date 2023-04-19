@@ -522,11 +522,13 @@ PeerConnection::~PeerConnection() {
   
   network_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
     RTC_DCHECK_RUN_ON(network_thread());
+    TeardownDataChannelTransport_n();
     transport_controller_.reset();
     port_allocator_.reset();
     if (network_thread_safety_)
       network_thread_safety_->SetNotAlive();
   });
+
   
   worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
     RTC_DCHECK_RUN_ON(worker_thread());
@@ -1737,6 +1739,12 @@ void PeerConnection::Close() {
   rtp_manager_->Close();
 
   network_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
+    
+    
+    
+    
+    
+    RTC_DCHECK(!data_channel_controller_.rtp_data_channel());
     transport_controller_.reset();
     port_allocator_->DiscardCandidatePool();
     if (network_thread_safety_) {
@@ -2410,16 +2418,30 @@ bool PeerConnection::SetupDataChannelTransport_n(const std::string& mid) {
   return true;
 }
 
-void PeerConnection::TeardownDataChannelTransport_n() {
-  if (!sctp_mid_n_ && !data_channel_controller_.data_channel_transport()) {
+void PeerConnection::SetupRtpDataChannelTransport_n(
+    cricket::RtpDataChannel* data_channel) {
+  data_channel_controller_.set_rtp_data_channel(data_channel);
+  if (!data_channel)
     return;
-  }
-  RTC_LOG(LS_INFO) << "Tearing down data channel transport for mid="
-                   << *sctp_mid_n_;
 
   
   
-  sctp_mid_n_.reset();
+  data_channel->SignalSentPacket().connect(this,
+                                           &PeerConnection::OnSentPacket_w);
+}
+
+void PeerConnection::TeardownDataChannelTransport_n() {
+  
+  data_channel_controller_.set_rtp_data_channel(nullptr);
+
+  if (sctp_mid_n_) {
+    
+    
+    RTC_LOG(LS_INFO) << "Tearing down data channel transport for mid="
+                     << *sctp_mid_n_;
+    sctp_mid_n_.reset();
+  }
+
   data_channel_controller_.TeardownDataChannelTransport_n();
 }
 
