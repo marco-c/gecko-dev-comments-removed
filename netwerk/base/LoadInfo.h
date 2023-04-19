@@ -8,6 +8,7 @@
 #define mozilla_LoadInfo_h
 
 #include "nsIContentSecurityPolicy.h"
+#include "nsIInterceptionInfo.h"
 #include "nsILoadInfo.h"
 #include "nsIPrincipal.h"
 #include "nsIWeakReferenceUtils.h"  
@@ -233,7 +234,7 @@ class LoadInfo final : public nsILoadInfo {
       nsINode* aLoadingContext,
       nsILoadInfo::CrossOriginEmbedderPolicy aLoadingEmbedderPolicy,
       bool aIsOriginTrialCoepCredentiallessEnabledForTopLevel,
-      nsIURI* aUnstrippedURI);
+      nsIURI* aUnstrippedURI, nsIInterceptionInfo* aInterceptionInfo);
   LoadInfo(const LoadInfo& rhs);
 
   NS_IMETHOD GetRedirects(JSContext* aCx,
@@ -363,6 +364,8 @@ class LoadInfo final : public nsILoadInfo {
   bool mIsOriginTrialCoepCredentiallessEnabledForTopLevel = false;
 
   nsCOMPtr<nsIURI> mUnstrippedURI;
+
+  nsCOMPtr<nsIInterceptionInfo> mInterceptionInfo;
 };
 
 

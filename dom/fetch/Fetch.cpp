@@ -487,6 +487,27 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
   }
 
   SafeRefPtr<InternalRequest> r = request->GetInternalRequest();
+
+  
+  
+  if (aInput.IsRequest()) {
+    RefPtr<Request> inputReq = &aInput.GetAsRequest();
+    SafeRefPtr<InternalRequest> inputInReq = inputReq->GetInternalRequest();
+    if (inputInReq->GetInterceptionTriggeringPrincipalInfo()) {
+      r->SetInterceptionContentPolicyType(
+          inputInReq->InterceptionContentPolicyType());
+      r->SetInterceptionTriggeringPrincipalInfo(
+          MakeUnique<mozilla::ipc::PrincipalInfo>(
+              *(inputInReq->GetInterceptionTriggeringPrincipalInfo().get())));
+      if (!inputInReq->InterceptionRedirectChain().IsEmpty()) {
+        r->SetInterceptionRedirectChain(
+            inputInReq->InterceptionRedirectChain());
+      }
+      r->SetInterceptionFromThirdParty(
+          inputInReq->InterceptionFromThirdParty());
+    }
+  }
+
   RefPtr<AbortSignalImpl> signalImpl = request->GetSignalImpl();
 
   if (signalImpl && signalImpl->Aborted()) {

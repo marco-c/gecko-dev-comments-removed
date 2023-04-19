@@ -17,11 +17,14 @@
 #include "nsIChannelEventSink.h"
 #include "nsIInputStream.h"
 #include "nsISupportsImpl.h"
+#include "mozilla/net/NeckoChannelParams.h"
 #ifdef DEBUG
 #  include "nsIURLParser.h"
 #  include "nsNetCID.h"
 #  include "nsServiceManagerUtils.h"
 #endif
+
+using mozilla::net::RedirectHistoryEntryInfo;
 
 namespace mozilla {
 
@@ -326,7 +329,6 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   
   void SetPrincipalInfo(UniquePtr<mozilla::ipc::PrincipalInfo> aPrincipalInfo);
-
   const UniquePtr<mozilla::ipc::PrincipalInfo>& GetPrincipalInfo() const {
     return mPrincipalInfo;
   }
@@ -349,6 +351,36 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   nsILoadInfo::CrossOriginEmbedderPolicy GetEmbedderPolicy() const {
     return mEmbedderPolicy;
+  }
+
+  void SetInterceptionTriggeringPrincipalInfo(
+      UniquePtr<mozilla::ipc::PrincipalInfo> aPrincipalInfo);
+
+  const UniquePtr<mozilla::ipc::PrincipalInfo>&
+  GetInterceptionTriggeringPrincipalInfo() const {
+    return mInterceptionTriggeringPrincipalInfo;
+  }
+
+  nsContentPolicyType InterceptionContentPolicyType() const {
+    return mInterceptionContentPolicyType;
+  }
+  void SetInterceptionContentPolicyType(nsContentPolicyType aContentPolicyType);
+
+  const nsTArray<RedirectHistoryEntryInfo>& InterceptionRedirectChain() const {
+    return mInterceptionRedirectChain;
+  }
+
+  void SetInterceptionRedirectChain(
+      const nsTArray<RedirectHistoryEntryInfo>& aRedirectChain) {
+    mInterceptionRedirectChain = aRedirectChain;
+  }
+
+  const bool& InterceptionFromThirdParty() const {
+    return mInterceptionFromThirdParty;
+  }
+
+  void SetInterceptionFromThirdParty(bool aFromThirdParty) {
+    mInterceptionFromThirdParty = aFromThirdParty;
   }
 
  private:
@@ -425,6 +457,26 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
       nsILoadInfo::EMBEDDER_POLICY_NULL;
 
   UniquePtr<mozilla::ipc::PrincipalInfo> mPrincipalInfo;
+
+  
+  
+  
+  
+  
+  
+
+  
+  UniquePtr<mozilla::ipc::PrincipalInfo> mInterceptionTriggeringPrincipalInfo;
+
+  
+  nsContentPolicyType mInterceptionContentPolicyType{
+      nsIContentPolicy::TYPE_INVALID};
+
+  
+  CopyableTArray<RedirectHistoryEntryInfo> mInterceptionRedirectChain;
+
+  
+  bool mInterceptionFromThirdParty{false};
 };
 
 }  
