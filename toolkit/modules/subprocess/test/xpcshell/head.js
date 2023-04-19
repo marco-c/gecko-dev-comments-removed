@@ -8,6 +8,6 @@ const { AppConstants } = ChromeUtils.importESModule(
 );
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  Subprocess: "resource://gre/modules/Subprocess.jsm",
+ChromeUtils.defineESModuleGetters(this, {
+  Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
 });
