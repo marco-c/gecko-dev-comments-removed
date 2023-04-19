@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/peer_connection_interface.h"
 #include "api/sequence_checker.h"
 #include "pc/jsep_transport.h"
 #include "pc/session_description.h"
@@ -41,7 +42,8 @@ namespace webrtc {
 
 class BundleManager {
  public:
-  BundleManager() {
+  explicit BundleManager(PeerConnectionInterface::BundlePolicy bundle_policy)
+      : bundle_policy_(bundle_policy) {
     
     sequence_checker_.Detach();
   }
@@ -58,16 +60,26 @@ class BundleManager {
   bool IsFirstMidInGroup(const std::string& mid) const;
   
   
-  void Update(const cricket::SessionDescription* description);
+  void Update(const cricket::SessionDescription* description, SdpType type);
   
   void DeleteMid(const cricket::ContentGroup* bundle_group,
                  const std::string& mid);
   
   void DeleteGroup(const cricket::ContentGroup* bundle_group);
+  
+  void Rollback();
+  
+  void Commit();
 
  private:
+  
+  void RefreshEstablishedBundleGroupsByMid() RTC_RUN_ON(sequence_checker_);
+
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
+  PeerConnectionInterface::BundlePolicy bundle_policy_;
   std::vector<std::unique_ptr<cricket::ContentGroup>> bundle_groups_
+      RTC_GUARDED_BY(sequence_checker_);
+  std::vector<std::unique_ptr<cricket::ContentGroup>> stable_bundle_groups_
       RTC_GUARDED_BY(sequence_checker_);
   std::map<std::string, cricket::ContentGroup*>
       established_bundle_groups_by_mid_;
@@ -91,7 +103,11 @@ class JsepTransportCollection {
 
   void RegisterTransport(const std::string& mid,
                          std::unique_ptr<cricket::JsepTransport> transport);
+  
+  
   std::vector<cricket::JsepTransport*> Transports();
+  
+  std::vector<cricket::JsepTransport*> ActiveTransports();
   void DestroyAllTransports();
   
   cricket::JsepTransport* GetTransportByName(const std::string& mid);
@@ -109,15 +125,26 @@ class JsepTransportCollection {
   
   void RemoveTransportForMid(const std::string& mid);
   
-  void RollbackTransports();
+  bool RollbackTransports();
+  
+  
   
   void CommitTransports();
-  
-  bool TransportInUse(cricket::JsepTransport* jsep_transport) const;
 
  private:
   
+  bool TransportInUse(cricket::JsepTransport* jsep_transport) const;
+
+  
+  
+  bool TransportNeededForRollback(cricket::JsepTransport* jsep_transport) const;
+
+  
+  
   void MaybeDestroyJsepTransport(cricket::JsepTransport* transport);
+
+  
+  void DestroyUnusedTransports();
 
   bool IsConsistent();  
 
@@ -131,7 +158,9 @@ class JsepTransportCollection {
   std::map<std::string, cricket::JsepTransport*> mid_to_transport_
       RTC_GUARDED_BY(sequence_checker_);
   
-  std::vector<std::string> pending_mids_ RTC_GUARDED_BY(sequence_checker_);
+  
+  std::map<std::string, cricket::JsepTransport*> stable_mid_to_transport_
+      RTC_GUARDED_BY(sequence_checker_);
   
   const std::function<bool(const std::string& mid,
                            cricket::JsepTransport* transport)>
