@@ -372,8 +372,6 @@ struct MetadataCacheablePod {
 WASM_DECLARE_CACHEABLE_POD(MetadataCacheablePod)
 
 typedef uint8_t ModuleHash[8];
-using FuncArgTypesVector = Vector<ValTypeVector, 0, SystemAllocPolicy>;
-using FuncReturnTypesVector = Vector<ValTypeVector, 0, SystemAllocPolicy>;
 
 struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod {
   TypeDefVector types;
@@ -393,8 +391,7 @@ struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod {
 
   
   bool debugEnabled;
-  FuncArgTypesVector debugFuncArgTypes;
-  FuncReturnTypesVector debugFuncReturnTypes;
+  Uint32Vector debugFuncTypeIndices;
   ModuleHash debugHash;
 
   explicit Metadata(ModuleKind kind = ModuleKind::Wasm)
@@ -416,12 +413,11 @@ struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod {
     return types[funcExport.typeIndex()].funcType();
   }
 
-  
-  
-  
-  ResultType getFuncResultType(uint32_t funcIndex) const {
-    return ResultType::Vector(debugFuncReturnTypes[funcIndex]);
-  };
+  size_t debugNumFuncs() const { return debugFuncTypeIndices.length(); }
+  const FuncType& debugFuncType(uint32_t funcIndex) const {
+    MOZ_ASSERT(debugEnabled);
+    return types[debugFuncTypeIndices[funcIndex]].funcType();
+  }
 
   
   
