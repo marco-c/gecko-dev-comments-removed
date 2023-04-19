@@ -223,6 +223,7 @@ TEST_F(ScreenshareLayerTest, 1Layer) {
   EXPECT_EQ(static_cast<uint8_t>(kNoTemporalIdx),
             info->codecSpecific.VP8.temporalIdx);
   EXPECT_FALSE(info->codecSpecific.VP8.layerSync);
+  EXPECT_EQ(info->generic_frame_info->temporal_id, 0);
 
   info = std::make_unique<CodecSpecificInfo>();
   flags = EncodeFrame(false, info.get());
@@ -230,6 +231,7 @@ TEST_F(ScreenshareLayerTest, 1Layer) {
   EXPECT_EQ(static_cast<uint8_t>(kNoTemporalIdx),
             info->codecSpecific.VP8.temporalIdx);
   EXPECT_FALSE(info->codecSpecific.VP8.layerSync);
+  EXPECT_EQ(info->generic_frame_info->temporal_id, 0);
 }
 
 TEST_F(ScreenshareLayerTest, 2LayersPeriodicSync) {
@@ -338,6 +340,8 @@ TEST_F(ScreenshareLayerTest, 2LayersToggling) {
   for (int i = 0; i < 50; ++i) {
     CodecSpecificInfo info;
     EncodeFrame(false, &info);
+    EXPECT_EQ(info.codecSpecific.VP8.temporalIdx,
+              info.generic_frame_info->temporal_id);
     timestamp_ += kTimestampDelta5Fps;
     switch (info.codecSpecific.VP8.temporalIdx) {
       case 0:
