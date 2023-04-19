@@ -132,6 +132,10 @@ class EchoRemoverImpl final : public EchoRemover {
     echo_leakage_detected_ = leakage_detected;
   }
 
+  void SetCaptureOutputUsage(bool capture_output_used) override {
+    capture_output_used_ = capture_output_used;
+  }
+
  private:
   
   
@@ -155,6 +159,7 @@ class EchoRemoverImpl final : public EchoRemover {
   RenderSignalAnalyzer render_signal_analyzer_;
   ResidualEchoEstimator residual_echo_estimator_;
   bool echo_leakage_detected_ = false;
+  bool capture_output_used_ = true;
   AecState aec_state_;
   EchoRemoverMetrics metrics_;
   std::vector<std::array<float, kFftLengthBy2>> e_old_;
@@ -392,41 +397,48 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0][0], 16000, 1);
 
   
-  residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
-                                    R2);
-
-  
   cng_.Compute(aec_state_.SaturatedCapture(), Y2, comfort_noise,
                high_band_comfort_noise);
 
   
-  if (aec_state_.UsableLinearEstimate()) {
-    
-    for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-      std::transform(E2[ch].begin(), E2[ch].end(), Y2[ch].begin(),
-                     E2[ch].begin(),
-                     [](float a, float b) { return std::min(a, b); });
-    }
-  }
-  const auto& nearend_spectrum = aec_state_.UsableLinearEstimate() ? E2 : Y2;
-
   
-  const auto& echo_spectrum =
-      aec_state_.UsableLinearEstimate() ? S2_linear : R2;
-
-  
-  const bool clock_drift = config_.echo_removal_control.has_clock_drift ||
-                           echo_path_variability.clock_drift;
-
-  
-  float high_bands_gain;
   std::array<float, kFftLengthBy2Plus1> G;
-  suppression_gain_.GetGain(nearend_spectrum, echo_spectrum, R2,
-                            cng_.NoiseSpectrum(), render_signal_analyzer_,
-                            aec_state_, x, clock_drift, &high_bands_gain, &G);
+  if (capture_output_used_) {
+    
+    residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
+                                      R2);
 
-  suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
-                                high_bands_gain, Y_fft, y);
+    
+    if (aec_state_.UsableLinearEstimate()) {
+      
+      for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
+        std::transform(E2[ch].begin(), E2[ch].end(), Y2[ch].begin(),
+                       E2[ch].begin(),
+                       [](float a, float b) { return std::min(a, b); });
+      }
+    }
+    const auto& nearend_spectrum = aec_state_.UsableLinearEstimate() ? E2 : Y2;
+
+    
+    const auto& echo_spectrum =
+        aec_state_.UsableLinearEstimate() ? S2_linear : R2;
+
+    
+    const bool clock_drift = config_.echo_removal_control.has_clock_drift ||
+                             echo_path_variability.clock_drift;
+
+    
+    float high_bands_gain;
+    suppression_gain_.GetGain(nearend_spectrum, echo_spectrum, R2,
+                              cng_.NoiseSpectrum(), render_signal_analyzer_,
+                              aec_state_, x, clock_drift, &high_bands_gain, &G);
+
+    suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
+                                  high_bands_gain, Y_fft, y);
+
+  } else {
+    G.fill(0.f);
+  }
 
   
   metrics_.Update(aec_state_, cng_.NoiseSpectrum()[0], G);

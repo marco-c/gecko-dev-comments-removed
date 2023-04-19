@@ -834,8 +834,8 @@ void EchoCanceller3::SetAudioBufferDelay(int delay_ms) {
 }
 
 void EchoCanceller3::SetCaptureOutputUsage(bool capture_output_used) {
-  
-  
+  RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
+  block_processor_->SetCaptureOutputUsage(capture_output_used);
 }
 
 bool EchoCanceller3::ActiveProcessing() const {
