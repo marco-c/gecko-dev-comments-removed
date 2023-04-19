@@ -11,6 +11,8 @@ const URL = "/secrets/v1/secret/project/perftest/gecko/level-";
 const SECRET = "/perftest-login";
 const DEFAULT_SERVER = "https://firefox-ci-tc.services.mozilla.com";
 
+const SCM_LOGIN_SITES = ["facebook", "netflix"];
+
 
 
 
@@ -341,6 +343,7 @@ module.exports = async function(context, commands) {
   let chimera_mode = context.options.browsertime.chimera;
   let login_required = context.options.browsertime.loginRequired;
   let live_site = context.options.browsertime.liveSite;
+  let test_name = context.options.browsertime.testName;
 
   context.log.info(
     "Waiting for %d ms (post_startup_delay)",
@@ -354,7 +357,12 @@ module.exports = async function(context, commands) {
   
   
   
-  if (login_required == "True" && live_site == "True") {
+  
+  if (
+    login_required == "True" &&
+    live_site == "True" &&
+    SCM_LOGIN_SITES.includes(test_name)
+  ) {
     await perform_live_login(context, commands);
   }
 
