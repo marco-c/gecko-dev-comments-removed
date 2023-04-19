@@ -156,7 +156,7 @@ static bool AddActionNode(ComPtr<IXmlDocument>& toastXml,
 
 
 
-static Result<nsString, nsresult> GetLaunchArgument() {
+Result<nsString, nsresult> ToastNotificationHandler::GetLaunchArgument() {
   nsString launchArg;
 
   
@@ -211,6 +211,10 @@ static Result<nsString, nsresult> GetLaunchArgument() {
     nsAutoString profilePath;
     MOZ_TRY(profDir->GetPath(profilePath));
     launchArg += u"\nprofile\n"_ns + profilePath;
+  }
+
+  if (!mLaunchUrl.IsEmpty()) {
+    launchArg += u"\nlaunchUrl\n"_ns + mLaunchUrl;
   }
 
   return launchArg;
