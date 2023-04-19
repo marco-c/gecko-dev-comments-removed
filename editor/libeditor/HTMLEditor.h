@@ -2324,11 +2324,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  HandleCSSIndentAtSelectionInternal(const Element& aEditingHost);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleCSSIndentAroundRanges(
+      AutoRangeArray& aRanges, const Element& aEditingHost);
 
   
 
@@ -2351,17 +2348,6 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  HandleCSSIndentAtSelection(const Element& aEditingHost);
-
-  
-
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   HandleHTMLIndentAtSelection(const Element& aEditingHost);
 
   
@@ -2369,6 +2355,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   HandleIndentAtSelection(const Element& aEditingHost);
 

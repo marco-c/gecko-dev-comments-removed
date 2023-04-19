@@ -367,6 +367,25 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
 
 
+  [[nodiscard]] bool IsInContent() const {
+    if (mRanges.IsEmpty()) {
+      return false;
+    }
+    for (const OwningNonNull<nsRange>& range : mRanges) {
+      if (MOZ_UNLIKELY(!range->IsPositioned() || !range->GetStartContainer() ||
+                       !range->GetStartContainer()->IsContent() ||
+                       !range->GetEndContainer() ||
+                       !range->GetEndContainer()->IsContent())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  
+
+
+
 
   void EnsureOnlyEditableRanges(const dom::Element& aEditingHost);
 
