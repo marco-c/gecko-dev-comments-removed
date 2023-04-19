@@ -2522,7 +2522,7 @@ void nsBlockFrame::PropagateFloatDamage(BlockReflowState& aState,
 
 static bool LineHasClear(nsLineBox* aLine) {
   return aLine->IsBlock()
-             ? (aLine->GetBreakTypeBefore() != StyleClear::None ||
+             ? (aLine->HasBreakBefore() ||
                 aLine->mFirstChild->HasAnyStateBits(
                     NS_BLOCK_HAS_CLEAR_CHILDREN) ||
                 !nsBlockFrame::BlockCanIntersectFloats(aLine->mFirstChild))
@@ -2678,8 +2678,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
 
     
     
-    if (!line->IsDirty() && (line->GetBreakTypeBefore() != StyleClear::None ||
-                             floatAvoidingBlock)) {
+    if (!line->IsDirty() && (line->HasBreakBefore() || floatAvoidingBlock)) {
       nscoord curBCoord = aState.mBCoord;
       
       
