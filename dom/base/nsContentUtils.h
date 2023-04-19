@@ -2852,6 +2852,21 @@ class nsContentUtils {
 
 
 
+
+
+  static nsresult SlurpFileToString(nsIFile* aFile, nsACString& aString);
+
+  
+
+
+
+
+  static bool IsFileImage(nsIFile* aFile, nsACString& aType);
+
+  
+
+
+
   static nsresult DeserializeDataTransferImageContainer(
       const mozilla::dom::IPCDataTransferImageContainer& aData,
       imgIContainer** aContainer);
