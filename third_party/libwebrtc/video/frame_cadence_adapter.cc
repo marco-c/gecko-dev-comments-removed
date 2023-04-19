@@ -369,6 +369,11 @@ bool ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
 
   
   
+  
+  ResetQualityConvergenceInfo();
+
+  
+  
   if (!scheduled_repeat_.has_value() || !scheduled_repeat_->idle) {
     RTC_LOG(LS_INFO) << __func__ << " this " << this
                      << " not requesting refresh frame because of recently "
@@ -399,7 +404,12 @@ bool ZeroHertzAdapterMode::ProcessKeyFrameRequest() {
 
 
 bool ZeroHertzAdapterMode::HasQualityConverged() const {
+  
+  
+  
+  
   const bool quality_converged =
+      !layer_trackers_.empty() &&
       absl::c_all_of(layer_trackers_, [](const SpatialLayerTracker& tracker) {
         return tracker.quality_converged.value_or(true);
       });

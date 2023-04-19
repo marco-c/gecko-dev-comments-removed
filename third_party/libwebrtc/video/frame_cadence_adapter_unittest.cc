@@ -37,6 +37,7 @@ using ::testing::ElementsAre;
 using ::testing::Invoke;
 using ::testing::Mock;
 using ::testing::Pair;
+using ::testing::Values;
 
 VideoFrame CreateFrame() {
   return VideoFrame::Builder()
@@ -379,105 +380,119 @@ TEST(FrameCadenceAdapterTest, IgnoresKeyFrameRequestShortlyAfterFrame) {
   EXPECT_FALSE(adapter->ProcessKeyFrameRequest());
 }
 
-TEST(FrameCadenceAdapterTest, IgnoresKeyFrameRequestWhileShortRepeating) {
-  ZeroHertzFieldTrialEnabler enabler;
-  MockCallback callback;
-  GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
-  auto adapter = CreateAdapter(time_controller.GetClock());
-  adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(
-      FrameCadenceAdapterInterface::ZeroHertzModeParams{
-          1});
-  constexpr int kMaxFpsHz = 10;
-  constexpr TimeDelta kMinFrameDelay = TimeDelta::Millis(1000 / kMaxFpsHz);
-  adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, kMaxFpsHz});
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  adapter->UpdateLayerStatus(0, true);
-  adapter->OnFrame(CreateFrame());
-  time_controller.AdvanceTime(2 * kMinFrameDelay);
-  EXPECT_FALSE(adapter->ProcessKeyFrameRequest());
-
-  
-  EXPECT_CALL(callback, OnFrame).Times(8);
-  time_controller.AdvanceTime(8 * kMinFrameDelay);
-}
-
-TEST(FrameCadenceAdapterTest, IgnoresKeyFrameRequestJustBeforeIdleRepeating) {
-  ZeroHertzFieldTrialEnabler enabler;
-  MockCallback callback;
-  GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
-  auto adapter = CreateAdapter(time_controller.GetClock());
-  adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(
-      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
-  constexpr int kMaxFpsHz = 10;
-  constexpr TimeDelta kMinFrameDelay = TimeDelta::Millis(1000 / kMaxFpsHz);
-  constexpr TimeDelta kIdleFrameDelay =
+class FrameCadenceAdapterSimulcastLayersParamTest
+    : public ::testing::TestWithParam<int> {
+ public:
+  static constexpr int kMaxFpsHz = 8;
+  static constexpr TimeDelta kMinFrameDelay =
+      TimeDelta::Millis(1000 / kMaxFpsHz);
+  static constexpr TimeDelta kIdleFrameDelay =
       FrameCadenceAdapterInterface::kZeroHertzIdleRepeatRatePeriod;
-  adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, kMaxFpsHz});
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  adapter->OnFrame(CreateFrame());
-  time_controller.AdvanceTime(kIdleFrameDelay);
 
+  FrameCadenceAdapterSimulcastLayersParamTest() {
+    adapter_->Initialize(&callback_);
+    adapter_->OnConstraintsChanged(VideoTrackSourceConstraints{0, kMaxFpsHz});
+    time_controller_.AdvanceTime(TimeDelta::Zero());
+    adapter_->SetZeroHertzModeEnabled(
+        FrameCadenceAdapterInterface::ZeroHertzModeParams{});
+    const int num_spatial_layers = GetParam();
+    adapter_->SetZeroHertzModeEnabled(
+        FrameCadenceAdapterInterface::ZeroHertzModeParams{num_spatial_layers});
+  }
+
+  int NumSpatialLayers() const { return GetParam(); }
+
+ protected:
+  ZeroHertzFieldTrialEnabler enabler_;
+  MockCallback callback_;
+  GlobalSimulatedTimeController time_controller_{Timestamp::Millis(0)};
+  const std::unique_ptr<FrameCadenceAdapterInterface> adapter_{
+      CreateAdapter(time_controller_.GetClock())};
+};
+
+TEST_P(FrameCadenceAdapterSimulcastLayersParamTest,
+       LayerReconfigurationResetsConvergenceInfo) {
   
   
-  
-  EXPECT_FALSE(adapter->ProcessKeyFrameRequest());
-  EXPECT_CALL(callback, OnFrame);
-  time_controller.AdvanceTime(kMinFrameDelay);
-  EXPECT_CALL(callback, OnFrame);
-  time_controller.AdvanceTime(kIdleFrameDelay);
+  adapter_->OnFrame(CreateFrame());
+  EXPECT_CALL(callback_, OnFrame).Times(kMaxFpsHz);
+  time_controller_.AdvanceTime(kMaxFpsHz * kMinFrameDelay);
 }
 
-TEST(FrameCadenceAdapterTest,
-     IgnoresKeyFrameRequestShortRepeatsBeforeIdleRepeat) {
-  ZeroHertzFieldTrialEnabler enabler;
-  MockCallback callback;
-  GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
-  auto adapter = CreateAdapter(time_controller.GetClock());
-  adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(
-      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
-  constexpr int kMaxFpsHz = 10;
-  constexpr TimeDelta kMinFrameDelay = TimeDelta::Millis(1000 / kMaxFpsHz);
-  constexpr TimeDelta kIdleFrameDelay =
-      FrameCadenceAdapterInterface::kZeroHertzIdleRepeatRatePeriod;
-  adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, kMaxFpsHz});
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  adapter->OnFrame(CreateFrame());
-  time_controller.AdvanceTime(2 * kMinFrameDelay);
+TEST_P(FrameCadenceAdapterSimulcastLayersParamTest,
+       IgnoresKeyFrameRequestWhileShortRepeating) {
+  
+  
+  
+  
+  
+  adapter_->OnFrame(CreateFrame());
+  time_controller_.AdvanceTime(2 * kMinFrameDelay);
+  EXPECT_FALSE(adapter_->ProcessKeyFrameRequest());
 
   
-  
-  
-  EXPECT_FALSE(adapter->ProcessKeyFrameRequest());
-  EXPECT_CALL(callback, OnFrame);
-  time_controller.AdvanceTime(kMinFrameDelay);
-  EXPECT_CALL(callback, OnFrame);
-  time_controller.AdvanceTime(kIdleFrameDelay);
+  EXPECT_CALL(callback_, OnFrame).Times(8);
+  time_controller_.AdvanceTime(8 * kMinFrameDelay);
 }
 
-TEST(FrameCadenceAdapterTest, LayerReconfigurationResetsConvergenceInfo) {
-  ZeroHertzFieldTrialEnabler enabler;
-  MockCallback callback;
-  GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
-  auto adapter = CreateAdapter(time_controller.GetClock());
-  adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(
-      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
-  constexpr int kMaxFpsHz = 10;
-  constexpr TimeDelta kMinFrameDelay = TimeDelta::Millis(1000 / kMaxFpsHz);
-  adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, kMaxFpsHz});
-  time_controller.AdvanceTime(TimeDelta::Zero());
+TEST_P(FrameCadenceAdapterSimulcastLayersParamTest,
+       IgnoresKeyFrameRequestJustBeforeIdleRepeating) {
+  
+  if (NumSpatialLayers() == 0)
+    return;
 
   
-  adapter->SetZeroHertzModeEnabled(
-      FrameCadenceAdapterInterface::ZeroHertzModeParams{
-          2});
-  adapter->OnFrame(CreateFrame());
-  EXPECT_CALL(callback, OnFrame).Times(kMaxFpsHz);
-  time_controller.AdvanceTime(kMaxFpsHz * kMinFrameDelay);
+  
+  
+  
+  
+  
+  
+  for (int i = 0; i != NumSpatialLayers(); i++) {
+    adapter_->UpdateLayerStatus(i, true);
+    adapter_->UpdateLayerQualityConvergence(i, true);
+  }
+  adapter_->OnFrame(CreateFrame());
+  time_controller_.AdvanceTime(kIdleFrameDelay);
+
+  
+  
+  
+  EXPECT_FALSE(adapter_->ProcessKeyFrameRequest());
+  EXPECT_CALL(callback_, OnFrame).Times(kMaxFpsHz);
+  time_controller_.AdvanceTime(kMaxFpsHz * kMinFrameDelay);
 }
+
+TEST_P(FrameCadenceAdapterSimulcastLayersParamTest,
+       IgnoresKeyFrameRequestShortRepeatsBeforeIdleRepeat) {
+  
+  if (NumSpatialLayers() == 0)
+    return;
+  
+  
+  
+  
+  
+  
+  
+  for (int i = 0; i != NumSpatialLayers(); i++) {
+    adapter_->UpdateLayerStatus(i, true);
+    adapter_->UpdateLayerQualityConvergence(i, true);
+  }
+  adapter_->OnFrame(CreateFrame());
+  time_controller_.AdvanceTime(2 * kMinFrameDelay);
+
+  
+  
+  
+  EXPECT_FALSE(adapter_->ProcessKeyFrameRequest());
+  EXPECT_CALL(callback_, OnFrame).Times(kMaxFpsHz);
+  time_controller_.AdvanceTime(kMaxFpsHz * kMinFrameDelay);
+}
+
+INSTANTIATE_TEST_SUITE_P(,
+                         FrameCadenceAdapterSimulcastLayersParamTest,
+                         Values(0, 1, 2));
 
 class ZeroHertzLayerQualityConvergenceTest : public ::testing::Test {
  public:
