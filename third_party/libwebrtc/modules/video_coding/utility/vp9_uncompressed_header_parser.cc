@@ -387,6 +387,11 @@ bool Vp9ReadSegmentationParams(BitstreamReader* br,
       for (size_t i = 0; i < kVp9MaxSegments; ++i) {
         for (size_t j = 0; j < kVp9SegLvlMax; ++j) {
           RETURN_IF_FALSE(br->IfNextBoolean([&] {  
+            if (kSegmentationFeatureBits[j] == 0) {
+              
+              frame_info->segmentation_features[i][j] = 1;
+              return true;
+            }
             READ_OR_RETURN(
                 br->ReadUnsigned<uint8_t>(kSegmentationFeatureBits[j]),
                 [&](uint8_t feature_value) {
