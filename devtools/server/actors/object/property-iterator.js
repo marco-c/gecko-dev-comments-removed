@@ -66,6 +66,8 @@ const PropertyIteratorActor = protocol.ActorClassWithSpec(
           this.iterator = enumWeakSetEntries(objectActor);
         } else if (cls == "Storage") {
           this.iterator = enumStorageEntries(objectActor);
+        } else if (cls == "URLSearchParams") {
+          this.iterator = enumURLSearchParamsEntries(objectActor);
         } else {
           throw new Error(
             "Unsupported class to enumerate entries from: " + cls
@@ -345,6 +347,40 @@ function enumStorageEntries(objectActor) {
   };
 }
 
+function enumURLSearchParamsEntries(objectActor) {
+  let obj = objectActor.obj;
+  let raw = obj.unsafeDereference();
+  const entries = [...waiveXrays(URLSearchParams.prototype.entries.call(raw))];
+
+  return {
+    [Symbol.iterator]: function*() {
+      for (const [key, value] of entries) {
+        yield [key, value];
+      }
+    },
+    size: entries.length,
+    propertyName(index) {
+      
+      
+      return index;
+    },
+    propertyDescription(index) {
+      const [key, value] = entries[index];
+
+      return {
+        enumerable: true,
+        value: {
+          type: "urlSearchParamsEntry",
+          preview: {
+            key: gripFromEntry(objectActor, key),
+            value: gripFromEntry(objectActor, value),
+          },
+        },
+      };
+    },
+  };
+}
+
 function getWeakMapEntries(obj) {
   
   
@@ -488,6 +524,7 @@ module.exports = {
   PropertyIteratorActor,
   enumMapEntries,
   enumSetEntries,
+  enumURLSearchParamsEntries,
   enumWeakMapEntries,
   enumWeakSetEntries,
 };

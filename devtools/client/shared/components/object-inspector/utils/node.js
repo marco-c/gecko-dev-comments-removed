@@ -278,12 +278,17 @@ function nodeHasEntries(item) {
     return false;
   }
 
+  const className = value.class;
   return (
-    value.class === "Map" ||
-    value.class === "Set" ||
-    value.class === "WeakMap" ||
-    value.class === "WeakSet" ||
-    value.class === "Storage"
+    className === "Map" ||
+    className === "Set" ||
+    className === "WeakMap" ||
+    className === "WeakSet" ||
+    className === "Storage" ||
+    
+    
+    
+    (className === "URLSearchParams" && Array.isArray(value.preview?.entries))
   );
 }
 
