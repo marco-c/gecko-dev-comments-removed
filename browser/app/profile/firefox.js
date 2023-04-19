@@ -2707,3 +2707,7 @@ pref("browser.snapshots.relevancy.timeOfDayIntervalSeconds", 3600);
 pref("browser.places.snapshots.expiration.days", 210);
 
 pref("browser.places.snapshots.expiration.userManaged.days", 420);
+
+
+
+pref("browser.browser.firefoxView.featureTour", "default, default, true");
