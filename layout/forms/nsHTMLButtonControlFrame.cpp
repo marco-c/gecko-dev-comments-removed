@@ -214,10 +214,10 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
     
     contentsReflowInput.SetComputedBSize(aButtonReflowInput.ComputedBSize(),
                                          ReflowInput::ResetResizeFlags::No);
-    contentsReflowInput.ComputedMinBSize() =
-        aButtonReflowInput.ComputedMinBSize();
-    contentsReflowInput.ComputedMaxBSize() =
-        aButtonReflowInput.ComputedMaxBSize();
+    contentsReflowInput.SetComputedMinBSize(
+        aButtonReflowInput.ComputedMinBSize());
+    contentsReflowInput.SetComputedMaxBSize(
+        aButtonReflowInput.ComputedMaxBSize());
   }
 
   

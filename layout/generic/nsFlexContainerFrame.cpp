@@ -2039,8 +2039,8 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
   
   
   
-  childRIForMeasuringBSize.ComputedMinBSize() = 0;
-  childRIForMeasuringBSize.ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;
+  childRIForMeasuringBSize.SetComputedMinBSize(0);
+  childRIForMeasuringBSize.SetComputedMaxBSize(NS_UNCONSTRAINEDSIZE);
 
   if (aForceBResizeForMeasuringReflow) {
     childRIForMeasuringBSize.SetBResize(true);

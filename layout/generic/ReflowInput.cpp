@@ -2179,8 +2179,9 @@ void ReflowInput::InitConstraints(
             : NS_UNCONSTRAINEDSIZE,
         ResetResizeFlags::No);
 
-    ComputedMinISize() = ComputedMinBSize() = 0;
-    ComputedMaxBSize() = ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;
+    mComputedMinSize.SizeTo(mWritingMode, 0, 0);
+    mComputedMaxSize.SizeTo(mWritingMode, NS_UNCONSTRAINEDSIZE,
+                            NS_UNCONSTRAINEDSIZE);
   } else {
     
     const ReflowInput* cbri = mCBReflowInput;
@@ -2332,9 +2333,9 @@ void ReflowInput::InitConstraints(
       }
 
       
-      ComputedMinISize() = ComputedMinBSize() = 0;
-      ComputedMaxISize() = ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;
-
+      mComputedMinSize.SizeTo(mWritingMode, 0, 0);
+      mComputedMaxSize.SizeTo(mWritingMode, NS_UNCONSTRAINEDSIZE,
+                              NS_UNCONSTRAINEDSIZE);
     } else if (mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
                mStyleDisplay->IsAbsolutelyPositionedStyle() &&
                
@@ -2953,28 +2954,28 @@ void ReflowInput::ComputeMinMaxValues(const LogicalSize& aCBSize) {
   
   
   if (minISize.IsAuto()) {
-    ComputedMinISize() = 0;
+    SetComputedMinISize(0);
   } else {
-    ComputedMinISize() =
-        ComputeISizeValue(aCBSize, mStylePosition->mBoxSizing, minISize);
+    SetComputedMinISize(
+        ComputeISizeValue(aCBSize, mStylePosition->mBoxSizing, minISize));
   }
 
   if (mIsThemed) {
-    ComputedMinISize() = std::max(ComputedMinISize(), minWidgetSize.ISize(wm));
+    SetComputedMinISize(std::max(ComputedMinISize(), minWidgetSize.ISize(wm)));
   }
 
   if (maxISize.IsNone()) {
     
-    ComputedMaxISize() = NS_UNCONSTRAINEDSIZE;  
+    SetComputedMaxISize(NS_UNCONSTRAINEDSIZE);
   } else {
-    ComputedMaxISize() =
-        ComputeISizeValue(aCBSize, mStylePosition->mBoxSizing, maxISize);
+    SetComputedMaxISize(
+        ComputeISizeValue(aCBSize, mStylePosition->mBoxSizing, maxISize));
   }
 
   
   
   if (ComputedMinISize() > ComputedMaxISize()) {
-    ComputedMaxISize() = ComputedMinISize();
+    SetComputedMaxISize(ComputedMinISize());
   }
 
   
@@ -2997,30 +2998,30 @@ void ReflowInput::ComputeMinMaxValues(const LogicalSize& aCBSize) {
   
   
   if (BSizeBehavesAsInitialValue(minBSize)) {
-    ComputedMinBSize() = 0;
+    SetComputedMinBSize(0);
   } else {
-    ComputedMinBSize() =
-        ComputeBSizeValue(bPercentageBasis, mStylePosition->mBoxSizing,
-                          minBSize.AsLengthPercentage());
+    SetComputedMinBSize(ComputeBSizeValue(bPercentageBasis,
+                                          mStylePosition->mBoxSizing,
+                                          minBSize.AsLengthPercentage()));
   }
 
   if (mIsThemed) {
-    ComputedMinBSize() = std::max(ComputedMinBSize(), minWidgetSize.BSize(wm));
+    SetComputedMinBSize(std::max(ComputedMinBSize(), minWidgetSize.BSize(wm)));
   }
 
   if (BSizeBehavesAsInitialValue(maxBSize)) {
     
-    ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;  
+    SetComputedMaxBSize(NS_UNCONSTRAINEDSIZE);
   } else {
-    ComputedMaxBSize() =
-        ComputeBSizeValue(bPercentageBasis, mStylePosition->mBoxSizing,
-                          maxBSize.AsLengthPercentage());
+    SetComputedMaxBSize(ComputeBSizeValue(bPercentageBasis,
+                                          mStylePosition->mBoxSizing,
+                                          maxBSize.AsLengthPercentage()));
   }
 
   
   
   if (ComputedMinBSize() > ComputedMaxBSize()) {
-    ComputedMaxBSize() = ComputedMinBSize();
+    SetComputedMaxBSize(ComputedMinBSize());
   }
 }
 
