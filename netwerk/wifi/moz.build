@@ -24,10 +24,6 @@ if CONFIG["OS_ARCH"] == "Darwin":
     SOURCES += [
         "osx_corewlan.mm",
     ]
-    
-    
-    
-    SOURCES["osx_corewlan.mm"].flags += ["-Wno-error=objc-method-access"]
 elif CONFIG["OS_ARCH"] in ("DragonFly", "FreeBSD"):
     UNIFIED_SOURCES += [
         "nsWifiScannerFreeBSD.cpp",
