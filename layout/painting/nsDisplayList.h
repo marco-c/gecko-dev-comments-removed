@@ -1103,23 +1103,39 @@ class nsDisplayListBuilder {
   
 
 
-  class AutoCurrentScrollParentIdSetter {
+
+  class AutoCurrentActiveScrolledRootSetter {
    public:
-    AutoCurrentScrollParentIdSetter(nsDisplayListBuilder* aBuilder,
-                                    ViewID aScrollId)
+    explicit AutoCurrentActiveScrolledRootSetter(nsDisplayListBuilder* aBuilder)
         : mBuilder(aBuilder),
-          mOldValue(aBuilder->mCurrentScrollParentId),
+          mSavedActiveScrolledRoot(aBuilder->mCurrentActiveScrolledRoot),
+          mContentClipASR(aBuilder->ClipState().GetContentClipASR()),
+          mDescendantsStartIndex(aBuilder->mActiveScrolledRoots.Length()),
+          mUsed(false),
+          mOldScrollParentId(aBuilder->mCurrentScrollParentId),
           mOldForceLayer(aBuilder->mForceLayerForScrollParent),
           mOldContainsNonMinimalDisplayPort(
-              mBuilder->mContainsNonMinimalDisplayPort) {
+              mBuilder->mContainsNonMinimalDisplayPort),
+          mCanBeScrollParent(true) {
+      UpdateCurrentScrollParentId();
+    }
+
+    void SetCurrentScrollParentId(ViewID aScrollId) {
       
       
       
       
-      mCanBeScrollParent = (mOldValue != aScrollId);
-      aBuilder->mCurrentScrollParentId = aScrollId;
-      aBuilder->mForceLayerForScrollParent = false;
-      aBuilder->mContainsNonMinimalDisplayPort = false;
+      mCanBeScrollParent = (mOldScrollParentId != aScrollId);
+      mBuilder->mCurrentScrollParentId = aScrollId;
+      mBuilder->mForceLayerForScrollParent = false;
+      mBuilder->mContainsNonMinimalDisplayPort = false;
+    }
+
+    void UpdateCurrentScrollParentId() {
+      ViewID scrollId = mBuilder->mCurrentActiveScrolledRoot
+                            ? mBuilder->mCurrentActiveScrolledRoot->GetViewId()
+                            : layers::ScrollableLayerGuid::NULL_SCROLL_ID;
+      SetCurrentScrollParentId(scrollId);
     }
 
     bool ShouldForceLayerForScrollParent() const {
@@ -1134,8 +1150,9 @@ class nsDisplayListBuilder {
       return mCanBeScrollParent && mBuilder->mContainsNonMinimalDisplayPort;
     }
 
-    ~AutoCurrentScrollParentIdSetter() {
-      mBuilder->mCurrentScrollParentId = mOldValue;
+    ~AutoCurrentActiveScrolledRootSetter() {
+      mBuilder->mCurrentActiveScrolledRoot = mSavedActiveScrolledRoot;
+      mBuilder->mCurrentScrollParentId = mOldScrollParentId;
       if (mCanBeScrollParent) {
         
         
@@ -1151,31 +1168,6 @@ class nsDisplayListBuilder {
           mOldContainsNonMinimalDisplayPort;
     }
 
-   private:
-    nsDisplayListBuilder* mBuilder;
-    ViewID mOldValue;
-    bool mOldForceLayer;
-    bool mOldContainsNonMinimalDisplayPort;
-    bool mCanBeScrollParent;
-  };
-
-  
-
-
-
-  class AutoCurrentActiveScrolledRootSetter {
-   public:
-    explicit AutoCurrentActiveScrolledRootSetter(nsDisplayListBuilder* aBuilder)
-        : mBuilder(aBuilder),
-          mSavedActiveScrolledRoot(aBuilder->mCurrentActiveScrolledRoot),
-          mContentClipASR(aBuilder->ClipState().GetContentClipASR()),
-          mDescendantsStartIndex(aBuilder->mActiveScrolledRoots.Length()),
-          mUsed(false) {}
-
-    ~AutoCurrentActiveScrolledRootSetter() {
-      mBuilder->mCurrentActiveScrolledRoot = mSavedActiveScrolledRoot;
-    }
-
     void SetCurrentActiveScrolledRoot(
         const ActiveScrolledRoot* aActiveScrolledRoot);
 
@@ -1185,6 +1177,7 @@ class nsDisplayListBuilder {
           mBuilder->mCurrentActiveScrolledRoot, aScrollableFrame);
       mBuilder->mCurrentActiveScrolledRoot = asr;
       mUsed = true;
+      UpdateCurrentScrollParentId();
     }
 
     void InsertScrollFrame(nsIScrollableFrame* aScrollableFrame);
@@ -1215,6 +1208,10 @@ class nsDisplayListBuilder {
 
 
     bool mUsed;
+    ViewID mOldScrollParentId;
+    bool mOldForceLayer;
+    bool mOldContainsNonMinimalDisplayPort;
+    bool mCanBeScrollParent;
   };
 
   
