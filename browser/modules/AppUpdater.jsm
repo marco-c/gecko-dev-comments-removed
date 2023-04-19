@@ -43,79 +43,6 @@ XPCOMUtils.defineLazyGetter(
 const PREF_APP_UPDATE_CANCELATIONS_OSX = "app.update.cancelations.osx";
 const PREF_APP_UPDATE_ELEVATE_NEVER = "app.update.elevate.never";
 
-class AbortError extends Error {
-  constructor(...params) {
-    super(...params);
-    this.name = this.constructor.name;
-  }
-}
-
-
-
-
-
-var gPendingAbortablePromises = new Set();
-
-
-
-
-
-
-
-
-class AbortablePromise {
-  #abortFn;
-  #promise;
-  #hasCompleted = false;
-
-  constructor(promise) {
-    let abortPromise = new Promise((resolve, reject) => {
-      this.#abortFn = () => reject(new AbortError());
-    });
-    this.#promise = Promise.race([promise, abortPromise]);
-    this.#promise = this.#promise.finally(() => {
-      this.#hasCompleted = true;
-      gPendingAbortablePromises.delete(this);
-    });
-    gPendingAbortablePromises.add(this);
-  }
-
-  abort() {
-    if (this.#hasCompleted) {
-      return;
-    }
-    this.#abortFn();
-  }
-
-  
-
-
-
-
-  get promise() {
-    return this.#promise;
-  }
-
-  
-
-
-
-  get hasCompleted() {
-    return this.#hasCompleted;
-  }
-}
-
-function makeAbortable(promise) {
-  let abortable = new AbortablePromise(promise);
-  return abortable.promise;
-}
-
-function abortAllPromises() {
-  for (const promise of gPendingAbortablePromises) {
-    promise.abort();
-  }
-}
-
 
 
 
@@ -123,69 +50,32 @@ function abortAllPromises() {
 
 
 class AppUpdater {
-  #listeners = new Set();
-  #status = AppUpdater.STATUS.NEVER_CHECKED;
-  
-  
-  
-  
-  #updateBusy = false;
-  
-  
-  
-  #permissionToDownloadGivenFn = null;
-  #_update = null;
-  
-  
-  
-  
-  #swapListenerConnected = false;
-
   constructor() {
     try {
+      this._listeners = new Set();
       this.QueryInterface = ChromeUtils.generateQI([
         "nsIObserver",
+        "nsIProgressEventSink",
+        "nsIRequestObserver",
         "nsISupportsWeakReference",
       ]);
+      Services.obs.addObserver(this, "update-swap",  true);
 
       
-      Services.prefs.addObserver(PREF_APP_UPDATE_LOG, this,  true);
+      Services.prefs.addObserver(PREF_APP_UPDATE_LOG, this);
     } catch (e) {
-      this.#onException(e);
+      this.onException(e);
     }
   }
 
-  #onException(exception) {
+  onException(exception) {
+    LOG(
+      "AppUpdater:onException - Exception caught. Setting status INTERNAL_ERROR"
+    );
+    console.error(exception);
     try {
-      this.#update = null;
-
-      if (this.#swapListenerConnected) {
-        LOG("AppUpdater:#onException - Removing update-swap listener");
-        Services.obs.removeObserver(this, "update-swap");
-        this.#swapListenerConnected = false;
-      }
-
-      if (exception instanceof AbortError) {
-        
-        
-        LOG(
-          "AppUpdater:#onException - Caught AbortError. Setting status " +
-            "NEVER_CHECKED"
-        );
-        this.#setStatus(AppUpdater.STATUS.NEVER_CHECKED);
-      } else {
-        LOG(
-          "AppUpdater:#onException - Exception caught. Setting status " +
-            "INTERNAL_ERROR"
-        );
-        console.error(exception);
-        this.#setStatus(AppUpdater.STATUS.INTERNAL_ERROR);
-      }
+      this._setStatus(AppUpdater.STATUS.INTERNAL_ERROR);
     } catch (e) {
-      LOG(
-        "AppUpdater:#onException - Caught additional exception while " +
-          "handling previous exception"
-      );
       console.error(e);
     }
   }
@@ -195,245 +85,141 @@ class AppUpdater {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  get update() {
-    return this.#update;
-  }
-
-  get #update() {
-    return this.#_update;
-  }
-
-  set #update(update) {
-    this.#_update = update;
-    if (this.#_update) {
-      this.#_update.QueryInterface(Ci.nsIWritablePropertyBag);
-      this.#_update.setProperty("foregroundDownload", "true");
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async check() {
+  check() {
     try {
-      
-      
-      
-      
-      
-      if (this.#updateBusy) {
-        return;
-      }
-    } catch (e) {
-      this.#onException(e);
-    }
-
-    try {
-      this.#updateBusy = true;
-      this.#update = null;
-
-      if (this.#swapListenerConnected) {
-        LOG("AppUpdater:check - Removing update-swap listener");
-        Services.obs.removeObserver(this, "update-swap");
-        this.#swapListenerConnected = false;
-      }
-
-      if (!AppConstants.MOZ_UPDATER || this.#updateDisabledByPackage) {
+      if (!AppConstants.MOZ_UPDATER || this.updateDisabledByPackage) {
         LOG(
           "AppUpdater:check -" +
             "AppConstants.MOZ_UPDATER=" +
             AppConstants.MOZ_UPDATER +
-            "this.#updateDisabledByPackage: " +
-            this.#updateDisabledByPackage
+            "this.updateDisabledByPackage: " +
+            this.updateDisabledByPackage
         );
-        this.#setStatus(AppUpdater.STATUS.NO_UPDATER);
+        this._setStatus(AppUpdater.STATUS.NO_UPDATER);
         return;
       }
 
-      if (this.aus.disabled) {
-        LOG("AppUpdater:check - AUS disabled");
-        this.#setStatus(AppUpdater.STATUS.UPDATE_DISABLED_BY_POLICY);
+      if (this.updateDisabledByPolicy) {
+        LOG("AppUpdater:check - this.updateDisabledByPolicy");
+        this._setStatus(AppUpdater.STATUS.UPDATE_DISABLED_BY_POLICY);
         return;
       }
 
-      let updateState = this.aus.currentState;
-      let stateName = this.aus.getStateName(updateState);
-      LOG(`AppUpdater:check - currentState=${stateName}`);
-
-      if (updateState == Ci.nsIApplicationUpdateService.STATE_PENDING) {
-        LOG("AppUpdater:check - ready for restart");
-        this.#onReadyToRestart();
+      if (this.isReadyForRestart) {
+        LOG("AppUpdater:check - this.isReadyForRestart");
+        this._setStatus(AppUpdater.STATUS.READY_FOR_RESTART);
         return;
       }
 
       if (this.aus.isOtherInstanceHandlingUpdates) {
         LOG("AppUpdater:check - this.aus.isOtherInstanceHandlingUpdates");
-        this.#setStatus(AppUpdater.STATUS.OTHER_INSTANCE_HANDLING_UPDATES);
+        this._setStatus(AppUpdater.STATUS.OTHER_INSTANCE_HANDLING_UPDATES);
         return;
       }
 
-      if (updateState == Ci.nsIApplicationUpdateService.STATE_DOWNLOADING) {
-        LOG("AppUpdater:check - downloading");
-        this.#update = this.um.downloadingUpdate;
-        await this.#downloadUpdate();
+      if (this.isDownloading) {
+        LOG("AppUpdater:check - this.isDownloading");
+        this.startDownload();
         return;
       }
 
-      if (updateState == Ci.nsIApplicationUpdateService.STATE_STAGING) {
-        LOG("AppUpdater:check - staging");
-        this.#update = this.um.readyUpdate;
-        await this.#awaitStagingComplete();
+      if (this.isStaging) {
+        LOG("AppUpdater:check - this.isStaging");
+        this._waitForUpdateToStage();
         return;
       }
 
       
-      if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CANCELATIONS_OSX)) {
-        Services.prefs.clearUserPref(PREF_APP_UPDATE_CANCELATIONS_OSX);
-      }
-      if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_NEVER)) {
-        Services.prefs.clearUserPref(PREF_APP_UPDATE_ELEVATE_NEVER);
-      }
-      this.#setStatus(AppUpdater.STATUS.CHECKING);
-      LOG("AppUpdater:check - starting update check");
-      let check = this.checker.checkForUpdates(this.checker.FOREGROUND_CHECK);
-      let result;
-      try {
-        result = await makeAbortable(check.result);
-      } catch (e) {
-        
-        if (e instanceof AbortError) {
-          this.checker.stopCheck(check.id);
-        }
-        throw e;
-      }
+      this.promiseAutoUpdateSetting = lazy.UpdateUtils.getAppUpdateAutoEnabled();
 
-      if (!result.checksAllowed) {
-        
-        
-        LOG("AppUpdater:check - !checksAllowed; INTERNAL_ERROR");
-        this.#setStatus(AppUpdater.STATUS.INTERNAL_ERROR);
-        return;
-      }
-
-      if (!result.succeeded) {
-        
-        
-        
-        LOG("AppUpdater:check - Update check failed; NO_UPDATES_FOUND");
-        this.#setStatus(AppUpdater.STATUS.NO_UPDATES_FOUND);
-        return;
-      }
-
-      LOG("AppUpdater:check - Update check succeeded");
-      this.#update = this.aus.selectUpdate(result.updates);
-      if (!this.#update) {
-        LOG("AppUpdater:check - result: NO_UPDATES_FOUND");
-        this.#setStatus(AppUpdater.STATUS.NO_UPDATES_FOUND);
-        return;
-      }
-
-      if (this.#update.unsupported) {
-        LOG("AppUpdater:check - result: UNSUPPORTED SYSTEM");
-        this.#setStatus(AppUpdater.STATUS.UNSUPPORTED_SYSTEM);
-        return;
-      }
-
-      if (!this.aus.canApplyUpdates) {
-        LOG("AppUpdater:check - result: MANUAL_UPDATE");
-        this.#setStatus(AppUpdater.STATUS.MANUAL_UPDATE);
-        return;
-      }
-
-      let updateAuto = await makeAbortable(
-        lazy.UpdateUtils.getAppUpdateAutoEnabled()
-      );
-      if (!updateAuto || this.aus.manualUpdateOnly) {
-        LOG(
-          "AppUpdater:check - Need to wait for user approval to start the " +
-            "download."
-        );
-
-        let downloadPermissionPromise = new Promise(resolve => {
-          this.#permissionToDownloadGivenFn = resolve;
-        });
-        
-        
-        
-        let downloadStartPromise = Promise.race([
-          downloadPermissionPromise,
-          this.aus.stateTransition,
-        ]);
-
-        this.#setStatus(AppUpdater.STATUS.DOWNLOAD_AND_INSTALL);
-
-        await makeAbortable(downloadStartPromise);
-        LOG("AppUpdater:check - Got user approval. Proceeding with download");
-        
-        
-        if (this.um.downloadingUpdate) {
-          this.#update = this.um.downloadingUpdate;
-        }
-      } else {
-        LOG(
-          "AppUpdater:check - updateAuto is active and " +
-            "manualUpdateOnlydateOnly is inactive. Start the download."
-        );
-      }
-      await this.#downloadUpdate();
+      
+      
+      
+      
+      
+      this.checkForUpdates();
     } catch (e) {
-      this.#onException(e);
-    } finally {
-      this.#updateBusy = false;
+      this.onException(e);
     }
   }
 
   
-
-
-
-
-
-
-  allowUpdateDownload() {
-    if (this.#permissionToDownloadGivenFn) {
-      this.#permissionToDownloadGivenFn();
+  get isPending() {
+    if (this.update) {
+      return (
+        this.update.state == "pending" ||
+        this.update.state == "pending-service" ||
+        this.update.state == "pending-elevate"
+      );
     }
+    return (
+      this.um.readyUpdate &&
+      (this.um.readyUpdate.state == "pending" ||
+        this.um.readyUpdate.state == "pending-service" ||
+        this.um.readyUpdate.state == "pending-elevate")
+    );
+  }
+
+  
+  get isApplied() {
+    if (this.update) {
+      return (
+        this.update.state == "applied" || this.update.state == "applied-service"
+      );
+    }
+    return (
+      this.um.readyUpdate &&
+      (this.um.readyUpdate.state == "applied" ||
+        this.um.readyUpdate.state == "applied-service")
+    );
+  }
+
+  get isStaging() {
+    if (!this.updateStagingEnabled) {
+      return false;
+    }
+    let errorCode;
+    if (this.update) {
+      errorCode = this.update.errorCode;
+    } else if (this.um.readyUpdate) {
+      errorCode = this.um.readyUpdate.errorCode;
+    }
+    
+    
+    return this.isPending && errorCode == 0;
+  }
+
+  
+  get isReadyForRestart() {
+    if (this.updateStagingEnabled) {
+      let errorCode;
+      if (this.update) {
+        errorCode = this.update.errorCode;
+      } else if (this.um.readyUpdate) {
+        errorCode = this.um.readyUpdate.errorCode;
+      }
+      
+      
+      
+      return this.isApplied || (this.isPending && errorCode != 0);
+    }
+    return this.isPending;
+  }
+
+  
+  get isDownloading() {
+    if (this.update) {
+      return this.update.state == "downloading";
+    }
+    return (
+      this.um.downloadingUpdate &&
+      this.um.downloadingUpdate.state == "downloading"
+    );
+  }
+
+  
+  get updateDisabledByPolicy() {
+    return Services.policies && !Services.policies.isAllowed("appUpdate");
   }
 
   
@@ -442,7 +228,7 @@ class AppUpdater {
   
   
   
-  get #updateDisabledByPackage() {
+  get updateDisabledByPackage() {
     try {
       return Services.sysinfo.getProperty("hasWinPackageId");
     } catch (_ex) {
@@ -452,15 +238,15 @@ class AppUpdater {
   }
 
   
-  get #updateStagingEnabled() {
+  get updateStagingEnabled() {
     LOG(
-      "AppUpdater:#updateStagingEnabled" +
+      "AppUpdater:updateStagingEnabled" +
         "canStageUpdates: " +
         this.aus.canStageUpdates
     );
     return (
-      !this.aus.disabled &&
-      !this.#updateDisabledByPackage &&
+      !this.updateDisabledByPolicy &&
+      !this.updateDisabledByPackage &&
       this.aus.canStageUpdates
     );
   }
@@ -468,131 +254,229 @@ class AppUpdater {
   
 
 
+  checkForUpdates() {
+    
+    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CANCELATIONS_OSX)) {
+      Services.prefs.clearUserPref(PREF_APP_UPDATE_CANCELATIONS_OSX);
+    }
+    if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_ELEVATE_NEVER)) {
+      Services.prefs.clearUserPref(PREF_APP_UPDATE_ELEVATE_NEVER);
+    }
+    this._setStatus(AppUpdater.STATUS.CHECKING);
+    this.checker.checkForUpdates(this._updateCheckListener, true);
+    
+    LOG("AppUpdater:checkForUpdates - waiting for onCheckComplete()");
+  }
+
+  
 
 
-  async #downloadUpdate() {
-    this.#setStatus(AppUpdater.STATUS.DOWNLOADING);
 
-    let success = await this.aus.downloadUpdate(this.#update, false);
+
+  get _updateCheckListener() {
+    if (!this.__updateCheckListener) {
+      this.__updateCheckListener = {
+        
+
+
+        onCheckComplete: async (aRequest, aUpdates) => {
+          LOG("AppUpdater:_updateCheckListener:onCheckComplete - reached.");
+          this.update = this.aus.selectUpdate(aUpdates);
+          if (!this.update) {
+            LOG(
+              "AppUpdater:_updateCheckListener:onCheckComplete - result: " +
+                "NO_UPDATES_FOUND"
+            );
+            this._setStatus(AppUpdater.STATUS.NO_UPDATES_FOUND);
+            return;
+          }
+
+          if (this.update.unsupported) {
+            LOG(
+              "AppUpdater:_updateCheckListener:onCheckComplete - result: " +
+                "UNSUPPORTED SYSTEM"
+            );
+            this._setStatus(AppUpdater.STATUS.UNSUPPORTED_SYSTEM);
+            return;
+          }
+
+          if (!this.aus.canApplyUpdates) {
+            LOG(
+              "AppUpdater:_updateCheckListener:onCheckComplete - result: " +
+                "MANUAL_UPDATE"
+            );
+            this._setStatus(AppUpdater.STATUS.MANUAL_UPDATE);
+            return;
+          }
+
+          if (!this.promiseAutoUpdateSetting) {
+            this.promiseAutoUpdateSetting = lazy.UpdateUtils.getAppUpdateAutoEnabled();
+          }
+          this.promiseAutoUpdateSetting.then(updateAuto => {
+            if (updateAuto && !this.aus.manualUpdateOnly) {
+              LOG(
+                "AppUpdater:_updateCheckListener:onCheckComplete - " +
+                  "updateAuto is active and " +
+                  "manualUpdateOnlydateOnly is inactive." +
+                  "start the download."
+              );
+              
+              this.startDownload();
+            } else {
+              
+              this._setStatus(AppUpdater.STATUS.DOWNLOAD_AND_INSTALL);
+            }
+          });
+        },
+
+        
+
+
+        onError: async (aRequest, aUpdate) => {
+          
+          
+          
+          LOG("AppUpdater:_updateCheckListener:onError: NO_UPDATES_FOUND");
+          this._setStatus(AppUpdater.STATUS.NO_UPDATES_FOUND);
+        },
+
+        
+
+
+        QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheckListener"]),
+      };
+    }
+    return this.__updateCheckListener;
+  }
+
+  
+
+
+
+  _waitForUpdateToStage() {
+    if (!this.update) {
+      this.update = this.um.readyUpdate;
+    }
+    this.update.QueryInterface(Ci.nsIWritablePropertyBag);
+    this.update.setProperty("foregroundDownload", "true");
+    this._setStatus(AppUpdater.STATUS.STAGING);
+    this._awaitStagingComplete();
+  }
+
+  
+
+
+  startDownload() {
+    if (!this.update) {
+      this.update = this.um.downloadingUpdate;
+    }
+    this.update.QueryInterface(Ci.nsIWritablePropertyBag);
+    this.update.setProperty("foregroundDownload", "true");
+
+    let success = this.aus.downloadUpdate(this.update, false);
     if (!success) {
-      LOG("AppUpdater:#downloadUpdate - downloadUpdate failed.");
-      this.#setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
+      LOG("AppUpdater:startDownload - downloadUpdate failed.");
+      this._setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
       return;
     }
 
-    await this.#awaitDownloadComplete();
+    this._setupDownloadListener();
   }
 
   
 
 
+  _setupDownloadListener() {
+    this._setStatus(AppUpdater.STATUS.DOWNLOADING);
+    this.aus.addDownloadListener(this);
+    LOG("AppUpdater:_setupDownloadListener - registered a download listener");
+  }
+
+  
 
 
-  async #awaitDownloadComplete() {
-    let updateState = this.aus.currentState;
-    if (
-      updateState != Ci.nsIApplicationUpdateService.STATE_DOWNLOADING &&
-      updateState != Ci.nsIApplicationUpdateService.STATE_SWAP
-    ) {
-      throw new Error(
-        "AppUpdater:#awaitDownloadComplete invoked in unexpected state: " +
-          this.aus.getStateName(updateState)
-      );
-    }
+  onStartRequest(aRequest) {
+    LOG("AppUpdater:onStartRequest - aRequest: " + aRequest);
+  }
 
-    
-    
-    
-    
-    
-    this.#setStatus(AppUpdater.STATUS.DOWNLOADING);
+  
 
-    const updateDownloadProgress = (progress, progressMax) => {
-      this.#setStatus(AppUpdater.STATUS.DOWNLOADING, progress, progressMax);
-    };
 
-    const progressObserver = {
-      onStartRequest(aRequest) {
-        LOG(
-          `AppUpdater:#awaitDownloadComplete.observer.onStartRequest - ` +
-            `aRequest: ${aRequest}`
-        );
-      },
-
-      onStatus(aRequest, aStatus, aStatusArg) {
-        LOG(
-          `AppUpdater:#awaitDownloadComplete.observer.onStatus ` +
-            `- aRequest: ${aRequest}, aStatus: ${aStatus}, ` +
-            `aStatusArg: ${aStatusArg}`
-        );
-      },
-
-      onProgress(aRequest, aProgress, aProgressMax) {
-        LOG(
-          `AppUpdater:#awaitDownloadComplete.observer.onProgress ` +
-            `- aRequest: ${aRequest}, aProgress: ${aProgress}, ` +
-            `aProgressMax: ${aProgressMax}`
-        );
-        updateDownloadProgress(aProgress, aProgressMax);
-      },
-
-      onStopRequest(aRequest, aStatusCode) {
-        LOG(
-          `AppUpdater:#awaitDownloadComplete.observer.onStopRequest ` +
-            `- aRequest: ${aRequest}, aStatusCode: ${aStatusCode}`
-        );
-      },
-
-      QueryInterface: ChromeUtils.generateQI([
-        "nsIProgressEventSink",
-        "nsIRequestObserver",
-      ]),
-    };
-
-    let listenForProgress =
-      updateState == Ci.nsIApplicationUpdateService.STATE_DOWNLOADING;
-
-    if (listenForProgress) {
-      this.aus.addDownloadListener(progressObserver);
-      LOG("AppUpdater:#awaitDownloadComplete - Registered download listener");
-    }
-
-    LOG("AppUpdater:#awaitDownloadComplete - Waiting for state transition.");
-    try {
-      await makeAbortable(this.aus.stateTransition);
-    } finally {
-      if (listenForProgress) {
-        this.aus.removeDownloadListener(progressObserver);
-        LOG("AppUpdater:#awaitDownloadComplete - Download listener removed");
-      }
-    }
-
-    updateState = this.aus.currentState;
+  onStopRequest(aRequest, aStatusCode) {
     LOG(
-      "AppUpdater:#awaitDownloadComplete - State transition seen. New state: " +
-        this.aus.getStateName(updateState)
+      "AppUpdater:onStopRequest " +
+        "- aRequest: " +
+        aRequest +
+        ", aStatusCode: " +
+        aStatusCode
     );
-
-    switch (updateState) {
-      case Ci.nsIApplicationUpdateService.STATE_IDLE:
+    switch (aStatusCode) {
+      case Cr.NS_ERROR_UNEXPECTED:
+        if (
+          this.update.selectedPatch.state == "download-failed" &&
+          (this.update.isCompleteUpdate || this.update.patchCount != 2)
+        ) {
+          
+          
+          this.aus.removeDownloadListener(this);
+          LOG(
+            "AppUpdater:onStopRequest " +
+              "- download failed with unexpected error" +
+              ", removed download listener"
+          );
+          this._setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
+          break;
+        }
+        
+        
+        break;
+      case Cr.NS_BINDING_ABORTED:
+        
+        break;
+      case Cr.NS_OK:
+        this.aus.removeDownloadListener(this);
         LOG(
-          "AppUpdater:#awaitDownloadComplete - Setting status DOWNLOAD_FAILED."
+          "AppUpdater:onStopRequest " +
+            "- download ok" +
+            ", removed download listener"
         );
-        this.#setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
-        break;
-      case Ci.nsIApplicationUpdateService.STATE_STAGING:
-        LOG("AppUpdater:#awaitDownloadComplete - awaiting staging completion.");
-        await this.#awaitStagingComplete();
-        break;
-      case Ci.nsIApplicationUpdateService.STATE_PENDING:
-        LOG("AppUpdater:#awaitDownloadComplete - ready to restart.");
-        this.#onReadyToRestart();
+        if (this.updateStagingEnabled) {
+          
+          
+          
+          
+          if (this.aus.isOtherInstanceHandlingUpdates) {
+            LOG(
+              "AppUpdater:onStopRequest " +
+                "- aStatusCode=Cr.NS_OK" +
+                ", another instance is handling updates"
+            );
+            this._setStatus(AppUpdater.OTHER_INSTANCE_HANDLING_UPDATES);
+          } else {
+            LOG(
+              "AppUpdater:onStopRequest " +
+                "- aStatusCode=Cr.NS_OK" +
+                ", no competitive instance found."
+            );
+            this._setStatus(AppUpdater.STATUS.STAGING);
+          }
+          
+          
+          
+          this._awaitStagingComplete();
+        } else {
+          this._awaitDownloadComplete();
+        }
         break;
       default:
+        this.aus.removeDownloadListener(this);
         LOG(
-          "AppUpdater:#awaitDownloadComplete - Setting status INTERNAL_ERROR."
+          "AppUpdater:onStopRequest " +
+            "- case default" +
+            ", removing download listener" +
+            ", because the download failed."
         );
-        this.#setStatus(AppUpdater.STATUS.INTERNAL_ERROR);
+        this._setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
         break;
     }
   }
@@ -600,80 +484,49 @@ class AppUpdater {
   
 
 
-
-
-
-
-
-
-  async #awaitStagingComplete() {
-    let updateState = this.aus.currentState;
-    if (updateState != Ci.nsIApplicationUpdateService.STATE_STAGING) {
-      throw new Error(
-        "AppUpdater:#awaitStagingComplete invoked in unexpected state: " +
-          this.aus.getStateName(updateState)
-      );
-    }
-
-    LOG("AppUpdater:#awaitStagingComplete - Setting status STAGING.");
-    this.#setStatus(AppUpdater.STATUS.STAGING);
-
-    LOG("AppUpdater:#awaitStagingComplete - Waiting for state transition.");
-    await makeAbortable(this.aus.stateTransition);
-
-    updateState = this.aus.currentState;
+  onStatus(aRequest, aStatus, aStatusArg) {
     LOG(
-      "AppUpdater:#awaitStagingComplete - State transition seen. New state: " +
-        this.aus.getStateName(updateState)
+      "AppUpdater:onStatus " +
+        "- aRequest: " +
+        aRequest +
+        ", aStatus: " +
+        aStatus +
+        ", aStatusArg: " +
+        aStatusArg
     );
-
-    switch (updateState) {
-      case Ci.nsIApplicationUpdateService.STATE_PENDING:
-        LOG("AppUpdater:#awaitStagingComplete - ready for restart");
-        this.#onReadyToRestart();
-        break;
-      case Ci.nsIApplicationUpdateService.STATE_IDLE:
-        LOG("AppUpdater:#awaitStagingComplete - DOWNLOAD_FAILED");
-        this.#setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
-        break;
-      case Ci.nsIApplicationUpdateService.STATE_DOWNLOADING:
-        
-        
-        LOG(
-          "AppUpdater:#awaitStagingComplete - Partial update must have " +
-            "failed to stage. Downloading complete update."
-        );
-        await this.#awaitDownloadComplete();
-        break;
-      default:
-        LOG(
-          "AppUpdater:#awaitStagingComplete - Setting status INTERNAL_ERROR."
-        );
-        this.#setStatus(AppUpdater.STATUS.INTERNAL_ERROR);
-        break;
-    }
   }
 
-  #onReadyToRestart() {
-    let updateState = this.aus.currentState;
-    if (updateState != Ci.nsIApplicationUpdateService.STATE_PENDING) {
-      throw new Error(
-        "AppUpdater:#onReadyToRestart invoked in unexpected state: " +
-          this.aus.getStateName(updateState)
-      );
-    }
+  
 
-    LOG("AppUpdater:#onReadyToRestart - Setting status READY_FOR_RESTART.");
-    if (this.#swapListenerConnected) {
+
+  onProgress(aRequest, aProgress, aProgressMax) {
+    LOG(
+      "AppUpdater:onProgress " +
+        "- aRequest: " +
+        aRequest +
+        ", aProgress: " +
+        aProgress +
+        ", aProgressMax: " +
+        aProgressMax
+    );
+    this._setStatus(AppUpdater.STATUS.DOWNLOADING, aProgress, aProgressMax);
+  }
+
+  
+
+
+
+  _awaitDownloadComplete() {
+    let observer = (aSubject, aTopic, aData) => {
+      
       LOG(
-        "AppUpdater:#onReadyToRestart - update-swap listener already attached"
+        "AppUpdater:_awaitStagingComplete - observer reached" +
+          ", status changes to READY_FOR_RESTART"
       );
-    } else {
-      this.#swapListenerConnected = true;
-      LOG("AppUpdater:#onReadyToRestart - Attaching update-swap listener");
-      Services.obs.addObserver(this, "update-swap",  true);
-    }
-    this.#setStatus(AppUpdater.STATUS.READY_FOR_RESTART);
+      this._setStatus(AppUpdater.STATUS.READY_FOR_RESTART);
+      Services.obs.removeObserver(observer, "update-downloaded");
+    };
+    Services.obs.addObserver(observer, "update-downloaded");
   }
 
   
@@ -683,27 +536,93 @@ class AppUpdater {
 
 
 
+  _awaitStagingComplete() {
+    let observer = (aSubject, aTopic, aData) => {
+      LOG(
+        "AppUpdater:_awaitStagingComplete:observer" +
+          "- aSubject: " +
+          aSubject +
+          "- aTopic: " +
+          aTopic +
+          "- aData (=status): " +
+          aData
+      );
+      
+      switch (aTopic) {
+        case "update-staged":
+          let status = aData;
+          if (
+            status == "applied" ||
+            status == "applied-service" ||
+            status == "pending" ||
+            status == "pending-service" ||
+            status == "pending-elevate"
+          ) {
+            
+            
+            
+            this._setStatus(AppUpdater.STATUS.READY_FOR_RESTART);
+          } else if (status == "failed") {
+            
+            
+            this._setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
+          } else if (status == "downloading") {
+            
+            
+            
+            this._setupDownloadListener();
+            return;
+          }
+          break;
+        case "update-error":
+          this._setStatus(AppUpdater.STATUS.DOWNLOAD_FAILED);
+          break;
+      }
+      Services.obs.removeObserver(observer, "update-staged");
+      Services.obs.removeObserver(observer, "update-error");
+    };
+    Services.obs.addObserver(observer, "update-staged");
+    Services.obs.addObserver(observer, "update-error");
+  }
 
+  
 
 
   stop() {
-    LOG("AppUpdater:stop called");
-    if (this.#swapListenerConnected) {
-      LOG("AppUpdater:stop - Removing update-swap listener");
-      Services.obs.removeObserver(this, "update-swap");
-      this.#swapListenerConnected = false;
-    }
-    abortAllPromises();
+    LOG("AppUpdater:stop called, remove download listener");
+    this.checker.stopCurrentCheck();
+    this.aus.removeDownloadListener(this);
   }
 
   
 
 
-
-
-
   get status() {
-    return this.#status;
+    if (!this._status) {
+      if (!AppConstants.MOZ_UPDATER || this.updateDisabledByPackage) {
+        LOG("AppUpdater:status - no updater or updates disabled by package.");
+        this._status = AppUpdater.STATUS.NO_UPDATER;
+      } else if (this.updateDisabledByPolicy) {
+        LOG("AppUpdater:status - updateDisabledByPolicy");
+        this._status = AppUpdater.STATUS.UPDATE_DISABLED_BY_POLICY;
+      } else if (this.isReadyForRestart) {
+        LOG("AppUpdater:status - isReadyForRestart");
+        this._status = AppUpdater.STATUS.READY_FOR_RESTART;
+      } else if (this.aus.isOtherInstanceHandlingUpdates) {
+        LOG("AppUpdater:status - another instance is handling updates");
+        this._status = AppUpdater.STATUS.OTHER_INSTANCE_HANDLING_UPDATES;
+      } else if (this.isDownloading) {
+        LOG("AppUpdater:status - isDownloading");
+        this._status = AppUpdater.STATUS.DOWNLOADING;
+      } else if (this.isStaging) {
+        LOG("AppUpdater:status - isStaging");
+        this._status = AppUpdater.STATUS.STAGING;
+      } else {
+        LOG("AppUpdater:status - NEVER_CHECKED");
+        this._status = AppUpdater.STATUS.NEVER_CHECKED;
+      }
+    }
+    return this._status;
   }
 
   
@@ -717,7 +636,7 @@ class AppUpdater {
 
 
   addListener(listener) {
-    this.#listeners.add(listener);
+    this._listeners.add(listener);
   }
 
   
@@ -728,7 +647,7 @@ class AppUpdater {
 
 
   removeListener(listener) {
-    this.#listeners.delete(listener);
+    this._listeners.delete(listener);
   }
 
   
@@ -739,9 +658,9 @@ class AppUpdater {
 
 
 
-  #setStatus(status, ...listenerArgs) {
-    this.#status = status;
-    for (let listener of this.#listeners) {
+  _setStatus(status, ...listenerArgs) {
+    this._status = status;
+    for (let listener of this._listeners) {
       listener(status, ...listenerArgs);
     }
     return status;
@@ -759,9 +678,7 @@ class AppUpdater {
     );
     switch (topic) {
       case "update-swap":
-        
-        
-        this.#handleUpdateSwap();
+        this._handleUpdateSwap();
         break;
       case "nsPref:changed":
         if (
@@ -774,39 +691,40 @@ class AppUpdater {
             Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG_FILE, false);
         }
         break;
+      case "quit-application":
+        Services.prefs.removeObserver(PREF_APP_UPDATE_LOG, this);
+        Services.obs.removeObserver(this, topic);
     }
   }
 
-  async #handleUpdateSwap() {
-    try {
+  _handleUpdateSwap() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      this._status == AppUpdater.STATUS.DOWNLOADING ||
+      this._status == AppUpdater.STATUS.STAGING
+    ) {
       
-      
-      
-      
-      
-      if (this.#updateBusy) {
-        return;
-      }
-    } catch (e) {
-      this.#onException(e);
+      return;
     }
 
-    try {
-      this.#updateBusy = true;
-
-      
-      
-      
-      this.#update = this.um.downloadingUpdate;
-      if (!this.#update) {
-        this.#update = this.um.readyUpdate;
-      }
-
-      await this.#awaitDownloadComplete();
-    } catch (e) {
-      this.#onException(e);
-    } finally {
-      this.#updateBusy = false;
+    if (this.updateStagingEnabled) {
+      LOG("AppUpdater:_handleUpdateSwap - updateStagingEnabled");
+      this._setStatus(AppUpdater.STATUS.STAGING);
+      this._awaitStagingComplete();
+    } else {
+      LOG("AppUpdater:_handleUpdateSwap - updateStagingDisabled");
+      this._setStatus(AppUpdater.STATUS.DOWNLOADING);
+      this._awaitDownloadComplete();
     }
   }
 }
