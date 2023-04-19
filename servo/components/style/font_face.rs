@@ -47,10 +47,13 @@ impl OneOrMoreSeparated for Source {
 }
 
 
+
 #[derive(Clone, Copy, Debug, Eq, Parse, PartialEq, ToCss, ToShmem)]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum FontFaceSourceFormatKeyword {
+    #[css(skip)]
+    None,
     Collection,
     EmbeddedOpentype,
     Opentype,
@@ -58,6 +61,8 @@ pub enum FontFaceSourceFormatKeyword {
     Truetype,
     Woff,
     Woff2,
+    #[css(skip)]
+    Unknown,
 }
 
 

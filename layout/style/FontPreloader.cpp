@@ -78,8 +78,9 @@ void FontPreloader::PrioritizeAsPreload(nsIChannel* aChannel) {
 
       
       
-      if (aFontFaceSrc->mFormatHint == gfxUserFontSet::FormatHint::WOFF ||
-          aFontFaceSrc->mFormatHint == gfxUserFontSet::FormatHint::WOFF2) {
+      if (aFontFaceSrc->mFormatHint == StyleFontFaceSourceFormatKeyword::Woff ||
+          aFontFaceSrc->mFormatHint ==
+              StyleFontFaceSourceFormatKeyword::Woff2) {
         rv = aHttpChannel->SetRequestHeader("Accept-Encoding"_ns, "identity"_ns,
                                             false);
         NS_ENSURE_SUCCESS(rv, rv);
