@@ -20,6 +20,7 @@ const {
   getAllMessagesUiById,
   getAllCssMessagesMatchingElements,
   getAllNetworkMessagesUpdateById,
+  getLastMessageId,
   getVisibleMessages,
   getAllRepeatById,
   getAllWarningGroupsById,
@@ -65,6 +66,7 @@ class ConsoleOutput extends Component {
       editorMode: PropTypes.bool.isRequired,
       cacheGeneration: PropTypes.number.isRequired,
       disableVirtualization: PropTypes.bool,
+      lastMessageId: PropTypes.string.isRequired,
     };
   }
 
@@ -170,7 +172,8 @@ class ConsoleOutput extends Component {
     
     const isNewMessageEvaluationResult =
       messagesDelta > 0 &&
-      nextProps.mutableMessages.get(nextProps.visibleMessages.at(-1))?.type ===
+      nextProps.lastMessageId &&
+      nextProps.mutableMessages.get(nextProps.lastMessageId)?.type ===
         MESSAGE_TYPE.RESULT;
 
     const messagesUiDelta =
@@ -351,6 +354,7 @@ function mapStateToProps(state, props) {
     
     messageCount: mutableMessages.size,
     mutableMessages,
+    lastMessageId: getLastMessageId(state),
     visibleMessages: getVisibleMessages(state),
     messagesUi: getAllMessagesUiById(state),
     cssMatchingElements: getAllCssMessagesMatchingElements(state),
