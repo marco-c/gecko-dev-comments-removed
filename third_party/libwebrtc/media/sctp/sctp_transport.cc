@@ -56,7 +56,18 @@ namespace {
 
 
 
-static constexpr size_t kSctpMtu = 1200;
+
+
+
+
+
+
+
+
+
+
+
+static constexpr size_t kSctpMtu = 1191;
 
 
 ABSL_CONST_INIT int g_usrsctp_usage_count = 0;
