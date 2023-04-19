@@ -41,5 +41,8 @@ def register(graph_config):
         graph_config: The graph configuration object.
     """
     from gecko_taskgraph.parameters import register_parameters
+    from gecko_taskgraph import (  
+        target_tasks,
+    )
 
     register_parameters()
