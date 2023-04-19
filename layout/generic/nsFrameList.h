@@ -99,8 +99,7 @@ class nsFrameList {
   }
 
   
-  
-  nsFrameList(const nsFrameList& aOther) = default;
+  nsFrameList(const nsFrameList& aOther) = delete;
 
   
   
