@@ -118,15 +118,11 @@ class XPCShellDirProvider : public nsIDirectoryServiceProvider2 {
   
   void SetAppFile(nsIFile* appFile);
   void ClearAppFile() { mAppFile = nullptr; }
-  
-  void SetPluginDir(nsIFile* pluginDir);
-  void ClearPluginDir() { mPluginDir = nullptr; }
 
  private:
   nsCOMPtr<nsIFile> mGREDir;
   nsCOMPtr<nsIFile> mGREBinDir;
   nsCOMPtr<nsIFile> mAppDir;
-  nsCOMPtr<nsIFile> mPluginDir;
   nsCOMPtr<nsIFile> mAppFile;
 };
 
@@ -990,18 +986,6 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
         compileOnly = true;
         isInteractive = false;
         break;
-      case 'p': {
-        
-        char* pluginPath = argv[++i];
-        nsCOMPtr<nsIFile> pluginsDir;
-        if (NS_FAILED(
-                XRE_GetFileFromPath(pluginPath, getter_AddRefs(pluginsDir)))) {
-          fprintf(gErrFile, "Couldn't use given plugins dir.\n");
-          return printUsageAndSetExitCode();
-        }
-        aDirProvider->SetPluginDir(pluginsDir);
-        break;
-      }
       default:
         return printUsageAndSetExitCode();
     }
@@ -1422,7 +1406,6 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 
     dirprovider.ClearGREDirs();
     dirprovider.ClearAppDir();
-    dirprovider.ClearPluginDir();
     dirprovider.ClearAppFile();
   }  
 
@@ -1467,10 +1450,6 @@ void XPCShellDirProvider::SetGREDirs(nsIFile* greDir) {
 void XPCShellDirProvider::SetAppFile(nsIFile* appFile) { mAppFile = appFile; }
 
 void XPCShellDirProvider::SetAppDir(nsIFile* appDir) { mAppDir = appDir; }
-
-void XPCShellDirProvider::SetPluginDir(nsIFile* pluginDir) {
-  mPluginDir = pluginDir;
-}
 
 NS_IMETHODIMP_(MozExternalRefCountType)
 XPCShellDirProvider::AddRef() { return 2; }
@@ -1543,29 +1522,6 @@ XPCShellDirProvider::GetFiles(const char* prop, nsISimpleEnumerator** result) {
       return NS_NewArrayEnumerator(result, dirs, NS_GET_IID(nsIFile));
     }
     return NS_ERROR_FAILURE;
-  } else if (!strcmp(prop, NS_APP_PLUGINS_DIR_LIST)) {
-    nsCOMArray<nsIFile> dirs;
-    
-    
-    if (mPluginDir) {
-      dirs.AppendObject(mPluginDir);
-      
-    } else {
-      nsCOMPtr<nsIFile> file;
-      bool exists;
-      
-      
-      if (mGREDir) {
-        mGREDir->Clone(getter_AddRefs(file));
-        if (NS_SUCCEEDED(mGREDir->Clone(getter_AddRefs(file)))) {
-          file->AppendNative("plugins"_ns);
-          if (NS_SUCCEEDED(file->Exists(&exists)) && exists) {
-            dirs.AppendObject(file);
-          }
-        }
-      }
-    }
-    return NS_NewArrayEnumerator(result, dirs, NS_GET_IID(nsIFile));
   }
   return NS_ERROR_FAILURE;
 }
