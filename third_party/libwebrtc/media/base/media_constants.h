@@ -61,8 +61,6 @@ extern const char kCodecParamUseInbandFec[];
 extern const char kCodecParamUseDtx[];
 extern const char kCodecParamMaxAverageBitrate[];
 extern const char kCodecParamMaxPlaybackRate[];
-extern const char kCodecParamSctpProtocol[];
-extern const char kCodecParamSctpStreams[];
 
 extern const char kParamValueTrue[];
 
@@ -115,8 +113,6 @@ extern const char kCodecParamMaxBitrate[];
 extern const char kCodecParamMinBitrate[];
 extern const char kCodecParamStartBitrate[];
 extern const char kCodecParamMaxQuantization[];
-extern const char kCodecParamPort[];
-extern const char kCodecParamMaxMessageSize[];
 
 
 
