@@ -1866,6 +1866,13 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         
         
         
+        
+        
+        
+        
+        
+        
+        
         return false;
       }
       return true;
@@ -1877,7 +1884,7 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         popup->WaylandPopupIsFirst(), useMoveToRect);
 
     popup->mPopupUseMoveToRect = useMoveToRect;
-    popup->WaylandPopupMove();
+    popup->WaylandPopupMoveImpl();
     popup->mPopupChanged = false;
     popup = popup->mWaylandPopupNext;
   }
@@ -1929,7 +1936,7 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
   
 #if MOZ_LOGGING
   if (!mWaitingForMoveToRectCallback) {
-    LOG("  Bogus move-to-rect callback! A compositor bug?");
+    LOG("  Bogus move-to-rect callback! Expect wrong popup coordinates.");
   }
 #endif
 
@@ -2500,9 +2507,8 @@ bool nsWindow::WaylandPopupCheckAndGetAnchor(GdkRectangle* aPopupAnchor,
   }
 
   *aPopupAnchor = DevicePixelsToGdkRectRoundOut(anchorRect);
-  LOG("  move-to-rect call, anchored to rectangle [%d, %d] -> [%d x %d]",
-      aPopupAnchor->x, aPopupAnchor->y, aPopupAnchor->width,
-      aPopupAnchor->height);
+  LOG("  anchored to rectangle [%d, %d] -> [%d x %d]", aPopupAnchor->x,
+      aPopupAnchor->y, aPopupAnchor->width, aPopupAnchor->height);
 
   if (!WaylandPopupAnchorAdjustForParentPopup(aPopupAnchor, aOffset)) {
     LOG("  can't use move-to-rect, anchor is not placed inside of parent "
@@ -2553,7 +2559,38 @@ void nsWindow::WaylandPopupPrepareForMove() {
   }
 }
 
-void nsWindow::WaylandPopupMove() {
+
+
+
+void nsWindow::WaylandPopupMovePlain(int aX, int aY) {
+  LOG("nsWindow::WaylandPopupMovePlain(%d, %d)", aX, aY);
+
+  
+  MOZ_DIAGNOSTIC_ASSERT(gtk_window_get_type_hint(GTK_WINDOW(mShell)) ==
+                        GDK_WINDOW_TYPE_HINT_UTILITY);
+
+  gtk_window_move(GTK_WINDOW(mShell), aX, aY);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!gtk_widget_get_mapped(mShell)) {
+    GdkWindow* window = gtk_widget_get_window(mShell);
+    if (window) {
+      gdk_window_move(window, aX, aY);
+    }
+  }
+}
+
+void nsWindow::WaylandPopupMoveImpl() {
   
   static auto sGdkWindowMoveToRect = (void (*)(
       GdkWindow*, const GdkRectangle*, GdkGravity, GdkGravity, GdkAnchorHints,
@@ -2578,34 +2615,14 @@ void nsWindow::WaylandPopupMove() {
       mRelativePopupPosition.y);
   LOG("  popup use move to rect %d", mPopupUseMoveToRect);
 
+  WaylandPopupPrepareForMove();
+
   if (!mPopupUseMoveToRect) {
-    
-    
-    GdkPoint currentPopupPosition;
-    gtk_window_get_position(GTK_WINDOW(mShell), &currentPopupPosition.x,
-                            &currentPopupPosition.y);
-    LOG("  recent window position (%d, %d)", currentPopupPosition.x,
-        currentPopupPosition.y);
-
-    if (mRelativePopupPosition.x == currentPopupPosition.x &&
-        mRelativePopupPosition.y == currentPopupPosition.y) {
-      LOG("  popup is already positioned, quit");
-      return;
-    }
-
-    WaylandPopupPrepareForMove();
-
-    LOG("  use relative gtk_window_move(%d, %d) for utility/tooltips",
-        mRelativePopupPosition.x, mRelativePopupPosition.y);
-    gtk_window_move(GTK_WINDOW(mShell), mRelativePopupPosition.x,
-                    mRelativePopupPosition.y);
-
+    WaylandPopupMovePlain(mRelativePopupPosition.x, mRelativePopupPosition.y);
     
     
     return;
   }
-
-  WaylandPopupPrepareForMove();
 
   
   
@@ -2619,6 +2636,7 @@ void nsWindow::WaylandPopupMove() {
   }
   mWaitingForMoveToRectCallback = true;
 
+  LOG("  call move-to-rect");
   sGdkWindowMoveToRect(gdkWindow, &gtkAnchorRect,
                        mPopupMoveToRectParams.mAnchorRectType,
                        mPopupMoveToRectParams.mPopupAnchorType,
