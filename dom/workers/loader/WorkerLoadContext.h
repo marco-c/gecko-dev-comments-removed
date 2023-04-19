@@ -60,8 +60,6 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
 
   RefPtr<workerinternals::loader::CacheCreator> GetCacheCreator();
 
-  Maybe<nsString> mSourceMapURL;
-
   enum CacheStatus {
     
     
