@@ -4,19 +4,11 @@
 "use strict";
 
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/webconsole/test/browser/shared-head.js",
-  this
-);
-
-
 
 
 
 add_task(async function() {
-  Services.prefs.setBoolPref("devtools.webconsole.filter.net", true);
-
-  const { monitor, toolbox } = await initNetMonitor(SIMPLE_URL, {
+  const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
   });
   info("Starting test... ");
@@ -36,38 +28,10 @@ add_task(async function() {
   await wait;
 
   assertSingleRequestState();
-  assertNetworkEventResourceState(1);
-
-  info("Swith to the webconsole and wait for network logs");
-  const onWebConsole = monitor.toolbox.once("webconsole-selected");
-  const { hud } = await monitor.toolbox.selectTool("webconsole");
-  await onWebConsole;
-
-  info("Wait for request");
-  await waitFor(() => findMessageByType(hud, SIMPLE_URL, ".network"));
-
-  info("Switch back the the netmonitor");
-  await monitor.toolbox.selectTool("netmonitor");
 
   
-  let waitRequestListCleared = waitForEmptyRequestList(document);
   EventUtils.sendMouseEvent({ type: "click" }, clearButton);
-  await waitRequestListCleared;
-
   assertNoRequestState();
-  assertNetworkEventResourceState(0);
-
-  info(
-    "Swith back to the webconsole to assert that the cleared request gets disabled"
-  );
-  await monitor.toolbox.selectTool("webconsole");
-
-  info("Wait for network request to show and that its disabled");
-
-  await waitFor(() => findMessageByType(hud, SIMPLE_URL, ".network.disabled"));
-
-  
-  await monitor.toolbox.selectTool("netmonitor");
 
   
   wait = waitForNetworkEvents(monitor, 1);
@@ -75,14 +39,10 @@ add_task(async function() {
   await wait;
 
   assertSingleRequestState();
-  assertNetworkEventResourceState(1);
 
   
   store.dispatch(Actions.toggleNetworkDetails());
   const detailsPanelToggleButton = document.querySelector(".sidebar-toggle");
-  
-  await waitForRequestData(store, ["requestHeaders", "responseHeaders"]);
-
   ok(
     detailsPanelToggleButton &&
       !detailsPanelToggleButton.classList.contains("pane-collapsed"),
@@ -90,13 +50,9 @@ add_task(async function() {
   );
 
   
-  waitRequestListCleared = waitForEmptyRequestList(document);
   EventUtils.sendMouseEvent({ type: "click" }, clearButton);
-  await waitRequestListCleared;
 
   assertNoRequestState();
-  assertNetworkEventResourceState(0);
-
   ok(
     !document.querySelector(".network-details-bar"),
     "The details pane should not be visible clicking 'clear'."
@@ -124,22 +80,5 @@ add_task(async function() {
       0,
       "The request menu should be empty at this point."
     );
-  }
-
-  function assertNetworkEventResourceState(expectedNoOfNetworkEventResources) {
-    const actualNoOfNetworkEventResources = toolbox.resourceCommand.getAllResources(
-      toolbox.resourceCommand.TYPES.NETWORK_EVENT
-    ).length;
-
-    is(
-      actualNoOfNetworkEventResources,
-      expectedNoOfNetworkEventResources,
-      `The expected number of network resources is correctly ${actualNoOfNetworkEventResources}`
-    );
-  }
-
-  function waitForEmptyRequestList(doc) {
-    info("Wait for request list to clear");
-    return waitFor(() => !!doc.querySelector(".request-list-empty-notice"));
   }
 });
