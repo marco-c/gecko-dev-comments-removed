@@ -88,8 +88,6 @@ namespace rtc {
 
 
 
-
-
 enum LoggingSeverity {
   LS_VERBOSE,
   LS_INFO,
