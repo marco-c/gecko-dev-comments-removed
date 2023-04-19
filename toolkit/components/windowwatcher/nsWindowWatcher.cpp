@@ -679,6 +679,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       parentOuterWin ? parentOuterWin->GetBrowsingContext() : nullptr);
   nsCOMPtr<nsIDocShell> parentDocShell(parentBC ? parentBC->GetDocShell()
                                                 : nullptr);
+  RefPtr<Document> parentDoc(parentOuterWin ? parentOuterWin->GetDoc()
+                                            : nullptr);
+  nsCOMPtr<nsPIDOMWindowInner> parentInnerWin(
+      parentOuterWin ? parentOuterWin->GetCurrentInnerWindow() : nullptr);
 
   
   
@@ -715,8 +719,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   bool hasChromeParent = !XRE_IsContentProcess();
   if (aParent) {
     
-    Document* doc = parentOuterWin->GetDoc();
-    hasChromeParent = doc && nsContentUtils::IsChromeDoc(doc);
+    hasChromeParent = parentDoc && nsContentUtils::IsChromeDoc(parentDoc);
   }
 
   bool isCallerChrome = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
@@ -892,22 +895,20 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
     
     
-    if (aParent) {
-      if (Document* doc = parentOuterWin->GetDoc()) {
-        
-        activeDocsSandboxFlags = doc->GetSandboxFlags();
+    if (parentDoc) {
+      
+      activeDocsSandboxFlags = parentDoc->GetSandboxFlags();
 
-        if (!aForceNoOpener) {
-          cspToInheritForAboutBlank = doc->GetCsp();
-          coepToInheritForAboutBlank = doc->GetEmbedderPolicy();
-        }
+      if (!aForceNoOpener) {
+        cspToInheritForAboutBlank = parentDoc->GetCsp();
+        coepToInheritForAboutBlank = parentDoc->GetEmbedderPolicy();
+      }
 
-        
-        
-        if (aPrintKind == PRINT_NONE &&
-            (activeDocsSandboxFlags & SANDBOXED_AUXILIARY_NAVIGATION)) {
-          return NS_ERROR_DOM_INVALID_ACCESS_ERR;
-        }
+      
+      
+      if (aPrintKind == PRINT_NONE &&
+          (activeDocsSandboxFlags & SANDBOXED_AUXILIARY_NAVIGATION)) {
+        return NS_ERROR_DOM_INVALID_ACCESS_ERR;
       }
     }
 
@@ -1214,6 +1215,26 @@ nsresult nsWindowWatcher::OpenWindowInternal(
         }
       }
     }
+
+    
+    
+    if (!aForceNoOpener && subjectPrincipal && parentDocShell &&
+        targetDocShell) {
+      const RefPtr<SessionStorageManager> parentStorageManager =
+          parentDocShell->GetBrowsingContext()->GetSessionStorageManager();
+      const RefPtr<SessionStorageManager> newStorageManager =
+          targetDocShell->GetBrowsingContext()->GetSessionStorageManager();
+
+      if (parentStorageManager && newStorageManager) {
+        RefPtr<Storage> storage;
+        parentStorageManager->GetStorage(
+            parentInnerWin, subjectPrincipal, subjectPrincipal,
+            targetBC->UsePrivateBrowsing(), getter_AddRefs(storage));
+        if (storage) {
+          newStorageManager->CloneStorage(storage);
+        }
+      }
+    }
   }
 
   
@@ -1225,9 +1246,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       targetBC->UseRemoteSubframes() ==
       !!(chromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW));
 
-  nsCOMPtr<nsPIDOMWindowInner> parentInnerWin =
-      parentOuterWin ? parentOuterWin->GetCurrentInnerWindow() : nullptr;
-  ;
   RefPtr<nsDocShellLoadState> loadState = aLoadState;
   if (uriToLoad && loadState) {
     
@@ -1262,8 +1280,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
 
       RefPtr<Document> doc = GetEntryDocument();
-      if (!doc && parentOuterWin) {
-        doc = parentOuterWin->GetExtantDoc();
+      if (!doc) {
+        doc = parentDoc;
       }
       if (doc) {
         auto referrerInfo = MakeRefPtr<ReferrerInfo>(*doc);
@@ -1341,25 +1359,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
     
     targetBC->LoadURI(loadState);
-  }
-
-  
-  
-  if (!aForceNoOpener && subjectPrincipal && parentDocShell && targetDocShell) {
-    const RefPtr<SessionStorageManager> parentStorageManager =
-        parentDocShell->GetBrowsingContext()->GetSessionStorageManager();
-    const RefPtr<SessionStorageManager> newStorageManager =
-        targetDocShell->GetBrowsingContext()->GetSessionStorageManager();
-
-    if (parentStorageManager && newStorageManager) {
-      RefPtr<Storage> storage;
-      parentStorageManager->GetStorage(
-          parentInnerWin, subjectPrincipal, subjectPrincipal,
-          targetBC->UsePrivateBrowsing(), getter_AddRefs(storage));
-      if (storage) {
-        newStorageManager->CloneStorage(storage);
-      }
-    }
   }
 
   if (isNewToplevelWindow) {
