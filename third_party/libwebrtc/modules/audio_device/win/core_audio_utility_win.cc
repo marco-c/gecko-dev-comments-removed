@@ -323,7 +323,7 @@ ComPtr<IMMDevice> CreateDeviceInternal(const std::string& device_id,
 
   
   
-  if (SUCCEEDED(error.Error()) && !audio_endpoint_device.Get() &&
+  if (SUCCEEDED(error.Error()) && audio_endpoint_device.Get() &&
       !IsDeviceActive(audio_endpoint_device.Get())) {
     RTC_LOG(LS_WARNING) << "Selected endpoint device is not active";
     audio_endpoint_device.Reset();
