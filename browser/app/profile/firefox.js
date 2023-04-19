@@ -1247,13 +1247,6 @@ pref("browser.bookmarks.editDialog.delayedApply.enabled", false);
   
   
   pref("security.sandbox.content.level", 6);
-
-  
-  
-  
-  
-  
-  pref("security.sandbox.gpu.level", 0);
 #endif
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
