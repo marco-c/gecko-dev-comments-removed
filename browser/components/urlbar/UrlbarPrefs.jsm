@@ -107,7 +107,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   
-  ["dnsResolveSingleWordsAfterSearch", 1],
+  ["dnsResolveSingleWordsAfterSearch", 0],
 
   
   ["eventTelemetry.enabled", false],
