@@ -162,8 +162,7 @@ class CertVerifier {
        KeySizeStatus* keySizeStatus = nullptr,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
        CertificateTransparencyInfo* ctInfo = nullptr,
-       bool* isBuiltChainRootBuiltInRoot = nullptr,
-       bool* madeOCSPRequests = nullptr);
+       bool* isBuiltChainRootBuiltInRoot = nullptr);
 
   mozilla::pkix::Result VerifySSLServerCert(
       const nsTArray<uint8_t>& peerCert, mozilla::pkix::Time time, void* pinarg,
@@ -183,8 +182,7 @@ class CertVerifier {
        KeySizeStatus* keySizeStatus = nullptr,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
        CertificateTransparencyInfo* ctInfo = nullptr,
-       bool* isBuiltChainRootBuiltInRoot = nullptr,
-       bool* madeOCSPRequests = nullptr);
+       bool* isBuiltChainRootBuiltInRoot = nullptr);
 
   enum OcspDownloadConfig { ocspOff = 0, ocspOn = 1, ocspEVOnly = 2 };
   enum OcspStrictConfig { ocspRelaxed = 0, ocspStrict };

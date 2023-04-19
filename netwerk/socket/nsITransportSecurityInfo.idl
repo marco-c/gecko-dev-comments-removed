@@ -83,19 +83,6 @@ interface nsITransportSecurityInfo : nsISupports {
     
 
 
- 
-    [must_use]
-    readonly attribute boolean madeOCSPRequests;
-
-    
-
- 
-    [must_use]
-    readonly attribute boolean usedPrivateDNS;
-
-    
-
-
 
     [must_use]
     readonly attribute boolean isExtendedValidation;
