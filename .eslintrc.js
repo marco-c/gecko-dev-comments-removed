@@ -8,6 +8,7 @@ const xpcshellTestConfig = require("eslint-plugin-mozilla/lib/configs/xpcshell-t
 const browserTestConfig = require("eslint-plugin-mozilla/lib/configs/browser-test.js");
 const mochitestTestConfig = require("eslint-plugin-mozilla/lib/configs/mochitest-test.js");
 const chromeTestConfig = require("eslint-plugin-mozilla/lib/configs/chrome-test.js");
+const { testPaths } = require("./.eslintrc-test-paths.js");
 const fs = require("fs");
 const path = require("path");
 
@@ -20,33 +21,6 @@ function removeOverrides(config) {
   delete config.overrides;
   return config;
 }
-
-
-
-
-
-
-const xpcshellTestPaths = [
-  "**/test*/unit*/**/",
-  "**/test*/*/unit*/",
-  "**/test*/xpcshell/**/",
-  
-  "testing/xpcshell/example/unit/",
-];
-
-const browserTestPaths = ["**/test*/**/browser*/"];
-
-const mochitestTestPaths = [
-  
-  
-  "**/test/mochitest/",
-  "**/tests/mochitest/",
-  "**/test/mochitests/",
-  "testing/mochitest/tests/SimpleTest/",
-  "testing/mochitest/tests/Harness_sanity/",
-];
-
-const chromeTestPaths = ["**/test*/chrome/"];
 
 const ignorePatterns = [
   ...fs
@@ -155,7 +129,7 @@ module.exports = {
     },
     {
       ...removeOverrides(xpcshellTestConfig),
-      files: xpcshellTestPaths.map(path => `${path}**`),
+      files: testPaths.xpcshell.map(path => `${path}**`),
       excludedFiles: "devtools/**",
     },
     {
@@ -163,7 +137,7 @@ module.exports = {
       
       
       
-      files: xpcshellTestPaths.map(path => `${path}head*.js`),
+      files: testPaths.xpcshell.map(path => `${path}head*.js`),
       rules: {
         "no-unused-vars": [
           "error",
@@ -181,7 +155,7 @@ module.exports = {
       
       
       
-      files: xpcshellTestPaths.map(path => `${path}test*.js`),
+      files: testPaths.xpcshell.map(path => `${path}test*.js`),
       rules: {
         
         "no-unused-vars": [
@@ -197,7 +171,7 @@ module.exports = {
       
       
       
-      files: xpcshellTestPaths.map(path => `${path}test*.js`),
+      files: testPaths.xpcshell.map(path => `${path}test*.js`),
       excludedFiles: [
         
         
@@ -235,16 +209,16 @@ module.exports = {
     },
     {
       ...browserTestConfig,
-      files: browserTestPaths.map(path => `${path}**`),
+      files: testPaths.browser.map(path => `${path}**`),
     },
     {
       ...removeOverrides(mochitestTestConfig),
-      files: mochitestTestPaths.map(path => `${path}**`),
+      files: testPaths.mochitest.map(path => `${path}**`),
       excludedFiles: ["security/manager/ssl/tests/mochitest/browser/**"],
     },
     {
       ...removeOverrides(chromeTestConfig),
-      files: chromeTestPaths.map(path => `${path}**`),
+      files: testPaths.chrome.map(path => `${path}**`),
     },
     {
       env: {
@@ -254,8 +228,8 @@ module.exports = {
         "mozilla/simpletest": true,
       },
       files: [
-        ...mochitestTestPaths.map(path => `${path}/**/*.js`),
-        ...chromeTestPaths.map(path => `${path}/**/*.js`),
+        ...testPaths.mochitest.map(path => `${path}/**/*.js`),
+        ...testPaths.chrome.map(path => `${path}/**/*.js`),
       ],
     },
     {
