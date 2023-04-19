@@ -471,7 +471,9 @@ TabTracker.prototype = {
     this.modified = false;
   },
 
-  _topics: ["TabOpen", "TabClose", "TabSelect"],
+  
+  
+  _topics: ["TabOpen", "TabClose"],
 
   _registerListenersForWindow(window) {
     this._log.trace("Registering tab listeners in window");
@@ -540,9 +542,29 @@ TabTracker.prototype = {
         return;
       }
     }
-
     this._log.trace("onTab event: " + event.type);
-    this.callScheduleSync(SCORE_INCREMENT_SMALL);
+
+    switch (event.type) {
+      case "TabOpen":
+        
+
+
+
+        this.callScheduleSync(SCORE_INCREMENT_SMALL);
+        break;
+      case "TabClose":
+        
+        
+        const tab = event.target.linkedBrowser || event.target;
+
+        
+        
+        if (lazy.TABS_FILTERED_SCHEMES.has(tab.currentURI.scheme)) {
+          return;
+        }
+        this.callScheduleSync(SCORE_INCREMENT_SMALL);
+        break;
+    }
   },
 
   
@@ -551,6 +573,7 @@ TabTracker.prototype = {
     
     if (
       flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT ||
+      flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD ||
       !webProgress.isTopLevel ||
       !locationURI
     ) {

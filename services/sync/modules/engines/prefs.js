@@ -141,7 +141,7 @@ PrefsEngine.prototype = {
 
 
 
-const UNSYNCABLE_URL_REGEXP = /^(moz-extension|blob):/i;
+const UNSYNCABLE_URL_REGEXP = /^(moz-extension|blob|data|file):/i;
 function isUnsyncableURLPref(prefName) {
   if (Services.prefs.getPrefType(prefName) != Ci.nsIPrefBranch.PREF_STRING) {
     return false;
