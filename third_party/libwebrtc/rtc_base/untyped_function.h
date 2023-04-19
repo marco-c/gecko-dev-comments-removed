@@ -24,10 +24,14 @@ namespace webrtc_function_impl {
 
 using FunVoid = void();
 
+
+enum : size_t { kInlineStorageWords = 4 };
+
 union VoidUnion {
   void* void_ptr;
   FunVoid* fun_ptr;
-  typename std::aligned_storage<4 * sizeof(uintptr_t)>::type inline_storage;
+  typename std::aligned_storage<kInlineStorageWords * sizeof(uintptr_t)>::type
+      inline_storage;
 };
 
 
@@ -76,6 +80,16 @@ class UntypedFunction final {
  public:
   
   
+  enum : size_t {
+    kInlineStorageSize = sizeof(webrtc_function_impl::VoidUnion::inline_storage)
+  };
+  static_assert(kInlineStorageSize ==
+                    webrtc_function_impl::kInlineStorageWords *
+                        sizeof(uintptr_t),
+                "");
+
+  
+  
   
   
   
@@ -85,6 +99,8 @@ class UntypedFunction final {
   
   template <size_t N>
   struct TrivialUntypedFunctionArgs {
+    static_assert(N >= 1, "");
+    static_assert(N <= webrtc_function_impl::kInlineStorageWords, "");
     
     
     
@@ -126,12 +142,9 @@ class UntypedFunction final {
                         typename std::remove_cv<F_deref>::type>::value &&
 
           
-          
           std::is_trivially_move_constructible<F_deref>::value &&
           std::is_trivially_destructible<F_deref>::value &&
-          sizeof(F_deref) <=
-              sizeof(webrtc_function_impl::VoidUnion::inline_storage)>::type* =
-          nullptr,
+          sizeof(F_deref) <= kInlineStorageSize>::type* = nullptr,
       size_t InlineSize = webrtc_function_impl::InlineStorageSize<F_deref>()>
   static TrivialUntypedFunctionArgs<InlineSize> PrepareArgs(F&& f) {
     
@@ -154,30 +167,29 @@ class UntypedFunction final {
   
   
   
-  template <
-      typename Signature,
-      typename F,
-      typename F_deref = typename std::remove_reference<F>::type,
-      typename std::enable_if<
-          
-          !std::is_function<
-              typename std::remove_pointer<F_deref>::type>::value &&
+  template <typename Signature,
+            typename F,
+            typename F_deref = typename std::remove_reference<F>::type,
+            typename std::enable_if<
+                
+                
+                !std::is_function<
+                    typename std::remove_pointer<F_deref>::type>::value &&
 
-          
-          !std::is_same<std::nullptr_t,
-                        typename std::remove_cv<F>::type>::value &&
+                
+                !std::is_same<std::nullptr_t,
+                              typename std::remove_cv<F>::type>::value &&
 
-          
-          
-          !std::is_same<UntypedFunction,
-                        typename std::remove_cv<F_deref>::type>::value &&
+                
+                
+                !std::is_same<UntypedFunction,
+                              typename std::remove_cv<F_deref>::type>::value &&
 
-          
-          
-          !(std::is_trivially_move_constructible<F_deref>::value &&
-            std::is_trivially_destructible<F_deref>::value &&
-            sizeof(F_deref) <= sizeof(webrtc_function_impl::VoidUnion::
-                                          inline_storage))>::type* = nullptr>
+                
+                
+                !(std::is_trivially_move_constructible<F_deref>::value &&
+                  std::is_trivially_destructible<F_deref>::value &&
+                  sizeof(F_deref) <= kInlineStorageSize)>::type* = nullptr>
   static NontrivialUntypedFunctionArgs PrepareArgs(F&& f) {
     
     
