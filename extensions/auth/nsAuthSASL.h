@@ -9,7 +9,6 @@
 #include "nsIAuthModule.h"
 #include "nsString.h"
 #include "nsCOMPtr.h"
-#include "mozilla/Attributes.h"
 
 
 
