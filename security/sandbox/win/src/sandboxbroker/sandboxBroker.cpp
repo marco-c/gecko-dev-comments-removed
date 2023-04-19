@@ -566,6 +566,26 @@ static bool CanUseJob() {
   return false;
 }
 
+
+
+
+
+
+
+
+static sandbox::MitigationFlags DynamicCodeFlagForSystemMediaLibraries() {
+  static auto dynamicCodeFlag = []() {
+#ifdef _M_X64
+    if (IsWin10CreatorsUpdateOrLater()) {
+      return sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
+    }
+#endif  
+
+    return sandbox::MitigationFlags{};
+  }();
+  return dynamicCodeFlag;
+}
+
 static sandbox::ResultCode SetJobLevel(sandbox::TargetPolicy* aPolicy,
                                        sandbox::JobLevel aJobLevel,
                                        uint32_t aUiExceptions) {
@@ -1359,26 +1379,18 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
 
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                 sandbox::MITIGATION_DLL_SEARCH_ORDER;
-  
-  
-  
-  
-  
-  
-  
-  if (aSandbox != mozilla::ipc::SandboxingKind::UTILITY_AUDIO_DECODING_WMF
+
+  if (aSandbox == mozilla::ipc::SandboxingKind::UTILITY_AUDIO_DECODING_WMF) {
+    
+    mitigations |= DynamicCodeFlagForSystemMediaLibraries();
+  }
 #ifdef MOZ_WMF_MEDIA_ENGINE
-      && aSandbox != mozilla::ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM
-#endif
-  ) {
-    mitigations |= sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
-  } else {
-    if (IsWin10CreatorsUpdateOrLater() &&
-        aSandbox == mozilla::ipc::SandboxingKind::UTILITY_AUDIO_DECODING_WMF) {
-#if defined(_M_X64)
-      mitigations |= sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
+  
+  else if (aSandbox == mozilla::ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM) {
+  }
 #endif  
-    }
+  else {
+    mitigations |= sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
   }
 
   if (exceptionModules.isNothing()) {
