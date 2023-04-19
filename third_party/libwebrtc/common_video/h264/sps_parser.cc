@@ -14,16 +14,9 @@
 #include <vector>
 
 #include "common_video/h264/h264_common.h"
-#include "rtc_base/bit_buffer.h"
+#include "rtc_base/bitstream_reader.h"
 
 namespace {
-typedef absl::optional<webrtc::SpsParser::SpsState> OptionalSps;
-
-#define RETURN_EMPTY_ON_FAIL(x) \
-  if (!(x)) {                   \
-    return OptionalSps();       \
-  }
-
 constexpr int kScalingDeltaMin = -128;
 constexpr int kScaldingDeltaMax = 127;
 }  
@@ -42,12 +35,12 @@ SpsParser::SpsState::~SpsState() = default;
 absl::optional<SpsParser::SpsState> SpsParser::ParseSps(const uint8_t* data,
                                                         size_t length) {
   std::vector<uint8_t> unpacked_buffer = H264::ParseRbsp(data, length);
-  rtc::BitBuffer bit_buffer(unpacked_buffer.data(), unpacked_buffer.size());
-  return ParseSpsUpToVui(&bit_buffer);
+  BitstreamReader reader(unpacked_buffer);
+  return ParseSpsUpToVui(reader);
 }
 
 absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
-    rtc::BitBuffer* buffer) {
+    BitstreamReader& reader) {
   
   
   
@@ -62,23 +55,17 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
   SpsState sps;
 
   
-  uint32_t golomb_ignored;
-
-  
   
   uint32_t chroma_format_idc = 1;
 
   
   
-  uint8_t profile_idc;
-  RETURN_EMPTY_ON_FAIL(buffer->ReadUInt8(profile_idc));
+  uint8_t profile_idc = reader.Read<uint8_t>();
   
   
-  RETURN_EMPTY_ON_FAIL(buffer->ConsumeBytes(1));
+  reader.ConsumeBits(16);
   
-  RETURN_EMPTY_ON_FAIL(buffer->ConsumeBytes(1));
-  
-  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(sps.id));
+  sps.id = reader.ReadExponentialGolomb();
   sps.separate_colour_plane_flag = 0;
   
   if (profile_idc == 100 || profile_idc == 110 || profile_idc == 122 ||
@@ -86,42 +73,37 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
       profile_idc == 86 || profile_idc == 118 || profile_idc == 128 ||
       profile_idc == 138 || profile_idc == 139 || profile_idc == 134) {
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(chroma_format_idc));
+    chroma_format_idc = reader.ReadExponentialGolomb();
     if (chroma_format_idc == 3) {
       
-      RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, sps.separate_colour_plane_flag));
+      sps.separate_colour_plane_flag = reader.ReadBit();
     }
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
+    reader.ReadExponentialGolomb();
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
+    reader.ReadExponentialGolomb();
     
-    RETURN_EMPTY_ON_FAIL(buffer->ConsumeBits(1));
+    reader.ConsumeBits(1);
     
-    uint32_t seq_scaling_matrix_present_flag;
-    RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, seq_scaling_matrix_present_flag));
-    if (seq_scaling_matrix_present_flag) {
+    if (reader.Read<bool>()) {
       
       
       
       int scaling_list_count = (chroma_format_idc == 3 ? 12 : 8);
       for (int i = 0; i < scaling_list_count; ++i) {
         
-        uint32_t seq_scaling_list_present_flags;
-        RETURN_EMPTY_ON_FAIL(
-            buffer->ReadBits(1, seq_scaling_list_present_flags));
-        if (seq_scaling_list_present_flags != 0) {
+        if (reader.Read<bool>()) {
           int last_scale = 8;
           int next_scale = 8;
           int size_of_scaling_list = i < 6 ? 16 : 64;
           for (int j = 0; j < size_of_scaling_list; j++) {
             if (next_scale != 0) {
-              int32_t delta_scale;
               
-              RETURN_EMPTY_ON_FAIL(
-                  buffer->ReadSignedExponentialGolomb(delta_scale));
-              RETURN_EMPTY_ON_FAIL(delta_scale >= kScalingDeltaMin &&
-                                   delta_scale <= kScaldingDeltaMax);
+              int delta_scale = reader.ReadSignedExponentialGolomb();
+              if (!reader.Ok() || delta_scale < kScalingDeltaMin ||
+                  delta_scale > kScaldingDeltaMax) {
+                return absl::nullopt;
+              }
               next_scale = (last_scale + delta_scale + 256) % 256;
             }
             if (next_scale != 0)
@@ -138,93 +120,85 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
   const uint32_t kMaxLog2Minus4 = 32 - 4;
 
   
-  uint32_t log2_max_frame_num_minus4;
-  if (!buffer->ReadExponentialGolomb(log2_max_frame_num_minus4) ||
-      log2_max_frame_num_minus4 > kMaxLog2Minus4) {
-    return OptionalSps();
+  uint32_t log2_max_frame_num_minus4 = reader.ReadExponentialGolomb();
+  if (!reader.Ok() || log2_max_frame_num_minus4 > kMaxLog2Minus4) {
+    return absl::nullopt;
   }
   sps.log2_max_frame_num = log2_max_frame_num_minus4 + 4;
 
   
-  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(sps.pic_order_cnt_type));
+  sps.pic_order_cnt_type = reader.ReadExponentialGolomb();
   if (sps.pic_order_cnt_type == 0) {
     
-    uint32_t log2_max_pic_order_cnt_lsb_minus4;
-    if (!buffer->ReadExponentialGolomb(log2_max_pic_order_cnt_lsb_minus4) ||
-        log2_max_pic_order_cnt_lsb_minus4 > kMaxLog2Minus4) {
-      return OptionalSps();
+    uint32_t log2_max_pic_order_cnt_lsb_minus4 = reader.ReadExponentialGolomb();
+    if (!reader.Ok() || log2_max_pic_order_cnt_lsb_minus4 > kMaxLog2Minus4) {
+      return absl::nullopt;
     }
     sps.log2_max_pic_order_cnt_lsb = log2_max_pic_order_cnt_lsb_minus4 + 4;
   } else if (sps.pic_order_cnt_type == 1) {
     
-    RETURN_EMPTY_ON_FAIL(
-        buffer->ReadBits(1, sps.delta_pic_order_always_zero_flag));
+    sps.delta_pic_order_always_zero_flag = reader.ReadBit();
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
+    reader.ReadExponentialGolomb();
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
+    reader.ReadExponentialGolomb();
     
-    uint32_t num_ref_frames_in_pic_order_cnt_cycle;
-    RETURN_EMPTY_ON_FAIL(
-        buffer->ReadExponentialGolomb(num_ref_frames_in_pic_order_cnt_cycle));
+    uint32_t num_ref_frames_in_pic_order_cnt_cycle =
+        reader.ReadExponentialGolomb();
     for (size_t i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; ++i) {
       
-      RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(golomb_ignored));
+      reader.ReadExponentialGolomb();
+      if (!reader.Ok()) {
+        return absl::nullopt;
+      }
     }
   }
   
-  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(sps.max_num_ref_frames));
+  sps.max_num_ref_frames = reader.ReadExponentialGolomb();
   
-  RETURN_EMPTY_ON_FAIL(buffer->ConsumeBits(1));
-  
-  
+  reader.ConsumeBits(1);
   
   
   
   
   
-  uint32_t pic_width_in_mbs_minus1;
-  RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(pic_width_in_mbs_minus1));
   
-  uint32_t pic_height_in_map_units_minus1;
-  RETURN_EMPTY_ON_FAIL(
-      buffer->ReadExponentialGolomb(pic_height_in_map_units_minus1));
   
-  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, sps.frame_mbs_only_flag));
+  sps.width = 16 * (reader.ReadExponentialGolomb() + 1);
+  
+  uint32_t pic_height_in_map_units_minus1 = reader.ReadExponentialGolomb();
+  
+  sps.frame_mbs_only_flag = reader.ReadBit();
   if (!sps.frame_mbs_only_flag) {
     
-    RETURN_EMPTY_ON_FAIL(buffer->ConsumeBits(1));
+    reader.ConsumeBits(1);
   }
+  sps.height =
+      16 * (2 - sps.frame_mbs_only_flag) * (pic_height_in_map_units_minus1 + 1);
   
-  RETURN_EMPTY_ON_FAIL(buffer->ConsumeBits(1));
+  reader.ConsumeBits(1);
   
   
   
-  
-  uint32_t frame_cropping_flag;
   uint32_t frame_crop_left_offset = 0;
   uint32_t frame_crop_right_offset = 0;
   uint32_t frame_crop_top_offset = 0;
   uint32_t frame_crop_bottom_offset = 0;
-  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, frame_cropping_flag));
-  if (frame_cropping_flag) {
+  
+  if (reader.Read<bool>()) {
     
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(frame_crop_left_offset));
-    RETURN_EMPTY_ON_FAIL(
-        buffer->ReadExponentialGolomb(frame_crop_right_offset));
-    RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(frame_crop_top_offset));
-    RETURN_EMPTY_ON_FAIL(
-        buffer->ReadExponentialGolomb(frame_crop_bottom_offset));
+    frame_crop_left_offset = reader.ReadExponentialGolomb();
+    frame_crop_right_offset = reader.ReadExponentialGolomb();
+    frame_crop_top_offset = reader.ReadExponentialGolomb();
+    frame_crop_bottom_offset = reader.ReadExponentialGolomb();
   }
   
-  RETURN_EMPTY_ON_FAIL(buffer->ReadBits(1, sps.vui_params_present));
+  sps.vui_params_present = reader.ReadBit();
 
   
-
-  
-  sps.width = 16 * (pic_width_in_mbs_minus1 + 1);
-  sps.height =
-      16 * (2 - sps.frame_mbs_only_flag) * (pic_height_in_map_units_minus1 + 1);
+  if (!reader.Ok()) {
+    return absl::nullopt;
+  }
 
   
   
@@ -247,7 +221,7 @@ absl::optional<SpsParser::SpsState> SpsParser::ParseSpsUpToVui(
   sps.width -= (frame_crop_left_offset + frame_crop_right_offset);
   sps.height -= (frame_crop_top_offset + frame_crop_bottom_offset);
 
-  return OptionalSps(sps);
+  return sps;
 }
 
 }  
