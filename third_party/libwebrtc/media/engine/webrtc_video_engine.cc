@@ -110,12 +110,30 @@ void AddDefaultFeedbackParams(VideoCodec* codec,
 
 
 
-std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
-    std::vector<webrtc::SdpVideoFormat> input_formats,
-    const webrtc::WebRtcKeyValueConfig& trials,
-    bool is_decoder_factory) {
-  if (input_formats.empty())
+
+
+
+
+
+
+template <class T>
+std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
+    const T* factory,
+    bool is_decoder_factory,
+    const webrtc::WebRtcKeyValueConfig& trials) {
+  if (!factory) {
+    return {};
+  }
+
+  std::vector<webrtc::SdpVideoFormat> supported_formats =
+      factory->GetSupportedFormats();
+  if (is_decoder_factory) {
+    AddH264ConstrainedBaselineProfileToSupportedFormats(&supported_formats);
+  }
+
+  if (supported_formats.empty())
     return std::vector<VideoCodec>();
+
   
   
   static const int kFirstDynamicPayloadTypeLowerRange = 35;
@@ -126,8 +144,8 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
   int payload_type_upper = kFirstDynamicPayloadTypeUpperRange;
   int payload_type_lower = kFirstDynamicPayloadTypeLowerRange;
 
-  input_formats.push_back(webrtc::SdpVideoFormat(kRedCodecName));
-  input_formats.push_back(webrtc::SdpVideoFormat(kUlpfecCodecName));
+  supported_formats.push_back(webrtc::SdpVideoFormat(kRedCodecName));
+  supported_formats.push_back(webrtc::SdpVideoFormat(kUlpfecCodecName));
 
   
   
@@ -142,11 +160,11 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
     
     
     flexfec_format.parameters = {{kFlexfecFmtpRepairWindow, "10000000"}};
-    input_formats.push_back(flexfec_format);
+    supported_formats.push_back(flexfec_format);
   }
 
   std::vector<VideoCodec> output_codecs;
-  for (const webrtc::SdpVideoFormat& format : input_formats) {
+  for (const webrtc::SdpVideoFormat& format : supported_formats) {
     VideoCodec codec(format);
     bool isCodecValidForLowerRange =
         absl::EqualsIgnoreCase(codec.name, kFlexfecCodecName);
@@ -201,31 +219,6 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
     }
   }
   return output_codecs;
-}
-
-
-
-
-
-
-
-template <class T>
-std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
-    const T* factory,
-    bool is_decoder_factory,
-    const webrtc::WebRtcKeyValueConfig& trials) {
-  if (!factory) {
-    return {};
-  }
-
-  std::vector<webrtc::SdpVideoFormat> supported_formats =
-      factory->GetSupportedFormats();
-  if (is_decoder_factory) {
-    AddH264ConstrainedBaselineProfileToSupportedFormats(&supported_formats);
-  }
-
-  return AssignPayloadTypesAndDefaultCodecs(std::move(supported_formats),
-                                            trials, is_decoder_factory);
 }
 
 bool IsTemporalLayersSupported(const std::string& codec_name) {
