@@ -4695,12 +4695,7 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
       }
     }
 
-    result = ConvertStatus(DispatchInputEvent(&event).mContentStatus);
-
-    
-    
-    
-    return result;
+    return ConvertStatus(DispatchInputEvent(&event).mContentStatus);
   }
 
   return result;
