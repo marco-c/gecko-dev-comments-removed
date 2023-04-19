@@ -647,8 +647,9 @@ class TenuredChunk : public TenuredChunkBase {
   
   void decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock);
 
-  static TenuredChunk* allocate(GCRuntime* gc);
-  void init(GCRuntime* gc, bool allMemoryCommitted);
+  static void* allocate(GCRuntime* gc);
+  static TenuredChunk* emplace(void* ptr, GCRuntime* gc,
+                               bool allMemoryCommitted);
 
   
   Arena* fetchNextFreeArena(GCRuntime* gc);

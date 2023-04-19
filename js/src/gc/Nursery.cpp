@@ -172,8 +172,9 @@ void js::NurseryDecommitTask::run(AutoLockHelperThreadState& lock) {
   while (!chunksToDecommit().empty()) {
     NurseryChunk* nurseryChunk = chunksToDecommit().popCopy();
     AutoUnlockHelperThreadState unlock(lock);
-    auto* tenuredChunk = reinterpret_cast<TenuredChunk*>(nurseryChunk);
-    tenuredChunk->init(gc,  false);
+    nurseryChunk->~NurseryChunk();
+    TenuredChunk* tenuredChunk = TenuredChunk::emplace(
+        nurseryChunk, gc,  false);
     AutoLockGC lock(gc);
     gc->recycleChunk(tenuredChunk, lock);
   }

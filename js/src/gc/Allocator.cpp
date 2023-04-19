@@ -726,12 +726,12 @@ TenuredChunk* GCRuntime::getOrAllocChunk(AutoLockGCBgAlloc& lock) {
     chunk->initBase(rt, nullptr);
     MOZ_ASSERT(chunk->unused());
   } else {
-    chunk = TenuredChunk::allocate(this);
-    if (!chunk) {
+    void* ptr = TenuredChunk::allocate(this);
+    if (!ptr) {
       return nullptr;
     }
 
-    chunk->init(this,  true);
+    chunk = TenuredChunk::emplace(ptr, this,  true);
     MOZ_ASSERT(chunk->info.numArenasFreeCommitted == 0);
   }
 
@@ -792,25 +792,25 @@ void BackgroundAllocTask::run(AutoLockHelperThreadState& lock) {
     TenuredChunk* chunk;
     {
       AutoUnlockGC unlock(gcLock);
-      chunk = TenuredChunk::allocate(gc);
-      if (!chunk) {
+      void* ptr = TenuredChunk::allocate(gc);
+      if (!ptr) {
         break;
       }
-      chunk->init(gc,  true);
+      chunk = TenuredChunk::emplace(ptr, gc,  true);
     }
     chunkPool_.ref().push(chunk);
   }
 }
 
 
-TenuredChunk* TenuredChunk::allocate(GCRuntime* gc) {
+void* TenuredChunk::allocate(GCRuntime* gc) {
   void* chunk = MapAlignedPages(ChunkSize, ChunkSize);
   if (!chunk) {
     return nullptr;
   }
 
   gc->stats().count(gcstats::COUNT_NEW_CHUNK);
-  return static_cast<TenuredChunk*>(chunk);
+  return chunk;
 }
 
 static inline bool ShouldDecommitNewChunk(bool allMemoryCommitted,
@@ -822,30 +822,32 @@ static inline bool ShouldDecommitNewChunk(bool allMemoryCommitted,
   return !allMemoryCommitted || !state.inHighFrequencyGCMode();
 }
 
-void TenuredChunk::init(GCRuntime* gc, bool allMemoryCommitted) {
+TenuredChunk* TenuredChunk::emplace(void* ptr, GCRuntime* gc,
+                                    bool allMemoryCommitted) {
   
-  MOZ_MAKE_MEM_UNDEFINED(this, ChunkSize);
+  MOZ_MAKE_MEM_UNDEFINED(ptr, ChunkSize);
 
   
 
 
 
-  Poison(this, JS_FRESH_TENURED_PATTERN, ChunkSize,
-         MemCheckKind::MakeUndefined);
+  Poison(ptr, JS_FRESH_TENURED_PATTERN, ChunkSize, MemCheckKind::MakeUndefined);
 
-  new (this) TenuredChunk(gc->rt);
+  TenuredChunk* chunk = new (mozilla::KnownNotNull, ptr) TenuredChunk(gc->rt);
 
   if (ShouldDecommitNewChunk(allMemoryCommitted, gc->schedulingState)) {
     
     
-    decommitAllArenas();
+    chunk->decommitAllArenas();
   } else {
     
     
-    initAsDecommitted();
+    chunk->initAsDecommitted();
   }
 
-  verify();
+  chunk->verify();
+
+  return chunk;
 }
 
 void TenuredChunk::decommitAllArenas() {
