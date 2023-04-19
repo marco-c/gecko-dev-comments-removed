@@ -249,11 +249,7 @@ void RetransmissionQueue::HandleIncreasedCumulativeTsnAck(
       
       
       
-      if (options_.slow_start_tcp_style) {
-        cwnd_ += std::min(total_bytes_acked, cwnd_);
-      } else {
-        cwnd_ += std::min(total_bytes_acked, options_.mtu);
-      }
+      cwnd_ += std::min(total_bytes_acked, options_.mtu);
       RTC_DLOG(LS_VERBOSE) << log_prefix_ << "SS increase cwnd=" << cwnd_
                            << " (" << old_cwnd << ")";
     }

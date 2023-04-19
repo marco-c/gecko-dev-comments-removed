@@ -144,9 +144,6 @@ struct DcSctpOptions {
   DurationMs min_rtt_variance = DurationMs(220);
 
   
-  bool slow_start_tcp_style = false;
-
-  
   
   
   
