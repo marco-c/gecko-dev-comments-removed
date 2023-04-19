@@ -37,6 +37,8 @@ default_optimizations = (
     {"test-verify": list(schedules.ALL_COMPONENTS)},
     
     {"upload-symbols": None},
+    
+    {"reprocess-symbols": None},
 )
 
 OptimizationSchema = voluptuous.Any(*default_optimizations)
