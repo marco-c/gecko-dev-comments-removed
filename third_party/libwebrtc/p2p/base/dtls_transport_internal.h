@@ -117,7 +117,6 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   sigslot::signal2<DtlsTransportInternal*, DtlsTransportState> SignalDtlsState;
 
   
-  sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
   
   template <typename F>
   void SubscribeDtlsHandshakeError(F&& callback) {
