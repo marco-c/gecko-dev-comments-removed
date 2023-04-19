@@ -4777,22 +4777,26 @@ class AssemblerX86Shared : public AssemblerShared {
 
   static size_t PatchWrite_NearCallSize() { return 5; }
   static uintptr_t GetPointer(uint8_t* instPtr) {
-    uintptr_t* ptr = ((uintptr_t*)instPtr) - 1;
-    return *ptr;
+    uint8_t* ptr = instPtr - sizeof(uintptr_t);
+    return mozilla::LittleEndian::readUintptr(ptr);
   }
   
   
   static void PatchWrite_NearCall(CodeLocationLabel startLabel,
                                   CodeLocationLabel target) {
     uint8_t* start = startLabel.raw();
-    *start = 0xE8;
+    *start = 0xE8;  
     ptrdiff_t offset = target - startLabel - PatchWrite_NearCallSize();
     MOZ_ASSERT(int32_t(offset) == offset);
-    *((int32_t*)(start + 1)) = offset;
+    mozilla::LittleEndian::writeInt32(start + 1, offset);  
   }
 
   static void PatchWrite_Imm32(CodeLocationLabel dataLabel, Imm32 toWrite) {
-    *((int32_t*)dataLabel.raw() - 1) = toWrite.value;
+    
+    
+    
+    uint8_t* ptr = dataLabel.raw();
+    mozilla::LittleEndian::writeInt32(ptr - sizeof(int32_t), toWrite.value);
   }
 
   static void PatchDataWithValueCheck(CodeLocationLabel data,
@@ -4818,13 +4822,13 @@ class AssemblerX86Shared : public AssemblerShared {
   
   static void ToggleToJmp(CodeLocationLabel inst) {
     uint8_t* ptr = (uint8_t*)inst.raw();
-    MOZ_ASSERT(*ptr == 0x3D);
-    *ptr = 0xE9;
+    MOZ_ASSERT(*ptr == 0x3D);  
+    *ptr = 0xE9;               
   }
   static void ToggleToCmp(CodeLocationLabel inst) {
     uint8_t* ptr = (uint8_t*)inst.raw();
-    MOZ_ASSERT(*ptr == 0xE9);
-    *ptr = 0x3D;
+    MOZ_ASSERT(*ptr == 0xE9);  
+    *ptr = 0x3D;               
   }
   static void ToggleCall(CodeLocationLabel inst, bool enabled) {
     uint8_t* ptr = (uint8_t*)inst.raw();
