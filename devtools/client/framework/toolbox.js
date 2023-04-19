@@ -777,12 +777,17 @@ Toolbox.prototype = {
         consoleFront.off("inspectObject", this._onInspectObject);
       }
       targetFront.off("frame-update", this._updateFrames);
-      
-      
-      
-      this._resumeToolbox();
     } else if (this.selection) {
       this.selection.onTargetDestroyed(targetFront);
+    }
+
+    
+    
+    
+    
+    
+    if (targetFront.isTopLevel || targetFront.threadFront?.paused) {
+      this._resumeToolbox();
     }
 
     if (targetFront.targetForm.ignoreSubFrames) {

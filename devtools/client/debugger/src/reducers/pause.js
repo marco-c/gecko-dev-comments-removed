@@ -102,6 +102,36 @@ function update(state = initialPauseState(), action) {
       };
     }
 
+    case "REMOVE_THREAD": {
+      if (
+        action.threadActorID in state.threads ||
+        action.threadActorID == state.threadcx.thread
+      ) {
+        
+        const threads = { ...state.threads };
+        delete threads[action.threadActorID];
+        let threadcx = state.threadcx;
+
+        
+        
+        
+        
+        if (state.threadcx.thread == action.threadActorID) {
+          threadcx = {
+            ...threadcx,
+            thread: Object.keys(threads)[0],
+            pauseCounter: threadcx.pauseCounter + 1,
+          };
+        }
+        return {
+          ...state,
+          threadcx,
+          threads,
+        };
+      }
+      break;
+    }
+
     case "PAUSED": {
       const { thread, frame, why } = action;
       state = {
