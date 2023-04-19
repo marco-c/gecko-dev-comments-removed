@@ -192,41 +192,90 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   void RollbackTransports();
 
-  
-
-  
-  
-  
-  
-  CallbackList<cricket::IceConnectionState> SignalIceConnectionState;
-
-  sigslot::signal1<PeerConnectionInterface::PeerConnectionState>
-      SignalConnectionState;
-
-  sigslot::signal1<PeerConnectionInterface::IceConnectionState>
-      SignalStandardizedIceConnectionState;
-
-  
-  
-  
-  sigslot::signal1<cricket::IceGatheringState> SignalIceGatheringState;
-
-  
-  sigslot::signal2<const std::string&, const std::vector<cricket::Candidate>&>
-      SignalIceCandidatesGathered;
-
-  sigslot::signal1<const cricket::IceCandidateErrorEvent&>
-      SignalIceCandidateError;
-
-  sigslot::signal1<const std::vector<cricket::Candidate>&>
-      SignalIceCandidatesRemoved;
-
-  sigslot::signal1<const cricket::CandidatePairChangeEvent&>
-      SignalIceCandidatePairChanged;
-
   sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
 
+  
+  template <typename F>
+  void SubscribeIceCandidateGathered(F&& callback) {
+    signal_ice_candidates_gathered_.AddReceiver(std::forward<F>(callback));
+  }
+
+  
+  template <typename F>
+  void SubscribeIceConnectionState(F&& callback) {
+    signal_ice_connection_state_.AddReceiver(std::forward<F>(callback));
+  }
+
+  
+  template <typename F>
+  void SubscribeConnectionState(F&& callback) {
+    signal_connection_state_.AddReceiver(std::forward<F>(callback));
+  }
+
+  
+  template <typename F>
+  void SubscribeStandardizedIceConnectionState(F&& callback) {
+    signal_standardized_ice_connection_state_.AddReceiver(
+        std::forward<F>(callback));
+  }
+
+  
+  template <typename F>
+  void SubscribeIceGatheringState(F&& callback) {
+    signal_ice_gathering_state_.AddReceiver(std::forward<F>(callback));
+  }
+
+  
+  template <typename F>
+  void SubscribeIceCandidateError(F&& callback) {
+    signal_ice_candidate_error_.AddReceiver(std::forward<F>(callback));
+  }
+
+  
+  template <typename F>
+  void SubscribeIceCandidatesRemoved(F&& callback) {
+    signal_ice_candidates_removed_.AddReceiver(std::forward<F>(callback));
+  }
+
+  
+  template <typename F>
+  void SubscribeIceCandidatePairChanged(F&& callback) {
+    signal_ice_candidate_pair_changed_.AddReceiver(std::forward<F>(callback));
+  }
+
  private:
+  
+
+  
+  
+  
+  
+  CallbackList<cricket::IceConnectionState> signal_ice_connection_state_;
+
+  CallbackList<PeerConnectionInterface::PeerConnectionState>
+      signal_connection_state_;
+
+  CallbackList<PeerConnectionInterface::IceConnectionState>
+      signal_standardized_ice_connection_state_;
+
+  
+  
+  
+  CallbackList<cricket::IceGatheringState> signal_ice_gathering_state_;
+
+  
+  CallbackList<const std::string&, const std::vector<cricket::Candidate>&>
+      signal_ice_candidates_gathered_;
+
+  CallbackList<const cricket::IceCandidateErrorEvent&>
+      signal_ice_candidate_error_;
+
+  CallbackList<const std::vector<cricket::Candidate>&>
+      signal_ice_candidates_removed_;
+
+  CallbackList<const cricket::CandidatePairChangeEvent&>
+      signal_ice_candidate_pair_changed_;
+
   RTCError ApplyDescription_n(bool local,
                               SdpType type,
                               const cricket::SessionDescription* description)
