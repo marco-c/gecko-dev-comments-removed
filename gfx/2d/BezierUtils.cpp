@@ -291,21 +291,35 @@ Float CalculateDistanceToEllipticArc(const Point& P, const Point& normal,
   Float d = normal.y / height;
 
   Float A = b * b + d * d;
+  
+  
   Float B = a * b + c * d;
-  Float C = a * a + c * c - 1;
+  Float C = a * a + c * c - 1.0;
 
-  Float S = sqrt(B * B - A * C);
+  Float signB = 1.0;
+  if (B < 0.0) {
+    signB = -1.0;
+  }
 
-  Float n1 = -B + S;
-  Float n2 = -B - S;
+  
+  
+  
+  
+  
+  
+  
+  
+  Float S = B + signB * sqrt(B * B - A * C);
+  Float r1 = -S / A;
+  Float r2 = -C / S;
 
 #ifdef DEBUG
   Float epsilon = (Float)0.001;
-  MOZ_ASSERT(n1 >= -epsilon);
-  MOZ_ASSERT(n2 >= -epsilon);
+  MOZ_ASSERT(r1 >= -epsilon);
+  MOZ_ASSERT(r2 >= -epsilon);
 #endif
 
-  return std::max((n1 < n2 ? n1 : n2) / A, (Float)0.0);
+  return std::max((r1 < r2 ? r1 : r2), (Float)0.0);
 }
 
 }  
