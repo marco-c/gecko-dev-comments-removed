@@ -47,23 +47,49 @@ const EvaluationStatus = {
   Throw: "throw",
 };
 
+
+
+
+
+
+
+
+
+
+
+const RealmType = {
+  AudioWorklet: "audio-worklet",
+  DedicatedWorker: "dedicated-worker",
+  PaintWorklet: "paint-worklet",
+  ServiceWorker: "service-worker",
+  SharedWorker: "shared-worker",
+  Window: "window",
+  Worker: "worker",
+  Worklet: "worklet",
+};
+
+const WINDOW_GLOBAL_KEY = Symbol();
+
 class ScriptModule extends Module {
-  #global;
+  #globals;
+  #realmIds;
 
   constructor(messageHandler) {
     super(messageHandler);
 
-    this.#global = lazy.dbg.makeGlobalObjectReference(
-      this.messageHandler.window
-    );
-    lazy.dbg.enableAsyncStack(this.messageHandler.window);
+    
+    
+    this.#globals = new Map();
+    
+    this.#realmIds = new WeakMap();
   }
 
   destroy() {
-    if (this.messageHandler.window) {
-      lazy.dbg.disableAsyncStack(this.messageHandler.window);
+    for (const global of this.#globals.values()) {
+      lazy.dbg.disableAsyncStack(global.unsafeDereference());
     }
-    this.#global = null;
+    this.#globals = null;
+    this.#realmIds = null;
   }
 
   #buildExceptionDetails(exception, stack) {
@@ -93,8 +119,9 @@ class ScriptModule extends Module {
     };
   }
 
-  async #buildReturnValue(rv, awaitPromise) {
+  async #buildReturnValue(rv, awaitPromise, globalObjectReference) {
     let evaluationStatus, exception, result, stack;
+    const realm = this.#getRealm(globalObjectReference);
     if ("return" in rv) {
       evaluationStatus = EvaluationStatus.Normal;
       if (
@@ -107,10 +134,10 @@ class ScriptModule extends Module {
           
           
           const asyncResult = await rv.return.unsafeDereference();
-          result = this.#global.makeDebuggeeValue(asyncResult);
+          result = globalObjectReference.makeDebuggeeValue(asyncResult);
         } catch (asyncException) {
           evaluationStatus = EvaluationStatus.Throw;
-          exception = this.#global.makeDebuggeeValue(asyncException);
+          exception = globalObjectReference.makeDebuggeeValue(asyncException);
           stack = rv.return.promiseResolutionSite;
         }
       } else {
@@ -130,11 +157,13 @@ class ScriptModule extends Module {
         return {
           evaluationStatus,
           result: lazy.serialize(this.#toRawObject(result), 1),
+          realm,
         };
       case EvaluationStatus.Throw:
         return {
           evaluationStatus,
           exceptionDetails: this.#buildExceptionDetails(exception, stack),
+          realm,
         };
       default:
         throw new lazy.error.UnsupportedOperationError(
@@ -143,12 +172,67 @@ class ScriptModule extends Module {
     }
   }
 
-  #cloneAsDebuggerObject(obj) {
+  #buildRealmId(sandboxName) {
+    let realmId = String(this.messageHandler.innerWindowId);
+    if (sandboxName) {
+      realmId += "-sandbox-" + sandboxName;
+    }
+    return realmId;
+  }
+
+  #cloneAsDebuggerObject(obj, globalObjectReference) {
     
     
     
-    const proxyObject = Cu.cloneInto(obj, this.messageHandler.window);
-    return this.#global.makeDebuggeeValue(proxyObject);
+    const proxyObject = Cu.cloneInto(
+      obj,
+      globalObjectReference.unsafeDereference()
+    );
+    return globalObjectReference.makeDebuggeeValue(proxyObject);
+  }
+
+  #createSandbox() {
+    const win = this.messageHandler.window;
+    const opts = {
+      sameZoneAs: win,
+      sandboxPrototype: win,
+      wantComponents: false,
+      wantXrays: true,
+    };
+
+    return new Cu.Sandbox(win, opts);
+  }
+
+  #getGlobalObjectReference(sandboxName) {
+    const key = sandboxName !== null ? sandboxName : WINDOW_GLOBAL_KEY;
+    if (this.#globals.has(key)) {
+      return this.#globals.get(key);
+    }
+
+    const globalObject =
+      key == WINDOW_GLOBAL_KEY
+        ? this.messageHandler.window
+        : this.#createSandbox();
+
+    const globalObjectReference = lazy.dbg.makeGlobalObjectReference(
+      globalObject
+    );
+    lazy.dbg.enableAsyncStack(globalObject);
+
+    this.#globals.set(key, globalObjectReference);
+    this.#realmIds.set(globalObjectReference, this.#buildRealmId(sandboxName));
+
+    return globalObjectReference;
+  }
+
+  #getRealm(globalObjectReference) {
+    
+    
+    return {
+      realm: this.#realmIds.get(globalObjectReference),
+      origin: null,
+      type: RealmType.Window,
+    };
   }
 
   #toRawObject(maybeDebuggerObject) {
@@ -191,11 +275,14 @@ class ScriptModule extends Module {
 
 
 
+
+
   async callFunctionDeclaration(options) {
     const {
       awaitPromise,
       commandArguments = null,
       functionDeclaration,
+      sandbox: sandboxName = null,
       thisParameter = null,
     } = options;
 
@@ -209,18 +296,25 @@ class ScriptModule extends Module {
 
     const expression = `(${functionDeclaration}).apply(__bidi_this, __bidi_args)`;
 
-    const rv = this.#global.executeInGlobalWithBindings(
+    const globalObjectReference = this.#getGlobalObjectReference(sandboxName);
+    const rv = globalObjectReference.executeInGlobalWithBindings(
       expression,
       {
-        __bidi_args: this.#cloneAsDebuggerObject(deserializedArguments),
-        __bidi_this: this.#cloneAsDebuggerObject(deserializedThis),
+        __bidi_args: this.#cloneAsDebuggerObject(
+          deserializedArguments,
+          globalObjectReference
+        ),
+        __bidi_this: this.#cloneAsDebuggerObject(
+          deserializedThis,
+          globalObjectReference
+        ),
       },
       {
         url: this.messageHandler.window.document.baseURI,
       }
     );
 
-    return this.#buildReturnValue(rv, awaitPromise);
+    return this.#buildReturnValue(rv, awaitPromise, globalObjectReference);
   }
 
   
@@ -240,13 +334,17 @@ class ScriptModule extends Module {
 
 
 
+
+
   async evaluateExpression(options) {
-    const { awaitPromise, expression } = options;
-    const rv = this.#global.executeInGlobal(expression, {
+    const { awaitPromise, expression, sandbox: sandboxName = null } = options;
+
+    const globalObjectReference = this.#getGlobalObjectReference(sandboxName);
+    const rv = globalObjectReference.executeInGlobal(expression, {
       url: this.messageHandler.window.document.baseURI,
     });
 
-    return this.#buildReturnValue(rv, awaitPromise);
+    return this.#buildReturnValue(rv, awaitPromise, globalObjectReference);
   }
 }
 
