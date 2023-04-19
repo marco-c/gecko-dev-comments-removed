@@ -474,7 +474,9 @@ class Accessible {
 
 
 
-  void DebugDescription(nsCString& aDesc);
+  void DebugDescription(nsCString& aDesc) const;
+
+  static void DebugPrint(const char* aPrefix, const Accessible* aAccessible);
 #endif
 
   
