@@ -81,6 +81,8 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
 
   void EnsureDcompSurfaceHandle();
 
+  void UpdateStatisticsData();
+
   
   
   static inline uint64_t sMediaEngineIdx = 0;
@@ -119,6 +121,14 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   bool mIsEnableDcompMode = false;
 
   float mPlaybackRate = 1.0;
+
+  
+  
+  
+  
+  
+  StatisticData mCurrentPlaybackStatisticData;
+  StatisticData mPrevPlaybackStatisticData;
 };
 
 }  
