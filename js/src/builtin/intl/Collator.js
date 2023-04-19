@@ -41,8 +41,9 @@ function resolveCollatorInternals(lazyCollatorData) {
     var collation = r.co;
 
     
-    if (collation === null)
+    if (collation === null) {
         collation = "default";
+    }
 
     
     internalProps.collation = collation;
@@ -87,8 +88,9 @@ function getCollatorInternals(obj) {
 
     
     var internalProps = maybeInternalProperties(internals);
-    if (internalProps)
+    if (internalProps) {
         return internalProps;
+    }
 
     
     internalProps = resolveCollatorInternals(internals.lazyData);
@@ -141,10 +143,11 @@ function InitializeCollator(collator, locales, options) {
     
     
     
-    if (options === undefined)
+    if (options === undefined) {
         options = std_Object_create(null);
-    else
+    } else {
         options = ToObject(options);
+    }
 
     
     
@@ -161,14 +164,16 @@ function InitializeCollator(collator, locales, options) {
 
     
     var collation = GetOption(options, "collation", "string", undefined, undefined);
-    if (collation !== undefined)
+    if (collation !== undefined) {
         collation = intl_ValidateAndCanonicalizeUnicodeExtensionType(collation, "collation", "co");
+    }
     opt.co = collation;
 
     
     var numericValue = GetOption(options, "numeric", "boolean", undefined, undefined);
-    if (numericValue !== undefined)
+    if (numericValue !== undefined) {
         numericValue = numericValue ? "true" : "false";
+    }
     opt.kn = numericValue;
 
     
@@ -242,8 +247,9 @@ function collatorActualLocale(locale) {
 
 function collatorSortCaseFirst(locale) {
     var actualLocale = collatorActualLocale(locale);
-    if (intl_isUpperCaseFirst(actualLocale))
+    if (intl_isUpperCaseFirst(actualLocale)) {
         return ["upper", "false", "lower"];
+    }
 
     
     return ["false", "lower", "upper"];
@@ -254,8 +260,9 @@ function collatorSortCaseFirst(locale) {
 
 function collatorSortCaseFirstDefault(locale) {
     var actualLocale = collatorActualLocale(locale);
-    if (intl_isUpperCaseFirst(actualLocale))
+    if (intl_isUpperCaseFirst(actualLocale)) {
         return "upper";
+    }
 
     
     return "false";
@@ -351,8 +358,9 @@ function $Intl_Collator_compare_get() {
     var collator = this;
 
     
-    if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null)
+    if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null) {
         return callFunction(intl_CallCollatorMethodIfWrapped, this, "$Intl_Collator_compare_get");
+    }
 
     var internals = getCollatorInternals(collator);
 
@@ -377,8 +385,9 @@ function Intl_Collator_resolvedOptions() {
     var collator = this;
 
     
-    if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null)
+    if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null) {
         return callFunction(intl_CallCollatorMethodIfWrapped, this, "Intl_Collator_resolvedOptions");
+    }
 
     var internals = getCollatorInternals(collator);
 
