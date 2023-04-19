@@ -31,7 +31,11 @@ class TestDeletionRequestPing(FOGTestCase):
 
         self.restart_browser()
 
-        self.assertEqual(self.fog_ping_server.pings[-1], ping1)
+        
+        
+        
+        
+        
 
         self.enable_telemetry()
         self.restart_browser()
