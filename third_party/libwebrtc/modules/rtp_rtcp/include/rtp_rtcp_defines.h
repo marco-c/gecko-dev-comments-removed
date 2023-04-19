@@ -76,7 +76,6 @@ enum RTPExtensionType : int {
   kRtpExtensionGenericFrameDescriptor02,
   kRtpExtensionColorSpace,
   kRtpExtensionVideoFrameTrackingId,
-  kRtpExtensionCsrcAudioLevel,
   kRtpExtensionNumberOfExtensions  
 };
 

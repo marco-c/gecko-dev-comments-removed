@@ -187,6 +187,7 @@ bool AudioLevel::Write(rtc::ArrayView<uint8_t> data,
   return true;
 }
 
+#if !defined(WEBRTC_MOZILLA_BUILD)
 
 
 
@@ -240,6 +241,7 @@ bool CsrcAudioLevel::Write(rtc::ArrayView<uint8_t> data,
   }
   return true;
 }
+#endif
 
 
 
@@ -454,6 +456,7 @@ bool PlayoutDelayLimits::Write(rtc::ArrayView<uint8_t> data,
   return true;
 }
 
+#if defined(WEBRTC_MOZILLA_BUILD)
 
 
 
@@ -492,6 +495,7 @@ bool CsrcAudioLevel::Write(rtc::ArrayView<uint8_t> data,
   
   return csrcAudioLevels.numAudioLevels;
 }
+#endif
 
 
 

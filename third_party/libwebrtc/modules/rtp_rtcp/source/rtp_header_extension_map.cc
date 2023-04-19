@@ -52,7 +52,6 @@ constexpr ExtensionInfo kExtensions[] = {
     CreateExtensionInfo<ColorSpaceExtension>(),
     CreateExtensionInfo<InbandComfortNoiseExtension>(),
     CreateExtensionInfo<VideoFrameTrackingIdExtension>(),
-    CreateExtensionInfo<CsrcAudioLevel>(),
 };
 
 
