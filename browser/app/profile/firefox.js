@@ -2707,4 +2707,4 @@ pref("browser.places.snapshots.expiration.userManaged.days", 420);
 
 
 
-pref("browser.browser.firefoxView.featureTour", "default, default, true");
+pref("browser.firefox-view.feature-tour", "{\"message\":\"\",\"screen\":\"\",\"complete\":true}");

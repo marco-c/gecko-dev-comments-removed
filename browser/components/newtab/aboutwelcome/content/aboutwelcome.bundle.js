@@ -195,6 +195,11 @@ const MultiStageAboutWelcome = props => {
     screens.forEach((screen, order) => {
       if (index === order) {
         _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendImpressionTelemetry(`${props.message_id}_${order}_${screen.id}`);
+      } 
+
+
+      if (window.AWNewScreen) {
+        window.AWNewScreen(index);
       }
     }); 
 
@@ -317,8 +322,8 @@ const MultiStageAboutWelcome = props => {
       background: props.backdrop
     } : {}
   }, screens.map((screen, order) => {
-    const isFirstCenteredScreen = screen.content.position !== "corner" && screen === centeredScreens[0];
-    const isLastCenteredScreen = screen.content.position !== "corner" && screen === centeredScreens[centeredScreens.length - 1];
+    const isFirstCenteredScreen = (!screen.content.position || screen.content.position === "center") && screen === centeredScreens[0];
+    const isLastCenteredScreen = (!screen.content.position || screen.content.position === "center") && screen === centeredScreens[centeredScreens.length - 1];
     
 
     const totalNumberOfScreens = screens[0].content.position === "corner" ? screens.length - 1 : screens.length;
