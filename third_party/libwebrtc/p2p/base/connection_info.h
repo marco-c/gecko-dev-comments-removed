@@ -41,7 +41,10 @@ struct ConnectionInfo {
   bool timeout;              
   bool new_connection;       
   size_t rtt;                
-  size_t sent_total_bytes;   
+  size_t sent_discarded_bytes;  
+                                
+  size_t sent_total_bytes;      
+                                
   size_t sent_bytes_second;  
   size_t sent_discarded_packets;  
                                   
