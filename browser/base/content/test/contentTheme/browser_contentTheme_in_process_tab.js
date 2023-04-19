@@ -76,11 +76,5 @@ add_task(async function test_in_process_tab() {
     }
   );
 
-  
-  
-  
-  
-  await new Promise(r => setTimeout(r, 100));
-
   await BrowserTestUtils.closeWindow(win);
 });

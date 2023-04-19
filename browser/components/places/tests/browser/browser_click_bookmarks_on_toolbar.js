@@ -94,17 +94,15 @@ add_setup(async function() {
   registerCleanupFunction(async () => {
     gBookmarkElements = [];
 
+    if (wasCollapsed) {
+      await promiseSetToolbarVisibility(toolbar, false);
+    }
+
     await Promise.all(
       bookmarks.map(bookmark => {
         return PlacesUtils.bookmarks.remove(bookmark);
       })
     );
-
-    
-    
-    if (wasCollapsed) {
-      await promiseSetToolbarVisibility(toolbar, false);
-    }
   });
 });
 

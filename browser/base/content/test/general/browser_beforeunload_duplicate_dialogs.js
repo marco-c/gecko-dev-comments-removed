@@ -36,16 +36,7 @@ function onCommonDialogLoaded(promptWindow) {
   let dialog = promptWindow.Dialog;
   if (wantToClose) {
     
-    
-    
-    if (AppConstants.platform == "macosx") {
-      
-      setTimeout(() => {
-        dialog.ui.button0.click();
-      }, 375);
-    } else {
-      dialog.ui.button0.click();
-    }
+    dialog.ui.button0.click();
   } else {
     
     dialog.ui.button1.click();
