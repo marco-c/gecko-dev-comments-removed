@@ -946,7 +946,7 @@ rtc::DiffServCodePoint TurnPort::StunDscpValue() const {
 bool TurnPort::AllowedTurnPort(int port) {
   
   
-  if (port == 80 || port == 443 || port >= 1024) {
+  if (port == 53 || port == 80 || port == 443 || port >= 1024) {
     return true;
   }
   

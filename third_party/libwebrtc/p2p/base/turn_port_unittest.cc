@@ -62,6 +62,8 @@ static const SocketAddress kTurnAlternateIntAddr("99.99.99.6",
 
 static const SocketAddress kTurnDangerousAddr("99.99.99.7", 81);
 
+static const SocketAddress kTurnPort53Addr("99.99.99.7", 53);
+
 static const SocketAddress kTurnPort80Addr("99.99.99.7", 80);
 
 static const SocketAddress kTurnPort443Addr("99.99.99.7", 443);
@@ -105,6 +107,8 @@ static const cricket::ProtocolAddress kTurnUdpIPv6ProtoAddr(kTurnUdpIPv6IntAddr,
 static const cricket::ProtocolAddress kTurnDangerousProtoAddr(
     kTurnDangerousAddr,
     cricket::PROTO_TCP);
+static const cricket::ProtocolAddress kTurnPort53ProtoAddr(kTurnPort53Addr,
+                                                           cricket::PROTO_TCP);
 static const cricket::ProtocolAddress kTurnPort80ProtoAddr(kTurnPort80Addr,
                                                            cricket::PROTO_TCP);
 static const cricket::ProtocolAddress kTurnPort443ProtoAddr(kTurnPort443Addr,
@@ -1805,13 +1809,18 @@ TEST_F(TurnPortTest, TestTurnDangerousServer) {
   ASSERT_FALSE(turn_port_);
 }
 
-TEST_F(TurnPortTest, TestTurnDangerousServerPermits443) {
-  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnPort443ProtoAddr);
+TEST_F(TurnPortTest, TestTurnDangerousServerPermits53) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnPort53ProtoAddr);
   ASSERT_TRUE(turn_port_);
 }
 
 TEST_F(TurnPortTest, TestTurnDangerousServerPermits80) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnPort80ProtoAddr);
+  ASSERT_TRUE(turn_port_);
+}
+
+TEST_F(TurnPortTest, TestTurnDangerousServerPermits443) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnPort443ProtoAddr);
   ASSERT_TRUE(turn_port_);
 }
 
