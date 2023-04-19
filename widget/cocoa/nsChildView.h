@@ -507,11 +507,9 @@ class nsChildView final : public nsBaseWidget {
   
   void UpdateFullscreen(bool aFullscreen);
 
-#ifdef DEBUG
   
   virtual nsresult SetHiDPIMode(bool aHiDPI) override;
   virtual nsresult RestoreHiDPIMode() override;
-#endif
 
  protected:
   virtual ~nsChildView();

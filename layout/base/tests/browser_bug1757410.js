@@ -17,7 +17,7 @@ const PAGECONTENT =
 const pageUrl = "data:text/html," + encodeURIComponent(PAGECONTENT);
 
 add_task(async function test() {
-  if (window.devicePixelRatio == 1) {
+  if (window.devicePixelRatio != 2) {
     ok(
       true,
       "Skip this test since this test is supposed to run on HiDPI mode, " +
@@ -41,11 +41,6 @@ add_task(async function test() {
 
   
   SpecialPowers.DOMWindowUtils.setHiDPIMode(false);
-  
-  registerCleanupFunction(() => {
-    SpecialPowers.DOMWindowUtils.restoreHiDPIMode();
-  });
-
   const scrollPosition = await SpecialPowers.spawn(
     tab.linkedBrowser,
     [],
@@ -59,4 +54,6 @@ add_task(async function test() {
     "The scroll position should be kept"
   );
   BrowserTestUtils.removeTab(tab);
+
+  SpecialPowers.DOMWindowUtils.restoreHiDPIMode();
 });
