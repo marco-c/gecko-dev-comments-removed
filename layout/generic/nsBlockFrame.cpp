@@ -3904,8 +3904,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
 
       frameReflowStatus.Reset();
       brc.ReflowBlock(availSpace, applyBStartMargin, aState.mPrevBEndMargin,
-                      clearance, aState.IsAdjacentWithBStart(), aLine.get(),
-                      *childReflowInput, frameReflowStatus, aState);
+                      clearance, aLine.get(), *childReflowInput,
+                      frameReflowStatus, aState);
 
       if (frameReflowStatus.IsInlineBreakBefore()) {
         
@@ -6674,10 +6674,6 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
   
   
   
-  
-  
-  
-  
   if (floatRS.mFlags.mIsTopOfPage &&
       (aFloatPushedDown ||
        aAdjustedAvailableSpace.ISize(wm) != aState.ContentISize())) {
@@ -6686,9 +6682,6 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
 
   
   nsBlockReflowContext brc(aState.mPresContext, aState.mReflowInput);
-
-  
-  bool isAdjacentWithTop = aState.IsAdjacentWithBStart();
 
   nsIFrame* clearanceFrame = nullptr;
   do {
@@ -6707,8 +6700,8 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState,
       }
     }
 
-    brc.ReflowBlock(aAdjustedAvailableSpace, true, margin, 0, isAdjacentWithTop,
-                    nullptr, floatRS, aReflowStatus, aState);
+    brc.ReflowBlock(aAdjustedAvailableSpace, true, margin, 0, nullptr, floatRS,
+                    aReflowStatus, aState);
   } while (clearanceFrame);
 
   if (aFloat->IsLetterFrame()) {
