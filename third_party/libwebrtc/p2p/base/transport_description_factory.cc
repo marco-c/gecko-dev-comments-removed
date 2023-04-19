@@ -21,8 +21,7 @@
 
 namespace cricket {
 
-TransportDescriptionFactory::TransportDescriptionFactory()
-    : secure_(SEC_DISABLED) {}
+TransportDescriptionFactory::TransportDescriptionFactory() {}
 
 TransportDescriptionFactory::~TransportDescriptionFactory() = default;
 
@@ -47,7 +46,7 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateOffer(
   }
 
   
-  if (secure_ == SEC_ENABLED || secure_ == SEC_REQUIRED) {
+  if (IsEncrypted()) {
     
     
     if (!SetSecurityInfo(desc.get(), CONNECTIONROLE_ACTPASS)) {
@@ -90,7 +89,7 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateAnswer(
   
   if (offer && offer->identity_fingerprint.get()) {
     
-    if (secure_ == SEC_ENABLED || secure_ == SEC_REQUIRED) {
+    if (IsEncrypted()) {
       ConnectionRole role = CONNECTIONROLE_NONE;
       
       if (offer->connection_role == CONNECTIONROLE_ACTPASS) {
@@ -116,7 +115,7 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateAnswer(
         return NULL;
       }
     }
-  } else if (require_transport_attributes && secure_ == SEC_REQUIRED) {
+  } else if (require_transport_attributes && IsEncrypted()) {
     
     RTC_LOG(LS_WARNING) << "Failed to create TransportDescription answer "
                            "because of incompatible security settings";

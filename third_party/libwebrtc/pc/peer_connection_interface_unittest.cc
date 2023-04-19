@@ -2080,7 +2080,10 @@ TEST_P(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
 
 
 
-TEST_P(PeerConnectionInterfaceTest, DtlsSdesFallbackNotSupported) {
+
+
+
+TEST_P(PeerConnectionInterfaceTest, SdesIgnored) {
   RTCConfiguration rtc_config;
   CreatePeerConnection(rtc_config);
   
@@ -2093,7 +2096,7 @@ TEST_P(PeerConnectionInterfaceTest, DtlsSdesFallbackNotSupported) {
   std::unique_ptr<SessionDescriptionInterface> desc(
       webrtc::CreateSessionDescription(SdpType::kOffer, kDtlsSdesFallbackSdp,
                                        nullptr));
-  EXPECT_FALSE(DoSetSessionDescription(std::move(desc), false));
+  EXPECT_TRUE(DoSetSessionDescription(std::move(desc), false));
 }
 
 

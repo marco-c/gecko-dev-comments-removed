@@ -19,7 +19,6 @@
 
 #include "absl/types/optional.h"
 #include "api/candidate.h"
-#include "api/crypto_params.h"
 #include "api/ice_transport_interface.h"
 #include "api/jsep.h"
 #include "api/rtc_error.h"
@@ -40,8 +39,6 @@
 #include "pc/rtp_transport_internal.h"
 #include "pc/sctp_transport.h"
 #include "pc/session_description.h"
-#include "pc/srtp_filter.h"
-#include "pc/srtp_transport.h"
 #include "pc/transport_stats.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
@@ -60,7 +57,6 @@ struct JsepTransportDescription {
   JsepTransportDescription();
   JsepTransportDescription(
       bool rtcp_mux_enabled,
-      const std::vector<CryptoParams>& cryptos,
       const std::vector<int>& encrypted_header_extension_ids,
       int rtp_abs_sendtime_extn_id,
       const TransportDescription& transport_description);
@@ -70,7 +66,6 @@ struct JsepTransportDescription {
   JsepTransportDescription& operator=(const JsepTransportDescription& from);
 
   bool rtcp_mux_enabled = true;
-  std::vector<CryptoParams> cryptos;
   std::vector<int> encrypted_header_extension_ids;
   int rtp_abs_sendtime_extn_id = -1;
   
@@ -171,9 +166,6 @@ class JsepTransport {
     if (dtls_srtp_transport_) {
       return dtls_srtp_transport_.get();
     }
-    if (sdes_transport_) {
-      return sdes_transport_.get();
-    }
     if (unencrypted_rtp_transport_) {
       return unencrypted_rtp_transport_.get();
     }
@@ -244,11 +236,6 @@ class JsepTransport {
 
   void ActivateRtcpMux() RTC_RUN_ON(network_thread_);
 
-  bool SetSdes(const std::vector<CryptoParams>& cryptos,
-               const std::vector<int>& encrypted_extension_ids,
-               webrtc::SdpType type,
-               ContentSource source);
-
   
   
   
@@ -300,7 +287,6 @@ class JsepTransport {
   
   
   const std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport_;
-  const std::unique_ptr<webrtc::SrtpTransport> sdes_transport_;
   const std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport_;
 
   const rtc::scoped_refptr<webrtc::DtlsTransport> rtp_dtls_transport_;
@@ -313,7 +299,6 @@ class JsepTransport {
       sctp_data_channel_transport_;
   const rtc::scoped_refptr<webrtc::SctpTransport> sctp_transport_;
 
-  SrtpFilter sdes_negotiator_ RTC_GUARDED_BY(network_thread_);
   RtcpMuxFilter rtcp_mux_negotiator_ RTC_GUARDED_BY(network_thread_);
 
   
