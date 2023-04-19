@@ -71,8 +71,7 @@ fn promote_thread(rpc: &rpccore::Proxy<ServerMessage, ClientMessage>) {
     match get_current_thread_info() {
         Ok(info) => {
             let bytes = info.serialize();
-            
-            rpc.call(ServerMessage::PromoteThreadToRealTime(bytes));
+            let _ = rpc.call(ServerMessage::PromoteThreadToRealTime(bytes));
         }
         Err(_) => {
             warn!("Could not remotely promote thread to RT.");

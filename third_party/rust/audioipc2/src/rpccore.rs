@@ -3,11 +3,14 @@
 
 
 
+use std::collections::VecDeque;
 use std::io::{self, Result};
 use std::mem::ManuallyDrop;
-use std::{collections::VecDeque, sync::mpsc};
+use std::sync::{Arc, Mutex, Weak};
 
+use crossbeam_channel::{self, Receiver, Sender};
 use mio::Token;
+use slab::Slab;
 
 use crate::ipccore::EventLoopHandle;
 
@@ -42,28 +45,16 @@ pub trait Server {
 }
 
 
-
-type ProxyRequest<Request, Response> = (Request, mpsc::Sender<Response>);
-type ProxyReceiver<Request, Response> = mpsc::Receiver<ProxyRequest<Request, Response>>;
-
+type ProxyKey = usize;
+type ProxyRequest<Request> = (ProxyKey, Request);
 
 
 
-pub struct ProxyResponse<Response> {
-    inner: mpsc::Receiver<Response>,
-}
 
-impl<Response> ProxyResponse<Response> {
-    pub fn wait(&self) -> Result<Response> {
-        match self.inner.recv() {
-            Ok(resp) => Ok(resp),
-            Err(_) => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "proxy recv error",
-            )),
-        }
-    }
-}
+
+
+
+
 
 
 
@@ -72,17 +63,44 @@ impl<Response> ProxyResponse<Response> {
 #[derive(Debug)]
 pub struct Proxy<Request, Response> {
     handle: Option<(EventLoopHandle, Token)>,
-    tx: ManuallyDrop<mpsc::Sender<ProxyRequest<Request, Response>>>,
+    key: ProxyKey,
+    response_rx: Receiver<Response>,
+    handler_tx: ManuallyDrop<Sender<ProxyRequest<Request>>>,
+    proxy_mgr: Weak<ProxyManager<Response>>,
 }
 
 impl<Request, Response> Proxy<Request, Response> {
-    pub fn call(&self, request: Request) -> ProxyResponse<Response> {
-        let (tx, rx) = mpsc::channel();
-        match self.tx.send((request, tx)) {
-            Ok(_) => self.wake_connection(),
-            Err(e) => debug!("Proxy::call error={:?}", e),
+    fn new(
+        handler_tx: Sender<ProxyRequest<Request>>,
+        proxy_mgr: Weak<ProxyManager<Response>>,
+    ) -> Self {
+        let (tx, rx) = crossbeam_channel::bounded(1);
+        Self {
+            handle: None,
+            key: proxy_mgr.upgrade().unwrap().register_proxy(tx),
+            response_rx: rx,
+            handler_tx: ManuallyDrop::new(handler_tx),
+            proxy_mgr,
         }
-        ProxyResponse { inner: rx }
+    }
+
+    pub fn call(&self, request: Request) -> Result<Response> {
+        match self.handler_tx.send((self.key, request)) {
+            Ok(_) => self.wake_connection(),
+            Err(_) => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "proxy send error",
+                ))
+            }
+        }
+        match self.response_rx.recv() {
+            Ok(resp) => Ok(resp),
+            Err(_) => Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "proxy recv error",
+            )),
+        }
     }
 
     pub(crate) fn connect_event_loop(&mut self, handle: EventLoopHandle, token: Token) {
@@ -100,9 +118,13 @@ impl<Request, Response> Proxy<Request, Response> {
 
 impl<Request, Response> Clone for Proxy<Request, Response> {
     fn clone(&self) -> Self {
-        Proxy {
+        let (tx, rx) = crossbeam_channel::bounded(1);
+        Self {
             handle: self.handle.clone(),
-            tx: self.tx.clone(),
+            key: self.proxy_mgr.upgrade().unwrap().register_proxy(tx),
+            response_rx: rx,
+            handler_tx: self.handler_tx.clone(),
+            proxy_mgr: self.proxy_mgr.clone(),
         }
     }
 }
@@ -110,12 +132,53 @@ impl<Request, Response> Clone for Proxy<Request, Response> {
 impl<Request, Response> Drop for Proxy<Request, Response> {
     fn drop(&mut self) {
         trace!("Proxy drop, waking EventLoop");
+        if let Some(mgr) = self.proxy_mgr.upgrade() {
+            mgr.unregister_proxy(self.key)
+        }
         
         
-        unsafe { ManuallyDrop::drop(&mut self.tx) }
+        unsafe {
+            ManuallyDrop::drop(&mut self.handler_tx);
+        }
         if self.handle.is_some() {
             self.wake_connection()
         }
+    }
+}
+
+const RPC_CLIENT_INITIAL_PROXIES: usize = 32; 
+
+
+
+#[derive(Debug)]
+struct ProxyManager<Response> {
+    proxies: Mutex<Slab<Sender<Response>>>,
+}
+
+impl<Response> ProxyManager<Response> {
+    fn new() -> Self {
+        Self {
+            proxies: Mutex::new(Slab::with_capacity(RPC_CLIENT_INITIAL_PROXIES)),
+        }
+    }
+
+    
+    
+    fn register_proxy(&self, tx: Sender<Response>) -> ProxyKey {
+        let mut proxies = self.proxies.lock().unwrap();
+        let entry = proxies.vacant_entry();
+        let key = entry.key();
+        entry.insert(tx);
+        key
+    }
+
+    fn unregister_proxy(&self, key: ProxyKey) {
+        let _ = self.proxies.lock().unwrap().remove(key);
+    }
+
+    
+    fn deliver(&self, key: ProxyKey, resp: Response) {
+        let _ = self.proxies.lock().unwrap()[key].send(resp);
     }
 }
 
@@ -127,8 +190,26 @@ impl<Request, Response> Drop for Proxy<Request, Response> {
 
 
 pub(crate) struct ClientHandler<C: Client> {
-    messages: ProxyReceiver<C::ServerMessage, C::ClientMessage>,
-    in_flight: VecDeque<mpsc::Sender<C::ClientMessage>>,
+    messages: Receiver<ProxyRequest<C::ServerMessage>>,
+    
+    
+    
+    proxies: Arc<ProxyManager<C::ClientMessage>>,
+    in_flight: VecDeque<ProxyKey>,
+}
+
+impl<C: Client> ClientHandler<C> {
+    fn new(rx: Receiver<ProxyRequest<C::ServerMessage>>) -> ClientHandler<C> {
+        ClientHandler::<C> {
+            messages: rx,
+            proxies: Arc::new(ProxyManager::new()),
+            in_flight: VecDeque::with_capacity(RPC_CLIENT_INITIAL_PROXIES),
+        }
+    }
+
+    fn proxy_manager(&self) -> Weak<ProxyManager<<C as Client>::ClientMessage>> {
+        Arc::downgrade(&self.proxies)
+    }
 }
 
 impl<C: Client> Handler for ClientHandler<C> {
@@ -137,8 +218,9 @@ impl<C: Client> Handler for ClientHandler<C> {
 
     fn consume(&mut self, response: Self::In) -> Result<()> {
         trace!("ClientHandler::consume");
-        if let Some(complete) = self.in_flight.pop_front() {
-            drop(complete.send(response));
+        
+        if let Some(proxy) = self.in_flight.pop_front() {
+            self.proxies.deliver(proxy, response);
         } else {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -154,12 +236,12 @@ impl<C: Client> Handler for ClientHandler<C> {
 
         
         match self.messages.try_recv() {
-            Ok((request, response_tx)) => {
+            Ok((proxy, request)) => {
                 trace!("  --> received request");
-                self.in_flight.push_back(response_tx);
+                self.in_flight.push_back(proxy);
                 Ok(Some(request))
             }
-            Err(mpsc::TryRecvError::Empty) => {
+            Err(crossbeam_channel::TryRecvError::Empty) => {
                 trace!("  --> no request");
                 Ok(None)
             }
@@ -173,19 +255,12 @@ impl<C: Client> Handler for ClientHandler<C> {
 
 pub(crate) fn make_client<C: Client>(
 ) -> (ClientHandler<C>, Proxy<C::ServerMessage, C::ClientMessage>) {
-    let (tx, rx) = mpsc::channel();
+    let (tx, rx) = crossbeam_channel::bounded(RPC_CLIENT_INITIAL_PROXIES);
 
-    let handler = ClientHandler::<C> {
-        messages: rx,
-        in_flight: VecDeque::with_capacity(32),
-    };
+    let handler = ClientHandler::new(rx);
+    let proxy_mgr = handler.proxy_manager();
 
-    let proxy = Proxy {
-        handle: None,
-        tx: ManuallyDrop::new(tx),
-    };
-
-    (handler, proxy)
+    (handler, Proxy::new(tx, proxy_mgr))
 }
 
 
@@ -226,9 +301,11 @@ impl<S: Server> Handler for ServerHandler<S> {
     }
 }
 
+const RPC_SERVER_INITIAL_CLIENTS: usize = 32; 
+
 pub(crate) fn make_server<S: Server>(server: S) -> ServerHandler<S> {
     ServerHandler::<S> {
         server,
-        in_flight: VecDeque::with_capacity(32),
+        in_flight: VecDeque::with_capacity(RPC_SERVER_INITIAL_CLIENTS),
     }
 }
