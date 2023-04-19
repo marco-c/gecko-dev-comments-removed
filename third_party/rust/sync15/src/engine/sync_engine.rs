@@ -2,14 +2,13 @@
 
 
 
-use crate::{
-    client::ClientData, telemetry, CollectionRequest, Guid, IncomingChangeset, OutgoingChangeset,
-    ServerTimestamp,
-};
+use super::{CollectionRequest, IncomingChangeset, OutgoingChangeset};
+use crate::client_types::ClientData;
+use crate::{telemetry, Guid, ServerTimestamp};
 use anyhow::Result;
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CollSyncIds {
     pub global: Guid,
     pub coll: Guid,
@@ -21,7 +20,7 @@ pub struct CollSyncIds {
 
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EngineSyncAssociation {
     
     Disconnected,

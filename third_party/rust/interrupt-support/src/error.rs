@@ -3,7 +3,7 @@
 
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Interrupted;
 
 impl std::fmt::Display for Interrupted {

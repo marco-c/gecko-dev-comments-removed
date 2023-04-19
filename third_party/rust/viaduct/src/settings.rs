@@ -13,7 +13,7 @@ use std::time::Duration;
 
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 #[non_exhaustive]
 pub struct Settings {
     pub read_timeout: Option<Duration>,

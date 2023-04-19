@@ -126,7 +126,7 @@ fn remove_from_db(tx: &Transaction<'_>, ext_id: &str) -> Result<()> {
 
 
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StorageValueChange {
     #[serde(skip_serializing)]
@@ -140,7 +140,7 @@ pub struct StorageValueChange {
 
 
 
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct StorageChanges {
     changes: Vec<StorageValueChange>,
 }
@@ -355,7 +355,7 @@ pub fn get_bytes_in_use(conn: &Connection, ext_id: &str, keys: JsonValue) -> Res
 }
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UsageInfo {
     
     pub ext_id: String,

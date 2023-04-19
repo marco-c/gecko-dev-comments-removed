@@ -7,7 +7,7 @@ use serde_json::{Map, Value as JsonValue};
 
 
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Payload {
     pub id: Guid,
 

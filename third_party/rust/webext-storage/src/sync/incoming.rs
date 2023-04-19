@@ -11,7 +11,7 @@ use rusqlite::{
     Connection, Row, Transaction,
 };
 use sql_support::ConnExt;
-use sync15_traits::Payload;
+use sync15::Payload;
 use sync_guid::Guid as SyncGuid;
 
 use crate::api::{StorageChanges, StorageValueChange};
@@ -21,7 +21,7 @@ use super::{merge, remove_matching_keys, JsonMap, Record, RecordData};
 
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum DataState {
     
     Deleted,
@@ -115,7 +115,7 @@ pub fn stage_incoming(
 
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum IncomingState {
     
     
@@ -225,7 +225,7 @@ pub fn get_incoming(conn: &Connection) -> Result<Vec<(SyncGuid, IncomingState)>>
 
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum IncomingAction {
     
     DeleteLocally {
@@ -482,7 +482,7 @@ mod tests {
     use crate::api;
     use interrupt_support::NeverInterrupts;
     use serde_json::{json, Value};
-    use sync15_traits::Payload;
+    use sync15::Payload;
 
     
     fn ssi(conn: &Connection, stmt: &str) -> u32 {

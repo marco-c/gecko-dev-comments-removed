@@ -5,7 +5,7 @@ use std::time::Duration;
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Default)]
 pub struct ServerTimestamp(pub i64);
 
 impl ServerTimestamp {

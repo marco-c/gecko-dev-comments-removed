@@ -101,7 +101,7 @@ impl std::fmt::Display for Header {
 }
 
 
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Headers {
     headers: Vec<Header>,
 }

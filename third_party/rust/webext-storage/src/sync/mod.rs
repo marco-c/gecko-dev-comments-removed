@@ -31,7 +31,7 @@ pub const STORAGE_VERSION: usize = 1;
 
 
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum RecordData {
     Data {

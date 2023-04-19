@@ -39,7 +39,7 @@ impl From<url::ParseError> for Error {
 
 
 
-#[derive(thiserror::Error, Debug, Clone, PartialEq)]
+#[derive(thiserror::Error, Debug, Clone)]
 #[error("Error: {method} {url} returned {status}")]
 pub struct UnexpectedStatus {
     pub status: u16,

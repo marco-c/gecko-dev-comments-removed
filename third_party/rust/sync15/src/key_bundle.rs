@@ -2,7 +2,7 @@
 
 
 
-use crate::error::{Result, SyncTraitsError as Error};
+use crate::error::{Error, Result};
 use rc_crypto::{
     aead::{self, OpeningKey, SealingKey},
     rand,
