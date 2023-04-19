@@ -2287,6 +2287,19 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
   });
   EXPECT_TRUE(encoder.WaitBitrateChanged(false));
 
+  
+  GetVideoEncoderConfig()->simulcast_layers[0].active = true;
+  SendTask(RTC_FROM_HERE, task_queue(), [this]() {
+    GetVideoSendStream()->UpdateActiveSimulcastLayers({true, false});
+    EXPECT_TRUE(GetVideoSendStream()->started());
+  });
+  EXPECT_TRUE(encoder.WaitBitrateChanged(true));
+
+  
+  SendTask(RTC_FROM_HERE, task_queue(),
+           [this]() { GetVideoSendStream()->Stop(); });
+  EXPECT_TRUE(encoder.WaitBitrateChanged(false));
+
   SendTask(RTC_FROM_HERE, task_queue(), [this]() {
     DestroyStreams();
     DestroyCalls();
