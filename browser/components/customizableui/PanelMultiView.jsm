@@ -960,8 +960,8 @@ var PanelMultiView = class extends AssociatedToNode {
     this._viewContainer.style.width = prevPanelView.knownWidth + "px";
     
     let rect = this._panel.getOuterScreenRect();
-    this._panel.setAttribute("width", rect.width);
-    this._panel.setAttribute("height", rect.height);
+    this._panel.style.width = rect.width + "px";
+    this._panel.style.height = rect.height + "px";
 
     let viewRect;
     if (reverse) {
@@ -1052,8 +1052,8 @@ var PanelMultiView = class extends AssociatedToNode {
     
     this._viewContainer.style.height = viewRect.height + "px";
     this._viewContainer.style.width = viewRect.width + "px";
-    this._panel.removeAttribute("width");
-    this._panel.removeAttribute("height");
+    this._panel.style.removeProperty("width");
+    this._panel.style.removeProperty("height");
     
     
     viewNode.style.width = viewRect.width + "px";
