@@ -53,15 +53,14 @@ class StorageAccessAPIHelper final {
   
   
   
-  typedef MozPromise<int, bool, true> StorageAccessFinalCheckPromise;
-  typedef std::function<RefPtr<StorageAccessFinalCheckPromise>()>
-      PerformFinalChecks;
   typedef MozPromise<int, bool, true> StorageAccessPermissionGrantPromise;
+  typedef std::function<RefPtr<StorageAccessPermissionGrantPromise>()>
+      PerformPermissionGrant;
   [[nodiscard]] static RefPtr<StorageAccessPermissionGrantPromise>
   AllowAccessFor(
       nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
       ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-      const PerformFinalChecks& aPerformFinalChecks = nullptr);
+      const PerformPermissionGrant& aPerformFinalChecks = nullptr);
 
   
   
@@ -158,6 +157,19 @@ class StorageAccessAPIHelper final {
   static Maybe<bool> CheckExistingPermissionDecidesStorageAccessAPI(
       dom::Document* aDocument, bool aRequestingStorageAccess);
 
+  
+  
+  
+  
+  
+  
+  static RefPtr<StorageAccessPermissionGrantPromise> RequestStorageAccessAsyncHelper(
+      dom::Document* aDocument, nsPIDOMWindowInner* aInnerWindow,
+      dom::BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
+      bool aHasUserInteraction,
+      ContentBlockingNotifier::StorageAccessPermissionGrantedReason aNotifier,
+      bool aRequireGrant);
+
  private:
   friend class dom::ContentParent;
   
@@ -168,7 +180,7 @@ class StorageAccessAPIHelper final {
       nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
       uint32_t aCookieBehavior,
       ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason,
-      const PerformFinalChecks& aPerformFinalChecks = nullptr);
+      const PerformPermissionGrant& aPerformFinalChecks = nullptr);
 
   static void UpdateAllowAccessOnCurrentProcess(
       dom::BrowsingContext* aParentContext, const nsACString& aTrackingOrigin);

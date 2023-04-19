@@ -16808,31 +16808,24 @@ Document::GetContentBlockingEvents() {
       });
 }
 
-RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
-    nsPIDOMWindowInner* aInnerWindow, BrowsingContext* aBrowsingContext,
-    nsIPrincipal* aPrincipal, bool aHasUserInteraction,
-    ContentBlockingNotifier::StorageAccessPermissionGrantedReason aNotifier,
-    bool requireFinalChecks) {
-  if (!requireFinalChecks) {
-    
-    return StorageAccessAPIHelper::AllowAccessFor(aPrincipal, aBrowsingContext,
-                                                  aNotifier);
-  }
-
+StorageAccessAPIHelper::PerformPermissionGrant
+Document::CreatePermissionGrantPromise(
+    nsPIDOMWindowInner* aInnerWindow, nsIPrincipal* aPrincipal,
+    bool aHasUserInteraction, const Maybe<nsCString>& aTopLevelBaseDomain) {
+  MOZ_ASSERT(aInnerWindow);
+  MOZ_ASSERT(aPrincipal);
   RefPtr<Document> self(this);
   RefPtr<nsPIDOMWindowInner> inner(aInnerWindow);
   RefPtr<nsIPrincipal> principal(aPrincipal);
 
-  
-  
-  auto performFinalChecks = [inner, self, principal, aHasUserInteraction]() {
+  return [inner, self, principal, aHasUserInteraction, aTopLevelBaseDomain]() {
     
-    RefPtr<StorageAccessAPIHelper::StorageAccessFinalCheckPromise::Private> p =
-        new StorageAccessAPIHelper::StorageAccessFinalCheckPromise::Private(
-            __func__);
+    RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::Private>
+        p = new StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
+            Private(__func__);
     RefPtr<StorageAccessPermissionRequest> sapr =
         StorageAccessPermissionRequest::Create(
-            inner, principal,
+            inner, principal, aTopLevelBaseDomain,
             
             [p] {
               Telemetry::AccumulateCategorical(
@@ -16915,10 +16908,6 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
 
     return p;
   };
-
-  
-  return StorageAccessAPIHelper::AllowAccessFor(principal, aBrowsingContext,
-                                                aNotifier, performFinalChecks);
 }
 
 already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
@@ -17053,9 +17042,9 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   
-  RequestStorageAccessAsyncHelper(inner, bc, NodePrincipal(), true,
-                                  ContentBlockingNotifier::eStorageAccessAPI,
-                                  true)
+  StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
+      this, inner, bc, NodePrincipal(), true,
+      ContentBlockingNotifier::eStorageAccessAPI, true)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self, inner, promise] {
@@ -17208,8 +17197,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
             
             
             
-            return self->RequestStorageAccessAsyncHelper(
-                inner, bc, principal, hasUserActivation,
+            return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
+                self, inner, bc, principal, hasUserActivation,
                 ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI,
                 true);
           },
@@ -17317,6 +17306,8 @@ already_AddRefed<Promise> Document::RequestStorageAccessUnderSite(
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
+  
+  nsCOMPtr<nsIPrincipal> principal(NodePrincipal());
 
   
   
@@ -17329,10 +17320,10 @@ already_AddRefed<Promise> Document::RequestStorageAccessUnderSite(
   cc->SendSetAllowStorageAccessRequestFlag(NodePrincipal(), siteURI)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [promise](bool success) {
-            if (success) {
-              promise->MaybeResolveWithUndefined();
-            } else {
+          [promise, principal, siteURI](int result) {
+            ContentChild* cc = ContentChild::GetSingleton();
+            if (!cc) {
+              
               promise->MaybeRejectWithUndefined();
             }
           },
@@ -17477,8 +17468,8 @@ already_AddRefed<Promise> Document::CompleteStorageAccessRequestFromSite(
             
             
             
-            return self->RequestStorageAccessAsyncHelper(
-                inner, bc, principal, true,
+            return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
+                self, inner, bc, principal, true,
                 ContentBlockingNotifier::eStorageAccessAPI, false);
           },
           
