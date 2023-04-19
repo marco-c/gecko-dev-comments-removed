@@ -349,7 +349,6 @@ const MessageLoaderUtils = {
 
 
 
-
   async _experimentsAPILoader(provider) {
     
     const featureIds = Array.isArray(provider.featureIds)
@@ -361,8 +360,13 @@ const MessageLoaderUtils = {
       let experimentData = lazy.ExperimentAPI.getExperimentMetaData({
         featureId,
       });
+
       
-      if (!experimentData) {
+      
+      if (
+        !experimentData &&
+        !lazy.ExperimentAPI.getRolloutMetaData({ featureId })
+      ) {
         continue;
       }
 
@@ -379,24 +383,28 @@ const MessageLoaderUtils = {
       if (!REACH_EVENT_GROUPS.includes(featureId)) {
         continue;
       }
+
       
-      
-      
-      
-      const branches =
-        (await lazy.ExperimentAPI.getAllBranches(experimentData.slug)) || [];
-      for (const branch of branches) {
-        let branchValue = branch[featureId].value;
-        if (
-          branch.slug !== experimentData.branch.slug &&
-          branchValue?.trigger
-        ) {
-          experiments.push({
-            forReachEvent: { sent: false, group: featureId },
-            experimentSlug: experimentData.slug,
-            branchSlug: branch.slug,
-            ...branchValue,
-          });
+      if (experimentData) {
+        
+        
+        
+        
+        const branches =
+          (await lazy.ExperimentAPI.getAllBranches(experimentData.slug)) || [];
+        for (const branch of branches) {
+          let branchValue = branch[featureId].value;
+          if (
+            branch.slug !== experimentData.branch.slug &&
+            branchValue?.trigger
+          ) {
+            experiments.push({
+              forReachEvent: { sent: false, group: featureId },
+              experimentSlug: experimentData.slug,
+              branchSlug: branch.slug,
+              ...branchValue,
+            });
+          }
         }
       }
     }
