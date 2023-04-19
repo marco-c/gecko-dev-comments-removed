@@ -117,7 +117,7 @@ inline bool ToJSValue(JSContext* aCx, double aArgument,
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
-  aValue.set(JS_NumberValue(aArgument));
+  aValue.setNumber(aArgument);
   return true;
 }
 
