@@ -99,9 +99,32 @@ RefPtr<FileSystemDataManager::CreatePromise>
 FileSystemDataManager::GetOrCreateFileSystemDataManager(const Origin& aOrigin) {
   if (RefPtr<FileSystemDataManager> dataManager =
           GetFileSystemDataManager(aOrigin)) {
-    
+    if (dataManager->IsOpening()) {
+      
+      
+      
+      return dataManager->OnOpen()->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [dataManager = Registered<FileSystemDataManager>(dataManager)](
+              const BoolPromise::ResolveOrRejectValue&) {
+            return CreatePromise::CreateAndResolve(dataManager, __func__);
+          });
+    }
 
-    
+    if (dataManager->IsClosing()) {
+      
+      
+      
+      
+      
+      
+      
+      return dataManager->OnClose()->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [aOrigin](const BoolPromise::ResolveOrRejectValue&) {
+            return GetOrCreateFileSystemDataManager(aOrigin);
+          });
+    }
 
     return CreatePromise::CreateAndResolve(
         Registered<FileSystemDataManager>(std::move(dataManager)), __func__);
