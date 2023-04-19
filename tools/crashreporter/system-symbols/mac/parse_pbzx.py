@@ -49,8 +49,8 @@ def parse_pbzx(pbzx_path):
     
     
     magic = seekread(f, length=4)
-    if magic != "pbzx":
-        raise "Error: Not a pbzx file"
+    if magic != b"pbzx":
+        raise Exception("Error: Not a pbzx file")
     
     flags = seekread(f, length=8)
     
@@ -64,7 +64,7 @@ def parse_pbzx(pbzx_path):
         f_length = seekread(f, length=8)
         f_length = struct.unpack(">Q", f_length)[0]
         xzmagic = seekread(f, length=6)
-        if xzmagic != "\xfd7zXZ\x00":
+        if xzmagic != b"\xfd7zXZ\x00":
             
             
             
@@ -89,9 +89,9 @@ def parse_pbzx(pbzx_path):
             tail = seekread(f, offset=-2, length=2)
             xar_f.write(xzmagic)
             xar_f.write(f_content)
-            if tail != "YZ":
+            if tail != b"YZ":
                 xar_f.close()
-                raise "Error: Footer is not xar file footer"
+                raise Exception("Error: Footer is not xar file footer")
     try:
         f.close()
         xar_f.close()
