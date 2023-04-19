@@ -90,9 +90,9 @@ pub extern "C" fn jog_test_register_metric(
     extern "C" {
         fn JOG_RegisterMetric(category: &nsACString, name: &nsACString, metric: u32);
     }
-    let metric = metric.unwrap();
-    
+    let metric = metric.unwrap(); 
     unsafe {
+        
         JOG_RegisterMetric(ns_category, ns_name, metric);
     }
     metric
@@ -103,9 +103,33 @@ pub extern "C" fn jog_test_register_metric(
 
 
 #[no_mangle]
-pub extern "C" fn jog_test_register_ping() {
-    
-    
+pub extern "C" fn jog_test_register_ping(
+    name: &nsACString,
+    include_client_id: bool,
+    send_if_empty: bool,
+    reason_codes: &ThinVec<nsCString>,
+) -> u32 {
+    let ns_name = name;
+    let ping_name = name.to_string();
+    let reason_codes = reason_codes
+        .iter()
+        .map(|reason| reason.to_string())
+        .collect();
+    let ping_id = factory::create_and_register_ping(
+        ping_name,
+        include_client_id,
+        send_if_empty,
+        reason_codes,
+    );
+    extern "C" {
+        fn JOG_RegisterPing(name: &nsACString, ping_id: u32);
+    }
+    let ping_id = ping_id.unwrap(); 
+    unsafe {
+        
+        JOG_RegisterPing(ns_name, ping_id);
+    }
+    ping_id
 }
 
 

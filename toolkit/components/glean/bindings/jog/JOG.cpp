@@ -21,6 +21,7 @@ namespace mozilla::glean {
 
 StaticAutoPtr<nsTHashSet<nsCString>> gCategories;
 StaticAutoPtr<nsTHashMap<nsCString, uint32_t>> gMetrics;
+StaticAutoPtr<nsTHashMap<nsCString, uint32_t>> gPings;
 
 
 bool JOG::HasCategory(const nsACString& aCategoryName) {
@@ -56,6 +57,12 @@ Maybe<uint32_t> JOG::GetMetric(const nsACString& aMetricName) {
   return !gMetrics ? Nothing() : gMetrics->MaybeGet(aMetricName);
 }
 
+
+Maybe<uint32_t> JOG::GetPing(const nsACString& aPingName) {
+  MOZ_ASSERT(NS_IsMainThread());
+  return !gPings ? Nothing() : gPings->MaybeGet(aPingName);
+}
+
 }  
 
 
@@ -84,10 +91,35 @@ nsCString dottedSnakeToCamel(const nsACString& aSnake) {
   return camel;
 }
 
+
+nsCString kebabToCamel(const nsACString& aKebab) {
+  nsCString camel;
+  bool first = true;
+  for (const nsACString& segment : aKebab.Split('-')) {
+    if (first) {
+      first = false;
+      camel.Append(segment);
+    } else if (segment.Length()) {
+      char lower = segment.CharAt(0);
+      if ('a' <= lower && lower <= 'z') {
+        camel.Append(
+            std::toupper(lower, std::locale()));  
+        camel.Append(segment.BeginReading() + 1,
+                     segment.Length() - 1);  
+      } else {
+        
+        camel.Append(segment);
+      }
+    }
+  }
+  return camel;
+}
+
 using mozilla::AppShutdown;
 using mozilla::ShutdownPhase;
 using mozilla::glean::gCategories;
 using mozilla::glean::gMetrics;
+using mozilla::glean::gPings;
 
 extern "C" NS_EXPORT void JOG_RegisterMetric(const nsACString& aCategory,
                                              const nsACString& aName,
@@ -117,4 +149,23 @@ extern "C" NS_EXPORT void JOG_RegisterMetric(const nsACString& aCategory,
                   ShutdownPhase::XPCOMWillShutdown);
   }
   gMetrics->InsertOrUpdate(categoryCamel + "."_ns + nameCamel, aMetric);
+}
+
+extern "C" NS_EXPORT void JOG_RegisterPing(const nsACString& aPingName,
+                                           uint32_t aPingId) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
+    return;
+  }
+
+  
+  auto pingCamel = kebabToCamel(aPingName);
+
+  
+  if (!gPings) {
+    gPings = new nsTHashMap<nsCString, uint32_t>();
+    RunOnShutdown([&] { gPings = nullptr; }, ShutdownPhase::XPCOMWillShutdown);
+  }
+  gPings->InsertOrUpdate(pingCamel, aPingId);
 }
