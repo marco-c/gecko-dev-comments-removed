@@ -810,6 +810,24 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   
   
+  
+  
+  
+  
+  
+  
+  JSContext* cx = nsContentUtils::GetCurrentJSContext();
+  nsCOMPtr<nsIPrincipal> subjectPrincipal =
+      cx ? nsContentUtils::SubjectPrincipal()
+         : nsContentUtils::GetSystemPrincipal();
+  MOZ_ASSERT(subjectPrincipal);
+
+  
+  MOZ_ASSERT_IF(windowTypeIsChrome,
+                subjectPrincipal && subjectPrincipal->IsSystemPrincipal());
+
+  
+  
   RefPtr<nsOpenWindowInfo> openWindowInfo;
   if (!newBC && !windowTypeIsChrome) {
     openWindowInfo = new nsOpenWindowInfo();
@@ -824,10 +842,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
     
     
-    nsCOMPtr<nsIPrincipal> subjectPrincipal =
-        nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
-    if (subjectPrincipal &&
-        !nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal)) {
+    if (!nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal)) {
       openWindowInfo->mOriginAttributes =
           subjectPrincipal->OriginAttributesRef();
     } else if (parentBC) {
@@ -1115,15 +1130,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   
   
-  
-  
-  
-  
-  
-  JSContext* cx = nsContentUtils::GetCurrentJSContext();
-  nsCOMPtr<nsIPrincipal> subjectPrincipal =
-      cx ? nsContentUtils::SubjectPrincipal()
-         : nsContentUtils::GetSystemPrincipal();
 
   if (windowIsNew) {
     if (subjectPrincipal &&
@@ -1165,13 +1171,12 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     
     
     
-    
     if (win) {
       MOZ_ASSERT(windowIsNew);
       MOZ_ASSERT(!win->GetSameProcessOpener() ||
                  win->GetSameProcessOpener() == aParent);
-      win->SetInitialPrincipalToSubject(cspToInheritForAboutBlank,
-                                        coepToInheritForAboutBlank);
+      win->SetInitialPrincipal(subjectPrincipal, cspToInheritForAboutBlank,
+                               coepToInheritForAboutBlank);
 
       if (aIsPopupSpam) {
         MOZ_ASSERT(!newBC->GetIsPopupSpam(),
