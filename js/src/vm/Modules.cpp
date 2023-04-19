@@ -1563,48 +1563,13 @@ static bool ExecuteAsyncModule(JSContext* cx, Handle<ModuleObject*> module) {
   return ModuleObject::execute(cx, module);
 }
 
-struct EvalOrderComparator {
-  bool operator()(ModuleObject* a, ModuleObject* b, bool* lessOrEqualp) {
-    int32_t result = int32_t(a->getAsyncEvaluatingPostOrder()) -
-                     int32_t(b->getAsyncEvaluatingPostOrder());
-    *lessOrEqualp = (result <= 0);
-    return true;
-  }
-};
-
-
-bool js::GatherAvailableModuleAncestors(
-    JSContext* cx, Handle<ModuleObject*> module,
-    MutableHandle<ModuleVector> sortedList) {
-  MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
-  MOZ_ASSERT(sortedList.empty());
-
-  if (!::GatherAvailableModuleAncestors(cx, module, sortedList)) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-
-  Rooted<ModuleVector> scratch(cx);
-  if (!scratch.resize(sortedList.length())) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  MOZ_ALWAYS_TRUE(MergeSort(sortedList.begin(), sortedList.length(),
-                            scratch.begin(), EvalOrderComparator()));
-  return true;
-}
-
 
 
 static bool GatherAvailableModuleAncestors(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<ModuleVector> execList) {
+  MOZ_ASSERT(module->status() == ModuleStatus::EvaluatingAsync);
+
   
   
   Rooted<ListObject*> asyncParentModules(cx, module->asyncParentModules());
@@ -1642,7 +1607,7 @@ static bool GatherAvailableModuleAncestors(
         
         
         if (!m->hasTopLevelAwait() &&
-            !::GatherAvailableModuleAncestors(cx, m, execList)) {
+            !GatherAvailableModuleAncestors(cx, m, execList)) {
           return false;
         }
       }
@@ -1651,6 +1616,28 @@ static bool GatherAvailableModuleAncestors(
 
   
   return true;
+}
+
+struct EvalOrderComparator {
+  bool operator()(ModuleObject* a, ModuleObject* b, bool* lessOrEqualp) {
+    int32_t result = int32_t(a->getAsyncEvaluatingPostOrder()) -
+                     int32_t(b->getAsyncEvaluatingPostOrder());
+    *lessOrEqualp = (result <= 0);
+    return true;
+  }
+};
+
+static void RejectExecutionWithPendingException(JSContext* cx,
+                                                Handle<ModuleObject*> module) {
+  
+  
+  
+  RootedValue exception(cx);
+  if (cx->isExceptionPending()) {
+    std::ignore = cx->getPendingException(&exception);
+  }
+  cx->clearPendingException();
+  AsyncModuleExecutionRejected(cx, module, exception);
 }
 
 
@@ -1672,29 +1659,33 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
     }
   }
 
-  Rooted<ModuleVector> sortedList(cx);
-  if (!js::GatherAvailableModuleAncestors(cx, module, &sortedList)) {
-    
-    
-    if (!cx->isExceptionPending()) {
-      AsyncModuleExecutionRejected(cx, module, UndefinedHandleValue);
-      return;
-    }
-
-    RootedValue exception(cx);
-    if (!cx->getPendingException(&exception)) {
-      return;
-    }
-    cx->clearPendingException();
-    AsyncModuleExecutionRejected(cx, module, exception);
+  Rooted<ModuleVector> execList(cx);
+  if (!GatherAvailableModuleAncestors(cx, module, &execList)) {
+    RejectExecutionWithPendingException(cx, module);
+    return;
   }
+
+  Rooted<ModuleVector> scratch(cx);
+  if (!scratch.resize(execList.length())) {
+    ReportOutOfMemory(cx);
+    RejectExecutionWithPendingException(cx, module);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  MOZ_ALWAYS_TRUE(MergeSort(execList.begin(), execList.length(),
+                            scratch.begin(), EvalOrderComparator()));
 
   
   module->setAsyncEvaluatingFalse();
 
   Rooted<ModuleObject*> m(cx);
 
-  for (ModuleObject* obj : sortedList) {
+  for (ModuleObject* obj : execList) {
     m = obj;
 
     
