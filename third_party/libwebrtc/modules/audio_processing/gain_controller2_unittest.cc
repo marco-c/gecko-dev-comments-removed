@@ -258,8 +258,7 @@ TEST(GainController2, CheckFinalGainWithAdaptiveDigitalController) {
   test::InputAudioFile input_file(
       test::GetApmCaptureTestVectorFileName(kSampleRateHz),
       true);
-  const StreamConfig stream_config(kSampleRateHz, kStereo,
-                                   false);
+  const StreamConfig stream_config(kSampleRateHz, kStereo);
 
   
   constexpr int kFrameDurationMs = 10;
