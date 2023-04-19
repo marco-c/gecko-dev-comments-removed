@@ -300,6 +300,17 @@ class Browsertime(Perftest):
             
             self.results_handler.perfstats = True
 
+        if self.config["app"] in ("fenix",):
+            
+            browsertime_options.extend(
+                [
+                    "--browsertime.browserRestartTries",
+                    "10",
+                    "--timeouts.browserStart",
+                    "180000",
+                ]
+            )
+
         if test.get("secondary_url"):
             browsertime_options.extend(
                 ["--browsertime.secondary_url", test.get("secondary_url")]
@@ -694,7 +705,7 @@ class Browsertime(Perftest):
                 output_timeout = BROWSERTIME_BENCHMARK_OUTPUT_TIMEOUT
 
             
-            if self.config["live_sites"]:
+            if self.config["live_sites"] or self.config["app"] in ("fenix",):
                 output_timeout *= 2
                 proc_timeout *= 2
 
