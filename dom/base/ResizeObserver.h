@@ -171,6 +171,11 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
   
 
 
+  bool HasNativeCallback() { return mCallback.is<NativeCallback>(); }
+
+  
+
+
 
 
 

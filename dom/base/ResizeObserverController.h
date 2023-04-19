@@ -73,7 +73,13 @@ class ResizeObserverController final {
   void ShellDetachedFromDocument();
   void AddResizeObserver(ResizeObserver& aObserver) {
     MOZ_ASSERT(!mResizeObservers.Contains(&aObserver));
-    mResizeObservers.AppendElement(&aObserver);
+    
+    
+    if (aObserver.HasNativeCallback()) {
+      mResizeObservers.InsertElementAt(0, &aObserver);
+    } else {
+      mResizeObservers.AppendElement(&aObserver);
+    }
   }
 
   void RemoveResizeObserver(ResizeObserver& aObserver) {
