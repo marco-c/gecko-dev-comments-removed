@@ -27,6 +27,7 @@
 #include "jsapi/PacketDumper.h"
 
 #include "test/rtp_header_parser.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 
 
 
@@ -231,7 +232,7 @@ class MediaPipeline : public sigslot::has_slots<> {
 
   
   UniquePtr<MediaPipelineFilter> mFilter;
-  const UniquePtr<webrtc::RtpHeaderParser> mRtpParser;
+  const UniquePtr<webrtc::RtpHeaderExtensionMap> mRtpHeaderExtensionMap;
 
   RefPtr<PacketDumper> mPacketDumper;
 
