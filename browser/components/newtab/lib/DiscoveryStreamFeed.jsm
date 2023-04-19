@@ -601,11 +601,27 @@ class DiscoveryStreamFeed {
         items = isBasicLayout ? 4 : 24;
       }
 
+      const spocAdTypes = pocketConfig.spocAdTypes
+        ?.split(",")
+        .map(item => parseInt(item, 10));
+      const spocZoneIds = pocketConfig.spocZoneIds
+        ?.split(",")
+        .map(item => parseInt(item, 10));
+      let spocPlacementData;
+
+      if (spocAdTypes?.length && spocZoneIds?.length) {
+        spocPlacementData = {
+          ad_types: spocAdTypes,
+          zone_ids: spocZoneIds,
+        };
+      }
+
       
       
       layoutResp = getHardcodedLayout({
         items,
         sponsoredCollectionsEnabled,
+        spocPlacementData,
         spocPositions: this.parseGridPositions(
           pocketConfig.spocPositions?.split(`,`)
         ),
@@ -662,8 +678,8 @@ class DiscoveryStreamFeed {
             isStartup,
           },
         });
-        this.updatePlacements(sendUpdate, layoutResp.layout, isStartup);
       }
+      this.updatePlacements(sendUpdate, layoutResp.layout, isStartup);
     }
   }
 
@@ -2017,9 +2033,11 @@ class DiscoveryStreamFeed {
 
 
 
+
 getHardcodedLayout = ({
   items = 21,
   spocPositions = [1, 5, 7, 11, 18, 20],
+  spocPlacementData = { ad_types: [3617], zone_ids: [217758, 217995] },
   widgetPositions = [],
   widgetData = [],
   sponsoredCollectionsEnabled = false,
@@ -2124,8 +2142,8 @@ getHardcodedLayout = ({
           },
           placement: {
             name: "spocs",
-            ad_types: [3617],
-            zone_ids: [217758, 217995],
+            ad_types: spocPlacementData.ad_types,
+            zone_ids: spocPlacementData.zone_ids,
           },
           feed: {
             embed_reference: null,
