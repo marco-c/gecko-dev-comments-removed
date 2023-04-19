@@ -59,6 +59,11 @@ void RetransmissionTimeout::ObserveRTT(DurationMs measured_rtt) {
   }
 
   
+  
+  
+  rto_ = std::fmax(rto_, rtt + 1);
+
+  
   rto_ = std::fmin(std::fmax(rto_, min_rto_), max_rto_);
 }
 }  

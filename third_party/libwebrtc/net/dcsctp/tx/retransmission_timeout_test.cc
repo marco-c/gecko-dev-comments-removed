@@ -80,29 +80,29 @@ TEST(RetransmissionTimeoutTest, WillNeverGoAboveMaximumRto) {
 TEST(RetransmissionTimeoutTest, CalculatesRtoForStableRtt) {
   RetransmissionTimeout rto_(MakeOptions());
   rto_.ObserveRTT(DurationMs(124));
-  EXPECT_THAT(*rto_.rto(), 372);
+  EXPECT_EQ(*rto_.rto(), 372);
   rto_.ObserveRTT(DurationMs(128));
-  EXPECT_THAT(*rto_.rto(), 314);
+  EXPECT_EQ(*rto_.rto(), 314);
   rto_.ObserveRTT(DurationMs(123));
-  EXPECT_THAT(*rto_.rto(), 268);
+  EXPECT_EQ(*rto_.rto(), 268);
   rto_.ObserveRTT(DurationMs(125));
-  EXPECT_THAT(*rto_.rto(), 233);
+  EXPECT_EQ(*rto_.rto(), 233);
   rto_.ObserveRTT(DurationMs(127));
-  EXPECT_THAT(*rto_.rto(), 208);
+  EXPECT_EQ(*rto_.rto(), 208);
 }
 
 TEST(RetransmissionTimeoutTest, CalculatesRtoForUnstableRtt) {
   RetransmissionTimeout rto_(MakeOptions());
   rto_.ObserveRTT(DurationMs(124));
-  EXPECT_THAT(*rto_.rto(), 372);
+  EXPECT_EQ(*rto_.rto(), 372);
   rto_.ObserveRTT(DurationMs(402));
-  EXPECT_THAT(*rto_.rto(), 622);
+  EXPECT_EQ(*rto_.rto(), 622);
   rto_.ObserveRTT(DurationMs(728));
-  EXPECT_THAT(*rto_.rto(), 800);
+  EXPECT_EQ(*rto_.rto(), 800);
   rto_.ObserveRTT(DurationMs(89));
-  EXPECT_THAT(*rto_.rto(), 800);
+  EXPECT_EQ(*rto_.rto(), 800);
   rto_.ObserveRTT(DurationMs(126));
-  EXPECT_THAT(*rto_.rto(), 800);
+  EXPECT_EQ(*rto_.rto(), 800);
 }
 
 TEST(RetransmissionTimeoutTest, WillStabilizeAfterAWhile) {
@@ -112,25 +112,40 @@ TEST(RetransmissionTimeoutTest, WillStabilizeAfterAWhile) {
   rto_.ObserveRTT(DurationMs(728));
   rto_.ObserveRTT(DurationMs(89));
   rto_.ObserveRTT(DurationMs(126));
-  EXPECT_THAT(*rto_.rto(), 800);
+  EXPECT_EQ(*rto_.rto(), 800);
   rto_.ObserveRTT(DurationMs(124));
-  EXPECT_THAT(*rto_.rto(), 800);
+  EXPECT_EQ(*rto_.rto(), 800);
   rto_.ObserveRTT(DurationMs(122));
-  EXPECT_THAT(*rto_.rto(), 709);
+  EXPECT_EQ(*rto_.rto(), 709);
   rto_.ObserveRTT(DurationMs(123));
-  EXPECT_THAT(*rto_.rto(), 630);
+  EXPECT_EQ(*rto_.rto(), 630);
   rto_.ObserveRTT(DurationMs(124));
-  EXPECT_THAT(*rto_.rto(), 561);
+  EXPECT_EQ(*rto_.rto(), 561);
   rto_.ObserveRTT(DurationMs(122));
-  EXPECT_THAT(*rto_.rto(), 504);
+  EXPECT_EQ(*rto_.rto(), 504);
   rto_.ObserveRTT(DurationMs(124));
-  EXPECT_THAT(*rto_.rto(), 453);
+  EXPECT_EQ(*rto_.rto(), 453);
   rto_.ObserveRTT(DurationMs(124));
-  EXPECT_THAT(*rto_.rto(), 409);
+  EXPECT_EQ(*rto_.rto(), 409);
   rto_.ObserveRTT(DurationMs(124));
-  EXPECT_THAT(*rto_.rto(), 372);
+  EXPECT_EQ(*rto_.rto(), 372);
   rto_.ObserveRTT(DurationMs(124));
-  EXPECT_THAT(*rto_.rto(), 339);
+  EXPECT_EQ(*rto_.rto(), 339);
 }
+
+TEST(RetransmissionTimeoutTest, WillAlwaysStayAboveRTT) {
+  
+  
+  
+  
+  
+  RetransmissionTimeout rto_(MakeOptions());
+
+  for (int i = 0; i < 100; ++i) {
+    rto_.ObserveRTT(DurationMs(124));
+  }
+  EXPECT_GT(*rto_.rto(), 124);
+}
+
 }  
 }  
