@@ -19,6 +19,7 @@
 #include "p2p/base/connection.h"
 #include "p2p/base/port.h"
 #include "rtc_base/async_packet_socket.h"
+#include "rtc_base/containers/flat_map.h"
 
 namespace cricket {
 
@@ -52,6 +53,9 @@ class TCPPort : public Port {
 
   void PrepareAddress() override;
 
+  
+  
+  
   int GetOption(rtc::Socket::Option opt, int* value) override;
   int SetOption(rtc::Socket::Option opt, int value) override;
   int GetError() override;
@@ -104,6 +108,12 @@ class TCPPort : public Port {
 
   bool allow_listen_;
   std::unique_ptr<rtc::AsyncListenSocket> listen_socket_;
+  
+  
+  
+  
+  webrtc::flat_map<rtc::Socket::Option, int> socket_options_;
+
   int error_;
   std::list<Incoming> incoming_;
 

@@ -78,14 +78,6 @@ AsyncListenSocket* BasicPacketSocketFactory::CreateServerTcpSocket(
     return NULL;
   }
 
-  
-  
-  
-  if (socket->SetOption(Socket::OPT_NODELAY, 1) != 0) {
-    RTC_LOG(LS_ERROR) << "Setting TCP_NODELAY option failed with error "
-                      << socket->GetError();
-  }
-
   RTC_CHECK(!(opts & PacketSocketFactory::OPT_STUN));
 
   return new AsyncTcpListenSocket(absl::WrapUnique(socket));

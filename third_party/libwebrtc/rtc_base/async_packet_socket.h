@@ -147,10 +147,6 @@ class RTC_EXPORT AsyncListenSocket : public sigslot::has_slots<> {
   
   virtual SocketAddress GetLocalAddress() const = 0;
 
-  
-  virtual int GetOption(Socket::Option opt, int* value) = 0;
-  virtual int SetOption(Socket::Option opt, int value) = 0;
-
   sigslot::signal2<AsyncListenSocket*, AsyncPacketSocket*> SignalNewConnection;
 };
 
