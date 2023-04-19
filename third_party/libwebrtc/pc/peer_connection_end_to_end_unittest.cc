@@ -509,14 +509,16 @@ TEST_P(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
   Negotiate();
   WaitForConnection();
 
-  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
-  WaitForDataChannelsToOpen(callee_dc, caller_signaled_data_channels_, 0);
+  WaitForDataChannelsToOpen(caller_dc.get(), callee_signaled_data_channels_, 0);
+  WaitForDataChannelsToOpen(callee_dc.get(), caller_signaled_data_channels_, 0);
 
-  TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[0]);
-  TestDataChannelSendAndReceive(callee_dc, caller_signaled_data_channels_[0]);
+  TestDataChannelSendAndReceive(caller_dc.get(),
+                                callee_signaled_data_channels_[0].get());
+  TestDataChannelSendAndReceive(callee_dc.get(),
+                                caller_signaled_data_channels_[0].get());
 
-  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 0);
-  CloseDataChannels(callee_dc, caller_signaled_data_channels_, 0);
+  CloseDataChannels(caller_dc.get(), callee_signaled_data_channels_, 0);
+  CloseDataChannels(callee_dc.get(), caller_signaled_data_channels_, 0);
 }
 
 
@@ -534,7 +536,7 @@ TEST_P(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
   WaitForConnection();
 
   
-  WaitForDataChannelsToOpen(dummy, callee_signaled_data_channels_, 0);
+  WaitForDataChannelsToOpen(dummy.get(), callee_signaled_data_channels_, 0);
 
   
   rtc::scoped_refptr<DataChannelInterface> caller_dc(
@@ -542,14 +544,16 @@ TEST_P(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
   rtc::scoped_refptr<DataChannelInterface> callee_dc(
       callee_->CreateDataChannel("hello", init));
 
-  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 1);
-  WaitForDataChannelsToOpen(callee_dc, caller_signaled_data_channels_, 0);
+  WaitForDataChannelsToOpen(caller_dc.get(), callee_signaled_data_channels_, 1);
+  WaitForDataChannelsToOpen(callee_dc.get(), caller_signaled_data_channels_, 0);
 
-  TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[1]);
-  TestDataChannelSendAndReceive(callee_dc, caller_signaled_data_channels_[0]);
+  TestDataChannelSendAndReceive(caller_dc.get(),
+                                callee_signaled_data_channels_[1].get());
+  TestDataChannelSendAndReceive(callee_dc.get(),
+                                caller_signaled_data_channels_[0].get());
 
-  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);
-  CloseDataChannels(callee_dc, caller_signaled_data_channels_, 0);
+  CloseDataChannels(caller_dc.get(), callee_signaled_data_channels_, 1);
+  CloseDataChannels(callee_dc.get(), caller_signaled_data_channels_, 0);
 }
 
 
@@ -566,7 +570,7 @@ TEST_P(PeerConnectionEndToEndTest, CreateDataChannelLargeTransfer) {
   WaitForConnection();
 
   
-  WaitForDataChannelsToOpen(dummy, callee_signaled_data_channels_, 0);
+  WaitForDataChannelsToOpen(dummy.get(), callee_signaled_data_channels_, 0);
 
   
   rtc::scoped_refptr<DataChannelInterface> caller_dc(
@@ -574,16 +578,16 @@ TEST_P(PeerConnectionEndToEndTest, CreateDataChannelLargeTransfer) {
   rtc::scoped_refptr<DataChannelInterface> callee_dc(
       callee_->CreateDataChannel("hello", init));
 
-  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 1);
-  WaitForDataChannelsToOpen(callee_dc, caller_signaled_data_channels_, 0);
+  WaitForDataChannelsToOpen(caller_dc.get(), callee_signaled_data_channels_, 1);
+  WaitForDataChannelsToOpen(callee_dc.get(), caller_signaled_data_channels_, 0);
 
-  TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[1],
-                                256 * 1024);
-  TestDataChannelSendAndReceive(callee_dc, caller_signaled_data_channels_[0],
-                                256 * 1024);
+  TestDataChannelSendAndReceive(
+      caller_dc.get(), callee_signaled_data_channels_[1].get(), 256 * 1024);
+  TestDataChannelSendAndReceive(
+      callee_dc.get(), caller_signaled_data_channels_[0].get(), 256 * 1024);
 
-  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);
-  CloseDataChannels(callee_dc, caller_signaled_data_channels_, 0);
+  CloseDataChannels(caller_dc.get(), callee_signaled_data_channels_, 1);
+  CloseDataChannels(callee_dc.get(), caller_signaled_data_channels_, 0);
 }
 
 
@@ -628,14 +632,18 @@ TEST_P(PeerConnectionEndToEndTest,
 
   Negotiate();
   WaitForConnection();
-  WaitForDataChannelsToOpen(caller_dc_1, callee_signaled_data_channels_, 0);
-  WaitForDataChannelsToOpen(caller_dc_2, callee_signaled_data_channels_, 1);
+  WaitForDataChannelsToOpen(caller_dc_1.get(), callee_signaled_data_channels_,
+                            0);
+  WaitForDataChannelsToOpen(caller_dc_2.get(), callee_signaled_data_channels_,
+                            1);
 
   std::unique_ptr<webrtc::MockDataChannelObserver> dc_1_observer(
-      new webrtc::MockDataChannelObserver(callee_signaled_data_channels_[0]));
+      new webrtc::MockDataChannelObserver(
+          callee_signaled_data_channels_[0].get()));
 
   std::unique_ptr<webrtc::MockDataChannelObserver> dc_2_observer(
-      new webrtc::MockDataChannelObserver(callee_signaled_data_channels_[1]));
+      new webrtc::MockDataChannelObserver(
+          callee_signaled_data_channels_[1].get()));
 
   const std::string message_1 = "hello 1";
   const std::string message_2 = "hello 2";
@@ -666,7 +674,7 @@ TEST_P(PeerConnectionEndToEndTest,
   Negotiate();
   WaitForConnection();
 
-  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
+  WaitForDataChannelsToOpen(caller_dc.get(), callee_signaled_data_channels_, 0);
   int first_channel_id = caller_dc->id();
   
   
@@ -676,13 +684,14 @@ TEST_P(PeerConnectionEndToEndTest,
 
   
   caller_dc = caller_->CreateDataChannel("data2", init);
-  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 1);
+  WaitForDataChannelsToOpen(caller_dc.get(), callee_signaled_data_channels_, 1);
   
   
   EXPECT_EQ(first_channel_id, caller_dc->id());
-  TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[1]);
+  TestDataChannelSendAndReceive(caller_dc.get(),
+                                callee_signaled_data_channels_[1].get());
 
-  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);
+  CloseDataChannels(caller_dc.get(), callee_signaled_data_channels_, 1);
 }
 
 
@@ -699,20 +708,21 @@ TEST_P(PeerConnectionEndToEndTest,
   Negotiate();
   WaitForConnection();
 
-  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
+  WaitForDataChannelsToOpen(caller_dc.get(), callee_signaled_data_channels_, 0);
   int first_channel_id = caller_dc->id();
   caller_dc->Close();
 
   
   
   caller_dc = caller_->CreateDataChannel("data2", init);
-  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 1);
+  WaitForDataChannelsToOpen(caller_dc.get(), callee_signaled_data_channels_, 1);
   
   
   EXPECT_NE(first_channel_id, caller_dc->id());
-  TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[1]);
+  TestDataChannelSendAndReceive(caller_dc.get(),
+                                callee_signaled_data_channels_[1].get());
 
-  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);
+  CloseDataChannels(caller_dc.get(), callee_signaled_data_channels_, 1);
 }
 
 
@@ -730,7 +740,7 @@ TEST_P(PeerConnectionEndToEndTest, CloseDataChannelRemotelyWhileNotReferenced) {
   Negotiate();
   WaitForConnection();
 
-  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
+  WaitForDataChannelsToOpen(caller_dc.get(), callee_signaled_data_channels_, 0);
   
   callee_signaled_data_channels_.clear();
   caller_dc->Close();
