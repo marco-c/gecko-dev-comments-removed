@@ -66,6 +66,9 @@ class ChannelInterface {
   
   virtual bool SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) = 0;
 
+  
+  virtual RtpHeaderExtensions GetNegotiatedRtpHeaderExtensions() const = 0;
+
  protected:
   virtual ~ChannelInterface() = default;
 };

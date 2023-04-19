@@ -159,6 +159,12 @@ class RTC_EXPORT RtpTransceiverInterface : public rtc::RefCountInterface {
   
   
   
+  virtual std::vector<RtpHeaderExtensionCapability> HeaderExtensionsNegotiated()
+      const;
+
+  
+  
+  
   virtual webrtc::RTCError SetOfferedRtpHeaderExtensions(
       rtc::ArrayView<const RtpHeaderExtensionCapability>
           header_extensions_to_offer);
