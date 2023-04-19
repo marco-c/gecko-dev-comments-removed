@@ -374,29 +374,10 @@ class nsFrameList {
     
     
     MOZ_IMPLICIT Slice(const nsFrameList& aList)
-        :
-#ifdef DEBUG
-          mList(aList),
-#endif
-          mStart(aList.FirstChild()),
-          mEnd(nullptr) {
-    }
-
-    Slice(const nsFrameList& aList, nsIFrame* aStart, nsIFrame* aEnd)
-        :
-#ifdef DEBUG
-          mList(aList),
-#endif
-          mStart(aStart),
-          mEnd(aEnd) {
-    }
-
-    Slice(const Slice& aOther) = default;
+        : mStart(aList.FirstChild()), mEnd(nullptr) {}
+    Slice(nsIFrame* aStart, nsIFrame* aEnd) : mStart(aStart), mEnd(aEnd) {}
 
    private:
-#ifdef DEBUG
-    const nsFrameList& mList;
-#endif
     nsIFrame* const mStart;      
     const nsIFrame* const mEnd;  
                                  
@@ -405,13 +386,7 @@ class nsFrameList {
   class Enumerator {
    public:
     explicit Enumerator(const Slice& aSlice)
-        :
-#ifdef DEBUG
-          mSlice(aSlice),
-#endif
-          mFrame(aSlice.mStart),
-          mEnd(aSlice.mEnd) {
-    }
+        : mFrame(aSlice.mStart), mEnd(aSlice.mEnd) {}
 
     Enumerator(const Enumerator& aOther) = default;
 
@@ -444,25 +419,10 @@ class nsFrameList {
       return Enumerator(*this, nullptr);
     }
 
-#ifdef DEBUG
-    const nsFrameList& List() const { return mSlice.mList; }
-#endif
-
    protected:
     Enumerator(const Enumerator& aOther, const nsIFrame* const aNewEnd)
-        :
-#ifdef DEBUG
-          mSlice(aOther.mSlice),
-#endif
-          mFrame(aOther.mFrame),
-          mEnd(aNewEnd) {
-    }
+        : mFrame(aOther.mFrame), mEnd(aNewEnd) {}
 
-#ifdef DEBUG
-    
-
-    const Slice mSlice;
-#endif
     nsIFrame* mFrame;            
     const nsIFrame* const mEnd;  
                                  

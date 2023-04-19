@@ -854,7 +854,7 @@ int32_t nsTableFrame::InsertRows(nsTableRowGroupFrame* aRowGroupFrame,
     TableArea damageArea(0, 0, 0, 0);
     bool shouldRecalculateIndex = !IsDeletedRowIndexRangesEmpty();
     if (shouldRecalculateIndex) {
-      ResetRowIndices(nsFrameList::Slice(mFrames, nullptr, nullptr));
+      ResetRowIndices(nsFrameList::Slice(nullptr, nullptr));
     }
     int32_t origNumRows = cellMap->GetRowCount();
     int32_t numNewRows = aRowFrames.Length();
@@ -2142,14 +2142,14 @@ void nsTableFrame::AppendFrames(ChildListID aListID, nsFrameList& aFrameList) {
       mColGroups.InsertFrame(this, lastColGroup, f);
       
       InsertColGroups(startColIndex,
-                      nsFrameList::Slice(mColGroups, f, f->GetNextSibling()));
+                      nsFrameList::Slice(f, f->GetNextSibling()));
     } else if (IsRowGroup(display->mDisplay)) {
       DrainSelfOverflowList();  
       
       mFrames.AppendFrame(nullptr, f);
 
       
-      InsertRowGroups(nsFrameList::Slice(mFrames, f, nullptr));
+      InsertRowGroups(nsFrameList::Slice(f, nullptr));
     } else {
       
       MOZ_ASSERT_UNREACHABLE(
@@ -2394,7 +2394,7 @@ void nsTableFrame::DoRemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
     if (cellMap) {
       cellMap->Synchronize(this);
       
-      ResetRowIndices(nsFrameList::Slice(mFrames, nullptr, nullptr));
+      ResetRowIndices(nsFrameList::Slice(nullptr, nullptr));
       TableArea damageArea;
       cellMap->RebuildConsideringCells(nullptr, nullptr, 0, 0, false,
                                        damageArea);
