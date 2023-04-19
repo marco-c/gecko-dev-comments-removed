@@ -3696,12 +3696,11 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
             
             return false;
           }
-        } else if (key->isKind(ParseNodeKind::BigIntExpr)) {
-          if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
-            
-            return false;
-          }
         } else {
+          
+          
+          MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName));
+
           if (!emitComputedPropertyName(&key->as<UnaryNode>())) {
             
             return false;
@@ -3829,15 +3828,11 @@ bool BytecodeEmitter::emitDestructuringObjRestExclusionSet(ListNode* pattern) {
           return false;
         }
         isIndex = true;
-      } else if (key->isKind(ParseNodeKind::BigIntExpr)) {
-        if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
-          return false;
-        }
-        isIndex = true;
       } else if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
                  key->isKind(ParseNodeKind::StringExpr)) {
         pnatom = key->as<NameNode>().atom();
       } else {
+        
         
         
         MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName));
@@ -8930,17 +8925,9 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
             }
           }
         } else {
-          MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName) ||
-                     key->isKind(ParseNodeKind::BigIntExpr));
-
           
           
-          if (key->isKind(ParseNodeKind::BigIntExpr)) {
-            MOZ_ASSERT(accessorType == AccessorType::None);
-            if (!emit1(JSOp::ToString)) {
-              return false;
-            }
-          }
+          MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName));
 
           FunctionPrefixKind prefix =
               accessorType == AccessorType::None     ? FunctionPrefixKind::None
@@ -8973,23 +8960,15 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         (type == ClassBody && propdef->as<ClassMethod>().isStatic())
             ? PropertyEmitter::Kind::Static
             : PropertyEmitter::Kind::Prototype;
-    if (key->isKind(ParseNodeKind::NumberExpr) ||
-        key->isKind(ParseNodeKind::BigIntExpr)) {
+    if (key->isKind(ParseNodeKind::NumberExpr)) {
       
       if (!pe.prepareForIndexPropKey(propdef->pn_pos.begin, kind)) {
         
         return false;
       }
-      if (key->isKind(ParseNodeKind::NumberExpr)) {
-        if (!emitNumberOp(key->as<NumericLiteral>().value())) {
-          
-          return false;
-        }
-      } else {
-        if (!emitBigIntOp(&key->as<BigIntLiteral>())) {
-          
-          return false;
-        }
+      if (!emitNumberOp(key->as<NumericLiteral>().value())) {
+        
+        return false;
       }
       if (!pe.prepareForIndexPropValue()) {
         
@@ -9040,6 +9019,9 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
     }
 
     if (key->isKind(ParseNodeKind::ComputedName)) {
+      
+      
+
       
 
       if (!pe.prepareForComputedPropKey(propdef->pn_pos.begin, kind)) {
