@@ -10,14 +10,7 @@ loadTestSubscript("head_disco.js");
 
 
 
-
-const API_RESPONSE_FILE = PathUtils.join(
-  Services.dirsvc.get("CurWorkD", Ci.nsIFile).path,
-  
-  ...RELATIVE_DIR.split("/").filter(c => c.length),
-  "discovery",
-  "api_response.json"
-);
+const API_RESPONSE_FILE = RELATIVE_DIR + "discovery/api_response.json";
 
 const AMO_TEST_HOST = "rewritten-for-testing.addons.allizom.org";
 
