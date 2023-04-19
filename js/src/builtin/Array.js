@@ -11,10 +11,12 @@ function ArrayEvery(callbackfn) {
     var len = ToLength(O.length);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.every");
-    if (!IsCallable(callbackfn))
+    }
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var T = arguments.length > 1 ? arguments[1] : undefined;
@@ -25,8 +27,9 @@ function ArrayEvery(callbackfn) {
         
         if (k in O) {
             
-            if (!callContentFunction(callbackfn, T, O[k], k, O))
+            if (!callContentFunction(callbackfn, T, O[k], k, O)) {
                 return false;
+            }
         }
     }
 
@@ -45,10 +48,12 @@ function ArraySome(callbackfn) {
     var len = ToLength(O.length);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.some");
-    if (!IsCallable(callbackfn))
+    }
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var T = arguments.length > 1 ? arguments[1] : undefined;
@@ -59,8 +64,9 @@ function ArraySome(callbackfn) {
         
         if (k in O) {
             
-            if (callContentFunction(callbackfn, T, O[k], k, O))
+            if (callContentFunction(callbackfn, T, O[k], k, O)) {
                 return true;
+            }
         }
     }
 
@@ -79,8 +85,9 @@ function ArraySort(comparefn) {
 function SortArray(obj, comparefn) {
     
     if (comparefn !== undefined) {
-        if (!IsCallable(comparefn))
+        if (!IsCallable(comparefn)) {
             ThrowTypeError(JSMSG_BAD_SORT_ARG);
+        }
     }
 
     
@@ -88,26 +95,30 @@ function SortArray(obj, comparefn) {
 
     
     
-    if (callFunction(ArrayNativeSort, O, comparefn))
+    if (callFunction(ArrayNativeSort, O, comparefn)) {
         return O;
+    }
 
     
     var len = ToLength(O.length);
 
-    if (len <= 1)
+    if (len <= 1) {
       return O;
+    }
 
     
     var wrappedCompareFn = comparefn;
     comparefn = function(x, y) {
         
         if (x === undefined) {
-            if (y === undefined)
+            if (y === undefined) {
                 return 0;
+            }
            return 1;
         }
-        if (y === undefined)
+        if (y === undefined) {
             return -1;
+        }
 
         
         var v = ToNumber(wrappedCompareFn(x, y));
@@ -128,10 +139,12 @@ function ArrayForEach(callbackfn) {
     var len = ToLength(O.length);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.forEach");
-    if (!IsCallable(callbackfn))
+    }
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var T = arguments.length > 1 ? arguments[1] : undefined;
@@ -161,10 +174,12 @@ function ArrayMap(callbackfn) {
     var len = ToLength(O.length);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.map");
-    if (!IsCallable(callbackfn))
+    }
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var T = arguments.length > 1 ? arguments[1] : undefined;
@@ -198,10 +213,12 @@ function ArrayFilter(callbackfn) {
     var len = ToLength(O.length);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.filter");
-    if (!IsCallable(callbackfn))
+    }
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var T = arguments.length > 1 ? arguments[1] : undefined;
@@ -219,8 +236,9 @@ function ArrayFilter(callbackfn) {
             
             var selected = callContentFunction(callbackfn, T, kValue, k, O);
             
-            if (selected)
+            if (selected) {
                 DefineDataProperty(A, to++, kValue);
+            }
         }
     }
 
@@ -380,10 +398,12 @@ function ArrayReduce(callbackfn) {
     var len = ToLength(O.length);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.reduce");
-    if (!IsCallable(callbackfn))
+    }
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var k = 0;
@@ -396,8 +416,9 @@ function ArrayReduce(callbackfn) {
         
         
         
-        if (len === 0)
+        if (len === 0) {
             throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+        }
 
         
         
@@ -409,8 +430,9 @@ function ArrayReduce(callbackfn) {
                 break;
             }
         } while (++k < len);
-        if (!kPresent)
+        if (!kPresent) {
           throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+        }
 
         
         accumulator = O[k++];
@@ -440,10 +462,12 @@ function ArrayReduceRight(callbackfn) {
     var len = ToLength(O.length);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.reduce");
-    if (!IsCallable(callbackfn))
+    }
+    if (!IsCallable(callbackfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
 
     
     var k = len - 1;
@@ -456,8 +480,9 @@ function ArrayReduceRight(callbackfn) {
         
         
         
-        if (len === 0)
+        if (len === 0) {
             throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+        }
 
         
         
@@ -469,8 +494,9 @@ function ArrayReduceRight(callbackfn) {
                 break;
             }
         } while (--k >= 0);
-        if (!kPresent)
+        if (!kPresent) {
             throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+        }
 
         
         accumulator = O[k--];
@@ -500,10 +526,12 @@ function ArrayFind(predicate) {
     var len = ToLength(O.length);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.find");
-    if (!IsCallable(predicate))
+    }
+    if (!IsCallable(predicate)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+    }
 
     
     var T = arguments.length > 1 ? arguments[1] : undefined;
@@ -514,8 +542,9 @@ function ArrayFind(predicate) {
         
         var kValue = O[k];
         
-        if (callContentFunction(predicate, T, kValue, k, O))
+        if (callContentFunction(predicate, T, kValue, k, O)) {
             return kValue;
+        }
     }
 
     
@@ -531,10 +560,12 @@ function ArrayFindIndex(predicate) {
     var len = ToLength(O.length);
 
     
-    if (arguments.length === 0)
+    if (arguments.length === 0) {
         ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.find");
-    if (!IsCallable(predicate))
+    }
+    if (!IsCallable(predicate)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+    }
 
     
     var T = arguments.length > 1 ? arguments[1] : undefined;
@@ -543,8 +574,9 @@ function ArrayFindIndex(predicate) {
     
     for (var k = 0; k < len; k++) {
         
-        if (callContentFunction(predicate, T, O[k], k, O))
+        if (callContentFunction(predicate, T, O[k], k, O)) {
             return k;
+        }
     }
 
     
@@ -592,10 +624,11 @@ function ArrayCopyWithin(target, start, end = undefined) {
 
         
         while (count > 0) {
-            if (from in O)
+            if (from in O) {
                 O[to] = O[from];
-            else
+            } else {
                 delete O[to];
+            }
 
             from--;
             to--;
@@ -604,10 +637,11 @@ function ArrayCopyWithin(target, start, end = undefined) {
     } else {
         
         while (count > 0) {
-            if (from in O)
+            if (from in O) {
                 O[to] = O[from];
-            else
+            } else {
                 delete O[to];
+            }
 
             from++;
             to++;
@@ -697,8 +731,9 @@ function ArrayIteratorNext() {
 
         
         if (len === 0) {
-            if (PossiblyWrappedTypedArrayHasDetachedBuffer(a))
+            if (PossiblyWrappedTypedArrayHasDetachedBuffer(a)) {
                 ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+            }
         }
     } else {
         len = ToLength(a.length);
@@ -758,8 +793,9 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
 
     
     var mapping = mapfn !== undefined;
-    if (mapping && !IsCallable(mapfn))
+    if (mapping && !IsCallable(mapfn)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, mapfn));
+    }
     var T = thisArg;
 
     
@@ -770,8 +806,9 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
     
     if (usingIterator !== undefined && usingIterator !== null) {
         
-        if (!IsCallable(usingIterator))
+        if (!IsCallable(usingIterator)) {
             ThrowTypeError(JSMSG_NOT_ITERABLE, DecompileArg(0, items));
+        }
 
         
         var A = IsConstructor(C) ? constructContentFunction(C, C) : [];
@@ -790,6 +827,7 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
             
             
             
+
 
 
 
@@ -862,8 +900,9 @@ function ArrayToString() {
     var func = array.join;
 
     
-    if (!IsCallable(func))
+    if (!IsCallable(func)) {
         return callFunction(std_Object_toString, array);
+    }
     return callContentFunction(func, array);
 }
 
@@ -880,8 +919,9 @@ function ArrayToLocaleString(locales, options) {
     var len = ToLength(array.length);
 
     
-    if (len === 0)
+    if (len === 0) {
         return "";
+    }
 
     
     var firstElement = array[0];
@@ -937,19 +977,22 @@ function ArraySpeciesCreate(originalArray, length) {
 
     
     
-    if (length === -0)
+    if (length === -0) {
         length = 0;
+    }
 
     
-    if (!IsArray(originalArray))
+    if (!IsArray(originalArray)) {
         return std_Array(length);
+    }
 
     
     var C = originalArray.constructor;
 
     
-    if (IsConstructor(C) && IsCrossRealmArrayConstructor(C))
+    if (IsConstructor(C) && IsCrossRealmArrayConstructor(C)) {
         return std_Array(length);
+    }
 
     
     if (IsObject(C)) {
@@ -957,21 +1000,25 @@ function ArraySpeciesCreate(originalArray, length) {
         C = C[GetBuiltinSymbol("species")];
 
         
-        if (C === GetBuiltinConstructor("Array"))
+        if (C === GetBuiltinConstructor("Array")) {
             return std_Array(length);
+        }
 
         
-        if (C === null)
+        if (C === null) {
             return std_Array(length);
+        }
     }
 
     
-    if (C === undefined)
+    if (C === undefined) {
         return std_Array(length);
+    }
 
     
-    if (!IsConstructor(C))
+    if (!IsConstructor(C)) {
         ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "constructor property");
+    }
 
     
     return constructContentFunction(C, C, length);
@@ -992,12 +1039,14 @@ function IsConcatSpreadable(O) {
     var spreadable = O[GetBuiltinSymbol("isConcatSpreadable")];
 
     
-    if (spreadable !== undefined)
+    if (spreadable !== undefined) {
         return ToBoolean(spreadable);
+    }
 
 #ifdef ENABLE_RECORD_TUPLE
-    if (IsTuple(O))
+    if (IsTuple(O)) {
         return true;
+    }
 #endif
 
     
@@ -1037,8 +1086,9 @@ function ArrayConcat(arg1) {
             len = ToLength(E.length);
 
             
-            if (n + len > MAX_NUMERIC_INDEX)
+            if (n + len > MAX_NUMERIC_INDEX) {
                 ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
+            }
 
             if (IsPackedArray(A) && IsPackedArray(E)) {
                 
@@ -1054,8 +1104,9 @@ function ArrayConcat(arg1) {
                 
                 for (k = 0; k < len; k++) {
                     
-                    if (k in E)
+                    if (k in E) {
                         DefineDataProperty(A, n, E[k]);
+                    }
 
                     
                     n++;
@@ -1063,8 +1114,9 @@ function ArrayConcat(arg1) {
             }
         } else {
             
-            if (n >= MAX_NUMERIC_INDEX)
+            if (n >= MAX_NUMERIC_INDEX) {
                 ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
+            }
 
             
             DefineDataProperty(A, n, E);
@@ -1073,8 +1125,9 @@ function ArrayConcat(arg1) {
             n++;
         }
 
-        if (i >= argsLen)
+        if (i >= argsLen) {
             break;
+        }
         
         E = arguments[i];
         i++;
@@ -1097,8 +1150,9 @@ function ArrayFlatMap(mapperFunction) {
     var sourceLen = ToLength(O.length);
 
     
-    if (!IsCallable(mapperFunction))
+    if (!IsCallable(mapperFunction)) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapperFunction));
+    }
 
     
     var T = arguments.length > 1 ? arguments[1] : undefined;
@@ -1126,8 +1180,9 @@ function ArrayFlat() {
     var depthNum = 1;
 
     
-    if (arguments.length > 0 && arguments[0] !== undefined)
+    if (arguments.length > 0 && arguments[0] !== undefined) {
         depthNum = ToInteger(arguments[0]);
+    }
 
     
     var A = ArraySpeciesCreate(O, 0);
@@ -1178,8 +1233,9 @@ function FlattenIntoArray(target, source, sourceLen, start, depth, mapperFunctio
                 targetIndex = FlattenIntoArray(target, element, elementLen, targetIndex, depth - 1);
             } else {
                 
-                if (targetIndex >= MAX_NUMERIC_INDEX)
+                if (targetIndex >= MAX_NUMERIC_INDEX) {
                     ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
+                }
 
                 
                 DefineDataProperty(target, targetIndex, element);
