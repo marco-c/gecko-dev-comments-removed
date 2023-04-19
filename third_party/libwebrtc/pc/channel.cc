@@ -155,14 +155,9 @@ BaseChannel::~BaseChannel() {
   
   
   
-  media_channel_.reset();
-  RTC_LOG(LS_INFO) << "Destroyed channel: " << ToString();
 }
 
 std::string BaseChannel::ToString() const {
-  
-  
-  
   rtc::StringBuilder sb;
   sb << "{mid: " << content_name_;
   if (media_channel_) {

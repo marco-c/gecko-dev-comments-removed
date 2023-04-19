@@ -185,9 +185,6 @@ class BaseChannel : public ChannelInterface,
   }
 
   MediaChannel* media_channel() const override {
-    
-    
-    
     return media_channel_.get();
   }
 
@@ -348,9 +345,7 @@ class BaseChannel : public ChannelInterface,
 
   
   
-  
-  
-  std::unique_ptr<MediaChannel> media_channel_;
+  const std::unique_ptr<MediaChannel> media_channel_;
   
   
   
