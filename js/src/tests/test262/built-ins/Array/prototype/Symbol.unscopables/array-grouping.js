@@ -21,14 +21,14 @@ var unscopables = Array.prototype[Symbol.unscopables];
 
 assert.sameValue(Object.getPrototypeOf(unscopables), null);
 
-assert.sameValue(unscopables.group, true, '`group` property value');
-verifyEnumerable(unscopables, 'group');
-verifyWritable(unscopables, 'group');
-verifyConfigurable(unscopables, 'group');
+assert.sameValue(unscopables.groupBy, true, '`groupBy` property value');
+verifyEnumerable(unscopables, 'groupBy');
+verifyWritable(unscopables, 'groupBy');
+verifyConfigurable(unscopables, 'groupBy');
 
-assert.sameValue(unscopables.groupToMap, true, '`groupToMap` property value');
-verifyEnumerable(unscopables, 'groupToMap');
-verifyWritable(unscopables, 'groupToMap');
-verifyConfigurable(unscopables, 'groupToMap');
+assert.sameValue(unscopables.groupByToMap, true, '`groupByToMap` property value');
+verifyEnumerable(unscopables, 'groupByToMap');
+verifyWritable(unscopables, 'groupByToMap');
+verifyConfigurable(unscopables, 'groupByToMap');
 
 reportCompare(0, 0);

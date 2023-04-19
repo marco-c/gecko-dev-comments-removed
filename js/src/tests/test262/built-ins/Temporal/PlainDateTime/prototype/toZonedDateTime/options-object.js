@@ -8,17 +8,17 @@
 
 
 
-const instance = new Temporal.PlainDateTime(2000, 5, 2);
+const dt = new Temporal.PlainDateTime(2019, 10, 29, 10, 46, 38, 271, 986, 102);
 
-const result1 = instance.toZonedDateTime("UTC", {});
 assert.sameValue(
-  result1.epochNanoseconds, 957225600000000000n,
+  dt.toZonedDateTime("UTC", {}).epochNanoseconds,
+  1572345998271986102n,
   "options may be an empty plain object"
 );
 
-const result2 = instance.toZonedDateTime("UTC", () => {});
 assert.sameValue(
-  result2.epochNanoseconds, 957225600000000000n,
+  dt.toZonedDateTime("UTC", () => {}).epochNanoseconds,
+  1572345998271986102n,
   "options may be a function object"
 );
 

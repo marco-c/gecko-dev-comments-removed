@@ -63,7 +63,8 @@ class TimeZone extends Temporal.TimeZone {
 {
   let tz = new TimeZone(-1n);
   let zoned = new Temporal.ZonedDateTime(0n, tz);
-  assert.throws(RangeError, () => zoned.round({ smallestUnit: "days" }));
+  let result = zoned.round({ smallestUnit: "days" });
+  assert(zoned.equals(result));
 }
 
 reportCompare(0, 0);

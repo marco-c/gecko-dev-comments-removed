@@ -78,8 +78,37 @@ SetIsInlinableLargeFunction(ArraySome);
 
 
 
-function ArraySortCompare(comparefn) {
-  return function(x, y) {
+function ArraySort(comparefn) {
+  return SortArray(this, comparefn);
+}
+
+function SortArray(obj, comparefn) {
+  
+  if (comparefn !== undefined) {
+    if (!IsCallable(comparefn)) {
+      ThrowTypeError(JSMSG_BAD_SORT_ARG);
+    }
+  }
+
+  
+  var O = ToObject(obj);
+
+  
+  
+  if (callFunction(ArrayNativeSort, O, comparefn)) {
+    return O;
+  }
+
+  
+  var len = ToLength(O.length);
+
+  if (len <= 1) {
+    return O;
+  }
+
+  
+  var wrappedCompareFn = comparefn;
+  comparefn = function(x, y) {
     
     if (x === undefined) {
       if (y === undefined) {
@@ -92,67 +121,13 @@ function ArraySortCompare(comparefn) {
     }
 
     
-    var v = ToNumber(callContentFunction(comparefn, undefined, x, y));
+    var v = ToNumber(callContentFunction(wrappedCompareFn, undefined, x, y));
 
     
     return v !== v ? 0 : v;
   };
-}
 
-
-
-function ArraySort(comparefn) {
-  
-  if (comparefn !== undefined) {
-    if (!IsCallable(comparefn)) {
-      ThrowTypeError(JSMSG_BAD_SORT_ARG);
-    }
-  }
-
-  
-  var O = ToObject(this);
-
-  
-  
-  if (callFunction(ArrayNativeSort, O, comparefn)) {
-    return O;
-  }
-
-  
-  var len = ToLength(O.length);
-
-  
-  if (len <= 1) {
-    return O;
-  }
-
-  
-  var wrappedCompareFn = ArraySortCompare(comparefn);
-
-  
-  
-  
-  var denseList = [];
-  var denseLen = 0;
-
-  for (var i = 0; i < len; i++) {
-    if (i in O) {
-      DefineDataProperty(denseList, denseLen++, O[i]);
-    }
-  }
-
-  if (denseLen < 1) {
-    return O;
-  }
-
-  var sorted = MergeSort(denseList, denseLen, wrappedCompareFn);
-
-  assert(IsPackedArray(sorted), "sorted is a packed array");
-  assert(sorted.length === denseLen, "sorted array has the correct length");
-
-  MoveHoles(O, len, sorted, denseLen);
-
-  return O;
+  return MergeSort(O, len, comparefn);
 }
 
 
@@ -1367,13 +1342,10 @@ function ArrayToReversed() {
   for (var k = 0; k < len; k++) {
     
     var from = len - k - 1;
-
-    
     
 
     
     var fromValue = O[from];
-
     
     DefineDataProperty(A, k, fromValue);
   }
@@ -1386,7 +1358,8 @@ function ArrayToReversed() {
 
 function ArrayToSorted(comparefn) {
   
-  
+
+
   if (comparefn !== undefined && !IsCallable(comparefn)) {
     ThrowTypeError(JSMSG_BAD_TOSORTED_ARG);
   }
@@ -1401,34 +1374,18 @@ function ArrayToSorted(comparefn) {
   var items = std_Array(len);
 
   
-  
-  
-  
+
+
+
+
   for (var k = 0; k < len; k++) {
     DefineDataProperty(items, k, O[k]);
   }
 
-  
-  if (len <= 1) {
-    return items;
-  }
+  SortArray(items, comparefn);
 
   
-  
-  if (callFunction(ArrayNativeSort, items, comparefn)) {
-    return items;
-  }
-
-  
-  var wrappedCompareFn = ArraySortCompare(comparefn);
-
-  
-  var sorted = MergeSort(items, len, wrappedCompareFn);
-
-  assert(IsPackedArray(sorted), "sorted is a packed array");
-  assert(sorted.length === len, "sorted array has the correct length");
-
-  return sorted;
+  return items;
 }
 
 #endif
@@ -1450,15 +1407,14 @@ function ArrayFindLast(predicate ) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var T = arguments.length > 1 ? arguments[1] : undefined;
 
   
   for (var k = len - 1; k >= 0; k--) {
     
     var kValue = O[k];
-
     
-    if (callContentFunction(predicate, thisArg, kValue, k, O)) {
+    if (callContentFunction(predicate, T, kValue, k, O)) {
       return kValue;
     }
   }
@@ -1484,15 +1440,14 @@ function ArrayFindLastIndex(predicate ) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  var T = arguments.length > 1 ? arguments[1] : undefined;
 
   
   for (var k = len - 1; k >= 0; k--) {
     
     var kValue = O[k];
-
     
-    if (callContentFunction(predicate, thisArg, kValue, k, O)) {
+    if (callContentFunction(predicate, T, kValue, k, O)) {
       return k;
     }
   }

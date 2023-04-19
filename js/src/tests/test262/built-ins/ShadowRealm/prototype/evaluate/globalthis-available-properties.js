@@ -36,7 +36,7 @@ assert.sameValue(
 
 const r = new ShadowRealm();
 
-let properties = [
+const properties = [
   'globalThis',
   'Infinity',
   'NaN',
@@ -95,14 +95,6 @@ let properties = [
   'Math',
   'Reflect',
 ];
-
-
-
-
-
-properties = properties.filter(name => {
-    return name in globalThis;
-});
 
 const available = properties.filter(name => {
   

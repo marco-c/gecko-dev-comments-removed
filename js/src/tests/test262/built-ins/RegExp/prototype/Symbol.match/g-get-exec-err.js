@@ -23,7 +23,7 @@
 
 
 
-var r = { flags: 'g', global: true };
+var r = { global: true };
 Object.defineProperty(r, 'exec', {
   get: function() {
     throw new Test262Error();

@@ -12,23 +12,14 @@
 
 
 
-
-
-
-
-
-
-
-
-var re = /./;
-Object.defineProperty(re, 'global', {
-  get() {
+var obj = {
+  get global() {
     throw new Test262Error();
   }
-});
+};
 
 assert.throws(Test262Error, function() {
-  RegExp.prototype[Symbol.replace].call(re);
+  RegExp.prototype[Symbol.replace].call(obj);
 });
 
 reportCompare(0, 0);

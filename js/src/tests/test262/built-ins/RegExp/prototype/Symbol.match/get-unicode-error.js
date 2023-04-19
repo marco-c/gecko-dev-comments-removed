@@ -15,7 +15,6 @@
 
 
 
-
 var nonGlobalRe = /./;
 var globalRe = /./g;
 var accessor = function() {
@@ -28,9 +27,7 @@ Object.defineProperty(globalRe, 'unicode', {
   get: accessor
 });
 
-assert.throws(Test262Error, function() {
-  nonGlobalRe[Symbol.match]('');
-});
+nonGlobalRe[Symbol.match]('');
 
 assert.throws(Test262Error, function() {
   globalRe[Symbol.match]('');
