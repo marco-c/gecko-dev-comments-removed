@@ -1370,34 +1370,48 @@ TEST_P(RtpSenderTest, SendPacketHandlesRetransmissionHistory) {
   std::unique_ptr<RtpPacketToSend> packet =
       BuildRtpPacket(kPayload, true, 0, clock_->TimeInMilliseconds());
   const uint16_t media_sequence_number = packet->SequenceNumber();
-  packet->set_packet_type(RtpPacketMediaType::kVideo);
   packet->set_allow_retransmission(true);
-  rtp_sender_context_->InjectPacket(std::move(packet), PacedPacketInfo());
+  rtp_sender_context_->packet_history_.PutRtpPacket(
+      std::move(packet), clock_->TimeInMilliseconds());
 
   
   time_controller_.AdvanceTime(TimeDelta::Millis(30));
-  EXPECT_GT(rtp_sender()->ReSendPacket(media_sequence_number), 0);
+  EXPECT_THAT(rtp_sender()->ReSendPacket(media_sequence_number), Gt(0));
 
   
   time_controller_.AdvanceTime(TimeDelta::Millis(30));
-  EXPECT_EQ(rtp_sender()->ReSendPacket(media_sequence_number), 0);
+  EXPECT_THAT(rtp_sender()->ReSendPacket(media_sequence_number), Eq(0));
 
   
-  packet = BuildRtpPacket(kPayload, true, 0, clock_->TimeInMilliseconds());
-  EXPECT_NE(packet->SequenceNumber(), media_sequence_number);
-  packet->set_packet_type(RtpPacketMediaType::kRetransmission);
-  packet->SetSsrc(kRtxSsrc);
-  packet->set_retransmitted_sequence_number(media_sequence_number);
-  packet->set_allow_retransmission(false);
-  uint16_t seq_no = packet->SequenceNumber();
-  rtp_sender_context_->InjectPacket(std::move(packet), PacedPacketInfo());
+  rtp_sender_context_->packet_history_.MarkPacketAsSent(media_sequence_number);
 
   
   time_controller_.AdvanceTime(TimeDelta::Millis(30));
-  EXPECT_GT(rtp_sender()->ReSendPacket(media_sequence_number), 0);
+  EXPECT_THAT(rtp_sender()->ReSendPacket(media_sequence_number), Gt(0));
+}
+
+TEST_P(RtpSenderTest, MarksRetransmittedPackets) {
+  rtp_sender_context_->packet_history_.SetStorePacketsStatus(
+      RtpPacketHistory::StorageMode::kStoreAndCull, 10);
 
   
-  EXPECT_EQ(rtp_sender()->ReSendPacket(seq_no), 0);
+  std::unique_ptr<RtpPacketToSend> packet =
+      BuildRtpPacket(kPayload, true, 0, clock_->TimeInMilliseconds());
+  const uint16_t media_sequence_number = packet->SequenceNumber();
+  packet->set_allow_retransmission(true);
+  rtp_sender_context_->packet_history_.PutRtpPacket(
+      std::move(packet), clock_->TimeInMilliseconds());
+
+  
+  
+  EXPECT_CALL(
+      mock_paced_sender_,
+      EnqueuePackets(ElementsAre(AllOf(
+          Pointee(Property(&RtpPacketToSend::packet_type,
+                           RtpPacketMediaType::kRetransmission)),
+          Pointee(Property(&RtpPacketToSend::retransmitted_sequence_number,
+                           Eq(media_sequence_number)))))));
+  EXPECT_THAT(rtp_sender()->ReSendPacket(media_sequence_number), Gt(0));
 }
 
 TEST_P(RtpSenderTest, SendPacketUpdatesExtensions) {
