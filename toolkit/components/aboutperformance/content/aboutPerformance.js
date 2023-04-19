@@ -659,59 +659,11 @@ var Control = {
     let tbody = document.getElementById("dispatch-tbody");
     tbody.addEventListener("click", event => {
       this._updateLastMouseEvent();
-
-      
-      let target = event.target;
-      if (target.classList.contains("twisty")) {
-        let row = target.parentNode.parentNode;
-        let id = row.windowId;
-        if (target.classList.toggle("open")) {
-          this._openItems.add(id);
-          this._showChildren(row);
-          View.insertAfterRow(row);
-        } else {
-          this._openItems.delete(id);
-          this._removeSubtree(row);
-        }
-        return;
-      }
-
-      
-      if (target.classList.contains("close-icon")) {
-        let row = target.parentNode.parentNode;
-        let id = parseInt(row.windowId);
-        let found = tabFinder.get(id);
-        if (!found || !found.tabbrowser) {
-          return;
-        }
-        let { tabbrowser, tab } = found;
-        tabbrowser.removeTab(tab);
-        this._removeSubtree(row);
-        row.remove();
-        return;
-      }
-
-      if (target.classList.contains("addon-icon")) {
-        let row = target.parentNode.parentNode;
-        let id = row.windowId;
-        let parentWin =
-          window.docShell.browsingContext.embedderElement.ownerGlobal;
-        parentWin.BrowserOpenAddonsMgr(
-          "addons://detail/" + encodeURIComponent(id)
-        );
-        return;
-      }
-
-      
-      let row = target.parentNode;
-      if (this.selectedRow) {
-        this.selectedRow.removeAttribute("selected");
-      }
-      if (row.windowId) {
-        row.setAttribute("selected", "true");
-        this.selectedRow = row;
-      } else if (this.selectedRow) {
-        this.selectedRow = null;
+      this._handleActivate(event.target);
+    });
+    tbody.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        this._handleActivate(event.target);
       }
     });
 
@@ -780,6 +732,60 @@ var Control = {
   _updateLastMouseEvent() {
     this._lastMouseEvent = Date.now();
   },
+  _handleActivate(target) {
+    
+    if (target.classList.contains("twisty")) {
+      let row = target.parentNode.parentNode;
+      let id = row.windowId;
+      if (target.classList.toggle("open")) {
+        target.setAttribute("aria-expanded", "true");
+        this._openItems.add(id);
+        this._showChildren(row);
+        View.insertAfterRow(row);
+      } else {
+        target.setAttribute("aria-expanded", "false");
+        this._openItems.delete(id);
+        this._removeSubtree(row);
+      }
+      return;
+    }
+    
+    if (target.classList.contains("close-icon")) {
+      let row = target.parentNode.parentNode;
+      let id = parseInt(row.windowId);
+      let found = tabFinder.get(id);
+      if (!found || !found.tabbrowser) {
+        return;
+      }
+      let { tabbrowser, tab } = found;
+      tabbrowser.removeTab(tab);
+      this._removeSubtree(row);
+      row.remove();
+      return;
+    }
+    
+    if (target.classList.contains("addon-icon")) {
+      let row = target.parentNode.parentNode;
+      let id = row.windowId;
+      let parentWin =
+        window.docShell.browsingContext.embedderElement.ownerGlobal;
+      parentWin.BrowserOpenAddonsMgr(
+        "addons://detail/" + encodeURIComponent(id)
+      );
+      return;
+    }
+    
+    let row = target.parentNode;
+    if (this.selectedRow) {
+      this.selectedRow.removeAttribute("selected");
+    }
+    if (row.windowId) {
+      row.setAttribute("selected", "true");
+      this.selectedRow = row;
+    } else if (this.selectedRow) {
+      this.selectedRow = null;
+    }
+  },
   async update() {
     await State.update();
 
@@ -796,6 +802,8 @@ var Control = {
   async _updateDisplay(force = false) {
     let counters = State.getCounters();
     let maxEnergyImpact = State.getMaxEnergyImpact(counters);
+    let focusedEl;
+
     
     
     
@@ -847,6 +855,13 @@ var Control = {
     let openItems = this._openItems;
     this._openItems = new Set();
 
+    
+    let focusedId;
+    const isFocusable = document.activeElement.classList.contains("twisty");
+    if (document.hasFocus() && isFocusable) {
+      focusedId = document.activeElement.parentNode.parentNode.windowId;
+    }
+
     counters = this._sortCounters(counters);
     for (let {
       id,
@@ -891,10 +906,21 @@ var Control = {
       let elt = row.firstChild;
       let img = document.createElement("span");
       img.className = "twisty";
+      img.setAttribute("role", "button");
+      img.setAttribute("tabindex", "0");
+      img.setAttribute("aria-label", name);
+
       let open = openItems.has(id);
       if (open) {
         img.classList.add("open");
+        img.setAttribute("aria-expanded", "true");
+
         this._openItems.add(id);
+      } else {
+        img.setAttribute("aria-expanded", "false");
+      }
+      if (id === focusedId) {
+        focusedEl = img;
       }
 
       
@@ -917,6 +943,10 @@ var Control = {
     }
 
     await View.commit();
+
+    if (focusedEl) {
+      focusedEl.focus();
+    }
   },
   _showChildren(row) {
     let children = row._children;
