@@ -15,6 +15,7 @@
 
 #include "absl/algorithm/container.h"
 #include "api/array_view.h"
+#include "api/task_queue/task_queue_base.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
 #include "test/gmock.h"
@@ -23,6 +24,21 @@ using ::testing::IsEmpty;
 using ::testing::Test;
 
 namespace rtc {
+namespace {
+
+class FakeTaskQueue : public webrtc::TaskQueueBase {
+ public:
+  FakeTaskQueue() : task_queue_setter_(this) {}
+
+  void Delete() override {}
+  void PostTask(std::unique_ptr<webrtc::QueuedTask> task) override {}
+  void PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
+                       uint32_t milliseconds) override {}
+
+ private:
+  CurrentTaskQueueSetter task_queue_setter_;
+};
+}  
 
 template <typename Generator>
 class UniqueIdGeneratorTest : public Test {};
@@ -147,5 +163,40 @@ TYPED_TEST(UniqueIdGeneratorTest,
   Generator generator2(known_values);
   EXPECT_FALSE(generator2.AddKnownId(id));
 }
+
+
+
+TEST(UniqueNumberGenerator, UsedOnSecondaryThread) {
+  const auto* current_tq = webrtc::TaskQueueBase::Current();
+  
+  
+  
+  UniqueNumberGenerator<uint32_t> generator;
+
+  FakeTaskQueue fake_task_queue;
+  
+  ASSERT_NE(current_tq, webrtc::TaskQueueBase::Current());
+
+  
+  generator.GenerateNumber();
+}
+
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST(UniqueNumberGeneratorDeathTest, FailsWhenUsedInWrongContext) {
+  
+  
+  
+  UniqueNumberGenerator<uint32_t> generator;
+  
+  
+  generator.GenerateNumber();
+
+  
+  FakeTaskQueue fake_task_queue;
+
+  
+  EXPECT_DEATH(generator.GenerateNumber(), "");
+}
+#endif
 
 }  

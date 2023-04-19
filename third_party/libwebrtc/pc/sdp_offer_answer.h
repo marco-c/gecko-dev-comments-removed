@@ -657,8 +657,9 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   
   
   
-  rtc::UniqueRandomIdGenerator ssrc_generator_
-      RTC_GUARDED_BY(signaling_thread());
+  
+  
+  rtc::UniqueRandomIdGenerator ssrc_generator_;
 
   
   
