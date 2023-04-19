@@ -293,6 +293,17 @@ function FindProxyForURL(url, host) {
             testname = test["name"]
             LOG.test_start(testname)
 
+            
+            skip_reason = test.get("skip_reason", None)
+            if skip_reason is not None and skip_reason != "":
+                LOG.info("Skipping %s, reason: %s" % (testname, skip_reason))
+                LOG.test_end(
+                    testname,
+                    status="SKIP",
+                    message="Test skipped: %s" % skip_reason,
+                )
+                continue
+
             if not test.get("url"):
                 
                 test["url"] = None
@@ -364,24 +375,28 @@ function FindProxyForURL(url, host) {
 
     LOG.info("Completed test suite (%s)" % timer.elapsed())
 
-    
-    if results_urls and not browser_config["no_upload_results"]:
-        talos_results.output(results_urls)
-        if browser_config["develop"] or config["gecko_profile"]:
-            print(
-                "Thanks for running Talos locally. Results are in %s"
-                % (results_urls["output_urls"])
-            )
+    if talos_results.has_results():
+        
+        if results_urls and not browser_config["no_upload_results"]:
+            talos_results.output(results_urls)
+            if browser_config["develop"] or config["gecko_profile"]:
+                print(
+                    "Thanks for running Talos locally. Results are in %s"
+                    % (results_urls["output_urls"])
+                )
 
-    
-    
-    if config["gecko_profile"] and browser_config["develop"]:
-        if os.environ.get("DISABLE_PROFILE_LAUNCH", "0") == "1":
-            LOG.info(
-                "Not launching profiler.firefox.com because DISABLE_PROFILE_LAUNCH=1"
-            )
-        else:
-            view_gecko_profile_from_talos()
+        
+        
+        if config["gecko_profile"] and browser_config["develop"]:
+            if os.environ.get("DISABLE_PROFILE_LAUNCH", "0") == "1":
+                LOG.info(
+                    "Not launching profiler.firefox.com because DISABLE_PROFILE_LAUNCH=1"
+                )
+            else:
+                view_gecko_profile_from_talos()
+    else:
+        LOG.error("No tests ran")
+        return 2
 
     
     
