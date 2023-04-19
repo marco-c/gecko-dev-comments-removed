@@ -134,7 +134,7 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  void SetPayloadTypeDemuxingEnabled(bool enabled) override;
+  bool SetPayloadTypeDemuxingEnabled(bool enabled) override;
 
   bool Enable(bool enable) override;
 
@@ -224,7 +224,7 @@ class BaseChannel : public ChannelInterface,
   bool AddRecvStream_w(const StreamParams& sp);
   bool RemoveRecvStream_w(uint32_t ssrc);
   void ResetUnsignaledRecvStream_w();
-  void SetPayloadTypeDemuxingEnabled_w(bool enabled);
+  bool SetPayloadTypeDemuxingEnabled_w(bool enabled);
   bool AddSendStream_w(const StreamParams& sp);
   bool RemoveSendStream_w(uint32_t ssrc);
 
@@ -322,6 +322,8 @@ class BaseChannel : public ChannelInterface,
   webrtc::RtpTransceiverDirection remote_content_direction_ =
       webrtc::RtpTransceiverDirection::kInactive;
 
+  
+  std::set<uint8_t> payload_types_ RTC_GUARDED_BY(worker_thread());
   webrtc::RtpDemuxerCriteria demuxer_criteria_;
   
   

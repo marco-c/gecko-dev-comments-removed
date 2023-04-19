@@ -290,9 +290,9 @@ bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
       Bind(&BaseChannel::SetRemoteContent_w, this, content, type, error_desc));
 }
 
-void BaseChannel::SetPayloadTypeDemuxingEnabled(bool enabled) {
+bool BaseChannel::SetPayloadTypeDemuxingEnabled(bool enabled) {
   TRACE_EVENT0("webrtc", "BaseChannel::SetPayloadTypeDemuxingEnabled");
-  InvokeOnWorker<void>(
+  return InvokeOnWorker<bool>(
       RTC_FROM_HERE,
       Bind(&BaseChannel::SetPayloadTypeDemuxingEnabled_w, this, enabled));
 }
@@ -595,11 +595,12 @@ void BaseChannel::ResetUnsignaledRecvStream_w() {
   media_channel()->ResetUnsignaledRecvStream();
 }
 
-void BaseChannel::SetPayloadTypeDemuxingEnabled_w(bool enabled) {
+bool BaseChannel::SetPayloadTypeDemuxingEnabled_w(bool enabled) {
   RTC_DCHECK_RUN_ON(worker_thread());
   if (enabled == payload_type_demuxing_enabled_) {
-    return;
+    return true;
   }
+  payload_type_demuxing_enabled_ = enabled;
   if (!enabled) {
     
     
@@ -607,10 +608,22 @@ void BaseChannel::SetPayloadTypeDemuxingEnabled_w(bool enabled) {
     
     
     media_channel()->ResetUnsignaledRecvStream();
-    ClearHandledPayloadTypes();
-    RegisterRtpDemuxerSink();
+    demuxer_criteria_.payload_types.clear();
+    if (!RegisterRtpDemuxerSink()) {
+      RTC_LOG(LS_ERROR) << "Failed to disable payload type demuxing for "
+                        << ToString();
+      return false;
+    }
+  } else if (!payload_types_.empty()) {
+    demuxer_criteria_.payload_types.insert(payload_types_.begin(),
+                                           payload_types_.end());
+    if (!RegisterRtpDemuxerSink()) {
+      RTC_LOG(LS_ERROR) << "Failed to enable payload type demuxing for "
+                        << ToString();
+      return false;
+    }
   }
-  payload_type_demuxing_enabled_ = enabled;
+  return true;
 }
 
 bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
@@ -754,6 +767,7 @@ bool BaseChannel::UpdateRemoteStreams_w(
   
   if (!RegisterRtpDemuxerSink()) {
     RTC_LOG(LS_ERROR) << "Failed to set up demuxing for " << ToString();
+    ret = false;
   }
   remote_streams_ = streams;
   return ret;
@@ -799,10 +813,14 @@ void BaseChannel::MaybeAddHandledPayloadType(int payload_type) {
   if (payload_type_demuxing_enabled_) {
     demuxer_criteria_.payload_types.insert(static_cast<uint8_t>(payload_type));
   }
+  
+  
+  payload_types_.insert(static_cast<uint8_t>(payload_type));
 }
 
 void BaseChannel::ClearHandledPayloadTypes() {
   demuxer_criteria_.payload_types.clear();
+  payload_types_.clear();
 }
 
 void BaseChannel::FlushRtcpMessages_n() {

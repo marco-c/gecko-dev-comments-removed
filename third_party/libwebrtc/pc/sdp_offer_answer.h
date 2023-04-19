@@ -490,7 +490,7 @@ class SdpOfferAnswerHandler {
   const std::string GetTransportName(const std::string& content_name);
   
   
-  void UpdatePayloadTypeDemuxingState(cricket::ContentSource source);
+  bool UpdatePayloadTypeDemuxingState(cricket::ContentSource source);
 
   
   

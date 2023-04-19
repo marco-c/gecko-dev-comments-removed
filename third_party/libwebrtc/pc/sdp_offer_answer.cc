@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <queue>
+#include <set>
 
 #include "api/media_stream_proxy.h"
 #include "api/uma_metrics.h"
@@ -4033,7 +4034,13 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(sdesc);
 
-  UpdatePayloadTypeDemuxingState(source);
+  if (!UpdatePayloadTypeDemuxingState(source)) {
+    
+    
+    
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
+                         "Failed to update payload type demuxing state.");
+  }
 
   
   for (const auto& transceiver : transceivers().List()) {
@@ -4700,9 +4707,11 @@ const std::string SdpOfferAnswerHandler::GetTransportName(
   return "";
 }
 
-void SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
+bool SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
     cricket::ContentSource source) {
   RTC_DCHECK_RUN_ON(signaling_thread());
+  
+  
   
   
   
@@ -4712,9 +4721,19 @@ void SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
   const SessionDescriptionInterface* sdesc =
       (source == cricket::CS_LOCAL ? local_description()
                                    : remote_description());
-  size_t num_receiving_video_transceivers = 0;
-  size_t num_receiving_audio_transceivers = 0;
+  const cricket::ContentGroup* bundle_group =
+      sdesc->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  std::set<int> audio_payload_types;
+  std::set<int> video_payload_types;
+  bool pt_demuxing_enabled_audio = true;
+  bool pt_demuxing_enabled_video = true;
   for (auto& content_info : sdesc->description()->contents()) {
+    
+    
+    
+    if (!bundle_group || !bundle_group->HasContentName(content_info.name)) {
+      continue;
+    }
     if (content_info.rejected ||
         (source == cricket::ContentSource::CS_LOCAL &&
          !RtpTransceiverDirectionHasRecv(
@@ -4726,19 +4745,37 @@ void SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
       continue;
     }
     switch (content_info.media_description()->type()) {
-      case cricket::MediaType::MEDIA_TYPE_AUDIO:
-        ++num_receiving_audio_transceivers;
+      case cricket::MediaType::MEDIA_TYPE_AUDIO: {
+        const cricket::AudioContentDescription* audio_desc =
+            content_info.media_description()->as_audio();
+        for (const cricket::AudioCodec& audio : audio_desc->codecs()) {
+          if (audio_payload_types.count(audio.id)) {
+            
+            
+            pt_demuxing_enabled_audio = false;
+          }
+          audio_payload_types.insert(audio.id);
+        }
         break;
-      case cricket::MediaType::MEDIA_TYPE_VIDEO:
-        ++num_receiving_video_transceivers;
+      }
+      case cricket::MediaType::MEDIA_TYPE_VIDEO: {
+        const cricket::VideoContentDescription* video_desc =
+            content_info.media_description()->as_video();
+        for (const cricket::VideoCodec& video : video_desc->codecs()) {
+          if (video_payload_types.count(video.id)) {
+            
+            
+            pt_demuxing_enabled_video = false;
+          }
+          video_payload_types.insert(video.id);
+        }
         break;
+      }
       default:
         
         continue;
     }
   }
-  bool pt_demuxing_enabled_video = num_receiving_video_transceivers <= 1;
-  bool pt_demuxing_enabled_audio = num_receiving_audio_transceivers <= 1;
 
   
   
@@ -4760,26 +4797,34 @@ void SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
                                     transceiver->internal()->channel());
   }
 
-  if (!channels_to_update.empty()) {
-    pc_->worker_thread()->Invoke<void>(
-        RTC_FROM_HERE, [&channels_to_update, pt_demuxing_enabled_audio,
-                        pt_demuxing_enabled_video]() {
-          for (const auto& it : channels_to_update) {
-            RtpTransceiverDirection local_direction = it.first;
-            cricket::ChannelInterface* channel = it.second;
-            cricket::MediaType media_type = channel->media_type();
-            if (media_type == cricket::MediaType::MEDIA_TYPE_AUDIO) {
-              channel->SetPayloadTypeDemuxingEnabled(
-                  pt_demuxing_enabled_audio &&
-                  RtpTransceiverDirectionHasRecv(local_direction));
-            } else if (media_type == cricket::MediaType::MEDIA_TYPE_VIDEO) {
-              channel->SetPayloadTypeDemuxingEnabled(
-                  pt_demuxing_enabled_video &&
-                  RtpTransceiverDirectionHasRecv(local_direction));
+  if (channels_to_update.empty()) {
+    return true;
+  }
+  return pc_->worker_thread()->Invoke<bool>(
+      RTC_FROM_HERE, [&channels_to_update, bundle_group,
+                      pt_demuxing_enabled_audio, pt_demuxing_enabled_video]() {
+        for (const auto& it : channels_to_update) {
+          RtpTransceiverDirection local_direction = it.first;
+          cricket::ChannelInterface* channel = it.second;
+          cricket::MediaType media_type = channel->media_type();
+          bool in_bundle_group = (bundle_group && bundle_group->HasContentName(
+                                                      channel->content_name()));
+          if (media_type == cricket::MediaType::MEDIA_TYPE_AUDIO) {
+            if (!channel->SetPayloadTypeDemuxingEnabled(
+                    (!in_bundle_group || pt_demuxing_enabled_audio) &&
+                    RtpTransceiverDirectionHasRecv(local_direction))) {
+              return false;
+            }
+          } else if (media_type == cricket::MediaType::MEDIA_TYPE_VIDEO) {
+            if (!channel->SetPayloadTypeDemuxingEnabled(
+                    (!in_bundle_group || pt_demuxing_enabled_video) &&
+                    RtpTransceiverDirectionHasRecv(local_direction))) {
+              return false;
             }
           }
-        });
-  }
+        }
+        return true;
+      });
 }
 
 }  
