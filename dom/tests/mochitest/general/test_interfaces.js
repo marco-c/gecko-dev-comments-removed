@@ -942,11 +942,14 @@ var interfaceNamesInGlobalScope = [
   
   { name: "PublicKeyCredential" },
   
-  "PushManager",
+  { name: "PushManager", insecureContext: true },
   
-  "PushSubscription",
+  { name: "PushSubscription", insecureContext: true },
   
-  "PushSubscriptionOptions",
+  {
+    name: "PushSubscriptionOptions",
+    insecureContext: true,
+  },
   
   { name: "RadioNodeList", insecureContext: true },
   
@@ -1026,11 +1029,11 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Selection", insecureContext: true },
   
-  "ServiceWorker",
+  { name: "ServiceWorker", insecureContext: true },
   
-  "ServiceWorkerContainer",
+  { name: "ServiceWorkerContainer", insecureContext: false },
   
-  "ServiceWorkerRegistration",
+  { name: "ServiceWorkerRegistration", insecureContext: true },
   
   { name: "ScopedCredential", insecureContext: true, disabled: true },
   

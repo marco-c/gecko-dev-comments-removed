@@ -224,6 +224,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "MessagePort", insecureContext: true },
   
+  "NavigationPreloadManager",
+  
   { name: "NetworkInformation", insecureContext: true, disabled: true },
   
   { name: "Notification", insecureContext: true },
@@ -250,6 +252,14 @@ var interfaceNamesInGlobalScope = [
   
   { name: "PromiseRejectionEvent", insecureContext: true },
   
+  { name: "PushManager", insecureContext: true },
+  
+  { name: "PushSubscription", insecureContext: true },
+  
+  {
+    name: "PushSubscriptionOptions",
+    insecureContext: true,
+  },
   
   { name: "ReadableByteStreamController", insecureContext: true },
   
@@ -274,6 +284,8 @@ var interfaceNamesInGlobalScope = [
   { name: "Response", insecureContext: true },
   
   { name: "Scheduler", insecureContext: true, nightly: true },
+  
+  { name: "ServiceWorkerRegistration", insecureContext: true },
   
   { name: "StorageManager", fennec: false },
   
