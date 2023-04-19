@@ -242,6 +242,7 @@ var gEditItemOverlay = {
 
 
 
+
   async initPanel(aInfo) {
     if (typeof aInfo != "object" || aInfo === null) {
       throw new Error("aInfo must be an object.");

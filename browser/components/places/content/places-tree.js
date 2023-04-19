@@ -167,6 +167,7 @@
 
 
 
+
     set view(val) {
       
       
@@ -476,6 +477,7 @@
 
 
 
+
     selectPlaceURI(placeURI) {
       
       if (this.hasSelection && this.selectedNode.uri == placeURI) {
@@ -538,6 +540,7 @@
     }
 
     
+
 
 
 
@@ -709,6 +712,7 @@
       var checkedGuidsSet = new Set();
 
       
+
 
 
 

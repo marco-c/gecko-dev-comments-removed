@@ -669,6 +669,7 @@ PlacesViewBase.prototype = {
 
 
 
+
   _isPopupOpen(elt) {
     return !!elt.parentNode.open;
   },

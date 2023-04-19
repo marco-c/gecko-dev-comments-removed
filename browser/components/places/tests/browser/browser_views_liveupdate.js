@@ -15,6 +15,7 @@ var wasCollapsed = toolbar.collapsed;
 
 
 
+
 function fakeOpenPopup(aPopup) {
   var popupEvent = document.createEvent("MouseEvent");
   popupEvent.initMouseEvent(

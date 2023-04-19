@@ -35,6 +35,15 @@ add_setup(async function() {
 
 
 
+
+
+
+
+
+
+
+
+
 async function checkResponse({ showToolbar, expectedFolder, reason }) {
   
   let menuList = win.document.getElementById("editBMPanel_folderMenuList");

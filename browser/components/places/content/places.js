@@ -820,6 +820,9 @@ var PlacesSearchBox = {
   
 
 
+
+
+
   get searchFilter() {
     return document.getElementById("searchFilter");
   },
@@ -941,6 +944,8 @@ var PlacesSearchBox = {
   
 
 
+
+
   get filterCollection() {
     return this.searchFilter.getAttribute("collection");
   },
@@ -968,6 +973,8 @@ var PlacesSearchBox = {
   },
 
   
+
+
 
 
   get value() {
@@ -1161,6 +1168,7 @@ var ViewMenu = {
   },
 
   
+
 
 
 
@@ -1425,6 +1433,7 @@ var ContentArea = {
   },
 
   
+
 
 
 

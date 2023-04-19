@@ -32,6 +32,7 @@ const overlapLimit = Services.prefs.getIntPref(
 
 
 
+
 async function create_snapshots({
   num = 1,
   duration = 5000,

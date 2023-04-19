@@ -256,6 +256,7 @@ PlacesTreeView.prototype = {
 
 
 
+
   _getNodeForRow: function PTV__getNodeForRow(aRow) {
     if (aRow < 0) {
       return null;
@@ -395,6 +396,7 @@ PlacesTreeView.prototype = {
   },
 
   
+
 
 
 
@@ -757,6 +759,9 @@ PlacesTreeView.prototype = {
   },
 
   
+
+
+
 
 
 

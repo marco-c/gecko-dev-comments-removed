@@ -215,6 +215,9 @@
     
 
 
+
+
+
     get _rootView() {
       if (!this.__rootView) {
         this.__rootView = PlacesUIUtils.getViewForNode(this);

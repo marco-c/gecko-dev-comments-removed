@@ -28,6 +28,7 @@ async function reset_interactions_snapshots() {
 
 
 
+
 async function create_interaction_and_snapshot({
   url = "https://example.com/",
   referrer = null,

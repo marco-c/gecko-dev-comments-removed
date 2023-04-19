@@ -37,6 +37,7 @@ const TOPIC_DELETED = "places-snapshots-deleted";
 
 
 
+
 async function addInteractions(interactions) {
   await PlacesTestUtils.addVisits(interactions);
 
@@ -97,6 +98,9 @@ async function getInteractions() {
 
 
 
+
+
+
 async function assertUrlNotification(topic, expected, task) {
   let seen = false;
 
@@ -124,6 +128,8 @@ async function assertUrlNotification(topic, expected, task) {
 
   Assert.ok(seen, `Should have seen ${topic} notification.`);
 }
+
+
 
 
 

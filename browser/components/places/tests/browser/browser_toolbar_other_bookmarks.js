@@ -526,6 +526,7 @@ async function closeToolbarContextMenu() {
 
 
 
+
 async function setupBookmarksToolbar(win = window) {
   let toolbar = win.document.getElementById("PersonalToolbar");
   let wasCollapsed = toolbar.collapsed;
