@@ -4,24 +4,20 @@
 
 
 
+
 #ifndef CUBEB_TRACING_H
 #define CUBEB_TRACING_H
 
-#include <MicroGeckoProfiler.h>
 
-#define CUBEB_REGISTER_THREAD(name)               \
-  do {                                            \
-    char stacktop;                                \
-    uprofiler_register_thread(name, &stacktop);   \
-  } while (0)
 
-#define CUBEB_UNREGISTER_THREAD() uprofiler_unregister_thread()
+
+#define CUBEB_REGISTER_THREAD(name)
+
+#define CUBEB_UNREGISTER_THREAD()
 
 
 
 
-
-#define CUBEB_TRACE(name, phase) \
-  uprofiler_simple_event_marker(name, phase, 0, NULL, NULL, NULL)
+#define CUBEB_TRACE(name, phase)
 
 #endif 
