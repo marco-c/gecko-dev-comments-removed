@@ -190,6 +190,8 @@ RtpCapabilities PeerConnectionFactory::GetRtpSenderCapabilities(
     }
     case cricket::MEDIA_TYPE_DATA:
       return RtpCapabilities();
+    case cricket::MEDIA_TYPE_UNSUPPORTED:
+      return RtpCapabilities();
   }
   
   FATAL();
@@ -214,6 +216,8 @@ RtpCapabilities PeerConnectionFactory::GetRtpReceiverCapabilities(
           channel_manager_->GetDefaultEnabledVideoRtpHeaderExtensions());
     }
     case cricket::MEDIA_TYPE_DATA:
+      return RtpCapabilities();
+    case cricket::MEDIA_TYPE_UNSUPPORTED:
       return RtpCapabilities();
   }
   
