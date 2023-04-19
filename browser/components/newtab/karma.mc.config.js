@@ -280,6 +280,11 @@ module.exports = function(config) {
             test: /\.js$/,
             exclude: [/node_modules\/(?!(fluent|fluent-react)\/).*/, /test/],
             loader: "babel-loader",
+            options: {
+              
+              
+              plugins: ["@babel/plugin-proposal-optional-chaining"],
+            },
           },
           {
             test: /\.jsx$/,
