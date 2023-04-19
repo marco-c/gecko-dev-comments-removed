@@ -47,13 +47,8 @@ class RRSendQueue : public SendQueue {
               size_t buffer_size,
               std::function<void(StreamID)> on_buffered_amount_low,
               size_t total_buffered_amount_low_threshold,
-              std::function<void()> on_total_buffered_amount_low)
-      : log_prefix_(std::string(log_prefix) + "fcfs: "),
-        buffer_size_(buffer_size),
-        on_buffered_amount_low_(std::move(on_buffered_amount_low)),
-        total_buffered_amount_(std::move(on_total_buffered_amount_low)) {
-    total_buffered_amount_.SetLowThreshold(total_buffered_amount_low_threshold);
-  }
+              std::function<void()> on_total_buffered_amount_low,
+              const DcSctpSocketHandoverState* handover_state = nullptr);
 
   
   
@@ -86,6 +81,10 @@ class RRSendQueue : public SendQueue {
   size_t buffered_amount_low_threshold(StreamID stream_id) const override;
   void SetBufferedAmountLowThreshold(StreamID stream_id, size_t bytes) override;
 
+  HandoverReadinessStatus GetHandoverReadiness() const;
+  void AddHandoverState(DcSctpSocketHandoverState& state);
+  void RestoreFromState(const DcSctpSocketHandoverState& state);
+
  private:
   
   
@@ -113,9 +112,14 @@ class RRSendQueue : public SendQueue {
   
   class OutgoingStream {
    public:
-    explicit OutgoingStream(std::function<void()> on_buffered_amount_low,
-                            ThresholdWatcher& total_buffered_amount)
-        : buffered_amount_(std::move(on_buffered_amount_low)),
+    explicit OutgoingStream(
+        std::function<void()> on_buffered_amount_low,
+        ThresholdWatcher& total_buffered_amount,
+        const DcSctpSocketHandoverState::OutgoingStream* state = nullptr)
+        : next_unordered_mid_(MID(state ? state->next_unordered_mid : 0)),
+          next_ordered_mid_(MID(state ? state->next_ordered_mid : 0)),
+          next_ssn_(SSN(state ? state->next_ssn : 0)),
+          buffered_amount_(std::move(on_buffered_amount_low)),
           total_buffered_amount_(total_buffered_amount) {}
 
     
@@ -150,6 +154,9 @@ class RRSendQueue : public SendQueue {
     
     bool HasDataToSend(TimeMs now);
 
+    void AddHandoverState(
+        DcSctpSocketHandoverState::OutgoingStream& state) const;
+
    private:
     
     struct Item {
@@ -181,10 +188,10 @@ class RRSendQueue : public SendQueue {
     
     bool is_paused_ = false;
     
-    MID next_unordered_mid_ = MID(0);
-    MID next_ordered_mid_ = MID(0);
+    MID next_unordered_mid_;
+    MID next_ordered_mid_;
 
-    SSN next_ssn_ = SSN(0);
+    SSN next_ssn_;
     
     std::deque<Item> items_;
 
