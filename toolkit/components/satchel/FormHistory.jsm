@@ -461,8 +461,7 @@ function getAddSourceToGuidQueries(source, guid) {
 
 
 
-
-async function updateFormHistoryWrite(aChanges, aPreparedHandlers) {
+async function updateFormHistoryWrite(aChanges) {
   log("updateFormHistoryWrite  " + aChanges.length);
 
   
@@ -659,11 +658,6 @@ async function updateFormHistoryWrite(aChanges, aPreparedHandlers) {
       
       sendNotification(notification, param);
     }
-
-    aPreparedHandlers.handleCompletion(0);
-  } catch (e) {
-    aPreparedHandlers.handleError(e);
-    aPreparedHandlers.handleCompletion(1);
   } finally {
     InProgressInserts.clear(adds);
   }
@@ -1133,7 +1127,7 @@ FormHistory = {
     });
   },
 
-  update(aChanges, aHandlers) {
+  async update(aChanges, aHandlers) {
     
     
     let numSearches = 0;
@@ -1245,11 +1239,17 @@ FormHistory = {
             handlers.handleError(aError);
           },
 
-          handleCompletion(aReason) {
+          async handleCompletion(aReason) {
             completedSearches++;
             if (completedSearches == numSearches) {
               if (!aReason && !searchFailed) {
-                updateFormHistoryWrite(aChanges, handlers);
+                try {
+                  await updateFormHistoryWrite(aChanges);
+                  handlers.handleCompletion(0);
+                } catch (e) {
+                  handlers.handleError(e);
+                  handlers.handleCompletion(1);
+                }
               } else {
                 handlers.handleCompletion(1);
               }
@@ -1261,7 +1261,13 @@ FormHistory = {
 
     if (numSearches == 0) {
       
-      updateFormHistoryWrite(aChanges, handlers);
+      try {
+        await updateFormHistoryWrite(aChanges);
+        handlers.handleCompletion(0);
+      } catch (e) {
+        handlers.handleError(e);
+        handlers.handleCompletion(1);
+      }
     }
   },
 
