@@ -140,6 +140,8 @@ static constexpr int kClippedLevelMin = 70;
 
 
 
+
+
 class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
  public:
   
@@ -228,6 +230,11 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
     struct TransientSuppression {
       bool enabled = false;
     } transient_suppression;
+
+    
+    struct VoiceDetection {
+      bool enabled = false;
+    } voice_detection;
 
     
     
