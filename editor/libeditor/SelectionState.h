@@ -99,6 +99,9 @@ struct RangeItem final {
 
 class SelectionState final {
  public:
+  SelectionState() = default;
+  explicit SelectionState(const AutoRangeArray& aRanges);
+
   
 
 
@@ -126,6 +129,11 @@ class SelectionState final {
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   RestoreSelection(dom::Selection& aSelection);
+
+  
+
+
+  void ApplyTo(AutoRangeArray& aRanges);
 
   
 

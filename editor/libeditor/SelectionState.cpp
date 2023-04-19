@@ -58,6 +58,16 @@ template nsresult RangeUpdater::SelAdjInsertNode(const EditorDOMPoint& aPoint);
 template nsresult RangeUpdater::SelAdjInsertNode(
     const EditorRawDOMPoint& aPoint);
 
+SelectionState::SelectionState(const AutoRangeArray& aRanges)
+    : mDirection(aRanges.GetDirection()) {
+  mArray.SetCapacity(aRanges.Ranges().Length());
+  for (const OwningNonNull<nsRange>& range : aRanges.Ranges()) {
+    RefPtr<RangeItem> rangeItem = new RangeItem();
+    rangeItem->StoreRange(range);
+    mArray.AppendElement(std::move(rangeItem));
+  }
+}
+
 void SelectionState::SaveSelection(Selection& aSelection) {
   
   if (mArray.Length() < aSelection.RangeCount()) {
@@ -110,6 +120,18 @@ nsresult SelectionState::RestoreSelection(Selection& aSelection) {
     }
   }
   return NS_OK;
+}
+
+void SelectionState::ApplyTo(AutoRangeArray& aRanges) {
+  aRanges.RemoveAllRanges();
+  aRanges.SetDirection(mDirection);
+  for (const RefPtr<RangeItem>& rangeItem : mArray) {
+    RefPtr<nsRange> range = rangeItem->GetRange();
+    if (MOZ_UNLIKELY(!range)) {
+      continue;
+    }
+    aRanges.Ranges().AppendElement(std::move(range));
+  }
 }
 
 bool SelectionState::Equals(const SelectionState& aOther) const {

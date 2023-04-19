@@ -1443,8 +1443,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult FormatBlockContainerWithTransaction(
-      nsAtom& aBlockType, const Element& aEditingHost);
+      AutoRangeArray& aSelectionRanges, nsAtom& aBlockType,
+      const Element& aEditingHost);
 
   
 
