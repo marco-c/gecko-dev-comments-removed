@@ -1958,23 +1958,9 @@ rtc::scoped_refptr<VideoFrameBuffer> LibvpxVp9Encoder::PrepareBufferForProfile0(
                         << " image to I420. Can't encode frame.";
       return {};
     }
-    
-    
-    
-    
-    
-    if (converted_buffer->type() != VideoFrameBuffer::Type::kI420 &&
-        converted_buffer->type() != VideoFrameBuffer::Type::kI420A) {
-      converted_buffer = converted_buffer->ToI420();
-      if (!converted_buffer) {
-        RTC_LOG(LS_ERROR) << "Failed to convert "
-                          << VideoFrameBufferTypeToString(buffer->type())
-                          << " image to I420. Can't encode frame.";
-        return {};
-      }
-      RTC_CHECK(converted_buffer->type() == VideoFrameBuffer::Type::kI420 ||
-                converted_buffer->type() == VideoFrameBuffer::Type::kI420A);
-    }
+    RTC_CHECK(converted_buffer->type() == VideoFrameBuffer::Type::kI420 ||
+              converted_buffer->type() == VideoFrameBuffer::Type::kI420A);
+
     
     buffer = mapped_buffer = converted_buffer;
   }
