@@ -27,7 +27,7 @@ add_task(async () => {
     
     if (thread.name.startsWith("BgIOThreadPool")) {
       const markers = getInflatedFileIOMarkers(thread, filename);
-      if (markers.length > 0) {
+      if (markers.length) {
         backgroundThread = thread;
         backgroundThreadFileIO = markers;
         break;
