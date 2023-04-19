@@ -191,6 +191,9 @@ pub enum SystemColor {
     
     MozMenuhover,
     
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozMenuhoverdisabled,
+    
     MozMenuhovertext,
     
     MozMenubartext,
