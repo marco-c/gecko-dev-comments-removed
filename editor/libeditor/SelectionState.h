@@ -244,7 +244,7 @@ class MOZ_STACK_CLASS RangeUpdater final {
 
   nsresult SelAdjJoinNodes(const EditorRawDOMPoint& aStartOfRightContent,
                            const nsIContent& aRemovedContent,
-                           uint32_t aOffsetOfJoinedContent,
+                           uint32_t aExOffsetOfRightContent,
                            JoinNodesDirection aJoinNodesDirection);
   void SelAdjInsertText(const dom::Text& aTextNode, uint32_t aOffset,
                         uint32_t aInsertedLength);
