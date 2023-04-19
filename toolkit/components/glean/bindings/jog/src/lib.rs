@@ -2,12 +2,32 @@
 
 
 
+use fog::factory;
+use fog::private::Lifetime;
+
 
 
 
 
 #[no_mangle]
 pub extern "C" fn jog_runtime_registrar() -> bool {
+    let _ = factory::create_and_register_metric(
+        "counter",
+        "category".into(),
+        "name".into(),
+        vec!["store1".into()],
+        Lifetime::Ping,
+        true,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
     false
 }
 

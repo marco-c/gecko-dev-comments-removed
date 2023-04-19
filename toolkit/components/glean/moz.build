@@ -122,6 +122,7 @@ deps = [
     "build_scripts/glean_parser_ext/templates/cpp_pings.jinja2",
     "build_scripts/glean_parser_ext/templates/gifft.jinja2",
     "build_scripts/glean_parser_ext/templates/gifft_events.jinja2",
+    "build_scripts/glean_parser_ext/templates/jog_factory.jinja2",
     "build_scripts/glean_parser_ext/templates/js.jinja2",
     "build_scripts/glean_parser_ext/templates/js_pings.jinja2",
     "build_scripts/glean_parser_ext/templates/rust.jinja2",
@@ -199,6 +200,34 @@ GeneratedFile(
     flags=[CONFIG["MOZ_APP_VERSION"], "Scalar"],
     inputs=deps + metrics_yamls + tags_yamls,
 )
+
+
+
+
+GeneratedFile(
+    "api/src/factory.rs",
+    script="build_scripts/glean_parser_ext/run_glean_parser.py",
+    entry_point="jog_factory",
+    flags=[CONFIG["MOZ_APP_VERSION"]],
+    inputs=deps + metrics_yamls + tags_yamls,
+)
+
+
+
+if not CONFIG["COMPILE_ENVIRONMENT"]:
+    GeneratedFile(
+        "artefact_metrics.yaml",
+        script="build_scripts/glean_parser_ext/run_glean_parser.py",
+        entry_point="jog_yaml",
+        flags=[CONFIG["MOZ_APP_VERSION"]],
+        inputs=deps + metrics_yamls + tags_yamls,
+    )
+else:
+    
+    
+    
+    
+    pass
 
 DIRS += [
     "tests",  

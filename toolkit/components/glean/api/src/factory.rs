@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(not(feature = "cargo-clippy"))]
+include!(mozbuild::objdir_path!(
+    "toolkit/components/glean/api/src/factory.rs"
+));
