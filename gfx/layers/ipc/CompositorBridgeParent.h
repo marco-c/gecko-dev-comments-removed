@@ -7,14 +7,6 @@
 #ifndef mozilla_layers_CompositorBridgeParent_h
 #define mozilla_layers_CompositorBridgeParent_h
 
-
-
-
-
-
-
-
-
 #include <stdint.h>  
 #include <unordered_map>
 #include "mozilla/Assertions.h"  
@@ -35,10 +27,7 @@
 
 namespace mozilla {
 
-class CancelableRunnable;
-
 namespace gfx {
-class DrawTarget;
 class GPUProcessManager;
 class GPUParent;
 }  
@@ -70,7 +59,6 @@ class APZSampler;
 class APZTestData;
 class APZUpdater;
 class AsyncImagePipelineManager;
-class Compositor;
 class CompositorAnimationStorage;
 class CompositorBridgeParent;
 class CompositorManagerParent;
@@ -78,7 +66,6 @@ class CompositorVsyncScheduler;
 class FrameUniformityData;
 class GeckoContentController;
 class IAPZCTreeManager;
-class Layer;
 class OMTASampler;
 class ContentCompositorBridgeParent;
 class CompositorThreadHolder;
@@ -163,12 +150,6 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   virtual UniquePtr<SurfaceDescriptor> LookupSurfaceDescriptorForClientTexture(
       const int64_t aTextureId) {
     MOZ_CRASH("Should only be called on ContentCompositorBridgeParent.");
-  }
-
-  virtual void ForceComposeToTarget(wr::RenderReasons aReasons,
-                                    gfx::DrawTarget* aTarget,
-                                    const gfx::IntRect* aRect = nullptr) {
-    MOZ_CRASH();
   }
 
   virtual void NotifyMemoryPressure() {}
@@ -404,13 +385,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
   void ScheduleComposition(wr::RenderReasons aReasons);
 
-  
-
-
-
-  void ScheduleRotationOnCompositorThread(const TargetConfig& aTargetConfig,
-                                          bool aIsFirstPaint);
-
   static void ScheduleForcedComposition(const LayersId& aLayersId,
                                         wr::RenderReasons aReasons);
 
@@ -423,22 +397,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
-
-
-
-
-  void InvalidateRemoteLayers();
-
-  
-
-
   static void InitializeStatics();
-
-  
-
-
-
-  static CompositorBridgeParent* GetCompositorBridgeParent(uint64_t id);
 
   
 
@@ -508,10 +467,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   static void PostInsertVsyncProfilerMarker(mozilla::TimeStamp aVsyncTimestamp);
 
   widget::CompositorWidget* GetWidget() { return mWidget; }
-
-  virtual void ForceComposeToTarget(
-      wr::RenderReasons aReasons, gfx::DrawTarget* aTarget,
-      const gfx::IntRect* aRect = nullptr) override;
 
   PAPZCTreeManagerParent* AllocPAPZCTreeManagerParent(
       const LayersId& aLayersId) override;
@@ -626,9 +581,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   bool IsPaused() { return mPaused; }
 
  protected:
-  void ForceComposition(wr::RenderReasons aReasons);
-  void CancelCurrentCompositeTask();
-
   
 
 
@@ -647,19 +599,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
 
   static void FinishShutdown();
-
-  
-
-
-
-  bool CanComposite();
-
-  void DidComposite(const VsyncId& aId, TimeStamp& aCompositeStart,
-                    TimeStamp& aCompositeEnd);
-
-  void NotifyDidComposite(const nsTArray<TransactionId>& aTransactionIds,
-                          VsyncId aId, TimeStamp& aCompositeStart,
-                          TimeStamp& aCompositeEnd);
 
   
   
@@ -681,11 +620,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   CSSToLayoutDeviceScale mScale;
   TimeDuration mVsyncRate;
 
-  AutoTArray<TransactionId, 2> mPendingTransactions;
-  TimeStamp mRefreshStartTime;
-  TimeStamp mTxnStartTime;
-  TimeStamp mFwdTime;
-
   bool mPaused;
   bool mHaveCompositionRecorder;
   bool mIsForcedFirstPaint;
@@ -697,9 +631,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
   uint64_t mCompositorBridgeID;
   LayersId mRootLayerTreeID;
-
-  bool mOverrideComposeReadiness;
-  RefPtr<CancelableRunnable> mForceCompositionTask;
 
   RefPtr<APZCTreeManager> mApzcTreeManager;
   RefPtr<APZSampler> mApzSampler;
@@ -716,8 +647,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
   RefPtr<CompositorBridgeParent> mSelfRef;
   RefPtr<CompositorAnimationStorage> mAnimationStorage;
-
-  TimeDuration mPaintTime;
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorBridgeParent);
 };

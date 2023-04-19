@@ -1608,13 +1608,6 @@ mozilla::ipc::IPCResult ContentChild::RecvReinitRendering(
   nsTArray<RefPtr<BrowserChild>> tabs = BrowserChild::GetAll();
 
   
-  for (const auto& browserChild : tabs) {
-    if (browserChild->GetLayersId().IsValid()) {
-      browserChild->InvalidateLayers();
-    }
-  }
-
-  
   if (!CompositorManagerChild::Init(std::move(aCompositor), namespaces[0])) {
     return GetResultForRenderingInitFailure(aCompositor.OtherPid());
   }

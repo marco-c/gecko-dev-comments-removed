@@ -104,11 +104,6 @@ child:
   
   
   
-  async InvalidateLayers(LayersId layersId);
-
-  
-  
-  
   
   
   [Priority=control] async DidComposite(LayersId id,
