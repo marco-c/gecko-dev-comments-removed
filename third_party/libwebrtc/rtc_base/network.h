@@ -22,8 +22,11 @@
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/sequence_checker.h"
+#include "api/transport/field_trial_based_config.h"
+#include "api/webrtc_key_value_config.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/mdns_responder_interface.h"
+#include "rtc_base/memory/always_valid_pointer.h"
 #include "rtc_base/network_monitor.h"
 #include "rtc_base/network_monitor_factory.h"
 #include "rtc_base/socket_factory.h"
@@ -205,7 +208,8 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
 
 class RTC_EXPORT NetworkManagerBase : public NetworkManager {
  public:
-  NetworkManagerBase();
+  NetworkManagerBase(
+      const webrtc::WebRtcKeyValueConfig* field_trials = nullptr);
   ~NetworkManagerBase() override;
 
   void GetNetworks(NetworkList* networks) const override;
@@ -273,15 +277,28 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
                                        public NetworkBinderInterface,
                                        public sigslot::has_slots<> {
  public:
+  
   ABSL_DEPRECATED(
       "Use the version with socket_factory, see bugs.webrtc.org/13145")
-  BasicNetworkManager();
-  explicit BasicNetworkManager(SocketFactory* socket_factory);
-  ABSL_DEPRECATED(
-      "Use the version with socket_factory, see bugs.webrtc.org/13145")
-  explicit BasicNetworkManager(NetworkMonitorFactory* network_monitor_factory);
-  BasicNetworkManager(NetworkMonitorFactory* network_monitor_factory,
-                      SocketFactory* socket_factory);
+  explicit BasicNetworkManager(
+      const webrtc::WebRtcKeyValueConfig* field_trials = nullptr)
+      : BasicNetworkManager(
+             nullptr,
+             nullptr,
+            field_trials) {}
+
+  
+  BasicNetworkManager(
+      SocketFactory* socket_factory,
+      const webrtc::WebRtcKeyValueConfig* field_trials = nullptr)
+      : BasicNetworkManager( nullptr,
+                            socket_factory,
+                            field_trials) {}
+
+  BasicNetworkManager(
+      NetworkMonitorFactory* network_monitor_factory,
+      SocketFactory* socket_factory,
+      const webrtc::WebRtcKeyValueConfig* field_trials = nullptr);
   ~BasicNetworkManager() override;
 
   void StartUpdating() override;
@@ -354,6 +371,10 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
   Thread* thread_ = nullptr;
   bool sent_first_update_ = true;
   int start_count_ = 0;
+  
+  webrtc::AlwaysValidPointer<const webrtc::WebRtcKeyValueConfig,
+                             webrtc::FieldTrialBasedConfig>
+      field_trials_;
   std::vector<std::string> network_ignore_list_;
   NetworkMonitorFactory* const network_monitor_factory_;
   SocketFactory* const socket_factory_;
@@ -372,13 +393,19 @@ class RTC_EXPORT Network {
   Network(absl::string_view name,
           absl::string_view description,
           const IPAddress& prefix,
-          int prefix_length);
+          int prefix_length)
+      : Network(name,
+                description,
+                prefix,
+                prefix_length,
+                rtc::ADAPTER_TYPE_UNKNOWN) {}
 
   Network(absl::string_view name,
           absl::string_view description,
           const IPAddress& prefix,
           int prefix_length,
           AdapterType type);
+
   Network(const Network&);
   ~Network();
 
@@ -515,7 +542,16 @@ class RTC_EXPORT Network {
     }
   }
 
-  uint16_t GetCost() const;
+  
+  
+  
+  
+  ABSL_DEPRECATED(
+      "Use the version with field trials, see bugs.webrtc.org/webrtc:10335")
+  uint16_t GetCost(
+      const webrtc::WebRtcKeyValueConfig* field_trials = nullptr) const;
+  uint16_t GetCost(const webrtc::WebRtcKeyValueConfig& field_trials) const;
+
   
   
   uint16_t id() const { return id_; }
@@ -567,8 +603,6 @@ class RTC_EXPORT Network {
   int preference_;
   bool active_ = true;
   uint16_t id_ = 0;
-  bool use_differentiated_cellular_costs_ = false;
-  bool add_network_cost_to_vpn_ = false;
   NetworkPreference network_preference_ = NetworkPreference::NEUTRAL;
 
   friend class NetworkManager;
