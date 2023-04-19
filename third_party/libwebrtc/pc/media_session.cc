@@ -793,6 +793,12 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
         
         RTC_DCHECK(apt_it != theirs.params.end());
         negotiated.SetParam(kCodecParamAssociatedPayloadType, apt_it->second);
+
+        
+        const auto rtx_time_it = theirs.params.find(kCodecParamRtxTime);
+        if (rtx_time_it != theirs.params.end()) {
+          negotiated.SetParam(kCodecParamRtxTime, rtx_time_it->second);
+        }
       }
       if (absl::EqualsIgnoreCase(ours.name, kH264CodecName)) {
         webrtc::H264::GenerateProfileLevelIdForAnswer(
