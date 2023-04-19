@@ -4403,6 +4403,18 @@ pref("extensions.formautofill.creditCards.heuristics.confidenceThreshold", "0.5"
 
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+
+
+
+pref("extensions.formautofill.creditCards.heuristics.numberOnly.confidenceThreshold", "0.5");
+#else
+pref("extensions.formautofill.creditCards.heuristics.numberOnly.confidenceThreshold", "0.95");
+#endif
+
+
+
+
 
 
 

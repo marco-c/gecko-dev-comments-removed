@@ -1017,13 +1017,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
   }
 
   isValidSection() {
-    
-    if (AppConstants.EARLY_BETA_OR_EARLIER) {
-      
-      return this.fieldDetails.some(detail => detail.fieldName == "cc-number");
-    }
-
     let ccNumberReason = "";
+    let ccNumberConfidence = 0;
     let hasCCNumber = false;
     let hasExpiryDate = false;
     let hasCCName = false;
@@ -1033,6 +1028,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
         case "cc-number":
           hasCCNumber = true;
           ccNumberReason = detail._reason;
+          ccNumberConfidence = detail.confidence;
           break;
         case "cc-name":
         case "cc-given-name":
@@ -1048,10 +1044,20 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       }
     }
 
-    return (
-      hasCCNumber &&
-      (ccNumberReason == "autocomplete" || hasExpiryDate || hasCCName)
-    );
+    if (hasCCNumber) {
+      if (ccNumberReason == "autocomplete" || hasExpiryDate || hasCCName) {
+        return true;
+      }
+
+      
+      
+      if (
+        ccNumberConfidence >= FormAutofillUtils.ccHeuristicsNumberOnlyThreshold
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   isEnabled() {
