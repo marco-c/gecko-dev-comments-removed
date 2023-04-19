@@ -22,8 +22,8 @@ const MAX_THUMBNAIL_AGE_SECS = 172800;
 
 const THUMBNAIL_DIRECTORY = "thumbnails";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
 const { BasePromiseWorker } = ChromeUtils.import(
   "resource://gre/modules/PromiseWorker.jsm"

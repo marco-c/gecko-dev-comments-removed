@@ -2,6 +2,8 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 function getConsoleMessages() {
   let consoleService = Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService);
   let messages = consoleService.getMessageArray().map((m) => m.toString());

@@ -7,7 +7,7 @@
 
 
 
-const TEST_URL = "resource://gre/modules/XPCOMUtils.sys.mjs";
+const TEST_URL = "resource://gre/modules/XPCOMUtils.jsm";
 
 add_task(async function test() {
   await new Promise(resolve => {

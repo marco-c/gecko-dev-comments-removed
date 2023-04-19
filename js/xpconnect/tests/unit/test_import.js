@@ -2,48 +2,48 @@
 
 
 
-var AppConstants;
+var XPCOMUtils;
 function run_test() {
   var scope = {};
-  var exports = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", scope);
-  Assert.equal(typeof(scope.AppConstants), "object");
-  Assert.equal(typeof(scope.AppConstants.isPlatformAndVersionAtLeast), "function");
+  var exports = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", scope);
+  Assert.equal(typeof(scope.XPCOMUtils), "object");
+  Assert.equal(typeof(scope.XPCOMUtils.defineLazyGetter), "function");
 
-  equal(scope.AppConstants, exports.AppConstants);
-  deepEqual(Object.keys(scope), ["AppConstants"]);
-  deepEqual(Object.keys(exports), ["AppConstants"]);
+  equal(scope.XPCOMUtils, exports.XPCOMUtils);
+  deepEqual(Object.keys(scope), ["XPCOMUtils"]);
+  deepEqual(Object.keys(exports), ["XPCOMUtils"]);
 
-  exports = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-  equal(scope.AppConstants, exports.AppConstants);
-  deepEqual(Object.keys(exports), ["AppConstants"]);
+  exports = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+  equal(scope.XPCOMUtils, exports.XPCOMUtils);
+  deepEqual(Object.keys(exports), ["XPCOMUtils"]);
 
   
   
   Assert.throws(
-    () => ChromeUtils.import("resource://gre/modules/AppConstants.jsm", null),
+    () => ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null),
     TypeError
   );
 
   
   Assert.equal(typeof(Cu.import), "function");
-  ({AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm"));
-  Assert.equal(typeof(AppConstants), "object");
-  Assert.equal(typeof(AppConstants.isPlatformAndVersionAtLeast), "function");
+  ({XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"));
+  Assert.equal(typeof(XPCOMUtils), "object");
+  Assert.equal(typeof(XPCOMUtils.defineLazyGetter), "function");
 
   
   var scope2 = {};
-  ChromeUtils.import("resource://gre/modules/AppConstants.jsm", scope2);
-  Assert.equal(typeof(scope2.AppConstants), "object");
-  Assert.equal(typeof(scope2.AppConstants.isPlatformAndVersionAtLeast), "function");
+  ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", scope2);
+  Assert.equal(typeof(scope2.XPCOMUtils), "object");
+  Assert.equal(typeof(scope2.XPCOMUtils.defineLazyGetter), "function");
 
-  Assert.ok(scope2.AppConstants == scope.AppConstants);
+  Assert.ok(scope2.XPCOMUtils == scope.XPCOMUtils);
 
   
   var res = Cc["@mozilla.org/network/protocol;1?name=resource"]
               .getService(Ci.nsIResProtocolHandler);
   var resURI = Cc["@mozilla.org/network/io-service;1"]
                  .getService(Ci.nsIIOService)
-                 .newURI("resource://gre/modules/AppConstants.jsm");
+                 .newURI("resource://gre/modules/XPCOMUtils.jsm");
   dump("resURI: " + resURI + "\n");
   var filePath = res.resolveURI(resURI);
   var scope3 = {};
@@ -55,7 +55,7 @@ function run_test() {
   
   var didThrow = false;
   try {
-      ChromeUtils.import("resource://gre/modules/AppConstants.jsm", "wrong");
+      ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", "wrong");
   } catch (ex) {
       print("exception (expected): " + ex);
       didThrow = true;
