@@ -1,13 +1,9 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ContentSearchParent", "ContentSearch"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -30,83 +26,83 @@ const MAX_SUGGESTIONS = 6;
 const SEARCH_ENGINE_PLACEHOLDER_ICON =
   "chrome://browser/skin/search-engine-placeholder.png";
 
-
+// Set of all ContentSearch actors, used to broadcast messages to all of them.
 let gContentSearchActors = new Set();
 
+/**
+ * Inbound messages have the following types:
+ *
+ *   AddFormHistoryEntry
+ *     Adds an entry to the search form history.
+ *     data: the entry, a string
+ *   GetSuggestions
+ *     Retrieves an array of search suggestions given a search string.
+ *     data: { engineName, searchString }
+ *   GetState
+ *     Retrieves the current search engine state.
+ *     data: null
+ *   GetStrings
+ *     Retrieves localized search UI strings.
+ *     data: null
+ *   ManageEngines
+ *     Opens the search engine management window.
+ *     data: null
+ *   RemoveFormHistoryEntry
+ *     Removes an entry from the search form history.
+ *     data: the entry, a string
+ *   Search
+ *     Performs a search.
+ *     Any GetSuggestions messages in the queue from the same target will be
+ *     cancelled.
+ *     data: { engineName, searchString, healthReportKey, searchPurpose }
+ *   SetCurrentEngine
+ *     Sets the current engine.
+ *     data: the name of the engine
+ *   SpeculativeConnect
+ *     Speculatively connects to an engine.
+ *     data: the name of the engine
+ *
+ * Outbound messages have the following types:
+ *
+ *   CurrentEngine
+ *     Broadcast when the current engine changes.
+ *     data: see _currentEngineObj
+ *   CurrentState
+ *     Broadcast when the current search state changes.
+ *     data: see currentStateObj
+ *   State
+ *     Sent in reply to GetState.
+ *     data: see currentStateObj
+ *   Strings
+ *     Sent in reply to GetStrings
+ *     data: Object containing string names and values for the current locale.
+ *   Suggestions
+ *     Sent in reply to GetSuggestions.
+ *     data: see _onMessageGetSuggestions
+ *   SuggestionsCancelled
+ *     Sent in reply to GetSuggestions when pending GetSuggestions events are
+ *     cancelled.
+ *     data: null
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-let ContentSearch = {
+export let ContentSearch = {
   initialized: false,
 
-  
-  
-  
+  // Inbound events are queued and processed in FIFO order instead of handling
+  // them immediately, which would result in non-FIFO responses due to the
+  // asynchrononicity added by converting image data URIs to ArrayBuffers.
   _eventQueue: [],
   _currentEventPromise: null,
 
-  
-  
+  // This is used to handle search suggestions.  It maps xul:browsers to objects
+  // { controller, previousFormHistoryResult }.  See _onMessageGetSuggestions.
   _suggestionMap: new WeakMap(),
 
-  
+  // Resolved when we finish shutting down.
   _destroyedPromise: null,
 
-  
-  
+  // The current controller and browser in _onMessageGetSuggestions.  Allows
+  // fetch cancellation from _cancelSuggestions.
   _currentSuggestion: null,
 
   init() {
@@ -169,7 +165,7 @@ let ContentSearch = {
         if (data != "init-complete") {
           break;
         }
-      
+      // fall through
       case "nsPref:changed":
       case "browser-search-engine-modified":
         this._eventQueue.push({
@@ -187,12 +183,12 @@ let ContentSearch = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Observes changes in prefs tracked by UrlbarPrefs.
+   * @param {string} pref
+   *   The name of the pref, relative to `browser.urlbar.` if the pref is
+   *   in that branch.
+   */
   onPrefChanged(pref) {
     if (lazy.UrlbarPrefs.shouldHandOffToSearchModePrefs.includes(pref)) {
       this._eventQueue.push({
@@ -231,20 +227,20 @@ let ContentSearch = {
     );
     let win = browser.ownerGlobal;
     if (!win) {
-      
-      
+      // The browser may have been closed between the time its content sent the
+      // message and the time we handle it.
       return;
     }
     let where = win.whereToOpenLink(data.originalEvent);
 
-    
-    
-    
-    
-    
+    // There is a chance that by the time we receive the search message, the user
+    // has switched away from the tab that triggered the search. If, based on the
+    // event, we need to load the search in the same tab that triggered it (i.e.
+    // where === "current"), openUILinkIn will not work because that tab is no
+    // longer the current one. For this case we manually load the URI.
     if (where === "current") {
-      
-      
+      // Since we're going to load the search in the same browser, blur the search
+      // UI to prevent further interaction before we start loading.
       this._reply(actor, "Blur");
       browser.loadURI(submission.uri.spec, {
         postData: submission.postData,
@@ -288,14 +284,14 @@ let ContentSearch = {
     controller.maxLocalResults = ok ? MAX_LOCAL_SUGGESTIONS : MAX_SUGGESTIONS;
     controller.maxRemoteResults = ok ? MAX_SUGGESTIONS : 0;
     let priv = lazy.PrivateBrowsingUtils.isBrowserPrivate(browser);
-    
-    
+    // fetch() rejects its promise if there's a pending request, but since we
+    // process our event queue serially, there's never a pending request.
     this._currentSuggestion = { controller, browser };
     let suggestions = await controller.fetch(searchString, priv, engine);
 
-    
+    // Simplify results since we do not support rich results in this component.
     suggestions.local = suggestions.local.map(e => e.value);
-    
+    // We shouldn't show tail suggestions in their full-text form.
     let nonTailEntries = suggestions.remote.filter(
       e => !e.matchPrefix && !e.tail
     );
@@ -303,17 +299,17 @@ let ContentSearch = {
 
     this._currentSuggestion = null;
 
-    
+    // suggestions will be null if the request was cancelled
     let result = {};
     if (!suggestions) {
       return result;
     }
 
-    
-    
-    
-    
-    
+    // Keep the form history result so RemoveFormHistoryEntry can remove entries
+    // from it.  Keeping only one result isn't foolproof because the client may
+    // try to remove an entry from one set of suggestions after it has requested
+    // more but before it's received them.  In that case, the entry may not
+    // appear in the new suggestions.  But that should happen rarely.
     browserData.previousFormHistoryResult = suggestions.formHistoryResult;
     result = {
       engineName,
@@ -327,9 +323,9 @@ let ContentSearch = {
   async addFormHistoryEntry(browser, entry = null) {
     let isPrivate = false;
     try {
-      
-      
-      
+      // isBrowserPrivate assumes that the passed-in browser has all the normal
+      // properties, which won't be true if the browser has been destroyed.
+      // That may be the case here due to the asynchronous nature of messaging.
       isPrivate = lazy.PrivateBrowsingUtils.isBrowserPrivate(browser);
     } catch (err) {
       return false;
@@ -411,7 +407,7 @@ let ContentSearch = {
 
   _cancelSuggestions({ actor, browser }) {
     let cancelled = false;
-    
+    // cancel active suggestion request
     if (
       this._currentSuggestion &&
       this._currentSuggestion.browser === browser
@@ -419,7 +415,7 @@ let ContentSearch = {
       this._currentSuggestion.controller.stop();
       cancelled = true;
     }
-    
+    // cancel queued suggestion requests
     for (let i = 0; i < this._eventQueue.length; i++) {
       let m = this._eventQueue[i];
       if (actor === m.actor && m.name === "GetSuggestions") {
@@ -549,9 +545,9 @@ let ContentSearch = {
   _suggestionDataForBrowser(browser, create = false) {
     let data = this._suggestionMap.get(browser);
     if (!data && create) {
-      
-      
-      
+      // Since one SearchSuggestionController instance is meant to be used per
+      // autocomplete widget, this means that we assume each xul:browser has at
+      // most one such widget.
       data = {
         controller: new lazy.SearchSuggestionController(),
       };
@@ -581,22 +577,22 @@ let ContentSearch = {
     return obj;
   },
 
-  
-
-
+  /**
+   * Converts the engine's icon into an appropriate URL for display at
+   */
   async _getEngineIconURL(engine) {
     let url = engine.getIconURLBySize(16, 16);
     if (!url) {
       return SEARCH_ENGINE_PLACEHOLDER_ICON;
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // The uri received here can be of two types
+    // 1 - moz-extension://[uuid]/path/to/icon.ico
+    // 2 - data:image/x-icon;base64,VERY-LONG-STRING
+    //
+    // If the URI is not a data: URI, there's no point in converting
+    // it to an arraybuffer (which is used to optimize passing the data
+    // accross processes): we can just pass the original URI, which is cheaper.
     if (!url.startsWith("data:")) {
       return url;
     }
@@ -612,7 +608,7 @@ let ContentSearch = {
         resolve(SEARCH_ENGINE_PLACEHOLDER_ICON);
       };
       try {
-        
+        // This throws if the URI is erroneously encoded.
         xhr.send();
       } catch (err) {
         resolve(SEARCH_ENGINE_PLACEHOLDER_ICON);
@@ -636,7 +632,7 @@ let ContentSearch = {
   },
 };
 
-class ContentSearchParent extends JSWindowActorParent {
+export class ContentSearchParent extends JSWindowActorParent {
   constructor() {
     super();
     ContentSearch.init();
@@ -648,10 +644,10 @@ class ContentSearchParent extends JSWindowActorParent {
   }
 
   receiveMessage(msg) {
-    
-    
-    
-    
+    // Add a temporary event handler that exists only while the message is in
+    // the event queue.  If the message's source docshell changes browsers in
+    // the meantime, then we need to update the browser.  event.detail will be
+    // the docshell's new parent <xul:browser> element.
     let browser = this.browsingContext.top.embedderElement;
     let eventItem = {
       type: "Message",
@@ -672,8 +668,8 @@ class ContentSearchParent extends JSWindowActorParent {
     };
     browser.addEventListener("SwapDocShells", eventItem, true);
 
-    
-    
+    // Search requests cause cancellation of all Suggestion requests from the
+    // same browser.
     if (msg.name === "Search") {
       ContentSearch._cancelSuggestions(eventItem);
     }
