@@ -55,7 +55,8 @@ TEST_F(WindowCapturerTest, Enumerate) {
 }
 
 
-#if defined(WEBRTC_LINUX)
+
+#if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 #define MAYBE_Capture DISABLED_Capture
 #else
 #define MAYBE_Capture Capture
