@@ -34,7 +34,8 @@ struct MappedInfo {
   bool mWritable = false;
   
   nsTArray<JS::Heap<JSObject*>> mArrayBuffers;
-
+  BufferAddress mOffset;
+  BufferAddress mSize;
   MappedInfo() = default;
   MappedInfo(const MappedInfo&) = delete;
 };
@@ -48,7 +49,7 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
                                          const dom::GPUBufferDescriptor& aDesc,
                                          ErrorResult& aRv);
 
-  void SetMapped(bool aWritable);
+  void SetMapped(BufferAddress aOffset, BufferAddress aSize, bool aWritable);
 
   const RawId mId;
 
@@ -58,6 +59,8 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   virtual ~Buffer();
   void Cleanup();
   void UnmapArrayBuffers(JSContext* aCx, ErrorResult& aRv);
+  void RejectMapRequest(dom::Promise* aPromise, nsACString& message);
+  void AbortMapRequest();
   bool Mappable() const;
 
   
@@ -68,6 +71,7 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   nsString mLabel;
   
   Maybe<MappedInfo> mMapped;
+  RefPtr<dom::Promise> mMapRequest;
   
   
   ipc::Shmem mShmem;
