@@ -200,6 +200,11 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
   nsresult error_code;
   
   
+  
+  
+  
+  
+  
   if ((error_code = static_cast<nsresult>(setjmp(mErr.setjmp_buffer))) !=
       NS_OK) {
     bool fatal = true;
@@ -213,6 +218,22 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
       
       mInfo.unread_marker = 0;
       fatal = false;
+    } else if (error_code == NS_ERROR_INVALID_CONTENT_ENCODING) {
+      
+      MOZ_LOG(sJPEGDecoderAccountingLog, LogLevel::Debug,
+              ("} (setjmp returned NS_ERROR_INVALID_CONTENT_ENCODING)"));
+      
+      
+      bool inDoneState = (mState == JPEG_DONE);
+      
+      mState = JPEG_SINK_NON_JPEG_TRAILER;
+
+      
+      
+      
+      if (inDoneState) {
+        return Transition::TerminateSuccess();
+      }
     } else {
       
       mState = JPEG_ERROR;
@@ -688,6 +709,9 @@ my_error_exit(j_common_ptr cinfo) {
       break;
     case JERR_UNKNOWN_MARKER:
       error_code = NS_ERROR_ILLEGAL_VALUE;
+      break;
+    case JERR_SOF_UNSUPPORTED:
+      error_code = NS_ERROR_INVALID_CONTENT_ENCODING;
       break;
     default:
       error_code = NS_ERROR_FAILURE;
