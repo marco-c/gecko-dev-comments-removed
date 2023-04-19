@@ -972,7 +972,7 @@ hb_bsearch (const K& key, V* base,
 
 
 
-#define SORT_R_SWAP(a,b,tmp) ((tmp) = (a), (a) = (b), (b) = (tmp))
+#define SORT_R_SWAP(a,b,tmp) ((void) ((tmp) = (a)), (void) ((a) = (b)), (b) = (tmp))
 
 
 
