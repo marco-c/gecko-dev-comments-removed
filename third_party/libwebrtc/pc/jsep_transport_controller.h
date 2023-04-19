@@ -103,6 +103,7 @@ class JsepTransportController : public sigslot::has_slots<> {
 
     
     SctpTransportFactoryInterface* sctp_factory = nullptr;
+    std::function<void(const rtc::SSLHandshakeError)> on_dtls_handshake_error_;
   };
 
   
@@ -191,8 +192,6 @@ class JsepTransportController : public sigslot::has_slots<> {
   
   
   void RollbackTransports();
-
-  sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
 
   
   template <typename F>

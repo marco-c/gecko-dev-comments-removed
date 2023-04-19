@@ -453,7 +453,8 @@ PeerConnection::PeerConnection(
       call_(std::move(call)),
       call_ptr_(call_.get()),
       data_channel_controller_(this),
-      message_handler_(signaling_thread()) {}
+      message_handler_(signaling_thread()),
+      weak_factory_(this) {}
 
 PeerConnection::~PeerConnection() {
   TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
@@ -602,14 +603,18 @@ RTCError PeerConnection::Initialize(
   }
 
   config.ice_transport_factory = ice_transport_factory_.get();
+  config.on_dtls_handshake_error_ =
+      [weak_ptr = weak_factory_.GetWeakPtr()](rtc::SSLHandshakeError s) {
+        if (weak_ptr) {
+          weak_ptr->OnTransportControllerDtlsHandshakeError(s);
+        }
+      };
 
   transport_controller_.reset(new JsepTransportController(
       signaling_thread(), network_thread(), port_allocator_.get(),
       async_resolver_factory_.get(), config));
 
-  transport_controller_->SignalDtlsHandshakeError.connect(
-      this, &PeerConnection::OnTransportControllerDtlsHandshakeError);
-
+  
   
   
   

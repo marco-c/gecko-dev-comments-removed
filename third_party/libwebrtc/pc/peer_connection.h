@@ -692,6 +692,8 @@ class PeerConnection : public PeerConnectionInternal,
   
   
   std::unique_ptr<RtpTransmissionManager> rtp_manager_;
+
+  rtc::WeakPtrFactory<PeerConnection> weak_factory_;
 };
 
 }  
