@@ -243,6 +243,11 @@ module.exports = {
       path: "source-map/source-map-loader.js",
       description: "Measure source map loader performance",
     },
+    {
+      name: "source-map-library",
+      path: "source-map/source-map-library.js",
+      description: "Measure source map library performance",
+    },
     
     
     
