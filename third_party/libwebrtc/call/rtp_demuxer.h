@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/containers/flat_map.h"
 #include "rtc_base/containers/flat_set.h"
 
@@ -27,6 +28,8 @@ class RtpPacketSinkInterface;
 
 
 struct RtpDemuxerCriteria {
+  explicit RtpDemuxerCriteria(absl::string_view mid,
+                              absl::string_view rsid = absl::string_view());
   RtpDemuxerCriteria();
   ~RtpDemuxerCriteria();
 
