@@ -108,9 +108,11 @@ function configureStore(webConsoleUI, options = {}) {
     compose(
       middleware,
       enableActorReleaser(webConsoleUI),
-      enableBatching(),
       enableMessagesCacheClearing(webConsoleUI),
-      ensureCSSErrorReportingEnabled(webConsoleUI)
+      ensureCSSErrorReportingEnabled(webConsoleUI),
+      
+      
+      enableBatching()
     )
   );
 }

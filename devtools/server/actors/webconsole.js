@@ -1475,7 +1475,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
   
 
 
-  clearMessagesCache: function() {
+  clearMessagesCacheAsync: function() {
     if (isWorker) {
       
       clearConsoleEvents();

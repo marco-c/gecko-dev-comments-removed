@@ -909,7 +909,10 @@ class TargetCommand extends EventEmitter {
     for (const target of targets) {
       
       
-      if (frontType == "thread" && !target.targetForm.threadActor) {
+      if (
+        (frontType == "thread" && !target.targetForm.threadActor) ||
+        (frontType == "console" && !target.targetForm.consoleActor)
+      ) {
         continue;
       }
 

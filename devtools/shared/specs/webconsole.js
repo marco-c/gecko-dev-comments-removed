@@ -189,9 +189,18 @@ const webconsoleSpecPrototype = {
     
 
 
+    
     clearMessagesCache: {
       oneway: true,
     },
+
+    
+
+
+    clearMessagesCacheAsync: {
+      request: {},
+    },
+
     
 
 

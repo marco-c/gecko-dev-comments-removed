@@ -113,34 +113,6 @@ class WebConsoleUI {
 
 
 
-
-
-
-
-  getAllProxies(filterDisconnectedProxies = true) {
-    let proxies = [this.getProxy()];
-
-    if (this.additionalProxies) {
-      proxies = proxies.concat([...this.additionalProxies.values()]);
-    }
-
-    
-    if (filterDisconnectedProxies) {
-      proxies = proxies.filter(proxy => {
-        return (
-          proxy && proxy.webConsoleFront && !!proxy.webConsoleFront.actorID
-        );
-      });
-    }
-
-    return proxies;
-  }
-
-  
-
-
-
-
   init() {
     if (this._initializer) {
       return this._initializer;
@@ -213,7 +185,7 @@ class WebConsoleUI {
     this.hud.commands.targetCommand.unwatchTargets({
       types: this.hud.commands.targetCommand.ALL_TYPES,
       onAvailable: this._onTargetAvailable,
-      onDestroyed: this._onTargetDestroy,
+      onDestroyed: this._onTargetDestroyed,
     });
 
     const resourceCommand = this.hud.resourceCommand;
@@ -233,11 +205,10 @@ class WebConsoleUI {
 
     this.stopWatchingNetworkResources();
 
-    for (const proxy of this.getAllProxies()) {
-      proxy.disconnect();
+    if (this.proxy) {
+      this.proxy.disconnect();
+      this.proxy = null;
     }
-    this.proxy = null;
-    this.additionalProxies = null;
 
     this.networkDataProvider.destroy();
     this.networkDataProvider = null;
@@ -257,7 +228,7 @@ class WebConsoleUI {
 
 
 
-  clearOutput(clearStorage, event) {
+  async clearOutput(clearStorage, event) {
     if (event) {
       event.preventDefault();
     }
@@ -266,14 +237,39 @@ class WebConsoleUI {
     }
 
     if (clearStorage) {
-      this.clearMessagesCache();
+      await this.clearMessagesCache();
     }
     this.emitForTests("messages-cleared");
   }
 
-  clearMessagesCache() {
-    for (const proxy of this.getAllProxies()) {
-      proxy.webConsoleFront.clearMessagesCache();
+  async clearMessagesCache() {
+    if (!this.hud) {
+      return;
+    }
+
+    const {
+      hasWebConsoleClearMessagesCacheAsync,
+    } = this.hud.commands.client.mainRoot.traits;
+
+    
+    try {
+      const consoleFronts = await this.hud.commands.targetCommand.getAllFronts(
+        this.hud.commands.targetCommand.ALL_TYPES,
+        "console"
+      );
+      const promises = [];
+      for (const consoleFront of consoleFronts) {
+        
+        promises.push(
+          hasWebConsoleClearMessagesCacheAsync
+            ? consoleFront.clearMessagesCacheAsync()
+            : consoleFront.clearMessagesCache()
+        );
+      }
+      await Promise.all(promises);
+      this.emitForTests("messages-cache-cleared");
+    } catch (e) {
+      console.warn("Exception in clearMessagesCache", e);
     }
   }
 
@@ -325,8 +321,6 @@ class WebConsoleUI {
 
 
   async _attachTargets() {
-    this.additionalProxies = new Map();
-
     const { commands, resourceCommand } = this.hud;
     this.networkDataProvider = new FirefoxDataProvider({
       commands,
@@ -346,7 +340,7 @@ class WebConsoleUI {
     await commands.targetCommand.watchTargets({
       types: this.hud.commands.targetCommand.ALL_TYPES,
       onAvailable: this._onTargetAvailable,
-      onDestroyed: this._onTargetDestroy,
+      onDestroyed: this._onTargetDestroyed,
     });
 
     await resourceCommand.watchResources(
@@ -545,41 +539,12 @@ class WebConsoleUI {
 
   async _onTargetAvailable({ targetFront }) {
     
-    
-    if (targetFront.isTopLevel) {
-      this.proxy = new WebConsoleConnectionProxy(this, targetFront);
-      await this.proxy.connect();
+    if (!targetFront.isTopLevel) {
       return;
     }
 
-    
-    
-    const listenForFrames = this.hud.commands.descriptorFront.isLocalTab;
-
-    const { TYPES } = this.hud.commands.targetCommand;
-    const isWorkerTarget =
-      targetFront.targetType == TYPES.WORKER ||
-      targetFront.targetType == TYPES.SHARED_WORKER ||
-      targetFront.targetType == TYPES.SERVICE_WORKER;
-
-    const acceptTarget =
-      
-      
-      targetFront.targetType == TYPES.PROCESS ||
-      (targetFront.targetType == TYPES.FRAME && listenForFrames) ||
-      
-      
-      (isWorkerTarget &&
-        !this.hud.commands.targetCommand.rootFront.traits
-          .workerConsoleApiMessagesDispatchedToMainThread);
-
-    if (!acceptTarget) {
-      return;
-    }
-
-    const proxy = new WebConsoleConnectionProxy(this, targetFront);
-    this.additionalProxies.set(targetFront, proxy);
-    await proxy.connect();
+    this.proxy = new WebConsoleConnectionProxy(this, targetFront);
+    await this.proxy.connect();
   }
 
   
@@ -589,14 +554,13 @@ class WebConsoleUI {
 
 
   _onTargetDestroyed({ targetFront }) {
-    if (targetFront.isTopLevel) {
-      this.proxy.disconnect();
-      this.proxy = null;
-    } else {
-      const proxy = this.additionalProxies.get(targetFront);
-      proxy.disconnect();
-      this.additionalProxies.delete(targetFront);
+    
+    if (!targetFront.isTopLevel || !this.proxy) {
+      return;
     }
+
+    this.proxy.disconnect();
+    this.proxy = null;
   }
 
   _initUI() {
