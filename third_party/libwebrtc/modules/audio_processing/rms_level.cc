@@ -101,8 +101,18 @@ void RmsLevel::AnalyzeMuted(size_t length) {
 }
 
 int RmsLevel::Average() {
-  int rms = (sample_count_ == 0) ? RmsLevel::kMinLevelDb
-                                 : ComputeRms(sum_square_ / sample_count_);
+  const bool have_samples = (sample_count_ != 0);
+  int rms = have_samples ? ComputeRms(sum_square_ / sample_count_)
+                         : RmsLevel::kMinLevelDb;
+
+  
+  
+  
+  
+  if (have_samples && rms == RmsLevel::kMinLevelDb && sum_square_ != 0.0f) {
+    rms = kInaudibleButNotMuted;
+  }
+
   Reset();
   return rms;
 }
