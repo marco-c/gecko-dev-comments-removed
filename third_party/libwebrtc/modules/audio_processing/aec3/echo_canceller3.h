@@ -144,6 +144,8 @@ class EchoCanceller3 : public EchoControl {
   FRIEND_TEST_ALL_PREFIXES(EchoCanceller3,
                            DetectionOfProperStereoUsingThreshold);
   FRIEND_TEST_ALL_PREFIXES(EchoCanceller3,
+                           DetectionOfProperStereoUsingHysteresis);
+  FRIEND_TEST_ALL_PREFIXES(EchoCanceller3,
                            StereoContentDetectionForMonoSignals);
 
   class RenderWriter;
@@ -158,7 +160,7 @@ class EchoCanceller3 : public EchoControl {
 
   
   bool StereoRenderProcessingActiveForTesting() const {
-    return multichannel_content_detector_.IsMultiChannelContentDetected();
+    return multichannel_content_detector_.IsProperMultiChannelContentDetected();
   }
 
   
