@@ -8988,12 +8988,9 @@ nsresult nsIFrame::PeekOffsetForLine(nsPeekOffsetStruct* aPos) {
 
 
 
-
-      bool shouldDrillIntoChildren =
+      const bool shouldDrillIntoChildren =
           aPos->mResultFrame->IsTableWrapperFrame() ||
-          aPos->mResultFrame->IsTableCellFrame() ||
-          aPos->mResultFrame->IsFlexContainerFrame() ||
-          aPos->mResultFrame->IsGridContainerFrame();
+          aPos->mResultFrame->IsTableCellFrame();
 
       if (shouldDrillIntoChildren) {
         nsIFrame* child = GetFirstSelectableDescendantWithLineIterator(
@@ -10540,8 +10537,9 @@ nsIFrame::RefreshSizeCache(nsBoxLayoutState& aState) {
     
     
     AutoAssertNoDomMutations guard;
-    nsILineIterator* lines = GetLineIterator();
-    if (lines) {
+    if (IsBlockFrameOrSubclass()) {
+      nsILineIterator* lines = GetLineIterator();
+      MOZ_ASSERT(lines);
       metrics->mBlockMinSize.height = 0;
       int32_t lineCount = lines->GetNumLines();
       for (int32_t i = 0; i < lineCount; ++i) {
