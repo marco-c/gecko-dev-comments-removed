@@ -14,27 +14,29 @@ module.exports = {
     "^devtools/shared/generate-uuid": `${fixturesDir}/generate-uuid`,
     "^devtools/shared/DevToolsUtils": `${fixturesDir}/devtools-utils`,
     
-    "shared/DevToolsUtils$": `${fixturesDir}/devtools-utils`,
+    "shared/DevToolsUtils": `${fixturesDir}/devtools-utils`,
 
     
     "Services-mock": `${fixturesDir}/Services`,
     "ChromeUtils-mock": `${fixturesDir}/ChromeUtils`,
 
     "^promise": `${fixturesDir}/promise`,
-    "^devtools/client/shared/fluent-l10n/fluent-l10n$": `${fixturesDir}/fluent-l10n`,
-    "^devtools/client/shared/unicode-url": `${fixturesDir}/unicode-url`,
+    "^resource://devtools/client/shared/fluent-l10n/fluent-l10n.js": `${fixturesDir}/fluent-l10n`,
+    "^resource://devtools/client/shared/unicode-url.js": `${fixturesDir}/unicode-url`,
     
     "client/shared/unicode-url$": `${fixturesDir}/unicode-url`,
     "^devtools/client/shared/telemetry": `${fixturesDir}/telemetry`,
+    "^resource://devtools/client/shared/telemetry": `${fixturesDir}/telemetry`,
     
     "client/shared/telemetry$": `${fixturesDir}/telemetry`,
     "devtools/shared/plural-form$": `${fixturesDir}/plural-form`,
     
-    "^devtools/client/shared/link": `${fixturesDir}/empty-module`,
+    "^resource://devtools/client/shared/link": `${fixturesDir}/empty-module`,
     "^devtools/shared/flags": `${fixturesDir}/empty-module`,
     "^devtools/shared/layout/utils": `${fixturesDir}/empty-module`,
     "^devtools/client/shared/components/tree/TreeView": `${fixturesDir}/empty-module`,
     
-    "^devtools\\/(.*)": `${__dirname}/../../../$1`,
+    "^devtools/(.*)": `${__dirname}/../../../$1`,
+    "^resource://devtools/(.*)": `${__dirname}/../../../$1`,
   },
 };

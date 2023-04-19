@@ -125,6 +125,15 @@ global.document.nodePrincipal = {
 
 const requireHacker = require("require-hacker");
 requireHacker.global_hook("default", (path, module) => {
+  
+  
+  
+  if (path.startsWith("resource://devtools/")) {
+    path = path.replace("resource://", "");
+  }
+  if (path.endsWith(".js")) {
+    path = path.replace(".js", "");
+  }
   const paths = {
     
     "react-dom": () => getModule("devtools/client/shared/vendor/react-dom"),

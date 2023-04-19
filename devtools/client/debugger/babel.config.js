@@ -52,6 +52,7 @@ module.exports = {
               "devtools/client/shared/vendor/react-prop-types": "prop-types",
               
               "^devtools\\/(.*)": `${__dirname}/../../\\1`,
+              "^resource://devtools/(.*)": `${__dirname}/../../\\1`,
             },
           },
         ],
