@@ -56,7 +56,7 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   const static int32_t kBestPriority =
       kNormalPriority + nsISupportsPriority::PRIORITY_HIGHEST;
 
-  Http2StreamBase(uint64_t, Http2Session*, int32_t, uint64_t);
+  Http2StreamBase(nsAHttpTransaction*, Http2Session*, int32_t, uint64_t);
 
   uint32_t StreamID() { return mStreamID; }
 
@@ -79,11 +79,12 @@ class Http2StreamBase : public nsAHttpSegmentReader,
 
   bool HasRegisteredID() { return mStreamID != 0; }
 
-  virtual nsAHttpTransaction* Transaction() { return nullptr; }
-  nsHttpTransaction* HttpTransaction();
-  virtual nsIRequestContext* RequestContext() { return nullptr; }
+  nsAHttpTransaction* Transaction() { return mTransaction; }
+  virtual nsIRequestContext* RequestContext() {
+    return mTransaction ? mTransaction->RequestContext() : nullptr;
+  }
 
-  virtual void CloseStream(nsresult reason) = 0;
+  virtual void Close(nsresult reason);
   void SetResponseIsComplete();
 
   void SetRecvdFin(bool aStatus);
@@ -173,20 +174,11 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   [[nodiscard]] virtual nsresult OnWriteSegment(char*, uint32_t,
                                                 uint32_t*) override;
 
-  virtual nsHttpConnectionInfo* ConnectionInfo();
-
-  bool DataBuffered() { return mSimpleBuffer.Available(); }
-
-  virtual nsresult Condition() { return NS_OK; }
-
  protected:
   virtual ~Http2StreamBase();
 
   virtual void HandleResponseHeaders(nsACString& aHeadersOut,
                                      int32_t httpResponseCode) {}
-  virtual nsresult CallToWriteData(uint32_t count, uint32_t* countRead) = 0;
-  virtual nsresult CallToReadData(uint32_t count, uint32_t* countWritten) = 0;
-  virtual bool CloseSendStreamWhenDone() { return true; }
 
   
   enum upstreamStateType {
@@ -241,12 +233,18 @@ class Http2StreamBase : public nsAHttpSegmentReader,
                                        bool forceCommitment);
 
   
-  nsCOMPtr<nsISocketTransport> mSocketTransport;
+  nsISocketTransport* mSocketTransport;
 
   uint8_t mPriorityWeight = 0;       
   uint32_t mPriorityDependency = 0;  
   uint64_t mCurrentTopBrowsingContextId;
   uint64_t mTransactionTabId{0};
+
+  
+  
+  
+  
+  RefPtr<nsAHttpTransaction> mTransaction;
 
   
   
@@ -256,26 +254,12 @@ class Http2StreamBase : public nsAHttpSegmentReader,
 
   uint32_t mPriority = 0;  
 
-  
-  nsCString mFlatHttpRequestHeaders;
-
-  
-  
-  
-  
-  
-  
-  int64_t mRequestBodyLenRemaining{0};
-
  private:
   friend class mozilla::DefaultDelete<Http2StreamBase>;
 
   [[nodiscard]] nsresult ParseHttpRequestHeaders(const char*, uint32_t,
                                                  uint32_t*);
   [[nodiscard]] nsresult GenerateOpen();
-
-  virtual nsresult GenerateHeaders(nsCString& aCompressedData,
-                                   uint8_t& firstFrameFlags) = 0;
 
   void GenerateDataFrameHeader(uint32_t, bool);
 
@@ -323,6 +307,17 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   
   
   uint32_t mTxStreamFrameSize{0};
+
+  
+  nsCString mFlatHttpRequestHeaders;
+
+  
+  
+  
+  
+  
+  
+  int64_t mRequestBodyLenRemaining{0};
 
   
   

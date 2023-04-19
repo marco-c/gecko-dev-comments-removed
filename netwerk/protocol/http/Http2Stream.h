@@ -14,9 +14,10 @@ namespace mozilla::net {
 class Http2Stream : public Http2StreamBase {
  public:
   Http2Stream(nsAHttpTransaction* httpTransaction, Http2Session* session,
-              int32_t priority, uint64_t bcId);
+              int32_t priority, uint64_t bcId)
+      : Http2StreamBase(httpTransaction, session, priority, bcId) {}
 
-  void CloseStream(nsresult reason) override;
+  void Close(nsresult reason) override;
   Http2Stream* GetHttp2Stream() override { return this; }
   uint32_t GetWireStreamId() override;
 
@@ -28,28 +29,13 @@ class Http2Stream : public Http2StreamBase {
   bool IsReadingFromPushStream();
   void ClearPushSource();
 
-  nsAHttpTransaction* Transaction() override { return mTransaction; }
-  nsIRequestContext* RequestContext() override {
-    return mTransaction ? mTransaction->RequestContext() : nullptr;
-  }
-
  protected:
   ~Http2Stream();
-  nsresult CallToReadData(uint32_t count, uint32_t* countRead) override;
-  nsresult CallToWriteData(uint32_t count, uint32_t* countWritten) override;
-  nsresult GenerateHeaders(nsCString& aCompressedData,
-                           uint8_t& firstFrameFlags) override;
 
  private:
   
   void AdjustPushedPriority();
   Http2PushedStream* mPushSource{nullptr};
-
-  
-  
-  
-  
-  RefPtr<nsAHttpTransaction> mTransaction;
 };
 
 }  

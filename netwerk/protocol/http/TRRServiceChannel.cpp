@@ -377,9 +377,6 @@ nsresult TRRServiceChannel::BeginConnect() {
   StoreAllowAltSvc(XRE_IsParentProcess() && LoadAllowAltSvc());
   bool http2Allowed = !gHttpHandler->IsHttp2Excluded(connInfo);
   bool http3Allowed = Http3Allowed();
-  if (!http3Allowed) {
-    mCaps |= NS_HTTP_DISALLOW_HTTP3;
-  }
 
   RefPtr<AltSvcMapping> mapping;
   if (!mConnectionInfo && LoadAllowAltSvc() &&  
@@ -542,13 +539,7 @@ nsresult TRRServiceChannel::SetupTransaction() {
   if (!LoadAllowSpdy()) {
     mCaps |= NS_HTTP_DISALLOW_SPDY;
   }
-  
-  
-  
-  bool useNonDirectProxy = mConnectionInfo->ProxyInfo()
-                               ? !mConnectionInfo->ProxyInfo()->IsDirect()
-                               : false;
-  if (!Http3Allowed() || useNonDirectProxy) {
+  if (!LoadAllowHttp3()) {
     mCaps |= NS_HTTP_DISALLOW_HTTP3;
   }
   if (LoadBeConservative()) {
