@@ -61,6 +61,11 @@ class DxgiOutputDuplicator {
   
   
   
+  
+  
+  
+  
+  
   bool Duplicate(Context* context,
                  DesktopVector offset,
                  SharedDesktopFrame* target);

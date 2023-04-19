@@ -41,6 +41,10 @@ namespace webrtc {
 
 
 
+
+
+
+
 class RTC_EXPORT DxgiDuplicatorController {
  public:
   using Context = DxgiFrameContext;
@@ -94,8 +98,10 @@ class RTC_EXPORT DxgiDuplicatorController {
   
   
   
+  
   Result Duplicate(DxgiFrame* frame);
 
+  
   
   
   

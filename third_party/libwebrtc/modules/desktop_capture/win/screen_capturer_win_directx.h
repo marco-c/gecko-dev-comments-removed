@@ -14,6 +14,7 @@
 #include <d3dcommon.h>
 
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "api/scoped_refptr.h"
@@ -86,7 +87,14 @@ class RTC_EXPORT ScreenCapturerWinDirectx : public DesktopCapturer {
 
  private:
   const rtc::scoped_refptr<DxgiDuplicatorController> controller_;
-  ScreenCaptureFrameQueue<DxgiFrame> frames_;
+
+  
+  
+  
+  
+  
+  std::unordered_map<SourceId, ScreenCaptureFrameQueue<DxgiFrame>>
+      frame_queue_map_;
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
   Callback* callback_ = nullptr;
   SourceId current_screen_id_ = kFullDesktopScreenId;
