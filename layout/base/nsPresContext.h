@@ -1086,16 +1086,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
     mHasWarnedAboutTooLargeDashedOrDottedRadius = true;
   }
 
-  void RegisterContainerQueryFrame(nsIFrame* aFrame);
-  void UnregisterContainerQueryFrame(nsIFrame* aFrame);
-  bool HasContainerQueryFrames() const {
-    return !mContainerQueryFrames.IsEmpty();
-  }
-
-  void FinishedContainerQueryUpdate();
-
-  bool UpdateContainerQueryStyles();
-
   mozilla::intl::Bidi& GetBidiEngine();
 
   gfxFontFeatureValueSet* GetFontFeatureValuesLookup() const {
@@ -1299,13 +1289,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
   nsTHashSet<nsCString> mBlockedFonts;
-
-  
-  nsTHashSet<nsIFrame*> mContainerQueryFrames;
-  
-  
-  
-  nsTHashSet<nsIContent*> mUpdatedContainerQueryContents;
 
   ScrollStyles mViewportScrollStyles;
 

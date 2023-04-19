@@ -2404,11 +2404,6 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     return nsChangeHint_ReconstructFrame;
   }
 
-  
-  if (mContainerType != aNewData.mContainerType) {
-    return nsChangeHint_ReconstructFrame;
-  }
-
   auto oldAppearance = EffectiveAppearance();
   auto newAppearance = aNewData.EffectiveAppearance();
   if (oldAppearance != newAppearance) {
@@ -2651,11 +2646,10 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   
 
   
-  
-  
   if (!hint && (mWillChange != aNewData.mWillChange ||
                 mOverflowAnchor != aNewData.mOverflowAnchor ||
-                mContainerName != aNewData.mContainerName)) {
+                mContainerName != aNewData.mContainerName ||
+                mContainerType != aNewData.mContainerType)) {
     hint |= nsChangeHint_NeutralChange;
   }
 
