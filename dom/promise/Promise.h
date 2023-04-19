@@ -278,11 +278,6 @@ class Promise : public SupportsWeakPtr {
   
   
   
-  template <typename ResolveCallback, typename RejectCallback,
-            typename ArgsTuple, typename JSArgsTuple>
-  Result<RefPtr<Promise>, nsresult> ThenCatchWithCycleCollectedArgsJS(
-      ResolveCallback&& aOnResolve, RejectCallback&& aOnReject,
-      ArgsTuple&& aArgs, JSArgsTuple&& aJSArgs);
   template <typename Callback, typename ArgsTuple, typename JSArgsTuple>
   Result<RefPtr<Promise>, nsresult> ThenWithCycleCollectedArgsJS(
       Callback&& aOnResolve, ArgsTuple&& aArgs, JSArgsTuple&& aJSArgs);
@@ -337,11 +332,6 @@ class Promise : public SupportsWeakPtr {
       nsIGlobalObject* aGlobal, ErrorResult& aRejectionError);
 
  protected:
-  template <typename ResolveCallback, typename RejectCallback, typename... Args,
-            typename... JSArgs>
-  Result<RefPtr<Promise>, nsresult> ThenCatchWithCycleCollectedArgsJSImpl(
-      Maybe<ResolveCallback>&& aOnResolve, Maybe<RejectCallback>&& aOnReject,
-      std::tuple<Args...>&& aArgs, std::tuple<JSArgs...>&& aJSArgs);
   template <typename ResolveCallback, typename RejectCallback, typename... Args>
   ThenResult<ResolveCallback, Args...> ThenCatchWithCycleCollectedArgsImpl(
       Maybe<ResolveCallback>&& aOnResolve, Maybe<RejectCallback>&& aOnReject,
