@@ -1519,7 +1519,12 @@ var SessionStoreInternal = {
       case "TabClose":
         
         
-        if (!aEvent.detail.adoptedBy) {
+        if (aEvent.detail.adoptedBy) {
+          this.onMoveToNewWindow(
+            target.linkedBrowser,
+            aEvent.detail.adoptedBy.linkedBrowser
+          );
+        } else {
           this.onTabClose(win, target);
         }
         this.onTabRemove(win, target);
@@ -2604,6 +2609,20 @@ var SessionStoreInternal = {
 
     
     this.maybeSaveClosedTab(aWindow, aTab, tabState);
+  },
+
+  
+
+
+
+
+
+
+  onMoveToNewWindow(aFromBrowser, aToBrowser) {
+    lazy.TabStateFlusher.flush(aFromBrowser).then(() => {
+      let tabState = lazy.TabStateCache.get(aFromBrowser.permanentKey);
+      lazy.TabStateCache.update(aToBrowser.permanentKey, tabState);
+    });
   },
 
   
