@@ -2226,6 +2226,13 @@ void nsSocketTransport::OnSocketDetached(PRFileDesc* fd) {
     mOutput.OnSocketReady(mCondition);
   }
 
+  if (mCondition == NS_ERROR_NET_RESET && mDNSRecord &&
+      mOutput.ByteCount() == 0) {
+    
+    
+    mDNSRecord->ReportUnusable(SocketPort());
+  }
+
   
   
   

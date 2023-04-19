@@ -1794,6 +1794,10 @@ nsresult nsHttpTransaction::Restart() {
   
   SetRestartReason(TRANSACTION_RESTART_OTHERS);
 
+  
+  
+  gHttpHandler->ConnMgr()->ResetIPFamilyPreference(mConnInfo);
+
   return gHttpHandler->InitiateTransaction(this, mPriority);
 }
 
