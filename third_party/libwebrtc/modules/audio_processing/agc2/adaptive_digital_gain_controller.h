@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_AGC_H_
-#define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_AGC_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_CONTROLLER_H_
+#define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_CONTROLLER_H_
 
 #include <memory>
 
@@ -25,16 +25,20 @@ class ApmDataDumper;
 
 
 
-class AdaptiveAgc {
+class AdaptiveDigitalGainController {
  public:
-  AdaptiveAgc(
+  AdaptiveDigitalGainController(
       ApmDataDumper* apm_data_dumper,
-      const AudioProcessing::Config::GainController2::AdaptiveDigital& config);
-  ~AdaptiveAgc();
-
-  void Initialize(int sample_rate_hz, int num_channels);
+      const AudioProcessing::Config::GainController2::AdaptiveDigital& config,
+      int sample_rate_hz,
+      int num_channels);
+  AdaptiveDigitalGainController(const AdaptiveDigitalGainController&) = delete;
+  AdaptiveDigitalGainController& operator=(
+      const AdaptiveDigitalGainController&) = delete;
+  ~AdaptiveDigitalGainController();
 
   
+  void Initialize(int sample_rate_hz, int num_channels);
 
   
   

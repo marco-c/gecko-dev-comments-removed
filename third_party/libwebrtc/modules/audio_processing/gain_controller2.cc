@@ -51,18 +51,14 @@ AvailableCpuFeatures GetAllowedCpuFeatures() {
 }
 
 
-std::unique_ptr<AdaptiveAgc> CreateAdaptiveDigitalController(
+std::unique_ptr<AdaptiveDigitalGainController> CreateAdaptiveDigitalController(
     const Agc2Config::AdaptiveDigital& config,
     int sample_rate_hz,
     int num_channels,
     ApmDataDumper* data_dumper) {
   if (config.enabled) {
-    
-    
-    auto controller = std::make_unique<AdaptiveAgc>(data_dumper, config);
-    
-    controller->Initialize(sample_rate_hz, num_channels);
-    return controller;
+    return std::make_unique<AdaptiveDigitalGainController>(
+        data_dumper, config, sample_rate_hz, num_channels);
   }
   return nullptr;
 }
