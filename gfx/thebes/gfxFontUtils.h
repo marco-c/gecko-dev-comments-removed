@@ -31,9 +31,6 @@ struct gfxFontVariationInstance;
 namespace mozilla {
 class Encoding;
 class ServoStyleSet;
-namespace gfx {
-struct DeviceColor;
-}
 }  
 
 
@@ -790,22 +787,6 @@ struct KernTableSubtableHeaderVersion1 {
   AutoSwap_PRUint16 tupleIndex;
 };
 
-struct COLRHeader {
-  AutoSwap_PRUint16 version;
-  AutoSwap_PRUint16 numBaseGlyphRecord;
-  AutoSwap_PRUint32 offsetBaseGlyphRecord;
-  AutoSwap_PRUint32 offsetLayerRecord;
-  AutoSwap_PRUint16 numLayerRecords;
-};
-
-struct CPALHeaderVersion0 {
-  AutoSwap_PRUint16 version;
-  AutoSwap_PRUint16 numPaletteEntries;
-  AutoSwap_PRUint16 numPalettes;
-  AutoSwap_PRUint16 numColorRecords;
-  AutoSwap_PRUint32 offsetFirstColorRecord;
-};
-
 #pragma pack()
 
 
@@ -1150,15 +1131,6 @@ class gfxFontUtils {
 
   
   static nsresult MakeUniqueUserFontName(nsAString& aName);
-
-  
-  static bool ValidateColorGlyphs(hb_blob_t* aCOLR, hb_blob_t* aCPAL);
-  static bool GetColorGlyphLayers(
-      hb_blob_t* aCOLR, hb_blob_t* aCPAL, uint32_t aGlyphId,
-      const mozilla::gfx::DeviceColor& aDefaultColor,
-      nsTArray<uint16_t>& aGlyphs,
-      nsTArray<mozilla::gfx::DeviceColor>& aColors);
-  static bool HasColorLayersForGlyph(hb_blob_t* aCOLR, uint32_t aGlyphId);
 
   
   
