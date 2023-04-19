@@ -1099,6 +1099,10 @@ pref("browser.sessionstore.debug", false);
 
 pref("browser.sessionstore.cleanup.forget_closed_after", 1209600000);
 
+pref("browser.sessionstore.platform_collection", true);
+
+pref("browser.sessionstore.collect_session_storage", true);
+
 
 pref("browser.quitShortcut.disabled", false);
 
