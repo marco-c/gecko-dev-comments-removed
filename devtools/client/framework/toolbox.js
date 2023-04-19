@@ -1179,21 +1179,23 @@ Toolbox.prototype = {
     
     this.shortcuts.on(L10N.getStr("toolbox.help.key"), this.toggleOptions);
 
-    
-    [
-      ["reload", false],
-      ["reload2", false],
-      ["forceReload", true],
-      ["forceReload2", true],
-    ].forEach(([id, force]) => {
-      const key = L10N.getStr("toolbox." + id + ".key");
-      this.shortcuts.on(key, event => {
-        this.commands.targetCommand.reloadTopLevelTarget(force);
+    if (!this.isBrowserToolbox) {
+      
+      [
+        ["reload", false],
+        ["reload2", false],
+        ["forceReload", true],
+        ["forceReload2", true],
+      ].forEach(([id, force]) => {
+        const key = L10N.getStr("toolbox." + id + ".key");
+        this.shortcuts.on(key, event => {
+          this.commands.targetCommand.reloadTopLevelTarget(force);
 
-        
-        event.preventDefault();
+          
+          event.preventDefault();
+        });
       });
-    });
+    }
 
     
     if (!this._hostOptions || this._hostOptions.zoom === true) {

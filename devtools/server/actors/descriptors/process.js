@@ -196,19 +196,30 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
     };
   },
 
-  async reloadDescriptor({ bypassCache }) {
+  async reloadDescriptor() {
     if (!this.isParent || this.isWindowlessParent) {
       throw new Error(
-        "reloadDescriptor is only available for parent process descriptors linked to a window"
+        "reloadDescriptor is only available for parent process descriptors"
       );
     }
 
     
     
-    this._windowGlobalTargetActor.browsingContext.reload(
-      bypassCache
-        ? Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
-        : Ci.nsIWebNavigation.LOAD_FLAGS_NONE
+    
+    
+    
+
+    
+    Services.obs.notifyObservers(null, "startupcache-invalidate");
+
+    
+    const env = Cc["@mozilla.org/process/environment;1"].getService(
+      Ci.nsIEnvironment
+    );
+    env.set("MOZ_DISABLE_SAFE_MODE_KEY", "1");
+
+    Services.startup.quit(
+      Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
     );
   },
 
