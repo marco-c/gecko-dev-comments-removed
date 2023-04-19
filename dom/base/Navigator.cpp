@@ -263,8 +263,8 @@ void Navigator::GetUserAgent(nsAString& aUserAgent, CallerType aCallerType,
 
   nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
 
-  nsresult rv = GetUserAgent(window, doc ? doc->NodePrincipal() : nullptr,
-                             aCallerType == CallerType::System, aUserAgent);
+  nsresult rv =
+      GetUserAgent(window, doc, aCallerType == CallerType::System, aUserAgent);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
   }
@@ -295,7 +295,7 @@ void Navigator::GetAppVersion(nsAString& aAppVersion, CallerType aCallerType,
   nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
 
   nsresult rv = GetAppVersion(
-      aAppVersion, doc ? doc->NodePrincipal() : nullptr,
+      aAppVersion, doc,
        aCallerType != CallerType::System);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
@@ -305,7 +305,7 @@ void Navigator::GetAppVersion(nsAString& aAppVersion, CallerType aCallerType,
 void Navigator::GetAppName(nsAString& aAppName, CallerType aCallerType) const {
   nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
 
-  AppName(aAppName, doc ? doc->NodePrincipal() : nullptr,
+  AppName(aAppName, doc,
            aCallerType != CallerType::System);
 }
 
@@ -410,7 +410,7 @@ void Navigator::GetPlatform(nsAString& aPlatform, CallerType aCallerType,
   nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
 
   nsresult rv = GetPlatform(
-      aPlatform, doc ? doc->NodePrincipal() : nullptr,
+      aPlatform, doc,
        aCallerType != CallerType::System);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
@@ -1894,15 +1894,14 @@ void Navigator::ClearPlatformCache() {
   Navigator_Binding::ClearCachedPlatformValue(this);
 }
 
-nsresult Navigator::GetPlatform(nsAString& aPlatform,
-                                nsIPrincipal* aCallerPrincipal,
+nsresult Navigator::GetPlatform(nsAString& aPlatform, Document* aCallerDoc,
                                 bool aUsePrefOverriddenValue) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aUsePrefOverriddenValue) {
     
     
-    if (nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
+    if (nsContentUtils::ShouldResistFingerprinting(aCallerDoc)) {
       aPlatform.AssignLiteral(SPOOFED_PLATFORM);
       return NS_OK;
     }
@@ -1938,15 +1937,14 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform,
 }
 
 
-nsresult Navigator::GetAppVersion(nsAString& aAppVersion,
-                                  nsIPrincipal* aCallerPrincipal,
+nsresult Navigator::GetAppVersion(nsAString& aAppVersion, Document* aCallerDoc,
                                   bool aUsePrefOverriddenValue) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aUsePrefOverriddenValue) {
     
     
-    if (nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
+    if (nsContentUtils::ShouldResistFingerprinting(aCallerDoc)) {
       aAppVersion.AssignLiteral(SPOOFED_APPVERSION);
       return NS_OK;
     }
@@ -1983,14 +1981,14 @@ nsresult Navigator::GetAppVersion(nsAString& aAppVersion,
 }
 
 
-void Navigator::AppName(nsAString& aAppName, nsIPrincipal* aCallerPrincipal,
+void Navigator::AppName(nsAString& aAppName, Document* aCallerDoc,
                         bool aUsePrefOverriddenValue) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aUsePrefOverriddenValue) {
     
     
-    if (nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
+    if (nsContentUtils::ShouldResistFingerprinting(aCallerDoc)) {
       aAppName.AssignLiteral(SPOOFED_APPNAME);
       return;
     }
@@ -2013,14 +2011,14 @@ void Navigator::ClearUserAgentCache() {
 }
 
 nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
-                                 nsIPrincipal* aCallerPrincipal,
-                                 bool aIsCallerChrome, nsAString& aUserAgent) {
+                                 Document* aCallerDoc, bool aIsCallerChrome,
+                                 nsAString& aUserAgent) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
   
   if (!aIsCallerChrome &&
-      !nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
+      !nsContentUtils::ShouldResistFingerprinting(aCallerDoc)) {
     nsAutoString override;
     nsresult rv =
         mozilla::Preferences::GetString("general.useragent.override", override);
@@ -2035,7 +2033,7 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
   
   
   if (!aIsCallerChrome &&
-      nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
+      nsContentUtils::ShouldResistFingerprinting(aCallerDoc)) {
     nsAutoCString spoofedUA;
     nsRFPService::GetSpoofedUserAgent(spoofedUA, false);
     CopyASCIItoUTF16(spoofedUA, aUserAgent);
@@ -2060,9 +2058,8 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
   
   
   
-  if (!aWindow ||
-      (nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal) &&
-       !aIsCallerChrome)) {
+  if (!aWindow || (nsContentUtils::ShouldResistFingerprinting(aCallerDoc) &&
+                   !aIsCallerChrome)) {
     return NS_OK;
   }
 
