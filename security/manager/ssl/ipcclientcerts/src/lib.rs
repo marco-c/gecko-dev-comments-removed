@@ -6,11 +6,13 @@
 #![allow(non_snake_case)]
 
 extern crate byteorder;
+extern crate once_cell;
 extern crate pkcs11;
 #[macro_use]
 extern crate rsclientcerts;
 extern crate sha2;
 
+use once_cell::sync::OnceCell;
 use pkcs11::types::*;
 use rsclientcerts::manager::{Manager, SlotType};
 use std::ffi::{c_void, CStr};
@@ -50,7 +52,7 @@ type SignFunction = extern "C" fn(
 
 
 
-static MANAGER: Mutex<Option<Manager<Backend>>> = Mutex::new(None);
+static mut MANAGER: OnceCell<Mutex<Option<Manager<Backend>>>> = OnceCell::new();
 
 
 
@@ -61,9 +63,11 @@ static MANAGER: Mutex<Option<Manager<Backend>>> = Mutex::new(None);
 
 macro_rules! try_to_get_manager_guard {
     () => {
-        match MANAGER.lock() {
-            Ok(maybe_manager) => maybe_manager,
-            Err(_) => return CKR_DEVICE_ERROR,
+        unsafe {
+            match MANAGER.get_or_init(|| Mutex::new(None)).lock() {
+                Ok(maybe_manager) => maybe_manager,
+                Err(_) => return CKR_DEVICE_ERROR,
+            }
         }
     };
 }
@@ -115,11 +119,8 @@ extern "C" fn C_Finalize(_pReserved: CK_VOID_PTR) -> CK_RV {
     
     
     
-    let mut manager_guard = try_to_get_manager_guard!();
-    match manager_guard.take() {
-        Some(_) => CKR_OK,
-        None => CKR_CRYPTOKI_NOT_INITIALIZED,
-    }
+    let _ = unsafe { MANAGER.take() };
+    CKR_OK
 }
 
 
