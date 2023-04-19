@@ -5270,29 +5270,22 @@ IMPL_TIMING_ATTR(RedirectEnd)
 
 #undef IMPL_TIMING_ATTR
 
-mozilla::dom::PerformanceStorage* HttpBaseChannel::GetPerformanceStorage() {
+void HttpBaseChannel::MaybeReportTimingData() {
   
   
   if (!LoadTimingEnabled()) {
-    return nullptr;
+    return;
   }
 
   
   
   
-  if (XRE_IsE10sParentProcess()) {
-    return nullptr;
-  }
-  return mLoadInfo->GetPerformanceStorage();
-}
-
-void HttpBaseChannel::MaybeReportTimingData() {
   if (XRE_IsE10sParentProcess()) {
     return;
   }
 
   mozilla::dom::PerformanceStorage* documentPerformance =
-      GetPerformanceStorage();
+      mLoadInfo->GetPerformanceStorage();
   if (documentPerformance) {
     documentPerformance->AddEntry(this, this);
     return;
@@ -5315,8 +5308,10 @@ void HttpBaseChannel::MaybeReportTimingData() {
     if (!performanceTimingData) {
       return;
     }
-    child->SendReportFrameTimingData(mLoadInfo->GetInnerWindowID(), entryName,
-                                     initiatorType,
+
+    Maybe<LoadInfoArgs> loadInfoArgs;
+    mozilla::ipc::LoadInfoToLoadInfoArgs(mLoadInfo, &loadInfoArgs);
+    child->SendReportFrameTimingData(loadInfoArgs, entryName, initiatorType,
                                      std::move(performanceTimingData));
   }
 }
