@@ -120,7 +120,7 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   
   nsCOMPtr<nsIInputStream> mCacheReadStream;
 
-  RefPtr<workerinternals::loader::CacheCreator> mCacheCreator;
+  nsMainThreadPtrHandle<workerinternals::loader::CacheCreator> mCacheCreator;
 
   void ClearCacheCreator();
 

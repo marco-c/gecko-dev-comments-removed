@@ -19,7 +19,7 @@ WorkerLoadContext::WorkerLoadContext(Kind aKind,
 void WorkerLoadContext::SetCacheCreator(
     RefPtr<workerinternals::loader::CacheCreator> aCacheCreator) {
   AssertIsOnMainThread();
-  mCacheCreator = aCacheCreator;
+  mCacheCreator = new nsMainThreadPtrHolder<workerinternals::loader::CacheCreator>("WorkerLoadContext::mCacheCreator", aCacheCreator);
 }
 
 void WorkerLoadContext::ClearCacheCreator() {
@@ -29,7 +29,8 @@ void WorkerLoadContext::ClearCacheCreator() {
 
 RefPtr<workerinternals::loader::CacheCreator>
 WorkerLoadContext::GetCacheCreator() {
-  return mCacheCreator;
+  AssertIsOnMainThread();
+  return mCacheCreator.get();
 }
 
 }  
