@@ -61,6 +61,10 @@ class PlatformThread final {
   PlatformThread(PlatformThread&& rhs);
 
   
+  PlatformThread(const PlatformThread&) = delete;
+  PlatformThread& operator=(const PlatformThread&) = delete;
+
+  
   
   
   PlatformThread& operator=(PlatformThread&& rhs);
