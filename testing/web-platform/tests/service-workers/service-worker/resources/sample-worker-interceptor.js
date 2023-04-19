@@ -5,9 +5,25 @@ const dedicated_worker_script = `postMessage('${text}');`;
 const shared_worker_script =
     `onconnect = evt => evt.ports[0].postMessage('${text}');`;
 
+let source;
+let resolveDone;
+let done = new Promise(resolve => resolveDone = resolve);
+
+
+
+self.addEventListener('message', event => {
+  source = event.data.port;
+  source.postMessage({id: event.source.id});
+  source.onmessage = resolveDone;
+  event.waitUntil(done);
+});
+
 self.onfetch = event => {
   const url = event.request.url;
   const destination = event.request.destination;
+
+  if (source)
+     source.postMessage({clientId:event.clientId, resultingClientId: event.resultingClientId});
 
   
   if (url.indexOf('synthesized') != -1) {
