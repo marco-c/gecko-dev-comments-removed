@@ -49,6 +49,7 @@
 #  include "updaterfileutils_osx.h"
 #endif  
 
+#include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/UniquePtr.h"
 #ifdef XP_WIN
 #  include "mozilla/Maybe.h"
@@ -2822,20 +2823,8 @@ bool ShouldRunSilently(int argc, NS_tchar** argv) {
   
   
   for (int i = 1; i < argc; ++i) {
-    NS_tchar* arg = argv[i];
-
-    
-    if (*arg == '-'
-#  if defined(XP_WIN)
-        || *arg == '/'
-#  endif
-    ) {
-      ++arg;
-
-      if (*arg == '-') {
-        ++arg;
-      }
-
+    if (const auto option = mozilla::internal::ReadAsOption(argv[i])) {
+      const NS_tchar* arg = option.value();
       if (NS_tstrcmp(arg, NS_T("backgroundtask")) == 0) {
         return true;
       }
