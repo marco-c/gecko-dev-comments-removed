@@ -154,7 +154,14 @@ nscoord ColumnSetWrapperFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord iSize = 0;
   DISPLAY_MIN_INLINE_SIZE(this, iSize);
 
-  if (StyleDisplay()->GetContainSizeAxes().mIContained) {
+  if (Maybe<nscoord> containISize =
+          ContainIntrinsicISize(NS_UNCONSTRAINEDSIZE)) {
+    
+    
+    if (*containISize != NS_UNCONSTRAINEDSIZE) {
+      return *containISize;
+    }
+
     
     
     
@@ -189,7 +196,12 @@ nscoord ColumnSetWrapperFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord iSize = 0;
   DISPLAY_PREF_INLINE_SIZE(this, iSize);
 
-  if (StyleDisplay()->GetContainSizeAxes().mIContained) {
+  if (Maybe<nscoord> containISize =
+          ContainIntrinsicISize(NS_UNCONSTRAINEDSIZE)) {
+    if (*containISize != NS_UNCONSTRAINEDSIZE) {
+      return *containISize;
+    }
+
     const nsStyleColumn* colStyle = StyleColumn();
     nscoord colISize;
     if (colStyle->mColumnWidth.IsLength()) {
