@@ -101,12 +101,7 @@ class ResourceCommand {
     const resourcesToClear = resourceTypes.filter(resourceType =>
       this.hasResourceCommandSupport(resourceType)
     );
-    if (
-      resourcesToClear.length &&
-      
-      
-      this.targetCommand.hasTargetWatcherSupport("supportsClearResources")
-    ) {
+    if (resourcesToClear.length) {
       this.watcherFront.clearResources(resourcesToClear);
     }
   }

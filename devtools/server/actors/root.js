@@ -134,8 +134,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       networkMonitor: true,
       resources: supportedResources,
       
-      supportsClearResources: true,
-      
       supportsSwitchingMode: true,
       
       

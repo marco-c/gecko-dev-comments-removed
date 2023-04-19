@@ -198,8 +198,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       traits: {
         ...this.sessionContext.supportedTargets,
         resources: this.sessionContext.supportedResources,
-        
-        supportsClearResources: true,
       },
     };
   },

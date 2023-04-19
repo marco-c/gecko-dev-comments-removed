@@ -170,12 +170,7 @@ class RootResourceCommand {
       cachedResource => !resourceTypes.includes(cachedResource.resourceType)
     );
 
-    if (
-      resourceTypes.length &&
-      
-      
-      this.rootFront.traits.supportsClearResources
-    ) {
+    if (resourceTypes.length) {
       this.rootFront.clearResources(resourceTypes);
     }
   }
