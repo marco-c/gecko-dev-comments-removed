@@ -214,6 +214,8 @@ class ChannelMediaResource
                              uint32_t aFlags, int64_t aOffset);
 
   
+  dom::HTMLMediaElement* MediaElement() const;
+  
   
   nsresult OpenChannel(int64_t aOffset);
   nsresult RecreateChannel();
