@@ -15,6 +15,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/mock_audio_encoder.h"
 #include "test/testsupport/rtc_expect_death.h"
@@ -167,6 +168,41 @@ TEST_F(AudioEncoderCopyRedTest, CheckNoOutput) {
 
 
 
+TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizesSingle) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-Audio-Red-For-Opus/Enabled-1/");
+  
+  AudioEncoderCopyRed::Config config;
+  config.payload_type = red_payload_type_;
+  config.speech_encoder = std::move(red_->ReclaimContainedEncoders()[0]);
+  red_.reset(new AudioEncoderCopyRed(std::move(config)));
+
+  
+  
+  static const int kNumPackets = 10;
+  InSequence s;
+  for (int encode_size = 1; encode_size <= kNumPackets; ++encode_size) {
+    EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
+        .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(encode_size)));
+  }
+
+  
+  
+  Encode();
+  EXPECT_EQ(0u, encoded_info_.redundant.size());
+  EXPECT_EQ(1u, encoded_info_.encoded_bytes);
+
+  for (size_t i = 2; i <= kNumPackets; ++i) {
+    Encode();
+    ASSERT_EQ(2u, encoded_info_.redundant.size());
+    EXPECT_EQ(i, encoded_info_.redundant[1].encoded_bytes);
+    EXPECT_EQ(i - 1, encoded_info_.redundant[0].encoded_bytes);
+    EXPECT_EQ(5 + i + (i - 1), encoded_info_.encoded_bytes);
+  }
+}
+
+
+
 TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
   
   
@@ -196,6 +232,56 @@ TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizes) {
     EXPECT_EQ(i - 1, encoded_info_.redundant[1].encoded_bytes);
     EXPECT_EQ(i - 2, encoded_info_.redundant[0].encoded_bytes);
     EXPECT_EQ(9 + i + (i - 1) + (i - 2), encoded_info_.encoded_bytes);
+  }
+}
+
+
+
+TEST_F(AudioEncoderCopyRedTest, CheckPayloadSizesTriple) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-Audio-Red-For-Opus/Enabled-3/");
+  
+  AudioEncoderCopyRed::Config config;
+  config.payload_type = red_payload_type_;
+  config.speech_encoder = std::move(red_->ReclaimContainedEncoders()[0]);
+  red_.reset(new AudioEncoderCopyRed(std::move(config)));
+
+  
+  
+  static const int kNumPackets = 10;
+  InSequence s;
+  for (int encode_size = 1; encode_size <= kNumPackets; ++encode_size) {
+    EXPECT_CALL(*mock_encoder_, EncodeImpl(_, _, _))
+        .WillOnce(Invoke(MockAudioEncoder::FakeEncoding(encode_size)));
+  }
+
+  
+  
+  Encode();
+  EXPECT_EQ(0u, encoded_info_.redundant.size());
+  EXPECT_EQ(1u, encoded_info_.encoded_bytes);
+
+  
+  
+  Encode();
+  EXPECT_EQ(2u, encoded_info_.redundant.size());
+  EXPECT_EQ(8u, encoded_info_.encoded_bytes);
+
+  
+  
+  Encode();
+  EXPECT_EQ(3u, encoded_info_.redundant.size());
+  EXPECT_EQ(15u, encoded_info_.encoded_bytes);
+
+  for (size_t i = 4; i <= kNumPackets; ++i) {
+    Encode();
+    ASSERT_EQ(4u, encoded_info_.redundant.size());
+    EXPECT_EQ(i, encoded_info_.redundant[3].encoded_bytes);
+    EXPECT_EQ(i - 1, encoded_info_.redundant[2].encoded_bytes);
+    EXPECT_EQ(i - 2, encoded_info_.redundant[1].encoded_bytes);
+    EXPECT_EQ(i - 3, encoded_info_.redundant[0].encoded_bytes);
+    EXPECT_EQ(13 + i + (i - 1) + (i - 2) + (i - 3),
+              encoded_info_.encoded_bytes);
   }
 }
 
