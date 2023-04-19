@@ -309,6 +309,14 @@ class nsTextFrame : public nsIFrame {
     return &mContent->AsText()->TextFragment();
   }
 
+  
+
+
+
+
+
+  bool IsEntirelyWhitespace() const;
+
   ContentOffsets CalcContentOffsetsFromFramePoint(const nsPoint& aPoint) final;
   ContentOffsets GetCharacterOffsetAtFramePoint(const nsPoint& aPoint);
 
