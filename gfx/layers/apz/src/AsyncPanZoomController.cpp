@@ -5336,9 +5336,9 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       }
 
       if (scrollUpdate.GetMode() == ScrollMode::SmoothMsd) {
-        
-        SmoothMsdScrollTo(CSSSnapTarget{destination},
-                          scrollUpdate.GetScrollTriggeredByScript());
+        SmoothMsdScrollTo(
+            CSSSnapTarget{destination, scrollUpdate.GetSnapTargetIds()},
+            scrollUpdate.GetScrollTriggeredByScript());
       } else {
         MOZ_ASSERT(scrollUpdate.GetMode() == ScrollMode::Smooth);
         MOZ_ASSERT(!scrollUpdate.WasTriggeredByScript());

@@ -879,7 +879,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   void ApzSmoothScrollTo(const nsPoint& aDestination, ScrollOrigin aOrigin,
-                         ScrollTriggeredByScript aTriggeredByScript);
+                         ScrollTriggeredByScript aTriggeredByScript,
+                         UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
 
   
   void RemoveObservers();
