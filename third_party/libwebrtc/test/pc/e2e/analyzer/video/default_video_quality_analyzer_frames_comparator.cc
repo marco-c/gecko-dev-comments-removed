@@ -427,12 +427,6 @@ void DefaultVideoQualityAnalyzerFramesComparator::ProcessComparison(
     stats->total_encoded_images_payload += frame_stats.encoded_image_size;
     stats->target_encode_bitrate.AddSample(StatsSample(
         frame_stats.target_encode_bitrate, frame_stats.encoded_time));
-  } else {
-    if (frame_stats.pre_encode_time.IsFinite()) {
-      stats->dropped_by_encoder++;
-    } else {
-      stats->dropped_before_encoder++;
-    }
   }
   
   if (comparison.type != FrameComparisonType::kDroppedFrame) {
