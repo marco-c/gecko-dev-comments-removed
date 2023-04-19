@@ -1657,11 +1657,11 @@ void FallbackICCodeCompiler::pushCallArguments(
 
   
   Register argPtr = regs.takeAny();
-  masm.moveStackPtrTo(argPtr);
+  masm.mov(FramePointer, argPtr);
 
   
   
-  size_t valueOffset = StubFrameSize;
+  size_t valueOffset = BaselineStubFrameLayout::Size();
 
   
   

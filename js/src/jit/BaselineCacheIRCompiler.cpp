@@ -2363,7 +2363,7 @@ void BaselineCacheIRCompiler::pushStandardArguments(Register argcReg,
 
   
   Register argPtr = scratch2;
-  Address argAddress(masm.getStackPointer(), StubFrameSize);
+  Address argAddress(FramePointer, BaselineStubFrameLayout::Size());
   masm.computeEffectiveAddress(argAddress, argPtr);
 
   
@@ -2392,9 +2392,9 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
                                                  bool isConstructing) {
   
   Register startReg = scratch;
-  masm.unboxObject(Address(masm.getStackPointer(),
-                           (isConstructing * sizeof(Value)) + StubFrameSize),
-                   startReg);
+  size_t arrayOffset =
+      (isConstructing * sizeof(Value)) + BaselineStubFrameLayout::Size();
+  masm.unboxObject(Address(FramePointer, arrayOffset), startReg);
   masm.loadPtr(Address(startReg, NativeObject::offsetOfElements()), startReg);
 
   
@@ -2505,7 +2505,8 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
                                                   bool isJitCall) {
   
   Register argsReg = scratch;
-  masm.unboxObject(Address(masm.getStackPointer(), StubFrameSize), argsReg);
+  masm.unboxObject(Address(FramePointer, BaselineStubFrameLayout::Size()),
+                   argsReg);
 
   
   
@@ -2746,16 +2747,17 @@ void BaselineCacheIRCompiler::storeThis(const T& newThis, Register argcReg,
                                         CallFlags flags) {
   switch (flags.getArgFormat()) {
     case CallFlags::Standard: {
-      BaseValueIndex thisAddress(masm.getStackPointer(),
-                                 argcReg,             
-                                 1 * sizeof(Value) +  
-                                     StubFrameSize);  
+      BaseValueIndex thisAddress(
+          FramePointer,
+          argcReg,                               
+          1 * sizeof(Value) +                    
+              BaselineStubFrameLayout::Size());  
       masm.storeValue(newThis, thisAddress);
     } break;
     case CallFlags::Spread: {
-      Address thisAddress(masm.getStackPointer(),
+      Address thisAddress(FramePointer,
                           2 * sizeof(Value) +  
-                              StubFrameSize);  
+                              BaselineStubFrameLayout::Size());  
       masm.storeValue(newThis, thisAddress);
     } break;
     default:
