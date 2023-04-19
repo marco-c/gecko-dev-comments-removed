@@ -31,6 +31,8 @@
 namespace js {
 namespace wasm {
 
+class TypeContext;
+
 
 
 
@@ -129,8 +131,13 @@ struct Coder;
 
 template <>
 struct Coder<MODE_SIZE> {
-  Coder() : size_(0) {}
+  explicit Coder(const TypeContext* types) : types_(types), size_(0) {}
 
+  
+  
+  const TypeContext* types_;
+
+  
   mozilla::CheckedInt<size_t> size_;
 
   
@@ -142,9 +149,16 @@ struct Coder<MODE_SIZE> {
 
 template <>
 struct Coder<MODE_ENCODE> {
-  Coder(uint8_t* start, size_t length) : buffer_(start), end_(start + length) {}
+  Coder(const TypeContext* types, uint8_t* start, size_t length)
+      : types_(types), buffer_(start), end_(start + length) {}
 
+  
+  
+  const TypeContext* types_;
+
+  
   uint8_t* buffer_;
+  
   const uint8_t* end_;
 
   CoderResult writeBytes(const void* src, size_t length);
@@ -154,9 +168,15 @@ struct Coder<MODE_ENCODE> {
 template <>
 struct Coder<MODE_DECODE> {
   Coder(const uint8_t* start, size_t length)
-      : buffer_(start), end_(start + length) {}
+      : types_(nullptr), buffer_(start), end_(start + length) {}
 
+  
+  
+  const TypeContext* types_;
+
+  
   const uint8_t* buffer_;
+  
   const uint8_t* end_;
 
   CoderResult readBytes(void* dest, size_t length);

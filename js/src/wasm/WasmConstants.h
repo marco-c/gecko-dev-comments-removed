@@ -110,7 +110,7 @@ static constexpr TypeCode AbstractReferenceTypeCode = TypeCode::ExternRef;
 
 
 
-static constexpr TypeCode AbstractReferenceTypeIndexCode = TypeCode::Ref;
+static constexpr TypeCode AbstractTypeRefCode = TypeCode::Ref;
 
 
 
