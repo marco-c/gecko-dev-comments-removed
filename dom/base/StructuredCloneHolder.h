@@ -166,7 +166,6 @@ class StructuredCloneHolderBase {
 class BlobImpl;
 class MessagePort;
 class MessagePortIdentifier;
-struct VideoFrameImageData;
 
 class StructuredCloneHolder : public StructuredCloneHolderBase {
  public:
@@ -209,8 +208,7 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   bool HasClonedDOMObjects() const {
     return !mBlobImplArray.IsEmpty() || !mWasmModuleArray.IsEmpty() ||
-           !mClonedSurfaces.IsEmpty() || !mInputStreamArray.IsEmpty() ||
-           !mVideoFrameImages.IsEmpty();
+           !mClonedSurfaces.IsEmpty() || !mInputStreamArray.IsEmpty();
   }
 
   nsTArray<RefPtr<BlobImpl>>& BlobImpls() {
@@ -264,10 +262,6 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
 
   nsTArray<RefPtr<gfx::DataSourceSurface>>& GetSurfaces() {
     return mClonedSurfaces;
-  }
-
-  nsTArray<VideoFrameImageData>& VideoFrameImages() {
-    return mVideoFrameImages;
   }
 
   
@@ -366,9 +360,6 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   
   nsTArray<RefPtr<gfx::DataSourceSurface>> mClonedSurfaces;
-
-  
-  nsTArray<VideoFrameImageData> mVideoFrameImages;
 
   
   nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;

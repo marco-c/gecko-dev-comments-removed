@@ -158,8 +158,6 @@ enum StructuredCloneTags : uint32_t {
 
   SCTAG_DOM_TRANSFORMSTREAM,
 
-  SCTAG_DOM_VIDEOFRAME,
-
   
   
 };
