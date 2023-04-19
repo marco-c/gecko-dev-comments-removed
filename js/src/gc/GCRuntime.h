@@ -1107,7 +1107,8 @@ class GCRuntime {
   MainThreadData<bool> markOnBackgroundThreadDuringSweeping;
 
   
-  MainThreadData<bool> sweepOnBackgroundThread;
+  
+  MainThreadData<bool> useBackgroundThreads;
 
 #ifdef DEBUG
   

@@ -415,7 +415,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       lastMarkSlice(false),
       safeToYield(true),
       markOnBackgroundThreadDuringSweeping(false),
-      sweepOnBackgroundThread(false),
+      useBackgroundThreads(false),
 #ifdef DEBUG
       hadShutdownGC(false),
 #endif
@@ -1780,7 +1780,7 @@ void GCRuntime::startDecommit() {
   }
 #endif
 
-  if (sweepOnBackgroundThread) {
+  if (useBackgroundThreads) {
     decommitTask.start();
     return;
   }
@@ -2265,8 +2265,11 @@ static bool ShouldCleanUpEverything(JS::GCOptions options) {
   return options == JS::GCOptions::Shutdown || options == JS::GCOptions::Shrink;
 }
 
-static bool ShouldSweepOnBackgroundThread(JS::GCReason reason) {
-  return reason != JS::GCReason::DESTROY_RUNTIME && CanUseExtraThreads();
+static bool ShouldUseBackgroundThreads(bool isIncremental,
+                                       JS::GCReason reason) {
+  bool shouldUse = isIncremental && CanUseExtraThreads();
+  MOZ_ASSERT_IF(reason == JS::GCReason::DESTROY_RUNTIME, !shouldUse);
+  return shouldUse;
 }
 
 void GCRuntime::startCollection(JS::GCReason reason) {
@@ -2278,7 +2281,6 @@ void GCRuntime::startCollection(JS::GCReason reason) {
 
   initialReason = reason;
   cleanUpEverything = ShouldCleanUpEverything(gcOptions());
-  sweepOnBackgroundThread = ShouldSweepOnBackgroundThread(reason);
   isCompacting = shouldCompact();
   rootsRemoved = false;
   lastGCStartTime_ = ReallyNow();
@@ -2488,7 +2490,11 @@ bool GCRuntime::beginPreparePhase(JS::GCReason reason, AutoGCSession& session) {
 
 
   unmarkTask.initZones();
-  unmarkTask.start();
+  if (useBackgroundThreads) {
+    unmarkTask.start();
+  } else {
+    unmarkTask.runFromMainThread();
+  }
 
   
 
@@ -3195,6 +3201,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
 
   initialState = incrementalState;
   isIncremental = !budget.isUnlimited();
+  useBackgroundThreads = ShouldUseBackgroundThreads(isIncremental, reason);
 
 #ifdef JS_GC_ZEAL
   
