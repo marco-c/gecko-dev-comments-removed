@@ -140,7 +140,7 @@ void TransformStreamDefaultController::Enqueue(JSContext* aCx,
     MOZ_ASSERT(backpressure);
 
     
-    TransformStreamSetBackpressure(stream, true, aRv);
+    stream->SetBackpressure(true, aRv);
   }
 }
 
