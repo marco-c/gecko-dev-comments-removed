@@ -581,10 +581,6 @@ bool RTPSenderVideo::SendVideo(
   
   rtc::Buffer encrypted_video_payload;
   if (frame_encryptor_ != nullptr) {
-    if (!has_generic_descriptor) {
-      return false;
-    }
-
     const size_t max_ciphertext_size =
         frame_encryptor_->GetMaxCiphertextByteSize(cricket::MEDIA_TYPE_VIDEO,
                                                    payload.size());
