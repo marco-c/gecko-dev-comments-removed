@@ -426,6 +426,11 @@ nsresult ExtensionProtocolHandler::GetFlagsForURI(nsIURI* aURI,
       } else {
         flags |= WEBEXT_URI_WEB_ACCESSIBLE;
       }
+    } else if (policy->Type() == nsGkAtoms::theme) {
+      
+      
+      
+      flags |= WEBEXT_URI_WEB_ACCESSIBLE;
     } else {
       flags |= URI_DANGEROUS_TO_LOAD;
     }
