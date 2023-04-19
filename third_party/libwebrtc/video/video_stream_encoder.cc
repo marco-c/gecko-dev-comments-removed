@@ -844,10 +844,6 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
       });
 }
 
-
-
-
-
 void VideoStreamEncoder::ReconfigureEncoder() {
   
   RTC_DCHECK(pending_encoder_reconfiguration_);
