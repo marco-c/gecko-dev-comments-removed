@@ -55,4 +55,8 @@ AvailableCpuFeatures GetAvailableCpuFeatures() {
 #endif
 }
 
+AvailableCpuFeatures NoAvailableCpuFeatures() {
+  return {false, false, false};
+}
+
 }  

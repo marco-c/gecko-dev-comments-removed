@@ -57,7 +57,8 @@ RnnVad::RnnVad(const AvailableCpuFeatures& cpu_features)
               kOutputDenseBias,
               kOutputDenseWeights,
               ActivationFunction::kSigmoidApproximated,
-              cpu_features,
+              
+              NoAvailableCpuFeatures(),
               "FC2") {
   
   RTC_DCHECK_EQ(input_.size(), hidden_.input_size())

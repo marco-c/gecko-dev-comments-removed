@@ -31,6 +31,9 @@ struct AvailableCpuFeatures {
 
 AvailableCpuFeatures GetAvailableCpuFeatures();
 
+
+AvailableCpuFeatures NoAvailableCpuFeatures();
+
 }  
 
 #endif  
