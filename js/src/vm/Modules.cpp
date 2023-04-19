@@ -37,6 +37,8 @@ using mozilla::Utf8Unit;
 
 
 
+using NameList = GCVector<JSAtom*, 0, SystemAllocPolicy>;
+
 JS_PUBLIC_API JS::SupportedAssertionsHook JS::GetSupportedAssertionsHook(
     JSRuntime* rt) {
   AssertHeapIsIdle();
@@ -332,10 +334,9 @@ static ArrayObject* NewList(JSContext* cx) {
   return NewArrayWithNullProto(cx);
 }
 
-static bool ArrayContainsName(Handle<ArrayObject*> array,
-                              Handle<JSAtom*> name) {
-  for (uint32_t i = 0; i < array->length(); i++) {
-    if (array->getDenseElement(i) == StringValue(name)) {
+static bool ContainsElement(Handle<NameList> list, JSAtom* atom) {
+  for (JSAtom* a : list) {
+    if (a == atom) {
       return true;
     }
   }
@@ -368,26 +369,23 @@ static size_t CountElements(Handle<ModuleVector> stack, ModuleObject* module) {
 
 
 
-static ArrayObject* ModuleGetExportedNames(
-    JSContext* cx, Handle<ModuleObject*> module,
-    MutableHandle<ModuleSet> exportStarSet) {
+static bool ModuleGetExportedNames(JSContext* cx, Handle<ModuleObject*> module,
+                                   MutableHandle<ModuleSet> exportStarSet,
+                                   MutableHandle<NameList> exportedNames) {
   
-  Rooted<ArrayObject*> exportedNames(cx, NewList(cx));
-  if (!exportedNames) {
-    return nullptr;
-  }
+  MOZ_ASSERT(exportedNames.empty());
 
   
   if (exportStarSet.has(module)) {
     
     
-    return exportedNames;
+    return true;
   }
 
   
   if (!exportStarSet.put(module)) {
     ReportOutOfMemory(cx);
-    return nullptr;
+    return false;
   }
 
   
@@ -399,8 +397,9 @@ static ArrayObject* ModuleGetExportedNames(
              .as<ExportEntryObject>();
     
     
-    if (!NewbornArrayPush(cx, exportedNames, StringValue(e->exportName()))) {
-      return nullptr;
+    if (!exportedNames.append(e->exportName())) {
+      ReportOutOfMemory(cx);
+      return false;
     }
   }
 
@@ -414,8 +413,9 @@ static ArrayObject* ModuleGetExportedNames(
              .as<ExportEntryObject>();
     
     
-    if (!NewbornArrayPush(cx, exportedNames, StringValue(e->exportName()))) {
-      return nullptr;
+    if (!exportedNames.append(e->exportName())) {
+      ReportOutOfMemory(cx);
+      return false;
     }
   }
 
@@ -436,27 +436,27 @@ static ArrayObject* ModuleGetExportedNames(
     requestedModule = HostResolveImportedModule(cx, module, moduleRequest,
                                                 ModuleStatus::Unlinked);
     if (!requestedModule) {
-      return nullptr;
+      return false;
     }
 
     
     
-    starNames = ModuleGetExportedNames(cx, requestedModule, exportStarSet);
-    if (!starNames) {
-      return nullptr;
+    Rooted<NameList> starNames(cx);
+    if (!ModuleGetExportedNames(cx, requestedModule, exportStarSet,
+                                &starNames)) {
+      return false;
     }
 
     
-    for (uint32_t j = 0; j != starNames->length(); j++) {
-      name = &starNames->getDenseElement(j).toString()->asAtom();
-
+    for (JSAtom* name : starNames) {
       
       if (name != cx->names().default_) {
         
-        if (!ArrayContainsName(exportedNames, name)) {
+        if (!ContainsElement(exportedNames, name)) {
           
-          if (!NewbornArrayPush(cx, exportedNames, StringValue(name))) {
-            return nullptr;
+          if (!exportedNames.append(name)) {
+            ReportOutOfMemory(cx);
+            return false;
           }
         }
       }
@@ -464,7 +464,7 @@ static ArrayObject* ModuleGetExportedNames(
   }
 
   
-  return exportedNames;
+  return true;
 }
 
 static ModuleObject* HostResolveImportedModule(
@@ -710,9 +710,8 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
   if (!ns) {
     
     Rooted<ModuleSet> exportStarSet(cx);
-    Rooted<ArrayObject*> exportedNames(cx);
-    exportedNames = ModuleGetExportedNames(cx, module, &exportStarSet);
-    if (!exportedNames) {
+    Rooted<NameList> exportedNames(cx);
+    if (!ModuleGetExportedNames(cx, module, &exportStarSet, &exportedNames)) {
       return nullptr;
     }
 
@@ -725,8 +724,8 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
     
     Rooted<JSAtom*> name(cx);
     Rooted<Value> resolution(cx);
-    for (uint32_t i = 0; i != exportedNames->length(); i++) {
-      name = &exportedNames->getDenseElement(i).toString()->asAtom();
+    for (JSAtom* atom : exportedNames) {
+      name = atom;
 
       
       if (!ModuleResolveExport(cx, module, name, &resolution)) {
