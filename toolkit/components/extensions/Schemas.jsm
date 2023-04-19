@@ -1060,8 +1060,6 @@ class InjectionContext extends Context {
 
 const FORMATS = {
   hostname(string, context) {
-    
-    
     let valid = true;
 
     try {
@@ -1072,25 +1070,6 @@ const FORMATS = {
 
     if (!valid) {
       throw new Error(`Invalid hostname ${string}`);
-    }
-
-    return string;
-  },
-
-  canonicalDomain(string, context) {
-    let valid;
-
-    try {
-      valid = new URL(`http://${string}`).hostname === string;
-    } catch (e) {
-      valid = false;
-    }
-
-    if (!valid) {
-      
-      
-      
-      throw new Error(`Invalid domain ${string}`);
     }
 
     return string;

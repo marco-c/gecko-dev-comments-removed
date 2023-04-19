@@ -243,11 +243,6 @@ let json = [
             type: "object",
             properties: {
               hostname: { type: "string", format: "hostname", optional: true },
-              canonicalDomain: {
-                type: "string",
-                format: "canonicalDomain",
-                optional: "omit-key-if-missing",
-              },
               url: { type: "string", format: "url", optional: true },
               origin: { type: "string", format: "origin", optional: true },
               relativeUrl: {
@@ -665,43 +660,6 @@ add_task(async function() {
       /Invalid hostname/,
       "should throw for invalid hostname"
     );
-    Assert.throws(
-      () => root.testing.format({ canonicalDomain: invalid }),
-      /Invalid domain /,
-      `should throw for invalid canonicalDomain (${invalid})`
-    );
-  }
-
-  for (let invalid of [
-    "%61", 
-    "foo:12345", 
-    "2", 
-    "::1", 
-    "[::1A]", 
-    "[::ffff:127.0.0.1]", 
-    "UPPERCASE", 
-    "straß.de", 
-  ]) {
-    Assert.throws(
-      () => root.testing.format({ canonicalDomain: invalid }),
-      /Invalid domain /,
-      `should throw for invalid canonicalDomain (${invalid})`
-    );
-  }
-
-  for (let valid of ["0.0.0.2", "[::1]", "[::1a]", "lowercase", "."]) {
-    root.testing.format({ canonicalDomain: valid });
-    wrapper.verify("call", "testing", "format", [
-      {
-        canonicalDomain: valid,
-        hostname: null,
-        imageDataOrStrictRelativeUrl: null,
-        origin: null,
-        relativeUrl: null,
-        strictRelativeUrl: null,
-        url: null,
-      },
-    ]);
   }
 
   for (let valid of [
