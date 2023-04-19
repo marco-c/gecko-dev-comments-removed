@@ -2473,12 +2473,14 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   enum class EditTarget {
     OnlyDescendantsExceptTable,
     NodeAndDescendantsExceptTable
   };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveAlignFromDescendants(
-      Element& aElement, const nsAString& aAlignType, EditTarget aEditTarget);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  RemoveAlignFromDescendants(Element& aElement, const nsAString& aAlignType,
+                             EditTarget aEditTarget);
 
   
 
