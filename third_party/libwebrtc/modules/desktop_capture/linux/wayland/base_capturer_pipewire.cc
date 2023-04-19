@@ -83,7 +83,15 @@ void BaseCapturerPipeWire::CaptureFrame() {
 #define PIPEWIRE_NAME "####_PIPEWIRE_PORTAL_####"
 
 bool BaseCapturerPipeWire::GetSourceList(SourceList* sources) {
-  sources->push_back({PIPEWIRE_ID, 0, PIPEWIRE_NAME});
+  RTC_DCHECK(sources->size() == 0);
+  
+  
+  
+  
+  
+  
+  
+  sources->push_back({1});
   return true;
 }
 
