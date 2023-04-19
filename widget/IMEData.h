@@ -11,6 +11,8 @@
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/ToString.h"
 
+#include "nsCOMPtr.h"
+#include "nsIURI.h"
 #include "nsPoint.h"
 #include "nsRect.h"
 #include "nsString.h"
@@ -411,8 +413,9 @@ struct InputContext final {
   
   
   void ShutDown() {
+    mURI = nullptr;
     mHTMLInputType.Truncate();
-    mHTMLInputInputmode.Truncate();
+    mHTMLInputMode.Truncate();
     mActionHint.Truncate();
     mAutocapitalize.Truncate();
   }
@@ -445,7 +448,7 @@ struct InputContext final {
            
            
            mHTMLInputType != aOldContext.mHTMLInputType ||
-           mHTMLInputInputmode != aOldContext.mHTMLInputInputmode ||
+           mHTMLInputMode != aOldContext.mHTMLInputMode ||
 #endif
 #if defined(ANDROID) || defined(MOZ_WIDGET_GTK)
            
@@ -461,10 +464,13 @@ struct InputContext final {
   IMEState mIMEState;
 
   
+  nsCOMPtr<nsIURI> mURI;
+
+  
   nsString mHTMLInputType;
 
   
-  nsString mHTMLInputInputmode;
+  nsString mHTMLInputMode;
 
   
   nsString mActionHint;
