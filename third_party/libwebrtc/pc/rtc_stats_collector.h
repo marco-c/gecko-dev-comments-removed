@@ -53,7 +53,7 @@ class RtpReceiverInternal;
 
 
 
-class RTCStatsCollector : public virtual rtc::RefCountInterface,
+class RTCStatsCollector : public rtc::RefCountInterface,
                           public sigslot::has_slots<> {
  public:
   static rtc::scoped_refptr<RTCStatsCollector> Create(

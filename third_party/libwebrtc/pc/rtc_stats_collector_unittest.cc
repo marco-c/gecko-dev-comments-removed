@@ -3215,10 +3215,19 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   static rtc::scoped_refptr<FakeRTCStatsCollector> Create(
       PeerConnectionInternal* pc,
       int64_t cache_lifetime_us) {
-    return rtc::scoped_refptr<FakeRTCStatsCollector>(
-        new rtc::RefCountedObject<FakeRTCStatsCollector>(pc,
-                                                         cache_lifetime_us));
+    return new rtc::RefCountedObject<FakeRTCStatsCollector>(pc,
+                                                            cache_lifetime_us);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  virtual void AddRef() const = 0;
+  virtual rtc::RefCountReleaseStatus Release() const = 0;
 
   
   void OnStatsDelivered(
