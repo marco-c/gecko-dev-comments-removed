@@ -63,8 +63,15 @@ typedef NS_ENUM(NSInteger, RTCEncryptionKeyType) {
 
 
 typedef NS_ENUM(NSInteger, RTCSdpSemantics) {
+  
   RTCSdpSemanticsPlanB,
   RTCSdpSemanticsUnifiedPlan,
+  
+  
+  
+  
+  
+  RTCSdpSemanticsNotSpecified,
 };
 
 NS_ASSUME_NONNULL_BEGIN
@@ -160,6 +167,11 @@ RTC_OBJC_EXPORT
 
 
 @property(nonatomic, copy, nullable) NSNumber *iceCheckMinInterval;
+
+
+
+
+
 
 
 
