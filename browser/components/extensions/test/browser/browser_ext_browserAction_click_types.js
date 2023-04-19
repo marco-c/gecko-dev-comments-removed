@@ -119,11 +119,21 @@ async function test_clickData({ manifest_version, persistent }) {
 
 async function test_clickData_reset({ manifest_version }) {
   const action = manifest_version < 3 ? "browser_action" : "action";
+  const browser_action_command =
+    manifest_version < 3 ? "_execute_browser_action" : "_execute_action";
+  const browser_action_key = "j";
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       manifest_version,
       [action]: {},
       page_action: {},
+      commands: {
+        [browser_action_command]: {
+          suggested_key: {
+            default: "Alt+Shift+J",
+          },
+        },
+      },
     },
 
     async background() {
@@ -132,10 +142,7 @@ async function test_clickData_reset({ manifest_version }) {
       }
 
       function onPageActionClicked(tab, info) {
-        
-        
-        
-        browser.browserAction.openPopup();
+        browser.test.sendMessage("open-popup");
       }
 
       const { manifest_version } = browser.runtime.getManifest();
@@ -195,9 +202,16 @@ async function test_clickData_reset({ manifest_version }) {
     
     await extension.awaitMessage("ready");
   } else {
+    extension.onMessage("open-popup", () => {
+      EventUtils.synthesizeKey(browser_action_key, {
+        altKey: true,
+        shiftKey: true,
+      });
+    });
+
     
     await clickPageAction(extension);
-    
+
     
     assertInfoReset(await extension.awaitMessage("onClick"));
   }

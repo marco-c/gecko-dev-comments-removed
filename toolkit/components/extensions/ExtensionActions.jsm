@@ -188,11 +188,22 @@ class PanelActionBase {
 
 
 
-  getPopupUrl(tab) {
+
+
+  getPopupUrl(tab, strict = false) {
     if (!this.isShownForTab(tab)) {
+      if (strict) {
+        throw new ExtensionError("Popup is disabled");
+      }
+
       return undefined;
     }
     let popupUrl = this.getProperty(tab, "popup");
+
+    if (strict && !popupUrl) {
+      throw new ExtensionError("No popup URL is set");
+    }
+
     return popupUrl;
   }
 
