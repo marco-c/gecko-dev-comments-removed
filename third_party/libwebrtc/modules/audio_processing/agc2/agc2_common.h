@@ -50,6 +50,9 @@ constexpr float kFullBufferLeakFactor = 1.f - 1.f / kFullBufferSizeMs;
 constexpr float kInitialSpeechLevelEstimateDbfs = -30.f;
 
 
+constexpr float kDefaultSmoothedVadProbabilityAttack = 1.f;
+
+
 float GetInitialSaturationMarginDb();
 float GetExtraSaturationMarginOffsetDb();
 

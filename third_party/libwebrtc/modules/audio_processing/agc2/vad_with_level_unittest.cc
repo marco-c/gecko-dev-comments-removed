@@ -10,29 +10,120 @@
 
 #include "modules/audio_processing/agc2/vad_with_level.h"
 
+#include <memory>
+#include <vector>
+
+#include "modules/audio_processing/agc2/agc2_common.h"
+#include "modules/audio_processing/include/audio_frame_view.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/numerics/safe_compare.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 namespace {
 
-TEST(AutomaticGainController2VadWithLevelEstimator,
-     PeakLevelGreaterThanRmsLevel) {
-  constexpr size_t kSampleRateHz = 8000;
+using ::testing::AnyNumber;
+using ::testing::ReturnRoundRobin;
 
+constexpr float kInstantAttack = 1.f;
+constexpr float kSlowAttack = 0.1f;
+
+constexpr int kSampleRateHz = 8000;
+
+class MockVad : public VadLevelAnalyzer::VoiceActivityDetector {
+ public:
+  MOCK_METHOD(float,
+              ComputeProbability,
+              (AudioFrameView<const float> frame),
+              (override));
+};
+
+
+
+
+std::unique_ptr<VadLevelAnalyzer> CreateVadLevelAnalyzerWithMockVad(
+    float vad_probability_attack,
+    const std::vector<float>& speech_probabilities) {
+  auto vad = std::make_unique<MockVad>();
+  EXPECT_CALL(*vad, ComputeProbability)
+      .Times(AnyNumber())
+      .WillRepeatedly(ReturnRoundRobin(speech_probabilities));
+  return std::make_unique<VadLevelAnalyzer>(vad_probability_attack,
+                                            std::move(vad));
+}
+
+
+struct FrameWithView {
   
+  FrameWithView(float value = 0.f)
+      : channel0(samples.data()),
+        view(&channel0, 1, samples.size()) {
+    samples.fill(value);
+  }
+  std::array<float, kSampleRateHz / 100> samples;
+  const float* const channel0;
+  const AudioFrameView<const float> view;
+};
+
+TEST(AutomaticGainController2VadLevelAnalyzer, PeakLevelGreaterThanRmsLevel) {
   
-  std::array<float, kSampleRateHz / 100> frame;
-  frame.fill(1000.f);
-  frame[10] = 2000.f;
-  float* const channel0 = frame.data();
-  AudioFrameView<float> frame_view(&channel0, 1, frame.size());
+  FrameWithView frame(1000.f);  
+  frame.samples[10] = 2000.f;   
 
   
   VadLevelAnalyzer analyzer;
-  auto levels_and_vad_prob = analyzer.AnalyzeFrame(frame_view);
+  auto levels_and_vad_prob = analyzer.AnalyzeFrame(frame.view);
 
   
   EXPECT_LT(levels_and_vad_prob.rms_dbfs, levels_and_vad_prob.peak_dbfs);
+}
+
+
+
+TEST(AutomaticGainController2VadLevelAnalyzer, NoSpeechProbabilitySmoothing) {
+  const std::vector<float> speech_probabilities{0.709f, 0.484f, 0.882f, 0.167f,
+                                                0.44f,  0.525f, 0.858f, 0.314f,
+                                                0.653f, 0.965f, 0.413f, 0.f};
+  auto analyzer =
+      CreateVadLevelAnalyzerWithMockVad(kInstantAttack, speech_probabilities);
+  FrameWithView frame;
+  for (int i = 0; rtc::SafeLt(i, speech_probabilities.size()); ++i) {
+    SCOPED_TRACE(i);
+    EXPECT_EQ(speech_probabilities[i],
+              analyzer->AnalyzeFrame(frame.view).speech_probability);
+  }
+}
+
+
+
+TEST(AutomaticGainController2VadLevelAnalyzer,
+     SlowAttackSpeechProbabilitySmoothing) {
+  const std::vector<float> speech_probabilities{0.f, 0.f, 1.f, 1.f, 1.f, 1.f};
+  auto analyzer =
+      CreateVadLevelAnalyzerWithMockVad(kSlowAttack, speech_probabilities);
+  FrameWithView frame;
+  float prev_probability = 0.f;
+  for (int i = 0; rtc::SafeLt(i, speech_probabilities.size()); ++i) {
+    SCOPED_TRACE(i);
+    const float smoothed_probability =
+        analyzer->AnalyzeFrame(frame.view).speech_probability;
+    EXPECT_LT(smoothed_probability, 1.f);  
+    EXPECT_LE(prev_probability, smoothed_probability);  
+    prev_probability = smoothed_probability;
+  }
+}
+
+
+
+TEST(AutomaticGainController2VadLevelAnalyzer, SpeechProbabilityInstantDecay) {
+  const std::vector<float> speech_probabilities{1.f, 1.f, 1.f, 1.f, 1.f, 0.f};
+  auto analyzer =
+      CreateVadLevelAnalyzerWithMockVad(kSlowAttack, speech_probabilities);
+  FrameWithView frame;
+  for (int i = 0; rtc::SafeLt(i, speech_probabilities.size() - 1); ++i) {
+    analyzer->AnalyzeFrame(frame.view);
+  }
+  EXPECT_EQ(0.f, analyzer->AnalyzeFrame(frame.view).speech_probability);
 }
 
 }  
