@@ -74,7 +74,10 @@ var BackgroundTasksTestUtils = {
       environmentAppend: true,
       stderr: "stdout",
     }).then(p => {
-      p.stdin.close();
+      p.stdin.close().catch(() => {
+        
+        
+      });
       const dumpPipe = async pipe => {
         
         let leftover = "";
