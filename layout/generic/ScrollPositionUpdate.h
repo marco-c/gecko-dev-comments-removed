@@ -11,14 +11,8 @@
 #include "nsPoint.h"
 #include "mozilla/ScrollGeneration.h"
 #include "mozilla/ScrollOrigin.h"
-#include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/ScrollTypes.h"
 #include "Units.h"
-
-namespace IPC {
-template <typename T>
-struct ParamTraits;
-}  
 
 namespace mozilla {
 
@@ -47,8 +41,6 @@ enum class ScrollTriggeredByScript : bool { No, Yes };
 
 
 class ScrollPositionUpdate {
-  friend struct IPC::ParamTraits<mozilla::ScrollPositionUpdate>;
-
  public:
   
   explicit ScrollPositionUpdate();
@@ -67,15 +59,9 @@ class ScrollPositionUpdate {
   
   
   
-  
-  
-  
-  
-  
   static ScrollPositionUpdate NewSmoothScroll(
       ScrollOrigin aOrigin, nsPoint aDestination,
-      ScrollTriggeredByScript aTriggeredByScript,
-      UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
+      ScrollTriggeredByScript aTriggeredByScript);
   
   
   
@@ -103,7 +89,6 @@ class ScrollPositionUpdate {
   bool WasTriggeredByScript() const {
     return mTriggeredByScript == ScrollTriggeredByScript::Yes;
   }
-  const ScrollSnapTargetIds& GetSnapTargetIds() const { return mSnapTargetIds; }
 
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const ScrollPositionUpdate& aUpdate);
@@ -122,7 +107,6 @@ class ScrollPositionUpdate {
   
   CSSPoint mDelta;
   ScrollTriggeredByScript mTriggeredByScript;
-  ScrollSnapTargetIds mSnapTargetIds;
 };
 
 }  
