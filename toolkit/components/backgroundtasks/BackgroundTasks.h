@@ -49,8 +49,11 @@ class BackgroundTasks final : public nsIBackgroundTasks {
 
   static bool IsBackgroundTaskMode();
 
-  static nsresult CreateEphemeralProfileDirectory(const nsCString& aInstallHash,
-                                                  nsIFile** aFile);
+  static nsresult CreateEphemeralProfileDirectory(
+      nsIFile* aRootDir, const nsCString& aProfilePrefix, nsIFile** aFile);
+
+  static nsresult CreateNonEphemeralProfileDirectory(
+      nsIFile* aRootDir, const nsCString& aProfilePrefix, nsIFile** aFile);
 
   static bool IsEphemeralProfile();
 
@@ -65,16 +68,37 @@ class BackgroundTasks final : public nsIBackgroundTasks {
 
   static bool IsUpdatingTaskName(const nsCString& aName);
 
+  
+
+
+
+
+
+
+
+
+  static bool IsEphemeralProfileTaskName(const nsCString& aName);
+
+  
+
+
+
+  static nsCString GetProfilePrefix(const nsCString& aInstallHash);
+
  protected:
   static StaticRefPtr<BackgroundTasks> sSingleton;
   static LazyLogModule sBackgroundTasksLog;
 
   Maybe<nsCString> mBackgroundTask;
+  bool mIsEphemeralProfile;
   nsCOMPtr<nsIFile> mProfD;
 
-  nsresult CreateEphemeralProfileDirectoryImpl(const nsCString& aInstallHash,
+  nsresult CreateEphemeralProfileDirectoryImpl(nsIFile* aRootDir,
+                                               const nsCString& aProfilePrefix,
                                                nsIFile** aFile);
 
+  nsresult CreateNonEphemeralProfileDirectoryImpl(
+      nsIFile* aRootDir, const nsCString& aProfilePrefix, nsIFile** aFile);
   
 
 

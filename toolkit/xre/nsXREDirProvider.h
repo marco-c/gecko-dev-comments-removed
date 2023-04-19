@@ -14,6 +14,9 @@
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
 #include "mozilla/Attributes.h"
+#ifdef MOZ_BACKGROUNDTASKS
+#  include "mozilla/BackgroundTasks.h"
+#endif
 
 
 #define NS_XREDIRPROVIDER_CID                        \
@@ -49,6 +52,11 @@ class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
 
   nsresult GetUserProfilesRootDir(nsIFile** aResult);
   nsresult GetUserProfilesLocalDir(nsIFile** aResult);
+#ifdef MOZ_BACKGROUNDTASKS
+  
+  
+  nsresult GetBackgroundTasksProfilesRootDir(nsIFile** aResult);
+#endif
 
   nsresult GetLegacyInstallHash(nsAString& aPathHash);
 

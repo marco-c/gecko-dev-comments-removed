@@ -60,6 +60,7 @@
 #include "prthread.h"
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
+#  include "SpecialSystemDirectory.h"
 #endif
 
 using namespace mozilla;
@@ -1266,6 +1267,8 @@ nsToolkitProfileService::SelectStartupProfile(
   return rv;
 }
 
+static void SaltProfileName(nsACString& aName);
+
 
 
 
@@ -1480,31 +1483,98 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
 
 #ifdef MOZ_BACKGROUNDTASKS
   if (BackgroundTasks::IsBackgroundTaskMode()) {
+    
+    
+    
+    
+    
+    
     nsString installHash;
     rv = gDirServiceProvider->GetInstallHash(installHash);
     NS_ENSURE_SUCCESS(rv, rv);
 
+    nsCString profilePrefix(BackgroundTasks::GetProfilePrefix(
+        NS_LossyConvertUTF16toASCII(installHash)));
+
+    nsCString taskName(BackgroundTasks::GetBackgroundTasks().ref());
+
     nsCOMPtr<nsIFile> file;
-    nsresult rv = BackgroundTasks::CreateEphemeralProfileDirectory(
-        NS_LossyConvertUTF16toASCII(installHash), getter_AddRefs(file));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+
+    if (BackgroundTasks::IsEphemeralProfileTaskName(taskName)) {
       
       
-      return NS_ERROR_UNEXPECTED;
+      mStartupReason = u"backgroundtask-ephemeral"_ns;
+
+      nsCOMPtr<nsIFile> rootDir;
+      rv = GetSpecialSystemDirectory(OS_TemporaryDirectory,
+                                     getter_AddRefs(rootDir));
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      nsresult rv = BackgroundTasks::CreateEphemeralProfileDirectory(
+          rootDir, profilePrefix, getter_AddRefs(file));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        
+        
+        return NS_ERROR_UNEXPECTED;
+      }
+      *aDidCreate = true;
+    } else {
+      
+      
+      mStartupReason = u"backgroundtask-not-ephemeral"_ns;
+
+      
+      nsCOMPtr<nsIFile> rootDir;
+      nsresult rv = gDirServiceProvider->GetBackgroundTasksProfilesRootDir(
+          getter_AddRefs(rootDir));
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      nsAutoCString buffer;
+      rv = mProfileDB.GetString("BackgroundTasksProfiles", profilePrefix.get(),
+                                buffer);
+      if (NS_SUCCEEDED(rv)) {
+        
+        rv = rootDir->Clone(getter_AddRefs(file));
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        rv = file->AppendNative(buffer);
+        NS_ENSURE_SUCCESS(rv, rv);
+      } else {
+        nsCString saltedProfilePrefix = profilePrefix;
+        SaltProfileName(saltedProfilePrefix);
+
+        nsresult rv = BackgroundTasks::CreateNonEphemeralProfileDirectory(
+            rootDir, saltedProfilePrefix, getter_AddRefs(file));
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          
+          
+          return NS_ERROR_UNEXPECTED;
+        }
+        *aDidCreate = true;
+
+        
+        
+        
+        
+        rv =
+            mProfileDB.SetString("BackgroundTasksProfiles", profilePrefix.get(),
+                                 saltedProfilePrefix.get());
+        Unused << NS_WARN_IF(NS_FAILED(rv));
+
+        if (NS_SUCCEEDED(rv)) {
+          rv = Flush();
+          Unused << NS_WARN_IF(NS_FAILED(rv));
+        }
+      }
     }
-
-    
-    GetProfileByDir(file, nullptr, getter_AddRefs(mCurrent));
-
-    
-    
-    mStartupReason = u"backgroundtask"_ns;
 
     nsCOMPtr<nsIFile> localDir = file;
     file.forget(aRootDir);
     localDir.forget(aLocalDir);
 
-    NS_IF_ADDREF(*aProfile = mCurrent);
+    
+    *aProfile = nullptr;
+
     return NS_OK;
   }
 #endif
