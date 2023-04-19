@@ -59,7 +59,7 @@ class MOZ_RAII AutoCheckRecursionLimit {
                                                   JS::StackKind kind,
                                                   int extraAllowance) const;
 
-  JS_PUBLIC_API bool runningWithTrustedPrincipals(JSContext* cx) const;
+  JS_PUBLIC_API JS::StackKind stackKindForCurrentPrincipal(JSContext* cx) const;
 
 #ifdef __wasi__
   
@@ -132,9 +132,7 @@ MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkLimitImpl(uintptr_t limit,
 
 MOZ_ALWAYS_INLINE uintptr_t
 AutoCheckRecursionLimit::getStackLimitSlow(JSContext* cx) const {
-  JS::StackKind kind = runningWithTrustedPrincipals(cx)
-                           ? JS::StackForTrustedScript
-                           : JS::StackForUntrustedScript;
+  JS::StackKind kind = stackKindForCurrentPrincipal(cx);
   return getStackLimitHelper(cx, kind, 0);
 }
 
