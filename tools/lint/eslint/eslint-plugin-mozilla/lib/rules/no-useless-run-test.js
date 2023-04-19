@@ -46,7 +46,7 @@ module.exports = {
               
               
               
-              if (startNode && startNode.length) {
+              if (startNode?.length) {
                 startNode = startNode[startNode.length - 1];
               } else {
                 startNode = sourceCode.getTokenBefore(node);
