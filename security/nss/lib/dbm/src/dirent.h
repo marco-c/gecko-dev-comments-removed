@@ -61,7 +61,7 @@ struct dirent {
 #else
     char d_name[MAXNAMLEN + 1]; 
     char d_attribute;           
-    unsigned long d_size; 
+    unsigned long d_size;       
 #endif
 };
 

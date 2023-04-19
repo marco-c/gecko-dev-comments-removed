@@ -106,7 +106,7 @@ test_generalname(int argc, char *argv[])
     diffInput = "1.2.840.115349";
     testNameType(PKIX_OID_NAME, goodInput, diffInput, goodInput);
 
-
+    
 
 
 

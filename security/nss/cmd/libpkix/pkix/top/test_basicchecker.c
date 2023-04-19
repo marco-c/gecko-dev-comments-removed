@@ -218,13 +218,13 @@ test_basicchecker(int argc, char *argv[])
     testNameChainingFail(dirName, goodInput, diffInput, dateAscii);
     testDateFail(dirName, goodInput, diffInput);
 
+    
 
 
 
 
 
-
-
+    
 
 cleanup:
 

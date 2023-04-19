@@ -982,8 +982,7 @@ AppendAVA(stringBuf* bufp, CERTAVA* ava, CertStrictnessLevel strict)
 
     nameLen = strlen(tagName);
     valueLen =
-        (useHex ? avaValue->len : cert_RFC1485_GetRequiredLen(
-                                      (char*)avaValue->data, avaValue->len, &mode));
+        (useHex ? avaValue->len : cert_RFC1485_GetRequiredLen((char*)avaValue->data, avaValue->len, &mode));
     len = nameLen + valueLen + 2; 
 
     maxName = nameLen;
@@ -1490,7 +1489,7 @@ loser:
 
 
 const char* 
-    CERT_GetFirstEmailAddress(CERTCertificate* cert)
+CERT_GetFirstEmailAddress(CERTCertificate* cert)
 {
     if (cert && cert->emailAddr && cert->emailAddr[0])
         return (const char*)cert->emailAddr;
@@ -1502,7 +1501,7 @@ const char*
 
 
 const char* 
-    CERT_GetNextEmailAddress(CERTCertificate* cert, const char* prev)
+CERT_GetNextEmailAddress(CERTCertificate* cert, const char* prev)
 {
     if (cert && prev && prev[0]) {
         PRUint32 len = PL_strlen(prev);

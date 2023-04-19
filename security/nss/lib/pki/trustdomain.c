@@ -318,7 +318,7 @@ NSSTrustDomain_FindBestTokenForAlgorithms(
     NSSTrustDomain *td,
     NSSOID *algorithms[],   
     PRUint32 nAlgorithmsOpt 
-    )
+)
 {
     nss_SetError(NSS_ERROR_NOT_FOUND);
     return NULL;

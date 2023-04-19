@@ -304,7 +304,7 @@ inline bool InputContains(const Input& input, uint8_t toFind) {
     }
   }
 }
-}
+}  
 }  
 
 #endif  

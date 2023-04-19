@@ -115,7 +115,7 @@ NSSCertificate_Validate(
     NSSTime *timeOpt, 
     NSSUsage *usage,
     NSSPolicies *policiesOpt 
-    );
+);
 
 
 
@@ -135,15 +135,15 @@ NSSCertificate_Validate(
 
 
 NSS_EXTERN void ** 
-    NSSCertificate_ValidateCompletely(
-        NSSCertificate *c,
-        NSSTime *timeOpt, 
-        NSSUsage *usage,
-        NSSPolicies *policiesOpt, 
-        void **rvOpt,             
-        PRUint32 rvLimit,         
-        NSSArena *arenaOpt        
-        );
+NSSCertificate_ValidateCompletely(
+    NSSCertificate *c,
+    NSSTime *timeOpt, 
+    NSSUsage *usage,
+    NSSPolicies *policiesOpt, 
+    void **rvOpt,             
+    PRUint32 rvLimit,         
+    NSSArena *arenaOpt        
+);
 
 
 
@@ -675,7 +675,7 @@ NSS_EXTERN NSSPublicKey *
 NSSPrivateKey_FindPublicKey(
     NSSPrivateKey *vk
     
-    );
+);
 
 
 
@@ -1363,7 +1363,7 @@ NSSTrustDomain_FindBestTokenForAlgorithms(
     NSSTrustDomain *td,
     NSSOID *algorithms[],   
     PRUint32 nAlgorithmsOpt 
-    );
+);
 
 
 
@@ -1470,7 +1470,7 @@ NSSTrustDomain_FindBestCertificateByNickname(
     NSSTime *timeOpt, 
     NSSUsage *usage,
     NSSPolicies *policiesOpt 
-    );
+);
 
 
 
@@ -2001,7 +2001,7 @@ NSSCryptoContext_FindBestCertificateByNickname(
     NSSTime *timeOpt, 
     NSSUsage *usage,
     NSSPolicies *policiesOpt 
-    );
+);
 
 
 

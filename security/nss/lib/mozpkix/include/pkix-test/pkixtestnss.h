@@ -42,7 +42,7 @@ TestKeyPair* CreateTestKeyPair(const TestPublicKeyAlgorithm publicKeyAlg,
                                const ScopedSECKEYPublicKey& publicKey,
                                const ScopedSECKEYPrivateKey& privateKey);
 }
-}
+}  
 }  
 
 #endif  

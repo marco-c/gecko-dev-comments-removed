@@ -214,10 +214,12 @@ intel_AES_GCM_EncryptUpdate(intel_AES_GCMContext *gcm,
 
     
     
-    if (sizeof(inlen) > 4 &&
-        inlen >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
-        PORT_SetError(SEC_ERROR_INPUT_LEN);
-        return SECFailure;
+    if (sizeof(inlen) > 4) {
+        unsigned long long inlen_ull = inlen;
+        if (inlen_ull >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
+            PORT_SetError(SEC_ERROR_INPUT_LEN);
+            return SECFailure;
+        }
     }
 
     if (!gcm->ctr_context_init) {
@@ -289,10 +291,12 @@ intel_AES_GCM_DecryptUpdate(intel_AES_GCMContext *gcm,
 
     
     
-    if (sizeof(inlen) > 4 &&
-        inlen >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
-        PORT_SetError(SEC_ERROR_INPUT_LEN);
-        return SECFailure;
+    if (sizeof(inlen) > 4) {
+        unsigned long long inlen_ull = inlen;
+        if (inlen_ull >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
+            PORT_SetError(SEC_ERROR_INPUT_LEN);
+            return SECFailure;
+        }
     }
 
     if (maxout < inlen) {
@@ -345,10 +349,12 @@ intel_AES_GCM_EncryptAEAD(intel_AES_GCMContext *gcm,
 
     
     
-    if (sizeof(inlen) > 4 &&
-        inlen >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
-        PORT_SetError(SEC_ERROR_INPUT_LEN);
-        return SECFailure;
+    if (sizeof(inlen) > 4) {
+        unsigned long long inlen_ull = inlen;
+        if (inlen_ull >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
+            PORT_SetError(SEC_ERROR_INPUT_LEN);
+            return SECFailure;
+        }
     }
     
 
@@ -426,10 +432,12 @@ intel_AES_GCM_DecryptAEAD(intel_AES_GCMContext *gcm,
 
     
     
-    if (sizeof(inlen) > 4 &&
-        inlen >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
-        PORT_SetError(SEC_ERROR_INPUT_LEN);
-        return SECFailure;
+    if (sizeof(inlen) > 4) {
+        unsigned long long inlen_ull = inlen;
+        if (inlen_ull >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
+            PORT_SetError(SEC_ERROR_INPUT_LEN);
+            return SECFailure;
+        }
     }
 
     if (maxout < inlen) {

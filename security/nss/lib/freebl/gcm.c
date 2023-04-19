@@ -491,9 +491,12 @@ gcmHash_Reset(gcmHashContext *ghash, const unsigned char *AAD,
     SECStatus rv;
 
     
-    if (sizeof(AADLen) >= 8 && AADLen > (1ULL << 61) - 1) {
-        PORT_SetError(SEC_ERROR_INPUT_LEN);
-        return SECFailure;
+    if (sizeof(AADLen) >= 8) {
+        unsigned long long AADLen_ull = AADLen;
+        if (AADLen_ull > (1ULL << 61) - 1) {
+            PORT_SetError(SEC_ERROR_INPUT_LEN);
+            return SECFailure;
+        }
     }
 
     ghash->cLen = 0;

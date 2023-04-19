@@ -156,7 +156,7 @@ Result VerifyEncodedOCSPResponse(
 
 Result CheckTLSFeaturesAreSatisfied(Input& cert,
                                     const Input* stapledOCSPResponse);
-}
+}  
 }  
 
 #endif  

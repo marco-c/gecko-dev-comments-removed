@@ -3245,7 +3245,8 @@ CLEANUP:
 
 
 
-mp_err s_mp_add_d(mp_int *mp, mp_digit d) 
+mp_err
+s_mp_add_d(mp_int *mp, mp_digit d) 
 {
 #if !defined(MP_NO_MP_WORD) && !defined(MP_NO_ADD_WORD)
     mp_word w, k = 0;
@@ -3302,7 +3303,8 @@ CLEANUP:
 
 
 
-mp_err s_mp_sub_d(mp_int *mp, mp_digit d) 
+mp_err
+s_mp_sub_d(mp_int *mp, mp_digit d) 
 {
 #if !defined(MP_NO_MP_WORD) && !defined(MP_NO_SUB_WORD)
     mp_word w, b = 0;
@@ -3509,7 +3511,8 @@ CLEANUP:
 
 
 
-mp_err s_mp_add(mp_int *a, const mp_int *b) 
+mp_err
+s_mp_add(mp_int *a, const mp_int *b) 
 {
 #if !defined(MP_NO_MP_WORD) && !defined(MP_NO_ADD_WORD)
     mp_word w = 0;
@@ -3772,7 +3775,8 @@ s_mp_add_offset(mp_int *a, mp_int *b, mp_size offset)
 
 
 
-mp_err s_mp_sub(mp_int *a, const mp_int *b) 
+mp_err
+s_mp_sub(mp_int *a, const mp_int *b) 
 {
     mp_digit *pa, *pb, *limit;
 #if !defined(MP_NO_MP_WORD) && !defined(MP_NO_SUB_WORD)
@@ -4238,9 +4242,10 @@ s_mp_sqr(mp_int *a)
 
 
 
-mp_err s_mp_div(mp_int *rem,  
-                mp_int *div,  
-                mp_int *quot) 
+mp_err
+s_mp_div(mp_int *rem,  
+         mp_int *div,  
+         mp_int *quot) 
 {
     mp_int part, t;
     mp_digit q_msd;

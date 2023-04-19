@@ -408,7 +408,7 @@ class StrictNameMatchingPolicy : public NameMatchingPolicy {
       Time notBefore,
        FallBackToSearchWithinSubject& fallBacktoCommonName) override;
 };
-}
+}  
 }  
 
 #endif  

@@ -188,7 +188,7 @@ NSSCryptoContext_FindBestCertificateByNickname(
     NSSTime *timeOpt, 
     NSSUsage *usage,
     NSSPolicies *policiesOpt 
-    )
+)
 {
     NSSCertificate **certs;
     NSSCertificate *rvCert = NULL;

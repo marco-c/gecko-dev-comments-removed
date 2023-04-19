@@ -103,7 +103,7 @@ nssTrustDomain_FindBestCertificateByNicknameForToken(
     NSSTime *timeOpt, 
     NSSUsage *usage,
     NSSPolicies *policiesOpt 
-    );
+);
 
 
 

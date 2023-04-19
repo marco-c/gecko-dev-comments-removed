@@ -30,7 +30,7 @@ local gzFile gz_open OF((const void *, int, const char *));
 
 
 
-char ZLIB_INTERNAL *gz_strwinerror (error)
+char ZLIB_INTERNAL *gz_strwinerror(error)
      DWORD error;
 {
     static char buf[1024];

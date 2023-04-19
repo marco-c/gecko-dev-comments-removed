@@ -527,8 +527,8 @@ Result SignedData(Reader& input,  Reader& tbs,
 
 
 Result ECDSASigValue(Input ecdsaSignature,  Input& r,  Input& s);
-}
-}
+}  
+}  
 }  
 
 #endif  

@@ -37,78 +37,76 @@ enum optionNames {
     opt_last
 };
 
-static const secuCommandFlag options_init[] =
-    {
-      {  'o', PR_TRUE, "1M2zmi", PR_TRUE, "order" },
-      {  'd', PR_TRUE, 0, PR_FALSE, "main_db" },
-      {  '1', PR_TRUE, 0, PR_FALSE, "lib1_db" },
-      {  '2', PR_TRUE, 0, PR_FALSE, "lib2_db" },
-      {  'r', PR_FALSE, 0, PR_FALSE, "main_readonly" },
-      {  0, PR_FALSE, 0, PR_FALSE, "lib1_readonly" },
-      {  0, PR_FALSE, 0, PR_FALSE, "lib2_readonly" },
-      {  'c', PR_TRUE, 0, PR_FALSE, "main_command" },
-      {  0, PR_TRUE, 0, PR_FALSE, "lib1_command" },
-      {  0, PR_TRUE, 0, PR_FALSE, "lib2_command" },
-      {  't', PR_TRUE, 0, PR_FALSE, "main_token_name" },
-      {  0, PR_TRUE, 0, PR_FALSE, "lib1_token_name" },
-      {  0, PR_TRUE, 0, PR_FALSE, "lib2_token_name" },
-      {  's', PR_FALSE, 0, PR_FALSE, "oldStype" },
-      {  'v', PR_FALSE, 0, PR_FALSE, "verbose" },
-      {  'z', PR_FALSE, 0, PR_FALSE, "summary" },
-      {  'h', PR_FALSE, 0, PR_FALSE, "help" }
-    };
+static const secuCommandFlag options_init[] = {
+    {  'o', PR_TRUE, "1M2zmi", PR_TRUE, "order" },
+    {  'd', PR_TRUE, 0, PR_FALSE, "main_db" },
+    {  '1', PR_TRUE, 0, PR_FALSE, "lib1_db" },
+    {  '2', PR_TRUE, 0, PR_FALSE, "lib2_db" },
+    {  'r', PR_FALSE, 0, PR_FALSE, "main_readonly" },
+    {  0, PR_FALSE, 0, PR_FALSE, "lib1_readonly" },
+    {  0, PR_FALSE, 0, PR_FALSE, "lib2_readonly" },
+    {  'c', PR_TRUE, 0, PR_FALSE, "main_command" },
+    {  0, PR_TRUE, 0, PR_FALSE, "lib1_command" },
+    {  0, PR_TRUE, 0, PR_FALSE, "lib2_command" },
+    {  't', PR_TRUE, 0, PR_FALSE, "main_token_name" },
+    {  0, PR_TRUE, 0, PR_FALSE, "lib1_token_name" },
+    {  0, PR_TRUE, 0, PR_FALSE, "lib2_token_name" },
+    {  's', PR_FALSE, 0, PR_FALSE, "oldStype" },
+    {  'v', PR_FALSE, 0, PR_FALSE, "verbose" },
+    {  'z', PR_FALSE, 0, PR_FALSE, "summary" },
+    {  'h', PR_FALSE, 0, PR_FALSE, "help" }
+};
 
-static const commandDescript options_des[] =
-    {
-      {  PR_FALSE, "initOrder",
-        " Specifies the order of NSS initialization and shutdown. Order is\n"
-        " given as a string where each character represents either an init or\n"
-        " a shutdown of the main program or one of the 2 test libraries\n"
-        " (library 1 and library 2). The valid characters are as follows:\n"
-        "   M Init the main program\n   1 Init library 1\n"
-        "   2 Init library 2\n"
-        "   m Shutdown the main program\n   i Shutdown library 1\n"
-        "   z Shutdown library 2\n" },
-      {  PR_TRUE, "nss_db",
-        " Specified the directory to open the nss database for the main\n"
-        " program. Must be specified if \"M\" is given in the order string\n" },
-      {  PR_FALSE, "nss_db",
-        " Specified the directory to open the nss database for library 1.\n"
-        " Must be specified if \"1\" is given in the order string\n" },
-      {  PR_FALSE, "nss_db",
-        " Specified the directory to open the nss database for library 2.\n"
-        " Must be specified if \"2\" is given in the order string\n" },
-      {  PR_FALSE, NULL,
-        " Open the main program's database read only.\n" },
-      {  PR_FALSE, NULL,
-        " Open library 1's database read only.\n" },
-      {  PR_FALSE, NULL,
-        " Open library 2's database read only.\n" },
-      {  PR_FALSE, "nss_command",
-        " Specifies the NSS command to execute in the main program.\n"
-        " Valid commands are: \n"
-        "   key_slot, list_slots, list_certs, add_cert, none.\n"
-        " Default is \"none\".\n" },
-      {  PR_FALSE, "nss_command",
-        " Specifies the NSS command to execute in library 1.\n" },
-      {  PR_FALSE, "nss_command",
-        " Specifies the NSS command to execute in library 2.\n" },
-      {  PR_FALSE, "token_name",
-        " Specifies the name of PKCS11 token for the main program's "
-        "database.\n" },
-      {  PR_FALSE, "token_name",
-        " Specifies the name of PKCS11 token for library 1's database.\n" },
-      {  PR_FALSE, "token_name",
-        " Specifies the name of PKCS11 token for library 2's database.\n" },
-      {  PR_FALSE, NULL,
-        " Use NSS_Shutdown rather than NSS_ShutdownContext in the main\n"
-        " program.\n" },
-      {  PR_FALSE, NULL,
-        " Noisily output status to standard error\n" },
-      {  PR_FALSE, NULL,
-        "report a summary of the test results\n" },
-      {  PR_FALSE, NULL, " give this message\n" }
-    };
+static const commandDescript options_des[] = {
+    {  PR_FALSE, "initOrder",
+      " Specifies the order of NSS initialization and shutdown. Order is\n"
+      " given as a string where each character represents either an init or\n"
+      " a shutdown of the main program or one of the 2 test libraries\n"
+      " (library 1 and library 2). The valid characters are as follows:\n"
+      "   M Init the main program\n   1 Init library 1\n"
+      "   2 Init library 2\n"
+      "   m Shutdown the main program\n   i Shutdown library 1\n"
+      "   z Shutdown library 2\n" },
+    {  PR_TRUE, "nss_db",
+      " Specified the directory to open the nss database for the main\n"
+      " program. Must be specified if \"M\" is given in the order string\n" },
+    {  PR_FALSE, "nss_db",
+      " Specified the directory to open the nss database for library 1.\n"
+      " Must be specified if \"1\" is given in the order string\n" },
+    {  PR_FALSE, "nss_db",
+      " Specified the directory to open the nss database for library 2.\n"
+      " Must be specified if \"2\" is given in the order string\n" },
+    {  PR_FALSE, NULL,
+      " Open the main program's database read only.\n" },
+    {  PR_FALSE, NULL,
+      " Open library 1's database read only.\n" },
+    {  PR_FALSE, NULL,
+      " Open library 2's database read only.\n" },
+    {  PR_FALSE, "nss_command",
+      " Specifies the NSS command to execute in the main program.\n"
+      " Valid commands are: \n"
+      "   key_slot, list_slots, list_certs, add_cert, none.\n"
+      " Default is \"none\".\n" },
+    {  PR_FALSE, "nss_command",
+      " Specifies the NSS command to execute in library 1.\n" },
+    {  PR_FALSE, "nss_command",
+      " Specifies the NSS command to execute in library 2.\n" },
+    {  PR_FALSE, "token_name",
+      " Specifies the name of PKCS11 token for the main program's "
+      "database.\n" },
+    {  PR_FALSE, "token_name",
+      " Specifies the name of PKCS11 token for library 1's database.\n" },
+    {  PR_FALSE, "token_name",
+      " Specifies the name of PKCS11 token for library 2's database.\n" },
+    {  PR_FALSE, NULL,
+      " Use NSS_Shutdown rather than NSS_ShutdownContext in the main\n"
+      " program.\n" },
+    {  PR_FALSE, NULL,
+      " Noisily output status to standard error\n" },
+    {  PR_FALSE, NULL,
+      "report a summary of the test results\n" },
+    {  PR_FALSE, NULL, " give this message\n" }
+};
 
 
 

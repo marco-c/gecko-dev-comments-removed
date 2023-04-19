@@ -37,7 +37,8 @@ static void INIT_FUNCTION lg_startup_tests(void);
 #if defined(XP_WIN) && !defined(NSS_NO_INIT_SUPPORT)
 #include <windows.h>
 
-BOOL WINAPI DllMain(
+BOOL WINAPI
+DllMain(
     HINSTANCE hinstDLL, 
     DWORD fdwReason,    
     LPVOID lpReserved)  

@@ -1558,8 +1558,8 @@ class BeforeFinished13 : public PacketFilter {
                   SSLInt_SetMTU(server_.lock()->ssl_fd(), input.len() - 1));
         return DROP;
 
-      
-      
+        
+        
 
       case 3:
         

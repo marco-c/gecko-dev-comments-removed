@@ -88,7 +88,7 @@ loader_LoadLibInReferenceDir(const char* referencePath, const char* name)
 
                                                        | PR_LD_ALT_SEARCH_PATH
 #endif
-                                          );
+            );
             PORT_Free(fullName);
         }
     }

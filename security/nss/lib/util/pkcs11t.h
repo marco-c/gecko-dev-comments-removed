@@ -1476,7 +1476,7 @@ typedef CK_CALLBACK_FUNCTION(CK_RV, CK_NOTIFY)(
     CK_SESSION_HANDLE hSession, 
     CK_NOTIFICATION event,
     CK_VOID_PTR pApplication 
-    );
+);
 
 
 
@@ -1510,24 +1510,24 @@ typedef CK_INTERFACE_PTR CK_PTR CK_INTERFACE_PTR_PTR;
 
 typedef CK_CALLBACK_FUNCTION(CK_RV, CK_CREATEMUTEX)(
     CK_VOID_PTR_PTR ppMutex 
-    );
+);
 
 
 
 typedef CK_CALLBACK_FUNCTION(CK_RV, CK_DESTROYMUTEX)(
     CK_VOID_PTR pMutex 
-    );
+);
 
 
 typedef CK_CALLBACK_FUNCTION(CK_RV, CK_LOCKMUTEX)(
     CK_VOID_PTR pMutex 
-    );
+);
 
 
 
 typedef CK_CALLBACK_FUNCTION(CK_RV, CK_UNLOCKMUTEX)(
     CK_VOID_PTR pMutex 
-    );
+);
 
 
 

@@ -22,7 +22,7 @@ CK_PKCS11_FUNCTION_INFO(C_Initialize)
     CK_VOID_PTR pInitArgs 
 
 
-    );
+);
 #endif
 
 
@@ -31,7 +31,7 @@ CK_PKCS11_FUNCTION_INFO(C_Finalize)
 #ifdef CK_NEED_ARG_LIST
 (
     CK_VOID_PTR pReserved 
-    );
+);
 #endif
 
 
@@ -39,7 +39,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetInfo)
 #ifdef CK_NEED_ARG_LIST
 (
     CK_INFO_PTR pInfo 
-    );
+);
 #endif
 
 
@@ -48,7 +48,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetFunctionList)
 (
     CK_FUNCTION_LIST_PTR_PTR ppFunctionList 
 
-    );
+);
 #endif
 
 
@@ -60,7 +60,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetSlotList)
     CK_BBOOL tokenPresent,    
     CK_SLOT_ID_PTR pSlotList, 
     CK_ULONG_PTR pulCount     
-    );
+);
 #endif
 
 
@@ -70,7 +70,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetSlotInfo)
 (
     CK_SLOT_ID slotID,     
     CK_SLOT_INFO_PTR pInfo 
-    );
+);
 #endif
 
 
@@ -80,7 +80,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetTokenInfo)
 (
     CK_SLOT_ID slotID,      
     CK_TOKEN_INFO_PTR pInfo 
-    );
+);
 #endif
 
 
@@ -91,7 +91,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetMechanismList)
     CK_SLOT_ID slotID,                    
     CK_MECHANISM_TYPE_PTR pMechanismList, 
     CK_ULONG_PTR pulCount                 
-    );
+);
 #endif
 
 
@@ -102,7 +102,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetMechanismInfo)
     CK_SLOT_ID slotID,          
     CK_MECHANISM_TYPE type,     
     CK_MECHANISM_INFO_PTR pInfo 
-    );
+);
 #endif
 
 
@@ -114,7 +114,7 @@ CK_PKCS11_FUNCTION_INFO(C_InitToken)
     CK_UTF8CHAR_PTR pPin,  
     CK_ULONG ulPinLen,     
     CK_UTF8CHAR_PTR pLabel 
-    );
+);
 #endif
 
 
@@ -124,7 +124,7 @@ CK_PKCS11_FUNCTION_INFO(C_InitPIN)
     CK_SESSION_HANDLE hSession, 
     CK_UTF8CHAR_PTR pPin,       
     CK_ULONG ulPinLen           
-    );
+);
 #endif
 
 
@@ -136,7 +136,7 @@ CK_PKCS11_FUNCTION_INFO(C_SetPIN)
     CK_ULONG ulOldLen,          
     CK_UTF8CHAR_PTR pNewPin,    
     CK_ULONG ulNewLen           
-    );
+);
 #endif
 
 
@@ -151,7 +151,7 @@ CK_PKCS11_FUNCTION_INFO(C_OpenSession)
     CK_VOID_PTR pApplication,       
     CK_NOTIFY Notify,               
     CK_SESSION_HANDLE_PTR phSession 
-    );
+);
 #endif
 
 
@@ -160,7 +160,7 @@ CK_PKCS11_FUNCTION_INFO(C_CloseSession)
 #ifdef CK_NEED_ARG_LIST
 (
     CK_SESSION_HANDLE hSession 
-    );
+);
 #endif
 
 
@@ -168,7 +168,7 @@ CK_PKCS11_FUNCTION_INFO(C_CloseAllSessions)
 #ifdef CK_NEED_ARG_LIST
 (
     CK_SLOT_ID slotID 
-    );
+);
 #endif
 
 
@@ -177,7 +177,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetSessionInfo)
 (
     CK_SESSION_HANDLE hSession, 
     CK_SESSION_INFO_PTR pInfo   
-    );
+);
 #endif
 
 
@@ -188,7 +188,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetOperationState)
     CK_SESSION_HANDLE hSession,       
     CK_BYTE_PTR pOperationState,      
     CK_ULONG_PTR pulOperationStateLen 
-    );
+);
 #endif
 
 
@@ -201,7 +201,7 @@ CK_PKCS11_FUNCTION_INFO(C_SetOperationState)
     CK_ULONG ulOperationStateLen,       
     CK_OBJECT_HANDLE hEncryptionKey,    
     CK_OBJECT_HANDLE hAuthenticationKey 
-    );
+);
 #endif
 
 
@@ -212,7 +212,7 @@ CK_PKCS11_FUNCTION_INFO(C_Login)
     CK_USER_TYPE userType,      
     CK_UTF8CHAR_PTR pPin,       
     CK_ULONG ulPinLen           
-    );
+);
 #endif
 
 
@@ -220,7 +220,7 @@ CK_PKCS11_FUNCTION_INFO(C_Logout)
 #ifdef CK_NEED_ARG_LIST
 (
     CK_SESSION_HANDLE hSession 
-    );
+);
 #endif
 
 
@@ -233,7 +233,7 @@ CK_PKCS11_FUNCTION_INFO(C_CreateObject)
     CK_ATTRIBUTE_PTR pTemplate,   
     CK_ULONG ulCount,             
     CK_OBJECT_HANDLE_PTR phObject 
-    );
+);
 #endif
 
 
@@ -246,7 +246,7 @@ CK_PKCS11_FUNCTION_INFO(C_CopyObject)
     CK_ATTRIBUTE_PTR pTemplate,      
     CK_ULONG ulCount,                
     CK_OBJECT_HANDLE_PTR phNewObject 
-    );
+);
 #endif
 
 
@@ -255,7 +255,7 @@ CK_PKCS11_FUNCTION_INFO(C_DestroyObject)
 (
     CK_SESSION_HANDLE hSession, 
     CK_OBJECT_HANDLE hObject    
-    );
+);
 #endif
 
 
@@ -265,7 +265,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetObjectSize)
     CK_SESSION_HANDLE hSession, 
     CK_OBJECT_HANDLE hObject,   
     CK_ULONG_PTR pulSize        
-    );
+);
 #endif
 
 
@@ -277,7 +277,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetAttributeValue)
     CK_OBJECT_HANDLE hObject,   
     CK_ATTRIBUTE_PTR pTemplate, 
     CK_ULONG ulCount            
-    );
+);
 #endif
 
 
@@ -289,7 +289,7 @@ CK_PKCS11_FUNCTION_INFO(C_SetAttributeValue)
     CK_OBJECT_HANDLE hObject,   
     CK_ATTRIBUTE_PTR pTemplate, 
     CK_ULONG ulCount            
-    );
+);
 #endif
 
 
@@ -300,7 +300,7 @@ CK_PKCS11_FUNCTION_INFO(C_FindObjectsInit)
     CK_SESSION_HANDLE hSession, 
     CK_ATTRIBUTE_PTR pTemplate, 
     CK_ULONG ulCount            
-    );
+);
 #endif
 
 
@@ -313,7 +313,7 @@ CK_PKCS11_FUNCTION_INFO(C_FindObjects)
     CK_OBJECT_HANDLE_PTR phObject, 
     CK_ULONG ulMaxObjectCount,     
     CK_ULONG_PTR pulObjectCount    
-    );
+);
 #endif
 
 
@@ -322,7 +322,7 @@ CK_PKCS11_FUNCTION_INFO(C_FindObjectsFinal)
 #ifdef CK_NEED_ARG_LIST
 (
     CK_SESSION_HANDLE hSession 
-    );
+);
 #endif
 
 
@@ -334,7 +334,7 @@ CK_PKCS11_FUNCTION_INFO(C_EncryptInit)
     CK_SESSION_HANDLE hSession,  
     CK_MECHANISM_PTR pMechanism, 
     CK_OBJECT_HANDLE hKey        
-    );
+);
 #endif
 
 
@@ -346,7 +346,7 @@ CK_PKCS11_FUNCTION_INFO(C_Encrypt)
     CK_ULONG ulDataLen,              
     CK_BYTE_PTR pEncryptedData,      
     CK_ULONG_PTR pulEncryptedDataLen 
-    );
+);
 #endif
 
 
@@ -359,7 +359,7 @@ CK_PKCS11_FUNCTION_INFO(C_EncryptUpdate)
     CK_ULONG ulPartLen,              
     CK_BYTE_PTR pEncryptedPart,      
     CK_ULONG_PTR pulEncryptedPartLen 
-    );
+);
 #endif
 
 
@@ -370,7 +370,7 @@ CK_PKCS11_FUNCTION_INFO(C_EncryptFinal)
     CK_SESSION_HANDLE hSession,          
     CK_BYTE_PTR pLastEncryptedPart,      
     CK_ULONG_PTR pulLastEncryptedPartLen 
-    );
+);
 #endif
 
 
@@ -380,7 +380,7 @@ CK_PKCS11_FUNCTION_INFO(C_DecryptInit)
     CK_SESSION_HANDLE hSession,  
     CK_MECHANISM_PTR pMechanism, 
     CK_OBJECT_HANDLE hKey        
-    );
+);
 #endif
 
 
@@ -392,7 +392,7 @@ CK_PKCS11_FUNCTION_INFO(C_Decrypt)
     CK_ULONG ulEncryptedDataLen, 
     CK_BYTE_PTR pData,           
     CK_ULONG_PTR pulDataLen      
-    );
+);
 #endif
 
 
@@ -405,7 +405,7 @@ CK_PKCS11_FUNCTION_INFO(C_DecryptUpdate)
     CK_ULONG ulEncryptedPartLen, 
     CK_BYTE_PTR pPart,           
     CK_ULONG_PTR pulPartLen      
-    );
+);
 #endif
 
 
@@ -416,7 +416,7 @@ CK_PKCS11_FUNCTION_INFO(C_DecryptFinal)
     CK_SESSION_HANDLE hSession, 
     CK_BYTE_PTR pLastPart,      
     CK_ULONG_PTR pulLastPartLen 
-    );
+);
 #endif
 
 
@@ -427,7 +427,7 @@ CK_PKCS11_FUNCTION_INFO(C_DigestInit)
 (
     CK_SESSION_HANDLE hSession, 
     CK_MECHANISM_PTR pMechanism 
-    );
+);
 #endif
 
 
@@ -439,7 +439,7 @@ CK_PKCS11_FUNCTION_INFO(C_Digest)
     CK_ULONG ulDataLen,         
     CK_BYTE_PTR pDigest,        
     CK_ULONG_PTR pulDigestLen   
-    );
+);
 #endif
 
 
@@ -450,7 +450,7 @@ CK_PKCS11_FUNCTION_INFO(C_DigestUpdate)
     CK_SESSION_HANDLE hSession, 
     CK_BYTE_PTR pPart,          
     CK_ULONG ulPartLen          
-    );
+);
 #endif
 
 
@@ -461,7 +461,7 @@ CK_PKCS11_FUNCTION_INFO(C_DigestKey)
 (
     CK_SESSION_HANDLE hSession, 
     CK_OBJECT_HANDLE hKey       
-    );
+);
 #endif
 
 
@@ -472,7 +472,7 @@ CK_PKCS11_FUNCTION_INFO(C_DigestFinal)
     CK_SESSION_HANDLE hSession, 
     CK_BYTE_PTR pDigest,        
     CK_ULONG_PTR pulDigestLen   
-    );
+);
 #endif
 
 
@@ -487,7 +487,7 @@ CK_PKCS11_FUNCTION_INFO(C_SignInit)
     CK_SESSION_HANDLE hSession,  
     CK_MECHANISM_PTR pMechanism, 
     CK_OBJECT_HANDLE hKey        
-    );
+);
 #endif
 
 
@@ -501,7 +501,7 @@ CK_PKCS11_FUNCTION_INFO(C_Sign)
     CK_ULONG ulDataLen,          
     CK_BYTE_PTR pSignature,      
     CK_ULONG_PTR pulSignatureLen 
-    );
+);
 #endif
 
 
@@ -513,7 +513,7 @@ CK_PKCS11_FUNCTION_INFO(C_SignUpdate)
     CK_SESSION_HANDLE hSession, 
     CK_BYTE_PTR pPart,          
     CK_ULONG ulPartLen          
-    );
+);
 #endif
 
 
@@ -524,7 +524,7 @@ CK_PKCS11_FUNCTION_INFO(C_SignFinal)
     CK_SESSION_HANDLE hSession,  
     CK_BYTE_PTR pSignature,      
     CK_ULONG_PTR pulSignatureLen 
-    );
+);
 #endif
 
 
@@ -535,7 +535,7 @@ CK_PKCS11_FUNCTION_INFO(C_SignRecoverInit)
     CK_SESSION_HANDLE hSession,  
     CK_MECHANISM_PTR pMechanism, 
     CK_OBJECT_HANDLE hKey        
-    );
+);
 #endif
 
 
@@ -548,7 +548,7 @@ CK_PKCS11_FUNCTION_INFO(C_SignRecover)
     CK_ULONG ulDataLen,          
     CK_BYTE_PTR pSignature,      
     CK_ULONG_PTR pulSignatureLen 
-    );
+);
 #endif
 
 
@@ -562,7 +562,7 @@ CK_PKCS11_FUNCTION_INFO(C_VerifyInit)
     CK_SESSION_HANDLE hSession,  
     CK_MECHANISM_PTR pMechanism, 
     CK_OBJECT_HANDLE hKey        
-    );
+);
 #endif
 
 
@@ -576,7 +576,7 @@ CK_PKCS11_FUNCTION_INFO(C_Verify)
     CK_ULONG ulDataLen,         
     CK_BYTE_PTR pSignature,     
     CK_ULONG ulSignatureLen     
-    );
+);
 #endif
 
 
@@ -588,7 +588,7 @@ CK_PKCS11_FUNCTION_INFO(C_VerifyUpdate)
     CK_SESSION_HANDLE hSession, 
     CK_BYTE_PTR pPart,          
     CK_ULONG ulPartLen          
-    );
+);
 #endif
 
 
@@ -599,7 +599,7 @@ CK_PKCS11_FUNCTION_INFO(C_VerifyFinal)
     CK_SESSION_HANDLE hSession, 
     CK_BYTE_PTR pSignature,     
     CK_ULONG ulSignatureLen     
-    );
+);
 #endif
 
 
@@ -610,7 +610,7 @@ CK_PKCS11_FUNCTION_INFO(C_VerifyRecoverInit)
     CK_SESSION_HANDLE hSession,  
     CK_MECHANISM_PTR pMechanism, 
     CK_OBJECT_HANDLE hKey        
-    );
+);
 #endif
 
 
@@ -623,7 +623,7 @@ CK_PKCS11_FUNCTION_INFO(C_VerifyRecover)
     CK_ULONG ulSignatureLen,    
     CK_BYTE_PTR pData,          
     CK_ULONG_PTR pulDataLen     
-    );
+);
 #endif
 
 
@@ -638,7 +638,7 @@ CK_PKCS11_FUNCTION_INFO(C_DigestEncryptUpdate)
     CK_ULONG ulPartLen,              
     CK_BYTE_PTR pEncryptedPart,      
     CK_ULONG_PTR pulEncryptedPartLen 
-    );
+);
 #endif
 
 
@@ -651,7 +651,7 @@ CK_PKCS11_FUNCTION_INFO(C_DecryptDigestUpdate)
     CK_ULONG ulEncryptedPartLen, 
     CK_BYTE_PTR pPart,           
     CK_ULONG_PTR pulPartLen      
-    );
+);
 #endif
 
 
@@ -664,7 +664,7 @@ CK_PKCS11_FUNCTION_INFO(C_SignEncryptUpdate)
     CK_ULONG ulPartLen,              
     CK_BYTE_PTR pEncryptedPart,      
     CK_ULONG_PTR pulEncryptedPartLen 
-    );
+);
 #endif
 
 
@@ -677,7 +677,7 @@ CK_PKCS11_FUNCTION_INFO(C_DecryptVerifyUpdate)
     CK_ULONG ulEncryptedPartLen, 
     CK_BYTE_PTR pPart,           
     CK_ULONG_PTR pulPartLen      
-    );
+);
 #endif
 
 
@@ -692,7 +692,7 @@ CK_PKCS11_FUNCTION_INFO(C_GenerateKey)
     CK_ATTRIBUTE_PTR pTemplate,  
     CK_ULONG ulCount,            
     CK_OBJECT_HANDLE_PTR phKey   
-    );
+);
 #endif
 
 
@@ -708,7 +708,7 @@ CK_PKCS11_FUNCTION_INFO(C_GenerateKeyPair)
     CK_ULONG ulPrivateKeyAttributeCount,  
     CK_OBJECT_HANDLE_PTR phPublicKey,     
     CK_OBJECT_HANDLE_PTR phPrivateKey     
-    );
+);
 #endif
 
 
@@ -721,7 +721,7 @@ CK_PKCS11_FUNCTION_INFO(C_WrapKey)
     CK_OBJECT_HANDLE hKey,         
     CK_BYTE_PTR pWrappedKey,       
     CK_ULONG_PTR pulWrappedKeyLen  
-    );
+);
 #endif
 
 
@@ -737,7 +737,7 @@ CK_PKCS11_FUNCTION_INFO(C_UnwrapKey)
     CK_ATTRIBUTE_PTR pTemplate,      
     CK_ULONG ulAttributeCount,       
     CK_OBJECT_HANDLE_PTR phKey       
-    );
+);
 #endif
 
 
@@ -751,7 +751,7 @@ CK_PKCS11_FUNCTION_INFO(C_DeriveKey)
     CK_ATTRIBUTE_PTR pTemplate,  
     CK_ULONG ulAttributeCount,   
     CK_OBJECT_HANDLE_PTR phKey   
-    );
+);
 #endif
 
 
@@ -764,7 +764,7 @@ CK_PKCS11_FUNCTION_INFO(C_SeedRandom)
     CK_SESSION_HANDLE hSession, 
     CK_BYTE_PTR pSeed,          
     CK_ULONG ulSeedLen          
-    );
+);
 #endif
 
 
@@ -774,7 +774,7 @@ CK_PKCS11_FUNCTION_INFO(C_GenerateRandom)
     CK_SESSION_HANDLE hSession, 
     CK_BYTE_PTR RandomData,     
     CK_ULONG ulRandomLen        
-    );
+);
 #endif
 
 
@@ -786,7 +786,7 @@ CK_PKCS11_FUNCTION_INFO(C_GetFunctionStatus)
 #ifdef CK_NEED_ARG_LIST
 (
     CK_SESSION_HANDLE hSession 
-    );
+);
 #endif
 
 
@@ -795,7 +795,7 @@ CK_PKCS11_FUNCTION_INFO(C_CancelFunction)
 #ifdef CK_NEED_ARG_LIST
 (
     CK_SESSION_HANDLE hSession 
-    );
+);
 #endif
 
 
@@ -808,7 +808,7 @@ CK_PKCS11_FUNCTION_INFO(C_WaitForSlotEvent)
     CK_FLAGS flags,       
     CK_SLOT_ID_PTR pSlot, 
     CK_VOID_PTR pRserved  
-    );
+);
 #endif
 
 #if defined(CK_PKCS11_3_0) && !defined(CK_PKCS11_2_0_ONLY)

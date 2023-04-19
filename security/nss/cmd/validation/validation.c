@@ -54,15 +54,14 @@ enum {
     opt_Debug
 };
 
-static secuCommandFlag validation_options[] =
-    {
-      {  'd', PR_TRUE, 0, PR_FALSE },
-      {  'h', PR_TRUE, 0, PR_FALSE },
-      {  'k', PR_TRUE, 0, PR_FALSE },
-      {  'K', PR_TRUE, 0, PR_FALSE },
-      {  'P', PR_TRUE, 0, PR_FALSE },
-      {  'v', PR_FALSE, 0, PR_FALSE }
-    };
+static secuCommandFlag validation_options[] = {
+    {  'd', PR_TRUE, 0, PR_FALSE },
+    {  'h', PR_TRUE, 0, PR_FALSE },
+    {  'k', PR_TRUE, 0, PR_FALSE },
+    {  'K', PR_TRUE, 0, PR_FALSE },
+    {  'P', PR_TRUE, 0, PR_FALSE },
+    {  'v', PR_FALSE, 0, PR_FALSE }
+};
 
 void
 dump_Raw(char *label, CK_ATTRIBUTE *attr)

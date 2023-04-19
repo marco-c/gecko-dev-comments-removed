@@ -408,8 +408,8 @@ class OCSPResponseContext final {
 };
 
 ByteString CreateEncodedOCSPResponse(OCSPResponseContext& context);
-}
-}
+}  
+}  
 }  
 
 #endif  

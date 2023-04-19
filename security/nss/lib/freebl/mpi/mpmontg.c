@@ -723,10 +723,11 @@ mp_set_safe_modexp(int value)
 
 
 
-mp_err mpi_to_weave(const mp_int *bignums,
-                    mp_digit *weaved,
-                    mp_size nDigits,  
-                    mp_size nBignums) 
+mp_err
+mpi_to_weave(const mp_int *bignums,
+             mp_digit *weaved,
+             mp_size nDigits,  
+             mp_size nBignums) 
 {
     mp_size i;
     mp_digit *endDest = weaved + (nDigits * nBignums);
@@ -765,11 +766,12 @@ mp_err mpi_to_weave(const mp_int *bignums,
 
 
 
-mp_err weave_to_mpi(mp_int *a,              
-                    const mp_digit *weaved, 
-                    mp_size index,          
-                    mp_size nDigits,        
-                    mp_size nBignums)       
+mp_err
+weave_to_mpi(mp_int *a,              
+             const mp_digit *weaved, 
+             mp_size index,          
+             mp_size nDigits,        
+             mp_size nBignums)       
 {
     
 

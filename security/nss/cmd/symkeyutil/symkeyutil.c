@@ -539,39 +539,37 @@ enum {
     opt_NoiseFile
 };
 
-static secuCommandFlag symKeyUtil_commands[] =
-    {
-      {  'K', PR_FALSE, 0, PR_FALSE },
-      {  'D', PR_FALSE, 0, PR_FALSE },
-      {  'I', PR_FALSE, 0, PR_FALSE },
-      {  'E', PR_FALSE, 0, PR_FALSE },
-      {  'W', PR_FALSE, 0, PR_FALSE },
-      {  'U', PR_FALSE, 0, PR_FALSE },
-      {  'M', PR_FALSE, 0, PR_FALSE },
-      {  'L', PR_FALSE, 0, PR_FALSE },
-      {  'H', PR_FALSE, 0, PR_FALSE },
-    };
+static secuCommandFlag symKeyUtil_commands[] = {
+    {  'K', PR_FALSE, 0, PR_FALSE },
+    {  'D', PR_FALSE, 0, PR_FALSE },
+    {  'I', PR_FALSE, 0, PR_FALSE },
+    {  'E', PR_FALSE, 0, PR_FALSE },
+    {  'W', PR_FALSE, 0, PR_FALSE },
+    {  'U', PR_FALSE, 0, PR_FALSE },
+    {  'M', PR_FALSE, 0, PR_FALSE },
+    {  'L', PR_FALSE, 0, PR_FALSE },
+    {  'H', PR_FALSE, 0, PR_FALSE },
+};
 
-static secuCommandFlag symKeyUtil_options[] =
-    {
-      {  'd', PR_TRUE, 0, PR_FALSE },
-      {  'f', PR_TRUE, 0, PR_FALSE },
-      {  'g', PR_TRUE, 0, PR_FALSE },
-      {  'h', PR_TRUE, 0, PR_FALSE },
-      {  'i', PR_TRUE, 0, PR_FALSE },
-      {  'j', PR_TRUE, 0, PR_FALSE },
-      {  't', PR_TRUE, 0, PR_FALSE },
-      {  'n', PR_TRUE, 0, PR_FALSE },
-      {  'k', PR_TRUE, 0, PR_FALSE },
-      {  'p', PR_TRUE, 0, PR_FALSE },
-      {  'P', PR_TRUE, 0, PR_FALSE },
-      {  'r', PR_FALSE, 0, PR_FALSE },
-      {  's', PR_TRUE, 0, PR_FALSE },
-      {  'w', PR_TRUE, 0, PR_FALSE },
-      {  'x', PR_TRUE, 0, PR_FALSE },
-      {  'y', PR_TRUE, 0, PR_FALSE },
-      {  'z', PR_TRUE, 0, PR_FALSE },
-    };
+static secuCommandFlag symKeyUtil_options[] = {
+    {  'd', PR_TRUE, 0, PR_FALSE },
+    {  'f', PR_TRUE, 0, PR_FALSE },
+    {  'g', PR_TRUE, 0, PR_FALSE },
+    {  'h', PR_TRUE, 0, PR_FALSE },
+    {  'i', PR_TRUE, 0, PR_FALSE },
+    {  'j', PR_TRUE, 0, PR_FALSE },
+    {  't', PR_TRUE, 0, PR_FALSE },
+    {  'n', PR_TRUE, 0, PR_FALSE },
+    {  'k', PR_TRUE, 0, PR_FALSE },
+    {  'p', PR_TRUE, 0, PR_FALSE },
+    {  'P', PR_TRUE, 0, PR_FALSE },
+    {  'r', PR_FALSE, 0, PR_FALSE },
+    {  's', PR_TRUE, 0, PR_FALSE },
+    {  'w', PR_TRUE, 0, PR_FALSE },
+    {  'x', PR_TRUE, 0, PR_FALSE },
+    {  'y', PR_TRUE, 0, PR_FALSE },
+    {  'z', PR_TRUE, 0, PR_FALSE },
+};
 
 int
 main(int argc, char **argv)

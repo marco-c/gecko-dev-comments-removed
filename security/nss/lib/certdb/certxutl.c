@@ -295,7 +295,7 @@ CERT_FinishExtensions(void *exthandle)
         goto loser;
     }
 
-
+    
 
 #ifdef OLD
     switch (handle->type) {

@@ -425,7 +425,7 @@ extern const NSSError NSS_ERROR_INTERNAL_ERROR;
 NSS_IMPLEMENT NSSUTF8 *
 nssUTF8_Create(NSSArena *arenaOpt, nssStringType type, const void *inputString,
                PRUint32 size 
-               )
+)
 {
     NSSUTF8 *rv = NULL;
 

@@ -509,7 +509,7 @@ smime_choose_cipher(CERTCertificate *scert, CERTCertificate **rcerts)
             max = cipher_votes[mapi];
         }
     }
-
+    
 
 done:
     if (poolp != NULL)

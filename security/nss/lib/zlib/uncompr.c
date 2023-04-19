@@ -24,7 +24,7 @@
 
 
 
-int ZEXPORT uncompress2 (dest, destLen, source, sourceLen)
+int ZEXPORT uncompress2(dest, destLen, source, sourceLen)
     Bytef *dest;
     uLongf *destLen;
     const Bytef *source;
@@ -83,7 +83,7 @@ int ZEXPORT uncompress2 (dest, destLen, source, sourceLen)
            err;
 }
 
-int ZEXPORT uncompress (dest, destLen, source, sourceLen)
+int ZEXPORT uncompress(dest, destLen, source, sourceLen)
     Bytef *dest;
     uLongf *destLen;
     const Bytef *source;

@@ -130,12 +130,12 @@ PK11_MapError(CK_RV rv)
 
 #else
 
-    
+            
     default :
         break;
-
-}
-return SEC_ERROR_UNKNOWN_PKCS11_ERROR;
+            
+    }
+    return SEC_ERROR_UNKNOWN_PKCS11_ERROR;
 }
 
 #endif

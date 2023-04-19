@@ -455,7 +455,7 @@ p12U_ReadPKCS12File(SECItem *uniPwp, char *in_file, PK11SlotInfo *slot,
             pk12uErrno = PK12UERR_DECODEVERIFY;
         }
     }
-
+    
 
 done:
     if (rv != SECSuccess) {
@@ -1009,27 +1009,26 @@ enum {
     opt_Mac
 };
 
-static secuCommandFlag pk12util_options[] =
-    {
-      {  'd', PR_TRUE, 0, PR_FALSE },
-      {  'h', PR_TRUE, 0, PR_FALSE },
-      {  'i', PR_TRUE, 0, PR_FALSE },
-      {  'k', PR_TRUE, 0, PR_FALSE },
-      {  'K', PR_TRUE, 0, PR_FALSE },
-      {  'l', PR_TRUE, 0, PR_FALSE },
-      {  'n', PR_TRUE, 0, PR_FALSE },
-      {  'o', PR_TRUE, 0, PR_FALSE },
-      {  'r', PR_FALSE, 0, PR_FALSE },
-      {  'w', PR_TRUE, 0, PR_FALSE },
-      {  'W', PR_TRUE, 0, PR_FALSE },
-      {  'P', PR_TRUE, 0, PR_FALSE },
-      {  'v', PR_FALSE, 0, PR_FALSE },
-      {  'c', PR_TRUE, 0, PR_FALSE },
-      {  'C', PR_TRUE, 0, PR_FALSE },
-      {  'm', PR_TRUE, 0, PR_FALSE, "key_len" },
-      {  0, PR_TRUE, 0, PR_FALSE, "cert_key_len" },
-      {  'M', PR_TRUE, 0, PR_FALSE, PR_FALSE }
-    };
+static secuCommandFlag pk12util_options[] = {
+    {  'd', PR_TRUE, 0, PR_FALSE },
+    {  'h', PR_TRUE, 0, PR_FALSE },
+    {  'i', PR_TRUE, 0, PR_FALSE },
+    {  'k', PR_TRUE, 0, PR_FALSE },
+    {  'K', PR_TRUE, 0, PR_FALSE },
+    {  'l', PR_TRUE, 0, PR_FALSE },
+    {  'n', PR_TRUE, 0, PR_FALSE },
+    {  'o', PR_TRUE, 0, PR_FALSE },
+    {  'r', PR_FALSE, 0, PR_FALSE },
+    {  'w', PR_TRUE, 0, PR_FALSE },
+    {  'W', PR_TRUE, 0, PR_FALSE },
+    {  'P', PR_TRUE, 0, PR_FALSE },
+    {  'v', PR_FALSE, 0, PR_FALSE },
+    {  'c', PR_TRUE, 0, PR_FALSE },
+    {  'C', PR_TRUE, 0, PR_FALSE },
+    {  'm', PR_TRUE, 0, PR_FALSE, "key_len" },
+    {  0, PR_TRUE, 0, PR_FALSE, "cert_key_len" },
+    {  'M', PR_TRUE, 0, PR_FALSE, PR_FALSE }
+};
 
 int
 main(int argc, char **argv)

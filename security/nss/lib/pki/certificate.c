@@ -210,22 +210,22 @@ NSSCertificate_Validate(
     NSSTime *timeOpt, 
     NSSUsage *usage,
     NSSPolicies *policiesOpt 
-    )
+)
 {
     nss_SetError(NSS_ERROR_NOT_FOUND);
     return PR_FAILURE;
 }
 
 NSS_IMPLEMENT void ** 
-    NSSCertificate_ValidateCompletely(
-        NSSCertificate *c,
-        NSSTime *timeOpt, 
-        NSSUsage *usage,
-        NSSPolicies *policiesOpt, 
-        void **rvOpt,             
-        PRUint32 rvLimit,         
-        NSSArena *arenaOpt        
-        )
+NSSCertificate_ValidateCompletely(
+    NSSCertificate *c,
+    NSSTime *timeOpt, 
+    NSSUsage *usage,
+    NSSPolicies *policiesOpt, 
+    void **rvOpt,             
+    PRUint32 rvLimit,         
+    NSSArena *arenaOpt        
+)
 {
     nss_SetError(NSS_ERROR_NOT_FOUND);
     return NULL;

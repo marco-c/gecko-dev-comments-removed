@@ -90,22 +90,20 @@ enum {
     opt_DebugInfo
 };
 
-static secuCommandFlag signver_commands[] =
-    {
-      {  'A', PR_FALSE, 0, PR_FALSE },
-      {  'V', PR_FALSE, 0, PR_FALSE }
-    };
+static secuCommandFlag signver_commands[] = {
+    {  'A', PR_FALSE, 0, PR_FALSE },
+    {  'V', PR_FALSE, 0, PR_FALSE }
+};
 
-static secuCommandFlag signver_options[] =
-    {
-      {  'a', PR_FALSE, 0, PR_FALSE },
-      {  'd', PR_TRUE, 0, PR_FALSE },
-      {  'i', PR_TRUE, 0, PR_FALSE },
-      {  'o', PR_TRUE, 0, PR_FALSE },
-      {  's', PR_TRUE, 0, PR_FALSE },
-      {  'v', PR_FALSE, 0, PR_FALSE },
-      {  0, PR_FALSE, 0, PR_FALSE, "debug" }
-    };
+static secuCommandFlag signver_options[] = {
+    {  'a', PR_FALSE, 0, PR_FALSE },
+    {  'd', PR_TRUE, 0, PR_FALSE },
+    {  'i', PR_TRUE, 0, PR_FALSE },
+    {  'o', PR_TRUE, 0, PR_FALSE },
+    {  's', PR_TRUE, 0, PR_FALSE },
+    {  'v', PR_FALSE, 0, PR_FALSE },
+    {  0, PR_FALSE, 0, PR_FALSE, "debug" }
+};
 
 int
 main(int argc, char **argv)

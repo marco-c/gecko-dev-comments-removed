@@ -166,7 +166,7 @@ NSS_IMPLEMENT NSSPublicKey *
 NSSPrivateKey_FindPublicKey(
     NSSPrivateKey *vk
     
-    )
+)
 {
     nss_SetError(NSS_ERROR_NOT_FOUND);
     return NULL;

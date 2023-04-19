@@ -1279,7 +1279,7 @@ input()
                     
                     yyrestart(yyin);
 
-                
+                    
 
                 case EOB_ACT_END_OF_FILE: {
                     if (yywrap())

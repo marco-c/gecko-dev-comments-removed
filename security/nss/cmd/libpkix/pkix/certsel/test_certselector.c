@@ -410,7 +410,8 @@ cleanup:
     PKIX_TEST_RETURN();
 }
 
-static void testPolicyMatch(
+static void
+testPolicyMatch(
     PKIX_List *certs,
     PKIX_PL_Cert *NIST1Cert,     
     PKIX_PL_Cert *NIST2Cert,     
@@ -860,8 +861,9 @@ cleanup:
     PKIX_TEST_RETURN();
 }
 
-static void test_customCallback2(PKIX_List *certs,
-                                 PKIX_PL_Cert *anyPolicyCert) 
+static void
+test_customCallback2(PKIX_List *certs,
+                     PKIX_PL_Cert *anyPolicyCert) 
 {
     PKIX_CertSelector *selector = NULL;
     PKIX_List *anyPolicyList = NULL; 
@@ -1423,12 +1425,10 @@ test_CertSelector_Duplicate(PKIX_CertSelector *selector)
                          PKIX_TRUE,
                          plContext);
     } else {
-        if
-            PKIX_EXACTLY_ONE_NULL(goodSubject, equalSubject)
-            {
-                pkixTestErrorMsg = "Subject Names are not equal!";
-                goto cleanup;
-            }
+        if PKIX_EXACTLY_ONE_NULL (goodSubject, equalSubject) {
+            pkixTestErrorMsg = "Subject Names are not equal!";
+            goto cleanup;
+        }
     }
 
     PKIX_TEST_EXPECT_NO_ERROR(PKIX_ComCertSelParams_GetPolicy(goodParams, &goodPolicy, plContext));
@@ -1439,12 +1439,10 @@ test_CertSelector_Duplicate(PKIX_CertSelector *selector)
                          PKIX_TRUE,
                          plContext);
     } else {
-        if
-            PKIX_EXACTLY_ONE_NULL(goodPolicy, equalPolicy)
-            {
-                pkixTestErrorMsg = "Policy Lists are not equal!";
-                goto cleanup;
-            }
+        if PKIX_EXACTLY_ONE_NULL (goodPolicy, equalPolicy) {
+            pkixTestErrorMsg = "Policy Lists are not equal!";
+            goto cleanup;
+        }
     }
 
     PKIX_TEST_EXPECT_NO_ERROR(PKIX_ComCertSelParams_GetCertificate(goodParams, &goodCert, plContext));
@@ -1455,12 +1453,10 @@ test_CertSelector_Duplicate(PKIX_CertSelector *selector)
                          PKIX_TRUE,
                          plContext);
     } else {
-        if
-            PKIX_EXACTLY_ONE_NULL(goodCert, equalCert)
-            {
-                pkixTestErrorMsg = "Cert Lists are not equal!";
-                goto cleanup;
-            }
+        if PKIX_EXACTLY_ONE_NULL (goodCert, equalCert) {
+            pkixTestErrorMsg = "Cert Lists are not equal!";
+            goto cleanup;
+        }
     }
 
     PKIX_TEST_EXPECT_NO_ERROR(PKIX_ComCertSelParams_GetCertificateValid(goodParams, &goodDate, plContext));
@@ -1471,12 +1467,10 @@ test_CertSelector_Duplicate(PKIX_CertSelector *selector)
                          PKIX_TRUE,
                          plContext);
     } else {
-        if
-            PKIX_EXACTLY_ONE_NULL(goodDate, equalDate)
-            {
-                pkixTestErrorMsg = "Date Lists are not equal!";
-                goto cleanup;
-            }
+        if PKIX_EXACTLY_ONE_NULL (goodDate, equalDate) {
+            pkixTestErrorMsg = "Date Lists are not equal!";
+            goto cleanup;
+        }
     }
 
     PKIX_TEST_EXPECT_NO_ERROR(PKIX_ComCertSelParams_GetBasicConstraints(goodParams, &goodBasicConstraints, plContext));

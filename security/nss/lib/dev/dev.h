@@ -251,7 +251,7 @@ nssSlot_CreateSession(
     NSSSlot *slot,
     NSSArena *arenaOpt,
     PRBool readWrite 
-    );
+);
 
 
 

@@ -59,7 +59,7 @@ Result CheckValidity(Time time, Time notBefore, Time notAfter);
 
 
 Result CheckTLSFeatures(const BackCert& subject, BackCert& potentialIssuer);
-}
+}  
 }  
 
 #endif  

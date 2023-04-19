@@ -223,18 +223,17 @@ enum {
     opt_NoDH
 };
 
-static secuCommandFlag options[] =
-    {
-      {  'd', PR_TRUE, 0, PR_FALSE },
-      {  'k', PR_TRUE, 0, PR_FALSE },
-      {  'C', PR_TRUE, 0, PR_FALSE },
-      {  'f', PR_TRUE, 0, PR_FALSE },
-      {  'p', PR_TRUE, 0, PR_FALSE },
-      {  'r', PR_TRUE, 0, PR_FALSE },
-      {  'D', PR_TRUE, 0, PR_FALSE },
-      {  'h', PR_TRUE, 0, PR_FALSE },
-      {  'e', PR_TRUE, 0, PR_FALSE },
-    };
+static secuCommandFlag options[] = {
+    {  'd', PR_TRUE, 0, PR_FALSE },
+    {  'k', PR_TRUE, 0, PR_FALSE },
+    {  'C', PR_TRUE, 0, PR_FALSE },
+    {  'f', PR_TRUE, 0, PR_FALSE },
+    {  'p', PR_TRUE, 0, PR_FALSE },
+    {  'r', PR_TRUE, 0, PR_FALSE },
+    {  'D', PR_TRUE, 0, PR_FALSE },
+    {  'h', PR_TRUE, 0, PR_FALSE },
+    {  'e', PR_TRUE, 0, PR_FALSE },
+};
 
 int
 main(int argc, char **argv)

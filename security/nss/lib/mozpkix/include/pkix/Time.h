@@ -136,7 +136,7 @@ class Duration final {
 
   uint64_t durationInSeconds;
 };
-}
+}  
 }  
 
 #endif  

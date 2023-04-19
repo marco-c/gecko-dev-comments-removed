@@ -515,13 +515,12 @@ enum {
     opt_Tests
 };
 
-static secuCommandFlag populate_options[] =
-    {
-      {  'e', PR_TRUE, 0, PR_FALSE },
-      {  'k', PR_TRUE, 0, PR_FALSE },
-      {  'r', PR_TRUE, 0, PR_FALSE },
-      {  't', PR_TRUE, 0, PR_FALSE },
-    };
+static secuCommandFlag populate_options[] = {
+    {  'e', PR_TRUE, 0, PR_FALSE },
+    {  'k', PR_TRUE, 0, PR_FALSE },
+    {  'r', PR_TRUE, 0, PR_FALSE },
+    {  't', PR_TRUE, 0, PR_FALSE },
+};
 
 int
 is_delimiter(char c)
