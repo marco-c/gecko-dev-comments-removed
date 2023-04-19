@@ -28,6 +28,7 @@ enum class RecordedProcessType : uint16_t {
   Content = (1 << GeckoProcessType_Content),
   Gpu = (1 << GeckoProcessType_GPU),
   Socket = (1 << GeckoProcessType_Socket),
+  Utility = (1 << GeckoProcessType_Utility),
   AllChildren = 0xFFFF - 1,  
                              
   All = 0xFFFF               
