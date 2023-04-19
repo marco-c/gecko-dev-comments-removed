@@ -16,7 +16,6 @@
 
 #include "net/dcsctp/common/internal_types.h"
 #include "net/dcsctp/public/types.h"
-#include "rtc_base/copy_on_write_buffer.h"
 
 namespace dcsctp {
 
@@ -46,7 +45,7 @@ struct Data {
        MID message_id,
        FSN fsn,
        PPID ppid,
-       rtc::CopyOnWriteBuffer payload,
+       std::vector<uint8_t> payload,
        IsBeginning is_beginning,
        IsEnd is_end,
        IsUnordered is_unordered)
@@ -91,7 +90,7 @@ struct Data {
   PPID ppid;
 
   
-  rtc::CopyOnWriteBuffer payload;
+  std::vector<uint8_t> payload;
 
   
   IsBeginning is_beginning;
