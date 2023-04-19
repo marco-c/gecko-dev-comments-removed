@@ -633,7 +633,7 @@ def update_git_tools(git: Optional[Path], root_state_dir: Path):
     cinnabar_exe = cinnabar_dir / "git-cinnabar"
 
     if sys.platform.startswith(("win32", "msys")):
-        cinnabar_exe += ".exe"
+        cinnabar_exe = cinnabar_exe.with_suffix(".exe")
 
     
     
