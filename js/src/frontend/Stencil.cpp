@@ -105,7 +105,7 @@ TaggedParserAtomIndex InputName::internInto(JSContext* cx, ErrorContext* ec,
         return parserAtoms.internJSAtom(cx, ec, atomCache, ptr);
       },
       [&](NameStencilRef& ref) -> TaggedParserAtomIndex {
-        return parserAtoms.internExternalParserAtomIndex(cx, ref.context_,
+        return parserAtoms.internExternalParserAtomIndex(cx, ec, ref.context_,
                                                          ref.atomIndex_);
       });
 }
@@ -786,21 +786,21 @@ mozilla::Maybe<NameLocation> ScopeContext::getPrivateFieldLocation(
   return mozilla::Some(p->value());
 }
 
-bool CompilationInput::initScriptSource(JSContext* cx) {
+bool CompilationInput::initScriptSource(JSContext* cx, ErrorContext* ec) {
   source = do_AddRef(cx->new_<ScriptSource>());
   if (!source) {
     return false;
   }
 
-  return source->initFromOptions(cx, options);
+  return source->initFromOptions(cx, ec, options);
 }
 
 bool CompilationInput::initForStandaloneFunctionInNonSyntacticScope(
-    JSContext* cx, Handle<Scope*> functionEnclosingScope) {
+    JSContext* cx, ErrorContext* ec, Handle<Scope*> functionEnclosingScope) {
   MOZ_ASSERT(!functionEnclosingScope->as<GlobalScope>().isSyntactic());
 
   target = CompilationTarget::StandaloneFunctionInNonSyntacticScope;
-  if (!initScriptSource(cx)) {
+  if (!initScriptSource(cx, ec)) {
     return false;
   }
   enclosingScope = InputScope(functionEnclosingScope);
@@ -2497,14 +2497,15 @@ bool SharedDataContainer::convertFromSingleToMap(ErrorContext* ec) {
   return true;
 }
 
-bool SharedDataContainer::addAndShare(JSContext* cx, ScriptIndex index,
+bool SharedDataContainer::addAndShare(JSContext* cx, ErrorContext* ec,
+                                      ScriptIndex index,
                                       js::SharedImmutableScriptData* data) {
   MOZ_ASSERT(!isBorrow());
 
   if (isSingle()) {
     MOZ_ASSERT(index == CompilationStencil::TopLevelIndex);
     RefPtr<SharedImmutableScriptData> ref(data);
-    if (!SharedImmutableScriptData::shareScriptData(cx, ref)) {
+    if (!SharedImmutableScriptData::shareScriptData(cx, ec, ref)) {
       return false;
     }
     setSingle(ref.forget());
@@ -2515,7 +2516,7 @@ bool SharedDataContainer::addAndShare(JSContext* cx, ScriptIndex index,
     auto& vec = *asVector();
     
     vec[index] = data;
-    return SharedImmutableScriptData::shareScriptData(cx, vec[index]);
+    return SharedImmutableScriptData::shareScriptData(cx, ec, vec[index]);
   }
 
   MOZ_ASSERT(isMap());
@@ -2524,7 +2525,7 @@ bool SharedDataContainer::addAndShare(JSContext* cx, ScriptIndex index,
   map.putNewInfallible(index, data);
   auto p = map.lookup(index);
   MOZ_ASSERT(p);
-  return SharedImmutableScriptData::shareScriptData(cx, p->value());
+  return SharedImmutableScriptData::shareScriptData(cx, ec, p->value());
 }
 
 bool SharedDataContainer::addExtraWithoutShare(
@@ -2743,13 +2744,13 @@ bool ExtensibleCompilationStencil::cloneFromImpl(JSContext* cx,
   
   for (const auto* entry : other.parserAtomsSpan()) {
     if (!entry) {
-      if (!parserAtoms.addPlaceholder(cx)) {
+      if (!parserAtoms.addPlaceholder(cx, ec)) {
         return false;
       }
       continue;
     }
 
-    auto index = parserAtoms.internExternalParserAtom(cx, entry);
+    auto index = parserAtoms.internExternalParserAtom(cx, ec, entry);
     if (!index) {
       return false;
     }
@@ -2879,13 +2880,13 @@ bool ExtensibleCompilationStencil::steal(JSContext* cx, ErrorContext* ec,
   
   for (const auto* entry : other->parserAtomData) {
     if (!entry) {
-      if (!parserAtoms.addPlaceholder(cx)) {
+      if (!parserAtoms.addPlaceholder(cx, ec)) {
         return false;
       }
       continue;
     }
 
-    auto index = parserAtoms.internExternalParserAtom(cx, entry);
+    auto index = parserAtoms.internExternalParserAtom(cx, ec, entry);
     if (!index) {
       return false;
     }
@@ -4346,7 +4347,8 @@ bool CompilationStencilMerger::buildAtomIndexMap(
     return false;
   }
   for (const auto& atom : delazification.parserAtomData) {
-    auto mappedIndex = initial_->parserAtoms.internExternalParserAtom(cx, atom);
+    auto mappedIndex =
+        initial_->parserAtoms.internExternalParserAtom(cx, ec, atom);
     if (!mappedIndex) {
       return false;
     }

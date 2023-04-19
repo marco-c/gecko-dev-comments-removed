@@ -1601,7 +1601,7 @@ class NumericLiteral : public ParseNode {
   void setDecimalPoint(DecimalPoint d) { decimalPoint_ = d; }
 
   
-  TaggedParserAtomIndex toAtom(JSContext* cx,
+  TaggedParserAtomIndex toAtom(JSContext* cx, ErrorContext* ec,
                                ParserAtomsTable& parserAtoms) const;
 };
 

@@ -494,8 +494,8 @@ static bool FoldType(FoldInfo info, ParseNode** pnp, ParseNodeKind kind) {
 
       case ParseNodeKind::StringExpr:
         if (pn->isKind(ParseNodeKind::NumberExpr)) {
-          TaggedParserAtomIndex atom =
-              pn->as<NumericLiteral>().toAtom(info.cx, info.parserAtoms);
+          TaggedParserAtomIndex atom = pn->as<NumericLiteral>().toAtom(
+              info.cx, info.ec, info.parserAtoms);
           if (!atom) {
             return false;
           }
@@ -1127,7 +1127,7 @@ static bool FoldElement(FoldInfo info, ParseNode** nodePtr) {
       
       
       
-      name = numeric->toAtom(info.cx, info.parserAtoms);
+      name = numeric->toAtom(info.cx, info.ec, info.parserAtoms);
       if (!name) {
         return false;
       }
@@ -1263,7 +1263,7 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
 
       
       if (accum) {
-        auto combination = accum->finishParserAtom(info.parserAtoms);
+        auto combination = accum->finishParserAtom(info.parserAtoms, info.ec);
         if (!combination) {
           return false;
         }

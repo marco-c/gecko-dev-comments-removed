@@ -16,6 +16,8 @@
 
 namespace js {
 
+class ErrorContext;
+
 namespace frontend {
 class ParserAtomsTable;
 class TaggedParserAtomIndex;
@@ -352,7 +354,7 @@ class StringBuffer {
   
   JSAtom* finishAtom();
   frontend::TaggedParserAtomIndex finishParserAtom(
-      frontend::ParserAtomsTable& parserAtoms);
+      frontend::ParserAtomsTable& parserAtoms, ErrorContext* ec);
 
   
 
