@@ -117,6 +117,12 @@ var connect = async function() {
 
   appendStatusMessage("Get root form for toolbox");
   gCommands = await CommandsFactory.forMainProcess({ client });
+
+  
+  
+  
+  gCommands.shouldCloseClient = false;
+
   await openToolbox(gCommands);
 };
 

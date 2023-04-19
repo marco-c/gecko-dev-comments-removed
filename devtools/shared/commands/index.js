@@ -53,17 +53,56 @@ async function createCommandsDictionary(descriptorFront) {
     },
 
     
+    
+    
+    
+    
+    
+    
+    shouldCloseClient: true,
+
+    
+
+
+
+
+
     async destroy() {
+      descriptorFront.off("descriptor-destroyed", this.destroy);
+
+      
       for (const command of allInstantiatedCommands) {
         if (typeof command.destroy == "function") {
           command.destroy();
         }
       }
       allInstantiatedCommands.clear();
-      await descriptorFront.destroy();
-      await client.close();
+
+      
+      
+      
+      
+      
+      
+      if (!descriptorFront.isDestroyed()) {
+        await descriptorFront.destroy();
+      }
+
+      
+      
+      
+      
+      if (this.shouldCloseClient) {
+        await client.close();
+      }
     },
   };
+  dictionary.destroy = dictionary.destroy.bind(dictionary);
+
+  
+  
+  
+  descriptorFront.on("descriptor-destroyed", dictionary.destroy);
 
   for (const name in Commands) {
     loader.lazyGetter(dictionary, name, () => {
