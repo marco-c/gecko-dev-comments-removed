@@ -34,10 +34,10 @@ const WCHAR kWindowTitle[] = L"WGC Capturer Test Window";
 
 const int kSmallWindowWidth = 200;
 const int kSmallWindowHeight = 100;
-const int kWindowWidth = 300;
-const int kWindowHeight = 200;
+const int kMediumWindowWidth = 300;
+const int kMediumWindowHeight = 200;
 const int kLargeWindowWidth = 400;
-const int kLargeWindowHeight = 300;
+const int kLargeWindowHeight = 500;
 
 
 
@@ -69,10 +69,11 @@ class WgcCapturerWinTest : public ::testing::TestWithParam<CaptureType>,
     EXPECT_TRUE(com_initializer_->Succeeded());
   }
 
-  void SetUpForWindowCapture() {
+  void SetUpForWindowCapture(int window_width = kMediumWindowWidth,
+                             int window_height = kMediumWindowHeight) {
     capturer_ = WgcCapturerWin::CreateRawWindowCapturer(
         DesktopCaptureOptions::CreateDefault());
-    CreateWindowOnSeparateThread();
+    CreateWindowOnSeparateThread(window_width, window_height);
     StartWindowThreadMessageLoop();
     source_id_ = GetTestWindowIdFromSourceList();
   }
@@ -93,14 +94,15 @@ class WgcCapturerWinTest : public ::testing::TestWithParam<CaptureType>,
   
   
   
-  void CreateWindowOnSeparateThread() {
+  void CreateWindowOnSeparateThread(int window_width, int window_height) {
     window_thread_ = rtc::Thread::Create();
     window_thread_->SetName(kWindowThreadName, nullptr);
     window_thread_->Start();
-    window_thread_->Invoke<void>(RTC_FROM_HERE, [this]() {
+    window_thread_->Invoke<void>(RTC_FROM_HERE, [this, window_width,
+                                                 window_height]() {
       window_thread_id_ = GetCurrentThreadId();
       window_info_ =
-          CreateTestWindow(kWindowTitle, kWindowHeight, kWindowWidth);
+          CreateTestWindow(kWindowTitle, window_height, window_width);
       window_open_ = true;
 
       while (!IsWindowResponding(window_info_.hwnd)) {
@@ -179,6 +181,39 @@ class WgcCapturerWinTest : public ::testing::TestWithParam<CaptureType>,
 
     EXPECT_EQ(result_, DesktopCapturer::Result::SUCCESS);
     EXPECT_TRUE(frame_);
+  }
+
+  void ValidateFrame(int expected_width, int expected_height) {
+    EXPECT_EQ(frame_->size().width(), expected_width - kWindowWidthSubtrahend);
+    EXPECT_EQ(frame_->size().height(),
+              expected_height - kWindowHeightSubtrahend);
+
+    
+    
+    int data_length = frame_->stride() * frame_->size().height();
+
+    
+    
+    
+    uint32_t first_pixel = static_cast<uint32_t>(*frame_->data());
+    uint32_t last_pixel = static_cast<uint32_t>(
+        *(frame_->data() + data_length - DesktopFrame::kBytesPerPixel));
+    EXPECT_EQ(first_pixel, last_pixel);
+
+    
+    
+    uint8_t* middle_pixel = frame_->data() + (data_length / 2);
+
+    int sub_pixel_offset = DesktopFrame::kBytesPerPixel / 4;
+    EXPECT_EQ(*middle_pixel, kTestWindowBValue);
+    middle_pixel += sub_pixel_offset;
+    EXPECT_EQ(*middle_pixel, kTestWindowGValue);
+    middle_pixel += sub_pixel_offset;
+    EXPECT_EQ(*middle_pixel, kTestWindowRValue);
+    middle_pixel += sub_pixel_offset;
+
+    
+    EXPECT_EQ(*middle_pixel, 0xFF);
   }
 
   
@@ -276,30 +311,44 @@ TEST_F(WgcCapturerWinTest, SelectClosedWindow) {
   EXPECT_FALSE(capturer_->SelectSource(source_id_));
 }
 
-TEST_F(WgcCapturerWinTest, ResizeWindowMidCapture) {
-  SetUpForWindowCapture();
+TEST_F(WgcCapturerWinTest, IncreaseWindowSizeMidCapture) {
+  SetUpForWindowCapture(kSmallWindowWidth, kSmallWindowHeight);
   EXPECT_TRUE(capturer_->SelectSource(source_id_));
 
   capturer_->Start(this);
   DoCapture();
-  EXPECT_EQ(frame_->size().width(), kWindowWidth - kWindowWidthSubtrahend);
-  EXPECT_EQ(frame_->size().height(), kWindowHeight - kWindowHeightSubtrahend);
+  ValidateFrame(kSmallWindowWidth, kSmallWindowHeight);
 
-  ResizeTestWindow(window_info_.hwnd, kLargeWindowWidth, kLargeWindowHeight);
+  ResizeTestWindow(window_info_.hwnd, kSmallWindowWidth, kMediumWindowHeight);
   DoCapture();
   
   
   DoCapture();
-  EXPECT_EQ(frame_->size().width(), kLargeWindowWidth - kWindowWidthSubtrahend);
-  EXPECT_EQ(frame_->size().height(),
-            kLargeWindowHeight - kWindowHeightSubtrahend);
+  ValidateFrame(kSmallWindowWidth, kMediumWindowHeight);
 
-  ResizeTestWindow(window_info_.hwnd, kSmallWindowWidth, kSmallWindowHeight);
+  ResizeTestWindow(window_info_.hwnd, kLargeWindowWidth, kMediumWindowHeight);
   DoCapture();
   DoCapture();
-  EXPECT_EQ(frame_->size().width(), kSmallWindowWidth - kWindowWidthSubtrahend);
-  EXPECT_EQ(frame_->size().height(),
-            kSmallWindowHeight - kWindowHeightSubtrahend);
+  ValidateFrame(kLargeWindowWidth, kMediumWindowHeight);
+}
+
+TEST_F(WgcCapturerWinTest, ReduceWindowSizeMidCapture) {
+  SetUpForWindowCapture(kLargeWindowWidth, kLargeWindowHeight);
+  EXPECT_TRUE(capturer_->SelectSource(source_id_));
+
+  capturer_->Start(this);
+  DoCapture();
+  ValidateFrame(kLargeWindowWidth, kLargeWindowHeight);
+
+  ResizeTestWindow(window_info_.hwnd, kLargeWindowWidth, kMediumWindowHeight);
+  
+  
+  DoCapture();
+  ValidateFrame(kLargeWindowWidth, kMediumWindowHeight);
+
+  ResizeTestWindow(window_info_.hwnd, kSmallWindowWidth, kMediumWindowHeight);
+  DoCapture();
+  ValidateFrame(kSmallWindowWidth, kMediumWindowHeight);
 }
 
 TEST_F(WgcCapturerWinTest, MinimizeWindowMidCapture) {
@@ -329,8 +378,7 @@ TEST_F(WgcCapturerWinTest, CloseWindowMidCapture) {
 
   capturer_->Start(this);
   DoCapture();
-  EXPECT_EQ(frame_->size().width(), kWindowWidth - kWindowWidthSubtrahend);
-  EXPECT_EQ(frame_->size().height(), kWindowHeight - kWindowHeightSubtrahend);
+  ValidateFrame(kMediumWindowWidth, kMediumWindowHeight);
 
   CloseTestWindow();
 

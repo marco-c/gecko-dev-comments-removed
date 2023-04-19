@@ -17,6 +17,14 @@
 
 namespace webrtc {
 
+typedef unsigned char uint8_t;
+
+
+
+const uint8_t kTestWindowRValue = 191;
+const uint8_t kTestWindowGValue = 99;
+const uint8_t kTestWindowBValue = 12;
+
 struct WindowInfo {
   HWND hwnd;
   HINSTANCE window_instance;
