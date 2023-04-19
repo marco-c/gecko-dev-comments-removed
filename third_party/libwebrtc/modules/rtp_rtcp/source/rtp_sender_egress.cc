@@ -445,8 +445,6 @@ void RtpSenderEgress::AddPacketToTransportFeedback(
         
         break;
     }
-    
-    packet_info.ssrc = packet_info.media_ssrc.value_or(0);
 
     transport_feedback_observer_->OnAddPacket(packet_info);
   }
