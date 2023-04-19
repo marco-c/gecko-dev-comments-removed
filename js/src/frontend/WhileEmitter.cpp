@@ -25,8 +25,8 @@ bool WhileEmitter::emitCond(uint32_t whilePos, uint32_t condPos,
   
   
   
-  if (bce_->parser->errorReporter().lineAt(whilePos) ==
-      bce_->parser->errorReporter().lineAt(endPos)) {
+  if (bce_->errorReporter().lineAt(whilePos) ==
+      bce_->errorReporter().lineAt(endPos)) {
     if (!bce_->updateSourceCoordNotes(whilePos)) {
       return false;
     }
