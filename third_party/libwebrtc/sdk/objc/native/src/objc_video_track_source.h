@@ -27,10 +27,9 @@ namespace webrtc {
 class ObjCVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  public:
   ObjCVideoTrackSource();
+  explicit ObjCVideoTrackSource(bool is_screencast);
   explicit ObjCVideoTrackSource(RTCObjCVideoSourceAdapter* adapter);
 
-  
-  
   bool is_screencast() const override;
 
   
@@ -52,6 +51,7 @@ class ObjCVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   rtc::TimestampAligner timestamp_aligner_;
 
   RTCObjCVideoSourceAdapter* adapter_;
+  bool is_screencast_;
 };
 
 }  

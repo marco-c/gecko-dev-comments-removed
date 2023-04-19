@@ -61,6 +61,13 @@ RTC_OBJC_EXPORT
 - (RTC_OBJC_TYPE(RTCVideoSource) *)videoSource;
 
 
+
+
+
+
+- (RTC_OBJC_TYPE(RTCVideoSource) *)videoSourceForScreenCast:(BOOL)forScreenCast;
+
+
 - (RTC_OBJC_TYPE(RTCVideoTrack) *)videoTrackWithSource:(RTC_OBJC_TYPE(RTCVideoSource) *)source
                                                trackId:(NSString *)trackId;
 
