@@ -999,9 +999,16 @@ TableWidget.prototype = {
       return;
     }
 
+    
     const sortedItems = this.columns.get(column).sort([...this.items.values()]);
+
+    
+    
+    
+    
+    
     for (const [id, col] of this.columns) {
-      if (id === col) {
+      if (id !== column) {
         col.sort(sortedItems);
       }
     }
