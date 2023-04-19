@@ -11,7 +11,7 @@ function displayNamesLocaleData() {
 }
 var displayNamesInternalProperties = {
   localeData: displayNamesLocaleData,
-  relevantExtensionKeys: []
+  relevantExtensionKeys: [],
 };
 
 function mozDisplayNamesLocaleData() {
@@ -24,7 +24,7 @@ function mozDisplayNamesLocaleData() {
 }
 var mozDisplayNamesInternalProperties = {
   localeData: mozDisplayNamesLocaleData,
-  relevantExtensionKeys: ["ca"]
+  relevantExtensionKeys: ["ca"],
 };
 
 
@@ -221,7 +221,7 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
         "weekday",
         "month",
         "quarter",
-        "dayPeriod"
+        "dayPeriod",
       ],
       undefined
     );
@@ -304,7 +304,7 @@ function Intl_DisplayNames_of(code) {
 
   
   
-  var {locale, calendar = "", style, type, languageDisplay = "", fallback} = internals;
+  var { locale, calendar = "", style, type, languageDisplay = "", fallback } = internals;
 
   
   return intl_ComputeDisplayName(
