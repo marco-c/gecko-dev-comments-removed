@@ -54,6 +54,10 @@ class EncodedImageDataExtractor {
 
   
   
+  virtual void AddParticipantInCall() = 0;
+
+  
+  
   
   virtual EncodedImageExtractionResult ExtractData(const EncodedImage& source,
                                                    int coding_entity_id) = 0;

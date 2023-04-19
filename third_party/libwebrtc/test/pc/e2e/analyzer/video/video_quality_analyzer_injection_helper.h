@@ -50,6 +50,7 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   
   void RegisterParticipantInCall(absl::string_view peer_name) {
     analyzer_->RegisterParticipantInCall(peer_name);
+    extractor_->AddParticipantInCall();
   }
 
   
