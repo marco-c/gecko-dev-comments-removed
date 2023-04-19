@@ -1795,6 +1795,25 @@ void VideoFrame::Close() {
 
 
 
+already_AddRefed<VideoFrame> VideoFrame::ReadStructuredClone(
+    JSContext* aCx, nsIGlobalObject* aGlobal,
+    JSStructuredCloneReader* aReader) {
+  return nullptr;
+}
+
+
+bool VideoFrame::WriteStructuredClone(JSContext* aCx,
+                                      JSStructuredCloneWriter* aWriter) const {
+  
+  
+  if (!mResource) {
+    return false;
+  }
+  return false;
+}
+
+
+
 
 
 
