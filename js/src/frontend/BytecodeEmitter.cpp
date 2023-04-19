@@ -6174,7 +6174,6 @@ bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
     }
   }
 
-  
   if (sc->asSuspendableContext()->isAsync()) {
     MOZ_ASSERT(!needsIteratorResult);
     if (!emitAwaitInInnermostScope()) {
@@ -6717,10 +6716,6 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
   }
   if (iterKind == IteratorKind::Async) {
     if (!emitAtomOp(JSOp::GetProp, TaggedParserAtomIndex::WellKnown::value())) {
-      
-      return false;
-    }
-    if (!emitAwaitInInnermostScope()) {
       
       return false;
     }
