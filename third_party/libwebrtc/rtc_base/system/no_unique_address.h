@@ -11,7 +11,6 @@
 #ifndef RTC_BASE_SYSTEM_NO_UNIQUE_ADDRESS_H_
 #define RTC_BASE_SYSTEM_NO_UNIQUE_ADDRESS_H_
 
-#include "rtc_base/sanitizer.h"
 
 
 
@@ -25,11 +24,7 @@
 
 
 
-
-
-
-#if !RTC_HAS_MSAN &&                                                       \
-    ((defined(__clang__) && !defined(_MSC_VER) && !defined(WEBRTC_IOS)) || \
+#if ((defined(__clang__) && !defined(_MSC_VER) && !defined(WEBRTC_IOS)) || \
      __cplusplus > 201703L)
 
 #define RTC_NO_UNIQUE_ADDRESS [[no_unique_address]]
