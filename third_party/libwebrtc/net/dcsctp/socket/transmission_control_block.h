@@ -19,6 +19,7 @@
 
 #include "absl/strings/string_view.h"
 #include "net/dcsctp/common/sequence_numbers.h"
+#include "net/dcsctp/packet/chunk/cookie_echo_chunk.h"
 #include "net/dcsctp/packet/sctp_packet.h"
 #include "net/dcsctp/public/dcsctp_options.h"
 #include "net/dcsctp/public/dcsctp_socket.h"
@@ -148,16 +149,27 @@ class TransmissionControlBlock : public Context {
   
   
   
-  
-  void SendBufferedPackets(SctpPacket::Builder& builder,
-                           TimeMs now,
-                           bool only_one_packet = false);
+  void SetCookieEchoChunk(CookieEchoChunk chunk) {
+    cookie_echo_chunk_ = std::move(chunk);
+  }
 
+  
+  
+  void ClearCookieEchoChunk() { cookie_echo_chunk_ = absl::nullopt; }
+
+  bool has_cookie_echo_chunk() const { return cookie_echo_chunk_.has_value(); }
+
+  
+  
+  
+  void SendBufferedPackets(SctpPacket::Builder& builder, TimeMs now);
+
+  
   
   
   void SendBufferedPackets(TimeMs now) {
     SctpPacket::Builder builder(peer_verification_tag_, options_);
-    SendBufferedPackets(builder, now, false);
+    SendBufferedPackets(builder, now);
   }
 
   
@@ -195,6 +207,13 @@ class TransmissionControlBlock : public Context {
   RetransmissionQueue retransmission_queue_;
   StreamResetHandler stream_reset_handler_;
   HeartbeatHandler heartbeat_handler_;
+
+  
+  
+  
+  
+  
+  absl::optional<CookieEchoChunk> cookie_echo_chunk_ = absl::nullopt;
 };
 }  
 

@@ -149,8 +149,6 @@ class DcSctpSocket : public DcSctpSocketInterface {
   
   void SendInit();
   
-  void SendCookieEcho();
-  
   void SendShutdown();
   
   void SendShutdownAck();
@@ -260,10 +258,6 @@ class DcSctpSocket : public DcSctpSocketInterface {
   
   
   RRSendQueue send_queue_;
-
-  
-  
-  absl::optional<CookieEchoChunk> cookie_echo_chunk_ = absl::nullopt;
 
   
   

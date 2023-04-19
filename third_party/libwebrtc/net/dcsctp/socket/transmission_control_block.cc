@@ -54,9 +54,15 @@ absl::optional<DurationMs> TransmissionControlBlock::OnRtxTimerExpiry() {
   TimeMs now = callbacks_.TimeMillis();
   RTC_DLOG(LS_INFO) << log_prefix_ << "Timer " << t3_rtx_->name()
                     << " has expired";
-  if (IncrementTxErrorCounter("t3-rtx expired")) {
-    retransmission_queue_.HandleT3RtxTimerExpiry();
-    SendBufferedPackets(now);
+  if (cookie_echo_chunk_.has_value()) {
+    
+    
+    RTC_DLOG(LS_VERBOSE) << "Not retransmitting as T1-cookie is active.";
+  } else {
+    if (IncrementTxErrorCounter("t3-rtx expired")) {
+      retransmission_queue_.HandleT3RtxTimerExpiry();
+      SendBufferedPackets(now);
+    }
   }
   return absl::nullopt;
 }
@@ -77,12 +83,19 @@ void TransmissionControlBlock::MaybeSendSack() {
 }
 
 void TransmissionControlBlock::SendBufferedPackets(SctpPacket::Builder& builder,
-                                                   TimeMs now,
-                                                   bool only_one_packet) {
+                                                   TimeMs now) {
   for (int packet_idx = 0;; ++packet_idx) {
     
     
     if (packet_idx == 0) {
+      if (cookie_echo_chunk_.has_value()) {
+        
+        
+        
+        RTC_DCHECK(builder.empty());
+        builder.Add(*cookie_echo_chunk_);
+      }
+
       
       
       
@@ -122,7 +135,11 @@ void TransmissionControlBlock::SendBufferedPackets(SctpPacket::Builder& builder,
       break;
     }
     Send(builder);
-    if (only_one_packet) {
+
+    if (cookie_echo_chunk_.has_value()) {
+      
+      
+      
       break;
     }
   }
