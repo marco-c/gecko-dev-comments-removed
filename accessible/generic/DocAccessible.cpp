@@ -1321,9 +1321,9 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     if (acc->IsTable() || acc->IsTableRow() || acc->IsTableCell()) {
       LocalAccessible* table = nsAccUtils::TableFor(acc);
-      FireDelayedEvent(nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED, acc);
-
       if (table && table->IsTable()) {
+        FireDelayedEvent(nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED,
+                         table);
         QueueCacheUpdate(acc, CacheDomain::Table);
       }
     }

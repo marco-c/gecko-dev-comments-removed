@@ -139,8 +139,7 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
     
     
     if (eventType == nsIAccessibleEvent::EVENT_REORDER ||
-        eventType == nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED ||
-        eventType == nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED) {
+        eventType == nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED) {
       
       [self invalidateLayoutTableCache];
     }
