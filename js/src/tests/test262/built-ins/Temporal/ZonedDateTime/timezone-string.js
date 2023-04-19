@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+["UTC", "+01:30"].forEach((timeZone) => {
+  const result = new Temporal.ZonedDateTime(0n, timeZone);
+  assert.sameValue(result.timeZone.id, timeZone, `Time zone created from string "${timeZone}"`);
+});
+
+reportCompare(0, 0);

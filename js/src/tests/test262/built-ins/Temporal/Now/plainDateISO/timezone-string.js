@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+["UTC", "+01:00"].forEach((timeZone) => {
+  Temporal.Now.plainDateISO(timeZone);
+});
+
+reportCompare(0, 0);

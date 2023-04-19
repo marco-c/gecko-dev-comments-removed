@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+const arg = "iso8601";
+
+const result = Temporal.Now.plainDateTime(arg);
+assert.sameValue(result.calendar.id, "iso8601", `Calendar created from string "${arg}"`);
+
+reportCompare(0, 0);
