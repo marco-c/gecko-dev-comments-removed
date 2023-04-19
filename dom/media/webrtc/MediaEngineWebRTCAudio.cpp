@@ -211,8 +211,12 @@ void MediaEngineWebRTCMicrophoneSource::ApplySettings(
 
   mAudioProcessingConfig.high_pass_filter.enabled = aPrefs.mHPFOn;
 
-  mAudioProcessingConfig.residual_echo_detector.enabled =
-      aPrefs.mResidualEchoOn;
+  
+  
+  
+  
+  
+  
 
   RefPtr<MediaEngineWebRTCMicrophoneSource> that = this;
   CubebUtils::AudioDeviceID deviceID = mDeviceInfo->DeviceID();
