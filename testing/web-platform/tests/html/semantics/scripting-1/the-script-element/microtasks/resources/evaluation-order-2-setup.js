@@ -1,0 +1,10 @@
+
+setupTest("Module script queueing a microtask then throwing an exception", [
+  "step-2.2-1", "step-2.2-2", 
+  "microtask-2.2",            
+  "global-error",             
+    
+    
+    
+    
+]);

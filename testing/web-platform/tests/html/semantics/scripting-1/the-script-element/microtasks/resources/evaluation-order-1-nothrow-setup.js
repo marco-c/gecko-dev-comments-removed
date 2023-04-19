@@ -1,0 +1,5 @@
+
+setupTest("Module script queueing a microtask", [
+  "body",         
+  "microtask",    
+]);

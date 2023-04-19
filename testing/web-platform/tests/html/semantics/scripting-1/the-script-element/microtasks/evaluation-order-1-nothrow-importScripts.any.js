@@ -1,0 +1,11 @@
+
+
+
+
+
+setupTest("importScripts() queueing a microtask then throwing an exception", [
+  "body",
+  "microtask",
+]);
+
+importScripts('./resources/evaluation-order-1-nothrow.js');

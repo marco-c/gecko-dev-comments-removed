@@ -1,0 +1,30 @@
+globalThis.setup({allow_uncaught_exception: true});
+
+
+globalThis.setupTest = (description, expectedLog) => {
+  globalThis.log = [];
+  globalThis.onerror = message => {
+      globalThis.log.push("global-error");
+      return true;
+  };
+  globalThis.onunhandledrejection =
+      () => globalThis.log.push('unhandled-promise-rejection');
+
+  globalThis.unreachable = () => globalThis.log.push("unreachable");
+
+  globalThis.test_load = async_test(description);
+  globalThis.testDone = globalThis.test_load.step_func_done(() => {
+    assert_array_equals(globalThis.log, expectedLog);
+  });
+
+  if (!('Window' in globalThis && globalThis instanceof Window)) {
+    
+    
+    globalThis.test_load.step_timeout(() => globalThis.testDone(), 1000);
+
+    
+    
+    
+    done();
+  }
+};
