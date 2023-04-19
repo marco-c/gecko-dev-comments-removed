@@ -146,6 +146,11 @@ using CreateContentResult = CreateNodeResultBase<nsIContent>;
 using CreateElementResult = CreateNodeResultBase<dom::Element>;
 using CreateTextResult = CreateNodeResultBase<dom::Text>;
 
+
+
+
+using InsertParagraphResult = CreateElementResult;
+
 using EditorDOMRange = EditorDOMRangeBase<EditorDOMPoint>;
 using EditorRawDOMRange = EditorDOMRangeBase<EditorRawDOMPoint>;
 using EditorDOMRangeInTexts = EditorDOMRangeBase<EditorDOMPointInText>;

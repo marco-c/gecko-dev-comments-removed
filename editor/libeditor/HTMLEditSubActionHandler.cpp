@@ -1797,9 +1797,11 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
   };
 
   RefPtr<Element> blockElementToPutCaret;
+  
+  
+  
   if (!HTMLEditUtils::IsSplittableNode(*editableBlockElement) &&
       separator != ParagraphSeparator::br) {
-    
     MOZ_ASSERT(separator == ParagraphSeparator::div ||
                separator == ParagraphSeparator::p);
     Result<RefPtr<Element>, nsresult> suggestBlockElementToPutCaretOrError =
@@ -1889,11 +1891,11 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
                                                        &aEditingHost);
   if (maybeNonEditableListItem &&
       HTMLEditUtils::IsSplittableNode(*maybeNonEditableListItem)) {
-    Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+    Result<InsertParagraphResult, nsresult> insertParagraphInListItemResult =
         HandleInsertParagraphInListItemElement(*maybeNonEditableListItem,
                                                pointToInsert, aEditingHost);
-    if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
-      if (NS_WARN_IF(pointToPutCaretOrError.unwrapErr() ==
+    if (MOZ_UNLIKELY(insertParagraphInListItemResult.isErr())) {
+      if (NS_WARN_IF(insertParagraphInListItemResult.unwrapErr() ==
                      NS_ERROR_EDITOR_DESTROYED)) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -1902,8 +1904,15 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
           "ignored");
       return EditActionResult::HandledResult();
     }
-    nsresult rv = CollapseSelection(pointToPutCaretOrError.inspect(),
-                                    blockElementToPutCaret,
+    InsertParagraphResult unwrappedInsertParagraphInListItemResult =
+        insertParagraphInListItemResult.unwrap();
+    MOZ_ASSERT(unwrappedInsertParagraphInListItemResult.Handled());
+    MOZ_ASSERT(unwrappedInsertParagraphInListItemResult.GetNewNode());
+    const RefPtr<Element> listItemOrParagraphElement =
+        unwrappedInsertParagraphInListItemResult.UnwrapNewNode();
+    const EditorDOMPoint pointToPutCaret =
+        unwrappedInsertParagraphInListItemResult.UnwrapCaretPoint();
+    nsresult rv = CollapseSelection(pointToPutCaret, listItemOrParagraphElement,
                                     {SuggestCaret::AndIgnoreTrivialError});
     if (NS_FAILED(rv)) {
       NS_WARNING("CollapseSelection() failed");
@@ -1915,17 +1924,25 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
   }
 
   if (HTMLEditUtils::IsHeader(*editableBlockElement)) {
-    SplitNodeResult splitHeadingElementResult =
-        HandleInsertParagraphInHeadingElement(*editableBlockElement,
-                                              pointToInsert);
-    if (MOZ_UNLIKELY(splitHeadingElementResult.isErr())) {
+    Result<InsertParagraphResult, nsresult>
+        insertParagraphInHeadingElementResult =
+            HandleInsertParagraphInHeadingElement(*editableBlockElement,
+                                                  pointToInsert);
+    if (MOZ_UNLIKELY(insertParagraphInHeadingElementResult.isErr())) {
       NS_WARNING(
           "HTMLEditor::HandleInsertParagraphInHeadingElement() failed, but "
           "ignored");
       return EditActionResult::HandledResult();
     }
-    EditorDOMPoint pointToPutCaret =
-        splitHeadingElementResult.UnwrapCaretPoint();
+    InsertParagraphResult unwrappedInsertParagraphInHeadingElementResult =
+        insertParagraphInHeadingElementResult.unwrap();
+    if (unwrappedInsertParagraphInHeadingElementResult.Handled()) {
+      MOZ_ASSERT(unwrappedInsertParagraphInHeadingElementResult.GetNewNode());
+      blockElementToPutCaret =
+          unwrappedInsertParagraphInHeadingElementResult.UnwrapNewNode();
+    }
+    const EditorDOMPoint pointToPutCaret =
+        unwrappedInsertParagraphInHeadingElementResult.UnwrapCaretPoint();
     nsresult rv = CollapseSelection(pointToPutCaret, blockElementToPutCaret,
                                     {SuggestCaret::OnlyIfHasSuggestion,
                                      SuggestCaret::AndIgnoreTrivialError});
@@ -1961,8 +1978,11 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
       return Err(splitResult.unwrapErr());
     }
     if (splitResult.Handled()) {
-      EditorDOMPoint pointToPutCaret = splitResult.UnwrapCaretPoint();
-      nsresult rv = CollapseSelection(pointToPutCaret, blockElementToPutCaret,
+      const RefPtr<Element> rightParagraphElement =
+          splitResult.DidSplit() ? splitResult.GetNextContent()->AsElement()
+                                 : blockElementToPutCaret.get();
+      const EditorDOMPoint pointToPutCaret = splitResult.UnwrapCaretPoint();
+      nsresult rv = CollapseSelection(pointToPutCaret, rightParagraphElement,
                                       {SuggestCaret::AndIgnoreTrivialError});
       if (NS_FAILED(rv)) {
         NS_WARNING("CollapseSelection() failed");
@@ -7203,7 +7223,8 @@ void HTMLEditor::MakeTransitionList(
   }
 }
 
-SplitNodeResult HTMLEditor::HandleInsertParagraphInHeadingElement(
+Result<InsertParagraphResult, nsresult>
+HTMLEditor::HandleInsertParagraphInHeadingElement(
     Element& aHeadingElement, const EditorDOMPoint& aPointToSplit) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
@@ -7237,14 +7258,14 @@ SplitNodeResult HTMLEditor::HandleInsertParagraphInHeadingElement(
   }();
   if (splitHeadingResult.isErr()) {
     NS_WARNING("Failed to splitting aHeadingElement");
-    return splitHeadingResult;
+    return Err(splitHeadingResult.unwrapErr());
   }
   splitHeadingResult.IgnoreCaretPointSuggestion();
   if (MOZ_UNLIKELY(!splitHeadingResult.DidSplit())) {
     NS_WARNING(
         "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
         "eAllowToCreateEmptyContainer) didn't split aHeadingElement");
-    return SplitNodeResult(NS_ERROR_FAILURE);
+    return Err(NS_ERROR_FAILURE);
   }
 
   
@@ -7267,7 +7288,7 @@ SplitNodeResult HTMLEditor::HandleInsertParagraphInHeadingElement(
       NS_WARNING(
           "HTMLEditor::InsertPaddingBRElementForEmptyLastLineWithTransaction("
           ") failed");
-      return SplitNodeResult(insertPaddingBRElementResult.unwrapErr());
+      return insertPaddingBRElementResult.propagateErr();
     }
     insertPaddingBRElementResult.inspect().IgnoreCaretPointSuggestion();
   }
@@ -7279,8 +7300,8 @@ SplitNodeResult HTMLEditor::HandleInsertParagraphInHeadingElement(
              "SplitNodeResult::GetNextContent() should return something if "
              "DidSplit() returns true");
   if (!HTMLEditUtils::IsEmptyBlockElement(*rightHeadingElement, {})) {
-    return SplitNodeResult(std::move(splitHeadingResult),
-                           EditorDOMPoint(rightHeadingElement, 0u));
+    return InsertParagraphResult(rightHeadingElement,
+                                 EditorDOMPoint(rightHeadingElement, 0u));
   }
 
   
@@ -7291,7 +7312,7 @@ SplitNodeResult HTMLEditor::HandleInsertParagraphInHeadingElement(
   nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(*rightHeadingElement));
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-    return SplitNodeResult(rv);
+    return Err(rv);
   }
 
   
@@ -7313,19 +7334,17 @@ SplitNodeResult HTMLEditor::HandleInsertParagraphInHeadingElement(
         nextEditableSibling->IsHTMLElement(nsGkAtoms::br)) {
       auto afterEditableBRElement = EditorDOMPoint::After(*nextEditableSibling);
       if (NS_WARN_IF(!afterEditableBRElement.IsSet())) {
-        return SplitNodeResult(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
       }
       
-      return SplitNodeResult(
-          SplitNodeResult::HandledButDidNotSplitDueToEndOfContainer(
-              *leftHeadingElement, GetSplitNodeDirection()),
-          afterEditableBRElement);
+      return InsertParagraphResult::NotHandled(
+          std::move(afterEditableBRElement));
     }
   }
 
   if (MOZ_UNLIKELY(!leftHeadingElement->IsInComposedDoc())) {
     NS_WARNING("The left heading element was unexpectedly removed");
-    return SplitNodeResult(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
   TopLevelEditSubActionDataRef().mCachedPendingStyles->Clear();
@@ -7370,19 +7389,18 @@ SplitNodeResult HTMLEditor::HandleInsertParagraphInHeadingElement(
   if (MOZ_UNLIKELY(createNewParagraphElementResult.isErr())) {
     NS_WARNING(
         "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) failed");
-    return SplitNodeResult(createNewParagraphElementResult.unwrapErr());
+    return createNewParagraphElementResult.propagateErr();
   }
   CreateElementResult unwrappedCreateNewParagraphElementResult =
       createNewParagraphElementResult.unwrap();
   
   unwrappedCreateNewParagraphElementResult.IgnoreCaretPointSuggestion();
   MOZ_ASSERT(unwrappedCreateNewParagraphElementResult.GetNewNode());
-  return SplitNodeResult(
-      *leftHeadingElement,
-      *unwrappedCreateNewParagraphElementResult.GetNewNode(),
-      GetSplitNodeDirection(),
-      Some(EditorDOMPoint(unwrappedCreateNewParagraphElementResult.GetNewNode(),
-                          0u)));
+  EditorDOMPoint pointToPutCaret(
+      unwrappedCreateNewParagraphElementResult.GetNewNode(), 0u);
+  return InsertParagraphResult(
+      unwrappedCreateNewParagraphElementResult.UnwrapNewNode(),
+      std::move(pointToPutCaret));
 }
 
 SplitNodeResult HTMLEditor::HandleInsertParagraphInParagraph(
@@ -7880,7 +7898,7 @@ SplitNodeResult HTMLEditor::SplitParagraphWithTransaction(
                                EditorDOMPoint(child));
 }
 
-Result<EditorDOMPoint, nsresult>
+Result<InsertParagraphResult, nsresult>
 HTMLEditor::HandleInsertParagraphInListItemElement(
     Element& aListItemElement, const EditorDOMPoint& aPointToSplit,
     const Element& aEditingHost) {
@@ -7930,7 +7948,8 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
         return moveListItemElementResult.propagateErr();
       }
       moveListItemElementResult.inspect().IgnoreCaretPointSuggestion();
-      return EditorDOMPoint(&aListItemElement, 0u);
+      return InsertParagraphResult(&aListItemElement,
+                                   EditorDOMPoint(&aListItemElement, 0u));
     }
 
     
@@ -7981,8 +8000,11 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
     }
     createNewParagraphElementResult.inspect().IgnoreCaretPointSuggestion();
     MOZ_ASSERT(createNewParagraphElementResult.inspect().GetNewNode());
-    return EditorDOMPoint(
+    EditorDOMPoint pointToPutCaret(
         createNewParagraphElementResult.inspect().GetNewNode(), 0u);
+    return InsertParagraphResult(
+        createNewParagraphElementResult.inspect().GetNewNode(),
+        std::move(pointToPutCaret));
   }
 
   
@@ -8046,7 +8068,8 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
     
     
     insertPaddingBRElementResult.inspect().IgnoreCaretPointSuggestion();
-    return EditorDOMPoint(&rightListItemElement, 0u);
+    return InsertParagraphResult(&rightListItemElement,
+                                 EditorDOMPoint(&rightListItemElement, 0u));
   }
 
   if (HTMLEditUtils::IsEmptyNode(rightListItemElement)) {
@@ -8082,9 +8105,12 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
         NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
         return Err(rv);
       }
-      return EditorDOMPoint(newListItemElement, 0u);
+      EditorDOMPoint pointToPutCaret(newListItemElement, 0u);
+      return InsertParagraphResult(std::move(newListItemElement),
+                                   std::move(pointToPutCaret));
     }
 
+    
     
     
     
@@ -8098,9 +8124,10 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
     if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
       NS_WARNING(
           "HTMLEditor::CopyLastEditableChildStylesWithTransaction() failed");
-      return Err(pointToPutCaretOrError.unwrapErr());
+      return pointToPutCaretOrError.propagateErr();
     }
-    return pointToPutCaretOrError.unwrap();
+    return InsertParagraphResult(&rightListItemElement,
+                                 pointToPutCaretOrError.unwrap());
   }
 
   
@@ -8121,13 +8148,16 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
     if (NS_WARN_IF(!atFoundElement.IsSetAndValid())) {
       return Err(NS_ERROR_FAILURE);
     }
-    return atFoundElement;
+    return InsertParagraphResult(&rightListItemElement,
+                                 std::move(atFoundElement));
   }
 
   
   
   
-  return forwardScanFromStartOfListItemResult.Point<EditorDOMPoint>();
+  return InsertParagraphResult(
+      &rightListItemElement,
+      forwardScanFromStartOfListItemResult.Point<EditorDOMPoint>());
 }
 
 Result<CreateElementResult, nsresult>
