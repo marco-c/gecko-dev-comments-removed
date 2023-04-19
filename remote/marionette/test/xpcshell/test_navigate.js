@@ -2,8 +2,8 @@
 
 
 
-const { navigate } = ChromeUtils.import(
-  "chrome://remote/content/marionette/navigate.js"
+const { navigate } = ChromeUtils.importESModule(
+  "chrome://remote/content/marionette/navigate.sys.mjs"
 );
 
 const mockTopContext = {

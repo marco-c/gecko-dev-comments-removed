@@ -2,8 +2,8 @@
 
 
 
-const { cookie } = ChromeUtils.import(
-  "chrome://remote/content/marionette/cookie.js"
+const { cookie } = ChromeUtils.importESModule(
+  "chrome://remote/content/marionette/cookie.sys.mjs"
 );
 
 

@@ -10,7 +10,9 @@ const {
   TimedPromise,
   waitForMessage,
   waitForObserverTopic,
-} = ChromeUtils.import("chrome://remote/content/marionette/sync.js");
+} = ChromeUtils.importESModule(
+  "chrome://remote/content/marionette/sync.sys.mjs"
+);
 
 
 
@@ -68,7 +70,9 @@ class MockTimer {
 add_test(function test_executeSoon_callback() {
   
   
-  let sync = ChromeUtils.import("chrome://remote/content/marionette/sync.js");
+  let sync = ChromeUtils.importESModule(
+    "chrome://remote/content/marionette/sync.sys.mjs"
+  );
 
   for (let func of ["foo", null, true, [], {}]) {
     Assert.throws(() => sync.executeSoon(func), /TypeError/);
