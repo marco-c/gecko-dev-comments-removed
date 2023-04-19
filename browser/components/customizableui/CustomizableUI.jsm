@@ -1807,18 +1807,31 @@ var CustomizableUIInternal = {
     lazy.log.debug("Building " + aWidget.id + " of type " + aWidget.type);
 
     let node;
+    let button;
     if (aWidget.type == "custom") {
       if (aWidget.onBuild) {
         node = aWidget.onBuild(aDocument);
       }
-      if (!node || !aDocument.defaultView.XULElement.isInstance(node)) {
+      if (
+        !node ||
+        !aDocument.defaultView.XULElement.isInstance(node) ||
+        (aWidget.viewId && !node.viewButton)
+      ) {
         lazy.log.error(
           "Custom widget with id " +
             aWidget.id +
             " does not return a valid node"
         );
       }
-    } else {
+      
+      
+      
+      if (aWidget.viewId) {
+        button = node.viewButton;
+      }
+    }
+    
+    if (button || aWidget.type != "custom") {
       if (
         aWidget.onBeforeCreated &&
         aWidget.onBeforeCreated(aDocument) === false
@@ -1826,7 +1839,10 @@ var CustomizableUIInternal = {
         return null;
       }
 
-      let button = aDocument.createXULElement("toolbarbutton");
+      if (!button) {
+        button = aDocument.createXULElement("toolbarbutton");
+        node = button;
+      }
       button.classList.add("toolbarbutton-1");
       button.setAttribute("delegatesanchor", "true");
 
@@ -1844,11 +1860,9 @@ var CustomizableUIInternal = {
         node.classList.add("toolbaritem-combined-buttons");
         node.append(button, dropmarker);
         viewbutton = dropmarker;
-      } else {
-        node = button;
-        if (aWidget.type == "view") {
-          viewbutton = button;
-        }
+      } else if (aWidget.viewId) {
+        
+        viewbutton = button;
       }
 
       node.setAttribute("id", aWidget.id);
@@ -2107,17 +2121,18 @@ var CustomizableUIInternal = {
     
     lazy.log.debug("handleWidgetCommand");
 
+    let action;
     if (aWidget.onBeforeCommand) {
       try {
-        aWidget.onBeforeCommand.call(null, aEvent);
+        action = aWidget.onBeforeCommand.call(null, aEvent, aNode);
       } catch (e) {
         lazy.log.error(e);
       }
     }
 
-    if (aWidget.type == "button") {
+    if (aWidget.type == "button" || action == "command") {
       this.doWidgetCommand(aWidget, aNode, aEvent);
-    } else if (aWidget.type == "view") {
+    } else if (aWidget.type == "view" || action == "view") {
       this.showWidgetView(aWidget, aNode, aEvent);
     } else if (aWidget.type == "button-and-view") {
       
@@ -2260,7 +2275,8 @@ var CustomizableUIInternal = {
       if (
         target.getAttribute("closemenu") == "none" ||
         target.getAttribute("widget-type") == "view" ||
-        target.getAttribute("widget-type") == "button-and-view"
+        target.getAttribute("widget-type") == "button-and-view" ||
+        target.hasAttribute("view-button-id")
       ) {
         return;
       }
@@ -2990,11 +3006,14 @@ var CustomizableUIInternal = {
       widget.onBeforeCommand = aData.onBeforeCommand;
     }
 
-    if (widget.type == "button" || widget.type == "button-and-view") {
-      widget.onCommand =
-        typeof aData.onCommand == "function" ? aData.onCommand : null;
+    if (typeof aData.onCommand == "function") {
+      widget.onCommand = aData.onCommand;
     }
-    if (widget.type == "view" || widget.type == "button-and-view") {
+    if (
+      widget.type == "view" ||
+      widget.type == "button-and-view" ||
+      aData.viewId
+    ) {
       if (typeof aData.viewId != "string") {
         lazy.log.error(
           "Expected a string for widget " +
@@ -3008,7 +3027,8 @@ var CustomizableUIInternal = {
 
       this.wrapWidgetEventHandler("onViewShowing", widget);
       this.wrapWidgetEventHandler("onViewHiding", widget);
-    } else if (widget.type == "custom") {
+    }
+    if (widget.type == "custom") {
       this.wrapWidgetEventHandler("onBuild", widget);
     }
 
@@ -3097,7 +3117,11 @@ var CustomizableUIInternal = {
           true
         );
       }
-      if (widget.type == "view" || widget.type == "button-and-view") {
+      if (
+        widget.type == "view" ||
+        widget.type == "button-and-view" ||
+        widget.viewId
+      ) {
         let viewNode = window.document.getElementById(widget.viewId);
         if (viewNode) {
           for (let eventName of kSubviewEvents) {
@@ -3919,6 +3943,13 @@ var CustomizableUI = {
     CustomizableUIInternal.endBatchUpdate(aForceDirty);
   },
   
+
+
+
+
+
+
+
 
 
 
@@ -4856,6 +4887,9 @@ function WidgetSingleWrapper(aWidget, aNode) {
     }
     if (!anchorId) {
       anchorId = aNode.getAttribute("cui-anchorid");
+    }
+    if (!anchorId) {
+      anchorId = aNode.getAttribute("view-button-id");
     }
     if (anchorId) {
       return aNode.ownerDocument.getElementById(anchorId);
