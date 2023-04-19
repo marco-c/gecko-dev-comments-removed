@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 #ifndef TEST_FRAME_GENERATOR_H_
 #define TEST_FRAME_GENERATOR_H_
 
@@ -27,9 +27,9 @@
 namespace webrtc {
 namespace test {
 
-// SquareGenerator is a FrameGenerator that draws a given amount of randomly
-// sized and colored squares. Between each new generated frame, the squares
-// are moved slightly towards the lower right corner.
+
+
+
 class SquareGenerator : public FrameGeneratorInterface {
  public:
   SquareGenerator(int width, int height, OutputType type, int num_squares);
@@ -75,12 +75,12 @@ class YuvFileGenerator : public FrameGeneratorInterface {
 
   VideoFrameData NextFrame() override;
   void ChangeResolution(size_t width, size_t height) override {
-    RTC_NOTREACHED();
+    RTC_DCHECK_NOTREACHED();
   }
 
  private:
-  // Returns true if the new frame was loaded.
-  // False only in case of a single file with a single frame in it.
+  
+  
   bool ReadNextFrame();
 
   size_t file_index_;
@@ -95,21 +95,21 @@ class YuvFileGenerator : public FrameGeneratorInterface {
   rtc::scoped_refptr<I420Buffer> last_read_buffer_;
 };
 
-// SlideGenerator works similarly to YuvFileGenerator but it fills the frames
-// with randomly sized and colored squares instead of reading their content
-// from files.
+
+
+
 class SlideGenerator : public FrameGeneratorInterface {
  public:
   SlideGenerator(int width, int height, int frame_repeat_count);
 
   VideoFrameData NextFrame() override;
   void ChangeResolution(size_t width, size_t height) override {
-    RTC_NOTREACHED();
+    RTC_DCHECK_NOTREACHED();
   }
 
  private:
-  // Generates some randomly sized and colored squares scattered
-  // over the frame.
+  
+  
   void GenerateNewFrame();
 
   const int width_;
@@ -134,7 +134,7 @@ class ScrollingImageFrameGenerator : public FrameGeneratorInterface {
 
   VideoFrameData NextFrame() override;
   void ChangeResolution(size_t width, size_t height) override {
-    RTC_NOTREACHED();
+    RTC_DCHECK_NOTREACHED();
   }
 
  private:
@@ -156,7 +156,7 @@ class ScrollingImageFrameGenerator : public FrameGeneratorInterface {
   YuvFileGenerator file_generator_;
 };
 
-}  // namespace test
-}  // namespace webrtc
+}  
+}  
 
-#endif  // TEST_FRAME_GENERATOR_H_
+#endif  

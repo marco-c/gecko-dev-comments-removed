@@ -28,7 +28,7 @@ std::string MediaTypeToString(MediaType type) {
       return kMediaTypeData;
     case MEDIA_TYPE_UNSUPPORTED:
       
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
       return "";
   }
   RTC_CHECK_NOTREACHED();

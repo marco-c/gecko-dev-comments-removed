@@ -50,7 +50,7 @@ int64_t SystemTimeNanos() {
     
     
     if (mach_timebase_info(&timebase) != KERN_SUCCESS) {
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
     }
   }
   

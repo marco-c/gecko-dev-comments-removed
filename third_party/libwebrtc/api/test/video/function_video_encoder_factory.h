@@ -39,7 +39,7 @@ class FunctionVideoEncoderFactory final : public VideoEncoderFactory {
 
   
   std::vector<SdpVideoFormat> GetSupportedFormats() const override {
-    RTC_NOTREACHED();
+    RTC_DCHECK_NOTREACHED();
     return {};
   }
 

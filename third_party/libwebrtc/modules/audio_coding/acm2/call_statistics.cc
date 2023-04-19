@@ -45,7 +45,7 @@ void CallStatistics::DecodedByNetEq(AudioFrame::SpeechType speech_type,
     }
     case AudioFrame::kUndefined: {
       
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
     }
   }
 }

@@ -221,7 +221,7 @@ void SetAudioFrameActivityAndType(bool vad_enabled,
       break;
     }
     default:
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
   }
   if (!vad_enabled) {
     
@@ -894,7 +894,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
     }
     case Operation::kUndefined: {
       RTC_LOG(LS_ERROR) << "Invalid operation kUndefined.";
-      RTC_NOTREACHED();  
+      RTC_DCHECK_NOTREACHED();  
       last_mode_ = Mode::kError;
       return kInvalidOperation;
     }
@@ -1057,7 +1057,7 @@ int NetEqImpl::GetDecision(Operation* operation,
       
       if (packet_buffer_->DiscardNextPacket(stats_.get()) !=
           PacketBuffer::kOK) {
-        RTC_NOTREACHED();  
+        RTC_DCHECK_NOTREACHED();  
       }
       
       if (!new_codec_) {
@@ -1967,7 +1967,8 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     next_packet = nullptr;
     if (!packet) {
       RTC_LOG(LS_ERROR) << "Should always be able to extract a packet here";
-      RTC_NOTREACHED();  
+      RTC_DCHECK_NOTREACHED();  
+                                
       return -1;
     }
     const uint64_t waiting_time_ms = packet->waiting_time->ElapsedMs();
@@ -2001,7 +2002,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     } else if (!has_cng_packet) {
       RTC_LOG(LS_WARNING) << "Unknown payload type "
                           << static_cast<int>(packet->payload_type);
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
     }
 
     if (packet_duration == 0) {

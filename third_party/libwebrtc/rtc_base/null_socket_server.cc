@@ -30,7 +30,7 @@ void NullSocketServer::WakeUp() {
 }
 
 rtc::Socket* NullSocketServer::CreateSocket(int , int ) {
-  RTC_NOTREACHED();
+  RTC_DCHECK_NOTREACHED();
   return nullptr;
 }
 

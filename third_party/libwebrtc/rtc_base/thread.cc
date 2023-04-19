@@ -116,7 +116,7 @@ ThreadManager* ThreadManager::Instance() {
 
 ThreadManager::~ThreadManager() {
   
-  RTC_NOTREACHED() << "ThreadManager should never be destructed.";
+  RTC_DCHECK_NOTREACHED() << "ThreadManager should never be destructed.";
 }
 
 

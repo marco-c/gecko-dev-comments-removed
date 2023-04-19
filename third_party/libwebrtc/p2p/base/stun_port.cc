@@ -248,7 +248,7 @@ Connection* UDPPort::CreateConnection(const Candidate& address,
   
   
   if (Candidates().empty()) {
-    RTC_NOTREACHED();
+    RTC_DCHECK_NOTREACHED();
     return nullptr;
   }
   

@@ -93,7 +93,7 @@ class CallStats {
       
       
       
-      RTC_NOTREACHED() << "Legacy call path";
+      RTC_DCHECK_NOTREACHED() << "Legacy call path";
       return 0;
     }
 

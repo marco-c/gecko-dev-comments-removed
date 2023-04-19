@@ -367,7 +367,7 @@ class TimedThreadApiProcessor {
 
     
     
-    RTC_NOTREACHED();
+    RTC_DCHECK_NOTREACHED();
     return false;
   }
 

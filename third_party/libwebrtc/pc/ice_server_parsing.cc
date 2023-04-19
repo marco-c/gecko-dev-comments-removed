@@ -275,7 +275,7 @@ static RTCErrorType ParseIceServerUrl(
     default:
       
       
-      RTC_NOTREACHED() << "Unexpected service type";
+      RTC_DCHECK_NOTREACHED() << "Unexpected service type";
       return RTCErrorType::INTERNAL_ERROR;
   }
   return RTCErrorType::NONE;

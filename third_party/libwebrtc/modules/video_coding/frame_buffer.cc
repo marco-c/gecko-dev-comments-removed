@@ -241,7 +241,7 @@ void VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state) {
 
     case kStateEmpty:
       
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
       break;
   }
   _state = state;

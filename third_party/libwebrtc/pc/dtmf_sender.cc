@@ -194,7 +194,7 @@ void DtmfSender::DoInsertDtmf() {
     if (!GetDtmfCode(tone, &code)) {
       
       
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
     }
   }
 

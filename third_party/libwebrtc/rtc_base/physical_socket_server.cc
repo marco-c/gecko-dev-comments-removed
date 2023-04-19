@@ -604,7 +604,7 @@ int PhysicalSocket::TranslateOption(Option opt, int* slevel, int* sopt) {
     case OPT_RTP_SENDTIME_EXTN_ID:
       return -1;  
     default:
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
       return -1;
   }
   return 0;
@@ -740,7 +740,7 @@ bool SocketDispatcher::IsDescriptorClosed() {
         
         
         
-        RTC_NOTREACHED();
+        RTC_DCHECK_NOTREACHED();
         return true;
       
       case ECONNRESET:
@@ -1652,7 +1652,7 @@ bool PhysicalSocketServer::Wait(int cmsWait, bool process_io) {
       
       
       WSAGetLastError();
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
       return false;
     } else if (dw == WSA_WAIT_TIMEOUT) {
       

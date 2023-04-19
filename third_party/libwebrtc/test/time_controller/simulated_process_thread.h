@@ -49,7 +49,7 @@ class SimulatedProcessThread : public ProcessThread,
  private:
   void Delete() override {
     
-    RTC_NOTREACHED();
+    RTC_DCHECK_NOTREACHED();
   }
   Timestamp GetNextTime(Module* module, Timestamp at_time);
 

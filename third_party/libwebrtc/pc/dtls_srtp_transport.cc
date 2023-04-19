@@ -235,7 +235,7 @@ bool DtlsSrtpTransport::ExtractParams(
                                             false, &dtls_buffer[0],
                                             dtls_buffer.size())) {
     RTC_LOG(LS_WARNING) << "DTLS-SRTP key export failed";
-    RTC_NOTREACHED();  
+    RTC_DCHECK_NOTREACHED();  
     return false;
   }
 

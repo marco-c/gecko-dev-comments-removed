@@ -378,7 +378,7 @@ size_t Merge::CorrelateAndPeakSearch(size_t start_position,
   while (((best_correlation_index + input_length) <
           (timestamps_per_call_ + expand_->overlap_length())) ||
          ((best_correlation_index + input_length) < start_position)) {
-    RTC_NOTREACHED();                         
+    RTC_DCHECK_NOTREACHED();                  
     best_correlation_index += expand_period;  
   }
   return best_correlation_index;

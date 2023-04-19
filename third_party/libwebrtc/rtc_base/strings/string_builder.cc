@@ -98,7 +98,7 @@ SimpleStringBuilder& SimpleStringBuilder::AppendFormat(const char* fmt, ...) {
   } else {
     
     
-    RTC_NOTREACHED();
+    RTC_DCHECK_NOTREACHED();
     buffer_[size_] = '\0';
   }
   va_end(args);

@@ -363,7 +363,7 @@ static void AttachSenderToMediaDescriptionOptions(
                          num_sim_layer);
       break;
     default:
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
   }
 }
 
@@ -4623,7 +4623,7 @@ void TestAudioCodecsAnswer(RtpTransceiverDirection offer_direction,
         break;
       case RtpTransceiverDirection::kStopped:
         
-        RTC_NOTREACHED();
+        RTC_DCHECK_NOTREACHED();
     }
 
     auto format_codecs = [](const std::vector<AudioCodec>& codecs) {

@@ -433,7 +433,7 @@ int DtlsTransport::SendPacket(const char* data,
                            "webrtc::DtlsTransportState::kClosed.";
       return -1;
     default:
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
       return -1;
   }
 }
@@ -532,7 +532,7 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
                            "webrtc::DtlsTransportState::kClosed.";
       break;
     case webrtc::DtlsTransportState::kNumValues:
-      RTC_NOTREACHED();
+      RTC_DCHECK_NOTREACHED();
       break;
   }
 }
@@ -720,7 +720,7 @@ void DtlsTransport::MaybeStartDtls() {
       
       
       
-      RTC_NOTREACHED() << "StartSSL failed.";
+      RTC_DCHECK_NOTREACHED() << "StartSSL failed.";
       RTC_LOG(LS_ERROR) << ToString() << ": Couldn't start DTLS handshake";
       set_dtls_state(webrtc::DtlsTransportState::kFailed);
       return;
