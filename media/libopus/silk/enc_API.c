@@ -270,6 +270,7 @@ opus_int silk_Encode(
                        psEnc->state_Fxx[ 0 ].sCmn.fs_kHz * 1000 );
     ALLOC( buf, nSamplesFromInputMax, opus_int16 );
     while( 1 ) {
+        int curr_nBitsUsedLBRR = 0;
         nSamplesToBuffer  = psEnc->state_Fxx[ 0 ].sCmn.frame_length - psEnc->state_Fxx[ 0 ].sCmn.inputBufIx;
         nSamplesToBuffer  = silk_min( nSamplesToBuffer, nSamplesToBufferMax );
         nSamplesFromInput = silk_DIV32_16( nSamplesToBuffer * psEnc->state_Fxx[ 0 ].sCmn.API_fs_Hz, psEnc->state_Fxx[ 0 ].sCmn.fs_kHz * 1000 );
@@ -342,6 +343,7 @@ opus_int silk_Encode(
                 opus_uint8 iCDF[ 2 ] = { 0, 0 };
                 iCDF[ 0 ] = 256 - silk_RSHIFT( 256, ( psEnc->state_Fxx[ 0 ].sCmn.nFramesPerPacket + 1 ) * encControl->nChannelsInternal );
                 ec_enc_icdf( psRangeEnc, 0, iCDF, 8 );
+                curr_nBitsUsedLBRR = ec_tell( psRangeEnc );
 
                 
                 
@@ -386,8 +388,7 @@ opus_int silk_Encode(
                 for( n = 0; n < encControl->nChannelsInternal; n++ ) {
                     silk_memset( psEnc->state_Fxx[ n ].sCmn.LBRR_flags, 0, sizeof( psEnc->state_Fxx[ n ].sCmn.LBRR_flags ) );
                 }
-
-                psEnc->nBitsUsedLBRR = ec_tell( psRangeEnc );
+                curr_nBitsUsedLBRR = ec_tell( psRangeEnc ) - curr_nBitsUsedLBRR;
             }
 
             silk_HP_variable_cutoff( psEnc->state_Fxx );
@@ -396,6 +397,16 @@ opus_int silk_Encode(
             nBits = silk_DIV32_16( silk_MUL( encControl->bitRate, encControl->payloadSize_ms ), 1000 );
             
             if( !prefillFlag ) {
+                
+
+
+                if ( curr_nBitsUsedLBRR < 10 ) {
+                    psEnc->nBitsUsedLBRR = 0;
+                } else if ( psEnc->nBitsUsedLBRR < 10) {
+                    psEnc->nBitsUsedLBRR = curr_nBitsUsedLBRR;
+                } else {
+                    psEnc->nBitsUsedLBRR = ( psEnc->nBitsUsedLBRR + curr_nBitsUsedLBRR ) / 2;
+                }
                 nBits -= psEnc->nBitsUsedLBRR;
             }
             

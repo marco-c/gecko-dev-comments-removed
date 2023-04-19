@@ -42,7 +42,13 @@ void silk_LTP_scale_ctrl_FLP(
     if( condCoding == CODE_INDEPENDENTLY ) {
         
         round_loss = psEnc->sCmn.PacketLoss_perc + psEnc->sCmn.nFramesPerPacket;
-        psEnc->sCmn.indices.LTP_scaleIndex = (opus_int8)silk_LIMIT( round_loss * psEncCtrl->LTPredCodGain * 0.1f, 0.0f, 2.0f );
+        if ( psEnc->sCmn.LBRR_flag ) {
+            
+
+            round_loss = 2 + silk_SMULBB( round_loss, round_loss) / 100;
+        }
+        psEnc->sCmn.indices.LTP_scaleIndex = silk_SMULBB( psEncCtrl->LTPredCodGain, round_loss ) > silk_log2lin( 2900 - psEnc->sCmn.SNR_dB_Q7 );
+        psEnc->sCmn.indices.LTP_scaleIndex += silk_SMULBB( psEncCtrl->LTPredCodGain, round_loss ) > silk_log2lin( 3900 - psEnc->sCmn.SNR_dB_Q7 );
     } else {
         
         psEnc->sCmn.indices.LTP_scaleIndex = 0;

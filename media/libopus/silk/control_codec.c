@@ -415,7 +415,7 @@ static OPUS_INLINE opus_int silk_setup_LBRR(
             
             psEncC->LBRR_GainIncreases = 7;
         } else {
-            psEncC->LBRR_GainIncreases = silk_max_int( 7 - silk_SMULWB( (opus_int32)psEncC->PacketLoss_perc, SILK_FIX_CONST( 0.4, 16 ) ), 2 );
+            psEncC->LBRR_GainIncreases = silk_max_int( 7 - silk_SMULWB( (opus_int32)psEncC->PacketLoss_perc, SILK_FIX_CONST( 0.2, 16 ) ), 3 );
         }
     }
 
