@@ -1,14 +1,11 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["GMPTestUtils"];
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
@@ -23,15 +20,15 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
-
-
+// These symbols are, unfortunately, accessed via the module global from
+// tests, and therefore cannot be lexical definitions.
 var { GMPPrefs, GMPUtils, OPEN_H264_ID, WIDEVINE_ID } = ChromeUtils.import(
   "resource://gre/modules/GMPUtils.jsm"
 );
 
 const SEC_IN_A_DAY = 24 * 60 * 60;
-
-const GMP_CHECK_DELAY = 10 * 1000; 
+// How long to wait after a user enabled EME before attempting to download CDMs.
+const GMP_CHECK_DELAY = 10 * 1000; // milliseconds
 
 const XHTML = "http://www.w3.org/1999/xhtml";
 
@@ -50,9 +47,9 @@ const GMP_PLUGINS = [
     id: OPEN_H264_ID,
     name: "plugins-openh264-name",
     description: "plugins-openh264-description",
-    
-    
-    
+    // The following licenseURL is part of an awful hack to include the OpenH264
+    // license without having bug 624602 fixed yet, and intentionally ignores
+    // localisation.
     licenseURL: "chrome://mozapps/content/extensions/OpenH264-license.txt",
     homepageURL: "https://www.openh264.org/",
   },
@@ -106,10 +103,10 @@ function configureLogging() {
   }
 }
 
-
-
-
-
+/**
+ * The GMPWrapper provides the info for the various GMP plugins to public
+ * callers through the API.
+ */
 function GMPWrapper(aPluginInfo, aRawPluginInfo) {
   this._plugin = aPluginInfo;
   this._rawPlugin = aRawPluginInfo;
@@ -139,7 +136,7 @@ GMPWrapper.prototype = {
     "nsISupportsWeakReference",
   ]),
 
-  
+  // An active task that checks for plugin updates and installs them.
   _updateTask: null,
   _gmpPath: null,
   _isUpdateCheckPending: false,
@@ -234,7 +231,7 @@ GMPWrapper.prototype = {
       this._plugin.isEME &&
       !GMPPrefs.getBool(GMPPrefs.KEY_EME_ENABLED, true)
     ) {
-      
+      // If "media.eme.enabled" is false, all EME plugins are disabled.
       return true;
     }
     return false;
@@ -348,24 +345,24 @@ GMPWrapper.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Called by the addon manager to update GMP addons. For example this will be
+   * used if a user manually checks for GMP plugin updates by using the
+   * menu in about:addons.
+   *
+   * This function is not used if MediaKeySystemAccess is requested and
+   * Widevine is not yet installed, or if the user toggles prefs to enable EME.
+   * For the function used in those cases see `checkForUpdates`.
+   */
   findUpdates(aListener, aReason, aAppVersion, aPlatformVersion) {
     this._log.trace(
       "findUpdates() - " + this._plugin.id + " - reason=" + aReason
     );
 
-    
-    
-    
-    
+    // In the case of GMP addons we do not wish to implement AddonInstall, as
+    // we don't want to display information as in a normal addon install such
+    // as a download progress bar. As such, we short circuit our
+    // listeners by indicating that no updates exist (though some may).
     lazy.AddonManagerPrivate.callNoUpdateListeners(this, aListener);
 
     if (aReason === lazy.AddonManager.UPDATE_WHEN_PERIODIC_UPDATE) {
@@ -507,8 +504,8 @@ GMPWrapper.prototype = {
     lazy.AddonManagerPrivate.callAddonListeners("onPropertyChanged", this, [
       "appDisabled",
     ]);
-    
-    
+    // If EME or the GMP itself are disabled, uninstall the GMP.
+    // Otherwise, check for updates, so we download and install the GMP.
     if (this.appDisabled) {
       this.uninstallPlugin();
     } else if (!GMPUtils.isPluginHidden(this._plugin)) {
@@ -528,25 +525,25 @@ GMPWrapper.prototype = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * This is called if prefs are changed to enable EME, or if Widevine
+   * MediaKeySystemAccess is requested but the Widevine CDM is not installed.
+   *
+   * For the function used by the addon manager see `findUpdates`.
+   */
   checkForUpdates(delay) {
     if (this._isUpdateCheckPending) {
       return;
     }
     this._isUpdateCheckPending = true;
     GMPPrefs.reset(GMPPrefs.KEY_UPDATE_LAST_CHECK, null);
-    
-    
+    // Delay this in case the user changes his mind and doesn't want to
+    // enable EME after all.
     lazy.setTimeout(() => {
       if (!this.appDisabled) {
         let gmpInstallManager = new lazy.GMPInstallManager();
-        
-        
+        // We don't really care about the results, if someone is interested
+        // they can check the log.
         gmpInstallManager.simpleCheckAndInstall().catch(() => {});
       }
       this._isUpdateCheckPending = false;
@@ -567,7 +564,7 @@ GMPWrapper.prototype = {
       );
       lazy.gmpService.removeAndDeletePluginDirectory(
         this._gmpPath,
-        true 
+        true /* can defer */
       );
     }
     lazy.AddonManagerPrivate.callAddonListeners("onUninstalled", this);
@@ -672,7 +669,7 @@ GMPWrapper.prototype = {
 
   validate() {
     if (!this.isInstalled) {
-      
+      // Not installed -> Valid.
       return {
         installed: false,
         valid: true,
@@ -686,8 +683,8 @@ GMPWrapper.prototype = {
       this._plugin.id
     );
     if (abi != expectedABI) {
-      
-      
+      // ABI doesn't match. Possibly this is a profile migrated across platforms
+      // or from 32 -> 64 bit.
       return {
         installed: true,
         mismatchedABI: true,
@@ -695,7 +692,7 @@ GMPWrapper.prototype = {
       };
     }
 
-    
+    // Installed -> Check if files are missing.
     let filesOnDisk = this._arePluginFilesOnDisk();
     return {
       installed: true,
@@ -879,17 +876,17 @@ var GMPProvider = {
 
 GMPProvider.addObserver();
 
-
-const GMPTestUtils = {
-  
-
-
-
-
-
-
-
-
+// For test use only.
+export const GMPTestUtils = {
+  /**
+   * Used to override the GMP service with a mock.
+   *
+   * @param {object} mockService
+   *        The mocked gmpService object.
+   * @param {function} callback
+   *        Method called with the overridden gmpService. The override
+   *        is undone after the callback returns.
+   */
   async overrideGmpService(mockService, callback) {
     let originalGmpService = lazy.gmpService;
     lazy.gmpService = mockService;
