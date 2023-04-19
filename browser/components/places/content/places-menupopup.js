@@ -514,7 +514,8 @@
       }
 
       
-      newMarginTop += scrollRect.y - this.scrollBox.getBoundingClientRect().y;
+      newMarginTop +=
+        scrollRect.y - this._indicatorBar.parentNode.getBoundingClientRect().y;
       this._indicatorBar.firstElementChild.style.marginTop =
         newMarginTop + "px";
       this._indicatorBar.hidden = false;
