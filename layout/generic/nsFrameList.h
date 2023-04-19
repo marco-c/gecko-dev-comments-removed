@@ -237,8 +237,6 @@ class nsFrameList {
   Slice InsertFrames(nsContainerFrame* aParent, nsIFrame* aPrevSibling,
                      nsFrameList& aFrameList);
 
-  class FrameLinkEnumerator;
-
   
 
 
@@ -458,59 +456,6 @@ class nsFrameList {
     nsIFrame* mFrame;            
     const nsIFrame* const mEnd;  
                                  
-  };
-
-  
-
-
-
-
-
-
-
-
-  class FrameLinkEnumerator : private Enumerator {
-   public:
-    friend class nsFrameList;
-
-    explicit FrameLinkEnumerator(const nsFrameList& aList)
-        : Enumerator(aList), mPrev(nullptr) {}
-
-    FrameLinkEnumerator(const FrameLinkEnumerator& aOther) = default;
-
-    
-
-
-    inline FrameLinkEnumerator(const nsFrameList& aList, nsIFrame* aPrevFrame);
-
-    void operator=(const FrameLinkEnumerator& aOther) {
-      MOZ_ASSERT(&List() == &aOther.List(), "Different lists?");
-      mFrame = aOther.mFrame;
-      mPrev = aOther.mPrev;
-    }
-
-    inline void Next();
-
-    
-
-
-
-
-
-
-
-
-
-    template <typename Predicate>
-    inline void Find(Predicate&& aPredicate);
-
-    bool AtEnd() const { return Enumerator::AtEnd(); }
-
-    nsIFrame* PrevFrame() const { return mPrev; }
-    nsIFrame* NextFrame() const { return mFrame; }
-
-   protected:
-    nsIFrame* mPrev;
   };
 
   class Iterator {
