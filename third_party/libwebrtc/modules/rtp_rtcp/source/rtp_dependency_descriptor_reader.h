@@ -16,7 +16,7 @@
 
 #include "api/array_view.h"
 #include "api/transport/rtp/dependency_descriptor.h"
-#include "rtc_base/bit_buffer.h"
+#include "rtc_base/bitstream_reader.h"
 
 namespace webrtc {
 
@@ -31,14 +31,9 @@ class RtpDependencyDescriptorReader {
       const RtpDependencyDescriptorReader&) = delete;
 
   
-  bool ParseSuccessful() { return !parsing_failed_; }
+  bool ParseSuccessful() { return buffer_.Ok(); }
 
  private:
-  
-  
-  uint32_t ReadBits(size_t bit_count);
-  uint32_t ReadNonSymmetric(size_t num_values);
-
   
   void ReadTemplateDependencyStructure();
   void ReadTemplateLayers();
@@ -57,11 +52,10 @@ class RtpDependencyDescriptorReader {
   void ReadFrameChains();
 
   
-  bool parsing_failed_ = false;
   DependencyDescriptor* const descriptor_;
   
   
-  rtc::BitBuffer buffer_;
+  BitstreamReader buffer_;
   int frame_dependency_template_id_ = 0;
   bool active_decode_targets_present_flag_ = false;
   bool custom_dtis_flag_ = false;
