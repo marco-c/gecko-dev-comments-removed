@@ -788,8 +788,8 @@ nscoord nsBlockFrame::GetMinISize(gfxContext* aRenderingContext) {
     return mCachedMinISize;
   }
 
-  if (StyleDisplay()->GetContainSizeAxes().mIContained) {
-    mCachedMinISize = 0;
+  if (Maybe<nscoord> containISize = ContainIntrinsicISize()) {
+    mCachedMinISize = *containISize;
     return mCachedMinISize;
   }
 
@@ -878,8 +878,8 @@ nscoord nsBlockFrame::GetPrefISize(gfxContext* aRenderingContext) {
     return mCachedPrefISize;
   }
 
-  if (StyleDisplay()->GetContainSizeAxes().mIContained) {
-    mCachedPrefISize = 0;
+  if (Maybe<nscoord> containISize = ContainIntrinsicISize()) {
+    mCachedPrefISize = *containISize;
     return mCachedPrefISize;
   }
 
@@ -1935,80 +1935,85 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     aMetrics.mCarriedOutBEndMargin.Zero();
-  } else if (!IsComboboxControlFrame() &&
-             aReflowInput.mStyleDisplay->GetContainSizeAxes().mBContained) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nscoord contentBSize = 0;
-    nscoord autoBSize =
-        aReflowInput.ApplyMinMaxBSize(contentBSize, aState.mConsumedBSize);
-    aMetrics.mCarriedOutBEndMargin.Zero();
-    autoBSize += borderPadding.BStartEnd(wm);
-    finalSize.BSize(wm) = autoBSize;
-  } else if (aState.mReflowStatus.IsInlineBreakBefore()) {
-    
-    
-    finalSize.BSize(wm) = aReflowInput.AvailableBSize();
-  } else if (aState.mReflowStatus.IsComplete()) {
-    nscoord contentBSize = blockEndEdgeOfChildren - borderPadding.BStart(wm);
-    nscoord lineClampedContentBSize =
-        ApplyLineClamp(aReflowInput, this, contentBSize);
-    nscoord autoBSize = aReflowInput.ApplyMinMaxBSize(lineClampedContentBSize,
-                                                      aState.mConsumedBSize);
-    if (autoBSize != contentBSize) {
-      
-      
-      aMetrics.mCarriedOutBEndMargin.Zero();
-    }
-    nscoord bSize = autoBSize + borderPadding.BStartEnd(wm);
-    if (MOZ_UNLIKELY(autoBSize > contentBSize &&
-                     bSize > aReflowInput.AvailableBSize() &&
-                     aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE)) {
-      
-      
-      
-      bSize = aReflowInput.AvailableBSize();
-      if (ShouldAvoidBreakInside(aReflowInput)) {
-        aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
-      } else {
-        aState.mReflowStatus.SetIncomplete();
-      }
-    }
-    finalSize.BSize(wm) = bSize;
   } else {
-    NS_ASSERTION(aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE,
-                 "Shouldn't be incomplete if availableBSize is UNCONSTRAINED.");
-    nscoord bSize = std::max(aState.mBCoord, aReflowInput.AvailableBSize());
-    if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
-      
-      bSize = aState.mBCoord;
-    }
-    const nscoord maxBSize = aReflowInput.ComputedMaxBSize();
-    if (maxBSize != NS_UNCONSTRAINEDSIZE &&
-        aState.mConsumedBSize + bSize - borderPadding.BStart(wm) > maxBSize) {
-      nscoord bEnd = std::max(0, maxBSize - aState.mConsumedBSize) +
-                     borderPadding.BStart(wm);
+    Maybe<nscoord> containBSize = ContainIntrinsicBSize();
+    if (!IsComboboxControlFrame() && containBSize) {
       
       
-      bEnd += aReflowInput.ComputedLogicalBorderPadding(wm).BEnd(wm);
-      if (bEnd <= aReflowInput.AvailableBSize()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      nscoord contentBSize = *containBSize;
+      nscoord autoBSize =
+          aReflowInput.ApplyMinMaxBSize(contentBSize, aState.mConsumedBSize);
+      aMetrics.mCarriedOutBEndMargin.Zero();
+      autoBSize += borderPadding.BStartEnd(wm);
+      finalSize.BSize(wm) = autoBSize;
+    } else if (aState.mReflowStatus.IsInlineBreakBefore()) {
+      
+      
+      finalSize.BSize(wm) = aReflowInput.AvailableBSize();
+    } else if (aState.mReflowStatus.IsComplete()) {
+      nscoord contentBSize = blockEndEdgeOfChildren - borderPadding.BStart(wm);
+      nscoord lineClampedContentBSize =
+          ApplyLineClamp(aReflowInput, this, contentBSize);
+      nscoord autoBSize = aReflowInput.ApplyMinMaxBSize(lineClampedContentBSize,
+                                                        aState.mConsumedBSize);
+      if (autoBSize != contentBSize) {
         
         
-        bSize = bEnd;
-        aState.mReflowStatus.SetOverflowIncomplete();
+        aMetrics.mCarriedOutBEndMargin.Zero();
       }
+      nscoord bSize = autoBSize + borderPadding.BStartEnd(wm);
+      if (MOZ_UNLIKELY(autoBSize > contentBSize &&
+                       bSize > aReflowInput.AvailableBSize() &&
+                       aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE)) {
+        
+        
+        
+        bSize = aReflowInput.AvailableBSize();
+        if (ShouldAvoidBreakInside(aReflowInput)) {
+          aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
+        } else {
+          aState.mReflowStatus.SetIncomplete();
+        }
+      }
+      finalSize.BSize(wm) = bSize;
+    } else {
+      NS_ASSERTION(
+          aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE,
+          "Shouldn't be incomplete if availableBSize is UNCONSTRAINED.");
+      nscoord bSize = std::max(aState.mBCoord, aReflowInput.AvailableBSize());
+      if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
+        
+        bSize = aState.mBCoord;
+      }
+      const nscoord maxBSize = aReflowInput.ComputedMaxBSize();
+      if (maxBSize != NS_UNCONSTRAINEDSIZE &&
+          aState.mConsumedBSize + bSize - borderPadding.BStart(wm) > maxBSize) {
+        nscoord bEnd = std::max(0, maxBSize - aState.mConsumedBSize) +
+                       borderPadding.BStart(wm);
+        
+        
+        bEnd += aReflowInput.ComputedLogicalBorderPadding(wm).BEnd(wm);
+        if (bEnd <= aReflowInput.AvailableBSize()) {
+          
+          
+          bSize = bEnd;
+          aState.mReflowStatus.SetOverflowIncomplete();
+        }
+      }
+      finalSize.BSize(wm) = bSize;
     }
-    finalSize.BSize(wm) = bSize;
   }
 
   if (IsTrueOverflowContainer()) {
