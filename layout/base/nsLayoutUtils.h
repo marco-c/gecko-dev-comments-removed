@@ -754,9 +754,13 @@ class nsLayoutUtils {
 
 
 
+  enum class GetPopupFrameForPointFlags : uint8_t {
+    OnlyReturnFramesWithWidgets = 0x1,
+  };
   static nsIFrame* GetPopupFrameForPoint(
       nsPresContext* aRootPresContext, nsIWidget* aWidget,
-      const mozilla::LayoutDeviceIntPoint& aPoint);
+      const mozilla::LayoutDeviceIntPoint& aPoint,
+      GetPopupFrameForPointFlags aFlags = GetPopupFrameForPointFlags(0));
 
   
 
@@ -3052,6 +3056,7 @@ class nsLayoutUtils {
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsLayoutUtils::PaintFrameFlags)
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsLayoutUtils::GetPopupFrameForPointFlags)
 
 template <typename PointType, typename RectType, typename CoordType>
  bool nsLayoutUtils::PointIsCloserToRect(
