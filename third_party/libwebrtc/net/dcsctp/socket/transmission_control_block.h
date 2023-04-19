@@ -151,13 +151,14 @@ class TransmissionControlBlock : public Context {
   
   
   void SendBufferedPackets(SctpPacket::Builder& builder,
+                           TimeMs now,
                            bool only_one_packet = false);
 
   
   
-  void SendBufferedPackets() {
+  void SendBufferedPackets(TimeMs now) {
     SctpPacket::Builder builder(peer_verification_tag_, options_);
-    SendBufferedPackets(builder, false);
+    SendBufferedPackets(builder, now, false);
   }
 
   

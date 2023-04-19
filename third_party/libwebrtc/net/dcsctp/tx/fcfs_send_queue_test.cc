@@ -191,7 +191,7 @@ TEST_F(FCFSSendQueueTest, ProduceWithLifetimeExpiry) {
   
   TimeMs now = kNow;
   buf_.Add(now, DcSctpMessage(kStreamID, kPPID, payload));
-  now = now + DurationMs(1000000);
+  now += DurationMs(1000000);
   ASSERT_TRUE(buf_.Produce(now, 100));
 
   SendOptions expires_2_seconds;
@@ -199,17 +199,17 @@ TEST_F(FCFSSendQueueTest, ProduceWithLifetimeExpiry) {
 
   
   buf_.Add(now, DcSctpMessage(kStreamID, kPPID, payload), expires_2_seconds);
-  now = now + DurationMs(1999);
+  now += DurationMs(2000);
   ASSERT_TRUE(buf_.Produce(now, 100));
 
   
   buf_.Add(now, DcSctpMessage(kStreamID, kPPID, payload), expires_2_seconds);
-  now = now + DurationMs(2000);
+  now += DurationMs(2001);
   ASSERT_FALSE(buf_.Produce(now, 100));
 
   
   buf_.Add(now, DcSctpMessage(kStreamID, kPPID, payload), expires_2_seconds);
-  now = now + DurationMs(1000000);
+  now += DurationMs(1000000);
   ASSERT_FALSE(buf_.Produce(now, 100));
 
   
@@ -219,7 +219,7 @@ TEST_F(FCFSSendQueueTest, ProduceWithLifetimeExpiry) {
   expires_4_seconds.lifetime = DurationMs(4000);
 
   buf_.Add(now, DcSctpMessage(kStreamID, kPPID, payload), expires_4_seconds);
-  now = now + DurationMs(2000);
+  now += DurationMs(2001);
 
   ASSERT_TRUE(buf_.Produce(now, 100));
   ASSERT_FALSE(buf_.Produce(now, 100));
