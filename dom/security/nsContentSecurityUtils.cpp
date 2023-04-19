@@ -612,6 +612,11 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       "resource://gre/modules/workers/require.js"_ns,
 
       
+      
+      
+      "resource://devtools/client/performance-new/symbolication.jsm.js"_ns,
+
+      
       "debugger"_ns,
   };
 
