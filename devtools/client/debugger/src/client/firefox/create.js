@@ -259,10 +259,6 @@ function createSourceObject({
 
     
     isOriginal,
-
-    
-    
-    isBlackBoxed: false,
   };
 }
 

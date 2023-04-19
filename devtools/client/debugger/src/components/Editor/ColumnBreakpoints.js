@@ -11,6 +11,7 @@ import {
   getSelectedSource,
   visibleColumnBreakpoints,
   getContext,
+  isSourceBlackBoxed,
 } from "../../selectors";
 import { connect } from "../../utils/connect";
 import { makeBreakpointId } from "../../utils/breakpoint";
@@ -38,11 +39,7 @@ class ColumnBreakpoints extends Component {
       breakpointActions,
     } = this.props;
 
-    if (
-      !selectedSource ||
-      selectedSource.isBlackBoxed ||
-      columnBreakpoints.length === 0
-    ) {
+    if (!selectedSource || columnBreakpoints.length === 0) {
       return null;
     }
 
@@ -63,11 +60,20 @@ class ColumnBreakpoints extends Component {
   }
 }
 
-const mapStateToProps = state => ({
-  cx: getContext(state),
-  selectedSource: getSelectedSource(state),
-  columnBreakpoints: visibleColumnBreakpoints(state),
-});
+const mapStateToProps = state => {
+  
+  
+  
+  const selectedSource = getSelectedSource(state);
+  if (!selectedSource || isSourceBlackBoxed(state, selectedSource)) {
+    return {};
+  }
+  return {
+    cx: getContext(state),
+    selectedSource,
+    columnBreakpoints: visibleColumnBreakpoints(state),
+  };
+};
 
 export default connect(mapStateToProps, dispatch => ({
   breakpointActions: breakpointItemActions(dispatch),

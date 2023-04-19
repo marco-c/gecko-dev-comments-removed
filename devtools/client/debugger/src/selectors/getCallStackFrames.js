@@ -2,7 +2,8 @@
 
 
 
-import { getSourcesMap, getSelectedSource, getBlackBoxRanges } from "./sources";
+import { getSourcesMap, getSelectedSource } from "./sources";
+import { getBlackBoxRanges } from "./source-blackbox";
 import { getCurrentThreadFrames } from "./pause";
 import { annotateFrames } from "../utils/pause/frames";
 import { isFrameBlackBoxed } from "../utils/source";

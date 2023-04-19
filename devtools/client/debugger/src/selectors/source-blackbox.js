@@ -1,0 +1,15 @@
+
+
+
+
+export function getBlackBoxRanges(state) {
+  return state.sourceBlackBox.blackboxedRanges;
+}
+
+export function isSourceBlackBoxed(state, source) {
+  
+  if (!source.url) {
+    return false;
+  }
+  return state.sourceBlackBox.blackboxedSet.has(source.url);
+}
