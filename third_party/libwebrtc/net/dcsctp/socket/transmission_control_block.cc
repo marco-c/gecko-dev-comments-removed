@@ -102,6 +102,33 @@ void TransmissionControlBlock::MaybeSendForwardTsn(SctpPacket::Builder& builder,
   }
 }
 
+void TransmissionControlBlock::MaybeSendFastRetransmit() {
+  if (!retransmission_queue_.has_data_to_be_fast_retransmitted()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  SctpPacket::Builder builder(peer_verification_tag_, options_);
+  auto chunks = retransmission_queue_.GetChunksForFastRetransmit(
+      builder.bytes_remaining());
+  for (auto& [tsn, data] : chunks) {
+    if (capabilities_.message_interleaving) {
+      builder.Add(IDataChunk(tsn, std::move(data), false));
+    } else {
+      builder.Add(DataChunk(tsn, std::move(data), false));
+    }
+  }
+  packet_sender_.Send(builder);
+}
+
 void TransmissionControlBlock::SendBufferedPackets(SctpPacket::Builder& builder,
                                                    TimeMs now) {
   for (int packet_idx = 0;

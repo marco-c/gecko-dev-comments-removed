@@ -74,6 +74,16 @@ class RetransmissionQueue {
   
   void HandleT3RtxTimerExpiry();
 
+  bool has_data_to_be_fast_retransmitted() const {
+    return outstanding_data_.has_data_to_be_fast_retransmitted();
+  }
+
+  
+  
+  
+  std::vector<std::pair<TSN, Data>> GetChunksForFastRetransmit(
+      size_t bytes_in_packet);
+
   
   
   

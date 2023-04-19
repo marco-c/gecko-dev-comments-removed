@@ -1393,6 +1393,17 @@ void DcSctpSocket::HandleSack(const CommonHeader& header,
       MaybeSendShutdownOrAck();
       
       
+      
+      
+      
+      
+      
+      
+      
+      tcb_->MaybeSendFastRetransmit();
+
+      
+      
       tcb_->SendBufferedPackets(now);
     } else {
       RTC_DLOG(LS_VERBOSE) << log_prefix()

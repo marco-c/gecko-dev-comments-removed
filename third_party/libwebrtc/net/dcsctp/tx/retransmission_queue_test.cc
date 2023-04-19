@@ -78,6 +78,14 @@ class RetransmissionQueueTest : public testing::Test {
     };
   }
 
+  std::vector<TSN> GetTSNsForFastRetransmit(RetransmissionQueue& queue) {
+    std::vector<TSN> tsns;
+    for (const auto& elem : queue.GetChunksForFastRetransmit(10000)) {
+      tsns.push_back(elem.first);
+    }
+    return tsns;
+  }
+
   std::vector<TSN> GetSentPacketTSNs(RetransmissionQueue& queue) {
     std::vector<TSN> tsns;
     for (const auto& elem : queue.GetChunksToSend(now_, 10000)) {
@@ -279,7 +287,8 @@ TEST_F(RetransmissionQueueTest, ResendPacketsWhenNackedThreeTimes) {
   
   EXPECT_CALL(producer_, Produce).Times(0);
 
-  EXPECT_THAT(GetSentPacketTSNs(queue), testing::ElementsAre(TSN(13), TSN(16)));
+  EXPECT_THAT(GetTSNsForFastRetransmit(queue),
+              testing::ElementsAre(TSN(13), TSN(16)));
 
   EXPECT_THAT(queue.GetChunkStatesForTesting(),
               ElementsAre(Pair(TSN(12), State::kAcked),     
@@ -1140,7 +1149,8 @@ TEST_F(RetransmissionQueueTest, AbandonsRtxLimit2WhenNackedNineTimes) {
                           Pair(TSN(18), State::kInFlight),           
                           Pair(TSN(19), State::kInFlight)));
 
-  EXPECT_THAT(queue.GetChunksToSend(now_, 1000), ElementsAre(Pair(TSN(10), _)));
+  EXPECT_THAT(queue.GetChunksForFastRetransmit(1000),
+              ElementsAre(Pair(TSN(10), _)));
 
   
   for (int tsn = 14; tsn <= 16; ++tsn) {
@@ -1375,7 +1385,7 @@ TEST_F(RetransmissionQueueTest, ReadyForHandoverWhenNothingToRetransmit) {
 
   
   EXPECT_CALL(producer_, Produce).Times(0);
-  EXPECT_THAT(GetSentPacketTSNs(queue), SizeIs(2));
+  EXPECT_THAT(GetTSNsForFastRetransmit(queue), SizeIs(2));
   EXPECT_EQ(
       queue.GetHandoverReadiness(),
       HandoverReadinessStatus()
