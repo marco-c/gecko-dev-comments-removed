@@ -145,8 +145,14 @@ TreeWidget.prototype = {
   
 
 
+
   setPlaceholderText(text) {
     this.placeholder.textContent = text;
+    if (text) {
+      this.placeholder.removeAttribute("hidden");
+    } else {
+      this.placeholder.setAttribute("hidden", "true");
+    }
   },
 
   
