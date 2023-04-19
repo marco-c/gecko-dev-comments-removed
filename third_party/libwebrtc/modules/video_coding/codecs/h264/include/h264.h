@@ -42,6 +42,11 @@ RTC_EXPORT void DisableRtcUseH264();
 
 std::vector<SdpVideoFormat> SupportedH264Codecs();
 
+
+
+
+std::vector<SdpVideoFormat> SupportedH264DecoderCodecs();
+
 class RTC_EXPORT H264Encoder : public VideoEncoder {
  public:
   static std::unique_ptr<H264Encoder> Create(const cricket::VideoCodec& codec);
