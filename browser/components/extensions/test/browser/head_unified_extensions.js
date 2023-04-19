@@ -93,6 +93,10 @@ const openUnifiedExtensionsContextMenu = async (win, extensionId) => {
     ".unified-extensions-item-open-menu"
   );
   ok(button, "expected 'open menu' button");
+  
+  
+  
+  button.scrollIntoView({ block: "center" });
 
   const menu = win.document.getElementById("unified-extensions-context-menu");
   ok(menu, "expected menu");
