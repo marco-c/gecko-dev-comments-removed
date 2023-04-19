@@ -41,19 +41,14 @@ let wasmGlobalInterfaces = [
   { name: "CompileError", insecureContext: true },
   { name: "LinkError", insecureContext: true },
   { name: "RuntimeError", insecureContext: true },
-  {
-    name: "Function",
-    insecureContext: true,
-    nightly: true,
-  },
-  {
-    name: "Exception",
-    insecureContext: true,
-  },
-  {
-    name: "Tag",
-    insecureContext: true,
-  },
+  { name: "Function", insecureContext: true, nightly: true },
+  { name: "Exception", insecureContext: true },
+  { name: "Tag", insecureContext: true },
+  { name: "compile", insecureContext: true },
+  { name: "compileStreaming", insecureContext: true },
+  { name: "instantiate", insecureContext: true },
+  { name: "instantiateStreaming", insecureContext: true },
+  { name: "validate", insecureContext: true },
 ];
 
 
@@ -113,6 +108,19 @@ let ecmaGlobals = [
   { name: "WeakRef", insecureContext: true },
   { name: "WeakSet", insecureContext: true },
   wasmGlobalEntry,
+  { name: "decodeURI", insecureContext: true },
+  { name: "decodeURIComponent", insecureContext: true },
+  { name: "encodeURI", insecureContext: true },
+  { name: "encodeURIComponent", insecureContext: true },
+  { name: "escape", insecureContext: true },
+  { name: "eval", insecureContext: true },
+  { name: "globalThis", insecureContext: true },
+  { name: "isFinite", insecureContext: true },
+  { name: "isNaN", insecureContext: true },
+  { name: "parseFloat", insecureContext: true },
+  { name: "parseInt", insecureContext: true },
+  { name: "undefined", insecureContext: true },
+  { name: "unescape", insecureContext: true },
 ];
 
 
@@ -372,8 +380,38 @@ let interfaceNamesInGlobalScope = [
   
   { name: "WritableStreamDefaultWriter", insecureContext: true },
   
+  { name: "cancelAnimationFrame", insecureContext: true },
+  
+  { name: "close", insecureContext: true },
+  
+  { name: "console", insecureContext: true },
+  
+  { name: "name", insecureContext: true },
+  
+  { name: "onmessage", insecureContext: true },
+  
+  { name: "onmessageerror", insecureContext: true },
+  
+  { name: "postMessage", insecureContext: true },
+  
+  { name: "requestAnimationFrame", insecureContext: true },
+  
 ];
 
+
+
+
+let testFunctions = [
+  "ok",
+  "is",
+  "workerTestArrayEquals",
+  "workerTestDone",
+  "workerTestGetPermissions",
+  "workerTestGetHelperData",
+  "entryDisabled",
+  "createInterfaceMap",
+  "runTest",
+];
 
 function entryDisabled(
   entry,
@@ -433,7 +471,7 @@ function runTest(parentName, parent, data, ...interfaceGroups) {
   var interfaceMap = createInterfaceMap(data, ...interfaceGroups);
   for (var name of Object.getOwnPropertyNames(parent)) {
     
-    if (!/^[A-Z]/.test(name)) {
+    if (parent === self && testFunctions.includes(name)) {
       continue;
     }
     ok(
