@@ -382,8 +382,25 @@ class PointerInputSource extends InputSource {
   }
 }
 
+
+
+
+class WheelInputSource extends InputSource {
+  static type = "wheel";
+
+  static fromJSON(state, actionSequence) {
+    const { id } = actionSequence;
+    return new this(id);
+  }
+}
+
 const inputSourceTypes = new Map();
-for (let cls of [NullInputSource, KeyInputSource, PointerInputSource]) {
+for (const cls of [
+  NullInputSource,
+  KeyInputSource,
+  PointerInputSource,
+  WheelInputSource,
+]) {
   inputSourceTypes.set(cls.type, cls);
 }
 
@@ -1071,6 +1088,142 @@ class PointerMoveAction extends PointerAction {
 
 
 
+class WheelAction extends Action {
+  static type = "wheel";
+}
+
+
+
+
+
+
+
+
+
+
+
+class WheelScrollAction extends WheelAction {
+  static subtype = "scroll";
+  affectsWallClockTime = true;
+
+  constructor(id, { duration, origin, x, y, deltaX, deltaY }) {
+    super(id);
+    this.duration = duration;
+    this.origin = origin;
+    this.x = x;
+    this.y = y;
+    this.deltaX = deltaX;
+    this.deltaY = deltaY;
+  }
+
+  static fromJSON(id, actionItem) {
+    const { duration, origin, x, y, deltaX, deltaY } = actionItem;
+    if (duration !== undefined) {
+      lazy.assert.positiveInteger(
+        duration,
+        lazy.pprint`Expected 'duration' (${duration}) to be >= 0`
+      );
+    }
+    const originObject = Origin.fromJSON(origin);
+    if (x !== undefined) {
+      lazy.assert.integer(x, lazy.pprint`Expected 'x' (${x}) to be an Integer`);
+    }
+    if (y !== undefined) {
+      lazy.assert.integer(y, lazy.pprint`Expected 'y' (${y}) to be an Integer`);
+    }
+    if (deltaX !== undefined) {
+      lazy.assert.integer(
+        deltaX,
+        lazy.pprint`Expected 'deltaX' (${deltaX}) to be an Integer`
+      );
+    }
+    if (deltaY !== undefined) {
+      lazy.assert.integer(
+        deltaY,
+        lazy.pprint`Expected 'deltaY' (${deltaY}) to be an Integer`
+      );
+    }
+
+    return new this(id, {
+      duration,
+      origin: originObject,
+      x,
+      y,
+      deltaX,
+      deltaY,
+    });
+  }
+
+  async dispatch(state, inputSource, tickDuration, win) {
+    lazy.logger.trace(
+      `Dispatch ${this.constructor.name} with id: ${this.id} deltaX: ${this.deltaX} deltaY: ${this.deltaY}`
+    );
+    const scrollCoordinates = this.origin.getTargetCoordinates(
+      state,
+      inputSource,
+      [this.x, this.y],
+      win
+    );
+    assertInViewPort(scrollCoordinates, win);
+
+    const startX = 0;
+    const startY = 0;
+    
+    const deltaPosition = [startX, startY];
+    await moveOverTime(
+      [[startX, startY]],
+      [[this.deltaX, this.deltaY]],
+      this.duration ?? tickDuration,
+      deltaTarget =>
+        this.performOneWheelScroll(
+          scrollCoordinates,
+          deltaPosition,
+          deltaTarget,
+          win
+        )
+    );
+  }
+
+  
+
+
+
+
+
+
+
+  performOneWheelScroll(scrollCoordinates, deltaPosition, deltaTargets, win) {
+    if (deltaTargets.length !== 1) {
+      throw new Error("Can only scroll one wheel at a time");
+    }
+    if (deltaPosition[0] == this.deltaX && deltaPosition[1] == this.deltaY) {
+      return;
+    }
+    const deltaTarget = deltaTargets[0];
+    const deltaX = deltaTarget[0] - deltaPosition[0];
+    const deltaY = deltaTarget[1] - deltaPosition[1];
+    const eventData = new WheelEventData({
+      deltaX,
+      deltaY,
+      deltaZ: 0,
+    });
+    lazy.event.synthesizeWheelAtPoint(
+      scrollCoordinates[0],
+      scrollCoordinates[1],
+      eventData,
+      win
+    );
+
+    
+    deltaPosition[0] = deltaTarget[0];
+    deltaPosition[1] = deltaTarget[1];
+  }
+}
+
+
+
+
+
 
 
 
@@ -1394,7 +1547,7 @@ async function moveOverTime(startCoords, targetCoords, duration, callback) {
   });
   const ONE_SHOT = Ci.nsITimer.TYPE_ONE_SHOT;
   const startTime = Date.now();
-  const intermediatePointerEvents = (async () => {
+  const transitions = (async () => {
     
     await new Promise(resolveTimer =>
       timer.initWithCallback(resolveTimer, fps60, ONE_SHOT)
@@ -1420,7 +1573,7 @@ async function moveOverTime(startCoords, targetCoords, duration, callback) {
     }
   })();
 
-  await intermediatePointerEvents;
+  await transitions;
 
   
   
@@ -1435,6 +1588,7 @@ for (const cls of [
   PointerDownAction,
   PointerUpAction,
   PointerMoveAction,
+  WheelScrollAction,
 ]) {
   if (!actionTypes.has(cls.type)) {
     actionTypes.set(cls.type, new Map());
@@ -1843,10 +1997,15 @@ class PointerEventData extends InputEventData {
       this.metaKey = otherInputSource.meta || this.metaKey;
       this.shiftKey = otherInputSource.shift || this.shiftKey;
     }
-    let allButtons = Array.from(inputSource.pressed);
+    const allButtons = Array.from(inputSource.pressed);
     this.buttons = allButtons.reduce((a, i) => a + Math.pow(2, i), 0);
   }
 }
+
+
+
+
+
 
 
 class MouseEventData extends PointerEventData {
@@ -1861,6 +2020,26 @@ class MouseEventData extends PointerEventData {
   update(state, inputSource) {
     super.update(state, inputSource);
     this.id = inputSource.pointer.id;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+class WheelEventData extends InputEventData {
+  constructor(options) {
+    super();
+    const { deltaX, deltaY, deltaZ, deltaMode = 0 } = options;
+    this.deltaX = deltaX;
+    this.deltaY = deltaY;
+    this.deltaZ = deltaZ;
+    this.deltaMode = deltaMode;
   }
 }
 
