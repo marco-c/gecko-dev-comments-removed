@@ -153,6 +153,47 @@ const kImpliedEOFCharacters = [
 ];
 
 
+const ARGS_LENGTH_MAX = 500 * 1000;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function safeApply(method, scope, args) {
+  let i = 0;
+  const res = [];
+  const length = args.length;
+  while (i < length) {
+    const _start = i;
+    i += ARGS_LENGTH_MAX;
+    res.push(method.apply(scope, args.slice(_start, i)));
+  }
+  return res;
+}
+
+
 
 
 
@@ -639,9 +680,8 @@ Scanner.prototype = {
     resultToken.tokenType = token.mType;
     resultToken.startOffset = this.mTokenOffset;
     resultToken.endOffset = this.mOffset;
-
     const constructText = () => {
-      return String.fromCharCode.apply(null, token.mIdent);
+      return safeApply(String.fromCharCode, null, token.mIdent).join("");
     };
 
     switch (token.mType) {
@@ -903,8 +943,8 @@ Scanner.prototype = {
         n++;
       }
       if (n > this.mOffset) {
-        const substr = this.mBuffer.slice(this.mOffset, n);
-        Array.prototype.push.apply(aText, stringToCodes(substr));
+        const codes = stringToCodes(this.mBuffer.slice(this.mOffset, n));
+        safeApply(Array.prototype.push, aText, codes);
         this.mOffset = n;
       }
       if (n == this.mCount) {
