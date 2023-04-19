@@ -7,7 +7,7 @@
 
 
 
-#include "modules/video_coding/svc/scalability_structure_l3t3.h"
+#include "modules/video_coding/svc/scalability_structure_full_svc.h"
 
 #include <vector>
 

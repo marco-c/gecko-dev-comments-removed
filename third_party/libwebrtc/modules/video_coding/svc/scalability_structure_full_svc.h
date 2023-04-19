@@ -21,7 +21,13 @@ namespace webrtc {
 
 class ScalabilityStructureFullSvc : public ScalableVideoController {
  public:
-  ScalabilityStructureFullSvc(int num_spatial_layers, int num_temporal_layers);
+  struct ScalingFactor {
+    int num = 1;
+    int den = 2;
+  };
+  ScalabilityStructureFullSvc(int num_spatial_layers,
+                              int num_temporal_layers,
+                              ScalingFactor resolution_factor);
   ~ScalabilityStructureFullSvc() override;
 
   StreamLayersConfig StreamConfig() const override;
@@ -61,11 +67,94 @@ class ScalabilityStructureFullSvc : public ScalableVideoController {
 
   const int num_spatial_layers_;
   const int num_temporal_layers_;
+  const ScalingFactor resolution_factor_;
 
   FramePattern last_pattern_ = kNone;
   std::bitset<kMaxNumSpatialLayers> can_reference_t0_frame_for_spatial_id_ = 0;
   std::bitset<kMaxNumSpatialLayers> can_reference_t1_frame_for_spatial_id_ = 0;
   std::bitset<32> active_decode_targets_;
+};
+
+
+
+
+
+class ScalabilityStructureL1T2 : public ScalabilityStructureFullSvc {
+ public:
+  explicit ScalabilityStructureL1T2(ScalingFactor resolution_factor = {})
+      : ScalabilityStructureFullSvc(1, 2, resolution_factor) {}
+  ~ScalabilityStructureL1T2() override = default;
+
+  FrameDependencyStructure DependencyStructure() const override;
+};
+
+
+
+
+
+
+
+class ScalabilityStructureL1T3 : public ScalabilityStructureFullSvc {
+ public:
+  explicit ScalabilityStructureL1T3(ScalingFactor resolution_factor = {})
+      : ScalabilityStructureFullSvc(1, 3, resolution_factor) {}
+  ~ScalabilityStructureL1T3() override = default;
+
+  FrameDependencyStructure DependencyStructure() const override;
+};
+
+
+
+
+class ScalabilityStructureL2T1 : public ScalabilityStructureFullSvc {
+ public:
+  explicit ScalabilityStructureL2T1(ScalingFactor resolution_factor = {})
+      : ScalabilityStructureFullSvc(2, 1, resolution_factor) {}
+  ~ScalabilityStructureL2T1() override = default;
+
+  FrameDependencyStructure DependencyStructure() const override;
+};
+
+
+
+
+
+
+
+
+
+class ScalabilityStructureL2T2 : public ScalabilityStructureFullSvc {
+ public:
+  explicit ScalabilityStructureL2T2(ScalingFactor resolution_factor = {})
+      : ScalabilityStructureFullSvc(2, 2, resolution_factor) {}
+  ~ScalabilityStructureL2T2() override = default;
+
+  FrameDependencyStructure DependencyStructure() const override;
+};
+
+
+
+
+
+
+
+class ScalabilityStructureL3T1 : public ScalabilityStructureFullSvc {
+ public:
+  explicit ScalabilityStructureL3T1(ScalingFactor resolution_factor = {})
+      : ScalabilityStructureFullSvc(3, 1, resolution_factor) {}
+  ~ScalabilityStructureL3T1() override = default;
+
+  FrameDependencyStructure DependencyStructure() const override;
+};
+
+
+class ScalabilityStructureL3T3 : public ScalabilityStructureFullSvc {
+ public:
+  explicit ScalabilityStructureL3T3(ScalingFactor resolution_factor = {})
+      : ScalabilityStructureFullSvc(3, 3, resolution_factor) {}
+  ~ScalabilityStructureL3T3() override = default;
+
+  FrameDependencyStructure DependencyStructure() const override;
 };
 
 }  
