@@ -189,10 +189,6 @@ check_and_add_warning("-Wno-error=atomic-alignment")
 
 
 
-check_and_add_warning("-Wno-error=deprecated-copy")
-
-
-
 check_and_add_warning("-Wno-error=deprecated-builtins")
 
 
