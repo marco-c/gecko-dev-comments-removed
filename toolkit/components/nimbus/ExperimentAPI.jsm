@@ -10,10 +10,6 @@ const EXPORTED_SYMBOLS = [
   "_ExperimentFeature",
 ];
 
-function isBooleanValueDefined(value) {
-  return typeof value === "boolean";
-}
-
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -410,41 +406,6 @@ class _ExperimentFeature {
 
 
 
-
-  isEnabled({ defaultValue = null } = {}) {
-    const branch = ExperimentAPI.getActiveBranch({ featureId: this.featureId });
-
-    let feature = featuresCompat(branch).find(
-      ({ featureId }) => featureId === this.featureId
-    );
-
-    
-    if (isBooleanValueDefined(feature?.enabled)) {
-      return feature.enabled;
-    }
-
-    let enabled;
-    try {
-      enabled = this.getVariable("enabled");
-    } catch (e) {
-      
-    }
-    if (isBooleanValueDefined(enabled)) {
-      return enabled;
-    }
-
-    if (isBooleanValueDefined(this.getRollout()?.enabled)) {
-      return this.getRollout().enabled;
-    }
-
-    return defaultValue;
-  }
-
-  
-
-
-
-
   getAllVariables({ defaultValues = null } = {}) {
     
     let userPrefs = this._getUserPrefsValues();
@@ -557,7 +518,6 @@ class _ExperimentFeature {
 
   debug() {
     return {
-      enabled: this.isEnabled(),
       variables: this.getAllVariables(),
       experiment: ExperimentAPI.getExperimentMetaData({
         featureId: this.featureId,
