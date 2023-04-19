@@ -78,8 +78,9 @@ class RTC_EXPORT VideoDecoder {
     void set_max_render_resolution(RenderResolution value);
 
     
+    
     int number_of_cores() const { return number_of_cores_; }
-    void set_number_of_cores(int value) { number_of_cores_ = value; }
+    void set_number_of_cores(int value);
 
     
     VideoCodecType codec_type() const { return codec_type_; }
