@@ -2817,15 +2817,18 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
     
     
     
+    const nsAtom* nextPageName = nullptr;
     bool shouldBreakForPageName = false;
     if (canBreakForPageNames && (!aState.mReflowInput.mFlags.mIsTopOfPage ||
                                  !aState.IsAdjacentWithBStart())) {
       const nsIFrame* const frame = line->mFirstChild;
       if (const nsIFrame* const prevFrame = frame->GetPrevSibling()) {
-        if (!frame->IsPlaceholderFrame() && !prevFrame->IsPlaceholderFrame() &&
-            frame->GetStartPageValue() != prevFrame->GetEndPageValue()) {
-          shouldBreakForPageName = true;
-          line->MarkDirty();
+        if (!frame->IsPlaceholderFrame() && !prevFrame->IsPlaceholderFrame()) {
+          nextPageName = frame->GetStartPageValue();
+          if (nextPageName != prevFrame->GetEndPageValue()) {
+            shouldBreakForPageName = true;
+            line->MarkDirty();
+          }
         }
       }
     }
@@ -2882,6 +2885,8 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
         
         
         PushTruncatedLine(aState, line, &keepGoing);
+        PresShell()->FrameConstructor()->SetNextPageContentFramePageName(
+            nextPageName ? nextPageName : GetAutoPageValue());
       } else {
         
         

@@ -297,6 +297,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                   nsContainerFrame* aParentFrame,
                                   bool aIsFluid = true);
 
+  void SetNextPageContentFramePageName(const nsAtom* aAtom) {
+    MOZ_ASSERT(!mNextPageContentFramePageName,
+               "PageContentFrame page name was already set");
+    mNextPageContentFramePageName = aAtom;
+  }
+
   
   nsresult ReplicateFixedFrames(nsPageContentFrame* aParentFrame);
 
@@ -2127,6 +2133,13 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   
   mozilla::ArenaAllocator<4096, 8> mFCItemPool;
+
+  
+  
+  
+  
+  RefPtr<const nsAtom> mNextPageContentFramePageName;
+
   struct FreeFCItemLink {
     FreeFCItemLink* mNext;
   };
