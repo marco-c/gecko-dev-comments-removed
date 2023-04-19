@@ -1253,25 +1253,19 @@ GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
       }
 
       
+      size_t oldPosition = stack.position();
       markAndTraverse(obj);
 
-      if (isMarkStackEmpty()) {
-        if (obj->asTenured().arena()->onDelayedMarkingList()) {
-          AutoEnterOOMUnsafeRegion oomUnsafe;
-          oomUnsafe.crash("mark queue OOM");
-        }
-      }
-
       
       
-      if (isMarkStackEmpty()) {
+      if (stack.position() == oldPosition) {
         MOZ_ASSERT(obj->asTenured().arena()->onDelayedMarkingList());
-        
-        
         AutoEnterOOMUnsafeRegion oomUnsafe;
         oomUnsafe.crash("Overflowed stack while marking test queue");
       }
 
+      
+      
       SliceBudget unlimited = SliceBudget::unlimited();
       processMarkStackTop(unlimited);
     } else if (val.isString()) {
@@ -1431,6 +1425,9 @@ inline void GCMarker::processMarkStackTop(SliceBudget& budget) {
 
 
 
+
+  MOZ_ASSERT_IF(markColor() == MarkColor::Black, hasBlackEntries());
+  MOZ_ASSERT_IF(markColor() == MarkColor::Gray, hasGrayEntries());
 
   JSObject* obj;             
   SlotsOrElementsKind kind;  
@@ -2028,6 +2025,9 @@ void GCMarker::setMarkColor(gc::MarkColor newColor) {
 template <typename T>
 inline void GCMarker::pushTaggedPtr(T* ptr) {
   checkZone(ptr);
+  MOZ_ASSERT((markColor() == MarkColor::Black) ==
+             (stack.position() >= grayPosition));
+
   if (!stack.push(ptr)) {
     delayMarkingChildrenOnOOM(ptr);
   }
@@ -2038,6 +2038,8 @@ void GCMarker::pushValueRange(JSObject* obj, SlotsOrElementsKind kind,
   checkZone(obj);
   MOZ_ASSERT(obj->is<NativeObject>());
   MOZ_ASSERT(start <= end);
+  MOZ_ASSERT((markColor() == MarkColor::Black) ==
+             (stack.position() >= grayPosition));
 
   if (start == end) {
     return;
