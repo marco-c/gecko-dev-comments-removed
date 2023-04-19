@@ -350,8 +350,6 @@ class BlockReflowState {
   
   OverflowAreas mFloatOverflowAreas;
 
-  nsFloatCacheFreeList mFloatCacheFreeList;
-
   
   
   nsIFrame* mPrevChild;
@@ -373,13 +371,13 @@ class BlockReflowState {
   
   
   
-  nsFloatCacheFreeList mCurrentLineFloats;
+  nsTArray<nsIFrame*> mCurrentLineFloats;
 
   
   
   
   
-  nsFloatCacheFreeList mBelowCurrentLineFloats;
+  nsTArray<nsIFrame*> mBelowCurrentLineFloats;
 
   
   
