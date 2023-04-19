@@ -46,6 +46,7 @@ class MessageDigestFactory {
 };
 
 
+
 bool IsFips180DigestAlgorithm(const std::string& alg);
 
 
