@@ -410,7 +410,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     
     
     if (!perScriptData().atomIndices()->add(p, atom, index.index)) {
-      ReportOutOfMemory(cx);
+      ReportOutOfMemory(ec);
       return false;
     }
 
