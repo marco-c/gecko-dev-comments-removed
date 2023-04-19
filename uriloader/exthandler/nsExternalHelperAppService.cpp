@@ -3599,7 +3599,10 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
           nextChar = '_';
         }
 
-        lastNonTrimmable = int32_t(outFileName.Length()) + 1;
+        
+        lastNonTrimmable =
+            int32_t(outFileName.Length()) +
+            (NS_IS_HIGH_SURROGATE(H_SURROGATE(nextChar)) ? 2 : 1);
       }
     }
 
