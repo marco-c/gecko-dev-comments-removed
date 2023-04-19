@@ -4,7 +4,7 @@
 
 
 
-#include "ScriptLoadInfo.h"
+#include "WorkerLoadContext.h"
 #include "CacheLoadHandler.h"  
 
 namespace mozilla {
