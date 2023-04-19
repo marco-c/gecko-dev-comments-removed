@@ -11,9 +11,9 @@
 
 
 var EXPORTED_SYMBOLS = [
-  "ExtensionStorageSync",
+  "ExtensionStorageSyncKinto",
   "KintoStorageTestUtils",
-  "extensionStorageSync",
+  "extensionStorageSyncKinto",
 ];
 
 const { AppConstants } = ChromeUtils.import(
@@ -127,7 +127,7 @@ function throwIfNoFxA(fxAccounts, action) {
 
 
 
-var extensionStorageSync = null;
+var extensionStorageSyncKinto = null;
 
 
 
@@ -631,9 +631,9 @@ class CryptoCollection {
     await collection.upsert(record);
   }
 
-  async sync(extensionStorageSync) {
+  async sync(extensionStorageSyncKinto) {
     const collection = await this.getCollection();
-    return extensionStorageSync._syncCollection(collection, {
+    return extensionStorageSyncKinto._syncCollection(collection, {
       strategy: "server_wins",
     });
   }
@@ -736,7 +736,7 @@ const openCollection = async function(extension, options = {}) {
   return coll;
 };
 
-class ExtensionStorageSync {
+class ExtensionStorageSyncKinto {
   
 
 
@@ -1376,7 +1376,7 @@ class ExtensionStorageSync {
     }
   }
 }
-extensionStorageSync = new ExtensionStorageSync(_fxaService);
+extensionStorageSyncKinto = new ExtensionStorageSyncKinto(_fxaService);
 
 
 const KintoStorageTestUtils = {
