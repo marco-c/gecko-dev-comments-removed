@@ -158,10 +158,10 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsAtom& aProperty,
       }
     }
   }
-  rv = SetInlinePropertyInternal(MOZ_KnownLive(*property),
-                                 MOZ_KnownLive(attribute), value);
+  rv = SetInlinePropertyAsSubAction(MOZ_KnownLive(*property),
+                                    MOZ_KnownLive(attribute), value);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditor::SetInlinePropertyInternal() failed");
+                       "HTMLEditor::SetInlinePropertyAsSubAction() failed");
   return EditorBase::ToGenericNSResult(rv);
 }
 
@@ -195,14 +195,16 @@ NS_IMETHODIMP HTMLEditor::SetInlineProperty(const nsAString& aProperty,
                          "CanHandleAndMaybeDispatchBeforeInputEvent(), failed");
     return EditorBase::ToGenericNSResult(rv);
   }
-  rv = SetInlinePropertyInternal(*property, MOZ_KnownLive(attribute), aValue);
+  rv =
+      SetInlinePropertyAsSubAction(*property, MOZ_KnownLive(attribute), aValue);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditor::SetInlinePropertyInternal() failed");
+                       "HTMLEditor::SetInlinePropertyAsSubAction() failed");
   return EditorBase::ToGenericNSResult(rv);
 }
 
-nsresult HTMLEditor::SetInlinePropertyInternal(
-    nsAtom& aProperty, nsAtom* aAttribute, const nsAString& aAttributeValue) {
+nsresult HTMLEditor::SetInlinePropertyAsSubAction(
+    nsAtom& aHTMLProperty, nsAtom* aAttribute,
+    const nsAString& aAttributeValue) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!mInitSucceeded)) {
@@ -216,7 +218,7 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
   if (SelectionRef().IsCollapsed()) {
     
     
-    mTypeInState->SetProp(&aProperty, aAttribute, aAttributeValue);
+    mTypeInState->SetProp(&aHTMLProperty, aAttribute, aAttributeValue);
     return NS_OK;
   }
 
@@ -244,45 +246,36 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
       !ignoredError.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
-  {
-    AutoSelectionRestorer restoreSelectionLater(*this);
-    
-    
-    
-    AutoTransactionsConserveSelection dontChangeMySelection(*this);
+  
+  
+  
+  AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
-    
-    
-    
-    
-    AutoSelectionRangeArray arrayOfRanges(SelectionRef());
-    for (auto& range : arrayOfRanges.mRanges) {
+  AutoRangeArray selectionRanges(SelectionRef());
+  {  
+    MOZ_ALWAYS_TRUE(selectionRanges.SaveAndTrackRanges(*this));
+    for (const OwningNonNull<nsRange>& selectionRange :
+         selectionRanges.Ranges()) {
       
       
-      nsresult rv = PromoteInlineRange(*range);
+      nsresult rv = PromoteInlineRange(*selectionRange);
       if (NS_FAILED(rv)) {
         NS_WARNING("HTMLEditor::PromoteInlineRange() failed");
         return rv;
       }
 
-      
-      
-
-      EditorDOMPoint startOfRange(range->StartRef());
-      EditorDOMPoint endOfRange(range->EndRef());
-      if (NS_WARN_IF(!startOfRange.IsSet()) ||
-          NS_WARN_IF(!endOfRange.IsSet())) {
+      EditorDOMRange range(selectionRange);
+      if (NS_WARN_IF(!range.IsPositioned())) {
         continue;
       }
 
       
-      if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
-          startOfRange.IsInTextNode()) {
+      if (range.InSameContainer() && range.StartRef().IsInTextNode()) {
         SplitRangeOffFromNodeResult wrapTextInStyledElementResult =
             SetInlinePropertyOnTextNode(
-                MOZ_KnownLive(*startOfRange.ContainerAs<Text>()),
-                startOfRange.Offset(), endOfRange.Offset(), aProperty,
-                aAttribute, aAttributeValue);
+                MOZ_KnownLive(*range.StartRef().ContainerAs<Text>()),
+                range.StartRef().Offset(), range.EndRef().Offset(),
+                aHTMLProperty, aAttribute, aAttributeValue);
         if (wrapTextInStyledElementResult.isErr()) {
           NS_WARNING("HTMLEditor::SetInlinePropertyOnTextNode() failed");
           return wrapTextInStyledElementResult.unwrapErr();
@@ -294,33 +287,39 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
       }
 
       
-      AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
-      ContentSubtreeIterator subtreeIter;
-      
-      
-      
-      if (NS_SUCCEEDED(subtreeIter.Init(range))) {
-        for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
-          nsINode* node = subtreeIter.GetCurrentNode();
-          if (NS_WARN_IF(!node)) {
-            return NS_ERROR_FAILURE;
-          }
-          if (node->IsContent() && EditorUtils::IsEditableContent(
-                                       *node->AsContent(), EditorType::HTML)) {
-            arrayOfContents.AppendElement(*node->AsContent());
+      AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContentsAroundRange;
+      {
+        ContentSubtreeIterator subtreeIter;
+        
+        
+        
+        if (NS_SUCCEEDED(
+                subtreeIter.Init(range.StartRef().ToRawRangeBoundary(),
+                                 range.EndRef().ToRawRangeBoundary()))) {
+          for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
+            nsINode* node = subtreeIter.GetCurrentNode();
+            if (NS_WARN_IF(!node)) {
+              return NS_ERROR_FAILURE;
+            }
+            if (node->IsContent() &&
+                EditorUtils::IsEditableContent(*node->AsContent(),
+                                               EditorType::HTML)) {
+              arrayOfContentsAroundRange.AppendElement(*node->AsContent());
+            }
           }
         }
       }
 
       
-      if (startOfRange.IsInTextNode() &&
-          EditorUtils::IsEditableContent(*startOfRange.ContainerAs<Text>(),
+      if (range.StartRef().IsInTextNode() &&
+          EditorUtils::IsEditableContent(*range.StartRef().ContainerAs<Text>(),
                                          EditorType::HTML)) {
         SplitRangeOffFromNodeResult wrapTextInStyledElementResult =
             SetInlinePropertyOnTextNode(
-                MOZ_KnownLive(*startOfRange.ContainerAs<Text>()),
-                startOfRange.Offset(), startOfRange.GetContainer()->Length(),
-                aProperty, aAttribute, aAttributeValue);
+                MOZ_KnownLive(*range.StartRef().ContainerAs<Text>()),
+                range.StartRef().Offset(),
+                range.StartRef().ContainerAs<Text>()->TextDataLength(),
+                aHTMLProperty, aAttribute, aAttributeValue);
         if (wrapTextInStyledElementResult.isErr()) {
           NS_WARNING("HTMLEditor::SetInlinePropertyOnTextNode() failed");
           return wrapTextInStyledElementResult.unwrapErr();
@@ -331,11 +330,11 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
       }
 
       
-      for (auto& content : arrayOfContents) {
+      for (auto& content : arrayOfContentsAroundRange) {
         
         
         Result<EditorDOMPoint, nsresult> setStyleResult =
-            SetInlinePropertyOnNode(MOZ_KnownLive(*content), aProperty,
+            SetInlinePropertyOnNode(MOZ_KnownLive(*content), aHTMLProperty,
                                     aAttribute, aAttributeValue);
         if (MOZ_UNLIKELY(setStyleResult.isErr())) {
           NS_WARNING("HTMLEditor::SetInlinePropertyOnNode() failed");
@@ -346,13 +345,14 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
       }
 
       
-      if (endOfRange.IsInTextNode() &&
-          EditorUtils::IsEditableContent(*endOfRange.ContainerAs<Text>(),
+      if (range.EndRef().IsInTextNode() &&
+          EditorUtils::IsEditableContent(*range.EndRef().ContainerAs<Text>(),
                                          EditorType::HTML)) {
         SplitRangeOffFromNodeResult wrapTextInStyledElementResult =
             SetInlinePropertyOnTextNode(
-                MOZ_KnownLive(*endOfRange.ContainerAs<Text>()), 0,
-                endOfRange.Offset(), aProperty, aAttribute, aAttributeValue);
+                MOZ_KnownLive(*range.EndRef().ContainerAs<Text>()), 0,
+                range.EndRef().Offset(), aHTMLProperty, aAttribute,
+                aAttributeValue);
         if (wrapTextInStyledElementResult.isErr()) {
           NS_WARNING("HTMLEditor::SetInlinePropertyOnTextNode() failed");
           return wrapTextInStyledElementResult.unwrapErr();
@@ -362,9 +362,17 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
         wrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
       }
     }
+
+    MOZ_ASSERT(selectionRanges.HasSavedRanges());
+    selectionRanges.RestoreFromSavedRanges();
   }
-  
-  return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
+
+  nsresult rv = selectionRanges.ApplyTo(SelectionRef());
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AutoRangeArray::ApplyTo() failed");
+  return rv;
 }
 
 Result<bool, nsresult> HTMLEditor::ElementIsGoodContainerForTheStyle(

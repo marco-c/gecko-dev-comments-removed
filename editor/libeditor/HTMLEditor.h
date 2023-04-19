@@ -3308,8 +3308,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertyInternal(
-      nsAtom& aProperty, nsAtom* aAttribute, const nsAString& aValue);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  SetInlinePropertyAsSubAction(nsAtom& aHTMLProperty, nsAtom* aAttribute,
+                               const nsAString& aAttributeValue);
 
   
 

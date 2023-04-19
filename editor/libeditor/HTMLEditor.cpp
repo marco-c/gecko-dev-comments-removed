@@ -3408,10 +3408,10 @@ nsresult HTMLEditor::InsertLinkAroundSelectionAsAction(
 
     attribute->GetValue(value);
 
-    nsresult rv = SetInlinePropertyInternal(
+    nsresult rv = SetInlinePropertyAsSubAction(
         *nsGkAtoms::a, MOZ_KnownLive(attributeName), value);
     if (NS_FAILED(rv)) {
-      NS_WARNING("SetInlinePropertyInternal(nsGkAtoms::a) failed");
+      NS_WARNING("SetInlinePropertyAsSubAction(nsGkAtoms::a) failed");
       return rv;
     }
   }
