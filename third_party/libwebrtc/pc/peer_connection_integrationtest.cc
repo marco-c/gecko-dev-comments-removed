@@ -600,6 +600,46 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
         webrtc::CreateSessionDescription(SdpType::kRollback, ""));
   }
 
+  
+  void StartWatchingDelayStats() {
+    
+    auto received_stats = NewGetStats();
+    auto track_stats =
+        received_stats->GetStatsOfType<webrtc::RTCMediaStreamTrackStats>()[0];
+    ASSERT_TRUE(track_stats->relative_packet_arrival_delay.is_defined());
+    auto rtp_stats =
+        received_stats->GetStatsOfType<webrtc::RTCInboundRTPStreamStats>()[0];
+    ASSERT_TRUE(rtp_stats->packets_received.is_defined());
+    ASSERT_TRUE(rtp_stats->track_id.is_defined());
+    audio_track_stats_id_ = track_stats->id();
+    ASSERT_TRUE(received_stats->Get(audio_track_stats_id_));
+    rtp_stats_id_ = rtp_stats->id();
+    ASSERT_EQ(audio_track_stats_id_, *rtp_stats->track_id);
+    audio_packets_stat_ = *rtp_stats->packets_received;
+    audio_delay_stat_ = *track_stats->relative_packet_arrival_delay;
+  }
+
+  void UpdateDelayStats(std::string tag, int desc_size) {
+    auto report = NewGetStats();
+    auto track_stats =
+        report->GetAs<webrtc::RTCMediaStreamTrackStats>(audio_track_stats_id_);
+    ASSERT_TRUE(track_stats);
+    auto rtp_stats =
+        report->GetAs<webrtc::RTCInboundRTPStreamStats>(rtp_stats_id_);
+    ASSERT_TRUE(rtp_stats);
+    auto delta_packets = *rtp_stats->packets_received - audio_packets_stat_;
+    auto delta_rpad =
+        *track_stats->relative_packet_arrival_delay - audio_delay_stat_;
+    auto recent_delay = delta_packets > 0 ? delta_rpad / delta_packets : -1;
+    
+    
+    
+    ASSERT_GT(0.1, recent_delay) << tag << " size " << desc_size;
+    
+    audio_packets_stat_ = *rtp_stats->packets_received;
+    audio_delay_stat_ = *track_stats->relative_packet_arrival_delay;
+  }
+
  private:
   explicit PeerConnectionWrapper(const std::string& debug_name)
       : debug_name_(debug_name) {}
@@ -1067,6 +1107,12 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   std::vector<PeerConnectionInterface::SignalingState>
       peer_connection_signaling_state_history_;
   webrtc::FakeRtcEventLogFactory* event_log_factory_;
+
+  
+  int audio_packets_stat_ = 0;
+  double audio_delay_stat_ = 0.0;
+  std::string rtp_stats_id_;
+  std::string audio_track_stats_id_;
 
   rtc::AsyncInvoker invoker_;
 
@@ -5535,6 +5581,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
   caller()->AddAudioTrack();
+  callee()->AddAudioTrack();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   
@@ -5543,20 +5590,9 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 
   
-  auto received_stats = callee()->NewGetStats();
-  auto track_stats =
-      received_stats->GetStatsOfType<webrtc::RTCMediaStreamTrackStats>()[0];
-  ASSERT_TRUE(track_stats->relative_packet_arrival_delay.is_defined());
-  auto rtp_stats =
-      received_stats->GetStatsOfType<webrtc::RTCInboundRTPStreamStats>()[0];
-  ASSERT_TRUE(rtp_stats->packets_received.is_defined());
-  ASSERT_TRUE(rtp_stats->track_id.is_defined());
-  auto audio_track_stats_id = track_stats->id();
-  ASSERT_TRUE(received_stats->Get(audio_track_stats_id));
-  auto rtp_stats_id = rtp_stats->id();
-  ASSERT_EQ(audio_track_stats_id, *rtp_stats->track_id);
-  auto audio_packets = *rtp_stats->packets_received;
-  auto audio_delay = *track_stats->relative_packet_arrival_delay;
+  
+  caller()->StartWatchingDelayStats();
+  callee()->StartWatchingDelayStats();
 
   int current_size = caller()->pc()->GetTransceivers().size();
   
@@ -5578,22 +5614,8 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
     ASSERT_GT(5000, elapsed_time_ms)
         << "Video transceivers: Negotiation took too long after "
         << current_size << " tracks added";
-    auto report = callee()->NewGetStats();
-    track_stats =
-        report->GetAs<webrtc::RTCMediaStreamTrackStats>(audio_track_stats_id);
-    ASSERT_TRUE(track_stats);
-    rtp_stats = report->GetAs<webrtc::RTCInboundRTPStreamStats>(rtp_stats_id);
-    ASSERT_TRUE(rtp_stats);
-    auto delta_packets = *rtp_stats->packets_received - audio_packets;
-    auto delta_rpad = *track_stats->relative_packet_arrival_delay - audio_delay;
-    auto recent_delay = delta_packets > 0 ? delta_rpad / delta_packets : -1;
-    
-    
-    
-    ASSERT_GT(0.1, recent_delay);
-    
-    audio_packets = *rtp_stats->packets_received;
-    audio_delay = *track_stats->relative_packet_arrival_delay;
+    caller()->UpdateDelayStats("caller reception", current_size);
+    callee()->UpdateDelayStats("callee reception", current_size);
   }
 }
 
