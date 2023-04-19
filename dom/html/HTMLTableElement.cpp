@@ -489,7 +489,7 @@ void TableRowsCollection::ContentRemoved(nsIContent* aChild,
   }
 }
 
-void TableRowsCollection::NodeWillBeDestroyed(const nsINode* aNode) {
+void TableRowsCollection::NodeWillBeDestroyed(nsINode* aNode) {
   
   
   
