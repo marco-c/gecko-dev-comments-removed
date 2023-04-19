@@ -778,7 +778,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
     mOverlayInfo = mozilla::Some(aInfo);
   }
 
-  bool HasVariationFontSupport() const { return mHasVariationFontSupport; }
+  static bool HasVariationFontSupport();
 
   bool HasNativeColrFontSupport() const { return mHasNativeColrFontSupport; }
 
@@ -917,12 +917,10 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   virtual bool CanUseHardwareVideoDecoding();
 
-  virtual bool CheckVariationFontSupport() = 0;
-
   int8_t mAllowDownloadableFonts;
 
   
-  bool mHasVariationFontSupport;
+  static std::atomic<int8_t> sHasVariationFontSupport;
 
   
   

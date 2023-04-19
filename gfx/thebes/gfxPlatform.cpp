@@ -438,8 +438,7 @@ void gfxPlatform::OnMemoryPressure(layers::MemoryPressureReason aWhy) {
 }
 
 gfxPlatform::gfxPlatform()
-    : mHasVariationFontSupport(false),
-      mAzureCanvasBackendCollector(this, &gfxPlatform::GetAzureBackendInfo),
+    : mAzureCanvasBackendCollector(this, &gfxPlatform::GetAzureBackendInfo),
       mApzSupportCollector(this, &gfxPlatform::GetApzSupportInfo),
       mFrameStatsCollector(this, &gfxPlatform::GetFrameStats),
       mCMSInfoCollector(this, &gfxPlatform::GetCMSSupportInfo),
@@ -776,6 +775,28 @@ WebRenderMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 #undef REPORT_INTERNER
 #undef REPORT_DATA_STORE
 
+std::atomic<int8_t> gfxPlatform::sHasVariationFontSupport = -1;
+
+bool gfxPlatform::HasVariationFontSupport() {
+  
+  if (sHasVariationFontSupport < 0) {
+    
+    
+#if defined(XP_WIN)
+    sHasVariationFontSupport = gfxWindowsPlatform::CheckVariationFontSupport();
+#elif defined(XP_MACOSX)
+    sHasVariationFontSupport = gfxPlatformMac::CheckVariationFontSupport();
+#elif defined(MOZ_WIDGET_GTK)
+    sHasVariationFontSupport = gfxPlatformGtk::CheckVariationFontSupport();
+#elif defined(ANDROID)
+    sHasVariationFontSupport = gfxAndroidPlatform::CheckVariationFontSupport();
+#else
+#  error "No gfxPlatform implementation available"
+#endif
+  }
+  return sHasVariationFontSupport > 0;
+}
+
 void gfxPlatform::Init() {
   MOZ_RELEASE_ASSERT(!XRE_IsGPUProcess(), "GFX: Not allowed in GPU process.");
   MOZ_RELEASE_ASSERT(!XRE_IsRDDProcess(), "GFX: Not allowed in RDD process.");
@@ -955,8 +976,6 @@ void gfxPlatform::Init() {
 
   InitLayersIPC();
 
-  gPlatform->mHasVariationFontSupport = gPlatform->CheckVariationFontSupport();
-
   
   
   
@@ -1012,7 +1031,7 @@ void gfxPlatform::Init() {
 
   if (XRE_IsParentProcess()) {
     Preferences::Unlock(FONT_VARIATIONS_PREF);
-    if (!gPlatform->HasVariationFontSupport()) {
+    if (!gfxPlatform::HasVariationFontSupport()) {
       
       Preferences::SetBool(FONT_VARIATIONS_PREF, false, PrefValueKind::Default);
       Preferences::SetBool(FONT_VARIATIONS_PREF, false);
