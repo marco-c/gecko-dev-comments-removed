@@ -2604,7 +2604,7 @@ pub struct SourcePropertyDeclaration {
 
 
 
-size_of_test!(SourcePropertyDeclaration, 632);
+size_of_test!(SourcePropertyDeclaration, 600);
 
 impl SourcePropertyDeclaration {
     
