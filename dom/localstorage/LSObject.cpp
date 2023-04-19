@@ -34,6 +34,7 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
+#include "mozilla/ipc/ProcessChild.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
@@ -1082,38 +1083,50 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
 
       MOZ_ALWAYS_SUCCEEDS(timer->SetTarget(domFileThread));
 
+      auto cancelRequest = [](nsITimer* aTimer, void* aClosure) {
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+
+        auto helper = static_cast<RequestHelper*>(aClosure);
+
+        LSRequestChild* actor = helper->mActor;
+
+        
+        
+        
+        
+        
+        if (actor && !actor->Finishing()) {
+          actor->SendCancel();
+        }
+      };
+
       MOZ_ALWAYS_SUCCEEDS(timer->InitWithNamedFuncCallback(
-          [](nsITimer* aTimer, void* aClosure) {
-            
-            
-
-            
-            
-            
-            
-            
-            
-            
-
-            auto helper = static_cast<RequestHelper*>(aClosure);
-
-            LSRequestChild* actor = helper->mActor;
-
-            
-            
-            
-            
-            
-            if (actor && !actor->Finishing()) {
-              actor->SendCancel();
-            }
-          },
-          this, FAILSAFE_CANCEL_SYNC_OP_MS, nsITimer::TYPE_ONE_SHOT,
+          cancelRequest, this, FAILSAFE_CANCEL_SYNC_OP_MS,
+          nsITimer::TYPE_ONE_SHOT,
           "RequestHelper::StartAndReturnResponse::SpinEventLoopTimer"));
 
       MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
           "RequestHelper::StartAndReturnResponse"_ns,
-          [&]() { return !mWaiting; }, thread));
+          [&]() {
+            if (mozilla::ipc::ProcessChild::ExpectingShutdown()) {
+              MOZ_ALWAYS_SUCCEEDS(timer->Cancel());
+              MOZ_ALWAYS_SUCCEEDS(timer->InitWithNamedFuncCallback(
+                  cancelRequest, this, 0, nsITimer::TYPE_ONE_SHOT,
+                  "RequestHelper::StartAndReturnResponse::SpinEventLoopAbort"));
+            }
+
+            return !mWaiting;
+          },
+          thread));
 
       MOZ_ALWAYS_SUCCEEDS(timer->Cancel());
     }
