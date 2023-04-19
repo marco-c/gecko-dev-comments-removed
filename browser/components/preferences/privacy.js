@@ -219,7 +219,10 @@ if (AppConstants.MOZ_DATA_REPORTING) {
   ]);
 }
 
-Preferences.add({ id: "browser.privacySegmentation.enabled", type: "bool" });
+Preferences.add({
+  id: "browser.dataFeatureRecommendations.enabled",
+  type: "bool",
+});
 
 
 if (AppConstants.MOZ_CRASHREPORTER) {

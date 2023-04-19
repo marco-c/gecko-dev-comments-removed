@@ -654,7 +654,7 @@ pref("browser.privatebrowsing.enable-new-indicator", true);
 pref("browser.privatebrowsing.enable-new-logo", true);
 
 
-pref("browser.privacySegmentation.enabled", false);
+pref("browser.dataFeatureRecommendations.enabled", false);
 
 
 

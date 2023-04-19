@@ -181,7 +181,7 @@ const SpecialMessageActions = {
   setPref(pref) {
     
     const allowedPrefs = [
-      "browser.privacySegmentation.enabled",
+      "browser.dataFeatureRecommendations.enabled",
       "browser.startup.homepage",
       "browser.privacySegmentation.windowSeparation.enabled",
       "browser.firefox-view.feature-tour",
