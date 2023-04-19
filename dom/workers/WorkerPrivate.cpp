@@ -2887,7 +2887,7 @@ nsresult WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
       loadInfo.mHasStorageAccessPermissionGranted =
           document->HasStorageAccessPermissionGranted();
       loadInfo.mShouldResistFingerprinting =
-          document->ShouldResistFingerprinting();
+          nsContentUtils::ShouldResistFingerprinting(document);
 
       
       

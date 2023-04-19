@@ -4087,12 +4087,6 @@ class Document : public nsINode,
 
   bool DidHitCompleteSheetCache() const { return mDidHitCompleteSheetCache; }
 
-  bool ShouldResistFingerprinting() const {
-    return mShouldResistFingerprinting;
-  }
-
-  void RecomputeResistFingerprinting();
-
  protected:
   
   
@@ -4833,29 +4827,6 @@ class Document : public nsINode,
   
   bool mDidHitCompleteSheetCache : 1;
 
-  
-  
-  
-  bool mUseCountersInitialized : 1;
-
-  
-  bool mShouldReportUseCounters : 1;
-
-  
-  
-  bool mShouldSendPageUseCounters : 1;
-
-  
-  bool mUserHasInteracted : 1;
-
-  
-  
-  
-  bool mHasUserInteractionTimerScheduled : 1;
-
-  
-  bool mShouldResistFingerprinting : 1;
-
   uint8_t mPendingFullscreenRequests;
 
   uint8_t mXMLDeclarationBits;
@@ -5061,6 +5032,26 @@ class Document : public nsINode,
 
   
   UniquePtr<StyleUseCounters> mStyleUseCounters;
+
+  
+  
+  
+  bool mUseCountersInitialized : 1;
+
+  
+  bool mShouldReportUseCounters : 1;
+
+  
+  
+  bool mShouldSendPageUseCounters : 1;
+
+  
+  bool mUserHasInteracted;
+
+  
+  
+  
+  bool mHasUserInteractionTimerScheduled;
 
   TimeStamp mPageUnloadingEventTimeStamp;
 
