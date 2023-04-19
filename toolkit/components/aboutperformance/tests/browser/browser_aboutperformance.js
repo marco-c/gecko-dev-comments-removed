@@ -75,11 +75,22 @@ function checkEnergyMedHigh(row) {
   );
 }
 
-function checkMemoryAtLeast(bytes, row) {
+async function checkMemoryAtLeast(bytes, row) {
   let memCell = row.children[3];
   ok(memCell, "Found the cell containing the amount of memory");
 
-  let text = memCell.textContent;
+  if (!memCell.innerText) {
+    info("There's no text yet, wait for an update");
+    await new Promise(resolve => {
+      let observer = new row.ownerDocument.ownerGlobal.MutationObserver(() => {
+        observer.disconnect();
+        resolve();
+      });
+      observer.observe(memCell, { childList: true });
+    });
+  }
+
+  let text = memCell.innerText;
   ok(text, "Found the text from the memory cell");
   
   
@@ -320,7 +331,7 @@ add_task(async function test_tab_memory() {
 
   
   
-  checkMemoryAtLeast(32 * 1024 * 1024, row);
+  await checkMemoryAtLeast(32 * 1024 * 1024, row);
 
   await BrowserTestUtils.removeTab(tabContent);
   await BrowserTestUtils.removeTab(aboutPerformance.tab);
@@ -363,6 +374,50 @@ add_task(async function test_worker_energy() {
 
   
   checkEnergyMedHigh(row);
+
+  await BrowserTestUtils.removeTab(tabContent);
+  await BrowserTestUtils.removeTab(aboutPerformance.tab);
+});
+
+add_task(async function test_worker_memory() {
+  let tabContent = await setup_tab(
+    "http://example.com/browser/toolkit/components/aboutperformance/tests/browser/workers_memory.html"
+  );
+
+  let aboutPerformance = await setup_about_performance();
+
+  
+  let row = find_row(
+    aboutPerformance.tbody,
+    "Main frame for test browser_aboutperformance.js",
+    tabContent
+  );
+  Assert.ok(row, "Found the row for our test tab");
+
+  
+  let button = row.firstChild.firstChild;
+  Assert.ok(button && button.classList, "Has a span to create the button");
+  Assert.ok(button.classList.contains("twisty"), "Button is expandable.");
+  Assert.ok(!button.classList.contains("open"), "Not already open");
+
+  
+  EventUtils.synthesizeMouseAtCenter(
+    button,
+    {},
+    aboutPerformance.tab.linkedBrowser.contentWindow
+  );
+
+  Assert.ok(button.classList.contains("open"), "It's now open");
+
+  
+  row = row.nextSibling;
+
+  
+  Assert.equal(row.children[1].getAttribute("data-l10n-id"), "type-worker");
+
+  
+  
+  await checkMemoryAtLeast(32 * 1024 * 1024, row);
 
   await BrowserTestUtils.removeTab(tabContent);
   await BrowserTestUtils.removeTab(aboutPerformance.tab);
