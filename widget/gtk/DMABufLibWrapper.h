@@ -191,6 +191,8 @@ class nsDMABufDevice {
   
   bool IsDMABufTexturesEnabled();
   
+  bool IsDMABufVAAPIEnabled();
+  
   bool IsDMABufWebGLEnabled();
   void DisableDMABufWebGL();
 
