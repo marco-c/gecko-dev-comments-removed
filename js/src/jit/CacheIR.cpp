@@ -6802,6 +6802,39 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCodePoint() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachStringIndexOf() {
+  
+  if (argc_ != 1 || !args_[0].isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!thisval_.isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
+  StringOperandId strId = writer.guardToString(thisValId);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  StringOperandId searchStrId = writer.guardToString(argId);
+
+  writer.stringIndexOfResult(strId, searchStrId);
+  writer.returnFromIC();
+
+  trackAttached("StringIndexOf");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachStringStartsWith() {
   
   if (argc_ != 1 || !args_[0].isString()) {
@@ -9767,6 +9800,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachStringFromCharCode();
     case InlinableNative::StringFromCodePoint:
       return tryAttachStringFromCodePoint();
+    case InlinableNative::StringIndexOf:
+      return tryAttachStringIndexOf();
     case InlinableNative::StringStartsWith:
       return tryAttachStringStartsWith();
     case InlinableNative::StringEndsWith:
