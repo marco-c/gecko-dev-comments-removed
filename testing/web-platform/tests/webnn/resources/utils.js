@@ -1,5 +1,10 @@
 'use strict';
 
+const ExecutionArray = ['async', 'sync'];
+
+
+const DeviceTypeArray = ['cpu', 'gpu'];
+
 
 
 
