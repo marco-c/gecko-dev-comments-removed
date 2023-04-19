@@ -91,17 +91,17 @@ const CreditCardTelemetry = {
     fieldDetails.forEach(detail => {
       identified.add(detail.fieldName);
 
-      
-      if (detail.confidence > 0) {
+      if (detail._reason == "autocomplete") {
+        this._ccFormV2SetExtra(ccFormV2Extra, detail.fieldName, "true");
+      } else {
         
-        let confidence = Math.floor(100 * detail.confidence) / 100;
+        let confidence =
+          detail.confidence > 0 ? Math.floor(100 * detail.confidence) / 100 : 0;
         this._ccFormV2SetExtra(
           ccFormV2Extra,
           detail.fieldName,
           confidence.toString()
         );
-      } else {
-        this._ccFormV2SetExtra(ccFormV2Extra, detail.fieldName, "true");
       }
     });
 
