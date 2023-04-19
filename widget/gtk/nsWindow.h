@@ -549,6 +549,20 @@ class nsWindow final : public nsBaseWidget {
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;
   mozilla::ScreenCoord mLastPinchEventSpan;
 
+  struct TouchpadPinchGestureState {
+    
+    ScreenPoint mBeginFocus;
+
+    
+    ScreenPoint mCurrentFocus;
+  };
+
+  
+  ScreenPoint mCurrentTouchpadFocus;
+
+  
+  TouchpadPinchGestureState mCurrentSynthesizedTouchpadPinch;
+
   
   nsRefPtrHashtable<nsPtrHashKey<GdkEventSequence>, mozilla::dom::Touch>
       mTouches;
