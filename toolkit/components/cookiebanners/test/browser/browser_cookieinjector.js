@@ -37,15 +37,31 @@ function insertTestRules() {
   Services.cookieBanners.insertRule(ruleA);
   ruleA.addCookie(
     true,
-    "." + DOMAIN_A,
     `cookieConsent_${DOMAIN_A}_1`,
-    "optOut1"
+    "optOut1",
+    "." + DOMAIN_A,
+    "/",
+    3600,
+    "",
+    false,
+    false,
+    false,
+    0,
+    0
   );
   ruleA.addCookie(
     true,
-    "." + DOMAIN_A,
     `cookieConsent_${DOMAIN_A}_2`,
-    "optOut2"
+    "optOut2",
+    DOMAIN_A,
+    "/",
+    3600,
+    "",
+    false,
+    false,
+    false,
+    0,
+    0
   );
 
   
@@ -57,12 +73,17 @@ function insertTestRules() {
   Services.cookieBanners.insertRule(ruleB);
   ruleB.addCookie(
     false,
-    null, 
     `cookieConsent_${DOMAIN_B}_1`,
     "optIn1",
+    DOMAIN_B,
     "/",
+    3600,
+    "UNSET",
+    false,
+    false,
+    true,
     0,
-    "UNSET"
+    0
   );
 }
 

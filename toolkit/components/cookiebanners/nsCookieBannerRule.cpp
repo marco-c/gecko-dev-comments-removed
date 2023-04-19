@@ -24,9 +24,8 @@ nsCookieBannerRule::ClearCookies() {
 }
 
 NS_IMETHODIMP
-nsCookieBannerRule::AddCookie(bool aIsOptOut, const nsACString& aHost,
-                              const nsACString& aName, const nsACString& aValue,
-                              
+nsCookieBannerRule::AddCookie(bool aIsOptOut, const nsACString& aName,
+                              const nsACString& aValue, const nsACString& aHost,
                               const nsACString& aPath, int64_t aExpiryRelative,
                               const nsACString& aUnsetValue, bool aIsSecure,
                               bool aIsHttpOnly, bool aIsSession,
@@ -38,15 +37,8 @@ nsCookieBannerRule::AddCookie(bool aIsOptOut, const nsACString& aHost,
            nsPromiseFlatCString(aName).get()));
 
   
-  nsAutoCString host(aHost);
-  if (host.IsEmpty()) {
-    host.AppendLiteral(".");
-    host.Append(mDomain);
-  }
-
-  
   nsCOMPtr<nsICookieRule> cookieRule = new nsCookieRule(
-      aIsOptOut, host, aName, aValue, aPath, aExpiryRelative, aUnsetValue,
+      aIsOptOut, aName, aValue, aHost, aPath, aExpiryRelative, aUnsetValue,
       aIsSecure, aIsHttpOnly, aIsSession, aSameSite, aSchemeMap);
   Cookies(aIsOptOut).AppendElement(cookieRule);
 
