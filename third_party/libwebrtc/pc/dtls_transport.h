@@ -20,7 +20,6 @@
 #include "p2p/base/dtls_transport_internal.h"
 #include "pc/ice_transport.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -30,8 +29,7 @@ class IceTransportWithPointer;
 
 
 
-class DtlsTransport : public DtlsTransportInterface,
-                      public sigslot::has_slots<> {
+class DtlsTransport : public DtlsTransportInterface {
  public:
   
   
