@@ -43,8 +43,8 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(Buffer)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 Buffer::Buffer(Device* const aParent, RawId aId, BufferAddress aSize,
-               uint32_t aUsage)
-    : ChildOf(aParent), mId(aId), mSize(aSize), mUsage(aUsage) {
+               uint32_t aUsage, ipc::Shmem&& aShmem)
+    : ChildOf(aParent), mId(aId), mSize(aSize), mUsage(aUsage), mShmem(aShmem) {
   mozilla::HoldJSObjects(this);
 }
 
@@ -76,21 +76,14 @@ void Buffer::Cleanup() {
     if (bridge && bridge->IsOpen()) {
       
       
-      
-      if (mMapped && mMapped->mShmem.IsReadable()) {
-        
-        
-        bridge->DeallocShmem(mMapped->mShmem);
-      }
       bridge->SendBufferDestroy(mId);
     }
   }
 }
 
-void Buffer::SetMapped(ipc::Shmem&& aShmem, bool aWritable) {
+void Buffer::SetMapped(bool aWritable) {
   MOZ_ASSERT(!mMapped);
   mMapped.emplace();
-  mMapped->mShmem = std::move(aShmem);
   mMapped->mWritable = aWritable;
 }
 
@@ -130,9 +123,7 @@ must be either GPUMapMode.READ or GPUMapMode.WRITE");
       return promise.forget();
   }
 
-  
-  
-  SetMapped(ipc::Shmem(), aMode == dom::GPUMapMode_Binding::WRITE);
+  SetMapped(aMode == dom::GPUMapMode_Binding::WRITE);
 
   const auto checked = aSize.WasPassed() ? CheckedInt<size_t>(aSize.Value())
                                          : CheckedInt<size_t>(mSize) - aOffset;
@@ -151,27 +142,20 @@ must be either GPUMapMode.READ or GPUMapMode.WRITE");
 
   mappingPromise->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [promise, self](MaybeShmem&& aShmem) {
-        switch (aShmem.type()) {
-          case MaybeShmem::TShmem: {
+      [promise, self](BufferMapResult&& aResult) {
+        switch (aResult.type()) {
+          case BufferMapResult::TBufferMapSuccess: {
+            promise->MaybeResolve(0);
+            break;
+          }
+          case BufferMapResult::TBufferMapError: {
             
-            
-            if (self->mMapped.isSome()) {
-              self->mMapped->mShmem = std::move(aShmem);
-              promise->MaybeResolve(0);
-            } else {
-              promise->MaybeRejectWithOperationError(
-                  "Unmapped or invalid buffer");
-            }
-
+            auto& error = aResult.get_BufferMapError();
+            promise->MaybeRejectWithOperationError(error.message());
             break;
           }
           default: {
-            if (self->mMapped.isSome()) {
-              self->mMapped->mShmem = ipc::Shmem();
-            }
-            promise->MaybeRejectWithOperationError(
-                "Attempted to map an invalid buffer");
+            MOZ_CRASH("unreachable");
           }
         }
       },
@@ -195,17 +179,17 @@ void Buffer::GetMappedRange(JSContext* aCx, uint64_t aOffset,
     aRv.ThrowRangeError("Invalid mapped range");
     return;
   }
-  if (!mMapped || !mMapped->IsReady()) {
+  if (!mMapped || !mShmem.IsReadable()) {
     aRv.ThrowInvalidStateError("Buffer is not mapped");
     return;
   }
-  if (checkedMinBufferSize.value() > mMapped->mShmem.Size<uint8_t>()) {
+  if (checkedMinBufferSize.value() > mShmem.Size<uint8_t>()) {
     aRv.ThrowOperationError("Mapped range exceeds buffer size");
     return;
   }
 
   auto* const arrayBuffer = mParent->CreateExternalArrayBuffer(
-      aCx, checkedOffset.value(), checkedSize.value(), mMapped->mShmem);
+      aCx, checkedOffset.value(), checkedSize.value(), mShmem);
   if (!arrayBuffer) {
     aRv.NoteJSContextException(aCx);
     return;
@@ -240,8 +224,18 @@ void Buffer::Unmap(JSContext* aCx, ErrorResult& aRv) {
   }
 
   UnmapArrayBuffers(aCx, aRv);
-  mParent->UnmapBuffer(mId, std::move(mMapped->mShmem), mMapped->mWritable,
-                       Mappable());
+
+  bool hasMapFlags = mUsage & (dom::GPUBufferUsage_Binding::MAP_WRITE |
+                               dom::GPUBufferUsage_Binding::MAP_READ);
+
+  if (!hasMapFlags) {
+    
+    
+    
+    mShmem = ipc::Shmem();
+  }
+
+  mParent->UnmapBuffer(mId, mMapped->mWritable);
   mMapped.reset();
 }
 

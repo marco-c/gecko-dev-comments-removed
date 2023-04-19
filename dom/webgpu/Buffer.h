@@ -29,7 +29,6 @@ namespace webgpu {
 class Device;
 
 struct MappedInfo {
-  ipc::Shmem mShmem;
   
   bool mWritable = false;
   
@@ -37,7 +36,6 @@ struct MappedInfo {
 
   MappedInfo() = default;
   MappedInfo(const MappedInfo&) = delete;
-  bool IsReady() const { return mShmem.IsReadable(); }
 };
 
 class Buffer final : public ObjectBase, public ChildOf<Device> {
@@ -45,9 +43,9 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   GPU_DECL_CYCLE_COLLECTION(Buffer)
   GPU_DECL_JS_WRAP(Buffer)
 
-  Buffer(Device* const aParent, RawId aId, BufferAddress aSize,
-         uint32_t aUsage);
-  void SetMapped(ipc::Shmem&& aShmem, bool aWritable);
+  Buffer(Device* const aParent, RawId aId, BufferAddress aSize, uint32_t aUsage,
+         ipc::Shmem&& aShmem);
+  void SetMapped(bool aWritable);
 
   const RawId mId;
 
@@ -65,6 +63,9 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   nsString mLabel;
   
   Maybe<MappedInfo> mMapped;
+  
+  
+  ipc::Shmem mShmem;
 
  public:
   already_AddRefed<dom::Promise> MapAsync(uint32_t aMode, uint64_t aOffset,
