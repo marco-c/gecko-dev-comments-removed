@@ -20,11 +20,6 @@ namespace webrtc {
 namespace video_coding {
 
 
-struct VideoLayerFrameId {
-  int64_t picture_id = -1;
-};
-
-
 
 
 class EncodedFrame : public webrtc::VCMEncodedFrame {
@@ -48,12 +43,8 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
 
   bool is_keyframe() const { return num_references == 0; }
 
-  
-  
-  VideoLayerFrameId id;
-
-  void SetId(int64_t frame_id) { id.picture_id = frame_id; }
-  int64_t Id() const { return id.picture_id; }
+  void SetId(int64_t id) { id_ = id; }
+  int64_t Id() const { return id_; }
 
   
   
@@ -62,6 +53,11 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   
   
   bool is_last_spatial_layer = true;
+
+ private:
+  
+  
+  int64_t id_ = -1;
 };
 
 }  

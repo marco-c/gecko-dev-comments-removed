@@ -38,10 +38,6 @@ class VideoStreamDecoderInterface {
     
     virtual void OnNonDecodableState() = 0;
 
-    
-    virtual void OnContinuousUntil(const video_coding::VideoLayerFrameId& key) {
-    }
-
     virtual void OnContinuousUntil(int64_t frame_id) {}
 
     virtual void OnDecodedFrame(VideoFrame frame,
