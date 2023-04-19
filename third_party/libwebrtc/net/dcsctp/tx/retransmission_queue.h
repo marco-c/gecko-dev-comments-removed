@@ -242,9 +242,6 @@ class RetransmissionQueue {
         : highest_tsn_acked(cumulative_tsn_ack) {}
 
     
-    std::vector<TSN> acked_tsns;
-
-    
     size_t bytes_acked = 0;
 
     
