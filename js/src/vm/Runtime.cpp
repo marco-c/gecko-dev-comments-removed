@@ -39,7 +39,8 @@
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
 #include "vm/PromiseObject.h"  
-#include "vm/Warnings.h"       
+#include "vm/SharedImmutableStringsCache.h"
+#include "vm/Warnings.h"  
 #include "wasm/WasmSignalHandlers.h"
 
 #include "debugger/DebugAPI-inl.h"
@@ -206,13 +207,6 @@ bool JSRuntime::init(JSContext* cx, uint32_t maxbytes) {
   
   js::ResetTimeZoneInternal(ResetTimeZoneMode::DontResetIfOffsetUnchanged);
 
-  if (!parentRuntime) {
-    sharedImmutableStrings_ = js::SharedImmutableStringsCache::Create();
-    if (!sharedImmutableStrings_) {
-      return false;
-    }
-  }
-
   return true;
 }
 
@@ -348,9 +342,10 @@ void JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
       gc.nursery().sizeOfMallocedBuffers(mallocSizeOf);
   gc.storeBuffer().addSizeOfExcludingThis(mallocSizeOf, &rtSizes->gc);
 
-  if (sharedImmutableStrings_) {
+  if (isMainRuntime()) {
     rtSizes->sharedImmutableStringsCache +=
-        sharedImmutableStrings_->sizeOfExcludingThis(mallocSizeOf);
+        js::SharedImmutableStringsCache::getSingleton().sizeOfExcludingThis(
+            mallocSizeOf);
   }
 
 #ifdef JS_HAS_INTL_API
