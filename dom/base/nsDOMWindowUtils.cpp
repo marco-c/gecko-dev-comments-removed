@@ -1899,25 +1899,20 @@ nsDOMWindowUtils::ToScreenRectInCSSUnits(float aX, float aY, float aWidth,
   nsPresContext* presContext = GetPresContext();
   MOZ_ASSERT(presContext);
 
-  auto devRect = ViewAs<LayoutDevicePixel>(
+  const auto devRect = ViewAs<LayoutDevicePixel>(
       rect, PixelCastJustification::ScreenIsParentLayerForRoot);
 
   
   
   
   
-  
-  
-  LayoutDeviceToCSSScale scale = [&] {
-    float auPerDev =
-        presContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom();
-    auPerDev /= LookAndFeel::SystemZoomSettings().mFullZoom;
-    return LayoutDeviceToCSSScale(auPerDev / AppUnitsPerCSSPixel());
-  }();
+  const nsRect appUnitsRect = LayoutDeviceRect::ToAppUnits(
+      devRect,
+      presContext->DeviceContext()->AppUnitsPerDevPixelInTopLevelChromePage());
 
-  CSSRect cssRect = devRect * scale;
   RefPtr<DOMRect> outRect = new DOMRect(mWindow);
-  outRect->SetRect(cssRect.x, cssRect.y, cssRect.width, cssRect.height);
+  outRect->SetLayoutRect(appUnitsRect);
+
   outRect.forget(aResult);
   return NS_OK;
 }

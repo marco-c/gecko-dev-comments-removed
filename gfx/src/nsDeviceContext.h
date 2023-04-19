@@ -110,6 +110,12 @@ class nsDeviceContext final {
   
 
 
+
+  int32_t AppUnitsPerDevPixelInTopLevelChromePage() const;
+
+  
+
+
   uint32_t GetDepth();
 
   

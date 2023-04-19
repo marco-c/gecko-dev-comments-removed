@@ -7,10 +7,10 @@
 #include "nsDeviceContext.h"
 #include <algorithm>  
 #include "gfxContext.h"
-#include "gfxImageSurface.h"     
-#include "gfxPoint.h"            
-#include "gfxTextRun.h"          
-#include "mozilla/Attributes.h"  
+#include "gfxImageSurface.h"  
+#include "gfxPoint.h"         
+#include "gfxTextRun.h"       
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/PrintTarget.h"
 #include "mozilla/Preferences.h"  
@@ -421,9 +421,22 @@ bool nsDeviceContext::SetFullZoom(float aScale) {
   return oldAppUnitsPerDevPixel != mAppUnitsPerDevPixel;
 }
 
+static int32_t ApplyFullZoom(int32_t aUnzoomedAppUnits, float aFullZoom) {
+  if (aFullZoom == 1.0f) {
+    return aUnzoomedAppUnits;
+  }
+  return std::max(1, NSToIntRound(float(aUnzoomedAppUnits) / aFullZoom));
+}
+
+int32_t nsDeviceContext::AppUnitsPerDevPixelInTopLevelChromePage() const {
+  
+  return ApplyFullZoom(mAppUnitsPerDevPixelAtUnitFullZoom,
+                       LookAndFeel::SystemZoomSettings().mFullZoom);
+}
+
 void nsDeviceContext::UpdateAppUnitsForFullZoom() {
-  mAppUnitsPerDevPixel = std::max(
-      1, NSToIntRound(float(mAppUnitsPerDevPixelAtUnitFullZoom) / mFullZoom));
+  mAppUnitsPerDevPixel =
+      ApplyFullZoom(mAppUnitsPerDevPixelAtUnitFullZoom, mFullZoom);
   
   mFullZoom = float(mAppUnitsPerDevPixelAtUnitFullZoom) / mAppUnitsPerDevPixel;
 }
