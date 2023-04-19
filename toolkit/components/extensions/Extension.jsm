@@ -52,8 +52,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   Log: "resource://gre/modules/Log.sys.mjs",
-  SITEPERMS_ADDON_TYPE:
-    "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
@@ -2001,28 +1999,8 @@ class ExtensionData {
     
     
     
-    if (info.addon?.type === lazy.SITEPERMS_ADDON_TYPE) {
-      
-      
-      
-      const host = new URL(info.siteOrigin).hostname;
-
-      
-      result.header = bundle.formatStringFromName(
-        `webextSitePerms.headerWithGatedPerms.${info.sitePermissions[0]}`,
-        ["<>", host]
-      );
-      result.text = bundle.formatStringFromName(
-        `webextSitePerms.descriptionGatedPerms`,
-        [host]
-      );
-
-      return result;
-    }
-
     
     if (info.sitePermissions) {
-      
       for (let permission of info.sitePermissions) {
         try {
           result.msgs.push(
@@ -2043,14 +2021,15 @@ class ExtensionData {
       }
 
       
-      
-      const host = new URL(info.siteOrigin).hostname;
-
       headerKey = info.unsigned
         ? "webextSitePerms.headerUnsignedWithPerms"
         : "webextSitePerms.headerWithPerms";
-      result.header = bundle.formatStringFromName(headerKey, ["<>", host]);
-
+      
+      
+      result.header = bundle.formatStringFromName(headerKey, [
+        "<>",
+        new URL(info.siteOrigin).hostname,
+      ]);
       return result;
     }
 
