@@ -36,8 +36,6 @@ enum class NetworkPreference {
 
 const char* NetworkPreferenceToString(NetworkPreference preference);
 
-
-
 class NetworkBinderInterface {
  public:
   
@@ -84,19 +82,6 @@ class NetworkMonitorInterface {
 
   virtual NetworkPreference GetNetworkPreference(
       const std::string& interface_name) = 0;
-
-  
-  
-  virtual bool SupportsBindSocketToNetwork() const { return false; }
-
-  
-  
-  virtual NetworkBindingResult BindSocketToNetwork(
-      int socket_fd,
-      const IPAddress& address,
-      const std::string& interface_name) {
-    return NetworkBindingResult::NOT_IMPLEMENTED;
-  }
 
   
   
