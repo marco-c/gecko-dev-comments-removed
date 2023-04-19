@@ -13,6 +13,7 @@
 #include "nsIURI.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
+#include "nsString.h"
 #include "nsURLHelper.h"
 
 static const char kSourceChar = ':';
@@ -75,6 +76,21 @@ static void PopulateTopLevelInfoFromURI(const bool aIsTopLevelDocument,
   if (scheme.EqualsLiteral("about")) {
     MakeTopLevelInfo(scheme, nsLiteralCString(ABOUT_URI_FIRST_PARTY_DOMAIN),
                      aUseSite, topLevelInfo);
+    return;
+  }
+
+  
+  
+  if (scheme.EqualsLiteral("moz-nullprincipal")) {
+    
+    nsAutoCString filePath;
+    rv = aURI->GetFilePath(filePath);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    
+    filePath.Mid(filePath, 1, filePath.Length() - 2);
+    filePath.AppendLiteral(".mozilla");
+    
+    topLevelInfo = NS_ConvertUTF8toUTF16(filePath);
     return;
   }
 

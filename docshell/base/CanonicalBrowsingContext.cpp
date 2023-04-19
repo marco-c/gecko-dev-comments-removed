@@ -1753,9 +1753,7 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
   }
 
   nsCOMPtr<nsIPrincipal> initialPrincipal =
-      NullPrincipal::CreateWithInheritedAttributes(
-          target->OriginAttributesRef(),
-           false);
+      NullPrincipal::Create(target->OriginAttributesRef());
   WindowGlobalInit windowInit =
       WindowGlobalActor::AboutBlankInitializer(target, initialPrincipal);
 

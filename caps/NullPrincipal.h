@@ -50,6 +50,10 @@ class NullPrincipal final : public BasePrincipal {
   NS_IMETHOD GetAddonId(nsAString& aAddonId) override;
   NS_IMETHOD GetPrecursorPrincipal(nsIPrincipal** aPrecursor) override;
 
+  
+  
+  
+  
   static already_AddRefed<NullPrincipal> CreateWithInheritedAttributes(
       nsIPrincipal* aInheritFrom);
 
@@ -57,13 +61,10 @@ class NullPrincipal final : public BasePrincipal {
   
   
   
-  static already_AddRefed<NullPrincipal> CreateWithInheritedAttributes(
-      nsIDocShell* aDocShell, bool aIsFirstParty = false);
-  static already_AddRefed<NullPrincipal> CreateWithInheritedAttributes(
-      const OriginAttributes& aOriginAttributes, bool aIsFirstParty = false);
-
+  
   static already_AddRefed<NullPrincipal> Create(
-      const OriginAttributes& aOriginAttributes, nsIURI* aURI = nullptr);
+      const OriginAttributes& aOriginAttributes,
+      nsIURI* aNullPrincipalURI = nullptr);
 
   static already_AddRefed<NullPrincipal> CreateWithoutOriginAttributes();
 
@@ -115,20 +116,10 @@ class NullPrincipal final : public BasePrincipal {
   const nsCOMPtr<nsIURI> mURI;
 
  private:
-  FRIEND_TEST(OriginAttributes, NullPrincipal);
   FRIEND_TEST(NullPrincipalPrecursor, EscapingRoundTrips);
 
   static void EscapePrecursorQuery(nsACString& aPrecursorQuery);
   static void UnescapePrecursorQuery(nsACString& aPrecursorQuery);
-
-  
-  
-  
-  
-  
-  static already_AddRefed<NullPrincipal> CreateInternal(
-      const OriginAttributes& aOriginAttributes, bool aIsFirstParty,
-      nsIURI* aURI = nullptr, nsIPrincipal* aPrecursor = nullptr);
 };
 
 }  
