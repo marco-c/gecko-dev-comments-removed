@@ -7,9 +7,6 @@
 #ifndef DOM_FS_SHARED_FILESYSTEMHELPERS_H_
 #define DOM_FS_SHARED_FILESYSTEMHELPERS_H_
 
-#include "FileSystemTypes.h"
-#include "mozilla/RefPtr.h"
-
 namespace mozilla::dom::fs {
 
 
@@ -74,13 +71,13 @@ class Registered {
     }
   }
 
-  Registered() = default;
+  Registered() {}
 
   Registered(const Registered& aOther) : mObject(aOther.mObject) {
     mObject->Register();
   }
 
-  Registered(Registered&& aOther) noexcept = default;
+  Registered(Registered&& aOther) = default;
 
   MOZ_IMPLICIT Registered(RefPtr<T> aObject) : mObject(std::move(aObject)) {
     if (mObject) {
@@ -109,7 +106,7 @@ class Registered {
     return *this;
   }
 
-  Registered<T>& operator=(Registered<T>&& aRhs) noexcept {
+  Registered<T>& operator=(Registered<T>&& aRhs) {
     RefPtr<T> oldObject = std::move(mObject);
     mObject = std::move(aRhs.mObject);
     aRhs.mObject = nullptr;
@@ -136,11 +133,6 @@ class Registered {
 
   T* operator->() const { return get(); }
 };
-
-
-
-
-bool IsValidName(const fs::Name& aName);
 
 }  
 

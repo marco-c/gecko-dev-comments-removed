@@ -30,17 +30,12 @@ async function serialize_handle(handle) {
 
 
 async function serialize_file_system_handle(handle) {
-  let read_permission = "granted";
-  let write_permission = "granted";
-  
-  
-  if ("queryPermission" in FileSystemHandle.prototype) {
-    read_permission =
-      await handle.queryPermission({ mode: 'read' });
+  const read_permission =
+    await handle.queryPermission({ mode: 'read' });
 
-    write_permission =
-      await handle.queryPermission({ mode: 'readwrite' })
-  }
+  const write_permission =
+    await handle.queryPermission({ mode: 'readwrite' })
+
   return {
     kind: handle.kind,
     name: handle.name,
