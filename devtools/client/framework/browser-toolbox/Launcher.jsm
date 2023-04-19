@@ -63,6 +63,8 @@ const processes = new Set();
 
 
 
+
+
 class BrowserToolboxLauncher extends EventEmitter {
   
 
@@ -104,7 +106,7 @@ class BrowserToolboxLauncher extends EventEmitter {
 
 
 
-  constructor({ onRun, overwritePreferences } = {}) {
+  constructor({ forceMultiprocess, onRun, overwritePreferences } = {}) {
     super();
 
     if (onRun) {
@@ -115,7 +117,7 @@ class BrowserToolboxLauncher extends EventEmitter {
     Services.obs.addObserver(this.close, "quit-application");
     this.#initServer();
     this.#initProfile(overwritePreferences);
-    this.#create();
+    this.#create({ forceMultiprocess });
 
     processes.add(this);
   }
@@ -288,7 +290,11 @@ class BrowserToolboxLauncher extends EventEmitter {
   
 
 
-  #create() {
+
+
+
+
+  #create({ forceMultiprocess } = {}) {
     dumpn("Initializing chrome debugging process.");
 
     let command = Services.dirsvc.get("XREExeF", Ci.nsIFile).path;
@@ -337,6 +343,7 @@ class BrowserToolboxLauncher extends EventEmitter {
       
       
       MOZ_BROWSER_TOOLBOX_FISSION_PREF: isBrowserToolboxFission ? "1" : "0",
+      MOZ_BROWSER_TOOLBOX_FORCE_MULTIPROCESS: forceMultiprocess ? "1" : "0",
       
       MOZ_BROWSER_TOOLBOX_INPUT_CONTEXT: isInputContextEnabled ? "1" : "0",
       
