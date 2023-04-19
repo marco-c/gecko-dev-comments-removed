@@ -20,6 +20,7 @@
 #include "p2p/base/port.h"
 #include "p2p/base/stun_request.h"
 #include "rtc_base/async_packet_socket.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
 
 namespace cricket {
 
@@ -180,12 +181,11 @@ class UDPPort : public Port {
   
   
   
-  class AddressResolver : public sigslot::has_slots<> {
+  class AddressResolver {
    public:
     explicit AddressResolver(
         rtc::PacketSocketFactory* factory,
         std::function<void(const rtc::SocketAddress&, int)> done_callback);
-    ~AddressResolver() override;
 
     void Resolve(const rtc::SocketAddress& address);
     bool GetResolvedAddress(const rtc::SocketAddress& input,
@@ -193,17 +193,18 @@ class UDPPort : public Port {
                             rtc::SocketAddress* output) const;
 
    private:
-    typedef std::map<rtc::SocketAddress, rtc::AsyncResolverInterface*>
+    typedef std::map<rtc::SocketAddress,
+                     std::unique_ptr<webrtc::AsyncDnsResolverInterface>>
         ResolverMap;
 
-    void OnResolveResult(rtc::AsyncResolverInterface* resolver);
-
     rtc::PacketSocketFactory* socket_factory_;
-    ResolverMap resolvers_;
     
     
     
     std::function<void(const rtc::SocketAddress&, int)> done_;
+    
+    
+    ResolverMap resolvers_;
   };
 
   

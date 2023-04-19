@@ -51,6 +51,11 @@ class AsyncDnsResolverResult {
   virtual int GetError() const = 0;
 };
 
+
+
+
+
+
 class RTC_EXPORT AsyncDnsResolverInterface {
  public:
   virtual ~AsyncDnsResolverInterface() = default;
