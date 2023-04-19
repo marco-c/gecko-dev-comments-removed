@@ -110,7 +110,7 @@ bool PlatformUIThread::RequestCallbackTimer(unsigned int milliseconds) {
 void PlatformUIThread::Stop() {
   {
     CritScope scoped_lock(&cs_);
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     
     if (timerid_) {
       MOZ_ASSERT(hwnd_);
