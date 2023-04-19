@@ -144,7 +144,6 @@ module.exports = {
         "*.xhtml",
         "*.xml",
         "js/src/builtin/**/*.js",
-        "js/src/shell/**/*.js",
       ],
       rules: {
         

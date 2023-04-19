@@ -26,14 +26,17 @@ function JSFuzzIterate() {
 
   try {
     
-    let input = String.fromCharCode.apply(null, new Uint16Array(fuzzBuf.buffer));
+    let input = String.fromCharCode.apply(
+      null,
+      new Uint16Array(fuzzBuf.buffer)
+    );
 
     
     
     
     
     print(JSON.stringify(JSON.parse(input)));
-  } catch(exc) {
+  } catch (exc) {
     print(exc);
   }
 }
