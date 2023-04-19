@@ -855,13 +855,10 @@ bool gfxDWriteFontEntry::IsCJKFont() {
   mIsCJK = false;
 
   const uint32_t kOS2Tag = TRUETYPE_TAG('O', 'S', '/', '2');
-  hb_blob_t* blob = GetFontTable(kOS2Tag);
+  gfxFontUtils::AutoHBBlob blob(GetFontTable(kOS2Tag));
   if (!blob) {
     return mIsCJK;
   }
-  
-  
-  
 
   uint32_t len;
   const OS2Table* os2 =
@@ -879,7 +876,6 @@ bool gfxDWriteFontEntry::IsCJKFont() {
       mIsCJK = true;
     }
   }
-  hb_blob_destroy(blob);
 
   return mIsCJK;
 }
