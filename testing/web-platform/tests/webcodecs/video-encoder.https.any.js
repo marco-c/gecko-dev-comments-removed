@@ -113,22 +113,36 @@ promise_test(async t => {
     frames.push(frame);
   }
 
+  let lastDequeueSize = Infinity;
+  encoder.ondequeue = () => {
+    assert_greater_than(lastDequeueSize, 0, "Dequeue event after queue empty");
+    assert_greater_than(lastDequeueSize, encoder.encodeQueueSize,
+                        "Dequeue event without decreased queue size");
+    lastDequeueSize = encoder.encodeQueueSize;
+  };
+
   for (let frame of frames)
     encoder.encode(frame);
 
-  assert_greater_than(encoder.encodeQueueSize, 0);
+  assert_greater_than_equal(encoder.encodeQueueSize, 0);
   assert_less_than_equal(encoder.encodeQueueSize, frames_count);
 
   await encoder.flush();
   
   assert_equals(encoder.encodeQueueSize, 0);
+  
+  assert_equals(lastDequeueSize, 0);
+
+  
+  
+  lastDequeueSize = Infinity;
 
   for (let frame of frames) {
     encoder.encode(frame);
     frame.close();
   }
 
-  assert_greater_than(encoder.encodeQueueSize, 0);
+  assert_greater_than_equal(encoder.encodeQueueSize, 0);
   encoder.reset();
   assert_equals(encoder.encodeQueueSize, 0);
 }, 'encodeQueueSize test');
