@@ -551,17 +551,6 @@ RTCError JsepTransportController::ApplyDescription_n(
         MergeEncryptedHeaderExtensionIdsForBundles(description);
   }
 
-  
-  
-  
-  for (size_t i = 0; i < description->contents().size(); ++i) {
-    const cricket::ContentInfo& content_info = description->contents()[i];
-    if (content_info.rejected) {
-      
-      HandleRejectedContent(content_info);
-    }
-  }
-
   for (const cricket::ContentInfo& content_info : description->contents()) {
     
     if (content_info.rejected ||
@@ -580,8 +569,9 @@ RTCError JsepTransportController::ApplyDescription_n(
     const cricket::ContentInfo& content_info = description->contents()[i];
     const cricket::TransportInfo& transport_info =
         description->transport_infos()[i];
-
     if (content_info.rejected) {
+      
+      HandleRejectedContent(content_info);
       continue;
     }
 
@@ -987,21 +977,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   if (transport) {
     return RTCError::OK();
   }
-  
-  
-  
-  
-  if (bundles_.bundle_groups().size() > 0) {
-    const auto& default_bundle_group = bundles_.bundle_groups()[0];
-    if (default_bundle_group->content_names().size() > 0) {
-      auto bundle_transport =
-          GetJsepTransportByName(default_bundle_group->content_names()[0]);
-      if (bundle_transport) {
-        transports_.SetTransportForMid(content_info.name, bundle_transport);
-        return RTCError::OK();
-      }
-    }
-  }
+
   const cricket::MediaContentDescription* content_desc =
       content_info.media_description();
   if (certificate_ && !content_desc->cryptos().empty()) {
