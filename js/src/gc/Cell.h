@@ -13,9 +13,9 @@
 #include <type_traits>
 
 #include "gc/Heap.h"
+#include "gc/TraceKind.h"
 #include "js/GCAnnotations.h"
 #include "js/shadow/Zone.h"  
-#include "js/TraceKind.h"
 #include "js/TypeDecls.h"
 
 namespace JS {
@@ -857,6 +857,20 @@ class alignas(gc::CellAlignBytes) TenuredCellWithGCPointer
     return offsetof(TenuredCellWithGCPointer, header_);
   }
 };
+
+
+
+template <typename T>
+static inline bool TenuredThingIsMarkedAny(T* thing) {
+  using BaseT = typename BaseGCType<T>::type;
+  TenuredCell* cell = &thing->asTenured();
+  if constexpr (TraceKindCanBeGray<BaseT>::value) {
+    return cell->isMarkedAny();
+  } else {
+    MOZ_ASSERT(!cell->isMarkedGray());
+    return cell->isMarkedBlack();
+  }
+}
 
 } 
 } 
