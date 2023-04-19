@@ -14,13 +14,13 @@
 #import "RTCVideoDecoder.h"
 
 RTC_OBJC_EXPORT
-@interface RTC_OBJC_TYPE (RTCVideoDecoderVP9) : NSObject
+@interface RTC_OBJC_TYPE (RTCVideoDecoderAV1) : NSObject
 
 
 
 
 
-+ (id<RTC_OBJC_TYPE(RTCVideoDecoder)>)vp9Decoder;
++ (id<RTC_OBJC_TYPE(RTCVideoDecoder)>)av1Decoder;
 
 + (bool)isSupported;
 
