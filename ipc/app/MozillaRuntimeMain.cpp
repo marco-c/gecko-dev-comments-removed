@@ -7,7 +7,6 @@
 #include "../contentproc/plugin-container.cpp"
 
 #include "mozilla/Bootstrap.h"
-#include "mozilla/RuntimeExceptionModule.h"
 #if defined(XP_WIN)
 #  include "mozilla/WindowsDllBlocklist.h"
 #  include "mozilla/GeckoArgs.h"
@@ -67,15 +66,6 @@ int main(int argc, char* argv[]) {
   if (UseForkServer(argc, argv)) {
     ret = RunForkServer(std::move(bootstrap), argc, argv);
   } else {
-    
-    
-    SetGeckoProcessType(argv[argc - 1]);
-
-    
-    
-    
-    CrashReporter::RegisterRuntimeExceptionModule();
-
 #ifdef HAS_DLL_BLOCKLIST
     uint32_t initFlags = eDllBlocklistInitFlagIsChildProcess;
 #  if defined(MOZ_SANDBOX)

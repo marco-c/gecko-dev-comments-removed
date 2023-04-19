@@ -9,8 +9,6 @@
 #include "XREShellData.h"
 #include "application.ini.h"
 #include "mozilla/Bootstrap.h"
-#include "mozilla/ProcessType.h"
-#include "mozilla/RuntimeExceptionModule.h"
 #if defined(XP_WIN)
 #  include <windows.h>
 #  include <stdlib.h>
@@ -30,7 +28,6 @@
 #  include "freestanding/SharedSection.h"
 #  include "LauncherProcessWin.h"
 #  include "mozilla/GeckoArgs.h"
-#  include "mozilla/mscom/ProcessRuntime.h"
 #  include "mozilla/WindowsDllBlocklist.h"
 #  include "mozilla/WindowsDpiInitialization.h"
 #  include "mozilla/WindowsProcessMitigations.h"
@@ -298,15 +295,6 @@ int main(int argc, char* argv[], char* envp[]) {
   
   
   if (argc > 1 && IsArg(argv[1], "contentproc")) {
-    
-    
-    SetGeckoProcessType(argv[argc - 1]);
-
-    
-    
-    
-    CrashReporter::RegisterRuntimeExceptionModule();
-
 #  ifdef HAS_DLL_BLOCKLIST
     uint32_t initFlags =
         gBlocklistInitFlags | eDllBlocklistInitFlagIsChildProcess;
@@ -367,9 +355,6 @@ int main(int argc, char* argv[], char* envp[]) {
     return result;
   }
 #endif
-
-  
-  CrashReporter::RegisterRuntimeExceptionModule();
 
 #ifdef HAS_DLL_BLOCKLIST
   DllBlocklist_Initialize(gBlocklistInitFlags);

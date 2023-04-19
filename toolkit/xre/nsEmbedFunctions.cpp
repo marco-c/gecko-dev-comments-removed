@@ -36,7 +36,6 @@
 
 #include "nsAppRunner.h"
 #include "nsExceptionHandler.h"
-#include "mozilla/RuntimeExceptionModule.h"
 #include "nsThreadUtils.h"
 #include "nsJSUtils.h"
 #include "nsWidgetsCID.h"
@@ -68,7 +67,6 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/FilePreferences.h"
 #include "mozilla/IOInterposer.h"
-#include "mozilla/ProcessType.h"
 #include "mozilla/RDDProcessImpl.h"
 #include "mozilla/ipc/UtilityProcessImpl.h"
 #include "mozilla/UniquePtr.h"
@@ -255,6 +253,10 @@ const char* XRE_ChildProcessTypeToAnnotation(GeckoProcessType aProcessType) {
   }
 }
 
+namespace mozilla::startup {
+GeckoProcessType sChildProcessType = GeckoProcessType_Default;
+}  
+
 #if defined(MOZ_WIDGET_ANDROID)
 void XRE_SetAndroidChildFds(JNIEnv* env, const XRE_AndroidChildFds& fds) {
   mozilla::jni::SetGeckoThreadEnv(env);
@@ -267,7 +269,21 @@ void XRE_SetAndroidChildFds(JNIEnv* env, const XRE_AndroidChildFds& fds) {
 #endif  
 
 void XRE_SetProcessType(const char* aProcessTypeString) {
-  SetGeckoProcessType(aProcessTypeString);
+  static bool called = false;
+  if (called && sChildProcessType != GeckoProcessType_ForkServer) {
+    MOZ_CRASH();
+  }
+  called = true;
+
+  sChildProcessType = [&] {
+    for (GeckoProcessType t :
+         MakeEnumeratedRange(GeckoProcessType::GeckoProcessType_End)) {
+      if (!strcmp(XRE_GeckoProcessTypeToString(t), aProcessTypeString)) {
+        return t;
+      }
+    }
+    return GeckoProcessType_Invalid;
+  }();
 
 #ifdef MOZ_MEMORY
   
@@ -490,12 +506,6 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
         
         NS_WARNING("Could not setup crash reporting\n");
       }
-    } else {
-      
-      
-      
-      
-      CrashReporter::UnregisterRuntimeExceptionModule();
     }
   }
 
