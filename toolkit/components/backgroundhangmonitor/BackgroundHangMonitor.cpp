@@ -67,10 +67,26 @@ namespace mozilla {
 class BackgroundHangManager : public nsIObserver {
  private:
   
+  static void MonitorThread(void* aData) {
+    AUTO_PROFILER_REGISTER_THREAD("BHMgr Monitor");
+    NS_SetCurrentThreadName("BHMgr Monitor");
+
+    
+
+
+
+
+    static_cast<BackgroundHangManager*>(aData)->RunMonitorThread();
+  }
+
+  
+  PRThread* mHangMonitorThread;
+  
   bool mShutdown;
 
   BackgroundHangManager(const BackgroundHangManager&);
   BackgroundHangManager& operator=(const BackgroundHangManager&);
+  void RunMonitorThread();
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -81,19 +97,14 @@ class BackgroundHangManager : public nsIObserver {
   
   Monitor mLock MOZ_UNANNOTATED;
   
+  TimeStamp mNow;
+  
   LinkedList<BackgroundHangThread> mHangThreads;
 
   
   nsCOMPtr<nsIThread> mHangProcessingThread;
 
-  
-  nsCOMPtr<nsIThread> mHangMonitorThread;
-
   ProfilerThreadId mHangMonitorProfilerThreadId;
-
-  void SetMonitorThreadId() {
-    mHangMonitorProfilerThreadId = profiler_current_thread_id();
-  }
 
   
   
@@ -103,20 +114,16 @@ class BackgroundHangManager : public nsIObserver {
   
   CPUUsageWatcher mCPUUsageWatcher;
 
-  TimeStamp mLastCheckedCPUUsage;
-
-  void CollectCPUUsage(TimeStamp aNow, bool aForce = false) {
-    if (aForce ||
-        aNow - mLastCheckedCPUUsage >
-            TimeDuration::FromMilliseconds(kCheckCPUIntervalMilliseconds)) {
-      Unused << NS_WARN_IF(mCPUUsageWatcher.CollectCPUUsage().isErr());
-      mLastCheckedCPUUsage = aNow;
-    }
-  }
-
   void Shutdown() {
     MonitorAutoLock autoLock(mLock);
     mShutdown = true;
+    autoLock.Notify();
+  }
+
+  
+  void Wakeup() {
+    mLock.AssertCurrentThreadOwns();
+    mLock.NotifyAll();
   }
 
   BackgroundHangManager();
@@ -168,10 +175,7 @@ BackgroundHangManager::Observe(nsISupports* aSubject, const char* aTopic,
 
 
 
-class BackgroundHangThread final
-    : public LinkedListElement<BackgroundHangThread>,
-      public nsITimerCallback,
-      public nsINamed {
+class BackgroundHangThread : public LinkedListElement<BackgroundHangThread> {
  private:
   static MOZ_THREAD_LOCAL(BackgroundHangThread*) sTlsKey;
   static bool sTlsKeyInitialized;
@@ -185,14 +189,11 @@ class BackgroundHangThread final
   const RefPtr<BackgroundHangManager> mManager;
   
   const PRThread* mThreadID;
-  RefPtr<nsITimer> mTimer;
-  TimeStamp mExpectedTimerNotification;
+
+  void Update();
 
  public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSITIMERCALLBACK
-  NS_DECL_NSINAMED
-
+  NS_INLINE_DECL_REFCOUNTING(BackgroundHangThread)
   
 
 
@@ -250,37 +251,14 @@ class BackgroundHangThread final
   void ReportPermaHang();
   
   void NotifyActivity() {
-    if (MOZ_UNLIKELY(!mTimer)) {
-      return;
-    }
-
     MonitorAutoLock autoLock(mManager->mLock);
     PROFILER_MARKER_UNTYPED(
         "NotifyActivity", OTHER,
         MarkerThreadId(mManager->mHangMonitorProfilerThreadId));
-
-    TimeStamp now = TimeStamp::Now();
-    if (mWaiting) {
-      mWaiting = false;
-    } else if (mHanging) {
-      
-      ReportHang(now - mHangStart);
-      mHanging = false;
-    }
-    mLastActivity = now;
-    BackgroundHangManager::sInstance->CollectCPUUsage(now);
-
-    
-    mExpectedTimerNotification = now + mTimeout;
-    mTimer->InitHighResolutionWithCallback(this, mTimeout,
-                                           nsITimer::TYPE_ONE_SHOT);
+    Update();
   }
   
   void NotifyWait() {
-    if (MOZ_UNLIKELY(!mTimer)) {
-      return;
-    }
-
     MonitorAutoLock autoLock(mManager->mLock);
     PROFILER_MARKER_UNTYPED(
         "NotifyWait", OTHER,
@@ -290,10 +268,7 @@ class BackgroundHangThread final
       return;
     }
 
-    mTimer->Cancel();
-
-    mLastActivity = TimeStamp::Now();
-
+    Update();
     if (mHanging) {
       
       
@@ -311,14 +286,6 @@ class BackgroundHangThread final
   }
 };
 
-NS_IMPL_ISUPPORTS(BackgroundHangThread, nsITimerCallback, nsINamed)
-
-NS_IMETHODIMP
-BackgroundHangThread::GetName(nsACString& aName) {
-  aName.AssignLiteral("BackgroundHangThread_timer");
-  return NS_OK;
-}
-
 StaticRefPtr<BackgroundHangManager> BackgroundHangManager::sInstance;
 bool BackgroundHangManager::sDisabled = false;
 
@@ -328,20 +295,16 @@ bool BackgroundHangThread::sTlsKeyInitialized;
 BackgroundHangManager::BackgroundHangManager()
     : mShutdown(false), mLock("BackgroundHangManager") {
   
-  
-  sInstance = this;
+  MonitorAutoLock autoLock(mLock);
 
-  DebugOnly<nsresult> rv =
-      NS_NewNamedThread("BHMgr Monitor", getter_AddRefs(mHangMonitorThread),
-                        mozilla::NewRunnableMethod(
-                            "BackgroundHangManager::SetMonitorThreadId", this,
-                            &BackgroundHangManager::SetMonitorThreadId));
+  mHangMonitorThread = PR_CreateThread(
+      PR_USER_THREAD, MonitorThread, this, PR_PRIORITY_LOW, PR_GLOBAL_THREAD,
+      PR_JOINABLE_THREAD, nsIThreadManager::DEFAULT_STACK_SIZE);
 
-  MOZ_ASSERT(NS_SUCCEEDED(rv) && mHangMonitorThread,
-             "Failed to create BHR processing thread");
+  MOZ_ASSERT(mHangMonitorThread, "Failed to create BHR monitor thread");
 
-  rv = NS_NewNamedThread("BHMgr Processor",
-                         getter_AddRefs(mHangProcessingThread));
+  DebugOnly<nsresult> rv = NS_NewNamedThread(
+      "BHMgr Processor", getter_AddRefs(mHangProcessingThread));
   MOZ_ASSERT(NS_SUCCEEDED(rv) && mHangProcessingThread,
              "Failed to create BHR processing thread");
 }
@@ -355,12 +318,149 @@ BackgroundHangManager::~BackgroundHangManager() {
   
   if (mHangMonitorThread) {
     
-    mHangMonitorThread->Shutdown();
+    PR_JoinThread(mHangMonitorThread);
   }
 
   
   if (mHangProcessingThread) {
     mHangProcessingThread->Shutdown();
+  }
+}
+
+void BackgroundHangManager::RunMonitorThread() {
+  
+  MonitorAutoLock autoLock(mLock);
+
+  mHangMonitorProfilerThreadId = profiler_current_thread_id();
+
+  
+
+
+
+
+
+  TimeStamp systemTime = TimeStamp::Now();
+  
+  TimeDuration waitTime;
+  TimeDuration recheckTimeout;
+  TimeStamp lastCheckedCPUUsage = systemTime;
+  TimeDuration checkCPUUsageInterval =
+      TimeDuration::FromMilliseconds(kCheckCPUIntervalMilliseconds);
+
+  while (!mShutdown) {
+    autoLock.Wait(waitTime);
+
+    TimeStamp newTime = TimeStamp::Now();
+    TimeDuration systemInterval = newTime - systemTime;
+    systemTime = newTime;
+
+    if (systemTime - lastCheckedCPUUsage > checkCPUUsageInterval) {
+      Unused << NS_WARN_IF(mCPUUsageWatcher.CollectCPUUsage().isErr());
+      lastCheckedCPUUsage = systemTime;
+    }
+
+    
+
+
+    if (MOZ_LIKELY(waitTime != TimeDuration::Forever() &&
+                   systemInterval < waitTime * 2)) {
+      mNow += systemInterval;
+    }
+
+    
+
+
+    if (MOZ_LIKELY(systemInterval < recheckTimeout &&
+                   systemInterval >= waitTime)) {
+      recheckTimeout -= systemInterval;
+      continue;
+    }
+
+    
+
+
+
+
+
+    waitTime = TimeDuration::Forever();
+    recheckTimeout = TimeDuration::Forever();
+
+    
+    TimeStamp now = mNow;
+
+    
+    for (BackgroundHangThread* currentThread = mHangThreads.getFirst();
+         currentThread; currentThread = currentThread->getNext()) {
+      if (currentThread->mWaiting) {
+        
+        continue;
+      }
+      TimeStamp lastActivity = currentThread->mLastActivity;
+      TimeDuration hangTime = now - lastActivity;
+      if (MOZ_UNLIKELY(hangTime >= currentThread->mMaxTimeout)) {
+        
+        
+        currentThread->mWaiting = true;
+        currentThread->mHanging = false;
+        currentThread->ReportPermaHang();
+        continue;
+      }
+
+      if (MOZ_LIKELY(!currentThread->mHanging)) {
+        if (MOZ_UNLIKELY(hangTime >= currentThread->mTimeout)) {
+#ifdef MOZ_GECKO_PROFILER
+          
+          currentThread->mStackHelper.GetStack(
+              currentThread->mHangStack, currentThread->mRunnableName, true);
+#endif
+
+          
+          
+          
+          
+          if (systemTime != lastCheckedCPUUsage) {
+            Unused << NS_WARN_IF(mCPUUsageWatcher.CollectCPUUsage().isErr());
+            lastCheckedCPUUsage = systemTime;
+          }
+
+          currentThread->mHangStart = lastActivity;
+          currentThread->mHanging = true;
+          currentThread->mAnnotations =
+              currentThread->mAnnotators.GatherAnnotations();
+        }
+      } else {
+        if (MOZ_LIKELY(lastActivity != currentThread->mHangStart)) {
+          
+          currentThread->ReportHang(now - currentThread->mHangStart);
+          currentThread->mHanging = false;
+        }
+      }
+
+      
+
+
+      TimeDuration nextRecheck;
+      if (currentThread->mHanging) {
+        nextRecheck = currentThread->mMaxTimeout;
+      } else {
+        nextRecheck = currentThread->mTimeout;
+      }
+      recheckTimeout =
+          TimeDuration::Min(recheckTimeout, nextRecheck - hangTime);
+
+      if (currentThread->mTimeout != TimeDuration::Forever()) {
+        
+
+        waitTime =
+            TimeDuration::Min(waitTime, currentThread->mTimeout / (int64_t)4);
+      }
+    }
+  }
+
+  
+
+  while (!mHangThreads.isEmpty()) {
+    autoLock.Wait();
   }
 }
 
@@ -375,6 +475,8 @@ BackgroundHangThread::BackgroundHangThread(
       mMaxTimeout(aMaxTimeoutMs == BackgroundHangMonitor::kNoTimeout
                       ? TimeDuration::Forever()
                       : TimeDuration::FromMilliseconds(aMaxTimeoutMs)),
+      mLastActivity(mManager->mNow),
+      mHangStart(mLastActivity),
       mHanging(false),
       mWaiting(true),
       mThreadType(aThreadType),
@@ -382,13 +484,12 @@ BackgroundHangThread::BackgroundHangThread(
   if (sTlsKeyInitialized && IsShared()) {
     sTlsKey.set(this);
   }
-  if (mManager->mHangMonitorThread) {
-    mTimer = NS_NewTimer(mManager->mHangMonitorThread);
-  }
   
   MonitorAutoLock autoLock(mManager->mLock);
   
   mManager->mHangThreads.insertBack(this);
+  
+  autoLock.Notify();
 }
 
 BackgroundHangThread::~BackgroundHangThread() {
@@ -396,6 +497,8 @@ BackgroundHangThread::~BackgroundHangThread() {
   MonitorAutoLock autoLock(mManager->mLock);
   
   remove();
+  
+  autoLock.Notify();
 
   
   if (sTlsKeyInitialized && IsShared()) {
@@ -473,55 +576,22 @@ void BackgroundHangThread::ReportPermaHang() {
   ReportHang(mMaxTimeout, PersistedToDisk::Yes);
 }
 
-NS_IMETHODIMP BackgroundHangThread::Notify(nsITimer* aTimer) {
-  MOZ_ASSERT(profiler_current_thread_id() ==
-             mManager->mHangMonitorProfilerThreadId);
+MOZ_ALWAYS_INLINE void BackgroundHangThread::Update() {
+  TimeStamp now = mManager->mNow;
+  if (mWaiting) {
+    mLastActivity = now;
+    mWaiting = false;
+    
 
-  MonitorAutoLock autoLock(mManager->mLock);
-  PROFILER_MARKER_UNTYPED("TimerNotify", OTHER, {});
-
-  TimeStamp now = TimeStamp::Now();
-  if (MOZ_UNLIKELY((now - mExpectedTimerNotification) * 2 > mTimeout)) {
-    
-    
-    
-    mWaiting = true;
-    mHanging = false;
-    return NS_OK;
+    mManager->Wakeup();
+  } else {
+    TimeDuration duration = now - mLastActivity;
+    if (MOZ_UNLIKELY(duration >= mTimeout)) {
+      
+      mManager->Wakeup();
+    }
+    mLastActivity = now;
   }
-
-  TimeDuration hangTime = now - mLastActivity;
-  if (MOZ_UNLIKELY(hangTime >= mMaxTimeout)) {
-    
-    
-    
-    mWaiting = true;
-    mHanging = false;
-    ReportPermaHang();
-    return NS_OK;
-  }
-
-  if (MOZ_LIKELY(!mHanging && hangTime >= mTimeout)) {
-#ifdef MOZ_GECKO_PROFILER
-    
-    mStackHelper.GetStack(mHangStack, mRunnableName, true);
-#endif
-
-    
-    
-    
-    
-    BackgroundHangManager::sInstance->CollectCPUUsage(now, true);
-
-    mHangStart = mLastActivity;
-    mHanging = true;
-    mAnnotations = mAnnotators.GatherAnnotations();
-  }
-
-  TimeDuration nextRecheck = mMaxTimeout - hangTime;
-  mExpectedTimerNotification = now + nextRecheck;
-  return mTimer->InitHighResolutionWithCallback(this, nextRecheck,
-                                                nsITimer::TYPE_ONE_SHOT);
 }
 
 BackgroundHangThread* BackgroundHangThread::FindThread() {
@@ -597,7 +667,7 @@ void BackgroundHangMonitor::Startup() {
   if (!strcmp(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL), "beta")) {
     if (XRE_IsParentProcess()) {  
       BackgroundHangThread::Startup();
-      new BackgroundHangManager();
+      BackgroundHangManager::sInstance = new BackgroundHangManager();
       Unused << NS_WARN_IF(
           BackgroundHangManager::sInstance->mCPUUsageWatcher.Init().isErr());
       observerService->AddObserver(BackgroundHangManager::sInstance,
@@ -609,7 +679,7 @@ void BackgroundHangMonitor::Startup() {
   }
 
   BackgroundHangThread::Startup();
-  new BackgroundHangManager();
+  BackgroundHangManager::sInstance = new BackgroundHangManager();
   Unused << NS_WARN_IF(
       BackgroundHangManager::sInstance->mCPUUsageWatcher.Init().isErr());
   if (XRE_IsParentProcess()) {
