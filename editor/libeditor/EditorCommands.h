@@ -303,19 +303,6 @@ class EditorCommand : public nsIControllerCommand {
       case Command::FormatIncreaseZIndex:
         return EditorCommandParamType::None;
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      case Command::GetHTML:
-        return EditorCommandParamType::None;
-
       default:
         MOZ_ASSERT_UNREACHABLE("Unknown Command");
         return EditorCommandParamType::None;
