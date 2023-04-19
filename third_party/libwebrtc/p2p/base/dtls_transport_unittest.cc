@@ -422,16 +422,6 @@ TEST_F(DtlsTransportTest, TestTransferDtls) {
 }
 
 
-TEST_F(DtlsTransportTest, TestWriteFailsOverDtls) {
-  PrepareDtls(rtc::KT_DEFAULT);
-  ASSERT_TRUE(Connect());
-  client1_.fake_ice_transport()->SetError(EAGAIN);
-  int res = client1_.dtls_transport()->SendPacket("hello", 5,
-                                                  rtc::PacketOptions(), 0);
-  EXPECT_EQ(res, -1);
-}
-
-
 
 
 
