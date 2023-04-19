@@ -111,12 +111,6 @@ class CellColor {
 
 
 
-
-
-
-
-
-
 class HeaderWord {
   
   
@@ -140,8 +134,7 @@ class HeaderWord {
 
   
   uintptr_t get() const {
-    
-    uintptr_t value = value_;
+    uintptr_t value = getAtomic();
     MOZ_ASSERT((value & RESERVED_MASK) == 0);
     return value;
   }
