@@ -1273,7 +1273,7 @@ add_task(async function bestMatch() {
 });
 
 
-add_task(async function endpointSetByNimbus() {
+add_task(async function nimbus() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
@@ -1296,7 +1296,44 @@ add_task(async function endpointSetByNimbus() {
 
   
   
-  await withEndpointExperiment(async () => {
+  
+
+  
+  
+  
+  let expectedParams = [
+    {
+      param: "client_variants",
+      value: "test-client-variants",
+      variable: "merinoClientVariants",
+    },
+    {
+      param: "providers",
+      value: "test-providers",
+      variable: "merinoProviders",
+    },
+  ];
+
+  
+  let experimentValues = expectedParams.reduce(
+    (memo, { variable, value }) => {
+      memo[variable] = value;
+      return memo;
+    },
+    {
+      merinoEndpointURL: gMerinoEndpointURL.toString(),
+    }
+  );
+
+  await withExperiment(experimentValues, async () => {
+    
+    let actualParams;
+    setMerinoResponse().checkRequest = req => {
+      info("Got request query string: " + req.queryString);
+      actualParams = new URLSearchParams(req.queryString);
+    };
+
+    
     await check_results({
       context: createContext(SEARCH_STRING, {
         providers: [UrlbarProviderQuickSuggest.name],
@@ -1304,12 +1341,22 @@ add_task(async function endpointSetByNimbus() {
       }),
       matches: [EXPECTED_MERINO_RESULT],
     });
+
+    
+    Assert.ok(actualParams, "Mock Merino server received the request");
+    for (let { param, value } of expectedParams) {
+      Assert.deepEqual(
+        actualParams.getAll(param),
+        [value],
+        "Param value is correct: " + param
+      );
+    }
   });
 
   UrlbarPrefs.set(PREF_MERINO_ENDPOINT_URL, gMerinoEndpointURL.toString());
 });
 
-async function withEndpointExperiment(callback) {
+async function withExperiment(values, callback) {
   let {
     enrollmentPromise,
     doExperimentCleanup,
@@ -1324,7 +1371,7 @@ async function withEndpointExperiment(callback) {
               featureId: NimbusFeatures.urlbar.featureId,
               value: {
                 enabled: true,
-                merinoEndpointURL: gMerinoEndpointURL.toString(),
+                ...values,
               },
             },
           ],
