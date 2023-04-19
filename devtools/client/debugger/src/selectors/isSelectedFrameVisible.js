@@ -2,7 +2,10 @@
 
 
 
-import { originalToGeneratedId, isOriginalId } from "devtools-source-map";
+import {
+  originalToGeneratedId,
+  isOriginalId,
+} from "devtools/client/shared/source-map/index";
 import { getSelectedFrame, getSelectedLocation, getCurrentThread } from ".";
 
 function getGeneratedId(sourceId) {

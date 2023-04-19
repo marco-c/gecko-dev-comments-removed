@@ -2,7 +2,7 @@
 
 
 
-import { isOriginalId } from "devtools-source-map";
+import { isOriginalId } from "devtools/client/shared/source-map/index";
 
 export function getSelectedLocation(mappedLocation, context) {
   if (!context) {

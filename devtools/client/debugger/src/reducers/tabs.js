@@ -7,7 +7,7 @@
 
 
 
-import { isOriginalId } from "devtools-source-map";
+import { isOriginalId } from "devtools/client/shared/source-map/index";
 
 import { isSimilarTab, persistTabs } from "../utils/tabs";
 

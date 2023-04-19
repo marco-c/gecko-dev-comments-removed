@@ -26,10 +26,6 @@ const mappings = {
 
 const mappingValues = Object.values(mappings);
 
-
-
-mappings["devtools-source-map"] = "devtools/client/shared/source-map/index.js";
-
 function isRequire(t, node) {
   return node && t.isCallExpression(node) && node.callee.name == "require";
 }

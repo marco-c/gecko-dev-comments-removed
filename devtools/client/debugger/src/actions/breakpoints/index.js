@@ -25,7 +25,7 @@ import {
   disableBreakpoint,
 } from "./modify";
 
-import { isOriginalId } from "devtools-source-map";
+import { isOriginalId } from "devtools/client/shared/source-map/index";
 
 
 export * from "./breakpointPositions";

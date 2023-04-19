@@ -2,7 +2,7 @@
 
 
 
-import { isOriginalId } from "devtools-source-map";
+import { isOriginalId } from "devtools/client/shared/source-map/index";
 import { getSource, getLocationSource } from "../selectors";
 
 export async function getGeneratedLocation(
