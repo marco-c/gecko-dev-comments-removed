@@ -61,9 +61,6 @@ struct VoipEngineConfig {
 };
 
 
-
-
-
 std::unique_ptr<VoipEngine> CreateVoipEngine(VoipEngineConfig config);
 
 }  

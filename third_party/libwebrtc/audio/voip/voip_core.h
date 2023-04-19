@@ -51,21 +51,17 @@ class VoipCore : public VoipEngine,
                  public VoipDtmf,
                  public VoipStatistics {
  public:
+  
+  
+  
+  
+  VoipCore(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
+           rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
+           std::unique_ptr<TaskQueueFactory> task_queue_factory,
+           rtc::scoped_refptr<AudioDeviceModule> audio_device_module,
+           rtc::scoped_refptr<AudioProcessing> audio_processing,
+           std::unique_ptr<ProcessThread> process_thread = nullptr);
   ~VoipCore() override = default;
-
-  
-  
-  
-  
-  
-  
-  
-  bool Init(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
-            rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
-            std::unique_ptr<TaskQueueFactory> task_queue_factory,
-            rtc::scoped_refptr<AudioDeviceModule> audio_device_module,
-            rtc::scoped_refptr<AudioProcessing> audio_processing,
-            std::unique_ptr<ProcessThread> process_thread = nullptr);
 
   
   VoipBase& Base() override { return *this; }
@@ -113,6 +109,16 @@ class VoipCore : public VoipEngine,
  private:
   
   
+  
+  
+  
+  
+  
+  
+  bool InitializeIfNeeded();
+
+  
+  
   rtc::scoped_refptr<AudioChannel> GetChannel(ChannelId channel_id);
 
   
@@ -154,6 +160,9 @@ class VoipCore : public VoipEngine,
   
   std::unordered_map<ChannelId, rtc::scoped_refptr<AudioChannel>> channels_
       RTC_GUARDED_BY(lock_);
+
+  
+  bool initialized_ RTC_GUARDED_BY(lock_) = false;
 };
 
 }  

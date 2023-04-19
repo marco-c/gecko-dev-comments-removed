@@ -37,12 +37,12 @@ static constexpr int kMaxChannelId = 100000;
 
 }  
 
-bool VoipCore::Init(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
-                    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
-                    std::unique_ptr<TaskQueueFactory> task_queue_factory,
-                    rtc::scoped_refptr<AudioDeviceModule> audio_device_module,
-                    rtc::scoped_refptr<AudioProcessing> audio_processing,
-                    std::unique_ptr<ProcessThread> process_thread) {
+VoipCore::VoipCore(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
+                   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
+                   std::unique_ptr<TaskQueueFactory> task_queue_factory,
+                   rtc::scoped_refptr<AudioDeviceModule> audio_device_module,
+                   rtc::scoped_refptr<AudioProcessing> audio_processing,
+                   std::unique_ptr<ProcessThread> process_thread) {
   encoder_factory_ = std::move(encoder_factory);
   decoder_factory_ = std::move(decoder_factory);
   task_queue_factory_ = std::move(task_queue_factory);
@@ -58,6 +58,18 @@ bool VoipCore::Init(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
   
   audio_transport_ = std::make_unique<AudioTransportImpl>(
       audio_mixer_.get(), audio_processing_.get(), nullptr);
+}
+
+bool VoipCore::InitializeIfNeeded() {
+  
+  
+  
+  
+  MutexLock lock(&lock_);
+
+  if (initialized_) {
+    return true;
+  }
 
   
   if (audio_device_module_->Init() != 0) {
@@ -65,7 +77,6 @@ bool VoipCore::Init(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
     return false;
   }
 
-  
   
   
   
@@ -110,6 +121,8 @@ bool VoipCore::Init(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
       0) {
     RTC_LOG(LS_WARNING) << "Unable to register audio callback.";
   }
+
+  initialized_ = true;
 
   return true;
 }
@@ -243,6 +256,11 @@ bool VoipCore::UpdateAudioTransportWithSenders() {
 
   
   if (!audio_senders.empty()) {
+    
+    if (!InitializeIfNeeded()) {
+      return false;
+    }
+
     if (!audio_device_module_->Recording()) {
       if (audio_device_module_->InitRecording() != 0) {
         RTC_LOG(LS_ERROR) << "InitRecording failed";
@@ -297,6 +315,11 @@ bool VoipCore::StartPlayout(ChannelId channel_id) {
   }
 
   if (!channel->StartPlay()) {
+    return false;
+  }
+
+  
+  if (!InitializeIfNeeded()) {
     return false;
   }
 
