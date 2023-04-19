@@ -2091,26 +2091,6 @@ class UtilitySandboxPolicy : public SandboxPolicyCommon {
         return Allow();
 
       
-      default:
-        return SandboxPolicyCommon::EvaluateSyscall(sysno);
-    }
-  }
-};
-
-UniquePtr<sandbox::bpf_dsl::Policy> GetUtilitySandboxPolicy(
-    SandboxBrokerClient* aMaybeBroker) {
-  return UniquePtr<sandbox::bpf_dsl::Policy>(
-      new UtilitySandboxPolicy(aMaybeBroker));
-}
-
-class UtilityAudioDecoderSandboxPolicy final : public UtilitySandboxPolicy {
- public:
-  explicit UtilityAudioDecoderSandboxPolicy(SandboxBrokerClient* aBroker)
-      : UtilitySandboxPolicy(aBroker) {}
-
-  ResultExpr EvaluateSyscall(int sysno) const override {
-    switch (sysno) {
-      
       case __NR_get_mempolicy:
         return Allow();
 
@@ -2126,15 +2106,15 @@ class UtilityAudioDecoderSandboxPolicy final : public UtilitySandboxPolicy {
 
       
       default:
-        return UtilitySandboxPolicy::EvaluateSyscall(sysno);
+        return SandboxPolicyCommon::EvaluateSyscall(sysno);
     }
   }
 };
 
-UniquePtr<sandbox::bpf_dsl::Policy> GetUtilityAudioDecoderSandboxPolicy(
+UniquePtr<sandbox::bpf_dsl::Policy> GetUtilitySandboxPolicy(
     SandboxBrokerClient* aMaybeBroker) {
   return UniquePtr<sandbox::bpf_dsl::Policy>(
-      new UtilityAudioDecoderSandboxPolicy(aMaybeBroker));
+      new UtilitySandboxPolicy(aMaybeBroker));
 }
 
 }  
