@@ -162,22 +162,21 @@ bool SRIMetadata::CanTrustBeDelegatedTo(const SRIMetadata& aOther) const {
     return false;
   }
 
-  if (mAlgorithmType < aOther.mAlgorithmType) {
+  if (mAlgorithmType != aOther.mAlgorithmType) {
     
-    
-    return true;
+    return false;
   }
-  if (mAlgorithmType > aOther.mAlgorithmType) {
-    
+
+  
+  
+  
+  
+  if (mHashes.Length() != aOther.mHashes.Length()) {
     return false;
   }
 
   for (const auto& hash : mHashes) {
     if (!aOther.mHashes.Contains(hash)) {
-      
-      
-      
-      
       return false;
     }
   }
