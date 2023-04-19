@@ -2860,6 +2860,12 @@ BrowserGlue.prototype = {
 
       {
         task: () => {
+          lazy.UrlbarQuickSuggest.init();
+        },
+      },
+
+      {
+        task: () => {
           
           
           ChromeUtils.idleDispatch(() => {
