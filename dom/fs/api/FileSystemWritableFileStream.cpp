@@ -415,24 +415,6 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
   return promise.forget();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 nsresult FileSystemWritableFileStream::WriteBlob(Blob* aBlob,
                                                  uint64_t& aWritten) {
   NS_ENSURE_ARG_POINTER(aBlob);
