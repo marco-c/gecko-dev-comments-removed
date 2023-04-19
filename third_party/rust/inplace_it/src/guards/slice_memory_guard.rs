@@ -3,7 +3,7 @@ use core::{
     mem::{MaybeUninit, transmute},
     ptr::{drop_in_place, write},
 };
-use std::intrinsics::copy_nonoverlapping;
+use std::ptr::copy_nonoverlapping;
 
 
 
