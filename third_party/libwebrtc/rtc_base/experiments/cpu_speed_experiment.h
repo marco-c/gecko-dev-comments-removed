@@ -15,6 +15,8 @@
 
 #include "absl/types/optional.h"
 
+#include "rtc_base/experiments/field_trial_parser.h"
+
 namespace webrtc {
 
 class CpuSpeedExperiment {
@@ -28,17 +30,34 @@ class CpuSpeedExperiment {
   
   
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   struct Config {
     int pixels = 0;     
     int cpu_speed = 0;  
                         
+    
+    int cpu_speed_le_cores = 0;  
+                                 
   };
 
   
-  absl::optional<int> GetValue(int pixels) const;
+  absl::optional<int> GetValue(int pixels, int num_cores) const;
 
  private:
   std::vector<Config> configs_;
+
+  
+  FieldTrialOptional<int> cores_;
 };
 
 }  
