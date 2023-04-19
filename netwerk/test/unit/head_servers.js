@@ -608,13 +608,13 @@ class NodeHTTP2ProxyServer extends BaseHTTPProxy {
 
 
 class NodeWebSocketServerCode extends BaseNodeHTTPServerCode {
-  static messageHandler(data) {
+  static messageHandler(data, ws) {
     if (global.wsInputHandler) {
-      global.wsInputHandler(data);
+      global.wsInputHandler(data, ws);
       return;
     }
 
-    global.ws.send("test");
+    ws.send("test");
   }
 
   static async startServer(port) {
@@ -634,8 +634,9 @@ class NodeWebSocketServerCode extends BaseNodeHTTPServerCode {
     WebSocket.Server = require(`${node_ws_root}/lib/websocket-server`);
     global.webSocketServer = new WebSocket.Server({ server: global.server });
     global.webSocketServer.on("connection", function connection(ws) {
-      global.ws = ws;
-      ws.on("message", NodeWebSocketServerCode.messageHandler);
+      ws.on("message", data =>
+        NodeWebSocketServerCode.messageHandler(data, ws)
+      );
     });
 
     await global.server.listen(port);
@@ -695,11 +696,10 @@ class NodeWebSocketHttp2ServerCode extends BaseNodeHTTPServerCode {
         const ws = new WebSocket(null);
         stream.setNoDelay = () => {};
         ws.setSocket(stream, Buffer.from(""), 100 * 1024 * 1024);
-        global.ws = ws;
 
         ws.on("message", data => {
           if (global.wsInputHandler) {
-            global.wsInputHandler(data);
+            global.wsInputHandler(data, ws);
             return;
           }
 
@@ -772,4 +772,91 @@ function getTestServerCertificate() {
     }
   }
   return null;
+}
+
+class WebSocketConnection {
+  constructor() {
+    this._openPromise = new Promise(resolve => {
+      this._openCallback = resolve;
+    });
+
+    this._stopPromise = new Promise(resolve => {
+      this._stopCallback = resolve;
+    });
+
+    this._msgPromise = new Promise(resolve => {
+      this._msgCallback = resolve;
+    });
+    this._messages = [];
+    this._ws = null;
+  }
+
+  get QueryInterface() {
+    return ChromeUtils.generateQI(["nsIWebSocketListener"]);
+  }
+
+  onAcknowledge(aContext, aSize) {}
+  onBinaryMessageAvailable(aContext, aMsg) {
+    info(`received binary ${aMsg}`);
+    this._messages.push(aMsg);
+    this._msgCallback();
+  }
+  onMessageAvailable(aContext, aMsg) {}
+  onServerClose(aContext, aCode, aReason) {}
+  onWebSocketListenerStart(aContext) {}
+  onStart(aContext) {
+    this._openCallback();
+  }
+  onStop(aContext, aStatusCode) {
+    this._stopCallback({ status: aStatusCode });
+    this._ws = null;
+  }
+  static makeWebSocketChan() {
+    let chan = Cc["@mozilla.org/network/protocol;1?name=wss"].createInstance(
+      Ci.nsIWebSocketChannel
+    );
+    chan.initLoadInfo(
+      null, 
+      Services.scriptSecurityManager.getSystemPrincipal(),
+      null, 
+      Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+      Ci.nsIContentPolicy.TYPE_WEBSOCKET
+    );
+    return chan;
+  }
+  
+  open(url) {
+    this._ws = WebSocketConnection.makeWebSocketChan();
+    let uri = Services.io.newURI(url);
+    this._ws.asyncOpen(uri, url, {}, 0, this, null);
+    return this._openPromise;
+  }
+  
+  close(code, reason) {
+    this._ws.close(code || Ci.nsIWebSocketChannel.CLOSE_NORMAL, reason || "");
+  }
+  
+  send(msg) {
+    this._ws.sendMsg(msg);
+  }
+  
+  
+  
+  finished() {
+    return this._stopPromise;
+  }
+
+  
+  
+  
+  
+  async receiveMessages() {
+    await this._msgPromise;
+    this._msgPromise = new Promise(resolve => {
+      this._msgCallback = resolve;
+    });
+    let messages = this._messages;
+    this._messages = [];
+    return messages;
+  }
 }
