@@ -189,10 +189,17 @@ class Connection : public CandidatePairInterface, public sigslot::has_slots<> {
   void set_receiving_timeout(absl::optional<int> receiving_timeout_ms);
 
   
-  void Destroy();
+  
+  
+  
+  [[deprecated]] void Destroy();
 
   
-  void FailAndDestroy();
+  
+  
+  
+  
+  bool Shutdown();
 
   
   
