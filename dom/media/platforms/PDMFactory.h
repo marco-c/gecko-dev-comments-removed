@@ -25,6 +25,8 @@ class CDMProxy;
 class MediaDataDecoder;
 class MediaResult;
 class StaticMutex;
+template <typename T>
+struct MaxEnumValue;
 struct CreateDecoderParams;
 struct CreateDecoderParamsForAsync;
 struct SupportDecoderParams;
@@ -43,10 +45,9 @@ class PDMFactory final {
   RefPtr<PDMCreateDecoderPromise> CreateDecoder(
       const CreateDecoderParams& aParams);
 
-  media::DecodeSupportSet SupportsMimeType(const nsACString& aMimeType) const;
-  media::DecodeSupportSet Supports(
-      const SupportDecoderParams& aParams,
-      DecoderDoctorDiagnostics* aDiagnostics) const;
+  bool SupportsMimeType(const nsACString& aMimeType) const;
+  bool Supports(const SupportDecoderParams& aParams,
+                DecoderDoctorDiagnostics* aDiagnostics) const;
 
   
   
@@ -60,10 +61,31 @@ class PDMFactory final {
   static constexpr int kYUV422 = 2;
   static constexpr int kYUV444 = 3;
 
-  static media::MediaCodecsSupported Supported(bool aForceRefresh = false);
-  static media::DecodeSupportSet SupportsMimeType(
-      const nsACString& aMimeType,
-      const media::MediaCodecsSupported& aSupported, RemoteDecodeIn aLocation);
+  
+
+
+  enum class MediaCodecs {
+    H264,
+    VP9,
+    VP8,
+    AV1,
+    Theora,
+    AAC,
+    MP3,
+    Opus,
+    Vorbis,
+    Flac,
+    Wave,
+
+    SENTINEL,
+  };
+
+  using MediaCodecsSupported = EnumSet<MediaCodecs>;
+
+  static MediaCodecsSupported Supported(bool aForceRefresh = false);
+  static bool SupportsMimeType(const nsACString& aMimeType,
+                               const MediaCodecsSupported& aSupported,
+                               RemoteDecodeIn aLocation);
 
   static bool AllDecodersAreRemote();
 
@@ -105,6 +127,14 @@ class PDMFactory final {
 
   friend class RemoteVideoDecoderParent;
   static void EnsureInit();
+};
+
+
+
+template <>
+struct MaxEnumValue<PDMFactory::MediaCodecs> {
+  static constexpr unsigned int value =
+      static_cast<unsigned int>(PDMFactory::MediaCodecs::SENTINEL);
 };
 
 }  

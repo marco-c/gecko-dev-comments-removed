@@ -71,7 +71,6 @@ class GfxInfoBase : public nsIGfxInfo,
   NS_IMETHOD GetWebRenderEnabled(bool* aWebRenderEnabled) override;
   NS_IMETHOD GetIsHeadless(bool* aIsHeadless) override;
   NS_IMETHOD GetTargetFrameRate(uint32_t* aTargetFrameRate) override;
-  NS_IMETHOD GetCodecSupportInfo(nsACString& aCodecSupportInfo) override;
 
   
   nsTArray<mozilla::gfx::GfxInfoFeatureStatus> GetAllFeatures();
