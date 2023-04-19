@@ -153,11 +153,23 @@ bool DegradedCall::FakeNetworkPipeTransportAdapter::SendRtcp(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 DegradedCall::~DegradedCall() = default;
 
 AudioSendStream* DegradedCall::CreateAudioSendStream(
     const AudioSendStream::Config& config) {
-  if (send_config_) {
+  if (!send_configs_.empty()) {
     auto transport_adapter = std::make_unique<FakeNetworkPipeTransportAdapter>(
         send_pipe_.get(), call_.get(), clock_, config.send_transport);
     AudioSendStream::Config degrade_config = config;
@@ -191,7 +203,7 @@ VideoSendStream* DegradedCall::CreateVideoSendStream(
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config) {
   std::unique_ptr<FakeNetworkPipeTransportAdapter> transport_adapter;
-  if (send_config_) {
+  if (!send_configs_.empty()) {
     transport_adapter = std::make_unique<FakeNetworkPipeTransportAdapter>(
         send_pipe_.get(), call_.get(), clock_, config.send_transport);
     config.send_transport = transport_adapter.get();
@@ -209,7 +221,7 @@ VideoSendStream* DegradedCall::CreateVideoSendStream(
     VideoEncoderConfig encoder_config,
     std::unique_ptr<FecController> fec_controller) {
   std::unique_ptr<FakeNetworkPipeTransportAdapter> transport_adapter;
-  if (send_config_) {
+  if (!send_configs_.empty()) {
     transport_adapter = std::make_unique<FakeNetworkPipeTransportAdapter>(
         send_pipe_.get(), call_.get(), clock_, config.send_transport);
     config.send_transport = transport_adapter.get();
@@ -253,7 +265,7 @@ void DegradedCall::AddAdaptationResource(
 }
 
 PacketReceiver* DegradedCall::Receiver() {
-  if (receive_config_) {
+  if (!receive_configs_.empty()) {
     return this;
   }
   return call_->Receiver();
@@ -301,7 +313,7 @@ void DegradedCall::OnUpdateSyncGroup(AudioReceiveStream& stream,
 }
 
 void DegradedCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
-  if (send_config_) {
+  if (!send_configs_.empty()) {
     
     
     
@@ -326,5 +338,22 @@ PacketReceiver::DeliveryStatus DegradedCall::DeliverPacket(
   
   receive_pipe_->Process();
   return status;
+}
+
+void DegradedCall::UpdateSendNetworkConfig() {
+  send_config_index_ = (send_config_index_ + 1) % send_configs_.size();
+  send_simulated_network_->SetConfig(send_configs_[send_config_index_]);
+  call_->network_thread()->PostDelayedTask(
+      ToQueuedTask(task_safety_, [this] { UpdateSendNetworkConfig(); }),
+      send_configs_[send_config_index_].duration.ms());
+}
+
+void DegradedCall::UpdateReceiveNetworkConfig() {
+  receive_config_index_ = (receive_config_index_ + 1) % receive_configs_.size();
+  receive_simulated_network_->SetConfig(
+      receive_configs_[receive_config_index_]);
+  call_->network_thread()->PostDelayedTask(
+      ToQueuedTask(task_safety_, [this] { UpdateReceiveNetworkConfig(); }),
+      receive_configs_[receive_config_index_].duration.ms());
 }
 }  
