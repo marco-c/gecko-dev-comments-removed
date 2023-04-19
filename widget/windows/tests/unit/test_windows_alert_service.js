@@ -5,6 +5,10 @@
 
 
 
+var { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+
 let gProfD = do_get_profile();
 
 
@@ -55,7 +59,7 @@ function testAlert(serverEnabled) {
     
     let s = ``;
     if (serverEnabled) {
-      s += `program&#xA;firefox&#xA;profile&#xA;${gProfD.path}`;
+      s += `program&#xA;${AppConstants.MOZ_APP_NAME}&#xA;profile&#xA;${gProfD.path}`;
     } else {
       s += `invalid key&#xA;invalid value`;
     }
