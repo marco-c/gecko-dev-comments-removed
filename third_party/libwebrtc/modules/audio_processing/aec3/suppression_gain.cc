@@ -28,10 +28,6 @@
 namespace webrtc {
 namespace {
 
-bool UseUnboundedEchoSpectrum() {
-  return field_trial::IsEnabled("WebRTC-Aec3UseUnboundedEchoSpectrum");
-}
-
 void LimitLowFrequencyGains(std::array<float, kFftLengthBy2Plus1>* gain) {
   
   
@@ -348,7 +344,8 @@ SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
       normal_params_(config_.suppressor.last_lf_band,
                      config_.suppressor.first_hf_band,
                      config_.suppressor.normal_tuning),
-      use_unbounded_echo_spectrum_(UseUnboundedEchoSpectrum()) {
+      use_unbounded_echo_spectrum_(config.suppressor.dominant_nearend_detection
+                                       .use_unbounded_echo_spectrum) {
   RTC_DCHECK_LT(0, state_change_duration_blocks_);
   last_gain_.fill(1.f);
   if (config_.suppressor.use_subband_nearend_detection) {
