@@ -220,6 +220,13 @@ pref("browser.triple_click_selects_paragraph", true);
 pref("pdfjs.annotationMode", 2);
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("pdfjs.annotationEditorMode", 0);
+#else
+  pref("pdfjs.annotationEditorMode", -1);
+#endif
+
+
 pref("pdfjs.enableScripting", true);
 
 
