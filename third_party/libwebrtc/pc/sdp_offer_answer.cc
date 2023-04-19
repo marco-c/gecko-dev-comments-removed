@@ -4769,7 +4769,9 @@ void SdpOfferAnswerHandler::DestroyChannelInterface(
 
   
   
-  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(2);
+  
+  
+  
 }
 
 void SdpOfferAnswerHandler::DestroyAllChannels() {
