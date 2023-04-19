@@ -52,25 +52,8 @@ class ChannelManager final {
                  rtc::Thread* network_thread);
   ~ChannelManager();
 
-  
-  
   rtc::Thread* worker_thread() const { return worker_thread_; }
-  bool set_worker_thread(rtc::Thread* thread) {
-    if (initialized_) {
-      return false;
-    }
-    worker_thread_ = thread;
-    return true;
-  }
   rtc::Thread* network_thread() const { return network_thread_; }
-  bool set_network_thread(rtc::Thread* thread) {
-    if (initialized_) {
-      return false;
-    }
-    network_thread_ = thread;
-    return true;
-  }
-
   MediaEngineInterface* media_engine() { return media_engine_.get(); }
 
   
@@ -88,7 +71,7 @@ class ChannelManager final {
   GetSupportedVideoRtpHeaderExtensions() const;
 
   
-  bool initialized() const { return initialized_; }
+  bool initialized() const;
   
   bool Init();
   
@@ -165,10 +148,10 @@ class ChannelManager final {
  private:
   std::unique_ptr<MediaEngineInterface> media_engine_;  
   std::unique_ptr<DataEngineInterface> data_engine_;    
-  bool initialized_ = false;
-  rtc::Thread* main_thread_;
-  rtc::Thread* worker_thread_;
-  rtc::Thread* network_thread_;
+  bool initialized_ RTC_GUARDED_BY(main_thread_) = false;
+  rtc::Thread* const main_thread_;
+  rtc::Thread* const worker_thread_;
+  rtc::Thread* const network_thread_;
 
   
   std::vector<std::unique_ptr<VoiceChannel>> voice_channels_;
