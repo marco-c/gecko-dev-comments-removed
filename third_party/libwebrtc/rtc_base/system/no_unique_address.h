@@ -24,8 +24,8 @@
 
 
 
-#if (defined(__clang__) && !defined(_MSC_VER) && !defined(WEBRTC_IOS)) || \
-    __cplusplus > 201703L
+#if ((defined(__clang__) && !defined(_MSC_VER) && !defined(WEBRTC_IOS)) || \
+    __cplusplus > 201703L) && !defined(WEBRTC_MOZILLA_BUILD)
 
 #define RTC_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
