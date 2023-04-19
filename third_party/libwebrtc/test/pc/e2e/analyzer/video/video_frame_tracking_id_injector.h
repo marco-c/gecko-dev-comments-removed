@@ -27,8 +27,7 @@ namespace webrtc_pc_e2e {
 
 
 
-class VideoFrameTrackingIdInjector : public EncodedImageDataInjector,
-                                     public EncodedImageDataExtractor {
+class VideoFrameTrackingIdInjector : public EncodedImageDataPropagator {
  public:
   EncodedImage InjectData(uint16_t id,
                           bool unused_discard,
