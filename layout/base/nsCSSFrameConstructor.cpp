@@ -9553,7 +9553,8 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
   
   
   if (aState.mPresContext->IsPaginated() &&
-      StaticPrefs::layout_css_named_pages_enabled()) {
+      StaticPrefs::layout_css_named_pages_enabled() &&
+      aParentFrame->IsBlockFrameOrSubclass()) {
     
     
     
@@ -9613,7 +9614,8 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
       
       
       
-      for (nsContainerFrame* frame = aParentFrame; frame;
+      for (nsContainerFrame* frame = aParentFrame;
+           frame && frame->IsBlockFrameOrSubclass();
            frame = frame->GetParent()) {
         nsIFrame::PageValues* const parentPageValues =
             frame->GetProperty(nsIFrame::PageValuesProperty());
