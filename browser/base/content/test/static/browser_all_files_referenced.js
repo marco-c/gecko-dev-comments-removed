@@ -277,6 +277,10 @@ var whitelist = [
 
   
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
+
+  
+  { file: "resource://gre/modules/LangPackMatcher.sys.mjs" },
+  { file: "resource://gre/modules/PluralForm.sys.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {

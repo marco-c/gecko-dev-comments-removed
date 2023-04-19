@@ -1,34 +1,30 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
-var EXPORTED_SYMBOLS = ["getAddonAndLocalAPIsMocker"];
+import { LangPackMatcher } from "resource://gre/modules/LangPackMatcher.sys.mjs";
 
-const { LangPackMatcher } = ChromeUtils.import(
-  "resource://gre/modules/LangPackMatcher.jsm"
-);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getAddonAndLocalAPIsMocker(testScope, sandbox) {
+/**
+ * LangPackMatcher.jsm calls out to to the addons store, which involves network requests.
+ * Other tests create a fake addons server, and install mock XPIs. At the time of this
+ * writing that infrastructure is not available for mochitests.
+ *
+ * Instead, this test mocks out APIs that have a side-effect, so the addons of the browser
+ * are never modified.
+ *
+ * The calls to get the app's locale and system's locale are also mocked so that the
+ * different language mismatch scenarios can be run through.
+ *
+ * The locales are BCP 47 identifiers:
+ *
+ * @param {{
+ *   sandbox: SinonSandbox,
+ *   systemLocale: string,
+ *   appLocale, string,
+ * }}
+ */
+export function getAddonAndLocalAPIsMocker(testScope, sandbox) {
   const { info } = testScope;
   return function mockAddonAndLocaleAPIs({ systemLocale, appLocale }) {
     info("Mocking LangPackMatcher.jsm APIs");
@@ -71,7 +67,7 @@ function getAddonAndLocalAPIsMocker(testScope, sandbox) {
     if (appLocale) {
       const availableLocales = [appLocale];
       if (appLocale !== "en-US") {
-        
+        // Ensure the fallback behavior is accurately simulated for Firefox.
         availableLocales.push("en-US");
       }
       sandbox
@@ -104,24 +100,24 @@ function getAddonAndLocalAPIsMocker(testScope, sandbox) {
     });
 
     return {
-      
-
-
-
-
-
+      /**
+       * Resolves the addons API call with available langpacks. Call with a list
+       * of BCP 47 identifiers.
+       *
+       * @type {(availableLangpacks: string[]) => {}}
+       */
       resolveLangPacks,
 
-      
-
-
-
-
+      /**
+       * Resolves the pending call to install a langpack.
+       *
+       * @type {() => {}}
+       */
       resolveInstaller,
 
-      
-
-
+      /**
+       * The mocked APIs.
+       */
       mockable,
     };
   };
