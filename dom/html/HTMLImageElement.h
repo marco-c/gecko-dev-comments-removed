@@ -266,9 +266,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   enum class FromIntersectionObserver : bool { No, Yes };
   enum class StartLoading : bool { No, Yes };
-  void StopLazyLoading(FromIntersectionObserver, StartLoading);
-
-  void LazyLoadImageReachedViewport();
+  void StopLazyLoading(StartLoading);
 
   
   

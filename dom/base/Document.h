@@ -3747,14 +3747,6 @@ class Document : public nsINode,
     return mLazyLoadImageObserverViewport;
   }
   DOMIntersectionObserver& EnsureLazyLoadImageObserver();
-  DOMIntersectionObserver& EnsureLazyLoadImageObserverViewport();
-  void IncLazyLoadImageCount();
-  void DecLazyLoadImageCount() {
-    MOZ_DIAGNOSTIC_ASSERT(mLazyLoadImageCount > 0);
-    --mLazyLoadImageCount;
-  }
-  void IncLazyLoadImageStarted() { ++mLazyLoadImageStarted; }
-  void IncLazyLoadImageReachViewport(bool aLoading);
 
   ResizeObserver* GetLastRememberedSizeObserver() {
     return mLastRememberedSizeObserver;
@@ -4832,19 +4824,6 @@ class Document : public nsINode,
   
   
   uint32_t mWriteLevel;
-
-  
-  
-  uint32_t mLazyLoadImageCount;
-  
-  
-  uint32_t mLazyLoadImageStarted;
-  
-  
-  uint32_t mLazyLoadImageReachViewportLoading;
-  
-  
-  uint32_t mLazyLoadImageReachViewportLoaded;
 
   uint32_t mContentEditableCount;
   EditingState mEditingState;
