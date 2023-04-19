@@ -28,15 +28,6 @@ using namespace mozilla::gfx;
 
 
 
-
-
-
-#define THIN_FRACTION_LINE 0.5f
-#define THIN_FRACTION_LINE_MINIMUM_PIXELS 1  // minimum of 1 pixel
-
-#define THICK_FRACTION_LINE 2.0f
-#define THICK_FRACTION_LINE_MINIMUM_PIXELS 2  // minimum of 2 pixels
-
 nsIFrame* NS_NewMathMLmfracFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell)
       nsMathMLmfracFrame(aStyle, aPresShell->GetPresContext());
@@ -98,55 +89,12 @@ nscoord nsMathMLmfracFrame::CalcLineThickness(nsPresContext* aPresContext,
 
   
   
-  
-  
-  
-  
-  
-  
-  
   if (!aThicknessAttribute.IsEmpty()) {
-    if (StaticPrefs::mathml_mfrac_linethickness_names_disabled()) {
-      
-      lineThickness = defaultThickness;
-      ParseNumericValue(aThicknessAttribute, &lineThickness,
-                        dom::MathMLElement::PARSE_ALLOW_UNITLESS, aPresContext,
-                        aComputedStyle, aFontSizeInflation);
-    } else {
-      bool isDeprecatedLineThicknessValue = true;
-      if (aThicknessAttribute.EqualsLiteral("thin")) {
-        lineThickness = NSToCoordFloor(defaultThickness * THIN_FRACTION_LINE);
-        minimumThickness = onePixel * THIN_FRACTION_LINE_MINIMUM_PIXELS;
-        
-        
-        if (defaultThickness > onePixel &&
-            lineThickness > defaultThickness - onePixel) {
-          lineThickness = defaultThickness - onePixel;
-        }
-      } else if (aThicknessAttribute.EqualsLiteral("medium")) {
-        
-      } else if (aThicknessAttribute.EqualsLiteral("thick")) {
-        lineThickness = NSToCoordCeil(defaultThickness * THICK_FRACTION_LINE);
-        minimumThickness = onePixel * THICK_FRACTION_LINE_MINIMUM_PIXELS;
-        
-        if (lineThickness < defaultThickness + onePixel) {
-          lineThickness = defaultThickness + onePixel;
-        }
-      } else {
-        
-        isDeprecatedLineThicknessValue = false;
-        lineThickness = defaultThickness;
-        ParseNumericValue(aThicknessAttribute, &lineThickness,
-                          dom::MathMLElement::PARSE_ALLOW_UNITLESS,
-                          aPresContext, aComputedStyle, aFontSizeInflation);
-      }
-      if (isDeprecatedLineThicknessValue) {
-        mContent->OwnerDoc()->WarnOnceAbout(
-            dom::DeprecatedOperations::eMathML_DeprecatedLineThicknessValue);
-      }
-    }
+    lineThickness = defaultThickness;
+    ParseNumericValue(aThicknessAttribute, &lineThickness,
+                      dom::MathMLElement::PARSE_ALLOW_UNITLESS, aPresContext,
+                      aComputedStyle, aFontSizeInflation);
   }
-
   
   if (lineThickness && lineThickness < minimumThickness)
     lineThickness = minimumThickness;
