@@ -93,8 +93,17 @@ void CloseProcessHandle(ProcessHandle process) {
 }
 
 ProcessId GetProcId(ProcessHandle process) {
+  if (process == base::kInvalidProcessHandle || process == nullptr) {
+    return 0;
+  }
   
-  return GetProcessId(process);
+  
+  ProcessId result = GetProcessId(process);
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  CHECK(result != 0 || GetLastError() != ERROR_INVALID_HANDLE)
+  << "process handle = " << process;
+#endif
+  return result;
 }
 
 
