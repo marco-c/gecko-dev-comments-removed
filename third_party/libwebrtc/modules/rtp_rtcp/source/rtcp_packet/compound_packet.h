@@ -29,13 +29,6 @@ class CompoundPacket : public RtcpPacket {
   void Append(std::unique_ptr<RtcpPacket> packet);
 
   
-  
-  template <typename T>
-  void Append(T* packet) {
-    Append(std::make_unique<T>(*packet));
-  }
-
-  
   size_t BlockLength() const override;
   
   bool Create(uint8_t* packet,
