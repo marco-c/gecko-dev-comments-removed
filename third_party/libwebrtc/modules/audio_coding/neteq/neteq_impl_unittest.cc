@@ -1026,22 +1026,37 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   EXPECT_CALL(mock_decoder, PacketDuration(nullptr, 0))
       .WillRepeatedly(Return(rtc::checked_cast<int>(kPayloadLengthSamples)));
 
-  
-  
-  EXPECT_CALL(mock_decoder, DecodeInternal(Pointee(0), kPayloadLengthBytes,
-                                           kSampleRateKhz * 1000, _, _))
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
-                                          dummy_output + kPayloadLengthSamples),
-                      SetArgPointee<4>(AudioDecoder::kSpeech),
-                      Return(rtc::checked_cast<int>(kPayloadLengthSamples))));
+  EXPECT_TRUE(neteq_->RegisterPayloadType(kPayloadType,
+                                          SdpAudioFormat("opus", 48000, 2)));
 
-  EXPECT_CALL(mock_decoder, DecodeInternal(Pointee(1), kPayloadLengthBytes,
-                                           kSampleRateKhz * 1000, _, _))
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
-                                          dummy_output + kPayloadLengthSamples),
-                      SetArgPointee<4>(AudioDecoder::kComfortNoise),
-                      Return(rtc::checked_cast<int>(kPayloadLengthSamples))));
+  struct Packet {
+    int sequence_number_delta;
+    int timestamp_delta;
+    AudioDecoder::SpeechType decoder_output_type;
+  };
+  std::vector<Packet> packets = {
+      {0, 0, AudioDecoder::kSpeech},
+      {1, kPayloadLengthSamples, AudioDecoder::kComfortNoise},
+      {2, 2 * kPayloadLengthSamples, AudioDecoder::kSpeech},
+      {1, kPayloadLengthSamples, AudioDecoder::kSpeech}};
 
+  for (size_t i = 0; i < packets.size(); ++i) {
+    rtp_header.sequenceNumber += packets[i].sequence_number_delta;
+    rtp_header.timestamp += packets[i].timestamp_delta;
+    payload[0] = i;
+    EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload));
+
+    
+    
+    EXPECT_CALL(mock_decoder, DecodeInternal(Pointee(i), kPayloadLengthBytes,
+                                             kSampleRateKhz * 1000, _, _))
+        .WillOnce(DoAll(SetArrayArgument<3>(
+                            dummy_output, dummy_output + kPayloadLengthSamples),
+                        SetArgPointee<4>(packets[i].decoder_output_type),
+                        Return(rtc::checked_cast<int>(kPayloadLengthSamples))));
+  }
+
+  
   EXPECT_CALL(mock_decoder,
               DecodeInternal(IsNull(), 0, kSampleRateKhz * 1000, _, _))
       .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
@@ -1049,86 +1064,23 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
                       SetArgPointee<4>(AudioDecoder::kComfortNoise),
                       Return(rtc::checked_cast<int>(kPayloadLengthSamples))));
 
-  EXPECT_CALL(mock_decoder, DecodeInternal(Pointee(2), kPayloadLengthBytes,
-                                           kSampleRateKhz * 1000, _, _))
-      .WillOnce(DoAll(SetArrayArgument<3>(dummy_output,
-                                          dummy_output + kPayloadLengthSamples),
-                      SetArgPointee<4>(AudioDecoder::kSpeech),
-                      Return(rtc::checked_cast<int>(kPayloadLengthSamples))));
+  std::vector<AudioFrame::SpeechType> expected_output = {
+      AudioFrame::kNormalSpeech, AudioFrame::kCNG, AudioFrame::kNormalSpeech};
+  size_t output_index = 0;
 
-  EXPECT_TRUE(neteq_->RegisterPayloadType(kPayloadType,
-                                          SdpAudioFormat("opus", 48000, 2)));
-
-  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateKhz);
-  AudioFrame output;
-  AudioFrame::SpeechType expected_type[8] = {
-      AudioFrame::kNormalSpeech, AudioFrame::kNormalSpeech, AudioFrame::kCNG,
-      AudioFrame::kCNG,          AudioFrame::kCNG,          AudioFrame::kCNG,
-      AudioFrame::kNormalSpeech, AudioFrame::kNormalSpeech};
-  int expected_timestamp_increment[8] = {
-      -1,  
-      10 * kSampleRateKhz,
-      -1,
-      -1,  
-      -1,
-      -1,
-      50 * kSampleRateKhz,
-      10 * kSampleRateKhz};
-
-  
-  EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload));
-
-  bool muted;
-  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
-  absl::optional<uint32_t> last_timestamp = neteq_->GetPlayoutTimestamp();
-  ASSERT_TRUE(last_timestamp);
-
-  
-  payload[0] = 1;
-  rtp_header.sequenceNumber++;
-  rtp_header.timestamp += kPayloadLengthSamples;
-  EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload));
-
-  
-  auto verify_timestamp = [&last_timestamp, &expected_timestamp_increment](
-                              absl::optional<uint32_t> ts, size_t i) {
-    if (expected_timestamp_increment[i] == -1) {
-      
-      EXPECT_FALSE(ts) << "i = " << i;
+  int timeout_counter = 0;
+  while (!packet_buffer_->Empty()) {
+    ASSERT_LT(timeout_counter++, 20) << "Test timed out";
+    AudioFrame output;
+    bool muted;
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+    if (output_index + 1 < expected_output.size() &&
+        output.speech_type_ == expected_output[output_index + 1]) {
+      ++output_index;
     } else {
-      ASSERT_TRUE(ts) << "i = " << i;
-      EXPECT_EQ(*ts, *last_timestamp + expected_timestamp_increment[i])
-          << "i = " << i;
-      last_timestamp = ts;
+      EXPECT_EQ(output.speech_type_, expected_output[output_index]);
     }
-  };
-
-  for (size_t i = 1; i < 6; ++i) {
-    ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
-    EXPECT_EQ(1u, output.num_channels_);
-    EXPECT_EQ(expected_type[i - 1], output.speech_type_);
-    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
-    SCOPED_TRACE("");
-    verify_timestamp(neteq_->GetPlayoutTimestamp(), i);
   }
-
-  
-  payload[0] = 2;
-  rtp_header.sequenceNumber += 2;
-  rtp_header.timestamp += 2 * kPayloadLengthSamples;
-  EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload));
-
-  for (size_t i = 6; i < 8; ++i) {
-    ASSERT_EQ(kMaxOutputSize, output.samples_per_channel_);
-    EXPECT_EQ(1u, output.num_channels_);
-    EXPECT_EQ(expected_type[i - 1], output.speech_type_);
-    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
-    SCOPED_TRACE("");
-    verify_timestamp(neteq_->GetPlayoutTimestamp(), i);
-  }
-
-  
-  EXPECT_TRUE(packet_buffer_->Empty());
 
   EXPECT_CALL(mock_decoder, Die());
 }
