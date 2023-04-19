@@ -83,14 +83,7 @@ class TaskQueueStdlib final : public TaskQueueBase {
   rtc::Event started_;
 
   
-  rtc::Event stopped_;
-
-  
   rtc::Event flag_notify_;
-
-  
-  
-  rtc::PlatformThread thread_;
 
   Mutex pending_lock_;
 
@@ -114,12 +107,17 @@ class TaskQueueStdlib final : public TaskQueueBase {
   
   std::map<DelayedEntryTimeout, std::unique_ptr<QueuedTask>> delayed_queue_
       RTC_GUARDED_BY(pending_lock_);
+
+  
+  
+  
+  
+  rtc::PlatformThread thread_;
 };
 
 TaskQueueStdlib::TaskQueueStdlib(absl::string_view queue_name,
                                  rtc::ThreadPriority priority)
     : started_(false, false),
-      stopped_(false, false),
       flag_notify_(false, false),
       thread_(rtc::PlatformThread::SpawnJoinable(
           [this] {
@@ -141,8 +139,6 @@ void TaskQueueStdlib::Delete() {
 
   NotifyWake();
 
-  stopped_.Wait(rtc::Event::kForever);
-  thread_.Finalize();
   delete this;
 }
 
@@ -243,8 +239,6 @@ void TaskQueueStdlib::ProcessTasks() {
     else
       flag_notify_.Wait(task.sleep_time_ms_);
   }
-
-  stopped_.Set();
 }
 
 void TaskQueueStdlib::NotifyWake() {
