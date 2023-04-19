@@ -106,14 +106,18 @@ class BaseChannel : public ChannelInterface,
 
   
   bool srtp_active() const {
-    
-    
+    RTC_DCHECK_RUN_ON(network_thread());
+    return rtp_transport_ && rtp_transport_->IsSrtpActive();
+  }
+
+  
+  bool SrtpActiveForTesting() const {
     if (!network_thread_->IsCurrent()) {
       return network_thread_->Invoke<bool>(RTC_FROM_HERE,
                                            [this] { return srtp_active(); });
     }
     RTC_DCHECK_RUN_ON(network_thread());
-    return rtp_transport_ && rtp_transport_->IsSrtpActive();
+    return srtp_active();
   }
 
   bool writable() const { return writable_; }
@@ -125,14 +129,18 @@ class BaseChannel : public ChannelInterface,
   bool SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) override;
 
   webrtc::RtpTransportInternal* rtp_transport() const {
-    
-    
+    RTC_DCHECK_RUN_ON(network_thread());
+    return rtp_transport_;
+  }
+
+  
+  webrtc::RtpTransportInternal* RtpTransportForTesting() const {
     if (!network_thread_->IsCurrent()) {
       return network_thread_->Invoke<webrtc::RtpTransportInternal*>(
           RTC_FROM_HERE, [this] { return rtp_transport(); });
     }
     RTC_DCHECK_RUN_ON(network_thread());
-    return rtp_transport_;
+    return rtp_transport();
   }
 
   
