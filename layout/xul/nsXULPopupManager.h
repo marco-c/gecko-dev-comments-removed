@@ -199,10 +199,6 @@ struct PendingPopup {
   
   mozilla::Modifiers mModifiers;
 
-  
-  nsCOMPtr<nsIContent> mRangeParentContent;
-  int32_t mRangeOffset;
-
   already_AddRefed<nsIContent> GetTriggerContent() const;
 
   void InitMousePoint();
