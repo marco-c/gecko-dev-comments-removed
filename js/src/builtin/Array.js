@@ -1338,10 +1338,13 @@ function ArrayToReversed() {
   for (var k = 0; k < len; k++) {
     
     var from = len - k - 1;
+
+    
     
 
     
     var fromValue = O[from];
+
     
     DefineDataProperty(A, k, fromValue);
   }
@@ -1354,8 +1357,7 @@ function ArrayToReversed() {
 
 function ArrayToSorted(comparefn) {
   
-
-
+  
   if (comparefn !== undefined && !IsCallable(comparefn)) {
     ThrowTypeError(JSMSG_BAD_TOSORTED_ARG);
   }
@@ -1370,10 +1372,9 @@ function ArrayToSorted(comparefn) {
   var items = std_Array(len);
 
   
-
-
-
-
+  
+  
+  
   for (var k = 0; k < len; k++) {
     DefineDataProperty(items, k, O[k]);
   }
@@ -1403,14 +1404,15 @@ function ArrayFindLast(predicate ) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
 
   
   for (var k = len - 1; k >= 0; k--) {
     
     var kValue = O[k];
+
     
-    if (callContentFunction(predicate, T, kValue, k, O)) {
+    if (callContentFunction(predicate, thisArg, kValue, k, O)) {
       return kValue;
     }
   }
@@ -1436,14 +1438,15 @@ function ArrayFindLastIndex(predicate ) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
   }
 
-  var T = arguments.length > 1 ? arguments[1] : undefined;
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
 
   
   for (var k = len - 1; k >= 0; k--) {
     
     var kValue = O[k];
+
     
-    if (callContentFunction(predicate, T, kValue, k, O)) {
+    if (callContentFunction(predicate, thisArg, kValue, k, O)) {
       return k;
     }
   }
