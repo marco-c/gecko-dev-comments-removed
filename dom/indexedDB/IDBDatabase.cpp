@@ -483,7 +483,7 @@ RefPtr<IDBTransaction> IDBDatabase::Transaction(
 
   if ((aMode == IDBTransactionMode::Readwriteflush ||
        aMode == IDBTransactionMode::Cleanup) &&
-      !IndexedDatabaseManager::ExperimentalFeaturesEnabled()) {
+      !StaticPrefs::dom_indexedDB_experimental()) {
     
     
     
