@@ -210,6 +210,15 @@ interface nsIEditor  : nsISupports
 
 
 
+  [binaryname(ClearUndoRedoXPCOM)]
+  void clearUndoRedo();
+
+  
+
+
+
+
+
 
 
 

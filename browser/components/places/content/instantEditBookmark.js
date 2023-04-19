@@ -445,22 +445,8 @@ var gEditItemOverlay = {
       aElement.value = aValue;
 
       
-      let transactionManager;
-      try {
-        transactionManager = aElement.editor.transactionManager;
-      } catch (e) {
-        
-        
-        
-        
-        
-        if (!(e instanceof TypeError) && e.result != Cr.NS_ERROR_FAILURE) {
-          throw e;
-        }
-      }
-      if (transactionManager) {
-        transactionManager.clear();
-      }
+      
+      aElement.editor?.clearUndoRedo();
     }
   },
 

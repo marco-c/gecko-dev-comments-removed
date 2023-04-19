@@ -964,7 +964,7 @@ const gSessionHistoryObserver = {
     fwdCommand.setAttribute("disabled", "true");
 
     
-    gURLBar.editor.transactionManager.clear();
+    gURLBar.editor.clearUndoRedo();
   },
 };
 
