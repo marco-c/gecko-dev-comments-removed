@@ -173,7 +173,7 @@ __webpack_require__.r(__webpack_exports__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(11);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(13);
 
 
 
@@ -598,6 +598,10 @@ __webpack_require__.r(__webpack_exports__);
  var _Themes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
  var _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(4);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(10);
+ var _LinkText__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(11);
+ var _HeroImage__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(12);
+
+
 
 
 
@@ -727,7 +731,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       style: content.background ? {
         background: content.background
       } : {}
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }, content.hero_image ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_HeroImage__WEBPACK_IMPORTED_MODULE_8__.HeroImage, {
+      url: content.hero_image.url
+    }) : react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "message-text"
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "spacer-top"
@@ -739,7 +745,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       text: content.help_text
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
       className: "attrib-text"
-    })));
+    }))));
   }
 
   render() {
@@ -807,7 +813,10 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         "addon-name": this.props.addonName,
         ...((_this$props$appAndSys = this.props.appAndSystemLocaleInfo) === null || _this$props$appAndSys === void 0 ? void 0 : _this$props$appAndSys.displayNames)
       })
-    }))), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    })), content.cta_paragraph ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_LinkText__WEBPACK_IMPORTED_MODULE_7__.LinkText, {
+      content: content.cta_paragraph,
+      handleAction: this.props.handleAction
+    }) : null), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "action-buttons"
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: (_content$primary_butt = content.primary_button) === null || _content$primary_butt === void 0 ? void 0 : _content$primary_butt.label
@@ -1318,6 +1327,82 @@ function LanguageSwitcher(props) {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   "LinkText": () => ( LinkText)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+
+
+const LinkText = props => {
+  const {
+    content,
+    handleAction
+  } = props;
+
+  if (!(content !== null && content !== void 0 && content.text && content !== null && content !== void 0 && content.button_label && typeof handleAction === "function")) {
+    return null;
+  }
+
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h2", {
+    className: "cta-paragraph"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: content.text
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null)), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: content.button_label
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+    onClick: handleAction,
+    value: "cta_paragraph",
+    className: "text-link"
+  })));
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   "HeroImage": () => ( HeroImage)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+
+
+const HeroImage = props => {
+  const {
+    height,
+    url,
+    alt
+  } = props;
+
+  if (!url) {
+    return null;
+  }
+
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "hero-image"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("img", {
+    style: height ? {
+      height
+    } : null,
+    src: url,
+    alt: alt || "",
+    role: alt ? null : "presentation"
+  }));
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
    "BASE_PARAMS": () => ( BASE_PARAMS),
    "addUtmParams": () => ( addUtmParams)
  });
@@ -1366,7 +1451,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(11);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(13);
 
 
 
@@ -1561,7 +1646,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
- var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(12);
+ var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(14);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
