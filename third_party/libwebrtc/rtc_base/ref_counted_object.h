@@ -59,6 +59,37 @@ class RefCountedObject : public T {
   RTC_DISALLOW_COPY_AND_ASSIGN(RefCountedObject);
 };
 
+template <class T>
+class FinalRefCountedObject final : public T {
+ public:
+  using T::T;
+  
+  
+  FinalRefCountedObject() = default;
+  FinalRefCountedObject(const FinalRefCountedObject&) = delete;
+  FinalRefCountedObject& operator=(const FinalRefCountedObject&) = delete;
+
+  void AddRef() const { ref_count_.IncRef(); }
+  void Release() const {
+    if (ref_count_.DecRef() == RefCountReleaseStatus::kDroppedLastRef) {
+      delete this;
+    }
+  }
+  bool HasOneRef() const { return ref_count_.HasOneRef(); }
+
+ private:
+  ~FinalRefCountedObject() = default;
+
+  
+  
+  
+  
+  class ZeroBasedRefCounter : public webrtc::webrtc_impl::RefCounter {
+   public:
+    ZeroBasedRefCounter() : RefCounter(0) {}
+  } mutable ref_count_;
+};
+
 }  
 
 #endif  
