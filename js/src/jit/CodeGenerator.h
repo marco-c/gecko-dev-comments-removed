@@ -7,9 +7,7 @@
 #ifndef jit_CodeGenerator_h
 #define jit_CodeGenerator_h
 
-#if defined(JS_ION_PERF)
-#  include "jit/PerfSpewer.h"
-#endif
+#include "jit/PerfSpewer.h"
 #include "js/ScalarType.h"  
 
 #if defined(JS_CODEGEN_X86)
@@ -366,9 +364,7 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   
   IonScriptCounts* scriptCounts_;
 
-#if defined(JS_ION_PERF)
   IonPerfSpewer perfSpewer_;
-#endif
 
   
   uint32_t realmStubsToReadBarrier_;
