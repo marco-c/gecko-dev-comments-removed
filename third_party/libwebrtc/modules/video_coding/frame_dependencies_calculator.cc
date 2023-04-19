@@ -17,14 +17,12 @@
 #include "absl/algorithm/container.h"
 #include "absl/container/inlined_vector.h"
 #include "api/array_view.h"
-#include "api/video/video_frame_type.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
 
 absl::InlinedVector<int64_t, 5> FrameDependenciesCalculator::FromBuffersUsage(
-    VideoFrameType frame_type,
     int64_t frame_id,
     rtc::ArrayView<const CodecBufferUsage> buffers_usage) {
   absl::InlinedVector<int64_t, 5> dependencies;
@@ -37,29 +35,28 @@ absl::InlinedVector<int64_t, 5> FrameDependenciesCalculator::FromBuffersUsage(
   }
   std::set<int64_t> direct_depenendencies;
   std::set<int64_t> indirect_depenendencies;
-  if (frame_type == VideoFrameType::kVideoFrameDelta) {
-    for (const CodecBufferUsage& buffer_usage : buffers_usage) {
-      if (!buffer_usage.referenced) {
-        continue;
-      }
-      const BufferUsage& buffer = buffers_[buffer_usage.id];
-      if (buffer.frame_id == absl::nullopt) {
-        RTC_LOG(LS_ERROR) << "Odd configuration: frame " << frame_id
-                          << " references buffer #" << buffer_usage.id
-                          << " that was never updated.";
-        continue;
-      }
-      direct_depenendencies.insert(*buffer.frame_id);
-      indirect_depenendencies.insert(buffer.dependencies.begin(),
-                                     buffer.dependencies.end());
+
+  for (const CodecBufferUsage& buffer_usage : buffers_usage) {
+    if (!buffer_usage.referenced) {
+      continue;
     }
-    
-    
-    
-    
-    absl::c_set_difference(direct_depenendencies, indirect_depenendencies,
-                           std::back_inserter(dependencies));
+    const BufferUsage& buffer = buffers_[buffer_usage.id];
+    if (buffer.frame_id == absl::nullopt) {
+      RTC_LOG(LS_ERROR) << "Odd configuration: frame " << frame_id
+                        << " references buffer #" << buffer_usage.id
+                        << " that was never updated.";
+      continue;
+    }
+    direct_depenendencies.insert(*buffer.frame_id);
+    indirect_depenendencies.insert(buffer.dependencies.begin(),
+                                   buffer.dependencies.end());
   }
+  
+  
+  
+  
+  absl::c_set_difference(direct_depenendencies, indirect_depenendencies,
+                         std::back_inserter(dependencies));
 
   
   for (const CodecBufferUsage& buffer_usage : buffers_usage) {

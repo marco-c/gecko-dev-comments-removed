@@ -10,7 +10,6 @@
 
 #include "modules/video_coding/frame_dependencies_calculator.h"
 
-#include "api/video/video_frame_type.h"
 #include "common_video/generic_frame_descriptor/generic_frame_info.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -21,9 +20,6 @@ namespace {
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 using ::testing::UnorderedElementsAre;
-
-constexpr VideoFrameType kVideoFrameKey = VideoFrameType::kVideoFrameKey;
-constexpr VideoFrameType kVideoFrameDelta = VideoFrameType::kVideoFrameDelta;
 
 constexpr CodecBufferUsage ReferenceAndUpdate(int id) {
   return CodecBufferUsage(id, true, true);
@@ -39,15 +35,11 @@ TEST(FrameDependenciesCalculatorTest, SingleLayer) {
   CodecBufferUsage pattern[] = {ReferenceAndUpdate(0)};
   FrameDependenciesCalculator calculator;
 
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameKey, 1, pattern),
-      IsEmpty());
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 3, pattern),
-      ElementsAre(1));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 6, pattern),
-      ElementsAre(3));
+  EXPECT_THAT(calculator.FromBuffersUsage(1, pattern), IsEmpty());
+  EXPECT_THAT(calculator.FromBuffersUsage(3, pattern),
+              ElementsAre(1));
+  EXPECT_THAT(calculator.FromBuffersUsage(6, pattern),
+              ElementsAre(3));
 }
 
 TEST(FrameDependenciesCalculatorTest, TwoTemporalLayers) {
@@ -61,30 +53,21 @@ TEST(FrameDependenciesCalculatorTest, TwoTemporalLayers) {
   CodecBufferUsage pattern3[] = {Reference(0), Reference(1)};
   FrameDependenciesCalculator calculator;
 
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameKey, 1, pattern0),
-      IsEmpty());
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 2, pattern1),
-      ElementsAre(1));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 3, pattern2),
-      ElementsAre(1));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 4, pattern3),
-      UnorderedElementsAre(2, 3));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 5, pattern0),
-      ElementsAre(3));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 6, pattern1),
-      ElementsAre(5));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 7, pattern2),
-      ElementsAre(5));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 8, pattern3),
-      UnorderedElementsAre(6, 7));
+  EXPECT_THAT(calculator.FromBuffersUsage(1, pattern0), IsEmpty());
+  EXPECT_THAT(calculator.FromBuffersUsage(2, pattern1),
+              ElementsAre(1));
+  EXPECT_THAT(calculator.FromBuffersUsage(3, pattern2),
+              ElementsAre(1));
+  EXPECT_THAT(calculator.FromBuffersUsage(4, pattern3),
+              UnorderedElementsAre(2, 3));
+  EXPECT_THAT(calculator.FromBuffersUsage(5, pattern0),
+              ElementsAre(3));
+  EXPECT_THAT(calculator.FromBuffersUsage(6, pattern1),
+              ElementsAre(5));
+  EXPECT_THAT(calculator.FromBuffersUsage(7, pattern2),
+              ElementsAre(5));
+  EXPECT_THAT(calculator.FromBuffersUsage(8, pattern3),
+              UnorderedElementsAre(6, 7));
 }
 
 TEST(FrameDependenciesCalculatorTest, ThreeTemporalLayers4FramePattern) {
@@ -99,26 +82,19 @@ TEST(FrameDependenciesCalculatorTest, ThreeTemporalLayers4FramePattern) {
   CodecBufferUsage pattern3[] = {Reference(0), Reference(1), Reference(2)};
   FrameDependenciesCalculator calculator;
 
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameKey, 1, pattern0),
-      IsEmpty());
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 2, pattern1),
-      ElementsAre(1));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 3, pattern2),
-      ElementsAre(1));
+  EXPECT_THAT(calculator.FromBuffersUsage(1, pattern0), IsEmpty());
+  EXPECT_THAT(calculator.FromBuffersUsage(2, pattern1),
+              ElementsAre(1));
+  EXPECT_THAT(calculator.FromBuffersUsage(3, pattern2),
+              ElementsAre(1));
   
   
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 4, pattern3),
-      UnorderedElementsAre(2, 3));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 5, pattern0),
-      ElementsAre(1));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 6, pattern1),
-      ElementsAre(5));
+  EXPECT_THAT(calculator.FromBuffersUsage(4, pattern3),
+              UnorderedElementsAre(2, 3));
+  EXPECT_THAT(calculator.FromBuffersUsage(5, pattern0),
+              ElementsAre(1));
+  EXPECT_THAT(calculator.FromBuffersUsage(6, pattern1),
+              ElementsAre(5));
 }
 
 TEST(FrameDependenciesCalculatorTest, SimulcastWith2Layers) {
@@ -129,24 +105,16 @@ TEST(FrameDependenciesCalculatorTest, SimulcastWith2Layers) {
   CodecBufferUsage pattern1[] = {ReferenceAndUpdate(1)};
   FrameDependenciesCalculator calculator;
 
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameKey, 1, pattern0),
-      IsEmpty());
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameKey, 2, pattern1),
-      IsEmpty());
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 3, pattern0),
-      ElementsAre(1));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 4, pattern1),
-      ElementsAre(2));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 5, pattern0),
-      ElementsAre(3));
-  EXPECT_THAT(
-      calculator.FromBuffersUsage(kVideoFrameDelta, 6, pattern1),
-      ElementsAre(4));
+  EXPECT_THAT(calculator.FromBuffersUsage(1, pattern0), IsEmpty());
+  EXPECT_THAT(calculator.FromBuffersUsage(2, pattern1), IsEmpty());
+  EXPECT_THAT(calculator.FromBuffersUsage(3, pattern0),
+              ElementsAre(1));
+  EXPECT_THAT(calculator.FromBuffersUsage(4, pattern1),
+              ElementsAre(2));
+  EXPECT_THAT(calculator.FromBuffersUsage(5, pattern0),
+              ElementsAre(3));
+  EXPECT_THAT(calculator.FromBuffersUsage(6, pattern1),
+              ElementsAre(4));
 }
 
 }  
