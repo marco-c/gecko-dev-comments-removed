@@ -1925,7 +1925,6 @@ var gMainPane = {
 
   isBackgroundUpdateUIAvailable() {
     return (
-      AppConstants.MOZ_UPDATER &&
       AppConstants.MOZ_UPDATE_AGENT &&
       
       
@@ -2113,7 +2112,7 @@ var gMainPane = {
       document.getElementById("updateRadioGroup").value = aData;
       this.maybeDisableBackgroundUpdateControls();
     } else if (aTopic == BACKGROUND_UPDATE_CHANGED_TOPIC) {
-      if (!AppConstants.MOZ_UPDATER || !AppConstants.MOZ_UPDATE_AGENT) {
+      if (!AppConstants.MOZ_UPDATE_AGENT) {
         return;
       }
       if (aData != "true" && aData != "false") {
