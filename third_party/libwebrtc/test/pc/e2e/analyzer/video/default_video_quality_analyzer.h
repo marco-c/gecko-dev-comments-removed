@@ -92,6 +92,10 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   AnalyzerStats GetAnalyzerStats() const;
   double GetCpuUsagePercent();
 
+  
+  
+  std::map<std::string, std::vector<uint16_t>> GetStreamFrames() const;
+
  private:
   
   class StreamState {
@@ -362,6 +366,9 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   
   
   std::map<size_t, std::set<uint16_t>> stream_to_frame_id_history_
+      RTC_GUARDED_BY(mutex_);
+  
+  std::map<size_t, std::vector<uint16_t>> stream_to_frame_id_full_history_
       RTC_GUARDED_BY(mutex_);
   AnalyzerStats analyzer_stats_ RTC_GUARDED_BY(mutex_);
 
