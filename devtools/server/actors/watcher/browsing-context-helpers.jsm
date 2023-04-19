@@ -50,6 +50,12 @@ function getAddonIdForWindowGlobal(windowGlobal) {
 
   
   
+  if (!principal) {
+    return null;
+  }
+
+  
+  
   if (principal.addonId) {
     return principal.addonId;
   }
@@ -57,7 +63,7 @@ function getAddonIdForWindowGlobal(windowGlobal) {
   
   
   const href = isParent
-    ? windowGlobal.documentURI.displaySpec
+    ? windowGlobal.documentURI?.displaySpec
     : browsingContext.window.document.location.href;
 
   if (href && href.startsWith(WEBEXTENSION_FALLBACK_DOC_URL)) {
