@@ -7,13 +7,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 import ctypes
 import os
 import platform
-import subprocess
 import sys
-from pathlib import Path
+import subprocess
 
-from looseversion import LooseVersion as Version
+from pathlib import Path
 from mozboot.base import BaseBootstrapper
-from mozbuild.util import mozilla_build_version
 
 
 def is_aarch64_host():
@@ -145,7 +143,10 @@ class MozillaBuildBootstrapper(BaseBootstrapper):
         
         
         
-        if mozilla_build_version() >= Version("4.0"):
+        with open(Path(os.environ["MOZILLABUILD"]) / "VERSION") as f:
+            major, minor = (int(v) for v in f.read().split("."))
+
+        if major >= 4:
             pip_dir = (
                 Path(os.environ["MOZILLABUILD"]) / "python3" / "Scripts" / "pip.exe"
             )

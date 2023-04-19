@@ -15,28 +15,6 @@ from mozbuild.base import MozbuildObject
 from mozfile import TemporaryDirectory
 from mozpack.files import FileFinder
 
-EXCLUDED_PACKAGES = {
-    
-    
-    "dlmanager",
-    
-    "gyp",
-    
-    "_venv",
-    
-    
-    "vsdownload",
-    
-    "moz.build",
-    "requirements.in",
-    
-    
-    
-    
-    
-    "ansicon",
-}
-
 
 class VendorPython(MozbuildObject):
     def vendor(self, keep_extra_files=False):
@@ -120,13 +98,6 @@ class VendorPython(MozbuildObject):
                 package_name, version, spec, abi, platform_and_suffix = archive.rsplit(
                     "-", 4
                 )
-
-                if package_name in EXCLUDED_PACKAGES:
-                    print(
-                        f"'{package_name}' is on the exclusion list and will not be vendored."
-                    )
-                    continue
-
                 target_package_dir = os.path.join(dest, package_name)
                 os.mkdir(target_package_dir)
 
@@ -141,12 +112,6 @@ class VendorPython(MozbuildObject):
                 
                 package_name, archive_postfix = archive.rsplit("-", 1)
                 package_dir = os.path.join(dest, package_name)
-
-                if package_name in EXCLUDED_PACKAGES:
-                    print(
-                        f"'{package_name}' is on the exclusion list and will not be vendored."
-                    )
-                    continue
 
                 
                 
@@ -206,8 +171,24 @@ def remove_environment_markers_from_requirements_txt(requirements_txt: Path):
 
 
 def _purge_vendor_dir(vendor_dir):
+    excluded_packages = [
+        
+        
+        "dlmanager",
+        
+        "gyp",
+        
+        "_venv",
+        
+        
+        "vsdownload",
+        
+        "moz.build",
+        "requirements.in",
+    ]
+
     for child in Path(vendor_dir).iterdir():
-        if child.name not in EXCLUDED_PACKAGES:
+        if child.name not in excluded_packages:
             mozfile.remove(str(child))
 
 
