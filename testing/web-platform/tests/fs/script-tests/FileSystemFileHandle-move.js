@@ -96,8 +96,9 @@ directory_test(async (t, root) => {
 
   
   await stream.close();
-  await handle.move('file-after');
-  assert_array_equals(await getSortedDirectoryEntries(root), ['file-after']);
+  await promise_rejects_dom(
+      t, 'NoModificationAllowedError', handle.move('file-after'));
+  assert_array_equals(await getSortedDirectoryEntries(root), ['file-before']);
 }, 'move(name) while the destination file has an open writable fails');
 
 
@@ -317,13 +318,9 @@ directory_test(async (t, root) => {
 
   
   await stream.close();
-  await file.move(dir_dest);
-  assert_array_equals(
-      await getSortedDirectoryEntries(root), ['dir-dest/', 'dir-src/']);
-  assert_array_equals(await getSortedDirectoryEntries(dir_src), []);
-  assert_array_equals(await getSortedDirectoryEntries(dir_dest), ['file']);
-  assert_equals(await getFileContents(file), 'abc');
-  assert_equals(await getFileSize(file), 3);
+  await promise_rejects_dom(
+      t, 'NoModificationAllowedError', file.move(dir_dest));
+  assert_array_equals(await getSortedDirectoryEntries(dir_src), ['file']);
 }, 'move(dir) while the destination file has an open writable fails');
 
 directory_test(async (t, root) => {
@@ -345,11 +342,10 @@ directory_test(async (t, root) => {
 
   
   await stream.close();
-  await file.move(dir_dest, 'file-dest');
-  assert_array_equals(
-      await getSortedDirectoryEntries(root), ['dir-dest/', 'dir-src/']);
-  assert_array_equals(await getSortedDirectoryEntries(dir_src), []);
-  assert_array_equals(await getSortedDirectoryEntries(dir_dest), ['file-dest']);
+  await promise_rejects_dom(
+      t, 'NoModificationAllowedError', file.move(dir_dest, 'file-dest'));
+  
+  assert_array_equals(await getSortedDirectoryEntries(dir_src), ['file-src']);
   assert_equals(await getFileContents(file), 'abc');
   assert_equals(await getFileSize(file), 3);
 }, 'move(dir, name) while the destination file has an open writable fails');
