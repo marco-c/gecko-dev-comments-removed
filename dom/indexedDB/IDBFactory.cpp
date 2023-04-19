@@ -407,6 +407,7 @@ RefPtr<IDBOpenDBRequest> IDBFactory::Open(JSContext* aCx,
   
   
   
+  
   if (aOptions.IsAnyMemberPresent()) {
     Telemetry::AccumulateCategorical(IdentifyPrincipalType(*mPrincipalInfo));
   }
@@ -536,6 +537,20 @@ RefPtr<IDBOpenDBRequest> IDBFactory::OpenInternal(
       return nullptr;
     }
   } else {
+    if (mGlobal->GetStorageAccess() == StorageAccess::ePrivateBrowsing) {
+      if (NS_IsMainThread()) {
+        SetUseCounter(
+            mGlobal->GetGlobalJSObject(),
+            aDeleting
+                ? eUseCounter_custom_PrivateBrowsingIDBFactoryOpen
+                : eUseCounter_custom_PrivateBrowsingIDBFactoryDeleteDatabase);
+      } else {
+        SetUseCounter(
+            aDeleting ? UseCounterWorker::Custom_PrivateBrowsingIDBFactoryOpen
+                      : UseCounterWorker::
+                            Custom_PrivateBrowsingIDBFactoryDeleteDatabase);
+      }
+    }
     principalInfo = *mPrincipalInfo;
   }
 
