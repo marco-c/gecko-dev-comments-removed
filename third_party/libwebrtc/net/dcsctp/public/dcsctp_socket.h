@@ -156,6 +156,19 @@ inline constexpr absl::string_view ToString(ResetStreamsStatus error) {
 }
 
 
+enum class SendPacketStatus {
+  
+  
+  kSuccess,
+  
+  
+  
+  kTemporaryFailure,
+  
+  kError,
+};
+
+
 
 struct Metrics {
   
@@ -207,7 +220,20 @@ class DcSctpSocketCallbacks {
   
   
   
-  virtual void SendPacket(rtc::ArrayView<const uint8_t> data) = 0;
+  
+  
+  
+  virtual void SendPacket(rtc::ArrayView<const uint8_t> data) {}
+
+  
+  
+  
+  
+  virtual SendPacketStatus SendPacketWithStatus(
+      rtc::ArrayView<const uint8_t> data) {
+    SendPacket(data);
+    return SendPacketStatus::kSuccess;
+  }
 
   
   

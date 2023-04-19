@@ -59,9 +59,10 @@ class CallbackDeferrer : public DcSctpSocketCallbacks {
     }
   }
 
-  void SendPacket(rtc::ArrayView<const uint8_t> data) override {
+  SendPacketStatus SendPacketWithStatus(
+      rtc::ArrayView<const uint8_t> data) override {
     
-    underlying_.SendPacket(data);
+    return underlying_.SendPacketWithStatus(data);
   }
 
   std::unique_ptr<Timeout> CreateTimeout() override {
