@@ -89,7 +89,7 @@ class Call {
   
   
   virtual FlexfecReceiveStream* CreateFlexfecReceiveStream(
-      const FlexfecReceiveStream::Config& config) = 0;
+      const FlexfecReceiveStream::Config config) = 0;
   virtual void DestroyFlexfecReceiveStream(
       FlexfecReceiveStream* receive_stream) = 0;
 

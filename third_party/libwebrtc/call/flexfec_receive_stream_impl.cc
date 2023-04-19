@@ -137,10 +137,11 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
 
 FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
     Clock* clock,
-    const Config& config,
+    Config config,
     RecoveredPacketReceiver* recovered_packet_receiver,
     RtcpRttStats* rtt_stats)
-    : config_(config),
+    : extension_map_(std::move(config.rtp.extensions)),
+      config_(std::move(config)),
       receiver_(MaybeCreateFlexfecReceiver(clock,
                                            config_,
                                            recovered_packet_receiver)),
@@ -174,7 +175,7 @@ void FlexfecReceiveStreamImpl::RegisterWithTransport(
   
   
   rtp_stream_receiver_ =
-      receiver_controller->CreateReceiver(config_.rtp.remote_ssrc, this);
+      receiver_controller->CreateReceiver(remote_ssrc(), this);
 }
 
 void FlexfecReceiveStreamImpl::UnregisterFromTransport() {
@@ -190,7 +191,7 @@ void FlexfecReceiveStreamImpl::OnRtpPacket(const RtpPacketReceived& packet) {
   receiver_->OnRtpPacket(packet);
 
   
-  if (packet.Ssrc() == config_.rtp.remote_ssrc) {
+  if (packet.Ssrc() == remote_ssrc()) {
     rtp_receive_statistics_->OnRtpPacket(packet);
   }
 }
@@ -204,16 +205,12 @@ FlexfecReceiveStreamImpl::Stats FlexfecReceiveStreamImpl::GetStats() const {
 void FlexfecReceiveStreamImpl::SetRtpExtensions(
     std::vector<RtpExtension> extensions) {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  
-  
-  const_cast<std::vector<RtpExtension>&>(config_.rtp.extensions) =
-      std::move(extensions);
+  extension_map_.Reset(extensions);
 }
 
-const std::vector<RtpExtension>& FlexfecReceiveStreamImpl::GetRtpExtensions()
-    const {
+RtpHeaderExtensionMap FlexfecReceiveStreamImpl::GetRtpExtensionMap() const {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  return config_.rtp.extensions;
+  return extension_map_;
 }
 
 }  

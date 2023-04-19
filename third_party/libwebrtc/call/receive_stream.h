@@ -18,6 +18,7 @@
 #include "api/media_types.h"
 #include "api/scoped_refptr.h"
 #include "api/transport/rtp/rtp_source.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 
 namespace webrtc {
 
@@ -56,11 +57,7 @@ class ReceiveStream {
   
   
   virtual void SetRtpExtensions(std::vector<RtpExtension> extensions) = 0;
-
-  
-  
-  
-  virtual const std::vector<RtpExtension>& GetRtpExtensions() const = 0;
+  virtual RtpHeaderExtensionMap GetRtpExtensionMap() const = 0;
 
   
   

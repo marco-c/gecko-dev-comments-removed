@@ -202,6 +202,12 @@ class AudioReceiveStream : public MediaReceiveStream {
   
   virtual uint32_t remote_ssrc() const = 0;
 
+  
+  
+  
+  
+  virtual const std::vector<RtpExtension>& GetRtpExtensions() const = 0;
+
  protected:
   virtual ~AudioReceiveStream() {}
 };

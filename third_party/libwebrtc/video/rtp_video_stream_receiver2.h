@@ -180,6 +180,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   void SetRtpExtensions(const std::vector<RtpExtension>& extensions);
+  const RtpHeaderExtensionMap& GetRtpExtensions() const;
 
   
   void UpdateRtt(int64_t max_rtt_ms);
