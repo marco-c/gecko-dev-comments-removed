@@ -316,7 +316,15 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-  updateDetailsAndRebuild({ url, time, type, rebuildImmediately = false }) {
+
+
+  updateDetailsAndRebuild({
+    url,
+    time,
+    type,
+    sessionStartTime,
+    rebuildImmediately = false,
+  }) {
     let rebuild = false;
     if (url !== undefined) {
       url = lazy.Snapshots.stripFragments(url);
@@ -333,6 +341,14 @@ class SnapshotSelector extends EventEmitter {
       this.#context.type = type;
       rebuild = true;
     }
+    if (
+      sessionStartTime != undefined &&
+      sessionStartTime != this.#context.sessionStartTime
+    ) {
+      this.#context.sessionStartTime = sessionStartTime;
+      rebuild = true;
+    }
+
     if (rebuild) {
       if (rebuildImmediately) {
         this.#buildSnapshots();

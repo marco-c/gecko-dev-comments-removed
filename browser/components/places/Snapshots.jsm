@@ -109,6 +109,26 @@ XPCOMUtils.defineLazyPreferenceGetter(
   10
 );
 
+
+
+
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "snapshot_timeofday_sessiondecay_start_s",
+  "browser.places.interactions.snapshotTimeOfDaySessionDecayStartSeconds",
+  1800 
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "snapshot_timeofday_sessiondecay_end_s",
+  "browser.places.interactions.snapshotTimeOfDaySessionDecayEndSeconds",
+  28800 
+);
+
 const DEFAULT_CRITERIA = [
   {
     property: "total_view_time",
@@ -899,7 +919,11 @@ const Snapshots = new (class Snapshots {
     
     
     entries.forEach(e => {
-      e.score = this.timeOfDayScore(e.data.interactions, interactionCounts);
+      e.score = this.timeOfDayScore({
+        interactions: e.data.interactions,
+        context: selectionContext,
+        ...interactionCounts,
+      });
     });
     return entries;
   }
@@ -916,7 +940,9 @@ const Snapshots = new (class Snapshots {
 
 
 
-  timeOfDayScore(interactions, { min, max }) {
+
+
+  timeOfDayScore({ interactions, context, min, max }) {
     
     
     let score = 1.0;
@@ -931,6 +957,28 @@ const Snapshots = new (class Snapshots {
         (1 +
           (interactions - 1) /
             (lazy.snapshot_timeofday_expected_interactions - 1));
+    }
+    
+    
+    
+    
+    
+    if (
+      context.sessionStartTime &&
+      lazy.snapshot_timeofday_sessiondecay_start_s >= 0
+    ) {
+      let timeFromSessionStart = context.time - context.sessionStartTime;
+      let decay = {
+        start: lazy.snapshot_timeofday_sessiondecay_start_s * 1000,
+        end: lazy.snapshot_timeofday_sessiondecay_end_s * 1000,
+      };
+      if (score > 0.1 && timeFromSessionStart > decay.start) {
+        if (timeFromSessionStart > decay.end) {
+          return 0.1;
+        }
+        score +=
+          ((timeFromSessionStart - decay.start) * (0.1 - score)) / decay.end;
+      }
     }
     
     return Math.round(score * 1e2) / 1e2;
@@ -1036,9 +1084,13 @@ const Snapshots = new (class Snapshots {
       return;
     }
 
-    lazy.logConsole.debug(
-      `Testing ${urls ? urls.length : "all"} potential snapshots`
-    );
+    if (urls) {
+      lazy.logConsole.debug(
+        `Testing ${urls.length} potential snapshots: ${urls}`
+      );
+    } else {
+      lazy.logConsole.debug("Testing for any potential snapshot");
+    }
 
     let model;
     try {
@@ -1153,8 +1205,6 @@ const Snapshots = new (class Snapshots {
           createdAt: now,
         });
 
-        lazy.logConsole.debug(`Inserted ${results.length} snapshots`);
-
         let newUrls = [];
         for (let row of results) {
           
@@ -1171,7 +1221,9 @@ const Snapshots = new (class Snapshots {
     );
 
     if (insertedUrls.length) {
-      lazy.logConsole.debug(`${insertedUrls.length} snapshots created`);
+      lazy.logConsole.debug(
+        `${insertedUrls.length} snapshots created: ${insertedUrls}`
+      );
       await this.#addPageData(insertedUrls);
       this.#notify(
         "places-snapshots-added",
