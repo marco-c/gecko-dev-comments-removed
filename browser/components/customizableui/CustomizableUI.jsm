@@ -5838,6 +5838,13 @@ class OverflowableToolbar {
   
 
 
+  isInOverflowList(node) {
+    return node.parentNode == this.#list;
+  }
+
+  
+
+
 
   observe(aSubject, aTopic, aData) {
     
