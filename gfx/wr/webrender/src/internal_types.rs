@@ -197,7 +197,7 @@ impl Default for PlaneSplitAnchor {
 }
 
 
-pub type PlaneSplitter = BspSplitter<f64, WorldPixel, PlaneSplitAnchor>;
+pub type PlaneSplitter = BspSplitter<PlaneSplitAnchor>;
 
 
 #[derive(Debug, Copy, Clone)]
