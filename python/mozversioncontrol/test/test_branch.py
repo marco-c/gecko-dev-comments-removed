@@ -2,7 +2,7 @@
 
 
 
-from distutils.version import LooseVersion
+from looseversion import LooseVersion
 
 import mozunit
 import pytest

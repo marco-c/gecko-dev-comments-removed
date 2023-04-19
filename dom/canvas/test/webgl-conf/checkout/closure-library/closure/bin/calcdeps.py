@@ -25,15 +25,7 @@ the inputs provided, it walks the dependency tree and outputs all the files
 required for compilation.
 """
 
-
-
-
-
-try:
-  import distutils.version
-except ImportError:
-  
-  distutils = None
+from looseversion import LooseVersion
 
 import logging
 import optparse
@@ -574,8 +566,7 @@ def main():
       sys.exit(1)
 
     
-    if distutils and not (distutils.version.LooseVersion(GetJavaVersion()) >
-        distutils.version.LooseVersion('1.6')):
+    if not LooseVersion(GetJavaVersion()) > LooseVersion('1.6'):
       logging.error('Closure Compiler requires Java 1.6 or higher.')
       logging.error('Please visit http://www.java.com/getjava')
       sys.exit(1)
