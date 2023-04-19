@@ -143,6 +143,8 @@ const PRIVATE_BROWSING_BINARY = "private_browsing.exe";
 
 
 const PRIVATE_BROWSING_EXE_ICON_INDEX = 1;
+const PREF_PRIVATE_WINDOW_SEPARATION =
+  "browser.privacySegmentation.windowSeparation.enabled";
 const PREF_PRIVATE_BROWSING_SHORTCUT_CREATED =
   "browser.privacySegmentation.createdShortcut";
 
@@ -2534,9 +2536,7 @@ BrowserGlue.prototype = {
           
           
           
-          lazy.NimbusFeatures.majorRelease2022.getVariable(
-            "feltPrivacyWindowSeparation"
-          ) &&
+          Services.prefs.getBoolPref(PREF_PRIVATE_WINDOW_SEPARATION, false) &&
           
           
           !Services.sysinfo.getProperty("hasWinPackageId") &&
