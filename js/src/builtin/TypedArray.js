@@ -129,7 +129,8 @@ function ValidateTypedArray(obj) {
 
 function TypedArrayCreateWithLength(constructor, length) {
     
-    var newTypedArray = new constructor(length);
+    var newTypedArray = constructContentFunction(constructor, constructor,
+                                                 length);
 
     
     var isTypedArray = ValidateTypedArray(newTypedArray);
@@ -154,7 +155,8 @@ function TypedArrayCreateWithLength(constructor, length) {
 
 function TypedArrayCreateWithBuffer(constructor, buffer, byteOffset, length) {
     
-    var newTypedArray = new constructor(buffer, byteOffset, length);
+    var newTypedArray = constructContentFunction(constructor, constructor,
+                                                 buffer, byteOffset, length);
 
     
     ValidateTypedArray(newTypedArray);
@@ -1023,7 +1025,7 @@ function TypedArraySort(comparefn) {
     
     var wrappedCompareFn = function(x, y) {
         
-        var v = +comparefn(x, y);
+        var v = +callContentFunction(comparefn, undefined, x, y);
 
         
         if (v !== v)
@@ -1412,7 +1414,7 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
                 var len = TypedArrayLength(source);
 
                 
-                var targetObj = new C(len);
+                var targetObj = constructContentFunction(C, C, len);
 
                 
                 for (var k = 0; k < len; k++) {
@@ -1428,7 +1430,7 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
                 ArrayIteratorPrototypeOptimizable())
             {
                 
-                var targetObj = new C(source.length);
+                var targetObj = constructContentFunction(C, C, source.length);
 
                 
                 TypedArrayInitFromPackedArray(targetObj, source);
@@ -1610,7 +1612,7 @@ function ArrayBufferSlice(start, end) {
     var ctor = SpeciesConstructor(O, GetBuiltinConstructor("ArrayBuffer"));
 
     
-    var new_ = new ctor(newLen);
+    var new_ = constructContentFunction(ctor, ctor, newLen);
 
     
     var isWrapped = false;
@@ -1708,7 +1710,7 @@ function SharedArrayBufferSlice(start, end) {
     var ctor = SpeciesConstructor(O, GetBuiltinConstructor("SharedArrayBuffer"));
 
     
-    var new_ = new ctor(newLen);
+    var new_ = constructContentFunction(ctor, ctor, newLen);
 
     
     var isWrapped = false;

@@ -30,7 +30,7 @@ function Promise_finally(onFinally) {
             
 
             
-            var result = onFinally();
+            var result = callContentFunction(onFinally, undefined);
 
             
 
@@ -50,7 +50,7 @@ function Promise_finally(onFinally) {
             
 
             
-            var result = onFinally();
+            var result = callContentFunction(onFinally, undefined);
 
             
 
