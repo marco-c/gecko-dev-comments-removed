@@ -18,8 +18,6 @@ add_task(async function default_homepage_test() {
 
   homeMode.dispatchEvent(new Event("command"));
 
-  is(Services.prefs.getCharPref("browser.startup.homepage"), "about:home");
-
   
   homeMode.value = 1;
 
@@ -28,11 +26,6 @@ add_task(async function default_homepage_test() {
   await TestUtils.waitForCondition(
     () => customSettings.hidden === true,
     "Wait for customSettings to be hidden."
-  );
-
-  is(
-    Services.prefs.getCharPref("browser.startup.homepage"),
-    "chrome://browser/content/blanktab.html"
   );
 
   

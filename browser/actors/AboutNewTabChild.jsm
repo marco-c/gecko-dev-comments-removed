@@ -33,10 +33,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 class AboutNewTabChild extends JSWindowActorChild {
   handleEvent(event) {
     if (event.type == "DOMContentLoaded") {
-      if (!this.contentWindow.document.body.firstElementChild) {
-        return; 
-      }
-
       
       
       if (
