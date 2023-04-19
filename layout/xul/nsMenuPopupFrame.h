@@ -391,9 +391,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
     return false;
   }
 
-  void ShowWithPositionedEvent() {
-    mPopupState = ePopupPositioning;
-  }
+  void ShowWithPositionedEvent() { mPopupState = ePopupPositioning; }
 
   
   

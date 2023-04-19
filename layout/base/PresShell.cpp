@@ -3784,7 +3784,7 @@ bool PresShell::ScrollFrameIntoView(
     const nsPoint pos = aFrame->GetPosition();
     const nsPoint normalPos = aFrame->GetNormalPosition();
     if (pos == normalPos) {
-      return; 
+      return;  
     }
     
     
