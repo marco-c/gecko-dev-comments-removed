@@ -95,8 +95,8 @@ static INLINE int16x8_t vec_max_across(int16x8_t a) {
 }
 
 void vpx_quantize_b_vsx(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                        int skip_block, const int16_t *zbin_ptr,
-                        const int16_t *round_ptr, const int16_t *quant_ptr,
+                        const int16_t *zbin_ptr, const int16_t *round_ptr,
+                        const int16_t *quant_ptr,
                         const int16_t *quant_shift_ptr, tran_low_t *qcoeff_ptr,
                         tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
                         uint16_t *eob_ptr, const int16_t *scan_ptr,
@@ -122,8 +122,6 @@ void vpx_quantize_b_vsx(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   zero_mask1 = vec_cmpge(coeff1_abs, zbin);
 
   (void)scan_ptr;
-  (void)skip_block;
-  assert(!skip_block);
 
   qcoeff0 =
       quantize_coeff(coeff0, coeff0_abs, round, quant, quant_shift, zero_mask0);
@@ -196,12 +194,14 @@ void vpx_quantize_b_vsx(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   *eob_ptr = eob[0];
 }
 
-void vpx_quantize_b_32x32_vsx(
-    const tran_low_t *coeff_ptr, intptr_t n_coeffs, int skip_block,
-    const int16_t *zbin_ptr, const int16_t *round_ptr, const int16_t *quant_ptr,
-    const int16_t *quant_shift_ptr, tran_low_t *qcoeff_ptr,
-    tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr, uint16_t *eob_ptr,
-    const int16_t *scan_ptr, const int16_t *iscan_ptr) {
+void vpx_quantize_b_32x32_vsx(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
+                              const int16_t *zbin_ptr, const int16_t *round_ptr,
+                              const int16_t *quant_ptr,
+                              const int16_t *quant_shift_ptr,
+                              tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
+                              const int16_t *dequant_ptr, uint16_t *eob_ptr,
+                              const int16_t *scan_ptr,
+                              const int16_t *iscan_ptr) {
   
   
   
@@ -227,9 +227,7 @@ void vpx_quantize_b_32x32_vsx(
   int16x8_t coeff1_abs = vec_abs(coeff1);
 
   (void)scan_ptr;
-  (void)skip_block;
   (void)n_coeffs;
-  assert(!skip_block);
 
   
   zbin = vec_sra(vec_add(zbin, vec_ones_s16), vec_ones_u16);

@@ -148,7 +148,7 @@ TEST_P(FdctTest, SignBiasCheck) {
 
   EXPECT_EQ(true, bias_acceptable)
       << "Error: 4x4 FDCT has a sign bias > 10% for input range [-15, 15]";
-};
+}
 
 TEST_P(FdctTest, RoundTripErrorCheck) {
   int max_error = 0;
@@ -181,7 +181,7 @@ TEST_P(FdctTest, RoundTripErrorCheck) {
 
   EXPECT_GE(count_test_block, total_error)
       << "Error: FDCT/IDCT has average roundtrip error > 1 per block";
-};
+}
 
 INSTANTIATE_TEST_SUITE_P(C, FdctTest, ::testing::Values(vp8_short_fdct4x4_c));
 
@@ -202,5 +202,10 @@ INSTANTIATE_TEST_SUITE_P(MSA, FdctTest,
 #if HAVE_MMI
 INSTANTIATE_TEST_SUITE_P(MMI, FdctTest,
                          ::testing::Values(vp8_short_fdct4x4_mmi));
+#endif  
+
+#if HAVE_LSX
+INSTANTIATE_TEST_SUITE_P(LSX, FdctTest,
+                         ::testing::Values(vp8_short_fdct4x4_lsx));
 #endif  
 }  

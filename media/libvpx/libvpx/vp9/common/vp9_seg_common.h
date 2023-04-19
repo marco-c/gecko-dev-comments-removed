@@ -26,6 +26,11 @@ extern "C" {
 #define PREDICTION_PROBS 3
 
 
+#define BACKGROUND_SEG_SKIP_ID 3
+
+#define FRAMES_NO_SKIPPING_AFTER_KEY 20
+
+
 typedef enum {
   SEG_LVL_ALT_Q = 0,      
   SEG_LVL_ALT_LF = 1,     

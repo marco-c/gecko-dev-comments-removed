@@ -46,22 +46,10 @@ static INLINE unsigned int sad(const uint8_t *src_ptr, int src_stride,
   }
 
 
-
-#define sadMxNxK(m, n, k)                                                     \
-  void vpx_sad##m##x##n##x##k##_c(const uint8_t *src_ptr, int src_stride,     \
-                                  const uint8_t *ref_ptr, int ref_stride,     \
-                                  uint32_t *sad_array) {                      \
-    int i;                                                                    \
-    for (i = 0; i < k; ++i)                                                   \
-      sad_array[i] =                                                          \
-          vpx_sad##m##x##n##_c(src_ptr, src_stride, &ref_ptr[i], ref_stride); \
-  }
-
-
 #define sadMxNx4D(m, n)                                                        \
   void vpx_sad##m##x##n##x4d_c(const uint8_t *src_ptr, int src_stride,         \
-                               const uint8_t *const ref_array[],               \
-                               int ref_stride, uint32_t *sad_array) {          \
+                               const uint8_t *const ref_array[4],              \
+                               int ref_stride, uint32_t sad_array[4]) {        \
     int i;                                                                     \
     for (i = 0; i < 4; ++i)                                                    \
       sad_array[i] =                                                           \
@@ -83,7 +71,6 @@ sadMxNx4D(32, 64)
 
 
 sadMxN(32, 32)
-sadMxNxK(32, 32, 8)
 sadMxNx4D(32, 32)
 
 
@@ -96,26 +83,18 @@ sadMxNx4D(16, 32)
 
 
 sadMxN(16, 16)
-sadMxNxK(16, 16, 3)
-sadMxNxK(16, 16, 8)
 sadMxNx4D(16, 16)
 
 
 sadMxN(16, 8)
-sadMxNxK(16, 8, 3)
-sadMxNxK(16, 8, 8)
 sadMxNx4D(16, 8)
 
 
 sadMxN(8, 16)
-sadMxNxK(8, 16, 3)
-sadMxNxK(8, 16, 8)
 sadMxNx4D(8, 16)
 
 
 sadMxN(8, 8)
-sadMxNxK(8, 8, 3)
-sadMxNxK(8, 8, 8)
 sadMxNx4D(8, 8)
 
 
@@ -128,8 +107,6 @@ sadMxNx4D(4, 8)
 
 
 sadMxN(4, 4)
-sadMxNxK(4, 4, 3)
-sadMxNxK(4, 4, 8)
 sadMxNx4D(4, 4)
 
 
@@ -181,15 +158,15 @@ static INLINE unsigned int highbd_sadb(const uint8_t *src8_ptr, int src_stride,
     return highbd_sadb(src_ptr, src_stride, comp_pred, m, m, n);               \
   }
 
-#define highbd_sadMxNx4D(m, n)                                                \
-  void vpx_highbd_sad##m##x##n##x4d_c(const uint8_t *src_ptr, int src_stride, \
-                                      const uint8_t *const ref_array[],       \
-                                      int ref_stride, uint32_t *sad_array) {  \
-    int i;                                                                    \
-    for (i = 0; i < 4; ++i) {                                                 \
-      sad_array[i] = vpx_highbd_sad##m##x##n##_c(src_ptr, src_stride,         \
-                                                 ref_array[i], ref_stride);   \
-    }                                                                         \
+#define highbd_sadMxNx4D(m, n)                                                 \
+  void vpx_highbd_sad##m##x##n##x4d_c(const uint8_t *src_ptr, int src_stride,  \
+                                      const uint8_t *const ref_array[4],       \
+                                      int ref_stride, uint32_t sad_array[4]) { \
+    int i;                                                                     \
+    for (i = 0; i < 4; ++i) {                                                  \
+      sad_array[i] = vpx_highbd_sad##m##x##n##_c(src_ptr, src_stride,          \
+                                                 ref_array[i], ref_stride);    \
+    }                                                                          \
   }
 
 

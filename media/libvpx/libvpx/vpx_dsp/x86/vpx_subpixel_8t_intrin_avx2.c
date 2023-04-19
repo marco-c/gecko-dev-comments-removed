@@ -969,12 +969,12 @@ filter8_1dfunction vpx_filter_block1d4_h2_avg_ssse3;
 
 
 
-FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , avx2, 0);
+FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , avx2, 0)
 FUN_CONV_1D(vert, y0_q4, y_step_q4, v, src - src_stride * (num_taps / 2 - 1), ,
-            avx2, 0);
-FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, avx2, 1);
+            avx2, 0)
+FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, avx2, 1)
 FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v,
-            src - src_stride * (num_taps / 2 - 1), avg_, avx2, 1);
+            src - src_stride * (num_taps / 2 - 1), avg_, avx2, 1)
 
 
 
@@ -986,6 +986,6 @@ FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v,
 
 
 
-FUN_CONV_2D(, avx2, 0);
-FUN_CONV_2D(avg_, avx2, 1);
+FUN_CONV_2D(, avx2, 0)
+FUN_CONV_2D(avg_, avx2, 1)
 #endif  

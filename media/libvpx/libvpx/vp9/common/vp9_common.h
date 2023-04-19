@@ -27,10 +27,10 @@ extern "C" {
 
 
 #define vp9_copy(dest, src)              \
-  {                                      \
+  do {                                   \
     assert(sizeof(dest) == sizeof(src)); \
     memcpy(dest, src, sizeof(src));      \
-  }
+  } while (0)
 
 
 #define vp9_copy_array(dest, src, n)           \

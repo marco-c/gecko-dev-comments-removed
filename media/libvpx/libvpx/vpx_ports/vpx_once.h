@@ -95,7 +95,7 @@ static void once(void (*func)(void)) {
 #define INCL_DOS
 #include <os2.h>
 static void once(void (*func)(void)) {
-  static int done;
+  static volatile int done;
 
   
   if (done) return;
@@ -128,7 +128,7 @@ static void once(void (*func)(void)) {
 
 
 static void once(void (*func)(void)) {
-  static int done;
+  static volatile int done;
 
   if (!done) {
     func();

@@ -548,13 +548,16 @@ class DatarateOnePassCbrSvc : public OnePassCbrSvc {
       }
 
       if (!single_layer_resize_) {
-        ASSERT_EQ(pkt->data.frame.width[sl],
-                  top_sl_width_ * svc_params_.scaling_factor_num[sl] /
-                      svc_params_.scaling_factor_den[sl]);
-
-        ASSERT_EQ(pkt->data.frame.height[sl],
-                  top_sl_height_ * svc_params_.scaling_factor_num[sl] /
-                      svc_params_.scaling_factor_den[sl]);
+        unsigned int scaled_width = top_sl_width_ *
+                                    svc_params_.scaling_factor_num[sl] /
+                                    svc_params_.scaling_factor_den[sl];
+        if (scaled_width % 2 != 0) scaled_width += 1;
+        ASSERT_EQ(pkt->data.frame.width[sl], scaled_width);
+        unsigned int scaled_height = top_sl_height_ *
+                                     svc_params_.scaling_factor_num[sl] /
+                                     svc_params_.scaling_factor_den[sl];
+        if (scaled_height % 2 != 0) scaled_height += 1;
+        ASSERT_EQ(pkt->data.frame.height[sl], scaled_height);
       } else if (superframe_count_ > 0) {
         if (pkt->data.frame.width[sl] < prev_frame_width[sl] &&
             pkt->data.frame.height[sl] < prev_frame_height[sl])
@@ -677,6 +680,152 @@ class DatarateOnePassCbrSvcSingleBR
     ResetModel();
   }
 };
+
+
+
+TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL3TL444Profile1) {
+  SetSvcConfig(3, 3);
+  ::libvpx_test::Y4mVideoSource video("rush_hour_444.y4m", 0, 140);
+  cfg_.g_profile = 1;
+  cfg_.g_bit_depth = VPX_BITS_8;
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.g_threads = 1;
+  cfg_.rc_dropframe_thresh = 0;
+  cfg_.kf_max_dist = 9999;
+
+  top_sl_width_ = 352;
+  top_sl_height_ = 288;
+  cfg_.rc_target_bitrate = 500;
+  ResetModel();
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  CheckLayerRateTargeting(number_spatial_layers_, number_temporal_layers_, 0.78,
+                          1.15);
+#if CONFIG_VP9_DECODER
+  
+  
+  EXPECT_EQ(GetNonRefFrames(), GetMismatchFrames());
+#endif
+}
+
+
+
+TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc2SL3TL422Profile1) {
+  SetSvcConfig(2, 3);
+  ::libvpx_test::Y4mVideoSource video("park_joy_90p_8_422.y4m", 0, 20);
+  cfg_.g_profile = 1;
+  cfg_.g_bit_depth = VPX_BITS_8;
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.g_threads = 1;
+  cfg_.rc_dropframe_thresh = 0;
+  cfg_.kf_max_dist = 9999;
+
+  top_sl_width_ = 160;
+  top_sl_height_ = 90;
+  cfg_.rc_target_bitrate = 500;
+  ResetModel();
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  
+  
+  CheckLayerRateTargeting(number_spatial_layers_, number_temporal_layers_, 0.5,
+                          1.7);
+#if CONFIG_VP9_DECODER
+  
+  
+  EXPECT_EQ(GetNonRefFrames(), GetMismatchFrames());
+#endif
+}
+
+#if CONFIG_VP9_HIGHBITDEPTH
+
+
+TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL3TL10bitProfile2) {
+  SetSvcConfig(3, 3);
+  ::libvpx_test::Y4mVideoSource video("park_joy_90p_10_420_20f.y4m", 0, 20);
+  cfg_.g_profile = 2;
+  cfg_.g_bit_depth = VPX_BITS_10;
+  cfg_.g_input_bit_depth = VPX_BITS_10;
+  if (cfg_.g_bit_depth > 8) init_flags_ |= VPX_CODEC_USE_HIGHBITDEPTH;
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.g_threads = 1;
+  cfg_.rc_dropframe_thresh = 0;
+  cfg_.kf_max_dist = 9999;
+
+  top_sl_width_ = 160;
+  top_sl_height_ = 90;
+  cfg_.rc_target_bitrate = 500;
+  ResetModel();
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  
+  
+  
+  
+
+
+
+
+
+#if CONFIG_VP9_DECODER
+  
+  
+  EXPECT_EQ(GetNonRefFrames(), GetMismatchFrames());
+#endif
+}
+
+
+
+TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL3TL12bitProfile2) {
+  SetSvcConfig(3, 3);
+  ::libvpx_test::Y4mVideoSource video("park_joy_90p_12_420_20f.y4m", 0, 20);
+  cfg_.g_profile = 2;
+  cfg_.g_bit_depth = VPX_BITS_12;
+  cfg_.g_input_bit_depth = VPX_BITS_12;
+  if (cfg_.g_bit_depth > 8) init_flags_ |= VPX_CODEC_USE_HIGHBITDEPTH;
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.g_threads = 1;
+  cfg_.rc_dropframe_thresh = 0;
+  cfg_.kf_max_dist = 9999;
+
+  top_sl_width_ = 160;
+  top_sl_height_ = 90;
+  cfg_.rc_target_bitrate = 500;
+  ResetModel();
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  
+  
+  
+  
+
+
+
+
+
+#if CONFIG_VP9_DECODER
+  
+  
+  EXPECT_EQ(GetNonRefFrames(), GetMismatchFrames());
+#endif
+}
+#endif
 
 
 
@@ -1354,7 +1503,6 @@ TEST_P(DatarateOnePassCbrSvcSmallKF, OnePassCbrSvc3SL3TLSmallKf) {
   ResetModel();
   AssignLayerBitrates();
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
-  
   CheckLayerRateTargeting(number_spatial_layers_, number_temporal_layers_, 0.70,
                           1.15);
 #if CONFIG_VP9_DECODER

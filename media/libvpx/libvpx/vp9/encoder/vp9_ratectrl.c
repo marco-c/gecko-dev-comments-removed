@@ -223,9 +223,10 @@ int vp9_rc_clamp_pframe_target_size(const VP9_COMP *const cpi, int target) {
   if (target > rc->max_frame_bandwidth) target = rc->max_frame_bandwidth;
 
   if (oxcf->rc_max_inter_bitrate_pct) {
-    const int max_rate =
-        rc->avg_frame_bandwidth * oxcf->rc_max_inter_bitrate_pct / 100;
-    target = VPXMIN(target, max_rate);
+    const int64_t max_rate =
+        (int64_t)rc->avg_frame_bandwidth * oxcf->rc_max_inter_bitrate_pct / 100;
+    
+    target = (int)VPXMIN(target, max_rate);
   }
   return target;
 }
@@ -234,9 +235,9 @@ int vp9_rc_clamp_iframe_target_size(const VP9_COMP *const cpi, int target) {
   const RATE_CONTROL *rc = &cpi->rc;
   const VP9EncoderConfig *oxcf = &cpi->oxcf;
   if (oxcf->rc_max_intra_bitrate_pct) {
-    const int max_rate =
-        rc->avg_frame_bandwidth * oxcf->rc_max_intra_bitrate_pct / 100;
-    target = VPXMIN(target, max_rate);
+    const int64_t max_rate =
+        (int64_t)rc->avg_frame_bandwidth * oxcf->rc_max_intra_bitrate_pct / 100;
+    target = (int)VPXMIN(target, max_rate);
   }
   if (target > rc->max_frame_bandwidth) target = rc->max_frame_bandwidth;
   return target;
@@ -277,9 +278,9 @@ static void update_buffer_level_svc_preencode(VP9_COMP *cpi) {
         svc->current_superframe > 0) {
       
       const double framerate_pts = 10000000.0 / ts_delta;
-      lrc->bits_off_target += (int)(lc->target_bandwidth / framerate_pts);
+      lrc->bits_off_target += (int)round(lc->target_bandwidth / framerate_pts);
     } else {
-      lrc->bits_off_target += (int)(lc->target_bandwidth / lc->framerate);
+      lrc->bits_off_target += (int)round(lc->target_bandwidth / lc->framerate);
     }
     
     lrc->bits_off_target =
@@ -2213,7 +2214,6 @@ static void set_intra_only_frame(VP9_COMP *cpi) {
   
   
   if ((cm->current_video_frame == 0 && svc->number_temporal_layers > 1) ||
-      svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS ||
       svc->number_spatial_layers > 3 || svc->number_temporal_layers > 3 ||
       svc->number_spatial_layers == 1)
     return;
@@ -2234,11 +2234,15 @@ static void set_intra_only_frame(VP9_COMP *cpi) {
     cpi->lst_fb_idx = -1;
     cpi->gld_fb_idx = -1;
     cpi->alt_fb_idx = -1;
+    svc->update_buffer_slot[0] = 0;
     
     
     
     for (i = 0; i < REF_FRAMES; ++i) {
-      if (svc->fb_idx_base[i] == 1) count++;
+      if (svc->fb_idx_base[i] == 1) {
+        svc->update_buffer_slot[0] |= 1 << i;
+        count++;
+      }
       if (count == 1 && cpi->lst_fb_idx == -1) cpi->lst_fb_idx = i;
       if (count == 2 && cpi->gld_fb_idx == -1) cpi->gld_fb_idx = i;
       if (count == 3 && cpi->alt_fb_idx == -1) cpi->alt_fb_idx = i;
@@ -2247,6 +2251,12 @@ static void set_intra_only_frame(VP9_COMP *cpi) {
     
     if (cpi->gld_fb_idx == -1) cpi->gld_fb_idx = cpi->lst_fb_idx;
     if (cpi->alt_fb_idx == -1) cpi->alt_fb_idx = cpi->lst_fb_idx;
+    if (svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
+      cpi->ext_refresh_last_frame = 0;
+      cpi->ext_refresh_golden_frame = 0;
+      cpi->ext_refresh_alt_ref_frame = 0;
+      cpi->ref_frame_flags = 0;
+    }
   }
 }
 
@@ -2389,6 +2399,9 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
     set_intra_only_frame(cpi);
     target = vp9_calc_iframe_target_size_one_pass_cbr(cpi);
   }
+  
+  if (svc->previous_frame_is_intra_only) cpi->ref_frame_flags |= VP9_LAST_FLAG;
+
   
   
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)

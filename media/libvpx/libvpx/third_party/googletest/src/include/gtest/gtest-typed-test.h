@@ -29,8 +29,8 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_GTEST_TYPED_TEST_H_
-#define GTEST_INCLUDE_GTEST_GTEST_TYPED_TEST_H_
+#ifndef GOOGLETEST_INCLUDE_GTEST_GTEST_TYPED_TEST_H_
+#define GOOGLETEST_INCLUDE_GTEST_GTEST_TYPED_TEST_H_
 
 
 
@@ -175,8 +175,6 @@ INSTANTIATE_TYPED_TEST_SUITE_P(My, FooTest, MyTypes);
 
 
 
-#if GTEST_HAS_TYPED_TEST
-
 
 
 
@@ -230,11 +228,7 @@ INSTANTIATE_TYPED_TEST_SUITE_P(My, FooTest, MyTypes);
   TYPED_TEST_SUITE
 #endif  
 
-#endif  
 
-
-
-#if GTEST_HAS_TYPED_TEST_P
 
 
 
@@ -330,8 +324,6 @@ INSTANTIATE_TYPED_TEST_SUITE_P(My, FooTest, MyTypes);
   static_assert(                                                           \
       ::testing::internal::InstantiateTypedTestCase_P_IsDeprecated(), ""); \
   INSTANTIATE_TYPED_TEST_SUITE_P
-#endif  
-
 #endif  
 
 #endif  

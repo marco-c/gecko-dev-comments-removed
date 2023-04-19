@@ -38,8 +38,8 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_STRING_H_
-#define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_STRING_H_
+#ifndef GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_STRING_H_
+#define GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_STRING_H_
 
 #ifdef __BORLANDC__
 
@@ -148,6 +148,9 @@ class GTEST_API_ String {
 
   
   static std::string FormatIntWidth2(int value);  
+
+  
+  static std::string FormatIntWidthN(int value, int width);
 
   
   static std::string FormatHexInt(int value);

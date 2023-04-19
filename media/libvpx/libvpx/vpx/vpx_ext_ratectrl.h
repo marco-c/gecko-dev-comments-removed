@@ -25,7 +25,21 @@ extern "C" {
 
 
 
-#define VPX_EXT_RATECTRL_ABI_VERSION (1)
+#define VPX_EXT_RATECTRL_ABI_VERSION (5)
+
+
+
+
+
+
+
+
+
+typedef enum vpx_rc_type {
+  VPX_RC_QP = 1 << 0,
+  VPX_RC_GOP = 1 << 1,
+  VPX_RC_GOP_QP = VPX_RC_QP | VPX_RC_GOP
+} vpx_rc_type_t;
 
 
 
@@ -33,6 +47,15 @@ extern "C" {
 
 
 typedef void *vpx_rc_model_t;
+
+
+
+
+
+
+#define VPX_DEFAULT_Q -1
+
+
 
 
 
@@ -261,6 +284,82 @@ typedef struct vpx_rc_config {
 
 
 
+typedef struct vpx_rc_gop_info {
+  
+
+
+
+
+
+
+  int min_gf_interval;
+  
+
+
+  int max_gf_interval;
+  
+
+
+
+  int active_min_gf_interval;
+  
+
+
+
+  int active_max_gf_interval;
+  
+
+
+  int allow_alt_ref;
+  
+
+
+  int is_key_frame;
+  
+
+
+  int last_gop_use_alt_ref;
+  
+
+
+
+  int frames_since_key;
+  
+
+
+
+  int frames_to_key;
+  
+
+
+  int lag_in_frames;
+  
+
+
+
+  int show_index;
+  
+
+
+  int coding_index;
+  
+
+
+
+  int gop_global_index;
+} vpx_rc_gop_info_t;
+
+
+
+
+typedef struct vpx_rc_gop_decision {
+  int gop_coding_frames; 
+  int use_alt_ref;       
+} vpx_rc_gop_decision_t;
+
+
+
+
 
 
 
@@ -317,6 +416,19 @@ typedef vpx_rc_status_t (*vpx_rc_update_encodeframe_result_cb_fn_t)(
 
 
 
+
+
+typedef vpx_rc_status_t (*vpx_rc_get_gop_decision_cb_fn_t)(
+    vpx_rc_model_t rate_ctrl_model, const vpx_rc_gop_info_t *gop_info,
+    vpx_rc_gop_decision_t *gop_decision);
+
+
+
+
+
+
+
+
 typedef vpx_rc_status_t (*vpx_rc_delete_model_cb_fn_t)(
     vpx_rc_model_t rate_ctrl_model);
 
@@ -327,6 +439,10 @@ typedef vpx_rc_status_t (*vpx_rc_delete_model_cb_fn_t)(
 
 
 typedef struct vpx_rc_funcs {
+  
+
+
+  vpx_rc_type_t rc_type;
   
 
 
@@ -343,6 +459,10 @@ typedef struct vpx_rc_funcs {
 
 
   vpx_rc_update_encodeframe_result_cb_fn_t update_encodeframe_result;
+  
+
+
+  vpx_rc_get_gop_decision_cb_fn_t get_gop_decision;
   
 
 

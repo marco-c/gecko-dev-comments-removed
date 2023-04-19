@@ -32,8 +32,8 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
-#define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
+#ifndef GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
+#define GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 
 #include "gtest/internal/gtest-port.h"
 
@@ -64,37 +64,39 @@ inline std::string CanonicalizeForStdLibVersioning(std::string s) {
   return s;
 }
 
+#if GTEST_HAS_RTTI
+
+inline std::string GetTypeName(const std::type_info& type) {
+  const char* const name = type.name();
+#if GTEST_HAS_CXXABI_H_ || defined(__HP_aCC)
+  int status = 0;
+  
+  
+#if GTEST_HAS_CXXABI_H_
+  using abi::__cxa_demangle;
+#endif  
+  char* const readable_name = __cxa_demangle(name, nullptr, nullptr, &status);
+  const std::string name_str(status == 0 ? readable_name : name);
+  free(readable_name);
+  return CanonicalizeForStdLibVersioning(name_str);
+#else
+  return name;
+#endif  
+}
+#endif  
+
+
 
 
 
 template <typename T>
 std::string GetTypeName() {
-# if GTEST_HAS_RTTI
-
-  const char* const name = typeid(T).name();
-#  if GTEST_HAS_CXXABI_H_ || defined(__HP_aCC)
-  int status = 0;
-  
-  
-#   if GTEST_HAS_CXXABI_H_
-  using abi::__cxa_demangle;
-#   endif  
-  char* const readable_name = __cxa_demangle(name, nullptr, nullptr, &status);
-  const std::string name_str(status == 0 ? readable_name : name);
-  free(readable_name);
-  return CanonicalizeForStdLibVersioning(name_str);
-#  else
-  return name;
-#  endif  
-
-# else
-
+#if GTEST_HAS_RTTI
+  return GetTypeName(typeid(T));
+#else
   return "<type>";
-
-# endif  
+#endif  
 }
-
-#if GTEST_HAS_TYPED_TEST || GTEST_HAS_TYPED_TEST_P
 
 
 struct None {};
@@ -170,8 +172,6 @@ struct GenerateTypeList {
  public:
   using type = typename proxy::type;
 };
-
-#endif  
 
 }  
 

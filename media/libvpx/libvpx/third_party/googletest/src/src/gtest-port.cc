@@ -198,7 +198,8 @@ size_t GetThreadCount() {
   if (sysctl(mib, miblen, NULL, &size, NULL, 0)) {
     return 0;
   }
-  mib[5] = size / mib[4];
+
+  mib[5] = static_cast<int>(size / static_cast<size_t>(mib[4]));
 
   
   struct kinfo_proc info[mib[5]];
@@ -207,8 +208,8 @@ size_t GetThreadCount() {
   }
 
   
-  int nthreads = 0;
-  for (int i = 0; i < size / mib[4]; i++) {
+  size_t nthreads = 0;
+  for (size_t i = 0; i < size / static_cast<size_t>(mib[4]); i++) {
     if (info[i].p_tid != -1)
       nthreads++;
   }
@@ -687,8 +688,8 @@ class ThreadLocalRegistryImpl {
   static Mutex thread_map_mutex_;
 };
 
-Mutex ThreadLocalRegistryImpl::mutex_(Mutex::kStaticMutex);
-Mutex ThreadLocalRegistryImpl::thread_map_mutex_(Mutex::kStaticMutex);
+Mutex ThreadLocalRegistryImpl::mutex_(Mutex::kStaticMutex);  
+Mutex ThreadLocalRegistryImpl::thread_map_mutex_(Mutex::kStaticMutex);  
 
 ThreadLocalValueHolderBase* ThreadLocalRegistry::GetValueOnCurrentThread(
       const ThreadLocalBase* thread_local_instance) {
@@ -1095,8 +1096,8 @@ class CapturedStream {
 # else
     
     
-    
-    
+    std::string name_template;
+
 #  if GTEST_OS_LINUX_ANDROID
     
     
@@ -1109,17 +1110,46 @@ class CapturedStream {
     
     
     
-    char name_template[] = "/data/local/tmp/gtest_captured_stream.XXXXXX";
+    name_template = "/data/local/tmp/";
+#  elif GTEST_OS_IOS
+    char user_temp_dir[PATH_MAX + 1];
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ::confstr(_CS_DARWIN_USER_TEMP_DIR, user_temp_dir, sizeof(user_temp_dir));
+
+    name_template = user_temp_dir;
+    if (name_template.back() != GTEST_PATH_SEP_[0])
+      name_template.push_back(GTEST_PATH_SEP_[0]);
 #  else
-    char name_template[] = "/tmp/captured_stream.XXXXXX";
-#  endif  
-    const int captured_fd = mkstemp(name_template);
+    name_template = "/tmp/";
+#  endif
+    name_template.append("gtest_captured_stream.XXXXXX");
+
+    
+    
+    
+    
+    
+    
+    const int captured_fd = ::mkstemp(const_cast<char*>(name_template.data()));
     if (captured_fd == -1) {
       GTEST_LOG_(WARNING)
           << "Failed to create tmp file " << name_template
           << " for test; does the test have access to the /tmp directory?";
     }
-    filename_ = name_template;
+    filename_ = std::move(name_template);
 # endif  
     fflush(nullptr);
     dup2(captured_fd, fd_);

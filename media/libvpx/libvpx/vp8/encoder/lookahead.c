@@ -66,8 +66,8 @@ struct lookahead_ctx *vp8_lookahead_init(unsigned int width,
   depth += 1;
 
   
-  width = (width + 15) & ~15;
-  height = (height + 15) & ~15;
+  width = (width + 15) & ~15u;
+  height = (height + 15) & ~15u;
 
   
   ctx = calloc(1, sizeof(*ctx));

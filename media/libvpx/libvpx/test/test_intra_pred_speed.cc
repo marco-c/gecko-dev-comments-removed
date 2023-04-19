@@ -49,10 +49,8 @@ struct IntraPredTestMem {
     for (int i = -1; i < kBPS; ++i) above[i] = rnd.Rand16() & mask;
 
     
-    
-    
     ASSERT_LE(block_size, kBPS);
-    for (int i = block_size; i < 2 * kBPS; ++i) {
+    for (int i = block_size; i < 2 * block_size; ++i) {
       above[i] = above[block_size - 1];
     }
   }

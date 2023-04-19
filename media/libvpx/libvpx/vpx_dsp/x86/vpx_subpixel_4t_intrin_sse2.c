@@ -1040,12 +1040,12 @@ filter8_1dfunction vpx_filter_block1d4_h2_avg_sse2;
 
 
 
-FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , sse2, 0);
+FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , sse2, 0)
 FUN_CONV_1D(vert, y0_q4, y_step_q4, v, src - (num_taps / 2 - 1) * src_stride, ,
-            sse2, 0);
-FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, sse2, 1);
+            sse2, 0)
+FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, sse2, 1)
 FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v,
-            src - (num_taps / 2 - 1) * src_stride, avg_, sse2, 1);
+            src - (num_taps / 2 - 1) * src_stride, avg_, sse2, 1)
 
 
 
@@ -1057,8 +1057,8 @@ FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v,
 
 
 
-FUN_CONV_2D(, sse2, 0);
-FUN_CONV_2D(avg_, sse2, 1);
+FUN_CONV_2D(, sse2, 0)
+FUN_CONV_2D(avg_, sse2, 1)
 
 #if CONFIG_VP9_HIGHBITDEPTH && VPX_ARCH_X86_64
 
@@ -1139,12 +1139,12 @@ highbd_filter8_1dfunction vpx_highbd_filter_block1d4_h2_avg_sse2;
 
 
 
-HIGH_FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , sse2, 0);
+HIGH_FUN_CONV_1D(horiz, x0_q4, x_step_q4, h, src, , sse2, 0)
 HIGH_FUN_CONV_1D(vert, y0_q4, y_step_q4, v,
-                 src - src_stride * (num_taps / 2 - 1), , sse2, 0);
-HIGH_FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, sse2, 1);
+                 src - src_stride * (num_taps / 2 - 1), , sse2, 0)
+HIGH_FUN_CONV_1D(avg_horiz, x0_q4, x_step_q4, h, src, avg_, sse2, 1)
 HIGH_FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v,
-                 src - src_stride * (num_taps / 2 - 1), avg_, sse2, 1);
+                 src - src_stride * (num_taps / 2 - 1), avg_, sse2, 1)
 
 
 
@@ -1156,6 +1156,6 @@ HIGH_FUN_CONV_1D(avg_vert, y0_q4, y_step_q4, v,
 
 
 
-HIGH_FUN_CONV_2D(, sse2, 0);
-HIGH_FUN_CONV_2D(avg_, sse2, 1);
+HIGH_FUN_CONV_2D(, sse2, 0)
+HIGH_FUN_CONV_2D(avg_, sse2, 1)
 #endif  

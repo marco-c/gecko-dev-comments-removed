@@ -578,6 +578,8 @@ TEST_P(ResizeRealtimeTest, TestExternalResizeWorks) {
   }
 }
 
+
+
 TEST_P(ResizeRealtimeTest, DISABLED_TestExternalResizeSmallerWidthBiggerSize) {
   ResizingVideoSource video;
   video.flag_codec_ = true;
@@ -794,6 +796,8 @@ TEST_P(ResizeCspTest, TestResizeCspWorks) {
 }
 
 VP8_INSTANTIATE_TEST_SUITE(ResizeTest, ONE_PASS_TEST_MODES);
+
+
 VP9_INSTANTIATE_TEST_SUITE(ResizeTest,
                            ::testing::Values(::libvpx_test::kRealTime));
 VP9_INSTANTIATE_TEST_SUITE(ResizeInternalTest,

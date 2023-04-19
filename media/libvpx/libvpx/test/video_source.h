@@ -20,8 +20,14 @@
 #endif
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <memory>
 #include <string>
+
 #include "test/acm_random.h"
+#if !defined(_WIN32)
+#include "third_party/googletest/src/include/gtest/gtest.h"
+#endif
 #include "vpx/vpx_encoder.h"
 
 namespace libvpx_test {
@@ -36,7 +42,7 @@ namespace libvpx_test {
 
 static std::string GetDataPath() {
   const char *const data_path = getenv("LIBVPX_TEST_DATA_PATH");
-  if (data_path == NULL) {
+  if (data_path == nullptr) {
 #ifdef LIBVPX_TEST_DATA_PATH
     
     
@@ -70,9 +76,25 @@ static FILE *GetTempOutFile(std::string *file_name) {
       return fopen(fname, "wb+");
     }
   }
-  return NULL;
+  return nullptr;
 #else
-  return tmpfile();
+  std::string temp_dir = testing::TempDir();
+  if (temp_dir.empty()) return nullptr;
+  
+  
+  
+  if (temp_dir[temp_dir.size() - 1] != '/') temp_dir += '/';
+  const char name_template[] = "libvpxtest.XXXXXX";
+  std::unique_ptr<char[]> temp_file_name(
+      new char[temp_dir.size() + sizeof(name_template)]);
+  if (temp_file_name == nullptr) return nullptr;
+  memcpy(temp_file_name.get(), temp_dir.data(), temp_dir.size());
+  memcpy(temp_file_name.get() + temp_dir.size(), name_template,
+         sizeof(name_template));
+  const int fd = mkstemp(temp_file_name.get());
+  if (fd == -1) return nullptr;
+  *file_name = temp_file_name.get();
+  return fdopen(fd, "wb+");
 #endif
 }
 
@@ -92,7 +114,7 @@ class TempOutFile {
   void CloseFile() {
     if (file_) {
       fclose(file_);
-      file_ = NULL;
+      file_ = nullptr;
     }
   }
   FILE *file_;
@@ -133,7 +155,7 @@ class VideoSource {
 class DummyVideoSource : public VideoSource {
  public:
   DummyVideoSource()
-      : img_(NULL), limit_(100), width_(80), height_(64),
+      : img_(nullptr), limit_(100), width_(80), height_(64),
         format_(VPX_IMG_FMT_I420) {
     ReallocImage();
   }
@@ -150,7 +172,9 @@ class DummyVideoSource : public VideoSource {
     FillFrame();
   }
 
-  virtual vpx_image_t *img() const { return (frame_ < limit_) ? img_ : NULL; }
+  virtual vpx_image_t *img() const {
+    return (frame_ < limit_) ? img_ : nullptr;
+  }
 
   
   virtual vpx_codec_pts_t pts() const { return frame_; }
@@ -190,8 +214,9 @@ class DummyVideoSource : public VideoSource {
 
   void ReallocImage() {
     vpx_img_free(img_);
-    img_ = vpx_img_alloc(NULL, format_, width_, height_, 32);
-    raw_sz_ = ((img_->w + 31) & ~31) * img_->h * img_->bps / 8;
+    img_ = vpx_img_alloc(nullptr, format_, width_, height_, 32);
+    ASSERT_NE(img_, nullptr);
+    raw_sz_ = ((img_->w + 31) & ~31u) * img_->h * img_->bps / 8;
   }
 
   vpx_image_t *img_;

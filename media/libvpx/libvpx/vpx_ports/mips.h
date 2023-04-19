@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_PORTS_MIPS_H_
-#define VPX_PORTS_MIPS_H_
+#ifndef VPX_VPX_PORTS_MIPS_H_
+#define VPX_VPX_PORTS_MIPS_H_
 
 #ifdef __cplusplus
 extern "C" {

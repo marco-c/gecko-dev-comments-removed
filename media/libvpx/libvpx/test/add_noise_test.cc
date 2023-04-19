@@ -23,7 +23,6 @@ namespace {
 
 static const int kNoiseSize = 3072;
 
-
 typedef void (*AddNoiseFunc)(uint8_t *start, const int8_t *noise,
                              int blackclamp, int whiteclamp, int width,
                              int height, int pitch);
