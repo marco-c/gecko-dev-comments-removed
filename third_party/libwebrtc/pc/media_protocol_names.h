@@ -11,7 +11,7 @@
 #ifndef PC_MEDIA_PROTOCOL_NAMES_H_
 #define PC_MEDIA_PROTOCOL_NAMES_H_
 
-#include <string>
+#include "absl/strings/string_view.h"
 
 namespace cricket {
 
@@ -22,13 +22,13 @@ extern const char kMediaProtocolDtlsSctp[];
 extern const char kMediaProtocolUdpDtlsSctp[];
 extern const char kMediaProtocolTcpDtlsSctp[];
 
-bool IsDtlsSctp(const std::string& protocol);
-bool IsPlainSctp(const std::string& protocol);
+bool IsDtlsSctp(absl::string_view protocol);
+bool IsPlainSctp(absl::string_view protocol);
 
 
-bool IsRtpProtocol(const std::string& protocol);
+bool IsRtpProtocol(absl::string_view protocol);
 
-bool IsSctpProtocol(const std::string& protocol);
+bool IsSctpProtocol(absl::string_view protocol);
 
 }  
 
