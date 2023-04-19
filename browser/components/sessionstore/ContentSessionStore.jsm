@@ -24,11 +24,9 @@ ChromeUtils.defineModuleGetter(
   "ContentRestore",
   "resource:///modules/sessionstore/ContentRestore.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "SessionHistory",
-  "resource://gre/modules/sessionstore/SessionHistory.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  SessionHistory: "resource://gre/modules/sessionstore/SessionHistory.sys.mjs",
+});
 
 
 

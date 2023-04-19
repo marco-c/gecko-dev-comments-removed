@@ -8,16 +8,10 @@ var EXPORTED_SYMBOLS = ["ContentRestore"];
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "SessionHistory",
-  "resource://gre/modules/sessionstore/SessionHistory.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "Utils",
-  "resource://gre/modules/sessionstore/Utils.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  SessionHistory: "resource://gre/modules/sessionstore/SessionHistory.sys.mjs",
+  Utils: "resource://gre/modules/sessionstore/Utils.sys.mjs",
+});
 
 
 
