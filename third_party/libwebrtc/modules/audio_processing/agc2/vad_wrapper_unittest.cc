@@ -18,6 +18,7 @@
 
 #include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_compare.h"
 #include "test/gmock.h"
@@ -26,90 +27,78 @@ namespace webrtc {
 namespace {
 
 using ::testing::AnyNumber;
+using ::testing::Return;
 using ::testing::ReturnRoundRobin;
+using ::testing::Truly;
 
 constexpr int kNoVadPeriodicReset =
     kFrameDurationMs * (std::numeric_limits<int>::max() / kFrameDurationMs);
 
-constexpr int kSampleRateHz = 8000;
+constexpr int kSampleRate8kHz = 8000;
 
-class MockVad : public VadLevelAnalyzer::VoiceActivityDetector {
+class MockVad : public VoiceActivityDetectorWrapper::MonoVad {
  public:
+  MOCK_METHOD(int, SampleRateHz, (), (const override));
   MOCK_METHOD(void, Reset, (), (override));
-  MOCK_METHOD(float,
-              ComputeProbability,
-              (AudioFrameView<const float> frame),
-              (override));
+  MOCK_METHOD(float, Analyze, (rtc::ArrayView<const float> frame), (override));
 };
 
 
 
 
-std::unique_ptr<VadLevelAnalyzer> CreateVadLevelAnalyzerWithMockVad(
+std::unique_ptr<VoiceActivityDetectorWrapper> CreateMockVadWrapper(
     int vad_reset_period_ms,
     const std::vector<float>& speech_probabilities,
     int expected_vad_reset_calls = 0) {
   auto vad = std::make_unique<MockVad>();
-  EXPECT_CALL(*vad, ComputeProbability)
+  EXPECT_CALL(*vad, SampleRateHz)
       .Times(AnyNumber())
-      .WillRepeatedly(ReturnRoundRobin(speech_probabilities));
+      .WillRepeatedly(Return(kSampleRate8kHz));
   if (expected_vad_reset_calls >= 0) {
     EXPECT_CALL(*vad, Reset).Times(expected_vad_reset_calls);
   }
-  return std::make_unique<VadLevelAnalyzer>(vad_reset_period_ms,
-                                            std::move(vad));
+  EXPECT_CALL(*vad, Analyze)
+      .Times(AnyNumber())
+      .WillRepeatedly(ReturnRoundRobin(speech_probabilities));
+  return std::make_unique<VoiceActivityDetectorWrapper>(vad_reset_period_ms,
+                                                        std::move(vad));
 }
 
 
 struct FrameWithView {
   
-  explicit FrameWithView(float value = 0.0f)
-      : channel0(samples.data()),
-        view(&channel0, 1, samples.size()) {
-    samples.fill(value);
-  }
-  std::array<float, kSampleRateHz / 100> samples;
+  explicit FrameWithView(int sample_rate_hz = kSampleRate8kHz)
+      : samples(rtc::CheckedDivExact(sample_rate_hz, 100), 0.0f),
+        channel0(samples.data()),
+        view(&channel0, 1, samples.size()) {}
+  std::vector<float> samples;
   const float* const channel0;
   const AudioFrameView<const float> view;
 };
 
-TEST(GainController2VadLevelAnalyzer, RmsLessThanPeakLevel) {
-  auto analyzer = CreateVadLevelAnalyzerWithMockVad(
-      1500,
-      {1.0f},
-      0);
-  
-  FrameWithView frame(1000.0f);  
-  frame.samples[10] = 2000.0f;   
-  
-  auto levels_and_vad_prob = analyzer->AnalyzeFrame(frame.view);
-  EXPECT_LT(levels_and_vad_prob.rms_dbfs, levels_and_vad_prob.peak_dbfs);
-}
 
-
-TEST(GainController2VadLevelAnalyzer, NoSpeechProbabilitySmoothing) {
+TEST(GainController2VoiceActivityDetectorWrapper, CheckSpeechProbabilities) {
   const std::vector<float> speech_probabilities{0.709f, 0.484f, 0.882f, 0.167f,
                                                 0.44f,  0.525f, 0.858f, 0.314f,
                                                 0.653f, 0.965f, 0.413f, 0.0f};
-  auto analyzer = CreateVadLevelAnalyzerWithMockVad(kNoVadPeriodicReset,
-                                                    speech_probabilities);
+  auto vad_wrapper =
+      CreateMockVadWrapper(kNoVadPeriodicReset, speech_probabilities);
   FrameWithView frame;
   for (int i = 0; rtc::SafeLt(i, speech_probabilities.size()); ++i) {
     SCOPED_TRACE(i);
-    EXPECT_EQ(speech_probabilities[i],
-              analyzer->AnalyzeFrame(frame.view).speech_probability);
+    EXPECT_EQ(speech_probabilities[i], vad_wrapper->Analyze(frame.view));
   }
 }
 
 
-TEST(GainController2VadLevelAnalyzer, VadNoPeriodicReset) {
+TEST(GainController2VoiceActivityDetectorWrapper, VadNoPeriodicReset) {
   constexpr int kNumFrames = 19;
-  auto analyzer = CreateVadLevelAnalyzerWithMockVad(
-      kNoVadPeriodicReset, {1.0f},
-      0);
+  auto vad_wrapper =
+      CreateMockVadWrapper(kNoVadPeriodicReset, {1.0f},
+                           0);
   FrameWithView frame;
   for (int i = 0; i < kNumFrames; ++i) {
-    analyzer->AnalyzeFrame(frame.view);
+    vad_wrapper->Analyze(frame.view);
   }
 }
 
@@ -122,20 +111,52 @@ class VadPeriodResetParametrization
 
 
 TEST_P(VadPeriodResetParametrization, VadPeriodicReset) {
-  auto analyzer = CreateVadLevelAnalyzerWithMockVad(
+  auto vad_wrapper = CreateMockVadWrapper(
       vad_reset_period_frames() * kFrameDurationMs,
       {1.0f},
       num_frames() / vad_reset_period_frames());
   FrameWithView frame;
   for (int i = 0; i < num_frames(); ++i) {
-    analyzer->AnalyzeFrame(frame.view);
+    vad_wrapper->Analyze(frame.view);
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(GainController2VadLevelAnalyzer,
+INSTANTIATE_TEST_SUITE_P(GainController2VoiceActivityDetectorWrapper,
                          VadPeriodResetParametrization,
                          ::testing::Combine(::testing::Values(1, 19, 123),
                                             ::testing::Values(2, 5, 20, 53)));
+
+class VadResamplingParametrization
+    : public ::testing::TestWithParam<std::tuple<int, int>> {
+ protected:
+  int input_sample_rate_hz() const { return std::get<0>(GetParam()); }
+  int vad_sample_rate_hz() const { return std::get<1>(GetParam()); }
+};
+
+
+
+
+TEST_P(VadResamplingParametrization, CheckResampledFrameSize) {
+  auto vad = std::make_unique<MockVad>();
+  EXPECT_CALL(*vad, SampleRateHz)
+      .Times(AnyNumber())
+      .WillRepeatedly(Return(vad_sample_rate_hz()));
+  EXPECT_CALL(*vad, Reset).Times(0);
+  EXPECT_CALL(*vad, Analyze(Truly([this](rtc::ArrayView<const float> frame) {
+    return rtc::SafeEq(frame.size(),
+                       rtc::CheckedDivExact(vad_sample_rate_hz(), 100));
+  }))).Times(1);
+  auto vad_wrapper = std::make_unique<VoiceActivityDetectorWrapper>(
+      kNoVadPeriodicReset, std::move(vad));
+  FrameWithView frame(input_sample_rate_hz());
+  vad_wrapper->Analyze(frame.view);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    GainController2VoiceActivityDetectorWrapper,
+    VadResamplingParametrization,
+    ::testing::Combine(::testing::Values(8000, 16000, 44100, 48000),
+                       ::testing::Values(6000, 8000, 12000, 16000, 24000)));
 
 }  
 }  

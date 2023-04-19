@@ -12,51 +12,57 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_VAD_WRAPPER_H_
 
 #include <memory>
+#include <vector>
 
+#include "api/array_view.h"
+#include "common_audio/resampler/include/push_resampler.h"
 #include "modules/audio_processing/agc2/cpu_features.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 
 namespace webrtc {
 
 
-class VadLevelAnalyzer {
- public:
-  struct Result {
-    float speech_probability;  
-    float rms_dbfs;            
-    float peak_dbfs;           
-  };
 
+
+
+class VoiceActivityDetectorWrapper {
+ public:
   
-  class VoiceActivityDetector {
+  class MonoVad {
    public:
-    virtual ~VoiceActivityDetector() = default;
+    virtual ~MonoVad() = default;
+    
+    
+    virtual int SampleRateHz() const = 0;
     
     virtual void Reset() = 0;
     
-    virtual float ComputeProbability(AudioFrameView<const float> frame) = 0;
+    virtual float Analyze(rtc::ArrayView<const float> frame) = 0;
   };
 
   
   
   
-  VadLevelAnalyzer(int vad_reset_period_ms,
-                   const AvailableCpuFeatures& cpu_features);
+  VoiceActivityDetectorWrapper(int vad_reset_period_ms,
+                               const AvailableCpuFeatures& cpu_features);
   
-  VadLevelAnalyzer(int vad_reset_period_ms,
-                   std::unique_ptr<VoiceActivityDetector> vad);
+  VoiceActivityDetectorWrapper(int vad_reset_period_ms,
+                               std::unique_ptr<MonoVad> vad);
 
-  VadLevelAnalyzer(const VadLevelAnalyzer&) = delete;
-  VadLevelAnalyzer& operator=(const VadLevelAnalyzer&) = delete;
-  ~VadLevelAnalyzer();
+  VoiceActivityDetectorWrapper(const VoiceActivityDetectorWrapper&) = delete;
+  VoiceActivityDetectorWrapper& operator=(const VoiceActivityDetectorWrapper&) =
+      delete;
+  ~VoiceActivityDetectorWrapper();
 
   
-  Result AnalyzeFrame(AudioFrameView<const float> frame);
+  float Analyze(AudioFrameView<const float> frame);
 
  private:
-  std::unique_ptr<VoiceActivityDetector> vad_;
   const int vad_reset_period_frames_;
   int time_to_vad_reset_;
+  PushResampler<float> resampler_;
+  std::unique_ptr<MonoVad> vad_;
+  std::vector<float> resampled_buffer_;
 };
 
 }  

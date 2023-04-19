@@ -33,7 +33,7 @@ class AdaptiveModeLevelEstimator {
       delete;
 
   
-  void Update(const VadLevelAnalyzer::Result& vad_data);
+  void Update(float rms_dbfs, float peak_dbfs, float speech_probability);
   
   float level_dbfs() const { return level_dbfs_; }
   

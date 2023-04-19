@@ -10,13 +10,10 @@
 
 #include "modules/audio_processing/agc2/vad_wrapper.h"
 
-#include <algorithm>
 #include <array>
-#include <cmath>
 #include <utility>
 
 #include "api/array_view.h"
-#include "common_audio/include/audio_util.h"
 #include "common_audio/resampler/include/push_resampler.h"
 #include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
@@ -27,82 +24,72 @@
 namespace webrtc {
 namespace {
 
-using VoiceActivityDetector = VadLevelAnalyzer::VoiceActivityDetector;
+constexpr int kNumFramesPerSecond = 100;
 
-
-
-class Vad : public VoiceActivityDetector {
+class MonoVadImpl : public VoiceActivityDetectorWrapper::MonoVad {
  public:
-  explicit Vad(const AvailableCpuFeatures& cpu_features)
+  explicit MonoVadImpl(const AvailableCpuFeatures& cpu_features)
       : features_extractor_(cpu_features), rnn_vad_(cpu_features) {}
-  Vad(const Vad&) = delete;
-  Vad& operator=(const Vad&) = delete;
-  ~Vad() = default;
+  MonoVadImpl(const MonoVadImpl&) = delete;
+  MonoVadImpl& operator=(const MonoVadImpl&) = delete;
+  ~MonoVadImpl() = default;
 
+  int SampleRateHz() const override { return rnn_vad::kSampleRate24kHz; }
   void Reset() override { rnn_vad_.Reset(); }
-
-  float ComputeProbability(AudioFrameView<const float> frame) override {
-    
-    
-    resampler_.InitializeIfNeeded(
-        static_cast<int>(frame.samples_per_channel() * 100),
-        rnn_vad::kSampleRate24kHz,
-        1);
-
-    std::array<float, rnn_vad::kFrameSize10ms24kHz> work_frame;
-    
-    resampler_.Resample(frame.channel(0).data(), frame.samples_per_channel(),
-                        work_frame.data(), rnn_vad::kFrameSize10ms24kHz);
-
+  float Analyze(rtc::ArrayView<const float> frame) override {
+    RTC_DCHECK_EQ(frame.size(), rnn_vad::kFrameSize10ms24kHz);
     std::array<float, rnn_vad::kFeatureVectorSize> feature_vector;
     const bool is_silence = features_extractor_.CheckSilenceComputeFeatures(
-        work_frame, feature_vector);
+        {frame.data(), rnn_vad::kFrameSize10ms24kHz},
+        feature_vector);
     return rnn_vad_.ComputeVadProbability(feature_vector, is_silence);
   }
 
  private:
-  PushResampler<float> resampler_;
   rnn_vad::FeaturesExtractor features_extractor_;
   rnn_vad::RnnVad rnn_vad_;
 };
 
 }  
 
-VadLevelAnalyzer::VadLevelAnalyzer(int vad_reset_period_ms,
-                                   const AvailableCpuFeatures& cpu_features)
-    : VadLevelAnalyzer(vad_reset_period_ms,
-                       std::make_unique<Vad>(cpu_features)) {}
+VoiceActivityDetectorWrapper::VoiceActivityDetectorWrapper(
+    int vad_reset_period_ms,
+    const AvailableCpuFeatures& cpu_features)
+    : VoiceActivityDetectorWrapper(
+          vad_reset_period_ms,
+          std::make_unique<MonoVadImpl>(cpu_features)) {}
 
-VadLevelAnalyzer::VadLevelAnalyzer(int vad_reset_period_ms,
-                                   std::unique_ptr<VoiceActivityDetector> vad)
-    : vad_(std::move(vad)),
-      vad_reset_period_frames_(
+VoiceActivityDetectorWrapper::VoiceActivityDetectorWrapper(
+    int vad_reset_period_ms,
+    std::unique_ptr<MonoVad> vad)
+    : vad_reset_period_frames_(
           rtc::CheckedDivExact(vad_reset_period_ms, kFrameDurationMs)),
-      time_to_vad_reset_(vad_reset_period_frames_) {
+      time_to_vad_reset_(vad_reset_period_frames_),
+      vad_(std::move(vad)) {
   RTC_DCHECK(vad_);
   RTC_DCHECK_GT(vad_reset_period_frames_, 1);
+  resampled_buffer_.resize(
+      rtc::CheckedDivExact(vad_->SampleRateHz(), kNumFramesPerSecond));
 }
 
-VadLevelAnalyzer::~VadLevelAnalyzer() = default;
+VoiceActivityDetectorWrapper::~VoiceActivityDetectorWrapper() = default;
 
-VadLevelAnalyzer::Result VadLevelAnalyzer::AnalyzeFrame(
-    AudioFrameView<const float> frame) {
+float VoiceActivityDetectorWrapper::Analyze(AudioFrameView<const float> frame) {
   
   time_to_vad_reset_--;
   if (time_to_vad_reset_ <= 0) {
     vad_->Reset();
     time_to_vad_reset_ = vad_reset_period_frames_;
   }
+
   
-  float peak = 0.0f;
-  float rms = 0.0f;
-  for (const auto& x : frame.channel(0)) {
-    peak = std::max(std::fabs(x), peak);
-    rms += x * x;
-  }
-  return {vad_->ComputeProbability(frame),
-          FloatS16ToDbfs(std::sqrt(rms / frame.samples_per_channel())),
-          FloatS16ToDbfs(peak)};
+  resampler_.InitializeIfNeeded(
+      frame.samples_per_channel() * kNumFramesPerSecond,
+      vad_->SampleRateHz(), 1);
+  resampler_.Resample(frame.channel(0).data(), frame.samples_per_channel(),
+                      resampled_buffer_.data(), resampled_buffer_.size());
+
+  return vad_->Analyze(resampled_buffer_);
 }
 
 }  
