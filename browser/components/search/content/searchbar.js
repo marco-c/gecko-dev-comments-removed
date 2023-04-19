@@ -9,6 +9,17 @@
 
 
 {
+  const lazy = {};
+
+  ChromeUtils.defineESModuleGetters(lazy, {
+    SearchSuggestionController:
+      "resource://gre/modules/SearchSuggestionController.sys.mjs",
+  });
+
+  XPCOMUtils.defineLazyModuleGetters(lazy, {
+    FormHistory: "resource://gre/modules/FormHistory.jsm",
+  });
+
   
 
 
@@ -100,13 +111,6 @@
       this._initTextbox();
 
       window.addEventListener("unload", this.destroy);
-
-      this.FormHistory = ChromeUtils.import(
-        "resource://gre/modules/FormHistory.jsm"
-      ).FormHistory;
-      this.SearchSuggestionController = ChromeUtils.importESModule(
-        "resource://gre/modules/SearchSuggestionController.sys.mjs"
-      ).SearchSuggestionController;
 
       Services.obs.addObserver(this.observer, "browser-search-engine-modified");
       Services.obs.addObserver(this.observer, "browser-search-service");
@@ -390,11 +394,11 @@
       if (
         aData &&
         !PrivateBrowsingUtils.isWindowPrivate(window) &&
-        this.FormHistory.enabled &&
+        lazy.FormHistory.enabled &&
         aData.length <=
-          this.SearchSuggestionController.SEARCH_HISTORY_MAX_VALUE_LENGTH
+          lazy.SearchSuggestionController.SEARCH_HISTORY_MAX_VALUE_LENGTH
       ) {
-        this.FormHistory.update(
+        lazy.FormHistory.update(
           {
             op: "bump",
             fieldname: textBox.getAttribute("autocompletesearchparam"),
@@ -601,7 +605,7 @@
           this._buildContextMenu();
         }
 
-        BrowserSearch.searchBar._textbox.closePopup();
+        this._textbox.closePopup();
 
         
         
@@ -882,10 +886,7 @@
             break;
           case clearHistoryItem:
             let param = this.textbox.getAttribute("autocompletesearchparam");
-            BrowserSearch.searchBar.FormHistory.update(
-              { op: "remove", fieldname: param },
-              null
-            );
+            lazy.FormHistory.update({ op: "remove", fieldname: param }, null);
             this.textbox.value = "";
             break;
           default:
