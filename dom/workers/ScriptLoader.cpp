@@ -683,15 +683,24 @@ void WorkerScriptLoader::CancelMainThread(
 
     mCancelMainThread = Some(aCancelResult);
 
-    
-    
-    
     for (WorkerLoadContext* loadContext : *aContextList) {
+      
+      
+      
       if (loadContext->IsAwaitingPromise()) {
+        
+        
+        
         loadContext->mCachePromise->MaybeReject(NS_BINDING_ABORTED);
         loadContext->mCachePromise = nullptr;
       }
+      
+      
+      
+      
+      
       if (!loadContext->mLoadingFinished) {
+        
         
         LoadingFinished(loadContext->mRequest, aCancelResult);
       }
@@ -715,9 +724,7 @@ nsresult WorkerScriptLoader::LoadScripts(
       nsresult rv = LoadScript(loadContext->mRequest);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         LoadingFinished(loadContext->mRequest, rv);
-        
-        
-        
+        CancelMainThread(rv, &aContextList);
         return rv;
       }
     }
@@ -1020,6 +1027,7 @@ void WorkerScriptLoader::TryShutdown() {
 
 void WorkerScriptLoader::ShutdownScriptLoader(bool aResult, bool aMutedError) {
   MOZ_ASSERT(AllScriptsExecuted());
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
 
   if (!aResult) {
     
@@ -1050,10 +1058,9 @@ void WorkerScriptLoader::ShutdownScriptLoader(bool aResult, bool aMutedError) {
   {
     MutexAutoLock lock(CleanUpLock());
 
-    if (!CleanedUp()) {
-      mWorkerRef->Private()->AssertIsOnWorkerThread();
-      mWorkerRef->Private()->StopSyncLoop(mSyncLoopTarget, aResult);
-    }
+    mWorkerRef->Private()->AssertIsOnWorkerThread();
+    mWorkerRef->Private()->StopSyncLoop(mSyncLoopTarget, aResult);
+
     
     mCleanedUp = true;
 
