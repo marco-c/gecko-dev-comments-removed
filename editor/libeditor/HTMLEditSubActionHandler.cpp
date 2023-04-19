@@ -4501,29 +4501,34 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal(
     MOZ_ASSERT(newDivElement);
     
     TopLevelEditSubActionDataRef().mNewBlockElement = newDivElement;
-    nsresult rv = ChangeMarginStart(*newDivElement, ChangeMargin::Increase);
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return NS_ERROR_EDITOR_DESTROYED;
+    const Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+        ChangeMarginStart(*newDivElement, ChangeMargin::Increase, aEditingHost);
+    if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+      if (NS_WARN_IF(pointToPutCaretOrError.inspectErr() ==
+                     NS_ERROR_EDITOR_DESTROYED)) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING(
+          "HTMLEditor::ChangeMarginStart(ChangeMargin::Increase) failed, but "
+          "ignored");
     }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditor::ChangeMarginStart() failed, but ignored");
     
     
-    while (!arrayOfContents.IsEmpty()) {
-      OwningNonNull<nsIContent>& content = arrayOfContents[0];
+
+    
+    
+    for (const OwningNonNull<nsIContent>& content : arrayOfContents) {
       
-      
-      nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(*content));
+      nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(content));
       if (NS_FAILED(rv)) {
         NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
         return rv;
       }
-      arrayOfContents.RemoveElementAt(0);
     }
     
     restoreSelectionLater.Abort();
     
-    rv = CollapseSelectionToStartOf(*newDivElement);
+    nsresult rv = CollapseSelectionToStartOf(*newDivElement);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "EditorBase::CollapseSelectionToStartOf() failed");
     return rv;
@@ -4560,14 +4565,25 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal(
     
 
     if (HTMLEditUtils::IsBlockElement(content)) {
-      nsresult rv = ChangeMarginStart(MOZ_KnownLive(*content->AsElement()),
-                                      ChangeMargin::Increase);
-      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-        return NS_ERROR_EDITOR_DESTROYED;
+      const Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+          ChangeMarginStart(MOZ_KnownLive(*content->AsElement()),
+                            ChangeMargin::Increase, aEditingHost);
+      if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+        if (NS_WARN_IF(pointToPutCaretOrError.inspectErr() ==
+                       NS_ERROR_EDITOR_DESTROYED)) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        NS_WARNING(
+            "HTMLEditor::ChangeMarginStart(ChangeMargin::Increase) failed, but "
+            "ignored");
+      } else if (AllowsTransactionsToChangeSelection() &&
+                 pointToPutCaretOrError.inspect().IsSet()) {
+        nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.inspect());
+        if (NS_FAILED(rv)) {
+          NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+          return rv;
+        }
       }
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "HTMLEditor::ChangeMarginStart() failed, but ignored");
       curQuote = nullptr;
       continue;
     }
@@ -4598,13 +4614,24 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal(
       }
       RefPtr<Element> newDivElement = createNewDivElementResult.UnwrapNewNode();
       MOZ_ASSERT(newDivElement);
-      rv = ChangeMarginStart(*newDivElement, ChangeMargin::Increase);
-      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-        return NS_ERROR_EDITOR_DESTROYED;
+      const Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+          ChangeMarginStart(*newDivElement, ChangeMargin::Increase,
+                            aEditingHost);
+      if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+        if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        NS_WARNING(
+            "HTMLEditor::ChangeMarginStart(ChangeMargin::Increase) failed, but "
+            "ignored");
+      } else if (AllowsTransactionsToChangeSelection() &&
+                 pointToPutCaretOrError.inspect().IsSet()) {
+        nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.inspect());
+        if (NS_FAILED(rv)) {
+          NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+          return rv;
+        }
       }
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "HTMLEditor::ChangeMarginStart() failed, but ignored");
       
       TopLevelEditSubActionDataRef().mNewBlockElement = newDivElement;
       curQuote = std::move(newDivElement);
@@ -5197,7 +5224,8 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal(
                              "Indented parent element is not the <blockquote>");
         SplitRangeOffFromNodeResult outdentResult = OutdentPartOfBlock(
             *indentedParentElement, *firstContentToBeOutdented,
-            *lastContentToBeOutdented, indentedParentIndentedWith);
+            *lastContentToBeOutdented, indentedParentIndentedWith,
+            aEditingHost);
         if (outdentResult.isErr()) {
           NS_WARNING("HTMLEditor::OutdentPartOfBlock() failed");
           return outdentResult;
@@ -5252,14 +5280,25 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal(
       CSSEditUtils::ParseLength(value, &startMargin, getter_AddRefs(unit));
       
       if (startMargin > 0) {
-        nsresult rv = ChangeMarginStart(MOZ_KnownLive(*content->AsElement()),
-                                        ChangeMargin::Decrease);
-        if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-          return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+        const Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+            ChangeMarginStart(MOZ_KnownLive(*content->AsElement()),
+                              ChangeMargin::Decrease, aEditingHost);
+        if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+          if (NS_WARN_IF(pointToPutCaretOrError.inspectErr() ==
+                         NS_ERROR_EDITOR_DESTROYED)) {
+            return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+          }
+          NS_WARNING(
+              "HTMLEditor::ChangeMarginStart(ChangeMargin::Decrease) failed, "
+              "but ignored");
+        } else if (AllowsTransactionsToChangeSelection() &&
+                   pointToPutCaretOrError.inspect().IsSet()) {
+          nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.inspect());
+          if (NS_FAILED(rv)) {
+            NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+            return SplitRangeOffFromNodeResult(rv);
+          }
         }
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "HTMLEditor::ChangeMarginStart(ChangeMargin::"
-                             "Decrease) failed, but ignored");
         continue;
       }
     }
@@ -5272,7 +5311,8 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal(
       if (indentedParentElement) {
         SplitRangeOffFromNodeResult outdentResult = OutdentPartOfBlock(
             *indentedParentElement, *firstContentToBeOutdented,
-            *lastContentToBeOutdented, indentedParentIndentedWith);
+            *lastContentToBeOutdented, indentedParentIndentedWith,
+            aEditingHost);
         if (outdentResult.isErr()) {
           NS_WARNING("HTMLEditor::OutdentPartOfBlock() failed");
           return outdentResult;
@@ -5312,7 +5352,7 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal(
       }
       SplitRangeOffFromNodeResult outdentResult = OutdentPartOfBlock(
           *indentedParentElement, *firstContentToBeOutdented,
-          *lastContentToBeOutdented, indentedParentIndentedWith);
+          *lastContentToBeOutdented, indentedParentIndentedWith, aEditingHost);
       if (outdentResult.isErr()) {
         NS_WARNING("HTMLEditor::OutdentPartOfBlock() failed");
         return outdentResult;
@@ -5329,10 +5369,9 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal(
     }
 
     indentedParentIndentedWith = BlockIndentedWith::HTML;
-    RefPtr<Element> editingHost = ComputeEditingHost();
     for (nsCOMPtr<nsIContent> parentContent = content->GetParent();
          parentContent && !parentContent->IsHTMLElement(nsGkAtoms::body) &&
-         parentContent != editingHost &&
+         parentContent != &aEditingHost &&
          (parentContent->IsHTMLElement(nsGkAtoms::table) ||
           !HTMLEditUtils::IsAnyTableElement(parentContent));
          parentContent = parentContent->GetParent()) {
@@ -5502,13 +5541,24 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal(
 
     if (useCSS) {
       if (RefPtr<Element> element = content->GetAsElementOrParentElement()) {
-        nsresult rv = ChangeMarginStart(*element, ChangeMargin::Decrease);
-        if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-          return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+        const Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+            ChangeMarginStart(*element, ChangeMargin::Decrease, aEditingHost);
+        if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+          if (NS_WARN_IF(pointToPutCaretOrError.inspectErr() ==
+                         NS_ERROR_EDITOR_DESTROYED)) {
+            return SplitRangeOffFromNodeResult(NS_ERROR_EDITOR_DESTROYED);
+          }
+          NS_WARNING(
+              "HTMLEditor::ChangeMarginStart(ChangeMargin::Decrease) failed, "
+              "but ignored");
+        } else if (AllowsTransactionsToChangeSelection() &&
+                   pointToPutCaretOrError.inspect().IsSet()) {
+          nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.inspect());
+          if (NS_FAILED(rv)) {
+            NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+            return SplitRangeOffFromNodeResult(rv);
+          }
         }
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "HTMLEditor::ChangeMarginStart(ChangeMargin::"
-                             "Decrease) failed, but ignored");
       }
       continue;
     }
@@ -5521,9 +5571,9 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal(
   }
 
   
-  SplitRangeOffFromNodeResult outdentResult =
-      OutdentPartOfBlock(*indentedParentElement, *firstContentToBeOutdented,
-                         *lastContentToBeOutdented, indentedParentIndentedWith);
+  SplitRangeOffFromNodeResult outdentResult = OutdentPartOfBlock(
+      *indentedParentElement, *firstContentToBeOutdented,
+      *lastContentToBeOutdented, indentedParentIndentedWith, aEditingHost);
   NS_WARNING_ASSERTION(outdentResult.isOk(),
                        "HTMLEditor::OutdentPartOfBlock() failed");
   return outdentResult;
@@ -5605,7 +5655,8 @@ SplitRangeOffFromNodeResult HTMLEditor::SplitRangeOffFromBlock(
 
 SplitRangeOffFromNodeResult HTMLEditor::OutdentPartOfBlock(
     Element& aBlockElement, nsIContent& aStartOfOutdent,
-    nsIContent& aEndOfOutdent, BlockIndentedWith aBlockIndentedWith) {
+    nsIContent& aEndOfOutdent, BlockIndentedWith aBlockIndentedWith,
+    const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   SplitRangeOffFromNodeResult splitResult =
@@ -5659,18 +5710,25 @@ SplitRangeOffFromNodeResult HTMLEditor::OutdentPartOfBlock(
                                        splitResult.GetRightContent());
   }
 
-  if (splitResult.GetMiddleContentAsElement()) {
-    nsresult rv = ChangeMarginStart(
-        MOZ_KnownLive(*splitResult.GetMiddleContentAsElement()),
-        ChangeMargin::Decrease);
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "HTMLEditor::ChangeMarginStart(ChangeMargin::Decrease) failed");
-      return SplitRangeOffFromNodeResult(rv);
-    }
+  if (!splitResult.GetMiddleContentAsElement()) {
     return splitResult;
   }
 
+  const Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+      ChangeMarginStart(MOZ_KnownLive(*splitResult.GetMiddleContentAsElement()),
+                        ChangeMargin::Decrease, aEditingHost);
+  if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+    NS_WARNING("HTMLEditor::ChangeMarginStart(ChangeMargin::Decrease) failed");
+    return SplitRangeOffFromNodeResult(pointToPutCaretOrError.inspectErr());
+  }
+  if (AllowsTransactionsToChangeSelection() &&
+      pointToPutCaretOrError.inspect().IsSet()) {
+    nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.inspect());
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+      return SplitRangeOffFromNodeResult(rv);
+    }
+  }
   return splitResult;
 }
 
@@ -9814,19 +9872,20 @@ nsresult HTMLEditor::SetBlockElementAlign(Element& aBlockOrHRElement,
   return rv;
 }
 
-nsresult HTMLEditor::ChangeMarginStart(Element& aElement,
-                                       ChangeMargin aChangeMargin) {
+Result<EditorDOMPoint, nsresult> HTMLEditor::ChangeMarginStart(
+    Element& aElement, ChangeMargin aChangeMargin,
+    const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   nsStaticAtom& marginProperty = MarginPropertyAtomForIndent(aElement);
   if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
+    return Err(NS_ERROR_EDITOR_DESTROYED);
   }
   nsAutoString value;
   DebugOnly<nsresult> rvIgnored =
       CSSEditUtils::GetSpecifiedProperty(aElement, marginProperty, value);
   if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
+    return Err(NS_ERROR_EDITOR_DESTROYED);
   }
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rvIgnored),
@@ -9875,13 +9934,13 @@ nsresult HTMLEditor::ChangeMarginStart(Element& aElement,
         NS_WARNING(
             "CSSEditUtils::SetCSSPropertyWithTransaction() destroyed the "
             "editor");
-        return NS_ERROR_EDITOR_DESTROYED;
+        return Err(NS_ERROR_EDITOR_DESTROYED);
       }
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rv),
           "CSSEditUtils::SetCSSPropertyWithTransaction() failed, but ignored");
     }
-    return NS_OK;
+    return EditorDOMPoint();
   }
 
   if (nsStyledElement* styledElement = nsStyledElement::FromNode(&aElement)) {
@@ -9894,7 +9953,7 @@ nsresult HTMLEditor::ChangeMarginStart(Element& aElement,
       NS_WARNING(
           "CSSEditUtils::RemoveCSSPropertyWithTransaction() destroyed the "
           "editor");
-      return NS_ERROR_EDITOR_DESTROYED;
+      return Err(NS_ERROR_EDITOR_DESTROYED);
     }
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rv),
@@ -9904,29 +9963,19 @@ nsresult HTMLEditor::ChangeMarginStart(Element& aElement,
   
   if (!aElement.IsHTMLElement(nsGkAtoms::div) ||
       HTMLEditor::HasAttributes(&aElement)) {
-    return NS_OK;
+    return EditorDOMPoint();
   }
   
-  Element* editingHost = ComputeEditingHost();
-  if (&aElement == editingHost ||
-      !aElement.IsInclusiveDescendantOf(editingHost)) {
-    return NS_OK;
+  if (&aElement == &aEditingHost ||
+      !aElement.IsInclusiveDescendantOf(&aEditingHost)) {
+    return EditorDOMPoint();
   }
 
-  const Result<EditorDOMPoint, nsresult> unwrapDivElementResult =
+  Result<EditorDOMPoint, nsresult> unwrapDivElementResult =
       RemoveContainerWithTransaction(aElement);
-  if (MOZ_UNLIKELY(unwrapDivElementResult.isErr())) {
-    NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
-    return unwrapDivElementResult.inspectErr();
-  }
-  const EditorDOMPoint& pointToPutCaret = unwrapDivElementResult.inspect();
-  if (!AllowsTransactionsToChangeSelection() || !pointToPutCaret.IsSet()) {
-    return NS_OK;
-  }
-  nsresult rv = CollapseSelectionTo(pointToPutCaret);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::CollapseSelectionTo() failed");
-  return rv;
+  NS_WARNING_ASSERTION(unwrapDivElementResult.isOk(),
+                       "HTMLEditor::RemoveContainerWithTransaction() failed");
+  return unwrapDivElementResult;
 }
 
 EditActionResult HTMLEditor::SetSelectionToAbsoluteAsSubAction(

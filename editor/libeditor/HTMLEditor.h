@@ -2307,9 +2307,16 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+
+
+
   enum class ChangeMargin { Increase, Decrease };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  ChangeMarginStart(Element& aElement, ChangeMargin aChangeMargin);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  ChangeMarginStart(Element& aElement, ChangeMargin aChangeMargin,
+                    const Element& aEditingHost);
 
   
 
@@ -2388,11 +2395,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   enum class BlockIndentedWith { CSS, HTML };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitRangeOffFromNodeResult
   OutdentPartOfBlock(Element& aBlockElement, nsIContent& aStartOfOutdent,
                      nsIContent& aEndOutdent,
-                     BlockIndentedWith aBlockIndentedWith);
+                     BlockIndentedWith aBlockIndentedWith,
+                     const Element& aEditingHost);
 
   
 
