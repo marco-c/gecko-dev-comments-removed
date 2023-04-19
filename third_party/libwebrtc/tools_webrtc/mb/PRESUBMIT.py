@@ -17,22 +17,6 @@ def _CommonChecks(input_api, output_api):
   results = []
 
   
-  pylint_checks = input_api.canned_checks.GetPylint(
-      input_api,
-      output_api,
-      version='2.7',
-      
-      
-      disabled_warnings=[
-          'super-with-arguments',
-          'raise-missing-from',
-          'useless-object-inheritance',
-          'arguments-differ',
-      ],
-  )
-  results.extend(input_api.RunTests(pylint_checks))
-
-  
   results.extend(
       input_api.canned_checks.RunUnitTestsInDirectory(input_api,
                                                       output_api,
