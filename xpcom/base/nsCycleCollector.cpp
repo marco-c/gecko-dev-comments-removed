@@ -1878,6 +1878,13 @@ class CCGraphBuilder final : public nsCycleCollectionTraversalCallback,
   NS_IMETHOD_(void)
   NoteWeakMapping(JSObject* aMap, JS::GCCellPtr aKey, JSObject* aKdelegate,
                   JS::GCCellPtr aVal) override;
+  
+  
+  
+  
+  NS_IMETHOD_(void)
+  NoteWeakMapping(JSObject* aKey, nsISupports* aVal,
+                  nsCycleCollectionParticipant* aValParticipant) override;
 
   
   NS_IMETHOD_(void)
@@ -2241,6 +2248,21 @@ CCGraphBuilder::NoteWeakMapping(JSObject* aMap, JS::GCCellPtr aKey,
   }
 }
 
+NS_IMETHODIMP_(void)
+CCGraphBuilder::NoteWeakMapping(JSObject* aKey, nsISupports* aVal,
+                                nsCycleCollectionParticipant* aValParticipant) {
+  WeakMapping* mapping = mGraph.mWeakMaps.AppendElement();
+  mapping->mMap = nullptr;
+  mapping->mKey = aKey ? AddWeakMapNode(aKey) : nullptr;
+  mapping->mKeyDelegate = mapping->mKey;
+  MOZ_ASSERT(js::UncheckedUnwrapWithoutExpose(aKey) == aKey);
+  mapping->mVal = aVal ? AddNode(aVal, aValParticipant) : nullptr;
+
+  if (mLogger) {
+    mLogger->NoteWeakMapEntry(0, (uint64_t)aKey, 0, (uint64_t)aVal);
+  }
+}
+
 static bool AddPurpleRoot(CCGraphBuilder& aBuilder, void* aRoot,
                           nsCycleCollectionParticipant* aParti) {
   return aBuilder.AddPurpleRoot(aRoot, aParti);
@@ -2258,6 +2280,10 @@ class ChildFinder : public nsCycleCollectionTraversalCallback {
   NS_IMETHOD_(void)
   NoteNativeChild(void* aChild, nsCycleCollectionParticipant* aHelper) override;
   NS_IMETHOD_(void) NoteJSChild(JS::GCCellPtr aThing) override;
+
+  NS_IMETHOD_(void)
+  NoteWeakMapping(JSObject* aKey, nsISupports* aVal,
+                  nsCycleCollectionParticipant* aValParticipant) override {}
 
   NS_IMETHOD_(void)
   DescribeRefCountedNode(nsrefcnt aRefcount, const char* aObjname) override {}
