@@ -2,10 +2,6 @@
 
 
 
-const { CommonUtils } = ChromeUtils.import(
-  "resource://services-common/utils.js"
-);
-
 
 
 
@@ -97,7 +93,7 @@ add_task(
     
     
     const FILE_PATH = getDefinitionsPath();
-    await CommonUtils.writeJSON(DYNAMIC_EVENT_SPEC, FILE_PATH);
+    await IOUtils.writeJSON(FILE_PATH, DYNAMIC_EVENT_SPEC);
 
     
     await TelemetryController.testReset();
