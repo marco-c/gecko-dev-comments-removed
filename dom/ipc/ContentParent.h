@@ -1580,6 +1580,9 @@ class ContentParent final : public PContentParent,
 
   uint8_t mIsInPool : 1;
 
+  
+  uint8_t mGMPCreated : 1;
+
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool mBlockShutdownCalled;
 #endif
