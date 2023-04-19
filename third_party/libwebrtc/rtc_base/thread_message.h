@@ -46,15 +46,9 @@ class ScopedMessageData : public MessageData {
  public:
   explicit ScopedMessageData(std::unique_ptr<T> data)
       : data_(std::move(data)) {}
-  
-  
-  
-  
-  const std::unique_ptr<T>& data() const { return data_; }
-  std::unique_ptr<T>& data() { return data_; }
 
-  const T& inner_data() const { return *data_; }
-  T& inner_data() { return *data_; }
+  const T& data() const { return *data_; }
+  T& data() { return *data_; }
 
   T* Release() { return data_.release(); }
 
