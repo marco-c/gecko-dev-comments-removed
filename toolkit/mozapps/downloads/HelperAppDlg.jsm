@@ -461,6 +461,29 @@ nsUnknownContentTypeDialog.prototype = {
       validatedFile = aLocalFolder;
     }
 
+    if (AppConstants.platform == "win") {
+      let ext;
+      try {
+        
+        ext = "." + this.mLauncher.MIMEInfo.primaryExtension;
+      } catch (e) {}
+
+      
+      
+      let leaf = validatedFile.leafName;
+      if (
+        ext &&
+        !leaf.toLowerCase().endsWith(ext.toLowerCase()) &&
+        validatedFile.isExecutable()
+      ) {
+        validatedFile.remove(false);
+        aLocalFolder.leafName = leaf + ext;
+        if (!aAllowExisting) {
+          validatedFile = DownloadPaths.createNiceUniqueFile(aLocalFolder);
+        }
+      }
+    }
+
     return validatedFile;
   },
 
