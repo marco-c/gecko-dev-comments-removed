@@ -4653,20 +4653,11 @@ void PresShell::ReconstructFrames() {
     return;
   }
 
-  
-  
-  
-  
-  
-  mDocument->FlushPendingNotifications(FlushType::Style);
-
-  if (mIsDestroying) {
-    return;
+  if (Element* root = mDocument->GetRootElement()) {
+    PostRecreateFramesFor(root);
   }
 
-  nsAutoCauseReflowNotifier crNotifier(this);
-  mFrameConstructor->ReconstructDocElementHierarchy(
-      nsCSSFrameConstructor::InsertionKind::Sync);
+  mDocument->FlushPendingNotifications(FlushType::Frames);
 }
 
 nsresult PresShell::RenderDocument(const nsRect& aRect,
