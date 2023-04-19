@@ -195,11 +195,12 @@ int NetEqImpl::InsertPacket(const RTPHeader& rtp_header,
   return kOK;
 }
 
-void NetEqImpl::InsertEmptyPacket(const RTPHeader& ) {
-  
-  
-  
+void NetEqImpl::InsertEmptyPacket(const RTPHeader& rtp_header) {
   MutexLock lock(&mutex_);
+  if (nack_enabled_) {
+    nack_->UpdateLastReceivedPacket(rtp_header.sequenceNumber,
+                                    rtp_header.timestamp);
+  }
   controller_->RegisterEmptyPacket();
 }
 
