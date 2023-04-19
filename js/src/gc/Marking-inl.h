@@ -150,7 +150,6 @@ inline bool IsAboutToBeFinalizedDuringMinorSweep(Cell** cellp) {
 
 
 
-
 inline void PreWriteBarrierDuringFlattening(JSString* str) {
   MOZ_ASSERT(str);
   MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
@@ -161,12 +160,13 @@ inline void PreWriteBarrierDuringFlattening(JSString* str) {
 
   auto* cell = reinterpret_cast<TenuredCell*>(str);
   JS::shadow::Zone* zone = cell->shadowZoneFromAnyThread();
-
-  if (zone->needsIncrementalBarrier()) {
-    MOZ_ASSERT(!str->isPermanentAndMayBeShared());
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(zone->runtimeFromAnyThread()));
-    PerformIncrementalBarrierDuringFlattening(str);
+  if (!zone->needsIncrementalBarrier()) {
+    return;
   }
+
+  MOZ_ASSERT(!str->isPermanentAndMayBeShared());
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(zone->runtimeFromAnyThread()));
+  PerformIncrementalBarrierDuringFlattening(str);
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS

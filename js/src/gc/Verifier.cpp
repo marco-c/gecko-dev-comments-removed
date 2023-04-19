@@ -341,11 +341,6 @@ void gc::GCRuntime::endVerifyPreBarriers() {
 
   
   
-  SliceBudget budget = SliceBudget::unlimited();
-  marker.traceBarrieredCells(budget);
-
-  
-  
   AutoPrepareForTracing prep(rt->mainContextFromOwnThread());
 
   bool compartmentCreated = false;
