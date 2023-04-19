@@ -6,34 +6,10 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ExperimentFakes: "resource://testing-common/NimbusTestUtils.jsm",
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
-  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.jsm",
-});
-
-
-
-
-const TEST_MERINO_TIMEOUT_MS = 1000;
-
 
 const PREF_DATA_COLLECTION_ENABLED = "quicksuggest.dataCollection.enabled";
-const PREF_MERINO_CLIENT_VARIANTS = "merino.clientVariants";
 const PREF_MERINO_ENABLED = "merino.enabled";
-const PREF_MERINO_ENDPOINT_URL = "merino.endpointURL";
-const PREF_MERINO_PROVIDERS = "merino.providers";
 const PREF_REMOTE_SETTINGS_ENABLED = "quicksuggest.remoteSettings.enabled";
-
-const TELEMETRY_MERINO_LATENCY = "FX_URLBAR_MERINO_LATENCY_MS";
-const TELEMETRY_MERINO_RESPONSE = "FX_URLBAR_MERINO_RESPONSE";
-const FETCH_RESPONSE = {
-  none: -1,
-  success: 0,
-  timeout: 1,
-  network_error: 2,
-  http_error: 3,
-};
 
 const SEARCH_STRING = "frab";
 
@@ -71,26 +47,6 @@ const EXPECTED_REMOTE_SETTINGS_RESULT = {
   },
 };
 
-const MERINO_RESPONSE = {
-  body: {
-    request_id: "request_id",
-    suggestions: [
-      {
-        full_keyword: "full_keyword",
-        title: "title",
-        url: "url",
-        icon: "icon",
-        impression_url: "impression_url",
-        click_url: "click_url",
-        block_id: 1,
-        advertiser: "advertiser",
-        is_sponsored: true,
-        score: 1,
-      },
-    ],
-  },
-};
-
 const EXPECTED_MERINO_RESULT = {
   type: UrlbarUtils.RESULT_TYPE.URL,
   source: UrlbarUtils.RESULT_SOURCE.SEARCH,
@@ -100,7 +56,7 @@ const EXPECTED_MERINO_RESULT = {
     title: "title",
     url: "url",
     originalUrl: "url",
-    icon: "icon",
+    icon: null,
     sponsoredImpressionUrl: "impression_url",
     sponsoredClickUrl: "click_url",
     sponsoredBlockId: 1,
@@ -114,8 +70,13 @@ const EXPECTED_MERINO_RESULT = {
   },
 };
 
-let gMerinoResponse;
-let gMerinoEndpointURL;
+
+
+XPCOMUtils.defineLazyGetter(
+  this,
+  "gClient",
+  () => UrlbarProviderQuickSuggest._merino
+);
 
 add_task(async function init() {
   UrlbarPrefs.set("quicksuggest.enabled", true);
@@ -123,16 +84,7 @@ add_task(async function init() {
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("quicksuggest.shouldShowOnboardingDialog", false);
 
-  
-  let path = "/merino";
-  let server = makeMerinoServer(path);
-  let url = new URL("http://localhost/");
-  url.pathname = path;
-  url.port = server.identity.primaryPort;
-  UrlbarPrefs.set(PREF_MERINO_ENDPOINT_URL, url.toString());
-  gMerinoEndpointURL = url;
-
-  UrlbarPrefs.set("merino.timeoutMs", TEST_MERINO_TIMEOUT_MS);
+  MerinoTestUtils.server.start();
 
   
   await QuickSuggestTestUtils.ensureQuickSuggestInit(REMOTE_SETTINGS_DATA);
@@ -150,11 +102,11 @@ add_task(async function oneEnabled_merino() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
   
   
-  setMerinoResponse().body.suggestions[0].score =
+  MerinoTestUtils.server.response.body.suggestions[0].score =
     UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE / 2;
 
   let context = createContext(SEARCH_STRING, {
@@ -166,12 +118,15 @@ add_task(async function oneEnabled_merino() {
     matches: [EXPECTED_MERINO_RESULT],
   });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.success,
+    response: "success",
     latencyRecorded: true,
+    client: gClient,
   });
+
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -180,11 +135,7 @@ add_task(async function oneEnabled_remoteSettings() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
-
-  
-  
-  setMerinoResponse();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
   let context = createContext(SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -195,11 +146,11 @@ add_task(async function oneEnabled_remoteSettings() {
     matches: [EXPECTED_REMOTE_SETTINGS_RESULT],
   });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.none,
+    response: null,
     latencyRecorded: false,
+    client: gClient,
   });
 });
 
@@ -211,11 +162,7 @@ add_task(async function dataCollectionDisabled() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, false);
 
-  
-  
-  setMerinoResponse();
-
-  let context = createContext("frab", {
+  let context = createContext(SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
@@ -232,9 +179,9 @@ add_task(async function higherScore() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
-  setMerinoResponse().body.suggestions[0].score =
+  MerinoTestUtils.server.response.body.suggestions[0].score =
     2 * UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE;
 
   let context = createContext(SEARCH_STRING, {
@@ -246,12 +193,15 @@ add_task(async function higherScore() {
     matches: [EXPECTED_MERINO_RESULT],
   });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.success,
+    response: "success",
     latencyRecorded: true,
+    client: gClient,
   });
+
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -261,9 +211,9 @@ add_task(async function lowerScore() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
-  setMerinoResponse().body.suggestions[0].score =
+  MerinoTestUtils.server.response.body.suggestions[0].score =
     UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE / 2;
 
   let context = createContext(SEARCH_STRING, {
@@ -275,12 +225,15 @@ add_task(async function lowerScore() {
     matches: [EXPECTED_REMOTE_SETTINGS_RESULT],
   });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.success,
+    response: "success",
     latencyRecorded: true,
+    client: gClient,
   });
+
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -290,9 +243,9 @@ add_task(async function sameScore() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
-  setMerinoResponse().body.suggestions[0].score =
+  MerinoTestUtils.server.response.body.suggestions[0].score =
     UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE;
 
   let context = createContext(SEARCH_STRING, {
@@ -304,12 +257,15 @@ add_task(async function sameScore() {
     matches: [EXPECTED_REMOTE_SETTINGS_RESULT],
   });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.success,
+    response: "success",
     latencyRecorded: true,
+    client: gClient,
   });
+
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -319,15 +275,14 @@ add_task(async function noMerinoScore() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
-  let resp = setMerinoResponse();
   Assert.equal(
-    typeof resp.body.suggestions[0].score,
+    typeof MerinoTestUtils.server.response.body.suggestions[0].score,
     "number",
     "Sanity check: First suggestion has a score"
   );
-  delete resp.body.suggestions[0].score;
+  delete MerinoTestUtils.server.response.body.suggestions[0].score;
 
   let context = createContext(SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -338,12 +293,15 @@ add_task(async function noMerinoScore() {
     matches: [EXPECTED_REMOTE_SETTINGS_RESULT],
   });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.success,
+    response: "success",
     latencyRecorded: true,
+    client: gClient,
   });
+
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -353,9 +311,7 @@ add_task(async function noSuggestion_remoteSettings() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
-
-  setMerinoResponse();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
   let context = createContext("this doesn't match remote settings", {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -366,12 +322,15 @@ add_task(async function noSuggestion_remoteSettings() {
     matches: [EXPECTED_MERINO_RESULT],
   });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.success,
+    response: "success",
     latencyRecorded: true,
+    client: gClient,
   });
+
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -381,14 +340,9 @@ add_task(async function noSuggestion_merino() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
-  setMerinoResponse({
-    body: {
-      request_id: "request_id",
-      suggestions: [],
-    },
-  });
+  MerinoTestUtils.server.response.body.suggestions = [];
 
   let context = createContext(SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -399,12 +353,15 @@ add_task(async function noSuggestion_merino() {
     matches: [EXPECTED_REMOTE_SETTINGS_RESULT],
   });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.success,
+    response: "success",
     latencyRecorded: true,
+    client: gClient,
   });
+
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -413,11 +370,7 @@ add_task(async function bothDisabled() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
-
-  
-  
-  setMerinoResponse();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
   let context = createContext(SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -425,11 +378,11 @@ add_task(async function bothDisabled() {
   });
   await check_results({ context, matches: [] });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.none,
+    response: null,
     latencyRecorded: false,
+    client: gClient,
   });
 });
 
@@ -440,51 +393,46 @@ add_task(async function multipleMerinoSuggestions() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  let histograms = getAndClearHistograms();
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
-  setMerinoResponse({
-    body: {
-      request_id: "request_id",
-      suggestions: [
-        {
-          full_keyword: "multipleMerinoSuggestions 0 full_keyword",
-          title: "multipleMerinoSuggestions 0 title",
-          url: "multipleMerinoSuggestions 0 url",
-          icon: "multipleMerinoSuggestions 0 icon",
-          impression_url: "multipleMerinoSuggestions 0 impression_url",
-          click_url: "multipleMerinoSuggestions 0 click_url",
-          block_id: 0,
-          advertiser: "multipleMerinoSuggestions 0 advertiser",
-          is_sponsored: true,
-          score: 0.1,
-        },
-        {
-          full_keyword: "multipleMerinoSuggestions 1 full_keyword",
-          title: "multipleMerinoSuggestions 1 title",
-          url: "multipleMerinoSuggestions 1 url",
-          icon: "multipleMerinoSuggestions 1 icon",
-          impression_url: "multipleMerinoSuggestions 1 impression_url",
-          click_url: "multipleMerinoSuggestions 1 click_url",
-          block_id: 1,
-          advertiser: "multipleMerinoSuggestions 1 advertiser",
-          is_sponsored: true,
-          score: 1,
-        },
-        {
-          full_keyword: "multipleMerinoSuggestions 2 full_keyword",
-          title: "multipleMerinoSuggestions 2 title",
-          url: "multipleMerinoSuggestions 2 url",
-          icon: "multipleMerinoSuggestions 2 icon",
-          impression_url: "multipleMerinoSuggestions 2 impression_url",
-          click_url: "multipleMerinoSuggestions 2 click_url",
-          block_id: 2,
-          advertiser: "multipleMerinoSuggestions 2 advertiser",
-          is_sponsored: true,
-          score: 0.2,
-        },
-      ],
+  MerinoTestUtils.server.response.body.suggestions = [
+    {
+      full_keyword: "multipleMerinoSuggestions 0 full_keyword",
+      title: "multipleMerinoSuggestions 0 title",
+      url: "multipleMerinoSuggestions 0 url",
+      icon: "multipleMerinoSuggestions 0 icon",
+      impression_url: "multipleMerinoSuggestions 0 impression_url",
+      click_url: "multipleMerinoSuggestions 0 click_url",
+      block_id: 0,
+      advertiser: "multipleMerinoSuggestions 0 advertiser",
+      is_sponsored: true,
+      score: 0.1,
     },
-  });
+    {
+      full_keyword: "multipleMerinoSuggestions 1 full_keyword",
+      title: "multipleMerinoSuggestions 1 title",
+      url: "multipleMerinoSuggestions 1 url",
+      icon: "multipleMerinoSuggestions 1 icon",
+      impression_url: "multipleMerinoSuggestions 1 impression_url",
+      click_url: "multipleMerinoSuggestions 1 click_url",
+      block_id: 1,
+      advertiser: "multipleMerinoSuggestions 1 advertiser",
+      is_sponsored: true,
+      score: 1,
+    },
+    {
+      full_keyword: "multipleMerinoSuggestions 2 full_keyword",
+      title: "multipleMerinoSuggestions 2 title",
+      url: "multipleMerinoSuggestions 2 url",
+      icon: "multipleMerinoSuggestions 2 icon",
+      impression_url: "multipleMerinoSuggestions 2 impression_url",
+      click_url: "multipleMerinoSuggestions 2 click_url",
+      block_id: 2,
+      advertiser: "multipleMerinoSuggestions 2 advertiser",
+      is_sponsored: true,
+      score: 0.2,
+    },
+  ];
 
   let context = createContext("test", {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -518,498 +466,15 @@ add_task(async function multipleMerinoSuggestions() {
     ],
   });
 
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.success,
+    response: "success",
     latencyRecorded: true,
-  });
-});
-
-
-add_task(async function unexpectedResponseProperties() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-
-  let histograms = getAndClearHistograms();
-
-  let resp = setMerinoResponse();
-  resp.body.unexpectedString = "some value";
-  resp.body.unexpectedArray = ["a", "b", "c"];
-  resp.body.unexpectedObject = { foo: "bar" };
-
-  let context = createContext("test", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [EXPECTED_MERINO_RESULT],
+    client: gClient,
   });
 
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.success,
-    latencyRecorded: true,
-  });
-});
-
-
-add_task(async function unexpectedResponseBody() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-
-  let histograms = getAndClearHistograms();
-
-  let context;
-  let contextArgs = [
-    "test",
-    { providers: [UrlbarProviderQuickSuggest.name], isPrivate: false },
-  ];
-
-  setMerinoResponse({
-    body: {},
-  });
-  context = createContext(...contextArgs);
-  await check_results({ context, matches: [] });
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.success,
-    latencyRecorded: true,
-  });
-
-  setMerinoResponse({
-    body: { bogus: [] },
-  });
-  context = createContext(...contextArgs);
-  await check_results({ context, matches: [] });
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.success,
-    latencyRecorded: true,
-  });
-
-  setMerinoResponse({
-    body: { suggestions: {} },
-  });
-  context = createContext(...contextArgs);
-  await check_results({ context, matches: [] });
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.success,
-    latencyRecorded: true,
-  });
-
-  setMerinoResponse({
-    body: { suggestions: [] },
-  });
-  context = createContext(...contextArgs);
-  await check_results({ context, matches: [] });
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.success,
-    latencyRecorded: true,
-  });
-
-  setMerinoResponse({
-    body: "",
-  });
-  context = createContext(...contextArgs);
-  await check_results({ context, matches: [] });
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.success,
-    latencyRecorded: true,
-  });
-
-  setMerinoResponse({
-    contentType: "text/html",
-    body: "bogus",
-  });
-  context = createContext(...contextArgs);
-  await check_results({ context, matches: [] });
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.success,
-    latencyRecorded: true,
-  });
-});
-
-
-
-add_task(async function networkError_merinoOnly() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  await doNetworkErrorTest([]);
-});
-
-
-
-add_task(async function networkError_withRemoteSettings() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  await doNetworkErrorTest([EXPECTED_REMOTE_SETTINGS_RESULT]);
-});
-
-async function doNetworkErrorTest(expectedResults) {
-  
-  let originalURL = UrlbarPrefs.get(PREF_MERINO_ENDPOINT_URL);
-  UrlbarPrefs.set(
-    PREF_MERINO_ENDPOINT_URL,
-    "http://localhost/test_quicksuggest_merino"
-  );
-
-  
-  
-  
-  UrlbarPrefs.set("merino.timeoutMs", 10000);
-
-  let histograms = getAndClearHistograms();
-
-  let context = createContext(SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: expectedResults,
-  });
-
-  
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._merinoTimeoutTimer,
-    "_merinoTimeoutTimer does not exist after search finished"
-  );
-
-  
-  
-  await TestUtils.waitForCondition(
-    () => !UrlbarProviderQuickSuggest._merinoFetchController,
-    "Waiting for fetch to finish",
-    100, 
-    100 
-  );
-
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.network_error,
-    latencyRecorded: false,
-  });
-
-  UrlbarPrefs.set(PREF_MERINO_ENDPOINT_URL, originalURL);
-  UrlbarPrefs.set("merino.timeoutMs", TEST_MERINO_TIMEOUT_MS);
-}
-
-
-
-add_task(async function httpError_merinoOnly() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  await doHTTPErrorTest([]);
-});
-
-
-
-add_task(async function httpError_withRemoteSettings() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  await doHTTPErrorTest([EXPECTED_REMOTE_SETTINGS_RESULT]);
-});
-
-async function doHTTPErrorTest(expectedResults) {
-  let histograms = getAndClearHistograms();
-
-  setMerinoResponse({
-    status: 500,
-  });
-
-  let context = createContext(SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: expectedResults,
-  });
-
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.http_error,
-    latencyRecorded: true,
-  });
-}
-
-
-
-add_task(async function timeout_merinoOnly() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  setMerinoResponse();
-  await doSimpleTimeoutTest([]);
-});
-
-
-
-add_task(async function timeout_withRemoteSettings() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  setMerinoResponse();
-  await doSimpleTimeoutTest([EXPECTED_REMOTE_SETTINGS_RESULT]);
-});
-
-
-
-add_task(async function timeout_followedByHTTPError() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  let resp = setMerinoResponse();
-  resp.status = 500;
-  delete resp.body;
-  await doSimpleTimeoutTest([]);
-});
-
-async function doSimpleTimeoutTest(expectedResults) {
-  let histograms = getAndClearHistograms();
-
-  
-  gMerinoResponse.delay = 2 * UrlbarPrefs.get("merinoTimeoutMs");
-
-  let context = createContext(SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: expectedResults,
-  });
-
-  
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._merinoTimeoutTimer,
-    "_merinoTimeoutTimer does not exist after search finished"
-  );
-
-  
-  
-  Assert.ok(
-    UrlbarProviderQuickSuggest._merinoFetchController,
-    "_merinoFetchController still exists after search finished"
-  );
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._merinoFetchController.signal.aborted,
-    "_merinoFetchController is not aborted"
-  );
-
-  
-  
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.timeout,
-    latencyRecorded: false,
-    latencyStopwatchRunning: true,
-  });
-
-  
-  
-  await TestUtils.waitForCondition(
-    () => !UrlbarProviderQuickSuggest._merinoFetchController,
-    "Waiting for fetch to finish"
-  );
-
-  assertAndClearHistograms({
-    histograms,
-    context,
-    
-    
-    response: FETCH_RESPONSE.none,
-    latencyRecorded: true,
-  });
-}
-
-
-
-
-
-add_task(async function newFetchAbortsPrevious() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-
-  let histograms = getAndClearHistograms();
-
-  
-  
-  let resp = setMerinoResponse();
-  resp.delay = 10000 * UrlbarPrefs.get("merinoTimeoutMs");
-
-  
-  let context = createContext("first search", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [],
-  });
-
-  
-  
-
-  
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._merinoTimeoutTimer,
-    "_merinoTimeoutTimer does not exist after first search finished"
-  );
-
-  
-  
-  Assert.ok(
-    UrlbarProviderQuickSuggest._merinoFetchController,
-    "_merinoFetchController still exists after first search finished"
-  );
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._merinoFetchController.signal.aborted,
-    "_merinoFetchController is not aborted"
-  );
-
-  
-  
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.timeout,
-    latencyRecorded: false,
-    latencyStopwatchRunning: true,
-  });
-
-  
-  delete resp.delay;
-  context = createContext("second search", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [EXPECTED_MERINO_RESULT],
-  });
-
-  
-  
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._merinoFetchController,
-    "_merinoFetchController does not exist after second search finished"
-  );
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._merinoTimeoutTimer,
-    "_merinoTimeoutTimer does not exist after second search finished"
-  );
-
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.success,
-    latencyRecorded: true,
-  });
-});
-
-
-
-
-add_task(async function cancelDoesNotAbortFetch() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-
-  let histograms = getAndClearHistograms();
-
-  
-  
-  setMerinoResponse().delay = 1000;
-
-  
-  let context = createContext("test", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  let controller = UrlbarTestUtils.newMockController({
-    input: {
-      isPrivate: context.isPrivate,
-      onFirstResult() {
-        return false;
-      },
-      window: {
-        location: {
-          href: AppConstants.BROWSER_CHROME_URL,
-        },
-      },
-    },
-  });
-  let searchPromise = controller.startQuery(context);
-
-  
-  
-  await TestUtils.waitForCondition(
-    () => UrlbarProviderQuickSuggest._merinoFetchController,
-    "Waiting for _merinoFetchController"
-  );
-
-  
-  controller.cancelQuery();
-  await searchPromise;
-
-  
-  
-  Assert.ok(
-    UrlbarProviderQuickSuggest._merinoFetchController,
-    "_merinoFetchController still exists after search canceled"
-  );
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._merinoFetchController.signal.aborted,
-    "_merinoFetchController is not aborted"
-  );
-
-  
-  
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.none,
-    latencyRecorded: false,
-    latencyStopwatchRunning: true,
-  });
-
-  
-  
-  await TestUtils.waitForCondition(
-    () => !UrlbarProviderQuickSuggest._merinoFetchController,
-    "Waiting for provider to null out _merinoFetchController"
-  );
-
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.none,
-    latencyRecorded: true,
-  });
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -1019,8 +484,7 @@ add_task(async function timestamps() {
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   
-  let resp = setMerinoResponse();
-  let suggestion = resp.body.suggestions[0];
+  let suggestion = MerinoTestUtils.server.response.body.suggestions[0];
   let { TIMESTAMP_TEMPLATE } = UrlbarProviderQuickSuggest;
 
   suggestion.url = `http://example.com/time-${TIMESTAMP_TEMPLATE}`;
@@ -1054,69 +518,9 @@ add_task(async function timestamps() {
     url: suggestion.click_url,
     sponsoredClickUrl: suggestion.click_url,
   });
-});
 
-
-add_task(async function clientVariants_providers() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  UrlbarPrefs.set(PREF_MERINO_CLIENT_VARIANTS, "");
-  UrlbarPrefs.set(PREF_MERINO_PROVIDERS, "");
-
-  function parseQueryString(queryString) {
-    return Object.fromEntries(queryString.split("&").map(p => p.split("=")));
-  }
-
-  let checksCalled = 0;
-
-  
-  setMerinoResponse().checkRequest = req => {
-    let qs = parseQueryString(req.queryString);
-    Assert.ok(
-      !Object.hasOwn(qs, "providers"),
-      "providers should not be specified"
-    );
-    Assert.ok(
-      !Object.hasOwn(qs, "client_variants"),
-      "client_variants should not be specified"
-    );
-    checksCalled += 1;
-  };
-
-  let context = createContext(SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [EXPECTED_MERINO_RESULT],
-  });
-
-  UrlbarPrefs.set(PREF_MERINO_CLIENT_VARIANTS, "green");
-  UrlbarPrefs.set(PREF_MERINO_PROVIDERS, "pink");
-
-  
-  setMerinoResponse().checkRequest = req => {
-    let qs = parseQueryString(req.queryString);
-    Assert.equal(qs.client_variants, "green", "client variants should be set");
-    Assert.equal(qs.providers, "pink", "providers should be set");
-    checksCalled += 1;
-  };
-
-  context = createContext(SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [EXPECTED_MERINO_RESULT],
-  });
-
-  Assert.equal(checksCalled, 2, "both checks should have been called");
-
-  UrlbarPrefs.clear(PREF_MERINO_CLIENT_VARIANTS);
-  UrlbarPrefs.clear(PREF_MERINO_PROVIDERS);
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -1129,19 +533,7 @@ add_task(async function suggestedDisabled_dataCollectionEnabled() {
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
 
-  let histograms = getAndClearHistograms();
-
-  
-  let checkRequestCallCount = 0;
-  setMerinoResponse().checkRequest = req => {
-    checkRequestCallCount++;
-    let params = new URLSearchParams(req.queryString);
-    Assert.deepEqual(
-      params.getAll("providers"),
-      [""],
-      "providers param is specified once and is an empty string"
-    );
-  };
+  let histograms = MerinoTestUtils.getAndClearHistograms();
 
   let context = createContext("test", {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -1152,65 +544,27 @@ add_task(async function suggestedDisabled_dataCollectionEnabled() {
     matches: [],
   });
 
-  Assert.equal(checkRequestCallCount, 1, "Request received");
-
-  assertAndClearHistograms({
-    histograms,
-    context,
-    response: FETCH_RESPONSE.success,
-    latencyRecorded: true,
-  });
-
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-});
-
-
-
-
-add_task(async function suggestedDisabled_dataCollectionEnabled_providers() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
-
-  UrlbarPrefs.set(PREF_MERINO_PROVIDERS, "blue");
-
-  let histograms = getAndClearHistograms();
-
   
-  let checkRequestCallCount = 0;
-  setMerinoResponse().checkRequest = req => {
-    checkRequestCallCount++;
-    let params = new URLSearchParams(req.queryString);
-    Assert.deepEqual(
-      params.getAll("providers"),
-      ["blue"],
-      "providers param is specified once and is 'blue'"
-    );
-  };
+  MerinoTestUtils.server.checkAndClearRequests([
+    {
+      params: {
+        [MerinoTestUtils.SEARCH_PARAMS.QUERY]: "test",
+        [MerinoTestUtils.SEARCH_PARAMS.SEQUENCE_NUMBER]: 0,
+        [MerinoTestUtils.SEARCH_PARAMS.PROVIDERS]: "",
+      },
+    },
+  ]);
 
-  let context = createContext("test", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [],
-  });
-
-  Assert.equal(checkRequestCallCount, 1, "Request received");
-
-  assertAndClearHistograms({
+  MerinoTestUtils.checkAndClearHistograms({
     histograms,
-    context,
-    response: FETCH_RESPONSE.success,
+    response: "success",
     latencyRecorded: true,
+    client: gClient,
   });
 
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  gClient.resetSession();
 });
 
 
@@ -1219,7 +573,7 @@ add_task(async function block() {
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
-  for (const suggestion of MERINO_RESPONSE.body.suggestions) {
+  for (const suggestion of MerinoTestUtils.server.response.body.suggestions) {
     await UrlbarProviderQuickSuggest.blockSuggestion(suggestion.url);
   }
 
@@ -1234,6 +588,8 @@ add_task(async function block() {
   });
 
   await UrlbarProviderQuickSuggest.clearBlockedSuggestions();
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
 
 
@@ -1247,8 +603,6 @@ add_task(async function bestMatch() {
   
   UrlbarPrefs.set("bestMatch.enabled", true);
   UrlbarPrefs.set("suggest.bestmatch", true);
-
-  setMerinoResponse();
 
   let expectedResult = { ...EXPECTED_MERINO_RESULT };
   expectedResult.payload = { ...EXPECTED_MERINO_RESULT.payload };
@@ -1270,244 +624,7 @@ add_task(async function bestMatch() {
 
   UrlbarPrefs.clear("bestMatch.enabled");
   UrlbarPrefs.clear("suggest.bestmatch");
+
+  MerinoTestUtils.server.reset();
+  gClient.resetSession();
 });
-
-
-add_task(async function nimbus() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-
-  
-  UrlbarPrefs.set(PREF_MERINO_ENDPOINT_URL, "");
-
-  setMerinoResponse();
-  await QuickSuggestTestUtils.initNimbusFeature();
-
-  
-  
-  await check_results({
-    context: createContext(SEARCH_STRING, {
-      providers: [UrlbarProviderQuickSuggest.name],
-      isPrivate: false,
-    }),
-    matches: [],
-  });
-
-  
-  
-  
-
-  
-  
-  
-  let expectedParams = [
-    {
-      param: "client_variants",
-      value: "test-client-variants",
-      variable: "merinoClientVariants",
-    },
-    {
-      param: "providers",
-      value: "test-providers",
-      variable: "merinoProviders",
-    },
-  ];
-
-  
-  let experimentValues = expectedParams.reduce(
-    (memo, { variable, value }) => {
-      memo[variable] = value;
-      return memo;
-    },
-    {
-      merinoEndpointURL: gMerinoEndpointURL.toString(),
-    }
-  );
-
-  await withExperiment(experimentValues, async () => {
-    
-    let actualParams;
-    setMerinoResponse().checkRequest = req => {
-      info("Got request query string: " + req.queryString);
-      actualParams = new URLSearchParams(req.queryString);
-    };
-
-    
-    await check_results({
-      context: createContext(SEARCH_STRING, {
-        providers: [UrlbarProviderQuickSuggest.name],
-        isPrivate: false,
-      }),
-      matches: [EXPECTED_MERINO_RESULT],
-    });
-
-    
-    Assert.ok(actualParams, "Mock Merino server received the request");
-    for (let { param, value } of expectedParams) {
-      Assert.deepEqual(
-        actualParams.getAll(param),
-        [value],
-        "Param value is correct: " + param
-      );
-    }
-  });
-
-  UrlbarPrefs.set(PREF_MERINO_ENDPOINT_URL, gMerinoEndpointURL.toString());
-});
-
-async function withExperiment(values, callback) {
-  let {
-    enrollmentPromise,
-    doExperimentCleanup,
-  } = ExperimentFakes.enrollmentHelper(
-    ExperimentFakes.recipe("mock-experiment", {
-      active: true,
-      branches: [
-        {
-          slug: "treatment",
-          features: [
-            {
-              featureId: NimbusFeatures.urlbar.featureId,
-              value: {
-                enabled: true,
-                ...values,
-              },
-            },
-          ],
-        },
-      ],
-    })
-  );
-  await enrollmentPromise;
-  await callback();
-  await doExperimentCleanup();
-}
-
-function makeMerinoServer(endpointPath) {
-  let server = makeTestServer();
-  server.registerPathHandler(endpointPath, async (req, resp) => {
-    resp.processAsync();
-    if (typeof gMerinoResponse.delay == "number") {
-      await new Promise(resolve => {
-        let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-        timer.initWithCallback(
-          resolve,
-          gMerinoResponse.delay,
-          Ci.nsITimer.TYPE_ONE_SHOT
-        );
-      });
-    }
-    if (typeof gMerinoResponse.status == "number") {
-      resp.setStatusLine("", gMerinoResponse.status, gMerinoResponse.status);
-    }
-    resp.setHeader("Content-Type", gMerinoResponse.contentType, false);
-    if (typeof gMerinoResponse.body == "string") {
-      resp.write(gMerinoResponse.body);
-    } else if (gMerinoResponse.body) {
-      resp.write(JSON.stringify(gMerinoResponse.body));
-    }
-    if (typeof gMerinoResponse.checkRequest == "function") {
-      gMerinoResponse.checkRequest(req);
-    }
-    resp.finish();
-  });
-  return server;
-}
-
-function deepCopy(obj) {
-  if (Array.isArray(obj)) {
-    return obj.map(item => deepCopy(item));
-  }
-  if (obj && typeof obj == "object") {
-    return Object.entries(obj).reduce((memo, [key, value]) => {
-      memo[key] = deepCopy(value);
-      return memo;
-    }, {});
-  }
-  return obj;
-}
-
-function setMerinoResponse(resp = deepCopy(MERINO_RESPONSE)) {
-  if (!resp.contentType) {
-    resp.contentType = "application/json";
-  }
-  gMerinoResponse = resp;
-
-  info("Set Merino response: " + JSON.stringify(resp));
-  return resp;
-}
-
-function getAndClearHistograms() {
-  return {
-    latency: TelemetryTestUtils.getAndClearHistogram(TELEMETRY_MERINO_LATENCY),
-    response: TelemetryTestUtils.getAndClearHistogram(
-      TELEMETRY_MERINO_RESPONSE
-    ),
-  };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function assertAndClearHistograms({
-  histograms,
-  response,
-  latencyRecorded,
-  context,
-  latencyStopwatchRunning = false,
-}) {
-  
-  Assert.equal(typeof response, "number", "Sanity check: response is defined");
-  if (response != FETCH_RESPONSE.none) {
-    TelemetryTestUtils.assertHistogram(histograms.response, response, 1);
-  } else {
-    Assert.strictEqual(
-      histograms.response.snapshot().sum,
-      0,
-      "Response histogram not updated"
-    );
-  }
-
-  
-  if (latencyRecorded) {
-    
-    Assert.deepEqual(
-      Object.values(histograms.latency.snapshot().values).filter(v => v > 0),
-      [1],
-      "Latency histogram updated"
-    );
-  } else {
-    Assert.strictEqual(
-      histograms.latency.snapshot().sum,
-      0,
-      "Latency histogram not updated"
-    );
-  }
-
-  
-  Assert.equal(
-    TelemetryStopwatch.running(TELEMETRY_MERINO_LATENCY, context),
-    latencyStopwatchRunning,
-    "Latency stopwatch running as expected"
-  );
-
-  
-  for (let histogram of Object.values(histograms)) {
-    histogram.clear();
-  }
-}
