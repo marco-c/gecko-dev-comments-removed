@@ -36,19 +36,24 @@ class HTMLPreview extends Component {
     
     iframe.browsingContext.allowJavascript = false;
 
-    const { responseContent } = this.props;
-    const htmlBody = responseContent ? responseContent.content.text : "";
-    iframe.setAttribute("src", "data:text/html," + htmlBody);
+    this.#updatePreview();
   }
 
   componentDidUpdate() {
-    const { responseContent } = this.props;
-    const htmlBody = responseContent ? responseContent.content.text : "";
-    this.iframe.setAttribute("src", "data:text/html," + htmlBody);
+    this.#updatePreview();
   }
 
   componentWillUnmount() {
     this.iframe.remove();
+  }
+
+  #updatePreview() {
+    const { responseContent } = this.props;
+    const htmlBody = responseContent ? responseContent.content.text : "";
+    this.iframe.setAttribute(
+      "src",
+      "data:text/html;charset=UTF-8," + encodeURIComponent(htmlBody)
+    );
   }
 
   render() {

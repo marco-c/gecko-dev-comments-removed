@@ -16,20 +16,35 @@ const REDIRECT_URL = BASE_URL + "redirect.html";
 
 
 
+function addBaseHtmlElements(body) {
+  return `<html><head></head><body>${body}</body></html>`;
+}
 
 
-const FETCH_CONTENT_1 = `<html><head></head><body>Fetch 1<script>window.parent.location.href = "${REDIRECT_URL}";</script></body></html>`;
+const FETCH_CONTENT_1 = addBaseHtmlElements(
+  `Fetch 1<script>window.parent.location.href = "${REDIRECT_URL}";</script>`
+);
 
-const FETCH_CONTENT_2 = `<html><head></head><body>Fetch 2<script>document.write("JS activated")</script></body></html>`;
+const FETCH_CONTENT_2 = addBaseHtmlElements(
+  `Fetch 2<script>document.write("JS activated")</script>`
+);
 
-const FETCH_CONTENT_3 = `<html><head></head><body>Fetch 3<a href="${REDIRECT_URL}">link</a> -- <form action="${REDIRECT_URL}"><input type="submit"></form></body></html>`;
+const FETCH_CONTENT_3 = addBaseHtmlElements(
+  `Fetch 3<a href="${REDIRECT_URL}">link</a> -- <form action="${REDIRECT_URL}"><input type="submit"></form>`
+);
+
+const FETCH_CONTENT_4 = addBaseHtmlElements(`
+  <a href="#" id="link1">link1</a>
+  <a href="#" id="link2">link2</a>
+`);
 
 
-const TEST_HTML = `<html><head></head><body>HTML<script>
+const TEST_HTML = addBaseHtmlElements(`HTML<script>
   fetch("${BASE_URL}fetch-1.html");
   fetch("${BASE_URL}fetch-2.html");
   fetch("${BASE_URL}fetch-3.html");
-</script></body></html>`;
+  fetch("${BASE_URL}fetch-4.html");
+</script>`);
 const TEST_URL = BASE_URL + "doc-html-preview.html";
 
 httpServer.registerPathHandler(
@@ -50,6 +65,10 @@ httpServer.registerPathHandler("/fetch-2.html", (request, response) => {
 httpServer.registerPathHandler("/fetch-3.html", (request, response) => {
   response.setStatusLine(request.httpVersion, 200, "OK");
   response.write(FETCH_CONTENT_3);
+});
+httpServer.registerPathHandler("/fetch-4.html", (request, response) => {
+  response.setStatusLine(request.httpVersion, 200, "OK");
+  response.write(FETCH_CONTENT_4);
 });
 httpServer.registerPathHandler("/redirect.html", (request, response) => {
   response.setStatusLine(request.httpVersion, 200, "OK");
@@ -74,10 +93,10 @@ add_task(async function() {
   await onNetworkEvent;
 
   
-  await selectIndexAndWaitForHtmlView(0, TEST_HTML.replace(/\n/g, ""));
+  await selectIndexAndWaitForHtmlView(0, TEST_HTML);
   await selectIndexAndWaitForHtmlView(1, FETCH_CONTENT_1);
   await selectIndexAndWaitForHtmlView(2, FETCH_CONTENT_2);
-  const previewIframe = await selectIndexAndWaitForHtmlView(3, FETCH_CONTENT_3);
+  let previewIframe = await selectIndexAndWaitForHtmlView(3, FETCH_CONTENT_3);
 
   info("Try to click on the link and submit the form");
   await SpecialPowers.spawn(previewIframe.browsingContext, [], async function(
@@ -110,6 +129,8 @@ add_task(async function() {
       );
     }
   );
+
+  previewIframe = await selectIndexAndWaitForHtmlView(4, FETCH_CONTENT_4);
 
   await teardown(monitor);
 
