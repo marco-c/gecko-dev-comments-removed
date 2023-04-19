@@ -399,6 +399,12 @@ pref("browser.urlbar.suggest.topsites",             true);
 pref("browser.urlbar.suggest.engines",              true);
 pref("browser.urlbar.suggest.calculator",           false);
 
+#if defined(EARLY_BETA_OR_EARLIER)
+  
+  pref("browser.urlbar.suggest.quickactions", true);
+  pref("browser.urlbar.shortcuts.quickactions", true);
+#endif
+
 
 
 
