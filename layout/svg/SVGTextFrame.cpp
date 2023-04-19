@@ -1112,12 +1112,12 @@ class TextNodeIterator {
   
 
 
-  nsIContent* mRoot;
+  nsIContent* const mRoot;
 
   
 
 
-  nsIContent* mSubtree;
+  nsIContent* const mSubtree;
 
   
 
@@ -1536,12 +1536,12 @@ class MOZ_STACK_CLASS TextFrameIterator {
   
 
 
-  SVGTextFrame* mRootFrame;
+  SVGTextFrame* const mRootFrame;
 
   
 
 
-  const nsIFrame* mSubtree;
+  const nsIFrame* const mSubtree;
 
   
 
@@ -2134,7 +2134,7 @@ class MOZ_STACK_CLASS CharIterator {
   
 
 
-  nsIContent* mSubtree;
+  nsIContent* const mSubtree;
 #endif
 
   
@@ -2468,9 +2468,9 @@ class SVGTextDrawPathCallbacks final : public nsTextFrame::DrawPathCallbacks {
 
   void StrokeGeometry();
 
-  SVGTextFrame* mSVGTextFrame;
+  SVGTextFrame* const mSVGTextFrame;
   gfxContext& mContext;
-  nsTextFrame* mFrame;
+  nsTextFrame* const mFrame;
   const gfxMatrix& mCanvasTM;
   imgDrawingParams& mImgParams;
 
