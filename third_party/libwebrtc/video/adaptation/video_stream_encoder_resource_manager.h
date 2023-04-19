@@ -92,7 +92,7 @@ class VideoStreamEncoderResourceManager
   void SetDegradationPreferences(DegradationPreference degradation_preference);
   DegradationPreference degradation_preference() const;
 
-  void EnsureEncodeUsageResourceStarted();
+  void ConfigureEncodeUsageResource();
   
   
   void MaybeInitializePixelLimitResource();
