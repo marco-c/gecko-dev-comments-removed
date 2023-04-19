@@ -583,34 +583,7 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-  bool HasPushedFloatsFromPrevContinuation() const {
-    if (!mFloats.IsEmpty()) {
-      
-      
-      if (mFloats.FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
-        return true;
-      }
-    }
-
-#ifdef DEBUG
-    
-    
-    for (nsFrameList::Enumerator e(mFloats); !e.AtEnd(); e.Next()) {
-      nsIFrame* f = e.get();
-      NS_ASSERTION(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
-                   "pushed floats must be at the beginning of the float list");
-    }
-#endif
-
-    
-    if (HasPushedFloats()) {
-      
-      
-      auto* pushedFloats = GetPushedFloats();
-      return pushedFloats && !pushedFloats->IsEmpty();
-    }
-    return false;
-  }
+  bool HasPushedFloatsFromPrevContinuation() const;
 
   
   void AddSizeOfExcludingThisForTree(nsWindowSizes&) const override;
