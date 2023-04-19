@@ -130,19 +130,10 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
       srtp_required_(srtp_required),
       crypto_options_(crypto_options),
       media_channel_(std::move(media_channel)),
+      demuxer_criteria_(content_name),
       ssrc_generator_(ssrc_generator) {
   RTC_DCHECK_RUN_ON(worker_thread_);
   RTC_DCHECK(ssrc_generator_);
-  
-  
-  
-  
-  if (content_name.size() > 16) {
-    RTC_LOG(LS_ERROR) << "Overlong mid attribute, truncating for matching";
-    demuxer_criteria_.mid = content_name.substr(0, 16);
-  } else {
-    demuxer_criteria_.mid = content_name;
-  }
   RTC_LOG(LS_INFO) << "Created channel: " << ToString();
 }
 
@@ -499,6 +490,8 @@ void BaseChannel::UpdateRtpHeaderExtensionMap(
 }
 
 bool BaseChannel::RegisterRtpDemuxerSink_w() {
+  
+  
   if (demuxer_criteria_ == previous_demuxer_criteria_) {
     return true;
   }
@@ -605,15 +598,17 @@ bool BaseChannel::SetPayloadTypeDemuxingEnabled_w(bool enabled) {
     
     
     media_channel()->ResetUnsignaledRecvStream();
-    demuxer_criteria_.payload_types.clear();
+    demuxer_criteria_.payload_types().clear();
     if (!RegisterRtpDemuxerSink_w()) {
       RTC_LOG(LS_ERROR) << "Failed to disable payload type demuxing for "
                         << ToString();
       return false;
     }
   } else if (!payload_types_.empty()) {
-    demuxer_criteria_.payload_types.insert(payload_types_.begin(),
-                                           payload_types_.end());
+    
+    
+    demuxer_criteria_.payload_types().insert(payload_types_.begin(),
+                                             payload_types_.end());
     if (!RegisterRtpDemuxerSink_w()) {
       RTC_LOG(LS_ERROR) << "Failed to enable payload type demuxing for "
                         << ToString();
@@ -732,7 +727,7 @@ bool BaseChannel::UpdateRemoteStreams_w(
       }
     }
   }
-  demuxer_criteria_.ssrcs.clear();
+  demuxer_criteria_.ssrcs().clear();
   
   for (const StreamParams& new_stream : streams) {
     
@@ -758,8 +753,8 @@ bool BaseChannel::UpdateRemoteStreams_w(
       }
     }
     
-    demuxer_criteria_.ssrcs.insert(new_stream.ssrcs.begin(),
-                                   new_stream.ssrcs.end());
+    demuxer_criteria_.ssrcs().insert(new_stream.ssrcs.begin(),
+                                     new_stream.ssrcs.end());
   }
   
   if (!RegisterRtpDemuxerSink_w()) {
@@ -780,7 +775,8 @@ RtpHeaderExtensions BaseChannel::GetDeduplicatedRtpHeaderExtensions(
 
 void BaseChannel::MaybeAddHandledPayloadType(int payload_type) {
   if (payload_type_demuxing_enabled_) {
-    demuxer_criteria_.payload_types.insert(static_cast<uint8_t>(payload_type));
+    demuxer_criteria_.payload_types().insert(
+        static_cast<uint8_t>(payload_type));
   }
   
   
@@ -788,7 +784,7 @@ void BaseChannel::MaybeAddHandledPayloadType(int payload_type) {
 }
 
 void BaseChannel::ClearHandledPayloadTypes() {
-  demuxer_criteria_.payload_types.clear();
+  demuxer_criteria_.payload_types().clear();
   payload_types_.clear();
 }
 

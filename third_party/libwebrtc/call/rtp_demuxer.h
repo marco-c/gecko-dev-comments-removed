@@ -27,7 +27,8 @@ class RtpPacketSinkInterface;
 
 
 
-struct RtpDemuxerCriteria {
+class RtpDemuxerCriteria {
+ public:
   explicit RtpDemuxerCriteria(absl::string_view mid,
                               absl::string_view rsid = absl::string_view());
   RtpDemuxerCriteria();
@@ -37,23 +38,40 @@ struct RtpDemuxerCriteria {
   bool operator!=(const RtpDemuxerCriteria& other) const;
 
   
-  std::string mid;
-
-  
-  
-  
-  
-  
-  std::string rsid;
-
-  
-  flat_set<uint32_t> ssrcs;
-
-  
-  flat_set<uint8_t> payload_types;
+  const std::string& mid() const { return mid_; }
 
   
   std::string ToString() const;
+
+  
+  
+  
+  
+  
+  const std::string& rsid() const { return rsid_; }
+
+  
+  const flat_set<uint32_t>& ssrcs() const { return ssrcs_; }
+
+  
+  flat_set<uint32_t>& ssrcs() { return ssrcs_; }
+
+  
+  const flat_set<uint8_t>& payload_types() const { return payload_types_; }
+
+  
+  flat_set<uint8_t>& payload_types() { return payload_types_; }
+
+ private:
+  
+  
+  
+  
+  
+  std::string mid_;
+  std::string rsid_;
+  flat_set<uint32_t> ssrcs_;
+  flat_set<uint8_t> payload_types_;
 };
 
 
