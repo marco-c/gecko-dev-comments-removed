@@ -2207,9 +2207,6 @@ STATIC_ATOMS = [
     Atom("mozfixed", "-moz-fixed"),
     Atom("moz_fixed_pos_containing_block", "-moz-fixed-pos-containing-block"),
     
-    Atom("light", "light"),
-    Atom("dark", "dark"),
-    
     
     Atom("RemoteId", "_remote_id"),
     Atom("RemoteType", "remoteType"),

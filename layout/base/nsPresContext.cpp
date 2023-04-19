@@ -277,7 +277,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mIsGlyph(false),
       mCounterStylesDirty(true),
       mFontFeatureValuesDirty(true),
-      mFontPaletteValuesDirty(true),
       mIsVisual(false),
       mHasWarnedAboutTooLargeDashedOrDottedRadius(false),
       mQuirkSheetAdded(false),
@@ -1836,7 +1835,6 @@ void nsPresContext::RebuildAllStyleData(nsChangeHint aExtraHint,
   mDocument->MarkUserFontSetDirty();
   MarkCounterStylesDirty();
   MarkFontFeatureValuesDirty();
-  MarkFontPaletteValuesDirty();
   PostRebuildAllStyleDataEvent(aExtraHint, aRestyleHint);
 }
 
@@ -2782,31 +2780,11 @@ void nsPresContext::FlushFontFeatureValues() {
     return;  
   }
 
-  if (!mFontFeatureValuesDirty) {
-    return;
+  if (mFontFeatureValuesDirty) {
+    ServoStyleSet* styleSet = mPresShell->StyleSet();
+    mFontFeatureValuesLookup = styleSet->BuildFontFeatureValueSet();
+    mFontFeatureValuesDirty = false;
   }
-
-  ServoStyleSet* styleSet = mPresShell->StyleSet();
-  mFontFeatureValuesLookup = styleSet->BuildFontFeatureValueSet();
-  mFontFeatureValuesDirty = false;
-}
-
-void nsPresContext::FlushFontPaletteValues() {
-  if (!mPresShell) {
-    return;  
-  }
-
-  if (!mFontPaletteValuesDirty) {
-    return;
-  }
-
-  ServoStyleSet* styleSet = mPresShell->StyleSet();
-  mFontPaletteValueSet = styleSet->BuildFontPaletteValueSet();
-  mFontPaletteValuesDirty = false;
-
-  
-  
-  InvalidatePaintedLayers();
 }
 
 void nsPresContext::SetVisibleArea(const nsRect& r) {

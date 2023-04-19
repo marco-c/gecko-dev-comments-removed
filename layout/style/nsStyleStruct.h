@@ -118,8 +118,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   static mozilla::Length ZoomText(const mozilla::dom::Document&,
                                   mozilla::Length);
 
-  nsAtom* GetFontPaletteAtom() const { return mFontPalette._0.AsAtom(); }
-
   nsFont mFont;
 
   
@@ -133,7 +131,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   float mFontSizeFactor;
   mozilla::Length mFontSizeOffset;
   mozilla::StyleFontSizeKeyword mFontSizeKeyword;
-  mozilla::StyleFontPalette mFontPalette;
 
   
   int8_t mMathDepth;

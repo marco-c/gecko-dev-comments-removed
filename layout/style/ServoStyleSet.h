@@ -45,9 +45,6 @@ class CSSImportRule;
 class Element;
 class ShadowRoot;
 }  
-namespace gfx {
-class FontPaletteValueSet;
-}  
 class StyleSheet;
 struct Keyframe;
 class ServoElementSnapshotTable;
@@ -368,9 +365,6 @@ class ServoStyleSet {
 
   
   already_AddRefed<gfxFontFeatureValueSet> BuildFontFeatureValueSet();
-
-  
-  already_AddRefed<gfx::FontPaletteValueSet> BuildFontPaletteValueSet();
 
   already_AddRefed<ComputedStyle> GetBaseContextForElement(
       dom::Element* aElement, const ComputedStyle* aStyle);
