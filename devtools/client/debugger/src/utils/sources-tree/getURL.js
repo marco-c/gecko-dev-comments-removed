@@ -21,8 +21,32 @@ export function getFilenameFromPath(pathname) {
   return filename;
 }
 
+function getFileExtension(path) {
+  if (!path) {
+    return "";
+  }
+
+  const lastIndex = path.lastIndexOf(".");
+  return lastIndex !== -1 ? path.slice(lastIndex + 1).toLowerCase() : "";
+}
+
 const NoDomain = "(no domain)";
-const def = { path: "", search: "", group: "", filename: "" };
+const def = {
+  path: "",
+  search: "",
+  group: "",
+  filename: "",
+  fileExtension: "",
+};
+
+
+
+
+
+
+
+
+
 
 
 
@@ -54,6 +78,7 @@ export function getDisplayURL(url, extensionName = null) {
         path: pathname,
         search,
         filename,
+        fileExtension: getFileExtension(pathname),
         
         
         
@@ -65,6 +90,7 @@ export function getDisplayURL(url, extensionName = null) {
         path: pathname,
         search,
         filename,
+        fileExtension: getFileExtension(pathname),
         group: `${protocol}//${host || ""}`,
       };
     case "webpack:":
@@ -73,6 +99,7 @@ export function getDisplayURL(url, extensionName = null) {
         path: pathname,
         search,
         filename,
+        fileExtension: getFileExtension(pathname),
         group: `Webpack`,
       };
     case "ng:":
@@ -81,6 +108,7 @@ export function getDisplayURL(url, extensionName = null) {
         path: pathname,
         search,
         filename,
+        fileExtension: getFileExtension(pathname),
         group: `Angular`,
       };
     case "about:":
@@ -90,6 +118,7 @@ export function getDisplayURL(url, extensionName = null) {
         path: "/",
         search,
         filename,
+        fileExtension: getFileExtension("/"),
         group: url,
       };
 
@@ -98,8 +127,9 @@ export function getDisplayURL(url, extensionName = null) {
         ...def,
         path: "/",
         search,
-        group: NoDomain,
         filename: url,
+        fileExtension: getFileExtension("/"),
+        group: NoDomain,
       };
 
     case "":
@@ -110,6 +140,7 @@ export function getDisplayURL(url, extensionName = null) {
           path: pathname,
           search,
           filename,
+          fileExtension: getFileExtension(pathname),
           group: "file://",
         };
       } else if (!host) {
@@ -117,8 +148,9 @@ export function getDisplayURL(url, extensionName = null) {
           ...def,
           path: pathname,
           search,
-          group: "",
           filename,
+          fileExtension: getFileExtension(pathname),
+          group: "",
         };
       }
       break;
@@ -130,6 +162,7 @@ export function getDisplayURL(url, extensionName = null) {
         path: pathname,
         search,
         filename,
+        fileExtension: getFileExtension(pathname),
         group: getUnicodeHostname(host),
       };
   }
@@ -138,7 +171,8 @@ export function getDisplayURL(url, extensionName = null) {
     ...def,
     path: pathname,
     search,
-    group: protocol ? `${protocol}//` : "",
+    fileExtension: getFileExtension(pathname),
     filename,
+    group: protocol ? `${protocol}//` : "",
   };
 }
