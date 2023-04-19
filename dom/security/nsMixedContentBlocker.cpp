@@ -374,7 +374,7 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(nsIURI* aURI) {
 
 
 
-static already_AddRefed<nsIURI> GetPrincipalURIOrPrecursorPrincialURI(
+static already_AddRefed<nsIURI> GetPrincipalURIOrPrecursorPrincipalURI(
     nsIPrincipal* aPrincipal) {
   nsCOMPtr<nsIURI> precursorURI = nullptr;
   if (aPrincipal->GetIsNullPrincipal()) {
@@ -645,13 +645,13 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   auto* baseLoadingPrincipal = BasePrincipal::Cast(loadingPrincipal);
   if (baseLoadingPrincipal) {
     requestingLocation =
-        GetPrincipalURIOrPrecursorPrincialURI(baseLoadingPrincipal);
+        GetPrincipalURIOrPrecursorPrincipalURI(baseLoadingPrincipal);
   }
   if (!requestingLocation) {
     auto* baseTriggeringPrincipal = BasePrincipal::Cast(triggeringPrincipal);
     if (baseTriggeringPrincipal) {
       requestingLocation =
-          GetPrincipalURIOrPrecursorPrincialURI(baseTriggeringPrincipal);
+          GetPrincipalURIOrPrecursorPrincipalURI(baseTriggeringPrincipal);
     }
   }
 
