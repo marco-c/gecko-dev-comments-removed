@@ -416,6 +416,23 @@ function serialize(
 
     return remoteValue;
   }
+  
+  
+  else if (className == "Object") {
+    const remoteValue = { type: "object" };
+
+    if (maxDepth !== null && maxDepth > 0) {
+      remoteValue.value = serializeMapping(
+        Object.entries(value),
+        maxDepth 
+
+
+
+      );
+    }
+
+    return remoteValue;
+  }
 
   lazy.logger.warn(
     `Unsupported type: ${type} for remote value: ${stringify(value)}`
