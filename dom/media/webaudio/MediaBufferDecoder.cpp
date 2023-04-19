@@ -265,8 +265,7 @@ void MediaDecodeTask::OnInitDemuxerCompleted() {
     UniquePtr<TrackInfo> audioInfo = mTrackDemuxer->GetInfo();
     
     if (audioInfo && audioInfo->IsValid() &&
-        platform->SupportsMimeType(audioInfo->mMimeType) !=
-            media::DecodeSupport::Unsupported) {
+        platform->SupportsMimeType(audioInfo->mMimeType)) {
       mMediaInfo.mAudio = *audioInfo->GetAsAudioInfo();
     }
   }

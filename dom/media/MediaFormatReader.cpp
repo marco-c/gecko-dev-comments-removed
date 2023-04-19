@@ -1164,8 +1164,7 @@ void MediaFormatReader::OnDemuxerInitDone(const MediaResult& aResult) {
     UniquePtr<TrackInfo> videoInfo = mVideo.mTrackDemuxer->GetInfo();
     videoActive = videoInfo && videoInfo->IsValid();
     if (videoActive) {
-      if (platform && platform->SupportsMimeType(videoInfo->mMimeType) ==
-                          media::DecodeSupport::Unsupported) {
+      if (platform && !platform->SupportsMimeType(videoInfo->mMimeType)) {
         
         mMetadataPromise.Reject(NS_ERROR_DOM_MEDIA_METADATA_ERR, __func__);
         return;
@@ -1196,8 +1195,7 @@ void MediaFormatReader::OnDemuxerInitDone(const MediaResult& aResult) {
     
     audioActive =
         audioInfo && audioInfo->IsValid() &&
-        (!platform || platform->SupportsMimeType(audioInfo->mMimeType) !=
-                          media::DecodeSupport::Unsupported);
+        (!platform || platform->SupportsMimeType(audioInfo->mMimeType));
 
     if (audioActive) {
       mInfo.mAudio = *audioInfo->GetAsAudioInfo();
