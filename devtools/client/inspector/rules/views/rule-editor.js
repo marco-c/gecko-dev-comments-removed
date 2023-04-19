@@ -137,6 +137,14 @@ RuleEditor.prototype = {
 
     if (this.rule.domRule.ancestorData.length) {
       const parts = this.rule.domRule.ancestorData.map(ancestorData => {
+        if (ancestorData.type == "container") {
+          const containerQueryParts = [
+            "@container",
+            ancestorData.containerName,
+            ancestorData.containerQuery,
+          ].filter(p => !!p);
+          return containerQueryParts.join(" ");
+        }
         if (ancestorData.type == "layer") {
           return `@layer${ancestorData.value ? " " + ancestorData.value : ""}`;
         }
