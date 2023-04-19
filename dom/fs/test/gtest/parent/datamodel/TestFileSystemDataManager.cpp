@@ -5,7 +5,6 @@
 
 
 #include "FileSystemDataManager.h"
-#include "TestHelpers.h"
 #include "gtest/gtest.h"
 #include "mozIStorageService.h"
 #include "mozStorageCID.h"
@@ -20,6 +19,15 @@
 #include "nsIQuotaRequests.h"
 
 namespace mozilla::dom::fs::test {
+
+namespace {
+
+quota::OriginMetadata GetTestOriginMetadata() {
+  return quota::OriginMetadata{""_ns, "example.com"_ns, "http://example.com"_ns,
+                               quota::PERSISTENCE_TYPE_DEFAULT};
+}
+
+}  
 
 class TestFileSystemDataManager : public ::testing::Test {
  public:

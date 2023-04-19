@@ -752,15 +752,6 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveFile(
   QM_TRY_UNWRAP(EntryId entryId, FindEntryId(mConnection, aHandle, true));
   MOZ_ASSERT(!entryId.IsEmpty());
 
-  
-  
-  
-  
-  if (mDataManager->IsLocked(entryId)) {
-    LOG(("Trying to remove in-use file"));
-    return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
-  }
-
   const nsLiteralCString deleteEntryQuery =
       "DELETE FROM Entries "
       "WHERE handle = :handle "
@@ -830,11 +821,14 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::MoveEntry(
   
   QM_TRY_UNWRAP(bool isFile, IsFile(mConnection, entryId), false);
 
+#if 0
   
-  if (isFile && mDataManager->IsLocked(entryId)) {
+  
+  if (isFile && !CanUseFile(entryId, AccessMode::EXCLUSIVE)) {
     LOG(("Trying to move in-use file"));
     return Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR));
   }
+#endif
 
   
   

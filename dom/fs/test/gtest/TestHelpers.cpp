@@ -4,10 +4,7 @@
 
 
 
-#include "TestHelpers.h"
-
 #include "gtest/gtest.h"
-#include "mozilla/dom/quota/CommonMetadata.h"
 #include "nsString.h"
 
 namespace testing::internal {
@@ -38,20 +35,6 @@ GTEST_API_ ::testing::AssertionResult CmpHelperSTREQ(const char* s1_expression,
   return ::testing::internal::EqFailure(s1_expression, s2_expression,
                                         std::string(s1), std::string(s2),
                                          false);
-}
-
-}  
-
-namespace mozilla::dom::fs::test {
-
-quota::OriginMetadata GetTestOriginMetadata() {
-  return quota::OriginMetadata{""_ns, "example.com"_ns, "http://example.com"_ns,
-                               quota::PERSISTENCE_TYPE_DEFAULT};
-}
-
-const Origin& GetTestOrigin() {
-  static const Origin origin = "http://example.com"_ns;
-  return origin;
 }
 
 }  

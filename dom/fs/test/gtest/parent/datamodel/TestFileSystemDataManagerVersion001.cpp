@@ -21,13 +21,11 @@
 #include "mozilla/Result.h"
 #include "mozilla/dom/FileSystemTypes.h"
 #include "mozilla/dom/PFileSystemManager.h"
-#include "mozilla/dom/quota/CommonMetadata.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsContentUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsLiteralString.h"
-#include "nsNetCID.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
@@ -39,25 +37,13 @@ namespace mozilla::dom::fs::test {
 using data::FileSystemDatabaseManagerVersion001;
 using data::FileSystemFileManager;
 
-
-
-class MockFileSystemDataManager final : public data::FileSystemDataManager {
- public:
-  MockFileSystemDataManager(const quota::OriginMetadata& aOriginMetadata,
-                            MovingNotNull<nsCOMPtr<nsIEventTarget>> aIOTarget,
-                            MovingNotNull<RefPtr<TaskQueue>> aIOTaskQueue)
-      : FileSystemDataManager(aOriginMetadata, std::move(aIOTarget),
-                              std::move(aIOTaskQueue)) {}
-
-  virtual ~MockFileSystemDataManager() {
-    
-    mState = State::Closed;
-  }
-};
+static const Origin& getTestOrigin() {
+  static const Origin orig = "testOrigin"_ns;
+  return orig;
+}
 
 static void MakeDatabaseManagerVersion001(
-    RefPtr<MockFileSystemDataManager>& aDataManager,
-    FileSystemDatabaseManagerVersion001*& aDatabaseManager) {
+    FileSystemDatabaseManagerVersion001*& aResult) {
   TEST_TRY_UNWRAP(auto storageService,
                   MOZ_TO_RESULT_GET_TYPED(nsCOMPtr<mozIStorageService>,
                                           MOZ_SELECT_OVERLOAD(do_GetService),
@@ -71,7 +57,7 @@ static void MakeDatabaseManagerVersion001(
                                                     getter_AddRefs(connection));
   ASSERT_NSEQ(NS_OK, rv);
 
-  const Origin& testOrigin = GetTestOrigin();
+  const Origin& testOrigin = getTestOrigin();
 
   TEST_TRY_UNWRAP(
       DatabaseVersion version,
@@ -83,46 +69,27 @@ static void MakeDatabaseManagerVersion001(
                               getter_AddRefs(testPath));
   ASSERT_NSEQ(NS_OK, rv);
 
-  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
+  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(getTestOrigin()));
 
   auto fmRes =
       FileSystemFileManager::CreateFileSystemFileManager(std::move(testPath));
   ASSERT_FALSE(fmRes.isErr());
 
-  QM_TRY_UNWRAP(auto streamTransportService,
-                MOZ_TO_RESULT_GET_TYPED(nsCOMPtr<nsIEventTarget>,
-                                        MOZ_SELECT_OVERLOAD(do_GetService),
-                                        NS_STREAMTRANSPORTSERVICE_CONTRACTID),
-                QM_VOID);
-
-  quota::OriginMetadata originMetadata = GetTestOriginMetadata();
-
-  nsCString taskQueueName("OPFS "_ns + originMetadata.mOrigin);
-
-  RefPtr<TaskQueue> ioTaskQueue =
-      TaskQueue::Create(do_AddRef(streamTransportService), taskQueueName.get());
-
-  aDataManager = MakeRefPtr<MockFileSystemDataManager>(
-      originMetadata, WrapMovingNotNull(streamTransportService),
-      WrapMovingNotNull(ioTaskQueue));
-
-  aDatabaseManager = new FileSystemDatabaseManagerVersion001(
-      aDataManager, std::move(connection),
-      MakeUnique<FileSystemFileManager>(fmRes.unwrap()), rootId);
+  aResult = new FileSystemDatabaseManagerVersion001(
+      std::move(connection), MakeUnique<FileSystemFileManager>(fmRes.unwrap()),
+      rootId);
 }
 
 TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveDirectories)
 {
   nsresult rv = NS_OK;
-  
-  RefPtr<MockFileSystemDataManager> dataManager;
   FileSystemDatabaseManagerVersion001* rdm = nullptr;
-  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(dataManager, rdm));
+  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(rdm));
   UniquePtr<FileSystemDatabaseManagerVersion001> dm(rdm);
   
   auto autoClose = MakeScopeExit([rdm] { rdm->Close(); });
 
-  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
+  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(getTestOrigin()));
 
   FileSystemChildMetadata firstChildMeta(rootId, u"First"_ns);
   TEST_TRY_UNWRAP_ERR(
@@ -197,12 +164,11 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles)
 {
   nsresult rv = NS_OK;
   
-  RefPtr<MockFileSystemDataManager> datamanager;
   FileSystemDatabaseManagerVersion001* rdm = nullptr;
-  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(datamanager, rdm));
+  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(rdm));
   UniquePtr<FileSystemDatabaseManagerVersion001> dm(rdm);
 
-  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
+  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(getTestOrigin()));
 
   FileSystemChildMetadata firstChildMeta(rootId, u"First"_ns);
   
@@ -328,14 +294,12 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateRemoveFiles)
 
 TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateMoveDirectories)
 {
-  
-  RefPtr<MockFileSystemDataManager> datamanager;
   FileSystemDatabaseManagerVersion001* rdm = nullptr;
-  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(datamanager, rdm));
+  ASSERT_NO_FATAL_FAILURE(MakeDatabaseManagerVersion001(rdm));
   UniquePtr<FileSystemDatabaseManagerVersion001> dm(rdm);
   auto closeAtExit = MakeScopeExit([&dm]() { dm->Close(); });
 
-  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(GetTestOrigin()));
+  TEST_TRY_UNWRAP(EntryId rootId, data::GetRootHandle(getTestOrigin()));
 
   FileSystemEntryMetadata rootMeta{rootId, u"root"_ns,  true};
 
