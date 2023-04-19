@@ -133,6 +133,7 @@ class RemoteGTests(object):
                 e10s=False,  
                 moz_env=env,
                 extra_args=args,
+                wait=False,
             )
         else:
             self.device.launch_fennec(self.package, moz_env=env, extra_args=args)
