@@ -255,7 +255,8 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
           InvokeAsync(taskQueue, __func__, [config = std::move(config)]() {
             RefPtr<PDMFactory> pdm = new PDMFactory();
             SupportDecoderParams params{*config};
-            if (!pdm->Supports(params, nullptr )) {
+            if (pdm->Supports(params, nullptr ) ==
+                media::DecodeSupport::Unsupported) {
               return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
                                                           __func__);
             }
