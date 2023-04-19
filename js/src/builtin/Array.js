@@ -847,16 +847,30 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
     }
 
     
-    let usingAsyncIterator = GetMethod(
-      asyncItems,
-      GetBuiltinSymbol("asyncIterator")
-    );
-    let usingSyncIterator = undefined;
+    let usingAsyncIterator = asyncItems[GetBuiltinSymbol("asyncIterator")];
+    if (usingAsyncIterator === null) {
+      usingAsyncIterator = undefined;
+    }
 
-    
-    if (usingAsyncIterator === undefined) {
+    let usingSyncIterator = undefined;
+    if (usingAsyncIterator !== undefined) {
+      if (!IsCallable(usingAsyncIterator)) {
+        ThrowTypeError(JSMSG_NOT_ITERABLE, ToSource(asyncItems));
+      }
+    } else {
       
-      usingSyncIterator = GetMethod(asyncItems, GetBuiltinSymbol("iterator"));
+
+      
+      usingSyncIterator = asyncItems[GetBuiltinSymbol("iterator")];
+      if (usingSyncIterator === null) {
+        usingSyncIterator = undefined;
+      }
+
+      if (usingSyncIterator !== undefined) {
+        if (!IsCallable(usingSyncIterator)) {
+          ThrowTypeError(JSMSG_NOT_ITERABLE, ToSource(asyncItems));
+        }
+      }
     }
 
     
