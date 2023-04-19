@@ -205,6 +205,13 @@ function Editor(config) {
   this.config.extraKeys[Editor.accel("U")] = false;
 
   
+  
+  
+  
+  
+  this.config.extraKeys["'\u0000'"] = false;
+
+  
   Object.keys(config).forEach(k => {
     if (k != "extraKeys") {
       this.config[k] = config[k];
