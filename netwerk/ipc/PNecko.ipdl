@@ -166,6 +166,8 @@ child:
 
   async PTransportProvider();
 
+  async SetTRRDomain(nsCString domain);
+
 both:
   
   
