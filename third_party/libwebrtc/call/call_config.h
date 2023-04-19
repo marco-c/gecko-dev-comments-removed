@@ -26,7 +26,11 @@ class AudioProcessing;
 class RtcEventLog;
 
 struct CallConfig {
-  explicit CallConfig(RtcEventLog* event_log);
+  
+  
+  
+  explicit CallConfig(RtcEventLog* event_log,
+                      TaskQueueBase* network_task_queue = nullptr);
   CallConfig(const CallConfig&);
   ~CallConfig();
 
@@ -42,7 +46,7 @@ struct CallConfig {
 
   
   
-  RtcEventLog* event_log = nullptr;
+  RtcEventLog* const event_log = nullptr;
 
   
   FecControllerFactoryInterface* fec_controller_factory = nullptr;
@@ -63,6 +67,8 @@ struct CallConfig {
   
   
   const WebRtcKeyValueConfig* trials = nullptr;
+
+  TaskQueueBase* const network_task_queue_ = nullptr;
 };
 
 }  
