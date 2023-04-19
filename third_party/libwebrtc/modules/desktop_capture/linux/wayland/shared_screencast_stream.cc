@@ -95,8 +95,8 @@ class SharedScreenCastStreamPrivate {
   uint32_t pw_stream_node_id_ = 0;
   int pw_fd_ = -1;
 
-  DesktopSize desktop_size_ = {};
-  DesktopSize video_size_;
+  DesktopSize stream_size_ = {};
+  DesktopSize frame_size_;
 
   webrtc::Mutex queue_lock_;
   ScreenCaptureFrameQueue<SharedDesktopFrame> queue_
@@ -235,7 +235,7 @@ void SharedScreenCastStreamPrivate::OnStreamParamChanged(
   auto stride = SPA_ROUND_UP_N(width * kBytesPerPixel, 4);
   auto size = height * stride;
 
-  that->desktop_size_ = DesktopSize(width, height);
+  that->stream_size_ = DesktopSize(width, height);
 
   uint8_t buffer[1024] = {};
   auto builder = spa_pod_builder{buffer, sizeof(buffer)};
@@ -601,7 +601,7 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
     
     
     src_unique_ptr = egl_dmabuf_->ImageFromDmaBuf(
-        desktop_size_, spa_video_format_.format, plane_datas, modifier_);
+        stream_size_, spa_video_format_.format, plane_datas, modifier_);
     if (src_unique_ptr) {
       src = src_unique_ptr.get();
     } else {
@@ -628,66 +628,88 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
     return;
   }
 
-  struct spa_meta_region* video_metadata =
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  struct spa_meta_region* videocrop_metadata =
       static_cast<struct spa_meta_region*>(spa_buffer_find_meta_data(
-          spa_buffer, SPA_META_VideoCrop, sizeof(*video_metadata)));
+          spa_buffer, SPA_META_VideoCrop, sizeof(*videocrop_metadata)));
 
   
   
   
-  if (video_metadata && (video_metadata->region.size.width >
-                             static_cast<uint32_t>(desktop_size_.width()) ||
-                         video_metadata->region.size.height >
-                             static_cast<uint32_t>(desktop_size_.height()))) {
+  if (videocrop_metadata &&
+      (videocrop_metadata->region.size.width >
+           static_cast<uint32_t>(stream_size_.width()) ||
+       videocrop_metadata->region.size.height >
+           static_cast<uint32_t>(stream_size_.height()))) {
     RTC_LOG(LS_ERROR) << "Stream metadata sizes are wrong!";
     return;
   }
 
   
   
-  bool video_metadata_use = false;
-  const struct spa_rectangle* video_metadata_size =
-      video_metadata ? &video_metadata->region.size : nullptr;
+  
+  
+  
+  bool videocrop_metadata_use = false;
+  const struct spa_rectangle* videocrop_metadata_size =
+      videocrop_metadata ? &videocrop_metadata->region.size : nullptr;
 
-  if (video_metadata_size && video_metadata_size->width != 0 &&
-      video_metadata_size->height != 0 &&
-      (static_cast<int>(video_metadata_size->width) < desktop_size_.width() ||
-       static_cast<int>(video_metadata_size->height) <
-           desktop_size_.height())) {
-    video_metadata_use = true;
+  if (videocrop_metadata_size && videocrop_metadata_size->width != 0 &&
+      videocrop_metadata_size->height != 0 &&
+      (static_cast<int>(videocrop_metadata_size->width) <
+           stream_size_.width() ||
+       static_cast<int>(videocrop_metadata_size->height) <
+           stream_size_.height())) {
+    videocrop_metadata_use = true;
   }
 
-  if (video_metadata_use) {
-    video_size_ =
-        DesktopSize(video_metadata_size->width, video_metadata_size->height);
+  if (videocrop_metadata_use) {
+    frame_size_ = DesktopSize(videocrop_metadata_size->width,
+                              videocrop_metadata_size->height);
   } else {
-    video_size_ = desktop_size_;
+    frame_size_ = stream_size_;
   }
 
-  uint32_t y_offset = video_metadata_use && (video_metadata->region.position.y +
-                                                 video_size_.height() <=
-                                             desktop_size_.height())
-                          ? video_metadata->region.position.y
-                          : 0;
-  uint32_t x_offset = video_metadata_use && (video_metadata->region.position.x +
-                                                 video_size_.width() <=
-                                             desktop_size_.width())
-                          ? video_metadata->region.position.x
-                          : 0;
+  
+  
+  
+  uint32_t y_offset =
+      videocrop_metadata_use &&
+              (videocrop_metadata->region.position.y + frame_size_.height() <=
+               stream_size_.height())
+          ? videocrop_metadata->region.position.y
+          : 0;
+  uint32_t x_offset =
+      videocrop_metadata_use &&
+              (videocrop_metadata->region.position.x + frame_size_.width() <=
+               stream_size_.width())
+          ? videocrop_metadata->region.position.x
+          : 0;
 
-  const uint32_t frame_stride = kBytesPerPixel * video_size_.width();
-  uint32_t stride = spa_buffer->datas[0].chunk->stride;
+  const uint32_t stream_stride = kBytesPerPixel * stream_size_.width();
+  uint32_t buffer_stride = spa_buffer->datas[0].chunk->stride;
+  uint32_t src_stride = buffer_stride;
 
-  if (spa_buffer->datas[0].type == SPA_DATA_DmaBuf && stride > frame_stride) {
+  if (spa_buffer->datas[0].type == SPA_DATA_DmaBuf &&
+      buffer_stride > stream_stride) {
     
     
     
     
-    stride = frame_stride;
+    src_stride = stream_stride;
   }
 
   uint8_t* updated_src =
-      src + (stride * y_offset) + (kBytesPerPixel * x_offset);
+      src + (src_stride * y_offset) + (kBytesPerPixel * x_offset);
 
   webrtc::MutexLock lock(&queue_lock_);
 
@@ -702,20 +724,20 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
   }
 
   if (!queue_.current_frame() ||
-      !queue_.current_frame()->size().equals(video_size_)) {
+      !queue_.current_frame()->size().equals(frame_size_)) {
     std::unique_ptr<DesktopFrame> frame(new BasicDesktopFrame(
-        DesktopSize(video_size_.width(), video_size_.height())));
+        DesktopSize(frame_size_.width(), frame_size_.height())));
     queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(std::move(frame)));
   }
 
   queue_.current_frame()->CopyPixelsFrom(
-      updated_src, (stride - (kBytesPerPixel * x_offset)),
-      DesktopRect::MakeWH(video_size_.width(), video_size_.height()));
+      updated_src, (src_stride - (kBytesPerPixel * x_offset)),
+      DesktopRect::MakeWH(frame_size_.width(), frame_size_.height()));
 
   if (spa_video_format_.format == SPA_VIDEO_FORMAT_RGBx ||
       spa_video_format_.format == SPA_VIDEO_FORMAT_RGBA) {
     uint8_t* tmp_src = queue_.current_frame()->data();
-    for (int i = 0; i < video_size_.height(); ++i) {
+    for (int i = 0; i < frame_size_.height(); ++i) {
       
       
       ConvertRGBxToBGRx(tmp_src, queue_.current_frame()->stride());
