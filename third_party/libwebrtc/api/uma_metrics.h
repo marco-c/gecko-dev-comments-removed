@@ -195,6 +195,17 @@ enum BundleUsage {
 
 
 
+enum BundlePolicyUsage {
+  kBundlePolicyUsageBalanced = 0,
+  kBundlePolicyUsageMaxBundle = 1,
+  kBundlePolicyUsageMaxCompat = 2,
+  kBundlePolicyUsageMax
+};
+
+
+
+
+
 }  
 
 #endif  

@@ -1738,6 +1738,27 @@ void PeerConnection::SetConnectionState(
     return;
   connection_state_ = new_state;
   Observer()->OnConnectionChange(new_state);
+
+  
+  
+  if (new_state == PeerConnectionState::kConnected) {
+    
+    
+    BundlePolicyUsage policy = kBundlePolicyUsageMax;
+    switch (configuration_.bundle_policy) {
+      case kBundlePolicyBalanced:
+        policy = kBundlePolicyUsageBalanced;
+        break;
+      case kBundlePolicyMaxBundle:
+        policy = kBundlePolicyUsageMaxBundle;
+        break;
+      case kBundlePolicyMaxCompat:
+        policy = kBundlePolicyUsageMaxCompat;
+        break;
+    }
+    RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.BundlePolicy", policy,
+                              kBundlePolicyUsageMax);
+  }
 }
 
 void PeerConnection::OnIceGatheringChange(
