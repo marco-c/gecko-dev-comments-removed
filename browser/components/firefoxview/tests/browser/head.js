@@ -1,6 +1,8 @@
 
 
 
+
+
 const { UIState } = ChromeUtils.import("resource://services-sync/UIState.jsm");
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
@@ -69,7 +71,6 @@ async function clearAllParentTelemetryEvents() {
     return !events || !events.length;
   });
 }
-
 
 function testVisibility(browser, expected) {
   const { document } = browser.contentWindow;
