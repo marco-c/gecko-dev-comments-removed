@@ -1165,6 +1165,10 @@ pub struct Device {
     
     #[cfg(debug_assertions)]
     shader_is_ready: bool,
+
+    
+    pub textures_created: u32,
+    pub textures_deleted: u32,
 }
 
 
@@ -1894,6 +1898,9 @@ impl Device {
 
             #[cfg(debug_assertions)]
             shader_is_ready: false,
+
+            textures_created: 0,
+            textures_deleted: 0,
         }
     }
 
@@ -2089,6 +2096,9 @@ impl Device {
         {
             self.shader_is_ready = false;
         }
+
+        self.textures_created = 0;
+        self.textures_deleted = 0;
 
         
         
@@ -2602,6 +2612,8 @@ impl Device {
             }
         }
 
+        self.textures_created += 1;
+
         texture
     }
 
@@ -2937,6 +2949,8 @@ impl Device {
                 *bound_texture = 0;
             }
         }
+
+        self.textures_deleted += 1;
 
         
         texture.id = 0;
