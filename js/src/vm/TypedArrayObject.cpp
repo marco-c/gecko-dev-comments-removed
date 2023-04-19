@@ -1131,15 +1131,6 @@ template <typename T>
   }
 
   
-  
-  
-  if (cx->realm() != srcArray->realm() || isWrapped) {
-    if (!TypedArrayObject::ensureHasBuffer(cx, srcArray)) {
-      return nullptr;
-    }
-  }
-
-  
 
   
   if (srcArray->hasDetachedBuffer()) {
