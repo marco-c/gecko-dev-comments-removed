@@ -1135,7 +1135,8 @@ void nsWindow::RemovePopupFromHierarchyList() {
 bool nsWindow::WaylandPopupRemoveNegativePosition(int* aX, int* aY) {
   
   
-  if (mPopupType != ePopupTypeTooltip) {
+  GdkWindow* window = gtk_widget_get_window(mShell);
+  if (!window || gdk_window_get_window_type(window) != GDK_WINDOW_TEMP) {
     return false;
   }
 
