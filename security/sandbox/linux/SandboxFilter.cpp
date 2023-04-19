@@ -1913,6 +1913,13 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         return Error(EPERM);
 
         
+        
+        
+        
+      CASES_FOR_fstatfs:
+        return Allow();
+
+        
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
     }
