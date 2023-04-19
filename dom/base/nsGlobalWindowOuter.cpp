@@ -3496,9 +3496,8 @@ nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize) {
 
   
   
-  RefPtr<nsViewManager> viewManager = presShell->GetViewManager();
-  if (viewManager) {
-    viewManager->FlushDelayedResize(false);
+  if (RefPtr<nsViewManager> viewManager = presShell->GetViewManager()) {
+    viewManager->FlushDelayedResize();
   }
 
   

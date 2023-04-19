@@ -906,8 +906,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   bool IsChrome() const;
 
-  bool SuppressingResizeReflow() const { return mSuppressResizeReflow; }
-
   gfxUserFontSet* GetUserFontSet();
 
   
@@ -1363,10 +1361,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   
   unsigned mFontFeatureValuesDirty : 1;
-
-  
-  
-  unsigned mSuppressResizeReflow : 1;
 
   unsigned mIsVisual : 1;
 

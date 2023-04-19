@@ -470,33 +470,7 @@ nsDocShellTreeOwner::SizeShellTo(nsIDocShellTreeItem* aShellItem, int32_t aCX,
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  NS_ENSURE_TRUE(aShellItem, NS_ERROR_FAILURE);
-
-  RefPtr<Document> document = aShellItem->GetDocument();
-  NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
-
-  NS_ENSURE_TRUE(document->GetDocumentElement(), NS_ERROR_FAILURE);
-
-  
-  
-  NS_ERROR("Implement this");
-  
-
-
-
-  RefPtr<nsPresContext> presContext = mWebBrowser->mDocShell->GetPresContext();
-  NS_ENSURE_TRUE(presContext, NS_ERROR_FAILURE);
-
-  RefPtr<PresShell> presShell = presContext->GetPresShell();
-  NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
-
-  NS_ENSURE_SUCCESS(
-      presShell->ResizeReflow(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE),
-      NS_ERROR_FAILURE);
-
-  
-  
-  
+  MOZ_ASSERT_UNREACHABLE("This is unimplemented, API should be cleaned up");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
