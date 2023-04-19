@@ -491,7 +491,9 @@ class MOZ_STACK_CLASS SplitNodeResult final {
   MOZ_KNOWN_LIVE nsIContent* GetOriginalContent() const {
     MOZ_ASSERT(isOk());
     if (mGivenSplitPoint.IsSet()) {
-      return mGivenSplitPoint.GetChild();
+      
+      
+      return mGivenSplitPoint.GetContainerAsContent();
     }
     if (mDirection == SplitNodeDirection::LeftNodeIsNewOne) {
       return mNextNode ? mNextNode : mPreviousNode;
@@ -928,39 +930,6 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
         mRightContent(aRightContent),
         mCaretPoint(std::move(aPointToPutCaret)),
         mRv(NS_OK) {}
-
-  SplitRangeOffFromNodeResult(SplitNodeResult&& aSplitResultAtLeftOfMiddleNode,
-                              SplitNodeResult&& aSplitResultAtRightOfMiddleNode)
-      : mRv(NS_OK) {
-    
-    
-    
-    SplitNodeResult splitResultAtLeftOfMiddleNode(
-        std::move(aSplitResultAtLeftOfMiddleNode));
-    SplitNodeResult splitResultARightOfMiddleNode(
-        std::move(aSplitResultAtRightOfMiddleNode));
-    splitResultAtLeftOfMiddleNode.IgnoreCaretPointSuggestion();
-    splitResultARightOfMiddleNode.IgnoreCaretPointSuggestion();
-    if (splitResultAtLeftOfMiddleNode.isOk()) {
-      mLeftContent = splitResultAtLeftOfMiddleNode.GetPreviousContent();
-    }
-    if (splitResultARightOfMiddleNode.isOk()) {
-      mRightContent = splitResultARightOfMiddleNode.GetNextContent();
-      mMiddleContent = splitResultARightOfMiddleNode.GetPreviousContent();
-    }
-    if (!mMiddleContent && splitResultAtLeftOfMiddleNode.isOk()) {
-      mMiddleContent = splitResultAtLeftOfMiddleNode.GetNextContent();
-    }
-    
-    if (splitResultARightOfMiddleNode.HasCaretPointSuggestion()) {
-      splitResultAtLeftOfMiddleNode.IgnoreCaretPointSuggestion();
-      mCaretPoint = splitResultARightOfMiddleNode.UnwrapCaretPoint();
-    }
-    
-    else if (splitResultAtLeftOfMiddleNode.HasCaretPointSuggestion()) {
-      mCaretPoint = splitResultAtLeftOfMiddleNode.UnwrapCaretPoint();
-    }
-  }
 
   explicit SplitRangeOffFromNodeResult(nsresult aRv) : mRv(aRv) {
     MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(mRv));
