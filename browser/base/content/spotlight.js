@@ -150,11 +150,18 @@ function renderMultistage(ready) {
   document.body.id = "root";
 
   
-  const { classList } = browser.closest(".dialogBox");
-  classList.add("noShadow", "fullScreen");
-  addEventListener("pagehide", () =>
-    classList.remove("noShadow", "fullScreen")
-  );
+  
+  const box = browser.closest(".dialogBox");
+  const dialog = box.closest("dialog");
+  box.classList.add("spotlightBox");
+  dialog?.classList.add("spotlight");
+  
+  box.setAttribute("sizeto", "available");
+  addEventListener("pagehide", () => {
+    box.classList.remove("spotlightBox");
+    dialog?.classList.remove("spotlight");
+    box.removeAttribute("sizeto");
+  });
 
   
   document.head.appendChild(document.createElement("script")).src =
