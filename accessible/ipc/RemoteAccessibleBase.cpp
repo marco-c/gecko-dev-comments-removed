@@ -1277,14 +1277,14 @@ already_AddRefed<nsAtom> RemoteAccessibleBase<Derived>::DisplayStyle() const {
 }
 
 template <class Derived>
-Maybe<float> RemoteAccessibleBase<Derived>::Opacity() const {
+float RemoteAccessibleBase<Derived>::Opacity() const {
   if (mCachedFields) {
-    
-    
-    return mCachedFields->GetAttribute<float>(nsGkAtoms::opacity);
+    if (auto opacity = mCachedFields->GetAttribute<float>(nsGkAtoms::opacity)) {
+      return *opacity;
+    }
   }
 
-  return Nothing();
+  return 1.0f;
 }
 
 template <class Derived>
