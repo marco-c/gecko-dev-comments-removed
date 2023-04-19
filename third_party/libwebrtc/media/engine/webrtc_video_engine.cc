@@ -1069,8 +1069,16 @@ webrtc::RtpParameters WebRtcVideoChannel::GetRtpSendParameters(
   
   
   for (const VideoCodec& codec : send_params_.codecs) {
-    rtp_params.codecs.push_back(codec.ToCodecParameters());
+    if (send_codec_ && send_codec_->codec.id == codec.id) {
+      
+      RTC_DCHECK_EQ(codec.name, send_codec_->codec.name);
+      rtp_params.codecs.insert(rtp_params.codecs.begin(),
+                               codec.ToCodecParameters());
+    } else {
+      rtp_params.codecs.push_back(codec.ToCodecParameters());
+    }
   }
+
   return rtp_params;
 }
 
