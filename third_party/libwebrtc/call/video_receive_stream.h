@@ -304,16 +304,6 @@ class VideoReceiveStream : public MediaReceiveStream {
   virtual ~VideoReceiveStream() {}
 };
 
-class DEPRECATED_VideoReceiveStream : public VideoReceiveStream {
- public:
-  
-  
-  
-  
-  virtual void AddSecondarySink(RtpPacketSinkInterface* sink) = 0;
-  virtual void RemoveSecondarySink(const RtpPacketSinkInterface* sink) = 0;
-};
-
 }  
 
 #endif  
