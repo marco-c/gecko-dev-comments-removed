@@ -1025,6 +1025,11 @@ def lint(repo_root, paths, output_format, ignore_glob=None, github_checks_output
 
     if jobs == 0:
         jobs = multiprocessing.cpu_count()
+        if sys.platform == 'win32':
+            
+            
+            
+            jobs = min(jobs, 56)
 
     with open(os.path.join(repo_root, "lint.ignore")) as f:
         ignorelist, skipped_files = parse_ignorelist(f)
