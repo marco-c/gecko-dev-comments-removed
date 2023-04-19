@@ -261,16 +261,6 @@ HRESULT WgcCaptureSession::GetFrame(
   
   ComPtr<ID3D11DeviceContext> d3d_context;
   d3d11_device_->GetImmediateContext(&d3d_context);
-  d3d_context->CopyResource(mapped_texture_.Get(), texture_2D.Get());
-
-  D3D11_MAPPED_SUBRESOURCE map_info;
-  hr = d3d_context->Map(mapped_texture_.Get(), 0,
-                        D3D11_MAP_READ, 0,
-                        &map_info);
-  if (FAILED(hr)) {
-    RecordGetFrameResult(GetFrameResult::kMapFrameFailed);
-    return hr;
-  }
 
   ABI::Windows::Graphics::SizeInt32 new_size;
   hr = capture_frame->get_ContentSize(&new_size);
@@ -280,31 +270,6 @@ HRESULT WgcCaptureSession::GetFrame(
   }
 
   
-  
-  
-  int image_height = std::min(previous_size_.Height, new_size.Height);
-  int image_width = std::min(previous_size_.Width, new_size.Width);
-  int row_data_length = image_width * DesktopFrame::kBytesPerPixel;
-
-  
-  
-  uint8_t* src_data = static_cast<uint8_t*>(map_info.pData);
-  std::vector<uint8_t> image_data;
-  image_data.resize(image_height * row_data_length);
-  uint8_t* image_data_ptr = image_data.data();
-  for (int i = 0; i < image_height; i++) {
-    memcpy(image_data_ptr, src_data, row_data_length);
-    image_data_ptr += row_data_length;
-    src_data += map_info.RowPitch;
-  }
-
-  
-  DesktopSize size(image_width, image_height);
-  *output_frame = std::make_unique<WgcDesktopFrame>(size, row_data_length,
-                                                    std::move(image_data));
-
-  d3d_context->Unmap(mapped_texture_.Get(), 0);
-
   
   
   if (previous_size_.Height != new_size.Height ||
@@ -323,9 +288,57 @@ HRESULT WgcCaptureSession::GetFrame(
     }
   }
 
-  RecordGetFrameResult(GetFrameResult::kSuccess);
+  
+  
+  
+  int image_height = std::min(previous_size_.Height, new_size.Height);
+  int image_width = std::min(previous_size_.Width, new_size.Width);
+
+  D3D11_BOX copy_region;
+  copy_region.left = 0;
+  copy_region.top = 0;
+  copy_region.right = image_width;
+  copy_region.bottom = image_height;
+  
+  copy_region.front = 0;
+  copy_region.back = 1;
+  d3d_context->CopySubresourceRegion(mapped_texture_.Get(),
+                                     0, 0,
+                                     0, 0, texture_2D.Get(),
+                                     0, &copy_region);
+
+  D3D11_MAPPED_SUBRESOURCE map_info;
+  hr = d3d_context->Map(mapped_texture_.Get(), 0,
+                        D3D11_MAP_READ, 0,
+                        &map_info);
+  if (FAILED(hr)) {
+    RecordGetFrameResult(GetFrameResult::kMapFrameFailed);
+    return hr;
+  }
+
+  int row_data_length = image_width * DesktopFrame::kBytesPerPixel;
+
+  
+  
+  uint8_t* src_data = static_cast<uint8_t*>(map_info.pData);
+  std::vector<uint8_t> image_data;
+  image_data.resize(image_height * row_data_length);
+  uint8_t* image_data_ptr = image_data.data();
+  for (int i = 0; i < image_height; i++) {
+    memcpy(image_data_ptr, src_data, row_data_length);
+    image_data_ptr += row_data_length;
+    src_data += map_info.RowPitch;
+  }
+
+  d3d_context->Unmap(mapped_texture_.Get(), 0);
+
+  
+  DesktopSize size(image_width, image_height);
+  *output_frame = std::make_unique<WgcDesktopFrame>(size, row_data_length,
+                                                    std::move(image_data));
 
   previous_size_ = new_size;
+  RecordGetFrameResult(GetFrameResult::kSuccess);
   return hr;
 }
 
