@@ -27,6 +27,51 @@ struct IngressStatistics {
 };
 
 
+struct RemoteRtcpStatistics {
+  
+  double jitter = 0.0;
+
+  
+  int64_t packets_lost = 0;
+
+  
+  
+  double fraction_lost = 0.0;
+
+  
+  absl::optional<double> round_trip_time;
+
+  
+  int64_t last_report_received_timestamp_ms;
+};
+
+struct ChannelStatistics {
+  
+  uint64_t packets_sent = 0;
+
+  
+  uint64_t bytes_sent = 0;
+
+  
+  uint64_t packets_received = 0;
+
+  
+  uint64_t bytes_received = 0;
+
+  
+  double jitter = 0.0;
+
+  
+  int64_t packets_lost = 0;
+
+  
+  
+  absl::optional<uint32_t> remote_ssrc;
+
+  absl::optional<RemoteRtcpStatistics> remote_rtcp;
+};
+
+
 
 class VoipStatistics {
  public:
@@ -36,6 +81,13 @@ class VoipStatistics {
   
   virtual VoipResult GetIngressStatistics(ChannelId channel_id,
                                           IngressStatistics& ingress_stats) = 0;
+
+  
+  
+  
+  
+  virtual VoipResult GetChannelStatistics(ChannelId channel_id,
+                                          ChannelStatistics& channel_stats) = 0;
 
  protected:
   virtual ~VoipStatistics() = default;
