@@ -224,6 +224,7 @@ class LibvpxVp9Encoder : public VP9Encoder {
       
       
       int deblock_mode = 0;
+      bool denoiser_on = true;
     };
     
     
