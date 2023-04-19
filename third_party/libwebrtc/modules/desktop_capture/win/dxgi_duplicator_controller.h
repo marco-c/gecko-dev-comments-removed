@@ -25,7 +25,7 @@
 #include "modules/desktop_capture/win/dxgi_adapter_duplicator.h"
 #include "modules/desktop_capture/win/dxgi_context.h"
 #include "modules/desktop_capture/win/dxgi_frame.h"
-#include "rtc_base/deprecated/recursive_critical_section.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 
@@ -155,58 +155,58 @@ class DxgiDuplicatorController {
   
   
   
-  bool Initialize() RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  bool Initialize() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
-  bool DoInitialize() RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  bool DoInitialize() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
-  void Deinitialize() RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  void Deinitialize() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   bool ContextExpired(const Context* const context) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
-  void Setup(Context* context) RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  void Setup(Context* context) RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   bool DoDuplicateUnlocked(Context* context,
                            int monitor_id,
                            SharedDesktopFrame* target)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   bool DoDuplicateAll(Context* context, SharedDesktopFrame* target)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   bool DoDuplicateOne(Context* context,
                       int monitor_id,
                       SharedDesktopFrame* target)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
-  int64_t GetNumFramesCaptured() const RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  int64_t GetNumFramesCaptured() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
-  DesktopSize desktop_size() const RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  DesktopSize desktop_size() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
   
-  DesktopRect ScreenRect(int id) const RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  DesktopRect ScreenRect(int id) const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  int ScreenCountUnlocked() const RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  int ScreenCountUnlocked() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   void GetDeviceNamesUnlocked(std::vector<std::string>* output) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
   DesktopSize SelectedDesktopSize(int monitor_id) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
@@ -214,31 +214,31 @@ class DxgiDuplicatorController {
   
   
   bool EnsureFrameCaptured(Context* context, SharedDesktopFrame* target)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   
   
   
-  void TranslateRect() RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  void TranslateRect() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   
   std::atomic_int refcount_;
 
   
-  rtc::RecursiveCriticalSection lock_;
+  Mutex mutex_;
 
   
   
-  int identity_ RTC_GUARDED_BY(lock_) = 0;
-  DesktopRect desktop_rect_ RTC_GUARDED_BY(lock_);
-  DesktopVector dpi_ RTC_GUARDED_BY(lock_);
-  std::vector<DxgiAdapterDuplicator> duplicators_ RTC_GUARDED_BY(lock_);
-  D3dInfo d3d_info_ RTC_GUARDED_BY(lock_);
+  int identity_ RTC_GUARDED_BY(mutex_) = 0;
+  DesktopRect desktop_rect_ RTC_GUARDED_BY(mutex_);
+  DesktopVector dpi_ RTC_GUARDED_BY(mutex_);
+  std::vector<DxgiAdapterDuplicator> duplicators_ RTC_GUARDED_BY(mutex_);
+  D3dInfo d3d_info_ RTC_GUARDED_BY(mutex_);
   DisplayConfigurationMonitor display_configuration_monitor_
-      RTC_GUARDED_BY(lock_);
+      RTC_GUARDED_BY(mutex_);
   
-  uint32_t succeeded_duplications_ RTC_GUARDED_BY(lock_) = 0;
+  uint32_t succeeded_duplications_ RTC_GUARDED_BY(mutex_) = 0;
 };
 
 }  
