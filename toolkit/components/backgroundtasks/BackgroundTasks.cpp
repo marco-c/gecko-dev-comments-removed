@@ -370,7 +370,7 @@ nsresult BackgroundTasks::RemoveStaleEphemeralProfileDirectories(
     }
 
     
-    if (aPrefix.Compare(entryName.get(), false, aPrefix.Length()) != 0) {
+    if (!StringBeginsWith(entryName, aPrefix)) {
       continue;
     }
 

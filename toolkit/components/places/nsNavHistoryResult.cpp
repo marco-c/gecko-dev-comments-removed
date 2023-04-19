@@ -989,7 +989,7 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_TitleLess(
   if (value == 0) {
     
     if (a->IsURI()) {
-      value = a->mURI.Compare(b->mURI.get());
+      value = Compare(a->mURI, b->mURI);
     }
     if (value == 0) {
       
@@ -1073,7 +1073,7 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_URILess(
   int32_t value;
   if (a->IsURI() && b->IsURI()) {
     
-    value = a->mURI.Compare(b->mURI.get());
+    value = Compare(a->mURI, b->mURI);
   } else if (a->IsContainer() && !b->IsContainer()) {
     
     return -1;
