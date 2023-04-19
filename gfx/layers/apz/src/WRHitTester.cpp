@@ -221,6 +221,7 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
                                            positionedNode);
     }
 
+#if defined(MOZ_WIDGET_ANDROID)
     if (hit.mNode && hit.mNode->GetFixedPositionAnimationId().isSome()) {
       
       
@@ -233,6 +234,7 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
       MOZ_ASSERT(sideBits == SideBits::eNone,
                  "Hit test results have side bits only for pos:fixed");
     }
+#endif
   }
 
   hit.mHitOverscrollGutter =
