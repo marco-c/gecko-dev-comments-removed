@@ -30,7 +30,37 @@ namespace dom {
 class ScriptLoader;
 class SRICheckDataVerifier;
 
-class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
+class ScriptDecoder {
+ public:
+  ScriptDecoder() = default;
+  ~ScriptDecoder() = default;
+  
+
+
+
+  nsresult DecodeRawData(JS::loader::ScriptLoadRequest* aRequest,
+                         const uint8_t* aData, uint32_t aDataLength,
+                         bool aEndOfStream);
+
+  
+  mozilla::UniquePtr<mozilla::Decoder> mDecoder;
+
+ private:
+  
+
+
+
+
+
+
+  template <typename Unit>
+  nsresult DecodeRawDataHelper(JS::loader::ScriptLoadRequest* aRequest,
+                               const uint8_t* aData, uint32_t aDataLength,
+                               bool aEndOfStream);
+};
+
+class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
+                                private ScriptDecoder {
  public:
   explicit ScriptLoadHandler(
       ScriptLoader* aScriptLoader, JS::loader::ScriptLoadRequest* aRequest,
@@ -41,24 +71,6 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
 
  private:
   virtual ~ScriptLoadHandler();
-
-  
-
-
-
-
-
-
-  template <typename Unit>
-  nsresult DecodeRawDataHelper(const uint8_t* aData, uint32_t aDataLength,
-                               bool aEndOfStream);
-
-  
-
-
-
-  nsresult DecodeRawData(const uint8_t* aData, uint32_t aDataLength,
-                         bool aEndOfStream);
 
   
 
@@ -106,9 +118,6 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
 
   
   nsresult mSRIStatus;
-
-  
-  mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 
   
   bool mPreloadStartNotified = false;
