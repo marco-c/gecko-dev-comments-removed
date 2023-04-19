@@ -248,8 +248,14 @@ int WebRtcOpus_Encode(OpusEncInst* inst,
           rtc::MakeArrayView(encoded, res))) {
     
     
-    inst->in_dtx_mode = 0;
-    return 0;
+    
+    
+    
+    
+    encoded[0] = encoded[0] & 0b11111100;
+    inst->in_dtx_mode = 1;
+    
+    return 1;
   }
   inst->in_dtx_mode = 0;
   return res;
