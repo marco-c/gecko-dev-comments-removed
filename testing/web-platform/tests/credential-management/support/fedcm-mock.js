@@ -1,7 +1,7 @@
-import { RequestIdTokenStatus, LogoutRpsStatus, FederatedAuthRequest, FederatedAuthRequestReceiver } from '/gen/third_party/blink/public/mojom/webid/federated_auth_request.mojom.m.js';
+import { RequestTokenStatus, LogoutRpsStatus, FederatedAuthRequest, FederatedAuthRequestReceiver } from '/gen/third_party/blink/public/mojom/webid/federated_auth_request.mojom.m.js';
 
-function toMojoIdTokenStatus(status) {
-  return RequestIdTokenStatus["k" + status];
+function toMojoTokenStatus(status) {
+  return RequestTokenStatus["k" + status];
 }
 
 
@@ -13,17 +13,17 @@ export class MockFederatedAuthRequest {
         this.receiver_.$.bindHandle(e.handle);
     }
     this.interceptor_.start();
-    this.idToken_ = null;
-    this.status_ = RequestIdTokenStatus.kError;
+    this.token_ = null;
+    this.status_ = RequestTokenStatus.kError;
     this.logoutRpsStatus_ = LogoutRpsStatus.kError;
     this.returnPending_ = false;
     this.pendingPromiseResolve_ = null;
   }
 
   
-  returnIdToken(token) {
-    this.status_ = RequestIdTokenStatus.kSuccess;
-    this.idToken_ = token;
+  returnToken(token) {
+    this.status_ = RequestTokenStatus.kSuccess;
+    this.token_ = token;
     this.returnPending_ = false;
   }
 
@@ -31,8 +31,8 @@ export class MockFederatedAuthRequest {
   returnError(error) {
     if (error == "Success")
       throw new Error("Success is not a valid error");
-    this.status_ = toMojoIdTokenStatus(error);
-    this.idToken_ = null;
+    this.status_ = toMojoTokenStatus(error);
+    this.token_ = null;
     this.returnPending_ = false;
   }
 
@@ -51,7 +51,7 @@ export class MockFederatedAuthRequest {
 
   
   
-  async requestIdToken(provider, idRequest) {
+  async requestToken(provider, idRequest) {
     if (this.returnPending_) {
       this.pendingPromise_ = new Promise((resolve, reject) => {
         this.pendingPromiseResolve_ = resolve;
@@ -60,14 +60,14 @@ export class MockFederatedAuthRequest {
     }
     return Promise.resolve({
       status: this.status_,
-      idToken: this.idToken_
+      token: this.token_
     });
   }
 
   async cancelTokenRequest() {
     this.pendingPromiseResolve_({
-      status: toMojoIdTokenStatus("ErrorCanceled"),
-      idToken: null
+      status: toMojoTokenStatus("ErrorCanceled"),
+      token: null
     });
     this.pendingPromiseResolve_ = null;
   }
@@ -79,8 +79,8 @@ export class MockFederatedAuthRequest {
   }
 
   async reset() {
-    this.idToken_ = null;
-    this.status_ = RequestIdTokenStatus.kError;
+    this.token_ = null;
+    this.status_ = RequestTokenStatus.kError;
     this.logoutRpsStatus_ = LogoutRpsStatus.kError;
     this.receiver_.$.close();
     this.interceptor_.stop();
