@@ -341,16 +341,6 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
   
   bool mForceSelection : 1;
 
-  
-  
-  
-  
-  nscoord mLastDropdownComputedBSize;
-
-  
-  
-  nscolor mLastDropdownBackstopColor;
-
   RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 
   static nsListControlFrame* mFocused;

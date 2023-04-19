@@ -1406,9 +1406,32 @@ nsISupports* nsPresContext::GetContainerWeak() const {
   return mDocument->GetDocShell();
 }
 
+ColorScheme nsPresContext::DefaultBackgroundColorScheme() const {
+  dom::Document* doc = Document();
+  
+  
+  {
+    BrowsingContext* bc = doc->GetBrowsingContext();
+    if (bc && bc->IsTop() && !bc->HasOpener() && doc->GetDocumentURI() &&
+        NS_IsAboutBlank(doc->GetDocumentURI())) {
+      return doc->PreferredColorScheme(Document::IgnoreRFP::Yes);
+    }
+  }
+  
+  
+  
+  if (auto* frame = FrameConstructor()->GetRootElementStyleFrame()) {
+    return LookAndFeel::ColorSchemeForFrame(frame);
+  }
+  return doc->DefaultColorScheme();
+}
+
 nscolor nsPresContext::DefaultBackgroundColor() const {
+  if (!GetBackgroundColorDraw()) {
+    return NS_RGB(255, 255, 255);
+  }
   return PrefSheetPrefs()
-      .ColorsFor(mDocument->DefaultColorScheme())
+      .ColorsFor(DefaultBackgroundColorScheme())
       .mDefaultBackground;
 }
 
