@@ -596,15 +596,34 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
 }
 
 nsIContent* HTMLEditUtils::GetUnnecessaryLineBreakContent(
-    const Element& aBlockElement) {
+    const Element& aBlockElement, ScanLineBreak aScanLineBreak) {
   auto* lastLineBreakContent = [&]() -> nsIContent* {
     const LeafNodeTypes leafNodeOrNonEditableNode{
         LeafNodeType::LeafNodeOrNonEditableNode};
-    for (nsIContent* content = HTMLEditUtils::GetLastLeafContent(
-             aBlockElement, leafNodeOrNonEditableNode);
+    const WalkTreeOptions onlyPrecedingLine{
+        WalkTreeOption::StopAtBlockBoundary};
+    for (nsIContent* content =
+             aScanLineBreak == ScanLineBreak::AtEndOfBlock
+                 ? HTMLEditUtils::GetLastLeafContent(aBlockElement,
+                                                     leafNodeOrNonEditableNode)
+                 : HTMLEditUtils::GetPreviousContent(
+                       aBlockElement, onlyPrecedingLine,
+                       aBlockElement.GetParentElement());
          content;
-         content = HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-             *content, aBlockElement, leafNodeOrNonEditableNode)) {
+         content =
+             aScanLineBreak == ScanLineBreak::AtEndOfBlock
+                 ? HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+                       *content, aBlockElement, leafNodeOrNonEditableNode)
+                 : HTMLEditUtils::GetPreviousContent(
+                       *content, onlyPrecedingLine,
+                       aBlockElement.GetParentElement())) {
+      
+      
+      
+      if (aScanLineBreak == ScanLineBreak::BeforeBlock &&
+          HTMLEditUtils::IsBlockElement(*content)) {
+        return nullptr;
+      }
       if (Text* textNode = Text::FromNode(content)) {
         if (!textNode->TextLength()) {
           continue;  

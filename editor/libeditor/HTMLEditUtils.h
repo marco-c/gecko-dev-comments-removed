@@ -1656,8 +1656,12 @@ class HTMLEditUtils final {
 
 
 
+  enum ScanLineBreak {
+    AtEndOfBlock,
+    BeforeBlock,
+  };
   static nsIContent* GetUnnecessaryLineBreakContent(
-      const Element& aBlockElement);
+      const Element& aBlockElement, ScanLineBreak aScanLineBreak);
 
   
 
