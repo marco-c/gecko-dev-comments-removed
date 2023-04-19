@@ -78,10 +78,12 @@ module.exports = {
 
 
 
-  parseCode(sourceText, astOptions = {}) {
+
+
+  parseCode(sourceText, astOptions = {}, configOptions = {}) {
     
     
-    let config = { ...this.getPermissiveConfig(), ...astOptions };
+    let config = { ...this.getPermissiveConfig(configOptions), ...astOptions };
 
     let parseResult =
       "parseForESLint" in parser
@@ -443,7 +445,11 @@ module.exports = {
 
 
 
-  getPermissiveConfig() {
+
+
+
+
+  getPermissiveConfig({ useBabel = true } = {}) {
     const config = {
       range: true,
       requireConfigFile: false,
@@ -464,7 +470,7 @@ module.exports = {
       sourceType: "script",
     };
 
-    if (this.isMozillaCentralBased()) {
+    if (useBabel && this.isMozillaCentralBased()) {
       config.babelOptions.configFile = path.join(
         gRootDir,
         ".babel-eslint.rc.js"
