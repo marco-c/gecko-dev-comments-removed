@@ -880,6 +880,12 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
           frames_decoded[rtc_event->ssrc()].emplace_back(rtc_event);
           break;
         }
+        case RtcEvent::Type::BeginV3Log:
+        case RtcEvent::Type::EndV3Log:
+          
+          
+          RTC_DCHECK_NOTREACHED();
+          break;
       }
     }
 

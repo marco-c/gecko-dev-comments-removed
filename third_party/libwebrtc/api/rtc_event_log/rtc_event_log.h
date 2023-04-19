@@ -29,7 +29,7 @@ class RtcEventLog {
 
   
   
-  enum class EncodingType { Legacy, NewFormat };
+  enum class EncodingType { Legacy, NewFormat, ProtoFree };
 
   virtual ~RtcEventLog() = default;
 
