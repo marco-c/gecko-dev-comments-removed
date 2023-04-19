@@ -23,10 +23,10 @@ addLoginsInParent(
 </script>
 <p id="display"></p>
 
-
+<!-- we presumably can't hide the content for this test. -->
 <div id="content">
 
-  
+  <!-- form1 tests multiple matching logins -->
   <form id="form1" action="https://autocomplete:8888/formtest.js" onsubmit="return false;">
     <input  type="text"       name="uname">
     <input  type="password"   name="pword">
@@ -40,8 +40,8 @@ addLoginsInParent(
 
 /** Test for Login Manager: autocomplete due to multiple matching logins **/
 
-var uname = $_(1, "uname");
-var pword = $_(1, "pword");
+const uname = getFormElementByName(1, "uname");
+const pword = getFormElementByName(1, "pword");
 
 // Restore the form to the default state.
 function restoreForm() {
