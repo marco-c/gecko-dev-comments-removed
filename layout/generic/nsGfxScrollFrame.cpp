@@ -2590,9 +2590,11 @@ void ScrollFrameHelper::ScrollToWithOrigin(nsPoint aScrollPosition,
 
   UniquePtr<ScrollSnapTargetIds> snapTargetIds;
   if (snapTarget) {
-    snapTargetIds = MakeUnique<ScrollSnapTargetIds>(snapTarget->mTargetIds);
+    snapTargetIds =
+        MakeUnique<ScrollSnapTargetIds>(std::move(snapTarget->mTargetIds));
   } else {
-    snapTargetIds = MakeUnique<ScrollSnapTargetIds>(aParams.mTargetIds);
+    snapTargetIds =
+        MakeUnique<ScrollSnapTargetIds>(std::move(aParams.mTargetIds));
   }
   if (aParams.IsInstant()) {
     
