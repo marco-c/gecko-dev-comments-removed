@@ -112,19 +112,15 @@ AllocatableGeneralRegisterSet BaselineICAvailableGeneralRegs(size_t numInputs) {
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
   MOZ_ASSERT(!regs.has(FramePointer));
 #if defined(JS_CODEGEN_ARM)
-  MOZ_ASSERT(!regs.has(BaselineStackReg));
   MOZ_ASSERT(!regs.has(ICTailCallReg));
   regs.take(BaselineSecondScratchReg);
 #elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-  MOZ_ASSERT(!regs.has(BaselineStackReg));
   MOZ_ASSERT(!regs.has(ICTailCallReg));
   MOZ_ASSERT(!regs.has(BaselineSecondScratchReg));
 #elif defined(JS_CODEGEN_ARM64)
   MOZ_ASSERT(!regs.has(PseudoStackPointer));
   MOZ_ASSERT(!regs.has(RealStackPointer));
   MOZ_ASSERT(!regs.has(ICTailCallReg));
-#else
-  MOZ_ASSERT(!regs.has(BaselineStackReg));
 #endif
   regs.take(ICStubReg);
 
@@ -1708,7 +1704,6 @@ bool FallbackICCodeCompiler::emitCall(bool isSpread, bool isConstructing) {
     
     enterStubFrame(masm, R1.scratchReg());
 
-    
     
     
 

@@ -21,7 +21,7 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
   
   
   masm.movl(FramePointer, eax);
-  masm.subl(BaselineStackReg, eax);
+  masm.subl(StackPointer, eax);
   masm.subl(Imm32(argSize), eax);
   Address frameSizeAddr(FramePointer,
                         BaselineFrame::reverseOffsetOfDebugFrameSize());
@@ -49,7 +49,7 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   
 
   masm.movl(FramePointer, scratch);
-  masm.subl(BaselineStackReg, scratch);
+  masm.subl(StackPointer, scratch);
   masm.subl(Imm32(sizeof(void*)), scratch);  
 
   Address frameSizeAddr(FramePointer,
@@ -61,15 +61,15 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   
 
   
-  masm.Push(Operand(BaselineStackReg, 0));
+  masm.Push(Operand(StackPointer, 0));
 
   
   masm.storePtr(ImmWord(MakeFrameDescriptor(FrameType::BaselineJS)),
-                Address(BaselineStackReg, sizeof(uintptr_t)));
+                Address(StackPointer, sizeof(uintptr_t)));
 
   
   masm.Push(FramePointer);
-  masm.mov(BaselineStackReg, FramePointer);
+  masm.mov(StackPointer, FramePointer);
 
   masm.Push(ICStubReg);
 }

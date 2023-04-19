@@ -47,7 +47,7 @@ inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
   
   
   
-  masm.Pop(Operand(BaselineStackReg, 0));
+  masm.Pop(Operand(StackPointer, 0));
 }
 
 template <typename AddrType>

@@ -14,8 +14,6 @@
 namespace js {
 namespace jit {
 
-static constexpr Register BaselineStackReg = sp;
-
 
 
 
