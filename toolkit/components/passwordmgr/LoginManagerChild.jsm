@@ -2794,13 +2794,6 @@ class LoginManagerChild extends JSWindowActorChild {
       }
 
       
-      if (passwordField?.disabled || passwordField?.readOnly) {
-        lazy.log("Not filling form, password field disabled or read-only.");
-        autofillResult = AUTOFILL_RESULT.PASSWORD_DISABLED_READONLY;
-        return;
-      }
-
-      
       
       
       
@@ -2808,6 +2801,13 @@ class LoginManagerChild extends JSWindowActorChild {
       if (usernameField) {
         lazy.gFormFillService.markAsLoginManagerField(usernameField);
         usernameField.addEventListener("keydown", observer);
+      }
+
+      
+      if (passwordField?.disabled || passwordField?.readOnly) {
+        lazy.log("Not filling form, password field disabled or read-only.");
+        autofillResult = AUTOFILL_RESULT.PASSWORD_DISABLED_READONLY;
+        return;
       }
 
       if (
