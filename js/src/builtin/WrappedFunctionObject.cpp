@@ -26,8 +26,8 @@ using namespace js;
 using namespace JS;
 
 
-bool js::GetWrappedValue(JSContext* cx, Realm* callerRealm, HandleValue value,
-                         MutableHandleValue res) {
+bool js::GetWrappedValue(JSContext* cx, Realm* callerRealm, Handle<Value> value,
+                         MutableHandle<Value> res) {
   
   if (!value.isObject()) {
     res.set(value);
@@ -36,7 +36,7 @@ bool js::GetWrappedValue(JSContext* cx, Realm* callerRealm, HandleValue value,
 
   
   
-  RootedObject objectVal(cx, &value.toObject());
+  Rooted<JSObject*> objectVal(cx, &value.toObject());
   if (!IsCallable(objectVal)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_SHADOW_REALM_INVALID_RETURN);
@@ -52,13 +52,13 @@ bool js::GetWrappedValue(JSContext* cx, Realm* callerRealm, HandleValue value,
 static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  RootedObject callee(cx, &args.callee());
+  Rooted<JSObject*> callee(cx, &args.callee());
   MOZ_ASSERT(callee->is<WrappedFunctionObject>());
 
   Handle<WrappedFunctionObject*> F = callee.as<WrappedFunctionObject>();
 
   
-  RootedObject target(cx, F->getTargetFunction());
+  Rooted<JSObject*> target(cx, F->getTargetFunction());
 
   
   MOZ_ASSERT(IsCallable(ObjectValue(*target)));
@@ -76,21 +76,21 @@ static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-  RootedValue result(cx);
+  Rooted<Value> result(cx);
   {
-    RootedObject global(cx, JS::GetRealmGlobalOrNull(callerRealm));
+    Rooted<JSObject*> global(cx, JS::GetRealmGlobalOrNull(callerRealm));
     MOZ_RELEASE_ASSERT(
         global, "global is null; executing in a realm that's being GC'd?");
     AutoRealm ar(cx, global);
 
     
     
-    RootedValueVector wrappedArgs(cx);
+    RootedVector<Value> wrappedArgs(cx);
 
     
     
     
-    RootedValue element(cx);
+    Rooted<Value> element(cx);
     for (size_t i = 0; i < args.length(); i++) {
       element = args.get(i);
       if (!GetWrappedValue(cx, targetRealm, element, &element)) {
@@ -104,7 +104,7 @@ static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
 
     
     
-    RootedValue wrappedThisArgument(cx);
+    Rooted<Value> wrappedThisArgument(cx);
     if (!GetWrappedValue(cx, targetRealm, args.thisv(), &wrappedThisArgument)) {
       return false;
     }
@@ -139,12 +139,12 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
 
   
 
-  RootedId length(cx, NameToId(cx->names().length));
-  RootedId name(cx, NameToId(cx->names().name));
+  Rooted<jsid> length(cx, NameToId(cx->names().length));
+  Rooted<jsid> name(cx, NameToId(cx->names().name));
   
   if (Target->is<JSFunction>() &&
       !Target->as<JSFunction>().hasResolvedLength()) {
-    RootedValue targetLen(cx);
+    Rooted<Value> targetLen(cx);
     if (!JSFunction::getUnresolvedLength(cx, Target.as<JSFunction>(),
                                          &targetLen)) {
       return false;
@@ -160,7 +160,7 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
     
     if (targetHasLength) {
       
-      RootedValue targetLen(cx);
+      Rooted<Value> targetLen(cx);
       if (!GetProperty(cx, Target, Target, length, &targetLen)) {
         return false;
       }
@@ -179,13 +179,13 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
   }
 
   
-  RootedValue rootedL(cx, DoubleValue(L));
+  Rooted<Value> rootedL(cx, DoubleValue(L));
   if (!JS_DefinePropertyById(cx, F, length, rootedL, JSPROP_READONLY)) {
     return false;
   }
 
   
-  RootedValue targetName(cx);
+  Rooted<Value> targetName(cx);
   if (!GetProperty(cx, Target, Target, cx->names().name, &targetName)) {
     return false;
   }
@@ -195,8 +195,8 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
     targetName = StringValue(cx->runtime()->emptyString);
   }
 
-  RootedString targetString(cx, targetName.toString());
-  RootedId targetNameId(cx);
+  Rooted<JSString*> targetString(cx, targetName.toString());
+  Rooted<jsid> targetNameId(cx);
   if (!JS_StringToId(cx, targetString, &targetNameId)) {
     return false;
   }
@@ -207,7 +207,7 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
   if (!funName) {
     return false;
   }
-  RootedValue rootedFunName(cx, StringValue(funName));
+  Rooted<Value> rootedFunName(cx, StringValue(funName));
   return JS_DefinePropertyById(cx, F, name, rootedFunName, JSPROP_READONLY);
 }
 
@@ -242,10 +242,10 @@ JSObject* GetRealmFunctionPrototype(JSContext* cx, Realm* realm) {
 
 
 bool js::WrappedFunctionCreate(JSContext* cx, Realm* callerRealm,
-                               HandleObject target, MutableHandleValue res) {
+                               HandleObject target, MutableHandle<Value> res) {
   
   
-  RootedObject global(cx, JS::GetRealmGlobalOrNull(callerRealm));
+  Rooted<JSObject*> global(cx, JS::GetRealmGlobalOrNull(callerRealm));
   MOZ_RELEASE_ASSERT(global,
                      "global is null; executing in a realm that's being GC'd?");
   AutoRealm ar(cx, global);
@@ -253,7 +253,7 @@ bool js::WrappedFunctionCreate(JSContext* cx, Realm* callerRealm,
   MOZ_ASSERT(target);
 
   
-  RootedObject maybeWrappedTarget(cx, target);
+  Rooted<JSObject*> maybeWrappedTarget(cx, target);
   if (!JS_WrapObject(cx, &maybeWrappedTarget)) {
     return false;
   }
@@ -263,8 +263,8 @@ bool js::WrappedFunctionCreate(JSContext* cx, Realm* callerRealm,
   
   
   
-  RootedObject functionPrototype(cx,
-                                 GetRealmFunctionPrototype(cx, callerRealm));
+  Rooted<JSObject*> functionPrototype(
+      cx, GetRealmFunctionPrototype(cx, callerRealm));
   MOZ_ASSERT(cx->compartment() == functionPrototype->compartment());
 
   Rooted<WrappedFunctionObject*> wrapped(
