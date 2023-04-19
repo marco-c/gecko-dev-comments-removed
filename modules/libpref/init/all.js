@@ -4276,19 +4276,15 @@ pref("extensions.formautofill.creditCards.hideui", false);
 
 
 
+
 pref("extensions.formautofill.creditCards.heuristics.mode", 2);
 pref("extensions.formautofill.creditCards.heuristics.fathom.types", "cc-number");
+
+
 pref("extensions.formautofill.creditCards.heuristics.fathom.confidenceThreshold", "0.5");
+pref("extensions.formautofill.creditCards.heuristics.fathom.highConfidenceThreshold", "0.95");
 
-
-#ifdef EARLY_BETA_OR_EARLIER
-
-
-
-pref("extensions.formautofill.creditCards.heuristics.numberOnly.confidenceThreshold", "0.5");
-#else
-pref("extensions.formautofill.creditCards.heuristics.numberOnly.confidenceThreshold", "0.95");
-#endif
+pref("extensions.formautofill.creditCards.heuristics.fathom.testConfidence", "0");
 
 
 

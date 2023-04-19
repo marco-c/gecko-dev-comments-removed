@@ -496,7 +496,7 @@ class FieldScanner {
     }
 
     let highestField = null;
-    let highestConfidence = lazy.FormAutofillUtils.ccHeuristicsThreshold; 
+    let highestConfidence = lazy.FormAutofillUtils.ccFathomConfidenceThreshold; 
     for (let [key, value] of Object.entries(elementConfidences)) {
       if (!fields.includes(key)) {
         
@@ -514,10 +514,8 @@ class FieldScanner {
     }
 
     
-    if (lazy.FormAutofillUtils.ccHeuristicTestConfidence != null) {
-      highestConfidence = parseFloat(
-        lazy.FormAutofillUtils.ccHeuristicTestConfidence
-      );
+    if (lazy.FormAutofillUtils.ccFathomTestConfidence > 0) {
+      highestConfidence = lazy.FormAutofillUtils.ccFathomTestConfidence;
     }
 
     return [highestField, highestConfidence];
