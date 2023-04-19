@@ -1354,7 +1354,7 @@ void TextServicesDocument::DidJoinContents(
   }
 
   Maybe<size_t> maybeJoinedIndex =
-      mOffsetTable.FirstIndexOf(*aJoinedPoint.ContainerAsText());
+      mOffsetTable.FirstIndexOf(*aJoinedPoint.ContainerAs<Text>());
   if (maybeJoinedIndex.isNothing()) {
     
     
@@ -1386,7 +1386,7 @@ void TextServicesDocument::DidJoinContents(
   const uint32_t movedTextDataLength =
       aJoinNodesDirection == JoinNodesDirection::LeftNodeIntoRightNode
           ? aJoinedPoint.Offset()
-          : aJoinedPoint.ContainerAsText()->TextDataLength() -
+          : aJoinedPoint.ContainerAs<Text>()->TextDataLength() -
                 aJoinedPoint.Offset();
   for (uint32_t i = removedIndex; i < mOffsetTable.Length(); i++) {
     const UniquePtr<OffsetEntry>& entry = mOffsetTable[i];
@@ -1395,7 +1395,7 @@ void TextServicesDocument::DidJoinContents(
       break;
     }
     if (entry->mIsValid) {
-      entry->mTextNode = aJoinedPoint.ContainerAsText();
+      entry->mTextNode = aJoinedPoint.ContainerAs<Text>();
       if (aJoinNodesDirection == JoinNodesDirection::RightNodeIntoLeftNode) {
         
         
@@ -1410,7 +1410,7 @@ void TextServicesDocument::DidJoinContents(
     for (uint32_t i = joinedIndex; i < mOffsetTable.Length(); i++) {
       const UniquePtr<OffsetEntry>& entry = mOffsetTable[i];
       LockOffsetEntryArrayLengthInDebugBuild(observer, mOffsetTable);
-      if (entry->mTextNode != aJoinedPoint.ContainerAsText()) {
+      if (entry->mTextNode != aJoinedPoint.ContainerAs<Text>()) {
         break;
       }
       if (entry->mIsValid) {
@@ -1422,7 +1422,7 @@ void TextServicesDocument::DidJoinContents(
   
   
   if (mFilteredIter->GetCurrentNode() == aRemovedContent.AsText()) {
-    mFilteredIter->PositionAt(aJoinedPoint.ContainerAsText());
+    mFilteredIter->PositionAt(aJoinedPoint.ContainerAs<Text>());
   }
 }
 
@@ -2672,7 +2672,7 @@ TextServicesDocument::OffsetEntryArray::FindWordRange(
   
   
   Maybe<size_t> maybeEntryIndex =
-      FirstIndexOf(*aStartPointToScan.ContainerAsText());
+      FirstIndexOf(*aStartPointToScan.ContainerAs<Text>());
   if (NS_WARN_IF(maybeEntryIndex.isNothing())) {
     NS_WARNING(
         "TextServicesDocument::OffsetEntryArray::FirstIndexOf() didn't find "

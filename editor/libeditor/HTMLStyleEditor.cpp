@@ -274,7 +274,7 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
       if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
           startOfRange.IsInTextNode()) {
         nsresult rv = SetInlinePropertyOnTextNode(
-            MOZ_KnownLive(*startOfRange.ContainerAsText()),
+            MOZ_KnownLive(*startOfRange.ContainerAs<Text>()),
             startOfRange.Offset(), endOfRange.Offset(), aProperty, aAttribute,
             aAttributeValue);
         if (NS_FAILED(rv)) {
@@ -305,10 +305,10 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
 
       
       if (startOfRange.IsInTextNode() &&
-          EditorUtils::IsEditableContent(*startOfRange.ContainerAsText(),
+          EditorUtils::IsEditableContent(*startOfRange.ContainerAs<Text>(),
                                          EditorType::HTML)) {
         nsresult rv = SetInlinePropertyOnTextNode(
-            MOZ_KnownLive(*startOfRange.ContainerAsText()),
+            MOZ_KnownLive(*startOfRange.ContainerAs<Text>()),
             startOfRange.Offset(), startOfRange.GetContainer()->Length(),
             aProperty, aAttribute, aAttributeValue);
         if (NS_FAILED(rv)) {
@@ -334,10 +334,10 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
 
       
       if (endOfRange.IsInTextNode() &&
-          EditorUtils::IsEditableContent(*endOfRange.ContainerAsText(),
+          EditorUtils::IsEditableContent(*endOfRange.ContainerAs<Text>(),
                                          EditorType::HTML)) {
         nsresult rv = SetInlinePropertyOnTextNode(
-            MOZ_KnownLive(*endOfRange.ContainerAsText()), 0,
+            MOZ_KnownLive(*endOfRange.ContainerAs<Text>()), 0,
             endOfRange.Offset(), aProperty, aAttribute, aAttributeValue);
         if (NS_FAILED(rv)) {
           NS_WARNING("HTMLEditor::SetInlinePropertyOnTextNode() failed");
@@ -1171,7 +1171,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   if (!atStartOfNextNode.IsInContentNode() ||
       !HTMLEditUtils::IsContainerNode(
-          *atStartOfNextNode.ContainerAsContent())) {
+          *atStartOfNextNode.ContainerAs<nsIContent>())) {
     
     brElement = HTMLBRElement::FromNode(atStartOfNextNode.GetContainer());
     if (!atStartOfNextNode.GetContainerParentAs<nsIContent>()) {
@@ -2261,21 +2261,21 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
         AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
         if (startOfRange.GetContainer() == endOfRange.GetContainer() &&
             startOfRange.IsInTextNode()) {
-          if (!EditorUtils::IsEditableContent(*startOfRange.ContainerAsText(),
+          if (!EditorUtils::IsEditableContent(*startOfRange.ContainerAs<Text>(),
                                               EditorType::HTML)) {
             continue;
           }
-          arrayOfContents.AppendElement(*startOfRange.ContainerAsText());
+          arrayOfContents.AppendElement(*startOfRange.ContainerAs<Text>());
         } else if (startOfRange.IsInTextNode() && endOfRange.IsInTextNode() &&
                    startOfRange.GetContainer()->GetNextSibling() ==
                        endOfRange.GetContainer()) {
-          if (EditorUtils::IsEditableContent(*startOfRange.ContainerAsText(),
+          if (EditorUtils::IsEditableContent(*startOfRange.ContainerAs<Text>(),
                                              EditorType::HTML)) {
-            arrayOfContents.AppendElement(*startOfRange.ContainerAsText());
+            arrayOfContents.AppendElement(*startOfRange.ContainerAs<Text>());
           }
-          if (EditorUtils::IsEditableContent(*endOfRange.ContainerAsText(),
+          if (EditorUtils::IsEditableContent(*endOfRange.ContainerAs<Text>(),
                                              EditorType::HTML)) {
-            arrayOfContents.AppendElement(*endOfRange.ContainerAsText());
+            arrayOfContents.AppendElement(*endOfRange.ContainerAs<Text>());
           }
           if (arrayOfContents.IsEmpty()) {
             continue;
@@ -2284,9 +2284,9 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
           
           if (startOfRange.IsInTextNode() &&
               !startOfRange.IsStartOfContainer() &&
-              EditorUtils::IsEditableContent(*startOfRange.ContainerAsText(),
+              EditorUtils::IsEditableContent(*startOfRange.ContainerAs<Text>(),
                                              EditorType::HTML)) {
-            arrayOfContents.AppendElement(*startOfRange.ContainerAsText());
+            arrayOfContents.AppendElement(*startOfRange.ContainerAs<Text>());
           }
           
           ContentSubtreeIterator subtreeIter;
@@ -2306,9 +2306,9 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
           
           if (startOfRange.GetContainer() != endOfRange.GetContainer() &&
               endOfRange.IsInTextNode() && !endOfRange.IsEndOfContainer() &&
-              EditorUtils::IsEditableContent(*endOfRange.ContainerAsText(),
+              EditorUtils::IsEditableContent(*endOfRange.ContainerAs<Text>(),
                                              EditorType::HTML)) {
-            arrayOfContents.AppendElement(*endOfRange.ContainerAsText());
+            arrayOfContents.AppendElement(*endOfRange.ContainerAs<Text>());
           }
         }
 

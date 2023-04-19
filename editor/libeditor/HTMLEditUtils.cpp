@@ -702,7 +702,7 @@ bool HTMLEditUtils::ShouldInsertLinefeedCharacter(
   
   Element* closestEditableBlockElement =
       HTMLEditUtils::GetInclusiveAncestorElement(
-          *aPointToInsert.ContainerAsContent(),
+          *aPointToInsert.ContainerAs<nsIContent>(),
           HTMLEditUtils::ClosestEditableBlockElement);
 
   
@@ -712,7 +712,7 @@ bool HTMLEditUtils::ShouldInsertLinefeedCharacter(
           closestEditableBlockElement == &aEditingHost) &&
          HTMLEditUtils::IsDisplayOutsideInline(aEditingHost) &&
          EditorUtils::IsNewLinePreformatted(
-             *aPointToInsert.ContainerAsContent());
+             *aPointToInsert.ContainerAs<nsIContent>());
 }
 
 
@@ -1085,7 +1085,8 @@ nsIContent* HTMLEditUtils::GetPreviousContent(
   if (aPoint.IsStartOfContainer() || aPoint.IsInTextNode()) {
     if (aOptions.contains(WalkTreeOption::StopAtBlockBoundary) &&
         aPoint.IsInContentNode() &&
-        HTMLEditUtils::IsBlockElement(*aPoint.ContainerAsContent())) {
+        HTMLEditUtils::IsBlockElement(
+            *aPoint.template ContainerAs<nsIContent>())) {
       
       return nullptr;
     }
@@ -1176,7 +1177,8 @@ nsIContent* HTMLEditUtils::GetNextContent(
   
   if (aOptions.contains(WalkTreeOption::StopAtBlockBoundary) &&
       point.IsInContentNode() &&
-      HTMLEditUtils::IsBlockElement(*point.ContainerAsContent())) {
+      HTMLEditUtils::IsBlockElement(
+          *point.template ContainerAs<nsIContent>())) {
     
     return nullptr;
   }
