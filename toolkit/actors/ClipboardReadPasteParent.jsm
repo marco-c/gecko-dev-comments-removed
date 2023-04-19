@@ -3,16 +3,16 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ClipboardReadTextPasteParent"];
+var EXPORTED_SYMBOLS = ["ClipboardReadPasteParent"];
 
 const kPasteMenuItemClickedEventType = "PasteMenuItemClicked";
 const kPasteMenupopupHidingEventType = "PasteMenupopupHiding";
 
-const kMenuPopupId = "clipboardReadTextPasteMenuPopup";
+const kMenuPopupId = "clipboardReadPasteMenuPopup";
 
 
 
-class ClipboardReadTextPasteParent extends JSWindowActorParent {
+class ClipboardReadPasteParent extends JSWindowActorParent {
   constructor() {
     super();
 
@@ -25,7 +25,7 @@ class ClipboardReadTextPasteParent extends JSWindowActorParent {
     switch (aEvent.type) {
       case kPasteMenuItemClickedEventType: {
         this._pasteMenuItemClicked = true;
-        this.sendAsyncMessage("ClipboardReadTextPaste:PasteMenuItemClicked");
+        this.sendAsyncMessage("ClipboardReadPaste:PasteMenuItemClicked");
         break;
       }
       case kPasteMenupopupHidingEventType: {
@@ -38,9 +38,7 @@ class ClipboardReadTextPasteParent extends JSWindowActorParent {
           
           this._pasteMenuItemClicked = false;
         } else {
-          this.sendAsyncMessage(
-            "ClipboardReadTextPaste:PasteMenuItemDismissed"
-          );
+          this.sendAsyncMessage("ClipboardReadPaste:PasteMenuItemDismissed");
         }
         break;
       }
@@ -49,7 +47,7 @@ class ClipboardReadTextPasteParent extends JSWindowActorParent {
 
   
   receiveMessage(value) {
-    if (value.name == "ClipboardReadTextPaste:ShowMenupopup") {
+    if (value.name == "ClipboardReadPaste:ShowMenupopup") {
       if (!this._menupopup) {
         this._menupopup = this._getMenupopup();
       }
@@ -99,7 +97,7 @@ class ClipboardReadTextPasteParent extends JSWindowActorParent {
 
   _createMenupopup(aChromeDoc) {
     let menuitem = aChromeDoc.createXULElement("menuitem");
-    menuitem.id = "clipboardReadTextPasteMenuItem";
+    menuitem.id = "clipboardReadPasteMenuItem";
     menuitem.setAttribute("data-l10n-id", "text-action-paste");
     menuitem.setAttribute(
       "oncommand",

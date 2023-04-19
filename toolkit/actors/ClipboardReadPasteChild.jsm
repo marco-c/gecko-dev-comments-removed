@@ -3,35 +3,35 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ClipboardReadTextPasteChild"];
+var EXPORTED_SYMBOLS = ["ClipboardReadPasteChild"];
 
 
 
 
 
 
-class ClipboardReadTextPasteChild extends JSWindowActorChild {
+class ClipboardReadPasteChild extends JSWindowActorChild {
   constructor() {
     super();
   }
 
   
   handleEvent(aEvent) {
-    if (aEvent.type == "MozClipboardReadTextPaste" && aEvent.isTrusted) {
-      this.sendAsyncMessage("ClipboardReadTextPaste:ShowMenupopup", {});
+    if (aEvent.type == "MozClipboardReadPaste" && aEvent.isTrusted) {
+      this.sendAsyncMessage("ClipboardReadPaste:ShowMenupopup", {});
     }
   }
 
   
   receiveMessage(value) {
     switch (value.name) {
-      case "ClipboardReadTextPaste:PasteMenuItemClicked": {
+      case "ClipboardReadPaste:PasteMenuItemClicked": {
         this.contentWindow.navigator.clipboard.onUserReactedToPasteMenuPopup(
           true
         );
         break;
       }
-      case "ClipboardReadTextPaste:PasteMenuItemDismissed": {
+      case "ClipboardReadPaste:PasteMenuItemDismissed": {
         this.contentWindow.navigator.clipboard.onUserReactedToPasteMenuPopup(
           false
         );
