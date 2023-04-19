@@ -438,6 +438,7 @@ class nsWindow final : public nsBaseWidget {
   } WindowCompositorState;
 
   
+  void ResumeCompositorImpl();
   void ResumeCompositorFlickering();
   void ResumeCompositorFromCompositorThread();
   void PauseCompositorFlickering();
