@@ -720,7 +720,7 @@ bool BlockReflowState::FlowAndPlaceFloat(nsIFrame* aFloat) {
 
   
   
-  mBCoord = std::max(FloatManager()->GetLowestFloatTop(), mBCoord);
+  mBCoord = std::max(FloatManager()->LowestFloatBStart(), mBCoord);
 
   
   

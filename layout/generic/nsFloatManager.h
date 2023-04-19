@@ -306,7 +306,7 @@ class nsFloatManager {
 
 
 
-  nscoord GetLowestFloatTop() const;
+  nscoord LowestFloatBStart() const;
 
   
 
