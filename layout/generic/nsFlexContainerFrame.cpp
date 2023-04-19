@@ -3647,10 +3647,9 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
   if (mPackingSpaceRemaining != 0) {
     if (mAlignContent.primary == StyleAlignFlags::BASELINE ||
         mAlignContent.primary == StyleAlignFlags::LAST_BASELINE) {
-      NS_WARNING(
-          "NYI: "
-          "align-items/align-self:left/right/self-start/self-end/baseline/"
-          "last baseline");
+      
+      
+      
     } else if (mAlignContent.primary == StyleAlignFlags::FLEX_START) {
       
     } else if (mAlignContent.primary == StyleAlignFlags::FLEX_END) {
