@@ -4154,18 +4154,13 @@ EditActionResult HTMLEditor::IndentAsSubAction(const Element& aEditingHost) {
   return result.SetResult(rv);
 }
 
-
-nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
-                                     const EditorDOMPoint& aCurPoint,
-                                     nsIContent& aContent) {
-  MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(aCurPoint.GetContainer()),
-             "unexpected container");
+Result<EditorDOMPoint, nsresult> HTMLEditor::IndentListChildWithTransaction(
+    RefPtr<Element>* aSubListElement, const EditorDOMPoint& aPointInListElement,
+    nsIContent& aContentMovingToSubList, const Element& aEditingHost) {
+  MOZ_ASSERT(
+      HTMLEditUtils::IsAnyListElement(aPointInListElement.GetContainer()),
+      "unexpected container");
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
-
-  RefPtr<Element> editingHost = ComputeEditingHost();
-  if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
-    return NS_ERROR_FAILURE;
-  }
 
   
 
@@ -4173,82 +4168,63 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   
   if (nsIContent* nextEditableSibling = HTMLEditUtils::GetNextSibling(
-          aContent, {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
-                     WalkTreeOption::IgnoreNonEditableNode})) {
+          aContentMovingToSubList, {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
+                                    WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsAnyListElement(nextEditableSibling) &&
-        aCurPoint.GetContainer()->NodeInfo()->NameAtom() ==
+        aPointInListElement.GetContainer()->NodeInfo()->NameAtom() ==
             nextEditableSibling->NodeInfo()->NameAtom() &&
-        aCurPoint.GetContainer()->NodeInfo()->NamespaceID() ==
+        aPointInListElement.GetContainer()->NodeInfo()->NamespaceID() ==
             nextEditableSibling->NodeInfo()->NamespaceID()) {
-      const MoveNodeResult moveListElementResult = MoveNodeWithTransaction(
-          aContent, EditorDOMPoint(nextEditableSibling, 0u));
+      MoveNodeResult moveListElementResult = MoveNodeWithTransaction(
+          aContentMovingToSubList, EditorDOMPoint(nextEditableSibling, 0u));
       if (moveListElementResult.isErr()) {
         NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
-        return moveListElementResult.unwrapErr();
+        return Err(moveListElementResult.unwrapErr());
       }
-      nsresult rv = moveListElementResult.SuggestCaretPointTo(
-          *this, {SuggestCaret::OnlyIfHasSuggestion,
-                  SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                  SuggestCaret::AndIgnoreTrivialError});
-      if (NS_FAILED(rv)) {
-        NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
-        return rv;
-      }
-      NS_WARNING_ASSERTION(
-          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-          "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
-      return NS_OK;
+      return moveListElementResult.UnwrapCaretPoint();
     }
   }
 
-  
   
   
   if (nsCOMPtr<nsIContent> previousEditableSibling =
           HTMLEditUtils::GetPreviousSibling(
-              aContent, {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
-                         WalkTreeOption::IgnoreNonEditableNode})) {
+              aContentMovingToSubList,
+              {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
+               WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsAnyListElement(previousEditableSibling) &&
-        aCurPoint.GetContainer()->NodeInfo()->NameAtom() ==
+        aPointInListElement.GetContainer()->NodeInfo()->NameAtom() ==
             previousEditableSibling->NodeInfo()->NameAtom() &&
-        aCurPoint.GetContainer()->NodeInfo()->NamespaceID() ==
+        aPointInListElement.GetContainer()->NodeInfo()->NamespaceID() ==
             previousEditableSibling->NodeInfo()->NamespaceID()) {
-      const MoveNodeResult moveListElementResult =
-          MoveNodeToEndWithTransaction(aContent, *previousEditableSibling);
+      MoveNodeResult moveListElementResult = MoveNodeToEndWithTransaction(
+          aContentMovingToSubList, *previousEditableSibling);
       if (moveListElementResult.isErr()) {
         NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-        return moveListElementResult.unwrapErr();
+        return Err(moveListElementResult.unwrapErr());
       }
-      nsresult rv = moveListElementResult.SuggestCaretPointTo(
-          *this, {SuggestCaret::OnlyIfHasSuggestion,
-                  SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                  SuggestCaret::AndIgnoreTrivialError});
-      if (NS_FAILED(rv)) {
-        NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
-        return rv;
-      }
-      NS_WARNING_ASSERTION(
-          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-          "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
-      return NS_OK;
+      return moveListElementResult.UnwrapCaretPoint();
     }
   }
 
   
   
+  EditorDOMPoint pointToPutCaret;
   nsIContent* previousEditableSibling =
-      *aCurList ? HTMLEditUtils::GetPreviousSibling(
-                      aContent, {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
-                                 WalkTreeOption::IgnoreNonEditableNode})
-                : nullptr;
-  if (!*aCurList ||
-      (previousEditableSibling && previousEditableSibling != *aCurList)) {
-    nsAtom* containerName = aCurPoint.GetContainer()->NodeInfo()->NameAtom();
+      *aSubListElement ? HTMLEditUtils::GetPreviousSibling(
+                             aContentMovingToSubList,
+                             {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
+                              WalkTreeOption::IgnoreNonEditableNode})
+                       : nullptr;
+  if (!*aSubListElement || (previousEditableSibling &&
+                            previousEditableSibling != *aSubListElement)) {
+    nsAtom* containerName =
+        aPointInListElement.GetContainer()->NodeInfo()->NameAtom();
     
     CreateElementResult createNewListElementResult =
         InsertElementWithSplittingAncestorsWithTransaction(
-            MOZ_KnownLive(*containerName), aCurPoint,
-            BRElementNextToSplitPoint::Keep, *editingHost);
+            MOZ_KnownLive(*containerName), aPointInListElement,
+            BRElementNextToSplitPoint::Keep, aEditingHost);
     if (createNewListElementResult.isErr()) {
       NS_WARNING(
           nsPrintfCString(
@@ -4256,42 +4232,25 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
               "%s) failed",
               nsAtomCString(containerName).get())
               .get());
-      return createNewListElementResult.unwrapErr();
-    }
-    nsresult rv = createNewListElementResult.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("CreateElementResult::SuggestCaretPointTo() failed");
-      return rv;
+      return Err(createNewListElementResult.unwrapErr());
     }
     MOZ_ASSERT(createNewListElementResult.GetNewNode());
-    
-    
-    TopLevelEditSubActionDataRef().mNewBlockElement =
-        createNewListElementResult.GetNewNode();
-    *aCurList = createNewListElementResult.UnwrapNewNode();
+    pointToPutCaret = createNewListElementResult.UnwrapCaretPoint();
+    *aSubListElement = createNewListElementResult.UnwrapNewNode();
   }
+
   
-  RefPtr<nsINode> container = *aCurList;
-  const MoveNodeResult moveNodeResult =
-      MoveNodeToEndWithTransaction(aContent, *container);
+  const RefPtr<Element> subListElement = *aSubListElement;
+  MoveNodeResult moveNodeResult =
+      MoveNodeToEndWithTransaction(aContentMovingToSubList, *subListElement);
   if (moveNodeResult.isErr()) {
     NS_WARNING("HTMLEditor::MoveNodeToEndWithTransaction() failed");
-    return moveNodeResult.unwrapErr();
+    return Err(moveNodeResult.unwrapErr());
   }
-  nsresult rv = moveNodeResult.SuggestCaretPointTo(
-      *this, {SuggestCaret::OnlyIfHasSuggestion,
-              SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-              SuggestCaret::AndIgnoreTrivialError});
-  if (NS_FAILED(rv)) {
-    NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
-    return rv;
+  if (moveNodeResult.HasCaretPointSuggestion()) {
+    pointToPutCaret = moveNodeResult.UnwrapCaretPoint();
   }
-  NS_WARNING_ASSERTION(
-      rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-      "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
-  return NS_OK;
+  return pointToPutCaret;
 }
 
 EditActionResult HTMLEditor::HandleIndentAtSelection(
@@ -4551,13 +4510,31 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal(
     }
 
     if (HTMLEditUtils::IsAnyListElement(atContent.GetContainer())) {
+      const RefPtr<Element> listElement = curList;
       
       
-      nsresult rv =
-          IndentListChild(&curList, atContent, MOZ_KnownLive(content));
-      if (NS_FAILED(rv)) {
-        NS_WARNING("HTMLEditor::IndentListChild() failed");
-        return rv;
+      Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+          IndentListChildWithTransaction(&curList, atContent,
+                                         MOZ_KnownLive(content), aEditingHost);
+      if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+        NS_WARNING("HTMLEditor::IndentListChildWithTransaction() failed");
+        return pointToPutCaretOrError.unwrapErr();
+      }
+      if (curList != listElement) {
+        
+        
+        TopLevelEditSubActionDataRef().mNewBlockElement = curList;
+      }
+      if (AllowsTransactionsToChangeSelection() &&
+          pointToPutCaretOrError.inspect().IsSet()) {
+        nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.inspect());
+        if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+          NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rv),
+            "EditorBase::CollapseSelectionTo() failed, but ignored");
       }
       continue;
     }
@@ -4836,13 +4813,31 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelectionInternal(
     }
 
     if (HTMLEditUtils::IsAnyListElement(atContent.GetContainer())) {
+      const RefPtr<Element> listElement = curList;
       
       
-      nsresult rv =
-          IndentListChild(&curList, atContent, MOZ_KnownLive(content));
-      if (NS_FAILED(rv)) {
-        NS_WARNING("HTMLEditor::IndentListChild() failed");
-        return rv;
+      Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
+          IndentListChildWithTransaction(&curList, atContent,
+                                         MOZ_KnownLive(content), aEditingHost);
+      if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+        NS_WARNING("HTMLEditor::IndentListChildWithTransaction() failed");
+        return pointToPutCaretOrError.unwrapErr();
+      }
+      if (listElement != curList) {
+        
+        
+        TopLevelEditSubActionDataRef().mNewBlockElement = curList;
+      }
+      if (AllowsTransactionsToChangeSelection() &&
+          pointToPutCaretOrError.inspect().IsSet()) {
+        nsresult rv = CollapseSelectionTo(pointToPutCaretOrError.inspect());
+        if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+          NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rv),
+            "EditorBase::CollapseSelectionTo() failed, but ignored");
       }
       
       curQuote = nullptr;
