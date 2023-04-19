@@ -1011,7 +1011,9 @@ void Statistics::sendGCTelemetry() {
   
   
   
-  runtime->metrics().GC_IS_COMPARTMENTAL(!runtime->gc.fullGCRequested);
+  runtime->metrics().GC_IS_COMPARTMENTAL(!gc->fullGCRequested);
+  runtime->metrics().GC_ZONE_COUNT(zoneStats.zoneCount);
+  runtime->metrics().GC_ZONES_COLLECTED(zoneStats.collectedZoneCount);
   TimeDuration prepareTotal = SumPhase(PhaseKind::PREPARE, phaseTimes);
   TimeDuration markTotal = SumPhase(PhaseKind::MARK, phaseTimes);
   TimeDuration markRootsTotal = SumPhase(PhaseKind::MARK_ROOTS, phaseTimes);
