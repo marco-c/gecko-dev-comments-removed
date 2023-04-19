@@ -6438,13 +6438,14 @@ static bool CompileToStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
   }
 
   
+  GeneralErrorContext ec(cx);
   Rooted<frontend::CompilationInput> input(cx,
                                            frontend::CompilationInput(options));
   UniquePtr<frontend::ExtensibleCompilationStencil> stencil;
   if (isModule) {
-    stencil = frontend::ParseModuleToExtensibleStencil(cx, input.get(), srcBuf);
+    stencil =
+        frontend::ParseModuleToExtensibleStencil(cx, &ec, input.get(), srcBuf);
   } else {
-    GeneralErrorContext ec(cx);
     stencil = frontend::CompileGlobalScriptToExtensibleStencil(
         cx, &ec, input.get(), srcBuf, ScopeKind::Global);
   }
