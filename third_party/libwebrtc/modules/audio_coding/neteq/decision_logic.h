@@ -70,16 +70,19 @@ class DecisionLogic : public NetEqController {
   
   void AddSampleMemory(int32_t value) override { sample_memory_ += value; }
 
-  int TargetLevelMs() const override { return delay_manager_->TargetDelayMs(); }
+  int TargetLevelMs() const override {
+    return ((delay_manager_->TargetLevel() * packet_length_samples_) >> 8) /
+           rtc::CheckedDivExact(sample_rate_, 1000);
+  }
 
-  absl::optional<int> PacketArrived(bool is_cng_or_dtmf,
+  absl::optional<int> PacketArrived(bool last_cng_or_dtmf,
                                     size_t packet_length_samples,
                                     bool should_update_stats,
                                     uint16_t main_sequence_number,
                                     uint32_t main_timestamp,
                                     int fs_hz) override;
 
-  void RegisterEmptyPacket() override {}
+  void RegisterEmptyPacket() override { delay_manager_->RegisterEmptyPacket(); }
 
   bool SetMaximumDelay(int delay_ms) override {
     return delay_manager_->SetMaximumDelay(delay_ms);
@@ -118,7 +121,7 @@ class DecisionLogic : public NetEqController {
 
   
   
-  void FilterBufferLevel(size_t buffer_size_samples);
+  void FilterBufferLevel(size_t buffer_size_packets);
 
   
   
@@ -183,7 +186,6 @@ class DecisionLogic : public NetEqController {
   std::unique_ptr<TickTimer::Countdown> timescale_countdown_;
   int num_consecutive_expands_ = 0;
   int time_stretched_cn_samples_ = 0;
-  bool last_pack_cng_or_dtmf_ = true;
   FieldTrialParameter<bool> estimate_dtx_delay_;
   FieldTrialParameter<bool> time_stretch_cn_;
   FieldTrialConstrained<int> target_level_window_ms_;

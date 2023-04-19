@@ -25,9 +25,10 @@ namespace webrtc {
 
 class DelayManager {
  public:
-  DelayManager(int max_packets_in_buffer,
+  DelayManager(size_t max_packets_in_buffer,
                int base_minimum_delay_ms,
                int histogram_quantile,
+               bool enable_rtx_handling,
                const TickTimer* tick_timer,
                std::unique_ptr<Histogram> histogram);
 
@@ -36,8 +37,9 @@ class DelayManager {
   
   
   
-  static std::unique_ptr<DelayManager> Create(int max_packets_in_buffer,
+  static std::unique_ptr<DelayManager> Create(size_t max_packets_in_buffer,
                                               int base_minimum_delay_ms,
+                                              bool enable_rtx_handling,
                                               const TickTimer* tick_timer);
 
   virtual ~DelayManager();
@@ -47,18 +49,46 @@ class DelayManager {
   
   
   
-  virtual absl::optional<int> Update(uint32_t timestamp,
-                                     int sample_rate_hz,
-                                     bool reset = false);
+  virtual absl::optional<int> Update(uint16_t sequence_number,
+                                     uint32_t timestamp,
+                                     int sample_rate_hz);
+
+  
+  
+  
+  
+  virtual int CalculateTargetLevel();
+
+  
+  
+  
+  virtual int SetPacketAudioLength(int length_ms);
 
   
   virtual void Reset();
 
   
-  virtual int TargetDelayMs() const;
+  virtual void ResetPacketIatCount();
 
   
-  virtual int SetPacketAudioLength(int length_ms);
+  
+  
+  virtual void BufferLimits(int* lower_limit, int* higher_limit) const;
+  virtual void BufferLimits(int target_level,
+                            int* lower_limit,
+                            int* higher_limit) const;
+
+  
+  virtual int TargetLevel() const;
+
+  
+  
+  virtual void LastDecodedWasCngOrDtmf(bool it_was);
+
+  
+  
+  
+  virtual void RegisterEmptyPacket();
 
   
   
@@ -66,11 +96,16 @@ class DelayManager {
   virtual bool SetMaximumDelay(int delay_ms);
   virtual bool SetBaseMinimumDelay(int delay_ms);
   virtual int GetBaseMinimumDelay() const;
+  virtual int base_target_level() const;
+  virtual int last_pack_cng_or_dtmf() const;
+  virtual void set_last_pack_cng_or_dtmf(int value);
 
   
   int effective_minimum_delay_ms_for_test() const {
     return effective_minimum_delay_ms_;
   }
+
+  
   int histogram_quantile() const { return histogram_quantile_; }
   Histogram* histogram() const { return histogram_.get(); }
 
@@ -78,6 +113,9 @@ class DelayManager {
   
   
   int MinimumDelayUpperBound() const;
+
+  
+  int MaxBufferTimeQ75() const;
 
   
   void UpdateDelayHistory(int iat_delay_ms,
@@ -94,27 +132,41 @@ class DelayManager {
 
   
   
+  void LimitTargetLevel();
+
+  
+  
   
   bool IsValidMinimumDelay(int delay_ms) const;
 
   bool IsValidBaseMinimumDelay(int delay_ms) const;
 
   bool first_packet_received_;
-  
-  const int max_packets_in_buffer_;
+  const size_t max_packets_in_buffer_;  
   std::unique_ptr<Histogram> histogram_;
   const int histogram_quantile_;
   const TickTimer* tick_timer_;
   int base_minimum_delay_ms_;
-  int effective_minimum_delay_ms_;  
-  int minimum_delay_ms_;            
-  int maximum_delay_ms_;            
+  
+  
+  int effective_minimum_delay_ms_;
 
-  int packet_len_ms_ = 0;
-  std::unique_ptr<TickTimer::Stopwatch>
-      packet_iat_stopwatch_;  
-  int target_level_ms_;       
-  uint32_t last_timestamp_;   
+  
+  std::unique_ptr<TickTimer::Stopwatch> packet_iat_stopwatch_;
+  int base_target_level_;  
+                           
+  
+  
+  int target_level_;         
+                             
+  int packet_len_ms_;        
+  uint16_t last_seq_no_;     
+  uint32_t last_timestamp_;  
+  int minimum_delay_ms_;     
+  int maximum_delay_ms_;     
+  int last_pack_cng_or_dtmf_;
+  const bool enable_rtx_handling_;
+  int num_reordered_packets_ = 0;  
 
   struct PacketDelay {
     int iat_delay_ms;
