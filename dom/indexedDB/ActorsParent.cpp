@@ -34,7 +34,6 @@
 #include "IndexedDatabaseManager.h"
 #include "KeyPath.h"
 #include "MainThreadUtils.h"
-#include "PermissionRequestBase.h"
 #include "ProfilerHelpers.h"
 #include "ReportInternalError.h"
 #include "SafeRefPtr.h"
@@ -3108,15 +3107,6 @@ class FactoryOp
 
     
     
-    PermissionChallenge,
-
-    
-    
-    
-    PermissionRetry,
-
-    
-    
     
     FinishOpen,
 
@@ -3236,12 +3226,6 @@ class FactoryOp
 
   nsresult Open();
 
-  nsresult ChallengePermission();
-
-  void PermissionRetry();
-
-  nsresult RetryCheckPermission();
-
   nsresult DirectoryOpen();
 
   nsresult SendToIOThread();
@@ -3287,13 +3271,11 @@ class FactoryOp
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  mozilla::ipc::IPCResult RecvPermissionRetry() final;
-
   virtual void SendBlockedNotification() = 0;
 
  private:
-  mozilla::Result<PermissionRequestBase::PermissionValue, nsresult>
-  CheckPermission(ContentParent* aContentParent);
+  mozilla::Result<PermissionValue, nsresult> CheckPermission(
+      ContentParent* aContentParent);
 
   static bool CheckAtLeastOneAppHasPermission(
       ContentParent* aContentParent, const nsACString& aPermissionString);
@@ -15126,14 +15108,6 @@ void FactoryOp::StringifyState(nsACString& aResult) const {
       aResult.AppendLiteral("Initial");
       return;
 
-    case State::PermissionChallenge:
-      aResult.AppendLiteral("PermissionChallenge");
-      return;
-
-    case State::PermissionRetry:
-      aResult.AppendLiteral("PermissionRetry");
-      return;
-
     case State::FinishOpen:
       aResult.AppendLiteral("FinishOpen");
       return;
@@ -15210,11 +15184,10 @@ nsresult FactoryOp::Open() {
 
   QM_TRY_INSPECT(const auto& permission, CheckPermission(contentParent));
 
-  MOZ_ASSERT(permission == PermissionRequestBase::kPermissionAllowed ||
-             permission == PermissionRequestBase::kPermissionDenied ||
-             permission == PermissionRequestBase::kPermissionPrompt);
+  MOZ_ASSERT(permission == PermissionValue::kPermissionAllowed ||
+             permission == PermissionValue::kPermissionDenied);
 
-  if (permission == PermissionRequestBase::kPermissionDenied) {
+  if (permission == PermissionValue::kPermissionDenied) {
     return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
   }
 
@@ -15242,13 +15215,7 @@ nsresult FactoryOp::Open() {
   mDatabaseId.Append('*');
   mDatabaseId.Append(NS_ConvertUTF16toUTF8(metadata.name()));
 
-  if (permission == PermissionRequestBase::kPermissionPrompt) {
-    mState = State::PermissionChallenge;
-    MOZ_ALWAYS_SUCCEEDS(mOwningEventTarget->Dispatch(this, NS_DISPATCH_NORMAL));
-    return NS_OK;
-  }
-
-  MOZ_ASSERT(permission == PermissionRequestBase::kPermissionAllowed);
+  MOZ_ASSERT(permission == PermissionValue::kPermissionAllowed);
 
   if (mInPrivateBrowsing) {
     const auto lockedPrivateBrowsingInfoHashtable =
@@ -15268,69 +15235,6 @@ nsresult FactoryOp::Open() {
       return keyOrErr.unwrap();
     });
   }
-
-  mState = State::FinishOpen;
-  MOZ_ALWAYS_SUCCEEDS(mOwningEventTarget->Dispatch(this, NS_DISPATCH_NORMAL));
-
-  return NS_OK;
-}
-
-nsresult FactoryOp::ChallengePermission() {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(mState == State::PermissionChallenge);
-
-  const PrincipalInfo& principalInfo = mCommonParams.principalInfo();
-  MOZ_ASSERT(principalInfo.type() == PrincipalInfo::TContentPrincipalInfo);
-
-  if (NS_WARN_IF(!SendPermissionChallenge(principalInfo))) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mWaitingForPermissionRetry = true;
-
-  return NS_OK;
-}
-
-void FactoryOp::PermissionRetry() {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(mState == State::PermissionChallenge);
-
-  mContentParent = BackgroundParent::GetContentParent(Manager()->Manager());
-
-  mState = State::PermissionRetry;
-
-  mWaitingForPermissionRetry = false;
-
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(this));
-}
-
-nsresult FactoryOp::RetryCheckPermission() {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mState == State::PermissionRetry);
-  MOZ_ASSERT(mCommonParams.principalInfo().type() ==
-             PrincipalInfo::TContentPrincipalInfo);
-
-  
-  const RefPtr<ContentParent> contentParent = std::move(mContentParent);
-
-  if (NS_WARN_IF(QuotaClient::IsShuttingDownOnNonBackgroundThread()) ||
-      !OperationMayProceed()) {
-    IDB_REPORT_INTERNAL_ERR();
-    return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
-  }
-
-  QM_TRY_INSPECT(const auto& permission, CheckPermission(contentParent));
-
-  MOZ_ASSERT(permission == PermissionRequestBase::kPermissionAllowed ||
-             permission == PermissionRequestBase::kPermissionDenied ||
-             permission == PermissionRequestBase::kPermissionPrompt);
-
-  if (permission == PermissionRequestBase::kPermissionDenied ||
-      permission == PermissionRequestBase::kPermissionPrompt) {
-    return NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR;
-  }
-
-  MOZ_ASSERT(permission == PermissionRequestBase::kPermissionAllowed);
 
   mState = State::FinishOpen;
   MOZ_ALWAYS_SUCCEEDS(mOwningEventTarget->Dispatch(this, NS_DISPATCH_NORMAL));
@@ -15456,10 +15360,10 @@ void FactoryOp::FinishSendResults() {
   mFactory = nullptr;
 }
 
-Result<PermissionRequestBase::PermissionValue, nsresult>
-FactoryOp::CheckPermission(ContentParent* aContentParent) {
+Result<PermissionValue, nsresult> FactoryOp::CheckPermission(
+    ContentParent* aContentParent) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mState == State::Initial || mState == State::PermissionRetry);
+  MOZ_ASSERT(mState == State::Initial);
 
   const PrincipalInfo& principalInfo = mCommonParams.principalInfo();
   if (principalInfo.type() != PrincipalInfo::TSystemPrincipalInfo) {
@@ -15545,7 +15449,7 @@ FactoryOp::CheckPermission(ContentParent* aContentParent) {
       mEnforcingQuota = false;
     }
 
-    return PermissionRequestBase::kPermissionAllowed;
+    return PermissionValue::kPermissionAllowed;
   }
 
   MOZ_ASSERT(principalInfo.type() == PrincipalInfo::TContentPrincipalInfo);
@@ -15556,26 +15460,21 @@ FactoryOp::CheckPermission(ContentParent* aContentParent) {
   QM_TRY_UNWRAP(auto principalMetadata,
                 QuotaManager::GetInfoFromPrincipal(principal));
 
-  QM_TRY_INSPECT(const auto& permission,
-                 ([persistenceType, &origin = principalMetadata.mOrigin,
-                   &principal = *principal]()
-                      -> mozilla::Result<PermissionRequestBase::PermissionValue,
-                                         nsresult> {
-                   if (persistenceType == PERSISTENCE_TYPE_PERSISTENT) {
-                     if (QuotaManager::IsOriginInternal(origin)) {
-                       return PermissionRequestBase::kPermissionAllowed;
-                     }
-#ifdef IDB_MOBILE
-                     return Err(NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR);
-#else
-                     return PermissionRequestBase::GetCurrentPermission(
-                         principal);
-#endif
-                   }
-                   return PermissionRequestBase::kPermissionAllowed;
-                 })());
+  QM_TRY_INSPECT(
+      const auto& permission,
+      ([persistenceType, &origin = principalMetadata.mOrigin,
+        &principal =
+            *principal]() -> mozilla::Result<PermissionValue, nsresult> {
+        if (persistenceType == PERSISTENCE_TYPE_PERSISTENT) {
+          if (QuotaManager::IsOriginInternal(origin)) {
+            return PermissionValue::kPermissionAllowed;
+          }
+          return Err(NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR);
+        }
+        return PermissionValue::kPermissionAllowed;
+      })());
 
-  if (permission != PermissionRequestBase::kPermissionDenied &&
+  if (permission != PermissionValue::kPermissionDenied &&
       State::Initial == mState) {
     mOriginMetadata = {std::move(principalMetadata), persistenceType};
 
@@ -15730,14 +15629,6 @@ FactoryOp::Run() {
       QM_TRY(MOZ_TO_RESULT(Open()), NS_OK, handleError);
       break;
 
-    case State::PermissionChallenge:
-      QM_TRY(MOZ_TO_RESULT(ChallengePermission()), NS_OK, handleError);
-      break;
-
-    case State::PermissionRetry:
-      QM_TRY(MOZ_TO_RESULT(RetryCheckPermission()), NS_OK, handleError);
-      break;
-
     case State::FinishOpen:
       QM_TRY(MOZ_TO_RESULT(FinishOpen()), NS_OK, handleError);
       break;
@@ -15812,32 +15703,6 @@ void FactoryOp::ActorDestroy(ActorDestroyReason aWhy) {
   AssertIsOnBackgroundThread();
 
   NoteActorDestroyed();
-
-  
-  
-  
-  
-  
-  
-  
-
-  if (mWaitingForPermissionRetry) {
-    PermissionRetry();
-  }
-
-  
-  
-  
-  
-}
-
-mozilla::ipc::IPCResult FactoryOp::RecvPermissionRetry() {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(!IsActorDestroyed());
-
-  PermissionRetry();
-
-  return IPC_OK();
 }
 
 OpenDatabaseOp::OpenDatabaseOp(SafeRefPtr<Factory> aFactory,
@@ -21473,13 +21338,6 @@ mozilla::ipc::IPCResult Utils::RecvGetFileReferences(
   }
 
   return IPC_OK();
-}
-
-void PermissionRequestHelper::OnPromptComplete(
-    PermissionValue aPermissionValue) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  mResolver(aPermissionValue);
 }
 
 #ifdef DEBUG

@@ -446,19 +446,6 @@ parent:
 
 
 
-
-
-
-
-
-
-    async IndexedDBPermissionRequest(nsIPrincipal aPrincipal) returns (uint32_t permission);
-
-    
-
-
-
-
     async RespondStartSwipeEvent(uint64_t aInputBlockId, bool aStartSwipe);
 
     
