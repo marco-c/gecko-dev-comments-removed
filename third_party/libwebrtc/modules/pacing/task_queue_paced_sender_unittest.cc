@@ -469,6 +469,7 @@ namespace test {
 
     
     
+    
     const TimeDelta kProbeTimeDelta = TimeDelta::Millis(2);
     const DataSize kProbeSize = kProbeRate * kProbeTimeDelta;
     const size_t kNumPacketsInProbe =
@@ -477,7 +478,7 @@ namespace test {
         packet_router,
         SendPacket(_, ::testing::Field(&PacedPacketInfo::probe_cluster_id,
                                        kProbeClusterId)))
-        .Times(kNumPacketsInProbe);
+        .Times(kNumPacketsInProbe + 1);
 
     pacer.EnqueuePackets(
         GeneratePackets(RtpPacketMediaType::kVideo, kNumPacketsInProbe));
@@ -546,7 +547,10 @@ namespace test {
     time_controller.AdvanceTime(kMinProbeDelta);
 
     
-    EXPECT_EQ(data_sent, kProbingRate * TimeDelta::Millis(1));
+    
+    
+    EXPECT_EQ(data_sent,
+              kProbingRate * TimeDelta::Millis(1) + DataSize::Bytes(1));
   }
 }  
 }  
