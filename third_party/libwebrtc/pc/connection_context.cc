@@ -125,6 +125,14 @@ ConnectionContext::ConnectionContext(
       worker_thread(), network_thread());
 
   channel_manager_->SetVideoRtxEnabled(true);
+  
+  
+  
+  
+  
+  signaling_thread_->SetDispatchWarningMs(100);
+  worker_thread_->SetDispatchWarningMs(30);
+  network_thread_->SetDispatchWarningMs(10);
 }
 
 ConnectionContext::~ConnectionContext() {

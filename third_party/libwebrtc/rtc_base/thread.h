@@ -291,6 +291,11 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   bool SetName(const std::string& name, const void* obj);
 
   
+  
+  
+  void SetDispatchWarningMs(int deadline);
+
+  
   bool Start();
 
   
@@ -525,6 +530,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   RecursiveCriticalSection* CritForTest() { return &crit_; }
 
  private:
+  static const int kSlowDispatchLoggingThreshold = 50;  
+
   class QueuedTaskHandler final : public MessageHandler {
    public:
     QueuedTaskHandler() {}
@@ -613,6 +620,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
       task_queue_registration_;
 
   friend class ThreadManager;
+
+  int dispatch_warning_ms_ RTC_GUARDED_BY(this) = kSlowDispatchLoggingThreshold;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Thread);
 };
