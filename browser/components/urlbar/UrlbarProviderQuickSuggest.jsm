@@ -844,8 +844,10 @@ class ProviderQuickSuggest extends UrlbarProvider {
     let instance = this.queryInstance;
 
     
+    
     if (!this._merinoSessionID) {
-      this._merinoSessionID = Services.uuid.generateUUID();
+      let uuid = Services.uuid.generateUUID().toString();
+      this._merinoSessionID = uuid.substring(1, uuid.length - 1);
       this._merinoSequenceNumber = 0;
       this._merinoSessionTimer?.cancel();
 
