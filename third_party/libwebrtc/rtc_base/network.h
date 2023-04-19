@@ -53,6 +53,11 @@ class Thread;
 
 const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
 
+namespace webrtc_network_internal {
+bool CompareNetworks(const std::unique_ptr<Network>& a,
+                     const std::unique_ptr<Network>& b);
+}  
+
 
 
 
