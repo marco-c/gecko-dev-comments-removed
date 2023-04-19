@@ -121,7 +121,7 @@ class ChannelSend : public ChannelSendInterface,
 
   
   void OnBitrateAllocation(BitrateAllocationUpdate update) override;
-  int GetBitrate() const override;
+  int GetTargetBitrate() const override;
 
   
   void ReceivedRTCPPacket(const uint8_t* data, size_t length) override;
@@ -264,9 +264,6 @@ class ChannelSend : public ChannelSendInterface,
   
   rtc::scoped_refptr<ChannelSendFrameTransformerDelegate>
       frame_transformer_delegate_ RTC_GUARDED_BY(encoder_queue_);
-
-  mutable Mutex bitrate_mutex_;
-  int configured_bitrate_bps_ RTC_GUARDED_BY(bitrate_mutex_) = 0;
 
   
   
@@ -646,18 +643,14 @@ void ChannelSend::OnBitrateAllocation(BitrateAllocationUpdate update) {
   
   
   
-  MutexLock lock(&bitrate_mutex_);
-
   CallEncoder([&](AudioEncoder* encoder) {
     encoder->OnReceivedUplinkAllocation(update);
   });
   retransmission_rate_limiter_->SetMaxRate(update.target_bitrate.bps());
-  configured_bitrate_bps_ = update.target_bitrate.bps();
 }
 
-int ChannelSend::GetBitrate() const {
-  MutexLock lock(&bitrate_mutex_);
-  return configured_bitrate_bps_;
+int ChannelSend::GetTargetBitrate() const {
+  return audio_coding_->GetTargetBitrate();
 }
 
 void ChannelSend::OnUplinkPacketLossRate(float packet_loss_rate) {

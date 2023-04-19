@@ -375,6 +375,8 @@ struct MediaSenderInfo {
   uint64_t retransmitted_packets_sent = 0;
   
   uint32_t nacks_rcvd = 0;
+  
+  double target_bitrate = 0.0;
   int packets_lost = 0;
   float fraction_lost = 0.0f;
   int64_t rtt_ms = 0;
