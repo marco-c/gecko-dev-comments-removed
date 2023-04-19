@@ -2471,27 +2471,10 @@ void ScrollFrameHelper::AsyncScrollCallback(ScrollFrameHelper* aInstance,
                                  aInstance->mAsyncScroll->TakeSnapTargetIds());
 }
 
-void ScrollFrameHelper::SetTransformingByAPZ(bool aTransforming) {
-  if (mTransformingByAPZ && !aTransforming) {
-    PostScrollEndEvent();
-  }
-  mTransformingByAPZ = aTransforming;
-  if (!mozilla::css::TextOverflow::HasClippedTextOverflow(mOuter) ||
-      mozilla::css::TextOverflow::HasBlockEllipsis(mScrolledFrame)) {
-    
-    
-    mOuter->SchedulePaint();
-  }
-}
-
 void ScrollFrameHelper::CompleteAsyncScroll(
     const nsRect& aRange, UniquePtr<ScrollSnapTargetIds> aSnapTargetIds,
     ScrollOrigin aOrigin) {
   SetLastSnapTargetIds(std::move(aSnapTargetIds));
-
-  bool isNotHandledByApz =
-      nsLayoutUtils::CanScrollOriginClobberApz(aOrigin) ||
-      ScrollAnimationState().contains(AnimationState::MainThread);
 
   
   RemoveObservers();
@@ -2503,17 +2486,7 @@ void ScrollFrameHelper::CompleteAsyncScroll(
   
   
   mDestination = GetScrollPosition();
-  
-  
-  
-  
-  
-  
-  
-  
-  if (isNotHandledByApz) {
-    PostScrollEndEvent();
-  }
+  PostScrollEndEvent();
 }
 
 bool ScrollFrameHelper::HasBgAttachmentLocal() const {
