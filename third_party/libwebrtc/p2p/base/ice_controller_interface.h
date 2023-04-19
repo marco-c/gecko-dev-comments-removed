@@ -87,7 +87,9 @@ class IceControllerInterface {
   
   struct PingResult {
     PingResult(const Connection* conn, int _recheck_delay_ms)
-        : connection(conn), recheck_delay_ms(_recheck_delay_ms) {}
+        : connection(conn ? absl::optional<const Connection*>(conn)
+                          : absl::nullopt),
+          recheck_delay_ms(_recheck_delay_ms) {}
 
     
     const absl::optional<const Connection*> connection;
