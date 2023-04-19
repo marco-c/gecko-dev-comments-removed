@@ -46,12 +46,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <map>
 #include <stack>
 #include <string>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/Vector.h"
 
 #include "LulCommonExt.h"
 #include "LulDwarfInt.h"
@@ -61,6 +61,7 @@
 
 namespace lul {
 
+using std::pair;
 using std::string;
 
 ByteReader::ByteReader(enum Endianness endian)
@@ -633,6 +634,134 @@ class CallFrameInfo::Rule final {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CallFrameInfo::RuleMapLowLevel {
+  using Entry = pair<int, Rule>;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Vector<Entry, 12> entries_;
+
+ public:
+  void clear() { entries_.clear(); }
+
+  RuleMapLowLevel() { clear(); }
+
+  RuleMapLowLevel& operator=(const RuleMapLowLevel& rhs) {
+    entries_.clear();
+    for (size_t i = 0; i < rhs.entries_.length(); i++) {
+      bool ok = entries_.append(rhs.entries_[i]);
+      MOZ_RELEASE_ASSERT(ok);
+    }
+    return *this;
+  }
+
+  void set(int reg, Rule rule) {
+    MOZ_ASSERT(rule.isVALID());
+    
+    size_t i = 0;
+    size_t nEnt = entries_.length();
+    while (i < nEnt && entries_[i].first < reg) {
+      i++;
+    }
+    if (i == nEnt) {
+      
+      
+      bool ok = entries_.append(Entry(reg, rule));
+      MOZ_RELEASE_ASSERT(ok);
+    } else {
+      
+      MOZ_ASSERT(i < nEnt);
+      if (entries_[i].first == reg) {
+        
+        entries_[i].second = rule;
+      } else {
+        
+        
+        
+        MOZ_ASSERT(entries_[i].first > reg);
+        bool ok = entries_.append(Entry(999999, Rule::mkINVALID()));
+        MOZ_RELEASE_ASSERT(ok);
+        for (size_t j = nEnt; j >= i + 1; j--) {
+          entries_[j] = entries_[j - 1];
+        }
+        entries_[i] = Entry(reg, rule);
+      }
+    }
+    
+    for (size_t i = 0; i < entries_.length(); i++) {
+      MOZ_ASSERT(entries_[i].second.isVALID());
+      MOZ_ASSERT_IF(i > 0, entries_[i - 1].first < entries_[i].first);
+    }
+    MOZ_ASSERT(get(reg).isVALID());
+  }
+
+  
+  Rule get(int reg) const {
+    size_t nEnt = entries_.length();
+    
+    
+    
+    
+    for (size_t i = 0; i < nEnt; i++) {
+      if (entries_[i].first == reg) {
+        CallFrameInfo::Rule ret = entries_[i].second;
+        MOZ_ASSERT(ret.isVALID());
+        return ret;
+      }
+    }
+    return CallFrameInfo::Rule::mkINVALID();
+  }
+
+  
+  class Iter {
+    const RuleMapLowLevel* rmll_;
+    size_t nextIx_;
+
+   public:
+    explicit Iter(const RuleMapLowLevel* rmll) : rmll_(rmll), nextIx_(0) {}
+    bool avail() const { return nextIx_ < rmll_->entries_.length(); }
+    bool finished() const { return !avail(); }
+    
+    void step() {
+      MOZ_RELEASE_ASSERT(nextIx_ < rmll_->entries_.length());
+      nextIx_++;
+    }
+    
+    
+    pair<int, Rule> peek() {
+      MOZ_RELEASE_ASSERT(nextIx_ < rmll_->entries_.length());
+      return rmll_->entries_[nextIx_];
+    }
+  };
+};
+
+
+
+
+
+
 class CallFrameInfo::RuleMap {
  public:
   RuleMap() : cfa_rule_(Rule::mkINVALID()) {}
@@ -667,9 +796,6 @@ class CallFrameInfo::RuleMap {
 
  private:
   
-  typedef std::map<int, Rule> RuleByNumber;
-
-  
   void Clear();
 
   
@@ -677,31 +803,25 @@ class CallFrameInfo::RuleMap {
 
   
   
-  RuleByNumber registers_;
+  RuleMapLowLevel registers_;
 };
 
 CallFrameInfo::RuleMap& CallFrameInfo::RuleMap::operator=(const RuleMap& rhs) {
   Clear();
   if (rhs.cfa_rule_.isVALID()) cfa_rule_ = rhs.cfa_rule_;
-  for (RuleByNumber::const_iterator it = rhs.registers_.begin();
-       it != rhs.registers_.end(); it++)
-    registers_[it->first] = it->second;
+  registers_ = rhs.registers_;
   return *this;
 }
 
 CallFrameInfo::Rule CallFrameInfo::RuleMap::RegisterRule(int reg) const {
   MOZ_ASSERT(reg != Handler::kCFARegister);
-  RuleByNumber::const_iterator it = registers_.find(reg);
-  if (it != registers_.end())
-    return it->second;
-  else
-    return Rule::mkINVALID();
+  return registers_.get(reg);
 }
 
 void CallFrameInfo::RuleMap::SetRegisterRule(int reg, Rule rule) {
   MOZ_ASSERT(reg != Handler::kCFARegister);
   MOZ_ASSERT(rule.isVALID());
-  registers_[reg] = rule;
+  registers_.set(reg, rule);
 }
 
 bool CallFrameInfo::RuleMap::HandleTransitionTo(
@@ -727,20 +847,23 @@ bool CallFrameInfo::RuleMap::HandleTransitionTo(
 
   
   
-  RuleByNumber::const_iterator old_it = registers_.begin();
-  RuleByNumber::const_iterator new_it = new_rules.registers_.begin();
-  while (old_it != registers_.end() && new_it != new_rules.registers_.end()) {
-    if (old_it->first < new_it->first) {
+  RuleMapLowLevel::Iter old_it(&registers_);
+  RuleMapLowLevel::Iter new_it(&new_rules.registers_);
+  while (!old_it.finished() && !new_it.finished()) {
+    pair<int, Rule> old_pair = old_it.peek();
+    pair<int, Rule> new_pair = new_it.peek();
+    if (old_pair.first < new_pair.first) {
       
       
       
       
       
       
-      
-      if (!handler->SameValueRule(address, old_it->first)) return false;
-      old_it++;
-    } else if (old_it->first > new_it->first) {
+      if (!handler->SameValueRule(address, old_pair.first)) {
+        return false;
+      }
+      old_it.step();
+    } else if (old_pair.first > new_pair.first) {
       
       
       
@@ -748,22 +871,24 @@ bool CallFrameInfo::RuleMap::HandleTransitionTo(
     } else {
       
       
-      if (old_it->second != new_it->second &&
-          !new_it->second.Handle(handler, address, new_it->first))
+      if (old_pair.second != new_pair.second &&
+          !new_pair.second.Handle(handler, address, new_pair.first)) {
         return false;
-      new_it++;
-      old_it++;
+      }
+      new_it.step();
+      old_it.step();
     }
   }
   
-  while (old_it != registers_.end()) {
-    if (!handler->SameValueRule(address, old_it->first)) return false;
-    old_it++;
+  while (!old_it.finished()) {
+    pair<int, Rule> old_pair = old_it.peek();
+    if (!handler->SameValueRule(address, old_pair.first)) return false;
+    old_it.step();
   }
   
   
   
-  MOZ_ASSERT(new_it == new_rules.registers_.end());
+  MOZ_ASSERT(new_it.finished());
 
   return true;
 }

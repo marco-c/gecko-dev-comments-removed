@@ -872,6 +872,7 @@ class CallFrameInfo {
 
   
   class Rule;
+  class RuleMapLowLevel;
   class RuleMap;
   class State;
 
