@@ -57,7 +57,7 @@ class MockPressureService {
       return;
 
     if (this.pressureServiceReadingTimerId_ != null)
-      stopPlatformCollector();
+      this.stopPlatformCollector();
 
     
     
