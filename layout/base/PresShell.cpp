@@ -5378,6 +5378,9 @@ void PresShell::AddCanvasBackgroundColorItem(
 bool PresShell::IsTransparentContainerElement() const {
   nsPresContext* pc = GetPresContext();
   if (!pc->IsRootContentDocumentCrossProcess()) {
+    if (pc->IsChrome()) {
+      return true;
+    }
     
     
     
