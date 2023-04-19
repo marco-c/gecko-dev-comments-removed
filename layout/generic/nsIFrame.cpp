@@ -8306,14 +8306,17 @@ nsresult nsIFrame::GetChildFrameContainingOffset(int32_t inContentOffset,
 
 
 
-nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
-                                                  nsPeekOffsetStruct* aPos,
-                                                  nsIFrame* aBlockFrame,
-                                                  int32_t aLineStart,
-                                                  int8_t aOutSideLimit) {
+static nsresult GetNextPrevLineFromBlockFrame(nsPeekOffsetStruct* aPos,
+                                              nsIFrame* aBlockFrame,
+                                              int32_t aLineStart,
+                                              int8_t aOutSideLimit) {
+  MOZ_ASSERT(aPos);
+  MOZ_ASSERT(aBlockFrame);
+
+  nsPresContext* pc = aBlockFrame->PresContext();
+
   
   
-  if (!aBlockFrame || !aPos) return NS_ERROR_NULL_POINTER;
 
   aPos->mResultFrame = nullptr;
   aPos->mResultContent = nullptr;
@@ -8327,13 +8330,13 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
   }
   int32_t searchingLine = aLineStart;
   int32_t countLines = it->GetNumLines();
-  if (aOutSideLimit > 0)  
+  if (aOutSideLimit > 0) {  
     searchingLine = countLines;
-  else if (aOutSideLimit < 0)  
-    searchingLine = -1;        
-  else if ((aPos->mDirection == eDirPrevious && searchingLine == 0) ||
-           (aPos->mDirection == eDirNext &&
-            searchingLine >= (countLines - 1))) {
+  } else if (aOutSideLimit < 0) {  
+    searchingLine = -1;            
+  } else if ((aPos->mDirection == eDirPrevious && searchingLine == 0) ||
+             (aPos->mDirection == eDirNext &&
+              searchingLine >= (countLines - 1))) {
     
     return NS_ERROR_FAILURE;
   }
@@ -8371,7 +8374,7 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
         return NS_ERROR_FAILURE;
       }
     }
-    GetLastLeaf(&lastFrame);
+    nsIFrame::GetLastLeaf(&lastFrame);
 
     if (aPos->mDirection == eDirNext) {
       nearStoppingFrame = firstFrame;
@@ -8403,16 +8406,18 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
       result = NS_ERROR_FAILURE;
 
       nsCOMPtr<nsIFrameEnumerator> frameTraversal;
-      result = NS_NewFrameTraversal(getter_AddRefs(frameTraversal),
-                                    aPresContext, resultFrame, ePostOrder,
+      result = NS_NewFrameTraversal(getter_AddRefs(frameTraversal), pc,
+                                    resultFrame, ePostOrder,
                                     false,  
                                     aPos->mScrollViewStop,
                                     false,  
                                     false   
       );
-      if (NS_FAILED(result)) return result;
+      if (NS_FAILED(result)) {
+        return result;
+      }
 
-      auto FoundValidFrame = [aPos](const ContentOffsets& aOffsets,
+      auto FoundValidFrame = [aPos](const nsIFrame::ContentOffsets& aOffsets,
                                     const nsIFrame* aFrame) {
         if (!aOffsets.content) {
           return false;
@@ -8447,10 +8452,7 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
         
         
         
-        mozilla::PresShell* presShell = aPresContext->GetPresShell();
-        if (!presShell) {
-          return NS_ERROR_FAILURE;
-        }
+        mozilla::PresShell* presShell = pc->PresShell();
         int16_t isEditor = presShell->GetSelectionFlags();
         isEditor = isEditor == nsISelectionDisplay::DISPLAY_ALL;
         if (isEditor) {
@@ -8484,7 +8486,7 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
           nsView* view;
           nsPoint offset;
           resultFrame->GetOffsetFromView(offset, &view);
-          ContentOffsets offsets =
+          nsIFrame::ContentOffsets offsets =
               resultFrame->GetContentOffsetsFromPoint(point - offset);
           aPos->mResultContent = offsets.content;
           aPos->mContentOffset = offsets.offset;
@@ -8496,20 +8498,24 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
         }
 
         if (aPos->mDirection == eDirPrevious &&
-            (resultFrame == farStoppingFrame))
+            resultFrame == farStoppingFrame) {
           break;
-        if (aPos->mDirection == eDirNext && (resultFrame == nearStoppingFrame))
+        }
+        if (aPos->mDirection == eDirNext && resultFrame == nearStoppingFrame) {
           break;
+        }
         
         resultFrame = frameTraversal->Traverse( false);
-        if (!resultFrame) return NS_ERROR_FAILURE;
+        if (!resultFrame) {
+          return NS_ERROR_FAILURE;
+        }
       }
 
       if (!found) {
         resultFrame = storeOldResultFrame;
 
-        result = NS_NewFrameTraversal(getter_AddRefs(frameTraversal),
-                                      aPresContext, resultFrame, eLeaf,
+        result = NS_NewFrameTraversal(getter_AddRefs(frameTraversal), pc,
+                                      resultFrame, eLeaf,
                                       false,  
                                       aPos->mScrollViewStop,
                                       false,  
@@ -8521,7 +8527,7 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
         nsView* view;
         nsPoint offset;
         resultFrame->GetOffsetFromView(offset, &view);
-        ContentOffsets offsets =
+        nsIFrame::ContentOffsets offsets =
             resultFrame->GetContentOffsetsFromPoint(point - offset);
         aPos->mResultContent = offsets.content;
         aPos->mContentOffset = offsets.offset;
@@ -8942,84 +8948,77 @@ nsresult nsIFrame::PeekOffsetForLine(nsPeekOffsetStruct* aPos) {
       return NS_ERROR_FAILURE;
     }
 
-    int edgeCase = 0;  
+    int8_t edgeCase = 0;  
 
-    bool doneLooping = false;  
     
     
     
     nsIFrame* lastFrame = this;
 
     
-    do {
-      result = nsIFrame::GetNextPrevLineFromeBlockFrame(
-          PresContext(), aPos, blockFrame, thisLine,
-          edgeCase);  
-
+    while (true) {
+      result =
+          GetNextPrevLineFromBlockFrame(aPos, blockFrame, thisLine, edgeCase);
       
       if (NS_SUCCEEDED(result) &&
           (!aPos->mResultFrame || aPos->mResultFrame == lastFrame)) {
         aPos->mResultFrame = nullptr;
+        lastFrame = nullptr;
         if (aPos->mDirection == eDirPrevious) {
           thisLine--;
         } else {
           thisLine++;
         }
-      } else {               
-        doneLooping = true;  
+        continue;
+      }
+
+      if (NS_FAILED(result)) {
+        break;
       }
 
       lastFrame = aPos->mResultFrame;  
+      
+
+
+
+
+
+
+
+
+
+
+
+      bool shouldDrillIntoChildren =
+          aPos->mResultFrame->IsTableWrapperFrame() ||
+          aPos->mResultFrame->IsTableCellFrame() ||
+          aPos->mResultFrame->IsFlexContainerFrame() ||
+          aPos->mResultFrame->IsGridContainerFrame();
+
+      if (shouldDrillIntoChildren) {
+        nsIFrame* child = GetFirstSelectableDescendantWithLineIterator(
+            aPos->mResultFrame, aPos->mForceEditableRegion);
+        if (child) {
+          aPos->mResultFrame = child;
+        }
+      }
+
+      if (!aPos->mResultFrame->CanProvideLineIterator()) {
+        
+        break;
+      }
 
       
-      if (NS_SUCCEEDED(result) && aPos->mResultFrame &&
-          blockFrame != aPos->mResultFrame) {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        bool shouldDrillIntoChildren =
-            aPos->mResultFrame->IsTableWrapperFrame() ||
-            aPos->mResultFrame->IsTableCellFrame() ||
-            aPos->mResultFrame->IsFlexContainerFrame() ||
-            aPos->mResultFrame->IsGridContainerFrame();
-
-        if (shouldDrillIntoChildren) {
-          nsIFrame* child = GetFirstSelectableDescendantWithLineIterator(
-              aPos->mResultFrame, aPos->mForceEditableRegion);
-          if (child) {
-            aPos->mResultFrame = child;
-          }
-        }
-
-        if (!aPos->mResultFrame->CanProvideLineIterator()) {
-          
-          break;
-        }
-
-        
-        doneLooping = false;
-        if (aPos->mDirection == eDirPrevious) {
-          edgeCase = 1;  
-        } else {
-          edgeCase = -1;  
-        }
-        thisLine = 0;  
-        
-        
-        blockFrame = aPos->mResultFrame;
+      if (aPos->mDirection == eDirPrevious) {
+        edgeCase = 1;  
+      } else {
+        edgeCase = -1;  
       }
-    } while (!doneLooping);
+      thisLine = 0;  
+      
+      
+      blockFrame = aPos->mResultFrame;
+    }
   }
   return result;
 }
@@ -9042,7 +9041,7 @@ nsresult nsIFrame::PeekOffsetForLineEdge(nsPeekOffsetStruct* aPos) {
   }
 
   nsIFrame* baseFrame = nullptr;
-  bool endOfLine = (eSelectEndLine == aPos->mAmount);
+  bool endOfLine = eSelectEndLine == aPos->mAmount;
 
   if (aPos->mVisual && PresContext()->BidiEnabled()) {
     nsIFrame* firstFrame;
