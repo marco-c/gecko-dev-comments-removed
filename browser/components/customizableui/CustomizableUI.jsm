@@ -2899,6 +2899,7 @@ var CustomizableUIInternal = {
       _introducedInVersion: -1,
       keepBroadcastAttributesWhenCustomizing: false,
       disallowSubView: false,
+      webExtension: false,
     };
 
     if (typeof aData.id != "string" || !/^[a-z0-9-_]{1,}$/i.test(aData.id)) {
@@ -2942,6 +2943,7 @@ var CustomizableUIInternal = {
       "localized",
       "keepBroadcastAttributesWhenCustomizing",
       "disallowSubView",
+      "webExtension",
     ];
     for (let prop of kOptBoolProps) {
       if (typeof aData[prop] == "boolean") {
@@ -4020,6 +4022,8 @@ var CustomizableUI = {
 
 
 
+
+
   createWidget(aProperties) {
     return CustomizableUIInternal.wrapWidget(
       CustomizableUIInternal.createWidget(aProperties)
@@ -4431,6 +4435,24 @@ var CustomizableUI = {
 
 
 
+
+
+
+
+  isWebExtensionWidget(aWidgetId) {
+    let widget = this.getWidget(aWidgetId);
+    if (widget) {
+      return widget.webExtension;
+    }
+    return aWidgetId.endsWith("-browser-action");
+  },
+  
+
+
+
+
+
+
   addPanelCloseListeners(aPanel) {
     CustomizableUIInternal.addPanelCloseListeners(aPanel);
   },
@@ -4736,6 +4758,7 @@ function WidgetGroupWrapper(aWidget) {
     "showInPrivateBrowsing",
     "viewId",
     "disallowSubView",
+    "webExtension",
   ];
   for (let prop of kBareProps) {
     let propertyName = prop;
@@ -4862,6 +4885,8 @@ function XULWidgetGroupWrapper(aWidgetId) {
   this.isGroup = true;
   this.id = aWidgetId;
   this.type = "custom";
+  
+  this.webExtension = false;
   this.provider = CustomizableUI.PROVIDER_XUL;
 
   this.forWindow = function XULWidgetGroupWrapper_forWindow(aWindow) {
@@ -5462,7 +5487,7 @@ class OverflowableToolbar {
         if (
           lazy.gUnifiedExtensionsEnabled &&
           webExtList &&
-          child.classList.contains("webextension-browser-action")
+          CustomizableUI.isWebExtensionWidget(child.id)
         ) {
           child.setAttribute("cui-anchorid", webExtButtonID);
           webExtList.insertBefore(child, webExtList.firstElementChild);
