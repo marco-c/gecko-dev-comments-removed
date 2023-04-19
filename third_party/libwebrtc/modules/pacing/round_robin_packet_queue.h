@@ -19,6 +19,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <unordered_map>
 
 #include "absl/types/optional.h"
 #include "api/transport/webrtc_key_value_config.h"
@@ -163,7 +164,7 @@ class RoundRobinPacketQueue {
   std::multimap<StreamPrioKey, uint32_t> stream_priorities_;
 
   
-  std::map<uint32_t, Stream> streams_;
+  std::unordered_map<uint32_t, Stream> streams_;
 
   
   
