@@ -2278,6 +2278,9 @@ void JSReporter::CollectReports(WindowPaths* windowPaths,
   mozJSModuleLoader* loader = mozJSModuleLoader::Get();
   size_t jsModuleLoaderSize =
       loader ? loader->SizeOfIncludingThis(JSMallocSizeOf) : 0;
+  mozJSModuleLoader* devToolsLoader = mozJSModuleLoader::GetDevToolsLoader();
+  size_t jsDevToolsModuleLoaderSize =
+      devToolsLoader ? devToolsLoader->SizeOfIncludingThis(JSMallocSizeOf) : 0;
 
   
   
@@ -2509,6 +2512,8 @@ void JSReporter::CollectReports(WindowPaths* windowPaths,
 
   REPORT_BYTES("explicit/xpconnect/js-module-loader"_ns, KIND_HEAP,
                jsModuleLoaderSize, "XPConnect's JS module loader.");
+  REPORT_BYTES("explicit/xpconnect/js-devtools-module-loader"_ns, KIND_HEAP,
+               jsDevToolsModuleLoaderSize, "DevTools's JS module loader.");
 
   
 

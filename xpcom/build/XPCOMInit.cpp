@@ -663,7 +663,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   
   
   
-  mozJSModuleLoader::Unload();
+  mozJSModuleLoader::UnloadLoaders();
 
   
   
