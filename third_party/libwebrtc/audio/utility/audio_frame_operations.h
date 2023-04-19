@@ -14,8 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/base/attributes.h"
 #include "api/audio/audio_frame.h"
-#include "rtc_base/deprecation.h"
 
 namespace webrtc {
 
@@ -36,12 +36,14 @@ class AudioFrameOperations {
   
   
   
-  RTC_DEPRECATED static int MonoToStereo(AudioFrame* frame);
+  ABSL_DEPRECATED("bugs.webrtc.org/8649")
+  static int MonoToStereo(AudioFrame* frame);
 
   
   
   
-  RTC_DEPRECATED static int StereoToMono(AudioFrame* frame);
+  ABSL_DEPRECATED("bugs.webrtc.org/8649")
+  static int StereoToMono(AudioFrame* frame);
 
   
   

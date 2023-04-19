@@ -59,10 +59,10 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/deprecation.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/inline.h"
 
@@ -442,7 +442,7 @@ class LogMessage {
   
   
   
-  RTC_DEPRECATED
+  ABSL_DEPRECATED("Use RTC_LOG macros instead of accessing this class directly")
   LogMessage(const char* file,
              int line,
              LoggingSeverity sev,
@@ -502,7 +502,7 @@ class LogMessage {
     return IsNoop(S);
   }
 #else
-  
+
   LogMessage(const char* file, int line, LoggingSeverity sev) {}
   LogMessage(const char* file,
              int line,
@@ -516,7 +516,7 @@ class LogMessage {
   
   
   
-  RTC_DEPRECATED
+  ABSL_DEPRECATED("Use RTC_LOG macros instead of accessing this class directly")
   LogMessage(const char* file,
              int line,
              LoggingSeverity sev,
@@ -544,9 +544,9 @@ class LogMessage {
   static constexpr bool IsNoop() {
     return IsNoop(S);
   }
-#endif  
+#endif
 
-  
+
   static void set_aec_debug(bool enable) { aec_debug_ = enable; }
   static void set_aec_debug_size(uint32_t size) { aec_debug_size_ = size; }
   static bool aec_debug() { return aec_debug_; }

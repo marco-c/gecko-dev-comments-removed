@@ -16,12 +16,12 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/call/bitrate_allocation.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/deprecation.h"
 
 namespace webrtc {
 
@@ -185,9 +185,8 @@ class AudioEncoder {
   
   
   
-  
-  
-  RTC_DEPRECATED virtual void SetTargetBitrate(int target_bps);
+  ABSL_DEPRECATED("Use OnReceivedTargetAudioBitrate instead")
+  virtual void SetTargetBitrate(int target_bps);
 
   
   
@@ -210,7 +209,8 @@ class AudioEncoder {
   virtual void OnReceivedUplinkPacketLossFraction(
       float uplink_packet_loss_fraction);
 
-  RTC_DEPRECATED virtual void OnReceivedUplinkRecoverablePacketLossFraction(
+  ABSL_DEPRECATED("")
+  virtual void OnReceivedUplinkRecoverablePacketLossFraction(
       float uplink_recoverable_packet_loss_fraction);
 
   
