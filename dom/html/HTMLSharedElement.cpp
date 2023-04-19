@@ -155,10 +155,10 @@ static void SetBaseURIUsingFirstBaseWithHref(Document* aDocument,
         
         
         bool cspPermitsBaseURI = true;
-        rv = csp->Permits(child->AsElement(), nullptr ,
-                          newBaseURI,
-                          nsIContentSecurityPolicy::BASE_URI_DIRECTIVE, true,
-                          &cspPermitsBaseURI);
+        rv = csp->Permits(
+            child->AsElement(), nullptr , newBaseURI,
+            nsIContentSecurityPolicy::BASE_URI_DIRECTIVE, true ,
+            true , &cspPermitsBaseURI);
         if (NS_FAILED(rv) || !cspPermitsBaseURI) {
           newBaseURI = nullptr;
         }

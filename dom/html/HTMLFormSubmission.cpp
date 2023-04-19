@@ -792,7 +792,8 @@ nsresult HTMLFormSubmission::GetFromForm(HTMLFormElement* aForm,
     
     
     rv = csp->Permits(aForm, nullptr , actionURL,
-                      nsIContentSecurityPolicy::FORM_ACTION_DIRECTIVE, true,
+                      nsIContentSecurityPolicy::FORM_ACTION_DIRECTIVE,
+                      true , true ,
                       &permitsFormAction);
     NS_ENSURE_SUCCESS(rv, rv);
     if (!permitsFormAction) {
