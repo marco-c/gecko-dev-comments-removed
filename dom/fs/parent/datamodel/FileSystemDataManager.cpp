@@ -14,6 +14,8 @@
 #include "mozilla/Result.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/FileSystemManagerParent.h"
+#include "mozilla/dom/quota/ClientImpl.h"
+#include "mozilla/dom/quota/DirectoryLock.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
@@ -279,6 +281,44 @@ FileSystemDataManager::GetOrCreateFileSystemDataManager(
 }
 
 
+void FileSystemDataManager::AbortOperationsForLocks(
+    const quota::Client::DirectoryLockIdTable& aDirectoryLockIds) {
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
+
+  
+  
+
+  if (!gDataManagers) {
+    return;
+  }
+
+  for (const auto& dataManager : gDataManagers->Values()) {
+    
+    
+    
+    
+    if (!quota::Client::IsLockForObjectAcquiredAndContainedInLockTable(
+            *dataManager, aDirectoryLockIds)) {
+      continue;
+    }
+
+    InvokeAsync(dataManager->MutableIOTargetPtr(), __func__,
+                [dataManager = RefPtr<FileSystemDataManager>(
+                     dataManager.get())]() mutable {
+                  dataManager->RequestAllowToClose();
+
+                  nsCOMPtr<nsISerialEventTarget> target =
+                      dataManager->MutableBackgroundTargetPtr();
+
+                  NS_ProxyRelease("ReleaseFileSystemDataManager", target,
+                                  dataManager.forget());
+
+                  return BoolPromise::CreateAndResolve(true, __func__);
+                });
+  }
+}
+
+
 void FileSystemDataManager::InitiateShutdown() {
   ::mozilla::ipc::AssertIsOnBackgroundThread();
 
@@ -370,40 +410,27 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
   QM_TRY_UNWRAP(const NotNull<RefPtr<quota::QuotaManager>> quotaManager,
                 quota::QuotaManager::GetOrCreate(), CreateAndRejectBoolPromise);
 
-  
+  RefPtr<quota::ClientDirectoryLock> directoryLock =
+      quotaManager->CreateDirectoryLock(quota::PERSISTENCE_TYPE_DEFAULT,
+                                        mOriginMetadata,
+                                        mozilla::dom::quota::Client::FILESYSTEM,
+                                         false);
 
-  InvokeAsync(
-      quotaManager->IOThread(), __func__,
-      [self = RefPtr<FileSystemDataManager>(this)]() mutable {
-        auto autoProxyReleaseManager = MakeScopeExit([&self] {
-          nsCOMPtr<nsISerialEventTarget> target =
-              self->MutableBackgroundTargetPtr();
+  directoryLock->Acquire()
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr<FileSystemDataManager>(this),
+              directoryLock = directoryLock](
+                 const BoolPromise::ResolveOrRejectValue& value) mutable {
+               if (value.IsReject()) {
+                 return BoolPromise::CreateAndReject(value.RejectValue(),
+                                                     __func__);
+               }
 
-          NS_ProxyRelease("ReleaseFileSystemDataManager", target,
-                          self.forget());
-        });
+               self->mDirectoryLock = std::move(directoryLock);
 
-        quota::QuotaManager* quotaManager = quota::QuotaManager::Get();
-        QM_TRY(MOZ_TO_RESULT(quotaManager), CreateAndRejectBoolPromise)
-
-        QM_TRY(MOZ_TO_RESULT(quotaManager->EnsureStorageIsInitialized()),
-               CreateAndRejectBoolPromise);
-
-        QM_TRY(
-            MOZ_TO_RESULT(quotaManager->EnsureTemporaryStorageIsInitialized()),
-            CreateAndRejectBoolPromise);
-
-        QM_TRY_INSPECT(
-            const auto& dirInfo,
-            quotaManager->EnsureTemporaryOriginIsInitialized(
-                quota::PERSISTENCE_TYPE_DEFAULT, self->mOriginMetadata),
-            CreateAndRejectBoolPromise);
-
-        Unused << dirInfo;
-
-        return BoolPromise::CreateAndResolve(true, __func__);
-      })
-      ->Then(MutableIOTargetPtr(), __func__,
+               return BoolPromise::CreateAndResolve(true, __func__);
+             })
+      ->Then(quotaManager->IOThread(), __func__,
              [self = RefPtr<FileSystemDataManager>(this)](
                  const BoolPromise::ResolveOrRejectValue& value) mutable {
                auto autoProxyReleaseManager = MakeScopeExit([&self] {
@@ -419,8 +446,41 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
                                                      __func__);
                }
 
-               
-               
+               quota::QuotaManager* quotaManager = quota::QuotaManager::Get();
+               QM_TRY(MOZ_TO_RESULT(quotaManager), CreateAndRejectBoolPromise);
+
+               QM_TRY(MOZ_TO_RESULT(quotaManager->EnsureStorageIsInitialized()),
+                      CreateAndRejectBoolPromise);
+
+               QM_TRY(MOZ_TO_RESULT(
+                          quotaManager->EnsureTemporaryStorageIsInitialized()),
+                      CreateAndRejectBoolPromise);
+
+               QM_TRY_INSPECT(
+                   const auto& dirInfo,
+                   quotaManager->EnsureTemporaryOriginIsInitialized(
+                       quota::PERSISTENCE_TYPE_DEFAULT, self->mOriginMetadata),
+                   CreateAndRejectBoolPromise);
+
+               Unused << dirInfo;
+
+               return BoolPromise::CreateAndResolve(true, __func__);
+             })
+      ->Then(MutableIOTargetPtr(), __func__,
+             [self = RefPtr<FileSystemDataManager>(this)](
+                 const BoolPromise::ResolveOrRejectValue& value) mutable {
+               auto autoProxyReleaseManager = MakeScopeExit([&self] {
+                 nsCOMPtr<nsISerialEventTarget> target =
+                     self->MutableBackgroundTargetPtr();
+
+                 NS_ProxyRelease("ReleaseFileSystemDataManager", target,
+                                 self.forget());
+               });
+
+               if (value.IsReject()) {
+                 return BoolPromise::CreateAndReject(value.RejectValue(),
+                                                     __func__);
+               }
 
                QM_TRY_UNWRAP(auto connection,
                              fs::data::GetStorageConnection(
@@ -487,6 +547,8 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginClose() {
       ->Then(MutableBackgroundTargetPtr(), __func__,
              [self = RefPtr<FileSystemDataManager>(this)](
                  const ShutdownPromise::ResolveOrRejectValue&) {
+               self->mDirectoryLock = nullptr;
+
                RemoveFileSystemDataManager(self->mOriginMetadata.mOrigin);
 
                self->mState = State::Closed;
