@@ -10,84 +10,100 @@
 
 #include "modules/audio_processing/agc2/adaptive_mode_level_estimator.h"
 
+#include <memory>
+
 #include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/gunit.h"
 
 namespace webrtc {
 namespace {
+
+constexpr float kInitialSaturationMarginDb = 20.f;
+constexpr float kExtraSaturationMarginDb = 2.f;
+
 void RunOnConstantLevel(int num_iterations,
                         VadWithLevel::LevelAndProbability vad_data,
-                        AdaptiveModeLevelEstimator* level_estimator) {
+                        AdaptiveModeLevelEstimator& level_estimator) {
   for (int i = 0; i < num_iterations; ++i) {
-    level_estimator->UpdateEstimation(vad_data);  
+    level_estimator.UpdateEstimation(vad_data);  
   }
 }
+
+struct TestLevelEstimator {
+  TestLevelEstimator()
+      : data_dumper(0),
+        estimator(std::make_unique<AdaptiveModeLevelEstimator>(
+            &data_dumper,
+            AudioProcessing::Config::GainController2::LevelEstimator::kRms,
+            true,
+            kInitialSaturationMarginDb,
+            kExtraSaturationMarginDb)) {}
+  ApmDataDumper data_dumper;
+  std::unique_ptr<AdaptiveModeLevelEstimator> estimator;
+};
+
 }  
 
 TEST(AutomaticGainController2AdaptiveModeLevelEstimator,
      EstimatorShouldNotCrash) {
-  ApmDataDumper apm_data_dumper(0);
-  AdaptiveModeLevelEstimator level_estimator(&apm_data_dumper);
+  TestLevelEstimator level_estimator;
 
   VadWithLevel::LevelAndProbability vad_data(1.f, -20.f, -10.f);
-  level_estimator.UpdateEstimation(vad_data);
-  static_cast<void>(level_estimator.LatestLevelEstimate());
+  level_estimator.estimator->UpdateEstimation(vad_data);
+  static_cast<void>(level_estimator.estimator->LatestLevelEstimate());
 }
 
 TEST(AutomaticGainController2AdaptiveModeLevelEstimator, LevelShouldStabilize) {
-  ApmDataDumper apm_data_dumper(0);
-  AdaptiveModeLevelEstimator level_estimator(&apm_data_dumper);
+  TestLevelEstimator level_estimator;
 
   constexpr float kSpeechPeakDbfs = -15.f;
-  RunOnConstantLevel(100,
-                     VadWithLevel::LevelAndProbability(
-                         1.f, kSpeechPeakDbfs - GetInitialSaturationMarginDb(),
-                         kSpeechPeakDbfs),
-                     &level_estimator);
+  RunOnConstantLevel(
+      100,
+      VadWithLevel::LevelAndProbability(
+          1.f, kSpeechPeakDbfs - kInitialSaturationMarginDb, kSpeechPeakDbfs),
+      *level_estimator.estimator);
 
-  EXPECT_NEAR(level_estimator.LatestLevelEstimate() -
-                  GetExtraSaturationMarginOffsetDb(),
+  EXPECT_NEAR(level_estimator.estimator->LatestLevelEstimate() -
+                  kExtraSaturationMarginDb,
               kSpeechPeakDbfs, 0.1f);
 }
 
 TEST(AutomaticGainController2AdaptiveModeLevelEstimator,
      EstimatorIgnoresZeroProbabilityFrames) {
-  ApmDataDumper apm_data_dumper(0);
-  AdaptiveModeLevelEstimator level_estimator(&apm_data_dumper);
+  TestLevelEstimator level_estimator;
 
   
   constexpr float kSpeechRmsDbfs = -25.f;
   RunOnConstantLevel(
       100,
       VadWithLevel::LevelAndProbability(
-          1.f, kSpeechRmsDbfs - GetInitialSaturationMarginDb(), kSpeechRmsDbfs),
-      &level_estimator);
+          1.f, kSpeechRmsDbfs - kInitialSaturationMarginDb, kSpeechRmsDbfs),
+      *level_estimator.estimator);
 
   
   constexpr float kNoiseRmsDbfs = 0.f;
   RunOnConstantLevel(
       100, VadWithLevel::LevelAndProbability(0.f, kNoiseRmsDbfs, kNoiseRmsDbfs),
-      &level_estimator);
+      *level_estimator.estimator);
 
   
-  EXPECT_NEAR(level_estimator.LatestLevelEstimate() -
-                  GetExtraSaturationMarginOffsetDb(),
+  EXPECT_NEAR(level_estimator.estimator->LatestLevelEstimate() -
+                  kExtraSaturationMarginDb,
               kSpeechRmsDbfs, 0.1f);
 }
 
 TEST(AutomaticGainController2AdaptiveModeLevelEstimator, TimeToAdapt) {
-  ApmDataDumper apm_data_dumper(0);
-  AdaptiveModeLevelEstimator level_estimator(&apm_data_dumper);
+  TestLevelEstimator level_estimator;
 
   
   constexpr float kInitialSpeechRmsDbfs = -30.f;
   RunOnConstantLevel(
       kFullBufferSizeMs / kFrameDurationMs,
       VadWithLevel::LevelAndProbability(
-          1.f, kInitialSpeechRmsDbfs - GetInitialSaturationMarginDb(),
+          1.f, kInitialSpeechRmsDbfs - kInitialSaturationMarginDb,
           kInitialSpeechRmsDbfs),
-      &level_estimator);
+      *level_estimator.estimator);
 
   
   
@@ -98,29 +114,28 @@ TEST(AutomaticGainController2AdaptiveModeLevelEstimator, TimeToAdapt) {
   RunOnConstantLevel(
       static_cast<int>(kFullBufferSizeMs / kFrameDurationMs / 2),
       VadWithLevel::LevelAndProbability(
-          1.f, kDifferentSpeechRmsDbfs - GetInitialSaturationMarginDb(),
+          1.f, kDifferentSpeechRmsDbfs - kInitialSaturationMarginDb,
           kDifferentSpeechRmsDbfs),
-      &level_estimator);
-  EXPECT_GT(
-      std::abs(kDifferentSpeechRmsDbfs - level_estimator.LatestLevelEstimate()),
-      kMaxDifferenceDb);
+      *level_estimator.estimator);
+  EXPECT_GT(std::abs(kDifferentSpeechRmsDbfs -
+                     level_estimator.estimator->LatestLevelEstimate()),
+            kMaxDifferenceDb);
 
   
   RunOnConstantLevel(
       static_cast<int>(3 * kFullBufferSizeMs / kFrameDurationMs),
       VadWithLevel::LevelAndProbability(
-          1.f, kDifferentSpeechRmsDbfs - GetInitialSaturationMarginDb(),
+          1.f, kDifferentSpeechRmsDbfs - kInitialSaturationMarginDb,
           kDifferentSpeechRmsDbfs),
-      &level_estimator);
-  EXPECT_NEAR(level_estimator.LatestLevelEstimate() -
-                  GetExtraSaturationMarginOffsetDb(),
+      *level_estimator.estimator);
+  EXPECT_NEAR(level_estimator.estimator->LatestLevelEstimate() -
+                  kExtraSaturationMarginDb,
               kDifferentSpeechRmsDbfs, kMaxDifferenceDb * 0.5f);
 }
 
 TEST(AutomaticGainController2AdaptiveModeLevelEstimator,
      ResetGivesFastAdaptation) {
-  ApmDataDumper apm_data_dumper(0);
-  AdaptiveModeLevelEstimator level_estimator(&apm_data_dumper);
+  TestLevelEstimator level_estimator;
 
   
   
@@ -128,27 +143,27 @@ TEST(AutomaticGainController2AdaptiveModeLevelEstimator,
   RunOnConstantLevel(
       kFullBufferSizeMs / kFrameDurationMs,
       VadWithLevel::LevelAndProbability(
-          1.f, kInitialSpeechRmsDbfs - GetInitialSaturationMarginDb(),
+          1.f, kInitialSpeechRmsDbfs - kInitialSaturationMarginDb,
           kInitialSpeechRmsDbfs),
-      &level_estimator);
+      *level_estimator.estimator);
 
   constexpr float kDifferentSpeechRmsDbfs = -10.f;
   
-  level_estimator.Reset();
+  level_estimator.estimator->Reset();
 
   RunOnConstantLevel(
       kFullBufferSizeMs / kFrameDurationMs / 2,
       VadWithLevel::LevelAndProbability(
-          1.f, kDifferentSpeechRmsDbfs - GetInitialSaturationMarginDb(),
+          1.f, kDifferentSpeechRmsDbfs - kInitialSaturationMarginDb,
           kDifferentSpeechRmsDbfs),
-      &level_estimator);
+      *level_estimator.estimator);
 
   
   const float kMaxDifferenceDb =
       0.1f * std::abs(kDifferentSpeechRmsDbfs - kInitialSpeechRmsDbfs);
   EXPECT_LT(std::abs(kDifferentSpeechRmsDbfs -
-                     (level_estimator.LatestLevelEstimate() -
-                      GetExtraSaturationMarginOffsetDb())),
+                     (level_estimator.estimator->LatestLevelEstimate() -
+                      kExtraSaturationMarginDb)),
             kMaxDifferenceDb);
 }
 
