@@ -514,6 +514,16 @@ MOZ_ALWAYS_INLINE bool MarkBitmap::isMarkedGray(const TenuredCell* cell) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
 MOZ_ALWAYS_INLINE bool MarkBitmap::markIfUnmarked(const TenuredCell* cell,
                                                   MarkColor color) {
   MarkBitmapWord* word;
@@ -523,17 +533,17 @@ MOZ_ALWAYS_INLINE bool MarkBitmap::markIfUnmarked(const TenuredCell* cell,
     return false;
   }
   if (color == MarkColor::Black) {
-    *word |= mask;
+    uintptr_t bits = *word;
+    *word = bits | mask;
   } else {
     
-
-
-
+    
     getMarkWordAndMask(cell, ColorBit::GrayOrBlackBit, &word, &mask);
     if (*word & mask) {
       return false;
     }
-    *word |= mask;
+    uintptr_t bits = *word;
+    *word = bits | mask;
   }
   return true;
 }
@@ -542,7 +552,8 @@ MOZ_ALWAYS_INLINE void MarkBitmap::markBlack(const TenuredCell* cell) {
   MarkBitmapWord* word;
   uintptr_t mask;
   getMarkWordAndMask(cell, ColorBit::BlackBit, &word, &mask);
-  *word |= mask;
+  uintptr_t bits = *word;
+  *word = bits | mask;
 }
 
 MOZ_ALWAYS_INLINE void MarkBitmap::copyMarkBit(TenuredCell* dst,
@@ -557,19 +568,24 @@ MOZ_ALWAYS_INLINE void MarkBitmap::copyMarkBit(TenuredCell* dst,
   uintptr_t dstMask;
   getMarkWordAndMask(dst, colorBit, &dstWord, &dstMask);
 
-  *dstWord &= ~dstMask;
+  uintptr_t bits = *dstWord;
+  bits &= ~dstMask;
   if (*srcWord & srcMask) {
-    *dstWord |= dstMask;
+    bits |= dstMask;
   }
+  *dstWord = bits;
 }
 
 MOZ_ALWAYS_INLINE void MarkBitmap::unmark(const TenuredCell* cell) {
   MarkBitmapWord* word;
   uintptr_t mask;
+  uintptr_t bits;
   getMarkWordAndMask(cell, ColorBit::BlackBit, &word, &mask);
-  *word &= ~mask;
+  bits = *word;
+  *word = bits & ~mask;
   getMarkWordAndMask(cell, ColorBit::GrayOrBlackBit, &word, &mask);
-  *word &= ~mask;
+  bits = *word;
+  *word = bits & ~mask;
 }
 
 inline MarkBitmapWord* MarkBitmap::arenaBits(Arena* arena) {
