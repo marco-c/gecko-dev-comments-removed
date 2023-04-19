@@ -406,6 +406,7 @@ void EchoRemoverImpl::ProcessCapture(
   if (capture_output_used_) {
     
     residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
+                                      suppression_gain_.IsDominantNearend(),
                                       R2);
 
     
