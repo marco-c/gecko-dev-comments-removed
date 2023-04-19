@@ -134,34 +134,19 @@ export default function update(state = initialSourcesTreeState(), action) {
     }
 
     case "NAVIGATE":
-      return initialSourcesTreeState();
-
+      state = initialSourcesTreeState();
+      
+      
+      
+      
+      if (action.mainThread.isWebExtension) {
+        addThread(state, action.mainThread);
+      }
+      return state;
     case "INSERT_THREAD":
-      const thread = action.newThread.actor;
-      
-      
-      if (action.newThread.isTopLevel) {
-        state.isWebExtension = action.newThread.isWebExtension;
-      }
-      let threadItem = state.threadItems.find(item => {
-        return item.threadActorID == thread;
-      });
-      if (!threadItem) {
-        threadItem = createThreadTreeItem(thread);
-        state.threadItems = [...state.threadItems, threadItem];
-      } else {
-        
-        
-        
-        state.threadItems = [...state.threadItems];
-      }
-      
-      
-      threadItem.thread = action.newThread;
-      return {
-        ...state,
-      };
-
+      state = { ...state };
+      addThread(state, action.newThread);
+      return state;
     case "REMOVE_THREAD": {
       const index = state.threadItems.findIndex(item => {
         return item.threadActorID == action.threadActorID;
@@ -189,6 +174,30 @@ export default function update(state = initialSourcesTreeState(), action) {
   }
 
   return state;
+}
+
+function addThread(state, thread) {
+  const threadActorID = thread.actor;
+  
+  
+  if (thread.isTopLevel) {
+    state.isWebExtension = thread.isWebExtension;
+  }
+  let threadItem = state.threadItems.find(item => {
+    return item.threadActorID == threadActorID;
+  });
+  if (!threadItem) {
+    threadItem = createThreadTreeItem(threadActorID);
+    state.threadItems = [...state.threadItems, threadItem];
+  } else {
+    
+    
+    
+    state.threadItems = [...state.threadItems];
+  }
+  
+  
+  threadItem.thread = thread;
 }
 
 function updateExpanded(state, action) {
