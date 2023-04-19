@@ -639,7 +639,7 @@ cubeb_enumerate_devices(cubeb * context, cubeb_device_type devtype,
 
   rv = context->ops->enumerate_devices(context, devtype, collection);
 
-  if (g_cubeb_log_callback) {
+  if (cubeb_log_get_callback()) {
     for (size_t i = 0; i < collection->count; i++) {
       log_device(&collection->device[i]);
     }
@@ -701,21 +701,11 @@ cubeb_set_log_callback(cubeb_log_level log_level,
     return CUBEB_ERROR_INVALID_PARAMETER;
   }
 
-  if (g_cubeb_log_callback && log_callback) {
+  if (cubeb_log_get_callback() && log_callback) {
     return CUBEB_ERROR_NOT_SUPPORTED;
   }
 
-  g_cubeb_log_callback = log_callback;
-  g_cubeb_log_level = log_level;
-
-  
-  
-  
-  
-  
-  if (log_level >= CUBEB_LOG_VERBOSE) {
-    ALOGV("Starting cubeb log");
-  }
+  cubeb_log_set(log_level, log_callback);
 
   return CUBEB_OK;
 }
