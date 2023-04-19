@@ -55,7 +55,7 @@ mozilla::ipc::IPCResult CreateFileSystemManagerParent(
   
   QM_TRY_UNWRAP(
       RefPtr<fs::data::FileSystemDataManager> dataManager,
-      fs::data::FileSystemDataManager::CreateFileSystemDataManager(origin),
+      fs::data::FileSystemDataManager::GetOrCreateFileSystemDataManager(origin),
       IPC_OK(), sendBackError);
 
   nsCOMPtr<nsIThread> pbackground = NS_GetCurrentThread();
