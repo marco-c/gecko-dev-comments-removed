@@ -6,31 +6,6 @@
 
 
 use crate::parser::ParserContext;
-use crate::values::generics::Optional;
-
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-    Serialize,
-    Deserialize,
-)]
-#[repr(C)]
-pub struct LinearStop<Number, Percentage> {
-    
-    pub output: Number,
-    
-    #[css(skip_if = "Optional::is_none")]
-    pub input: Optional<Percentage>,
-}
 
 
 #[derive(
@@ -39,9 +14,7 @@ pub struct LinearStop<Number, Percentage> {
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
-    ToComputedValue,
     ToCss,
-    ToResolvedValue,
     ToShmem,
     Serialize,
     Deserialize,
@@ -49,7 +22,7 @@ pub struct LinearStop<Number, Percentage> {
 #[value_info(ty = "TIMING_FUNCTION")]
 #[repr(u8, C)]
 /// cbindgen:private-default-tagged-enum-constructor=false
-pub enum TimingFunction<Integer, Number, Percentage> {
+pub enum TimingFunction<Integer, Number, LinearStops> {
     
     Keyword(TimingKeyword),
     
@@ -69,8 +42,8 @@ pub enum TimingFunction<Integer, Number, Percentage> {
     
     
     
-    #[css(comma, function = "linear")]
-    LinearFunction(#[css(iterable)] crate::OwnedSlice<LinearStop<Number, Percentage>>),
+    #[css(function = "linear")]
+    LinearFunction(LinearStops),
 }
 
 #[allow(missing_docs)]
@@ -107,7 +80,7 @@ pub enum TimingKeyword {
 #[repr(u8)]
 pub enum BeforeFlag {
     Unset,
-    Set
+    Set,
 }
 
 #[cfg(feature = "gecko")]
@@ -156,7 +129,7 @@ fn is_end(position: &StepPosition) -> bool {
     *position == StepPosition::JumpEnd || *position == StepPosition::End
 }
 
-impl<Integer, Number, Percentage> TimingFunction<Integer, Number, Percentage> {
+impl<Integer, Number, LinearStops> TimingFunction<Integer, Number, LinearStops> {
     
     #[inline]
     pub fn ease() -> Self {

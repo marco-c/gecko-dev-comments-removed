@@ -3,25 +3,64 @@
 
 
 
+use crate::values::computed::Percentage;
+use core::slice::Iter;
 
 use euclid::approxeq::ApproxEq;
 use itertools::Itertools;
+use std::fmt::{self, Write};
+use style_traits::{CssWriter, ToCss};
 
 use crate::values::CSSFloat;
 
 type ValueType = CSSFloat;
 
-#[derive(Clone, Copy)]
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToResolvedValue,
+    Serialize,
+    Deserialize,
+)]
 #[repr(C)]
-struct PiecewiseLinearFunctionEntry {
-    x: ValueType,
-    y: ValueType,
+pub struct PiecewiseLinearFunctionEntry {
+    pub x: ValueType,
+    pub y: ValueType,
+}
+
+impl ToCss for PiecewiseLinearFunctionEntry {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        self.y.to_css(dest)?;
+        dest.write_str(" ")?;
+        Percentage(self.x).to_css(dest)
+    }
 }
 
 
-#[derive(Default)]
+#[derive(
+    Default,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToResolvedValue,
+    ToCss,
+    Serialize,
+    Deserialize,
+)]
 #[repr(C)]
+#[css(comma)]
 pub struct PiecewiseLinearFunction {
+    #[css(iterable)]
     entries: crate::OwnedSlice<PiecewiseLinearFunctionEntry>,
 }
 
@@ -101,6 +140,11 @@ impl PiecewiseLinearFunction {
             builder = builder.push(y, x_start);
         }
         builder.build()
+    }
+
+    #[allow(missing_docs)]
+    pub fn iter(&self) -> Iter<PiecewiseLinearFunctionEntry> {
+        self.entries.iter()
     }
 }
 
