@@ -222,6 +222,11 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   std::vector<std::string> stream_ids_;
   RtpParameters init_parameters_;
 
+  
+  
+  
+  
+  
   cricket::MediaChannel* media_channel_ = nullptr;
   rtc::scoped_refptr<MediaStreamTrackInterface> track_;
 
