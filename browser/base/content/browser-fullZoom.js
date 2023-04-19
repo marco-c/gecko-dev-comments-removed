@@ -50,7 +50,6 @@ var FullZoom = {
   init: function FullZoom_init() {
     gBrowser.addEventListener("DoZoomEnlargeBy10", this);
     gBrowser.addEventListener("DoZoomReduceBy10", this);
-    window.addEventListener("MozScaleGestureComplete", this);
 
     
     this._cps2 = Cc["@mozilla.org/content-pref/service;1"].getService(
@@ -87,7 +86,6 @@ var FullZoom = {
     this._cps2.removeObserverForName(this.name, this);
     gBrowser.removeEventListener("DoZoomEnlargeBy10", this);
     gBrowser.removeEventListener("DoZoomReduceBy10", this);
-    window.removeEventListener("MozScaleGestureComplete", this);
   },
 
   
@@ -102,11 +100,6 @@ var FullZoom = {
       case "DoZoomReduceBy10":
         this.changeZoomBy(this._getTargetedBrowser(event), -0.1);
         break;
-      case "MozScaleGestureComplete": {
-        let nonDefaultScalingZoom = event.detail != 1.0;
-        this.updateCommands(nonDefaultScalingZoom);
-        break;
-      }
     }
   },
 
@@ -330,18 +323,7 @@ var FullZoom = {
 
   
 
-  
-
-
-
-
-
-
-
-
-
-
-  updateCommands: function FullZoom_updateCommands(forceResetEnabled = false) {
+  updateCommands: function FullZoom_updateCommands() {
     let zoomLevel = ZoomManager.zoom;
     let reduceCmd = document.getElementById("cmd_fullZoomReduce");
     if (zoomLevel == ZoomManager.MIN) {
@@ -358,7 +340,7 @@ var FullZoom = {
     }
 
     let resetCmd = document.getElementById("cmd_fullZoomReset");
-    if (zoomLevel == 1 && !forceResetEnabled) {
+    if (zoomLevel == 1) {
       resetCmd.setAttribute("disabled", "true");
     } else {
       resetCmd.removeAttribute("disabled");
