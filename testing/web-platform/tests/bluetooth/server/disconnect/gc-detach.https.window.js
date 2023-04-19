@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Garbage collect then detach frame. We shouldn\'t crash.';
 let iframe = document.createElement('iframe');

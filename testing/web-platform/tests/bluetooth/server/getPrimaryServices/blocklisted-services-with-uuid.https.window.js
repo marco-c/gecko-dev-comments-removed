@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Request for services. Does not return blocklisted service.';
 const expected = new DOMException(

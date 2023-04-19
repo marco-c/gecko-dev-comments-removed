@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'An empty |filters| member should result in a TypeError';
 const expected = new DOMException(

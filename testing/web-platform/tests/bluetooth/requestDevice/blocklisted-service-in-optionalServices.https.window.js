@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Blocklisted UUID in optionalServices is removed and ' +
     'access not granted.';

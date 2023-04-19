@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Find correct services with UUID.';
 let device, fake_peripheral;

@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'RequestDeviceOptions should have exactly one of ' +
     '\'filters\' or \'acceptAllDevices:true\'. Reject with TypeError if not.';

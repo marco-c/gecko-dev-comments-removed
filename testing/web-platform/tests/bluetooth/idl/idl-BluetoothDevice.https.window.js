@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc_idl = 'BluetoothDevice IDL test.';
 

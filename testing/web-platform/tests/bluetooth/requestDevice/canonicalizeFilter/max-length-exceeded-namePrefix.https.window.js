@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'A device name prefix longer than 248 must reject.';
 const expected = new DOMException(

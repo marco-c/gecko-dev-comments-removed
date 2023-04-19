@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Services member must contain at least one service.';
 const expected = new TypeError();

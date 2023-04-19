@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict';
 
 const baseUrl = `${location.protocol}//${location.host}`;

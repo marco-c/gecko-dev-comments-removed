@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'A unicode device namePrefix of 248 bytes is valid.';
 

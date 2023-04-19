@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'A device name between 29 and 248 bytes is valid.';
 const DEVICE_NAME = 'a_device_name_that_is_longer_than_29_bytes_but_' +

@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Request device from a unique origin. ' +
     'Should reject with SecurityError.';

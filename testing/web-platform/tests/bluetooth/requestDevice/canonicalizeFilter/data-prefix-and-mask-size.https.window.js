@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc =
     'Manufacturer data mask size must be equal to dataPrefix size.';

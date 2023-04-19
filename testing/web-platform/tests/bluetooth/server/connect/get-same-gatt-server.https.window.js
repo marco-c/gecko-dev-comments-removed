@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Multiple connects should return the same gatt object.';
 

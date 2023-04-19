@@ -2,8 +2,6 @@
 
 
 
-
-
 const test_desc =
     'A device with name and no UUIDs nearby. Should be found if ' +
     'acceptAllDevices is true.';

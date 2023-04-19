@@ -2,9 +2,6 @@
 
 
 
-
-
-
 'use strict';
 const test_desc = 'requestDevice() requires an argument.';
 const expected = new TypeError();

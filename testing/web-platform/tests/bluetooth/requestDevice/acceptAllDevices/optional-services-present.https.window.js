@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'requestDevice called with acceptAllDevices: true and with ' +
   'optionalServices. Should get access to services.';

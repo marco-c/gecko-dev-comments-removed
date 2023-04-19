@@ -1,7 +1,5 @@
 
 
-
-
 'use strict';
 
 for (const beaconType of BeaconTypes) {

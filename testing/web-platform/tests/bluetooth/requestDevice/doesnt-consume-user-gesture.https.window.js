@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'requestDevice calls do not consume user gestures.';
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Reject with NotFoundError if there is no BT radio present.';
 const expected =

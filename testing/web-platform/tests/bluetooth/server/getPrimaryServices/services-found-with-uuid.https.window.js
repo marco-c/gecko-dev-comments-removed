@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Request for services. Should return right number of ' +
     'services.';

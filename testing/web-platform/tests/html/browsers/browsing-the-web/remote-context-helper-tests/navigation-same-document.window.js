@@ -5,8 +5,6 @@
 
 
 
-
-
 'use strict';
 
 async function assertLocationIs(remoteContextWrapper, expectedLocation) {

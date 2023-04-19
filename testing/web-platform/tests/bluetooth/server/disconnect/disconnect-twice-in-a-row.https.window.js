@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Calling disconnect twice in a row still results in ' +
     '\'connected\' being false.';

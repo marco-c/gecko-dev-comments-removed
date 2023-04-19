@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'An empty name device can be obtained by empty name filter.'
 

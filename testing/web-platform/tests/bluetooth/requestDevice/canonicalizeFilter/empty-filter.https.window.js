@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'A filter must restrict the devices in some way.';
 const expected = new TypeError();

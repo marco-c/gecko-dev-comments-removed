@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'The Device Information service is composed of blocklisted ' +
     'characteristics so we shouldn\'t find any.';

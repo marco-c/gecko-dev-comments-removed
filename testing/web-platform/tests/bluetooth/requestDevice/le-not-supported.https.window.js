@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Reject with NotFoundError if Bluetooth is not supported.';
 const expected =

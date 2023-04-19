@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'A device name of 248 bytes is valid.';
 const DEVICE_NAME = 'a'.repeat(248);

@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Discover a device using alias, name, or UUID.';
 

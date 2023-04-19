@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Returned device should always be the same.';
 let devices = [];

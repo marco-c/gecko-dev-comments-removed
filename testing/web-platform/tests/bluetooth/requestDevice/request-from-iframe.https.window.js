@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Concurrent requestDevice calls in iframes work.';
 const iframes = [];

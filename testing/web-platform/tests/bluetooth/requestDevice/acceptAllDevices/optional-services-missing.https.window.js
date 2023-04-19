@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'requestDevice called with acceptAllDevices: true and ' +
   'with no optionalServices. Should not get access to any services.';

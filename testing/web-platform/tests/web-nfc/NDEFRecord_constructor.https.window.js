@@ -3,8 +3,6 @@
 
 
 
-
-
 test(() => {
   assert_equals(NDEFRecord.length, 1);
   assert_throws_js(TypeError, () => new NDEFRecord());

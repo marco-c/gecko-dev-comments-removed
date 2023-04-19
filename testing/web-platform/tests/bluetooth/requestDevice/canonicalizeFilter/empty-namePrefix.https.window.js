@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'requestDevice with empty namePrefix. ' +
     'Should reject with TypeError.';

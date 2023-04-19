@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Reject with SecurityError if requesting a blocklisted ' +
     'service.';

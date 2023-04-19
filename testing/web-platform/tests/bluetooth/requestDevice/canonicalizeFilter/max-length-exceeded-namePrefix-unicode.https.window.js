@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Unicode string with utf8 representation longer than 248 ' +
     'bytes in \'namePrefix\' must throw NotFoundError.';

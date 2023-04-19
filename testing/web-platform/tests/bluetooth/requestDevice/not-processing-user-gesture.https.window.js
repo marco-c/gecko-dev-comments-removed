@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Requires a user gesture.';
 const expected = new DOMException(

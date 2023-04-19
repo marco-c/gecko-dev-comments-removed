@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Request for services in a device with no services. Reject ' +
     'with NotFoundError.';

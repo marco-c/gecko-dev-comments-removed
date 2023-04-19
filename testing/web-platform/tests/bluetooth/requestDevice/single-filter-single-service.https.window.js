@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Simple filter selects matching device.';
 

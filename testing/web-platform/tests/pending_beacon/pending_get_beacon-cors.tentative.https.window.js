@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 
 const {HTTPS_ORIGIN, HTTPS_NOTSAMESITE_ORIGIN} = get_host_info();

@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Manufacturer data company identifier must be unique.';
 const expected = new TypeError();

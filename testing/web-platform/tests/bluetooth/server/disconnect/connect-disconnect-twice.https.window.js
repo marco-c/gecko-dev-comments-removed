@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Connect + Disconnect twice still results in ' +
     '\'connected\' being false.';

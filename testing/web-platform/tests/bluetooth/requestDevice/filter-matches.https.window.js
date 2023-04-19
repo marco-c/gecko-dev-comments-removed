@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Matches a filter if all present members match.';
 let matching_services = [health_thermometer.uuid];

@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = '[SameObject] test for BluetoothRemoteGATTServer\'s device.';
 

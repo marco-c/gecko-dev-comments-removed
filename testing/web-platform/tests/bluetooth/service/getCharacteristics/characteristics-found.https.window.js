@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Find all characteristics in a service.';
 

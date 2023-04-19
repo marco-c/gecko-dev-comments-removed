@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Invalid optional service must reject the promise.';
 const expected = new TypeError();

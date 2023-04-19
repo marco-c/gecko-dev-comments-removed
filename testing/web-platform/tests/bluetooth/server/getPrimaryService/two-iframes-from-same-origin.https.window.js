@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Two iframes in the same origin should be able to access ' +
     'each other\'s services';

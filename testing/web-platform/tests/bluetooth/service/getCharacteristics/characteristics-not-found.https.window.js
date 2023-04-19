@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Request for absent characteristics. Reject with ' +
     'NotFoundError.';

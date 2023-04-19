@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Find all services in a device.';
 

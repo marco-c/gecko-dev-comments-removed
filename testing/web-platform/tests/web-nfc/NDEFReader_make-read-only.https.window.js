@@ -3,8 +3,6 @@
 
 
 
-
-
 'use strict';
 
 const invalid_signals = ['string', 123, {}, true, Symbol(), () => {}, self];

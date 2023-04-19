@@ -4,8 +4,6 @@
 
 
 
-
-
 promise_test(async t => {
   const rcHelper = new RemoteContextHelper();
 

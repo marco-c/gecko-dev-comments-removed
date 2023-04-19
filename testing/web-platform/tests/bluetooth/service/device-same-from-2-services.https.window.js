@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Same parent device returned from multiple services.';
 

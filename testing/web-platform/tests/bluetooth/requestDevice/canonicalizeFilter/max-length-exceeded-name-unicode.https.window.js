@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'Unicode string with utf8 representation longer than 248 ' +
     'bytes in \'name\' must throw TypeError.';

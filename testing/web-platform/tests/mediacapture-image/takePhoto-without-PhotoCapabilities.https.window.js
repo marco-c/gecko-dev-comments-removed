@@ -1,6 +1,3 @@
-
-
-
 promise_test(async t => {
   const track = new MediaStreamTrackGenerator('video');
   const capturer = new ImageCapture(track);

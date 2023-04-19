@@ -2,8 +2,6 @@
 
 
 
-
-
 'use strict';
 const test_desc = 'A name containing unicode characters whose utf8 length ' +
     'is less than 30 must not throw an error.';
