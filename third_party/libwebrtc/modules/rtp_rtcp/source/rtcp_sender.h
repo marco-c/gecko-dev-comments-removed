@@ -64,6 +64,12 @@ class RTCPSender final {
     
     
     bool non_sender_rtt_measurement = false;
+    
+    
+    
+    
+    
+    std::function<void(TimeDelta)> schedule_next_rtcp_send_evaluation_function;
 
     RtcEventLog* event_log = nullptr;
     absl::optional<TimeDelta> rtcp_report_interval;
@@ -91,7 +97,7 @@ class RTCPSender final {
     RTCPReceiver* receiver;
   };
 
-  explicit RTCPSender(const Configuration& config);
+  explicit RTCPSender(Configuration config);
   
   
   explicit RTCPSender(const RtpRtcpInterface::Configuration& config);
@@ -224,6 +230,10 @@ class RTCPSender final {
   void BuildNACK(const RtcpContext& context, PacketSender& sender)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_rtcp_sender_);
 
+  
+  void SetNextRtcpSendEvaluationDuration(TimeDelta duration)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_rtcp_sender_);
+
   const bool audio_;
   
   
@@ -238,6 +248,10 @@ class RTCPSender final {
   Transport* const transport_;
 
   const TimeDelta report_interval_;
+  
+  
+  const std::function<void(TimeDelta)>
+      schedule_next_rtcp_send_evaluation_function_;
 
   mutable Mutex mutex_rtcp_sender_;
   bool sending_ RTC_GUARDED_BY(mutex_rtcp_sender_);
