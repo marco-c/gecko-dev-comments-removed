@@ -189,7 +189,11 @@ module.exports = {
         
         
         
-        "dom/**",
+        "dom/base/**",
+        "dom/cache/**",
+        "dom/indexedDB/**",
+        "dom/localstorage/**",
+        "dom/tests/**",
       ],
       rules: {
         
