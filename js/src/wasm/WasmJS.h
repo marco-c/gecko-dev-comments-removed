@@ -154,6 +154,9 @@ JS_FOR_WASM_FEATURES(WASM_FEATURE, WASM_FEATURE, WASM_FEATURE)
 #undef WASM_FEATURE
 
 
+bool SimdAvailable(JSContext* cx);
+
+
 bool IsSimdPrivilegedContext(JSContext* cx);
 
 

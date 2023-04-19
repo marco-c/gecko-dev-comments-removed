@@ -324,11 +324,11 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
   bool testSerialization = WasmTestSerializationFlag(cx);
   bool functionReferences = WasmFunctionReferencesFlag(cx);
   bool gc = WasmGcFlag(cx);
-#ifdef JS_CODEGEN_ARM64
   
+#if !defined(ENABLE_WASM_SIMD) || defined(JS_CODEGEN_ARM64)
   bool simdOnNonAarch64 = false;
 #else
-  bool simdOnNonAarch64 = WasmSimdFlag(cx);
+  bool simdOnNonAarch64 = true;
 #endif
   bool exn = WasmExceptionsFlag(cx);
   if (reason) {
@@ -385,15 +385,12 @@ bool wasm::IsSimdPrivilegedContext(JSContext* cx) {
          cx->realm()->principals()->isSystemOrAddonPrincipal();
 }
 
+bool wasm::SimdAvailable(JSContext* cx) {
+  return js::jit::JitSupportsWasmSimd();
+}
+
 bool wasm::SimdWormholeAvailable(JSContext* cx) {
 #ifdef ENABLE_WASM_SIMD_WORMHOLE
-  
-  
-  
-  
-  
-  
-  
   
   
   return js::jit::JitSupportsWasmSimd() &&

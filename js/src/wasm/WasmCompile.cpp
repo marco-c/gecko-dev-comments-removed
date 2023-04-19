@@ -92,14 +92,11 @@ FeatureArgs FeatureArgs::build(JSContext* cx, const FeatureOptions& options) {
   features.sharedMemory =
       wasm::ThreadsAvailable(cx) ? Shareable::True : Shareable::False;
 
+  features.simd = jit::JitSupportsWasmSimd();
   
   
-  bool wormholeOverride =
+  features.simdWormhole =
       wasm::SimdWormholeAvailable(cx) && options.simdWormhole;
-  features.simdWormhole = wormholeOverride;
-  if (wormholeOverride) {
-    features.v128 = true;
-  }
   features.intrinsics = options.intrinsics;
 
   return features;
