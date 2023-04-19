@@ -44,7 +44,7 @@
 #include "rtc_base/openssl_identity.h"
 #endif
 #include "rtc_base/openssl_utility.h"
-#include "rtc_base/string_encode.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/thread.h"
 
 
@@ -165,6 +165,23 @@ static void LogSslError() {
 
 
 namespace rtc {
+
+namespace webrtc_openssl_adapter_internal {
+
+
+std::string StrJoin(const std::vector<std::string>& list, char delimiter) {
+  RTC_CHECK(!list.empty());
+  StringBuilder sb;
+  sb << list[0];
+  for (size_t i = 1; i < list.size(); i++) {
+    sb.AppendFormat("%c", delimiter);
+    sb << list[i];
+  }
+  return sb.Release();
+}
+}  
+
+using webrtc_openssl_adapter_internal::StrJoin;
 
 bool OpenSSLAdapter::InitializeSSL() {
   if (!SSL_library_init())
@@ -354,7 +371,7 @@ int OpenSSLAdapter::BeginSSL() {
   }
 
   if (!elliptic_curves_.empty()) {
-    SSL_set1_curves_list(ssl_, rtc::join(elliptic_curves_, ':').c_str());
+    SSL_set1_curves_list(ssl_, StrJoin(elliptic_curves_, ':').c_str());
   }
 
   

@@ -45,10 +45,6 @@ size_t hex_decode_with_delimiter(ArrayView<char> buffer,
 
 
 
-std::string join(const std::vector<std::string>& source, char delimiter);
-
-
-
 
 std::vector<absl::string_view> split(absl::string_view source, char delimiter);
 

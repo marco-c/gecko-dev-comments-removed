@@ -37,6 +37,14 @@
 
 namespace rtc {
 
+namespace webrtc_openssl_adapter_internal {
+
+
+
+std::string StrJoin(const std::vector<std::string>& list, char delimiter);
+
+}  
+
 class OpenSSLAdapter final : public SSLAdapter,
                              public MessageHandlerAutoCleanup {
  public:
