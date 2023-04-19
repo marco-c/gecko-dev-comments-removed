@@ -71,7 +71,7 @@ class PacingController {
                       std::unique_ptr<RtpPacketToSend> packet) = 0;
     virtual std::unique_ptr<RtpPacketToSend> Pop() = 0;
 
-    virtual size_t SizeInPackets() const = 0;
+    virtual int SizeInPackets() const = 0;
     bool Empty() const { return SizeInPackets() == 0; }
     virtual DataSize SizeInPayloadBytes() const = 0;
 
@@ -85,6 +85,7 @@ class PacingController {
     
     virtual Timestamp OldestEnqueueTime() const = 0;
 
+    
     
     
     
