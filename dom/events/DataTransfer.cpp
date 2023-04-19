@@ -1379,7 +1379,8 @@ void DataTransfer::CacheExternalData(const nsTArray<nsCString>& aTypes,
   for (const nsCString& type : aTypes) {
     if (type.EqualsLiteral(kCustomTypesMime)) {
       FillInExternalCustomTypes(0, aPrincipal);
-    } else if (type.EqualsLiteral(kFileMime) && XRE_IsContentProcess()) {
+    } else if (type.EqualsLiteral(kFileMime) && XRE_IsContentProcess() &&
+               !StaticPrefs::dom_events_dataTransfer_mozFile_enabled()) {
       
       
       
@@ -1390,9 +1391,10 @@ void DataTransfer::CacheExternalData(const nsTArray<nsCString>& aTypes,
       
       
       
-      if (type.EqualsLiteral(kFileMime) && !XRE_IsContentProcess()) {
+      if (type.EqualsLiteral(kFileMime)) {
         hasFileData = true;
       }
+
       
       CacheExternalData(
           type.get(), 0, aPrincipal,
