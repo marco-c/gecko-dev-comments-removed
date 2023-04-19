@@ -18,6 +18,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/HTMLLinkElementBinding.h"
 #include "mozilla/dom/HTMLDNSPrefetch.h"
+#include "mozilla/dom/ScriptLoader.h"
 #include "nsContentUtils.h"
 #include "nsDOMTokenList.h"
 #include "nsGenericHTMLElement.h"
@@ -313,8 +314,9 @@ static const DOMTokenListSupportedToken sSupportedRelValues[] = {
     
     
     
-    "preload",   "prefetch",   "dns-prefetch", "stylesheet", "next",
-    "alternate", "preconnect", "icon",         "search",     nullptr};
+    "preload", "prefetch",      "dns-prefetch", "stylesheet",
+    "next",    "alternate",     "preconnect",   "icon",
+    "search",  "modulepreload", nullptr};
 
 static const DOMTokenListSupportedToken sSupportedRelValuesWithManifest[] = {
     
@@ -484,6 +486,15 @@ void HTMLLinkElement::
       StartPreload(policyType);
       return;
     }
+  }
+
+  if (linkTypes & eMODULE_PRELOAD) {
+    
+    
+    
+    OwnerDoc()->ScriptLoader()->GetModuleLoader()->SetAcquiringImportMaps(
+        false);
+    return;
   }
 
   if (linkTypes & ePRECONNECT) {

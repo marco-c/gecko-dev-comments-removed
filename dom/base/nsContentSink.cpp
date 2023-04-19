@@ -327,6 +327,14 @@ nsresult nsContentSink::ProcessLinkFromHeader(const net::LinkHeader& aHeader) {
                   aHeader.mIntegrity, aHeader.mSrcset, aHeader.mSizes,
                   aHeader.mCrossOrigin, aHeader.mReferrerPolicy);
     }
+
+    if (linkTypes & LinkStyle::eMODULE_PRELOAD) {
+      
+      
+      
+      mDocument->ScriptLoader()->GetModuleLoader()->SetAcquiringImportMaps(
+          false);
+    }
   }
 
   
