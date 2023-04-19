@@ -1095,7 +1095,10 @@ bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
   }
 
   
-  aFontStyle.size /= gfxPlatformGtk::GetFontScaleFactor();
+  
+  
+  
+  aFontStyle.size /= LookAndFeel::GetTextScaleFactor();
   return true;
 }
 
