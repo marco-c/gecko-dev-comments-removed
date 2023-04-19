@@ -284,6 +284,10 @@ var whitelist = [
   
   { file: "resource://gre/modules/LangPackMatcher.sys.mjs" },
   { file: "resource://gre/modules/PluralForm.sys.mjs" },
+
+  
+  
+  { file: "chrome://global/locale/notification.dtd" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {

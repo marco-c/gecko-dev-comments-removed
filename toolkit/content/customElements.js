@@ -488,11 +488,6 @@
 
 
 
-
-
-
-
-
       static get fragment() {
         if (!this.hasOwnProperty("_fragment")) {
           let markup = this.markup;
