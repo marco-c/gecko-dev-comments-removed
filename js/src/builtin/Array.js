@@ -866,52 +866,57 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
     let A = IsConstructor(C) ? constructContentFunction(C, C) : [];
 
     
-
     
-    if (usingAsyncIterator !== undefined) {
-      
-    } else if (usingSyncIterator !== undefined) {
+    if (usingAsyncIterator !== undefined || usingSyncIterator !== undefined) {
       
       
-    } else {
       
       
 
       
-      
-      let arrayLike = ToObject(asyncItems);
-
-      
-      let len = ToLength(arrayLike.length);
 
       
       
       
       
-      
-      
-      let A = IsConstructor(C)
-        ? constructContentFunction(C, C, len)
-        : std_Array(len);
 
       
       let k = 0;
 
       
-      while (k < len) {
+      for await (let nextValue of allowContentIterWith(
+        asyncItems,
+        usingAsyncIterator,
+        usingSyncIterator
+      )) {
         
         
         
-        let kValue = await arrayLike[k];
+        
+        
+        
+        
 
         
-        
-        
-        
-        let mappedValue = mapping
-          ? await callContentFunction(mapfn, thisArg, kValue, k)
-          : kValue;
 
+        
+
+        
+        let mappedValue = nextValue;
+
+        
+        if (mapping) {
+          
+          
+          
+          mappedValue = callContentFunction(mapfn, thisArg, nextValue, k);
+
+          
+          
+          mappedValue = await mappedValue;
+        }
+
+        
         
         DefineDataProperty(A, k, mappedValue);
 
@@ -920,54 +925,49 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
       }
 
       
-      A.length = len;
+
+      
+      A.length = k;
 
       
       return A;
     }
 
     
+
+    
+    
+    let arrayLike = ToObject(asyncItems);
+
+    
+    let len = ToLength(arrayLike.length);
+
     
     
     
+    
+    
+    
+    A = IsConstructor(C) ? constructContentFunction(C, C, len) : std_Array(len);
 
     
     let k = 0;
 
     
-    for await (let nextValue of allowContentIterWith(
-      asyncItems,
-      usingAsyncIterator,
-      usingSyncIterator
-    )) {
+    while (k < len) {
       
       
       
-      
-      
-      
-      
+      let kValue = await arrayLike[k];
 
       
-
       
-
       
-      let mappedValue = nextValue;
-
       
-      if (mapping) {
-        
-        
-        
-        mappedValue = callContentFunction(mapfn, thisArg, nextValue, k);
+      let mappedValue = mapping
+        ? await callContentFunction(mapfn, thisArg, kValue, k)
+        : kValue;
 
-        
-        
-        mappedValue = await mappedValue;
-      }
-
-      
       
       DefineDataProperty(A, k, mappedValue);
 
@@ -976,9 +976,7 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
     }
 
     
-
-    
-    A.length = k;
+    A.length = len;
 
     
     return A;
