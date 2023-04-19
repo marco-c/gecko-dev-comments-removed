@@ -53,13 +53,13 @@ with only_when(target_is_osx):
         env="MACOSX_DEPLOYMENT_TARGET",
         nargs=1,
         default=depends(target, developer_options)
-            
-            
-            
-            
-            
-            
-            (lambda t, d: "11.0" if (t.cpu == "aarch64" and not d) else "10.12"),
+        
+        
+        
+        
+        
+        
+        (lambda t, d: "11.0" if (t.cpu == "aarch64" and not d) else "10.12"),
         help="Set the minimum MacOS version needed at runtime{|}",
     )
 
