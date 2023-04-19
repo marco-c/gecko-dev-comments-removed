@@ -78,6 +78,9 @@ struct gfxFontFaceSrc {
   bool mUseOriginPrincipal = false;
 
   
+  mozilla::StyleFontFaceSourceTechFlags mTechFlags;
+
+  
   mozilla::StyleFontFaceSourceFormatKeyword mFormatHint;
 
   nsCString mLocalName;                     
@@ -113,7 +116,7 @@ inline bool operator==(const gfxFontFaceSrc& a, const gfxFontFaceSrc& b) {
         return false;
       }
       bool equals;
-      return a.mFormatHint == b.mFormatHint &&
+      return a.mFormatHint == b.mFormatHint && a.mTechFlags == b.mTechFlags &&
              (a.mURI == b.mURI || a.mURI->Equals(b.mURI)) &&
              NS_SUCCEEDED(a.mReferrerInfo->Equals(b.mReferrerInfo, &equals)) &&
              equals;
@@ -136,6 +139,7 @@ class gfxUserFontData {
   gfxUserFontData()
       : mSrcIndex(0),
         mMetaOrigLen(0),
+        mTechFlags(mozilla::StyleFontFaceSourceTechFlags::Empty()),
         mFormatHint(mozilla::StyleFontFaceSourceFormatKeyword::None),
         mCompression(kUnknownCompression),
         mPrivate(false),
@@ -152,6 +156,7 @@ class gfxUserFontData {
   nsCString mRealName;    
   uint32_t mSrcIndex;     
   uint32_t mMetaOrigLen;  
+  mozilla::StyleFontFaceSourceTechFlags mTechFlags;  
   mozilla::StyleFontFaceSourceFormatKeyword
       mFormatHint;       
   uint8_t mCompression;  
