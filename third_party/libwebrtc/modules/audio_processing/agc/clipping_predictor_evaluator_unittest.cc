@@ -25,6 +25,7 @@ namespace webrtc {
 namespace {
 
 using testing::Eq;
+using testing::Field;
 using testing::Optional;
 
 constexpr bool kDetected = true;
@@ -35,17 +36,19 @@ constexpr bool kNotPredicted = false;
 
 int SumTrueFalsePositivesNegatives(
     const ClippingPredictorEvaluator& evaluator) {
-  return evaluator.true_positives() + evaluator.true_negatives() +
-         evaluator.false_positives() + evaluator.false_negatives();
+  return evaluator.counters().true_positives +
+         evaluator.counters().true_negatives +
+         evaluator.counters().false_positives +
+         evaluator.counters().false_negatives;
 }
 
 
-TEST(ClippingPredictorEvaluatorTest, Init) {
+TEST(ClippingPredictionEvalTest, Init) {
   ClippingPredictorEvaluator evaluator(3);
-  EXPECT_EQ(evaluator.true_positives(), 0);
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 class ClippingPredictorEvaluatorParameterization
@@ -66,10 +69,10 @@ TEST_P(ClippingPredictorEvaluatorParameterization, AtMostOneMetricChanges) {
   for (int i = 0; i < kNumCalls; ++i) {
     SCOPED_TRACE(i);
     
-    const int last_tp = evaluator.true_positives();
-    const int last_tn = evaluator.true_negatives();
-    const int last_fp = evaluator.false_positives();
-    const int last_fn = evaluator.false_negatives();
+    const int last_tp = evaluator.counters().true_positives;
+    const int last_tn = evaluator.counters().true_negatives;
+    const int last_fp = evaluator.counters().false_positives;
+    const int last_fn = evaluator.counters().false_negatives;
     
     bool clipping_detected = random_generator.Rand<bool>();
     bool clipping_predicted = random_generator.Rand<bool>();
@@ -77,10 +80,10 @@ TEST_P(ClippingPredictorEvaluatorParameterization, AtMostOneMetricChanges) {
 
     
     int num_changes = 0;
-    num_changes += last_tp == evaluator.true_positives() ? 0 : 1;
-    num_changes += last_tn == evaluator.true_negatives() ? 0 : 1;
-    num_changes += last_fp == evaluator.false_positives() ? 0 : 1;
-    num_changes += last_fn == evaluator.false_negatives() ? 0 : 1;
+    num_changes += last_tp == evaluator.counters().true_positives ? 0 : 1;
+    num_changes += last_tn == evaluator.counters().true_negatives ? 0 : 1;
+    num_changes += last_fp == evaluator.counters().false_positives ? 0 : 1;
+    num_changes += last_fn == evaluator.counters().false_negatives ? 0 : 1;
     EXPECT_GE(num_changes, 0);
     EXPECT_LE(num_changes, 1);
   }
@@ -96,20 +99,20 @@ TEST_P(ClippingPredictorEvaluatorParameterization, MetricsAreWeaklyMonotonic) {
   for (int i = 0; i < kNumCalls; ++i) {
     SCOPED_TRACE(i);
     
-    const int last_tp = evaluator.true_positives();
-    const int last_tn = evaluator.true_negatives();
-    const int last_fp = evaluator.false_positives();
-    const int last_fn = evaluator.false_negatives();
+    const int last_tp = evaluator.counters().true_positives;
+    const int last_tn = evaluator.counters().true_negatives;
+    const int last_fp = evaluator.counters().false_positives;
+    const int last_fn = evaluator.counters().false_negatives;
     
     bool clipping_detected = random_generator.Rand<bool>();
     bool clipping_predicted = random_generator.Rand<bool>();
     evaluator.Observe(clipping_detected, clipping_predicted);
 
     
-    EXPECT_GE(evaluator.true_positives(), last_tp);
-    EXPECT_GE(evaluator.true_negatives(), last_tn);
-    EXPECT_GE(evaluator.false_positives(), last_fp);
-    EXPECT_GE(evaluator.false_negatives(), last_fn);
+    EXPECT_GE(evaluator.counters().true_positives, last_tp);
+    EXPECT_GE(evaluator.counters().true_negatives, last_tn);
+    EXPECT_GE(evaluator.counters().false_positives, last_fp);
+    EXPECT_GE(evaluator.counters().false_negatives, last_fn);
   }
 }
 
@@ -123,10 +126,10 @@ TEST_P(ClippingPredictorEvaluatorParameterization, BoundedMetricsGrowth) {
   for (int i = 0; i < kNumCalls; ++i) {
     SCOPED_TRACE(i);
     
-    const int last_tp = evaluator.true_positives();
-    const int last_tn = evaluator.true_negatives();
-    const int last_fp = evaluator.false_positives();
-    const int last_fn = evaluator.false_negatives();
+    const int last_tp = evaluator.counters().true_positives;
+    const int last_tn = evaluator.counters().true_negatives;
+    const int last_fp = evaluator.counters().false_positives;
+    const int last_fn = evaluator.counters().false_negatives;
     
     bool clipping_detected = random_generator.Rand<bool>();
     bool clipping_predicted = random_generator.Rand<bool>();
@@ -134,11 +137,12 @@ TEST_P(ClippingPredictorEvaluatorParameterization, BoundedMetricsGrowth) {
 
     
     
-    EXPECT_LE(evaluator.true_positives() - last_tp, history_size() + 1);
+    EXPECT_LE(evaluator.counters().true_positives - last_tp,
+              history_size() + 1);
     
-    EXPECT_LE(evaluator.true_negatives() - last_tn, 1);
-    EXPECT_LE(evaluator.false_positives() - last_fp, 1);
-    EXPECT_LE(evaluator.false_negatives() - last_fn, 1);
+    EXPECT_LE(evaluator.counters().true_negatives - last_tn, 1);
+    EXPECT_LE(evaluator.counters().false_positives - last_fp, 1);
+    EXPECT_LE(evaluator.counters().false_negatives - last_fn, 1);
   }
 }
 
@@ -153,7 +157,7 @@ TEST_P(ClippingPredictorEvaluatorParameterization,
   for (int i = 0; i < kNumCalls; ++i) {
     SCOPED_TRACE(i);
     
-    const int last_tp = evaluator.true_positives();
+    const int last_tp = evaluator.counters().true_positives;
     
     bool clipping_detected = random_generator.Rand<bool>();
     bool clipping_predicted = random_generator.Rand<bool>();
@@ -162,7 +166,7 @@ TEST_P(ClippingPredictorEvaluatorParameterization,
 
     
     
-    if (evaluator.true_positives() == last_tp) {
+    if (evaluator.counters().true_positives == last_tp) {
       EXPECT_FALSE(prediction_interval.has_value());
     } else {
       EXPECT_TRUE(prediction_interval.has_value());
@@ -171,198 +175,197 @@ TEST_P(ClippingPredictorEvaluatorParameterization,
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ClippingPredictorEvaluatorTest,
+    ClippingPredictionEvalTest,
     ClippingPredictorEvaluatorParameterization,
     ::testing::Combine(::testing::Values(4, 8, 15, 16, 23, 42),
                        ::testing::Values(1, 10, 21)));
 
 
 
-TEST(ClippingPredictorEvaluatorTest, OneTruePositiveAfterInit) {
+TEST(ClippingPredictionEvalTest, OneTruePositiveAfterInit) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kDetected, kPredicted);
-  EXPECT_EQ(evaluator.true_positives(), 1);
+  EXPECT_EQ(evaluator.counters().true_positives, 1);
 
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest, OneFalseNegativeAfterInit) {
+TEST(ClippingPredictionEvalTest, OneFalseNegativeAfterInit) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_negatives(), 1);
+  EXPECT_EQ(evaluator.counters().false_negatives, 1);
 
-  EXPECT_EQ(evaluator.true_positives(), 0);
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest, OneFalsePositiveAfterInit) {
+TEST(ClippingPredictionEvalTest, OneFalsePositiveAfterInit) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
   evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 1);
+  EXPECT_EQ(evaluator.counters().false_positives, 1);
 
-  EXPECT_EQ(evaluator.true_positives(), 0);
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest, OneTrueNegativeAfterInit) {
+TEST(ClippingPredictionEvalTest, OneTrueNegativeAfterInit) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.true_negatives(), 1);
+  EXPECT_EQ(evaluator.counters().true_negatives, 1);
 
-  EXPECT_EQ(evaluator.true_positives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest, NeverDetectedAndNotPredicted) {
+TEST(ClippingPredictionEvalTest, NeverDetectedAndNotPredicted) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.true_negatives(), 4);
+  EXPECT_EQ(evaluator.counters().true_negatives, 4);
 
-  EXPECT_EQ(evaluator.true_positives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest, DetectedButNotPredicted) {
+TEST(ClippingPredictionEvalTest, DetectedButNotPredicted) {
   ClippingPredictorEvaluator evaluator(3);
-  evaluator.Observe(kNotDetected, kNotPredicted);
-  evaluator.Observe(kNotDetected, kNotPredicted);
-  evaluator.Observe(kNotDetected, kNotPredicted);
-  evaluator.Observe(kDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_negatives(), 1);
-
-  EXPECT_EQ(evaluator.true_positives(), 0);
-  EXPECT_EQ(evaluator.true_negatives(), 3);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-}
-
-
-
-TEST(ClippingPredictorEvaluatorTest,
-     PredictedOnceAndNeverDetectedBeforeDeadline) {
-  ClippingPredictorEvaluator evaluator(3);
-  evaluator.Observe(kNotDetected, kPredicted);
-  evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 1);
-
-  EXPECT_EQ(evaluator.true_positives(), 0);
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
-}
-
-
-
-TEST(ClippingPredictorEvaluatorTest, PredictedOnceButDetectedAfterDeadline) {
-  ClippingPredictorEvaluator evaluator(3);
-  evaluator.Observe(kNotDetected, kPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 1);
+  EXPECT_EQ(evaluator.counters().false_negatives, 1);
 
-  EXPECT_EQ(evaluator.true_positives(), 0);
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 1);
+  EXPECT_EQ(evaluator.counters().true_positives, 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 3);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
 }
 
 
-TEST(ClippingPredictorEvaluatorTest, PredictedOnceAndThenImmediatelyDetected) {
+
+TEST(ClippingPredictionEvalTest, PredictedOnceAndNeverDetectedBeforeDeadline) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  evaluator.Observe(kDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.true_positives(), 1);
+  evaluator.Observe(kNotDetected, kNotPredicted);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  evaluator.Observe(kNotDetected, kNotPredicted);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  evaluator.Observe(kNotDetected, kNotPredicted);
+  EXPECT_EQ(evaluator.counters().false_positives, 1);
 
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest, PredictedOnceAndDetectedBeforeDeadline) {
+TEST(ClippingPredictionEvalTest, PredictedOnceButDetectedAfterDeadline) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 0);
   evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 0);
+  evaluator.Observe(kNotDetected, kNotPredicted);
+  evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.true_positives(), 1);
+  EXPECT_EQ(evaluator.counters().false_positives, 1);
 
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 1);
 }
 
 
-
-TEST(ClippingPredictorEvaluatorTest, PredictedOnceAndDetectedAtDeadline) {
+TEST(ClippingPredictionEvalTest, PredictedOnceAndThenImmediatelyDetected) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_positives(), 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
   evaluator.Observe(kDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.true_positives(), 1);
+  EXPECT_EQ(evaluator.counters().true_positives, 1);
 
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
+}
+
+
+
+TEST(ClippingPredictionEvalTest, PredictedOnceAndDetectedBeforeDeadline) {
+  ClippingPredictorEvaluator evaluator(3);
+  evaluator.Observe(kNotDetected, kPredicted);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  evaluator.Observe(kNotDetected, kNotPredicted);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  evaluator.Observe(kDetected, kNotPredicted);
+  EXPECT_EQ(evaluator.counters().true_positives, 1);
+
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
+}
+
+
+
+TEST(ClippingPredictionEvalTest, PredictedOnceAndDetectedAtDeadline) {
+  ClippingPredictorEvaluator evaluator(3);
+  evaluator.Observe(kNotDetected, kPredicted);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  evaluator.Observe(kNotDetected, kNotPredicted);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  evaluator.Observe(kNotDetected, kNotPredicted);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  evaluator.Observe(kDetected, kNotPredicted);
+  EXPECT_EQ(evaluator.counters().true_positives, 1);
+
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
 
-TEST(ClippingPredictorEvaluatorTest, PredictedOnceAndDetectedMultipleTimes) {
+TEST(ClippingPredictionEvalTest, PredictedOnceAndDetectedMultipleTimes) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
   
   evaluator.Observe(kDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.true_positives(), 1);
+  EXPECT_EQ(evaluator.counters().true_positives, 1);
   evaluator.Observe(kDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.true_positives(), 1);
+  EXPECT_EQ(evaluator.counters().true_positives, 1);
   
   evaluator.Observe(kDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.false_negatives(), 1);
+  EXPECT_EQ(evaluator.counters().false_negatives, 1);
   EXPECT_EQ(SumTrueFalsePositivesNegatives(evaluator), 2);
 
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest,
+TEST(ClippingPredictionEvalTest,
      PredictedMultipleTimesAndDetectedOnceAfterDeadline) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);  
@@ -370,42 +373,42 @@ TEST(ClippingPredictorEvaluatorTest,
   evaluator.Observe(kNotDetected, kPredicted);  
   evaluator.Observe(kNotDetected, kPredicted);  
   
-  EXPECT_EQ(evaluator.false_positives(), 1);
+  EXPECT_EQ(evaluator.counters().false_positives, 1);
   evaluator.Observe(kDetected, kNotPredicted);
   
   
-  EXPECT_EQ(evaluator.false_positives(), 1);
+  EXPECT_EQ(evaluator.counters().false_positives, 1);
 
-  EXPECT_EQ(evaluator.true_positives(), 3);
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 3);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest, PredictedMultipleTimesAndDetectedOnce) {
+TEST(ClippingPredictionEvalTest, PredictedMultipleTimesAndDetectedOnce) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);  
   evaluator.Observe(kNotDetected, kPredicted);  
   evaluator.Observe(kNotDetected, kPredicted);  
   evaluator.Observe(kDetected, kNotPredicted);  
-  EXPECT_EQ(evaluator.true_positives(), 3);
+  EXPECT_EQ(evaluator.counters().true_positives, 3);
   
   
   
-  const int true_negatives = evaluator.true_negatives();
+  const int true_negatives = evaluator.counters().true_negatives;
   evaluator.Observe(kNotDetected, kNotPredicted);
   evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.true_negatives(), true_negatives);
+  EXPECT_EQ(evaluator.counters().true_negatives, true_negatives);
 
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest,
+TEST(ClippingPredictionEvalTest,
      PredictedMultipleTimesAndDetectedMultipleTimes) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);  
@@ -413,22 +416,22 @@ TEST(ClippingPredictorEvaluatorTest,
   evaluator.Observe(kNotDetected, kPredicted);  
   evaluator.Observe(kDetected, kNotPredicted);  
   evaluator.Observe(kDetected, kNotPredicted);  
-  EXPECT_EQ(evaluator.true_positives(), 3);
+  EXPECT_EQ(evaluator.counters().true_positives, 3);
   
   
   
-  const int true_negatives = evaluator.true_negatives();
+  const int true_negatives = evaluator.counters().true_negatives;
   evaluator.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(evaluator.true_negatives(), true_negatives);
+  EXPECT_EQ(evaluator.counters().true_negatives, true_negatives);
 
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest, PredictedMultipleTimesAndAllDetected) {
+TEST(ClippingPredictionEvalTest, PredictedMultipleTimesAndAllDetected) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);  
   evaluator.Observe(kNotDetected, kPredicted);  
@@ -436,16 +439,15 @@ TEST(ClippingPredictorEvaluatorTest, PredictedMultipleTimesAndAllDetected) {
   evaluator.Observe(kDetected, kNotPredicted);  
   evaluator.Observe(kDetected, kNotPredicted);  
   evaluator.Observe(kDetected, kNotPredicted);  
-  EXPECT_EQ(evaluator.true_positives(), 3);
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 3);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 
 
-TEST(ClippingPredictorEvaluatorTest,
-     PredictedMultipleTimesWithGapAndAllDetected) {
+TEST(ClippingPredictionEvalTest, PredictedMultipleTimesWithGapAndAllDetected) {
   ClippingPredictorEvaluator evaluator(3);
   evaluator.Observe(kNotDetected, kPredicted);     
   evaluator.Observe(kNotDetected, kNotPredicted);  
@@ -453,10 +455,10 @@ TEST(ClippingPredictorEvaluatorTest,
   evaluator.Observe(kDetected, kNotPredicted);     
   evaluator.Observe(kDetected, kNotPredicted);     
   evaluator.Observe(kDetected, kNotPredicted);     
-  EXPECT_EQ(evaluator.true_positives(), 2);
-  EXPECT_EQ(evaluator.true_negatives(), 0);
-  EXPECT_EQ(evaluator.false_positives(), 0);
-  EXPECT_EQ(evaluator.false_negatives(), 0);
+  EXPECT_EQ(evaluator.counters().true_positives, 2);
+  EXPECT_EQ(evaluator.counters().true_negatives, 0);
+  EXPECT_EQ(evaluator.counters().false_positives, 0);
+  EXPECT_EQ(evaluator.counters().false_negatives, 0);
 }
 
 class ClippingPredictorEvaluatorPredictionIntervalParameterization
@@ -535,13 +537,13 @@ TEST_P(ClippingPredictorEvaluatorPredictionIntervalParameterization,
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ClippingPredictorEvaluatorTest,
+    ClippingPredictionEvalTest,
     ClippingPredictorEvaluatorPredictionIntervalParameterization,
     ::testing::Combine(::testing::Values(0, 3, 5), ::testing::Values(7, 11)));
 
 
 
-TEST(ClippingPredictorEvaluatorTest, NoFalsePositivesAfterReset) {
+TEST(ClippingPredictionEvalTest, NoFalsePositivesAfterReset) {
   constexpr int kHistorySize = 2;
 
   ClippingPredictorEvaluator with_reset(kHistorySize);
@@ -549,20 +551,183 @@ TEST(ClippingPredictorEvaluatorTest, NoFalsePositivesAfterReset) {
   with_reset.Reset();
   with_reset.Observe(kNotDetected, kNotPredicted);
   with_reset.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(with_reset.true_positives(), 0);
-  EXPECT_EQ(with_reset.true_negatives(), 2);
-  EXPECT_EQ(with_reset.false_positives(), 0);
-  EXPECT_EQ(with_reset.false_negatives(), 0);
+  EXPECT_EQ(with_reset.counters().true_positives, 0);
+  EXPECT_EQ(with_reset.counters().true_negatives, 2);
+  EXPECT_EQ(with_reset.counters().false_positives, 0);
+  EXPECT_EQ(with_reset.counters().false_negatives, 0);
 
   ClippingPredictorEvaluator no_reset(kHistorySize);
   no_reset.Observe(kNotDetected, kPredicted);
   no_reset.Observe(kNotDetected, kNotPredicted);
   no_reset.Observe(kNotDetected, kNotPredicted);
-  EXPECT_EQ(no_reset.true_positives(), 0);
-  EXPECT_EQ(no_reset.true_negatives(), 0);
-  EXPECT_EQ(no_reset.false_positives(), 1);
-  EXPECT_EQ(no_reset.false_negatives(), 0);
+  EXPECT_EQ(no_reset.counters().true_positives, 0);
+  EXPECT_EQ(no_reset.counters().true_negatives, 0);
+  EXPECT_EQ(no_reset.counters().false_positives, 1);
+  EXPECT_EQ(no_reset.counters().false_negatives, 0);
 }
+
+class ComputeClippingPredictionMetricsParameterization
+    : public ::testing::TestWithParam<int> {
+ protected:
+  int true_negatives() const { return GetParam(); }
+};
+
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization,
+       NoMetricsWithUndefinedPrecision) {
+  EXPECT_EQ(ComputeClippingPredictionMetrics(
+                {0,
+                              true_negatives(),
+                              0,
+                              0}),
+            absl::nullopt);
+  EXPECT_EQ(ComputeClippingPredictionMetrics(
+                {0,
+                              true_negatives(),
+                              0,
+                              1}),
+            absl::nullopt);
+}
+
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization,
+       NoMetricsWithUndefinedRecall) {
+  EXPECT_EQ(ComputeClippingPredictionMetrics(
+                {0,
+                              true_negatives(),
+                              0,
+                              0}),
+            absl::nullopt);
+  EXPECT_EQ(ComputeClippingPredictionMetrics(
+                {0,
+                              true_negatives(),
+                              1,
+                              0}),
+            absl::nullopt);
+}
+
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization,
+       NoMetricsWithUndefinedF1Score) {
+  EXPECT_EQ(ComputeClippingPredictionMetrics(
+                {0,
+                              true_negatives(),
+                              1,
+                              1}),
+            absl::nullopt);
+}
+
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization, HighestPrecision) {
+  EXPECT_THAT(ComputeClippingPredictionMetrics(
+                  {1,
+                                true_negatives(),
+                                0,
+                                1}),
+              Optional(Field(&ClippingPredictionMetrics::precision, Eq(1.0f))));
+}
+
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization, HighestRecall) {
+  EXPECT_THAT(ComputeClippingPredictionMetrics(
+                  {1,
+                                true_negatives(),
+                                1,
+                                0}),
+              Optional(Field(&ClippingPredictionMetrics::recall, Eq(1.0f))));
+}
+
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization,
+       PrecisionAndRecall50Percent) {
+  absl::optional<ClippingPredictionMetrics> metrics =
+      ComputeClippingPredictionMetrics(
+          {42,
+                        true_negatives(),
+                        42,
+                        42});
+  ASSERT_TRUE(metrics.has_value());
+  EXPECT_EQ(metrics->precision, 0.5f);
+  EXPECT_EQ(metrics->recall, 0.5f);
+  EXPECT_EQ(metrics->f1_score, 0.5f);
+}
+
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization,
+       HighestPrecisionRecallF1Score) {
+  absl::optional<ClippingPredictionMetrics> metrics =
+      ComputeClippingPredictionMetrics(
+          {123,
+                        true_negatives(),
+                        0,
+                        0});
+  ASSERT_TRUE(metrics.has_value());
+  EXPECT_EQ(metrics->precision, 1.0f);
+  EXPECT_EQ(metrics->recall, 1.0f);
+  EXPECT_EQ(metrics->f1_score, 1.0f);
+}
+
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization,
+       PrecisionLowerThanRecall) {
+  absl::optional<ClippingPredictionMetrics> metrics =
+      ComputeClippingPredictionMetrics(
+          {1,
+                        true_negatives(),
+                        8,
+                        1});
+  ASSERT_TRUE(metrics.has_value());
+  EXPECT_LT(metrics->precision, metrics->recall);
+}
+
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization,
+       PrecisionGreaterThanRecall) {
+  absl::optional<ClippingPredictionMetrics> metrics =
+      ComputeClippingPredictionMetrics(
+          {1,
+                        true_negatives(),
+                        1,
+                        8});
+  ASSERT_TRUE(metrics.has_value());
+  EXPECT_GT(metrics->precision, metrics->recall);
+}
+
+
+TEST_P(ComputeClippingPredictionMetricsParameterization, SameF1Score) {
+  absl::optional<ClippingPredictionMetrics> m1 =
+      ComputeClippingPredictionMetrics(
+          {1,
+                        true_negatives(),
+                        8,
+                        1});
+  absl::optional<ClippingPredictionMetrics> m2 =
+      ComputeClippingPredictionMetrics(
+          {1,
+                        true_negatives(),
+                        1,
+                        8});
+  
+  ASSERT_TRUE(m1.has_value());
+  ASSERT_TRUE(m2.has_value());
+  ASSERT_EQ(m1->precision, m2->recall);
+  ASSERT_EQ(m1->recall, m2->precision);
+  
+  EXPECT_EQ(m1->f1_score, m2->f1_score);
+}
+
+INSTANTIATE_TEST_SUITE_P(ClippingPredictionEvalTest,
+                         ComputeClippingPredictionMetricsParameterization,
+                         ::testing::Values(0, 1, 11));
 
 }  
 }  

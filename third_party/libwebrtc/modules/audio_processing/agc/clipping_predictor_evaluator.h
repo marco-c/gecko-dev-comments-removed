@@ -18,6 +18,14 @@
 namespace webrtc {
 
 
+struct ClippingPredictionCounters {
+  int true_positives;   
+  int true_negatives;   
+  int false_positives;  
+  int false_negatives;  
+};
+
+
 
 
 
@@ -51,11 +59,7 @@ class ClippingPredictorEvaluator {
   
   void Reset();
 
-  
-  int true_positives() const { return true_positives_; }
-  int true_negatives() const { return true_negatives_; }
-  int false_positives() const { return false_positives_; }
-  int false_negatives() const { return false_negatives_; }
+  ClippingPredictionCounters counters() const { return counters_; }
 
  private:
   const int history_size_;
@@ -91,11 +95,24 @@ class ClippingPredictorEvaluator {
   bool HasExpiredUnmatchedExpectedDetection() const;
 
   
-  int true_positives_;
-  int true_negatives_;
-  int false_positives_;
-  int false_negatives_;
+  ClippingPredictionCounters counters_;
 };
+
+
+struct ClippingPredictionMetrics {
+  
+  float precision;
+  
+  float recall;
+  
+  float f1_score;
+};
+
+
+
+
+absl::optional<ClippingPredictionMetrics> ComputeClippingPredictionMetrics(
+    const ClippingPredictionCounters& counters);
 
 }  
 
