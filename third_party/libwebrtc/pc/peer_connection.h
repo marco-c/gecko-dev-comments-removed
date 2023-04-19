@@ -371,6 +371,97 @@ class PeerConnection : public PeerConnectionInternal,
   const RtpTransmissionManager* rtp_manager() const {
     return rtp_manager_.get();
   }
+  cricket::ChannelManager* channel_manager() const;
+
+  JsepTransportController* transport_controller() {
+    return transport_controller_.get();
+  }
+  cricket::PortAllocator* port_allocator() { return port_allocator_.get(); }
+  Call* call_ptr() { return call_ptr_; }
+  rtc::UniqueRandomIdGenerator* ssrc_generator() { return &ssrc_generator_; }
+  const cricket::AudioOptions& audio_options() { return audio_options_; }
+  const cricket::VideoOptions& video_options() { return video_options_; }
+  VideoBitrateAllocatorFactory* video_bitrate_allocator_factory() {
+    return video_bitrate_allocator_factory_.get();
+  }
+
+  cricket::DataChannelType data_channel_type() const;
+  void SetIceConnectionState(IceConnectionState new_state);
+  void NoteUsageEvent(UsageEvent event);
+
+  
+  void ReportSdpFormatReceived(const SessionDescriptionInterface& remote_offer);
+  
+  void OnAudioTrackAdded(AudioTrackInterface* track,
+                         MediaStreamInterface* stream)
+      RTC_RUN_ON(signaling_thread());
+  void OnAudioTrackRemoved(AudioTrackInterface* track,
+                           MediaStreamInterface* stream)
+      RTC_RUN_ON(signaling_thread());
+  void OnVideoTrackAdded(VideoTrackInterface* track,
+                         MediaStreamInterface* stream)
+      RTC_RUN_ON(signaling_thread());
+  void OnVideoTrackRemoved(VideoTrackInterface* track,
+                           MediaStreamInterface* stream)
+      RTC_RUN_ON(signaling_thread());
+
+  
+  
+  
+  
+  
+  
+  bool IsUnifiedPlan() const {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    return configuration_.sdp_semantics == SdpSemantics::kUnifiedPlan;
+  }
+  bool ValidateBundleSettings(const cricket::SessionDescription* desc);
+
+  
+  
+  
+  absl::optional<std::string> GetDataMid() const;
+
+  void SetSctpDataMid(const std::string& mid) {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    sctp_mid_s_ = mid;
+  }
+  void ResetSctpDataMid() {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    sctp_mid_s_.reset();
+  }
+
+  
+  
+  
+  CryptoOptions GetCryptoOptions();
+
+  
+  
+  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
+      cricket::MediaType media_type,
+      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+      const RtpTransceiverInit& init,
+      bool fire_callback = true);
+
+  
+  RtpTransportInternal* GetRtpTransport(const std::string& mid) {
+    RTC_DCHECK_RUN_ON(signaling_thread());
+    auto rtp_transport = transport_controller_->GetRtpTransport(mid);
+    RTC_DCHECK(rtp_transport);
+    return rtp_transport;
+  }
+
+  
+  
+  bool SrtpRequired() const RTC_RUN_ON(signaling_thread());
+
+  void OnSentPacket_w(const rtc::SentPacket& sent_packet);
+
+  bool SetupDataChannelTransport_n(const std::string& mid)
+      RTC_RUN_ON(network_thread());
+  void TeardownDataChannelTransport_n() RTC_RUN_ON(network_thread());
+  cricket::ChannelInterface* GetChannel(const std::string& content_name);
 
   
   void ReturnHistogramVeryQuicklyForTesting() {
@@ -383,23 +474,10 @@ class PeerConnection : public PeerConnectionInternal,
   ~PeerConnection() override;
 
  private:
-  
-  
-  friend class SdpOfferAnswerHandler;
-
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   FindTransceiverBySender(rtc::scoped_refptr<RtpSenderInterface> sender)
       RTC_RUN_ON(signaling_thread());
 
-  
-  
-  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
-      cricket::MediaType media_type,
-      rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const RtpTransceiverInit& init,
-      bool fire_callback = true);
-
-  void SetIceConnectionState(IceConnectionState new_state);
   void SetStandardizedIceConnectionState(
       PeerConnectionInterface::IceConnectionState new_state)
       RTC_RUN_ON(signaling_thread());
@@ -428,38 +506,9 @@ class PeerConnection : public PeerConnectionInternal,
       const cricket::CandidatePairChangeEvent& event)
       RTC_RUN_ON(signaling_thread());
 
-  
-  void OnAudioTrackAdded(AudioTrackInterface* track,
-                         MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
-  void OnAudioTrackRemoved(AudioTrackInterface* track,
-                           MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
-  void OnVideoTrackAdded(VideoTrackInterface* track,
-                         MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
-  void OnVideoTrackRemoved(VideoTrackInterface* track,
-                           MediaStreamInterface* stream)
-      RTC_RUN_ON(signaling_thread());
 
   void OnNegotiationNeeded();
 
-
-  
-  
-  
-  absl::optional<std::string> GetDataMid() const;
-
-  
-  
-  
-  
-  
-  
-  bool IsUnifiedPlan() const {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return configuration_.sdp_semantics == SdpSemantics::kUnifiedPlan;
-  }
 
   
   
@@ -501,14 +550,9 @@ class PeerConnection : public PeerConnectionInternal,
   
   RTCError ValidateConfiguration(const RTCConfiguration& config) const;
 
-  cricket::ChannelManager* channel_manager() const;
-
-  cricket::ChannelInterface* GetChannel(const std::string& content_name);
-
   cricket::IceConfig ParseIceConfig(
       const PeerConnectionInterface::RTCConfiguration& config) const;
 
-  cricket::DataChannelType data_channel_type() const;
 
   
   
@@ -529,20 +573,11 @@ class PeerConnection : public PeerConnectionInternal,
                                    int* sdp_mline_index)
       RTC_RUN_ON(signaling_thread());
 
-  bool SetupDataChannelTransport_n(const std::string& mid)
-      RTC_RUN_ON(network_thread());
-  void TeardownDataChannelTransport_n() RTC_RUN_ON(network_thread());
-
-  bool ValidateBundleSettings(const cricket::SessionDescription* desc);
   bool HasRtcpMuxEnabled(const cricket::ContentInfo* content);
 
   
   bool ValidateDtlsSetupAttribute(const cricket::SessionDescription* desc,
                                   SdpType type);
-
-  
-  
-  bool SrtpRequired() const RTC_RUN_ON(signaling_thread());
 
   
   void OnTransportControllerConnectionState(cricket::IceConnectionState state)
@@ -565,9 +600,6 @@ class PeerConnection : public PeerConnectionInternal,
   void OnTransportControllerDtlsHandshakeError(rtc::SSLHandshakeError error);
 
   
-  void ReportSdpFormatReceived(const SessionDescriptionInterface& remote_offer);
-
-  
   
   void ReportTransportStats() RTC_RUN_ON(signaling_thread());
 
@@ -580,10 +612,7 @@ class PeerConnection : public PeerConnectionInternal,
   void ReportIceCandidateCollected(const cricket::Candidate& candidate)
       RTC_RUN_ON(signaling_thread());
 
-  void NoteUsageEvent(UsageEvent event);
   void ReportUsagePattern() const RTC_RUN_ON(signaling_thread());
-
-  void OnSentPacket_w(const rtc::SentPacket& sent_packet);
 
   
   
@@ -596,19 +625,6 @@ class PeerConnection : public PeerConnectionInternal,
       RtpTransportInternal* rtp_transport,
       rtc::scoped_refptr<DtlsTransport> dtls_transport,
       DataChannelTransportInterface* data_channel_transport) override;
-
-  
-  
-  
-  CryptoOptions GetCryptoOptions();
-
-  
-  RtpTransportInternal* GetRtpTransport(const std::string& mid) {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    auto rtp_transport = transport_controller_->GetRtpTransport(mid);
-    RTC_DCHECK(rtp_transport);
-    return rtp_transport;
-  }
 
   std::function<void(const rtc::CopyOnWriteBuffer& packet,
                      int64_t packet_time_us)>
