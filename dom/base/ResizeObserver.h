@@ -95,7 +95,7 @@ class ResizeObservation final : public LinkedListElement<ResizeObservation> {
   
 
 
-  void UpdateLastReportedSize(const LogicalPixelSize& aSize);
+  void UpdateLastReportedSize(const nsTArray<LogicalPixelSize>& aSize);
 
   enum class RemoveFromObserver : bool { No, Yes };
   void Unlink(RemoveFromObserver);
@@ -113,7 +113,7 @@ class ResizeObservation final : public LinkedListElement<ResizeObservation> {
   
   
   
-  LogicalPixelSize mLastReportedSize;
+  AutoTArray<LogicalPixelSize, 1> mLastReportedSize;
 };
 
 
@@ -228,10 +228,11 @@ class ResizeObserverEntry final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ResizeObserverEntry)
 
-  ResizeObserverEntry(nsISupports* aOwner, Element& aTarget,
-                      const LogicalPixelSize& aBorderBoxSize,
-                      const LogicalPixelSize& aContentBoxSize,
-                      const LogicalPixelSize& aDevicePixelContentBoxSize)
+  ResizeObserverEntry(
+      nsISupports* aOwner, Element& aTarget,
+      const nsTArray<LogicalPixelSize>& aBorderBoxSize,
+      const nsTArray<LogicalPixelSize>& aContentBoxSize,
+      const nsTArray<LogicalPixelSize>& aDevicePixelContentBoxSize)
       : mOwner(aOwner), mTarget(&aTarget) {
     MOZ_ASSERT(mOwner, "Need a non-null owner");
     MOZ_ASSERT(mTarget, "Need a non-null target element");
@@ -269,19 +270,19 @@ class ResizeObserverEntry final : public nsISupports, public nsWrapperCache {
   ~ResizeObserverEntry() = default;
 
   
-  void SetBorderBoxSize(const LogicalPixelSize& aSize);
+  void SetBorderBoxSize(const nsTArray<LogicalPixelSize>& aSize);
   
-  void SetContentRectAndSize(const LogicalPixelSize& aSize);
+  void SetContentRectAndSize(const nsTArray<LogicalPixelSize>& aSize);
   
-  void SetDevicePixelContentSize(const LogicalPixelSize& aSize);
+  void SetDevicePixelContentSize(const nsTArray<LogicalPixelSize>& aSize);
 
   nsCOMPtr<nsISupports> mOwner;
   nsCOMPtr<Element> mTarget;
 
   RefPtr<DOMRectReadOnly> mContentRect;
-  RefPtr<ResizeObserverSize> mBorderBoxSize;
-  RefPtr<ResizeObserverSize> mContentBoxSize;
-  RefPtr<ResizeObserverSize> mDevicePixelContentBoxSize;
+  AutoTArray<RefPtr<ResizeObserverSize>, 1> mBorderBoxSize;
+  AutoTArray<RefPtr<ResizeObserverSize>, 1> mContentBoxSize;
+  AutoTArray<RefPtr<ResizeObserverSize>, 1> mDevicePixelContentBoxSize;
 };
 
 class ResizeObserverSize final : public nsISupports, public nsWrapperCache {
