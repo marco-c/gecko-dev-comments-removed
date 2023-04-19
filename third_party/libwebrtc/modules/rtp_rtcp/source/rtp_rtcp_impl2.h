@@ -241,9 +241,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
       std::vector<std::unique_ptr<rtcp::RtcpPacket>> rtcp_packets) override;
 
   
-  void SetRtcpXrRrtrStatus(bool enable) override;
-
-  
   int32_t SendLossNotification(uint16_t last_decoded_seq_num,
                                uint16_t last_received_seq_num,
                                bool decodability_flag,
@@ -292,9 +289,6 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
 
   
   bool StorePackets() const;
-
-  
-  bool RtcpXrRrtrStatus() const;
 
   TaskQueueBase* const worker_queue_;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker process_thread_checker_;

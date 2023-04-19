@@ -254,9 +254,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                                          uint16_t length) override;
 
   
-  void SetRtcpXrRrtrStatus(bool enable) override;
-
-  
   int32_t SendLossNotification(uint16_t last_decoded_seq_num,
                                uint16_t last_received_seq_num,
                                bool decodability_flag,

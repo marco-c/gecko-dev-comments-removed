@@ -147,6 +147,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     bool enable_rtx_padding_prioritization = true;
 
+    
+    
+    bool non_sender_rtt_measurement = false;
+
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
   };
@@ -400,9 +404,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   virtual std::vector<ReportBlockData> GetLatestReportBlockData() const = 0;
   
   virtual absl::optional<SenderReportStats> GetSenderReportStats() const = 0;
-
-  
-  virtual void SetRtcpXrRrtrStatus(bool enable) = 0;
 
   
   
