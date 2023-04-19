@@ -1355,6 +1355,7 @@ bool gfxHarfBuzzShaper::ShapeText(DrawTarget* aDrawTarget,
   
   
   
+  
   if (gfxTextRun::IsCJKScript(aScript)) {
     hb_tag_t kern =
         aVertical ? HB_TAG('v', 'k', 'r', 'n') : HB_TAG('k', 'e', 'r', 'n');
@@ -1367,11 +1368,14 @@ bool gfxHarfBuzzShaper::ShapeText(DrawTarget* aDrawTarget,
     };
     constexpr auto NoIndex = nsTArray<hb_feature_t>::NoIndex;
     nsTArray<hb_feature_t>::index_type i = features.IndexOf(kern, 0, Cmp());
-    
-    
-    
-    
-    if (i == NoIndex || features[i].value) {
+    if (i == NoIndex) {
+      
+      
+      features.AppendElement(hb_feature_t{kern, 0, HB_FEATURE_GLOBAL_START,
+                                          HB_FEATURE_GLOBAL_END});
+    } else if (features[i].value) {
+      
+      
       if (features.IndexOf(alt, 0, Cmp()) == NoIndex) {
         features.AppendElement(hb_feature_t{alt, 1, HB_FEATURE_GLOBAL_START,
                                             HB_FEATURE_GLOBAL_END});
