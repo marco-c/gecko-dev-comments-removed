@@ -91,8 +91,7 @@ class TNotification : public Notification {
 
 
 class NotificationController final : public EventQueue,
-                                     public nsARefreshObserver,
-                                     public nsAPostRefreshObserver {
+                                     public nsARefreshObserver {
  public:
   NotificationController(DocAccessible* aDocument, PresShell* aPresShell);
 
@@ -300,7 +299,6 @@ class NotificationController final : public EventQueue,
 
   
   virtual void WillRefresh(mozilla::TimeStamp aTime) override;
-  virtual void DidRefresh() override;
 
   
 
