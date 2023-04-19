@@ -668,7 +668,7 @@ nsresult nsListControlFrame::HandleEvent(nsPresContext* aPresContext,
 
 
 void nsListControlFrame::SetInitialChildList(ChildListID aListID,
-                                             nsFrameList& aChildList) {
+                                             nsFrameList&& aChildList) {
   if (aListID == kPrincipalList) {
     
     mIsAllContentHere = mContent->IsDoneAddingChildren();
@@ -677,7 +677,7 @@ void nsListControlFrame::SetInitialChildList(ChildListID aListID,
       mHasBeenInitialized = false;
     }
   }
-  nsHTMLScrollFrame::SetInitialChildList(aListID, aChildList);
+  nsHTMLScrollFrame::SetInitialChildList(aListID, std::move(aChildList));
 
   
   

@@ -782,8 +782,8 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
 }
 
 void nsFieldSetFrame::SetInitialChildList(ChildListID aListID,
-                                          nsFrameList& aChildList) {
-  nsContainerFrame::SetInitialChildList(aListID, aChildList);
+                                          nsFrameList&& aChildList) {
+  nsContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
   if (nsBlockFrame* legend = do_QueryFrame(GetLegend())) {
     
     

@@ -300,9 +300,9 @@ void nsTableFrame::UnregisterPositionedTablePart(nsIFrame* aFrame,
 
 
 void nsTableFrame::SetInitialChildList(ChildListID aListID,
-                                       nsFrameList& aChildList) {
+                                       nsFrameList&& aChildList) {
   if (aListID != kPrincipalList) {
-    nsContainerFrame::SetInitialChildList(aListID, aChildList);
+    nsContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
     return;
   }
 

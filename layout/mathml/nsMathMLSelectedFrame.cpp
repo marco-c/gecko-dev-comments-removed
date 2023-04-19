@@ -42,8 +42,8 @@ nsresult nsMathMLSelectedFrame::ChildListChanged(int32_t aModType) {
 }
 
 void nsMathMLSelectedFrame::SetInitialChildList(ChildListID aListID,
-                                                nsFrameList& aChildList) {
-  nsMathMLContainerFrame::SetInitialChildList(aListID, aChildList);
+                                                nsFrameList&& aChildList) {
+  nsMathMLContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
   
   
   GetSelectedFrame();

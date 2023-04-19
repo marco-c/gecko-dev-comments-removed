@@ -72,8 +72,8 @@ class nsMathMLmtableFrame final : public nsTableFrame {
 
   
 
-  virtual void SetInitialChildList(ChildListID aListID,
-                                   nsFrameList& aChildList) override;
+  void SetInitialChildList(ChildListID aListID,
+                           nsFrameList&& aChildList) override;
 
   virtual void AppendFrames(ChildListID aListID,
                             nsFrameList& aFrameList) override {

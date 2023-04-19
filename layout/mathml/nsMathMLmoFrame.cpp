@@ -907,9 +907,9 @@ nsMathMLmoFrame::TransmitAutomaticData() {
 }
 
 void nsMathMLmoFrame::SetInitialChildList(ChildListID aListID,
-                                          nsFrameList& aChildList) {
+                                          nsFrameList&& aChildList) {
   
-  nsMathMLTokenFrame::SetInitialChildList(aListID, aChildList);
+  nsMathMLTokenFrame::SetInitialChildList(aListID, std::move(aChildList));
   ProcessTextData();
 }
 

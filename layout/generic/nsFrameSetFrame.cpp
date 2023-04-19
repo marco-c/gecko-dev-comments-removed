@@ -336,7 +336,7 @@ void nsHTMLFramesetFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 }
 
 void nsHTMLFramesetFrame::SetInitialChildList(ChildListID aListID,
-                                              nsFrameList& aChildList) {
+                                              nsFrameList&& aChildList) {
   
   
   
@@ -345,7 +345,7 @@ void nsHTMLFramesetFrame::SetInitialChildList(ChildListID aListID,
     return;
   }
 
-  nsContainerFrame::SetInitialChildList(aListID, aChildList);
+  nsContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
 }
 
 

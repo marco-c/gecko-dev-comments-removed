@@ -993,7 +993,7 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   
   
   void SetInitialChildList(ChildListID aListID,
-                           nsFrameList& aChildList) override;
+                           nsFrameList&& aChildList) override;
   void AppendFrames(ChildListID aListID, nsFrameList& aFrameList) final;
   void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
                     const nsLineList::iterator* aPrevFrameLine,
@@ -1450,7 +1450,7 @@ class nsXULScrollFrame final : public nsBoxFrame,
 
   
   
-  void SetInitialChildList(ChildListID aListID, nsFrameList& aChildList) final;
+  void SetInitialChildList(ChildListID aListID, nsFrameList&& aChildList) final;
   void AppendFrames(ChildListID aListID, nsFrameList& aFrameList) final;
   void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
                     const nsLineList::iterator* aPrevFrameLine,

@@ -90,7 +90,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
   virtual void SetInitialChildList(ChildListID aListID,
-                                   nsFrameList& aChildList);
+                                   nsFrameList&& aChildList);
 
   
 
