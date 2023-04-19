@@ -34,11 +34,13 @@ pub type KeywordParser = for<'a, 'i, 't> fn(
 #[allow(missing_docs)]
 pub enum Evaluator {
     Length(QueryFeatureGetter<CSSPixelLength>),
+    OptionalLength(QueryFeatureGetter<Option<CSSPixelLength>>),
     Integer(QueryFeatureGetter<u32>),
     Float(QueryFeatureGetter<f32>),
     BoolInteger(QueryFeatureGetter<bool>),
     
     NumberRatio(QueryFeatureGetter<Ratio>),
+    OptionalNumberRatio(QueryFeatureGetter<Option<Ratio>>),
     
     Resolution(QueryFeatureGetter<Resolution>),
     

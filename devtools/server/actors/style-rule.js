@@ -1136,12 +1136,8 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       nodeFront.rawNode
     );
 
-    
-    
     if (!containerEl) {
-      return this.pageStyle.walker.getNode(
-        nodeFront.rawNode.ownerDocument.documentElement
-      );
+      return null;
     }
 
     return this.pageStyle.walker.getNode(containerEl);
