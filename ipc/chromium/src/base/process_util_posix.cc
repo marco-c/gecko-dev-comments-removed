@@ -187,7 +187,7 @@ void CloseSuperfluousFds(void* aCtx, bool (*aShouldPreserve)(void*, int)) {
   }
 }
 
-bool DidProcessCrash(bool* child_exited, ProcessHandle handle) {
+bool IsProcessDead(ProcessHandle handle) {
 #ifdef MOZ_ENABLE_FORKSERVER
   if (mozilla::ipc::ForkServiceChild::Get()) {
     
@@ -196,13 +196,10 @@ bool DidProcessCrash(bool* child_exited, ProcessHandle handle) {
     
     
     const int r = kill(handle, 0);
-    if (r < 0 && errno == ESRCH) {
-      if (child_exited) *child_exited = true;
-    } else {
-      if (child_exited) *child_exited = false;
-    }
-
-    return false;
+    
+    
+    
+    return r < 0 && errno == ESRCH;
   }
 #endif
   int status;
@@ -220,32 +217,13 @@ bool DidProcessCrash(bool* child_exited, ProcessHandle handle) {
     
     CHROMIUM_LOG(ERROR) << "waitpid failed pid:" << handle
                         << " errno:" << errno;
-    if (child_exited) *child_exited = true;
-    return false;
+    return true;
   } else if (result == 0) {
     
-    if (child_exited) *child_exited = false;
     return false;
   }
 
-  if (child_exited) *child_exited = true;
-
-  if (WIFSIGNALED(status)) {
-    switch (WTERMSIG(status)) {
-      case SIGSYS:
-      case SIGSEGV:
-      case SIGILL:
-      case SIGABRT:
-      case SIGFPE:
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  if (WIFEXITED(status)) return WEXITSTATUS(status) != 0;
-
-  return false;
+  return true;
 }
 
 void FreeEnvVarsArray::operator()(char** array) {

@@ -266,6 +266,7 @@ bool LaunchApp(const CommandLine& cl, const LaunchOptions&,
 
 bool KillProcess(ProcessHandle process, int exit_code);
 
+#ifdef OS_POSIX
 
 
 
@@ -273,7 +274,8 @@ bool KillProcess(ProcessHandle process, int exit_code);
 
 
 
-bool DidProcessCrash(bool* child_exited, ProcessHandle handle);
+bool IsProcessDead(ProcessHandle handle);
+#endif
 
 }  
 
