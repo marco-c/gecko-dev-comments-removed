@@ -454,8 +454,7 @@ RTC_NORETURN RTC_EXPORT void UnreachableCodeReached();
         RTC_UNREACHABLE_FILE_AND_LINE_CALL_ARGS);      \
   } while (0)
 
-
-#define FATAL()                                                      \
+#define RTC_FATAL()                                                  \
   ::rtc::webrtc_checks_impl::FatalLogCall<false>(__FILE__, __LINE__, \
                                                  "FATAL()") &        \
       ::rtc::webrtc_checks_impl::LogStreamer<>()

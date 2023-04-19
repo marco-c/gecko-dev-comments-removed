@@ -171,9 +171,8 @@ AudioEncoder::EncodedInfo AudioEncoderCng::EncodeImpl(
       last_frame_active_ = true;
       break;
     }
-    case Vad::kError: {
-      FATAL();  
-      break;
+    default: {
+      RTC_CHECK_NOTREACHED();
     }
   }
 
