@@ -60,15 +60,6 @@ function setNewDummyTelemetryClientId() {
 }
 
 
-
-function clearProfileCountedPref() {
-  const updateDirectory = getDummyUpdateDirectory();
-  const hash = updateDirectory.leafName;
-  const prefName = `browser.engagement.profileCounted.${hash}`;
-  Services.prefs.clearUserPref(prefName);
-}
-
-
 function getProfileCount() {
   
   

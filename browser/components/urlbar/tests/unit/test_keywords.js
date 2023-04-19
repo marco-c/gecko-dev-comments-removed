@@ -2,8 +2,6 @@
 
 
 
-const ENGINE_NAME = "engine-suggestions.xml";
-
 testEngine_setup();
 
 add_task(async function test_non_keyword() {

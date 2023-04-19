@@ -189,8 +189,6 @@ module.exports = {
         
         
         
-        "browser/components/**",
-        "browser/modules/**",
         "dom/**",
         "netwerk/**",
         "security/manager/ssl/tests/unit/**",
