@@ -342,6 +342,13 @@ typedef enum {
   
 
 
+
+
+  JXL_ENC_FRAME_SETTING_JPEG_COMPRESS_BOXES = 33,
+
+  
+
+
   JXL_ENC_FRAME_SETTING_FILL_ENUM = 65535,
 
 } JxlEncoderFrameSettingId;

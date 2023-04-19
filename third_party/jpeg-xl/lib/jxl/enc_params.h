@@ -189,6 +189,9 @@ struct CompressParams {
   bool force_cfl_jpeg_recompression = true;
 
   
+  bool jpeg_compress_boxes = true;
+
+  
   
   float photon_noise_iso = 0;
 
@@ -246,13 +249,12 @@ struct CompressParams {
 static constexpr float kMinButteraugliForDynamicAR = 0.5f;
 static constexpr float kMinButteraugliForDots = 3.0f;
 static constexpr float kMinButteraugliToSubtractOriginalPatches = 3.0f;
-static constexpr float kMinButteraugliDistanceForProgressiveDc = 4.5f;
 
 
 static constexpr float kMinButteraugliForNoise = 99.0f;
 
 
-static constexpr float kMinButteraugliDistance = 0.01f;
+static constexpr float kMinButteraugliDistance = 0.001f;
 
 
 

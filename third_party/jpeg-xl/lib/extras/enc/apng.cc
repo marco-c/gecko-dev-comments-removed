@@ -52,6 +52,9 @@ namespace extras {
 
 namespace {
 
+constexpr unsigned char kExifSignature[6] = {0x45, 0x78, 0x69,
+                                             0x66, 0x00, 0x00};
+
 class APNGEncoder : public Encoder {
  public:
   std::vector<JxlPixelFormat> AcceptedFormats() const override {
@@ -98,12 +101,23 @@ class BlobsWriterPNG {
       
       std::vector<uint8_t> exif = blobs.exif;
       ResetExifOrientation(exif);
+      
+      
+      
+      
+      
+      if (exif.size() >= sizeof kExifSignature &&
+          memcmp(exif.data(), kExifSignature, sizeof kExifSignature) != 0) {
+        exif.insert(exif.begin(), kExifSignature,
+                    kExifSignature + sizeof kExifSignature);
+      }
       JXL_RETURN_IF_ERROR(EncodeBase16("exif", exif, strings));
     }
     if (!blobs.iptc.empty()) {
       JXL_RETURN_IF_ERROR(EncodeBase16("iptc", blobs.iptc, strings));
     }
     if (!blobs.xmp.empty()) {
+      
       JXL_RETURN_IF_ERROR(EncodeBase16("xmp", blobs.xmp, strings));
     }
     return true;

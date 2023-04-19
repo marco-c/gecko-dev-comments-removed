@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "jxl/cms_interface.h"
 #include "jxl/codestream_header.h"
 #include "jxl/color_encoding.h"
 #include "jxl/jxl_export.h"
@@ -836,29 +837,6 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsICCProfile(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 JXL_EXPORT JxlDecoderStatus JxlDecoderSetPreferredColorProfile(
     JxlDecoder* dec, const JxlColorEncoding* color_encoding);
 
@@ -874,6 +852,67 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetPreferredColorProfile(
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderSetDesiredIntensityTarget(
     JxlDecoder* dec, float desired_intensity_target);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlDecoderStatus JxlDecoderSetOutputColorProfile(
+    JxlDecoder* dec, const JxlColorEncoding* color_encoding,
+    const uint8_t* icc_data, size_t icc_size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT void JxlDecoderSetCms(JxlDecoder* dec, JxlCmsInterface cms);
+
+
 
 
 

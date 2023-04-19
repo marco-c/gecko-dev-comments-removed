@@ -57,6 +57,9 @@ namespace extras {
 
 namespace {
 
+constexpr unsigned char kExifSignature[6] = {0x45, 0x78, 0x69,
+                                             0x66, 0x00, 0x00};
+
 
 
 const png_byte kIgnoredPngChunks[] = {
@@ -129,6 +132,11 @@ class BlobsReaderPNG {
       return false;
     }
     if (type == "exif") {
+      
+      if (bytes.size() >= sizeof kExifSignature &&
+          memcmp(bytes.data(), kExifSignature, sizeof kExifSignature) == 0) {
+        bytes.erase(bytes.begin(), bytes.begin() + sizeof kExifSignature);
+      }
       if (!metadata->exif.empty()) {
         JXL_WARNING("overwriting EXIF (%" PRIuS " bytes) with base16 (%" PRIuS
                     " bytes)",
@@ -228,6 +236,10 @@ class BlobsReaderPNG {
     
     
     if (*(pos++) != '\n') return false;
+    
+    while (pos < encoded_end && *pos == ' ') {
+      pos++;
+    }
     uint32_t bytes_to_decode = 0;
     JXL_RETURN_IF_ERROR(DecodeDecimal(&pos, encoded_end, &bytes_to_decode));
 
