@@ -10,6 +10,7 @@ const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 
+
 function dumpToFile(aData) {
   var outputFile = do_get_cwd();
   outputFile.append("testdump.webp");

@@ -10,6 +10,8 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 
 var ioService = Services.io;
 
+
+
 XPCOMUtils.defineLazyGetter(this, "uri", function() {
   return ioService.newURI(
     "http://localhost:" +
