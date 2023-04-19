@@ -5,6 +5,8 @@ const { ContentTaskUtils } = ChromeUtils.import(
   "resource://testing-common/ContentTaskUtils.jsm"
 );
 
+requestLongerTimeout(2);
+
 const TEST_PAGE_URI = "data:text/html;charset=utf-8,The letter s.";
 
 
@@ -78,8 +80,8 @@ add_task(async function test_not_found() {
   await promiseFindFinished(gBrowser, "--- THIS SHOULD NEVER MATCH ---", false);
   let findbar = gBrowser.getCachedFindBar();
   is(
-    findbar._findStatusDesc.textContent,
-    findbar._notFoundStr,
+    findbar._findStatusDesc.dataset.l10nId,
+    "findbar-not-found",
     "Findbar status text should be 'Phrase not found'"
   );
 
@@ -95,7 +97,7 @@ add_task(async function test_found() {
   
   await promiseFindFinished(gBrowser, "S", true);
   ok(
-    !gBrowser.getCachedFindBar()._findStatusDesc.textContent,
+    !gBrowser.getCachedFindBar()._findStatusDesc.dataset.l10nId,
     "Findbar status should be empty"
   );
 
@@ -125,8 +127,8 @@ add_task(async function test_tabwise_case_sensitive() {
   
   await promiseFindFinished(gBrowser, "S", true);
   is(
-    findbar1._findStatusDesc.textContent,
-    findbar1._notFoundStr,
+    findbar1._findStatusDesc.dataset.l10nId,
+    "findbar-not-found",
     "Findbar status text should be 'Phrase not found'"
   );
 
@@ -134,7 +136,10 @@ add_task(async function test_tabwise_case_sensitive() {
 
   
   await promiseFindFinished(gBrowser, "S", true);
-  ok(!findbar2._findStatusDesc.textContent, "Findbar status should be empty");
+  ok(
+    !findbar2._findStatusDesc.dataset.l10nId,
+    "Findbar status should be empty"
+  );
 
   gBrowser.removeTab(tab1);
   gBrowser.removeTab(tab2);
@@ -167,13 +172,13 @@ add_task(async function test_reinitialization_at_remoteness_change() {
   
   await promiseFindFinished(gBrowser, "z", false);
   is(
-    findbar._findStatusDesc.textContent,
-    findbar._notFoundStr,
+    findbar._findStatusDesc.dataset.l10nId,
+    "findbar-not-found",
     "Findbar status text should be 'Phrase not found'"
   );
 
   await promiseFindFinished(gBrowser, "s", false);
-  ok(!findbar._findStatusDesc.textContent, "Findbar status should be empty");
+  ok(!findbar._findStatusDesc.dataset.l10nId, "Findbar status should be empty");
 
   
   ok(browser.isRemoteBrowser, "Browser should be remote now.");
@@ -192,13 +197,13 @@ add_task(async function test_reinitialization_at_remoteness_change() {
   
   await promiseFindFinished(gBrowser, "z", false);
   is(
-    findbar._findStatusDesc.textContent,
-    findbar._notFoundStr,
+    findbar._findStatusDesc.dataset.l10nId,
+    "findbar-not-found",
     "Findbar status text should be 'Phrase not found'"
   );
 
   await promiseFindFinished(gBrowser, "s", false);
-  ok(!findbar._findStatusDesc.textContent, "Findbar status should be empty");
+  ok(!findbar._findStatusDesc.dataset.l10nId, "Findbar status should be empty");
 
   BrowserTestUtils.removeTab(tab);
 });
@@ -430,7 +435,7 @@ add_task(async function test_preservestate_on_reload() {
   for (let stateChange of ["case-sensitive", "entire-word"]) {
     let tab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      "data:text/html,<p>There is a cat named Theo in the kitchen with another cat named Catherine. The two of them are thirsty."
+      "data:text/html,<!DOCTYPE html><p>There is a cat named Theo in the kitchen with another cat named Catherine. The two of them are thirsty."
     );
 
     
