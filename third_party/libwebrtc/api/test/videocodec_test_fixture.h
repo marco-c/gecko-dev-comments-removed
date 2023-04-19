@@ -129,6 +129,14 @@ class VideoCodecTestFixture {
     std::string codec_name;
 
     
+    
+    
+    
+    
+    absl::optional<SdpVideoFormat> encoder_format;
+    absl::optional<SdpVideoFormat> decoder_format;
+
+    
     struct H264CodecSettings {
       H264Profile profile = H264Profile::kProfileConstrainedBaseline;
       H264PacketizationMode packetization_mode =
