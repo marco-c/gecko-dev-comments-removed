@@ -230,7 +230,6 @@ TurnPort::TurnPort(rtc::Thread* thread,
       tls_cert_verifier_(nullptr),
       credentials_(credentials),
       socket_(socket),
-      resolver_(NULL),
       error_(0),
       stun_dscp_value_(rtc::DSCP_NO_CHANGE),
       request_manager_(thread),
@@ -272,7 +271,6 @@ TurnPort::TurnPort(rtc::Thread* thread,
       tls_cert_verifier_(tls_cert_verifier),
       credentials_(credentials),
       socket_(NULL),
-      resolver_(NULL),
       error_(0),
       stun_dscp_value_(rtc::DSCP_NO_CHANGE),
       request_manager_(thread),
@@ -296,9 +294,6 @@ TurnPort::~TurnPort() {
 
   while (!entries_.empty()) {
     DestroyEntry(entries_.front());
-  }
-  if (resolver_) {
-    resolver_->Destroy(false);
   }
   if (!SharedSocket()) {
     delete socket_;
@@ -797,44 +792,43 @@ void TurnPort::ResolveTurnAddress(const rtc::SocketAddress& address) {
 
   RTC_LOG(LS_INFO) << ToString() << ": Starting TURN host lookup for "
                    << address.ToSensitiveString();
-  resolver_ = socket_factory()->CreateAsyncResolver();
-  resolver_->SignalDone.connect(this, &TurnPort::OnResolveResult);
-  resolver_->Start(address);
-}
+  resolver_ = socket_factory()->CreateAsyncDnsResolver();
+  resolver_->Start(address, [this] {
+    
+    
+    
+    
+    
+    auto& result = resolver_->result();
+    if (result.GetError() != 0 && (server_address_.proto == PROTO_TCP ||
+                                   server_address_.proto == PROTO_TLS)) {
+      if (!CreateTurnClientSocket()) {
+        OnAllocateError(SERVER_NOT_REACHABLE_ERROR,
+                        "TURN host lookup received error.");
+      }
+      return;
+    }
 
-void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
-  RTC_DCHECK(resolver == resolver_);
-  
-  
-  
-  
-  if (resolver_->GetError() != 0 && (server_address_.proto == PROTO_TCP ||
-                                     server_address_.proto == PROTO_TLS)) {
-    if (!CreateTurnClientSocket()) {
+    
+    
+    rtc::SocketAddress resolved_address = server_address_.address;
+    if (result.GetError() != 0 ||
+        !result.GetResolvedAddress(Network()->GetBestIP().family(),
+                                   &resolved_address)) {
+      RTC_LOG(LS_WARNING) << ToString() << ": TURN host lookup received error "
+                          << result.GetError();
+      error_ = result.GetError();
       OnAllocateError(SERVER_NOT_REACHABLE_ERROR,
                       "TURN host lookup received error.");
+      return;
     }
-    return;
-  }
-
-  
-  
-  rtc::SocketAddress resolved_address = server_address_.address;
-  if (resolver_->GetError() != 0 ||
-      !resolver_->GetResolvedAddress(Network()->GetBestIP().family(),
-                                     &resolved_address)) {
-    RTC_LOG(LS_WARNING) << ToString() << ": TURN host lookup received error "
-                        << resolver_->GetError();
-    error_ = resolver_->GetError();
-    OnAllocateError(SERVER_NOT_REACHABLE_ERROR,
-                    "TURN host lookup received error.");
-    return;
-  }
-  
-  
-  SignalResolvedServerAddress(this, server_address_.address, resolved_address);
-  server_address_.address = resolved_address;
-  PrepareAddress();
+    
+    
+    SignalResolvedServerAddress(this, server_address_.address,
+                                resolved_address);
+    server_address_.address = resolved_address;
+    PrepareAddress();
+  });
 }
 
 void TurnPort::OnSendStunPacket(const void* data,
