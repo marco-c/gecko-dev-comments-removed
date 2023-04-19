@@ -34,12 +34,17 @@ using mozilla::StaticMutexAutoLock;
 using mozilla::Unused;
 
 #if defined(MOZ_SANDBOX) || defined(__aarch64__)
-StaticAutoPtr<nsCString> nsMacUtilsImpl::sCachedAppPath;
-StaticMutex nsMacUtilsImpl::sCachedAppPathMutex;
+
+static StaticMutex sCachedAppPathMutex;
+
+
+static StaticAutoPtr<nsCString> sCachedAppPath
+    MOZ_GUARDED_BY(sCachedAppPathMutex);
 #endif
 
 #if defined(__aarch64__)
-std::atomic<bool> nsMacUtilsImpl::sIsXULTranslated = false;
+
+static std::atomic<bool> sIsXULTranslated = false;
 #endif
 
 
@@ -50,10 +55,20 @@ std::atomic<bool> nsMacUtilsImpl::sIsXULTranslated = false;
 
 #define kCFBundleExecutableArchitectureARM64 0x0100000c
 
+enum TCSMStatus { TCSM_Unknown = 0, TCSM_Available, TCSM_Unavailable };
 
-Atomic<nsMacUtilsImpl::TCSMStatus> nsMacUtilsImpl::sTCSMStatus(TCSM_Unknown);
+
+static Atomic<TCSMStatus> sTCSMStatus(TCSM_Unknown);
 
 #if defined(MOZ_SANDBOX) || defined(__aarch64__)
+
+
+static nsresult ClearCachedAppPathOnShutdown() {
+  MOZ_ASSERT(NS_IsMainThread());
+  ClearOnShutdown(&sCachedAppPath);
+  return NS_OK;
+}
+
 
 
 
@@ -115,22 +130,17 @@ bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
     sCachedAppPath = new nsCString(aAppPath);
 
     if (NS_IsMainThread()) {
-      nsMacUtilsImpl::ClearCachedAppPathOnShutdown();
+      ClearCachedAppPathOnShutdown();
     } else {
-      NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "nsMacUtilsImpl::ClearCachedAppPathOnShutdown",
-          [] { nsMacUtilsImpl::ClearCachedAppPathOnShutdown(); }));
+      NS_DispatchToMainThread(
+          NS_NewRunnableFunction("ClearCachedAppPathOnShutdown",
+                                 [] { ClearCachedAppPathOnShutdown(); }));
     }
   }
 
   return true;
 }
 
-nsresult nsMacUtilsImpl::ClearCachedAppPathOnShutdown() {
-  MOZ_ASSERT(NS_IsMainThread());
-  ClearOnShutdown(&sCachedAppPath);
-  return NS_OK;
-}
 #endif 
 
 #if defined(MOZ_SANDBOX) && defined(DEBUG)
@@ -194,8 +204,7 @@ bool nsMacUtilsImpl::IsTCSMAvailable() {
   return (sTCSMStatus == TCSM_Available);
 }
 
-
-nsresult nsMacUtilsImpl::EnableTCSM() {
+static nsresult EnableTCSM() {
   uint32_t newVal = 1;
   int rv = sysctlbyname("kern.tcsm_enable", NULL, 0, &newVal, sizeof(newVal));
   if (rv < 0) {
@@ -203,6 +212,15 @@ nsresult nsMacUtilsImpl::EnableTCSM() {
   }
   return NS_OK;
 }
+
+#if defined(DEBUG)
+static bool IsTCSMEnabled() {
+  uint32_t oldVal = 0;
+  size_t oldValSize = sizeof(oldVal);
+  int rv = sysctlbyname("kern.tcsm_enable", &oldVal, &oldValSize, NULL, 0);
+  return (rv == 0) && (oldVal != 0);
+}
+#endif
 
 
 
@@ -218,16 +236,6 @@ void nsMacUtilsImpl::EnableTCSMIfAvailable() {
     MOZ_ASSERT(IsTCSMEnabled());
   }
 }
-
-#if defined(DEBUG)
-
-bool nsMacUtilsImpl::IsTCSMEnabled() {
-  uint32_t oldVal = 0;
-  size_t oldValSize = sizeof(oldVal);
-  int rv = sysctlbyname("kern.tcsm_enable", &oldVal, &oldValSize, NULL, 0);
-  return (rv == 0) && (oldVal != 0);
-}
-#endif
 
 
 
