@@ -3073,7 +3073,7 @@ bool ParseContent(const std::string& message,
 
     if (!IsLineType(line, kLineTypeAttributes)) {
       
-      RTC_LOG(LS_INFO) << "Ignored line: " << line;
+      RTC_LOG(LS_VERBOSE) << "Ignored line: " << line;
       continue;
     }
 
