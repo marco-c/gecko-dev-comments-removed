@@ -208,8 +208,7 @@ class VideoSendStream {
   
   
   
-  virtual void UpdateActiveSimulcastLayers(
-      const std::vector<bool> active_layers) = 0;
+  virtual void UpdateActiveSimulcastLayers(std::vector<bool> active_layers) = 0;
 
   
   
