@@ -309,9 +309,10 @@ function ArrayGroup(callbackfn ) {
 
 
 
-    var propertyKey = TO_PROPERTY_KEY(
-      callContentFunction(callbackfn, thisArg, kValue, k, O)
-    );
+    var propertyKey = callContentFunction(callbackfn, thisArg, kValue, k, O);
+
+    
+    propertyKey = TO_PROPERTY_KEY(propertyKey);
 
     
     var elements = object[propertyKey];
