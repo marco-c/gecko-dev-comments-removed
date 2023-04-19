@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "api/webrtc_key_value_config.h"
+#include "api/field_trials_view.h"
 #include "modules/video_coding/event_wrapper.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/include/video_coding_defines.h"
@@ -31,7 +31,7 @@ class VCMReceiver {
  public:
   VCMReceiver(VCMTiming* timing,
               Clock* clock,
-              const WebRtcKeyValueConfig& field_trials);
+              const FieldTrialsView& field_trials);
 
   
   
@@ -41,7 +41,7 @@ class VCMReceiver {
               Clock* clock,
               std::unique_ptr<EventWrapper> receiver_event,
               std::unique_ptr<EventWrapper> jitter_buffer_event,
-              const WebRtcKeyValueConfig& field_trials);
+              const FieldTrialsView& field_trials);
 
   ~VCMReceiver();
 

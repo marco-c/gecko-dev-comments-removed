@@ -15,9 +15,9 @@
 #include <memory>
 
 #include "absl/base/attributes.h"
+#include "api/field_trials_view.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/transport/network_types.h"
-#include "api/transport/webrtc_key_value_config.h"
 
 namespace webrtc {
 
@@ -46,7 +46,7 @@ struct NetworkControllerConfig {
 
   
   
-  const WebRtcKeyValueConfig* key_value_config = nullptr;
+  const FieldTrialsView* key_value_config = nullptr;
   
   RtcEventLog* event_log = nullptr;
 };
@@ -132,7 +132,7 @@ class NetworkStateEstimator {
 class NetworkStateEstimatorFactory {
  public:
   virtual std::unique_ptr<NetworkStateEstimator> Create(
-      const WebRtcKeyValueConfig* key_value_config) = 0;
+      const FieldTrialsView* key_value_config) = 0;
   virtual ~NetworkStateEstimatorFactory() = default;
 };
 }  

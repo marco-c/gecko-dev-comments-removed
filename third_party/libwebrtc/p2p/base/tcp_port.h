@@ -43,7 +43,7 @@ class TCPPort : public Port {
       const std::string& username,
       const std::string& password,
       bool allow_listen,
-      const webrtc::WebRtcKeyValueConfig* field_trials = nullptr) {
+      const webrtc::FieldTrialsView* field_trials = nullptr) {
     
     return absl::WrapUnique(new TCPPort(thread, factory, network, min_port,
                                         max_port, username, password,
@@ -74,7 +74,7 @@ class TCPPort : public Port {
           const std::string& username,
           const std::string& password,
           bool allow_listen,
-          const webrtc::WebRtcKeyValueConfig* field_trials);
+          const webrtc::FieldTrialsView* field_trials);
 
   
   int SendTo(const void* data,

@@ -32,8 +32,7 @@ namespace webrtc {
 
 class DtlsSrtpTransport : public SrtpTransport {
  public:
-  DtlsSrtpTransport(bool rtcp_mux_enabled,
-                    const WebRtcKeyValueConfig& field_trials);
+  DtlsSrtpTransport(bool rtcp_mux_enabled, const FieldTrialsView& field_trials);
 
   
   

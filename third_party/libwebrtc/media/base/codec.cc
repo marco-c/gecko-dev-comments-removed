@@ -129,7 +129,7 @@ bool Codec::operator==(const Codec& c) const {
 }
 
 bool Codec::Matches(const Codec& codec,
-                    const webrtc::WebRtcKeyValueConfig* field_trials) const {
+                    const webrtc::FieldTrialsView* field_trials) const {
   
   
 
@@ -238,9 +238,8 @@ bool AudioCodec::operator==(const AudioCodec& c) const {
   return bitrate == c.bitrate && channels == c.channels && Codec::operator==(c);
 }
 
-bool AudioCodec::Matches(
-    const AudioCodec& codec,
-    const webrtc::WebRtcKeyValueConfig* field_trials) const {
+bool AudioCodec::Matches(const AudioCodec& codec,
+                         const webrtc::FieldTrialsView* field_trials) const {
   
   
   
@@ -326,9 +325,8 @@ bool VideoCodec::operator==(const VideoCodec& c) const {
   return Codec::operator==(c) && packetization == c.packetization;
 }
 
-bool VideoCodec::Matches(
-    const VideoCodec& other,
-    const webrtc::WebRtcKeyValueConfig* field_trials) const {
+bool VideoCodec::Matches(const VideoCodec& other,
+                         const webrtc::FieldTrialsView* field_trials) const {
   return Codec::Matches(other, field_trials) &&
          IsSameCodecSpecific(name, params, other.name, other.params);
 }

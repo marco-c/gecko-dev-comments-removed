@@ -27,7 +27,7 @@ class IceControllerFactoryInterface;
 }  
 
 namespace webrtc {
-class WebRtcKeyValueConfig;
+class FieldTrialsView;
 
 
 
@@ -84,8 +84,8 @@ struct IceTransportInit final {
     return ice_controller_factory_;
   }
 
-  const WebRtcKeyValueConfig* field_trials() { return field_trials_; }
-  void set_field_trials(const WebRtcKeyValueConfig* field_trials) {
+  const FieldTrialsView* field_trials() { return field_trials_; }
+  void set_field_trials(const FieldTrialsView* field_trials) {
     field_trials_ = field_trials;
   }
 
@@ -96,7 +96,7 @@ struct IceTransportInit final {
   AsyncResolverFactory* async_resolver_factory_ = nullptr;
   RtcEventLog* event_log_ = nullptr;
   cricket::IceControllerFactoryInterface* ice_controller_factory_ = nullptr;
-  const WebRtcKeyValueConfig* field_trials_ = nullptr;
+  const FieldTrialsView* field_trials_ = nullptr;
   
 };
 

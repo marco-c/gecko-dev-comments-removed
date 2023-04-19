@@ -23,7 +23,7 @@ std::unique_ptr<VideoStreamDecoderInterface> CreateVideoStreamDecoder(
     std::map<int, std::pair<SdpVideoFormat, int>> decoder_settings,
     
     
-    const WebRtcKeyValueConfig* field_trials) {
+    const FieldTrialsView* field_trials) {
   return std::make_unique<VideoStreamDecoderImpl>(
       callbacks, decoder_factory, task_queue_factory,
       std::move(decoder_settings), field_trials);

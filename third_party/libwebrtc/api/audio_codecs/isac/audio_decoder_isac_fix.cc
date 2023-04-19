@@ -34,7 +34,7 @@ void AudioDecoderIsacFix::AppendSupportedDecoders(
 std::unique_ptr<AudioDecoder> AudioDecoderIsacFix::MakeAudioDecoder(
     Config config,
     absl::optional<AudioCodecPairId> ,
-    const WebRtcKeyValueConfig* field_trials) {
+    const FieldTrialsView* field_trials) {
   AudioDecoderIsacFixImpl::Config c;
   c.sample_rate_hz = 16000;
   return std::make_unique<AudioDecoderIsacFixImpl>(c);

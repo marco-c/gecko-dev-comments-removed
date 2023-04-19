@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/field_trials_view.h"
 #include "api/rtp_parameters.h"
 #include "api/video_codecs/sdp_video_format.h"
-#include "api/webrtc_key_value_config.h"
 #include "media/base/media_constants.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -76,9 +76,8 @@ struct RTC_EXPORT Codec {
   virtual ~Codec();
 
   
-  bool Matches(
-      const Codec& codec,
-      const webrtc::WebRtcKeyValueConfig* field_trials = nullptr) const;
+  bool Matches(const Codec& codec,
+               const webrtc::FieldTrialsView* field_trials = nullptr) const;
   bool MatchesCapability(const webrtc::RtpCodecCapability& capability) const;
 
   
@@ -135,9 +134,8 @@ struct AudioCodec : public Codec {
   ~AudioCodec() override = default;
 
   
-  bool Matches(
-      const AudioCodec& codec,
-      const webrtc::WebRtcKeyValueConfig* field_trials = nullptr) const;
+  bool Matches(const AudioCodec& codec,
+               const webrtc::FieldTrialsView* field_trials = nullptr) const;
 
   std::string ToString() const;
 
@@ -168,9 +166,8 @@ struct RTC_EXPORT VideoCodec : public Codec {
   
   
   
-  bool Matches(
-      const VideoCodec& codec,
-      const webrtc::WebRtcKeyValueConfig* field_trials = nullptr) const;
+  bool Matches(const VideoCodec& codec,
+               const webrtc::FieldTrialsView* field_trials = nullptr) const;
 
   std::string ToString() const;
 

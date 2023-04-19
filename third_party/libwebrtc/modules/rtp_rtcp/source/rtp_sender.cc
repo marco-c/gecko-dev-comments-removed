@@ -146,7 +146,7 @@ bool HasBweExtension(const RtpHeaderExtensionMap& extensions_map) {
          extensions_map.IsRegistered(kRtpExtensionTransmissionTimeOffset);
 }
 
-double GetMaxPaddingSizeFactor(const WebRtcKeyValueConfig* field_trials) {
+double GetMaxPaddingSizeFactor(const FieldTrialsView* field_trials) {
   
   
   

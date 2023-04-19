@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/field_trials_view.h"
 #include "api/scoped_refptr.h"
-#include "api/webrtc_key_value_config.h"
 #include "rtc_base/ref_counted_object.h"
 
 namespace webrtc {
@@ -38,7 +38,7 @@ struct Helper<> {
       int payload_type,
       const SdpAudioFormat& format,
       absl::optional<AudioCodecPairId> codec_pair_id,
-      const WebRtcKeyValueConfig* field_trials) {
+      const FieldTrialsView* field_trials) {
     return nullptr;
   }
 };
@@ -66,7 +66,7 @@ struct Helper<T, Ts...> {
       int payload_type,
       const SdpAudioFormat& format,
       absl::optional<AudioCodecPairId> codec_pair_id,
-      const WebRtcKeyValueConfig* field_trials) {
+      const FieldTrialsView* field_trials) {
     auto opt_config = T::SdpToConfig(format);
     if (opt_config) {
       return T::MakeAudioEncoder(*opt_config, payload_type, codec_pair_id);
@@ -80,7 +80,7 @@ struct Helper<T, Ts...> {
 template <typename... Ts>
 class AudioEncoderFactoryT : public AudioEncoderFactory {
  public:
-  explicit AudioEncoderFactoryT(const WebRtcKeyValueConfig* field_trials) {
+  explicit AudioEncoderFactoryT(const FieldTrialsView* field_trials) {
     field_trials_ = field_trials;
   }
 
@@ -103,7 +103,7 @@ class AudioEncoderFactoryT : public AudioEncoderFactory {
                                            field_trials_);
   }
 
-  const WebRtcKeyValueConfig* field_trials_;
+  const FieldTrialsView* field_trials_;
 };
 
 }  
@@ -145,7 +145,7 @@ class AudioEncoderFactoryT : public AudioEncoderFactory {
 
 template <typename... Ts>
 rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory(
-    const WebRtcKeyValueConfig* field_trials = nullptr) {
+    const FieldTrialsView* field_trials = nullptr) {
   
   
   
