@@ -1792,9 +1792,6 @@ pref("media.gmp-gmpopenh264.visible", true);
 pref("media.gmp-gmpopenh264.enabled", true);
 
 
-pref("media.autoplay.default", 1); 
-
-
 pref("media.autoplay.block-webaudio", true);
 
 pref("media.videocontrols.picture-in-picture.enabled", true);

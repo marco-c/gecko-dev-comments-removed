@@ -411,9 +411,6 @@ pref("media.video-queue.send-to-compositor-size", 1);
 pref("media.mediadrm-widevinecdm.visible", true);
 
 
-pref("media.autoplay.default", 1); 
-
-
 pref("media.webspeech.synth.enabled", true);
 
 
