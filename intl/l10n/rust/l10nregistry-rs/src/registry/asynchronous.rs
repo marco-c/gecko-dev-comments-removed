@@ -27,6 +27,8 @@ where
     P: Clone,
     B: Clone,
 {
+    
+    #[cfg(feature = "test-fluent")]
     pub fn generate_bundles_for_lang(
         &self,
         langid: LanguageIdentifier,
