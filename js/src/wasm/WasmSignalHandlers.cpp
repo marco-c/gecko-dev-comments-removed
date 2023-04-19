@@ -828,7 +828,6 @@ void wasm::EnsureEagerProcessSignalHandlers() {
 #    if defined(MOZ_ASAN)
   
   
-  
   const bool firstHandler = false;
 #    else
   
