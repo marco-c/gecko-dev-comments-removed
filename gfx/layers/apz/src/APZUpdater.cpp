@@ -325,6 +325,12 @@ void APZUpdater::RunOnUpdaterThread(LayersId aLayersId,
   
 
   if (IsUpdaterThread()) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!IsConnectedToWebRender());
     task->Run();
     return;
   }
