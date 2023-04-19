@@ -12,6 +12,7 @@
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
 #include "nsIScrollableFrame.h"
+#include "nsLayoutUtils.h"
 #include <limits>
 
 namespace mozilla::dom {
@@ -118,13 +119,29 @@ static gfx::Size CalculateBoxSize(Element* aTarget,
       
       
       
+      const auto* referenceFrame = nsLayoutUtils::GetReferenceFrame(frame);
       
       
-      const LayoutDeviceIntSize snappedSize =
-          LayoutDevicePixel::FromAppUnitsRounded(
-              GetContentRectSize(*frame),
-              frame->PresContext()->AppUnitsPerDevPixel());
-      return gfx::Size(snappedSize.ToUnknownSize());
+      
+      const auto offset = frame->GetOffsetToCrossDoc(referenceFrame);
+      const auto contentSize = GetContentRectSize(*frame);
+      
+      
+      const auto appUnitsPerDevPixel =
+          static_cast<double>(frame->PresContext()->AppUnitsPerDevPixel());
+      
+      
+      
+      gfx::Rect rect{gfx::Float(offset.X() / appUnitsPerDevPixel),
+                     gfx::Float(offset.Y() / appUnitsPerDevPixel),
+                     gfx::Float(contentSize.Width() / appUnitsPerDevPixel),
+                     gfx::Float(contentSize.Height() / appUnitsPerDevPixel)};
+      gfx::Point tl = rect.TopLeft().Round();
+      gfx::Point br = rect.BottomRight().Round();
+
+      rect.SizeTo(gfx::Size(br.x - tl.x, br.y - tl.y));
+      rect.NudgeToIntegers();
+      return rect.Size().ToUnknownSize();
     }
     case ResizeObserverBoxOptions::Content_box:
     default:
