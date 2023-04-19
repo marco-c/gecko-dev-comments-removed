@@ -104,6 +104,12 @@ using EvalCache =
 
 class MegamorphicCache {
  public:
+  static constexpr size_t NumEntries = 1024;
+  
+  static constexpr size_t ShapeHashShift1 = 3;
+  
+  static constexpr size_t ShapeHashShift2 = ShapeHashShift1 + 10;
+
   class Entry {
     
     Shape* shape_ = nullptr;
@@ -157,7 +163,6 @@ class MegamorphicCache {
   };
 
  private:
-  static constexpr size_t NumEntries = 1024;
   mozilla::Array<Entry, NumEntries> entries_;
 
   
@@ -166,8 +171,9 @@ class MegamorphicCache {
   Entry& getEntry(Shape* shape, PropertyKey key) {
     static_assert(mozilla::IsPowerOfTwo(NumEntries),
                   "NumEntries must be a power-of-two for fast modulo");
-    uintptr_t hash = (uintptr_t(shape) ^ (uintptr_t(shape) >> 13)) +
-                     HashAtomOrSymbolPropertyKey(key);
+    uintptr_t hash = uintptr_t(shape) >> ShapeHashShift1;
+    hash ^= uintptr_t(shape) >> ShapeHashShift2;
+    hash += HashAtomOrSymbolPropertyKey(key);
     return entries_[hash % NumEntries];
   }
 
