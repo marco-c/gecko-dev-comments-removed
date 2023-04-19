@@ -780,14 +780,8 @@ class nsBlockFrame : public nsContainerFrame {
 
   
   
-  
-  
-  
-  
-  
   void ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
-                   const mozilla::LogicalSize& aAvailableSize, nsIFrame* aFloat,
-                   bool aFloatPushedDown, nsReflowStatus& aReflowStatus);
+                   nsIFrame* aFloat, nsReflowStatus& aReflowStatus);
 
   
   

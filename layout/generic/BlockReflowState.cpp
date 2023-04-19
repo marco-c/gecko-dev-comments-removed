@@ -710,6 +710,12 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
   AutoRestore<nscoord> restoreBCoord(mBCoord);
 
   
+  
+  auto HasFloatPushedDown = [this, &restoreBCoord]() {
+    return mBCoord != restoreBCoord.SavedValue();
+  };
+
+  
   const nsStyleDisplay* floatDisplay = aFloat->StyleDisplay();
 
   
@@ -754,8 +760,7 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
   bool earlyFloatReflow =
       aFloat->IsLetterFrame() || floatMarginISize == NS_UNCONSTRAINEDSIZE;
   if (earlyFloatReflow) {
-    mBlock->ReflowFloat(*this, *floatRI, availSize, aFloat, false,
-                        reflowStatus);
+    mBlock->ReflowFloat(*this, *floatRI, aFloat, reflowStatus);
     floatMarginISize = aFloat->ISize(wm) + floatMargin.IStartEnd(wm);
     NS_ASSERTION(reflowStatus.IsComplete(),
                  "letter frames and orthogonal floats with auto block-size "
@@ -764,8 +769,9 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
   }
 
   
-  if (mBCoord == restoreBCoord.SavedValue() && aAvailableISizeInCurrentLine &&
+  if (!HasFloatPushedDown() && aAvailableISizeInCurrentLine &&
       floatMarginISize > *aAvailableISizeInCurrentLine) {
+    
     
     
     
@@ -842,9 +848,18 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
       floatRI.emplace(mPresContext, mReflowInput, aFloat,
                       availSize.ConvertTo(floatWM, wm));
     }
-    bool pushedDown = mBCoord != restoreBCoord.SavedValue();
-    mBlock->ReflowFloat(*this, *floatRI, availSize, aFloat, pushedDown,
-                        reflowStatus);
+    
+    
+    
+    if (floatRI->mFlags.mIsTopOfPage && HasFloatPushedDown()) {
+      
+      
+      NS_ASSERTION(!mustPlaceFloat,
+                   "mustPlaceFloat shouldn't be set if we're not at the "
+                   "top-of-page!");
+      floatRI->mFlags.mIsTopOfPage = false;
+    }
+    mBlock->ReflowFloat(*this, *floatRI, aFloat, reflowStatus);
   }
   if (aFloat->GetPrevInFlow()) {
     floatMargin.BStart(wm) = 0;

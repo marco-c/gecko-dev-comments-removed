@@ -6618,8 +6618,7 @@ const nsStyleText* nsBlockFrame::StyleTextForLineLayout() {
 }
 
 void nsBlockFrame::ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
-                               const LogicalSize& aAvailableSize,
-                               nsIFrame* aFloat, bool aFloatPushedDown,
+                               nsIFrame* aFloat,
                                nsReflowStatus& aReflowStatus) {
   MOZ_ASSERT(aReflowStatus.IsEmpty(),
              "Caller should pass a fresh reflow status!");
@@ -6627,15 +6626,6 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
              "aFloat must be an out-of-flow frame");
 
   WritingMode wm = aState.mReflowInput.GetWritingMode();
-
-  
-  
-  
-  
-  if (aFloatRI.mFlags.mIsTopOfPage &&
-      (aFloatPushedDown || aAvailableSize.ISize(wm) != aState.ContentISize())) {
-    aFloatRI.mFlags.mIsTopOfPage = false;
-  }
 
   
   nsBlockReflowContext brc(aState.mPresContext, aState.mReflowInput);
