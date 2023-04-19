@@ -9,24 +9,28 @@
 
 
 
-const PSEUDOURI = "indexeddb://fx-devtools";
-const principaluri = Services.io.newURI(PSEUDOURI);
-const principal = Services.scriptSecurityManager.createContentPrincipal(
-  principaluri,
-  {}
-);
 
+if (globalThis.indexedDB) {
+  module.exports = globalThis.indexedDB;
+} else {
+  const PSEUDOURI = "indexeddb://fx-devtools";
+  const principaluri = Services.io.newURI(PSEUDOURI);
+  const principal = Services.scriptSecurityManager.createContentPrincipal(
+    principaluri,
+    {}
+  );
 
+  
+  
+  
+  
+  const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+  const sandbox = Cu.Sandbox(systemPrincipal, {
+    wantGlobalProperties: ["indexedDB"],
+  });
+  const { indexedDB } = sandbox;
 
-
-
-
-
-
-
-
-exports.createDevToolsIndexedDB = function(indexedDB) {
-  return Object.freeze({
+  module.exports = Object.freeze({
     
 
 
@@ -37,12 +41,14 @@ exports.createDevToolsIndexedDB = function(indexedDB) {
       }
       return indexedDB.openForPrincipal(principal, name, options);
     },
+
     
 
 
     deleteDatabase(name) {
       return indexedDB.deleteForPrincipal(principal, name);
     },
+
     cmp: indexedDB.cmp.bind(indexedDB),
   });
-};
+}
