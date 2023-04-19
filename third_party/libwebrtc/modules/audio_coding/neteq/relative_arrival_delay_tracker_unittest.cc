@@ -49,14 +49,17 @@ TEST(RelativeArrivalDelayTrackerTest, ReorderedPackets) {
 
   
   EXPECT_EQ(tracker.Update(kTs - 4 * kTsIncrement, kFs), 80);
+  EXPECT_EQ(tracker.newest_timestamp(), kTs);
 
   
   EXPECT_EQ(tracker.Update(kTs - kTsIncrement, kFs), 20);
+  EXPECT_EQ(tracker.newest_timestamp(), kTs);
 
   
   
   tick_timer.Increment(4 * kFrameSizeMs / tick_timer.ms_per_tick());
   EXPECT_EQ(tracker.Update(kTs + kTsIncrement, kFs), 60);
+  EXPECT_EQ(tracker.newest_timestamp(), kTs + kTsIncrement);
 }
 
 TEST(RelativeArrivalDelayTrackerTest, MaxDelayHistory) {

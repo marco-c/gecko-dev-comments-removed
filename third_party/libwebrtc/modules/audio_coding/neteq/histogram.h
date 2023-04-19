@@ -42,7 +42,7 @@ class Histogram {
   virtual int NumBuckets() const;
 
   
-  std::vector<int> buckets() const { return buckets_; }
+  const std::vector<int>& buckets() const { return buckets_; }
 
   
   int base_forget_factor_for_testing() const { return base_forget_factor_; }
