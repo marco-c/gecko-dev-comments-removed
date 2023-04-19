@@ -35,25 +35,31 @@ let $0 = instantiate(`(module
     (unreachable)
   )
 
-  (func (export "select_unreached_result_1") (result i32)
+  (func (export "select-unreached-result1") (result i32)
     (unreachable) (i32.add (select))
   )
 
-  (func (export "select_unreached_result_2") (result i64)
+  (func (export "select-unreached-result2") (result i64)
     (unreachable) (i64.add (select (i64.const 0) (i32.const 0)))
   )
 
-  (func (export "unreachable-num")
+  (func (export "select-unreached-num")
     (unreachable)
     (select)
     (i32.eqz)
     (drop)
   )
-  (func (export "unreachable-ref")
+  (func (export "select-unreached-ref")
     (unreachable)
     (select)
     (ref.is_null)
     (drop)
+  )
+
+  (type $$t (func (param i32) (result i32)))
+  (func (export "call_ref-unreached") (result i32)
+    (unreachable)
+    (call_ref $$t)
   )
 )`);
 
@@ -68,6 +74,21 @@ assert_trap(() => invoke($0, `select-trap-right`, [1]), `unreachable`);
 
 
 assert_trap(() => invoke($0, `select-trap-right`, [0]), `unreachable`);
+
+
+assert_trap(() => invoke($0, `select-unreached-result1`, []), `unreachable`);
+
+
+assert_trap(() => invoke($0, `select-unreached-result2`, []), `unreachable`);
+
+
+assert_trap(() => invoke($0, `select-unreached-num`, []), `unreachable`);
+
+
+assert_trap(() => invoke($0, `select-unreached-ref`, []), `unreachable`);
+
+
+assert_trap(() => invoke($0, `call_ref-unreached`, []), `unreachable`);
 
 
 let $1 = instantiate(`(module
