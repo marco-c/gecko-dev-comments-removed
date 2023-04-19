@@ -60,10 +60,6 @@ class SimpleStringBuilder {
   SimpleStringBuilder&
   AppendFormat(const char* fmt, ...);
 
-  
-  
-  SimpleStringBuilder& Append(const char* str, size_t length);
-
  private:
   bool IsConsistent() const {
     return size_ <= buffer_.size() - 1 && buffer_[size_] == '\0';
