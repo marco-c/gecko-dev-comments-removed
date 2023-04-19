@@ -13,6 +13,7 @@ add_task(async function() {
   
   
   await pushPref("devtools.browsertoolbox.fission", true);
+  await pushPref("devtools.browsertoolbox.scope", "everything");
 
   
   const tab = await addTab("data:text/html,Root Node tests");
