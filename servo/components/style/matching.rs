@@ -52,8 +52,9 @@ pub enum StyleChange {
 
 
 
+
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub enum ChildCascadeRequirement {
+pub enum ChildRestyleRequirement {
     
     
     
@@ -68,12 +69,16 @@ pub enum ChildCascadeRequirement {
     
     
     MustCascadeDescendants = 3,
+    
+    
+    
+    MustMatchDescendants = 4,
 }
 
-impl ChildCascadeRequirement {
+impl ChildRestyleRequirement {
     
     pub fn can_skip_cascade(&self) -> bool {
-        matches!(*self, ChildCascadeRequirement::CanSkipCascade)
+        matches!(*self, ChildRestyleRequirement::CanSkipCascade)
     }
 }
 
@@ -729,7 +734,7 @@ trait PrivateMatchMethods: TElement {
         old_values: &ComputedValues,
         new_values: &ComputedValues,
         pseudo: Option<&PseudoElement>,
-    ) -> ChildCascadeRequirement {
+    ) -> ChildRestyleRequirement {
         debug!("accumulate_damage_for: {:?}", self);
         debug_assert!(!shared_context
             .traversal_flags
@@ -748,16 +753,16 @@ trait PrivateMatchMethods: TElement {
                 " > flags changed: {:?} != {:?}",
                 old_values.flags, new_values.flags
             );
-            return ChildCascadeRequirement::MustCascadeChildren;
+            return ChildRestyleRequirement::MustCascadeChildren;
         }
 
         match difference.change {
-            StyleChange::Unchanged => return ChildCascadeRequirement::CanSkipCascade,
+            StyleChange::Unchanged => return ChildRestyleRequirement::CanSkipCascade,
             StyleChange::Changed { reset_only } => {
                 
                 
                 if !reset_only {
-                    return ChildCascadeRequirement::MustCascadeChildren;
+                    return ChildRestyleRequirement::MustCascadeChildren;
                 }
             },
         }
@@ -769,26 +774,26 @@ trait PrivateMatchMethods: TElement {
             
             
             if old_display == Display::None {
-                return ChildCascadeRequirement::MustCascadeChildren;
+                return ChildRestyleRequirement::MustCascadeChildren;
             }
             
             
             
             if old_display.is_item_container() != new_display.is_item_container() {
-                return ChildCascadeRequirement::MustCascadeChildren;
+                return ChildRestyleRequirement::MustCascadeChildren;
             }
             
             
             
             if old_display.is_contents() || new_display.is_contents() {
-                return ChildCascadeRequirement::MustCascadeChildren;
+                return ChildRestyleRequirement::MustCascadeChildren;
             }
             
             
             #[cfg(feature = "gecko")]
             {
                 if old_display.is_ruby_type() != new_display.is_ruby_type() {
-                    return ChildCascadeRequirement::MustCascadeChildren;
+                    return ChildRestyleRequirement::MustCascadeChildren;
                 }
             }
         }
@@ -811,12 +816,12 @@ trait PrivateMatchMethods: TElement {
             let is_legacy_justify_items = new_justify_items.computed.0.contains(AlignFlags::LEGACY);
 
             if is_legacy_justify_items != was_legacy_justify_items {
-                return ChildCascadeRequirement::MustCascadeChildren;
+                return ChildRestyleRequirement::MustCascadeChildren;
             }
 
             if was_legacy_justify_items && old_justify_items.computed != new_justify_items.computed
             {
-                return ChildCascadeRequirement::MustCascadeChildren;
+                return ChildRestyleRequirement::MustCascadeChildren;
             }
         }
 
@@ -825,13 +830,13 @@ trait PrivateMatchMethods: TElement {
             
             
             if old_values.is_multicol() != new_values.is_multicol() {
-                return ChildCascadeRequirement::MustCascadeChildren;
+                return ChildRestyleRequirement::MustCascadeChildren;
             }
         }
 
         
         
-        ChildCascadeRequirement::MustCascadeChildrenIfInheritResetStyle
+        ChildRestyleRequirement::MustCascadeChildrenIfInheritResetStyle
     }
 }
 
@@ -878,7 +883,7 @@ pub trait MatchMethods: TElement {
         data: &mut ElementData,
         mut new_styles: ResolvedElementStyles,
         important_rules_changed: bool,
-    ) -> ChildCascadeRequirement {
+    ) -> ChildRestyleRequirement {
         use std::cmp;
 
         self.process_animations(
@@ -894,26 +899,37 @@ pub trait MatchMethods: TElement {
 
         let new_primary_style = data.styles.primary.as_ref().unwrap();
 
-        let mut cascade_requirement = ChildCascadeRequirement::CanSkipCascade;
-        if new_primary_style
-            .flags
-            .contains(ComputedValueFlags::IS_ROOT_ELEMENT_STYLE)
-        {
-            let device = context.shared.stylist.device();
+        let mut restyle_requirement = ChildRestyleRequirement::CanSkipCascade;
+        let is_root = new_primary_style.flags.contains(ComputedValueFlags::IS_ROOT_ELEMENT_STYLE);
+        let is_container = !new_primary_style.get_box().clone_container_type().is_empty();
+        if is_root || is_container {
             let new_font_size = new_primary_style.get_font().clone_font_size();
-
-            if old_styles
+            let old_font_size = old_styles
                 .primary
                 .as_ref()
-                .map_or(true, |s| s.get_font().clone_font_size() != new_font_size)
-            {
-                debug_assert!(self.owner_doc_matches_for_testing(device));
-                device.set_root_font_size(new_font_size.size().into());
-                
-                
-                
-                if device.used_root_font_size() {
-                    cascade_requirement = ChildCascadeRequirement::MustCascadeDescendants;
+                .map(|s| s.get_font().clone_font_size());
+
+            if old_font_size != Some(new_font_size) {
+                if is_root {
+                    let device = context.shared.stylist.device();
+                    debug_assert!(self.owner_doc_matches_for_testing(device));
+                    device.set_root_font_size(new_font_size.size().into());
+                    if device.used_root_font_size() {
+                        
+                        
+                        
+                        restyle_requirement = ChildRestyleRequirement::MustCascadeDescendants;
+                    }
+                }
+
+                if is_container && old_font_size.is_some() {
+                    
+                    
+                    
+                    
+                    
+                    
+                    restyle_requirement = ChildRestyleRequirement::MustMatchDescendants;
                 }
             }
         }
@@ -924,7 +940,6 @@ pub trait MatchMethods: TElement {
                 
                 
                 
-
                 let device = context.shared.stylist.device();
 
                 
@@ -939,17 +954,17 @@ pub trait MatchMethods: TElement {
             .traversal_flags
             .contains(TraversalFlags::FinalAnimationTraversal)
         {
-            return ChildCascadeRequirement::MustCascadeChildren;
+            return ChildRestyleRequirement::MustCascadeChildren;
         }
 
         
         let old_primary_style = match old_styles.primary {
             Some(s) => s,
-            None => return ChildCascadeRequirement::MustCascadeChildren,
+            None => return ChildRestyleRequirement::MustCascadeChildren,
         };
 
-        cascade_requirement = cmp::max(
-            cascade_requirement,
+        restyle_requirement = cmp::max(
+            restyle_requirement,
             self.accumulate_damage_for(
                 context.shared,
                 &mut data.damage,
@@ -961,7 +976,7 @@ pub trait MatchMethods: TElement {
 
         if data.styles.pseudos.is_empty() && old_styles.pseudos.is_empty() {
             
-            return cascade_requirement;
+            return restyle_requirement;
         }
 
         let pseudo_styles = old_styles
@@ -994,13 +1009,13 @@ pub trait MatchMethods: TElement {
                         old.as_ref().map_or(false, |s| pseudo.should_exist(s));
                     if new_pseudo_should_exist != old_pseudo_should_exist {
                         data.damage |= RestyleDamage::reconstruct();
-                        return cascade_requirement;
+                        return restyle_requirement;
                     }
                 },
             }
         }
 
-        cascade_requirement
+        restyle_requirement
     }
 
     
