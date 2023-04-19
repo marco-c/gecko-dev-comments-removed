@@ -322,7 +322,7 @@ class CallObject : public EnvironmentObject {
   static constexpr uint32_t CALLEE_SLOT = 1;
 
   static CallObject* create(JSContext* cx, HandleScript script,
-                            HandleFunction callee, HandleObject enclosing);
+                            HandleObject enclosing, gc::InitialHeap heap);
 
  public:
   static const JSClass class_;
@@ -339,8 +339,7 @@ class CallObject : public EnvironmentObject {
   static CallObject* create(JSContext* cx, Handle<Shape*> shape);
 
   static CallObject* createTemplateObject(JSContext* cx, HandleScript script,
-                                          HandleObject enclosing,
-                                          gc::InitialHeap heap);
+                                          HandleObject enclosing);
 
   static CallObject* create(JSContext* cx, AbstractFramePtr frame);
 
@@ -384,6 +383,10 @@ class VarEnvironmentObject : public EnvironmentObject {
                                               HandleObject enclosing,
                                               gc::InitialHeap heap);
 
+  static VarEnvironmentObject* create(JSContext* cx, Handle<Scope*> scope,
+                                      HandleObject enclosing,
+                                      gc::InitialHeap heap);
+
   void initScope(Scope* scope) {
     initReservedSlot(SCOPE_SLOT, PrivateGCThingValue(scope));
   }
@@ -394,17 +397,15 @@ class VarEnvironmentObject : public EnvironmentObject {
   static constexpr uint32_t RESERVED_SLOTS = 2;
   static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::QualifiedVarObj};
 
-  static VarEnvironmentObject* create(JSContext* cx, Handle<Scope*> scope,
-                                      HandleObject enclosing,
-                                      gc::InitialHeap heap);
   static VarEnvironmentObject* createForFrame(JSContext* cx,
                                               Handle<Scope*> scope,
                                               AbstractFramePtr frame);
   static VarEnvironmentObject* createHollowForDebug(JSContext* cx,
                                                     Handle<Scope*> scope);
   static VarEnvironmentObject* createTemplateObject(JSContext* cx,
-                                                    Handle<VarScope*> scope,
-                                                    gc::InitialHeap heap);
+                                                    Handle<VarScope*> scope);
+  static VarEnvironmentObject* createWithoutEnclosing(JSContext* cx,
+                                                      Handle<VarScope*> scope);
 
   Scope& scope() const {
     Value v = getReservedSlot(SCOPE_SLOT);
@@ -535,10 +536,9 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   static constexpr uint32_t RESERVED_SLOTS = 2;
 
  protected:
-  static LexicalEnvironmentObject* createTemplateObject(JSContext* cx,
-                                                        Handle<Shape*> shape,
-                                                        HandleObject enclosing,
-                                                        gc::InitialHeap heap);
+  static LexicalEnvironmentObject* create(JSContext* cx, Handle<Shape*> shape,
+                                          HandleObject enclosing,
+                                          gc::InitialHeap heap);
 
  public:
   
@@ -575,13 +575,14 @@ class ScopedLexicalEnvironmentObject : public LexicalEnvironmentObject {
 };
 
 class BlockLexicalEnvironmentObject : public ScopedLexicalEnvironmentObject {
- public:
-  static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible};
-
+ protected:
   static BlockLexicalEnvironmentObject* create(JSContext* cx,
                                                Handle<LexicalScope*> scope,
                                                HandleObject enclosing,
                                                gc::InitialHeap heap);
+
+ public:
+  static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible};
 
   static BlockLexicalEnvironmentObject* createForFrame(
       JSContext* cx, Handle<LexicalScope*> scope, AbstractFramePtr frame);
@@ -590,7 +591,10 @@ class BlockLexicalEnvironmentObject : public ScopedLexicalEnvironmentObject {
       JSContext* cx, Handle<LexicalScope*> scope);
 
   static BlockLexicalEnvironmentObject* createTemplateObject(
-      JSContext* cx, Handle<LexicalScope*> scope, gc::InitialHeap heap);
+      JSContext* cx, Handle<LexicalScope*> scope);
+
+  static BlockLexicalEnvironmentObject* createWithoutEnclosing(
+      JSContext* cx, Handle<LexicalScope*> scope);
 
   
   
@@ -615,8 +619,10 @@ class NamedLambdaObject : public BlockLexicalEnvironmentObject {
 
  public:
   static NamedLambdaObject* createTemplateObject(JSContext* cx,
-                                                 HandleFunction callee,
-                                                 gc::InitialHeap heap);
+                                                 HandleFunction callee);
+
+  static NamedLambdaObject* createWithoutEnclosing(JSContext* cx,
+                                                   HandleFunction callee);
 
   static NamedLambdaObject* create(JSContext* cx, AbstractFramePtr frame);
 
@@ -626,16 +632,19 @@ class NamedLambdaObject : public BlockLexicalEnvironmentObject {
 
 class ClassBodyLexicalEnvironmentObject
     : public ScopedLexicalEnvironmentObject {
- public:
   static ClassBodyLexicalEnvironmentObject* create(
       JSContext* cx, Handle<ClassBodyScope*> scope, HandleObject enclosing,
       gc::InitialHeap heap);
 
+ public:
   static ClassBodyLexicalEnvironmentObject* createForFrame(
       JSContext* cx, Handle<ClassBodyScope*> scope, AbstractFramePtr frame);
 
   static ClassBodyLexicalEnvironmentObject* createTemplateObject(
-      JSContext* cx, Handle<ClassBodyScope*> scope, gc::InitialHeap heap);
+      JSContext* cx, Handle<ClassBodyScope*> scope);
+
+  static ClassBodyLexicalEnvironmentObject* createWithoutEnclosing(
+      JSContext* cx, Handle<ClassBodyScope*> scope);
 
   
   ClassBodyScope& scope() const {
