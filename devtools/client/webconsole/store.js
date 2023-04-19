@@ -73,8 +73,14 @@ function configureStore(webConsoleUI, options = {}) {
     ui: UiState({
       networkMessageActiveTabId: "headers",
       persistLogs: getBoolPref(PREFS.UI.PERSIST),
+      
+      
+      
+      
       showContentMessages:
-        webConsoleUI.isBrowserConsole || webConsoleUI.isBrowserToolboxConsole
+        (webConsoleUI.isBrowserConsole ||
+          webConsoleUI.isBrowserToolboxConsole) &&
+        !webConsoleUI.fissionSupport
           ? getBoolPref(PREFS.UI.CONTENT_MESSAGES)
           : true,
       editor: getBoolPref(PREFS.UI.EDITOR),
