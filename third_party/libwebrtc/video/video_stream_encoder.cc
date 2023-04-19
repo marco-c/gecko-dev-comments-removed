@@ -1827,6 +1827,9 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     const CodecSpecificInfo* codec_specific_info) {
   TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
                        "timestamp", encoded_image.Timestamp());
+
+  
+
   const size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
   EncodedImage image_copy(encoded_image);
 
@@ -1895,18 +1898,6 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   
   
   encoder_stats_observer_->OnSendEncodedImage(image_copy, codec_specific_info);
-
-  
-  
-  
-  
-  int simulcast_id = 0;
-  if (codec_specific_info &&
-      (codec_specific_info->codecType == kVideoCodecVP8 ||
-       codec_specific_info->codecType == kVideoCodecH264 ||
-       codec_specific_info->codecType == kVideoCodecGeneric)) {
-    simulcast_id = encoded_image.SpatialIndex().value_or(0);
-  }
 
   EncodedImageCallback::Result result =
       sink_->OnEncodedImage(image_copy, codec_specific_info);

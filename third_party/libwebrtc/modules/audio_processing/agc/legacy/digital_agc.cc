@@ -79,10 +79,9 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t* gainTable,
   uint16_t constMaxGain;
   uint16_t tmpU16, intPart, fracPart;
   const int16_t kCompRatio = 3;
-  const int16_t kSoftLimiterLeft = 1;
   int16_t limiterOffset = 0;  
   int16_t limiterIdx, limiterLvlX;
-  int16_t constLinApprox, zeroGainLvl, maxGain, diffGain;
+  int16_t constLinApprox, maxGain, diffGain;
   int16_t i, tmp16, tmp16no1;
   int zeros, zerosScale;
 
@@ -98,16 +97,10 @@ int32_t WebRtcAgc_CalculateGainTable(int32_t* gainTable,
       WebRtcSpl_DivW32W16ResW16(tmp32no1 + (kCompRatio >> 1), kCompRatio);
   maxGain = WEBRTC_SPL_MAX(tmp16no1, (analogTarget - targetLevelDbfs));
   tmp32no1 = maxGain * kCompRatio;
-  zeroGainLvl = digCompGaindB;
-  zeroGainLvl -= WebRtcSpl_DivW32W16ResW16(tmp32no1 + ((kCompRatio - 1) >> 1),
-                                           kCompRatio - 1);
   if ((digCompGaindB <= analogTarget) && (limiterEnable)) {
-    zeroGainLvl += (analogTarget - digCompGaindB + kSoftLimiterLeft);
     limiterOffset = 0;
   }
 
-  
-  
   
   tmp32no1 = digCompGaindB * (kCompRatio - 1);
   diffGain =
@@ -294,15 +287,12 @@ int32_t WebRtcAgc_ComputeDigitalGains(DigitalAgc* stt,
   int16_t gate, gain_adj;
   int16_t k;
   size_t n, L;
-  int16_t L2;  
 
   
   if (FS == 8000) {
     L = 8;
-    L2 = 3;
   } else if (FS == 16000 || FS == 32000 || FS == 48000) {
     L = 16;
-    L2 = 4;
   } else {
     return -1;
   }
