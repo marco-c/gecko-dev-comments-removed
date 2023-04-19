@@ -16,20 +16,24 @@ const lazy = {};
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   getMessageHandlerClass:
     "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm",
+  Log: "chrome://remote/content/shared/Log.jsm",
+});
+
+const protocols = {
+  bidi: {},
+  test: {},
+};
+XPCOMUtils.defineLazyModuleGetters(protocols.bidi, {
   
   
   
   getModuleClass:
     "chrome://remote/content/webdriver-bidi/modules/ModuleRegistry.jsm",
-  Log: "chrome://remote/content/shared/Log.jsm",
 });
-
-XPCOMUtils.defineLazyModuleGetter(
-  lazy,
-  "getTestModuleClass",
-  "chrome://mochitests/content/browser/remote/shared/messagehandler/test/browser/resources/modules/ModuleRegistry.jsm",
-  "getModuleClass"
-);
+XPCOMUtils.defineLazyModuleGetters(protocols.test, {
+  getModuleClass:
+    "chrome://mochitests/content/browser/remote/shared/messagehandler/test/browser/resources/modules/ModuleRegistry.jsm",
+});
 
 XPCOMUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
 
@@ -73,10 +77,14 @@ class ModuleCache {
     this.messageHandler = messageHandler;
     this._messageHandlerType = messageHandler.constructor.type;
 
-    this._useTestModules = Services.prefs.getBoolPref(
+    
+    
+    this._protocol = Services.prefs.getBoolPref(
       "remote.messagehandler.modulecache.useBrowserTestRoot",
       false
-    );
+    )
+      ? protocols.test
+      : protocols.bidi;
 
     
     this._modules = new Map();
@@ -119,7 +127,7 @@ class ModuleCache {
     }
 
     return folders
-      .map(folder => this._getModuleClass(moduleName, folder))
+      .map(folder => this._protocol.getModuleClass(moduleName, folder))
       .filter(cls => !!cls);
   }
 
@@ -151,7 +159,7 @@ class ModuleCache {
       this._messageHandlerType,
       destination.type
     );
-    const ModuleClass = this._getModuleClass(moduleName, moduleFolder);
+    const ModuleClass = this._protocol.getModuleClass(moduleName, moduleFolder);
 
     let module = null;
     if (ModuleClass) {
@@ -186,16 +194,6 @@ class ModuleCache {
 
   toString() {
     return `[object ${this.constructor.name} ${this.messageHandler.name}]`;
-  }
-
-  _getModuleClass(moduleName, moduleFolder) {
-    if (this._useTestModules) {
-      return lazy.getTestModuleClass(moduleName, moduleFolder);
-    }
-
-    
-    
-    return lazy.getModuleClass(moduleName, moduleFolder);
   }
 
   _getModuleFolder(originType, destinationType) {
