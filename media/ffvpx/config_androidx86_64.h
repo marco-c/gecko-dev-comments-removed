@@ -1,12 +1,12 @@
 
 #ifndef FFMPEG_CONFIG_H
 #define FFMPEG_CONFIG_H
-#define FFMPEG_CONFIGURATION "--disable-all --enable-avcodec --enable-decoder='vp8,vp9,mp3,flac,av1' --enable-parser='vp8,vp9' --disable-static --enable-shared --disable-autodetect --disable-iconv --enable-vaapi --enable-hwaccel='vp9_vaapi,vp8_vaapi,av1_vaapi' --enable-libdav1d"
+#define FFMPEG_CONFIGURATION "--disable-all --enable-avcodec --enable-parser='vp8,vp9' --enable-decoder='mp3,flac,vp8,vp9' --disable-static --enable-shared --disable-autodetect --enable-small --target-os=linux --arch=x86_64 --enable-cross-compile --cc=/Users/padenot/.mozbuild/android-ndk-r21d/toolchains/llvm/prebuilt/darwin-x86_64/bin/x86_64-linux-android21-clang"
 #define FFMPEG_LICENSE "LGPL version 2.1 or later"
 #define CONFIG_THIS_YEAR 2022
 #define FFMPEG_DATADIR "/usr/local/share/ffmpeg"
 #define AVCONV_DATADIR "/usr/local/share/ffmpeg"
-#define CC_IDENT "gcc 11 (Ubuntu 11.2.0-19ubuntu1)"
+#define CC_IDENT "Android (6454773 based on r365631c2) clang version 9.0.8 (https://android.googlesource.com/toolchain/llvm-project 98c855489587874b2a325e7a516b99d838599c6f) (based on LLVM 9.0.8svn)"
 #define OS_NAME linux
 #define av_restrict restrict
 #define EXTERN_PREFIX ""
@@ -231,13 +231,14 @@
 #define HAVE_LINUX_PERF_EVENT_H 1
 #define HAVE_MACHINE_IOCTL_BT848_H 0
 #define HAVE_MACHINE_IOCTL_METEOR_H 0
+#define HAVE_MALLOC_H 1
 #define HAVE_OPENCV2_CORE_CORE_C_H 0
 #define HAVE_OPENGL_GL3_H 0
 #define HAVE_POLL_H 1
 #define HAVE_SYS_PARAM_H 1
 #define HAVE_SYS_RESOURCE_H 1
 #define HAVE_SYS_SELECT_H 1
-#define HAVE_SYS_SOUNDCARD_H 1
+#define HAVE_SYS_SOUNDCARD_H 0
 #define HAVE_SYS_TIME_H 1
 #define HAVE_SYS_UN_H 1
 #define HAVE_SYS_VIDEOIO_H 0
@@ -286,6 +287,7 @@
 #define HAVE_WINRT 0
 #define HAVE_ACCESS 1
 #define HAVE_ALIGNED_MALLOC 0
+#define HAVE_ARC4RANDOM 1
 #define HAVE_CLOCK_GETTIME 1
 #define HAVE_CLOSESOCKET 0
 #define HAVE_COMMANDLINETOARGVW 0
@@ -303,22 +305,25 @@
 #define HAVE_GETSTDHANDLE 0
 #define HAVE_GETSYSTEMTIMEASFILETIME 0
 #define HAVE_GETTIMEOFDAY 1
-#define HAVE_GLOB 1
+#define HAVE_GLOB 0
 #define HAVE_GLXGETPROCADDRESS 0
 #define HAVE_GMTIME_R 1
 #define HAVE_INET_ATON 1
 #define HAVE_ISATTY 1
 #define HAVE_KBHIT 0
+#define HAVE_LOCALTIME_R 1
 #define HAVE_LSTAT 1
 #define HAVE_LZO1X_999_COMPRESS 0
 #define HAVE_MACH_ABSOLUTE_TIME 0
 #define HAVE_MAPVIEWOFFILE 0
+#define HAVE_MEMALIGN 1
 #define HAVE_MKSTEMP 1
 #define HAVE_MMAP 1
 #define HAVE_MPROTECT 1
 #define HAVE_NANOSLEEP 1
 #define HAVE_PEEKNAMEDPIPE 0
-#define HAVE_PTHREAD_CANCEL 1
+#define HAVE_POSIX_MEMALIGN 1
+#define HAVE_PTHREAD_CANCEL 0
 #define HAVE_SCHED_GETAFFINITY 1
 #define HAVE_SECITEMIMPORT 0
 #define HAVE_SETCONSOLETEXTATTRIBUTE 0
@@ -357,8 +362,8 @@
 #define HAVE_INLINE_ASM_LABELS 1
 #define HAVE_INLINE_ASM_NONLOCAL_LABELS 1
 #define HAVE_PRAGMA_DEPRECATED 1
-#define HAVE_RSYNC_CONTIMEOUT 1
-#define HAVE_SYMVER_ASM_LABEL 0
+#define HAVE_RSYNC_CONTIMEOUT 0
+#define HAVE_SYMVER_ASM_LABEL 1
 #define HAVE_SYMVER_GNU_ASM 1
 #define HAVE_VFP_ARGS 0
 #define HAVE_XFORM_ASM 0
@@ -397,7 +402,7 @@
 #define HAVE_GZIP 1
 #define HAVE_LIBDRM_GETFB2 0
 #define HAVE_MAKEINFO 1
-#define HAVE_MAKEINFO_HTML 1
+#define HAVE_MAKEINFO_HTML 0
 #define HAVE_OPENCL_D3D11 0
 #define HAVE_OPENCL_DRM_ARM 0
 #define HAVE_OPENCL_DRM_BEIGNET 0
@@ -410,7 +415,7 @@
 #define HAVE_XMLLINT 1
 #define HAVE_ZLIB_GZIP 0
 #define CONFIG_DOC 0
-#define CONFIG_HTMLPAGES 1
+#define CONFIG_HTMLPAGES 0
 #define CONFIG_MANPAGES 1
 #define CONFIG_PODPAGES 1
 #define CONFIG_TXTPAGES 1
@@ -473,7 +478,7 @@
 #define CONFIG_LIBCACA 0
 #define CONFIG_LIBCELT 0
 #define CONFIG_LIBCODEC2 0
-#define CONFIG_LIBDAV1D 1
+#define CONFIG_LIBDAV1D 0
 #define CONFIG_LIBDC1394 0
 #define CONFIG_LIBDRM 0
 #define CONFIG_LIBFLITE 0
@@ -572,6 +577,7 @@
 #define CONFIG_FFNVCODEC 0
 #define CONFIG_NVDEC 0
 #define CONFIG_NVENC 0
+#define CONFIG_VAAPI 0
 #define CONFIG_VDPAU 0
 #define CONFIG_VIDEOTOOLBOX 0
 #define CONFIG_VULKAN 0
@@ -583,7 +589,7 @@
 #define CONFIG_RUNTIME_CPUDETECT 1
 #define CONFIG_SAFE_BITSTREAM_READER 1
 #define CONFIG_SHARED 1
-#define CONFIG_SMALL 0
+#define CONFIG_SMALL 1
 #define CONFIG_STATIC 0
 #define CONFIG_SWSCALE_ALPHA 1
 #define CONFIG_GPL 0
@@ -627,7 +633,7 @@
 #define CONFIG_BSFS 0
 #define CONFIG_DECODERS 1
 #define CONFIG_ENCODERS 0
-#define CONFIG_HWACCELS 1
+#define CONFIG_HWACCELS 0
 #define CONFIG_PARSERS 1
 #define CONFIG_INDEVS 0
 #define CONFIG_OUTDEVS 0
@@ -644,8 +650,8 @@
 #define CONFIG_BLOCKDSP 0
 #define CONFIG_BSWAPDSP 0
 #define CONFIG_CABAC 0
-#define CONFIG_CBS 1
-#define CONFIG_CBS_AV1 1
+#define CONFIG_CBS 0
+#define CONFIG_CBS_AV1 0
 #define CONFIG_CBS_H264 0
 #define CONFIG_CBS_H265 0
 #define CONFIG_CBS_JPEG 0
@@ -722,6 +728,7 @@
 #define CONFIG_TEXTUREDSP 0
 #define CONFIG_TEXTUREDSPENC 0
 #define CONFIG_TPELDSP 0
+#define CONFIG_VAAPI_1 0
 #define CONFIG_VAAPI_ENCODE 0
 #define CONFIG_VC1DSP 0
 #define CONFIG_VIDEODSP 1
