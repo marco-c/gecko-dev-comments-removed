@@ -5,7 +5,34 @@
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({ set: [["keyword.enabled", false]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [["keyword.enabled", false]],
+  });
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function(browser) {
+      gURLBar.value = "example";
+      gURLBar.select();
+      const loadPromise = BrowserTestUtils.waitForErrorPage(browser);
+      EventUtils.sendKey("return");
+      await loadPromise;
+      ok(true, "error page is loaded correctly");
+    }
+  );
+});
+
+
+
+
+
+
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["keyword.enabled", false],
+      ["browser.fixup.alternate.enabled", true],
+    ],
+  });
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function(browser) {
