@@ -8079,7 +8079,13 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       switchRealm = false;
       break;
     case wasm::CalleeDesc::FuncRef:
-      MOZ_CRASH("NYI");
+      
+      
+      
+      masm.wasmCallRef(desc, callee, &retOffset, &secondRetOffset);
+      reloadRegs = false;
+      switchRealm = false;
+      break;
   }
 
   
