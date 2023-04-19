@@ -1,0 +1,9 @@
+
+
+
+"use strict";
+
+ChromeUtils.defineESModuleGetters(this, {
+  NetworkHelper:
+    "resource://devtools/shared/network-observer/NetworkHelper.sys.mjs",
+});
