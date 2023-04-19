@@ -53,7 +53,6 @@ class RtpHeaderExtensionMap {
     return ids_[type];
   }
 
-  int32_t Deregister(RTPExtensionType type);
   void Deregister(absl::string_view uri);
 
   

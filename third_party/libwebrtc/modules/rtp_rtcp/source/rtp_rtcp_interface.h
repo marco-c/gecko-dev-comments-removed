@@ -221,7 +221,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   virtual void RegisterRtpHeaderExtension(absl::string_view uri, int id) = 0;
 
-  virtual int32_t DeregisterSendRtpHeaderExtension(RTPExtensionType type) = 0;
   virtual void DeregisterSendRtpHeaderExtension(absl::string_view uri) = 0;
 
   
