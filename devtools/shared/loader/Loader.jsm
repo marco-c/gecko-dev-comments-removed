@@ -139,7 +139,7 @@ function DevToolsLoader({
 
   
   const { modules, globals } = this.require(
-    "devtools/shared/loader/builtin-modules"
+    "resource://devtools/shared/loader/builtin-modules.js"
   );
 
   

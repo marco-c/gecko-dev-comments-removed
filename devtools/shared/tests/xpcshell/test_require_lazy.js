@@ -25,7 +25,7 @@ function run_test() {
 
   
   
-  loader2.require("devtools/shared/DevToolsUtils");
+  loader2.require("resource://devtools/shared/DevToolsUtils.js");
 
   loader2.lazyRequireGetter(o2, name, path);
   Assert.ok(o2.asyncUtils !== asyncUtils);
