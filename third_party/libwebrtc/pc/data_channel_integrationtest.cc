@@ -40,6 +40,8 @@ class DataChannelIntegrationTest
       : PeerConnectionIntegrationBaseTest(GetParam()) {}
 };
 
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(DataChannelIntegrationTest);
+
 
 
 
@@ -70,6 +72,9 @@ class DataChannelIntegrationTestPlanB
   DataChannelIntegrationTestPlanB()
       : PeerConnectionIntegrationBaseTest(SdpSemantics::kPlanB) {}
 };
+
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(
+    DataChannelIntegrationTestWithFakeClock);
 
 class DataChannelIntegrationTestUnifiedPlan
     : public PeerConnectionIntegrationBaseTest {
