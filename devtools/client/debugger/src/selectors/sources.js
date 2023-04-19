@@ -11,7 +11,6 @@ import {
   getPrettySourceURL,
   isDescendantOfRoot,
   isGenerated,
-  getPlainUrl,
   isPretty,
   isJavaScript,
   removeThreadActorId,
@@ -127,26 +126,12 @@ export function hasPrettySource(state, id) {
 }
 
 
-export function getSourcesUrlsInSources(state, url) {
-  if (!url) {
-    return [];
-  }
-
-  const plainUrl = getPlainUrl(url);
-  return getPlainUrls(state)[plainUrl] || [];
-}
-
-
 export function getSourcesMap(state) {
   return state.sources.sources;
 }
 
 function getUrls(state) {
   return state.sources.urls;
-}
-
-function getPlainUrls(state) {
-  return state.sources.plainUrls;
 }
 
 export const getSourceList = createSelector(

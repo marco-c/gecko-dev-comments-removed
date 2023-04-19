@@ -7,7 +7,7 @@
 
 
 
-import { getRelativeUrl, getPlainUrl } from "../utils/source";
+import { getRelativeUrl } from "../utils/source";
 import { prefs } from "../utils/prefs";
 
 export function initialSourcesState(state) {
@@ -26,15 +26,6 @@ export function initialSourcesState(state) {
 
 
     urls: {},
-
-    
-
-
-
-
-
-
-    plainUrls: {},
 
     
 
@@ -223,7 +214,6 @@ function addSources(state, sources) {
   state = {
     ...state,
     urls: { ...state.urls },
-    plainUrls: { ...state.plainUrls },
   };
 
   const newSourceMap = new Map(state.sources);
@@ -238,12 +228,6 @@ function addSources(state, sources) {
 
     
     if (source.url) {
-      const plainUrl = getPlainUrl(source.url);
-      const existingPlainUrls = state.plainUrls[plainUrl] || [];
-      if (!existingPlainUrls.includes(source.url)) {
-        state.plainUrls[plainUrl] = [...existingPlainUrls, source.url];
-      }
-
       
       if (originalState.sourcesWithUrls === state.sourcesWithUrls) {
         state.sourcesWithUrls = [...state.sourcesWithUrls];
@@ -263,7 +247,6 @@ function removeSourcesAndActors(state, sources) {
   state = {
     ...state,
     urls: { ...state.urls },
-    plainUrls: { ...state.plainUrls },
   };
 
   const newSourceMap = new Map(state.sources);
@@ -279,20 +262,6 @@ function removeSourcesAndActors(state, sources) {
       }
       if (state.urls[source.url]?.length == 0) {
         delete state.urls[source.url];
-      }
-
-      
-      const plainUrl = getPlainUrl(source.url);
-      if (state.plainUrls[plainUrl]) {
-        
-        
-        const index = state.plainUrls[plainUrl].findIndex(
-          url => url === source.url
-        );
-        state.plainUrls[plainUrl].splice(index, 1);
-      }
-      if (state.plainUrls[plainUrl]?.length == 0) {
-        delete state.plainUrls[plainUrl];
       }
 
       
