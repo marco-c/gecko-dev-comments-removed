@@ -218,23 +218,12 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     const NonOwningAnimationTarget& aTarget) {
   switch (aStyleTimeline.tag) {
     case StyleAnimationTimeline::Tag::Timeline: {
+      
       nsAtom* name = aStyleTimeline.AsTimeline().AsAtom();
-      if (name == nsGkAtoms::_empty) {
-        
-        return nullptr;
-      }
-      
-      if (const auto* rule =
-              aPresContext->StyleSet()->ScrollTimelineRuleForName(name)) {
-        
-        
-        
-        return ScrollTimeline::FromRule(*rule, aPresContext->Document(),
-                                        aTarget);
-      }
-      
-      return ScrollTimeline::FromNamedScroll(aPresContext->Document(), aTarget,
-                                             name);
+      return name != nsGkAtoms::_empty
+                 ? ScrollTimeline::FromNamedScroll(aPresContext->Document(),
+                                                   aTarget, name)
+                 : nullptr;
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();

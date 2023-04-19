@@ -289,7 +289,7 @@ trait PrivateMatchMethods: TElement {
 
         let old_ui_style = old_style.get_ui();
 
-        let keyframes_or_timeline_could_have_changed = context
+        let keyframes_could_have_changed = context
             .shared
             .traversal_flags
             .contains(TraversalFlags::ForCSSRuleChanges);
@@ -301,7 +301,7 @@ trait PrivateMatchMethods: TElement {
         
         
         
-        if keyframes_or_timeline_could_have_changed {
+        if keyframes_could_have_changed {
             return true;
         }
 
