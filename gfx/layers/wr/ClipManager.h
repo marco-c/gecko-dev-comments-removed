@@ -119,11 +119,13 @@ class ClipManager {
   
   struct ItemClips {
     ItemClips(const ActiveScrolledRoot* aASR,
-              const DisplayItemClipChain* aChain, bool aSeparateLeaf);
+              const DisplayItemClipChain* aChain, int32_t aAppUnitsPerDevPixel,
+              bool aSeparateLeaf);
 
     
     const ActiveScrolledRoot* mASR;
     const DisplayItemClipChain* mChain;
+    int32_t mAppUnitsPerDevPixel;
     bool mSeparateLeaf;
 
     
