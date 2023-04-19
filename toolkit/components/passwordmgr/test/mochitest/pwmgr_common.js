@@ -7,9 +7,7 @@
 const { LoginTestUtils } = SpecialPowers.ChromeUtils.import(
   "resource://testing-common/LoginTestUtils.jsm"
 );
-const { Services } = SpecialPowers.ChromeUtils.import(
-  "resource://gre/modules/Services.jsm"
-);
+const Services = SpecialPowers.Services;
 
 
 LoginTestUtils.setAssertReporter(
