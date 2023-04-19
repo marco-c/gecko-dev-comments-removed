@@ -539,6 +539,18 @@ bool RTPSenderVideo::SendVideo(
   AddRtpHeaderExtensions(video_header, absolute_capture_time,
                          true, true,
                          single_packet.get());
+  if (video_structure_ != nullptr &&
+      single_packet->IsRegistered<RtpDependencyDescriptorExtension>() &&
+      !single_packet->HasExtension<RtpDependencyDescriptorExtension>()) {
+    RTC_DCHECK_EQ(video_header.frame_type, VideoFrameType::kVideoFrameKey);
+    
+    
+    
+    RTC_LOG(LS_WARNING) << "Disable dependency descriptor because failed to "
+                           "attach it to a key frame.";
+    video_structure_ = nullptr;
+  }
+
   AddRtpHeaderExtensions(video_header, absolute_capture_time,
                          true, false,
                          first_packet.get());
