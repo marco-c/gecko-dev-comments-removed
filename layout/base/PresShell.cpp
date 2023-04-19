@@ -5438,7 +5438,7 @@ bool PresShell::IsTransparentContainerElement() const {
     
     
     if (BrowsingContext* bc = pc->Document()->GetBrowsingContext()) {
-      switch (bc->GetEmbedderColorScheme()) {
+      switch (bc->GetEmbedderColorSchemes().mUsed) {
         case dom::PrefersColorSchemeOverride::Light:
           return pc->DefaultBackgroundColorScheme() == ColorScheme::Light;
         case dom::PrefersColorSchemeOverride::Dark:
