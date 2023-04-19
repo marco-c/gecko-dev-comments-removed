@@ -1991,19 +1991,25 @@ nsresult nsDataObj ::BuildPlatformHTML(const char* inOurHTML,
   
   
   
-  constexpr size_t kNumberLength = 8;
+  
+  
+  
+  
+  
+  
+  const size_t numberLength = inHTMLString.Length() < 9999'0000 ? 8 : 16;
 
   const size_t sourceURLLength = mSourceURL.Length();
 
-  constexpr size_t kFixedHeaderLen =
+  const size_t fixedHeaderLen =
       kStartHTMLPrefix.Length() + kEndHTMLPrefix.Length() +
       kStartFragPrefix.Length() + kEndFragPrefix.Length() +
-      kEndFragTrailer.Length() + (4 * kNumberLength);
+      kEndFragTrailer.Length() + (4 * numberLength);
 
   const size_t totalHeaderLen =
-      kFixedHeaderLen + (sourceURLLength > 0
-                             ? kStartSourceURLPrefix.Length() + sourceURLLength
-                             : 0);
+      fixedHeaderLen + (sourceURLLength > 0
+                            ? kStartSourceURLPrefix.Length() + sourceURLLength
+                            : 0);
 
   constexpr auto kHeaderString = "<html><body>\r\n<!--StartFragment-->"_ns;
   constexpr auto kTrailingString =
@@ -2022,18 +2028,18 @@ nsresult nsDataObj ::BuildPlatformHTML(const char* inOurHTML,
   nsCString clipboardString;
   clipboardString.SetCapacity(endHTMLOffset);
 
-  
+  const int numberLengthInt = static_cast<int>(numberLength);
   clipboardString.Append(kStartHTMLPrefix);
-  clipboardString.AppendPrintf("%08zu", startHTMLOffset);
+  clipboardString.AppendPrintf("%0*zu", numberLengthInt, startHTMLOffset);
 
   clipboardString.Append(kEndHTMLPrefix);
-  clipboardString.AppendPrintf("%08zu", endHTMLOffset);
+  clipboardString.AppendPrintf("%0*zu", numberLengthInt, endHTMLOffset);
 
   clipboardString.Append(kStartFragPrefix);
-  clipboardString.AppendPrintf("%08zu", startFragOffset);
+  clipboardString.AppendPrintf("%0*zu", numberLengthInt, startFragOffset);
 
   clipboardString.Append(kEndFragPrefix);
-  clipboardString.AppendPrintf("%08zu", endFragOffset);
+  clipboardString.AppendPrintf("%0*zu", numberLengthInt, endFragOffset);
 
   if (sourceURLLength > 0) {
     clipboardString.Append(kStartSourceURLPrefix);
