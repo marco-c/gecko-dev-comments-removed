@@ -1729,7 +1729,12 @@ bool IonCacheIRCompiler::emitGuardAndGetIterator(ObjOperandId objId,
 
   
   Address iterObjAddr(niScratch, NativeIterator::offsetOfObjectBeingIterated());
-  EmitPreBarrier(masm, iterObjAddr, MIRType::Object);
+#ifdef DEBUG
+  Label ok;
+  masm.branchPtr(Assembler::Equal, iterObjAddr, ImmPtr(nullptr), &ok);
+  masm.assumeUnreachable("iterator with non-null object");
+  masm.bind(&ok);
+#endif
 
   
   Address iterFlagsAddr(niScratch, NativeIterator::offsetOfFlagsAndCount());

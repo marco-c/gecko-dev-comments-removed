@@ -27,6 +27,7 @@ struct NativeIterator {
  private:
   
   
+  
   GCPtr<JSObject*> objectBeingIterated_ = {};
 
   
@@ -137,7 +138,14 @@ struct NativeIterator {
 
   JSObject* objectBeingIterated() const { return objectBeingIterated_; }
 
-  void changeObjectBeingIterated(JSObject& obj) { objectBeingIterated_ = &obj; }
+  void initObjectBeingIterated(JSObject& obj) {
+    MOZ_ASSERT(!objectBeingIterated_);
+    objectBeingIterated_.init(&obj);
+  }
+  void clearObjectBeingIterated() {
+    MOZ_ASSERT(objectBeingIterated_);
+    objectBeingIterated_ = nullptr;
+  }
 
   GCPtr<Shape*>* shapesBegin() const {
     static_assert(

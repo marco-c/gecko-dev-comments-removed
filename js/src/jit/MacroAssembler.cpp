@@ -4753,6 +4753,11 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
         Address(temp1, NativeIterator::offsetOfFlagsAndCount()));
 
   
+  Address iterObjAddr(temp1, NativeIterator::offsetOfObjectBeingIterated());
+  guardedCallPreBarrierAnyZone(iterObjAddr, MIRType::Object, temp2);
+  storePtr(ImmPtr(nullptr), iterObjAddr);
+
+  
   loadPtr(Address(temp1, NativeIterator::offsetOfShapesEnd()), temp2);
   storePtr(temp2, Address(temp1, NativeIterator::offsetOfPropertyCursor()));
 
