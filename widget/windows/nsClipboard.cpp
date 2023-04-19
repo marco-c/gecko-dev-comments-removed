@@ -449,6 +449,23 @@ static void RepeatedlyTryOleSetClipboard(IDataObject* aDataObj) {
   RepeatedlyTry(::OleSetClipboard, LogOleSetClipboardResult, aDataObj);
 }
 
+static bool ShouldFlushClipboardAfterWriting() {
+  switch (StaticPrefs::widget_windows_sync_clipboard_flush()) {
+    case 0:
+      return false;
+    case 1:
+      return true;
+    default:
+      
+      
+      
+      
+      
+      
+      return NeedsWindows11SuggestedActionsWorkaround();
+  }
+}
+
 
 NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
   MOZ_LOG(gWin32ClipboardLog, LogLevel::Debug, ("%s", __FUNCTION__));
@@ -467,6 +484,9 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
                                           nullptr))) {  
     RepeatedlyTryOleSetClipboard(dataObj);
     dataObj->Release();
+    if (ShouldFlushClipboardAfterWriting()) {
+      RepeatedlyTry(::OleFlushClipboard, [](HRESULT) {});
+    }
   } else {
     
     RepeatedlyTryOleSetClipboard(nullptr);

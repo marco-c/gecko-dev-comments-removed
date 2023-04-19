@@ -204,6 +204,12 @@ inline bool IsWin7AndPre2000Compatible() {
   return info.dwMajorVersion < 5;
 }
 
+
+
+MOZ_ALWAYS_INLINE bool NeedsWindows11SuggestedActionsWorkaround() {
+  return IsWindows10BuildOrLater(22621);
+}
+
 }  
 
 #endif 
