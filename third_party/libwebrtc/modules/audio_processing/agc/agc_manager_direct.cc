@@ -28,32 +28,25 @@ namespace webrtc {
 namespace {
 
 
-const int kClippedLevelStep = 15;
 
-const float kClippedRatioThreshold = 0.1f;
+constexpr int kLevelQuantizationSlack = 25;
 
-const int kClippedWaitFrames = 300;
+constexpr int kDefaultCompressionGain = 7;
+constexpr int kMaxCompressionGain = 12;
+constexpr int kMinCompressionGain = 2;
 
+constexpr float kCompressionGainStep = 0.05f;
 
-
-const int kLevelQuantizationSlack = 25;
-
-const int kDefaultCompressionGain = 7;
-const int kMaxCompressionGain = 12;
-const int kMinCompressionGain = 2;
-
-const float kCompressionGainStep = 0.05f;
-
-const int kMaxMicLevel = 255;
+constexpr int kMaxMicLevel = 255;
 static_assert(kGainMapSize > kMaxMicLevel, "gain map too small");
-const int kMinMicLevel = 12;
+constexpr int kMinMicLevel = 12;
 
 
-const int kMaxResidualGainChange = 15;
+constexpr int kMaxResidualGainChange = 15;
 
 
 
-const int kSurplusCompressionGain = 6;
+constexpr int kSurplusCompressionGain = 6;
 
 
 
@@ -182,19 +175,19 @@ void MonoAgc::Process(const int16_t* audio,
   }
 }
 
-void MonoAgc::HandleClipping() {
+void MonoAgc::HandleClipping(int clipped_level_step) {
   
   
-  SetMaxLevel(std::max(clipped_level_min_, max_level_ - kClippedLevelStep));
+  SetMaxLevel(std::max(clipped_level_min_, max_level_ - clipped_level_step));
   if (log_to_histograms_) {
     RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.AgcClippingAdjustmentAllowed",
-                          level_ - kClippedLevelStep >= clipped_level_min_);
+                          level_ - clipped_level_step >= clipped_level_min_);
   }
   if (level_ > clipped_level_min_) {
     
     
     
-    SetLevel(std::max(clipped_level_min_, level_ - kClippedLevelStep));
+    SetLevel(std::max(clipped_level_min_, level_ - clipped_level_step));
     
     agc_->Reset();
   }
@@ -404,12 +397,18 @@ int AgcManagerDirect::instance_counter_ = 0;
 AgcManagerDirect::AgcManagerDirect(Agc* agc,
                                    int startup_min_level,
                                    int clipped_level_min,
-                                   int sample_rate_hz)
+                                   int sample_rate_hz,
+                                   int clipped_level_step,
+                                   float clipped_ratio_threshold,
+                                   int clipped_wait_frames)
     : AgcManagerDirect( 1,
                        startup_min_level,
                        clipped_level_min,
                         false,
-                       sample_rate_hz) {
+                       sample_rate_hz,
+                       clipped_level_step,
+                       clipped_ratio_threshold,
+                       clipped_wait_frames) {
   RTC_DCHECK(channel_agcs_[0]);
   RTC_DCHECK(agc);
   channel_agcs_[0]->set_agc(agc);
@@ -419,15 +418,21 @@ AgcManagerDirect::AgcManagerDirect(int num_capture_channels,
                                    int startup_min_level,
                                    int clipped_level_min,
                                    bool disable_digital_adaptive,
-                                   int sample_rate_hz)
+                                   int sample_rate_hz,
+                                   int clipped_level_step,
+                                   float clipped_ratio_threshold,
+                                   int clipped_wait_frames)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_counter_))),
       use_min_channel_level_(!UseMaxAnalogChannelLevel()),
       sample_rate_hz_(sample_rate_hz),
       num_capture_channels_(num_capture_channels),
       disable_digital_adaptive_(disable_digital_adaptive),
-      frames_since_clipped_(kClippedWaitFrames),
+      frames_since_clipped_(clipped_wait_frames),
       capture_output_used_(true),
+      clipped_level_step_(clipped_level_step),
+      clipped_ratio_threshold_(clipped_ratio_threshold),
+      clipped_wait_frames_(clipped_wait_frames),
       channel_agcs_(num_capture_channels),
       new_compressions_to_set_(num_capture_channels) {
   const int min_mic_level = GetMinMicLevel();
@@ -438,7 +443,13 @@ AgcManagerDirect::AgcManagerDirect(int num_capture_channels,
         data_dumper_ch, startup_min_level, clipped_level_min,
         disable_digital_adaptive_, min_mic_level);
   }
-  RTC_DCHECK_LT(0, channel_agcs_.size());
+  RTC_DCHECK(!channel_agcs_.empty());
+  RTC_DCHECK_GT(clipped_level_step, 0);
+  RTC_DCHECK_LE(clipped_level_step, 255);
+  RTC_DCHECK_GT(clipped_ratio_threshold, 0.f);
+  RTC_DCHECK_LT(clipped_ratio_threshold, 1.f);
+  RTC_DCHECK_GT(clipped_wait_frames, 0);
+
   channel_agcs_[0]->ActivateLogging();
 }
 
@@ -489,7 +500,7 @@ void AgcManagerDirect::AnalyzePreProcess(const float* const* audio,
     return;
   }
 
-  if (frames_since_clipped_ < kClippedWaitFrames) {
+  if (frames_since_clipped_ < clipped_wait_frames_) {
     ++frames_since_clipped_;
     return;
   }
@@ -506,11 +517,11 @@ void AgcManagerDirect::AnalyzePreProcess(const float* const* audio,
   float clipped_ratio =
       ComputeClippedRatio(audio, num_capture_channels_, samples_per_channel);
 
-  if (clipped_ratio > kClippedRatioThreshold) {
+  if (clipped_ratio > clipped_ratio_threshold_) {
     RTC_DLOG(LS_INFO) << "[agc] Clipping detected. clipped_ratio="
                       << clipped_ratio;
     for (auto& state_ch : channel_agcs_) {
-      state_ch->HandleClipping();
+      state_ch->HandleClipping(clipped_level_step_);
     }
     frames_since_clipped_ = 0;
   }

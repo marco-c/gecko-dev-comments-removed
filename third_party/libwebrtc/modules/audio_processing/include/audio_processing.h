@@ -58,9 +58,9 @@ class CustomProcessing;
 
 
 #if defined(WEBRTC_CHROMIUM_BUILD)
-static const int kAgcStartupMinVolume = 85;
+static constexpr int kAgcStartupMinVolume = 85;
 #else
-static const int kAgcStartupMinVolume = 0;
+static constexpr int kAgcStartupMinVolume = 0;
 #endif  
 static constexpr int kClippedLevelMin = 70;
 
@@ -333,6 +333,15 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
         
         int clipped_level_min = kClippedLevelMin;
         bool enable_digital_adaptive = true;
+        
+        
+        int clipped_level_step = 15;
+        
+        
+        float clipped_ratio_threshold = 0.1f;
+        
+        
+        int clipped_wait_frames = 300;
       } analog_gain_controller;
     } gain_controller1;
 
