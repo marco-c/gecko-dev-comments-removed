@@ -41,7 +41,7 @@ docker_image_schema = Schema(
         Optional("symbol"): str,
         
         
-        Optional("job-from"): str,
+        Optional("task-from"): str,
         
         Optional("args"): {str: str},
         

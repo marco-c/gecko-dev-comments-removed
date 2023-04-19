@@ -21,15 +21,11 @@ tc_util.PRODUCTION_TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozill
 
 
 
-schema.WHITELISTED_SCHEMA_IDENTIFIERS.extend(
+schema.EXCEPTED_SCHEMA_IDENTIFIERS.extend(
     [
-        
-        lambda path: "[{!r}]".format("upstream-artifacts") in path,
-        lambda path: (
-            "[{!r}]".format("test_name") in path
-            or "[{!r}]".format("json_location") in path
-            or "[{!r}]".format("video_location") in path
-        ),
+        "test_name",
+        "json_location",
+        "video_location",
     ]
 )
 
