@@ -7,6 +7,9 @@ const { JSONFile } = ChromeUtils.import("resource://gre/modules/JSONFile.jsm");
 const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
+const { RemoteSettings } = ChromeUtils.import(
+  "resource://services-settings/remote-settings.js"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const lazy = {};
@@ -36,8 +39,6 @@ const REMOTE_IMAGES_PATH = PathUtils.join(
 );
 const REMOTE_IMAGES_DB_PATH = PathUtils.join(REMOTE_IMAGES_PATH, "db.json");
 
-const CLEANUP_FINISHED_TOPIC = "remote-images:cleanup-finished";
-
 const IMAGE_EXPIRY_DURATION = 30 * 24 * 60 * 60; 
 
 class _RemoteImages {
@@ -46,12 +47,7 @@ class _RemoteImages {
   constructor() {
     this.#dbPromise = null;
 
-    
-    
-    Services.obs.addObserver(
-      () => this.#cleanup(),
-      "remote-settings:changes-poll-end"
-    );
+    RemoteSettings(RS_COLLECTION).on("sync", () => this.#onSync());
 
     
     this.withDb(() => {});
@@ -66,7 +62,7 @@ class _RemoteImages {
 
 
 
-  async #loadDB() {
+  async #loadDb() {
     let db;
 
     if (!(await IOUtils.exists(REMOTE_IMAGES_DB_PATH))) {
@@ -89,8 +85,12 @@ class _RemoteImages {
 
   reset() {
     return this.withDb(async db => {
-      await db._save();
+      
+      
+      
+      
       this.#dbPromise = null;
+      await db.finalize();
     });
   }
 
@@ -105,7 +105,7 @@ class _RemoteImages {
 
 
   async withDb(fn) {
-    const dbPromise = this.#dbPromise ?? this.#loadDB();
+    const dbPromise = this.#dbPromise ?? this.#loadDb();
 
     const { resolve, promise } = PromiseUtils.defer();
     
@@ -226,34 +226,54 @@ class _RemoteImages {
     }
   }
 
+  #onSync() {
+    return this.withDb(async db => {
+      await this.#cleanup(db);
+
+      const recordsById = await RemoteSettings(RS_COLLECTION)
+        .db.list()
+        .then(records =>
+          Object.assign({}, ...records.map(record => ({ [record.id]: record })))
+        );
+
+      await Promise.all(
+        Object.values(db.data.images)
+          .filter(
+            entry => recordsById[entry.recordId]?.attachment.hash !== entry.hash
+          )
+          .map(entry => this.#download(db, entry.recordId, { refresh: true }))
+      );
+    });
+  }
+
+  forceCleanup() {
+    return this.withDb(db => this.#cleanup(db));
+  }
+
   
 
 
 
 
 
-  #cleanup() {
-    return this.withDb(async db => {
-      const now = Date.now();
-      await Promise.all(
-        Object.values(db.data.images)
-          .filter(entry => now - entry.lastLoaded >= IMAGE_EXPIRY_DURATION)
-          .map(entry => {
-            const path = PathUtils.join(REMOTE_IMAGES_PATH, entry.recordId);
-            delete db.data.images[entry.recordId];
+  async #cleanup(db) {
+    const now = Date.now();
+    await Promise.all(
+      Object.values(db.data.images)
+        .filter(entry => now - entry.lastLoaded >= IMAGE_EXPIRY_DURATION)
+        .map(entry => {
+          const path = PathUtils.join(REMOTE_IMAGES_PATH, entry.recordId);
+          delete db.data.images[entry.recordId];
 
-            return IOUtils.remove(path).catch(e => {
-              Cu.reportError(
-                `Could not remove remote image ${entry.recordId}: ${e}`
-              );
-            });
-          })
-      );
+          return IOUtils.remove(path).catch(e => {
+            Cu.reportError(
+              `Could not remove remote image ${entry.recordId}: ${e}`
+            );
+          });
+        })
+    );
 
-      db.saveSoon();
-
-      Services.obs.notifyObservers(null, CLEANUP_FINISHED_TOPIC);
-    });
+    db.saveSoon();
   }
 
   
@@ -309,7 +329,14 @@ class _RemoteImages {
 
 
 
-  async #download(db, recordId) {
+
+
+
+
+
+
+
+  async #download(db, recordId, { refresh = false } = {}) {
     const client = new lazy.KintoHttpClient(
       Services.prefs.getStringPref(RS_SERVER_PREF)
     );
@@ -320,7 +347,6 @@ class _RemoteImages {
       .getRecord(recordId);
 
     const downloader = new lazy.Downloader(RS_MAIN_BUCKET, RS_COLLECTION);
-
     const arrayBuffer = await downloader.downloadAsBytes(record.data, {
       retries: RS_DOWNLOAD_MAX_RETRIES,
     });
@@ -333,16 +359,26 @@ class _RemoteImages {
     
     IOUtils.write(path, new Uint8Array(arrayBuffer));
 
-    db.data.images[recordId] = {
-      recordId,
-      mimetype: record.data.attachment.mimetype,
-      hash: record.data.attachment.hash,
-      lastLoaded: Date.now(),
-    };
+    const { mimetype, hash } = record.data.attachment;
+
+    if (refresh) {
+      Object.assign(db.data.images[recordId], { mimetype, hash });
+    } else {
+      db.data.images[recordId] = {
+        recordId,
+        mimetype,
+        hash,
+        lastLoaded: Date.now(),
+      };
+    }
 
     db.saveSoon();
 
-    return new Blob([arrayBuffer], { type: record.data.attachment.mimetype });
+    if (!refresh) {
+      return new Blob([arrayBuffer], { type: record.data.attachment.mimetype });
+    }
+
+    return undefined;
   }
 
   
