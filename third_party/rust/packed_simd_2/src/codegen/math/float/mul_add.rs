@@ -4,7 +4,7 @@ use crate::*;
 
 
 
-crate trait MulAdd {
+pub(crate) trait MulAdd {
     fn mul_add(self, y: Self, z: Self) -> Self;
 }
 
