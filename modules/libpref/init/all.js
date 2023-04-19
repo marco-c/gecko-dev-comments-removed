@@ -4434,3 +4434,9 @@ pref("cookiebanners.listService.logLevel", "Error");
 
 
 pref("cookiebanners.bannerClicking.logLevel", "Error");
+
+
+
+
+
+pref("cookiebanners.listService.testRules", "[]");
