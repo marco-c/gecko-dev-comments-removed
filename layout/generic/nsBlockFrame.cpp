@@ -2673,7 +2673,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
           
           
           aState.mReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE ||
-          GetPrevInFlow() || GetNextInFlow() ||
+          HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR) ||
           
           aState.mPresContext->IsPaginated();
       if (isPaginated) {
