@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "frontend/EmitterScope.h"
 
@@ -10,9 +10,9 @@
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/TDZCheckCache.h"
-#include "js/friend/ErrorMessages.h"  // JSMSG_*
-#include "vm/EnvironmentObject.h"     // ClassBodyLexicalEnvironmentObject
-#include "vm/WellKnownAtom.h"         // js_*_str
+#include "js/friend/ErrorMessages.h"  
+#include "vm/EnvironmentObject.h"     
+#include "vm/WellKnownAtom.h"         
 
 using namespace js;
 using namespace js::frontend;
@@ -53,12 +53,12 @@ bool EmitterScope::checkEnvironmentChainLength(BytecodeEmitter* bce) {
     hops =
         bce->compilationState.scopeContext.enclosingScopeEnvironmentChainLength;
   } else {
-    // If we're compiling module, enclosingScope is nullptr and it means empty
-    // global scope.
-    // See also the assertion in CompilationStencil::instantiateStencils.
-    //
-    // Global script also uses enclosingScope == nullptr, but it shouldn't call
-    // checkEnvironmentChainLength.
+    
+    
+    
+    
+    
+    
     MOZ_ASSERT(bce->sc->isModule());
     hops = ModuleScope::EnclosingEnvironmentChainLength;
   }
@@ -105,13 +105,13 @@ Maybe<NameLocation> EmitterScope::lookupInCache(BytecodeEmitter* bce,
 }
 
 EmitterScope* EmitterScope::enclosing(BytecodeEmitter** bce) const {
-  // There is an enclosing scope with access to the same frame.
+  
   if (EmitterScope* inFrame = enclosingInFrame()) {
     return inFrame;
   }
 
-  // We are currently compiling the enclosing script, look in the
-  // enclosing BCE.
+  
+  
   if ((*bce)->parent) {
     *bce = (*bce)->parent;
     return (*bce)->innermostEmitterScopeNoCheck();
@@ -123,23 +123,23 @@ EmitterScope* EmitterScope::enclosing(BytecodeEmitter** bce) const {
 mozilla::Maybe<ScopeIndex> EmitterScope::enclosingScopeIndex(
     BytecodeEmitter* bce) const {
   if (EmitterScope* es = enclosing(&bce)) {
-    // NOTE: A value of Nothing for the ScopeIndex will occur when the enclosing
-    // scope is the empty-global-scope. This is only allowed for self-hosting
-    // code.
+    
+    
+    
     MOZ_ASSERT_IF(es->scopeIndex(bce).isNothing(),
                   bce->emitterMode == BytecodeEmitter::SelfHosting);
     return es->scopeIndex(bce);
   }
 
-  // The enclosing script is already compiled or the current script is the
-  // global script.
+  
+  
   return mozilla::Nothing();
 }
 
-/* static */
+
 bool EmitterScope::nameCanBeFree(BytecodeEmitter* bce,
                                  TaggedParserAtomIndex name) {
-  // '.generator' cannot be accessed by name.
+  
   return name != TaggedParserAtomIndex::WellKnown::dotGenerator();
 }
 
@@ -149,7 +149,7 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,
   uint8_t hops = hasEnvironment() ? 1 : 0;
   DebugOnly<bool> inCurrentScript = enclosingInFrame();
 
-  // Start searching in the current compilation.
+  
   for (EmitterScope* es = enclosing(&bce); es; es = es->enclosing(&bce)) {
     loc = es->lookupInCache(bce, name);
     if (loc) {
@@ -170,8 +170,8 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,
 #endif
   }
 
-  // If the name is not found in the current compilation, walk the Scope
-  // chain encompassing the compilation.
+  
+  
   if (!loc) {
     MOZ_ASSERT(bce->compilationState.input.target ==
                    CompilationInput::CompilationTarget::Delazification ||
@@ -186,24 +186,24 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,
     }
   }
 
-  // Each script has its own frame. A free name that is accessed
-  // from an inner script must not be a frame slot access. If this
-  // assertion is hit, it is a bug in the free name analysis in the
-  // parser.
+  
+  
+  
+  
   MOZ_ASSERT_IF(!inCurrentScript, loc->kind() != NameLocation::Kind::FrameSlot);
 
-  // It is always correct to not cache the location. Ignore OOMs to make
-  // lookups infallible.
+  
+  
   if (!putNameInCache(bce, name, *loc)) {
-    bce->cx->recoverFromOutOfMemory();
+    bce->ec->recoverFromOutOfMemory();
   }
 
   return *loc;
 }
 
 bool EmitterScope::internEmptyGlobalScopeAsBody(BytecodeEmitter* bce) {
-  // Only the self-hosted top-level script uses this. If this changes, you must
-  // update ScopeStencil::enclosing.
+  
+  
   MOZ_ASSERT(bce->emitterMode == BytecodeEmitter::SelfHosting);
 
   hasEnvironment_ = Scope::hasEnvironment(ScopeKind::Global);
@@ -245,18 +245,18 @@ bool EmitterScope::clearFrameSlotRange(BytecodeEmitter* bce, JSOp opcode,
                                        uint32_t slotEnd) const {
   MOZ_ASSERT(opcode == JSOp::Uninitialized || opcode == JSOp::Undefined);
 
-  // Lexical bindings throw ReferenceErrors if they are used before
-  // initialization. See ES6 8.1.1.1.6.
-  //
-  // For completeness, lexical bindings are initialized in ES6 by calling
-  // InitializeBinding, after which touching the binding will no longer
-  // throw reference errors. See 13.1.11, 9.2.13, 13.6.3.4, 13.6.4.6,
-  // 13.6.4.8, 13.14.5, 15.1.8, and 15.2.0.15.
-  //
-  // This code is also used to reset `var`s to `undefined` when entering an
-  // extra body var scope; and to clear slots when leaving a block, in
-  // generators and async functions, to avoid keeping garbage alive
-  // indefinitely.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (slotStart != slotEnd) {
     if (!bce->emit1(opcode)) {
       return false;
@@ -344,10 +344,10 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
     return false;
   }
 
-  // Resolve bindings.
+  
   TDZCheckCache* tdzCache = bce->innermostTDZCheckCache;
   uint32_t firstFrameSlot = frameSlotStart();
-  ParserBindingIter bi(*bindings, firstFrameSlot, /* isNamedLambda = */ false);
+  ParserBindingIter bi(*bindings, firstFrameSlot,  false);
   for (; bi; bi++) {
     if (!checkSlotLimits(bce, bi)) {
       return false;
@@ -376,22 +376,22 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
   }
 
   if (ScopeKindIsInBody(kind) && hasEnvironment()) {
-    // After interning the VM scope we can get the scope index.
+    
     if (!bce->emitInternedScopeOp(index(), JSOp::PushLexicalEnv)) {
       return false;
     }
   }
 
-  // Lexical scopes need notes to be mapped from a pc.
+  
   if (!appendScopeNote(bce)) {
     return false;
   }
 
-  // Put frame slots in TDZ. Environment slots are poisoned during
-  // environment creation.
-  //
-  // This must be done after appendScopeNote to be considered in the extent
-  // of the scope.
+  
+  
+  
+  
+  
   if (!deadZoneFrameSlotRange(bce, firstFrameSlot, frameSlotEnd())) {
     return false;
   }
@@ -408,7 +408,7 @@ bool EmitterScope::enterClassBody(BytecodeEmitter* bce, ScopeKind kind,
     return false;
   }
 
-  // Resolve bindings.
+  
   TDZCheckCache* tdzCache = bce->innermostTDZCheckCache;
   uint32_t firstFrameSlot = frameSlotStart();
   ParserBindingIter bi(*bindings, firstFrameSlot);
@@ -440,16 +440,16 @@ bool EmitterScope::enterClassBody(BytecodeEmitter* bce, ScopeKind kind,
   }
 
   if (ScopeKindIsInBody(kind) && hasEnvironment()) {
-    // After interning the VM scope we can get the scope index.
-    //
-    // ClassBody uses PushClassBodyEnv, however, PopLexicalEnv supports both
-    // cases and doesn't need extra specialization.
+    
+    
+    
+    
     if (!bce->emitInternedScopeOp(index(), JSOp::PushClassBodyEnv)) {
       return false;
     }
   }
 
-  // Lexical scopes need notes to be mapped from a pc.
+  
   if (!appendScopeNote(bce)) {
     return false;
   }
@@ -466,11 +466,11 @@ bool EmitterScope::enterNamedLambda(BytecodeEmitter* bce, FunctionBox* funbox) {
   }
 
   ParserBindingIter bi(*funbox->namedLambdaBindings(), LOCALNO_LIMIT,
-                       /* isNamedLambda = */ true);
+                        true);
   MOZ_ASSERT(bi.kind() == BindingKind::NamedLambdaCallee);
 
-  // The lambda name, if not closed over, is accessed via JSOp::Callee and
-  // not a frame slot. Do not update frame slot information.
+  
+  
   NameLocation loc = bi.nameLocation();
   if (!putNameInCache(bce, bi.name(), loc)) {
     return false;
@@ -499,7 +499,7 @@ bool EmitterScope::enterNamedLambda(BytecodeEmitter* bce, FunctionBox* funbox) {
 bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
   MOZ_ASSERT(this == bce->innermostEmitterScopeNoCheck());
 
-  // If there are parameter expressions, there is an extra var scope.
+  
   if (!funbox->functionHasExtraBodyVarScope()) {
     bce->setVarEmitterScope(this);
   }
@@ -508,7 +508,7 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
     return false;
   }
 
-  // Resolve body-level bindings, if there are any.
+  
   auto bindings = funbox->functionScopeBindings();
   if (bindings) {
     NameLocationMap& cache = *nameCache_;
@@ -522,9 +522,9 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
       NameLocation loc = bi.nameLocation();
       NameLocationMap::AddPtr p = cache.lookupForAdd(bi.name());
 
-      // The only duplicate bindings that occur are simple formal
-      // parameters, in which case the last position counts, so update the
-      // location.
+      
+      
+      
       if (p) {
         MOZ_ASSERT(bi.kind() == BindingKind::FormalParameter);
         MOZ_ASSERT(!funbox->hasDestructuringArgs);
@@ -544,14 +544,14 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
     nextFrameSlot_ = 0;
   }
 
-  // If the function's scope may be extended at runtime due to sloppy direct
-  // eval, any names beyond the function scope must be accessed dynamically as
-  // we don't know if the name will become a 'var' binding due to direct eval.
+  
+  
+  
   if (funbox->funHasExtensibleScope()) {
     fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
   } else if (funbox->isStandalone) {
-    // If the function is standalone, the enclosing scope is either an empty
-    // global or non-syntactic scope, and there's no static bindings.
+    
+    
     if (bce->compilationState.input.target ==
         CompilationInput::CompilationTarget::
             StandaloneFunctionInNonSyntacticScope) {
@@ -561,8 +561,8 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
     }
   }
 
-  // In case of parameter expressions, the parameters are lexical
-  // bindings and have TDZ.
+  
+  
   if (funbox->hasParameterExprs && nextFrameSlot_) {
     uint32_t paramFrameSlotEnd = 0;
     for (ParserBindingIter bi(*bindings, true); bi; bi++) {
@@ -604,15 +604,15 @@ bool EmitterScope::enterFunctionExtraBodyVar(BytecodeEmitter* bce,
              funbox->needsExtraBodyVarEnvironmentRegardlessOfBindings());
   MOZ_ASSERT(this == bce->innermostEmitterScopeNoCheck());
 
-  // The extra var scope is never popped once it's entered. It replaces the
-  // function scope as the var emitter scope.
+  
+  
   bce->setVarEmitterScope(this);
 
   if (!ensureCache(bce)) {
     return false;
   }
 
-  // Resolve body-level bindings, if there are any.
+  
   uint32_t firstFrameSlot = frameSlotStart();
   if (auto bindings = funbox->extraVarScopeBindings()) {
     ParserBindingIter bi(*bindings, firstFrameSlot);
@@ -631,9 +631,9 @@ bool EmitterScope::enterFunctionExtraBodyVar(BytecodeEmitter* bce,
     uint32_t priorEnd = bce->maxFixedSlots;
     updateFrameFixedSlots(bce, bi);
 
-    // If any of the bound slots were previously used, reset them to undefined.
-    // This doesn't break TDZ for let/const/class bindings because there aren't
-    // any in extra body var scopes. We assert above that bi.kind() is Var.
+    
+    
+    
     uint32_t end = std::min(priorEnd, nextFrameSlot_);
     if (firstFrameSlot < end) {
       if (!clearFrameSlotRange(bce, JSOp::Undefined, firstFrameSlot, end)) {
@@ -644,15 +644,15 @@ bool EmitterScope::enterFunctionExtraBodyVar(BytecodeEmitter* bce,
     nextFrameSlot_ = firstFrameSlot;
   }
 
-  // If the extra var scope may be extended at runtime due to sloppy
-  // direct eval, any names beyond the var scope must be accessed
-  // dynamically as we don't know if the name will become a 'var' binding
-  // due to direct eval.
+  
+  
+  
+  
   if (funbox->funHasExtensibleScope()) {
     fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
   }
 
-  // Create and intern the VM scope.
+  
   ScopeIndex scopeIndex;
   if (!ScopeStencil::createForVarScope(
           bce->ec, bce->compilationState, ScopeKind::FunctionBodyVar,
@@ -671,7 +671,7 @@ bool EmitterScope::enterFunctionExtraBodyVar(BytecodeEmitter* bce,
     }
   }
 
-  // The extra var scope needs a note to be mapped from a pc.
+  
   if (!appendScopeNote(bce)) {
     return false;
   }
@@ -683,10 +683,10 @@ bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
                                GlobalSharedContext* globalsc) {
   MOZ_ASSERT(this == bce->innermostEmitterScopeNoCheck());
 
-  // TODO-Stencil
-  //   This is another snapshot-sensitive location.
-  //   The incoming atoms from the global scope object should be snapshotted.
-  //   For now, converting them to ParserAtoms here individually.
+  
+  
+  
+  
 
   bce->setVarEmitterScope(this);
 
@@ -695,13 +695,13 @@ bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
   }
 
   if (bce->emitterMode == BytecodeEmitter::SelfHosting) {
-    // In self-hosting, it is incorrect to consult the global scope because
-    // self-hosted scripts are cloned into their target compartments before
-    // they are run. Instead of Global, Intrinsic is used for all names.
-    //
-    // Intrinsic lookups are redirected to the special intrinsics holder
-    // in the global object, into which any missing values are cloned
-    // lazily upon first access.
+    
+    
+    
+    
+    
+    
+    
     fallbackFreeNameLocation_ = Some(NameLocation::Intrinsic());
 
     return internEmptyGlobalScopeAsBody(bce);
@@ -717,14 +717,14 @@ bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
     return false;
   }
 
-  // See: JSScript::outermostScope.
+  
   MOZ_ASSERT(bce->bodyScopeIndex == GCThingIndex::outermostScopeIndex(),
              "Global scope must be index 0");
 
-  // Resolve binding names.
-  //
-  // NOTE: BytecodeEmitter::emitDeclarationInstantiation will emit the
-  //       redeclaration check and initialize these bindings.
+  
+  
+  
+  
   if (globalsc->bindings) {
     for (ParserBindingIter bi(*globalsc->bindings); bi; bi++) {
       NameLocation loc = bi.nameLocation();
@@ -734,9 +734,9 @@ bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
     }
   }
 
-  // Note that to save space, we don't add free names to the cache for
-  // global scopes. They are assumed to be global vars in the syntactic
-  // global scope, dynamic accesses under non-syntactic global scope.
+  
+  
+  
   if (globalsc->scopeKind() == ScopeKind::Global) {
     fallbackFreeNameLocation_ = Some(NameLocation::Global(BindingKind::Var));
   } else {
@@ -755,8 +755,8 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
     return false;
   }
 
-  // Create the `var` scope. Note that there is also a lexical scope, created
-  // separately in emitScript().
+  
+  
   ScopeKind scopeKind =
       evalsc->strict() ? ScopeKind::StrictEval : ScopeKind::Eval;
 
@@ -787,8 +787,8 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
       updateFrameFixedSlots(bce, bi);
     }
   } else {
-    // For simplicity, treat all free name lookups in nonstrict eval scripts as
-    // dynamic.
+    
+    
     fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
   }
 
@@ -797,13 +797,13 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
       return false;
     }
   } else {
-    // NOTE: BytecodeEmitter::emitDeclarationInstantiation will emit the
-    //       redeclaration check and initialize these bindings for sloppy
-    //       eval.
+    
+    
+    
 
-    // As an optimization, if the eval does not have its own var
-    // environment and is directly enclosed in a global scope, then all
-    // free name lookups are global.
+    
+    
+    
     if (scope(bce).enclosing().is<GlobalScope>()) {
       fallbackFreeNameLocation_ = Some(NameLocation::Global(BindingKind::Var));
     }
@@ -822,7 +822,7 @@ bool EmitterScope::enterModule(BytecodeEmitter* bce,
     return false;
   }
 
-  // Resolve body-level bindings, if there are any.
+  
   TDZCheckCache* tdzCache = bce->innermostTDZCheckCache;
   Maybe<uint32_t> firstLexicalFrameSlot;
   if (ModuleScope::ParserData* bindings = modulesc->bindings) {
@@ -854,18 +854,18 @@ bool EmitterScope::enterModule(BytecodeEmitter* bce,
     nextFrameSlot_ = 0;
   }
 
-  // Modules are toplevel, so any free names are global.
+  
   fallbackFreeNameLocation_ = Some(NameLocation::Global(BindingKind::Var));
 
-  // Put lexical frame slots in TDZ. Environment slots are poisoned during
-  // environment creation.
+  
+  
   if (firstLexicalFrameSlot) {
     if (!deadZoneFrameSlotRange(bce, *firstLexicalFrameSlot, frameSlotEnd())) {
       return false;
     }
   }
 
-  // Create and intern the VM scope creation data.
+  
   ScopeIndex scopeIndex;
   if (!ScopeStencil::createForModuleScope(
           bce->ec, bce->compilationState, modulesc->bindings,
@@ -886,7 +886,7 @@ bool EmitterScope::enterWith(BytecodeEmitter* bce) {
     return false;
   }
 
-  // 'with' make all accesses dynamic and unanalyzable.
+  
   fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
 
   ScopeIndex scopeIndex;
@@ -916,8 +916,8 @@ bool EmitterScope::deadZoneFrameSlots(BytecodeEmitter* bce) const {
 }
 
 bool EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal) {
-  // If we aren't leaving the scope due to a non-local jump (e.g., break),
-  // we must be the innermost scope.
+  
+  
   MOZ_ASSERT_IF(!nonLocal, this == bce->innermostEmitterScopeNoCheck());
 
   ScopeKind kind = scope(bce).kind();
@@ -961,14 +961,14 @@ bool EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal) {
       MOZ_CRASH("No wasm function scopes in JS");
   }
 
-  // Finish up the scope if we are leaving it in LIFO fashion.
+  
   if (!nonLocal) {
-    // Popping scopes due to non-local jumps generate additional scope
-    // notes. See NonLocalExitControl::prepareForNonLocalJump.
+    
+    
     if (ScopeKindIsInBody(kind)) {
       if (kind == ScopeKind::FunctionBodyVar) {
-        // The extra function var scope is never popped once it's pushed,
-        // so its scope note extends until the end of any possible code.
+        
+        
         bce->bytecodeSection().scopeNoteList().recordEndFunctionBodyVar(
             noteIndex_);
       } else {
@@ -998,7 +998,7 @@ NameLocation EmitterScope::lookup(BytecodeEmitter* bce,
   return searchAndCache(bce, name);
 }
 
-/* static */
+
 uint32_t EmitterScope::CountEnclosingCompilationEnvironments(
     BytecodeEmitter* bce, EmitterScope* emitterScope) {
   uint32_t environments = emitterScope->hasEnvironment() ? 1 : 0;
@@ -1015,31 +1015,31 @@ void EmitterScope::lookupPrivate(BytecodeEmitter* bce,
                                  mozilla::Maybe<NameLocation>& brandLoc) {
   loc = lookup(bce, name);
 
-  // Private Brand checking relies on the ability to construct a new
-  // environment coordinate for a name at a fixed offset, which will
-  // correspond to the private brand for that class.
-  //
-  // If our name lookup isn't a fixed location, we must construct a
-  // new environment coordinate, using information available from our private
-  // field cache. (See cachePrivateFieldsForEval, and Bug 1638309).
-  //
-  // This typically involves a DebugEnvironmentProxy, so we need to use a
-  // DebugEnvironmentCoordinate.
-  //
-  // See also Bug 793345 which argues that we should remove the
-  // DebugEnvironmentProxy.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (loc.kind() != NameLocation::Kind::EnvironmentCoordinate &&
       loc.kind() != NameLocation::Kind::FrameSlot) {
     MOZ_ASSERT(loc.kind() == NameLocation::Kind::Dynamic ||
                loc.kind() == NameLocation::Kind::Global);
-    // Private fields don't require brand checking and can be correctly
-    // code-generated with dynamic name lookup bytecode we have today. However,
-    // for that to happen we first need to figure out if we have a Private
-    // method or private field, which we cannot disambiguate based on the
-    // dynamic lookup.
-    //
-    // However, this is precisely the case that the private field eval case can
-    // help us handle. It knows the truth about these private bindings.
+    
+    
+    
+    
+    
+    
+    
+    
     mozilla::Maybe<NameLocation> cacheEntry =
         bce->compilationState.scopeContext.getPrivateFieldLocation(name);
     MOZ_ASSERT(cacheEntry);
@@ -1047,15 +1047,15 @@ void EmitterScope::lookupPrivate(BytecodeEmitter* bce,
     if (cacheEntry->bindingKind() == BindingKind::PrivateMethod) {
       MOZ_ASSERT(cacheEntry->kind() ==
                  NameLocation::Kind::DebugEnvironmentCoordinate);
-      // To construct the brand check there are two hop values required:
-      //
-      // 1. Compilation Hops: The number of environment hops required to get to
-      //    the compilation enclosing environment.
-      // 2. "external hops", to get from compilation enclosing debug environment
-      //     to the environment that actually contains our brand. This is
-      //     determined by the cacheEntry. This traversal will bypass a Debug
-      //     environment proxy, which is why need to use
-      //     DebugEnvironmentCoordinate.
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
       uint32_t compilation_hops =
           CountEnclosingCompilationEnvironments(bce, this);
@@ -1076,9 +1076,9 @@ void EmitterScope::lookupPrivate(BytecodeEmitter* bce,
     if (loc.kind() == NameLocation::Kind::EnvironmentCoordinate) {
       hops = loc.environmentCoordinate().hops();
     } else {
-      // If we have a FrameSlot, then our innermost emitter scope must be a
-      // class body scope, and we can generate an environment coordinate with
-      // hops=0 to find the associated brand location.
+      
+      
+      
       MOZ_ASSERT(bce->innermostScope().is<ClassBodyScope>());
     }
 
@@ -1092,8 +1092,8 @@ void EmitterScope::lookupPrivate(BytecodeEmitter* bce,
 
 Maybe<NameLocation> EmitterScope::locationBoundInScope(
     TaggedParserAtomIndex name, EmitterScope* target) {
-  // The target scope must be an intra-frame enclosing scope of this
-  // one. Count the number of extra hops to reach it.
+  
+  
   uint8_t extraHops = 0;
   for (EmitterScope* es = this; es != target; es = es->enclosingInFrame()) {
     if (es->hasEnvironment()) {
@@ -1101,9 +1101,9 @@ Maybe<NameLocation> EmitterScope::locationBoundInScope(
     }
   }
 
-  // Caches are prepopulated with bound names. So if the name is bound in a
-  // particular scope, it must already be in the cache. Furthermore, don't
-  // consult the fallback location as we only care about binding names.
+  
+  
+  
   Maybe<NameLocation> loc;
   if (NameLocationMap::Ptr p = target->nameCache_->lookup(name)) {
     NameLocation l = p->value().wrapped;
