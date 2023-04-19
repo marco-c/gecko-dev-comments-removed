@@ -627,6 +627,50 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
 }
 
 template <class Derived>
+nsTArray<RemoteAccessible*> RemoteAccessibleBase<Derived>::RelationByType(
+    RelationType aType) const {
+  nsTArray<RemoteAccessible*> accs;
+
+  if (!mCachedFields) {
+    return accs;
+  }
+
+  for (auto data : kRelationTypeAtoms) {
+    if (data.mType != aType ||
+        (data.mValidTag && TagName() != data.mValidTag)) {
+      continue;
+    }
+
+    if (auto maybeIds =
+            mCachedFields->GetAttribute<nsTArray<uint64_t>>(data.mAtom)) {
+      for (uint64_t id : *maybeIds) {
+        if (RemoteAccessible* acc = mDoc->GetAccessible(id)) {
+          accs.AppendElement(acc);
+        }
+      }
+    }
+    
+    
+    
+    break;
+  }
+
+  if (auto accRelMapEntry = mDoc->mReverseRelations.Lookup(ID())) {
+    if (auto reverseIdsEntry =
+            accRelMapEntry.Data().Lookup(static_cast<uint64_t>(aType))) {
+      nsTArray<uint64_t>& reverseIds = reverseIdsEntry.Data();
+      for (uint64_t id : reverseIds) {
+        if (RemoteAccessible* acc = mDoc->GetAccessible(id)) {
+          accs.AppendElement(acc);
+        }
+      }
+    }
+  }
+
+  return accs;
+}
+
+template <class Derived>
 void RemoteAccessibleBase<Derived>::AppendTextTo(nsAString& aText,
                                                  uint32_t aStartOffset,
                                                  uint32_t aLength) {
