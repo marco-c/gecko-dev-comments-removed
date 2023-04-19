@@ -67,13 +67,21 @@ const PREF_PREFIX = "devtools.performance.recording.";
 
 const CURRENT_WEBCHANNEL_VERSION = 1;
 
+const lazyRequire = {};
 
-ChromeUtils.defineModuleGetter(
+ChromeUtils.defineESModuleGetters(lazyRequire, {
+  require: "resource://devtools/shared/loader/Loader.sys.mjs",
+});
+
+
+
+
+
+
+function require(path) {
   
-  this,
-  "require",
-  "resource://devtools/shared/loader/Loader.jsm"
-);
+  return lazyRequire.require(path);
+}
 
 
 

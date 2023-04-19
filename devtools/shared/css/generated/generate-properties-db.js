@@ -9,8 +9,8 @@
 
 
 
-var { require } = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
+var { require } = ChromeUtils.importESModule(
+  "resource://devtools/shared/loader/Loader.sys.mjs"
 );
 var {
   generateCssProperties,

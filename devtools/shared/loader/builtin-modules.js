@@ -15,8 +15,8 @@
 
 
 
-const jsmScope = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
+const jsmScope = ChromeUtils.importESModule(
+  "resource://devtools/shared/loader/Loader.sys.mjs"
 );
 
 const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();

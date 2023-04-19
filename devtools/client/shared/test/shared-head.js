@@ -31,8 +31,8 @@ if (DEBUG_ALLOCATIONS) {
   
   
   
-  const { DevToolsLoader } = ChromeUtils.import(
-    "resource://devtools/shared/loader/Loader.jsm"
+  const { DevToolsLoader } = ChromeUtils.importESModule(
+    "resource://devtools/shared/loader/Loader.sys.mjs"
   );
   const loader = new DevToolsLoader({
     invisibleToDebugger: true,
@@ -52,8 +52,8 @@ if (DEBUG_ALLOCATIONS) {
   });
 }
 
-const { loader, require } = ChromeUtils.import(
-  "resource://devtools/shared/loader/Loader.jsm"
+const { loader, require } = ChromeUtils.importESModule(
+  "resource://devtools/shared/loader/Loader.sys.mjs"
 );
 
 
@@ -326,8 +326,8 @@ function highlighterTestActorBootstrap() {
   const HIGHLIGHTER_TEST_ACTOR_URL =
     "chrome://mochitests/content/browser/devtools/client/shared/test/highlighter-test-actor.js";
 
-  const { require: _require } = ChromeUtils.import(
-    "resource://devtools/shared/loader/Loader.jsm"
+  const { require: _require } = ChromeUtils.importESModule(
+    "resource://devtools/shared/loader/Loader.sys.mjs"
   );
   _require(HIGHLIGHTER_TEST_ACTOR_URL);
 
@@ -1419,8 +1419,8 @@ async function registerActorInContentProcess(url, options) {
     [{ url, options }],
     args => {
       
-      const { require } = ChromeUtils.import(
-        "resource://devtools/shared/loader/Loader.jsm"
+      const { require } = ChromeUtils.importESModule(
+        "resource://devtools/shared/loader/Loader.sys.mjs"
       );
       const {
         ActorRegistry,

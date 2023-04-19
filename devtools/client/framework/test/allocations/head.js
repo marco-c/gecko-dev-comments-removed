@@ -12,8 +12,8 @@
 
 let tracker;
 {
-  const { DevToolsLoader } = ChromeUtils.import(
-    "resource://devtools/shared/loader/Loader.jsm"
+  const { DevToolsLoader } = ChromeUtils.importESModule(
+    "resource://devtools/shared/loader/Loader.sys.mjs"
   );
   const loader = new DevToolsLoader({
     invisibleToDebugger: true,
@@ -86,8 +86,8 @@ async function startRecordingAllocations({
       gBrowser.selectedBrowser,
       [DEBUG_ALLOCATIONS],
       async debug_allocations => {
-        const { DevToolsLoader } = ChromeUtils.import(
-          "resource://devtools/shared/loader/Loader.jsm"
+        const { DevToolsLoader } = ChromeUtils.importESModule(
+          "resource://devtools/shared/loader/Loader.sys.mjs"
         );
         const loader = new DevToolsLoader({
           invisibleToDebugger: true,
@@ -140,8 +140,8 @@ async function stopRecordingAllocations(
       gBrowser.selectedBrowser,
       [DEBUG_ALLOCATIONS],
       debug_allocations => {
-        const { DevToolsLoader } = ChromeUtils.import(
-          "resource://devtools/shared/loader/Loader.jsm"
+        const { DevToolsLoader } = ChromeUtils.importESModule(
+          "resource://devtools/shared/loader/Loader.sys.mjs"
         );
         const { tracker } = DevToolsLoader;
         ok(
@@ -162,8 +162,8 @@ async function stopRecordingAllocations(
       );
       const objectNodeIds = TrackedObjects.getAllNodeIds();
       if (objectNodeIds.length) {
-        const { DevToolsLoader } = ChromeUtils.import(
-          "resource://devtools/shared/loader/Loader.jsm"
+        const { DevToolsLoader } = ChromeUtils.importESModule(
+          "resource://devtools/shared/loader/Loader.sys.mjs"
         );
         const { tracker } = DevToolsLoader;
         

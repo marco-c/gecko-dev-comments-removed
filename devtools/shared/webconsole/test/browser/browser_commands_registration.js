@@ -13,8 +13,8 @@ add_task(async function() {
 
   
   await ContentTask.spawn(gBrowser.selectedBrowser, null, function() {
-    const { require } = ChromeUtils.import(
-      "resource://devtools/shared/loader/Loader.jsm"
+    const { require } = ChromeUtils.importESModule(
+      "resource://devtools/shared/loader/Loader.sys.mjs"
     );
     const {
       WebConsoleCommands,

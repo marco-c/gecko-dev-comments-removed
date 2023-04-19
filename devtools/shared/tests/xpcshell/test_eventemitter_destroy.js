@@ -5,8 +5,8 @@
 "use strict";
 
 add_task(function() {
-  const { DevToolsLoader, require } = ChromeUtils.import(
-    "resource://devtools/shared/loader/Loader.jsm"
+  const { DevToolsLoader, require } = ChromeUtils.importESModule(
+    "resource://devtools/shared/loader/Loader.sys.mjs"
   );
 
   
