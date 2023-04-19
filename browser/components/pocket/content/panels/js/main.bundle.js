@@ -377,7 +377,7 @@ function Home(props) {
     url: `https://${pockethost}/a?${utmParams}`,
     source: "home_view_list"
   }, react.createElement("span", {
-    "data-l10n-id": "pocket-panel-header-my-list"
+    "data-l10n-id": "pocket-panel-header-my-saves"
   }))), react.createElement("hr", null), recentSavesSection, react.createElement("hr", null), pockethost && locale?.startsWith("en") && topics?.length && react.createElement(react.Fragment, null, react.createElement("h3", {
     className: "header_medium"
   }, "Explore popular topics:"), react.createElement(PopularTopics_PopularTopics, {
@@ -503,7 +503,7 @@ function Signup(props) {
     className: "header_medium",
     "data-l10n-id": "pocket-panel-signup-cta-a-fix"
   }), react.createElement("p", {
-    "data-l10n-id": "pocket-panel-signup-cta-b"
+    "data-l10n-id": "pocket-panel-signup-cta-b-updated"
   })), react.createElement("div", {
     className: "stp_signup_content_wrapper"
   }, react.createElement("hr", null)), react.createElement("div", {
@@ -520,7 +520,7 @@ function Signup(props) {
   }), react.createElement("p", {
     "data-l10n-id": "pocket-panel-signup-cta-b-short"
   }), react.createElement("strong", null, react.createElement("p", {
-    "data-l10n-id": "pocket-panel-signup-cta-c"
+    "data-l10n-id": "pocket-panel-signup-cta-c-updated"
   }))), react.createElement("hr", null), react.createElement("span", {
     className: "stp_button_wide"
   }, react.createElement(Button_Button, {
@@ -872,7 +872,7 @@ function Saved(props) {
     url: `https://${pockethost}/a?${utmParams}`,
     source: "view_list"
   }, react.createElement("span", {
-    "data-l10n-id": "pocket-panel-header-my-list"
+    "data-l10n-id": "pocket-panel-header-my-saves"
   }))), react.createElement("hr", null), !removedStatus && savedStatus === "success" && react.createElement(react.Fragment, null, react.createElement("h3", {
     className: "header_large header_flex"
   }, react.createElement("span", {
@@ -904,7 +904,7 @@ function Saved(props) {
     "data-l10n-id": "pocket-panel-saved-processing-remove"
   }), removedStatus === "removed" && react.createElement("h3", {
     className: "header_large header_center",
-    "data-l10n-id": "pocket-panel-saved-removed"
+    "data-l10n-id": "pocket-panel-saved-removed-updated"
   }), removedStatus === "error" && react.createElement(react.Fragment, null, react.createElement("h3", {
     className: "header_large",
     "data-l10n-id": "pocket-panel-saved-error-remove"
