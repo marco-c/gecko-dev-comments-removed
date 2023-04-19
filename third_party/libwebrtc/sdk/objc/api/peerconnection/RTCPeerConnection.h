@@ -301,6 +301,11 @@ RTC_OBJC_EXPORT
           completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
 
+
+- (void)setLocalDescriptionWithCompletionHandler:
+    (nullable void (^)(NSError *_Nullable error))completionHandler;
+
+
 - (void)setRemoteDescription:(RTC_OBJC_TYPE(RTCSessionDescription) *)sdp
            completionHandler:(nullable void (^)(NSError *_Nullable error))completionHandler;
 
