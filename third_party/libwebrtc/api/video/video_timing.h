@@ -16,6 +16,8 @@
 #include <limits>
 #include <string>
 
+#include "api/units/time_delta.h"
+
 namespace webrtc {
 
 
@@ -34,6 +36,7 @@ struct VideoSendTiming {
   
   
   static uint16_t GetDeltaCappedMs(int64_t base_ms, int64_t time_ms);
+  static uint16_t GetDeltaCappedMs(TimeDelta delta);
 
   uint16_t encode_start_delta_ms;
   uint16_t encode_finish_delta_ms;
