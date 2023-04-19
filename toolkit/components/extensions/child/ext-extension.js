@@ -59,6 +59,13 @@ this.extension = class extends ExtensionAPI {
             }
           }
 
+          
+          
+          
+          if (context.extension.hasContextBlockedParsingDocument(view)) {
+            continue;
+          }
+
           result.push(view.contentWindow);
         }
 

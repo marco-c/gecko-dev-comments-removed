@@ -388,6 +388,11 @@ class BrowserExtensionContent extends EventEmitter {
     super();
 
     this.policy = policy;
+    
+    
+    
+    this.policy.weakExtension = Cu.getWeakReference(this);
+
     this.instanceId = policy.instanceId;
     this.optionalPermissions = policy.optionalPermissions;
 
@@ -419,6 +424,7 @@ class BrowserExtensionContent extends EventEmitter {
     );
 
     
+    this.blockedParsingDocuments = new WeakSet();
     this.views = new Set();
 
     
@@ -555,6 +561,18 @@ class BrowserExtensionContent extends EventEmitter {
       return value != null;
     }
     return this.permissions.has(perm);
+  }
+
+  trackBlockedParsingDocument(doc) {
+    this.blockedParsingDocuments.add(doc);
+  }
+
+  untrackBlockedParsingDocument(doc) {
+    this.blockedParsingDocuments.delete(doc);
+  }
+
+  hasContextBlockedParsingDocument(extContext) {
+    return this.blockedParsingDocuments.has(extContext.contentWindow?.document);
   }
 }
 
