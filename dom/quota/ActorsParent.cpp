@@ -2697,14 +2697,28 @@ Result<uint64_t, nsresult> GetTemporaryStorageLimit(nsIFile& aStorageDir) {
            1024;
   }
 
-  
-  QM_TRY_INSPECT(const int64_t& diskCapacity,
-                 MOZ_TO_RESULT_INVOKE_MEMBER(aStorageDir, GetDiskCapacity));
-
-  MOZ_ASSERT(diskCapacity >= 0);
+  constexpr int64_t teraByte = (1024LL * 1024LL * 1024LL * 1024LL);
+  constexpr int64_t maxAllowedCapacity = 8LL * teraByte;
 
   
-  return diskCapacity / 2u;
+  int64_t diskCapacity = maxAllowedCapacity;
+
+  
+  QM_WARNONLY_TRY(MOZ_TO_RESULT(aStorageDir.GetDiskCapacity(&diskCapacity)));
+
+  MOZ_ASSERT(diskCapacity >= 0LL);
+
+  
+  int64_t capacityLimit = diskCapacity / 2LL;
+
+  
+  
+  
+  QM_WARNONLY_TRY(
+      OkIf(capacityLimit < maxAllowedCapacity),
+      ([&capacityLimit](const auto&) { capacityLimit = maxAllowedCapacity; }));
+
+  return capacityLimit;
 }
 
 bool IsOriginUnaccessed(const FullOriginMetadata& aFullOriginMetadata,
