@@ -864,8 +864,7 @@ void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
              ProtoToString(server_address_.proto),  
              "",  
              RELAY_PORT_TYPE, GetRelayPreference(server_address_.proto),
-             server_priority_, ReconstructedServerUrl(false ),
-             true);
+             server_priority_, ReconstructedServerUrl(), true);
 }
 
 void TurnPort::OnAllocateError(int error_code, const std::string& reason) {
@@ -881,9 +880,8 @@ void TurnPort::OnAllocateError(int error_code, const std::string& reason) {
     port = 0;
   }
   SignalCandidateError(
-      this, IceCandidateErrorEvent(
-                address, port, ReconstructedServerUrl(true ),
-                error_code, reason));
+      this, IceCandidateErrorEvent(address, port, ReconstructedServerUrl(),
+                                   error_code, reason));
 }
 
 void TurnPort::OnRefreshError() {
@@ -1291,7 +1289,7 @@ bool TurnPort::SetEntryChannelId(const rtc::SocketAddress& address,
   return true;
 }
 
-std::string TurnPort::ReconstructedServerUrl(bool use_hostname) {
+std::string TurnPort::ReconstructedServerUrl() {
   
   
   
@@ -1314,10 +1312,8 @@ std::string TurnPort::ReconstructedServerUrl(bool use_hostname) {
       break;
   }
   rtc::StringBuilder url;
-  url << scheme << ":"
-      << (use_hostname ? server_address_.address.hostname()
-                       : server_address_.address.ipaddr().ToString())
-      << ":" << server_address_.address.port() << "?transport=" << transport;
+  url << scheme << ":" << server_address_.address.hostname() << ":"
+      << server_address_.address.port() << "?transport=" << transport;
   return url.Release();
 }
 

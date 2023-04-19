@@ -367,7 +367,7 @@ class TurnPort : public Port {
   bool FailAndPruneConnection(const rtc::SocketAddress& address);
 
   
-  std::string ReconstructedServerUrl(bool use_hostname);
+  std::string ReconstructedServerUrl();
 
   void MaybeAddTurnLoggingId(StunMessage* message);
 
