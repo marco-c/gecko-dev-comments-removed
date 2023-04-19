@@ -3511,7 +3511,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 128;
+    const UI_VERSION = 129;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4285,6 +4285,26 @@ BrowserGlue.prototype = {
           true
         );
       }
+    }
+
+    function migrateXULAttributeToStyle(id, attr) {
+      try {
+        let value = Services.xulStore.getValue(BROWSER_DOCURL, id, attr);
+        if (value) {
+          Services.xulStore.setValue(
+            BROWSER_DOCURL,
+            "style",
+            `width: ${value}px;`
+          );
+        }
+      } catch (ex) {
+        Cu.reportError(`Error migrating ${id}'s ${attr} value: ` + ex);
+      }
+    }
+
+    
+    if (currentUIVersion < 129) {
+      migrateXULAttributeToStyle("sidebar-box", "width");
     }
 
     
