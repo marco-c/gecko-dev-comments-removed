@@ -2109,16 +2109,19 @@ nsresult IOUtils::EventQueue::SetShutdownHooks() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  nsCOMPtr<nsIAsyncShutdownBlocker> profileBeforeChangeBlocker;
+
   
   {
-    nsCOMPtr<nsIAsyncShutdownBlocker> blocker =
+    profileBeforeChangeBlocker =
         new IOUtilsShutdownBlocker(ShutdownPhase::ProfileBeforeChange);
 
-    nsCOMPtr<nsIAsyncShutdownClient> profileBeforeChange;
-    MOZ_TRY(svc->GetProfileBeforeChange(getter_AddRefs(profileBeforeChange)));
-    MOZ_RELEASE_ASSERT(profileBeforeChange);
+    nsCOMPtr<nsIAsyncShutdownClient> globalClient;
+    MOZ_TRY(svc->GetProfileBeforeChange(getter_AddRefs(globalClient)));
+    MOZ_RELEASE_ASSERT(globalClient);
 
-    MOZ_TRY(profileBeforeChange->AddBlocker(blocker, FILE, __LINE__, STACK));
+    MOZ_TRY(globalClient->AddBlocker(profileBeforeChangeBlocker, FILE, __LINE__,
+                                     STACK));
   }
 
   
@@ -2139,19 +2142,43 @@ nsresult IOUtils::EventQueue::SetShutdownHooks() {
     mBarriers[ShutdownPhase::ProfileBeforeChange] = std::move(barrier);
   }
 
+  
   {
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIAsyncShutdownClient> xpcomWillShutdown;
-    MOZ_TRY(svc->GetXpcomWillShutdown(getter_AddRefs(xpcomWillShutdown)));
-    MOZ_RELEASE_ASSERT(xpcomWillShutdown);
+    nsCOMPtr<nsIAsyncShutdownClient> globalClient;
+    MOZ_TRY(svc->GetXpcomWillShutdown(getter_AddRefs(globalClient)));
+    MOZ_RELEASE_ASSERT(globalClient);
 
     nsCOMPtr<nsIAsyncShutdownBlocker> blocker =
         new IOUtilsShutdownBlocker(ShutdownPhase::XpcomWillShutdown);
-    MOZ_TRY(xpcomWillShutdown->AddBlocker(blocker, FILE, __LINE__, STACK));
+    MOZ_TRY(globalClient->AddBlocker(
+        blocker, FILE, __LINE__, u"IOUtils::EventQueue::SetShutdownHooks"_ns));
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  {
+    nsCOMPtr<nsIAsyncShutdownBarrier> barrier;
+
+    MOZ_TRY(svc->MakeBarrier(
+        u"IOUtils: waiting for xpcomWillShutdown IO to complete"_ns,
+        getter_AddRefs(barrier)));
+    MOZ_RELEASE_ASSERT(barrier);
+
+    
+    nsCOMPtr<nsIAsyncShutdownClient> client;
+    MOZ_TRY(barrier->GetClient(getter_AddRefs(client)));
+
+    client->AddBlocker(profileBeforeChangeBlocker, FILE, __LINE__,
+                       u"IOUtils::EventQueue::SetShutdownHooks"_ns);
+
+    mBarriers[ShutdownPhase::XpcomWillShutdown] = std::move(barrier);
   }
 
   return NS_OK;
@@ -2325,9 +2352,7 @@ NS_IMETHODIMP IOUtilsShutdownBlocker::BlockShutdown(
 
     mParentClient = aBarrierClient;
 
-    barrier = state->mEventQueue
-                  ->GetShutdownBarrier(ShutdownPhase::ProfileBeforeChange)
-                  .unwrapOr(nullptr);
+    barrier = state->mEventQueue->GetShutdownBarrier(mPhase).unwrapOr(nullptr);
   }
 
   
@@ -2350,26 +2375,28 @@ NS_IMETHODIMP IOUtilsShutdownBlocker::Done() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   auto state = IOUtils::sState.Lock();
-  MOZ_RELEASE_ASSERT(state->mEventQueue);
 
-  
-  
-  state->mEventQueue->Dispatch<Ok>([]() { return Ok{}; })
-      ->Then(GetMainThreadSerialEventTarget(), __func__,
-             [self = RefPtr(this)]() {
-               if (self->mParentClient) {
-                 Unused << NS_WARN_IF(
-                     NS_FAILED(self->mParentClient->RemoveBlocker(self)));
-                 self->mParentClient = nullptr;
+  if (state->mEventQueue) {
+    MOZ_RELEASE_ASSERT(state->mQueueStatus == EventQueueStatus::Initialized);
 
-                 auto state = IOUtils::sState.Lock();
-                 MOZ_RELEASE_ASSERT(state->mEventQueue);
-                 state->mEventQueue = nullptr;
-               }
-             });
+    
+    
+    state->mEventQueue->Dispatch<Ok>([]() { return Ok{}; })
+        ->Then(GetMainThreadSerialEventTarget(), __func__,
+               [self = RefPtr(this)]() {
+                 if (self->mParentClient) {
+                   Unused << NS_WARN_IF(
+                       NS_FAILED(self->mParentClient->RemoveBlocker(self)));
+                   self->mParentClient = nullptr;
 
-  MOZ_RELEASE_ASSERT(state->mQueueStatus == EventQueueStatus::Initialized);
-  state->mQueueStatus = EventQueueStatus::Shutdown;
+                   auto state = IOUtils::sState.Lock();
+                   MOZ_RELEASE_ASSERT(state->mEventQueue);
+                   state->mEventQueue = nullptr;
+                 }
+               });
+
+    state->mQueueStatus = EventQueueStatus::Shutdown;
+  }
 
   return NS_OK;
 }
