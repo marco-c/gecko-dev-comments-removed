@@ -12,6 +12,8 @@ package org.webrtc;
 
 import android.graphics.Matrix;
 import android.opengl.GLES20;
+import android.opengl.GLException;
+import android.support.annotation.Nullable;
 import java.nio.ByteBuffer;
 import org.webrtc.VideoFrame.I420Buffer;
 import org.webrtc.VideoFrame.TextureBuffer;
@@ -20,7 +22,9 @@ import org.webrtc.VideoFrame.TextureBuffer;
 
 
 
-public class YuvConverter {
+public final class YuvConverter {
+  private static final String TAG = "YuvConverter";
+
   private static final String FRAGMENT_SHADER =
       
       
@@ -122,9 +126,17 @@ public class YuvConverter {
   }
 
   
+  @Nullable
   public I420Buffer convert(TextureBuffer inputTextureBuffer) {
-    threadChecker.checkIsOnValidThread();
+    try {
+      return convertInternal(inputTextureBuffer);
+    } catch (GLException e) {
+      Logging.w(TAG, "Failed to convert TextureBuffer", e);
+    }
+    return null;
+  }
 
+  private I420Buffer convertInternal(TextureBuffer inputTextureBuffer) {
     TextureBuffer preparedBuffer = (TextureBuffer) videoFrameDrawer.prepareBufferForViewportSize(
         inputTextureBuffer, inputTextureBuffer.getWidth(), inputTextureBuffer.getHeight());
 
