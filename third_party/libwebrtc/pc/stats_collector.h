@@ -107,6 +107,35 @@ class StatsCollector : public StatsCollectorInterface {
   friend class StatsCollectorTest;
 
   
+  
+  struct TransportStats {
+    TransportStats() = default;
+    TransportStats(std::string transport_name,
+                   cricket::TransportStats transport_stats)
+        : name(std::move(transport_name)), stats(std::move(transport_stats)) {}
+    TransportStats(TransportStats&&) = default;
+    TransportStats(const TransportStats&) = delete;
+
+    std::string name;
+    cricket::TransportStats stats;
+    std::unique_ptr<rtc::SSLCertificateStats> local_cert_stats;
+    std::unique_ptr<rtc::SSLCertificateStats> remote_cert_stats;
+  };
+
+  struct SessionStats {
+    SessionStats() = default;
+    SessionStats(SessionStats&&) = default;
+    SessionStats(const SessionStats&) = delete;
+
+    SessionStats& operator=(SessionStats&&) = default;
+    SessionStats& operator=(SessionStats&) = delete;
+
+    cricket::CandidateStatsList candidate_stats;
+    std::vector<TransportStats> transport_stats;
+    std::map<std::string, std::string> transport_names_by_mid;
+  };
+
+  
   virtual double GetTimeNow();
 
   bool CopySelectedReports(const std::string& selector, StatsReports* reports);
@@ -129,9 +158,14 @@ class StatsCollector : public StatsCollectorInterface {
                                        const cricket::ConnectionInfo& info);
 
   void ExtractDataInfo();
-  void ExtractSessionInfo();
+
+  
+  
+  std::map<std::string, std::string> ExtractSessionInfo();
+
   void ExtractBweInfo();
-  void ExtractMediaInfo();
+  void ExtractMediaInfo(
+      const std::map<std::string, std::string>& transport_names_by_mid);
   void ExtractSenderInfo();
   webrtc::StatsReport* GetReport(const StatsReport::StatsType& type,
                                  const std::string& id,
@@ -145,6 +179,9 @@ class StatsCollector : public StatsCollectorInterface {
 
   
   void UpdateTrackReports();
+
+  SessionStats ExtractSessionInfo_n();
+  void ExtractSessionInfo_s(SessionStats& session_stats);
 
   
   StatsCollection reports_;
