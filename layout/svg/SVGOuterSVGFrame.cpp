@@ -174,8 +174,9 @@ nscoord SVGOuterSVGFrame::GetPrefISize(gfxContext* aRenderingContext) {
       wm.IsVertical() ? svg->mLengthAttributes[SVGSVGElement::ATTR_HEIGHT]
                       : svg->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
 
-  if (ContainSizeAxesIfApplicable(this).mIContained) {
-    result = nscoord(0);
+  if (Maybe<nscoord> containISize =
+          ContainSizeAxesIfApplicable(this).ContainIntrinsicISize(*this)) {
+    result = *containISize;
   } else if (isize.IsPercentage()) {
     
     
@@ -214,7 +215,8 @@ IntrinsicSize SVGOuterSVGFrame::GetIntrinsicSize() {
   const auto containAxes = ContainSizeAxesIfApplicable(this);
   if (containAxes.IsBoth()) {
     
-    return IntrinsicSize(0, 0);
+    
+    return containAxes.ContainIntrinsicSize(IntrinsicSize(0, 0), *this);
   }
 
   SVGSVGElement* content = static_cast<SVGSVGElement*>(GetContent());
