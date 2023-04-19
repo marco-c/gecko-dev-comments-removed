@@ -59,7 +59,7 @@ impl UploadPrefObserver {
         &self,
         _subject: *const nsISupports,
         topic: *const c_char,
-        pref_name: *const i16,
+        pref_name: *const u16,
     ) -> nserror::nsresult {
         let topic = CStr::from_ptr(topic).to_str().unwrap();
         
@@ -69,7 +69,7 @@ impl UploadPrefObserver {
         
         
         let len = (0..).take_while(|&i| *pref_name.offset(i) != 0).count(); 
-        let slice = std::slice::from_raw_parts(pref_name as *const u16, len);
+        let slice = std::slice::from_raw_parts(pref_name, len);
         let pref_name = match String::from_utf16(slice) {
             Ok(name) => name,
             Err(_) => return NS_ERROR_FAILURE,
