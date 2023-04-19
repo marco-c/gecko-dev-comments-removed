@@ -352,7 +352,12 @@ var NativeApp = class extends EventEmitter {
     });
 
     let result = this.startupPromise.then(() => {
-      this.send(holder);
+      
+      
+      
+      if (!this.cleanupStarted) {
+        this.send(holder);
+      }
       return responsePromise;
     });
 
