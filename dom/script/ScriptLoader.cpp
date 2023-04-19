@@ -1679,6 +1679,20 @@ nsresult ScriptLoader::AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
   } else {
     MOZ_ASSERT(aRequest->IsTextSource());
 
+    if (ShouldApplyDelazifyStrategy(aRequest)) {
+      ApplyDelazifyStrategy(&options);
+      mTotalFullParseSize +=
+          aRequest->ScriptTextLength() > 0
+              ? static_cast<uint32_t>(aRequest->ScriptTextLength())
+              : 0;
+
+      LOG(
+          ("ScriptLoadRequest (%p): non-on-demand-only Parsing Enabled for "
+           "url=%s mTotalFullParseSize=%u",
+           aRequest, aRequest->mURI->GetSpecOrDefault().get(),
+           mTotalFullParseSize));
+    }
+
     MaybeSourceText maybeSource;
     nsresult rv = aRequest->GetScriptSource(cx, &maybeSource);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -2005,24 +2019,6 @@ nsresult ScriptLoader::FillCompileOptionsForRequest(
   aOptions->borrowBuffer = true;
 
   aOptions->allocateInstantiationStorage = true;
-
-  if (aOptions->forceFullParse()) {
-    
-    
-    
-  } else if (ShouldApplyDelazifyStrategy(aRequest)) {
-    ApplyDelazifyStrategy(aRequest, aOptions);
-    mTotalFullParseSize +=
-        aRequest->ScriptTextLength() > 0
-            ? static_cast<uint32_t>(aRequest->ScriptTextLength())
-            : 0;
-  } else {
-    
-    
-    
-    aOptions->setEagerDelazificationStrategy(
-        JS::DelazificationOption::OnDemandOnly);
-  }
 
   return NS_OK;
 }
@@ -3258,26 +3254,6 @@ static bool IsInternalURIScheme(nsIURI* uri) {
 
 bool ScriptLoader::ShouldApplyDelazifyStrategy(ScriptLoadRequest* aRequest) {
   
-  if (!aRequest->IsTextSource()) {
-    
-    
-    return false;
-  }
-
-  if (aRequest->IsModuleRequest()) {
-    
-    
-    return false;
-  }
-
-  auto logEnabled = MakeScopeExit([&] {
-    LOG(
-        ("ScriptLoadRequest (%p): non-on-demand-only Parsing Enabled for "
-         "url=%s mTotalFullParseSize=%u",
-         aRequest, aRequest->mURI->GetSpecOrDefault().get(),
-         mTotalFullParseSize));
-  });
-
   if (StaticPrefs::dom_script_loader_delazification_max_size() < 0) {
     return true;
   }
@@ -3285,7 +3261,6 @@ bool ScriptLoader::ShouldApplyDelazifyStrategy(ScriptLoadRequest* aRequest) {
   
   if (PhysicalSizeOfMemoryInGB() <=
       StaticPrefs::dom_script_loader_delazification_min_mem()) {
-    logEnabled.release();
     return false;
   }
 
@@ -3300,7 +3275,6 @@ bool ScriptLoader::ShouldApplyDelazifyStrategy(ScriptLoadRequest* aRequest) {
     return true;
   }
 
-  logEnabled.release();
   if (LOG_ENABLED()) {
     nsCString url = aRequest->mURI->GetSpecOrDefault();
     LOG(
@@ -3312,8 +3286,7 @@ bool ScriptLoader::ShouldApplyDelazifyStrategy(ScriptLoadRequest* aRequest) {
   return false;
 }
 
-void ScriptLoader::ApplyDelazifyStrategy(ScriptLoadRequest* aRequest,
-                                         JS::CompileOptions* aOptions) {
+void ScriptLoader::ApplyDelazifyStrategy(JS::CompileOptions* aOptions) {
   JS::DelazificationOption strategy =
       JS::DelazificationOption::ParseEverythingEagerly;
   uint32_t strategyIndex =
@@ -3340,17 +3313,6 @@ void ScriptLoader::ApplyDelazifyStrategy(ScriptLoadRequest* aRequest,
   
   if (strategyIndex <= uint32_t(strategy)) {
     strategy = JS::DelazificationOption(uint8_t(strategyIndex));
-  }
-
-  
-  
-  
-  
-  if (aRequest->HasScriptLoadContext() &&
-      aRequest->GetScriptLoadContext()->mIsInline) {
-    if (strategy == JS::DelazificationOption::ParseEverythingEagerly) {
-      strategy = JS::DelazificationOption::OnDemandOnly;
-    }
   }
 
   aOptions->setEagerDelazificationStrategy(strategy);
