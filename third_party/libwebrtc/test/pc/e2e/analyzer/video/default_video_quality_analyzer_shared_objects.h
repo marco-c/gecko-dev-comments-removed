@@ -11,6 +11,7 @@
 #ifndef TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_VIDEO_QUALITY_ANALYZER_SHARED_OBJECTS_H_
 #define TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_VIDEO_QUALITY_ANALYZER_SHARED_OBJECTS_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -78,9 +79,19 @@ struct StreamCodecInfo {
   Timestamp switched_from_at = Timestamp::PlusInfinity();
 };
 
+
+
+enum class FrameDropPhase : int {
+  kBeforeEncoder,
+  kByEncoder,
+  kTransport,
+  kAfterDecoder,
+  
+  kLastValue
+};
+
 struct StreamStats {
-  explicit StreamStats(Timestamp stream_started_time)
-      : stream_started_time(stream_started_time) {}
+  explicit StreamStats(Timestamp stream_started_time);
 
   
   Timestamp stream_started_time;
@@ -117,6 +128,8 @@ struct StreamStats {
   int64_t total_encoded_images_payload = 0;
   int64_t dropped_by_encoder = 0;
   int64_t dropped_before_encoder = 0;
+  
+  std::map<FrameDropPhase, int64_t> dropped_by_phase;
 
   
   std::vector<StreamCodecInfo> encoders;
