@@ -49,12 +49,6 @@ var DEBUG = false;
 
 var DEBUG_TIMESTAMP = false; 
 
-
-
-const Services =
-  globalThis.Services ||
-  ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
-
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
