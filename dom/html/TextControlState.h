@@ -306,6 +306,13 @@ class TextControlState final : public SupportsWeakPtr {
   }
   bool IsEmpty() const { return mValue.IsEmpty(); }
 
+  const nsAString& LastInteractiveValueIfLastChangeWasNonInteractive() const {
+    return mLastInteractiveValue;
+  }
+  
+  
+  void ClearLastInteractiveValue() { mLastInteractiveValue.SetIsVoid(true); }
+
   Element* GetRootNode();
   Element* GetPreviewNode();
 
@@ -515,7 +522,12 @@ class TextControlState final : public SupportsWeakPtr {
   RefPtr<TextInputListener> mTextListener;
   UniquePtr<PasswordMaskData> mPasswordMaskData;
 
-  nsString mValue { VoidString() };  
+  nsString mValue{VoidString()};  
+
+  
+  
+  
+  nsString mLastInteractiveValue{VoidString()};
 
   SelectionProperties mSelectionProperties;
 

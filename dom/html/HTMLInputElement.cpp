@@ -2734,6 +2734,12 @@ nsresult HTMLInputElement::SetValueInternal(
       }
 
       
+      
+      
+      
+      SetLastValueChangeWasInteractive(false);
+
+      
       return nsGenericHTMLFormControlElementWithState::SetAttr(
           kNameSpaceID_None, nsGkAtoms::value, aValue, true);
 
@@ -5098,6 +5104,17 @@ bool HTMLInputElement::IsDateTimeTypeSupported(
     default:
       return false;
   }
+}
+
+void HTMLInputElement::GetLastInteractiveValue(nsAString& aValue) {
+  if (mLastValueChangeWasInteractive) {
+    return GetValue(aValue, CallerType::System);
+  }
+  if (TextControlState* state = GetEditorState()) {
+    return aValue.Assign(
+        state->LastInteractiveValueIfLastChangeWasNonInteractive());
+  }
+  aValue.Truncate();
 }
 
 bool HTMLInputElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
