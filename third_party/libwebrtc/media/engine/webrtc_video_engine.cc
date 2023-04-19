@@ -67,6 +67,11 @@ bool IsEnabled(const webrtc::WebRtcKeyValueConfig& trials,
   return absl::StartsWith(trials.Lookup(name), "Enabled");
 }
 
+bool IsDisabled(const webrtc::WebRtcKeyValueConfig& trials,
+                absl::string_view name) {
+  return absl::StartsWith(trials.Lookup(name), "Disabled");
+}
+
 bool PowerOfTwo(int value) {
   return (value > 0) && ((value & (value - 1)) == 0);
 }
@@ -107,7 +112,8 @@ void AddDefaultFeedbackParams(VideoCodec* codec,
 
 std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
     std::vector<webrtc::SdpVideoFormat> input_formats,
-    const webrtc::WebRtcKeyValueConfig& trials) {
+    const webrtc::WebRtcKeyValueConfig& trials,
+    bool is_decoder_factory) {
   if (input_formats.empty())
     return std::vector<VideoCodec>();
   
@@ -123,7 +129,13 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
   input_formats.push_back(webrtc::SdpVideoFormat(kRedCodecName));
   input_formats.push_back(webrtc::SdpVideoFormat(kUlpfecCodecName));
 
-  if (IsEnabled(trials, "WebRTC-FlexFEC-03-Advertised")) {
+  
+  
+  
+  if ((is_decoder_factory &&
+       !IsDisabled(trials, "WebRTC-FlexFEC-03-Advertised")) ||
+      (!is_decoder_factory &&
+       IsEnabled(trials, "WebRTC-FlexFEC-03-Advertised"))) {
     webrtc::SdpVideoFormat flexfec_format(kFlexfecCodecName);
     
     
@@ -195,6 +207,8 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
 
 
 
+
+
 template <class T>
 std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
     const T* factory,
@@ -211,7 +225,7 @@ std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
   }
 
   return AssignPayloadTypesAndDefaultCodecs(std::move(supported_formats),
-                                            trials);
+                                            trials, is_decoder_factory);
 }
 
 bool IsTemporalLayersSupported(const std::string& codec_name) {
@@ -1532,7 +1546,7 @@ void WebRtcVideoChannel::ConfigureReceiverRtp(
 
   
   flexfec_config->payload_type = recv_flexfec_payload_type_;
-  if (IsEnabled(call_->trials(), "WebRTC-FlexFEC-03-Advertised") &&
+  if (!IsDisabled(call_->trials(), "WebRTC-FlexFEC-03-Advertised") &&
       sp.GetFecFrSsrc(ssrc, &flexfec_config->remote_ssrc)) {
     flexfec_config->protected_media_ssrcs = {ssrc};
     flexfec_config->local_ssrc = config->rtp.local_ssrc;
