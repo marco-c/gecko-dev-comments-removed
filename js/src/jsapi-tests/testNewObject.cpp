@@ -156,22 +156,10 @@ BEGIN_TEST(testNewObject_IsMapObject) {
 }
 END_TEST(testNewObject_IsMapObject)
 
-static const JSClassOps Base_classOps = {
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
-    nullptr,  
+static const JSClass Base_class = {
+    "Base",
+    JSCLASS_HAS_RESERVED_SLOTS(8),  
 };
-
-static const JSClass Base_class = {"Base",
-                                   0,  
-                                   &Base_classOps};
 
 BEGIN_TEST(testNewObject_Subclassing) {
   JSObject* proto =
@@ -213,6 +201,12 @@ BEGIN_TEST(testNewObject_Subclassing) {
 
   EVAL("myObj", &result);
   CHECK_EQUAL(JS::GetClass(&result.toObject()), &Base_class);
+
+  
+  for (uint32_t i = 0; i < JSCLASS_RESERVED_SLOTS(&Base_class); i++) {
+    CHECK_SAME(JS::GetReservedSlot(&result.toObject(), i),
+               JS::UndefinedValue());
+  }
 
   return true;
 }
