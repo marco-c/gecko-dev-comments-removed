@@ -106,11 +106,8 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
   modified_combining_class (hb_codepoint_t u)
   {
     
-
     if (unlikely (u == 0x1A60u)) return 254;
-
     
-
     if (unlikely (u == 0x0FC6u)) return 254;
     
     if (unlikely (u == 0x0F39u)) return 127;

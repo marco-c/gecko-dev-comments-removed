@@ -37,7 +37,7 @@
 
 
 
-#define HB_NULL_POOL_SIZE 384
+#define HB_NULL_POOL_SIZE 448
 
 
 
@@ -108,7 +108,7 @@ struct NullHelper
 
 #define DECLARE_NULL_NAMESPACE_BYTES(Namespace, Type) \
 	} /* Close namespace. */ \
-	extern HB_INTERNAL const unsigned char _hb_Null_##Namespace##_##Type[Namespace::Type::null_size]; \
+	extern HB_INTERNAL const unsigned char _hb_Null_##Namespace##_##Type[hb_null_size (Namespace::Type)]; \
 	template <> \
 	struct Null<Namespace::Type> { \
 	  static Namespace::Type const & get_null () { \
@@ -118,7 +118,7 @@ struct NullHelper
 	namespace Namespace { \
 	static_assert (true, "") /* Require semicolon after. */
 #define DEFINE_NULL_NAMESPACE_BYTES(Namespace, Type) \
-	const unsigned char _hb_Null_##Namespace##_##Type[Namespace::Type::null_size]
+	const unsigned char _hb_Null_##Namespace##_##Type[hb_null_size (Namespace::Type)]
 
 
 #define DECLARE_NULL_INSTANCE(Type) \

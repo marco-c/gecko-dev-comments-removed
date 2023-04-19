@@ -55,6 +55,9 @@ const unsigned char _hb_Null_AAT_Lookup[2] = {0xFF, 0xFF};
 
 
 
+const hb_codepoint_t minus_1 = -1;
+
+
 
 #ifndef HB_NO_BORING_EXPANSION
 static inline unsigned

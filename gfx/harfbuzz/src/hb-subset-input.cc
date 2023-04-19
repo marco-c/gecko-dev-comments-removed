@@ -141,6 +141,19 @@ hb_subset_input_create_or_fail (void)
     HB_TAG ('r', 't', 'l', 'm'),
 
     
+    HB_TAG ('r', 'a', 'n', 'd'),
+
+    
+    HB_TAG ('j', 'a', 'l', 't'), 
+
+    
+    HB_TAG ('H', 'a', 'r', 'f'),
+    HB_TAG ('H', 'A', 'R', 'F'),
+    HB_TAG ('B', 'u', 'z', 'z'),
+    HB_TAG ('B', 'U', 'Z', 'Z'),
+
+    
+
     
     HB_TAG ('i', 'n', 'i', 't'),
     HB_TAG ('m', 'e', 'd', 'i'),

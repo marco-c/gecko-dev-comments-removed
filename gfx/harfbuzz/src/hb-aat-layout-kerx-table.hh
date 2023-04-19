@@ -287,7 +287,7 @@ struct KerxSubTableFormat1
 
 	      if (v == -0x8000)
 	      {
-		o.attach_type() = ATTACH_TYPE_NONE;
+		o.attach_type() = OT::Layout::GPOS_impl::ATTACH_TYPE_NONE;
 		o.attach_chain() = 0;
 		o.y_offset = 0;
 	      }
@@ -310,7 +310,7 @@ struct KerxSubTableFormat1
 	      
 	      if (v == -0x8000)
 	      {
-		o.attach_type() = ATTACH_TYPE_NONE;
+		o.attach_type() = OT::Layout::GPOS_impl::ATTACH_TYPE_NONE;
 		o.attach_chain() = 0;
 		o.x_offset = 0;
 	      }
@@ -567,7 +567,7 @@ struct KerxSubTableFormat4
 	  }
 	  break;
 	}
-	o.attach_type() = ATTACH_TYPE_MARK;
+	o.attach_type() = OT::Layout::GPOS_impl::ATTACH_TYPE_MARK;
 	o.attach_chain() = (int) mark - (int) buffer->idx;
 	buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT;
       }
@@ -901,7 +901,7 @@ struct KerxTable
 	unsigned int count = c->buffer->len;
 	for (unsigned int i = 0; i < count; i++)
 	{
-	  pos[i].attach_type() = ATTACH_TYPE_CURSIVE;
+	  pos[i].attach_type() = OT::Layout::GPOS_impl::ATTACH_TYPE_CURSIVE;
 	  pos[i].attach_chain() = HB_DIRECTION_IS_FORWARD (c->buffer->props.direction) ? -1 : +1;
 	  
 

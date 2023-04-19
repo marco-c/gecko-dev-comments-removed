@@ -219,6 +219,7 @@ static const LangTag ot_languages2[] = {
   {HB_TAG('z','u',' ',' '),	HB_TAG('Z','U','L',' ')},	
 };
 
+#ifndef HB_NO_LANGUAGE_LONG
 static const LangTag ot_languages3[] = {
   {HB_TAG('a','a','e',' '),	HB_TAG('S','Q','I',' ')},	
   {HB_TAG('a','a','o',' '),	HB_TAG('A','R','A',' ')},	
@@ -1621,6 +1622,7 @@ static const LangTag ot_languages3[] = {
 	
   {HB_TAG('z','z','j',' '),	HB_TAG('Z','H','A',' ')},	
 };
+#endif
 
 
 
@@ -1636,7 +1638,7 @@ static const LangTag ot_languages3[] = {
 
 
 
-static bool
+static inline bool
 hb_ot_tags_from_complex_language (const char   *lang_str,
 				  const char   *limit,
 				  unsigned int *count ,
@@ -2818,7 +2820,7 @@ out:
 
 
 
-static hb_language_t
+static inline hb_language_t
 hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
 {
   switch (tag)

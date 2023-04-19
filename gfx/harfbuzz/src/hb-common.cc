@@ -160,7 +160,7 @@ hb_tag_to_string (hb_tag_t tag, char *buf)
 
 
 
-const char direction_strings[][4] = {
+static const char direction_strings[][4] = {
   "ltr",
   "rtl",
   "ttb",

@@ -332,7 +332,7 @@ _hb_coretext_shaper_font_data_create (hb_font_t *font)
     return nullptr;
   }
 
-  if (font->coords)
+  if (font->num_coords)
   {
     CFMutableDictionaryRef variations =
       CFDictionaryCreateMutable (kCFAllocatorDefault,
@@ -377,37 +377,6 @@ void
 _hb_coretext_shaper_font_data_destroy (hb_coretext_font_data_t *data)
 {
   CFRelease ((CTFontRef) data);
-}
-
-static const hb_coretext_font_data_t *
-hb_coretext_font_data_sync (hb_font_t *font)
-{
-retry:
-  const hb_coretext_font_data_t *data = font->data.coretext;
-  if (unlikely (!data)) return nullptr;
-
-  if (fabs (CTFontGetSize ((CTFontRef) data) - (CGFloat) font->ptem) > (CGFloat) .5)
-  {
-    
-
-
-
-
-
-
-
-
-
-
-    
-    
-
-    if (likely (font->data.coretext.cmpexch (const_cast<hb_coretext_font_data_t *> (data), nullptr)))
-      _hb_coretext_shaper_font_data_destroy (const_cast<hb_coretext_font_data_t *> (data));
-    else
-      goto retry;
-  }
-  return font->data.coretext;
 }
 
 
@@ -455,8 +424,8 @@ hb_coretext_font_create (CTFontRef ct_font)
 CTFontRef
 hb_coretext_font_get_ct_font (hb_font_t *font)
 {
-  const hb_coretext_font_data_t *data = hb_coretext_font_data_sync (font);
-  return data ? (CTFontRef) data : nullptr;
+  CTFontRef ct_font = (CTFontRef) (const void *) font->data.coretext;
+  return ct_font ? (CTFontRef) ct_font : nullptr;
 }
 
 
@@ -516,7 +485,7 @@ _hb_coretext_shape (hb_shape_plan_t    *shape_plan,
 {
   hb_face_t *face = font->face;
   CGFontRef cg_font = (CGFontRef) (const void *) face->data.coretext;
-  CTFontRef ct_font = (CTFontRef) hb_coretext_font_data_sync (font);
+  CTFontRef ct_font = (CTFontRef) (const void *) font->data.coretext;
 
   CGFloat ct_font_size = CTFontGetSize (ct_font);
   CGFloat x_mult = (CGFloat) font->x_scale / ct_font_size;
@@ -1106,7 +1075,8 @@ resize_and_retry:
 	      advance = positions[j + 1].x - positions[j].x;
 	    else 
 	      advance = run_advance - (positions[j].x - positions[0].x);
-	    info->mask = round (advance * x_mult);
+	    
+	    info->mask = (int) round (advance * x_mult);
 	    info->var1.i32 = x_offset;
 	    info->var2.i32 = round (positions[j].y * y_mult);
 	    info++;
@@ -1122,7 +1092,8 @@ resize_and_retry:
 	      advance = positions[j + 1].y - positions[j].y;
 	    else 
 	      advance = run_advance - (positions[j].y - positions[0].y);
-	    info->mask = round (advance * y_mult);
+	    
+	    info->mask = (int) round (advance * y_mult);
 	    info->var1.i32 = round (positions[j].x * x_mult);
 	    info->var2.i32 = y_offset;
 	    info++;
@@ -1151,7 +1122,7 @@ resize_and_retry:
 	pos->x_offset = info->var1.i32;
 	pos->y_offset = info->var2.i32;
 
-	info++, pos++;
+	info++; pos++;
       }
     else
       for (unsigned int i = 0; i < count; i++)
@@ -1160,7 +1131,7 @@ resize_and_retry:
 	pos->x_offset = info->var1.i32;
 	pos->y_offset = info->var2.i32;
 
-	info++, pos++;
+	info++; pos++;
       }
 
     
@@ -1173,7 +1144,8 @@ resize_and_retry:
 
 
 
-    if (count > 1 && (status_or & kCTRunStatusNonMonotonic))
+    if (count > 1 && (status_or & kCTRunStatusNonMonotonic) &&
+	buffer->cluster_level != HB_BUFFER_CLUSTER_LEVEL_CHARACTERS)
     {
       hb_glyph_info_t *info = buffer->info;
       if (HB_DIRECTION_IS_FORWARD (buffer->props.direction))
@@ -1196,6 +1168,10 @@ resize_and_retry:
       }
     }
   }
+
+  
+
+
 
   buffer->clear_glyph_flags ();
   buffer->unsafe_to_break ();

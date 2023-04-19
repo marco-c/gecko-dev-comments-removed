@@ -17,7 +17,7 @@ if not nm:
 	print ('check-symbols.py: \'nm\' not found; skipping test')
 	sys.exit (77)
 
-cxxflit = shutil.which ('c++filt')
+cxxfilt = shutil.which ('c++filt')
 
 tested = False
 stat = 0
@@ -35,9 +35,9 @@ for soname in ['harfbuzz', 'harfbuzz-subset', 'harfbuzz-icu', 'harfbuzz-gobject'
 				    if not re.match (r'.* %s(%s)\b' % (symprefix, IGNORED_SYMBOLS), s)]
 
 		
-		if cxxflit:
+		if cxxfilt:
 			EXPORTED_SYMBOLS = subprocess.check_output (
-				[cxxflit], input='\n'.join (EXPORTED_SYMBOLS).encode ()
+				[cxxfilt], input='\n'.join (EXPORTED_SYMBOLS).encode ()
 			).decode ('utf-8').splitlines ()
 
 		prefix = (symprefix + os.path.basename (so)).replace ('libharfbuzz', 'hb').replace ('-', '_').split ('.')[0]

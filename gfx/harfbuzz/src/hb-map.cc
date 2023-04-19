@@ -182,6 +182,25 @@ hb_map_allocation_successful (const hb_map_t  *map)
 
 
 
+hb_map_t *
+hb_map_copy (const hb_map_t *map)
+{
+  hb_map_t *copy = hb_map_create ();
+  if (unlikely (!copy)) return nullptr;
+  copy->resize (map->population);
+  hb_copy (*map, *copy);
+  return copy;
+}
+
+
+
+
+
+
+
+
+
+
 
 void
 hb_map_set (hb_map_t       *map,
@@ -307,5 +326,22 @@ hb_map_is_equal (const hb_map_t *map,
 		 const hb_map_t *other)
 {
   return map->is_equal (*other);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN unsigned int
+hb_map_hash (const hb_map_t *map)
+{
+  return map->hash ();
 }
 

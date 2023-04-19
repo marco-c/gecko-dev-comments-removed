@@ -22,10 +22,8 @@
 
 
 
-
 #include "hb.hh"
 #include "hb-set.hh"
-
 
 int
 main (int argc, char **argv)

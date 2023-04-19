@@ -55,11 +55,6 @@
 
 
 
-
-
-
-
-
 template <typename iter_t, typename Item = typename iter_t::__item_t__>
 struct hb_iter_t
 {
@@ -76,10 +71,6 @@ struct hb_iter_t
   public:
 
   
-
-
-
-  
   iter_t iter () const { return *thiz(); }
   iter_t operator + () const { return *thiz(); }
   iter_t begin () const { return *thiz(); }
@@ -87,7 +78,6 @@ struct hb_iter_t
   explicit operator bool () const { return thiz()->__more__ (); }
   unsigned len () const { return thiz()->__len__ (); }
   
-
 
   template <typename T = item_t,
 	    hb_enable_if (std::is_reference<T>::value)>

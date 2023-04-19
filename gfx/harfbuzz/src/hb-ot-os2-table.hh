@@ -225,8 +225,10 @@ struct OS2
   }
 
   
+
   enum font_page_t
   {
+    FONT_PAGE_NONE		= 0,
     FONT_PAGE_HEBREW		= 0xB100, 
     FONT_PAGE_SIMP_ARABIC	= 0xB200, 
     FONT_PAGE_TRAD_ARABIC	= 0xB300, 

@@ -29,7 +29,7 @@
 #ifndef HB_NO_OT_SHAPE
 
 #include "hb-ot-shape-normalize.hh"
-#include "hb-ot-shape-complex.hh"
+#include "hb-ot-shaper.hh"
 #include "hb-ot-shape.hh"
 
 
@@ -143,8 +143,7 @@ decompose (const hb_ot_shape_normalize_context_t *c, bool shortest, hb_codepoint
     return 1;
   }
 
-  unsigned int ret;
-  if ((ret = decompose (c, shortest, a))) {
+  if (unsigned ret = decompose (c, shortest, a)) {
     if (b) {
       output_char (buffer, b, b_glyph);
       return ret + 1;
@@ -395,7 +394,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
 	  break;
 
       
-      if (end - i > HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS) {
+      if (end - i > HB_OT_SHAPE_MAX_COMBINING_MARKS) {
 	i = end;
 	continue;
       }
