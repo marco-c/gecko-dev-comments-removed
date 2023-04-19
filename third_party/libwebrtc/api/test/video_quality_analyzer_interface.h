@@ -85,9 +85,11 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
   
   
   
-  virtual uint16_t OnFrameCaptured(absl::string_view peer_name,
-                                   const std::string& stream_label,
-                                   const VideoFrame& frame) = 0;
+  
+  virtual absl::optional<uint16_t> OnFrameCaptured(
+      absl::string_view peer_name,
+      const std::string& stream_label,
+      const VideoFrame& frame) = 0;
   
   
   virtual void OnFramePreEncode(absl::string_view peer_name,
