@@ -374,6 +374,10 @@ class AppWindow final : public nsIBaseWindow,
   WidgetListenerDelegate mWidgetListenerDelegate;
 
  private:
+  MOZ_CAN_RUN_SCRIPT void IntrinsicallySizeShell(const CSSIntSize& aWindowDiff,
+                                                 int32_t& aSpecWidth,
+                                                 int32_t& aSpecHeight);
+
   
   
   

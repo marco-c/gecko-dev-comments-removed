@@ -196,6 +196,8 @@
       return this.shadowRoot.querySelector(".dialog-button-box");
     }
 
+    
+    
     _sizeToPreferredSize() {
       const docEl = document.documentElement;
       const prefWidth = (() => {
