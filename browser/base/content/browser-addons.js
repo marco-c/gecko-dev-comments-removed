@@ -6,6 +6,14 @@
 
 
 
+const lazy = {};
+
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "ExtensionParent",
+  "resource://gre/modules/ExtensionParent.jsm"
+);
+
 customElements.define(
   "addon-progress-notification",
   class MozAddonProgressNotification extends customElements.get(
@@ -1361,7 +1369,14 @@ var gUnifiedExtensions = {
     window.dispatchEvent(new CustomEvent("UnifiedExtensionsTogglePanel"));
   },
 
-  async updateContextMenu(menu) {
+  async updateContextMenu(menu, event) {
+    
+    
+    
+    if (event.target.id !== "unified-extensions-context-menu") {
+      return;
+    }
+
     const id = this._getExtensionId(menu);
     const addon = await AddonManager.getAddonByID(id);
 
@@ -1378,6 +1393,16 @@ var gUnifiedExtensions = {
     );
 
     ExtensionsUI.originControlsMenu(menu, id);
+
+    
+    
+    
+    const browserAction = lazy.ExtensionParent.apiManager.global.browserActionFor?.(
+      WebExtensionPolicy.getByID(id)?.extension
+    );
+    if (browserAction) {
+      browserAction.updateContextMenu(menu);
+    }
   },
 
   async manageExtension(menu) {

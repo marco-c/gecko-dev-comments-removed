@@ -450,13 +450,7 @@ this.browserAction = class extends ExtensionAPIPersistent {
         ];
 
         if (contexts.includes(menu.id) && node && node.contains(trigger)) {
-          const action =
-            this.extension.manifestVersion < 3 ? "onBrowserAction" : "onAction";
-          global.actionContextMenu({
-            extension: this.extension,
-            [action]: true,
-            menu: menu,
-          });
+          this.updateContextMenu(menu);
         }
         break;
 
@@ -478,6 +472,23 @@ this.browserAction = class extends ExtensionAPIPersistent {
         }
         break;
     }
+  }
+
+  
+
+
+
+
+
+  updateContextMenu(menu) {
+    const action =
+      this.extension.manifestVersion < 3 ? "onBrowserAction" : "onAction";
+
+    global.actionContextMenu({
+      extension: this.extension,
+      [action]: true,
+      menu,
+    });
   }
 
   

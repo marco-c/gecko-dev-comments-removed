@@ -36,9 +36,19 @@ const promiseExtensionUninstalled = extensionId => {
   });
 };
 
-add_task(async function test_context_menu() {
-  const win = await promiseEnableUnifiedExtensions();
+let win;
 
+add_setup(async function() {
+  
+  
+  win = await promiseEnableUnifiedExtensions();
+
+  registerCleanupFunction(async () => {
+    await BrowserTestUtils.closeWindow(win);
+  });
+});
+
+add_task(async function test_context_menu() {
   const [extension] = createExtensions([{ name: "an extension" }]);
   await extension.startup();
 
@@ -71,7 +81,6 @@ add_task(async function test_context_menu() {
   await closeExtensionsPanel(win);
 
   await extension.unload();
-  await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(
@@ -79,7 +88,6 @@ add_task(
     await SpecialPowers.pushPrefEnv({
       set: [["extensions.abuseReport.enabled", false]],
     });
-    const win = await promiseEnableUnifiedExtensions();
 
     const [extension] = createExtensions([{ name: "an extension" }]);
     await extension.startup();
@@ -101,14 +109,11 @@ add_task(
     await closeExtensionsPanel(win);
 
     await extension.unload();
-    await BrowserTestUtils.closeWindow(win);
   }
 );
 
 add_task(
   async function test_context_menu_remove_button_disabled_when_extension_cannot_be_uninstalled() {
-    const win = await promiseEnableUnifiedExtensions();
-
     const [extension] = createExtensions([{ name: "an extension" }]);
     await extension.startup();
 
@@ -138,14 +143,11 @@ add_task(
 
     await extension.unload();
     await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
-    await BrowserTestUtils.closeWindow(win);
   }
 );
 
 add_task(async function test_manage_extension() {
   Services.telemetry.clearEvents();
-
-  const win = await promiseEnableUnifiedExtensions();
 
   
   
@@ -179,7 +181,6 @@ add_task(async function test_manage_extension() {
   BrowserTestUtils.removeTab(aboutAddonsTab);
 
   await extension.unload();
-  await BrowserTestUtils.closeWindow(win);
 
   TelemetryTestUtils.assertEvents(
     [
@@ -197,8 +198,6 @@ add_task(async function test_report_extension() {
   SpecialPowers.pushPrefEnv({
     set: [["extensions.abuseReport.enabled", true]],
   });
-
-  const win = await promiseEnableUnifiedExtensions();
 
   
   
@@ -244,13 +243,10 @@ add_task(async function test_report_extension() {
   win.gBrowser.removeTab(win.gBrowser.selectedTab);
 
   await extension.unload();
-  await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(async function test_remove_extension() {
   Services.telemetry.clearEvents();
-
-  const win = await promiseEnableUnifiedExtensions();
 
   const [extension] = createExtensions([{ name: "an extension" }]);
   await extension.startup();
@@ -286,7 +282,6 @@ add_task(async function test_remove_extension() {
   await Promise.all([uninstalled, hidden]);
 
   await extension.unload();
-  await BrowserTestUtils.closeWindow(win);
   
   Services.prompt = prompt;
 
@@ -304,8 +299,6 @@ add_task(async function test_remove_extension() {
 
 add_task(async function test_remove_extension_cancelled() {
   Services.telemetry.clearEvents();
-
-  const win = await promiseEnableUnifiedExtensions();
 
   const [extension] = createExtensions([{ name: "an extension" }]);
   await extension.startup();
@@ -350,7 +343,6 @@ add_task(async function test_remove_extension_cancelled() {
   await closeExtensionsPanel(win);
 
   await extension.unload();
-  await BrowserTestUtils.closeWindow(win);
   
   Services.prompt = prompt;
 
@@ -367,8 +359,6 @@ add_task(async function test_remove_extension_cancelled() {
 });
 
 add_task(async function test_open_context_menu_on_click() {
-  const win = await promiseEnableUnifiedExtensions();
-
   const [extension] = createExtensions([{ name: "an extension" }]);
   await extension.startup();
 
@@ -394,12 +384,9 @@ add_task(async function test_open_context_menu_on_click() {
   await closeExtensionsPanel(win);
 
   await extension.unload();
-  await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(async function test_open_context_menu_with_keyboard() {
-  const win = await promiseEnableUnifiedExtensions();
-
   const [extension] = createExtensions([{ name: "an extension" }]);
   await extension.startup();
 
@@ -440,5 +427,197 @@ add_task(async function test_open_context_menu_with_keyboard() {
   await closeExtensionsPanel(win);
 
   await extension.unload();
-  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_context_menu_without_browserActionFor_global() {
+  const { ExtensionParent } = ChromeUtils.import(
+    "resource://gre/modules/ExtensionParent.jsm"
+  );
+  const { browserActionFor } = ExtensionParent.apiManager.global;
+  const cleanup = () => {
+    ExtensionParent.apiManager.global.browserActionFor = browserActionFor;
+  };
+  registerCleanupFunction(cleanup);
+  
+  
+  
+  
+  delete ExtensionParent.apiManager.global.browserActionFor;
+
+  const [extension] = createExtensions([{ name: "an extension" }]);
+  await extension.startup();
+
+  
+  
+  
+  await openExtensionsPanel(win);
+  
+  
+  const contextMenu = await openUnifiedExtensionsContextMenu(win, extension.id);
+  is(contextMenu.childElementCount, 3, "expected 3 menu items");
+
+  await closeChromeContextMenu(contextMenu.id, null, win);
+  await closeExtensionsPanel(win);
+
+  await extension.unload();
+
+  cleanup();
+});
+
+add_task(async function test_browser_action_context_menu() {
+  const extWithMenuBrowserAction = ExtensionTestUtils.loadExtension({
+    manifest: {
+      browser_action: {},
+      permissions: ["contextMenus"],
+    },
+    background() {
+      browser.contextMenus.create(
+        {
+          id: "some-menu-id",
+          title: "Click me!",
+          contexts: ["all"],
+        },
+        () => browser.test.sendMessage("ready")
+      );
+    },
+    useAddonManager: "temporary",
+  });
+  const extWithSubMenuBrowserAction = ExtensionTestUtils.loadExtension({
+    manifest: {
+      browser_action: {},
+      permissions: ["contextMenus"],
+    },
+    background() {
+      browser.contextMenus.create({
+        id: "some-menu-id",
+        title: "Open sub-menu",
+        contexts: ["all"],
+      });
+      browser.contextMenus.create(
+        {
+          id: "some-sub-menu-id",
+          parentId: "some-menu-id",
+          title: "Click me!",
+          contexts: ["all"],
+        },
+        () => browser.test.sendMessage("ready")
+      );
+    },
+    useAddonManager: "temporary",
+  });
+  const extWithMenuPageAction = ExtensionTestUtils.loadExtension({
+    manifest: {
+      page_action: {},
+      permissions: ["contextMenus"],
+    },
+    background() {
+      browser.contextMenus.create(
+        {
+          id: "some-menu-id",
+          title: "Click me!",
+          contexts: ["all"],
+        },
+        () => browser.test.sendMessage("ready")
+      );
+    },
+    useAddonManager: "temporary",
+  });
+  const extWithoutMenu1 = ExtensionTestUtils.loadExtension({
+    manifest: {
+      name: "extension without any menu",
+    },
+    useAddonManager: "temporary",
+  });
+  const extWithoutMenu2 = ExtensionTestUtils.loadExtension({
+    manifest: {
+      browser_action: {},
+      name: "extension with a browser action but no menu",
+    },
+    useAddonManager: "temporary",
+  });
+
+  const extensions = [
+    extWithMenuBrowserAction,
+    extWithMenuPageAction,
+    extWithSubMenuBrowserAction,
+    extWithoutMenu1,
+    extWithoutMenu2,
+  ];
+
+  await Promise.all(extensions.map(extension => extension.startup()));
+
+  await extWithMenuBrowserAction.awaitMessage("ready");
+  await extWithMenuPageAction.awaitMessage("ready");
+  await extWithSubMenuBrowserAction.awaitMessage("ready");
+
+  await openExtensionsPanel(win);
+
+  info("extension with browser action and a menu");
+  
+  
+  
+  let contextMenu = await openUnifiedExtensionsContextMenu(
+    win,
+    extWithMenuBrowserAction.id
+  );
+  is(contextMenu.childElementCount, 5, "expected 5 menu items");
+  const [item, separator] = contextMenu.children;
+  is(
+    item.getAttribute("label"),
+    "Click me!",
+    "expected menu item as first child"
+  );
+  is(
+    separator.tagName,
+    "menuseparator",
+    "expected separator after last menu item created by the extension"
+  );
+  await closeChromeContextMenu(contextMenu.id, null, win);
+
+  info("extension with page action and a menu");
+  
+  
+  contextMenu = await openUnifiedExtensionsContextMenu(
+    win,
+    extWithMenuPageAction.id
+  );
+  is(contextMenu.childElementCount, 3, "expected 3 menu items");
+  await closeChromeContextMenu(contextMenu.id, null, win);
+
+  info("extension with no browser action and no menu");
+  
+  
+  contextMenu = await openUnifiedExtensionsContextMenu(win, extWithoutMenu1.id);
+  is(contextMenu.childElementCount, 3, "expected 3 menu items");
+  await closeChromeContextMenu(contextMenu.id, null, win);
+
+  info("extension with browser action and no menu");
+  
+  
+  contextMenu = await openUnifiedExtensionsContextMenu(win, extWithoutMenu2.id);
+  is(contextMenu.childElementCount, 3, "expected 3 menu items");
+  await closeChromeContextMenu(contextMenu.id, null, win);
+
+  info("extension with browser action and menu + sub-menu");
+  
+  
+  contextMenu = await openUnifiedExtensionsContextMenu(
+    win,
+    extWithSubMenuBrowserAction.id
+  );
+  is(contextMenu.childElementCount, 5, "expected 5 menu items");
+  const popup = await openSubmenu(contextMenu.children[0]);
+  is(popup.children.length, 1, "expected 1 submenu item");
+  is(
+    popup.children[0].getAttribute("label"),
+    "Click me!",
+    "expected menu item"
+  );
+  
+  is(contextMenu.childElementCount, 5, "expected 5 menu items");
+  await closeChromeContextMenu(contextMenu.id, null, win);
+
+  await closeExtensionsPanel(win);
+
+  await Promise.all(extensions.map(extension => extension.unload()));
 });
