@@ -46,10 +46,6 @@ void IonCompileTask::runHelperThreadTask(AutoLockHelperThreadState& locked) {
 
 void IonCompileTask::runTask() {
   
-  TraceLoggerThread* logger = TraceLoggerForCurrentThread();
-  TraceLoggerEvent event(TraceLogger_AnnotateScripts, script());
-  AutoTraceLog logScript(logger, event);
-  AutoTraceLog logCompile(logger, TraceLogger_IonCompilation);
 
   jit::JitContext jctx(mirGen_.realm->runtime(), mirGen_.realm, &alloc());
   setBackgroundCodegen(jit::CompileBackEnd(&mirGen_, snapshot_));
