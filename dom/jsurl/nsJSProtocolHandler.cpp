@@ -132,23 +132,36 @@ static nsIScriptGlobalObject* GetGlobalObject(nsIChannel* aChannel) {
 }
 
 static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP,
-                         const nsAString& aContentOfPseudoScript) {
+                         const nsACString& aJavaScriptURL) {
   if (!aCSP) {
     return true;
   }
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool allowsInlineScript = true;
   nsresult rv =
       aCSP->GetAllowsInline(nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE,
-                            u""_ns,                  
-                            true,                    
-                            nullptr,                 
-                            nullptr,                 
-                            aContentOfPseudoScript,  
-                            0,                       
-                            0,                       
+                            true,     
+                            u""_ns,   
+                            true,     
+                            nullptr,  
+                            nullptr,  
+                            NS_ConvertASCIItoUTF16(aJavaScriptURL),  
+                            0,  
+                            0,  
                             &allowsInlineScript);
 
   return (NS_SUCCEEDED(rv) && allowsInlineScript);
@@ -210,11 +223,7 @@ nsresult nsJSThunk::EvaluateScript(
   
   nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCspToInherit();
 
-  nsAutoCString script(mScript);
-  
-  NS_UnescapeURL(script);
-
-  if (!AllowedByCSP(csp, NS_ConvertASCIItoUTF16(script))) {
+  if (!AllowedByCSP(csp, mURL)) {
     return NS_ERROR_DOM_RETVAL_UNDEFINED;
   }
 
@@ -264,7 +273,7 @@ nsresult nsJSThunk::EvaluateScript(
     
     if (targetDoc->NodePrincipal()->Subsumes(loadInfo->TriggeringPrincipal())) {
       nsCOMPtr<nsIContentSecurityPolicy> targetCSP = targetDoc->GetCsp();
-      if (!AllowedByCSP(targetCSP, NS_ConvertASCIItoUTF16(script))) {
+      if (!AllowedByCSP(targetCSP, mURL)) {
         return NS_ERROR_DOM_RETVAL_UNDEFINED;
       }
     }
@@ -304,6 +313,10 @@ nsresult nsJSThunk::EvaluateScript(
   if (objectPrincipal->IsSystemPrincipal()) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
+
+  nsAutoCString script(mScript);
+  
+  NS_UnescapeURL(script);
 
   JS::Rooted<JS::Value> v(cx, JS::UndefinedValue());
   

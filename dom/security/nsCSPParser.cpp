@@ -454,6 +454,11 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
     return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
   }
 
+  if (StaticPrefs::security_csp_unsafe_hashes_enabled() &&
+      CSP_IsKeyword(mCurToken, CSP_UNSAFE_HASHES)) {
+    return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
+  }
+
   if (CSP_IsKeyword(mCurToken, CSP_UNSAFE_ALLOW_REDIRECTS)) {
     if (!CSP_IsDirective(mCurDir[0],
                          nsIContentSecurityPolicy::NAVIGATE_TO_DIRECTIVE)) {
@@ -1072,8 +1077,11 @@ void nsCSPParser::directive() {
       
       
       
+      
+      
       if (!srcStr.EqualsASCII(CSP_EnumToUTF8Keyword(CSP_STRICT_DYNAMIC)) &&
           !srcStr.EqualsASCII(CSP_EnumToUTF8Keyword(CSP_UNSAFE_EVAL)) &&
+          !srcStr.EqualsASCII(CSP_EnumToUTF8Keyword(CSP_UNSAFE_HASHES)) &&
           !StringBeginsWith(
               srcStr, nsDependentString(CSP_EnumToUTF16Keyword(CSP_NONCE))) &&
           !StringBeginsWith(srcStr, u"'sha"_ns)) {

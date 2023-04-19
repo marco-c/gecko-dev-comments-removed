@@ -875,7 +875,7 @@ bool nsCSPKeywordSrc::allows(enum CSPKeyword aKeyword,
        "%s",
        CSP_EnumToUTF8Keyword(aKeyword),
        NS_ConvertUTF16toUTF8(aHashOrNonce).get(),
-       mInvalidated ? "yes" : "false"));
+       mInvalidated ? "true" : "false"));
 
   if (mInvalidated) {
     

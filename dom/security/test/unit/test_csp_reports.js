@@ -129,6 +129,7 @@ function run_test() {
       let inlineOK = true;
       inlineOK = csp.getAllowsInline(
         Ci.nsIContentSecurityPolicy.SCRIPT_SRC_ELEM_DIRECTIVE,
+        false, 
         "", 
         false, 
         null, 
@@ -206,6 +207,7 @@ function run_test() {
       let inlineOK = true;
       inlineOK = csp.getAllowsInline(
         Ci.nsIContentSecurityPolicy.SCRIPT_SRC_ELEM_DIRECTIVE,
+        false, 
         "", 
         false, 
         null, 
