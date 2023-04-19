@@ -20,7 +20,9 @@ class SecretsMixin(object):
         
         
         
-        url = "http://taskcluster/secrets/v1/secret/" + secret_name
+        proxy = os.environ.get("TASKCLUSTER_PROXY_URL", "http://taskcluster")
+        proxy = proxy.rstrip("/")
+        url = proxy + "/secrets/v1/secret/" + secret_name
         res = urllib.request.urlopen(url)
         if res.getcode() != 200:
             self.fatal("Error fetching from secrets API:" + res.read())
