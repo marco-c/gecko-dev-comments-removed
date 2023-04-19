@@ -39,14 +39,13 @@ AntiTracking.runTest(
       );
     });
   },
+  [["privacy.partition.always_partition_third_party_non_cookie_storage", true]], 
+  true, 
+  true, 
   [
-    [
-      "privacy.partition.always_partition_third_party_non_cookie_storage",
-      false,
-    ],
-  ], 
-  true, 
-  true, 
-  0, 
+    
+    Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER,
+    Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_ALL,
+  ],
   true
 ); 
