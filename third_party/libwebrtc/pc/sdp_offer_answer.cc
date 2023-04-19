@@ -4711,8 +4711,11 @@ cricket::VoiceChannel* SdpOfferAnswerHandler::CreateVoiceChannel(
   if (!channel_manager()->media_engine())
     return nullptr;
 
+  
   RtpTransportInternal* rtp_transport = pc_->GetRtpTransport(mid);
 
+  
+  
   
   
   

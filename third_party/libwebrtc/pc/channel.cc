@@ -183,34 +183,29 @@ void BaseChannel::DisconnectFromRtpTransport_n() {
   rtp_transport_->SignalNetworkRouteChanged.disconnect(this);
   rtp_transport_->SignalWritableState.disconnect(this);
   rtp_transport_->SignalSentPacket.disconnect(this);
+  rtp_transport_ = nullptr;
 }
 
-void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
-  RTC_DCHECK_RUN_ON(worker_thread());
+void BaseChannel::Init_n(webrtc::RtpTransportInternal* rtp_transport) {
+  
+  
+  SetRtpTransport(rtp_transport);
 
-  network_thread_->Invoke<void>(RTC_FROM_HERE, [this, rtp_transport] {
-    SetRtpTransport(rtp_transport);
-    
-    
-    RTC_DCHECK(!media_channel_->HasNetworkInterface());
-    media_channel_->SetInterface(this);
-  });
+  
+  
+  RTC_DCHECK(!media_channel_->HasNetworkInterface());
+  media_channel_->SetInterface(this);
 }
 
-void BaseChannel::Deinit() {
-  RTC_DCHECK_RUN_ON(worker_thread());
+void BaseChannel::Deinit_n() {
   
   
   
-  network_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
-    RTC_DCHECK_RUN_ON(network_thread());
-    media_channel_->SetInterface(nullptr);
-
-    if (rtp_transport_) {
-      DisconnectFromRtpTransport_n();
-    }
-    RTC_DCHECK(!network_initialized());
-  });
+  media_channel_->SetInterface(nullptr);
+  if (rtp_transport_) {
+    DisconnectFromRtpTransport_n();
+  }
+  RTC_DCHECK(!network_initialized());
 }
 
 bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
@@ -234,7 +229,7 @@ bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
     if (!ConnectToRtpTransport_n()) {
       return false;
     }
-    OnTransportReadyToSend(rtp_transport_->IsReadyToSend());
+    media_channel_->OnReadyToSend(rtp_transport_->IsReadyToSend());
     UpdateWritableState_n();
 
     
@@ -322,6 +317,7 @@ int BaseChannel::SetOption(SocketType type,
                            rtc::Socket::Option opt,
                            int value) {
   RTC_DCHECK_RUN_ON(network_thread());
+  RTC_DCHECK(network_initialized());
   RTC_DCHECK(rtp_transport_);
   switch (type) {
     case ST_RTP:
@@ -338,6 +334,7 @@ int BaseChannel::SetOption(SocketType type,
 
 void BaseChannel::OnWritableState(bool writable) {
   RTC_DCHECK_RUN_ON(network_thread());
+  RTC_DCHECK(network_initialized());
   if (writable) {
     ChannelWritable_n();
   } else {
@@ -347,9 +344,11 @@ void BaseChannel::OnWritableState(bool writable) {
 
 void BaseChannel::OnNetworkRouteChanged(
     absl::optional<rtc::NetworkRoute> network_route) {
+  RTC_DCHECK_RUN_ON(network_thread());
+  RTC_DCHECK(network_initialized());
+
   RTC_LOG(LS_INFO) << "Network route changed for " << ToString();
 
-  RTC_DCHECK_RUN_ON(network_thread());
   rtc::NetworkRoute new_route;
   if (network_route) {
     new_route = *(network_route);
@@ -365,11 +364,19 @@ void BaseChannel::SetFirstPacketReceivedCallback(
     std::function<void()> callback) {
   RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(!on_first_packet_received_ || !callback);
+
+  
+  
+  
+  
+  
+
   on_first_packet_received_ = std::move(callback);
 }
 
 void BaseChannel::OnTransportReadyToSend(bool ready) {
   RTC_DCHECK_RUN_ON(network_thread());
+  RTC_DCHECK(network_initialized());
   media_channel_->OnReadyToSend(ready);
 }
 
@@ -377,6 +384,7 @@ bool BaseChannel::SendPacket(bool rtcp,
                              rtc::CopyOnWriteBuffer* packet,
                              const rtc::PacketOptions& options) {
   RTC_DCHECK_RUN_ON(network_thread());
+  RTC_DCHECK(network_initialized());
   TRACE_EVENT0("webrtc", "BaseChannel::SendPacket");
 
   
@@ -420,6 +428,7 @@ bool BaseChannel::SendPacket(bool rtcp,
 
 void BaseChannel::OnRtpPacket(const webrtc::RtpPacketReceived& parsed_packet) {
   RTC_DCHECK_RUN_ON(network_thread());
+  RTC_DCHECK(network_initialized());
 
   if (on_first_packet_received_) {
     on_first_packet_received_();
@@ -824,7 +833,6 @@ VoiceChannel::~VoiceChannel() {
   TRACE_EVENT0("webrtc", "VoiceChannel::~VoiceChannel");
   
   DisableMedia_w();
-  Deinit();
 }
 
 void VoiceChannel::UpdateMediaSendRecvState_w() {
@@ -947,7 +955,6 @@ VideoChannel::~VideoChannel() {
   TRACE_EVENT0("webrtc", "VideoChannel::~VideoChannel");
   
   DisableMedia_w();
-  Deinit();
 }
 
 void VideoChannel::UpdateMediaSendRecvState_w() {
