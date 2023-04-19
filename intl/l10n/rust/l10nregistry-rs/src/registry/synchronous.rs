@@ -60,6 +60,7 @@ where
     P: Clone,
     B: Clone,
 {
+    
     #[cfg(feature = "test-fluent")]
     pub fn generate_bundles_for_lang_sync(
         &self,
@@ -71,6 +72,8 @@ where
         GenerateBundlesSync::new(self.clone(), lang_ids.into_iter(), resource_ids)
     }
 
+    
+    
     pub fn generate_bundles_sync(
         &self,
         locales: std::vec::IntoIter<LanguageIdentifier>,
@@ -196,23 +199,6 @@ where
     }
 }
 
-macro_rules! try_next_metasource {
-    ( $self:ident ) => {{
-        if $self.current_metasource > 0 {
-            $self.current_metasource -= 1;
-            let solver = SerialProblemSolver::new(
-                $self.resource_ids.len(),
-                $self.reg.lock().metasource_len($self.current_metasource),
-            );
-            $self.state = State::Solver {
-                locale: $self.state.get_locale().clone(),
-                solver,
-            };
-            continue;
-        }
-    }};
-}
-
 impl<P, B> Iterator for GenerateBundlesSync<P, B>
 where
     P: ErrorReporter,
@@ -220,55 +206,91 @@ where
 {
     type Item = Result<FluentBundle, (FluentBundle, Vec<FluentError>)>;
 
+    
     fn next(&mut self) -> Option<Self::Item> {
+        if self.reg.lock().number_of_metasources() == 0 {
+            
+            return None;
+        }
+
         loop {
             if let State::Solver { .. } = self.state {
+                
+                
                 let mut solver = self.state.take_solver();
-                match solver.try_next(self, false) {
-                    Ok(Some(order)) => {
-                        let locale = self.state.get_locale();
-                        let bundle = self.reg.lock().bundle_from_order(
-                            self.current_metasource,
-                            locale.clone(),
-                            &order,
-                            &self.resource_ids,
-                            &self.reg.shared.provider,
-                            self.reg.shared.bundle_adapter.as_ref(),
-                        );
-                        self.state.put_back_solver(solver);
-                        if bundle.is_some() {
-                            return bundle;
-                        } else {
-                            continue;
-                        }
-                    }
-                    Ok(None) => {
-                        try_next_metasource!(self);
-                    }
-                    Err(idx) => {
-                        try_next_metasource!(self);
+                let solver_result = solver.try_next(self, false);
+
+                if let Ok(Some(order)) = solver_result {
+                    
+                    
+
+                    let bundle = self.reg.lock().bundle_from_order(
+                        self.current_metasource,
+                        self.state.get_locale().clone(),
+                        &order,
+                        &self.resource_ids,
+                        &self.reg.shared.provider,
+                        self.reg.shared.bundle_adapter.as_ref(),
+                    );
+
+                    self.state.put_back_solver(solver);
+
+                    if bundle.is_some() {
                         
-                        
-                        self.reg.shared.provider.report_errors(vec![
-                            L10nRegistryError::MissingResource {
-                                locale: self.state.get_locale().clone(),
-                                resource_id: self.resource_ids[idx].clone(),
-                            },
-                        ]);
+                        return bundle;
                     }
+
+                    
+                    continue;
                 }
+
+                
+
+                if self.current_metasource > 0 {
+                    
+                    
+                    
+                    self.current_metasource -= 1;
+                    let solver = SerialProblemSolver::new(
+                        self.resource_ids.len(),
+                        self.reg.lock().metasource_len(self.current_metasource),
+                    );
+                    self.state = State::Solver {
+                        locale: self.state.get_locale().clone(),
+                        solver,
+                    };
+                    continue;
+                }
+
+                if let Err(idx) = solver_result {
+                    
+                    
+                    self.reg.shared.provider.report_errors(vec![
+                        L10nRegistryError::MissingResource {
+                            locale: self.state.get_locale().clone(),
+                            resource_id: self.resource_ids[idx].clone(),
+                        },
+                    ]);
+                }
+
                 self.state = State::Empty;
+                continue;
             }
 
+            
             let locale = self.locales.next()?;
-            if self.reg.lock().number_of_metasources() == 0 {
-                return None;
-            }
-            self.current_metasource = self.reg.lock().number_of_metasources() - 1;
+
+            
+            
+            let last_metasource_idx = self.reg.lock().number_of_metasources() - 1;
+            self.current_metasource = last_metasource_idx;
+
             let solver = SerialProblemSolver::new(
                 self.resource_ids.len(),
                 self.reg.lock().metasource_len(self.current_metasource),
             );
+
+            
             self.state = State::Solver { locale, solver };
         }
     }

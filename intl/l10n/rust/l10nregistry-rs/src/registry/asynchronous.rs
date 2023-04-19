@@ -37,6 +37,7 @@ where
         GenerateBundles::new(self.clone(), lang_ids.into_iter(), resource_ids)
     }
 
+    
     pub fn generate_bundles(
         &self,
         locales: std::vec::IntoIter<LanguageIdentifier>,
@@ -45,6 +46,8 @@ where
         GenerateBundles::new(self.clone(), locales, resource_ids)
     }
 }
+
+
 
 enum State<P, B> {
     Empty,
@@ -150,22 +153,6 @@ impl<P, B> BundleStream for GenerateBundles<P, B> {
     }
 }
 
-macro_rules! try_next_metasource {
-    ( $self:ident ) => {{
-        if $self.current_metasource > 0 {
-            $self.current_metasource -= 1;
-            let solver = ParallelProblemSolver::new(
-                $self.resource_ids.len(),
-                $self.reg.lock().metasource_len($self.current_metasource),
-            );
-            $self.state = State::Solver {
-                locale: $self.state.get_locale().clone(),
-                solver,
-            };
-            continue;
-        }
-    }};
-}
 
 impl<P, B> Stream for GenerateBundles<P, B>
 where
@@ -174,68 +161,114 @@ where
 {
     type Item = Result<FluentBundle, (FluentBundle, Vec<FluentError>)>;
 
+    
+    
+    
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        if self.reg.lock().number_of_metasources() == 0 {
+            
+            return None.into();
+        }
         loop {
             if let State::Solver { .. } = self.state {
+                
+                
+
+                
                 let mut solver = self.state.take_solver();
                 let pinned_solver = Pin::new(&mut solver);
-                match pinned_solver.try_poll_next(cx, &self, false) {
-                    std::task::Poll::Ready(order) => match order {
-                        Ok(Some(order)) => {
-                            let locale = self.state.get_locale();
-                            let bundle = self.reg.lock().bundle_from_order(
-                                self.current_metasource,
-                                locale.clone(),
-                                &order,
-                                &self.resource_ids,
-                                &self.reg.shared.provider,
-                                self.reg.shared.bundle_adapter.as_ref(),
-                            );
-                            self.state.put_back_solver(solver);
-                            if bundle.is_some() {
-                                return bundle.into();
-                            } else {
-                                continue;
-                            }
-                        }
-                        Ok(None) => {
-                            try_next_metasource!(self);
-                            self.state = State::Empty;
-                            continue;
-                        }
-                        Err(idx) => {
-                            try_next_metasource!(self);
-                            
-                            
-                            self.reg.shared.provider.report_errors(vec![
-                                L10nRegistryError::MissingResource {
-                                    locale: self.state.get_locale().clone(),
-                                    resource_id: self.resource_ids[idx].clone(),
-                                },
-                            ]);
-                            self.state = State::Empty;
-                            continue;
-                        }
-                    },
-                    std::task::Poll::Pending => {
+
+                if let std::task::Poll::Ready(solver_result) =
+                    pinned_solver.try_poll_next(cx, &self, false)
+                {
+                    
+
+                    if let Ok(Some(order)) = solver_result {
+                        
+                        
+
+                        let bundle = self.reg.lock().bundle_from_order(
+                            self.current_metasource,
+                            self.state.get_locale().clone(),
+                            &order,
+                            &self.resource_ids,
+                            &self.reg.shared.provider,
+                            self.reg.shared.bundle_adapter.as_ref(),
+                        );
+
                         self.state.put_back_solver(solver);
-                        return std::task::Poll::Pending;
+
+                        if bundle.is_some() {
+                            
+                            return bundle.into();
+                        }
+
+                        
+                        continue;
                     }
+
+                    
+
+                    if self.current_metasource > 0 {
+                        
+                        
+                        
+                        self.current_metasource -= 1;
+                        let solver = ParallelProblemSolver::new(
+                            self.resource_ids.len(),
+                            self.reg.lock().metasource_len(self.current_metasource),
+                        );
+                        self.state = State::Solver {
+                            locale: self.state.get_locale().clone(),
+                            solver,
+                        };
+                        continue;
+                    }
+
+                    if let Err(idx) = solver_result {
+                        
+                        
+                        self.reg.shared.provider.report_errors(vec![
+                            L10nRegistryError::MissingResource {
+                                locale: self.state.get_locale().clone(),
+                                resource_id: self.resource_ids[idx].clone(),
+                            },
+                        ]);
+                    }
+
+                    
+                    self.state = State::Empty;
+                    continue;
                 }
-            } else if let Some(locale) = self.locales.next() {
-                if self.reg.lock().number_of_metasources() == 0 {
-                    return None.into();
-                }
-                let number_of_metasources = self.reg.lock().number_of_metasources() - 1;
-                self.current_metasource = number_of_metasources;
+
+                
+                
+                self.state.put_back_solver(solver);
+                return std::task::Poll::Pending;
+            }
+
+            
+
+            
+            if let Some(locale) = self.locales.next() {
+                
+                
+                let last_metasource_idx = self.reg.lock().number_of_metasources() - 1;
+                self.current_metasource = last_metasource_idx;
+
                 let solver = ParallelProblemSolver::new(
                     self.resource_ids.len(),
                     self.reg.lock().metasource_len(self.current_metasource),
                 );
                 self.state = State::Solver { locale, solver };
-            } else {
-                return None.into();
+
+                
+                continue;
             }
+
+            
+            
+            return None.into();
         }
     }
 }
