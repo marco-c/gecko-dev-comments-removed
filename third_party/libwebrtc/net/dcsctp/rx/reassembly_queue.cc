@@ -221,14 +221,21 @@ void ReassemblyQueue::AddReassembledMessage(
   }
 
   
+  MaybeMoveLastAssembledWatermarkFurther();
+
+  reassembled_messages_.emplace_back(std::move(message));
+}
+
+void ReassemblyQueue::MaybeMoveLastAssembledWatermarkFurther() {
+  
+  
+  
   while (!delivered_tsns_.empty() &&
          *delivered_tsns_.begin() ==
              last_assembled_tsn_watermark_.next_value()) {
     last_assembled_tsn_watermark_.Increment();
     delivered_tsns_.erase(delivered_tsns_.begin());
   }
-
-  reassembled_messages_.emplace_back(std::move(message));
 }
 
 void ReassemblyQueue::Handle(const AnyForwardTsnChunk& forward_tsn) {
@@ -239,12 +246,21 @@ void ReassemblyQueue::Handle(const AnyForwardTsnChunk& forward_tsn) {
   delivered_tsns_.erase(delivered_tsns_.begin(),
                         delivered_tsns_.upper_bound(tsn));
 
+  MaybeMoveLastAssembledWatermarkFurther();
+
   queued_bytes_ -=
       streams_->HandleForwardTsn(tsn, forward_tsn.skipped_streams());
   RTC_DCHECK(IsConsistent());
 }
 
 bool ReassemblyQueue::IsConsistent() const {
+  
+  
+  if (!delivered_tsns_.empty() &&
+      last_assembled_tsn_watermark_.next_value() >= *delivered_tsns_.begin()) {
+    return false;
+  }
+
   
   
   
