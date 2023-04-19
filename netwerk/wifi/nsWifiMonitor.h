@@ -30,6 +30,12 @@ class nsWifiAccessPoint;
 
 #define kDefaultWifiScanInterval 5 /* seconds */
 
+#ifdef XP_MACOSX
+
+
+#  define kMacOS13MonitorStackSize (512 * 1024)
+#endif
+
 class nsWifiListener {
  public:
   explicit nsWifiListener(nsMainThreadPtrHolder<nsIWifiListener>* aListener) {
@@ -58,6 +64,8 @@ class nsWifiMonitor final : nsIRunnable, nsIWifiMonitor, nsIObserver {
 
   nsresult CallWifiListeners(const nsCOMArray<nsWifiAccessPoint>& aAccessPoints,
                              bool aAccessPointsChanged);
+
+  uint32_t GetMonitorThreadStackSize();
 
   mozilla::Atomic<bool> mKeepGoing;
   mozilla::Atomic<bool> mThreadComplete;
