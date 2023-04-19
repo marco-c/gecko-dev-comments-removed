@@ -182,12 +182,7 @@ pref("dom.mouseevent.click.hack.use_legacy_non-primary_dispatch", "");
 
 
 
-
-#ifdef EARLY_BETA_OR_EARLIER
-  pref("dom.text-recognition.enabled", true);
-#else
-  pref("dom.text-recognition.enabled", false);
-#endif
+pref("dom.text-recognition.enabled", true);
 
 
 
