@@ -378,10 +378,6 @@ class PeerConnectionE2EQualityTestFixture {
    public:
     
     
-    using Resolution = VideoResolution;
-
-    
-    
     static absl::optional<VideoResolution> GetMaxResolution(
         rtc::ArrayView<const VideoConfig> video_configs);
     static absl::optional<VideoResolution> GetMaxResolution(
