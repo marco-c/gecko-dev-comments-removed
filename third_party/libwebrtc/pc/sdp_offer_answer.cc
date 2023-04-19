@@ -1126,11 +1126,9 @@ void SdpOfferAnswerHandler::CreateOffer(
           return;
         }
         
-        rtc::scoped_refptr<CreateSessionDescriptionObserverOperationWrapper>
-            observer_wrapper(new rtc::RefCountedObject<
-                             CreateSessionDescriptionObserverOperationWrapper>(
-                std::move(observer_refptr),
-                std::move(operations_chain_callback)));
+        auto observer_wrapper = rtc::make_ref_counted<
+            CreateSessionDescriptionObserverOperationWrapper>(
+            std::move(observer_refptr), std::move(operations_chain_callback));
         this_weak_ptr->DoCreateOffer(options, observer_wrapper);
       });
 }
@@ -1160,9 +1158,8 @@ void SdpOfferAnswerHandler::SetLocalDescription(
         
         this_weak_ptr->DoSetLocalDescription(
             std::move(desc),
-            rtc::scoped_refptr<SetLocalDescriptionObserverInterface>(
-                new rtc::RefCountedObject<SetSessionDescriptionObserverAdapter>(
-                    this_weak_ptr, observer_refptr)));
+            rtc::make_ref_counted<SetSessionDescriptionObserverAdapter>(
+                this_weak_ptr, observer_refptr));
         
         
         
@@ -1203,7 +1200,7 @@ void SdpOfferAnswerHandler::SetLocalDescription(
     SetSessionDescriptionObserver* observer) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   SetLocalDescription(
-      new rtc::RefCountedObject<SetSessionDescriptionObserverAdapter>(
+      rtc::make_ref_counted<SetSessionDescriptionObserverAdapter>(
           weak_ptr_factory_.GetWeakPtr(), observer));
 }
 
@@ -1212,10 +1209,9 @@ void SdpOfferAnswerHandler::SetLocalDescription(
   RTC_DCHECK_RUN_ON(signaling_thread());
   
   
-  rtc::scoped_refptr<ImplicitCreateSessionDescriptionObserver>
-      create_sdp_observer(
-          new rtc::RefCountedObject<ImplicitCreateSessionDescriptionObserver>(
-              weak_ptr_factory_.GetWeakPtr(), observer));
+  auto create_sdp_observer =
+      rtc::make_ref_counted<ImplicitCreateSessionDescriptionObserver>(
+          weak_ptr_factory_.GetWeakPtr(), observer);
   
   
   
@@ -1513,9 +1509,8 @@ void SdpOfferAnswerHandler::SetRemoteDescription(
         
         this_weak_ptr->DoSetRemoteDescription(
             std::move(desc),
-            rtc::scoped_refptr<SetRemoteDescriptionObserverInterface>(
-                new rtc::RefCountedObject<SetSessionDescriptionObserverAdapter>(
-                    this_weak_ptr, observer_refptr)));
+            rtc::make_ref_counted<SetSessionDescriptionObserverAdapter>(
+                this_weak_ptr, observer_refptr));
         
         
         
@@ -2062,11 +2057,9 @@ void SdpOfferAnswerHandler::CreateAnswer(
           return;
         }
         
-        rtc::scoped_refptr<CreateSessionDescriptionObserverOperationWrapper>
-            observer_wrapper(new rtc::RefCountedObject<
-                             CreateSessionDescriptionObserverOperationWrapper>(
-                std::move(observer_refptr),
-                std::move(operations_chain_callback)));
+        auto observer_wrapper = rtc::make_ref_counted<
+            CreateSessionDescriptionObserverOperationWrapper>(
+            std::move(observer_refptr), std::move(operations_chain_callback));
         this_weak_ptr->DoCreateAnswer(options, observer_wrapper);
       });
 }
