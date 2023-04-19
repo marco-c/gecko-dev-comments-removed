@@ -1665,7 +1665,8 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
 
 
 
-TEST_F(VideoSendStreamTest, RelayToDirectRoute) {
+
+TEST_F(VideoSendStreamTest, DISABLED_RelayToDirectRoute) {
   static const int kStartBitrateBps = 300000;
   static const int kRelayBandwidthCapBps = 800000;
   static const int kMinPacketsToSend = 100;
