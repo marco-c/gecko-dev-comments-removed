@@ -318,8 +318,7 @@ class WebRtcVideoChannel : public VideoMediaChannel,
       const std::vector<VideoCodecSettings>& codecs);
 
   
-  class WebRtcVideoSendStream
-      : public rtc::VideoSourceInterface<webrtc::VideoFrame> {
+  class WebRtcVideoSendStream {
    public:
     WebRtcVideoSendStream(
         webrtc::Call* call,
@@ -331,7 +330,7 @@ class WebRtcVideoChannel : public VideoMediaChannel,
         const absl::optional<VideoCodecSettings>& codec_settings,
         const absl::optional<std::vector<webrtc::RtpExtension>>& rtp_extensions,
         const VideoSendParameters& send_params);
-    virtual ~WebRtcVideoSendStream();
+    ~WebRtcVideoSendStream();
 
     void SetSendParameters(const ChangedSendParameters& send_params);
     webrtc::RTCError SetRtpParameters(const webrtc::RtpParameters& parameters);
@@ -339,14 +338,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
 
     void SetFrameEncryptor(
         rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor);
-
-    
-    
-    
-    
-    void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-                         const rtc::VideoSinkWants& wants) override;
-    void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
     bool SetVideoSend(const VideoOptions* options,
                       rtc::VideoSourceInterface<webrtc::VideoFrame>* source);
@@ -413,8 +404,7 @@ class WebRtcVideoChannel : public VideoMediaChannel,
         RTC_GUARDED_BY(&thread_checker_);
 
     webrtc::VideoSendStream* stream_ RTC_GUARDED_BY(&thread_checker_);
-    rtc::VideoSinkInterface<webrtc::VideoFrame>* encoder_sink_
-        RTC_GUARDED_BY(&thread_checker_);
+
     
     
     
