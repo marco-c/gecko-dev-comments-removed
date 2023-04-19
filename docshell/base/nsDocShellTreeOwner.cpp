@@ -955,6 +955,14 @@ nsDocShellTreeOwner::HandleEvent(Event* aEvent) {
   } else if (eventType.EqualsLiteral("drop")) {
     nsIWebNavigation* webnav = static_cast<nsIWebNavigation*>(mWebBrowser);
 
+    
+    
+    bool canDropLink = false;
+    handler->CanDropLink(dragEvent, false, &canDropLink);
+    if (!canDropLink) {
+      return NS_OK;
+    }
+
     nsTArray<RefPtr<nsIDroppedLinkItem>> links;
     if (webnav && NS_SUCCEEDED(handler->DropLinks(dragEvent, true, links))) {
       if (links.Length() >= 1) {
