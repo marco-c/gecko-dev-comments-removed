@@ -228,6 +228,35 @@ var BackgroundTasksUtils = {
 
 
 
+  async readFirefoxMessagingSystemTargetingSnapshot(lock = null) {
+    if (!lock) {
+      return this.withProfileLock(profileLock =>
+        this.readFirefoxMessagingSystemTargetingSnapshot(profileLock)
+      );
+    }
+
+    this._throwIfNotLocked(lock);
+
+    let snapshotFile = lock.directory.clone();
+    snapshotFile.append("targeting.snapshot.json");
+
+    lazy.log.info(
+      `readFirefoxMessagingSystemTargetingSnapshot: will read Firefox Messaging ` +
+        `System targeting snapshot from ${snapshotFile.path}`
+    );
+
+    return IOUtils.readJSON(snapshotFile.path);
+  },
+
+  
+
+
+
+
+
+
+
+
   async readTelemetryClientID(lock = null) {
     if (!lock) {
       return this.withProfileLock(profileLock =>
@@ -245,9 +274,7 @@ var BackgroundTasksUtils = {
       `readPreferences: will read Telemetry client ID from ${stateFile.path}`
     );
 
-    
-    let data = await IOUtils.readUTF8(stateFile.path);
-    let state = JSON.parse(data);
+    let state = await IOUtils.readJSON(stateFile.path);
 
     return state.clientID;
   },
