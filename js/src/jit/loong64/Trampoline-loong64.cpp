@@ -185,12 +185,9 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   }
   masm.bind(&footer);
 
-  masm.subPtr(Imm32(2 * sizeof(uintptr_t)), StackPointer);
-  masm.storePtr(s3,
-                Address(StackPointer, sizeof(uintptr_t)));  
-  masm.storePtr(reg_token, Address(StackPointer, 0));       
-
-  masm.pushFrameDescriptor(FrameType::CppToJSJit);
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
+  masm.push(reg_token);
+  masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, s3, s3);
 
   CodeLabel returnLabel;
   Label oomReturnLabel;
@@ -524,14 +521,10 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
 
   
-  masm.subPtr(Imm32(3 * sizeof(uintptr_t)), StackPointer);
-  
-  masm.storePtr(numActArgsReg, Address(StackPointer, 2 * sizeof(uintptr_t)));
-  
-  masm.storePtr(calleeTokenReg, Address(StackPointer, sizeof(uintptr_t)));
-  
-  masm.storePtr(ImmWord(MakeFrameDescriptor(FrameType::Rectifier)),
-                Address(StackPointer, 0));
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
+  masm.push(calleeTokenReg);
+  masm.pushFrameDescriptorForJitCall(FrameType::Rectifier, numActArgsReg,
+                                     numActArgsReg);
 
   
   masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), calleeTokenReg);

@@ -205,13 +205,14 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.movq(result, reg_argc);
   masm.unboxInt32(Operand(reg_argc, 0), reg_argc);
-  masm.push(reg_argc);
+
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
 
   
   masm.push(token);
 
   
-  masm.pushFrameDescriptor(FrameType::CppToJSJit);
+  masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, reg_argc, reg_argc);
 
   CodeLabel returnLabel;
   Label oomReturnLabel;
@@ -594,9 +595,9 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
 
   
-  masm.push(rdx);  
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
   masm.push(rax);  
-  masm.pushFrameDescriptor(FrameType::Rectifier);
+  masm.pushFrameDescriptorForJitCall(FrameType::Rectifier, rdx, rdx);
 
   
   masm.andq(Imm32(uint32_t(CalleeTokenMask)), rax);

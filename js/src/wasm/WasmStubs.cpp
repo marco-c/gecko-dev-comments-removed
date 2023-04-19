@@ -2288,8 +2288,10 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   GenerateJitExitPrologue(masm, jitFramePushed + frameAlignExtra, offsets);
 
   
+  unsigned argc = fi.funcType().args().length();
   size_t argOffset = frameAlignExtra;
-  uint32_t descriptor = MakeFrameDescriptor(FrameType::WasmToJSJit);
+  uint32_t descriptor =
+      MakeFrameDescriptorForJitCall(FrameType::WasmToJSJit, argc);
   masm.storePtr(ImmWord(uintptr_t(descriptor)),
                 Address(masm.getStackPointer(), argOffset));
   argOffset += sizeof(size_t);
@@ -2300,8 +2302,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   argOffset += sizeof(size_t);
 
   
-  unsigned argc = fi.funcType().args().length();
-  masm.storePtr(ImmWord(uintptr_t(argc)),
+  masm.storePtr(ImmWord(JitFrameLayout::UnusedValue),
                 Address(masm.getStackPointer(), argOffset));
   argOffset += sizeof(size_t);
   MOZ_ASSERT(argOffset == sizeOfPreFrame + frameAlignExtra);

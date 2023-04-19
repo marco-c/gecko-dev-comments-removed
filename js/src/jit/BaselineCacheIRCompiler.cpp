@@ -496,9 +496,9 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
     masm.storeICScriptInJSContext(scratch);
   }
 
-  masm.Push(Imm32(0));  
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.Push(callee);
-  masm.PushFrameDescriptor(FrameType::BaselineStub);
+  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub,  0);
 
   
   Label noUnderflow;
@@ -1579,13 +1579,13 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
   masm.Push(val);
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(receiver)));
 
-  masm.Push(Imm32(1));  
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
 
   
   masm.Push(callee);
 
   
-  masm.PushFrameDescriptor(FrameType::BaselineStub);
+  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub,  1);
 
   if (isInlined) {
     
@@ -2901,9 +2901,9 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
 
   
   
-  masm.Push(argcReg);
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(calleeReg, isConstructing);
-  masm.PushFrameDescriptor(FrameType::BaselineStub);
+  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
 
   
   Label noUnderflow;
@@ -3009,9 +3009,9 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
 
   
   
-  masm.Push(argcReg);
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(calleeReg, isConstructing);
-  masm.PushFrameDescriptor(FrameType::BaselineStub);
+  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
 
   
   Label noUnderflow;
@@ -3184,9 +3184,9 @@ bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(
     masm.pushValue(UndefinedValue());
   }
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(iter)));
-  masm.Push(Imm32(0));  
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.Push(callee);
-  masm.PushFrameDescriptor(FrameType::BaselineStub);
+  masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub,  0);
 
   masm.callJit(code);
 

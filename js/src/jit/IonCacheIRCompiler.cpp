@@ -892,9 +892,9 @@ bool IonCacheIRCompiler::emitCallScriptedGetterResult(
 
   masm.movePtr(ImmGCPtr(target), scratch);
 
-  masm.Push(Imm32(0));  
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.Push(scratch);
-  masm.PushFrameDescriptor(FrameType::IonICCall);
+  masm.PushFrameDescriptorForJitCall(FrameType::IonICCall,  0);
 
   
   MOZ_ASSERT(((masm.framePushed() + sizeof(uintptr_t)) % JitStackAlignment) ==
@@ -1540,9 +1540,9 @@ bool IonCacheIRCompiler::emitCallScriptedSetter(ObjOperandId receiverId,
 
   masm.movePtr(ImmGCPtr(target), scratch);
 
-  masm.Push(Imm32(1));  
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.Push(scratch);
-  masm.PushFrameDescriptor(FrameType::IonICCall);
+  masm.PushFrameDescriptorForJitCall(FrameType::IonICCall,  1);
 
   
   MOZ_ASSERT(((masm.framePushed() + sizeof(uintptr_t)) % JitStackAlignment) ==
@@ -1944,9 +1944,9 @@ bool IonCacheIRCompiler::emitCloseIterScriptedResult(ObjOperandId iterId,
   }
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(iter)));
 
-  masm.Push(Imm32(0));  
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.Push(callee);
-  masm.PushFrameDescriptor(FrameType::IonICCall);
+  masm.PushFrameDescriptorForJitCall(FrameType::IonICCall,  0);
 
   masm.loadJitCodeRaw(callee, callee);
   masm.callJit(callee);

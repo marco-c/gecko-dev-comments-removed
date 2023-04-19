@@ -143,7 +143,8 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.mov(Operand(ebp, ARG_RESULT), eax);
   masm.unboxInt32(Address(eax, 0x0), eax);
-  masm.push(eax);
+
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
 
   
   masm.push(Operand(ebp, ARG_CALLEETOKEN));
@@ -153,7 +154,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.loadPtr(Address(ebp, ARG_STACKFRAME), OsrFrameReg);
 
   
-  masm.pushFrameDescriptor(FrameType::CppToJSJit);
+  masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, eax, eax);
 
   CodeLabel returnLabel;
   Label oomReturnLabel;
@@ -505,9 +506,9 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   }
 
   
-  masm.push(edx);  
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
   masm.push(eax);  
-  masm.pushFrameDescriptor(FrameType::Rectifier);
+  masm.pushFrameDescriptorForJitCall(FrameType::Rectifier, edx, edx);
 
   
   masm.andl(Imm32(CalleeTokenMask), eax);

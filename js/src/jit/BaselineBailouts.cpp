@@ -994,7 +994,7 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   size_t endOfBaselineStubArgs = framePushed();
 
   
-  if (!writeWord(actualArgc, "ActualArgc")) {
+  if (!writeWord(JitFrameLayout::UnusedValue, "Unused")) {
     return false;
   }
 
@@ -1009,7 +1009,8 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   setNextCallee(calleeFun);
 
   
-  size_t baselineStubFrameDescr = MakeFrameDescriptor(FrameType::BaselineStub);
+  size_t baselineStubFrameDescr =
+      MakeFrameDescriptorForJitCall(FrameType::BaselineStub, actualArgc);
   if (!writeWord(baselineStubFrameDescr, "Descriptor")) {
     return false;
   }
@@ -1112,7 +1113,7 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
          (actualArgc + 1) * sizeof(Value));
 
   
-  if (!writeWord(actualArgc, "ActualArgc")) {
+  if (!writeWord(JitFrameLayout::UnusedValue, "Unused")) {
     return false;
   }
 
@@ -1122,7 +1123,8 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
   }
 
   
-  size_t rectifierFrameDescr = MakeFrameDescriptor(FrameType::Rectifier);
+  size_t rectifierFrameDescr =
+      MakeFrameDescriptorForJitCall(FrameType::Rectifier, actualArgc);
   if (!writeWord(rectifierFrameDescr, "Descriptor")) {
     return false;
   }

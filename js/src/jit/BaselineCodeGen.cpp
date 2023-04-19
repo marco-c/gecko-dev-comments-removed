@@ -5865,9 +5865,9 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   masm.store32(scratch2, frame.addressOfDebugFrameSize());
 #endif
 
-  masm.push(Imm32(0));  
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(callee,  false);
-  masm.pushFrameDescriptor(FrameType::BaselineJS);
+  masm.pushFrameDescriptorForJitCall(FrameType::BaselineJS,  0);
 
   
   MOZ_ASSERT(masm.framePushed() == sizeof(uintptr_t));

@@ -199,17 +199,13 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.bind(&footer);
   }
 
-  
-  masm.move32(Imm32(MakeFrameDescriptor(FrameType::CppToJSJit)), r8);
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
 
-  aasm->as_sub(sp, sp, Imm8(sizeof(JitFrameLayout)));
-
-  masm.startDataTransferM(IsStore, sp, IB, NoWriteBack);
   
-  masm.transferReg(r8);   
-  masm.transferReg(r9);   
-  masm.transferReg(r10);  
-  masm.finishDataTransfer();
+  masm.push(r9);
+
+  
+  masm.pushFrameDescriptorForJitCall(FrameType::CppToJSJit, r10, r10);
 
   Label returnLabel;
   {
@@ -241,7 +237,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
       Label skipJump;
       masm.mov(pc, scratch);
       masm.addPtr(Imm32(2 * sizeof(uint32_t)), scratch);
-      masm.storePtr(scratch, Address(sp, 0));
+      masm.push(scratch);
       masm.jump(&skipJump);
       masm.jump(&returnLabel);
       masm.bind(&skipJump);
@@ -317,11 +313,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.loadPtr(Address(r11, offsetof(EnterJITStack, scopeChain)),
                  R1.scratchReg());
   }
-
-  
-  
-  
-  masm.addPtr(Imm32(sizeof(uintptr_t)), sp);
 
   
   
@@ -506,9 +497,9 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   }
 
   
-  masm.ma_push(r0);  
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
   masm.ma_push(r1);  
-  masm.pushFrameDescriptor(FrameType::Rectifier);
+  masm.pushFrameDescriptorForJitCall(FrameType::Rectifier, r0, r0);
 
   
   masm.andPtr(Imm32(CalleeTokenMask), r1);

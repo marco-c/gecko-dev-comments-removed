@@ -5423,9 +5423,9 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   masm.freeStack(unusedStack);
 
   
-  masm.Push(Imm32(call->numActualArgs()));
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(calleereg, call->mir()->isConstructing());
-  masm.PushFrameDescriptor(FrameType::IonJS);
+  masm.PushFrameDescriptorForJitCall(FrameType::IonJS, call->numActualArgs());
 
   
   
@@ -5528,9 +5528,9 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
   masm.freeStack(unusedStack);
 
   
-  masm.Push(Imm32(call->numActualArgs()));
+  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(calleereg, call->mir()->isConstructing());
-  masm.PushFrameDescriptor(FrameType::IonJS);
+  masm.PushFrameDescriptorForJitCall(FrameType::IonJS, call->numActualArgs());
 
   
   uint32_t callOffset = masm.callJit(objreg);
@@ -5981,9 +5981,9 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
     
     masm.loadJitCodeRaw(calleereg, objreg);
 
-    masm.Push(argcreg);
+    masm.Push(ImmWord(JitFrameLayout::UnusedValue));
     masm.PushCalleeToken(calleereg, constructing);
-    masm.PushFrameDescriptor(FrameType::IonJS);
+    masm.PushFrameDescriptorForJitCall(FrameType::IonJS, argcreg, scratch);
 
     Label underflow, rejoin;
 

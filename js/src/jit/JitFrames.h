@@ -76,9 +76,15 @@ struct VMFunctionData;
 
 
 
+
+
+
+
 static const uintptr_t FRAMETYPE_BITS = 4;
 static const uintptr_t FRAMETYPE_MASK = (1 << FRAMETYPE_BITS) - 1;
 static const uintptr_t HASCACHEDSAVEDFRAME_BIT = 1 << FRAMETYPE_BITS;
+static const uintptr_t NUMACTUALARGS_SHIFT =
+    FRAMETYPE_BITS + 1 ;
 
 struct BaselineBailoutInfo;
 
@@ -172,6 +178,17 @@ static inline uint32_t MakeFrameDescriptor(FrameType type) {
 }
 
 
+
+
+static inline uint32_t MakeFrameDescriptorForJitCall(FrameType type,
+                                                     uint32_t argc) {
+  uint32_t descriptor = (argc << NUMACTUALARGS_SHIFT) | uint32_t(type);
+  MOZ_ASSERT((descriptor >> NUMACTUALARGS_SHIFT) == argc,
+             "argc must fit in descriptor");
+  return descriptor;
+}
+
+
 JSScript* GetTopJitJSScript(JSContext* cx);
 
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_ARM64)
@@ -194,11 +211,11 @@ class CommonFrameLayout {
   
   static constexpr size_t FramePointerOffset = sizeof(void*);
 
-  static size_t offsetOfDescriptor() {
+  static constexpr size_t offsetOfDescriptor() {
     return offsetof(CommonFrameLayout, descriptor_);
   }
   uintptr_t descriptor() const { return descriptor_; }
-  static size_t offsetOfReturnAddress() {
+  static constexpr size_t offsetOfReturnAddress() {
     return offsetof(CommonFrameLayout, returnAddress_);
   }
   FrameType prevType() const { return FrameType(descriptor_ & FRAMETYPE_MASK); }
@@ -222,19 +239,24 @@ class CommonFrameLayout {
 
 class JitFrameLayout : public CommonFrameLayout {
   CalleeToken calleeToken_;
-  uintptr_t numActualArgs_;
+
+ protected:  
+  uintptr_t unused_;
 
  public:
-  CalleeToken calleeToken() const { return calleeToken_; }
+  
+  static constexpr uintptr_t UnusedValue = 0xbad0bad1;
+
+  CalleeToken calleeToken() const {
+    MOZ_ASSERT(unused_ == UnusedValue);
+    return calleeToken_;
+  }
   void replaceCalleeToken(CalleeToken calleeToken) {
     calleeToken_ = calleeToken;
   }
 
   static constexpr size_t offsetOfCalleeToken() {
     return offsetof(JitFrameLayout, calleeToken_);
-  }
-  static constexpr size_t offsetOfNumActualArgs() {
-    return offsetof(JitFrameLayout, numActualArgs_);
   }
   static constexpr size_t offsetOfThis() { return sizeof(JitFrameLayout); }
   static constexpr size_t offsetOfActualArgs() {
@@ -252,7 +274,10 @@ class JitFrameLayout : public CommonFrameLayout {
     MOZ_ASSERT(CalleeTokenIsFunction(calleeToken()));
     return (JS::Value*)(this + 1);
   }
-  uintptr_t numActualArgs() const { return numActualArgs_; }
+  uintptr_t numActualArgs() const {
+    MOZ_ASSERT(unused_ == UnusedValue);
+    return descriptor() >> NUMACTUALARGS_SHIFT;
+  }
 
   
   

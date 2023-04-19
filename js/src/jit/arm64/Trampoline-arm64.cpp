@@ -175,13 +175,15 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     vixl::UseScratchRegisterScope temps(&masm.asVIXL());
     MOZ_ASSERT(temps.IsAvailable(ScratchReg64));  
     temps.Exclude(ScratchReg64);
-    masm.unboxInt32(Address(reg_vp, 0x0), ScratchReg64.asUnsized());
-    masm.push(ScratchReg64.asUnsized(), reg_callee);
-  }
-  masm.checkStackAlignment();
+    Register scratch = ScratchReg64.asUnsized();
+    masm.movePtr(ImmWord(JitFrameLayout::UnusedValue), scratch);
+    masm.push(scratch, reg_callee);
+    masm.checkStackAlignment();
 
-  
-  masm.PushFrameDescriptor(FrameType::CppToJSJit);
+    
+    masm.unboxInt32(Address(reg_vp, 0x0), scratch);
+    masm.PushFrameDescriptorForJitCall(FrameType::CppToJSJit, scratch, scratch);
+  }
 
   Label osrReturnPoint;
   {
@@ -502,9 +504,9 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
     masm.B(&copyLoopTop, Assembler::NotSigned);
   }
 
-  masm.push(r0,   
-            r1);  
-  masm.pushFrameDescriptor(FrameType::Rectifier);
+  masm.push(ImmWord(JitFrameLayout::UnusedValue));
+  masm.push(r1);  
+  masm.pushFrameDescriptorForJitCall(FrameType::Rectifier, r0, r0);
 
   
   switch (kind) {

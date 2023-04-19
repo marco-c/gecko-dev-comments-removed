@@ -847,6 +847,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void PushFrameDescriptor(FrameType type);
 
   
+  
+  inline void pushFrameDescriptorForJitCall(FrameType type, uint32_t argc);
+  inline void pushFrameDescriptorForJitCall(FrameType type, Register argc,
+                                            Register scratch);
+  inline void PushFrameDescriptorForJitCall(FrameType type, uint32_t argc);
+  inline void PushFrameDescriptorForJitCall(FrameType type, Register argc,
+                                            Register scratch);
+
+  
   inline void loadNumActualArgs(Register framePtr, Register dest);
 
   
