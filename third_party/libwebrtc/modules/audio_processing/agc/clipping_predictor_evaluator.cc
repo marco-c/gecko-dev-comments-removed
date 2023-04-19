@@ -50,10 +50,6 @@ absl::optional<int> ClippingPredictorEvaluator::Observe(
   RTC_DCHECK_LT(ring_buffer_tail_, ring_buffer_capacity_);
 
   DecreaseTimesToLive();
-  if (clipping_predicted) {
-    
-    Push({history_size_, false});
-  }
   
   
   
@@ -80,13 +76,27 @@ absl::optional<int> ClippingPredictorEvaluator::Observe(
     RTC_DCHECK(!clipping_expected && !clipping_detected);
     counters_.true_negatives++;
   }
+
+  if (clipping_predicted) {
+    
+    Push({history_size_, false});
+  }
+
   return prediction_interval;
 }
 
-void ClippingPredictorEvaluator::Reset() {
+void ClippingPredictorEvaluator::RemoveExpectations() {
   
   ring_buffer_tail_ = 0;
   ring_buffer_size_ = 0;
+}
+
+void ClippingPredictorEvaluator::Reset() {
+  counters_.true_positives = 0;
+  counters_.true_negatives = 0;
+  counters_.false_positives = 0;
+  counters_.false_negatives = 0;
+  RemoveExpectations();
 }
 
 

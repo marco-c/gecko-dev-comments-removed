@@ -57,6 +57,9 @@ class ClippingPredictorEvaluator {
 
   
   
+  void RemoveExpectations();
+
+  
   void Reset();
 
   ClippingPredictionCounters counters() const { return counters_; }
