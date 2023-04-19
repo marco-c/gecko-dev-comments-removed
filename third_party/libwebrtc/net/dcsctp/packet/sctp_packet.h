@@ -66,9 +66,8 @@ class SctpPacket {
     Builder& Add(const Chunk& chunk);
 
     
-    size_t bytes_remaining() const {
-      return out_.size() >= max_mtu_ ? 0 : max_mtu_ - out_.size();
-    }
+    
+    size_t bytes_remaining() const;
 
     
     bool empty() const { return out_.empty(); }
@@ -82,7 +81,9 @@ class SctpPacket {
     VerificationTag verification_tag_;
     uint16_t source_port_;
     uint16_t dest_port_;
-    size_t max_mtu_;
+    
+    
+    size_t max_packet_size_;
     std::vector<uint8_t> out_;
   };
 

@@ -16,7 +16,19 @@ namespace dcsctp {
 
 template <typename IntType>
 IntType RoundUpTo4(IntType val) {
-  return (val + 3) & -4;
+  return (val + 3) & ~3;
+}
+
+
+template <typename IntType>
+IntType RoundDownTo4(IntType val) {
+  return val & ~3;
+}
+
+
+template <typename IntType>
+bool IsDivisibleBy4(IntType val) {
+  return (val & 3) == 0;
 }
 
 }  
