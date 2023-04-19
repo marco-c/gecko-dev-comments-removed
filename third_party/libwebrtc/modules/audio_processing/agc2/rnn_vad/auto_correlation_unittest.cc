@@ -17,15 +17,15 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
+namespace {
 
 
 
 TEST(RnnVadTest, PitchBufferAutoCorrelationWithinTolerance) {
   PitchTestData test_data;
   std::array<float, kBufSize12kHz> pitch_buf_decimated;
-  Decimate2x(test_data.GetPitchBufView(), pitch_buf_decimated);
-  std::array<float, kNumPitchBufAutoCorrCoeffs> computed_output;
+  Decimate2x(test_data.PitchBuffer24kHzView(), pitch_buf_decimated);
+  std::array<float, kNumLags12kHz> computed_output;
   {
     
     
@@ -33,7 +33,7 @@ TEST(RnnVadTest, PitchBufferAutoCorrelationWithinTolerance) {
     auto_corr_calculator.ComputeOnPitchBuffer(pitch_buf_decimated,
                                               computed_output);
   }
-  auto auto_corr_view = test_data.GetPitchBufAutoCorrCoeffsView();
+  auto auto_corr_view = test_data.AutoCorrelation12kHzView();
   ExpectNearAbsolute({auto_corr_view.data(), auto_corr_view.size()},
                      computed_output, 3e-3f);
 }
@@ -44,7 +44,7 @@ TEST(RnnVadTest, CheckAutoCorrelationOnConstantPitchBuffer) {
   
   std::array<float, kBufSize12kHz> pitch_buf_decimated;
   std::fill(pitch_buf_decimated.begin(), pitch_buf_decimated.end(), 1.f);
-  std::array<float, kNumPitchBufAutoCorrCoeffs> computed_output;
+  std::array<float, kNumLags12kHz> computed_output;
   {
     
     
@@ -55,7 +55,7 @@ TEST(RnnVadTest, CheckAutoCorrelationOnConstantPitchBuffer) {
   
   
   constexpr int kFrameSize20ms12kHz = kFrameSize20ms24kHz / 2;
-  std::array<float, kNumPitchBufAutoCorrCoeffs> expected_output;
+  std::array<float, kNumLags12kHz> expected_output;
   std::fill(expected_output.begin(), expected_output.end(),
             static_cast<float>(kFrameSize20ms12kHz));
   ExpectNearAbsolute(expected_output, computed_output, 4e-5f);

@@ -24,7 +24,6 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
 namespace {
 
 using ::rnnoise::kInputDenseBias;
@@ -103,7 +102,6 @@ INSTANTIATE_TEST_SUITE_P(
       return info.param.ToString();
     });
 
-}  
 }  
 }  
 }  

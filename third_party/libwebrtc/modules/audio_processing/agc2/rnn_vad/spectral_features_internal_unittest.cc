@@ -26,7 +26,6 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
 namespace {
 
 
@@ -48,8 +47,6 @@ std::vector<float> ComputeTriangularFiltersWeights() {
   }
   return weights;
 }
-
-}  
 
 
 

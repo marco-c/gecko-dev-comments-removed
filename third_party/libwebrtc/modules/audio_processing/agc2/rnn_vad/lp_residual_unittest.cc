@@ -22,7 +22,7 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
+namespace {
 
 
 TEST(RnnVadTest, LpResidualOfEmptyFrame) {
@@ -33,50 +33,43 @@ TEST(RnnVadTest, LpResidualOfEmptyFrame) {
   std::array<float, kFrameSize10ms24kHz> empty_frame;
   empty_frame.fill(0.f);
   
-  std::array<float, kNumLpcCoefficients> lpc_coeffs;
-  ComputeAndPostProcessLpcCoefficients(empty_frame, lpc_coeffs);
+  std::array<float, kNumLpcCoefficients> lpc;
+  ComputeAndPostProcessLpcCoefficients(empty_frame, lpc);
   
   std::array<float, kFrameSize10ms24kHz> lp_residual;
-  ComputeLpResidual(lpc_coeffs, empty_frame, lp_residual);
+  ComputeLpResidual(lpc, empty_frame, lp_residual);
 }
 
 
 TEST(RnnVadTest, LpResidualPipelineBitExactness) {
   
-  auto pitch_buf_24kHz_reader = CreatePitchBuffer24kHzReader();
-  auto lp_residual_reader = CreateLpResidualAndPitchPeriodGainReader();
+  ChunksFileReader pitch_buffer_reader = CreatePitchBuffer24kHzReader();
+  ChunksFileReader lp_pitch_reader = CreateLpResidualAndPitchInfoReader();
 
   
-  std::vector<float> pitch_buf_data(kBufSize24kHz);
-  std::array<float, kNumLpcCoefficients> lpc_coeffs;
+  std::vector<float> pitch_buffer_24kHz(kBufSize24kHz);
+  std::array<float, kNumLpcCoefficients> lpc;
   std::vector<float> computed_lp_residual(kBufSize24kHz);
   std::vector<float> expected_lp_residual(kBufSize24kHz);
 
   
   const int num_frames =
-      std::min(pitch_buf_24kHz_reader.second, 300);  
-  ASSERT_GE(lp_residual_reader.second, num_frames);
+      std::min(pitch_buffer_reader.num_chunks, 300);  
+  ASSERT_GE(lp_pitch_reader.num_chunks, num_frames);
 
-  {
+  
+  
+  for (int i = 0; i < num_frames; ++i) {
+    SCOPED_TRACE(i);
     
+    ASSERT_TRUE(pitch_buffer_reader.reader->ReadChunk(pitch_buffer_24kHz));
     
-    for (int i = 0; i < num_frames; ++i) {
-      
-      ASSERT_TRUE(pitch_buf_24kHz_reader.first->ReadChunk(pitch_buf_data));
-      
-      ASSERT_TRUE(lp_residual_reader.first->ReadChunk(expected_lp_residual));
-      float unused;
-      ASSERT_TRUE(lp_residual_reader.first->ReadValue(&unused));
-      ASSERT_TRUE(lp_residual_reader.first->ReadValue(&unused));
-
-      
-      if (i % 20 != 0) {
-        continue;
-      }
-
-      SCOPED_TRACE(i);
-      ComputeAndPostProcessLpcCoefficients(pitch_buf_data, lpc_coeffs);
-      ComputeLpResidual(lpc_coeffs, pitch_buf_data, computed_lp_residual);
+    ASSERT_TRUE(lp_pitch_reader.reader->ReadChunk(expected_lp_residual));
+    lp_pitch_reader.reader->SeekForward(2);  
+    
+    if (i % 20 == 0) {
+      ComputeAndPostProcessLpcCoefficients(pitch_buffer_24kHz, lpc);
+      ComputeLpResidual(lpc, pitch_buffer_24kHz, computed_lp_residual);
       ExpectNearAbsolute(expected_lp_residual, computed_lp_residual, kFloatMin);
     }
   }

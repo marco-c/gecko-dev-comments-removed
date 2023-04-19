@@ -15,7 +15,6 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
 namespace {
 
 template <typename T, int S>
@@ -43,8 +42,6 @@ bool CheckPairsWithValueExist(
   }
   return false;
 }
-
-}  
 
 
 

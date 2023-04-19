@@ -17,7 +17,6 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
 namespace {
 
 constexpr std::array<float, kFeatureVectorSize> kFeatures = {
@@ -66,7 +65,6 @@ TEST(RnnVadTest, CheckRnnVadSilence) {
   EXPECT_EQ(pre, post);
 }
 
-}  
 }  
 }  
 }  

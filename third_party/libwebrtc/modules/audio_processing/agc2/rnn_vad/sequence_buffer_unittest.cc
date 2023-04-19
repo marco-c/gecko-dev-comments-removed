@@ -17,7 +17,6 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
 namespace {
 
 template <typename T, int S, int N>
@@ -59,8 +58,6 @@ void TestSequenceBufferPushOp() {
     EXPECT_EQ(last, seq_buf_view[S - N - 1]);
   }
 }
-
-}  
 
 TEST(RnnVadTest, SequenceBufferGetters) {
   constexpr int buffer_size = 8;

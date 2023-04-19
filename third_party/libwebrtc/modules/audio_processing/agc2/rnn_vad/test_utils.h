@@ -11,15 +11,10 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_TEST_UTILS_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_TEST_UTILS_H_
 
-#include <algorithm>
 #include <array>
 #include <fstream>
-#include <limits>
 #include <memory>
 #include <string>
-#include <type_traits>
-#include <utility>
-#include <vector>
 
 #include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
@@ -28,7 +23,6 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
 
 constexpr float kFloatMin = std::numeric_limits<float>::min();
 
@@ -44,97 +38,47 @@ void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
                         float tolerance);
 
 
-
-template <typename T, typename D = T>
-class BinaryFileReader {
+class FileReader {
  public:
-  BinaryFileReader(const std::string& file_path, int chunk_size = 0)
-      : is_(file_path, std::ios::binary | std::ios::ate),
-        data_length_(is_.tellg() / sizeof(T)),
-        chunk_size_(chunk_size) {
-    RTC_CHECK(is_);
-    SeekBeginning();
-    buf_.resize(chunk_size_);
-  }
-  BinaryFileReader(const BinaryFileReader&) = delete;
-  BinaryFileReader& operator=(const BinaryFileReader&) = delete;
-  ~BinaryFileReader() = default;
-  int data_length() const { return data_length_; }
-  bool ReadValue(D* dst) {
-    if (std::is_same<T, D>::value) {
-      is_.read(reinterpret_cast<char*>(dst), sizeof(T));
-    } else {
-      T v;
-      is_.read(reinterpret_cast<char*>(&v), sizeof(T));
-      *dst = static_cast<D>(v);
-    }
-    return is_.gcount() == sizeof(T);
-  }
+  virtual ~FileReader() = default;
+  
+  virtual int size() const = 0;
   
   
-  bool ReadChunk(rtc::ArrayView<D> dst) {
-    RTC_DCHECK((chunk_size_ == 0) || rtc::SafeEq(chunk_size_, dst.size()));
-    const std::streamsize bytes_to_read = dst.size() * sizeof(T);
-    if (std::is_same<T, D>::value) {
-      is_.read(reinterpret_cast<char*>(dst.data()), bytes_to_read);
-    } else {
-      is_.read(reinterpret_cast<char*>(buf_.data()), bytes_to_read);
-      std::transform(buf_.begin(), buf_.end(), dst.begin(),
-                     [](const T& v) -> D { return static_cast<D>(v); });
-    }
-    return is_.gcount() == bytes_to_read;
-  }
-  void SeekForward(int items) { is_.seekg(items * sizeof(T), is_.cur); }
-  void SeekBeginning() { is_.seekg(0, is_.beg); }
-
- private:
-  std::ifstream is_;
-  const int data_length_;
-  const int chunk_size_;
-  std::vector<T> buf_;
-};
-
-
-template <typename T>
-class BinaryFileWriter {
- public:
-  explicit BinaryFileWriter(const std::string& file_path)
-      : os_(file_path, std::ios::binary) {}
-  BinaryFileWriter(const BinaryFileWriter&) = delete;
-  BinaryFileWriter& operator=(const BinaryFileWriter&) = delete;
-  ~BinaryFileWriter() = default;
-  static_assert(std::is_arithmetic<T>::value, "");
-  void WriteChunk(rtc::ArrayView<const T> value) {
-    const std::streamsize bytes_to_write = value.size() * sizeof(T);
-    os_.write(reinterpret_cast<const char*>(value.data()), bytes_to_write);
-  }
-
- private:
-  std::ofstream os_;
+  
+  
+  
+  virtual bool ReadChunk(rtc::ArrayView<float> dst) = 0;
+  
+  
+  
+  
+  virtual bool ReadValue(float& dst) = 0;
+  
+  virtual void SeekForward(int hop) = 0;
+  
+  virtual void SeekBeginning() = 0;
 };
 
 
 
+struct ChunksFileReader {
+  const int chunk_size;
+  const int num_chunks;
+  std::unique_ptr<FileReader> reader;
+};
 
 
-
-std::pair<std::unique_ptr<BinaryFileReader<int16_t, float>>, const int>
-CreatePcmSamplesReader(const int frame_length);
-
-std::pair<std::unique_ptr<BinaryFileReader<float>>, const int>
-CreatePitchBuffer24kHzReader();
+std::unique_ptr<FileReader> CreatePcmSamplesReader();
 
 
-std::pair<std::unique_ptr<BinaryFileReader<float>>, const int>
-CreateLpResidualAndPitchPeriodGainReader();
+ChunksFileReader CreatePitchBuffer24kHzReader();
 
-std::pair<std::unique_ptr<BinaryFileReader<float>>, const int>
-CreateVadProbsReader();
 
-constexpr int kNumPitchBufAutoCorrCoeffs = 147;
-constexpr int kNumPitchBufSquareEnergies = 385;
-constexpr int kPitchTestDataSize =
-    kBufSize24kHz + kNumPitchBufSquareEnergies + kNumPitchBufAutoCorrCoeffs;
+ChunksFileReader CreateLpResidualAndPitchInfoReader();
+
+
+std::unique_ptr<FileReader> CreateVadProbsReader();
 
 
 
@@ -142,17 +86,40 @@ class PitchTestData {
  public:
   PitchTestData();
   ~PitchTestData();
-  rtc::ArrayView<const float, kBufSize24kHz> GetPitchBufView() const;
-  rtc::ArrayView<const float, kNumPitchBufSquareEnergies>
-  GetPitchBufSquareEnergiesView() const;
-  rtc::ArrayView<const float, kNumPitchBufAutoCorrCoeffs>
-  GetPitchBufAutoCorrCoeffsView() const;
+  rtc::ArrayView<const float, kBufSize24kHz> PitchBuffer24kHzView() const {
+    return pitch_buffer_24k_;
+  }
+  rtc::ArrayView<const float, kRefineNumLags24kHz> SquareEnergies24kHzView()
+      const {
+    return square_energies_24k_;
+  }
+  rtc::ArrayView<const float, kNumLags12kHz> AutoCorrelation12kHzView() const {
+    return auto_correlation_12k_;
+  }
 
  private:
-  std::array<float, kPitchTestDataSize> test_data_;
+  std::array<float, kBufSize24kHz> pitch_buffer_24k_;
+  std::array<float, kRefineNumLags24kHz> square_energies_24k_;
+  std::array<float, kNumLags12kHz> auto_correlation_12k_;
 };
 
-}  
+
+class FileWriter {
+ public:
+  explicit FileWriter(const std::string& file_path)
+      : os_(file_path, std::ios::binary) {}
+  FileWriter(const FileWriter&) = delete;
+  FileWriter& operator=(const FileWriter&) = delete;
+  ~FileWriter() = default;
+  void WriteChunk(rtc::ArrayView<const float> value) {
+    const std::streamsize bytes_to_write = value.size() * sizeof(float);
+    os_.write(reinterpret_cast<const char*>(value.data()), bytes_to_write);
+  }
+
+ private:
+  std::ofstream os_;
+};
+
 }  
 }  
 

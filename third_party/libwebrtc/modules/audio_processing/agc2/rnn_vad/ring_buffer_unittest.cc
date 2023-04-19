@@ -14,7 +14,6 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
 namespace {
 
 
@@ -63,8 +62,6 @@ void TestRingBuffer() {
     ExpectEq(pushed_array_view, ring_buf.GetArrayView(delay));
   }
 }
-
-}  
 
 
 TEST(RnnVadTest, RingBufferArrayViews) {

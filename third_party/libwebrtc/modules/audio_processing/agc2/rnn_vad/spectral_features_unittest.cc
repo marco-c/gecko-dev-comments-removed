@@ -21,7 +21,6 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace test {
 namespace {
 
 constexpr int kTestFeatureVectorSize = kNumBands + 3 * kNumLowerBands + 1;
@@ -65,8 +64,6 @@ float* GetCepstralVariability(
 }
 
 constexpr float kInitialFeatureVal = -9999.f;
-
-}  
 
 
 
