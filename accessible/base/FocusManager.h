@@ -68,7 +68,7 @@ class FocusManager {
   
 
 
-  bool IsFocusWithin(const LocalAccessible* aContainer) const;
+  bool IsFocusWithin(const Accessible* aContainer) const;
 
   
 
