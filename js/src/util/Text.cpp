@@ -194,7 +194,7 @@ char16_t* js::InflateString(JSContext* cx, const char* bytes, size_t length) {
 
 
 
-uint32_t js::OneUcs4ToUtf8Char(uint8_t* utf8Buffer, uint32_t ucs4Char) {
+uint32_t js::OneUcs4ToUtf8Char(uint8_t* utf8Buffer, char32_t ucs4Char) {
   MOZ_ASSERT(ucs4Char <= unicode::NonBMPMax);
 
   if (ucs4Char < 0x80) {

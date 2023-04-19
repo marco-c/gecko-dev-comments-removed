@@ -295,7 +295,7 @@ inline void CopyAndInflateChars(char16_t* dst, const JS::Latin1Char* src,
 
 
 
-extern uint32_t OneUcs4ToUtf8Char(uint8_t* utf8Buffer, uint32_t ucs4Char);
+extern uint32_t OneUcs4ToUtf8Char(uint8_t* utf8Buffer, char32_t ucs4Char);
 
 extern size_t PutEscapedStringImpl(char* buffer, size_t size,
                                    GenericPrinter* out, JSLinearString* str,

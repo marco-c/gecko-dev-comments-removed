@@ -1548,7 +1548,7 @@ using CharBuffer = Vector<char16_t, 32>;
 
 
 [[nodiscard]] extern bool AppendCodePointToCharBuffer(CharBuffer& charBuffer,
-                                                      uint32_t codePoint);
+                                                      char32_t codePoint);
 
 
 
@@ -1942,8 +1942,8 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
     return token;
   }
 
-  uint32_t matchUnicodeEscape(uint32_t* codePoint);
-  uint32_t matchExtendedUnicodeEscape(uint32_t* codePoint);
+  uint32_t matchUnicodeEscape(char32_t* codePoint);
+  uint32_t matchExtendedUnicodeEscape(char32_t* codePoint);
 
  protected:
   using CharsBase::addLineOfContext;
@@ -2107,8 +2107,8 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
         this->sourceUnits.offset());
   }
 
-  uint32_t matchUnicodeEscapeIdStart(uint32_t* codePoint);
-  bool matchUnicodeEscapeIdent(uint32_t* codePoint);
+  uint32_t matchUnicodeEscapeIdStart(char32_t* codePoint);
+  bool matchUnicodeEscapeIdent(char32_t* codePoint);
   bool matchIdentifierStart();
 
   
@@ -2226,7 +2226,7 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
 
 
-  [[nodiscard]] bool getNonAsciiCodePoint(int32_t lead, int32_t* codePoint);
+  [[nodiscard]] bool getNonAsciiCodePoint(int32_t lead, char32_t* codePoint);
 };
 
 template <class AnyCharsAccess>
@@ -2320,7 +2320,7 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
   
   
   
-  MOZ_COLD void badStructurallyValidCodePoint(uint32_t codePoint,
+  MOZ_COLD void badStructurallyValidCodePoint(char32_t codePoint,
                                               uint8_t codePointLength,
                                               const char* reason);
 
@@ -2328,7 +2328,7 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
 
 
 
-  MOZ_COLD void badCodePoint(uint32_t codePoint, uint8_t codePointLength) {
+  MOZ_COLD void badCodePoint(char32_t codePoint, uint8_t codePointLength) {
     MOZ_ASSERT(unicode::IsSurrogate(codePoint) ||
                codePoint > unicode::NonBMPMax);
 
@@ -2342,7 +2342,7 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
 
 
 
-  MOZ_COLD void notShortestForm(uint32_t codePoint, uint8_t codePointLength) {
+  MOZ_COLD void notShortestForm(char32_t codePoint, uint8_t codePointLength) {
     MOZ_ASSERT(!unicode::IsSurrogate(codePoint));
     MOZ_ASSERT(codePoint <= unicode::NonBMPMax);
 
@@ -2374,7 +2374,7 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
 
 
 
-  [[nodiscard]] bool getNonAsciiCodePoint(int32_t lead, int32_t* codePoint);
+  [[nodiscard]] bool getNonAsciiCodePoint(int32_t lead, char32_t* codePoint);
 };
 
 
