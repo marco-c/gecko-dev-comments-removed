@@ -3455,7 +3455,6 @@ pref("signon.includeOtherSubdomainsInLookup",     true);
 
 pref("signon.masterPasswordReprompt.timeout_ms", 900000); 
 pref("signon.showAutoCompleteFooter",             false);
-pref("signon.showAutoCompleteOrigins",            true);
 
 
 pref("browser.formfill.debug",            false);
