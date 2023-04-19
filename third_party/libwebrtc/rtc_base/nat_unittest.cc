@@ -56,7 +56,7 @@ TestClient* CreateTestClient(SocketFactory* factory,
 }
 
 TestClient* CreateTCPTestClient(Socket* socket) {
-  return new TestClient(std::make_unique<AsyncTCPSocket>(socket));
+  return new TestClient(std::make_unique<AsyncTCPSocket>(socket, false));
 }
 
 

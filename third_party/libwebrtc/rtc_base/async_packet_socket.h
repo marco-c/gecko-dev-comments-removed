@@ -128,31 +128,17 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   
   sigslot::signal2<AsyncPacketSocket*, int> SignalClose;
 
+  
+  sigslot::signal2<AsyncPacketSocket*, AsyncPacketSocket*> SignalNewConnection;
+
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(AsyncPacketSocket);
 };
 
 
-class RTC_EXPORT AsyncListenSocket : public sigslot::has_slots<> {
- public:
-  enum class State {
-    kClosed,
-    kBound,
-  };
 
-  
-  virtual State GetState() const = 0;
 
-  
-  
-  virtual SocketAddress GetLocalAddress() const = 0;
-
-  
-  virtual int GetOption(Socket::Option opt, int* value) = 0;
-  virtual int SetOption(Socket::Option opt, int value) = 0;
-
-  sigslot::signal2<AsyncListenSocket*, AsyncPacketSocket*> SignalNewConnection;
-};
+using AsyncListenSocket = AsyncPacketSocket;
 
 void CopySocketInformationToPacketInfo(size_t packet_size_bytes,
                                        const AsyncPacketSocket& socket_from,
