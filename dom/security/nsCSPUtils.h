@@ -91,6 +91,8 @@ static const char* CSPStrDirectives[] = {
     "navigate-to",                
     "script-src-elem",            
     "script-src-attr",            
+    "style-src-elem",             
+    "style-src-attr",             
 };
 
 inline const char* CSP_CSPDirectiveToString(CSPDirective aDir) {
@@ -515,12 +517,33 @@ class nsCSPScriptSrcDirective : public nsCSPDirective {
   void setRestrictScriptElem() { mRestrictScriptElem = true; }
   void setRestrictScriptAttr() { mRestrictScriptAttr = true; }
 
-  virtual bool equals(CSPDirective aDirective) const override;
+  bool equals(CSPDirective aDirective) const override;
 
  private:
-  bool mRestrictWorkers;
-  bool mRestrictScriptElem;
-  bool mRestrictScriptAttr;
+  bool mRestrictWorkers = false;
+  bool mRestrictScriptElem = false;
+  bool mRestrictScriptAttr = false;
+};
+
+
+
+
+
+
+
+class nsCSPStyleSrcDirective : public nsCSPDirective {
+ public:
+  explicit nsCSPStyleSrcDirective(CSPDirective aDirective);
+  virtual ~nsCSPStyleSrcDirective();
+
+  void setRestrictStyleElem() { mRestrictStyleElem = true; }
+  void setRestrictStyleAttr() { mRestrictStyleAttr = true; }
+
+  bool equals(CSPDirective aDirective) const override;
+
+ private:
+  bool mRestrictStyleElem = false;
+  bool mRestrictStyleAttr = false;
 };
 
 

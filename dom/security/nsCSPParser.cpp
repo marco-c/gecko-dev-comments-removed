@@ -50,6 +50,7 @@ nsCSPParser::nsCSPParser(policyTokens& aTokens, nsIURI* aSelfURI,
       mFrameSrc(nullptr),
       mWorkerSrc(nullptr),
       mScriptSrc(nullptr),
+      mStyleSrc(nullptr),
       mParsingFrameAncestorsDir(false),
       mTokens(aTokens.Clone()),
       mSelfURI(aSelfURI),
@@ -859,9 +860,13 @@ nsCSPDirective* nsCSPParser::directiveName() {
   }
 
   
-  if ((directive == nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE ||
-       directive == nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) &&
-      !StaticPrefs::security_csp_script_src_attr_elem_enabled()) {
+  
+  if (((directive == nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE ||
+        directive == nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE) &&
+       !StaticPrefs::security_csp_script_src_attr_elem_enabled()) ||
+      ((directive == nsIContentSecurityPolicy::STYLE_SRC_ATTR_DIRECTIVE ||
+        directive == nsIContentSecurityPolicy::STYLE_SRC_ELEM_DIRECTIVE) &&
+       !StaticPrefs::security_csp_style_src_attr_elem_enabled())) {
     AutoTArray<nsString, 1> params = {mCurToken};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
                              "notSupportingDirective", params);
@@ -939,6 +944,13 @@ nsCSPDirective* nsCSPParser::directiveName() {
   if (directive == nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) {
     mScriptSrc = new nsCSPScriptSrcDirective(directive);
     return mScriptSrc;
+  }
+
+  
+  
+  if (directive == nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE) {
+    mStyleSrc = new nsCSPStyleSrcDirective(directive);
+    return mStyleSrc;
   }
 
   return new nsCSPDirective(directive);
@@ -1153,6 +1165,20 @@ nsCSPPolicy* nsCSPParser::policy() {
   if (mScriptSrc && !mPolicy->hasDirective(
                         nsIContentSecurityPolicy::SCRIPT_SRC_ATTR_DIRECTIVE)) {
     mScriptSrc->setRestrictScriptAttr();
+  }
+
+  
+  
+  if (mStyleSrc && !mPolicy->hasDirective(
+                       nsIContentSecurityPolicy::STYLE_SRC_ELEM_DIRECTIVE)) {
+    mStyleSrc->setRestrictStyleElem();
+  }
+
+  
+  
+  if (mStyleSrc && !mPolicy->hasDirective(
+                       nsIContentSecurityPolicy::STYLE_SRC_ATTR_DIRECTIVE)) {
+    mStyleSrc->setRestrictStyleAttr();
   }
 
   return mPolicy;

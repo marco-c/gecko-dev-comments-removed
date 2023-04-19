@@ -198,6 +198,7 @@ class nsCSPParser {
   nsCSPDirective* mFrameSrc;
   nsCSPDirective* mWorkerSrc;
   nsCSPScriptSrcDirective* mScriptSrc;
+  nsCSPStyleSrcDirective* mStyleSrc;
 
   
   
