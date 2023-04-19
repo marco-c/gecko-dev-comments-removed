@@ -20,6 +20,12 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.jsm",
 });
 
+XPCOMUtils.defineLazyGetter(lazy, "WebDriverError", () => {
+  return ChromeUtils.import(
+    "chrome://remote/content/shared/webdriver/Errors.jsm"
+  ).error.WebDriverError;
+});
+
 
 
 
@@ -86,7 +92,12 @@ class MessageHandlerFrameParent extends JSWindowActorParent {
     );
 
     if (result?.error) {
-      throw lazy.error.MessageHandlerError.fromJSON(result.error);
+      if (result.isMessageHandlerError) {
+        throw lazy.error.MessageHandlerError.fromJSON(result.error);
+      }
+
+      
+      throw lazy.WebDriverError.fromJSON(result.error);
     }
 
     return result;

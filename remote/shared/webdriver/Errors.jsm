@@ -10,6 +10,10 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
 
+const { RemoteError } = ChromeUtils.import(
+  "chrome://remote/content/shared/RemoteError.jsm"
+);
+
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
@@ -178,7 +182,7 @@ const error = {
 
 
 
-class WebDriverError extends Error {
+class WebDriverError extends RemoteError {
   
 
 
