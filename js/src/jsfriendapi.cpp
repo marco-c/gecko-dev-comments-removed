@@ -23,6 +23,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/friend/WindowProxy.h"    
+#include "js/HashTable.h"
 #include "js/Object.h"                
 #include "js/PropertyAndElement.h"    
 #include "js/Proxy.h"
@@ -776,7 +777,34 @@ JS_PUBLIC_API const gc::SharedMemoryMap& js::GetSharedMemoryUsageForZone(
 }
 
 JS_PUBLIC_API uint64_t js::GetGCHeapUsage(JSContext* cx) {
-  return cx->runtime()->gc.heapSize.bytes();
+  mozilla::CheckedInt<uint64_t> sum = 0;
+  using SharedSet = js::HashSet<void*, PointerHasher<void*>, SystemAllocPolicy>;
+  SharedSet sharedVisited;
+
+  for (ZonesIter zone(cx->runtime(), WithAtoms); !zone.done(); zone.next()) {
+    sum += GetMemoryUsageForZone(zone);
+
+    const gc::SharedMemoryMap& shared = GetSharedMemoryUsageForZone(zone);
+    for (auto iter = shared.iter(); !iter.done(); iter.next()) {
+      void* sharedMem = iter.get().key();
+      SharedSet::AddPtr addShared = sharedVisited.lookupForAdd(sharedMem);
+      if (addShared) {
+        
+
+        
+        
+        
+        
+        sum -= iter.get().value().nbytes;
+      } else if (!sharedVisited.add(addShared, sharedMem)) {
+        
+        break;
+      }
+    }
+  }
+
+  MOZ_ASSERT(sum.isValid(), "Memory calculation under/over flowed");
+  return sum.value();
 }
 
 #ifdef DEBUG
