@@ -51,7 +51,12 @@ class AndroidNetworkMonitorTest : public ::testing::Test {
         std::make_unique<jni::AndroidNetworkMonitor>(env, context);
   }
 
-  void SetUp() {
+  void SetUp() override {
+    
+    network_monitor_->Stop();
+  }
+
+  void TearDown() override {
     
     network_monitor_->Stop();
   }
