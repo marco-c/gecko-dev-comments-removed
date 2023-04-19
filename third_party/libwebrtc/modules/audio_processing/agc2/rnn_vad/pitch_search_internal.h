@@ -82,10 +82,8 @@ CandidatePitchPeriods ComputePitchPeriod12kHz(
 
 
 
-
 int ComputePitchPeriod48kHz(
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
     CandidatePitchPeriods pitch_candidates_24kHz);
 
 struct PitchInfo {
@@ -96,10 +94,8 @@ struct PitchInfo {
 
 
 
-
 PitchInfo ComputeExtendedPitchPeriod48kHz(
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<const float, kRefineNumLags24kHz> y_energy,
     int initial_pitch_period_48kHz,
     PitchInfo last_pitch_48kHz);
 
