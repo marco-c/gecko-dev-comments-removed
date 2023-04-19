@@ -45,6 +45,10 @@ class NetEqSimulatorFactory {
     
     absl::optional<std::string> output_audio_filename;
     
+    absl::optional<std::string> python_plot_filename;
+    
+    absl::optional<std::string> text_log_filename;
+    
     NetEqFactory* neteq_factory = nullptr;
   };
   std::unique_ptr<NetEqSimulator> CreateSimulatorFromFile(
