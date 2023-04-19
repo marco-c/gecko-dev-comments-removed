@@ -133,8 +133,6 @@ class AudioProcessingImpl : public AudioProcessing {
     return stats_reporter_.GetStatistics();
   }
 
-  
-  void MutateConfig(rtc::FunctionView<void(AudioProcessing::Config*)> mutator);
   AudioProcessing::Config GetConfig() const override;
 
  protected:
