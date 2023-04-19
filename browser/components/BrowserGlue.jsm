@@ -140,7 +140,8 @@ const PREF_DFPI_ENABLED_BY_DEFAULT =
 
 
 const PRIVATE_BROWSING_ICON_INDEX = 5;
-const PREF_PRIVACY_SEGMENTATION = "browser.privacySegmentation.enabled";
+const PREF_PRIVATE_WINDOW_SEPARATION =
+  "browser.privacySegmentation.windowSeparation.enabled";
 const PREF_PRIVATE_BROWSING_SHORTCUT_CREATED =
   "browser.privacySegmentation.createdShortcut";
 
@@ -2529,7 +2530,7 @@ BrowserGlue.prototype = {
           
           
           
-          Services.prefs.getBoolPref(PREF_PRIVACY_SEGMENTATION, false) &&
+          Services.prefs.getBoolPref(PREF_PRIVATE_WINDOW_SEPARATION, false) &&
           
           
           !Services.sysinfo.getProperty("hasWinPackageId") &&
