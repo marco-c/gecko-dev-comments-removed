@@ -24,7 +24,9 @@ add_task(async function test_MockExtension() {
     
     
     useAddonManager: "permanent",
-    manifest: { applications: { gecko: { id: "@permanent-mock-extension" } } },
+    manifest: {
+      browser_specific_settings: { gecko: { id: "@permanent-mock-extension" } },
+    },
   });
 
   Assert.ok(!ext.id, "Extension ID is initially unavailable");

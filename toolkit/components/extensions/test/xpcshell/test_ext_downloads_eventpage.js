@@ -54,7 +54,7 @@ add_task(
     
     let dl_extension = ExtensionTestUtils.loadExtension({
       manifest: {
-        applications: { gecko: { id: "downloader@mochitest" } },
+        browser_specific_settings: { gecko: { id: "downloader@mochitest" } },
         permissions: ["downloads"],
         background: { persistent: false },
       },
