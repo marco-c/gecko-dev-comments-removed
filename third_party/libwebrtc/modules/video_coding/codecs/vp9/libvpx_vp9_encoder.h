@@ -106,6 +106,12 @@ class LibvpxVp9Encoder : public VP9Encoder {
   size_t SteadyStateSize(int sid, int tid);
 
   void MaybeRewrapRawWithFormat(const vpx_img_fmt fmt);
+  
+  
+  
+  
+  rtc::scoped_refptr<VideoFrameBuffer> PrepareBufferForProfile0(
+      rtc::scoped_refptr<VideoFrameBuffer> buffer);
 
   const std::unique_ptr<LibvpxInterface> libvpx_;
   EncodedImage encoded_image_;

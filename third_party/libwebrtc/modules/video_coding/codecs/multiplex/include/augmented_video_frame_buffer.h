@@ -45,6 +45,12 @@ class AugmentedVideoFrameBuffer : public VideoFrameBuffer {
 
   
   rtc::scoped_refptr<I420BufferInterface> ToI420() final;
+  
+  
+  
+  
+  
+  const I420BufferInterface* GetI420() const final;
 
  private:
   uint16_t augmenting_data_size_;
