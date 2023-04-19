@@ -122,9 +122,16 @@ class OffThreadErrorContext : public ErrorContext {
  private:
   js::OffThreadFrontendErrors errors_;
 
+  
+  
+  
+  
+  JSContext* maybeCx_ = nullptr;
+
  public:
   OffThreadErrorContext() = default;
 
+  void setCurrentJSContext(JSContext* cx);
   void convertToRuntimeError(JSContext* cx);
 
   void linkWithJSContext(JSContext* cx);
@@ -156,7 +163,7 @@ class OffThreadErrorContext : public ErrorContext {
   bool hadAllocationOverflow() const override {
     return errors_.allocationOverflow;
   }
-  bool hadErrors() const override { return errors_.hadErrors(); }
+  bool hadErrors() const override;
 
 #ifdef __wasi__
   void incWasiRecursionDepth() override;

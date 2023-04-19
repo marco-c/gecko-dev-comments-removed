@@ -78,7 +78,21 @@ bool MainThreadErrorContext::hadAllocationOverflow() const {
 }
 
 bool MainThreadErrorContext::hadErrors() const {
+  if (cx_->isExceptionPending()) {
+    return true;
+  }
+
   return cx_->offThreadFrontendErrors()->hadErrors();
+}
+
+bool OffThreadErrorContext::hadErrors() const {
+  if (maybeCx_) {
+    if (maybeCx_->isExceptionPending()) {
+      return true;
+    }
+  }
+
+  return errors_.hadErrors();
 }
 
 void* OffThreadErrorContext::onOutOfMemory(AllocFunction allocFunc,
@@ -97,11 +111,22 @@ void OffThreadErrorContext::onOutOfMemory() { addPendingOutOfMemory(); }
 void OffThreadErrorContext::onOverRecursed() { errors_.overRecursed = true; }
 
 void OffThreadErrorContext::recoverFromOutOfMemory() {
+  
+  
+  if (maybeCx_) {
+    maybeCx_->recoverFromOutOfMemory();
+  }
+
   errors_.outOfMemory = false;
 }
 
 const JSErrorFormatString* OffThreadErrorContext::gcSafeCallback(
     JSErrorCallback callback, void* userRef, const unsigned errorNumber) {
+  if (maybeCx_) {
+    gc::AutoSuppressGC suppressGC(maybeCx_);
+    return callback(userRef, errorNumber);
+  }
+
   return callback(userRef, errorNumber);
 }
 
@@ -137,6 +162,10 @@ void OffThreadErrorContext::ReportOutOfMemory() {
 
 void OffThreadErrorContext::addPendingOutOfMemory() {
   errors_.outOfMemory = true;
+}
+
+void OffThreadErrorContext::setCurrentJSContext(JSContext* cx) {
+  maybeCx_ = cx;
 }
 
 void OffThreadErrorContext::convertToRuntimeError(JSContext* cx) {
@@ -177,15 +206,21 @@ bool MainThreadErrorContext::checkWasiRecursionLimit() {
 }
 
 void OffThreadErrorContext::incWasiRecursionDepth() {
-  
+  if (maybeCx_) {
+    IncWasiRecursionDepth(maybeCx_);
+  }
 }
 
 void OffThreadErrorContext::decWasiRecursionDepth() {
-  
+  if (maybeCx_) {
+    DecWasiRecursionDepth(maybeCx_);
+  }
 }
 
 bool OffThreadErrorContext::checkWasiRecursionLimit() {
-  
+  if (maybeCx_) {
+    return CheckWasiRecursionLimit(maybeCx_);
+  }
   return true;
 }
 
