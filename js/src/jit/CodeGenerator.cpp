@@ -11548,7 +11548,6 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
   Register object, elements;
   LInstruction* ins = ool->ins();
   const LAllocation* index;
-  MIRType valueType;
   mozilla::Maybe<ConstantOrRegister> value;
   Register spectreTemp;
 
@@ -11557,7 +11556,6 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
     object = ToRegister(store->object());
     elements = ToRegister(store->elements());
     index = store->index();
-    valueType = store->mir()->value()->type();
     value.emplace(
         TypedOrValueRegister(ToValue(store, LStoreElementHoleV::ValueIndex)));
     spectreTemp = ToTempRegisterOrInvalid(store->temp0());
@@ -11566,11 +11564,11 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
     object = ToRegister(store->object());
     elements = ToRegister(store->elements());
     index = store->index();
-    valueType = store->mir()->value()->type();
     if (store->value()->isConstant()) {
       value.emplace(
           ConstantOrRegister(store->value()->toConstant()->toJSValue()));
     } else {
+      MIRType valueType = store->mir()->value()->type();
       value.emplace(
           TypedOrValueRegister(valueType, ToAnyRegister(store->value())));
     }
@@ -11614,18 +11612,8 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
 
   masm.sub32(Imm32(1), indexReg);
 
-  if (ins->isStoreElementHoleT() && valueType != MIRType::Double) {
-    
-    
-    
-    MOZ_ASSERT(valueType < MIRType::Value);
-    emitStoreElementTyped(ins->toStoreElementHoleT()->value(), valueType,
-                          elements, index);
-    masm.jump(ool->rejoin());
-  } else {
-    
-    masm.jump(ool->rejoinStore());
-  }
+  
+  masm.jump(ool->rejoinStore());
 
   masm.bind(ool->callStub());
   saveLive(ins);
