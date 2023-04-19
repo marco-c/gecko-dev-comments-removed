@@ -159,12 +159,15 @@ function RegExpMatch(string) {
 
 function RegExpMatchSlowPath(rx, S) {
   
-  if (!rx.global) {
+  var flags = ToString(rx.flags);
+
+  
+  if (!callFunction(std_String_includes, flags, "g")) {
     return RegExpExec(rx, S, false);
   }
 
   
-  var fullUnicode = !!rx.unicode;
+  var fullUnicode = callFunction(std_String_includes, flags, "u");
 
   
   rx.lastIndex = 0;
@@ -397,13 +400,16 @@ function RegExpReplaceSlowPath(
   firstDollarIndex
 ) {
   
-  var global = !!rx.global;
+  var flags = ToString(rx.flags);
+
+  
+  var global = callFunction(std_String_includes, flags, "g");
 
   
   var fullUnicode = false;
   if (global) {
     
-    fullUnicode = !!rx.unicode;
+    fullUnicode = callFunction(std_String_includes, flags, "u");
 
     
     rx.lastIndex = 0;
