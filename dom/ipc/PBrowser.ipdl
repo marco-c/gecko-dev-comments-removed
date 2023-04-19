@@ -1010,8 +1010,7 @@ parent:
     async IsWindowSupportingWebVR(uint64_t aOuterWindowID) returns(bool isSupported);
 
     
-    async VisitURI(nsIURI aURI, nsIURI aLastVisitedURI,
-                   uint32_t aFlags);
+    async VisitURI(nsIURI aURI, nsIURI aLastVisitedURI, uint32_t aFlags, uint64_t aBrowserId);
 
     
     async QueryVisitedState(nsIURI[] aURIs);
