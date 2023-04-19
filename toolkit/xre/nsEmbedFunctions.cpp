@@ -973,6 +973,8 @@ void XRE_InstallX11ErrorHandler() {
   
   InstallX11ErrorHandler();
 }
+
+void XRE_CleanupX11ErrorHandler() { CleanupX11ErrorHandler(); }
 #endif
 
 #ifdef MOZ_ENABLE_FORKSERVER
