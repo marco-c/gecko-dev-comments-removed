@@ -1476,42 +1476,6 @@ uint64_t LocalAccessible::State() {
   
   ApplyARIAState(&state);
 
-  
-  
-  
-  const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-  if (roleMapEntry && !(state & states::SELECTED) &&
-      (!mContent->IsElement() ||
-       !nsAccUtils::ARIAAttrValueIs(mContent->AsElement(),
-                                    nsGkAtoms::aria_selected, nsGkAtoms::_false,
-                                    eCaseMatters))) {
-    
-    
-    if (roleMapEntry->role == roles::PAGETAB) {
-      if (state & states::FOCUSED) {
-        state |= states::SELECTED;
-      } else {
-        
-        Relation rel = RelationByType(RelationType::LABEL_FOR);
-        LocalAccessible* relTarget = nullptr;
-        while ((relTarget = rel.LocalNext())) {
-          if (relTarget->Role() == roles::PROPERTYPAGE &&
-              FocusMgr()->IsFocusWithin(relTarget)) {
-            state |= states::SELECTED;
-          }
-        }
-      }
-    } else if (state & states::FOCUSED) {
-      LocalAccessible* container =
-          nsAccUtils::GetSelectableContainer(this, state);
-      if (container &&
-          !nsAccUtils::HasDefinedARIAToken(container->GetContent(),
-                                           nsGkAtoms::aria_multiselectable)) {
-        state |= states::SELECTED;
-      }
-    }
-  }
-
   const uint32_t kExpandCollapseStates = states::COLLAPSED | states::EXPANDED;
   if ((state & kExpandCollapseStates) == kExpandCollapseStates) {
     
@@ -1536,11 +1500,6 @@ uint64_t LocalAccessible::State() {
   if ((state & states::COLLAPSED) || (state & states::EXPANDED)) {
     state |= states::EXPANDABLE;
   }
-
-  
-  
-  nsIFrame* frame = GetFrame();
-  if (!frame) return state;
 
   Maybe<float> opacity = Opacity();
   if (opacity && *opacity == 1.0f && !(state & states::INVISIBLE)) {
