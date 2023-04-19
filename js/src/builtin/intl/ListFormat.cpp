@@ -8,7 +8,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/ListFormat.h"
-#include "mozilla/PodOperations.h"
 
 #include <stddef.h>
 
@@ -20,9 +19,6 @@
 #include "js/Vector.h"
 #include "vm/JSContext.h"
 #include "vm/PlainObject.h"  
-#include "vm/Runtime.h"      
-#include "vm/SelfHosting.h"
-#include "vm/Stack.h"
 #include "vm/StringType.h"
 #include "vm/WellKnownAtom.h"  
 
