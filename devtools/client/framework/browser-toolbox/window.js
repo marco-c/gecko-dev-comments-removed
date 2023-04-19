@@ -24,11 +24,12 @@ const L10N = new LocalizationHelper(
 const env = Cc["@mozilla.org/process/environment;1"].getService(
   Ci.nsIEnvironment
 );
-loader.lazyImporter(
-  this,
-  "BrowserToolboxLauncher",
-  "resource://devtools/client/framework/browser-toolbox/Launcher.jsm"
-);
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserToolboxLauncher:
+    "resource://devtools/client/framework/browser-toolbox/Launcher.sys.mjs",
+});
 
 
 
@@ -187,7 +188,7 @@ function onCloseCommand(event) {
 
 
 function onDebugBrowserToolbox() {
-  BrowserToolboxLauncher.init();
+  lazy.BrowserToolboxLauncher.init();
 }
 
 
