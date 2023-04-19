@@ -277,15 +277,15 @@ struct CorsPreflightArgs
 
 struct HttpChannelOpenArgs
 {
-  nsIURI                      uri;
+  URIParams                   uri;
   
   
   
-  nsIURI                      original;
-  nsIURI                      doc;
+  URIParams?                  original;
+  URIParams?                  doc;
   nsIReferrerInfo             referrerInfo;
-  nsIURI                      apiRedirectTo;
-  nsIURI                      topWindowURI;
+  URIParams?                  apiRedirectTo;
+  URIParams?                  topWindowURI;
   uint32_t                    loadFlags;
   RequestHeaderTuples         requestHeaders;
   nsCString                   requestMethod;
