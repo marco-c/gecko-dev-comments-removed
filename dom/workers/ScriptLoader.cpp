@@ -956,6 +956,23 @@ void WorkerScriptLoader::DispatchMaybeMoveToLoadedList(
   }
 }
 
+nsresult WorkerScriptLoader::FillCompileOptionsForRequest(
+    JSContext* cx, ScriptLoadRequest* aRequest, JS::CompileOptions* aOptions,
+    JS::MutableHandle<JSScript*> aIntroductionScript) {
+  
+  aOptions->setFileAndLine(aRequest->mURL.get(), 1);
+  aOptions->setNoScriptRval(true);
+
+  aOptions->setMutedErrors(
+      aRequest->GetWorkerLoadContext()->mMutedErrorFlag.value());
+
+  if (aRequest->mSourceMapURL) {
+    aOptions->setSourceMapURL(aRequest->mSourceMapURL->get());
+  }
+
+  return NS_OK;
+}
+
 bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
                                         ScriptLoadRequest* aRequest) {
   mWorkerRef->Private()->AssertIsOnWorkerThread();
@@ -984,21 +1001,22 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
 
   JS::CompileOptions options(aCx);
   
-  options.setFileAndLine(aRequest->mURL.get(), 1).setNoScriptRval(true);
+  
+  
+  
+  
+  JS::Rooted<JSScript*> unusedIntroductionScript(aCx);
+  nsresult rv = FillCompileOptionsForRequest(aCx, aRequest, &options,
+                                             &unusedIntroductionScript);
 
-  MOZ_ASSERT(loadContext->mMutedErrorFlag.isSome());
-  options.setMutedErrors(loadContext->mMutedErrorFlag.valueOr(true));
-
-  if (aRequest->mSourceMapURL) {
-    options.setSourceMapURL(aRequest->mSourceMapURL->get());
-  }
+  MOZ_ASSERT(NS_SUCCEEDED(rv), "Filling compile options should not fail");
 
   
   MOZ_ASSERT(!mRv.Failed(), "Who failed it and why?");
 
   
   ScriptLoadRequest::MaybeSourceText maybeSource;
-  nsresult rv = aRequest->GetScriptSource(aCx, &maybeSource);
+  rv = aRequest->GetScriptSource(aCx, &maybeSource);
   if (NS_FAILED(rv)) {
     mRv.StealExceptionFromJSContext(aCx);
     return false;
