@@ -457,6 +457,8 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
   virtual bool HasScrollUpdates() const = 0;
+
+  enum class InScrollingGesture : bool { No, Yes };
   
 
 
@@ -467,7 +469,8 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   virtual void ResetScrollInfoIfNeeded(
       const mozilla::MainThreadScrollGeneration& aGeneration,
       const mozilla::APZScrollGeneration& aGenerationOnApz,
-      mozilla::APZScrollAnimationType aAPZScrollAnimationType) = 0;
+      mozilla::APZScrollAnimationType aAPZScrollAnimationType,
+      InScrollingGesture aInScrollingGesture) = 0;
   
 
 

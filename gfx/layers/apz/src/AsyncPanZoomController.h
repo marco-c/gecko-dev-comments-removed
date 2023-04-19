@@ -1714,6 +1714,10 @@ class AsyncPanZoomController {
  public:
   bool IsInPanningState() const;
 
+  
+  
+  bool IsInScrollingGesture() const;
+
  private:
   
 
