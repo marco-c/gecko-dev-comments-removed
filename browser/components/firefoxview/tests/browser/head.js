@@ -13,6 +13,10 @@ const { TelemetryTestUtils } = ChromeUtils.import(
 const MOBILE_PROMO_DISMISSED_PREF =
   "browser.tabs.firefox-view.mobilePromo.dismissed";
 
+const calloutId = "root";
+const calloutSelector = `#${calloutId}.featureCallout`;
+const primaryButtonSelector = `#${calloutId} .primary`;
+
 const syncedTabsData1 = [
   {
     id: 1,
@@ -378,6 +382,58 @@ async function tearDown(sandbox) {
   Services.prefs.clearUserPref("services.sync.lastTabFetch");
   Services.prefs.clearUserPref(MOBILE_PROMO_DISMISSED_PREF);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+const getPrefValueByScreen = screen => {
+  return JSON.stringify({
+    screen: `FEATURE_CALLOUT_${screen}`,
+    complete: false,
+  });
+};
+
+
+
+
+
+
+const waitForCalloutScreen = async (doc, screenPostfix) => {
+  await BrowserTestUtils.waitForCondition(() =>
+    doc.querySelector(`${calloutSelector}:not(.hidden) .${screenPostfix}`)
+  );
+};
+
+
+
+
+
+
+const waitForCalloutRemoved = async doc => {
+  await BrowserTestUtils.waitForCondition(() => {
+    return !doc.body.querySelector(calloutSelector);
+  });
+};
+
+
+
+
+
+
+
+
+
+const clickPrimaryButton = async doc => {
+  doc.querySelector(primaryButtonSelector).click();
+};
 
 
 
