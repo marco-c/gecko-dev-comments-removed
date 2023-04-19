@@ -2685,6 +2685,16 @@ public class GeckoSession {
   }
 
   
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<Boolean> containsFormData() {
+    return mEventDispatcher.queryBoolean("GeckoView:ContainsFormData");
+  }
+
+  
   private GeckoDisplay mDisplay;
 
    interface Owner {
