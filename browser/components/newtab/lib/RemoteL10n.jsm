@@ -226,6 +226,25 @@ class _RemoteL10n {
   isLocaleSupported(locale) {
     return locale === "en-US" || ALL_LOCALES.has(locale);
   }
+
+  
+
+
+
+
+
+
+
+
+  async formatLocalizableText(localizableText) {
+    if (typeof localizableText !== "string") {
+      
+      
+      let value = await this.l10n.formatValue(localizableText.string_id);
+      return value;
+    }
+    return localizableText;
+  }
 }
 
 const RemoteL10n = new _RemoteL10n();
