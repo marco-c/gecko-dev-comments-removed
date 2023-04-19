@@ -496,7 +496,6 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
     masm.storeICScriptInJSContext(scratch);
   }
 
-  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.Push(callee);
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub,  0);
 
@@ -1579,8 +1578,6 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
   masm.Push(val);
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(receiver)));
 
-  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
-
   
   masm.Push(callee);
 
@@ -2604,6 +2601,7 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
 
   masm.pushFrameDescriptor(FrameType::BaselineStub);
   masm.push(ICTailCallReg);
+  masm.push(FramePointer);
   masm.loadJSContext(scratch);
   masm.enterFakeExitFrameForNative(scratch, scratch, isConstructing);
 
@@ -2848,8 +2846,9 @@ void BaselineCacheIRCompiler::updateReturnValue() {
   
   
   
-  
-  Address thisAddress(masm.getStackPointer(), 3 * sizeof(size_t));
+  size_t thisvOffset =
+      JitFrameLayout::offsetOfThis() - JitFrameLayout::bytesPoppedAfterCall();
+  Address thisAddress(masm.getStackPointer(), thisvOffset);
   masm.loadValue(thisAddress, JSReturnOperand);
 
 #ifdef DEBUG
@@ -2901,7 +2900,6 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
 
   
   
-  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(calleeReg, isConstructing);
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
 
@@ -3009,7 +3007,6 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
 
   
   
-  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(calleeReg, isConstructing);
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch);
 
@@ -3184,7 +3181,6 @@ bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(
     masm.pushValue(UndefinedValue());
   }
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(iter)));
-  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.Push(callee);
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub,  0);
 

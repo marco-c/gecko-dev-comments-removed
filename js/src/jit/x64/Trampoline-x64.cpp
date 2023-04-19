@@ -206,8 +206,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.movq(result, reg_argc);
   masm.unboxInt32(Operand(reg_argc, 0), reg_argc);
 
-  masm.push(ImmWord(JitFrameLayout::UnusedValue));
-
   
   masm.push(token);
 
@@ -255,6 +253,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     
     masm.pushFrameDescriptor(FrameType::BaselineJS);
     masm.push(Imm32(0));  
+    masm.push(FramePointer);
     
     masm.loadJSContext(scratch);
     masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
@@ -308,7 +307,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
   
   
-  masm.assertStackAlignment(JitStackAlignment, sizeof(uintptr_t));
+  masm.assertStackAlignment(JitStackAlignment, 2 * sizeof(uintptr_t));
 
   
   masm.callJitNoProfiler(reg_code);
@@ -438,7 +437,6 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
 
   
   masm.moveToStackPtr(FramePointer);
-  masm.pop(FramePointer);
 
   
   masm.jmp(bailoutTail);
@@ -474,10 +472,7 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   masm.loadNumActualArgs(FramePointer, r8);
 
   
-  constexpr size_t FrameOffset = sizeof(void*);  
-  constexpr size_t TokenOffset =
-      FrameOffset + RectifierFrameLayout::offsetOfCalleeToken();
-  masm.loadPtr(Address(rsp, TokenOffset), rax);
+  masm.loadPtr(Address(rbp, RectifierFrameLayout::offsetOfCalleeToken()), rax);
   masm.mov(rax, rcx);
   masm.andq(Imm32(uint32_t(CalleeTokenMask)), rcx);
   masm.loadFunctionArgCount(rcx, rcx);
@@ -499,21 +494,21 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   static_assert(
       sizeof(JitFrameLayout) % JitStackAlignment == 0,
       "No need to consider the JitFrameLayout for aligning the stack");
-  static_assert((sizeof(Value) + sizeof(void*)) % JitStackAlignment == 0,
-                "No need to consider |this| and the frame pointer for "
-                "aligning the stack");
   static_assert(
       JitStackAlignment % sizeof(Value) == 0,
       "Ensure that we can pad the stack by pushing extra UndefinedValue");
   static_assert(IsPowerOfTwo(JitStackValueAlignment),
                 "must have power of two for masm.andl to do its job");
 
-  masm.addl(Imm32(JitStackValueAlignment - 1 ), rcx);
+  masm.addl(
+      Imm32(JitStackValueAlignment - 1  + 1 ),
+      rcx);
   masm.addl(rdx, rcx);
   masm.andl(Imm32(~(JitStackValueAlignment - 1)), rcx);
 
   
-  masm.subq(r8, rcx);
+  masm.subl(r8, rcx);
+  masm.subl(Imm32(1), rcx);
 
   
   
@@ -543,9 +538,7 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   static_assert(sizeof(Value) == 8, "TimesEight is used to skip arguments");
 
   
-  
-  BaseIndex b(FramePointer, r8, TimesEight,
-              sizeof(RectifierFrameLayout) + sizeof(void*));
+  BaseIndex b(FramePointer, r8, TimesEight, sizeof(RectifierFrameLayout));
   masm.lea(Operand(b), rcx);
 
   
@@ -572,10 +565,8 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
     ValueOperand newTarget(r10);
 
     
-    
-    BaseIndex newTargetSrc(
-        FramePointer, rdx, TimesEight,
-        sizeof(RectifierFrameLayout) + sizeof(Value) + sizeof(void*));
+    BaseIndex newTargetSrc(FramePointer, rdx, TimesEight,
+                           sizeof(RectifierFrameLayout) + sizeof(Value));
     masm.loadValue(newTargetSrc, newTarget);
 
     
@@ -595,7 +586,6 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
 
   
-  masm.push(ImmWord(JitFrameLayout::UnusedValue));
   masm.push(rax);  
   masm.pushFrameDescriptorForJitCall(FrameType::Rectifier, rdx, rdx);
 
@@ -652,7 +642,6 @@ static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
 
   
   masm.moveToStackPtr(FramePointer);
-  masm.pop(FramePointer);
 
   
   masm.jmp(bailoutTail);
@@ -693,6 +682,7 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   
   
   
+  masm.Push(FramePointer);
   masm.loadJSContext(cxreg);
   masm.enterExitFrame(cxreg, regs.getAny(), &f);
 
@@ -839,8 +829,11 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
     masm.speculationBarrier();
   }
 
-  masm.leaveExitFrame();
-  masm.retn(Imm32(sizeof(ExitFrameLayout) +
+  
+  masm.leaveExitFrame(sizeof(void*));
+
+  
+  masm.retn(Imm32(sizeof(ExitFrameLayout) - sizeof(void*) +
                   f.explicitStackSlots() * sizeof(void*) +
                   f.extraValuesToPop * sizeof(Value)));
 

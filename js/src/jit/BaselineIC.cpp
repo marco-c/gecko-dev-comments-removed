@@ -1791,7 +1791,9 @@ bool FallbackICCodeCompiler::emitCall(bool isSpread, bool isConstructing) {
   
   
   
-  masm.loadValue(Address(masm.getStackPointer(), 3 * sizeof(size_t)), R1);
+  size_t thisvOffset =
+      JitFrameLayout::offsetOfThis() - JitFrameLayout::bytesPoppedAfterCall();
+  masm.loadValue(Address(masm.getStackPointer(), thisvOffset), R1);
 
   leaveStubFrame(masm);
 

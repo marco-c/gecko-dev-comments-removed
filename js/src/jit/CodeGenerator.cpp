@@ -362,11 +362,10 @@ void CodeGenerator::callVMInternal(VMFunctionId id, LInstruction* ins) {
 #endif
 
   
-  
-  int framePop = sizeof(ExitFrameLayout) - sizeof(void*);
-
-  
+  int framePop =
+      sizeof(ExitFrameLayout) - ExitFrameLayout::bytesPoppedAfterCall();
   masm.implicitPop(fun.explicitStackSlots() * sizeof(void*) + framePop);
+
   
   
 }
@@ -3723,15 +3722,14 @@ void CodeGenerator::visitOsrEntry(LOsrEntry* lir) {
   masm.setFramePushed(0);
 
   
-  masm.Push(FramePointer);
-  masm.moveStackPtrTo(FramePointer);
+  
 
   
   if (isProfilerInstrumentationEnabled()) {
     masm.profilerEnterFrame(FramePointer, temp);
   }
 
-  masm.reserveStack(frameSize() - sizeof(uintptr_t));
+  masm.reserveStack(frameSize());
   MOZ_ASSERT(masm.framePushed() == frameSize());
 
   
@@ -5423,7 +5421,6 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   masm.freeStack(unusedStack);
 
   
-  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(calleereg, call->mir()->isConstructing());
   masm.PushFrameDescriptorForJitCall(FrameType::IonJS, call->numActualArgs());
 
@@ -5460,7 +5457,8 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
 
   
   
-  int prefixGarbage = sizeof(JitFrameLayout) - sizeof(void*);
+  int prefixGarbage =
+      sizeof(JitFrameLayout) - JitFrameLayout::bytesPoppedAfterCall();
   masm.adjustStack(prefixGarbage - unusedStack);
   masm.jump(&end);
 
@@ -5528,7 +5526,6 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
   masm.freeStack(unusedStack);
 
   
-  masm.Push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(calleereg, call->mir()->isConstructing());
   masm.PushFrameDescriptorForJitCall(FrameType::IonJS, call->numActualArgs());
 
@@ -5544,7 +5541,8 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
 
   
   
-  int prefixGarbage = sizeof(JitFrameLayout) - sizeof(void*);
+  int prefixGarbage =
+      sizeof(JitFrameLayout) - JitFrameLayout::bytesPoppedAfterCall();
   masm.adjustStack(prefixGarbage - unusedStack);
 
   
@@ -5691,7 +5689,7 @@ void CodeGenerator::emitRestoreStackPointerFromFP() {
 
   MOZ_ASSERT(masm.framePushed() == frameSize());
 
-  int32_t offset = -int32_t(frameSize() - JitFrameLayout::FramePointerOffset);
+  int32_t offset = -int32_t(frameSize());
   masm.computeEffectiveAddress(Address(FramePointer, offset),
                                masm.getStackPointer());
 }
@@ -5714,9 +5712,8 @@ void CodeGenerator::emitPushArguments(Register argcreg, Register scratch,
 
   
   Register argvSrcBase = FramePointer;
-  size_t argvSrcOffset = JitFrameLayout::FramePointerOffset +
-                         JitFrameLayout::offsetOfActualArgs() +
-                         extraFormals * sizeof(JS::Value);
+  size_t argvSrcOffset =
+      JitFrameLayout::offsetOfActualArgs() + extraFormals * sizeof(JS::Value);
   size_t argvDstOffset = 0;
 
   Register argvIndex = scratch;
@@ -5981,7 +5978,6 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
     
     masm.loadJitCodeRaw(calleereg, objreg);
 
-    masm.Push(ImmWord(JitFrameLayout::UnusedValue));
     masm.PushCalleeToken(calleereg, constructing);
     masm.PushFrameDescriptorForJitCall(FrameType::IonJS, argcreg, scratch);
 
@@ -6025,8 +6021,8 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
     }
 
     
-    
-    masm.freeStack(sizeof(JitFrameLayout) - sizeof(void*));
+    masm.freeStack(sizeof(JitFrameLayout) -
+                   JitFrameLayout::bytesPoppedAfterCall());
     masm.jump(&end);
   }
 
@@ -10687,6 +10683,7 @@ void JitRuntime::generateLazyLinkStub(MacroAssembler& masm) {
 #ifdef JS_USE_LINK_REGISTER
   masm.pushReturnAddress();
 #endif
+  masm.Push(FramePointer);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::Volatile());
   Register temp0 = regs.takeAny();
@@ -10704,7 +10701,8 @@ void JitRuntime::generateLazyLinkStub(MacroAssembler& masm) {
   masm.callWithABI<Fn, LazyLinkTopActivation>(
       MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-  masm.leaveExitFrame();
+  
+  masm.leaveExitFrame(sizeof(void*));
 
 #ifdef JS_USE_LINK_REGISTER
   
@@ -10722,6 +10720,7 @@ void JitRuntime::generateInterpreterStub(MacroAssembler& masm) {
 #ifdef JS_USE_LINK_REGISTER
   masm.pushReturnAddress();
 #endif
+  masm.Push(FramePointer);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::Volatile());
   Register temp0 = regs.takeAny();
@@ -10740,13 +10739,16 @@ void JitRuntime::generateInterpreterStub(MacroAssembler& masm) {
       MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
   masm.branchIfFalseBool(ReturnReg, masm.failureLabel());
-  masm.leaveExitFrame();
+
+  
+  masm.leaveExitFrame(sizeof(void*));
 
   
   
-  masm.loadValue(
-      Address(masm.getStackPointer(), JitFrameLayout::offsetOfThis()),
-      JSReturnOperand);
+  
+  masm.loadValue(Address(masm.getStackPointer(),
+                         JitFrameLayout::offsetOfThis() - sizeof(void*)),
+                 JSReturnOperand);
   masm.ret();
 }
 

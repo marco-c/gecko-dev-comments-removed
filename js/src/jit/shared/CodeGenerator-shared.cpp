@@ -114,15 +114,10 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
 #endif
   } else {
     
-    offsetOfLocalSlots_ = JitFrameLayout::IonFirstSlotOffset;
-    frameDepth_ = offsetOfLocalSlots_;
-
     
     
     
-    
-    frameDepth_ += graph->localSlotsSize();
-    frameDepth_ = AlignBytes(frameDepth_, JitStackAlignment);
+    frameDepth_ = AlignBytes(graph->localSlotsSize(), JitStackAlignment);
 
     
     offsetOfPassedArgSlots_ = frameDepth_;
@@ -142,11 +137,11 @@ bool CodeGeneratorShared::generatePrologue() {
 #endif
 
   
-  masm.assertStackAlignment(JitStackAlignment, 0);
+  masm.push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
 
   
-  masm.Push(FramePointer);
-  masm.moveStackPtrTo(FramePointer);
+  masm.assertStackAlignment(JitStackAlignment, 0);
 
   
   if (isProfilerInstrumentationEnabled()) {
@@ -154,7 +149,7 @@ bool CodeGeneratorShared::generatePrologue() {
   }
 
   
-  masm.reserveStack(frameSize() - sizeof(uintptr_t));
+  masm.reserveStack(frameSize());
   MOZ_ASSERT(masm.framePushed() == frameSize());
   masm.checkStackAlignment();
 
@@ -358,7 +353,7 @@ void CodeGeneratorShared::dumpNativeToBytecodeEntry(uint32_t idx) {
 static inline int32_t ToStackIndex(LAllocation* a) {
   if (a->isStackSlot()) {
     MOZ_ASSERT(a->toStackSlot()->slot() >= 1);
-    return JitFrameLayout::IonFirstSlotOffset + a->toStackSlot()->slot();
+    return a->toStackSlot()->slot();
   }
   return -int32_t(sizeof(JitFrameLayout) + a->toArgument()->index());
 }

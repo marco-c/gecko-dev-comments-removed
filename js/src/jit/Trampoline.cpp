@@ -24,17 +24,16 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   profilerExitFrameTailOffset_ = startTrampolineCode(masm);
   masm.bind(profilerExitTail);
 
-  
-  static constexpr size_t FPOffset = CommonFrameLayout::FramePointerOffset;
+  static constexpr size_t CallerFPOffset =
+      CommonFrameLayout::offsetOfCallerFramePtr();
 
   
   auto emitAssertPrevFrameType = [&masm](
                                      Register framePtr, Register scratch,
                                      std::initializer_list<FrameType> types) {
 #ifdef DEBUG
-    masm.loadPtr(
-        Address(framePtr, FPOffset + CommonFrameLayout::offsetOfDescriptor()),
-        scratch);
+    masm.loadPtr(Address(framePtr, CommonFrameLayout::offsetOfDescriptor()),
+                 scratch);
     masm.and32(Imm32(FRAMETYPE_MASK), scratch);
 
     Label checkOk;
@@ -52,7 +51,6 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   regs.take(JSReturnOperand);
   Register scratch = regs.takeAny();
 
-  
   
   
   
@@ -134,9 +132,8 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
 
   
   
-  masm.loadPtr(
-      Address(fpScratch, FPOffset + JitFrameLayout::offsetOfDescriptor()),
-      scratch);
+  masm.loadPtr(Address(fpScratch, JitFrameLayout::offsetOfDescriptor()),
+               scratch);
   masm.and32(Imm32(FRAMETYPE_MASK), scratch);
 
   
@@ -171,13 +168,12 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     
 
     
-    masm.loadPtr(
-        Address(fpScratch, FPOffset + JitFrameLayout::offsetOfReturnAddress()),
-        scratch);
+    masm.loadPtr(Address(fpScratch, JitFrameLayout::offsetOfReturnAddress()),
+                 scratch);
     masm.storePtr(scratch, lastProfilingCallSite);
 
     
-    masm.loadPtr(Address(fpScratch, 0), scratch);
+    masm.loadPtr(Address(fpScratch, CallerFPOffset), scratch);
     masm.storePtr(scratch, lastProfilingFrame);
 
     masm.moveToStackPtr(FramePointer);
@@ -188,17 +184,16 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   
   auto emitHandleStubFrame = [&](FrameType expectedPrevType) {
     
-    masm.loadPtr(Address(fpScratch, 0), fpScratch);
+    masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
     emitAssertPrevFrameType(fpScratch, scratch, {expectedPrevType});
 
     
-    masm.loadPtr(Address(fpScratch,
-                         FPOffset + CommonFrameLayout::offsetOfReturnAddress()),
+    masm.loadPtr(Address(fpScratch, CommonFrameLayout::offsetOfReturnAddress()),
                  scratch);
     masm.storePtr(scratch, lastProfilingCallSite);
 
     
-    masm.loadPtr(Address(fpScratch, 0), scratch);
+    masm.loadPtr(Address(fpScratch, CallerFPOffset), scratch);
     masm.storePtr(scratch, lastProfilingFrame);
 
     masm.moveToStackPtr(FramePointer);
@@ -222,7 +217,7 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   {
     
     
-    masm.loadPtr(Address(fpScratch, 0), fpScratch);
+    masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
     emitAssertPrevFrameType(fpScratch, scratch,
                             {FrameType::IonJS, FrameType::BaselineStub,
                              FrameType::CppToJSJit, FrameType::WasmToJSJit});

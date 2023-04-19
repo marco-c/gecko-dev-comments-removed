@@ -140,10 +140,6 @@ class CodeGeneratorShared : public LElementVisitor {
   uint32_t frameDepth_;
 
   
-  
-  uint32_t offsetOfLocalSlots_ = 0;
-
-  
   uint32_t offsetOfPassedArgSlots_ = 0;
 
   

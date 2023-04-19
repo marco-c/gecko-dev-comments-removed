@@ -139,8 +139,6 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     MOZ_ASSERT(!header_);
     MOZ_ASSERT(bufferUsed_ == 0);
 
-    prevFramePtr_ = frame_->callerFramePtr();
-
     uint8_t* bufferRaw = cx_->pod_calloc<uint8_t>(bufferTotal_);
     if (!bufferRaw) {
       return false;
@@ -228,7 +226,10 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     return excInfo_ && excInfo_->propagatingIonExceptionForDebugMode();
   }
 
-  void* prevFramePtr() const { return prevFramePtr_; }
+  void* prevFramePtr() const {
+    MOZ_ASSERT(prevFramePtr_);
+    return prevFramePtr_;
+  }
   BufferPointer<BaselineFrame>& blFrame() { return blFrame_.ref(); }
 
   void setNextCallee(JSFunction* nextCallee);
@@ -460,8 +461,6 @@ bool BaselineStackBuilder::initFrame() {
     MOZ_ASSERT(exprStackSlots_ <= totalFrameSlots);
   }
 
-  resetFramePushed();
-
   JitSpew(JitSpew_BaselineBailouts, "      Unpacking %s:%u:%u",
           script_->filename(), script_->lineno(), script_->column());
   JitSpew(JitSpew_BaselineBailouts, "      [BASELINE-JS FRAME]");
@@ -469,10 +468,15 @@ bool BaselineStackBuilder::initFrame() {
   
   
   
-  if (!writePtr(prevFramePtr(), "PrevFramePtr")) {
-    return false;
+  
+  if (!isOutermostFrame()) {
+    if (!writePtr(prevFramePtr(), "PrevFramePtr")) {
+      return false;
+    }
   }
   prevFramePtr_ = virtualPointerAtStackOffset(0);
+
+  resetFramePushed();
 
   return true;
 }
@@ -888,8 +892,6 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   
   
   
-  
-  
 
   JitSpew(JitSpew_BaselineBailouts, "      [BASELINE-STUB FRAME]");
 
@@ -994,11 +996,6 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   size_t endOfBaselineStubArgs = framePushed();
 
   
-  if (!writeWord(JitFrameLayout::UnusedValue, "Unused")) {
-    return false;
-  }
-
-  
   JitSpew(JitSpew_BaselineBailouts, "      Callee = %016" PRIx64,
           callee.asRawBits());
 
@@ -1021,7 +1018,9 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   if (!writePtr(baselineCallReturnAddr, "ReturnAddr")) {
     return false;
   }
-  MOZ_ASSERT(framePushed() % JitStackAlignment == 0);
+
+  
+  MOZ_ASSERT((framePushed() + sizeof(void*)) % JitStackAlignment == 0);
 
   
   if (actualArgc < calleeFun->nargs() &&
@@ -1058,8 +1057,6 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
   
   
   
-  
-  
 
   JitSpew(JitSpew_BaselineBailouts, "      [RECTIFIER FRAME]");
   bool pushedNewTarget = IsConstructPC(pc_);
@@ -1068,14 +1065,6 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
     return false;
   }
   prevFramePtr_ = virtualPointerAtStackOffset(0);
-
-#ifdef JS_NUNBOX32
-  
-  
-  if (!writePtr(prevFramePtr(), "Padding")) {
-    return false;
-  }
-#endif
 
   
   size_t afterFrameSize =
@@ -1113,11 +1102,6 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
          (actualArgc + 1) * sizeof(Value));
 
   
-  if (!writeWord(JitFrameLayout::UnusedValue, "Unused")) {
-    return false;
-  }
-
-  
   if (!writePtr(CalleeToToken(nextCallee(), pushedNewTarget), "CalleeToken")) {
     return false;
   }
@@ -1137,7 +1121,9 @@ bool BaselineStackBuilder::buildRectifierFrame(uint32_t actualArgc,
   if (!writePtr(rectReturnAddr, "ReturnAddr")) {
     return false;
   }
-  MOZ_ASSERT(framePushed() % JitStackAlignment == 0);
+
+  
+  MOZ_ASSERT((framePushed() + sizeof(void*)) % JitStackAlignment == 0);
 
   return true;
 }

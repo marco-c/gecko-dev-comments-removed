@@ -676,8 +676,7 @@ template <>
 void BaselineInterpreterCodeGen::computeFrameSize(Register dest) {
   
   MOZ_ASSERT(!inCall_, "must not be called in the middle of a VM call");
-  masm.computeEffectiveAddress(
-      Address(FramePointer, BaselineFrame::FramePointerOffset), dest);
+  masm.mov(FramePointer, dest);
   masm.subStackPtrFrom(dest);
 }
 
@@ -708,9 +707,7 @@ void BaselineInterpreterCodeGen::storeFrameSizeAndPushDescriptor(
 #ifdef DEBUG
   
   
-  
-  masm.computeEffectiveAddress(
-      Address(FramePointer, BaselineFrame::FramePointerOffset), scratch);
+  masm.mov(FramePointer, scratch);
   masm.subStackPtrFrom(scratch);
   masm.sub32(Imm32(argSize), scratch);
   masm.store32(scratch, frame.addressOfDebugFrameSize());
@@ -1471,7 +1468,6 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
     
     
     masm.moveToStackPtr(FramePointer);
-    masm.pop(FramePointer);
 
     
     masm.loadPtr(Address(osrDataReg, IonOsrTempData::offsetOfBaselineFrame()),
@@ -5859,13 +5855,11 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
 
 #ifdef DEBUG
   
-  masm.computeEffectiveAddress(
-      Address(FramePointer, BaselineFrame::FramePointerOffset), scratch2);
+  masm.mov(FramePointer, scratch2);
   masm.subStackPtrFrom(scratch2);
   masm.store32(scratch2, frame.addressOfDebugFrameSize());
 #endif
 
-  masm.push(ImmWord(JitFrameLayout::UnusedValue));
   masm.PushCalleeToken(callee,  false);
   masm.pushFrameDescriptorForJitCall(FrameType::BaselineJS,  0);
 
@@ -6327,11 +6321,12 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
 #ifdef JS_USE_LINK_REGISTER
   
   masm.pushReturnAddress();
-  masm.checkStackAlignment();
 #endif
 
   masm.push(FramePointer);
   masm.moveStackPtrTo(FramePointer);
+
+  masm.checkStackAlignment();
 
   emitProfilerEnterFrame();
 

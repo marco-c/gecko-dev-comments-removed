@@ -29,7 +29,6 @@ class JSJitFrameIter;
 
 
 
-
 class BaselineFrame {
  public:
   enum Flags : uint32_t {
@@ -79,23 +78,14 @@ class BaselineFrame {
   
   
   
-  
   uint32_t debugFrameSize_;
 #else
   uint32_t unused_;
 #endif
   uint32_t loReturnValue_;  
   uint32_t hiReturnValue_;
-#if JS_BITS_PER_WORD == 32
-  
-  uint32_t padding_;
-#endif
 
  public:
-  
-  
-  static const uint32_t FramePointerOffset = sizeof(void*);
-
   [[nodiscard]] bool initForOsr(InterpreterFrame* fp, uint32_t numStackValues);
 
 #ifdef DEBUG
@@ -130,9 +120,8 @@ class BaselineFrame {
   size_t numValueSlots(size_t frameSize) const {
     MOZ_ASSERT(frameSize == debugFrameSize());
 
-    MOZ_ASSERT(frameSize >=
-               BaselineFrame::FramePointerOffset + BaselineFrame::Size());
-    frameSize -= BaselineFrame::FramePointerOffset + BaselineFrame::Size();
+    MOZ_ASSERT(frameSize >= BaselineFrame::Size());
+    frameSize -= BaselineFrame::Size();
 
     MOZ_ASSERT((frameSize % sizeof(Value)) == 0);
     return frameSize / sizeof(Value);
@@ -148,8 +137,7 @@ class BaselineFrame {
   }
 
   static size_t frameSizeForNumValueSlots(size_t numValueSlots) {
-    return BaselineFrame::FramePointerOffset + BaselineFrame::Size() +
-           numValueSlots * sizeof(Value);
+    return BaselineFrame::Size() + numValueSlots * sizeof(Value);
   }
 
   Value& unaliasedFormal(
@@ -327,20 +315,17 @@ class BaselineFrame {
   bool isDebuggerEvalFrame() const { return false; }
 
   JitFrameLayout* framePrefix() const {
-    uint8_t* fp = (uint8_t*)this + Size() + FramePointerOffset;
+    uint8_t* fp = (uint8_t*)this + Size();
     return (JitFrameLayout*)fp;
   }
 
   
   static size_t offsetOfCalleeToken() {
-    return FramePointerOffset + js::jit::JitFrameLayout::offsetOfCalleeToken();
+    return JitFrameLayout::offsetOfCalleeToken();
   }
-  static size_t offsetOfThis() {
-    return FramePointerOffset + js::jit::JitFrameLayout::offsetOfThis();
-  }
+  static size_t offsetOfThis() { return JitFrameLayout::offsetOfThis(); }
   static size_t offsetOfArg(size_t index) {
-    return FramePointerOffset +
-           js::jit::JitFrameLayout::offsetOfActualArg(index);
+    return JitFrameLayout::offsetOfActualArg(index);
   }
   static size_t Size() { return sizeof(BaselineFrame); }
 
@@ -396,9 +381,7 @@ class BaselineFrame {
 };
 
 
-static_assert(((sizeof(BaselineFrame) + BaselineFrame::FramePointerOffset) %
-               8) == 0,
-              "frame (including frame pointer) must be 8-byte aligned");
+static_assert((sizeof(BaselineFrame) % 8) == 0, "frame must be 8-byte aligned");
 
 }  
 }  

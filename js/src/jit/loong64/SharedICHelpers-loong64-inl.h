@@ -22,7 +22,6 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
 
   
   masm.movePtr(FramePointer, scratch);
-  masm.addPtr(Imm32(BaselineFrame::FramePointerOffset), scratch);
   masm.subPtr(BaselineStackReg, scratch);
 
   
@@ -58,7 +57,6 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
 #ifdef DEBUG
   
   masm.movePtr(FramePointer, scratch);
-  masm.addPtr(Imm32(BaselineFrame::FramePointerOffset), scratch);
   masm.subPtr(BaselineStackReg, scratch);
 
   Address frameSizeAddr(FramePointer,

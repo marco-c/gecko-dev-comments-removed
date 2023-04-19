@@ -21,7 +21,6 @@ inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
   
   
   masm.movl(FramePointer, eax);
-  masm.addl(Imm32(BaselineFrame::FramePointerOffset), eax);
   masm.subl(BaselineStackReg, eax);
   masm.subl(Imm32(argSize), eax);
   Address frameSizeAddr(FramePointer,
@@ -48,17 +47,10 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   
   
   
-  
-  
-  
-  
-
-  static_assert(
-      BaselineFrame::FramePointerOffset == sizeof(void*),
-      "FramePointerOffset must be the same as the return address size");
 
   masm.movl(FramePointer, scratch);
   masm.subl(BaselineStackReg, scratch);
+  masm.subl(Imm32(sizeof(void*)), scratch);  
 
   Address frameSizeAddr(FramePointer,
                         BaselineFrame::reverseOffsetOfDebugFrameSize());
