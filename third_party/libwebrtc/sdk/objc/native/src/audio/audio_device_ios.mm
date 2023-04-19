@@ -844,6 +844,24 @@ bool AudioDeviceIOS::ConfigureAudioSession() {
   return success;
 }
 
+bool AudioDeviceIOS::ConfigureAudioSessionLocked() {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  RTCLog(@"Configuring audio session.");
+  if (has_configured_session_) {
+    RTCLogWarning(@"Audio session already configured.");
+    return false;
+  }
+  RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
+  bool success = [session configureWebRTCSession:nil];
+  if (success) {
+    has_configured_session_ = true;
+    RTCLog(@"Configured audio session.");
+  } else {
+    RTCLog(@"Failed to configure audio session.");
+  }
+  return success;
+}
+
 void AudioDeviceIOS::UnconfigureAudioSession() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTCLog(@"Unconfiguring audio session.");
@@ -887,7 +905,7 @@ bool AudioDeviceIOS::InitPlayOrRecord() {
   
   
   if (session.canPlayOrRecord) {
-    if (!ConfigureAudioSession()) {
+    if (!ConfigureAudioSessionLocked()) {
       
       
       

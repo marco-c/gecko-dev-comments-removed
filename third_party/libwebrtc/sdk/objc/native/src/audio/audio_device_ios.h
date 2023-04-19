@@ -192,6 +192,10 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   
   bool ConfigureAudioSession();
+
+  
+  bool ConfigureAudioSessionLocked();
+
   
   void UnconfigureAudioSession();
 
