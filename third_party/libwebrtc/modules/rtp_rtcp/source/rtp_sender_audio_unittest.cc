@@ -148,7 +148,16 @@ TEST_F(RtpSenderAudioTest, SendAudioWithoutAbsoluteCaptureTime) {
                    .HasExtension<AbsoluteCaptureTimeExtension>());
 }
 
+
+
+
 TEST_F(RtpSenderAudioTest, SendAudioWithAbsoluteCaptureTime) {
+  
+  test::ScopedFieldTrials field_trial(
+      "WebRTC-IncludeCaptureClockOffset/Disabled/");
+  rtp_sender_audio_ =
+      std::make_unique<RTPSenderAudio>(&fake_clock_, rtp_module_->RtpSender());
+
   rtp_module_->RegisterRtpHeaderExtension(AbsoluteCaptureTimeExtension::Uri(),
                                           kAbsoluteCaptureTimeExtensionId);
   constexpr uint32_t kAbsoluteCaptureTimestampMs = 521;
@@ -174,17 +183,8 @@ TEST_F(RtpSenderAudioTest, SendAudioWithAbsoluteCaptureTime) {
       absolute_capture_time->estimated_capture_clock_offset.has_value());
 }
 
-
-
-
 TEST_F(RtpSenderAudioTest,
        SendAudioWithAbsoluteCaptureTimeWithCaptureClockOffset) {
-  
-  test::ScopedFieldTrials field_trial(
-      "WebRTC-IncludeCaptureClockOffset/Enabled/");
-  rtp_sender_audio_ =
-      std::make_unique<RTPSenderAudio>(&fake_clock_, rtp_module_->RtpSender());
-
   rtp_module_->RegisterRtpHeaderExtension(AbsoluteCaptureTimeExtension::Uri(),
                                           kAbsoluteCaptureTimeExtensionId);
   constexpr uint32_t kAbsoluteCaptureTimestampMs = 521;
