@@ -156,8 +156,6 @@ class WorkerGlobalScopeBase : public DOMEventTargetHelper,
 
   uint64_t WindowID() const;
 
-  void NoteTerminating() { StartDying(); }
-
   
   
   void NoteWorkerTerminated() { mWorkerPrivate = nullptr; }
@@ -211,6 +209,8 @@ class WorkerGlobalScope : public WorkerGlobalScopeBase {
                                            WorkerGlobalScopeBase)
 
   using WorkerGlobalScopeBase::WorkerGlobalScopeBase;
+
+  void NoteTerminating();
 
   
   RefPtr<ServiceWorkerRegistration> GetServiceWorkerRegistration(
