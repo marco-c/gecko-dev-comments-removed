@@ -322,6 +322,9 @@ function sortProps(obj) {
 
 
 function moveComments(nodeTo, nodeFrom) {
+  if (!nodeFrom.comments) {
+    return;
+  }
   if (nodeTo.comments) {
     nodeTo.comments = [...nodeTo.comments, ...nodeFrom.comments];
   } else {
