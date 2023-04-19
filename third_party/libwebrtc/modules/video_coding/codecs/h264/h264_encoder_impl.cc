@@ -545,6 +545,12 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams(size_t i) const {
   
   
   encoder_params.uiIntraPeriod = configurations_[i].key_frame_interval;
+  
+  
+  
+  
+  
+  encoder_params.eSpsPpsIdStrategy = SPS_LISTING;
   encoder_params.uiMaxNalSize = 0;
   
   
