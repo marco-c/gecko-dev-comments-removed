@@ -136,35 +136,29 @@ bool wasm::DecodeValidatedLocalEntries(const TypeContext& types, Decoder& d,
 
 bool wasm::CheckIsSubtypeOf(Decoder& d, const ModuleEnvironment& env,
                             size_t opcodeOffset, FieldType actual,
-                            FieldType expected, TypeCache* cache) {
-  switch (env.types->isSubtypeOf(actual, expected, cache)) {
-    case TypeResult::OOM:
-      return false;
-    case TypeResult::True:
-      return true;
-    case TypeResult::False: {
-      UniqueChars actualText = ToString(actual, env.types);
-      if (!actualText) {
-        return false;
-      }
-
-      UniqueChars expectedText = ToString(expected, env.types);
-      if (!expectedText) {
-        return false;
-      }
-
-      UniqueChars error(
-          JS_smprintf("type mismatch: expression has type %s but expected %s",
-                      actualText.get(), expectedText.get()));
-      if (!error) {
-        return false;
-      }
-
-      return d.fail(opcodeOffset, error.get());
-    }
-    default:
-      MOZ_CRASH();
+                            FieldType expected) {
+  if (FieldType::isSubTypeOf(actual, expected)) {
+    return true;
   }
+
+  UniqueChars actualText = ToString(actual, env.types);
+  if (!actualText) {
+    return false;
+  }
+
+  UniqueChars expectedText = ToString(expected, env.types);
+  if (!expectedText) {
+    return false;
+  }
+
+  UniqueChars error(
+      JS_smprintf("type mismatch: expression has type %s but expected %s",
+                  actualText.get(), expectedText.get()));
+  if (!error) {
+    return false;
+  }
+
+  return d.fail(opcodeOffset, error.get());
 }
 
 
@@ -1655,19 +1649,56 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
         return d.fail("too many types");
       }
 
-      
       uint8_t form;
+      const TypeDef* superTypeDef = nullptr;
+
+      
+      
+      if (env->gcEnabled() && d.peekByte(&form) &&
+          form == (uint8_t)TypeCode::SubType) {
+        
+        d.uncheckedReadFixedU8();
+
+        
+        
+        uint32_t numSuperTypes;
+        if (!d.readVarU32(&numSuperTypes)) {
+          return d.fail("expected number of super types");
+        }
+        if (numSuperTypes > 1) {
+          return d.fail("too many super types");
+        }
+
+        
+        if (numSuperTypes == 1) {
+          uint32_t superTypeDefIndex;
+          if (!d.readVarU32(&superTypeDefIndex)) {
+            return d.fail("expected super type index");
+          }
+
+          
+          
+          if (superTypeDefIndex >= typeIndex) {
+            return d.fail("invalid super type index");
+          }
+
+          superTypeDef = &env->types->type(superTypeDefIndex);
+        }
+      }
+
+      
       if (!d.readFixedU8(&form)) {
         return d.fail("expected type form");
       }
 
+      TypeDef* typeDef = &recGroup->type(recGroupTypeIndex);
       switch (form) {
         case uint8_t(TypeCode::Func): {
           FuncType funcType;
           if (!DecodeFuncType(d, env, &funcType)) {
             return false;
           }
-          recGroup->type(recGroupTypeIndex) = std::move(funcType);
+          *typeDef = std::move(funcType);
           break;
         }
         case uint8_t(TypeCode::Struct): {
@@ -1675,7 +1706,7 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
           if (!DecodeStructType(d, env, &structType)) {
             return false;
           }
-          recGroup->type(recGroupTypeIndex) = std::move(structType);
+          *typeDef = std::move(structType);
           break;
         }
         case uint8_t(TypeCode::Array): {
@@ -1683,11 +1714,17 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
           if (!DecodeArrayType(d, env, &arrayType)) {
             return false;
           }
-          recGroup->type(recGroupTypeIndex) = std::move(arrayType);
+          *typeDef = std::move(arrayType);
           break;
         }
         default:
           return d.fail("expected type form");
+      }
+
+      
+      
+      if (superTypeDef && !typeDef->trySetSuperTypeDef(superTypeDef)) {
+        return d.fail("incompatible super type");
       }
     }
 
@@ -2605,10 +2642,9 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
       case ElemSegmentKind::Active:
       case ElemSegmentKind::ActiveWithTableIndex: {
         RefType tblElemType = env->tables[seg->tableIndex].elemType;
-        TypeCache cache;
         if (!CheckIsSubtypeOf(d, *env, d.currentOffset(),
                               ValType(elemType).fieldType(),
-                              ValType(tblElemType).fieldType(), &cache)) {
+                              ValType(tblElemType).fieldType())) {
           return false;
         }
         break;
@@ -2650,7 +2686,6 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
     
     
 
-    TypeCache cache;
     for (uint32_t i = 0; i < numElems; i++) {
       bool needIndex = true;
 
@@ -2676,7 +2711,7 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
         }
         if (!CheckIsSubtypeOf(d, *env, d.currentOffset(),
                               ValType(initType).fieldType(),
-                              ValType(elemType).fieldType(), &cache)) {
+                              ValType(elemType).fieldType())) {
           return false;
         }
       }

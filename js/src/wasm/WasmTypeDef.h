@@ -182,6 +182,14 @@ class FuncType {
            EqualContainers(lhs.results(), rhs.results());
   }
 
+  
+  
+  static bool canBeSubTypeOf(const FuncType& subType,
+                             const FuncType& superType) {
+    
+    return FuncType::strictlyEquals(subType, superType);
+  }
+
   bool canHaveJitEntry() const;
   bool canHaveJitExit() const;
 
@@ -245,6 +253,23 @@ struct StructField {
     hn = mozilla::AddToHash(hn, HashNumber(isMutable));
     return hn;
   }
+
+  
+  
+  static bool canBeSubTypeOf(const StructField& subType,
+                             const StructField& superType) {
+    
+    if (subType.isMutable && superType.isMutable) {
+      return subType.type == superType.type;
+    }
+
+    
+    if (!subType.isMutable && !superType.isMutable) {
+      return FieldType::isSubTypeOf(subType.type, superType.type);
+    }
+
+    return false;
+  }
 };
 
 using StructFieldVector = Vector<StructField, 0, SystemAllocPolicy>;
@@ -303,6 +328,25 @@ class StructType {
       if (lhsField.isMutable != rhsField.isMutable ||
           lhsField.type.forMatch(lhsRecGroup) !=
               rhsField.type.forMatch(rhsRecGroup)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  
+  
+  static bool canBeSubTypeOf(const StructType& subType,
+                             const StructType& superType) {
+    
+    if (subType.fields_.length() < superType.fields_.length()) {
+      return false;
+    }
+
+    
+    for (uint32_t i = 0; i < superType.fields_.length(); i++) {
+      if (!StructField::canBeSubTypeOf(subType.fields_[i],
+                                       superType.fields_[i])) {
         return false;
       }
     }
@@ -389,6 +433,23 @@ class ArrayType {
     return true;
   }
 
+  
+  static bool canBeSubTypeOf(const ArrayType& subType,
+                             const ArrayType& superType) {
+    
+    if (subType.isMutable_ && superType.isMutable_) {
+      return subType.elementType_ == superType.elementType_;
+    }
+
+    
+    if (!subType.isMutable_ && !superType.isMutable_) {
+      return FieldType::isSubTypeOf(subType.elementType_,
+                                    superType.elementType_);
+    }
+
+    return true;
+  }
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
@@ -407,6 +468,7 @@ enum class TypeDefKind : uint8_t {
 };
 
 class TypeDef {
+  const TypeDef* superTypeDef_;
   uint32_t offsetToRecGroup_;
   TypeDefKind kind_;
   union {
@@ -424,7 +486,8 @@ class TypeDef {
   }
 
  public:
-  explicit TypeDef(RecGroup* recGroup) : offsetToRecGroup_(0), kind_(TypeDefKind::None) {
+  explicit TypeDef(RecGroup* recGroup)
+      : superTypeDef_(nullptr), offsetToRecGroup_(0), kind_(TypeDefKind::None) {
     setRecGroup(recGroup);
   }
 
@@ -464,6 +527,8 @@ class TypeDef {
     new (&arrayType_) ArrayType(std::move(that));
     return *this;
   }
+
+  const TypeDef* superTypeDef() const { return superTypeDef_; }
 
   const RecGroup& recGroup() const {
     uintptr_t typeDefAddr = (uintptr_t)this;
@@ -511,8 +576,14 @@ class TypeDef {
     return arrayType_;
   }
 
+  
+  
+  static inline uintptr_t forMatch(const TypeDef* typeDef,
+                                   const RecGroup* recGroup);
+
   HashNumber hash() const {
     HashNumber hn = HashNumber(kind_);
+    hn = mozilla::AddToHash(hn, TypeDef::forMatch(superTypeDef_, &recGroup()));
     switch (kind_) {
       case TypeDefKind::Func:
         hn = mozilla::AddToHash(hn, funcType_.hash(&recGroup()));
@@ -535,6 +606,10 @@ class TypeDef {
     if (lhs.kind_ != rhs.kind_) {
       return false;
     }
+    if (TypeDef::forMatch(lhs.superTypeDef_, &lhs.recGroup()) !=
+        TypeDef::forMatch(rhs.superTypeDef_, &rhs.recGroup())) {
+      return false;
+    }
     switch (lhs.kind_) {
       case TypeDefKind::Func:
         return FuncType::matches(&lhs.recGroup(), lhs.funcType_,
@@ -548,6 +623,51 @@ class TypeDef {
       case TypeDefKind::None:
         return true;
     }
+    return false;
+  }
+
+  
+  
+  static bool canBeSubTypeOf(const TypeDef* subType, const TypeDef* superType) {
+    if (subType->kind() != superType->kind()) {
+      return false;
+    }
+
+    switch (subType->kind_) {
+      case TypeDefKind::Func:
+        return FuncType::canBeSubTypeOf(subType->funcType_,
+                                        superType->funcType_);
+      case TypeDefKind::Struct:
+        return StructType::canBeSubTypeOf(subType->structType_,
+                                          superType->structType_);
+      case TypeDefKind::Array:
+        return ArrayType::canBeSubTypeOf(subType->arrayType_,
+                                         superType->arrayType_);
+      case TypeDefKind::None:
+        MOZ_CRASH();
+    }
+    return false;
+  }
+
+  
+  
+  [[nodiscard]] bool trySetSuperTypeDef(const TypeDef* superTypeDef) {
+    if (!TypeDef::canBeSubTypeOf(this, superTypeDef)) {
+      return false;
+    }
+    superTypeDef_ = superTypeDef;
+    return true;
+  }
+
+  
+  static bool isSubTypeOf(const TypeDef* subType, const TypeDef* superType) {
+    while (subType) {
+      if (subType == superType) {
+        return true;
+      }
+      subType = subType->superTypeDef();
+    }
+    return false;
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -643,6 +763,12 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
 
     for (uint32_t i = 0; i < numTypes_; i++) {
       const TypeDef& typeDef = types_[i];
+
+      if (typeDef.superTypeDef() &&
+          &typeDef.superTypeDef()->recGroup() != this) {
+        visitor(&typeDef.superTypeDef()->recGroup());
+      }
+
       switch (typeDef.kind()) {
         case TypeDefKind::Func: {
           const FuncType& funcType = typeDef.funcType();
@@ -740,92 +866,6 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
 using SharedRecGroup = RefPtr<const RecGroup>;
 using MutableRecGroup = RefPtr<RecGroup>;
 using SharedRecGroupVector = Vector<SharedRecGroup, 0, SystemAllocPolicy>;
-
-
-
-
-
-
-
-
-class TypeCache {
-  struct TypePair {
-    const TypeDef* first;
-    const TypeDef* second;
-
-    constexpr TypePair(const TypeDef* first, const TypeDef* second)
-        : first(first), second(second) {}
-
-    
-    static constexpr TypePair ordered(const TypeDef* a, const TypeDef* b) {
-      return TypePair(a, b);
-    }
-
-    
-    static constexpr TypePair unordered(const TypeDef* a, const TypeDef* b) {
-      if (a < b) {
-        return TypePair(a, b);
-      }
-      return TypePair(b, a);
-    }
-
-    HashNumber hash() const {
-      HashNumber hn = 0;
-      hn = mozilla::AddToHash(hn, first);
-      hn = mozilla::AddToHash(hn, second);
-      return hn;
-    }
-    bool operator==(const TypePair& rhs) const {
-      return first == rhs.first && second == rhs.second;
-    }
-  };
-  struct TypePairHashPolicy {
-    using Lookup = const TypePair&;
-    static HashNumber hash(Lookup pair) { return pair.hash(); }
-    static bool match(const TypePair& lhs, Lookup rhs) { return lhs == rhs; }
-  };
-  using TypeSet = HashSet<TypePair, TypePairHashPolicy, SystemAllocPolicy>;
-
-  TypeSet equivalence_;
-  TypeSet subtype_;
-
- public:
-  TypeCache() = default;
-
-  
-  [[nodiscard]] bool markEquivalent(const TypeDef* a, const TypeDef* b) {
-    return equivalence_.put(TypePair::unordered(a, b));
-  }
-  
-  void unmarkEquivalent(const TypeDef* a, const TypeDef* b) {
-    equivalence_.remove(TypePair::unordered(a, b));
-  }
-
-  
-  bool isEquivalent(const TypeDef* a, const TypeDef* b) {
-    return equivalence_.has(TypePair::unordered(a, b));
-  }
-
-  
-  [[nodiscard]] bool markSubtypeOf(const TypeDef* a, const TypeDef* b) {
-    return subtype_.put(TypePair::ordered(a, b));
-  }
-  
-  void unmarkSubtypeOf(const TypeDef* a, const TypeDef* b) {
-    subtype_.remove(TypePair::ordered(a, b));
-  }
-  
-  bool isSubtypeOf(const TypeDef* a, const TypeDef* b) {
-    return subtype_.has(TypePair::ordered(a, b));
-  }
-};
-
-
-enum class TypeResult {
-  True,
-  False,
-  OOM,
-};
 
 
 
@@ -955,80 +995,6 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
     MOZ_RELEASE_ASSERT(moduleIndex.found());
     return moduleIndex->value();
   }
-
-  
-
-  template <class T>
-  TypeResult isEquivalent(T first, T second, TypeCache* cache) const {
-    
-    if (first == second) {
-      return TypeResult::True;
-    }
-
-    
-    if (first.isRefType() && second.isRefType()) {
-      return isRefEquivalent(first.refType(), second.refType(), cache);
-    }
-
-    return TypeResult::False;
-  }
-
-  TypeResult isRefEquivalent(RefType first, RefType second,
-                             TypeCache* cache) const;
-#ifdef ENABLE_WASM_FUNCTION_REFERENCES
-  TypeResult isTypeDefEquivalent(const TypeDef* first, const TypeDef* second,
-                                 TypeCache* cache) const;
-#endif
-#ifdef ENABLE_WASM_GC
-  TypeResult isStructEquivalent(const TypeDef* first, const TypeDef* second,
-                                TypeCache* cache) const;
-  TypeResult isStructFieldEquivalent(const StructField first,
-                                     const StructField second,
-                                     TypeCache* cache) const;
-  TypeResult isArrayEquivalent(const TypeDef* first, const TypeDef* second,
-                               TypeCache* cache) const;
-  TypeResult isArrayElementEquivalent(const ArrayType& first,
-                                      const ArrayType& second,
-                                      TypeCache* cache) const;
-#endif
-
-  
-
-  template <class T>
-  TypeResult isSubtypeOf(T subType, T superType, TypeCache* cache) const {
-    
-    if (subType == superType) {
-      return TypeResult::True;
-    }
-
-    
-    if (subType.isRefType() && superType.isRefType()) {
-      return isRefSubtypeOf(subType.refType(), superType.refType(), cache);
-    }
-
-    return TypeResult::False;
-  }
-
-  TypeResult isRefSubtypeOf(RefType subType, RefType superType,
-                            TypeCache* cache) const;
-#ifdef ENABLE_WASM_FUNCTION_REFERENCES
-  TypeResult isTypeDefSubtypeOf(const TypeDef* subType,
-                                const TypeDef* superType,
-                                TypeCache* cache) const;
-#endif
-
-#ifdef ENABLE_WASM_GC
-  TypeResult isStructSubtypeOf(const TypeDef* subType, const TypeDef* superType,
-                               TypeCache* cache) const;
-  TypeResult isStructFieldSubtypeOf(const StructField subType,
-                                    const StructField superType,
-                                    TypeCache* cache) const;
-  TypeResult isArraySubtypeOf(const TypeDef* subType, const TypeDef* superType,
-                              TypeCache* cache) const;
-  TypeResult isArrayElementSubtypeOf(const ArrayType& subType,
-                                     const ArrayType& superType,
-                                     TypeCache* cache) const;
-#endif
 };
 
 using SharedTypeContext = RefPtr<const TypeContext>;
@@ -1058,19 +1024,76 @@ class TypeHandle {
 };
 
 
+inline uintptr_t TypeDef::forMatch(const TypeDef* typeDef,
+                                   const RecGroup* recGroup) {
+  
+  
+  static_assert(alignof(TypeDef) > 1);
+  MOZ_ASSERT((uintptr_t(typeDef) & 0x1) == 0);
+
+  
+  if (typeDef && &typeDef->recGroup() == recGroup) {
+    return uintptr_t(recGroup->indexOf(typeDef)) | 0x1;
+  }
+
+  
+  return uintptr_t(typeDef);
+}
+
+
 inline MatchTypeCode MatchTypeCode::forMatch(PackedTypeCode ptc,
                                              const RecGroup* recGroup) {
   MatchTypeCode mtc = {};
   mtc.typeCode = PackedRepr(ptc.typeCode());
-  if (ptc.typeDef() && &ptc.typeDef()->recGroup() == recGroup) {
-    mtc.isLocal = true;
-    mtc.typeRef = recGroup->indexOf(ptc.typeDef());
-  } else {
-    mtc.isLocal = false;
-    mtc.typeRef = PackedRepr(ptc.typeDef());
-  }
+  mtc.typeRef = TypeDef::forMatch(ptc.typeDef(), recGroup);
   mtc.nullable = ptc.isNullable();
   return mtc;
+}
+
+
+inline bool RefType::isSubTypeOf(RefType subType, RefType superType) {
+  
+  if (subType == superType) {
+    return true;
+  }
+
+  
+  
+  if (!(subType.isNullable() == superType.isNullable() ||
+        superType.isNullable())) {
+    return false;
+  }
+
+  
+  if (!subType.isTypeRef() && !superType.isTypeRef() &&
+      subType.kind() == superType.kind()) {
+    return true;
+  }
+
+  
+  if (subType.isTypeRef() && subType.typeDef()->isStructType() &&
+      superType.isEq()) {
+    return true;
+  }
+
+  
+  if (subType.isTypeRef() && subType.typeDef()->isArrayType() &&
+      superType.isEq()) {
+    return true;
+  }
+
+  
+  if (subType.isTypeRef() && subType.typeDef()->isFuncType() &&
+      superType.isFunc()) {
+    return true;
+  }
+
+  
+  if (subType.isTypeRef() && superType.isTypeRef()) {
+    return TypeDef::isSubTypeOf(subType.typeDef(), superType.typeDef());
+  }
+
+  return false;
 }
 
 

@@ -96,6 +96,9 @@ enum class TypeCode {
   
   RecGroup = 0x45,
 
+  
+  SubType = 0x50,
+
   Limit = 0x80
 };
 
