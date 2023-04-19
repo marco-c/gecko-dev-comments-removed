@@ -356,9 +356,7 @@
       this.richlistbox.style.removeProperty("height");
       
       
-      
-      
-      this.richlistbox.height = Math.ceil(height);
+      this.richlistbox.style.height = Math.ceil(height) + "px";
     }
 
     _appendCurrentResult(invalidateReason) {
