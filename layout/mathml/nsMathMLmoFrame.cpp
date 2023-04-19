@@ -131,12 +131,16 @@ void nsMathMLmoFrame::ProcessTextData() {
 
   
   
-  nsOperatorFlags flags[4];
-  float lspace[4], rspace[4];
-  nsMathMLOperators::LookupOperators(data, flags, lspace, rspace);
-  nsOperatorFlags allFlags = flags[NS_MATHML_OPERATOR_FORM_INFIX] |
-                             flags[NS_MATHML_OPERATOR_FORM_POSTFIX] |
-                             flags[NS_MATHML_OPERATOR_FORM_PREFIX];
+  nsOperatorFlags allFlags = 0;
+  for (const auto& form :
+       {NS_MATHML_OPERATOR_FORM_INFIX, NS_MATHML_OPERATOR_FORM_POSTFIX,
+        NS_MATHML_OPERATOR_FORM_PREFIX}) {
+    nsOperatorFlags flags = 0;
+    float dummy;
+    if (nsMathMLOperators::LookupOperator(data, form, &flags, &dummy, &dummy)) {
+      allFlags |= flags;
+    }
+  }
 
   mFlags |= allFlags & NS_MATHML_OPERATOR_ACCENT;
   mFlags |= allFlags & NS_MATHML_OPERATOR_MOVABLELIMITS;
@@ -327,7 +331,13 @@ void nsMathMLmoFrame::ProcessOperatorData() {
     
     nsAutoString data;
     mMathMLChar.GetData(data);
-    nsMathMLOperators::LookupOperator(data, form, &mFlags, &lspace, &rspace);
+    nsOperatorFlags flags = 0;
+    if (nsMathMLOperators::LookupOperatorWithFallback(data, form, &flags,
+                                                      &lspace, &rspace)) {
+      mFlags &= ~NS_MATHML_OPERATOR_FORM;  
+      mFlags |= flags;                     
+    }
+
     
     
     if (!NS_MATHML_OPERATOR_EMBELLISH_IS_ISOLATED(mFlags) &&
