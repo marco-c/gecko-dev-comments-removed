@@ -48,8 +48,6 @@ const NULL_PRINCIPAL_SCHEME = Services.scriptSecurityManager
   .createNullPrincipal({})
   .scheme.toLowerCase();
 
-let testExtension;
-
 
 
 
@@ -109,103 +107,10 @@ function testAlwaysAsk(scheme, ask) {
 
 
 
+function useServerRedirect(serverRedirect) {
+  return async (browser, scheme) => {
+    let uri = `${scheme}://test`;
 
-
-
-
-
-
-
-
-
-
-
-async function triggerOpenProto(
-  browser,
-  scheme,
-  {
-    triggeringPrincipal = browser.contentPrincipal,
-    useNullPrincipal = false,
-    useExtensionPrincipal = false,
-    omitTriggeringPrincipal = false,
-    useJSRedirect = false,
-    serverRedirect = "",
-    linkToRedirect = false,
-    customHandlerInfo,
-  } = {}
-) {
-  let uri = `${scheme}://test`;
-
-  if (useNullPrincipal) {
-    
-    
-    ContentTask.spawn(browser, { uri }, args => {
-      let frame = content.document.createElement("iframe");
-      frame.src = `data:text/html,<script>location.href="${args.uri}"</script>`;
-      content.document.body.appendChild(frame);
-    });
-    return;
-  }
-
-  if (useExtensionPrincipal) {
-    const EXTENSION_DATA = {
-      manifest: {
-        content_scripts: [
-          {
-            matches: [browser.currentURI.spec],
-            js: ["navigate.js"],
-          },
-        ],
-      },
-      files: {
-        "navigate.js": `window.location.href = "${uri}";`,
-      },
-    };
-
-    testExtension = ExtensionTestUtils.loadExtension(EXTENSION_DATA);
-    await testExtension.startup();
-    return;
-  }
-
-  if (omitTriggeringPrincipal) {
-    
-    let contentDispatchChooser = Cc[
-      "@mozilla.org/content-dispatch-chooser;1"
-    ].createInstance(Ci.nsIContentDispatchChooser);
-
-    let handler =
-      customHandlerInfo || HandlerServiceTestUtils.getHandlerInfo(scheme);
-
-    contentDispatchChooser.handleURI(
-      handler,
-      Services.io.newURI(uri),
-      null,
-      browser.browsingContext
-    );
-    return;
-  }
-
-  if (useJSRedirect) {
-    let innerParams = new URLSearchParams();
-    innerParams.set("uri", uri);
-    let params = new URLSearchParams();
-    params.set(
-      "uri",
-      "https://example.com/" +
-        ROOT_PATH +
-        "script_redirect.html?" +
-        innerParams.toString()
-    );
-    uri =
-      "https://example.org/" +
-      ROOT_PATH +
-      "script_redirect.html?" +
-      params.toString();
-    BrowserTestUtils.loadURI(browser, uri);
-    return;
-  }
-
-  if (serverRedirect) {
     let innerParams = new URLSearchParams();
     innerParams.set("uri", uri);
     innerParams.set("redirectType", serverRedirect);
@@ -223,29 +128,22 @@ async function triggerOpenProto(
       "redirect_helper.sjs?" +
       params.toString();
     BrowserTestUtils.loadURI(browser, uri);
-    return;
-  }
+  };
+}
 
-  if (linkToRedirect) {
-    let params = new URLSearchParams();
-    params.set("uri", uri);
-    uri =
-      "https://example.com/" +
-      ROOT_PATH +
-      "redirect_helper.sjs?" +
-      params.toString();
-    await ContentTask.spawn(browser, { uri }, args => {
-      let textLink = content.document.createElement("a");
-      textLink.href = args.uri;
-      textLink.textContent = "click me";
-      content.document.body.appendChild(textLink);
-      textLink.click();
-    });
-    return;
-  }
 
-  info("Loading uri: " + uri);
-  browser.loadURI(uri, { triggeringPrincipal });
+
+
+
+
+function useTriggeringPrincipal(principal = undefined) {
+  return async (browser, scheme) => {
+    let uri = `${scheme}://test`;
+    let triggeringPrincipal = principal ?? browser.contentPrincipal;
+
+    info("Loading uri: " + uri);
+    browser.loadURI(uri, { triggeringPrincipal });
+  };
 }
 
 
@@ -267,7 +165,11 @@ async function triggerOpenProto(
 async function testOpenProto(
   browser,
   scheme,
-  { permDialogOptions, chooserDialogOptions, loadOptions } = {}
+  {
+    permDialogOptions,
+    chooserDialogOptions,
+    triggerLoad = useTriggeringPrincipal(),
+  } = {}
 ) {
   let permDialogOpenPromise;
   let chooserDialogOpenPromise;
@@ -281,7 +183,7 @@ async function testOpenProto(
     info("Should see chooser dialog");
     chooserDialogOpenPromise = waitForProtocolAppChooserDialog(browser, true);
   }
-  await triggerOpenProto(browser, scheme, loadOptions);
+  await triggerLoad(browser, scheme);
   let webHandlerLoadedPromise;
 
   let webHandlerShouldOpen =
@@ -383,13 +285,6 @@ async function testOpenProto(
     await webHandlerLoadedPromise;
   } else {
     info("Web handler open canceled");
-  }
-
-  
-  if (testExtension) {
-    await testExtension.unload();
-    
-    testExtension = null;
   }
 }
 
@@ -711,9 +606,9 @@ add_task(async function test_permission_system_principal() {
   await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
     await testOpenProto(browser, scheme, {
       chooserDialogOptions: { hasCheckbox: true, actionConfirm: false },
-      loadOptions: {
-        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      },
+      triggerLoad: useTriggeringPrincipal(
+        Services.scriptSecurityManager.getSystemPrincipal()
+      ),
     });
   });
 });
@@ -795,8 +690,13 @@ add_task(async function test_null_principal() {
 
   await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
     await testOpenProto(browser, scheme, {
-      loadOptions: {
-        useNullPrincipal: true,
+      triggerLoad: () => {
+        let uri = `${scheme}://test`;
+        ContentTask.spawn(browser, { uri }, args => {
+          let frame = content.document.createElement("iframe");
+          frame.src = `data:text/html,<script>location.href="${args.uri}"</script>`;
+          content.document.body.appendChild(frame);
+        });
       },
       permDialogOptions: {
         hasCheckbox: false,
@@ -821,8 +721,21 @@ add_task(async function test_no_principal() {
 
   await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
     await testOpenProto(browser, scheme, {
-      loadOptions: {
-        omitTriggeringPrincipal: true,
+      triggerLoad: () => {
+        let uri = `${scheme}://test`;
+
+        let contentDispatchChooser = Cc[
+          "@mozilla.org/content-dispatch-chooser;1"
+        ].createInstance(Ci.nsIContentDispatchChooser);
+
+        let handler = HandlerServiceTestUtils.getHandlerInfo(scheme);
+
+        contentDispatchChooser.handleURI(
+          handler,
+          Services.io.newURI(uri),
+          null,
+          browser.browsingContext
+        );
       },
       permDialogOptions: {
         hasCheckbox: false,
@@ -856,9 +769,6 @@ add_task(async function test_non_standard_protocol() {
 
   await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
     await testOpenProto(browser, scheme, {
-      loadOptions: {
-        customHandlerInfo: HandlerServiceTestUtils.getHandlerInfo(scheme),
-      },
       permDialogOptions: {
         hasCheckbox: true,
         hasChangeApp: true,
@@ -875,15 +785,36 @@ add_task(async function test_non_standard_protocol() {
 add_task(async function test_extension_principal() {
   let scheme = TEST_PROTOS[0];
   await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
+    let testExtension;
+
     await testOpenProto(browser, scheme, {
-      loadOptions: {
-        useExtensionPrincipal: true,
+      triggerLoad: async () => {
+        let uri = `${scheme}://test`;
+
+        const EXTENSION_DATA = {
+          manifest: {
+            content_scripts: [
+              {
+                matches: [browser.currentURI.spec],
+                js: ["navigate.js"],
+              },
+            ],
+          },
+          files: {
+            "navigate.js": `window.location.href = "${uri}";`,
+          },
+        };
+
+        testExtension = ExtensionTestUtils.loadExtension(EXTENSION_DATA);
+        await testExtension.startup();
       },
       chooserDialogOptions: {
         hasCheckbox: true,
         actionConfirm: false, 
       },
     });
+
+    await testExtension.unload();
   });
 });
 
@@ -894,9 +825,7 @@ add_task(async function test_redirect_principal() {
   let scheme = TEST_PROTOS[0];
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     await testOpenProto(browser, scheme, {
-      loadOptions: {
-        serverRedirect: "location",
-      },
+      triggerLoad: useServerRedirect("location"),
       permDialogOptions: {
         checkboxOrigin: ORIGIN1,
         chooserIsNext: true,
@@ -914,9 +843,7 @@ add_task(async function test_redirect_principal() {
   let scheme = TEST_PROTOS[0];
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     await testOpenProto(browser, scheme, {
-      loadOptions: {
-        serverRedirect: "refresh",
-      },
+      triggerLoad: useServerRedirect("refresh"),
       permDialogOptions: {
         checkboxOrigin: ORIGIN1,
         chooserIsNext: true,
@@ -934,9 +861,7 @@ add_task(async function test_redirect_principal() {
   let scheme = TEST_PROTOS[0];
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     await testOpenProto(browser, scheme, {
-      loadOptions: {
-        serverRedirect: "meta-refresh",
-      },
+      triggerLoad: useServerRedirect("meta-refresh"),
       permDialogOptions: {
         checkboxOrigin: ORIGIN1,
         chooserIsNext: true,
@@ -954,8 +879,25 @@ add_task(async function test_redirect_principal_js() {
   let scheme = TEST_PROTOS[0];
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     await testOpenProto(browser, scheme, {
-      loadOptions: {
-        useJSRedirect: true,
+      triggerLoad: () => {
+        let uri = `${scheme}://test`;
+
+        let innerParams = new URLSearchParams();
+        innerParams.set("uri", uri);
+        let params = new URLSearchParams();
+        params.set(
+          "uri",
+          "https://example.com/" +
+            ROOT_PATH +
+            "script_redirect.html?" +
+            innerParams.toString()
+        );
+        uri =
+          "https://example.org/" +
+          ROOT_PATH +
+          "script_redirect.html?" +
+          params.toString();
+        BrowserTestUtils.loadURI(browser, uri);
       },
       permDialogOptions: {
         checkboxOrigin: ORIGIN1,
@@ -974,8 +916,23 @@ add_task(async function test_redirect_principal_links() {
   let scheme = TEST_PROTOS[0];
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     await testOpenProto(browser, scheme, {
-      loadOptions: {
-        linkToRedirect: true,
+      triggerLoad: async () => {
+        let uri = `${scheme}://test`;
+
+        let params = new URLSearchParams();
+        params.set("uri", uri);
+        uri =
+          "https://example.com/" +
+          ROOT_PATH +
+          "redirect_helper.sjs?" +
+          params.toString();
+        await ContentTask.spawn(browser, { uri }, args => {
+          let textLink = content.document.createElement("a");
+          textLink.href = args.uri;
+          textLink.textContent = "click me";
+          content.document.body.appendChild(textLink);
+          textLink.click();
+        });
       },
       permDialogOptions: {
         checkboxOrigin: ORIGIN1,
