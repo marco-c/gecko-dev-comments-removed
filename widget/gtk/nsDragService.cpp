@@ -1030,7 +1030,8 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
   return NS_OK;
 }
 
-void nsDragService::ReplyToDragMotion(GdkDragContext* aDragContext) {
+void nsDragService::ReplyToDragMotion(GdkDragContext* aDragContext,
+                                      guint aTime) {
   LOGDRAGSERVICE("nsDragService::ReplyToDragMotion(%p) can drop %d",
                  aDragContext, mCanDrop);
 
@@ -1039,26 +1040,50 @@ void nsDragService::ReplyToDragMotion(GdkDragContext* aDragContext) {
     
     switch (mDragAction) {
       case DRAGDROP_ACTION_COPY:
-        LOGDRAGSERVICE("  set gdk_drag_status() action copy");
+        LOGDRAGSERVICE("  set explicit action copy");
         action = GDK_ACTION_COPY;
         break;
       case DRAGDROP_ACTION_LINK:
-        LOGDRAGSERVICE("  set gdk_drag_status() action link");
+        LOGDRAGSERVICE("  set explicit action link");
         action = GDK_ACTION_LINK;
         break;
       case DRAGDROP_ACTION_NONE:
-        LOGDRAGSERVICE("  set gdk_drag_status() action none");
+        LOGDRAGSERVICE("  set explicit action none");
         action = (GdkDragAction)0;
         break;
       default:
-        LOGDRAGSERVICE("  set gdk_drag_status() action move");
+        LOGDRAGSERVICE("  set explicit action move");
         action = GDK_ACTION_MOVE;
         break;
     }
   } else {
     LOGDRAGSERVICE("  mCanDrop is false, disable drop");
   }
-  gdk_drag_status(aDragContext, action, mTargetTime);
+
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  if (widget::GdkIsWaylandDisplay() && action == GDK_ACTION_COPY) {
+    LOGDRAGSERVICE("  Wayland: switch copy to move");
+    action = GDK_ACTION_MOVE;
+  }
+
+  gdk_drag_status(aDragContext, action, aTime);
 }
 
 void nsDragService::EnsureCachedDataValidForContext(
@@ -2213,7 +2238,7 @@ gboolean nsDragService::Schedule(DragTask aTask, nsWindow* aWindow,
   
   if (widget::GdkIsWaylandDisplay() && mScheduledTask == eDragTaskMotion) {
     UpdateDragAction(aDragContext);
-    ReplyToDragMotion(aDragContext);
+    ReplyToDragMotion(aDragContext, aTime);
   }
 
   return TRUE;
@@ -2392,6 +2417,12 @@ void nsDragService::UpdateDragAction(GdkDragContext* aDragContext) {
 
     
     
+    
+
+    
+    
+    
+    
     if (widget::GdkIsWaylandDisplay()) {
       GdkDragAction gdkActionSelected =
           gdk_drag_context_get_selected_action(aDragContext);
@@ -2432,7 +2463,7 @@ NS_IMETHODIMP
 nsDragService::UpdateDragEffect() {
   LOGDRAGSERVICE("nsDragService::UpdateDragEffect() from e10s child process");
   if (mTargetDragContextForRemote) {
-    ReplyToDragMotion(mTargetDragContextForRemote);
+    ReplyToDragMotion(mTargetDragContextForRemote, mTargetTime);
     mTargetDragContextForRemote = nullptr;
   }
   return NS_OK;
@@ -2440,7 +2471,7 @@ nsDragService::UpdateDragEffect() {
 
 void nsDragService::ReplyToDragMotion() {
   if (mTargetDragContext) {
-    ReplyToDragMotion(mTargetDragContext);
+    ReplyToDragMotion(mTargetDragContext, mTargetTime);
   }
 }
 
