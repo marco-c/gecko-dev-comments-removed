@@ -339,7 +339,7 @@ void VideoReceiveStream2::Start() {
     
     
     
-    if (decoders_count < maximum_pre_stream_decoders_) {
+    if (decoders_count < static_cast<int>(maximum_pre_stream_decoders_)) {
       CreateAndRegisterExternalDecoder(decoder);
       ++decoders_count;
     }
