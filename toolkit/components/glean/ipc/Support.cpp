@@ -60,6 +60,12 @@ void FOG_IPCPayloadFull() {
   
   
   
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown)) {
+    return;
+  }
+  
+  
+  
   Unused << NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(
       NS_NewRunnableFunction("FOG IPC Payload getting full", [] {
         FlushFOGData([](ByteBuf&& aBuf) { SendFOGData(std::move(aBuf)); });
