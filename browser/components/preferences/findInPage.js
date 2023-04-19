@@ -576,7 +576,7 @@ var gSearchResultsPane = {
       
       
       if (
-        child instanceof Element &&
+        Element.isInstance(child) &&
         (child.classList.contains("featureGate") ||
           child.classList.contains("mozilla-product-item"))
       ) {

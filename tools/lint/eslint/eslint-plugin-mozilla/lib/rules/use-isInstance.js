@@ -96,8 +96,16 @@ function isChromeContext(context) {
   }
 
   
+  
+  
+  
+  
+  
+  
   const source = context.getSourceCode().text;
-  return !!source.match(/(^|\s)ChromeUtils/);
+  return !!source.match(
+    /(^|\s)ChromeUtils|BrowserTestUtils|PlacesUtils|createXULElement|lazyRequireGetter|(^|\s)Services\.|evalInSandbox/
+  );
 }
 
 module.exports = {

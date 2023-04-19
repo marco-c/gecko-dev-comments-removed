@@ -216,6 +216,7 @@ add_task(async function runtimeSendMessageReply() {
 add_task(async function runtimeSendMessageBlob() {
   function background() {
     browser.runtime.onMessage.addListener(msg => {
+      
       browser.test.assertTrue(msg.blob instanceof Blob, "Message is a blob");
       return Promise.resolve(msg);
     });
@@ -230,6 +231,7 @@ add_task(async function runtimeSendMessageBlob() {
       .sendMessage({ blob: new Blob(["hello"]) })
       .then(response => {
         browser.test.assertTrue(
+          
           response.blob instanceof Blob,
           "Response is a blob"
         );
