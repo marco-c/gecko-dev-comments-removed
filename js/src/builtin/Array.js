@@ -233,7 +233,7 @@ function ArrayFilter(callbackfn) {
 
 
 
-function ArrayGroup(callbackfn) {
+function ArrayGroupBy(callbackfn) {
     
     var O = ToObject(this);
 
@@ -297,7 +297,7 @@ function ArrayGroup(callbackfn) {
 
 
 
-function ArrayGroupToMap(callbackfn) {
+function ArrayGroupByToMap(callbackfn) {
 
     
     var O = ToObject(this);
