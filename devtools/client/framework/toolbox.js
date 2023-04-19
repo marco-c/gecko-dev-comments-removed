@@ -1204,7 +1204,9 @@ Toolbox.prototype = {
     }
 
     
-    if (!this._hostOptions || this._hostOptions.zoom === true) {
+    if (this.hostType != Toolbox.HostType.PAGE) {
+      
+      
       ZoomKeys.register(this.win, this.shortcuts);
     }
   },
