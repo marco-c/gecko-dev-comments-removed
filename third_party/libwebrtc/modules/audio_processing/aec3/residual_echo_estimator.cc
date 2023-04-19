@@ -86,22 +86,6 @@ void LinearEstimate(
 
 
 
-void LinearEstimate(
-    rtc::ArrayView<const std::array<float, kFftLengthBy2Plus1>> S2_linear,
-    float erle_uncertainty,
-    rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> R2) {
-  RTC_DCHECK_EQ(S2_linear.size(), R2.size());
-
-  const size_t num_capture_channels = R2.size();
-  for (size_t ch = 0; ch < num_capture_channels; ++ch) {
-    for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-      R2[ch][k] = S2_linear[ch][k] * erle_uncertainty;
-    }
-  }
-}
-
-
-
 void NonLinearEstimate(
     float echo_path_gain,
     const std::array<float, kFftLengthBy2Plus1>& X2,
@@ -201,12 +185,7 @@ void ResidualEchoEstimator::Estimate(
         std::copy(Y2[ch].begin(), Y2[ch].end(), R2[ch].begin());
       }
     } else {
-      absl::optional<float> erle_uncertainty = aec_state.ErleUncertainty();
-      if (erle_uncertainty) {
-        LinearEstimate(S2_linear, *erle_uncertainty, R2);
-      } else {
-        LinearEstimate(S2_linear, aec_state.Erle(), R2);
-      }
+      LinearEstimate(S2_linear, aec_state.Erle(), R2);
     }
 
     AddReverb(ReverbType::kLinear, aec_state, render_buffer, R2);

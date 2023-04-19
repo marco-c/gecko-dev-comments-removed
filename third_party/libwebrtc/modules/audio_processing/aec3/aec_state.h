@@ -75,12 +75,6 @@ class AecState {
   }
 
   
-  
-  
-  
-  absl::optional<float> ErleUncertainty() const;
-
-  
   float FullBandErleLog2() const { return erle_estimator_.FullbandErleLog2(); }
 
   
