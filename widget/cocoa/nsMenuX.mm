@@ -479,7 +479,7 @@ void nsMenuX::MenuOpenedAsync() {
   EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
 }
 
-void nsMenuX::MenuClosed(bool aEntireMenuClosingDueToActivateItem) {
+void nsMenuX::MenuClosed() {
   if (!mIsOpen) {
     return;
   }
@@ -490,7 +490,7 @@ void nsMenuX::MenuClosed(bool aEntireMenuClosingDueToActivateItem) {
   
   for (auto& child : mMenuChildren) {
     if (child.is<RefPtr<nsMenuX>>()) {
-      child.as<RefPtr<nsMenuX>>()->MenuClosed(aEntireMenuClosingDueToActivateItem);
+      child.as<RefPtr<nsMenuX>>()->MenuClosed();
     }
   }
 
@@ -526,20 +526,7 @@ void nsMenuX::MenuClosed(bool aEntireMenuClosingDueToActivateItem) {
 
   mPendingAsyncMenuCloseRunnable = new MenuClosedAsyncRunnable(this);
 
-  if (aEntireMenuClosingDueToActivateItem) {
-    
-    
-    
-    
-    
-    [MOZMenuOpeningCoordinator.sharedInstance runAfterMenuClosed:mPendingAsyncMenuCloseRunnable];
-  } else {
-    
-    
-    
-    
-    NS_DispatchToCurrentThread(mPendingAsyncMenuCloseRunnable);
-  }
+  NS_DispatchToCurrentThread(mPendingAsyncMenuCloseRunnable);
 }
 
 void nsMenuX::FlushMenuClosedRunnable() {

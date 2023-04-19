@@ -986,9 +986,11 @@ static BOOL gMenuItemsExecuteCommands = YES;
   
   
   if (menuGroupOwner) {
-    nsMenuItemX* menuItem = menuGroupOwner->GetMenuItemForCommandID(static_cast<uint32_t>(tag));
-    if (menuItem) {
-      menuItem->DoCommand(modifierFlags, button);
+    if (RefPtr<nsMenuItemX> menuItem =
+            menuGroupOwner->GetMenuItemForCommandID(static_cast<uint32_t>(tag))) {
+      if (RefPtr<nsMenuX> menu = menuItem->ParentMenu()) {
+        menu->ActivateItemAfterClosing(std::move(menuItem), modifierFlags, button);
+      }
     }
   }
 }

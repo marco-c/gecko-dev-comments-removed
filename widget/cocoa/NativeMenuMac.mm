@@ -351,24 +351,29 @@ void NativeMenuMac::ActivateItem(dom::Element* aItemElement, Modifiers aModifier
 
   NSMenuItem* nativeItem = [item->NativeNSMenuItem() retain];
 
-  menu->ActivateItemAfterClosing(std::move(item), ConvertModifierFlags(aModifiers), aButton);
-
-  
-  mMenu->MenuClosed(true);
-
-  
   
   
   
   
   
   [mMenu->NativeNSMenu() cancelTrackingWithoutAnimation];
-  MOZMenuOpeningCoordinator.needToUnwindForMenuClosing = YES;
 
   
   
   
   menu->OnWillActivateItem(nativeItem);
+
+  
+  
+  menu->ActivateItemAfterClosing(std::move(item), ConvertModifierFlags(aModifiers), aButton);
+
+  
+  
+  
+  
+  
+  
+  MOZMenuOpeningCoordinator.needToUnwindForMenuClosing = YES;
 
   [nativeItem release];
 }

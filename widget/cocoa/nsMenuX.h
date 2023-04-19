@@ -131,10 +131,7 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
-  
-  
-  
-  void MenuClosed(bool aEntireMenuClosingDueToActivateItem = false);
+  void MenuClosed();
 
   
   bool Close();
