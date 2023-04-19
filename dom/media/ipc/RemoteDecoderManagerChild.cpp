@@ -36,11 +36,11 @@ using namespace gfx;
 
 StaticMutex sLaunchRDDMutex;
 static StaticRefPtr<GenericNonExclusivePromise> sLaunchRDDPromise
-    GUARDED_BY(sLaunchRDDMutex);
+    MOZ_GUARDED_BY(sLaunchRDDMutex);
 
 StaticMutex sLaunchUtilityMutex;
 static StaticRefPtr<GenericNonExclusivePromise> sLaunchUtilityPromise
-    GUARDED_BY(sLaunchUtilityMutex);
+    MOZ_GUARDED_BY(sLaunchUtilityMutex);
 
 
 

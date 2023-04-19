@@ -66,12 +66,12 @@ class RemoteLazyInputStream final : public nsIAsyncInputStream,
 
   ~RemoteLazyInputStream();
 
-  void StreamNeeded() REQUIRES(mMutex);
+  void StreamNeeded() MOZ_REQUIRES(mMutex);
 
   
   
   
-  nsresult EnsureAsyncRemoteStream() REQUIRES(mMutex);
+  nsresult EnsureAsyncRemoteStream() MOZ_REQUIRES(mMutex);
 
   
   
@@ -82,7 +82,7 @@ class RemoteLazyInputStream final : public nsIAsyncInputStream,
       IPC::MessageReader* aReader);
 
   
-  nsCString Describe() REQUIRES(mMutex);
+  nsCString Describe() MOZ_REQUIRES(mMutex);
 
   
   
@@ -112,7 +112,7 @@ class RemoteLazyInputStream final : public nsIAsyncInputStream,
     
     
     eClosed,
-  } mState GUARDED_BY(mMutex) = eClosed;
+  } mState MOZ_GUARDED_BY(mMutex) = eClosed;
 
   
   
@@ -121,22 +121,25 @@ class RemoteLazyInputStream final : public nsIAsyncInputStream,
   
   
   
-  RefPtr<RemoteLazyInputStreamChild> mActor GUARDED_BY(mMutex);
+  RefPtr<RemoteLazyInputStreamChild> mActor MOZ_GUARDED_BY(mMutex);
 
-  nsCOMPtr<nsIInputStream> mInnerStream GUARDED_BY(mMutex);
-  nsCOMPtr<nsIAsyncInputStream> mAsyncInnerStream GUARDED_BY(mMutex);
-
-  
-  
-  
-  RefPtr<nsIInputStreamCallback> mInputStreamCallback GUARDED_BY(mMutex);
-  nsCOMPtr<nsIEventTarget> mInputStreamCallbackEventTarget GUARDED_BY(mMutex);
-  uint32_t mInputStreamCallbackFlags GUARDED_BY(mMutex) = 0;
-  uint32_t mInputStreamCallbackRequestedCount GUARDED_BY(mMutex) = 0;
+  nsCOMPtr<nsIInputStream> mInnerStream MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsIAsyncInputStream> mAsyncInnerStream MOZ_GUARDED_BY(mMutex);
 
   
-  nsCOMPtr<nsIFileMetadataCallback> mFileMetadataCallback GUARDED_BY(mMutex);
-  nsCOMPtr<nsIEventTarget> mFileMetadataCallbackEventTarget GUARDED_BY(mMutex);
+  
+  
+  RefPtr<nsIInputStreamCallback> mInputStreamCallback MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsIEventTarget> mInputStreamCallbackEventTarget
+      MOZ_GUARDED_BY(mMutex);
+  uint32_t mInputStreamCallbackFlags MOZ_GUARDED_BY(mMutex) = 0;
+  uint32_t mInputStreamCallbackRequestedCount MOZ_GUARDED_BY(mMutex) = 0;
+
+  
+  nsCOMPtr<nsIFileMetadataCallback> mFileMetadataCallback
+      MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsIEventTarget> mFileMetadataCallbackEventTarget
+      MOZ_GUARDED_BY(mMutex);
 };
 
 }  

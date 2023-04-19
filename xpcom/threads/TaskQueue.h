@@ -146,11 +146,11 @@ class TaskQueue final : public AbstractThread,
 
   void MaybeResolveShutdown();
 
-  nsCOMPtr<nsIEventTarget> mTarget GUARDED_BY(mQueueMonitor);
+  nsCOMPtr<nsIEventTarget> mTarget MOZ_GUARDED_BY(mQueueMonitor);
 
   
   
-  UniquePtr<TaskQueueTrackerEntry> mTrackerEntry GUARDED_BY(mQueueMonitor);
+  UniquePtr<TaskQueueTrackerEntry> mTrackerEntry MOZ_GUARDED_BY(mQueueMonitor);
 
   
   
@@ -162,11 +162,11 @@ class TaskQueue final : public AbstractThread,
   } TaskStruct;
 
   
-  Queue<TaskStruct> mTasks GUARDED_BY(mQueueMonitor);
+  Queue<TaskStruct> mTasks MOZ_GUARDED_BY(mQueueMonitor);
 
   
   nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks
-      GUARDED_BY(mQueueMonitor);
+      MOZ_GUARDED_BY(mQueueMonitor);
 
   
   
@@ -218,11 +218,12 @@ class TaskQueue final : public AbstractThread,
 
   
   
-  bool mIsRunning GUARDED_BY(mQueueMonitor);
+  bool mIsRunning MOZ_GUARDED_BY(mQueueMonitor);
 
   
-  bool mIsShutdown GUARDED_BY(mQueueMonitor);
-  MozPromiseHolder<ShutdownPromise> mShutdownPromise GUARDED_BY(mQueueMonitor);
+  bool mIsShutdown MOZ_GUARDED_BY(mQueueMonitor);
+  MozPromiseHolder<ShutdownPromise> mShutdownPromise
+      MOZ_GUARDED_BY(mQueueMonitor);
 
   
   const char* const mName;
@@ -270,7 +271,7 @@ class TaskQueueTracker : public nsISupports {
   friend class TaskQueueTrackerEntry;
 
   Mutex mMutex{"TaskQueueTracker"};
-  LinkedList<TaskQueueTrackerEntry> mEntries GUARDED_BY(mMutex);
+  LinkedList<TaskQueueTrackerEntry> mEntries MOZ_GUARDED_BY(mMutex);
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(TaskQueueTracker, MOZILLA_TASKQUEUETRACKER_IID)

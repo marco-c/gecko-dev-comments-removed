@@ -71,13 +71,13 @@ class NonBlockingAsyncInputStream final : public nsIAsyncInputStream,
   
   
   
-  Maybe<WaitClosureOnly> mWaitClosureOnly GUARDED_BY(mLock);
+  Maybe<WaitClosureOnly> mWaitClosureOnly MOZ_GUARDED_BY(mLock);
 
   
-  RefPtr<AsyncWaitRunnable> mAsyncWaitCallback GUARDED_BY(mLock);
+  RefPtr<AsyncWaitRunnable> mAsyncWaitCallback MOZ_GUARDED_BY(mLock);
 
   
-  bool mClosed GUARDED_BY(mLock);
+  bool mClosed MOZ_GUARDED_BY(mLock);
 };
 
 }  

@@ -181,7 +181,7 @@ class WebSocket final : public DOMEventTargetHelper {
   mozilla::Mutex mMutex;
 
   
-  uint16_t mReadyState GUARDED_BY(mMutex);
+  uint16_t mReadyState MOZ_GUARDED_BY(mMutex);
 };
 
 }  

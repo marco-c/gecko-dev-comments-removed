@@ -20,12 +20,12 @@ namespace mozilla {
 
 
 
-class CAPABILITY MultiWriterQueueReaderLocking_Mutex {
+class MOZ_CAPABILITY MultiWriterQueueReaderLocking_Mutex {
  public:
   MultiWriterQueueReaderLocking_Mutex()
       : mMutex("MultiWriterQueueReaderLocking_Mutex") {}
-  void Lock() CAPABILITY_ACQUIRE(mMutex) { mMutex.Lock(); };
-  void Unlock() CAPABILITY_RELEASE(mMutex) { mMutex.Unlock(); };
+  void Lock() MOZ_CAPABILITY_ACQUIRE(mMutex) { mMutex.Lock(); };
+  void Unlock() MOZ_CAPABILITY_RELEASE(mMutex) { mMutex.Unlock(); };
 
  private:
   Mutex mMutex;
@@ -33,17 +33,17 @@ class CAPABILITY MultiWriterQueueReaderLocking_Mutex {
 
 
 
-class CAPABILITY MultiWriterQueueReaderLocking_None {
+class MOZ_CAPABILITY MultiWriterQueueReaderLocking_None {
  public:
 #ifndef DEBUG
-  void Lock() CAPABILITY_ACQUIRE(){};
-  void Unlock() CAPABILITY_RELEASE(){};
+  void Lock() MOZ_CAPABILITY_ACQUIRE(){};
+  void Unlock() MOZ_CAPABILITY_RELEASE(){};
 #else
   
-  void Lock() CAPABILITY_ACQUIRE() {
+  void Lock() MOZ_CAPABILITY_ACQUIRE() {
     MOZ_ASSERT(mLocked.compareExchange(false, true));
   };
-  void Unlock() CAPABILITY_RELEASE() {
+  void Unlock() MOZ_CAPABILITY_RELEASE() {
     MOZ_ASSERT(mLocked.compareExchange(true, false));
   };
 

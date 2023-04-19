@@ -85,10 +85,10 @@ class WorkerThread;
 
 
 
-class CAPABILITY SharedMutex {
+class MOZ_CAPABILITY SharedMutex {
   using Mutex = mozilla::Mutex;
 
-  class CAPABILITY RefCountedMutex final : public Mutex {
+  class MOZ_CAPABILITY RefCountedMutex final : public Mutex {
    public:
     explicit RefCountedMutex(const char* aName) : Mutex(aName) {}
 
@@ -106,17 +106,17 @@ class CAPABILITY SharedMutex {
 
   SharedMutex(const SharedMutex& aOther) = default;
 
-  operator Mutex&() RETURN_CAPABILITY(this) { return *mMutex; }
+  operator Mutex&() MOZ_RETURN_CAPABILITY(this) { return *mMutex; }
 
-  operator const Mutex&() const RETURN_CAPABILITY(this) { return *mMutex; }
+  operator const Mutex&() const MOZ_RETURN_CAPABILITY(this) { return *mMutex; }
 
   
-  void Lock() CAPABILITY_ACQUIRE() { mMutex->Lock(); }
-  void Unlock() CAPABILITY_RELEASE() { mMutex->Unlock(); }
+  void Lock() MOZ_CAPABILITY_ACQUIRE() { mMutex->Lock(); }
+  void Unlock() MOZ_CAPABILITY_RELEASE() { mMutex->Unlock(); }
 
   
   void AssertCurrentThreadOwns() const
-      ASSERT_CAPABILITY(this) NO_THREAD_SAFETY_ANALYSIS {
+      MOZ_ASSERT_CAPABILITY(this) MOZ_NO_THREAD_SAFETY_ANALYSIS {
     mMutex->AssertCurrentThreadOwns();
   }
 };
@@ -173,14 +173,14 @@ class WorkerPrivate final
 
   bool Cancel() { return Notify(Canceling); }
 
-  bool Close() REQUIRES(mMutex);
+  bool Close() MOZ_REQUIRES(mMutex);
 
   
   
   static void OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo,
                                         nsIPrincipal* aPrincipal);
 
-  bool IsDebuggerRegistered() NO_THREAD_SAFETY_ANALYSIS {
+  bool IsDebuggerRegistered() MOZ_NO_THREAD_SAFETY_ANALYSIS {
     AssertIsOnMainThread();
 
     
@@ -369,7 +369,7 @@ class WorkerPrivate final
     return mFetchHandlerWasAdded;
   }
 
-  JSContext* GetJSContext() const NO_THREAD_SAFETY_ANALYSIS {
+  JSContext* GetJSContext() const MOZ_NO_THREAD_SAFETY_ANALYSIS {
     
     
     AssertIsOnWorkerThread();
@@ -547,7 +547,7 @@ class WorkerPrivate final
     return mParentStatus;
   }
 
-  WorkerStatus ParentStatus() const REQUIRES(mMutex) {
+  WorkerStatus ParentStatus() const MOZ_REQUIRES(mMutex) {
     mMutex.AssertCurrentThreadOwns();
     return mParentStatus;
   }
@@ -1115,13 +1115,13 @@ class WorkerPrivate final
   }
 
   ProcessAllControlRunnablesResult ProcessAllControlRunnablesLocked()
-      REQUIRES(mMutex);
+      MOZ_REQUIRES(mMutex);
 
   void EnableMemoryReporter();
 
   void DisableMemoryReporter();
 
-  void WaitForWorkerEvents() REQUIRES(mMutex);
+  void WaitForWorkerEvents() MOZ_REQUIRES(mMutex);
 
   
   
@@ -1158,7 +1158,8 @@ class WorkerPrivate final
   
   nsresult DispatchLockHeld(already_AddRefed<WorkerRunnable> aRunnable,
                             nsIEventTarget* aSyncLoopTarget,
-                            const MutexAutoLock& aProofOfLock) REQUIRES(mMutex);
+                            const MutexAutoLock& aProofOfLock)
+      MOZ_REQUIRES(mMutex);
 
   
   
@@ -1197,7 +1198,7 @@ class WorkerPrivate final
   friend class mozilla::dom::WorkerThread;
 
   SharedMutex mMutex;
-  mozilla::CondVar mCondVar GUARDED_BY(mMutex);
+  mozilla::CondVar mCondVar MOZ_GUARDED_BY(mMutex);
 
   
   
@@ -1231,7 +1232,7 @@ class WorkerPrivate final
   LocationInfo mLocationInfo;
 
   
-  workerinternals::JSSettings mJSSettings GUARDED_BY(mMutex);
+  workerinternals::JSSettings mJSSettings MOZ_GUARDED_BY(mMutex);
 
   WorkerDebugger* mDebugger;
 
@@ -1240,9 +1241,9 @@ class WorkerPrivate final
 
   
   
-  JSContext* mJSContext GUARDED_BY(mMutex);
+  JSContext* mJSContext MOZ_GUARDED_BY(mMutex);
   
-  RefPtr<WorkerThread> mThread GUARDED_BY(mMutex);
+  RefPtr<WorkerThread> mThread MOZ_GUARDED_BY(mMutex);
   
   
   
@@ -1286,7 +1287,7 @@ class WorkerPrivate final
   RefPtr<WorkerCSPEventListener> mCSPEventListener;
 
   
-  nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables GUARDED_BY(mMutex);
+  nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables MOZ_GUARDED_BY(mMutex);
 
   
   RefPtr<RemoteWorkerChild> mRemoteWorkerController;
@@ -1296,8 +1297,8 @@ class WorkerPrivate final
 
   JS::UniqueChars mDefaultLocale;  
   TimeStamp mKillTime;
-  WorkerStatus mParentStatus GUARDED_BY(mMutex);
-  WorkerStatus mStatus GUARDED_BY(mMutex);
+  WorkerStatus mParentStatus MOZ_GUARDED_BY(mMutex);
+  WorkerStatus mStatus MOZ_GUARDED_BY(mMutex);
 
   
   
@@ -1430,7 +1431,7 @@ class WorkerPrivate final
   
   const bool mIsSecureContext;
 
-  bool mDebuggerRegistered GUARDED_BY(mMutex);
+  bool mDebuggerRegistered MOZ_GUARDED_BY(mMutex);
 
   
   

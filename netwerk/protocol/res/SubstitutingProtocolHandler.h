@@ -105,7 +105,7 @@ class SubstitutingProtocolHandler {
 
   RWLock mSubstitutionsLock;
   nsTHashMap<nsCStringHashKey, SubstitutionEntry> mSubstitutions
-      GUARDED_BY(mSubstitutionsLock);
+      MOZ_GUARDED_BY(mSubstitutionsLock);
   nsCOMPtr<nsIIOService> mIOService;
 
   

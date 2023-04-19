@@ -122,31 +122,17 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
   
 
 
-  bool mWorkerThreadAttentionRequested GUARDED_BY(mLock){false};
+  bool mWorkerThreadAttentionRequested MOZ_GUARDED_BY(mLock){false};
 
   
 
 
-  bool mFinishRequested GUARDED_BY(mLock){false};
+  bool mFinishRequested MOZ_GUARDED_BY(mLock){false};
 
   
 
 
-  bool mComplete GUARDED_BY(mLock){false};
-
-  
-
-
-
-
-
-  nsresult mStatus GUARDED_BY(mLock){NS_OK};
-
-  
-
-
-
-  bool mAppend GUARDED_BY(mLock){false};
+  bool mComplete MOZ_GUARDED_BY(mLock){false};
 
   
 
@@ -154,14 +140,28 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  nsCOMPtr<nsIFile> mInitialTarget GUARDED_BY(mLock);
+  nsresult mStatus MOZ_GUARDED_BY(mLock){NS_OK};
+
+  
+
+
+
+  bool mAppend MOZ_GUARDED_BY(mLock){false};
 
   
 
 
 
 
-  bool mInitialTargetKeepPartial GUARDED_BY(mLock){false};
+
+  nsCOMPtr<nsIFile> mInitialTarget MOZ_GUARDED_BY(mLock);
+
+  
+
+
+
+
+  bool mInitialTargetKeepPartial MOZ_GUARDED_BY(mLock){false};
 
   
 
@@ -172,43 +172,43 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  nsCOMPtr<nsIFile> mRenamedTarget GUARDED_BY(mLock);
+  nsCOMPtr<nsIFile> mRenamedTarget MOZ_GUARDED_BY(mLock);
 
   
 
 
 
 
-  bool mRenamedTargetKeepPartial GUARDED_BY(mLock){false};
+  bool mRenamedTargetKeepPartial MOZ_GUARDED_BY(mLock){false};
 
   
 
 
 
-  nsCOMPtr<nsISupports> mAsyncCopyContext GUARDED_BY(mLock);
+  nsCOMPtr<nsISupports> mAsyncCopyContext MOZ_GUARDED_BY(mLock);
 
   
 
 
 
-  nsCString mSha256 GUARDED_BY(mLock);
+  nsCString mSha256 MOZ_GUARDED_BY(mLock);
 
   
 
 
 
-  bool mSha256Enabled GUARDED_BY(mLock){false};
+  bool mSha256Enabled MOZ_GUARDED_BY(mLock){false};
 
   
 
 
-  nsTArray<nsTArray<nsTArray<uint8_t>>> mSignatureInfo GUARDED_BY(mLock);
+  nsTArray<nsTArray<nsTArray<uint8_t>>> mSignatureInfo MOZ_GUARDED_BY(mLock);
 
   
 
 
 
-  bool mSignatureInfoEnabled GUARDED_BY(mLock){false};
+  bool mSignatureInfoEnabled MOZ_GUARDED_BY(mLock){false};
 
   
   
@@ -345,18 +345,18 @@ class BackgroundFileSaverStreamListener final : public BackgroundFileSaver,
   
 
 
-  bool mReceivedTooMuchData GUARDED_BY(mSuspensionLock){false};
+  bool mReceivedTooMuchData MOZ_GUARDED_BY(mSuspensionLock){false};
 
   
 
 
 
-  nsCOMPtr<nsIRequest> mRequest GUARDED_BY(mSuspensionLock);
+  nsCOMPtr<nsIRequest> mRequest MOZ_GUARDED_BY(mSuspensionLock);
 
   
 
 
-  bool mRequestSuspended GUARDED_BY(mSuspensionLock){false};
+  bool mRequestSuspended MOZ_GUARDED_BY(mSuspensionLock){false};
 
   
 

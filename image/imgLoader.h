@@ -413,7 +413,7 @@ class imgLoader final : public imgILoader,
   
   
   
-  imgSet mUncachedImages GUARDED_BY(mUncachedImagesMutex);
+  imgSet mUncachedImages MOZ_GUARDED_BY(mUncachedImagesMutex);
   
   
   
