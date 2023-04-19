@@ -30,6 +30,12 @@ EXCLUDED_PACKAGES = {
     
     "moz.build",
     "requirements.in",
+    
+    
+    
+    
+    
+    "ansicon",
 }
 
 
