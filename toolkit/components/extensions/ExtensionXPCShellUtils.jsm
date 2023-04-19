@@ -269,8 +269,8 @@ class ExtensionWrapper {
 
 
 
-  terminateBackground(...args) {
-    return this.extension.terminateBackground(...args);
+  terminateBackground() {
+    return this.extension.terminateBackground();
   }
 
   wakeupBackground() {
