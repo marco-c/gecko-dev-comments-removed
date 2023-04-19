@@ -1325,12 +1325,11 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
   
   
 
-  RefPtr<HttpConnectionBase> conn =
-      GetH2orH3ActiveConn(ent,
-                          (!StaticPrefs::network_http_http2_enabled() ||
-                           (caps & NS_HTTP_DISALLOW_SPDY)),
-                          (!StaticPrefs::network_http_http3_enable() ||
-                           (caps & NS_HTTP_DISALLOW_HTTP3)));
+  RefPtr<HttpConnectionBase> conn = GetH2orH3ActiveConn(
+      ent,
+      (!StaticPrefs::network_http_http2_enabled() ||
+       (caps & NS_HTTP_DISALLOW_SPDY)),
+      (!nsHttpHandler::IsHttp3Enabled() || (caps & NS_HTTP_DISALLOW_HTTP3)));
   if (conn) {
     if (trans->IsWebsocketUpgrade() && !conn->CanAcceptWebsocket()) {
       
