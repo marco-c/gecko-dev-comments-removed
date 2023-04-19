@@ -166,15 +166,14 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(ResizeObservation, Release)
 
 ResizeObservation::ResizeObservation(Element& aTarget,
                                      ResizeObserver& aObserver,
-                                     ResizeObserverBoxOptions aBox,
-                                     WritingMode aWm)
+                                     ResizeObserverBoxOptions aBox)
     : mTarget(&aTarget),
       mObserver(&aObserver),
       mObservedBox(aBox),
       mLastReportedSize(
-          aWm, StaticPrefs::dom_resize_observer_last_reported_size_invalid()
-                   ? gfx::Size(-1, -1)
-                   : gfx::Size()) {
+          StaticPrefs::dom_resize_observer_last_reported_size_invalid()
+              ? LogicalPixelSize(WritingMode(), gfx::Size(-1, -1))
+              : LogicalPixelSize()) {
   aTarget.BindObject(mObserver);
 }
 
@@ -300,12 +299,7 @@ void ResizeObserver::Observe(Element& aTarget,
     observation = nullptr;
   }
 
-  
-  
-  nsIFrame* frame = aTarget.GetPrimaryFrame();
-  observation =
-      new ResizeObservation(aTarget, *this, aOptions.mBox,
-                            frame ? frame->GetWritingMode() : WritingMode());
+  observation = new ResizeObservation(aTarget, *this, aOptions.mBox);
   if (!StaticPrefs::dom_resize_observer_last_reported_size_invalid() &&
       this == mDocument->GetLastRememberedSizeObserver()) {
     
