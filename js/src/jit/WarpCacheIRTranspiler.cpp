@@ -2307,7 +2307,6 @@ bool WarpCacheIRTranspiler::emitStoreDenseElementHole(ObjOperandId objId,
   if (handleAdd) {
     
     auto* ins = MStoreElementHole::New(alloc(), obj, elements, index, rhs);
-    ins->setNeedsBarrier();
     store = ins;
   } else {
     auto* length = MInitializedLength::New(alloc(), elements);
