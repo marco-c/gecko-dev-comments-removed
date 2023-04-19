@@ -101,16 +101,6 @@ using namespace js::selfhosted;
 using JS::CompileOptions;
 using mozilla::Maybe;
 
-static void selfHosting_WarningReporter(JSContext* cx, JSErrorReport* report) {
-  MOZ_ASSERT(report->isWarning());
-
-  js::selfHosting_ErrorReporter(report);
-}
-
-void js::selfHosting_ErrorReporter(JSErrorReport* report) {
-  JS::PrintError(stderr, report, true);
-}
-
 static bool intrinsic_ToObject(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   JSObject* obj = ToObject(cx, args[0]);
@@ -2315,23 +2305,38 @@ void js::FillSelfHostingCompileOptions(CompileOptions& options) {
   options.setNoScriptRval(true);
 }
 
-class MOZ_STACK_CLASS AutoSelfHostingErrorReporter {
+
+
+
+class MOZ_STACK_CLASS AutoPrintSelfHostingFrontendContext
+    : public OffThreadErrorContext {
   JSContext* cx_;
-  JS::WarningReporter oldReporter_;
 
  public:
-  explicit AutoSelfHostingErrorReporter(JSContext* cx) : cx_(cx) {
-    oldReporter_ = JS::SetWarningReporter(cx_, selfHosting_WarningReporter);
+  explicit AutoPrintSelfHostingFrontendContext(JSContext* cx)
+      : OffThreadErrorContext(), cx_(cx) {
+    setCurrentJSContext(cx_);
   }
-  ~AutoSelfHostingErrorReporter() {
-    JS::SetWarningReporter(cx_, oldReporter_);
-
-    
-    
-    
-    
+  ~AutoPrintSelfHostingFrontendContext() {
     
     MaybePrintAndClearPendingException(cx_);
+
+    if (hadOutOfMemory()) {
+      fprintf(stderr, "Out of memory\n");
+    }
+
+    for (const UniquePtr<CompileError>& error : errors()) {
+      JS::PrintError(stderr, const_cast<CompileError*>(error.get()), true);
+    }
+    for (const UniquePtr<CompileError>& error : warnings()) {
+      JS::PrintError(stderr, const_cast<CompileError*>(error.get()), true);
+    }
+    if (hadOverRecursed()) {
+      fprintf(stderr, "Over recursed\n");
+    }
+    if (hadAllocationOverflow()) {
+      fprintf(stderr, "Allocation overflow\n");
+    }
   }
 };
 
@@ -2414,22 +2419,12 @@ bool JSRuntime::initSelfHostingStencil(JSContext* cx,
   }
 
   
-
-
-
-
-
-
-
-  AutoSelfHostingErrorReporter errorReporter(cx);
-
-  
   CompileOptions options(cx);
   FillSelfHostingCompileOptions(options);
 
   
   bool decodeOk = false;
-  MainThreadErrorContext ec(cx);
+  AutoPrintSelfHostingFrontendContext ec(cx);
   if (xdrCache.Length() > 0) {
     
     

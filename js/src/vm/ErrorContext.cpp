@@ -11,7 +11,6 @@
 #include "js/friend/StackLimits.h"  
 #include "util/DifferentialTesting.h"
 #include "vm/JSContext.h"
-#include "vm/SelfHosting.h"  
 
 using namespace js;
 
@@ -54,7 +53,6 @@ void MainThreadErrorContext::reportError(CompileError* err) {
   
 
   if (MOZ_UNLIKELY(!cx_->runtime()->hasInitializedSelfHosting())) {
-    selfHosting_ErrorReporter(err);
     return;
   }
 
