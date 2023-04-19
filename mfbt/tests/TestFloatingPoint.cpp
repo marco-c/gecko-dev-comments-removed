@@ -4,11 +4,9 @@
 
 
 
-#include "mozilla/Compiler.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/FloatingPoint.h"
 
-#include <cmath>  
-#include <float.h>
 #include <math.h>
 
 using mozilla::ExponentComponent;
