@@ -100,7 +100,7 @@ static const RedirEntry kRedirMap[] = {
     
     
     {"home", "about:blank", ACTIVITY_STREAM_FLAGS},
-    {"newtab", "about:blank", ACTIVITY_STREAM_FLAGS},
+    {"newtab", "chrome://browser/content/blanktab.html", ACTIVITY_STREAM_FLAGS},
     {"welcome", "about:blank",
      nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
          nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
