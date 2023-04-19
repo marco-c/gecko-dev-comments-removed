@@ -174,8 +174,7 @@ class Pickle {
   bool WriteString(const std::string& value);
   bool WriteWString(const std::wstring& value);
   bool WriteData(const char* data, uint32_t length);
-  bool WriteBytes(const void* data, uint32_t data_len,
-                  uint32_t alignment = sizeof(memberAlignmentType));
+  bool WriteBytes(const void* data, uint32_t data_len);
   
   bool WriteBytesZeroCopy(void* data, uint32_t data_len, uint32_t capacity);
 
@@ -218,9 +217,7 @@ class Pickle {
 
   
   
-  
-  
-  void BeginWrite(uint32_t length, uint32_t alignment);
+  void BeginWrite(uint32_t length);
 
   
   
