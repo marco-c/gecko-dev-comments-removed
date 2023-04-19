@@ -60,7 +60,8 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
 
     
     
-    this.observer = new lazy.NetworkObserver(filters, this);
+    this.onNetworkEvent = this.onNetworkEvent.bind(this);
+    this.observer = new lazy.NetworkObserver(filters, this.onNetworkEvent);
     this.observer.init();
 
     this.stackTraces = new Set();
