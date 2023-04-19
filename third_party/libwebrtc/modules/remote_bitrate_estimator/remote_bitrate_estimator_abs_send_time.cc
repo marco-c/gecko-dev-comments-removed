@@ -278,13 +278,7 @@ void RemoteBitrateEstimatorAbsSendTime::IncomingPacketInfo(
     TimeoutStreams(now);
     RTC_DCHECK(inter_arrival_);
     RTC_DCHECK(estimator_);
-    
-    
-    auto inserted = ssrcs_.insert(std::make_pair(ssrc, now));
-    if (!inserted.second) {
-      
-      inserted.first->second = now;
-    }
+    ssrcs_.insert_or_assign(ssrc, now);
 
     
     
