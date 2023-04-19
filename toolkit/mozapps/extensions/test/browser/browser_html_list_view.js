@@ -1075,6 +1075,13 @@ add_task(async function testEmptyMessage() {
       disabledSection.firstChild.remove();
     }
 
+    if (test.type == "theme") {
+      
+      
+      
+      getSection(doc, "colorways-section")?.remove();
+    }
+
     
     is_element_visible(message, "Empty addons message visible");
 
