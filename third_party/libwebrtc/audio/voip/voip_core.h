@@ -55,11 +55,15 @@ class VoipCore : public VoipEngine,
   
   
   
+  
+  
+  
   bool Init(rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
             rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
             std::unique_ptr<TaskQueueFactory> task_queue_factory,
             rtc::scoped_refptr<AudioDeviceModule> audio_device_module,
-            rtc::scoped_refptr<AudioProcessing> audio_processing);
+            rtc::scoped_refptr<AudioProcessing> audio_processing,
+            std::unique_ptr<ProcessThread> process_thread = nullptr);
 
   
   VoipBase& Base() override { return *this; }
