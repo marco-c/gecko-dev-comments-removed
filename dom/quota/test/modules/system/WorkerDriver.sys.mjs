@@ -1,9 +1,9 @@
+/**
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
-
-
-
-
-async function runTestInWorker(script, base, listener) {
+export async function runTestInWorker(script, base, listener) {
   return new Promise(function(resolve) {
     const globalHeadUrl = new URL(
       "resource://testing-common/dom/quota/test/modules/worker/head.js"
@@ -50,5 +50,3 @@ async function runTestInWorker(script, base, listener) {
     worker.postMessage([localHeadUrl.href, scriptUrl.href]);
   });
 }
-
-const EXPORTED_SYMBOLS = ["runTestInWorker"];
