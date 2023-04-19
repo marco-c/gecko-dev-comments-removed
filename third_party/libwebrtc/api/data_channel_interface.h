@@ -174,6 +174,7 @@ class RTC_EXPORT DataChannelInterface : public rtc::RefCountInterface {
   
   
   
+  
   virtual uint64_t buffered_amount() const = 0;
 
   
@@ -189,6 +190,10 @@ class RTC_EXPORT DataChannelInterface : public rtc::RefCountInterface {
   
   
   virtual bool Send(const DataBuffer& buffer) = 0;
+
+  
+  
+  static uint64_t MaxSendQueueSize();
 
  protected:
   ~DataChannelInterface() override = default;
