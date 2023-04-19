@@ -235,10 +235,7 @@ class RetransmissionQueue {
     std::vector<TSN> acked_tsns;
 
     
-    size_t bytes_acked_by_cumulative_tsn_ack = 0;
-
-    
-    size_t bytes_acked_by_new_gap_ack_blocks = 0;
+    size_t bytes_acked = 0;
 
     
     
@@ -288,6 +285,11 @@ class RetransmissionQueue {
   void AckGapBlocks(UnwrappedTSN cumulative_tsn_ack,
                     rtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
                     AckInfo& ack_info);
+
+  
+  
+  void AckChunk(AckInfo& ack_info,
+                std::map<UnwrappedTSN, TxData>::iterator iter);
 
   
   
