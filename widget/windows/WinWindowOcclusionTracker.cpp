@@ -371,15 +371,22 @@ void WinWindowOcclusionTracker::ShutDown() {
 
   sTracker->Destroy();
 
+  
+  
+  
+  
+  
+  static const PRIntervalTime TIMEOUT = PR_TicksPerSecond() * 2;
   layers::SynchronousTask task("WinWindowOcclusionTracker");
   RefPtr<Runnable> runnable =
       WrapRunnable(RefPtr<WindowOcclusionCalculator>(
                        WindowOcclusionCalculator::GetInstance()),
                    &WindowOcclusionCalculator::Shutdown, &task);
   OcclusionCalculatorLoop()->PostTask(runnable.forget());
-  task.Wait();
-
-  sTracker->mThread->Stop();
+  nsresult rv = task.Wait(TIMEOUT);
+  if (rv == NS_OK) {
+    sTracker->mThread->Stop();
+  }
 
   WindowOcclusionCalculator::ClearInstance();
   sTracker = nullptr;
