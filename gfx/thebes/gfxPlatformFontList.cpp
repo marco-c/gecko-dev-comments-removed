@@ -2621,6 +2621,11 @@ void gfxPlatformFontList::CleanupLoader() {
 }
 
 void gfxPlatformFontList::GetPrefsAndStartLoader() {
+  
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    return;
+  }
   uint32_t delay = std::max(1u, StaticPrefs::gfx_font_loader_delay_AtStartup());
   if (NS_IsMainThread()) {
     StartLoader(delay);
