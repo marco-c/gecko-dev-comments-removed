@@ -1737,8 +1737,6 @@ class MediaTrackGraphShutDownRunnable : public Runnable {
       RefPtr<GraphRunner>(mGraph->mGraphRunner)->Shutdown();
     }
 
-    
-    
     RefPtr<GraphDriver>(mGraph->mDriver)->Shutdown();
 
     
