@@ -18,6 +18,7 @@
 #include "absl/algorithm/container.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "modules/video_coding/svc/scalability_mode_util.h"
 
 namespace webrtc {
 
@@ -66,6 +67,18 @@ class VideoEncoderFactoryTemplate : public VideoEncoderFactory {
     return absl::c_count(V::SupportedFormats(), format) > 0;
   }
 
+  template <typename V>
+  bool IsScalabilityModeSupported(
+      const absl::optional<std::string>& scalability_mode_string) const {
+    if (!scalability_mode_string.has_value()) {
+      return true;
+    }
+    absl::optional<ScalabilityMode> scalability_mode =
+        ScalabilityModeFromString(*scalability_mode_string);
+    return scalability_mode.has_value() &&
+           V::IsScalabilityModeSupported(*scalability_mode);
+  }
+
   template <typename V, typename... Vs>
   void GetSupportedFormatsInternal(std::vector<SdpVideoFormat>& formats) const {
     auto supported_formats = V::SupportedFormats();
@@ -99,8 +112,7 @@ class VideoEncoderFactoryTemplate : public VideoEncoderFactory {
       const SdpVideoFormat& format,
       const absl::optional<std::string>& scalability_mode) const {
     if (IsFormatSupported<V>(format)) {
-      return {.is_supported = !scalability_mode ||
-                              V::IsScalabilityModeSupported(*scalability_mode)};
+      return {.is_supported = IsScalabilityModeSupported<V>(scalability_mode)};
     }
 
     if constexpr (sizeof...(Vs) > 0) {
