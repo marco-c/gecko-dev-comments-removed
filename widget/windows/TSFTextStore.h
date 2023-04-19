@@ -382,7 +382,8 @@ class TSFTextStore final : public ITextStoreACP,
   HRESULT HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
                              const TS_ATTRID* aFilterAttrs);
   void SetInputScope(const nsString& aHTMLInputType,
-                     const nsString& aHTMLInputInputMode);
+                     const nsString& aHTMLInputInputmode,
+                     bool aInPrivateBrowsing);
 
   
   
@@ -1018,9 +1019,6 @@ class TSFTextStore final : public ITextStoreACP,
   nsTArray<InputScope> mInputScopes;
 
   
-  nsString mDocumentURL;
-
-  
   
   enum {
     
@@ -1028,59 +1026,56 @@ class TSFTextStore final : public ITextStoreACP,
 
     
     eInputScope = 0,
-    eDocumentURL,
     eTextVerticalWriting,
     eTextOrientation,
 
     
     NUM_OF_SUPPORTED_ATTRS
   };
-  bool mRequestedAttrs[NUM_OF_SUPPORTED_ATTRS]{false};
+  bool mRequestedAttrs[NUM_OF_SUPPORTED_ATTRS];
 
   int32_t GetRequestedAttrIndex(const TS_ATTRID& aAttrID);
   TS_ATTRID GetAttrID(int32_t aIndex);
 
-  bool mRequestedAttrValues = false;
+  bool mRequestedAttrValues;
 
   
   
-  bool mIsRecordingActionsWithoutLock = false;
+  bool mIsRecordingActionsWithoutLock;
   
   
   
-  bool mHasReturnedNoLayoutError = false;
+  bool mHasReturnedNoLayoutError;
   
   
   
   
-  bool mWaitingQueryLayout = false;
+  bool mWaitingQueryLayout;
   
   
   bool mPendingDestroy;
   
   
-  bool mDeferClearingContentForTSF = false;
+  bool mDeferClearingContentForTSF;
   
   
   
   
   
   
-  bool mDeferNotifyingTSF = false;
+  bool mDeferNotifyingTSF;
   
   
   
   
-  bool mDeferCommittingComposition = false;
-  bool mDeferCancellingComposition = false;
+  bool mDeferCommittingComposition;
+  bool mDeferCancellingComposition;
   
   
-  bool mDestroyed = false;
+  bool mDestroyed;
   
   
-  bool mBeingDestroyed = false;
-  
-  bool mInPrivateBrowsing = true;
+  bool mBeingDestroyed;
 
   
   static StaticRefPtr<ITfThreadMgr> sThreadMgr;

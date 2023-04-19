@@ -11,8 +11,6 @@
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/ToString.h"
 
-#include "nsCOMPtr.h"
-#include "nsIURI.h"
 #include "nsPoint.h"
 #include "nsRect.h"
 #include "nsString.h"
@@ -413,7 +411,6 @@ struct InputContext final {
   
   
   void ShutDown() {
-    mURI = nullptr;
     mHTMLInputType.Truncate();
     mHTMLInputInputmode.Truncate();
     mActionHint.Truncate();
@@ -462,9 +459,6 @@ struct InputContext final {
   }
 
   IMEState mIMEState;
-
-  
-  nsCOMPtr<nsIURI> mURI;
 
   
   nsString mHTMLInputType;
