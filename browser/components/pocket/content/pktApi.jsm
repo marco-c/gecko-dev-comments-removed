@@ -309,6 +309,11 @@ var pktApi = (function() {
     request.open("POST", url, true);
     request.onreadystatechange = function(e) {
       if (request.readyState == 4) {
+        
+        if (options.done) {
+          options.done();
+        }
+
         if (request.status === 200) {
           
           
@@ -483,6 +488,7 @@ var pktApi = (function() {
         }
       },
       error: options.error,
+      done: options.done,
     });
   }
 

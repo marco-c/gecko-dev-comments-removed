@@ -382,16 +382,27 @@ var pktUI = (function() {
         SaveToPocket.itemSaved();
 
         if (
-          item?.resolved_id &&
-          item?.resolved_id !== "0" &&
           NimbusFeatures.saveToPocket.getVariable("layoutRefresh") &&
           !NimbusFeatures.saveToPocket.getVariable("hideRecentSaves")
         ) {
-          pktApi.getArticleInfo(item.resolved_url, {
-            success(data) {
-              pktUIMessaging.sendMessageToPanel("PKT_renderSavedStory", data);
-            },
-          });
+          
+          if (item?.resolved_id && item?.resolved_id !== "0") {
+            pktApi.getArticleInfo(item.resolved_url, {
+              success(data) {
+                pktUIMessaging.sendMessageToPanel(
+                  "PKT_articleInfoFetched",
+                  data
+                );
+              },
+              done() {
+                pktUIMessaging.sendMessageToPanel(
+                  "PKT_getArticleInfoAttempted"
+                );
+              },
+            });
+          } else {
+            pktUIMessaging.sendMessageToPanel("PKT_getArticleInfoAttempted");
+          }
         }
 
         getAndShowRecsForItem(item, {
