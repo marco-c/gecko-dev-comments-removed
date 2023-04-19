@@ -48,7 +48,7 @@ class DataTracker {
   
   
   
-  static constexpr uint32_t kMaxAcceptedOutstandingFragments = 256;
+  static constexpr uint32_t kMaxAcceptedOutstandingFragments = 100000;
 
   explicit DataTracker(absl::string_view log_prefix,
                        Timer* delayed_ack_timer,
