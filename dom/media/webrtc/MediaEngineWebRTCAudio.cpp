@@ -906,6 +906,10 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
 
     
     
+    
+    
+    
+    
     AutoTArray<float*, 8> deinterleavedPacketizedInputDataChannelPointers;
     uint32_t channelCountInput = 0;
     if (mPacketizerInput->mChannels > MAX_CHANNELS) {
@@ -916,13 +920,11 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
           mDeinterleavedBuffer.Data();
       
       
-      
-      float gain = 1.f / mPacketizerInput->mChannels;
       size_t readIndex = 0;
       for (size_t i = 0; i < mPacketizerInput->mPacketSize; i++) {
         mDeinterleavedBuffer.Data()[i] = 0.;
         for (size_t j = 0; j < mPacketizerInput->mChannels; j++) {
-          mDeinterleavedBuffer.Data()[i] += gain * packet[readIndex++];
+          mDeinterleavedBuffer.Data()[i] += packet[readIndex++];
         }
       }
     } else {
