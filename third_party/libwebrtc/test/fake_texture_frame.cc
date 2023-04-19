@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "test/fake_texture_frame.h"
 
@@ -23,7 +23,7 @@ VideoFrame FakeNativeBuffer::CreateFrame(int width,
                                          VideoRotation rotation) {
   return VideoFrame::Builder()
       .set_video_frame_buffer(
-          new rtc::RefCountedObject<FakeNativeBuffer>(width, height))
+          rtc::make_ref_counted<FakeNativeBuffer>(width, height))
       .set_timestamp_rtp(timestamp)
       .set_timestamp_ms(render_time_ms)
       .set_rotation(rotation)
@@ -48,5 +48,5 @@ rtc::scoped_refptr<I420BufferInterface> FakeNativeBuffer::ToI420() {
   return buffer;
 }
 
-}  // namespace test
-}  // namespace webrtc
+}  
+}  

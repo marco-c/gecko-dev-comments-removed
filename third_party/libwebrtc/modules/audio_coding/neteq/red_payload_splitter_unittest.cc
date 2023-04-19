@@ -298,7 +298,7 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   
   
   DecoderDatabase decoder_database(
-      new rtc::RefCountedObject<MockAudioDecoderFactory>, absl::nullopt);
+      rtc::make_ref_counted<MockAudioDecoderFactory>(), absl::nullopt);
   decoder_database.RegisterPayload(0, SdpAudioFormat("cn", 8000, 1));
   decoder_database.RegisterPayload(1, SdpAudioFormat("pcmu", 8000, 1));
   decoder_database.RegisterPayload(2,
@@ -333,7 +333,7 @@ TEST(RedPayloadSplitter, CheckRedPayloadsRecursiveRed) {
   
   
   DecoderDatabase decoder_database(
-      new rtc::RefCountedObject<MockAudioDecoderFactory>, absl::nullopt);
+      rtc::make_ref_counted<MockAudioDecoderFactory>(), absl::nullopt);
   decoder_database.RegisterPayload(kRedPayloadType,
                                    SdpAudioFormat("red", 8000, 1));
 

@@ -537,8 +537,7 @@ TEST_P(PeerConnectionSignalingTest, CreateOffersAndShutdown) {
 
   rtc::scoped_refptr<MockCreateSessionDescriptionObserver> observers[100];
   for (auto& observer : observers) {
-    observer =
-        new rtc::RefCountedObject<MockCreateSessionDescriptionObserver>();
+    observer = rtc::make_ref_counted<MockCreateSessionDescriptionObserver>();
     caller->pc()->CreateOffer(observer, options);
   }
 
@@ -559,8 +558,7 @@ TEST_P(PeerConnectionSignalingTest, CreateOffersAndShutdown) {
 
 TEST_P(PeerConnectionSignalingTest, CloseCreateOfferAndShutdown) {
   auto caller = CreatePeerConnection();
-  rtc::scoped_refptr<MockCreateSessionDescriptionObserver> observer =
-      new rtc::RefCountedObject<MockCreateSessionDescriptionObserver>();
+  auto observer = rtc::make_ref_counted<MockCreateSessionDescriptionObserver>();
   caller->pc()->Close();
   caller->pc()->CreateOffer(observer, RTCOfferAnswerOptions());
   caller.reset(nullptr);
@@ -687,8 +685,8 @@ TEST_P(PeerConnectionSignalingTest, CreateOfferBlocksSetRemoteDescription) {
   auto offer = caller->CreateOffer(RTCOfferAnswerOptions());
 
   EXPECT_EQ(0u, callee->pc()->GetReceivers().size());
-  rtc::scoped_refptr<MockCreateSessionDescriptionObserver> offer_observer(
-      new rtc::RefCountedObject<MockCreateSessionDescriptionObserver>());
+  auto offer_observer =
+      rtc::make_ref_counted<MockCreateSessionDescriptionObserver>();
   
   
   
@@ -985,7 +983,7 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest,
   
   RTC_DCHECK(!caller->pc()->GetTransceivers()[0]->mid().has_value());
   caller->pc()->SetLocalDescription(
-      new rtc::RefCountedObject<MockSetSessionDescriptionObserver>(),
+      rtc::make_ref_counted<MockSetSessionDescriptionObserver>(),
       offer.release());
   EXPECT_TRUE(caller->pc()->GetTransceivers()[0]->mid().has_value());
 }
@@ -1013,9 +1011,8 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest,
   
   auto offer = caller->CreateOffer(RTCOfferAnswerOptions());
 
-  rtc::scoped_refptr<ExecuteFunctionOnCreateSessionDescriptionObserver>
-      offer_observer(new rtc::RefCountedObject<
-                     ExecuteFunctionOnCreateSessionDescriptionObserver>(
+  auto offer_observer =
+      rtc::make_ref_counted<ExecuteFunctionOnCreateSessionDescriptionObserver>(
           [pc = caller->pc()](SessionDescriptionInterface* desc) {
             
             
@@ -1024,7 +1021,7 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest,
                 new rtc::RefCountedObject<MockSetSessionDescriptionObserver>(),
                 desc);
             EXPECT_TRUE(pc->GetTransceivers()[0]->mid().has_value());
-          }));
+          });
   caller->pc()->CreateOffer(offer_observer, RTCOfferAnswerOptions());
   EXPECT_TRUE_WAIT(offer_observer->was_called(), kWaitTimeout);
 }
@@ -1111,8 +1108,7 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest,
       caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, RtpTransceiverInit());
   EXPECT_TRUE(caller->observer()->has_negotiation_needed_event());
 
-  rtc::scoped_refptr<MockCreateSessionDescriptionObserver> observer =
-      new rtc::RefCountedObject<MockCreateSessionDescriptionObserver>();
+  auto observer = rtc::make_ref_counted<MockCreateSessionDescriptionObserver>();
   caller->pc()->CreateOffer(observer, RTCOfferAnswerOptions());
   
   

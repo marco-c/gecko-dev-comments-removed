@@ -544,8 +544,7 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
 TEST(AudioProcessingImplTest, RenderPreProcessorBeforeEchoDetector) {
   
   
-  rtc::scoped_refptr<TestEchoDetector> test_echo_detector(
-      new rtc::RefCountedObject<TestEchoDetector>());
+  auto test_echo_detector = rtc::make_ref_counted<TestEchoDetector>();
   std::unique_ptr<CustomProcessing> test_render_pre_processor(
       new TestRenderPreProcessor());
   
@@ -605,8 +604,7 @@ TEST(AudioProcessingImplTest, RenderPreProcessorBeforeEchoDetector) {
 
 
 TEST(ApmWithSubmodulesExcludedTest, BitexactWithDisabledModules) {
-  rtc::scoped_refptr<AudioProcessingImpl> apm =
-      new rtc::RefCountedObject<AudioProcessingImpl>(webrtc::Config());
+  auto apm = rtc::make_ref_counted<AudioProcessingImpl>(webrtc::Config());
   ASSERT_EQ(apm->Initialize(), AudioProcessing::kNoError);
 
   ApmSubmoduleCreationOverrides overrides;
@@ -654,8 +652,7 @@ TEST(ApmWithSubmodulesExcludedTest, BitexactWithDisabledModules) {
 
 
 TEST(ApmWithSubmodulesExcludedTest, ReinitializeTransientSuppressor) {
-  rtc::scoped_refptr<AudioProcessingImpl> apm =
-      new rtc::RefCountedObject<AudioProcessingImpl>(webrtc::Config());
+  auto apm = rtc::make_ref_counted<AudioProcessingImpl>(webrtc::Config());
   ASSERT_EQ(apm->Initialize(), kNoErr);
 
   ApmSubmoduleCreationOverrides overrides;
@@ -716,8 +713,7 @@ TEST(ApmWithSubmodulesExcludedTest, ReinitializeTransientSuppressor) {
 
 
 TEST(ApmWithSubmodulesExcludedTest, ToggleTransientSuppressor) {
-  rtc::scoped_refptr<AudioProcessingImpl> apm =
-      new rtc::RefCountedObject<AudioProcessingImpl>(webrtc::Config());
+  auto apm = rtc::make_ref_counted<AudioProcessingImpl>(webrtc::Config());
   ASSERT_EQ(apm->Initialize(), AudioProcessing::kNoError);
 
   ApmSubmoduleCreationOverrides overrides;

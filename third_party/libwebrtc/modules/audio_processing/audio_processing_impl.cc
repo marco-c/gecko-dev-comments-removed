@@ -290,8 +290,7 @@ AudioProcessingImpl::AudioProcessingImpl(
 
   
   if (!submodules_.echo_detector) {
-    submodules_.echo_detector =
-        new rtc::RefCountedObject<ResidualEchoDetector>();
+    submodules_.echo_detector = rtc::make_ref_counted<ResidualEchoDetector>();
   }
 
 #if !(defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS))

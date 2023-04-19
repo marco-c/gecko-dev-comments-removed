@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2019 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "rtc_tools/rtp_generator/rtp_generator.h"
 
@@ -29,24 +29,24 @@
 namespace webrtc {
 namespace {
 
-// Payload types.
+
 constexpr int kPayloadTypeVp8 = 125;
 constexpr int kPayloadTypeVp9 = 124;
 constexpr int kPayloadTypeH264 = 123;
 constexpr int kFakeVideoSendPayloadType = 122;
 
-// Defaults
+
 constexpr int kDefaultSsrc = 1337;
 constexpr int kMaxConfigBufferSize = 8192;
 
-// Utility function to validate a correct codec type has been passed in.
+
 bool IsValidCodecType(const std::string& codec_name) {
   return cricket::kVp8CodecName == codec_name ||
          cricket::kVp9CodecName == codec_name ||
          cricket::kH264CodecName == codec_name;
 }
 
-// Utility function to return some base payload type for a codec_name.
+
 int GetDefaultTypeForPayloadName(const std::string& codec_name) {
   if (cricket::kVp8CodecName == codec_name) {
     return kPayloadTypeVp8;
@@ -60,12 +60,12 @@ int GetDefaultTypeForPayloadName(const std::string& codec_name) {
   return kFakeVideoSendPayloadType;
 }
 
-// Creates a single VideoSendStream configuration.
+
 absl::optional<RtpGeneratorOptions::VideoSendStreamConfig>
 ParseVideoSendStreamConfig(const Json::Value& json) {
   RtpGeneratorOptions::VideoSendStreamConfig config;
 
-  // Parse video source settings.
+  
   if (!rtc::GetIntFromJsonObject(json, "duration_ms", &config.duration_ms)) {
     RTC_LOG(LS_WARNING) << "duration_ms not specified using default: "
                         << config.duration_ms;
@@ -87,7 +87,7 @@ ParseVideoSendStreamConfig(const Json::Value& json) {
                         << config.num_squares;
   }
 
-  // Parse RTP settings for this configuration.
+  
   config.rtp.ssrcs.push_back(kDefaultSsrc);
   Json::Value rtp_json;
   if (!rtc::GetValueFromJsonObject(json, "rtp", &rtp_json)) {
@@ -116,7 +116,7 @@ ParseVideoSendStreamConfig(const Json::Value& json) {
   return config;
 }
 
-}  // namespace
+}  
 
 absl::optional<RtpGeneratorOptions> ParseRtpGeneratorOptionsFromFile(
     const std::string& options_file) {
@@ -125,7 +125,7 @@ absl::optional<RtpGeneratorOptions> ParseRtpGeneratorOptionsFromFile(
     return absl::nullopt;
   }
 
-  // Read the configuration file from disk.
+  
   FileWrapper config_file = FileWrapper::OpenReadOnly(options_file);
   std::vector<char> raw_json_buffer(kMaxConfigBufferSize, 0);
   size_t bytes_read =
@@ -135,7 +135,7 @@ absl::optional<RtpGeneratorOptions> ParseRtpGeneratorOptionsFromFile(
     return absl::nullopt;
   }
 
-  // Parse the file as JSON
+  
   Json::Reader json_reader;
   Json::Value json;
   if (!json_reader.parse(raw_json_buffer.data(), json)) {
@@ -165,8 +165,8 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
       event_log_(std::make_unique<RtcEventLogNull>()),
       call_(Call::Create(CallConfig(event_log_.get()))),
       task_queue_(CreateDefaultTaskQueueFactory()) {
-  constexpr int kMinBitrateBps = 30000;    // 30 Kbps
-  constexpr int kMaxBitrateBps = 2500000;  // 2.5 Mbps
+  constexpr int kMinBitrateBps = 30000;    
+  constexpr int kMaxBitrateBps = 2500000;  
 
   int stream_count = 0;
   for (const auto& send_config : options.video_streams) {
@@ -176,11 +176,11 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
     video_config.encoder_settings.bitrate_allocator_factory =
         video_bitrate_allocator_factory_.get();
     video_config.rtp = send_config.rtp;
-    // Update some required to be unique values.
+    
     stream_count++;
     video_config.rtp.mid = "mid-" + std::to_string(stream_count);
 
-    // Configure the video encoder configuration.
+    
     VideoEncoderConfig encoder_config;
     encoder_config.content_type =
         VideoEncoderConfig::ContentType::kRealtimeVideo;
@@ -188,15 +188,17 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
         PayloadStringToCodecType(video_config.rtp.payload_name);
     if (video_config.rtp.payload_name == cricket::kVp8CodecName) {
       VideoCodecVP8 settings = VideoEncoder::GetDefaultVp8Settings();
-      encoder_config.encoder_specific_settings = new rtc::RefCountedObject<
-          VideoEncoderConfig::Vp8EncoderSpecificSettings>(settings);
+      encoder_config.encoder_specific_settings =
+          rtc::make_ref_counted<VideoEncoderConfig::Vp8EncoderSpecificSettings>(
+              settings);
     } else if (video_config.rtp.payload_name == cricket::kVp9CodecName) {
       VideoCodecVP9 settings = VideoEncoder::GetDefaultVp9Settings();
-      encoder_config.encoder_specific_settings = new rtc::RefCountedObject<
-          VideoEncoderConfig::Vp9EncoderSpecificSettings>(settings);
+      encoder_config.encoder_specific_settings =
+          rtc::make_ref_counted<VideoEncoderConfig::Vp9EncoderSpecificSettings>(
+              settings);
     } else if (video_config.rtp.payload_name == cricket::kH264CodecName) {
       VideoCodecH264 settings = VideoEncoder::GetDefaultH264Settings();
-      encoder_config.encoder_specific_settings = new rtc::RefCountedObject<
+      encoder_config.encoder_specific_settings = rtc::make_ref_counted<
           VideoEncoderConfig::H264EncoderSpecificSettings>(settings);
     }
     encoder_config.video_format.name = video_config.rtp.payload_name;
@@ -205,7 +207,7 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
     encoder_config.content_type =
         VideoEncoderConfig::ContentType::kRealtimeVideo;
 
-    // Configure the simulcast layers.
+    
     encoder_config.number_of_streams = video_config.rtp.ssrcs.size();
     encoder_config.bitrate_priority = 1.0;
     encoder_config.simulcast_layers.resize(encoder_config.number_of_streams);
@@ -217,11 +219,11 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
     }
 
     encoder_config.video_stream_factory =
-        new rtc::RefCountedObject<cricket::EncoderStreamFactory>(
-            video_config.rtp.payload_name, /*max qp*/ 56, /*screencast*/ false,
-            /*screenshare enabled*/ false);
+        rtc::make_ref_counted<cricket::EncoderStreamFactory>(
+            video_config.rtp.payload_name,  56,  false,
+             false);
 
-    // Setup the fake video stream for this.
+    
     std::unique_ptr<test::FrameGeneratorCapturer> frame_generator =
         std::make_unique<test::FrameGeneratorCapturer>(
             Clock::GetRealTimeClock(),
@@ -236,7 +238,7 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
     video_send_stream->SetSource(
         frame_generator.get(),
         webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
-    // Store these objects so we can destropy them at the end.
+    
     frame_generators_.push_back(std::move(frame_generator));
     video_send_streams_.push_back(video_send_stream);
   }
@@ -258,7 +260,7 @@ void RtpGenerator::GenerateRtpDump(const std::string& rtp_dump_path) {
     send_stream->Start();
   }
 
-  // Spinlock until all the durations end.
+  
   WaitUntilAllVideoStreamsFinish();
 
   call_->SignalChannelNetworkState(webrtc::MediaType::VIDEO,
@@ -288,7 +290,7 @@ int RtpGenerator::GetMaxDuration() const {
 }
 
 void RtpGenerator::WaitUntilAllVideoStreamsFinish() {
-  // Find the maximum duration required by the streams.
+  
   start_ms_ = Clock::GetRealTimeClock()->TimeInMilliseconds();
   int64_t max_end_ms = start_ms_ + GetMaxDuration();
 
@@ -296,7 +298,7 @@ void RtpGenerator::WaitUntilAllVideoStreamsFinish() {
   do {
     int64_t min_wait_time = 0;
     current_time = Clock::GetRealTimeClock()->TimeInMilliseconds();
-    // Stop any streams that are no longer active.
+    
     for (size_t i = 0; i < options_.video_streams.size(); ++i) {
       const int64_t end_ms = start_ms_ + options_.video_streams[i].duration_ms;
       if (current_time > end_ms) {
@@ -320,4 +322,4 @@ test::RtpPacket RtpGenerator::DataToRtpPacket(const uint8_t* packet,
   return rtp_packet;
 }
 
-}  // namespace webrtc
+}  

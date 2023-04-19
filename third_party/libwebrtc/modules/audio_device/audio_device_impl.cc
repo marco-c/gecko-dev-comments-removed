@@ -92,27 +92,26 @@ rtc::scoped_refptr<AudioDeviceModuleForTest> AudioDeviceModule::CreateForTest(
   }
 
   
-  rtc::scoped_refptr<AudioDeviceModuleImpl> audioDevice(
-      new rtc::RefCountedObject<AudioDeviceModuleImpl>(audio_layer,
-                                                       task_queue_factory));
+  auto audio_device = rtc::make_ref_counted<AudioDeviceModuleImpl>(
+      audio_layer, task_queue_factory);
 
   
-  if (audioDevice->CheckPlatform() == -1) {
+  if (audio_device->CheckPlatform() == -1) {
     return nullptr;
   }
 
   
-  if (audioDevice->CreatePlatformSpecificObjects() == -1) {
+  if (audio_device->CreatePlatformSpecificObjects() == -1) {
     return nullptr;
   }
 
   
   
-  if (audioDevice->AttachAudioBuffer() == -1) {
+  if (audio_device->AttachAudioBuffer() == -1) {
     return nullptr;
   }
 
-  return audioDevice;
+  return audio_device;
 }
 
 AudioDeviceModuleImpl::AudioDeviceModuleImpl(

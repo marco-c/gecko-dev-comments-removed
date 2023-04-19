@@ -208,7 +208,7 @@ TestStatistics RunTest(int loss_cadence,
 
   NetEqTest neteq_test(
       config, 
-      new rtc::RefCountedObject<test::AudioDecoderProxyFactory>(&dec),
+      rtc::make_ref_counted<test::AudioDecoderProxyFactory>(&dec),
       decoders, nullptr, nullptr,
       std::move(lossy_input), std::move(output), callbacks);
   EXPECT_LE(kRunTimeMs, neteq_test.Run());

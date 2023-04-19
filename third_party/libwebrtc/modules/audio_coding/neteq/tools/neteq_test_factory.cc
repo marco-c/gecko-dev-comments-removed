@@ -285,7 +285,7 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
 
     
     
-    decoder_factory = new rtc::RefCountedObject<FunctionAudioDecoderFactory>(
+    decoder_factory = rtc::make_ref_counted<FunctionAudioDecoderFactory>(
         [decoder_factory, config](
             const SdpAudioFormat& format,
             absl::optional<AudioCodecPairId> codec_pair_id) {

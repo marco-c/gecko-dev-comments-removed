@@ -26,8 +26,7 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(const char* devi
     return nullptr;
 
   
-  rtc::scoped_refptr<VideoCaptureDS> capture(
-      new rtc::RefCountedObject<VideoCaptureDS>());
+  auto capture = rtc::make_ref_counted<VideoCaptureDS>();
   if (capture->Init(device_id) != 0) {
     return nullptr;
   }
