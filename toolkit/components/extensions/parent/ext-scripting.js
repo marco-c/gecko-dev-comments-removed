@@ -6,7 +6,13 @@
 
 "use strict";
 
-var { ExtensionError, getUniqueId, parseMatchPatterns } = ExtensionUtils;
+const {
+  ExtensionScriptingStore,
+  makeInternalContentScript,
+  makePublicContentScript,
+} = ChromeUtils.import("resource://gre/modules/ExtensionScriptingStore.jsm");
+
+var { ExtensionError, parseMatchPatterns } = ExtensionUtils;
 
 
 
@@ -111,27 +117,6 @@ const execute = (context, details, kind, method) => {
   return tab.queryContent("Execute", options);
 };
 
-const makeInternalContentScript = details => {
-  return {
-    scriptId: getUniqueId(),
-    options: {
-      allFrames: details.allFrames || false,
-      
-      
-      
-      checkPermissions: true,
-      cssPaths: details.css || [],
-      excludeMatches: details.excludeMatches,
-      jsPaths: details.js || [],
-      matchAboutBlank: true,
-      matches: details.matches,
-      originAttributesPatterns: null,
-      persistAcrossSessions: details.persistAcrossSessions,
-      runAt: details.runAt || "document_idle",
-    },
-  };
-};
-
 const ensureValidScriptId = id => {
   if (!id.length || id.startsWith("_")) {
     throw new ExtensionError("Invalid content script id.");
@@ -166,7 +151,14 @@ this.scripting = class extends ExtensionAPI {
   constructor(extension) {
     super(extension);
 
-    gScriptIdsMap.set(extension, new Map());
+    
+    
+    
+    
+    gScriptIdsMap.set(
+      extension,
+      ExtensionScriptingStore.getInitialScriptIdsMap(extension)
+    );
   }
 
   onShutdown() {
@@ -231,7 +223,10 @@ this.scripting = class extends ExtensionAPI {
 
             ensureValidScriptParams(extension, script);
 
-            scriptsToRegister.set(script.id, makeInternalContentScript(script));
+            scriptsToRegister.set(
+              script.id,
+              makeInternalContentScript(extension, script)
+            );
           }
 
           for (const [id, { scriptId, options }] of scriptsToRegister) {
@@ -239,6 +234,8 @@ this.scripting = class extends ExtensionAPI {
             extension.registeredContentScripts.set(scriptId, options);
           }
           extension.updateContentScripts();
+
+          ExtensionScriptingStore.persistAll(extension);
 
           await extension.broadcast("Extension:RegisterContentScripts", {
             id: extension.id,
@@ -257,31 +254,7 @@ this.scripting = class extends ExtensionAPI {
             .map(([id, scriptId]) => {
               const options = extension.registeredContentScripts.get(scriptId);
 
-              let script = {
-                id,
-                allFrames: options.allFrames,
-                matches: options.matches,
-                runAt: options.runAt,
-                persistAcrossSessions: options.persistAcrossSessions,
-              };
-
-              if (options.cssPaths.length) {
-                script.css = options.cssPaths.map(cssPath =>
-                  cssPath.replace(extension.baseURL, "")
-                );
-              }
-
-              if (options.excludeMatches?.length) {
-                script.excludeMatches = options.excludeMatches;
-              }
-
-              if (options.jsPaths.length) {
-                script.js = options.jsPaths.map(jsPath =>
-                  jsPath.replace(extension.baseURL, "")
-                );
-              }
-
-              return script;
+              return makePublicContentScript(extension, options);
             });
         },
 
@@ -320,6 +293,8 @@ this.scripting = class extends ExtensionAPI {
             scriptIds.push(scriptId);
           }
           extension.updateContentScripts();
+
+          ExtensionScriptingStore.persistAll(extension);
 
           await extension.broadcast("Extension:UnregisterContentScripts", {
             id: extension.id,
@@ -364,7 +339,7 @@ this.scripting = class extends ExtensionAPI {
             ensureValidScriptParams(extension, script);
 
             scriptsToUpdate.set(script.id, {
-              ...makeInternalContentScript(script),
+              ...makeInternalContentScript(extension, script),
               
               scriptId,
             });
@@ -374,6 +349,8 @@ this.scripting = class extends ExtensionAPI {
             extension.registeredContentScripts.set(scriptId, options);
           }
           extension.updateContentScripts();
+
+          ExtensionScriptingStore.persistAll(extension);
 
           await extension.broadcast("Extension:UpdateContentScripts", {
             id: extension.id,
