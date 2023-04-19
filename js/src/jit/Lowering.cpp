@@ -1072,6 +1072,20 @@ static inline bool CanEmitCompareAtUses(MInstruction* ins) {
   return iter == ins->usesEnd();
 }
 
+static bool CanCompareCharactersInline(const JSLinearString* linear) {
+  size_t length = linear->length();
+
+  
+  
+  
+  constexpr size_t Latin1StringCompareCutoff = 32;
+  constexpr size_t TwoByteStringCompareCutoff = 16;
+
+  return length > 0 &&
+         (linear->hasLatin1Chars() ? length <= Latin1StringCompareCutoff
+                                   : length <= TwoByteStringCompareCutoff);
+}
+
 void LIRGenerator::visitCompare(MCompare* comp) {
   MDefinition* left = comp->lhs();
   MDefinition* right = comp->rhs();
@@ -1097,19 +1111,8 @@ void LIRGenerator::visitCompare(MCompare* comp) {
 
       if (constant) {
         JSLinearString* linear = &constant->toString()->asLinear();
-        size_t length = linear->length();
 
-        
-        
-        
-        constexpr size_t Latin1StringCompareCutoff = 32;
-        constexpr size_t TwoByteStringCompareCutoff = 16;
-
-        bool canCompareInline =
-            length > 0 &&
-            (linear->hasLatin1Chars() ? length <= Latin1StringCompareCutoff
-                                      : length <= TwoByteStringCompareCutoff);
-        if (canCompareInline) {
+        if (CanCompareCharactersInline(linear)) {
           MDefinition* input = left->isConstant() ? right : left;
 
           auto* lir = new (alloc()) LCompareSInline(useRegister(input), linear);
