@@ -14,7 +14,7 @@ add_task(async function test() {
 
   
   PermissionTestUtils.add(
-    "http://example.com",
+    "https://example.com",
     "testing",
     Services.perms.ALLOW_ACTION
   );

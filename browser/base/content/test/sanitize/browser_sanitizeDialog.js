@@ -84,7 +84,7 @@ add_task(async function test_cancel() {
   let places = [];
   let pURI;
   for (let i = 0; i < 30; i++) {
-    pURI = makeURI("http://" + i + "-minutes-ago.com/");
+    pURI = makeURI("https://" + i + "-minutes-ago.com/");
     places.push({ uri: pURI, visitDate: visitTimeForMinutesAgo(i) });
     uris.push(pURI);
   }
@@ -126,14 +126,14 @@ add_task(async function test_history_downloads_checked() {
   let places = [];
   let pURI;
   for (let i = 0; i < 30; i++) {
-    pURI = makeURI("http://" + i + "-minutes-ago.com/");
+    pURI = makeURI("https://" + i + "-minutes-ago.com/");
     places.push({ uri: pURI, visitDate: visitTimeForMinutesAgo(i) });
     uris.push(pURI);
   }
   
   let olderURIs = [];
   for (let i = 0; i < 5; i++) {
-    pURI = makeURI("http://" + (61 + i) + "-minutes-ago.com/");
+    pURI = makeURI("https://" + (61 + i) + "-minutes-ago.com/");
     places.push({ uri: pURI, visitDate: visitTimeForMinutesAgo(61 + i) });
     olderURIs.push(pURI);
   }
@@ -209,7 +209,7 @@ add_task(async function test_history_downloads_unchecked() {
   let places = [];
   let pURI;
   for (let i = 0; i < 5; i++) {
-    pURI = makeURI("http://" + i + "-minutes-ago.com/");
+    pURI = makeURI("https://" + i + "-minutes-ago.com/");
     places.push({ uri: pURI, visitDate: visitTimeForMinutesAgo(i) });
     uris.push(pURI);
   }
@@ -279,7 +279,7 @@ add_task(async function test_everything() {
   
   
   [10, 70, 130, 250].forEach(function(aValue) {
-    pURI = makeURI("http://" + aValue + "-minutes-ago.com/");
+    pURI = makeURI("https://" + aValue + "-minutes-ago.com/");
     places.push({ uri: pURI, visitDate: visitTimeForMinutesAgo(aValue) });
     uris.push(pURI);
   });
@@ -326,7 +326,7 @@ add_task(async function test_everything_warning() {
   
   
   [10, 70, 130, 250].forEach(function(aValue) {
-    pURI = makeURI("http://" + aValue + "-minutes-ago.com/");
+    pURI = makeURI("https://" + aValue + "-minutes-ago.com/");
     places.push({ uri: pURI, visitDate: visitTimeForMinutesAgo(aValue) });
     uris.push(pURI);
   });
@@ -374,7 +374,7 @@ add_task(async function test_cannot_clear_history() {
   let promiseSanitized = promiseSanitizationComplete();
 
   
-  let pURI = makeURI("http://" + 10 + "-minutes-ago.com/");
+  let pURI = makeURI("https://" + 10 + "-minutes-ago.com/");
   await PlacesTestUtils.addVisits({
     uri: pURI,
     visitDate: visitTimeForMinutesAgo(10),
@@ -495,7 +495,7 @@ add_task(async function test_form_entries() {
 
 add_task(async function test_offline_apps_permissions() {
   
-  var URL = "http://www.example.com";
+  var URL = "https://www.example.com";
   var URI = makeURI(URL);
   var principal = Services.scriptSecurityManager.createContentPrincipal(
     URI,

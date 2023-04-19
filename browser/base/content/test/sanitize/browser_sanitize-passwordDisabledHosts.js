@@ -6,10 +6,10 @@ add_task(async function() {
   await SpecialPowers.pushPrefEnv({ set: [["signon.rememberSignons", true]] });
 
   
-  Services.logins.setLoginSavingEnabled("http://example.com", false);
+  Services.logins.setLoginSavingEnabled("https://example.com", false);
   
   is(
-    Services.logins.getLoginSavingEnabled("http://example.com"),
+    Services.logins.getLoginSavingEnabled("https://example.com"),
     false,
     "example.com should be disabled for password saving since we haven't cleared that yet."
   );
@@ -19,7 +19,7 @@ add_task(async function() {
 
   
   is(
-    Services.logins.getLoginSavingEnabled("http://example.com"),
+    Services.logins.getLoginSavingEnabled("https://example.com"),
     true,
     "example.com should be enabled for password saving again now that we've cleared."
   );
