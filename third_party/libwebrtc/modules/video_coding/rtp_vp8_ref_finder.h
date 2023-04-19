@@ -22,14 +22,13 @@
 #include "rtc_base/numerics/sequence_number_util.h"
 
 namespace webrtc {
-namespace video_coding {
 
 class RtpVp8RefFinder {
  public:
   RtpVp8RefFinder() = default;
 
   RtpFrameReferenceFinder::ReturnVector ManageFrame(
-      std::unique_ptr<RtpFrameObject> frame);
+      std::unique_ptr<video_coding::RtpFrameObject> frame);
   void ClearTo(uint16_t seq_num);
 
  private:
@@ -41,12 +40,12 @@ class RtpVp8RefFinder {
 
   enum FrameDecision { kStash, kHandOff, kDrop };
 
-  FrameDecision ManageFrameInternal(RtpFrameObject* frame);
+  FrameDecision ManageFrameInternal(video_coding::RtpFrameObject* frame);
   void RetryStashedFrames(RtpFrameReferenceFinder::ReturnVector& res);
-  void UpdateLayerInfoVp8(RtpFrameObject* frame,
+  void UpdateLayerInfoVp8(video_coding::RtpFrameObject* frame,
                           int64_t unwrapped_tl0,
                           uint8_t temporal_idx);
-  void UnwrapPictureIds(RtpFrameObject* frame);
+  void UnwrapPictureIds(video_coding::RtpFrameObject* frame);
 
   
   
@@ -59,7 +58,7 @@ class RtpVp8RefFinder {
 
   
   
-  std::deque<std::unique_ptr<RtpFrameObject>> stashed_frames_;
+  std::deque<std::unique_ptr<video_coding::RtpFrameObject>> stashed_frames_;
 
   
   
@@ -72,7 +71,6 @@ class RtpVp8RefFinder {
   SeqNumUnwrapper<uint8_t> tl0_unwrapper_;
 };
 
-}  
 }  
 
 #endif  

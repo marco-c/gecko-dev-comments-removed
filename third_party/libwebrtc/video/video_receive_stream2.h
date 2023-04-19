@@ -77,7 +77,7 @@ struct VideoFrameMetaData {
 class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
                             public rtc::VideoSinkInterface<VideoFrame>,
                             public NackSender,
-                            public video_coding::OnCompleteFrameCallback,
+                            public OnCompleteFrameCallback,
                             public Syncable,
                             public CallStatsObserver {
  public:
