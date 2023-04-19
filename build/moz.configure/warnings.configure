@@ -333,6 +333,9 @@ check_and_add_warning(
 )
 
 
+check_and_add_warning("-Werror=unguarded-availability-new", when=target_is_osx)
+
+
 add_old_configure_assignment("_WARNINGS_CFLAGS", warnings_flags.cflags)
 add_old_configure_assignment("_WARNINGS_CXXFLAGS", warnings_flags.cxxflags)
 add_old_configure_assignment("_WARNINGS_HOST_CFLAGS", warnings_flags.host_cflags)
