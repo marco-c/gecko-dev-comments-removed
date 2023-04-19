@@ -716,6 +716,11 @@ void nsBaseWidget::PerformFullscreenTransition(FullscreenTransitionStage aStage,
 
 
 void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen) {
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(BoundsUseDesktopPixels(),
+                        "non-desktop windows cannot be made fullscreen");
+
   HideWindowChrome(aFullScreen);
 
   if (aFullScreen) {
@@ -733,15 +738,16 @@ void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen) {
         Resize(left, top, width, height, true);
       }
     }
-  } else if (mOriginalBounds) {
-    if (BoundsUseDesktopPixels()) {
-      DesktopRect deskRect = *mOriginalBounds / GetDesktopToDeviceScale();
-      Resize(deskRect.X(), deskRect.Y(), deskRect.Width(), deskRect.Height(),
-             true);
-    } else {
-      Resize(mOriginalBounds->X(), mOriginalBounds->Y(),
-             mOriginalBounds->Width(), mOriginalBounds->Height(), true);
+  } else {
+    if (!mOriginalBounds) {
+      
+      
+      MOZ_ASSERT(false, "fullscreen window did not have saved position");
+      return;
     }
+    DesktopRect deskRect = *mOriginalBounds / GetDesktopToDeviceScale();
+    Resize(deskRect.X(), deskRect.Y(), deskRect.Width(), deskRect.Height(),
+           true);
   }
 }
 
