@@ -159,7 +159,7 @@ class Connector {
 
   clear() {
     
-    this.dataProvider.destroy();
+    this.dataProvider.clear();
 
     this.toolbox.resourceCommand.clearResources(Connector.NETWORK_RESOURCES);
     this.emitForTests("clear-network-resources");

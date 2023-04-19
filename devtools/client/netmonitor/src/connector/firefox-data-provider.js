@@ -42,7 +42,13 @@ class FirefoxDataProvider {
 
     
     
-    this.requestDataEnabled = true;
+    
+    this._requestDataEnabled = true;
+
+    
+    
+    
+    this._lastRequestDataClearId = 0;
 
     this.owner = owner;
 
@@ -81,18 +87,25 @@ class FirefoxDataProvider {
     this.onEventReceived = this.onEventReceived.bind(this);
     this.setEventStreamFlag = this.setEventStreamFlag.bind(this);
   }
+
   
 
 
 
-
-
-  destroy() {
+  clear() {
     this.stackTraces.clear();
     this.pendingRequests.clear();
     this.lazyRequestData.clear();
     this.stackTraceRequestInfoByActorID.clear();
-    this.requestDataEnabled = false;
+    this._requestDataEnabled = false;
+    this._lastRequestDataClearId++;
+  }
+
+  destroy() {
+    
+    
+    
+    this.clear();
   }
 
   
@@ -384,8 +397,8 @@ class FirefoxDataProvider {
   async onNetworkResourceAvailable(resource) {
     const { actor, stacktraceResourceId, cause } = resource;
 
-    if (!this.requestDataEnabled) {
-      this.requestDataEnabled = true;
+    if (!this._requestDataEnabled) {
+      this._requestDataEnabled = true;
     }
 
     
@@ -517,7 +530,7 @@ class FirefoxDataProvider {
   requestData(actor, method) {
     
     
-    if (!this.requestDataEnabled) {
+    if (!this._requestDataEnabled) {
       return Promise.resolve();
     }
     
@@ -570,6 +583,9 @@ class FirefoxDataProvider {
 
   async _requestData(actor, method) {
     
+    const lastRequestDataClearId = this._lastRequestDataClearId;
+
+    
     const clientMethodName = `get${method
       .charAt(0)
       .toUpperCase()}${method.slice(1)}`;
@@ -612,9 +628,20 @@ class FirefoxDataProvider {
         };
         response = await this.commands.client.request(packet);
       } catch (e) {
-        throw new Error(
-          `Error while calling method ${clientMethodName}: ${e.message}`
-        );
+        if (this._lastRequestDataClearId !== lastRequestDataClearId) {
+          
+          
+          
+          console.warn(
+            `Firefox Data Provider destroyed while requesting data: ${e.message}`
+          );
+          
+          response = { from: actor };
+        } else {
+          throw new Error(
+            `Error while calling method ${clientMethodName}: ${e.message}`
+          );
+        }
       }
     }
 
