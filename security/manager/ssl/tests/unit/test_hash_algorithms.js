@@ -90,7 +90,7 @@ function doHash(algo, value, cmp) {
 
 function doHashStream(algo, value, cmp) {
   
-  if (value.length == 0) {
+  if (!value.length) {
     return;
   }
 
