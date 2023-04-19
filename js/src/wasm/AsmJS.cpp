@@ -603,6 +603,27 @@ static inline TaggedParserAtomIndex FunctionName(FunctionNode* funNode) {
   return TaggedParserAtomIndex::null();
 }
 
+static inline ParseNode* FunctionFormalParametersList(FunctionNode* fn,
+                                                      unsigned* numFormals) {
+  ParamsBodyNode* argsBody = fn->body();
+
+  
+  
+  
+  *numFormals = argsBody->count();
+
+  
+  
+  
+  if (*numFormals > 0 && argsBody->last()->is<LexicalScopeNode>()) {
+    MOZ_ASSERT(argsBody->last()->as<LexicalScopeNode>().scopeBody()->isKind(
+        ParseNodeKind::StatementList));
+    (*numFormals)--;
+  }
+
+  return argsBody->head();
+}
+
 static inline ParseNode* FunctionStatementList(FunctionNode* funNode) {
   LexicalScopeNode* last = &funNode->body()->last()->as<LexicalScopeNode>();
   MOZ_ASSERT(last->isEmptyScope());

@@ -606,8 +606,6 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
 
 
 
-
-
 #define FOR_EACH_PARSENODE_SUBCLASS(MACRO)                                   \
   MACRO(BinaryNode, BinaryNodeType, asBinary)                                \
   MACRO(AssignmentNode, AssignmentNodeType, asAssignment)                    \
@@ -2535,18 +2533,6 @@ inline bool ParseNode::isConstant() {
     default:
       return false;
   }
-}
-
-static inline ParseNode* FunctionFormalParametersList(FunctionNode* fn,
-                                                      unsigned* numFormals) {
-  ParamsBodyNode* argsBody = fn->body();
-  *numFormals = argsBody->count();
-  if (*numFormals > 0 && argsBody->last()->is<LexicalScopeNode>() &&
-      argsBody->last()->as<LexicalScopeNode>().scopeBody()->isKind(
-          ParseNodeKind::StatementList)) {
-    (*numFormals)--;
-  }
-  return argsBody->head();
 }
 
 bool IsAnonymousFunctionDefinition(ParseNode* pn);

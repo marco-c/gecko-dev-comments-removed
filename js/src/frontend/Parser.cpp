@@ -3108,7 +3108,6 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
     this->compilationState_.rewind(startObj);
 
     
-    
     handler_.setFunctionFormalParametersAndBody(funNode, null());
   }
 
