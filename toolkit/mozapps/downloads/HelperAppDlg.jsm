@@ -557,10 +557,17 @@ nsUnknownContentTypeDialog.prototype = {
     
     var mimeType = this.mLauncher.MIMEInfo.MIMEType;
     let isPlain = mimeType == "text/plain";
+
+    this.isExemptExecutableExtension = Services.policies.isExemptExecutableExtension(
+      url.spec,
+      fname?.split(".").at(-1)
+    );
+
     var shouldntRememberChoice =
       mimeType == "application/octet-stream" ||
       mimeType == "application/x-msdownload" ||
-      this.mLauncher.targetFileIsExecutable ||
+      (this.mLauncher.targetFileIsExecutable &&
+        !this.isExemptExecutableExtension) ||
       
       
       (isPlain && lazy.gReputationService.isBinary(suggestedFileName));
@@ -737,7 +744,10 @@ nsUnknownContentTypeDialog.prototype = {
       
 
       
-      return !this.mLauncher.targetFileIsExecutable;
+      return (
+        !this.mLauncher.targetFileIsExecutable ||
+        this.isExemptExecutableExtension
+      );
     }
     
     
@@ -778,7 +788,8 @@ nsUnknownContentTypeDialog.prototype = {
     var mimeType = this.mLauncher.MIMEInfo.MIMEType;
     var openHandler = this.dialogElement("openHandler");
     if (
-      this.mLauncher.targetFileIsExecutable ||
+      (this.mLauncher.targetFileIsExecutable &&
+        !this.isExemptExecutableExtension) ||
       ((mimeType == "application/octet-stream" ||
         mimeType == "application/x-msdos-program" ||
         mimeType == "application/x-msdownload") &&

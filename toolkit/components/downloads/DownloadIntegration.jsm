@@ -701,16 +701,10 @@ var DownloadIntegration = {
       fileExtension &&
       fileExtension.toLowerCase() == "exe";
 
-    let isExemptExecutableExtension = false;
-    try {
-      let url = new URL(aDownload.source.url);
-      isExemptExecutableExtension = Services.policies.isExemptExecutableExtension(
-        url.origin,
-        fileExtension?.toLowerCase()
-      );
-    } catch (e) {
-      
-    }
+    let isExemptExecutableExtension = Services.policies.isExemptExecutableExtension(
+      aDownload.source.url,
+      fileExtension
+    );
 
     
     

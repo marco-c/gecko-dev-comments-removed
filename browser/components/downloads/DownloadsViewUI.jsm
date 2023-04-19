@@ -326,14 +326,21 @@ var DownloadsViewUI = {
 
 
 
+    
+    let filename = PathUtils.filename(download.target.path);
+
+    let isExemptExecutableExtension = Services.policies.isExemptExecutableExtension(
+      download.source.originalUrl || download.source.url,
+      filename?.split(".").at(-1)
+    );
+
     let shouldNotRememberChoice =
       !mimeInfo?.type ||
       mimeInfo.type === "application/octet-stream" ||
       mimeInfo.type === "application/x-msdownload" ||
       mimeInfo.type === "application/x-msdos-program" ||
-      lazy.gReputationService.isExecutable(
-        PathUtils.filename(download.target.path)
-      ) ||
+      (lazy.gReputationService.isExecutable(filename) &&
+        !isExemptExecutableExtension) ||
       (mimeInfo.type === "text/plain" &&
         lazy.gReputationService.isBinary(download.target.path));
 
