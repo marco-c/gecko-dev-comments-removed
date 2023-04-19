@@ -807,8 +807,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "Notification", insecureContext: true },
   
-  { name: "OffscreenCanvas", insecureContext: true, disabled: true },
-  
   { name: "OfflineAudioCompletionEvent", insecureContext: true },
   
   { name: "OfflineAudioContext", insecureContext: true },
@@ -1883,8 +1881,10 @@ function createInterfaceMap(...interfaceGroups) {
   function addInterfaces(interfaces) {
     for (var entry of interfaces) {
       if (typeof entry === "string") {
+        ok(!(entry in interfaceMap), "duplicate entry for " + entry);
         interfaceMap[entry] = !isInsecureContext;
       } else {
+        ok(!(entry.name in interfaceMap), "duplicate entry for " + entry.name);
         ok(!("pref" in entry), "Bogus pref annotation for " + entry.name);
         interfaceMap[entry.name] = !entryDisabled(entry);
       }
