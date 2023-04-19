@@ -52,8 +52,7 @@ class UsedIds {
 
     if (IsIdUsed(original_id)) {
       new_id = FindUnusedId();
-      RTC_LOG(LS_WARNING) << "Duplicate id found. Reassigning from "
-                          << original_id << " to " << new_id;
+      
       idstruct->id = new_id;
     }
     SetIdUsed(new_id);
