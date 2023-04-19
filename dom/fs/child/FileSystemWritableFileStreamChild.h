@@ -16,16 +16,16 @@ class FileSystemWritableFileStream;
 class FileSystemWritableFileStreamChild
     : public PFileSystemWritableFileStreamChild {
  public:
-  explicit FileSystemWritableFileStreamChild(
-      const FileDescriptor& aFileDescriptor);
+  FileSystemWritableFileStreamChild();
 
   NS_INLINE_DECL_REFCOUNTING(FileSystemWritableFileStreamChild, override)
 
+  FileSystemWritableFileStream* MutableWritableFileStreamPtr() const {
+    MOZ_ASSERT(mStream);
+    return mStream;
+  }
+
   void SetStream(FileSystemWritableFileStream* aStream);
-
-  PRFileDesc* MutableFileDescPtr() const;
-
-  void Close();
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -35,8 +35,6 @@ class FileSystemWritableFileStreamChild
   
   
   FileSystemWritableFileStream* MOZ_NON_OWNING_REF mStream;
-
-  PRFileDesc* mFileDesc;
 };
 
 }  
