@@ -1288,5 +1288,31 @@ void DocAccessibleParent::URL(nsAString& aURL) const {
   CopyUTF8toUTF16(url, aURL);
 }
 
+DocAccessibleParent* DocAccessibleParent::GetFrom(
+    dom::BrowsingContext* aBrowsingContext) {
+  if (!aBrowsingContext) {
+    return nullptr;
+  }
+
+  dom::BrowserParent* bp = aBrowsingContext->Canonical()->GetBrowserParent();
+  if (!bp) {
+    return nullptr;
+  }
+
+  const ManagedContainer<PDocAccessibleParent>& docs =
+      bp->ManagedPDocAccessibleParent();
+  for (auto* key : docs) {
+    
+    
+    
+    auto* doc = static_cast<a11y::DocAccessibleParent*>(key);
+    if (doc->GetBrowsingContext() == aBrowsingContext) {
+      return doc;
+    }
+  }
+
+  return nullptr;
+}
+
 }  
 }  
