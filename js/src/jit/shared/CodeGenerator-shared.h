@@ -143,15 +143,8 @@ class CodeGeneratorShared : public LElementVisitor {
   uint32_t offsetOfPassedArgSlots_ = 0;
 
   
-  inline uint32_t ArgToStackOffset(uint32_t slot) const;
-
-  inline uint32_t SlotToStackOffset(uint32_t slot) const;
-
-  
   inline Address AddressOfPassedArg(uint32_t slot) const;
   inline uint32_t UnusedStackBytesForCall(uint32_t numArgSlots) const;
-
-  inline uint32_t ToStackOffset(LAllocation a) const;
 
   inline Address ToAddress(const LAllocation& a) const;
   inline Address ToAddress(const LAllocation* a) const;
@@ -159,10 +152,6 @@ class CodeGeneratorShared : public LElementVisitor {
   static inline Address ToAddress(Register elements, const LAllocation* index,
                                   Scalar::Type type,
                                   int32_t offsetAdjustment = 0);
-
-  
-  
-  inline uint32_t ToFramePointerOffset(LAllocation a) const;
 
   uint32_t frameSize() const { return frameDepth_; }
 
