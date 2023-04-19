@@ -1152,17 +1152,6 @@ Maybe<gfx::Matrix> DCSurfaceSwapChain::EnsurePresented(
   }
 
   
-  
-  
-  
-  if (dstSize.width % 2 == 1) {
-    dstSize.width += 1;
-  }
-  if (dstSize.height % 2 == 1) {
-    dstSize.height += 1;
-  }
-
-  
 
   if (mDest && mDest->dest->size != dstSize) {
     mDest = Nothing();
@@ -1318,10 +1307,24 @@ static Maybe<DCSurfaceSwapChain::Dest> CreateSwapChain(
     desc.Scaling = DXGI_SCALING_STRETCH;
     desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
     desc.Flags = DXGI_SWAP_CHAIN_FLAG_FULLSCREEN_VIDEO;
+    desc.AlphaMode = aAlphaMode;  
+
     if (IsYuv(desc.Format)) {
       desc.Flags |= DXGI_SWAP_CHAIN_FLAG_YUV_VIDEO;
     }
-    desc.AlphaMode = aAlphaMode;  
+
+    
+    
+    
+    
+    
+    
+    if (desc.Width % 2 == 1) {
+      desc.Width += 1;
+    }
+    if (desc.Height % 2 == 1) {
+      desc.Height += 1;
+    }
 
     RefPtr<IDXGISwapChain1> swapChain1;
     HRESULT hr;
@@ -1585,15 +1588,15 @@ bool DCSurfaceSwapChain::CallBlitHelper() const {
   
   
 
-  auto lutUintIfNeeded = Some(LUT_TEX_UNIT);
+  auto lutUnitIfNeeded = Some(LUT_TEX_UNIT);
   auto fragConvert = gl::kFragConvert_ColorLut;
   if (!mDest->lut) {
-    lutUintIfNeeded = Nothing();
+    lutUnitIfNeeded = Nothing();
     fragConvert = gl::kFragConvert_None;
   }
 
   const auto baseArgs = gl::DrawBlitProg::BaseArgs{
-      texCoordMat0, false, mDest->dest->size, {}, lutUintIfNeeded,
+      texCoordMat0, false, mDest->dest->size, {}, lutUnitIfNeeded,
   };
   Maybe<gl::DrawBlitProg::YUVArgs> yuvArgs;
   auto fragSample = gl::kFragSample_OnePlane;
