@@ -13,80 +13,39 @@ add_task(async function test_button_state_disabled() {
     gBrowser,
     REPORTABLE_PAGE
   );
-  await openPageActions();
+  const menu = new HelpMenuHelper();
+  await menu.open();
   is(
-    await isPanelItemEnabled(),
+    menu.isItemEnabled(),
     true,
     "Check that panel item is enabled for reportable schemes on tab load"
   );
+  await menu.close();
 
   let tab2 = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     NONREPORTABLE_PAGE
   );
-  await openPageActions();
+  await menu.open();
   is(
-    await isPanelItemDisabled(),
-    true,
+    menu.isItemEnabled(),
+    false,
     "Check that panel item is disabled for non-reportable schemes on tab load"
   );
+  await menu.close();
 
   let tab3 = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     REPORTABLE_PAGE2
   );
-  await openPageActions();
+  await menu.open();
   is(
-    await isPanelItemEnabled(),
+    menu.isItemEnabled(),
     true,
     "Check that panel item is enabled for reportable schemes on tab load"
   );
+  await menu.close();
 
-  await BrowserTestUtils.removeTab(tab1);
-  await BrowserTestUtils.removeTab(tab2);
-  await BrowserTestUtils.removeTab(tab3);
-});
-
-
-
-add_task(async function test_button_state_in_urlbar() {
-  await SpecialPowers.pushPrefEnv({ set: [[PREF_WC_REPORTER_ENABLED, true]] });
-
-  pinToURLBar();
-  let tab1 = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    REPORTABLE_PAGE
-  );
-  await openPageActions();
-  is(
-    await isURLButtonPresent(),
-    true,
-    "Check that urlbar icon is enabled for reportable schemes on tab load"
-  );
-
-  let tab2 = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    NONREPORTABLE_PAGE
-  );
-  await openPageActions();
-  is(
-    await isURLButtonPresent(),
-    false,
-    "Check that urlbar icon is hidden for non-reportable schemes on tab load"
-  );
-
-  let tab3 = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    REPORTABLE_PAGE2
-  );
-  await openPageActions();
-  is(
-    await isURLButtonPresent(),
-    true,
-    "Check that urlbar icon is enabled for reportable schemes on tab load"
-  );
-
-  unpinFromURLBar();
   await BrowserTestUtils.removeTab(tab1);
   await BrowserTestUtils.removeTab(tab2);
   await BrowserTestUtils.removeTab(tab3);
