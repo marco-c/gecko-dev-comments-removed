@@ -674,8 +674,9 @@ TEST_P(PeerConnectionSignalingTest, SetRemoteDescriptionExecutesImmediately) {
 
   
   
-  callee->pc()->SetRemoteDescription(std::move(offer),
-                                     new FakeSetRemoteDescriptionObserver());
+  callee->pc()->SetRemoteDescription(
+      std::move(offer),
+      rtc::make_ref_counted<FakeSetRemoteDescriptionObserver>());
   EXPECT_EQ(2u, callee->pc()->GetReceivers().size());
 }
 
@@ -693,8 +694,9 @@ TEST_P(PeerConnectionSignalingTest, CreateOfferBlocksSetRemoteDescription) {
   
   
   callee->pc()->CreateOffer(offer_observer, RTCOfferAnswerOptions());
-  callee->pc()->SetRemoteDescription(std::move(offer),
-                                     new FakeSetRemoteDescriptionObserver());
+  callee->pc()->SetRemoteDescription(
+      std::move(offer),
+      rtc::make_ref_counted<FakeSetRemoteDescriptionObserver>());
   
   
   EXPECT_FALSE(offer_observer->called());
@@ -1113,8 +1115,9 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest,
   
   
   RTC_DCHECK(!caller->pc()->GetTransceivers()[0]->mid().has_value());
-  caller->pc()->SetLocalDescription(std::move(offer),
-                                    new FakeSetLocalDescriptionObserver());
+  caller->pc()->SetLocalDescription(
+      std::move(offer),
+      rtc::make_ref_counted<FakeSetLocalDescriptionObserver>());
   EXPECT_TRUE(caller->pc()->GetTransceivers()[0]->mid().has_value());
 }
 
