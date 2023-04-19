@@ -548,10 +548,7 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeUnicodeExtension(
   
   if (static_cast<Span<const char>>(sb) != extension) {
     
-    if (!sb.append('\0')) {
-      return Err(CanonicalizationError::OutOfMemory);
-    }
-    UniqueChars canonical(sb.extractOrCopyRawBuffer());
+    UniqueChars canonical = DuplicateStringToUniqueChars(sb);
     if (!canonical) {
       return Err(CanonicalizationError::OutOfMemory);
     }
@@ -730,10 +727,7 @@ Locale::CanonicalizeTransformExtension(UniqueChars& aTransformExtension) {
   
   if (static_cast<Span<const char>>(sb) != extension) {
     
-    if (!sb.append('\0')) {
-      return Err(CanonicalizationError::OutOfMemory);
-    }
-    UniqueChars canonical(sb.extractOrCopyRawBuffer());
+    UniqueChars canonical = DuplicateStringToUniqueChars(sb);
     if (!canonical) {
       return Err(CanonicalizationError::OutOfMemory);
     }
