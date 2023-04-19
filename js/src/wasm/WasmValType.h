@@ -57,8 +57,6 @@ union PackedTypeCode {
     PackedRepr pointerTag_ : PointerTagBits;
   };
 
-  WASM_CHECK_CACHEABLE_POD(bits_);
-
  public:
   static constexpr uint32_t NoTypeCode = (1 << TypeCodeBits) - 1;
   static constexpr uint32_t NoTypeIndex = (1 << TypeIndexBits) - 1;
@@ -162,11 +160,7 @@ union PackedTypeCode {
   }
 };
 
-WASM_DECLARE_CACHEABLE_POD(PackedTypeCode);
-
 static_assert(sizeof(PackedTypeCode) == sizeof(uint32_t), "packed");
-static_assert(std::is_pod_v<PackedTypeCode>,
-              "must be POD to be simply serialized/deserialized");
 
 
 
@@ -187,8 +181,6 @@ class RefType {
 
  private:
   PackedTypeCode ptc_;
-
-  WASM_CHECK_CACHEABLE_POD(ptc_);
 
 #ifdef DEBUG
   bool isValid() const {
@@ -264,8 +256,6 @@ class RefType {
   bool operator==(const RefType& that) const { return ptc_ == that.ptc_; }
   bool operator!=(const RefType& that) const { return ptc_ != that.ptc_; }
 };
-
-WASM_DECLARE_CACHEABLE_POD(RefType);
 
 class FieldTypeTraits {
  public:
@@ -414,8 +404,6 @@ class PackedType : public T {
 
  protected:
   PackedTypeCode tc_;
-
-  WASM_CHECK_CACHEABLE_POD(tc_);
 
   explicit PackedType(TypeCode c) : tc_(PackedTypeCode::pack(c)) {
     MOZ_ASSERT(c != AbstractReferenceTypeIndexCode);
@@ -691,9 +679,6 @@ class PackedType : public T {
 
 using ValType = PackedType<ValTypeTraits>;
 using FieldType = PackedType<FieldTypeTraits>;
-
-WASM_DECLARE_CACHEABLE_POD(ValType);
-WASM_DECLARE_CACHEABLE_POD(FieldType);
 
 
 
