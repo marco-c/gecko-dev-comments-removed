@@ -119,6 +119,9 @@ class RetransmissionQueue {
   size_t outstanding_items() const { return outstanding_items_; }
 
   
+  bool can_send_data() const;
+
+  
   
   
   bool ShouldSendForwardTsn(TimeMs now);
@@ -343,7 +346,14 @@ class RetransmissionQueue {
                : CongestionAlgorithmPhase::kCongestionAvoidance;
   }
 
+  
+  
+  size_t max_bytes_to_send() const;
+
   const DcSctpOptions options_;
+  
+  
+  const size_t min_bytes_required_to_send_;
   
   const bool partial_reliability_;
   const std::string log_prefix_;

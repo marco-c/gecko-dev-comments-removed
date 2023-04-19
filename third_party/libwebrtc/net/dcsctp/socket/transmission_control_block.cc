@@ -84,7 +84,9 @@ void TransmissionControlBlock::MaybeSendSack() {
 
 void TransmissionControlBlock::SendBufferedPackets(SctpPacket::Builder& builder,
                                                    TimeMs now) {
-  for (int packet_idx = 0; packet_idx < options_.max_burst; ++packet_idx) {
+  for (int packet_idx = 0;
+       packet_idx < options_.max_burst && retransmission_queue_.can_send_data();
+       ++packet_idx) {
     
     
     if (packet_idx == 0) {
