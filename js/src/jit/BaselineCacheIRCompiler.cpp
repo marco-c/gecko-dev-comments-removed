@@ -632,7 +632,7 @@ bool BaselineCacheIRCompiler::emitFrameIsConstructingResult() {
   Register outputScratch = output.valueReg().scratchReg();
 
   
-  Address tokenAddr(FramePointer, BaselineFrame::offsetOfCalleeToken());
+  Address tokenAddr(FramePointer, JitFrameLayout::offsetOfCalleeToken());
   masm.loadPtr(tokenAddr, outputScratch);
 
   
