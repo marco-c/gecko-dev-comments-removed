@@ -98,6 +98,24 @@ class Module {
 
 
 
+
+
+
+
+  interceptEvent(name, payload) {
+    throw new Error(
+      `Could not intercept event ${name}, interceptEvent is not implemented in windowglobal-in-root module`
+    );
+  }
+
+  
+
+
+
+
+
+
+
   removeEventSessionData(moduleName, event) {
     return this.messageHandler.removeSessionData({
       moduleName,

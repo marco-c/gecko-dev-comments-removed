@@ -1,0 +1,22 @@
+
+
+
+
+"use strict";
+
+const EXPORTED_SYMBOLS = ["eventnointercept"];
+
+const { Module } = ChromeUtils.import(
+  "chrome://remote/content/shared/messagehandler/Module.jsm"
+);
+
+class EventNoInterceptModule extends Module {
+  destroy() {}
+
+  testEvent() {
+    const text = `event no interception`;
+    this.emitProtocolEvent("eventnointercept.testEvent", { text });
+  }
+}
+
+const eventnointercept = EventNoInterceptModule;

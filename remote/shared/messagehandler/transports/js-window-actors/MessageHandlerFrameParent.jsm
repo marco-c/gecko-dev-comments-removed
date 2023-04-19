@@ -16,6 +16,8 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   error: "chrome://remote/content/shared/messagehandler/Errors.jsm",
   RootMessageHandlerRegistry:
     "chrome://remote/content/shared/messagehandler/RootMessageHandlerRegistry.jsm",
+  WindowGlobalMessageHandler:
+    "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.jsm",
 });
 
 
@@ -24,16 +26,37 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 
 
 class MessageHandlerFrameParent extends JSWindowActorParent {
-  receiveMessage(message) {
+  async receiveMessage(message) {
     switch (message.name) {
       case "MessageHandlerFrameChild:messageHandlerEvent":
         const { name, data, isProtocolEvent, sessionId } = message.data;
+        const [moduleName] = name.split(".");
 
         
         const messageHandler = lazy.RootMessageHandlerRegistry.getExistingMessageHandler(
           sessionId
         );
-        messageHandler.emitEvent(name, data, { isProtocolEvent });
+        
+        
+        const module = messageHandler.moduleCache.getModuleInstance(
+          moduleName,
+          { type: lazy.WindowGlobalMessageHandler.type }
+        );
+        let eventPayload = data;
+
+        
+        
+        if (module?.interceptEvent) {
+          eventPayload = await module.interceptEvent(name, data);
+
+          
+          if (!eventPayload) {
+            throw new Error(
+              `${moduleName}.interceptEvent doesn't return the event payload`
+            );
+          }
+        }
+        messageHandler.emitEvent(name, eventPayload, { isProtocolEvent });
 
         break;
       default:

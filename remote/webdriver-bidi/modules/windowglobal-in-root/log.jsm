@@ -12,6 +12,9 @@ const { Module } = ChromeUtils.import(
 
 class LogModule extends Module {
   destroy() {}
+  interceptEvent(name, payload) {
+    return payload;
+  }
 }
 
 const log = LogModule;
