@@ -742,6 +742,21 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
   }
 
   
+  bool maybeWebAccessible = false;
+  NS_URIChainHasFlags(targetBaseURI,
+                      nsIProtocolHandler::WEBEXT_URI_WEB_ACCESSIBLE,
+                      &maybeWebAccessible);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (maybeWebAccessible) {
+    bool isWebAccessible = false;
+    rv = ExtensionPolicyService::GetSingleton().SourceMayLoadExtensionURI(
+        sourceURI, targetBaseURI, &isWebAccessible);
+    if (!(NS_SUCCEEDED(rv) && isWebAccessible)) {
+      return NS_ERROR_DOM_BAD_URI;
+    }
+  }
+
+  
   bool targetURIIsLoadableBySubsumers = false;
   rv = NS_URIChainHasFlags(targetBaseURI,
                            nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,
@@ -814,7 +829,6 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     bool schemesMatch =
         scheme.Equals(otherScheme, nsCaseInsensitiveCStringComparator);
     bool isSamePage = false;
-    bool isExtensionMismatch = false;
     
     if (scheme.EqualsLiteral("about") && schemesMatch) {
       nsAutoCString moduleName, otherModuleName;
@@ -862,13 +876,6 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
           }
         }
       }
-    } else if (schemesMatch && scheme.EqualsLiteral("moz-extension")) {
-      
-      
-      nsAutoCString host, otherHost;
-      currentURI->GetHost(host);
-      currentOtherURI->GetHost(otherHost);
-      isExtensionMismatch = !host.Equals(otherHost);
     } else {
       bool equalExceptRef = false;
       rv = currentURI->EqualsExceptRef(currentOtherURI, &equalExceptRef);
@@ -880,9 +887,7 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
     
     
     
-    
-    if (!schemesMatch || (denySameSchemeLinks && !isSamePage) ||
-        isExtensionMismatch) {
+    if (!schemesMatch || (denySameSchemeLinks && !isSamePage)) {
       return CheckLoadURIFlags(
           currentURI, currentOtherURI, sourceBaseURI, targetBaseURI, aFlags,
           aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0,
@@ -932,7 +937,6 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
   if (NS_FAILED(rv)) return rv;
 
   
-  
   rv = DenyAccessIfURIHasFlags(aTargetURI,
                                nsIProtocolHandler::URI_DANGEROUS_TO_LOAD);
   if (NS_FAILED(rv)) {
@@ -956,26 +960,6 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
       }
       return rv;
     }
-  }
-
-  
-  
-  bool maybeWebAccessible = false;
-  NS_URIChainHasFlags(aTargetURI, nsIProtocolHandler::WEBEXT_URI_WEB_ACCESSIBLE,
-                      &maybeWebAccessible);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (maybeWebAccessible) {
-    bool isWebAccessible = false;
-    rv = ExtensionPolicyService::GetSingleton().SourceMayLoadExtensionURI(
-        aSourceURI, aTargetURI, &isWebAccessible);
-    if (NS_SUCCEEDED(rv) && isWebAccessible) {
-      return NS_OK;
-    }
-    if (reportErrors) {
-      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow,
-                  aInnerWindowID);
-    }
-    return NS_ERROR_DOM_BAD_URI;
   }
 
   

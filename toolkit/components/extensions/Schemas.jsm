@@ -304,18 +304,6 @@ const POSTPROCESSORS = {
     context.logError(context.makeError(msg));
     throw new Error(msg);
   },
-
-  webAccessibleMatching(value, context) {
-    
-    for (let obj of value) {
-      if (!obj.matches && !obj.extension_ids) {
-        const msg = `web_accessible_resources requires one of "matches" or "extension_ids"`;
-        context.logError(context.makeError(msg));
-        throw new Error(msg);
-      }
-    }
-    return value;
-  },
 };
 
 

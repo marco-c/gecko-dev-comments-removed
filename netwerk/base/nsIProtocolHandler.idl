@@ -277,7 +277,6 @@ interface nsIProtocolHandler : nsISupports
 
 
 
-
     const unsigned long URI_FETCHABLE_BY_ANYONE = (1 << 18);
 
     
