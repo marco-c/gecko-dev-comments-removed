@@ -560,6 +560,7 @@ class Marionette(object):
                 
                 
                 pass
+
         if self.instance:
             
             self.instance.close(clean=True)
@@ -567,6 +568,7 @@ class Marionette(object):
                 raise errors.UnresponsiveInstanceException(
                     "Application clean-up has failed >2 consecutive times."
                 )
+
         self.cleanup_ran = True
 
     def __del__(self):
@@ -1023,16 +1025,26 @@ class Marionette(object):
                 
                 pass
 
-            returncode = self.instance.runner.wait(timeout=self.shutdown_timeout)
-            if returncode is None:
+            except Exception:
                 
-                self.cleanup()
+                
+                self.is_shutting_down = False
+                self._send_message("Marionette:AcceptConnections", {"value": True})
+                raise
 
-                message = "Process still running {}s after quit request"
-                raise IOError(message.format(self.shutdown_timeout))
+            try:
+                self.delete_session(send_request=False)
 
-            self.is_shutting_down = False
-            self.delete_session(send_request=False)
+                
+                returncode = self.instance.runner.wait(timeout=self.shutdown_timeout)
+                if returncode is None:
+                    self.cleanup()
+
+                    message = "Process still running {}s after quit request"
+                    raise IOError(message.format(self.shutdown_timeout))
+
+            finally:
+                self.is_shutting_down = False
 
         else:
             self.delete_session(send_request=False)
