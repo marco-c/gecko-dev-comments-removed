@@ -2415,8 +2415,8 @@ gfxPlatformFontList::PrefFontList* gfxFcPlatformFontList::FindGenericFamilies(
           
           auto prefFonts = MakeUnique<PrefFontList>();  
                                                         
-          uint32_t limit = StaticPrefs::
-              gfx_font_rendering_fontconfig_max_generic_substitutions();
+          uint32_t limit =
+              gfxPlatformGtk::GetPlatform()->MaxGenericSubstitions();
           bool foundFontWithLang = false;
           for (int i = 0; i < faces->nfont; i++) {
             FcPattern* font = faces->fonts[i];

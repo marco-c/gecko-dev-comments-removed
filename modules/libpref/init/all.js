@@ -3277,6 +3277,11 @@ pref("font.size.monospace.x-math", 13);
   
   pref("intl.ime.hack.uim.using_key_snooper", true);
 
+  #ifdef MOZ_WIDGET_GTK
+    
+    pref("gfx.font_rendering.fontconfig.max_generic_substitutions", 3);
+  #endif
+
 #endif // !ANDROID && !XP_MACOSX && XP_UNIX
 
 #if defined(ANDROID)
