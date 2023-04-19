@@ -249,6 +249,7 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
        nullptr,
 
       storageAccess, isThirdPartyContextToTopWindow,
+      nsContentUtils::ShouldResistFingerprinting(principal),
       
       
       OriginTrials(), std::move(serviceWorkerData), regInfo->AgentClusterId(),
