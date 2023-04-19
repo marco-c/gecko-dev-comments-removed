@@ -13,6 +13,7 @@
 #include "NamespaceImports.h"
 
 #include "builtin/TestingUtility.h"  
+#include "js/Conversions.h"
 #include "js/MapAndSet.h"
 #include "js/Modules.h"
 #include "js/PropertyAndElement.h"  
@@ -82,6 +83,34 @@ bool ModuleLoader::GetImportMetaProperties(JSContext* cx,
                                            JS::HandleObject metaObject) {
   ShellContext* scx = GetShellContext(cx);
   return scx->moduleLoader->populateImportMeta(cx, privateValue, metaObject);
+}
+
+bool ModuleLoader::ImportMetaResolve(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedValue modulePrivate(
+      cx, js::GetFunctionNativeReserved(&args.callee(), ModulePrivateSlot));
+
+  
+  
+  
+  
+  RootedValue v(cx, args.get(ImportMetaResolveSpecifierArg));
+  RootedString specifier(cx, JS::ToString(cx, v));
+  if (!specifier) {
+    return false;
+  }
+
+  
+  ShellContext* scx = GetShellContext(cx);
+  RootedString url(cx);
+  if (!scx->moduleLoader->importMetaResolve(cx, modulePrivate, specifier,
+                                            &url)) {
+    return false;
+  }
+
+  
+  args.rval().setString(url);
+  return true;
 }
 
 
@@ -188,7 +217,35 @@ bool ModuleLoader::populateImportMeta(JSContext* cx,
   }
 
   RootedValue pathValue(cx, StringValue(path));
-  return JS_DefineProperty(cx, metaObject, "url", pathValue, JSPROP_ENUMERATE);
+  if (!JS_DefineProperty(cx, metaObject, "url", pathValue, JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  JSFunction* resolveFunc = js::DefineFunctionWithReserved(
+      cx, metaObject, "resolve", ImportMetaResolve, ImportMetaResolveNumArgs,
+      JSPROP_ENUMERATE);
+  if (!resolveFunc) {
+    return false;
+  }
+
+  RootedObject resolveFuncObj(cx, JS_GetFunctionObject(resolveFunc));
+  js::SetFunctionNativeReserved(resolveFuncObj, ModulePrivateSlot,
+                                privateValue);
+
+  return true;
+}
+
+bool ModuleLoader::importMetaResolve(JSContext* cx,
+                                     JS::Handle<JS::Value> referencingPrivate,
+                                     JS::Handle<JSString*> specifier,
+                                     JS::MutableHandle<JSString*> urlOut) {
+  Rooted<JSLinearString*> path(cx, resolve(cx, specifier, referencingPrivate));
+  if (!path) {
+    return false;
+  }
+
+  urlOut.set(path);
+  return true;
 }
 
 bool ModuleLoader::dynamicImport(JSContext* cx,
@@ -308,6 +365,16 @@ JSLinearString* ModuleLoader::resolve(JSContext* cx,
     return nullptr;
   }
 
+  return resolve(cx, name, referencingInfo);
+}
+
+JSLinearString* ModuleLoader::resolve(JSContext* cx, HandleString specifier,
+                                      HandleValue referencingInfo) {
+  Rooted<JSLinearString*> name(cx, JS_EnsureLinearString(cx, specifier));
+  if (!name) {
+    return nullptr;
+  }
+
   if (IsJavaScriptURL(name) || IsAbsolutePath(name)) {
     return name;
   }
@@ -362,7 +429,11 @@ JSLinearString* ModuleLoader::resolve(JSContext* cx,
     return nullptr;
   }
 
-  return JS_EnsureLinearString(cx, result);
+  Rooted<JSLinearString*> linear(cx, JS_EnsureLinearString(cx, result));
+  if (!linear) {
+    return nullptr;
+  }
+  return normalizePath(cx, linear);
 }
 
 JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg) {

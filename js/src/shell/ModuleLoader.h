@@ -31,6 +31,7 @@ class ModuleLoader {
                                          HandleObject moduleRequest);
   static bool GetImportMetaProperties(JSContext* cx, HandleValue privateValue,
                                       HandleObject metaObject);
+  static bool ImportMetaResolve(JSContext* cx, unsigned argc, Value* vp);
   static bool ImportModuleDynamically(JSContext* cx,
                                       HandleValue referencingPrivate,
                                       HandleObject moduleRequest,
@@ -48,6 +49,10 @@ class ModuleLoader {
                                   HandleObject moduleRequest);
   bool populateImportMeta(JSContext* cx, HandleValue privateValue,
                           HandleObject metaObject);
+  bool importMetaResolve(JSContext* cx,
+                         JS::Handle<JS::Value> referencingPrivate,
+                         JS::Handle<JSString*> specifier,
+                         JS::MutableHandle<JSString*> urlOut);
   bool dynamicImport(JSContext* cx, HandleValue referencingPrivate,
                      HandleObject moduleRequest, HandleObject promise);
   bool doDynamicImport(JSContext* cx, HandleValue referencingPrivate,
@@ -62,6 +67,8 @@ class ModuleLoader {
                            HandleObject module);
   JSLinearString* resolve(JSContext* cx, HandleObject moduleRequestArg,
                           HandleValue referencingInfo);
+  JSLinearString* resolve(JSContext* cx, HandleString specifier,
+                          HandleValue referencingInfo);
   bool getScriptPath(JSContext* cx, HandleValue privateValue,
                      MutableHandle<JSLinearString*> pathOut);
   JSLinearString* normalizePath(JSContext* cx, Handle<JSLinearString*> path);
@@ -71,6 +78,14 @@ class ModuleLoader {
   
   JSAtom* loadPathStr = nullptr;
   JSAtom* pathSeparatorStr = nullptr;
+
+  
+  enum { ModulePrivateSlot = 0, SlotCount };
+
+  
+  static const uint32_t ImportMetaResolveNumArgs = 1;
+  
+  static const uint32_t ImportMetaResolveSpecifierArg = 0;
 } JS_HAZ_NON_GC_POINTER;
 
 }  
