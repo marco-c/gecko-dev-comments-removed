@@ -45,6 +45,16 @@ namespace webrtc {
 
 
 
+
+
+
+
+
+
+
+
+
+
 class PendingTaskSafetyFlag : public rtc::RefCountInterface {
  public:
   static rtc::scoped_refptr<PendingTaskSafetyFlag> Create();
@@ -61,6 +71,17 @@ class PendingTaskSafetyFlag : public rtc::RefCountInterface {
   bool alive_ = true;
   RTC_NO_UNIQUE_ADDRESS SequenceChecker main_sequence_;
 };
+
+
+
+
+
+
+
+
+
+
+
 
 
 
