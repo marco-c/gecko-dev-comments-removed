@@ -174,44 +174,35 @@ def main(check=False):
         "$id": schema_id,
         "title": "Messaging Experiment",
         "description": "A Firefox Messaging System message.",
-        "oneOf": [
+        "allOf": [
+            
+            
             {
-                "description": "An empty FxMS message.",
                 "type": "object",
-                "additionalProperties": False,
+                "properties": {
+                    "template": {
+                        "type": "string",
+                        "enum": all_templates,
+                    },
+                },
+                "required": ["template"],
             },
-            {
-                "allOf": [
-                    
-                    
-                    {
+            *(
+                {
+                    "if": {
                         "type": "object",
                         "properties": {
                             "template": {
                                 "type": "string",
-                                "enum": all_templates,
+                                "enum": templates[message_type],
                             },
                         },
                         "required": ["template"],
                     },
-                    *(
-                        {
-                            "if": {
-                                "type": "object",
-                                "properties": {
-                                    "template": {
-                                        "type": "string",
-                                        "enum": templates[message_type],
-                                    },
-                                },
-                                "required": ["template"],
-                            },
-                            "then": {"$ref": f"{schema_id}#/$defs/{message_type}"},
-                        }
-                        for message_type in defs
-                    ),
-                ],
-            },
+                    "then": {"$ref": f"{schema_id}#/$defs/{message_type}"},
+                }
+                for message_type in defs
+            ),
         ],
         "$defs": defs,
     }
