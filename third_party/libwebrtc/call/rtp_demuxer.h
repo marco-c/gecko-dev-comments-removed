@@ -94,7 +94,7 @@ class RtpDemuxer {
   
   static std::string DescribePacket(const RtpPacketReceived& packet);
 
-  RtpDemuxer();
+  explicit RtpDemuxer(bool use_mid = true);
   ~RtpDemuxer();
 
   RtpDemuxer(const RtpDemuxer&) = delete;
@@ -131,10 +131,6 @@ class RtpDemuxer {
   
   
   bool OnRtpPacket(const RtpPacketReceived& packet);
-
-  
-  
-  void set_use_mid(bool use_mid) { use_mid_ = use_mid; }
 
  private:
   
@@ -191,7 +187,7 @@ class RtpDemuxer {
   
   void AddSsrcSinkBinding(uint32_t ssrc, RtpPacketSinkInterface* sink);
 
-  bool use_mid_ = true;
+  const bool use_mid_;
 };
 
 }  

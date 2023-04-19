@@ -14,7 +14,7 @@
 
 #include "call/rtp_demuxer.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
-#include "rtc_base/deprecated/recursive_critical_section.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -63,8 +63,13 @@ class RtpStreamReceiverController
   
   
   
-  rtc::RecursiveCriticalSection lock_;
-  RtpDemuxer demuxer_ RTC_GUARDED_BY(&lock_);
+  
+  
+  
+  SequenceChecker demuxer_sequence_;
+  
+  
+  RtpDemuxer demuxer_ RTC_GUARDED_BY(&demuxer_sequence_){false };
 };
 
 }  
