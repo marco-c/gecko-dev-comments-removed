@@ -7832,17 +7832,46 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
       if (!privateStateDesc.append(" accessor storage")) {
         return false;
       }
-
       
       
+      TokenPos propNamePos(propNameOffset, pos().end);
       auto privateStateName =
           privateStateDesc.finishParserAtom(this->parserAtoms(), ec_);
       if (!noteDeclaredPrivateName(
               propName, privateStateName, propType,
               isStatic ? FieldPlacement::Static : FieldPlacement::Instance,
-              pos())) {
+              propNamePos)) {
         return false;
       }
+
+      
+      
+      Node method = synthesizeAccessor(
+          propName, propNamePos, propAtom, privateStateName, isStatic,
+          FunctionSyntaxKind::Getter, decorators, classInitializedMembers);
+      if (!method) {
+        return false;
+      }
+      if (!handler_.addClassMemberDefinition(classMembers, method)) {
+        return false;
+      }
+
+      
+      
+      method = synthesizeAccessor(
+          propName, propNamePos, propAtom, privateStateName, isStatic,
+          FunctionSyntaxKind::Setter, decorators, classInitializedMembers);
+      if (!method) {
+        return false;
+      }
+      if (!handler_.addClassMemberDefinition(classMembers, method)) {
+        return false;
+      }
+
+      
+      
+      
+      
       propName = handler_.newPrivateName(privateStateName, pos());
       propAtom = privateStateName;
       decorators = handler_.newList(ParseNodeKind::DecoratorList, pos());
@@ -7999,30 +8028,9 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
     if (!isStatic) {
       if (atype == AccessorType::Getter || atype == AccessorType::Setter) {
         classInitializedMembers.privateAccessors++;
-
-        
-        
-        StringBuffer storedMethodName(cx_);
-        if (!storedMethodName.append(this->parserAtoms(), propAtom)) {
-          return false;
-        }
-        if (!storedMethodName.append(
-                atype == AccessorType::Getter ? ".getter" : ".setter")) {
-          return false;
-        }
-        auto storedMethodProp =
-            storedMethodName.finishParserAtom(this->parserAtoms(), ec_);
-        if (!storedMethodProp) {
-          return false;
-        }
-        if (!noteDeclaredName(storedMethodProp, DeclarationKind::Synthetic,
-                              pos())) {
-          return false;
-        }
-
         TokenPos propNamePos(propNameOffset, pos().end);
         auto initializerNode =
-            privateMethodInitializer(propNamePos, propAtom, storedMethodProp);
+            synthesizePrivateMethodInitializer(propAtom, atype, propNamePos);
         if (!initializerNode) {
           return false;
         }
@@ -9019,6 +9027,265 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
 
   return funNode;
 }
+
+template <class ParseHandler, typename Unit>
+typename ParseHandler::FunctionNodeType
+GeneralParser<ParseHandler, Unit>::synthesizePrivateMethodInitializer(
+    TaggedParserAtomIndex propAtom, AccessorType accessorType,
+    TokenPos propNamePos) {
+  if (!abortIfSyntaxParser()) {
+    return null();
+  }
+
+  
+  
+  StringBuffer storedMethodName(cx_);
+  if (!storedMethodName.append(this->parserAtoms(), propAtom)) {
+    return null();
+  }
+  if (!storedMethodName.append(
+          accessorType == AccessorType::Getter ? ".getter" : ".setter")) {
+    return null();
+  }
+  auto storedMethodProp =
+      storedMethodName.finishParserAtom(this->parserAtoms(), ec_);
+  if (!storedMethodProp) {
+    return null();
+  }
+  if (!noteDeclaredName(storedMethodProp, DeclarationKind::Synthetic, pos())) {
+    return null();
+  }
+
+  return privateMethodInitializer(propNamePos, propAtom, storedMethodProp);
+}
+
+#ifdef ENABLE_DECORATORS
+
+template <class ParseHandler, typename Unit>
+typename ParseHandler::Node
+GeneralParser<ParseHandler, Unit>::synthesizeAccessor(
+    Node propName, TokenPos propNamePos, TaggedParserAtomIndex propAtom,
+    TaggedParserAtomIndex privateStateNameAtom, bool isStatic,
+    FunctionSyntaxKind syntaxKind, ListNodeType decorators,
+    ClassInitializedMembers& classInitializedMembers) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!abortIfSyntaxParser()) {
+    return null();
+  }
+
+  AccessorType accessorType = syntaxKind == FunctionSyntaxKind::Getter
+                                  ? AccessorType::Getter
+                                  : AccessorType::Setter;
+
+  mozilla::Maybe<FunctionNodeType> initializerIfPrivate = Nothing();
+  if (handler_.isPrivateName(propName)) {
+    classInitializedMembers.privateAccessors++;
+    auto initializerNode =
+        synthesizePrivateMethodInitializer(propAtom, accessorType, propNamePos);
+    if (!initializerNode) {
+      return null();
+    }
+    initializerIfPrivate = Some(initializerNode);
+    handler_.setPrivateNameKind(propName, PrivateNameKind::GetterSetter);
+  }
+
+  
+  
+  
+  
+  
+  FunctionNodeType funNode =
+      synthesizeAccessorBody(propNamePos, privateStateNameAtom, syntaxKind);
+  if (!funNode) {
+    return null();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  return handler_.newClassMethodDefinition(propName, funNode, accessorType,
+                                           isStatic, initializerIfPrivate,
+                                           decorators);
+}
+
+template <class ParseHandler, typename Unit>
+typename ParseHandler::FunctionNodeType
+GeneralParser<ParseHandler, Unit>::synthesizeAccessorBody(
+    TokenPos propNamePos, TaggedParserAtomIndex propAtom,
+    FunctionSyntaxKind syntaxKind) {
+  if (!abortIfSyntaxParser()) {
+    return null();
+  }
+
+  FunctionAsyncKind asyncKind = FunctionAsyncKind::SyncFunction;
+  GeneratorKind generatorKind = GeneratorKind::NotGenerator;
+  bool isSelfHosting = options().selfHostingMode;
+  FunctionFlags flags =
+      InitialFunctionFlags(syntaxKind, generatorKind, asyncKind, isSelfHosting);
+
+  
+  FunctionNodeType funNode = handler_.newFunction(syntaxKind, propNamePos);
+  if (!funNode) {
+    return null();
+  }
+
+  
+  Directives directives(true);
+  FunctionBox* funbox =
+      newFunctionBox(funNode, TaggedParserAtomIndex::null(), flags,
+                     propNamePos.begin, directives, generatorKind, asyncKind);
+  if (!funbox) {
+    return null();
+  }
+  funbox->initWithEnclosingParseContext(pc_, syntaxKind);
+  funbox->setSyntheticFunction();
+
+  
+  ParseContext* outerpc = pc_;
+  SourceParseContext funpc(this, funbox,  nullptr);
+  if (!funpc.init()) {
+    return null();
+  }
+
+  pc_->functionScope().useAsVarScope(pc_);
+
+  
+  
+  setFunctionStartAtCurrentToken(funbox);
+  setFunctionEndFromCurrentToken(funbox);
+
+  
+  ParamsBodyNodeType paramsbody = handler_.newParamsBody(propNamePos);
+  if (!paramsbody) {
+    return null();
+  }
+  handler_.setFunctionFormalParametersAndBody(funNode, paramsbody);
+
+  if (syntaxKind == FunctionSyntaxKind::Getter) {
+    funbox->setArgCount(0);
+  } else {
+    funbox->setArgCount(1);
+  }
+
+  
+  
+  NameNodeType thisName = newThisName();
+  if (!thisName) {
+    return null();
+  }
+
+  ThisLiteralType propThis = handler_.newThisLiteral(propNamePos, thisName);
+  if (!propThis) {
+    return null();
+  }
+
+  NameNodeType privateNameNode = privateNameReference(propAtom);
+  if (!privateNameNode) {
+    return null();
+  }
+
+  Node propFieldAccess = handler_.newPrivateMemberAccess(
+      propThis, privateNameNode, propNamePos.end);
+  if (!propFieldAccess) {
+    return null();
+  }
+
+  Node accessorBody;
+  if (syntaxKind == FunctionSyntaxKind::Getter) {
+    
+    
+    
+    
+    
+    
+    accessorBody = handler_.newReturnStatement(propFieldAccess, propNamePos);
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    notePositionalFormalParameter(funNode,
+                                  TaggedParserAtomIndex::WellKnown::value(),
+                                   0, false,
+                                   nullptr);
+
+    Node initializerExpr = handler_.newName(
+        TaggedParserAtomIndex::WellKnown::value(), propNamePos);
+    if (!initializerExpr) {
+      return null();
+    }
+
+    
+    Node assignment = handler_.newAssignment(ParseNodeKind::AssignExpr,
+                                             propFieldAccess, initializerExpr);
+    if (!assignment) {
+      return null();
+    }
+
+    accessorBody = handler_.newExprStatement(assignment, propNamePos.end);
+    if (!accessorBody) {
+      return null();
+    }
+
+    
+  }
+
+  ListNodeType statementList = handler_.newStatementList(propNamePos);
+  if (!statementList) {
+    return null();
+  }
+  handler_.addStatementToList(statementList, accessorBody);
+
+  bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
+  if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
+    return null();
+  }
+  if (!pc_->declareNewTarget(usedNames_, canSkipLazyClosedOverBindings)) {
+    return null();
+  }
+
+  LexicalScopeNodeType initializerBody = finishLexicalScope(
+      pc_->varScope(), statementList, ScopeKind::FunctionLexical);
+  if (!initializerBody) {
+    return null();
+  }
+
+  handler_.setFunctionBody(funNode, initializerBody);
+
+  if (pc_->superScopeNeedsHomeObject()) {
+    funbox->setNeedsHomeObject();
+  }
+
+  if (!finishFunction()) {
+    return null();
+  }
+
+  if (!leaveInnerFunction(outerpc)) {
+    return null();
+  }
+
+  return funNode;
+}
+
+#endif
 
 bool ParserBase::nextTokenContinuesLetDeclaration(TokenKind next) {
   MOZ_ASSERT(anyChars.isCurrentTokenType(TokenKind::Let));

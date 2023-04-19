@@ -609,7 +609,8 @@ class FunctionBox : public SuspendableContext {
   }
   void setSyntheticFunction() {
     
-    MOZ_ASSERT(flags_.isMethod());
+    
+    MOZ_ASSERT(flags_.isMethod() || flags_.isGetter() || flags_.isSetter());
     setFlag(ImmutableFlags::IsSyntheticFunction);
   }
 
