@@ -17,12 +17,11 @@
 
 
 
-class nsGTKToolkit {
+class nsGTKToolkit final {
  public:
-  nsGTKToolkit();
+  nsGTKToolkit() = default;
 
   static nsGTKToolkit* GetToolkit();
-
   static void Shutdown() {
     delete gToolkit;
     gToolkit = nullptr;
@@ -33,21 +32,21 @@ class nsGTKToolkit {
 
 
 
-  void SetDesktopStartupID(const nsACString& aID) { mDesktopStartupID = aID; }
-  void GetDesktopStartupID(nsACString* aID) { *aID = mDesktopStartupID; }
+  void SetStartupToken(const nsACString& aToken) { mStartupToken = aToken; }
+  const nsCString& GetStartupToken() const { return mStartupToken; }
 
   
 
 
 
   void SetFocusTimestamp(uint32_t aTimestamp) { mFocusTimestamp = aTimestamp; }
-  uint32_t GetFocusTimestamp() { return mFocusTimestamp; }
+  uint32_t GetFocusTimestamp() const { return mFocusTimestamp; }
 
  private:
   static nsGTKToolkit* gToolkit;
 
-  nsCString mDesktopStartupID;
-  uint32_t mFocusTimestamp;
+  nsCString mStartupToken;
+  uint32_t mFocusTimestamp = 0;
 };
 
 #endif  

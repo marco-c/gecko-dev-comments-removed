@@ -281,6 +281,13 @@ static const char kPrefBrowserStartupBlankWindow[] =
 static const char kPrefPreXulSkeletonUI[] = "browser.startup.preXulSkeletonUI";
 #endif  
 
+#if defined(MOZ_WIDGET_GTK)
+constexpr nsLiteralCString kStartupTokenNames[] = {
+    "XDG_ACTIVATION_TOKEN"_ns,
+    "DESKTOP_STARTUP_ID"_ns,
+};
+#endif
+
 int gArgc;
 char** gArgv;
 
@@ -3753,19 +3760,7 @@ bool fire_glxtest_process();
 
 class XREMain {
  public:
-  XREMain()
-      : mStartOffline(false),
-        mShuttingDown(false)
-#ifdef MOZ_HAS_REMOTE
-        ,
-        mDisableRemoteClient(false),
-        mDisableRemoteServer(false)
-#endif
-#if defined(MOZ_WIDGET_GTK)
-        ,
-        mGdkDisplay(nullptr)
-#endif
-            {};
+  XREMain() = default;
 
   ~XREMain() {
     mScopedXPCOM = nullptr;
@@ -3792,17 +3787,14 @@ class XREMain {
   UniquePtr<XREAppData> mAppData;
 
   nsXREDirProvider mDirProvider;
+  nsAutoCString mXDGActivationToken;
   nsAutoCString mDesktopStartupID;
 
-  bool mStartOffline;
-  bool mShuttingDown;
+  bool mStartOffline = false;
+  bool mShuttingDown = false;
 #if defined(MOZ_HAS_REMOTE)
-  bool mDisableRemoteClient;
-  bool mDisableRemoteServer;
-#endif
-
-#if defined(MOZ_WIDGET_GTK)
-  GdkDisplay* mGdkDisplay;
+  bool mDisableRemoteClient = false;
+  bool mDisableRemoteServer = false;
 #endif
 };
 
@@ -4704,10 +4696,11 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #if defined(MOZ_WIDGET_GTK)
   
   
-#  define HAVE_DESKTOP_STARTUP_ID
-  const char* desktopStartupIDEnv = PR_GetEnv("DESKTOP_STARTUP_ID");
-  if (desktopStartupIDEnv) {
-    mDesktopStartupID.Assign(desktopStartupIDEnv);
+  if (const char* v = PR_GetEnv("DESKTOP_STARTUP_ID")) {
+    mDesktopStartupID.Assign(v);
+  }
+  if (const char* v = PR_GetEnv("XDG_ACTIVATION_TOKEN")) {
+    mXDGActivationToken.Assign(v);
   }
 #endif
 
@@ -4821,17 +4814,17 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     }
 
     if (display_name) {
-      mGdkDisplay = gdk_display_open(display_name);
-      if (!mGdkDisplay) {
+      GdkDisplay* disp = gdk_display_open(display_name);
+      if (!disp) {
         PR_fprintf(PR_STDERR, "Error: cannot open display: %s\n", display_name);
         return 1;
       }
       if (saveDisplayArg) {
-        if (GdkIsX11Display(mGdkDisplay)) {
+        if (GdkIsX11Display(disp)) {
           SaveWordToEnv("DISPLAY", nsDependentCString(display_name));
         }
 #  ifdef MOZ_WAYLAND
-        else if (GdkIsWaylandDisplay(mGdkDisplay)) {
+        else if (GdkIsWaylandDisplay(disp)) {
           SaveWordToEnv("WAYLAND_DISPLAY", nsDependentCString(display_name));
         }
 #  endif
@@ -4839,8 +4832,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     }
 #  ifdef MOZ_WIDGET_GTK
     else {
-      mGdkDisplay =
-          gdk_display_manager_open_display(gdk_display_manager_get(), nullptr);
+      gdk_display_manager_open_display(gdk_display_manager_get(), nullptr);
     }
 #  endif
   }
@@ -4873,15 +4865,17 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     return 1;
   }
 
-#if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK)
+#if defined(MOZ_WIDGET_GTK)
   
   
   if (!mDesktopStartupID.IsEmpty()) {
-    nsAutoCString desktopStartupEnv;
-    desktopStartupEnv.AssignLiteral("DESKTOP_STARTUP_ID=");
-    desktopStartupEnv.Append(mDesktopStartupID);
     
-    PR_SetEnv(ToNewCString(desktopStartupEnv));
+    PR_SetEnv(ToNewCString("DESKTOP_STARTUP_ID="_ns + mDesktopStartupID));
+  }
+
+  if (!mXDGActivationToken.IsEmpty()) {
+    
+    PR_SetEnv(ToNewCString("XDG_ACTIVATION_TOKEN="_ns + mXDGActivationToken));
   }
 #endif
 
@@ -4935,10 +4929,10 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     if (!mDisableRemoteClient) {
       
       
-      const char* desktopStartupIDPtr =
-          mDesktopStartupID.IsEmpty() ? nullptr : mDesktopStartupID.get();
-
-      RemoteResult rr = mRemoteService->StartClient(desktopStartupIDPtr);
+      const auto& startupToken =
+          GdkIsWaylandDisplay() ? mXDGActivationToken : mDesktopStartupID;
+      RemoteResult rr = mRemoteService->StartClient(
+          startupToken.IsEmpty() ? nullptr : startupToken.get());
       if (rr == REMOTE_FOUND) {
         *aExitFlag = true;
         mRemoteService->UnlockStartup();
@@ -5585,10 +5579,12 @@ nsresult XREMain::XRE_mainRun() {
 #  endif  
 #endif
 
-#if defined(HAVE_DESKTOP_STARTUP_ID) && defined(MOZ_WIDGET_GTK)
+#if defined(MOZ_WIDGET_GTK)
       
       
-      g_unsetenv("DESKTOP_STARTUP_ID");
+      for (const auto& name : kStartupTokenNames) {
+        g_unsetenv(name.get());
+      }
 #endif
 
 #ifdef XP_MACOSX

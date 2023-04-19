@@ -18,13 +18,15 @@
 
 
 
-void nsUnixRemoteServer::SetDesktopStartupIDOrTimestamp(
-    const nsACString& aDesktopStartupID, uint32_t aTimestamp) {
+void nsUnixRemoteServer::SetStartupTokenOrTimestamp(
+    const nsACString& aStartupToken, uint32_t aTimestamp) {
   nsGTKToolkit* toolkit = nsGTKToolkit::GetToolkit();
-  if (!toolkit) return;
+  if (!toolkit) {
+    return;
+  }
 
-  if (!aDesktopStartupID.IsEmpty()) {
-    toolkit->SetDesktopStartupID(aDesktopStartupID);
+  if (!aStartupToken.IsEmpty()) {
+    toolkit->SetStartupToken(aStartupToken);
   }
 
   toolkit->SetFocusTimestamp(aTimestamp);
@@ -87,7 +89,7 @@ const char* nsUnixRemoteServer::HandleCommandLine(const char* aBuffer,
 
     if (i == 0) {
       nsDependentCString cmd(argv[0]);
-      FindExtensionParameterInCommand("DESKTOP_STARTUP_ID", cmd, ' ',
+      FindExtensionParameterInCommand("STARTUP_TOKEN", cmd, ' ',
                                       &desktopStartupID);
     }
   }
@@ -99,7 +101,7 @@ const char* nsUnixRemoteServer::HandleCommandLine(const char* aBuffer,
     return "509 internal error";
   }
 
-  SetDesktopStartupIDOrTimestamp(desktopStartupID, aTimestamp);
+  SetStartupTokenOrTimestamp(desktopStartupID, aTimestamp);
 
   rv = cmdline->Run();
 
