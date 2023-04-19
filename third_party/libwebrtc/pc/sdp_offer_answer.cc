@@ -744,12 +744,14 @@ class CreateSessionDescriptionObserverOperationWrapper
     RTC_DCHECK(observer_);
   }
   ~CreateSessionDescriptionObserverOperationWrapper() override {
+#if RTC_DCHECK_IS_ON
     RTC_DCHECK(was_called_);
+#endif
   }
 
   void OnSuccess(SessionDescriptionInterface* desc) override {
+#if RTC_DCHECK_IS_ON
     RTC_DCHECK(!was_called_);
-#ifdef RTC_DCHECK_IS_ON
     was_called_ = true;
 #endif  
     
@@ -759,8 +761,8 @@ class CreateSessionDescriptionObserverOperationWrapper
   }
 
   void OnFailure(RTCError error) override {
+#if RTC_DCHECK_IS_ON
     RTC_DCHECK(!was_called_);
-#ifdef RTC_DCHECK_IS_ON
     was_called_ = true;
 #endif  
     operation_complete_callback_();
@@ -768,7 +770,7 @@ class CreateSessionDescriptionObserverOperationWrapper
   }
 
  private:
-#ifdef RTC_DCHECK_IS_ON
+#if RTC_DCHECK_IS_ON
   bool was_called_ = false;
 #endif  
   rtc::scoped_refptr<CreateSessionDescriptionObserver> observer_;
@@ -2919,6 +2921,7 @@ SdpOfferAnswerHandler::AssociateTransceiver(
     const ContentInfo* old_local_content,
     const ContentInfo* old_remote_content) {
   RTC_DCHECK(IsUnifiedPlan());
+#if RTC_DCHECK_IS_ON
   
   
   
@@ -2933,6 +2936,8 @@ SdpOfferAnswerHandler::AssociateTransceiver(
     
     RTC_DCHECK(!old_transceiver);
   }
+#endif
+
   const MediaContentDescription* media_desc = content.media_description();
   auto transceiver = transceivers().FindByMid(content.name);
   if (source == cricket::CS_LOCAL) {
@@ -2984,6 +2989,9 @@ SdpOfferAnswerHandler::AssociateTransceiver(
         transceivers().StableState(transceiver)->set_newly_created();
       }
     }
+
+    RTC_DCHECK(transceiver);
+
     
     
     if (SimulcastIsRejected(old_local_content, *media_desc)) {
@@ -2996,12 +3004,13 @@ SdpOfferAnswerHandler::AssociateTransceiver(
       }
     }
   }
-  RTC_DCHECK(transceiver);
+
   if (transceiver->media_type() != media_desc->type()) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INVALID_PARAMETER,
         "Transceiver type does not match media description type.");
   }
+
   if (media_desc->HasSimulcast()) {
     std::vector<SimulcastLayer> layers =
         source == cricket::CS_LOCAL
