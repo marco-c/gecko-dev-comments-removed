@@ -2720,7 +2720,7 @@ pref("browser.places.snapshots.expiration.userManaged.days", 420);
 
 
 
-pref("browser.firefox-view.feature-tour", "{\"message\":\"FIREFOX_VIEW_FEATURE_TOUR\",\"screen\":\"FIREFOX_VIEW_SPOTLIGHT\",\"complete\":false}");
+pref("browser.firefox-view.feature-tour", "{\"screen\":\"FIREFOX_VIEW_SPOTLIGHT\",\"complete\":false}");
 
 pref("browser.firefox-view.view-count", 0);
 
