@@ -400,16 +400,16 @@ class VirtualSocket : public AsyncSocket,
 
   void OnSocketServerReadyToSend();
 
-  VirtualSocketServer* server_;
-  int type_;
-  bool async_;
+  VirtualSocketServer* const server_;
+  const int type_;
+  const bool async_;
   ConnState state_;
   int error_;
   SocketAddress local_addr_;
   SocketAddress remote_addr_;
 
   
-  ListenQueue* listen_queue_;
+  ListenQueue* listen_queue_ RTC_GUARDED_BY(crit_) RTC_PT_GUARDED_BY(crit_);
 
   
   SendBuffer send_buffer_;
@@ -428,7 +428,7 @@ class VirtualSocket : public AsyncSocket,
   int64_t last_delivery_time_ = 0;
 
   
-  RecvBuffer recv_buffer_;
+  RecvBuffer recv_buffer_ RTC_GUARDED_BY(crit_);
   
   size_t recv_buffer_size_;
 
