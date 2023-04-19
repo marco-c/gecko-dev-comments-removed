@@ -4,6 +4,8 @@
 
 
 
+#![allow(clippy::module_name_repetitions)]
+
 use std::io::Write;
 use std::sync::Once;
 use std::time::Instant;

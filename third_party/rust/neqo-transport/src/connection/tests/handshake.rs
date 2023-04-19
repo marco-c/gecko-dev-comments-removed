@@ -7,8 +7,8 @@
 use super::super::{Connection, Output, State};
 use super::{
     assert_error, connect, connect_force_idle, connect_with_rtt, default_client, default_server,
-    get_tokens, handshake, maybe_authenticate, send_something, CountingConnectionIdGenerator,
-    AT_LEAST_PTO, DEFAULT_RTT, DEFAULT_STREAM_DATA,
+    get_tokens, handshake, maybe_authenticate, resumed_server, send_something,
+    CountingConnectionIdGenerator, AT_LEAST_PTO, DEFAULT_RTT, DEFAULT_STREAM_DATA,
 };
 use crate::connection::AddressValidation;
 use crate::events::ConnectionEvent;
@@ -17,8 +17,7 @@ use crate::server::ValidateAddress;
 use crate::tparams::{TransportParameter, MIN_ACK_DELAY};
 use crate::tracking::DEFAULT_ACK_DELAY;
 use crate::{
-    ConnectionError, ConnectionParameters, EmptyConnectionIdGenerator, Error, QuicVersion,
-    StreamType,
+    ConnectionError, ConnectionParameters, EmptyConnectionIdGenerator, Error, StreamType, Version,
 };
 
 use neqo_common::{event::Provider, qdebug, Datagram};
@@ -356,7 +355,7 @@ fn reorder_05rtt_with_0rtt() {
     let token = get_tokens(&mut client).pop().unwrap();
     let mut client = default_client();
     client.enable_resumption(now, token).unwrap();
-    let mut server = default_server();
+    let mut server = resumed_server(&client);
 
     
     let c1 = send_something(&mut client, now);
@@ -398,7 +397,9 @@ fn reorder_05rtt_with_0rtt() {
     now += RTT / 2;
     server.process_input(c4.unwrap(), now);
     assert_eq!(*server.state(), State::Confirmed);
-    assert_eq!(server.paths.rtt(), RTT);
+    
+    
+    
 }
 
 
@@ -522,7 +523,9 @@ fn reorder_handshake() {
     now += RTT / 2;
     let s3 = server.process(c3, now).dgram();
     assert_eq!(*server.state(), State::Confirmed);
-    assert_eq!(server.paths.rtt(), RTT);
+    
+    
+    
 
     now += RTT / 2;
     client.process_input(s3.unwrap(), now);
@@ -567,8 +570,7 @@ fn reorder_1rtt() {
     let s2 = server.process(c2, now).dgram();
     
     
-    
-    assert_eq!(server.stats().packets_rx, PACKETS * 2 + 5);
+    assert_eq!(server.stats().packets_rx, PACKETS * 2 + 4);
     assert_eq!(server.stats().saved_datagrams, PACKETS);
     assert_eq!(server.stats().dropped_rx, 1);
     assert_eq!(*server.state(), State::Confirmed);
@@ -714,51 +716,36 @@ fn extra_initial_invalid_cid() {
     assert!(nothing.is_none());
 }
 
-fn connect_version(version: QuicVersion) {
-    fixture_init();
-    let mut client = Connection::new_client(
-        test_fixture::DEFAULT_SERVER_NAME,
-        test_fixture::DEFAULT_ALPN,
-        Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
-        addr(),
-        addr(),
-        ConnectionParameters::default().quic_version(version),
-        now(),
-    )
-    .unwrap();
-    let mut server = Connection::new_server(
-        test_fixture::DEFAULT_KEYS,
-        test_fixture::DEFAULT_ALPN,
-        Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
-        ConnectionParameters::default().quic_version(version),
-    )
-    .unwrap();
-    connect_force_idle(&mut client, &mut server);
-}
-
 #[test]
-fn connect_v1() {
-    connect_version(QuicVersion::Version1);
-}
+fn connect_one_version() {
+    fn connect_v(version: Version) {
+        fixture_init();
+        let mut client = Connection::new_client(
+            test_fixture::DEFAULT_SERVER_NAME,
+            test_fixture::DEFAULT_ALPN,
+            Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
+            addr(),
+            addr(),
+            ConnectionParameters::default().versions(version, vec![version]),
+            now(),
+        )
+        .unwrap();
+        let mut server = Connection::new_server(
+            test_fixture::DEFAULT_KEYS,
+            test_fixture::DEFAULT_ALPN,
+            Rc::new(RefCell::new(CountingConnectionIdGenerator::default())),
+            ConnectionParameters::default().versions(version, vec![version]),
+        )
+        .unwrap();
+        connect_force_idle(&mut client, &mut server);
+        assert_eq!(client.version(), version);
+        assert_eq!(server.version(), version);
+    }
 
-#[test]
-fn connect_29() {
-    connect_version(QuicVersion::Draft29);
-}
-
-#[test]
-fn connect_30() {
-    connect_version(QuicVersion::Draft30);
-}
-
-#[test]
-fn connect_31() {
-    connect_version(QuicVersion::Draft31);
-}
-
-#[test]
-fn connect_32() {
-    connect_version(QuicVersion::Draft32);
+    for v in Version::all() {
+        println!("Connecting with {:?}", v);
+        connect_v(v);
+    }
 }
 
 #[test]
@@ -798,8 +785,8 @@ fn anti_amplification() {
     assert!(!maybe_authenticate(&mut client)); 
 
     
-    assert_eq!(client.stats().frame_tx.ack, ack_count + 2);
-    assert_eq!(client.stats().frame_tx.all, frame_count + 2);
+    assert_eq!(client.stats().frame_tx.ack, ack_count + 1);
+    assert_eq!(client.stats().frame_tx.all, frame_count + 1);
     assert_ne!(ack.len(), PATH_MTU_V6); 
 
     now += DEFAULT_RTT / 2;
@@ -1027,4 +1014,116 @@ fn bad_min_ack_delay() {
             Error::TransportParameterError.code()
         )))
     );
+}
+
+
+
+#[test]
+fn only_server_initial() {
+    let mut server = default_server();
+    let mut client = default_client();
+    let mut now = now();
+
+    let client_dgram = client.process_output(now).dgram();
+
+    
+    let server_dgram1 = server.process(client_dgram, now).dgram();
+    let server_dgram2 = server.process_output(now + AT_LEAST_PTO).dgram();
+
+    
+    let (initial, handshake) = split_datagram(&server_dgram1.unwrap());
+    assert!(handshake.is_some());
+
+    
+    
+    assert_eq!(client.stats().frame_tx.ping, 0);
+    let probe = client.process(Some(initial), now).dgram();
+    assertions::assert_handshake(&probe.unwrap());
+    assert_eq!(client.stats().dropped_rx, 0);
+    assert_eq!(client.stats().frame_tx.ping, 1);
+
+    let (initial, handshake) = split_datagram(&server_dgram2.unwrap());
+    assert!(handshake.is_some());
+
+    
+    now += AT_LEAST_PTO;
+    assert_eq!(client.stats().frame_tx.ping, 1);
+    let discarded = client.stats().dropped_rx;
+    let probe = client.process(Some(initial), now).dgram();
+    assertions::assert_handshake(&probe.unwrap());
+    assert_eq!(client.stats().frame_tx.ping, 2);
+    assert_eq!(client.stats().dropped_rx, discarded + 1);
+
+    
+    client.process_input(handshake.unwrap(), now);
+    maybe_authenticate(&mut client);
+    let dgram = client.process_output(now).dgram();
+    let dgram = server.process(dgram, now).dgram();
+    client.process_input(dgram.unwrap(), now);
+
+    assert_eq!(*client.state(), State::Confirmed);
+    assert_eq!(*server.state(), State::Confirmed);
+}
+
+
+
+#[test]
+fn no_extra_probes_after_confirmed() {
+    let mut server = default_server();
+    let mut client = default_client();
+    let mut now = now();
+
+    
+    let spare_initial = client.process_output(now).dgram();
+    assert!(spare_initial.is_some());
+
+    
+    now += AT_LEAST_PTO;
+    let dgram = client.process_output(now).dgram();
+    let (replay_initial, _) = split_datagram(dgram.as_ref().unwrap());
+
+    
+    now += AT_LEAST_PTO * 2;
+    let dgram = client.process_output(now).dgram();
+    let dgram = server.process(dgram, now).dgram();
+
+    
+    
+    let spare_handshake = server.process(Some(replay_initial), now).dgram();
+    assert!(spare_handshake.is_some());
+
+    client.process_input(dgram.unwrap(), now);
+    maybe_authenticate(&mut client);
+    let dgram = client.process_output(now).dgram();
+    let dgram = server.process(dgram, now).dgram();
+    client.process_input(dgram.unwrap(), now);
+
+    assert_eq!(*client.state(), State::Confirmed);
+    assert_eq!(*server.state(), State::Confirmed);
+
+    let probe = server.process(spare_initial, now).dgram();
+    assert!(probe.is_none());
+    let probe = client.process(spare_handshake, now).dgram();
+    assert!(probe.is_none());
+}
+
+#[test]
+fn implicit_rtt_server() {
+    const RTT: Duration = Duration::from_secs(2);
+    let mut server = default_server();
+    let mut client = default_client();
+    let mut now = now();
+
+    let dgram = client.process_output(now).dgram();
+    now += RTT / 2;
+    let dgram = server.process(dgram, now).dgram();
+    now += RTT / 2;
+    let dgram = client.process(dgram, now).dgram();
+    assertions::assert_handshake(dgram.as_ref().unwrap());
+    now += RTT / 2;
+    server.process_input(dgram.unwrap(), now);
+
+    
+    
+    assert_eq!(server.stats().rtt, RTT);
 }

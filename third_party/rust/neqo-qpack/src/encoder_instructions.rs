@@ -18,7 +18,7 @@ use std::mem;
 
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum EncoderInstruction<'a> {
     Capacity { value: u64 },
     InsertWithNameRefStatic { index: u64, value: &'a [u8] },
@@ -63,7 +63,7 @@ enum EncoderInstructionReaderState {
     Done,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum DecodedEncoderInstruction {
     Capacity { value: u64 },
     InsertWithNameRefStatic { index: u64, value: Vec<u8> },

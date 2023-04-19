@@ -7,7 +7,7 @@
 use crate::err::{mozpkix, sec, ssl, PRErrorCode};
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AuthenticationStatus {
     Ok,
     CaInvalid,

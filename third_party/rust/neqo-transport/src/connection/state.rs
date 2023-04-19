@@ -22,8 +22,17 @@ use crate::{ConnectionError, Error, Res};
 #[derive(Clone, Debug, PartialEq, Eq)]
 
 pub enum State {
+    
     Init,
+    
     WaitInitial,
+    
+    
+    
+    
+    
+    WaitVersion,
+    
     Handshaking,
     Connected,
     Confirmed,
@@ -81,6 +90,8 @@ impl Ord for State {
             (_, Self::Init) => Ordering::Greater,
             (Self::WaitInitial, _) => Ordering::Less,
             (_, Self::WaitInitial) => Ordering::Greater,
+            (Self::WaitVersion, _) => Ordering::Less,
+            (_, Self::WaitVersion) => Ordering::Greater,
             (Self::Handshaking, _) => Ordering::Less,
             (_, Self::Handshaking) => Ordering::Greater,
             (Self::Connected, _) => Ordering::Less,
