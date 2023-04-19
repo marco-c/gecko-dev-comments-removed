@@ -106,6 +106,17 @@ class TextEditor final : public EditorBase,
     return aEditor ? aEditor->GetAsTextEditor() : nullptr;
   }
 
+  
+
+
+
+
+
+
+  static void MaskString(nsString& aString, const dom::Text& aTextNode,
+                         uint32_t aStartOffsetInString,
+                         uint32_t aStartOffsetInText);
+
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
 

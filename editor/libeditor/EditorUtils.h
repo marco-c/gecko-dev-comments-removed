@@ -378,17 +378,6 @@ class EditorUtils final {
 
   static bool IsOnlyNewLinePreformatted(const nsIContent& aContent);
 
-  
-
-
-
-
-
-
-  static void MaskString(nsString& aString, const dom::Text& aTextNode,
-                         uint32_t aStartOffsetInString,
-                         uint32_t aStartOffsetInText);
-
   static nsStaticAtom* GetTagNameAtom(const nsAString& aTagName) {
     if (aTagName.IsEmpty()) {
       return nullptr;
