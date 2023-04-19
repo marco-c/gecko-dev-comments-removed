@@ -9,6 +9,7 @@
 #include "xpcprivate.h"
 #include "XPCMaps.h"
 #include "mozilla/DeferredFinalize.h"
+#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Sprintf.h"
 #include "js/Object.h"  
 #include "js/RealmIterators.h"
@@ -123,12 +124,6 @@ NS_CYCLE_COLLECTION_CLASSNAME(nsXPCWrappedJS)::TraverseNative(
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "self");
   cb.NoteXPCOMChild(s);
 
-  if (tmp->IsValid()) {
-    MOZ_ASSERT(refcnt > 1);
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mJSObj");
-    cb.NoteJSChild(JS::GCCellPtr(tmp->GetJSObjectPreserveColor()));
-  }
-
   if (tmp->IsRootWrapper()) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "aggregated native");
     cb.NoteXPCOMChild(tmp->GetAggregatedNativeObject());
@@ -140,13 +135,21 @@ NS_CYCLE_COLLECTION_CLASSNAME(nsXPCWrappedJS)::TraverseNative(
   return NS_OK;
 }
 
-NS_IMPL_CYCLE_COLLECTION_CLASS(nsXPCWrappedJS)
+NS_IMPL_CYCLE_COLLECTION_SINGLE_ZONE_SCRIPT_HOLDER_CLASS(nsXPCWrappedJS)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsXPCWrappedJS)
   tmp->Unlink();
   
   
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsXPCWrappedJS)
+  
+  
+  if (!tmp->IsSubjectToFinalization()) {
+    NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mJSObj)
+  }
+NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 
 
@@ -250,7 +253,6 @@ MozExternalRefCountType nsXPCWrappedJS::AddRef(void) {
 
   if (2 == cnt && IsValid()) {
     GetJSObject();  
-    XPCJSRuntime::Get()->AddWrappedJSRoot(this);
   }
 
   return cnt;
@@ -278,10 +280,6 @@ MozExternalRefCountType nsXPCWrappedJS::Release(void) {
       mRefCnt.decr(base);
     }
   } else if (1 == cnt) {
-    if (IsValid()) {
-      RemoveFromRootSet();
-    }
-
     
     
     
@@ -297,11 +295,6 @@ MozExternalRefCountType nsXPCWrappedJS::Release(void) {
 
 NS_IMETHODIMP_(void)
 nsXPCWrappedJS::DeleteCycleCollectable(void) { delete this; }
-
-void nsXPCWrappedJS::TraceJS(JSTracer* trc) {
-  MOZ_ASSERT(mRefCnt >= 2 && IsValid(), "must be strongly referenced");
-  JS::TraceEdge(trc, &mJSObj, "nsXPCWrappedJS::mJSObj");
-}
 
 NS_IMETHODIMP
 nsXPCWrappedJS::GetWeakReference(nsIWeakReference** aInstancePtr) {
@@ -428,6 +421,8 @@ nsXPCWrappedJS::nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj,
       }
     }
   }
+
+  mozilla::HoldJSObjects(this);
 }
 
 nsXPCWrappedJS::~nsXPCWrappedJS() { Destroy(); }
@@ -498,10 +493,6 @@ void nsXPCWrappedJS::Unlink() {
       if (IsRootWrapper()) {
         rt->RemoveWrappedJS(this);
       }
-
-      if (mRefCnt > 1) {
-        RemoveFromRootSet();
-      }
     }
 
     mJSObj = nullptr;
@@ -539,6 +530,8 @@ void nsXPCWrappedJS::Unlink() {
       mOuter = nullptr;
     }
   }
+
+  mozilla::DropJSObjects(this);
 }
 
 bool nsXPCWrappedJS::IsMultiCompartment() const {

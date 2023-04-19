@@ -120,7 +120,6 @@ nsXPConnect::~nsXPConnect() {
                            JS::GCReason::XPCONNECT_SHUTDOWN);
 
   XPCWrappedNativeScope::SystemIsBeingShutDown();
-  mRuntime->SystemIsBeingShutDown();
 
   
   
