@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+
+#import "RTCMacros.h"
+
+
+
+
+
+RTC_EXTERN BOOL RTCInitializeSSL(void);
+RTC_EXTERN BOOL RTCCleanupSSL(void);

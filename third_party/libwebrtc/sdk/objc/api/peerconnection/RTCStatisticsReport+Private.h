@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+#import "RTCStatisticsReport.h"
+
+#include "api/stats/rtc_stats_report.h"
+
+@interface RTC_OBJC_TYPE (RTCStatisticsReport) (Private)
+
+- (instancetype)initWithReport : (const webrtc::RTCStatsReport &)report;
+
+@end

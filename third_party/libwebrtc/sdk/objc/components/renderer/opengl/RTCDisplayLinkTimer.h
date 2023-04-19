@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+
+
+
+
+
+@interface RTCDisplayLinkTimer : NSObject
+
+@property(nonatomic) BOOL isPaused;
+
+- (instancetype)initWithTimerHandler:(void (^)(void))timerHandler;
+- (void)invalidate;
+
+@end

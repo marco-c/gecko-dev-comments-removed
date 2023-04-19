@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+#import "RTCConfiguration.h"
+
+#include "api/peer_connection_interface.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface RTC_OBJC_TYPE (RTCConfiguration)
+()
+
+    
+
+
+
+
+    @property(nonatomic, nullable) webrtc::TurnCustomizer* turnCustomizer;
+
+@end
+
+NS_ASSUME_NONNULL_END

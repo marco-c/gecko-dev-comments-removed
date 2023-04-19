@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+#import <Foundation/Foundation.h>
+
+#import "RTCMTLRenderer.h"
+
+
+
+
+
+NS_AVAILABLE(10_11, 9_0)
+@interface RTCMTLRGBRenderer : RTCMTLRenderer
+
+@end
