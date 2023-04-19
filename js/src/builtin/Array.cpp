@@ -3174,12 +3174,9 @@ static ArrayObject* NewDensePartlyAllocatedArray(JSContext* cx, uint64_t len) {
 
 
 
-
-
-static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_toSpliced(JSContext* cx, unsigned argc, Value* vp) {
   
-
-
+  
 
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype", "toSpliced");
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -3198,12 +3195,12 @@ static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-
-
+  
   uint64_t actualStart;
   if (!GetActualStart(cx, args.get(0), len, &actualStart)) {
     return false;
   }
+  MOZ_ASSERT(actualStart <= len);
 
   
   uint32_t insertCount = GetItemCount(args);
@@ -3215,29 +3212,41 @@ static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
                             &actualDeleteCount)) {
     return false;
   }
+  MOZ_ASSERT(actualStart + actualDeleteCount <= len);
 
   
   uint64_t newLen = len + insertCount - actualDeleteCount;
 
   
+  MOZ_ASSERT(newLen < DOUBLE_INTEGRAL_PRECISION_LIMIT);
+  MOZ_ASSERT(actualStart <= newLen,
+             "if |actualStart + actualDeleteCount <= len| and "
+             "|newLen = len + insertCount - actualDeleteCount|, then "
+             "|actualStart <= newLen|");
+
   
-  RootedObject A(cx, ::NewDensePartlyAllocatedArray(cx, newLen));
-  if (!A) {
+  Rooted<ArrayObject*> arr(cx, ::NewDensePartlyAllocatedArray(cx, newLen));
+  if (!arr) {
     return false;
   }
+  MOZ_ASSERT(newLen <= UINT32_MAX);
 
   
 
   
-  uint64_t i = 0;
+  uint32_t i = 0;
 
   
   uint64_t r = actualStart + actualDeleteCount;
 
   
-  while (i < actualStart) {
+  RootedValue iValue(cx);
+  while (i < uint32_t(actualStart)) {
+    if (!CheckForInterrupt(cx)) {
+      return false;
+    }
+
     
-    RootedValue iValue(cx);
 
     
     if (!GetArrayElement(cx, obj, i, &iValue)) {
@@ -3245,7 +3254,7 @@ static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    if (!SetArrayElement(cx, A, i, iValue)) {
+    if (!DefineArrayElement(cx, arr, i, iValue)) {
       return false;
     }
 
@@ -3256,41 +3265,70 @@ static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
   
 
   
-  Value* items = args.array() + 2;
+  if (insertCount > 0) {
+    HandleValueArray items = HandleValueArray::subarray(args, 2, insertCount);
 
-  
+    
+    DenseElementResult result =
+        arr->setOrExtendDenseElements(cx, i, items.begin(), items.length());
+    if (result == DenseElementResult::Failure) {
+      return false;
+    }
 
+    if (result == DenseElementResult::Success) {
+      i += items.length();
+    } else {
+      MOZ_ASSERT(result == DenseElementResult::Incomplete);
 
-  if (!SetArrayElements(cx, A, actualStart, insertCount, items)) {
-    return false;
+      
+      for (size_t j = 0; j < items.length(); j++) {
+        if (!CheckForInterrupt(cx)) {
+          return false;
+        }
+
+        
+
+        
+        if (!DefineArrayElement(cx, arr, i, items[j])) {
+          return false;
+        }
+
+        
+        i++;
+      }
+    }
   }
-  
-  
-  i += insertCount;
 
   
   
-  while (i < newLen) {
+  RootedValue fromValue(cx);
+  while (i < uint32_t(newLen)) {
+    if (!CheckForInterrupt(cx)) {
+      return false;
+    }
+
     
     
-    RootedValue fromValue(cx);
+
     
     if (!GetArrayElement(cx, obj, r, &fromValue)) {
       return false;
     }
+
     
-    if (!SetArrayElement(cx, A, i, fromValue)) {
+    if (!DefineArrayElement(cx, arr, i, fromValue)) {
       return false;
     }
+
     
     i++;
+
     
     r++;
   }
 
   
-  args.rval().setObject(*A);
-
+  args.rval().setObject(*arr);
   return true;
 }
 
@@ -4426,7 +4464,7 @@ static const JSFunctionSpec array_methods[] = {
 #ifdef ENABLE_CHANGE_ARRAY_BY_COPY
     JS_SELF_HOSTED_FN("toReversed", "ArrayToReversed", 0, 0),
     JS_SELF_HOSTED_FN("toSorted", "ArrayToSorted", 1, 0),
-    JS_FN("toSpliced", array_to_spliced, 2, 0), JS_FN("with", array_with, 2, 0),
+    JS_FN("toSpliced", array_toSpliced, 2, 0), JS_FN("with", array_with, 2, 0),
 #endif
 
     JS_FS_END};
