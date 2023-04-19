@@ -919,7 +919,15 @@ DevToolsStartup.prototype = {
     
     
     env.set("MOZ_BROWSER_TOOLBOX_BINARY", binaryPath);
-    BrowserToolboxLauncher.init();
+
+    const browserToolboxLauncherConfig = {};
+
+    
+    
+    if (Services.prefs.getBoolPref("devtools.testing", false)) {
+      browserToolboxLauncherConfig.forceMultiprocess = true;
+    }
+    BrowserToolboxLauncher.init(browserToolboxLauncherConfig);
 
     if (pauseOnStartup) {
       
