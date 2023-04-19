@@ -437,7 +437,7 @@ class _RemoteSettingsExperimentLoader {
       description: manifest.description,
       type: "object",
       properties: {},
-      additionalProperties: false,
+      additionalProperties: true,
     };
 
     for (const [varName, desc] of Object.entries(manifest.variables)) {
@@ -449,19 +449,21 @@ class _RemoteSettingsExperimentLoader {
           break;
 
         case "int":
-          prop.type = "integer";
+          
+          prop.type = "number";
           break;
 
         case "json":
           
-          break;
+          
+          continue;
 
         default:
           
           Cu.reportError(
             `Feature ID ${featureId} has variable ${varName} with invalid FML type: ${prop.type}`
           );
-          break;
+          continue;
       }
 
       if (prop.type === "string" && !!desc.enum) {
