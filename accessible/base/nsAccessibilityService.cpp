@@ -1551,8 +1551,11 @@ void nsAccessibilityService::MarkupAttributes(
     const MarkupAttrInfo* info = markupMap->attrs + i;
     if (!info->name) break;
 
-    
-    if (info->DOMAttrName && el) {
+    if (info->DOMAttrName) {
+      if (!el) {
+        
+        continue;
+      }
       if (info->DOMAttrValue) {
         if (el->AttrValueIs(kNameSpaceID_None, info->DOMAttrName,
                             info->DOMAttrValue, eCaseMatters)) {
