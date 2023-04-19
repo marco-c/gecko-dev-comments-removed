@@ -2902,12 +2902,8 @@ void MediaSessionDescriptionFactory::ComputeVideoCodecsIntersectionAndUnion() {
   video_sendrecv_codecs_.clear();
   all_video_codecs_.clear();
   
-  
-  UsedPayloadTypes used_payload_types;
   for (const VideoCodec& send : video_send_codecs_) {
-    VideoCodec send_mutable = send;
-    used_payload_types.FindAndSetIdUsed(&send_mutable);
-    all_video_codecs_.push_back(send_mutable);
+    all_video_codecs_.push_back(send);
     if (!FindMatchingCodec<VideoCodec>(video_send_codecs_, video_recv_codecs_,
                                        send, nullptr)) {
       
@@ -2919,11 +2915,12 @@ void MediaSessionDescriptionFactory::ComputeVideoCodecsIntersectionAndUnion() {
       
     }
   }
-  
-  
-  MergeCodecs<VideoCodec>(video_recv_codecs_, &all_video_codecs_,
-                          &used_payload_types);
-
+  for (const VideoCodec& recv : video_recv_codecs_) {
+    if (!FindMatchingCodec<VideoCodec>(video_recv_codecs_, video_send_codecs_,
+                                       recv, nullptr)) {
+      all_video_codecs_.push_back(recv);
+    }
+  }
   
   
   
