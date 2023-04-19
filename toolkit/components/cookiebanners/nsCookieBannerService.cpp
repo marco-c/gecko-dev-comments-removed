@@ -114,7 +114,7 @@ nsresult nsCookieBannerService::Init() {
   mIsInitialized = true;
 
   
-  mListService->ImportRules();
+  mListService->Init();
 
   
   RefPtr<nsCookieInjector> injector = nsCookieInjector::GetSingleton();
@@ -132,6 +132,9 @@ nsresult nsCookieBannerService::Shutdown() {
     return NS_OK;
   }
   mIsInitialized = false;
+
+  
+  mListService->Shutdown();
 
   
   mRules.Clear();
@@ -164,7 +167,7 @@ nsCookieBannerService::ResetRules(const bool doImport) {
 
   if (doImport) {
     NS_ENSURE_TRUE(mListService, NS_ERROR_FAILURE);
-    nsresult rv = mListService->ImportRules();
+    nsresult rv = mListService->ImportAllRules();
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -247,8 +250,7 @@ nsCookieBannerService::GetCookiesForURI(
 }
 
 NS_IMETHODIMP
-nsCookieBannerService::LookupOrInsertRuleForDomain(
-    const nsACString& aDomain, nsICookieBannerRule** aRule) {
+nsCookieBannerService::InsertRule(nsICookieBannerRule* aRule) {
   NS_ENSURE_ARG_POINTER(aRule);
 
   
@@ -256,11 +258,34 @@ nsCookieBannerService::LookupOrInsertRuleForDomain(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsCOMPtr<nsICookieBannerRule> rule =
-      mRules.LookupOrInsert(aDomain, RefPtr{new nsCookieBannerRule(aDomain)});
-  NS_ENSURE_TRUE(rule, NS_ERROR_FAILURE);
+  nsAutoCString domain;
+  nsresult rv = aRule->GetDomain(domain);
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(!domain.IsEmpty(), NS_ERROR_FAILURE);
 
-  rule.forget(aRule);
+  MOZ_LOG(gCookieBannerLog, LogLevel::Debug,
+          ("%s. domain: %s", __FUNCTION__, domain.get()));
+
+  nsCOMPtr<nsICookieBannerRule> result = mRules.InsertOrUpdate(domain, aRule);
+  NS_ENSURE_TRUE(result, NS_ERROR_FAILURE);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsCookieBannerService::RemoveRuleForDomain(const nsACString& aDomain) {
+  NS_ENSURE_TRUE(!aDomain.IsEmpty(), NS_ERROR_FAILURE);
+
+  
+  if (!mIsInitialized) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  MOZ_LOG(gCookieBannerLog, LogLevel::Debug,
+          ("%s. aDomain: %s", __FUNCTION__, PromiseFlatCString(aDomain).get()));
+
+  mRules.Remove(aDomain);
+
   return NS_OK;
 }
 

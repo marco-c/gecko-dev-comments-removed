@@ -4,51 +4,30 @@
 
 "use strict";
 
+const lazy = {};
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "RemoteSettings",
+  "resource://services-settings/remote-settings.js"
+);
 
-const RULES_TESTING = [
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-];
+
+const COLLECTION_NAME = "cookie-banner-rules-list";
+
+let logConsole;
+function log(...args) {
+  if (!logConsole) {
+    logConsole = console.createInstance({
+      prefix: "** CookieBannerListService.jsm",
+      maxLogLevelPref: "cookiebanners.listService.logLevel",
+    });
+  }
+
+  logConsole.log(...args);
+}
 
 
 
@@ -58,19 +37,79 @@ class CookieBannerListService {
   QueryInterface = ChromeUtils.generateQI(["nsICookieBannerListService"]);
 
   
+  #rs = null;
+  
+  
+  #onSyncCallback = null;
+
+  constructor() {
+    this.#rs = lazy.RemoteSettings(COLLECTION_NAME);
+  }
+
+  init() {
+    log("init");
+
+    
+    
+    if (!this.#onSyncCallback) {
+      this.#onSyncCallback = this.onSync.bind(this);
+      this.#rs.on("sync", this.#onSyncCallback);
+    }
+
+    return this.importAllRules();
+  }
+
+  async importAllRules() {
+    log("importAllRules");
+
+    let rules = await this.#rs.get();
+    this.importRules(rules);
+  }
+
+  shutdown() {
+    log("shutdown");
+
+    
+    if (this.#onSyncCallback) {
+      this.#rs.off("sync", this.#onSyncCallback);
+      this.#onSyncCallback = null;
+    }
+  }
+
+  
 
 
-  importRules() {
-    RULES_TESTING.forEach(({ domain, cookies }) => {
-      let rule = Services.cookieBanners.lookupOrInsertRuleForDomain(domain);
+  onSync({ data: { created, updated, deleted } }) {
+    log("onSync", { created, updated, deleted });
 
-      
-      rule.clearCookies();
+    
+    this.removeRules(deleted);
 
+    
+    this.importRules(created.concat(updated));
+  }
+
+  removeRules(rules = []) {
+    log("removeRules", rules);
+
+    rules
+      .map(rule => rule.domain)
+      .forEach(Services.cookieBanners.removeRuleForDomain);
+  }
+
+  importRules(rules) {
+    log("importRules", rules);
+
+    rules.forEach(({ domain, cookies }) => {
       
       if (!cookies) {
         return;
       }
+
+      let rule = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
+        Ci.nsICookieBannerRule
+      );
+      rule.domain = domain;
 
       
       for (let category of ["optOut", "optIn"]) {
@@ -99,6 +138,8 @@ class CookieBannerListService {
           );
         }
       }
+
+      Services.cookieBanners.insertRule(rule);
     });
   }
 }

@@ -15,7 +15,7 @@
 [builtinclass, scriptable, uuid(eb1904db-e0d1-4760-a721-db76b1ca3e94)]
 interface nsICookieBannerRule : nsISupports {
     
-    readonly attribute ACString domain;
+    attribute ACString domain;
 
     
     readonly attribute Array<nsICookieRule> cookiesOptOut;
