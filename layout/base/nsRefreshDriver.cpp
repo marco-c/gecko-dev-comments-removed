@@ -2635,17 +2635,27 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
     if (data->mStartTime) {
       TimeStamp& start = *data->mStartTime;
-      TimeDuration prev = previousRefresh - start;
-      TimeDuration curr = aNowTime - start;
-      uint32_t prevMultiple = uint32_t(prev.ToMilliseconds()) / delay;
 
-      
-      
-      
-      
-      if (prevMultiple != uint32_t(curr.ToMilliseconds()) / delay) {
-        mozilla::TimeStamp desired =
-            start + TimeDuration::FromMilliseconds(prevMultiple * delay);
+      if (previousRefresh >= start && aNowTime >= start) {
+        TimeDuration prev = previousRefresh - start;
+        TimeDuration curr = aNowTime - start;
+        uint32_t prevMultiple = uint32_t(prev.ToMilliseconds()) / delay;
+
+        
+        
+        
+        
+        if (prevMultiple != uint32_t(curr.ToMilliseconds()) / delay) {
+          mozilla::TimeStamp desired =
+              start + TimeDuration::FromMilliseconds(prevMultiple * delay);
+          BeginRefreshingImages(data->mEntries, desired);
+        }
+      } else {
+        
+        
+        
+        
+        mozilla::TimeStamp desired = start;
         BeginRefreshingImages(data->mEntries, desired);
       }
     } else {
