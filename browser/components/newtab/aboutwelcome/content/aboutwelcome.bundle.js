@@ -176,8 +176,8 @@ __webpack_require__.r(__webpack_exports__);
  var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
- var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(13);
+ var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(11);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(14);
 
 
 
@@ -279,6 +279,9 @@ const MultiStageAboutWelcome = props => {
   }, []); 
   
 
+  const [activeMultiSelect, setActiveMultiSelect] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null); 
+  
+
   const [activeTheme, setActiveTheme] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [initialTheme, setInitialTheme] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
@@ -356,6 +359,8 @@ const MultiStageAboutWelcome = props => {
       initialTheme: initialTheme,
       setActiveTheme: setActiveTheme,
       setInitialTheme: setInitialTheme,
+      activeMultiSelect: activeMultiSelect,
+      setActiveMultiSelect: setActiveMultiSelect,
       autoAdvance: screen.auto_advance,
       negotiatedLanguage: negotiatedLanguage,
       langPackInstallPhase: langPackInstallPhase
@@ -457,6 +462,17 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       action
     } = targetContent;
 
+    if (action.collectSelect) {
+      
+      action.data = {
+        actions: this.props.activeMultiSelect.map(id => {
+          var _props$content, _props$content$tiles, _props$content$tiles$;
+
+          return (_props$content = props.content) === null || _props$content === void 0 ? void 0 : (_props$content$tiles = _props$content.tiles) === null || _props$content$tiles === void 0 ? void 0 : (_props$content$tiles$ = _props$content$tiles.data.find(ckbx => ckbx.id === id)) === null || _props$content$tiles$ === void 0 ? void 0 : _props$content$tiles$.action;
+        })
+      };
+    }
+
     if (["OPEN_URL", "SHOW_FIREFOX_ACCOUNTS"].includes(action.type)) {
       this.handleOpenURL(action, props.flowParams, props.UTMTerm);
     } else if (action.type) {
@@ -495,6 +511,8 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       order: this.props.order,
       stepOrder: this.props.stepOrder,
       activeTheme: this.props.activeTheme,
+      activeMultiSelect: this.props.activeMultiSelect,
+      setActiveMultiSelect: this.props.setActiveMultiSelect,
       totalNumberOfScreens: this.props.totalNumberOfScreens,
       appAndSystemLocaleInfo: this.props.appAndSystemLocaleInfo,
       negotiatedLanguage: this.props.negotiatedLanguage,
@@ -621,11 +639,13 @@ __webpack_require__.r(__webpack_exports__);
  var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var _MRColorways__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
  var _MobileDownloads__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
- var _Themes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
- var _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(4);
- var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(10);
- var _CTAParagraph__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(11);
- var _HeroImage__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(12);
+ var _MultiSelect__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
+ var _Themes__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(10);
+ var _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(4);
+ var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(11);
+ var _CTAParagraph__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(12);
+ var _HeroImage__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(13);
+
 
 
 
@@ -664,6 +684,8 @@ const MultiStageProtonScreen = props => {
     id: props.id,
     order: props.order,
     activeTheme: props.activeTheme,
+    activeMultiSelect: props.activeMultiSelect,
+    setActiveMultiSelect: props.setActiveMultiSelect,
     totalNumberOfScreens: props.totalNumberOfScreens,
     handleAction: props.handleAction,
     isFirstCenteredScreen: props.isFirstCenteredScreen,
@@ -718,7 +740,7 @@ const ProtonScreenActionButtons = props => {
     text: content.checkbox.label
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
     htmlFor: "action-checkbox"
-  }))) : null, content.secondary_button ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__.SecondaryCTA, {
+  }))) : null, content.secondary_button ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.SecondaryCTA, {
     content: content,
     handleAction: props.handleAction
   }) : null);
@@ -772,12 +794,17 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       content: content,
       activeTheme: this.props.activeTheme,
       handleAction: this.props.handleAction
-    }) : null, content.tiles && content.tiles.type === "theme" && content.tiles.data ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_Themes__WEBPACK_IMPORTED_MODULE_4__.Themes, {
+    }) : null, content.tiles && content.tiles.type === "theme" && content.tiles.data ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_Themes__WEBPACK_IMPORTED_MODULE_5__.Themes, {
       content: content,
       activeTheme: this.props.activeTheme,
       handleAction: this.props.handleAction
     }) : null, content.tiles && content.tiles.type === "mobile_downloads" && content.tiles.data ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MobileDownloads__WEBPACK_IMPORTED_MODULE_3__.MobileDownloads, {
       data: content.tiles.data,
+      handleAction: this.props.handleAction
+    }) : null, content.tiles && content.tiles.type === "multiselect" && content.tiles.data ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiSelect__WEBPACK_IMPORTED_MODULE_4__.MultiSelect, {
+      content: content,
+      activeMultiSelect: this.props.activeMultiSelect,
+      setActiveMultiSelect: this.props.setActiveMultiSelect,
       handleAction: this.props.handleAction
     }) : null);
   }
@@ -797,7 +824,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   }
 
   renderLanguageSwitcher() {
-    return this.props.content.languageSwitcher ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_LanguageSwitcher__WEBPACK_IMPORTED_MODULE_6__.LanguageSwitcher, {
+    return this.props.content.languageSwitcher ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_LanguageSwitcher__WEBPACK_IMPORTED_MODULE_7__.LanguageSwitcher, {
       content: this.props.content,
       handleAction: this.props.handleAction,
       negotiatedLanguage: this.props.negotiatedLanguage,
@@ -826,7 +853,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       className: "sr-only image-alt",
       role: "img",
       "data-l10n-id": content.image_alt_text.string_id
-    }) : null, content.hero_image ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_HeroImage__WEBPACK_IMPORTED_MODULE_8__.HeroImage, {
+    }) : null, content.hero_image ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_HeroImage__WEBPACK_IMPORTED_MODULE_9__.HeroImage, {
       url: content.hero_image.url
     }) : react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "message-text"
@@ -875,7 +902,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       }
     }, isCenterPosition ? null : this.renderSecondarySection(content), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "section-main"
-    }, content.secondary_button_top ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__.SecondaryCTA, {
+    }, content.secondary_button_top ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.SecondaryCTA, {
       content: content,
       handleAction: this.props.handleAction,
       position: "top"
@@ -906,7 +933,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         "addon-name": this.props.addonName,
         ...((_this$props$appAndSys = this.props.appAndSystemLocaleInfo) === null || _this$props$appAndSys === void 0 ? void 0 : _this$props$appAndSys.displayNames)
       })
-    })), content.cta_paragraph ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_CTAParagraph__WEBPACK_IMPORTED_MODULE_7__.CTAParagraph, {
+    })), content.cta_paragraph ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_CTAParagraph__WEBPACK_IMPORTED_MODULE_8__.CTAParagraph, {
       content: content.cta_paragraph,
       handleAction: this.props.handleAction
     }) : null), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreenActionButtons, {
@@ -924,7 +951,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       "aria-valuenow": currentStep,
       "aria-valuemin": 1,
       "aria-valuemax": total
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__.StepsIndicator, {
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.StepsIndicator, {
       order: this.props.stepOrder,
       totalNumberOfScreens: total
     })))));
@@ -1168,6 +1195,67 @@ const MobileDownloads = props => {
     buttons: props.data.marketplace_buttons,
     handleAction: props.handleAction
   }) : null);
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   "MultiSelect": () => ( MultiSelect)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+
+
+const MultiSelect = props => {
+  let handleChange = event => {
+    if (event.currentTarget.checked) {
+      props.setActiveMultiSelect([...props.activeMultiSelect, event.currentTarget.value]);
+    } else {
+      props.setActiveMultiSelect(props.activeMultiSelect.filter(id => id !== event.currentTarget.value));
+    }
+  };
+
+  let {
+    data
+  } = props.content.tiles; 
+  
+
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (!props.activeMultiSelect) {
+      props.setActiveMultiSelect(data.map(item => item.defaultValue && item.id).filter(item => !!item));
+    } 
+
+  }, []);
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "multi-select-container"
+  }, props.content.tiles.data.map(({
+    label,
+    id
+  }) => {
+    var _props$activeMultiSel;
+
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      key: id + label,
+      className: "checkbox-container"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
+      type: "checkbox",
+      id: id,
+      value: id,
+      checked: (_props$activeMultiSel = props.activeMultiSelect) === null || _props$activeMultiSel === void 0 ? void 0 : _props$activeMultiSel.includes(id),
+      onChange: handleChange
+    }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: label
+    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
+      htmlFor: id
+    })));
+  }));
 };
 
  }),
@@ -1601,7 +1689,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(13);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(14);
 
 
 
@@ -1796,7 +1884,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
- var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(14);
+ var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(15);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
