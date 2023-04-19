@@ -3,25 +3,25 @@
 
 
 function AsyncIteratorIdentity() {
-    return this;
+  return this;
 }
 
 function AsyncGeneratorNext(val) {
-    assert(IsAsyncGeneratorObject(this),
-           "ThisArgument must be a generator object for async generators");
-    return resumeGenerator(this, val, "next");
+  assert(IsAsyncGeneratorObject(this),
+         "ThisArgument must be a generator object for async generators");
+  return resumeGenerator(this, val, "next");
 }
 
 function AsyncGeneratorThrow(val) {
-    assert(IsAsyncGeneratorObject(this),
-           "ThisArgument must be a generator object for async generators");
-    return resumeGenerator(this, val, "throw");
+  assert(IsAsyncGeneratorObject(this),
+         "ThisArgument must be a generator object for async generators");
+  return resumeGenerator(this, val, "throw");
 }
 
 function AsyncGeneratorReturn(val) {
-    assert(IsAsyncGeneratorObject(this),
-           "ThisArgument must be a generator object for async generators");
-    return resumeGenerator(this, val, "return");
+  assert(IsAsyncGeneratorObject(this),
+         "ThisArgument must be a generator object for async generators");
+  return resumeGenerator(this, val, "return");
 }
 
 
