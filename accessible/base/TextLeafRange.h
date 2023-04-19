@@ -96,9 +96,12 @@ class TextLeafPoint final {
 
 
 
+
+
   TextLeafPoint FindBoundary(AccessibleTextBoundary aBoundaryType,
                              nsDirection aDirection,
-                             bool aIncludeOrigin = false) const;
+                             bool aIncludeOrigin = false,
+                             bool aStopInEditable = false) const;
 
   
 
@@ -196,8 +199,10 @@ class TextLeafPoint final {
   TextLeafPoint FindLineStartSameAcc(nsDirection aDirection,
                                      bool aIncludeOrigin) const;
 
-  TextLeafPoint FindLineEnd(nsDirection aDirection, bool aIncludeOrigin) const;
-  TextLeafPoint FindWordEnd(nsDirection aDirection, bool aIncludeOrigin) const;
+  TextLeafPoint FindLineEnd(nsDirection aDirection, bool aIncludeOrigin,
+                            bool aStopInEditable) const;
+  TextLeafPoint FindWordEnd(nsDirection aDirection, bool aIncludeOrigin,
+                            bool aStopInEditable) const;
 
   TextLeafPoint FindParagraphSameAcc(nsDirection aDirection,
                                      bool aIncludeOrigin) const;
