@@ -9,6 +9,7 @@
 
 #include <new>
 #include <utility>
+#include <functional>
 #include "PLDHashTable.h"
 #include "ThebesRLBoxTypes.h"
 #include "gfxFontVariations.h"
@@ -1805,14 +1806,10 @@ class gfxFont {
 
   
   
-  template <typename T>
-  gfxShapedWord* GetShapedWord(DrawTarget* aDrawTarget, const T* aText,
-                               uint32_t aLength, uint32_t aHash,
-                               Script aRunScript, nsAtom* aLanguage,
-                               bool aVertical, int32_t aAppUnitsPerDevUnit,
-                               mozilla::gfx::ShapedTextFlags aFlags,
-                               RoundingFlags aRounding,
-                               gfxTextPerfMetrics* aTextPerf);
+  bool ProcessSingleSpaceShapedWord(
+      DrawTarget* aDrawTarget, bool aVertical, int32_t aAppUnitsPerDevUnit,
+      mozilla::gfx::ShapedTextFlags aFlags, RoundingFlags aRounding,
+      const std::function<void(gfxShapedWord*)>& aCallback);
 
   
   
@@ -2048,6 +2045,17 @@ class gfxFont {
                                      gfxTextRun* aTextRun);
 
   void CheckForFeaturesInvolvingSpace() const;
+
+  
+  
+  template <typename T, typename Func>
+  bool ProcessShapedWordInternal(DrawTarget* aDrawTarget, const T* aText,
+                                 uint32_t aLength, uint32_t aHash,
+                                 Script aRunScript, nsAtom* aLanguage,
+                                 bool aVertical, int32_t aAppUnitsPerDevUnit,
+                                 mozilla::gfx::ShapedTextFlags aFlags,
+                                 RoundingFlags aRounding,
+                                 gfxTextPerfMetrics* aTextPerf, Func aCallback);
 
   
   
