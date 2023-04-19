@@ -696,12 +696,27 @@ nsTArray<bool> RemoteAccessibleBase<Derived>::PreProcessRelations(
     AccAttributes* aFields) {
   nsTArray<bool> updateTracker(ArrayLength(kRelationTypeAtoms));
   for (auto const& data : kRelationTypeAtoms) {
-    if (data.mValidTag && TagName() != data.mValidTag) {
+    if (data.mValidTag) {
       
       
-      
-      updateTracker.AppendElement(false);
-      continue;
+      nsAtom* tag = TagName();
+      if (!tag) {
+        
+        
+        if (auto maybeTag =
+                aFields->GetAttribute<RefPtr<nsAtom>>(nsGkAtoms::tag)) {
+          tag = *maybeTag;
+        }
+      }
+      MOZ_ASSERT(
+          tag || IsTextLeaf(),
+          "Could not fetch tag via TagName() or from initial cache push!");
+      if (tag != data.mValidTag) {
+        
+        
+        updateTracker.AppendElement(false);
+        continue;
+      }
     }
 
     nsStaticAtom* const relAtom = data.mAtom;

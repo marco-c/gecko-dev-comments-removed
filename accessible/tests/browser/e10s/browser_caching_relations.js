@@ -264,3 +264,18 @@ addAccessibleTask(
   },
   { iframe: true, remoteIframe: true }
 );
+
+
+
+
+addAccessibleTask(
+  `data:text/html,<label id="label" for="input">label</label><input id="input">`,
+  async function(browser, accDoc) {
+    const input = findAccessibleChildByID(accDoc, "input");
+    const label = findAccessibleChildByID(accDoc, "label");
+
+    await testCachedRelation(input, RELATION_LABELLED_BY, label);
+    await testCachedRelation(label, RELATION_LABEL_FOR, input);
+  },
+  { iframe: true, remoteIframe: true }
+);
