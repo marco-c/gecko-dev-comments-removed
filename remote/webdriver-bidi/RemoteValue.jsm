@@ -46,18 +46,55 @@ const OwnershipModel = {
 
 
 
+class RemoteValue {
+  #handle;
+  #value;
+  #type;
+
+  
 
 
 
 
 
 
-function createRemoteValue(type, handleId) {
-  const remoteValue = { type };
-  if (handleId !== null) {
-    remoteValue.handle = handleId;
+
+
+  constructor(type, handle = null) {
+    this.#type = type;
+    this.#handle = handle;
+    this.#value = null;
   }
-  return remoteValue;
+
+  
+
+
+
+
+
+
+
+  serialize() {
+    const serialized = { type: this.#type };
+    if (this.#handle !== null) {
+      serialized.handle = this.#handle;
+    }
+    if (this.#value !== null) {
+      serialized.value = this.#value;
+    }
+    return serialized;
+  }
+
+  
+
+
+
+
+
+
+  setValue(value) {
+    this.#value = value;
+  }
 }
 
 
@@ -455,68 +492,76 @@ function serialize(
 
   
   if (className == "Array") {
-    const remoteValue = createRemoteValue("array", handleId);
+    const remoteValue = new RemoteValue("array", handleId);
 
     if (maxDepth !== null && maxDepth > 0) {
-      remoteValue.value = serializeList(
-        value,
-        maxDepth,
-        childOwnership,
-        serializationInternalMap,
-        realm
+      remoteValue.setValue(
+        serializeList(
+          value,
+          maxDepth,
+          childOwnership,
+          serializationInternalMap,
+          realm
+        )
       );
     }
-    return remoteValue;
+    return remoteValue.serialize();
   } else if (className == "RegExp") {
-    const remoteValue = createRemoteValue("regexp", handleId);
-    remoteValue.value = { pattern: value.source, flags: value.flags };
-    return remoteValue;
+    const remoteValue = new RemoteValue("regexp", handleId);
+    remoteValue.setValue({ pattern: value.source, flags: value.flags });
+    return remoteValue.serialize();
   } else if (className == "Date") {
-    const remoteValue = createRemoteValue("date", handleId);
-    remoteValue.value = value.toISOString();
-    return remoteValue;
+    const remoteValue = new RemoteValue("date", handleId);
+    remoteValue.setValue(value.toISOString());
+    return remoteValue.serialize();
   } else if (className == "Map") {
-    const remoteValue = createRemoteValue("map", handleId);
+    const remoteValue = new RemoteValue("map", handleId);
 
     if (maxDepth !== null && maxDepth > 0) {
-      remoteValue.value = serializeMapping(
-        value.entries(),
-        maxDepth,
-        childOwnership,
-        serializationInternalMap,
-        realm
+      remoteValue.setValue(
+        serializeMapping(
+          value.entries(),
+          maxDepth,
+          childOwnership,
+          serializationInternalMap,
+          realm
+        )
       );
     }
-    return remoteValue;
+    return remoteValue.serialize();
   } else if (className == "Set") {
-    const remoteValue = createRemoteValue("set", handleId);
+    const remoteValue = new RemoteValue("set", handleId);
 
     if (maxDepth !== null && maxDepth > 0) {
-      remoteValue.value = serializeList(
-        value.values(),
-        maxDepth,
-        childOwnership,
-        serializationInternalMap,
-        realm
+      remoteValue.setValue(
+        serializeList(
+          value.values(),
+          maxDepth,
+          childOwnership,
+          serializationInternalMap,
+          realm
+        )
       );
     }
-    return remoteValue;
+    return remoteValue.serialize();
   }
   
   
   else if (className == "Object") {
-    const remoteValue = createRemoteValue("object", handleId);
+    const remoteValue = new RemoteValue("object", handleId);
 
     if (maxDepth !== null && maxDepth > 0) {
-      remoteValue.value = serializeMapping(
-        Object.entries(value),
-        maxDepth,
-        childOwnership,
-        serializationInternalMap,
-        realm
+      remoteValue.setValue(
+        serializeMapping(
+          Object.entries(value),
+          maxDepth,
+          childOwnership,
+          serializationInternalMap,
+          realm
+        )
       );
     }
-    return remoteValue;
+    return remoteValue.serialize();
   }
 
   lazy.logger.warn(
