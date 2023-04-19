@@ -1954,6 +1954,13 @@ void SdpOfferAnswerHandler::ApplyRemoteDescriptionUpdateTransceiverState(
         RtpTransceiverDirectionReversed(media_desc->direction());
     
     
+    if (sdp_type == SdpType::kOffer) {
+      transceivers()
+          ->StableState(transceiver_ext)
+          ->SetRemoteStreamIds(transceiver->receiver()->stream_ids());
+    }
+    
+    
     
     
     if (RtpTransceiverDirectionHasRecv(local_direction)) {
@@ -1962,9 +1969,6 @@ void SdpOfferAnswerHandler::ApplyRemoteDescriptionUpdateTransceiverState(
         
         stream_ids = media_desc->streams()[0].stream_ids();
       }
-      transceivers()
-          ->StableState(transceiver_ext)
-          ->SetRemoteStreamIdsIfUnset(transceiver->receiver()->stream_ids());
 
       RTC_LOG(LS_INFO) << "Processing the MSIDs for MID=" << content->name
                        << " (" << GetStreamIdsString(stream_ids) << ").";
@@ -1994,6 +1998,14 @@ void SdpOfferAnswerHandler::ApplyRemoteDescriptionUpdateTransceiverState(
                                   &removed_streams);
     }
     
+    if (sdp_type == SdpType::kOffer) {
+      
+      
+      
+      transceivers()
+          ->StableState(transceiver_ext)
+          ->SetFiredDirection(transceiver->fired_direction());
+    }
     transceiver->set_fired_direction(local_direction);
     
     
@@ -2899,6 +2911,8 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
   }
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(IsUnifiedPlan());
+  std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
+      now_receiving_transceivers;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> all_added_streams;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> all_removed_streams;
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> removed_receivers;
@@ -2906,6 +2920,22 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
   for (auto&& transceivers_stable_state_pair : transceivers()->StableStates()) {
     auto transceiver = transceivers_stable_state_pair.first;
     auto state = transceivers_stable_state_pair.second;
+
+    if (state.did_set_fired_direction()) {
+      
+      
+      bool previously_fired_direction_is_recv =
+          transceiver->fired_direction().has_value() &&
+          RtpTransceiverDirectionHasRecv(*transceiver->fired_direction());
+      bool currently_fired_direction_is_recv =
+          state.fired_direction().has_value() &&
+          RtpTransceiverDirectionHasRecv(state.fired_direction().value());
+      if (!previously_fired_direction_is_recv &&
+          currently_fired_direction_is_recv) {
+        now_receiving_transceivers.push_back(transceiver);
+      }
+      transceiver->internal()->set_fired_direction(state.fired_direction());
+    }
 
     if (state.remote_stream_ids()) {
       std::vector<rtc::scoped_refptr<MediaStreamInterface>> added_streams;
@@ -2922,6 +2952,10 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
         continue;
       }
     }
+
+    
+    
+    
 
     RTC_DCHECK(transceiver->internal()->mid().has_value());
     transceiver->internal()->ClearChannel();
@@ -2957,6 +2991,11 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
   ChangeSignalingState(PeerConnectionInterface::kStable);
 
   
+  for (const auto& transceiver : now_receiving_transceivers) {
+    pc_->Observer()->OnTrack(transceiver);
+    pc_->Observer()->OnAddTrack(transceiver->receiver(),
+                                transceiver->receiver()->streams());
+  }
   for (const auto& receiver : removed_receivers) {
     pc_->Observer()->OnRemoveTrack(receiver);
   }
