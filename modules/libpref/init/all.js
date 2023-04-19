@@ -2559,14 +2559,6 @@ pref("font.size.monospace.x-math", 13);
   
   
   pref("intl.tsf.hack.atok.search_input_scope_disabled", false);
-  
-  
-  
-  
-  
-  
-  
-  pref("intl.tsf.hack.ms_traditional_chinese.query_insert_result", true);
 
   
   
