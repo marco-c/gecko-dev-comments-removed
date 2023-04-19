@@ -106,7 +106,7 @@ async def test_console_log_cached_message_after_refresh(
     await on_entry_added
 
     
-    await asyncio.sleep(0.5)
+    asyncio.sleep(0.5)
 
     
     assert len(events) == 1
