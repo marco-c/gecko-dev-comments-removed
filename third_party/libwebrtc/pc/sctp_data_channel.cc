@@ -158,11 +158,8 @@ rtc::scoped_refptr<SctpDataChannel> SctpDataChannel::Create(
 rtc::scoped_refptr<DataChannelInterface> SctpDataChannel::CreateProxy(
     rtc::scoped_refptr<SctpDataChannel> channel) {
   
-  
-  
-  
-  
-  return DataChannelProxy::Create(channel->signaling_thread_, channel.get());
+  auto* signaling_thread = channel->signaling_thread_;
+  return DataChannelProxy::Create(signaling_thread, std::move(channel));
 }
 
 SctpDataChannel::SctpDataChannel(const InternalDataChannelInit& config,
