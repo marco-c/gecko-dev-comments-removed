@@ -20,7 +20,9 @@ namespace xdg_portal {
 class ScreenCapturePortalInterface {
  public:
   virtual ~ScreenCapturePortalInterface() {}
+  
   virtual xdg_portal::SessionDetails GetSessionDetails() = 0;
+  
   virtual void Start() = 0;
 };
 

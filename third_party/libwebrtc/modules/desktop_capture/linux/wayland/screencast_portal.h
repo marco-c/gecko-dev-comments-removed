@@ -92,7 +92,7 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
   xdg_portal::SessionDetails GetSessionDetails() override;
 
   
-  void PortalFailed(xdg_portal::RequestResponse result);
+  void OnPortalDone(xdg_portal::RequestResponse result);
 
   
   void SessionRequest(GDBusProxy* proxy);
