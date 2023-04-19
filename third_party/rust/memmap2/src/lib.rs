@@ -51,13 +51,14 @@ use std::fmt;
 #[cfg(not(any(unix, windows)))]
 use std::fs::File;
 use std::io::{Error, ErrorKind, Result};
+use std::isize;
+use std::mem;
 use std::ops::{Deref, DerefMut};
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, RawFd};
 #[cfg(windows)]
 use std::os::windows::io::{AsRawHandle, RawHandle};
 use std::slice;
-use std::usize;
 
 #[cfg(not(any(unix, windows)))]
 pub struct MmapRawDescriptor<'a>(&'a File);
@@ -238,14 +239,19 @@ impl MmapOptions {
             let len = file_len - self.offset;
 
             
-            #[cfg(not(target_pointer_width = "64"))]
-            {
-                if len > (usize::MAX as u64) {
-                    return Err(Error::new(
-                        ErrorKind::InvalidData,
-                        "memory map length overflows usize",
-                    ));
-                }
+            
+            
+            
+            
+            
+            
+            
+            
+            if mem::size_of::<usize>() < 8 && len > isize::MAX as u64 {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "memory map length overflows isize",
+                ));
             }
 
             Ok(len as usize)
@@ -463,8 +469,20 @@ impl MmapOptions {
     
     
     
+    
+    
     pub fn map_anon(&self) -> Result<MmapMut> {
-        MmapInner::map_anon(self.len.unwrap_or(0), self.stack).map(|inner| MmapMut { inner })
+        let len = self.len.unwrap_or(0);
+
+        
+        if mem::size_of::<usize>() < 8 && len > isize::MAX as usize {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "memory map length overflows isize",
+            ));
+        }
+
+        MmapInner::map_anon(len, self.stack).map(|inner| MmapMut { inner })
     }
 
     
@@ -610,6 +628,22 @@ impl Mmap {
     #[cfg(unix)]
     pub fn advise(&self, advice: Advice) -> Result<()> {
         self.inner.advise(advice)
+    }
+
+    
+    
+    
+    #[cfg(unix)]
+    pub fn lock(&mut self) -> Result<()> {
+        self.inner.lock()
+    }
+
+    
+    
+    
+    #[cfg(unix)]
+    pub fn unlock(&mut self) -> Result<()> {
+        self.inner.unlock()
     }
 }
 
@@ -857,6 +891,7 @@ impl MmapMut {
     
     
     
+    
     pub fn map_anon(length: usize) -> Result<MmapMut> {
         MmapOptions::new().len(length).map_anon()
     }
@@ -987,6 +1022,22 @@ impl MmapMut {
     pub fn advise(&self, advice: Advice) -> Result<()> {
         self.inner.advise(advice)
     }
+
+    
+    
+    
+    #[cfg(unix)]
+    pub fn lock(&mut self) -> Result<()> {
+        self.inner.lock()
+    }
+
+    
+    
+    
+    #[cfg(unix)]
+    pub fn unlock(&mut self) -> Result<()> {
+        self.inner.unlock()
+    }
 }
 
 #[cfg(feature = "stable_deref_trait")]
@@ -1037,7 +1088,7 @@ mod test {
 
     #[cfg(unix)]
     use crate::advice::Advice;
-    use std::fs::OpenOptions;
+    use std::fs::{self, OpenOptions};
     use std::io::{Read, Write};
     #[cfg(unix)]
     use std::os::unix::io::AsRawFd;
@@ -1155,6 +1206,17 @@ mod test {
     #[test]
     fn map_anon_zero_len() {
         assert!(MmapOptions::new().map_anon().unwrap().is_empty())
+    }
+
+    #[test]
+    #[cfg(target_pointer_width = "32")]
+    fn map_anon_len_overflow() {
+        let res = MmapMut::map_anon(0x80000000);
+
+        assert_eq!(
+            res.unwrap_err().to_string(),
+            "memory map length overflows isize"
+        );
     }
 
     #[test]
@@ -1333,7 +1395,6 @@ mod test {
 
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     fn jit_x86(mut mmap: MmapMut) {
-        use std::mem;
         mmap[0] = 0xB8; 
         mmap[1] = 0xAB;
         mmap[2] = 0x00;
@@ -1343,7 +1404,7 @@ mod test {
 
         let mmap = mmap.make_exec().expect("make_exec");
 
-        let jitfn: extern "C" fn() -> u8 = unsafe { mem::transmute(mmap.as_ptr()) };
+        let jitfn: extern "C" fn() -> u8 = unsafe { std::mem::transmute(mmap.as_ptr()) };
         assert_eq!(jitfn(), 0xab);
     }
 
@@ -1556,5 +1617,57 @@ mod test {
 
         
         assert_eq!(&incr[..], &mmap[..]);
+    }
+
+    
+    #[cfg(target_os = "linux")]
+    fn is_locked() -> bool {
+        let status = &fs::read_to_string("/proc/self/status")
+            .expect("/proc/self/status should be available");
+        for line in status.lines() {
+            if line.starts_with("VmLck:") {
+                let numbers = line.replace(|c: char| !c.is_ascii_digit(), "");
+                return numbers != "0";
+            }
+        }
+        panic!("cannot get VmLck information")
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn lock() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let path = tempdir.path().join("mmap_lock");
+
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(&path)
+            .unwrap();
+        file.set_len(128).unwrap();
+
+        let mut mmap = unsafe { Mmap::map(&file).unwrap() };
+        #[cfg(target_os = "linux")]
+        assert!(!is_locked());
+
+        mmap.lock().expect("mmap lock should be supported on unix");
+        #[cfg(target_os = "linux")]
+        assert!(is_locked());
+
+        mmap.lock()
+            .expect("mmap lock again should not cause problems");
+        #[cfg(target_os = "linux")]
+        assert!(is_locked());
+
+        mmap.unlock()
+            .expect("mmap unlock should be supported on unix");
+        #[cfg(target_os = "linux")]
+        assert!(!is_locked());
+
+        mmap.unlock()
+            .expect("mmap unlock again should not cause problems");
+        #[cfg(target_os = "linux")]
+        assert!(!is_locked());
     }
 }
