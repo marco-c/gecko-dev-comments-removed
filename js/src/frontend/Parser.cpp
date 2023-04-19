@@ -2623,7 +2623,6 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
     FunctionNodeType funNode) {
   FunctionBox* funbox = pc_->functionBox();
 
-  bool parenFreeArrow = false;
   
   
   
@@ -2641,76 +2640,66 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
   
   
   
-  Modifier firstTokenModifier = TokenStream::SlashIsDiv;
-
-  
-  
-  
-  
-  Modifier argModifier = TokenStream::SlashIsRegExp;
-  if (kind == FunctionSyntaxKind::Arrow) {
-    TokenKind tt;
-    
-    
-    
-    
-    firstTokenModifier = funbox->isAsync() ? TokenStream::SlashIsDiv
-                                           : TokenStream::SlashIsRegExp;
-    if (!tokenStream.peekToken(&tt, firstTokenModifier)) {
-      return false;
-    }
-    if (TokenKindIsPossibleIdentifier(tt)) {
-      parenFreeArrow = true;
-      argModifier = firstTokenModifier;
-    }
+  Modifier firstTokenModifier =
+      kind != FunctionSyntaxKind::Arrow || funbox->isAsync()
+          ? TokenStream::SlashIsDiv
+          : TokenStream::SlashIsRegExp;
+  TokenKind tt;
+  if (!tokenStream.getToken(&tt, firstTokenModifier)) {
+    return false;
   }
 
-  TokenPos firstTokenPos;
-  if (!parenFreeArrow) {
-    TokenKind tt;
-    if (!tokenStream.getToken(&tt, firstTokenModifier)) {
-      return false;
-    }
-    if (tt != TokenKind::LeftParen) {
-      error(kind == FunctionSyntaxKind::Arrow ? JSMSG_BAD_ARROW_ARGS
-                                              : JSMSG_PAREN_BEFORE_FORMAL);
-      return false;
-    }
-
-    firstTokenPos = pos();
-
-    
+  if (kind == FunctionSyntaxKind::Arrow && TokenKindIsPossibleIdentifier(tt)) {
     
     setFunctionStartAtCurrentToken(funbox);
-  } else {
-    
-    
-    if (!tokenStream.peekTokenPos(&firstTokenPos, firstTokenModifier)) {
+
+    ListNodeType argsbody = handler_.newList(ParseNodeKind::ParamsBody, pos());
+    if (!argsbody) {
       return false;
     }
+    handler_.setFunctionFormalParametersAndBody(funNode, argsbody);
+
+    TaggedParserAtomIndex name = bindingIdentifier(yieldHandling);
+    if (!name) {
+      return false;
+    }
+
+    constexpr bool disallowDuplicateParams = true;
+    bool duplicatedParam = false;
+    if (!notePositionalFormalParameter(funNode, name, pos().begin,
+                                       disallowDuplicateParams,
+                                       &duplicatedParam)) {
+      return false;
+    }
+    MOZ_ASSERT(!duplicatedParam);
+    MOZ_ASSERT(pc_->positionalFormalParameterNames().length() == 1);
+
+    funbox->setLength(1);
+    funbox->setArgCount(1);
+    return true;
   }
 
-  ListNodeType argsbody =
-      handler_.newList(ParseNodeKind::ParamsBody, firstTokenPos);
+  if (tt != TokenKind::LeftParen) {
+    error(kind == FunctionSyntaxKind::Arrow ? JSMSG_BAD_ARROW_ARGS
+                                            : JSMSG_PAREN_BEFORE_FORMAL);
+    return false;
+  }
+
+  
+  setFunctionStartAtCurrentToken(funbox);
+
+  ListNodeType argsbody = handler_.newList(ParseNodeKind::ParamsBody, pos());
   if (!argsbody) {
     return false;
   }
   handler_.setFunctionFormalParametersAndBody(funNode, argsbody);
 
-  bool hasArguments = false;
-  if (parenFreeArrow) {
-    hasArguments = true;
-  } else {
-    bool matched;
-    if (!tokenStream.matchToken(&matched, TokenKind::RightParen,
-                                TokenStream::SlashIsRegExp)) {
-      return false;
-    }
-    if (!matched) {
-      hasArguments = true;
-    }
+  bool matched;
+  if (!tokenStream.matchToken(&matched, TokenKind::RightParen,
+                              TokenStream::SlashIsRegExp)) {
+    return false;
   }
-  if (hasArguments) {
+  if (!matched) {
     bool hasRest = false;
     bool hasDefault = false;
     bool duplicatedParam = false;
@@ -2733,11 +2722,9 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
       }
 
       TokenKind tt;
-      if (!tokenStream.getToken(&tt, argModifier)) {
+      if (!tokenStream.getToken(&tt, TokenStream::SlashIsRegExp)) {
         return false;
       }
-      argModifier = TokenStream::SlashIsRegExp;
-      MOZ_ASSERT_IF(parenFreeArrow, TokenKindIsPossibleIdentifier(tt));
 
       if (tt == TokenKind::TripleDot) {
         if (kind == FunctionSyntaxKind::Setter) {
@@ -2797,10 +2784,6 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
             return false;
           }
 
-          if (parenFreeArrow) {
-            setFunctionStartAtCurrentToken(funbox);
-          }
-
           TaggedParserAtomIndex name = bindingIdentifier(yieldHandling);
           if (!name) {
             return false;
@@ -2824,28 +2807,12 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
         return false;
       }
 
-      
-      
-      
-      
-      
-      
-      if (parenFreeArrow) {
-        break;
-      }
-
       bool matched;
       if (!tokenStream.matchToken(&matched, TokenKind::Assign,
                                   TokenStream::SlashIsRegExp)) {
         return false;
       }
       if (matched) {
-        
-        
-        
-        
-        MOZ_ASSERT(!parenFreeArrow);
-
         if (hasRest) {
           error(JSMSG_REST_WITH_DEFAULT);
           return false;
@@ -2898,20 +2865,18 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
       }
     }
 
-    if (!parenFreeArrow) {
-      TokenKind tt;
-      if (!tokenStream.getToken(&tt, TokenStream::SlashIsRegExp)) {
+    TokenKind tt;
+    if (!tokenStream.getToken(&tt, TokenStream::SlashIsRegExp)) {
+      return false;
+    }
+    if (tt != TokenKind::RightParen) {
+      if (kind == FunctionSyntaxKind::Setter) {
+        error(JSMSG_ACCESSOR_WRONG_ARGS, "setter", "one", "");
         return false;
       }
-      if (tt != TokenKind::RightParen) {
-        if (kind == FunctionSyntaxKind::Setter) {
-          error(JSMSG_ACCESSOR_WRONG_ARGS, "setter", "one", "");
-          return false;
-        }
 
-        error(JSMSG_PAREN_AFTER_FORMAL);
-        return false;
-      }
+      error(JSMSG_PAREN_AFTER_FORMAL);
+      return false;
     }
 
     if (!hasDefault) {
