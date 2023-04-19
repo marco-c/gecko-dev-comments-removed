@@ -51,20 +51,14 @@ void GeckoProfilerRuntime::setEventMarker(void (*fn)(const char*,
 }
 
 
-static jit::JitFrameLayout* GetTopProfilingJitFrame(Activation* act) {
-  if (!act || !act->isJit()) {
-    return nullptr;
-  }
-
-  jit::JitActivation* jitActivation = act->asJit();
-
+static jit::JitFrameLayout* GetTopProfilingJitFrame(jit::JitActivation* act) {
   
-  if (!jitActivation->hasExitFP()) {
+  if (!act->hasExitFP()) {
     return nullptr;
   }
 
   
-  OnlyJSJitFrameIter iter(jitActivation);
+  OnlyJSJitFrameIter iter(act);
   if (iter.done()) {
     return nullptr;
   }
@@ -118,16 +112,12 @@ void GeckoProfilerRuntime::enable(bool enabled) {
     
     
     if (enabled) {
-      Activation* act = cx->activation();
-      auto* lastProfilingFrame = GetTopProfilingJitFrame(act);
-
       jit::JitActivation* jitActivation = cx->jitActivation;
       while (jitActivation) {
+        auto* lastProfilingFrame = GetTopProfilingJitFrame(jitActivation);
         jitActivation->setLastProfilingFrame(lastProfilingFrame);
         jitActivation->setLastProfilingCallSite(nullptr);
-
         jitActivation = jitActivation->prevJitActivation();
-        lastProfilingFrame = GetTopProfilingJitFrame(jitActivation);
       }
     } else {
       jit::JitActivation* jitActivation = cx->jitActivation;
