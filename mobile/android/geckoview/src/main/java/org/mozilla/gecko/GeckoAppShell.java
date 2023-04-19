@@ -1049,6 +1049,7 @@ public class GeckoAppShell {
     return lp.getDomains();
   }
 
+  @SuppressLint("ResourceType")
   @WrapForJNI(calledFrom = "gecko")
   private static int[] getSystemColors() {
     
@@ -1072,8 +1073,7 @@ public class GeckoAppShell {
     final ContextThemeWrapper contextThemeWrapper =
         new ContextThemeWrapper(getApplicationContext(), android.R.style.TextAppearance);
 
-    final TypedArray appearance =
-        contextThemeWrapper.getTheme().obtainStyledAttributes(attrsAppearance);
+    final TypedArray appearance = contextThemeWrapper.obtainStyledAttributes(attrsAppearance);
 
     if (appearance != null) {
       for (int i = 0; i < appearance.getIndexCount(); i++) {
