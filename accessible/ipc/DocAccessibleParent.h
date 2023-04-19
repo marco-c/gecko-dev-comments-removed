@@ -327,6 +327,10 @@ class DocAccessibleParent : public RemoteAccessible,
   nsTHashMap<uint64_t, nsTHashMap<uint64_t, nsTArray<uint64_t>>>
       mReverseRelations;
 
+  
+  
+  nsTHashSet<uint64_t> mOnScreenAccessibles;
+
   static DocAccessibleParent* GetFrom(dom::BrowsingContext* aBrowsingContext);
 
  private:

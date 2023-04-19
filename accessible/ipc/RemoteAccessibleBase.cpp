@@ -935,6 +935,33 @@ uint64_t RemoteAccessibleBase<Derived>::State() {
 
     auto* cbc = mDoc->GetBrowsingContext();
     if (cbc && !cbc->IsActive()) {
+      
+      
+      state |= states::OFFSCREEN;
+    } else if (this == mDoc) {
+      
+      
+      
+      
+      
+      
+      
+      if (!AsDoc()->IsTopLevel()) {
+        
+        
+        
+        
+        Accessible* parent = Parent();
+        MOZ_ASSERT(parent && parent->IsRemote(),
+                   "Could not find remote parent for embedded content doc?");
+        RemoteAccessible* outerDoc = parent->AsRemote();
+        DocAccessibleParent* embeddingDocument = outerDoc->Document();
+        if (embeddingDocument &&
+            !embeddingDocument->mOnScreenAccessibles.Contains(outerDoc->ID())) {
+          state |= states::OFFSCREEN;
+        }
+      }
+    } else if (!mDoc->mOnScreenAccessibles.Contains(ID())) {
       state |= states::OFFSCREEN;
     }
   }
