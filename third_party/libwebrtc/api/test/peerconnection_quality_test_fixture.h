@@ -465,6 +465,13 @@ class PeerConnectionE2EQualityTestFixture {
     virtual void StopAndReportResults() = 0;
   };
 
+  
+  
+  class PeerHandle {
+   public:
+    virtual ~PeerHandle() = default;
+  };
+
   virtual ~PeerConnectionE2EQualityTestFixture() = default;
 
   
@@ -493,7 +500,13 @@ class PeerConnectionE2EQualityTestFixture {
   
   virtual void AddPeer(rtc::Thread* network_thread,
                        rtc::NetworkManager* network_manager,
-                       rtc::FunctionView<void(PeerConfigurer*)> configurer) = 0;
+                       rtc::FunctionView<void(PeerConfigurer*)> configurer) {}
+  virtual PeerHandle* AddAndReturnPeer(
+      rtc::Thread* network_thread,
+      rtc::NetworkManager* network_manager,
+      rtc::FunctionView<void(PeerConfigurer*)> configurer) {
+    return nullptr;
+  }
   
   
   
