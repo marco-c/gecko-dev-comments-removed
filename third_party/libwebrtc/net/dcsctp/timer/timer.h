@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <string>
@@ -20,9 +21,13 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "net/dcsctp/public/strong_alias.h"
 #include "net/dcsctp/public/timeout.h"
 
 namespace dcsctp {
+
+using TimerID = StrongAlias<class TimerIDTag, uint32_t>;
+using TimerGeneration = StrongAlias<class TimerGenerationTag, uint32_t>;
 
 enum class TimerBackoffAlgorithm {
   
@@ -69,6 +74,9 @@ struct TimerOptions {
 class Timer {
  public:
   
+  static constexpr DurationMs kMaxTimerDuration = DurationMs(24 * 3600 * 1000);
+
+  
   
   
   using OnExpired = std::function<absl::optional<DurationMs>()>;
@@ -89,7 +97,9 @@ class Timer {
 
   
   
-  void set_duration(DurationMs duration) { duration_ = duration; }
+  void set_duration(DurationMs duration) {
+    duration_ = std::min(duration, kMaxTimerDuration);
+  }
 
   
   
@@ -110,7 +120,7 @@ class Timer {
  private:
   friend class TimerManager;
   using UnregisterHandler = std::function<void()>;
-  Timer(uint32_t id,
+  Timer(TimerID id,
         absl::string_view name,
         OnExpired on_expired,
         UnregisterHandler unregister,
@@ -122,9 +132,9 @@ class Timer {
   
   
   
-  void Trigger(uint32_t generation);
+  void Trigger(TimerGeneration generation);
 
-  const uint32_t id_;
+  const TimerID id_;
   const std::string name_;
   const TimerOptions options_;
   const OnExpired on_expired_;
@@ -134,7 +144,15 @@ class Timer {
   DurationMs duration_;
 
   
-  uint32_t generation_ = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  TimerGeneration generation_ = TimerGeneration(0);
   bool is_running_ = false;
   
   int expiration_count_ = 0;
@@ -158,8 +176,8 @@ class TimerManager {
 
  private:
   const std::function<std::unique_ptr<Timeout>()> create_timeout_;
-  std::unordered_map<int, Timer*> timers_;
-  uint32_t next_id_ = 0;
+  std::unordered_map<TimerID, Timer*, TimerID::Hasher> timers_;
+  TimerID next_id_ = TimerID(0);
 };
 
 }  
