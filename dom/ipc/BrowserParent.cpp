@@ -1329,6 +1329,13 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
       return IPC_FAIL_NO_REASON(this);
     }
 
+    if (auto* prevTopLevel = GetTopLevelDocAccessible()) {
+      
+      
+      
+      
+      prevTopLevel->Destroy();
+    }
     doc->SetTopLevel();
     a11y::DocManager::RemoteDocAdded(doc);
 #  ifdef XP_WIN
