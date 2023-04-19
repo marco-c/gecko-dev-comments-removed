@@ -3759,6 +3759,9 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
     if (sendTransformUpdate) {
       
       
+      mDoc->SetViewportCacheDirty(true);
+      
+      
       
       
       mDoc->QueueCacheUpdate(this, CacheDomain::TransformMatrix);
