@@ -987,18 +987,6 @@ void SessionAccessibility::PopulateNodeInfo(
   }
 }
 
-Accessible* SessionAccessibility::GetAccessibleByID(int32_t aID) const {
-  auto gvAccessor(mWindow.Access());
-  if (!gvAccessor || !gvAccessor->GetNsWindow() ||
-      !gvAccessor->GetNsWindow()->GetRootAccessible()) {
-    
-    
-    return nullptr;
-  }
-
-  return mIDToAccessibleMap.Get(aID);
-}
-
 void SessionAccessibility::RegisterAccessible(Accessible* aAccessible) {
   if (IPCAccessibilityActive()) {
     
