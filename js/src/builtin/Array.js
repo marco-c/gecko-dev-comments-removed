@@ -3,7 +3,7 @@
 
 
 
-function ArrayEvery(callbackfn) {
+function ArrayEvery(callbackfn ) {
   
   var O = ToObject(this);
 
@@ -40,7 +40,7 @@ function ArrayEvery(callbackfn) {
 SetIsInlinableLargeFunction(ArrayEvery);
 
 
-function ArraySome(callbackfn) {
+function ArraySome(callbackfn ) {
   
   var O = ToObject(this);
 
@@ -131,7 +131,7 @@ function SortArray(obj, comparefn) {
 }
 
 
-function ArrayForEach(callbackfn) {
+function ArrayForEach(callbackfn ) {
   
   var O = ToObject(this);
 
@@ -166,7 +166,7 @@ function ArrayForEach(callbackfn) {
 SetIsInlinableLargeFunction(ArrayForEach);
 
 
-function ArrayMap(callbackfn) {
+function ArrayMap(callbackfn ) {
   
   var O = ToObject(this);
 
@@ -205,7 +205,7 @@ function ArrayMap(callbackfn) {
 SetIsInlinableLargeFunction(ArrayMap);
 
 
-function ArrayFilter(callbackfn) {
+function ArrayFilter(callbackfn ) {
   
   var O = ToObject(this);
 
@@ -251,7 +251,7 @@ function ArrayFilter(callbackfn) {
 
 
 
-function ArrayGroup(callbackfn) {
+function ArrayGroup(callbackfn ) {
   
   var O = ToObject(this);
 
@@ -287,7 +287,7 @@ function ArrayGroup(callbackfn) {
 
     
     if (!groups[propertyKey]) {
-      var elements = [ kValue ];
+      var elements = [kValue];
       DefineDataProperty(groups, propertyKey, elements);
     } else {
       var lenElements = groups[propertyKey].length;
@@ -314,7 +314,7 @@ function ArrayGroup(callbackfn) {
 
 
 
-function ArrayGroupToMap(callbackfn) {
+function ArrayGroupToMap(callbackfn ) {
   
   var O = ToObject(this);
 
@@ -358,7 +358,7 @@ function ArrayGroupToMap(callbackfn) {
     
 
 
-    var propertyKey = callContentFunction(callbackfn,T, kValue, k, O);
+    var propertyKey = callContentFunction(callbackfn, T, kValue, k, O);
 
     
 
@@ -373,7 +373,7 @@ function ArrayGroupToMap(callbackfn) {
 
 
     if (!callFunction(std_Map_get, map, propertyKey)) {
-      var elements = [ kValue ];
+      var elements = [kValue];
       callFunction(std_Map_set, map, propertyKey, elements);
     } else {
       var elements = callFunction(std_Map_get, map, propertyKey);
@@ -388,7 +388,7 @@ function ArrayGroupToMap(callbackfn) {
 #endif
 
 
-function ArrayReduce(callbackfn) {
+function ArrayReduce(callbackfn ) {
   
   var O = ToObject(this);
 
@@ -452,7 +452,7 @@ function ArrayReduce(callbackfn) {
 }
 
 
-function ArrayReduceRight(callbackfn) {
+function ArrayReduceRight(callbackfn ) {
   
   var O = ToObject(this);
 
@@ -516,7 +516,7 @@ function ArrayReduceRight(callbackfn) {
 }
 
 
-function ArrayFind(predicate) {
+function ArrayFind(predicate ) {
   
   var O = ToObject(this);
 
@@ -550,7 +550,7 @@ function ArrayFind(predicate) {
 }
 
 
-function ArrayFindIndex(predicate) {
+function ArrayFindIndex(predicate ) {
   
   var O = ToObject(this);
 
@@ -1139,7 +1139,7 @@ function ArrayConcat(arg1) {
 
 
 
-function ArrayFlatMap(mapperFunction) {
+function ArrayFlatMap(mapperFunction ) {
   
   var O = ToObject(this);
 
@@ -1347,7 +1347,7 @@ function ArrayToSorted(comparefn) {
 
 
 
-function ArrayFindLast(predicate) {
+function ArrayFindLast(predicate ) {
   
   var O = ToObject(this);
 
@@ -1380,7 +1380,7 @@ function ArrayFindLast(predicate) {
 
 
 
-function ArrayFindLastIndex(predicate) {
+function ArrayFindLastIndex(predicate ) {
   
   var O = ToObject(this);
 
