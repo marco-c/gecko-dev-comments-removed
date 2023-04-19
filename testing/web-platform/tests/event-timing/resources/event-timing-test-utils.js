@@ -5,10 +5,12 @@ async function clickOnElementAndDelay(id, delay, callback) {
   const element = document.getElementById(id);
   const clickHandler = () => {
     mainThreadBusy(delay);
-    if (callback)
+    if (callback) {
       callback();
+    }
     element.removeEventListener("pointerdown", clickHandler);
   };
+
   element.addEventListener("pointerdown", clickHandler);
   await test_driver.click(element);
 }
@@ -119,6 +121,46 @@ async function testDuration(t, id, numEntries, dur, slowDur) {
   });
   return Promise.all([observerPromise, clicksPromise]);
 }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  async function testDurationWithDurationThreshold(t, id, numEntries, durThreshold, processingDelay) {
+    assert_implements(window.PerformanceEventTiming, 'Event Timing is not supported.');
+    const observerPromise = new Promise(async resolve => {
+      let minDuration = Math.ceil(durThreshold / 8) * 8;
+      
+      minDuration = Math.max(minDuration, 16);
+      new PerformanceObserver(t.step_func(list => {
+        const pointerDowns = list.getEntriesByName('pointerdown');
+        pointerDowns.forEach(p => {
+        assert_greater_than_equal(p.duration, minDuration,
+          "The entry's duration should be greater than or equal to " + minDuration + " ms.");
+        });
+        resolve();
+      })).observe({type: "event", durationThreshold: durThreshold});
+    });
+    for (let index = 0; index < numEntries; index++) {
+      
+      
+      
+      await clickOnElementAndDelay(id, processingDelay);
+    }
+    
+    
+    await clickOnElementAndDelay(id, durThreshold);
+    return observerPromise;
+  }
 
 
 
