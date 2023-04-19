@@ -25,6 +25,10 @@ namespace gfx {
 struct RecordingSourceSurfaceUserData {
   void* refPtr;
   RefPtr<DrawEventRecorderPrivate> recorder;
+
+  
+  
+  ThreadSafeWeakPtr<SourceSurface> optimizedSurface;
 };
 
 static void RecordingSourceSurfaceUserDataFunc(void* aUserData) {
@@ -523,6 +527,16 @@ already_AddRefed<SourceSurface> DrawTargetRecording::OptimizeSourceSurface(
     return do_AddRef(aSurface);
   }
 
+  
+  auto* userData = static_cast<RecordingSourceSurfaceUserData*>(
+      aSurface->GetUserData(reinterpret_cast<UserDataKey*>(mRecorder.get())));
+  if (userData) {
+    RefPtr<SourceSurface> strongRef(userData->optimizedSurface);
+    if (strongRef) {
+      return do_AddRef(strongRef);
+    }
+  }
+
   EnsureSurfaceStoredRecording(mRecorder, aSurface, "OptimizeSourceSurface");
 
   RefPtr<SourceSurface> retSurf = new SourceSurfaceRecording(
@@ -530,6 +544,10 @@ already_AddRefed<SourceSurface> DrawTargetRecording::OptimizeSourceSurface(
 
   mRecorder->RecordEvent(
       RecordedOptimizeSourceSurface(aSurface, this, retSurf));
+
+  userData = static_cast<RecordingSourceSurfaceUserData*>(
+      aSurface->GetUserData(reinterpret_cast<UserDataKey*>(mRecorder.get())));
+  userData->optimizedSurface = retSurf;
 
   return retSurf.forget();
 }
