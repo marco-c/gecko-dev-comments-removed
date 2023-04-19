@@ -161,7 +161,7 @@ pub struct SceneClipInstance {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct ClipTemplate {
     
-    pub parent: ClipId,
+    pub parent: Option<ClipId>,
     
     pub clips: ops::Range<u32>,
 }
@@ -266,19 +266,26 @@ impl ClipChainBuilder {
             clip_chain_id = new_clip_chain_id;
         }
 
-        
-        if clip_id == template.parent {
-            return clip_chain_id;
-        }
+        match template.parent {
+            Some(parent) => {
+                
+                if clip_id == parent {
+                    return clip_chain_id;
+                }
 
-        ClipChainBuilder::add_new_clips_to_chain(
-            template.parent,
-            clip_chain_id,
-            existing_clips,
-            clip_chain_nodes,
-            templates,
-            clip_instances,
-        )
+                ClipChainBuilder::add_new_clips_to_chain(
+                    parent,
+                    clip_chain_id,
+                    existing_clips,
+                    clip_chain_nodes,
+                    templates,
+                    clip_instances,
+                )
+            }
+            None => {
+                clip_chain_id
+            }
+        }
     }
 
     
@@ -301,17 +308,24 @@ impl ClipChainBuilder {
             }
         }
 
-        
-        if clip_id == template.parent {
-            return false;
-        }
+        match template.parent {
+            Some(parent) => {
+                
+                if clip_id == parent {
+                    return false;
+                }
 
-        
-        self.has_complex_clips(
-            template.parent,
-            templates,
-            instances,
-        )
+                
+                self.has_complex_clips(
+                    parent,
+                    templates,
+                    instances,
+                )
+            }
+            None => {
+                false
+            }
+        }
     }
 
     
@@ -1036,7 +1050,7 @@ impl ClipStore {
     pub fn register_clip_template(
         &mut self,
         clip_id: ClipId,
-        parent: ClipId,
+        parent: Option<ClipId>,
         clips: &[SceneClipInstance],
     ) {
         let start = self.instances.len() as u32;

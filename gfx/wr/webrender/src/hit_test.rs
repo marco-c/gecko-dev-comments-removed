@@ -494,13 +494,15 @@ fn add_clips(
     }
 
     
-    if clip_id != template.parent {
-        add_clips(
-            template.parent,
-            clip_store,
-            clip_nodes,
-            seen_clips,
-            interners,
-        );
+    if let Some(parent) = template.parent {
+        if clip_id != parent {
+            add_clips(
+                parent,
+                clip_store,
+                clip_nodes,
+                seen_clips,
+                interners,
+            );
+        }
     }
 }
