@@ -230,7 +230,10 @@ DevToolsServerConnection.prototype = {
 
   _unknownError(from, prefix, error) {
     const errorString = prefix + ": " + DevToolsUtils.safeErrorString(error);
-    reportError(errorString);
+    
+    if (!isWorker) {
+      Cu.reportError(errorString);
+    }
     dumpn(errorString);
     return {
       from,

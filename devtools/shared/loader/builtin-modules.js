@@ -234,7 +234,6 @@ exports.globals = {
   },
   Localization,
   PathUtils,
-  reportError: Cu.reportError,
   StructuredCloneHolder,
 };
 
