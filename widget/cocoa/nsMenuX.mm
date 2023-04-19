@@ -581,9 +581,21 @@ void nsMenuX::MenuClosedAsync() {
 
 void nsMenuX::ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers,
                                        int16_t aButton) {
-  
-  
-  mPendingCommandEvents.AppendElement(PendingCommandEvent{std::move(aItem), aModifiers, aButton});
+  if (mIsOpenForGecko) {
+    
+    
+    mPendingCommandEvents.AppendElement(PendingCommandEvent{std::move(aItem), aModifiers, aButton});
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    aItem->DoCommand(aModifiers, aButton);
+  }
 }
 
 bool nsMenuX::Close() {
