@@ -392,7 +392,9 @@ WorkerScriptLoader::WorkerScriptLoader(
       mSyncLoopTarget(aSyncLoopTarget),
       mWorkerScriptType(aWorkerScriptType),
       mCancelMainThread(Nothing()),
-      mRv(aRv) {
+      mRv(aRv),
+      mCleanedUp(false),
+      mCleanUpLock("cleanUpLock") {
   aWorkerPrivate->AssertIsOnWorkerThread();
   MOZ_ASSERT(aSyncLoopTarget);
 
@@ -667,22 +669,25 @@ void WorkerScriptLoader::CancelMainThreadWithBindingAborted(
 void WorkerScriptLoader::CancelMainThread(
     nsresult aCancelResult, nsTArray<WorkerLoadContext*>* aContextList) {
   AssertIsOnMainThread();
+  {
+    MutexAutoLock lock(CleanUpLock());
 
-  
-  
-  if (IsCancelled() || !mWorkerRef) {
-    return;
-  }
+    
+    
+    if (IsCancelled() || CleanedUp()) {
+      return;
+    }
 
-  mCancelMainThread = Some(aCancelResult);
+    mCancelMainThread = Some(aCancelResult);
 
-  
-  
-  
-  for (WorkerLoadContext* loadContext : *aContextList) {
-    if (loadContext->IsAwaitingPromise()) {
-      loadContext->mCachePromise->MaybeReject(NS_BINDING_ABORTED);
-      loadContext->mCachePromise = nullptr;
+    
+    
+    
+    for (WorkerLoadContext* loadContext : *aContextList) {
+      if (loadContext->IsAwaitingPromise()) {
+        loadContext->mCachePromise->MaybeReject(NS_BINDING_ABORTED);
+        loadContext->mCachePromise = nullptr;
+      }
     }
   }
 }
@@ -1006,7 +1011,6 @@ void WorkerScriptLoader::TryShutdown() {
 
 void WorkerScriptLoader::ShutdownScriptLoader(bool aResult, bool aMutedError) {
   mWorkerRef->Private()->AssertIsOnWorkerThread();
-
   MOZ_ASSERT(AllScriptsExecuted());
 
   if (!aResult) {
@@ -1034,10 +1038,17 @@ void WorkerScriptLoader::ShutdownScriptLoader(bool aResult, bool aMutedError) {
     }
   }
 
-  mWorkerRef->Private()->StopSyncLoop(mSyncLoopTarget, aResult);
-
   
-  mWorkerRef = nullptr;
+  {
+    MutexAutoLock lock(CleanUpLock());
+
+    mWorkerRef->Private()->StopSyncLoop(mSyncLoopTarget, aResult);
+
+    
+    mCleanedUp = true;
+    
+    mWorkerRef = nullptr;
+  }
 }
 
 void WorkerScriptLoader::LogExceptionToConsole(JSContext* aCx,

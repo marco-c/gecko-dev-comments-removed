@@ -141,6 +141,28 @@ class WorkerScriptLoader final : public nsINamed {
   bool mExecutionAborted = false;
   bool mMutedErrorFlag = false;
 
+  
+  
+  
+  
+  
+  bool mCleanedUp MOZ_GUARDED_BY(
+      mCleanUpLock);  
+
+  Mutex& CleanUpLock() MOZ_RETURN_CAPABILITY(mCleanUpLock) {
+    return mCleanUpLock;
+  }
+
+  bool CleanedUp() const MOZ_REQUIRES(mCleanUpLock) {
+    mCleanUpLock.AssertCurrentThreadOwns();
+    return mCleanedUp;
+  }
+
+  
+  
+  
+  Mutex mCleanUpLock;
+
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
