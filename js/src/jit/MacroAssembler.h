@@ -4890,6 +4890,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
                         temp5, IsBigInt::Maybe);
   }
 
+ private:
+  template <typename OrderedHashTable>
+  void loadOrderedHashTableCount(Register setOrMapObj, Register result);
+
+ public:
+  void loadSetObjectSize(Register setObj, Register result);
+  void loadMapObjectSize(Register mapObj, Register result);
+
   
   
   void clampDoubleToUint8(FloatRegister input, Register output) PER_ARCH;
