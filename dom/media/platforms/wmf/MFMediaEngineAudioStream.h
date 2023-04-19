@@ -32,6 +32,9 @@ class MFMediaEngineAudioStream final : public MFMediaEngineStream {
                           IMFMediaType** aMediaType) override;
 
   bool HasEnoughRawData() const override;
+
+  
+  nsTArray<BYTE> mAACUserData;
 };
 
 }  
