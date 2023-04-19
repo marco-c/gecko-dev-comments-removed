@@ -70,6 +70,15 @@ class IDNA final {
 
 
 
+    bool HasInvalidAceLabel() const {
+      return (mErrorCode & UIDNA_ERROR_INVALID_ACE_LABEL) != 0;
+    }
+
+    
+
+
+
+
 
 
 

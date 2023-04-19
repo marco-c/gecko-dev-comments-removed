@@ -188,8 +188,8 @@ nsresult nsIDNService::IDNA2008StringPrep(const nsAString& input,
   
   
   
-  if (info.HasInvalidPunycode() && !output.IsEmpty() &&
-      output.Last() == 0xfffd) {
+  if ((info.HasInvalidPunycode() || info.HasInvalidAceLabel()) &&
+      !output.IsEmpty() && output.Last() == 0xfffd) {
     output.Truncate(output.Length() - 1);
   }
 
