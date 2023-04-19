@@ -1635,14 +1635,21 @@ pub struct BackdropInfo {
     
     pub opaque_rect: PictureRect,
     
+    
+    pub spanning_opaque_color: Option<ColorF>,
+    
     pub kind: Option<BackdropKind>,
+    
+    pub backdrop_rect: PictureRect,
 }
 
 impl BackdropInfo {
     fn empty() -> Self {
         BackdropInfo {
             opaque_rect: PictureRect::zero(),
+            spanning_opaque_color: None,
             kind: None,
+            backdrop_rect: PictureRect::zero(),
         }
     }
 }
@@ -3127,7 +3134,9 @@ impl TileCacheInstance {
                 if color.a >= 1.0 {
                     backdrop_candidate = Some(BackdropInfo {
                         opaque_rect: pic_coverage_rect,
+                        spanning_opaque_color: None,
                         kind: Some(BackdropKind::Color { color }),
+                        backdrop_rect: pic_coverage_rect,
                     });
                 }
 
@@ -3171,7 +3180,9 @@ impl TileCacheInstance {
                        image_data.color.a >= 1.0 {
                         backdrop_candidate = Some(BackdropInfo {
                             opaque_rect: pic_coverage_rect,
+                            spanning_opaque_color: None,
                             kind: None,
+                            backdrop_rect: PictureRect::zero(),
                         });
                     }
                 }
@@ -3290,7 +3301,9 @@ impl TileCacheInstance {
             PrimitiveInstanceKind::Clear { .. } => {
                 backdrop_candidate = Some(BackdropInfo {
                     opaque_rect: pic_coverage_rect,
+                    spanning_opaque_color: None,
                     kind: Some(BackdropKind::Clear),
+                    backdrop_rect: pic_coverage_rect,        
                 });
             }
             PrimitiveInstanceKind::LinearGradient { data_handle, .. }
@@ -3301,7 +3314,9 @@ impl TileCacheInstance {
                 {
                     backdrop_candidate = Some(BackdropInfo {
                         opaque_rect: pic_coverage_rect,
+                        spanning_opaque_color: None,
                         kind: None,
+                        backdrop_rect: PictureRect::zero(),
                     });
                 }
             }
@@ -3312,7 +3327,9 @@ impl TileCacheInstance {
                 {
                     backdrop_candidate = Some(BackdropInfo {
                         opaque_rect: pic_coverage_rect,
+                        spanning_opaque_color: None,
                         kind: None,
+                        backdrop_rect: PictureRect::zero(),
                     });
                 }
             }
@@ -3323,7 +3340,9 @@ impl TileCacheInstance {
                 {
                     backdrop_candidate = Some(BackdropInfo {
                         opaque_rect: pic_coverage_rect,
+                        spanning_opaque_color: None,
                         kind: None,
+                        backdrop_rect: PictureRect::zero(),
                     });
                 }
             }
@@ -3473,6 +3492,7 @@ impl TileCacheInstance {
                     if backdrop_candidate.opaque_rect.contains_box(&visible_local_rect) {
                         self.found_prims_after_backdrop = false;
                         self.backdrop.kind = Some(kind);
+                        self.backdrop.backdrop_rect = backdrop_candidate.opaque_rect;
                         
                         
                         
@@ -3482,7 +3502,7 @@ impl TileCacheInstance {
                         if let BackdropKind::Color { color } = kind {
                             if backdrop_candidate.opaque_rect.contains_box(&self.local_rect) {
                                 vis_flags |= PrimitiveVisibilityFlags::IS_BACKDROP;
-                                self.background_color = Some(color);
+                                self.backdrop.spanning_opaque_color = Some(color);
                             }
                         }
                     }
@@ -4947,6 +4967,15 @@ impl PicturePrimitive {
                                     if let Some(background_color) = tile_cache.background_color {
                                         clear_color = background_color;
                                     }
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    if let Some(color) = tile_cache.backdrop.spanning_opaque_color {
+                                        clear_color = color;
+                                    }
                                 }
 
                                 let cmd_buffer_index = frame_state.cmd_buffers.create_cmd_buffer();
@@ -5150,7 +5179,7 @@ impl PicturePrimitive {
                 }
 
                 
-                let backdrop_rect = tile_cache.backdrop.opaque_rect
+                let backdrop_rect = tile_cache.backdrop.backdrop_rect
                     .intersection(&tile_cache.local_rect)
                     .and_then(|r| {
                         r.intersection(&tile_cache.local_clip_rect)
