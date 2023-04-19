@@ -66,12 +66,15 @@ class MOZ_CAPABILITY EventTargetCapability final {
   EventTargetCapability& operator=(EventTargetCapability&&) = default;
 
   void AssertOnCurrentThread() const MOZ_ASSERT_CAPABILITY(this) {
-    MOZ_ASSERT(mTarget->IsOnCurrentThread());
+    MOZ_ASSERT(IsOnCurrentThread());
   }
 
   
+  bool IsOnCurrentThread() const { return mTarget->IsOnCurrentThread(); }
+
   
-  T* GetEventTarget() { return mTarget; }
+  
+  T* GetEventTarget() const { return mTarget; }
 
   
   nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable,
