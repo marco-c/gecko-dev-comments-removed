@@ -23,6 +23,7 @@
 #if defined(SOLARIS)
 #  include <ieeefp.h>
 #endif
+#include <iterator>
 #include <limits>
 #include <stdint.h>
 #ifdef HAVE_SSIZE_T
@@ -3074,7 +3075,7 @@ void IntegerToString(IntegerType i, int radix,
   
   
   CharType buffer[sizeof(IntegerType) * 8 + 1];
-  CharType* end = buffer + sizeof(buffer) / sizeof(CharType);
+  CharType* end = std::end(buffer);
   CharType* cp = end;
 
   
