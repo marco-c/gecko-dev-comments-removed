@@ -174,6 +174,85 @@ async function withWindowOverflowed(win, taskFn) {
   }
 }
 
+function verifyExtensionWidget(widget, unifiedExtensionsEnabled) {
+  Assert.ok(widget, "expected widget");
+
+  Assert.equal(
+    widget.getAttribute("unified-extensions"),
+    unifiedExtensionsEnabled ? "true" : "false",
+    `expected unified-extensions attribute to be ${String(
+      unifiedExtensionsEnabled
+    )}`
+  );
+
+  let actionButton = widget.firstElementChild;
+  Assert.ok(
+    actionButton.classList.contains("unified-extensions-item-action"),
+    "expected action class on the button"
+  );
+
+  let contents = actionButton.querySelector(
+    ".unified-extensions-item-contents"
+  );
+
+  if (unifiedExtensionsEnabled) {
+    Assert.ok(
+      contents,
+      `expected contents element when unifiedExtensionsEnabled=${unifiedExtensionsEnabled}`
+    );
+    
+    
+    Assert.equal(
+      contents.getAttribute("move-after-stack"),
+      "true",
+      "expected move-after-stack attribute to be set"
+    );
+    
+    
+    Assert.deepEqual(
+      Array.from(actionButton.childNodes.values()).map(
+        child => child.classList[0]
+      ),
+      [
+        
+        
+        "toolbarbutton-badge-stack",
+        
+        "toolbarbutton-text",
+        
+        
+        "unified-extensions-item-contents",
+      ],
+      "expected the correct order for the children of the action button"
+    );
+
+    let name = contents.querySelector(".unified-extensions-item-name");
+    Assert.ok(name, "expected name element");
+    Assert.ok(
+      name.textContent.startsWith("Extension "),
+      "expected name to not be empty"
+    );
+    Assert.ok(
+      contents.querySelector(".unified-extensions-item-message-default"),
+      "expected message default element"
+    );
+    Assert.ok(
+      contents.querySelector(".unified-extensions-item-message-hover"),
+      "expected message hover element"
+    );
+  } else {
+    Assert.ok(
+      !contents,
+      `expected no contents element when unifiedExtensionsEnabled=${unifiedExtensionsEnabled}`
+    );
+
+    Assert.ok(
+      actionButton.getAttribute("label")?.startsWith("Extension "),
+      "expected button's label to not be empty"
+    );
+  }
+}
+
 
 
 
@@ -208,6 +287,7 @@ add_task(async function test_overflowable_toolbar() {
           extensionIDs.includes(child.dataset.extensionid),
           `Unified Extensions overflow list should have ${child.dataset.extensionid}`
         );
+        verifyExtensionWidget(child, true);
       }
     }
   );
@@ -239,10 +319,11 @@ add_task(async function test_overflowable_toolbar_legacy() {
       
       
       for (const extensionID of extensionIDs) {
-        Assert.ok(
-          defaultList.querySelector(`[data-extensionid='${extensionID}']`),
-          `Default list should have ${extensionID}`
+        const widget = defaultList.querySelector(
+          `[data-extensionid='${extensionID}']`
         );
+        Assert.ok(widget, `Default list should have ${extensionID}`);
+        verifyExtensionWidget(widget, false);
       }
 
       Assert.equal(
