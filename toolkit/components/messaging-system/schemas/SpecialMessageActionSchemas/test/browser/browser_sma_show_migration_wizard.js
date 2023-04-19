@@ -13,11 +13,7 @@ add_task(async function test_SHOW_MIGRATION_WIZARD() {
     return win && win.document && win.document.readyState == "complete";
   }, "Migrator window loaded");
 
-  
-  
-  executeSoon(() =>
-    SMATestUtils.executeAndValidateAction({ type: "SHOW_MIGRATION_WIZARD" })
-  );
+  SMATestUtils.executeAndValidateAction({ type: "SHOW_MIGRATION_WIZARD" });
 
   await migratorOpen;
   let migratorWindow = Services.wm.getMostRecentWindow(
@@ -33,14 +29,10 @@ add_task(async function test_SHOW_MIGRATION_WIZARD_WITH_SOURCE() {
     return win && win.document && win.document.readyState == "complete";
   }, "Migrator window loaded");
 
-  
-  
-  executeSoon(() =>
-    SMATestUtils.executeAndValidateAction({
-      type: "SHOW_MIGRATION_WIZARD",
-      data: { source: "chrome" },
-    })
-  );
+  SMATestUtils.executeAndValidateAction({
+    type: "SHOW_MIGRATION_WIZARD",
+    data: { source: "chrome" },
+  });
 
   await migratorOpen;
   let migratorWindow = Services.wm.getMostRecentWindow(
