@@ -344,6 +344,12 @@ void DocAccessibleParent::FireEvent(RemoteAccessible* aAcc,
            child = child->RemoteNextSibling()) {
         child->InvalidateGroupInfo();
       }
+    } else if (aEventType == nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE &&
+               aAcc == this) {
+      
+      
+      
+      UpdateStateCache(states::STALE, false);
     }
   }
 
