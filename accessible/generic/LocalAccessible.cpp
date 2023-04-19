@@ -2502,6 +2502,20 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
     
     mDoc->QueueCacheUpdate(aParent, CacheDomain::Table);
   }
+
+#if defined(XP_WIN)
+  if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+      aParent->HasOwnContent() && aParent->mContent->IsMathMLElement()) {
+    
+    
+    for (LocalAccessible* acc = aParent; acc; acc = acc->LocalParent()) {
+      if (acc->HasOwnContent() &&
+          acc->mContent->IsMathMLElement(nsGkAtoms::math)) {
+        mDoc->QueueCacheUpdate(acc, CacheDomain::InnerHTML);
+      }
+    }
+  }
+#endif  
 }
 
 
@@ -3597,6 +3611,15 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       }
     }
   }
+
+#if defined(XP_WIN)
+  if (aCacheDomain & CacheDomain::InnerHTML && HasOwnContent() &&
+      mContent->IsMathMLElement(nsGkAtoms::math)) {
+    nsString innerHTML;
+    mContent->AsElement()->GetInnerHTML(innerHTML, IgnoreErrors());
+    fields->SetAttribute(nsGkAtoms::html, std::move(innerHTML));
+  }
+#endif  
 
   if (aUpdateType == CacheUpdateType::Initial) {
     

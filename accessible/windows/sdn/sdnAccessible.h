@@ -25,15 +25,29 @@ class sdnAccessible final : public ISimpleDOMNode {
     if (!mNode) MOZ_CRASH();
   }
 
-  explicit sdnAccessible(NotNull<MsaaAccessible*> aMsaa)
-      : mNode(aMsaa->LocalAcc()->GetNode()), mMsaa(aMsaa) {}
+  explicit sdnAccessible(NotNull<MsaaAccessible*> aMsaa) : mMsaa(aMsaa) {
+    Accessible* acc = aMsaa->Acc();
+    MOZ_ASSERT(acc);
+    if (LocalAccessible* localAcc = acc->AsLocal()) {
+      mNode = localAcc->GetNode();
+    }
+  }
 
   ~sdnAccessible();
 
   
 
 
-  bool IsDefunct() const { return !GetDocument(); }
+  bool IsDefunct() const {
+    if (mMsaa && !mMsaa->Acc()) {
+      return true;
+    }
+    if (!mNode) {
+      MOZ_ASSERT(mMsaa && mMsaa->Acc()->IsRemote());
+      return false;
+    }
+    return !GetDocument();
+  }
 
   
 
@@ -122,6 +136,8 @@ class sdnAccessible final : public ISimpleDOMNode {
        BSTR __RPC_FAR* aLanguage);
 
  private:
+  
+  
   nsCOMPtr<nsINode> mNode;
   RefPtr<MsaaAccessible> mMsaa;
   Maybe<uint32_t> mUniqueId;
