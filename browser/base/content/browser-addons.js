@@ -1550,14 +1550,15 @@ var gUnifiedExtensions = {
 
   async togglePanel(aEvent) {
     if (!CustomizationHandler.isCustomizing()) {
+      if (aEvent && aEvent.button !== 0) {
+        return;
+      }
+
       let panel = this.panel;
       
       
       if ((await this.getActiveExtensions()).length === 0) {
-        
-        if (aEvent.button === 0) {
-          await BrowserOpenAddonsMgr("addons://discover/");
-        }
+        await BrowserOpenAddonsMgr("addons://discover/");
         return;
       }
 
