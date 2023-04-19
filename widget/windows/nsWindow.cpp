@@ -1203,7 +1203,12 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     ::SetWindowLongPtrW(scrollableWnd, GWLP_USERDATA, (LONG_PTR)oldWndProc);
   }
 
-  SubclassWindow(TRUE);
+  
+  
+  
+  if (!AssociateWithNativeWindow()) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
@@ -1488,25 +1493,57 @@ DWORD nsWindow::WindowExStyle() {
 
 
 
-void nsWindow::SubclassWindow(BOOL bState) {
-  if (bState) {
-    if (!mWnd || !IsWindow(mWnd)) {
-      NS_ERROR("Invalid window handle");
-    }
 
-    mPrevWndProc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(
-        mWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(nsWindow::WindowProc)));
-    NS_ASSERTION(mPrevWndProc, "Null standard window procedure");
-    
-    WinUtils::SetNSWindowPtr(mWnd, this);
-  } else {
-    if (IsWindow(mWnd)) {
-      SetWindowLongPtrW(mWnd, GWLP_WNDPROC,
-                        reinterpret_cast<LONG_PTR>(mPrevWndProc));
-    }
-    WinUtils::SetNSWindowPtr(mWnd, nullptr);
-    mPrevWndProc = nullptr;
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool nsWindow::AssociateWithNativeWindow() {
+  if (!mWnd || !IsWindow(mWnd)) {
+    NS_ERROR("Invalid window handle");
+    return false;
   }
+
+  
+  
+  
+  WinUtils::SetNSWindowPtr(mWnd, this);
+
+  ::SetLastError(ERROR_SUCCESS);
+  const auto prevWndProc = reinterpret_cast<WNDPROC>(::SetWindowLongPtrW(
+      mWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(nsWindow::WindowProc)));
+  if (!prevWndProc && GetLastError() != ERROR_SUCCESS) {
+    NS_ERROR("Failure in SetWindowLongPtrW");
+    WinUtils::SetNSWindowPtr(mWnd, nullptr);
+    return false;
+  }
+
+  mPrevWndProc.emplace(prevWndProc);
+  return true;
+}
+
+void nsWindow::DissociateFromNativeWindow() {
+  if (!mWnd || !IsWindow(mWnd) || mPrevWndProc.isNothing()) {
+    return;
+  }
+
+  DebugOnly<WNDPROC> wndProcBeforeDissociate =
+      reinterpret_cast<WNDPROC>(::SetWindowLongPtrW(
+          mWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(*mPrevWndProc)));
+  NS_ASSERTION(wndProcBeforeDissociate == nsWindow::WindowProc,
+               "Unstacked an unexpected native window procedure");
+
+  WinUtils::SetNSWindowPtr(mWnd, nullptr);
+  mPrevWndProc.reset();
 }
 
 
@@ -7475,7 +7512,8 @@ void nsWindow::OnDestroy() {
 
   
   
-  SubclassWindow(FALSE);
+  
+  DissociateFromNativeWindow();
 
   
   
