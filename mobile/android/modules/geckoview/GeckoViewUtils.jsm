@@ -479,6 +479,35 @@ var GeckoViewUtils = {
 
     aLogger[aLevel.toLowerCase()](strs, ...aExprs);
   },
+
+  
+
+
+
+
+
+
+
+  isSupportedPermissionsPrincipal(principal) {
+    if (!principal) {
+      return false;
+    }
+    if (!(principal instanceof Ci.nsIPrincipal)) {
+      throw new Error(
+        "Argument passed as principal is not an instance of Ci.nsIPrincipal"
+      );
+    }
+    return this.isSupportedPermissionsScheme(principal.scheme);
+  },
+
+  
+
+
+
+
+  isSupportedPermissionsScheme(scheme) {
+    return ["http", "https", "moz-extension", "file"].includes(scheme);
+  },
 };
 
 XPCOMUtils.defineLazyGetter(
