@@ -107,10 +107,11 @@ elif gl_provider == "Linux":
     
     
     SOURCES += [
-        "GLContextProviderGLX.cpp",
         "GLContextProviderLinux.cpp",
     ]
     EXPORTS += ["GLContextGLX.h", "GLXLibrary.h"]
+    if CONFIG["MOZ_X11"]:
+        SOURCES += ["GLContextProviderGLX.cpp"]
 
 if CONFIG["MOZ_WAYLAND"]:
     SOURCES += ["SharedSurfaceDMABUF.cpp"]
