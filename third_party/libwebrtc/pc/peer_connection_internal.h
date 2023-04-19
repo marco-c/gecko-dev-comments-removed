@@ -127,8 +127,7 @@ class PeerConnectionSdpMethods {
 
 
 class PeerConnectionInternal : public PeerConnectionInterface,
-                               public PeerConnectionSdpMethods,
-                               public sigslot::has_slots<> {
+                               public PeerConnectionSdpMethods {
  public:
   virtual rtc::Thread* network_thread() const = 0;
   virtual rtc::Thread* worker_thread() const = 0;
@@ -139,6 +138,9 @@ class PeerConnectionInternal : public PeerConnectionInterface,
   virtual std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   GetTransceiversInternal() const = 0;
+
+  virtual sigslot::signal1<SctpDataChannel*>&
+  SignalSctpDataChannelCreated() = 0;
 
   
   
@@ -170,14 +172,6 @@ class PeerConnectionInternal : public PeerConnectionInterface,
   
   virtual bool GetSslRole(const std::string& content_name,
                           rtc::SSLRole* role) = 0;
-
-  
-  virtual void SubscribeDataChannelCreated(
-      std::function<void(SctpDataChannel*)> callback) = 0;
-  
-  virtual void NoteDataAddedEvent() = 0;
-  
-  virtual void OnSctpDataChannelClosed(DataChannelInterface* channel) = 0;
 };
 
 }  
