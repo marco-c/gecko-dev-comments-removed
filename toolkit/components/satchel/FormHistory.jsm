@@ -82,9 +82,6 @@
 
 
 
-
-
-
 const EXPORTED_SYMBOLS = ["FormHistory"];
 let FormHistory;
 
@@ -101,7 +98,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const DB_SCHEMA_VERSION = 5;
 const DAY_IN_MS = 86400000; 
 const MAX_SEARCH_TOKENS = 10;
-const NOOP = function noop() {};
 const DB_FILENAME = "formhistory.sqlite";
 
 var supportsDeletedTable = AppConstants.platform == "android";
@@ -653,7 +649,11 @@ async function updateFormHistoryWrite(aChanges) {
   }
 
   try {
-    await runUpdateQueries(conn, queries);
+    await conn.executeTransaction(async () => {
+      for (let { query, params } of queries) {
+        await conn.executeCached(query, params);
+      }
+    });
     for (let [notification, param] of notifications) {
       
       sendNotification(notification, param);
@@ -661,24 +661,6 @@ async function updateFormHistoryWrite(aChanges) {
   } finally {
     InProgressInserts.clear(adds);
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-async function runUpdateQueries(conn, queries) {
-  await conn.executeTransaction(async () => {
-    for (let { query, params } of queries) {
-      await conn.executeCached(query, params);
-    }
-  });
 }
 
 
@@ -995,30 +977,6 @@ FormHistory = {
     return Prefs.enabled;
   },
 
-  _prepareHandlers(handlers) {
-    let defaultHandlers = {
-      handleResult: NOOP,
-      handleError: NOOP,
-      handleCompletion: NOOP,
-    };
-
-    if (!handlers) {
-      return defaultHandlers;
-    }
-
-    if (handlers.handleResult) {
-      defaultHandlers.handleResult = handlers.handleResult;
-    }
-    if (handlers.handleError) {
-      defaultHandlers.handleError = handlers.handleError;
-    }
-    if (handlers.handleCompletion) {
-      defaultHandlers.handleCompletion = handlers.handleCompletion;
-    }
-
-    return defaultHandlers;
-  },
-
   async search(aSelectTerms, aSearchData, aRowFunc) {
     
     if (!aSelectTerms) {
@@ -1151,7 +1109,28 @@ FormHistory = {
     await updateFormHistoryWrite(aChanges);
   },
 
-  getAutoCompleteResults(searchString, params, aHandlers) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getAutoCompleteResults(searchString, params, callback) {
     
     let searchTokens;
     let where = "";
@@ -1213,8 +1192,6 @@ FormHistory = {
       )`;
     }
 
-    let handlers = this._prepareHandlers(aHandlers);
-
     
 
 
@@ -1241,44 +1218,37 @@ FormHistory = {
       where +
       "ORDER BY ROUND(frecency * boundaryBonuses) DESC, UPPER(value) ASC";
 
+    let results = [];
     let cancelled = false;
+    function cancelFn() {
+      cancelled = true;
+    }
 
-    let cancellableQuery = {
-      cancel() {
-        cancelled = true;
-      },
-    };
-
-    this.db.then(async conn => {
-      try {
-        await conn.executeCached(query, params, (row, cancel) => {
-          if (cancelled) {
-            cancel();
-            return;
-          }
-
-          let value = row.getResultByName("value");
-          let guid = row.getResultByName("guid");
-          let frecency = row.getResultByName("frecency");
-          let entry = {
-            text: value,
-            guid,
-            textLowerCase: value.toLowerCase(),
-            frecency,
-            totalScore: Math.round(
-              frecency * row.getResultByName("boundaryBonuses")
-            ),
-          };
-          handlers.handleResult(entry);
-        });
-        handlers.handleCompletion(0);
-      } catch (e) {
-        handlers.handleError(e);
-        handlers.handleCompletion(1);
+    let conn = await this.db;
+    await conn.executeCached(query, params, (row, cancel) => {
+      if (cancelled) {
+        cancel();
+        return;
       }
-    });
 
-    return cancellableQuery;
+      let value = row.getResultByName("value");
+      let guid = row.getResultByName("guid");
+      let frecency = row.getResultByName("frecency");
+      let entry = {
+        text: value,
+        guid,
+        textLowerCase: value.toLowerCase(),
+        frecency,
+        totalScore: Math.round(
+          frecency * row.getResultByName("boundaryBonuses")
+        ),
+      };
+      if (callback) {
+        callback(entry, cancelFn);
+      }
+      results.push(entry);
+    });
+    return cancelled ? [] : results;
   },
 
   
