@@ -20,6 +20,8 @@ typedef NS_ENUM(NSInteger, RTCDispatcherQueueType) {
   RTCDispatcherTypeCaptureSession,
   
   RTCDispatcherTypeAudioSession,
+  
+  RTCDispatcherTypeNetworkMonitor,
 };
 
 
