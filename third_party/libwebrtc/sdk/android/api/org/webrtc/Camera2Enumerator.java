@@ -55,7 +55,7 @@ public class Camera2Enumerator implements CameraEnumerator {
       
       
     } catch ( AndroidException e) {
-      Logging.e(TAG, "Camera access exception: " + e);
+      Logging.e(TAG, "Camera access exception", e);
       return new String[] {};
     }
   }
@@ -109,7 +109,7 @@ public class Camera2Enumerator implements CameraEnumerator {
       
       
     } catch ( AndroidException e) {
-      Logging.e(TAG, "Camera access exception: " + e);
+      Logging.e(TAG, "Camera access exception", e);
       return null;
     }
   }
@@ -135,8 +135,8 @@ public class Camera2Enumerator implements CameraEnumerator {
       
       
       
-    } catch ( AndroidException e) {
-      Logging.e(TAG, "Camera access exception: " + e);
+    } catch ( AndroidException | RuntimeException e) {
+      Logging.e(TAG, "Failed to check if camera2 is supported", e);
       return false;
     }
     return true;
@@ -198,7 +198,7 @@ public class Camera2Enumerator implements CameraEnumerator {
       try {
         cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId);
       } catch (Exception ex) {
-        Logging.e(TAG, "getCameraCharacteristics(): " + ex);
+        Logging.e(TAG, "getCameraCharacteristics()", ex);
         return new ArrayList<CaptureFormat>();
       }
 
