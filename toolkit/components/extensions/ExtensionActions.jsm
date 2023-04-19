@@ -258,9 +258,21 @@ class PanelActionBase {
         
         
         let url = details.popup && context.uri.resolve(details.popup);
+
         if (url && !context.checkLoadURL(url)) {
           return Promise.reject({ message: `Access denied for URL ${url}` });
         }
+
+        
+        
+        if (
+          context.extension.manifestVersion >= 3 &&
+          url &&
+          !url.startsWith(extension.baseURI.spec)
+        ) {
+          return Promise.reject({ message: `Access denied for URL ${url}` });
+        }
+
         this.setPropertyFromDetails(details, "popup", url);
       },
       getPopup: details => {
