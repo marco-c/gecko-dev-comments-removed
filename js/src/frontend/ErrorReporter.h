@@ -40,7 +40,6 @@ class StrictModeGetter {
 
 
 
-
 class ErrorReportMixin : public StrictModeGetter {
  public:
   
@@ -49,9 +48,6 @@ class ErrorReportMixin : public StrictModeGetter {
 
   
   virtual ErrorContext* getContext() const = 0;
-
-  
-  virtual JSAllocator* getAllocator() const = 0;
 
   
   struct Current {};
@@ -148,7 +144,7 @@ class ErrorReportMixin : public StrictModeGetter {
       return;
     }
 
-    ReportCompileErrorLatin1(getContext(), getAllocator(), std::move(metadata),
+    ReportCompileErrorLatin1(getContext(), std::move(metadata),
                              std::move(notes), errorNumber, args);
   }
 
@@ -302,7 +298,7 @@ class ErrorReportMixin : public StrictModeGetter {
       return false;
     }
 
-    ReportCompileErrorLatin1(getContext(), getAllocator(), std::move(metadata),
+    ReportCompileErrorLatin1(getContext(), std::move(metadata),
                              std::move(notes), errorNumber, args);
     return false;
   }
@@ -311,9 +307,8 @@ class ErrorReportMixin : public StrictModeGetter {
   [[nodiscard]] bool compileWarning(ErrorMetadata&& metadata,
                                     UniquePtr<JSErrorNotes> notes,
                                     unsigned errorNumber, va_list* args) {
-    return ReportCompileWarning(getContext(), getAllocator(),
-                                std::move(metadata), std::move(notes),
-                                errorNumber, args);
+    return ReportCompileWarning(getContext(), std::move(metadata),
+                                std::move(notes), errorNumber, args);
   }
 };
 
