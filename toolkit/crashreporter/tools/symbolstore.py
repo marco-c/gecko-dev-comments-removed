@@ -563,7 +563,7 @@ class Dumper:
         Get the commandline used to invoke dump_syms.
         """
         
-        return [self.dump_syms, file]
+        return [self.dump_syms, "--inlines", file]
 
     def ProcessFileWork(
         self, file, arch_num, arch, vcs_root, dsymbundle=None, count_ctors=False
@@ -911,7 +911,11 @@ class Dumper_Mac(Dumper):
         
         if dsymbundle:
             
-            return [self.dump_syms] + arch.split() + ["-j", "2", dsymbundle, file]
+            return (
+                [self.dump_syms]
+                + arch.split()
+                + ["--inlines", "-j", "2", dsymbundle, file]
+            )
         return Dumper.dump_syms_cmdline(self, file, arch)
 
     def GenerateDSYM(self, file):
