@@ -2301,7 +2301,15 @@ class MediaDecoderStateMachine::VideoOnlySeekingState
     mDoneAudioSeeking = true;
     mDoneVideoSeeking = !Info().HasVideo();
 
+    const auto offset = VideoQueue().GetOffset();
     mMaster->ResetDecode(TrackInfo::kVideoTrack);
+
+    
+    
+    
+    if (offset != media::TimeUnit::Zero()) {
+      VideoQueue().SetOffset(offset);
+    }
 
     DemuxerSeek();
   }
@@ -2312,9 +2320,9 @@ class MediaDecoderStateMachine::VideoOnlySeekingState
   void RequestVideoData() override {
     MOZ_ASSERT(!mDoneVideoSeeking);
 
-    const auto& clock = mMaster->mMediaSink->IsStarted()
-                            ? mMaster->GetClock()
-                            : mMaster->GetMediaTime();
+    auto clock = mMaster->mMediaSink->IsStarted() ? mMaster->GetClock()
+                                                  : mMaster->GetMediaTime();
+    mMaster->AdjustByLooping(clock);
     const auto& nextKeyFrameTime = GetNextKeyFrameTime();
 
     auto threshold = clock;
@@ -2335,8 +2343,11 @@ class MediaDecoderStateMachine::VideoOnlySeekingState
 
   
   media::TimeUnit GetSeekTarget() const override {
-    return mMaster->mMediaSink->IsStarted() ? mMaster->GetClock()
-                                            : mSeekJob.mTarget->GetTime();
+    auto target = mMaster->mMediaSink->IsStarted()
+                      ? mMaster->GetClock()
+                      : mSeekJob.mTarget->GetTime();
+    mMaster->AdjustByLooping(target);
+    return target;
   }
 
   media::TimeUnit GetNextKeyFrameTime() const {
@@ -2570,7 +2581,9 @@ class MediaDecoderStateMachine::CompletedState
   void HandleResumeVideoDecoding(const TimeUnit&) override {
     
     
-    StateObject::HandleResumeVideoDecoding(mMaster->mDecodedVideoEndTime);
+    auto target = mMaster->mDecodedVideoEndTime;
+    mMaster->AdjustByLooping(target);
+    StateObject::HandleResumeVideoDecoding(target);
   }
 
   void HandlePlayStateChanged(MediaDecoder::PlayState aPlayState) override {
@@ -2708,6 +2721,8 @@ void MediaDecoderStateMachine::StateObject::HandleResumeVideoDecoding(
                         : SeekTarget::Type::PrevSyncPoint;
 
   seekJob.mTarget.emplace(aTarget, type, SeekTarget::Track::VideoOnly);
+  SLOG("video-only seek target=%" PRId64 ", current time=%" PRId64,
+       aTarget.ToMicroseconds(), mMaster->GetMediaTime().ToMicroseconds());
 
   
   
@@ -3651,7 +3666,8 @@ void MediaDecoderStateMachine::SetVideoDecodeModeInternal(
   CancelSuspendTimer();
 
   if (mVideoDecodeSuspended) {
-    const auto target = mMediaSink->IsStarted() ? GetClock() : GetMediaTime();
+    auto target = mMediaSink->IsStarted() ? GetClock() : GetMediaTime();
+    AdjustByLooping(target);
     mStateObj->HandleResumeVideoDecoding(target + detail::RESUME_VIDEO_PREMIUM);
   }
 }
