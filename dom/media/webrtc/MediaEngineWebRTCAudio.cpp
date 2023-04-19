@@ -819,7 +819,7 @@ void AudioInputProcessing::ProcessOutputData(MediaTrackGraphImpl* aGraph,
 
     
     
-    StreamConfig inputConfig(aRate, channelCountFarend, false);
+    StreamConfig inputConfig(aRate, channelCountFarend);
     StreamConfig outputConfig = inputConfig;
 
     
@@ -941,8 +941,7 @@ void AudioInputProcessing::PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
                    deinterleavedPacketizedInputDataChannelPointers.Elements());
     }
 
-    StreamConfig inputConfig(aGraph->GraphRate(), channelCountInput,
-                             false );
+    StreamConfig inputConfig(aGraph->GraphRate(), channelCountInput);
     StreamConfig outputConfig = inputConfig;
 
     
