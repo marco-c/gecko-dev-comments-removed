@@ -227,6 +227,18 @@ function promiseACShown() {
   });
 }
 
+
+
+
+
+
+function openAutocompletePopup(input) {
+  input?.focus();
+  const promisePopupShown = promiseACShown();
+  synthesizeKey("KEY_ArrowDown");
+  return promisePopupShown;
+}
+
 function checkACTelemetryEvent(actualEvent, input, augmentedExtra) {
   ok(
     parseInt(actualEvent[4], 10) > 0,
