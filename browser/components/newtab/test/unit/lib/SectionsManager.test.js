@@ -43,7 +43,10 @@ describe("SectionsManager", () => {
     globals.set({
       Services: fakeServices,
       PlacesUtils: fakePlacesUtils,
-      NimbusFeatures: { newtab: { getAllVariables: sandbox.stub() } },
+      NimbusFeatures: {
+        newtab: { getAllVariables: sandbox.stub() },
+        pocketNewtab: { getAllVariables: sandbox.stub() },
+      },
     });
     
     EventEmitter.decorate(SectionsManager);
@@ -523,6 +526,7 @@ describe("SectionsFeed", () => {
     globals = new GlobalOverrider();
     globals.set("NimbusFeatures", {
       newtab: { getAllVariables: sandbox.stub() },
+      pocketNewtab: { getAllVariables: sandbox.stub() },
     });
     storage = {
       get: sandbox.stub().resolves(),
