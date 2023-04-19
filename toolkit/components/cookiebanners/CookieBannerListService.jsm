@@ -63,7 +63,7 @@ class CookieBannerListService {
     log("importAllRules");
 
     let rules = await this.#rs.get();
-    this.importRules(rules);
+    this.#importRules(rules);
   }
 
   shutdown() {
@@ -86,7 +86,7 @@ class CookieBannerListService {
     this.removeRules(deleted);
 
     
-    this.importRules(created.concat(updated.map(u => u.new)));
+    this.#importRules(created.concat(updated.map(u => u.new)));
   }
 
   removeRules(rules = []) {
@@ -97,50 +97,62 @@ class CookieBannerListService {
       .forEach(Services.cookieBanners.removeRuleForDomain);
   }
 
-  importRules(rules) {
+  #importRules(rules) {
     log("importRules", rules);
 
-    rules.forEach(({ domain, cookies }) => {
-      
-      if (!cookies) {
-        return;
-      }
-
+    rules.forEach(({ domain, cookies, click }) => {
       let rule = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
         Ci.nsICookieBannerRule
       );
       rule.domain = domain;
 
       
-      for (let category of ["optOut", "optIn"]) {
-        if (!cookies[category]) {
-          continue;
-        }
+      this.#importCookieRule(rule, cookies);
 
-        let isOptOut = category == "optOut";
-
-        for (let c of cookies[category]) {
-          rule.addCookie(
-            isOptOut,
-            c.host,
-            c.name,
-            c.value,
-            
-            
-            c.path,
-            c.expiryRelative,
-            c.unsetValue,
-            c.isSecure,
-            c.isHTTPOnly,
-            c.isSession,
-            c.sameSite,
-            c.schemeMap
-          );
-        }
-      }
+      
+      this.#importClickRule(rule, click);
 
       Services.cookieBanners.insertRule(rule);
     });
+  }
+
+  #importCookieRule(rule, cookies) {
+    
+    if (!cookies) {
+      return;
+    }
+
+    
+    for (let category of ["optOut", "optIn"]) {
+      if (!cookies[category]) {
+        continue;
+      }
+
+      let isOptOut = category == "optOut";
+
+      for (let c of cookies[category]) {
+        rule.addCookie(
+          isOptOut,
+          c.host,
+          c.name,
+          c.value,
+          
+          
+          c.path,
+          c.expiryRelative,
+          c.unsetValue,
+          c.isSecure,
+          c.isHTTPOnly,
+          c.isSession,
+          c.sameSite,
+          c.schemeMap
+        );
+      }
+    }
+  }
+
+  #importClickRule(rule, click) {
+    
   }
 }
 
