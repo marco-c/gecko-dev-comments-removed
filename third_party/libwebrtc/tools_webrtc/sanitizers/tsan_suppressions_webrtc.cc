@@ -34,12 +34,6 @@ char kTSanDefaultSuppressions[] =
 
     
     
-    "race:rtc_base/test_client.cc\n"
-    "race:rtc_base/virtual_socket_server.cc\n"
-    "race:talk/p2p/base/stun_server_unittest.cc\n"
-
-    
-    
     "race:user_sctp_timer_iterate\n"
 
     
@@ -49,6 +43,10 @@ char kTSanDefaultSuppressions[] =
     
     "deadlock:usrsctp_conninput\n"
     "deadlock:usrsctp_connect\n"
+
+    
+    
+    "race:sctp_process_cookie_existing\n"
 
     
     
