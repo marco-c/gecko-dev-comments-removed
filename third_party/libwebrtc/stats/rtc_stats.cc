@@ -37,6 +37,20 @@ std::string VectorToString(const std::vector<T>& vector) {
 
 
 
+std::string VectorToString(const std::vector<bool>& vector) {
+  rtc::StringBuilder sb;
+  sb << "[";
+  const char* separator = "";
+  for (bool element : vector) {
+    sb << separator << rtc::ToString(element);
+    separator = ",";
+  }
+  sb << "]";
+  return sb.Release();
+}
+
+
+
 template <typename T>
 std::string VectorOfStringsToString(const std::vector<T>& strings) {
   rtc::StringBuilder sb;
