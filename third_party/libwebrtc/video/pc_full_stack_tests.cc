@@ -1738,7 +1738,6 @@ TEST(PCFullStackTest, Pc_Simulcast_Vp8_3sl_Low) {
 
 
 
-class PCDualStreamsTest : public ::testing::TestWithParam<int> {};
 
 
 
@@ -1844,8 +1843,9 @@ class PCDualStreamsTest : public ::testing::TestWithParam<int> {};
 
 
 
-INSTANTIATE_TEST_SUITE_P(PCFullStackTest,
-                         PCDualStreamsTest,
-                         ::testing::Values(0, 1));
+
+
+
+
 
 }  
