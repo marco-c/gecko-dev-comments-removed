@@ -302,6 +302,12 @@ bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
 }
 
 bool BaseChannel::SetPayloadTypeDemuxingEnabled(bool enabled) {
+  
+  
+  
+  
+  
+  
   RTC_DCHECK_RUN_ON(worker_thread());
   TRACE_EVENT0("webrtc", "BaseChannel::SetPayloadTypeDemuxingEnabled");
   return SetPayloadTypeDemuxingEnabled_w(enabled);
