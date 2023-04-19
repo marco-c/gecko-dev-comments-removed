@@ -67,6 +67,11 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = {};
 ChromeUtils.defineModuleGetter(
   lazy,
+  "AddonManager",
+  "resource://gre/modules/AddonManager.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  lazy,
   "SitePermissions",
   "resource:///modules/SitePermissions.jsm"
 );
@@ -95,6 +100,16 @@ XPCOMUtils.defineLazyGetter(lazy, "gBrowserBundle", function() {
     "chrome://browser/locale/browser.properties"
   );
 });
+
+const { SITEPERMS_ADDON_PROVIDER_PREF } = ChromeUtils.importESModule(
+  "resource://gre/modules/addons/siteperms-addon-utils.sys.mjs"
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "sitePermsAddonsProviderEnabled",
+  SITEPERMS_ADDON_PROVIDER_PREF,
+  false
+);
 
 var PermissionUI = {};
 
@@ -692,6 +707,41 @@ PermissionUI.PermissionPromptForRequestPrototype = PermissionPromptForRequestPro
 
 
 
+var SitePermsAddonInstallRequestPrototype = {
+  __proto__: PermissionPromptForRequestPrototype,
+
+  prompt() {
+    
+    
+    if (this.principal.isLoopbackHost || !lazy.sitePermsAddonsProviderEnabled) {
+      PermissionPromptForRequestPrototype.prompt.call(this);
+      return;
+    }
+
+    
+    lazy.AddonManager.installSitePermsAddonFromWebpage(
+      this.browser,
+      this.principal,
+      this.permName
+    ).then(
+      () => {
+        this.allow();
+      },
+      err => {
+        Cu.reportError(err);
+        this.cancel();
+      }
+    );
+  },
+};
+
+PermissionUI.SitePermsAddonInstallRequestPrototype = SitePermsAddonInstallRequestPrototype;
+
+
+
+
+
+
 
 
 function GeolocationPermissionPrompt(request) {
@@ -1174,8 +1224,7 @@ function MIDIPermissionPrompt(request) {
 }
 
 MIDIPermissionPrompt.prototype = {
-  __proto__: PermissionPromptForRequestPrototype,
-
+  __proto__: SitePermsAddonInstallRequestPrototype,
   get type() {
     return "midi";
   },
