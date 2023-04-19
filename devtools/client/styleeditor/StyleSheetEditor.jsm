@@ -287,8 +287,7 @@ StyleSheetEditor.prototype = {
 
 
 
-
-  async _getSourceTextAndPrettify() {
+  async _fetchSourceText(options = {}) {
     const styleSheetsFront = await this._getStyleSheetsFront();
 
     let longStr = null;
@@ -300,19 +299,7 @@ StyleSheetEditor.prototype = {
       longStr = await styleSheetsFront.getText(this.resourceId);
     }
 
-    let source = await longStr.string();
-    const ruleCount = this.styleSheet.ruleCount;
-    if (!this.styleSheet.isOriginalSource) {
-      const { result, mappings } = prettifyCSS(source, ruleCount);
-      source = result;
-      
-      
-      
-      this._mappings = mappings;
-    }
-
-    this._state.text = source;
-    return source;
+    this._state.text = await longStr.string();
   },
 
   
@@ -321,31 +308,41 @@ StyleSheetEditor.prototype = {
 
 
 
+  _prettifySourceTextIfNeeded() {
+    if (!this.styleSheet.isOriginalSource) {
+      const ruleCount = this.styleSheet.ruleCount;
+      const { result, mappings } = prettifyCSS(this._state.text, ruleCount);
+      
+      
+      
+      this._mappings = mappings;
+      this._state.text = result;
+    }
+  },
 
-  fetchSource() {
-    return this._getSourceTextAndPrettify()
-      .then(source => {
-        this.sourceLoaded = true;
-        return source;
-      })
-      .catch(e => {
-        if (this._isDestroyed) {
-          console.warn(
-            "Could not fetch the source for " +
-              this.styleSheet.href +
-              ", the editor was destroyed"
-          );
-          console.error(e);
-        } else {
-          console.error(e);
-          this.emit("error", {
-            key: LOAD_ERROR,
-            append: this.styleSheet.href,
-            level: "warning",
-          });
-          throw e;
-        }
-      });
+  
+
+
+  async fetchSource() {
+    try {
+      await this._fetchSourceText();
+      this.sourceLoaded = true;
+    } catch (e) {
+      if (this._isDestroyed) {
+        console.warn(
+          `Could not fetch the source for ${this.styleSheet.href}, the editor was destroyed`
+        );
+        console.error(e);
+      } else {
+        console.error(e);
+        this.emit("error", {
+          key: LOAD_ERROR,
+          append: this.styleSheet.href,
+          level: "warning",
+        });
+        throw e;
+      }
+    }
   },
 
   
@@ -406,7 +403,7 @@ StyleSheetEditor.prototype = {
 
 
 
-  onStyleApplied(update) {
+  async onStyleApplied(update) {
     const updateIsFromSyleSheetEditor =
       update?.event?.cause === STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR;
 
@@ -417,15 +414,22 @@ StyleSheetEditor.prototype = {
     }
 
     if (this.sourceEditor) {
-      this._getSourceTextAndPrettify().then(newText => {
-        this._justSetText = true;
-        const firstLine = this.sourceEditor.getFirstVisibleLine();
-        const pos = this.sourceEditor.getCursor();
-        this.sourceEditor.setText(newText);
-        this.sourceEditor.setFirstVisibleLine(firstLine);
-        this.sourceEditor.setCursor(pos);
-        this.emit("style-applied");
-      });
+      await this._fetchSourceText();
+
+      
+      this._prettifySourceTextIfNeeded();
+
+      
+      
+      const sourceText = this._state.text;
+
+      this._justSetText = true;
+      const firstLine = this.sourceEditor.getFirstVisibleLine();
+      const pos = this.sourceEditor.getCursor();
+      this.sourceEditor.setText(sourceText);
+      this.sourceEditor.setFirstVisibleLine(firstLine);
+      this.sourceEditor.setCursor(pos);
+      this.emit("style-applied");
     }
   },
 
@@ -471,6 +475,9 @@ StyleSheetEditor.prototype = {
     }
 
     this._inputElement = inputElement;
+
+    
+    this._prettifySourceTextIfNeeded();
 
     const walker = await this.getWalker();
     const config = {
