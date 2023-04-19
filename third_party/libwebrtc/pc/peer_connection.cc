@@ -567,6 +567,7 @@ PeerConnection::~PeerConnection() {
 
   
   
+  transport_controller_copy_ = nullptr;
   network_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
     RTC_DCHECK_RUN_ON(network_thread());
     TeardownDataChannelTransport_n();
@@ -615,20 +616,20 @@ RTCError PeerConnection::Initialize(
   }
 
   
-  network_thread()->Invoke<void>(RTC_FROM_HERE, [this, &stun_servers,
-                                                 &turn_servers, &configuration,
-                                                 &dependencies] {
-    RTC_DCHECK_RUN_ON(network_thread());
-    network_thread_safety_ = PendingTaskSafetyFlag::Create();
-    InitializePortAllocatorResult pa_result =
-        InitializePortAllocator_n(stun_servers, turn_servers, configuration);
-    
-    PeerConnectionAddressFamilyCounter address_family =
-        pa_result.enable_ipv6 ? kPeerConnection_IPv6 : kPeerConnection_IPv4;
-    RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.IPMetrics", address_family,
-                              kPeerConnectionAddressFamilyCounter_Max);
-    InitializeTransportController_n(configuration, dependencies);
-  });
+  transport_controller_copy_ =
+      network_thread()->Invoke<JsepTransportController*>(RTC_FROM_HERE, [&] {
+        RTC_DCHECK_RUN_ON(network_thread());
+        network_thread_safety_ = PendingTaskSafetyFlag::Create();
+        InitializePortAllocatorResult pa_result = InitializePortAllocator_n(
+            stun_servers, turn_servers, configuration);
+        
+        PeerConnectionAddressFamilyCounter address_family =
+            pa_result.enable_ipv6 ? kPeerConnection_IPv6 : kPeerConnection_IPv4;
+        RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.IPMetrics",
+                                  address_family,
+                                  kPeerConnectionAddressFamilyCounter_Max);
+        return InitializeTransportController_n(configuration, dependencies);
+      });
 
   configuration_ = configuration;
 
@@ -674,7 +675,7 @@ RTCError PeerConnection::Initialize(
   return RTCError::OK();
 }
 
-void PeerConnection::InitializeTransportController_n(
+JsepTransportController* PeerConnection::InitializeTransportController_n(
     const RTCConfiguration& configuration,
     const PeerConnectionDependencies& dependencies) {
   JsepTransportController::Config config;
@@ -793,6 +794,7 @@ void PeerConnection::InitializeTransportController_n(
       });
 
   transport_controller_->SetIceConfig(ParseIceConfig(configuration));
+  return transport_controller_.get();
 }
 
 rtc::scoped_refptr<StreamCollectionInterface> PeerConnection::local_streams() {
@@ -914,9 +916,12 @@ PeerConnection::AddTransceiver(
 }
 
 RtpTransportInternal* PeerConnection::GetRtpTransport(const std::string& mid) {
+  
+  
   RTC_DCHECK_RUN_ON(signaling_thread());
   return network_thread()->Invoke<RtpTransportInternal*>(
       RTC_FROM_HERE, [this, &mid] {
+        RTC_DCHECK_RUN_ON(network_thread());
         auto rtp_transport = transport_controller_->GetRtpTransport(mid);
         RTC_DCHECK(rtp_transport);
         return rtp_transport;
@@ -1506,6 +1511,7 @@ RTCError PeerConnection::SetConfiguration(
           RTC_FROM_HERE,
           [this, needs_ice_restart, &ice_config, &stun_servers, &turn_servers,
            &modified_config, has_local_description] {
+            RTC_DCHECK_RUN_ON(network_thread());
             
             
             
@@ -1529,8 +1535,11 @@ RTCError PeerConnection::SetConfiguration(
   if (configuration_.active_reset_srtp_params !=
       modified_config.active_reset_srtp_params) {
     
-    transport_controller_->SetActiveResetSrtpParams(
-        modified_config.active_reset_srtp_params);
+    network_thread()->Invoke<void>(RTC_FROM_HERE, [this, &modified_config] {
+      RTC_DCHECK_RUN_ON(network_thread());
+      transport_controller_->SetActiveResetSrtpParams(
+          modified_config.active_reset_srtp_params);
+    });
   }
 
   if (modified_config.allow_codec_switching.has_value()) {
@@ -1693,7 +1702,13 @@ PeerConnection::LookupDtlsTransportByMid(const std::string& mid) {
 rtc::scoped_refptr<DtlsTransport>
 PeerConnection::LookupDtlsTransportByMidInternal(const std::string& mid) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  return transport_controller_->LookupDtlsTransportByMid(mid);
+  
+  
+  return network_thread()->Invoke<rtc::scoped_refptr<DtlsTransport>>(
+      RTC_FROM_HERE, [this, mid]() {
+        RTC_DCHECK_RUN_ON(network_thread());
+        return transport_controller_->LookupDtlsTransportByMid(mid);
+      });
 }
 
 rtc::scoped_refptr<SctpTransportInterface> PeerConnection::GetSctpTransport()
@@ -1793,6 +1808,7 @@ void PeerConnection::Close() {
     
     
     
+    RTC_DCHECK_RUN_ON(network_thread());
     transport_controller_.reset();
     port_allocator_->DiscardCandidatePool();
     if (network_thread_safety_) {
@@ -2146,7 +2162,11 @@ bool PeerConnection::GetSctpSslRole(rtc::SSLRole* role) {
 
   absl::optional<rtc::SSLRole> dtls_role;
   if (sctp_mid_s_) {
-    dtls_role = transport_controller_->GetDtlsRole(*sctp_mid_s_);
+    dtls_role = network_thread()->Invoke<absl::optional<rtc::SSLRole>>(
+        RTC_FROM_HERE, [this] {
+          RTC_DCHECK_RUN_ON(network_thread());
+          return transport_controller_->GetDtlsRole(*sctp_mid_n_);
+        });
     if (!dtls_role && sdp_handler_->is_caller().has_value()) {
       dtls_role =
           *sdp_handler_->is_caller() ? rtc::SSL_SERVER : rtc::SSL_CLIENT;
@@ -2167,7 +2187,11 @@ bool PeerConnection::GetSslRole(const std::string& content_name,
     return false;
   }
 
-  auto dtls_role = transport_controller_->GetDtlsRole(content_name);
+  auto dtls_role = network_thread()->Invoke<absl::optional<rtc::SSLRole>>(
+      RTC_FROM_HERE, [this, content_name]() {
+        RTC_DCHECK_RUN_ON(network_thread());
+        return transport_controller_->GetDtlsRole(content_name);
+      });
   if (dtls_role) {
     *role = *dtls_role;
     return true;
@@ -2198,7 +2222,7 @@ std::vector<DataChannelStats> PeerConnection::GetDataChannelStats() const {
 
 absl::optional<std::string> PeerConnection::sctp_transport_name() const {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (sctp_mid_s_ && transport_controller_)
+  if (sctp_mid_s_ && transport_controller_copy_)
     return sctp_transport_name_s_;
   return absl::optional<std::string>();
 }
@@ -2864,7 +2888,7 @@ void PeerConnection::StartSctpTransport(int local_port,
       network_thread_safety_,
       [this, mid = *sctp_mid_s_, local_port, remote_port, max_message_size] {
         rtc::scoped_refptr<SctpTransport> sctp_transport =
-            transport_controller()->GetSctpTransport(mid);
+            transport_controller_n()->GetSctpTransport(mid);
         if (sctp_transport)
           sctp_transport->Start(local_port, remote_port, max_message_size);
       }));
