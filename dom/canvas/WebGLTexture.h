@@ -120,11 +120,6 @@ class WebGLTexture final : public WebGLContextBoundObject,
   
   
 
-  
-  
-  bool mBaseMipmapLevelDirty;
-  bool mMaxMipmapLevelDirty;
-
   webgl::SamplingState mSamplingState;
 
   mutable const GLint* mCurSwizzle =
