@@ -75,6 +75,18 @@ enum class OverloadReason {
   kMemory
 };
 
+enum class FrameComparisonType {
+  
+  kRegular,
+  
+  
+  kDroppedFrame,
+  
+  
+  
+  kFrameInFlight
+};
+
 
 
 
@@ -87,7 +99,7 @@ struct FrameComparison {
   FrameComparison(InternalStatsKey stats_key,
                   absl::optional<VideoFrame> captured,
                   absl::optional<VideoFrame> rendered,
-                  bool dropped,
+                  FrameComparisonType type,
                   FrameStats frame_stats,
                   OverloadReason overload_reason);
 
@@ -96,10 +108,7 @@ struct FrameComparison {
   
   absl::optional<VideoFrame> captured;
   absl::optional<VideoFrame> rendered;
-  
-  
-  
-  bool dropped;
+  FrameComparisonType type;
   FrameStats frame_stats;
   OverloadReason overload_reason;
 };

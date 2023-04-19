@@ -92,10 +92,18 @@ class DefaultVideoQualityAnalyzerFramesComparator {
           stream_started_time,
       Timestamp start_time);
 
+  
+  
+  
+  
+  
+  
+  
+  
   void AddComparison(InternalStatsKey stats_key,
                      absl::optional<VideoFrame> captured,
                      absl::optional<VideoFrame> rendered,
-                     bool dropped,
+                     FrameComparisonType type,
                      FrameStats frame_stats);
   
   
@@ -103,7 +111,7 @@ class DefaultVideoQualityAnalyzerFramesComparator {
                      int skipped_between_rendered,
                      absl::optional<VideoFrame> captured,
                      absl::optional<VideoFrame> rendered,
-                     bool dropped,
+                     FrameComparisonType type,
                      FrameStats frame_stats);
 
   std::map<InternalStatsKey, webrtc_pc_e2e::StreamStats> stream_stats() const {
@@ -121,7 +129,7 @@ class DefaultVideoQualityAnalyzerFramesComparator {
   void AddComparisonInternal(InternalStatsKey stats_key,
                              absl::optional<VideoFrame> captured,
                              absl::optional<VideoFrame> rendered,
-                             bool dropped,
+                             FrameComparisonType type,
                              FrameStats frame_stats)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void ProcessComparisons();
