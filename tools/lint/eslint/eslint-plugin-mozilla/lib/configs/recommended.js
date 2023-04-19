@@ -57,6 +57,7 @@ module.exports = {
         
         
         "mozilla/reject-importGlobalProperties": ["error", "everything"],
+        "mozilla/reject-mixing-eager-and-lazy": "error",
         "mozilla/reject-top-level-await": "error",
         
         
