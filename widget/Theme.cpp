@@ -1401,7 +1401,7 @@ bool Theme::GetWidgetPadding(nsDeviceContext* aContext, nsIFrame* aFrame,
 bool Theme::GetWidgetOverflow(nsDeviceContext* aContext, nsIFrame* aFrame,
                               StyleAppearance aAppearance,
                               nsRect* aOverflowRect) {
-  CSSIntMargin overflow;
+  nsIntMargin overflow;
   switch (aAppearance) {
     case StyleAppearance::FocusOutline:
       
@@ -1433,7 +1433,11 @@ bool Theme::GetWidgetOverflow(nsDeviceContext* aContext, nsIFrame* aFrame,
   
   
   
-  aOverflowRect->Inflate(CSSPixel::ToAppUnits(overflow));
+  aOverflowRect->Inflate(nsMargin(CSSPixel::ToAppUnits(overflow.top),
+                                  CSSPixel::ToAppUnits(overflow.right),
+                                  CSSPixel::ToAppUnits(overflow.bottom),
+                                  CSSPixel::ToAppUnits(overflow.left)));
+
   return true;
 }
 
