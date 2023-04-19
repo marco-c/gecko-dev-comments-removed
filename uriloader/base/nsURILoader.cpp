@@ -568,7 +568,15 @@ nsresult nsDocumentOpenInfo::ConvertData(nsIRequest* request,
 
 nsresult nsDocumentOpenInfo::TryStreamConversion(nsIChannel* aChannel) {
   constexpr auto anyType = "*/*"_ns;
-  nsresult rv = ConvertData(aChannel, m_contentListener, mContentType, anyType);
+
+  
+  nsCString srcContentType(mContentType);
+  if (srcContentType.IsEmpty()) {
+    srcContentType.AssignLiteral(UNKNOWN_CONTENT_TYPE);
+  }
+
+  nsresult rv =
+      ConvertData(aChannel, m_contentListener, srcContentType, anyType);
   if (NS_FAILED(rv)) {
     m_targetStreamListener = nullptr;
   } else if (m_targetStreamListener) {

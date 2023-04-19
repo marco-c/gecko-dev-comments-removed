@@ -457,7 +457,8 @@ nsViewSourceChannel::GetContentType(nsACString& aContentType) {
     
     
     
-    if (!contentType.EqualsLiteral(UNKNOWN_CONTENT_TYPE)) {
+    if (!contentType.EqualsLiteral(UNKNOWN_CONTENT_TYPE) &&
+        !contentType.IsEmpty()) {
       contentType = VIEWSOURCE_CONTENT_TYPE;
     }
 
