@@ -32,7 +32,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const page = document.querySelector(":root[dialogroot=true]") ? "spotlight" : "about:welcome";
+
+
+const page = document.querySelector(":root[dialogroot=true]") ? "spotlight" : document.location.href;
 const AboutWelcomeUtils = {
   handleUserAction(action) {
     window.AWSendToParent("SPECIAL_ACTION", action);

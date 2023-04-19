@@ -3,9 +3,11 @@
 
 
 
+
+
 const page = document.querySelector(":root[dialogroot=true]")
   ? "spotlight"
-  : "about:welcome";
+  : document.location.href;
 
 export const AboutWelcomeUtils = {
   handleUserAction(action) {
