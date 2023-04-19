@@ -145,7 +145,7 @@ RefPtr<MemoryPromise> CollectMemoryInfo(
           
           
           
-          jsMemUsed += js::GetMemoryUsageForObjectZone(object);
+          jsMemUsed += js::GetMemoryUsageForZone(zone);
           if (!zonesVisited.add(p, zone)) {
             
             break;
