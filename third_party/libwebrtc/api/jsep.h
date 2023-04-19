@@ -139,7 +139,7 @@ class RTC_EXPORT SessionDescriptionInterface {
   
   
   
-  virtual std::unique_ptr<SessionDescriptionInterface> Clone() {
+  virtual std::unique_ptr<SessionDescriptionInterface> Clone() const {
     return nullptr;
   }
 
