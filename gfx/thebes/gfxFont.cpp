@@ -2464,61 +2464,23 @@ bool gfxFont::RenderSVGGlyph(gfxContext* aContext,
 
 bool gfxFont::RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
                                layout::TextDrawTarget* aTextDrawer,
-                               mozilla::gfx::ScaledFont* scaledFont,
-                               mozilla::gfx::DrawOptions aDrawOptions,
-                               const mozilla::gfx::Point& aPoint,
+                               ScaledFont* aScaledFont,
+                               DrawOptions aDrawOptions, const Point& aPoint,
                                uint32_t aGlyphId) const {
-  AutoTArray<uint16_t, 8> layerGlyphs;
-  AutoTArray<mozilla::gfx::DeviceColor, 8> layerColors;
+  DeviceColor ctxColor;
+  sRGBColor currentColor = aContext->GetDeviceColor(ctxColor)
+                               ? sRGBColor::FromABGR(ctxColor.ToABGR())
+                               : sRGBColor::OpaqueBlack();
 
-  mozilla::gfx::DeviceColor ctxColor;
-  if (!aContext->GetDeviceColor(ctxColor)) {
-    ctxColor = ToDeviceColor(mozilla::gfx::sRGBColor::OpaqueBlack());
-  }
-  if (!COLRFonts::GetColorGlyphLayers(GetFontEntry()->GetCOLR(),
-                                      GetFontEntry()->GetCPAL(), aGlyphId,
-                                      ctxColor, layerGlyphs, layerColors)) {
-    return false;
-  }
-
-  
-  float alpha = 1.0;
-  if (aTextDrawer) {
-    
-    bool hasComplexTransparency = 0.f < ctxColor.a && ctxColor.a < 1.f;
-    if (hasComplexTransparency && layerGlyphs.Length() > 1) {
-      
-      
-      
-      aTextDrawer->FoundUnsupportedFeature();
-      return true;
-    }
-
-    
-    
-    
-    
-    
-    
-    alpha = ctxColor.a;
+  if (const auto* layers =
+          COLRFonts::GetGlyphLayers(GetFontEntry()->GetCOLR(), aGlyphId)) {
+    return COLRFonts::PaintGlyphLayers(GetFontEntry()->GetCOLR(),
+                                       GetFontEntry()->GetCPAL(), layers,
+                                       aDrawTarget, aTextDrawer, aScaledFont,
+                                       aDrawOptions, currentColor, aPoint);
   }
 
-  for (uint32_t layerIndex = 0; layerIndex < layerGlyphs.Length();
-       layerIndex++) {
-    Glyph glyph;
-    glyph.mIndex = layerGlyphs[layerIndex];
-    glyph.mPosition = aPoint;
-
-    mozilla::gfx::GlyphBuffer buffer;
-    buffer.mGlyphs = &glyph;
-    buffer.mNumGlyphs = 1;
-
-    mozilla::gfx::DeviceColor layerColor = layerColors[layerIndex];
-    layerColor.a *= alpha;
-    aDrawTarget->FillGlyphs(scaledFont, buffer, ColorPattern(layerColor),
-                            aDrawOptions);
-  }
-  return true;
+  return false;
 }
 
 bool gfxFont::HasColorGlyphFor(uint32_t aCh, uint32_t aNextCh) {
@@ -2544,7 +2506,7 @@ bool gfxFont::HasColorGlyphFor(uint32_t aCh, uint32_t aNextCh) {
   }
   
   if (fe->TryGetColorGlyphs() &&
-      COLRFonts::HasColorLayersForGlyph(fe->GetCOLR(), gid)) {
+      COLRFonts::GetGlyphLayers(fe->GetCOLR(), gid)) {
     return true;
   }
   if (fe->TryGetSVGData(this) && fe->HasSVGGlyph(gid)) {
