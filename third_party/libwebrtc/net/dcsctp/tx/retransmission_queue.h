@@ -116,6 +116,9 @@ class RetransmissionQueue {
   size_t outstanding_bytes() const { return outstanding_bytes_; }
 
   
+  size_t outstanding_items() const { return outstanding_items_; }
+
+  
   
   
   bool ShouldSendForwardTsn(TimeMs now);
@@ -381,6 +384,9 @@ class RetransmissionQueue {
   std::set<UnwrappedTSN> to_be_retransmitted_;
   
   size_t outstanding_bytes_ = 0;
+  
+  
+  size_t outstanding_items_ = 0;
 };
 }  
 
