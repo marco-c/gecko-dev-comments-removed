@@ -1220,39 +1220,43 @@ static ArenaCollection gArenas;
 static AddressRadixTree<(sizeof(void*) << 3) - LOG2(kChunkSize)> gChunkRTree;
 
 
-static Mutex chunks_mtx MOZ_UNANNOTATED;
+static Mutex chunks_mtx;
 
 
 
 
 
-static RedBlackTree<extent_node_t, ExtentTreeSzTrait> gChunksBySize;
-static RedBlackTree<extent_node_t, ExtentTreeTrait> gChunksByAddress;
+static RedBlackTree<extent_node_t, ExtentTreeSzTrait> gChunksBySize
+    MOZ_GUARDED_BY(chunks_mtx);
+static RedBlackTree<extent_node_t, ExtentTreeTrait> gChunksByAddress
+    MOZ_GUARDED_BY(chunks_mtx);
 
 
-static Mutex huge_mtx MOZ_UNANNOTATED;
+static Mutex huge_mtx;
 
 
-static RedBlackTree<extent_node_t, ExtentTreeTrait> huge;
+static RedBlackTree<extent_node_t, ExtentTreeTrait> huge
+    MOZ_GUARDED_BY(huge_mtx);
 
 
-static size_t huge_allocated;
-static size_t huge_mapped;
-
-
-
-
+static size_t huge_allocated MOZ_GUARDED_BY(huge_mtx);
+static size_t huge_mapped MOZ_GUARDED_BY(huge_mtx);
 
 
 
 
-static void* base_pages;
-static void* base_next_addr;
-static void* base_next_decommitted;
-static void* base_past_addr;  
-static Mutex base_mtx MOZ_UNANNOTATED;
-static size_t base_mapped;
-static size_t base_committed;
+static Mutex base_mtx;
+
+
+
+
+static void* base_pages MOZ_GUARDED_BY(base_mtx);
+static void* base_next_addr MOZ_GUARDED_BY(base_mtx);
+static void* base_next_decommitted MOZ_GUARDED_BY(base_mtx);
+
+static void* base_past_addr MOZ_GUARDED_BY(base_mtx);
+static size_t base_mapped MOZ_GUARDED_BY(base_mtx);
+static size_t base_committed MOZ_GUARDED_BY(base_mtx);
 
 
 
@@ -1536,7 +1540,7 @@ static inline void pages_decommit(void* aAddr, size_t aSize) {
   return true;
 }
 
-static bool base_pages_alloc(size_t minsize) {
+static bool base_pages_alloc(size_t minsize) MOZ_REQUIRES(base_mtx) {
   size_t csize;
   size_t pminsize;
 
@@ -4217,19 +4221,25 @@ static bool malloc_init_hard() {
 
   
   chunks_mtx.Init();
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   gChunksBySize.Init();
   gChunksByAddress.Init();
+  MOZ_POP_THREAD_SAFETY
 
   
   huge_mtx.Init();
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   huge.Init();
   huge_allocated = 0;
   huge_mapped = 0;
+  MOZ_POP_THREAD_SAFETY
 
   
+  base_mtx.Init();
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   base_mapped = 0;
   base_committed = 0;
-  base_mtx.Init();
+  MOZ_POP_THREAD_SAFETY
 
   
   if (!gArenas.Init()) {

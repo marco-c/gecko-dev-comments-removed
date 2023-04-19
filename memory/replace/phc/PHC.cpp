@@ -786,7 +786,8 @@ class GMut {
     MOZ_CRASH("unreachable");
   }
 
-  void EnsureValidAndInUse(GMutLock, void* aPtr, uintptr_t aIndex) {
+  void EnsureValidAndInUse(GMutLock, void* aPtr, uintptr_t aIndex)
+      MOZ_REQUIRES(sMutex) {
     const AllocPageInfo& page = mAllocPages[aIndex];
 
     
@@ -800,9 +801,7 @@ class GMut {
       
       
       
-      MOZ_PUSH_IGNORE_THREAD_SAFETY
       sMutex.Unlock();
-      MOZ_POP_THREAD_SAFETY
       *static_cast<uint8_t*>(aPtr) = 0;
       MOZ_CRASH("unreachable");
     }
