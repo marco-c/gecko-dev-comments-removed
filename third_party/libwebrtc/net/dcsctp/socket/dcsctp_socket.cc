@@ -763,12 +763,7 @@ absl::optional<DurationMs> DcSctpSocket::OnShutdownTimerExpiry() {
                        << " has expired: " << t2_shutdown_->expiration_count()
                        << "/" << t2_shutdown_->options().max_restarts;
 
-  
-  
-  
-  if (t2_shutdown_->is_running()) {
-    SendShutdown();
-  } else {
+  if (!t2_shutdown_->is_running()) {
     
     
     
@@ -781,7 +776,14 @@ absl::optional<DurationMs> DcSctpSocket::OnShutdownTimerExpiry() {
                              .Build())));
 
     InternalClose(ErrorKind::kTooManyRetries, "No SHUTDOWN_ACK received");
+    RTC_DCHECK(IsConsistent());
+    return absl::nullopt;
   }
+
+  
+  
+  
+  SendShutdown();
   RTC_DCHECK(IsConsistent());
   return tcb_->current_rto();
 }
