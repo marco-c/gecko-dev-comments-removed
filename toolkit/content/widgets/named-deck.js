@@ -308,6 +308,10 @@
 
 
 
+
+
+
+
   class NamedDeck extends HTMLElement {
     static get observedAttributes() {
       return ["selected-view"];
@@ -372,8 +376,11 @@
       let { selectedViewName } = this;
       for (let view of this.children) {
         let name = view.getAttribute("name");
-        view.setAttribute("aria-labelledby", `${this.id}-button-${name}`);
-        view.setAttribute("role", "tabpanel");
+
+        if (this.hasAttribute("is-tabbed")) {
+          view.setAttribute("aria-labelledby", `${this.id}-button-${name}`);
+          view.setAttribute("role", "tabpanel");
+        }
 
         if (name === selectedViewName) {
           view.slot = "selected";
