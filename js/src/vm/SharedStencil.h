@@ -25,6 +25,7 @@
 #include "js/AllocPolicy.h"            
 #include "js/TypeDecls.h"              
 #include "js/UniquePtr.h"              
+#include "js/Vector.h"                 
 #include "util/EnumFlags.h"            
 #include "util/TrailingArray.h"        
 #include "vm/GeneratorAndAsyncKind.h"  
@@ -794,6 +795,12 @@ struct MemberInitializers {
         numMemberInitializers(0) {
   }
 };
+
+
+using FunctionDeclaration = GCThingIndex;
+
+using FunctionDeclarationVector =
+    Vector<FunctionDeclaration, 0, js::SystemAllocPolicy>;
 
 }  
 

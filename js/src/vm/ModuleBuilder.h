@@ -77,7 +77,7 @@ class MOZ_STACK_CLASS ModuleBuilder {
   AtomSet exportNames_;
 
   
-  frontend::FunctionDeclarationVector functionDecls_;
+  FunctionDeclarationVector functionDecls_;
 
   frontend::StencilModuleEntry* importEntryFor(
       frontend::TaggedParserAtomIndex localName) const;
