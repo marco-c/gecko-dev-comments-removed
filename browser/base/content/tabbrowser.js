@@ -3269,6 +3269,7 @@
       
       if (typeof index != "number") {
         
+        index = Infinity;
         if (
           !bulkOrderedOpen &&
           ((openerTab &&
@@ -3281,9 +3282,12 @@
             openerTab && this._lastRelatedTabMap.get(openerTab);
           let previousTab = lastRelatedTab || openerTab || this.selectedTab;
           if (previousTab.multiselected) {
-            index = this.selectedTabs[this.selectedTabs.length - 1]._tPos + 1;
-          } else {
+            previousTab = this.selectedTabs.at(-1);
+          }
+          if (!previousTab.hidden) {
             index = previousTab._tPos + 1;
+          } else if (previousTab == FirefoxViewHandler.tab) {
+            index = 0;
           }
 
           if (lastRelatedTab) {
@@ -3295,8 +3299,6 @@
           if (openerTab) {
             this._lastRelatedTabMap.set(openerTab, tab);
           }
-        } else {
-          index = Infinity;
         }
       }
       
