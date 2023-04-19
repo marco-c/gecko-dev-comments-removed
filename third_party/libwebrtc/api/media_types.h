@@ -15,16 +15,23 @@
 
 #include "rtc_base/system/rtc_export.h"
 
+namespace webrtc {
+
+enum class MediaType { ANY, AUDIO, VIDEO, DATA, UNSUPPORTED };
+
+}  
+
+
 
 
 
 namespace cricket {
 
 enum MediaType {
-  MEDIA_TYPE_AUDIO,
-  MEDIA_TYPE_VIDEO,
-  MEDIA_TYPE_DATA,
-  MEDIA_TYPE_UNSUPPORTED
+  MEDIA_TYPE_AUDIO = static_cast<int>(webrtc::MediaType::AUDIO),
+  MEDIA_TYPE_VIDEO = static_cast<int>(webrtc::MediaType::VIDEO),
+  MEDIA_TYPE_DATA = static_cast<int>(webrtc::MediaType::DATA),
+  MEDIA_TYPE_UNSUPPORTED = static_cast<int>(webrtc::MediaType::UNSUPPORTED),
 };
 
 extern const char kMediaTypeAudio[];
@@ -32,12 +39,6 @@ extern const char kMediaTypeVideo[];
 extern const char kMediaTypeData[];
 
 RTC_EXPORT std::string MediaTypeToString(MediaType type);
-
-}  
-
-namespace webrtc {
-
-enum class MediaType { ANY, AUDIO, VIDEO, DATA };
 
 }  
 
