@@ -167,7 +167,7 @@ var SidebarUI = {
           
           
           this.hide();
-          this._show(this.lastOpenedId);
+          this.showInitially(this.lastOpenedId);
           break;
         }
       }
