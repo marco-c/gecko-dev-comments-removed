@@ -4,6 +4,23 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const Services = require("Services");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 const { Cc, Ci } = require("chrome");
@@ -189,7 +206,10 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
       isWindowlessParent: this.isWindowlessParent,
       traits: {
         
-        watcher: true,
+        
+        
+        
+        watcher: this.isParent,
         
         supportsReloadDescriptor: this.isParent && !this.isWindowlessParent,
       },

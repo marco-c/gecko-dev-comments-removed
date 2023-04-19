@@ -7,6 +7,7 @@
 const {
   TYPES: { SOURCE },
 } = require("devtools/server/actors/resources/index");
+const Targets = require("devtools/server/actors/targets/index");
 
 const { STATES: THREAD_STATES } = require("devtools/server/actors/thread");
 
@@ -27,6 +28,16 @@ class SourceWatcher {
   }
 
   async watch(targetActor, { onAvailable }) {
+    
+    
+    if (
+      targetActor.sessionContext.type == "all" &&
+      targetActor.targetType === Targets.TYPES.FRAME &&
+      targetActor.typeName != "parentProcessTarget"
+    ) {
+      return;
+    }
+
     const { threadActor } = targetActor;
     this.sourcesManager = targetActor.sourcesManager;
     this.onAvailable = onAvailable;
@@ -36,6 +47,9 @@ class SourceWatcher {
 
     threadActor.sourcesManager.on("newSource", this.onNewSource);
 
+    
+    
+    
     
     
     
@@ -66,7 +80,9 @@ class SourceWatcher {
 
 
   destroy() {
-    this.sourcesManager.off("newSource", this.onNewSource);
+    if (this.sourcesManager) {
+      this.sourcesManager.off("newSource", this.onNewSource);
+    }
   }
 
   onNewSource(source) {
