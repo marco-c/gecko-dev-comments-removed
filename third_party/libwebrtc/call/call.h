@@ -116,6 +116,11 @@ class Call {
   virtual void OnAudioTransportOverheadChanged(
       int transport_overhead_per_packet) = 0;
 
+  
+  
+  virtual void OnLocalSsrcUpdated(AudioReceiveStream& stream,
+                                  uint32_t local_ssrc) = 0;
+
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
 
   virtual void SetClientBitratePreferences(
