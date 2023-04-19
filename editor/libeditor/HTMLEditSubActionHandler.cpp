@@ -7505,6 +7505,10 @@ SplitNodeResult HTMLEditor::SplitParagraphWithTransaction(
           return NS_OK;
         }
 
+        
+        
+        
+        
         CreateElementResult insertBRElementResult = InsertBRElement(
             WithTransaction::Yes, EditorDOMPoint(&aElement, 0u));
         if (insertBRElementResult.isErr()) {
@@ -7527,18 +7531,74 @@ SplitNodeResult HTMLEditor::SplitParagraphWithTransaction(
         "InsertBRElementIfEmptyBlockElement(leftDivOrParagraphElement) failed");
     return SplitNodeResult(rv);
   }
-  
-  
-  rv = InsertBRElementIfEmptyBlockElement(
-      MOZ_KnownLive(*rightDivOrParagraphElement));
-  if (NS_FAILED(rv)) {
-    NS_WARNING(
-        "InsertBRElementIfEmptyBlockElement(rightDivOrParagraphElement) "
-        "failed");
-    return SplitNodeResult(rv);
+
+  if (HTMLEditUtils::IsEmptyNode(*rightDivOrParagraphElement)) {
+    
+    
+    
+    const RefPtr<Element> deepestInlineContainerElement =
+        [](const Element& aBlockElement) {
+          Element* result = nullptr;
+          for (Element* maybeDeepestInlineContainer =
+                   Element::FromNodeOrNull(aBlockElement.GetFirstChild());
+               maybeDeepestInlineContainer &&
+               HTMLEditUtils::IsInlineElement(*maybeDeepestInlineContainer) &&
+               HTMLEditUtils::IsContainerNode(*maybeDeepestInlineContainer);
+               maybeDeepestInlineContainer =
+                   maybeDeepestInlineContainer->GetFirstElementChild()) {
+            result = maybeDeepestInlineContainer;
+          }
+          return result;
+        }(*rightDivOrParagraphElement);
+    if (deepestInlineContainerElement) {
+      RefPtr<HTMLBRElement> brElement =
+          HTMLEditUtils::GetFirstBRElement(*rightDivOrParagraphElement);
+      
+      
+      
+      if (brElement &&
+          brElement->GetParentNode() == deepestInlineContainerElement) {
+        brElement->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
+        return SplitNodeResult(std::move(splitDivOrPResult),
+                               EditorDOMPoint(brElement));
+      }
+      
+      
+      
+      if (brElement) {
+        nsresult rv = DeleteNodeWithTransaction(*brElement);
+        if (NS_FAILED(rv)) {
+          NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+          return SplitNodeResult(rv);
+        }
+      }
+      const CreateElementResult insertPaddingBRElementResult =
+          InsertPaddingBRElementForEmptyLastLineWithTransaction(
+              EditorDOMPoint::AtEndOf(deepestInlineContainerElement));
+      if (insertPaddingBRElementResult.isErr()) {
+        NS_WARNING(
+            "HTMLEditor::"
+            "InsertPaddingBRElementForEmptyLastLineWithTransaction() failed");
+        return SplitNodeResult(insertPaddingBRElementResult.inspectErr());
+      }
+      insertPaddingBRElementResult.IgnoreCaretPointSuggestion();
+      return SplitNodeResult(
+          std::move(splitDivOrPResult),
+          EditorDOMPoint(insertPaddingBRElementResult.GetNewNode()));
+    }
+
+    
+    
+    nsresult rv = InsertBRElementIfEmptyBlockElement(
+        MOZ_KnownLive(*rightDivOrParagraphElement));
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "InsertBRElementIfEmptyBlockElement(rightDivOrParagraphElement) "
+          "failed");
+      return SplitNodeResult(rv);
+    }
   }
 
-  
   
   nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
       *rightDivOrParagraphElement, {LeafNodeType::LeafNodeOrChildBlock});
@@ -9002,7 +9062,9 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
         previousEditableContent->IsHTMLElement(nsGkAtoms::br)) {
       
       
-      if (HTMLEditUtils::IsInvisibleBRElement(*previousEditableContent)) {
+      if (HTMLEditUtils::IsInvisibleBRElement(*previousEditableContent) &&
+          !EditorUtils::IsPaddingBRElementForEmptyLastLine(
+              *previousEditableContent)) {
         CreateElementResult insertPaddingBRElementResult =
             InsertPaddingBRElementForEmptyLastLineWithTransaction(point);
         if (insertPaddingBRElementResult.isErr()) {

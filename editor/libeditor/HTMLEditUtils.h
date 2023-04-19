@@ -1624,6 +1624,28 @@ class HTMLEditUtils final {
 
 
 
+  static dom::HTMLBRElement* GetFirstBRElement(const dom::Element& aElement) {
+    for (nsIContent* content = HTMLEditUtils::GetFirstLeafContent(
+             aElement, {LeafNodeType::OnlyLeafNode});
+         content; content = HTMLEditUtils::GetNextContent(
+                      *content,
+                      {WalkTreeOption::IgnoreDataNodeExceptText,
+                       WalkTreeOption::IgnoreWhiteSpaceOnlyText},
+                      &aElement)) {
+      if (auto* brElement = dom::HTMLBRElement::FromNode(*content)) {
+        return brElement;
+      }
+    }
+    return nullptr;
+  }
+
+  
+
+
+
+
+
+
 
   static bool IsInTableCellSelectionMode(const Selection& aSelection) {
     return GetFirstSelectedTableCellElement(aSelection) != nullptr;
