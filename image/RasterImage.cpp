@@ -339,12 +339,25 @@ LookupResult RasterImage::LookupFrame(const OrientedIntSize& aSize,
     return LookupResult(MatchType::NOT_FOUND);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const bool syncDecode = aFlags & FLAG_SYNC_DECODE;
   const bool avoidRedecode = aFlags & FLAG_AVOID_REDECODE_FOR_SIZE;
   if (result.Type() == MatchType::NOT_FOUND ||
       (result.Type() == MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND &&
        !avoidRedecode) ||
-      (syncDecode && !avoidRedecode && !result)) {
+      (syncDecode && !avoidRedecode && !result && LoadAllSourceData())) {
     
     
     
