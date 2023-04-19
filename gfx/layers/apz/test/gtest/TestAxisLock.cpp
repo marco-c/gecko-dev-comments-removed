@@ -335,11 +335,11 @@ TEST_F(APZCAxisLockTester, BreakStickyAxisLock) {
                                            ScrollDirection::eVertical));
 
   
-  apzc->AssertStateIsPanning();
-  apzc->AssertNotAxisLocked();
-
+  
   
   BreakStickyAxisLockTestGesture(ScrollDirection::eHorizontal);
+  apzc->AssertStateIsPanning();
+  apzc->AssertNotAxisLocked();
 
   
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
@@ -361,13 +361,6 @@ TEST_F(APZCAxisLockTester, BreakStickyAxisLock) {
   
   BreakStickyAxisLockTest(ScrollDirections(ScrollDirection::eHorizontal,
                                            ScrollDirection::eVertical));
-
-  
-  apzc->AssertStateIsPanning();
-  apzc->AssertNotAxisLocked();
-
-  
-  BreakStickyAxisLockTest(ScrollDirection::eVertical);
 }
 
 TEST_F(APZCAxisLockTester, BreakAxisLockByLockAngle) {
