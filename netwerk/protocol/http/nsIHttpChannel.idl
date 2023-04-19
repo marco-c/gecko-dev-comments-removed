@@ -211,13 +211,6 @@ interface nsIHttpChannel : nsIIdentChannel
 
 
 
-    [must_use] attribute boolean allowPipelining;
-
-    
-
-
-
-
 
 
 
