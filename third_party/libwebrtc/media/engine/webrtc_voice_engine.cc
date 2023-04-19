@@ -1863,12 +1863,14 @@ void WebRtcVoiceMediaChannel::SetSend(bool send) {
   }
 
   
-  
   if (send) {
     engine()->ApplyOptions(options_);
 
     
-    if (!engine()->adm()->RecordingIsInitialized() &&
+    
+    if (options_.init_recording_on_send.value_or(true) &&
+        
+        !engine()->adm()->RecordingIsInitialized() &&
         !engine()->adm()->Recording()) {
       if (engine()->adm()->InitRecording() != 0) {
         RTC_LOG(LS_WARNING) << "Failed to initialize recording";

@@ -83,6 +83,10 @@ struct RTC_EXPORT AudioOptions {
   absl::optional<bool> audio_network_adaptor;
   
   absl::optional<std::string> audio_network_adaptor_config;
+  
+  
+  
+  absl::optional<bool> init_recording_on_send;
 };
 
 }  

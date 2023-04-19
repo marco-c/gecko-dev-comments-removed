@@ -68,6 +68,7 @@ class MediaConstraints {
   static const char kAudioMirroring[];        
   static const char
       kAudioNetworkAdaptorConfig[];  
+  static const char kInitAudioRecordingOnSend[];  
 
   
   
