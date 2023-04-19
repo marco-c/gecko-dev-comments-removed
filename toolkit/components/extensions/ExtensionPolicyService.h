@@ -60,6 +60,12 @@ class ExtensionPolicyService final : public nsIAddonPolicyService,
     return do_AddRef(&GetSingleton());
   }
 
+  
+  
+  
+  static RefPtr<extensions::WebExtensionPolicyCore> GetCoreByHost(
+      const nsACString& aHost);
+
   WebExtensionPolicy* GetByID(const nsAtom* aAddonId) {
     return mExtensions.GetWeak(aAddonId);
   }
