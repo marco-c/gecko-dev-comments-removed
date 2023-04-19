@@ -1405,7 +1405,17 @@ static inline StallSpecs GetStallSpecs() {
   return maxStall;
 #  elif defined(NIGHTLY_BUILD)
   
-  return maxStall;
+  
+  switch (GetGeckoProcessType()) {
+    
+    
+    case GeckoProcessType::GeckoProcessType_Default:
+      return maxStall;
+
+    
+    default:
+      return {.maxAttempts = kMaxAttempts / 2, .delayMs = kDelayMs};
+  }
 #  else
   
   if (GetGeckoProcessType() == GeckoProcessType::GeckoProcessType_Default) {
