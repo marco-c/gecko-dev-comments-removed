@@ -112,7 +112,9 @@ async function setup(configuration) {
     }
   );
 
-  const cleanup = () => client.db.clear();
+  
+  const cleanup = () =>
+    client.db.importChanges({}, Date.now(), [], { clear: true });
   return { client, cleanup };
 }
 
@@ -148,7 +150,7 @@ add_task(async function test_remote_fetch_and_ready() {
 
   await ExperimentAPI.ready();
 
-  let { client: rsClient, cleanup } = await setup();
+  let { cleanup } = await setup();
 
   
   
@@ -224,7 +226,7 @@ add_task(async function test_remote_fetch_and_ready() {
   Assert.equal(barInstance.getVariable("remoteValue"), 3, "Has rollout value");
 
   
-  await rsClient.db.clear();
+  await cleanup();
   await RemoteSettingsExperimentLoader.updateRecipes(
     "browser_rsel_remote_defaults"
   );

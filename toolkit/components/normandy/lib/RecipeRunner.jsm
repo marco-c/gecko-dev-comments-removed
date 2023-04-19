@@ -333,7 +333,10 @@ var RecipeRunner = {
       
       let recipesAndSignatures;
       try {
-        recipesAndSignatures = await lazy.gRemoteSettingsClient.get();
+        recipesAndSignatures = await lazy.gRemoteSettingsClient.get({
+          
+          emptyListFallback: false,
+        });
       } catch (e) {
         await lazy.Uptake.reportRunner(lazy.Uptake.RUNNER_SERVER_ERROR);
         return;

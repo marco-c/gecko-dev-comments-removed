@@ -205,7 +205,10 @@ class _RemoteSettingsExperimentLoader {
     let loadingError = false;
 
     try {
-      recipes = await this.remoteSettingsClient.get();
+      recipes = await this.remoteSettingsClient.get({
+        
+        emptyListFallback: false,
+      });
       lazy.log.debug(`Got ${recipes.length} recipes from Remote Settings`);
     } catch (e) {
       lazy.log.debug("Error getting recipes from remote settings.");
@@ -296,7 +299,10 @@ class _RemoteSettingsExperimentLoader {
     try {
       recipes = await lazy
         .RemoteSettings(collection || lazy.COLLECTION_ID)
-        .get();
+        .get({
+          
+          emptyListFallback: false,
+        });
     } catch (e) {
       Cu.reportError(e);
       throw new Error("Error getting recipes from remote settings.");
