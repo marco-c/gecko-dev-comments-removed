@@ -13,6 +13,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "api/scoped_refptr.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/ref_counter.h"
@@ -69,6 +70,15 @@ class FinalRefCountedObject final : public T {
   FinalRefCountedObject(const FinalRefCountedObject&) = delete;
   FinalRefCountedObject& operator=(const FinalRefCountedObject&) = delete;
 
+  template <class P0>
+  explicit FinalRefCountedObject(P0&& p0) : T(std::forward<P0>(p0)) {}
+
+  template <class P0, class P1, class... Args>
+  FinalRefCountedObject(P0&& p0, P1&& p1, Args&&... args)
+      : T(std::forward<P0>(p0),
+          std::forward<P1>(p1),
+          std::forward<Args>(args)...) {}
+
   void AddRef() const { ref_count_.IncRef(); }
   void Release() const {
     if (ref_count_.DecRef() == RefCountReleaseStatus::kDroppedLastRef) {
@@ -81,6 +91,113 @@ class FinalRefCountedObject final : public T {
   ~FinalRefCountedObject() = default;
 
   mutable webrtc::webrtc_impl::RefCounter ref_count_{0};
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <
+    typename T,
+    typename... Args,
+    typename std::enable_if<std::is_convertible<T*, RefCountInterface*>::value,
+                            T>::type* = nullptr>
+scoped_refptr<T> make_ref_counted(Args&&... args) {
+  return new RefCountedObject<T>(std::forward<Args>(args)...);
+}
+
+
+
+template <
+    typename T,
+    typename... Args,
+    typename std::enable_if<!std::is_convertible<T*, RefCountInterface*>::value,
+                            T>::type* = nullptr>
+scoped_refptr<FinalRefCountedObject<T>> make_ref_counted(Args&&... args) {
+  return new FinalRefCountedObject<T>(std::forward<Args>(args)...);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+struct Ref {
+  typedef typename std::conditional<
+      std::is_convertible<T*, RefCountInterface*>::value,
+      T,
+      FinalRefCountedObject<T>>::type Type;
+
+  typedef scoped_refptr<Type> Ptr;
 };
 
 }  
