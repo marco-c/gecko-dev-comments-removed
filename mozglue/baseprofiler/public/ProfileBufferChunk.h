@@ -161,6 +161,7 @@ class ProfileBufferChunk {
 #endif
     mInternalHeader.mHeader.mOffsetFirstBlock = aTailSize;
     mInternalHeader.mHeader.mOffsetPastLastBlock = aTailSize;
+    mInternalHeader.mHeader.mStartTimeStamp = TimeStamp::Now();
     return SpanOfBytes(&mBuffer, aTailSize);
   }
 
@@ -237,6 +238,7 @@ class ProfileBufferChunk {
     void Reset() {
       mOffsetFirstBlock = 0;
       mOffsetPastLastBlock = 0;
+      mStartTimeStamp = TimeStamp{};
       mDoneTimeStamp = TimeStamp{};
       mBlockCount = 0;
       mRangeStart = 0;
@@ -255,6 +257,8 @@ class ProfileBufferChunk {
     
     
     Length mOffsetPastLastBlock = 0;
+    
+    TimeStamp mStartTimeStamp;
     
     
     
