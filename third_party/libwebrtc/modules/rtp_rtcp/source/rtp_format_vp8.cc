@@ -94,22 +94,25 @@ bool RtpPacketizerVp8::NextPacket(RtpPacketToSend* packet) {
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 RtpPacketizerVp8::RawHeader RtpPacketizerVp8::BuildHeader(
     const RTPVideoHeaderVP8& header) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   RTC_DCHECK(ValidateHeader(header));
 
   RawHeader result;

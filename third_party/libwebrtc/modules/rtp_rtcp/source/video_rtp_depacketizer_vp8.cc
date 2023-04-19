@@ -42,6 +42,11 @@
 
 
 
+
+
+
+
+
 namespace webrtc {
 namespace {
 
@@ -56,7 +61,7 @@ int ParseVP8Descriptor(RTPVideoHeaderVP8* vp8,
   bool extension = (*data & 0x80) ? true : false;             
   vp8->nonReference = (*data & 0x20) ? true : false;          
   vp8->beginningOfPartition = (*data & 0x10) ? true : false;  
-  vp8->partitionId = (*data & 0x0F);                          
+  vp8->partitionId = (*data & 0x07);                          
 
   data++;
   parsed_bytes++;
@@ -160,10 +165,8 @@ int VideoRtpDepacketizerVp8::ParseRtpPayload(
   if (descriptor_size == kFailedToParse)
     return kFailedToParse;
 
-  if (vp8_header.partitionId > 8) {
-    
-    return kFailedToParse;
-  }
+  RTC_DCHECK_LT(vp8_header.partitionId, 8);
+
   video_header->is_first_packet_in_frame =
       vp8_header.beginningOfPartition && vp8_header.partitionId == 0;
 

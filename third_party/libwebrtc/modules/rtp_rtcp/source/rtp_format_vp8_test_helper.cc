@@ -14,28 +14,30 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace webrtc {
 namespace {
 
 using ::testing::ElementsAreArray;
 
 constexpr RtpPacketToSend::ExtensionManager* kNoExtensions = nullptr;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 int Bit(uint8_t byte, int position) {
   return (byte >> position) & 0x01;
