@@ -76,4 +76,4 @@ promise_test(async t => {
                   'cpuSpeed quantization');
 
 }, 'ComputePressureObserver with a new quantization schema stops all ' +
-   'other active observers');
+   'other active observers in the same frame');
