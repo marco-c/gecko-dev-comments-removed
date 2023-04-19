@@ -74,136 +74,53 @@ class nsAtom;
 
 namespace IPC {
 
-template <>
-struct ParamTraits<nsACString> {
-  typedef nsACString paramType;
+template <class T>
+struct ParamTraits<nsTSubstring<T>> {
+  typedef nsTSubstring<T> paramType;
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     bool isVoid = aParam.IsVoid();
     aWriter->WriteBool(isVoid);
 
-    if (isVoid)
+    if (isVoid) {
       
       return;
+    }
 
-    uint32_t length = aParam.Length();
-    WriteParam(aWriter, length);
-    aWriter->WriteBytes(aParam.BeginReading(), length);
+    WriteSequenceParam<const T&>(aWriter, aParam.BeginReading(),
+                                 aParam.Length());
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
     bool isVoid;
-    if (!aReader->ReadBool(&isVoid)) return false;
+    if (!aReader->ReadBool(&isVoid)) {
+      return false;
+    }
 
     if (isVoid) {
       aResult->SetIsVoid(true);
       return true;
     }
 
-    uint32_t length;
-    if (!ReadParam(aReader, &length)) {
-      return false;
-    }
-    if (!aReader->HasBytesAvailable(length)) {
-      return false;
-    }
-    aResult->SetLength(length);
-
-    return aReader->ReadBytesInto(aResult->BeginWriting(), length);
+    return ReadSequenceParam(aReader, [&](uint32_t aLength) -> T* {
+      T* data = nullptr;
+      aResult->GetMutableData(&data, aLength);
+      return data;
+    });
   }
 };
 
-template <>
-struct ParamTraits<nsAString> {
-  typedef nsAString paramType;
+template <class T>
+struct ParamTraits<nsTString<T>> : ParamTraits<nsTSubstring<T>> {};
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    bool isVoid = aParam.IsVoid();
-    aWriter->WriteBool(isVoid);
+template <class T>
+struct ParamTraits<nsTLiteralString<T>> : ParamTraits<nsTSubstring<T>> {};
 
-    if (isVoid)
-      
-      return;
+template <class T, size_t N>
+struct ParamTraits<nsTAutoStringN<T, N>> : ParamTraits<nsTSubstring<T>> {};
 
-    uint32_t length = aParam.Length();
-    WriteParam(aWriter, length);
-    aWriter->WriteBytes(aParam.BeginReading(), length * sizeof(char16_t));
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    bool isVoid;
-    if (!aReader->ReadBool(&isVoid)) return false;
-
-    if (isVoid) {
-      aResult->SetIsVoid(true);
-      return true;
-    }
-
-    uint32_t length;
-    if (!ReadParam(aReader, &length)) {
-      return false;
-    }
-
-    mozilla::CheckedInt<uint32_t> byteLength =
-        mozilla::CheckedInt<uint32_t>(length) * sizeof(char16_t);
-    if (!byteLength.isValid() ||
-        !aReader->HasBytesAvailable(byteLength.value())) {
-      return false;
-    }
-
-    aResult->SetLength(length);
-
-    return aReader->ReadBytesInto(aResult->BeginWriting(), byteLength.value());
-  }
-};
-
-template <>
-struct ParamTraits<nsCString> : ParamTraits<nsACString> {
-  typedef nsCString paramType;
-};
-
-template <>
-struct ParamTraits<nsLiteralCString> : ParamTraits<nsACString> {
-  typedef nsLiteralCString paramType;
-};
-
-#ifdef MOZILLA_INTERNAL_API
-
-template <>
-struct ParamTraits<nsAutoCString> : ParamTraits<nsCString> {
-  typedef nsAutoCString paramType;
-};
-
-#endif  
-
-template <>
-struct ParamTraits<nsString> : ParamTraits<nsAString> {
-  typedef nsString paramType;
-};
-
-template <>
-struct ParamTraits<nsLiteralString> : ParamTraits<nsAString> {
-  typedef nsLiteralString paramType;
-};
-
-template <>
-struct ParamTraits<nsDependentSubstring> : ParamTraits<nsAString> {
-  typedef nsDependentSubstring paramType;
-};
-
-template <>
-struct ParamTraits<nsDependentCSubstring> : ParamTraits<nsACString> {
-  typedef nsDependentCSubstring paramType;
-};
-
-#ifdef MOZILLA_INTERNAL_API
-
-template <>
-struct ParamTraits<nsAutoString> : ParamTraits<nsString> {
-  typedef nsAutoString paramType;
-};
-
-#endif  
+template <class T>
+struct ParamTraits<nsTDependentString<T>> : ParamTraits<nsTSubstring<T>> {};
 
 
 
@@ -238,96 +155,22 @@ struct ParamTraits<nsTHashSet<uint64_t>> {
   }
 };
 
-
-
-
-bool ByteLengthIsValid(uint32_t aNumElements, size_t aElementSize,
-                       int* aByteLength);
-
 template <typename E>
 struct ParamTraits<nsTArray<E>> {
   typedef nsTArray<E> paramType;
 
-  
-  
-  
-  
-  
-  static constexpr bool sUseWriteBytes =
-      (std::is_integral_v<E> || std::is_floating_point_v<E>);
-  
-  
-  
-  
-  
-  template <typename U>
-  static void Write(MessageWriter* aWriter, U&& aParam) {
-    uint32_t length = aParam.Length();
-    WriteParam(aWriter, length);
-
-    if (sUseWriteBytes) {
-      int pickledLength = 0;
-      MOZ_RELEASE_ASSERT(ByteLengthIsValid(length, sizeof(E), &pickledLength));
-      aWriter->WriteBytes(aParam.Elements(), pickledLength);
-    } else {
-      WriteValues(aWriter, std::forward<U>(aParam));
-    }
+  static void Write(MessageWriter* aWriter, const paramType& aParam) {
+    WriteSequenceParam<const E&>(aWriter, aParam.Elements(), aParam.Length());
   }
 
-  
-  
+  static void Write(MessageWriter* aWriter, paramType&& aParam) {
+    WriteSequenceParam<E&&>(aWriter, aParam.Elements(), aParam.Length());
+  }
+
   static bool Read(MessageReader* aReader, paramType* aResult) {
-    uint32_t length;
-    if (!ReadParam(aReader, &length)) {
-      return false;
-    }
-
-    if (sUseWriteBytes) {
-      int pickledLength = 0;
-      if (!ByteLengthIsValid(length, sizeof(E), &pickledLength)) {
-        return false;
-      }
-
-      E* elements = aResult->AppendElements(length);
-      return aReader->ReadBytesInto(elements, pickledLength);
-    } else {
-      
-      
-      
-      if (!aReader->HasBytesAvailable(length)) {
-        return false;
-      }
-
-      aResult->SetCapacity(length);
-
-      for (uint32_t index = 0; index < length; index++) {
-        E* element = aResult->AppendElement();
-        if (!ReadParam(aReader, element)) {
-          return false;
-        }
-      }
-      return true;
-    }
-  }
-
- private:
-  
-  static void WriteValues(MessageWriter* aWriter, const paramType& aParam) {
-    for (auto& elt : aParam) {
-      WriteParam(aWriter, elt);
-    }
-  }
-
-  
-  static void WriteValues(MessageWriter* aWriter, paramType&& aParam) {
-    for (auto& elt : aParam) {
-      WriteParam(aWriter, std::move(elt));
-    }
-
-    
-    
-    
-    aParam.Clear();
+    return ReadSequenceParam(aReader, [&](uint32_t aLength) -> E* {
+      return aResult->AppendElements(aLength);
+    });
   }
 };
 
@@ -339,16 +182,17 @@ struct ParamTraits<FallibleTArray<E>> {
   typedef FallibleTArray<E> paramType;
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, static_cast<const nsTArray<E>&>(aParam));
+    WriteSequenceParam<const E&>(aWriter, aParam.Elements(), aParam.Length());
   }
 
-  
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    nsTArray<E> temp;
-    if (!ReadParam(aReader, &temp)) return false;
+  static void Write(MessageWriter* aWriter, paramType&& aParam) {
+    WriteSequenceParam<E&&>(aWriter, aParam.Elements(), aParam.Length());
+  }
 
-    *aResult = std::move(temp);
-    return true;
+  static bool Read(MessageReader* aReader, paramType* aResult) {
+    return ReadSequenceParam(aReader, [&](uint32_t aLength) -> E* {
+      return aResult->AppendElements(aLength, mozilla::fallible);
+    });
   }
 };
 
@@ -368,70 +212,22 @@ template <typename E, size_t N, typename AP>
 struct ParamTraits<mozilla::Vector<E, N, AP>> {
   typedef mozilla::Vector<E, N, AP> paramType;
 
-  
-  
-  
-  
-  
-  static const bool sUseWriteBytes =
-      (std::is_integral_v<E> || std::is_floating_point_v<E>);
-
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    uint32_t length = aParam.length();
-    WriteParam(aWriter, length);
+    WriteSequenceParam<const E&>(aWriter, aParam.Elements(), aParam.Length());
+  }
 
-    if (sUseWriteBytes) {
-      int pickledLength = 0;
-      MOZ_RELEASE_ASSERT(ByteLengthIsValid(length, sizeof(E), &pickledLength));
-      aWriter->WriteBytes(aParam.begin(), pickledLength);
-      return;
-    }
-
-    for (const E& elem : aParam) {
-      WriteParam(aWriter, elem);
-    }
+  static void Write(MessageWriter* aWriter, paramType&& aParam) {
+    WriteSequenceParam<E&&>(aWriter, aParam.Elements(), aParam.Length());
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
-    uint32_t length;
-    if (!ReadParam(aReader, &length)) {
-      return false;
-    }
-
-    if (sUseWriteBytes) {
-      int pickledLength = 0;
-      if (!ByteLengthIsValid(length, sizeof(E), &pickledLength)) {
-        return false;
-      }
-
-      if (!aResult->resizeUninitialized(length)) {
+    return ReadSequenceParam(aReader, [&](uint32_t aLength) -> E* {
+      if (!aResult->resize(aLength)) {
         
-        NS_ABORT_OOM(length * sizeof(E));
+        NS_ABORT_OOM(aLength * sizeof(E));
       }
-
-      E* elements = aResult->begin();
-      return aReader->ReadBytesInto(elements, pickledLength);
-    }
-
-    
-    
-    
-    if (!aReader->HasBytesAvailable(length)) {
-      return false;
-    }
-
-    if (!aResult->resize(length)) {
-      
-      NS_ABORT_OOM(length * sizeof(E));
-    }
-
-    for (uint32_t index = 0; index < length; ++index) {
-      if (!ReadParam(aReader, &((*aResult)[index]))) {
-        return false;
-      }
-    }
-
-    return true;
+      return aResult->begin();
+    });
   }
 };
 
@@ -439,64 +235,18 @@ template <typename E>
 struct ParamTraits<std::vector<E>> {
   typedef std::vector<E> paramType;
 
-  
-  
-  
-  
-  
-  static const bool sUseWriteBytes =
-      (std::is_integral_v<E> || std::is_floating_point_v<E>);
-
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    uint32_t length = aParam.size();
-    WriteParam(aWriter, length);
-
-    if (sUseWriteBytes) {
-      int pickledLength = 0;
-      MOZ_RELEASE_ASSERT(ByteLengthIsValid(length, sizeof(E), &pickledLength));
-      aWriter->WriteBytes(aParam.data(), pickledLength);
-      return;
-    }
-
-    for (const E& elem : aParam) {
-      WriteParam(aWriter, elem);
-    }
+    WriteSequenceParam<const E&>(aWriter, aParam.data(), aParam.size());
+  }
+  static void Write(MessageWriter* aWriter, paramType&& aParam) {
+    WriteSequenceParam<E&&>(aWriter, aParam.data(), aParam.size());
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
-    uint32_t length;
-    if (!ReadParam(aReader, &length)) {
-      return false;
-    }
-
-    if (sUseWriteBytes) {
-      int pickledLength = 0;
-      if (!ByteLengthIsValid(length, sizeof(E), &pickledLength)) {
-        return false;
-      }
-
-      aResult->resize(length);
-
-      E* elements = aResult->data();
-      return aReader->ReadBytesInto(elements, pickledLength);
-    }
-
-    
-    
-    
-    if (!aReader->HasBytesAvailable(length)) {
-      return false;
-    }
-
-    aResult->resize(length);
-
-    for (uint32_t index = 0; index < length; ++index) {
-      if (!ReadParam(aReader, &((*aResult)[index]))) {
-        return false;
-      }
-    }
-
-    return true;
+    return ReadSequenceParam(aReader, [&](uint32_t aLength) -> E* {
+      aResult->resize(aLength);
+      return aResult->data();
+    });
   }
 };
 
