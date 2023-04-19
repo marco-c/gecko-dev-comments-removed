@@ -81,10 +81,7 @@
 
 
 
-
-
-
-#![doc(html_root_url = "https://docs.rs/serde/1.0.137")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.143")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -118,9 +115,12 @@
         use_self,
         zero_prefixed_literal,
         
+        derive_partial_eq_without_eq,
         enum_glob_use,
+        explicit_auto_deref,
         let_underscore_drop,
         map_err_ignore,
+        new_without_default,
         result_unit_err,
         wildcard_imports,
         

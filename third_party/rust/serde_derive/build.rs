@@ -13,14 +13,14 @@ fn main() {
 
     
     
-    if minor >= 37 {
-        println!("cargo:rustc-cfg=underscore_consts");
+    if minor < 37 {
+        println!("cargo:rustc-cfg=no_underscore_consts");
     }
 
     
     
-    if minor >= 51 {
-        println!("cargo:rustc-cfg=ptr_addr_of");
+    if minor < 51 {
+        println!("cargo:rustc-cfg=no_ptr_addr_of");
     }
 }
 

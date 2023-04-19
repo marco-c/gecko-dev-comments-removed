@@ -13,7 +13,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.137")]
+#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.143")]
 #![allow(unknown_lints, bare_trait_objects)]
 
 #![allow(
@@ -22,6 +22,7 @@
     clippy::cognitive_complexity,
     
     clippy::collapsible_match,
+    clippy::derive_partial_eq_without_eq,
     clippy::enum_variant_names,
     
     clippy::manual_map,
