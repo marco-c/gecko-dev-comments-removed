@@ -204,10 +204,13 @@ void SharedArrayRawBuffer::dropReference() {
   
   if (isWasm()) {
     WasmSharedArrayRawBuffer* wasmBuf = toWasmBuffer();
+    wasm::IndexType indexType = wasmBuf->wasmIndexType();
+    uint8_t* basePointer = wasmBuf->basePointer();
     size_t mappedSizeWithHeader =
         wasmBuf->wasmMappedSize() + gc::SystemPageSize();
-    UnmapBufferMemory(wasmBuf->wasmIndexType(), wasmBuf->basePointer(),
-                      mappedSizeWithHeader);
+    
+    wasmBuf->~WasmSharedArrayRawBuffer();
+    UnmapBufferMemory(indexType, basePointer, mappedSizeWithHeader);
   } else {
     js_delete(this);
   }
