@@ -5,7 +5,6 @@
 "use strict";
 
 const EXPORTED_SYMBOLS = [
-  "ChromeWebElement",
   "element",
   "ShadowRoot",
   "WebElement",
@@ -1500,10 +1499,6 @@ class WebReference {
       
       return new ShadowRoot(uuid);
     } else if (element.isElement(node)) {
-      if (element.isInPrivilegedDocument(node)) {
-        
-        return new ChromeWebElement(uuid);
-      }
       return new WebElement(uuid);
     } else if (element.isDOMWindow(node)) {
       if (node.parent === node) {
@@ -1552,9 +1547,6 @@ class WebReference {
 
         case WebWindow.Identifier:
           return WebWindow.fromJSON(json);
-
-        case ChromeWebElement.Identifier:
-          return ChromeWebElement.fromJSON(json);
       }
     }
 
@@ -1579,34 +1571,13 @@ class WebReference {
 
 
 
-
-
-
-
-
-
-
-
-  static fromUUID(uuid, context) {
+  static fromUUID(uuid) {
     lazy.assert.string(uuid);
 
-    switch (context) {
-      case "chrome":
-        return new ChromeWebElement(uuid);
-
-      case "content":
-        return new WebElement(uuid);
-
-      default:
-        throw new lazy.error.InvalidArgumentError(
-          "Unknown context: " + context
-        );
-    }
+    return new WebElement(uuid);
   }
 
   
-
-
 
 
 
@@ -1624,8 +1595,7 @@ class WebReference {
       ShadowRoot.Identifier in obj ||
       WebElement.Identifier in obj ||
       WebFrame.Identifier in obj ||
-      WebWindow.Identifier in obj ||
-      ChromeWebElement.Identifier in obj
+      WebWindow.Identifier in obj
     ) {
       return true;
     }
@@ -1735,25 +1705,3 @@ class WebFrame extends WebReference {
   }
 }
 WebFrame.Identifier = "frame-075b-4da1-b6ba-e579c2d3230a";
-
-
-
-
-
-class ChromeWebElement extends WebReference {
-  toJSON() {
-    return { [ChromeWebElement.Identifier]: this.uuid };
-  }
-
-  static fromJSON(json) {
-    if (!(ChromeWebElement.Identifier in json)) {
-      throw new lazy.error.InvalidArgumentError(
-        "Expected chrome element reference " +
-          lazy.pprint`for XUL element, got: ${json}`
-      );
-    }
-    let uuid = json[ChromeWebElement.Identifier];
-    return new ChromeWebElement(uuid);
-  }
-}
-ChromeWebElement.Identifier = "chromeelement-9fc5-4b51-a3c8-01716eedeb04";
