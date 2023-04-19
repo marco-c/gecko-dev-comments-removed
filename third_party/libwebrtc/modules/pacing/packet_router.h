@@ -39,9 +39,7 @@ class RtpRtcpInterface;
 
 
 
-class PacketRouter : public RemoteBitrateObserver,
-                     public TransportFeedbackSenderInterface,
-                     public PacingController::PacketSender {
+class PacketRouter : public PacingController::PacketSender {
  public:
   PacketRouter();
   explicit PacketRouter(uint16_t start_transport_seq);
@@ -63,23 +61,11 @@ class PacketRouter : public RemoteBitrateObserver,
   uint16_t CurrentTransportSequenceNumber() const;
 
   
-  
-  
-  
-  
-  void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
-                               uint32_t bitrate_bps) override;
+  void SendRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs);
 
   
-  
-  void SetMaxDesiredReceiveBitrate(int64_t bitrate_bps);
-
-  
-  bool SendRemb(int64_t bitrate_bps, const std::vector<uint32_t>& ssrcs);
-
-  
-  bool SendCombinedRtcpPacket(
-      std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets) override;
+  void SendCombinedRtcpPacket(
+      std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets);
 
  private:
   void AddRembModuleCandidate(RtcpFeedbackSenderInterface* candidate_module,
@@ -106,16 +92,6 @@ class PacketRouter : public RemoteBitrateObserver,
   
   std::vector<RtcpFeedbackSenderInterface*> rtcp_feedback_senders_
       RTC_GUARDED_BY(modules_mutex_);
-
-  
-  
-  Mutex remb_mutex_;
-  
-  int64_t last_remb_time_ms_ RTC_GUARDED_BY(remb_mutex_);
-  int64_t last_send_bitrate_bps_ RTC_GUARDED_BY(remb_mutex_);
-  
-  int64_t bitrate_bps_ RTC_GUARDED_BY(remb_mutex_);
-  int64_t max_bitrate_bps_ RTC_GUARDED_BY(remb_mutex_);
 
   
   

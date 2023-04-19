@@ -35,14 +35,6 @@ class RemoteBitrateObserver;
 class ReceiveSideCongestionController : public CallStatsObserver,
                                         public Module {
  public:
-  
-  ReceiveSideCongestionController(Clock* clock, PacketRouter* packet_router);
-  
-  ReceiveSideCongestionController(
-      Clock* clock,
-      PacketRouter* packet_router,
-      NetworkStateEstimator* network_state_estimator);
-
   ReceiveSideCongestionController(
       Clock* clock,
       RemoteEstimatorProxy::TransportFeedbackSender feedback_sender,
