@@ -586,10 +586,6 @@ bool GPUProcessManager::FallbackFromAcceleration(wr::WebRenderError aError,
 
 bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
                                                const nsCString& aMsg) {
-  if (!gfx::gfxVars::UseWebRender()) {
-    return false;
-  }
-
   
   
   
@@ -658,13 +654,6 @@ void GPUProcessManager::NotifyWebRenderError(wr::WebRenderError aError) {
 }
 
 bool GPUProcessManager::OnDeviceReset(bool aTrackThreshold) {
-#ifdef XP_WIN
-  
-  if (!gfxVars::UseWebRender() && gfxVars::UseDoubleBufferingWithCompositor()) {
-    gfxVars::SetUseDoubleBufferingWithCompositor(false);
-  }
-#endif
-
   
   if (!aTrackThreshold) {
     return false;

@@ -737,16 +737,6 @@ nsIXULRuntime::ContentWin32kLockdownState GetLiveWin32kLockdownState() {
   }
 
   
-  
-  
-  
-  
-  
-  if (!gfx::gfxVars::UseWebRender()) {
-    return nsIXULRuntime::ContentWin32kLockdownState::MissingWebRender;
-  }
-
-  
   if (!StaticPrefs::widget_non_native_theme_enabled()) {
     return nsIXULRuntime::ContentWin32kLockdownState::MissingNonNativeTheming;
   }
