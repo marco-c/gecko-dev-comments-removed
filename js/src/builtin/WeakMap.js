@@ -5,24 +5,24 @@
 
 
 function WeakMapConstructorInit(iterable) {
-    var map = this;
+  var map = this;
 
-    
-    var adder = map.set;
+  
+  var adder = map.set;
 
+  
+  if (!IsCallable(adder)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, typeof adder);
+  }
+
+  
+  for (var nextItem of allowContentIter(iterable)) {
     
-    if (!IsCallable(adder)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, typeof adder);
+    if (!IsObject(nextItem)) {
+      ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "WeakMap");
     }
 
     
-    for (var nextItem of allowContentIter(iterable)) {
-        
-        if (!IsObject(nextItem)) {
-            ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "WeakMap");
-        }
-
-        
-        callContentFunction(adder, map, nextItem[0], nextItem[1]);
-    }
+    callContentFunction(adder, map, nextItem[0], nextItem[1]);
+  }
 }

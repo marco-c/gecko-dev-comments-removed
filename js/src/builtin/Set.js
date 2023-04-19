@@ -5,20 +5,20 @@
 
 
 function SetConstructorInit(iterable) {
-    var set = this;
+  var set = this;
 
-    
-    var adder = set.add;
+  
+  var adder = set.add;
 
-    
-    if (!IsCallable(adder)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, typeof adder);
-    }
+  
+  if (!IsCallable(adder)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, typeof adder);
+  }
 
-    
-    for (var nextValue of allowContentIter(iterable)) {
-        callContentFunction(adder, set, nextValue);
-    }
+  
+  for (var nextValue of allowContentIter(iterable)) {
+    callContentFunction(adder, set, nextValue);
+  }
 }
 
 #ifdef ENABLE_NEW_SET_METHODS
@@ -27,34 +27,34 @@ function SetConstructorInit(iterable) {
 
 
 function SetUnion(iterable) {
-    
-    var set = this;
+  
+  var set = this;
 
-    
-    if (!IsObject(set)) {
-        ThrowTypeError(
-            JSMSG_OBJECT_REQUIRED,
-            set === null ? "null" : typeof set
-        );
-    }
+  
+  if (!IsObject(set)) {
+    ThrowTypeError(
+        JSMSG_OBJECT_REQUIRED,
+        set === null ? "null" : typeof set
+    );
+  }
 
-    
-    var Ctr = SpeciesConstructor(set, GetBuiltinConstructor("Set"));
+  
+  var Ctr = SpeciesConstructor(set, GetBuiltinConstructor("Set"));
 
-    
-    var newSet = constructContentFunction(Ctr, Ctr, set);
+  
+  var newSet = constructContentFunction(Ctr, Ctr, set);
 
-    
-    var adder = newSet.add;
+  
+  var adder = newSet.add;
 
-    
-    
-    if (!IsCallable(adder)) {
-        ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "add");
-    }
+  
+  
+  if (!IsCallable(adder)) {
+    ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "add");
+  }
 
-    
-    return AddEntryFromIterable(newSet, iterable, adder);
+  
+  return AddEntryFromIterable(newSet, iterable, adder);
 }
 
 
@@ -62,84 +62,84 @@ function SetUnion(iterable) {
 
 
 function SetIntersection(iterable) {
+  
+  var set = this;
+
+  
+  if (!IsObject(set)) {
+    ThrowTypeError(
+        JSMSG_OBJECT_REQUIRED,
+        set === null ? "null" : typeof set
+    );
+  }
+
+  
+  var Ctr = SpeciesConstructor(set, GetBuiltinConstructor("Set"));
+
+  
+  var newSet = constructContentFunction(Ctr, Ctr);
+
+  
+  var hasCheck = set.has;
+
+  
+  if (!IsCallable(hasCheck)) {
+    ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "has");
+  }
+
+  
+  var adder = newSet.add;
+
+  
+  if (!IsCallable(adder)) {
+    ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "add");
+  }
+
+  
+  var iteratorRecord = GetIteratorSync(iterable);
+
+  
+  while (true) {
     
-    var set = this;
+    var next = IteratorStep(iteratorRecord);
 
     
-    if (!IsObject(set)) {
-        ThrowTypeError(
-            JSMSG_OBJECT_REQUIRED,
-            set === null ? "null" : typeof set
-        );
+    if (!next) {
+      return newSet;
     }
 
     
-    var Ctr = SpeciesConstructor(set, GetBuiltinConstructor("Set"));
-
-    
-    var newSet = constructContentFunction(Ctr, Ctr);
-
-    
-    var hasCheck = set.has;
-
-    
-    if (!IsCallable(hasCheck)) {
-        ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "has");
-    }
-
-    
-    var adder = newSet.add;
-
-    
-    if (!IsCallable(adder)) {
-        ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "add");
-    }
-
-    
-    var iteratorRecord = GetIteratorSync(iterable);
-
-    
-    while (true) {
+    var nextValue = next.value;
+    var needClose = true;
+    var has;
+    try {
+      
+      has = callContentFunction(hasCheck, set, nextValue);
+      needClose = false;
+    } finally {
+      if (needClose) {
         
-        var next = IteratorStep(iteratorRecord);
-
         
-        if (!next) {
-            return newSet;
+        IteratorClose(iteratorRecord);
+      }
+    }
+
+    
+    if (has) {
+      needClose = true;
+      try {
+        
+        callContentFunction(adder, newSet, nextValue);
+        needClose = false;
+      } finally {
+        if (needClose) {
+          
+          
+          IteratorClose(iteratorRecord);
         }
-
-        
-        var nextValue = next.value;
-        var needClose = true;
-        var has;
-        try {
-            
-            has = callContentFunction(hasCheck, set, nextValue);
-            needClose = false;
-        } finally {
-            if (needClose) {
-                
-                
-                IteratorClose(iteratorRecord);
-            }
-        }
-
-        
-        if (has) {
-            needClose = true;
-            try {
-                
-                callContentFunction(adder, newSet, nextValue);
-                needClose = false;
-            } finally {
-                if (needClose) {
-                    
-                    
-                    IteratorClose(iteratorRecord);
-                }
-            }
-        }
+      }
     }
+  }
 }
 
 
@@ -147,59 +147,59 @@ function SetIntersection(iterable) {
 
 
 function SetDifference(iterable) {
+  
+  var set = this;
+
+  
+  if (!IsObject(set)) {
+    ThrowTypeError(
+        JSMSG_OBJECT_REQUIRED,
+        set === null ? "null" : typeof set
+    );
+  }
+
+  
+  var Ctr = SpeciesConstructor(set, GetBuiltinConstructor("Set"));
+
+  
+  var newSet = constructContentFunction(Ctr, Ctr, set);
+
+  
+  var remover = newSet.delete;
+
+  
+  if (!IsCallable(remover)) {
+    ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "delete");
+  }
+
+  
+  var iteratorRecord = GetIteratorSync(iterable);
+
+  
+  while (true) {
     
-    var set = this;
+    var next = IteratorStep(iteratorRecord);
 
     
-    if (!IsObject(set)) {
-        ThrowTypeError(
-            JSMSG_OBJECT_REQUIRED,
-            set === null ? "null" : typeof set
-        );
+    if (!next) {
+      return newSet;
     }
 
     
-    var Ctr = SpeciesConstructor(set, GetBuiltinConstructor("Set"));
-
-    
-    var newSet = constructContentFunction(Ctr, Ctr, set);
-
-    
-    var remover = newSet.delete;
-
-    
-    if (!IsCallable(remover)) {
-        ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "delete");
+    var nextValue = next.value;
+    var needClose = true;
+    try {
+      
+      callContentFunction(remover, newSet, nextValue);
+      needClose = false;
+    } finally {
+      if (needClose) {
+        
+        
+        IteratorClose(iteratorRecord);
+      }
     }
-
-    
-    var iteratorRecord = GetIteratorSync(iterable);
-
-    
-    while (true) {
-        
-        var next = IteratorStep(iteratorRecord);
-
-        
-        if (!next) {
-            return newSet;
-        }
-
-        
-        var nextValue = next.value;
-        var needClose = true;
-        try {
-            
-            callContentFunction(remover, newSet, nextValue);
-            needClose = false;
-        } finally {
-            if (needClose) {
-                
-                
-                IteratorClose(iteratorRecord);
-            }
-        }
-    }
+  }
 }
 
 
@@ -207,84 +207,84 @@ function SetDifference(iterable) {
 
 
 function SetSymmetricDifference(iterable) {
+  
+  var set = this;
+
+  
+  if (!IsObject(set)) {
+    ThrowTypeError(
+        JSMSG_OBJECT_REQUIRED,
+        set === null ? "null" : typeof set
+    );
+  }
+
+  
+  var Ctr = SpeciesConstructor(set, GetBuiltinConstructor("Set"));
+
+  
+  var newSet = constructContentFunction(Ctr, Ctr, set);
+
+  
+  var remover = newSet.delete;
+
+  
+  if (!IsCallable(remover)) {
+    ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "delete");
+  }
+
+  
+  var adder = newSet.add;
+
+  
+  if (!IsCallable(adder)) {
+    ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "add");
+  }
+
+  
+  var iteratorRecord = GetIteratorSync(iterable);
+
+  
+  while (true) {
     
-    var set = this;
+    var next = IteratorStep(iteratorRecord);
 
     
-    if (!IsObject(set)) {
-        ThrowTypeError(
-            JSMSG_OBJECT_REQUIRED,
-            set === null ? "null" : typeof set
-        );
+    if (!next) {
+      return newSet;
     }
 
     
-    var Ctr = SpeciesConstructor(set, GetBuiltinConstructor("Set"));
-
-    
-    var newSet = constructContentFunction(Ctr, Ctr, set);
-
-    
-    var remover = newSet.delete;
-
-    
-    if (!IsCallable(remover)) {
-        ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "delete");
-    }
-
-    
-    var adder = newSet.add;
-
-    
-    if (!IsCallable(adder)) {
-        ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "add");
-    }
-
-    
-    var iteratorRecord = GetIteratorSync(iterable);
-
-    
-    while (true) {
+    var nextValue = next.value;
+    var needClose = true;
+    var removed;
+    try {
+      
+      removed = callContentFunction(remover, newSet, nextValue);
+      needClose = false;
+    } finally {
+      if (needClose) {
         
-        var next = IteratorStep(iteratorRecord);
-
         
-        if (!next) {
-            return newSet;
+        IteratorClose(iteratorRecord);
+      }
+    }
+
+    
+    if (!removed) {
+      needClose = true;
+      try {
+        
+        callContentFunction(adder, newSet, nextValue);
+        needClose = false;
+      } finally {
+        if (needClose) {
+          
+          
+          IteratorClose(iteratorRecord);
         }
-
-        
-        var nextValue = next.value;
-        var needClose = true;
-        var removed;
-        try {
-            
-            removed = callContentFunction(remover, newSet, nextValue);
-            needClose = false;
-        } finally {
-            if (needClose) {
-                
-                
-                IteratorClose(iteratorRecord);
-            }
-        }
-
-        
-        if (!removed) {
-            needClose = true;
-            try {
-                
-                callContentFunction(adder, newSet, nextValue);
-                needClose = false;
-            } finally {
-                if (needClose) {
-                    
-                    
-                    IteratorClose(iteratorRecord);
-                }
-            }
-        }
+      }
     }
+  }
 }
 
 
@@ -292,72 +292,72 @@ function SetSymmetricDifference(iterable) {
 
 
 function SetIsSubsetOf(iterable) {
+  
+  var set = this;
+
+  
+  var iteratorRecord = GetIteratorSync(set);
+
+  
+  if (!IsObject(iterable)) {
+    ThrowTypeError(
+        JSMSG_OBJECT_REQUIRED,
+        set === null ? "null" : typeof set
+    );
+  }
+
+  
+  var otherSet = iterable;
+
+  
+  var hasCheck = otherSet.has;
+
+  
+  if (!IsCallable(hasCheck)) {
     
-    var set = this;
+    let set = GetBuiltinConstructor("Set");
+    otherSet = new set();
 
     
-    var iteratorRecord = GetIteratorSync(set);
+    
+    
+    AddEntryFromIterable(otherSet, iterable, std_Set_add);
 
     
-    if (!IsObject(iterable)) {
-        ThrowTypeError(
-            JSMSG_OBJECT_REQUIRED,
-            set === null ? "null" : typeof set
-        );
+    hasCheck = std_Set_has;
+  }
+
+  
+  while (true) {
+    
+    var next = IteratorStep(iteratorRecord);
+
+    
+    if (!next) {
+      return true;
     }
 
     
-    var otherSet = iterable;
-
-    
-    var hasCheck = otherSet.has;
-
-    
-    if (!IsCallable(hasCheck)) {
-        
-        let set = GetBuiltinConstructor("Set");
-        otherSet = new set();
-
+    var nextValue = next.value;
+    var needClose = true;
+    var has;
+    try {
+      
+      has = callContentFunction(hasCheck, otherSet, nextValue);
+      needClose = false;
+    } finally {
+      if (needClose) {
         
         
-        
-        AddEntryFromIterable(otherSet, iterable, std_Set_add);
-
-        
-        hasCheck = std_Set_has;
+        IteratorClose(iteratorRecord);
+      }
     }
 
     
-    while (true) {
-        
-        var next = IteratorStep(iteratorRecord);
-
-        
-        if (!next) {
-            return true;
-        }
-
-        
-        var nextValue = next.value;
-        var needClose = true;
-        var has;
-        try {
-            
-            has = callContentFunction(hasCheck, otherSet, nextValue);
-            needClose = false;
-        } finally {
-            if (needClose) {
-                
-                
-                IteratorClose(iteratorRecord);
-            }
-        }
-
-        
-        if (!has) {
-            return false;
-        }
+    if (!has) {
+      return false;
     }
+  }
 }
 
 
@@ -365,59 +365,59 @@ function SetIsSubsetOf(iterable) {
 
 
 function SetIsSupersetOf(iterable) {
+  
+  var set = this;
+
+  
+  if (!IsObject(set)) {
+    ThrowTypeError(
+        JSMSG_OBJECT_REQUIRED,
+        set === null ? "null" : typeof set
+    );
+  }
+
+  
+  var hasCheck = set.has;
+
+  
+  if (!IsCallable(hasCheck)) {
+    ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "has");
+  }
+
+  
+  var iteratorRecord = GetIteratorSync(iterable);
+
+  
+  while (true) {
     
-    var set = this;
+    var next = IteratorStep(iteratorRecord);
 
     
-    if (!IsObject(set)) {
-        ThrowTypeError(
-            JSMSG_OBJECT_REQUIRED,
-            set === null ? "null" : typeof set
-        );
+    if (!next) {
+      return true;
     }
 
     
-    var hasCheck = set.has;
-
-    
-    if (!IsCallable(hasCheck)) {
-        ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "has");
+    var nextValue = next.value;
+    var needClose = true;
+    var has;
+    try {
+      
+      has = callContentFunction(hasCheck, set, nextValue);
+      needClose = false;
+    } finally {
+      if (needClose) {
+        
+        
+        IteratorClose(iteratorRecord);
+      }
     }
 
     
-    var iteratorRecord = GetIteratorSync(iterable);
-
-    
-    while (true) {
-        
-        var next = IteratorStep(iteratorRecord);
-
-        
-        if (!next) {
-            return true;
-        }
-
-        
-        var nextValue = next.value;
-        var needClose = true;
-        var has;
-        try {
-            
-            has = callContentFunction(hasCheck, set, nextValue);
-            needClose = false;
-        } finally {
-            if (needClose) {
-                
-                
-                IteratorClose(iteratorRecord);
-            }
-        }
-
-        
-        if (!has) {
-            return false;
-        }
+    if (!has) {
+      return false;
     }
+  }
 }
 
 
@@ -425,59 +425,59 @@ function SetIsSupersetOf(iterable) {
 
 
 function SetIsDisjointFrom(iterable) {
+  
+  var set = this;
+
+  
+  if (!IsObject(set)) {
+    ThrowTypeError(
+        JSMSG_OBJECT_REQUIRED,
+        set === null ? "null" : typeof set
+    );
+  }
+
+  
+  var hasCheck = set.has;
+
+  
+  if (!IsCallable(hasCheck)) {
+    ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "has");
+  }
+
+  
+  var iteratorRecord = GetIteratorSync(iterable);
+
+  
+  while (true) {
     
-    var set = this;
+    var next = IteratorStep(iteratorRecord);
 
     
-    if (!IsObject(set)) {
-        ThrowTypeError(
-            JSMSG_OBJECT_REQUIRED,
-            set === null ? "null" : typeof set
-        );
+    if (!next) {
+      return true;
     }
 
     
-    var hasCheck = set.has;
-
-    
-    if (!IsCallable(hasCheck)) {
-        ThrowTypeError(JSMSG_PROPERTY_NOT_CALLABLE, "has");
+    var nextValue = next.value;
+    var needClose = true;
+    var has;
+    try {
+      
+      has = callContentFunction(hasCheck, set, nextValue);
+      needClose = false;
+    } finally {
+      if (needClose) {
+        
+        
+        IteratorClose(iteratorRecord);
+      }
     }
 
     
-    var iteratorRecord = GetIteratorSync(iterable);
-
-    
-    while (true) {
-        
-        var next = IteratorStep(iteratorRecord);
-
-        
-        if (!next) {
-            return true;
-        }
-
-        
-        var nextValue = next.value;
-        var needClose = true;
-        var has;
-        try {
-            
-            has = callContentFunction(hasCheck, set, nextValue);
-            needClose = false;
-        } finally {
-            if (needClose) {
-                
-                
-                IteratorClose(iteratorRecord);
-            }
-        }
-
-        
-        if (has) {
-            return false;
-        }
+    if (has) {
+      return false;
     }
+  }
 }
 
 
@@ -485,131 +485,130 @@ function SetIsDisjointFrom(iterable) {
 
 
 function AddEntryFromIterable(target, iterable, adder) {
-    assert(IsCallable(adder), "adder argument is callable");
+  assert(IsCallable(adder), "adder argument is callable");
+
+  
+  var iteratorRecord = GetIteratorSync(iterable);
+
+  
+  while (true) {
+    
+    var next = IteratorStep(iteratorRecord);
 
     
-    var iteratorRecord = GetIteratorSync(iterable);
-
-    
-    while (true) {
-        
-        var next = IteratorStep(iteratorRecord);
-
-        
-        if (!next) {
-            return target;
-        }
-
-        
-        var nextValue = next.value;
-        var needClose = true;
-        try {
-            
-            callContentFunction(adder, target, nextValue);
-            needClose = false;
-        } finally {
-            if (needClose) {
-                
-                
-                IteratorClose(iteratorRecord);
-            }
-        }
+    if (!next) {
+      return target;
     }
+
+    
+    var nextValue = next.value;
+    var needClose = true;
+    try {
+      
+      callContentFunction(adder, target, nextValue);
+      needClose = false;
+    } finally {
+      if (needClose) {
+        
+        
+        IteratorClose(iteratorRecord);
+      }
+    }
+  }
 }
 #endif
 
 
 
 function SetForEach(callbackfn, thisArg = undefined) {
-    
-    var S = this;
+  
+  var S = this;
 
-    
-    if (!IsObject(S) || (S = GuardToSetObject(S)) === null) {
-        return callFunction(CallSetMethodIfWrapped, this, callbackfn, thisArg, "SetForEach");
+  
+  if (!IsObject(S) || (S = GuardToSetObject(S)) === null) {
+    return callFunction(CallSetMethodIfWrapped, this, callbackfn, thisArg, "SetForEach");
+  }
+
+  
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var values = callFunction(std_Set_values, S);
+
+  
+  var setIterationResult = setIteratorTemp.setIterationResult;
+  if (!setIterationResult) {
+    setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
+  }
+
+  while (true) {
+    var done = GetNextSetEntryForIterator(values, setIterationResult);
+    if (done) {
+      break;
     }
 
-    
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+    var value = setIterationResult[0];
+    setIterationResult[0] = null;
 
-    
-    var values = callFunction(std_Set_values, S);
-
-    
-    var setIterationResult = setIteratorTemp.setIterationResult;
-    if (!setIterationResult) {
-        setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
-    }
-
-    while (true) {
-        var done = GetNextSetEntryForIterator(values, setIterationResult);
-        if (done) {
-            break;
-        }
-
-        var value = setIterationResult[0];
-        setIterationResult[0] = null;
-
-        callContentFunction(callbackfn, thisArg, value, value, S);
-    }
+    callContentFunction(callbackfn, thisArg, value, value, S);
+  }
 }
 
 
 
 
 function $SetSpecies() {
-    
-    return this;
+  
+  return this;
 }
 SetCanonicalName($SetSpecies, "get [Symbol.species]");
-
 
 var setIteratorTemp = { setIterationResult: null };
 
 function SetIteratorNext() {
+  
+  var O = this;
+
+  
+  if (!IsObject(O) || (O = GuardToSetIterator(O)) === null) {
+    return callFunction(CallSetIteratorMethodIfWrapped, this, "SetIteratorNext");
+  }
+
+  
+  
+
+  var setIterationResult = setIteratorTemp.setIterationResult;
+  if (!setIterationResult) {
+    setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
+  }
+
+  var retVal = {value: undefined, done: true};
+
+  
+  var done = GetNextSetEntryForIterator(O, setIterationResult);
+  if (!done) {
     
-    var O = this;
 
     
-    if (!IsObject(O) || (O = GuardToSetIterator(O)) === null) {
-        return callFunction(CallSetIteratorMethodIfWrapped, this, "SetIteratorNext");
+    var itemKind = UnsafeGetInt32FromReservedSlot(O, ITERATOR_SLOT_ITEM_KIND);
+
+    var result;
+    if (itemKind === ITEM_KIND_VALUE) {
+      
+      result = setIterationResult[0];
+    } else {
+      
+      assert(itemKind === ITEM_KIND_KEY_AND_VALUE, itemKind);
+      result = [setIterationResult[0], setIterationResult[0]];
     }
 
-    
-    
+    setIterationResult[0] = null;
+    retVal.value = result;
+    retVal.done = false;
+  }
 
-    var setIterationResult = setIteratorTemp.setIterationResult;
-    if (!setIterationResult) {
-        setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
-    }
-
-    var retVal = {value: undefined, done: true};
-
-    
-    var done = GetNextSetEntryForIterator(O, setIterationResult);
-    if (!done) {
-        
-
-        
-        var itemKind = UnsafeGetInt32FromReservedSlot(O, ITERATOR_SLOT_ITEM_KIND);
-
-        var result;
-        if (itemKind === ITEM_KIND_VALUE) {
-            
-            result = setIterationResult[0];
-        } else {
-            
-            assert(itemKind === ITEM_KIND_KEY_AND_VALUE, itemKind);
-            result = [setIterationResult[0], setIterationResult[0]];
-        }
-
-        setIterationResult[0] = null;
-        retVal.value = result;
-        retVal.done = false;
-    }
-
-    
-    return retVal;
+  
+  return retVal;
 }

@@ -3,331 +3,330 @@
 
 
 function TupleToArray(obj) {
-    var len = TupleLength(obj);
-    var items = std_Array(len);
+  var len = TupleLength(obj);
+  var items = std_Array(len);
 
-    for(var k = 0; k < len; k++) {
-        DefineDataProperty(items, k, obj[k]);
-    }
-    return items;
+  for(var k = 0; k < len; k++) {
+    DefineDataProperty(items, k, obj[k]);
+  }
+  return items;
 }
 
 
 
 function TupleToSorted(comparefn) {
-    
-    if (comparefn !== undefined && !IsCallable(comparefn)) {
-        ThrowTypeError(JSMSG_BAD_SORT_ARG);
-    }
+  
+  if (comparefn !== undefined && !IsCallable(comparefn)) {
+    ThrowTypeError(JSMSG_BAD_SORT_ARG);
+  }
 
-    
-    var T = ThisTupleValue(this);
+  
+  var T = ThisTupleValue(this);
 
-    
-    var items = TupleToArray(T);
-    var sorted = callFunction(ArraySort, items, comparefn);
-    return std_Tuple_unchecked(sorted);
+  
+  var items = TupleToArray(T);
+  var sorted = callFunction(ArraySort, items, comparefn);
+  return std_Tuple_unchecked(sorted);
 }
 
 
 
 function TupleToSpliced(start, deleteCount, ) {
-    
-    var list = ThisTupleValue(this);
+  
+  var list = ThisTupleValue(this);
 
-    
-    var len = TupleLength(list);
+  
+  var len = TupleLength(list);
 
-    
-    var relativeStart = ToInteger(start);
+  
+  var relativeStart = ToInteger(start);
 
+  
+  var actualStart;
+  if (relativeStart < 0) {
+    actualStart = std_Math_max(len + relativeStart, 0);
+  } else {
+    actualStart = std_Math_min(relativeStart, len);
+  }
+
+  
+  var insertCount;
+  var actualDeleteCount;
+  if (arguments.length === 0) {
+    insertCount = 0;
+    actualDeleteCount = 0;
+  } else if (arguments.length === 1) {
     
-    var actualStart;
-    if (relativeStart < 0) {
-        actualStart = std_Math_max(len + relativeStart, 0);
-    } else {
-        actualStart = std_Math_min(relativeStart, len);
+    insertCount = 0;
+    actualDeleteCount = len - actualStart;
+  } else {
+    
+    insertCount = arguments.length - 2;
+    
+    let dc = ToInteger(deleteCount);
+    
+    actualDeleteCount = std_Math_min(std_Math_max(dc, 0), len - actualStart);
+  }
+
+  
+  if (len + insertCount - actualDeleteCount > MAX_NUMERIC_INDEX) {
+    ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
+  }
+
+
+  
+  var k = 0;
+  
+  
+  var itemCount = insertCount;
+
+  
+  var newList = [];
+
+  
+  while(k < actualStart) {
+    
+    let E = list[k];
+    
+    DefineDataProperty(newList, k, E);
+    
+    k++;
+  }
+
+  
+  var itemK = 0;
+  
+  while(itemK < itemCount) {
+    
+    let E = arguments[itemK + 2];
+    
+    if (IsObject(E)) {
+      ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
     }
+    
+    DefineDataProperty(newList, k, E);
+    
+    k++;
+    itemK++;
+  }
 
+  
+  itemK = actualStart + actualDeleteCount;
+  
+  while(itemK < len) {
     
-    var insertCount;
-    var actualDeleteCount;
-    if (arguments.length === 0) {
-        insertCount = 0;
-        actualDeleteCount = 0;
-    } else if (arguments.length === 1) {
-        
-        insertCount = 0;
-        actualDeleteCount = len - actualStart;
-    } else {
-        
-        insertCount = arguments.length - 2;
-        
-        let dc = ToInteger(deleteCount);
-        
-        actualDeleteCount = std_Math_min(std_Math_max(dc, 0), len - actualStart);
-    }
+    let E = list[itemK];
+    
+    DefineDataProperty(newList, k, E);
+    
+    k++;
+    itemK++;
+  }
 
-    
-    if (len + insertCount - actualDeleteCount > MAX_NUMERIC_INDEX) {
-        ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
-    }
-
-
-    
-    var k = 0;
-    
-    
-    var itemCount = insertCount;
-
-    
-    var newList = [];
-
-    
-    while(k < actualStart) {
-        
-        let E = list[k];
-        
-        DefineDataProperty(newList, k, E);
-        
-        k++;
-    }
-
-    
-    var itemK = 0;
-    
-    while(itemK < itemCount) {
-        
-        let E = arguments[itemK + 2];
-        
-        if (IsObject(E)) {
-            ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
-        }
-        
-        DefineDataProperty(newList, k, E);
-        
-        k++;
-        itemK++;
-    }
-
-    
-    itemK = actualStart + actualDeleteCount;
-    
-    while(itemK < len) {
-        
-        let E = list[itemK];
-        
-        DefineDataProperty(newList, k, E);
-        
-        k++;
-        itemK++;
-    }
-
-    
-    return std_Tuple_unchecked(newList);
+  
+  return std_Tuple_unchecked(newList);
 }
 
 
 
 function TupleToReversed() {
-    
-    var T = ThisTupleValue(this);
+  
+  var T = ThisTupleValue(this);
 
-    
+  
 
-    
-    var len = TupleLength(T);
-    var newList = [];
+  
+  var len = TupleLength(T);
+  var newList = [];
 
+  
+  for (var k = len - 1; k >= 0; k--) {
     
-    for (var k = len - 1; k >= 0; k--) {
-        
-        let E = T[k];
-        
-        DefineDataProperty(newList, (len - k) - 1, E);
-    }
+    let E = T[k];
+    
+    DefineDataProperty(newList, (len - k) - 1, E);
+  }
 
-    
-    return std_Tuple_unchecked(newList);
+  
+  return std_Tuple_unchecked(newList);
 }
 
 
 
 function TupleConcat() {
+  
+  var T = ThisTupleValue(this);
+  
+  var list = TupleToArray(T);
+  
+  var n = list.length;
+  
+  
+  for(var i = 0; i < arguments.length; i++) {
     
-    var T = ThisTupleValue(this);
+    let E = arguments[i];
     
-    var list = TupleToArray(T);
+    var spreadable = IsConcatSpreadable(E);
     
-    var n = list.length;
-    
-    
-    for(var i = 0; i < arguments.length; i++) {
+    if (spreadable) {
+      
+      var k = 0;
+      
+      var len = ToLength(E.length);
+      
+      if (n + len > MAX_NUMERIC_INDEX) {
+        ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
+      }
+      
+      while(k < len) {
         
-        let E = arguments[i];
+        var exists = E[k] !== undefined;
         
-        var spreadable = IsConcatSpreadable(E);
-        
-        if (spreadable) {
-            
-            var k = 0;
-            
-            var len = ToLength(E.length);
-            
-            if (n + len > MAX_NUMERIC_INDEX) {
-                ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
-            }
-            
-            while(k < len) {
-                
-                var exists = E[k] !== undefined;
-                
-                if (exists) {
-                    
-                    var subElement = E[k];
-                    
-                    if (IsObject(subElement)) {
-                        ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
-                    }
-                    
-                    DefineDataProperty(list, n, subElement);
-                    
-                    n++;
-                }
-                
-                k++;
-            }
+        if (exists) {
+          
+          var subElement = E[k];
+          
+          if (IsObject(subElement)) {
+            ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
+          }
+          
+          DefineDataProperty(list, n, subElement);
+          
+          n++;
         }
         
-        else {
-            
-            if (n >= MAX_NUMERIC_INDEX) {
-                ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
-            }
-            
-            if (IsObject(E)) {
-                ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
-            }
-            
-            DefineDataProperty(list, n, E);
-            
-            n++;
-        }
+        k++;
+      }
     }
     
-    return std_Tuple_unchecked(list);
+    else {
+      
+      if (n >= MAX_NUMERIC_INDEX) {
+        ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
+      }
+      
+      if (IsObject(E)) {
+        ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
+      }
+      
+      DefineDataProperty(list, n, E);
+      
+      n++;
+    }
+  }
+  
+  return std_Tuple_unchecked(list);
 }
 
 
 
 function TupleIncludes(valueToFind ) {
-    var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
-    return callFunction(std_Array_includes, ThisTupleValue(this), valueToFind,
-                        fromIndex);
+  var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
+  return callFunction(std_Array_includes, ThisTupleValue(this), valueToFind,
+                      fromIndex);
 }
 
 
 
 function TupleIndexOf(valueToFind ) {
-    var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
-    return callFunction(std_Array_indexOf, ThisTupleValue(this),
-                        valueToFind, fromIndex);
+  var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
+  return callFunction(std_Array_indexOf, ThisTupleValue(this),
+                      valueToFind, fromIndex);
 }
 
 
 
 function TupleJoin(separator) {
-    let T = ThisTupleValue(this);
+  let T = ThisTupleValue(this);
 
-    
-    let len = TupleLength(T);
+  
+  let len = TupleLength(T);
 
-    
-    var sep = ",";
-    if (separator != undefined && separator !== null) {
-        let toString = IsCallable(separator.toString) ? separator.toString : std_Object_toString;
-        sep = callContentFunction(toString, separator);
-    }
+  
+  var sep = ",";
+  if (separator != undefined && separator !== null) {
+    let toString = IsCallable(separator.toString) ? separator.toString : std_Object_toString;
+    sep = callContentFunction(toString, separator);
+  }
 
-    
-    var R = "";
+  
+  var R = "";
 
-    
-    var k = 0;
+  
+  var k = 0;
 
+  
+  while (k < len) {
     
-    while (k < len) {
-        
-        if (k > 0) {
-            R += sep;
-        }
-        
-        let element = T[k];
-        
-        var next = "";
-        if (element != undefined && element != null) {
-            let toString = IsCallable(element.toString) ? element.toString : std_Object_toString;
-            next = callContentFunction(toString, element);
-        }
-        
-        R += next;
-        
-        k++;
+    if (k > 0) {
+      R += sep;
     }
     
-    return R;
+    let element = T[k];
+    
+    var next = "";
+    if (element != undefined && element != null) {
+      let toString = IsCallable(element.toString) ? element.toString : std_Object_toString;
+      next = callContentFunction(toString, element);
+    }
+    
+    R += next;
+    
+    k++;
+  }
+  
+  return R;
 }
 
 
 
-
 function TupleLastIndexOf(valueToFind ) {
-    if (arguments.length < 2) {
-        return callFunction(std_Array_lastIndexOf, ThisTupleValue(this),
-                            valueToFind);
-    }
+  if (arguments.length < 2) {
     return callFunction(std_Array_lastIndexOf, ThisTupleValue(this),
-                        valueToFind, arguments[1]);
+                        valueToFind);
+  }
+  return callFunction(std_Array_lastIndexOf, ThisTupleValue(this),
+                      valueToFind, arguments[1]);
 }
 
 
 
 function TupleToString() {
-    
-    var T = ThisTupleValue(this);
-    
-    var func = T.join;
-    if (!IsCallable(func)) {
-        return callFunction(std_Object_toString, T);
-    }
-    
-    return callContentFunction(func, T);
+  
+  var T = ThisTupleValue(this);
+  
+  var func = T.join;
+  if (!IsCallable(func)) {
+    return callFunction(std_Object_toString, T);
+  }
+  
+  return callContentFunction(func, T);
 }
 
 
 
 function TupleToLocaleString(locales, options) {
-    var T = ThisTupleValue(this);
-    return callContentFunction(ArrayToLocaleString, TupleToArray(T),
-                               locales, options);
+  var T = ThisTupleValue(this);
+  return callContentFunction(ArrayToLocaleString, TupleToArray(T),
+                             locales, options);
 }
 
 
 
 function TupleEntries() {
-    return CreateArrayIterator(this, ITEM_KIND_KEY_AND_VALUE);
+  return CreateArrayIterator(this, ITEM_KIND_KEY_AND_VALUE);
 }
 
 
 
 function TupleKeys() {
-    return CreateArrayIterator(this, ITEM_KIND_KEY);
+  return CreateArrayIterator(this, ITEM_KIND_KEY);
 }
 
 
 
 function $TupleValues() {
-    return CreateArrayIterator(this, ITEM_KIND_VALUE);
+  return CreateArrayIterator(this, ITEM_KIND_VALUE);
 };
 
 SetCanonicalName($TupleValues, "values");
@@ -335,322 +334,320 @@ SetCanonicalName($TupleValues, "values");
 
 
 function TupleEvery(callbackfn) {
-    return callContentFunction(ArrayEvery, ThisTupleValue(this),
-                               callbackfn);
+  return callContentFunction(ArrayEvery, ThisTupleValue(this),
+                             callbackfn);
 }
 
 
 
 function TupleFilter(callbackfn) {
+  
+  var list = ThisTupleValue(this);
 
-    
-    var list = ThisTupleValue(this);
+  
+  var len = TupleLength(list);
 
-    
-    var len = TupleLength(list);
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Tuple.prototype.filter");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
 
+  
+  var newList = [];
+
+  
+  var k = 0;
+  var newK = 0;
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+  while(k < len) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Tuple.prototype.filter");
+    var kValue = list[k];
+    
+    var selected = ToBoolean(callContentFunction(callbackfn, T, kValue, k, list));
+    
+    if (selected) {
+      
+      DefineDataProperty(newList, newK++, kValue);
     }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
-
     
-    var newList = [];
+    k++;
+  }
 
-    
-    var k = 0;
-    var newK = 0;
-
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-    while(k < len) {
-        
-        var kValue = list[k];
-        
-        var selected = ToBoolean(callContentFunction(callbackfn, T, kValue, k, list));
-        
-        if (selected) {
-            
-            DefineDataProperty(newList, newK++, kValue);
-        }
-        
-        k++;
-    }
-
-    
-    return std_Tuple_unchecked(newList);
+  
+  return std_Tuple_unchecked(newList);
 }
 
 
 
 function TupleFind(predicate) {
-    return callContentFunction(ArrayFind, ThisTupleValue(this),
-                               predicate);
+  return callContentFunction(ArrayFind, ThisTupleValue(this),
+                             predicate);
 }
 
 
 
 function TupleFindIndex(predicate) {
-    return callContentFunction(ArrayFindIndex, ThisTupleValue(this),
-                               predicate);
+  return callContentFunction(ArrayFindIndex, ThisTupleValue(this),
+                             predicate);
 }
 
 
 
 function TupleForEach(callbackfn) {
-    return callContentFunction(ArrayForEach, ThisTupleValue(this),
-                               callbackfn);
+  return callContentFunction(ArrayForEach, ThisTupleValue(this),
+                             callbackfn);
 }
 
 
 
 function TupleMap(callbackfn) {
+  
+  var list = ThisTupleValue(this);
 
-    
-    var list = ThisTupleValue(this);
+  
+  var len = TupleLength(list);
 
-    
-    var len = TupleLength(list);
+  
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
 
+  
+  var newList = [];
+
+  
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  for(var k = 0; k < len; k++) {
     
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    var kValue = list[k];
+    
+    var mappedValue = callContentFunction(callbackfn, thisArg, kValue, k, list);
+    
+    if (IsObject(mappedValue)) {
+      ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
     }
-
     
-    var newList = [];
+    DefineDataProperty(newList, k, mappedValue);
+  }
 
-    
-    var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-    for(var k = 0; k < len; k++) {
-        
-        var kValue = list[k];
-        
-        var mappedValue = callContentFunction(callbackfn, thisArg, kValue, k, list);
-        
-        if (IsObject(mappedValue)) {
-            ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
-        }
-        
-        DefineDataProperty(newList, k, mappedValue);
-    }
-
-    
-    return std_Tuple_unchecked(newList);
+  
+  return std_Tuple_unchecked(newList);
 }
 
 
 
 function TupleReduce(callbackfn ) {
-    if (arguments.length < 2) {
-        return callContentFunction(ArrayReduce, ThisTupleValue(this),
-                                   callbackfn);
-    }
+  if (arguments.length < 2) {
     return callContentFunction(ArrayReduce, ThisTupleValue(this),
-                                   callbackfn, arguments[1]);
+                               callbackfn);
+  }
+  return callContentFunction(ArrayReduce, ThisTupleValue(this),
+                                 callbackfn, arguments[1]);
 }
 
 
 
 function TupleReduceRight(callbackfn ) {
-    if (arguments.length < 2) {
-        return callContentFunction(ArrayReduceRight, ThisTupleValue(this),
-                                   callbackfn);
-    }
+  if (arguments.length < 2) {
     return callContentFunction(ArrayReduceRight, ThisTupleValue(this),
-                                   callbackfn, arguments[1]);
+                               callbackfn);
+  }
+  return callContentFunction(ArrayReduceRight, ThisTupleValue(this),
+                                 callbackfn, arguments[1]);
 }
 
 
 
 function TupleSome(callbackfn) {
-    return callContentFunction(ArraySome, ThisTupleValue(this),
-                               callbackfn);
+  return callContentFunction(ArraySome, ThisTupleValue(this),
+                             callbackfn);
 }
 
 function FlattenIntoTuple(target, source, depth) {
-    
-    assert(IsArray(target), "FlattenIntoTuple: target is not array");
+  
+  assert(IsArray(target), "FlattenIntoTuple: target is not array");
 
-    
-    assert(IsTuple(source), "FlattenIntoTuple: source is not tuple");
+  
+  assert(IsTuple(source), "FlattenIntoTuple: source is not tuple");
 
-    
+  
 
+  
+  var mapperFunction = undefined;
+  var thisArg = undefined;
+  var mapperIsPresent = arguments.length > 3;
+  if (mapperIsPresent) {
+    mapperFunction = arguments[3];
+    assert(IsCallable(mapperFunction) && arguments.length > 4 && depth === 1,
+           "FlattenIntoTuple: mapper function must be callable, thisArg present, and depth === 1");
+    thisArg = arguments[4];
+  }
+
+  
+  var sourceIndex = 0;
+
+  
+  for (var k = 0; k < source.length; k++) {
+    var element = source[k];
     
-    var mapperFunction = undefined;
-    var thisArg = undefined;
-    var mapperIsPresent = arguments.length > 3;
     if (mapperIsPresent) {
-        mapperFunction = arguments[3];
-        assert(IsCallable(mapperFunction) && arguments.length > 4 && depth === 1,
-               "FlattenIntoTuple: mapper function must be callable, thisArg present, and depth === 1");
-        thisArg = arguments[4];
+      
+      element = callContentFunction(mapperFunction, thisArg, element, sourceIndex, source);
+      
+      if (IsObject(element)) {
+        ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
+      }
     }
-
     
-    var sourceIndex = 0;
-
-    
-    for (var k = 0; k < source.length; k++) {
-        var element = source[k];
-        
-        if (mapperIsPresent) {
-            
-            element = callContentFunction(mapperFunction, thisArg, element, sourceIndex, source);
-            
-            if (IsObject(element)) {
-                ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
-            }
-        }
-        
-        if (depth > 0 && IsTuple(element)) {
-            FlattenIntoTuple(target, element, depth - 1);
-        } else {
-            
-            var len = ToLength(target.length);
-            
-            if (len > MAX_NUMERIC_INDEX) {
-                ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
-            }
-            
-            DefineDataProperty(target, len, element);
-        }
-        
-        sourceIndex++;
+    if (depth > 0 && IsTuple(element)) {
+      FlattenIntoTuple(target, element, depth - 1);
+    } else {
+      
+      var len = ToLength(target.length);
+      
+      if (len > MAX_NUMERIC_INDEX) {
+        ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
+      }
+      
+      DefineDataProperty(target, len, element);
     }
+    
+    sourceIndex++;
+  }
 }
 
 
 
 function TupleFlat() {
-    
-    var list = ThisTupleValue(this);
+  
+  var list = ThisTupleValue(this);
 
-    
-    var depthNum = 1;
+  
+  var depthNum = 1;
 
-    
-    if (arguments.length > 0 && arguments[0] !== undefined) {
-        depthNum = ToInteger(arguments[0]);
-    }
+  
+  if (arguments.length > 0 && arguments[0] !== undefined) {
+    depthNum = ToInteger(arguments[0]);
+  }
 
-    
-    var flat = [];
+  
+  var flat = [];
 
-    
-    FlattenIntoTuple(flat, list, depthNum);
+  
+  FlattenIntoTuple(flat, list, depthNum);
 
-    
-    return std_Tuple_unchecked(flat);
+  
+  return std_Tuple_unchecked(flat);
 }
 
 
 
 function TupleFlatMap(mapperFunction ) {
-    
-    var list = ThisTupleValue(this);
+  
+  var list = ThisTupleValue(this);
 
-    
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Tuple.prototype.flatMap");
-    }
-    if (!IsCallable(mapperFunction)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapperFunction));
-    }
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Tuple.prototype.flatMap");
+  }
+  if (!IsCallable(mapperFunction)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapperFunction));
+  }
 
-    
-    var flat = [];
+  
+  var flat = [];
 
-    
-    var thisArg = arguments.length > 1 ? arguments[1] : undefined;
-    FlattenIntoTuple(flat, list, 1, mapperFunction, thisArg);
+  
+  var thisArg = arguments.length > 1 ? arguments[1] : undefined;
+  FlattenIntoTuple(flat, list, 1, mapperFunction, thisArg);
 
-    
-    return std_Tuple_unchecked(flat);
+  
+  return std_Tuple_unchecked(flat);
 }
 
 function TupleFrom(items, ) {
+  
+  var mapping;
+  var mapfn = arguments.length < 2 ? undefined : arguments[1];
+  var thisArg = arguments.length < 3 ? undefined : arguments[2];
+  if (mapfn === undefined) {
+    mapping = false;
+  } else {
     
-    var mapping;
-    var mapfn = arguments.length < 2 ? undefined : arguments[1];
-    var thisArg = arguments.length < 3 ? undefined : arguments[2];
-    if (mapfn === undefined) {
-        mapping = false;
-    } else {
-        
-        if (!IsCallable(mapfn)) {
-            ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, arguments[1]));
-        }
-        mapping = true;
+    if (!IsCallable(mapfn)) {
+      ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, arguments[1]));
     }
+    mapping = true;
+  }
 
-    
-    var list = [];
+  
+  var list = [];
 
-    
-    var k = 0;
+  
+  var k = 0;
 
-    
-    let usingIterator = GetMethod(items, GetBuiltinSymbol("iterator"));
+  
+  let usingIterator = GetMethod(items, GetBuiltinSymbol("iterator"));
 
+  
+  if (usingIterator !== undefined) {
     
-    if (usingIterator !== undefined) {
+    let adder = function(value) {
+      var mappedValue;
+      
+      if (mapping) {
         
-        let adder = function(value) {
-            var mappedValue;
-            
-            if (mapping) {
-                
-                mappedValue = callContentFunction(mapfn, thisArg, value, k);
-            } else {
-                
-                mappedValue = value;
-            }
-            
-            if (IsObject(mappedValue)) {
-                ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
-            }
-            
-            DefineDataProperty(list, k, mappedValue);
-            
-            k++;
-        };
+        mappedValue = callContentFunction(mapfn, thisArg, value, k);
+      } else {
         
-        
-        var iteratorRecord = MakeIteratorWrapper(items, usingIterator);
+        mappedValue = value;
+      }
+      
+      if (IsObject(mappedValue)) {
+        ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
+      }
+      
+      DefineDataProperty(list, k, mappedValue);
+      
+      k++;
+    };
+    
+    
+    var iteratorRecord = MakeIteratorWrapper(items, usingIterator);
 
-        for (var nextValue of allowContentIter(iteratorRecord)) {
-            adder(nextValue);
-        }
-        
-        return std_Tuple_unchecked(list);
-    }
-    
-    
-    
-    let arrayLike = ToObject(items);
-    
-    let len = ToLength(arrayLike.length);
-    
-    while (k < len) {
-        
-        
-        let kValue = arrayLike[k];
-        
-        let mappedValue = mapping ? callContentFunction(mapfn, thisArg, kValue, k) : kValue;
-        
-        if (IsObject(mappedValue)) {
-            ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
-        }
-        
-        DefineDataProperty(list, k, mappedValue);
-        
-        k++;
+    for (var nextValue of allowContentIter(iteratorRecord)) {
+      adder(nextValue);
     }
     
     return std_Tuple_unchecked(list);
+  }
+  
+  
+  
+  let arrayLike = ToObject(items);
+  
+  let len = ToLength(arrayLike.length);
+  
+  while (k < len) {
+    
+    
+    let kValue = arrayLike[k];
+    
+    let mappedValue = mapping ? callContentFunction(mapfn, thisArg, kValue, k) : kValue;
+    
+    if (IsObject(mappedValue)) {
+      ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
+    }
+    
+    DefineDataProperty(list, k, mappedValue);
+    
+    k++;
+  }
+  
+  return std_Tuple_unchecked(list);
 }

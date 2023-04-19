@@ -8,17 +8,17 @@
 
 #ifdef DEBUG
 #define assert(b, info) \
-    do { \
-        if (!(b)) { \
-            AssertionFailed(__FILE__ + ":" + __LINE__ + ": " + info) \
-        } \
-    } while (false)
+  do { \
+    if (!(b)) { \
+      AssertionFailed(__FILE__ + ":" + __LINE__ + ": " + info) \
+    } \
+  } while (false)
 #define dbg(msg) \
-    do { \
-        DumpMessage(callFunction(std_Array_pop, \
-                                 StringSplitString(__FILE__, '/')) + \
-                    '#' + __LINE__ + ': ' + msg) \
-    } while (false)
+  do { \
+    DumpMessage(callFunction(std_Array_pop, \
+                             StringSplitString(__FILE__, '/')) + \
+                '#' + __LINE__ + ': ' + msg) \
+  } while (false)
 #else
 #define assert(b, info) ; // Elided assertion.
 #define dbg(msg) ; // Elided debugging output.
@@ -33,58 +33,54 @@
 
 
 
-
 function new_Record() {
-    return std_Object_create(null);
+  return std_Object_create(null);
 }
-
-
 
 
 
 
 function ToBoolean(v) {
-    return !!v;
+  return !!v;
 }
 
 
-
 function ToNumber(v) {
-    return +v;
+  return +v;
 }
 
 
 
 function SameValueZero(x, y) {
-    return x === y || (x !== x && y !== y);
+  return x === y || (x !== x && y !== y);
 }
 
 
 function GetMethod(V, P) {
-    
-    assert(IsPropertyKey(P), "Invalid property key");
+  
+  assert(IsPropertyKey(P), "Invalid property key");
 
-    
-    var func = V[P];
+  
+  var func = V[P];
 
-    
-    if (func === undefined || func === null) {
-        return undefined;
-    }
+  
+  if (func === undefined || func === null) {
+    return undefined;
+  }
 
-    
-    if (!IsCallable(func)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, typeof func);
-    }
+  
+  if (!IsCallable(func)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, typeof func);
+  }
 
-    
-    return func;
+  
+  return func;
 }
 
 
 function IsPropertyKey(argument) {
-    var type = typeof argument;
-    return type === "string" || type === "symbol";
+  var type = typeof argument;
+  return type === "string" || type === "symbol";
 }
 
 #define TO_PROPERTY_KEY(name) \
@@ -92,64 +88,64 @@ function IsPropertyKey(argument) {
 
 
 function SpeciesConstructor(obj, defaultConstructor) {
-    
-    assert(IsObject(obj), "not passed an object");
+  
+  assert(IsObject(obj), "not passed an object");
 
-    
-    var ctor = obj.constructor;
+  
+  var ctor = obj.constructor;
 
-    
-    if (ctor === undefined) {
-        return defaultConstructor;
-    }
+  
+  if (ctor === undefined) {
+    return defaultConstructor;
+  }
 
-    
-    if (!IsObject(ctor)) {
-        ThrowTypeError(JSMSG_OBJECT_REQUIRED, "object's 'constructor' property");
-    }
+  
+  if (!IsObject(ctor)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, "object's 'constructor' property");
+  }
 
-    
-    var s = ctor[GetBuiltinSymbol("species")];
+  
+  var s = ctor[GetBuiltinSymbol("species")];
 
-    
-    if (s === undefined || s === null) {
-        return defaultConstructor;
-    }
+  
+  if (s === undefined || s === null) {
+    return defaultConstructor;
+  }
 
-    
-    if (IsConstructor(s)) {
-        return s;
-    }
+  
+  if (IsConstructor(s)) {
+    return s;
+  }
 
-    
-    ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "@@species property of object's constructor");
+  
+  ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "@@species property of object's constructor");
 }
 
 function GetTypeError(msg) {
-    try {
-        FUN_APPLY(ThrowTypeError, undefined, arguments);
-    } catch (e) {
-        return e;
-    }
-    assert(false, "the catch block should've returned from this function.");
+  try {
+    FUN_APPLY(ThrowTypeError, undefined, arguments);
+  } catch (e) {
+    return e;
+  }
+  assert(false, "the catch block should've returned from this function.");
 }
 
 function GetAggregateError(msg) {
-    try {
-        FUN_APPLY(ThrowAggregateError, undefined, arguments);
-    } catch (e) {
-        return e;
-    }
-    assert(false, "the catch block should've returned from this function.");
+  try {
+    FUN_APPLY(ThrowAggregateError, undefined, arguments);
+  } catch (e) {
+    return e;
+  }
+  assert(false, "the catch block should've returned from this function.");
 }
 
 function GetInternalError(msg) {
-    try {
-        FUN_APPLY(ThrowInternalError, undefined, arguments);
-    } catch (e) {
-        return e;
-    }
-    assert(false, "the catch block should've returned from this function.");
+  try {
+    FUN_APPLY(ThrowInternalError, undefined, arguments);
+  } catch (e) {
+    return e;
+  }
+  assert(false, "the catch block should've returned from this function.");
 }
 
 
@@ -158,85 +154,85 @@ function NullFunction() {}
 
 
 function CopyDataProperties(target, source, excludedItems) {
-    
-    assert(IsObject(target), "target is an object");
+  
+  assert(IsObject(target), "target is an object");
+
+  
+  assert(IsObject(excludedItems), "excludedItems is an object");
+
+  
+  if (source === undefined || source === null) {
+    return;
+  }
+
+  
+  var from = ToObject(source);
+
+  
+  var keys = CopyDataPropertiesOrGetOwnKeys(target, from, excludedItems);
+
+  
+  if (keys === null) {
+    return;
+  }
+
+  
+  for (var index = 0; index < keys.length; index++) {
+    var key = keys[index];
 
     
-    assert(IsObject(excludedItems), "excludedItems is an object");
-
     
-    if (source === undefined || source === null) {
-        return;
+    if (!hasOwn(key, excludedItems) &&
+        callFunction(std_Object_propertyIsEnumerable, from, key))
+    {
+      DefineDataProperty(target, key, from[key]);
     }
+  }
 
-    
-    var from = ToObject(source);
-
-    
-    var keys = CopyDataPropertiesOrGetOwnKeys(target, from, excludedItems);
-
-    
-    if (keys === null) {
-        return;
-    }
-
-    
-    for (var index = 0; index < keys.length; index++) {
-        var key = keys[index];
-
-        
-        
-        if (!hasOwn(key, excludedItems) &&
-            callFunction(std_Object_propertyIsEnumerable, from, key))
-        {
-            DefineDataProperty(target, key, from[key]);
-        }
-    }
-
-    
+  
 }
 
 
 
 function CopyDataPropertiesUnfiltered(target, source) {
-    
-    assert(IsObject(target), "target is an object");
+  
+  assert(IsObject(target), "target is an object");
+
+  
+
+  
+  if (source === undefined || source === null) {
+    return;
+  }
+
+  
+  var from = ToObject(source);
+
+  
+  var keys = CopyDataPropertiesOrGetOwnKeys(target, from, null);
+
+  
+  if (keys === null) {
+    return;
+  }
+
+  
+  for (var index = 0; index < keys.length; index++) {
+    var key = keys[index];
 
     
-
     
-    if (source === undefined || source === null) {
-        return;
+    if (callFunction(std_Object_propertyIsEnumerable, from, key)) {
+      DefineDataProperty(target, key, from[key]);
     }
+  }
 
-    
-    var from = ToObject(source);
-
-    
-    var keys = CopyDataPropertiesOrGetOwnKeys(target, from, null);
-
-    
-    if (keys === null) {
-        return;
-    }
-
-    
-    for (var index = 0; index < keys.length; index++) {
-        var key = keys[index];
-
-        
-        
-        if (callFunction(std_Object_propertyIsEnumerable, from, key)) {
-            DefineDataProperty(target, key, from[key]);
-        }
-    }
-
-    
+  
 }
 
 
 function outer() {
-    return function inner() {
-        return "foo";
-    };
+  return function inner() {
+    return "foo";
+  };
 }

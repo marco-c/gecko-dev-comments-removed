@@ -8,18 +8,18 @@
 
 
 function InsertionSort(array, from, to, comparefn) {
-    let item, swap, i, j;
-    for (i = from + 1; i <= to; i++) {
-        item = array[i];
-        for (j = i - 1; j >= from; j--) {
-            swap = array[j];
-            if (callContentFunction(comparefn, undefined, swap, item) <= 0) {
-                break;
-            }
-            array[j + 1] = swap;
-        }
-        array[j + 1] = item;
+  let item, swap, i, j;
+  for (i = from + 1; i <= to; i++) {
+    item = array[i];
+    for (j = i - 1; j >= from; j--) {
+      swap = array[j];
+      if (callContentFunction(comparefn, undefined, swap, item) <= 0) {
+        break;
+      }
+      array[j + 1] = swap;
     }
+    array[j + 1] = item;
+  }
 }
 
 
@@ -27,105 +27,105 @@ function InsertionSort(array, from, to, comparefn) {
 
 
 function Merge(list, out, start, mid, end, comparefn) {
-    
-    
-    if (mid >= end || callContentFunction(comparefn, undefined,
-                                          list[mid], list[mid + 1]) <= 0) {
-        for (var i = start; i <= end; i++) {
-            DefineDataProperty(out, i, list[i]);
-        }
-        return;
+  
+  
+  if (mid >= end || callContentFunction(comparefn, undefined,
+                                        list[mid], list[mid + 1]) <= 0) {
+    for (var i = start; i <= end; i++) {
+      DefineDataProperty(out, i, list[i]);
     }
+    return;
+  }
 
-    var i = start;
-    var j = mid + 1;
-    var k = start;
-    while (i <= mid && j <= end) {
-        var lvalue = list[i];
-        var rvalue = list[j];
-        if (callContentFunction(comparefn, undefined, lvalue, rvalue) <= 0) {
-            DefineDataProperty(out, k++, lvalue);
-            i++;
-        } else {
-            DefineDataProperty(out, k++, rvalue);
-            j++;
-        }
+  var i = start;
+  var j = mid + 1;
+  var k = start;
+  while (i <= mid && j <= end) {
+    var lvalue = list[i];
+    var rvalue = list[j];
+    if (callContentFunction(comparefn, undefined, lvalue, rvalue) <= 0) {
+      DefineDataProperty(out, k++, lvalue);
+      i++;
+    } else {
+      DefineDataProperty(out, k++, rvalue);
+      j++;
     }
+  }
 
-    
-    while (i <= mid) {
-        DefineDataProperty(out, k++, list[i++]);
-    }
-    while (j <= end) {
-        DefineDataProperty(out, k++, list[j++]);
-    }
+  
+  while (i <= mid) {
+    DefineDataProperty(out, k++, list[i++]);
+  }
+  while (j <= end) {
+    DefineDataProperty(out, k++, list[j++]);
+  }
 }
 
 
 
 function MoveHoles(sparse, sparseLen, dense, denseLen) {
-    for (var i = 0; i < denseLen; i++) {
-        sparse[i] = dense[i];
-    }
-    for (var j = denseLen; j < sparseLen; j++) {
-        delete sparse[j];
-    }
+  for (var i = 0; i < denseLen; i++) {
+    sparse[i] = dense[i];
+  }
+  for (var j = denseLen; j < sparseLen; j++) {
+    delete sparse[j];
+  }
 }
 
 
 function MergeSort(array, len, comparefn) {
-    
-    
-    var denseList = [];
-    var denseLen = 0;
+  
+  
+  var denseList = [];
+  var denseLen = 0;
 
-    for (var i = 0; i < len; i++) {
-        if (i in array) {
-            DefineDataProperty(denseList, denseLen++, array[i]);
-        }
+  for (var i = 0; i < len; i++) {
+    if (i in array) {
+      DefineDataProperty(denseList, denseLen++, array[i]);
     }
+  }
 
-    if (denseLen < 1) {
-        return array;
-    }
-
-    
-    
-    if (denseLen < 24) {
-        InsertionSort(denseList, 0, denseLen - 1, comparefn);
-        MoveHoles(array, len, denseList, denseLen);
-        return array;
-    }
-
-    
-    var lBuffer = denseList;
-    var rBuffer = [];
-
-    
-    var windowSize = 4;
-    for (var start = 0; start < denseLen - 1; start += windowSize) {
-        var end = std_Math_min(start + windowSize - 1, denseLen - 1);
-        InsertionSort(lBuffer, start, end, comparefn);
-    }
-
-    for (; windowSize < denseLen; windowSize = 2 * windowSize) {
-        for (var start = 0; start < denseLen; start += 2 * windowSize) {
-            
-            var mid = start + windowSize - 1;
-
-            
-            var end = std_Math_min(start + 2 * windowSize - 1, denseLen - 1);
-
-            Merge(lBuffer, rBuffer, start, mid, end, comparefn);
-        }
-
-        
-        var swap = lBuffer;
-        lBuffer = rBuffer;
-        rBuffer = swap;
-    }
-    MoveHoles(array, len, lBuffer, denseLen);
+  if (denseLen < 1) {
     return array;
+  }
+
+  
+  
+  if (denseLen < 24) {
+    InsertionSort(denseList, 0, denseLen - 1, comparefn);
+    MoveHoles(array, len, denseList, denseLen);
+    return array;
+  }
+
+  
+  var lBuffer = denseList;
+  var rBuffer = [];
+
+  
+  var windowSize = 4;
+  for (var start = 0; start < denseLen - 1; start += windowSize) {
+    var end = std_Math_min(start + windowSize - 1, denseLen - 1);
+    InsertionSort(lBuffer, start, end, comparefn);
+  }
+
+  for (; windowSize < denseLen; windowSize = 2 * windowSize) {
+    for (var start = 0; start < denseLen; start += 2 * windowSize) {
+      
+      var mid = start + windowSize - 1;
+
+      
+      var end = std_Math_min(start + 2 * windowSize - 1, denseLen - 1);
+
+      Merge(lBuffer, rBuffer, start, mid, end, comparefn);
+    }
+
+    
+    var swap = lBuffer;
+    lBuffer = rBuffer;
+    rBuffer = swap;
+  }
+  MoveHoles(array, len, lBuffer, denseLen);
+  return array;
 }
 
 
@@ -133,100 +133,100 @@ function MergeSort(array, len, comparefn) {
 
 
 function MergeTypedArray(list, out, start, mid, end, comparefn) {
-    
-    
-    if (mid >= end || callContentFunction(comparefn, undefined,
-                                          list[mid], list[mid + 1]) <= 0) {
-        for (var i = start; i <= end; i++) {
-            out[i] = list[i];
-        }
-        return;
+  
+  
+  if (mid >= end || callContentFunction(comparefn, undefined,
+                                        list[mid], list[mid + 1]) <= 0) {
+    for (var i = start; i <= end; i++) {
+      out[i] = list[i];
     }
+    return;
+  }
 
-    var i = start;
-    var j = mid + 1;
-    var k = start;
-    while (i <= mid && j <= end) {
-        var lvalue = list[i];
-        var rvalue = list[j];
-        if (callContentFunction(comparefn, undefined, lvalue, rvalue) <= 0) {
-            out[k++] = lvalue;
-            i++;
-        } else {
-            out[k++] = rvalue;
-            j++;
-        }
+  var i = start;
+  var j = mid + 1;
+  var k = start;
+  while (i <= mid && j <= end) {
+    var lvalue = list[i];
+    var rvalue = list[j];
+    if (callContentFunction(comparefn, undefined, lvalue, rvalue) <= 0) {
+      out[k++] = lvalue;
+      i++;
+    } else {
+      out[k++] = rvalue;
+      j++;
     }
+  }
 
-    
-    while (i <= mid) {
-        out[k++] = list[i++];
-    }
-    while (j <= end) {
-        out[k++] = list[j++];
-    }
+  
+  while (i <= mid) {
+    out[k++] = list[i++];
+  }
+  while (j <= end) {
+    out[k++] = list[j++];
+  }
 }
 
 
 function MergeSortTypedArray(array, len, comparefn) {
-    assert(IsPossiblyWrappedTypedArray(array),
-           "MergeSortTypedArray works only with typed arrays.");
+  assert(IsPossiblyWrappedTypedArray(array),
+         "MergeSortTypedArray works only with typed arrays.");
 
-    
-    var C = ConstructorForTypedArray(array);
+  
+  var C = ConstructorForTypedArray(array);
 
-    var lBuffer = new C(len);
+  var lBuffer = new C(len);
 
-    
-    
-    for (var i = 0; i < len; i++) {
-        lBuffer[i] = array[i];
-    }
+  
+  
+  for (var i = 0; i < len; i++) {
+    lBuffer[i] = array[i];
+  }
 
-    
-    
-    if (len < 8) {
-        InsertionSort(lBuffer, 0, len - 1, comparefn);
-
-        
-        for (var i = 0; i < len; i++) {
-            array[i] = lBuffer[i];
-        }
-
-        return array;
-    }
-
-    
-    var rBuffer = new C(len);
-
-    
-    var windowSize = 4;
-    for (var start = 0; start < len - 1; start += windowSize) {
-        var end = std_Math_min(start + windowSize - 1, len - 1);
-        InsertionSort(lBuffer, start, end, comparefn);
-    }
-
-    for (; windowSize < len; windowSize = 2 * windowSize) {
-        for (var start = 0; start < len; start += 2 * windowSize) {
-            
-            var mid = start + windowSize - 1;
-
-            
-            var end = std_Math_min(start + 2 * windowSize - 1, len - 1);
-
-            MergeTypedArray(lBuffer, rBuffer, start, mid, end, comparefn);
-        }
-
-        
-        var swap = lBuffer;
-        lBuffer = rBuffer;
-        rBuffer = swap;
-    }
+  
+  
+  if (len < 8) {
+    InsertionSort(lBuffer, 0, len - 1, comparefn);
 
     
     for (var i = 0; i < len; i++) {
-        array[i] = lBuffer[i];
+      array[i] = lBuffer[i];
     }
 
     return array;
+  }
+
+  
+  var rBuffer = new C(len);
+
+  
+  var windowSize = 4;
+  for (var start = 0; start < len - 1; start += windowSize) {
+    var end = std_Math_min(start + windowSize - 1, len - 1);
+    InsertionSort(lBuffer, start, end, comparefn);
+  }
+
+  for (; windowSize < len; windowSize = 2 * windowSize) {
+    for (var start = 0; start < len; start += 2 * windowSize) {
+      
+      var mid = start + windowSize - 1;
+
+      
+      var end = std_Math_min(start + 2 * windowSize - 1, len - 1);
+
+      MergeTypedArray(lBuffer, rBuffer, start, mid, end, comparefn);
+    }
+
+    
+    var swap = lBuffer;
+    lBuffer = rBuffer;
+    rBuffer = swap;
+  }
+
+  
+  for (var i = 0; i < len; i++) {
+    array[i] = lBuffer[i];
+  }
+
+  return array;
 }
