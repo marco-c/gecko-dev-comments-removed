@@ -52,7 +52,7 @@ void DataTracker::Observe(TSN tsn,
 
   
   if (unwrapped_tsn <= last_cumulative_acked_tsn_) {
-    
+    duplicate_tsns_.insert(unwrapped_tsn.Wrap());
     return;
   }
 
@@ -66,7 +66,11 @@ void DataTracker::Observe(TSN tsn,
       additional_tsns_.erase(additional_tsns_.begin());
     }
   } else {
-    additional_tsns_.insert(unwrapped_tsn);
+    bool inserted = additional_tsns_.insert(unwrapped_tsn).second;
+    if (!inserted) {
+      
+      duplicate_tsns_.insert(unwrapped_tsn.Wrap());
+    }
   }
 
   
@@ -178,15 +182,11 @@ SackChunk DataTracker::CreateSelectiveAck(size_t a_rwnd) {
   
   
   
-  std::vector<TSN> duplicate_tsns;
-  duplicate_tsns.reserve(duplicates_.size());
-  for (UnwrappedTSN tsn : duplicates_) {
-    duplicate_tsns.push_back(tsn.Wrap());
-  }
-  duplicates_.clear();
+  std::set<TSN> duplicate_tsns;
+  duplicate_tsns_.swap(duplicate_tsns);
 
   return SackChunk(last_cumulative_acked_tsn_.Wrap(), a_rwnd,
-                   CreateGapAckBlocks(), duplicate_tsns);
+                   CreateGapAckBlocks(), std::move(duplicate_tsns));
 }
 
 std::vector<SackChunk::GapAckBlock> DataTracker::CreateGapAckBlocks() const {

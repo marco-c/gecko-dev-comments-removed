@@ -38,9 +38,7 @@ SackChunk ChunkValidators::Clean(SackChunk&& sack) {
   
   if (gap_ack_blocks.size() <= 1) {
     return SackChunk(sack.cumulative_tsn_ack(), sack.a_rwnd(),
-                     std::move(gap_ack_blocks),
-                     std::vector<TSN>(sack.duplicate_tsns().begin(),
-                                      sack.duplicate_tsns().end()));
+                     std::move(gap_ack_blocks), sack.duplicate_tsns());
   }
 
   
@@ -63,8 +61,7 @@ SackChunk ChunkValidators::Clean(SackChunk&& sack) {
   }
 
   return SackChunk(sack.cumulative_tsn_ack(), sack.a_rwnd(), std::move(merged),
-                   std::vector<TSN>(sack.duplicate_tsns().begin(),
-                                    sack.duplicate_tsns().end()));
+                   sack.duplicate_tsns());
 }
 
 bool ChunkValidators::Validate(const SackChunk& sack) {
