@@ -55,6 +55,7 @@ const COLOR_TAKING_FUNCTIONS = [
   "conic-gradient",
   "repeating-conic-gradient",
   "drop-shadow",
+  "color-mix",
 ];
 
 const BASIC_SHAPE_FUNCTIONS = ["polygon", "circle", "ellipse", "inset"];
