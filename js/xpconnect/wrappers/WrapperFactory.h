@@ -38,7 +38,7 @@ class CrossOriginObjectWrapper : public js::Wrapper {
       : js::Wrapper(CROSS_COMPARTMENT,  false,
                      true) {}
 
-  bool dynamicCheckedUnwrapAllowed(JS::HandleObject obj,
+  bool dynamicCheckedUnwrapAllowed(JS::Handle<JSObject*> obj,
                                    JSContext* cx) const override;
 
   static const CrossOriginObjectWrapper singleton;
@@ -75,10 +75,10 @@ class WrapperFactory {
 
   static bool IsCOW(JSObject* wrapper);
 
-  static JSObject* GetXrayWaiver(JS::HandleObject obj);
+  static JSObject* GetXrayWaiver(JS::Handle<JSObject*> obj);
   
   
-  static JSObject* CreateXrayWaiver(JSContext* cx, JS::HandleObject obj,
+  static JSObject* CreateXrayWaiver(JSContext* cx, JS::Handle<JSObject*> obj,
                                     bool allowExisting = false);
   static JSObject* WaiveXray(JSContext* cx, JSObject* obj);
 
@@ -90,18 +90,20 @@ class WrapperFactory {
   static bool AllowWaiver(JSObject* wrapper);
 
   
-  static void PrepareForWrapping(JSContext* cx, JS::HandleObject scope,
-                                 JS::HandleObject origObj, JS::HandleObject obj,
-                                 JS::HandleObject objectPassedToWrap,
-                                 JS::MutableHandleObject retObj);
+  static void PrepareForWrapping(JSContext* cx, JS::Handle<JSObject*> scope,
+                                 JS::Handle<JSObject*> origObj,
+                                 JS::Handle<JSObject*> obj,
+                                 JS::Handle<JSObject*> objectPassedToWrap,
+                                 JS::MutableHandle<JSObject*> retObj);
 
   
-  static JSObject* Rewrap(JSContext* cx, JS::HandleObject existing,
-                          JS::HandleObject obj);
+  static JSObject* Rewrap(JSContext* cx, JS::Handle<JSObject*> existing,
+                          JS::Handle<JSObject*> obj);
 
   
-  static bool WaiveXrayAndWrap(JSContext* cx, JS::MutableHandleValue vp);
-  static bool WaiveXrayAndWrap(JSContext* cx, JS::MutableHandleObject object);
+  static bool WaiveXrayAndWrap(JSContext* cx, JS::MutableHandle<JS::Value> vp);
+  static bool WaiveXrayAndWrap(JSContext* cx,
+                               JS::MutableHandle<JSObject*> object);
 };
 
 }  

@@ -88,7 +88,7 @@ class ComponentModuleLoader : public JS::loader::ModuleLoaderBase {
 
   
   
-  JS::PersistentRootedValue mLoadException;
+  JS::PersistentRooted<JS::Value> mLoadException;
 };
 
 
@@ -105,9 +105,9 @@ class ComponentLoadContext : public JS::loader::LoadContextBase {
 
   
   
-  JS::PersistentRootedValue mExceptionValue;
+  JS::PersistentRooted<JS::Value> mExceptionValue;
 
-  JS::PersistentRootedScript mScript;
+  JS::PersistentRooted<JSScript*> mScript;
 };
 
 }  
