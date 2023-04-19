@@ -588,14 +588,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void EnableRollup(nsIContent* aPopup, bool aShouldRollup);
-
-  
-
-
-
-
-
   void UpdatePopupPositions(nsRefreshDriver* aRefreshDriver);
 
   
