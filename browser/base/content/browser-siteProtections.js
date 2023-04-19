@@ -1621,7 +1621,7 @@ var gProtectionsHandler = {
 
 
 
-  updatePanelForBlockingEvent(event, isShown) {
+  updatePanelForBlockingEvent(event) {
     
     for (let blocker of Object.values(this.blockers)) {
       if (blocker.categoryItem.hasAttribute("uidisabled")) {
@@ -1643,16 +1643,6 @@ var gProtectionsHandler = {
     if (this.anyDetected) {
       
       this.reorderCategoryItems();
-
-      if (isShown) {
-        
-        
-        
-        
-        PanelMultiView.forNode(
-          this._protectionsPopupMainView
-        ).descriptionHeightWorkaround();
-      }
     }
   },
 
@@ -1756,7 +1746,7 @@ var gProtectionsHandler = {
       this._protectionsPopup?.state
     );
     if (isPanelOpen) {
-      this.updatePanelForBlockingEvent(event, true);
+      this.updatePanelForBlockingEvent(event);
     }
 
     

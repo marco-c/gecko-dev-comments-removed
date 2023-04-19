@@ -131,7 +131,6 @@ const TRANSITION_PHASES = Object.freeze({
 
 let gNodeToObjectMap = new WeakMap();
 let gWindowsWithUnloadHandler = new WeakSet();
-let gMultiLineElementsMap = new WeakMap();
 
 
 
@@ -827,7 +826,6 @@ var PanelMultiView = class extends AssociatedToNode {
 
     
     nextPanelView.visible = true;
-    nextPanelView.descriptionHeightWorkaround();
 
     return true;
   }
@@ -991,7 +989,6 @@ var PanelMultiView = class extends AssociatedToNode {
           return this._getBoundsWithoutFlushing(header).height;
         });
       }
-      await nextPanelView.descriptionHeightWorkaround();
       
       if (!nextPanelView.isOpenIn(this)) {
         return;
@@ -1000,10 +997,6 @@ var PanelMultiView = class extends AssociatedToNode {
       this._offscreenViewStack.style.minHeight = olderView.knownHeight + "px";
       this._offscreenViewStack.appendChild(viewNode);
       nextPanelView.visible = true;
-
-      
-      
-      await nextPanelView.descriptionHeightWorkaround();
 
       viewRect = await window.promiseDocumentFlushed(() => {
         return this._getBoundsWithoutFlushing(viewNode);
@@ -1267,7 +1260,6 @@ var PanelMultiView = class extends AssociatedToNode {
         
         
         let mainPanelView = this.openViews[0];
-        mainPanelView.descriptionHeightWorkaround(true).catch(Cu.reportError);
         this._activateView(mainPanelView);
         break;
       case "popuphidden": {
@@ -1465,124 +1457,6 @@ var PanelView = class extends AssociatedToNode {
     let rect = this._getBoundsWithoutFlushing(this.node);
     this.knownWidth = rect.width;
     this.knownHeight = rect.height;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async descriptionHeightWorkaround(allowSyncReflows = false) {
-    if (!this.node.hasAttribute("descriptionheightworkaround")) {
-      
-      return;
-    }
-
-    const profilerMarkerStartTime = Cu.now();
-
-    
-    
-    
-    let items = [];
-    let collectItems = () => {
-      
-      
-      
-      let isMultiline = ":not([hidden],[value],:empty)";
-      let selector = [
-        "description" + isMultiline,
-        "label" + isMultiline,
-        "toolbarbutton[wrap]:not([hidden])",
-      ].join(",");
-      for (let element of this.node.querySelectorAll(selector)) {
-        
-        if (element.closest("[hidden]")) {
-          continue;
-        }
-
-        
-        if (
-          element.tagName != "toolbarbutton" &&
-          element.closest("toolbarbutton")
-        ) {
-          continue;
-        }
-
-        
-        element = element.multilineLabel || element;
-
-        let bounds = element.getBoundingClientRect();
-        let previous = gMultiLineElementsMap.get(element);
-        
-        
-        if (
-          !bounds.width ||
-          !bounds.height ||
-          (previous &&
-            element.textContent == previous.textContent &&
-            bounds.width == previous.bounds.width)
-        ) {
-          continue;
-        }
-
-        items.push({ element });
-      }
-    };
-    if (allowSyncReflows) {
-      collectItems();
-    } else {
-      await this.window.promiseDocumentFlushed(collectItems);
-      
-      if (!this.node.panelMultiView) {
-        return;
-      }
-    }
-
-    
-    
-    for (let item of items) {
-      item.element.style.removeProperty("height");
-    }
-
-    
-    
-    let measureItems = () => {
-      for (let item of items) {
-        item.bounds = item.element.getBoundingClientRect();
-      }
-    };
-    if (allowSyncReflows) {
-      measureItems();
-    } else {
-      await this.window.promiseDocumentFlushed(measureItems);
-      
-      if (!this.node.panelMultiView) {
-        return;
-      }
-    }
-
-    
-    for (let { element, bounds } of items) {
-      gMultiLineElementsMap.set(element, {
-        bounds,
-        textContent: element.textContent,
-      });
-      element.style.height = bounds.height + "px";
-    }
-
-    ChromeUtils.addProfilerMarker(
-      "PMV.descriptionHeightWorkaround()",
-      profilerMarkerStartTime,
-      `<${this.node.tagName} id="${this.node.id}">`
-    );
   }
 
   

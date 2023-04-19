@@ -135,9 +135,6 @@ function createViewControllers(state, elements) {
         
         elements.presetsMenuList.value = "custom";
       }
-      const { PanelMultiView } = lazy.PanelMultiView();
-      
-      PanelMultiView.forNode(elements.panelview).descriptionHeightWorkaround();
     },
 
     updateProfilerState() {
@@ -220,11 +217,6 @@ function initializeView(state, elements, view) {
     view.updateInfoCollapse();
     view.updateProfilerState();
     view.updatePresets();
-
-    
-    
-    const { PanelMultiView } = lazy.PanelMultiView();
-    PanelMultiView.forNode(elements.panelview).descriptionHeightWorkaround();
 
     
     elements.window.requestAnimationFrame(() => {
