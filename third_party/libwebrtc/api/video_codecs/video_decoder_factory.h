@@ -15,20 +15,46 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
+#include "api/video_codecs/sdp_video_format.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 class VideoDecoder;
-struct SdpVideoFormat;
 
 
 
 class RTC_EXPORT VideoDecoderFactory {
  public:
+  struct CodecSupport {
+    bool is_supported = false;
+    bool is_power_efficient = false;
+  };
+
   
   
   virtual std::vector<SdpVideoFormat> GetSupportedFormats() const = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  virtual CodecSupport QueryCodecSupport(
+      const SdpVideoFormat& format,
+      absl::optional<std::string> scalability_mode) const {
+    
+    
+    
+    CodecSupport codec_support;
+    if (!scalability_mode) {
+      codec_support.is_supported = format.IsCodecInList(GetSupportedFormats());
+    }
+    return codec_support;
+  }
 
   
   virtual std::unique_ptr<VideoDecoder> CreateVideoDecoder(

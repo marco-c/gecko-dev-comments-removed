@@ -12,6 +12,7 @@
 #define API_VIDEO_CODECS_VIDEO_ENCODER_FACTORY_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "absl/types/optional.h"
@@ -34,6 +35,11 @@ class VideoEncoderFactory {
     
     
     bool has_internal_source = false;
+  };
+
+  struct CodecSupport {
+    bool is_supported = false;
+    bool is_power_efficient = false;
   };
 
   
@@ -76,6 +82,26 @@ class VideoEncoderFactory {
   
   virtual CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const {
     return CodecInfo();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  virtual CodecSupport QueryCodecSupport(
+      const SdpVideoFormat& format,
+      absl::optional<std::string> scalability_mode) const {
+    
+    
+    
+    CodecSupport codec_support;
+    if (!scalability_mode) {
+      codec_support.is_supported = format.IsCodecInList(GetSupportedFormats());
+    }
+    return codec_support;
   }
 
   
