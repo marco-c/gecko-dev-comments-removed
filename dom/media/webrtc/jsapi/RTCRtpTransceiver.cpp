@@ -525,9 +525,6 @@ void RTCRtpTransceiver::SyncToJsep() const {
   if (mStopped) {
     jsepTransceiver->Stop();
   }
-  if (mAddTrackMagic) {
-    jsepTransceiver->SetAddTrackMagic();
-  }
 }
 
 
@@ -584,7 +581,9 @@ void RTCRtpTransceiver::SetDirectionInternal(
 void RTCRtpTransceiver::SetAddTrackMagic() {
   
   
-  mAddTrackMagic = true;
+  
+  
+  GetJsepTransceiver()->SetAddTrackMagic();
 }
 
 bool RTCRtpTransceiver::ShouldRemove() const { return mShouldRemove; }
