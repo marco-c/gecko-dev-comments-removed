@@ -665,6 +665,9 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachSetHas();
   AttachDecision tryAttachMapHas();
   AttachDecision tryAttachMapGet();
+#ifdef FUZZING_JS_FUZZILLI
+  AttachDecision tryAttachFuzzilliHash();
+#endif
 
   void trackAttached(const char* name ) {
     return generator_.trackAttached(name);
