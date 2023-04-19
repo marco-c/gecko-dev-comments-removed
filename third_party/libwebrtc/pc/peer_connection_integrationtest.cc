@@ -8,10 +8,6 @@
 
 
 
-
-
-#if !defined(THREAD_SANITIZER)
-
 #include <stdio.h>
 
 #include <algorithm>
@@ -3717,6 +3713,9 @@ TEST_P(PeerConnectionIntegrationTest,
   EXPECT_FALSE(callee()->data_observer()->IsOpen());
 }
 
+#if !defined(THREAD_SANITIZER)
+
+
 
 
 
@@ -3762,6 +3761,8 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
   EXPECT_EQ_SIMULATED_WAIT(data, new_observer.last_message(), kDefaultTimeout,
                            FakeClock());
 }
+
+#endif  
 
 
 
@@ -4073,6 +4074,9 @@ TEST_P(PeerConnectionIntegrationTest, IceStatesReachCompletion) {
                  callee()->ice_connection_state(), kDefaultTimeout);
 }
 
+#if !defined(THREAD_SANITIZER)
+
+
 constexpr int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
                                 cricket::PORTALLOCATOR_DISABLE_RELAY |
                                 cricket::PORTALLOCATOR_DISABLE_TCP;
@@ -4132,6 +4136,8 @@ TEST_P(PeerConnectionIntegrationTest,
                           "WebRTC.PeerConnection.CandidatePairType_UDP",
                           webrtc::kIceCandidatePairHostNameHostName));
 }
+
+#endif  
 
 
 
@@ -4200,6 +4206,9 @@ class PeerConnectionIntegrationIceStatesTest
 class PeerConnectionIntegrationIceStatesTestWithFakeClock
     : public FakeClockForTest,
       public PeerConnectionIntegrationIceStatesTest {};
+
+#if !defined(THREAD_SANITIZER)
+
 
 
 
@@ -4326,6 +4335,8 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock,
                            caller()->standardized_ice_connection_state(),
                            kConsentTimeout, FakeClock());
 }
+
+#endif  
 
 
 
@@ -4683,6 +4694,9 @@ TEST_F(PeerConnectionIntegrationTestPlanB, CanSendRemoteVideoTrack) {
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
+#if !defined(THREAD_SANITIZER)
+
+
 
 
 
@@ -4772,6 +4786,8 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
   
   ClosePeerConnections();
 }
+
+#endif  
 
 
 
@@ -5195,6 +5211,9 @@ TEST_P(PeerConnectionIntegrationTest, MediaFlowsWhenCandidatesSetOnlyInSdp) {
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
+#if !defined(THREAD_SANITIZER)
+
+
 
 
 
@@ -5264,6 +5283,8 @@ TEST_P(PeerConnectionIntegrationTest,
   
   EXPECT_TRUE_WAIT(GetAudioEnergyStat(caller()) > 0, kMaxWaitForFramesMs);
 }
+
+#endif  
 
 
 
@@ -6097,5 +6118,3 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
 
 }  
 }  
-
-#endif  
