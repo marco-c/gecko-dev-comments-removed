@@ -7,13 +7,15 @@
 
 
 
+
 function appendIframeWith(t, doc, func) {
   return new Promise(resolve => {
       const child = doc.createElement("iframe");
+      t.add_cleanup(() => child.remove());
+
+      child.addEventListener("load", () => resolve(child), { once: true });
       func(child);
-      child.onload = () => { resolve(child); };
       doc.body.appendChild(child);
-      t.add_cleanup(() => { doc.body.removeChild(child); });
     });
 }
 
@@ -35,6 +37,8 @@ function appendIframe(t, doc, src) {
 
 
 
+
+
 function futureMessage(options) {
   return new Promise(resolve => {
     window.addEventListener("message", (e) => {
@@ -42,9 +46,24 @@ function futureMessage(options) {
         return;
       }
 
+      if (options?.filter && !options.filter(e.data)) {
+        return;
+      }
+
       resolve(e.data);
     });
   });
+};
+
+
+
+
+function promise_test_parallel(promise, description) {
+  async_test(test => {
+    promise(test)
+        .then(() => test.done())
+        .catch(test.step_func(error => { throw error; }));
+  }, description);
 };
 
 async function postMessageAndAwaitReply(target, message) {
@@ -342,21 +361,28 @@ const IframeTestResult = {
 };
 
 async function iframeTest(t, { source, target, expected }) {
+  
+  const uuid = token();
+
   const targetUrl = preflightUrl(target);
   targetUrl.searchParams.set("file", "iframed.html");
+  targetUrl.searchParams.set("iframe-uuid", uuid);
 
   const sourceUrl =
       resolveUrl("resources/iframer.html", sourceResolveOptions(source));
   sourceUrl.searchParams.set("url", targetUrl);
 
-  const messagePromise = futureMessage();
+  const messagePromise = futureMessage({
+    filter: (data) => data.uuid === uuid,
+  });
   const iframe = await appendIframe(t, document, sourceUrl);
 
   
   
   
+  
   const result = await Promise.race([
-      messagePromise,
+      messagePromise.then((data) => data.message),
       new Promise((resolve) => {
         t.step_timeout(() => resolve("timeout"), 500 );
       }),
