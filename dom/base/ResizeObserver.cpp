@@ -194,7 +194,7 @@ bool ResizeObservation::IsActive() const {
 
   
   
-  if (frame && frame->AncestorHidesContent()) {
+  if (frame && frame->IsHiddenByContentVisibilityOnAnyAncestor()) {
     return false;
   }
 

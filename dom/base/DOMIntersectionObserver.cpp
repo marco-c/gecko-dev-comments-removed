@@ -613,7 +613,7 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   
   
   
-  if (targetFrame->AncestorHidesContent()) {
+  if (targetFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
     return {isSimilarOrigin};
   }
 
