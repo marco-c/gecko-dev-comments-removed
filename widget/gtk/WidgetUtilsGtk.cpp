@@ -91,9 +91,7 @@ GdkDevice* GdkGetPointer() {
 }
 
 static GdkEvent* sLastMousePressEvent = nullptr;
-GdkEvent* GetLastMousePressEvent() {
-  return sLastMousePressEvent;
-}
+GdkEvent* GetLastMousePressEvent() { return sLastMousePressEvent; }
 
 void SetLastMousePressEvent(GdkEvent* aEvent) {
   if (sLastMousePressEvent) {
@@ -106,7 +104,6 @@ void SetLastMousePressEvent(GdkEvent* aEvent) {
   GUniquePtr<GdkEvent> event(gdk_event_copy(aEvent));
   sLastMousePressEvent = event.release();
 }
-
 
 bool IsRunningUnderFlatpak() {
   
