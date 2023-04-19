@@ -828,7 +828,7 @@ void ChannelMediaResource::UpdatePrincipal() {
         
         
         
-        !nsContentUtils::CheckMayLoad(loadInfo->GetLoadingPrincipal(), mChannel,
+        !nsContentUtils::CheckMayLoad(MediaElement()->NodePrincipal(), mChannel,
                                        true);
     if (!hadData) {  
       mSharedInfo->mFinalResponsesAreOpaque = finalResponseIsOpaque;
