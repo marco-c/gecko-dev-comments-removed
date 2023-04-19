@@ -5,7 +5,7 @@
 "use strict";
 
 const { AppInfo } = ChromeUtils.import(
-  "chrome://remote/content/marionette/appinfo.js"
+  "chrome://remote/content/shared/AppInfo.jsm"
 );
 
 
