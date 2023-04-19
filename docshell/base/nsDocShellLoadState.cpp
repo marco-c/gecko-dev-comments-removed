@@ -819,8 +819,7 @@ nsresult nsDocShellLoadState::SetupInheritingPrincipal(
       
       
       
-      mPrincipalToInherit = NullPrincipal::CreateWithInheritedAttributes(
-          aOriginAttributes, false);
+      mPrincipalToInherit = NullPrincipal::Create(aOriginAttributes);
       mInheritPrincipal = false;
     }
   }
@@ -833,9 +832,15 @@ nsresult nsDocShellLoadState::SetupInheritingPrincipal(
   if (mLoadFlags & nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL) {
     mInheritPrincipal = false;
     
+    nsCOMPtr<nsIURI> nullPrincipalURI =
+        NullPrincipal::CreateURI(mPrincipalToInherit);
     
-    mPrincipalToInherit = NullPrincipal::CreateWithInheritedAttributes(
-        aOriginAttributes, mFirstParty);
+    
+    OriginAttributes attrs(aOriginAttributes);
+    if (mFirstParty) {
+      attrs.SetFirstPartyDomain(true, nullPrincipalURI);
+    }
+    mPrincipalToInherit = NullPrincipal::Create(attrs, nullPrincipalURI);
   }
 
   return NS_OK;

@@ -839,8 +839,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       
       
       if (parentBC) {
-        newWindowPrincipal = NullPrincipal::CreateWithInheritedAttributes(
-            parentBC->OriginAttributesRef());
+        newWindowPrincipal =
+            NullPrincipal::Create(parentBC->OriginAttributesRef());
       } else {
         newWindowPrincipal = NullPrincipal::CreateWithoutOriginAttributes();
       }

@@ -6725,7 +6725,7 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
       if (aPrincipal) {
         principal = NullPrincipal::CreateWithInheritedAttributes(aPrincipal);
       } else {
-        principal = NullPrincipal::CreateWithInheritedAttributes(this);
+        principal = NullPrincipal::Create(GetOriginAttributes());
       }
       partitionedPrincipal = principal;
     } else {
@@ -12071,7 +12071,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
       
       
       nsCOMPtr<nsIPrincipal> principal =
-          NullPrincipal::CreateWithInheritedAttributes(this);
+          NullPrincipal::Create(GetOriginAttributes());
       aLoadState->SetTriggeringPrincipal(principal);
     }
   }
