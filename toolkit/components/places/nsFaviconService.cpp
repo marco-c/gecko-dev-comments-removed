@@ -719,23 +719,27 @@ nsresult nsFaviconService::OptimizeIconSizes(IconData& aIcon) {
 
       
       
+      bool animated;
       if (newPayload.mimeType.Equals(payload.mimeType) &&
           newPayload.width == frameInfo.width &&
-          payload.data.Length() < nsIFaviconService::MAX_FAVICON_BUFFER_SIZE) {
+          payload.data.Length() < nsIFaviconService::MAX_FAVICON_BUFFER_SIZE &&
+          (NS_FAILED(container->GetAnimated(&animated)) || !animated)) {
         newPayload.data = payload.data;
-      } else {
-        
-        
-        
-        nsCOMPtr<nsIInputStream> iconStream;
-        rv = GetImgTools()->EncodeScaledImage(
-            container, newPayload.mimeType, newPayload.width, newPayload.width,
-            u""_ns, getter_AddRefs(iconStream));
-        NS_ENSURE_SUCCESS(rv, rv);
-        
-        rv = NS_ConsumeStream(iconStream, UINT32_MAX, newPayload.data);
-        NS_ENSURE_SUCCESS(rv, rv);
+        break;
       }
+
+      
+      
+      
+      
+      nsCOMPtr<nsIInputStream> iconStream;
+      rv = GetImgTools()->EncodeScaledImage(container, newPayload.mimeType,
+                                            newPayload.width, newPayload.width,
+                                            u""_ns, getter_AddRefs(iconStream));
+      NS_ENSURE_SUCCESS(rv, rv);
+      
+      rv = NS_ConsumeStream(iconStream, UINT32_MAX, newPayload.data);
+      NS_ENSURE_SUCCESS(rv, rv);
 
       
       if (newPayload.data.Length() <
