@@ -103,7 +103,10 @@ async function installTestExtension(
         },
       };
       break;
-    case "sitepermission":
+
+    
+    
+    case "sitepermission-deprecated":
       additionalProps = {
         name: "WebMIDI test addon for https://mochi.test",
         install_origins: ["https://mochi.test"],
@@ -126,7 +129,9 @@ async function installTestExtension(
     useAddonManager: "temporary",
   };
 
-  if (type === "sitepermission") {
+  
+  
+  if (type === "sitepermission-deprecated") {
     const xpi = AddonTestUtils.createTempWebExtensionFile(extensionOpts);
     const addon = await AddonManager.installTemporaryAddon(xpi);
     

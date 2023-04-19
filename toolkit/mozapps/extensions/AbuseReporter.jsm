@@ -24,7 +24,13 @@ const MAX_STRING_LENGTH = 255;
 const MIN_MS_BETWEEN_SUBMITS = 30000;
 
 
-const SUPPORTED_ADDON_TYPES = ["extension", "theme", "sitepermission"];
+const SUPPORTED_ADDON_TYPES = [
+  "extension",
+  "theme",
+  "sitepermission",
+  
+  "sitepermission-deprecated",
+];
 
 const lazy = {};
 

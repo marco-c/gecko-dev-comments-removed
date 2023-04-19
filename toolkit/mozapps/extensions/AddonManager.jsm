@@ -4876,6 +4876,11 @@ AMTelemetry = {
       case "dictionary":
       case "sitepermission":
         return addonType;
+      
+      case "sitepermission-deprecated":
+        
+        
+        return "siteperm_deprecated";
       default:
         
         return "other";

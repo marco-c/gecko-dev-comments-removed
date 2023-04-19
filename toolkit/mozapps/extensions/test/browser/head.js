@@ -630,10 +630,10 @@ function addCertOverrides() {
 
 
 
-function MockProvider() {
+function MockProvider(addonTypes) {
   this.addons = [];
   this.installs = [];
-  this.addonTypes = ["extension"];
+  this.addonTypes = addonTypes ?? ["extension"];
 
   var self = this;
   registerCleanupFunction(function() {

@@ -2,6 +2,9 @@
 
 "use strict";
 
+
+
+
 const { AddonManager } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
@@ -9,6 +12,9 @@ const { TestUtils } = ChromeUtils.import(
   "resource://testing-common/TestUtils.jsm"
 );
 
+const { TelemetryController } = ChromeUtils.import(
+  "resource://gre/modules/TelemetryController.jsm"
+);
 const { TelemetryTestUtils } = ChromeUtils.import(
   "resource://testing-common/TelemetryTestUtils.jsm"
 );
@@ -55,6 +61,12 @@ async function _test_manifest(manifest, expectedError) {
   }
   equal(normalized.errors.length, 0, "Should have no warning");
 }
+
+add_setup(async () => {
+  
+  
+  await TelemetryController.testSetup();
+});
 
 add_task(async function test_manifest_site_permissions() {
   await _test_manifest({
@@ -136,7 +148,7 @@ add_task(async function test_sitepermission_telemetry() {
       [
         "addonsManager",
         "install",
-        "sitepermission",
+        "siteperm_deprecated",
         /.*/,
         {
           step: "started",
@@ -146,14 +158,14 @@ add_task(async function test_sitepermission_telemetry() {
       [
         "addonsManager",
         "install",
-        "sitepermission",
+        "siteperm_deprecated",
         /.*/,
         {
           step: "completed",
           addon_id,
         },
       ],
-      ["addonsManager", "uninstall", "sitepermission", addon_id],
+      ["addonsManager", "uninstall", "siteperm_deprecated", addon_id],
     ],
     {
       category: "addonsManager",

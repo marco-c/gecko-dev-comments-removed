@@ -114,6 +114,8 @@ async function openAbuseReport({ addonId, reportEntryPoint }) {
       )
       .then(clearUnloadListeners);
   } catch (err) {
+    
+    Cu.reportError(err);
     document.dispatchEvent(
       new CustomEvent("abuse-report:create-error", {
         detail: {
@@ -152,9 +154,14 @@ function createReportMessageBar(
   addonNameEl.setAttribute("data-l10n-name", "addon-name");
   messageEl.append(addonNameEl);
 
+  
+  
+  const mappingAddonType =
+    addonType === "sitepermission-deprecated" ? "sitepermission" : addonType;
+
   document.l10n.setAttributes(
     messageEl,
-    getMessageL10n(barInfo.addonTypeSuffix ? `${id}-${addonType}` : id),
+    getMessageL10n(barInfo.addonTypeSuffix ? `${id}-${mappingAddonType}` : id),
     { "addon-name": addonName || addonId }
   );
 
@@ -163,7 +170,7 @@ function createReportMessageBar(
         
         
         const actionId = barInfo.actionAddonTypeSuffix
-          ? `${action}-${addonType}`
+          ? `${action}-${mappingAddonType}`
           : action;
         const buttonEl = document.createElement("button");
         buttonEl.addEventListener("click", () => onaction && onaction(action));

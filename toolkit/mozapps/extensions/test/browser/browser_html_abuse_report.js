@@ -272,7 +272,14 @@ async function test_abusereport_suggestions(addonId) {
       reason
     );
 
-    if (reasonInfo.isReasonHidden(addon.type)) {
+    
+    
+    const addonType =
+      addon.type === "sitepermission-deprecated"
+        ? "sitepermission"
+        : addon.type;
+
+    if (reasonInfo.isReasonHidden(addonType)) {
       continue;
     }
 
@@ -383,15 +390,18 @@ add_task(async function test_abusereport_suggestions_theme() {
   await theme.unload();
 });
 
+
 add_task(async function test_abusereport_suggestions_sitepermission() {
   const SITEPERM_ADDON_ID = "webmidi@mochi.test";
   const sitePermAddon = await installTestExtension(
     SITEPERM_ADDON_ID,
-    "sitepermission"
+    "sitepermission-deprecated"
   );
   await test_abusereport_suggestions(SITEPERM_ADDON_ID);
   await sitePermAddon.unload();
 });
+
+
 
 
 
@@ -405,7 +415,7 @@ add_task(async function test_abusereport_messagebars() {
   const theme = await installTestExtension(THEME_ID, "theme");
   const sitePermAddon = await installTestExtension(
     SITEPERM_ADDON_ID,
-    "sitepermission"
+    "sitepermission-deprecated"
   );
 
   async function assertMessageBars(
@@ -988,11 +998,13 @@ add_task(async function test_author_hidden_when_missing() {
 
 
 
+
+
 add_task(async function test_siteperm_siteorigin_fallback() {
   const SITEPERM_ADDON_ID = "webmidi-site-origin@mochi.test";
   const sitePermAddon = await installTestExtension(
     SITEPERM_ADDON_ID,
-    "sitepermission",
+    "sitepermission-deprecated",
     {
       homepage_url: undefined,
     }

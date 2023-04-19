@@ -180,7 +180,8 @@ const ALL_XPI_TYPES = new Set([
   "dictionary",
   "extension",
   "locale",
-  "sitepermission",
+  
+  "sitepermission-deprecated",
   "theme",
 ]);
 
@@ -1905,7 +1906,8 @@ class BootstrapScope {
           this.scope = lazy.Extension.getBootstrapScope();
           break;
 
-        case "sitepermission":
+        
+        case "sitepermission-deprecated":
           this.scope = lazy.SitePermission.getBootstrapScope();
           break;
 

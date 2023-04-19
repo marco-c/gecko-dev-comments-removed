@@ -179,7 +179,8 @@ const SIGNED_TYPES = new Set([
   "extension",
   "locale",
   "theme",
-  "sitepermission",
+  
+  "sitepermission-deprecated",
 ]);
 
 
@@ -384,7 +385,8 @@ class AddonInternal {
       return false;
     }
 
-    if (this.type == "sitepermission") {
+    
+    if (this.type == "sitepermission-deprecated") {
       
       for (let origin of installOrigins) {
         let host = new URL(origin).host;
@@ -844,7 +846,9 @@ class AddonInternal {
     
     
     if (
-      (this.type === "extension" || this.type == "sitepermission") &&
+      (this.type === "extension" ||
+        
+        this.type == "sitepermission-deprecated") &&
       this.incognito !== "not_allowed" &&
       this.signedState !== lazy.AddonManager.SIGNEDSTATE_PRIVILEGED &&
       this.signedState !== lazy.AddonManager.SIGNEDSTATE_SYSTEM &&

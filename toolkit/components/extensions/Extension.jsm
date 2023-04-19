@@ -160,6 +160,7 @@ XPCOMUtils.defineLazyGetter(lazy, "NO_PROMPT_PERMISSIONS", async () => {
   );
 });
 
+
 XPCOMUtils.defineLazyGetter(lazy, "SCHEMA_SITE_PERMISSIONS", async () => {
   
   await Management.lazyInit();
@@ -574,10 +575,11 @@ ExtensionAddonObserver.init();
 
 const manifestTypes = new Map([
   ["theme", "manifest.ThemeManifest"],
-  ["sitepermission", "manifest.WebExtensionSitePermissionsManifest"],
   ["locale", "manifest.WebExtensionLangpackManifest"],
   ["dictionary", "manifest.WebExtensionDictionaryManifest"],
   ["extension", "manifest.WebExtensionManifest"],
+  
+  ["sitepermission-deprecated", "manifest.WebExtensionSitePermissionsManifest"],
 ]);
 
 
@@ -1187,7 +1189,8 @@ class ExtensionData {
     } else if (manifest.dictionaries) {
       this.type = "dictionary";
     } else if (manifest.site_permissions) {
-      this.type = "sitepermission";
+      
+      this.type = "sitepermission-deprecated";
     } else {
       this.type = "extension";
     }
@@ -1988,6 +1991,9 @@ class ExtensionData {
     
     
     
+    
+    
+    
     if (info.sitePermissions) {
       for (let permission of info.sitePermissions) {
         try {
@@ -2340,6 +2346,7 @@ class LangpackBootstrapScope extends BootstrapScope {
     this.langpack = null;
   }
 }
+
 
 class SitePermissionBootstrapScope extends BootstrapScope {
   install(data, reason) {}
@@ -3460,6 +3467,7 @@ class Langpack extends ExtensionData {
     lazy.resourceProtocol.setSubstitution(this.startupData.langpackId, null);
   }
 }
+
 
 class SitePermission extends ExtensionData {
   constructor(addonData, startupReason) {

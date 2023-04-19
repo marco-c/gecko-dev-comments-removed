@@ -739,6 +739,11 @@ class AbuseReport extends HTMLElement {
   }
 
   get addonType() {
+    
+    
+    if (this.addon?.type === "sitepermission-deprecated") {
+      return "sitepermission";
+    }
     return this.addon?.type;
   }
 

@@ -1728,7 +1728,10 @@ class CategoryButton extends HTMLButtonElement {
   }
 
   get isVisible() {
-    return true;
+    
+    
+    
+    return AddonManager.hasAddonType(this.name);
   }
 
   get badgeCount() {

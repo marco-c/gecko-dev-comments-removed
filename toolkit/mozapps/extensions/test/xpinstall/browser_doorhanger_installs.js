@@ -2,6 +2,9 @@
 
 
 
+
+
+
 const { AddonTestUtils } = ChromeUtils.import(
   "resource://testing-common/AddonTestUtils.jsm"
 );
@@ -591,7 +594,7 @@ var TESTS = [
             action: "privateBrowsingAllowed",
             view: "postInstall",
             addonId: addon.id,
-            type: "sitepermission",
+            type: "sitepermission-deprecated",
           },
         },
       ],
