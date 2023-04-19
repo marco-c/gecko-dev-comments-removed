@@ -27,14 +27,14 @@ void JSObject2WrappedJSMap::UpdateWeakPointersAfterGC(JSTracer* trc) {
     MOZ_ASSERT(wrapper, "found a null JS wrapper!");
 
     
-    while (wrapper) {
-      if (wrapper->IsSubjectToFinalization()) {
-        wrapper->UpdateObjectPointerAfterGC(trc);
-        if (!wrapper->GetJSObjectPreserveColor()) {
-          dying.AppendElement(dont_AddRef(wrapper));
-        }
+    
+    
+    
+    if (wrapper && wrapper->IsSubjectToFinalization()) {
+      wrapper->UpdateObjectPointerAfterGC(trc);
+      if (!wrapper->GetJSObjectPreserveColor()) {
+        dying.AppendElement(dont_AddRef(wrapper));
       }
-      wrapper = wrapper->GetNextWrapper();
     }
 
     
