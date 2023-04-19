@@ -1797,7 +1797,7 @@ impl Device {
         
         
         
-        if renderer_name.starts_with("Mali-G78") {
+        if renderer_name.starts_with("Mali-G78") || renderer_name.starts_with("Mali-G710") {
             match parse_mali_version(&version_string) {
                 Some(version) if version >= (1, 36, 0) => supports_render_target_invalidate = false,
                 _ => {}
