@@ -6,6 +6,17 @@
 
 const EXPORTED_SYMBOLS = ["Module"];
 
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  ContextDescriptorType:
+    "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
+});
+
 class Module {
   #messageHandler;
 
@@ -17,6 +28,25 @@ class Module {
 
   constructor(messageHandler) {
     this.#messageHandler = messageHandler;
+  }
+
+  
+
+
+
+
+
+
+
+  addEventSessionData(moduleName, event) {
+    return this.messageHandler.addSessionData({
+      moduleName,
+      category: "event",
+      contextDescriptor: {
+        type: lazy.ContextDescriptorType.All,
+      },
+      values: [event],
+    });
   }
 
   
@@ -57,6 +87,25 @@ class Module {
   emitProtocolEvent(name, data) {
     this.messageHandler.emitEvent(name, data, {
       isProtocolEvent: true,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  removeEventSessionData(moduleName, event) {
+    return this.messageHandler.removeSessionData({
+      moduleName,
+      category: "event",
+      contextDescriptor: {
+        type: lazy.ContextDescriptorType.All,
+      },
+      values: [event],
     });
   }
 
