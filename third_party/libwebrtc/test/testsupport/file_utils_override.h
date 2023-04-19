@@ -8,10 +8,12 @@
 
 
 
-#include <string>
-
 #ifndef TEST_TESTSUPPORT_FILE_UTILS_OVERRIDE_H_
 #define TEST_TESTSUPPORT_FILE_UTILS_OVERRIDE_H_
+
+#include <string>
+
+#include "absl/strings/string_view.h"
 
 namespace webrtc {
 namespace test {
@@ -46,7 +48,7 @@ std::string WorkingDir();
 
 
 
-std::string ResourcePath(const std::string& name, const std::string& extension);
+std::string ResourcePath(absl::string_view name, absl::string_view extension);
 
 }  
 }  

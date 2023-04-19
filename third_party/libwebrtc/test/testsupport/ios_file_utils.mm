@@ -15,6 +15,7 @@
 
 #import "sdk/objc/helpers/NSString+StdString.h"
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -23,11 +24,11 @@ namespace test {
 
 
 
-std::string IOSResourcePath(std::string name, std::string extension) {
+std::string IOSResourcePath(absl::string_view name, absl::string_view extension) {
   @autoreleasepool {
-    NSString* path = [NSString stringForStdString:name];
+    NSString* path = [NSString stringForAbslStringView:name];
     NSString* fileName = path.lastPathComponent;
-    NSString* fileType = [NSString stringForStdString:extension];
+    NSString* fileType = [NSString stringForAbslStringView:extension];
     
     NSString* pathString = [[NSBundle mainBundle] pathForResource:fileName
                                                            ofType:fileType];

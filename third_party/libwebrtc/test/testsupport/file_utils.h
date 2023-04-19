@@ -16,17 +16,15 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/attributes.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 namespace webrtc {
 namespace test {
 
 
-
-extern const char* kCannotFindProjectRootDir;
-
-
-extern const char* kPathDelimiter;
+ABSL_CONST_INIT extern const absl::string_view kPathDelimiter;
 
 
 
@@ -47,26 +45,26 @@ std::string OutputPath();
 
 
 
-std::string TempFilename(const std::string& dir, const std::string& prefix);
+std::string TempFilename(absl::string_view dir, absl::string_view prefix);
 
 
 
-std::string GenerateTempFilename(const std::string& dir,
-                                 const std::string& prefix);
-
-
-
-
+std::string GenerateTempFilename(absl::string_view dir,
+                                 absl::string_view prefix);
 
 
 
 
 
 
-std::string ResourcePath(const std::string& name, const std::string& extension);
 
 
-std::string JoinFilename(const std::string& dir, const std::string& name);
+
+
+std::string ResourcePath(absl::string_view name, absl::string_view extension);
+
+
+std::string JoinFilename(absl::string_view dir, absl::string_view name);
 
 
 
@@ -77,31 +75,34 @@ std::string WorkingDir();
 
 
 
-absl::optional<std::vector<std::string>> ReadDirectory(std::string path);
+absl::optional<std::vector<std::string>> ReadDirectory(absl::string_view path);
 
 
 
 
-bool CreateDir(const std::string& directory_name);
+bool CreateDir(absl::string_view directory_name);
 
 
-bool RemoveDir(const std::string& directory_name);
+bool RemoveDir(absl::string_view directory_name);
 
 
-bool RemoveFile(const std::string& file_name);
+bool RemoveFile(absl::string_view file_name);
 
 
+
+
+bool FileExists(absl::string_view file_name);
 bool FileExists(const std::string& file_name);
 
 
-bool DirExists(const std::string& directory_name);
+bool DirExists(absl::string_view directory_name);
 
 
-std::string DirName(const std::string& path);
+std::string DirName(absl::string_view path);
 
 
 
-size_t GetFileSize(const std::string& filename);
+size_t GetFileSize(absl::string_view filename);
 
 }  
 }  
