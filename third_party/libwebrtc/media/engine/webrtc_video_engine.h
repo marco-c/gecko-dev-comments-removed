@@ -483,7 +483,10 @@ class WebRtcVideoChannel : public VideoMediaChannel,
    private:
     void RecreateWebRtcVideoStream();
 
-    void ConfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
+    
+    
+    
+    bool ConfigureCodecs(const std::vector<VideoCodecSettings>& recv_codecs);
 
     std::string GetCodecNameFromPayloadType(int payload_type);
 

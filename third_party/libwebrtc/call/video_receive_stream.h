@@ -60,9 +60,13 @@ class VideoReceiveStream : public MediaReceiveStream {
   
   
   struct Decoder {
+    Decoder(SdpVideoFormat video_format, int payload_type);
     Decoder();
     Decoder(const Decoder&);
     ~Decoder();
+
+    bool operator==(const Decoder& other) const;
+
     std::string ToString() const;
 
     SdpVideoFormat video_format;
