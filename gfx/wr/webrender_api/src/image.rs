@@ -10,7 +10,6 @@ use std::ops::{Add, Sub};
 use std::sync::Arc;
 
 use crate::{IdNamespace, TileSize};
-use crate::display_item::ImageRendering;
 use crate::font::{FontInstanceKey, FontInstanceData, FontKey, FontTemplate};
 use crate::units::*;
 
@@ -94,7 +93,7 @@ pub trait ExternalImageHandler {
     
     
     
-    fn lock(&mut self, key: ExternalImageId, channel_index: u8, rendering: ImageRendering) -> ExternalImage;
+    fn lock(&mut self, key: ExternalImageId, channel_index: u8) -> ExternalImage;
     
     
     fn unlock(&mut self, key: ExternalImageId, channel_index: u8);

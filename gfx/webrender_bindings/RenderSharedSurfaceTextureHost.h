@@ -27,8 +27,7 @@ class RenderSharedSurfaceTextureHost final : public RenderTextureHostSWGL {
       gfx::SourceSurfaceSharedDataWrapper* aSurface);
 
   
-  wr::WrExternalImage Lock(uint8_t aChannelIndex, gl::GLContext* aGL,
-                           wr::ImageRendering aRendering) override;
+  wr::WrExternalImage Lock(uint8_t aChannelIndex, gl::GLContext* aGL) override;
   void Unlock() override;
   size_t Bytes() override;
 
