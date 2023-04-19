@@ -1131,7 +1131,7 @@ bool DelazifyTask::runTask(JSContext* cx) {
   
   
   
-  ScopeBindingCache scopeCache;
+  StencilScopeBindingCache scopeCache(merger);
 
   while (!strategy->done() || isInterrupted()) {
     RefPtr<CompilationStencil> innerStencil;

@@ -394,6 +394,16 @@ struct ScopeContext {
 
   
   
+  
+  
+  
+  
+  
+  
+  size_t scopeCacheGen = 0;
+
+  
+  
   mozilla::Maybe<MemberInitializers> memberInitializers = {};
 
   enum class EnclosingLexicalBindingKind {
@@ -497,6 +507,14 @@ struct ScopeContext {
   void computeThisEnvironment(const InputScope& enclosingScope);
   void computeInScope(const InputScope& enclosingScope);
   void cacheEnclosingScope(const InputScope& enclosingScope);
+  NameLocation searchInEnclosingScopeWithCache(JSContext* cx, ErrorContext* ec,
+                                               CompilationInput& input,
+                                               ParserAtomsTable& parserAtoms,
+                                               TaggedParserAtomIndex name);
+  NameLocation searchInEnclosingScopeNoCache(JSContext* cx, ErrorContext* ec,
+                                             CompilationInput& input,
+                                             ParserAtomsTable& parserAtoms,
+                                             TaggedParserAtomIndex name);
 
   InputScope determineEffectiveScope(InputScope& scope, JSObject* environment);
 
