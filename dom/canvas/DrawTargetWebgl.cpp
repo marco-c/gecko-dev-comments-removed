@@ -596,6 +596,9 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
   mSharedContext->SetClipRect(mClipBounds);
   
   mSkiaValid = false;
+  
+  
+  mProfile.OnCacheMiss();
   return !!data;
 }
 
@@ -3163,6 +3166,9 @@ void DrawTargetWebgl::SharedContext::WaitForShmem() {
     
     (void)mWebgl->GetError();
     mWaitForShmem = false;
+    
+    
+    mCurrentTarget->mProfile.OnReadback();
   }
 }
 
@@ -3173,6 +3179,7 @@ void DrawTargetWebgl::MarkSkiaChanged(const DrawOptions& aOptions) {
       
       mSkiaValid = true;
       if (mWebglValid) {
+        mProfile.OnLayer();
         mSkiaLayer = true;
         mSkia->Clear();
       }
@@ -3284,8 +3291,9 @@ void DrawTargetWebgl::UsageProfile::EndFrame() {
   float cacheRatio =
       StaticPrefs::gfx_canvas_accelerated_profile_cache_miss_ratio();
   if (mFallbacks > 0 ||
-      mCacheMisses + mReadbacks > cacheRatio * (mCacheMisses + mCacheHits +
-                                                mUncachedDraws + mReadbacks)) {
+      float(mCacheMisses + mReadbacks + mLayers) >
+          cacheRatio * float(mCacheMisses + mCacheHits + mUncachedDraws +
+                             mReadbacks + mLayers)) {
     failed = true;
   }
   if (failed) {
