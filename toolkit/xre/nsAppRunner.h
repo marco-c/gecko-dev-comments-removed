@@ -80,8 +80,6 @@ already_AddRefed<nsINativeAppSupport> NS_GetNativeAppSupport();
 
 nsresult NS_NewToolkitProfileService(nsIToolkitProfileService** aResult);
 
-nsresult NS_NewToolkitProfileFactory(nsIFactory** aResult);
-
 
 
 
