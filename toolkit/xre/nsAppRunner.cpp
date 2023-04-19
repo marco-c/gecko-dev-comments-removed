@@ -23,6 +23,7 @@
 #include "mozilla/Printf.h"
 #include "mozilla/ProcessType.h"
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/RuntimeExceptionModule.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_fission.h"
@@ -4197,6 +4198,11 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
         SaveWordToEnv("MOZ_CRASHREPORTER_STRINGS_OVERRIDE", overridePath);
       }
     }
+  } else {
+    
+    
+    
+    CrashReporter::UnregisterRuntimeExceptionModule();
   }
 
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
