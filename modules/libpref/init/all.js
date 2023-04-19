@@ -2078,7 +2078,7 @@ pref("extensions.blocklist.addonItemURL", "https://addons.mozilla.org/%LOCALE%/%
 
 pref("extensions.blocklist.level", 2);
 
-pref("extensions.eventPages.enabled", false);
+pref("extensions.eventPages.enabled", true);
 
 
 pref("extensions.manifestV2.actionsPopupURLRestricted", false);
