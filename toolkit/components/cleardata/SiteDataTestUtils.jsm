@@ -210,10 +210,21 @@ var SiteDataTestUtils = {
     });
   },
 
-  hasCookies(origin, testEntries) {
+  hasCookies(origin, testEntries = null, testPBMCookies = false) {
     let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
       origin
     );
+
+    let cookies;
+    if (testPBMCookies) {
+      
+      let originAttributes = { privateBrowsingId: 1 };
+      cookies = Services.cookies.getCookiesWithOriginAttributes(
+        JSON.stringify(originAttributes)
+      );
+    } else {
+      cookies = Services.cookies.cookies;
+    }
 
     let filterFn = cookie => {
       return (
@@ -226,11 +237,11 @@ var SiteDataTestUtils = {
 
     
     if (!testEntries) {
-      return Services.cookies.cookies.some(filterFn);
+      return cookies.some(filterFn);
     }
 
     
-    let cookies = Services.cookies.cookies.filter(filterFn);
+    cookies = cookies.filter(filterFn);
 
     if (cookies.length < testEntries.length) {
       return false;
