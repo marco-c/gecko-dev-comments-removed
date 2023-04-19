@@ -48,7 +48,7 @@ class TransformConfig:
 
     
     
-    kind_dependencies_tasks = attr.ib()
+    kind_dependencies_tasks = attr.ib(type=dict)
 
     
     graph_config = attr.ib(type=GraphConfig)
