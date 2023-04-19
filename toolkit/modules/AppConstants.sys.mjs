@@ -1,21 +1,17 @@
 #filter substitution
 #include @TOPOBJDIR@/source-repo.h
 #include @TOPOBJDIR@/buildid.h
-
-
-
-
-"use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 ChromeUtils.defineModuleGetter(lazy, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 
-var EXPORTED_SYMBOLS = ["AppConstants"];
-
-
-var AppConstants = Object.freeze({
-  
-  
+// Immutable for export.
+export var AppConstants = Object.freeze({
+  // See this wiki page for more details about channel specific build
+  // defines: https://wiki.mozilla.org/Platform/Channel-specific_build_defines
   NIGHTLY_BUILD:
 #ifdef NIGHTLY_BUILD
   true,
@@ -51,9 +47,9 @@ var AppConstants = Object.freeze({
   false,
 #endif
 
-  
-  
-  
+  // Official corresponds, roughly, to whether this build is performed
+  // on Mozilla's continuous integration infrastructure. You should
+  // disable developer-only functionality when this flag is set.
   MOZILLA_OFFICIAL:
 #ifdef MOZILLA_OFFICIAL
   true,
@@ -152,8 +148,8 @@ var AppConstants = Object.freeze({
   false,
 #endif
 
-
-
+// NOTE! XP_LINUX has to go after MOZ_WIDGET_ANDROID otherwise Android
+// builds will be misidentified as linux.
   platform:
 #ifdef MOZ_WIDGET_GTK
   "linux",
@@ -169,8 +165,8 @@ var AppConstants = Object.freeze({
   "other",
 #endif
 
-
-
+// Most of our frontend code assumes that any desktop Unix platform
+// is "linux". Add the distinction for code that needs it.
   unixstyle:
 #ifdef XP_LINUX
     "linux",
@@ -340,9 +336,9 @@ var AppConstants = Object.freeze({
 
   MOZ_APP_NAME: "@MOZ_APP_NAME@",
   MOZ_APP_BASENAME: "@MOZ_APP_BASENAME@",
-  
-  
-  
+  // N.b.: you almost certainly want brandShortName/brand-short-name:
+  // MOZ_APP_DISPLAYNAME should only be used for static user-visible
+  // fields (e.g., DLL properties, Mac Bundle name, or similar).
   MOZ_APP_DISPLAYNAME_DO_NOT_USE: "@MOZ_APP_DISPLAYNAME@",
   MOZ_APP_VERSION: "@MOZ_APP_VERSION@",
   MOZ_APP_VERSION_DISPLAY: "@MOZ_APP_VERSION_DISPLAY@",
@@ -366,9 +362,9 @@ var AppConstants = Object.freeze({
 
   OMNIJAR_NAME: "@OMNIJAR_NAME@",
 
-  
-  
-  
+  // URL to the hg revision this was built from (e.g.
+  // "https://hg.mozilla.org/mozilla-central/rev/6256ec9113c1")
+  // On unofficial builds, this is an empty string.
 #ifndef MOZ_SOURCE_URL
 #define MOZ_SOURCE_URL
 #endif
@@ -475,7 +471,7 @@ var AppConstants = Object.freeze({
     false,
 #endif
 
-  
+  // Returns true for CN region build when distibution id set as 'MozillaOnline'
   isChinaRepack() {
     return (
       Services.prefs

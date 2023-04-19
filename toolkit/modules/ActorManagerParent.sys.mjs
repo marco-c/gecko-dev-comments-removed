@@ -1,29 +1,22 @@
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * This module handles JavaScript-implemented JSWindowActors, registered through DOM IPC
+ * infrastructure, and are fission-compatible.
+ */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-"use strict";
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["ActorManagerParent"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
-
-
-
-
-
-
-
+/**
+ * Fission-compatible JSProcess implementations.
+ * Each actor options object takes the form of a ProcessActorOptions dictionary.
+ * Detailed documentation of these options is in dom/docs/ipc/jsactors.rst,
+ * available at https://firefox-source-docs.mozilla.org/dom/ipc/jsactors.html
+ */
 let JSPROCESSACTORS = {
   AsyncPrefs: {
     parent: {
@@ -60,12 +53,12 @@ let JSPROCESSACTORS = {
   },
 };
 
-
-
-
-
-
-
+/**
+ * Fission-compatible JSWindowActor implementations.
+ * Each actor options object takes the form of a WindowActorOptions dictionary.
+ * Detailed documentation of these options is in dom/docs/ipc/jsactors.rst,
+ * available at https://firefox-source-docs.mozilla.org/dom/ipc/jsactors.html
+ */
 let JSWINDOWACTORS = {
   AboutCertViewer: {
     parent: {
@@ -112,10 +105,10 @@ let JSWINDOWACTORS = {
   AutoComplete: {
     parent: {
       moduleURI: "resource://gre/actors/AutoCompleteParent.jsm",
-      
-      
-      
-      
+      // These two messages are also used, but are currently synchronous calls
+      // through the per-process message manager.
+      // "FormAutoComplete:GetSelectedIndex",
+      // "FormAutoComplete:SelectBy"
     },
 
     child: {
@@ -213,8 +206,8 @@ let JSWINDOWACTORS = {
         DOMContentLoaded: {},
       },
     },
-    
-    
+    // We only handle cookie banners for HTTP/S scheme. Avoid initializing
+    // actors for other schemes.
     matches: ["https://*/*", "http://*/*"],
     allFrames: true,
     enablePreference: "cookiebanners.bannerClicking.enabled",
@@ -260,8 +253,8 @@ let JSWINDOWACTORS = {
     messageManagerGroups: ["browsers", "test"],
   },
 
-  
-  
+  // This is the actor that responds to requests from the find toolbar and
+  // searches for matches and highlights them.
   Finder: {
     child: {
       moduleURI: "resource://gre/actors/FinderChild.jsm",
@@ -396,8 +389,8 @@ let JSWINDOWACTORS = {
       moduleURI: "resource://gre/actors/PopupBlockingChild.jsm",
       events: {
         DOMPopupBlocked: { capture: true },
-        
-        
+        // Only listen for the `pageshow` event after the actor has already been
+        // created for some other reason.
         pageshow: { createActor: false },
       },
     },
@@ -431,10 +424,10 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  
-  
-  
-  
+  // This actor is available for all pages that one can
+  // view the source of, however it won't be created until a
+  // request to view the source is made via the message
+  // 'ViewSource:LoadSource' or 'ViewSource:LoadSourceWithSelection'.
   ViewSource: {
     child: {
       esModuleURI: "resource://gre/actors/ViewSourceChild.sys.mjs",
@@ -443,7 +436,7 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  
+  // This actor is for the view-source page itself.
   ViewSourcePage: {
     parent: {
       esModuleURI: "resource://gre/actors/ViewSourcePageParent.sys.mjs",
@@ -508,10 +501,10 @@ let JSWINDOWACTORS = {
   },
 };
 
-
-
-
-
+/**
+ * Note that turning on page data collection for snapshots currently disables
+ * collection of generic page info for normal history entries. See bug 1740234.
+ */
 if (!Services.prefs.getBoolPref("browser.pagedata.enabled", false)) {
   JSWINDOWACTORS.ContentMeta = {
     parent: {
@@ -531,7 +524,7 @@ if (!Services.prefs.getBoolPref("browser.pagedata.enabled", false)) {
 }
 
 if (AppConstants.platform != "android") {
-  
+  // For GeckoView support see bug 1776829.
   JSWINDOWACTORS.ClipboardReadPaste = {
     parent: {
       moduleURI: "resource://gre/actors/ClipboardReadPasteParent.jsm",
@@ -547,9 +540,9 @@ if (AppConstants.platform != "android") {
     allFrames: true,
   };
 
-  
-
-
+  /**
+   * Note that GeckoView has another implementation in mobile/android/actors.
+   */
   JSWINDOWACTORS.Select = {
     parent: {
       moduleURI: "resource://gre/actors/SelectParent.jsm",
@@ -569,7 +562,7 @@ if (AppConstants.platform != "android") {
   };
 }
 
-var ActorManagerParent = {
+export var ActorManagerParent = {
   _addActors(actors, kind) {
     let register, unregister;
     switch (kind) {
@@ -585,8 +578,8 @@ var ActorManagerParent = {
         throw new Error("Invalid JSActor kind " + kind);
     }
     for (let [actorName, actor] of Object.entries(actors)) {
-      
-      
+      // If enablePreference is set, only register the actor while the
+      // preference is set to true.
       if (actor.enablePreference) {
         let actorNameProp = actorName + "_Preference";
         XPCOMUtils.defineLazyPreferenceGetter(
