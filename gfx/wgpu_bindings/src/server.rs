@@ -364,12 +364,13 @@ pub unsafe extern "C" fn wgpu_server_buffer_map(
         host: map_mode,
         callback,
     };
-    gfx_select!(buffer_id => global.buffer_map_async(
+    
+    
+    let _ = gfx_select!(buffer_id => global.buffer_map_async(
         buffer_id,
         start .. start + size,
         operation
-    ))
-    .unwrap();
+    ));
 }
 
 #[repr(C)]
