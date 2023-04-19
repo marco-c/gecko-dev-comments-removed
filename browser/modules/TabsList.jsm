@@ -491,7 +491,10 @@ class TabsPanel extends TabsListBase {
     this.dropTargetRow = row;
     this.dropTargetDirection = direction;
 
-    let offset = this.dropIndicator.parentNode.getBoundingClientRect().top;
+    const holder = this.dropIndicator.parentNode;
+    const holderOffset = holder.getBoundingClientRect().top;
+
+    
     let top;
     if (this.dropTargetDirection === -1) {
       if (this.dropTargetRow.previousSibling) {
@@ -506,7 +509,13 @@ class TabsPanel extends TabsListBase {
       top = rect.top + rect.height;
     }
 
-    this.dropIndicator.style.top = `${top - offset - 12}px`;
+    
+    const indicatorHeight = 12;
+    const subViewBody = holder.parentNode;
+    const subViewBodyRect = subViewBody.getBoundingClientRect();
+    top = Math.min(top, subViewBodyRect.bottom - indicatorHeight);
+
+    this.dropIndicator.style.top = `${top - holderOffset - 12}px`;
     this.dropIndicator.collapsed = false;
   }
 
