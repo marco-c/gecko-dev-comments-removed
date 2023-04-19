@@ -1313,15 +1313,18 @@ nsFrameConstructorSaveState::~nsFrameConstructorSaveState() {
     MOZ_ASSERT(mState, "Can't have mList set without having a state!");
     mState->ProcessFrameInsertions(*mList, mChildListID);
 
-    if (mSavedFixedPosIsAbsPos) {
-      MOZ_ASSERT(mList == &mState->mAbsoluteList);
+    if (mList == &mState->mAbsoluteList) {
       mState->mFixedPosIsAbsPos = mSavedFixedPosIsAbsPos;
       
       
-      mState->mAbsoluteList = std::move(mState->mFixedList);
-      mState->mFixedList = std::move(mSavedList);
+      if (mSavedFixedPosIsAbsPos) {
+        mState->mAbsoluteList = std::move(mState->mFixedList);
+        mState->mFixedList = std::move(mSavedList);
+      } else {
+        mState->mAbsoluteList = std::move(mSavedList);
+      }
     } else {
-      *mList = std::move(mSavedList);
+      mState->mFloatedList = std::move(mSavedList);
     }
 
     MOZ_ASSERT(mSavedList.IsEmpty(),
