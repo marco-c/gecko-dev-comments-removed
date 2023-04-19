@@ -202,9 +202,10 @@ already_AddRefed<Promise> AsyncIterableNextImpl::Next(
     auto onSettled = [this](JSContext* aCx, JS::Handle<JS::Value> aValue,
                             ErrorResult& aRv,
                             const RefPtr<AsyncIterableIteratorBase>& aObject,
-                            const nsCOMPtr<nsIGlobalObject>& aGlobalObject) {
-      return NextSteps(aCx, aObject, aGlobalObject, aRv);
-    };
+                            const nsCOMPtr<nsIGlobalObject>& aGlobalObject)
+                         MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
+                           return NextSteps(aCx, aObject, aGlobalObject, aRv);
+                         };
 
     
     
@@ -280,13 +281,13 @@ already_AddRefed<Promise> AsyncIterableReturnImpl::Return(
     
     
     
-    auto onSettled = [this](JSContext* aCx, JS::Handle<JS::Value> aValue,
-                            ErrorResult& aRv,
-                            const RefPtr<AsyncIterableIteratorBase>& aObject,
-                            const nsCOMPtr<nsIGlobalObject>& aGlobalObject,
-                            JS::Handle<JS::Value> aVal) {
-      return ReturnSteps(aCx, aObject, aGlobalObject, aVal, aRv);
-    };
+    auto onSettled =
+        [this](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
+               const RefPtr<AsyncIterableIteratorBase>& aObject,
+               const nsCOMPtr<nsIGlobalObject>& aGlobalObject,
+               JS::Handle<JS::Value> aVal) MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
+          return ReturnSteps(aCx, aObject, aGlobalObject, aVal, aRv);
+        };
 
     
     
