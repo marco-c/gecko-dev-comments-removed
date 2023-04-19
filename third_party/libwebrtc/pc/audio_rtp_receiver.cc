@@ -61,6 +61,7 @@ AudioRtpReceiver::AudioRtpReceiver(
 
 AudioRtpReceiver::~AudioRtpReceiver() {
   RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  RTC_DCHECK(stopped_);
   RTC_DCHECK(!media_channel_);
 
   track_->GetSource()->UnregisterAudioObserver(this);
@@ -84,10 +85,6 @@ void AudioRtpReceiver::OnChanged() {
 void AudioRtpReceiver::SetOutputVolume_w(double volume) {
   RTC_DCHECK_GE(volume, 0.0);
   RTC_DCHECK_LE(volume, 10.0);
-
-  if (!media_channel_)
-    return;
-
   ssrc_ ? media_channel_->SetOutputVolume(*ssrc_, volume)
         : media_channel_->SetDefaultOutputVolume(volume);
 }
@@ -100,6 +97,9 @@ void AudioRtpReceiver::OnSetVolume(double volume) {
   
   
   cached_volume_ = volume;
+
+  if (stopped_)
+    return;
 
   
   
@@ -160,7 +160,10 @@ AudioRtpReceiver::GetFrameDecryptor() const {
 void AudioRtpReceiver::Stop() {
   RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   
-  source_->SetState(MediaSourceInterface::kEnded);
+  if (!stopped_) {
+    source_->SetState(MediaSourceInterface::kEnded);
+    stopped_ = true;
+  }
 
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&]() {
     RTC_DCHECK_RUN_ON(worker_thread_);
@@ -180,17 +183,22 @@ void AudioRtpReceiver::StopAndEndTrack() {
 
 void AudioRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
   RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
-  MediaSourceInterface::SourceState state = source_->state();
-  worker_thread_->Invoke<void>(
-      RTC_FROM_HERE,
-      [&, enabled = cached_track_enabled_, volume = cached_volume_]() {
+  bool ok = worker_thread_->Invoke<bool>(
+      RTC_FROM_HERE, [&, enabled = cached_track_enabled_,
+                      volume = cached_volume_, was_stopped = stopped_]() {
         RTC_DCHECK_RUN_ON(worker_thread_);
-        if (!media_channel_)
-          return;  
+        if (!media_channel_) {
+          RTC_DCHECK(was_stopped);
+          return false;  
+        }
 
-        if (state != MediaSourceInterface::kInitializing) {
-          if (ssrc_ == ssrc)
-            return;
+        if (!was_stopped && ssrc_ == ssrc) {
+          
+          RTC_DCHECK(worker_thread_safety_->alive());
+          return true;
+        }
+
+        if (!was_stopped) {
           source_->Stop(media_channel_, ssrc_);
         }
 
@@ -201,8 +209,13 @@ void AudioRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
         }
 
         Reconfigure(enabled, volume);
+        return true;
       });
-  source_->SetState(MediaSourceInterface::kLive);
+
+  if (!ok)
+    return;
+
+  stopped_ = false;
 }
 
 void AudioRtpReceiver::SetupMediaChannel(uint32_t ssrc) {
@@ -321,6 +334,9 @@ void AudioRtpReceiver::SetMediaChannel(cricket::MediaChannel* media_channel) {
   RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
   RTC_DCHECK(media_channel == nullptr ||
              media_channel->media_type() == media_type());
+
+  if (stopped_ && !media_channel)
+    return;
 
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
     RTC_DCHECK_RUN_ON(worker_thread_);

@@ -141,6 +141,8 @@ class VideoRtpReceiver : public RtpReceiverInternal {
   rtc::Thread* const worker_thread_;
 
   const std::string id_;
+  
+  
   cricket::VideoMediaChannel* media_channel_ RTC_GUARDED_BY(worker_thread_) =
       nullptr;
   absl::optional<uint32_t> ssrc_ RTC_GUARDED_BY(worker_thread_);
@@ -150,6 +152,15 @@ class VideoRtpReceiver : public RtpReceiverInternal {
   const rtc::scoped_refptr<VideoTrackProxyWithInternal<VideoTrack>> track_;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams_
       RTC_GUARDED_BY(&signaling_thread_checker_);
+  
+  
+  
+  
+  
+  
+  
+  
+  bool stopped_ RTC_GUARDED_BY(&signaling_thread_checker_) = true;
   RtpReceiverObserverInterface* observer_
       RTC_GUARDED_BY(&signaling_thread_checker_) = nullptr;
   bool received_first_packet_ RTC_GUARDED_BY(&signaling_thread_checker_) =
