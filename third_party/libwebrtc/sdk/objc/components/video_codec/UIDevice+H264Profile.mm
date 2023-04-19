@@ -24,6 +24,16 @@ struct SupportedH264Profile {
 
 constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
     
+    {RTCDeviceTypeIPhone13ProMax,
+     {H264Profile::kProfileHigh, H264Level::kLevel5_2}},  
+    {RTCDeviceTypeIPhone13Pro,
+     {H264Profile::kProfileHigh, H264Level::kLevel5_2}},  
+    {RTCDeviceTypeIPhone13,
+     {H264Profile::kProfileHigh, H264Level::kLevel5_2}},  
+    {RTCDeviceTypeIPhone13Mini,
+     {H264Profile::kProfileHigh, H264Level::kLevel5_2}},  
+    {RTCDeviceTypeIPhoneSE2Gen,
+     {H264Profile::kProfileHigh, H264Level::kLevel5_2}},  
     {RTCDeviceTypeIPhone12ProMax,
      {H264Profile::kProfileHigh, H264Level::kLevel5_2}},  
     {RTCDeviceTypeIPhone12Pro,
@@ -162,6 +172,14 @@ constexpr SupportedH264Profile kH264MaxSupportedProfiles[] = {
      {H264Profile::kProfileHigh, H264Level::kLevel4_2}},  
     {RTCDeviceTypeIPadPro10Inch,
      {H264Profile::kProfileHigh, H264Level::kLevel4_2}},  
+    {RTCDeviceTypeIPadMini6,
+     {H264Profile::kProfileHigh, H264Level::kLevel5_2}},  
+    {RTCDeviceTypeIPad9,
+     {H264Profile::kProfileHigh, H264Level::kLevel4_2}},  
+    {RTCDeviceTypeIPadPro5Gen12Inch,
+     {H264Profile::kProfileHigh, H264Level::kLevel5_2}},  
+    {RTCDeviceTypeIPadPro5Gen11Inch,
+     {H264Profile::kProfileHigh, H264Level::kLevel5_2}},  
 };
 
 absl::optional<H264ProfileLevelId> FindMaxSupportedProfileForDevice(RTCDeviceType deviceType) {
