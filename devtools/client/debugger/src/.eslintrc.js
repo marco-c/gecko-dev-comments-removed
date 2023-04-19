@@ -299,11 +299,6 @@ module.exports = {
     
     "use-isnan": 2,
     
-    
-    
-    
-    "valid-jsdoc": 0,
-    
     "valid-typeof": 2,
     
     "vars-on-top": 0,
