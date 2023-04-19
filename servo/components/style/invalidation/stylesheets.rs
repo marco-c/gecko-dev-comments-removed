@@ -555,7 +555,6 @@ impl StylesheetInvalidationSet {
             LayerStatement(..) |
             FontFace(..) |
             Keyframes(..) |
-            ScrollTimeline(..) |
             Container(..) |
             Style(..) => {
                 if is_generic_change {
@@ -633,8 +632,6 @@ impl StylesheetInvalidationSet {
                     
                 }
             },
-            
-            ScrollTimeline(..) |
             CounterStyle(..) |
             Page(..) |
             Viewport(..) |
