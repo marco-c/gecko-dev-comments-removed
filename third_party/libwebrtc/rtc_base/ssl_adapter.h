@@ -40,7 +40,7 @@ class SSLAdapterFactory {
   virtual void SetCertVerifier(SSLCertificateVerifier* ssl_cert_verifier) = 0;
 
   
-  virtual SSLAdapter* CreateAdapter(AsyncSocket* socket) = 0;
+  virtual SSLAdapter* CreateAdapter(Socket* socket) = 0;
 
   static SSLAdapterFactory* Create();
 };
@@ -52,7 +52,7 @@ class SSLAdapterFactory {
 
 class SSLAdapter : public AsyncSocketAdapter {
  public:
-  explicit SSLAdapter(AsyncSocket* socket) : AsyncSocketAdapter(socket) {}
+  explicit SSLAdapter(Socket* socket) : AsyncSocketAdapter(socket) {}
 
   
   
@@ -90,7 +90,7 @@ class SSLAdapter : public AsyncSocketAdapter {
   
   
   
-  static SSLAdapter* Create(AsyncSocket* socket);
+  static SSLAdapter* Create(Socket* socket);
 };
 
 

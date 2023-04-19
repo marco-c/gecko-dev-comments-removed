@@ -43,8 +43,8 @@ class ProxyTest : public ::testing::Test {
 
 
 TEST_F(ProxyTest, TestSocks5Connect) {
-  rtc::AsyncSocket* socket =
-      ss()->CreateAsyncSocket(kSocksProxyIntAddr.family(), SOCK_STREAM);
+  rtc::Socket* socket =
+      ss()->CreateSocket(kSocksProxyIntAddr.family(), SOCK_STREAM);
   rtc::AsyncSocksProxySocket* proxy_socket = new rtc::AsyncSocksProxySocket(
       socket, kSocksProxyIntAddr, "", rtc::CryptString());
   

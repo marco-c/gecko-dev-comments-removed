@@ -16,7 +16,6 @@
 #include <memory>
 
 #include "rtc_base/async_packet_socket.h"
-#include "rtc_base/async_socket.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/socket_factory.h"
@@ -30,13 +29,13 @@ class AsyncUDPSocket : public AsyncPacketSocket {
   
   
   
-  static AsyncUDPSocket* Create(AsyncSocket* socket,
+  static AsyncUDPSocket* Create(Socket* socket,
                                 const SocketAddress& bind_address);
   
   
   static AsyncUDPSocket* Create(SocketFactory* factory,
                                 const SocketAddress& bind_address);
-  explicit AsyncUDPSocket(AsyncSocket* socket);
+  explicit AsyncUDPSocket(Socket* socket);
   ~AsyncUDPSocket() override;
 
   SocketAddress GetLocalAddress() const override;
@@ -58,11 +57,11 @@ class AsyncUDPSocket : public AsyncPacketSocket {
 
  private:
   
-  void OnReadEvent(AsyncSocket* socket);
+  void OnReadEvent(Socket* socket);
   
-  void OnWriteEvent(AsyncSocket* socket);
+  void OnWriteEvent(Socket* socket);
 
-  std::unique_ptr<AsyncSocket> socket_;
+  std::unique_ptr<Socket> socket_;
   char* buf_;
   size_t size_;
 };

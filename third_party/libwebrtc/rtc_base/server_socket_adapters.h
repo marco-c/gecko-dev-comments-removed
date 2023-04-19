@@ -18,7 +18,7 @@ namespace rtc {
 
 class AsyncProxyServerSocket : public BufferedReadAdapter {
  public:
-  AsyncProxyServerSocket(AsyncSocket* socket, size_t buffer_size);
+  AsyncProxyServerSocket(Socket* socket, size_t buffer_size);
   ~AsyncProxyServerSocket() override;
   sigslot::signal2<AsyncProxyServerSocket*, const SocketAddress&>
       SignalConnectRequest;
@@ -29,7 +29,7 @@ class AsyncProxyServerSocket : public BufferedReadAdapter {
 
 class AsyncSSLServerSocket : public BufferedReadAdapter {
  public:
-  explicit AsyncSSLServerSocket(AsyncSocket* socket);
+  explicit AsyncSSLServerSocket(Socket* socket);
 
  protected:
   void ProcessInput(char* data, size_t* len) override;
@@ -39,7 +39,7 @@ class AsyncSSLServerSocket : public BufferedReadAdapter {
 
 class AsyncSocksProxyServerSocket : public AsyncProxyServerSocket {
  public:
-  explicit AsyncSocksProxyServerSocket(AsyncSocket* socket);
+  explicit AsyncSocksProxyServerSocket(Socket* socket);
 
  private:
   void ProcessInput(char* data, size_t* len) override;

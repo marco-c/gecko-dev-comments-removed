@@ -25,8 +25,10 @@
 #include "rtc_base/win32.h"
 #endif
 
+#include "absl/base/attributes.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 
 
@@ -124,12 +126,27 @@ class Socket {
   virtual int GetOption(Option opt, int* value) = 0;
   virtual int SetOption(Option opt, int value) = 0;
 
+  
+  
+  
+  
+  
+  sigslot::signal1<Socket*, sigslot::multi_threaded_local> SignalReadEvent;
+  
+  sigslot::signal1<Socket*, sigslot::multi_threaded_local> SignalWriteEvent;
+  sigslot::signal1<Socket*> SignalConnectEvent;     
+  sigslot::signal2<Socket*, int> SignalCloseEvent;  
+
  protected:
   Socket() {}
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(Socket);
 };
+
+
+
+using AsyncSocket ABSL_DEPRECATED("bugs.webrtc.org/13065") = Socket;
 
 }  
 

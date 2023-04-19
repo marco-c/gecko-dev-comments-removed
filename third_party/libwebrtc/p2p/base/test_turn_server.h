@@ -99,8 +99,8 @@ class TestTurnServer : public TurnAuthInterface {
     } else if (proto == cricket::PROTO_TCP || proto == cricket::PROTO_TLS) {
       
       
-      rtc::AsyncSocket* socket =
-          thread_->socketserver()->CreateAsyncSocket(AF_INET, SOCK_STREAM);
+      rtc::Socket* socket =
+          thread_->socketserver()->CreateSocket(AF_INET, SOCK_STREAM);
       if (proto == cricket::PROTO_TLS) {
         
         

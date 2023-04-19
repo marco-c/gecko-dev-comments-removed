@@ -116,7 +116,6 @@ class VirtualSocketServer : public SocketServer {
 
   
   Socket* CreateSocket(int family, int type) override;
-  AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
   
   void SetMessageQueue(Thread* queue) override;
@@ -326,7 +325,7 @@ class VirtualSocketServer : public SocketServer {
 
 
 
-class VirtualSocket : public AsyncSocket,
+class VirtualSocket : public Socket,
                       public MessageHandler,
                       public sigslot::has_slots<> {
  public:

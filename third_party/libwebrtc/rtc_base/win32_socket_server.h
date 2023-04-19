@@ -12,7 +12,6 @@
 #define RTC_BASE_WIN32_SOCKET_SERVER_H_
 
 #if defined(WEBRTC_WIN)
-#include "rtc_base/async_socket.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_factory.h"
 #include "rtc_base/socket_server.h"
@@ -26,7 +25,7 @@ namespace rtc {
 
 
 
-class Win32Socket : public AsyncSocket {
+class Win32Socket : public Socket {
  public:
   Win32Socket();
   ~Win32Socket() override;
@@ -100,7 +99,6 @@ class Win32SocketServer : public SocketServer {
 
   
   Socket* CreateSocket(int family, int type) override;
-  AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
   void SetMessageQueue(Thread* queue) override;
   bool Wait(int cms, bool process_io) override;

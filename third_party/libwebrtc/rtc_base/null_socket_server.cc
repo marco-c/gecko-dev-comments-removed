@@ -34,10 +34,4 @@ rtc::Socket* NullSocketServer::CreateSocket(int , int ) {
   return nullptr;
 }
 
-rtc::AsyncSocket* NullSocketServer::CreateAsyncSocket(int ,
-                                                      int ) {
-  RTC_NOTREACHED();
-  return nullptr;
-}
-
 }  

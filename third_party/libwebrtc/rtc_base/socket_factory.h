@@ -11,7 +11,6 @@
 #ifndef RTC_BASE_SOCKET_FACTORY_H_
 #define RTC_BASE_SOCKET_FACTORY_H_
 
-#include "rtc_base/async_socket.h"
 #include "rtc_base/socket.h"
 
 namespace rtc {
@@ -21,11 +20,11 @@ class SocketFactory {
   virtual ~SocketFactory() {}
 
   
-  
   virtual Socket* CreateSocket(int family, int type) = 0;
   
-  
-  virtual AsyncSocket* CreateAsyncSocket(int family, int type) = 0;
+  virtual Socket* CreateAsyncSocket(int family, int type) {
+    return CreateSocket(family, type);
+  }
 };
 
 }  
