@@ -122,6 +122,12 @@ class LogModule {
   
 
 
+
+  static void SetRecordMarkers(bool aRecordMarkers);
+
+  
+
+
   bool ShouldLog(LogLevel aLevel) const { return mLevel >= aLevel; }
 
   
