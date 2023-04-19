@@ -1686,7 +1686,10 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
     
     
     
-    if (!oldIntercepted && newIntercepted) {
+    
+    
+    if ((!oldIntercepted && newIntercepted) ||
+        (oldIntercepted && !newIntercepted && oldIntercepted->IsReset())) {
       
       
       
