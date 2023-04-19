@@ -374,7 +374,6 @@ class ModuleObject : public NativeObject {
 
   void setMetaObject(JSObject* obj);
 
-  
   static bool instantiateFunctionDeclarations(JSContext* cx,
                                               Handle<ModuleObject*> self);
 
