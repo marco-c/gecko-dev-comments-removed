@@ -1049,7 +1049,7 @@ var snapshotFormatters = {
 
     
     
-    if (AppConstants.platform == "win") {
+    if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
       insertBasicInfo("media-codec-support-info", data.codecSupportInfo);
     }
   },
