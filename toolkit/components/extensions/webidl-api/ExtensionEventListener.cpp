@@ -491,6 +491,13 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
   erv.WouldReportJSException();
 
   if (erv.Failed()) {
+    if (erv.IsUncatchableException()) {
+      
+      retPromise->MaybeRejectWithTimeoutError(
+          "WebExtensions API Event listener threw uncatchable exception");
+      return true;
+    }
+
     retPromise->MaybeReject(std::move(erv));
     return true;
   }
