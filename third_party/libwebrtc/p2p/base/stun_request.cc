@@ -1,12 +1,12 @@
-/*
- *  Copyright 2004 The WebRTC Project Authors. All rights reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "p2p/base/stun_request.h"
 
@@ -18,29 +18,29 @@
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
-#include "rtc_base/time_utils.h"  // For TimeMillis
+#include "rtc_base/time_utils.h"  
 #include "system_wrappers/include/field_trial.h"
 
 namespace cricket {
 
 const uint32_t MSG_STUN_SEND = 1;
 
-// RFC 5389 says SHOULD be 500ms.
-// For years, this was 100ms, but for networks that
-// experience moments of high RTT (such as 2G networks), this doesn't
-// work well.
-const int STUN_INITIAL_RTO = 250;  // milliseconds
 
-// The timeout doubles each retransmission, up to this many times
-// RFC 5389 says SHOULD retransmit 7 times.
-// This has been 8 for years (not sure why).
-const int STUN_MAX_RETRANSMISSIONS = 8;           // Total sends: 9
 
-// We also cap the doubling, even though the standard doesn't say to.
-// This has been 1.6 seconds for years, but for networks that
-// experience moments of high RTT (such as 2G networks), this doesn't
-// work well.
-const int STUN_MAX_RTO = 8000;  // milliseconds, or 5 doublings
+
+
+const int STUN_INITIAL_RTO = 250;  
+
+
+
+
+const int STUN_MAX_RETRANSMISSIONS = 8;           
+
+
+
+
+
+const int STUN_MAX_RTO = 8000;  
 
 StunRequestManager::StunRequestManager(rtc::Thread* thread) : thread_(thread) {}
 
@@ -59,7 +59,6 @@ void StunRequestManager::Send(StunRequest* request) {
 void StunRequestManager::SendDelayed(StunRequest* request, int delay) {
   request->set_manager(this);
   RTC_DCHECK(requests_.find(request->id()) == requests_.end());
-  request->set_origin(origin_);
   request->Construct();
   requests_[request->id()] = request;
   if (delay > 0) {
@@ -105,8 +104,8 @@ void StunRequestManager::Clear() {
     requests.push_back(i->second);
 
   for (uint32_t i = 0; i < requests.size(); ++i) {
-    // StunRequest destructor calls Remove() which deletes requests
-    // from `requests_`.
+    
+    
     delete requests[i];
   }
 }
@@ -114,17 +113,17 @@ void StunRequestManager::Clear() {
 bool StunRequestManager::CheckResponse(StunMessage* msg) {
   RequestMap::iterator iter = requests_.find(msg->transaction_id());
   if (iter == requests_.end()) {
-    // TODO(pthatcher): Log unknown responses without being too spammy
-    // in the logs.
+    
+    
     return false;
   }
 
   StunRequest* request = iter->second;
 
-  // Now that we know the request, we can see if the response is
-  // integrity-protected or not.
-  // For some tests, the message integrity is not set in the request.
-  // Complain, and then don't check.
+  
+  
+  
+  
   bool skip_integrity_checking = false;
   if (request->msg()->integrity() == StunMessage::IntegrityStatus::kNotSet) {
     skip_integrity_checking = true;
@@ -133,9 +132,9 @@ bool StunRequestManager::CheckResponse(StunMessage* msg) {
   }
 
   if (!msg->GetNonComprehendedAttributes().empty()) {
-    // If a response contains unknown comprehension-required attributes, it's
-    // simply discarded and the transaction is considered failed. See RFC5389
-    // sections 7.3.3 and 7.3.4.
+    
+    
+    
     RTC_LOG(LS_ERROR) << ": Discarding response due to unknown "
                          "comprehension-required attribute.";
     delete request;
@@ -159,8 +158,8 @@ bool StunRequestManager::CheckResponse(StunMessage* msg) {
 }
 
 bool StunRequestManager::CheckResponse(const char* data, size_t size) {
-  // Check the appropriate bytes of the stream to see if they match the
-  // transaction ID of a response we are expecting.
+  
+  
 
   if (size < 20)
     return false;
@@ -170,12 +169,12 @@ bool StunRequestManager::CheckResponse(const char* data, size_t size) {
 
   RequestMap::iterator iter = requests_.find(id);
   if (iter == requests_.end()) {
-    // TODO(pthatcher): Log unknown responses without being too spammy
-    // in the logs.
+    
+    
     return false;
   }
 
-  // Parse the STUN message and continue processing as usual.
+  
 
   rtc::ByteBufferReader buf(data, size);
   std::unique_ptr<StunMessage> response(iter->second->msg_->CreateNew());
@@ -213,10 +212,6 @@ StunRequest::~StunRequest() {
 
 void StunRequest::Construct() {
   if (msg_->type() == 0) {
-    if (!origin_.empty()) {
-      msg_->AddAttribute(
-          std::make_unique<StunByteStringAttribute>(STUN_ATTR_ORIGIN, origin_));
-    }
     Prepare(msg_);
     RTC_DCHECK(msg_->type() != 0);
   }
@@ -284,4 +279,4 @@ int StunRequest::resend_delay() {
   return std::min(rto, STUN_MAX_RTO);
 }
 
-}  // namespace cricket
+}  
