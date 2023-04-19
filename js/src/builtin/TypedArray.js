@@ -2176,16 +2176,6 @@ function TypedArrayWith(index, value) {
 
 function TypedArrayToSorted(comparefn) {
   
-  if (!IsObject(this) || !IsTypedArray(this)) {
-    return callFunction(
-      CallTypedArrayMethodIfWrapped,
-      this,
-      "TypedArrayToSorted",
-      comparefn
-    );
-  }
-
-  
   if (comparefn !== undefined) {
     if (!IsCallable(comparefn)) {
       ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, comparefn));
@@ -2196,28 +2186,36 @@ function TypedArrayToSorted(comparefn) {
   var O = this;
 
   
+  var isTypedArray = IsTypedArrayEnsuringArrayBuffer(O);
 
   
-  var len = TypedArrayLength(O);
+  
+
+  
+  var len;
+  if (isTypedArray) {
+    len = TypedArrayLength(O);
+  } else {
+    len = callFunction(
+      CallTypedArrayMethodIfWrapped,
+      O,
+      "TypedArrayLengthMethod"
+    );
+  }
 
   
   var A = TypedArrayCreateSameType(O, len);
 
   
-
-
+  
+  
   
   for (var k = 0; k < len; k++) {
     A[k] = O[k];
   }
 
   
-  return callFunction(
-    CallTypedArrayMethodIfWrapped,
-    A,
-    comparefn,
-    "TypedArraySort"
-  );
+  return callFunction(TypedArraySort, A, comparefn);
 }
 
 #endif
