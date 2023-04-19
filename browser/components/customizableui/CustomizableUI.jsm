@@ -984,7 +984,13 @@ var CustomizableUIInternal = {
       
       
       
-      if (gDirtyAreaCache.has(area)) {
+      
+      
+      
+      if (
+        gDirtyAreaCache.has(area) ||
+        placements.some(id => gPalette.has(id))
+      ) {
         this.buildArea(area, placements, aToolbar);
       } else {
         
