@@ -480,47 +480,4 @@ var OriginControls = {
     let perms = { permissions: [], origins: ["*://" + uri.host] };
     ExtensionPermissions.remove(policy.id, perms, policy.extension);
   },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getStateMessageIDs(policy, uri) {
-    const state = this.getState(policy, uri);
-
-    
-
-    if (state.noAccess) {
-      return {
-        default: "origin-controls-state-no-access",
-        onHover: null,
-      };
-    }
-
-    if (state.allDomains || (state.alwaysOn && state.hasAccess)) {
-      return {
-        default: "origin-controls-state-always-on",
-        onHover: null,
-      };
-    }
-
-    if (state.whenClicked) {
-      return {
-        default: "origin-controls-state-when-clicked",
-        onHover: "origin-controls-state-hover-run-visit-only",
-      };
-    }
-
-    return null;
-  },
 };
