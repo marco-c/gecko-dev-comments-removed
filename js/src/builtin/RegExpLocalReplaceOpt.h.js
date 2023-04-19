@@ -20,12 +20,15 @@
 
 
 
-function FUNC_NAME(rx, S, lengthS, replaceValue
+function FUNC_NAME(
+  rx,
+  S,
+  lengthS,
+  replaceValue,
 #ifdef SUBSTITUTION
-                   , firstDollarIndex
+  firstDollarIndex
 #endif
-                  )
-{
+) {
   
   var lastIndex = ToLength(rx.lastIndex);
 
@@ -127,8 +130,14 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
     namedCaptures = ToObject(namedCaptures);
   }
   
-  replacement = RegExpGetSubstitution(result, S, position, replaceValue, firstDollarIndex,
-                                      namedCaptures);
+  replacement = RegExpGetSubstitution(
+    result,
+    S,
+    position,
+    replaceValue,
+    firstDollarIndex,
+    namedCaptures
+  );
 #else
   replacement = replaceValue;
 #endif
