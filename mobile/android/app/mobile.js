@@ -142,9 +142,6 @@ pref("signon.debug", false);
 pref("formhelper.autozoom", true);
 
 
-pref("findhelper.autozoom", true);
-
-
 pref("browser.formfill.enable", true);
 
 
