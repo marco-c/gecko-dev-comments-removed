@@ -802,7 +802,9 @@ bool nsPACMan::ProcessPending() {
 
   RefPtr<PendingPACQuery> query(dont_AddRef(mPendingQ.popFirst()));
 
-  if (mShutdown || IsLoading()) {
+  
+  
+  if (mShutdown || IsLoading() || mLoadFailureCount > 0) {
     query->Complete(NS_ERROR_NOT_AVAILABLE, ""_ns);
     return true;
   }
