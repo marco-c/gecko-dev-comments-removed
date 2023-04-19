@@ -167,6 +167,8 @@ class NetworkEmulationManager {
   virtual ~NetworkEmulationManager() = default;
 
   virtual TimeController* time_controller() = 0;
+  
+  virtual TimeMode time_mode() const = 0;
 
   
   
