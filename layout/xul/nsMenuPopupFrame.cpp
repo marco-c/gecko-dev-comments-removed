@@ -1628,9 +1628,11 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
 
       
       
-      const nscoord inputMargin =
-          StyleUIReset()->mMozWindowInputRegionMargin.ToAppUnits();
-      sr.Inflate(inputMargin);
+      nsMargin rawMargin;
+      if (StyleMargin()->GetMargin(rawMargin)) {
+        rawMargin.EnsureAtMost(nsMargin());
+        sr.Deflate(rawMargin);
+      }
       return sr;
     }();
 
