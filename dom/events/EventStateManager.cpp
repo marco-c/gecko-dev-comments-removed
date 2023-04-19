@@ -3486,7 +3486,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
 
           
           
-          if (frame->StyleDisplay()->mDisplay == StyleDisplay::MozPopup) {
+          if (frame->IsMenuPopupFrame()) {
             newFocus = nullptr;
             break;
           }
