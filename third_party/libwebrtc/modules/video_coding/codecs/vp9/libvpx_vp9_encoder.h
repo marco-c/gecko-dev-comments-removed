@@ -14,7 +14,6 @@
 
 #ifdef RTC_ENABLE_VP9
 
-#include <map>
 #include <memory>
 #include <vector>
 
@@ -28,6 +27,7 @@
 #include "modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
 #include "modules/video_coding/svc/scalable_video_controller.h"
 #include "modules/video_coding/utility/framerate_controller_deprecated.h"
+#include "rtc_base/containers/flat_map.h"
 #include "rtc_base/experiments/encoder_info_settings.h"
 #include "vpx/vp8cx.h"
 
@@ -176,7 +176,7 @@ class LibvpxVp9Encoder : public VP9Encoder {
     size_t spatial_layer_id = 0;
     size_t temporal_layer_id = 0;
   };
-  std::map<size_t, RefFrameBuffer> ref_buf_;
+  flat_map<size_t, RefFrameBuffer> ref_buf_;
   std::vector<ScalableVideoController::LayerFrameConfig> layer_frames_;
 
   
@@ -229,7 +229,7 @@ class LibvpxVp9Encoder : public VP9Encoder {
     
     
     
-    std::map<int, ParameterSet> settings_by_resolution;
+    flat_map<int, ParameterSet> settings_by_resolution;
   };
   
   const PerformanceFlags performance_flags_;

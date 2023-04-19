@@ -1925,14 +1925,30 @@ LibvpxVp9Encoder::ParseQualityScalerConfig(const FieldTrialsView& trials) {
 }
 
 void LibvpxVp9Encoder::UpdatePerformanceFlags() {
+  flat_map<int, PerformanceFlags::ParameterSet> params_by_resolution;
+  if (codec_.GetVideoEncoderComplexity() ==
+      VideoCodecComplexity::kComplexityLow) {
+    
+    
+    params_by_resolution[0] = {.base_layer_speed = 9,
+                               .high_layer_speed = 9,
+                               .deblock_mode = 1,
+                               .allow_denoising = true};
+    params_by_resolution[352 * 288] = {.base_layer_speed = 9,
+                                       .high_layer_speed = 9,
+                                       .deblock_mode = 0,
+                                       .allow_denoising = true};
+  } else {
+    params_by_resolution = performance_flags_.settings_by_resolution;
+  }
+
   const auto find_speed = [&](int min_pixel_count) {
-    RTC_DCHECK(!performance_flags_.settings_by_resolution.empty());
-    auto it =
-        performance_flags_.settings_by_resolution.upper_bound(min_pixel_count);
+    RTC_DCHECK(!params_by_resolution.empty());
+    auto it = params_by_resolution.upper_bound(min_pixel_count);
     return std::prev(it)->second;
   };
-
   performance_flags_by_spatial_index_.clear();
+
   if (is_svc_) {
     for (int si = 0; si < num_spatial_layers_; ++si) {
       performance_flags_by_spatial_index_.push_back(find_speed(
@@ -2003,24 +2019,38 @@ LibvpxVp9Encoder::GetDefaultPerformanceFlags() {
   flags.use_per_layer_speed = true;
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || defined(ANDROID)
   
-  flags.settings_by_resolution[0] = {8, 8, 0, true};
+  flags.settings_by_resolution[0] = {.base_layer_speed = 8,
+                                     .high_layer_speed = 8,
+                                     .deblock_mode = 0,
+                                     .allow_denoising = true};
 #else
-  
-  
-  
-  
-  flags.settings_by_resolution[0] = {5, 8, 1, true};
-
-  
-  
-  
-  flags.settings_by_resolution[352 * 288] = {7, 8, 0, true};
 
   
   
   
   
-  flags.settings_by_resolution[1920 * 1080] = {9, 9, 0, false};
+  flags.settings_by_resolution[0] = {.base_layer_speed = 5,
+                                     .high_layer_speed = 8,
+                                     .deblock_mode = 1,
+                                     .allow_denoising = true};
+
+  
+  
+  
+  flags.settings_by_resolution[352 * 288] = {.base_layer_speed = 7,
+                                             .high_layer_speed = 8,
+                                             .deblock_mode = 0,
+                                             .allow_denoising = true};
+
+  
+  
+  
+  
+  flags.settings_by_resolution[1920 * 1080] = {.base_layer_speed = 9,
+                                               .high_layer_speed = 9,
+                                               .deblock_mode = 0,
+                                               .allow_denoising = false};
+
 #endif
   return flags;
 }
