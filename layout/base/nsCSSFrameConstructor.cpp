@@ -9376,6 +9376,26 @@ static void VerifyGridFlexContainerChildren(nsIFrame* aParentFrame,
 #endif
 }
 
+static bool FrameHasOnlyPlaceholderPrevSiblings(const nsIFrame* aFrame) {
+  
+  MOZ_ASSERT(aFrame, "frame must not be null");
+  const nsIFrame* prevSibling = aFrame;
+  do {
+    prevSibling = prevSibling->GetPrevSibling();
+  } while (prevSibling && prevSibling->IsPlaceholderFrame());
+  return !prevSibling;
+}
+
+static bool FrameHasOnlyPlaceholderNextSiblings(const nsIFrame* aFrame) {
+  
+  MOZ_ASSERT(aFrame, "frame must not be null");
+  const nsIFrame* nextSibling = aFrame;
+  do {
+    nextSibling = nextSibling->GetNextSibling();
+  } while (nextSibling && nextSibling->IsPlaceholderFrame());
+  return !nextSibling;
+}
+
 inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
     nsFrameConstructorState& aState, FrameConstructionItemList& aItems,
     nsContainerFrame* aParentFrame, bool aParentIsWrapperAnonBox,
@@ -9462,6 +9482,9 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
     const nsAtom* startPageValue = nullptr;
     const nsAtom* endPageValue = nullptr;
     for (nsIFrame* f : aFrameList) {
+      if (f->IsPlaceholderFrame()) {
+        continue;
+      }
       
       
       
@@ -9515,21 +9538,40 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
       
       
       
-      for (nsContainerFrame* frame = aParentFrame;
-           frame && frame->IsBlockFrameOrSubclass();
-           frame = frame->GetParent()) {
-        nsIFrame::PageValues* const parentPageValues =
-            frame->GetProperty(nsIFrame::PageValuesProperty());
-        
-        
-        
-        if (!parentPageValues) {
+      
+      
+      for (nsContainerFrame* ancestorFrame = aParentFrame;
+           (startPageValue || endPageValue) && ancestorFrame &&
+           ancestorFrame->IsBlockFrameOrSubclass();
+           ancestorFrame = ancestorFrame->GetParent()) {
+        MOZ_ASSERT(!ancestorFrame->GetPrevInFlow(),
+                   "Should not have fragmentation yet");
+
+        nsIFrame::PageValues* const ancestorPageValues =
+            ancestorFrame->GetProperty(nsIFrame::PageValuesProperty());
+
+        if (!ancestorPageValues) {
           break;
         }
-        if (!parentPageValues->mStartPageValue) {
-          parentPageValues->mStartPageValue = startPageValue;
+
+        
+        
+        
+        
+        
+        
+        if (startPageValue) {
+          ancestorPageValues->mStartPageValue = startPageValue;
+          if (!FrameHasOnlyPlaceholderPrevSiblings(ancestorFrame)) {
+            startPageValue = nullptr;
+          }
         }
-        parentPageValues->mEndPageValue = endPageValue;
+        if (endPageValue) {
+          ancestorPageValues->mEndPageValue = endPageValue;
+          if (!FrameHasOnlyPlaceholderNextSiblings(ancestorFrame)) {
+            endPageValue = nullptr;
+          }
+        }
       }
     }
   }
