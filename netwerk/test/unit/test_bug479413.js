@@ -24,12 +24,6 @@ function expected_fail(inputIDN) {
 }
 
 function run_test() {
-  
-  var pbi = Services.prefs;
-  var whitelistPref = "network.IDN.whitelist.com";
-
-  pbi.setBoolPref(whitelistPref, true);
-
   idnService = Cc["@mozilla.org/network/idn-service;1"].getService(
     Ci.nsIIDNService
   );
@@ -51,9 +45,4 @@ function run_test() {
   
   
   expected_fail("foo\u0370bar.com");
-
-  
-  if (pbi.prefHasUserValue(whitelistPref)) {
-    pbi.clearUserPref(whitelistPref);
-  }
 }

@@ -52,8 +52,6 @@ static const char kACEPrefix[] = "xn--";
 #define NS_NET_PREF_EXTRAALLOWED "network.IDN.extra_allowed_chars"
 #define NS_NET_PREF_EXTRABLOCKED "network.IDN.extra_blocked_chars"
 #define NS_NET_PREF_SHOWPUNYCODE "network.IDN_show_punycode"
-#define NS_NET_PREF_IDNWHITELIST "network.IDN.whitelist."
-#define NS_NET_PREF_IDNUSEWHITELIST "network.IDN.use_whitelist"
 #define NS_NET_PREF_IDNRESTRICTION "network.IDN.restriction_profile"
 
 static inline bool isOnlySafeChars(const nsString& in,
@@ -80,20 +78,16 @@ static inline bool isOnlySafeChars(const nsString& in,
 NS_IMPL_ISUPPORTS(nsIDNService, nsIIDNService, nsISupportsWeakReference)
 
 static const char* gCallbackPrefs[] = {
-    NS_NET_PREF_EXTRAALLOWED,    NS_NET_PREF_EXTRABLOCKED,
-    NS_NET_PREF_SHOWPUNYCODE,    NS_NET_PREF_IDNRESTRICTION,
-    NS_NET_PREF_IDNUSEWHITELIST, nullptr,
+    NS_NET_PREF_EXTRAALLOWED,
+    NS_NET_PREF_EXTRABLOCKED,
+    NS_NET_PREF_SHOWPUNYCODE,
+    NS_NET_PREF_IDNRESTRICTION,
+    nullptr,
 };
 
 nsresult nsIDNService::Init() {
   MOZ_ASSERT(NS_IsMainThread());
   MutexSingleWriterAutoLock lock(mLock);
-
-  nsCOMPtr<nsIPrefService> prefs(do_GetService(NS_PREFSERVICE_CONTRACTID));
-  if (prefs) {
-    prefs->GetBranch(NS_NET_PREF_IDNWHITELIST,
-                     getter_AddRefs(mIDNWhitelistPrefBranch));
-  }
 
   Preferences::RegisterPrefixCallbacks(PrefChanged, gCallbackPrefs, this);
   prefsChanged(nullptr);
@@ -116,12 +110,6 @@ void nsIDNService::prefsChanged(const char* pref) {
     bool val;
     if (NS_SUCCEEDED(Preferences::GetBool(NS_NET_PREF_SHOWPUNYCODE, &val))) {
       mShowPunycode = val;
-    }
-  }
-  if (!pref || nsLiteralCString(NS_NET_PREF_IDNUSEWHITELIST).Equals(pref)) {
-    bool val;
-    if (NS_SUCCEEDED(Preferences::GetBool(NS_NET_PREF_IDNUSEWHITELIST, &val))) {
-      mIDNUseWhitelist = val;
     }
   }
   if (!pref || nsLiteralCString(NS_NET_PREF_IDNRESTRICTION).Equals(pref)) {
@@ -453,10 +441,7 @@ NS_IMETHODIMP nsIDNService::ConvertToDisplayIDN(
       nsAutoCString temp(_retval);
       
       
-      
-      ACEtoUTF8(
-          temp, _retval,
-          isInWhitelist(temp) ? eStringPrepIgnoreErrors : eStringPrepForUI);
+      ACEtoUTF8(temp, _retval, eStringPrepForUI);
       *_isASCII = IsAscii(_retval);
     } else {
       *_isASCII = true;
@@ -490,7 +475,7 @@ NS_IMETHODIMP nsIDNService::ConvertToDisplayIDN(
     
     
     *_isASCII = IsAscii(_retval);
-    if (!*_isASCII && !isInWhitelist(_retval)) {
+    if (!*_isASCII) {
       
       
       
@@ -676,39 +661,6 @@ nsresult nsIDNService::decodeACE(const nsACString& in, nsACString& out,
   }
 
   return NS_OK;
-}
-
-bool nsIDNService::isInWhitelist(const nsACString& host) {
-  if (!NS_IsMainThread()) {
-    mLock.AssertCurrentThreadOwns();
-  } else {
-    mLock.AssertOnWritingThread();
-  }
-
-  if (mIDNUseWhitelist && mIDNWhitelistPrefBranch) {
-    nsAutoCString tld(host);
-    
-    
-    if (!IsAscii(tld) && NS_FAILED(UTF8toACE(tld, tld, eStringPrepForDNS))) {
-      return false;
-    }
-
-    
-    tld.Trim(".");
-    int32_t pos = tld.RFind(".");
-    if (pos == kNotFound) {
-      return false;
-    }
-
-    tld.Cut(0, pos + 1);
-
-    bool safe;
-    if (NS_SUCCEEDED(mIDNWhitelistPrefBranch->GetBoolPref(tld.get(), &safe))) {
-      return safe;
-    }
-  }
-
-  return false;
 }
 
 bool nsIDNService::isLabelSafe(const nsAString& label) {

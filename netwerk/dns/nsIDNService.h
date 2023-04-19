@@ -99,7 +99,6 @@ class nsIDNService final : public nsIIDNService,
   nsresult ACEtoUTF8(const nsACString& input, nsACString& _retval,
                      stringPrepFlag flag);
 
-  bool isInWhitelist(const nsACString& host);
   void prefsChanged(const char* pref);
 
   static void PrefChanged(const char* aPref, void* aSelf) {
@@ -172,7 +171,6 @@ class nsIDNService final : public nsIIDNService,
   
   
   
-  
   mozilla::MutexSingleWriter mLock;
 
   
@@ -200,10 +198,6 @@ class nsIDNService final : public nsIIDNService,
   
   restrictionProfile mRestrictionProfile MOZ_GUARDED_BY(mLock){
       eASCIIOnlyProfile};
-  
-  nsCOMPtr<nsIPrefBranch> mIDNWhitelistPrefBranch MOZ_GUARDED_BY(mLock);
-  
-  bool mIDNUseWhitelist MOZ_GUARDED_BY(mLock) = false;
 };
 
 #endif  
