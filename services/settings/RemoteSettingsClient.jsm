@@ -89,7 +89,7 @@ class EventEmitter {
   }
 
   hasListeners(event) {
-    return this._listeners.has(event) && this._listeners.get(event).length > 0;
+    return this._listeners.has(event) && !!this._listeners.get(event).length;
   }
 
   on(event, callback) {
@@ -686,7 +686,7 @@ class RemoteSettingsClient extends EventEmitter {
             await this.db.importChanges(metadata);
             
             
-            if (this.verifySignature && importedFromDump.length == 0) {
+            if (this.verifySignature && !importedFromDump.length) {
               lazy.console.debug(
                 `${this.identifier} verify signature of local data`
               );
@@ -699,7 +699,7 @@ class RemoteSettingsClient extends EventEmitter {
           }
 
           
-          if (importedFromDump.length == 0) {
+          if (!importedFromDump.length) {
             return;
           }
           

@@ -259,7 +259,7 @@ PasswordStore.prototype = {
     let logins = Services.logins.searchLogins(prop);
     await Async.promiseYield(); 
 
-    if (logins.length > 0) {
+    if (logins.length) {
       this._log.trace(logins.length + " items matching " + id + " found.");
       return logins[0];
     }

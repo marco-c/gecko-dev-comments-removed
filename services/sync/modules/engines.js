@@ -1304,7 +1304,7 @@ SyncEngine.prototype = {
       
       
       let remainingIDs = guids.obj.filter(id => !downloadedIDs.has(id));
-      if (remainingIDs.length > 0) {
+      if (remainingIDs.length) {
         this.toFetch = Utils.setAddAll(this.toFetch, remainingIDs);
       }
     }
@@ -1939,7 +1939,7 @@ SyncEngine.prototype = {
         await doDelete(key, val);
       } else {
         
-        while (val.length > 0) {
+        while (val.length) {
           await doDelete(key, val.slice(0, 100));
           val = val.slice(100);
         }

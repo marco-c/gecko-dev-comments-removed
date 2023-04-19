@@ -287,7 +287,7 @@ FxAccountsStorageManager.prototype = {
     
     
     
-    if (Object.keys(this.cachedPlain).length != 0) {
+    if (Object.keys(this.cachedPlain).length) {
       throw new Error("should be impossible to have cached data already.");
     }
     for (let [name, value] of Object.entries(got.accountData)) {
@@ -326,7 +326,7 @@ FxAccountsStorageManager.prototype = {
       
       
       
-      let needWrite = Object.keys(this.cachedSecure).length != 0;
+      let needWrite = !!Object.keys(this.cachedSecure).length;
       let readSecure = await this.secureStorage.get(uid, email);
       
       
@@ -605,7 +605,7 @@ LoginManagerStorage.prototype = {
         null,
         FXA_PWDMGR_REALM
       );
-      if (logins.length == 0) {
+      if (!logins.length) {
         
         log.info("Can't find any credentials in the login manager");
         return null;

@@ -280,7 +280,7 @@ function assert_valid_ping(record) {
   
   
   
-  if (record && (record.why != "shutdown" || record.syncs.length != 0)) {
+  if (record && (record.why != "shutdown" || !!record.syncs.length)) {
     const result = SyncPingValidator.validate(record);
     if (!result.valid) {
       if (result.errors.length) {

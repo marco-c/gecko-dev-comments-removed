@@ -272,10 +272,10 @@ var SyncedTabs = {
     
     
     clients.sort((a, b) => {
-      if (a.tabs.length == 0) {
+      if (!a.tabs.length) {
         return 1; 
       }
-      if (b.tabs.length == 0) {
+      if (!b.tabs.length) {
         return -1; 
       }
       return b.tabs[0].lastUsed - a.tabs[0].lastUsed;

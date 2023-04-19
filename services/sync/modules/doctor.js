@@ -84,14 +84,12 @@ var Doctor = {
   },
 
   async _runValidators(engineInfos) {
-    if (Object.keys(engineInfos).length == 0) {
+    if (!Object.keys(engineInfos).length) {
       log.info("Skipping validation: no engines qualify");
       return;
     }
 
-    if (
-      Object.values(engineInfos).filter(i => i.maxRecords != -1).length != 0
-    ) {
+    if (Object.values(engineInfos).filter(i => i.maxRecords != -1).length) {
       
       
       let countInfo = await this._fetchCollectionCounts();

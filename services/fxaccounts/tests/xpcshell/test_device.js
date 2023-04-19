@@ -23,7 +23,7 @@ add_test(function test_default_device_name() {
   
   let def = fxAccounts.device.getDefaultLocalName(); 
   _("default value is " + def);
-  ok(def.length > 0);
+  ok(!!def.length);
 
   
   
@@ -33,7 +33,7 @@ add_test(function test_default_device_name() {
     Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService)
       .myHostName;
   _("hostname is " + hostname);
-  ok(hostname.length > 0);
+  ok(!!hostname.length);
   
   ok(def.includes(hostname));
   
@@ -41,7 +41,7 @@ add_test(function test_default_device_name() {
     Ci.nsIHttpProtocolHandler
   ).oscpu;
   _("UA fallback is " + fallback);
-  ok(fallback.length > 0);
+  ok(!!fallback.length);
   
   ok(!def.includes(fallback));
 

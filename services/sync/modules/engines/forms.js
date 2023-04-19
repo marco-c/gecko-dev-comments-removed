@@ -92,7 +92,7 @@ var FormWrapper = {
   async hasGUID(guid) {
     
     let results = await this._search(this._guidCols, { guid });
-    return results.length != 0;
+    return !!results.length;
   },
 
   async replaceGUID(oldGUID, newGUID) {
