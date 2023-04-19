@@ -129,9 +129,6 @@ function createViewControllers(state, elements) {
           preset.l10nIds.popup.description
         );
         elements.presetsMenuList.value = presetName;
-        
-        const { height } = elements.presetDescription.getBoundingClientRect();
-        elements.presetDescription.style.height = `${height}px`;
       } else {
         elements.presetDescription.style.display = "none";
         
