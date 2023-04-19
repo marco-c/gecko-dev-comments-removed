@@ -32,11 +32,12 @@ class nsPrintObject final {
   nsPrintObject();
   ~nsPrintObject();
 
-  nsresult InitAsRootObject(nsIDocShell* aDocShell,
-                            mozilla::dom::Document* aDoc);
-  nsresult InitAsNestedObject(nsIDocShell* aDocShell,
-                              mozilla::dom::Document* aDoc,
-                              nsPrintObject* aParent);
+  
+
+
+
+  nsresult Init(nsIDocShell* aDocShell, mozilla::dom::Document* aDoc,
+                nsPrintObject* aParent = nullptr);
 
   void DestroyPresentation();
 

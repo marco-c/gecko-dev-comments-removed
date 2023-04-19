@@ -49,8 +49,8 @@ nsPrintObject::~nsPrintObject() {
 
 
 
-nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell,
-                                         Document* aDoc) {
+nsresult nsPrintObject::Init(nsIDocShell* aDocShell, Document* aDoc,
+                             nsPrintObject* aParent) {
   NS_ENSURE_STATE(aDocShell);
   NS_ENSURE_STATE(aDoc);
 
@@ -59,27 +59,17 @@ nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell,
   mDocShell = aDocShell;
   mDocument = aDoc;
 
-  
-  DestroyPresentation();
-
-  return NS_OK;
-}
-
-nsresult nsPrintObject::InitAsNestedObject(nsIDocShell* aDocShell,
-                                           Document* aDoc,
-                                           nsPrintObject* aParent) {
-  NS_ENSURE_STATE(aDocShell);
-  NS_ENSURE_STATE(aDoc);
-
-  mParent = aParent;
-  mDocShell = aDocShell;
-  mDocument = aDoc;
-
-  nsCOMPtr<nsPIDOMWindowOuter> window = aDoc->GetWindow();
-  mContent = window->GetFrameElementInternal();
-
-  mFrameType = eIFrame;
-
+  if (!aParent) {
+    
+    
+    DestroyPresentation();
+  } else {
+    
+    mParent = aParent;
+    nsCOMPtr<nsPIDOMWindowOuter> window = aDoc->GetWindow();
+    mContent = window->GetFrameElementInternal();
+    mFrameType = eIFrame;
+  }
   return NS_OK;
 }
 
