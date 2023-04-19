@@ -2242,6 +2242,11 @@ static already_AddRefed<gfxTextRun> GetHyphenTextRun(nsTextFrame* aTextFrame,
   const auto& hyphenateChar = aTextFrame->StyleText()->mHyphenateCharacter;
   gfx::ShapedTextFlags flags =
       nsLayoutUtils::GetTextRunOrientFlagsForStyle(aTextFrame->Style());
+  
+  
+  if (aTextFrame->GetWritingMode().IsBidiRTL()) {
+    flags |= gfx::ShapedTextFlags::TEXT_IS_RTL;
+  }
   if (hyphenateChar.IsAuto()) {
     return fontGroup->MakeHyphenTextRun(dt, flags, appPerDev);
   }
@@ -7155,9 +7160,7 @@ void nsTextFrame::DrawTextRun(Range aRange, const gfx::Point& aTextBaselinePt,
       bool vertical = GetWritingMode().IsVertical();
       
       
-      float shift =
-          mTextRun->GetDirection() * (*aParams.advanceWidth) -
-          (mTextRun->IsRightToLeft() ? hyphenTextRun->GetAdvanceWidth() : 0);
+      float shift = mTextRun->GetDirection() * (*aParams.advanceWidth);
       if (vertical) {
         p.y += shift;
       } else {
