@@ -342,6 +342,37 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
         
         
         int clipped_wait_frames = 300;
+
+        
+        struct ClippingPredictor {
+          bool enabled = false;
+          enum Mode {
+            
+            
+            kClippingEventPrediction,
+            
+            
+            kAdaptiveStepClippingPeakPrediction,
+            
+            
+            kFixedStepClippingPeakPrediction,
+          };
+          Mode mode = kClippingEventPrediction;
+          
+          
+          int window_length = 5;
+          
+          
+          int reference_window_length = 5;
+          
+          
+          
+          int reference_window_delay = 5;
+          
+          float clipping_threshold = -1.0f;
+          
+          float crest_factor_margin = 3.0f;
+        } clipping_predictor;
       } analog_gain_controller;
     } gain_controller1;
 
