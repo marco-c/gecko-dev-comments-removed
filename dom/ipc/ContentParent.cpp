@@ -5191,11 +5191,6 @@ bool ContentParent::DeallocPWebrtcGlobalParent(PWebrtcGlobalParent* aActor) {
 }
 #endif
 
-mozilla::ipc::IPCResult ContentParent::RecvSetOfflinePermission(
-    nsIPrincipal* aPrincipal) {
-  return IPC_OK();
-}
-
 void ContentParent::MaybeInvokeDragSession(BrowserParent* aParent) {
   
   
