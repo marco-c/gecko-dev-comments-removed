@@ -139,6 +139,13 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorInterface {
   bool find_network_handle_without_ipv6_temporary_part_
       RTC_GUARDED_BY(network_thread_) = false;
   bool surface_cellular_types_ RTC_GUARDED_BY(network_thread_) = false;
+
+  
+  
+  
+  
+  
+  
   bool bind_using_ifname_ RTC_GUARDED_BY(network_thread_) = true;
 };
 
