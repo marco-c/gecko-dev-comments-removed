@@ -87,15 +87,33 @@ class NackTracker {
   
   
   
-  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms) const;
+  
+  
+  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms);
 
   
   
   void Reset();
 
+  
+  uint32_t GetPacketLossRateForTest() { return packet_loss_rate_; }
+
  private:
   
   FRIEND_TEST_ALL_PREFIXES(NackTrackerTest, EstimateTimestampAndTimeToPlay);
+
+  
+  struct Config {
+    Config();
+
+    
+    double packet_loss_forget_factor = 0.996;
+    
+    
+    int ms_per_loss_percent = 20;
+    
+    bool never_nack_multiple_times = false;
+  };
 
   struct NackElement {
     NackElement(int64_t initial_time_to_play_ms,
@@ -174,6 +192,11 @@ class NackTracker {
   int64_t TimeToPlay(uint32_t timestamp) const;
 
   
+  void UpdatePacketLossRate(int packets_lost);
+
+  const Config config_;
+
+  
   
   
   
@@ -204,6 +227,9 @@ class NackTracker {
   
   
   size_t max_nack_list_size_;
+
+  
+  uint32_t packet_loss_rate_ = 0;
 };
 
 }  
