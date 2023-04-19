@@ -28,8 +28,27 @@ add_task(async () => {
         switcher.STATE_LOADED,
         "The originating browser tab should be in STATE_LOADED."
       );
+      Assert.equal(
+        browser.docShellIsActive,
+        true,
+        "The docshell should be active in the originating tab"
+      );
 
-      await BrowserTestUtils.closeWindow(pipWin);
+      
+      
+      
+      switcher.destroy();
+
+      
+      
+      pipWin.document.getElementById("close").click();
+      await BrowserTestUtils.windowClosed(pipWin);
+
+      Assert.equal(
+        browser.docShellIsActive,
+        false,
+        "The docshell should be inactive in the originating tab"
+      );
     }
   );
 });
