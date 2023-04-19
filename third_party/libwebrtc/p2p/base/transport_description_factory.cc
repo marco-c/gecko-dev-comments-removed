@@ -91,11 +91,26 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateAnswer(
   if (offer && offer->identity_fingerprint.get()) {
     
     if (secure_ == SEC_ENABLED || secure_ == SEC_REQUIRED) {
+      ConnectionRole role = CONNECTIONROLE_NONE;
       
-      
-      ConnectionRole role = (options.prefer_passive_role)
-                                ? CONNECTIONROLE_PASSIVE
-                                : CONNECTIONROLE_ACTIVE;
+      if (offer->connection_role == CONNECTIONROLE_ACTPASS) {
+        role = (options.prefer_passive_role) ? CONNECTIONROLE_PASSIVE
+                                             : CONNECTIONROLE_ACTIVE;
+      } else if (offer->connection_role == CONNECTIONROLE_ACTIVE) {
+        role = CONNECTIONROLE_PASSIVE;
+      } else if (offer->connection_role == CONNECTIONROLE_PASSIVE) {
+        role = CONNECTIONROLE_ACTIVE;
+      } else if (offer->connection_role == CONNECTIONROLE_NONE) {
+        
+        RTC_LOG(LS_WARNING) << "Remote offer connection role is NONE, which is "
+                               "a protocol violation";
+        role = (options.prefer_passive_role) ? CONNECTIONROLE_PASSIVE
+                                             : CONNECTIONROLE_ACTIVE;
+      } else {
+        RTC_LOG(LS_ERROR) << "Remote offer connection role is " << role
+                          << " which is a protocol violation";
+        RTC_NOTREACHED();
+      }
 
       if (!SetSecurityInfo(desc.get(), role)) {
         return NULL;

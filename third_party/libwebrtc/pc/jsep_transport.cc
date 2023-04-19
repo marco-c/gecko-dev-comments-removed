@@ -619,6 +619,9 @@ webrtc::RTCError JsepTransport::NegotiateDtlsRole(
   
   
   
+  
+  
+  
   bool is_remote_server = false;
   if (local_description_type == SdpType::kOffer) {
     if (local_connection_role != CONNECTIONROLE_ACTPASS) {
@@ -649,15 +652,37 @@ webrtc::RTCError JsepTransport::NegotiateDtlsRole(
       
       
       auto current_dtls_role = GetDtlsRole();
-      if (!current_dtls_role ||
-          (*current_dtls_role == rtc::SSL_CLIENT &&
-           remote_connection_role == CONNECTIONROLE_ACTIVE) ||
-          (*current_dtls_role == rtc::SSL_SERVER &&
-           remote_connection_role == CONNECTIONROLE_PASSIVE)) {
-        return webrtc::RTCError(
-            webrtc::RTCErrorType::INVALID_PARAMETER,
-            "Offerer must use actpass value or current negotiated role for "
-            "setup attribute.");
+      if (!current_dtls_role) {
+        
+        switch (remote_connection_role) {
+          case CONNECTIONROLE_ACTIVE:
+            if (local_connection_role != CONNECTIONROLE_PASSIVE) {
+              return webrtc::RTCError(
+                  webrtc::RTCErrorType::INVALID_PARAMETER,
+                  "Answerer must be passive when offerer is active");
+            }
+            break;
+          case CONNECTIONROLE_PASSIVE:
+            if (local_connection_role != CONNECTIONROLE_ACTIVE) {
+              return webrtc::RTCError(
+                  webrtc::RTCErrorType::INVALID_PARAMETER,
+                  "Answerer must be active when offerer is passive");
+            }
+            break;
+          default:
+            RTC_NOTREACHED();
+            break;
+        }
+      } else {
+        if ((*current_dtls_role == rtc::SSL_CLIENT &&
+             remote_connection_role == CONNECTIONROLE_ACTIVE) ||
+            (*current_dtls_role == rtc::SSL_SERVER &&
+             remote_connection_role == CONNECTIONROLE_PASSIVE)) {
+          return webrtc::RTCError(
+              webrtc::RTCErrorType::INVALID_PARAMETER,
+              "Offerer must use current negotiated role for "
+              "setup attribute.");
+        }
       }
     }
 
