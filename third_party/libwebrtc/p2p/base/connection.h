@@ -366,6 +366,9 @@ class Connection : public CandidatePairInterface, public sigslot::has_slots<> {
   rtc::RateTracker recv_rate_tracker_;
   rtc::RateTracker send_rate_tracker_;
   int64_t last_send_data_ = 0;
+  
+  
+  bool pending_delete_ RTC_GUARDED_BY(network_thread_) = false;
 
  private:
   
