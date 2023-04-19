@@ -14,7 +14,9 @@
 #include <stddef.h>
 
 #if defined(WEBRTC_WIN)
-#include <windows.h>
+
+
+typedef void* HANDLE;
 #endif
 
 #include <memory>
