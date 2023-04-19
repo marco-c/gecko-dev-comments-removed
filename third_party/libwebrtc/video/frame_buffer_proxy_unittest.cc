@@ -198,6 +198,12 @@ class VCMReceiveStatisticsCallbackMock : public VCMReceiveStatisticsCallback {
               (const TimingFrameInfo& info),
               (override));
 };
+
+bool IsFrameBuffer2Enabled() {
+  return field_trial::FindFullName("WebRTC-FrameBuffer3")
+             .find("arm:FrameBuffer2") != std::string::npos;
+}
+
 }  
 
 constexpr auto kMaxWaitForKeyframe = TimeDelta::Millis(500);
@@ -635,6 +641,64 @@ TEST_P(FrameBufferProxyTest, TestStatsCallback) {
   time_controller_.AdvanceTime(TimeDelta::Zero());
 }
 
+TEST_P(FrameBufferProxyTest, FrameCompleteCalledOnceForDuplicateFrame) {
+  EXPECT_CALL(stats_callback_,
+              OnCompleteFrame(true, kFrameSize, VideoContentType::UNSPECIFIED))
+      .Times(1);
+
+  StartNextDecodeForceKeyframe();
+  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
+  proxy_->InsertFrame(Builder().Id(0).Time(0).AsLast().Build());
+  
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+}
+
+TEST_P(FrameBufferProxyTest, FrameCompleteCalledOnceForSingleTemporalUnit) {
+  StartNextDecodeForceKeyframe();
+
+  
+  
+  EXPECT_CALL(stats_callback_, OnCompleteFrame(_, _, _)).Times(0);
+  proxy_->InsertFrame(Builder().Id(0).Time(0).Build());
+  proxy_->InsertFrame(Builder().Id(1).Time(0).Refs({0}).Build());
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+  
+  ::testing::Mock::VerifyAndClearExpectations(&stats_callback_);
+
+  
+  
+  EXPECT_CALL(stats_callback_,
+              OnCompleteFrame(false, kFrameSize, VideoContentType::UNSPECIFIED))
+      .Times(1);
+  proxy_->InsertFrame(Builder().Id(2).Time(0).Refs({0, 1}).AsLast().Build());
+  
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+}
+
+TEST_P(FrameBufferProxyTest, FrameCompleteCalledOnceForCompleteTemporalUnit) {
+  
+  if (IsFrameBuffer2Enabled())
+    return;
+  StartNextDecodeForceKeyframe();
+
+  
+  
+  
+  EXPECT_CALL(stats_callback_, OnCompleteFrame(_, _, _)).Times(0);
+  proxy_->InsertFrame(Builder().Id(0).Time(0).Build());
+  proxy_->InsertFrame(Builder().Id(2).Time(0).Refs({0, 1}).AsLast().Build());
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+  
+  ::testing::Mock::VerifyAndClearExpectations(&stats_callback_);
+
+  EXPECT_CALL(stats_callback_,
+              OnCompleteFrame(false, kFrameSize, VideoContentType::UNSPECIFIED))
+      .Times(1);
+  proxy_->InsertFrame(Builder().Id(1).Time(0).Refs({0}).Build());
+  
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+}
+
 
 
 
@@ -690,8 +754,7 @@ TEST_P(FrameBufferProxyTest, NextFrameWithOldTimestamp) {
                           .AsLast()
                           .Build());
   
-  if (field_trial::FindFullName("WebRTC-FrameBuffer3")
-          .find("arm:FrameBuffer2") == std::string::npos) {
+  if (!IsFrameBuffer2Enabled()) {
     EXPECT_THAT(WaitForFrameOrTimeout(kFps30Delay), Frame(WithId(2)));
   } else {
     EXPECT_THAT(WaitForFrameOrTimeout(kMaxWaitForFrame), TimedOut());
