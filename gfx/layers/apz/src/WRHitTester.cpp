@@ -12,6 +12,7 @@
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDebug.h"        
 #include "nsIXULRuntime.h"  
+#include "mozilla/gfx/Matrix.h"
 
 #define APZCTM_LOG(...) \
   MOZ_LOG(APZCTreeManager::sLog, LogLevel::Debug, (__VA_ARGS__))
@@ -21,6 +22,53 @@ namespace layers {
 
 using mozilla::gfx::CompositorHitTestFlags;
 using mozilla::gfx::CompositorHitTestInvisibleToHit;
+
+static bool CheckCloseToIdentity(const gfx::Matrix4x4& aMatrix) {
+  
+  
+  
+  const float multiplyEps = 1 / 2048.f;
+  
+  const float translateEps = 1.f;
+
+  if (!FuzzyEqualsAdditive(aMatrix._11, 1.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._12, 0.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._13, 0.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._14, 0.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._21, 0.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._22, 1.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._23, 0.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._24, 0.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._31, 0.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._32, 0.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._33, 1.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._34, 0.f, multiplyEps) ||
+      !FuzzyEqualsAdditive(aMatrix._41, 0.f, translateEps) ||
+      !FuzzyEqualsAdditive(aMatrix._42, 0.f, translateEps) ||
+      !FuzzyEqualsAdditive(aMatrix._43, 0.f, translateEps) ||
+      !FuzzyEqualsAdditive(aMatrix._44, 1.f, multiplyEps)) {
+    return false;
+  }
+  return true;
+}
+
+
+
+
+static bool CheckInvertibleWithFinitePrecision(const gfx::Matrix4x4& aMatrix) {
+  auto inverse = aMatrix.MaybeInverse();
+  if (inverse.isNothing()) {
+    
+    return true;
+  }
+  if (!CheckCloseToIdentity(aMatrix * *inverse)) {
+    return false;
+  }
+  if (!CheckCloseToIdentity(*inverse * aMatrix)) {
+    return false;
+  }
+  return true;
+}
 
 IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
     const ScreenPoint& aHitTestPoint,
@@ -93,6 +141,19 @@ IAPZHitTester::HitTestResult WRHitTester::GetAPZCAtPoint(
     if (flags & EventRegionsOverride::ForceEmptyHitRegion) {
       
       APZCTM_LOG("skipping due to FEHR subtree.\n");
+      continue;
+    }
+
+    if (!CheckInvertibleWithFinitePrecision(
+            mTreeManager->GetScreenToApzcTransform(node->GetApzc())
+                .ToUnknownMatrix())) {
+      APZCTM_LOG("skipping due to check inverse accuracy\n");
+      continue;
+    }
+    if (!CheckInvertibleWithFinitePrecision(
+            mTreeManager->GetApzcToGeckoTransform(node->GetApzc())
+                .ToUnknownMatrix())) {
+      APZCTM_LOG("skipping due to check inverse accuracy\n");
       continue;
     }
 
