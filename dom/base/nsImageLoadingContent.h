@@ -191,8 +191,7 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-
-  nsIFrame* GetOurPrimaryImageFrame();
+  nsIFrame* GetOurPrimaryFrame();
 
   
 
