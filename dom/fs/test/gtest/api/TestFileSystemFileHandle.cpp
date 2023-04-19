@@ -4,12 +4,10 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "FileSystemMocks.h"
-
 #include "fs/FileSystemChildFactory.h"
-
+#include "gtest/gtest.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/FileSystemFileHandle.h"
 #include "mozilla/dom/FileSystemFileHandleBinding.h"
 #include "mozilla/dom/FileSystemHandle.h"
@@ -17,7 +15,6 @@
 #include "mozilla/dom/FileSystemManager.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/StorageManager.h"
-#include "mozilla/UniquePtr.h"
 #include "nsIGlobalObject.h"
 
 namespace mozilla::dom::fs::test {
