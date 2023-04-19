@@ -629,6 +629,11 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
   uint32_t negotiation_needed_event_id_ = 0;
   bool update_negotiation_needed_on_empty_chain_
       RTC_GUARDED_BY(signaling_thread()) = false;
+  
+  
+  
+  bool pt_demuxing_has_been_used_audio_ = false;
+  bool pt_demuxing_has_been_used_video_ = false;
 
   
   

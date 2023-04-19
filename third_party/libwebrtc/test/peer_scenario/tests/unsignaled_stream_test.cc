@@ -24,6 +24,31 @@ namespace webrtc {
 namespace test {
 namespace {
 
+enum class MidTestConfiguration {
+  
+  kMidNotNegotiated,
+  
+  
+  
+  kMidNegotiatedButMissingFromPackets,
+  
+  
+  kMidNegotiatedAndPresentInPackets,
+};
+
+
+std::string TestParametersMidTestConfigurationToString(
+    testing::TestParamInfo<MidTestConfiguration> info) {
+  switch (info.param) {
+    case MidTestConfiguration::kMidNotNegotiated:
+      return "MidNotNegotiated";
+    case MidTestConfiguration::kMidNegotiatedButMissingFromPackets:
+      return "MidNegotiatedButMissingFromPackets";
+    case MidTestConfiguration::kMidNegotiatedAndPresentInPackets:
+      return "MidNegotiatedAndPresentInPackets";
+  }
+}
+
 class FrameObserver : public rtc::VideoSinkInterface<VideoFrame> {
  public:
   FrameObserver() : frame_observed_(false) {}
@@ -53,7 +78,11 @@ void set_ssrc(SessionDescriptionInterface* offer, size_t index, uint32_t ssrc) {
 
 }  
 
-TEST(UnsignaledStreamTest, ReplacesUnsignaledStreamOnCompletedSignaling) {
+class UnsignaledStreamTest
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<MidTestConfiguration> {};
+
+TEST_P(UnsignaledStreamTest, ReplacesUnsignaledStreamOnCompletedSignaling) {
   
   
   
@@ -62,10 +91,11 @@ TEST(UnsignaledStreamTest, ReplacesUnsignaledStreamOnCompletedSignaling) {
   
   
   
+  const MidTestConfiguration kMidTestConfiguration = GetParam();
 
   
   
-  PeerScenario s(*test_info_);
+  PeerScenario s(*::testing::UnitTest::GetInstance()->current_test_info());
 
   PeerScenarioClient::Config config = PeerScenarioClient::Config();
   
@@ -96,11 +126,58 @@ TEST(UnsignaledStreamTest, ReplacesUnsignaledStreamOnCompletedSignaling) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   uint32_t first_ssrc = 0;
   uint32_t second_ssrc = 0;
+  absl::optional<int> mid_header_extension_id = absl::nullopt;
 
   signaling.NegotiateSdp(
-       {},
+      
+      [&](SessionDescriptionInterface* offer) {
+        
+        
+        
+        for (cricket::ContentInfo& content_info :
+             offer->description()->contents()) {
+          std::vector<RtpExtension> header_extensions =
+              content_info.media_description()->rtp_header_extensions();
+          for (auto it = header_extensions.begin();
+               it != header_extensions.end(); ++it) {
+            if (it->uri == RtpExtension::kMidUri) {
+              
+              mid_header_extension_id = it->id;
+              if (kMidTestConfiguration ==
+                  MidTestConfiguration::kMidNotNegotiated) {
+                
+                header_extensions.erase(it);
+              }
+              break;
+            }
+          }
+          content_info.media_description()->set_rtp_header_extensions(
+              std::move(header_extensions));
+        }
+        ASSERT_TRUE(mid_header_extension_id.has_value());
+      },
       
       [&](SessionDescriptionInterface* offer) {
         first_ssrc = get_ssrc(offer, 0);
@@ -113,9 +190,40 @@ TEST(UnsignaledStreamTest, ReplacesUnsignaledStreamOnCompletedSignaling) {
             if (ByteReader<uint32_t>::ReadBigEndian(&(packet.cdata()[8])) ==
                     first_ssrc &&
                 !got_unsignaled_packet) {
-              rtc::CopyOnWriteBuffer updated_buffer = packet.data;
-              ByteWriter<uint32_t>::WriteBigEndian(
-                  updated_buffer.MutableData() + 8, second_ssrc);
+              
+              
+              std::vector<RtpExtension> extensions;
+              extensions.emplace_back(RtpExtension::kMidUri,
+                                      mid_header_extension_id.value());
+              RtpHeaderExtensionMap extensions_map(extensions);
+              RtpPacket parsed_packet;
+              parsed_packet.IdentifyExtensions(extensions_map);
+              ASSERT_TRUE(parsed_packet.Parse(packet.data));
+              parsed_packet.SetSsrc(second_ssrc);
+              
+              
+              
+              switch (kMidTestConfiguration) {
+                case MidTestConfiguration::kMidNotNegotiated:
+                  EXPECT_FALSE(parsed_packet.HasExtension<RtpMid>());
+                  break;
+                case MidTestConfiguration::kMidNegotiatedButMissingFromPackets:
+                  EXPECT_TRUE(parsed_packet.HasExtension<RtpMid>());
+                  ASSERT_TRUE(parsed_packet.RemoveExtension(RtpMid::kId));
+                  break;
+                case MidTestConfiguration::kMidNegotiatedAndPresentInPackets:
+                  EXPECT_TRUE(parsed_packet.HasExtension<RtpMid>());
+                  
+                  
+                  
+                  
+                  
+                  
+                  ASSERT_TRUE(parsed_packet.SetExtension<RtpMid>("1"));
+                  break;
+              }
+              
+              rtc::CopyOnWriteBuffer updated_buffer = parsed_packet.Buffer();
               EmulatedIpPacket updated_packet(
                   packet.from, packet.to, updated_buffer, packet.arrival_time);
               send_node->OnPacketReceived(std::move(updated_packet));
@@ -152,6 +260,14 @@ TEST(UnsignaledStreamTest, ReplacesUnsignaledStreamOnCompletedSignaling) {
   EXPECT_TRUE(s.WaitAndProcess(&offer_exchange_done));
   EXPECT_TRUE(s.WaitAndProcess(&second_sink.frame_observed_));
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    All,
+    UnsignaledStreamTest,
+    ::testing::Values(MidTestConfiguration::kMidNotNegotiated,
+                      MidTestConfiguration::kMidNegotiatedButMissingFromPackets,
+                      MidTestConfiguration::kMidNegotiatedAndPresentInPackets),
+    TestParametersMidTestConfigurationToString);
 
 }  
 }  
