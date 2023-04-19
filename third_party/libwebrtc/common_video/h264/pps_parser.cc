@@ -13,23 +13,16 @@
 #include <cstdint>
 #include <vector>
 
+#include "absl/numeric/bits.h"
 #include "common_video/h264/h264_common.h"
-#include "rtc_base/bit_buffer.h"
+#include "rtc_base/bitstream_reader.h"
 #include "rtc_base/checks.h"
 
-#define RETURN_EMPTY_ON_FAIL(x) \
-  do {                          \
-    if (!(x)) {                 \
-      return absl::nullopt;     \
-    }                           \
-  } while (0)
-
-namespace {
-const int kMaxPicInitQpDeltaValue = 25;
-const int kMinPicInitQpDeltaValue = -26;
-}  
-
 namespace webrtc {
+namespace {
+constexpr int kMaxPicInitQpDeltaValue = 25;
+constexpr int kMinPicInitQpDeltaValue = -26;
+}  
 
 
 
@@ -40,9 +33,7 @@ absl::optional<PpsParser::PpsState> PpsParser::ParsePps(const uint8_t* data,
   
   
   
-  std::vector<uint8_t> unpacked_buffer = H264::ParseRbsp(data, length);
-  rtc::BitBuffer bit_buffer(unpacked_buffer.data(), unpacked_buffer.size());
-  return ParseInternal(&bit_buffer);
+  return ParseInternal(H264::ParseRbsp(data, length));
 }
 
 bool PpsParser::ParsePpsIds(const uint8_t* data,
@@ -55,150 +46,109 @@ bool PpsParser::ParsePpsIds(const uint8_t* data,
   
   
   std::vector<uint8_t> unpacked_buffer = H264::ParseRbsp(data, length);
-  rtc::BitBuffer bit_buffer(unpacked_buffer.data(), unpacked_buffer.size());
-  return ParsePpsIdsInternal(&bit_buffer, pps_id, sps_id);
+  BitstreamReader reader(unpacked_buffer);
+  *pps_id = reader.ReadExponentialGolomb();
+  *sps_id = reader.ReadExponentialGolomb();
+  return reader.Ok();
 }
 
 absl::optional<uint32_t> PpsParser::ParsePpsIdFromSlice(const uint8_t* data,
                                                         size_t length) {
   std::vector<uint8_t> unpacked_buffer = H264::ParseRbsp(data, length);
-  rtc::BitBuffer slice_reader(unpacked_buffer.data(), unpacked_buffer.size());
+  BitstreamReader slice_reader(unpacked_buffer);
 
-  uint32_t golomb_tmp;
   
-  if (!slice_reader.ReadExponentialGolomb(golomb_tmp))
-    return absl::nullopt;
+  slice_reader.ReadExponentialGolomb();
   
-  if (!slice_reader.ReadExponentialGolomb(golomb_tmp))
-    return absl::nullopt;
+  slice_reader.ReadExponentialGolomb();
   
-  uint32_t slice_pps_id;
-  if (!slice_reader.ReadExponentialGolomb(slice_pps_id))
+  uint32_t slice_pps_id = slice_reader.ReadExponentialGolomb();
+  if (!slice_reader.Ok()) {
     return absl::nullopt;
+  }
   return slice_pps_id;
 }
 
 absl::optional<PpsParser::PpsState> PpsParser::ParseInternal(
-    rtc::BitBuffer* bit_buffer) {
+    rtc::ArrayView<const uint8_t> buffer) {
+  BitstreamReader reader(buffer);
   PpsState pps;
-
-  RETURN_EMPTY_ON_FAIL(ParsePpsIdsInternal(bit_buffer, &pps.id, &pps.sps_id));
-
-  uint32_t bits_tmp;
-  uint32_t golomb_ignored;
-  
-  uint32_t entropy_coding_mode_flag;
-  RETURN_EMPTY_ON_FAIL(bit_buffer->ReadBits(1, entropy_coding_mode_flag));
-  pps.entropy_coding_mode_flag = entropy_coding_mode_flag != 0;
-  
-  uint32_t bottom_field_pic_order_in_frame_present_flag;
-  RETURN_EMPTY_ON_FAIL(
-      bit_buffer->ReadBits(1, bottom_field_pic_order_in_frame_present_flag));
-  pps.bottom_field_pic_order_in_frame_present_flag =
-      bottom_field_pic_order_in_frame_present_flag != 0;
+  pps.id = reader.ReadExponentialGolomb();
+  pps.sps_id = reader.ReadExponentialGolomb();
 
   
-  uint32_t num_slice_groups_minus1;
-  RETURN_EMPTY_ON_FAIL(
-      bit_buffer->ReadExponentialGolomb(num_slice_groups_minus1));
+  pps.entropy_coding_mode_flag = reader.Read<bool>();
+  
+  pps.bottom_field_pic_order_in_frame_present_flag = reader.Read<bool>();
+
+  
+  uint32_t num_slice_groups_minus1 = reader.ReadExponentialGolomb();
   if (num_slice_groups_minus1 > 0) {
-    uint32_t slice_group_map_type;
     
-    RETURN_EMPTY_ON_FAIL(
-        bit_buffer->ReadExponentialGolomb(slice_group_map_type));
+    uint32_t slice_group_map_type = reader.ReadExponentialGolomb();
     if (slice_group_map_type == 0) {
-      for (uint32_t i_group = 0; i_group <= num_slice_groups_minus1;
-           ++i_group) {
+      for (uint32_t i_group = 0;
+           i_group <= num_slice_groups_minus1 && reader.Ok(); ++i_group) {
         
-        RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(golomb_ignored));
+        reader.ReadExponentialGolomb();
       }
     } else if (slice_group_map_type == 1) {
       
       
     } else if (slice_group_map_type == 2) {
-      for (uint32_t i_group = 0; i_group <= num_slice_groups_minus1;
-           ++i_group) {
+      for (uint32_t i_group = 0;
+           i_group <= num_slice_groups_minus1 && reader.Ok(); ++i_group) {
         
-        RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(golomb_ignored));
+        reader.ReadExponentialGolomb();
         
-        RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(golomb_ignored));
+        reader.ReadExponentialGolomb();
       }
     } else if (slice_group_map_type == 3 || slice_group_map_type == 4 ||
                slice_group_map_type == 5) {
       
-      RETURN_EMPTY_ON_FAIL(bit_buffer->ReadBits(1, bits_tmp));
+      reader.ConsumeBits(1);
       
-      RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(golomb_ignored));
+      reader.ReadExponentialGolomb();
     } else if (slice_group_map_type == 6) {
       
-      uint32_t pic_size_in_map_units_minus1;
-      RETURN_EMPTY_ON_FAIL(
-          bit_buffer->ReadExponentialGolomb(pic_size_in_map_units_minus1));
-      uint32_t slice_group_id_bits = 0;
-      uint32_t num_slice_groups = num_slice_groups_minus1 + 1;
+      uint32_t pic_size_in_map_units = reader.ReadExponentialGolomb() + 1;
+      int slice_group_id_bits = 1 + absl::bit_width(num_slice_groups_minus1);
+
       
       
-      if ((num_slice_groups & (num_slice_groups - 1)) != 0)
-        ++slice_group_id_bits;
-      while (num_slice_groups > 0) {
-        num_slice_groups >>= 1;
-        ++slice_group_id_bits;
-      }
-      for (uint32_t i = 0; i <= pic_size_in_map_units_minus1; i++) {
-        
-        
-        RETURN_EMPTY_ON_FAIL(
-            bit_buffer->ReadBits(slice_group_id_bits, bits_tmp));
-      }
+      reader.ConsumeBits(slice_group_id_bits * pic_size_in_map_units);
     }
   }
   
-  RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(golomb_ignored));
+  reader.ReadExponentialGolomb();
   
-  RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(golomb_ignored));
+  reader.ReadExponentialGolomb();
   
-  uint32_t weighted_pred_flag;
-  RETURN_EMPTY_ON_FAIL(bit_buffer->ReadBits(1, weighted_pred_flag));
-  pps.weighted_pred_flag = weighted_pred_flag != 0;
+  pps.weighted_pred_flag = reader.Read<bool>();
   
-  RETURN_EMPTY_ON_FAIL(bit_buffer->ReadBits(2, pps.weighted_bipred_idc));
+  pps.weighted_bipred_idc = reader.ReadBits(2);
 
   
-  RETURN_EMPTY_ON_FAIL(
-      bit_buffer->ReadSignedExponentialGolomb(pps.pic_init_qp_minus26));
+  pps.pic_init_qp_minus26 = reader.ReadSignedExponentialGolomb();
   
-  if (pps.pic_init_qp_minus26 > kMaxPicInitQpDeltaValue ||
+  if (!reader.Ok() || pps.pic_init_qp_minus26 > kMaxPicInitQpDeltaValue ||
       pps.pic_init_qp_minus26 < kMinPicInitQpDeltaValue) {
-    RETURN_EMPTY_ON_FAIL(false);
+    return absl::nullopt;
   }
   
-  RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(golomb_ignored));
+  reader.ReadExponentialGolomb();
   
-  RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(golomb_ignored));
+  reader.ReadExponentialGolomb();
   
   
-  RETURN_EMPTY_ON_FAIL(bit_buffer->ReadBits(2, bits_tmp));
+  reader.ConsumeBits(2);
   
-  RETURN_EMPTY_ON_FAIL(
-      bit_buffer->ReadBits(1, pps.redundant_pic_cnt_present_flag));
+  pps.redundant_pic_cnt_present_flag = reader.ReadBit();
+  if (!reader.Ok()) {
+    return absl::nullopt;
+  }
 
   return pps;
-}
-
-bool PpsParser::ParsePpsIdsInternal(rtc::BitBuffer* bit_buffer,
-                                    uint32_t* pps_id,
-                                    uint32_t* sps_id) {
-  if (pps_id == nullptr)
-    return false;
-  
-  if (!bit_buffer->ReadExponentialGolomb(*pps_id))
-    return false;
-  if (sps_id == nullptr)
-    return false;
-  
-  if (!bit_buffer->ReadExponentialGolomb(*sps_id))
-    return false;
-  return true;
 }
 
 }  
