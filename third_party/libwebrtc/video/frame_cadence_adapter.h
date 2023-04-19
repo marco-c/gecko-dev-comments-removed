@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "api/task_queue/task_queue_base.h"
+#include "api/units/time_delta.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -31,7 +32,18 @@ class FrameCadenceAdapterInterface
  public:
   
   
+  
   static constexpr int64_t kFrameRateAveragingWindowSizeMs = (1000 / 30) * 90;
+  
+  
+  
+  static constexpr TimeDelta kZeroHertzIdleRepeatRatePeriod =
+      TimeDelta::Millis(1000);
+
+  struct ZeroHertzModeParams {
+    
+    int num_simulcast_layers = 0;
+  };
 
   
   class Callback {
@@ -69,7 +81,10 @@ class FrameCadenceAdapterInterface
   virtual void Initialize(Callback* callback) = 0;
 
   
-  virtual void SetZeroHertzModeEnabled(bool enabled) = 0;
+  
+  
+  virtual void SetZeroHertzModeEnabled(
+      absl::optional<ZeroHertzModeParams> params) = 0;
 
   
   
@@ -78,6 +93,13 @@ class FrameCadenceAdapterInterface
   
   
   virtual void UpdateFrameRate() = 0;
+
+  
+  virtual void UpdateLayerQualityConvergence(int spatial_index,
+                                             bool converged) = 0;
+
+  
+  virtual void UpdateLayerStatus(int spatial_index, bool enabled) = 0;
 };
 
 }  

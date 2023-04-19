@@ -14,10 +14,13 @@
 #include <vector>
 
 #include "api/task_queue/task_queue_base.h"
+#include "api/task_queue/task_queue_factory.h"
+#include "api/units/timestamp.h"
 #include "api/video/nv12_buffer.h"
 #include "api/video/video_frame.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/ref_counted_object.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/ntp_time.h"
@@ -159,7 +162,8 @@ TEST(FrameCadenceAdapterTest, FrameRateFollowsMaxFpsWhenZeroHertzActivated) {
   GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
   auto adapter = CreateAdapter(time_controller.GetClock());
   adapter->Initialize(nullptr);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, 1});
   for (int frame = 0; frame != 10; ++frame) {
     time_controller.AdvanceTime(TimeDelta::Millis(10));
@@ -175,7 +179,8 @@ TEST(FrameCadenceAdapterTest,
   GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
   auto adapter = CreateAdapter(time_controller.GetClock());
   adapter->Initialize(nullptr);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, 1});
   RateStatistics rate(
       FrameCadenceAdapterInterface::kFrameRateAveragingWindowSizeMs, 1000);
@@ -187,7 +192,7 @@ TEST(FrameCadenceAdapterTest,
   }
   
   
-  adapter->SetZeroHertzModeEnabled(false);
+  adapter->SetZeroHertzModeEnabled(absl::nullopt);
   
   time_controller.AdvanceTime(TimeDelta::Millis(10));
   rate.Update(1, time_controller.GetClock()->TimeInMilliseconds());
@@ -203,7 +208,8 @@ TEST(FrameCadenceAdapterTest, ForwardsFramesDelayed) {
   GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
   auto adapter = CreateAdapter(time_controller.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, 1});
   constexpr int kNumFrames = 3;
   NtpTime original_ntp_time = time_controller.GetClock()->CurrentNtpTime();
@@ -237,7 +243,8 @@ TEST(FrameCadenceAdapterTest, RepeatsFramesDelayed) {
   GlobalSimulatedTimeController time_controller(Timestamp::Millis(47892223));
   auto adapter = CreateAdapter(time_controller.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, 1});
   NtpTime original_ntp_time = time_controller.GetClock()->CurrentNtpTime();
 
@@ -290,7 +297,8 @@ TEST(FrameCadenceAdapterTest,
   GlobalSimulatedTimeController time_controller(Timestamp::Millis(4711));
   auto adapter = CreateAdapter(time_controller.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, 1});
 
   
@@ -322,7 +330,8 @@ TEST(FrameCadenceAdapterTest, StopsRepeatingFramesDelayed) {
   GlobalSimulatedTimeController time_controller(Timestamp::Millis(0));
   auto adapter = CreateAdapter(time_controller.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(VideoTrackSourceConstraints{0, 1});
   NtpTime original_ntp_time = time_controller.GetClock()->CurrentNtpTime();
 
@@ -341,6 +350,120 @@ TEST(FrameCadenceAdapterTest, StopsRepeatingFramesDelayed) {
                   original_ntp_time.ToMs() + 5u * rtc::kNumMillisecsPerSec / 2);
       }));
   time_controller.AdvanceTime(TimeDelta::Seconds(1));
+}
+
+class ZeroHertzLayerQualityConvergenceTest : public ::testing::Test {
+ public:
+  static constexpr TimeDelta kMinFrameDelay = TimeDelta::Millis(100);
+  static constexpr TimeDelta kIdleFrameDelay =
+      FrameCadenceAdapterInterface::kZeroHertzIdleRepeatRatePeriod;
+
+  ZeroHertzLayerQualityConvergenceTest() {
+    adapter_->Initialize(&callback_);
+    adapter_->SetZeroHertzModeEnabled(
+        FrameCadenceAdapterInterface::ZeroHertzModeParams{
+            2});
+    adapter_->OnConstraintsChanged(VideoTrackSourceConstraints{
+        0, TimeDelta::Seconds(1) / kMinFrameDelay});
+    time_controller_.AdvanceTime(TimeDelta::Zero());
+  }
+
+  void PassFrame() { adapter_->OnFrame(CreateFrame()); }
+
+  void ExpectFrameEntriesAtDelaysFromNow(
+      std::initializer_list<TimeDelta> list) {
+    Timestamp origin = time_controller_.GetClock()->CurrentTime();
+    for (auto delay : list) {
+      EXPECT_CALL(callback_, OnFrame(origin + delay, _, _));
+      time_controller_.AdvanceTime(origin + delay -
+                                   time_controller_.GetClock()->CurrentTime());
+    }
+  }
+
+  void ScheduleDelayed(TimeDelta delay, std::function<void()> function) {
+    TaskQueueBase::Current()->PostDelayedTask(
+        ToQueuedTask([function = std::move(function)] { function(); }),
+        delay.ms());
+  }
+
+ protected:
+  ZeroHertzFieldTrialEnabler field_trial_enabler_;
+  MockCallback callback_;
+  GlobalSimulatedTimeController time_controller_{Timestamp::Millis(0)};
+  std::unique_ptr<FrameCadenceAdapterInterface> adapter_{
+      CreateAdapter(time_controller_.GetClock())};
+};
+
+TEST_F(ZeroHertzLayerQualityConvergenceTest, InitialStateConverged) {
+  
+  
+  
+  
+  PassFrame();
+  ExpectFrameEntriesAtDelaysFromNow({
+      kMinFrameDelay,  
+      kMinFrameDelay +
+          kIdleFrameDelay,  
+      kMinFrameDelay + 2 * kIdleFrameDelay,  
+      kMinFrameDelay + 3 * kIdleFrameDelay,  
+  });
+}
+
+TEST_F(ZeroHertzLayerQualityConvergenceTest, UnconvergedAfterLayersEnabled) {
+  
+  adapter_->UpdateLayerStatus(0, true);
+  adapter_->UpdateLayerStatus(1, true);
+  PassFrame();
+  ExpectFrameEntriesAtDelaysFromNow({
+      kMinFrameDelay,      
+      2 * kMinFrameDelay,  
+      3 * kMinFrameDelay,  
+  });
+}
+
+TEST_F(ZeroHertzLayerQualityConvergenceTest,
+       RepeatsPassedFramesUntilConvergence) {
+  ScheduleDelayed(TimeDelta::Zero(), [&] {
+    adapter_->UpdateLayerStatus(0, true);
+    adapter_->UpdateLayerStatus(1, true);
+    PassFrame();
+  });
+  ScheduleDelayed(2.5 * kMinFrameDelay, [&] {
+    adapter_->UpdateLayerQualityConvergence(1, true);
+  });
+  ScheduleDelayed(3.5 * kMinFrameDelay, [&] {
+    adapter_->UpdateLayerQualityConvergence(0, true);
+  });
+  ScheduleDelayed(8 * kMinFrameDelay, [&] { PassFrame(); });
+  ScheduleDelayed(9.5 * kMinFrameDelay, [&] {
+    adapter_->UpdateLayerQualityConvergence(0, true);
+  });
+  ScheduleDelayed(10.5 * kMinFrameDelay, [&] {
+    adapter_->UpdateLayerQualityConvergence(1, true);
+  });
+  ExpectFrameEntriesAtDelaysFromNow({
+      kMinFrameDelay,      
+      2 * kMinFrameDelay,  
+
+      
+      3 * kMinFrameDelay,  
+
+      
+      4 * kMinFrameDelay,  
+                           
+                           
+
+      
+      9 * kMinFrameDelay,  
+
+      
+      10 * kMinFrameDelay,  
+      
+      11 * kMinFrameDelay,                        
+      11 * kMinFrameDelay + kIdleFrameDelay,      
+      11 * kMinFrameDelay + 2 * kIdleFrameDelay,  
+                                                  
+  });
 }
 
 class FrameCadenceAdapterMetricsTest : public ::testing::Test {
@@ -439,7 +562,8 @@ TEST_F(FrameCadenceAdapterMetricsTest, RecordsNoConstraintsIfUnsetOnFrame) {
   MockCallback callback;
   auto adapter = CreateAdapter(time_controller_.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnFrame(CreateFrame());
   DepleteTaskQueues();
   EXPECT_THAT(
@@ -451,7 +575,8 @@ TEST_F(FrameCadenceAdapterMetricsTest, RecordsEmptyConstraintsIfSetOnFrame) {
   MockCallback callback;
   auto adapter = CreateAdapter(time_controller_.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(
       VideoTrackSourceConstraints{absl::nullopt, absl::nullopt});
   adapter->OnFrame(CreateFrame());
@@ -490,7 +615,8 @@ TEST_F(FrameCadenceAdapterMetricsTest, RecordsMaxConstraintIfSetOnFrame) {
   MockCallback callback;
   auto adapter = CreateAdapter(time_controller_.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(
       VideoTrackSourceConstraints{absl::nullopt, 2.0});
   adapter->OnFrame(CreateFrame());
@@ -526,7 +652,8 @@ TEST_F(FrameCadenceAdapterMetricsTest, RecordsMinConstraintIfSetOnFrame) {
   MockCallback callback;
   auto adapter = CreateAdapter(time_controller_.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(
       VideoTrackSourceConstraints{3.0, absl::nullopt});
   adapter->OnFrame(CreateFrame());
@@ -562,7 +689,8 @@ TEST_F(FrameCadenceAdapterMetricsTest, RecordsMinGtMaxConstraintIfSetOnFrame) {
   MockCallback callback;
   auto adapter = CreateAdapter(time_controller_.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(VideoTrackSourceConstraints{5.0, 4.0});
   adapter->OnFrame(CreateFrame());
   DepleteTaskQueues();
@@ -597,7 +725,8 @@ TEST_F(FrameCadenceAdapterMetricsTest, RecordsMinLtMaxConstraintIfSetOnFrame) {
   MockCallback callback;
   auto adapter = CreateAdapter(time_controller_.GetClock());
   adapter->Initialize(&callback);
-  adapter->SetZeroHertzModeEnabled(true);
+  adapter->SetZeroHertzModeEnabled(
+      FrameCadenceAdapterInterface::ZeroHertzModeParams{});
   adapter->OnConstraintsChanged(VideoTrackSourceConstraints{4.0, 5.0});
   adapter->OnFrame(CreateFrame());
   DepleteTaskQueues();

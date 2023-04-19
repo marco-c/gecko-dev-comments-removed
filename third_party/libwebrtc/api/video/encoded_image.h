@@ -154,6 +154,16 @@ class RTC_EXPORT EncodedImage {
     return encoded_data_ ? encoded_data_->data() : nullptr;
   }
 
+  
+  
+  bool IsAtTargetQuality() const { return at_target_quality_; }
+
+  
+  
+  void SetAtTargetQuality(bool at_target_quality) {
+    at_target_quality_ = at_target_quality;
+  }
+
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
   
@@ -200,6 +210,8 @@ class RTC_EXPORT EncodedImage {
   
   RtpPacketInfos packet_infos_;
   bool retransmission_allowed_ = true;
+  
+  bool at_target_quality_ = false;
 };
 
 }  
