@@ -21,9 +21,9 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include "mozilla/EndianUtils.h"
-
 #include "fdlibm.h"
+
+#include "mozilla/EndianUtils.h"
 
 
 
@@ -93,6 +93,11 @@ typedef union
 } ieee_quad_shape_type;
 
 #endif
+
+
+
+
+
 
 #if MOZ_BIG_ENDIAN()
 
@@ -630,7 +635,7 @@ rnint(__double_t x)
 
 
 
-#if defined(amd64) || defined(__i386__)
+#if (defined(amd64) || defined(__i386__)) && defined(__GNUCLIKE_ASM)
 #define	irint(x)						\
     (sizeof(x) == sizeof(float) &&				\
     sizeof(__float_t) == sizeof(long double) ? irintf(x) :	\
