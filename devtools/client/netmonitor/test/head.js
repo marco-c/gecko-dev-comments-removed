@@ -1235,9 +1235,35 @@ function validateRequests(requests, monitor) {
 
 
 
+
+
+
+
 function getContextMenuItem(monitor, id) {
   const Menu = require("devtools/client/framework/menu");
   return Menu.getMenuElementById(id, monitor.panelWin.document);
+}
+
+
+
+
+
+
+
+
+
+async function selectContextMenuItem(monitor, id) {
+  const contextMenuItem = getContextMenuItem(monitor, id);
+  contextMenuItem.click();
+
+  
+  const onHidden = new Promise(resolve =>
+    contextMenuItem.parentElement.addEventListener("popuphidden", resolve, {
+      once: true,
+    })
+  );
+  contextMenuItem.parentElement.hidePopup();
+  await onHidden;
 }
 
 

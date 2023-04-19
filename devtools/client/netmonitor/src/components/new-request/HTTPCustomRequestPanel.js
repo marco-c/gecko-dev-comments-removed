@@ -216,10 +216,22 @@ class HTTPCustomRequestPanel extends Component {
 
   handleInputChange(event) {
     const { name, value } = event.target;
-
-    this.updateStateAndPref({
+    const newState = {
       [name]: value,
-    });
+    };
+
+    
+    
+    if (name == "postBody") {
+      newState.headers = this.state.headers.map(header => {
+        if (header.name == "Content-Length") {
+          header.value = value.length;
+        }
+        return header;
+      });
+    }
+
+    this.updateStateAndPref(newState);
   }
 
   updateInputMapItem(stateName, event) {
