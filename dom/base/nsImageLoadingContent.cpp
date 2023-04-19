@@ -1170,13 +1170,13 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
     
     
     
-    
-    if (req == mPendingRequest) {
-      uint32_t pendingLoadStatus;
-      rv = req->GetImageStatus(&pendingLoadStatus);
-      if (NS_SUCCEEDED(rv) &&
-          (pendingLoadStatus & imgIRequest::STATUS_LOAD_COMPLETE)) {
-        MakePendingRequestCurrent();
+    {
+      uint32_t loadStatus;
+      if (NS_SUCCEEDED(req->GetImageStatus(&loadStatus)) &&
+          (loadStatus & imgIRequest::STATUS_LOAD_COMPLETE)) {
+        if (req == mPendingRequest) {
+          MakePendingRequestCurrent();
+        }
         MOZ_ASSERT(mCurrentRequest,
                    "How could we not have a current request here?");
 
