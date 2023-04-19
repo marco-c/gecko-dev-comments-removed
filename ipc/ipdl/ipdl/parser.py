@@ -4,7 +4,7 @@
 
 import os
 from ply import lex, yacc
-
+from pathlib import Path
 from ipdl.ast import *
 
 
@@ -58,6 +58,24 @@ class Parser:
 
     def parse(self, input, filename, includedirs):
         assert os.path.isabs(filename)
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        filename = Path(*Path(filename).parts[2:]).as_posix()
 
         if self.tu.name in Parser.parsed:
             priorTU = Parser.parsed[self.tu.name].tu
