@@ -79,7 +79,8 @@ class AnimationEffect : public nsISupports, public nsWrapperCache {
   
   static ComputedTiming GetComputedTimingAt(
       const Nullable<TimeDuration>& aLocalTime, const TimingParams& aTiming,
-      double aPlaybackRate);
+      double aPlaybackRate,
+      Animation::ProgressTimelinePosition aProgressTimelinePosition);
   
   
   ComputedTiming GetComputedTiming(const TimingParams* aTiming = nullptr) const;

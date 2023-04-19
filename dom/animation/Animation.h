@@ -451,6 +451,23 @@ class Animation : public DOMEventTargetHelper,
     return mTimeline && mTimeline->IsScrollTimeline();
   }
 
+  
+
+
+
+  enum class ProgressTimelinePosition : uint8_t { Boundary, NotBoundary };
+  static ProgressTimelinePosition AtProgressTimelineBoundary(
+      const Nullable<TimeDuration>& aTimelineDuration,
+      const Nullable<TimeDuration>& aCurrentTime,
+      const TimeDuration& aEffectStartTime, const double aPlaybackRate);
+  ProgressTimelinePosition AtProgressTimelineBoundary() const {
+    return AtProgressTimelineBoundary(
+        mTimeline ? mTimeline->TimelineDuration() : nullptr,
+        GetCurrentTimeAsDuration(),
+        mStartTime.IsNull() ? TimeDuration() : mStartTime.Value(),
+        mPlaybackRate);
+  }
+
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();

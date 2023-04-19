@@ -31,8 +31,8 @@ namespace layers {
 
 static dom::Nullable<TimeDuration> CalculateElapsedTimeForScrollTimeline(
     const Maybe<APZSampler::ScrollOffsetAndRange> aScrollMeta,
-    const ScrollTimelineOptions& aOptions,
-    const Maybe<TimeDuration>& aDuration) {
+    const ScrollTimelineOptions& aOptions, const Maybe<TimeDuration>& aDuration,
+    const TimeDuration& aStartTime, float aPlaybackRate) {
   MOZ_ASSERT(aDuration);
 
   
@@ -60,10 +60,9 @@ static dom::Nullable<TimeDuration> CalculateElapsedTimeForScrollTimeline(
   
   progress = std::min(progress, 1.0);
 
-  
-  
-  
-  return TimeDuration::FromMilliseconds(progress * aDuration->ToMilliseconds());
+  auto timelineTime = aDuration->MultDouble(progress);
+  return dom::Animation::CurrentTimeFromTimelineTime(timelineTime, aStartTime,
+                                                     aPlaybackRate);
 }
 
 static dom::Nullable<TimeDuration> CalculateElapsedTime(
@@ -84,7 +83,9 @@ static dom::Nullable<TimeDuration> CalculateElapsedTime(
             aLayersId, aAnimation.mScrollTimelineOptions.value().source(),
             aProofOfMapLock),
         aAnimation.mScrollTimelineOptions.value(),
-        aAnimation.mTiming.Duration());
+        aAnimation.mTiming.Duration(),
+        aAnimation.mStartTime.refOr(aAnimation.mHoldTime),
+        aAnimation.mPlaybackRate);
   }
 
   
@@ -173,9 +174,24 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
         aAPZSampler, aLayersId, aProofOfMapLock, animation, aPreviousFrameTime,
         aCurrentFrameTime, aPreviousValue);
 
-    ComputedTiming computedTiming = dom::AnimationEffect::GetComputedTimingAt(
-        elapsedDuration, animation.mTiming, animation.mPlaybackRate);
+    const auto progressTimelinePosition =
+        animation.mScrollTimelineOptions
+            ? dom::Animation::AtProgressTimelineBoundary(
+                  TimeDuration::FromMilliseconds(
+                      PROGRESS_TIMELINE_DURATION_MILLISEC),
+                  elapsedDuration, animation.mStartTime.refOr(TimeDuration()),
+                  animation.mPlaybackRate)
+            : dom::Animation::ProgressTimelinePosition::NotBoundary;
 
+    ComputedTiming computedTiming = dom::AnimationEffect::GetComputedTimingAt(
+        elapsedDuration, animation.mTiming, animation.mPlaybackRate,
+        progressTimelinePosition);
+
+    
+    
+    
+    
+    
     if (computedTiming.mProgress.IsNull()) {
       continue;
     }

@@ -106,6 +106,13 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   virtual bool IsScrollTimeline() const { return false; }
   virtual const ScrollTimeline* AsScrollTimeline() const { return nullptr; }
 
+  
+  
+  
+  
+  
+  virtual Nullable<TimeDuration> TimelineDuration() const { return nullptr; }
+
  protected:
   nsCOMPtr<nsIGlobalObject> mWindow;
 
