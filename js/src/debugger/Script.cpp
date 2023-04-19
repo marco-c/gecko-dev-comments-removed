@@ -31,6 +31,7 @@
 #include "js/Wrapper.h"               
 #include "vm/ArrayObject.h"           
 #include "vm/BytecodeUtil.h"          
+#include "vm/EnvironmentObject.h"     
 #include "vm/GlobalObject.h"          
 #include "vm/JSContext.h"             
 #include "vm/JSFunction.h"            
@@ -586,6 +587,28 @@ static bool EnsureScriptOffsetIsValid(JSContext* cx, JSScript* script,
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                             JSMSG_DEBUG_BAD_OFFSET);
   return false;
+}
+
+static bool EnsureBreakpointIsAllowed(JSContext* cx, JSScript* script,
+                                      size_t offset) {
+  
+  
+  
+  
+  
+  
+  
+  jsbytecode* pc = script->offsetToPC(offset);
+  if (JSOp(*pc) == JSOp::SetAliasedVar) {
+    PropertyName* name = EnvironmentCoordinateNameSlow(script, pc);
+    if (name == cx->names().dotGenerator) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEBUG_BREAKPOINT_NOT_ALLOWED);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 template <bool OnlyOffsets>
@@ -1952,6 +1975,10 @@ struct DebuggerScript::SetBreakpointMatcher {
     }
 
     if (!EnsureScriptOffsetIsValid(cx_, script, offset_)) {
+      return false;
+    }
+
+    if (!EnsureBreakpointIsAllowed(cx_, script, offset_)) {
       return false;
     }
 
