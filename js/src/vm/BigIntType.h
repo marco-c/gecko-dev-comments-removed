@@ -455,8 +455,8 @@ extern JS::BigInt* NumberToBigInt(JSContext* cx, double d);
 
 
 
-extern JS::Result<JS::BigInt*, JS::OOM> StringToBigInt(
-    JSContext* cx, JS::Handle<JSString*> str);
+extern JS::Result<JS::BigInt*> StringToBigInt(JSContext* cx,
+                                              JS::Handle<JSString*> str);
 
 
 
