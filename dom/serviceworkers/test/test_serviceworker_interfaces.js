@@ -327,7 +327,11 @@ let interfaceNamesInGlobalScope = [
   
   "TextDecoder",
   
+  "TextDecoderStream",
+  
   "TextEncoder",
+  
+  "TextEncoderStream",
   
   "TextMetrics",
   
