@@ -586,9 +586,20 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
     
     
     
+    
+    
+    
+    
+    
     RTPSenderVideo& sender_video = *rtp_streams_[stream_index].sender_video;
     if (codec_specific_info && codec_specific_info->template_structure) {
       sender_video.SetVideoStructure(&*codec_specific_info->template_structure);
+    } else if (codec_specific_info &&
+               codec_specific_info->codecType == kVideoCodecVP8) {
+      FrameDependencyStructure structure =
+          RtpPayloadParams::MinimalisticStructure(1,
+                                                  kMaxTemporalStreams);
+      sender_video.SetVideoStructure(&structure);
     } else if (codec_specific_info &&
                codec_specific_info->codecType == kVideoCodecVP9) {
       const CodecSpecificInfoVP9& vp9 = codec_specific_info->codecSpecific.VP9;
