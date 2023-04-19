@@ -263,7 +263,6 @@ const BrowserListener = {
       docShell.contentViewer.getContentSize(
         this.maxWidth,
         this.maxHeight,
-         0,
         w,
         h
       );
