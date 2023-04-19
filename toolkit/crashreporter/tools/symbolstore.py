@@ -422,30 +422,36 @@ def GetPlatformSpecificDumper(**kwargs):
     ](**kwargs)
 
 
-def SourceIndex(fileStream, outputPath, vcs_root):
+def SourceIndex(fileStream, outputPath, vcs_root, s3_bucket):
     """Takes a list of files, writes info to a data block in a .stream file"""
     
     
     result = True
     pdbStreamFile = open(outputPath, "w")
     pdbStreamFile.write(
-        "SRCSRV: ini ------------------------------------------------\r"
-        + "\nVERSION=2\r\nINDEXVERSION=2\r"
-        + "\nVERCTRL=http\r"
-        + "\nSRCSRV: variables ------------------------------------------\r"
-        + "\nHGSERVER="
+        "SRCSRV: ini ------------------------------------------------\r\n"
+        + "VERSION=2\r\n"
+        + "INDEXVERSION=2\r\n"
+        + "VERCTRL=http\r\n"
+        + "SRCSRV: variables ------------------------------------------\r\n"
+        + "SRCSRVVERCTRL=http\r\n"
+        + "RUST_GITHUB_TARGET=https://github.com/rust-lang/rust/raw/%var4%/%var3%\r\n"
     )
-    pdbStreamFile.write(vcs_root)
+    pdbStreamFile.write("HGSERVER=" + vcs_root + "\r\n")
+    pdbStreamFile.write("HG_TARGET=%hgserver%/raw-file/%var4%/%var3%\r\n")
+
+    if s3_bucket:
+        pdbStreamFile.write("S3_BUCKET=" + s3_bucket + "\r\n")
+        pdbStreamFile.write("S3_TARGET=https://%s3_bucket%.s3.amazonaws.com/%var3%\r\n")
+
+    
+    
+    pdbStreamFile.write("SRCSRVTRG=%fnvar%(%var2%)\r\n")
+
     pdbStreamFile.write(
-        "\r\nSRCSRVVERCTRL=http\r"
-        + "\nHTTP_EXTRACT_TARGET=%hgserver%/raw-file/%var3%/%var2%\r"
-        + "\nSRCSRVTRG=%http_extract_target%\r"
-        + "\nSRCSRV: source files ---------------------------------------\r\n"
-        ""
+        "SRCSRV: source files ---------------------------------------\r\n"
     )
     pdbStreamFile.write(fileStream)
-    
-    
     pdbStreamFile.write(
         "SRCSRV: end ------------------------------------------------\r\n\n"
     )
@@ -520,7 +526,9 @@ class Dumper:
         return read_output("file", "-Lb", file)
 
     
-    def SourceServerIndexing(self, debug_file, guid, sourceFileStream, vcs_root):
+    def SourceServerIndexing(
+        self, debug_file, guid, sourceFileStream, vcs_root, s3_bucket
+    ):
         return ""
 
     
@@ -619,12 +627,18 @@ class Dumper:
                                 if rootname:
                                     vcs_root = rootname
                         
-                        if filename.startswith("hg"):
-                            (ver, checkout, source_file, revision) = filename.split(
-                                ":", 3
-                            )
-                            sourceFileStream += sourcepath + "*" + source_file
+                        if filename.startswith("hg:"):
+                            (vcs, repo, source_file, revision) = filename.split(":", 3)
+                            sourceFileStream += sourcepath + "*HG_TARGET*" + source_file
                             sourceFileStream += "*" + revision + "\r\n"
+                        elif filename.startswith("s3:"):
+                            (vcs, bucket, source_file, nothing) = filename.split(":", 3)
+                            sourceFileStream += sourcepath + "*S3_TARGET*"
+                            sourceFileStream += source_file + "\r\n"
+                        elif filename.startswith("git:github.com/rust-lang/rust:"):
+                            (vcs, repo, source_file, revision) = filename.split(":", 3)
+                            sourceFileStream += sourcepath + "*RUST_GITHUB_TARGET*"
+                            sourceFileStream += source_file + "*" + revision + "\r\n"
                         f.write("FILE %s %s\n" % (index, filename))
                     elif line.startswith("INFO CODE_ID "):
                         
@@ -660,7 +674,7 @@ class Dumper:
                 if self.srcsrv and vcs_root:
                     
                     self.SourceServerIndexing(
-                        debug_file, guid, sourceFileStream, vcs_root
+                        debug_file, guid, sourceFileStream, vcs_root, self.s3_bucket
                     )
                 
                 if self.copy_debug and arch_num == 0:
@@ -779,12 +793,14 @@ class Dumper_Win32(Dumper):
                 shutil.copyfile(full_code_path, full_path)
                 print(rel_path)
 
-    def SourceServerIndexing(self, debug_file, guid, sourceFileStream, vcs_root):
+    def SourceServerIndexing(
+        self, debug_file, guid, sourceFileStream, vcs_root, s3_bucket
+    ):
         
         streamFilename = debug_file + ".stream"
         stream_output_path = os.path.abspath(streamFilename)
         
-        result = SourceIndex(sourceFileStream, stream_output_path, vcs_root)
+        result = SourceIndex(sourceFileStream, stream_output_path, vcs_root, s3_bucket)
         if self.copy_debug:
             pdbstr = buildconfig.substs["PDBSTR"]
             wine = buildconfig.substs.get("WINE")
