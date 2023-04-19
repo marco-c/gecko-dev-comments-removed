@@ -167,11 +167,6 @@ void AudioRtpReceiver::Stop() {
   track_->internal()->set_ended();
 }
 
-void AudioRtpReceiver::SetSourceEnded() {
-  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
-  source_->SetState(MediaSourceInterface::kEnded);
-}
-
 
 void AudioRtpReceiver::RestartMediaChannel(absl::optional<uint32_t> ssrc) {
   bool enabled = track_->internal()->enabled();

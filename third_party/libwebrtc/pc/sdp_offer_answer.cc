@@ -2933,6 +2933,7 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
       if (transceiver->internal()->reused_for_addtrack()) {
         transceiver->internal()->set_created_by_addtrack(true);
       } else {
+        transceiver->internal()->StopTransceiverProcedure();
         transceivers()->Remove(transceiver);
       }
     }
@@ -3406,6 +3407,36 @@ RTCError SdpOfferAnswerHandler::UpdateTransceiversAndDataChannels(
       auto transceiver = transceiver_or_error.MoveValue();
       RTCError error =
           UpdateTransceiverChannel(transceiver, new_content, bundle_group);
+      
+      
+      
+      if (source == cricket::ContentSource::CS_LOCAL && new_content.rejected) {
+        
+        if (new_session.GetType() == SdpType::kOffer) {
+          
+          
+          
+          if (!transceiver->internal()->stopping()) {
+            transceiver->internal()->StopStandard();
+          }
+          RTC_DCHECK(transceiver->internal()->stopping());
+        } else {
+          
+          RTC_DCHECK(new_session.GetType() == SdpType::kAnswer ||
+                     new_session.GetType() == SdpType::kPrAnswer);
+          
+          
+          
+          
+          
+          
+          
+          if (!transceiver->internal()->stopped()) {
+            transceiver->internal()->StopTransceiverProcedure();
+          }
+          RTC_DCHECK(transceiver->internal()->stopped());
+        }
+      }
       if (!error.ok()) {
         return error;
       }
