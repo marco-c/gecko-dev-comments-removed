@@ -385,11 +385,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
       bool enabled = true;
     } residual_echo_detector;
 
-    
-    struct LevelEstimation {
-      bool enabled = false;
-    } level_estimation;
-
     std::string ToString() const;
   };
 
