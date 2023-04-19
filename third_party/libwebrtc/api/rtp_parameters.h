@@ -471,6 +471,9 @@ struct RTC_EXPORT RtpEncodingParameters {
   absl::optional<double> scale_resolution_down_by;
 
   
+  absl::optional<std::string> scalability_mode;
+
+  
   
   
   

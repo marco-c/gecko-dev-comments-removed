@@ -2261,9 +2261,11 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
   
   
   
-  bool reconfigure_encoder =
-      new_param || (new_parameters.encodings[0].bitrate_priority !=
-                    rtp_parameters_.encodings[0].bitrate_priority);
+  bool reconfigure_encoder = new_param ||
+                             (new_parameters.encodings[0].bitrate_priority !=
+                              rtp_parameters_.encodings[0].bitrate_priority) ||
+                             new_parameters.encodings[0].scalability_mode !=
+                                 rtp_parameters_.encodings[0].scalability_mode;
 
   
   
@@ -2422,6 +2424,8 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   for (size_t i = 0; i < encoder_config.simulcast_layers.size(); ++i) {
     encoder_config.simulcast_layers[i].active =
         rtp_parameters_.encodings[i].active;
+    encoder_config.simulcast_layers[i].scalability_mode =
+        rtp_parameters_.encodings[i].scalability_mode;
     if (rtp_parameters_.encodings[i].min_bitrate_bps) {
       encoder_config.simulcast_layers[i].min_bitrate_bps =
           *rtp_parameters_.encodings[i].min_bitrate_bps;
