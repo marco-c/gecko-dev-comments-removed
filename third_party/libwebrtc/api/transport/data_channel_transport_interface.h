@@ -35,9 +35,6 @@ enum class DataMessageType {
 
 
 struct SendDataParams {
-  SendDataParams() = default;
-  SendDataParams(const SendDataParams&) = default;
-
   DataMessageType type = DataMessageType::kText;
 
   
