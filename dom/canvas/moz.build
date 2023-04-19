@@ -5,28 +5,28 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "Canvas: 2D")
+    BUG_COMPONENT = ("Core", "Graphics: Canvas2D")
 
 with Files("TexUnpackBlob.cpp"):
-    BUG_COMPONENT = ("Core", "Canvas: WebGL")
+    BUG_COMPONENT = ("Core", "Graphics: WebGL")
 
 with Files("WebGL*"):
-    BUG_COMPONENT = ("Core", "Canvas: WebGL")
+    BUG_COMPONENT = ("Core", "Graphics: WebGL")
 
 with Files("test/webgl-conf/**"):
-    BUG_COMPONENT = ("Core", "Canvas: WebGL")
+    BUG_COMPONENT = ("Core", "Graphics: WebGL")
 
 with Files("test/webgl-mochitest/**"):
-    BUG_COMPONENT = ("Core", "Canvas: WebGL")
+    BUG_COMPONENT = ("Core", "Graphics: WebGL")
 
 with Files("test/reftest/webgl*"):
-    BUG_COMPONENT = ("Core", "Canvas: WebGL")
+    BUG_COMPONENT = ("Core", "Graphics: WebGL")
 
 with Files("test/chrome/*webgl*"):
-    BUG_COMPONENT = ("Core", "Canvas: WebGL")
+    BUG_COMPONENT = ("Core", "Graphics: WebGL")
 
 with Files("test/crossorigin/*webgl*"):
-    BUG_COMPONENT = ("Core", "Canvas: WebGL")
+    BUG_COMPONENT = ("Core", "Graphics: WebGL")
 
 
 

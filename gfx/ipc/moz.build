@@ -5,7 +5,7 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "Graphics: Layers")
+    BUG_COMPONENT = ("Core", "Graphics")
 
 EXPORTS.mozilla += ["D3DMessageUtils.h", "GfxMessageUtils.h"]
 
