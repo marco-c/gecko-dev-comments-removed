@@ -790,13 +790,14 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   
+  
   enum class CallerAPI {
     DRAW_IMAGE,
     CREATE_PATTERN,
     CREATE_IMAGEBITMAP,
     CAPTURE_STREAM,
   };
-  void MarkAsContentSource(CallerAPI aAPI);
+  void LogVisibility(CallerAPI aAPI);
 
   Document* GetDocument() const override;
 
