@@ -242,7 +242,9 @@ def skip_test(test_instance, config):
     
     
     
-    if not getattr(test_instance, "pine", True) and config.get("project") == "pine":
+    if not getattr(test_instance, "pine", True) and config.get(
+        "project", ""
+    ).startswith("pine"):
         return "Broken on the pine branch"
     return None
 
