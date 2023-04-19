@@ -13,11 +13,10 @@ Services.scriptloader.loadSubScript(
 const { Input: I } = ChromeUtils.import(
   "chrome://remote/content/cdp/domains/parent/Input.jsm"
 );
-const { AppInfo } = ChromeUtils.import(
-  "chrome://remote/content/shared/AppInfo.jsm"
-);
 
 const { alt, ctrl, meta, shift } = I.Modifier;
+
+const isMac = Services.appinfo.OS === "Darwin";
 
 
 const KEYCODES = {
@@ -106,7 +105,7 @@ function keyForPlatform() {
   
   let primary = ctrl;
   let primaryKey = "Control";
-  if (AppInfo.isMac) {
+  if (isMac) {
     primary = alt;
     primaryKey = "Alt";
   }

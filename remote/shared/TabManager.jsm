@@ -13,7 +13,7 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
-  AppInfo: "chrome://remote/content/shared/AppInfo.jsm",
+  AppInfo: "chrome://remote/content/marionette/appinfo.js",
   EventPromise: "chrome://remote/content/shared/Sync.jsm",
   MobileTabBrowser: "chrome://remote/content/shared/MobileTabBrowser.jsm",
 });
@@ -108,9 +108,12 @@ var TabManager = {
 
 
   getTabBrowser(win) {
-    if (lazy.AppInfo.isAndroid) {
+    
+    
+    if (Services.appinfo.OS === "Android") {
       return new lazy.MobileTabBrowser(win);
-    } else if (lazy.AppInfo.isFirefox) {
+      
+    } else if ("gBrowser" in win) {
       return win.gBrowser;
     }
 
@@ -138,7 +141,7 @@ var TabManager = {
     } = options;
     const tabBrowser = this.getTabBrowser(window);
 
-    const tab = await tabBrowser.addTab("about:blank", {
+    const tab = tabBrowser.addTab("about:blank", {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       userContextId,
     });
@@ -293,7 +296,9 @@ var TabManager = {
   },
 
   supportsTabs() {
-    return lazy.AppInfo.isAndroid || lazy.AppInfo.isFirefox;
+    
+    
+    return lazy.AppInfo.name === "Firefox";
   },
 
   _getWindowForTab(tab) {

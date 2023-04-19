@@ -13,7 +13,7 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
-  AppInfo: "chrome://remote/content/shared/AppInfo.jsm",
+  AppInfo: "chrome://remote/content/marionette/appinfo.js",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   EventPromise: "chrome://remote/content/shared/Sync.jsm",
   MessageManagerDestroyedPromise: "chrome://remote/content/marionette/sync.js",
@@ -214,10 +214,6 @@ browser.Context = class {
   closeTab() {
     
     
-    
-    
-    
-    
     if (
       !this.tabBrowser ||
       !this.tabBrowser.tabs ||
@@ -232,15 +228,16 @@ browser.Context = class {
     );
     let tabClosed;
 
-    if (lazy.AppInfo.isAndroid) {
-      lazy.TabManager.removeTab(this.tab);
-    } else if (lazy.AppInfo.isFirefox) {
-      tabClosed = new lazy.EventPromise(this.tab, "TabClose");
-      this.tabBrowser.removeTab(this.tab);
-    } else {
-      throw new lazy.error.UnsupportedOperationError(
-        `closeTab() not supported for ${lazy.AppInfo.name}`
-      );
+    switch (lazy.AppInfo.name) {
+      case "Firefox":
+        tabClosed = new lazy.EventPromise(this.tab, "TabClose");
+        this.tabBrowser.removeTab(this.tab);
+        break;
+
+      default:
+        throw new lazy.error.UnsupportedOperationError(
+          `closeTab() not supported in ${lazy.AppInfo.name}`
+        );
     }
 
     return Promise.all([destroyed, tabClosed]);
@@ -252,26 +249,26 @@ browser.Context = class {
   async openTab(focus = false) {
     let tab = null;
 
-    
-    
-    if (lazy.AppInfo.isAndroid) {
-      tab = await lazy.TabManager.addTab({ focus, window: this.window });
-    } else if (lazy.AppInfo.isFirefox) {
-      const opened = new lazy.EventPromise(this.window, "TabOpen");
-      this.window.BrowserOpenTab();
-      await opened;
+    switch (lazy.AppInfo.name) {
+      case "Firefox":
+        const opened = new lazy.EventPromise(this.window, "TabOpen");
+        this.window.BrowserOpenTab();
+        await opened;
 
-      tab = this.tabBrowser.selectedTab;
+        tab = this.tabBrowser.selectedTab;
 
-      
-      
-      if (!focus) {
-        this.tabBrowser.selectedTab = this.tab;
-      }
-    } else {
-      throw new lazy.error.UnsupportedOperationError(
-        `openTab() not supported for ${lazy.AppInfo.name}`
-      );
+        
+        
+        if (!focus) {
+          this.tabBrowser.selectedTab = this.tab;
+        }
+
+        break;
+
+      default:
+        throw new lazy.error.UnsupportedOperationError(
+          `openTab() not supported in ${lazy.AppInfo.name}`
+        );
     }
 
     return tab;
