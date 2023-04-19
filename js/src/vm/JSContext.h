@@ -180,11 +180,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::ContextData<JS::ContextOptions> options_;
 
   
-  
-  
-  uint32_t allocsThisZoneSinceMinorGC_;
-
-  
   js::ThreadId currentThread_;
 
   js::OffThreadFrontendErrors* errors_;
@@ -270,18 +265,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   void recoverFromOutOfMemory();
 
   void reportAllocationOverflow() { js::ReportAllocationOverflow(this); }
-
-  void noteTenuredAlloc() { allocsThisZoneSinceMinorGC_++; }
-
-  uint32_t* addressOfTenuredAllocCount() {
-    return &allocsThisZoneSinceMinorGC_;
-  }
-
-  uint32_t getAndResetAllocsThisZoneSinceMinorGC() {
-    uint32_t allocs = allocsThisZoneSinceMinorGC_;
-    allocsThisZoneSinceMinorGC_ = 0;
-    return allocs;
-  }
 
   
   JSAtomState& names() { return *runtime_->commonNames; }

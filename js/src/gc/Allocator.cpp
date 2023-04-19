@@ -376,7 +376,7 @@ T* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
   
   
   
-  cx->noteTenuredAlloc();
+  zone->noteTenuredAlloc();
   return t;
 }
 
