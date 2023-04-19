@@ -1400,10 +1400,6 @@ class RTC_EXPORT PeerConnectionFactoryInterface
 
     
     
-    bool disable_sctp_data_channels = false;
-
-    
-    
     
     
     

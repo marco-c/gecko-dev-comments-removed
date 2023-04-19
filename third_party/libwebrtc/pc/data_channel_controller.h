@@ -102,8 +102,6 @@ class DataChannelController : public SctpDataChannelProviderInterface,
   }
 
   
-  cricket::DataChannelType data_channel_type() const;
-  void set_data_channel_type(cricket::DataChannelType type);
   DataChannelTransportInterface* data_channel_transport() const;
   void set_data_channel_transport(DataChannelTransportInterface* transport);
 
@@ -143,11 +141,6 @@ class DataChannelController : public SctpDataChannelProviderInterface,
 
   rtc::Thread* network_thread() const;
   rtc::Thread* signaling_thread() const;
-
-  
-  cricket::DataChannelType data_channel_type_ =
-      cricket::DCT_NONE;  
-                          
 
   
   

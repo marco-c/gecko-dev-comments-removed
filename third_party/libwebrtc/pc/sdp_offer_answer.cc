@@ -1375,7 +1375,7 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
   
   
   rtc::SSLRole role;
-  if (IsSctpLike(pc_->data_channel_type()) && pc_->GetSctpSslRole(&role)) {
+  if (pc_->GetSctpSslRole(&role)) {
     data_channel_controller()->AllocateSctpSids(role);
   }
 
@@ -1644,7 +1644,7 @@ RTCError SdpOfferAnswerHandler::ApplyRemoteDescription(
   
   
   rtc::SSLRole role;
-  if (IsSctpLike(pc_->data_channel_type()) && pc_->GetSctpSslRole(&role)) {
+  if (pc_->GetSctpSslRole(&role)) {
     data_channel_controller()->AllocateSctpSids(role);
   }
 
@@ -3352,11 +3352,6 @@ RTCError SdpOfferAnswerHandler::UpdateDataChannel(
     cricket::ContentSource source,
     const cricket::ContentInfo& content,
     const cricket::ContentGroup* bundle_group) {
-  if (pc_->data_channel_type() == cricket::DCT_NONE) {
-    
-    
-    return RTCError::OK();
-  }
   if (content.rejected) {
     RTC_LOG(LS_INFO) << "Rejected data channel, mid=" << content.mid();
     DestroyDataChannelTransport();
@@ -3493,8 +3488,6 @@ void SdpOfferAnswerHandler::GetOptionsForOffer(
   } else {
     GetOptionsForPlanBOffer(offer_answer_options, session_options);
   }
-
-  session_options->data_channel_type = pc_->data_channel_type();
 
   
   bool ice_restart = offer_answer_options.ice_restart || HasNewIceCredentials();
@@ -3753,8 +3746,6 @@ void SdpOfferAnswerHandler::GetOptionsForAnswer(
     GetOptionsForPlanBAnswer(offer_answer_options, session_options);
   }
 
-  session_options->data_channel_type = pc_->data_channel_type();
-
   
   for (auto& options : session_options->media_description_options) {
     options.transport_options.enable_ice_renomination =
@@ -3856,8 +3847,7 @@ void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanAnswer(
       
       
       
-      if (pc_->data_channel_type() == cricket::DCT_NONE || content.rejected ||
-          content.name != *(pc_->GetDataMid())) {
+      if (content.rejected || content.name != *(pc_->GetDataMid())) {
         session_options->media_description_options.push_back(
             GetMediaDescriptionOptionsForRejectedData(content.name));
       } else {
@@ -4497,8 +4487,8 @@ RTCError SdpOfferAnswerHandler::CreateChannels(const SessionDescription& desc) {
   }
 
   const cricket::ContentInfo* data = cricket::GetFirstDataContent(&desc);
-  if (pc_->data_channel_type() != cricket::DCT_NONE && data &&
-      !data->rejected && !data_channel_controller()->data_channel_transport()) {
+  if (data && !data->rejected &&
+      !data_channel_controller()->data_channel_transport()) {
     if (!CreateDataChannel(data->name)) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
                            "Failed to create data channel.");
@@ -4548,26 +4538,18 @@ cricket::VideoChannel* SdpOfferAnswerHandler::CreateVideoChannel(
 
 bool SdpOfferAnswerHandler::CreateDataChannel(const std::string& mid) {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  switch (pc_->data_channel_type()) {
-    case cricket::DCT_SCTP:
-      if (!pc_->network_thread()->Invoke<bool>(RTC_FROM_HERE, [this, &mid] {
-            RTC_DCHECK_RUN_ON(pc_->network_thread());
-            return pc_->SetupDataChannelTransport_n(mid);
-          })) {
-        return false;
-      }
-      
-      
-      
-      
-      
-      pc_->SetSctpDataMid(mid);
-      break;
-    case cricket::DCT_NONE:
-      
-      RTC_NOTREACHED();
-      return false;
+  if (!pc_->network_thread()->Invoke<bool>(RTC_FROM_HERE, [this, &mid] {
+        RTC_DCHECK_RUN_ON(pc_->network_thread());
+        return pc_->SetupDataChannelTransport_n(mid);
+      })) {
+    return false;
   }
+  
+  
+  
+  
+  
+  pc_->SetSctpDataMid(mid);
   return true;
 }
 
