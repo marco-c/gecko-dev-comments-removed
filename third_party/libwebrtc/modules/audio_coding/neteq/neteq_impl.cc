@@ -798,6 +798,11 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
     RTC_DCHECK(audio_frame->muted());  
     playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
     audio_frame->sample_rate_hz_ = fs_hz_;
+    
+    if (output_size_samples_ * sync_buffer_->Channels() >
+        AudioFrame::kMaxDataSizeSamples) {
+      return kSampleUnderrun;
+    }
     audio_frame->samples_per_channel_ = output_size_samples_;
     audio_frame->timestamp_ =
         first_packet_
