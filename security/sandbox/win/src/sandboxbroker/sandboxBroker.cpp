@@ -1339,8 +1339,12 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
   
   
   
+  
+  
   if (aSandbox != mozilla::ipc::SandboxingKind::UTILITY_AUDIO_DECODING_WMF) {
+#if !defined(__MINGW32__) && !defined(__MINGW64__)
     mitigations |= sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
+#endif  
   } else {
     if (IsWin10CreatorsUpdateOrLater()) {
 #if defined(_M_X64) && !defined(__MINGW64__)
