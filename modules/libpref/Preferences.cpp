@@ -6032,6 +6032,7 @@ static const PrefListEntry sParentOnlyPrefBranchList[] = {
 };
 
 static const PrefListEntry sDynamicPrefOverrideList[]{
+    PREF_LIST_ENTRY("apz.subtest"),
     PREF_LIST_ENTRY("autoadmin.global_config_url"),  
     PREF_LIST_ENTRY("browser.contentblocking.category"),
     PREF_LIST_ENTRY("browser.search.region"),
