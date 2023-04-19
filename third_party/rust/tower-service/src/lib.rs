@@ -1,11 +1,11 @@
-#![doc(html_root_url = "https://docs.rs/tower-service/0.3.1")]
 #![warn(
     missing_debug_implementations,
     missing_docs,
     rust_2018_idioms,
     unreachable_pub
 )]
-#![deny(broken_intra_doc_links)]
+#![forbid(unsafe_code)]
+
 
 
 
@@ -15,6 +15,83 @@
 
 use std::future::Future;
 use std::task::{Context, Poll};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -241,6 +318,12 @@ pub trait Service<Request> {
     
     type Future: Future<Output = Result<Self::Response, Self::Error>>;
 
+    
+    
+    
+    
+    
+    
     
     
     
