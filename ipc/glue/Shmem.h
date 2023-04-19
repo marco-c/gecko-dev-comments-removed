@@ -60,36 +60,44 @@ class ShadowLayerForwarder;
 
 namespace ipc {
 
+class IProtocol;
+class IToplevelProtocol;
+
+#ifdef FUZZING
+class ProtocolFuzzerHelper;
+#endif
+
 template <typename P>
 struct IPDLParamTraits;
 
 class Shmem final {
   friend struct IPDLParamTraits<mozilla::ipc::Shmem>;
+  friend class mozilla::ipc::IProtocol;
+  friend class mozilla::ipc::IToplevelProtocol;
 #ifdef DEBUG
   
   friend class mozilla::layers::ShadowLayerForwarder;
+#endif
+#ifdef FUZZING
+  friend class ProtocolFuzzerHelper;
+  template <typename T>
+  friend void FuzzProtocol(T*, const uint8_t*, size_t,
+                           const nsTArray<nsCString>&);
 #endif
 
  public:
   typedef int32_t id_t;
   
   typedef mozilla::ipc::SharedMemory SharedMemory;
-  
-  
-  
-  
-  struct PrivateIPDLCaller {};
 
   Shmem() : mSegment(nullptr), mData(nullptr), mSize(0), mId(0) {}
 
   Shmem(const Shmem& aOther) = default;
 
-  Shmem(PrivateIPDLCaller, SharedMemory* aSegment, id_t aId);
-
   ~Shmem() {
     
     
-    forget(PrivateIPDLCaller());
+    forget();
   }
 
   Shmem& operator=(const Shmem& aRhs) = default;
@@ -130,26 +138,29 @@ class Shmem final {
     return {get<T>(), Size<T>()};
   }
 
+ private:
   
-  id_t Id(PrivateIPDLCaller) const { return mId; }
 
-  SharedMemory* Segment(PrivateIPDLCaller) const { return mSegment; }
+  Shmem(SharedMemory* aSegment, id_t aId);
+
+  id_t Id() const { return mId; }
+
+  SharedMemory* Segment() const { return mSegment; }
 
 #ifndef DEBUG
-  void RevokeRights(PrivateIPDLCaller) {}
+  void RevokeRights() {}
 #else
-  void RevokeRights(PrivateIPDLCaller);
+  void RevokeRights();
 #endif
 
-  void forget(PrivateIPDLCaller) {
+  void forget() {
     mSegment = nullptr;
     mData = nullptr;
     mSize = 0;
     mId = 0;
   }
 
-  static already_AddRefed<Shmem::SharedMemory> Alloc(PrivateIPDLCaller,
-                                                     size_t aNBytes,
+  static already_AddRefed<Shmem::SharedMemory> Alloc(size_t aNBytes,
                                                      bool aUnsafe,
                                                      bool aProtect = false);
 
@@ -157,27 +168,23 @@ class Shmem final {
   
   
   
-  UniquePtr<IPC::Message> MkCreatedMessage(PrivateIPDLCaller,
-                                           int32_t routingId);
+  UniquePtr<IPC::Message> MkCreatedMessage(int32_t routingId);
 
   
   
   
   
-  UniquePtr<IPC::Message> MkDestroyedMessage(PrivateIPDLCaller,
-                                             int32_t routingId);
+  UniquePtr<IPC::Message> MkDestroyedMessage(int32_t routingId);
 
   
   
   
   
   static already_AddRefed<SharedMemory> OpenExisting(
-      PrivateIPDLCaller, const IPC::Message& aDescriptor, id_t* aId,
-      bool aProtect = false);
+      const IPC::Message& aDescriptor, id_t* aId, bool aProtect = false);
 
-  static void Dealloc(PrivateIPDLCaller, SharedMemory* aSegment);
+  static void Dealloc(SharedMemory* aSegment);
 
- private:
   template <typename T>
   void AssertAligned() const {
     if (0 != (mSize % sizeof(T))) MOZ_CRASH("shmem is not T-aligned");
