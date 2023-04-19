@@ -61,8 +61,11 @@
 
 
 
-#define RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(x) \
-  RTC_DCHECK_LE(blocked_call_count_printer.GetTotalBlockedCallCount(), x)
+#define RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(x)                               \
+  do {                                                                       \
+    blocked_call_count_printer.set_minimum_call_count_for_callback(x + 1);   \
+    RTC_DCHECK_LE(blocked_call_count_printer.GetTotalBlockedCallCount(), x); \
+  } while (0)
 #else
 #define RTC_LOG_THREAD_BLOCK_COUNT()
 #define RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(x)
@@ -251,10 +254,19 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
     uint32_t GetCouldBeBlockingCallCount() const;
     uint32_t GetTotalBlockedCallCount() const;
 
+    void set_minimum_call_count_for_callback(uint32_t minimum) {
+      min_blocking_calls_for_callback_ = minimum;
+    }
+
    private:
     Thread* const thread_;
     const uint32_t base_blocking_call_count_;
     const uint32_t base_could_be_blocking_call_count_;
+    
+    
+    
+    
+    uint32_t min_blocking_calls_for_callback_ = 0;
     std::function<void(uint32_t, uint32_t)> result_callback_;
   };
 
