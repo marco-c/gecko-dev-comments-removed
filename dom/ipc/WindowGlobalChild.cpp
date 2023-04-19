@@ -444,31 +444,31 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvDrawSnapshot(
 
 mozilla::ipc::IPCResult WindowGlobalChild::RecvGetSecurityInfo(
     GetSecurityInfoResolver&& aResolve) {
-  Maybe<nsCString> result;
+  nsCOMPtr<nsITransportSecurityInfo> securityInfo;
+  auto callResolve =
+      MakeScopeExit([aResolve, &securityInfo]() { aResolve(securityInfo); });
 
-  if (nsCOMPtr<Document> doc = mWindowGlobal->GetDoc()) {
-    nsCOMPtr<nsISupports> secInfo;
-    nsresult rv = NS_OK;
-
-    
-    
-    if (nsIChannel* failedChannel = doc->GetFailedChannel()) {
-      rv = failedChannel->GetSecurityInfo(getter_AddRefs(secInfo));
-    } else {
-      
-      
-      
-      secInfo = doc->GetSecurityInfo();
-    }
-
-    if (NS_SUCCEEDED(rv) && secInfo) {
-      nsCOMPtr<nsISerializable> secInfoSer = do_QueryInterface(secInfo);
-      result.emplace();
-      NS_SerializeToString(secInfoSer, result.ref());
-    }
+  nsCOMPtr<Document> doc = mWindowGlobal->GetDoc();
+  if (!doc) {
+    return IPC_OK();
   }
 
-  aResolve(result);
+  nsCOMPtr<nsISupports> securityInfoSupports;
+  
+  
+  if (nsIChannel* failedChannel = doc->GetFailedChannel()) {
+    nsresult rv =
+        failedChannel->GetSecurityInfo(getter_AddRefs(securityInfoSupports));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return IPC_OK();
+    }
+  } else {
+    
+    
+    
+    securityInfoSupports = doc->GetSecurityInfo();
+  }
+  securityInfo = do_QueryInterface(securityInfoSupports);
   return IPC_OK();
 }
 
