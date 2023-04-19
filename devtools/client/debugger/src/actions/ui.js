@@ -8,9 +8,8 @@ import {
   getQuickOpenEnabled,
   getSource,
   getSourceContent,
-  startsWithThreadActor,
   getFileSearchQuery,
-  getProjectDirectoryRoot,
+  getMainThread,
 } from "../selectors";
 import { selectSource } from "../actions/sources/select";
 import {
@@ -193,28 +192,15 @@ export function clearProjectDirectoryRoot(cx) {
 
 export function setProjectDirectoryRoot(cx, newRoot, newName) {
   return ({ dispatch, getState }) => {
-    const threadActor = startsWithThreadActor(getState(), newRoot);
-
-    let curRoot = getProjectDirectoryRoot(getState());
-
     
-    if (threadActor) {
-      newRoot = newRoot.slice(threadActor.length + 1);
-      curRoot = curRoot.slice(threadActor.length + 1);
+    
+    
+    
+    
+    const mainThread = getMainThread(getState());
+    if (mainThread && newRoot.startsWith(mainThread.actor)) {
+      newRoot = newRoot.replace(mainThread.actor, "top-level");
     }
-
-    if (newRoot && curRoot) {
-      const newRootArr = newRoot.replace(/\/+/g, "/").split("/");
-      const curRootArr = curRoot
-        .replace(/^\//, "")
-        .replace(/\/+/g, "/")
-        .split("/");
-      if (newRootArr[0] !== curRootArr[0]) {
-        newRootArr.splice(0, 2);
-        newRoot = `${curRoot}/${newRootArr.join("/")}`;
-      }
-    }
-
     dispatch({
       type: "SET_PROJECT_DIRECTORY_ROOT",
       cx,

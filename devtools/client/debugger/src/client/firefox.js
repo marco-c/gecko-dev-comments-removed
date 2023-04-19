@@ -64,11 +64,7 @@ export async function onConnect(_commands, _resourceCommand, _actions, store) {
   
   
   
-  await actions.connect(
-    targetFront.url,
-    targetFront.threadFront.actor,
-    targetFront.isWebExtension
-  );
+  await actions.connect(targetFront.url, targetFront.threadFront.actor);
 
   await targetCommand.watchTargets({
     types: targetCommand.ALL_TYPES,

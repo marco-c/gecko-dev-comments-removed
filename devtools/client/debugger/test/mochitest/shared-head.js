@@ -1097,6 +1097,18 @@ function assertSourceIcon(dbg, sourceName, icon) {
   );
 }
 
+async function expandSourceTree(dbg) {
+  
+  
+  
+  
+  for (const rootNode of dbg.win.document.querySelectorAll(
+    ".sources-list > .managed-tree > .tree > .tree-node[data-expandable=true]"
+  )) {
+    await expandAllSourceNodes(dbg, rootNode);
+  }
+}
+
 async function expandAllSourceNodes(dbg, treeNode) {
   const onContextMenu = waitForContextMenu(dbg);
   rightClickEl(dbg, treeNode);
@@ -2018,15 +2030,6 @@ async function waitForBreakableLine(dbg, source, lineNumber) {
     },
     `waiting for breakable line ${lineNumber}`
   );
-}
-
-async function expandSourceTree(dbg) {
-  const rootNodes = dbg.win.document.querySelectorAll(
-    selectors.sourceTreeThreadsNodes
-  );
-  for (const rootNode of rootNodes) {
-    await expandAllSourceNodes(dbg, rootNode);
-  }
 }
 
 async function waitForSourceTreeThreadsCount(dbg, i) {

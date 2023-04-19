@@ -31,13 +31,6 @@ export function initialSourcesState(state) {
 
 
 
-    sourcesWithUrls: [],
-
-    
-
-
-
-
 
 
 
@@ -65,25 +58,6 @@ export function initialSourcesState(state) {
 
 
     pendingSelectedLocation: prefs.pendingSelectedLocation,
-
-    
-
-
-
-
-    projectDirectoryRoot: prefs.projectDirectoryRoot,
-    projectDirectoryRootName: prefs.projectDirectoryRootName,
-
-    
-
-
-
-
-
-
-
-
-    chromeAndExtensionsEnabled: prefs.chromeAndExtensionsEnabled,
   };
 }
 
@@ -136,10 +110,6 @@ function update(state = initialSourcesState(), action) {
       prefs.pendingSelectedLocation = location;
       return { ...state, pendingSelectedLocation: location };
 
-    case "SET_PROJECT_DIRECTORY_ROOT":
-      const { url, name } = action;
-      return updateProjectDirectoryRoot(state, url, name);
-
     case "SET_ORIGINAL_BREAKABLE_LINES": {
       const { breakableLines, sourceId } = action;
       return {
@@ -187,8 +157,6 @@ function update(state = initialSourcesState(), action) {
 
 
 function addSources(state, sources) {
-  const originalState = state;
-
   state = {
     ...state,
     urls: { ...state.urls },
@@ -202,16 +170,6 @@ function addSources(state, sources) {
     const existing = state.urls[source.url] || [];
     if (!existing.includes(source.id)) {
       state.urls[source.url] = [...existing, source.id];
-    }
-
-    
-    if (source.url) {
-      
-      if (originalState.sourcesWithUrls === state.sourcesWithUrls) {
-        state.sourcesWithUrls = [...state.sourcesWithUrls];
-      }
-
-      state.sourcesWithUrls.push(source.id);
     }
   }
   state.sources = newSourceMap;
@@ -239,11 +197,6 @@ function removeSourcesAndActors(state, sources) {
       if (state.urls[source.url]?.length == 0) {
         delete state.urls[source.url];
       }
-
-      
-      state.sourcesWithUrls = state.sourcesWithUrls.filter(
-        sourceId => sourceId !== source.id
-      );
     }
     
     delete state.actors[source.id];
@@ -284,34 +237,6 @@ function insertSourceActors(state, action) {
   }
 
   return state;
-}
-
-
-
-
-function updateProjectDirectoryRoot(state, root, name) {
-  
-  
-  if (actorType(root) !== "thread") {
-    prefs.projectDirectoryRoot = root;
-    prefs.projectDirectoryRootName = name;
-  }
-
-  state = {
-    ...state,
-    projectDirectoryRoot: root,
-    projectDirectoryRootName: name,
-  };
-
-  return state;
-}
-
-
-
-
-function actorType(actor) {
-  const match = actor.match(/\/([a-z]+)\d+/);
-  return match ? match[1] : null;
 }
 
 export default update;

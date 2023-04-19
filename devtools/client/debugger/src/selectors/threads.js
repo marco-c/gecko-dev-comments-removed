@@ -50,11 +50,3 @@ export function getMainThreadHost(state) {
 export function getThread(state, threadActor) {
   return getAllThreads(state).find(thread => thread.actor === threadActor);
 }
-
-
-
-export function startsWithThreadActor(state, path) {
-  const threadActors = getAllThreads(state).map(t => t.actor);
-  const match = path.match(new RegExp(`(${threadActors.join("|")})\/(.*)`));
-  return match?.[1];
-}

@@ -979,6 +979,7 @@ class Tree extends Component {
     const nodes = traversal.map((v, i) => {
       const { item, depth } = traversal[i];
       const key = this.props.getKey(item, i);
+      const focusedKey = focused ? this.props.getKey(focused, i) : null;
       return TreeNodeFactory({
         
         
@@ -990,7 +991,7 @@ class Tree extends Component {
         depth,
         shouldItemUpdate: this.props.shouldItemUpdate,
         renderItem: this.props.renderItem,
-        focused: focused === item,
+        focused: focusedKey === key,
         active: active === item,
         expanded: this.props.isExpanded(item),
         isExpandable: this._nodeIsExpandable(item),
