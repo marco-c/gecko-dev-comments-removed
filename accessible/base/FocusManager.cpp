@@ -27,7 +27,7 @@ FocusManager::FocusManager() {}
 
 FocusManager::~FocusManager() {}
 
-LocalAccessible* FocusManager::FocusedAccessible() const {
+LocalAccessible* FocusManager::FocusedLocalAccessible() const {
   if (mActiveItem) {
     if (mActiveItem->IsDefunct()) {
       MOZ_ASSERT_UNREACHABLE("Stored active item is unbound from document");
@@ -71,7 +71,7 @@ bool FocusManager::IsFocused(const LocalAccessible* aAccessible) const {
 }
 
 bool FocusManager::IsFocusWithin(const LocalAccessible* aContainer) const {
-  LocalAccessible* child = FocusedAccessible();
+  LocalAccessible* child = FocusedLocalAccessible();
   while (child) {
     if (child == aContainer) return true;
 
@@ -82,7 +82,7 @@ bool FocusManager::IsFocusWithin(const LocalAccessible* aContainer) const {
 
 FocusManager::FocusDisposition FocusManager::IsInOrContainsFocus(
     const LocalAccessible* aAccessible) const {
-  LocalAccessible* focus = FocusedAccessible();
+  LocalAccessible* focus = FocusedLocalAccessible();
   if (!focus) return eNone;
 
   
@@ -203,7 +203,7 @@ void FocusManager::ActiveItemChanged(LocalAccessible* aItem,
   
   
   
-  LocalAccessible* target = FocusedAccessible();
+  LocalAccessible* target = FocusedLocalAccessible();
   if (target) {
     DispatchFocusEvent(target->Document(), target);
   }

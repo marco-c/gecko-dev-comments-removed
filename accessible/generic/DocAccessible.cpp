@@ -273,7 +273,7 @@ void DocAccessible::ApplyARIAState(uint64_t* aState) const {
 Accessible* DocAccessible::FocusedChild() {
   
   
-  if (Accessible* focusedAcc = FocusMgr()->FocusedAccessible()) {
+  if (Accessible* focusedAcc = FocusMgr()->FocusedLocalAccessible()) {
     return focusedAcc;
   }
   nsFocusManager* focusManagerDOM = nsFocusManager::GetFocusManager();

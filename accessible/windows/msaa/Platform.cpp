@@ -156,7 +156,7 @@ void a11y::ProxyStateChangeEvent(RemoteAccessible* aTarget, uint64_t, bool) {
 void a11y::ProxyFocusEvent(RemoteAccessible* aTarget,
                            const LayoutDeviceIntRect& aCaretRect) {
   FocusManager* focusMgr = FocusMgr();
-  if (focusMgr && focusMgr->FocusedAccessible()) {
+  if (focusMgr && focusMgr->FocusedLocalAccessible()) {
     
     
     

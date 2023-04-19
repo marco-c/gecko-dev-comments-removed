@@ -31,7 +31,8 @@ class FocusManager {
   
 
 
-  LocalAccessible* FocusedAccessible() const;
+
+  LocalAccessible* FocusedLocalAccessible() const;
 
   
 
