@@ -97,6 +97,7 @@ static const uint32_t kSsrcs3[] = {1, 2, 3};
 static const uint32_t kRtxSsrcs1[] = {4};
 static const uint32_t kFlexfecSsrc = 5;
 static const uint32_t kIncomingUnsignalledSsrc = 0xC0FFEE;
+static const int64_t kUnsignalledReceiveStreamCooldownMs = 500;
 
 constexpr uint32_t kRtpHeaderSize = 12;
 
@@ -2564,6 +2565,16 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
   }
 
   cricket::VideoCodec DefaultCodec() { return GetEngineCodec("VP8"); }
+
+  
+  
+  void ReceivePacketAndAdvanceTime(rtc::CopyOnWriteBuffer packet,
+                                   int64_t packet_time_us) {
+    channel_->OnPacketReceived(packet, packet_time_us);
+    rtc::Thread::Current()->ProcessMessages(0);
+    fake_clock_.AdvanceTime(
+        webrtc::TimeDelta::Millis(kUnsignalledReceiveStreamCooldownMs));
+  }
 
  protected:
   FakeVideoSendStream* AddSendStream() {
@@ -6297,8 +6308,7 @@ TEST_F(WebRtcVideoChannelTest, DefaultReceiveStreamReconfiguresToUseRtx) {
   memset(data, 0, sizeof(data));
   rtc::SetBE32(&data[8], ssrcs[0]);
   rtc::CopyOnWriteBuffer packet(data, kDataLength);
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
 
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
       << "No default receive stream created.";
@@ -6459,8 +6469,7 @@ TEST_F(WebRtcVideoChannelTest, RecvUnsignaledSsrcWithSignaledStreamId) {
   memset(data, 0, sizeof(data));
   rtc::SetBE32(&data[8], kIncomingUnsignalledSsrc);
   rtc::CopyOnWriteBuffer packet(data, kDataLength);
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
 
   
   EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
@@ -6475,16 +6484,14 @@ TEST_F(WebRtcVideoChannelTest, RecvUnsignaledSsrcWithSignaledStreamId) {
 
   
   
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
   EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
 
   
   
   
   channel_->OnDemuxerCriteriaUpdateComplete();
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
   EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   EXPECT_TRUE(
       fake_call_->GetVideoReceiveStreams()[0]->GetConfig().sync_group.empty());
@@ -6501,8 +6508,7 @@ TEST_F(WebRtcVideoChannelTest,
   memset(data, 0, sizeof(data));
   rtc::SetBE32(&data[8], kIncomingUnsignalledSsrc);
   rtc::CopyOnWriteBuffer packet(data, kDataLength);
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
 
   
   const auto& receivers1 = fake_call_->GetVideoReceiveStreams();
@@ -6552,7 +6558,7 @@ TEST_F(WebRtcVideoChannelTest,
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc1);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
   {
     
@@ -6561,9 +6567,8 @@ TEST_F(WebRtcVideoChannelTest,
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc2);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
-  rtc::Thread::Current()->ProcessMessages(0);
 
   
   
@@ -6585,7 +6590,7 @@ TEST_F(WebRtcVideoChannelTest,
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc1);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
   {
     
@@ -6594,9 +6599,8 @@ TEST_F(WebRtcVideoChannelTest,
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc2);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
-  rtc::Thread::Current()->ProcessMessages(0);
 
   
   
@@ -6637,7 +6641,7 @@ TEST_F(WebRtcVideoChannelTest,
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc1);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
   {
     
@@ -6646,9 +6650,8 @@ TEST_F(WebRtcVideoChannelTest,
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc2);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
-  rtc::Thread::Current()->ProcessMessages(0);
 
   
   
@@ -6669,7 +6672,7 @@ TEST_F(WebRtcVideoChannelTest,
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc1);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
   {
     
@@ -6678,9 +6681,8 @@ TEST_F(WebRtcVideoChannelTest,
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc2);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
-  rtc::Thread::Current()->ProcessMessages(0);
 
   
   
@@ -6717,9 +6719,8 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
-  rtc::Thread::Current()->ProcessMessages(0);
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 1u);
 
   
@@ -6734,9 +6735,8 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
-  rtc::Thread::Current()->ProcessMessages(0);
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 2u);
 
   
@@ -6752,9 +6752,8 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
-  rtc::Thread::Current()->ProcessMessages(0);
   EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 0u);
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 2u);
 
@@ -6770,9 +6769,8 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
-  rtc::Thread::Current()->ProcessMessages(0);
   EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 0u);
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 2u);
 
@@ -6788,11 +6786,72 @@ TEST_F(WebRtcVideoChannelTest, MultiplePendingDemuxerCriteriaUpdates) {
     memset(data, 0, sizeof(data));
     rtc::SetBE32(&data[8], kSsrc);
     rtc::CopyOnWriteBuffer packet(data, kDataLength);
-    channel_->OnPacketReceived(packet,  -1);
+    ReceivePacketAndAdvanceTime(packet,  -1);
   }
-  rtc::Thread::Current()->ProcessMessages(0);
   EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
   EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc), 3u);
+}
+
+TEST_F(WebRtcVideoChannelTest, UnsignalledSsrcHasACooldown) {
+  const uint32_t kSsrc1 = 1;
+  const uint32_t kSsrc2 = 2;
+
+  
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc1);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+  fake_clock_.AdvanceTime(
+      webrtc::TimeDelta::Millis(kUnsignalledReceiveStreamCooldownMs - 1));
+
+  
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc1), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc2), 0u);
+
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc2);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc1), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc2), 0u);
+
+  
+  
+  fake_clock_.AdvanceTime(webrtc::TimeDelta::Millis(1));
+  {
+    
+    const size_t kDataLength = 12;
+    uint8_t data[kDataLength];
+    memset(data, 0, sizeof(data));
+    rtc::SetBE32(&data[8], kSsrc2);
+    rtc::CopyOnWriteBuffer packet(data, kDataLength);
+    channel_->OnPacketReceived(packet,  -1);
+  }
+  rtc::Thread::Current()->ProcessMessages(0);
+
+  
+  
+  
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams().size(), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc1), 1u);
+  EXPECT_EQ(fake_call_->GetDeliveredPacketsForSsrc(kSsrc2), 1u);
 }
 
 
@@ -6828,8 +6887,7 @@ TEST_F(WebRtcVideoChannelTest, BaseMinimumPlayoutDelayMsUnsignaledRecvStream) {
   memset(data, 0, sizeof(data));
   rtc::SetBE32(&data[8], kIncomingUnsignalledSsrc);
   rtc::CopyOnWriteBuffer packet(data, kDataLength);
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
 
   recv_stream = fake_call_->GetVideoReceiveStream(kIncomingUnsignalledSsrc);
   EXPECT_EQ(recv_stream->base_mininum_playout_delay_ms(), 200);
@@ -6866,8 +6924,7 @@ void WebRtcVideoChannelTest::TestReceiveUnsignaledSsrcPacket(
   rtc::Set8(data, 1, payload_type);
   rtc::SetBE32(&data[8], kIncomingUnsignalledSsrc);
   rtc::CopyOnWriteBuffer packet(data, kDataLength);
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
 
   if (expect_created_receive_stream) {
     EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size())
@@ -6954,8 +7011,7 @@ TEST_F(WebRtcVideoChannelTest, ReceiveDifferentUnsignaledSsrc) {
   rtpHeader.ssrc = kIncomingUnsignalledSsrc + 1;
   cricket::SetRtpHeader(data, sizeof(data), rtpHeader);
   rtc::CopyOnWriteBuffer packet(data, sizeof(data));
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
   
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   FakeVideoReceiveStream* recv_stream = fake_call_->GetVideoReceiveStreams()[0];
@@ -6976,8 +7032,7 @@ TEST_F(WebRtcVideoChannelTest, ReceiveDifferentUnsignaledSsrc) {
   rtpHeader.ssrc = kIncomingUnsignalledSsrc + 2;
   cricket::SetRtpHeader(data, sizeof(data), rtpHeader);
   rtc::CopyOnWriteBuffer packet2(data, sizeof(data));
-  channel_->OnPacketReceived(packet2,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet2,  -1);
   
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
@@ -6999,8 +7054,7 @@ TEST_F(WebRtcVideoChannelTest, ReceiveDifferentUnsignaledSsrc) {
   rtpHeader.ssrc = kIncomingUnsignalledSsrc + 3;
   cricket::SetRtpHeader(data, sizeof(data), rtpHeader);
   rtc::CopyOnWriteBuffer packet3(data, sizeof(data));
-  channel_->OnPacketReceived(packet3,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet3,  -1);
   
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
@@ -7039,8 +7093,7 @@ TEST_F(WebRtcVideoChannelTest,
   rtp_header.ssrc = kSsrcs3[0];
   cricket::SetRtpHeader(data, sizeof(data), rtp_header);
   rtc::CopyOnWriteBuffer packet(data, sizeof(data));
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
   
   ASSERT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
   FakeVideoReceiveStream* recv_stream0 =
@@ -7058,8 +7111,7 @@ TEST_F(WebRtcVideoChannelTest,
   rtp_header.ssrc = kSsrcs3[1];
   cricket::SetRtpHeader(data, sizeof(data), rtp_header);
   packet.SetData(data, sizeof(data));
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
   
   ASSERT_EQ(2u, fake_call_->GetVideoReceiveStreams().size());
   EXPECT_EQ(recv_stream0, fake_call_->GetVideoReceiveStreams()[0]);
@@ -8672,8 +8724,7 @@ TEST_F(WebRtcVideoChannelTest,
   rtpHeader.ssrc = kIncomingUnsignalledSsrc;
   cricket::SetRtpHeader(data, sizeof(data), rtpHeader);
   rtc::CopyOnWriteBuffer packet(data, sizeof(data));
-  channel_->OnPacketReceived(packet,  -1);
-  rtc::Thread::Current()->ProcessMessages(0);
+  ReceivePacketAndAdvanceTime(packet,  -1);
 
   
   rtp_parameters = channel_->GetDefaultRtpReceiveParameters();
