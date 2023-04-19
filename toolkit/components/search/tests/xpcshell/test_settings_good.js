@@ -21,7 +21,10 @@ const enginesSettings = {
     searchDefaultHash: "TBD",
     
     searchDefaultExpir: 1567694909002,
-    current: "",
+    
+    
+    
+    current: "engine2",
     hash: "TBD",
     visibleDefaultEngines: "engine1,engine2",
     visibleDefaultEnginesHash: "TBD",
@@ -87,10 +90,14 @@ add_task(async function test_cached_engine_properties() {
   );
 
   const engines = await Services.search.getEngines();
-
+  Assert.equal(
+    Services.search.defaultEngine.name,
+    "engine2",
+    "Should have the expected default engine"
+  );
   Assert.deepEqual(
     engines.map(e => e.name),
     ["engine1", "engine2"],
-    "Should have the expected default engines"
+    "Should have the expected application provided engines"
   );
 });
