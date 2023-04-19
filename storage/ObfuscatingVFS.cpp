@@ -650,7 +650,7 @@ UniquePtr<sqlite3_vfs> ConstructObfuscatingVFS(const char* aBaseVFSName) {
   const sqlite3_vfs obfs_vfs = {
       pOrig->iVersion,                                      
       static_cast<int>(pOrig->szOsFile + sizeof(ObfsFile)), 
-      1024,                                                 
+      pOrig->mxPathname,                                    
       nullptr,                                              
       GetObfuscatingVFSName(),                              
       pOrig,                                                
