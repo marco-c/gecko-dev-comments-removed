@@ -4125,38 +4125,30 @@ function checkFilesInDirRecursive(aDir, aCallback) {
 
 
 
-function waitForUpdateCheck(aSuccess, aExpectedValues = {}) {
-  return new Promise(resolve =>
-    gUpdateChecker.checkForUpdates(
-      {
-        onProgress: (aRequest, aPosition, aTotalSize) => {},
-        onCheckComplete: async (request, updates) => {
-          Assert.ok(aSuccess, "the update check should succeed");
-          if (aExpectedValues.updateCount) {
-            Assert.equal(
-              aExpectedValues.updateCount,
-              updates.length,
-              "the update count" + MSG_SHOULD_EQUAL
-            );
-          }
-          resolve({ request, updates });
-        },
-        onError: async (request, update) => {
-          Assert.ok(!aSuccess, "the update check should error");
-          if (aExpectedValues.url) {
-            Assert.equal(
-              aExpectedValues.url,
-              request.channel.originalURI.spec,
-              "the url" + MSG_SHOULD_EQUAL
-            );
-          }
-          resolve({ request, update });
-        },
-        QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheckListener"]),
-      },
-      true
-    )
+async function waitForUpdateCheck(aSuccess, aExpectedValues = {}) {
+  let check = gUpdateChecker.checkForUpdates(gUpdateChecker.FOREGROUND_CHECK);
+  let result = await check.result;
+  Assert.ok(result.checksAllowed, "We should be able to check for updates");
+  Assert.equal(
+    result.succeeded,
+    aSuccess,
+    "the update check should " + (aSuccess ? "succeed" : "error")
   );
+  if (aExpectedValues.updateCount) {
+    Assert.equal(
+      aExpectedValues.updateCount,
+      result.updates.length,
+      "the update count" + MSG_SHOULD_EQUAL
+    );
+  }
+  if (aExpectedValues.url) {
+    Assert.equal(
+      aExpectedValues.url,
+      result.request.channel.originalURI.spec,
+      "the url" + MSG_SHOULD_EQUAL
+    );
+  }
+  return result;
 }
 
 
