@@ -37,7 +37,7 @@ add_task(async function testCategoryLogs() {
   testTrace();
   console.timeEnd("foobarTimer");
 
-  info("wait for the Console.jsm messages");
+  info("wait for the Console.sys.mjs messages");
 
   await checkMessageExists(hud, "bug851231-log");
   await checkMessageExists(hud, "bug851231-info");
