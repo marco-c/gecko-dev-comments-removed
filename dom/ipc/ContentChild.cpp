@@ -810,8 +810,23 @@ void ContentChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
 #endif
 }
 
+void ContentChild::AddProfileToProcessName(const nsACString& aProfile) {
+  nsCOMPtr<nsIPrincipal> isolationPrincipal =
+      ContentParent::CreateRemoteTypeIsolationPrincipal(mRemoteType);
+  if (isolationPrincipal) {
+    
+    if (isolationPrincipal->OriginAttributesRef().mPrivateBrowsingId !=
+        nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID) {
+      return;
+    }
+  }
+
+  mProcessName = aProfile + ":"_ns + mProcessName;  
+}
+
 void ContentChild::SetProcessName(const nsACString& aName,
-                                  const nsACString* aSite) {
+                                  const nsACString* aSite,
+                                  const nsACString* aCurrentProfile) {
   char* name;
   if ((name = PR_GetEnv("MOZ_DEBUG_APP_PROCESS")) && aName.EqualsASCII(name)) {
 #ifdef OS_POSIX
@@ -832,6 +847,9 @@ void ContentChild::SetProcessName(const nsACString& aName,
   } else {
     profiler_set_process_name(aName);
   }
+
+  mProcessName = aName;
+
   
   if (aSite && StaticPrefs::fission_processSiteNames()) {
     nsCOMPtr<nsIPrincipal> isolationPrincipal =
@@ -859,28 +877,29 @@ void ContentChild::SetProcessName(const nsACString& aName,
           nsAutoCString originSuffix;
           isolationPrincipal->GetOriginSuffix(originSuffix);
           schemeless.Append(originSuffix);
-          mozilla::ipc::SetThisProcessName(schemeless.get());
-          MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-                  ("Changed name of process %d to %s", getpid(),
-                   PromiseFlatCString(schemeless).get()));
+          mProcessName = schemeless;
         } else
 #endif
         {
-          mozilla::ipc::SetThisProcessName(PromiseFlatCString(*aSite).get());
-          MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-                  ("Changed name of process %d to %s", getpid(),
-                   PromiseFlatCString(*aSite).get()));
+          mProcessName = *aSite;
         }
-
-        mProcessName = *aSite;
-        return;
       }
     }
   }
+
+  if (StaticPrefs::fission_processProfileName() && aCurrentProfile &&
+      !aCurrentProfile->IsEmpty()) {
+    AddProfileToProcessName(*aCurrentProfile);
+  }
+
   
   
-  mProcessName = aName;
+
   mozilla::ipc::SetThisProcessName(mProcessName.get());
+
+  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+          ("Changed name of process %d to %s", getpid(),
+           PromiseFlatCString(mProcessName).get()));
 }
 
 static nsresult GetCreateWindowParams(nsIOpenWindowInfo* aOpenWindowInfo,
@@ -2606,7 +2625,7 @@ mozilla::ipc::IPCResult ContentChild::RecvAppInfo(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
-    const nsCString& aRemoteType) {
+    const nsCString& aRemoteType, const nsCString& aProfile) {
   if (aRemoteType == mRemoteType) {
     
     
@@ -2641,29 +2660,32 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
 
   
   if (aRemoteType == FILE_REMOTE_TYPE) {
-    SetProcessName("file:// Content"_ns);
+    SetProcessName("file:// Content"_ns, nullptr, &aProfile);
   } else if (aRemoteType == EXTENSION_REMOTE_TYPE) {
-    SetProcessName("WebExtensions"_ns);
+    SetProcessName("WebExtensions"_ns, nullptr, &aProfile);
   } else if (aRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE) {
-    SetProcessName("Privileged Content"_ns);
+    SetProcessName("Privileged Content"_ns, nullptr, &aProfile);
   } else if (remoteTypePrefix == WITH_COOP_COEP_REMOTE_TYPE) {
 #ifdef NIGHTLY_BUILD
-    SetProcessName("WebCOOP+COEP Content"_ns);
+    SetProcessName("WebCOOP+COEP Content"_ns, nullptr, &aProfile);
 #else
-    SetProcessName("Isolated Web Content"_ns);  
+    SetProcessName("Isolated Web Content"_ns, nullptr,
+                   &aProfile);  
 #endif
   } else if (remoteTypePrefix == FISSION_WEB_REMOTE_TYPE) {
     
     nsDependentCSubstring etld =
         Substring(aRemoteType, FISSION_WEB_REMOTE_TYPE.Length() + 1);
-    SetProcessName("Isolated Web Content"_ns, &etld);
+    SetProcessName("Isolated Web Content"_ns, &etld, &aProfile);
   } else if (remoteTypePrefix == SERVICEWORKER_REMOTE_TYPE) {
     
     nsDependentCSubstring etld =
         Substring(aRemoteType, SERVICEWORKER_REMOTE_TYPE.Length() + 1);
-    SetProcessName("Isolated Service Worker"_ns, &etld);
+    SetProcessName("Isolated Service Worker"_ns, &etld, &aProfile);
+  } else {
+    
+    SetProcessName("Web Content"_ns, nullptr, &aProfile);
   }
-  
 
   
   if (StaticPrefs::javascript_options_spectre_disable_for_isolated_content() &&
@@ -4940,6 +4962,7 @@ bool StartOpenBSDSandbox(GeckoProcessType type, ipc::SandboxingKind kind) {
   if (NS_FAILED(rv)) {
     errx(1, "failed to cache binary path ?");
   }
+
   if (NS_WARN_IF(NS_FAILED(OpenBSDUnveilPaths(unveilFile, pledgeFile)))) {
     errx(1, "failed reading/parsing %s", unveilFile.get());
   }
