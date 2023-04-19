@@ -11,6 +11,7 @@ const { webconsoleSpec } = require("devtools/shared/specs/webconsole");
 
 const Services = require("Services");
 const { Cc, Ci, Cu } = require("chrome");
+const ChromeUtils = require("ChromeUtils");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 const { ThreadActor } = require("devtools/server/actors/thread");
 const { ObjectActor } = require("devtools/server/actors/object");
@@ -992,7 +993,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   async evaluateJSAsync(request) {
-    const startTime = Date.now();
+    const startTime = ChromeUtils.dateNow();
     
     
     
@@ -1010,12 +1011,13 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         let response = await this.evaluateJS(request);
         
         response = await this._maybeWaitForResponseResult(response);
+
         
         
         
         
         
-        response.timestamp = Date.now() + 1;
+        response.timestamp = ChromeUtils.dateNow();
         
         this.emit("evaluationResult", {
           type: "evaluationResult",
