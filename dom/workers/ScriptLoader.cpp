@@ -532,12 +532,13 @@ void WorkerScriptLoader::LoadingFinished(ScriptLoadInfo* aLoadInfo,
 }
 
 void WorkerScriptLoader::MaybeExecuteFinishedScripts(
-    const ScriptLoadInfo* aLoadInfo) {
+    ScriptLoadInfo* aLoadInfo) {
   AssertIsOnMainThread();
 
   
   
   if (aLoadInfo->Finished()) {
+    aLoadInfo->ClearCacheCreator();
     DispatchProcessPendingRequests();
   }
 }
@@ -613,22 +614,6 @@ void WorkerScriptLoader::CancelMainThread(nsresult aCancelResult) {
   }
 
   mCancelMainThread = Some(aCancelResult);
-
-  if (mCacheCreator) {
-    MOZ_ASSERT(mWorkerPrivate->IsServiceWorker());
-    DeleteCache(aCancelResult);
-  }
-}
-
-void WorkerScriptLoader::DeleteCache(nsresult aReason) {
-  AssertIsOnMainThread();
-
-  if (!mCacheCreator) {
-    return;
-  }
-
-  mCacheCreator->DeleteCache(aReason);
-  mCacheCreator = nullptr;
 }
 
 nsresult WorkerScriptLoader::LoadScripts() {
@@ -657,12 +642,13 @@ nsresult WorkerScriptLoader::LoadScripts() {
     return NS_OK;
   }
 
-  MOZ_ASSERT(!mCacheCreator);
-  mCacheCreator = new CacheCreator(mWorkerPrivate);
+  RefPtr<CacheCreator> cacheCreator = new CacheCreator(mWorkerPrivate);
 
   for (ScriptLoadInfo* loadInfo : mLoadingRequests) {
-    mCacheCreator->AddLoader(MakeNotNull<RefPtr<CacheLoadHandler>>(
-        mWorkerPrivate, loadInfo, IsMainWorkerScript(), this));
+    loadInfo->SetCacheCreator(cacheCreator);
+    loadInfo->GetCacheCreator()->AddLoader(
+        MakeNotNull<RefPtr<CacheLoadHandler>>(mWorkerPrivate, loadInfo,
+                                              IsMainWorkerScript(), this));
   }
 
   
@@ -674,7 +660,7 @@ nsresult WorkerScriptLoader::LoadScripts() {
     principal = parentWorker->GetPrincipal();
   }
 
-  nsresult rv = mCacheCreator->Load(principal);
+  nsresult rv = cacheCreator->Load(principal);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -890,10 +876,6 @@ void WorkerScriptLoader::DispatchProcessPendingRequests() {
   
   
   if (loadedScripts.Length()) {
-    if (mLoadingRequests.IsEmpty()) {
-      mCacheCreator = nullptr;
-    }
-
     RefPtr<ScriptExecutorRunnable> runnable = new ScriptExecutorRunnable(
         *this, mSyncLoopTarget, std::move(loadedScripts),
          mLoadingRequests.IsEmpty());
