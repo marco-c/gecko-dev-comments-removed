@@ -185,6 +185,27 @@ interface nsICookieManager : nsISupports
 
 
 
+
+  [notxpcom]
+  nsresult getCookieNative(in AUTF8String aHost,
+                           in AUTF8String aPath,
+                           in ACString    aName,
+                           in OriginAttributesPtr aOriginAttributes,
+                           out nsICookie aCookie);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   unsigned long countCookiesFromHost(in AUTF8String aHost);
 
   
