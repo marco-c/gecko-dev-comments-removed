@@ -27,8 +27,8 @@ namespace mozilla {
 namespace dom {
 class Document;
 class Element;
-}
-}
+}  
+}  
 
 
 @interface ApplicationMenuDelegate : NSObject <NSMenuDelegate> {

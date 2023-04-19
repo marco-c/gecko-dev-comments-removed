@@ -161,6 +161,7 @@ class nsMenuX final : public nsMenuParentX,
   void Dump(uint32_t aIndent) const;
 
   static bool IsXULHelpMenu(nsIContent* aMenuContent);
+  static bool IsXULWindowMenu(nsIContent* aMenuContent);
 
   
   
