@@ -141,7 +141,6 @@ class SharedJSAllocatedData final {
 
 
 
-
 class StructuredCloneData : public StructuredCloneHolder {
  public:
   StructuredCloneData();
