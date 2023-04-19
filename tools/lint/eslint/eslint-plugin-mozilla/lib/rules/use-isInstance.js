@@ -8,6 +8,8 @@
 
 "use strict";
 
+const fs = require("fs");
+
 const { maybeGetMemberPropertyName } = require("../helpers");
 
 const privilegedGlobals = Object.keys(
@@ -85,6 +87,12 @@ function isChromeContext(context) {
     filename.endsWith(".jsm.js");
   if (isChromeFileName) {
     return true;
+  }
+
+  if (filename.endsWith(".xhtml")) {
+    
+    
+    return fs.readFileSync(filename).includes("there.is.only.xul");
   }
 
   
