@@ -121,8 +121,18 @@ public class SurfaceViewWrapper {
 
 
 
-  @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-  public static native boolean isSurfaceAbandoned(final Surface surface);
+  public static boolean isSurfaceAbandoned(final Surface surface) {
+    
+    
+    if (!GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+      return false;
+    }
+
+    return isSurfaceAbandonedNative(surface);
+  }
+
+  @WrapForJNI(calledFrom = "ui", dispatchTo = "current", stubName = "IsSurfaceAbandoned")
+  private static native boolean isSurfaceAbandonedNative(final Surface surface);
 
   
 
