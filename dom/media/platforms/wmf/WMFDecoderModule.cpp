@@ -107,7 +107,11 @@ void WMFDecoderModule::Init() {
   } else if (XRE_IsRDDProcess()) {
     
     
-    sDXVAEnabled = !!DeviceManagerDx::Get()->GetImageDevice();
+    
+    
+    
+    
+    sDXVAEnabled = false;
   } else {
     
     sDXVAEnabled = !mozilla::BrowserTabsRemoteAutostart();
