@@ -136,6 +136,8 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       
       supportsClearResources: true,
       
+      supportsSwitchingMode: true,
+      
       
       workerConsoleApiMessagesDispatchedToMainThread: Services.prefs
         ? Services.prefs.getBoolPref(
