@@ -422,28 +422,34 @@ void MathMLElement::MapMathMLAttributesInto(
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
   value = aAttributes->GetAttr(nsGkAtoms::scriptlevel_);
   if (value && value->Type() == nsAttrValue::eString &&
       !aDecls.PropertyIsSet(eCSSProperty_math_depth)) {
     auto str = value->GetStringValue();
+    
+    
     str.CompressWhitespace();
     if (str.Length() > 0) {
       nsresult errorCode;
       int32_t intValue = str.ToInteger(&errorCode);
+      bool reportParseError = true;
       if (NS_SUCCEEDED(errorCode)) {
         char16_t ch = str.CharAt(0);
         bool isRelativeScriptLevel = (ch == '+' || ch == '-');
-        aDecls.SetMathDepthValue(intValue, isRelativeScriptLevel);
-      } else {
+        
+        reportParseError = false;
+        for (uint32_t i = isRelativeScriptLevel ? 1 : 0; i < str.Length();
+             i++) {
+          if (!IsAsciiDigit(str.CharAt(i))) {
+            reportParseError = true;
+            break;
+          }
+        }
+        if (!reportParseError) {
+          aDecls.SetMathDepthValue(intValue, isRelativeScriptLevel);
+        }
+      }
+      if (reportParseError) {
         ReportParseErrorNoTag(str, nsGkAtoms::scriptlevel_, aDecls.Document());
       }
     }
