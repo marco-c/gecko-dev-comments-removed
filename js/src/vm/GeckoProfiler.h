@@ -210,6 +210,36 @@ class MOZ_RAII AutoGeckoProfilerEntry {
 
 
 
+
+
+
+
+class MOZ_RAII AutoJSMethodProfilerEntry : public AutoGeckoProfilerEntry {
+ public:
+  explicit MOZ_ALWAYS_INLINE AutoJSMethodProfilerEntry(
+      JSContext* cx, const char* label, const char* dynamicString = nullptr);
+};
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoJSConstructorProfilerEntry : public AutoGeckoProfilerEntry {
+ public:
+  explicit MOZ_ALWAYS_INLINE AutoJSConstructorProfilerEntry(JSContext* cx,
+                                                            const char* label);
+};
+
+
+
+
+
+
 class MOZ_RAII GeckoProfilerBaselineOSRMarker {
  public:
   explicit GeckoProfilerBaselineOSRMarker(JSContext* cx, bool hasProfilerFrame);
