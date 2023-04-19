@@ -460,7 +460,7 @@ class Accessible {
 
   bool IsTableCell() const { return mGenericTypes & eTableCell; }
 
-  bool IsTable() const { return HasGenericType(eTable); }
+  bool IsTable() const { return mGenericTypes & eTable; }
 
   bool IsHyperText() const { return HasGenericType(eHyperText); }
 
