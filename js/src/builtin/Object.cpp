@@ -45,6 +45,7 @@
 #  include "builtin/TupleObject.h"
 #endif
 
+#include "vm/GeckoProfiler-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/Shape-inl.h"
@@ -151,6 +152,7 @@ bool js::obj_propertyIsEnumerable(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static bool obj_toSource(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Object.prototype", "toSource");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   AutoCheckRecursionLimit recursion(cx);
@@ -664,6 +666,7 @@ static JSAtom* MaybeObjectToStringPrimitive(JSContext* cx, const Value& v) {
 
 
 bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Object.prototype", "toString");
   CallArgs args = CallArgsFromVp(argc, vp);
   RootedObject obj(cx);
 
@@ -1112,6 +1115,7 @@ JS_PUBLIC_API bool JS_AssignObject(JSContext* cx, JS::HandleObject target,
 
 
 static bool obj_assign(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Object", "assign");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -1868,6 +1872,7 @@ static bool EnumerableOwnProperties(JSContext* cx, const JS::CallArgs& args) {
 
 
 static bool obj_keys(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Object", "keys");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -1895,6 +1900,7 @@ static bool obj_keys(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool obj_values(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Object", "values");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -1904,6 +1910,7 @@ static bool obj_values(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool obj_entries(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Object", "entries");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -1978,6 +1985,7 @@ bool js::GetOwnPropertyKeys(JSContext* cx, HandleObject obj, unsigned flags,
 
 
 static bool obj_getOwnPropertyNames(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Object", "getOwnPropertyNames");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedObject obj(cx, ToObject(cx, args.get(0)));
@@ -2003,6 +2011,7 @@ static bool obj_getOwnPropertyNames(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool obj_getOwnPropertySymbols(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Object", "getOwnPropertySymbols");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedObject obj(cx, ToObject(cx, args.get(0)));
@@ -2018,6 +2027,7 @@ static bool obj_getOwnPropertySymbols(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool obj_defineProperties(JSContext* cx, unsigned argc, Value* vp) {
+  AutoJSMethodProfilerEntry pseudoFrame(cx, "Object", "defineProperties");
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
