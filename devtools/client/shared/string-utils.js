@@ -3,7 +3,9 @@
 
 "use strict";
 
-const { LongStringFront } = require("devtools/client/fronts/string");
+const {
+  LongStringFront,
+} = require("resource://devtools/client/fronts/string.js");
 
 
 

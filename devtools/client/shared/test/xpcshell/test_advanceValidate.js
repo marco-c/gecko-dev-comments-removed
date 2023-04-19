@@ -5,8 +5,10 @@
 
 
 
-const { advanceValidate } = require("devtools/client/inspector/shared/utils");
-const { KeyCodes } = require("devtools/client/shared/keycodes");
+const {
+  advanceValidate,
+} = require("resource://devtools/client/inspector/shared/utils.js");
+const { KeyCodes } = require("resource://devtools/client/shared/keycodes.js");
 
 
 

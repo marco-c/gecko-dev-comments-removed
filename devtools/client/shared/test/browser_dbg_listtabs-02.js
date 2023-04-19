@@ -7,8 +7,12 @@
 
 
 
-var { BrowserTabList } = require("devtools/server/actors/webbrowser");
-var { DevToolsServer } = require("devtools/server/devtools-server");
+var {
+  BrowserTabList,
+} = require("resource://devtools/server/actors/webbrowser.js");
+var {
+  DevToolsServer,
+} = require("resource://devtools/server/devtools-server.js");
 
 var gTestPage =
   "data:text/html;charset=utf-8," +

@@ -5,7 +5,9 @@
 
 
 
-const { splitBy } = require("devtools/client/shared/node-attribute-parser");
+const {
+  splitBy,
+} = require("resource://devtools/client/shared/node-attribute-parser.js");
 
 const TEST_DATA = [
   {

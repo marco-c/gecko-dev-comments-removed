@@ -7,10 +7,10 @@
 const {
   cssTokenizer,
   cssTokenizerWithLineColumn,
-} = require("devtools/shared/css/parsing-utils");
+} = require("resource://devtools/shared/css/parsing-utils.js");
 const {
   getClientCssProperties,
-} = require("devtools/client/fronts/css-properties");
+} = require("resource://devtools/client/fronts/css-properties.js");
 
 
 

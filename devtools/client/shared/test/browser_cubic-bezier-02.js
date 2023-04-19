@@ -7,10 +7,10 @@
 
 const {
   CubicBezierWidget,
-} = require("devtools/client/shared/widgets/CubicBezierWidget");
+} = require("resource://devtools/client/shared/widgets/CubicBezierWidget.js");
 const {
   PREDEFINED,
-} = require("devtools/client/shared/widgets/CubicBezierPresets");
+} = require("resource://devtools/client/shared/widgets/CubicBezierPresets.js");
 
 
 

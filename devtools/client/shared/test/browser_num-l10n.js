@@ -5,7 +5,7 @@
 
 
 
-const { LocalizationHelper } = require("devtools/shared/l10n");
+const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
 
 function test() {
   const l10n = new LocalizationHelper();

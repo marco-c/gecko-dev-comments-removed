@@ -61,16 +61,18 @@ const { loader, require } = ChromeUtils.import(
 
 
 
-const { gDevTools } = require("devtools/client/framework/devtools");
+const {
+  gDevTools,
+} = require("resource://devtools/client/framework/devtools.js");
 const {
   TabDescriptorFactory,
-} = require("devtools/client/framework/tab-descriptor-factory");
+} = require("resource://devtools/client/framework/tab-descriptor-factory.js");
 const {
   CommandsFactory,
-} = require("devtools/shared/commands/commands-factory");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+} = require("resource://devtools/shared/commands/commands-factory.js");
+const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
 
-const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
+const KeyShortcuts = require("resource://devtools/client/shared/key-shortcuts.js");
 
 loader.lazyRequireGetter(
   this,
@@ -154,7 +156,7 @@ try {
 }
 
 
-require("devtools/client/framework/devtools-browser");
+require("resource://devtools/client/framework/devtools-browser.js");
 
 
 if (isMochitest) {
@@ -234,7 +236,7 @@ registerCleanupFunction(() => {
 
 var {
   BrowserConsoleManager,
-} = require("devtools/client/webconsole/browser-console-manager");
+} = require("resource://devtools/client/webconsole/browser-console-manager.js");
 
 registerCleanupFunction(async function cleanup() {
   
@@ -255,7 +257,9 @@ registerCleanupFunction(async function cleanup() {
   await waitForTick();
 
   
-  const { DevToolsServer } = require("devtools/server/devtools-server");
+  const {
+    DevToolsServer,
+  } = require("resource://devtools/server/devtools-server.js");
   ok(
     !DevToolsServer.hasConnection(),
     "The main process DevToolsServer has no pending connection when the test ends"
@@ -1423,7 +1427,7 @@ async function registerActorInContentProcess(url, options) {
       );
       const {
         ActorRegistry,
-      } = require("devtools/server/actors/utils/actor-registry");
+      } = require("resource://devtools/server/actors/utils/actor-registry.js");
       ActorRegistry.registerModule(args.url, args.options);
     }
   );

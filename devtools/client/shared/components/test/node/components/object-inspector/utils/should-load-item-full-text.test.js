@@ -2,12 +2,12 @@
 
 
 
-const Utils = require("devtools/client/shared/components/object-inspector/utils/index");
+const Utils = require("resource://devtools/client/shared/components/object-inspector/utils/index.js");
 const { createNode } = Utils.node;
 const { shouldLoadItemFullText } = Utils.loadProperties;
 
-const longStringStubs = require("devtools/client/shared/components/test/node/stubs/reps/long-string");
-const symbolStubs = require("devtools/client/shared/components/test/node/stubs/reps/symbol");
+const longStringStubs = require("resource://devtools/client/shared/components/test/node/stubs/reps/long-string.js");
+const symbolStubs = require("resource://devtools/client/shared/components/test/node/stubs/reps/symbol.js");
 
 describe("shouldLoadItemFullText", () => {
   it("returns true for a longString node with unloaded full text", () => {

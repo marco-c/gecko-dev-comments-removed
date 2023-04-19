@@ -2,7 +2,7 @@
 
 
 
-const { loadItemProperties } = require("devtools/client/shared/components/object-inspector/utils/load-properties");
+const { loadItemProperties } = require("resource://devtools/client/shared/components/object-inspector/utils/load-properties.js");
 const {
   getPathExpression,
   getParentFront,
@@ -10,8 +10,8 @@ const {
   getValue,
   nodeIsBucket,
   getFront,
-} = require("devtools/client/shared/components/object-inspector/utils/node");
-const { getLoadedProperties, getWatchpoints } = require("devtools/client/shared/components/object-inspector/reducer");
+} = require("resource://devtools/client/shared/components/object-inspector/utils/node.js");
+const { getLoadedProperties, getWatchpoints } = require("resource://devtools/client/shared/components/object-inspector/reducer.js");
 
 
 

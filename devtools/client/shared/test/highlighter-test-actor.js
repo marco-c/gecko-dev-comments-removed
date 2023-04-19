@@ -8,7 +8,10 @@
 
 
 
-const { getRect, getAdjustedQuads } = require("devtools/shared/layout/utils");
+const {
+  getRect,
+  getAdjustedQuads,
+} = require("resource://devtools/shared/layout/utils.js");
 
 
 
@@ -29,7 +32,7 @@ const { TestUtils } = ChromeUtils.import(
   "resource://testing-common/TestUtils.jsm"
 );
 
-const protocol = require("devtools/shared/protocol");
+const protocol = require("resource://devtools/shared/protocol.js");
 const { Arg, RetVal } = protocol;
 
 const dumpn = msg => {

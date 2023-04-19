@@ -2,16 +2,16 @@
 
 
 
-const { Component } = require("devtools/client/shared/vendor/react");
-const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const { Component } = require("resource://devtools/client/shared/vendor/react.js");
+const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 
 const isMacOS = Services.appinfo.OS === "Darwin";
 
 const {
   MODE,
-} = require("devtools/client/shared/components/reps/reps/constants");
+} = require("resource://devtools/client/shared/components/reps/reps/constants.js");
 
-const Utils = require("devtools/client/shared/components/object-inspector/utils/index");
+const Utils = require("resource://devtools/client/shared/components/object-inspector/utils/index.js");
 
 const {
   getValue,

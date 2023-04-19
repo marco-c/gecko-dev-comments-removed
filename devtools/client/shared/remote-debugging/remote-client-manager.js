@@ -6,7 +6,7 @@
 
 const {
   CONNECTION_TYPES,
-} = require("devtools/client/shared/remote-debugging/constants");
+} = require("resource://devtools/client/shared/remote-debugging/constants.js");
 
 
 

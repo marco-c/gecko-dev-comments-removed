@@ -2,10 +2,10 @@
 
 
 
-const ObjectFront = require("devtools/client/shared/components/test/node/__mocks__/object-front");
+const ObjectFront = require("resource://devtools/client/shared/components/test/node/__mocks__/object-front.js");
 const {
   mountObjectInspector,
-} = require("devtools/client/shared/components/test/node/components/object-inspector/test-utils");
+} = require("resource://devtools/client/shared/components/test/node/components/object-inspector/test-utils.js");
 
 function generateDefaults(overrides) {
   return {

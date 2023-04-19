@@ -4,10 +4,10 @@
 
 "use strict";
 
-const { dumpn } = require("devtools/shared/DevToolsUtils");
+const { dumpn } = require("resource://devtools/shared/DevToolsUtils.js");
 const {
   runCommand,
-} = require("devtools/client/shared/remote-debugging/adb/commands/run-command");
+} = require("resource://devtools/client/shared/remote-debugging/adb/commands/run-command.js");
 
 
 const forwardPort = function(deviceId, localPort, devicePort) {

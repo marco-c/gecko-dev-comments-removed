@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { KeyCodes } = require("devtools/client/shared/keycodes");
+const { KeyCodes } = require("resource://devtools/client/shared/keycodes.js");
 
 const PANE_APPEARANCE_DELAY = 50;
 

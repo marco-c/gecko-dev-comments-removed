@@ -5,7 +5,7 @@
 
 
 
-const { PrefsHelper } = require("devtools/client/shared/prefs");
+const { PrefsHelper } = require("resource://devtools/client/shared/prefs.js");
 
 function test() {
   const Prefs = new PrefsHelper("prefs.helper.test", {

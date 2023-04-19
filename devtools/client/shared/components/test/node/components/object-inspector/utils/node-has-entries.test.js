@@ -2,13 +2,13 @@
 
 
 
-const gripArrayStubs = require("devtools/client/shared/components/test/node/stubs/reps/grip-array");
-const gripMapStubs = require("devtools/client/shared/components/test/node/stubs/reps/grip-map");
+const gripArrayStubs = require("resource://devtools/client/shared/components/test/node/stubs/reps/grip-array.js");
+const gripMapStubs = require("resource://devtools/client/shared/components/test/node/stubs/reps/grip-map.js");
 
 const {
   createNode,
   nodeHasEntries,
-} = require("devtools/client/shared/components/object-inspector/utils/node");
+} = require("resource://devtools/client/shared/components/object-inspector/utils/node.js");
 
 const createRootNode = value =>
   createNode({ name: "root", contents: { value } });

@@ -11,7 +11,7 @@ const TEST_URI =
 
 const TOOL_DELAY = 200;
 
-const asyncStorage = require("devtools/shared/async-storage");
+const asyncStorage = require("resource://devtools/shared/async-storage.js");
 
 
 
