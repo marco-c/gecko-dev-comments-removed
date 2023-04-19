@@ -1,0 +1,18 @@
+"use strict";
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(window.wrappedJSObject, "flag", {
+  get: exportFunction(function() {
+    return true;
+  }, window),
+
+  set: exportFunction(function() {}, window),
+});

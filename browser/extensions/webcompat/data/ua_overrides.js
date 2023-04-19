@@ -260,10 +260,7 @@ const AVAILABLE_UA_OVERRIDES = [
     config: {
       matches: ["*://*.ceskatelevize.cz/*"],
       uaTransformer: originalUA => {
-        return (
-          UAHelpers.getPrefix(originalUA) +
-          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.111 Mobile Safari/537.36"
-        );
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -719,7 +716,6 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://*.ibmserviceengage.com/*", 
         "*://*.wordpress.org/*", 
         "*://as.eservice.asus.com/*", 
-        "*://bethesda.net/*", 
         "*://cdn-vzn.yottaa.net/*", 
         "*://dsae.co.za/*", 
         "*://fpt.dfp.microsoft.com/*", 
@@ -839,7 +835,9 @@ const AVAILABLE_UA_OVERRIDES = [
     config: {
       matches: ["*://nordjyske.dk/*"],
       uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA("97.0.4692.9", "Pixel 4");
+        return UAHelpers.getDeviceAppropriateChromeUA({
+          androidDevice: "Pixel 4",
+        });
       },
     },
   },
@@ -894,7 +892,7 @@ const AVAILABLE_UA_OVERRIDES = [
     config: {
       matches: ["*://www.otsuka.co.jp/fib/*"],
       uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA("97.0.4692.9");
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -912,6 +910,64 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1771200",
     config: {
       matches: ["*://*.animalplanet.com/video/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1779059",
+    platform: "android",
+    domain: "lazada.co.id",
+    bug: "1779059",
+    config: {
+      matches: ["*://member-m.lazada.co.id/address/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1778168",
+    platform: "desktop",
+    domain: "watch.antennaplus.gr",
+    bug: "1778168",
+    config: {
+      matches: ["*://watch.antennaplus.gr/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA({
+          desktopOS: "nonLinux",
+        });
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1776897",
+    platform: "all",
+    domain: "www.edencast.fr",
+    bug: "1776897",
+    config: {
+      matches: ["*://www.edencast.fr/zoomcast*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
