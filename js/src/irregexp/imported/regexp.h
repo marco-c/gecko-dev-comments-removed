@@ -11,6 +11,9 @@
 namespace v8 {
 namespace internal {
 
+class JSRegExp;
+class RegExpCapture;
+class RegExpMatchInfo;
 class RegExpNode;
 class RegExpTree;
 
@@ -39,7 +42,7 @@ struct RegExpCompileData {
 
   
   
-  Handle<FixedArray> capture_name_map;
+  ZoneVector<RegExpCapture*>* named_captures = nullptr;
 
   
   
@@ -62,9 +65,15 @@ struct RegExpCompileData {
 class RegExp final : public AllStatic {
  public:
   
-  static bool CanGenerateBytecode() {
-    return FLAG_regexp_interpret_all || FLAG_regexp_tier_up;
-  }
+  static bool CanGenerateBytecode();
+
+  
+  
+  template <class CharT>
+  static bool VerifySyntax(Zone* zone, uintptr_t stack_limit,
+                           const CharT* input, int input_length,
+                           RegExpFlags flags, RegExpError* regexp_error_out,
+                           const DisallowGarbageCollection& no_gc);
 
   
   
@@ -72,7 +81,7 @@ class RegExp final : public AllStatic {
   
   V8_WARN_UNUSED_RESULT static MaybeHandle<Object> Compile(
       Isolate* isolate, Handle<JSRegExp> re, Handle<String> pattern,
-      JSRegExp::Flags flags, uint32_t backtrack_limit);
+      RegExpFlags flags, uint32_t backtrack_limit);
 
   
   
@@ -131,12 +140,9 @@ class RegExp final : public AllStatic {
       Isolate* isolate, Handle<RegExpMatchInfo> last_match_info,
       Handle<String> subject, int capture_count, int32_t* match);
 
-  V8_EXPORT_PRIVATE static bool CompileForTesting(Isolate* isolate, Zone* zone,
-                                                  RegExpCompileData* input,
-                                                  JSRegExp::Flags flags,
-                                                  Handle<String> pattern,
-                                                  Handle<String> sample_subject,
-                                                  bool is_one_byte);
+  V8_EXPORT_PRIVATE static bool CompileForTesting(
+      Isolate* isolate, Zone* zone, RegExpCompileData* input, RegExpFlags flags,
+      Handle<String> pattern, Handle<String> sample_subject, bool is_one_byte);
 
   V8_EXPORT_PRIVATE static void DotPrintForTesting(const char* label,
                                                    RegExpNode* node);
@@ -152,6 +158,9 @@ class RegExp final : public AllStatic {
                                    RegExpError error_text);
 
   static bool IsUnmodifiedRegExp(Isolate* isolate, Handle<JSRegExp> regexp);
+
+  static Handle<FixedArray> CreateCaptureNameMap(
+      Isolate* isolate, ZoneVector<RegExpCapture*>* named_captures);
 };
 
 
