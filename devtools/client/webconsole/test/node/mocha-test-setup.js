@@ -99,6 +99,9 @@ if (!global.ResizeObserver) {
   };
 }
 
+global.Services = require(mcRoot +
+  "devtools/client/shared/test-helpers/jest-fixtures/Services");
+
 
 global.ChromeUtils = {
   import: () => {},
@@ -140,8 +143,6 @@ requireHacker.global_hook("default", (path, module) => {
       `module.exports = { addProfilerMarker: () => {}, import: () => ({}) }`,
     
     
-    Services: () =>
-      getModule("devtools/client/shared/test-helpers/jest-fixtures/Services"),
     "devtools/server/devtools-server": () =>
       `module.exports = {DevToolsServer: {}}`,
     "devtools/client/shared/components/SmartTrace": () =>

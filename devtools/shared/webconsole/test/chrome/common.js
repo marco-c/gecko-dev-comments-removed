@@ -18,8 +18,6 @@ const {
   CommandsFactory,
 } = require("devtools/shared/commands/commands-factory");
 
-const Services = require("Services");
-
 
 
 

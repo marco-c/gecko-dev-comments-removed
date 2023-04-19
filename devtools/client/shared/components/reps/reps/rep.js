@@ -136,10 +136,9 @@ define(function(require, exports, module) {
 
   
   
-  const Services = require("Services");
   
   
-  if (Services?.prefs) {
+  if (typeof Services == "object" && Services?.prefs) {
     const customFormattersExperimentallyEnabled = Services.prefs.getBoolPref(
       "devtools.custom-formatters",
       false

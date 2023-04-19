@@ -8,7 +8,6 @@ const { KeyCodes } = require("devtools/client/shared/keycodes");
 
 const EventEmitter = require("devtools/shared/event-emitter");
 const AutocompletePopup = require("devtools/client/shared/autocomplete-popup");
-const Services = require("Services");
 
 
 const MAX_SUGGESTIONS = 15;

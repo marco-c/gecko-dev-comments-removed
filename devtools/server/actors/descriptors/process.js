@@ -21,7 +21,6 @@
 
 
 
-const Services = require("Services");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 const { Cc, Ci } = require("chrome");
 

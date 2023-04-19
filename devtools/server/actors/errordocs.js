@@ -11,7 +11,6 @@
 
 
 
-const Services = require("Services");
 
 loader.lazyGetter(this, "supportBaseURL", () => {
   

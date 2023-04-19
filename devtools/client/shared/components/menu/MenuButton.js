@@ -7,7 +7,6 @@
 
 
 
-const Services = require("Services");
 const flags = require("devtools/shared/flags");
 const {
   createRef,

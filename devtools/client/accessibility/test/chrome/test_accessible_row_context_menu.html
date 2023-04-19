@@ -1,11 +1,11 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Test that openLink function is called if accessible object property is rendered as a link.
+-->
 <head>
   <meta charset="utf-8">
   <title>AccessibilityRow context menu test</title>
@@ -23,7 +23,6 @@
 window.onload = async function() {
   try {
     const { gDevTools } = require("devtools/client/framework/devtools");
-    const Services = browserRequire("Services");
     const ReactDOM = browserRequire("devtools/client/shared/vendor/react-dom");
     const { createFactory, createElement } =
       browserRequire("devtools/client/shared/vendor/react");

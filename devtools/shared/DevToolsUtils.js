@@ -9,7 +9,6 @@
 
 
 var { Ci, Cc, Cu, components } = require("chrome");
-var Services = require("Services");
 var flags = require("devtools/shared/flags");
 var {
   getStack,

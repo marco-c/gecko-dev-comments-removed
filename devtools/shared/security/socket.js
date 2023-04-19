@@ -9,7 +9,6 @@ var { Ci, Cc, CC, Cr } = require("chrome");
 
 Cc["@mozilla.org/psm;1"].getService(Ci.nsISupports);
 
-var Services = require("Services");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
 var { dumpn } = DevToolsUtils;
 loader.lazyRequireGetter(

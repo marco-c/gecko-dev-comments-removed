@@ -14,8 +14,6 @@ const { require } = ChromeUtils.import(
 );
 const { NetUtil } = require("resource://gre/modules/NetUtil.jsm");
 
-const Services = require("Services");
-
 
 
 

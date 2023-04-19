@@ -8,7 +8,6 @@
 
 
 
-const Services = require("Services");
 const { gDevTools } = require("devtools/client/framework/devtools");
 
 

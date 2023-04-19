@@ -60,7 +60,6 @@ const { loader, require } = ChromeUtils.import(
 
 
 
-var Services = this.Services || require("Services");
 
 const { gDevTools } = require("devtools/client/framework/devtools");
 const {
@@ -330,9 +329,6 @@ function highlighterTestActorBootstrap() {
     "resource://devtools/shared/loader/Loader.jsm"
   );
   _require(HIGHLIGHTER_TEST_ACTOR_URL);
-
-  
-  const Services = _require("Services");
 
   const actorRegistryObserver = subject => {
     const actorRegistry = subject.wrappedJSObject;

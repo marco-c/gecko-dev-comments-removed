@@ -28,7 +28,6 @@ const { createLazyLoaders } = ChromeUtils.import(
 
 const lazy = createLazyLoaders({
   Chrome: () => require("chrome"),
-  Services: () => require("Services"),
 });
 
 
@@ -60,8 +59,6 @@ const UI_BASE_URL_PATH_DEFAULT = "/from-browser";
 
 
 async function openProfilerTab(profilerViewMode) {
-  const Services = lazy.Services();
-
   
   const baseUrl = Services.prefs.getStringPref(
     UI_BASE_URL_PREF,
@@ -149,7 +146,6 @@ function sharedLibrariesFromProfile(profile) {
 
 
 function restartBrowserWithEnvironmentVariable(envName, value) {
-  const Services = lazy.Services();
   const { Cc, Ci } = lazy.Chrome();
   const env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment

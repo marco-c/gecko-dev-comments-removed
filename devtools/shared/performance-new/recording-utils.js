@@ -18,30 +18,7 @@
 
 
 
-
-
-
-
-function requireLazy(callback) {
-  
-  let cache;
-  return () => {
-    if (cache === undefined) {
-      cache = callback();
-    }
-    return cache;
-  };
-}
-
-const lazyServices = requireLazy(() => require("Services"));
-
-
-
-
-
-
 function getActiveBrowserID() {
-  const Services = lazyServices();
   const win = Services.wm.getMostRecentWindow("navigator:browser");
 
   if (win?.gBrowser?.selectedBrowser?.browsingContext?.browserId) {

@@ -16,9 +16,10 @@ module.exports = {
     
     "shared/DevToolsUtils$": `${fixturesDir}/devtools-utils`,
     "^ChromeUtils": `${fixturesDir}/ChromeUtils`,
-    "^Services": `${fixturesDir}/Services`,
+
     
-    "devtools-services": `${fixturesDir}/Services`,
+    "Services-mock": `${fixturesDir}/Services`,
+
     "^promise": `${fixturesDir}/promise`,
     "^chrome": `${fixturesDir}/Chrome`,
     "^devtools/client/shared/fluent-l10n/fluent-l10n$": `${fixturesDir}/fluent-l10n`,

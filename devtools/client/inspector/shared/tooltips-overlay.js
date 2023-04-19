@@ -9,7 +9,6 @@
 
 
 
-const Services = require("Services");
 const flags = require("devtools/shared/flags");
 const {
   VIEW_NODE_VALUE_TYPE,

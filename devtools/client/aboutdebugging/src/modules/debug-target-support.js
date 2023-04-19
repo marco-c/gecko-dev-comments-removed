@@ -10,8 +10,6 @@ const {
   RUNTIMES,
 } = require("devtools/client/aboutdebugging/src/constants");
 
-const Services = require("Services");
-
 
 function isProcessDebuggingSupported() {
   return Services.prefs.getBoolPref(

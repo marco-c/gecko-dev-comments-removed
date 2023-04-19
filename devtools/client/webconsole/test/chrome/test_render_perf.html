@@ -5,8 +5,8 @@
   <title>Test for getRepeatId()</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script type="application/javascript" src="head.js"></script>
-  
-
+  <!-- Any copyright is dedicated to the Public Domain.
+     - http://creativecommons.org/publicdomain/zero/1.0/ -->
 </head>
 <body>
 <p>Test for render perf</p>
@@ -23,7 +23,6 @@
 const NUM_MESSAGES = 4000;
 const NUM_STREAMING = 100;
 const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
-const Services = browserRequire("Services");
 Services.prefs.setIntPref("devtools.hud.loglimit", NUM_MESSAGES);
 const WebConsoleWrapper = browserRequire("devtools/client/webconsole/webconsole-wrapper");
 const actions =

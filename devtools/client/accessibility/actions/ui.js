@@ -3,8 +3,6 @@
 
 "use strict";
 
-const Services = require("Services");
-
 const {
   ENABLE,
   RESET,

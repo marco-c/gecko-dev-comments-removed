@@ -4,8 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
-
 
 const CONTENT_PROCESS_SCRIPT =
   "resource://devtools/server/actors/webconsole/content-process-forward.js";

@@ -6,8 +6,6 @@
 
 const ResourceCommand = require("devtools/shared/commands/resource/resource-command");
 
-const Services = require("Services");
-
 
 
 

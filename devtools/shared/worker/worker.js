@@ -168,7 +168,6 @@
         "used in production."
     );
     
-    const Services = require("Services");
     const { URL, Blob } = Services.wm.getMostRecentWindow("navigator:browser");
     const stringifiedFn = createWorkerString(fn);
     const blob = new Blob([stringifiedFn]);

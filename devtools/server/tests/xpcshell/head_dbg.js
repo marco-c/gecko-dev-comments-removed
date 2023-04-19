@@ -26,7 +26,6 @@ const { worker } = ChromeUtils.import(
 
 const { NetUtil } = require("resource://gre/modules/NetUtil.jsm");
 
-const Services = require("Services");
 
 
 Services.prefs.setBoolPref("devtools.debugger.log", false);

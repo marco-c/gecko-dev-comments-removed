@@ -9,7 +9,6 @@
 
 
 const { Ci, Cc } = require("chrome");
-const Services = require("Services");
 const { getRect, getAdjustedQuads } = require("devtools/shared/layout/utils");
 
 

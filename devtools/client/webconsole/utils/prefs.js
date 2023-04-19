@@ -3,7 +3,6 @@
 
 
 "use strict";
-const Services = require("Services");
 
 function getPreferenceName(hud, suffix) {
   if (!suffix) {

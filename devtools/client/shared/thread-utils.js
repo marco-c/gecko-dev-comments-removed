@@ -3,7 +3,6 @@
 
 "use strict";
 
-var Services = require("Services");
 const asyncStoreHelper = require("devtools/client/shared/async-store-helper");
 const {
   validateBreakpointLocation,

@@ -10,6 +10,8 @@
 
 
 function setMocksInGlobal() {
+  global.Services = require("Services-mock");
+
   global.isWorker = false;
 
   global.loader = {

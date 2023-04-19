@@ -5,7 +5,6 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-const Services = require("Services");
 
 
 const CONSOLE_ENTRY_THRESHOLD = 5;

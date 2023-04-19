@@ -3,7 +3,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const {
   Component,
   createFactory,

@@ -5,7 +5,6 @@
 const { PrefsHelper } = require("devtools/client/shared/prefs");
 
 import { isNode } from "./environment";
-import Services from "devtools-services";
 
 
 

@@ -1362,7 +1362,6 @@ Decoder.decode = function(bits) {
 };
 
 
-var Services = require("Services");
 
 var DevToolsServer = require("devtools/server/devtools-server").DevToolsServer;
 

@@ -225,7 +225,6 @@ exports.modules = {
   
   
   Promise,
-  Services: Object.create(Services),
   TelemetryStopwatch,
 };
 
@@ -296,6 +295,7 @@ exports.globals = {
   Node,
   PathUtils,
   reportError: Cu.reportError,
+  Services: Object.create(Services),
   StructuredCloneHolder,
   TextDecoder,
   TextEncoder,

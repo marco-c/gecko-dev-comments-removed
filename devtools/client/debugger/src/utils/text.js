@@ -6,10 +6,8 @@
 
 
 
-import Services from "devtools-services";
-const { appinfo } = Services;
 
-const isMacOS = appinfo.OS === "Darwin";
+const isMacOS = Services.appinfo.OS === "Darwin";
 
 
 
