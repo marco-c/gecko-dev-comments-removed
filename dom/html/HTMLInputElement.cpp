@@ -6508,24 +6508,25 @@ void HTMLInputElement::UpdateValueMissingValidityStateForRadio(
 
   HTMLInputElement* selection = GetSelectedRadioButton();
 
-  aIgnoreSelf = aIgnoreSelf || !IsMutable();
-
   
   
   bool selected = selection || (!aIgnoreSelf && mChecked);
   bool required = !aIgnoreSelf && IsRequired();
-  bool valueMissing = false;
 
   nsCOMPtr<nsIRadioGroupContainer> container = GetRadioGroupContainer();
 
-  if (!container) {
-    SetValidityState(VALIDITY_STATE_VALUE_MISSING,
-                     IsMutable() && required && !selected);
-    return;
-  }
-
   nsAutoString name;
   GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+
+  if (!container) {
+    
+    
+    
+    
+    SetValidityState(VALIDITY_STATE_VALUE_MISSING,
+                     required && !selected && !name.IsEmpty());
+    return;
+  }
 
   
   
@@ -6535,8 +6536,7 @@ void HTMLInputElement::UpdateValueMissingValidityStateForRadio(
                    : container->GetRequiredRadioCount(name);
   }
 
-  valueMissing = required && !selected;
-
+  bool valueMissing = required && !selected;
   if (container->GetValueMissingState(name) != valueMissing) {
     container->SetValueMissingState(name, valueMissing);
 
