@@ -11,14 +11,14 @@ const { DevToolsLoader } = ChromeUtils.import(
 loader.lazyRequireGetter(
   this,
   "DevToolsServer",
-  "devtools/server/devtools-server",
+  "resource://devtools/server/devtools-server.js",
   true
 );
 
 loader.lazyRequireGetter(
   this,
   "DevToolsClient",
-  "devtools/client/devtools-client",
+  "resource://devtools/client/devtools-client.js",
   true
 );
 
