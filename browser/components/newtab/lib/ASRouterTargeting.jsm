@@ -715,6 +715,32 @@ const TargetingGetters = {
   get doesAppNeedPrivatePin() {
     return QueryCache.getters.doesAppNeedPrivatePin.get();
   },
+
+  
+
+
+
+
+  get isBackgroundTaskMode() {
+    let bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
+      Ci.nsIBackgroundTasks
+    );
+    return !!bts?.isBackgroundTaskMode;
+  },
+
+  
+
+
+
+
+
+
+  get backgroundTaskName() {
+    let bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
+      Ci.nsIBackgroundTasks
+    );
+    return bts?.backgroundTaskName();
+  },
 };
 
 const ASRouterTargeting = {
