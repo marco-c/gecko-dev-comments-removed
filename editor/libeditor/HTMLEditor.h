@@ -1485,9 +1485,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  SplitParagraph(Element& aParentDivOrP,
-                 const EditorDOMPoint& aStartOfRightNode, nsIContent* aBRNode);
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitNodeResult
+  SplitParagraphWithTransaction(Element& aParentDivOrP,
+                                const EditorDOMPoint& aStartOfRightNode,
+                                dom::HTMLBRElement* aMayBecomeVisibleBRElement);
 
   
 

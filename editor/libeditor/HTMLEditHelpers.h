@@ -543,6 +543,18 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
 
 
+  SplitNodeResult(SplitNodeResult&& aSplitResult,
+                  const EditorDOMPoint& aNewCaretPoint)
+      : SplitNodeResult(std::move(aSplitResult)) {
+    MOZ_ASSERT(isOk());
+    mCaretPoint = aNewCaretPoint;
+    mHandledCaretPoint = false;
+  }
+
+  
+
+
+
 
 
 
