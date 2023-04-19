@@ -10112,7 +10112,7 @@ static Maybe<LayoutDeviceToScreenScale> ParseScaleString(
   } else if (aScaleString.EqualsLiteral("yes")) {
     return Some(LayoutDeviceToScreenScale(1.0f));
   } else if (aScaleString.EqualsLiteral("no")) {
-    return Some(LayoutDeviceToScreenScale(kViewportMinScale));
+    return Some(LayoutDeviceToScreenScale(ViewportMinScale()));
   } else if (aScaleString.IsEmpty()) {
     return Nothing();
   }
@@ -10120,14 +10120,14 @@ static Maybe<LayoutDeviceToScreenScale> ParseScaleString(
   nsresult scaleErrorCode;
   float scale = aScaleString.ToFloatAllowTrailingChars(&scaleErrorCode);
   if (NS_FAILED(scaleErrorCode)) {
-    return Some(LayoutDeviceToScreenScale(kViewportMinScale));
+    return Some(LayoutDeviceToScreenScale(ViewportMinScale()));
   }
 
   if (scale < 0) {
     return Nothing();
   }
-  return Some(clamped(LayoutDeviceToScreenScale(scale), kViewportMinScale,
-                      kViewportMaxScale));
+  return Some(clamped(LayoutDeviceToScreenScale(scale), ViewportMinScale(),
+                      ViewportMaxScale()));
 }
 
 void Document::ParseScalesInViewportMetaData(
@@ -10142,11 +10142,11 @@ void Document::ParseScalesInViewportMetaData(
   
   
   
-  mScaleMaxFloat = scale.valueOr(kViewportMaxScale);
+  mScaleMaxFloat = scale.valueOr(ViewportMaxScale());
   mValidMaxScale = scale.isSome();
 
   scale = ParseScaleString(aViewportMetaData.mMinimumScale);
-  mScaleMinFloat = scale.valueOr(kViewportMinScale);
+  mScaleMinFloat = scale.valueOr(ViewportMinScale());
   mValidMinScale = scale.isSome();
 
   
@@ -10355,8 +10355,8 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
         
         
         
-        effectiveMinScale = kViewportMinScale;
-        effectiveMaxScale = kViewportMaxScale;
+        effectiveMinScale = ViewportMinScale();
+        effectiveMaxScale = ViewportMaxScale();
         effectiveValidMaxScale = true;
         effectiveZoomFlag = nsViewportInfo::ZoomFlag::AllowZoom;
       }
