@@ -274,7 +274,13 @@ bool KillProcess(ProcessHandle process, int exit_code);
 
 
 
-bool IsProcessDead(ProcessHandle handle);
+
+
+
+
+
+
+bool IsProcessDead(ProcessHandle handle, bool blocking = false);
 #endif
 
 }  

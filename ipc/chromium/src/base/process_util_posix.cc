@@ -187,7 +187,7 @@ void CloseSuperfluousFds(void* aCtx, bool (*aShouldPreserve)(void*, int)) {
   }
 }
 
-bool IsProcessDead(ProcessHandle handle) {
+bool IsProcessDead(ProcessHandle handle, bool blocking) {
 #ifdef MOZ_ENABLE_FORKSERVER
   if (mozilla::ipc::ForkServiceChild::Get()) {
     
@@ -202,8 +202,15 @@ bool IsProcessDead(ProcessHandle handle) {
     return r < 0 && errno == ESRCH;
   }
 #endif
-  int status;
-  const int result = HANDLE_EINTR(waitpid(handle, &status, WNOHANG));
+
+  
+  
+  
+  
+  
+  siginfo_t si{};
+  const int wflags = WEXITED | WNOWAIT | (blocking ? 0 : WNOHANG);
+  int result = HANDLE_EINTR(waitid(P_PID, handle, &si, wflags));
   if (result == -1) {
     
     
@@ -215,14 +222,54 @@ bool IsProcessDead(ProcessHandle handle) {
     
     
     
-    CHROMIUM_LOG(ERROR) << "waitpid failed pid:" << handle
-                        << " errno:" << errno;
+    CHROMIUM_LOG(ERROR) << "waitid failed pid:" << handle << " errno:" << errno;
     return true;
-  } else if (result == 0) {
+  }
+
+  if (si.si_pid == 0) {
     
     return false;
   }
 
+  DCHECK(si.si_pid == handle);
+  switch (si.si_code) {
+    case CLD_STOPPED:
+    case CLD_CONTINUED:
+      DCHECK(false) << "waitid returned an event type that it shouldn't have";
+      [[fallthrough]];
+    case CLD_TRAPPED:
+      CHROMIUM_LOG(WARNING) << "ignoring non-exit event for process " << handle;
+      return false;
+
+    case CLD_KILLED:
+    case CLD_DUMPED:
+      CHROMIUM_LOG(WARNING)
+          << "process " << handle << " exited on signal " << si.si_status;
+      break;
+
+    case CLD_EXITED:
+      if (si.si_status != 0) {
+        CHROMIUM_LOG(WARNING)
+            << "process " << handle << " exited with status " << si.si_status;
+      }
+      break;
+
+    default:
+      CHROMIUM_LOG(ERROR) << "unexpected waitid si_code value: " << si.si_code;
+      DCHECK(false);
+      
+      
+  }
+
+  
+  const int old_si_code = si.si_code;
+  si.si_pid = 0;
+  
+  
+  result = HANDLE_EINTR(waitid(P_PID, handle, &si, WEXITED | WNOHANG));
+  DCHECK(result == 0);
+  DCHECK(si.si_pid == handle);
+  DCHECK(si.si_code == old_si_code);
   return true;
 }
 
