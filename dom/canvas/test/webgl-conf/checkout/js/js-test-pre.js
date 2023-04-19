@@ -21,7 +21,6 @@
     }
 
     if (window.layoutTestController) {
-      window.layoutTestController.overridePreference("WebKitWebGLEnabled", "1");
       window.layoutTestController.dumpAsText();
       window.layoutTestController.waitUntilDone();
     }
@@ -753,8 +752,6 @@ function webglHarnessCollectGarbage() {
     }
 
     
-    
-    
     if (window.$vm) {
         window.$vm.gc();
         return;
@@ -789,3 +786,16 @@ function finishTest() {
   document.body.appendChild(epilogue);
 }
 
+
+
+function call(fn) {
+    return fn();
+}
+
+
+
+function* range(n) {
+  for (let i = 0; i < n; i++) {
+    yield i;
+  }
+}

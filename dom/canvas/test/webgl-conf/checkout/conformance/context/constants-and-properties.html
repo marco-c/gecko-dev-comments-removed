@@ -1,8 +1,8 @@
-
-
-
-
-
+<!--
+Copyright (c) 2019 The Khronos Group Inc.
+Use of this source code is governed by an MIT-style license that can be
+found in the LICENSE.txt file.
+-->
 <!DOCTYPE html>
 <html>
 <head>
@@ -442,9 +442,11 @@ BROWSER_DEFAULT_WEBGL              : 0x9244
 
 // Other non-function properties on the WebGL object
 var otherProperties = {
-drawingBufferWidth  : "number",
-drawingBufferHeight : "number",
-canvas              : "implementation-dependent"
+drawingBufferWidth      : "number",
+drawingBufferHeight     : "number",
+drawingBufferColorSpace : "string",
+unpackColorSpace        : "string",
+canvas                  : "implementation-dependent"
 };
 
 // Properties to be ignored (as a list of strings) because they were

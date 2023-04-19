@@ -1,8 +1,8 @@
-
-
-
-
-
+<!--
+Copyright (c) 2019 The Khronos Group Inc.
+Use of this source code is governed by an MIT-style license that can be
+found in the LICENSE.txt file.
+-->
 
 <!DOCTYPE html>
 <html>
@@ -82,7 +82,7 @@ async function fence() {
     do {
         await wait();
         status = gl.clientWaitSync(sync, 0, 0);
-    } while (status != gl.ALREADY_SIGNALED && status != gl.CONDITION_SATISIFIED);
+    } while (status != gl.ALREADY_SIGNALED && status != gl.CONDITION_SATISFIED);
     gl.deleteSync(sync);
 }
 
