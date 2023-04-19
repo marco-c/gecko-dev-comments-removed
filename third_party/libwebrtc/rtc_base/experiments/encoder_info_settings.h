@@ -58,6 +58,13 @@ class SimulcastEncoderAdapterEncoderInfoSettings : public EncoderInfoSettings {
 };
 
 
+class LibvpxVp8EncoderInfoSettings : public EncoderInfoSettings {
+ public:
+  LibvpxVp8EncoderInfoSettings();
+  ~LibvpxVp8EncoderInfoSettings() override {}
+};
+
+
 class LibvpxVp9EncoderInfoSettings : public EncoderInfoSettings {
  public:
   LibvpxVp9EncoderInfoSettings();
