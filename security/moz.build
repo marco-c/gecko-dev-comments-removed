@@ -88,6 +88,9 @@ gyp_vars["disable_libpkix"] = 1
 gyp_vars["enable_sslkeylogfile"] = 1
 
 
+gyp_vars["disable_ckbi"] = 1
+
+
 
 gyp_vars["zlib_libs"] = "-lz"
 gyp_vars["ssl_enable_zlib"] = 0
