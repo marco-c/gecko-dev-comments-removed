@@ -1420,6 +1420,7 @@ nsCSSFrameConstructor::AutoFrameConstructionPageName::
   MOZ_ASSERT(mNameToRestore,
              "Page name should have been found by EnsureAutoPageName");
   MaybeApplyPageName(aState, aFrame->StylePage()->mPage);
+  aFrame->SetAutoPageValue(aState.mAutoPageNameValue);
   
   
   
