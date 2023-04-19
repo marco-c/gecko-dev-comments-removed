@@ -266,6 +266,7 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
   static nsresult Init();
   static nsresult Shutdown();
   static nsresult OnProfile();
+  static nsresult OnDelayedStartupFinished();
   static already_AddRefed<nsIEventTarget> IOTarget();
   static already_AddRefed<CacheIOThread> IOThread();
   static bool IsOnIOThread();
@@ -429,6 +430,14 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
 
   static nsresult CacheIndexStateChanged();
   void CacheIndexStateChangedInternal();
+
+  
+  
+  
+  
+  nsresult DispatchPurgeTask(const nsCString& aCacheDirName,
+                             const nsCString& aSecondsToWait,
+                             const nsCString& aPurgeExtension);
 
   
   
