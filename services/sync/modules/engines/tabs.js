@@ -36,7 +36,7 @@ const { SyncRecord, SyncTelemetry } = ChromeUtils.import(
   "resource://services-sync/telemetry.js"
 );
 
-const { BridgedEngine, LogAdapter } = ChromeUtils.import(
+const { BridgedEngine, BridgedStore, LogAdapter } = ChromeUtils.import(
   "resource://services-sync/bridged_engine.js"
 );
 
@@ -81,6 +81,10 @@ TabEngine.prototype = {
   __proto__: BridgedEngine.prototype,
   _trackerObj: TabTracker,
   syncPriority: 3,
+
+  get _storeObj() {
+    return TabsBridgedStore;
+  },
 
   async prepareTheBridge(isQuickWrite) {
     let clientsEngine = this.service.clientsEngine;
@@ -180,6 +184,7 @@ TabEngine.prototype = {
       }
       let client = {
         tabs: rustClient.remoteTabs,
+        lastModified: this._store.clientsLastSync[remoteClient.id] || 0,
         ...remoteClient,
       };
       remoteClientTabs.push(client);
@@ -333,6 +338,27 @@ TabEngine.prototype = {
     }
   },
 };
+
+
+
+
+class TabsBridgedStore extends BridgedStore {
+  constructor(name, engine) {
+    super(name, engine);
+    
+    
+    this.clientsLastSync = {};
+  }
+
+  async applyIncomingBatch(records) {
+    
+    this.clientsLastSync = {};
+    for (let record of records) {
+      this.clientsLastSync[record.id] = record.modified;
+    }
+    return super.applyIncomingBatch(records);
+  }
+}
 
 const TabProvider = {
   getWindowEnumerator() {
