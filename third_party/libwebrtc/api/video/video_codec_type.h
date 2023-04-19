@@ -13,7 +13,6 @@
 
 namespace webrtc {
 
-
 enum VideoCodecType {
   
   
