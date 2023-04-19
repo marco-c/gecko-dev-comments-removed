@@ -219,7 +219,12 @@ RTC_OBJC_EXPORT
 - (void)close;
 
 
-- (void)addIceCandidate:(RTC_OBJC_TYPE(RTCIceCandidate) *)candidate;
+- (void)addIceCandidate:(RTC_OBJC_TYPE(RTCIceCandidate) *)candidate
+    DEPRECATED_MSG_ATTRIBUTE("Please use addIceCandidate:completionHandler: instead");
+
+
+- (void)addIceCandidate:(RTC_OBJC_TYPE(RTCIceCandidate) *)candidate
+      completionHandler:(void (^)(NSError *_Nullable error))completionHandler;
 
 
 - (void)removeIceCandidates:(NSArray<RTC_OBJC_TYPE(RTCIceCandidate) *> *)candidates;
