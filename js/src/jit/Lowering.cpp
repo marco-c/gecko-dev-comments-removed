@@ -305,7 +305,7 @@ void LIRGenerator::visitCreateInlinedArgumentsObject(
 }
 
 void LIRGenerator::visitGetInlinedArgument(MGetInlinedArgument* ins) {
-#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_MIPS64)
+#if defined(JS_PUNBOX64)
   
   
   
