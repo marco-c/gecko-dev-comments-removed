@@ -106,9 +106,8 @@ enum class SessionState {
               
 };
 
-class RTC_EXPORT BasicPortAllocatorSession
-    : public PortAllocatorSession,
-      public rtc::MessageHandlerAutoCleanup {
+class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
+                                             public rtc::MessageHandler {
  public:
   BasicPortAllocatorSession(BasicPortAllocator* allocator,
                             const std::string& content_name,
@@ -324,7 +323,7 @@ class TurnPort;
 
 
 
-class AllocationSequence : public rtc::MessageHandlerAutoCleanup,
+class AllocationSequence : public rtc::MessageHandler,
                            public sigslot::has_slots<> {
  public:
   enum State {
