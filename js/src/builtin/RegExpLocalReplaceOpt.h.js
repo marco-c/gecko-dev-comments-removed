@@ -41,8 +41,9 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
     if (globalOrSticky) {
         
         if (lastIndex > lengthS) {
-            if (globalOrSticky)
+            if (globalOrSticky) {
                 rx.lastIndex = 0;
+            }
 
             
             return S;
@@ -59,8 +60,9 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
     
     if (result === null) {
         
-        if (globalOrSticky)
+        if (globalOrSticky) {
             rx.lastIndex = 0;
+        }
 
         
         return S;
@@ -72,8 +74,9 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
     
     if (result === -1) {
         
-        if (globalOrSticky)
+        if (globalOrSticky) {
             rx.lastIndex = 0;
+        }
 
         
         return S;
@@ -109,8 +112,9 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
 #endif
 
     
-    if (globalOrSticky)
+    if (globalOrSticky) {
        rx.lastIndex = nextSourcePosition;
+    }
 
     var replacement;
     
@@ -133,8 +137,9 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
     var accumulatedResult = Substring(S, 0, position) + replacement;
 
     
-    if (nextSourcePosition >= lengthS)
+    if (nextSourcePosition >= lengthS) {
         return accumulatedResult;
+    }
 
     
     return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
