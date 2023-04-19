@@ -548,7 +548,7 @@ bool nsNativeTheme::IsRangeHorizontal(nsIFrame* aFrame) {
 }
 
 
-bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
+bool nsNativeTheme::IsDarkBackgroundForScrollbar(nsIFrame* aFrame) {
   
   
   {
@@ -565,6 +565,11 @@ bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
     }
   }
 
+  return IsDarkBackground(aFrame);
+}
+
+
+bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
   auto color =
       nsCSSRendering::FindEffectiveBackgroundColor(
           aFrame,  false,  true)
