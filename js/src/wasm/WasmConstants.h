@@ -769,72 +769,13 @@ enum class SimdOp {
   I16x8RelaxedQ15MulrS = 0x111,
   I16x8DotI8x16I7x16S = 0x112,
   I32x4DotI8x16I7x16AddS = 0x113,
-
-
-
-
-
-
-#ifdef ENABLE_WASM_SIMD_WORMHOLE
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
 
   
-  
 
   
-  
-  MozWHSELFTEST = 0x200,
-
-  
-  MozWHPMADDUBSW = 0x201,
-
-  
-  MozWHPMADDWD = 0x202,
-#endif
+  MozPMADDUBSW = 0x201,
 
   Limit
 };

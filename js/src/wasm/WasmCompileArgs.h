@@ -73,10 +73,8 @@ class Tiers {
 
 
 struct FeatureOptions {
-  FeatureOptions() : simdWormhole(false), intrinsics(false) {}
+  FeatureOptions() : intrinsics(false) {}
 
-  
-  bool simdWormhole;
   
   bool intrinsics;
 };
@@ -91,7 +89,6 @@ struct FeatureArgs {
 #undef WASM_FEATURE
             sharedMemory(Shareable::False),
         simd(false),
-        simdWormhole(false),
         intrinsics(false) {
   }
   FeatureArgs(const FeatureArgs&) = default;
@@ -106,7 +103,6 @@ struct FeatureArgs {
 
   Shareable sharedMemory;
   bool simd;
-  bool simdWormhole;
   bool intrinsics;
 };
 

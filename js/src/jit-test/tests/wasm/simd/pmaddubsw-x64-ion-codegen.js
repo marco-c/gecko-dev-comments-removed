@@ -5,7 +5,6 @@
 
 
 
-
 const isX64 = getBuildConfiguration().x64 && !getBuildConfiguration().simulator;
 
 

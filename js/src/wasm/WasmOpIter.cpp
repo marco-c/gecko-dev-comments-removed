@@ -334,6 +334,7 @@ OpKind wasm::Classify(OpBytes op) {
     }
     case Op::SimdPrefix: {
       switch (SimdOp(op.b1)) {
+        case SimdOp::MozPMADDUBSW:
         case SimdOp::Limit:
           
           break;
@@ -607,12 +608,6 @@ OpKind wasm::Classify(OpBytes op) {
         case SimdOp::I64x2RelaxedLaneSelect:
         case SimdOp::I32x4DotI8x16I7x16AddS:
           WASM_SIMD_OP(OpKind::Ternary);
-#  ifdef ENABLE_WASM_SIMD_WORMHOLE
-        case SimdOp::MozWHSELFTEST:
-        case SimdOp::MozWHPMADDUBSW:
-        case SimdOp::MozWHPMADDWD:
-          MOZ_CRASH("Should not be seen");
-#  endif
       }
       break;
     }

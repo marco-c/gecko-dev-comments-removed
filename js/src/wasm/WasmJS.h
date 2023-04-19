@@ -159,9 +159,6 @@ bool SimdAvailable(JSContext* cx);
 
 bool IsSimdPrivilegedContext(JSContext* cx);
 
-
-bool SimdWormholeAvailable(JSContext* cx);
-
 #if defined(ENABLE_WASM_SIMD) && defined(DEBUG)
 
 void ReportSimdAnalysis(const char* data);
@@ -175,7 +172,7 @@ bool ExceptionsAvailable(JSContext* cx);
 
 
 [[nodiscard]] bool Eval(JSContext* cx, Handle<TypedArrayObject*> code,
-                        HandleObject importObj, HandleValue maybeOptions,
+                        HandleObject importObj,
                         MutableHandle<WasmInstanceObject*> instanceObj);
 
 
