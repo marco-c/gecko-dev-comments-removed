@@ -2,7 +2,7 @@
 
 
 
-const { SourceMapConsumer } = require("source-map");
+const { SourceMapConsumer } = require("devtools/client/shared/vendor/source-map/source-map.js");
 const {
   setAssetRootURL: wasmDwarfSetAssetRootURL,
 } = require("../wasm-dwarf/wasmAsset");

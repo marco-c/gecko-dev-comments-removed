@@ -1,0 +1,21 @@
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+module.exports = require("../../whatwg-url.js").URL;
