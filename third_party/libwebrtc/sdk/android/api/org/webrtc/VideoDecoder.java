@@ -90,7 +90,10 @@ public interface VideoDecoder {
 
 
 
-  @CalledByNative boolean getPrefersLateDecoding();
+  
+  default boolean getPrefersLateDecoding() {
+    return true;
+  }
   
 
 

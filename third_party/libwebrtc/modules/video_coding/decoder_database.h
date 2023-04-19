@@ -59,10 +59,6 @@ class VCMDecoderDataBase {
       const VCMEncodedFrame& frame,
       VCMDecodedFrameCallback* decoded_frame_callback);
 
-  
-  
-  bool PrefersLateDecoding() const;
-
  private:
   typedef std::map<uint8_t, VCMDecoderMapItem*> DecoderMap;
   typedef std::map<uint8_t, VCMExtDecoderMapItem*> ExternalDecoderMap;

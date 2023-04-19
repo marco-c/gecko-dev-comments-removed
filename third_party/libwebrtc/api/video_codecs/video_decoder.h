@@ -59,6 +59,7 @@ class RTC_EXPORT VideoDecoder {
   
   
   
+  
   virtual bool PrefersLateDecoding() const;
 
   virtual const char* ImplementationName() const;

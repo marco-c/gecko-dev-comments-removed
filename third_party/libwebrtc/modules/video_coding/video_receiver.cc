@@ -173,8 +173,7 @@ int32_t VideoReceiver::RegisterPacketRequestCallback(
 
 int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
   RTC_DCHECK_RUN_ON(&decoder_thread_checker_);
-  VCMEncodedFrame* frame = _receiver.FrameForDecoding(
-      maxWaitTimeMs, _codecDataBase.PrefersLateDecoding());
+  VCMEncodedFrame* frame = _receiver.FrameForDecoding(maxWaitTimeMs, true);
 
   if (!frame)
     return VCM_FRAME_NOT_READY;
