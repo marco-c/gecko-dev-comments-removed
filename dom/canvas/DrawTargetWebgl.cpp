@@ -543,8 +543,6 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
     
     return false;
   }
-  
-  mSharedContext->WaitForShmem();
   RefPtr<ClientWebGLContext> webgl = mSharedContext->mWebgl;
   if (!webgl) {
     return false;
@@ -567,14 +565,23 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
   
   
   
-  IntRect dataBounds = init ? IntRect(IntPoint(), mSize) : mClipBounds;
-  mSkia->Clear(Rect(dataBounds), false);
+  RefPtr<DrawTargetSkia> dt = new DrawTargetSkia;
+  if (!dt->Init(mClipBounds.Size(), SurfaceFormat::A8)) {
+    return false;
+  }
   
   
-  Matrix xform = mSkia->GetTransform();
-  mSkia->SetTransform(Matrix());
-  mSkia->FillRect(Rect(dataBounds), ColorPattern(DeviceColor(1, 1, 1, 1)));
-  mSkia->SetTransform(xform);
+  for (auto& clipStack : mClipStack) {
+    dt->SetTransform(
+        Matrix(clipStack.mTransform).PostTranslate(-mClipBounds.TopLeft()));
+    if (clipStack.mPath) {
+      dt->PushClip(clipStack.mPath);
+    } else {
+      dt->PushClipRect(clipStack.mRect);
+    }
+  }
+  dt->SetTransform(Matrix::Translation(-mClipBounds.TopLeft()));
+  dt->FillRect(Rect(mClipBounds), ColorPattern(DeviceColor(1, 1, 1, 1)));
   
   webgl->ActiveTexture(LOCAL_GL_TEXTURE1);
   webgl->BindTexture(LOCAL_GL_TEXTURE_2D, mClipMask);
@@ -582,20 +589,25 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
     mSharedContext->InitTexParameters(mClipMask, false);
   }
   RefPtr<DataSourceSurface> data;
-  if (RefPtr<SourceSurface> snapshot = mSkia->Snapshot()) {
+  if (RefPtr<SourceSurface> snapshot = dt->Snapshot()) {
     data = snapshot->GetDataSurface();
   }
   
   
-  mSharedContext->UploadSurface(data, SurfaceFormat::B8G8R8A8, dataBounds,
-                                dataBounds.TopLeft(), init);
+  if (init && mClipBounds.Size() != mSize) {
+    mSharedContext->UploadSurface(nullptr, SurfaceFormat::A8,
+                                  IntRect(IntPoint(), mSize), IntPoint(), true,
+                                  true);
+    init = false;
+  }
+  mSharedContext->UploadSurface(data, SurfaceFormat::A8,
+                                IntRect(IntPoint(), mClipBounds.Size()),
+                                mClipBounds.TopLeft(), init);
   webgl->ActiveTexture(LOCAL_GL_TEXTURE0);
   
   
   mSharedContext->mLastClipMask = mClipMask;
   mSharedContext->SetClipRect(mClipBounds);
-  
-  mSkiaValid = false;
   
   
   mProfile.OnCacheMiss();
@@ -1011,7 +1023,7 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         "varying vec2 v_cliptc;\n"
         "varying vec4 v_dist;\n"
         "void main() {\n"
-        "   vec4 clip = texture2D(u_clipmask, v_cliptc);\n"
+        "   float clip = texture2D(u_clipmask, v_cliptc).r;\n"
         "   vec2 dist = min(v_dist.xy, v_dist.zw);\n"
         "   float aa = clamp(min(dist.x, dist.y), 0.0, 1.0);\n"
         "   gl_FragColor = clip * aa * u_color;\n"
@@ -1094,7 +1106,7 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         "void main() {\n"
         "   vec2 tc = clamp(v_texcoord, u_texbounds.xy, u_texbounds.zw);\n"
         "   vec4 image = texture2D(u_sampler, tc);\n"
-        "   vec4 clip = texture2D(u_clipmask, v_cliptc);\n"
+        "   float clip = texture2D(u_clipmask, v_cliptc).r;\n"
         "   vec2 dist = min(v_dist.xy, v_dist.zw);\n"
         "   float aa = clamp(min(dist.x, dist.y), 0.0, 1.0);\n"
         "   gl_FragColor = clip * aa * u_color *\n"
@@ -1223,12 +1235,16 @@ void DrawTargetWebgl::PushClip(const Path* aPath) {
   mClipChanged = true;
   mRefreshClipState = true;
   mSkia->PushClip(aPath);
+
+  mClipStack.push_back({GetTransform(), Rect(), aPath});
 }
 
 void DrawTargetWebgl::PushClipRect(const Rect& aRect) {
   mClipChanged = true;
   mRefreshClipState = true;
   mSkia->PushClipRect(aRect);
+
+  mClipStack.push_back({GetTransform(), aRect, nullptr});
 }
 
 void DrawTargetWebgl::PushDeviceSpaceClipRects(const IntRect* aRects,
@@ -1236,12 +1252,18 @@ void DrawTargetWebgl::PushDeviceSpaceClipRects(const IntRect* aRects,
   mClipChanged = true;
   mRefreshClipState = true;
   mSkia->PushDeviceSpaceClipRects(aRects, aCount);
+
+  for (uint32_t i = 0; i < aCount; i++) {
+    mClipStack.push_back({Matrix(), Rect(aRects[i]), nullptr});
+  }
 }
 
 void DrawTargetWebgl::PopClip() {
   mClipChanged = true;
   mRefreshClipState = true;
   mSkia->PopClip();
+
+  mClipStack.pop_back();
 }
 
 
@@ -1475,12 +1497,13 @@ bool DrawTargetWebgl::SharedContext::UploadSurface(DataSourceSurface* aData,
     
     
     MOZ_ASSERT(aSrcRect.TopLeft() == IntPoint(0, 0));
-    if (!mZeroBuffer || mZeroSize.width < aSrcRect.width ||
-        mZeroSize.height < aSrcRect.height) {
+    size_t size =
+        size_t(GetAlignedStride<4>(aSrcRect.width, BytesPerPixel(aFormat))) *
+        aSrcRect.height;
+    if (!mZeroBuffer || size > mZeroSize) {
       mZeroBuffer = mWebgl->CreateBuffer();
-      mZeroSize = aSrcRect.Size();
+      mZeroSize = size;
       mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, mZeroBuffer);
-      size_t size = 4 * mZeroSize.width * mZeroSize.height;
       
       
       mWebgl->RawBufferData(LOCAL_GL_PIXEL_UNPACK_BUFFER, nullptr, size,

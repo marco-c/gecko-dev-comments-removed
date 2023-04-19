@@ -8,6 +8,7 @@
 #define _MOZILLA_GFX_DRAWTARGETWEBGL_H
 
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/PathSkia.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/ThreadLocal.h"
@@ -96,6 +97,16 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
 
   
   
+  struct ClipStack {
+    Matrix mTransform;
+    Rect mRect;
+    RefPtr<const Path> mPath;
+  };
+
+  std::vector<ClipStack> mClipStack;
+
+  
+  
   
   struct UsageProfile {
     uint32_t mFailedFrames = 0;
@@ -174,7 +185,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     RefPtr<WebGLFramebufferJS> mScratchFramebuffer;
     
     RefPtr<WebGLBufferJS> mZeroBuffer;
-    IntSize mZeroSize;
+    size_t mZeroSize = 0;
     
     RefPtr<WebGLTextureJS> mNoClipMask;
 
