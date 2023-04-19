@@ -27,6 +27,7 @@ use crate::stylesheets::layer_rule::LayerOrder;
 use crate::values::animated::{Animate, Procedure};
 use crate::values::computed::{Time, TimingFunction};
 use crate::values::generics::box_::AnimationIterationCount;
+use crate::values::generics::easing::BeforeFlag;
 use crate::Atom;
 use fxhash::FxHashMap;
 use parking_lot::RwLock;
@@ -84,7 +85,12 @@ impl PropertyAnimation {
     
     fn timing_function_output(&self, progress: f64) -> f64 {
         let epsilon = 1. / (200. * self.duration);
-        self.timing_function.calculate_output(progress, epsilon)
+        
+        
+        
+        
+        
+        self.timing_function.calculate_output(progress, BeforeFlag::Unset, epsilon)
     }
 
     

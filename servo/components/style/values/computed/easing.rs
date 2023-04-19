@@ -4,10 +4,12 @@
 
 
 
+use euclid::approxeq::ApproxEq;
+
 use crate::bezier::Bezier;
-use crate::piecewise_linear::{PiecewiseLinearFunctionBuildParameters, PiecewiseLinearFunction};
+use crate::piecewise_linear::{PiecewiseLinearFunction, PiecewiseLinearFunctionBuildParameters};
 use crate::values::computed::{Integer, Number, Percentage};
-use crate::values::generics::easing::{self, StepPosition, TimingKeyword};
+use crate::values::generics::easing::{self, BeforeFlag, StepPosition, TimingKeyword};
 
 
 pub type ComputedTimingFunction = easing::TimingFunction<Integer, Number, Percentage>;
@@ -31,33 +33,46 @@ impl ComputedLinearStop {
 }
 
 impl ComputedTimingFunction {
-    fn calculate_step_output(steps: i32, pos: StepPosition, progress: f64) -> f64 {
+    fn calculate_step_output(
+        steps: i32,
+        pos: StepPosition,
+        progress: f64,
+        before_flag: BeforeFlag,
+    ) -> f64 {
+        
+        
         let mut current_step = (progress * (steps as f64)).floor() as i32;
 
+        
         if pos == StepPosition::Start ||
             pos == StepPosition::JumpStart ||
             pos == StepPosition::JumpBoth
         {
-            current_step = current_step + 1;
+            current_step = current_step.checked_add(1).unwrap_or(current_step);
+        }
+
+        
+        
+        if before_flag == BeforeFlag::Set &&
+            (progress * steps as f64).rem_euclid(1.0).approx_eq(&0.0)
+        {
+            current_step = current_step.checked_sub(1).unwrap_or(current_step);
         }
 
         
         
         
-        
-        
-
         if progress >= 0.0 && current_step < 0 {
             current_step = 0;
         }
 
-        let jumps = match pos {
-            StepPosition::JumpBoth => steps + 1,
-            StepPosition::JumpNone => steps - 1,
-            StepPosition::JumpStart |
-            StepPosition::JumpEnd |
-            StepPosition::Start |
-            StepPosition::End => steps,
+        
+        let jumps = if pos == StepPosition::JumpBoth {
+            steps.checked_add(1).unwrap_or(steps)
+        } else if pos == StepPosition::JumpNone {
+            steps.checked_sub(1).unwrap_or(steps)
+        } else {
+            steps
         };
 
         if progress <= 1.0 && current_step > jumps {
@@ -68,13 +83,13 @@ impl ComputedTimingFunction {
     }
 
     
-    pub fn calculate_output(&self, progress: f64, epsilon: f64) -> f64 {
+    pub fn calculate_output(&self, progress: f64, before_flag: BeforeFlag, epsilon: f64) -> f64 {
         match self {
             TimingFunction::CubicBezier { x1, y1, x2, y2 } => {
                 Bezier::new(*x1, *y1, *x2, *y2).solve(progress, epsilon)
             },
             TimingFunction::Steps(steps, pos) => {
-                Self::calculate_step_output(*steps, *pos, progress)
+                Self::calculate_step_output(*steps, *pos, progress, before_flag)
             },
             TimingFunction::LinearFunction(elements) => {
                 
