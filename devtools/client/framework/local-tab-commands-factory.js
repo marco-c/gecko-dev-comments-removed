@@ -17,7 +17,7 @@ const commandsMap = new WeakMap();
 
 
 
-exports.TabDescriptorFactory = {
+exports.LocalTabCommandsFactory = {
   
 
 
@@ -35,11 +35,12 @@ exports.TabDescriptorFactory = {
 
 
 
-  async createDescriptorForTab(tab) {
+  async createCommandsForTab(tab) {
     let commands = commandsMap.get(tab);
     if (commands) {
-      commands = await commands;
-      return commands.descriptorFront;
+      
+      
+      return commands;
     }
 
     const promise = CommandsFactory.forTab(tab);
@@ -52,7 +53,7 @@ exports.TabDescriptorFactory = {
     commands.descriptorFront.once("descriptor-destroyed", () => {
       commandsMap.delete(tab);
     });
-    return commands.descriptorFront;
+    return commands;
   },
 
   
@@ -62,20 +63,10 @@ exports.TabDescriptorFactory = {
 
 
 
-  async getDescriptorForTab(tab) {
+  async getCommandsForTab(tab) {
     
     
     
-    const commands = await commandsMap.get(tab);
-    return commands?.descriptorFront;
-  },
-
-  
-
-
-
-
-  isKnownTab(tab) {
-    return commandsMap.has(tab);
+    return commandsMap.get(tab);
   },
 };
