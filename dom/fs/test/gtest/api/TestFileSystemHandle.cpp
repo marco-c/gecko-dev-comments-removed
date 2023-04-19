@@ -4,13 +4,9 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "FileSystemMocks.h"
-
 #include "fs/FileSystemChildFactory.h"
-
-#include "mozilla/dom/FileSystemHandle.h"
+#include "gtest/gtest.h"
 #include "mozilla/dom/FileSystemDirectoryHandle.h"
 #include "mozilla/dom/FileSystemFileHandle.h"
 #include "mozilla/dom/FileSystemHandle.h"
