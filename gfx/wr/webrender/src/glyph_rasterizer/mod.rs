@@ -41,8 +41,10 @@ pub static GLYPH_FLASHING: AtomicBool = AtomicBool::new(false);
 impl FontContexts {
     
     pub fn lock_current_context(&self) -> MutexGuard<FontContext> {
-        let id = self.current_worker_id();
-        self.lock_context(id)
+        match self.current_worker_id() {
+            Some(id) => self.lock_context(id),
+            None => self.lock_any_context(),
+        }
     }
 
     pub(in super) fn current_worker_id(&self) -> Option<usize> {
@@ -1460,9 +1462,6 @@ pub struct FontContexts {
     
     worker_contexts: Vec<Mutex<FontContext>>,
     
-    
-    shared_context: Mutex<FontContext>,
-    
     #[allow(dead_code)]
     workers: Arc<ThreadPool>,
     locked_mutex: Mutex<bool>,
@@ -1475,17 +1474,19 @@ impl FontContexts {
     
     
     
-    
-    pub fn lock_context(&self, id: Option<usize>) -> MutexGuard<FontContext> {
-        match id {
-            Some(index) => self.worker_contexts[index].lock().unwrap(),
-            None => self.shared_context.lock().unwrap(),
-        }
+    pub fn lock_context(&self, id: usize) -> MutexGuard<FontContext> {
+        self.worker_contexts[id].lock().unwrap()
     }
 
     
-    pub fn lock_shared_context(&self) -> MutexGuard<FontContext> {
-        self.shared_context.lock().unwrap()
+    
+    pub fn lock_any_context(&self) -> MutexGuard<FontContext> {
+        for context in &self.worker_contexts {
+            if let Ok(mutex) = context.try_lock() {
+                return mutex;
+            }
+        }
+        self.lock_context(0)
     }
 
     
@@ -1509,10 +1510,9 @@ impl AsyncForEach<FontContext> for Arc<FontContexts> {
         
         self.workers.spawn(move || {
             
-            let mut locks = Vec::with_capacity(font_contexts.num_worker_contexts() + 1);
-            locks.push(font_contexts.lock_shared_context());
+            let mut locks = Vec::with_capacity(font_contexts.num_worker_contexts());
             for i in 0 .. font_contexts.num_worker_contexts() {
-                locks.push(font_contexts.lock_context(Some(i)));
+                locks.push(font_contexts.lock_context(i));
             }
 
             
@@ -1538,6 +1538,9 @@ pub struct GlyphRasterizer {
     #[allow(dead_code)]
     workers: Arc<ThreadPool>,
     font_contexts: Arc<FontContexts>,
+
+    
+    fonts: FastHashSet<FontKey>,
 
     
     pending_glyph_count: usize,
@@ -1577,22 +1580,20 @@ impl GlyphRasterizer {
         let num_workers = workers.current_num_threads();
         let mut contexts = Vec::with_capacity(num_workers);
 
-        let shared_context = FontContext::new()?;
-
         for _ in 0 .. num_workers {
             contexts.push(Mutex::new(FontContext::new()?));
         }
 
         let font_context = FontContexts {
-                worker_contexts: contexts,
-                shared_context: Mutex::new(shared_context),
-                workers: Arc::clone(&workers),
-                locked_mutex: Mutex::new(false),
-                locked_cond: Condvar::new(),
+            worker_contexts: contexts,
+            workers: Arc::clone(&workers),
+            locked_mutex: Mutex::new(false),
+            locked_cond: Condvar::new(),
         };
 
         Ok(GlyphRasterizer {
             font_contexts: Arc::new(font_context),
+            fonts: FastHashSet::default(),
             pending_glyph_jobs: 0,
             pending_glyph_count: 0,
             glyph_request_count: 0,
@@ -1608,9 +1609,12 @@ impl GlyphRasterizer {
     }
 
     pub fn add_font(&mut self, font_key: FontKey, template: FontTemplate) {
-        self.font_contexts.async_for_each(move |mut context| {
-            context.add_font(&font_key, &template);
-        });
+        if self.fonts.insert(font_key.clone()) {
+            
+            self.font_contexts.async_for_each(move |mut context| {
+                context.add_font(&font_key, &template);
+            });
+        }
     }
 
     pub fn delete_font(&mut self, font_key: FontKey) {
@@ -1637,7 +1641,7 @@ impl GlyphRasterizer {
     }
 
     pub fn has_font(&self, font_key: FontKey) -> bool {
-        self.font_contexts.lock_shared_context().has_font(&font_key)
+        self.fonts.contains(&font_key)
     }
 
     pub fn get_glyph_dimensions(
@@ -1652,13 +1656,13 @@ impl GlyphRasterizer {
         );
 
         self.font_contexts
-            .lock_shared_context()
+            .lock_any_context()
             .get_glyph_dimensions(font, &glyph_key)
     }
 
     pub fn get_glyph_index(&mut self, font_key: FontKey, ch: char) -> Option<u32> {
         self.font_contexts
-            .lock_shared_context()
+            .lock_any_context()
             .get_glyph_index(font_key, ch)
     }
 
@@ -1668,7 +1672,9 @@ impl GlyphRasterizer {
         }
 
         profile_scope!("remove_dead_fonts");
-        let fonts_to_remove = mem::replace(&mut self.fonts_to_remove, Vec::new());
+        let mut fonts_to_remove = mem::replace(& mut self.fonts_to_remove, Vec::new());
+        
+        fonts_to_remove.retain(|font| self.fonts.remove(font));
         let font_instances_to_remove = mem::replace(& mut self.font_instances_to_remove, Vec::new());
         self.font_contexts.async_for_each(move |mut context| {
             for font_key in &fonts_to_remove {
