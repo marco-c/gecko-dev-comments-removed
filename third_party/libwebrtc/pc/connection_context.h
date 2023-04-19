@@ -103,6 +103,7 @@ class ConnectionContext final
   
   
   
+  std::unique_ptr<rtc::SocketFactory> owned_socket_factory_;
   std::unique_ptr<rtc::Thread> owned_network_thread_
       RTC_GUARDED_BY(signaling_thread_);
   std::unique_ptr<rtc::Thread> owned_worker_thread_
