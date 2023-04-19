@@ -1883,6 +1883,11 @@ void nsPresContext::MediaFeatureValuesChanged(
     };
     mDocument->EnumerateSubDocuments(recurse);
   }
+
+  
+  
+  
+  mDocument->NotifyMediaFeatureValuesChanged();
 }
 
 bool nsPresContext::FlushPendingMediaFeatureValuesChanged() {
@@ -1908,8 +1913,6 @@ bool nsPresContext::FlushPendingMediaFeatureValuesChanged() {
     MOZ_ASSERT(mDocument->MediaQueryLists().isEmpty());
     return changedStyle;
   }
-
-  mDocument->NotifyMediaFeatureValuesChanged();
 
   
   
