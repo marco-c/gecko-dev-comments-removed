@@ -4834,8 +4834,7 @@ static void VerifyUniqueStringContents(
   mozilla::baseprofiler::SpliceableChunkedJSONWriter writer;
 
   
-  mozilla::baseprofiler::UniqueJSONStrings localUniqueStrings(
-      mozilla::JSONWriter::SingleLineStyle);
+  mozilla::baseprofiler::UniqueJSONStrings localUniqueStrings;
   mozilla::baseprofiler::UniqueJSONStrings& uniqueStrings =
       aUniqueStringsOrNull ? *aUniqueStringsOrNull : localUniqueStrings;
 
@@ -4947,7 +4946,7 @@ void TestUniqueJSONStrings() {
 
   
   {
-    UJS ujs(mozilla::JSONWriter::SingleLineStyle);
+    UJS ujs;
     {
       SCJW writer;
       ujs.WriteElement(writer, "external0");
@@ -4965,15 +4964,14 @@ void TestUniqueJSONStrings() {
 
   
   {
-    UJS ujs(mozilla::JSONWriter::SingleLineStyle);
+    UJS ujs;
     {
       SCJW writer;
       ujs.WriteElement(writer, "external0");
       ujs.WriteElement(writer, "external1");
       ujs.WriteElement(writer, "external0");
     }
-    UJS ujsCopy(ujs, mozilla::ProgressLogger{},
-                mozilla::JSONWriter::SingleLineStyle);
+    UJS ujsCopy(ujs, mozilla::ProgressLogger{});
     VerifyUniqueStringContents(
         [](SCJW& aWriter, UJS& aUniqueStrings) {
           aUniqueStrings.WriteElement(aWriter, "string0");
