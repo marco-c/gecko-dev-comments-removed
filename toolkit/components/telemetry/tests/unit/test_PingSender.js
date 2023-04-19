@@ -7,12 +7,8 @@
 
 "use strict";
 
-const { ClientID } = ChromeUtils.import("resource://gre/modules/ClientID.jsm");
 const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
-);
-const { TelemetryReportingPolicy } = ChromeUtils.import(
-  "resource://gre/modules/TelemetryReportingPolicy.jsm"
 );
 const { TelemetrySend } = ChromeUtils.import(
   "resource://gre/modules/TelemetrySend.jsm"
@@ -24,8 +20,6 @@ const { TelemetryUtils } = ChromeUtils.import(
   "resource://gre/modules/TelemetryUtils.jsm"
 );
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-
-const REASON_SHUTDOWN = "shutdown";
 
 function generateTestPingData() {
   return {
@@ -63,11 +57,11 @@ function testSendingPings(pingPaths) {
 
 
 function waitForPingDeletion(pingId) {
-  const path = PathUtils.join(TelemetryStorage.pingDirectoryPath, pingId);
+  const path = OS.Path.join(TelemetryStorage.pingDirectoryPath, pingId);
 
   let checkFn = (resolve, reject) =>
     setTimeout(() => {
-      IOUtils.exists(path).then(exists => {
+      OS.File.exists(path).then(exists => {
         if (!exists) {
           Assert.ok(true, pingId + " was deleted");
           resolve();
@@ -80,91 +74,15 @@ function waitForPingDeletion(pingId) {
   return new Promise((resolve, reject) => checkFn(resolve, reject));
 }
 
-add_setup(async () => {
+add_task(async function setup() {
   
   do_get_profile(true);
-  createAppInfo();
-
-  
-  await setEmptyPrefWatchlist();
 
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 
-  await new Promise(resolve =>
-    Telemetry.asyncFetchTelemetryData(wrapWithExceptionHandler(resolve))
-  );
-  await TelemetryController.testSetup();
-
   
   PingServer.start();
-  registerCleanupFunction(async () => {
-    await PingServer.stop();
-  });
-  TelemetrySend.setServer("http://localhost:" + PingServer.port);
-  Preferences.set(
-    TelemetryUtils.Preferences.Server,
-    "http://localhost:" + PingServer.port
-  );
 });
-
-add_task(
-  { pref_set: [[TelemetryUtils.Preferences.HealthPingEnabled, true]] },
-  async function test_usePingSenderOnShutdown() {
-    const { TelemetryHealthPing } = ChromeUtils.import(
-      "resource://gre/modules/HealthPing.jsm"
-    );
-    TelemetryHealthPing.testReset();
-    await TelemetrySend.reset();
-    PingServer.clearRequests();
-
-    
-    
-    await TelemetryHealthPing.recordSendFailure("testFailure");
-    await PingServer.promiseNextPing();
-
-    TelemetryHealthPing.recordSendFailure("testFailure");
-    let nextRequest = PingServer.promiseNextRequest();
-
-    await TelemetryController.testReset();
-    await TelemetryController.testShutdown();
-    let request = await nextRequest;
-
-    
-    Assert.equal(
-      request.getHeader("User-Agent"),
-      "pingsender/1.0",
-      "Should have received the correct user agent string."
-    );
-    Assert.equal(
-      request.getHeader("X-PingSender-Version"),
-      "1.0",
-      "Should have received the correct PingSender version string."
-    );
-
-    let ping = decodeRequestPayload(request);
-    const expectedFailuresDict = {
-      [TelemetryHealthPing.FailureType.SEND_FAILURE]: {
-        testFailure: 1,
-      },
-      os: TelemetryHealthPing.OsInfo,
-      reason: TelemetryHealthPing.Reason.SHUT_DOWN,
-    };
-
-    Assert.equal(
-      ping.type,
-      TelemetryHealthPing.HEALTH_PING_TYPE,
-      "Should have recorded a health ping."
-    );
-
-    for (let [key, value] of Object.entries(expectedFailuresDict)) {
-      Assert.deepEqual(
-        ping.payload[key],
-        value,
-        "Should have recorded correct entry with key: " + key
-      );
-    }
-  }
-);
 
 add_task(async function test_pingSender() {
   
@@ -172,7 +90,7 @@ add_task(async function test_pingSender() {
   await TelemetryStorage.savePing(data, true);
 
   
-  const pingPath = PathUtils.join(TelemetryStorage.pingDirectoryPath, data.id);
+  const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, data.id);
 
   
   
@@ -201,7 +119,7 @@ add_task(async function test_pingSender() {
   
   await deferred404Hit.promise;
   Assert.ok(
-    await IOUtils.exists(pingPath),
+    await OS.File.exists(pingPath),
     "The pending ping must not be deleted if we fail to send using the PingSender"
   );
 
@@ -252,7 +170,7 @@ add_task(async function test_bannedDomains() {
   await TelemetryStorage.savePing(data, true);
 
   
-  const pingPath = PathUtils.join(TelemetryStorage.pingDirectoryPath, data.id);
+  const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, data.id);
 
   
   let bannedUris = [
@@ -294,7 +212,7 @@ add_task(async function test_pingSender_multiple_pings() {
 
   
   const pingPaths = data.map(d =>
-    PathUtils.join(TelemetryStorage.pingDirectoryPath, d.id)
+    OS.Path.join(TelemetryStorage.pingDirectoryPath, d.id)
   );
 
   
@@ -321,378 +239,6 @@ add_task(async function test_pingSender_multiple_pings() {
   }
 });
 
-add_task(
-  {
-    pref_set: [
-      [TelemetryUtils.Preferences.NewProfilePingEnabled, true],
-      [TelemetryUtils.Preferences.NewProfilePingDelay, 1],
-    ],
-  },
-  async function test_sendNewProfile() {
-    const NEWPROFILE_PING_TYPE = "new-profile";
-
-    
-    
-    let resetTest = async function() {
-      await TelemetryController.testShutdown();
-      await TelemetryStorage.testClearPendingPings();
-      PingServer.clearRequests();
-    };
-    await resetTest();
-
-    
-    const stateFilePath = PathUtils.join(
-      PathUtils.profileDir,
-      "datareporting",
-      "session-state.json"
-    );
-    await IOUtils.remove(stateFilePath);
-
-    
-    let nextReq = PingServer.promiseNextRequest();
-    await TelemetryController.testReset();
-    let req = await nextReq;
-    let ping = decodeRequestPayload(req);
-    checkPingFormat(ping, NEWPROFILE_PING_TYPE, true, true);
-    Assert.equal(
-      ping.payload.reason,
-      "startup",
-      "The new-profile ping generated after startup must have the correct reason"
-    );
-    Assert.ok(
-      "parent" in ping.payload.processes,
-      "The new-profile ping generated after startup must have processes.parent data"
-    );
-
-    
-    Assert.throws(
-      () => req.getHeader("X-PingSender-Version"),
-      /NS_ERROR_NOT_AVAILABLE/,
-      "Should not have used the pingsender."
-    );
-
-    
-    await resetTest();
-    await IOUtils.remove(stateFilePath);
-    Preferences.reset(TelemetryUtils.Preferences.NewProfilePingDelay);
-
-    nextReq = PingServer.promiseNextRequest();
-    await TelemetryController.testReset();
-    await TelemetryController.testShutdown();
-    req = await nextReq;
-    ping = decodeRequestPayload(req);
-    checkPingFormat(ping, NEWPROFILE_PING_TYPE, true, true);
-    Assert.equal(
-      ping.payload.reason,
-      "shutdown",
-      "The new-profile ping generated at shutdown must have the correct reason"
-    );
-    Assert.ok(
-      "parent" in ping.payload.processes,
-      "The new-profile ping generated at shutdown must have processes.parent data"
-    );
-
-    
-    Assert.equal(
-      req.getHeader("User-Agent"),
-      "pingsender/1.0",
-      "Should have received the correct user agent string."
-    );
-    Assert.equal(
-      req.getHeader("X-PingSender-Version"),
-      "1.0",
-      "Should have received the correct PingSender version string."
-    );
-
-    
-    
-    await resetTest();
-    PingServer.registerPingHandler(() =>
-      Assert.ok(
-        false,
-        "The new-profile ping must be sent only on new profiles."
-      )
-    );
-    await TelemetryController.testReset();
-    await TelemetryController.testShutdown();
-
-    
-    
-    await resetTest();
-    await IOUtils.remove(stateFilePath);
-    const sessionState = {
-      sessionId: null,
-      subsessionId: null,
-      profileSubsessionCounter: 3785,
-    };
-    await IOUtils.writeJSON(stateFilePath, sessionState);
-    await TelemetryController.testReset();
-    await TelemetryController.testShutdown();
-
-    
-    PingServer.resetPingHandler();
-  }
-);
-
-add_task(
-  {
-    pref_set: [
-      [TelemetryUtils.Preferences.ShutdownPingSender, true],
-      [TelemetryUtils.Preferences.ShutdownPingSenderFirstSession, false],
-      [TelemetryUtils.Preferences.BypassNotification, true],
-      [TelemetryUtils.Preferences.FirstRun, false],
-    ],
-  },
-  async function test_sendShutdownPing() {
-    let checkPendingShutdownPing = async function() {
-      let pendingPings = await TelemetryStorage.loadPendingPingList();
-      Assert.equal(
-        pendingPings.length,
-        1,
-        "We expect 1 pending ping: shutdown."
-      );
-      
-      const shutdownPing = await TelemetryStorage.loadPendingPing(
-        pendingPings[0].id
-      );
-      Assert.ok(shutdownPing, "The 'shutdown' ping must be saved to disk.");
-      Assert.equal(
-        "shutdown",
-        shutdownPing.payload.info.reason,
-        "The 'shutdown' ping must be saved to disk."
-      );
-    };
-
-    let clientID = await ClientID.getClientID();
-    await TelemetryController.testReset();
-
-    
-    TelemetryReportingPolicy.testUpdateFirstRun();
-    PingServer.clearRequests();
-    Telemetry.clearScalars();
-
-    
-    let nextPing = PingServer.promiseNextPing();
-    await TelemetryController.testShutdown();
-    let ping = await nextPing;
-
-    
-    checkPingFormat(ping, ping.type, true, true);
-    Assert.equal(ping.payload.info.reason, REASON_SHUTDOWN);
-    Assert.equal(ping.clientId, clientID);
-    
-    
-    PingServer.registerPingHandler(() =>
-      Assert.ok(false, "Telemetry must not send pings if not allowed to.")
-    );
-    Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
-    await TelemetryController.testReset();
-    await TelemetryController.testShutdown();
-
-    
-    await TelemetryStorage.testClearPendingPings();
-
-    
-    
-    Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
-    await TelemetryController.testReset();
-    Services.obs.notifyObservers(null, "quit-application-forced");
-    await TelemetryController.testShutdown();
-    
-    clientID = await ClientID.getClientID();
-
-    
-    await checkPendingShutdownPing();
-
-    
-    await TelemetryStorage.testClearPendingPings();
-    Telemetry.clearScalars();
-
-    await TelemetryController.testReset();
-    Services.obs.notifyObservers(
-      null,
-      "quit-application-granted",
-      "syncShutdown"
-    );
-    await TelemetryController.testShutdown();
-    await checkPendingShutdownPing();
-
-    
-    await TelemetryStorage.testClearPendingPings();
-
-    
-    Preferences.set(TelemetryUtils.Preferences.BypassNotification, false);
-    await TelemetryController.testReset();
-    await TelemetryController.testShutdown();
-
-    
-    await TelemetryStorage.testClearPendingPings();
-
-    
-    
-    
-    Preferences.set(TelemetryUtils.Preferences.BypassNotification, true);
-    Preferences.set(TelemetryUtils.Preferences.FirstRun, true);
-    
-    TelemetryReportingPolicy.testUpdateFirstRun();
-
-    await TelemetryController.testReset();
-    await TelemetryController.testShutdown();
-
-    
-    await TelemetryStorage.testClearPendingPings();
-    PingServer.clearRequests();
-    PingServer.resetPingHandler();
-
-    
-    
-    Preferences.set(
-      TelemetryUtils.Preferences.ShutdownPingSenderFirstSession,
-      true
-    );
-    Preferences.set(TelemetryUtils.Preferences.FirstRun, true);
-    TelemetryReportingPolicy.testUpdateFirstRun();
-
-    
-    await TelemetryController.testReset();
-    await TelemetryController.testShutdown();
-    ping = await PingServer.promiseNextPing();
-
-    
-    checkPingFormat(ping, ping.type, true, true);
-    Assert.equal(ping.payload.info.reason, REASON_SHUTDOWN);
-    Assert.equal(ping.clientId, clientID);
-
-    
-    PingServer.resetPingHandler();
-  }
-);
-
-add_task(
-  {
-    pref_set: [
-      [TelemetryUtils.Preferences.ShutdownPingSender, true],
-      [TelemetryUtils.Preferences.ShutdownPingSenderFirstSession, false],
-      [TelemetryUtils.Preferences.FirstShutdownPingEnabled, true],
-      [TelemetryUtils.Preferences.FirstRun, true],
-    ],
-  },
-  async function test_sendFirstShutdownPing() {
-    let storageContainsFirstShutdown = async function() {
-      let pendingPings = await TelemetryStorage.loadPendingPingList();
-      let pings = await Promise.all(
-        pendingPings.map(async p => {
-          return TelemetryStorage.loadPendingPing(p.id);
-        })
-      );
-      return pings.find(p => p.type == "first-shutdown");
-    };
-
-    let checkShutdownNotSent = async function() {
-      
-      
-      
-
-      
-      PingServer.registerPingHandler((req, res) => {
-        const receivedPing = decodeRequestPayload(req);
-        Assert.ok(
-          false,
-          `No ping should be received in this test (got ${receivedPing.id}).`
-        );
-      });
-
-      
-      
-      Preferences.set(TelemetryUtils.Preferences.FirstRun, true);
-      TelemetryReportingPolicy.testUpdateFirstRun();
-
-      await TelemetryController.testReset();
-      Services.obs.notifyObservers(null, "quit-application-forced");
-      await TelemetryController.testShutdown();
-      Assert.ok(
-        await storageContainsFirstShutdown(),
-        "The 'first-shutdown' ping must be saved to disk."
-      );
-
-      await TelemetryStorage.testClearPendingPings();
-
-      
-      Preferences.set(TelemetryUtils.Preferences.FirstRun, false);
-      TelemetryReportingPolicy.testUpdateFirstRun();
-
-      await TelemetryController.testReset();
-      Services.obs.notifyObservers(null, "quit-application-forced");
-      await TelemetryController.testShutdown();
-      Assert.ok(
-        !(await storageContainsFirstShutdown()),
-        "The 'first-shutdown' ping should only be written during first run."
-      );
-
-      await TelemetryStorage.testClearPendingPings();
-
-      
-      Preferences.set(TelemetryUtils.Preferences.FirstRun, true);
-      Preferences.set(
-        TelemetryUtils.Preferences.FirstShutdownPingEnabled,
-        false
-      );
-      TelemetryReportingPolicy.testUpdateFirstRun();
-
-      await TelemetryController.testReset();
-      await TelemetryController.testShutdown();
-      Assert.ok(
-        !(await storageContainsFirstShutdown()),
-        "The 'first-shutdown' ping should only be written if enabled"
-      );
-
-      await TelemetryStorage.testClearPendingPings();
-
-      
-      
-      Preferences.set(
-        TelemetryUtils.Preferences.FirstShutdownPingEnabled,
-        true
-      );
-      Preferences.set(TelemetryUtils.Preferences.ShutdownPingSender, false);
-      TelemetryReportingPolicy.testUpdateFirstRun();
-
-      await TelemetryController.testReset();
-      await TelemetryController.testShutdown();
-      Assert.ok(
-        !(await storageContainsFirstShutdown()),
-        "The 'first-shutdown' ping should only be written if ping-sender is enabled"
-      );
-
-      
-      await TelemetryStorage.testClearPendingPings();
-      PingServer.clearRequests();
-      PingServer.resetPingHandler();
-    };
-
-    
-    await TelemetryStorage.testClearPendingPings();
-    PingServer.clearRequests();
-    Telemetry.clearScalars();
-
-    
-    let clientID = await ClientID.getClientID();
-    TelemetryReportingPolicy.testUpdateFirstRun();
-
-    
-    await TelemetryController.testReset();
-    await TelemetryController.testShutdown();
-    let ping = await PingServer.promiseNextPing();
-    checkPingFormat(ping, "first-shutdown", true, true);
-    Assert.equal(ping.payload.info.reason, REASON_SHUTDOWN);
-    Assert.equal(ping.clientId, clientID);
-
-    await TelemetryStorage.testClearPendingPings();
-
-    
-    await checkShutdownNotSent();
-
-    
-    PingServer.resetPingHandler();
-  }
-);
+add_task(async function cleanup() {
+  await PingServer.stop();
+});

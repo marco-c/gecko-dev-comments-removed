@@ -34,7 +34,8 @@ add_task(
     const FILE_PATH = getDefinitionsPath();
 
     
-    await IOUtils.writeUTF8(FILE_PATH, INVALID_JSON, {
+    await OS.File.writeAtomic(FILE_PATH, INVALID_JSON, {
+      encoding: "utf-8",
       noOverwrite: false,
     });
 
@@ -44,7 +45,7 @@ add_task(
 
     
     await TelemetryController.testShutdown();
-    await IOUtils.remove(FILE_PATH);
+    await OS.File.remove(FILE_PATH);
   }
 );
 
@@ -183,7 +184,7 @@ add_task(
 
     
     await TelemetryController.testShutdown();
-    await IOUtils.remove(FILE_PATH);
+    await OS.File.remove(FILE_PATH);
   }
 );
 

@@ -6,6 +6,7 @@
 const { TelemetryStorage } = ChromeUtils.import(
   "resource://gre/modules/TelemetryStorage.jsm"
 );
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { FileUtils } = ChromeUtils.import(
   "resource://gre/modules/FileUtils.jsm"
 );
@@ -18,7 +19,7 @@ add_task(async function setup() {
   do_get_profile();
 
   let fakeVendorDirectoryNSFile = new FileUtils.File(
-    PathUtils.join(PathUtils.profileDir, "uninstall-ping-test")
+    OS.Path.join(OS.Constants.Path.profileDir, "uninstall-ping-test")
   );
   fakeVendorDirectoryNSFile.createUnique(
     Ci.nsIFile.DIRECTORY_TYPE,
@@ -33,8 +34,8 @@ add_task(async function setup() {
 
   fakeUninstallPingPath(gFakeGetUninstallPingPath);
 
-  registerCleanupFunction(async () => {
-    await IOUtils.remove(gFakeVendorDirectory, { recursive: true });
+  registerCleanupFunction(() => {
+    OS.File.removeDir(gFakeVendorDirectory);
   });
 });
 
@@ -57,14 +58,16 @@ add_task(async function test_store_ping() {
   await TelemetryStorage.saveUninstallPing(ping1);
 
   
-  Assert.ok(await IOUtils.exists(ping1Path));
-  const readPing1 = await IOUtils.readJSON(ping1Path);
+  Assert.ok(await OS.File.exists(ping1Path));
+  const readPing1 = JSON.parse(
+    await OS.File.read(ping1Path, { encoding: "utf-8" })
+  );
   Assert.deepEqual(ping1, readPing1);
 
   
-  const otherFilePath = PathUtils.join(gFakeVendorDirectory, "other_file.json");
-  await IOUtils.writeUTF8(otherFilePath, "");
-  Assert.ok(await IOUtils.exists(otherFilePath));
+  const otherFilePath = OS.Path.join(gFakeVendorDirectory, "other_file.json");
+  await OS.File.writeAtomic(otherFilePath, "");
+  Assert.ok(await OS.File.exists(otherFilePath));
 
   
   const ping2 = {
@@ -74,25 +77,25 @@ add_task(async function test_store_ping() {
   const ping2Path = ping_path(ping2);
   await TelemetryStorage.saveUninstallPing(ping2);
 
-  Assert.ok(!(await IOUtils.exists(ping1Path)));
-  Assert.ok(await IOUtils.exists(ping2Path));
-  Assert.ok(await IOUtils.exists(otherFilePath));
+  Assert.ok(!(await OS.File.exists(ping1Path)));
+  Assert.ok(await OS.File.exists(ping2Path));
+  Assert.ok(await OS.File.exists(otherFilePath));
 
   
   const ping3 = { id: "yada-yada" };
   const ping3Path = ping_path(ping3);
 
-  await IOUtils.writeUTF8(ping3Path, "");
-  Assert.ok(await IOUtils.exists(ping3Path));
+  await OS.File.writeAtomic(ping3Path, "");
+  Assert.ok(await OS.File.exists(ping3Path));
 
   
   await TelemetryStorage.removeUninstallPings();
 
   
-  Assert.ok(!(await IOUtils.exists(ping1Path)));
-  Assert.ok(!(await IOUtils.exists(ping2Path)));
-  Assert.ok(!(await IOUtils.exists(ping3Path)));
-  Assert.ok(await IOUtils.exists(otherFilePath));
+  Assert.ok(!(await OS.File.exists(ping1Path)));
+  Assert.ok(!(await OS.File.exists(ping2Path)));
+  Assert.ok(!(await OS.File.exists(ping3Path)));
+  Assert.ok(await OS.File.exists(otherFilePath));
 
   
   await TelemetryStorage.removeUninstallPings();
@@ -105,22 +108,20 @@ add_task(async function test_store_ping() {
   await TelemetryStorage.saveUninstallPing(ping4);
 
   
-  const { BasePromiseWorker } = ChromeUtils.import(
-    "resource://gre/modules/PromiseWorker.jsm"
+  const ping4File = await OS.File.open(
+    ping4Path,
+    { read: true, existing: true },
+    { winShare: OS.Constants.Win.FILE_SHARE_READ }
   );
-  const worker = new BasePromiseWorker(
-    "resource://test/file_UninstallPing.worker.js"
-  );
-  await worker.post("open", [ping4Path]);
 
   
   await TelemetryStorage.removeUninstallPings();
 
   
-  Assert.ok(await IOUtils.exists(ping4Path));
+  Assert.ok(await OS.File.exists(ping4Path));
 
   
-  await worker.post("close");
+  ping4File.close();
   await TelemetryStorage.removeUninstallPings();
-  Assert.ok(!(await IOUtils.exists(ping4Path)));
+  Assert.ok(!(await OS.File.exists(ping4Path)));
 });
