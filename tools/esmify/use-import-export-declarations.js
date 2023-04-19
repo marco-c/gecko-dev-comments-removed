@@ -6,12 +6,17 @@
 
 
 
+
 const _path = require("path");
 const {
   warnForPath,
   getPrevStatement,
   getNextStatement,
 } = require(_path.resolve(__dirname, "./utils.js"));
+const {
+  isImportESModuleCall,
+  replaceImportESModuleCall,
+} = require(_path.resolve(__dirname, "./static-import.js"));
 
 module.exports = function(fileInfo, api) {
   const { jscodeshift } = api;
@@ -192,4 +197,12 @@ function doTranslate(inputFile, jscodeshift, root) {
       `exported symbols ${[...EXPORTED_SYMBOLS].join(", ")} not found`
     );
   }
+
+  root.find(jscodeshift.CallExpression).forEach(path => {
+    if (isImportESModuleCall(path.node)) {
+      
+      
+      replaceImportESModuleCall(inputFile, jscodeshift, path, true);
+    }
+  });
 }
