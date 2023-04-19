@@ -115,12 +115,6 @@ class ClickHandlerParent extends JSWindowActorParent {
       openerBrowser: browser,
       
       hasValidUserGestureActivation: true,
-      globalHistoryOptions: {
-        triggeringSponsoredURL: browser.getAttribute("triggeringSponsoredURL"),
-        triggeringSponsoredURLVisitTimeMS: browser.getAttribute(
-          "triggeringSponsoredURLVisitTimeMS"
-        ),
-      },
     };
 
     
