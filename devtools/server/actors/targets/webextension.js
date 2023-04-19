@@ -13,7 +13,7 @@
 
 
 const { extend } = require("devtools/shared/extend");
-const { Ci, Cu, Cc } = require("chrome");
+const { Ci, Cu } = require("chrome");
 const Services = require("Services");
 
 const {
@@ -114,7 +114,8 @@ webExtensionTargetPrototype.initialize = function(
 ) {
   this.addonId = addonId;
   this.addonBrowsingContextGroupId = addonBrowsingContextGroupId;
-  this.chromeGlobal = chromeGlobal;
+  this._chromeGlobal = chromeGlobal;
+  this._prefix = prefix;
 
   
   
@@ -132,8 +133,6 @@ webExtensionTargetPrototype.initialize = function(
     window: extensionWindow,
     sessionContext,
   });
-  this._chromeGlobal = chromeGlobal;
-  this._prefix = prefix;
 
   
   
@@ -159,10 +158,6 @@ webExtensionTargetPrototype.initialize = function(
   this.consoleAPIListenerOptions = {
     addonId: this.addonId,
   };
-
-  this.aps = Cc["@mozilla.org/addons/policy-service;1"].getService(
-    Ci.nsIAddonPolicyService
-  );
 
   
   this.makeDebugger = makeDebugger.bind(null, {
@@ -234,7 +229,7 @@ webExtensionTargetPrototype._searchFallbackWindow = function() {
   
   
   
-  this.fallbackWindow = this.chromeGlobal.content;
+  this.fallbackWindow = this._chromeGlobal.content;
 
   
   
@@ -298,6 +293,9 @@ webExtensionTargetPrototype._onDocShellDestroy = function(docShell) {
 webExtensionTargetPrototype._onNewExtensionWindow = function(window) {
   if (!this.window || this.window === this.fallbackWindow) {
     this._changeTopLevelDocument(window);
+    
+    
+    this.addonBrowsingContextGroupId = window.docShell.browsingContext.group.id;
   }
 };
 
