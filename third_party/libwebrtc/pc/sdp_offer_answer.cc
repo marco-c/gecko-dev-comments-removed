@@ -4700,11 +4700,29 @@ void SdpOfferAnswerHandler::DestroyTransceiverChannel(
     rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
         transceiver) {
   RTC_DCHECK(transceiver);
+  RTC_LOG_THREAD_BLOCK_COUNT();
+
+  
+  
+  
+  
+  
+  
 
   cricket::ChannelInterface* channel = transceiver->internal()->channel();
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
   if (channel) {
+    
+    
+    
+    
     transceiver->internal()->SetChannel(nullptr);
+    RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(2);
+    
+    
+    
     DestroyChannelInterface(channel);
+    RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(3);
   }
 }
 
@@ -4734,6 +4752,9 @@ void SdpOfferAnswerHandler::DestroyChannelInterface(
   
   
   RTC_DCHECK(channel);
+
+  RTC_LOG_THREAD_BLOCK_COUNT();
+
   switch (channel->media_type()) {
     case cricket::MEDIA_TYPE_AUDIO:
       channel_manager()->DestroyVoiceChannel(
@@ -4751,6 +4772,10 @@ void SdpOfferAnswerHandler::DestroyChannelInterface(
       RTC_NOTREACHED() << "Unknown media type: " << channel->media_type();
       break;
   }
+
+  
+  
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(2);
 }
 
 void SdpOfferAnswerHandler::DestroyAllChannels() {
@@ -4758,18 +4783,25 @@ void SdpOfferAnswerHandler::DestroyAllChannels() {
   if (!transceivers()) {
     return;
   }
+
+  RTC_LOG_THREAD_BLOCK_COUNT();
+
   
   
-  for (const auto& transceiver : transceivers()->List()) {
+  auto list = transceivers()->List();
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
+
+  for (const auto& transceiver : list) {
     if (transceiver->media_type() == cricket::MEDIA_TYPE_VIDEO) {
       DestroyTransceiverChannel(transceiver);
     }
   }
-  for (const auto& transceiver : transceivers()->List()) {
+  for (const auto& transceiver : list) {
     if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
       DestroyTransceiverChannel(transceiver);
     }
   }
+
   DestroyDataChannelTransport();
 }
 

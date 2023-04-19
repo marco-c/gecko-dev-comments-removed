@@ -150,6 +150,8 @@ void RtpTransceiver::SetChannel(cricket::ChannelInterface* channel) {
     return;
   }
 
+  RTC_LOG_THREAD_BLOCK_COUNT();
+
   if (channel) {
     RTC_DCHECK_EQ(media_type(), channel->media_type());
   }
@@ -170,14 +172,21 @@ void RtpTransceiver::SetChannel(cricket::ChannelInterface* channel) {
                                                  : nullptr);
   }
 
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
+
   for (const auto& receiver : receivers_) {
     if (!channel_) {
+      
+      
+      
       receiver->internal()->Stop();
     }
 
     receiver->internal()->SetMediaChannel(channel_ ? channel_->media_channel()
                                                    : nullptr);
   }
+
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(receivers_.size() * 2);
 }
 
 void RtpTransceiver::AddSender(
