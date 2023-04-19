@@ -217,8 +217,7 @@ JS_PUBLIC_API JSObject* JS::GetModuleNamespace(JSContext* cx,
   cx->check(moduleRecord);
   MOZ_ASSERT(moduleRecord->is<ModuleObject>());
 
-  return ModuleObject::GetOrCreateModuleNamespace(
-      cx, moduleRecord.as<ModuleObject>());
+  return GetOrCreateModuleNamespace(cx, moduleRecord.as<ModuleObject>());
 }
 
 JS_PUBLIC_API JSObject* JS::GetModuleForNamespace(
@@ -300,6 +299,9 @@ class ResolveSetEntry {
 
 using ResolveSet = GCVector<ResolveSetEntry, 0, SystemAllocPolicy>;
 
+using ModuleSet =
+    GCHashSet<ModuleObject*, DefaultHasher<ModuleObject*>, SystemAllocPolicy>;
+
 static ModuleObject* HostResolveImportedModule(
     JSContext* cx, Handle<ModuleObject*> module,
     Handle<ModuleRequestObject*> moduleRequest,
@@ -308,6 +310,8 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
                                 Handle<JSAtom*> exportName,
                                 MutableHandle<ResolveSet> resolveSet,
                                 MutableHandle<Value> result);
+static ModuleNamespaceObject* ModuleNamespaceCreate(
+    JSContext* cx, Handle<ModuleObject*> module, Handle<ArrayObject*> exports);
 
 static ArrayObject* NewList(JSContext* cx) {
   
@@ -328,7 +332,7 @@ static bool ArrayContainsName(Handle<ArrayObject*> array,
 
 
 
-ArrayObject* js::ModuleGetExportedNames(
+static ArrayObject* ModuleGetExportedNames(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<ModuleSet> exportStarSet) {
   
@@ -653,4 +657,143 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
   
   result.setObjectOrNull(starResolution);
   return true;
+}
+
+void js::EnsureModuleEnvironmentNamespace(JSContext* cx,
+                                          Handle<ModuleObject*> module,
+                                          Handle<ModuleNamespaceObject*> ns) {
+  Rooted<ModuleEnvironmentObject*> environment(cx,
+                                               &module->initialEnvironment());
+  
+  
+  mozilla::Maybe<PropertyInfo> prop =
+      environment->lookup(cx, cx->names().starNamespaceStar);
+  MOZ_ASSERT(prop.isSome());
+  environment->setSlot(prop->slot(), ObjectValue(*ns));
+}
+
+
+
+ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
+    JSContext* cx, Handle<ModuleObject*> module) {
+  
+  
+  MOZ_ASSERT(module->status() != MODULE_STATUS_UNLINKED);
+
+  
+  Rooted<ModuleNamespaceObject*> ns(cx, module->namespace_());
+
+  
+  if (!ns) {
+    
+    Rooted<ModuleSet> exportStarSet(cx);
+    Rooted<ArrayObject*> exportedNames(cx);
+    exportedNames = ModuleGetExportedNames(cx, module, &exportStarSet);
+    if (!exportedNames) {
+      return nullptr;
+    }
+
+    
+    Rooted<ArrayObject*> unambiguousNames(cx, NewList(cx));
+    if (!unambiguousNames) {
+      return nullptr;
+    }
+
+    
+    Rooted<JSAtom*> name(cx);
+    Rooted<Value> resolution(cx);
+    for (uint32_t i = 0; i != exportedNames->length(); i++) {
+      name = &exportedNames->getDenseElement(i).toString()->asAtom();
+
+      
+      if (!ModuleResolveExport(cx, module, name, &resolution)) {
+        return nullptr;
+      }
+
+      
+      
+      if (resolution.isObject() &&
+          !NewbornArrayPush(cx, unambiguousNames, StringValue(name))) {
+        return nullptr;
+      }
+    }
+
+    
+    
+    ns = ModuleNamespaceCreate(cx, module, unambiguousNames);
+  }
+
+  
+  return ns;
+}
+
+#ifdef DEBUG
+static bool IsResolvedBinding(JSContext* cx, Handle<Value> resolution) {
+  MOZ_ASSERT(resolution.isObjectOrNull() ||
+             resolution.toString() == cx->names().ambiguous);
+  return resolution.isObject();
+}
+#endif
+
+
+
+static ModuleNamespaceObject* ModuleNamespaceCreate(
+    JSContext* cx, Handle<ModuleObject*> module, Handle<ArrayObject*> exports) {
+  
+  MOZ_ASSERT(!module->namespace_());
+
+  
+  Rooted<ModuleNamespaceObject*> ns(
+      cx, ModuleObject::createNamespace(cx, module, exports));
+  if (!ns) {
+    return nullptr;
+  }
+
+  
+  
+  
+  if (!ArrayNativeSort(cx, exports)) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  Rooted<JSAtom*> name(cx);
+  Rooted<Value> resolution(cx);
+  Rooted<ResolvedBindingObject*> binding(cx);
+  Rooted<ModuleObject*> importedModule(cx);
+  Rooted<ModuleNamespaceObject*> importedNamespace(cx);
+  Rooted<JSAtom*> bindingName(cx);
+  for (uint32_t i = 0; i != exports->length(); i++) {
+    name = &exports->getDenseElement(i).toString()->asAtom();
+
+    if (!ModuleResolveExport(cx, module, name, &resolution)) {
+      return nullptr;
+    }
+
+    MOZ_ASSERT(IsResolvedBinding(cx, resolution));
+    binding = &resolution.toObject().as<ResolvedBindingObject>();
+    importedModule = binding->module();
+    if (binding->bindingName() == cx->names().starNamespaceStar) {
+      importedNamespace = GetOrCreateModuleNamespace(cx, importedModule);
+      if (!importedNamespace) {
+        return nullptr;
+      }
+
+      
+      
+      
+      EnsureModuleEnvironmentNamespace(cx, importedModule, importedNamespace);
+    }
+
+    bindingName = binding->bindingName();
+    if (!ns->addBinding(cx, name, importedModule, bindingName)) {
+      return nullptr;
+    }
+  }
+
+  
+  return ns;
 }
