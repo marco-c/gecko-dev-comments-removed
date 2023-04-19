@@ -1178,11 +1178,11 @@ nsresult ContentChild::ProvideWindowCommon(
       return;
     }
 
-    ParentShowInfo showInfo(
-        u""_ns,  true,  false,
-        aTabOpener->WebWidget()->GetDPI(),
-        aTabOpener->WebWidget()->RoundsWidgetCoordinatesTo(),
-        aTabOpener->WebWidget()->GetDefaultScale().scale);
+    ParentShowInfo showInfo(u""_ns,  true,
+                             false,
+                            newChild->WebWidget()->GetDPI(),
+                            newChild->WebWidget()->RoundsWidgetCoordinatesTo(),
+                            newChild->WebWidget()->GetDefaultScale().scale);
 
     newChild->SetMaxTouchPoints(maxTouchPoints);
     newChild->SetHasSiblings(hasSiblings);
