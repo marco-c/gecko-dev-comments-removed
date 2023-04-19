@@ -3,7 +3,7 @@
 
 function parseModule(source) {
     offThreadCompileModuleToStencil(source);
-    var stencil = finishOffThreadCompileModuleToStencil();
+    var stencil = finishOffThreadStencil();
     return instantiateModuleStencil(stencil);
 }
 

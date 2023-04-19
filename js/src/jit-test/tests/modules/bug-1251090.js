@@ -1,3 +1,0 @@
-
-offThreadCompileToStencil("");
-finishOffThreadCompileModuleToStencil();

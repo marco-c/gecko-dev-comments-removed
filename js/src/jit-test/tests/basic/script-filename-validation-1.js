@@ -35,7 +35,7 @@ assertEq(ex.toString(), "InternalError: unsafe filename: file://foo.js");
 
 if (helperThreadCount() > 0) {
     offThreadCompileToStencil('throw 1');
-    var stencil = finishOffThreadCompileToStencil();
+    var stencil = finishOffThreadStencil();
     assertThrowsInstanceOf(() => evalStencil(stencil), InternalError);
 }
 

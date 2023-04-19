@@ -18,7 +18,7 @@ function testOffThreadCompile(sourceIsLazy1, sourceIsLazy2,
                               forceFullParse1, forceFullParse2) {
   offThreadCompileToStencil(code, { sourceIsLazy: sourceIsLazy1,
                                     forceFullParse: forceFullParse1 });
-  const stencil = finishOffThreadCompileToStencil();
+  const stencil = finishOffThreadStencil();
   
   evalStencil(stencil, { sourceIsLazy: sourceIsLazy2,
                          forceFullParse: forceFullParse2 });
@@ -43,7 +43,7 @@ function testOffThreadXDR(sourceIsLazy1, sourceIsLazy2,
   
   offThreadDecodeStencil(t, { sourceIsLazy: sourceIsLazy2,
                              forceFullParse: forceFullParse2 });
-  const stencil = finishOffThreadDecodeStencil();
+  const stencil = finishOffThreadStencil();
 
   
   evalStencil(stencil, { sourceIsLazy: sourceIsLazy2,

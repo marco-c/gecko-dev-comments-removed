@@ -4,7 +4,7 @@
 
 evaluate(`
 offThreadCompileToStencil("var x = -1");
-var stencil = finishOffThreadCompileToStencil();
+var stencil = finishOffThreadStencil();
 evalStencil(stencil);
 `,
          { global: newGlobal() });
@@ -13,6 +13,6 @@ evalStencil(stencil);
 
 for (var i = 0; i < 1000; ++i) {
   offThreadCompileToStencil('var x = ' + i);
-  var stencil = finishOffThreadCompileToStencil();
+  var stencil = finishOffThreadStencil();
   evalStencil(stencil);
 }

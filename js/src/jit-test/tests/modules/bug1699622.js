@@ -1,4 +1,4 @@
 
 offThreadCompileModuleToStencil("");
-var stencil = finishOffThreadCompileModuleToStencil();
+var stencil = finishOffThreadStencil();
 instantiateModuleStencil(stencil);

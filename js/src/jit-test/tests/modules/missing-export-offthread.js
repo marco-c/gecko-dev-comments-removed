@@ -5,6 +5,6 @@ load(libdir + "asserts.js")
 
 offThreadCompileModuleToStencil("export { x };");
 assertThrowsInstanceOf(() => {
-  var stencil = finishOffThreadCompileModuleToStencil();
+  var stencil = finishOffThreadStencil();
   instantiateModuleStencil(stencil);
 }, SyntaxError);

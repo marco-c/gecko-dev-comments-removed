@@ -1,6 +1,6 @@
 
 offThreadCompileToStencil(``);
 evalInWorker(`
-var stencil = finishOffThreadCompileToStencil();
+var stencil = finishOffThreadStencil();
 evalStencil(stencil);
 `);
