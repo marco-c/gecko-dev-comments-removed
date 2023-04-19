@@ -1941,8 +1941,9 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     aMetrics.mCarriedOutBEndMargin.Zero();
   } else {
-    Maybe<nscoord> containBSize = ContainIntrinsicBSize();
-    if (!IsComboboxControlFrame() && containBSize) {
+    Maybe<nscoord> containBSize = ContainIntrinsicBSize(
+        IsComboboxControlFrame() ? NS_UNCONSTRAINEDSIZE : 0);
+    if (containBSize && *containBSize != NS_UNCONSTRAINEDSIZE) {
       
       
       
