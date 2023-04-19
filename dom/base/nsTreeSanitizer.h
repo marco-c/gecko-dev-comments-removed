@@ -19,7 +19,8 @@ class nsINode;
 
 namespace mozilla {
 class DeclarationBlock;
-}
+enum class StyleSanitizationKind : uint8_t;
+}  
 
 namespace mozilla::dom {
 class DocumentFragment;
@@ -63,6 +64,11 @@ class nsTreeSanitizer {
 
   void WithWebSanitizerOptions(const mozilla::dom::SanitizerConfig& aOptions);
 
+  
+
+
+  static void RemoveConditionalCSSFromSubtree(nsINode* aRoot);
+
  private:
   
 
@@ -103,11 +109,6 @@ class nsTreeSanitizer {
 
 
   bool mLogRemovals;
-
-  
-
-
-  bool mOnlyConditionalCSS;
 
   
 
@@ -218,23 +219,19 @@ class nsTreeSanitizer {
 
 
 
-
-
-
-
-  void SanitizeStyleSheet(const nsAString& aOriginal, nsAString& aSanitized,
-                          mozilla::dom::Document* aDocument, nsIURI* aBaseURI);
+  static bool SanitizeInlineStyle(mozilla::dom::Element*,
+                                  mozilla::StyleSanitizationKind);
 
   
 
 
-  void RemoveAllAttributes(mozilla::dom::Element* aElement);
+  static void RemoveAllAttributes(mozilla::dom::Element* aElement);
 
   
 
 
 
-  void RemoveAllAttributesFromDescendants(mozilla::dom::Element* aElement);
+  static void RemoveAllAttributesFromDescendants(mozilla::dom::Element*);
 
   
 
