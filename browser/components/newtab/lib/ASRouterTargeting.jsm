@@ -794,15 +794,6 @@ const TargetingGetters = {
       lazy.NimbusFeatures.majorRelease2022.getVariable("onboarding") === false
     );
   },
-  
-
-
-
-  get distributionId() {
-    return Services.prefs
-      .getDefaultBranch(null)
-      .getCharPref("distribution.id", "");
-  },
 };
 
 const ASRouterTargeting = {
