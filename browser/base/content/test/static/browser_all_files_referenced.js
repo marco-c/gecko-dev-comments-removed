@@ -287,6 +287,7 @@ var whitelist = [
 
   
   
+  { file: "chrome://browser/locale/translation.dtd" },
   { file: "chrome://global/locale/notification.dtd" },
 ];
 
