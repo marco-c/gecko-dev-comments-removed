@@ -724,8 +724,6 @@ PROT_ListManager.prototype.updateSuccess_ = function(
   );
   Services.prefs.setCharPref(nextUpdatePref, targetTime.toString());
 
-  this.recordRemoteSettingsUpdateTelemetry(updateUrl, 0);
-
   Services.obs.notifyObservers(null, "safebrowsing-update-finished", "success");
 };
 
@@ -740,8 +738,6 @@ PROT_ListManager.prototype.updateError_ = function(table, updateUrl, result) {
   
   
   this.setUpdateCheckTimer(updateUrl, this.updateInterval);
-
-  this.recordRemoteSettingsUpdateTelemetry(updateUrl, 1);
 
   Services.obs.notifyObservers(
     null,
@@ -773,8 +769,6 @@ PROT_ListManager.prototype.downloadError_ = function(table, updateUrl, status) {
 
   this.setUpdateCheckTimer(updateUrl, delay);
 
-  this.recordRemoteSettingsUpdateTelemetry(updateUrl, 2);
-
   Services.obs.notifyObservers(
     null,
     "safebrowsing-update-finished",
@@ -801,26 +795,6 @@ PROT_ListManager.prototype.getBackOffTime = function(provider) {
 
   let delay = this.requestBackoffs_[updateUrl].nextRequestDelay();
   return delay == 0 ? 0 : Date.now() + delay;
-};
-
-
-
-
-
-
-
-
-
-PROT_ListManager.prototype.recordRemoteSettingsUpdateTelemetry = function(
-  updateUrl,
-  result
-) {
-  if (updateUrl.startsWith("moz-sbrs://")) {
-    
-    Services.telemetry
-      .getHistogramById("URLCLASSIFIER_UPDATE_REMOTE_SETTINGS_RESULT")
-      .add(result);
-  }
 };
 
 PROT_ListManager.prototype.QueryInterface = ChromeUtils.generateQI([
