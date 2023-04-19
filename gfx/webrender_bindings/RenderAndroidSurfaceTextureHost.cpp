@@ -17,12 +17,13 @@ namespace wr {
 
 RenderAndroidSurfaceTextureHost::RenderAndroidSurfaceTextureHost(
     const java::GeckoSurfaceTexture::GlobalRef& aSurfTex, gfx::IntSize aSize,
-    gfx::SurfaceFormat aFormat, bool aContinuousUpdate, bool aIgnoreTransform)
+    gfx::SurfaceFormat aFormat, bool aContinuousUpdate,
+    Maybe<gfx::Matrix4x4> aTransformOverride)
     : mSurfTex(aSurfTex),
       mSize(aSize),
       mFormat(aFormat),
       mContinuousUpdate(aContinuousUpdate),
-      mIgnoreTransform(aIgnoreTransform),
+      mTransformOverride(aTransformOverride),
       mPrepareStatus(STATUS_NONE),
       mAttachedToGLContext(false) {
   MOZ_COUNT_CTOR_INHERITED(RenderAndroidSurfaceTextureHost, RenderTextureHost);
@@ -277,7 +278,10 @@ std::pair<gfx::Point, gfx::Point> RenderAndroidSurfaceTextureHost::GetUvCoords(
   
   
   
-  if (mSurfTex && !mIgnoreTransform) {
+  
+  if (mTransformOverride) {
+    transform = *mTransformOverride;
+  } else if (mSurfTex) {
     const auto& surf = java::sdk::SurfaceTexture::LocalRef(
         java::sdk::SurfaceTexture::Ref::From(mSurfTex));
     gl::AndroidSurfaceTexture::GetTransformMatrix(surf, &transform);

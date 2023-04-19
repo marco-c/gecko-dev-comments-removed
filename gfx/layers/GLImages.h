@@ -9,10 +9,12 @@
 
 #include "GLContextTypes.h"
 #include "GLTypes.h"
-#include "ImageContainer.h"     
-#include "ImageTypes.h"         
-#include "nsCOMPtr.h"           
-#include "mozilla/gfx/Point.h"  
+#include "ImageContainer.h"      
+#include "ImageTypes.h"          
+#include "nsCOMPtr.h"            
+#include "mozilla/Maybe.h"       
+#include "mozilla/gfx/Matrix.h"  
+#include "mozilla/gfx/Point.h"   
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidSurfaceTexture.h"
@@ -42,13 +44,17 @@ class SurfaceTextureImage : public GLImage {
 
   SurfaceTextureImage(AndroidSurfaceTextureHandle aHandle,
                       const gfx::IntSize& aSize, bool aContinuous,
-                      gl::OriginPos aOriginPos, bool aHasAlpha = true);
+                      gl::OriginPos aOriginPos, bool aHasAlpha,
+                      Maybe<gfx::Matrix4x4> aTransformOverride);
 
   gfx::IntSize GetSize() const override { return mSize; }
   AndroidSurfaceTextureHandle GetHandle() const { return mHandle; }
   bool GetContinuous() const { return mContinuous; }
   gl::OriginPos GetOriginPos() const { return mOriginPos; }
   bool GetHasAlpha() const { return mHasAlpha; }
+  const Maybe<gfx::Matrix4x4>& GetTransformOverride() const {
+    return mTransformOverride;
+  }
 
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override {
     
@@ -78,6 +84,7 @@ class SurfaceTextureImage : public GLImage {
   bool mContinuous;
   gl::OriginPos mOriginPos;
   const bool mHasAlpha;
+  const Maybe<gfx::Matrix4x4> mTransformOverride;
   UniquePtr<SetCurrentCallback> mSetCurrentCallback;
 };
 
