@@ -169,8 +169,8 @@ bool IsOAForceStripPermission(const nsACString& aType) {
 
 
 
-static constexpr std::array<nsLiteralCString, 1> kSiteScopedPermissions = {
-    {"3rdPartyStorage^"_ns}};
+static constexpr std::array<nsLiteralCString, 2> kSiteScopedPermissions = {
+    {"3rdPartyStorage^"_ns, "AllowStorageAccessRequest^"_ns}};
 
 bool IsSiteScopedPermission(const nsACString& aType) {
   if (aType.IsEmpty()) {
