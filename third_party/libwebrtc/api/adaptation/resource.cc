@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+#include "api/adaptation/resource.h"
+
+#include "rtc_base/checks.h"
+
+namespace webrtc {
+
+const char* ResourceUsageStateToString(ResourceUsageState usage_state) {
+  switch (usage_state) {
+    case ResourceUsageState::kOveruse:
+      return "kOveruse";
+    case ResourceUsageState::kUnderuse:
+      return "kUnderuse";
+  }
+  RTC_CHECK(false);
+}
+
+ResourceListener::~ResourceListener() {}
+
+Resource::Resource() {}
+
+Resource::~Resource() {}
+
+}  
