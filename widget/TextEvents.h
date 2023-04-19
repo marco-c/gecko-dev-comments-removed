@@ -124,7 +124,7 @@ struct IgnoreModifierState {
 
 
 
-class WidgetKeyboardEvent : public WidgetInputEvent {
+class WidgetKeyboardEvent final : public WidgetInputEvent {
  private:
   friend class dom::PBrowserParent;
   friend class dom::PBrowserChild;
@@ -150,7 +150,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
         mEditCommandsForRichTextEditorInitialized(false) {}
 
  public:
-  virtual WidgetKeyboardEvent* AsKeyboardEvent() override { return this; }
+  WidgetKeyboardEvent* AsKeyboardEvent() override { return this; }
 
   WidgetKeyboardEvent(bool aIsTrusted, EventMessage aMessage,
                       nsIWidget* aWidget,
@@ -252,7 +252,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
              (MODIFIER_ALT | MODIFIER_META | MODIFIER_OS | MODIFIER_SHIFT));
   }
 
-  virtual WidgetEvent* Duplicate() const override {
+  WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eKeyboardEventClass,
                "Duplicate() must be overridden by sub class");
     
@@ -292,6 +292,18 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_V ||
               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_X) &&
              IsAccel()));
+  }
+
+  [[nodiscard]] bool ShouldWorkAsSpaceKey() const {
+    if (mKeyCode == NS_VK_SPACE) {
+      return true;
+    }
+    
+    
+    
+    
+    return mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
+           mCodeNameIndex == CODE_NAME_INDEX_Space;
   }
 
   
