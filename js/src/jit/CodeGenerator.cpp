@@ -6956,29 +6956,15 @@ void CodeGenerator::visitNewObjectVMCall(LNewObject* lir) {
   restoreLive(lir);
 }
 
-static bool ShouldInitFixedSlots(LInstruction* lir, const TemplateObject& obj) {
-  if (!obj.isNativeObject()) {
-    return true;
-  }
-  const TemplateNativeObject& templateObj = obj.asTemplateNativeObject();
-
+static bool ShouldInitFixedSlots(LNewPlainObject* lir, const Shape* shape,
+                                 uint32_t nfixed) {
   
   
   
   
 
-  uint32_t nfixed = templateObj.numUsedFixedSlots();
   if (nfixed == 0) {
     return false;
-  }
-
-  
-  
-  
-  for (uint32_t slot = 0; slot < nfixed; slot++) {
-    if (!templateObj.getSlot(slot).isUndefined()) {
-      return true;
-    }
   }
 
   
@@ -6989,7 +6975,7 @@ static bool ShouldInitFixedSlots(LInstruction* lir, const TemplateObject& obj) {
   uint32_t initializedSlots = 0;
   uint32_t numInitialized = 0;
 
-  MInstruction* allocMir = lir->mirRaw()->toInstruction();
+  MInstruction* allocMir = lir->mir();
   MBasicBlock* block = allocMir->block();
 
   
@@ -6997,52 +6983,58 @@ static bool ShouldInitFixedSlots(LInstruction* lir, const TemplateObject& obj) {
   MOZ_ASSERT(*iter == allocMir);
   iter++;
 
-  while (true) {
-    for (; iter != block->end(); iter++) {
-      if (iter->isNop() || iter->isConstant() || iter->isPostWriteBarrier()) {
-        
-        continue;
+  
+  for (; iter != block->end(); iter++) {
+    if (iter->isConstant()) {
+      
+      continue;
+    }
+    if (iter->isGuardShape()) {
+      auto* guard = iter->toGuardShape();
+      if (guard->object() != allocMir || guard->shape() != shape) {
+        return true;
       }
+      allocMir = guard;
+      iter++;
+    }
+    break;
+  }
 
-      if (iter->isStoreFixedSlot()) {
-        MStoreFixedSlot* store = iter->toStoreFixedSlot();
-        if (store->object() != allocMir) {
-          return true;
-        }
+  for (; iter != block->end(); iter++) {
+    if (iter->isConstant() || iter->isPostWriteBarrier()) {
+      
+      continue;
+    }
 
-        
-        
-        
-        
-        store->setNeedsBarrier(false);
-
-        uint32_t slot = store->slot();
-        MOZ_ASSERT(slot < nfixed);
-        if ((initializedSlots & (1 << slot)) == 0) {
-          numInitialized++;
-          initializedSlots |= (1 << slot);
-
-          if (numInitialized == nfixed) {
-            
-            MOZ_ASSERT(mozilla::CountPopulation32(initializedSlots) == nfixed);
-            return false;
-          }
-        }
-        continue;
-      }
-
-      if (iter->isGoto()) {
-        block = iter->toGoto()->target();
-        if (block->numPredecessors() != 1) {
-          return true;
-        }
-        break;
+    if (iter->isStoreFixedSlot()) {
+      MStoreFixedSlot* store = iter->toStoreFixedSlot();
+      if (store->object() != allocMir) {
+        return true;
       }
 
       
-      return true;
+      
+      
+      
+      store->setNeedsBarrier(false);
+
+      uint32_t slot = store->slot();
+      MOZ_ASSERT(slot < nfixed);
+      if ((initializedSlots & (1 << slot)) == 0) {
+        numInitialized++;
+        initializedSlots |= (1 << slot);
+
+        if (numInitialized == nfixed) {
+          
+          MOZ_ASSERT(mozilla::CountPopulation32(initializedSlots) == nfixed);
+          return false;
+        }
+      }
+      continue;
     }
-    iter = block->begin();
+
+    
+    return true;
   }
 
   MOZ_CRASH("Shouldn't get here");
@@ -7091,11 +7083,25 @@ void CodeGenerator::visitNewPlainObject(LNewPlainObject* lir) {
       ArgList(ImmGCPtr(shape), Imm32(int32_t(allocKind)), Imm32(initialHeap)),
       StoreRegisterTo(objReg));
 
+  bool initContents = ShouldInitFixedSlots(lir, shape, mir->numFixedSlots());
+
   masm.movePtr(ImmGCPtr(shape), shapeReg);
-  masm.createPlainGCObject(objReg, shapeReg, temp0Reg, temp1Reg,
-                           mir->numFixedSlots(), mir->numDynamicSlots(),
-                           allocKind, initialHeap, ool->entry(),
-                           AllocSiteInput(gc::CatchAllAllocSite::Optimized));
+  masm.createPlainGCObject(
+      objReg, shapeReg, temp0Reg, temp1Reg, mir->numFixedSlots(),
+      mir->numDynamicSlots(), allocKind, initialHeap, ool->entry(),
+      AllocSiteInput(gc::CatchAllAllocSite::Optimized), initContents);
+
+#ifdef DEBUG
+  
+  
+  
+  
+  Label ok;
+  masm.branchTestObjShape(Assembler::Equal, objReg, shape, temp0Reg, objReg,
+                          &ok);
+  masm.assumeUnreachable("Newly created object has the correct shape");
+  masm.bind(&ok);
+#endif
 
   masm.bind(ool->rejoin());
 }
