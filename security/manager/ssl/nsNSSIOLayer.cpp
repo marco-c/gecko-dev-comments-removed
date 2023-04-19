@@ -429,6 +429,7 @@ void nsNSSSocketInfo::SetCertVerificationWaiting() {
 
 
 void nsNSSSocketInfo::SetCertVerificationResult(PRErrorCode errorCode) {
+  SetUsedPrivateDNS(GetProviderFlags() & nsISocketProvider::USED_PRIVATE_DNS);
   MOZ_ASSERT(mCertVerificationState == waiting_for_cert_verification,
              "Invalid state transition to cert_verification_finished");
 
