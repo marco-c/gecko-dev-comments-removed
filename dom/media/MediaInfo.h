@@ -434,6 +434,7 @@ class VideoInfo : public TrackInfo {
   Maybe<gfx::YUVColorSpace> mColorSpace;
 
   
+  Maybe<gfx::ColorSpace2> mColorPrimaries;
 
   
   

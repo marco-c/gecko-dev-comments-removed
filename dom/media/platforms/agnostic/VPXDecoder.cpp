@@ -13,6 +13,7 @@
 #include "ImageContainer.h"
 #include "TimeUnits.h"
 #include "gfx2DGlue.h"
+#include "gfxUtils.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TaskQueue.h"
@@ -544,9 +545,9 @@ void VPXDecoder::GetVPCCBox(MediaByteBuffer* aDestBox,
   writer.WriteBit(aInfo.mFullRange);     
 
   
-  writer.WriteU8(2);  
-  writer.WriteU8(2);  
-  writer.WriteU8(2);  
+  writer.WriteU8(aInfo.mColorPrimaries);    
+  writer.WriteU8(aInfo.mTransferFunction);  
+  writer.WriteU8(2);                        
 
   writer.WriteBits(0,
                    16);  
@@ -563,6 +564,10 @@ bool VPXDecoder::SetVideoInfo(VideoInfo* aDestInfo, const nsAString& aCodec) {
     return false;
   }
 
+  aDestInfo->mColorPrimaries =
+      gfxUtils::CicpToColorPrimaries(colorSpace.mPrimaries, sPDMLog);
+  aDestInfo->mTransferFunction =
+      gfxUtils::CicpToTransferFunction(colorSpace.mTransfer);
   aDestInfo->mColorDepth = gfx::ColorDepthForBitDepth(info.mBitDepth);
   VPXDecoder::SetChroma(info, chroma);
   info.mFullRange = colorSpace.mRange == ColorRange::FULL;
@@ -604,9 +609,9 @@ void VPXDecoder::ReadVPCCBox(VPXStreamInfo& aDestInfo, MediaByteBuffer* aBox) {
   SetChroma(aDestInfo, reader.ReadBits(3));
   aDestInfo.mFullRange = reader.ReadBit();
 
-  reader.ReadBits(8);  
-  reader.ReadBits(8);  
-  reader.ReadBits(8);  
+  aDestInfo.mColorPrimaries = reader.ReadBits(8);    
+  aDestInfo.mTransferFunction = reader.ReadBits(8);  
+  reader.ReadBits(8);                                
 
   MOZ_ASSERT(reader.ReadBits(16) ==
              0);  

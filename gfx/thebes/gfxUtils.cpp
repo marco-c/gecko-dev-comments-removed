@@ -1388,6 +1388,25 @@ const float kIdentityNarrowYCbCrToRGB_RowMajor[16] = {
 
 
 
+
+
+ Maybe<gfx::ColorSpace2> gfxUtils::CicpToColorPrimaries(
+    const CICP::ColourPrimaries aColourPrimaries, LazyLogModule& aLogger) {
+  switch (aColourPrimaries) {
+    case CICP::ColourPrimaries::CP_BT709:
+      return Some(gfx::ColorSpace2::BT709);
+    case CICP::ColourPrimaries::CP_BT2020:
+      return Some(gfx::ColorSpace2::BT2020);
+    default:
+      MOZ_LOG(aLogger, LogLevel::Debug,
+              ("Unsupported color primaries value: %hhu", aColourPrimaries));
+      return {};
+  }
+}
+
+
+
+
  Maybe<gfx::TransferFunction> gfxUtils::CicpToTransferFunction(
     const CICP::TransferCharacteristics aTransferCharacteristics) {
   switch (aTransferCharacteristics) {

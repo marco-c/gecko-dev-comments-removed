@@ -231,14 +231,27 @@ int DAV1DDecoder::GetPicture(DecodedData& aData, MediaResult& aResult) {
 }
 
 
- Maybe<gfx::YUVColorSpace> DAV1DDecoder::GetColorSpace(
+Maybe<gfx::YUVColorSpace> DAV1DDecoder::GetColorSpace(
     const Dav1dPicture& aPicture, LazyLogModule& aLogger) {
+  
   if (!aPicture.seq_hdr || !aPicture.seq_hdr->color_description_present) {
     return Nothing();
   }
 
   return gfxUtils::CicpToColorSpace(
       static_cast<gfx::CICP::MatrixCoefficients>(aPicture.seq_hdr->mtrx),
+      static_cast<gfx::CICP::ColourPrimaries>(aPicture.seq_hdr->pri), aLogger);
+}
+
+
+Maybe<gfx::ColorSpace2> DAV1DDecoder::GetColorPrimaries(
+    const Dav1dPicture& aPicture, LazyLogModule& aLogger) {
+  
+  if (!aPicture.seq_hdr || !aPicture.seq_hdr->color_description_present) {
+    return Nothing();
+  }
+
+  return gfxUtils::CicpToColorPrimaries(
       static_cast<gfx::CICP::ColourPrimaries>(aPicture.seq_hdr->pri), aLogger);
 }
 
@@ -256,6 +269,8 @@ already_AddRefed<VideoData> DAV1DDecoder::ConstructImage(
   b.mYUVColorSpace =
       DAV1DDecoder::GetColorSpace(aPicture, sPDMLog)
           .valueOr(DefaultColorSpace({aPicture.p.w, aPicture.p.h}));
+  b.mColorPrimaries = DAV1DDecoder::GetColorPrimaries(aPicture, sPDMLog)
+                          .valueOr(gfx::ColorSpace2::BT709);
   b.mColorRange = aPicture.seq_hdr->color_range ? gfx::ColorRange::FULL
                                                 : gfx::ColorRange::LIMITED;
 

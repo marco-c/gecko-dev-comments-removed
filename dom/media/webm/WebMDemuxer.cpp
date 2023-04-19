@@ -307,6 +307,10 @@ nsresult WebMDemuxer::ReadMetadata() {
           return NS_ERROR_FAILURE;
       }
 
+      mInfo.mVideo.mColorPrimaries = gfxUtils::CicpToColorPrimaries(
+          static_cast<gfx::CICP::ColourPrimaries>(params.primaries),
+          gMediaDemuxerLog);
+
       
       
       

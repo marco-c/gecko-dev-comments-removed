@@ -144,6 +144,11 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       mCurrentConfig.mColorSpace = Some(spsdata.ColorSpace());
       
       
+      mCurrentConfig.mColorPrimaries = gfxUtils::CicpToColorPrimaries(
+          static_cast<gfx::CICP::ColourPrimaries>(spsdata.colour_primaries),
+          gMediaDecoderLog);
+      
+      
       mCurrentConfig.mTransferFunction = gfxUtils::CicpToTransferFunction(
           static_cast<gfx::CICP::TransferCharacteristics>(
               spsdata.transfer_characteristics));
@@ -272,6 +277,7 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
 
     mCurrentConfig.mColorDepth = gfx::ColorDepthForBitDepth(info.mBitDepth);
     mCurrentConfig.mColorSpace = Some(info.ColorSpace());
+    
 
     
     
@@ -347,6 +353,8 @@ class AV1ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     mCurrentConfig.mColorSpace = gfxUtils::CicpToColorSpace(
         aInfo.mColorSpace.mMatrix, aInfo.mColorSpace.mPrimaries,
         gMediaDecoderLog);
+    mCurrentConfig.mColorPrimaries = gfxUtils::CicpToColorPrimaries(
+        aInfo.mColorSpace.mPrimaries, gMediaDecoderLog);
     mCurrentConfig.mTransferFunction =
         gfxUtils::CicpToTransferFunction(aInfo.mColorSpace.mTransfer);
     mCurrentConfig.mColorRange = aInfo.mColorSpace.mRange;
