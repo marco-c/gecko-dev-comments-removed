@@ -41,6 +41,7 @@
 #include "nsIFormControl.h"
 #include "nsINode.h"
 #include "nsISupports.h"
+#include "nsIURI.h"
 #include "nsPresContext.h"
 
 namespace mozilla {
@@ -1521,6 +1522,27 @@ void IMEStateManager::SetIMEState(const IMEState& aState,
 
   InputContext context;
   context.mIMEState = aState;
+  if (aPresContext) {
+    if (nsIURI* uri = aPresContext->Document()->GetDocumentURI()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (uri->SchemeIs("http") || uri->SchemeIs("https")) {
+        context.mURI = uri;
+      }
+    }
+  }
   context.mOrigin = aOrigin;
   context.mMayBeIMEUnaware =
       context.mIMEState.IsEditable() &&
