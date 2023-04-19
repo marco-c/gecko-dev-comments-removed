@@ -733,9 +733,9 @@ add_task(async function setupAndTeardown() {
   
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    !UrlbarQuickSuggest._rs,
+    !QuickSuggest.remoteSettings._rs,
     "Settings client is null after disabling suggest prefs"
   );
 
@@ -743,58 +743,58 @@ add_task(async function setupAndTeardown() {
   
   
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    UrlbarQuickSuggest._rs,
+    QuickSuggest.remoteSettings._rs,
     "Settings client is non-null after enabling suggest.quicksuggest.nonsponsored"
   );
 
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    !UrlbarQuickSuggest._rs,
+    !QuickSuggest.remoteSettings._rs,
     "Settings client is null after disabling suggest.quicksuggest.nonsponsored"
   );
 
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    UrlbarQuickSuggest._rs,
+    QuickSuggest.remoteSettings._rs,
     "Settings client is non-null after enabling suggest.quicksuggest.sponsored"
   );
 
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    UrlbarQuickSuggest._rs,
+    QuickSuggest.remoteSettings._rs,
     "Settings client remains non-null after enabling suggest.quicksuggest.nonsponsored"
   );
 
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    UrlbarQuickSuggest._rs,
+    QuickSuggest.remoteSettings._rs,
     "Settings client remains non-null after disabling suggest.quicksuggest.nonsponsored"
   );
 
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    !UrlbarQuickSuggest._rs,
+    !QuickSuggest.remoteSettings._rs,
     "Settings client is null after disabling suggest.quicksuggest.sponsored"
   );
 
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    UrlbarQuickSuggest._rs,
+    QuickSuggest.remoteSettings._rs,
     "Settings client is non-null after enabling suggest.quicksuggest.nonsponsored"
   );
 
   UrlbarPrefs.set("quicksuggest.enabled", false);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    !UrlbarQuickSuggest._rs,
+    !QuickSuggest.remoteSettings._rs,
     "Settings client is null after disabling quicksuggest.enabled"
   );
 
@@ -802,9 +802,9 @@ add_task(async function setupAndTeardown() {
   UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
   UrlbarPrefs.set("quicksuggest.enabled", true);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
   Assert.ok(
-    !UrlbarQuickSuggest._rs,
+    !QuickSuggest.remoteSettings._rs,
     "Settings client remains null at end of task"
   );
 });
@@ -1224,11 +1224,12 @@ add_task(async function remoteSettingsDataType() {
 
   
   
+  
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  await UrlbarQuickSuggest.readyPromise;
+  await QuickSuggest.remoteSettings.readyPromise;
 
   let sandbox = sinon.createSandbox();
-  let spy = sandbox.spy(UrlbarQuickSuggest._rs, "get");
+  let spy = sandbox.spy(QuickSuggest.remoteSettings._rs, "get");
 
   for (let dataType of [undefined, "test-data-type"]) {
     
@@ -1239,7 +1240,7 @@ add_task(async function remoteSettingsDataType() {
     let cleanUpNimbus = await QuickSuggestTestUtils.initNimbusFeature(value);
 
     
-    await UrlbarQuickSuggest._queueSettingsSync();
+    await QuickSuggest.remoteSettings._queueSettingsSync();
 
     let expectedDataType = dataType || "data";
     Assert.ok(

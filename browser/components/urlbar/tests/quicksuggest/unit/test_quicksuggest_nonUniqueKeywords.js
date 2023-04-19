@@ -19,17 +19,17 @@ let SUGGESTIONS_DATA = [
   {
     keywords: ["aaa", "bbb"],
     isSponsored: false,
-    score: 2 * UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE,
+    score: 2 * QuickSuggestRemoteSettingsClient.DEFAULT_SUGGESTION_SCORE,
   },
   {
     keywords: ["bbb"],
     isSponsored: true,
-    score: 4 * UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE,
+    score: 4 * QuickSuggestRemoteSettingsClient.DEFAULT_SUGGESTION_SCORE,
   },
   {
     keywords: ["bbb"],
     isSponsored: false,
-    score: 3 * UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE,
+    score: 3 * QuickSuggestRemoteSettingsClient.DEFAULT_SUGGESTION_SCORE,
   },
   {
     keywords: ["ccc"],
@@ -161,7 +161,7 @@ add_task(async function() {
       score:
         typeof score == "number"
           ? score
-          : UrlbarQuickSuggest.DEFAULT_SUGGESTION_SCORE,
+          : QuickSuggestRemoteSettingsClient.DEFAULT_SUGGESTION_SCORE,
       source: "remote-settings",
       icon: null,
       position: undefined,
@@ -205,16 +205,16 @@ add_task(async function() {
 
     
     Assert.deepEqual(
-      await UrlbarQuickSuggest.query(keyword),
+      await QuickSuggest.remoteSettings.fetch(keyword),
       expectedIndexes.map(i => ({
         ...qsSuggestions[i],
         full_keyword: keyword,
       })),
-      `query() for ${keyword}`
+      `fetch() for ${keyword}`
     );
 
     
-    let mapValue = UrlbarQuickSuggest._resultsByKeyword.get(keyword);
+    let mapValue = QuickSuggest.remoteSettings._resultsByKeyword.get(keyword);
     if (expectedIndexes.length == 1) {
       Assert.ok(!Array.isArray(mapValue), "The map value is not an array");
       Assert.deepEqual(
