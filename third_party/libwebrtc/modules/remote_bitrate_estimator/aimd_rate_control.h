@@ -109,7 +109,10 @@ class AimdRateControl {
   const bool estimate_bounded_backoff_;
   
   
-  const bool estimate_bounded_increase_;
+  FieldTrialFlag disable_estimate_bounded_increase_{"Disabled"};
+  FieldTrialParameter<double> estimate_bounded_increase_ratio_{"ratio", 1.0};
+  FieldTrialParameter<bool> ignore_throughput_limit_if_network_estimate_{
+      "ignore_acked", false};
   absl::optional<DataRate> last_decrease_;
   FieldTrialOptional<TimeDelta> initial_backoff_interval_;
   FieldTrialFlag link_capacity_fix_;
