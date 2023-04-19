@@ -1054,8 +1054,6 @@ bool CheckPreloadAttrs(const nsAttrValue& aAs, const nsAString& aType,
                        const nsAString& aMedia,
                        mozilla::dom::Document* aDocument);
 void WarnIgnoredPreload(const mozilla::dom::Document&, nsIURI&);
-}  
-}  
 
 
 
@@ -1066,11 +1064,14 @@ void WarnIgnoredPreload(const mozilla::dom::Document&, nsIURI&);
 
 
 
-nsresult NS_HasRootDomain(const nsACString& aInput, const nsACString& aHost,
-                          bool* aResult);
+nsresult HasRootDomain(const nsACString& aInput, const nsACString& aHost,
+                       bool* aResult);
 
 void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI);
 
 bool IsCoepCredentiallessEnabled(bool aIsOriginTrialCoepCredentiallessEnabled);
+
+}  
+}  
 
 #endif  

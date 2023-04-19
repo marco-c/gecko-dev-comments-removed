@@ -3167,7 +3167,7 @@ nsresult CacheFileIOManager::EvictByContextInternal(
 
         
         bool hasRootDomain = false;
-        rv = NS_HasRootDomain(host, baseDomain, &hasRootDomain);
+        rv = HasRootDomain(host, baseDomain, &hasRootDomain);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return false;
         }
