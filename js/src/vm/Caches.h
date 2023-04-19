@@ -239,22 +239,32 @@ class MegamorphicCache {
 
 
 
+
+
+
+
+
+
+
+
 class StringToAtomCache {
   using Map = HashMap<JSLinearString*, JSAtom*, PointerHasher<JSLinearString*>,
                       SystemAllocPolicy>;
   Map map_;
 
+  struct LastEntry {
+    JSLinearString* string = nullptr;
+    JSAtom* atom = nullptr;
+  };
+  static constexpr size_t NumLastEntries = 2;
+  mozilla::Array<LastEntry, NumLastEntries> lastLookups_;
+
  public:
   
   static constexpr size_t MinStringLength = 30;
 
-  JSAtom* lookup(JSLinearString* s) {
-    MOZ_ASSERT(!s->isAtom());
-    if (!s->inStringToAtomCache()) {
-      MOZ_ASSERT(!map_.lookup(s));
-      return nullptr;
-    }
-
+  JSAtom* lookupInMap(JSLinearString* s) const {
+    MOZ_ASSERT(s->inStringToAtomCache());
     MOZ_ASSERT(s->length() >= MinStringLength);
 
     auto p = map_.lookup(s);
@@ -263,8 +273,33 @@ class StringToAtomCache {
     return atom;
   }
 
+  MOZ_ALWAYS_INLINE JSAtom* lookup(JSLinearString* s) const {
+    MOZ_ASSERT(!s->isAtom());
+
+    for (const LastEntry& entry : lastLookups_) {
+      if (entry.string == s) {
+        MOZ_ASSERT(EqualStrings(s, entry.atom));
+        return entry.atom;
+      }
+    }
+
+    if (!s->inStringToAtomCache()) {
+      MOZ_ASSERT(!map_.lookup(s));
+      return nullptr;
+    }
+
+    return lookupInMap(s);
+  }
+
   void maybePut(JSLinearString* s, JSAtom* atom) {
     MOZ_ASSERT(!s->isAtom());
+
+    for (size_t i = NumLastEntries - 1; i > 0; i--) {
+      lastLookups_[i] = lastLookups_[i - 1];
+    }
+    lastLookups_[0].string = s;
+    lastLookups_[0].atom = atom;
+
     if (s->length() < MinStringLength) {
       return;
     }
@@ -274,7 +309,13 @@ class StringToAtomCache {
     s->setInStringToAtomCache();
   }
 
-  void purge() { map_.clearAndCompact(); }
+  void purge() {
+    map_.clearAndCompact();
+    for (LastEntry& entry : lastLookups_) {
+      entry.string = nullptr;
+      entry.atom = nullptr;
+    }
+  }
 };
 
 class RuntimeCaches {
