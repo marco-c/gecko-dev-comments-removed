@@ -26,6 +26,7 @@
 #include "net/dcsctp/packet/chunk/iforward_tsn_chunk.h"
 #include "net/dcsctp/packet/chunk/sack_chunk.h"
 #include "net/dcsctp/packet/data.h"
+#include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/dcsctp_options.h"
 #include "net/dcsctp/timer/timer.h"
 #include "net/dcsctp/tx/retransmission_timeout.h"
@@ -68,16 +69,18 @@ class RetransmissionQueue {
   
   
   
-  RetransmissionQueue(absl::string_view log_prefix,
-                      TSN initial_tsn,
-                      size_t a_rwnd,
-                      SendQueue& send_queue,
-                      std::function<void(DurationMs rtt)> on_new_rtt,
-                      std::function<void()> on_clear_retransmission_counter,
-                      Timer& t3_rtx,
-                      const DcSctpOptions& options,
-                      bool supports_partial_reliability = true,
-                      bool use_message_interleaving = false);
+  RetransmissionQueue(
+      absl::string_view log_prefix,
+      TSN my_initial_tsn,
+      size_t a_rwnd,
+      SendQueue& send_queue,
+      std::function<void(DurationMs rtt)> on_new_rtt,
+      std::function<void()> on_clear_retransmission_counter,
+      Timer& t3_rtx,
+      const DcSctpOptions& options,
+      bool supports_partial_reliability = true,
+      bool use_message_interleaving = false,
+      const DcSctpSocketHandoverState* handover_state = nullptr);
 
   
   
@@ -138,6 +141,10 @@ class RetransmissionQueue {
   bool CanResetStreams() const;
   void CommitResetStreams();
   void RollbackResetStreams();
+
+  HandoverReadinessStatus GetHandoverReadiness() const;
+
+  void AddHandoverState(DcSctpSocketHandoverState& state);
 
  private:
   enum class CongestionAlgorithmPhase {
@@ -279,9 +286,7 @@ class RetransmissionQueue {
   
   
   
-  bool NackItem(UnwrappedTSN cumulative_tsn_ack,
-                TxData& item,
-                bool retransmit_now);
+  bool NackItem(UnwrappedTSN tsn, TxData& item, bool retransmit_now);
 
   
   
@@ -375,7 +380,7 @@ class RetransmissionQueue {
   
   size_t ssthresh_;
   
-  size_t partial_bytes_acked_ = 0;
+  size_t partial_bytes_acked_;
   
   
   absl::optional<UnwrappedTSN> fast_recovery_exit_tsn_ = absl::nullopt;
