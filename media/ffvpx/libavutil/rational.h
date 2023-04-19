@@ -185,6 +185,7 @@ AVRational av_d2q(double d, int max) av_const;
 
 
 
+
 int av_nearer_q(AVRational q, AVRational q1, AVRational q2);
 
 

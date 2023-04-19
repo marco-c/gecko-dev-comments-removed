@@ -27,15 +27,13 @@
 #ifndef AVCODEC_FLAC_H
 #define AVCODEC_FLAC_H
 
-#include "avcodec.h"
-#include "bytestream.h"
-#include "get_bits.h"
+#include "libavutil/intreadwrite.h"
 
 #define FLAC_STREAMINFO_SIZE   34
 #define FLAC_MAX_CHANNELS       8
 #define FLAC_MIN_BLOCKSIZE     16
 #define FLAC_MAX_BLOCKSIZE  65535
-#define FLAC_MIN_FRAME_SIZE    11
+#define FLAC_MIN_FRAME_SIZE    10
 
 enum {
     FLAC_CHMODE_INDEPENDENT = 0,
@@ -55,84 +53,6 @@ enum {
     FLAC_METADATA_TYPE_INVALID = 127
 };
 
-enum FLACExtradataFormat {
-    FLAC_EXTRADATA_FORMAT_STREAMINFO  = 0,
-    FLAC_EXTRADATA_FORMAT_FULL_HEADER = 1
-};
-
-#define FLACCOMMONINFO \
-    int samplerate;         /**< sample rate                             */\
-    int channels;           /**< number of channels                      */\
-    int bps;                /**< bits-per-sample                         */\
-
-
-
-
-
-#define FLACSTREAMINFO \
-    FLACCOMMONINFO \
-    int max_blocksize;      /**< maximum block size, in samples          */\
-    int max_framesize;      /**< maximum frame size, in bytes            */\
-    int64_t samples;        /**< total number of samples                 */\
-
-typedef struct FLACStreaminfo {
-    FLACSTREAMINFO
-} FLACStreaminfo;
-
-typedef struct FLACFrameInfo {
-    FLACCOMMONINFO
-    int blocksize;          
-    int ch_mode;            
-    int64_t frame_or_sample_num;    
-    int is_var_size;                
-
-
-
-} FLACFrameInfo;
-
-
-
-
-
-
-
-
-
-int ff_flac_parse_streaminfo(AVCodecContext *avctx, struct FLACStreaminfo *s,
-                              const uint8_t *buffer);
-
-
-
-
-
-
-
-
-int ff_flac_is_extradata_valid(AVCodecContext *avctx,
-                               enum FLACExtradataFormat *format,
-                               uint8_t **streaminfo_start);
-
-
-
-
-
-
-
-int ff_flac_get_max_frame_size(int blocksize, int ch, int bps);
-
-
-
-
-
-
-
-
-
-int ff_flac_decode_frame_header(AVCodecContext *avctx, GetBitContext *gb,
-                                FLACFrameInfo *fi, int log_level_offset);
-
-void ff_flac_set_channel_layout(AVCodecContext *avctx, int channels);
-
 
 
 
@@ -143,13 +63,13 @@ void ff_flac_set_channel_layout(AVCodecContext *avctx, int channels);
 static av_always_inline void flac_parse_block_header(const uint8_t *block_header,
                                                       int *last, int *type, int *size)
 {
-    int tmp = bytestream_get_byte(&block_header);
+    int tmp = *block_header;
     if (last)
         *last = tmp & 0x80;
     if (type)
         *type = tmp & 0x7F;
     if (size)
-        *size = bytestream_get_be24(&block_header);
+        *size = AV_RB24(block_header + 1);
 }
 
-#endif
+#endif 

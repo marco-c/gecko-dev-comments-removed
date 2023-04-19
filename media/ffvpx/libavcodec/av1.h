@@ -175,4 +175,10 @@ enum {
     AV1_RESTORE_SWITCHABLE = 3,
 };
 
+
+
+
+
+#define AV1_SANE_SEQUENCE_HEADER_MAX_BITS           3138
+
 #endif 

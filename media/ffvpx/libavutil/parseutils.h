@@ -95,6 +95,10 @@ int av_parse_video_rate(AVRational *rate, const char *str);
 
 
 
+
+
+
+
 int av_parse_color(uint8_t *rgba_color, const char *color_string, int slen,
                    void *log_ctx);
 

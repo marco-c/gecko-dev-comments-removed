@@ -18,6 +18,12 @@
 
 
 
+
+
+
+
+
+
 #ifndef AVUTIL_BPRINT_H
 #define AVUTIL_BPRINT_H
 
@@ -25,6 +31,14 @@
 
 #include "attributes.h"
 #include "avstring.h"
+
+
+
+
+
+
+
+
 
 
 
@@ -76,9 +90,6 @@ typedef struct name { \
 
 
 
-
-
-
 FF_PAD_STRUCTURE(AVBPrint, 1024,
     char *str;         
     unsigned len;      
@@ -91,9 +102,28 @@ FF_PAD_STRUCTURE(AVBPrint, 1024,
 
 
 
+
+
+
+
+
+
 #define AV_BPRINT_SIZE_UNLIMITED  ((unsigned)-1)
+
+
+
+
+
+
 #define AV_BPRINT_SIZE_AUTOMATIC  1
+
+
+
+
+
+
 #define AV_BPRINT_SIZE_COUNT_ONLY 0
+
 
 
 
@@ -215,5 +245,7 @@ int av_bprint_finalize(AVBPrint *buf, char **ret_str);
 
 void av_bprint_escape(AVBPrint *dstbuf, const char *src, const char *special_chars,
                       enum AVEscapeMode mode, int flags);
+
+
 
 #endif 

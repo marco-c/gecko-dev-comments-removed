@@ -671,6 +671,7 @@ void *av_dynarray2_add(void **tab_ptr, int *nb_ptr, size_t elem_size,
 
 
 
+
 int av_size_mult(size_t a, size_t b, size_t *r);
 
 

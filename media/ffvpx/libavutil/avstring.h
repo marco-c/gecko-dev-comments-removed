@@ -138,6 +138,7 @@ size_t av_strlcatf(char *dst, size_t size, const char *fmt, ...) av_printf_forma
 
 
 
+
 static inline size_t av_strnlen(const char *s, size_t len)
 {
     size_t i;

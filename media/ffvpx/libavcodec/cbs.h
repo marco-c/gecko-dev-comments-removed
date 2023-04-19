@@ -368,17 +368,8 @@ void ff_cbs_fragment_free(CodedBitstreamFragment *frag);
 
 
 
-int ff_cbs_alloc_unit_content(CodedBitstreamUnit *unit,
-                              size_t size,
-                              void (*free)(void *opaque, uint8_t *content));
-
-
-
-
-
-
-int ff_cbs_alloc_unit_content2(CodedBitstreamContext *ctx,
-                               CodedBitstreamUnit *unit);
+int ff_cbs_alloc_unit_content(CodedBitstreamContext *ctx,
+                              CodedBitstreamUnit *unit);
 
 
 

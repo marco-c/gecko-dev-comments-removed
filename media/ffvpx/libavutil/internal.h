@@ -41,7 +41,6 @@
 #include "config.h"
 #include "attributes.h"
 #include "timer.h"
-#include "dict.h"
 #include "macros.h"
 #include "pixfmt.h"
 
@@ -110,50 +109,10 @@
 
 
 
-
 #if CONFIG_SMALL
 #   define NULL_IF_CONFIG_SMALL(x) NULL
 #else
 #   define NULL_IF_CONFIG_SMALL(x) x
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if HAVE_SYMVER_ASM_LABEL
-#   define FF_SYMVER(type, name, args, ver)                     \
-    type ff_##name args __asm__ (EXTERN_PREFIX #name "@" ver);  \
-    type ff_##name args
-#elif HAVE_SYMVER_GNU_ASM
-#   define FF_SYMVER(type, name, args, ver)                             \
-    __asm__ (".symver ff_" #name "," EXTERN_PREFIX #name "@" ver);      \
-    type ff_##name args;                                                \
-    type ff_##name args
-#endif
-
-
-
-
-
-
-#if HAVE_THREADS
-#   define ONLY_IF_THREADS_ENABLED(x) x
-#else
-#   define ONLY_IF_THREADS_ENABLED(x) NULL
 #endif
 
 
@@ -184,10 +143,6 @@ void avpriv_request_sample(void *avc,
 #pragma comment(linker, "/include:" EXTERN_PREFIX "avpriv_snprintf")
 #endif
 
-#define avpriv_fopen_utf8 ff_fopen_utf8
-#define avpriv_open ff_open
-#define avpriv_tempfile ff_tempfile
-
 #define PTRDIFF_SPECIFIER "Id"
 #define SIZE_SPECIFIER "Iu"
 #else
@@ -217,66 +172,6 @@ void avpriv_request_sample(void *avc,
 #define SUINT32 uint32_t
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static av_always_inline av_const int64_t ff_rint64_clip(double a, int64_t amin, int64_t amax)
-{
-    int64_t res;
-#if defined(HAVE_AV_CONFIG_H) && defined(ASSERT_LEVEL) && ASSERT_LEVEL >= 2
-    if (amin > amax) abort();
-#endif
-    
-    
-    if (a >=  9223372036854775808.0)
-        return amax;
-    if (a <= -9223372036854775808.0)
-        return amin;
-
-    
-    res = llrint(a);
-    if (res > amax)
-        return amax;
-    if (res < amin)
-        return amin;
-    return res;
-}
-
-
-
-
-av_warn_unused_result
-int avpriv_open(const char *filename, int flags, ...);
-
-
-
-
-FILE *avpriv_fopen_utf8(const char *path, const char *mode);
-
-
-
-
-
-
-
-
-
-
-
-
-int avpriv_tempfile(const char *prefix, char **filename, int log_offset, void *log_ctx);
-
 int avpriv_set_systematic_pal2(uint32_t pal[256], enum AVPixelFormat pix_fmt);
 
 static av_always_inline av_const int avpriv_mirror(int x, int w)
@@ -291,18 +186,5 @@ static av_always_inline av_const int avpriv_mirror(int x, int w)
     }
     return x;
 }
-
-void ff_check_pixfmt_descriptors(void);
-
-
-
-
-
-
-
-
-
-
-int avpriv_dict_set_timestamp(AVDictionary **dict, const char *key, int64_t timestamp);
 
 #endif 

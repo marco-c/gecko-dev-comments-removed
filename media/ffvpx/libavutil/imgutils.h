@@ -49,6 +49,7 @@
 
 
 
+
 void av_image_fill_max_pixsteps(int max_pixsteps[4], int max_pixstep_comps[4],
                                 const AVPixFmtDescriptor *pixdesc);
 
@@ -67,7 +68,11 @@ int av_image_get_linesize(enum AVPixelFormat pix_fmt, int width, int plane);
 
 
 
+
+
 int av_image_fill_linesizes(int linesizes[4], enum AVPixelFormat pix_fmt, int width);
+
+
 
 
 
@@ -94,6 +99,8 @@ int av_image_fill_plane_sizes(size_t size[4], enum AVPixelFormat pix_fmt,
 
 
 
+
+
 int av_image_fill_pointers(uint8_t *data[4], enum AVPixelFormat pix_fmt, int height,
                            uint8_t *ptr, const int linesizes[4]);
 
@@ -107,8 +114,16 @@ int av_image_fill_pointers(uint8_t *data[4], enum AVPixelFormat pix_fmt, int hei
 
 
 
+
+
+
+
+
 int av_image_alloc(uint8_t *pointers[4], int linesizes[4],
                    int w, int h, enum AVPixelFormat pix_fmt, int align);
+
+
+
 
 
 
@@ -143,6 +158,11 @@ void av_image_copy_plane(uint8_t       *dst, int dst_linesize,
 void av_image_copy_plane_uc_from(uint8_t       *dst, ptrdiff_t dst_linesize,
                                  const uint8_t *src, ptrdiff_t src_linesize,
                                  ptrdiff_t bytewidth, int height);
+
+
+
+
+
 
 
 

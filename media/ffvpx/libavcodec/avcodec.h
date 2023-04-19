@@ -234,6 +234,16 @@ typedef struct RcOverride{
 
 
 
+
+
+
+
+
+
+#define AV_CODEC_FLAG_RECON_FRAME     (1 <<  6)
+
+
+
 #define AV_CODEC_FLAG_PASS1           (1 <<  9)
 
 
@@ -336,8 +346,7 @@ typedef struct RcOverride{
 
 
 
-
-
+#define AV_CODEC_FLAG2_ICC_PROFILES   (1U << 31)
 
 
 
@@ -1297,12 +1306,8 @@ typedef struct AVCodecContext {
 
 
 
+
     int strict_std_compliance;
-#define FF_COMPLIANCE_VERY_STRICT   2 ///< Strictly conform to an older more strict version of the spec or reference software.
-#define FF_COMPLIANCE_STRICT        1 ///< Strictly conform to all the things in the spec no matter what consequences.
-#define FF_COMPLIANCE_NORMAL        0
-#define FF_COMPLIANCE_UNOFFICIAL   -1 ///< Allow unofficial extensions
-#define FF_COMPLIANCE_EXPERIMENTAL -2 ///< Allow nonstandardized experimental things.
 
     
 
@@ -1341,24 +1346,9 @@ typedef struct AVCodecContext {
 
 
 
+
+
     int err_recognition;
-
-
-
-
-
-
-
-#define AV_EF_CRCCHECK  (1<<0)
-#define AV_EF_BITSTREAM (1<<1)          ///< detect bitstream specification deviations
-#define AV_EF_BUFFER    (1<<2)          ///< detect improper bitstream length
-#define AV_EF_EXPLODE   (1<<3)          ///< abort decoding on minor error detection
-
-#define AV_EF_IGNORE_ERR (1<<15)        ///< ignore errors and continue
-#define AV_EF_CAREFUL    (1<<16)        ///< consider things that violate the spec, are fast to calculate and have not been seen in the wild as errors
-#define AV_EF_COMPLIANT  (1<<17)        ///< consider all spec non compliances as errors
-#define AV_EF_AGGRESSIVE (1<<18)        ///< consider things that a sane encoder should not do as an error
-
 
     
 
@@ -1379,6 +1369,19 @@ typedef struct AVCodecContext {
     const struct AVHWAccel *hwaccel;
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1514,7 +1517,6 @@ typedef struct AVCodecContext {
     int (*execute)(struct AVCodecContext *c, int (*func)(struct AVCodecContext *c2, void *arg), void *arg2, int *ret, int count, int size);
 
     
-
 
 
 
@@ -2494,6 +2496,7 @@ void avcodec_align_dimensions(AVCodecContext *s, int *width, int *height);
 void avcodec_align_dimensions2(AVCodecContext *s, int *width, int *height,
                                int linesize_align[AV_NUM_DATA_POINTERS]);
 
+#ifdef FF_API_AVCODEC_CHROMA_POS
 
 
 
@@ -2503,6 +2506,8 @@ void avcodec_align_dimensions2(AVCodecContext *s, int *width, int *height,
 
 
 
+
+ attribute_deprecated
 int avcodec_enum_to_chroma_pos(int *xpos, int *ypos, enum AVChromaLocation pos);
 
 
@@ -2514,7 +2519,10 @@ int avcodec_enum_to_chroma_pos(int *xpos, int *ypos, enum AVChromaLocation pos);
 
 
 
+
+ attribute_deprecated
 enum AVChromaLocation avcodec_chroma_pos_to_enum(int xpos, int ypos);
+#endif
 
 
 
@@ -2594,6 +2602,8 @@ int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
 
 
 int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
+
+
 
 
 

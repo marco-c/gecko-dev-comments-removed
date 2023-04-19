@@ -604,13 +604,18 @@ typedef struct AVFrame {
 
     int64_t pkt_pos;
 
+#if FF_API_PKT_DURATION
     
 
 
 
 
 
+
+
+    attribute_deprecated
     int64_t pkt_duration;
+#endif
 
     
 
@@ -702,6 +707,11 @@ typedef struct AVFrame {
 
 
     AVChannelLayout ch_layout;
+
+    
+
+
+    int64_t duration;
 } AVFrame;
 
 
@@ -825,6 +835,7 @@ int av_frame_is_writable(AVFrame *frame);
 
 
 
+
 int av_frame_make_writable(AVFrame *frame);
 
 
@@ -849,6 +860,7 @@ int av_frame_copy(AVFrame *dst, const AVFrame *src);
 
 
 int av_frame_copy_props(AVFrame *dst, const AVFrame *src);
+
 
 
 

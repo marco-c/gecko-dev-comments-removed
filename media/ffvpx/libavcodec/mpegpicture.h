@@ -62,34 +62,20 @@ typedef struct Picture {
     AVBufferRef *ref_index_buf[2];
     int8_t *ref_index[2];
 
-    AVBufferRef *mb_var_buf;
-    uint16_t *mb_var;           
-
-    AVBufferRef *mc_mb_var_buf;
-    uint16_t *mc_mb_var;        
-
     int alloc_mb_width;         
     int alloc_mb_height;        
     int alloc_mb_stride;        
-
-    AVBufferRef *mb_mean_buf;
-    uint8_t *mb_mean;           
 
     AVBufferRef *hwaccel_priv_buf;
     void *hwaccel_picture_private; 
 
     int field_picture;          
 
-    int64_t mb_var_sum;         
-    int64_t mc_mb_var_sum;      
-
     int b_frame_score;
     int needs_realloc;          
 
     int reference;
     int shared;
-
-    uint64_t encoding_error[MPEGVIDEO_MAX_PLANES];
 } Picture;
 
 

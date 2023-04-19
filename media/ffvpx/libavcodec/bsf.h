@@ -165,6 +165,8 @@ int av_bsf_alloc(const AVBitStreamFilter *filter, AVBSFContext **ctx);
 
 
 
+
+
 int av_bsf_init(AVBSFContext *ctx);
 
 
@@ -187,7 +189,9 @@ int av_bsf_init(AVBSFContext *ctx);
 
 
 
+
 int av_bsf_send_packet(AVBSFContext *ctx, AVPacket *pkt);
+
 
 
 

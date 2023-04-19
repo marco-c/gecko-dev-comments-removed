@@ -185,6 +185,14 @@
 
 
 
+
+
+
+#define AV_CODEC_CAP_ENCODER_RECON_FRAME (1 << 22)
+
+
+
+
 typedef struct AVProfile {
     int profile;
     const char *name; 

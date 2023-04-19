@@ -56,6 +56,11 @@ typedef struct FrameDecodeData {
 
 
 
+int ff_decode_receive_frame(AVCodecContext *avctx, AVFrame *frame);
+
+
+
+
 
 
 
@@ -93,5 +98,50 @@ int ff_copy_palette(void *dst, const AVPacket *src, void *logctx);
 
 
 int ff_decode_preinit(AVCodecContext *avctx);
+
+
+
+
+
+int ff_set_dimensions(AVCodecContext *s, int width, int height);
+
+
+
+
+
+int ff_set_sar(AVCodecContext *avctx, AVRational sar);
+
+
+
+
+
+
+
+
+
+
+
+
+int ff_get_format(AVCodecContext *avctx, const enum AVPixelFormat *fmt);
+
+
+
+
+
+
+int ff_get_buffer(AVCodecContext *avctx, AVFrame *frame, int flags);
+
+#define FF_REGET_BUFFER_FLAG_READONLY 1 ///< the returned buffer does not need to be writable
+
+
+
+
+int ff_reget_buffer(AVCodecContext *avctx, AVFrame *frame, int flags);
+
+
+
+
+int ff_side_data_update_matrix_encoding(AVFrame *frame,
+                                        enum AVMatrixEncoding matrix_encoding);
 
 #endif 

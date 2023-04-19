@@ -51,8 +51,6 @@ typedef struct MotionEstContext {
     int direct_basis_mv[4][2];
     uint8_t *scratchpad;            
 
-    uint8_t *best_mb;
-    uint8_t *temp_mb[2];
     uint8_t *temp;
     int best_bits;
     uint32_t *map;                  
@@ -77,8 +75,8 @@ typedef struct MotionEstContext {
     int ymax;
     int pred_x;
     int pred_y;
-    uint8_t *src[4][4];
-    uint8_t *ref[4][4];
+    const uint8_t *src[4][4];
+    const uint8_t *ref[4][4];
     int stride;
     int uvstride;
     

@@ -33,6 +33,10 @@
 #include "avcodec.h"
 #include "config.h"
 
+#if CONFIG_LCMS2
+# include "fflcms2.h"
+#endif
+
 #define FF_SANE_NB_CHANNELS 512U
 
 #if HAVE_SIMD_ALIGN_64
@@ -57,6 +61,12 @@ typedef struct AVCodecInternal {
 
 
     int last_audio_frame;
+
+    
+
+
+
+    int pad_samples;
 
     AVBufferRef *pool;
 
@@ -107,6 +117,14 @@ typedef struct AVCodecInternal {
 
 
 
+
+
+    AVFrame *recon_frame;
+
+    
+
+
+
     int needs_close;
 
     
@@ -133,8 +151,6 @@ typedef struct AVCodecInternal {
 
     int showed_multi_packet_warning;
 
-    int skip_samples_multiplier;
-
     
     int nb_draining_errors;
 
@@ -143,11 +159,11 @@ typedef struct AVCodecInternal {
     int initial_format;
     int initial_width, initial_height;
     int initial_sample_rate;
-#if FF_API_OLD_CHANNEL_LAYOUT
-    int initial_channels;
-    uint64_t initial_channel_layout;
-#endif
     AVChannelLayout initial_ch_layout;
+
+#if CONFIG_LCMS2
+    FFIccContext icc; 
+#endif
 } AVCodecInternal;
 
 
@@ -170,18 +186,6 @@ void ff_color_frame(AVFrame *frame, const int color[4]);
 
 
 
-static av_always_inline int64_t ff_samples_to_time_base(AVCodecContext *avctx,
-                                                        int64_t samples)
-{
-    if(samples == AV_NOPTS_VALUE)
-        return AV_NOPTS_VALUE;
-    return av_rescale_q(samples, (AVRational){ 1, avctx->sample_rate },
-                        avctx->time_base);
-}
-
-
-
-
 
 static av_always_inline float ff_exp2fi(int x) {
     
@@ -198,56 +202,9 @@ static av_always_inline float ff_exp2fi(int x) {
         return 0;
 }
 
-
-
-
-
-
-int ff_get_buffer(AVCodecContext *avctx, AVFrame *frame, int flags);
-
-#define FF_REGET_BUFFER_FLAG_READONLY 1 ///< the returned buffer does not need to be writable
-
-
-
-
-int ff_reget_buffer(AVCodecContext *avctx, AVFrame *frame, int flags);
-
-int ff_thread_can_start_frame(AVCodecContext *avctx);
-
 int avpriv_h264_has_num_reorder_frames(AVCodecContext *avctx);
 
 int avpriv_codec_get_cap_skip_frame_fill_param(const AVCodec *codec);
-
-
-
-
-
-int ff_set_dimensions(AVCodecContext *s, int width, int height);
-
-
-
-
-
-int ff_set_sar(AVCodecContext *avctx, AVRational sar);
-
-
-
-
-int ff_side_data_update_matrix_encoding(AVFrame *frame,
-                                        enum AVMatrixEncoding matrix_encoding);
-
-
-
-
-
-
-
-
-
-
-
-
-int ff_get_format(AVCodecContext *avctx, const enum AVPixelFormat *fmt);
 
 
 
@@ -287,7 +244,5 @@ int64_t ff_guess_coded_bitrate(AVCodecContext *avctx);
 
 int ff_int_from_list_or_default(void *ctx, const char * val_name, int val,
                                 const int * array_valid_values, int default_value);
-
-void ff_dvdsub_parse_palette(uint32_t *palette, const char *p);
 
 #endif 

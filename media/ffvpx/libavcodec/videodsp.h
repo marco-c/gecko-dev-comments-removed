@@ -72,7 +72,7 @@ typedef struct VideoDSPContext {
 
 
 
-    void (*prefetch)(uint8_t *buf, ptrdiff_t stride, int h);
+    void (*prefetch)(const uint8_t *buf, ptrdiff_t stride, int h);
 } VideoDSPContext;
 
 void ff_videodsp_init(VideoDSPContext *ctx, int bpc);

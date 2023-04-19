@@ -21,6 +21,7 @@
 
 
 
+
 #ifndef AVUTIL_FIFO_H
 #define AVUTIL_FIFO_H
 
@@ -29,6 +30,14 @@
 
 #include "attributes.h"
 #include "version.h"
+
+
+
+
+
+
+
+
 
 typedef struct AVFifo AVFifo;
 
@@ -90,6 +99,12 @@ size_t av_fifo_can_read(const AVFifo *f);
 
 
 
+
+
+
+
+
+
 size_t av_fifo_can_write(const AVFifo *f);
 
 
@@ -105,6 +120,9 @@ size_t av_fifo_can_write(const AVFifo *f);
 
 
 int av_fifo_grow2(AVFifo *f, size_t inc);
+
+
+
 
 
 
@@ -422,5 +440,9 @@ static inline uint8_t *av_fifo_peek2(const AVFifoBuffer *f, int offs)
 }
 #endif
 #endif
+
+
+
+
 
 #endif 

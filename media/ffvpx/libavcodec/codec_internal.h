@@ -23,12 +23,15 @@
 
 #include "libavutil/attributes.h"
 #include "codec.h"
+#include "config.h"
 
 
 
 
 
-#define FF_CODEC_CAP_INIT_THREADSAFE        (1 << 0)
+
+
+#define FF_CODEC_CAP_NOT_INIT_THREADSAFE    (1 << 0)
 
 
 
@@ -73,6 +76,10 @@
 
 
 #define FF_CODEC_CAP_SETS_FRAME_PROPS       (1 << 8)
+
+
+
+#define FF_CODEC_CAP_ICC_PROFILES           (1 << 9)
 
 
 
@@ -250,6 +257,43 @@ typedef struct FFCodec {
 
     const uint32_t *codec_tags;
 } FFCodec;
+
+#if CONFIG_SMALL
+#define CODEC_LONG_NAME(str) .p.long_name = NULL
+#else
+#define CODEC_LONG_NAME(str) .p.long_name = str
+#endif
+
+#if HAVE_THREADS
+#define UPDATE_THREAD_CONTEXT(func) \
+        .update_thread_context          = (func)
+#define UPDATE_THREAD_CONTEXT_FOR_USER(func) \
+        .update_thread_context_for_user = (func)
+#else
+#define UPDATE_THREAD_CONTEXT(func) \
+        .update_thread_context          = NULL
+#define UPDATE_THREAD_CONTEXT_FOR_USER(func) \
+        .update_thread_context_for_user = NULL
+#endif
+
+#if FF_API_OLD_CHANNEL_LAYOUT
+#define CODEC_OLD_CHANNEL_LAYOUTS(...) CODEC_OLD_CHANNEL_LAYOUTS_ARRAY(((const uint64_t[]) { __VA_ARGS__, 0 }))
+#if defined(__clang__)
+#define CODEC_OLD_CHANNEL_LAYOUTS_ARRAY(array) \
+        FF_DISABLE_DEPRECATION_WARNINGS \
+        .p.channel_layouts = (array), \
+        FF_ENABLE_DEPRECATION_WARNINGS
+#else
+#define CODEC_OLD_CHANNEL_LAYOUTS_ARRAY(array) .p.channel_layouts = (array),
+#endif
+#else
+
+
+
+
+#define CODEC_OLD_CHANNEL_LAYOUTS(...)
+#define CODEC_OLD_CHANNEL_LAYOUTS_ARRAY(array)
+#endif
 
 #define FF_CODEC_DECODE_CB(func)                          \
     .cb_type           = FF_CODEC_CB_TYPE_DECODE,         \
