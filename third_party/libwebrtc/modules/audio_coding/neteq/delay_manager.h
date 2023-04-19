@@ -101,7 +101,6 @@ class DelayManager {
 
   bool IsValidBaseMinimumDelay(int delay_ms) const;
 
-  bool first_packet_received_;
   
   const int max_packets_in_buffer_;
   std::unique_ptr<Histogram> histogram_;
@@ -119,8 +118,8 @@ class DelayManager {
   std::unique_ptr<TickTimer::Stopwatch>
       packet_iat_stopwatch_;  
   int target_level_ms_;       
-  uint32_t last_timestamp_;   
-  int num_reordered_packets_ = 0;
+  absl::optional<uint32_t>
+      last_timestamp_;  
   int max_delay_in_interval_ms_ = 0;
   std::unique_ptr<TickTimer::Stopwatch> resample_stopwatch_;
 
