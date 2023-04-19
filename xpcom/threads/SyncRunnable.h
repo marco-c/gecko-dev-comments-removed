@@ -32,6 +32,7 @@ namespace mozilla {
 
 
 
+
 class SyncRunnable : public Runnable {
  public:
   explicit SyncRunnable(nsIRunnable* aRunnable)
@@ -108,6 +109,29 @@ class SyncRunnable : public Runnable {
     RefPtr<SyncRunnable> s(new SyncRunnable(aRunnable));
     return s->DispatchToThread(aThread, aForceDispatch);
   }
+
+  static nsresult DispatchToThread(nsIEventTarget* aThread,
+                                   already_AddRefed<nsIRunnable> aRunnable,
+                                   bool aForceDispatch = false) {
+    RefPtr<SyncRunnable> s(new SyncRunnable(std::move(aRunnable)));
+    return s->DispatchToThread(aThread, aForceDispatch);
+  }
+
+  static nsresult DispatchToThread(AbstractThread* aThread,
+                                   already_AddRefed<nsIRunnable> aRunnable,
+                                   bool aForceDispatch = false) {
+    RefPtr<SyncRunnable> s(new SyncRunnable(std::move(aRunnable)));
+    return s->DispatchToThread(aThread, aForceDispatch);
+  }
+
+  
+  
+  static nsresult DispatchToThread(nsIEventTarget* aThread,
+                                   SyncRunnable* aRunnable,
+                                   bool aForceDispatch = false) = delete;
+  static nsresult DispatchToThread(AbstractThread* aThread,
+                                   SyncRunnable* aRunnable,
+                                   bool aForceDispatch = false) = delete;
 
  protected:
   NS_IMETHOD Run() override {

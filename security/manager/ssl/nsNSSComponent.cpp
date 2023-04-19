@@ -185,9 +185,10 @@ bool EnsureNSSInitializedChromeOrContent() {
 
     
     mozilla::SyncRunnable::DispatchToThread(
-        mainThread, new SyncRunnable(NS_NewRunnableFunction(
-                        "EnsureNSSInitializedChromeOrContent",
-                        []() { EnsureNSSInitializedChromeOrContent(); })));
+        mainThread,
+        NS_NewRunnableFunction("EnsureNSSInitializedChromeOrContent", []() {
+          EnsureNSSInitializedChromeOrContent();
+        }));
 
     return initialized;
   }
