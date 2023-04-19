@@ -1465,7 +1465,8 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
     }
 
     
-    if (requiredModule->isAsyncEvaluating()) {
+    if (requiredModule->isAsyncEvaluating() &&
+        requiredModule->status() != ModuleStatus::Evaluated) {
       
       if (!ModuleObject::appendAsyncParentModule(cx, requiredModule, module)) {
         return false;
