@@ -19,6 +19,9 @@ namespace cricket {
 
 
 struct IceFieldTrials {
+  
+  
+
   bool skip_relay_to_non_relay_connections = false;
   absl::optional<int> max_outstanding_pings;
 
@@ -64,6 +67,9 @@ struct IceFieldTrials {
 
   
   absl::optional<int> override_dscp;
+
+  bool piggyback_ice_check_acknowledgement = false;
+  bool extra_ice_ping = false;
 };
 
 }  
