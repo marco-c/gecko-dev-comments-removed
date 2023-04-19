@@ -64,8 +64,7 @@ struct NetworkInformation {
   std::string ToString() const;
 };
 
-class AndroidNetworkMonitor : public rtc::NetworkMonitorInterface,
-                              public rtc::NetworkBinderInterface {
+class AndroidNetworkMonitor : public rtc::NetworkMonitorInterface {
  public:
   AndroidNetworkMonitor(JNIEnv* env,
                         const JavaRef<jobject>& j_application_context);
@@ -77,9 +76,14 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorInterface,
   void Start() override;
   void Stop() override;
 
+  
+  
+  virtual bool SupportsBindSocketToNetwork() const override { return true; }
+
   rtc::NetworkBindingResult BindSocketToNetwork(
       int socket_fd,
-      const rtc::IPAddress& address) override;
+      const rtc::IPAddress& address,
+      const std::string& if_name) override;
   rtc::AdapterType GetAdapterType(const std::string& if_name) override;
   rtc::AdapterType GetVpnUnderlyingAdapterType(
       const std::string& if_name) override;
@@ -106,14 +110,18 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorInterface,
                                  jint preference);
 
   
-  absl::optional<NetworkHandle> FindNetworkHandleFromAddress(
-      const rtc::IPAddress& address) const;
+  absl::optional<NetworkHandle> FindNetworkHandleFromAddressOrName(
+      const rtc::IPAddress& address,
+      const std::string& ifname) const;
 
  private:
   void OnNetworkConnected_n(const NetworkInformation& network_info);
   void OnNetworkDisconnected_n(NetworkHandle network_handle);
   void OnNetworkPreference_n(NetworkType type,
                              rtc::NetworkPreference preference);
+
+  absl::optional<NetworkHandle> FindNetworkHandleFromIfname(
+      const std::string& ifname) const;
 
   const int android_sdk_int_;
   ScopedJavaGlobalRef<jobject> j_application_context_;
@@ -133,6 +141,14 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorInterface,
   bool find_network_handle_without_ipv6_temporary_part_
       RTC_GUARDED_BY(network_thread_) = false;
   bool surface_cellular_types_ RTC_GUARDED_BY(network_thread_) = false;
+
+  
+  
+  
+  
+  
+  
+  bool bind_using_ifname_ RTC_GUARDED_BY(network_thread_) = true;
   const rtc::scoped_refptr<PendingTaskSafetyFlag> safety_flag_
       RTC_PT_GUARDED_BY(network_thread_);
 };
