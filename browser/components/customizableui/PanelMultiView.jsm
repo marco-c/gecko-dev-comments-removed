@@ -1634,10 +1634,6 @@ var PanelView = class extends AssociatedToNode {
         node.tagName == "toolbarbutton" ||
         node.tagName == "checkbox" ||
         node.classList.contains("text-link") ||
-        
-        
-        
-        node.classList.contains("complex-subviewbutton") ||
         (!arrowKey && isNavigableWithTabOnly)
       ) {
         
