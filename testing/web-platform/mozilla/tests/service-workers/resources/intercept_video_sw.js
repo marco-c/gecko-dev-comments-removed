@@ -1,0 +1,8 @@
+'use strict';
+
+self.addEventListener('fetch', event => {
+  if (event.request.url.indexOf('fetch_video.py') !== -1) {
+    
+    event.respondWith(new Response('intercepted'));
+  }
+});
