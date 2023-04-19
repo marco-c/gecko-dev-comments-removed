@@ -1440,25 +1440,22 @@ static void EnsureAutoPageName(nsFrameConstructorState& aState,
 }
 
 nsCSSFrameConstructor::AutoFrameConstructionPageName::
-    AutoFrameConstructionPageName(nsCSSFrameConstructor& aFCtor,
-                                  nsFrameConstructorState& aState,
-                                  FrameConstructionItemList& aItems,
+    AutoFrameConstructionPageName(nsFrameConstructorState& aState,
                                   nsIFrame* const aFrame)
-    : mFCtor(aFCtor),
-      mState(aState),
-      mItems(aItems),
-      mFrame(aFrame),
-      mNameToRestore(nullptr) {
-  if (!(aState.mPresContext->IsPaginated() &&
-        StaticPrefs::layout_css_named_pages_enabled())) {
+    : mState(aState), mNameToRestore(nullptr) {
+  if (!aState.mPresContext->IsPaginated() ||
+      !StaticPrefs::layout_css_named_pages_enabled()) {
+    MOZ_ASSERT(!aState.mAutoPageNameValue,
+               "Page name should not have been set");
     return;
   }
+
   EnsureAutoPageName(aState, aFrame->GetParent());
   mNameToRestore = aState.mAutoPageNameValue;
 
   MOZ_ASSERT(mNameToRestore,
              "Page name should have been found by EnsureAutoPageName");
-  MaybeApplyPageName(mState, aFrame->StylePage()->mPage);
+  MaybeApplyPageName(aState, aFrame->StylePage()->mPage);
   
   
   
@@ -1477,26 +1474,10 @@ nsCSSFrameConstructor::AutoFrameConstructionPageName::
 
 nsCSSFrameConstructor::AutoFrameConstructionPageName::
     ~AutoFrameConstructionPageName() {
-  if (!(mState.mPresContext->IsPaginated() &&
-        StaticPrefs::layout_css_named_pages_enabled())) {
-    return;
-  }
-  nsIFrame::PageValues* const pageValues =
-      mFrame->GetProperty(nsIFrame::PageValuesProperty());
-  MOZ_ASSERT(!!pageValues->mStartPageValue == !!pageValues->mEndPageValue,
-             "Both or neither of the child page names should have been set.");
-  if (!pageValues->mStartPageValue && !mItems.IsEmpty()) {
-    pageValues->mStartPageValue = mState.mAutoPageNameValue;
-    pageValues->mEndPageValue = mState.mAutoPageNameValue;
-  }
-  if (const nsIFrame* const prevSibling = mFrame->GetPrevSibling()) {
-    if (const nsIFrame::PageValues* const prevPageValues =
-            prevSibling->GetProperty(nsIFrame::PageValuesProperty())) {
-      if (prevPageValues->mEndPageValue != pageValues->mStartPageValue) {
-        mFCtor.PrependPageBreakItem(mFrame->GetContent(), mItems);
-      }
-    }
-  }
+  
+  
+  
+  
   mState.mAutoPageNameValue = mNameToRestore;
 }
 
@@ -2875,9 +2856,9 @@ void nsCSSFrameConstructor::ConstructAnonymousContentForCanvas(
   }
 
   AutoFrameConstructionItemList itemsToConstruct(this);
+  AutoFrameConstructionPageName pageNameTracker(aState, aFrame);
   AddFCItemsForAnonymousContent(aState, aFrame, anonymousItems,
-                                itemsToConstruct);
-
+                                itemsToConstruct, pageNameTracker);
   ConstructFramesFromItemList(aState, itemsToConstruct, aFrame,
                                false,
                               aFrameList);
@@ -3061,8 +3042,9 @@ nsIFrame* nsCSSFrameConstructor::ConstructSelectFrame(
 
     
     AutoFrameConstructionItemList fcItems(this);
+    AutoFrameConstructionPageName pageNameTracker(aState, comboboxFrame);
     AddFCItemsForAnonymousContent(aState, comboboxFrame, newAnonymousItems,
-                                  fcItems);
+                                  fcItems, pageNameTracker);
     ConstructFramesFromItemList(aState, fcItems, comboboxFrame,
                                  false,
                                 childList);
@@ -3880,8 +3862,6 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
       aState.MaybePushFloatContainingBlock(newFrameAsContainer, floatSaveState);
 
       if (bits & FCDATA_USE_CHILD_ITEMS) {
-        AutoFrameConstructionPageName pageName(*this, aState, aItem.mChildItems,
-                                               newFrame);
         ConstructFramesFromItemList(
             aState, aItem.mChildItems, newFrameAsContainer,
             bits & FCDATA_IS_WRAPPER_ANON_BOX, childList);
@@ -4288,7 +4268,9 @@ already_AddRefed<ComputedStyle> nsCSSFrameConstructor::BeginBuildingScrollFrame(
     aState.MaybePushFloatContainingBlock(gfxScrollFrame, floatSaveState);
 
     AutoFrameConstructionItemList items(this);
-    AddFCItemsForAnonymousContent(aState, gfxScrollFrame, scrollNAC, items);
+    AutoFrameConstructionPageName pageNameTracker(aState, gfxScrollFrame);
+    AddFCItemsForAnonymousContent(aState, gfxScrollFrame, scrollNAC, items,
+                                  pageNameTracker);
     ConstructFramesFromItemList(aState, items, gfxScrollFrame,
                                  false,
                                 anonymousList);
@@ -5506,8 +5488,12 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     return;
   }
 
+  bool pageNameBreak = false;
+  
+  
   if (aState.mPresContext->IsPaginated() &&
-      StaticPrefs::layout_css_named_pages_enabled()) {
+      StaticPrefs::layout_css_named_pages_enabled() &&
+      !aContent->TextIsOnlyWhitespace()) {
     
     
     
@@ -5515,14 +5501,6 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     
     
     const StylePageName& pageName = aComputedStyle->StylePage()->mPage;
-    const nsAtom* pageNameAtom;
-    if (pageName.IsPageName()) {
-      pageNameAtom = pageName.AsPageName().AsAtom();
-    } else {
-      
-      MOZ_ASSERT(pageName.IsAuto(), "Impossible page name");
-      pageNameAtom = aState.mAutoPageNameValue;
-    }
 
     
     
@@ -5532,13 +5510,44 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const nsAtom* const pageNameAtom =
+        (pageName.IsPageName() &&
+         aComputedStyle->StyleDisplay()->IsBlockOutsideStyle())
+            ? pageName.AsPageName().AsAtom()
+            : aState.mAutoPageNameValue;
+
+    
+    
+    
     nsIFrame::PageValues* const framePageValues =
         aParentFrame->GetProperty(nsIFrame::PageValuesProperty());
+    
+    
     MOZ_ASSERT(framePageValues,
                "child box page names should have been created by "
                "AutoFrameConstructionPageName");
     if (!framePageValues->mStartPageValue) {
       framePageValues->mStartPageValue = pageNameAtom;
+      if (nsIFrame* const prevFrame = aParentFrame->GetPrevSibling()) {
+        const nsIFrame::PageValues* const prevPageValues =
+            prevFrame->GetProperty(nsIFrame::PageValuesProperty());
+        if (prevPageValues && prevPageValues->mEndPageValue != pageNameAtom) {
+          pageNameBreak = true;
+        }
+      }
       
       
       
@@ -5561,8 +5570,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
       !display.IsAbsolutelyPositionedStyle() &&
       !(aParentFrame && aParentFrame->IsGridContainerFrame()) &&
       !(bits & FCDATA_IS_TABLE_PART) && !(bits & FCDATA_IS_SVG_TEXT);
-
-  if (canHavePageBreak && display.BreakBefore()) {
+  if (canHavePageBreak && (pageNameBreak || display.BreakBefore())) {
     AppendPageBreakItem(aContent, aItems);
   }
 
@@ -9641,9 +9649,8 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
 void nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
     nsFrameConstructorState& aState, nsContainerFrame* aFrame,
     const nsTArray<nsIAnonymousContentCreator::ContentInfo>& aAnonymousItems,
-    FrameConstructionItemList& aItemsToConstruct) {
-  AutoFrameConstructionPageName pageName(*this, aState, aItemsToConstruct,
-                                         aFrame);
+    FrameConstructionItemList& aItemsToConstruct,
+    const AutoFrameConstructionPageName&) {
   for (const auto& info : aAnonymousItems) {
     nsIContent* content = info.mContent;
     
@@ -9702,8 +9709,7 @@ void nsCSSFrameConstructor::ProcessChildren(
   }
 
   AutoFrameConstructionItemList itemsToConstruct(this);
-  AutoFrameConstructionPageName pageName(*this, aState, itemsToConstruct,
-                                         aFrame);
+  AutoFrameConstructionPageName pageNameTracker(aState, aFrame);
 
   
   
@@ -9724,7 +9730,7 @@ void nsCSSFrameConstructor::ProcessChildren(
   }
 #endif
   AddFCItemsForAnonymousContent(aState, aFrame, anonymousItems,
-                                itemsToConstruct);
+                                itemsToConstruct, pageNameTracker);
 
   nsBlockFrame* listItem = nullptr;
   bool isOutsideMarker = false;

@@ -1257,19 +1257,15 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-
-
   class MOZ_RAII AutoFrameConstructionPageName final {
-    nsCSSFrameConstructor& mFCtor;
     nsFrameConstructorState& mState;
-    FrameConstructionItemList& mItems;
-    const nsIFrame* const mFrame;
     const nsAtom* mNameToRestore;
 
    public:
-    AutoFrameConstructionPageName(nsCSSFrameConstructor& aFCtor,
-                                  nsFrameConstructorState& aState,
-                                  FrameConstructionItemList& aItems,
+    AutoFrameConstructionPageName(const AutoFrameConstructionPageName&) =
+        delete;
+    AutoFrameConstructionPageName(AutoFrameConstructionPageName&&) = delete;
+    AutoFrameConstructionPageName(nsFrameConstructorState& aState,
                                   nsIFrame* const aFrame);
     ~AutoFrameConstructionPageName();
   };
@@ -1618,10 +1614,14 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
+
+
+
   void AddFCItemsForAnonymousContent(
       nsFrameConstructorState& aState, nsContainerFrame* aFrame,
       const nsTArray<nsIAnonymousContentCreator::ContentInfo>& aAnonymousItems,
-      FrameConstructionItemList& aItemsToConstruct);
+      FrameConstructionItemList& aItemsToConstruct,
+      const AutoFrameConstructionPageName& aUnusedPageNameTracker);
 
   
 
