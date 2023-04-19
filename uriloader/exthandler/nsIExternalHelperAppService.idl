@@ -151,7 +151,10 @@ interface nsIHelperAppLauncher : nsICancelable
 
 
 
-  void saveDestinationAvailable(in nsIFile aFile);
+
+
+
+  void saveDestinationAvailable(in nsIFile aFile, [optional] in boolean aDialogWasShown);
 
   
 

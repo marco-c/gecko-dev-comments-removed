@@ -1008,14 +1008,18 @@ DownloadsDataCtor.prototype = {
       browserWin == Services.focus.activeWindow &&
       lazy.gAlwaysOpenPanel;
 
+    
+    
+    
+    
+    
+    
+    
     if (
-      this.panelHasShownBefore &&
       aType != "error" &&
-      !shouldOpenDownloadsPanel
+      ((this.panelHasShownBefore && !shouldOpenDownloadsPanel) ||
+        !openDownloadsListOnStart)
     ) {
-      
-      
-      
       DownloadsCommon.log("Showing new download notification.");
       browserWin.DownloadsIndicatorView.showEventNotification(aType);
       return;
