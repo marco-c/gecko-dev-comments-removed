@@ -62,6 +62,12 @@ struct DcSctpOptions {
   size_t max_send_buffer_size = 2 * 1024 * 1024;
 
   
+  
+  
+  
+  DurationMs rtt_max = DurationMs(8'000);
+
+  
   DurationMs rto_initial = DurationMs(500);
 
   
