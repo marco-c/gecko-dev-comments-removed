@@ -403,6 +403,9 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   }
 
   
+  js::Metrics metrics() { return js::Metrics(runtime_); }
+
+  
   bool addPendingCompileError(js::CompileError** err);
   void addPendingOverRecursed();
   void addPendingOutOfMemory();
