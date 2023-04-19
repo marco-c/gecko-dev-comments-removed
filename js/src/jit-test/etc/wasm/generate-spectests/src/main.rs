@@ -290,9 +290,15 @@ fn build_repo(repo: &Repo, config: &Config, lock: &Lock) -> Result<Status> {
     let merged = try_merge_parent(repo, &commit_base_hash)?;
 
     
+    let mut excluded_files = Vec::new();
+    excluded_files.extend_from_slice(&config.excluded_tests);
+    excluded_files.extend_from_slice(&repo.excluded_tests);
+    let exclude = RegexSetBuilder::new(&excluded_files).build().unwrap();
+
+    
     
     let mut built = false;
-    match try_build_tests() {
+    match try_build_tests(&exclude) {
         Ok(()) => built = true,
         Err(err) => warn!("Failed to build tests: {:?}", err),
     };
@@ -328,15 +334,7 @@ fn build_repo(repo: &Repo, config: &Config, lock: &Lock) -> Result<Status> {
     included_files.extend_from_slice(&config.included_tests);
     included_files.extend_from_slice(&repo.included_tests);
     included_files.push("harness/".to_owned());
-
-    
-    let mut excluded_files = Vec::new();
-    excluded_files.extend_from_slice(&config.excluded_tests);
-    excluded_files.extend_from_slice(&repo.excluded_tests);
-
-    
     let include = RegexSetBuilder::new(&included_files).build().unwrap();
-    let exclude = RegexSetBuilder::new(&excluded_files).build().unwrap();
 
     
     if !repo.skip_wast {
@@ -387,13 +385,19 @@ fn try_merge_parent(repo: &Repo, commit_base_hash: &str) -> Result<Merge> {
     )
 }
 
-fn try_build_tests() -> Result<()> {
+fn try_build_tests(exclude: &RegexSet) -> Result<()> {
     let _ = fs::remove_dir_all("./js");
     fs::create_dir("./js")?;
 
     let paths = find("./test/core/");
     for path in paths {
         if path.extension() != Some(OsStr::new("wast")) {
+            continue;
+        }
+
+        let stripped_path = path.strip_prefix("./test/core/").unwrap();
+        let stripped_path_str = stripped_path.to_str().unwrap();
+        if exclude.is_match(stripped_path_str) {
             continue;
         }
 
