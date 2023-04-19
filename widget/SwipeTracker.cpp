@@ -10,7 +10,6 @@
 #include "mozilla/FlushType.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/SimpleGestureEventBinding.h"
@@ -141,12 +140,8 @@ nsEventStatus SwipeTracker::ProcessEvent(
   
   
   
-  
-  
-  
   double eventAmount = mGestureAmount;
-  if (computedSwipeSuccess &&
-      StaticPrefs::browser_swipe_navigation_icon_move_distance() == 0) {
+  if (computedSwipeSuccess) {
     eventAmount = kSwipeSuccessThreshold;
     if (mGestureAmount < 0.f) {
       eventAmount = -eventAmount;
