@@ -6,6 +6,13 @@
 
 
 
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
+
+
+
 
 
 

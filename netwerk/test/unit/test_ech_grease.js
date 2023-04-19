@@ -5,6 +5,13 @@
 "use strict";
 
 
+
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
+
+
 do_get_profile();
 Cc["@mozilla.org/psm;1"].getService(Ci.nsISupports);
 
