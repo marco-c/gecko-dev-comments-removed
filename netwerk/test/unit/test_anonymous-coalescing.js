@@ -58,7 +58,8 @@ function makeChan(origin) {
 }
 
 var nextTest;
-var origin;
+
+
 var nextPortExpectedToBeSame = false;
 var currentPort = 0;
 var forceReload = false;

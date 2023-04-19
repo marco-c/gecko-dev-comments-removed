@@ -51,7 +51,8 @@ function makeChan(origin) {
   }).QueryInterface(Ci.nsIHttpChannel);
 }
 
-let origin;
+
+
 var nextTest;
 var nextPortExpectedToBeSame = false;
 var currentPort = 0;
