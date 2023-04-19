@@ -36,7 +36,7 @@ function getDevToolsPrefBranchName(extensionId) {
 
 
 global.getTargetTabIdForToolbox = toolbox => {
-  let { descriptorFront } = toolbox.commands;
+  let { descriptorFront } = toolbox;
 
   if (!descriptorFront.isLocalTab) {
     throw new Error(
@@ -204,7 +204,7 @@ class DevToolsPageDefinition {
   buildForToolbox(toolbox) {
     if (
       !this.extension.canAccessWindow(
-        toolbox.commands.descriptorFront.localTab.ownerGlobal
+        toolbox.descriptorFront.localTab.ownerGlobal
       )
     ) {
       
@@ -242,7 +242,7 @@ class DevToolsPageDefinition {
       
       if (this.devtoolsPageForToolbox.has(toolbox)) {
         throw new Error(
-          `Leaked DevToolsPage instance for target "${toolbox.commands.descriptorFront.url}", extension "${this.extension.policy.debugName}"`
+          `Leaked DevToolsPage instance for target "${toolbox.descriptorFront.url}", extension "${this.extension.policy.debugName}"`
         );
       }
 
@@ -267,9 +267,9 @@ class DevToolsPageDefinition {
     
     for (let toolbox of DevToolsShim.getToolboxes()) {
       if (
-        !toolbox.commands.descriptorFront.isLocalTab ||
+        !toolbox.descriptorFront.isLocalTab ||
         !this.extension.canAccessWindow(
-          toolbox.commands.descriptorFront.localTab.ownerGlobal
+          toolbox.descriptorFront.localTab.ownerGlobal
         )
       ) {
         
@@ -414,9 +414,9 @@ this.devtools = class extends ExtensionAPI {
 
   onToolboxReady(toolbox) {
     if (
-      !toolbox.commands.descriptorFront.isLocalTab ||
+      !toolbox.descriptorFront.isLocalTab ||
       !this.extension.canAccessWindow(
-        toolbox.commands.descriptorFront.localTab.ownerGlobal
+        toolbox.descriptorFront.localTab.ownerGlobal
       )
     ) {
       
@@ -439,7 +439,7 @@ this.devtools = class extends ExtensionAPI {
   }
 
   onToolboxDestroy(toolbox) {
-    if (!toolbox.commands.descriptorFront.isLocalTab) {
+    if (!toolbox.descriptorFront.isLocalTab) {
       
       
       return;

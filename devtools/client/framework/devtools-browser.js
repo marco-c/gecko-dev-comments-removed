@@ -368,8 +368,9 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     if (processId) {
       try {
         const commands = await CommandsFactory.forProcess(processId);
+        const descriptor = commands.descriptorFront;
         
-        const toolbox = await gDevTools.showToolbox(commands, {
+        const toolbox = await gDevTools.showToolbox(descriptor, {
           hostType: Toolbox.HostType.WINDOW,
           hostOptions: {
             

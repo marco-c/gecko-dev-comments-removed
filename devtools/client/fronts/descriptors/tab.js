@@ -113,6 +113,12 @@ class TabDescriptorFront extends DescriptorMixin(
   setLocalTab(localTab) {
     this._localTab = localTab;
     this._setupLocalTabListeners();
+
+    
+    
+    
+    
+    this.shouldCloseClient = true;
   }
 
   get isTabDescriptor() {
@@ -308,7 +314,7 @@ class TabDescriptorFront extends DescriptorMixin(
         
         
         
-        const toolbox = gDevTools.getToolboxForDescriptorFront(this);
+        const toolbox = gDevTools.getToolboxForDescriptor(this);
         if (toolbox) {
           
           await toolbox.destroy();

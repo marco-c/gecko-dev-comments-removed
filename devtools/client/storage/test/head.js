@@ -53,9 +53,6 @@ Services.scriptloader.loadSubScript(
 );
 
 const { TableWidget } = require("devtools/client/shared/widgets/TableWidget");
-const {
-  LocalTabCommandsFactory,
-} = require("devtools/client/framework/local-tab-commands-factory");
 const STORAGE_PREF = "devtools.storage.enabled";
 const DOM_CACHE = "dom.caches.enabled";
 const DUMPEMIT_PREF = "devtools.dump.emit";
@@ -157,10 +154,10 @@ async function openTabAndSetupStorage(url, options = {}) {
 
 
 
-var openStoragePanel = async function({ tab, commands, hostType } = {}) {
+var openStoragePanel = async function({ tab, descriptor, hostType } = {}) {
   info("Opening the storage inspector");
-  if (!commands) {
-    commands = await LocalTabCommandsFactory.createCommandsForTab(
+  if (!descriptor) {
+    descriptor = await TabDescriptorFactory.createDescriptorForTab(
       tab || gBrowser.selectedTab
     );
   }
@@ -170,7 +167,7 @@ var openStoragePanel = async function({ tab, commands, hostType } = {}) {
   
   
   
-  toolbox = gDevTools.getToolboxForCommands(commands);
+  toolbox = gDevTools.getToolboxForDescriptor(descriptor);
   if (toolbox) {
     storage = toolbox.getPanel("storage");
     if (storage) {
@@ -187,7 +184,7 @@ var openStoragePanel = async function({ tab, commands, hostType } = {}) {
   }
 
   info("Opening the toolbox");
-  toolbox = await gDevTools.showToolbox(commands, {
+  toolbox = await gDevTools.showToolbox(descriptor, {
     toolId: "storage",
     hostType,
   });

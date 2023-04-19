@@ -513,16 +513,15 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-    const targetActor = this._getTargetActorInParentProcess();
-    if (targetActor) {
-      const targetActorResourceTypes = Resources.getResourceTypesForTargetType(
-        resourceTypes,
-        targetActor.targetType
-      );
-      await targetActor.addSessionDataEntry(
-        "resources",
-        targetActorResourceTypes
-      );
+    const frameResourceTypes = Resources.getResourceTypesForTargetType(
+      resourceTypes,
+      Targets.TYPES.FRAME
+    );
+    if (frameResourceTypes.length) {
+      const targetActor = this._getTargetActorInParentProcess();
+      if (targetActor) {
+        await targetActor.addSessionDataEntry("resources", frameResourceTypes);
+      }
     }
   },
 
@@ -584,13 +583,15 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     }
 
     
-    const targetActor = this._getTargetActorInParentProcess();
-    if (targetActor) {
-      const targetActorResourceTypes = Resources.getResourceTypesForTargetType(
-        resourceTypes,
-        targetActor.targetType
-      );
-      targetActor.removeSessionDataEntry("resources", targetActorResourceTypes);
+    const frameResourceTypes = Resources.getResourceTypesForTargetType(
+      resourceTypes,
+      Targets.TYPES.FRAME
+    );
+    if (frameResourceTypes.length) {
+      const targetActor = this._getTargetActorInParentProcess();
+      if (targetActor) {
+        targetActor.removeSessionDataEntry("resources", frameResourceTypes);
+      }
     }
 
     
