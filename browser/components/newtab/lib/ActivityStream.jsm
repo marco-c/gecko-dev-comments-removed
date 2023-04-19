@@ -15,11 +15,9 @@ ChromeUtils.defineModuleGetter(
   "resource://activity-stream/lib/DefaultSites.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "Region",
-  "resource://gre/modules/Region.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  Region: "resource://gre/modules/Region.sys.mjs",
+});
 
 
 
