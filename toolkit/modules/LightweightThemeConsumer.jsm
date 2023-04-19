@@ -29,6 +29,11 @@ ChromeUtils.defineModuleGetter(
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "NimbusFeatures",
+  "resource://nimbus/ExperimentAPI.jsm"
+);
 
 
 
@@ -260,9 +265,8 @@ LightweightThemeConsumer.prototype = {
 
       
       if (
-        !Services.prefs.getBoolPref(
-          "browser.theme.dark-private-windows",
-          false
+        !lazy.NimbusFeatures.majorRelease2022.getVariable(
+          "feltPrivacyPBMDarkTheme"
         ) ||
         !lazy.PrivateBrowsingUtils.isWindowPrivate(this._win) ||
         lazy.PrivateBrowsingUtils.permanentPrivateBrowsing
