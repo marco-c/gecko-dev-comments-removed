@@ -17,8 +17,6 @@
 namespace webrtc {
 namespace test {
 
-void ValidateFieldTrialsStringOrDie(const std::string&);
-
 
 
 class ScopedFieldTrials {
