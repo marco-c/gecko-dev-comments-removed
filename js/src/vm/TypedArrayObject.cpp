@@ -915,8 +915,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     return makeInstance(cx, buffer, 0, nelements, proto);
   }
 
-  static bool AllocateArrayBuffer(JSContext* cx, HandleObject ctor,
-                                  size_t count,
+  static bool AllocateArrayBuffer(JSContext* cx, size_t count,
                                   MutableHandle<ArrayBufferObject*> buffer);
 
   static TypedArrayObject* fromArray(JSContext* cx, HandleObject other,
@@ -1101,33 +1100,12 @@ TypedArrayObject* js::NewTypedArrayWithTemplateAndBuffer(
 
 
 
+
 template <typename T>
  bool TypedArrayObjectTemplate<T>::AllocateArrayBuffer(
-    JSContext* cx, HandleObject ctor, size_t count,
-    MutableHandle<ArrayBufferObject*> buffer) {
+    JSContext* cx, size_t count, MutableHandle<ArrayBufferObject*> buffer) {
   
-  RootedObject proto(cx);
-
-  JSObject* arrayBufferCtor =
-      GlobalObject::getOrCreateArrayBufferConstructor(cx, cx->global());
-  if (!arrayBufferCtor) {
-    return false;
-  }
-
-  
-  if (ctor != arrayBufferCtor) {
-    
-    if (!GetPrototypeFromConstructor(cx, ctor, JSProto_ArrayBuffer, &proto)) {
-      return false;
-    }
-  }
-
-  
-  if (!maybeCreateArrayBuffer(cx, count, proto, buffer)) {
-    return false;
-  }
-
-  return true;
+  return maybeCreateArrayBuffer(cx, count, nullptr, buffer);
 }
 
 template <typename T>
@@ -1193,17 +1171,10 @@ template <typename T>
 
   
 
-  RootedObject bufferCtor(
-      cx, GlobalObject::getOrCreateArrayBufferConstructor(cx, cx->global()));
-  if (!bufferCtor) {
-    return nullptr;
-  }
-
+  
+  
   Rooted<ArrayBufferObject*> buffer(cx);
-
-  
-  
-  if (!AllocateArrayBuffer(cx, bufferCtor, elementLength, &buffer)) {
+  if (!AllocateArrayBuffer(cx, elementLength, &buffer)) {
     return nullptr;
   }
 
