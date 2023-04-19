@@ -327,6 +327,7 @@ void DefaultVideoQualityAnalyzerFramesComparator::ProcessComparisons() {
   while (true) {
     
     absl::optional<FrameComparison> comparison = absl::nullopt;
+    bool more_new_comparisons_expected;
     {
       MutexLock lock(&mutex_);
       if (!comparisons_.empty()) {
@@ -336,16 +337,11 @@ void DefaultVideoQualityAnalyzerFramesComparator::ProcessComparisons() {
           comparison_available_event_.Set();
         }
       }
+      
+      more_new_comparisons_expected = state_ != State::kStopped;
     }
     if (!comparison) {
-      bool more_frames_expected;
-      {
-        
-        
-        MutexLock lock(&mutex_);
-        more_frames_expected = state_ != State::kStopped;
-      }
-      if (!more_frames_expected) {
+      if (!more_new_comparisons_expected) {
         comparison_available_event_.Set();
         return;
       }
