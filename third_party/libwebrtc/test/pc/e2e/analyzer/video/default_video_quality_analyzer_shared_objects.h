@@ -157,12 +157,6 @@ struct AnalyzerStats {
 };
 
 struct StatsKey {
-  
-  StatsKey(std::string stream_label,
-           std::string ,
-           std::string receiver)
-      : stream_label(std::move(stream_label)), receiver(std::move(receiver)) {}
-
   StatsKey(std::string stream_label, std::string receiver)
       : stream_label(std::move(stream_label)), receiver(std::move(receiver)) {}
 
