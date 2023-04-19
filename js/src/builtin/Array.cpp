@@ -3162,16 +3162,6 @@ static bool array_splice_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
 
 #ifdef ENABLE_CHANGE_ARRAY_BY_COPY
 
-static ArrayObject* NewDensePartlyAllocatedArray(JSContext* cx, uint64_t len) {
-  if (len > UINT32_MAX) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_BAD_ARRAY_LENGTH);
-    return nullptr;
-  }
-
-  return NewDensePartlyAllocatedArray(cx, uint32_t(len));
-}
-
 
 
 static bool array_toSpliced(JSContext* cx, unsigned argc, Value* vp) {
@@ -3225,11 +3215,18 @@ static bool array_toSpliced(JSContext* cx, unsigned argc, Value* vp) {
              "|actualStart <= newLen|");
 
   
-  Rooted<ArrayObject*> arr(cx, ::NewDensePartlyAllocatedArray(cx, newLen));
+  if (newLen > UINT32_MAX) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_ARRAY_LENGTH);
+    return false;
+  }
+
+  
+  Rooted<ArrayObject*> arr(cx,
+                           NewDensePartlyAllocatedArray(cx, uint32_t(newLen)));
   if (!arr) {
     return false;
   }
-  MOZ_ASSERT(newLen <= UINT32_MAX);
 
   
 
@@ -3372,17 +3369,25 @@ static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  RootedObject arr(cx, ::NewDensePartlyAllocatedArray(cx, len));
+  if (len > UINT32_MAX) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_ARRAY_LENGTH);
+    return false;
+  }
+  uint32_t length = uint32_t(len);
+
+  MOZ_ASSERT(length > 0);
+  MOZ_ASSERT(0 <= actualIndex && actualIndex < UINT32_MAX);
+
+  
+  RootedObject arr(cx, NewDensePartlyAllocatedArray(cx, length));
   if (!arr) {
     return false;
   }
 
-  MOZ_ASSERT(len <= UINT32_MAX);
-  MOZ_ASSERT(actualIndex <= UINT32_MAX);
-
   
   RootedValue fromValue(cx);
-  for (uint32_t k = 0; k < uint32_t(len); k++) {
+  for (uint32_t k = 0; k < length; k++) {
     if (!CheckForInterrupt(cx)) {
       return false;
     }
