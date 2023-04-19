@@ -41,6 +41,8 @@ add_task(async function() {
   
   await pushPref("devtools.browserconsole.contentMessages", true);
   await pushPref("devtools.browsertoolbox.scope", "everything");
+  
+  await pushPref("devtools.chrome.enabled", true);
   await pushPref("devtools.webconsole.input.context", true);
 
   info("Run once with Fission enabled");
