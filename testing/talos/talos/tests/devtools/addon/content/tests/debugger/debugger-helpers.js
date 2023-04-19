@@ -105,7 +105,7 @@ function waitForSymbols(dbg) {
   return waitUntil(() => {
     const state = dbg.store.getState();
     const source = dbg.selectors.getSelectedSource(state);
-    return dbg.selectors.hasSymbols(state, source);
+    return dbg.selectors.getSymbols(state, source);
   }, "has file metadata");
 }
 
@@ -192,7 +192,7 @@ function selectSource(dbg, url) {
 
       
       
-      return dbg.selectors.hasSymbols(state, source);
+      return dbg.selectors.getSymbols(state, source);
     },
     "selected source"
   );
