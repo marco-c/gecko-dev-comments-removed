@@ -959,10 +959,7 @@ enum DataMessageType {
 struct ReceiveDataParams {
   
   
-  union {
-    uint32_t ssrc;
-    int sid = 0;
-  };
+  int sid = 0;
   
   DataMessageType type = DMT_TEXT;
   
@@ -973,11 +970,7 @@ struct ReceiveDataParams {
 
 struct SendDataParams {
   
-  
-  union {
-    uint32_t ssrc;
-    int sid = 0;
-  };
+  int sid = 0;
   
   DataMessageType type = DMT_TEXT;
 

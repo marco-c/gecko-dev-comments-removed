@@ -633,10 +633,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
       RTC_GUARDED_BY(signaling_thread());
 
   
-  bool have_pending_rtp_data_channel_ RTC_GUARDED_BY(signaling_thread()) =
-      false;
-
-  
   void SetSessionError(SessionError error, const std::string& error_desc);
 
   

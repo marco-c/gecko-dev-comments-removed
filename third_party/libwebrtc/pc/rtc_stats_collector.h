@@ -29,7 +29,6 @@
 #include "media/base/media_channel.h"
 #include "pc/data_channel_utils.h"
 #include "pc/peer_connection_internal.h"
-#include "pc/rtp_data_channel.h"
 #include "pc/rtp_receiver.h"
 #include "pc/rtp_sender.h"
 #include "pc/rtp_transceiver.h"
@@ -239,7 +238,6 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void MergeNetworkReport_s();
 
   
-  void OnRtpDataChannelCreated(RtpDataChannel* channel);
   void OnSctpDataChannelCreated(SctpDataChannel* channel);
   
   void OnDataChannelOpened(DataChannelInterface* channel);

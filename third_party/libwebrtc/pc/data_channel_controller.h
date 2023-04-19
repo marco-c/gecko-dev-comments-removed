@@ -27,7 +27,6 @@
 #include "media/base/stream_params.h"
 #include "pc/channel.h"
 #include "pc/data_channel_utils.h"
-#include "pc/rtp_data_channel.h"
 #include "pc/sctp_data_channel.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
@@ -41,8 +40,7 @@ namespace webrtc {
 
 class PeerConnection;
 
-class DataChannelController : public RtpDataChannelProviderInterface,
-                              public SctpDataChannelProviderInterface,
+class DataChannelController : public SctpDataChannelProviderInterface,
                               public DataChannelSink {
  public:
   explicit DataChannelController(PeerConnection* pc) : pc_(pc) {}
@@ -58,8 +56,6 @@ class DataChannelController : public RtpDataChannelProviderInterface,
   bool SendData(const cricket::SendDataParams& params,
                 const rtc::CopyOnWriteBuffer& payload,
                 cricket::SendDataResult* result) override;
-  bool ConnectDataChannel(RtpDataChannel* webrtc_data_channel) override;
-  void DisconnectDataChannel(RtpDataChannel* webrtc_data_channel) override;
   bool ConnectDataChannel(SctpDataChannel* webrtc_data_channel) override;
   void DisconnectDataChannel(SctpDataChannel* webrtc_data_channel) override;
   void AddSctpDataStream(int sid) override;
@@ -104,28 +100,13 @@ class DataChannelController : public RtpDataChannelProviderInterface,
     RTC_DCHECK_RUN_ON(signaling_thread());
     return !sctp_data_channels_.empty();
   }
-  bool HasRtpDataChannels() const {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return !rtp_data_channels_.empty();
-  }
-
-  void UpdateLocalRtpDataChannels(const cricket::StreamParamsVec& streams);
-  void UpdateRemoteRtpDataChannels(const cricket::StreamParamsVec& streams);
 
   
   cricket::DataChannelType data_channel_type() const;
   void set_data_channel_type(cricket::DataChannelType type);
-  cricket::RtpDataChannel* rtp_data_channel() const;
-  void set_rtp_data_channel(cricket::RtpDataChannel* channel);
   DataChannelTransportInterface* data_channel_transport() const;
   void set_data_channel_transport(DataChannelTransportInterface* transport);
-  const std::map<std::string, rtc::scoped_refptr<RtpDataChannel>>*
-  rtp_data_channels() const;
 
-  sigslot::signal1<RtpDataChannel*>& SignalRtpDataChannelCreated() {
-    RTC_DCHECK_RUN_ON(signaling_thread());
-    return SignalRtpDataChannelCreated_;
-  }
   sigslot::signal1<SctpDataChannel*>& SignalSctpDataChannelCreated() {
     RTC_DCHECK_RUN_ON(signaling_thread());
     return SignalSctpDataChannelCreated_;
@@ -136,10 +117,6 @@ class DataChannelController : public RtpDataChannelProviderInterface,
   void OnSctpDataChannelClosed(SctpDataChannel* channel);
 
  private:
-  rtc::scoped_refptr<RtpDataChannel> InternalCreateRtpDataChannel(
-      const std::string& label,
-      const DataChannelInit* config) ;
-
   rtc::scoped_refptr<SctpDataChannel> InternalCreateSctpDataChannel(
       const std::string& label,
       const InternalDataChannelInit*
@@ -155,14 +132,6 @@ class DataChannelController : public RtpDataChannelProviderInterface,
                                 const InternalDataChannelInit& config)
       RTC_RUN_ON(signaling_thread());
 
-  void CreateRemoteRtpDataChannel(const std::string& label,
-                                  uint32_t remote_ssrc)
-      RTC_RUN_ON(signaling_thread());
-
-  void UpdateClosingRtpDataChannels(
-      const std::vector<std::string>& active_channels,
-      bool is_local_update) RTC_RUN_ON(signaling_thread());
-
   
   bool DataChannelSendData(const cricket::SendDataParams& params,
                            const rtc::CopyOnWriteBuffer& payload,
@@ -175,12 +144,6 @@ class DataChannelController : public RtpDataChannelProviderInterface,
   rtc::Thread* network_thread() const;
   rtc::Thread* signaling_thread() const;
 
-  
-  
-  
-  
-  
-  
   
   cricket::DataChannelType data_channel_type_ =
       cricket::DCT_NONE;  
@@ -197,20 +160,10 @@ class DataChannelController : public RtpDataChannelProviderInterface,
   bool data_channel_transport_ready_to_send_
       RTC_GUARDED_BY(signaling_thread()) = false;
 
-  
-  
-  
-  
-  cricket::RtpDataChannel* rtp_data_channel_ = nullptr;
-
   SctpSidAllocator sid_allocator_ ;
   std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_
       RTC_GUARDED_BY(signaling_thread());
   std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_to_free_
-      RTC_GUARDED_BY(signaling_thread());
-
-  
-  std::map<std::string, rtc::scoped_refptr<RtpDataChannel>> rtp_data_channels_
       RTC_GUARDED_BY(signaling_thread());
 
   
@@ -228,8 +181,6 @@ class DataChannelController : public RtpDataChannelProviderInterface,
   sigslot::signal1<int> SignalDataChannelTransportChannelClosed_s
       RTC_GUARDED_BY(signaling_thread());
 
-  sigslot::signal1<RtpDataChannel*> SignalRtpDataChannelCreated_
-      RTC_GUARDED_BY(signaling_thread());
   sigslot::signal1<SctpDataChannel*> SignalSctpDataChannelCreated_
       RTC_GUARDED_BY(signaling_thread());
 

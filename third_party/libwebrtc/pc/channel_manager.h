@@ -50,7 +50,6 @@ class ChannelManager final {
   
   static std::unique_ptr<ChannelManager> Create(
       std::unique_ptr<MediaEngineInterface> media_engine,
-      std::unique_ptr<DataEngineInterface> data_engine,
       bool enable_rtx,
       rtc::Thread* worker_thread,
       rtc::Thread* network_thread);
@@ -110,17 +109,6 @@ class ChannelManager final {
   
   void DestroyVideoChannel(VideoChannel* video_channel);
 
-  RtpDataChannel* CreateRtpDataChannel(
-      const MediaConfig& media_config,
-      webrtc::RtpTransportInternal* rtp_transport,
-      rtc::Thread* signaling_thread,
-      const std::string& content_name,
-      bool srtp_required,
-      const webrtc::CryptoOptions& crypto_options,
-      rtc::UniqueRandomIdGenerator* ssrc_generator);
-  
-  void DestroyRtpDataChannel(RtpDataChannel* data_channel);
-
   
   
   
@@ -131,13 +119,11 @@ class ChannelManager final {
 
  private:
   ChannelManager(std::unique_ptr<MediaEngineInterface> media_engine,
-                 std::unique_ptr<DataEngineInterface> data_engine,
                  bool enable_rtx,
                  rtc::Thread* worker_thread,
                  rtc::Thread* network_thread);
 
   const std::unique_ptr<MediaEngineInterface> media_engine_;  
-  const std::unique_ptr<DataEngineInterface> data_engine_;    
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
 
@@ -145,8 +131,6 @@ class ChannelManager final {
   std::vector<std::unique_ptr<VoiceChannel>> voice_channels_
       RTC_GUARDED_BY(worker_thread_);
   std::vector<std::unique_ptr<VideoChannel>> video_channels_
-      RTC_GUARDED_BY(worker_thread_);
-  std::vector<std::unique_ptr<RtpDataChannel>> data_channels_
       RTC_GUARDED_BY(worker_thread_);
 
   const bool enable_rtx_;
