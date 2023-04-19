@@ -610,7 +610,9 @@ class NativeObject : public JSObject {
 
   
   
-  MOZ_ALWAYS_INLINE bool setShapeAndUpdateSlots(JSContext* cx, Shape* newShape);
+  MOZ_ALWAYS_INLINE bool setShapeAndAddNewSlots(JSContext* cx, Shape* newShape,
+                                                uint32_t oldSpan,
+                                                uint32_t newSpan);
 
   
   
