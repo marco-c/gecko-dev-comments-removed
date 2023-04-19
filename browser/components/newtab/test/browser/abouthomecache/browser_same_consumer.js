@@ -9,7 +9,7 @@
 
 
 add_task(async function test_same_consumer() {
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     await simulateRestart(browser);
 
     

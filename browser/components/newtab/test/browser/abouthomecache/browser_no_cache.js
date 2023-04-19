@@ -10,7 +10,7 @@ requestLongerTimeout(2);
 
 
 add_task(async function test_no_cache() {
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     await clearCache();
     
     

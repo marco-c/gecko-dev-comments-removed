@@ -11,7 +11,7 @@
 
 
 add_task(async function test_no_startup_actions() {
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     
     await clearCache();
     await simulateRestart(browser);

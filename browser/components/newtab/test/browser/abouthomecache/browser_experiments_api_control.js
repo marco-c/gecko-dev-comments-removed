@@ -10,7 +10,7 @@ const { ExperimentFakes } = ChromeUtils.import(
 registerCleanupFunction(async () => {
   
   
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     await simulateRestart(browser);
   });
 });
@@ -21,7 +21,7 @@ registerCleanupFunction(async () => {
 
 add_task(async function test_experiments_api_control() {
   
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     let doEnrollmentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
       featureId: "abouthomecache",
       value: { enabled: false },
@@ -44,7 +44,7 @@ add_task(async function test_experiments_api_control() {
   });
 
   
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     let doEnrollmentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
       featureId: "abouthomecache",
       value: { enabled: true },

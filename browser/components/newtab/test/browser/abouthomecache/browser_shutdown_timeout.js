@@ -11,7 +11,7 @@
 
 
 add_task(async function test_shutdown_timeout() {
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     
     
     

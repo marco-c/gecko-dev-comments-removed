@@ -51,6 +51,34 @@ let { AboutHomeStartupCache } = ChromeUtils.import(
 
 
 
+function withFullyLoadedAboutHome(taskFn) {
+  return BrowserTestUtils.withNewTab("about:home", async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          content.document.querySelectorAll(
+            "[data-section-id='topstories'] .ds-card-link"
+          ).length,
+        "Waiting for Discovery Stream to be rendered."
+      );
+    });
+
+    await taskFn(browser);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

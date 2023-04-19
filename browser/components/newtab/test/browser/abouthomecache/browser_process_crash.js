@@ -12,7 +12,7 @@
 
 
 add_task(async function test_process_crash() {
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     await simulateRestart(browser);
     let origProcManager = AboutHomeStartupCache._procManager;
 
@@ -24,7 +24,7 @@ add_task(async function test_process_crash() {
     );
   });
 
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     
     
     await ensureDynamicAboutHome(
@@ -55,7 +55,7 @@ add_task(async function test_process_crash() {
 
 
 add_task(async function test_process_crash_while_requesting_streams() {
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     await simulateRestart(browser);
     let cacheStreamsPromise = AboutHomeStartupCache.requestCache();
     await BrowserTestUtils.crashFrame(browser);

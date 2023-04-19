@@ -8,7 +8,7 @@
 
 
 add_task(async function test_basic_behaviour() {
-  await BrowserTestUtils.withNewTab("about:home", async browser => {
+  await withFullyLoadedAboutHome(async browser => {
     
     await clearCache();
     await simulateRestart(browser);
