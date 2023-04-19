@@ -162,7 +162,7 @@ template <class T>
 class StaticRefPtr;
 
 namespace dom {
-class IPCImage;
+class ShmemImage;
 struct AutocompleteInfo;
 class BrowserChild;
 class BrowserParent;
@@ -182,7 +182,6 @@ class Event;
 class EventTarget;
 class HTMLInputElement;
 class IPCDataTransfer;
-class IPCDataTransferImageContainer;
 class IPCDataTransferItem;
 struct LifecycleCallbackArgs;
 class MessageBroadcaster;
@@ -195,8 +194,9 @@ enum class ReferrerPolicy : uint8_t;
 }  
 
 namespace ipc {
-class BigBuffer;
 class IProtocol;
+class IShmemAllocator;
+class Shmem;
 }  
 
 namespace gfx {
@@ -2877,8 +2877,10 @@ class nsContentUtils {
 
 
 
-  static nsresult DeserializeDataTransferImageContainer(
-      const mozilla::dom::IPCDataTransferImageContainer& aData,
+
+
+  static nsresult DataTransferItemToImage(
+      const mozilla::dom::IPCDataTransferItem& aItem,
       imgIContainer** aContainer);
 
   
@@ -2889,13 +2891,15 @@ class nsContentUtils {
 
   static nsresult IPCTransferableToTransferable(
       const mozilla::dom::IPCDataTransfer& aDataTransfer, bool aAddDataFlavor,
-      nsITransferable* aTransferable);
+      nsITransferable* aTransferable,
+      mozilla::ipc::IShmemAllocator* aAllocator);
 
   static nsresult IPCTransferableToTransferable(
       const mozilla::dom::IPCDataTransfer& aDataTransfer,
       const bool& aIsPrivateData, nsIPrincipal* aRequestingPrincipal,
       const nsContentPolicyType& aContentPolicyType, bool aAddDataFlavor,
-      nsITransferable* aTransferable);
+      nsITransferable* aTransferable,
+      mozilla::ipc::IShmemAllocator* aAllocator);
 
   static nsresult IPCTransferableItemToVariant(
       const mozilla::dom::IPCDataTransferItem& aDataTransferItem,
@@ -2915,13 +2919,21 @@ class nsContentUtils {
 
 
 
-  static mozilla::Maybe<mozilla::ipc::BigBuffer> GetSurfaceData(
+  static mozilla::UniquePtr<char[]> GetSurfaceData(
       mozilla::gfx::DataSourceSurface&, size_t* aLength, int32_t* aStride);
 
-  static mozilla::Maybe<mozilla::dom::IPCImage> SurfaceToIPCImage(
-      mozilla::gfx::DataSourceSurface&);
+  
+
+
+
+  static mozilla::Maybe<mozilla::ipc::Shmem> GetSurfaceData(
+      mozilla::gfx::DataSourceSurface& aSurface, size_t* aLength,
+      int32_t* aStride, mozilla::ipc::IShmemAllocator* aAlloc);
+
+  static mozilla::Maybe<mozilla::dom::ShmemImage> SurfaceToIPCImage(
+      mozilla::gfx::DataSourceSurface&, mozilla::ipc::IShmemAllocator*);
   static already_AddRefed<mozilla::gfx::DataSourceSurface> IPCImageToSurface(
-      mozilla::dom::IPCImage&&);
+      mozilla::dom::ShmemImage&&, mozilla::ipc::IShmemAllocator*);
 
   
   
