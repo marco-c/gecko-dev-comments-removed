@@ -518,4 +518,14 @@ class CreditCard {
   static getSupportedNetworks() {
     return SUPPORTED_NETWORKS;
   }
+
+  
+
+
+
+  static getNetworkL10nId(network) {
+    return this.isValidNetwork(network)
+      ? `autofill-card-network-${network}`
+      : null;
+  }
 }

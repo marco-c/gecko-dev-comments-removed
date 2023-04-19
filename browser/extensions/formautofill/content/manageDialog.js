@@ -150,7 +150,7 @@ class ManageRecords {
     let selectedGuids = this._selectedOptions.map(option => option.value);
     this.clearRecordElements();
     for (let record of records) {
-      let { id, args, raw } = this.getLabelInfo(record);
+      let { id, args, raw } = await this.getLabelInfo(record);
       let option = new Option(
         raw ?? "",
         record.guid,
@@ -323,10 +323,8 @@ class ManageAddresses extends ManageRecords {
   constructor(elements) {
     super("addresses", elements);
     elements.add.setAttribute(
-      "searchkeywords",
-      FormAutofillUtils.EDIT_ADDRESS_KEYWORDS.map(key =>
-        FormAutofillUtils.stringBundle.GetStringFromName(key)
-      ).join("\n")
+      "search-l10n-ids",
+      FormAutofillUtils.EDIT_ADDRESS_L10N_IDS.join(",")
     );
   }
 
@@ -353,10 +351,8 @@ class ManageCreditCards extends ManageRecords {
   constructor(elements) {
     super("creditCards", elements);
     elements.add.setAttribute(
-      "searchkeywords",
-      FormAutofillUtils.EDIT_CREDITCARD_KEYWORDS.map(key =>
-        FormAutofillUtils.stringBundle.GetStringFromName(key)
-      ).join("\n")
+      "search-l10n-ids",
+      FormAutofillUtils.EDIT_CREDITCARD_L10N_IDS.join(",")
     );
 
     Services.telemetry.recordEvent("creditcard", "show", "manage");
@@ -419,26 +415,23 @@ class ManageCreditCards extends ManageRecords {
 
 
 
-  getLabelInfo(creditCard) {
+  async getLabelInfo(creditCard) {
     
     
     
     
     
-    let type;
-    try {
-      type = FormAutofillUtils.stringBundle.GetStringFromName(
-        `cardNetwork.${creditCard["cc-type"]}`
-      );
-    } catch (e) {
-      type = ""; 
-    }
+    const type = creditCard["cc-type"];
+    const typeL10nId = CreditCard.getNetworkL10nId(type);
+    const typeName = typeL10nId
+      ? await document.l10n.formatValue(typeL10nId)
+      : type ?? ""; 
     return CreditCard.getLabelInfo({
       name: creditCard["cc-name"],
       number: creditCard["cc-number"],
       month: creditCard["cc-exp-month"],
       year: creditCard["cc-exp-year"],
-      type,
+      type: typeName,
     });
   }
 

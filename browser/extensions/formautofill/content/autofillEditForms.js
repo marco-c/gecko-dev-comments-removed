@@ -7,6 +7,13 @@
 
 "use strict";
 
+const { FormAutofill } = ChromeUtils.import(
+  "resource://autofill/FormAutofill.jsm"
+);
+const { FormAutofillUtils } = ChromeUtils.import(
+  "resource://autofill/FormAutofillUtils.jsm"
+);
+
 class EditAutofillForm {
   constructor(elements) {
     this._elements = elements;
@@ -143,11 +150,6 @@ class EditAddress extends EditAutofillForm {
 
 
 
-
-
-
-
-
   constructor(elements, record, config) {
     super(elements);
 
@@ -182,11 +184,13 @@ class EditAddress extends EditAutofillForm {
     this._record = record;
     if (!record) {
       record = {
-        country: this.DEFAULT_REGION,
+        country: FormAutofill.DEFAULT_REGION,
       };
     }
 
-    let { addressLevel1Options } = this.getFormFormat(record.country);
+    let { addressLevel1Options } = FormAutofillUtils.getFormFormat(
+      record.country
+    );
     this.populateAddressLevel1(addressLevel1Options, record.country);
 
     super.loadRecord(record);
@@ -257,19 +261,32 @@ class EditAddress extends EditAutofillForm {
 
   formatForm(country) {
     const {
-      addressLevel3Label,
-      addressLevel2Label,
-      addressLevel1Label,
+      addressLevel3L10nId,
+      addressLevel2L10nId,
+      addressLevel1L10nId,
       addressLevel1Options,
-      postalCodeLabel,
+      postalCodeL10nId,
       fieldsOrder: mailingFieldsOrder,
       postalCodePattern,
       countryRequiredFields,
-    } = this.getFormFormat(country);
-    this._elements.addressLevel3Label.dataset.localization = addressLevel3Label;
-    this._elements.addressLevel2Label.dataset.localization = addressLevel2Label;
-    this._elements.addressLevel1Label.dataset.localization = addressLevel1Label;
-    this._elements.postalCodeLabel.dataset.localization = postalCodeLabel;
+    } = FormAutofillUtils.getFormFormat(country);
+
+    document.l10n.setAttributes(
+      this._elements.addressLevel3Label,
+      addressLevel3L10nId
+    );
+    document.l10n.setAttributes(
+      this._elements.addressLevel2Label,
+      addressLevel2L10nId
+    );
+    document.l10n.setAttributes(
+      this._elements.addressLevel1Label,
+      addressLevel1L10nId
+    );
+    document.l10n.setAttributes(
+      this._elements.postalCodeLabel,
+      postalCodeL10nId
+    );
     let addressFields = this._elements.form.dataset.addressFields;
     let extraRequiredFields = this._elements.form.dataset.extraRequiredFields;
     let fieldClasses = EditAddress.computeVisibleFields(
@@ -376,7 +393,7 @@ class EditAddress extends EditAutofillForm {
       return;
     }
 
-    let matchedSelectOption = this.findAddressSelectOption(
+    let matchedSelectOption = FormAutofillUtils.findAddressSelectOption(
       field,
       {
         country,
@@ -451,13 +468,14 @@ class EditAddress extends EditAutofillForm {
   populateCountries() {
     let fragment = document.createDocumentFragment();
     
-    let countries = [...this.countries.entries()].sort((e1, e2) =>
+    let countries = [...FormAutofill.countries.entries()].sort((e1, e2) =>
       e1[1].localeCompare(e2[1])
     );
-    for (let country of countries) {
-      let option = new Option();
-      option.value = country[0];
-      option.dataset.localizationRegion = country[0].toLowerCase();
+    for (let [country] of countries) {
+      const countryName = Services.intl.getRegionDisplayNames(undefined, [
+        country.toLowerCase(),
+      ]);
+      const option = new Option(countryName, country);
       fragment.appendChild(option);
     }
     this._elements.country.appendChild(fragment);
@@ -482,14 +500,10 @@ class EditCreditCard extends EditAutofillForm {
 
 
 
-
-
-
-  constructor(elements, record, addresses, config) {
+  constructor(elements, record, addresses) {
     super(elements);
 
     this._addresses = addresses;
-    Object.assign(this, config);
     Object.assign(this._elements, {
       ccNumber: this._elements.form.querySelector("#cc-number"),
       invalidCardNumberStringElement: this._elements.form.querySelector(
@@ -581,11 +595,11 @@ class EditCreditCard extends EditAutofillForm {
     
     frag.appendChild(new Option("", ""));
 
-    let supportedNetworks = this.getSupportedNetworks();
+    let supportedNetworks = FormAutofillUtils.getCreditCardNetworks();
     for (let id of supportedNetworks) {
-      let option = new Option();
-      option.value = id;
-      option.dataset.localization = "cardNetwork." + id;
+      const option = new Option(undefined, id);
+      
+      option.dataset.l10nId = `autofill-card-network-${id}`;
       frag.appendChild(option);
     }
     this._elements.ccType.appendChild(frag);
@@ -608,7 +622,7 @@ class EditCreditCard extends EditAutofillForm {
       hasAddresses = true;
       let selected = guid == billingAddressGUID;
       let option = new Option(
-        this.getAddressLabel(address),
+        FormAutofillUtils.getAddressLabel(address),
         guid,
         selected,
         selected
@@ -628,7 +642,7 @@ class EditCreditCard extends EditAutofillForm {
     
     if (
       event.target == this._elements.ccNumber &&
-      this.isCCNumber(this._elements.ccNumber.value)
+      FormAutofillUtils.isCCNumber(this._elements.ccNumber.value)
     ) {
       this._elements.ccNumber.setCustomValidity("");
     }
@@ -639,7 +653,10 @@ class EditCreditCard extends EditAutofillForm {
     super.updateCustomValidity(field);
 
     
-    if (field == this._elements.ccNumber && !this.isCCNumber(field.value)) {
+    if (
+      field == this._elements.ccNumber &&
+      !FormAutofillUtils.isCCNumber(field.value)
+    ) {
       let invalidCardNumberString = this._elements
         .invalidCardNumberStringElement.textContent;
       field.setCustomValidity(invalidCardNumberString || " ");
