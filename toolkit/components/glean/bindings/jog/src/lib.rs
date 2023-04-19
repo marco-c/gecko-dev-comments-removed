@@ -4,20 +4,14 @@
 
 use fog::factory;
 use fog::private::traits::HistogramType;
-use fog::private::{CommonMetricData, MemoryUnit, TimeUnit};
+use fog::private::{CommonMetricData, Lifetime, MemoryUnit, TimeUnit};
 #[cfg(feature = "with_gecko")]
-use nsstring::{nsACString, nsCString};
+use nsstring::{nsACString, nsAString, nsCString};
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufReader;
 use thin_vec::ThinVec;
-
-
-
-
-
-#[no_mangle]
-pub extern "C" fn jog_runtime_registrar() -> bool {
-    false
-}
 
 #[derive(Default, Deserialize)]
 struct ExtraMetricArgs {
@@ -55,8 +49,6 @@ pub extern "C" fn jog_test_register_metric(
 ) -> u32 {
     log::warn!("Type: {:?}, Category: {:?}, Name: {:?}, SendInPings: {:?}, Lifetime: {:?}, Disabled: {}, ExtraArgs: {}",
       metric_type, category, name, send_in_pings, lifetime, disabled, extra_args);
-    let ns_category = category;
-    let ns_name = name;
     let metric_type = &metric_type.to_utf8();
     let category = category.to_string();
     let name = name.to_string();
@@ -70,7 +62,30 @@ pub extern "C" fn jog_test_register_metric(
         serde_json::from_str(&extra_args.to_utf8())
             .expect("Extras didn't deserialize happily. Are they valid JSON?")
     };
-    let metric = factory::create_and_register_metric(
+    create_and_register_metric(
+        metric_type,
+        category,
+        name,
+        send_in_pings,
+        lifetime,
+        disabled,
+        extra_args,
+    )
+    .expect("Creation/Registration of metric failed") 
+}
+
+fn create_and_register_metric(
+    metric_type: &str,
+    category: String,
+    name: String,
+    send_in_pings: Vec<String>,
+    lifetime: Lifetime,
+    disabled: bool,
+    extra_args: ExtraMetricArgs,
+) -> Result<u32, Box<dyn std::error::Error>> {
+    let ns_name = nsCString::from(&name);
+    let ns_category = nsCString::from(&category);
+    let metric_id = factory::create_and_register_metric(
         metric_type,
         category,
         name,
@@ -90,12 +105,20 @@ pub extern "C" fn jog_test_register_metric(
     extern "C" {
         fn JOG_RegisterMetric(category: &nsACString, name: &nsACString, metric: u32);
     }
-    let metric = metric.unwrap(); 
-    unsafe {
-        
-        JOG_RegisterMetric(ns_category, ns_name, metric);
+    if let Ok(metric_id) = metric_id {
+        unsafe {
+            
+            JOG_RegisterMetric(&ns_category, &ns_name, metric_id);
+        }
+    } else {
+        log::warn!(
+            "Could not register metric {}.{} due to {:?}",
+            ns_category,
+            ns_name,
+            metric_id
+        );
     }
-    metric
+    metric_id
 }
 
 
@@ -109,12 +132,22 @@ pub extern "C" fn jog_test_register_ping(
     send_if_empty: bool,
     reason_codes: &ThinVec<nsCString>,
 ) -> u32 {
-    let ns_name = name;
     let ping_name = name.to_string();
     let reason_codes = reason_codes
         .iter()
         .map(|reason| reason.to_string())
         .collect();
+    create_and_register_ping(ping_name, include_client_id, send_if_empty, reason_codes)
+        .expect("Creation or registration of ping failed.") 
+}
+
+fn create_and_register_ping(
+    ping_name: String,
+    include_client_id: bool,
+    send_if_empty: bool,
+    reason_codes: Vec<String>,
+) -> Result<u32, Box<dyn std::error::Error>> {
+    let ns_name = nsCString::from(&ping_name);
     let ping_id = factory::create_and_register_ping(
         ping_name,
         include_client_id,
@@ -124,10 +157,13 @@ pub extern "C" fn jog_test_register_ping(
     extern "C" {
         fn JOG_RegisterPing(name: &nsACString, ping_id: u32);
     }
-    let ping_id = ping_id.unwrap(); 
-    unsafe {
-        
-        JOG_RegisterPing(ns_name, ping_id);
+    if let Ok(ping_id) = ping_id {
+        unsafe {
+            
+            JOG_RegisterPing(&ns_name, ping_id);
+        }
+    } else {
+        log::warn!("Could not register ping {} due to {:?}", ns_name, ping_id);
     }
     ping_id
 }
@@ -138,10 +174,75 @@ pub extern "C" fn jog_test_register_ping(
 #[no_mangle]
 pub extern "C" fn jog_test_clear_registered_metrics_and_pings() {}
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn runtime_registrar_does_nothing() {
-        assert!(!jog_runtime_registrar());
+#[derive(Default, Deserialize)]
+struct Jogfile {
+    metrics: HashMap<String, Vec<MetricDefinitionData>>,
+    pings: Vec<PingDefinitionData>,
+}
+
+#[derive(Default, Deserialize)]
+struct MetricDefinitionData {
+    metric_type: String,
+    name: String,
+    send_in_pings: Vec<String>,
+    lifetime: Lifetime,
+    disabled: bool,
+    #[serde(default)]
+    extra_args: Option<ExtraMetricArgs>,
+}
+
+#[derive(Default, Deserialize)]
+struct PingDefinitionData {
+    name: String,
+    include_client_id: bool,
+    send_if_empty: bool,
+    reason_codes: Option<Vec<String>>,
+}
+
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn jog_load_jogfile(jogfile_path: &nsAString) -> bool {
+    let f = match File::open(jogfile_path.to_string()) {
+        Ok(f) => f,
+        _ => {
+            log::error!("Boo, couldn't open jogfile at {}", jogfile_path.to_string());
+            return false;
+        }
+    };
+    let reader = BufReader::new(f);
+
+    let mut j: Jogfile = match serde_json::from_reader(reader) {
+        Ok(j) => j,
+        Err(e) => {
+            log::error!("Boo, couldn't read jogfile because of: {:?}", e);
+            return false;
+        }
+    };
+    log::trace!("Loaded jogfile. Registering metrics+pings.");
+    for (category, metrics) in j.metrics.drain() {
+        for metric in metrics.into_iter() {
+            let _ = create_and_register_metric(
+                &metric.metric_type,
+                category.to_string(),
+                metric.name,
+                metric.send_in_pings,
+                metric.lifetime,
+                metric.disabled,
+                metric.extra_args.unwrap_or_else(Default::default),
+            );
+        }
     }
+    for ping in j.pings.into_iter() {
+        let _ = create_and_register_ping(
+            ping.name,
+            ping.include_client_id,
+            ping.send_if_empty,
+            ping.reason_codes.unwrap_or_else(Vec::new),
+        );
+    }
+    true
 }

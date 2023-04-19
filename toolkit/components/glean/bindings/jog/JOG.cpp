@@ -10,7 +10,11 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/glean/bindings/jog/jog_ffi_generated.h"
+#include "mozilla/Omnijar.h"
 #include "mozilla/Tuple.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsThreadUtils.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
@@ -30,14 +34,60 @@ bool JOG::HasCategory(const nsACString& aCategoryName) {
   return gCategories && gCategories->Contains(aCategoryName);
 }
 
+static Maybe<bool> sFoundAndLoadedJogfile;
+
 
 bool JOG::EnsureRuntimeMetricsRegistered(bool aForce) {
-  return false;  
+  MOZ_ASSERT(NS_IsMainThread());
+
+#ifdef MOZILLA_OFFICIAL
+  
+  
+  return false;
+#endif
+
+  if (sFoundAndLoadedJogfile) {
+    return sFoundAndLoadedJogfile.value();
+  }
+  sFoundAndLoadedJogfile.emplace(false);
+
+  if (!mozilla::IsDevelopmentBuild()) {
+    
+    
+    
+    return false;
+  }
+  
+  
+  
+  nsCOMPtr<nsIFile> jogfile;
+  if (NS_WARN_IF(NS_FAILED(
+          NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(jogfile))))) {
+    return false;
+  }
+  if (NS_WARN_IF(NS_FAILED(jogfile->Append(u"jogfile.json"_ns)))) {
+    return false;
+  }
+  bool jogfileExists = false;
+  if (NS_WARN_IF(NS_FAILED(jogfile->Exists(&jogfileExists))) ||
+      !jogfileExists) {
+    return false;
+  }
+
+  
+  
+  nsAutoString jogfileString;
+  if (NS_WARN_IF(NS_FAILED(jogfile->GetPath(jogfileString)))) {
+    return false;
+  }
+  sFoundAndLoadedJogfile.emplace(jog::jog_load_jogfile(&jogfileString));
+  return sFoundAndLoadedJogfile.value();
 }
 
 
 bool JOG::AreRuntimeMetricsComprehensive() {
-  return false;  
+  MOZ_ASSERT(NS_IsMainThread());
+  return sFoundAndLoadedJogfile && sFoundAndLoadedJogfile.value();
 }
 
 
