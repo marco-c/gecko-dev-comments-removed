@@ -525,8 +525,10 @@ SignalingInterceptor::PatchOffererIceCandidates(
     if (simulcast_info_it != context_.simulcast_infos_by_mid.end()) {
       
       
-      out.push_back(CreateIceCandidate(simulcast_info_it->second->rids[0], 0,
-                                       candidate->candidate()));
+      
+      for (auto rid : simulcast_info_it->second->rids) {
+        out.push_back(CreateIceCandidate(rid, -1, candidate->candidate()));
+      }
     } else {
       out.push_back(CreateIceCandidate(candidate->sdp_mid(),
                                        candidate->sdp_mline_index(),
@@ -550,6 +552,9 @@ SignalingInterceptor::PatchAnswererIceCandidates(
       
       out.push_back(CreateIceCandidate(simulcast_info_it->second->mid, 0,
                                        candidate->candidate()));
+    } else if (context_.simulcast_infos_by_rid.size()) {
+      
+      out.push_back(CreateIceCandidate("", 0, candidate->candidate()));
     } else {
       out.push_back(CreateIceCandidate(candidate->sdp_mid(),
                                        candidate->sdp_mline_index(),
