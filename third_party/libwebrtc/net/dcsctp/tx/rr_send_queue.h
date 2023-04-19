@@ -12,9 +12,8 @@
 
 #include <cstdint>
 #include <deque>
+#include <map>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
 #include "absl/algorithm/container.h"
@@ -79,43 +78,90 @@ class RRSendQueue : public SendQueue {
 
  private:
   
-  struct Item {
-    explicit Item(DcSctpMessage msg,
-                  absl::optional<TimeMs> expires_at,
-                  const SendOptions& send_options)
-        : message(std::move(msg)),
-          expires_at(expires_at),
-          send_options(send_options),
-          remaining_offset(0),
-          remaining_size(message.payload().size()) {}
-    DcSctpMessage message;
-    absl::optional<TimeMs> expires_at;
-    SendOptions send_options;
+  class OutgoingStream {
+   public:
     
+    void Add(DcSctpMessage message,
+             absl::optional<TimeMs> expires_at,
+             const SendOptions& send_options);
+
     
-    size_t remaining_offset;
-    size_t remaining_size;
+    absl::optional<DataToSend> Produce(TimeMs now, size_t max_size);
+
     
+    size_t buffered_amount() const;
+
     
-    absl::optional<MID> message_id = absl::nullopt;
-    absl::optional<SSN> ssn = absl::nullopt;
+    void Discard(IsUnordered unordered, MID message_id);
+
     
-    FSN current_fsn = FSN(0);
+    void Pause();
+
+    
+    void Resume() { is_paused_ = false; }
+
+    bool is_paused() const { return is_paused_; }
+
+    
+    void Reset();
+
+    
+    bool has_partially_sent_message() const;
+
+   private:
+    
+    struct Item {
+      explicit Item(DcSctpMessage msg,
+                    absl::optional<TimeMs> expires_at,
+                    const SendOptions& send_options)
+          : message(std::move(msg)),
+            expires_at(expires_at),
+            send_options(send_options),
+            remaining_offset(0),
+            remaining_size(message.payload().size()) {}
+      DcSctpMessage message;
+      absl::optional<TimeMs> expires_at;
+      SendOptions send_options;
+      
+      
+      size_t remaining_offset;
+      size_t remaining_size;
+      
+      
+      absl::optional<MID> message_id = absl::nullopt;
+      absl::optional<SSN> ssn = absl::nullopt;
+      
+      FSN current_fsn = FSN(0);
+    };
+
+    
+    Item* GetFirstNonExpiredMessage(TimeMs now);
+
+    
+    bool is_paused_ = false;
+    
+    MID next_unordered_mid_ = MID(0);
+    MID next_ordered_mid_ = MID(0);
+
+    SSN next_ssn_ = SSN(0);
+    
+    std::deque<Item> items_;
   };
 
-  Item* GetFirstNonExpiredMessage(TimeMs now);
-  bool IsPaused(StreamID stream_id) const;
+  OutgoingStream& GetOrCreateStreamInfo(StreamID stream_id);
+  absl::optional<DataToSend> Produce(
+      std::map<StreamID, OutgoingStream>::iterator it,
+      TimeMs now,
+      size_t max_size);
 
   const std::string log_prefix_;
   const size_t buffer_size_;
-  std::deque<Item> items_;
 
-  std::unordered_set<StreamID, StreamID::Hasher> paused_streams_;
-  std::deque<Item> paused_items_;
+  
+  StreamID next_stream_id_ = StreamID(0);
 
-  std::unordered_map<std::pair<IsUnordered, StreamID>, MID, UnorderedStreamHash>
-      mid_by_stream_id_;
-  std::unordered_map<StreamID, SSN, StreamID::Hasher> ssn_by_stream_id_;
+  
+  std::map<StreamID, OutgoingStream> streams_;
 };
 }  
 
