@@ -139,7 +139,7 @@ class Builder {
   
   
   
-#if DEBUG
+#ifdef DEBUG
   void assertBuilt(JSObject* obj);
 #else
   void assertBuilt(JSObject* obj) {}
