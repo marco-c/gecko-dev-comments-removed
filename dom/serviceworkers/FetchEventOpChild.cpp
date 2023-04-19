@@ -328,22 +328,6 @@ mozilla::ipc::IPCResult FetchEventOpChild::RecvRespondWith(
       break;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (mPreloadResponseAvailablePromiseRequestHolder.Exists()) {
-    mPreloadResponseAvailablePromiseRequestHolder.Disconnect();
-    mPreloadResponseEndPromiseRequestHolder.Disconnect();
-    if (mPreloadResponseReadyPromises) {
-      RefPtr<FetchService> fetchService = FetchService::GetInstance();
-      fetchService->CancelFetch(std::move(mPreloadResponseReadyPromises));
-    }
-  }
-
   return IPC_OK();
 }
 
@@ -362,6 +346,9 @@ mozilla::ipc::IPCResult FetchEventOpChild::Recv__delete__(
   }
 
   mPromiseHolder.ResolveIfExists(true, __func__);
+
+  
+  
   mPreloadResponseAvailablePromiseRequestHolder.DisconnectIfExists();
   mPreloadResponseEndPromiseRequestHolder.DisconnectIfExists();
   if (mPreloadResponseReadyPromises) {
