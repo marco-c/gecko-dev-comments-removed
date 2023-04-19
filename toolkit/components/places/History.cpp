@@ -2113,15 +2113,29 @@ History::IsURIVisited(nsIURI* aURI, mozIVisitedStatusCallback* aCallback) {
 
 void History::StartPendingVisitedQueries(PendingVisitedQueries&& aQueries) {
   if (XRE_IsContentProcess()) {
+    auto* cpc = dom::ContentChild::GetSingleton();
+    MOZ_ASSERT(cpc, "Content Protocol is NULL!");
+
+    
+    
+    
+    
+    constexpr size_t kBatchLimit = 4000;
+
     nsTArray<RefPtr<nsIURI>> uris(aQueries.Count());
     for (const auto& entry : aQueries) {
       uris.AppendElement(entry.GetKey());
       MOZ_ASSERT(entry.GetData().IsEmpty(),
                  "Child process shouldn't have parent requests");
+      if (uris.Length() == kBatchLimit) {
+        Unused << cpc->SendStartVisitedQueries(uris);
+        uris.ClearAndRetainStorage();
+      }
     }
-    auto* cpc = mozilla::dom::ContentChild::GetSingleton();
-    MOZ_ASSERT(cpc, "Content Protocol is NULL!");
-    Unused << cpc->SendStartVisitedQueries(uris);
+
+    if (!uris.IsEmpty()) {
+      Unused << cpc->SendStartVisitedQueries(uris);
+    }
   } else {
     
     
