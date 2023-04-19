@@ -25,6 +25,16 @@ namespace webrtc {
 
 class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
  public:
+  enum class DelayPrecision {
+    
+    
+    kLow,
+    
+    
+    
+    kHigh,
+  };
+
   
   
   
@@ -100,6 +110,21 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
 
   
   
+  void PostDelayedTaskWithPrecision(DelayPrecision precision,
+                                    std::unique_ptr<QueuedTask> task,
+                                    uint32_t milliseconds) {
+    switch (precision) {
+      case DelayPrecision::kLow:
+        PostDelayedTask(std::move(task), milliseconds);
+        break;
+      case DelayPrecision::kHigh:
+        PostDelayedHighPrecisionTask(std::move(task), milliseconds);
+        break;
+    }
+  }
+
+  
+  
   
   static TaskQueueBase* Current();
   bool IsCurrent() const { return Current() == this; }
@@ -127,4 +152,4 @@ struct TaskQueueDeleter {
 
 }  
 
-#endif  
+#endif
