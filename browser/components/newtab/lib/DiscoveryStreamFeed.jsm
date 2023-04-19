@@ -55,11 +55,8 @@ const PREF_SPOCS_ENDPOINT_QUERY = "discoverystream.spocs-endpoint-query";
 const PREF_REGION_BASIC_LAYOUT = "discoverystream.region-basic-layout";
 const PREF_USER_TOPSTORIES = "feeds.section.topstories";
 const PREF_SYSTEM_TOPSTORIES = "feeds.system.topstories";
-const PREF_USER_TOPSITES = "feeds.topsites";
-const PREF_SYSTEM_TOPSITES = "feeds.system.topsites";
 const PREF_SPOCS_CLEAR_ENDPOINT = "discoverystream.endpointSpocsClear";
 const PREF_SHOW_SPONSORED = "showSponsored";
-const PREF_SHOW_SPONSORED_TOPSITES = "showSponsoredTopSites";
 const PREF_SPOC_IMPRESSIONS = "discoverystream.spoc.impressions";
 const PREF_FLIGHT_BLOCKS = "discoverystream.flight.blocks";
 const PREF_REC_IMPRESSIONS = "discoverystream.rec.impressions";
@@ -152,21 +149,10 @@ class DiscoveryStreamFeed {
 
   get showSpocs() {
     
-    
-    return this.showSponsoredStories || this.showSponsoredTopsites;
-  }
-
-  get showSponsoredStories() {
-    
     return (
       this.store.getState().Prefs.values[PREF_SHOW_SPONSORED] &&
       this.config.show_spocs
     );
-  }
-
-  get showSponsoredTopsites() {
-    
-    return this.store.getState().Prefs.values[PREF_SHOW_SPONSORED_TOPSITES];
   }
 
   get showStories() {
@@ -174,14 +160,6 @@ class DiscoveryStreamFeed {
     return (
       this.store.getState().Prefs.values[PREF_SYSTEM_TOPSTORIES] &&
       this.store.getState().Prefs.values[PREF_USER_TOPSTORIES]
-    );
-  }
-
-  get showTopsites() {
-    
-    return (
-      this.store.getState().Prefs.values[PREF_SYSTEM_TOPSITES] &&
-      this.store.getState().Prefs.values[PREF_USER_TOPSITES]
     );
   }
 
@@ -534,48 +512,25 @@ class DiscoveryStreamFeed {
     const placements = [];
     const placementsMap = {};
     for (const row of layout.filter(r => r.components && r.components.length)) {
-      for (const component of row.components.filter(
-        c => c.placement && c.spocs
-      )) {
-        
-        let placement;
-
-        
-        
-        if (component.spocs.prefs) {
+      for (const component of row.components) {
+        if (component.placement) {
           
-          if (
-            component.spocs.prefs.length &&
-            component.spocs.prefs.every(
-              p => this.store.getState().Prefs.values[p]
-            )
-          ) {
-            
-            placement = component.placement;
+          if (!placementsMap[component.placement.name]) {
+            placementsMap[component.placement.name] = component.placement;
+            placements.push(component.placement);
           }
-        } else if (this.showSponsoredStories) {
-          
-          
-          placement = component.placement;
-        }
-
-        
-        if (placement?.name && !placementsMap[placement.name]) {
-          placementsMap[placement.name] = placement;
-          placements.push(placement);
         }
       }
     }
-
-    
-    
-    sendUpdate({
-      type: at.DISCOVERY_STREAM_SPOCS_PLACEMENTS,
-      data: { placements },
-      meta: {
-        isStartup,
-      },
-    });
+    if (placements.length) {
+      sendUpdate({
+        type: at.DISCOVERY_STREAM_SPOCS_PLACEMENTS,
+        data: { placements },
+        meta: {
+          isStartup,
+        },
+      });
+    }
   }
 
   
@@ -647,33 +602,22 @@ class DiscoveryStreamFeed {
         items = isBasicLayout ? 4 : 24;
       }
 
-      const prepConfArr = arr => {
-        return arr
-          ?.split(",")
-          .filter(item => item)
-          .map(item => parseInt(item, 10));
-      };
-
-      const spocAdTypes = prepConfArr(pocketConfig.spocAdTypes);
-      const spocZoneIds = prepConfArr(pocketConfig.spocZoneIds);
-      const spocTopsitesAdTypes = prepConfArr(pocketConfig.spocTopsitesAdTypes);
-      const spocTopsitesZoneIds = prepConfArr(pocketConfig.spocTopsitesZoneIds);
+      const spocAdTypes = pocketConfig.spocAdTypes
+        ?.split(",")
+        .filter(item => item)
+        .map(item => parseInt(item, 10));
+      const spocZoneIds = pocketConfig.spocZoneIds
+        ?.split(",")
+        .filter(item => item)
+        .map(item => parseInt(item, 10));
       const { spocSiteId } = pocketConfig;
       let spocPlacementData;
-      let spocTopsitesPlacementData;
       let spocsUrl;
 
       if (spocAdTypes?.length && spocZoneIds?.length) {
         spocPlacementData = {
           ad_types: spocAdTypes,
           zone_ids: spocZoneIds,
-        };
-      }
-
-      if (spocTopsitesAdTypes?.length && spocTopsitesZoneIds?.length) {
-        spocTopsitesPlacementData = {
-          ad_types: spocTopsitesAdTypes,
-          zone_ids: spocTopsitesZoneIds,
         };
       }
 
@@ -690,7 +634,6 @@ class DiscoveryStreamFeed {
         items,
         sponsoredCollectionsEnabled,
         spocPlacementData,
-        spocTopsitesPlacementData,
         spocPositions: this.parseGridPositions(
           pocketConfig.spocPositions?.split(`,`)
         ),
@@ -892,6 +835,10 @@ class DiscoveryStreamFeed {
 
   getPlacements() {
     const { placements } = this.store.getState().DiscoveryStream.spocs;
+    
+    if (!placements || !placements.length) {
+      return [{ name: "spocs" }];
+    }
     return placements;
   }
 
@@ -980,9 +927,9 @@ class DiscoveryStreamFeed {
     const cachedData = (await this.cache.get()) || {};
     let spocsState;
 
-    const placements = this.getPlacements();
+    const { placements } = this.store.getState().DiscoveryStream.spocs;
 
-    if (this.showSpocs && placements?.length) {
+    if (this.showSpocs) {
       spocsState = cachedData.spocs;
       if (this.isExpired({ cachedData, key: "spocs", isStartup })) {
         const endpoint = this.store.getState().DiscoveryStream.spocs
@@ -1610,25 +1557,15 @@ class DiscoveryStreamFeed {
       : this.store.dispatch;
 
     await this.loadLayout(dispatch, isStartup);
-    if (this.showStories || this.showTopsites) {
-      const promises = [];
-      
-      
-      
-      const spocsPromise = this.loadSpocs(dispatch, isStartup).catch(error =>
-        Cu.reportError(`Error trying to load spocs feeds: ${error}`)
-      );
-      promises.push(spocsPromise);
-      if (this.showStories) {
-        const storiesPromise = this.loadComponentFeeds(
-          dispatch,
-          isStartup
-        ).catch(error =>
+    if (this.showStories) {
+      await Promise.all([
+        this.loadSpocs(dispatch, isStartup).catch(error =>
+          Cu.reportError(`Error trying to load spocs feeds: ${error}`)
+        ),
+        this.loadComponentFeeds(dispatch, isStartup).catch(error =>
           Cu.reportError(`Error trying to load component feeds: ${error}`)
-        );
-        promises.push(storiesPromise);
-      }
-      await Promise.all(promises);
+        ),
+      ]);
       if (isStartup) {
         await this._maybeUpdateCachedData();
       }
@@ -1864,21 +1801,13 @@ class DiscoveryStreamFeed {
         break;
       
       case PREF_SHOW_SPONSORED:
-      case PREF_SHOW_SPONSORED_TOPSITES:
         if (!action.data.value) {
           
           this.clearSpocs();
         }
-        const dispatch = update =>
-          this.store.dispatch(ac.BroadcastToContent(update));
-        
-        this.updatePlacements(
-          dispatch,
-          this.store.getState().DiscoveryStream.layout
+        await this.loadSpocs(update =>
+          this.store.dispatch(ac.BroadcastToContent(update))
         );
-        
-        await this.cache.set("spocs", {});
-        await this.loadSpocs(dispatch);
         break;
     }
   }
@@ -2092,6 +2021,7 @@ class DiscoveryStreamFeed {
       case at.PREF_CHANGED:
         await this.onPrefChangedAction(action);
         if (action.data.name === "pocketConfig") {
+          
           await this.onPrefChange();
           this.setupPrefs(false );
         }
@@ -2118,13 +2048,11 @@ class DiscoveryStreamFeed {
 
 
 
-
 getHardcodedLayout = ({
   spocsUrl = SPOCS_URL,
   items = 21,
   spocPositions = [1, 5, 7, 11, 18, 20],
   spocPlacementData = { ad_types: [3617], zone_ids: [217758, 217995] },
-  spocTopsitesPlacementData,
   widgetPositions = [],
   widgetData = [],
   sponsoredCollectionsEnabled = false,
@@ -2151,24 +2079,6 @@ getHardcodedLayout = ({
               id: "newtab-section-header-topsites",
             },
           },
-          ...(spocTopsitesPlacementData
-            ? {
-                placement: {
-                  name: "sponsored-topsites",
-                  ad_types: spocTopsitesPlacementData.ad_types,
-                  zone_ids: spocTopsitesPlacementData.zone_ids,
-                },
-                spocs: {
-                  probability: 1,
-                  prefs: [PREF_SHOW_SPONSORED_TOPSITES],
-                  positions: [
-                    {
-                      index: 1,
-                    },
-                  ],
-                },
-              }
-            : {}),
           properties: {},
         },
         ...(sponsoredCollectionsEnabled
