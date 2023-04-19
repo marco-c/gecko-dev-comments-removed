@@ -63,10 +63,8 @@ bool nsXPCWrappedJS::CanSkip() {
     return false;
   }
 
-  if (IsSubjectToFinalization()) {
-    return true;
-  }
-
+  
+  
   
   JSObject* obj = GetJSObjectPreserveColor();
   if (obj && JS::ObjectIsMarkedGray(obj)) {
@@ -80,6 +78,10 @@ bool nsXPCWrappedJS::CanSkip() {
     NS_ENSURE_TRUE(mRoot, false);
     return mRoot->CanSkip();
   }
+
+  
+  
+  
 
   
   
@@ -113,13 +115,14 @@ NS_CYCLE_COLLECTION_CLASSNAME(nsXPCWrappedJS)::TraverseNative(
     NS_IMPL_CYCLE_COLLECTION_DESCRIBE(nsXPCWrappedJS, refcnt)
   }
 
-  
-  
   if (tmp->IsSubjectToFinalization()) {
-    return NS_OK;
+    
+    
+    
+    cb.NoteWeakMapping(tmp->GetJSObjectPreserveColor(), s,
+                       NS_CYCLE_COLLECTION_PARTICIPANT(nsXPCWrappedJS));
   }
 
-  
   
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "self");
   cb.NoteXPCOMChild(s);
