@@ -359,7 +359,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  bool IsCSSEnabled() const { return !IsMailEditor() && mIsCSSPrefChecked; }
+  bool IsCSSEnabled() const { return mIsCSSPrefChecked; }
 
   
 

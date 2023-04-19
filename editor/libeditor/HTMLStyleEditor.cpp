@@ -3178,7 +3178,6 @@ nsresult HTMLEditor::GetFontColorState(bool* aMixed, nsAString& aOutColor) {
 
 
 
-
 NS_IMETHODIMP HTMLEditor::GetIsCSSEnabled(bool* aIsCSSEnabled) {
   *aIsCSSEnabled = IsCSSEnabled();
   return NS_OK;
