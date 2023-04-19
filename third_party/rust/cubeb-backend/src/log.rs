@@ -3,6 +3,8 @@
 
 
 
+use std::os::raw::c_char;
+
 
 
 const LOG_LIMIT: usize = 1024;
@@ -55,7 +57,7 @@ impl<const N: usize> std::fmt::Write for StaticCString<N> {
 
 
 pub fn cubeb_log_internal_buf_fmt(
-    log_callback: unsafe extern "C" fn(*const i8, ...),
+    log_callback: unsafe extern "C" fn(*const c_char, ...),
     file: &str,
     line: u32,
     msg: std::fmt::Arguments,
