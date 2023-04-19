@@ -87,8 +87,9 @@ const SpecialMessageActions = {
 
 
 
-  pinFirefoxToTaskbar(window) {
-    return window.getShellService().pinToTaskbar();
+
+  pinFirefoxToTaskbar(window, privateBrowsing = false) {
+    return window.getShellService().pinToTaskbar(privateBrowsing);
   },
 
   
@@ -242,10 +243,10 @@ const SpecialMessageActions = {
         );
         break;
       case "PIN_FIREFOX_TO_TASKBAR":
-        await this.pinFirefoxToTaskbar(window);
+        await this.pinFirefoxToTaskbar(window, action.data?.privatePin);
         break;
       case "PIN_AND_DEFAULT":
-        await this.pinFirefoxToTaskbar(window);
+        await this.pinFirefoxToTaskbar(window, action.data?.privatePin);
         this.setDefaultBrowser(window);
         break;
       case "SET_DEFAULT_BROWSER":
