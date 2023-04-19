@@ -179,13 +179,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   
-  
-  void AddSecondarySink(RtpPacketSinkInterface* sink);
-  void RemoveSecondarySink(const RtpPacketSinkInterface* sink);
-
-  
-  
-  
   void RemoteRTCPSenderInfo(uint32_t* packet_count, uint32_t* octet_count,
                             int64_t* ntp_timestamp_ms,
                             int64_t* remote_ntp_timestamp_ms) const;
@@ -348,9 +341,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   int16_t last_payload_type_ RTC_GUARDED_BY(worker_task_checker_) = -1;
 
   bool has_received_frame_ RTC_GUARDED_BY(worker_task_checker_);
-
-  std::vector<RtpPacketSinkInterface*> secondary_sinks_
-      RTC_GUARDED_BY(worker_task_checker_);
 
   absl::optional<uint32_t> last_received_rtp_timestamp_
       RTC_GUARDED_BY(worker_task_checker_);

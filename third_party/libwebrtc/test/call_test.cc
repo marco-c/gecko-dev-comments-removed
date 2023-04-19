@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "test/call_test.h"
 
@@ -37,7 +37,7 @@ CallTest::CallTest()
       task_queue_factory_(CreateDefaultTaskQueueFactory()),
       send_event_log_(std::make_unique<RtcEventLogNull>()),
       recv_event_log_(std::make_unique<RtcEventLogNull>()),
-      audio_send_config_(/*send_transport=*/nullptr),
+      audio_send_config_(nullptr),
       audio_send_stream_(nullptr),
       frame_generator_capturer_(nullptr),
       fake_encoder_factory_([this]() {
@@ -71,9 +71,9 @@ void CallTest::RegisterRtpExtension(const RtpExtension& extension) {
       ASSERT_EQ(registered_extension.encrypt, extension.encrypt)
           << "Encryption mismatch associated with ID " << extension.id << ".";
       return;
-    } else {  // Different IDs.
-      // Different IDs referring to the same extension probably indicate
-      // a mistake in the test.
+    } else {  
+      
+      
       ASSERT_FALSE(registered_extension.uri == extension.uri &&
                    registered_extension.encrypt == extension.encrypt)
           << "URI " << extension.uri
@@ -138,7 +138,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
       if (num_audio_streams_ > 0)
         receiver_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
     } else {
-      // Sender-only call delivers to itself.
+      
       send_transport_->SetReceiver(sender_call_->Receiver());
       receive_transport_->SetReceiver(nullptr);
     }
@@ -286,7 +286,7 @@ void CallTest::CreateAudioAndFecSendConfigs(size_t num_audio_streams,
     SetAudioConfig(audio_send_config);
   }
 
-  // TODO(brandtr): Update this when we support multistream protection.
+  
   if (num_flexfec_streams > 0) {
     SetSendFecConfig({kVideoSendSsrcs[0]});
   }
@@ -368,7 +368,7 @@ void CallTest::AddMatchingVideoReceiveConfigs(
   for (const RtpExtension& extension : video_send_config.rtp.extensions)
     default_config.rtp.extensions.push_back(extension);
   default_config.rtp.nack.rtp_history_ms = rtp_history_ms;
-  // Enable RTT calculation so NTP time estimator will work.
+  
   default_config.rtp.rtcp_xr.receiver_reference_time_report =
       receiver_reference_time_report;
   default_config.renderer = &fake_renderer_;
@@ -386,7 +386,7 @@ void CallTest::AddMatchingVideoReceiveConfigs(
 
     decoder.payload_type = video_send_config.rtp.payload_type;
     decoder.video_format = SdpVideoFormat(video_send_config.rtp.payload_name);
-    // Force fake decoders on non-selected simulcast streams.
+    
     if (!decode_sub_stream || i == *decode_sub_stream) {
       video_recv_config.decoder_factory = decoder_factory;
     } else {
@@ -404,7 +404,7 @@ void CallTest::CreateMatchingAudioAndFecConfigs(
     CreateMatchingAudioConfigs(rtcp_send_transport, "");
   }
 
-  // TODO(brandtr): Update this when we support multistream protection.
+  
   RTC_DCHECK(num_flexfec_streams_ <= 1);
   if (num_flexfec_streams_ == 1) {
     CreateMatchingFecConfig(rtcp_send_transport, *GetVideoSendConfig());
@@ -447,8 +447,10 @@ void CallTest::CreateMatchingFecConfig(
   config.remote_ssrc = send_config.rtp.flexfec.ssrc;
   config.protected_media_ssrcs = send_config.rtp.flexfec.protected_media_ssrcs;
   config.local_ssrc = kReceiverLocalVideoSsrc;
-  if (!video_receive_configs_.empty())
+  if (!video_receive_configs_.empty()) {
     video_receive_configs_[0].rtp.protected_by_flexfec = true;
+    video_receive_configs_[0].rtp.packet_sink_ = this;
+  }
   flexfec_receive_configs_.push_back(config);
 }
 
@@ -510,24 +512,22 @@ void CallTest::CreateVideoStreams() {
     video_receive_streams_.push_back(receiver_call_->CreateVideoReceiveStream(
         video_receive_configs_[i].Copy()));
   }
-
-  AssociateFlexfecStreamsWithVideoStreams();
 }
 
 void CallTest::CreateVideoSendStreams() {
   RTC_DCHECK(video_send_streams_.empty());
 
-  // We currently only support testing external fec controllers with a single
-  // VideoSendStream.
+  
+  
   if (fec_controller_factory_.get()) {
     RTC_DCHECK_LE(video_send_configs_.size(), 1);
   }
 
-  // TODO(http://crbug/818127):
-  // Remove this workaround when ALR is not screenshare-specific.
+  
+  
   std::list<size_t> streams_creation_order;
   for (size_t i = 0; i < video_send_configs_.size(); ++i) {
-    // If dual streams are created, add the screenshare stream last.
+    
     if (video_encoder_configs_[i].content_type ==
         VideoEncoderConfig::ContentType::kScreen) {
       streams_creation_order.push_back(i);
@@ -572,31 +572,12 @@ void CallTest::CreateFlexfecStreams() {
         receiver_call_->CreateFlexfecReceiveStream(
             flexfec_receive_configs_[i]));
   }
-
-  AssociateFlexfecStreamsWithVideoStreams();
 }
 
 void CallTest::ConnectVideoSourcesToStreams() {
   for (size_t i = 0; i < video_sources_.size(); ++i)
     video_send_streams_[i]->SetSource(video_sources_[i].get(),
                                       degradation_preference_);
-}
-
-void CallTest::AssociateFlexfecStreamsWithVideoStreams() {
-  // All FlexFEC streams protect all of the video streams.
-  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_) {
-    for (VideoReceiveStream* video_recv_stream : video_receive_streams_) {
-      video_recv_stream->AddSecondarySink(flexfec_recv_stream);
-    }
-  }
-}
-
-void CallTest::DissociateFlexfecStreamsFromVideoStreams() {
-  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_) {
-    for (VideoReceiveStream* video_recv_stream : video_receive_streams_) {
-      video_recv_stream->RemoveSecondarySink(flexfec_recv_stream);
-    }
-  }
 }
 
 void CallTest::Start() {
@@ -632,8 +613,6 @@ void CallTest::StopVideoStreams() {
 }
 
 void CallTest::DestroyStreams() {
-  DissociateFlexfecStreamsFromVideoStreams();
-
   if (audio_send_stream_)
     sender_call_->DestroyAudioSendStream(audio_send_stream_);
   audio_send_stream_ = nullptr;
@@ -689,6 +668,12 @@ VideoSendStream* CallTest::GetVideoSendStream() {
 }
 FlexfecReceiveStream::Config* CallTest::GetFlexFecConfig() {
   return &flexfec_receive_configs_[0];
+}
+
+void CallTest::OnRtpPacket(const RtpPacketReceived& packet) {
+  
+  for (FlexfecReceiveStream* flexfec_recv_stream : flexfec_receive_streams_)
+    flexfec_recv_stream->OnRtpPacket(packet);
 }
 
 absl::optional<RtpExtension> CallTest::GetRtpExtensionByUri(
@@ -843,5 +828,5 @@ bool EndToEndTest::ShouldCreateReceivers() const {
   return true;
 }
 
-}  // namespace test
-}  // namespace webrtc
+}  
+}  

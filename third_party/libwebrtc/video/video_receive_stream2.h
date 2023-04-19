@@ -110,9 +110,6 @@ class VideoReceiveStream2 : public webrtc::VideoReceiveStream,
 
   webrtc::VideoReceiveStream::Stats GetStats() const override;
 
-  void AddSecondarySink(RtpPacketSinkInterface* sink) override;
-  void RemoveSecondarySink(const RtpPacketSinkInterface* sink) override;
-
   
   
   

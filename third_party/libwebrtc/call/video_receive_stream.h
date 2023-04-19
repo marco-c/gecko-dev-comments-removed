@@ -235,6 +235,10 @@ class VideoReceiveStream {
 
       
       
+      RtpPacketSinkInterface* packet_sink_ = nullptr;
+
+      
+      
       std::map<int, int> rtx_associated_payload_types;
 
       
@@ -297,13 +301,6 @@ class VideoReceiveStream {
   
   virtual Stats GetStats() const = 0;
 
-  
-  
-  
-  
-  virtual void AddSecondarySink(RtpPacketSinkInterface* sink) = 0;
-  virtual void RemoveSecondarySink(const RtpPacketSinkInterface* sink) = 0;
-
   virtual std::vector<RtpSource> GetSources() const = 0;
 
   
@@ -342,6 +339,16 @@ class VideoReceiveStream {
 
  protected:
   virtual ~VideoReceiveStream() {}
+};
+
+class DEPRECATED_VideoReceiveStream : public VideoReceiveStream {
+ public:
+  
+  
+  
+  
+  virtual void AddSecondarySink(RtpPacketSinkInterface* sink) = 0;
+  virtual void RemoveSecondarySink(const RtpPacketSinkInterface* sink) = 0;
 };
 
 }  

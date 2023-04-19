@@ -4081,8 +4081,10 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest, SetDefaultRecvCodecsWithoutSsrc) {
       fake_call_->GetVideoReceiveStreams();
   ASSERT_EQ(1U, video_streams.size());
   const FakeVideoReceiveStream& video_stream = *video_streams.front();
-  EXPECT_EQ(0, video_stream.GetNumAddedSecondarySinks());
-  EXPECT_EQ(0, video_stream.GetNumRemovedSecondarySinks());
+  const webrtc::VideoReceiveStream::Config& video_config =
+      video_stream.GetConfig();
+  EXPECT_FALSE(video_config.rtp.protected_by_flexfec);
+  EXPECT_EQ(video_config.rtp.packet_sink_, nullptr);
 }
 
 TEST_F(WebRtcVideoChannelFlexfecRecvTest, SetDefaultRecvCodecsWithSsrc) {
@@ -4103,14 +4105,17 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest, SetDefaultRecvCodecsWithSsrc) {
       fake_call_->GetVideoReceiveStreams();
   ASSERT_EQ(1U, video_streams.size());
   const FakeVideoReceiveStream& video_stream = *video_streams.front();
-  EXPECT_EQ(1, video_stream.GetNumAddedSecondarySinks());
   const webrtc::VideoReceiveStream::Config& video_config =
       video_stream.GetConfig();
   EXPECT_TRUE(video_config.rtp.protected_by_flexfec);
+  EXPECT_NE(video_config.rtp.packet_sink_, nullptr);
 }
 
+
+
+
 TEST_F(WebRtcVideoChannelFlexfecRecvTest,
-       EnablingFlexfecDoesNotRecreateVideoReceiveStream) {
+       EnablingFlexfecRecreatesVideoReceiveStream) {
   cricket::VideoRecvParameters recv_parameters;
   recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
   ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
@@ -4121,25 +4126,37 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest,
   const std::vector<FakeVideoReceiveStream*>& video_streams =
       fake_call_->GetVideoReceiveStreams();
   ASSERT_EQ(1U, video_streams.size());
-  const FakeVideoReceiveStream& video_stream = *video_streams.front();
-  EXPECT_EQ(0, video_stream.GetNumAddedSecondarySinks());
-  EXPECT_EQ(0, video_stream.GetNumRemovedSecondarySinks());
+  const FakeVideoReceiveStream* video_stream = video_streams.front();
+  const webrtc::VideoReceiveStream::Config* video_config =
+      &video_stream->GetConfig();
+  EXPECT_FALSE(video_config->rtp.protected_by_flexfec);
+  EXPECT_EQ(video_config->rtp.packet_sink_, nullptr);
 
   
   recv_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
   ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
-  EXPECT_EQ(2, fake_call_->GetNumCreatedReceiveStreams())
+
+  
+  
+  EXPECT_EQ(3, fake_call_->GetNumCreatedReceiveStreams())
       << "Enabling FlexFEC should create FlexfecReceiveStream.";
+
   EXPECT_EQ(1U, fake_call_->GetVideoReceiveStreams().size())
       << "Enabling FlexFEC should not create VideoReceiveStream.";
   EXPECT_EQ(1U, fake_call_->GetFlexfecReceiveStreams().size())
       << "Enabling FlexFEC should create a single FlexfecReceiveStream.";
-  EXPECT_EQ(1, video_stream.GetNumAddedSecondarySinks());
-  EXPECT_EQ(0, video_stream.GetNumRemovedSecondarySinks());
+  video_stream = video_streams.front();
+  video_config = &video_stream->GetConfig();
+  EXPECT_TRUE(video_config->rtp.protected_by_flexfec);
+  EXPECT_NE(video_config->rtp.packet_sink_, nullptr);
 }
 
+
+
+
+
 TEST_F(WebRtcVideoChannelFlexfecRecvTest,
-       DisablingFlexfecDoesNotRecreateVideoReceiveStream) {
+       DisablingFlexfecRecreatesVideoReceiveStream) {
   cricket::VideoRecvParameters recv_parameters;
   recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
   recv_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
@@ -4152,22 +4169,28 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest,
   const std::vector<FakeVideoReceiveStream*>& video_streams =
       fake_call_->GetVideoReceiveStreams();
   ASSERT_EQ(1U, video_streams.size());
-  const FakeVideoReceiveStream& video_stream = *video_streams.front();
-  EXPECT_EQ(1, video_stream.GetNumAddedSecondarySinks());
-  EXPECT_EQ(0, video_stream.GetNumRemovedSecondarySinks());
+  const FakeVideoReceiveStream* video_stream = video_streams.front();
+  const webrtc::VideoReceiveStream::Config* video_config =
+      &video_stream->GetConfig();
+  EXPECT_TRUE(video_config->rtp.protected_by_flexfec);
+  EXPECT_NE(video_config->rtp.packet_sink_, nullptr);
 
   
   recv_parameters.codecs.clear();
   recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
   ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
-  EXPECT_EQ(2, fake_call_->GetNumCreatedReceiveStreams())
+  
+  
+  EXPECT_EQ(3, fake_call_->GetNumCreatedReceiveStreams())
       << "Disabling FlexFEC should not recreate VideoReceiveStream.";
   EXPECT_EQ(1U, fake_call_->GetVideoReceiveStreams().size())
       << "Disabling FlexFEC should not destroy VideoReceiveStream.";
   EXPECT_TRUE(fake_call_->GetFlexfecReceiveStreams().empty())
       << "Disabling FlexFEC should destroy FlexfecReceiveStream.";
-  EXPECT_EQ(1, video_stream.GetNumAddedSecondarySinks());
-  EXPECT_EQ(1, video_stream.GetNumRemovedSecondarySinks());
+  video_stream = video_streams.front();
+  video_config = &video_stream->GetConfig();
+  EXPECT_FALSE(video_config->rtp.protected_by_flexfec);
+  EXPECT_EQ(video_config->rtp.packet_sink_, nullptr);
 }
 
 TEST_F(WebRtcVideoChannelFlexfecRecvTest, DuplicateFlexfecCodecIsDropped) {
