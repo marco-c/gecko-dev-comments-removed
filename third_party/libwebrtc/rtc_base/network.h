@@ -150,11 +150,6 @@ class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
 
   
   
-  ABSL_DEPRECATED("bugs.webrtc.org/13869")
-  virtual void GetNetworks(NetworkList* networks) const {}
-
-  
-  
   
   
   
