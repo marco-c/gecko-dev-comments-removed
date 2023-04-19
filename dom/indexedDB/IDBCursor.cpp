@@ -56,6 +56,9 @@ IDBTypedCursor<CursorType>::~IDBTypedCursor() {
 
   DropJSObjects();
 
+  
+  mTransaction = nullptr;
+
   if (mBackgroundActor) {
     (*mBackgroundActor)->SendDeleteMeInternal();
     MOZ_ASSERT(!mBackgroundActor, "SendDeleteMeInternal should have cleared!");
