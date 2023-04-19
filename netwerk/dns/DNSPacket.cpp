@@ -809,6 +809,11 @@ nsresult DNSPacket::DecodeInternal(
             parsed.mSvcFieldValue.AppendElement(value);
           }
 
+          if (aType != TRRTYPE_HTTPSSVC) {
+            
+            break;
+          }
+
           
           if (aCname.IsEmpty() && parsed.mSvcFieldPriority == 0) {
             
@@ -816,14 +821,11 @@ nsresult DNSPacket::DecodeInternal(
               return NS_ERROR_UNEXPECTED;
             }
             aCname = parsed.mSvcDomainName;
+            
+            aTypeResult = mozilla::AsVariant(Nothing());
             ToLowerCase(aCname);
             LOG(("DNSPacket::DohDecode HTTPSSVC AliasForm host %s => %s\n",
                  host.get(), aCname.get()));
-            break;
-          }
-
-          if (aType != TRRTYPE_HTTPSSVC) {
-            
             break;
           }
 
