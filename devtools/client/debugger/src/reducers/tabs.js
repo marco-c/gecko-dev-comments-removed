@@ -23,8 +23,7 @@ function resetTabState(state) {
 function update(state = initialTabState(), action) {
   switch (action.type) {
     case "ADD_TAB":
-    case "UPDATE_TAB":
-      return updateTabList(state, action.source, action.framework);
+      return updateTabList(state, action.source);
 
     case "MOVE_TAB":
       return moveTabInList(state, action);
@@ -71,7 +70,7 @@ function addSelectedSource(state, source) {
     return state;
   }
 
-  return updateTabList(state, source, null);
+  return updateTabList(state, source);
 }
 
 function addVisibleTabs(state, sources) {
@@ -124,8 +123,7 @@ function resetTabsForThread(state, threadActorID) {
 
 
 
-
-function updateTabList(state, source, framework) {
+function updateTabList(state, source) {
   const { url } = source;
   const isOriginal = isOriginalId(source.id);
 
@@ -139,16 +137,12 @@ function updateTabList(state, source, framework) {
   if (currentIndex === -1) {
     const newTab = {
       url,
-      framework,
       sourceId: source.id,
       isOriginal,
       threadActorID: source.thread,
     };
     
     tabs = [newTab, ...tabs];
-  } else if (framework && tabs[currentIndex].framework != framework) {
-    tabs = Array.from(tabs);
-    tabs[currentIndex].framework = framework;
   } else {
     return state;
   }

@@ -1078,6 +1078,25 @@ function findSourceNodeWithText(dbg, text) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+function assertSourceIcon(dbg, sourceName, icon) {
+  const sourceItem = findSourceNodeWithText(dbg, sourceName);
+  ok(sourceItem, `Found the source item for ${sourceName}`);
+  is(
+    sourceItem.querySelector(".source-icon").className,
+    `img source-icon ${icon}`,
+    `The icon for ${sourceName} is correct`
+  );
+}
+
 async function expandAllSourceNodes(dbg, treeNode) {
   const onContextMenu = waitForContextMenu(dbg);
   rightClickEl(dbg, treeNode);

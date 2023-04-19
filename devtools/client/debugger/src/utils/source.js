@@ -485,7 +485,27 @@ export function getTextAtPosition(sourceId, asyncContent, location) {
   return lineText.slice(column, column + 100).trim();
 }
 
-export function getSourceClassnames(source, symbols, isBlackBoxed) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function getSourceClassnames(
+  source,
+  symbols,
+  isBlackBoxed,
+  hasPrettyTab = false
+) {
   
   const defaultClassName = "file";
 
@@ -493,7 +513,10 @@ export function getSourceClassnames(source, symbols, isBlackBoxed) {
     return defaultClassName;
   }
 
-  if (isPretty(source)) {
+  
+  
+  
+  if (isPretty(source) || hasPrettyTab) {
     return "prettyPrint";
   }
 
