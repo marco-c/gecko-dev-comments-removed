@@ -389,6 +389,13 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool DoFlushLayout(bool aInterruptible);
+
+  
+
+
+
   void MaybeRecreateMobileViewportManager(bool aAfterInitialization);
 
   

@@ -3056,6 +3056,12 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   presContext->RefreshDriver()->MostRecentRefresh();
 
   
+  {
+    presContext->UpdateContainerQueryStyles();
+    presContext->FinishedContainerQueryUpdate();
+  }
+
+  
   
   
   
@@ -3108,6 +3114,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     }
 
     doc->ClearServoRestyleRoot();
+    ClearSnapshots();
 
     
     
@@ -3160,12 +3167,17 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
       
       IncrementRestyleGeneration();
     }
+
+    mInStyleRefresh = false;
+    presContext->UpdateContainerQueryStyles();
+    mInStyleRefresh = true;
   }
 
   doc->ClearServoRestyleRoot();
-
+  presContext->FinishedContainerQueryUpdate();
   ClearSnapshots();
   styleSet->AssertTreeIsClean();
+
   mHaveNonAnimationRestyles = false;
   mRestyleForCSSRuleChanges = false;
   mInStyleRefresh = false;

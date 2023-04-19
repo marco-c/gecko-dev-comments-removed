@@ -4161,7 +4161,10 @@ void PresShell::HandlePostedReflowCallbacks(bool aInterruptible) {
 
   FlushType flushType =
       aInterruptible ? FlushType::InterruptibleLayout : FlushType::Layout;
-  if (shouldFlush && !mIsDestroying) {
+  if (shouldFlush && !mIsDestroying && nsContentUtils::IsSafeToRunScript()) {
+    
+    
+    
     FlushPendingNotifications(flushType);
   }
 }
@@ -4376,8 +4379,7 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
                           : FlushType::InterruptibleLayout) &&
         !mIsDestroying) {
       didLayoutFlush = true;
-      mFrameConstructor->RecalcQuotesAndCounters();
-      if (ProcessReflowCommands(flushType < FlushType::Layout)) {
+      if (DoFlushLayout( flushType < FlushType::Layout)) {
         if (mContentToScrollTo) {
           DoScrollContentIntoView();
           if (mContentToScrollTo) {
@@ -9844,6 +9846,11 @@ bool PresShell::ProcessReflowCommands(bool aInterruptible) {
   }
 
   return !interrupted;
+}
+
+bool PresShell::DoFlushLayout(bool aInterruptible) {
+  mFrameConstructor->RecalcQuotesAndCounters();
+  return ProcessReflowCommands(aInterruptible);
 }
 
 void PresShell::WindowSizeMoveDone() {
