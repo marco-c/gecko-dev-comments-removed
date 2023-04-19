@@ -7,8 +7,8 @@
 
 
 {
-  const { RemoteL10n } = ChromeUtils.importESModule(
-    "resource://activity-stream/lib/RemoteL10n.sys.mjs"
+  const { RemoteL10n } = ChromeUtils.import(
+    "resource://activity-stream/lib/RemoteL10n.jsm"
   );
   class MozTextParagraph extends HTMLElement {
     constructor() {

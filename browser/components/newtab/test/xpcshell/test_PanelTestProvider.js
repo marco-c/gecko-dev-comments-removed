@@ -1,8 +1,8 @@
 
 
 
-const { PanelTestProvider } = ChromeUtils.importESModule(
-  "resource://activity-stream/lib/PanelTestProvider.sys.mjs"
+const { PanelTestProvider } = ChromeUtils.import(
+  "resource://activity-stream/lib/PanelTestProvider.jsm"
 );
 const { JsonSchema } = ChromeUtils.import(
   "resource://gre/modules/JsonSchema.jsm"
