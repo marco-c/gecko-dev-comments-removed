@@ -2,7 +2,7 @@
 
 
 const Geometry = ChromeUtils.import(
-  "resource://gre/modules/components-utils/Geometry.jsm"
+  "resource://gre/modules/components-utils/RustGeometry.jsm"
 );
 
 add_task(async function() {

@@ -78,7 +78,9 @@ fn render_js(
     object_ids: &ObjectIds,
 ) -> Result<()> {
     for ci in ci_list {
-        let path = out_dir.join(format!("{}.jsm", ci.namespace().to_title_case()));
+        
+        
+        let path = out_dir.join(format!("Rust{}.jsm", ci.namespace().to_title_case()));
         render(
             path,
             JSBindingsTemplate {

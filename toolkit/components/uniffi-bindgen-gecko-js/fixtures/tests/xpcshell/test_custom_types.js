@@ -2,7 +2,7 @@
 
 
 const Customtypes = ChromeUtils.import(
-  "resource://gre/modules/components-utils/Customtypes.jsm"
+  "resource://gre/modules/components-utils/RustCustomtypes.jsm"
 );
 
 add_task(async function() {

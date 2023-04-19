@@ -2,7 +2,7 @@
 
 
 const Sprites = ChromeUtils.import(
-  "resource://gre/modules/components-utils/Sprites.jsm"
+  "resource://gre/modules/components-utils/RustSprites.jsm"
 );
 
 add_task(async function() {
