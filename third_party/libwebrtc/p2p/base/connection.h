@@ -88,6 +88,8 @@ class Connection : public CandidatePairInterface,
   
   uint32_t id() const { return id_; }
 
+  webrtc::TaskQueueBase* network_thread() const;
+
   
   
   const Candidate& local_candidate() const override;
@@ -369,8 +371,14 @@ class Connection : public CandidatePairInterface,
   Port* port() { return port_; }
   const Port* port() const { return port_; }
 
-  uint32_t id_;
-  Port* port_;
+  
+  
+  
+  
+  
+  webrtc::TaskQueueBase* const network_thread_;
+  const uint32_t id_;
+  Port* const port_;
   size_t local_candidate_index_;
   Candidate remote_candidate_;
 
