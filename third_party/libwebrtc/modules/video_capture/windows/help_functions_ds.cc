@@ -30,7 +30,6 @@ LONGLONG GetMaxOfFrameArray(LONGLONG* maxFps, long size) {
 }
 
 IPin* GetInputPin(IBaseFilter* filter) {
-  HRESULT hr;
   IPin* pin = NULL;
   IEnumPins* pPinEnum = NULL;
   filter->EnumPins(&pPinEnum);
@@ -39,7 +38,7 @@ IPin* GetInputPin(IBaseFilter* filter) {
   }
 
   
-  hr = pPinEnum->Reset();  
+  pPinEnum->Reset();  
 
   while (S_OK == pPinEnum->Next(1, &pin, NULL)) {
     PIN_DIRECTION pPinDir;
