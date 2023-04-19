@@ -31,8 +31,7 @@ FileSystemWritableFileStream::StreamAlgorithms::WriteCallback(
   
   
   ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams chunkUnion;
-  JS::Rooted<JS::Value> chunk(aCx, aChunk);
-  if (!chunkUnion.Init(aCx, &chunk)) {
+  if (!chunkUnion.Init(aCx, aChunk)) {
     aRv.MightThrowJSException();
     aRv.StealExceptionFromJSContext(aCx);
     return nullptr;
