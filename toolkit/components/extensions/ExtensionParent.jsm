@@ -548,7 +548,30 @@ class ProxyContextParent extends BaseContext {
     
     this.activeNativePorts = new WeakSet();
 
+    
+    this.runListenerPromises = new Set();
+
     apiManager.emit("proxy-context-load", this);
+  }
+
+  trackRunListenerPromise(runListenerPromise) {
+    if (
+      
+      !this.extension ||
+      
+      !this.isBackgroundContext ||
+      this.extension.persistentBackground
+    ) {
+      return;
+    }
+    const clearFromSet = () =>
+      this.runListenerPromises.delete(runListenerPromise);
+    runListenerPromise.then(clearFromSet, clearFromSet);
+    this.runListenerPromises.add(runListenerPromise);
+  }
+
+  get pendingRunListenerPromisesCount() {
+    return this.runListenerPromises.size;
   }
 
   trackNativeAppPort(port) {
@@ -1172,7 +1195,7 @@ ParentAPIManager = {
         urgentSend = listenerArgs[0].urgentSend;
         delete listenerArgs[0].urgentSend;
       }
-      let result = await this.conduit.queryRunListener(childId, {
+      let runListenerPromise = this.conduit.queryRunListener(childId, {
         childId,
         handlingUserInput,
         listenerId: data.listenerId,
@@ -1182,6 +1205,9 @@ ParentAPIManager = {
           return new StructuredCloneHolder(listenerArgs);
         },
       });
+      context.trackRunListenerPromise(runListenerPromise);
+
+      const result = await runListenerPromise;
       let rv = result && result.deserialize(globalThis);
       ChromeUtils.addProfilerMarker(
         "ExtensionParent",

@@ -408,6 +408,7 @@ this.backgroundPage = class extends ExtensionAPI {
 
     extension.terminateBackground = async ({
       ignoreDevToolsAttached = false,
+      disableResetIdleForTest = false, 
     } = {}) => {
       await bgStartupPromise;
       if (!this.extension || this.extension.hasShutdown) {
@@ -433,8 +434,25 @@ this.backgroundPage = class extends ExtensionAPI {
       
       
       
-      if (extension.backgroundContext?.hasActiveNativeAppPorts) {
-        extension.emit("background-script-reset-idle");
+      if (
+        !disableResetIdleForTest &&
+        extension.backgroundContext?.hasActiveNativeAppPorts
+      ) {
+        extension.emit("background-script-reset-idle", {
+          reason: "hasActiveNativeAppPorts",
+        });
+        return;
+      }
+
+      if (
+        !disableResetIdleForTest &&
+        extension.backgroundContext?.pendingRunListenerPromisesCount
+      ) {
+        extension.emit("background-script-reset-idle", {
+          reason: "pendingListeners",
+          pendingListeners:
+            extension.backgroundContext.pendingRunListenerPromisesCount,
+        });
         return;
       }
 
@@ -463,8 +481,10 @@ this.backgroundPage = class extends ExtensionAPI {
           Cu.reportError(err);
           return false;
         });
-        if (hasActiveStreamFilter) {
-          extension.emit("background-script-reset-idle");
+        if (!disableResetIdleForTest && hasActiveStreamFilter) {
+          extension.emit("background-script-reset-idle", {
+            reason: "hasActiveStreamFilter",
+          });
           return;
         }
 
@@ -490,7 +510,7 @@ this.backgroundPage = class extends ExtensionAPI {
       this.onShutdown(false);
       EventManager.clearPrimedListeners(this.extension, false);
       
-      return this.primeBackground(false);
+      await this.primeBackground(false);
     };
 
     
