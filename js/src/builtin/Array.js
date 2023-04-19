@@ -4,74 +4,74 @@
 
 
 function ArrayEvery(callbackfn) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.every");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  
+  for (var k = 0; k < len; k++) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.every");
+    if (k in O) {
+      
+      if (!callContentFunction(callbackfn, T, O[k], k, O)) {
+        return false;
+      }
     }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+  }
 
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    
-    for (var k = 0; k < len; k++) {
-        
-        if (k in O) {
-            
-            if (!callContentFunction(callbackfn, T, O[k], k, O)) {
-                return false;
-            }
-        }
-    }
-
-    
-    return true;
+  
+  return true;
 }
 
 SetIsInlinableLargeFunction(ArrayEvery);
 
 
 function ArraySome(callbackfn) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.some");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  
+  for (var k = 0; k < len; k++) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.some");
+    if (k in O) {
+      
+      if (callContentFunction(callbackfn, T, O[k], k, O)) {
+        return true;
+      }
     }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+  }
 
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    
-    for (var k = 0; k < len; k++) {
-        
-        if (k in O) {
-            
-            if (callContentFunction(callbackfn, T, O[k], k, O)) {
-                return true;
-            }
-        }
-    }
-
-    
-    return false;
+  
+  return false;
 }
 
 SetIsInlinableLargeFunction(ArraySome);
@@ -79,171 +79,171 @@ SetIsInlinableLargeFunction(ArraySome);
 
 
 function ArraySort(comparefn) {
-    return SortArray(this, comparefn);
+  return SortArray(this, comparefn);
 }
 
 function SortArray(obj, comparefn) {
+  
+  if (comparefn !== undefined) {
+    if (!IsCallable(comparefn)) {
+      ThrowTypeError(JSMSG_BAD_SORT_ARG);
+    }
+  }
+
+  
+  var O = ToObject(obj);
+
+  
+  
+  if (callFunction(ArrayNativeSort, O, comparefn)) {
+    return O;
+  }
+
+  
+  var len = ToLength(O.length);
+
+  if (len <= 1) {
+    return O;
+  }
+
+  
+  var wrappedCompareFn = comparefn;
+  comparefn = function(x, y) {
     
-    if (comparefn !== undefined) {
-        if (!IsCallable(comparefn)) {
-            ThrowTypeError(JSMSG_BAD_SORT_ARG);
-        }
+    if (x === undefined) {
+      if (y === undefined) {
+        return 0;
+      }
+      return 1;
+    }
+    if (y === undefined) {
+      return -1;
     }
 
     
-    var O = ToObject(obj);
+    var v = ToNumber(callContentFunction(wrappedCompareFn, undefined, x, y));
 
     
-    
-    if (callFunction(ArrayNativeSort, O, comparefn)) {
-        return O;
-    }
+    return v !== v ? 0 : v;
+  };
 
-    
-    var len = ToLength(O.length);
-
-    if (len <= 1) {
-      return O;
-    }
-
-    
-    var wrappedCompareFn = comparefn;
-    comparefn = function(x, y) {
-        
-        if (x === undefined) {
-            if (y === undefined) {
-                return 0;
-            }
-           return 1;
-        }
-        if (y === undefined) {
-            return -1;
-        }
-
-        
-        var v = ToNumber(callContentFunction(wrappedCompareFn, undefined, x, y));
-
-        
-        return v !== v ? 0 : v;
-    };
-
-    return MergeSort(O, len, comparefn);
+  return MergeSort(O, len, comparefn);
 }
 
 
 function ArrayForEach(callbackfn) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.forEach");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  
+  for (var k = 0; k < len; k++) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.forEach");
+    if (k in O) {
+      
+      callContentFunction(callbackfn, T, O[k], k, O);
     }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+  }
 
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    
-    for (var k = 0; k < len; k++) {
-        
-        if (k in O) {
-            
-            callContentFunction(callbackfn, T, O[k], k, O);
-        }
-    }
-
-    
-    return undefined;
+  
+  return undefined;
 }
 
 SetIsInlinableLargeFunction(ArrayForEach);
 
 
 function ArrayMap(callbackfn) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.map");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  var A = ArraySpeciesCreate(O, len);
+
+  
+  
+  for (var k = 0; k < len; k++) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.map");
+    if (k in O) {
+      
+      var mappedValue = callContentFunction(callbackfn, T, O[k], k, O);
+      DefineDataProperty(A, k, mappedValue);
     }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+  }
 
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    var A = ArraySpeciesCreate(O, len);
-
-    
-    
-    for (var k = 0; k < len; k++) {
-        
-        if (k in O) {
-            
-            var mappedValue = callContentFunction(callbackfn, T, O[k], k, O);
-            DefineDataProperty(A, k, mappedValue);
-        }
-    }
-
-    
-    return A;
+  
+  return A;
 }
 
 SetIsInlinableLargeFunction(ArrayMap);
 
 
 function ArrayFilter(callbackfn) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.filter");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  var A = ArraySpeciesCreate(O, 0);
+
+  
+  
+  for (var k = 0, to = 0; k < len; k++) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.filter");
+    if (k in O) {
+      
+      var kValue = O[k];
+      
+      var selected = callContentFunction(callbackfn, T, kValue, k, O);
+      
+      if (selected) {
+        DefineDataProperty(A, to++, kValue);
+      }
     }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
+  }
 
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    var A = ArraySpeciesCreate(O, 0);
-
-    
-    
-    for (var k = 0, to = 0; k < len; k++) {
-        
-        if (k in O) {
-            
-            var kValue = O[k];
-            
-            var selected = callContentFunction(callbackfn, T, kValue, k, O);
-            
-            if (selected) {
-                DefineDataProperty(A, to++, kValue);
-            }
-        }
-    }
-
-    
-    return A;
+  
+  return A;
 }
 
 #ifdef NIGHTLY_BUILD
@@ -252,63 +252,62 @@ function ArrayFilter(callbackfn) {
 
 
 function ArrayGroup(callbackfn) {
+  
+  var O = ToObject(this);
+
+  
+  var len = ToLength(O.length);
+
+  
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var groups = new_List();
+
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  for (var k = 0; k < len; k++) {
     
-    var O = ToObject(this);
+
+
 
     
-    var len = ToLength(O.length);
+    var kValue = O[k];
 
     
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+
+
+
+    var propertyKey = TO_PROPERTY_KEY(
+      callContentFunction(callbackfn, T, kValue, k, O)
+    );
+
+    
+    if (!groups[propertyKey]) {
+      var elements = [ kValue ];
+      DefineDataProperty(groups, propertyKey, elements);
+    } else {
+      var lenElements = groups[propertyKey].length;
+      DefineDataProperty(groups[propertyKey], lenElements, kValue);
     }
+  }
 
-    
-    var groups = new_List();
+  
+  var object = std_Object_create(null);
 
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    for (var k = 0; k < len; k++) {
-
-        
+  
 
 
 
-        
-        var kValue = O[k];
+  for (var propertyKey in groups) {
+    DefineDataProperty(object, propertyKey, groups[propertyKey])
+  }
 
-        
-
-
-
-        var propertyKey = TO_PROPERTY_KEY(
-          callContentFunction(callbackfn, T, kValue, k, O)
-        );
-
-        
-        if (!groups[propertyKey]) {
-            var elements = [ kValue ];
-            DefineDataProperty(groups, propertyKey, elements);
-        } else {
-            var lenElements = groups[propertyKey].length;
-            DefineDataProperty(groups[propertyKey], lenElements, kValue);
-        }
-    }
-
-    
-    var object = std_Object_create(null);
-
-    
-
-
-
-    for (var propertyKey in groups) {
-        DefineDataProperty(object, propertyKey, groups[propertyKey])
-    }
-
-    
-    return object;
+  
+  return object;
 }
 
 
@@ -316,594 +315,592 @@ function ArrayGroup(callbackfn) {
 
 
 function ArrayGroupToMap(callbackfn) {
+  
+  var O = ToObject(this);
+
+  
+  var len = ToLength(O.length);
+
+  
+
+
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+
+
+
+
+
+  
+  var C = GetBuiltinConstructor("Map");
+  var map = new C();
+
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+
+
+
+
+
+  for (var k = 0; k < len; k++) {
+    
+
+
+
 
     
-    var O = ToObject(this);
-
-    
-    var len = ToLength(O.length);
+    var kValue = O[k];
 
     
 
 
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    var propertyKey = callContentFunction(callbackfn,T, kValue, k, O);
+
+    
+
+
+
+
+    
+
+
+
+
+
+
+    if (!callFunction(std_Map_get, map, propertyKey)) {
+      var elements = [ kValue ];
+      callFunction(std_Map_set, map, propertyKey, elements);
+    } else {
+      var elements = callFunction(std_Map_get, map, propertyKey);
+      DefineDataProperty(elements, elements.length, kValue);
     }
+  }
 
-    
-
-
-
-
-
-    
-    var C = GetBuiltinConstructor("Map");
-    var map = new C();
-
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-
-
-
-
-
-    for (var k = 0; k < len; k++) {
-        
-
-
-
-
-        
-        var kValue = O[k];
-
-        
-
-
-        var propertyKey = callContentFunction(callbackfn,T, kValue, k, O);
-
-        
-
-
-
-
-        
-
-
-
-
-
-
-        if (!callFunction(std_Map_get, map, propertyKey)) {
-            var elements = [ kValue ];
-            callFunction(std_Map_set, map, propertyKey, elements);
-        } else {
-            var elements = callFunction(std_Map_get, map, propertyKey);
-            DefineDataProperty(elements, elements.length, kValue);
-        }
-    }
-
-    
-    return map;
+  
+  return map;
 }
 
 #endif
 
 
 function ArrayReduce(callbackfn) {
+  
+  var O = ToObject(this);
+
+  
+  var len = ToLength(O.length);
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.reduce");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var k = 0;
+
+  
+  var accumulator;
+  if (arguments.length > 1) {
+    accumulator = arguments[1];
+  } else {
     
-    var O = ToObject(this);
-
     
-    var len = ToLength(O.length);
-
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.reduce");
-    }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
-
-    
-    var k = 0;
-
-    
-    var accumulator;
-    if (arguments.length > 1) {
-        accumulator = arguments[1];
-    } else {
-        
-        
-        
-        if (len === 0) {
-            throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-        }
-
-        
-        
-        
-        var kPresent = false;
-        do {
-            if (k in O) {
-                kPresent = true;
-                break;
-            }
-        } while (++k < len);
-        if (!kPresent) {
-          throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-        }
-
-        
-        accumulator = O[k++];
+    if (len === 0) {
+      throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
     }
 
     
     
-    for (; k < len; k++) {
-        
-        if (k in O) {
-            
-            accumulator = callContentFunction(callbackfn, undefined,
-                                              accumulator, O[k], k, O);
-        }
+    
+    var kPresent = false;
+    do {
+      if (k in O) {
+        kPresent = true;
+        break;
+      }
+    } while (++k < len);
+    if (!kPresent) {
+      throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
     }
 
     
-    return accumulator;
+    accumulator = O[k++];
+  }
+
+  
+  
+  for (; k < len; k++) {
+    
+    if (k in O) {
+      
+      accumulator = callContentFunction(callbackfn, undefined,
+                                        accumulator, O[k], k, O);
+    }
+  }
+
+  
+  return accumulator;
 }
 
 
 function ArrayReduceRight(callbackfn) {
+  
+  var O = ToObject(this);
+
+  
+  var len = ToLength(O.length);
+
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.reduce");
+  }
+  if (!IsCallable(callbackfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+  }
+
+  
+  var k = len - 1;
+
+  
+  var accumulator;
+  if (arguments.length > 1) {
+    accumulator = arguments[1];
+  } else {
     
-    var O = ToObject(this);
-
     
-    var len = ToLength(O.length);
-
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.reduce");
-    }
-    if (!IsCallable(callbackfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
-    }
-
-    
-    var k = len - 1;
-
-    
-    var accumulator;
-    if (arguments.length > 1) {
-        accumulator = arguments[1];
-    } else {
-        
-        
-        
-        if (len === 0) {
-            throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-        }
-
-        
-        
-        
-        var kPresent = false;
-        do {
-            if (k in O) {
-                kPresent = true;
-                break;
-            }
-        } while (--k >= 0);
-        if (!kPresent) {
-            throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-        }
-
-        
-        accumulator = O[k--];
+    if (len === 0) {
+      throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
     }
 
     
     
-    for (; k >= 0; k--) {
-        
-        if (k in O) {
-            
-            accumulator = callContentFunction(callbackfn, undefined,
-                                              accumulator, O[k], k, O);
-        }
+    
+    var kPresent = false;
+    do {
+      if (k in O) {
+        kPresent = true;
+        break;
+      }
+    } while (--k >= 0);
+    if (!kPresent) {
+      throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
     }
 
     
-    return accumulator;
+    accumulator = O[k--];
+  }
+
+  
+  
+  for (; k >= 0; k--) {
+    
+    if (k in O) {
+      
+      accumulator = callContentFunction(callbackfn, undefined,
+                                        accumulator, O[k], k, O);
+    }
+  }
+
+  
+  return accumulator;
 }
 
 
 function ArrayFind(predicate) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.find");
+  }
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  
+  for (var k = 0; k < len; k++) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.find");
+    var kValue = O[k];
+    
+    if (callContentFunction(predicate, T, kValue, k, O)) {
+      return kValue;
     }
-    if (!IsCallable(predicate)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
-    }
+  }
 
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    
-    for (var k = 0; k < len; k++) {
-        
-        var kValue = O[k];
-        
-        if (callContentFunction(predicate, T, kValue, k, O)) {
-            return kValue;
-        }
-    }
-
-    
-    return undefined;
+  
+  return undefined;
 }
 
 
 function ArrayFindIndex(predicate) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.find");
+  }
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  
+  for (var k = 0; k < len; k++) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.find");
+    if (callContentFunction(predicate, T, O[k], k, O)) {
+      return k;
     }
-    if (!IsCallable(predicate)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
-    }
+  }
 
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    
-    for (var k = 0; k < len; k++) {
-        
-        if (callContentFunction(predicate, T, O[k], k, O)) {
-            return k;
-        }
-    }
-
-    
-    return -1;
+  
+  return -1;
 }
 
 
 
 function ArrayCopyWithin(target, start, end = undefined) {
+  
+  var O = ToObject(this);
+
+  
+  var len = ToLength(O.length);
+
+  
+  var relativeTarget = ToInteger(target);
+
+  
+  var to = relativeTarget < 0 ? std_Math_max(len + relativeTarget, 0)
+                              : std_Math_min(relativeTarget, len);
+
+  
+  var relativeStart = ToInteger(start);
+
+  
+  var from = relativeStart < 0 ? std_Math_max(len + relativeStart, 0)
+                               : std_Math_min(relativeStart, len);
+
+  
+  var relativeEnd = end === undefined ? len : ToInteger(end);
+
+  
+  var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0)
+                              : std_Math_min(relativeEnd, len);
+
+  
+  var count = std_Math_min(final - from, len - to);
+
+  
+  if (from < to && to < (from + count)) {
     
-    var O = ToObject(this);
+    from = from + count - 1;
+    to = to + count - 1;
 
     
-    var len = ToLength(O.length);
+    while (count > 0) {
+      if (from in O) {
+        O[to] = O[from];
+      } else {
+        delete O[to];
+      }
 
-    
-    var relativeTarget = ToInteger(target);
-
-    
-    var to = relativeTarget < 0 ? std_Math_max(len + relativeTarget, 0)
-                                : std_Math_min(relativeTarget, len);
-
-    
-    var relativeStart = ToInteger(start);
-
-    
-    var from = relativeStart < 0 ? std_Math_max(len + relativeStart, 0)
-                                 : std_Math_min(relativeStart, len);
-
-    
-    var relativeEnd = end === undefined ? len : ToInteger(end);
-
-    
-    var final = relativeEnd < 0 ? std_Math_max(len + relativeEnd, 0)
-                                : std_Math_min(relativeEnd, len);
-
-    
-    var count = std_Math_min(final - from, len - to);
-
-    
-    if (from < to && to < (from + count)) {
-        
-        from = from + count - 1;
-        to = to + count - 1;
-
-        
-        while (count > 0) {
-            if (from in O) {
-                O[to] = O[from];
-            } else {
-                delete O[to];
-            }
-
-            from--;
-            to--;
-            count--;
-        }
-    } else {
-        
-        while (count > 0) {
-            if (from in O) {
-                O[to] = O[from];
-            } else {
-                delete O[to];
-            }
-
-            from++;
-            to++;
-            count--;
-        }
+      from--;
+      to--;
+      count--;
     }
-
+  } else {
     
-    return O;
+    while (count > 0) {
+      if (from in O) {
+        O[to] = O[from];
+      } else {
+        delete O[to];
+      }
+
+      from++;
+      to++;
+      count--;
+    }
+  }
+
+  
+  return O;
 }
 
 
 
 function ArrayFill(value, start = 0, end = undefined) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
-    
-    var relativeStart = ToInteger(start);
+  
+  var relativeStart = ToInteger(start);
 
-    
-    var k = relativeStart < 0
-            ? std_Math_max(len + relativeStart, 0)
-            : std_Math_min(relativeStart, len);
+  
+  var k = relativeStart < 0
+          ? std_Math_max(len + relativeStart, 0)
+          : std_Math_min(relativeStart, len);
 
-    
-    var relativeEnd = end === undefined ? len : ToInteger(end);
+  
+  var relativeEnd = end === undefined ? len : ToInteger(end);
 
-    
-    var final = relativeEnd < 0
-                ? std_Math_max(len + relativeEnd, 0)
-                : std_Math_min(relativeEnd, len);
+  
+  var final = relativeEnd < 0
+              ? std_Math_max(len + relativeEnd, 0)
+              : std_Math_min(relativeEnd, len);
 
-    
-    for (; k < final; k++) {
-        O[k] = value;
-    }
+  
+  for (; k < final; k++) {
+    O[k] = value;
+  }
 
-    
-    return O;
+  
+  return O;
 }
 
 
 function CreateArrayIterator(obj, kind) {
-    var iteratedObject = ToObject(obj);
-    var iterator = NewArrayIterator();
-    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_TARGET, iteratedObject);
-    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_NEXT_INDEX, 0);
-    UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_ITEM_KIND, kind);
-    return iterator;
+  var iteratedObject = ToObject(obj);
+  var iterator = NewArrayIterator();
+  UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_TARGET, iteratedObject);
+  UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_NEXT_INDEX, 0);
+  UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_ITEM_KIND, kind);
+  return iterator;
 }
 
 
 
 function ArrayIteratorNext() {
-    
-    var obj = this;
-    if (!IsObject(obj) || (obj = GuardToArrayIterator(obj)) === null) {
-        return callFunction(CallArrayIteratorMethodIfWrapped, this,
-                            "ArrayIteratorNext");
-    }
+  
+  var obj = this;
+  if (!IsObject(obj) || (obj = GuardToArrayIterator(obj)) === null) {
+    return callFunction(CallArrayIteratorMethodIfWrapped, this,
+                        "ArrayIteratorNext");
+  }
 
-    
-    var a = UnsafeGetReservedSlot(obj, ITERATOR_SLOT_TARGET);
-    var result = { value: undefined, done: false };
+  
+  var a = UnsafeGetReservedSlot(obj, ITERATOR_SLOT_TARGET);
+  var result = { value: undefined, done: false };
 
-    
-    if (a === null) {
-      result.done = true;
-      return result;
-    }
-
-    
-    
-    var index = UnsafeGetReservedSlot(obj, ITERATOR_SLOT_NEXT_INDEX);
-
-    
-    var itemKind = UnsafeGetInt32FromReservedSlot(obj, ITERATOR_SLOT_ITEM_KIND);
-
-    
-    var len;
-    if (IsPossiblyWrappedTypedArray(a)) {
-        len = PossiblyWrappedTypedArrayLength(a);
-
-        
-        if (len === 0) {
-            if (PossiblyWrappedTypedArrayHasDetachedBuffer(a)) {
-                ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
-            }
-        }
-    } else {
-        len = ToLength(a.length);
-    }
-
-    
-    if (index >= len) {
-        UnsafeSetReservedSlot(obj, ITERATOR_SLOT_TARGET, null);
-        result.done = true;
-        return result;
-    }
-
-    
-    UnsafeSetReservedSlot(obj, ITERATOR_SLOT_NEXT_INDEX, index + 1);
-
-    
-    if (itemKind === ITEM_KIND_VALUE) {
-        result.value = a[index];
-        return result;
-    }
-
-    
-    if (itemKind === ITEM_KIND_KEY_AND_VALUE) {
-        var pair = [index, a[index]];
-        result.value = pair;
-        return result;
-    }
-
-    
-    assert(itemKind === ITEM_KIND_KEY, itemKind);
-    result.value = index;
+  
+  if (a === null) {
+    result.done = true;
     return result;
+  }
+
+  
+  
+  var index = UnsafeGetReservedSlot(obj, ITERATOR_SLOT_NEXT_INDEX);
+
+  
+  var itemKind = UnsafeGetInt32FromReservedSlot(obj, ITERATOR_SLOT_ITEM_KIND);
+
+  
+  var len;
+  if (IsPossiblyWrappedTypedArray(a)) {
+    len = PossiblyWrappedTypedArrayLength(a);
+
+    
+    if (len === 0) {
+      if (PossiblyWrappedTypedArrayHasDetachedBuffer(a)) {
+        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+      }
+    }
+  } else {
+    len = ToLength(a.length);
+  }
+
+  
+  if (index >= len) {
+    UnsafeSetReservedSlot(obj, ITERATOR_SLOT_TARGET, null);
+    result.done = true;
+    return result;
+  }
+
+  
+  UnsafeSetReservedSlot(obj, ITERATOR_SLOT_NEXT_INDEX, index + 1);
+
+  
+  if (itemKind === ITEM_KIND_VALUE) {
+    result.value = a[index];
+    return result;
+  }
+
+  
+  if (itemKind === ITEM_KIND_KEY_AND_VALUE) {
+    var pair = [index, a[index]];
+    result.value = pair;
+    return result;
+  }
+
+  
+  assert(itemKind === ITEM_KIND_KEY, itemKind);
+  result.value = index;
+  return result;
 }
 
 SetIsInlinableLargeFunction(ArrayIteratorNext);
 
 
 
-
 function $ArrayValues() {
-    return CreateArrayIterator(this, ITEM_KIND_VALUE);
+  return CreateArrayIterator(this, ITEM_KIND_VALUE);
 }
 SetCanonicalName($ArrayValues, "values");
 
 function ArrayEntries() {
-    return CreateArrayIterator(this, ITEM_KIND_KEY_AND_VALUE);
+  return CreateArrayIterator(this, ITEM_KIND_KEY_AND_VALUE);
 }
 
 function ArrayKeys() {
-    return CreateArrayIterator(this, ITEM_KIND_KEY);
+  return CreateArrayIterator(this, ITEM_KIND_KEY);
 }
 
 
 function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
+  
+  var C = this;
+
+  
+  var mapping = mapfn !== undefined;
+  if (mapping && !IsCallable(mapfn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, mapfn));
+  }
+  var T = thisArg;
+
+  
+  
+  var usingIterator = items[GetBuiltinSymbol("iterator")];
+
+  
+  
+  if (usingIterator !== undefined && usingIterator !== null) {
     
-    var C = this;
-
-    
-    var mapping = mapfn !== undefined;
-    if (mapping && !IsCallable(mapfn)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(1, mapfn));
-    }
-    var T = thisArg;
-
-    
-    
-    var usingIterator = items[GetBuiltinSymbol("iterator")];
-
-    
-    
-    if (usingIterator !== undefined && usingIterator !== null) {
-        
-        if (!IsCallable(usingIterator)) {
-            ThrowTypeError(JSMSG_NOT_ITERABLE, DecompileArg(0, items));
-        }
-
-        
-        var A = IsConstructor(C) ? constructContentFunction(C, C) : [];
-
-        
-        var iterator = MakeIteratorWrapper(items, usingIterator);
-
-        
-        var k = 0;
-
-        
-        for (var nextValue of allowContentIter(iterator)) {
-            
-            
-            
-            
-            
-            
-
-
-
-
-
-            
-            var mappedValue = mapping ? callContentFunction(mapfn, T, nextValue, k) : nextValue;
-
-            
-            DefineDataProperty(A, k++, mappedValue);
-        }
-
-        
-        A.length = k;
-        return A;
+    if (!IsCallable(usingIterator)) {
+      ThrowTypeError(JSMSG_NOT_ITERABLE, DecompileArg(0, items));
     }
 
     
-    
+    var A = IsConstructor(C) ? constructContentFunction(C, C) : [];
 
     
-    var arrayLike = ToObject(items);
+    var iterator = MakeIteratorWrapper(items, usingIterator);
 
     
-    var len = ToLength(arrayLike.length);
+    var k = 0;
 
     
-    var A = IsConstructor(C) ? constructContentFunction(C, C, len)
-                             : std_Array(len);
+    for (var nextValue of allowContentIter(iterator)) {
+      
+      
+      
+      
+      
+      
 
-    
-    for (var k = 0; k < len; k++) {
-        
-        var kValue = items[k];
 
-        
-        var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
 
-        
-        DefineDataProperty(A, k, mappedValue);
+
+
+      
+      var mappedValue = mapping ? callContentFunction(mapfn, T, nextValue, k) : nextValue;
+
+      
+      DefineDataProperty(A, k++, mappedValue);
     }
 
     
-    A.length = len;
-
-    
+    A.length = k;
     return A;
+  }
+
+  
+  
+
+  
+  var arrayLike = ToObject(items);
+
+  
+  var len = ToLength(arrayLike.length);
+
+  
+  var A = IsConstructor(C) ? constructContentFunction(C, C, len)
+                           : std_Array(len);
+
+  
+  for (var k = 0; k < len; k++) {
+    
+    var kValue = items[k];
+
+    
+    var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
+
+    
+    DefineDataProperty(A, k, mappedValue);
+  }
+
+  
+  A.length = len;
+
+  
+  return A;
 }
 
 function MakeIteratorWrapper(items, method) {
-    assert(IsCallable(method), "method argument is a function");
+  assert(IsCallable(method), "method argument is a function");
 
+  
+  
+  
+  return {
     
     
-    
-    return {
-        
-        
-        [GetBuiltinSymbol("iterator")]: function IteratorMethod() {
-            return callContentFunction(method, items);
-        },
-    };
+    [GetBuiltinSymbol("iterator")]: function IteratorMethod() {
+      return callContentFunction(method, items);
+    },
+  };
 }
 
 
 function ArrayToString() {
-    
-    var array = ToObject(this);
+  
+  var array = ToObject(this);
 
-    
-    var func = array.join;
+  
+  var func = array.join;
 
-    
-    if (!IsCallable(func)) {
-        return callFunction(std_Object_toString, array);
-    }
-    return callContentFunction(func, array);
+  
+  if (!IsCallable(func)) {
+    return callFunction(std_Object_toString, array);
+  }
+  return callContentFunction(func, array);
 }
 
 
@@ -911,372 +908,372 @@ function ArrayToString() {
 
 
 function ArrayToLocaleString(locales, options) {
-    
-    assert(IsObject(this), "|this| should be an object");
-    var array = this;
+  
+  assert(IsObject(this), "|this| should be an object");
+  var array = this;
 
-    
-    var len = ToLength(array.length);
+  
+  var len = ToLength(array.length);
 
-    
-    if (len === 0) {
-        return "";
-    }
+  
+  if (len === 0) {
+    return "";
+  }
 
-    
-    var firstElement = array[0];
+  
+  var firstElement = array[0];
 
-    
-    var R;
-    if (firstElement === undefined || firstElement === null) {
-        R = "";
-    } else {
+  
+  var R;
+  if (firstElement === undefined || firstElement === null) {
+    R = "";
+  } else {
 #if JS_HAS_INTL_API
-        R = ToString(callContentFunction(firstElement.toLocaleString, firstElement, locales, options));
+    R = ToString(callContentFunction(firstElement.toLocaleString, firstElement, locales, options));
 #else
-        R = ToString(callContentFunction(firstElement.toLocaleString, firstElement));
+    R = ToString(callContentFunction(firstElement.toLocaleString, firstElement));
+#endif
+  }
+
+  
+  
+  var separator = ",";
+
+  
+  for (var k = 1; k < len; k++) {
+    
+    var nextElement = array[k];
+
+    
+    R += separator;
+    if (!(nextElement === undefined || nextElement === null)) {
+#if JS_HAS_INTL_API
+      R += ToString(callContentFunction(nextElement.toLocaleString, nextElement, locales, options));
+#else
+      R += ToString(callContentFunction(nextElement.toLocaleString, nextElement));
 #endif
     }
+  }
 
-    
-    
-    var separator = ",";
-
-    
-    for (var k = 1; k < len; k++) {
-        
-        var nextElement = array[k];
-
-        
-        R += separator;
-        if (!(nextElement === undefined || nextElement === null)) {
-#if JS_HAS_INTL_API
-            R += ToString(callContentFunction(nextElement.toLocaleString, nextElement, locales, options));
-#else
-            R += ToString(callContentFunction(nextElement.toLocaleString, nextElement));
-#endif
-        }
-    }
-
-    
-    return R;
+  
+  return R;
 }
 
 
 function $ArraySpecies() {
-    
-    return this;
+  
+  return this;
 }
 SetCanonicalName($ArraySpecies, "get [Symbol.species]");
 
 
 function ArraySpeciesCreate(originalArray, length) {
+  
+  assert(typeof length == "number", "length should be a number");
+  assert(length >= 0, "length should be a non-negative number");
+
+  
+  
+  if (length === -0) {
+    length = 0;
+  }
+
+  
+  if (!IsArray(originalArray)) {
+    return std_Array(length);
+  }
+
+  
+  var C = originalArray.constructor;
+
+  
+  if (IsConstructor(C) && IsCrossRealmArrayConstructor(C)) {
+    return std_Array(length);
+  }
+
+  
+  if (IsObject(C)) {
     
-    assert(typeof length == "number", "length should be a number");
-    assert(length >= 0, "length should be a non-negative number");
+    C = C[GetBuiltinSymbol("species")];
 
     
-    
-    if (length === -0) {
-        length = 0;
+    if (C === GetBuiltinConstructor("Array")) {
+      return std_Array(length);
     }
 
     
-    if (!IsArray(originalArray)) {
-        return std_Array(length);
+    if (C === null) {
+      return std_Array(length);
     }
+  }
 
-    
-    var C = originalArray.constructor;
+  
+  if (C === undefined) {
+    return std_Array(length);
+  }
 
-    
-    if (IsConstructor(C) && IsCrossRealmArrayConstructor(C)) {
-        return std_Array(length);
-    }
+  
+  if (!IsConstructor(C)) {
+    ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "constructor property");
+  }
 
-    
-    if (IsObject(C)) {
-        
-        C = C[GetBuiltinSymbol("species")];
-
-        
-        if (C === GetBuiltinConstructor("Array")) {
-            return std_Array(length);
-        }
-
-        
-        if (C === null) {
-            return std_Array(length);
-        }
-    }
-
-    
-    if (C === undefined) {
-        return std_Array(length);
-    }
-
-    
-    if (!IsConstructor(C)) {
-        ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "constructor property");
-    }
-
-    
-    return constructContentFunction(C, C, length);
+  
+  return constructContentFunction(C, C, length);
 }
 
 
 function IsConcatSpreadable(O) {
-    
-    if (!IsObject(O)
+  
+  if (!IsObject(O)
 #ifdef ENABLE_RECORD_TUPLE
-        && !IsTuple(O)
+      && !IsTuple(O)
 #endif
-    ) {
-        return false;
-    }
+  ) {
+    return false;
+  }
 
-    
-    var spreadable = O[GetBuiltinSymbol("isConcatSpreadable")];
+  
+  var spreadable = O[GetBuiltinSymbol("isConcatSpreadable")];
 
-    
-    if (spreadable !== undefined) {
-        return ToBoolean(spreadable);
-    }
+  
+  if (spreadable !== undefined) {
+    return ToBoolean(spreadable);
+  }
 
 #ifdef ENABLE_RECORD_TUPLE
-    if (IsTuple(O)) {
-        return true;
-    }
+  if (IsTuple(O)) {
+    return true;
+  }
 #endif
 
-    
-    return IsArray(O);
+  
+  return IsArray(O);
 }
 
 
 
 function ArrayConcat(arg1) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var A = ArraySpeciesCreate(O, 0);
+  
+  var A = ArraySpeciesCreate(O, 0);
 
-    
-    var n = 0;
+  
+  var n = 0;
 
-    
+  
 
-    
-    var i = 0, argsLen = arguments.length;
+  
+  var i = 0, argsLen = arguments.length;
 
-    
-    var E = O;
+  
+  var E = O;
 
-    var k, len;
-    while (true) {
-        
-        if (IsConcatSpreadable(E)) {
+  var k, len;
+  while (true) {
+    
+    if (IsConcatSpreadable(E)) {
 #ifdef ENABLE_RECORD_TUPLE
-            
-            E = ToObject(E);
+      
+      E = ToObject(E);
 #endif
 
-            
-            len = ToLength(E.length);
+      
+      len = ToLength(E.length);
 
-            
-            if (n + len > MAX_NUMERIC_INDEX) {
-                ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
-            }
+      
+      if (n + len > MAX_NUMERIC_INDEX) {
+        ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
+      }
 
-            if (IsPackedArray(A) && IsPackedArray(E)) {
-                
-                for (k = 0; k < len; k++) {
-                    
-                    
-                    DefineDataProperty(A, n, E[k]);
-
-                    
-                    n++;
-                }
-            } else {
-                
-                for (k = 0; k < len; k++) {
-                    
-                    if (k in E) {
-                        DefineDataProperty(A, n, E[k]);
-                    }
-
-                    
-                    n++;
-                }
-            }
-        } else {
-            
-            if (n >= MAX_NUMERIC_INDEX) {
-                ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
-            }
-
-            
-            DefineDataProperty(A, n, E);
-
-            
-            n++;
-        }
-
-        if (i >= argsLen) {
-            break;
-        }
+      if (IsPackedArray(A) && IsPackedArray(E)) {
         
-        E = arguments[i];
-        i++;
+        for (k = 0; k < len; k++) {
+          
+          
+          DefineDataProperty(A, n, E[k]);
+
+          
+          n++;
+        }
+      } else {
+        
+        for (k = 0; k < len; k++) {
+          
+          if (k in E) {
+            DefineDataProperty(A, n, E[k]);
+          }
+
+          
+          n++;
+        }
+      }
+    } else {
+      
+      if (n >= MAX_NUMERIC_INDEX) {
+        ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
+      }
+
+      
+      DefineDataProperty(A, n, E);
+
+      
+      n++;
     }
 
+    if (i >= argsLen) {
+      break;
+    }
     
-    A.length = n;
+    E = arguments[i];
+    i++;
+  }
 
-    
-    return A;
+  
+  A.length = n;
+
+  
+  return A;
 }
 
 
 
 function ArrayFlatMap(mapperFunction) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var sourceLen = ToLength(O.length);
+  
+  var sourceLen = ToLength(O.length);
 
-    
-    if (!IsCallable(mapperFunction)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapperFunction));
-    }
+  
+  if (!IsCallable(mapperFunction)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, mapperFunction));
+  }
 
-    
-    var T = arguments.length > 1 ? arguments[1] : undefined;
+  
+  var T = arguments.length > 1 ? arguments[1] : undefined;
 
-    
-    var A = ArraySpeciesCreate(O, 0);
+  
+  var A = ArraySpeciesCreate(O, 0);
 
-    
-    FlattenIntoArray(A, O, sourceLen, 0, 1, mapperFunction, T);
+  
+  FlattenIntoArray(A, O, sourceLen, 0, 1, mapperFunction, T);
 
-    
-    return A;
+  
+  return A;
 }
 
 
 
 function ArrayFlat() {
-     
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var sourceLen = ToLength(O.length);
+  
+  var sourceLen = ToLength(O.length);
 
-    
-    var depthNum = 1;
+  
+  var depthNum = 1;
 
-    
-    if (arguments.length > 0 && arguments[0] !== undefined) {
-        depthNum = ToInteger(arguments[0]);
-    }
+  
+  if (arguments.length > 0 && arguments[0] !== undefined) {
+    depthNum = ToInteger(arguments[0]);
+  }
 
-    
-    var A = ArraySpeciesCreate(O, 0);
+  
+  var A = ArraySpeciesCreate(O, 0);
 
-    
-    FlattenIntoArray(A, O, sourceLen, 0, depthNum);
+  
+  FlattenIntoArray(A, O, sourceLen, 0, depthNum);
 
-    
-    return A;
+  
+  return A;
 }
 
 
 
 function FlattenIntoArray(target, source, sourceLen, start, depth, mapperFunction, thisArg) {
-    
-    var targetIndex = start;
+  
+  var targetIndex = start;
 
+  
+  for (var sourceIndex = 0; sourceIndex < sourceLen; sourceIndex++) {
     
-    for (var sourceIndex = 0; sourceIndex < sourceLen; sourceIndex++) {
+    if (sourceIndex in source) {
+      
+      var element = source[sourceIndex];
+
+      if (mapperFunction) {
         
-        if (sourceIndex in source) {
-            
-            var element = source[sourceIndex];
+        assert(arguments.length === 7, "thisArg is present");
 
-            if (mapperFunction) {
-                
-                assert(arguments.length === 7, "thisArg is present");
+        
+        element = callContentFunction(mapperFunction, thisArg, element, sourceIndex, source);
+      }
 
-                
-                element = callContentFunction(mapperFunction, thisArg, element, sourceIndex, source);
-            }
+      
+      var shouldFlatten = false;
 
-            
-            var shouldFlatten = false;
+      
+      if (depth > 0) {
+        
+        shouldFlatten = IsArray(element);
+      }
 
-            
-            if (depth > 0) {
-                
-                shouldFlatten = IsArray(element);
-            }
+      
+      if (shouldFlatten) {
+        
+        var elementLen = ToLength(element.length);
 
-            
-            if (shouldFlatten) {
-                
-                var elementLen = ToLength(element.length);
-
-                
-                targetIndex = FlattenIntoArray(target, element, elementLen, targetIndex, depth - 1);
-            } else {
-                
-                if (targetIndex >= MAX_NUMERIC_INDEX) {
-                    ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
-                }
-
-                
-                DefineDataProperty(target, targetIndex, element);
-
-                
-                targetIndex++;
-            }
+        
+        targetIndex = FlattenIntoArray(target, element, elementLen, targetIndex, depth - 1);
+      } else {
+        
+        if (targetIndex >= MAX_NUMERIC_INDEX) {
+          ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
         }
-    }
 
-    
-    return targetIndex;
+        
+        DefineDataProperty(target, targetIndex, element);
+
+        
+        targetIndex++;
+      }
+    }
+  }
+
+  
+  return targetIndex;
 }
 
 
 
 function ArrayAt(index) {
-     
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
-    
-    var relativeIndex = ToInteger(index);
+  
+  var relativeIndex = ToInteger(index);
 
-    
-    var k;
-    if (relativeIndex >= 0) {
-        k = relativeIndex;
-    } else {
-        k = len + relativeIndex;
-    }
+  
+  var k;
+  if (relativeIndex >= 0) {
+    k = relativeIndex;
+  } else {
+    k = len + relativeIndex;
+  }
 
-    
-    if (k < 0 || k >= len) {
-        return undefined;
-    }
+  
+  if (k < 0 || k >= len) {
+    return undefined;
+  }
 
-    
-    return O[k];
+  
+  return O[k];
 }
 
 SetIsInlinableLargeFunction(ArrayAt);
@@ -1286,66 +1283,64 @@ SetIsInlinableLargeFunction(ArrayAt);
 
 
 function ArrayToReversed() {
+  
+  var O = ToObject(this);
+
+  
+  var len = ToLength(O.length);
+
+  
+  var A = std_Array(len);
+
+  
+  
+  for (var k = 0; k < len; k++) {
+    
+    var from = len - k - 1;
+    
 
     
-    var O = ToObject(this);
-
+    var fromValue = O[from];
     
-    var len = ToLength(O.length);
+    DefineDataProperty(A, k, fromValue);
+  }
 
-    
-    var A = std_Array(len);
-
-    
-    
-    for (var k = 0; k < len; k++) {
-        
-        var from = len - k - 1;
-        
-
-        
-        var fromValue = O[from];
-        
-        DefineDataProperty(A, k, fromValue);
-    }
-
-    
-    return A;
+  
+  return A;
 }
 
 
 
 function ArrayToSorted(comparefn) {
+  
 
-    
 
+  if (comparefn !== undefined && !IsCallable(comparefn)) {
+    ThrowTypeError(JSMSG_BAD_TOSORTED_ARG);
+  }
 
-    if (comparefn !== undefined && !IsCallable(comparefn)) {
-        ThrowTypeError(JSMSG_BAD_TOSORTED_ARG);
-    }
+  
+  var O = ToObject(this);
 
-    
-    var O = ToObject(this);
+  
+  var len = ToLength(O.length);
 
-    
-    var len = ToLength(O.length);
+  
+  var items = std_Array(len);
 
-    
-    var items = std_Array(len);
-
-    
-
+  
 
 
 
-    for (var k = 0; k < len; k++) {
-        DefineDataProperty(items, k, O[k]);
-    }
 
-    SortArray(items, comparefn);
+  for (var k = 0; k < len; k++) {
+    DefineDataProperty(items, k, O[k]);
+  }
 
-    
-    return items;
+  SortArray(items, comparefn);
+
+  
+  return items;
 }
 
 #endif
@@ -1353,65 +1348,65 @@ function ArrayToSorted(comparefn) {
 
 
 function ArrayFindLast(predicate) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.findLast");
+  }
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  for (var k = len - 1; k >= 0; k--) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.findLast");
+    var kValue = O[k];
+    
+    if (callContentFunction(predicate, T, kValue, k, O)) {
+      return kValue;
     }
-    if (!IsCallable(predicate)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
-    }
+  }
 
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    for (var k = len - 1; k >= 0; k--) {
-        
-        var kValue = O[k];
-        
-        if (callContentFunction(predicate, T, kValue, k, O)) {
-            return kValue;
-        }
-    }
-
-    
-    return undefined;
+  
+  return undefined;
 }
 
 
 
 function ArrayFindLastIndex(predicate) {
-    
-    var O = ToObject(this);
+  
+  var O = ToObject(this);
 
-    
-    var len = ToLength(O.length);
+  
+  var len = ToLength(O.length);
 
+  
+  if (arguments.length === 0) {
+    ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.findLastIndex");
+  }
+  if (!IsCallable(predicate)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
+  }
+
+  var T = arguments.length > 1 ? arguments[1] : undefined;
+
+  
+  for (var k = len - 1; k >= 0; k--) {
     
-    if (arguments.length === 0) {
-        ThrowTypeError(JSMSG_MISSING_FUN_ARG, 0, "Array.prototype.findLastIndex");
+    var kValue = O[k];
+    
+    if (callContentFunction(predicate, T, kValue, k, O)) {
+      return k;
     }
-    if (!IsCallable(predicate)) {
-        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
-    }
+  }
 
-    var T = arguments.length > 1 ? arguments[1] : undefined;
-
-    
-    for (var k = len - 1; k >= 0; k--) {
-        
-        var kValue = O[k];
-        
-        if (callContentFunction(predicate, T, kValue, k, O)) {
-            return k;
-        }
-    }
-
-    
-    return -1;
+  
+  return -1;
 }
