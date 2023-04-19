@@ -1138,8 +1138,6 @@ void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
       error_code == STUN_ERROR_SERVER_ERROR ||
       error_code == STUN_ERROR_UNAUTHORIZED) {
     
-  } else if (error_code == STUN_ERROR_STALE_CREDENTIALS) {
-    
   } else if (error_code == STUN_ERROR_ROLE_CONFLICT) {
     HandleRoleConflictFromPeer();
   } else if (request->msg()->type() == GOOG_PING_REQUEST) {
