@@ -360,7 +360,7 @@ class SearchService {
     this.#initStarted = false;
     this.#startupExtensions = new Set();
     this._engines.clear();
-    this.__sortedEngines = null;
+    this._cachedSortedEngines = null;
     this.#currentEngine = null;
     this.#currentPrivateEngine = null;
     this._searchDefault = null;
@@ -754,8 +754,8 @@ class SearchService {
     } 
 
     
-    var movedEngine = this.__sortedEngines.splice(currentIndex, 1)[0];
-    this.__sortedEngines.splice(newIndex, 0, movedEngine);
+    var movedEngine = this._cachedSortedEngines.splice(currentIndex, 1)[0];
+    this._cachedSortedEngines.splice(newIndex, 0, movedEngine);
 
     lazy.SearchUtils.notifyAction(
       engine,
@@ -1003,8 +1003,7 @@ class SearchService {
 
 
 
-
-  __sortedEngines = null;
+  _cachedSortedEngines = null;
 
   
 
@@ -1085,10 +1084,10 @@ class SearchService {
   #observersAdded = false;
 
   get #sortedEngines() {
-    if (!this.__sortedEngines) {
+    if (!this._cachedSortedEngines) {
       return this.#buildSortedEngineList();
     }
-    return this.__sortedEngines;
+    return this._cachedSortedEngines;
   }
   
 
@@ -1880,7 +1879,7 @@ class SearchService {
 
     this.#dontSetUseSavedOrder = false;
     
-    this.__sortedEngines = null;
+    this._cachedSortedEngines = null;
     Services.obs.notifyObservers(
       null,
       lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
@@ -1944,8 +1943,8 @@ class SearchService {
       
       
       
-      if (this.__sortedEngines && !this.#dontSetUseSavedOrder) {
-        this.__sortedEngines.push(engine);
+      if (this._cachedSortedEngines && !this.#dontSetUseSavedOrder) {
+        this._cachedSortedEngines.push(engine);
         this.#saveSortedEngineList();
       }
       lazy.SearchUtils.notifyAction(
@@ -2138,7 +2137,7 @@ class SearchService {
     
     
     
-    this.__sortedEngines = [];
+    this._cachedSortedEngines = [];
 
     
     
@@ -2156,8 +2155,8 @@ class SearchService {
         
         
         
-        if (orderNumber && !this.__sortedEngines[orderNumber - 1]) {
-          this.__sortedEngines[orderNumber - 1] = engine;
+        if (orderNumber && !this._cachedSortedEngines[orderNumber - 1]) {
+          this._cachedSortedEngines[orderNumber - 1] = engine;
           addedEngines[engine.name] = engine;
         } else {
           
@@ -2166,13 +2165,13 @@ class SearchService {
       }
 
       
-      var filteredEngines = this.__sortedEngines.filter(function(a) {
+      var filteredEngines = this._cachedSortedEngines.filter(function(a) {
         return !!a;
       });
-      if (this.__sortedEngines.length != filteredEngines.length) {
+      if (this._cachedSortedEngines.length != filteredEngines.length) {
         needToSaveEngineList = true;
       }
-      this.__sortedEngines = filteredEngines;
+      this._cachedSortedEngines = filteredEngines;
 
       if (needToSaveEngineList) {
         this.#saveSortedEngineList();
@@ -2191,11 +2190,13 @@ class SearchService {
       alphaEngines.sort((a, b) => {
         return collator.compare(a.name, b.name);
       });
-      return (this.__sortedEngines = this.__sortedEngines.concat(alphaEngines));
+      return (this._cachedSortedEngines = this._cachedSortedEngines.concat(
+        alphaEngines
+      ));
     }
     lazy.logConsole.debug("#buildSortedEngineList: using default orders");
 
-    return (this.__sortedEngines = this._sortEnginesByDefaults(
+    return (this._cachedSortedEngines = this._sortEnginesByDefaults(
       Array.from(this._engines.values())
     ));
   }
@@ -2267,10 +2268,7 @@ class SearchService {
 
 
   get #sortedVisibleEngines() {
-    this.__sortedVisibleEngines = this.#sortedEngines.filter(
-      engine => !engine.hidden
-    );
-    return this.__sortedVisibleEngines;
+    return this.#sortedEngines.filter(engine => !engine.hidden);
   }
 
   
@@ -2509,7 +2507,7 @@ class SearchService {
         if (isDefaultPrivate) {
           this._settings.setVerifiedAttribute("private", engine.name);
         }
-        this.__sortedEngines = null;
+        this._cachedSortedEngines = null;
       }
     }
     return extensionEngines;
@@ -2576,15 +2574,15 @@ class SearchService {
 
   #internalRemoveEngine(engine) {
     
-    if (this.__sortedEngines) {
-      var index = this.__sortedEngines.indexOf(engine);
+    if (this._cachedSortedEngines) {
+      var index = this._cachedSortedEngines.indexOf(engine);
       if (index == -1) {
         throw Components.Exception(
           "Can't find engine to remove in _sortedEngines!",
           Cr.NS_ERROR_FAILURE
         );
       }
-      this.__sortedEngines.splice(index, 1);
+      this._cachedSortedEngines.splice(index, 1);
     }
 
     
@@ -2787,7 +2785,7 @@ class SearchService {
 
   #onSeparateDefaultPrefChanged() {
     
-    this.__sortedEngines = null;
+    this._cachedSortedEngines = null;
     
     
     if (this.defaultEngine != this._getEngineDefault(true)) {
