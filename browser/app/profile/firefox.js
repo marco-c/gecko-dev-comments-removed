@@ -2763,8 +2763,3 @@ pref("browser.pdfjs.feature-tour", "{\"screen\":\"FEATURE_CALLOUT_1\",\"complete
 
 
 pref("cookiebanners.ui.desktop.enabled", false);
-
-
-#ifdef NIGHTLY_BUILD
-  pref("dom.sitepermsaddon-provider.enabled", true);
-#endif
