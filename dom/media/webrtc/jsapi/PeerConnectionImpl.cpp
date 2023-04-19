@@ -2254,6 +2254,16 @@ nsresult PeerConnectionImpl::SetConfiguration(
     mPrivacyRequested = Some(true);
   }
 
+  auto proxyConfig = GetProxyConfig();
+  if (proxyConfig) {
+    
+    
+    
+    
+    
+    mTransportHandler->SetProxyConfig(std::move(*proxyConfig));
+  }
+
   
   StoreConfigurationForAboutWebrtc(aConfiguration);
   return NS_OK;
@@ -3749,16 +3759,6 @@ nsresult PeerConnectionImpl::SetTargetForDefaultLocalAddressLookup() {
 
 void PeerConnectionImpl::EnsureIceGathering(bool aDefaultRouteOnly,
                                             bool aObfuscateHostAddresses) {
-  auto proxyConfig = GetProxyConfig();
-  if (proxyConfig) {
-    
-    
-    
-    
-    
-    mTransportHandler->SetProxyConfig(std::move(*proxyConfig));
-  }
-
   if (!mTargetForDefaultLocalAddressLookupIsSet) {
     nsresult rv = SetTargetForDefaultLocalAddressLookup();
     if (NS_FAILED(rv)) {
