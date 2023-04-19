@@ -312,14 +312,18 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
     DestroyStreams();
 
-    video_send_transport.reset();
-    audio_send_transport.reset();
-    receive_transport.reset();
-
     sender_call_->DestroyAudioSendStream(audio_send_stream);
     receiver_call_->DestroyAudioReceiveStream(audio_receive_stream);
 
     DestroyCalls();
+    
+    
+    
+    
+    
+    video_send_transport.reset();
+    audio_send_transport.reset();
+    receive_transport.reset();
   });
 
   observer->PrintResults();
@@ -357,10 +361,8 @@ TEST_F(CallPerfTest,
                      DriftingClock::PercentsFaster(30.0f), "_audio_faster");
 }
 
-
-TEST_F(
-    CallPerfTest,
-    DISABLED_Synchronization_PlaysOutAudioAndVideoWithVideoFasterThanAudioDrift) {  
+TEST_F(CallPerfTest,
+       Synchronization_PlaysOutAudioAndVideoWithVideoFasterThanAudioDrift) {
   TestAudioVideoSync(FecMode::kOn, CreateOrder::kVideoFirst,
                      DriftingClock::kNoDrift,
                      DriftingClock::PercentsFaster(30.0f),
