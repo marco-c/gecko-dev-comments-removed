@@ -34,7 +34,6 @@ ChromeUtils.defineModuleGetter(
 const PREF_SECURITY_DELAY = "security.notification_enable_delay";
 
 
-let currentBrowserWeakRef = null;
 let currentActor = null;
 
 let autoCompleteListeners = new Set();
@@ -177,10 +176,6 @@ class AutoCompleteParent extends JSWindowActorParent {
     return currentActor;
   }
 
-  static getCurrentBrowser() {
-    return currentBrowserWeakRef ? currentBrowserWeakRef.get() : null;
-  }
-
   static addPopupStateListener(listener) {
     autoCompleteListeners.add(listener);
   }
@@ -216,7 +211,6 @@ class AutoCompleteParent extends JSWindowActorParent {
         
         this.openedPopup.adjustHeight();
         this.openedPopup = null;
-        currentBrowserWeakRef = null;
         currentActor = null;
         evt.target.removeEventListener("popuphidden", this);
         evt.target.removeEventListener("popupshowing", this);
@@ -247,7 +241,6 @@ class AutoCompleteParent extends JSWindowActorParent {
 
     
     let resultStyles = new Set(results.map(r => r.style).filter(r => !!r));
-    currentBrowserWeakRef = Cu.getWeakReference(browser);
     currentActor = this;
     this.openedPopup = browser.autoCompletePopup;
     
