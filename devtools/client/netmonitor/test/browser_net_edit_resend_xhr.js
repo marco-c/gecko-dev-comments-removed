@@ -110,7 +110,13 @@ add_task(async function() {
     
     
     
-    await waitUntil(() => document.querySelector(".http-custom-request-panel"));
+    
+    await waitUntil(
+      () =>
+        document.querySelector(".http-custom-request-panel") &&
+        document.querySelector("#http-custom-request-send-button").disabled ===
+          false
+    );
     document.querySelector("#http-custom-request-send-button").click();
     await waitForNetworkEvents(monitor, 1);
 

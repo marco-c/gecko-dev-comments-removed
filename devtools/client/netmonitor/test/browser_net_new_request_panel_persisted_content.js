@@ -3,6 +3,8 @@
 
 "use strict";
 
+const asyncStorage = require("devtools/shared/async-storage");
+
 
 
 
@@ -11,7 +13,7 @@ add_task(async function() {
   
   await pushPref("devtools.netmonitor.features.newEditAndResend", true);
   
-  await pushPref("devtools.netmonitor.customRequest", "");
+  await asyncStorage.removeItem("devtools.netmonitor.customRequest");
 
   const { monitor } = await initNetMonitor(HTTPS_CUSTOM_GET_URL, {
     requestCount: 1,
@@ -85,7 +87,13 @@ add_task(async function() {
   closePanel.click();
 
   
-  waitForPanels = waitForDOM(document, ".monitor-panel .network-action-bar");
+  waitForPanels = waitUntil(
+    () =>
+      document.querySelector(".http-custom-request-panel") &&
+      document.querySelector("#http-custom-request-send-button").disabled ===
+        false
+  );
+
   HTTPCustomRequestButton = document.querySelector(
     "#netmonitor-toolbar-container .devtools-http-custom-request-icon"
   );

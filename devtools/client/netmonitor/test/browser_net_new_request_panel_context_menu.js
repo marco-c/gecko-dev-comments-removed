@@ -3,6 +3,8 @@
 
 "use strict";
 
+const asyncStorage = require("devtools/shared/async-storage");
+
 
 
 
@@ -12,7 +14,7 @@ add_task(async function() {
   
   await pushPref("devtools.netmonitor.features.newEditAndResend", true);
   
-  await pushPref("devtools.netmonitor.customRequest", "");
+  await asyncStorage.removeItem("devtools.netmonitor.customRequest");
 
   const { tab, monitor } = await initNetMonitor(POST_DATA_URL, {
     requestCount: 1,
@@ -25,7 +27,7 @@ add_task(async function() {
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   store.dispatch(Actions.batchEnable(false));
 
-  await performRequests(monitor, tab, 1);
+  await performRequests(monitor, tab, 2);
 
   const { getSelectedRequest } = windowRequire(
     "devtools/client/netmonitor/src/selectors/index"
@@ -55,10 +57,13 @@ add_task(async function() {
   );
 
   info("Opening the new request panel");
-  const waitForPanels = waitForDOM(
-    document,
-    ".monitor-panel .network-action-bar"
+  const waitForPanels = waitUntil(
+    () =>
+      document.querySelector(".http-custom-request-panel") &&
+      document.querySelector("#http-custom-request-send-button").disabled ===
+        false
   );
+
   await selectContextMenuItem(monitor, "request-list-context-edit-resend");
   await waitForPanels;
 
