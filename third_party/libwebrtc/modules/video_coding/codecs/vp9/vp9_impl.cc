@@ -1263,8 +1263,6 @@ int VP9EncoderImpl::UpdateCodecFrameSize(
   
   config_->g_threads = NumberOfThreads(codec_.width, codec_.height,
                                        num_cores_);
-  
-  cpu_speed_ = GetCpuSpeed(codec_.width, codec_.height);
 
   
   
