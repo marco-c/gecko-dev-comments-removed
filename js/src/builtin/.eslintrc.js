@@ -51,6 +51,8 @@ module.exports = {
         
         
         "no-redeclare": "off",
+        
+        "no-void": ["error", { allowAsStatement: true }],
       },
 
       globals: {
