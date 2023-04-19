@@ -65,7 +65,7 @@ void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
 
 void ComputeSlidingFrameSquareEnergies24kHz(
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buffer,
-    rtc::ArrayView<float, kRefineNumLags24kHz> y_energy);
+    rtc::ArrayView<float, kRefineNumLags24kHz> yy_values);
 
 
 struct CandidatePitchPeriods {
