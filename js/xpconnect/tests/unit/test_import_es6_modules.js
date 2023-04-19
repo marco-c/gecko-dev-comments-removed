@@ -13,37 +13,23 @@ function run_test() {
   Assert.equal(ns, ns2);
 
   
-  let threw = false;
-  try {
-    ChromeUtils.importESModule("resource://test/es6module_not_found.js");
-  } catch (e) {
-    threw = true;
-  }
-  Assert.ok(threw);
+  testFailure("resource://test/es6module_not_found.js");
+  
+  
+  testFailure("resource://test/es6module_missing_import.js");
 
   
-  threw = false;
-  let exception;
-  try {
-    ChromeUtils.importESModule("resource://test/es6module_throws.js");
-  } catch (e) {
-    exception = e;
-    threw = true;
-  }
-  Assert.ok(threw);
-  Assert.ok(exception.toString().includes("foobar"));
+  testFailure("resource://test/es6module_parse_error.js", "SyntaxError");
 
   
-  threw = false;
-  let exception2;
-  try {
-    ChromeUtils.importESModule("resource://test/es6module_throws.js");
-  } catch (e) {
-    exception2 = e;
-    threw = true;
-  }
-  Assert.ok(threw);
-  Assert.equal(exception, exception2);
+  testFailure("resource://test/es6module_parse_error_in_import.js", "SyntaxError");
+
+  
+  let exception1 = testFailure("resource://test/es6module_throws.js", "foobar");
+
+  
+  let exception2 = testFailure("resource://test/es6module_throws.js", "foobar");
+  Assert.ok(exception1 === exception2);
 
   
   ns = ChromeUtils.importESModule("resource://test/es6module_cycle_a.js");
@@ -57,14 +43,23 @@ function run_test() {
   Assert.equal(ns.getValueFromA(), "a");
 
   
-  threw = false;
-  exception = undefined;
+  testFailure("resource://test/es6module_top_level_await.js", "not supported");
+}
+
+function testFailure(url, exceptionPart) {
+  let threw = false;
+  let exception;
   try {
-    ChromeUtils.importESModule("resource://test/es6module_top_level_await.js");
+    ChromeUtils.importESModule(url);
   } catch (e) {
-    exception = e;
     threw = true;
+    exception = e;
   }
+
   Assert.ok(threw);
-  Assert.ok(exception.message.includes("not supported"));
+  if (exceptionPart) {
+    Assert.ok(exception.toString().includes(exceptionPart));
+  }
+
+  return exception;
 }
