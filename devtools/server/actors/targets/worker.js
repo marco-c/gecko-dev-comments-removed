@@ -34,6 +34,8 @@ exports.WorkerTargetActor = TargetActorMixin(
 
 
 
+
+
     initialize: function(
       connection,
       workerGlobal,
@@ -48,6 +50,8 @@ exports.WorkerTargetActor = TargetActorMixin(
 
       this._workerDebuggerData = workerDebuggerData;
       this._sourcesManager = null;
+      this.workerConsoleApiMessagesDispatchedToMainThread =
+        workerDebuggerData.workerConsoleApiMessagesDispatchedToMainThread;
 
       this.makeDebugger = makeDebuggerUtil.bind(null, {
         findDebuggees: () => {

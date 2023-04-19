@@ -284,6 +284,16 @@ async function watchResources(rootOrWatcherOrTargetActor, resourceTypes) {
       continue;
     }
 
+    
+    
+    
+    if (
+      resourceType == TYPES.CONSOLE_MESSAGE &&
+      rootOrWatcherOrTargetActor.workerConsoleApiMessagesDispatchedToMainThread
+    ) {
+      continue;
+    }
+
     const watcher = new WatcherClass();
     await watcher.watch(rootOrWatcherOrTargetActor, {
       onAvailable: rootOrWatcherOrTargetActor.notifyResourceAvailable,
