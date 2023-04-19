@@ -690,6 +690,13 @@ function _execute_test() {
   
   _fakeIdleService.deactivate();
 
+  if (
+    globalThis.hasOwnProperty("storage") &&
+    StorageManager.isInstance(globalThis.storage)
+  ) {
+    globalThis.storage.shutdown();
+  }
+
   if (_profileInitialized) {
     
     
