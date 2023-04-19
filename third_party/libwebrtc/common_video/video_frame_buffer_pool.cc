@@ -21,9 +21,14 @@ bool HasOneRef(const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
   
   
   
+  
   switch (buffer->type()) {
     case VideoFrameBuffer::Type::kI420: {
       return static_cast<rtc::RefCountedObject<I420Buffer>*>(buffer.get())
+          ->HasOneRef();
+    }
+    case VideoFrameBuffer::Type::kI444: {
+      return static_cast<rtc::RefCountedObject<I444Buffer>*>(buffer.get())
           ->HasOneRef();
     }
     case VideoFrameBuffer::Type::kNV12: {
@@ -108,6 +113,37 @@ rtc::scoped_refptr<I420Buffer> VideoFrameBufferPool::CreateI420Buffer(
   
   rtc::scoped_refptr<I420Buffer> buffer =
       rtc::make_ref_counted<I420Buffer>(width, height);
+
+  if (zero_initialize_)
+    buffer->InitializeData();
+
+  buffers_.push_back(buffer);
+  return buffer;
+}
+
+rtc::scoped_refptr<I444Buffer> VideoFrameBufferPool::CreateI444Buffer(
+    int width,
+    int height) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+
+  rtc::scoped_refptr<VideoFrameBuffer> existing_buffer =
+      GetExistingBuffer(width, height, VideoFrameBuffer::Type::kI444);
+  if (existing_buffer) {
+    
+    
+    
+    rtc::RefCountedObject<I444Buffer>* raw_buffer =
+        static_cast<rtc::RefCountedObject<I444Buffer>*>(existing_buffer.get());
+    
+    
+    return rtc::scoped_refptr<I444Buffer>(raw_buffer);
+  }
+
+  if (buffers_.size() >= max_number_of_buffers_)
+    return nullptr;
+  
+  rtc::scoped_refptr<I444Buffer> buffer =
+      rtc::make_ref_counted<I444Buffer>(width, height);
 
   if (zero_initialize_)
     buffer->InitializeData();
