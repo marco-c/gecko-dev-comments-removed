@@ -40,6 +40,9 @@ XPCOMUtils.defineLazyPreferenceGetter(
   delay => Math.min(Math.max(delay, 100), 5 * 60 * 1000)
 );
 
+
+Cu.importGlobalProperties(["DOMException"]);
+
 function notifyBackgroundScriptStatus(addonId, isRunning) {
   
   
@@ -424,7 +427,10 @@ this.backgroundPage = class extends ExtensionAPI {
       }
 
       const childId = extension.backgroundContext?.childId;
-      if (childId !== undefined) {
+      if (
+        childId !== undefined &&
+        extension.hasPermission("webRequestBlocking")
+      ) {
         
         
         
@@ -432,9 +438,29 @@ this.backgroundPage = class extends ExtensionAPI {
         
         const hasActiveStreamFilter = await ExtensionParent.ParentAPIManager.queryStreamFilterSuspendCancel(
           extension.backgroundContext.childId
-        );
+        ).catch(err => {
+          
+          
+          if (
+            extension.backgroundState == BACKGROUND_STATE.STOPPED &&
+            DOMException.isInstance(err) &&
+            err.name === "AbortError"
+          ) {
+            return false;
+          }
+          Cu.reportError(err);
+          return false;
+        });
         if (hasActiveStreamFilter) {
           extension.emit("background-script-reset-idle");
+          return;
+        }
+
+        
+        if (
+          extension.backgroundState !== BACKGROUND_STATE.RUNNING ||
+          extension.hasShutdown
+        ) {
           return;
         }
       }
