@@ -5,22 +5,27 @@
 
 
 
-let testPrefix = "top-level-context";
-
-
-
-let topLevelDocument = true;
-
-
-
-let queryParams = window.location.search.substring(1).split("&");
-queryParams.forEach(function (param, index) {
-  if (param.toLowerCase() == "rootdocument=false") {
-    topLevelDocument = false;
-  } else if (param.split("=")[0].toLowerCase() == "testcase") {
-    testPrefix = param.split("=")[1];
+function processQueryParams() {
+  let testPrefix = "top-level-context";
+  let topLevelDocument = true;
+  for (const param of window.location.search.substring(1).split("&")) {
+    if (param.toLowerCase() === "rootdocument=false") {
+      topLevelDocument = false;
+    } else if (param.split("=")[0].toLowerCase() === "testcase") {
+      testPrefix = param.split("=")[1];
+    }
   }
-});
+  return {testPrefix, topLevelDocument};
+}
+
+
+
+
+
+
+
+
+const {testPrefix, topLevelDocument} = processQueryParams();
 
 
 test(() => {
@@ -28,11 +33,9 @@ test(() => {
 }, "[" + testPrefix + "] document.requestStorageAccess() should be supported on the document interface");
 
 promise_test(t => {
-  let promise = document.requestStorageAccess();
-  let description = "document.requestStorageAccess() call without user gesture";
-  return promise.then(t.unreached_func("Should have rejected: " + description)).catch(function(e) {
-    assert_equals(undefined, e, description);
-  });
+  return promise_rejects_exactly(
+    t, undefined, document.requestStorageAccess(),
+    "document.requestStorageAccess() call without user gesture");
 }, "[" + testPrefix + "] document.requestStorageAccess() should be rejected by default with no user gesture");
 
 
@@ -40,39 +43,36 @@ if (topLevelDocument) {
   
   
   
-  promise_test(async t => {
-    let promise = RunRequestStorageAccessInDetachedFrame();
-    let description = "document.requestStorageAccess() call in a detached frame";
-    return promise.then(t.unreached_func("Should have rejected: " + description)).catch(function (e) {
-
+  promise_test(t => {
+    const promise = RunRequestStorageAccessInDetachedFrame();
+    const description = "document.requestStorageAccess() call in a detached frame";
+    
+    return promise.then(t.unreached_func("Should have rejected: " + description), (e) => {
       assert_equals(e.name, 'SecurityError', description);
     });
   }, "[non-fully-active] document.requestStorageAccess() should not resolve when run in a detached frame");
 
-  promise_test(async t => {
-    let promise = RunRequestStorageAccessViaDomParser();
-    let description = "document.requestStorageAccess() in a detached DOMParser result";
-    return promise.then(t.unreached_func("Should have rejected: " + description)).catch(function (e) {
-      assert_equals(e.name, 'SecurityError', description);
-    });
+  promise_test(t => {
+    return promise_rejects_dom(t, 'SecurityError', RunRequestStorageAccessViaDomParser(),
+     "document.requestStorageAccess() in a detached DOMParser result");
   }, "[non-fully-active] document.requestStorageAccess() should not resolve when run in a detached DOMParser document");
 
   
-  let sameOriginFramePromise = RunTestsInIFrame(
+  const sameOriginFramePromise = RunTestsInIFrame(
       'resources/requestStorageAccess-iframe.html?testCase=same-origin-frame&rootdocument=false');
 
   
-  let crossOriginFramePromise = RunTestsInIFrame(
+  const crossOriginFramePromise = RunTestsInIFrame(
       'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=cross-origin-frame&rootdocument=false');
 
   
   
-  let nestedSameOriginFramePromise = RunTestsInNestedIFrame(
+  const nestedSameOriginFramePromise = RunTestsInNestedIFrame(
       'resources/requestStorageAccess-iframe.html?testCase=nested-same-origin-frame&rootdocument=false');
 
   
   
-  let nestedCrossOriginFramePromise = RunTestsInNestedIFrame(
+  const nestedCrossOriginFramePromise = RunTestsInNestedIFrame(
       'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=nested-cross-origin-frame&rootdocument=false');
 
   
@@ -85,19 +85,18 @@ if (topLevelDocument) {
         nestedSameOriginFramePromise,
         nestedCrossOriginFramePromise,
       ])
-      .then(x => {
+      .then(() => {
         promise_test(
-            async t => {
+            async () => {
               await test_driver.set_permission(
                   {name: 'storage-access'}, 'granted');
 
-              var access_promise;
-              let testMethod = function() {
+              let access_promise;
+              await ClickButtonWithGesture(() => {
                 access_promise = document.requestStorageAccess();
-              };
-              await ClickButtonWithGesture(testMethod);
+              });
 
-              return access_promise;
+              await access_promise;
             },
             '[' + testPrefix +
                 '] document.requestStorageAccess() should be resolved when called properly with a user gesture');
