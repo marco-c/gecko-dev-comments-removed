@@ -1,10 +1,8 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-
-var EXPORTED_SYMBOLS = ["Snapshots"];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -27,32 +25,32 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   PlacesPreviews: "resource://gre/modules/PlacesPreviews.jsm",
 });
 
+/**
+ * @typedef {object} Recommendation
+ *   A snapshot recommendation with an associated score.
+ * @property {Snapshot} snapshot
+ *   The recommended snapshot.
+ * @property {number} score
+ *   The score for this snapshot.
+ * @property {object} [data]
+ *   An optional object containing data used to calculate the score, printed
+ *   as part of logs for debugging purposes.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * @typedef {object} SnapshotCriteria
+ *   A set of tests to check if a set of interactions are a snapshot.
+ * @property {string} property
+ *   The property to check.
+ * @property {string} aggregator
+ *   An aggregator to apply ("sum", "avg", "max", "min").
+ * @property {number} cutoff
+ *   The value to compare against.
+ * @property {?number} interactionCount
+ *   The maximum number of interactions to consider.
+ * @property {?number} interactionRecency
+ *   The maximum age of interactions to consider, in milliseconds.
+ */
 
 XPCOMUtils.defineLazyGetter(lazy, "logConsole", function() {
   return console.createInstance({
@@ -66,44 +64,44 @@ XPCOMUtils.defineLazyGetter(lazy, "logConsole", function() {
   });
 });
 
-
-
-
-
+/**
+ * Snapshots are considered overlapping if interactions took place within snapshot_overlap_limit milleseconds of each other.
+ * Default to a half-hour on each end of the interactions.
+ */
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "snapshot_overlap_limit",
   "browser.places.interactions.snapshotOverlapLimit",
-  1800000 
+  1800000 // 1000 * 60 * 30
 );
 
-
-
-
-
-
-
+/**
+ * Interval for the timeOfDay heuristic interval. The heuristic looks for
+ * interactions within these milliseconds from the current time.
+ * This interval is split in half, thus if it's 3pm, with a 1 hour interval, it
+ * looks for snapshots between 2:30pm and 3:30 pm.
+ */
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "snapshot_timeofday_interval_seconds",
   "browser.places.interactions.snapshotTimeOfDayIntervalSeconds",
   3600
 );
-
-
-
-
-
+/**
+ * Maximum number of past days to look for timeOfDay snapshots.
+ * Returning very old snapshots from the past may not be particularly useful
+ * for the user.
+ */
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "snapshot_timeofday_limit_days",
   "browser.places.interactions.snapshotTimeOfDayLimitDays",
   45
 );
-
-
-
-
+/**
+ * Expected number of interactions with a page during snapshot_timeofday_limit_days
+ * to assign maximum score. Less than these will cause a gradual reduced score.
+ */
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "snapshot_timeofday_expected_interactions",
@@ -111,24 +109,24 @@ XPCOMUtils.defineLazyPreferenceGetter(
   10
 );
 
-
-
-
-
-
-
-
+/**
+ * We may apply a penalty to timeOfDay scores, based on how much time elapsed
+ * from the start of the browsing session.
+ * After "start" time passed from the begin of the browsing session, the score
+ * will be reduced linearly until 0.1 at the "end" time.
+ * Setting the start time to -1 disables the penalty.
+ */
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "snapshot_timeofday_sessiondecay_start_s",
   "browser.places.interactions.snapshotTimeOfDaySessionDecayStartSeconds",
-  1800 
+  1800 // 30 mins
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "snapshot_timeofday_sessiondecay_end_s",
   "browser.places.interactions.snapshotTimeOfDaySessionDecayEndSeconds",
-  28800 
+  28800 // 8 hours
 );
 
 const DEFAULT_CRITERIA = [
@@ -151,10 +149,10 @@ const DEFAULT_CRITERIA = [
   },
 ];
 
-
-
-
-
+/**
+ * This is an array of criteria that would make a page a snapshot. Each element is a SnapshotCriteria.
+ * A page is a snapshot if any of the criteria apply.
+ */
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "snapshotCriteria",
@@ -162,49 +160,49 @@ XPCOMUtils.defineLazyPreferenceGetter(
   JSON.stringify(DEFAULT_CRITERIA)
 );
 
+/**
+ * @typedef {object} Snapshot
+ *   A snapshot summarises a collection of interactions.
+ * @property {string} url
+ *   The associated URL.
+ * @property {Date} createdAt
+ *   The date/time the snapshot was created.
+ * @property {Date} removedAt
+ *   The date/time the snapshot was deleted.
+ * @property {Snapshots.REMOVED_REASON} removedReason
+ *   The reason the snapshot was deleted, can be one of REMOVED_REASON.*.
+ * @property {Date} firstInteractionAt
+ *   The date/time of the first interaction with the snapshot.
+ * @property {Date} lastInteractionAt
+ *   The date/time of the last interaction with the snapshot.
+ * @property {Interactions.DOCUMENT_TYPE} documentType
+ *   The document type of the snapshot.
+ * @property {Snapshots.USER_PERSISTED} userPersisted
+ *   Whether the user created the snapshot and if they did, through what action.
+ * @property {Map<type, data>} pageData
+ *   Collection of PageData by type. See PageDataService.jsm
+ * @property {Number} overlappingVisitScore
+ *   Calculated score based on overlapping visits to the context url. In the range [0.0, 1.0]
+ * @property {number} [relevancyScore]
+ *   The relevancy score associated with the snapshot.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const Snapshots = new (class Snapshots {
+/**
+ * Handles storing and retrieving of Snapshots in the Places database.
+ *
+ * Notifications of updates are sent via the observer service:
+ * - places-snapshots-added, data: JSON encoded array of urls
+ *     Sent when a new snapshot is added
+ * - places-snapshots-deleted, data: JSON encoded array of urls
+ *     Sent when a snapshot is removed.
+ */
+export const Snapshots = new (class Snapshots {
   USER_PERSISTED = {
-    
+    // The snapshot was created automatically.
     NO: 0,
-    
+    // The user created the snapshot manually, e.g. snapshot keyboard shortcut.
     MANUAL: 1,
-    
+    // The user pinned the page which caused the snapshot to be created.
     PINNED: 2,
   };
 
@@ -216,12 +214,12 @@ const Snapshots = new (class Snapshots {
   };
 
   constructor() {
-    
-    
-    
-    
-    
-    
+    // TODO: we should update the pagedata periodically. We first need a way to
+    // track when the last update happened, we may add an updated_at column to
+    // snapshots, though that requires some I/O to check it. Thus, we probably
+    // want to accumulate changes and update on idle, plus store a cache of the
+    // last notified pages to avoid hitting the same page continuously.
+    // PageDataService.on("page-data", this.#onPageData);
 
     if (!lazy.PlacesPreviews.enabled) {
       lazy.PageThumbs.addExpirationFilter(this);
@@ -238,11 +236,11 @@ const Snapshots = new (class Snapshots {
     Services.obs.notifyObservers(null, topic, JSON.stringify(urls));
   }
 
-  
-
-
-
-
+  /**
+   * This is called by PageThumbs to see what thumbnails should be kept alive.
+   * Currently, the last 100 snapshots are kept alive.
+   * @param {function} callback
+   */
   async filterForThumbnailExpiration(callback) {
     let snapshots = await this.query();
     let urls = [];
@@ -252,10 +250,10 @@ const Snapshots = new (class Snapshots {
     callback(urls);
   }
 
-  
-
-
-
+  /**
+   * Fetches page data for the given urls and stores it with snapshots.
+   * @param {Array<Objects>} urls Array of {placeId, url} tuples.
+   */
   async #addPageData(urls) {
     let pageDataIndex = 0;
     let pageDataValues = [];
@@ -295,8 +293,8 @@ const Snapshots = new (class Snapshots {
         );
         placesIndex++;
       } else {
-        
-        
+        // TODO: queuing a fetch will notify page-data once done, if any data
+        // was found, but we're not yet handling that, see the constructor.
         lazy.PageDataService.queueFetch(url);
       }
 
@@ -346,20 +344,20 @@ const Snapshots = new (class Snapshots {
     );
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * TODO: Store the downloaded and rescaled page image. For now this
+   * only kicks off the page thumbnail if there isn't a meta data image.
+   *
+   * @param {string} url The URL of the page. This is only used if there isn't
+   *    a `metaDataImageURL`.
+   * @param {string} metaDataImageURL The URL of the meta data page image. If
+   *    this exists, it is prioritized over the page thumbnail.
+   */
   #downloadPageImage(url, metaDataImageURL = null) {
     if (!metaDataImageURL) {
-      
-      
-      
+      // No metadata image was found, start the process to capture a thumbnail
+      // so it will be ready when needed. Ignore any errors since we can
+      // fallback to a favicon.
       if (lazy.PlacesPreviews.enabled) {
         lazy.PlacesPreviews.update(url).catch(console.error);
       } else {
@@ -368,34 +366,34 @@ const Snapshots = new (class Snapshots {
     }
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Returns the url up until, but not including, any hash mark identified fragments
+   * For example, given  http://www.example.org/foo.html#bar, this function will return http://www.example.org/foo.html
+   * @param {string} url
+   *   The url associated with the snapshot.
+   * @returns {string}
+   *  The url up until, but not including, any fragments
+   */
   stripFragments(url) {
     return url?.split("#")[0];
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Adds a new snapshot.
+   *
+   * If the snapshot already exists, and this is a user-persisted addition,
+   * then the userPersisted value will be updated, and the removed_at flag will be
+   * cleared.
+   *
+   * @param {object} details
+   * @param {string} details.url
+   *   The url associated with the snapshot.
+   * @param {string} [details.title]
+   *   Optional user-provided title for the snapshot.
+   * @param {Snapshots.USER_PERSISTED} [details.userPersisted]
+   *   Whether the user created the snapshot and if they did, through what
+   *   action, defaults to USER_PERSISTED.NO.
+   */
   async add({ url, title, userPersisted = this.USER_PERSISTED.NO }) {
     if (!url) {
       throw new Error("Missing url parameter to Snapshots.add()");
@@ -413,23 +411,23 @@ const Snapshots = new (class Snapshots {
         let now = Date.now();
         await lazy.PlacesUtils.maybeInsertPlace(db, new URL(url));
 
-        
+        // Title is updated only if the caller provided it.
         let updateTitleFragment =
           title !== undefined ? ", title = :title " : "";
-        
-        
-        
-        
+        // If the user edits the title, update userPersisted accordingly. Note
+        // that in case of an update, we'll not override higher USER_PERSISTED
+        // values like PINNED with lower ones line MANUAL, to avoid losing
+        // precious information.
         if (title !== undefined) {
           userPersisted = this.USER_PERSISTED.MANUAL;
         }
 
-        
-        
-        
-        
-        
-        
+        // When the user asks for a snapshot to be created, we may not yet have
+        // a corresponding interaction. We create a snapshot with 0 as the value
+        // for first_interaction_at to flag it as missing a corresponding
+        // interaction. We have a database trigger that will update this
+        // snapshot with real values from the corresponding interaction when the
+        // latter is created.
         let rows = await db.executeCached(
           `
             INSERT INTO moz_places_metadata_snapshots
@@ -453,13 +451,13 @@ const Snapshots = new (class Snapshots {
             url,
             userPersisted,
             documentFallback: lazy.Interactions.DOCUMENT_TYPE.GENERIC,
-            title: title || null, 
+            title: title || null, // Store null, not an empty string.
           }
         );
 
         if (rows.length) {
-          
-          
+          // If created_at doesn't match then this url was already a snapshot,
+          // and we only overwrite it when the new request is user_persisted.
           if (
             rows[0].getResultByName("created_at") != now &&
             rows[0].getResultByName("user_persisted") == this.USER_PERSISTED.NO
@@ -479,19 +477,19 @@ const Snapshots = new (class Snapshots {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Deletes one or more snapshots.
+   * Unless EXPIRED is passed as reason, this creates a tombstone rather than
+   * removing the entry, so that heuristics can take into account user removed
+   * snapshots.
+   * Note, the caller is expected to take account of the userPersisted value
+   * for a Snapshot when appropriate.
+   *
+   * @param {string|Array<string>} urls
+   *   The url of the snapshot to delete, or an Array of urls.
+   * @param {integer} reason
+   *  One value from REMOVED_REASON.*. This is tracked in the data store.
+   */
   async delete(urls, reason = 0) {
     if (
       typeof reason != "number" ||
@@ -533,7 +531,7 @@ const Snapshots = new (class Snapshots {
         let placeIds = (await db.executeCached(...queryArgs)).map(r =>
           r.getResultByName("place_id")
         );
-        
+        // Remove orphan page data.
         await db.executeCached(
           `DELETE FROM moz_places_metadata_snapshots_extra
          WHERE place_id IN (${lazy.PlacesUtils.sqlBindPlaceholders(placeIds)})`,
@@ -545,15 +543,15 @@ const Snapshots = new (class Snapshots {
     this.#notify("places-snapshots-deleted", urls);
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Gets the details for a particular snapshot based on the url.
+   *
+   * @param {string} url
+   *   The url of the snapshot to obtain.
+   * @param {boolean} [includeTombstones]
+   *   Whether to include tombstones in the snapshots to obtain.
+   * @returns {?Snapshot}
+   */
   async get(url, includeTombstones = false) {
     url = this.stripFragments(url);
     let db = await lazy.PlacesUtils.promiseDBConnection();
@@ -588,39 +586,39 @@ const Snapshots = new (class Snapshots {
     return this.#translateRow(rows[0]);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Queries the current snapshots in the database.
+   *
+   * @param {object} [options]
+   * @param {number} [options.limit]
+   *   A numerical limit to the number of snapshots to retrieve, defaults to 100.
+   *   -1 may be used to get all snapshots, e.g. for use by the group builders.
+   * @param {boolean} [options.includeTombstones]
+   *   Whether to include tombstones in the snapshots to obtain.
+   * @param {number} [options.type]
+   *   Restrict the snapshots to those with a particular type of page data available.
+   * @param {number} [options.group]
+   *   Restrict the snapshots to those within a particular group.
+   * @param {boolean} [includeSnapshotsInUserManagedGroups]
+   *   Whether snapshots that are in a user managed group should be included.
+   *   Snapshots that are part of multiple groups are excluded even if only one
+   *   of the groups is user managed.
+   *   This is ignored if a specific .group id is passed. Defaults to true.
+   * @param {boolean} [options.includeHiddenInGroup]
+   *   Only applies when querying a particular group. Pass true to include
+   *   snapshots that are hidden in the group.
+   * @param {boolean} [options.includeUserPersisted]
+   *   Whether to include user persisted snapshots.
+   * @param {number} [options.lastInteractionBefore]
+   *   Restrict to snaphots whose last interaction was before the given time.
+   * @param {boolean} [options.sortDescending]
+   *   Whether or not to sortDescending. Defaults to true.
+   * @param {string} [options.sortBy]
+   *   A string to choose what to sort the snapshots by, e.g. "last_interaction_at"
+   *   By default results are sorted by last_interaction_at.
+   * @returns {Snapshot[]}
+   *   Returns snapshots in order of descending last interaction time.
+   */
   async query({
     limit = 100,
     includeTombstones = false,
@@ -668,8 +666,8 @@ const Snapshots = new (class Snapshots {
         "LEFT JOIN moz_places_metadata_groups_to_snapshots gs USING(place_id)"
       );
     } else if (!includeSnapshotsInUserManagedGroups) {
-      
-      
+      // TODO: if we change the way to define user managed groups, we should
+      // update this condition.
       clauses.push(`NOT EXISTS(
         SELECT 1 FROM moz_places_metadata_snapshots_groups g
         JOIN moz_places_metadata_groups_to_snapshots gs ON g.id = gs.group_id
@@ -707,14 +705,14 @@ const Snapshots = new (class Snapshots {
     return rows.map(row => this.#translateRow(row));
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Queries the place id from moz_places for a given url
+   *
+   * @param {string} url
+   *   url to query the place_id of
+   * @returns {number}
+   *   place_id of the given url or -1 if not found
+   */
   async queryPlaceIdFromUrl(url) {
     let db = await lazy.PlacesUtils.promiseDBConnection();
 
@@ -732,20 +730,20 @@ const Snapshots = new (class Snapshots {
     return rows[0].getResultByName("id");
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Queries snapshots that were browsed within an hour of visiting the given
+   * context url
+   *
+   * For example, if a user visited Site A two days ago, we would generate a
+   * list of snapshots that were visited within an hour of that visit.
+   * Site A may have also been visited four days ago, we would like to see what
+   * websites were browsed then.
+   *
+   * @param {SelectionContext} selectionContext
+   *   the selection context to inform recommendations
+   * @returns {Recommendation[]}
+   *   Returns array of overlapping snapshots in order of descending overlappingVisitScore (Calculated as 1.0 to 0.0, as the overlap gap goes to snapshot_overlap_limit)
+   */
   async #queryOverlapping(selectionContext) {
     let current_id = await this.queryPlaceIdFromUrl(selectionContext.url);
     if (current_id == -1) {
@@ -801,15 +799,15 @@ const Snapshots = new (class Snapshots {
     }));
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Queries snapshots which have interactions sharing a common referrer with
+   * the context url's interactions
+   *
+   * @param {SelectionContext} selectionContext
+   *   the selection context to inform recommendations
+   * @returns {Recommendation[]}
+   *   Returns array of snapshots with the common referrer
+   */
   async #queryCommonReferrer(selectionContext) {
     let db = await lazy.PlacesUtils.promiseDBConnection();
 
@@ -849,21 +847,21 @@ const Snapshots = new (class Snapshots {
     }));
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Queries snapshots that were browsed within an hour of the current time of
+   * day, but on a previous day.
+   *
+   * @param {SelectionContext} selectionContext
+   *   the selection context to inform recommendations
+   * @returns {Recommendation[]}
+   *   Returns array of snapshots with the common referrer
+   */
   async #queryTimeOfDay(selectionContext) {
     let db = await lazy.PlacesUtils.promiseDBConnection();
 
-    
-    
-    
+    // The query applies the current time to a past date, then calculates the
+    // time bracket starting from there. This should be more robust to DST
+    // changes than using the number of seconds from start of day.
     let rows = await db.executeCached(
       `
       WITH times AS (
@@ -914,12 +912,12 @@ const Snapshots = new (class Snapshots {
       };
     });
 
-    
-    
-    
-    
-    
-    
+    // Add a score to each result.
+    // For small intervals it doesn't make sense to use a bell curve giving
+    // more weight to the exact time, but if we start evaluating much larger
+    // intervals in the future, it may be worth investigating.
+    // For now instead we assign a score based on the number of interactions
+    // with the page during `snapshot_timeofday_limit_days`.
     entries.forEach(e => {
       e.score = this.timeOfDayScore({
         interactions: e.data.interactions,
@@ -930,29 +928,29 @@ const Snapshots = new (class Snapshots {
     return entries;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Calculate score for a timeOfDay entry, based on the number of interactions.
+   *
+   * @param {number} interactions
+   *  The number of interactions with the page.
+   * @param {object} context
+   *  The selection context.
+   * @param {number} min
+   *  The minimum number of interactions during snapshot_timeofday_limit_days.
+   * @param {number} max
+   *  The maximum number of interactions during snapshot_timeofday_limit_days.
+   * @returns {float} Calculated score for the page.
+   * @note This function is useful for testing scores.
+   */
   timeOfDayScore({ interactions, context, min, max }) {
-    
-    
+    // Assign score 1.0 to the pages having more than max / 2 interactions,
+    // other pages get a decreasing score between 0.5 and 1.0.
     let score = 1.0;
     if (interactions < max / 2) {
       score = 0.5 * (1 + (interactions - min) / (max - min));
     }
-    
-    
+    // If the number of interactions is lower than `snapshot_timeofday_expected_interactions`
+    // threshold, apply a penalty to the score.
     if (interactions < lazy.snapshot_timeofday_expected_interactions) {
       score *=
         0.5 *
@@ -960,11 +958,11 @@ const Snapshots = new (class Snapshots {
           (interactions - 1) /
             (lazy.snapshot_timeofday_expected_interactions - 1));
     }
-    
-    
-    
-    
-    
+    // Finally, if the session decay prefs are set, apply an additional penalty
+    // based on how much time passed from the start of the browsing session.
+    // The idea behind this is that starting a new session is likely to identify
+    // the begin of a workflow, that may be repeated in days.
+    // The score is reduced linearly to 0.1 between a "start" and an "end" time.
     if (
       context.sessionStartTime &&
       lazy.snapshot_timeofday_sessiondecay_start_s >= 0
@@ -982,19 +980,19 @@ const Snapshots = new (class Snapshots {
           ((timeFromSessionStart - decay.start) * (0.1 - score)) / decay.end;
       }
     }
-    
+    // Round to 2 decimal positions.
     return Math.round(score * 1e2) / 1e2;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Translates a database row to a Snapshot.
+   *
+   * @param {object} row
+   *   The database row to translate.
+   * @returns {Snapshot}
+   */
   #translateRow(row) {
-    
+    // Maps data type to data.
     let pageData;
     let pageDataStr = row.getResultByName("page_data");
     if (pageDataStr) {
@@ -1031,15 +1029,15 @@ const Snapshots = new (class Snapshots {
     return snapshot;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Get the image that should represent the snapshot. The image URL
+   * returned comes from the following priority:
+   *   1) meta data page image
+   *   2) thumbnail of the page
+   * @param {Snapshot} snapshot
+   *
+   * @returns {string?}
+   */
   async getSnapshotImageURL(snapshot) {
     if (snapshot.image) {
       return snapshot.image;
@@ -1060,13 +1058,13 @@ const Snapshots = new (class Snapshots {
     return null;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Translates a date value from the database.
+   *
+   * @param {number} value
+   *   The date in milliseconds from the epoch.
+   * @returns {Date?}
+   */
   #toDate(value) {
     if (value) {
       return new Date(value);
@@ -1074,13 +1072,13 @@ const Snapshots = new (class Snapshots {
     return null;
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Adds snapshots for any pages where the gathered metadata meets a set of
+   * criteria.
+   *
+   * @param {string[]} urls
+   *  The list of pages to check, if undefined all pages are checked.
+   */
   async updateSnapshots(urls = undefined) {
     if (urls !== undefined && !urls.length) {
       return;
@@ -1119,11 +1117,11 @@ const Snapshots = new (class Snapshots {
 
         let urlFilter = "";
         if (urls == undefined) {
-          
-          
-          
-          
-          
+          // TODO: checking .pdf file extension in SQL is more complex than we'd
+          // like, since the manually adding API is already checking it, this is
+          // basically only allowing file:// urls added automatically, and it's
+          // likely in the future these picking rules will be replaced by some
+          // ML machinery. Thus it seems not worth the added complexity.
           let filters = [];
           for (let protocol of lazy.InteractionsBlocklist.urlRequirements.keys()) {
             filters.push(
@@ -1144,7 +1142,7 @@ const Snapshots = new (class Snapshots {
             );
           });
           if (!urlMatches.length) {
-            
+            // All the urls were discarded.
             return [];
           }
           urlFilter = `WHERE ${urlMatches.join(" OR ")}`;
@@ -1209,7 +1207,7 @@ const Snapshots = new (class Snapshots {
 
         let newUrls = [];
         for (let row of results) {
-          
+          // If created_at differs from the passed value then this snapshot already existed.
           if (row.getResultByName("created_at") == now) {
             newUrls.push({
               placeId: row.getResultByName("place_id"),
@@ -1239,9 +1237,9 @@ const Snapshots = new (class Snapshots {
     }
   }
 
-  
-
-
+  /**
+   * Completely clears the store. This exists for testing purposes.
+   */
   async reset() {
     await lazy.PlacesUtils.withConnectionWrapper(
       "Snapshots.jsm::reset",

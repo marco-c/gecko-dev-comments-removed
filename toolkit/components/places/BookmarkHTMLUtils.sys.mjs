@@ -1,62 +1,60 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["BookmarkHTMLUtils"];
+/**
+ * This file works on the old-style "bookmarks.html" file.  It includes
+ * functions to import and export existing bookmarks to this file format.
+ *
+ * Format
+ * ------
+ *
+ * Primary heading := h1
+ *   Old version used this to set attributes on the bookmarks RDF root, such
+ *   as the last modified date. We only use H1 to check for the attribute
+ *   PLACES_ROOT, which tells us that this hierarchy root is the places root.
+ *   For backwards compatibility, if we don't find this, we assume that the
+ *   hierarchy is rooted at the bookmarks menu.
+ * Heading := any heading other than h1
+ *   Old version used this to set attributes on the current container. We only
+ *   care about the content of the heading container, which contains the title
+ *   of the bookmark container.
+ * Bookmark := a
+ *   HREF is the destination of the bookmark
+ *   FEEDURL is the URI of the RSS feed. This is deprecated and no more
+ *   supported, but some old files may still contain it.
+ *   LAST_CHARSET is stored as an annotation so that the next time we go to
+ *     that page we remember the user's preference.
+ *   ICON will be stored in the favicon service
+ *   ICON_URI is new for places bookmarks.html, it refers to the original
+ *     URI of the favicon so we don't have to make up favicon URLs.
+ *   Text of the <a> container is the name of the bookmark
+ *   Ignored: LAST_VISIT, ID (writing out non-RDF IDs can confuse Firefox 2)
+ * Bookmark comment := dd
+ *   This affects the previosly added bookmark
+ * Separator := hr
+ *   Insert a separator into the current container
+ * The folder hierarchy is defined by <dl>/<ul>/<menu> (the old importing code
+ *     handles all these cases, when we write, use <dl>).
+ *
+ * Overall design
+ * --------------
+ *
+ * We need to emulate a recursive parser. A "Bookmark import frame" is created
+ * corresponding to each folder we encounter. These are arranged in a stack,
+ * and contain all the state we need to keep track of.
+ *
+ * A frame is created when we find a heading, which defines a new container.
+ * The frame also keeps track of the nesting of <DL>s, (in well-formed
+ * bookmarks files, these will have a 1-1 correspondence with frames, but we
+ * try to be a little more flexible here). When the nesting count decreases
+ * to 0, then we know a frame is complete and to pop back to the previous
+ * frame.
+ *
+ * Note that a lot of things happen when tags are CLOSED because we need to
+ * get the text from the content of the tag. For example, link and heading tags
+ * both require the content (= title) before actually creating it.
+ */
 
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 const { FileUtils } = ChromeUtils.import(
@@ -82,7 +80,7 @@ const Container_Places = 4;
 
 const MICROSEC_PER_SEC = 1000000;
 
-const EXPORT_INDENT = "    "; 
+const EXPORT_INDENT = "    "; // four spaces
 
 function base64EncodeString(aString) {
   let stream = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(
@@ -95,10 +93,10 @@ function base64EncodeString(aString) {
   return encoder.encodeToString(stream, aString.length);
 }
 
-
-
-
-
+/**
+ * Provides HTML escaping for use in HTML attributes and body of the bookmarks
+ * file, compatible with the old bookmarks system.
+ */
 function escapeHtmlEntities(aText) {
   return (aText || "")
     .replace(/&/g, "&amp;")
@@ -108,10 +106,10 @@ function escapeHtmlEntities(aText) {
     .replace(/'/g, "&#39;");
 }
 
-
-
-
-
+/**
+ * Provides URL escaping for use in HTML attributes of the bookmarks file,
+ * compatible with the old bookmarks system.
+ */
 function escapeUrl(aText) {
   return (aText || "").replace(/"/g, "%22");
 }
@@ -124,25 +122,25 @@ function notifyObservers(aTopic, aInitialImport) {
   );
 }
 
-var BookmarkHTMLUtils = Object.freeze({
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export var BookmarkHTMLUtils = Object.freeze({
+  /**
+   * Loads the current bookmarks hierarchy from a "bookmarks.html" file.
+   *
+   * @param aSpec
+   *        String containing the "file:" URI for the existing "bookmarks.html"
+   *        file to be loaded.
+   * @param [options.replace]
+   *        Whether we should erase existing bookmarks before loading.
+   *        Defaults to `false`.
+   * @param [options.source]
+   *        The bookmark change source, used to determine the sync status for
+   *        imported bookmarks. Defaults to `RESTORE` if `replace = true`, or
+   *        `IMPORT` otherwise.
+   *
+   * @return {Promise}
+   * @resolves When the new bookmarks have been created.
+   * @rejects JavaScript exception.
+   */
   async importFromURL(
     aSpec,
     {
@@ -171,23 +169,23 @@ var BookmarkHTMLUtils = Object.freeze({
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Loads the current bookmarks hierarchy from a "bookmarks.html" file.
+   *
+   * @param aFilePath
+   *        OS.File path string of the "bookmarks.html" file to be loaded.
+   * @param [options.replace]
+   *        Whether we should erase existing bookmarks before loading.
+   *        Defaults to `false`.
+   * @param [options.source]
+   *        The bookmark change source, used to determine the sync status for
+   *        imported bookmarks. Defaults to `RESTORE` if `replace = true`, or
+   *        `IMPORT` otherwise.
+   *
+   * @return {Promise}
+   * @resolves When the new bookmarks have been created.
+   * @rejects JavaScript exception.
+   */
   async importFromFile(
     aFilePath,
     {
@@ -223,21 +221,21 @@ var BookmarkHTMLUtils = Object.freeze({
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Saves the current bookmarks hierarchy to a "bookmarks.html" file.
+   *
+   * @param aFilePath
+   *        OS.File path string for the "bookmarks.html" file to be created.
+   *
+   * @return {Promise}
+   * @resolves To the exported bookmarks count when the file has been created.
+   * @rejects JavaScript exception.
+   */
   async exportToFile(aFilePath) {
     let [bookmarks, count] = await lazy.PlacesBackups.getBookmarksTree();
     let startTime = Date.now();
 
-    
+    // Report the time taken to convert the tree to HTML.
     let exporter = new BookmarkExporter(bookmarks);
     await exporter.exportToFile(aFilePath);
 
@@ -263,65 +261,65 @@ var BookmarkHTMLUtils = Object.freeze({
 function Frame(aFolder) {
   this.folder = aFolder;
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * How many <dl>s have been nested. Each frame/container should start
+   * with a heading, and is then followed by a <dl>, <ul>, or <menu>. When
+   * that list is complete, then it is the end of this container and we need
+   * to pop back up one level for new items. If we never get an open tag for
+   * one of these things, we should assume that the container is empty and
+   * that things we find should be siblings of it. Normally, these <dl>s won't
+   * be nested so this will be 0 or 1.
+   */
   this.containerNesting = 0;
 
-  
-
-
-
-
+  /**
+   * when we find a heading tag, it actually affects the title of the NEXT
+   * container in the list. This stores that heading tag and whether it was
+   * special. 'consumeHeading' resets this._
+   */
   this.lastContainerType = Container_Normal;
 
-  
-
-
-
-
+  /**
+   * this contains the text from the last begin tag until now. It is reset
+   * at every begin tag. We can check it when we see a </a>, or </h3>
+   * to see what the text content of that node should be.
+   */
   this.previousText = "";
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * true when we hit a <dd>, which contains the description for the preceding
+   * <a> tag. We can't just check for </dd> like we can for </a> or </h3>
+   * because if there is a sub-folder, it is actually a child of the <dd>
+   * because the tag is never explicitly closed. If this is true and we see a
+   * new open tag, that means to commit the description to the previous
+   * bookmark.
+   *
+   * Additional weirdness happens when the previous <dt> tag contains a <h3>:
+   * this means there is a new folder with the given description, and whose
+   * children are contained in the following <dl> list.
+   *
+   * This is handled in openContainer(), which commits previous text if
+   * necessary.
+   */
   this.inDescription = false;
 
-  
-
-
-
-
-
+  /**
+   * contains the URL of the previous bookmark created. This is used so that
+   * when we encounter a <dd>, we know what bookmark to associate the text with.
+   * This is cleared whenever we hit a <h3>, so that we know NOT to save this
+   * with a bookmark, but to keep it until
+   */
   this.previousLink = null;
 
-  
-
-
+  /**
+   * Contains a reference to the last created bookmark or folder object.
+   */
   this.previousItem = null;
 
-  
-
-
-
+  /**
+   * Contains the date-added and last-modified-date of an imported item.
+   * Used to override the values set by insertBookmark, createFolder, etc.
+   */
   this.previousDateAdded = null;
   this.previousLastModifiedDate = null;
 }
@@ -330,13 +328,13 @@ function BookmarkImporter(aInitialImport, aSource) {
   this._isImportDefaults = aInitialImport;
   this._source = aSource;
 
-  
-  
-  
-  
-  
-  
-  
+  // This root is where we construct the bookmarks tree into, following the format
+  // of the imported file.
+  // If we're doing an initial import, the non-menu roots will be created as
+  // children of this root, so in _getBookmarkTrees we'll split them out.
+  // If we're not doing an initial import, everything gets imported under the
+  // bookmark menu folder, so there won't be any need for _getBookmarkTrees to
+  // do separation.
   this._bookmarkTree = {
     type: PlacesUtils.bookmarks.TYPE_FOLDER,
     guid: PlacesUtils.bookmarks.menuGuid,
@@ -360,10 +358,10 @@ BookmarkImporter.prototype = {
     return this._frames[this._frames.length - 2];
   },
 
-  
-
-
-
+  /**
+   * This is called when there is a new folder found. The folder takes the
+   * name from the previous frame's heading.
+   */
   _newFrame: function newFrame() {
     let frame = this._curFrame;
     let containerTitle = frame.previousText;
@@ -377,7 +375,7 @@ BookmarkImporter.prototype = {
 
     switch (containerType) {
       case Container_Normal:
-        
+        // This can only be a sub-folder so no need to set a guid here.
         folder.title = containerTitle;
         break;
       case Container_Places:
@@ -393,7 +391,7 @@ BookmarkImporter.prototype = {
         folder.guid = PlacesUtils.bookmarks.toolbarGuid;
         break;
       default:
-        
+        // NOT REACHED
         throw new Error("Unknown bookmark container type!");
     }
 
@@ -421,14 +419,14 @@ BookmarkImporter.prototype = {
     this._frames.push(new Frame(folder));
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Handles <hr> as a separator.
+   *
+   * @note Separators may have a title in old html files, though Places dropped
+   *       support for them.
+   *       We also don't import ADD_DATE or LAST_MODIFIED for separators because
+   *       pre-Places bookmarks did not support them.
+   */
   _handleSeparator: function handleSeparator(aElt) {
     let frame = this._curFrame;
 
@@ -439,45 +437,45 @@ BookmarkImporter.prototype = {
     frame.previousItem = separator;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Called for h2,h3,h4,h5,h6. This just stores the correct information in
+   * the current frame; the actual new frame corresponding to the container
+   * associated with the heading will be created when the tag has been closed
+   * and we know the title (we don't know to create a new folder or to merge
+   * with an existing one until we have the title).
+   */
   _handleHeadBegin: function handleHeadBegin(aElt) {
     let frame = this._curFrame;
 
-    
-    
+    // after a heading, a previous bookmark is not applicable (for example, for
+    // the descriptions contained in a <dd>). Neither is any previous head type
     frame.previousLink = null;
     frame.lastContainerType = Container_Normal;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // It is syntactically possible for a heading to appear after another heading
+    // but before the <dl> that encloses that folder's contents.  This should not
+    // happen in practice, as the file will contain "<dl></dl>" sequence for
+    // empty containers.
+    //
+    // Just to be on the safe side, if we encounter
+    //   <h3>FOO</h3>
+    //   <h3>BAR</h3>
+    //   <dl>...content 1...</dl>
+    //   <dl>...content 2...</dl>
+    // we'll pop the stack when we find the h3 for BAR, treating that as an
+    // implicit ending of the FOO container. The output will be FOO and BAR as
+    // siblings. If there's another <dl> following (as in "content 2"), those
+    // items will be treated as further siblings of FOO and BAR
+    // This special frame popping business, of course, only happens when our
+    // frame array has more than one element so we can avoid situations where
+    // we don't have a frame to parse into anymore.
     if (frame.containerNesting == 0 && this._frames.length > 1) {
       this._frames.pop();
     }
 
-    
-    
-    
+    // We have to check for some attributes to see if this is a "special"
+    // folder, which will have different creation rules when the end tag is
+    // processed.
     if (aElt.hasAttribute("personal_toolbar_folder")) {
       if (this._isImportDefaults) {
         frame.lastContainerType = Container_Toolbar;
@@ -511,18 +509,18 @@ BookmarkImporter.prototype = {
     this._curFrame.previousText = "";
   },
 
-  
-
-
-
-
+  /*
+   * Handles "<a" tags by creating a new bookmark. The title of the bookmark
+   * will be the text content, which will be stuffed in previousText for us
+   * and which will be saved by handleLinkEnd
+   */
   _handleLinkBegin: function handleLinkBegin(aElt) {
     let frame = this._curFrame;
 
     frame.previousItem = null;
-    frame.previousText = ""; 
+    frame.previousText = ""; // Will hold link text, clear it.
 
-    
+    // Get the attributes we care about.
     let href = this._safeTrim(aElt.getAttribute("href"));
     let icon = this._safeTrim(aElt.getAttribute("icon"));
     let iconUri = this._safeTrim(aElt.getAttribute("icon_uri"));
@@ -533,7 +531,7 @@ BookmarkImporter.prototype = {
     let lastModified = this._safeTrim(aElt.getAttribute("last_modified"));
     let tags = this._safeTrim(aElt.getAttribute("tags"));
 
-    
+    // Ignore <a> tags that have no href.
     try {
       frame.previousLink = Services.io.newURI(href).spec;
     } catch (e) {
@@ -543,7 +541,7 @@ BookmarkImporter.prototype = {
 
     let bookmark = {};
 
-    
+    // Only set the url for bookmarks.
     if (frame.previousLink) {
       bookmark.url = frame.previousLink;
     }
@@ -551,7 +549,7 @@ BookmarkImporter.prototype = {
     if (dateAdded) {
       bookmark.dateAdded = this._convertImportedDateToInternalDate(dateAdded);
     }
-    
+    // Save bookmark's last modified date.
     if (lastModified) {
       bookmark.lastModified = this._convertImportedDateToInternalDate(
         lastModified
@@ -570,7 +568,7 @@ BookmarkImporter.prototype = {
             !!aTag.length && aTag.length <= PlacesUtils.bookmarks.MAX_TAG_LENGTH
         );
 
-      
+      // If we end up with none, then delete the property completely.
       if (!bookmark.tags.length) {
         delete bookmark.tags;
       }
@@ -596,7 +594,7 @@ BookmarkImporter.prototype = {
       bookmark.iconUri = iconUri;
     }
 
-    
+    // Add bookmark to the tree.
     frame.folder.children.push(bookmark);
     frame.previousItem = bookmark;
   },
@@ -605,11 +603,11 @@ BookmarkImporter.prototype = {
     this._curFrame.containerNesting++;
   },
 
-  
-
-
-
-
+  /**
+   * Our "indent" count has decreased, and when we hit 0 that means that this
+   * container is complete and we need to pop back to the outer frame. Never
+   * pop the toplevel frame
+   */
   _handleContainerEnd: function handleContainerEnd() {
     let frame = this._curFrame;
     if (frame.containerNesting > 0) {
@@ -620,18 +618,18 @@ BookmarkImporter.prototype = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Creates the new frame for this heading now that we know the name of the
+   * container (tokens since the heading open tag will have been placed in
+   * previousText).
+   */
   _handleHeadEnd: function handleHeadEnd() {
     this._newFrame();
   },
 
-  
-
-
+  /**
+   * Saves the title for the given bookmark.
+   */
   _handleLinkEnd: function handleLinkEnd() {
     let frame = this._curFrame;
     frame.previousText = frame.previousText.trim();
@@ -675,8 +673,8 @@ BookmarkImporter.prototype = {
   _closeContainer: function closeContainer(aElt) {
     let frame = this._curFrame;
 
-    
-    
+    // Although we no longer support importing descriptions, we still need to
+    // clear any previous text, so that it doesn't get swallowed into other elements.
     if (frame.inDescription) {
       frame.previousText = "";
       frame.inDescription = false;
@@ -694,7 +692,7 @@ BookmarkImporter.prototype = {
       case "dt":
         break;
       case "h1":
-        
+        // ignore
         break;
       case "h2":
       case "h3":
@@ -715,18 +713,18 @@ BookmarkImporter.prototype = {
     this._curFrame.previousText += str;
   },
 
-  
-
-
+  /**
+   * Converts a string date in seconds to a date object
+   */
   _convertImportedDateToInternalDate: function convertImportedDateToInternalDate(
     aDate
   ) {
     try {
       if (aDate && !isNaN(aDate)) {
-        return new Date(parseInt(aDate) * 1000); 
+        return new Date(parseInt(aDate) * 1000); // in bookmarks.html this value is in seconds
       }
     } catch (ex) {
-      
+      // Do nothing.
     }
     return new Date();
   },
@@ -767,27 +765,27 @@ BookmarkImporter.prototype = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Returns the bookmark tree(s) from the importer. These are suitable for
+   * passing to PlacesUtils.bookmarks.insertTree().
+   *
+   * @returns {Array} An array of bookmark trees.
+   */
   _getBookmarkTrees() {
-    
-    
+    // If we're not importing defaults, then everything gets imported under the
+    // Bookmarks menu.
     if (!this._isImportDefaults) {
       return [this._bookmarkTree];
     }
 
-    
-    
+    // If we are importing defaults, we need to separate out the top-level
+    // default folders into separate items, for the caller to pass into insertTree.
     let bookmarkTrees = [this._bookmarkTree];
 
-    
-    
-    
-    
+    // The children of this "root" element will contain normal children of the
+    // bookmark menu as well as the places roots. Hence, we need to filter out
+    // the separate roots, but keep the children that are relevant to the
+    // bookmark menu.
     this._bookmarkTree.children = this._bookmarkTree.children.filter(child => {
       if (
         child.guid &&
@@ -802,12 +800,12 @@ BookmarkImporter.prototype = {
     return bookmarkTrees;
   },
 
-  
-
-
-
-
-
+  /**
+   * Imports the bookmarks from the importer into the places database.
+   *
+   * @param {BookmarkImporter} importer The importer from which to get the
+   *                                    bookmark information.
+   */
   async _importBookmarks() {
     if (this._isImportDefaults) {
       await PlacesUtils.bookmarks.eraseEverything();
@@ -819,7 +817,7 @@ BookmarkImporter.prototype = {
         continue;
       }
 
-      
+      // Give the tree the source.
       tree.source = this._source;
       await PlacesUtils.bookmarks.insertTree(tree, {
         fixupOrSkipInvalidEntries: true,
@@ -828,22 +826,22 @@ BookmarkImporter.prototype = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Imports data into the places database from the supplied url.
+   *
+   * @param {String} href The url to import data from.
+   */
   async importFromURL(href) {
     let data = await fetchData(href);
 
     if (this._isImportDefaults && data) {
-      
-      
+      // Localize default bookmarks.  Find rel="localization" links and manually
+      // localize using them.
       let hrefs = [];
       let links = data.head.querySelectorAll("link[rel='localization']");
       for (let link of links) {
         if (link.getAttribute("href")) {
-          
+          // We need the text, not the fully qualified URL, so we use `getAttribute`.
           hrefs.push(link.getAttribute("href"));
         }
       }
@@ -860,19 +858,19 @@ BookmarkImporter.prototype = {
 };
 
 function BookmarkExporter(aBookmarksTree) {
-  
+  // Create a map of the roots.
   let rootsMap = new Map();
   for (let child of aBookmarksTree.children) {
     if (child.root) {
       rootsMap.set(child.root, child);
-      
-      
+      // Also take the opportunity to get the correctly localised title for the
+      // root.
       child.title = PlacesUtils.bookmarks.getLocalizedTitle(child);
     }
   }
 
-  
-  
+  // For backwards compatibility reasons the bookmarks menu is the root, while
+  // the bookmarks toolbar and unfiled bookmarks will be child items.
   this._root = rootsMap.get("bookmarksMenuFolder");
 
   for (let key of ["toolbarFolder", "unfiledBookmarksFolder"]) {
@@ -889,18 +887,18 @@ function BookmarkExporter(aBookmarksTree) {
 BookmarkExporter.prototype = {
   exportToFile: function exportToFile(aFilePath) {
     return (async () => {
-      
+      // Create a file that can be accessed by the current user only.
       let out = FileUtils.openAtomicFileOutputStream(
         new FileUtils.File(aFilePath)
       );
       try {
-        
+        // We need a buffered output stream for performance.  See bug 202477.
         let bufferedOut = Cc[
           "@mozilla.org/network/buffered-output-stream;1"
         ].createInstance(Ci.nsIBufferedOutputStream);
         bufferedOut.init(out, 4096);
         try {
-          
+          // Write bookmarks in UTF-8.
           this._converterOut = Cc[
             "@mozilla.org/intl/converter-output-stream;1"
           ].createInstance(Ci.nsIConverterOutputStream);
@@ -908,7 +906,7 @@ BookmarkExporter.prototype = {
           try {
             this._writeHeader();
             await this._writeContainer(this._root);
-            
+            // Retain the target file on success only.
             bufferedOut.QueryInterface(Ci.nsISafeOutputStream).finish();
           } finally {
             this._converterOut.close();
@@ -993,7 +991,7 @@ BookmarkExporter.prototype = {
 
   _writeSeparator(aItem, aIndent) {
     this._write(aIndent + "<HR");
-    
+    // We keep exporting separator titles, but don't support them anymore.
     if (aItem.title) {
       this._writeAttribute("NAME", escapeHtmlEntities(aItem.title));
     }
@@ -1004,7 +1002,7 @@ BookmarkExporter.prototype = {
     try {
       NetUtil.newURI(aItem.uri);
     } catch (ex) {
-      
+      // If the item URI is invalid, skip the item instead of failing later.
       return;
     }
 
@@ -1067,17 +1065,17 @@ BookmarkExporter.prototype = {
   },
 };
 
-
-
-
-
-
-
-
+/**
+ * Handles inserting favicons into the database for a bookmark node.
+ * It is assumed the node has already been inserted into the bookmarks
+ * database.
+ *
+ * @param {Object} node The bookmark node for icons to be inserted.
+ */
 function insertFaviconForNode(node) {
   if (node.icon) {
     try {
-      
+      // Create a fake faviconURI to use (FIXME: bug 523932)
       let faviconURI = Services.io.newURI("fake-favicon-uri:" + node.url);
       PlacesUtils.favicons.replaceFaviconDataFromDataURL(
         faviconURI,
@@ -1116,15 +1114,15 @@ function insertFaviconForNode(node) {
   }
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Handles inserting favicons into the database for a bookmark tree - a node
+ * and its children.
+ *
+ * It is assumed the nodes have already been inserted into the bookmarks
+ * database.
+ *
+ * @param {Object} nodeTree The bookmark node tree for icons to be inserted.
+ */
 function insertFaviconsForTree(nodeTree) {
   insertFaviconForNode(nodeTree);
 
@@ -1135,13 +1133,13 @@ function insertFaviconsForTree(nodeTree) {
   }
 }
 
-
-
-
-
-
-
-
+/**
+ * Handles fetching data from a URL.
+ *
+ * @param {String} href The url to fetch data from.
+ * @return {Promise} Returns a promise that is resolved with the data once
+ *                   the fetch is complete, or is rejected if it fails.
+ */
 function fetchData(href) {
   return new Promise((resolve, reject) => {
     let xhr = new XMLHttpRequest();

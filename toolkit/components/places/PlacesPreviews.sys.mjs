@@ -1,10 +1,8 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
-
-var EXPORTED_SYMBOLS = ["PlacesPreviews", "PlacesPreviewsHelperService"];
 
 const { EventEmitter } = ChromeUtils.import(
   "resource://gre/modules/EventEmitter.jsm"
@@ -32,27 +30,27 @@ XPCOMUtils.defineLazyGetter(lazy, "logConsole", function() {
   });
 });
 
-
-
-
+// Toggling Places previews requires a restart, because a database trigger
+// filling up tombstones is enabled on the database only when the pref is set
+// on startup.
 XPCOMUtils.defineLazyGetter(lazy, "previewsEnabled", function() {
   return Services.prefs.getBoolPref("places.previews.enabled", false);
 });
 
-
+// Preview deletions are done in chunks of this size.
 const DELETE_CHUNK_SIZE = 50;
-
+// This is the time between deletion chunks.
 const DELETE_TIMEOUT_MS = 60000;
 
-
+// The folder inside the profile folder where to store previews.
 const PREVIEWS_DIRECTORY = "places-previews";
 
-
+// How old a preview file should be before we replace it.
 const DAYS_BEFORE_REPLACEMENT = 30;
 
-
-
-
+/**
+ * This extends Set to only keep the latest 100 entries.
+ */
 class LimitedSet extends Set {
   #limit = 100;
   add(key) {
@@ -69,20 +67,20 @@ class LimitedSet extends Set {
   }
 }
 
-
-
-
-
-
-
+/**
+ * This class handles previews deletion from tombstones in the database.
+ * Deletion happens in chunks, each chunk runs after DELETE_TIMEOUT_MS, and
+ * the process is interrupted once there's nothing more to delete.
+ * Any page removal operations on the Places database will restart the timer.
+ */
 class DeletionHandler {
   #timeoutId = null;
   #shutdownProgress = {};
 
-  
-
-
-
+  /**
+   * This can be set by tests to speed up the deletion process, otherwise the
+   * product should just use the default value.
+   */
   #timeout = DELETE_TIMEOUT_MS;
   get timeout() {
     return this.#timeout;
@@ -97,7 +95,7 @@ class DeletionHandler {
   }
 
   constructor() {
-    
+    // Clear any pending timeouts on shutdown.
     lazy.PlacesUtils.history.shutdownClient.jsclient.addBlocker(
       "PlacesPreviews.jsm::DeletionHandler",
       async () => {
@@ -109,10 +107,10 @@ class DeletionHandler {
     );
   }
 
-  
-
-
-
+  /**
+   * This should be invoked everytime we expect there are tombstones to
+   * handle. If deletion is already pending, this is a no-op.
+   */
   ensureRunning() {
     if (this.#timeoutId || this.#shutdownProgress.shuttingDown) {
       return;
@@ -127,15 +125,15 @@ class DeletionHandler {
     }, this.timeout);
   }
 
-  
-
-
+  /**
+   * Deletes a chunk of previews.
+   */
   async #deleteChunk() {
     if (this.#shutdownProgress.shuttingDown) {
       return;
     }
-    
-    
+    // Select tombstones, delete images, then delete tombstones. This order
+    // ensures that in case of problems we'll try again in the future.
     let db = await lazy.PlacesUtils.promiseDBConnection();
     let count;
     let hashes = (
@@ -150,7 +148,7 @@ class DeletionHandler {
       return r.getResultByName("hash");
     });
     if (!count || this.#shutdownProgress.shuttingDown) {
-      
+      // There's nothing to delete, or it's too late.
       return;
     }
 
@@ -172,7 +170,7 @@ class DeletionHandler {
         return;
       }
     }
-    
+    // Delete hashes from tombstones.
     let params = deleted.reduce((p, c, i) => {
       p["hash" + i] = c;
       return p;
@@ -196,17 +194,17 @@ class DeletionHandler {
   }
 }
 
-
-
-
-
-
-
-const PlacesPreviews = new (class extends EventEmitter {
+/**
+ * Handles previews for Places urls.
+ * Previews are stored in WebP format, using MD5 hash of the page url in hex
+ * format. All the previews are saved into a "places-previews" folder under
+ * the roaming profile folder.
+ */
+export const PlacesPreviews = new (class extends EventEmitter {
   #placesObserver = null;
   #deletionHandler = null;
-  
-  
+  // This is used as a cache to avoid fetching the same preview multiple
+  // times in a short timeframe.
   #recentlyUpdatedPreviews = new LimitedSet();
 
   fileExtension = ".webp";
@@ -214,7 +212,7 @@ const PlacesPreviews = new (class extends EventEmitter {
 
   constructor() {
     super();
-    
+    // Observe page removals and delete previews when necessary.
     this.#placesObserver = new PlacesWeakCallbackWrapper(
       this.handlePlacesEvents.bind(this)
     );
@@ -223,8 +221,8 @@ const PlacesPreviews = new (class extends EventEmitter {
       this.#placesObserver
     );
 
-    
-    
+    // Start deletion in case it was interruped during the previous session,
+    // it will end once there's nothing more to delete.
     this.#deletionHandler = new DeletionHandler();
     this.#deletionHandler.ensureRunning();
   }
@@ -241,18 +239,18 @@ const PlacesPreviews = new (class extends EventEmitter {
     }
   }
 
-  
-
-
-
+  /**
+   * Whether the feature is enabled. Use this instead of directly checking
+   * the pref, since it requires a restart.
+   */
   get enabled() {
     return lazy.previewsEnabled;
   }
 
-  
-
-
-
+  /**
+   * Returns the path to the previews folder.
+   * @returns {string} The path to the previews folder.
+   */
   getPath() {
     return PathUtils.join(
       Services.dirsvc.get("ProfD", Ci.nsIFile).path,
@@ -260,12 +258,12 @@ const PlacesPreviews = new (class extends EventEmitter {
     );
   }
 
-  
-
-
-
-
-
+  /**
+   * Returns the file path of the preview for the given url.
+   * This doesn't guarantee the file exists.
+   * @param {string} url Address of the page.
+   * @returns {string} File path of the preview for the given url.
+   */
   getPathForUrl(url) {
     return PathUtils.join(
       this.getPath(),
@@ -273,20 +271,20 @@ const PlacesPreviews = new (class extends EventEmitter {
     );
   }
 
-  
-
-
-
-
+  /**
+   * Returns the file path of the preview having the given hash.
+   * @param {string} hash md5 hash in hex format.
+   * @returns {string } File path of the preview having the given hash.
+   */
   getPathForHash(hash) {
     return PathUtils.join(this.getPath(), hash + this.fileExtension);
   }
 
-  
-
-
-
-
+  /**
+   * Returns the moz-page-thumb: url to show the preview for the given url.
+   * @param {string} url Address of the page.
+   * @returns {string} Preview url for the given page url.
+   */
   getPageThumbURL(url) {
     return (
       "moz-page-thumb://" +
@@ -298,20 +296,20 @@ const PlacesPreviews = new (class extends EventEmitter {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Updates the preview for the given page url. The update happens in
+   * background, using a windowless browser with very conservative privacy
+   * settings. Due to this, it may not look exactly like the page that the user
+   * is normally facing when logged in. See BackgroundPageThumbs.jsm for
+   * additional details.
+   * Unless `forceUpdate` is set, the preview is not updated if:
+   *  - It was already fetched recently
+   *  - The stored preview is younger than DAYS_BEFORE_REPLACEMENT
+   * The previem image is encoded using WebP.
+   * @param {string} url The address of the page.
+   * @param {boolean} [forceUpdate] Whether to update the preview regardless.
+   * @returns {boolean} Whether a preview is available and ready.
+   */
   async update(url, { forceUpdate = false } = {}) {
     if (!this.enabled) {
       return false;
@@ -328,13 +326,13 @@ const PlacesPreviews = new (class extends EventEmitter {
           fileInfo.lastModified >
           Date.now() - DAYS_BEFORE_REPLACEMENT * 86400000
         ) {
-          
+          // File is recent enough.
           this.#recentlyUpdatedPreviews.add(filePath);
           lazy.logConsole.debug("Skipping update because file is recent");
           return true;
         }
       } catch (ex) {
-        
+        // If the file doesn't exist, we always update it.
         if (!DOMException.isInstance(ex) || ex.name != "NotFoundError") {
           lazy.logConsole.error("Error while trying to stat() preview" + ex);
           return false;
@@ -377,23 +375,23 @@ const PlacesPreviews = new (class extends EventEmitter {
     return true;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Removes orphan previews that are not tracked by Places.
+   * Orphaning should normally not happen, but unexpected manipulation (e.g. the
+   * user touching the profile folder, or third party applications) could cause
+   * it.
+   * This method is slow, because it has to go through all the Places stored
+   * pages, thus it's suggested to only run it as periodic maintenance.
+   * @returns {boolean} Whether orphans deletion ran.
+   */
   async deleteOrphans() {
     if (!this.enabled) {
       return false;
     }
 
-    
-    
-    
+    // From the previews directory, get all the files whose name matches our
+    // format.  Avoid any other filenames, also for safety reasons, since we are
+    // injecting them into SQL.
     let files = await IOUtils.getChildren(this.getPath());
     let hashes = files
       .map(f => PathUtils.filename(f))
@@ -420,19 +418,19 @@ const PlacesPreviews = new (class extends EventEmitter {
     return true;
   }
 
-  
-
-
-
+  /**
+   * This is invoked by #deletionHandler every time a preview file is removed.
+   * @param {string} filePath The path of the deleted file.
+   */
   onDelete(filePath) {
     this.#recentlyUpdatedPreviews.delete(filePath);
     this.emit("places-preview-deleted", filePath);
   }
 
-  
-
-
-
+  /**
+   * Used by tests to change the deletion timeout between chunks.
+   * @param {integer} timeout New timeout in milliseconds.
+   */
   testSetDeletionTimeout(timeout) {
     if (timeout === null) {
       this.#deletionHandler.timeout = DELETE_TIMEOUT_MS;
@@ -442,11 +440,12 @@ const PlacesPreviews = new (class extends EventEmitter {
   }
 })();
 
+/**
+ * Used to exposes nsIPlacesPreviewsHelperService to the moz-page-thumb protocol
+ * cpp implementation.
+ */
+export function PlacesPreviewsHelperService() {}
 
-
-
-
-function PlacesPreviewsHelperService() {}
 PlacesPreviewsHelperService.prototype = {
   classID: Components.ID("{bd0a4d3b-ff26-4d4d-9a62-a513e1c1bf92}"),
   QueryInterface: ChromeUtils.generateQI(["nsIPlacesPreviewsHelperService"]),
