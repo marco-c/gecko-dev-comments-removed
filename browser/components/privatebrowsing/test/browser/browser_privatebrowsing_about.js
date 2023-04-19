@@ -2,13 +2,13 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
+ChromeUtils.defineESModuleGetters(this, {
+  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
-  const { UrlbarTestUtils: module } = ChromeUtils.import(
-    "resource://testing-common/UrlbarTestUtils.jsm"
+  const { UrlbarTestUtils: module } = ChromeUtils.importESModule(
+    "resource://testing-common/UrlbarTestUtils.sys.mjs"
   );
   module.init(this);
   return module;
