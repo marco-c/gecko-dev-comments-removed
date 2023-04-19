@@ -206,6 +206,17 @@ enum BundlePolicyUsage {
 
 
 
+enum ProvisionalAnswerUsage {
+  kProvisionalAnswerNotUsed = 0,
+  kProvisionalAnswerLocal = 1,
+  kProvisionalAnswerRemote = 2,
+  kProvisionalAnswerMax
+};
+
+
+
+
+
 }  
 
 #endif  
