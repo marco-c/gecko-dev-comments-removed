@@ -207,7 +207,7 @@ void nsPresContext::ForceReflowForFontInfoUpdate(bool aNeedsReframe) {
   
   
   if (auto* fonts = Document()->GetFonts()) {
-    fonts->GetUserFontSet()->ForgetLocalFaces();
+    fonts->GetImpl()->ForgetLocalFaces();
   }
 
   FlushFontCache();
