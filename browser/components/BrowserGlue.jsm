@@ -4298,7 +4298,7 @@ BrowserGlue.prototype = {
   async _maybeShowDefaultBrowserPrompt() {
     
     
-    const dialogVersion = 100;
+    const dialogVersion = 106;
     const dialogVersionPref = "browser.startup.upgradeDialog.version";
     const dialogReason = await (async () => {
       if (!lazy.BrowserHandler.majorUpgrade) {
