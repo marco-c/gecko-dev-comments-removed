@@ -271,16 +271,25 @@ bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
   return true;
 }
 
-bool BaseChannel::Enable(bool enable) {
-  worker_thread_->Invoke<void>(RTC_FROM_HERE, [this, enable] {
+void BaseChannel::Enable(bool enable) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+
+  if (enable == enabled_s_)
+    return;
+
+  enabled_s_ = enable;
+
+  worker_thread_->PostTask(ToQueuedTask(alive_, [this, enable] {
     RTC_DCHECK_RUN_ON(worker_thread());
+    
+    
+    RTC_DCHECK_NE(enabled_, enable);
     if (enable) {
       EnableMedia_w();
     } else {
       DisableMedia_w();
     }
-  });
-  return true;
+  }));
 }
 
 bool BaseChannel::SetLocalContent(const MediaContentDescription* content,
@@ -313,14 +322,14 @@ bool BaseChannel::SetPayloadTypeDemuxingEnabled(bool enabled) {
 
 bool BaseChannel::IsReadyToReceiveMedia_w() const {
   
-  return enabled() &&
+  return enabled_ &&
          webrtc::RtpTransceiverDirectionHasRecv(local_content_direction_);
 }
 
 bool BaseChannel::IsReadyToSendMedia_w() const {
   
   
-  return enabled() &&
+  return enabled_ &&
          webrtc::RtpTransceiverDirectionHasRecv(remote_content_direction_) &&
          webrtc::RtpTransceiverDirectionHasSend(local_content_direction_) &&
          was_ever_writable();
