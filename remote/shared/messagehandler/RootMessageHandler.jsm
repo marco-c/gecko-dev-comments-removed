@@ -146,7 +146,7 @@ class RootMessageHandler extends MessageHandler {
       values
     );
 
-    if (updatedValues.length == 0) {
+    if (!updatedValues.length) {
       
       return [];
     }
