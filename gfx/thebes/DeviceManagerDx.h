@@ -173,7 +173,7 @@ class DeviceManagerDx final {
 
   bool LoadD3D11();
   bool LoadDcomp();
-  void ReleaseD3D11();
+  void ReleaseD3D11() MOZ_REQUIRES(mDeviceLock);
 
   
   
