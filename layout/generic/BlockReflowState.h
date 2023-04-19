@@ -195,9 +195,10 @@ class BlockReflowState {
       nsIFrame* aFloatAvoidingBlock,
       const nsFlowAreaRect& aFloatAvailableSpace) const;
 
-  bool IsAdjacentWithTop() const {
-    return mBCoord == mBorderPadding.BStart(mReflowInput.GetWritingMode());
-  }
+  
+  
+  
+  bool IsAdjacentWithBStart() const { return mBCoord == ContentBStart(); }
 
   
 

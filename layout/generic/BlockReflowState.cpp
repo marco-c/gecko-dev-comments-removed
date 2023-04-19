@@ -781,7 +781,8 @@ bool BlockReflowState::FlowAndPlaceFloat(nsIFrame* aFloat) {
   
   
   
-  bool mustPlaceFloat = mReflowInput.mFlags.mIsTopOfPage && IsAdjacentWithTop();
+  bool mustPlaceFloat =
+      mReflowInput.mFlags.mIsTopOfPage && IsAdjacentWithBStart();
 
   for (;;) {
     if (mReflowInput.AvailableHeight() != NS_UNCONSTRAINEDSIZE &&
