@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1269539
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1269539</title>
@@ -28,8 +28,12 @@ function handleLoad() {
     });
   } else {
     childWin.waitForAllPaintsFlushed(function() {
-      // Verify that the scroll position was retained
-      is(childWin.scrollY, childWin.scrollMaxY);
+      // Verify that the scroll position was retained.
+      // NOTE: Window.scrollMaY is a long value, so we need to round
+      // Window.scrollY which is double.
+      // NOTE: Window.scrollMaxY is non-standard, so difference < 1.0 would not
+      // be a big problem.
+      is(Math.round(childWin.scrollY), childWin.scrollMaxY);
       childWin.close();
       SimpleTest.finish();
     });
