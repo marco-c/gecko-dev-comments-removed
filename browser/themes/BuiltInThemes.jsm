@@ -212,18 +212,6 @@ class _BuiltInThemes {
   findActiveColorwayCollection() {
     return this.builtInThemeMap.findActiveColorwayCollection(new Date());
   }
-
-  
-
-
-
-
-  isColorwayFromCurrentCollection(id) {
-    let collection = this.findActiveColorwayCollection();
-    return (
-      collection && this.builtInThemeMap.get(id)?.collection == collection.id
-    );
-  }
 }
 
 var BuiltInThemes = new _BuiltInThemes();
