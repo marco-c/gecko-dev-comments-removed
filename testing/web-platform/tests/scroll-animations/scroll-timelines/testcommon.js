@@ -73,14 +73,6 @@ function createScrollTimeline(test, options) {
   return new ScrollTimeline(options);
 }
 
-function createScrollTimelineWithOffsets(test, startOffset, endOffset) {
-  return createScrollTimeline(test, {
-    source: createScroller(test),
-    orientation: "vertical",
-    scrollOffsets: [startOffset, endOffset]
-  });
-}
-
 function createScrollLinkedAnimation(test, timeline) {
   return createScrollLinkedAnimationWithTiming(test,  1000, timeline);
 }
