@@ -1119,6 +1119,9 @@ void WinWindowOcclusionTracker::WindowOcclusionCalculator::
   CALC_LOG(LogLevel::Info, "RegisterEventHooks()");
 
   
+  RegisterGlobalEventHook(EVENT_SYSTEM_CAPTUREEND, EVENT_SYSTEM_CAPTUREEND);
+
+  
   RegisterGlobalEventHook(EVENT_SYSTEM_MOVESIZESTART, EVENT_SYSTEM_MOVESIZEEND);
 
   
