@@ -31,6 +31,15 @@
 
 
 
+enum nsAssignmentType {
+  NS_ASSIGNMENT_COPY,    
+  NS_ASSIGNMENT_DEPEND,  
+  NS_ASSIGNMENT_ADOPT    
+};
+
+
+
+
 
 
 

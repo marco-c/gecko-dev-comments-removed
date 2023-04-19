@@ -101,13 +101,4 @@ class nsMemory {
 #define NS_FREE_XPCOM_ISUPPORTS_POINTER_ARRAY(size, array) \
   NS_FREE_XPCOM_POINTER_ARRAY((size), (array), NS_IF_RELEASE)
 
-
-
-
-enum nsAssignmentType {
-  NS_ASSIGNMENT_COPY,    
-  NS_ASSIGNMENT_DEPEND,  
-  NS_ASSIGNMENT_ADOPT    
-};
-
 #endif  
