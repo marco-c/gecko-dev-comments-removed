@@ -240,6 +240,13 @@ void RRSendQueue::OutgoingStream::Pause() {
   
   
   
+
+  
+  
+  
+  
+  
+  
   for (auto it = items_.begin(); it != items_.end();) {
     if (it->remaining_offset == 0) {
       buffered_amount_.Decrease(it->remaining_size);
