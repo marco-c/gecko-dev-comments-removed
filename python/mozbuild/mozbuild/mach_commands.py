@@ -2622,6 +2622,18 @@ def package_l10n(command_context, verbose=False, locales=[]):
             cwd=mozpath.join(command_context.topsrcdir),
         )
 
+        
+        
+        
+        
+        print(
+            "Execute `env MOZ_CHROME_MULTILOCALE='{}' ".format(
+                append_env["MOZ_CHROME_MULTILOCALE"]
+            )
+            + "mach android install-geckoview_example` "
+            + "to install the multi-locale geckoview_example and test APKs."
+        )
+
     return 0
 
 
