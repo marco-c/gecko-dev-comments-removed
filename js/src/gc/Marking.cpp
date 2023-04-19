@@ -2571,7 +2571,7 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
   
   
   
-  EphemeronEdgeTable::Range r = gcEphemeronEdges().all();
+  EphemeronEdgeTable::MutableRange r = gcEphemeronEdges().mutableAll();
   while (!r.empty()) {
     Cell* src = r.front().key;
     CellColor srcColor = gc::detail::GetEffectiveColor(marker->runtime(), src);
