@@ -206,7 +206,7 @@ TEST_P(EncoderTest, DoNotOvershootTargetBitrate) {
     
     constexpr float kAudioDurationInv = 100.f / kNumFrames;
     const int measured_bitrate_bps = 8 * num_bytes * kAudioDurationInv;
-    EXPECT_LT(measured_bitrate_bps, bitrate_bps + 2250);  
+    EXPECT_LT(measured_bitrate_bps, bitrate_bps + 2000);  
   }
 }
 
