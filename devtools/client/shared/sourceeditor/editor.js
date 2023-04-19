@@ -161,6 +161,24 @@ function Editor(config) {
     maxHighlightLength: 1000,
     
     cursorBlinkRate: 0,
+    
+    
+    
+    
+    
+    
+    
+    
+    specialChars: /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028\u2029\u202d\u202e\u2066\u2067\u2069\ufeff\ufff9-\ufffc]/,
+    specialCharPlaceholder: char => {
+      
+      
+      const doc = this._ownerDoc;
+      const el = doc.createElement("span");
+      el.classList.add("cm-non-printable-char");
+      el.append(doc.createTextNode(`\\u${char.codePointAt(0).toString(16)}`));
+      return el;
+    },
   };
 
   
@@ -353,7 +371,7 @@ Editor.prototype = {
 
 
   _setup: function(el, doc) {
-    doc = doc || el.ownerDocument;
+    this._ownerDoc = doc || el.ownerDocument;
     const win = el.ownerDocument.defaultView;
 
     Services.scriptloader.loadSubScript(CM_BUNDLE, win);
@@ -421,7 +439,7 @@ Editor.prototype = {
 
       let popup = this.config.contextMenu;
       if (typeof popup == "string") {
-        popup = doc.getElementById(this.config.contextMenu);
+        popup = this._ownerDoc.getElementById(this.config.contextMenu);
       }
 
       this.emit("popupOpen", ev, popup);
@@ -1433,6 +1451,7 @@ Editor.prototype = {
     this.container = null;
     this.config = null;
     this.version = null;
+    this._ownerDoc = null;
 
     if (this._prefObserver) {
       this._prefObserver.off(KEYMAP_PREF, this.setKeyMap);
