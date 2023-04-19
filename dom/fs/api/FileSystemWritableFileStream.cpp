@@ -14,6 +14,8 @@
 #include "mozilla/dom/FileSystemWritableFileStreamChild.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WritableStreamDefaultController.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
+#include "mozilla/dom/quota/ResultExtensions.h"
 #include "nsIInputStream.h"
 #include "nsNetUtil.h"
 #include "private/pprio.h"
@@ -339,9 +341,16 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
     return promise.forget();
   }
 
-  UniquePtr<uint8_t> buffer(new uint8_t[length]);
-  memcpy(buffer.get(), data, length);
-  written = PR_Write(mFileDesc, buffer.get(), length);  
+  const auto checkedLength = CheckedInt<PRInt32>(length);
+  QM_TRY(MOZ_TO_RESULT(checkedLength.isValid()), [&promise](const nsresult rv) {
+    promise->MaybeReject(rv);
+    return promise.forget();
+  });
+
+  UniquePtr<uint8_t> buffer(new uint8_t[checkedLength.value()]);
+  memcpy(buffer.get(), data, checkedLength.value());
+  written =
+      PR_Write(mFileDesc, buffer.get(), checkedLength.value());  
   promise->MaybeResolve(written);
   return promise.forget();
 }
@@ -425,9 +434,13 @@ nsresult FileSystemWritableFileStream::WriteBlob(Blob* aBlob,
           rv = NS_ReadInputStreamToBuffer(msgStream, &data, -1, &length)))) {
     return rv;
   }
+
+  const auto checkedLength = CheckedInt<PRInt32>(length);
+  QM_TRY(MOZ_TO_RESULT(checkedLength.isValid()));
+
   
   
-  aWritten += PR_Write(mFileDesc, data, length);  
+  aWritten += PR_Write(mFileDesc, data, checkedLength.value());  
   free(data);
   return NS_OK;
 }
