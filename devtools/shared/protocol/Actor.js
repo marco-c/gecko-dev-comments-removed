@@ -76,7 +76,9 @@ class Actor extends Pool {
 
     
     
-    if (Services.profiler.IsActive()) {
+    
+    
+    if (Services.profiler?.IsActive()) {
       ChromeUtils.addProfilerMarker(
         "DevTools:RDP Actor",
         null,
