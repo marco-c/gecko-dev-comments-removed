@@ -4511,6 +4511,12 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
       
       AttachAndSetUAShadowRoot(NotifyUAWidgetSetup::Yes, DelegatesFocus::Yes);
     }
+    
+    
+    if (State().HasState(ElementState::FOCUS) && IsSingleLineTextControl() &&
+        !IsSingleLineTextControl( false, oldType)) {
+      AddStates(ElementState::FOCUSRING);
+    }
   }
 }
 
