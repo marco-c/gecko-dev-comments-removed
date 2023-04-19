@@ -11,7 +11,6 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/ThreadLocal.h"
-#include "mozilla/ipc/Shmem.h"
 #include <vector>
 
 namespace mozilla {
@@ -69,8 +68,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   RefPtr<WebGLFramebufferJS> mFramebuffer;
   RefPtr<WebGLTextureJS> mTex;
   RefPtr<DrawTargetSkia> mSkia;
-  
-  mozilla::ipc::Shmem mShmem;
   
   RefPtr<DataSourceSurface> mSnapshot;
   
@@ -201,10 +198,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     
     
     Atomic<bool> mShouldClearCaches;
-    
-    
-    
-    bool mWaitForShmem = false;
 
     const Matrix& GetTransform() const { return mCurrentTarget->mTransform; }
 
@@ -279,8 +272,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     void ClearAllTextures();
     void ClearEmptyTextureMemory();
     void ClearCachesIfNecessary();
-
-    void WaitForShmem();
   };
 
   RefPtr<SharedContext> mSharedContext;
@@ -441,14 +432,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   void FlattenSkia();
   bool FlushFromSkia();
 
-  void WaitForShmem() {
-    if (mSharedContext->mWaitForShmem) {
-      mSharedContext->WaitForShmem();
-    }
-  }
-
   void MarkSkiaChanged() {
-    WaitForShmem();
     if (!mSkiaValid) {
       ReadIntoSkia();
     } else if (mSkiaLayer) {

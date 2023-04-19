@@ -15,10 +15,8 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/PathSkia.h"
 #include "mozilla/gfx/Swizzle.h"
-#include "mozilla/layers/ImageDataSerializer.h"
 
 #include "ClientWebGLContext.h"
-#include "WebGLChild.h"
 
 #include "gfxPlatform.h"
 
@@ -216,12 +214,6 @@ void DrawTargetWebgl::ClearSnapshot(bool aCopyOnWrite, bool aNeedHandle) {
 DrawTargetWebgl::~DrawTargetWebgl() {
   ClearSnapshot(false);
   if (mSharedContext) {
-    if (mShmem.IsWritable()) {
-      auto* child = mSharedContext->mWebgl->GetChild();
-      if (child && child->CanSend()) {
-        child->DeallocShmem(mShmem);
-      }
-    }
     if (mFramebuffer) {
       mSharedContext->mWebgl->DeleteFramebuffer(mFramebuffer);
     }
@@ -357,23 +349,8 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format) {
     return false;
   }
 
-  auto* child = mSharedContext->mWebgl->GetChild();
-  if (child && child->CanSend()) {
-    size_t byteSize = layers::ImageDataSerializer::ComputeRGBBufferSize(
-        mSize, SurfaceFormat::B8G8R8A8);
-    if (byteSize) {
-      (void)child->AllocUnsafeShmem(byteSize, &mShmem);
-    }
-  }
   mSkia = new DrawTargetSkia;
-  if (mShmem.IsWritable()) {
-    auto stride = layers::ImageDataSerializer::ComputeRGBStride(
-        SurfaceFormat::B8G8R8A8, size.width);
-    if (!mSkia->Init(mShmem.get<uint8_t>(), size, stride,
-                     SurfaceFormat::B8G8R8A8, true)) {
-      return false;
-    }
-  } else if (!mSkia->Init(size, SurfaceFormat::B8G8R8A8)) {
+  if (!mSkia->Init(size, SurfaceFormat::B8G8R8A8)) {
     return false;
   }
   SetPermitSubpixelAA(IsOpaque(format));
@@ -692,15 +669,8 @@ bool DrawTargetWebgl::SharedContext::ReadInto(uint8_t* aDstData,
   desc.srcOffset = *ivec2::From(aBounds);
   desc.size = *uvec2::FromSize(aBounds);
   desc.packState.rowLength = aDstStride / 4;
-
-  bool success = false;
-  if (mCurrentTarget->mShmem.IsWritable() &&
-      aDstData == mCurrentTarget->mShmem.get<uint8_t>()) {
-    success = mWebgl->DoReadPixels(desc, mCurrentTarget->mShmem);
-  } else {
-    Range<uint8_t> range = {aDstData, size_t(aDstStride) * aBounds.height};
-    success = mWebgl->DoReadPixels(desc, range);
-  }
+  Range<uint8_t> range = {aDstData, size_t(aDstStride) * aBounds.height};
+  bool success = mWebgl->DoReadPixels(desc, range);
 
   
   if (aHandle && mCurrentTarget) {
@@ -1255,30 +1225,19 @@ bool DrawTargetWebgl::SharedContext::UploadSurface(DataSourceSurface* aData,
     }
     int32_t stride = map.GetStride();
     int32_t bpp = BytesPerPixel(aFormat);
-    if (mCurrentTarget->mShmem.IsWritable() &&
-        map.GetData() == mCurrentTarget->mShmem.get<uint8_t>()) {
-      texDesc.sd = Some(layers::SurfaceDescriptorBuffer(
-          layers::RGBDescriptor(mCurrentTarget->mSize, SurfaceFormat::R8G8B8A8),
-          mCurrentTarget->mShmem));
-      texDesc.structuredSrcSize =
-          uvec2::From(stride / bpp, mCurrentTarget->mSize.height);
-      texDesc.unpacking.skipPixels = aSrcRect.x;
-      texDesc.unpacking.skipRows = aSrcRect.y;
-      mWaitForShmem = true;
-    } else {
-      
-      
-      Range<const uint8_t> range(
-          map.GetData() + aSrcRect.y * size_t(stride) + aSrcRect.x * bpp,
-          std::max(aSrcRect.height - 1, 0) * size_t(stride) +
-              aSrcRect.width * bpp);
-      texDesc.cpuData = Some(RawBuffer(range));
-    }
+    
+    
+    Range<const uint8_t> range(
+        map.GetData() + aSrcRect.y * size_t(stride) + aSrcRect.x * bpp,
+        std::max(aSrcRect.height - 1, 0) * size_t(stride) +
+            aSrcRect.width * bpp);
+    texDesc.cpuData = Some(RawBuffer(range));
     
     
     
     texDesc.unpacking.alignmentInTypeElems = stride % 4 ? 1 : 4;
     texDesc.unpacking.rowLength = stride / bpp;
+    texDesc.unpacking.imageHeight = aSrcRect.height;
   } else if (aZero) {
     
     
@@ -1310,7 +1269,7 @@ bool DrawTargetWebgl::SharedContext::UploadSurface(DataSourceSurface* aData,
   
   mWebgl->RawTexImage(0, aInit ? intFormat : 0,
                       {uint32_t(aDstOffset.x), uint32_t(aDstOffset.y), 0},
-                      texPI, std::move(texDesc));
+                      texPI, texDesc);
   if (!aData && aZero) {
     mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, 0);
   }
@@ -2755,19 +2714,8 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   mSkia->FillGlyphs(aFont, aBuffer, aPattern, aOptions);
 }
 
-void DrawTargetWebgl::SharedContext::WaitForShmem() {
-  if (mWaitForShmem) {
-    
-    
-    
-    (void)mWebgl->GetError();
-    mWaitForShmem = false;
-  }
-}
-
 void DrawTargetWebgl::MarkSkiaChanged(const DrawOptions& aOptions) {
   if (SupportsLayering(aOptions)) {
-    WaitForShmem();
     if (!mSkiaValid) {
       
       mSkiaValid = true;
@@ -2951,7 +2899,8 @@ Maybe<layers::SurfaceDescriptor> DrawTargetWebgl::GetFrontBuffer() {
       options.bgra = true;
       
       
-      options.forceAsyncPresent = StaticPrefs::gfx_canvas_accelerated_async_present();
+      options.forceAsyncPresent =
+          StaticPrefs::gfx_canvas_accelerated_async_present();
       mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, options);
     }
   }

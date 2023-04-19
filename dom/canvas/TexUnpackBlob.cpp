@@ -10,7 +10,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/RefPtr.h"
 #include "nsLayoutUtils.h"
 #include "WebGLBuffer.h"
@@ -292,14 +291,6 @@ static bool ValidateUnpackBytes(const WebGLContext* const webgl,
 
 
 
-
-static bool SDIsRGBBuffer(const layers::SurfaceDescriptor& sd) {
-  return sd.type() == layers::SurfaceDescriptor::TSurfaceDescriptorBuffer &&
-         sd.get_SurfaceDescriptorBuffer().desc().type() ==
-             layers::BufferDescriptor::TRGBDescriptor;
-}
-
-
 std::unique_ptr<TexUnpackBlob> TexUnpackBlob::Create(
     const TexUnpackBlobDesc& desc) {
   return std::unique_ptr<TexUnpackBlob>{[&]() -> TexUnpackBlob* {
@@ -320,11 +311,6 @@ std::unique_ptr<TexUnpackBlob> TexUnpackBlob::Create(
     }
 
     if (desc.sd) {
-      
-      
-      
-      
-      if (SDIsRGBBuffer(*desc.sd)) return new TexUnpackSurface(desc);
       return new TexUnpackImage(desc);
     }
     if (desc.dataSurf) {
@@ -870,41 +856,21 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
                                      GLenum* const out_error) const {
   const auto& webgl = tex->mContext;
   const auto& size = mDesc.size;
-  RefPtr<gfx::DataSourceSurface> surf;
-  if (mDesc.sd) {
-    
-    const auto& sd = *(mDesc.sd);
-    MOZ_ASSERT(SDIsRGBBuffer(sd));
-    const auto& sdb = sd.get_SurfaceDescriptorBuffer();
-    const auto& rgb = sdb.desc().get_RGBDescriptor();
-    const auto& data = sdb.data();
-    MOZ_ASSERT(data.type() == layers::MemoryOrShmem::TShmem);
-    const auto& shmem = data.get_Shmem();
-    surf = gfx::Factory::CreateWrappingDataSourceSurface(
-        shmem.get<uint8_t>(), layers::ImageDataSerializer::GetRGBStride(rgb),
-        rgb.size(), rgb.format());
-    if (!surf) {
-      gfxCriticalError() << "TexUnpackSurface failed to create wrapping "
-                            "DataSourceSurface for Shmem.";
-      return false;
-    }
-  } else {
-    surf = mDesc.dataSurf;
-  }
+  auto& surf = *(mDesc.dataSurf);
 
   
 
   WebGLTexelFormat srcFormat;
   uint8_t srcBPP;
-  if (!GetFormatForSurf(surf, &srcFormat, &srcBPP)) {
+  if (!GetFormatForSurf(&surf, &srcFormat, &srcBPP)) {
     webgl->ErrorImplementationBug(
         "GetFormatForSurf failed for"
         " WebGLTexelFormat::%u.",
-        uint32_t(surf->GetFormat()));
+        uint32_t(surf.GetFormat()));
     return false;
   }
 
-  gfx::DataSourceSurface::ScopedMap map(surf,
+  gfx::DataSourceSurface::ScopedMap map(&surf,
                                         gfx::DataSourceSurface::MapType::READ);
   if (!map.IsMapped()) {
     webgl->ErrorOutOfMemory("Failed to map source surface for upload.");
@@ -918,7 +884,7 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
 
   const auto dstFormat = FormatForPackingInfo(dstPI);
   const auto dstBpp = BytesPerPixel(dstPI);
-  const size_t dstUsedBytesPerRow = dstBpp * surf->GetSize().width;
+  const size_t dstUsedBytesPerRow = dstBpp * surf.GetSize().width;
   auto dstStride = dstUsedBytesPerRow;
   if (dstFormat == srcFormat) {
     dstStride = srcStride;  
@@ -951,7 +917,7 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
   const uint8_t* dstBegin = srcBegin;
   UniqueBuffer tempBuffer;
   
-  if (!ConvertIfNeeded(webgl, surf->GetSize().width, surf->GetSize().height,
+  if (!ConvertIfNeeded(webgl, surf.GetSize().width, surf.GetSize().height,
                        srcFormat, srcBegin, AutoAssertCast(srcStride),
                        dstFormat, AutoAssertCast(dstUnpacking.metrics.bytesPerRowStride), &dstBegin,
                        &tempBuffer)) {
