@@ -1847,6 +1847,21 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     return true;
   }
 
+  if (aElement->IsHTMLElement(nsGkAtoms::img) && aAttribute == nsGkAtoms::alt) {
+    
+    
+    if (nsAccessibilityService::ShouldCreateImgAccessible(aElement, this)) {
+      if (GetAccessible(aElement)) {
+        
+        return false;
+      }
+      ContentInserted(aElement, aElement->GetNextSibling());
+    } else {
+      ContentRemoved(aElement);
+    }
+    return true;
+  }
+
   return false;
 }
 

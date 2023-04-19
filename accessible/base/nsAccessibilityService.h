@@ -253,6 +253,12 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
+  static bool ShouldCreateImgAccessible(mozilla::dom::Element* aElement,
+                                        DocAccessible* aDocument);
+
+  
+
+
 
 
 
