@@ -16,6 +16,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "api/rtp_headers.h"
 #include "api/transport/rtp/dependency_descriptor.h"
 #include "api/video/color_space.h"
 #include "api/video/video_codec_type.h"
@@ -81,6 +82,11 @@ struct RTPVideoHeader {
   
   absl::optional<uint16_t> video_frame_tracking_id;
   RTPVideoTypeHeader video_type_header;
+
+  
+  
+  
+  absl::optional<AbsoluteCaptureTime> absolute_capture_time;
 };
 
 }  
