@@ -22,25 +22,6 @@
 
 
 
-#if defined(__APPLE__) && defined(__aarch64__)
-#  define POWER_HELP "Sample per process power use"
-#elif defined(__APPLE__) && defined(__x86_64__)
-#  define POWER_HELP \
-    "Record the power used by the entire system with each sample."
-#elif defined(__linux__) && defined(__x86_64__)
-#  define POWER_HELP                                                \
-    "Record the power used by the entire system with each sample. " \
-    "Only available with Intel CPUs and requires setting "          \
-    "the sysctl kernel.perf_event_paranoid to 0."
-
-#elif defined(_MSC_VER)
-#  define POWER_HELP                                                       \
-    "Record the value of every energy meter available on the system with " \
-    "each sample. Only available on Windows 11 with Intel CPUs."
-#else
-#  define POWER_HELP "Not supported on this platform."
-#endif
-
 
 
 
@@ -114,7 +95,9 @@
   MACRO(21, "processcpu", ProcessCPU,                                      \
         "Sample the CPU utilization of each process")                      \
                                                                            \
-  MACRO(22, "power", Power, POWER_HELP)
+  MACRO(22, "power", Power,                                                \
+        "Sample energy meters on Windows 11 and per process power use on " \
+        "Apple Silicon")
 
 
 struct ProfilerFeature {
