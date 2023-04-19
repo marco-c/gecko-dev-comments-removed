@@ -115,18 +115,13 @@ class ClickHandlerParent extends JSWindowActorParent {
       openerBrowser: browser,
       
       hasValidUserGestureActivation: true,
-    };
-
-    if (data.globalHistoryOptions) {
-      params.globalHistoryOptions = data.globalHistoryOptions;
-    } else {
-      params.globalHistoryOptions = {
+      globalHistoryOptions: {
         triggeringSponsoredURL: browser.getAttribute("triggeringSponsoredURL"),
         triggeringSponsoredURLVisitTimeMS: browser.getAttribute(
           "triggeringSponsoredURLVisitTimeMS"
         ),
-      };
-    }
+      },
+    };
 
     
     if (data.originAttributes.userContextId) {
