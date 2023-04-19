@@ -444,6 +444,10 @@ class nsWindow final : public nsBaseWidget {
   void PauseCompositorFlickering();
   bool IsWaitingForCompositorResume();
 
+  
+  
+  void ClearRenderingQueue();
+
  protected:
   virtual ~nsWindow();
 
