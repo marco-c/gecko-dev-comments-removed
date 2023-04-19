@@ -43,7 +43,9 @@ class RTC_EXPORT DesktopCaptureOptions {
   DesktopCaptureOptions& operator=(DesktopCaptureOptions&& options);
 
 #if defined(WEBRTC_USE_X11)
-  SharedXDisplay* x_display() const { return x_display_; }
+  const rtc::scoped_refptr<SharedXDisplay>& x_display() const {
+    return x_display_;
+  }
   void set_x_display(rtc::scoped_refptr<SharedXDisplay> x_display) {
     x_display_ = x_display;
   }
@@ -53,7 +55,8 @@ class RTC_EXPORT DesktopCaptureOptions {
   
   
   
-  DesktopConfigurationMonitor* configuration_monitor() const {
+  const rtc::scoped_refptr<DesktopConfigurationMonitor>& configuration_monitor()
+      const {
     return configuration_monitor_;
   }
   
@@ -67,7 +70,8 @@ class RTC_EXPORT DesktopCaptureOptions {
   void set_allow_iosurface(bool allow) { allow_iosurface_ = allow; }
 #endif
 
-  FullScreenWindowDetector* full_screen_window_detector() const {
+  const rtc::scoped_refptr<FullScreenWindowDetector>&
+  full_screen_window_detector() const {
     return full_screen_window_detector_;
   }
   void set_full_screen_window_detector(
