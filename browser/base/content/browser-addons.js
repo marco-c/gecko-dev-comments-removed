@@ -1291,7 +1291,14 @@ var gUnifiedExtensions = {
     }
   },
 
-  togglePanel(anchor, aEvent) {
+  async togglePanel(anchor, aEvent) {
+    
+    
+    if ((await this.getActiveExtensions()).length === 0) {
+      await BrowserOpenAddonsMgr("addons://discover/");
+      return;
+    }
+
     if (anchor.getAttribute("open") == "true") {
       PanelUI.hide();
     } else {
