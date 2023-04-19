@@ -99,8 +99,12 @@ class nsFrameList {
   }
 
   
-  nsFrameList(const nsFrameList& aOther) = delete;
-  nsFrameList& operator=(const nsFrameList& aOther) = delete;
+  
+  nsFrameList(const nsFrameList& aOther) = default;
+
+  
+  
+  nsFrameList& operator=(const nsFrameList& aOther) = default;
 
   
 
@@ -112,9 +116,7 @@ class nsFrameList {
     VerifyList();
   }
   nsFrameList& operator=(nsFrameList&& aOther) {
-    if (this != &aOther) {
-      SetFrames(aOther);
-    }
+    SetFrames(aOther);
     return *this;
   }
 

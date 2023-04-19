@@ -2842,8 +2842,8 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
     }
 
     
-    const nsFrameList& absPosChildren = aGridContainerFrame->GetChildList(
-        aGridContainerFrame->GetAbsoluteListID());
+    nsFrameList absPosChildren(aGridContainerFrame->GetChildList(
+        aGridContainerFrame->GetAbsoluteListID()));
     for (auto f : absPosChildren) {
       nsIFrame* childFirstInFlow = f->FirstInFlow();
       DebugOnly<size_t> len = mAbsPosItems.Length();
@@ -4798,8 +4798,8 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
     
     
     
-    const nsFrameList& children =
-        aState.mFrame->GetChildList(aState.mFrame->GetAbsoluteListID());
+    nsFrameList children(
+        aState.mFrame->GetChildList(aState.mFrame->GetAbsoluteListID()));
     const int32_t offsetToColZero = int32_t(mExplicitGridOffsetCol) - 1;
     const int32_t offsetToRowZero = int32_t(mExplicitGridOffsetRow) - 1;
     
@@ -8487,7 +8487,7 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aState,
   aStatus.MergeCompletionStatusFrom(ocStatus);
 
   if (IsAbsoluteContainer()) {
-    const nsFrameList& children = GetChildList(GetAbsoluteListID());
+    nsFrameList children(GetChildList(GetAbsoluteListID()));
     if (!children.IsEmpty()) {
       
       
