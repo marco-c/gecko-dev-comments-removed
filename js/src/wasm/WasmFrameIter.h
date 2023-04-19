@@ -111,13 +111,12 @@ enum class SymbolicAddress;
 class ExitReason {
  public:
   enum class Fixed : uint32_t {
-    None,             
-    FakeInterpEntry,  
-    ImportJit,        
-    ImportInterp,     
-    BuiltinNative,    
-    Trap,             
-    DebugTrap         
+    None,           
+    ImportJit,      
+    ImportInterp,   
+    BuiltinNative,  
+    Trap,           
+    DebugTrap       
   };
 
  private:
@@ -150,9 +149,6 @@ class ExitReason {
   bool isNone() const { return isFixed() && fixed() == Fixed::None; }
   bool isNative() const {
     return !isFixed() || fixed() == Fixed::BuiltinNative;
-  }
-  bool isInterpEntry() const {
-    return isFixed() && fixed() == Fixed::FakeInterpEntry;
   }
 
   uint32_t encode() const { return payload_; }
