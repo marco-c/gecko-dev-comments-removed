@@ -509,7 +509,8 @@ void MacroAssemblerX86::finish() {
   }
 }
 
-void MacroAssemblerX86::handleFailureWithHandlerTail(Label* profilerExitTail) {
+void MacroAssemblerX86::handleFailureWithHandlerTail(Label* profilerExitTail,
+                                                     Label* bailoutTail) {
   
   subl(Imm32(sizeof(ResumeFromException)), esp);
   movl(esp, eax);
@@ -621,8 +622,9 @@ void MacroAssemblerX86::handleFailureWithHandlerTail(Label* profilerExitTail) {
   
   bind(&bailout);
   loadPtr(Address(esp, ResumeFromException::offsetOfBailoutInfo()), ecx);
+  loadPtr(Address(esp, ResumeFromException::offsetOfStackPointer()), esp);
   move32(Imm32(1), ReturnReg);
-  jmp(Operand(esp, ResumeFromException::offsetOfTarget()));
+  jump(bailoutTail);
 
   
   

@@ -1777,7 +1777,7 @@ void MacroAssemblerMIPS64Compat::checkStackAlignment() {
 }
 
 void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
-    Label* profilerExitTail) {
+    Label* profilerExitTail, Label* bailoutTail) {
   
   int size = (sizeof(ResumeFromException) + ABIStackAlignment) &
              ~(ABIStackAlignment - 1);
@@ -1905,9 +1905,10 @@ void MacroAssemblerMIPS64Compat::handleFailureWithHandlerTail(
   
   bind(&bailout);
   loadPtr(Address(sp, ResumeFromException::offsetOfBailoutInfo()), a2);
+  loadPtr(Address(StackPointer, ResumeFromException::offsetOfStackPointer()),
+          StackPointer);
   ma_li(ReturnReg, Imm32(1));
-  loadPtr(Address(sp, ResumeFromException::offsetOfTarget()), a1);
-  jump(a1);
+  jump(bailoutTail);
 
   
   

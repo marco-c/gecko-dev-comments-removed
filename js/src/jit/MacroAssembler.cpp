@@ -2030,13 +2030,21 @@ void MacroAssembler::generateBailoutTail(Register scratch,
                   !regs.has(AsRegister(getStackPointer())));
     regs.take(bailoutInfo);
 
+    Register temp = regs.takeAny();
+
+#ifdef DEBUG
     
-    loadStackPtr(
-        Address(bailoutInfo, offsetof(BaselineBailoutInfo, incomingStack)));
+    
+    Label ok;
+    loadPtr(Address(bailoutInfo, offsetof(BaselineBailoutInfo, incomingStack)),
+            temp);
+    branchStackPtr(Assembler::Equal, temp, &ok);
+    assumeUnreachable("Unexpected stack pointer value");
+    bind(&ok);
+#endif
 
     Register copyCur = regs.takeAny();
     Register copyEnd = regs.takeAny();
-    Register temp = regs.takeAny();
 
     
     loadPtr(Address(bailoutInfo, offsetof(BaselineBailoutInfo, copyStackTop)),

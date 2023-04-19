@@ -3313,7 +3313,7 @@ void MacroAssemblerARMCompat::checkStackAlignment() {
 }
 
 void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
-    Label* profilerExitTail) {
+    Label* profilerExitTail, Label* bailoutTail) {
   
   int size = (sizeof(ResumeFromException) + 7) & ~7;
 
@@ -3462,10 +3462,11 @@ void MacroAssemblerARMCompat::handleFailureWithHandlerTail(
     ScratchRegisterScope scratch(asMasm());
     ma_ldr(Address(sp, ResumeFromException::offsetOfBailoutInfo()), r2,
            scratch);
+    ma_ldr(Address(sp, ResumeFromException::offsetOfStackPointer()), sp,
+           scratch);
     ma_mov(Imm32(1), ReturnReg);
-    ma_ldr(Address(sp, ResumeFromException::offsetOfTarget()), r1, scratch);
   }
-  jump(r1);
+  jump(bailoutTail);
 
   
   

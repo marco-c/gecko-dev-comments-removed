@@ -1124,7 +1124,8 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
 
  public:
   
-  void handleFailureWithHandlerTail(Label* profilerExitTail);
+  void handleFailureWithHandlerTail(Label* profilerExitTail,
+                                    Label* bailoutTail);
 
   
   void profilerEnterFrame(Register framePtr, Register scratch);

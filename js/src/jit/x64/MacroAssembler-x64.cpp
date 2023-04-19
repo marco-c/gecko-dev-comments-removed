@@ -505,7 +505,8 @@ void MacroAssemblerX64::boxValue(JSValueType type, Register src,
   orq(src, dest);
 }
 
-void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
+void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail,
+                                                     Label* bailoutTail) {
   
   subq(Imm32(sizeof(ResumeFromException)), rsp);
   movq(rsp, rax);
@@ -615,9 +616,10 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
   
   
   bind(&bailout);
-  loadPtr(Address(esp, ResumeFromException::offsetOfBailoutInfo()), r9);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfBailoutInfo()), r9);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
   move32(Imm32(1), ReturnReg);
-  jmp(Operand(rsp, ResumeFromException::offsetOfTarget()));
+  jump(bailoutTail);
 
   
   

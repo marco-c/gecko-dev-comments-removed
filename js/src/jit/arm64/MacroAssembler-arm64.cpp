@@ -181,8 +181,8 @@ void MacroAssemblerCompat::loadPrivate(const Address& src, Register dest) {
   loadPtr(src, dest);
 }
 
-void MacroAssemblerCompat::handleFailureWithHandlerTail(
-    Label* profilerExitTail) {
+void MacroAssemblerCompat::handleFailureWithHandlerTail(Label* profilerExitTail,
+                                                        Label* bailoutTail) {
   
   MOZ_RELEASE_ASSERT(GetStackPointer64().Is(PseudoStackPointer64));
 
@@ -348,10 +348,12 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   bind(&bailout);
   Ldr(x2, MemOperand(PseudoStackPointer64,
                      ResumeFromException::offsetOfBailoutInfo()));
-  Ldr(x1,
-      MemOperand(PseudoStackPointer64, ResumeFromException::offsetOfTarget()));
+  Ldr(PseudoStackPointer64,
+      MemOperand(PseudoStackPointer64,
+                 ResumeFromException::offsetOfStackPointer()));
+  syncStackPtr();
   Mov(x0, 1);
-  Br(x1);
+  jump(bailoutTail);
 
   
   
