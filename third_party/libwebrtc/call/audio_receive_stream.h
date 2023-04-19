@@ -160,6 +160,9 @@ class AudioReceiveStream : public MediaReceiveStream {
   virtual void SetDecoderMap(std::map<int, SdpAudioFormat> decoder_map) = 0;
   virtual void SetUseTransportCcAndNackHistory(bool use_transport_cc,
                                                int history_ms) = 0;
+  
+  
+  virtual void SetRtpExtensions(std::vector<RtpExtension> extensions) = 0;
 
   
   virtual bool IsRunning() const = 0;
