@@ -122,9 +122,6 @@ class ChannelManager final {
   void DestroyRtpDataChannel(RtpDataChannel* data_channel);
 
   
-  bool has_channels() const;
-
-  
   
   
   bool StartAecDump(webrtc::FileWrapper file, int64_t max_size_bytes);
