@@ -3158,19 +3158,14 @@ static bool array_splice_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
 
 #ifdef ENABLE_CHANGE_ARRAY_BY_COPY
 
-static ArrayObject* NewDenseArray(JSContext* cx, const CallArgs& args,
-                                  uint64_t len) {
+static ArrayObject* NewDensePartlyAllocatedArray(JSContext* cx, uint64_t len) {
   if (len > UINT32_MAX) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_BAD_ARRAY_LENGTH);
     return nullptr;
   }
 
-  RootedObject proto(cx);
-  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Array, &proto)) {
-    return nullptr;
-  }
-  return NewDensePartlyAllocatedArrayWithProto(cx, len, proto);
+  return NewDensePartlyAllocatedArray(cx, uint32_t(len));
 }
 
 
@@ -3222,7 +3217,7 @@ static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-  RootedObject A(cx, NewDenseArray(cx, args, newLen));
+  RootedObject A(cx, ::NewDensePartlyAllocatedArray(cx, newLen));
   if (!A) {
     return false;
   }
@@ -3295,24 +3290,6 @@ static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-bool IsIntegralNumber(JSContext* cx, HandleValue v, bool* result) {
-  double d;
-  if (!ToNumber(cx, v, &d)) {
-    return false;
-  }
-
-  if (mozilla::IsNaN(d) || !mozilla::IsFinite(d)) {
-    *result = false;
-    return true;
-  }
-
-  double integer = trunc(d);
-  *result = d - integer == 0;
-  return true;
-}
-
-
-
 
 
 static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
@@ -3334,8 +3311,7 @@ static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
   
   double relativeIndex;
   if (!ToInteger(cx, args.get(0), &relativeIndex)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX,
-                              "Array.with");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
     return false;
   }
 
@@ -3343,31 +3319,36 @@ static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
   double actualIndex = relativeIndex;
   if (actualIndex < 0) {
     
-    actualIndex = int64_t(len + actualIndex);
+    actualIndex = double(len) + actualIndex;
   }
 
   
-
+  
   if (actualIndex < 0 || actualIndex >= double(len)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX,
-                              "Array.with: index out of bounds");
-    return false;
-  }
-  
-
-  
-  RootedObject A(cx, NewDenseArray(cx, args, len));
-  if (!A) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
     return false;
   }
 
   
-  for (uint64_t k = 0; k < len; k++) {
-    
-    RootedValue fromValue(cx);
+  RootedObject arr(cx, ::NewDensePartlyAllocatedArray(cx, len));
+  if (!arr) {
+    return false;
+  }
+
+  MOZ_ASSERT(len <= UINT32_MAX);
+  MOZ_ASSERT(actualIndex <= UINT32_MAX);
+
+  
+  RootedValue fromValue(cx);
+  for (uint32_t k = 0; k < uint32_t(len); k++) {
+    if (!CheckForInterrupt(cx)) {
+      return false;
+    }
 
     
-    if (k == uint64_t(actualIndex)) {
+
+    
+    if (k == uint32_t(actualIndex)) {
       fromValue = args.get(1);
     } else {
       
@@ -3375,14 +3356,15 @@ static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
         return false;
       }
     }
+
     
-    if (!SetArrayElement(cx, A, k, fromValue)) {
+    if (!DefineArrayElement(cx, arr, k, fromValue)) {
       return false;
     }
   }
 
   
-  args.rval().setObject(*A);
+  args.rval().setObject(*arr);
   return true;
 }
 #endif
