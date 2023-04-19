@@ -29,6 +29,7 @@
 #include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/dcsctp_options.h"
 #include "net/dcsctp/timer/timer.h"
+#include "net/dcsctp/tx/outstanding_data.h"
 #include "net/dcsctp/tx/retransmission_timeout.h"
 #include "net/dcsctp/tx/send_queue.h"
 
@@ -45,23 +46,7 @@ namespace dcsctp {
 class RetransmissionQueue {
  public:
   static constexpr size_t kMinimumFragmentedPayload = 10;
-  
-  enum class State {
-    
-    
-    kInFlight,
-    
-    
-    kNacked,
-    
-    kToBeRetransmitted,
-    
-    kAcked,
-    
-    
-    kAbandoned,
-  };
-
+  using State = OutstandingData::State;
   
   
   
@@ -100,10 +85,13 @@ class RetransmissionQueue {
 
   
   
-  std::vector<std::pair<TSN, State>> GetChunkStatesForTesting() const;
+  std::vector<std::pair<TSN, OutstandingData::State>> GetChunkStatesForTesting()
+      const {
+    return outstanding_data_.GetChunkStatesForTesting();
+  }
 
   
-  TSN next_tsn() const { return next_tsn_.Wrap(); }
+  TSN next_tsn() const { return outstanding_data_.next_tsn().Wrap(); }
 
   
   
@@ -116,10 +104,14 @@ class RetransmissionQueue {
   size_t rwnd() const { return rwnd_; }
 
   
-  size_t outstanding_bytes() const { return outstanding_bytes_; }
+  size_t outstanding_bytes() const {
+    return outstanding_data_.outstanding_bytes();
+  }
 
   
-  size_t outstanding_items() const { return outstanding_items_; }
+  size_t outstanding_items() const {
+    return outstanding_data_.outstanding_items();
+  }
 
   
   bool can_send_data() const;
@@ -130,10 +122,14 @@ class RetransmissionQueue {
   bool ShouldSendForwardTsn(TimeMs now);
 
   
-  ForwardTsnChunk CreateForwardTsn() const;
+  ForwardTsnChunk CreateForwardTsn() const {
+    return outstanding_data_.CreateForwardTsn();
+  }
 
   
-  IForwardTsnChunk CreateIForwardTsn() const;
+  IForwardTsnChunk CreateIForwardTsn() const {
+    return outstanding_data_.CreateIForwardTsn();
+  }
 
   
   
@@ -152,109 +148,6 @@ class RetransmissionQueue {
     kCongestionAvoidance,
   };
 
-  
-  
-  class TxData {
-   public:
-    enum class NackAction {
-      kNothing,
-      kRetransmit,
-      kAbandon,
-    };
-
-    explicit TxData(Data data,
-                    absl::optional<size_t> max_retransmissions,
-                    TimeMs time_sent,
-                    absl::optional<TimeMs> expires_at)
-        : max_retransmissions_(max_retransmissions),
-          time_sent_(time_sent),
-          expires_at_(expires_at),
-          data_(std::move(data)) {}
-
-    TimeMs time_sent() const { return time_sent_; }
-
-    const Data& data() const { return data_; }
-
-    
-    void Ack();
-
-    
-    
-    
-    
-    NackAction Nack(bool retransmit_now = false);
-
-    
-    
-    void Retransmit();
-
-    
-    void Abandon();
-
-    bool is_outstanding() const { return ack_state_ == AckState::kUnacked; }
-    bool is_acked() const { return ack_state_ == AckState::kAcked; }
-    bool is_nacked() const { return ack_state_ == AckState::kNacked; }
-    bool is_abandoned() const { return is_abandoned_; }
-
-    
-    bool should_be_retransmitted() const { return should_be_retransmitted_; }
-    
-    bool has_been_retransmitted() const { return num_retransmissions_ > 0; }
-
-    
-    
-    bool has_expired(TimeMs now) const;
-
-   private:
-    enum class AckState {
-      kUnacked,
-      kAcked,
-      kNacked,
-    };
-    
-    
-    AckState ack_state_ = AckState::kUnacked;
-    
-    bool is_abandoned_ = false;
-    
-    bool should_be_retransmitted_ = false;
-
-    
-    
-    size_t nack_count_ = 0;
-    
-    size_t num_retransmissions_ = 0;
-    
-    
-    
-    const absl::optional<size_t> max_retransmissions_;
-    
-    const TimeMs time_sent_;
-    
-    const absl::optional<TimeMs> expires_at_;
-    
-    Data data_;
-  };
-
-  
-  struct AckInfo {
-    explicit AckInfo(UnwrappedTSN cumulative_tsn_ack)
-        : highest_tsn_acked(cumulative_tsn_ack) {}
-
-    
-    size_t bytes_acked = 0;
-
-    
-    
-    
-    
-    
-    bool has_packet_loss = false;
-
-    
-    UnwrappedTSN highest_tsn_acked;
-  };
-
   bool IsConsistent() const;
 
   
@@ -266,44 +159,10 @@ class RetransmissionQueue {
   }
 
   
-  bool is_in_fast_retransmit() const { return is_in_fast_retransmit_; }
-
-  
   
   
   
   bool IsSackValid(const SackChunk& sack) const;
-
-  
-  
-  
-  void RemoveAcked(UnwrappedTSN cumulative_tsn_ack, AckInfo& ack_info);
-
-  
-  
-  
-  
-  bool NackItem(UnwrappedTSN tsn, TxData& item, bool retransmit_now);
-
-  
-  
-  void AckGapBlocks(UnwrappedTSN cumulative_tsn_ack,
-                    rtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
-                    AckInfo& ack_info);
-
-  
-  
-  void AckChunk(AckInfo& ack_info,
-                std::map<UnwrappedTSN, TxData>::iterator iter);
-
-  
-  
-  
-  
-  void NackBetweenAckBlocks(
-      UnwrappedTSN cumulative_tsn_ack,
-      rtc::ArrayView<const SackChunk::GapAckBlock> gap_ack_blocks,
-      AckInfo& ack_info);
 
   
   
@@ -328,18 +187,7 @@ class RetransmissionQueue {
   void UpdateReceiverWindow(uint32_t a_rwnd);
   
   
-  std::vector<std::pair<TSN, Data>> GetChunksToBeRetransmitted(size_t max_size);
-  
-  
   void StartT3RtxTimerIfOutstandingData();
-
-  
-  
-  void ExpireOutstandingChunks(TimeMs now);
-  
-  
-  
-  void AbandonAllFor(const RetransmissionQueue::TxData& item);
 
   
   CongestionAlgorithmPhase phase() const {
@@ -385,22 +233,11 @@ class RetransmissionQueue {
   bool is_in_fast_retransmit_ = false;
 
   
-  UnwrappedTSN next_tsn_;
-  
-  UnwrappedTSN last_cumulative_tsn_ack_;
-  
   SendQueue& send_queue_;
   
   
   
-  std::map<UnwrappedTSN, TxData> outstanding_data_;
-  
-  std::set<UnwrappedTSN> to_be_retransmitted_;
-  
-  size_t outstanding_bytes_ = 0;
-  
-  
-  size_t outstanding_items_ = 0;
+  OutstandingData outstanding_data_;
 };
 }  
 
