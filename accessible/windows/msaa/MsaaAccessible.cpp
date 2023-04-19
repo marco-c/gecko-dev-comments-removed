@@ -1001,9 +1001,6 @@ MsaaAccessible::get_accName(
   nsAutoString name;
   Acc()->Name(name);
 
-  
-  
-  
   if (name.IsVoid()) return S_FALSE;
 
   *pszName = ::SysAllocStringLen(name.get(), name.Length());

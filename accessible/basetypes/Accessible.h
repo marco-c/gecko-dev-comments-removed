@@ -43,12 +43,6 @@ enum ENameValueFlag {
   
 
 
-
-  eNoNameOnPurpose,
-
-  
-
-
   eNameFromSubtree,
 
   

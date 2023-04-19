@@ -145,6 +145,45 @@ static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
   return false;
 }
 
+bool nsAccessibilityService::ShouldCreateImgAccessible(
+    mozilla::dom::Element* aElement, DocAccessible* aDocument) {
+  
+  
+  nsIFrame* frame = aElement->GetPrimaryFrame();
+  if (!frame) {
+    return false;
+  }
+
+  
+  
+  if (!aElement->IsHTMLElement(nsGkAtoms::img) &&
+      ((!aElement->IsHTMLElement(nsGkAtoms::embed) &&
+        !aElement->IsHTMLElement(nsGkAtoms::object)) ||
+       frame->AccessibleType() != AccType::eImageType)) {
+    return false;
+  }
+
+  nsAutoString newAltText;
+  const bool hasAlt = aElement->GetAttr(nsGkAtoms::alt, newAltText);
+  if (!hasAlt || !newAltText.IsEmpty()) {
+    
+    
+    
+    return true;
+  }
+
+  if (newAltText.IsEmpty() && (nsCoreUtils::HasClickListener(aElement) ||
+                               MustBeAccessible(aElement, aDocument))) {
+    
+    
+    
+    return true;
+  }
+
+  
+  return false;
+}
+
 
 
 
@@ -987,6 +1026,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     }
 
     newAcc = CreateAccessibleByFrameType(frame, content, aContext);
+    MOZ_ASSERT(newAcc, "Accessible not created for text node!");
     document->BindToDocument(newAcc, nullptr);
     newAcc->AsTextLeaf()->SetText(text.mString);
     return newAcc;
@@ -1494,7 +1534,10 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
       break;
     }
     case eImageType:
-      newAcc = new ImageAccessibleWrap(aContent, document);
+      if (aContent->IsElement() &&
+          ShouldCreateImgAccessible(aContent->AsElement(), document)) {
+        newAcc = new ImageAccessibleWrap(aContent, document);
+      }
       break;
     case eOuterDocType:
       newAcc = new OuterDocAccessible(aContent, document);
