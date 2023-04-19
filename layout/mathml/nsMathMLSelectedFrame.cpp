@@ -138,6 +138,13 @@ nsresult nsMathMLSelectedFrame::Place(DrawTarget* aDrawTarget,
   nsIFrame* childFrame = GetSelectedFrame();
 
   if (mInvalidMarkup) {
+    
+    
+    
+    
+    
+    
+    
     return ReflowError(aDrawTarget, aDesiredSize);
   }
 

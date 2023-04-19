@@ -7,6 +7,7 @@
 #include "nsMathMLmrootFrame.h"
 
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include <algorithm>
@@ -46,6 +47,18 @@ void nsMathMLmrootFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   mSqrChar.SetComputedStyle(Style());
 }
 
+bool nsMathMLmrootFrame::ShouldUseRowFallback() {
+  if (!StaticPrefs::mathml_error_message_layout_for_invalid_markup_disabled()) {
+    return false;
+  }
+  nsIFrame* baseFrame = mFrames.FirstChild();
+  if (!baseFrame) {
+    return true;
+  }
+  nsIFrame* indexFrame = baseFrame->GetNextSibling();
+  return !indexFrame || indexFrame->GetNextSibling();
+}
+
 NS_IMETHODIMP
 nsMathMLmrootFrame::TransmitAutomaticData() {
   
@@ -68,6 +81,8 @@ void nsMathMLmrootFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   nsMathMLContainerFrame::BuildDisplayList(aBuilder, aLists);
+
+  if (ShouldUseRowFallback()) return;
 
   
   
@@ -142,6 +157,13 @@ void nsMathMLmrootFrame::Reflow(nsPresContext* aPresContext,
                                 ReflowOutput& aDesiredSize,
                                 const ReflowInput& aReflowInput,
                                 nsReflowStatus& aStatus) {
+  if (ShouldUseRowFallback()) {
+    ReportChildCountError();
+    nsMathMLContainerFrame::Reflow(aPresContext, aDesiredSize, aReflowInput,
+                                   aStatus);
+    return;
+  }
+
   MarkInReflow();
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
@@ -187,6 +209,8 @@ void nsMathMLmrootFrame::Reflow(nsPresContext* aPresContext,
     count++;
     childFrame = childFrame->GetNextSibling();
   }
+  
+  
   if (2 != count) {
     
     ReportChildCountError();
@@ -335,6 +359,12 @@ void nsMathMLmrootFrame::Reflow(nsPresContext* aPresContext,
 
 void nsMathMLmrootFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
                                                   ReflowOutput& aDesiredSize) {
+  if (ShouldUseRowFallback()) {
+    nsMathMLContainerFrame::GetIntrinsicISizeMetrics(aRenderingContext,
+                                                     aDesiredSize);
+    return;
+  }
+
   nsIFrame* baseFrame = mFrames.FirstChild();
   nsIFrame* indexFrame = nullptr;
   if (baseFrame) indexFrame = baseFrame->GetNextSibling();

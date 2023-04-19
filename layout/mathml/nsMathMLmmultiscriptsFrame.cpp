@@ -139,7 +139,7 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
       aFrame->ReportErrorToConsole("NoBase");
     else
       aFrame->ReportChildCountError();
-    return aFrame->ReflowError(aDrawTarget, aDesiredSize);
+    return aFrame->PlaceForError(aDrawTarget, aPlaceOrigin, aDesiredSize);
   }
 
   
@@ -295,7 +295,7 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
         if (aPlaceOrigin) {
           aFrame->ReportInvalidChildError(nsGkAtoms::mprescripts_);
         }
-        return aFrame->ReflowError(aDrawTarget, aDesiredSize);
+        return aFrame->PlaceForError(aDrawTarget, aPlaceOrigin, aDesiredSize);
       }
       if (prescriptsFrame) {
         
@@ -303,13 +303,13 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
         if (aPlaceOrigin) {
           aFrame->ReportErrorToConsole("DuplicateMprescripts");
         }
-        return aFrame->ReflowError(aDrawTarget, aDesiredSize);
+        return aFrame->PlaceForError(aDrawTarget, aPlaceOrigin, aDesiredSize);
       }
       if (!isSubScript) {
         if (aPlaceOrigin) {
           aFrame->ReportErrorToConsole("SubSupMismatch");
         }
-        return aFrame->ReflowError(aDrawTarget, aDesiredSize);
+        return aFrame->PlaceForError(aDrawTarget, aPlaceOrigin, aDesiredSize);
       }
 
       prescriptsFrame = childFrame;
@@ -322,7 +322,7 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
           if (aPlaceOrigin) {
             aFrame->ReportErrorToConsole("NoBase");
           }
-          return aFrame->ReflowError(aDrawTarget, aDesiredSize);
+          return aFrame->PlaceForError(aDrawTarget, aPlaceOrigin, aDesiredSize);
         } else {
           
           foundNoneTag = true;
@@ -513,7 +513,7 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
         aFrame->ReportErrorToConsole("SubSupMismatch");
       }
     }
-    return aFrame->ReflowError(aDrawTarget, aDesiredSize);
+    return aFrame->PlaceForError(aDrawTarget, aPlaceOrigin, aDesiredSize);
   }
 
   
