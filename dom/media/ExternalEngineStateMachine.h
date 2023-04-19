@@ -252,11 +252,17 @@ class ExternalEngineStateMachine final
 
   void MaybeFinishWaitForData();
 
+  void SetBlankVideoToVideoContainer();
+
   UniquePtr<ExternalPlaybackEngine> mEngine;
 
   bool mHasEnoughAudio = false;
   bool mHasEnoughVideo = false;
   bool mSentPlaybackEndedEvent = false;
+
+  const RefPtr<VideoFrameContainer> mVideoFrameContainer;
+  
+  RefPtr<layers::Image> mBlankImage;
 };
 
 class ExternalPlaybackEngine {
