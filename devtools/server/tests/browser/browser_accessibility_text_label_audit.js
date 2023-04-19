@@ -910,8 +910,7 @@ add_task(async function() {
       { score: WARNING, issue: FORM_NO_VISIBLE_NAME },
     ],
     ["Aria slider with aria-labelledby a visible element", "#slider-9", null],
-    
-    
+    ["Number input inside a label", "#spinbutton-1", null],
     [
       "Number input with no label",
       "#spinbutton-2",
