@@ -40,7 +40,6 @@ static bool IsAttrNameLocalizable(
   if (nameSpace == kNameSpaceID_XHTML) {
     
     if (aAttrName == nsGkAtoms::title || aAttrName == nsGkAtoms::aria_label ||
-        aAttrName == nsGkAtoms::aria_valuetext ||
         aAttrName == nsGkAtoms::aria_description) {
       return true;
     }
@@ -95,10 +94,8 @@ static bool IsAttrNameLocalizable(
   } else if (nameSpace == kNameSpaceID_XUL) {
     
     if (aAttrName == nsGkAtoms::accesskey ||
-        aAttrName == nsGkAtoms::aria_label ||
-        aAttrName == nsGkAtoms::aria_valuetext ||
-        aAttrName == nsGkAtoms::label || aAttrName == nsGkAtoms::title ||
-        aAttrName == nsGkAtoms::tooltiptext) {
+        aAttrName == nsGkAtoms::aria_label || aAttrName == nsGkAtoms::label ||
+        aAttrName == nsGkAtoms::title || aAttrName == nsGkAtoms::tooltiptext) {
       return true;
     }
 
