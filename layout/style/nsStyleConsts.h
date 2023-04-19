@@ -567,12 +567,6 @@ enum class StyleTextOrientation : uint8_t {
 };
 
 
-enum class StyleMozBoxLayout : uint8_t {
-  Legacy,
-  Flex,
-};
-
-
 #define NS_STYLE_TEXT_COMBINE_UPRIGHT_NONE 0
 #define NS_STYLE_TEXT_COMBINE_UPRIGHT_ALL 1
 
