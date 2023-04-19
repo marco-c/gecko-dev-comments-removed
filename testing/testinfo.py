@@ -582,6 +582,18 @@ class TestInfoReport(TestInfo):
                             
                             
                             annotation_conditions = t[key].split(";")
+
+                            
+                            
+                            
+                            annotation_conditions = [
+                                x.strip("\n") for x in annotation_conditions
+                            ]
+                            temp = []
+                            for condition in annotation_conditions:
+                                temp.extend(condition.split("\n"))
+                            annotation_conditions = temp
+
                             for condition in annotation_conditions:
                                 condition_count += 1
                                 
