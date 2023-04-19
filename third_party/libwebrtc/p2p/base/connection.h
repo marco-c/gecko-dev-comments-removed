@@ -70,7 +70,9 @@ class ConnectionRequest : public StunRequest {
 
 
 
-class Connection : public CandidatePairInterface, public sigslot::has_slots<> {
+class Connection : public CandidatePairInterface,
+                   public rtc::MessageHandlerAutoCleanup,
+                   public sigslot::has_slots<> {
  public:
   struct SentPing {
     SentPing(const std::string id, int64_t sent_time, uint32_t nomination)
@@ -318,6 +320,8 @@ class Connection : public CandidatePairInterface, public sigslot::has_slots<> {
   void set_remote_nomination(uint32_t remote_nomination);
 
  protected:
+  enum { MSG_DELETE = 0, MSG_FIRST_AVAILABLE };
+
   
   Connection(Port* port, size_t index, const Candidate& candidate);
 
@@ -346,6 +350,8 @@ class Connection : public CandidatePairInterface, public sigslot::has_slots<> {
   void UpdateReceiving(int64_t now);
   void set_state(IceCandidatePairState state);
   void set_connected(bool value);
+
+  void OnMessage(rtc::Message* pmsg) override;
 
   
   Port* port() { return port_; }

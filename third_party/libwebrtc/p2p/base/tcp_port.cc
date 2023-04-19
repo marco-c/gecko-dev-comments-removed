@@ -79,7 +79,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/rate_tracker.h"
-#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {
@@ -367,9 +366,7 @@ TCPConnection::TCPConnection(TCPPort* port,
   }
 }
 
-TCPConnection::~TCPConnection() {
-  RTC_DCHECK_RUN_ON(network_thread_);
-}
+TCPConnection::~TCPConnection() {}
 
 int TCPConnection::Send(const void* data,
                         size_t size,
@@ -499,23 +496,32 @@ void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
     
     
     
-    
-    
-    
-    port()->thread()->PostDelayedTask(
-        webrtc::ToQueuedTask(network_safety_,
-                             [this]() {
-                               if (pretending_to_be_writable_) {
-                                 Destroy();
-                               }
-                             }),
-        reconnection_timeout());
+    port()->thread()->PostDelayed(RTC_FROM_HERE, reconnection_timeout(), this,
+                                  MSG_TCPCONNECTION_DELAYED_ONCLOSE);
   } else if (!pretending_to_be_writable_) {
     
     
     
     
     Destroy();
+  }
+}
+
+void TCPConnection::OnMessage(rtc::Message* pmsg) {
+  switch (pmsg->message_id) {
+    case MSG_TCPCONNECTION_DELAYED_ONCLOSE:
+      
+      
+      
+      if (pretending_to_be_writable_) {
+        Destroy();
+      }
+      break;
+    case MSG_TCPCONNECTION_FAILED_CREATE_SOCKET:
+      FailAndPrune();
+      break;
+    default:
+      Connection::OnMessage(pmsg);
   }
 }
 
@@ -570,13 +576,13 @@ void TCPConnection::CreateOutgoingTcpSocket() {
   } else {
     RTC_LOG(LS_WARNING) << ToString() << ": Failed to create connection to "
                         << remote_candidate().address().ToSensitiveString();
+    
+    
+    
+    
     set_state(IceCandidatePairState::FAILED);
-    
-    
-    
-    
-    port()->thread()->PostTask(
-        webrtc::ToQueuedTask(network_safety_, [this]() { FailAndPrune(); }));
+    port()->thread()->Post(RTC_FROM_HERE, this,
+                           MSG_TCPCONNECTION_FAILED_CREATE_SOCKET);
   }
 }
 
