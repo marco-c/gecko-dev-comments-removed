@@ -4705,6 +4705,8 @@ class nsIFrame : public nsQueryFrame {
   
   void UpdateVisibleDescendantsState();
 
+  void UpdateAnimationVisibility();
+
   
 
 

@@ -98,6 +98,8 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   bool HasAnimations() const { return !mAnimations.IsEmpty(); }
 
   virtual void RemoveAnimation(Animation* aAnimation);
+  virtual void NotifyAnimationContentVisibilityChanged(Animation* aAnimation,
+                                                       bool visible);
 
   virtual Document* GetDocument() const = 0;
 
@@ -116,6 +118,7 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
  protected:
   nsCOMPtr<nsIGlobalObject> mWindow;
 
+  
   
   
   
