@@ -2803,7 +2803,10 @@ void AppWindow::SizeModeChanged(nsSizeMode aSizeMode) {
 
   RecomputeBrowsingContextVisibility();
 
-  PersistentAttributesDirty(PersistentAttribute::Misc, Sync);
+  
+  
+  
+  PersistentAttributesDirty(PersistentAttribute::Misc, Async);
   nsCOMPtr<nsPIDOMWindowOuter> ourWindow =
       mDocShell ? mDocShell->GetWindow() : nullptr;
   if (ourWindow) {
