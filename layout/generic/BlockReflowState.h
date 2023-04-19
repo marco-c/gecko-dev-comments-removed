@@ -200,9 +200,6 @@ class BlockReflowState {
   
   bool IsAdjacentWithBStart() const { return mBCoord == ContentBStart(); }
 
-  
-
-
   const LogicalMargin& BorderPadding() const { return mBorderPadding; }
 
   
@@ -338,6 +335,7 @@ class BlockReflowState {
   
   nscoord mBCoord;
 
+  
   
   LogicalMargin mBorderPadding;
 
