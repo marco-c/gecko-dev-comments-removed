@@ -35,7 +35,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
 
   
   RtpPacketizerAv1 packetizer(fuzz_input.ReadByteArray(fuzz_input.BytesLeft()),
-                              limits, frame_type);
+                              limits, frame_type,
+                              true);
 
   size_t num_packets = packetizer.NumPackets();
   if (num_packets == 0) {

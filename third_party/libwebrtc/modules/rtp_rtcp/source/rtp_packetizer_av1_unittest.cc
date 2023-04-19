@@ -88,9 +88,11 @@ class Av1Frame {
 std::vector<RtpPayload> Packetize(
     rtc::ArrayView<const uint8_t> payload,
     RtpPacketizer::PayloadSizeLimits limits,
-    VideoFrameType frame_type = VideoFrameType::kVideoFrameDelta) {
+    VideoFrameType frame_type = VideoFrameType::kVideoFrameDelta,
+    bool is_last_frame_in_picture = true) {
   
-  RtpPacketizerAv1 packetizer(payload, limits, frame_type);
+  RtpPacketizerAv1 packetizer(payload, limits, frame_type,
+                              is_last_frame_in_picture);
   
   std::vector<RtpPayload> result(packetizer.NumPackets());
   for (RtpPayload& rtp_payload : result) {
@@ -330,6 +332,34 @@ TEST(RtpPacketizerAv1Test, SplitSingleObuIntoManyPackets) {
 
   
   EXPECT_THAT(ReassembleFrame(payloads), ElementsAreArray(kFrame));
+}
+
+TEST(RtpPacketizerAv1Test, SetMarkerBitForLastPacketInEndOfPictureFrame) {
+  auto kFrame = BuildAv1Frame(
+      {Obu(kObuTypeFrame).WithPayload(std::vector<uint8_t>(200, 27))});
+
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 100;
+  auto payloads = Packetize(kFrame, limits, VideoFrameType::kVideoFrameDelta,
+                            true);
+  ASSERT_THAT(payloads, SizeIs(3u));
+  EXPECT_FALSE(payloads[0].rtp_packet.Marker());
+  EXPECT_FALSE(payloads[1].rtp_packet.Marker());
+  EXPECT_TRUE(payloads[2].rtp_packet.Marker());
+}
+
+TEST(RtpPacketizerAv1Test, DoesntSetMarkerBitForPacketsNotInEndOfPictureFrame) {
+  auto kFrame = BuildAv1Frame(
+      {Obu(kObuTypeFrame).WithPayload(std::vector<uint8_t>(200, 27))});
+
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 100;
+  auto payloads = Packetize(kFrame, limits, VideoFrameType::kVideoFrameDelta,
+                            false);
+  ASSERT_THAT(payloads, SizeIs(3u));
+  EXPECT_FALSE(payloads[0].rtp_packet.Marker());
+  EXPECT_FALSE(payloads[1].rtp_packet.Marker());
+  EXPECT_FALSE(payloads[2].rtp_packet.Marker());
 }
 
 TEST(RtpPacketizerAv1Test, SplitTwoObusIntoTwoPackets) {
