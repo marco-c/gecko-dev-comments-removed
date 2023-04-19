@@ -3258,13 +3258,12 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
               static_cast<HTMLComboboxAccessible*>(acc);
           HTMLComboboxListAccessible* list = combobox->List();
           LocalAccessible* currItem = combobox->SelectedOption();
-          MOZ_ASSERT(list && currItem);
           
           
-          if (inViewAccs.EnsureInserted(currItem)) {
+          if (currItem && inViewAccs.EnsureInserted(currItem)) {
             viewportCache.AppendElement(currItem->ID());
           }
-          if (inViewAccs.EnsureInserted(list)) {
+          if (list && inViewAccs.EnsureInserted(list)) {
             viewportCache.AppendElement(list->ID());
           }
         }
