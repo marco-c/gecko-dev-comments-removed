@@ -152,23 +152,10 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   uint32_t sent_packets() const { return sent_packets_; }
 
   
-  sigslot::signal1<VirtualSocket*> SignalSocketCreated;
-
- protected:
-  
-  IPAddress GetNextIP(int family);
-  uint16_t GetNextPort();
-
-  VirtualSocket* CreateSocketInternal(int family, int type);
-
-  
   int Bind(VirtualSocket* socket, SocketAddress* addr);
 
   
   int Bind(VirtualSocket* socket, const SocketAddress& addr);
-
-  
-  VirtualSocket* LookupBinding(const SocketAddress& addr);
 
   int Unbind(const SocketAddress& addr, VirtualSocket* socket);
 
@@ -178,19 +165,19 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
                      VirtualSocket* socket);
 
   
-  VirtualSocket* LookupConnection(const SocketAddress& client,
-                                  const SocketAddress& server);
-
-  void RemoveConnection(const SocketAddress& client,
-                        const SocketAddress& server);
-
-  
   int Connect(VirtualSocket* socket,
               const SocketAddress& remote_addr,
               bool use_delay);
 
   
   bool Disconnect(VirtualSocket* socket);
+
+  
+  bool Disconnect(const SocketAddress& addr);
+
+  
+  bool Disconnect(const SocketAddress& local_addr,
+                  const SocketAddress& remote_addr);
 
   
   int SendUdp(VirtualSocket* socket,
@@ -202,6 +189,44 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   void SendTcp(VirtualSocket* socket);
 
   
+  void SendTcp(const SocketAddress& addr);
+
+  
+  uint32_t SendDelay(uint32_t size);
+
+  
+  void CancelConnects(VirtualSocket* socket);
+
+  
+  void Clear(VirtualSocket* socket);
+
+  void ProcessOneMessage();
+
+  void PostSignalReadEvent(VirtualSocket* socket);
+
+  
+  sigslot::signal0<> SignalReadyToSend;
+
+ protected:
+  
+  IPAddress GetNextIP(int family);
+
+  
+  VirtualSocket* LookupBinding(const SocketAddress& addr);
+
+ private:
+  uint16_t GetNextPort();
+
+  VirtualSocket* CreateSocketInternal(int family, int type);
+
+  
+  VirtualSocket* LookupConnection(const SocketAddress& client,
+                                  const SocketAddress& server);
+
+  void RemoveConnection(const SocketAddress& client,
+                        const SocketAddress& server);
+
+  
   void AddPacketToNetwork(VirtualSocket* socket,
                           VirtualSocket* recipient,
                           int64_t cur_time,
@@ -209,12 +234,6 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
                           size_t data_size,
                           size_t header_size,
                           bool ordered);
-
-  
-  void PurgeNetworkPackets(VirtualSocket* socket, int64_t cur_time);
-
-  
-  uint32_t SendDelay(uint32_t size);
 
   
   
@@ -252,12 +271,6 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   
   
   static bool CanInteractWith(VirtualSocket* local, VirtualSocket* remote);
-
- private:
-  friend class VirtualSocket;
-
-  
-  sigslot::signal0<> SignalReadyToSend;
 
   typedef std::map<SocketAddress, VirtualSocket*> AddressMap;
   typedef std::map<SocketAddressPair, VirtualSocket*> ConnectionMap;
@@ -331,8 +344,30 @@ class VirtualSocket : public AsyncSocket,
   int SetOption(Option opt, int value) override;
   void OnMessage(Message* pmsg) override;
 
+  size_t recv_buffer_size() const { return recv_buffer_size_; }
+  size_t send_buffer_size() const { return send_buffer_.size(); }
+  const char* send_buffer_data() const { return send_buffer_.data(); }
+
+  
+  void SetLocalAddress(const SocketAddress& addr);
+
   bool was_any() { return was_any_; }
   void set_was_any(bool was_any) { was_any_ = was_any; }
+
+  void SetToBlocked();
+
+  void UpdateRecv(size_t data_size);
+  void UpdateSend(size_t data_size);
+
+  void MaybeSignalWriteEvent(size_t capacity);
+
+  
+  uint32_t AddPacket(int64_t cur_time, size_t packet_size);
+
+  int64_t UpdateOrderedDelivery(int64_t ts);
+
+  
+  size_t PurgeNetworkPackets(int64_t cur_time);
 
   
   sigslot::signal2<VirtualSocket*, const SocketAddress&> SignalAddressReady;
@@ -353,9 +388,6 @@ class VirtualSocket : public AsyncSocket,
   void CompleteConnect(const SocketAddress& addr, bool notify);
   int SendUdp(const void* pv, size_t cb, const SocketAddress& addr);
   int SendTcp(const void* pv, size_t cb);
-
-  
-  void SetLocalAddress(const SocketAddress& addr);
 
   void OnSocketServerReadyToSend();
 
@@ -402,8 +434,6 @@ class VirtualSocket : public AsyncSocket,
 
   
   OptionsMap options_map_;
-
-  friend class VirtualSocketServer;
 };
 
 }  
