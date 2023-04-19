@@ -46,6 +46,7 @@ struct CallSendStatistics {
   
   
   std::vector<ReportBlockData> report_block_datas;
+  uint32_t nacks_rcvd;
 };
 
 
