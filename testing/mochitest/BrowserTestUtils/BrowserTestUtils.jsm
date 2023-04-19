@@ -1380,6 +1380,36 @@ var BrowserTestUtils = {
 
 
 
+  async waitForSelectPopupShown(win) {
+    let getMenulist = () =>
+      win.document.getElementById("ContentSelectDropdown");
+    let menulist = getMenulist();
+    if (!menulist) {
+      await this.waitForMutationCondition(
+        win.document,
+        { childList: true, subtree: true },
+        getMenulist
+      );
+      menulist = getMenulist();
+      if (menulist.menupopup.state == "open") {
+        return menulist.menupopup;
+      }
+    }
+    await this.waitForEvent(menulist.menupopup, "popupshown");
+    return menulist.menupopup;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
 

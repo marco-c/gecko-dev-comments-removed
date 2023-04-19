@@ -43,7 +43,6 @@ function getBrowser(panel) {
   browser.setAttribute("context", "contentAreaContextMenu");
   browser.setAttribute("tooltip", "aHTMLTooltip");
   browser.setAttribute("autocompletepopup", "PopupAutoComplete");
-  browser.setAttribute("selectmenulist", "ContentSelectDropdown");
 
   
   
