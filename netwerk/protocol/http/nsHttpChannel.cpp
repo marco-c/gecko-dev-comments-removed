@@ -4596,7 +4596,10 @@ void nsHttpChannel::CloseCacheEntry(bool doomOnFailure) {
   } else {
     
     
-    if (mSecurityInfo) mCacheEntry->SetSecurityInfo(mSecurityInfo);
+    nsCOMPtr<nsITransportSecurityInfo> tsi = do_QueryInterface(mSecurityInfo);
+    if (tsi) {
+      mCacheEntry->SetSecurityInfo(tsi);
+    }
   }
 
   mCachedResponseHead = nullptr;
@@ -4742,7 +4745,10 @@ nsresult DoAddCacheEntryHeaders(nsHttpChannel* self, nsICacheEntry* entry,
 
   LOG(("nsHttpChannel::AddCacheEntryHeaders [this=%p] begin", self));
   
-  if (securityInfo) entry->SetSecurityInfo(securityInfo);
+  nsCOMPtr<nsITransportSecurityInfo> tsi = do_QueryInterface(securityInfo);
+  if (tsi) {
+    entry->SetSecurityInfo(tsi);
+  }
 
   
   

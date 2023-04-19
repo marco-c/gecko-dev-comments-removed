@@ -3,23 +3,24 @@
 
 
 
+#include <algorithm>
+
 #include "nsAboutCacheEntry.h"
 
-#include "mozilla/Sprintf.h"
-
-#include "nsAboutCache.h"
-#include "nsICacheStorage.h"
+#include "CacheFileUtils.h"
 #include "CacheObserver.h"
-#include "nsNetUtil.h"
+#include "mozilla/Sprintf.h"
+#include "nsAboutCache.h"
+#include "nsAboutProtocolUtils.h"
+#include "nsContentUtils.h"
 #include "nsEscape.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
+#include "nsICacheStorage.h"
 #include "nsIPipe.h"
-#include "nsAboutProtocolUtils.h"
-#include "nsContentUtils.h"
+#include "nsITransportSecurityInfo.h"
 #include "nsInputStreamPump.h"
-#include "CacheFileUtils.h"
-#include <algorithm>
+#include "nsNetUtil.h"
 
 using namespace mozilla::net;
 
@@ -419,7 +420,7 @@ nsresult nsAboutCacheEntry::Channel::WriteCacheEntryDescription(
   
 
   
-  nsCOMPtr<nsISupports> securityInfo;
+  nsCOMPtr<nsITransportSecurityInfo> securityInfo;
   entry->GetSecurityInfo(getter_AddRefs(securityInfo));
   if (securityInfo) {
     APPEND_ROW("Security", "This is a secure document.");
