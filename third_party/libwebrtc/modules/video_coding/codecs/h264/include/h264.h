@@ -27,8 +27,8 @@ struct SdpVideoFormat;
 
 
 RTC_EXPORT SdpVideoFormat
-CreateH264Format(H264::Profile profile,
-                 H264::Level level,
+CreateH264Format(H264Profile profile,
+                 H264Level level,
                  const std::string& packetization_mode);
 
 

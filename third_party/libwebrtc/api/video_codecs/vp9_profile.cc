@@ -8,7 +8,7 @@
 
 
 
-#include "media/base/vp9_profile.h"
+#include "api/video_codecs/vp9_profile.h"
 
 #include <map>
 #include <utility>
@@ -59,7 +59,7 @@ absl::optional<VP9Profile> ParseSdpForVP9Profile(
   return StringToVP9Profile(profile_str);
 }
 
-bool IsSameVP9Profile(const SdpVideoFormat::Parameters& params1,
+bool VP9IsSameProfile(const SdpVideoFormat::Parameters& params1,
                       const SdpVideoFormat::Parameters& params2) {
   const absl::optional<VP9Profile> profile = ParseSdpForVP9Profile(params1);
   const absl::optional<VP9Profile> other_profile =

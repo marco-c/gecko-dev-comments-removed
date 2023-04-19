@@ -1,0 +1,115 @@
+
+
+
+
+
+
+
+
+
+
+#include "media/base/sdp_video_format_utils.h"
+
+#include <string.h>
+
+#include <map>
+#include <utility>
+
+#include "rtc_base/string_to_number.h"
+#include "test/gtest.h"
+
+namespace webrtc {
+namespace {
+
+const char kVPxFmtpMaxFrameRate[] = "max-fr";
+
+const char kVPxFmtpMaxFrameSize[] = "max-fs";
+}  
+
+TEST(SdpVideoFormatUtilsTest, TestH264GenerateProfileLevelIdForAnswerEmpty) {
+  SdpVideoFormat::Parameters answer_params;
+  H264GenerateProfileLevelIdForAnswer(SdpVideoFormat::Parameters(),
+                                      SdpVideoFormat::Parameters(),
+                                      &answer_params);
+  EXPECT_TRUE(answer_params.empty());
+}
+
+TEST(SdpVideoFormatUtilsTest,
+     TestH264GenerateProfileLevelIdForAnswerLevelSymmetryCapped) {
+  SdpVideoFormat::Parameters low_level;
+  low_level["profile-level-id"] = "42e015";
+  SdpVideoFormat::Parameters high_level;
+  high_level["profile-level-id"] = "42e01f";
+
+  
+  
+  SdpVideoFormat::Parameters answer_params;
+  H264GenerateProfileLevelIdForAnswer(low_level ,
+                                      high_level ,
+                                      &answer_params);
+  EXPECT_EQ("42e015", answer_params["profile-level-id"]);
+
+  SdpVideoFormat::Parameters answer_params2;
+  H264GenerateProfileLevelIdForAnswer(high_level ,
+                                      low_level ,
+                                      &answer_params2);
+  EXPECT_EQ("42e015", answer_params2["profile-level-id"]);
+}
+
+TEST(SdpVideoFormatUtilsTest,
+     TestH264GenerateProfileLevelIdForAnswerConstrainedBaselineLevelAsymmetry) {
+  SdpVideoFormat::Parameters local_params;
+  local_params["profile-level-id"] = "42e01f";
+  local_params["level-asymmetry-allowed"] = "1";
+  SdpVideoFormat::Parameters remote_params;
+  remote_params["profile-level-id"] = "42e015";
+  remote_params["level-asymmetry-allowed"] = "1";
+  SdpVideoFormat::Parameters answer_params;
+  H264GenerateProfileLevelIdForAnswer(local_params, remote_params,
+                                      &answer_params);
+  
+  
+  EXPECT_EQ("42e01f", answer_params["profile-level-id"]);
+}
+
+TEST(SdpVideoFormatUtilsTest, MaxFrameRateIsMissingOrInvalid) {
+  SdpVideoFormat::Parameters params;
+  absl::optional<int> empty = ParseSdpForVPxMaxFrameRate(params);
+  EXPECT_FALSE(empty);
+  params[kVPxFmtpMaxFrameRate] = "-1";
+  EXPECT_FALSE(ParseSdpForVPxMaxFrameRate(params));
+  params[kVPxFmtpMaxFrameRate] = "0";
+  EXPECT_FALSE(ParseSdpForVPxMaxFrameRate(params));
+  params[kVPxFmtpMaxFrameRate] = "abcde";
+  EXPECT_FALSE(ParseSdpForVPxMaxFrameRate(params));
+}
+
+TEST(SdpVideoFormatUtilsTest, MaxFrameRateIsSpecified) {
+  SdpVideoFormat::Parameters params;
+  params[kVPxFmtpMaxFrameRate] = "30";
+  EXPECT_EQ(ParseSdpForVPxMaxFrameRate(params), 30);
+  params[kVPxFmtpMaxFrameRate] = "60";
+  EXPECT_EQ(ParseSdpForVPxMaxFrameRate(params), 60);
+}
+
+TEST(SdpVideoFormatUtilsTest, MaxFrameSizeIsMissingOrInvalid) {
+  SdpVideoFormat::Parameters params;
+  absl::optional<int> empty = ParseSdpForVPxMaxFrameSize(params);
+  EXPECT_FALSE(empty);
+  params[kVPxFmtpMaxFrameSize] = "-1";
+  EXPECT_FALSE(ParseSdpForVPxMaxFrameSize(params));
+  params[kVPxFmtpMaxFrameSize] = "0";
+  EXPECT_FALSE(ParseSdpForVPxMaxFrameSize(params));
+  params[kVPxFmtpMaxFrameSize] = "abcde";
+  EXPECT_FALSE(ParseSdpForVPxMaxFrameSize(params));
+}
+
+TEST(SdpVideoFormatUtilsTest, MaxFrameSizeIsSpecified) {
+  SdpVideoFormat::Parameters params;
+  params[kVPxFmtpMaxFrameSize] = "8100";  
+  EXPECT_EQ(ParseSdpForVPxMaxFrameSize(params), 1920 * 1080);
+  params[kVPxFmtpMaxFrameSize] = "32400";  
+  EXPECT_EQ(ParseSdpForVPxMaxFrameSize(params), 3840 * 2160);
+}
+
+}  

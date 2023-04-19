@@ -11,54 +11,45 @@
 #ifndef MEDIA_BASE_H264_PROFILE_LEVEL_ID_H_
 #define MEDIA_BASE_H264_PROFILE_LEVEL_ID_H_
 
-#include <map>
 #include <string>
 
-#include "absl/types/optional.h"
-#include "rtc_base/system/rtc_export.h"
+#include "api/video_codecs/h264_profile_level_id.h"
+
+
+
 
 namespace webrtc {
 namespace H264 {
 
-enum Profile {
-  kProfileConstrainedBaseline,
-  kProfileBaseline,
-  kProfileMain,
-  kProfileConstrainedHigh,
-  kProfileHigh,
-};
+typedef H264Profile Profile;
+typedef H264Level Level;
+typedef H264ProfileLevelId ProfileLevelId;
 
+constexpr H264Profile kProfileConstrainedBaseline =
+    H264Profile::kProfileConstrainedBaseline;
+constexpr H264Profile kProfileBaseline = H264Profile::kProfileBaseline;
+constexpr H264Profile kProfileMain = H264Profile::kProfileMain;
+constexpr H264Profile kProfileConstrainedHigh =
+    H264Profile::kProfileConstrainedHigh;
+constexpr H264Profile kProfileHigh = H264Profile::kProfileHigh;
 
-typedef std::map<std::string, std::string> CodecParameterMap;
-
-
-
-enum Level {
-  kLevel1_b = 0,
-  kLevel1 = 10,
-  kLevel1_1 = 11,
-  kLevel1_2 = 12,
-  kLevel1_3 = 13,
-  kLevel2 = 20,
-  kLevel2_1 = 21,
-  kLevel2_2 = 22,
-  kLevel3 = 30,
-  kLevel3_1 = 31,
-  kLevel3_2 = 32,
-  kLevel4 = 40,
-  kLevel4_1 = 41,
-  kLevel4_2 = 42,
-  kLevel5 = 50,
-  kLevel5_1 = 51,
-  kLevel5_2 = 52
-};
-
-struct ProfileLevelId {
-  constexpr ProfileLevelId(Profile profile, Level level)
-      : profile(profile), level(level) {}
-  Profile profile;
-  Level level;
-};
+constexpr H264Level kLevel1_b = H264Level::kLevel1_b;
+constexpr H264Level kLevel1 = H264Level::kLevel1;
+constexpr H264Level kLevel1_1 = H264Level::kLevel1_1;
+constexpr H264Level kLevel1_2 = H264Level::kLevel1_2;
+constexpr H264Level kLevel1_3 = H264Level::kLevel1_3;
+constexpr H264Level kLevel2 = H264Level::kLevel2;
+constexpr H264Level kLevel2_1 = H264Level::kLevel2_1;
+constexpr H264Level kLevel2_2 = H264Level::kLevel2_2;
+constexpr H264Level kLevel3 = H264Level::kLevel3;
+constexpr H264Level kLevel3_1 = H264Level::kLevel3_1;
+constexpr H264Level kLevel3_2 = H264Level::kLevel3_2;
+constexpr H264Level kLevel4 = H264Level::kLevel4;
+constexpr H264Level kLevel4_1 = H264Level::kLevel4_1;
+constexpr H264Level kLevel4_2 = H264Level::kLevel4_2;
+constexpr H264Level kLevel5 = H264Level::kLevel5;
+constexpr H264Level kLevel5_1 = H264Level::kLevel5_1;
+constexpr H264Level kLevel5_2 = H264Level::kLevel5_2;
 
 
 
@@ -70,7 +61,7 @@ absl::optional<ProfileLevelId> ParseProfileLevelId(const char* str);
 
 
 RTC_EXPORT absl::optional<ProfileLevelId> ParseSdpProfileLevelId(
-    const CodecParameterMap& params);
+    const SdpVideoFormat::Parameters& params);
 
 
 
@@ -86,31 +77,9 @@ RTC_EXPORT absl::optional<std::string> ProfileLevelIdToString(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void GenerateProfileLevelIdForAnswer(
-    const CodecParameterMap& local_supported_params,
-    const CodecParameterMap& remote_offered_params,
-    CodecParameterMap* answer_params);
-
-
-
-bool IsSameH264Profile(const CodecParameterMap& params1,
-                       const CodecParameterMap& params2);
+RTC_EXPORT bool IsSameH264Profile(const SdpVideoFormat::Parameters& params1,
+                                  const SdpVideoFormat::Parameters& params2);
 
 }  
 }  
-
 #endif  

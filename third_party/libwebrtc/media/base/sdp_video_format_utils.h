@@ -8,13 +8,33 @@
 
 
 
-#ifndef MEDIA_BASE_SDP_FMTP_UTILS_H_
-#define MEDIA_BASE_SDP_FMTP_UTILS_H_
+#ifndef MEDIA_BASE_SDP_VIDEO_FORMAT_UTILS_H_
+#define MEDIA_BASE_SDP_VIDEO_FORMAT_UTILS_H_
 
 #include "absl/types/optional.h"
 #include "api/video_codecs/sdp_video_format.h"
 
 namespace webrtc {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void H264GenerateProfileLevelIdForAnswer(
+    const SdpVideoFormat::Parameters& local_supported_params,
+    const SdpVideoFormat::Parameters& remote_offered_params,
+    SdpVideoFormat::Parameters* answer_params);
 
 
 
