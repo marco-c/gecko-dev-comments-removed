@@ -148,6 +148,10 @@ FormAutofillPreferences.prototype = {
 
       
       savedAddressesBtn.setAttribute(
+        "search-l10n-ids",
+        "autofill-manage-addresses-title"
+      );
+      savedAddressesBtn.setAttribute(
         "searchkeywords",
         MANAGE_ADDRESSES_KEYWORDS.concat(EDIT_ADDRESS_KEYWORDS)
           .map(key => this.bundle.GetStringFromName(key))
@@ -217,6 +221,10 @@ FormAutofillPreferences.prototype = {
       creditCardAutofillLearnMore.setAttribute("href", creditCardLearnMoreURL);
 
       
+      savedCreditCardsBtn.setAttribute(
+        "search-l10n-ids",
+        "autofill-manage-credit-cards-title"
+      );
       savedCreditCardsBtn.setAttribute(
         "searchkeywords",
         MANAGE_CREDITCARDS_KEYWORDS.concat(EDIT_CREDITCARD_KEYWORDS)
