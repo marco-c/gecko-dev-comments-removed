@@ -11,7 +11,9 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_ESTIMATOR_PROXY_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_ESTIMATOR_PROXY_H_
 
+#include <functional>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "api/transport/network_control.h"
@@ -24,7 +26,6 @@
 namespace webrtc {
 
 class Clock;
-class PacketRouter;
 namespace rtcp {
 class TransportFeedback;
 }
@@ -32,11 +33,14 @@ class TransportFeedback;
 
 
 
-
 class RemoteEstimatorProxy : public RemoteBitrateEstimator {
  public:
+  
+  
+  using TransportFeedbackSender = std::function<void(
+      std::vector<std::unique_ptr<rtcp::RtcpPacket>> packets)>;
   RemoteEstimatorProxy(Clock* clock,
-                       TransportFeedbackSenderInterface* feedback_sender,
+                       TransportFeedbackSender feedback_sender,
                        const WebRtcKeyValueConfig* key_value_config,
                        NetworkStateEstimator* network_state_estimator);
   ~RemoteEstimatorProxy() override;
@@ -88,7 +92,7 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
       rtcp::TransportFeedback* feedback_packet);
 
   Clock* const clock_;
-  TransportFeedbackSenderInterface* const feedback_sender_;
+  const TransportFeedbackSender feedback_sender_;
   const TransportWideFeedbackConfig send_config_;
   int64_t last_process_time_ms_;
 
