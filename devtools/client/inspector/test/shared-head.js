@@ -570,23 +570,36 @@ function getRuleViewRule(view, selectorText, index = 0) {
 
 
 
-function getRuleViewProperty(view, selectorText, propertyName) {
-  let prop;
 
+
+
+
+
+function getRuleViewProperty(view, selectorText, propertyName, options = {}) {
+  if (options.wait) {
+    return waitFor(() =>
+      _syncGetRuleViewProperty(view, selectorText, propertyName)
+    );
+  }
+  return _syncGetRuleViewProperty(view, selectorText, propertyName);
+}
+
+function _syncGetRuleViewProperty(view, selectorText, propertyName) {
   const rule = getRuleViewRule(view, selectorText);
-  if (rule) {
-    
-    for (const p of rule.querySelectorAll(".ruleview-property")) {
-      const nameSpan = p.querySelector(".ruleview-propertyname");
-      const valueSpan = p.querySelector(".ruleview-propertyvalue");
+  if (!rule) {
+    return null;
+  }
 
-      if (nameSpan.textContent === propertyName) {
-        prop = { nameSpan: nameSpan, valueSpan: valueSpan };
-        break;
-      }
+  
+  for (const p of rule.querySelectorAll(".ruleview-property")) {
+    const nameSpan = p.querySelector(".ruleview-propertyname");
+    const valueSpan = p.querySelector(".ruleview-propertyvalue");
+
+    if (nameSpan.textContent === propertyName) {
+      return { nameSpan: nameSpan, valueSpan: valueSpan };
     }
   }
-  return prop;
+  return null;
 }
 
 

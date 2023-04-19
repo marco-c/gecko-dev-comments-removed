@@ -21,9 +21,10 @@ add_task(async function() {
   const { view } = await openRuleView();
 
   
-  const property = await waitFor(() =>
-    getRuleViewProperty(view, "body", "background")
-  );
+  const property = await getRuleViewProperty(view, "body", "background", {
+    wait: true,
+  });
+
   const value = property.valueSpan;
   const swatch = value.querySelectorAll(".ruleview-colorswatch")[0];
   const url = value.querySelector(".theme-link");
