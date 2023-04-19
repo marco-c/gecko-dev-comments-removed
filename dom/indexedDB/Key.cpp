@@ -7,7 +7,6 @@
 #include "Key.h"
 
 #include <algorithm>
-#include <cstdint>
 #include <stdint.h>          
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
@@ -32,7 +31,6 @@
 #include "mozIStorageStatement.h"
 #include "mozIStorageValueArray.h"
 #include "nsJSUtils.h"
-#include "nsTStringRepr.h"
 #include "ReportInternalError.h"
 #include "xpcpublic.h"
 
@@ -557,22 +555,20 @@ Result<Ok, nsresult> Key::EncodeString(const Span<const T> aInput,
   return EncodeAsString(aInput, eString + aTypeOffset);
 }
 
-
-
-#define KEY_MAXIMUM_BUFFER_LENGTH \
-  ::mozilla::detail::nsTStringLengthStorage<char>::kMax
-
 template <typename T>
 Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
                                          uint8_t aType) {
   
-  
-  
-  
+  if (NS_WARN_IF(UINT32_MAX - 2 < uintptr_t(aInput.Length()))) {
+    IDB_REPORT_INTERNAL_ERR();
+    return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+  }
 
   
   
-  uint32_t size = 2;
+  CheckedUint32 size = 2;
+
+  MOZ_ASSERT(size.isValid());
 
   
   
@@ -581,15 +577,15 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
   const auto inputRange = mozilla::detail::IteratorRange(
       aInput.Elements(), aInput.Elements() + aInput.Length());
 
-  uint32_t payloadSize = aInput.Length();
+  CheckedUint32 payloadSize = aInput.Length();
   bool anyMultibyte = false;
-  for (const T val : inputRange) {
+  for (const auto val : inputRange) {
     if (val > ONE_BYTE_LIMIT) {
       anyMultibyte = true;
       payloadSize += char16_t(val) > TWO_BYTE_LIMIT ? 2 : 1;
-      if (payloadSize > KEY_MAXIMUM_BUFFER_LENGTH) {
+      if (!payloadSize.isValid()) {
         IDB_REPORT_INTERNAL_ERR();
-        return Err(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
+        return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
       }
     }
   }
@@ -600,13 +596,13 @@ Result<Ok, nsresult> Key::EncodeAsString(const Span<const T> aInput,
   uint32_t oldLen = mBuffer.Length();
   size += oldLen;
 
-  if (size > KEY_MAXIMUM_BUFFER_LENGTH) {
+  if (!size.isValid()) {
     IDB_REPORT_INTERNAL_ERR();
-    return Err(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
+    return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
   }
 
   char* buffer;
-  if (!mBuffer.GetMutableData(&buffer, size)) {
+  if (!mBuffer.GetMutableData(&buffer, size.value())) {
     IDB_REPORT_INTERNAL_ERR();
     return Err(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
   }
