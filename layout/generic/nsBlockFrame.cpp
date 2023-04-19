@@ -1162,6 +1162,10 @@ static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
     return false;
   }
 
+  if (StaticPrefs::layout_css_webkit_line_clamp_block_enabled()) {
+    return true;
+  }
+
   
   
   
@@ -1848,7 +1852,6 @@ static nscoord ApplyLineClamp(const ReflowInput& aReflowInput,
   if (!IsLineClampRoot(aFrame)) {
     return aContentBlockEndEdge;
   }
-
   auto lineClamp = aReflowInput.mStyleDisplay->mWebkitLineClamp;
   nsBlockFrame* frame = aFrame;
   nsLineBox* line = FindLineClampTarget(frame, lineClamp);
