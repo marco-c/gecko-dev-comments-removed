@@ -4602,7 +4602,12 @@ Toolbox.prototype = {
 
 
   _setDebugTargetData() {
-    if (this.hostType === Toolbox.HostType.PAGE) {
+    
+    
+    if (
+      this.hostType === Toolbox.HostType.PAGE ||
+      this.descriptorFront.isWebExtensionDescriptor
+    ) {
       
       
       

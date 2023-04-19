@@ -35,6 +35,13 @@ loader.lazyRequireGetter(
   "devtools/client/webconsole/browser-console-manager",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "Toolbox",
+  "devtools/client/framework/toolbox",
+  true
+);
+
 loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
 loader.lazyImporter(
   this,
@@ -73,6 +80,9 @@ function DevTools() {
   EventEmitter.decorate(this);
   this._telemetry = new Telemetry();
   this._telemetry.setEventRecordingEnabled(true);
+
+  
+  this._commandsPromiseByWebExtId = new Map(); 
 
   
   this._onThemeChanged = this._onThemeChanged.bind(this);
@@ -611,6 +621,40 @@ DevTools.prototype = {
       raise,
       reason,
       hostOptions,
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+  async showToolboxForWebExtension(extensionId) {
+    
+    
+    
+    let commandsPromise = this._commandsPromiseByWebExtId.get(extensionId);
+    if (!commandsPromise) {
+      commandsPromise = CommandsFactory.forAddon(extensionId);
+      this._commandsPromiseByWebExtId.set(extensionId, commandsPromise);
+    }
+    const commands = await commandsPromise;
+    commands.client.once("closed").then(() => {
+      this._commandsPromiseByWebExtId.delete(extensionId);
+    });
+
+    
+    
+    
+    
+    commands.descriptorFront.shouldCloseClient = true;
+
+    return this.showToolbox(commands.descriptorFront, {
+      hostType: Toolbox.HostType.WINDOW,
     });
   },
 
