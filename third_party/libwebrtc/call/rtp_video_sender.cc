@@ -301,6 +301,38 @@ bool TransportSeqNumExtensionConfigured(const RtpConfig& config) {
     return ext.uri == RtpExtension::kTransportSequenceNumberUri;
   });
 }
+
+
+
+
+
+
+bool IsFirstFrameOfACodedVideoSequence(
+    const EncodedImage& encoded_image,
+    const CodecSpecificInfo* codec_specific_info) {
+  if (encoded_image._frameType != VideoFrameType::kVideoFrameKey) {
+    return false;
+  }
+
+  if (codec_specific_info != nullptr &&
+      codec_specific_info->generic_frame_info.has_value()) {
+    
+    
+    
+    return absl::c_none_of(
+        codec_specific_info->generic_frame_info->encoder_buffers,
+        [](const CodecBufferUsage& buffer) { return buffer.referenced; });
+  }
+
+  
+  
+  
+  
+
+  
+  return encoded_image.SpatialIndex() <= 0;
+}
+
 }  
 
 RtpVideoSender::RtpVideoSender(
@@ -526,7 +558,7 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
         rtp_streams_[stream_index].rtp_rtcp->ExpectedRetransmissionTimeMs();
   }
 
-  if (encoded_image._frameType == VideoFrameType::kVideoFrameKey) {
+  if (IsFirstFrameOfACodedVideoSequence(encoded_image, codec_specific_info)) {
     
     
     
