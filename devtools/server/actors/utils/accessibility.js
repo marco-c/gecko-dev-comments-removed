@@ -83,26 +83,6 @@ function removeSheetForBackgroundCalculation(win) {
 
 
 
-function isWebRenderEnabled(win) {
-  try {
-    return win.windowUtils && win.windowUtils.layerManagerType === "WebRender";
-  } catch (e) {
-    
-    
-    console.warn(e);
-  }
-
-  return false;
-}
-
-
-
-
-
-
-
-
-
 
 
 function getAriaRoles(accessible) {
@@ -118,6 +98,5 @@ function getAriaRoles(accessible) {
 
 exports.getAriaRoles = getAriaRoles;
 exports.isDefunct = isDefunct;
-exports.isWebRenderEnabled = isWebRenderEnabled;
 exports.loadSheetForBackgroundCalculation = loadSheetForBackgroundCalculation;
 exports.removeSheetForBackgroundCalculation = removeSheetForBackgroundCalculation;

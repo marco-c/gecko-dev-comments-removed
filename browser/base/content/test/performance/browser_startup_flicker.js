@@ -9,19 +9,6 @@
 
 
 add_task(async function() {
-  const isWebRenderEnabled = Services.prefs.getBoolPref("gfx.webrender.all");
-  const isFissionEnabled = SpecialPowers.useRemoteSubframes;
-  if (isFissionEnabled && !isWebRenderEnabled) {
-    
-    
-    
-    ok(
-      true,
-      "Detected Fission without WebRender. Flicker expected, deactivating flicker test"
-    );
-    return;
-  }
-
   let startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService()
     .wrappedJSObject;
   await startupRecorder.done;

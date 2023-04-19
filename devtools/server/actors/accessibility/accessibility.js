@@ -24,12 +24,6 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/accessibility/simulator.js",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "isWebRenderEnabled",
-  "resource://devtools/server/actors/utils/accessibility.js",
-  true
-);
 
 
 
@@ -116,11 +110,6 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
 
 
   getSimulator() {
-    
-    if (!isWebRenderEnabled(this.targetActor.window)) {
-      return null;
-    }
-
     if (!this.simulator) {
       this.simulator = new SimulatorActor(this.conn, this.targetActor);
       this.manage(this.simulator);
