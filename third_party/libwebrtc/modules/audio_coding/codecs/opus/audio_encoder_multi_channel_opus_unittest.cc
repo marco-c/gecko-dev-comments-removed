@@ -28,10 +28,9 @@ TEST(AudioEncoderMultiOpusTest, CheckConfigValidity) {
                                      {"num_streams", "2"}});
     const absl::optional<AudioEncoderMultiChannelOpus::Config> encoder_config =
         AudioEncoderMultiChannelOpus::SdpToConfig(sdp_format);
-    ASSERT_TRUE(encoder_config.has_value());
 
     
-    EXPECT_FALSE(encoder_config->IsOk());
+    EXPECT_FALSE(encoder_config.has_value());
   }
 
   {
@@ -41,10 +40,9 @@ TEST(AudioEncoderMultiOpusTest, CheckConfigValidity) {
                                      {"num_streams", "2"}});
     const absl::optional<AudioEncoderMultiChannelOpus::Config> encoder_config =
         AudioEncoderMultiChannelOpus::SdpToConfig(sdp_format);
-    ASSERT_TRUE(encoder_config.has_value());
 
     
-    EXPECT_FALSE(encoder_config->IsOk());
+    EXPECT_FALSE(encoder_config.has_value());
   }
   {
     const SdpAudioFormat sdp_format("multiopus", 48000, 3,
@@ -53,10 +51,9 @@ TEST(AudioEncoderMultiOpusTest, CheckConfigValidity) {
                                      {"num_streams", "1"}});
     const absl::optional<AudioEncoderMultiChannelOpus::Config> encoder_config =
         AudioEncoderMultiChannelOpus::SdpToConfig(sdp_format);
-    ASSERT_TRUE(encoder_config.has_value());
 
     
-    EXPECT_FALSE(encoder_config->IsOk());
+    EXPECT_FALSE(encoder_config.has_value());
   }
   {
     const SdpAudioFormat sdp_format("multiopus", 48000, 3,
@@ -77,11 +74,10 @@ TEST(AudioEncoderMultiOpusTest, CheckConfigValidity) {
                                      {"num_streams", "2"}});
     const absl::optional<AudioEncoderMultiChannelOpus::Config> encoder_config =
         AudioEncoderMultiChannelOpus::SdpToConfig(sdp_format);
-    ASSERT_TRUE(encoder_config.has_value());
 
     
     
-    EXPECT_FALSE(encoder_config->IsOk());
+    EXPECT_FALSE(encoder_config.has_value());
   }
 }
 
@@ -105,7 +101,7 @@ TEST(AudioEncoderMultiOpusTest, ConfigValuesAreParsedCorrectly) {
       testing::ContainerEq(std::vector<unsigned char>({0, 4, 1, 2, 3, 5})));
 }
 
-TEST(AudioEncoderMultiOpusTest, CreateFromValidOrInvalidConfig) {
+TEST(AudioEncoderMultiOpusTest, CreateFromValidConfig) {
   {
     const SdpAudioFormat sdp_format("multiopus", 48000, 3,
                                     {{"channel_mapping", "0,255,255"},
@@ -113,19 +109,7 @@ TEST(AudioEncoderMultiOpusTest, CreateFromValidOrInvalidConfig) {
                                      {"num_streams", "2"}});
     const absl::optional<AudioEncoderMultiChannelOpus::Config> encoder_config =
         AudioEncoderMultiChannelOpus::SdpToConfig(sdp_format);
-    ASSERT_TRUE(encoder_config.has_value());
-
-    
-    
-    EXPECT_FALSE(encoder_config->IsOk());
-
-    const std::unique_ptr<AudioEncoder> opus_encoder =
-        AudioEncoderMultiChannelOpus::MakeAudioEncoder(*encoder_config,
-                                                       kOpusPayloadType);
-
-    
-    
-    EXPECT_FALSE(opus_encoder);
+    ASSERT_FALSE(encoder_config.has_value());
   }
   {
     const SdpAudioFormat sdp_format("multiopus", 48000, 3,
