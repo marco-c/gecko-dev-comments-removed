@@ -151,12 +151,7 @@ extern "C" const char* __tsan_default_suppressions() {
          
          
          "race:event_debug_mode_too_late\n"
-         
-         
-         
-         
-         "race:sctp_close\n"
-         "race:sctp_iterator_work\n"
+
          
          
          
@@ -168,6 +163,10 @@ extern "C" const char* __tsan_default_suppressions() {
          
          
          "race:system_base_info\n"
+         
+         
+         "deadlock:sctp_add_to_readq\n"
+
          
          
          
