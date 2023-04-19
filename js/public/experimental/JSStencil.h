@@ -200,7 +200,6 @@ extern JS_PUBLIC_API TranscodeResult DecodeStencil(JSContext* cx,
 
 
 
-
 extern JS_PUBLIC_API bool StartIncrementalEncoding(JSContext* cx,
                                                    RefPtr<Stencil>&& stencil);
 
