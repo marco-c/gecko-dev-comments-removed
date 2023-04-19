@@ -78,9 +78,19 @@ struct gfxFontFaceSrc {
   bool mUseOriginPrincipal = false;
 
   
-  
-  
-  uint32_t mFormatFlags;
+  enum FormatHint : uint8_t {
+    NONE = 0,  
+    COLLECTION = 1,
+    OPENTYPE = 2,
+    TRUETYPE = 3,
+    EOT = 4,
+    SVG = 5,
+    WOFF = 6,
+    WOFF2 = 7,
+    UNKNOWN = 255  
+  };
+
+  FormatHint mFormatHint;
 
   nsCString mLocalName;                     
   RefPtr<gfxFontSrcURI> mURI;               
@@ -115,7 +125,7 @@ inline bool operator==(const gfxFontFaceSrc& a, const gfxFontFaceSrc& b) {
         return false;
       }
       bool equals;
-      return a.mFormatFlags == b.mFormatFlags &&
+      return a.mFormatHint == b.mFormatHint &&
              (a.mURI == b.mURI || a.mURI->Equals(b.mURI)) &&
              NS_SUCCEEDED(a.mReferrerInfo->Equals(b.mReferrerInfo, &equals)) &&
              equals;
@@ -137,8 +147,8 @@ class gfxUserFontData {
  public:
   gfxUserFontData()
       : mSrcIndex(0),
-        mFormat(0),
         mMetaOrigLen(0),
+        mFormatHint(gfxFontFaceSrc::FormatHint::NONE),
         mCompression(kUnknownCompression),
         mPrivate(false),
         mIsBuffer(false) {}
@@ -153,11 +163,12 @@ class gfxUserFontData {
   nsCString mLocalName;   
   nsCString mRealName;    
   uint32_t mSrcIndex;     
-  uint32_t mFormat;       
   uint32_t mMetaOrigLen;  
-  uint8_t mCompression;   
-  bool mPrivate;          
-  bool mIsBuffer;         
+  gfxFontFaceSrc::FormatHint
+      mFormatHint;       
+  uint8_t mCompression;  
+  bool mPrivate;         
+  bool mIsBuffer;        
 
   enum {
     kUnknownCompression = 0,
@@ -239,33 +250,7 @@ class gfxUserFontSet {
 
   void Destroy();
 
-  enum {
-    
-    
-    FLAG_FORMAT_UNKNOWN = 1,
-    FLAG_FORMAT_OPENTYPE = 1 << 1,
-    FLAG_FORMAT_TRUETYPE = 1 << 2,
-    FLAG_FORMAT_TRUETYPE_AAT = 1 << 3,
-    FLAG_FORMAT_EOT = 1 << 4,
-    FLAG_FORMAT_SVG = 1 << 5,
-    FLAG_FORMAT_WOFF = 1 << 6,
-    FLAG_FORMAT_WOFF2 = 1 << 7,
-
-    FLAG_FORMAT_OPENTYPE_VARIATIONS = 1 << 8,
-    FLAG_FORMAT_TRUETYPE_VARIATIONS = 1 << 9,
-    FLAG_FORMAT_WOFF_VARIATIONS = 1 << 10,
-    FLAG_FORMAT_WOFF2_VARIATIONS = 1 << 11,
-
-    
-    FLAG_FORMATS_COMMON =
-        FLAG_FORMAT_OPENTYPE | FLAG_FORMAT_TRUETYPE | FLAG_FORMAT_WOFF |
-        FLAG_FORMAT_WOFF2 | FLAG_FORMAT_OPENTYPE_VARIATIONS |
-        FLAG_FORMAT_TRUETYPE_VARIATIONS | FLAG_FORMAT_WOFF_VARIATIONS |
-        FLAG_FORMAT_WOFF2_VARIATIONS,
-
-    
-    FLAG_FORMAT_NOT_USED = ~((1 << 12) - 1)
-  };
+  using FormatHint = gfxFontFaceSrc::FormatHint;
 
   
   
