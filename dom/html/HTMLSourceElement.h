@@ -29,11 +29,13 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLSourceElement, source)
 
-  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
+  nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   
   
-  virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
+  nsresult BindToTree(BindContext&, nsINode& aParent) override;
+
+  void UnbindFromTree(bool aNullParent) override;
 
   
   
@@ -97,6 +99,14 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
     SetUnsignedIntAttr(nsGkAtoms::height, aHeight, 0, aRv);
   }
 
+  const nsMappedAttributes* GetAttributesMappedForImage() const {
+    return mMappedAttributesForImage;
+  }
+
+  static bool IsAttributeMappedToImages(const nsAtom* aAttribute) {
+    return aAttribute == nsGkAtoms::width || aAttribute == nsGkAtoms::height;
+  }
+
  protected:
   virtual ~HTMLSourceElement();
 
@@ -114,6 +124,11 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
                         bool aNotify) override;
 
  private:
+  
+  void UpdateMediaList(const nsAttrValue* aValue);
+
+  void BuildMappedAttributesForImage();
+
   bool IsInPicture() const {
     return GetParentElement() &&
            GetParentElement()->IsHTMLElement(nsGkAtoms::picture);
@@ -129,7 +144,8 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
   nsCOMPtr<nsIPrincipal> mSrcsetTriggeringPrincipal;
 
   
-  void UpdateMediaList(const nsAttrValue* aValue);
+  
+  RefPtr<nsMappedAttributes> mMappedAttributesForImage;
 };
 
 }  

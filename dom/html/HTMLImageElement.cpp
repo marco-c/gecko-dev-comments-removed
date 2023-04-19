@@ -45,6 +45,7 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MappedDeclarations.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/RestyleManager.h"
 
 #include "nsLayoutUtils.h"
 
@@ -54,7 +55,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Image)
 
 #ifdef DEBUG
 
-static bool IsPreviousSibling(nsINode* aSubject, nsINode* aNode) {
+static bool IsPreviousSibling(const nsINode* aSubject, const nsINode* aNode) {
   if (aSubject == aNode) {
     return false;
   }
@@ -1018,6 +1019,20 @@ void HTMLImageElement::PictureSourceMediaOrTypeChanged(nsIContent* aSourceNode,
   UpdateSourceSyncAndQueueImageTask(true);
 }
 
+void HTMLImageElement::PictureSourceDimensionChanged(
+    HTMLSourceElement* aSourceNode, bool aNotify) {
+  MOZ_ASSERT(IsPreviousSibling(aSourceNode, this),
+             "Should not be getting notifications for non-previous-siblings");
+
+  
+  
+  
+  
+  if (mResponsiveSelector->Content() == aSourceNode) {
+    InvalidateAttributeMapping();
+  }
+}
+
 void HTMLImageElement::PictureSourceAdded(HTMLSourceElement* aSourceNode) {
   MOZ_ASSERT(!aSourceNode || IsPreviousSibling(aSourceNode, this),
              "Should not be getting notifications for non-previous-siblings");
@@ -1335,6 +1350,45 @@ void HTMLImageElement::LazyLoadImageReachedViewport() {
   doc->IncLazyLoadImageReachViewport(!Complete());
 }
 
+const nsMappedAttributes* HTMLImageElement::GetMappedAttributesFromSource()
+    const {
+  if (!IsInPicture() || !mResponsiveSelector ||
+      !mResponsiveSelector->Content()) {
+    return nullptr;
+  }
+
+  const auto* source =
+      HTMLSourceElement::FromNode(mResponsiveSelector->Content());
+  if (!source) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(IsPreviousSibling(source, this),
+             "Incorrect or out-of-date source");
+  return source->GetAttributesMappedForImage();
+}
+
+void HTMLImageElement::InvalidateAttributeMapping() {
+  if (!IsInPicture()) {
+    return;
+  }
+
+  nsPresContext* presContext = nsContentUtils::GetContextForContent(this);
+  if (!presContext) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  presContext->RestyleManager()->PostRestyleEvent(
+      this, RestyleHint::RESTYLE_SELF, nsChangeHint(0));
+}
+
 void HTMLImageElement::SetResponsiveSelector(
     RefPtr<ResponsiveImageSelector>&& aSource) {
   if (mResponsiveSelector == aSource) {
@@ -1344,7 +1398,9 @@ void HTMLImageElement::SetResponsiveSelector(
   mResponsiveSelector = std::move(aSource);
 
   
+  InvalidateAttributeMapping();
 
+  
   SetDensity(mResponsiveSelector
                  ? mResponsiveSelector->GetSelectedImageDensity()
                  : 1.0);

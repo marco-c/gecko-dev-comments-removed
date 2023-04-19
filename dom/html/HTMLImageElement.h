@@ -270,6 +270,10 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   void LazyLoadImageReachedViewport();
 
+  
+  
+  const nsMappedAttributes* GetMappedAttributesFromSource() const;
+
  protected:
   virtual ~HTMLImageElement();
 
@@ -309,6 +313,11 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   
   
   void PictureSourceMediaOrTypeChanged(nsIContent* aSourceNode, bool aNotify);
+
+  
+  
+  void PictureSourceDimensionChanged(HTMLSourceElement* aSourceNode,
+                                     bool aNotify);
 
   void PictureSourceAdded(HTMLSourceElement* aSourceNode = nullptr);
   
@@ -407,6 +416,8 @@ class HTMLImageElement final : public nsGenericHTMLElement,
     return GetParentElement() &&
            GetParentElement()->IsHTMLElement(nsGkAtoms::picture);
   }
+
+  void InvalidateAttributeMapping();
 
   void SetResponsiveSelector(RefPtr<ResponsiveImageSelector>&& aSource);
   void SetDensity(double aDensity);

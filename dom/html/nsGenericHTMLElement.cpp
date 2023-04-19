@@ -1405,6 +1405,41 @@ void nsGenericHTMLElement::MapImageSizeAttributesInto(
   }
 }
 
+void nsGenericHTMLElement::MapPictureSourceSizeAttributesInto(
+    const nsMappedAttributes* aAttributes, MappedDeclarations& aDecls) {
+  const auto* width = aAttributes->GetAttr(nsGkAtoms::width);
+  const auto* height = aAttributes->GetAttr(nsGkAtoms::height);
+  if (!width && !height) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (width) {
+    MapDimensionAttributeInto(aDecls, eCSSProperty_width, *width);
+  } else {
+    aDecls.SetAutoValue(eCSSProperty_width);
+  }
+
+  if (height) {
+    MapDimensionAttributeInto(aDecls, eCSSProperty_height, *height);
+  } else {
+    aDecls.SetAutoValue(eCSSProperty_height);
+  }
+
+  if (width && height) {
+    DoMapAspectRatio(*width, *height, aDecls);
+  } else {
+    aDecls.SetAutoValue(eCSSProperty_aspect_ratio);
+  }
+}
+
 void nsGenericHTMLElement::MapAspectRatioInto(
     const nsMappedAttributes* aAttributes, MappedDeclarations& aDecls) {
   auto* width = aAttributes->GetAttr(nsGkAtoms::width);
