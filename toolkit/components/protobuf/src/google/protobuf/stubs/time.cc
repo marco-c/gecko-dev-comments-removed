@@ -10,23 +10,23 @@ namespace protobuf {
 namespace internal {
 
 namespace {
-static const int64 kSecondsPerMinute = 60;
-static const int64 kSecondsPerHour = 3600;
-static const int64 kSecondsPerDay = kSecondsPerHour * 24;
-static const int64 kSecondsPer400Years =
+static const int64_t kSecondsPerMinute = 60;
+static const int64_t kSecondsPerHour = 3600;
+static const int64_t kSecondsPerDay = kSecondsPerHour * 24;
+static const int64_t kSecondsPer400Years =
     kSecondsPerDay * (400 * 365 + 400 / 4 - 3);
 
-static const int64 kSecondsFromEraToEpoch = 62135596800LL;
+static const int64_t kSecondsFromEraToEpoch = 62135596800LL;
 
-static const int64 kMinTime = -62135596800LL;  
-static const int64 kMaxTime = 253402300799LL;  
+static const int64_t kMinTime = -62135596800LL;  
+static const int64_t kMaxTime = 253402300799LL;  
 
 static const int kNanosPerMillisecond = 1000000;
 static const int kNanosPerMicrosecond = 1000;
 
 
 
-int64 SecondsPer100Years(int year) {
+int64_t SecondsPer100Years(int year) {
   if (year % 400 == 0 || year % 400 > 300) {
     return kSecondsPerDay * (100 * 365 + 100 / 4);
   } else {
@@ -36,7 +36,7 @@ int64 SecondsPer100Years(int year) {
 
 
 
-int64 SecondsPer4Years(int year) {
+int64_t SecondsPer4Years(int year) {
   if ((year % 100 == 0 || year % 100 > 96) &&
       !(year % 400 == 0 || year % 400 > 396)) {
     
@@ -51,7 +51,7 @@ bool IsLeapYear(int year) {
   return year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
 }
 
-int64 SecondsPerYear(int year) {
+int64_t SecondsPerYear(int year) {
   return kSecondsPerDay * (IsLeapYear(year) ? 366 : 365);
 }
 
@@ -59,7 +59,7 @@ static const int kDaysInMonth[13] = {
   0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-int64 SecondsPerMonth(int month, bool leap) {
+int64_t SecondsPerMonth(int month, bool leap) {
   if (month == 2 && leap) {
     return kSecondsPerDay * (kDaysInMonth[month] + 1);
   }
@@ -88,8 +88,8 @@ bool ValidateDateTime(const DateTime& time) {
 
 
 
-int64 SecondsSinceCommonEra(const DateTime& time) {
-  int64 result = 0;
+int64_t SecondsSinceCommonEra(const DateTime& time) {
+  int64_t result = 0;
   
   assert(time.year >= 1 && time.year <= 9999);
   int year = 1;
@@ -130,7 +130,7 @@ int64 SecondsSinceCommonEra(const DateTime& time) {
 
 
 
-string FormatNanos(int32 nanos) {
+std::string FormatNanos(int32_t nanos) {
   if (nanos % kNanosPerMillisecond == 0) {
     return StringPrintf("%03d", nanos / kNanosPerMillisecond);
   } else if (nanos % kNanosPerMicrosecond == 0) {
@@ -167,7 +167,7 @@ const char* ParseInt(const char* data, int width, int min_value,
 
 
 
-const char* ParseNanos(const char* data, int32* nanos) {
+const char* ParseNanos(const char* data, int32_t* nanos) {
   if (!ascii_isdigit(*data)) {
     return nullptr;
   }
@@ -190,7 +190,7 @@ const char* ParseNanos(const char* data, int32* nanos) {
   return data;
 }
 
-const char* ParseTimezoneOffset(const char* data, int64* offset) {
+const char* ParseTimezoneOffset(const char* data, int64_t* offset) {
   
   int hour;
   if ((data = ParseInt(data, 2, 0, 23, &hour)) == nullptr) {
@@ -208,7 +208,7 @@ const char* ParseTimezoneOffset(const char* data, int64* offset) {
 }
 }  
 
-bool SecondsToDateTime(int64 seconds, DateTime* time) {
+bool SecondsToDateTime(int64_t seconds, DateTime* time) {
   if (seconds < kMinTime || seconds > kMaxTime) {
     return false;
   }
@@ -253,7 +253,7 @@ bool SecondsToDateTime(int64 seconds, DateTime* time) {
   return true;
 }
 
-bool DateTimeToSeconds(const DateTime& time, int64* seconds) {
+bool DateTimeToSeconds(const DateTime& time, int64_t* seconds) {
   if (!ValidateDateTime(time)) {
     return false;
   }
@@ -261,28 +261,28 @@ bool DateTimeToSeconds(const DateTime& time, int64* seconds) {
   return true;
 }
 
-void GetCurrentTime(int64* seconds, int32* nanos) {
+void GetCurrentTime(int64_t* seconds, int32_t* nanos) {
   
   
   *seconds = time(nullptr);
   *nanos = 0;
 }
 
-string FormatTime(int64 seconds, int32 nanos) {
+std::string FormatTime(int64_t seconds, int32_t nanos) {
   DateTime time;
   if (nanos < 0 || nanos > 999999999 || !SecondsToDateTime(seconds, &time)) {
     return "InvalidTime";
   }
-  string result = StringPrintf("%04d-%02d-%02dT%02d:%02d:%02d",
-                               time.year, time.month, time.day,
-                               time.hour, time.minute, time.second);
+  std::string result =
+      StringPrintf("%04d-%02d-%02dT%02d:%02d:%02d", time.year, time.month,
+                   time.day, time.hour, time.minute, time.second);
   if (nanos != 0) {
     result += "." + FormatNanos(nanos);
   }
   return result + "Z";
 }
 
-bool ParseTime(const string& value, int64* seconds, int32* nanos) {
+bool ParseTime(const std::string& value, int64_t* seconds, int32_t* nanos) {
   DateTime time;
   const char* data = value.c_str();
   
@@ -341,14 +341,14 @@ bool ParseTime(const string& value, int64* seconds, int32* nanos) {
     ++data;
   } else if (*data == '+') {
     ++data;
-    int64 offset;
+    int64_t offset;
     if ((data = ParseTimezoneOffset(data, &offset)) == nullptr) {
       return false;
     }
     *seconds -= offset;
   } else if (*data == '-') {
     ++data;
-    int64 offset;
+    int64_t offset;
     if ((data = ParseTimezoneOffset(data, &offset)) == nullptr) {
       return false;
     }

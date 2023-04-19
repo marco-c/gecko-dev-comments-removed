@@ -48,12 +48,12 @@
 #include <iosfwd>
 #include <memory>
 #include <string>
-#include <vector> 
 
 #include <google/protobuf/stubs/callback.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/stubs/stl_util.h>
+
 
 
 #include <google/protobuf/port_def.inc>
@@ -65,7 +65,8 @@ namespace io {
 
 
 
-class PROTOBUF_EXPORT ArrayInputStream : public ZeroCopyInputStream {
+class PROTOBUF_EXPORT ArrayInputStream PROTOBUF_FUTURE_FINAL
+    : public ZeroCopyInputStream {
  public:
   
   
@@ -85,7 +86,7 @@ class PROTOBUF_EXPORT ArrayInputStream : public ZeroCopyInputStream {
 
 
  private:
-  const uint8* const data_;  
+  const uint8_t* const data_;  
   const int size_;           
   const int block_size_;     
 
@@ -99,7 +100,8 @@ class PROTOBUF_EXPORT ArrayInputStream : public ZeroCopyInputStream {
 
 
 
-class PROTOBUF_EXPORT ArrayOutputStream : public ZeroCopyOutputStream {
+class PROTOBUF_EXPORT ArrayOutputStream PROTOBUF_FUTURE_FINAL
+    : public ZeroCopyOutputStream {
  public:
   
   
@@ -117,7 +119,7 @@ class PROTOBUF_EXPORT ArrayOutputStream : public ZeroCopyOutputStream {
   int64_t ByteCount() const override;
 
  private:
-  uint8* const data_;     
+  uint8_t* const data_;     
   const int size_;        
   const int block_size_;  
 
@@ -131,7 +133,8 @@ class PROTOBUF_EXPORT ArrayOutputStream : public ZeroCopyOutputStream {
 
 
 
-class PROTOBUF_EXPORT StringOutputStream : public ZeroCopyOutputStream {
+class PROTOBUF_EXPORT StringOutputStream PROTOBUF_FUTURE_FINAL
+    : public ZeroCopyOutputStream {
  public:
   
   
@@ -151,7 +154,7 @@ class PROTOBUF_EXPORT StringOutputStream : public ZeroCopyOutputStream {
   int64_t ByteCount() const override;
 
  private:
-  static const int kMinimumSize = 16;
+  static constexpr size_t kMinimumSize = 16;
 
   std::string* target_;
 
@@ -237,11 +240,11 @@ class PROTOBUF_EXPORT CopyingInputStreamAdaptor : public ZeroCopyInputStream {
 
   
   
-  int64 position_;
+  int64_t position_;
 
   
   
-  std::unique_ptr<uint8[]> buffer_;
+  std::unique_ptr<uint8_t[]> buffer_;
   const int buffer_size_;
 
   
@@ -308,6 +311,8 @@ class PROTOBUF_EXPORT CopyingOutputStreamAdaptor : public ZeroCopyOutputStream {
   bool Next(void** data, int* size) override;
   void BackUp(int count) override;
   int64_t ByteCount() const override;
+  bool WriteAliasedRaw(const void* data, int size) override;
+  bool AllowsAliasing() const override { return true; }
 
  private:
   
@@ -326,11 +331,11 @@ class PROTOBUF_EXPORT CopyingOutputStreamAdaptor : public ZeroCopyOutputStream {
 
   
   
-  int64 position_;
+  int64_t position_;
 
   
   
-  std::unique_ptr<uint8[]> buffer_;
+  std::unique_ptr<uint8_t[]> buffer_;
   const int buffer_size_;
 
   
@@ -345,9 +350,10 @@ class PROTOBUF_EXPORT CopyingOutputStreamAdaptor : public ZeroCopyOutputStream {
 
 
 
-class PROTOBUF_EXPORT LimitingInputStream : public ZeroCopyInputStream {
+class PROTOBUF_EXPORT LimitingInputStream PROTOBUF_FUTURE_FINAL
+    : public ZeroCopyInputStream {
  public:
-  LimitingInputStream(ZeroCopyInputStream* input, int64 limit);
+  LimitingInputStream(ZeroCopyInputStream* input, int64_t limit);
   ~LimitingInputStream() override;
 
   
@@ -359,8 +365,8 @@ class PROTOBUF_EXPORT LimitingInputStream : public ZeroCopyInputStream {
 
  private:
   ZeroCopyInputStream* input_;
-  int64 limit_;  
-  int64 prior_bytes_read_;  
+  int64_t limit_;  
+  int64_t prior_bytes_read_;  
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(LimitingInputStream);
 };

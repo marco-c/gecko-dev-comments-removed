@@ -39,6 +39,7 @@
 #ifndef GOOGLE_PROTOBUF_MESSAGE_LITE_H__
 #define GOOGLE_PROTOBUF_MESSAGE_LITE_H__
 
+
 #include <climits>
 #include <string>
 
@@ -49,9 +50,13 @@
 #include <google/protobuf/stubs/once.h>
 #include <google/protobuf/port.h>
 #include <google/protobuf/stubs/strutil.h>
+#include <google/protobuf/explicitly_constructed.h>
+#include <google/protobuf/metadata_lite.h>
+#include <google/protobuf/stubs/hash.h>  
 
 
 #include <google/protobuf/port_def.inc>
+
 
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
@@ -63,6 +68,10 @@ namespace protobuf {
 template <typename T>
 class RepeatedPtrField;
 
+class FastReflectionMessageMutator;
+class FastReflectionStringSetter;
+class Reflection;
+
 namespace io {
 
 class CodedInputStream;
@@ -73,12 +82,20 @@ class ZeroCopyOutputStream;
 }  
 namespace internal {
 
+class SwapFieldHelper;
+
 
 class ParseContext;
 
+class ExtensionSet;
+class LazyField;
 class RepeatedPtrFieldBase;
+class TcParser;
 class WireFormatLite;
 class WeakFieldMap;
+
+template <typename Type>
+class GenericTypeHandler;  
 
 
 
@@ -110,47 +127,11 @@ inline int ToIntSize(size_t size) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-class ExplicitlyConstructed {
- public:
-  void DefaultConstruct() { new (&union_) T(); }
-
-  template <typename... Args>
-  void Construct(Args&&... args) {
-    new (&union_) T(std::forward<Args>(args)...);
-  }
-
-  void Destruct() { get_mutable()->~T(); }
-
-  constexpr const T& get() const { return reinterpret_cast<const T&>(union_); }
-  T* get_mutable() { return reinterpret_cast<T*>(&union_); }
-
- private:
-  
-  union AlignedUnion {
-    char space[sizeof(T)];
-    int64 align_to_int64;
-    void* align_to_ptr;
-  } union_;
-};
-
-
-
-PROTOBUF_EXPORT extern ExplicitlyConstructed<std::string>
+PROTOBUF_EXPORT extern ExplicitlyConstructedArenaString
     fixed_address_empty_string;
 
 
-PROTOBUF_EXPORT inline const std::string& GetEmptyStringAlreadyInited() {
+PROTOBUF_EXPORT constexpr const std::string& GetEmptyStringAlreadyInited() {
   return fixed_address_empty_string.get();
 }
 
@@ -181,10 +162,13 @@ PROTOBUF_EXPORT size_t StringSpaceUsedExcludingSelfLong(const std::string& str);
 
 
 
+
+
+
 class PROTOBUF_EXPORT MessageLite {
  public:
-  inline MessageLite() {}
-  virtual ~MessageLite() {}
+  constexpr MessageLite() {}
+  virtual ~MessageLite() = default;
 
   
 
@@ -193,31 +177,15 @@ class PROTOBUF_EXPORT MessageLite {
 
   
   
-  virtual MessageLite* New() const = 0;
+  MessageLite* New() const { return New(nullptr); }
 
   
   
-  virtual MessageLite* New(Arena* arena) const;
+  virtual MessageLite* New(Arena* arena) const = 0;
 
   
-  
-  
-  
-  
-  virtual Arena* GetArena() const { return NULL; }
+  Arena* GetArena() const { return _internal_metadata_.user_arena(); }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void* GetMaybeArenaPointer() const { return GetArena(); }
-
-  
   
   
   
@@ -261,28 +229,35 @@ class PROTOBUF_EXPORT MessageLite {
   
   
   
-  bool ParseFromCodedStream(io::CodedInputStream* input);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParseFromCodedStream(
+      io::CodedInputStream* input);
   
   
-  bool ParsePartialFromCodedStream(io::CodedInputStream* input);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParsePartialFromCodedStream(
+      io::CodedInputStream* input);
   
   
-  bool ParseFromZeroCopyStream(io::ZeroCopyInputStream* input);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParseFromZeroCopyStream(
+      io::ZeroCopyInputStream* input);
   
   
-  bool ParsePartialFromZeroCopyStream(io::ZeroCopyInputStream* input);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParsePartialFromZeroCopyStream(
+      io::ZeroCopyInputStream* input);
   
   
-  bool ParseFromFileDescriptor(int file_descriptor);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParseFromFileDescriptor(
+      int file_descriptor);
   
   
-  bool ParsePartialFromFileDescriptor(int file_descriptor);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParsePartialFromFileDescriptor(
+      int file_descriptor);
   
   
-  bool ParseFromIstream(std::istream* input);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParseFromIstream(std::istream* input);
   
   
-  bool ParsePartialFromIstream(std::istream* input);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParsePartialFromIstream(
+      std::istream* input);
   
   
   
@@ -291,25 +266,29 @@ class PROTOBUF_EXPORT MessageLite {
   
   
   bool MergeFromBoundedZeroCopyStream(io::ZeroCopyInputStream* input, int size);
-  bool ParseFromBoundedZeroCopyStream(io::ZeroCopyInputStream* input, int size);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParseFromBoundedZeroCopyStream(
+      io::ZeroCopyInputStream* input, int size);
   
   
-  bool ParsePartialFromBoundedZeroCopyStream(io::ZeroCopyInputStream* input,
-                                             int size);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParsePartialFromBoundedZeroCopyStream(
+      io::ZeroCopyInputStream* input, int size);
   
   
   
   
   
-  bool ParseFromString(const std::string& data);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParseFromString(ConstStringParam data);
   
   
-  bool ParsePartialFromString(const std::string& data);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParsePartialFromString(
+      ConstStringParam data);
   
-  bool ParseFromArray(const void* data, int size);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParseFromArray(const void* data,
+                                                       int size);
   
   
-  bool ParsePartialFromArray(const void* data, int size);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES bool ParsePartialFromArray(const void* data,
+                                                              int size);
 
 
   
@@ -333,7 +312,7 @@ class PROTOBUF_EXPORT MessageLite {
   bool MergePartialFromCodedStream(io::CodedInputStream* input);
 
   
-  bool MergeFromString(const std::string& data);
+  bool MergeFromString(ConstStringParam data);
 
 
   
@@ -418,7 +397,7 @@ class PROTOBUF_EXPORT MessageLite {
   
   
   
-  uint8* SerializeWithCachedSizesToArray(uint8* target) const;
+  uint8_t* SerializeWithCachedSizesToArray(uint8_t* target) const;
 
   
   
@@ -438,11 +417,33 @@ class PROTOBUF_EXPORT MessageLite {
     return nullptr;
   }
 
+  virtual void OnDemandRegisterArenaDtor(Arena* ) {}
+
  protected:
   template <typename T>
   static T* CreateMaybeMessage(Arena* arena) {
     return Arena::CreateMaybeMessage<T>(arena);
   }
+
+  inline explicit MessageLite(Arena* arena, bool is_message_owned = false)
+      : _internal_metadata_(arena, is_message_owned) {}
+
+  
+  
+  
+  
+  
+  Arena* GetOwningArena() const { return _internal_metadata_.owning_arena(); }
+
+  
+  
+  Arena* GetArenaForAllocation() const { return _internal_metadata_.arena(); }
+
+  
+  
+  static bool InMoaTrial() { return false; }
+
+  internal::InternalMetadata _internal_metadata_;
 
  public:
   enum ParseFlags {
@@ -461,24 +462,36 @@ class PROTOBUF_EXPORT MessageLite {
 
   
   
-  virtual uint8* _InternalSerialize(uint8* ptr,
-                                    io::EpsCopyOutputStream* stream) const = 0;
+  virtual uint8_t* _InternalSerialize(
+      uint8_t* ptr, io::EpsCopyOutputStream* stream) const = 0;
 
- private:
   
-  virtual const void* InternalGetTable() const { return NULL; }
-
-  friend class internal::WireFormatLite;
-  friend class Message;
-  friend class internal::WeakFieldMap;
-
   bool IsInitializedWithErrors() const {
     if (IsInitialized()) return true;
     LogInitializationErrorMessage();
     return false;
   }
 
+ private:
+  friend class FastReflectionMessageMutator;
+  friend class FastReflectionStringSetter;
+  friend class Message;
+  friend class Reflection;
+  friend class internal::ExtensionSet;
+  friend class internal::LazyField;
+  friend class internal::SwapFieldHelper;
+  friend class internal::TcParser;
+  friend class internal::WeakFieldMap;
+  friend class internal::WireFormatLite;
+
+  template <typename Type>
+  friend class Arena::InternalHelper;
+  template <typename Type>
+  friend class internal::GenericTypeHandler;
+
   void LogInitializationErrorMessage() const;
+
+  bool MergeFromImpl(io::CodedInputStream* input, ParseFlags parse_flags);
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageLite);
 };
@@ -486,18 +499,24 @@ class PROTOBUF_EXPORT MessageLite {
 namespace internal {
 
 template <bool alias>
-bool MergePartialFromImpl(StringPiece input, MessageLite* msg);
-extern template bool MergePartialFromImpl<false>(StringPiece input,
-                                                 MessageLite* msg);
-extern template bool MergePartialFromImpl<true>(StringPiece input,
-                                                MessageLite* msg);
+bool MergeFromImpl(StringPiece input, MessageLite* msg,
+                   MessageLite::ParseFlags parse_flags);
+extern template bool MergeFromImpl<false>(StringPiece input,
+                                          MessageLite* msg,
+                                          MessageLite::ParseFlags parse_flags);
+extern template bool MergeFromImpl<true>(StringPiece input,
+                                         MessageLite* msg,
+                                         MessageLite::ParseFlags parse_flags);
 
 template <bool alias>
-bool MergePartialFromImpl(io::ZeroCopyInputStream* input, MessageLite* msg);
-extern template bool MergePartialFromImpl<false>(io::ZeroCopyInputStream* input,
-                                                 MessageLite* msg);
-extern template bool MergePartialFromImpl<true>(io::ZeroCopyInputStream* input,
-                                                MessageLite* msg);
+bool MergeFromImpl(io::ZeroCopyInputStream* input, MessageLite* msg,
+                   MessageLite::ParseFlags parse_flags);
+extern template bool MergeFromImpl<false>(io::ZeroCopyInputStream* input,
+                                          MessageLite* msg,
+                                          MessageLite::ParseFlags parse_flags);
+extern template bool MergeFromImpl<true>(io::ZeroCopyInputStream* input,
+                                         MessageLite* msg,
+                                         MessageLite::ParseFlags parse_flags);
 
 struct BoundedZCIS {
   io::ZeroCopyInputStream* zcis;
@@ -505,18 +524,20 @@ struct BoundedZCIS {
 };
 
 template <bool alias>
-bool MergePartialFromImpl(BoundedZCIS input, MessageLite* msg);
-extern template bool MergePartialFromImpl<false>(BoundedZCIS input,
-                                                 MessageLite* msg);
-extern template bool MergePartialFromImpl<true>(BoundedZCIS input,
-                                                MessageLite* msg);
+bool MergeFromImpl(BoundedZCIS input, MessageLite* msg,
+                   MessageLite::ParseFlags parse_flags);
+extern template bool MergeFromImpl<false>(BoundedZCIS input, MessageLite* msg,
+                                          MessageLite::ParseFlags parse_flags);
+extern template bool MergeFromImpl<true>(BoundedZCIS input, MessageLite* msg,
+                                         MessageLite::ParseFlags parse_flags);
 
 template <typename T>
 struct SourceWrapper;
 
 template <bool alias, typename T>
-bool MergePartialFromImpl(const SourceWrapper<T>& input, MessageLite* msg) {
-  return input.template MergePartialInto<alias>(msg);
+bool MergeFromImpl(const SourceWrapper<T>& input, MessageLite* msg,
+                   MessageLite::ParseFlags parse_flags) {
+  return input.template MergeInto<alias>(msg, parse_flags);
 }
 
 }  
@@ -524,9 +545,8 @@ bool MergePartialFromImpl(const SourceWrapper<T>& input, MessageLite* msg) {
 template <MessageLite::ParseFlags flags, typename T>
 bool MessageLite::ParseFrom(const T& input) {
   if (flags & kParse) Clear();
-  constexpr bool alias = flags & kMergeWithAliasing;
-  bool res = internal::MergePartialFromImpl<alias>(input, this);
-  return res && ((flags & kMergePartial) || IsInitializedWithErrors());
+  constexpr bool alias = (flags & kMergeWithAliasing) != 0;
+  return internal::MergeFromImpl<alias>(input, this, flags);
 }
 
 

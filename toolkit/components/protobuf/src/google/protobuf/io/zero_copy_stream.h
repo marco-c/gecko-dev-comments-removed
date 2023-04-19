@@ -108,11 +108,11 @@
 #define GOOGLE_PROTOBUF_IO_ZERO_COPY_STREAM_H__
 
 
-#include <string>
-
 #include <google/protobuf/stubs/common.h>
-#include <google/protobuf/port_def.inc>
 
+
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
@@ -147,6 +147,13 @@ class PROTOBUF_EXPORT ZeroCopyInputStream {
   
   virtual bool Next(const void** data, int* size) = 0;
 
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -250,4 +257,4 @@ class PROTOBUF_EXPORT ZeroCopyOutputStream {
 
 #include <google/protobuf/port_undef.inc>
 
-#endif
+#endif  

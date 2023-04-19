@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <google/protobuf/map.h>
+
+namespace google {
+namespace protobuf {
+namespace internal {
+
+void* const kGlobalEmptyTable[kGlobalEmptyTableSize] = {nullptr};
+
+}  
+}  
+}  

@@ -110,6 +110,7 @@
 #ifndef GOOGLE_PROTOBUF_MESSAGE_H__
 #define GOOGLE_PROTOBUF_MESSAGE_H__
 
+
 #include <iosfwd>
 #include <string>
 #include <type_traits>
@@ -118,14 +119,14 @@
 #include <google/protobuf/stubs/casts.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/arena.h>
+#include <google/protobuf/port.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/generated_message_reflection.h>
+#include <google/protobuf/generated_message_util.h>
+#include <google/protobuf/map.h>  
 #include <google/protobuf/message_lite.h>
-#include <google/protobuf/port.h>
 
 
-#define GOOGLE_PROTOBUF_HAS_ONEOF
-#define GOOGLE_PROTOBUF_HAS_ARENAS
 
 #include <google/protobuf/port_def.inc>
 
@@ -144,7 +145,9 @@ class MessageFactory;
 
 class AssignDescriptorsHelper;
 class DynamicMessageFactory;
+class GeneratedMessageReflectionTestHelper;
 class MapKey;
+class MapValueConstRef;
 class MapValueRef;
 class MapIterator;
 class MapReflectionTester;
@@ -152,7 +155,9 @@ class MapReflectionTester;
 namespace internal {
 struct DescriptorTable;
 class MapFieldBase;
-}
+class SwapFieldHelper;
+class CachedSize;
+}  
 class UnknownFieldSet;  
 namespace io {
 class ZeroCopyInputStream;   
@@ -162,13 +167,17 @@ class CodedOutputStream;
 }  
 namespace python {
 class MapReflectionFriend;  
-}
+class MessageReflectionFriend;
+}  
 namespace expr {
 class CelMapReflectionFriend;  
 }
 
 namespace internal {
 class MapFieldPrinterHelper;  
+}
+namespace util {
+class MessageDifferencer;
 }
 
 
@@ -192,6 +201,32 @@ struct Metadata {
   const Reflection* reflection;
 };
 
+namespace internal {
+template <class To>
+inline To* GetPointerAtOffset(Message* message, uint32_t offset) {
+  return reinterpret_cast<To*>(reinterpret_cast<char*>(message) + offset);
+}
+
+template <class To>
+const To* GetConstPointerAtOffset(const Message* message, uint32_t offset) {
+  return reinterpret_cast<const To*>(reinterpret_cast<const char*>(message) +
+                                     offset);
+}
+
+template <class To>
+const To& GetConstRefAtOffset(const Message& message, uint32_t offset) {
+  return *GetConstPointerAtOffset<To>(&message, offset);
+}
+
+bool CreateUnknownEnumValues(const FieldDescriptor* field);
+
+
+PROTOBUF_EXPORT bool IsDescendant(Message& root, const Message& message);
+}  
+
+
+
+
 
 
 
@@ -204,31 +239,23 @@ struct Metadata {
 
 class PROTOBUF_EXPORT Message : public MessageLite {
  public:
-  inline Message() {}
-  ~Message() override {}
+  constexpr Message() {}
 
   
 
   
   
   
-  Message* New() const override = 0;
+  Message* New() const { return New(nullptr); }
+
+  
+  
+  Message* New(Arena* arena) const override = 0;
 
   
   
   
-  Message* New(Arena* arena) const override {
-    Message* message = New();
-    if (arena != nullptr) {
-      arena->Own(message);
-    }
-    return message;
-  }
-
-  
-  
-  
-  virtual void CopyFrom(const Message& from);
+  void CopyFrom(const Message& from);
 
   
   
@@ -261,7 +288,7 @@ class PROTOBUF_EXPORT Message : public MessageLite {
   
   
   
-  virtual void DiscardUnknownFields();
+  void DiscardUnknownFields();
 
   
   
@@ -278,6 +305,9 @@ class PROTOBUF_EXPORT Message : public MessageLite {
 
   
 
+  
+  
+  
   
   
   std::string DebugString() const;
@@ -304,8 +334,8 @@ class PROTOBUF_EXPORT Message : public MessageLite {
   const char* _InternalParse(const char* ptr,
                              internal::ParseContext* ctx) override;
   size_t ByteSizeLong() const override;
-  uint8* _InternalSerialize(uint8* target,
-                            io::EpsCopyOutputStream* stream) const override;
+  uint8_t* _InternalSerialize(uint8_t* target,
+                              io::EpsCopyOutputStream* stream) const override;
 
  private:
   
@@ -337,6 +367,39 @@ class PROTOBUF_EXPORT Message : public MessageLite {
   
   virtual Metadata GetMetadata() const = 0;
 
+  struct ClassData {
+    
+    
+    
+    void (*copy_to_from)(Message& to, const Message& from_msg);
+    void (*merge_to_from)(Message& to, const Message& from_msg);
+  };
+  
+  
+  
+  
+  
+  virtual const ClassData* GetClassData() const { return nullptr; }
+
+  
+  
+  
+  
+  static void CopyWithSourceCheck(Message& to, const Message& from);
+
+  
+  static void FailIfCopyFromDescendant(Message& to, const Message& from);
+
+  inline explicit Message(Arena* arena, bool is_message_owned = false)
+      : MessageLite(arena, is_message_owned) {}
+  size_t ComputeUnknownFieldsSize(size_t total_size,
+                                  internal::CachedSize* cached_size) const;
+  size_t MaybeComputeUnknownFieldsSize(size_t total_size,
+                                       internal::CachedSize* cached_size) const;
+
+
+ protected:
+  static uint64_t GetInvariantPerBuild(uint64_t salt);
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Message);
@@ -445,7 +508,14 @@ class PROTOBUF_EXPORT Reflection final {
   void RemoveLast(Message* message, const FieldDescriptor* field) const;
   
   
-  Message* ReleaseLast(Message* message, const FieldDescriptor* field) const;
+  PROTOBUF_NODISCARD Message* ReleaseLast(Message* message,
+                                          const FieldDescriptor* field) const;
+
+  
+  
+  
+  Message* UnsafeArenaReleaseLast(Message* message,
+                                  const FieldDescriptor* field) const;
 
   
   void Swap(Message* message1, Message* message2) const;
@@ -457,6 +527,16 @@ class PROTOBUF_EXPORT Reflection final {
   
   void SwapElements(Message* message, const FieldDescriptor* field, int index1,
                     int index2) const;
+
+  
+  
+  void UnsafeArenaSwap(Message* lhs, Message* rhs) const;
+
+  
+  
+  void UnsafeArenaSwapFields(
+      Message* lhs, Message* rhs,
+      const std::vector<const FieldDescriptor*>& fields) const;
 
   
   
@@ -473,10 +553,12 @@ class PROTOBUF_EXPORT Reflection final {
   
   
 
-  int32 GetInt32(const Message& message, const FieldDescriptor* field) const;
-  int64 GetInt64(const Message& message, const FieldDescriptor* field) const;
-  uint32 GetUInt32(const Message& message, const FieldDescriptor* field) const;
-  uint64 GetUInt64(const Message& message, const FieldDescriptor* field) const;
+  int32_t GetInt32(const Message& message, const FieldDescriptor* field) const;
+  int64_t GetInt64(const Message& message, const FieldDescriptor* field) const;
+  uint32_t GetUInt32(const Message& message,
+                     const FieldDescriptor* field) const;
+  uint64_t GetUInt64(const Message& message,
+                     const FieldDescriptor* field) const;
   float GetFloat(const Message& message, const FieldDescriptor* field) const;
   double GetDouble(const Message& message, const FieldDescriptor* field) const;
   bool GetBool(const Message& message, const FieldDescriptor* field) const;
@@ -521,13 +603,13 @@ class PROTOBUF_EXPORT Reflection final {
   
 
   void SetInt32(Message* message, const FieldDescriptor* field,
-                int32 value) const;
+                int32_t value) const;
   void SetInt64(Message* message, const FieldDescriptor* field,
-                int64 value) const;
+                int64_t value) const;
   void SetUInt32(Message* message, const FieldDescriptor* field,
-                 uint32 value) const;
+                 uint32_t value) const;
   void SetUInt64(Message* message, const FieldDescriptor* field,
-                 uint64 value) const;
+                 uint64_t value) const;
   void SetFloat(Message* message, const FieldDescriptor* field,
                 float value) const;
   void SetDouble(Message* message, const FieldDescriptor* field,
@@ -560,12 +642,20 @@ class PROTOBUF_EXPORT Reflection final {
   
   Message* MutableMessage(Message* message, const FieldDescriptor* field,
                           MessageFactory* factory = nullptr) const;
+
   
   
   
   
   void SetAllocatedMessage(Message* message, Message* sub_message,
                            const FieldDescriptor* field) const;
+
+  
+  
+  
+  void UnsafeArenaSetAllocatedMessage(Message* message, Message* sub_message,
+                                      const FieldDescriptor* field) const;
+
   
   
   
@@ -573,21 +663,29 @@ class PROTOBUF_EXPORT Reflection final {
   
   
   
-  Message* ReleaseMessage(Message* message, const FieldDescriptor* field,
-                          MessageFactory* factory = nullptr) const;
+  PROTOBUF_NODISCARD Message* ReleaseMessage(
+      Message* message, const FieldDescriptor* field,
+      MessageFactory* factory = nullptr) const;
+
+  
+  
+  
+  Message* UnsafeArenaReleaseMessage(Message* message,
+                                     const FieldDescriptor* field,
+                                     MessageFactory* factory = nullptr) const;
 
 
   
   
 
-  int32 GetRepeatedInt32(const Message& message, const FieldDescriptor* field,
-                         int index) const;
-  int64 GetRepeatedInt64(const Message& message, const FieldDescriptor* field,
-                         int index) const;
-  uint32 GetRepeatedUInt32(const Message& message, const FieldDescriptor* field,
+  int32_t GetRepeatedInt32(const Message& message, const FieldDescriptor* field,
                            int index) const;
-  uint64 GetRepeatedUInt64(const Message& message, const FieldDescriptor* field,
+  int64_t GetRepeatedInt64(const Message& message, const FieldDescriptor* field,
                            int index) const;
+  uint32_t GetRepeatedUInt32(const Message& message,
+                             const FieldDescriptor* field, int index) const;
+  uint64_t GetRepeatedUInt64(const Message& message,
+                             const FieldDescriptor* field, int index) const;
   float GetRepeatedFloat(const Message& message, const FieldDescriptor* field,
                          int index) const;
   double GetRepeatedDouble(const Message& message, const FieldDescriptor* field,
@@ -621,13 +719,13 @@ class PROTOBUF_EXPORT Reflection final {
   
 
   void SetRepeatedInt32(Message* message, const FieldDescriptor* field,
-                        int index, int32 value) const;
+                        int index, int32_t value) const;
   void SetRepeatedInt64(Message* message, const FieldDescriptor* field,
-                        int index, int64 value) const;
+                        int index, int64_t value) const;
   void SetRepeatedUInt32(Message* message, const FieldDescriptor* field,
-                         int index, uint32 value) const;
+                         int index, uint32_t value) const;
   void SetRepeatedUInt64(Message* message, const FieldDescriptor* field,
-                         int index, uint64 value) const;
+                         int index, uint64_t value) const;
   void SetRepeatedFloat(Message* message, const FieldDescriptor* field,
                         int index, float value) const;
   void SetRepeatedDouble(Message* message, const FieldDescriptor* field,
@@ -658,13 +756,13 @@ class PROTOBUF_EXPORT Reflection final {
   
 
   void AddInt32(Message* message, const FieldDescriptor* field,
-                int32 value) const;
+                int32_t value) const;
   void AddInt64(Message* message, const FieldDescriptor* field,
-                int64 value) const;
+                int64_t value) const;
   void AddUInt32(Message* message, const FieldDescriptor* field,
-                 uint32 value) const;
+                 uint32_t value) const;
   void AddUInt64(Message* message, const FieldDescriptor* field,
-                 uint64 value) const;
+                 uint64_t value) const;
   void AddFloat(Message* message, const FieldDescriptor* field,
                 float value) const;
   void AddDouble(Message* message, const FieldDescriptor* field,
@@ -693,8 +791,14 @@ class PROTOBUF_EXPORT Reflection final {
   void AddAllocatedMessage(Message* message, const FieldDescriptor* field,
                            Message* new_entry) const;
 
-
   
+  
+  
+  void UnsafeArenaAddAllocatedMessage(Message* message,
+                                      const FieldDescriptor* field,
+                                      Message* new_entry) const;
+
+
   
   
   
@@ -888,6 +992,46 @@ class PROTOBUF_EXPORT Reflection final {
   const internal::RepeatedFieldAccessor* RepeatedFieldAccessor(
       const FieldDescriptor* field) const;
 
+  
+  
+  void ListFieldsOmitStripped(
+      const Message& message,
+      std::vector<const FieldDescriptor*>* output) const;
+
+  bool IsMessageStripped(const Descriptor* descriptor) const {
+    return schema_.IsMessageStripped(descriptor);
+  }
+
+  friend class TextFormat;
+
+  void ListFieldsMayFailOnStripped(
+      const Message& message, bool should_fail,
+      std::vector<const FieldDescriptor*>* output) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsLazyField(const FieldDescriptor* field) const {
+    return IsLazilyVerifiedLazyField(field) ||
+           IsEagerlyVerifiedLazyField(field);
+  }
+
+  
+  
+  bool IsLazyExtension(const Message& message,
+                       const FieldDescriptor* field) const;
+
+  bool IsLazilyVerifiedLazyField(const FieldDescriptor* field) const;
+  bool IsEagerlyVerifiedLazyField(const FieldDescriptor* field) const;
+
+  friend class FastReflectionMessageMutator;
+  friend bool internal::IsDescendant(Message& root, const Message& message);
+
   const Descriptor* const descriptor_;
   const internal::ReflectionSchema schema_;
   const DescriptorPool* const descriptor_pool_;
@@ -905,16 +1049,19 @@ class PROTOBUF_EXPORT Reflection final {
   friend class ::PROTOBUF_NAMESPACE_ID::MessageLayoutInspector;
   friend class ::PROTOBUF_NAMESPACE_ID::AssignDescriptorsHelper;
   friend class DynamicMessageFactory;
+  friend class GeneratedMessageReflectionTestHelper;
   friend class python::MapReflectionFriend;
+  friend class python::MessageReflectionFriend;
+  friend class util::MessageDifferencer;
 #define GOOGLE_PROTOBUF_HAS_CEL_MAP_REFLECTION_FRIEND
   friend class expr::CelMapReflectionFriend;
   friend class internal::MapFieldReflectionTest;
   friend class internal::MapKeySorter;
   friend class internal::WireFormat;
   friend class internal::ReflectionOps;
+  friend class internal::SwapFieldHelper;
   
   friend class internal::MapFieldPrinterHelper;
-  friend class internal::ReflectionAccessor;
 
   Reflection(const Descriptor* descriptor,
              const internal::ReflectionSchema& schema,
@@ -937,8 +1084,17 @@ class PROTOBUF_EXPORT Reflection final {
   
   
   
+  
   bool InsertOrLookupMapValue(Message* message, const FieldDescriptor* field,
                               const MapKey& key, MapValueRef* val) const;
+
+  
+  
+  
+  bool LookupMapValue(const Message& message, const FieldDescriptor* field,
+                      const MapKey& key, MapValueConstRef* val) const;
+  bool LookupMapValue(const Message&, const FieldDescriptor*, const MapKey&,
+                      MapValueRef*) const = delete;
 
   
   
@@ -980,24 +1136,26 @@ class PROTOBUF_EXPORT Reflection final {
   template <typename Type>
   inline Type* MutableRaw(Message* message, const FieldDescriptor* field) const;
   template <typename Type>
-  inline const Type& DefaultRaw(const FieldDescriptor* field) const;
+  const Type& DefaultRaw(const FieldDescriptor* field) const;
 
-  inline const uint32* GetHasBits(const Message& message) const;
-  inline uint32* MutableHasBits(Message* message) const;
-  inline uint32 GetOneofCase(const Message& message,
-                             const OneofDescriptor* oneof_descriptor) const;
-  inline uint32* MutableOneofCase(
+  const Message* GetDefaultMessageInstance(const FieldDescriptor* field) const;
+
+  inline const uint32_t* GetHasBits(const Message& message) const;
+  inline uint32_t* MutableHasBits(Message* message) const;
+  inline uint32_t GetOneofCase(const Message& message,
+                               const OneofDescriptor* oneof_descriptor) const;
+  inline uint32_t* MutableOneofCase(
       Message* message, const OneofDescriptor* oneof_descriptor) const;
-  inline const internal::ExtensionSet& GetExtensionSet(
+  inline bool HasExtensionSet(const Message& ) const {
+    return schema_.HasExtensionSet();
+  }
+  const internal::ExtensionSet& GetExtensionSet(const Message& message) const;
+  internal::ExtensionSet* MutableExtensionSet(Message* message) const;
+
+  const internal::InternalMetadata& GetInternalMetadata(
       const Message& message) const;
-  inline internal::ExtensionSet* MutableExtensionSet(Message* message) const;
-  inline Arena* GetArena(Message* message) const;
 
-  inline const internal::InternalMetadataWithArena&
-  GetInternalMetadataWithArena(const Message& message) const;
-
-  internal::InternalMetadataWithArena* MutableInternalMetadataWithArena(
-      Message* message) const;
+  internal::InternalMetadata* MutableInternalMetadata(Message* message) const;
 
   inline bool IsInlined(const FieldDescriptor* field) const;
 
@@ -1008,12 +1166,35 @@ class PROTOBUF_EXPORT Reflection final {
   inline void SwapBit(Message* message1, Message* message2,
                       const FieldDescriptor* field) const;
 
+  inline const uint32_t* GetInlinedStringDonatedArray(
+      const Message& message) const;
+  inline uint32_t* MutableInlinedStringDonatedArray(Message* message) const;
+  inline bool IsInlinedStringDonated(const Message& message,
+                                     const FieldDescriptor* field) const;
+  inline void SwapInlinedStringDonated(Message* lhs, Message* rhs,
+                                       const FieldDescriptor* field) const;
+
+  
+  
+  void UnsafeShallowSwapFields(
+      Message* message1, Message* message2,
+      const std::vector<const FieldDescriptor*>& fields) const;
+
   
   
   void SwapField(Message* message1, Message* message2,
                  const FieldDescriptor* field) const;
 
-  void SwapOneofField(Message* message1, Message* message2,
+  
+  void UnsafeShallowSwapField(Message* message1, Message* message2,
+                              const FieldDescriptor* field) const;
+
+  template <bool unsafe_shallow_swap>
+  void SwapFieldsImpl(Message* message1, Message* message2,
+                      const std::vector<const FieldDescriptor*>& fields) const;
+
+  template <bool unsafe_shallow_swap>
+  void SwapOneofField(Message* lhs, Message* rhs,
                       const OneofDescriptor* oneof_descriptor) const;
 
   inline bool HasOneofField(const Message& message,
@@ -1064,13 +1245,6 @@ class PROTOBUF_EXPORT Reflection final {
                                     int value) const;
   void AddEnumValueInternal(Message* message, const FieldDescriptor* field,
                             int value) const;
-
-  Message* UnsafeArenaReleaseMessage(Message* message,
-                                     const FieldDescriptor* field,
-                                     MessageFactory* factory = nullptr) const;
-
-  void UnsafeArenaSetAllocatedMessage(Message* message, Message* sub_message,
-                                      const FieldDescriptor* field) const;
 
   friend inline  
       void
@@ -1165,10 +1339,10 @@ class PROTOBUF_EXPORT MessageFactory {
   Reflection::MutableRepeatedFieldInternal<TYPE>(                  \
       Message * message, const FieldDescriptor* field) const;
 
-DECLARE_GET_REPEATED_FIELD(int32)
-DECLARE_GET_REPEATED_FIELD(int64)
-DECLARE_GET_REPEATED_FIELD(uint32)
-DECLARE_GET_REPEATED_FIELD(uint64)
+DECLARE_GET_REPEATED_FIELD(int32_t)
+DECLARE_GET_REPEATED_FIELD(int64_t)
+DECLARE_GET_REPEATED_FIELD(uint32_t)
+DECLARE_GET_REPEATED_FIELD(uint64_t)
 DECLARE_GET_REPEATED_FIELD(float)
 DECLARE_GET_REPEATED_FIELD(double)
 DECLARE_GET_REPEATED_FIELD(bool)
@@ -1193,11 +1367,12 @@ const T* DynamicCastToGenerated(const Message* from) {
   const Message* unused = static_cast<T*>(nullptr);
   (void)unused;
 
-#ifdef GOOGLE_PROTOBUF_NO_RTTI
-  bool ok = T::default_instance().GetReflection() == from->GetReflection();
-  return ok ? down_cast<const T*>(from) : nullptr;
-#else
+#if PROTOBUF_RTTI
   return dynamic_cast<const T*>(from);
+#else
+  bool ok = from != nullptr &&
+            T::default_instance().GetReflection() == from->GetReflection();
+  return ok ? down_cast<const T*>(from) : nullptr;
 #endif
 }
 
@@ -1286,6 +1461,33 @@ inline RepeatedPtrField<PB>* Reflection::MutableRepeatedPtrFieldInternal(
   return static_cast<RepeatedPtrField<PB>*>(
       MutableRawRepeatedField(message, field, FieldDescriptor::CPPTYPE_MESSAGE,
                               -1, PB::default_instance().GetDescriptor()));
+}
+
+template <typename Type>
+const Type& Reflection::DefaultRaw(const FieldDescriptor* field) const {
+  return *reinterpret_cast<const Type*>(schema_.GetFieldDefault(field));
+}
+
+uint32_t Reflection::GetOneofCase(
+    const Message& message, const OneofDescriptor* oneof_descriptor) const {
+  GOOGLE_DCHECK(!oneof_descriptor->is_synthetic());
+  return internal::GetConstRefAtOffset<uint32_t>(
+      message, schema_.GetOneofCaseOffset(oneof_descriptor));
+}
+
+bool Reflection::HasOneofField(const Message& message,
+                               const FieldDescriptor* field) const {
+  return (GetOneofCase(message, field->containing_oneof()) ==
+          static_cast<uint32_t>(field->number()));
+}
+
+template <typename Type>
+const Type& Reflection::GetRaw(const Message& message,
+                               const FieldDescriptor* field) const {
+  GOOGLE_DCHECK(!schema_.InRealOneof(field) || HasOneofField(message, field))
+      << "Field = " << field->full_name();
+  return internal::GetConstRefAtOffset<Type>(message,
+                                             schema_.GetFieldOffset(field));
 }
 }  
 }  

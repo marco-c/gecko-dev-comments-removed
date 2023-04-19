@@ -28,14 +28,15 @@
 
 
 
-#ifndef GOOGLE_PROTOBUF_UTIL_CONVERTER_STRUCTURED_OBJECTWRITER_H__
-#define GOOGLE_PROTOBUF_UTIL_CONVERTER_STRUCTURED_OBJECTWRITER_H__
+#ifndef GOOGLE_PROTOBUF_UTIL_INTERNAL_STRUCTURED_OBJECTWRITER_H__
+#define GOOGLE_PROTOBUF_UTIL_INTERNAL_STRUCTURED_OBJECTWRITER_H__
 
 #include <memory>
 
 #include <google/protobuf/stubs/casts.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/util/internal/object_writer.h>
+
 
 #include <google/protobuf/port_def.inc>
 
@@ -57,7 +58,7 @@ namespace converter {
 
 class PROTOBUF_EXPORT StructuredObjectWriter : public ObjectWriter {
  public:
-  virtual ~StructuredObjectWriter() {}
+  ~StructuredObjectWriter() override {}
 
  protected:
   
@@ -69,7 +70,8 @@ class PROTOBUF_EXPORT StructuredObjectWriter : public ObjectWriter {
    public:
     
     explicit BaseElement(BaseElement* parent)
-        : parent_(parent), level_(parent == NULL ? 0 : parent->level() + 1) {}
+        : parent_(parent),
+          level_(parent == nullptr ? 0 : parent->level() + 1) {}
     virtual ~BaseElement() {}
 
     

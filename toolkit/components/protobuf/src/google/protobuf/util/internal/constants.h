@@ -28,8 +28,10 @@
 
 
 
-#ifndef GOOGLE_PROTOBUF_UTIL_CONVERTER_CONSTANTS_H__
-#define GOOGLE_PROTOBUF_UTIL_CONVERTER_CONSTANTS_H__
+#ifndef GOOGLE_PROTOBUF_UTIL_INTERNAL_CONSTANTS_H__
+#define GOOGLE_PROTOBUF_UTIL_INTERNAL_CONSTANTS_H__
+
+#include <cstdint>
 
 #include <google/protobuf/stubs/common.h>
 
@@ -50,19 +52,19 @@ const char kRfc3339TimeFormat[] = "%E4Y-%m-%dT%H:%M:%S";
 const char kRfc3339TimeFormatNoPadding[] = "%Y-%m-%dT%H:%M:%S";
 
 
-const int64 kTimestampMinSeconds = -62135596800LL;
+const int64_t kTimestampMinSeconds = -62135596800LL;
 
 
-const int64 kTimestampMaxSeconds = 253402300799LL;
+const int64_t kTimestampMaxSeconds = 253402300799LL;
 
 
-const int64 kDurationMinSeconds = -315576000000LL;
+const int64_t kDurationMinSeconds = -315576000000LL;
 
 
-const int64 kDurationMaxSeconds = 315576000000LL;
+const int64_t kDurationMaxSeconds = 315576000000LL;
 
 
-const int32 kNanosPerSecond = 1000000000;
+const int32_t kNanosPerSecond = 1000000000;
 
 
 const char kStructNullValueTypeUrl[] =

@@ -33,11 +33,14 @@
 #ifndef GOOGLE_PROTOBUF_UTIL_FIELD_COMPARATOR_H__
 #define GOOGLE_PROTOBUF_UTIL_FIELD_COMPARATOR_H__
 
+
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
 
 #include <google/protobuf/stubs/common.h>
+
 
 #include <google/protobuf/port_def.inc>
 
@@ -97,7 +100,7 @@ class PROTOBUF_EXPORT FieldComparator {
 
 
 
-class PROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
+class PROTOBUF_EXPORT SimpleFieldComparator : public FieldComparator {
  public:
   enum FloatComparison {
     EXACT,        
@@ -109,14 +112,9 @@ class PROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   };
 
   
-  DefaultFieldComparator();
+  SimpleFieldComparator();
 
-  ~DefaultFieldComparator() override;
-
-  ComparisonResult Compare(const Message& message_1, const Message& message_2,
-                           const FieldDescriptor* field, int index_1,
-                           int index_2,
-                           const util::FieldContext* field_context) override;
+  ~SimpleFieldComparator() override;
 
   void set_float_comparison(FloatComparison float_comparison) {
     float_comparison_ = float_comparison;
@@ -154,9 +152,24 @@ class PROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   
   
   
-  bool Compare(MessageDifferencer* differencer, const Message& message1,
-               const Message& message2,
-               const util::FieldContext* field_context);
+  
+  
+  ComparisonResult SimpleCompare(const Message& message_1,
+                                 const Message& message_2,
+                                 const FieldDescriptor* field, int index_1,
+                                 int index_2,
+                                 const util::FieldContext* field_context);
+
+  
+  
+  
+  bool CompareWithDifferencer(MessageDifferencer* differencer,
+                              const Message& message1, const Message& message2,
+                              const util::FieldContext* field_context);
+
+  
+  
+  ComparisonResult ResultFromBoolean(bool boolean_result) const;
 
  private:
   
@@ -170,6 +183,7 @@ class PROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   
   typedef std::map<const FieldDescriptor*, Tolerance> ToleranceMap;
 
+  friend class MessageDifferencer;
   
   
   
@@ -192,13 +206,13 @@ class PROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   
   bool CompareFloat(const FieldDescriptor& field, float value_1, float value_2);
 
-  bool CompareInt32(const FieldDescriptor& , int32 value_1,
-                    int32 value_2) {
+  bool CompareInt32(const FieldDescriptor& , int32_t value_1,
+                    int32_t value_2) {
     return value_1 == value_2;
   }
 
-  bool CompareInt64(const FieldDescriptor& , int64 value_1,
-                    int64 value_2) {
+  bool CompareInt64(const FieldDescriptor& , int64_t value_1,
+                    int64_t value_2) {
     return value_1 == value_2;
   }
 
@@ -207,13 +221,13 @@ class PROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
     return value_1 == value_2;
   }
 
-  bool CompareUInt32(const FieldDescriptor& , uint32 value_1,
-                     uint32 value_2) {
+  bool CompareUInt32(const FieldDescriptor& , uint32_t value_1,
+                     uint32_t value_2) {
     return value_1 == value_2;
   }
 
-  bool CompareUInt64(const FieldDescriptor& , uint64 value_1,
-                     uint64 value_2) {
+  bool CompareUInt64(const FieldDescriptor& , uint64_t value_1,
+                     uint64_t value_2) {
     return value_1 == value_2;
   }
 
@@ -222,10 +236,6 @@ class PROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   
   template <typename T>
   bool CompareDoubleOrFloat(const FieldDescriptor& field, T value_1, T value_2);
-
-  
-  
-  ComparisonResult ResultFromBoolean(bool boolean_result) const;
 
   FloatComparison float_comparison_;
 
@@ -248,7 +258,25 @@ class PROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   
   ToleranceMap map_tolerance_;
 
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DefaultFieldComparator);
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(SimpleFieldComparator);
+};
+
+
+#ifdef PROTOBUF_FUTURE_BREAKING_CHANGES
+class PROTOBUF_EXPORT DefaultFieldComparator final
+    : public SimpleFieldComparator
+#else   
+class PROTOBUF_EXPORT DefaultFieldComparator : public SimpleFieldComparator
+#endif  
+{
+ public:
+  ComparisonResult Compare(const Message& message_1, const Message& message_2,
+                           const FieldDescriptor* field, int index_1,
+                           int index_2,
+                           const util::FieldContext* field_context) override {
+    return SimpleCompare(message_1, message_2, field, index_1, index_2,
+                         field_context);
+  }
 };
 
 }  

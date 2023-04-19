@@ -42,9 +42,9 @@ namespace internal {
 
 
 struct RemapEntry {
-  uint8 delete_bytes;
-  uint8 add_bytes;
-  uint16 bytes_offset;
+  uint8_t delete_bytes;
+  uint8_t add_bytes;
+  uint16_t bytes_offset;
 };
 
 
@@ -81,18 +81,18 @@ typedef enum {
 
 
 typedef struct {
-  const uint32 state0;
-  const uint32 state0_size;
-  const uint32 total_size;
+  const uint32_t state0;
+  const uint32_t state0_size;
+  const uint32_t total_size;
   const int max_expand;
   const int entry_shift;
   const int bytes_per_entry;
-  const uint32 losub;
-  const uint32 hiadd;
-  const uint8* state_table;
+  const uint32_t losub;
+  const uint32_t hiadd;
+  const uint8_t* state_table;
   const RemapEntry* remap_base;
-  const uint8* remap_string;
-  const uint8* fast_state;
+  const uint8_t* remap_string;
+  const uint8_t* fast_state;
 } UTF8StateMachineObj;
 
 typedef UTF8StateMachineObj UTF8ScanObj;
@@ -122,7 +122,7 @@ static const unsigned int utf8acceptnonsurrogates_BYTES = 1;
 static const unsigned int utf8acceptnonsurrogates_LOSUB = 0x20202020;
 static const unsigned int utf8acceptnonsurrogates_HIADD = 0x00000000;
 
-static const uint8 utf8acceptnonsurrogates[] = {
+static const uint8_t utf8acceptnonsurrogates[] = {
 
   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
   0,   0,   0,   0,   0,   0,   0,   0,    0,   0,   0,   0,   0,   0,   0,   0,
@@ -376,10 +376,12 @@ static const UTF8ScanObj utf8acceptnonsurrogates_obj = {
 
 
 
-static inline bool InStateZero(const UTF8ScanObj* st, const uint8* Tbl) {
-  const uint8* Tbl0 = &st->state_table[st->state0];
-  return (static_cast<uint32>(Tbl - Tbl0) < st->state0_size);
+static inline bool InStateZero(const UTF8ScanObj* st, const uint8_t* Tbl) {
+  const uint8_t* Tbl0 = &st->state_table[st->state0];
+  return (static_cast<uint32_t>(Tbl - Tbl0) < st->state0_size);
 }
+
+namespace {
 
 
 
@@ -392,19 +394,19 @@ int UTF8GenericScan(const UTF8ScanObj* st,
   if (str_length == 0) return kExitOK;
 
   int eshift = st->entry_shift;
-  const uint8* isrc = reinterpret_cast<const uint8*>(str);
-  const uint8* src = isrc;
-  const uint8* srclimit = isrc + str_length;
-  const uint8* srclimit8 = str_length < 7 ? isrc : srclimit - 7;
-  const uint8* Tbl_0 = &st->state_table[st->state0];
+  const uint8_t* isrc = reinterpret_cast<const uint8_t*>(str);
+  const uint8_t* src = isrc;
+  const uint8_t* srclimit = isrc + str_length;
+  const uint8_t* srclimit8 = str_length < 7 ? isrc : srclimit - 7;
+  const uint8_t* Tbl_0 = &st->state_table[st->state0];
 
  DoAgain:
   
   int e = 0;
-  uint8 c;
-  const uint8* Tbl2 = &st->fast_state[0];
-  const uint32 losub = st->losub;
-  const uint32 hiadd = st->hiadd;
+  uint8_t c;
+  const uint8_t* Tbl2 = &st->fast_state[0];
+  const uint32_t losub = st->losub;
+  const uint32_t hiadd = st->hiadd;
   
   
   while ((((uintptr_t)src & 0x07) != 0) &&
@@ -418,12 +420,12 @@ int UTF8GenericScan(const UTF8ScanObj* st,
     
     
     while (src < srclimit8) {
-      uint32 s0123 = (reinterpret_cast<const uint32 *>(src))[0];
-      uint32 s4567 = (reinterpret_cast<const uint32 *>(src))[1];
+      uint32_t s0123 = (reinterpret_cast<const uint32_t *>(src))[0];
+      uint32_t s4567 = (reinterpret_cast<const uint32_t *>(src))[1];
       src += 8;
       
-      uint32 temp = (s0123 - losub) | (s0123 + hiadd) |
-                    (s4567 - losub) | (s4567 + hiadd);
+      uint32_t temp = (s0123 - losub) | (s0123 + hiadd) |
+                      (s4567 - losub) | (s4567 + hiadd);
       if ((temp & 0x80808080) != 0) {
         
         int e0123 = (Tbl2[src[-8]] | Tbl2[src[-7]]) |
@@ -446,7 +448,7 @@ int UTF8GenericScan(const UTF8ScanObj* st,
 
   
   
-  const uint8* Tbl = Tbl_0;
+  const uint8_t* Tbl = Tbl_0;
   while (src < srclimit) {
     c = *src;
     e = Tbl[c];
@@ -455,7 +457,6 @@ int UTF8GenericScan(const UTF8ScanObj* st,
     Tbl = &Tbl_0[e << eshift];
   }
   
-
 
   
   
@@ -501,10 +502,10 @@ int UTF8GenericScanFastAscii(const UTF8ScanObj* st,
   *bytes_consumed = 0;
   if (str_length == 0) return kExitOK;
 
-  const uint8* isrc =  reinterpret_cast<const uint8*>(str);
-  const uint8* src = isrc;
-  const uint8* srclimit = isrc + str_length;
-  const uint8* srclimit8 = str_length < 7 ? isrc : srclimit - 7;
+  const uint8_t* isrc =  reinterpret_cast<const uint8_t*>(str);
+  const uint8_t* src = isrc;
+  const uint8_t* srclimit = isrc + str_length;
+  const uint8_t* srclimit8 = str_length < 7 ? isrc : srclimit - 7;
   int n;
   int rest_consumed;
   int exit_reason;
@@ -516,8 +517,9 @@ int UTF8GenericScanFastAscii(const UTF8ScanObj* st,
     }
     if (((uintptr_t)src & 0x07) == 0) {
       while ((src < srclimit8) &&
-             (((reinterpret_cast<const uint32*>(src)[0] |
-                reinterpret_cast<const uint32*>(src)[1]) & 0x80808080) == 0)) {
+             (((reinterpret_cast<const uint32_t*>(src)[0] |
+                reinterpret_cast<const uint32_t*>(src)[1]) &
+               0x80808080) == 0)) {
         src += 8;
       }
     }
@@ -540,7 +542,6 @@ int UTF8GenericScanFastAscii(const UTF8ScanObj* st,
 
 
 
-namespace {
 
 bool module_initialized_ = false;
 
@@ -562,7 +563,7 @@ bool IsStructurallyValidUTF8(const char* buf, int len) {
   return (bytes_consumed == len);
 }
 
-int UTF8SpnStructurallyValid(const StringPiece& str) {
+int UTF8SpnStructurallyValid(StringPiece str) {
   if (!module_initialized_) return str.size();
 
   int bytes_consumed = 0;
@@ -583,8 +584,7 @@ int UTF8SpnStructurallyValid(const StringPiece& str) {
 
 
 
-char* UTF8CoerceToStructurallyValid(const StringPiece& src_str,
-                                    char* idst,
+char* UTF8CoerceToStructurallyValid(StringPiece src_str, char* idst,
                                     const char replace_char) {
   const char* isrc = src_str.data();
   const int len = src_str.length();

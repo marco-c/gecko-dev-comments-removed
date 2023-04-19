@@ -28,9 +28,10 @@
 
 
 
-#ifndef GOOGLE_PROTOBUF_UTIL_CONVERTER_UTILITY_H__
-#define GOOGLE_PROTOBUF_UTIL_CONVERTER_UTILITY_H__
+#ifndef GOOGLE_PROTOBUF_UTIL_INTERNAL_UTILITY_H__
+#define GOOGLE_PROTOBUF_UTIL_INTERNAL_UTILITY_H__
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
@@ -41,8 +42,8 @@
 #include <google/protobuf/type.pb.h>
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/stubs/status.h>
 #include <google/protobuf/stubs/statusor.h>
+#include <google/protobuf/stubs/status.h>
 
 
 #include <google/protobuf/port_def.inc>
@@ -53,7 +54,7 @@ namespace util {
 namespace converter {
 
 
-static const int64 kTypeUrlSize = 19;
+static const int64_t kTypeUrlSize = 19;
 
 
 
@@ -64,9 +65,9 @@ PROTOBUF_EXPORT bool GetBoolOptionOrDefault(
 
 
 
-PROTOBUF_EXPORT int64 GetInt64OptionOrDefault(
+PROTOBUF_EXPORT int64_t GetInt64OptionOrDefault(
     const RepeatedPtrField<google::protobuf::Option>& options,
-    StringPiece option_name, int64 default_value);
+    StringPiece option_name, int64_t default_value);
 
 
 
@@ -87,7 +88,7 @@ PROTOBUF_EXPORT std::string GetStringOptionOrDefault(
 PROTOBUF_EXPORT bool GetBoolFromAny(const google::protobuf::Any& any);
 
 
-PROTOBUF_EXPORT int64 GetInt64FromAny(const google::protobuf::Any& any);
+PROTOBUF_EXPORT int64_t GetInt64FromAny(const google::protobuf::Any& any);
 
 
 PROTOBUF_EXPORT double GetDoubleFromAny(const google::protobuf::Any& any);
@@ -127,7 +128,7 @@ const google::protobuf::Field* FindJsonFieldInTypeOrNull(
 
 
 const google::protobuf::Field* FindFieldInTypeByNumberOrNull(
-    const google::protobuf::Type* type, int32 number);
+    const google::protobuf::Type* type, int32_t number);
 
 
 
@@ -137,7 +138,7 @@ const google::protobuf::EnumValue* FindEnumValueByNameOrNull(
 
 
 const google::protobuf::EnumValue* FindEnumValueByNumberOrNull(
-    const google::protobuf::Enum* enum_type, int32 value);
+    const google::protobuf::Enum* enum_type, int32_t value);
 
 
 

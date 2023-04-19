@@ -38,6 +38,8 @@
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/type.pb.h>
 #include <google/protobuf/stubs/status.h>
+#include <google/protobuf/stubs/status.h>
+
 
 #include <google/protobuf/port_def.inc>
 
@@ -60,7 +62,7 @@ class PROTOBUF_EXPORT TypeResolver {
 
   
   virtual util::Status ResolveEnumType(const std::string& type_url,
-                                         google::protobuf::Enum* enum_type) = 0;
+                                       google::protobuf::Enum* enum_type) = 0;
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TypeResolver);

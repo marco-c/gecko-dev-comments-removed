@@ -28,23 +28,27 @@
 
 
 
-#ifndef GOOGLE_PROTOBUF_UTIL_CONVERTER_PROTOSTREAM_OBJECTSOURCE_H__
-#define GOOGLE_PROTOBUF_UTIL_CONVERTER_PROTOSTREAM_OBJECTSOURCE_H__
+#ifndef GOOGLE_PROTOBUF_UTIL_INTERNAL_PROTOSTREAM_OBJECTSOURCE_H__
+#define GOOGLE_PROTOBUF_UTIL_INTERNAL_PROTOSTREAM_OBJECTSOURCE_H__
 
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <unordered_map>
 
+#include <google/protobuf/stubs/status.h>
+
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/type.pb.h>
-#include <google/protobuf/util/internal/type_info.h>
+#include <google/protobuf/stubs/statusor.h>
+#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/util/internal/object_source.h>
 #include <google/protobuf/util/internal/object_writer.h>
+#include <google/protobuf/util/internal/type_info.h>
 #include <google/protobuf/util/type_resolver.h>
-#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/stubs/hash.h>
 #include <google/protobuf/stubs/status.h>
-#include <google/protobuf/stubs/statusor.h>
+
 
 
 #include <google/protobuf/port_def.inc>
@@ -71,51 +75,59 @@ class TypeInfo;
 
 class PROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
  public:
+
+  struct RenderOptions {
+    RenderOptions() = default;
+    RenderOptions(const RenderOptions&) = default;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool use_lower_camel_for_enums = false;
+
+    
+    
+    bool use_ints_for_enums = false;
+
+    
+    bool preserve_proto_field_names = false;
+
+  };
+
   ProtoStreamObjectSource(io::CodedInputStream* stream,
                           TypeResolver* type_resolver,
-                          const google::protobuf::Type& type);
+                          const google::protobuf::Type& type)
+      : ProtoStreamObjectSource(stream, type_resolver, type, RenderOptions()) {}
+  ProtoStreamObjectSource(io::CodedInputStream* stream,
+                          TypeResolver* type_resolver,
+                          const google::protobuf::Type& type,
+                          const RenderOptions& render_options);
 
   ~ProtoStreamObjectSource() override;
 
   util::Status NamedWriteTo(StringPiece name,
-                              ObjectWriter* ow) const override;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void set_use_lower_camel_for_enums(bool value) {
-    use_lower_camel_for_enums_ = value;
-  }
-
-  
-  
-  void set_use_ints_for_enums(bool value) { use_ints_for_enums_ = value; }
-
-  
-  void set_preserve_proto_field_names(bool value) {
-    preserve_proto_field_names_ = value;
-  }
+                            ObjectWriter* ow) const override;
 
   
   
@@ -124,34 +136,33 @@ class PROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
     max_recursion_depth_ = max_depth;
   }
 
-
  protected:
   
   
   
   
   
-  virtual util::Status WriteMessage(const google::protobuf::Type& descriptor,
-                                      StringPiece name,
-                                      const uint32 end_tag,
-                                      bool include_start_and_end,
-                                      ObjectWriter* ow) const;
+  virtual util::Status WriteMessage(const google::protobuf::Type& type,
+                                    StringPiece name,
+                                    const uint32_t end_tag,
+                                    bool include_start_and_end,
+                                    ObjectWriter* ow) const;
 
   
   
   
-  virtual util::StatusOr<uint32> RenderList(
+  virtual util::StatusOr<uint32_t> RenderList(
       const google::protobuf::Field* field, StringPiece name,
-      uint32 list_tag, ObjectWriter* ow) const;
+      uint32_t list_tag, ObjectWriter* ow) const;
 
   
   const google::protobuf::Field* FindAndVerifyField(
-      const google::protobuf::Type& type, uint32 tag) const;
+      const google::protobuf::Type& type, uint32_t tag) const;
 
   
   virtual util::Status RenderField(const google::protobuf::Field* field,
-                                     StringPiece field_name,
-                                     ObjectWriter* ow) const;
+                                   StringPiece field_name,
+                                   ObjectWriter* ow) const;
 
   
   
@@ -160,14 +171,18 @@ class PROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
       const google::protobuf::Field& field) const;
 
 
+  
+  io::CodedInputStream* stream() const { return stream_; }
+
  private:
   ProtoStreamObjectSource(io::CodedInputStream* stream,
                           const TypeInfo* typeinfo,
-                          const google::protobuf::Type& type);
+                          const google::protobuf::Type& type,
+                          const RenderOptions& render_options);
   
   typedef util::Status (*TypeRenderer)(const ProtoStreamObjectSource*,
-                                         const google::protobuf::Type&,
-                                         StringPiece, ObjectWriter*);
+                                       const google::protobuf::Type&,
+                                       StringPiece, ObjectWriter*);
 
   
   
@@ -175,84 +190,82 @@ class PROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
   
   
   
-  util::StatusOr<uint32> RenderMap(const google::protobuf::Field* field,
-                                     StringPiece name, uint32 list_tag,
+  util::StatusOr<uint32_t> RenderMap(const google::protobuf::Field* field,
+                                     StringPiece name, uint32_t list_tag,
                                      ObjectWriter* ow) const;
 
   
   
   
   util::Status RenderPacked(const google::protobuf::Field* field,
-                              ObjectWriter* ow) const;
+                            ObjectWriter* ow) const;
 
   
   static util::Status RenderTimestamp(const ProtoStreamObjectSource* os,
-                                        const google::protobuf::Type& type,
-                                        StringPiece name,
-                                        ObjectWriter* ow);
+                                      const google::protobuf::Type& type,
+                                      StringPiece name, ObjectWriter* ow);
 
   
   static util::Status RenderDuration(const ProtoStreamObjectSource* os,
-                                       const google::protobuf::Type& type,
-                                       StringPiece name,
-                                       ObjectWriter* ow);
+                                     const google::protobuf::Type& type,
+                                     StringPiece name, ObjectWriter* ow);
 
   
   
   static util::Status RenderDouble(const ProtoStreamObjectSource* os,
-                                     const google::protobuf::Type& type,
-                                     StringPiece name, ObjectWriter* ow);
-  static util::Status RenderFloat(const ProtoStreamObjectSource* os,
-                                    const google::protobuf::Type& type,
-                                    StringPiece name, ObjectWriter* ow);
-  static util::Status RenderInt64(const ProtoStreamObjectSource* os,
-                                    const google::protobuf::Type& type,
-                                    StringPiece name, ObjectWriter* ow);
-  static util::Status RenderUInt64(const ProtoStreamObjectSource* os,
-                                     const google::protobuf::Type& type,
-                                     StringPiece name, ObjectWriter* ow);
-  static util::Status RenderInt32(const ProtoStreamObjectSource* os,
-                                    const google::protobuf::Type& type,
-                                    StringPiece name, ObjectWriter* ow);
-  static util::Status RenderUInt32(const ProtoStreamObjectSource* os,
-                                     const google::protobuf::Type& type,
-                                     StringPiece name, ObjectWriter* ow);
-  static util::Status RenderBool(const ProtoStreamObjectSource* os,
                                    const google::protobuf::Type& type,
                                    StringPiece name, ObjectWriter* ow);
+  static util::Status RenderFloat(const ProtoStreamObjectSource* os,
+                                  const google::protobuf::Type& type,
+                                  StringPiece name, ObjectWriter* ow);
+  static util::Status RenderInt64(const ProtoStreamObjectSource* os,
+                                  const google::protobuf::Type& type,
+                                  StringPiece name, ObjectWriter* ow);
+  static util::Status RenderUInt64(const ProtoStreamObjectSource* os,
+                                   const google::protobuf::Type& type,
+                                   StringPiece name, ObjectWriter* ow);
+  static util::Status RenderInt32(const ProtoStreamObjectSource* os,
+                                  const google::protobuf::Type& type,
+                                  StringPiece name, ObjectWriter* ow);
+  static util::Status RenderUInt32(const ProtoStreamObjectSource* os,
+                                   const google::protobuf::Type& type,
+                                   StringPiece name, ObjectWriter* ow);
+  static util::Status RenderBool(const ProtoStreamObjectSource* os,
+                                 const google::protobuf::Type& type,
+                                 StringPiece name, ObjectWriter* ow);
   static util::Status RenderString(const ProtoStreamObjectSource* os,
-                                     const google::protobuf::Type& type,
-                                     StringPiece name, ObjectWriter* ow);
+                                   const google::protobuf::Type& type,
+                                   StringPiece name, ObjectWriter* ow);
   static util::Status RenderBytes(const ProtoStreamObjectSource* os,
-                                    const google::protobuf::Type& type,
-                                    StringPiece name, ObjectWriter* ow);
-
-  
-  static util::Status RenderStruct(const ProtoStreamObjectSource* os,
-                                     const google::protobuf::Type& type,
-                                     StringPiece name, ObjectWriter* ow);
-
-  
-  static util::Status RenderStructValue(const ProtoStreamObjectSource* os,
-                                          const google::protobuf::Type& type,
-                                          StringPiece name,
-                                          ObjectWriter* ow);
-
-  
-  static util::Status RenderStructListValue(
-      const ProtoStreamObjectSource* os, const google::protobuf::Type& type,
-      StringPiece name, ObjectWriter* ow);
-
-  
-  static util::Status RenderAny(const ProtoStreamObjectSource* os,
                                   const google::protobuf::Type& type,
                                   StringPiece name, ObjectWriter* ow);
 
   
-  static util::Status RenderFieldMask(const ProtoStreamObjectSource* os,
+  static util::Status RenderStruct(const ProtoStreamObjectSource* os,
+                                   const google::protobuf::Type& type,
+                                   StringPiece name, ObjectWriter* ow);
+
+  
+  static util::Status RenderStructValue(const ProtoStreamObjectSource* os,
                                         const google::protobuf::Type& type,
                                         StringPiece name,
                                         ObjectWriter* ow);
+
+  
+  static util::Status RenderStructListValue(const ProtoStreamObjectSource* os,
+                                            const google::protobuf::Type& type,
+                                            StringPiece name,
+                                            ObjectWriter* ow);
+
+  
+  static util::Status RenderAny(const ProtoStreamObjectSource* os,
+                                const google::protobuf::Type& type,
+                                StringPiece name, ObjectWriter* ow);
+
+  
+  static util::Status RenderFieldMask(const ProtoStreamObjectSource* os,
+                                      const google::protobuf::Type& type,
+                                      StringPiece name, ObjectWriter* ow);
 
   static std::unordered_map<std::string, TypeRenderer>* renderers_;
   static void InitRendererMap();
@@ -262,8 +275,8 @@ class PROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
   
   
   util::Status RenderNonMessageField(const google::protobuf::Field* field,
-                                       StringPiece field_name,
-                                       ObjectWriter* ow) const;
+                                     StringPiece field_name,
+                                     ObjectWriter* ow) const;
 
 
   
@@ -271,17 +284,17 @@ class PROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
 
   
   
-  std::pair<int64, int32> ReadSecondsAndNanos(
+  std::pair<int64_t, int32_t> ReadSecondsAndNanos(
       const google::protobuf::Type& type) const;
 
   
   
   
   util::Status IncrementRecursionDepth(StringPiece type_name,
-                                         StringPiece field_name) const;
+                                       StringPiece field_name) const;
 
   
-  io::CodedInputStream* stream_;
+  mutable io::CodedInputStream* stream_;
 
   
   
@@ -295,36 +308,13 @@ class PROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
   const google::protobuf::Type& type_;
 
 
-  
-  bool use_lower_camel_for_enums_;
-
-  
-  bool use_ints_for_enums_;
-
-  
-  bool preserve_proto_field_names_;
+  const RenderOptions render_options_;
 
   
   mutable int recursion_depth_;
 
   
   int max_recursion_depth_;
-
-  
-  bool render_unknown_fields_;
-
-  
-  bool render_unknown_enum_values_;
-
-  
-  bool add_trailing_zeros_for_timestamp_and_duration_;
-
-  
-  
-  
-  bool suppress_empty_object_;
-
-  bool use_legacy_json_map_format_;
 
   GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS(ProtoStreamObjectSource);
 };

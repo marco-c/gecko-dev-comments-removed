@@ -33,6 +33,7 @@
 #ifndef GOOGLE_PROTOBUF_REFLECTION_H__
 #define GOOGLE_PROTOBUF_REFLECTION_H__
 
+
 #include <memory>
 
 #include <google/protobuf/message.h>
@@ -41,6 +42,7 @@
 #ifdef SWIG
 #error "You cannot SWIG proto headers"
 #endif
+
 
 #include <google/protobuf/port_def.inc>
 
@@ -92,7 +94,7 @@ class RepeatedFieldRef<
     const Reflection* reflection = message.GetReflection();
     data_ = reflection->RepeatedFieldData(const_cast<Message*>(&message), field,
                                           internal::RefTypeTraits<T>::cpp_type,
-                                          NULL);
+                                          nullptr);
     accessor_ = reflection->RepeatedFieldAccessor(field);
   }
 
@@ -143,7 +145,7 @@ class MutableRepeatedFieldRef<
   MutableRepeatedFieldRef(Message* message, const FieldDescriptor* field) {
     const Reflection* reflection = message->GetReflection();
     data_ = reflection->RepeatedFieldData(
-        message, field, internal::RefTypeTraits<T>::cpp_type, NULL);
+        message, field, internal::RefTypeTraits<T>::cpp_type, nullptr);
     accessor_ = reflection->RepeatedFieldAccessor(field);
   }
 
@@ -392,13 +394,18 @@ class PROTOBUF_EXPORT RepeatedFieldAccessor {
 
 
 template <typename T>
-class RepeatedFieldRefIterator
-    : public std::iterator<std::forward_iterator_tag, T> {
+class RepeatedFieldRefIterator {
   typedef typename RefTypeTraits<T>::AccessorValueType AccessorValueType;
   typedef typename RefTypeTraits<T>::IteratorValueType IteratorValueType;
   typedef typename RefTypeTraits<T>::IteratorPointerType IteratorPointerType;
 
  public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = T;
+  using pointer = T*;
+  using reference = T&;
+  using difference_type = std::ptrdiff_t;
+
   
   RepeatedFieldRefIterator(const void* data,
                            const RepeatedFieldAccessor* accessor, bool begin)
@@ -471,7 +478,7 @@ class RepeatedFieldRefIterator
 
 template <typename T>
 struct PrimitiveTraits {
-  static const bool is_primitive = false;
+  static constexpr bool is_primitive = false;
 };
 #define DEFINE_PRIMITIVE(TYPE, type)                 \
   template <>                                        \
@@ -480,10 +487,10 @@ struct PrimitiveTraits {
     static const FieldDescriptor::CppType cpp_type = \
         FieldDescriptor::CPPTYPE_##TYPE;             \
   };
-DEFINE_PRIMITIVE(INT32, int32)
-DEFINE_PRIMITIVE(UINT32, uint32)
-DEFINE_PRIMITIVE(INT64, int64)
-DEFINE_PRIMITIVE(UINT64, uint64)
+DEFINE_PRIMITIVE(INT32, int32_t)
+DEFINE_PRIMITIVE(UINT32, uint32_t)
+DEFINE_PRIMITIVE(INT64, int64_t)
+DEFINE_PRIMITIVE(UINT64, uint64_t)
 DEFINE_PRIMITIVE(FLOAT, float)
 DEFINE_PRIMITIVE(DOUBLE, double)
 DEFINE_PRIMITIVE(BOOL, bool)
@@ -497,8 +504,9 @@ struct RefTypeTraits<
   typedef T AccessorValueType;
   typedef T IteratorValueType;
   typedef T* IteratorPointerType;
-  static const FieldDescriptor::CppType cpp_type = PrimitiveTraits<T>::cpp_type;
-  static const Descriptor* GetMessageFieldDescriptor() { return NULL; }
+  static constexpr FieldDescriptor::CppType cpp_type =
+      PrimitiveTraits<T>::cpp_type;
+  static const Descriptor* GetMessageFieldDescriptor() { return nullptr; }
 };
 
 template <typename T>
@@ -507,12 +515,12 @@ struct RefTypeTraits<
   typedef RepeatedFieldRefIterator<T> iterator;
   typedef RepeatedFieldAccessor AccessorType;
   
-  typedef int32 AccessorValueType;
+  typedef int32_t AccessorValueType;
   typedef T IteratorValueType;
-  typedef int32* IteratorPointerType;
-  static const FieldDescriptor::CppType cpp_type =
+  typedef int32_t* IteratorPointerType;
+  static constexpr FieldDescriptor::CppType cpp_type =
       FieldDescriptor::CPPTYPE_ENUM;
-  static const Descriptor* GetMessageFieldDescriptor() { return NULL; }
+  static const Descriptor* GetMessageFieldDescriptor() { return nullptr; }
 };
 
 template <typename T>
@@ -523,9 +531,9 @@ struct RefTypeTraits<
   typedef std::string AccessorValueType;
   typedef const std::string IteratorValueType;
   typedef const std::string* IteratorPointerType;
-  static const FieldDescriptor::CppType cpp_type =
+  static constexpr FieldDescriptor::CppType cpp_type =
       FieldDescriptor::CPPTYPE_STRING;
-  static const Descriptor* GetMessageFieldDescriptor() { return NULL; }
+  static const Descriptor* GetMessageFieldDescriptor() { return nullptr; }
 };
 
 template <typename T>
@@ -536,7 +544,7 @@ struct MessageDescriptorGetter {
 };
 template <>
 struct MessageDescriptorGetter<Message> {
-  static const Descriptor* get() { return NULL; }
+  static const Descriptor* get() { return nullptr; }
 };
 
 template <typename T>
@@ -547,7 +555,7 @@ struct RefTypeTraits<
   typedef Message AccessorValueType;
   typedef const T& IteratorValueType;
   typedef const T* IteratorPointerType;
-  static const FieldDescriptor::CppType cpp_type =
+  static constexpr FieldDescriptor::CppType cpp_type =
       FieldDescriptor::CPPTYPE_MESSAGE;
   static const Descriptor* GetMessageFieldDescriptor() {
     return MessageDescriptorGetter<T>::get();

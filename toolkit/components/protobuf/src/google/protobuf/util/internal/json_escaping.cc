@@ -30,6 +30,8 @@
 
 #include <google/protobuf/util/internal/json_escaping.h>
 
+#include <cstdint>
+
 #include <google/protobuf/stubs/logging.h>
 #include <google/protobuf/stubs/common.h>
 
@@ -77,7 +79,7 @@ static const char kCommonEscapes[160][7] = {
 
 
 
-inline bool IsSurrogate(uint32 c) {
+inline bool IsSurrogate(uint32_t c) {
   
   
   
@@ -86,13 +88,13 @@ inline bool IsSurrogate(uint32 c) {
 
 
 
-inline bool IsValidCodePoint(uint32 cp) {
+inline bool IsValidCodePoint(uint32_t cp) {
   return cp <= JsonEscaping::kMaxCodePoint;
 }
 
 
 
-inline uint16 ToLowSurrogate(uint32 cp) {
+inline uint16_t ToLowSurrogate(uint32_t cp) {
   return (cp &
           (JsonEscaping::kMaxLowSurrogate - JsonEscaping::kMinLowSurrogate)) +
          JsonEscaping::kMinLowSurrogate;
@@ -100,7 +102,7 @@ inline uint16 ToLowSurrogate(uint32 cp) {
 
 
 
-inline uint16 ToHighSurrogate(uint32 cp) {
+inline uint16_t ToHighSurrogate(uint32_t cp) {
   return (cp >> 10) + (JsonEscaping::kMinHighSurrogate -
                        (JsonEscaping::kMinSupplementaryCodePoint >> 10));
 }
@@ -125,11 +127,11 @@ inline uint16 ToHighSurrogate(uint32 cp) {
 
 
 
-bool ReadCodePoint(StringPiece str, int index, uint32* cp, int* num_left,
-                   int* num_read) {
+bool ReadCodePoint(StringPiece str, int index, uint32_t* cp,
+                   int* num_left, int* num_read) {
   if (*num_left == 0) {
     
-    *cp = static_cast<uint8>(str[index++]);
+    *cp = static_cast<uint8_t>(str[index++]);
     *num_read = 1;
     
     
@@ -178,7 +180,7 @@ bool ReadCodePoint(StringPiece str, int index, uint32* cp, int* num_left,
     *num_read = 0;
   }
   while (*num_left > 0 && index < str.size()) {
-    uint32 ch = static_cast<uint8>(str[index++]);
+    uint32_t ch = static_cast<uint8_t>(str[index++]);
     --(*num_left);
     ++(*num_read);
     *cp = (*cp << 6) | (ch & 0x3f);
@@ -190,7 +192,7 @@ bool ReadCodePoint(StringPiece str, int index, uint32* cp, int* num_left,
 
 
 
-StringPiece ToHex(uint16 cp, char* buffer) {
+StringPiece ToHex(uint16_t cp, char* buffer) {
   buffer[5] = kHex[cp & 0x0f];
   cp >>= 4;
   buffer[4] = kHex[cp & 0x0f];
@@ -204,9 +206,9 @@ StringPiece ToHex(uint16 cp, char* buffer) {
 
 
 
-StringPiece ToSurrogateHex(uint32 cp, char* buffer) {
-  uint16 low = ToLowSurrogate(cp);
-  uint16 high = ToHighSurrogate(cp);
+StringPiece ToSurrogateHex(uint32_t cp, char* buffer) {
+  uint16_t low = ToLowSurrogate(cp);
+  uint16_t high = ToHighSurrogate(cp);
 
   buffer[11] = kHex[low & 0x0f];
   low >>= 4;
@@ -234,7 +236,7 @@ StringPiece ToSurrogateHex(uint32 cp, char* buffer) {
 
 
 
-StringPiece EscapeCodePoint(uint32 cp, char* buffer) {
+StringPiece EscapeCodePoint(uint32_t cp, char* buffer) {
   if (cp < 0xa0) return kCommonEscapes[cp];
   switch (cp) {
     
@@ -272,7 +274,8 @@ StringPiece EscapeCodePoint(uint32 cp, char* buffer) {
 
 
 
-StringPiece EscapeCodePoint(uint32 cp, char* buffer, bool force_output) {
+StringPiece EscapeCodePoint(uint32_t cp, char* buffer,
+                                  bool force_output) {
   StringPiece sp = EscapeCodePoint(cp, buffer);
   if (force_output && sp.empty()) {
     buffer[5] = (cp & 0x3f) | 0x80;
@@ -301,7 +304,7 @@ StringPiece EscapeCodePoint(uint32 cp, char* buffer, bool force_output) {
 void JsonEscaping::Escape(strings::ByteSource* input,
                           strings::ByteSink* output) {
   char buffer[12] = "\\udead\\ubee";
-  uint32 cp = 0;     
+  uint32_t cp = 0;   
   int num_left = 0;  
   while (input->Available() > 0) {
     StringPiece str = input->Peek();

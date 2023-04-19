@@ -33,11 +33,12 @@
 #ifndef GOOGLE_PROTOBUF_UTIL_FIELD_MASK_UTIL_H__
 #define GOOGLE_PROTOBUF_UTIL_FIELD_MASK_UTIL_H__
 
+#include <cstdint>
 #include <string>
 
 #include <google/protobuf/field_mask.pb.h>
-#include <google/protobuf/descriptor.h>
 #include <google/protobuf/stubs/strutil.h>
+#include <google/protobuf/descriptor.h>
 
 
 #include <google/protobuf/port_def.inc>
@@ -54,6 +55,21 @@ class PROTOBUF_EXPORT FieldMaskUtil {
   
   static std::string ToString(const FieldMask& mask);
   static void FromString(StringPiece str, FieldMask* out);
+
+  
+  
+  template <typename T>
+  static void FromFieldNumbers(const std::vector<int64_t>& field_numbers,
+                               FieldMask* out) {
+    for (const auto field_number : field_numbers) {
+      const FieldDescriptor* field_desc =
+          T::descriptor()->FindFieldByNumber(field_number);
+      GOOGLE_CHECK(field_desc != nullptr)
+          << "Invalid field number for " << T::descriptor()->full_name() << ": "
+          << field_number;
+      AddPathToFieldMask<T>(field_desc->lowercase_name(), out);
+    }
+  }
 
   
   
@@ -80,8 +96,9 @@ class PROTOBUF_EXPORT FieldMaskUtil {
   template <typename T>
   static bool IsValidFieldMask(const FieldMask& mask) {
     for (int i = 0; i < mask.paths_size(); ++i) {
-      if (!GetFieldDescriptors(T::descriptor(), mask.paths(i), nullptr))
+      if (!GetFieldDescriptors(T::descriptor(), mask.paths(i), nullptr)) {
         return false;
+      }
     }
     return true;
   }
@@ -90,8 +107,8 @@ class PROTOBUF_EXPORT FieldMaskUtil {
   
   template <typename T>
   static void AddPathToFieldMask(StringPiece path, FieldMask* mask) {
-    GOOGLE_CHECK(IsValidPath<T>(path));
-    mask->add_paths(path);
+    GOOGLE_CHECK(IsValidPath<T>(path)) << path;
+    mask->add_paths(std::string(path));
   }
 
   

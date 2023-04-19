@@ -33,14 +33,15 @@
 #ifndef GOOGLE_PROTOBUF_UTIL_TIME_UTIL_H__
 #define GOOGLE_PROTOBUF_UTIL_TIME_UTIL_H__
 
+#include <cstdint>
 #include <ctime>
 #include <ostream>
 #include <string>
 #ifdef _MSC_VER
 #ifdef _XBOX_ONE
 struct timeval {
-  int64 tv_sec;  
-  int64 tv_usec; 
+  int64_t tv_sec;  
+  int64_t tv_usec; 
 };
 #else
 #include <winsock2.h>
@@ -51,6 +52,7 @@ struct timeval {
 
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/timestamp.pb.h>
+
 
 #include <google/protobuf/port_def.inc>
 
@@ -67,11 +69,11 @@ class PROTOBUF_EXPORT TimeUtil {
   
   
   
-  static const int64 kTimestampMinSeconds = -62135596800LL;
+  static const int64_t kTimestampMinSeconds = -62135596800LL;
   
-  static const int64 kTimestampMaxSeconds = 253402300799LL;
-  static const int64 kDurationMinSeconds = -315576000000LL;
-  static const int64 kDurationMaxSeconds = 315576000000LL;
+  static const int64_t kTimestampMaxSeconds = 253402300799LL;
+  static const int64_t kDurationMinSeconds = -315576000000LL;
+  static const int64_t kDurationMaxSeconds = 315576000000LL;
 
   
   
@@ -110,12 +112,12 @@ class PROTOBUF_EXPORT TimeUtil {
 
   
   
-  static Duration NanosecondsToDuration(int64 nanos);
-  static Duration MicrosecondsToDuration(int64 micros);
-  static Duration MillisecondsToDuration(int64 millis);
-  static Duration SecondsToDuration(int64 seconds);
-  static Duration MinutesToDuration(int64 minutes);
-  static Duration HoursToDuration(int64 hours);
+  static Duration NanosecondsToDuration(int64_t nanos);
+  static Duration MicrosecondsToDuration(int64_t micros);
+  static Duration MillisecondsToDuration(int64_t millis);
+  static Duration SecondsToDuration(int64_t seconds);
+  static Duration MinutesToDuration(int64_t minutes);
+  static Duration HoursToDuration(int64_t hours);
   
   
   
@@ -123,28 +125,28 @@ class PROTOBUF_EXPORT TimeUtil {
   
   
   
-  static int64 DurationToNanoseconds(const Duration& duration);
-  static int64 DurationToMicroseconds(const Duration& duration);
-  static int64 DurationToMilliseconds(const Duration& duration);
-  static int64 DurationToSeconds(const Duration& duration);
-  static int64 DurationToMinutes(const Duration& duration);
-  static int64 DurationToHours(const Duration& duration);
+  static int64_t DurationToNanoseconds(const Duration& duration);
+  static int64_t DurationToMicroseconds(const Duration& duration);
+  static int64_t DurationToMilliseconds(const Duration& duration);
+  static int64_t DurationToSeconds(const Duration& duration);
+  static int64_t DurationToMinutes(const Duration& duration);
+  static int64_t DurationToHours(const Duration& duration);
   
   
   
-  static Timestamp NanosecondsToTimestamp(int64 nanos);
-  static Timestamp MicrosecondsToTimestamp(int64 micros);
-  static Timestamp MillisecondsToTimestamp(int64 millis);
-  static Timestamp SecondsToTimestamp(int64 seconds);
+  static Timestamp NanosecondsToTimestamp(int64_t nanos);
+  static Timestamp MicrosecondsToTimestamp(int64_t micros);
+  static Timestamp MillisecondsToTimestamp(int64_t millis);
+  static Timestamp SecondsToTimestamp(int64_t seconds);
   
   
   
   
   
-  static int64 TimestampToNanoseconds(const Timestamp& timestamp);
-  static int64 TimestampToMicroseconds(const Timestamp& timestamp);
-  static int64 TimestampToMilliseconds(const Timestamp& timestamp);
-  static int64 TimestampToSeconds(const Timestamp& timestamp);
+  static int64_t TimestampToNanoseconds(const Timestamp& timestamp);
+  static int64_t TimestampToMicroseconds(const Timestamp& timestamp);
+  static int64_t TimestampToMilliseconds(const Timestamp& timestamp);
+  static int64_t TimestampToSeconds(const Timestamp& timestamp);
 
   
   
@@ -176,19 +178,19 @@ PROTOBUF_EXPORT Duration& operator+=(Duration& d1,
                                      const Duration& d2);  
 PROTOBUF_EXPORT Duration& operator-=(Duration& d1,
                                      const Duration& d2);     
-PROTOBUF_EXPORT Duration& operator*=(Duration& d, int64 r);   
+PROTOBUF_EXPORT Duration& operator*=(Duration& d, int64_t r);  
 PROTOBUF_EXPORT Duration& operator*=(Duration& d, double r);  
-PROTOBUF_EXPORT Duration& operator/=(Duration& d, int64 r);   
+PROTOBUF_EXPORT Duration& operator/=(Duration& d, int64_t r);  
 PROTOBUF_EXPORT Duration& operator/=(Duration& d, double r);  
 
 template <typename T>
 Duration& operator*=(Duration& d, T r) {  
-  int64 x = r;
+  int64_t x = r;
   return d *= x;
 }
 template <typename T>
 Duration& operator/=(Duration& d, T r) {  
-  int64 x = r;
+  int64_t x = r;
   return d /= x;
 }
 PROTOBUF_EXPORT Duration& operator%=(Duration& d1,
@@ -243,7 +245,7 @@ template <typename T>
 inline Duration operator/(Duration d, T r) {
   return d /= r;
 }
-PROTOBUF_EXPORT int64 operator/(const Duration& d1, const Duration& d2);
+PROTOBUF_EXPORT int64_t operator/(const Duration& d1, const Duration& d2);
 
 inline Duration operator%(const Duration& d1, const Duration& d2) {
   Duration result = d1;

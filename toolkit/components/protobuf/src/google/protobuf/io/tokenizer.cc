@@ -92,11 +92,14 @@
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/stringprintf.h>
 #include <google/protobuf/stubs/strutil.h>
+#include <google/protobuf/stubs/stringprintf.h>
 #include <google/protobuf/io/strtod.h>
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/stubs/stl_util.h>
+
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
@@ -147,12 +150,32 @@ CHARACTER_CLASS(Escape, c == 'a' || c == 'b' || c == 'f' || c == 'n' ||
 
 
 
-inline int DigitValue(char digit) {
-  if ('0' <= digit && digit <= '9') return digit - '0';
-  if ('a' <= digit && digit <= 'z') return digit - 'a' + 10;
-  if ('A' <= digit && digit <= 'Z') return digit - 'A' + 10;
-  return -1;
-}
+
+
+
+static const int8_t kAsciiToInt[256] = {
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    0,  1,  2,  3,  4,  5,  6,  7,  8,  9,                           
+    36, 36, 36, 36, 36, 36, 36,                                      
+    10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,  
+    26, 27, 28, 29, 30, 31, 32, 33, 34, 35,                          
+    36, 36, 36, 36, 36, 36,                                          
+    10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,  
+    26, 27, 28, 29, 30, 31, 32, 33, 34, 35,                          
+    36, 36, 36, 36, 36,                                              
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36,  
+};
+
+inline int DigitValue(char digit) { return kAsciiToInt[digit & 0xFF]; }
 
 
 inline char TranslateEscape(char c) {
@@ -222,6 +245,21 @@ Tokenizer::~Tokenizer() {
   if (buffer_size_ > buffer_pos_) {
     input_->BackUp(buffer_size_ - buffer_pos_);
   }
+}
+
+bool Tokenizer::report_whitespace() const { return report_whitespace_; }
+
+void Tokenizer::set_report_whitespace(bool report) {
+  report_whitespace_ = report;
+  report_newlines_ &= report;
+}
+
+
+bool Tokenizer::report_newlines() const { return report_newlines_; }
+
+void Tokenizer::set_report_newlines(bool report) {
+  report_newlines_ = report;
+  report_whitespace_ |= report;  
 }
 
 
@@ -560,13 +598,46 @@ Tokenizer::NextCommentStatus Tokenizer::TryConsumeCommentStart() {
   }
 }
 
+bool Tokenizer::TryConsumeWhitespace() {
+  if (report_newlines_) {
+    if (TryConsumeOne<WhitespaceNoNewline>()) {
+      ConsumeZeroOrMore<WhitespaceNoNewline>();
+      current_.type = TYPE_WHITESPACE;
+      return true;
+    }
+    return false;
+  }
+  if (TryConsumeOne<Whitespace>()) {
+    ConsumeZeroOrMore<Whitespace>();
+    current_.type = TYPE_WHITESPACE;
+    return report_whitespace_;
+  }
+  return false;
+}
+
+bool Tokenizer::TryConsumeNewline() {
+  if (!report_whitespace_ || !report_newlines_) {
+    return false;
+  }
+  if (TryConsume('\n')) {
+    current_.type = TYPE_NEWLINE;
+    return true;
+  }
+  return false;
+}
+
 
 
 bool Tokenizer::Next() {
   previous_ = current_;
 
   while (!read_error_) {
-    ConsumeZeroOrMore<Whitespace>();
+    StartToken();
+    bool report_token = TryConsumeWhitespace() || TryConsumeNewline();
+    EndToken();
+    if (report_token) {
+      return true;
+    }
 
     switch (TryConsumeCommentStart()) {
       case LINE_COMMENT:
@@ -638,7 +709,7 @@ bool Tokenizer::Next() {
           error_collector_->AddError(
               line_, column_,
               StringPrintf("Interpreting non ascii codepoint %d.",
-                           static_cast<unsigned char>(current_char_)));
+                              static_cast<unsigned char>(current_char_)));
         }
         NextChar();
         current_.type = TYPE_SYMBOL;
@@ -768,8 +839,9 @@ bool Tokenizer::NextWithComments(std::string* prev_trailing_comments,
   if (current_.type == TYPE_START) {
     
     
-    if (TryConsume((char)0xEF)) {
-      if (!TryConsume((char)0xBB) || !TryConsume((char)0xBF)) {
+    if (TryConsume(static_cast<char>(0xEF))) {
+      if (!TryConsume(static_cast<char>(0xBB)) ||
+          !TryConsume(static_cast<char>(0xBF))) {
         AddError(
             "Proto file starts with 0xEF but not UTF-8 BOM. "
             "Only UTF-8 is accepted for proto file.");
@@ -860,27 +932,51 @@ bool Tokenizer::NextWithComments(std::string* prev_trailing_comments,
 
 
 
-bool Tokenizer::ParseInteger(const std::string& text, uint64 max_value,
-                             uint64* output) {
+bool Tokenizer::ParseInteger(const std::string& text, uint64_t max_value,
+                             uint64_t* output) {
   
   
 
-  
+#if 0
+  const char *str_begin = text.c_str();
+  if (*str_begin == '-') return false;
+  char *str_end = nullptr;
+  errno = 0;
+  *output = std::strtoull(str_begin, &str_end, 0);
+  return (errno == 0 && str_end && *str_end == '\0' && *output <= max_value);
+#endif
 
   const char* ptr = text.c_str();
   int base = 10;
+  uint64_t overflow_if_mul_base = (kuint64max / 10) + 1;
   if (ptr[0] == '0') {
     if (ptr[1] == 'x' || ptr[1] == 'X') {
       
       base = 16;
+      overflow_if_mul_base = (kuint64max / 16) + 1;
       ptr += 2;
     } else {
       
       base = 8;
+      overflow_if_mul_base = (kuint64max / 8) + 1;
     }
   }
 
-  uint64 result = 0;
+  uint64_t result = 0;
+  
+  
+  while (*ptr != '\0') {
+    int digit = DigitValue(*ptr++);
+    if (digit >= base) {
+      
+      
+      return false;
+    }
+    if (digit != 0) {
+      result = digit;
+      break;
+    }
+  }
   for (; *ptr != '\0'; ptr++) {
     int digit = DigitValue(*ptr);
     if (digit < 0 || digit >= base) {
@@ -888,12 +984,18 @@ bool Tokenizer::ParseInteger(const std::string& text, uint64 max_value,
       
       return false;
     }
-    if (digit > max_value || result > (max_value - digit) / base) {
+    if (result >= overflow_if_mul_base) {
       
       return false;
     }
+    
     result = result * base + digit;
+    
+    
+    
+    if (result < static_cast<uint64_t>(base)) return false;
   }
+  if (result > max_value) return false;
 
   *output = result;
   return true;
@@ -918,7 +1020,8 @@ double Tokenizer::ParseFloat(const std::string& text) {
     ++end;
   }
 
-  GOOGLE_LOG_IF(DFATAL, end - start != text.size() || *start == '-')
+  GOOGLE_LOG_IF(DFATAL,
+         static_cast<size_t>(end - start) != text.size() || *start == '-')
       << " Tokenizer::ParseFloat() passed text that could not have been"
          " tokenized as a float: "
       << CEscape(text);
@@ -927,8 +1030,8 @@ double Tokenizer::ParseFloat(const std::string& text) {
 
 
 
-static void AppendUTF8(uint32 code_point, std::string* output) {
-  uint32 tmp = 0;
+static void AppendUTF8(uint32_t code_point, std::string* output) {
+  uint32_t tmp = 0;
   int len = 0;
   if (code_point <= 0x7f) {
     tmp = code_point;
@@ -940,12 +1043,13 @@ static void AppendUTF8(uint32 code_point, std::string* output) {
     tmp = 0x00e08080 | ((code_point & 0xf000) << 4) |
           ((code_point & 0x0fc0) << 2) | (code_point & 0x003f);
     len = 3;
-  } else if (code_point <= 0x1fffff) {
+  } else if (code_point <= 0x10ffff) {
     tmp = 0xf0808080 | ((code_point & 0x1c0000) << 6) |
           ((code_point & 0x03f000) << 4) | ((code_point & 0x000fc0) << 2) |
           (code_point & 0x003f);
     len = 4;
   } else {
+    
     
     
     StringAppendF(output, "\\U%08x", code_point);
@@ -957,7 +1061,7 @@ static void AppendUTF8(uint32 code_point, std::string* output) {
 
 
 
-static bool ReadHexDigits(const char* ptr, int len, uint32* result) {
+static bool ReadHexDigits(const char* ptr, int len, uint32_t* result) {
   *result = 0;
   if (len == 0) return false;
   for (const char* end = ptr + len; ptr < end; ++ptr) {
@@ -972,22 +1076,23 @@ static bool ReadHexDigits(const char* ptr, int len, uint32* result) {
 
 
 
-static const uint32 kMinHeadSurrogate = 0xd800;
-static const uint32 kMaxHeadSurrogate = 0xdc00;
-static const uint32 kMinTrailSurrogate = 0xdc00;
-static const uint32 kMaxTrailSurrogate = 0xe000;
+static const uint32_t kMinHeadSurrogate = 0xd800;
+static const uint32_t kMaxHeadSurrogate = 0xdc00;
+static const uint32_t kMinTrailSurrogate = 0xdc00;
+static const uint32_t kMaxTrailSurrogate = 0xe000;
 
-static inline bool IsHeadSurrogate(uint32 code_point) {
+static inline bool IsHeadSurrogate(uint32_t code_point) {
   return (code_point >= kMinHeadSurrogate) && (code_point < kMaxHeadSurrogate);
 }
 
-static inline bool IsTrailSurrogate(uint32 code_point) {
+static inline bool IsTrailSurrogate(uint32_t code_point) {
   return (code_point >= kMinTrailSurrogate) &&
          (code_point < kMaxTrailSurrogate);
 }
 
 
-static uint32 AssembleUTF16(uint32 head_surrogate, uint32 trail_surrogate) {
+static uint32_t AssembleUTF16(uint32_t head_surrogate,
+                              uint32_t trail_surrogate) {
   GOOGLE_DCHECK(IsHeadSurrogate(head_surrogate));
   GOOGLE_DCHECK(IsTrailSurrogate(trail_surrogate));
   return 0x10000 + (((head_surrogate - kMinHeadSurrogate) << 10) |
@@ -1005,7 +1110,7 @@ static inline int UnicodeLength(char key) {
 
 
 
-static const char* FetchUnicodePoint(const char* ptr, uint32* code_point) {
+static const char* FetchUnicodePoint(const char* ptr, uint32_t* code_point) {
   const char* p = ptr;
   
   const int len = UnicodeLength(*p++);
@@ -1017,7 +1122,7 @@ static const char* FetchUnicodePoint(const char* ptr, uint32* code_point) {
   
   
   if (IsHeadSurrogate(*code_point) && *p == '\\' && *(p + 1) == 'u') {
-    uint32 trail_surrogate;
+    uint32_t trail_surrogate;
     if (ReadHexDigits(p + 2, 4, &trail_surrogate) &&
         IsTrailSurrogate(trail_surrogate)) {
       *code_point = AssembleUTF16(*code_point, trail_surrogate);
@@ -1089,7 +1194,7 @@ void Tokenizer::ParseStringAppend(const std::string& text,
         output->push_back(static_cast<char>(code));
 
       } else if (*ptr == 'u' || *ptr == 'U') {
-        uint32 unicode;
+        uint32_t unicode;
         const char* end = FetchUnicodePoint(ptr, &unicode);
         if (end == ptr) {
           
@@ -1113,8 +1218,8 @@ void Tokenizer::ParseStringAppend(const std::string& text,
 
 template <typename CharacterClass>
 static bool AllInClass(const std::string& s) {
-  for (int i = 0; i < s.size(); ++i) {
-    if (!CharacterClass::InClass(s[i])) return false;
+  for (const char character : s) {
+    if (!CharacterClass::InClass(character)) return false;
   }
   return true;
 }
@@ -1130,3 +1235,5 @@ bool Tokenizer::IsIdentifier(const std::string& text) {
 }  
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>

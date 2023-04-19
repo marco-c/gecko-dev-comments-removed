@@ -43,6 +43,8 @@
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
+
+
 #include <google/protobuf/port_def.inc>
 
 namespace google {
@@ -78,8 +80,8 @@ class PROTOBUF_EXPORT ErrorCollector {
   
   
   
-  virtual void AddWarning(int line, ColumnNumber column,
-                          const std::string& message) {}
+  virtual void AddWarning(int , ColumnNumber ,
+                          const std::string& ) {}
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ErrorCollector);
@@ -120,6 +122,13 @@ class PROTOBUF_EXPORT Tokenizer {
                       
                       
     TYPE_SYMBOL,      
+                      
+                      
+    TYPE_WHITESPACE,  
+                      
+                      
+    TYPE_NEWLINE,     
+                      
                       
                       
   };
@@ -217,8 +226,8 @@ class PROTOBUF_EXPORT Tokenizer {
   
   
   
-  static bool ParseInteger(const std::string& text, uint64 max_value,
-                           uint64* output);
+  static bool ParseInteger(const std::string& text, uint64_t max_value,
+                           uint64_t* output);
 
   
 
@@ -251,6 +260,16 @@ class PROTOBUF_EXPORT Tokenizer {
   void set_allow_multiline_strings(bool allow) {
     allow_multiline_strings_ = allow;
   }
+
+  
+  
+  bool report_whitespace() const;
+  void set_report_whitespace(bool report);
+
+  
+  
+  bool report_newlines() const;
+  void set_report_newlines(bool report);
 
   
   static bool IsIdentifier(const std::string& text);
@@ -287,6 +306,8 @@ class PROTOBUF_EXPORT Tokenizer {
   CommentStyle comment_style_;
   bool require_space_after_number_;
   bool allow_multiline_strings_;
+  bool report_whitespace_ = false;
+  bool report_newlines_ = false;
 
   
   
@@ -359,6 +380,14 @@ class PROTOBUF_EXPORT Tokenizer {
   
   
   NextCommentStatus TryConsumeCommentStart();
+
+  
+  
+  bool TryConsumeWhitespace();
+
+  
+  
+  bool TryConsumeNewline();
 
   
   

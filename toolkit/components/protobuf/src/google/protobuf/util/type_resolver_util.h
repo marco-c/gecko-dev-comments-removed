@@ -41,6 +41,7 @@ class DescriptorPool;
 namespace util {
 class TypeResolver;
 
+
 #include <google/protobuf/port_def.inc>
 
 

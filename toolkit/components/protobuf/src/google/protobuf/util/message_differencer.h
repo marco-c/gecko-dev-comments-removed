@@ -39,11 +39,14 @@
 
 
 
+
 #ifndef GOOGLE_PROTOBUF_UTIL_MESSAGE_DIFFERENCER_H__
 #define GOOGLE_PROTOBUF_UTIL_MESSAGE_DIFFERENCER_H__
 
+
 #include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -177,45 +180,52 @@ class PROTOBUF_EXPORT MessageDifferencer {
     
     
     
-    const FieldDescriptor* field;
-    int unknown_field_number;
-    UnknownField::Type unknown_field_type;
+    const FieldDescriptor* field = nullptr;
+    int unknown_field_number = -1;
+    UnknownField::Type unknown_field_type = UnknownField::Type::TYPE_VARINT;
 
     
     
     
-    int index;
-
-    
-    
-    
-    
-    int new_index;
+    int index = -1;
 
     
     
     
     
-    const UnknownFieldSet* unknown_field_set1;
-    const UnknownFieldSet* unknown_field_set2;
+    int new_index = -1;
+
+    
+    const Message* map_entry1 = nullptr;
+    const Message* map_entry2 = nullptr;
 
     
     
     
-    int unknown_field_index1;
-    int unknown_field_index2;
+    
+    const UnknownFieldSet* unknown_field_set1 = nullptr;
+    const UnknownFieldSet* unknown_field_set2 = nullptr;
 
-    SpecificField()
-        : field(NULL),
-          unknown_field_number(-1),
-          index(-1),
-          new_index(-1),
-          unknown_field_set1(NULL),
-          unknown_field_set2(NULL),
-          unknown_field_index1(-1),
-          unknown_field_index2(-1) {}
+    
+    
+    
+    int unknown_field_index1 = -1;
+    int unknown_field_index2 = -1;
   };
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -514,6 +524,9 @@ class PROTOBUF_EXPORT MessageDifferencer {
   
   
   void set_field_comparator(FieldComparator* comparator);
+#ifdef PROTOBUF_FUTURE_BREAKING_CHANGES
+  void set_field_comparator(DefaultFieldComparator* comparator);
+#endif  
 
   
   
@@ -531,6 +544,9 @@ class PROTOBUF_EXPORT MessageDifferencer {
   
   
   void set_message_field_comparison(MessageFieldComparison comparison);
+
+  
+  MessageFieldComparison message_field_comparison() const;
 
   
   
@@ -555,7 +571,7 @@ class PROTOBUF_EXPORT MessageDifferencer {
   void set_scope(Scope scope);
 
   
-  Scope scope();
+  Scope scope() const;
 
   
   
@@ -571,7 +587,7 @@ class PROTOBUF_EXPORT MessageDifferencer {
   void set_repeated_field_comparison(RepeatedFieldComparison comparison);
 
   
-  RepeatedFieldComparison repeated_field_comparison();
+  RepeatedFieldComparison repeated_field_comparison() const;
 
   
   
@@ -602,6 +618,22 @@ class PROTOBUF_EXPORT MessageDifferencer {
   
   void ReportDifferencesTo(Reporter* reporter);
 
+ private:
+  
+  
+  class UnpackAnyField {
+   private:
+    std::unique_ptr<DynamicMessageFactory> dynamic_message_factory_;
+
+   public:
+    UnpackAnyField() = default;
+    ~UnpackAnyField() = default;
+    
+    
+    bool UnpackAny(const Message& any, std::unique_ptr<Message>* data);
+  };
+
+ public:
   
   
   
@@ -649,12 +681,11 @@ class PROTOBUF_EXPORT MessageDifferencer {
         const Message& message1, const Message& message2,
         const std::vector<SpecificField>& field_path) override;
 
-   protected:
     
     
-    virtual void PrintPath(const std::vector<SpecificField>& field_path,
-                           bool left_side, const Message& message);
+    void SetMessages(const Message& message1, const Message& message2);
 
+   protected:
     
     virtual void PrintPath(const std::vector<SpecificField>& field_path,
                            bool left_side);
@@ -675,15 +706,20 @@ class PROTOBUF_EXPORT MessageDifferencer {
     void Print(const std::string& str);
 
    private:
+    
+    void PrintMapKey(bool left_side, const SpecificField& specific_field);
+
     io::Printer* printer_;
     bool delete_printer_;
     bool report_modified_aggregates_;
-
+    const Message* message1_;
+    const Message* message2_;
+    MessageDifferencer::UnpackAnyField unpack_any_field_;
     GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(StreamReporter);
   };
 
  private:
-  friend class DefaultFieldComparator;
+  friend class SimpleFieldComparator;
 
   
   
@@ -753,6 +789,26 @@ class PROTOBUF_EXPORT MessageDifferencer {
   bool CompareRepeatedField(const Message& message1, const Message& message2,
                             const FieldDescriptor* field,
                             std::vector<SpecificField>* parent_fields);
+
+  
+  bool CompareMapField(const Message& message1, const Message& message2,
+                       const FieldDescriptor* field,
+                       std::vector<SpecificField>* parent_fields);
+
+  
+  
+  
+  bool CompareRepeatedRep(const Message& message1, const Message& message2,
+                          const FieldDescriptor* field,
+                          std::vector<SpecificField>* parent_fields);
+
+  
+  
+  bool CompareMapFieldByMapReflection(const Message& message1,
+                                      const Message& message2,
+                                      const FieldDescriptor* field,
+                                      std::vector<SpecificField>* parent_fields,
+                                      DefaultFieldComparator* comparator);
 
   
   bool CompareFieldValue(const Message& message1, const Message& message2,
@@ -839,10 +895,6 @@ class PROTOBUF_EXPORT MessageDifferencer {
       std::vector<int>* match_list1, std::vector<int>* match_list2);
 
   
-  
-  bool UnpackAny(const Message& any, std::unique_ptr<Message>* data);
-
-  
   static bool CheckPathChanged(const std::vector<SpecificField>& parent_fields);
 
   
@@ -863,7 +915,6 @@ class PROTOBUF_EXPORT MessageDifferencer {
 
   Reporter* reporter_;
   DefaultFieldComparator default_field_comparator_;
-  FieldComparator* field_comparator_;
   MessageFieldComparison message_field_comparison_;
   Scope scope_;
   RepeatedFieldComparison repeated_field_comparison_;
@@ -884,6 +935,12 @@ class PROTOBUF_EXPORT MessageDifferencer {
 
   FieldSet ignored_fields_;
 
+  union {
+    DefaultFieldComparator* default_impl;
+    FieldComparator* base;
+  } field_comparator_ = {&default_field_comparator_};
+  enum { kFCDefault, kFCBase } field_comparator_kind_ = kFCDefault;
+
   bool report_matches_;
   bool report_moves_;
   bool report_ignores_;
@@ -894,7 +951,7 @@ class PROTOBUF_EXPORT MessageDifferencer {
   std::function<void(std::vector<int>*, std::vector<int>*)>
       match_indices_for_smart_list_callback_;
 
-  std::unique_ptr<DynamicMessageFactory> dynamic_message_factory_;
+  MessageDifferencer::UnpackAnyField unpack_any_field_;
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageDifferencer);
 };
 
@@ -920,4 +977,4 @@ class PROTOBUF_EXPORT FieldContext {
 
 #include <google/protobuf/port_undef.inc>
 
-#endif
+#endif  

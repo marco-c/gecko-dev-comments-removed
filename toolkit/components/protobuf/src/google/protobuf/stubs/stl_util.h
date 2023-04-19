@@ -35,6 +35,11 @@
 
 #include <google/protobuf/stubs/common.h>
 
+#include <algorithm>
+
+
+#include <google/protobuf/port_def.inc>  
+
 namespace google {
 namespace protobuf {
 
@@ -44,8 +49,20 @@ namespace protobuf {
 
 
 
-inline void STLStringResizeUninitialized(string* s, size_t new_size) {
+inline void STLStringResizeUninitialized(std::string* s, size_t new_size) {
   s->resize(new_size);
+}
+
+
+
+inline void STLStringResizeUninitializedAmortized(std::string* s,
+                                                  size_t new_size) {
+  const size_t cap = s->capacity();
+  if (new_size > cap) {
+    
+    s->reserve(std::max<size_t>(new_size, 2 * cap));
+  }
+  STLStringResizeUninitialized(s, new_size);
 }
 
 
@@ -60,12 +77,14 @@ inline void STLStringResizeUninitialized(string* s, size_t new_size) {
 
 
 
-inline char* string_as_array(string* str) {
+inline char* string_as_array(std::string* str) {
   
   return str->empty() ? nullptr : &*str->begin();
 }
 
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>  
 
 #endif  

@@ -69,17 +69,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #ifndef GOOGLE_PROTOBUF_STUBS_STATUSOR_H_
 #define GOOGLE_PROTOBUF_STUBS_STATUSOR_H_
 
@@ -94,14 +83,18 @@
 namespace google {
 namespace protobuf {
 namespace util {
+namespace statusor_internal {
 
 template<typename T>
 class StatusOr {
   template<typename U> friend class StatusOr;
 
  public:
+  using value_type = T;
+
   
-  StatusOr();
+  
+  explicit StatusOr();
 
   
   
@@ -150,9 +143,7 @@ class StatusOr {
   bool ok() const;
 
   
-  
-  
-  const T& ValueOrDie() const;
+  const T& value () const;
 
  private:
   Status status_;
@@ -161,8 +152,6 @@ class StatusOr {
 
 
 
-
-namespace internal {
 
 class PROTOBUF_EXPORT StatusOrHelper {
  public:
@@ -177,7 +166,7 @@ class PROTOBUF_EXPORT StatusOrHelper {
 template<typename T>
 struct StatusOrHelper::Specialize {
   
-  static inline bool IsValueNull(const T& t) { return false; }
+  static inline bool IsValueNull(const T& ) { return false; }
 };
 
 template<typename T>
@@ -185,17 +174,13 @@ struct StatusOrHelper::Specialize<T*> {
   static inline bool IsValueNull(const T* t) { return t == nullptr; }
 };
 
-}  
-
-template<typename T>
-inline StatusOr<T>::StatusOr()
-    : status_(util::Status::UNKNOWN) {
-}
+template <typename T>
+inline StatusOr<T>::StatusOr() : status_(util::UnknownError("")) {}
 
 template<typename T>
 inline StatusOr<T>::StatusOr(const Status& status) {
   if (status.ok()) {
-    status_ = Status(error::INTERNAL, "Status::OK is not a valid argument.");
+    status_ = util::InternalError("OkStatus() is not a valid argument.");
   } else {
     status_ = status;
   }
@@ -203,10 +188,10 @@ inline StatusOr<T>::StatusOr(const Status& status) {
 
 template<typename T>
 inline StatusOr<T>::StatusOr(const T& value) {
-  if (internal::StatusOrHelper::Specialize<T>::IsValueNull(value)) {
-    status_ = Status(error::INTERNAL, "nullptr is not a vaild argument.");
+  if (StatusOrHelper::Specialize<T>::IsValueNull(value)) {
+    status_ = util::InternalError("nullptr is not a valid argument.");
   } else {
-    status_ = Status::OK;
+    status_ = util::OkStatus();
     value_ = value;
   }
 }
@@ -248,12 +233,17 @@ inline bool StatusOr<T>::ok() const {
 }
 
 template<typename T>
-inline const T& StatusOr<T>::ValueOrDie() const {
+inline const T& StatusOr<T>::value() const {
   if (!status_.ok()) {
-    internal::StatusOrHelper::Crash(status_);
+    StatusOrHelper::Crash(status_);
   }
   return value_;
 }
+
+}  
+
+using ::google::protobuf::util::statusor_internal::StatusOr;
+
 }  
 }  
 }  

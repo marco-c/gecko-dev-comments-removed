@@ -35,7 +35,7 @@
 namespace google {
 namespace protobuf {
 namespace util {
-namespace internal {
+namespace statusor_internal {
 
 void StatusOrHelper::Crash(const Status& status) {
   GOOGLE_LOG(FATAL) << "Attempting to fetch value instead of handling error "

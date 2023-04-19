@@ -52,18 +52,20 @@ namespace google {
 namespace protobuf {
 
 
-PROTOBUF_EXPORT extern string StringPrintf(const char* format, ...);
+PROTOBUF_EXPORT extern std::string StringPrintf(const char* format, ...);
 
 
-PROTOBUF_EXPORT extern const string& SStringPrintf(string* dst,
-                                                   const char* format, ...);
+PROTOBUF_EXPORT extern const std::string& SStringPrintf(std::string* dst,
+                                                        const char* format,
+                                                        ...);
 
 
-PROTOBUF_EXPORT extern void StringAppendF(string* dst, const char* format, ...);
+PROTOBUF_EXPORT extern void StringAppendF(std::string* dst, const char* format,
+                                          ...);
 
 
 
-PROTOBUF_EXPORT extern void StringAppendV(string* dst, const char* format,
+PROTOBUF_EXPORT extern void StringAppendV(std::string* dst, const char* format,
                                           va_list ap);
 
 
@@ -72,8 +74,8 @@ PROTOBUF_EXPORT extern const int kStringPrintfVectorMaxArgs;
 
 
 
-PROTOBUF_EXPORT extern string StringPrintfVector(const char* format,
-                                                 const std::vector<string>& v);
+PROTOBUF_EXPORT extern std::string StringPrintfVector(
+    const char* format, const std::vector<std::string>& v);
 
 }  
 }  

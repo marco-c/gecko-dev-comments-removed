@@ -31,13 +31,15 @@
 #ifndef GOOGLE_PROTOBUF_CASTS_H__
 #define GOOGLE_PROTOBUF_CASTS_H__
 
-#include <type_traits>
-
 #include <google/protobuf/stubs/common.h>
+
+#include <google/protobuf/port_def.inc>
+#include <type_traits>
 
 namespace google {
 namespace protobuf {
 namespace internal {
+
 
 
 
@@ -88,7 +90,7 @@ inline To down_cast(From* f) {
     implicit_cast<From*, To>(0);
   }
 
-#if !defined(NDEBUG) && !defined(GOOGLE_PROTOBUF_NO_RTTI)
+#if !defined(NDEBUG) && PROTOBUF_RTTI
   assert(f == nullptr || dynamic_cast<To>(f) != nullptr);  
 #endif
   return static_cast<To>(f);
@@ -105,7 +107,7 @@ inline To down_cast(From& f) {
     implicit_cast<From*, ToAsPointer>(0);
   }
 
-#if !defined(NDEBUG) && !defined(GOOGLE_PROTOBUF_NO_RTTI)
+#if !defined(NDEBUG) && PROTOBUF_RTTI
   
   assert(dynamic_cast<ToAsPointer>(&f) != nullptr);
 #endif
@@ -114,8 +116,7 @@ inline To down_cast(From& f) {
 
 template<typename To, typename From>
 inline To bit_cast(const From& from) {
-  GOOGLE_COMPILE_ASSERT(sizeof(From) == sizeof(To),
-                        bit_cast_with_different_sizes);
+  static_assert(sizeof(From) == sizeof(To), "bit_cast_with_different_sizes");
   To dest;
   memcpy(&dest, &from, sizeof(dest));
   return dest;
@@ -131,4 +132,7 @@ using internal::bit_cast;
 
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

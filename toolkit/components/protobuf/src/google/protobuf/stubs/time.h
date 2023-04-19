@@ -30,6 +30,8 @@
 #ifndef GOOGLE_PROTOBUF_STUBS_TIME_H_
 #define GOOGLE_PROTOBUF_STUBS_TIME_H_
 
+#include <cstdint>
+
 #include <google/protobuf/stubs/common.h>
 
 #include <google/protobuf/port_def.inc>
@@ -51,25 +53,25 @@ struct DateTime {
 
 
 
-bool PROTOBUF_EXPORT SecondsToDateTime(int64 seconds, DateTime* time);
+bool PROTOBUF_EXPORT SecondsToDateTime(int64_t seconds, DateTime* time);
 
 
-bool PROTOBUF_EXPORT DateTimeToSeconds(const DateTime& time, int64* seconds);
+bool PROTOBUF_EXPORT DateTimeToSeconds(const DateTime& time, int64_t* seconds);
 
-void PROTOBUF_EXPORT GetCurrentTime(int64* seconds, int32* nanos);
-
-
-
+void PROTOBUF_EXPORT GetCurrentTime(int64_t* seconds, int32_t* nanos);
 
 
 
 
 
-string PROTOBUF_EXPORT FormatTime(int64 seconds, int32 nanos);
 
 
-bool PROTOBUF_EXPORT ParseTime(const string& value, int64* seconds,
-                               int32* nanos);
+
+std::string PROTOBUF_EXPORT FormatTime(int64_t seconds, int32_t nanos);
+
+
+bool PROTOBUF_EXPORT ParseTime(const std::string& value, int64_t* seconds,
+                               int32_t* nanos);
 
 }  
 }  

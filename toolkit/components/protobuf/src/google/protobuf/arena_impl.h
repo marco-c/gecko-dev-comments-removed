@@ -35,13 +35,18 @@
 
 #include <atomic>
 #include <limits>
+#include <typeinfo>
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
+#include <google/protobuf/stubs/port.h>
 
 #ifdef ADDRESS_SANITIZER
 #include <sanitizer/asan_interface.h>
 #endif  
+
+#include <google/protobuf/arenaz_sampler.h>
+
 
 #include <google/protobuf/port_def.inc>
 
@@ -50,94 +55,158 @@ namespace google {
 namespace protobuf {
 namespace internal {
 
-inline size_t AlignUpTo8(size_t n) {
+
+#ifdef __cpp_aligned_new
+enum { kCacheAlignment = 64 };
+#else
+enum { kCacheAlignment = alignof(max_align_t) };  
+#endif
+
+inline constexpr size_t AlignUpTo8(size_t n) {
   
   return (n + 7) & static_cast<size_t>(-8);
 }
 
-using LifecycleId = int64_t;
+using LifecycleIdAtomic = uint64_t;
 
 
-
-
-
-
-
-class PROTOBUF_EXPORT ArenaImpl {
+class PROTOBUF_EXPORT ArenaMetricsCollector {
  public:
-  struct Options {
-    size_t start_block_size;
-    size_t max_block_size;
-    char* initial_block;
-    size_t initial_block_size;
-    void* (*block_alloc)(size_t);
-    void (*block_dealloc)(void*, size_t);
+  ArenaMetricsCollector(bool record_allocs) : record_allocs_(record_allocs) {}
 
-    template <typename O>
-    explicit Options(const O& options)
-        : start_block_size(options.start_block_size),
-          max_block_size(options.max_block_size),
-          initial_block(options.initial_block),
-          initial_block_size(options.initial_block_size),
-          block_alloc(options.block_alloc),
-          block_dealloc(options.block_dealloc) {}
-  };
+  
+  
+  
+  virtual void OnDestroy(uint64_t space_allocated) = 0;
 
-  template <typename O>
-  explicit ArenaImpl(const O& options) : options_(options) {
-    if (options_.initial_block != NULL && options_.initial_block_size > 0) {
-      GOOGLE_CHECK_GE(options_.initial_block_size, sizeof(Block))
-          << ": Initial block size too small for header.";
-      initial_block_ = reinterpret_cast<Block*>(options_.initial_block);
-    } else {
-      initial_block_ = NULL;
-    }
+  
+  
+  virtual void OnReset(uint64_t space_allocated) = 0;
 
-    Init();
+  
+  
+  
+  
+  
+  
+  virtual void OnAlloc(const std::type_info* allocated_type,
+                       uint64_t alloc_size) = 0;
+
+  
+  
+  bool RecordAllocs() { return record_allocs_; }
+
+ protected:
+  
+  ~ArenaMetricsCollector() = default;
+  const bool record_allocs_;
+};
+
+struct AllocationPolicy {
+  static constexpr size_t kDefaultStartBlockSize = 256;
+  static constexpr size_t kDefaultMaxBlockSize = 8192;
+
+  size_t start_block_size = kDefaultStartBlockSize;
+  size_t max_block_size = kDefaultMaxBlockSize;
+  void* (*block_alloc)(size_t) = nullptr;
+  void (*block_dealloc)(void*, size_t) = nullptr;
+  ArenaMetricsCollector* metrics_collector = nullptr;
+
+  bool IsDefault() const {
+    return start_block_size == kDefaultMaxBlockSize &&
+           max_block_size == kDefaultMaxBlockSize && block_alloc == nullptr &&
+           block_dealloc == nullptr && metrics_collector == nullptr;
+  }
+};
+
+
+class TaggedAllocationPolicyPtr {
+ public:
+  constexpr TaggedAllocationPolicyPtr() : policy_(0) {}
+
+  explicit TaggedAllocationPolicyPtr(AllocationPolicy* policy)
+      : policy_(reinterpret_cast<uintptr_t>(policy)) {}
+
+  void set_policy(AllocationPolicy* policy) {
+    auto bits = policy_ & kTagsMask;
+    policy_ = reinterpret_cast<uintptr_t>(policy) | bits;
   }
 
-  
-  
-  
-  
-  ~ArenaImpl();
-
-  uint64 Reset();
-
-  uint64 SpaceAllocated() const;
-  uint64 SpaceUsed() const;
-
-  void* AllocateAligned(size_t n) {
-    SerialArena* arena;
-    if (PROTOBUF_PREDICT_TRUE(GetSerialArenaFast(&arena))) {
-      return arena->AllocateAligned(n);
-    } else {
-      return AllocateAlignedFallback(n);
-    }
+  AllocationPolicy* get() {
+    return reinterpret_cast<AllocationPolicy*>(policy_ & kPtrMask);
+  }
+  const AllocationPolicy* get() const {
+    return reinterpret_cast<const AllocationPolicy*>(policy_ & kPtrMask);
   }
 
-  
-  
-  
-  
-  
-  PROTOBUF_ALWAYS_INLINE bool MaybeAllocateAligned(size_t n, void** out) {
-    SerialArena* a;
-    if (PROTOBUF_PREDICT_TRUE(GetSerialArenaFromThreadCache(&a))) {
-      return a->MaybeAllocateAligned(n, out);
-    }
-    return false;
+  AllocationPolicy& operator*() { return *get(); }
+  const AllocationPolicy& operator*() const { return *get(); }
+
+  AllocationPolicy* operator->() { return get(); }
+  const AllocationPolicy* operator->() const { return get(); }
+
+  bool is_user_owned_initial_block() const {
+    return static_cast<bool>(get_mask<kUserOwnedInitialBlock>());
+  }
+  void set_is_user_owned_initial_block(bool v) {
+    set_mask<kUserOwnedInitialBlock>(v);
   }
 
-  void* AllocateAlignedAndAddCleanup(size_t n, void (*cleanup)(void*));
+  bool should_record_allocs() const {
+    return static_cast<bool>(get_mask<kRecordAllocs>());
+  }
+  void set_should_record_allocs(bool v) { set_mask<kRecordAllocs>(v); }
 
-  
-  void AddCleanup(void* elem, void (*cleanup)(void*));
+  uintptr_t get_raw() const { return policy_; }
+
+  inline void RecordAlloc(const std::type_info* allocated_type,
+                          size_t n) const {
+    get()->metrics_collector->OnAlloc(allocated_type, n);
+  }
 
  private:
-  void* AllocateAlignedFallback(size_t n);
-  void* AllocateAlignedAndAddCleanupFallback(size_t n, void (*cleanup)(void*));
-  void AddCleanupFallback(void* elem, void (*cleanup)(void*));
+  enum : uintptr_t {
+    kUserOwnedInitialBlock = 1,
+    kRecordAllocs = 2,
+  };
+
+  static constexpr uintptr_t kTagsMask = 7;
+  static constexpr uintptr_t kPtrMask = ~kTagsMask;
+
+  template <uintptr_t kMask>
+  uintptr_t get_mask() const {
+    return policy_ & kMask;
+  }
+  template <uintptr_t kMask>
+  void set_mask(bool v) {
+    if (v) {
+      policy_ |= kMask;
+    } else {
+      policy_ &= ~kMask;
+    }
+  }
+  uintptr_t policy_;
+};
+
+enum class AllocationClient { kDefault, kArray };
+
+
+
+
+
+
+
+
+
+
+
+
+class PROTOBUF_EXPORT SerialArena {
+ public:
+  struct Memory {
+    void* ptr;
+    size_t size;
+  };
 
   
   
@@ -146,147 +215,436 @@ class PROTOBUF_EXPORT ArenaImpl {
     void (*cleanup)(void*);  
   };
 
-  
-  struct CleanupChunk {
-    static size_t SizeOf(size_t i) {
-      return sizeof(CleanupChunk) + (sizeof(CleanupNode) * (i - 1));
-    }
-    size_t size;           
-    CleanupChunk* next;    
-    CleanupNode nodes[1];  
-  };
+  void CleanupList();
+  uint64_t SpaceAllocated() const {
+    return space_allocated_.load(std::memory_order_relaxed);
+  }
+  uint64_t SpaceUsed() const;
 
-  class Block;
+  bool HasSpace(size_t n) const {
+    return n <= static_cast<size_t>(limit_ - ptr_);
+  }
 
   
-  class PROTOBUF_EXPORT SerialArena {
-   public:
+  PROTOBUF_ALWAYS_INLINE void* TryAllocateFromCachedBlock(size_t size) {
+    if (PROTOBUF_PREDICT_FALSE(size < 16)) return nullptr;
     
     
-    
+    const size_t index = Bits::Log2FloorNonZero64(size - 1) - 3;
 
-    
-    static SerialArena* New(Block* b, void* owner, ArenaImpl* arena);
+    if (index >= cached_block_length_) return nullptr;
+    auto& cached_head = cached_blocks_[index];
+    if (cached_head == nullptr) return nullptr;
 
-    
-    
-    static uint64 Free(SerialArena* serial, Block* initial_block,
-                       void (*block_dealloc)(void*, size_t));
-
-    void CleanupList();
-    uint64 SpaceUsed() const;
-
-    bool HasSpace(size_t n) { return n <= static_cast<size_t>(limit_ - ptr_); }
-
-    void* AllocateAligned(size_t n) {
-      GOOGLE_DCHECK_EQ(internal::AlignUpTo8(n), n);  
-      GOOGLE_DCHECK_GE(limit_, ptr_);
-      if (PROTOBUF_PREDICT_FALSE(!HasSpace(n))) {
-        return AllocateAlignedFallback(n);
-      }
-      void* ret = ptr_;
-      ptr_ += n;
+    void* ret = cached_head;
 #ifdef ADDRESS_SANITIZER
-      ASAN_UNPOISON_MEMORY_REGION(ret, n);
+    ASAN_UNPOISON_MEMORY_REGION(ret, size);
 #endif  
-      return ret;
-    }
+    cached_head = cached_head->next;
+    return ret;
+  }
 
-    
-    bool MaybeAllocateAligned(size_t n, void** out) {
-      GOOGLE_DCHECK_EQ(internal::AlignUpTo8(n), n);  
-      GOOGLE_DCHECK_GE(limit_, ptr_);
-      if (PROTOBUF_PREDICT_FALSE(!HasSpace(n))) return false;
-      void* ret = ptr_;
-      ptr_ += n;
-#ifdef ADDRESS_SANITIZER
-      ASAN_UNPOISON_MEMORY_REGION(ret, n);
-#endif  
-      *out = ret;
-      return true;
-    }
+  
+  
+  
+  
+  
+  
+  
+  template <AllocationClient alloc_client = AllocationClient::kDefault>
+  void* AllocateAligned(size_t n, const AllocationPolicy* policy) {
+    GOOGLE_DCHECK_EQ(internal::AlignUpTo8(n), n);  
+    GOOGLE_DCHECK_GE(limit_, ptr_);
 
-    void AddCleanup(void* elem, void (*cleanup)(void*)) {
-      if (PROTOBUF_PREDICT_FALSE(cleanup_ptr_ == cleanup_limit_)) {
-        AddCleanupFallback(elem, cleanup);
-        return;
+    if (alloc_client == AllocationClient::kArray) {
+      if (void* res = TryAllocateFromCachedBlock(n)) {
+        return res;
       }
-      cleanup_ptr_->elem = elem;
-      cleanup_ptr_->cleanup = cleanup;
-      cleanup_ptr_++;
     }
 
-    void* AllocateAlignedAndAddCleanup(size_t n, void (*cleanup)(void*)) {
-      void* ret = AllocateAligned(n);
-      AddCleanup(ret, cleanup);
-      return ret;
+    if (PROTOBUF_PREDICT_FALSE(!HasSpace(n))) {
+      return AllocateAlignedFallback(n, policy);
+    }
+    return AllocateFromExisting(n);
+  }
+
+ private:
+  void* AllocateFromExisting(size_t n) {
+    void* ret = ptr_;
+    ptr_ += n;
+#ifdef ADDRESS_SANITIZER
+    ASAN_UNPOISON_MEMORY_REGION(ret, n);
+#endif  
+    return ret;
+  }
+
+  
+  void ReturnArrayMemory(void* p, size_t size) {
+    
+    
+    
+    if (sizeof(void*) < 8) {
+      if (PROTOBUF_PREDICT_FALSE(size < 16)) return;
+    } else {
+      GOOGLE_DCHECK(size >= 16);
     }
 
-    void* owner() const { return owner_; }
-    SerialArena* next() const { return next_; }
-    void set_next(SerialArena* next) { next_ = next; }
-
-   private:
-    void* AllocateAlignedFallback(size_t n);
-    void AddCleanupFallback(void* elem, void (*cleanup)(void*));
-    void CleanupListFallback();
-
-    ArenaImpl* arena_;       
-    void* owner_;            
-    Block* head_;            
-    CleanupChunk* cleanup_;  
-    SerialArena* next_;      
-
     
     
     
-    char* ptr_;
-    char* limit_;
+    const size_t index = Bits::Log2FloorNonZero64(size) - 4;
 
-    
-    CleanupNode* cleanup_ptr_;
-    CleanupNode* cleanup_limit_;
-  };
+    if (PROTOBUF_PREDICT_FALSE(index >= cached_block_length_)) {
+      
+      
+      
+      CachedBlock** new_list = static_cast<CachedBlock**>(p);
+      size_t new_size = size / sizeof(CachedBlock*);
+
+      std::copy(cached_blocks_, cached_blocks_ + cached_block_length_,
+                new_list);
+      std::fill(new_list + cached_block_length_, new_list + new_size, nullptr);
+      cached_blocks_ = new_list;
+      
+      
+      cached_block_length_ =
+          static_cast<uint8_t>(std::min(size_t{64}, new_size));
+
+      return;
+    }
+
+    auto& cached_head = cached_blocks_[index];
+    auto* new_node = static_cast<CachedBlock*>(p);
+    new_node->next = cached_head;
+    cached_head = new_node;
+#ifdef ADDRESS_SANITIZER
+    ASAN_POISON_MEMORY_REGION(p, size);
+#endif  
+  }
+
+ public:
+  
+  bool MaybeAllocateAligned(size_t n, void** out) {
+    GOOGLE_DCHECK_EQ(internal::AlignUpTo8(n), n);  
+    GOOGLE_DCHECK_GE(limit_, ptr_);
+    if (PROTOBUF_PREDICT_FALSE(!HasSpace(n))) return false;
+    *out = AllocateFromExisting(n);
+    return true;
+  }
+
+  std::pair<void*, CleanupNode*> AllocateAlignedWithCleanup(
+      size_t n, const AllocationPolicy* policy) {
+    GOOGLE_DCHECK_EQ(internal::AlignUpTo8(n), n);  
+    if (PROTOBUF_PREDICT_FALSE(!HasSpace(n + kCleanupSize))) {
+      return AllocateAlignedWithCleanupFallback(n, policy);
+    }
+    return AllocateFromExistingWithCleanupFallback(n);
+  }
+
+ private:
+  std::pair<void*, CleanupNode*> AllocateFromExistingWithCleanupFallback(
+      size_t n) {
+    void* ret = ptr_;
+    ptr_ += n;
+    limit_ -= kCleanupSize;
+#ifdef ADDRESS_SANITIZER
+    ASAN_UNPOISON_MEMORY_REGION(ret, n);
+    ASAN_UNPOISON_MEMORY_REGION(limit_, kCleanupSize);
+#endif  
+    return CreatePair(ret, reinterpret_cast<CleanupNode*>(limit_));
+  }
+
+ public:
+  void AddCleanup(void* elem, void (*cleanup)(void*),
+                  const AllocationPolicy* policy) {
+    auto res = AllocateAlignedWithCleanup(0, policy);
+    res.second->elem = elem;
+    res.second->cleanup = cleanup;
+  }
+
+  void* owner() const { return owner_; }
+  SerialArena* next() const { return next_; }
+  void set_next(SerialArena* next) { next_ = next; }
+
+ private:
+  friend class ThreadSafeArena;
+  friend class ArenaBenchmark;
 
   
   
-  class PROTOBUF_EXPORT Block {
-   public:
-    Block(size_t size, Block* next);
+  static SerialArena* New(SerialArena::Memory mem, void* owner,
+                          ThreadSafeArenaStats* stats);
+  
+  template <typename Deallocator>
+  Memory Free(Deallocator deallocator);
+
+  
+  
+  struct Block {
+    Block(Block* next, size_t size) : next(next), size(size), start(nullptr) {}
 
     char* Pointer(size_t n) {
-      GOOGLE_DCHECK(n <= size_);
+      GOOGLE_DCHECK(n <= size);
       return reinterpret_cast<char*>(this) + n;
     }
 
-    Block* next() const { return next_; }
-    size_t pos() const { return pos_; }
-    size_t size() const { return size_; }
-    void set_pos(size_t pos) { pos_ = pos; }
-
-   private:
-    Block* next_;  
-    size_t pos_;
-    size_t size_;
+    Block* const next;
+    const size_t size;
+    CleanupNode* start;
     
   };
 
-  struct ThreadCache {
+  void* owner_;            
+  Block* head_;            
+  SerialArena* next_;      
+  size_t space_used_ = 0;  
+  std::atomic<size_t> space_allocated_;
+
+  
+  
+  
+  char* ptr_;
+  
+  char* limit_;
+  
+  
+  ThreadSafeArenaStats* arena_stats_;
+
+  
+  
+  
+  
+  
+  
+  
+  struct CachedBlock {
+    
+    CachedBlock* next;
+  };
+  uint8_t cached_block_length_ = 0;
+  CachedBlock** cached_blocks_ = nullptr;
+
+  
+  inline SerialArena(Block* b, void* owner, ThreadSafeArenaStats* stats);
+  void* AllocateAlignedFallback(size_t n, const AllocationPolicy* policy);
+  std::pair<void*, CleanupNode*> AllocateAlignedWithCleanupFallback(
+      size_t n, const AllocationPolicy* policy);
+  void AllocateNewBlock(size_t n, const AllocationPolicy* policy);
+
+  std::pair<void*, CleanupNode*> CreatePair(void* ptr, CleanupNode* node) {
+    return {ptr, node};
+  }
+
+ public:
+  static constexpr size_t kBlockHeaderSize = AlignUpTo8(sizeof(Block));
+  static constexpr size_t kCleanupSize = AlignUpTo8(sizeof(CleanupNode));
+};
+
+
+
+
+struct MessageOwned {
+  explicit MessageOwned() = default;
+};
+
+
+
+
+
+
+
+class PROTOBUF_EXPORT ThreadSafeArena {
+ public:
+  ThreadSafeArena() { Init(); }
+
+  
+  ThreadSafeArena(internal::MessageOwned) : tag_and_id_(kMessageOwnedArena) {
+    Init();
+  }
+
+  ThreadSafeArena(char* mem, size_t size) { InitializeFrom(mem, size); }
+
+  explicit ThreadSafeArena(void* mem, size_t size,
+                           const AllocationPolicy& policy) {
+    InitializeWithPolicy(mem, size, policy);
+  }
+
+  
+  
+  
+  
+  ~ThreadSafeArena();
+
+  uint64_t Reset();
+
+  uint64_t SpaceAllocated() const;
+  uint64_t SpaceUsed() const;
+
+  template <AllocationClient alloc_client = AllocationClient::kDefault>
+  void* AllocateAligned(size_t n, const std::type_info* type) {
+    SerialArena* arena;
+    if (PROTOBUF_PREDICT_TRUE(!alloc_policy_.should_record_allocs() &&
+                              GetSerialArenaFast(&arena))) {
+      return arena->AllocateAligned<alloc_client>(n, AllocPolicy());
+    } else {
+      return AllocateAlignedFallback(n, type);
+    }
+  }
+
+  void ReturnArrayMemory(void* p, size_t size) {
+    SerialArena* arena;
+    if (PROTOBUF_PREDICT_TRUE(GetSerialArenaFast(&arena))) {
+      arena->ReturnArrayMemory(p, size);
+    }
+  }
+
+  
+  
+  
+  
+  
+  PROTOBUF_NDEBUG_INLINE bool MaybeAllocateAligned(size_t n, void** out) {
+    SerialArena* arena;
+    if (PROTOBUF_PREDICT_TRUE(!alloc_policy_.should_record_allocs() &&
+                              GetSerialArenaFromThreadCache(&arena))) {
+      return arena->MaybeAllocateAligned(n, out);
+    }
+    return false;
+  }
+
+  std::pair<void*, SerialArena::CleanupNode*> AllocateAlignedWithCleanup(
+      size_t n, const std::type_info* type);
+
+  
+  void AddCleanup(void* elem, void (*cleanup)(void*));
+
+  
+  PROTOBUF_ALWAYS_INLINE bool IsMessageOwned() const {
+    return tag_and_id_ & kMessageOwnedArena;
+  }
+
+ private:
+  
+  uint64_t tag_and_id_ = 0;
+  
+  enum : uint64_t { kMessageOwnedArena = 1 };
+
+  TaggedAllocationPolicyPtr alloc_policy_;  
+
+  static_assert(std::is_trivially_destructible<SerialArena>{},
+                "SerialArena needs to be trivially destructible.");
+  
+  std::atomic<SerialArena*> threads_;
+  std::atomic<SerialArena*> hint_;  
+
+  const AllocationPolicy* AllocPolicy() const { return alloc_policy_.get(); }
+  void InitializeFrom(void* mem, size_t size);
+  void InitializeWithPolicy(void* mem, size_t size, AllocationPolicy policy);
+  void* AllocateAlignedFallback(size_t n, const std::type_info* type);
+  std::pair<void*, SerialArena::CleanupNode*>
+  AllocateAlignedWithCleanupFallback(size_t n, const std::type_info* type);
+
+  void Init();
+  void SetInitialBlock(void* mem, size_t size);
+
+  
+  void CleanupList();
+
+  inline uint64_t LifeCycleId() const {
+    return tag_and_id_ & ~kMessageOwnedArena;
+  }
+
+  inline void CacheSerialArena(SerialArena* serial) {
+    thread_cache().last_serial_arena = serial;
+    thread_cache().last_lifecycle_id_seen = tag_and_id_;
+    
+    
+    
+
+    hint_.store(serial, std::memory_order_release);
+  }
+
+  PROTOBUF_NDEBUG_INLINE bool GetSerialArenaFast(SerialArena** arena) {
+    if (GetSerialArenaFromThreadCache(arena)) return true;
+
+    
+    
+    ThreadCache* tc = &thread_cache();
+    SerialArena* serial = hint_.load(std::memory_order_acquire);
+    if (PROTOBUF_PREDICT_TRUE(serial != nullptr && serial->owner() == tc)) {
+      *arena = serial;
+      return true;
+    }
+    return false;
+  }
+
+  PROTOBUF_NDEBUG_INLINE bool GetSerialArenaFromThreadCache(
+      SerialArena** arena) {
+    
+    
+    
+    ThreadCache* tc = &thread_cache();
+    if (PROTOBUF_PREDICT_TRUE(tc->last_lifecycle_id_seen == tag_and_id_)) {
+      *arena = tc->last_serial_arena;
+      return true;
+    }
+    return false;
+  }
+  SerialArena* GetSerialArenaFallback(void* me);
+
+  template <typename Functor>
+  void PerSerialArena(Functor fn) {
+    
+    
+    SerialArena* serial = threads_.load(std::memory_order_relaxed);
+
+    for (; serial; serial = serial->next()) fn(serial);
+  }
+
+  
+  
+  
+  SerialArena::Memory Free(size_t* space_allocated);
+
+#ifdef _MSC_VER
+#pragma warning(disable : 4324)
+#endif
+  struct alignas(kCacheAlignment) ThreadCache {
 #if defined(GOOGLE_PROTOBUF_NO_THREADLOCAL)
     
     
     
-    ThreadCache() : last_lifecycle_id_seen(-1), last_serial_arena(NULL) {}
+    ThreadCache()
+        : next_lifecycle_id(0),
+          last_lifecycle_id_seen(-1),
+          last_serial_arena(nullptr) {}
 #endif
 
     
     
-    LifecycleId last_lifecycle_id_seen;
+    
+    
+    static constexpr size_t kPerThreadIds = 256;
+    
+    
+    uint64_t next_lifecycle_id;
+    
+    
+    uint64_t last_lifecycle_id_seen;
     SerialArena* last_serial_arena;
   };
-  static std::atomic<LifecycleId> lifecycle_id_generator_;
-#if defined(GOOGLE_PROTOBUF_NO_THREADLOCAL)
+
   
+  
+  
+#ifdef _MSC_VER
+#pragma warning(disable : 4324)
+#endif
+  struct alignas(kCacheAlignment) CacheAlignedLifecycleIdGenerator {
+    std::atomic<LifecycleIdAtomic> id;
+  };
+  static CacheAlignedLifecycleIdGenerator lifecycle_id_generator_;
+#if defined(GOOGLE_PROTOBUF_NO_THREADLOCAL)
   
   
   static ThreadCache& thread_cache();
@@ -295,82 +653,23 @@ class PROTOBUF_EXPORT ArenaImpl {
   
   static ThreadCache& thread_cache();
 #else
-  static GOOGLE_THREAD_LOCAL ThreadCache thread_cache_;
+  static PROTOBUF_THREAD_LOCAL ThreadCache thread_cache_;
   static ThreadCache& thread_cache() { return thread_cache_; }
 #endif
 
-  void Init();
+  ThreadSafeArenaStatsHandle arena_stats_;
 
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ThreadSafeArena);
   
   
-  uint64 FreeBlocks();
-  
-  void CleanupList();
-
-  inline void CacheSerialArena(SerialArena* serial) {
-    thread_cache().last_serial_arena = serial;
-    thread_cache().last_lifecycle_id_seen = lifecycle_id_;
-    
-    
-    
-
-    hint_.store(serial, std::memory_order_release);
-  }
-
-  std::atomic<SerialArena*>
-      threads_;                     
-  std::atomic<SerialArena*> hint_;  
-  std::atomic<size_t> space_allocated_;  
-
-  Block* initial_block_;  
-                          
-
-  Block* NewBlock(Block* last_block, size_t min_bytes);
-
-  SerialArena* GetSerialArena();
-  PROTOBUF_ALWAYS_INLINE bool GetSerialArenaFast(SerialArena** arena) {
-    if (GetSerialArenaFromThreadCache(arena)) return true;
-
-    
-    
-    ThreadCache* tc = &thread_cache();
-    SerialArena* serial = hint_.load(std::memory_order_acquire);
-    if (PROTOBUF_PREDICT_TRUE(serial != NULL && serial->owner() == tc)) {
-      *arena = serial;
-      return true;
-    }
-    return false;
-  }
-
-  PROTOBUF_ALWAYS_INLINE bool GetSerialArenaFromThreadCache(
-      SerialArena** arena) {
-    
-    
-    
-    ThreadCache* tc = &thread_cache();
-    if (PROTOBUF_PREDICT_TRUE(tc->last_lifecycle_id_seen == lifecycle_id_)) {
-      *arena = tc->last_serial_arena;
-      return true;
-    }
-    return false;
-  }
-  SerialArena* GetSerialArenaFallback(void* me);
-  LifecycleId lifecycle_id_;  
-
-  Options options_;
-
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ArenaImpl);
-  
-  
-  ArenaImpl(ArenaImpl&&) = delete;
-  ArenaImpl& operator=(ArenaImpl&&) = delete;
+  ThreadSafeArena(ThreadSafeArena&&) = delete;
+  ThreadSafeArena& operator=(ThreadSafeArena&&) = delete;
 
  public:
   
   
-  static const size_t kBlockHeaderSize =
-      (sizeof(Block) + 7) & static_cast<size_t>(-8);
-  static const size_t kSerialArenaSize =
+  static constexpr size_t kBlockHeaderSize = SerialArena::kBlockHeaderSize;
+  static constexpr size_t kSerialArenaSize =
       (sizeof(SerialArena) + 7) & static_cast<size_t>(-8);
   static_assert(kBlockHeaderSize % 8 == 0,
                 "kBlockHeaderSize must be a multiple of 8.");

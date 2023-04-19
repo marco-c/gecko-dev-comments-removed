@@ -43,9 +43,10 @@
 #include <string>
 #include <vector>
 
-#include <google/protobuf/stubs/port.h>
 #include <google/protobuf/stubs/macros.h>
 #include <google/protobuf/stubs/platform_macros.h>
+#include <google/protobuf/stubs/port.h>
+#include <google/protobuf/stubs/stringpiece.h>
 
 #ifndef PROTOBUF_USE_EXCEPTIONS
 #if defined(_MSC_VER) && defined(_CPPUNWIND)
@@ -81,7 +82,7 @@ namespace internal {
 
 
 
-#define GOOGLE_PROTOBUF_VERSION 3011004
+#define GOOGLE_PROTOBUF_VERSION 3021002
 
 
 #define GOOGLE_PROTOBUF_VERSION_SUFFIX ""
@@ -89,15 +90,15 @@ namespace internal {
 
 
 
-static const int kMinHeaderVersionForLibrary = 3011000;
+static const int kMinHeaderVersionForLibrary = 3021000;
 
 
 
-#define GOOGLE_PROTOBUF_MIN_PROTOC_VERSION 3011000
+#define GOOGLE_PROTOBUF_MIN_PROTOC_VERSION 3021000
 
 
 
-static const int kMinHeaderVersionForProtoc = 3011000;
+static const int kMinHeaderVersionForProtoc = 3021000;
 
 
 
@@ -122,19 +123,18 @@ std::string PROTOBUF_EXPORT VersionString(int version);
 
 
 
-class StringPiece;
 namespace internal {
 
 
 
 PROTOBUF_EXPORT bool IsStructurallyValidUTF8(const char* buf, int len);
 
-inline bool IsStructurallyValidUTF8(const std::string& str) {
+inline bool IsStructurallyValidUTF8(StringPiece str) {
   return IsStructurallyValidUTF8(str.data(), static_cast<int>(str.length()));
 }
 
 
-PROTOBUF_EXPORT int UTF8SpnStructurallyValid(const StringPiece& str);
+PROTOBUF_EXPORT int UTF8SpnStructurallyValid(StringPiece str);
 
 
 
@@ -148,8 +148,7 @@ PROTOBUF_EXPORT int UTF8SpnStructurallyValid(const StringPiece& str);
 
 
 
-PROTOBUF_EXPORT char* UTF8CoerceToStructurallyValid(const StringPiece& str,
-                                                    char* dst,
+PROTOBUF_EXPORT char* UTF8CoerceToStructurallyValid(StringPiece str, char* dst,
                                                     char replace_char);
 
 }  
@@ -177,7 +176,7 @@ class FatalException : public std::exception {
       : filename_(filename), line_(line), message_(message) {}
   virtual ~FatalException() throw();
 
-  virtual const char* what() const throw();
+  const char* what() const throw() override;
 
   const char* filename() const { return filename_; }
   int line() const { return line_; }
@@ -189,10 +188,6 @@ class FatalException : public std::exception {
   const std::string message_;
 };
 #endif
-
-
-
-using std::string;
 
 }  
 }  

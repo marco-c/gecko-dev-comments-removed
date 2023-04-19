@@ -62,17 +62,20 @@
 
 
 
+#include <google/protobuf/dynamic_message.h>
+
 #include <algorithm>
+#include <cstddef>
 #include <memory>
+#include <new>
 #include <unordered_map>
 
-#include <google/protobuf/stubs/hash.h>
-
-#include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/descriptor.h>
-#include <google/protobuf/dynamic_message.h>
+#include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/generated_message_reflection.h>
 #include <google/protobuf/generated_message_util.h>
+#include <google/protobuf/unknown_field_set.h>
+#include <google/protobuf/stubs/hash.h>
 #include <google/protobuf/arenastring.h>
 #include <google/protobuf/extension_set.h>
 #include <google/protobuf/map_field.h>
@@ -82,12 +85,14 @@
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/wire_format.h>
 
+
+#include <google/protobuf/port_def.inc>
+
 namespace google {
 namespace protobuf {
 
 using internal::DynamicMapField;
 using internal::ExtensionSet;
-using internal::InternalMetadataWithArena;
 using internal::MapField;
 
 
@@ -101,18 +106,40 @@ namespace {
 bool IsMapFieldInApi(const FieldDescriptor* field) { return field->is_map(); }
 
 
+inline bool HasHasbit(const FieldDescriptor* field) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return (field->has_optional_keyword() || field->is_required()) &&
+         !field->options().weak();
+}
+
+inline bool InRealOneof(const FieldDescriptor* field) {
+  return field->containing_oneof() &&
+         !field->containing_oneof()->is_synthetic();
+}
+
+
 int FieldSpaceUsed(const FieldDescriptor* field) {
   typedef FieldDescriptor FD;  
   if (field->label() == FD::LABEL_REPEATED) {
     switch (field->cpp_type()) {
       case FD::CPPTYPE_INT32:
-        return sizeof(RepeatedField<int32>);
+        return sizeof(RepeatedField<int32_t>);
       case FD::CPPTYPE_INT64:
-        return sizeof(RepeatedField<int64>);
+        return sizeof(RepeatedField<int64_t>);
       case FD::CPPTYPE_UINT32:
-        return sizeof(RepeatedField<uint32>);
+        return sizeof(RepeatedField<uint32_t>);
       case FD::CPPTYPE_UINT64:
-        return sizeof(RepeatedField<uint64>);
+        return sizeof(RepeatedField<uint64_t>);
       case FD::CPPTYPE_DOUBLE:
         return sizeof(RepeatedField<double>);
       case FD::CPPTYPE_FLOAT:
@@ -139,13 +166,13 @@ int FieldSpaceUsed(const FieldDescriptor* field) {
   } else {
     switch (field->cpp_type()) {
       case FD::CPPTYPE_INT32:
-        return sizeof(int32);
+        return sizeof(int32_t);
       case FD::CPPTYPE_INT64:
-        return sizeof(int64);
+        return sizeof(int64_t);
       case FD::CPPTYPE_UINT32:
-        return sizeof(uint32);
+        return sizeof(uint32_t);
       case FD::CPPTYPE_UINT64:
-        return sizeof(uint64);
+        return sizeof(uint64_t);
       case FD::CPPTYPE_DOUBLE:
         return sizeof(double);
       case FD::CPPTYPE_FLOAT:
@@ -172,48 +199,10 @@ int FieldSpaceUsed(const FieldDescriptor* field) {
   return 0;
 }
 
-
-
-int OneofFieldSpaceUsed(const FieldDescriptor* field) {
-  typedef FieldDescriptor FD;  
-  switch (field->cpp_type()) {
-    case FD::CPPTYPE_INT32:
-      return sizeof(int32);
-    case FD::CPPTYPE_INT64:
-      return sizeof(int64);
-    case FD::CPPTYPE_UINT32:
-      return sizeof(uint32);
-    case FD::CPPTYPE_UINT64:
-      return sizeof(uint64);
-    case FD::CPPTYPE_DOUBLE:
-      return sizeof(double);
-    case FD::CPPTYPE_FLOAT:
-      return sizeof(float);
-    case FD::CPPTYPE_BOOL:
-      return sizeof(bool);
-    case FD::CPPTYPE_ENUM:
-      return sizeof(int);
-
-    case FD::CPPTYPE_MESSAGE:
-      return sizeof(Message*);
-
-    case FD::CPPTYPE_STRING:
-      switch (field->options().ctype()) {
-        default:
-        case FieldOptions::STRING:
-          return sizeof(ArenaStringPtr);
-      }
-      break;
-  }
-
-  GOOGLE_LOG(DFATAL) << "Can't get here.";
-  return 0;
-}
-
 inline int DivideRoundingUp(int i, int j) { return (i + (j - 1)) / j; }
 
-static const int kSafeAlignment = sizeof(uint64);
-static const int kMaxOneofUnionSize = sizeof(uint64);
+static const int kSafeAlignment = sizeof(uint64_t);
+static const int kMaxOneofUnionSize = sizeof(uint64_t);
 
 inline int AlignTo(int offset, int alignment) {
   return DivideRoundingUp(offset, alignment) * alignment;
@@ -231,56 +220,35 @@ inline int AlignOffset(int offset) { return AlignTo(offset, kSafeAlignment); }
 
 class DynamicMessage : public Message {
  public:
-  struct TypeInfo {
-    int size;
-    int has_bits_offset;
-    int oneof_case_offset;
-    int internal_metadata_offset;
-    int extensions_offset;
-
-    
-    DynamicMessageFactory* factory;  
-    const DescriptorPool* pool;      
-    const Descriptor* type;          
-
-    
-    
-    std::unique_ptr<uint32[]> offsets;
-    std::unique_ptr<uint32[]> has_bits_indices;
-    std::unique_ptr<const Reflection> reflection;
-    
-    
-    
-    
-    const DynamicMessage* prototype;
-    int weak_field_map_offset;  
-
-    TypeInfo() : prototype(NULL) {}
-
-    ~TypeInfo() { delete prototype; }
-  };
-
-  DynamicMessage(const TypeInfo* type_info);
+  explicit DynamicMessage(const DynamicMessageFactory::TypeInfo* type_info);
 
   
-  DynamicMessage(TypeInfo* type_info, bool lock_factory);
+  DynamicMessage(DynamicMessageFactory::TypeInfo* type_info, bool lock_factory);
 
-  ~DynamicMessage();
+  ~DynamicMessage() override;
 
+  
+  
+  
+  
+  
+  
+  
   
   void CrossLinkPrototypes();
 
   
 
-  Message* New() const override;
   Message* New(Arena* arena) const override;
-  Arena* GetArena() const override { return arena_; }
 
   int GetCachedSize() const override;
   void SetCachedSize(int size) const override;
 
   Metadata GetMetadata() const override;
 
+#if defined(__cpp_lib_destroying_delete) && defined(__cpp_sized_deallocation)
+  static void operator delete(DynamicMessage* msg, std::destroying_delete_t);
+#else
   
   
   
@@ -289,44 +257,79 @@ class DynamicMessage : public Message {
 #ifndef _MSC_VER
   static void operator delete(void* ptr) { ::operator delete(ptr); }
 #endif  
+#endif
 
  private:
-  DynamicMessage(const TypeInfo* type_info, Arena* arena);
+  DynamicMessage(const DynamicMessageFactory::TypeInfo* type_info,
+                 Arena* arena);
 
   void SharedCtor(bool lock_factory);
 
-  inline bool is_prototype() const {
-    return type_info_->prototype == this ||
-           
-           
-           type_info_->prototype == NULL;
-  }
+  
+  friend class DynamicMessageFactory;
+
+  bool is_prototype() const;
 
   inline void* OffsetToPointer(int offset) {
-    return reinterpret_cast<uint8*>(this) + offset;
+    return reinterpret_cast<uint8_t*>(this) + offset;
   }
   inline const void* OffsetToPointer(int offset) const {
-    return reinterpret_cast<const uint8*>(this) + offset;
+    return reinterpret_cast<const uint8_t*>(this) + offset;
   }
 
-  const TypeInfo* type_info_;
-  Arena* const arena_;
+  void* MutableRaw(int i);
+  void* MutableExtensionsRaw();
+  void* MutableWeakFieldMapRaw();
+  void* MutableOneofCaseRaw(int i);
+  void* MutableOneofFieldRaw(const FieldDescriptor* f);
+
+  const DynamicMessageFactory::TypeInfo* type_info_;
   mutable std::atomic<int> cached_byte_size_;
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DynamicMessage);
 };
 
-DynamicMessage::DynamicMessage(const TypeInfo* type_info)
-    : type_info_(type_info), arena_(NULL), cached_byte_size_(0) {
+struct DynamicMessageFactory::TypeInfo {
+  int size;
+  int has_bits_offset;
+  int oneof_case_offset;
+  int extensions_offset;
+
+  
+  DynamicMessageFactory* factory;  
+  const DescriptorPool* pool;      
+  const Descriptor* type;          
+
+  
+  
+  std::unique_ptr<uint32_t[]> offsets;
+  std::unique_ptr<uint32_t[]> has_bits_indices;
+  std::unique_ptr<const Reflection> reflection;
+  
+  
+  
+  
+  const DynamicMessage* prototype;
+  int weak_field_map_offset;  
+
+  TypeInfo() : prototype(nullptr) {}
+
+  ~TypeInfo() { delete prototype; }
+};
+
+DynamicMessage::DynamicMessage(const DynamicMessageFactory::TypeInfo* type_info)
+    : type_info_(type_info), cached_byte_size_(0) {
   SharedCtor(true);
 }
 
-DynamicMessage::DynamicMessage(const TypeInfo* type_info, Arena* arena)
-    : type_info_(type_info), arena_(arena), cached_byte_size_(0) {
+DynamicMessage::DynamicMessage(const DynamicMessageFactory::TypeInfo* type_info,
+                               Arena* arena)
+    : Message(arena), type_info_(type_info), cached_byte_size_(0) {
   SharedCtor(true);
 }
 
-DynamicMessage::DynamicMessage(TypeInfo* type_info, bool lock_factory)
-    : type_info_(type_info), arena_(NULL), cached_byte_size_(0) {
+DynamicMessage::DynamicMessage(DynamicMessageFactory::TypeInfo* type_info,
+                               bool lock_factory)
+    : type_info_(type_info), cached_byte_size_(0) {
   
   
   
@@ -335,6 +338,23 @@ DynamicMessage::DynamicMessage(TypeInfo* type_info, bool lock_factory)
   
   type_info->prototype = this;
   SharedCtor(lock_factory);
+}
+
+inline void* DynamicMessage::MutableRaw(int i) {
+  return OffsetToPointer(type_info_->offsets[i]);
+}
+inline void* DynamicMessage::MutableExtensionsRaw() {
+  return OffsetToPointer(type_info_->extensions_offset);
+}
+inline void* DynamicMessage::MutableWeakFieldMapRaw() {
+  return OffsetToPointer(type_info_->weak_field_map_offset);
+}
+inline void* DynamicMessage::MutableOneofCaseRaw(int i) {
+  return OffsetToPointer(type_info_->oneof_case_offset + sizeof(uint32_t) * i);
+}
+inline void* DynamicMessage::MutableOneofFieldRaw(const FieldDescriptor* f) {
+  return OffsetToPointer(type_info_->offsets[type_info_->type->field_count() +
+                                             f->containing_oneof()->index()]);
 }
 
 void DynamicMessage::SharedCtor(bool lock_factory) {
@@ -349,37 +369,35 @@ void DynamicMessage::SharedCtor(bool lock_factory) {
 
   const Descriptor* descriptor = type_info_->type;
   
+  int oneof_count = 0;
   for (int i = 0; i < descriptor->oneof_decl_count(); ++i) {
-    new (OffsetToPointer(type_info_->oneof_case_offset + sizeof(uint32) * i))
-        uint32(0);
+    if (descriptor->oneof_decl(i)->is_synthetic()) continue;
+    new (MutableOneofCaseRaw(oneof_count++)) uint32_t{0};
   }
 
-  new (OffsetToPointer(type_info_->internal_metadata_offset))
-      InternalMetadataWithArena(arena_);
-
   if (type_info_->extensions_offset != -1) {
-    new (OffsetToPointer(type_info_->extensions_offset)) ExtensionSet(arena_);
+    new (MutableExtensionsRaw()) ExtensionSet(GetArenaForAllocation());
   }
   for (int i = 0; i < descriptor->field_count(); i++) {
     const FieldDescriptor* field = descriptor->field(i);
-    void* field_ptr = OffsetToPointer(type_info_->offsets[i]);
-    if (field->containing_oneof()) {
+    void* field_ptr = MutableRaw(i);
+    if (InRealOneof(field)) {
       continue;
     }
     switch (field->cpp_type()) {
-#define HANDLE_TYPE(CPPTYPE, TYPE)                         \
-  case FieldDescriptor::CPPTYPE_##CPPTYPE:                 \
-    if (!field->is_repeated()) {                           \
-      new (field_ptr) TYPE(field->default_value_##TYPE()); \
-    } else {                                               \
-      new (field_ptr) RepeatedField<TYPE>(arena_);         \
-    }                                                      \
+#define HANDLE_TYPE(CPPTYPE, TYPE)                                  \
+  case FieldDescriptor::CPPTYPE_##CPPTYPE:                          \
+    if (!field->is_repeated()) {                                    \
+      new (field_ptr) TYPE(field->default_value_##TYPE());          \
+    } else {                                                        \
+      new (field_ptr) RepeatedField<TYPE>(GetArenaForAllocation()); \
+    }                                                               \
     break;
 
-      HANDLE_TYPE(INT32, int32);
-      HANDLE_TYPE(INT64, int64);
-      HANDLE_TYPE(UINT32, uint32);
-      HANDLE_TYPE(UINT64, uint64);
+      HANDLE_TYPE(INT32, int32_t);
+      HANDLE_TYPE(INT64, int64_t);
+      HANDLE_TYPE(UINT32, uint32_t);
+      HANDLE_TYPE(UINT64, uint64_t);
       HANDLE_TYPE(DOUBLE, double);
       HANDLE_TYPE(FLOAT, float);
       HANDLE_TYPE(BOOL, bool);
@@ -387,9 +405,9 @@ void DynamicMessage::SharedCtor(bool lock_factory) {
 
       case FieldDescriptor::CPPTYPE_ENUM:
         if (!field->is_repeated()) {
-          new (field_ptr) int(field->default_value_enum()->number());
+          new (field_ptr) int{field->default_value_enum()->number()};
         } else {
-          new (field_ptr) RepeatedField<int>(arena_);
+          new (field_ptr) RepeatedField<int>(GetArenaForAllocation());
         }
         break;
 
@@ -398,19 +416,11 @@ void DynamicMessage::SharedCtor(bool lock_factory) {
           default:  
           case FieldOptions::STRING:
             if (!field->is_repeated()) {
-              const std::string* default_value;
-              if (is_prototype()) {
-                default_value = &field->default_value_string();
-              } else {
-                default_value = &(reinterpret_cast<const ArenaStringPtr*>(
-                                      type_info_->prototype->OffsetToPointer(
-                                          type_info_->offsets[i]))
-                                      ->Get());
-              }
               ArenaStringPtr* asp = new (field_ptr) ArenaStringPtr();
-              asp->UnsafeSetDefault(default_value);
+              asp->InitDefault();
             } else {
-              new (field_ptr) RepeatedPtrField<std::string>(arena_);
+              new (field_ptr)
+                  RepeatedPtrField<std::string>(GetArenaForAllocation());
             }
             break;
         }
@@ -418,27 +428,37 @@ void DynamicMessage::SharedCtor(bool lock_factory) {
 
       case FieldDescriptor::CPPTYPE_MESSAGE: {
         if (!field->is_repeated()) {
-          new (field_ptr) Message*(NULL);
+          new (field_ptr) Message*(nullptr);
         } else {
           if (IsMapFieldInApi(field)) {
             
             
             
             if (lock_factory) {
-              if (arena_ != NULL) {
+              if (GetArenaForAllocation() != nullptr) {
                 new (field_ptr) DynamicMapField(
                     type_info_->factory->GetPrototype(field->message_type()),
-                    arena_);
+                    GetArenaForAllocation());
+                if (GetOwningArena() != nullptr) {
+                  
+                  GetOwningArena()->OwnDestructor(
+                      static_cast<DynamicMapField*>(field_ptr));
+                }
               } else {
                 new (field_ptr) DynamicMapField(
                     type_info_->factory->GetPrototype(field->message_type()));
               }
             } else {
-              if (arena_ != NULL) {
+              if (GetArenaForAllocation() != nullptr) {
                 new (field_ptr)
                     DynamicMapField(type_info_->factory->GetPrototypeNoLock(
                                         field->message_type()),
-                                    arena_);
+                                    GetArenaForAllocation());
+                if (GetOwningArena() != nullptr) {
+                  
+                  GetOwningArena()->OwnDestructor(
+                      static_cast<DynamicMapField*>(field_ptr));
+                }
               } else {
                 new (field_ptr)
                     DynamicMapField(type_info_->factory->GetPrototypeNoLock(
@@ -446,7 +466,7 @@ void DynamicMessage::SharedCtor(bool lock_factory) {
               }
             }
           } else {
-            new (field_ptr) RepeatedPtrField<Message>(arena_);
+            new (field_ptr) RepeatedPtrField<Message>(GetArenaForAllocation());
           }
         }
         break;
@@ -455,17 +475,29 @@ void DynamicMessage::SharedCtor(bool lock_factory) {
   }
 }
 
+bool DynamicMessage::is_prototype() const {
+  return type_info_->prototype == this ||
+         
+         
+         type_info_->prototype == nullptr;
+}
+
+#if defined(__cpp_lib_destroying_delete) && defined(__cpp_sized_deallocation)
+void DynamicMessage::operator delete(DynamicMessage* msg,
+                                     std::destroying_delete_t) {
+  const size_t size = msg->type_info_->size;
+  msg->~DynamicMessage();
+  ::operator delete(msg, size);
+}
+#endif
+
 DynamicMessage::~DynamicMessage() {
   const Descriptor* descriptor = type_info_->type;
 
-  reinterpret_cast<InternalMetadataWithArena*>(
-      OffsetToPointer(type_info_->internal_metadata_offset))
-      ->~InternalMetadataWithArena();
+  _internal_metadata_.Delete<UnknownFieldSet>();
 
   if (type_info_->extensions_offset != -1) {
-    reinterpret_cast<ExtensionSet*>(
-        OffsetToPointer(type_info_->extensions_offset))
-        ->~ExtensionSet();
+    reinterpret_cast<ExtensionSet*>(MutableExtensionsRaw())->~ExtensionSet();
   }
 
   
@@ -478,25 +510,15 @@ DynamicMessage::~DynamicMessage() {
   
   for (int i = 0; i < descriptor->field_count(); i++) {
     const FieldDescriptor* field = descriptor->field(i);
-    if (field->containing_oneof()) {
-      void* field_ptr =
-          OffsetToPointer(type_info_->oneof_case_offset +
-                          sizeof(uint32) * field->containing_oneof()->index());
-      if (*(reinterpret_cast<const uint32*>(field_ptr)) == field->number()) {
-        field_ptr = OffsetToPointer(
-            type_info_->offsets[descriptor->field_count() +
-                                field->containing_oneof()->index()]);
+    if (InRealOneof(field)) {
+      void* field_ptr = MutableOneofCaseRaw(field->containing_oneof()->index());
+      if (*(reinterpret_cast<const int32_t*>(field_ptr)) == field->number()) {
+        field_ptr = MutableOneofFieldRaw(field);
         if (field->cpp_type() == FieldDescriptor::CPPTYPE_STRING) {
           switch (field->options().ctype()) {
             default:
             case FieldOptions::STRING: {
-              const std::string* default_value =
-                  &(reinterpret_cast<const ArenaStringPtr*>(
-                        reinterpret_cast<const uint8*>(type_info_->prototype) +
-                        type_info_->offsets[i])
-                        ->Get());
-              reinterpret_cast<ArenaStringPtr*>(field_ptr)->Destroy(
-                  default_value, NULL);
+              reinterpret_cast<ArenaStringPtr*>(field_ptr)->Destroy();
               break;
             }
           }
@@ -506,7 +528,7 @@ DynamicMessage::~DynamicMessage() {
       }
       continue;
     }
-    void* field_ptr = OffsetToPointer(type_info_->offsets[i]);
+    void* field_ptr = MutableRaw(i);
 
     if (field->is_repeated()) {
       switch (field->cpp_type()) {
@@ -516,10 +538,10 @@ DynamicMessage::~DynamicMessage() {
         ->~RepeatedField<LOWERCASE>();                     \
     break
 
-        HANDLE_TYPE(INT32, int32);
-        HANDLE_TYPE(INT64, int64);
-        HANDLE_TYPE(UINT32, uint32);
-        HANDLE_TYPE(UINT64, uint64);
+        HANDLE_TYPE(INT32, int32_t);
+        HANDLE_TYPE(INT64, int64_t);
+        HANDLE_TYPE(UINT32, uint32_t);
+        HANDLE_TYPE(UINT64, uint64_t);
         HANDLE_TYPE(DOUBLE, double);
         HANDLE_TYPE(FLOAT, float);
         HANDLE_TYPE(BOOL, bool);
@@ -550,20 +572,14 @@ DynamicMessage::~DynamicMessage() {
       switch (field->options().ctype()) {
         default:  
         case FieldOptions::STRING: {
-          const std::string* default_value =
-              &(reinterpret_cast<const ArenaStringPtr*>(
-                    type_info_->prototype->OffsetToPointer(
-                        type_info_->offsets[i]))
-                    ->Get());
-          reinterpret_cast<ArenaStringPtr*>(field_ptr)->Destroy(default_value,
-                                                                NULL);
+          reinterpret_cast<ArenaStringPtr*>(field_ptr)->Destroy();
           break;
         }
       }
     } else if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE) {
           if (!is_prototype()) {
         Message* message = *reinterpret_cast<Message**>(field_ptr);
-        if (message != NULL) {
+        if (message != nullptr) {
           delete message;
         }
       }
@@ -581,9 +597,10 @@ void DynamicMessage::CrossLinkPrototypes() {
   
   for (int i = 0; i < descriptor->field_count(); i++) {
     const FieldDescriptor* field = descriptor->field(i);
-    void* field_ptr = OffsetToPointer(type_info_->offsets[i]);
     if (field->cpp_type() == FieldDescriptor::CPPTYPE_MESSAGE &&
+        !field->options().weak() && !InRealOneof(field) &&
         !field->is_repeated()) {
+      void* field_ptr = MutableRaw(i);
       
       
       
@@ -594,10 +611,8 @@ void DynamicMessage::CrossLinkPrototypes() {
   }
 }
 
-Message* DynamicMessage::New() const { return New(NULL); }
-
 Message* DynamicMessage::New(Arena* arena) const {
-  if (arena != NULL) {
+  if (arena != nullptr) {
     void* new_base = Arena::CreateArray<char>(arena, type_info_->size);
     memset(new_base, 0, type_info_->size);
     return new (new_base) DynamicMessage(type_info_, arena);
@@ -625,27 +640,14 @@ Metadata DynamicMessage::GetMetadata() const {
 
 
 
-struct DynamicMessageFactory::PrototypeMap {
-  typedef std::unordered_map<const Descriptor*, const DynamicMessage::TypeInfo*>
-      Map;
-  Map map_;
-};
-
 DynamicMessageFactory::DynamicMessageFactory()
-    : pool_(NULL),
-      delegate_to_generated_factory_(false),
-      prototypes_(new PrototypeMap) {}
+    : pool_(nullptr), delegate_to_generated_factory_(false) {}
 
 DynamicMessageFactory::DynamicMessageFactory(const DescriptorPool* pool)
-    : pool_(pool),
-      delegate_to_generated_factory_(false),
-      prototypes_(new PrototypeMap) {}
+    : pool_(pool), delegate_to_generated_factory_(false) {}
 
 DynamicMessageFactory::~DynamicMessageFactory() {
-  for (PrototypeMap::Map::iterator iter = prototypes_->map_.begin();
-       iter != prototypes_->map_.end(); ++iter) {
-    DeleteDefaultOneofInstance(iter->second->type, iter->second->offsets.get(),
-                               iter->second->prototype);
+  for (auto iter = prototypes_.begin(); iter != prototypes_.end(); ++iter) {
     delete iter->second;
   }
 }
@@ -662,17 +664,17 @@ const Message* DynamicMessageFactory::GetPrototypeNoLock(
     return MessageFactory::generated_factory()->GetPrototype(type);
   }
 
-  const DynamicMessage::TypeInfo** target = &prototypes_->map_[type];
-  if (*target != NULL) {
+  const TypeInfo** target = &prototypes_[type];
+  if (*target != nullptr) {
     
     return (*target)->prototype;
   }
 
-  DynamicMessage::TypeInfo* type_info = new DynamicMessage::TypeInfo;
+  TypeInfo* type_info = new TypeInfo;
   *target = type_info;
 
   type_info->type = type;
-  type_info->pool = (pool_ == NULL) ? type->file()->pool() : pool_;
+  type_info->pool = (pool_ == nullptr) ? type->file()->pool() : pool_;
   type_info->factory = this;
 
   
@@ -682,9 +684,15 @@ const Message* DynamicMessageFactory::GetPrototypeNoLock(
   
   
   
+  int real_oneof_count = 0;
+  for (int i = 0; i < type->oneof_decl_count(); i++) {
+    if (!type->oneof_decl(i)->is_synthetic()) {
+      real_oneof_count++;
+    }
+  }
 
   
-  uint32* offsets = new uint32[type->field_count() + type->oneof_decl_count()];
+  uint32_t* offsets = new uint32_t[type->field_count() + real_oneof_count];
   type_info->offsets.reset(offsets);
 
   
@@ -694,26 +702,35 @@ const Message* DynamicMessageFactory::GetPrototypeNoLock(
   size = AlignOffset(size);
 
   
-  if (type->file()->syntax() == FileDescriptor::SYNTAX_PROTO3) {
-    type_info->has_bits_offset = -1;
-  } else {
-    type_info->has_bits_offset = size;
-    int has_bits_array_size =
-        DivideRoundingUp(type->field_count(), bitsizeof(uint32));
-    size += has_bits_array_size * sizeof(uint32);
-    size = AlignOffset(size);
-
-    uint32* has_bits_indices = new uint32[type->field_count()];
-    for (int i = 0; i < type->field_count(); i++) {
-      has_bits_indices[i] = i;
+  type_info->has_bits_offset = -1;
+  int max_hasbit = 0;
+  for (int i = 0; i < type->field_count(); i++) {
+    if (HasHasbit(type->field(i))) {
+      if (type_info->has_bits_offset == -1) {
+        
+        
+        type_info->has_bits_offset = size;
+        uint32_t* has_bits_indices = new uint32_t[type->field_count()];
+        for (int j = 0; j < type->field_count(); j++) {
+          
+          has_bits_indices[j] = static_cast<uint32_t>(-1);
+        }
+        type_info->has_bits_indices.reset(has_bits_indices);
+      }
+      type_info->has_bits_indices[i] = max_hasbit++;
     }
-    type_info->has_bits_indices.reset(has_bits_indices);
+  }
+
+  if (max_hasbit > 0) {
+    int has_bits_array_size = DivideRoundingUp(max_hasbit, bitsizeof(uint32_t));
+    size += has_bits_array_size * sizeof(uint32_t);
+    size = AlignOffset(size);
   }
 
   
-  if (type->oneof_decl_count() > 0) {
+  if (real_oneof_count > 0) {
     type_info->oneof_case_offset = size;
-    size += type->oneof_decl_count() * sizeof(uint32);
+    size += real_oneof_count * sizeof(uint32_t);
     size = AlignOffset(size);
   }
 
@@ -730,11 +747,10 @@ const Message* DynamicMessageFactory::GetPrototypeNoLock(
   
   
   
-  int num_weak_fields = 0;
   for (int i = 0; i < type->field_count(); i++) {
     
     
-    if (!type->field(i)->containing_oneof()) {
+    if (!InRealOneof(type->field(i))) {
       int field_size = FieldSpaceUsed(type->field(i));
       size = AlignTo(size, std::min(kSafeAlignment, field_size));
       offsets[i] = size;
@@ -744,15 +760,12 @@ const Message* DynamicMessageFactory::GetPrototypeNoLock(
 
   
   for (int i = 0; i < type->oneof_decl_count(); i++) {
-    size = AlignTo(size, kSafeAlignment);
-    offsets[type->field_count() + i] = size;
-    size += kMaxOneofUnionSize;
+    if (!type->oneof_decl(i)->is_synthetic()) {
+      size = AlignTo(size, kSafeAlignment);
+      offsets[type->field_count() + i] = size;
+      size += kMaxOneofUnionSize;
+    }
   }
-
-  
-  size = AlignOffset(size);
-  type_info->internal_metadata_offset = size;
-  size += sizeof(InternalMetadataWithArena);
 
   type_info->weak_field_map_offset = -1;
 
@@ -762,20 +775,21 @@ const Message* DynamicMessageFactory::GetPrototypeNoLock(
 
   
 
-  if (type->oneof_decl_count() > 0) {
-    
-    
-    for (int i = 0; i < type->oneof_decl_count(); i++) {
-      for (int j = 0; j < type->oneof_decl(i)->field_count(); j++) {
-        const FieldDescriptor* field = type->oneof_decl(i)->field(j);
-        int field_size = OneofFieldSpaceUsed(field);
-        size = AlignTo(size, std::min(kSafeAlignment, field_size));
-        offsets[field->index()] = size;
-        size += field_size;
-      }
+  
+  
+  for (int i = 0; i < type->oneof_decl_count(); i++) {
+    if (type->oneof_decl(i)->is_synthetic()) continue;
+    for (int j = 0; j < type->oneof_decl(i)->field_count(); j++) {
+      const FieldDescriptor* field = type->oneof_decl(i)->field(j);
+      
+      
+      
+      
+      
+      offsets[field->index()] = internal::kInvalidFieldOffsetTag;
     }
   }
-  size = AlignOffset(size);
+
   
   void* base = operator new(size);
   memset(base, 0, size);
@@ -784,21 +798,18 @@ const Message* DynamicMessageFactory::GetPrototypeNoLock(
   
   DynamicMessage* prototype = new (base) DynamicMessage(type_info, false);
 
-  if (type->oneof_decl_count() > 0 || num_weak_fields > 0) {
-    
-    ConstructDefaultOneofInstance(type_info->type, type_info->offsets.get(),
-                                  prototype);
-  }
-
-  internal::ReflectionSchema schema = {type_info->prototype,
-                                       type_info->offsets.get(),
-                                       type_info->has_bits_indices.get(),
-                                       type_info->has_bits_offset,
-                                       type_info->internal_metadata_offset,
-                                       type_info->extensions_offset,
-                                       type_info->oneof_case_offset,
-                                       type_info->size,
-                                       type_info->weak_field_map_offset};
+  internal::ReflectionSchema schema = {
+      type_info->prototype,
+      type_info->offsets.get(),
+      type_info->has_bits_indices.get(),
+      type_info->has_bits_offset,
+      PROTOBUF_FIELD_OFFSET(DynamicMessage, _internal_metadata_),
+      type_info->extensions_offset,
+      type_info->oneof_case_offset,
+      type_info->size,
+      type_info->weak_field_map_offset,
+      nullptr ,
+      0 };
 
   type_info->reflection.reset(
       new Reflection(type_info->type, schema, type_info->pool, this));
@@ -809,68 +820,7 @@ const Message* DynamicMessageFactory::GetPrototypeNoLock(
   return prototype;
 }
 
-void DynamicMessageFactory::ConstructDefaultOneofInstance(
-    const Descriptor* type, const uint32 offsets[],
-    void* default_oneof_or_weak_instance) {
-  for (int i = 0; i < type->oneof_decl_count(); i++) {
-    for (int j = 0; j < type->oneof_decl(i)->field_count(); j++) {
-      const FieldDescriptor* field = type->oneof_decl(i)->field(j);
-      void* field_ptr =
-          reinterpret_cast<uint8*>(default_oneof_or_weak_instance) +
-          offsets[field->index()];
-      switch (field->cpp_type()) {
-#define HANDLE_TYPE(CPPTYPE, TYPE)                       \
-  case FieldDescriptor::CPPTYPE_##CPPTYPE:               \
-    new (field_ptr) TYPE(field->default_value_##TYPE()); \
-    break;
-
-        HANDLE_TYPE(INT32, int32);
-        HANDLE_TYPE(INT64, int64);
-        HANDLE_TYPE(UINT32, uint32);
-        HANDLE_TYPE(UINT64, uint64);
-        HANDLE_TYPE(DOUBLE, double);
-        HANDLE_TYPE(FLOAT, float);
-        HANDLE_TYPE(BOOL, bool);
-#undef HANDLE_TYPE
-
-        case FieldDescriptor::CPPTYPE_ENUM:
-          new (field_ptr) int(field->default_value_enum()->number());
-          break;
-        case FieldDescriptor::CPPTYPE_STRING:
-          switch (field->options().ctype()) {
-            default:
-            case FieldOptions::STRING:
-              ArenaStringPtr* asp = new (field_ptr) ArenaStringPtr();
-              asp->UnsafeSetDefault(&field->default_value_string());
-              break;
-          }
-          break;
-
-        case FieldDescriptor::CPPTYPE_MESSAGE: {
-          new (field_ptr) Message*(NULL);
-          break;
-        }
-      }
-    }
-  }
-}
-
-void DynamicMessageFactory::DeleteDefaultOneofInstance(
-    const Descriptor* type, const uint32 offsets[],
-    const void* default_oneof_instance) {
-  for (int i = 0; i < type->oneof_decl_count(); i++) {
-    for (int j = 0; j < type->oneof_decl(i)->field_count(); j++) {
-      const FieldDescriptor* field = type->oneof_decl(i)->field(j);
-      if (field->cpp_type() == FieldDescriptor::CPPTYPE_STRING) {
-        switch (field->options().ctype()) {
-          default:
-          case FieldOptions::STRING:
-            break;
-        }
-      }
-    }
-  }
-}
-
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>  

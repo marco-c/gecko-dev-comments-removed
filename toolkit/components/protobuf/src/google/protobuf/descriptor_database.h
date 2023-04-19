@@ -37,12 +37,15 @@
 #ifndef GOOGLE_PROTOBUF_DESCRIPTOR_DATABASE_H__
 #define GOOGLE_PROTOBUF_DESCRIPTOR_DATABASE_H__
 
+
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
+
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/descriptor.h>
+
 
 #include <google/protobuf/port_def.inc>
 
@@ -188,9 +191,6 @@ class PROTOBUF_EXPORT SimpleDescriptorDatabase : public DescriptorDatabase {
 
  private:
   
-  friend class EncodedDescriptorDatabase;
-
-  
   
   template <typename Value>
   class DescriptorIndex {
@@ -266,21 +266,6 @@ class PROTOBUF_EXPORT SimpleDescriptorDatabase : public DescriptorDatabase {
     
     
     
-
-    
-    
-    typename std::map<std::string, Value>::iterator FindLastLessOrEqual(
-        const std::string& name);
-
-    
-    
-    
-    bool IsSubSymbol(const std::string& sub_symbol,
-                     const std::string& super_symbol);
-
-    
-    
-    bool ValidateSymbolName(const std::string& name);
   };
 
   DescriptorIndex<const FileDescriptorProto*> index_;
@@ -332,8 +317,10 @@ class PROTOBUF_EXPORT EncodedDescriptorDatabase : public DescriptorDatabase {
   bool FindAllFileNames(std::vector<std::string>* output) override;
 
  private:
-  SimpleDescriptorDatabase::DescriptorIndex<std::pair<const void*, int> >
-      index_;
+  class DescriptorIndex;
+  
+  
+  std::unique_ptr<DescriptorIndex> index_;
   std::vector<void*> files_to_delete_;
 
   
@@ -393,6 +380,10 @@ class PROTOBUF_EXPORT MergedDescriptorDatabase : public DescriptorDatabase {
   bool FindAllExtensionNumbers(const std::string& extendee_type,
                                std::vector<int>* output) override;
 
+
+  
+  
+  bool FindAllFileNames(std::vector<std::string>* output) override;
 
  private:
   std::vector<DescriptorDatabase*> sources_;

@@ -37,6 +37,7 @@
 #include <google/protobuf/arenastring.h>
 #include <google/protobuf/message_lite.h>
 
+
 #include <google/protobuf/port_def.inc>
 
 namespace google {
@@ -60,29 +61,36 @@ class PROTOBUF_EXPORT AnyMetadata {
   typedef ArenaStringPtr ValueType;
  public:
   
-  AnyMetadata(UrlType* type_url, ValueType* value);
+  constexpr AnyMetadata(UrlType* type_url, ValueType* value)
+      : type_url_(type_url), value_(value) {}
 
-  
-  
-  template <typename T>
-  void PackFrom(const T& message) {
-    InternalPackFrom(message, kTypeGoogleApisComPrefix, T::FullMessageName());
-  }
-
-  void PackFrom(const Message& message);
-
-  
-  
-  
   
   
   
   template <typename T>
-  void PackFrom(const T& message, StringPiece type_url_prefix) {
-    InternalPackFrom(message, type_url_prefix, T::FullMessageName());
+  bool PackFrom(Arena* arena, const T& message) {
+    return InternalPackFrom(arena, message, kTypeGoogleApisComPrefix,
+                            T::FullMessageName());
   }
 
-  void PackFrom(const Message& message, const std::string& type_url_prefix);
+  bool PackFrom(Arena* arena, const Message& message);
+
+  
+  
+  
+  
+  
+  
+  
+  template <typename T>
+  bool PackFrom(Arena* arena, const T& message,
+                StringPiece type_url_prefix) {
+    return InternalPackFrom(arena, message, type_url_prefix,
+                            T::FullMessageName());
+  }
+
+  bool PackFrom(Arena* arena, const Message& message,
+                StringPiece type_url_prefix);
 
   
   
@@ -104,7 +112,7 @@ class PROTOBUF_EXPORT AnyMetadata {
   }
 
  private:
-  void InternalPackFrom(const MessageLite& message,
+  bool InternalPackFrom(Arena* arena, const MessageLite& message,
                         StringPiece type_url_prefix,
                         StringPiece type_name);
   bool InternalUnpackTo(StringPiece type_name,
@@ -124,14 +132,14 @@ class PROTOBUF_EXPORT AnyMetadata {
 
 
 
-bool ParseAnyTypeUrl(const std::string& type_url, std::string* full_type_name);
+bool ParseAnyTypeUrl(StringPiece type_url, std::string* full_type_name);
 
 
 
 
 
 
-bool ParseAnyTypeUrl(const std::string& type_url, std::string* url_prefix,
+bool ParseAnyTypeUrl(StringPiece type_url, std::string* url_prefix,
                      std::string* full_type_name);
 
 

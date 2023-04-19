@@ -67,7 +67,10 @@ Printer::Printer(ZeroCopyOutputStream* output, char variable_delimiter,
 
 Printer::~Printer() {
   
-  if (buffer_size_ > 0 && !failed_) {
+  
+  
+  
+  if (buffer_ != nullptr && !failed_) {
     output_->BackUp(buffer_size_);
   }
 }
@@ -296,7 +299,7 @@ void Printer::FormatInternal(const std::vector<std::string>& args,
     }
     push_back(c);
   }
-  if (arg_index != args.size()) {
+  if (arg_index != static_cast<int>(args.size())) {
     GOOGLE_LOG(FATAL) << " Unused arguments. " << save;
   }
   if (!annotations.empty()) {
@@ -305,7 +308,7 @@ void Printer::FormatInternal(const std::vector<std::string>& args,
 }
 
 const char* Printer::WriteVariable(
-    const std::vector<string>& args,
+    const std::vector<std::string>& args,
     const std::map<std::string, std::string>& vars, const char* format,
     int* arg_index, std::vector<AnnotationCollector::Annotation>* annotations) {
   auto start = format;
@@ -324,7 +327,7 @@ const char* Printer::WriteVariable(
     GOOGLE_CHECK(std::isdigit(start[1]));
     GOOGLE_CHECK_EQ(end - start, 2);
     int idx = start[1] - '1';
-    if (idx < 0 || idx >= args.size()) {
+    if (idx < 0 || static_cast<size_t>(idx) >= args.size()) {
       GOOGLE_LOG(FATAL) << "Annotation ${" << idx + 1 << "$ is out of bounds.";
     }
     if (idx > *arg_index) {
@@ -358,10 +361,10 @@ const char* Printer::WriteVariable(
       start_var, static_cast<std::string::size_type>(end_var - start_var)};
   std::string sub;
   if (std::isdigit(var_name[0])) {
-    GOOGLE_CHECK_EQ(var_name.size(), 1);  
+    GOOGLE_CHECK_EQ(var_name.size(), 1U);  
     int idx = var_name[0] - '1';   
     GOOGLE_CHECK_GE(idx, 0);
-    if (idx >= args.size()) {
+    if (static_cast<size_t>(idx) >= args.size()) {
       GOOGLE_LOG(FATAL) << "Argument $" << idx + 1 << "$ is out of bounds.";
     }
     if (idx > *arg_index) {

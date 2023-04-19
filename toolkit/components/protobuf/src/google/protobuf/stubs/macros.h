@@ -31,21 +31,19 @@
 #ifndef GOOGLE_PROTOBUF_MACROS_H__
 #define GOOGLE_PROTOBUF_MACROS_H__
 
-#include <google/protobuf/stubs/port.h>
-
 namespace google {
 namespace protobuf {
 
 #undef GOOGLE_DISALLOW_EVIL_CONSTRUCTORS
-#define GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TypeName)    \
-  TypeName(const TypeName&);                           \
-  void operator=(const TypeName&)
+#define GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TypeName) \
+  TypeName(const TypeName&) = delete;               \
+  void operator=(const TypeName&) = delete
 
 #undef GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS
 #define GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
-  TypeName();                                           \
-  TypeName(const TypeName&);                            \
-  void operator=(const TypeName&)
+  TypeName() = delete;                                  \
+  TypeName(const TypeName&) = delete;                   \
+  void operator=(const TypeName&) = delete
 
 
 
@@ -88,31 +86,6 @@ namespace protobuf {
 #define GOOGLE_ARRAYSIZE(a) \
   ((sizeof(a) / sizeof(*(a))) / \
    static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace internal {
-
-template <bool>
-struct CompileAssert {
-};
-
-}  
-
-#define GOOGLE_COMPILE_ASSERT(expr, msg) static_assert(expr, #msg)
 
 }  
 }  

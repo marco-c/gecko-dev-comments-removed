@@ -28,12 +28,13 @@
 
 
 
-#ifndef GOOGLE_PROTOBUF_UTIL_CONVERTER_LOCATION_TRACKER_H__
-#define GOOGLE_PROTOBUF_UTIL_CONVERTER_LOCATION_TRACKER_H__
+#ifndef GOOGLE_PROTOBUF_UTIL_INTERNAL_LOCATION_TRACKER_H__
+#define GOOGLE_PROTOBUF_UTIL_INTERNAL_LOCATION_TRACKER_H__
 
 #include <string>
 
 #include <google/protobuf/stubs/common.h>
+
 
 #include <google/protobuf/port_def.inc>
 

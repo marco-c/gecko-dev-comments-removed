@@ -37,9 +37,6 @@
 #include <limits>
 #include <type_traits>
 #include <utility>
-#ifdef max
-#undef max  // Visual Studio defines this macro
-#endif
 #if defined(_MSC_VER) && !defined(_LIBCPP_STD_VER) && !_HAS_EXCEPTIONS
 
 #include <exception>
@@ -55,6 +52,7 @@ using type_info = ::type_info;
 #include <google/protobuf/arena_impl.h>
 #include <google/protobuf/port.h>
 
+
 #include <google/protobuf/port_def.inc>
 
 #ifdef SWIG
@@ -65,13 +63,6 @@ namespace google {
 namespace protobuf {
 
 struct ArenaOptions;  
-
-}  
-}  
-
-namespace google {
-namespace protobuf {
-
 class Arena;    
 class Message;  
 class MessageLite;
@@ -84,33 +75,47 @@ void EnableArenaMetrics(ArenaOptions* options);
 
 }  
 
+namespace TestUtil {
+class ReflectionTester;  
+}  
+
 namespace internal {
 
-struct ArenaStringPtr;  
-class LazyField;        
-class EpsCopyInputStream;  
+struct ArenaTestPeer;        
+class InternalMetadata;      
+class LazyField;             
+class EpsCopyInputStream;    
+class RepeatedPtrFieldBase;  
 
 template <typename Type>
 class GenericTypeHandler;  
+
+inline PROTOBUF_ALWAYS_INLINE
+void* AlignTo(void* ptr, size_t align) {
+  return reinterpret_cast<void*>(
+      (reinterpret_cast<uintptr_t>(ptr) + align - 1) & (~align + 1));
+}
 
 
 template <typename T>
 void arena_destruct_object(void* object) {
   reinterpret_cast<T*>(object)->~T();
 }
+
+template <bool destructor_skippable, typename T>
+struct ObjectDestructor {
+  constexpr static void (*destructor)(void*) = &arena_destruct_object<T>;
+};
+
+template <typename T>
+struct ObjectDestructor<true, T> {
+  constexpr static void (*destructor)(void*) = nullptr;
+};
+
 template <typename T>
 void arena_delete_object(void* object) {
   delete reinterpret_cast<T*>(object);
 }
-inline void arena_free(void* object, size_t size) {
-#if defined(__GXX_DELETE_WITH_SIZE__) || defined(__cpp_sized_deallocation)
-  ::operator delete(object, size);
-#else
-  (void)size;
-  ::operator delete(object);
-#endif
-}
-
 }  
 
 
@@ -147,46 +152,36 @@ struct ArenaOptions {
   void (*block_dealloc)(void*, size_t);
 
   ArenaOptions()
-      : start_block_size(kDefaultStartBlockSize),
-        max_block_size(kDefaultMaxBlockSize),
+      : start_block_size(internal::AllocationPolicy::kDefaultStartBlockSize),
+        max_block_size(internal::AllocationPolicy::kDefaultMaxBlockSize),
         initial_block(NULL),
         initial_block_size(0),
-        block_alloc(&::operator new),
-        block_dealloc(&internal::arena_free),
-        on_arena_init(NULL),
-        on_arena_reset(NULL),
-        on_arena_destruction(NULL),
-        on_arena_allocation(NULL) {}
+        block_alloc(nullptr),
+        block_dealloc(nullptr),
+        make_metrics_collector(nullptr) {}
 
  private:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  void* (*on_arena_init)(Arena* arena);
-  void (*on_arena_reset)(Arena* arena, void* cookie, uint64 space_used);
-  void (*on_arena_destruction)(Arena* arena, void* cookie, uint64 space_used);
+  internal::ArenaMetricsCollector* (*make_metrics_collector)();
 
-  
-  
-  
-  
-  
-  void (*on_arena_allocation)(const std::type_info* allocated_type,
-                              uint64 alloc_size, void* cookie);
+  internal::ArenaMetricsCollector* MetricsCollector() const {
+    return make_metrics_collector ? (*make_metrics_collector)() : nullptr;
+  }
 
-  
-  
-  static const size_t kDefaultStartBlockSize = 256;
-  static const size_t kDefaultMaxBlockSize = 8192;
+  internal::AllocationPolicy AllocationPolicy() const {
+    internal::AllocationPolicy res;
+    res.start_block_size = start_block_size;
+    res.max_block_size = max_block_size;
+    res.block_alloc = block_alloc;
+    res.block_dealloc = block_dealloc;
+    res.metrics_collector = MetricsCollector();
+    return res;
+  }
 
   friend void arena_metrics::EnableArenaMetrics(ArenaOptions*);
+
   friend class Arena;
   friend class ArenaOptionsTestFriend;
 };
@@ -244,17 +239,24 @@ struct ArenaOptions {
 
 
 
-
-
-
-
-class PROTOBUF_EXPORT alignas(8) Arena final {
+class PROTOBUF_EXPORT PROTOBUF_ALIGNAS(8) Arena final {
  public:
   
   
-  explicit Arena(const ArenaOptions& options) : impl_(options) {
-    Init(options);
-  }
+  inline Arena() : impl_() {}
+
+  
+  
+  
+  
+  inline Arena(char* initial_block, size_t initial_block_size)
+      : impl_(initial_block, initial_block_size) {}
+
+  
+  
+  explicit Arena(const ArenaOptions& options)
+      : impl_(options.initial_block, options.initial_block_size,
+              options.AllocationPolicy()) {}
 
   
   
@@ -262,30 +264,14 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
   
   
   
-  static const size_t kBlockOverhead = internal::ArenaImpl::kBlockHeaderSize +
-                                       internal::ArenaImpl::kSerialArenaSize;
+  static const size_t kBlockOverhead =
+      internal::ThreadSafeArena::kBlockHeaderSize +
+      internal::ThreadSafeArena::kSerialArenaSize;
+
+  inline ~Arena() {}
 
   
-  
-  Arena() : impl_(ArenaOptions()) { Init(ArenaOptions()); }
-
-  ~Arena() {
-    if (hooks_cookie_) {
-      CallDestructorHooks();
-    }
-  }
-
-  void Init(const ArenaOptions& options) {
-    on_arena_allocation_ = options.on_arena_allocation;
-    on_arena_reset_ = options.on_arena_reset;
-    on_arena_destruction_ = options.on_arena_destruction;
-    
-    if (options.on_arena_init != NULL) {
-      hooks_cookie_ = options.on_arena_init(this);
-    } else {
-      hooks_cookie_ = NULL;
-    }
-  }
+  void Init(const ArenaOptions&) {}
 
   
   
@@ -305,7 +291,7 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
     
     
     
-    return Arena::CreateMaybeMessage<T>(arena, std::forward<Args>(args)...);
+    return Arena::CreateMaybeMessage<T>(arena, static_cast<Args&&>(args)...);
   }
 
   
@@ -324,9 +310,23 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
   
   
   template <typename T, typename... Args>
-  PROTOBUF_ALWAYS_INLINE static T* Create(Arena* arena, Args&&... args) {
-    return CreateNoMessage<T>(arena, is_arena_constructable<T>(),
-                              std::forward<Args>(args)...);
+  PROTOBUF_NDEBUG_INLINE static T* Create(Arena* arena, Args&&... args) {
+    return CreateInternal<T>(arena, std::is_convertible<T*, MessageLite*>(),
+                             static_cast<Args&&>(args)...);
+  }
+
+  
+  void* AllocateAligned(size_t size, size_t align = 8) {
+    if (align <= 8) {
+      return AllocateAlignedNoHook(internal::AlignUpTo8(size));
+    } else {
+      
+      
+      
+      
+      
+      return internal::AlignTo(AllocateAlignedNoHook(size + align - 8), align);
+    }
   }
 
   
@@ -336,9 +336,9 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
   
   
   template <typename T>
-  PROTOBUF_ALWAYS_INLINE static T* CreateArray(Arena* arena,
+  PROTOBUF_NDEBUG_INLINE static T* CreateArray(Arena* arena,
                                                size_t num_elements) {
-    static_assert(std::is_pod<T>::value,
+    static_assert(std::is_trivial<T>::value,
                   "CreateArray requires a trivially constructible type");
     static_assert(std::is_trivially_destructible<T>::value,
                   "CreateArray requires a trivially destructible type");
@@ -354,31 +354,28 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
   
   
   
-  uint64 SpaceAllocated() const { return impl_.SpaceAllocated(); }
+  
+  
+  
+  uint64_t SpaceAllocated() const { return impl_.SpaceAllocated(); }
   
   
   
   
-  uint64 SpaceUsed() const { return impl_.SpaceUsed(); }
+  uint64_t SpaceUsed() const { return impl_.SpaceUsed(); }
 
   
   
   
   
   
-  PROTOBUF_NOINLINE uint64 Reset() {
-    
-    if (on_arena_reset_ != NULL) {
-      on_arena_reset_(this, hooks_cookie_, impl_.SpaceAllocated());
-    }
-    return impl_.Reset();
-  }
+  uint64_t Reset() { return impl_.Reset(); }
 
   
   
   template <typename T>
-  PROTOBUF_NOINLINE void Own(T* object) {
-    OwnInternal(object, std::is_convertible<T*, Message*>());
+  PROTOBUF_ALWAYS_INLINE void Own(T* object) {
+    OwnInternal(object, std::is_convertible<T*, MessageLite*>());
   }
 
   
@@ -387,7 +384,7 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
   
   
   template <typename T>
-  PROTOBUF_NOINLINE void OwnDestructor(T* object) {
+  PROTOBUF_ALWAYS_INLINE void OwnDestructor(T* object) {
     if (object != NULL) {
       impl_.AddCleanup(object, &internal::arena_destruct_object<T>);
     }
@@ -397,8 +394,8 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
   
   
   
-  PROTOBUF_NOINLINE void OwnCustomDestructor(void* object,
-                                             void (*destruct)(void*)) {
+  PROTOBUF_ALWAYS_INLINE void OwnCustomDestructor(void* object,
+                                                  void (*destruct)(void*)) {
     impl_.AddCleanup(object, destruct);
   }
 
@@ -413,6 +410,44 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
 
   template <typename T>
   class InternalHelper {
+   private:
+    
+    static Arena* GetOwningArena(const T* p) { return p->GetOwningArena(); }
+
+    static void InternalSwap(T* a, T* b) { a->InternalSwap(b); }
+
+    static Arena* GetArenaForAllocationInternal(
+        const T* p, std::true_type ) {
+      return p->GetArenaForAllocation();
+    }
+
+    static Arena* GetArenaForAllocationInternal(
+        const T* p, std::false_type ) {
+      return GetArenaForAllocationForNonMessage(
+          p, typename is_arena_constructable::type());
+    }
+
+    static Arena* GetArenaForAllocationForNonMessage(
+        const T* p, std::true_type ) {
+      return p->GetArena();
+    }
+
+    static Arena* GetArenaForAllocationForNonMessage(
+        const T* p, std::false_type ) {
+      return GetArenaForAllocationForNonMessageNonArenaConstructible(
+          p, typename has_get_arena::type());
+    }
+
+    static Arena* GetArenaForAllocationForNonMessageNonArenaConstructible(
+        const T* p, std::true_type ) {
+      return p->GetArena();
+    }
+
+    static Arena* GetArenaForAllocationForNonMessageNonArenaConstructible(
+        const T* , std::false_type ) {
+      return nullptr;
+    }
+
     template <typename U>
     static char DestructorSkippable(const typename U::DestructorSkippable_*);
     template <typename U>
@@ -450,13 +485,41 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
 
     template <typename... Args>
     static T* Construct(void* ptr, Args&&... args) {
-      return new (ptr) T(std::forward<Args>(args)...);
+      return new (ptr) T(static_cast<Args&&>(args)...);
     }
 
-    static Arena* GetArena(const T* p) { return p->GetArenaNoVirtual(); }
+    static inline PROTOBUF_ALWAYS_INLINE T* New() {
+      return new T(nullptr);
+    }
+
+    static Arena* GetArena(const T* p) { return p->GetArena(); }
 
     friend class Arena;
+    friend class TestUtil::ReflectionTester;
   };
+
+  
+  
+  template <typename T>
+  static Arena* InternalGetOwningArena(const T* p) {
+    return InternalHelper<T>::GetOwningArena(p);
+  }
+
+  
+  
+  template <typename T>
+  static Arena* InternalGetArenaForAllocation(const T* p) {
+    return InternalHelper<T>::GetArenaForAllocationInternal(
+        p, std::is_convertible<T*, MessageLite*>());
+  }
+
+  
+  static Arena* InternalCreateMessageOwnedArena() {
+    return new Arena(internal::MessageOwned{});
+  }
+
+  
+  bool InternalIsMessageOwnedArena() { return IsMessageOwned(); }
 
   
   
@@ -477,19 +540,33 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
   };
 
  private:
+  internal::ThreadSafeArena impl_;
+
   template <typename T>
   struct has_get_arena : InternalHelper<T>::has_get_arena {};
 
+  
+  inline Arena(internal::MessageOwned) : impl_(internal::MessageOwned{}) {}
+
+  
+  PROTOBUF_ALWAYS_INLINE bool IsMessageOwned() const {
+    return impl_.IsMessageOwned();
+  }
+
+  void ReturnArrayMemory(void* p, size_t size) {
+    impl_.ReturnArrayMemory(p, size);
+  }
+
   template <typename T, typename... Args>
-  PROTOBUF_ALWAYS_INLINE static T* CreateMessageInternal(Arena* arena,
+  PROTOBUF_NDEBUG_INLINE static T* CreateMessageInternal(Arena* arena,
                                                          Args&&... args) {
     static_assert(
         InternalHelper<T>::is_arena_constructable::value,
         "CreateMessage can only construct types that are ArenaConstructable");
     if (arena == NULL) {
-      return new T(nullptr, std::forward<Args>(args)...);
+      return new T(nullptr, static_cast<Args&&>(args)...);
     } else {
-      return arena->DoCreateMessage<T>(std::forward<Args>(args)...);
+      return arena->DoCreateMessage<T>(static_cast<Args&&>(args)...);
     }
   }
 
@@ -497,49 +574,40 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
   
   
   template <typename T>
-  PROTOBUF_ALWAYS_INLINE static T* CreateMessageInternal(Arena* arena) {
+  PROTOBUF_NDEBUG_INLINE static T* CreateMessageInternal(Arena* arena) {
     static_assert(
         InternalHelper<T>::is_arena_constructable::value,
         "CreateMessage can only construct types that are ArenaConstructable");
     if (arena == NULL) {
-      return new T();
+      
+      
+      return InternalHelper<T>::New();
     } else {
       return arena->DoCreateMessage<T>();
     }
   }
 
-  template <typename T, typename... Args>
-  PROTOBUF_ALWAYS_INLINE static T* CreateInternal(Arena* arena,
-                                                  Args&&... args) {
-    if (arena == NULL) {
-      return new T(std::forward<Args>(args)...);
-    } else {
-      return arena->DoCreate<T>(std::is_trivially_destructible<T>::value,
-                                std::forward<Args>(args)...);
-    }
-  }
-
-  void CallDestructorHooks();
-  void OnArenaAllocation(const std::type_info* allocated_type, size_t n) const;
-  inline void AllocHook(const std::type_info* allocated_type, size_t n) const {
-    if (PROTOBUF_PREDICT_FALSE(hooks_cookie_ != NULL)) {
-      OnArenaAllocation(allocated_type, n);
-    }
-  }
-
   
   
-  
-  template <typename T>
-  PROTOBUF_ALWAYS_INLINE void* AllocateInternal(bool skip_explicit_ownership) {
-    const size_t n = internal::AlignUpTo8(sizeof(T));
-    AllocHook(RTTI_TYPE_ID(T), n);
+  PROTOBUF_NDEBUG_INLINE void* AllocateInternal(size_t size, size_t align,
+                                                void (*destructor)(void*),
+                                                const std::type_info* type) {
     
-    if (skip_explicit_ownership) {
-      return AllocateAlignedNoHook(n);
+    if (destructor == nullptr) {
+      return AllocateAlignedWithHook(size, align, type);
     } else {
-      return impl_.AllocateAlignedAndAddCleanup(
-          n, &internal::arena_destruct_object<T>);
+      if (align <= 8) {
+        auto res = AllocateAlignedWithCleanup(internal::AlignUpTo8(size), type);
+        res.second->elem = res.first;
+        res.second->cleanup = destructor;
+        return res.first;
+      } else {
+        auto res = AllocateAlignedWithCleanup(size + align - 8, type);
+        auto ptr = internal::AlignTo(res.first, align);
+        res.second->elem = ptr;
+        res.second->cleanup = destructor;
+        return ptr;
+      }
     }
   }
 
@@ -559,7 +627,7 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
   PROTOBUF_ALWAYS_INLINE static T* DoCreateMaybeMessage(Arena* arena,
                                                         std::false_type,
                                                         Args&&... args) {
-    return CreateInternal<T>(arena, std::forward<Args>(args)...);
+    return Create<T>(arena, std::forward<Args>(args)...);
   }
 
   template <typename T, typename... Args>
@@ -569,71 +637,54 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
                                    std::forward<Args>(args)...);
   }
 
-  template <typename T, typename... Args>
-  PROTOBUF_ALWAYS_INLINE static T* CreateNoMessage(Arena* arena, std::true_type,
-                                                   Args&&... args) {
-    
-    
-    
-    return CreateInternal<T>(arena, std::forward<Args>(args)...);
-  }
-
-  template <typename T, typename... Args>
-  PROTOBUF_ALWAYS_INLINE static T* CreateNoMessage(Arena* arena,
-                                                   std::false_type,
-                                                   Args&&... args) {
-    
-    
-    
-    return CreateMaybeMessage<T>(arena, std::forward<Args>(args)...);
-  }
-
   
   
   template <typename T>
-  PROTOBUF_ALWAYS_INLINE T* CreateInternalRawArray(size_t num_elements) {
+  PROTOBUF_NDEBUG_INLINE T* CreateInternalRawArray(size_t num_elements) {
     GOOGLE_CHECK_LE(num_elements, std::numeric_limits<size_t>::max() / sizeof(T))
         << "Requested size is too large to fit into size_t.";
-    const size_t n = internal::AlignUpTo8(sizeof(T) * num_elements);
     
-    AllocHook(RTTI_TYPE_ID(T), n);
-    return static_cast<T*>(AllocateAlignedNoHook(n));
+    
+    const size_t n = sizeof(T) * num_elements;
+    return static_cast<T*>(
+        AllocateAlignedWithHookForArray(n, alignof(T), RTTI_TYPE_ID(T)));
   }
 
   template <typename T, typename... Args>
-  PROTOBUF_ALWAYS_INLINE T* DoCreate(bool skip_explicit_ownership,
-                                     Args&&... args) {
-    return new (AllocateInternal<T>(skip_explicit_ownership))
-        T(std::forward<Args>(args)...);
-  }
-  template <typename T, typename... Args>
-  PROTOBUF_ALWAYS_INLINE T* DoCreateMessage(Args&&... args) {
+  PROTOBUF_NDEBUG_INLINE T* DoCreateMessage(Args&&... args) {
     return InternalHelper<T>::Construct(
-        AllocateInternal<T>(InternalHelper<T>::is_destructor_skippable::value),
+        AllocateInternal(sizeof(T), alignof(T),
+                         internal::ObjectDestructor<
+                             InternalHelper<T>::is_destructor_skippable::value,
+                             T>::destructor,
+                         RTTI_TYPE_ID(T)),
         this, std::forward<Args>(args)...);
   }
 
   
   
   
-  template <typename T>
-  static void CreateInArenaStorage(T* ptr, Arena* arena) {
+  template <typename T, typename... Args>
+  static void CreateInArenaStorage(T* ptr, Arena* arena, Args&&... args) {
     CreateInArenaStorageInternal(ptr, arena,
-                                 typename is_arena_constructable<T>::type());
-    RegisterDestructorInternal(
-        ptr, arena,
-        typename InternalHelper<T>::is_destructor_skippable::type());
+                                 typename is_arena_constructable<T>::type(),
+                                 std::forward<Args>(args)...);
+    if (arena != nullptr) {
+      RegisterDestructorInternal(
+          ptr, arena,
+          typename InternalHelper<T>::is_destructor_skippable::type());
+    }
   }
 
-  template <typename T>
+  template <typename T, typename... Args>
   static void CreateInArenaStorageInternal(T* ptr, Arena* arena,
-                                           std::true_type) {
-    InternalHelper<T>::Construct(ptr, arena);
+                                           std::true_type, Args&&... args) {
+    InternalHelper<T>::Construct(ptr, arena, std::forward<Args>(args)...);
   }
-  template <typename T>
+  template <typename T, typename... Args>
   static void CreateInArenaStorageInternal(T* ptr, Arena* ,
-                                           std::false_type) {
-    new (ptr) T();
+                                           std::false_type, Args&&... args) {
+    new (ptr) T(std::forward<Args>(args)...);
   }
 
   template <typename T>
@@ -647,13 +698,46 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
 
   
   
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* CreateInternal(Arena* arena, std::true_type,
+                                                  Args&&... args) {
+    if (arena == nullptr) {
+      return new T(std::forward<Args>(args)...);
+    } else {
+      auto destructor =
+          internal::ObjectDestructor<std::is_trivially_destructible<T>::value,
+                                     T>::destructor;
+      T* result =
+          new (arena->AllocateInternal(sizeof(T), alignof(T), destructor,
+                                       RTTI_TYPE_ID(T)))
+          T(std::forward<Args>(args)...);
+      return result;
+    }
+  }
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* CreateInternal(Arena* arena, std::false_type,
+                                                  Args&&... args) {
+    if (arena == nullptr) {
+      return new T(std::forward<Args>(args)...);
+    } else {
+      auto destructor =
+          internal::ObjectDestructor<std::is_trivially_destructible<T>::value,
+                                     T>::destructor;
+      return new (arena->AllocateInternal(sizeof(T), alignof(T), destructor,
+                                          RTTI_TYPE_ID(T)))
+          T(std::forward<Args>(args)...);
+    }
+  }
+
+  
+  
   
   
   
   template <typename T>
   PROTOBUF_ALWAYS_INLINE void OwnInternal(T* object, std::true_type) {
     if (object != NULL) {
-      impl_.AddCleanup(object, &internal::arena_delete_object<Message>);
+      impl_.AddCleanup(object, &internal::arena_delete_object<MessageLite>);
     }
   }
   template <typename T>
@@ -687,33 +771,73 @@ class PROTOBUF_EXPORT alignas(8) Arena final {
     return nullptr;
   }
 
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE static Arena* GetOwningArena(const T* value) {
+    return GetOwningArenaInternal(
+        value, std::is_convertible<T*, MessageLite*>());
+  }
+
   
-  void* AllocateAligned(size_t n) {
-    AllocHook(NULL, n);
-    return AllocateAlignedNoHook(internal::AlignUpTo8(n));
+  
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE static Arena* GetOwningArenaInternal(
+      const T* value, std::true_type) {
+    return InternalHelper<T>::GetOwningArena(value);
+  }
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE static Arena* GetOwningArenaInternal(
+      const T* , std::false_type) {
+    return nullptr;
+  }
+
+  void* AllocateAlignedWithHookForArray(size_t n, size_t align,
+                                        const std::type_info* type) {
+    if (align <= 8) {
+      return AllocateAlignedWithHookForArray(internal::AlignUpTo8(n), type);
+    } else {
+      
+      
+      
+      
+      
+      return internal::AlignTo(
+          AllocateAlignedWithHookForArray(n + align - 8, type), align);
+    }
+  }
+
+  void* AllocateAlignedWithHook(size_t n, size_t align,
+                                const std::type_info* type) {
+    if (align <= 8) {
+      return AllocateAlignedWithHook(internal::AlignUpTo8(n), type);
+    } else {
+      
+      
+      
+      
+      
+      return internal::AlignTo(AllocateAlignedWithHook(n + align - 8, type),
+                               align);
+    }
   }
 
   void* AllocateAlignedNoHook(size_t n);
-
-  internal::ArenaImpl impl_;
-
-  void (*on_arena_allocation_)(const std::type_info* allocated_type,
-                               uint64 alloc_size, void* cookie);
-  void (*on_arena_reset_)(Arena* arena, void* cookie, uint64 space_used);
-  void (*on_arena_destruction_)(Arena* arena, void* cookie, uint64 space_used);
-
-  
-  
-  void* hooks_cookie_;
+  void* AllocateAlignedWithHook(size_t n, const std::type_info* type);
+  void* AllocateAlignedWithHookForArray(size_t n, const std::type_info* type);
+  std::pair<void*, internal::SerialArena::CleanupNode*>
+  AllocateAlignedWithCleanup(size_t n, const std::type_info* type);
 
   template <typename Type>
   friend class internal::GenericTypeHandler;
-  friend struct internal::ArenaStringPtr;  
+  friend class internal::InternalMetadata;  
   friend class internal::LazyField;        
   friend class internal::EpsCopyInputStream;  
   friend class MessageLite;
   template <typename Key, typename T>
   friend class Map;
+  template <typename>
+  friend class RepeatedField;                   
+  friend class internal::RepeatedPtrFieldBase;  
+  friend struct internal::ArenaTestPeer;
 };
 
 

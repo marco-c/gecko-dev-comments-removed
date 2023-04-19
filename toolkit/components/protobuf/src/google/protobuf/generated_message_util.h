@@ -46,16 +46,17 @@
 #include <vector>
 
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/once.h>  
+#include <google/protobuf/port.h>
+#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/any.h>
 #include <google/protobuf/has_bits.h>
 #include <google/protobuf/implicit_weak_message.h>
 #include <google/protobuf/message_lite.h>
-#include <google/protobuf/stubs/once.h>  
-#include <google/protobuf/port.h>
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/wire_format_lite.h>
-#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/stubs/casts.h>
+
 
 #include <google/protobuf/port_def.inc>
 
@@ -67,6 +68,7 @@ namespace google {
 namespace protobuf {
 
 class Arena;
+class Message;
 
 namespace io {
 class CodedInputStream;
@@ -84,7 +86,17 @@ inline To DownCast(From& f) {
 }
 
 
-PROTOBUF_EXPORT void InitProtobufDefaults();
+
+
+
+PROTOBUF_EXPORT extern std::atomic<bool> init_protobuf_defaults_state;
+PROTOBUF_EXPORT void InitProtobufDefaultsSlow();
+PROTOBUF_EXPORT inline void InitProtobufDefaults() {
+  if (PROTOBUF_PREDICT_FALSE(
+          !init_protobuf_defaults_state.load(std::memory_order_acquire))) {
+    InitProtobufDefaultsSlow();
+  }
+}
 
 
 PROTOBUF_EXPORT inline const std::string& GetEmptyString() {
@@ -121,27 +133,28 @@ bool AllAreInitializedWeak(const RepeatedPtrField<T>& t) {
   return true;
 }
 
-inline bool IsPresent(const void* base, uint32 hasbit) {
-  const uint32* has_bits_array = static_cast<const uint32*>(base);
+inline bool IsPresent(const void* base, uint32_t hasbit) {
+  const uint32_t* has_bits_array = static_cast<const uint32_t*>(base);
   return (has_bits_array[hasbit / 32] & (1u << (hasbit & 31))) != 0;
 }
 
-inline bool IsOneofPresent(const void* base, uint32 offset, uint32 tag) {
-  const uint32* oneof =
-      reinterpret_cast<const uint32*>(static_cast<const uint8*>(base) + offset);
+inline bool IsOneofPresent(const void* base, uint32_t offset, uint32_t tag) {
+  const uint32_t* oneof = reinterpret_cast<const uint32_t*>(
+      static_cast<const uint8_t*>(base) + offset);
   return *oneof == tag >> 3;
 }
 
-typedef void (*SpecialSerializer)(const uint8* base, uint32 offset, uint32 tag,
-                                  uint32 has_offset,
+typedef void (*SpecialSerializer)(const uint8_t* base, uint32_t offset,
+                                  uint32_t tag, uint32_t has_offset,
                                   io::CodedOutputStream* output);
 
-PROTOBUF_EXPORT void ExtensionSerializer(const uint8* base, uint32 offset,
-                                         uint32 tag, uint32 has_offset,
+PROTOBUF_EXPORT void ExtensionSerializer(const MessageLite* extendee,
+                                         const uint8_t* ptr, uint32_t offset,
+                                         uint32_t tag, uint32_t has_offset,
                                          io::CodedOutputStream* output);
-PROTOBUF_EXPORT void UnknownFieldSerializerLite(const uint8* base,
-                                                uint32 offset, uint32 tag,
-                                                uint32 has_offset,
+PROTOBUF_EXPORT void UnknownFieldSerializerLite(const uint8_t* base,
+                                                uint32_t offset, uint32_t tag,
+                                                uint32_t has_offset,
                                                 io::CodedOutputStream* output);
 
 PROTOBUF_EXPORT MessageLite* DuplicateIfNonNullInternal(MessageLite* message);
@@ -149,6 +162,8 @@ PROTOBUF_EXPORT MessageLite* GetOwnedMessageInternal(Arena* message_arena,
                                                      MessageLite* submessage,
                                                      Arena* submessage_arena);
 PROTOBUF_EXPORT void GenericSwap(MessageLite* m1, MessageLite* m2);
+
+PROTOBUF_EXPORT void GenericSwap(Message* m1, Message* m2);
 
 template <typename T>
 T* DuplicateIfNonNull(T* message) {
@@ -178,64 +193,6 @@ class PROTOBUF_EXPORT CachedSize {
  private:
   std::atomic<int> size_{0};
 };
-
-
-
-struct PROTOBUF_EXPORT SCCInfoBase {
-  
-  
-  enum {
-    kInitialized = 0,  
-    kRunning = 1,
-    kUninitialized = -1,  
-  };
-#if defined(_MSC_VER) && !defined(__clang__)
-  
-  
-  union {
-    int visit_status_to_make_linker_init;
-    std::atomic<int> visit_status;
-  };
-#else
-  std::atomic<int> visit_status;
-#endif
-  int num_deps;
-  int num_implicit_weak_deps;
-  void (*init_func)();
-  
-  
-};
-
-
-
-#ifdef __GNUC__
-#define PROTOBUF_ARRAY_SIZE(n) (n)
-#else
-#define PROTOBUF_ARRAY_SIZE(n) ((n) ? (n) : 1)
-#endif
-
-template <int N>
-struct SCCInfo {
-  SCCInfoBase base;
-  
-  
-  
-  
-  
-  
-  
-  void* deps[PROTOBUF_ARRAY_SIZE(N)];
-};
-
-#undef PROTOBUF_ARRAY_SIZE
-
-PROTOBUF_EXPORT void InitSCCImpl(SCCInfoBase* scc);
-
-inline void InitSCC(SCCInfoBase* scc) {
-  auto status = scc->visit_status.load(std::memory_order_acquire);
-  if (PROTOBUF_PREDICT_FALSE(status != SCCInfoBase::kInitialized))
-    InitSCCImpl(scc);
-}
 
 PROTOBUF_EXPORT void DestroyMessage(const void* message);
 PROTOBUF_EXPORT void DestroyString(const void* s);

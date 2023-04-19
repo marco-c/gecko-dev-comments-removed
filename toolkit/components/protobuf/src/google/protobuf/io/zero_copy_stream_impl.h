@@ -63,7 +63,8 @@ namespace io {
 
 
 
-class PROTOBUF_EXPORT FileInputStream : public ZeroCopyInputStream {
+class PROTOBUF_EXPORT FileInputStream PROTOBUF_FUTURE_FINAL
+    : public ZeroCopyInputStream {
  public:
   
   
@@ -96,7 +97,8 @@ class PROTOBUF_EXPORT FileInputStream : public ZeroCopyInputStream {
   int64_t ByteCount() const override;
 
  private:
-  class PROTOBUF_EXPORT CopyingFileInputStream : public CopyingInputStream {
+  class PROTOBUF_EXPORT CopyingFileInputStream PROTOBUF_FUTURE_FINAL
+      : public CopyingInputStream {
    public:
     CopyingFileInputStream(int file_descriptor);
     ~CopyingFileInputStream() override;
@@ -140,24 +142,21 @@ class PROTOBUF_EXPORT FileInputStream : public ZeroCopyInputStream {
 
 
 
-class PROTOBUF_EXPORT FileOutputStream : public ZeroCopyOutputStream {
+class PROTOBUF_EXPORT FileOutputStream PROTOBUF_FUTURE_FINAL
+    : public CopyingOutputStreamAdaptor {
  public:
   
   
   
   
   explicit FileOutputStream(int file_descriptor, int block_size = -1);
+
   ~FileOutputStream() override;
 
   
   
   
   bool Close();
-
-  
-  
-  
-  bool Flush();
 
   
   
@@ -172,13 +171,9 @@ class PROTOBUF_EXPORT FileOutputStream : public ZeroCopyOutputStream {
   
   int GetErrno() const { return copying_output_.GetErrno(); }
 
-  
-  bool Next(void** data, int* size) override;
-  void BackUp(int count) override;
-  int64_t ByteCount() const override;
-
  private:
-  class PROTOBUF_EXPORT CopyingFileOutputStream : public CopyingOutputStream {
+  class PROTOBUF_EXPORT CopyingFileOutputStream PROTOBUF_FUTURE_FINAL
+      : public CopyingOutputStream {
    public:
     CopyingFileOutputStream(int file_descriptor);
     ~CopyingFileOutputStream() override;
@@ -203,7 +198,6 @@ class PROTOBUF_EXPORT FileOutputStream : public ZeroCopyOutputStream {
   };
 
   CopyingFileOutputStream copying_output_;
-  CopyingOutputStreamAdaptor impl_;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FileOutputStream);
 };
@@ -214,7 +208,8 @@ class PROTOBUF_EXPORT FileOutputStream : public ZeroCopyOutputStream {
 
 
 
-class PROTOBUF_EXPORT IstreamInputStream : public ZeroCopyInputStream {
+class PROTOBUF_EXPORT IstreamInputStream PROTOBUF_FUTURE_FINAL
+    : public ZeroCopyInputStream {
  public:
   
   
@@ -229,7 +224,8 @@ class PROTOBUF_EXPORT IstreamInputStream : public ZeroCopyInputStream {
   int64_t ByteCount() const override;
 
  private:
-  class PROTOBUF_EXPORT CopyingIstreamInputStream : public CopyingInputStream {
+  class PROTOBUF_EXPORT CopyingIstreamInputStream PROTOBUF_FUTURE_FINAL
+      : public CopyingInputStream {
    public:
     CopyingIstreamInputStream(std::istream* input);
     ~CopyingIstreamInputStream() override;
@@ -257,7 +253,8 @@ class PROTOBUF_EXPORT IstreamInputStream : public ZeroCopyInputStream {
 
 
 
-class PROTOBUF_EXPORT OstreamOutputStream : public ZeroCopyOutputStream {
+class PROTOBUF_EXPORT OstreamOutputStream PROTOBUF_FUTURE_FINAL
+    : public ZeroCopyOutputStream {
  public:
   
   
@@ -272,7 +269,7 @@ class PROTOBUF_EXPORT OstreamOutputStream : public ZeroCopyOutputStream {
   int64_t ByteCount() const override;
 
  private:
-  class PROTOBUF_EXPORT CopyingOstreamOutputStream
+  class PROTOBUF_EXPORT CopyingOstreamOutputStream PROTOBUF_FUTURE_FINAL
       : public CopyingOutputStream {
    public:
     CopyingOstreamOutputStream(std::ostream* output);
@@ -303,7 +300,8 @@ class PROTOBUF_EXPORT OstreamOutputStream : public ZeroCopyOutputStream {
 
 
 
-class PROTOBUF_EXPORT ConcatenatingInputStream : public ZeroCopyInputStream {
+class PROTOBUF_EXPORT ConcatenatingInputStream PROTOBUF_FUTURE_FINAL
+    : public ZeroCopyInputStream {
  public:
   
   
@@ -322,7 +320,7 @@ class PROTOBUF_EXPORT ConcatenatingInputStream : public ZeroCopyInputStream {
   
   ZeroCopyInputStream* const* streams_;
   int stream_count_;
-  int64 bytes_retired_;  
+  int64_t bytes_retired_;  
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ConcatenatingInputStream);
 };

@@ -28,16 +28,18 @@
 
 
 
-#ifndef GOOGLE_PROTOBUF_UTIL_CONVERTER_DATAPIECE_H__
-#define GOOGLE_PROTOBUF_UTIL_CONVERTER_DATAPIECE_H__
+#ifndef GOOGLE_PROTOBUF_UTIL_INTERNAL_DATAPIECE_H__
+#define GOOGLE_PROTOBUF_UTIL_INTERNAL_DATAPIECE_H__
 
+#include <cstdint>
 #include <string>
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
 #include <google/protobuf/type.pb.h>
-#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/stubs/statusor.h>
+#include <google/protobuf/stubs/strutil.h>
+
 
 #include <google/protobuf/port_def.inc>
 
@@ -75,13 +77,13 @@ class PROTOBUF_EXPORT DataPiece {
   };
 
   
-  explicit DataPiece(const int32 value)
+  explicit DataPiece(const int32_t value)
       : type_(TYPE_INT32), i32_(value), use_strict_base64_decoding_(false) {}
-  explicit DataPiece(const int64 value)
+  explicit DataPiece(const int64_t value)
       : type_(TYPE_INT64), i64_(value), use_strict_base64_decoding_(false) {}
-  explicit DataPiece(const uint32 value)
+  explicit DataPiece(const uint32_t value)
       : type_(TYPE_UINT32), u32_(value), use_strict_base64_decoding_(false) {}
-  explicit DataPiece(const uint64 value)
+  explicit DataPiece(const uint64_t value)
       : type_(TYPE_UINT64), u64_(value), use_strict_base64_decoding_(false) {}
   explicit DataPiece(const double value)
       : type_(TYPE_DOUBLE),
@@ -93,12 +95,12 @@ class PROTOBUF_EXPORT DataPiece {
       : type_(TYPE_BOOL), bool_(value), use_strict_base64_decoding_(false) {}
   DataPiece(StringPiece value, bool use_strict_base64_decoding)
       : type_(TYPE_STRING),
-        str_(StringPiecePod::CreateFromStringPiece(value)),
+        str_(value),
         use_strict_base64_decoding_(use_strict_base64_decoding) {}
   
-  DataPiece(StringPiece value, bool dummy, bool use_strict_base64_decoding)
+  DataPiece(StringPiece value, bool , bool use_strict_base64_decoding)
       : type_(TYPE_BYTES),
-        str_(StringPiecePod::CreateFromStringPiece(value)),
+        str_(value),
         use_strict_base64_decoding_(use_strict_base64_decoding) {}
 
   DataPiece(const DataPiece& r) : type_(r.type_) { InternalCopy(r); }
@@ -125,16 +127,16 @@ class PROTOBUF_EXPORT DataPiece {
 
 
   
-  util::StatusOr<int32> ToInt32() const;
+  util::StatusOr<int32_t> ToInt32() const;
 
   
-  util::StatusOr<uint32> ToUint32() const;
+  util::StatusOr<uint32_t> ToUint32() const;
 
   
-  util::StatusOr<int64> ToInt64() const;
+  util::StatusOr<int64_t> ToInt64() const;
 
   
-  util::StatusOr<uint64> ToUint64() const;
+  util::StatusOr<uint64_t> ToUint64() const;
 
   
   util::StatusOr<double> ToDouble() const;
@@ -161,16 +163,16 @@ class PROTOBUF_EXPORT DataPiece {
   DataPiece();
 
   
-  DataPiece(Type type, int32 val)
+  DataPiece(Type type, int32_t val)
       : type_(type), i32_(val), use_strict_base64_decoding_(false) {}
 
   
   
   util::StatusOr<int> ToEnum(const google::protobuf::Enum* enum_type,
-                               bool use_lower_camel_for_enums,
-                               bool case_insensitive_enum_parsing,
-                               bool ignore_unknown_enum_values,
-                               bool* is_unknown_enum_value) const;
+                             bool use_lower_camel_for_enums,
+                             bool case_insensitive_enum_parsing,
+                             bool ignore_unknown_enum_values,
+                             bool* is_unknown_enum_value) const;
 
   
   
@@ -180,8 +182,7 @@ class PROTOBUF_EXPORT DataPiece {
   
   
   template <typename To>
-  util::StatusOr<To> StringToNumber(bool (*func)(StringPiece,
-                                                   To*)) const;
+  util::StatusOr<To> StringToNumber(bool (*func)(StringPiece, To*)) const;
 
   
   bool DecodeBase64(StringPiece src, std::string* dest) const;
@@ -192,18 +193,16 @@ class PROTOBUF_EXPORT DataPiece {
   
   Type type_;
 
-  typedef ::google::protobuf::internal::StringPiecePod StringPiecePod;
-
   
   union {
-    int32 i32_;
-    int64 i64_;
-    uint32 u32_;
-    uint64 u64_;
+    int32_t i32_;
+    int64_t i64_;
+    uint32_t u32_;
+    uint64_t u64_;
     double double_;
     float float_;
     bool bool_;
-    StringPiecePod str_;
+    StringPiece str_;
   };
 
   
