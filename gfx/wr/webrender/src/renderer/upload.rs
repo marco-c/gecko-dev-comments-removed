@@ -639,7 +639,7 @@ pub struct UploadTexturePool {
     
     
     temporary_buffers: Vec<Vec<mem::MaybeUninit<u8>>>,
-    used_temporary_buffers: usize,
+    min_temporary_buffers: usize,
     delay_buffer_deallocation: u64,
 }
 
@@ -650,7 +650,7 @@ impl UploadTexturePool {
             delay_texture_deallocation: [0; 3],
             current_frame: 0,
             temporary_buffers: Vec::new(),
-            used_temporary_buffers: 0,
+            min_temporary_buffers: 0,
             delay_buffer_deallocation: 0,
         }
     }
@@ -666,6 +666,7 @@ impl UploadTexturePool {
 
     pub fn begin_frame(&mut self) {
         self.current_frame += 1;
+        self.min_temporary_buffers = self.temporary_buffers.len();
     }
 
     
@@ -715,10 +716,11 @@ impl UploadTexturePool {
     
     
     pub fn get_temporary_buffer(&mut self) -> Vec<mem::MaybeUninit<u8>> {
-        self.used_temporary_buffers += 1;
-        self.temporary_buffers.pop().unwrap_or_else(|| {
+        let buffer = self.temporary_buffers.pop().unwrap_or_else(|| {
             vec![mem::MaybeUninit::new(0); BATCH_UPLOAD_TEXTURE_SIZE.area() as usize * 4]
-        })
+        });
+        self.min_temporary_buffers = self.min_temporary_buffers.min(self.temporary_buffers.len());
+        buffer
     }
 
     
@@ -770,7 +772,12 @@ impl UploadTexturePool {
         }
 
         
-        let unused_buffers = self.temporary_buffers.len() - self.used_temporary_buffers;
+        
+        
+        
+        
+        
+        let unused_buffers = self.min_temporary_buffers;
         if unused_buffers < 8 {
             self.delay_buffer_deallocation = self.current_frame + 120;
         }
@@ -784,7 +791,6 @@ impl UploadTexturePool {
             
             self.temporary_buffers.pop();
         }
-        self.used_temporary_buffers = 0;
     }
 
     pub fn report_memory_to(&self, report: &mut MemoryReport, size_op_funs: &MallocSizeOfOps) {
