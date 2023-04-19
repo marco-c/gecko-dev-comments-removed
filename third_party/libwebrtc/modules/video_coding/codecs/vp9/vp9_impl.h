@@ -21,6 +21,7 @@
 
 #include "api/fec_controller_override.h"
 #include "api/video_codecs/video_encoder.h"
+#include "common_video/include/video_frame_buffer_pool.h"
 #include "media/base/vp9_profile.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
@@ -220,13 +221,18 @@ class VP9DecoderImpl : public VP9Decoder {
                   const webrtc::ColorSpace* explicit_color_space);
 
   
-  Vp9FrameBufferPool frame_buffer_pool_;
+  Vp9FrameBufferPool libvpx_buffer_pool_;
+  
+  VideoFrameBufferPool output_buffer_pool_;
   DecodedImageCallback* decode_complete_callback_;
   bool inited_;
   vpx_codec_ctx_t* decoder_;
   bool key_frame_required_;
   VideoCodec current_codec_;
   int num_cores_;
+
+  
+  const VideoFrameBuffer::Type preferred_output_format_;
 };
 }  
 
