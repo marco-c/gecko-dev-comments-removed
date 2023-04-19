@@ -2910,6 +2910,16 @@ Toolbox.prototype = {
   
 
 
+  disableAllConsoleNetworkLogs: function() {
+    const consolePanel = this.getPanel("webconsole");
+    if (consolePanel) {
+      consolePanel.hud.ui.disableAllNetworkMessages();
+    }
+  },
+
+  
+
+
 
 
   _onFocus: function({ originalTarget }) {

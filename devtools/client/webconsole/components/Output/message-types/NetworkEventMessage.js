@@ -74,6 +74,7 @@ function NetworkEventMessage({
   networkMessageActiveTabId,
   dispatch,
   open,
+  disabled,
 }) {
   const {
     id,
@@ -189,6 +190,7 @@ function NetworkEventMessage({
   
   const attachment =
     open &&
+    !disabled &&
     dom.div(
       {
         className: "network-info network-monitor",
@@ -222,6 +224,7 @@ function NetworkEventMessage({
     indent,
     collapsible: true,
     open,
+    disabled,
     onToggle,
     attachment,
     topLevelClasses,
