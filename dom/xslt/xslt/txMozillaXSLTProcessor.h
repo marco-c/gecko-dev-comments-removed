@@ -36,8 +36,6 @@ enum class ReferrerPolicy : uint8_t;
 }  
 }  
 
-#define XSLT_MSGS_URL "chrome://global/locale/xslt/xslt.properties"
-
 
 
 

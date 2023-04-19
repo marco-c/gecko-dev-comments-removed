@@ -4,7 +4,10 @@
 
 
 
-EXPORTS.mozilla.dom += ["txMozillaXSLTProcessor.h"]
+EXPORTS.mozilla.dom += [
+    "txMozillaXSLTProcessor.h",
+    "txXSLTMsgsURL.h",
+]
 
 XPIDL_MODULE = "dom_xslt"
 
