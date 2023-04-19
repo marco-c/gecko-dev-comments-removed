@@ -587,6 +587,7 @@ var View = {
       }
       document.l10n.setAttributes(processNameElement, fluentName, fluentArgs);
       nameCell.className = ["type", "favicon", ...classNames].join(" ");
+      nameCell.setAttribute("id", data.pid + "-label");
 
       let image;
       switch (data.type) {
@@ -759,17 +760,26 @@ var View = {
     if (!nameCell.firstChild) {
       nameCell.className = "name indent";
       
-      let img = document.createElement("span");
-      img.className = "twisty";
-      nameCell.appendChild(img);
+      let imgBtn = document.createElement("span");
+      
+      imgBtn.className = "twisty";
+      imgBtn.setAttribute("role", "button");
+      imgBtn.setAttribute("tabindex", "0");
+      
+      imgBtn.setAttribute("aria-labelledby", `${data.pid}-label ${rowId}`);
+      if (!imgBtn.hasAttribute("aria-expanded")) {
+        imgBtn.setAttribute("aria-expanded", "false");
+      }
+      nameCell.appendChild(imgBtn);
 
       span = document.createElement("span");
+      span.setAttribute("id", rowId);
       nameCell.appendChild(span);
     } else {
       
-      let img = nameCell.firstChild;
-      isOpen = img.classList.contains("open");
-      span = img.nextSibling;
+      let imgBtn = nameCell.firstChild;
+      isOpen = imgBtn.classList.contains("open");
+      span = imgBtn.nextSibling;
     }
     document.l10n.setAttributes(span, fluentName, fluentArgs);
 
@@ -1056,53 +1066,24 @@ var Control = {
     
     
     
+    
+    
     tbody.addEventListener("click", event => {
       this._updateLastMouseEvent();
 
-      
-      let target = event.target;
-      if (target.classList.contains("twisty")) {
-        this._handleTwisty(target);
-        return;
-      }
-      if (target.classList.contains("close-icon")) {
-        this._handleKill(target);
-        return;
-      }
+      this._handleActivate(event.target);
+    });
 
-      if (target.classList.contains("profiler-icon")) {
-        if (Services.profiler.IsActive()) {
-          return;
-        }
-        Services.profiler.StartProfiler(
-          10000000,
-          1,
-          ["default", "ipcmessages", "power"],
-          ["pid:" + target.parentNode.parentNode.process.pid]
-        );
-        target.classList.add("profiler-active");
-        setTimeout(() => {
-          ProfilerPopupBackground.captureProfile("aboutprofiling");
-          target.classList.remove("profiler-active");
-        }, PROFILE_DURATION * 1000);
-        return;
-      }
-
+    
+    
+    
+    
+    
+    tbody.addEventListener("keypress", event => {
       
-      let row = target.closest("tr");
-      if (!row) {
-        return;
+      if (event.key === "Enter" || event.key === " ") {
+        this._handleActivate(event.target);
       }
-      if (this.selectedRow) {
-        this.selectedRow.removeAttribute("selected");
-        if (this.selectedRow.rowId == row.rowId) {
-          
-          this.selectedRow = null;
-          return;
-        }
-      }
-      row.setAttribute("selected", "true");
-      this.selectedRow = row;
     });
 
     
@@ -1436,12 +1417,33 @@ var Control = {
   },
 
   
+  _handleActivate(target) {
+    if (target.classList.contains("twisty")) {
+      this._handleTwisty(target);
+      return;
+    }
+    if (target.classList.contains("close-icon")) {
+      this._handleKill(target);
+      return;
+    }
+
+    if (target.classList.contains("profiler-icon")) {
+      this._handleProfiling(target);
+      return;
+    }
+
+    this._handleSelection(target);
+  },
+
+  
   _handleTwisty(target) {
     let row = target.parentNode.parentNode;
     if (target.classList.toggle("open")) {
+      target.setAttribute("aria-expanded", "true");
       this._showThreads(row, this._maxSlopeCpu);
       View.insertAfterRow(row);
     } else {
+      target.setAttribute("aria-expanded", "false");
       this._removeSubtree(row);
     }
   },
@@ -1511,6 +1513,42 @@ var Control = {
         }
       }
     }
+  },
+
+  
+  _handleProfiling(target) {
+    if (Services.profiler.IsActive()) {
+      return;
+    }
+    Services.profiler.StartProfiler(
+      10000000,
+      1,
+      ["default", "ipcmessages", "power"],
+      ["pid:" + target.parentNode.parentNode.process.pid]
+    );
+    target.classList.add("profiler-active");
+    setTimeout(() => {
+      ProfilerPopupBackground.captureProfile("aboutprofiling");
+      target.classList.remove("profiler-active");
+    }, PROFILE_DURATION * 1000);
+  },
+
+  
+  _handleSelection(target) {
+    let row = target.closest("tr");
+    if (!row) {
+      return;
+    }
+    if (this.selectedRow) {
+      this.selectedRow.removeAttribute("selected");
+      if (this.selectedRow.rowId == row.rowId) {
+        
+        this.selectedRow = null;
+        return;
+      }
+    }
+    row.setAttribute("selected", "true");
+    this.selectedRow = row;
   },
 };
 
