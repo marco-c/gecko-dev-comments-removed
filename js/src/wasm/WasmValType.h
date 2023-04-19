@@ -519,16 +519,6 @@ class PackedType : public T {
     return RefType(tc_).kind();
   }
 
-  void renumber(const RenumberVector& renumbering) {
-    if (!isTypeIndex()) {
-      return;
-    }
-
-    uint32_t newIndex = renumbering[typeIndex()];
-    MOZ_ASSERT(newIndex != UINT32_MAX);
-    *this = RefType::fromTypeIndex(newIndex, isNullable());
-  }
-
   
   
   
