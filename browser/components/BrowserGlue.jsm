@@ -2513,6 +2513,8 @@ BrowserGlue.prototype = {
             "feltPrivacyWindowSeparation"
           ) &&
           
+          lazy.PrivateBrowsingUtils.enabled &&
+          
           
           !Services.sysinfo.getProperty("hasWinPackageId") &&
           
