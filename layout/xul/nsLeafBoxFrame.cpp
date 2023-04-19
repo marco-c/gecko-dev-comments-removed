@@ -295,9 +295,6 @@ nsSize nsLeafBoxFrame::GetXULMaxSize(nsBoxLayoutState& aState) {
 }
 
 
-int32_t nsLeafBoxFrame::GetXULFlex() { return nsIFrame::ComputeXULFlex(this); }
-
-
 nscoord nsLeafBoxFrame::GetXULBoxAscent(nsBoxLayoutState& aState) {
   if (IsXULCollapsed()) {
     return 0;
