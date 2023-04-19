@@ -370,7 +370,7 @@ add_task(async function test_getViews_excludes_blocked_parsing_documents() {
     
     
     let mouseOverEvent = new MouseEvent("mouseover");
-    widget.node.dispatchEvent(mouseOverEvent);
+    widget.node.firstElementChild.dispatchEvent(mouseOverEvent);
 
     await TestUtils.waitForCondition(
       () => browserAction.pendingPopup?.browser,

@@ -366,7 +366,8 @@ add_task(async function testDetailsObjects() {
 
   
   const DEFAULT_ICON = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
-  let browserActionButton = browserActionWidget.forWindow(window).node;
+  let browserActionButton = browserActionWidget.forWindow(window).node
+    .firstElementChild;
   let pageActionImage = document.getElementById(pageActionId);
   is(
     getListStyleImage(browserActionButton),
