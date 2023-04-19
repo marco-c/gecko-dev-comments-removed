@@ -1451,9 +1451,6 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   
   nsRect anchorRect;
 
-  
-  int32_t parentWidth = 0;
-
   bool anchored = IsAnchored();
   if (anchored || aSizedToPopup) {
     
@@ -1486,9 +1483,6 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
 
       anchorRect = ComputeAnchorRect(rootPresContext, aAnchorFrame);
     }
-
-    
-    parentWidth = anchorRect.width;
   }
 
   
@@ -1500,12 +1494,17 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
                  "preferred size of popup not set");
     nsSize newSize = mPrefSize;
     if (aSizedToPopup) {
-      newSize.width = parentWidth;
+      
+      
+      const nscoord inputMargin =
+          StyleUIReset()->mMozWindowInputRegionMargin.ToAppUnits();
+      newSize.width = anchorRect.width + 2 * inputMargin;
       
       
       if (mAnchorType == MenuPopupAnchorType_Rect) {
-        newSize.width = std::max(parentWidth, mPrefSize.width);
+        newSize.width = std::max(newSize.width, mPrefSize.width);
       }
+
       
       ConstrainSizeForWayland(newSize);
     }
@@ -1629,11 +1628,9 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
 
       
       
-      nsMargin rawMargin;
-      if (StyleMargin()->GetMargin(rawMargin)) {
-        rawMargin.EnsureAtMost(nsMargin());
-        sr.Deflate(rawMargin);
-      }
+      const nscoord inputMargin =
+          StyleUIReset()->mMozWindowInputRegionMargin.ToAppUnits();
+      sr.Inflate(inputMargin);
       return sr;
     }();
 
