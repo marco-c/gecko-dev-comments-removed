@@ -1191,6 +1191,13 @@ namespace webgl {
 
 
 inline constexpr size_t kMaxDrawBuffers = 8;
+
+union UniformDataVal {
+  float f32;
+  int32_t i32;
+  uint32_t u32;
+};
+
 }  
 
 }  

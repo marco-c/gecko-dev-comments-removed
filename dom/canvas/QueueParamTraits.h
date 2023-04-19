@@ -95,6 +95,13 @@ static_assert(!BytesAlwaysValidT<bool[4]>::value);
 
 
 
+template <>
+struct BytesAlwaysValidT<webgl::UniformDataVal> {
+  static constexpr bool value = true;
+};
+
+
+
 
 
 
