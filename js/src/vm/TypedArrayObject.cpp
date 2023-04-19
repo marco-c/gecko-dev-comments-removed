@@ -352,8 +352,6 @@ static TypedArrayObject* NewTypedArrayObject(JSContext* cx,
   return &obj->as<TypedArrayObject>();
 }
 
-enum class SpeciesConstructorOverride { None, ArrayBuffer };
-
 template <typename NativeType>
 class TypedArrayObjectTemplate : public TypedArrayObject {
   friend class TypedArrayObject;
@@ -1141,67 +1139,6 @@ template <typename T>
   return true;
 }
 
-static bool IsArrayBufferSpecies(JSContext* cx, JSFunction* species) {
-  return IsSelfHostedFunctionWithName(species, cx->names().ArrayBufferSpecies);
-}
-
-static JSObject* GetBufferSpeciesConstructor(
-    JSContext* cx, Handle<TypedArrayObject*> typedArray, bool isWrapped,
-    SpeciesConstructorOverride override) {
-  RootedObject defaultCtor(
-      cx, GlobalObject::getOrCreateArrayBufferConstructor(cx, cx->global()));
-  if (!defaultCtor) {
-    return nullptr;
-  }
-
-  
-  if (override == SpeciesConstructorOverride::ArrayBuffer) {
-    return defaultCtor;
-  }
-
-  RootedObject obj(cx, typedArray->bufferEither());
-  if (!obj) {
-    MOZ_ASSERT(!isWrapped);
-
-    
-    
-    
-    
-    
-
-    JSObject* proto =
-        GlobalObject::getOrCreateArrayBufferPrototype(cx, cx->global());
-    if (!proto) {
-      return nullptr;
-    }
-
-    Value ctor;
-    bool found;
-    if (GetOwnPropertyPure(cx, proto, NameToId(cx->names().constructor), &ctor,
-                           &found) &&
-        ctor.isObject() && &ctor.toObject() == defaultCtor) {
-      jsid speciesId = PropertyKey::Symbol(cx->wellKnownSymbols().species);
-      JSFunction* getter;
-      if (GetOwnGetterPure(cx, defaultCtor, speciesId, &getter) && getter &&
-          IsArrayBufferSpecies(cx, getter)) {
-        return defaultCtor;
-      }
-    }
-
-    if (!TypedArrayObject::ensureHasBuffer(cx, typedArray)) {
-      return nullptr;
-    }
-
-    obj.set(typedArray->bufferEither());
-  } else {
-    if (isWrapped && !cx->compartment()->wrap(cx, &obj)) {
-      return nullptr;
-    }
-  }
-
-  return SpeciesConstructor(cx, obj, defaultCtor, IsArrayBufferSpecies);
-}
-
 template <typename T>
  TypedArrayObject* TypedArrayObjectTemplate<T>::fromArray(
     JSContext* cx, HandleObject other, HandleObject proto ) {
@@ -1271,13 +1208,8 @@ template <typename T>
   
 
   
-  bool isShared = srcArray->isSharedMemory();
-  SpeciesConstructorOverride override =
-      isShared ? SpeciesConstructorOverride::ArrayBuffer
-               : SpeciesConstructorOverride::None;
-
   RootedObject bufferCtor(
-      cx, GetBufferSpeciesConstructor(cx, srcArray, isWrapped, override));
+      cx, GlobalObject::getOrCreateArrayBufferConstructor(cx, cx->global()));
   if (!bufferCtor) {
     return nullptr;
   }
@@ -1316,7 +1248,7 @@ template <typename T>
 
   
   MOZ_ASSERT(!obj->isSharedMemory());
-  if (isShared) {
+  if (srcArray->isSharedMemory()) {
     if (!ElementSpecific<T, SharedOps>::setFromTypedArray(obj, srcArray, 0)) {
       return nullptr;
     }
