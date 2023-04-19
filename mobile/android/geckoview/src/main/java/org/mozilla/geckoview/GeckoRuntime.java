@@ -23,6 +23,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.Process;
 import android.provider.Settings;
+import android.text.format.DateFormat;
 import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
@@ -164,6 +165,10 @@ public final class GeckoRuntime implements Parcelable {
       
       
       GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
+
+      
+      GeckoAppShell.setIs24HourFormat(
+          DateFormat.is24HourFormat(GeckoAppShell.getApplicationContext()));
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)

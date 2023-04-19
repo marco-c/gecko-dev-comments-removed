@@ -72,20 +72,6 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
         })
     }
 
-    private fun pressHome() {
-        val intent = Intent();
-        intent.action = Intent.ACTION_MAIN;
-        intent.addCategory(Intent.CATEGORY_HOME);
-        context.startActivity(intent);
-    }
-
-    private fun setActivityToForeground() {
-        val notificationIntent = Intent(context, GeckoViewTestActivity::class.java)
-        notificationIntent.action = Intent.ACTION_MAIN;
-        notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        context.startActivity(notificationIntent)
-    }
-
     private fun getCurrentPositionJS(): JSONObject {
          return mainSession.evaluatePromiseJS("""
                     new Promise((resolve, reject) =>
@@ -180,11 +166,11 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 
         
         Handler(Looper.getMainLooper()).postDelayed({
-            setActivityToForeground()
+            sessionRule.requestActivityToForeground(context)
         }, 1500)
 
         
-        pressHome()
+        sessionRule.simulatePressHome(context)
 
         
         val whilePausingPosition = getCurrentPositionJSWithWait()
