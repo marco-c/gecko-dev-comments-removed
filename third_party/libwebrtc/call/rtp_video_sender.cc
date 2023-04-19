@@ -497,28 +497,27 @@ void RtpVideoSender::SetActiveModulesLocked(
       active_ = true;
     }
 
-    const bool was_active = rtp_streams_[i].rtp_rtcp->SendingMedia();
+    RtpRtcpInterface& rtp_module = *rtp_streams_[i].rtp_rtcp;
+    const bool was_active = rtp_module.SendingMedia();
     const bool should_be_active = active_modules[i];
 
     
-    rtp_streams_[i].rtp_rtcp->SetSendingStatus(active_modules[i]);
+    rtp_module.SetSendingStatus(active_modules[i]);
 
     if (was_active && !should_be_active) {
       
       
       
-      transport_->packet_router()->RemoveSendRtpModule(
-          rtp_streams_[i].rtp_rtcp.get());
+      transport_->packet_router()->RemoveSendRtpModule(&rtp_module);
     }
 
     
-    rtp_streams_[i].rtp_rtcp->SetSendingMediaStatus(active_modules[i]);
+    rtp_module.SetSendingMediaStatus(active_modules[i]);
 
     if (!was_active && should_be_active) {
       
-      transport_->packet_router()->AddSendRtpModule(
-          rtp_streams_[i].rtp_rtcp.get(),
-          true);
+      transport_->packet_router()->AddSendRtpModule(&rtp_module,
+                                                    true);
     }
   }
 }
