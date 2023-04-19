@@ -151,6 +151,11 @@ class SheetLoadData final
   
   
   
+  bool mIsLoading : 1;
+
+  
+  
+  
   
   bool mIsCancelled : 1;
 
@@ -254,6 +259,13 @@ class SheetLoadData final
   bool IsLinkRelPreload() const { return css::IsLinkRelPreload(mPreloadKind); }
 
   bool BlocksLoadEvent() const { return !RootLoadData().IsLinkRelPreload(); }
+
+  bool IsLoading() const override { return mIsLoading; }
+  bool IsCancelled() const override { return mIsCancelled; }
+
+  void StartLoading() override { mIsLoading = true; }
+  void SetLoadCompleted() override { mIsLoading = false; }
+  void Cancel() override { mIsCancelled = true; }
 
  private:
   const SheetLoadData& RootLoadData() const {

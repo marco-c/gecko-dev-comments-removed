@@ -48,7 +48,7 @@ void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
     cancelledStatus = NS_BINDING_ABORTED;
     css::SheetLoadData* data = &aData;
     do {
-      if (data->mIsCancelled) {
+      if (data->IsCancelled()) {
         
         
         css::Loader::MarkLoadTreeFailed(*data, data->mLoader);
@@ -64,7 +64,7 @@ void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
 
   
   for (RefPtr<css::SheetLoadData>& data : datasToNotify) {
-    auto status = data->mIsCancelled ? cancelledStatus : aStatus;
+    auto status = data->IsCancelled() ? cancelledStatus : aStatus;
     data->mLoader->NotifyObservers(*data, status);
   }
 }
