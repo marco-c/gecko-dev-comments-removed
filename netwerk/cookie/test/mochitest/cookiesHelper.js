@@ -11,7 +11,6 @@ async function cleanupData() {
             Services.clearData.CLEAR_ALL_CACHES |
             Services.clearData.CLEAR_DOM_STORAGES,
           ___ => {
-            
             sendAsyncMessage("done");
           }
         );

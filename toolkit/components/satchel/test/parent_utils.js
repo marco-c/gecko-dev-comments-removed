@@ -1,7 +1,5 @@
 
 
-
-
 const { FormHistory } = ChromeUtils.import(
   "resource://gre/modules/FormHistory.jsm"
 );

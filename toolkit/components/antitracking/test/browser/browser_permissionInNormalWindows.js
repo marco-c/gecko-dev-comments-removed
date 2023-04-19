@@ -15,7 +15,6 @@ AntiTracking.runTest(
         
         addMessageListener("go", _ => {
           function ok(what, msg) {
-            
             sendAsyncMessage("ok", { what: !!what, msg });
           }
 
@@ -42,7 +41,6 @@ AntiTracking.runTest(
             ok(perm.expireTime > 0, "Permission must have a expiry time");
           }
 
-          
           sendAsyncMessage("done");
         });
       });

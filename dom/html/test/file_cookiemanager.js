@@ -1,3 +1,5 @@
+
+
 addMessageListener("getCookieFromManager", ({ host, path }) => {
   let cm = Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager);
   let values = [];

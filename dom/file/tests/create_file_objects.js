@@ -1,3 +1,5 @@
+
+
 Cu.importGlobalProperties(["File"]);
 
 addMessageListener("create-file-objects", function(message) {

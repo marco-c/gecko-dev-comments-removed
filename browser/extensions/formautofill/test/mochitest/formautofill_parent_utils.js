@@ -1,7 +1,5 @@
 
 
-
-
 "use strict";
 
 const { FormAutofill } = ChromeUtils.import(

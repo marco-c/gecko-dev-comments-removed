@@ -3,11 +3,9 @@
 
 
 
+
+
 "use strict";
-
-
-
-
 
 var { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"

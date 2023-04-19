@@ -246,6 +246,7 @@ var chromeScript;
 
 function runTests(flag, prefs, trackingResource) {
   chromeScript = SpecialPowers.loadChromeScript(_ => {
+    
     function onExamResp(subject, topic, data) {
       let channel = subject.QueryInterface(Ci.nsIHttpChannel);
       let classifiedChannel = subject.QueryInterface(Ci.nsIClassifiedChannel);
@@ -259,21 +260,18 @@ function runTests(flag, prefs, trackingResource) {
         return;
       }
 
-      
       sendAsyncMessage("last-channel-flags", {
         classificationFlags: classifiedChannel.classificationFlags,
         isThirdPartyTrackingResource: classifiedChannel.isThirdPartyTrackingResource(),
       });
     }
 
-    
     addMessageListener("done", __ => {
       Services.obs.removeObserver(onExamResp, "http-on-examine-response");
     });
 
     Services.obs.addObserver(onExamResp, "http-on-examine-response");
 
-    
     sendAsyncMessage("start-test");
   });
 

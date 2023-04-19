@@ -728,6 +728,7 @@ function runInParent(aFunctionOrURL) {
 
 function addLoginsInParent(...aLogins) {
   let script = runInParent(function addLoginsInParentInner() {
+    
     addMessageListener("addLogins", logins => {
       let nsLoginInfo = Components.Constructor(
         "@mozilla.org/login-manager/loginInfo;1",
@@ -809,6 +810,7 @@ SimpleTest.registerCleanupFunction(() => {
   PWMGR_COMMON_PARENT.sendAsyncMessage("cleanup");
 
   runInParent(function cleanupParent() {
+    
     
     const { LoginManagerParent } = ChromeUtils.import(
       "resource://gre/modules/LoginManagerParent.jsm"
