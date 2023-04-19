@@ -66,6 +66,8 @@ add_task(async () => {
     return;
   }
 
+  await pushPref("dom.abort_script_on_child_shutdown", true);
+
   
   pushPref("dom.ipc.processPreload.enabled", false);
   
