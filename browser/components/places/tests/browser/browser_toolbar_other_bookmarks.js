@@ -26,6 +26,13 @@ const bookmarksInfo = [
 
 
 add_setup(async function() {
+  
+  if (navigator.platform.indexOf("Win") == 0) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["widget.windows.window_occlusion_tracking.enabled", false]],
+    });
+  }
+
   let toolbar = document.getElementById("PersonalToolbar");
   let wasCollapsed = toolbar.collapsed;
 

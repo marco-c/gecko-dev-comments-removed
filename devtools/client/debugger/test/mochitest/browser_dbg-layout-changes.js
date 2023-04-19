@@ -13,6 +13,15 @@ requestLongerTimeout(2);
 
 let gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");
 
+add_setup(async function() {
+  
+  if (navigator.platform.indexOf("Win") == 0) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["widget.windows.window_occlusion_tracking.enabled", false]],
+    });
+  }
+});
+
 add_task(async function() {
   
   const dbg = await initDebugger("doc-iframes.html");

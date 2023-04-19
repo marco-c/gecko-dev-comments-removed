@@ -168,8 +168,7 @@ function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
 
 
 
-
-function promiseSetToolbarVisibility(aToolbar, aVisible, aCallback) {
+function promiseSetToolbarVisibility(aToolbar, aVisible) {
   if (isToolbarVisible(aToolbar) != aVisible) {
     let visibilityChanged = TestUtils.waitForCondition(
       () => aToolbar.collapsed != aVisible
