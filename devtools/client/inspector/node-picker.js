@@ -55,14 +55,28 @@ class NodePicker extends EventEmitter {
 
 
 
-  #onDocumentEventResourceAvailable = async resources => {
+  #onWebExtensionDocumentEventAvailable = async resources => {
     const { DOCUMENT_EVENT } = this.commands.resourceCommand.TYPES;
 
     for (const resource of resources) {
       if (
         resource.resourceType == DOCUMENT_EVENT &&
         resource.name === "dom-complete" &&
-        resource.targetFront.isTopLevel
+        resource.targetFront.isTopLevel &&
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        resource.isFrameSwitching
       ) {
         const inspectorFront = await resource.targetFront.getFront("inspector");
         
@@ -71,6 +85,7 @@ class NodePicker extends EventEmitter {
         
         await inspectorFront.walker.cancelPick();
         await inspectorFront.walker.pick(this.doFocus);
+        this.emitForTests("node-picker-webextension-target-restarted");
       }
     }
   };
@@ -175,7 +190,7 @@ class NodePicker extends EventEmitter {
       await this.commands.resourceCommand.watchResources(
         [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
         {
-          onAvailable: this.#onDocumentEventResourceAvailable,
+          onAvailable: this.#onWebExtensionDocumentEventAvailable,
         }
       );
     }
@@ -210,7 +225,7 @@ class NodePicker extends EventEmitter {
       this.commands.resourceCommand.unwatchResources(
         [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
         {
-          onAvailable: this.#onDocumentEventResourceAvailable,
+          onAvailable: this.#onWebExtensionDocumentEventAvailable,
         }
       );
     }

@@ -70,9 +70,14 @@ add_task(async function testNodePickerInExtensionPopup() {
   
   
   
+  
+  const nodePickerRestarted = toolbox.nodePicker.once(
+    "node-picker-webextension-target-restarted"
+  );
   const reloaded = inspector.once("reloaded");
   clickOnAddonWidget(ADDON_ID);
   await reloaded;
+  await nodePickerRestarted;
 
   const popup = await waitFor(() =>
     gBrowser.ownerDocument.querySelector(".webextension-popup-browser")
