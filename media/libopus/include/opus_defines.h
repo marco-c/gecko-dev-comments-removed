@@ -485,7 +485,9 @@ extern "C" {
 
 
 
+
 #define OPUS_SET_INBAND_FEC(x) OPUS_SET_INBAND_FEC_REQUEST, __opus_check_int(x)
+
 
 
 
