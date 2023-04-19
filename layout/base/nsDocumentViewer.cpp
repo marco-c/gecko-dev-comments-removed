@@ -2924,8 +2924,11 @@ nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
 
   OnDonePrinting();
   RefPtr<nsPrintJob> printJob = new nsPrintJob();
+
+  
+  
   nsresult rv =
-      printJob->Initialize(this, mContainer, mDocument,
+      printJob->Initialize(*this, *mContainer, *mDocument,
                            float(AppUnitsPerCSSInch()) /
                                float(mDeviceContext->AppUnitsPerDevPixel()));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2935,7 +2938,6 @@ nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
 
   mPrintJob = printJob;
 
-  
   rv = printJob->Print(*mDocument, aPrintSettings, aRemotePrintJob,
                        aWebProgressListener);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2971,8 +2973,10 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
 
   RefPtr<nsPrintJob> printJob = new nsPrintJob();
 
+  
+  
   nsresult rv =
-      printJob->Initialize(this, mContainer, doc,
+      printJob->Initialize(*this, *mContainer, *doc,
                            float(AppUnitsPerCSSInch()) /
                                float(mDeviceContext->AppUnitsPerDevPixel()));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2981,7 +2985,6 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
   }
   mPrintJob = printJob;
 
-  
   rv = printJob->PrintPreview(*doc, aPrintSettings, aWebProgressListener,
                               std::move(aCallback));
   if (NS_WARN_IF(NS_FAILED(rv))) {

@@ -263,27 +263,23 @@ void nsPrintJob::DestroyPrintingData() {
 
 
 
-nsresult nsPrintJob::Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
-                                nsIDocShell* aDocShell, Document* aOriginalDoc,
+nsresult nsPrintJob::Initialize(nsIDocumentViewerPrint& aDocViewerPrint,
+                                nsIDocShell& aDocShell, Document& aOriginalDoc,
                                 float aScreenDPI) {
-  NS_ENSURE_ARG_POINTER(aDocViewerPrint);
-  NS_ENSURE_ARG_POINTER(aDocShell);
-  NS_ENSURE_ARG_POINTER(aOriginalDoc);
-
-  mDocViewerPrint = aDocViewerPrint;
-  mDocShell = do_GetWeakReference(aDocShell);
+  mDocViewerPrint = &aDocViewerPrint;
+  mDocShell = do_GetWeakReference(&aDocShell);
   mScreenDPI = aScreenDPI;
 
   
   
   
 
-  Element* root = aOriginalDoc->GetRootElement();
+  Element* root = aOriginalDoc.GetRootElement();
   mDisallowSelectionPrint =
       root &&
       root->HasAttr(kNameSpaceID_None, nsGkAtoms::mozdisallowselectionprint);
 
-  if (nsPIDOMWindowOuter* window = aOriginalDoc->GetWindow()) {
+  if (nsPIDOMWindowOuter* window = aOriginalDoc.GetWindow()) {
     if (nsCOMPtr<nsIWebBrowserChrome> wbc = window->GetWebBrowserChrome()) {
       
       
