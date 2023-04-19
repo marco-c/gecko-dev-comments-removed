@@ -412,25 +412,14 @@ bool HasTransportCc(const Codec& codec) {
 const VideoCodec* FindMatchingCodec(
     const std::vector<VideoCodec>& supported_codecs,
     const VideoCodec& codec) {
+  webrtc::SdpVideoFormat sdp_video_format{codec.name, codec.params};
   for (const VideoCodec& supported_codec : supported_codecs) {
-    if (IsSameCodec(codec.name, codec.params, supported_codec.name,
-                    supported_codec.params)) {
+    if (sdp_video_format.IsSameCodec(
+            {supported_codec.name, supported_codec.params})) {
       return &supported_codec;
     }
   }
   return nullptr;
-}
-
-
-
-bool IsSameCodec(const std::string& name1,
-                 const CodecParameterMap& params1,
-                 const std::string& name2,
-                 const CodecParameterMap& params2) {
-  
-  
-  return absl::EqualsIgnoreCase(name1, name2) &&
-         IsSameCodecSpecific(name1, params1, name2, params2);
 }
 
 
