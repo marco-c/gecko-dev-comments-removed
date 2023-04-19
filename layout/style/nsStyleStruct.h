@@ -1705,7 +1705,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     auto contain = mContain;
     
     
-    if (MOZ_LIKELY(mContainerType == mozilla::StyleContainerType::Normal) &&
+    if (MOZ_LIKELY(!mContainerType) &&
         MOZ_LIKELY(mContentVisibility == StyleContentVisibility::Visible)) {
       return contain;
     }
@@ -1726,24 +1726,18 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
         break;
     }
 
-    switch (mContainerType) {
-      case mozilla::StyleContainerType::Normal:
-        break;
-      case mozilla::StyleContainerType::InlineSize:
-        
-        
-        
-        contain |= mozilla::StyleContain::LAYOUT |
-                   mozilla::StyleContain::STYLE |
-                   mozilla::StyleContain::INLINE_SIZE;
-        break;
-      case mozilla::StyleContainerType::Size:
-        
-        
-        
-        contain |= mozilla::StyleContain::LAYOUT |
-                   mozilla::StyleContain::STYLE | mozilla::StyleContain::SIZE;
-        break;
+    if (mContainerType & mozilla::StyleContainerType::SIZE) {
+      
+      
+      
+      contain |= mozilla::StyleContain::LAYOUT | mozilla::StyleContain::STYLE |
+                 mozilla::StyleContain::SIZE;
+    } else if (mContainerType & mozilla::StyleContainerType::INLINE_SIZE) {
+      
+      
+      
+      contain |= mozilla::StyleContain::LAYOUT | mozilla::StyleContain::STYLE |
+                 mozilla::StyleContain::INLINE_SIZE;
     }
 
     return contain;
