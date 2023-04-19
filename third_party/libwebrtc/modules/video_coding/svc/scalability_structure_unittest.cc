@@ -292,7 +292,8 @@ TEST_P(ScalabilityStructureTest, ProduceNoFrameForDisabledLayers) {
 INSTANTIATE_TEST_SUITE_P(
     Svc,
     ScalabilityStructureTest,
-    Values(SvcTestParam{"L1T2", 4},
+    Values(SvcTestParam{"NONE", 3},
+           SvcTestParam{"L1T2", 4},
            SvcTestParam{"L1T3", 8},
            SvcTestParam{"L2T1", 3},
            SvcTestParam{"L2T1_KEY", 3},
