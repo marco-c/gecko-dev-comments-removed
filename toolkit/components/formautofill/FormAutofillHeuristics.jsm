@@ -510,6 +510,11 @@ class FieldScanner {
       return [null, null];
     }
 
+    
+    if (lazy.FormAutofillUtils.ccHeuristicTestConfidence != null) {
+      highestConfidence = lazy.FormAutofillUtils.ccHeuristicTestConfidence;
+    }
+
     return [highestField, highestConfidence];
   }
 
