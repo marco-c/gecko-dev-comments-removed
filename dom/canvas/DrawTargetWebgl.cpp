@@ -795,6 +795,7 @@ bool DrawTargetWebgl::LockBits(uint8_t** aData, IntSize* aSize,
                                IntPoint* aOrigin) {
   
   if (mSkiaValid && !mSkiaLayer) {
+    MarkSkiaChanged();
     return mSkia->LockBits(aData, aSize, aStride, aFormat, aOrigin);
   }
   return false;
