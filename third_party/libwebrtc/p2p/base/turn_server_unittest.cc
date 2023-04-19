@@ -21,7 +21,7 @@ namespace cricket {
 
 class TurnServerConnectionTest : public ::testing::Test {
  public:
-  TurnServerConnectionTest() : thread_(&vss_) {}
+  TurnServerConnectionTest() : thread_(&vss_), socket_factory_(&vss_) {}
 
   void ExpectEqual(const TurnServerConnection& a,
                    const TurnServerConnection& b) {
@@ -41,8 +41,6 @@ class TurnServerConnectionTest : public ::testing::Test {
  protected:
   rtc::VirtualSocketServer vss_;
   rtc::AutoSocketServerThread thread_;
-  
-  
   rtc::BasicPacketSocketFactory socket_factory_;
 };
 
