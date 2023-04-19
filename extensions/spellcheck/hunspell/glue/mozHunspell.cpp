@@ -453,6 +453,7 @@ mozHunspell::Check(const nsAString& aWord, bool* aResult) {
     return NS_ERROR_FAILURE;
   }
 
+  *aResult = true;
   for (auto iter = mHunspells.Iter(); !iter.Done(); iter.Next()) {
     if (!iter.Data().mEnabled) {
       continue;
@@ -465,7 +466,18 @@ mozHunspell::Check(const nsAString& aWord, bool* aResult) {
 
     std::string charsetWord;
     rv = iter.Data().ConvertCharset(aWord, charsetWord);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      continue;
+    }
+
+    
+    
+    
+    
+    
+    if (charsetWord.empty() || charsetWord[0] == 0) {
+      continue;
+    }
 
     *aResult = iter.Data().mHunspell->spell(charsetWord);
     if (*aResult) {
