@@ -259,7 +259,7 @@ addAccessibleTask(
   {
     chrome: true,
     topLevel: !isWinNoCache,
-    iframe: !isWinNoCache,
-    remoteIframe: !isWinNoCache,
+    iframe: false, 
+    remoteIframe: false, 
   }
 );
