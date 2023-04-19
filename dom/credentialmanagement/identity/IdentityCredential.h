@@ -68,6 +68,23 @@ class IdentityCredential final : public Credential {
   
   
   
+  static RefPtr<GetIPCIdentityCredentialPromise> CreateCredential(
+      nsIPrincipal* aPrincipal, const IdentityProvider& aProvider);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static RefPtr<ValidationPromise> CheckRootManifest(
       nsIPrincipal* aPrincipal, const IdentityProvider& aProvider);
 
