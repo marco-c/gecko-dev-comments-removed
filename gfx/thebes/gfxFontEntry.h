@@ -492,14 +492,14 @@ class gfxFontEntry {
   gfxSVGGlyphs* GetSVGGlyphs() const { return mSVGGlyphs; }
 
   
-  nsTArray<const gfxFont*> mFontsUsingSVGGlyphs GUARDED_BY(mLock);
+  nsTArray<const gfxFont*> mFontsUsingSVGGlyphs MOZ_GUARDED_BY(mLock);
   nsTArray<gfxFontFeature> mFeatureSettings;
   nsTArray<gfxFontVariation> mVariationSettings;
 
   mozilla::UniquePtr<nsTHashMap<nsUint32HashKey, bool>> mSupportedFeatures
-      GUARDED_BY(mFeatureInfoLock);
+      MOZ_GUARDED_BY(mFeatureInfoLock);
   mozilla::UniquePtr<nsTHashMap<nsUint32HashKey, hb_set_t*>> mFeatureInputs
-      GUARDED_BY(mFeatureInfoLock);
+      MOZ_GUARDED_BY(mFeatureInfoLock);
 
   
   
@@ -615,7 +615,7 @@ class gfxFontEntry {
   
   
   
-  bool ParseTrakTable() REQUIRES(mLock);
+  bool ParseTrakTable() MOZ_REQUIRES(mLock);
 
   
   virtual already_AddRefed<gfxCharacterMap> GetCMAPFromFontInfo(
@@ -862,11 +862,12 @@ class gfxFontFamily {
   bool CheckForLegacyFamilyNames(gfxPlatformFontList* aFontList);
 
   
-  const nsTArray<RefPtr<gfxFontEntry>>& GetFontList() REQUIRES_SHARED(mLock) {
+  const nsTArray<RefPtr<gfxFontEntry>>& GetFontList()
+      MOZ_REQUIRES_SHARED(mLock) {
     return mAvailableFonts;
   }
-  void ReadLock() ACQUIRE_SHARED(mLock) { mLock.ReadLock(); }
-  void ReadUnlock() RELEASE_SHARED(mLock) { mLock.ReadUnlock(); }
+  void ReadLock() MOZ_ACQUIRE_SHARED(mLock) { mLock.ReadLock(); }
+  void ReadUnlock() MOZ_RELEASE_SHARED(mLock) { mLock.ReadUnlock(); }
 
   uint32_t FontListLength() const {
     mozilla::AutoReadLock lock(mLock);
@@ -878,7 +879,7 @@ class gfxFontFamily {
     AddFontEntryLocked(aFontEntry);
   }
 
-  void AddFontEntryLocked(RefPtr<gfxFontEntry> aFontEntry) REQUIRES(mLock) {
+  void AddFontEntryLocked(RefPtr<gfxFontEntry> aFontEntry) MOZ_REQUIRES(mLock) {
     
     if (mAvailableFonts.Contains(aFontEntry)) {
       return;
@@ -951,7 +952,7 @@ class gfxFontFamily {
   
   
   virtual void FindStyleVariationsLocked(FontInfoData* aFontInfoData = nullptr)
-      REQUIRES(mLock){};
+      MOZ_REQUIRES(mLock){};
   void FindStyleVariations(FontInfoData* aFontInfoData = nullptr) {
     if (mHasStyles) {
       return;
@@ -977,7 +978,7 @@ class gfxFontFamily {
     return mFamilyCharacterMap.test(aCh);
   }
 
-  void ResetCharacterMap() REQUIRES(mLock) {
+  void ResetCharacterMap() MOZ_REQUIRES(mLock) {
     mFamilyCharacterMap.reset();
     mFamilyCharacterMapInitialized = false;
   }
@@ -997,12 +998,12 @@ class gfxFontFamily {
   bool CheckForFallbackFaces() const { return mCheckForFallbackFaces; }
 
   
-  void SortAvailableFonts() REQUIRES(mLock);
+  void SortAvailableFonts() MOZ_REQUIRES(mLock);
 
   
   
   
-  void CheckForSimpleFamily() REQUIRES(mLock);
+  void CheckForSimpleFamily() MOZ_REQUIRES(mLock);
 
   
   virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
@@ -1045,7 +1046,7 @@ class gfxFontFamily {
                                    bool useFullName = false);
 
   
-  void SetBadUnderlineFonts() REQUIRES(mLock) {
+  void SetBadUnderlineFonts() MOZ_REQUIRES(mLock) {
     for (auto& f : mAvailableFonts) {
       if (f) {
         f->mIsBadUnderlineFont = true;
@@ -1054,8 +1055,8 @@ class gfxFontFamily {
   }
 
   nsCString mName;
-  nsTArray<RefPtr<gfxFontEntry>> mAvailableFonts GUARDED_BY(mLock);
-  gfxSparseBitSet mFamilyCharacterMap GUARDED_BY(mLock);
+  nsTArray<RefPtr<gfxFontEntry>> mAvailableFonts MOZ_GUARDED_BY(mLock);
+  gfxSparseBitSet mFamilyCharacterMap MOZ_GUARDED_BY(mLock);
 
   mutable mozilla::RWLock mLock;
 
@@ -1068,7 +1069,7 @@ class gfxFontFamily {
   mozilla::Atomic<bool> mCheckedForLegacyFamilyNames;
   mozilla::Atomic<bool> mHasOtherFamilyNames;
 
-  bool mIsSimpleFamily : 1 GUARDED_BY(mLock);
+  bool mIsSimpleFamily : 1 MOZ_GUARDED_BY(mLock);
   bool mIsBadUnderlineFamily : 1;
   bool mSkipDefaultFeatureSpaceCheck : 1;
   bool mCheckForFallbackFaces : 1;  

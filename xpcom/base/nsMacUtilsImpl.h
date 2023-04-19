@@ -69,7 +69,7 @@ class nsMacUtilsImpl final : public nsIMacUtils {
 #if defined(MOZ_SANDBOX) || defined(__aarch64__)
   
   static StaticAutoPtr<nsCString> sCachedAppPath
-      GUARDED_BY(sCachedAppPathMutex);
+      MOZ_GUARDED_BY(sCachedAppPathMutex);
   
   static StaticMutex sCachedAppPathMutex;
   

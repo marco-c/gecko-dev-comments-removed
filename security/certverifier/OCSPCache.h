@@ -127,7 +127,7 @@ class OCSPCache {
   
   
   
-  Vector<Entry*, 256> mEntries GUARDED_BY(mMutex);
+  Vector<Entry*, 256> mEntries MOZ_GUARDED_BY(mMutex);
 };
 
 }  

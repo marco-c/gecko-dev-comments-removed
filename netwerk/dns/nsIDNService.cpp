@@ -395,14 +395,14 @@ NS_IMETHODIMP nsIDNService::Normalize(const nsACString& input,
 namespace {
 
 template <typename T>
-class CAPABILITY MOZ_STACK_CLASS MutexSettableAutoUnlock final {
+class MOZ_CAPABILITY MOZ_STACK_CLASS MutexSettableAutoUnlock final {
  private:
   T* mMutex = nullptr;
 
  public:
   MutexSettableAutoUnlock() = default;
 
-  void Acquire(T& aMutex) CAPABILITY_ACQUIRE(aMutex) {
+  void Acquire(T& aMutex) MOZ_CAPABILITY_ACQUIRE(aMutex) {
     MOZ_ASSERT(!mMutex);
     mMutex = &aMutex;
     aMutex.Lock();
@@ -411,7 +411,7 @@ class CAPABILITY MOZ_STACK_CLASS MutexSettableAutoUnlock final {
   
   
   
-  ~MutexSettableAutoUnlock() CAPABILITY_ACQUIRE() {
+  ~MutexSettableAutoUnlock() MOZ_CAPABILITY_ACQUIRE() {
     if (mMutex) {
       mMutex->Unlock();
     }
@@ -423,7 +423,7 @@ class CAPABILITY MOZ_STACK_CLASS MutexSettableAutoUnlock final {
 
 NS_IMETHODIMP nsIDNService::ConvertToDisplayIDN(
     const nsACString& input, bool* _isASCII,
-    nsACString& _retval) NO_THREAD_SAFETY_ANALYSIS {
+    nsACString& _retval) MOZ_NO_THREAD_SAFETY_ANALYSIS {
   MutexSettableAutoUnlock<MutexSingleWriter> lock;
   if (!NS_IsMainThread()) {
     lock.Acquire(mLock);

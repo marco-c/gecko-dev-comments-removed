@@ -95,13 +95,13 @@ class ThrottledEventQueue::Inner final : public nsISupports {
   };
 
   mutable Mutex mMutex;
-  mutable CondVar mIdleCondVar GUARDED_BY(mMutex);
+  mutable CondVar mIdleCondVar MOZ_GUARDED_BY(mMutex);
 
   
   
   
   
-  EventQueueSized<64> mEventQueue GUARDED_BY(mMutex);
+  EventQueueSized<64> mEventQueue MOZ_GUARDED_BY(mMutex);
 
   
   
@@ -112,7 +112,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
   
   
   
-  nsCOMPtr<nsIRunnable> mExecutor GUARDED_BY(mMutex);
+  nsCOMPtr<nsIRunnable> mExecutor MOZ_GUARDED_BY(mMutex);
 
   const char* const mName;
 
@@ -120,7 +120,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
 
   
   
-  bool mIsPaused GUARDED_BY(mMutex);
+  bool mIsPaused MOZ_GUARDED_BY(mMutex);
 
   explicit Inner(nsISerialEventTarget* aBaseTarget, const char* aName,
                  uint32_t aPriority)
@@ -154,7 +154,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
 
   
   
-  nsresult EnsureExecutor(MutexAutoLock& lock) REQUIRES(mMutex) {
+  nsresult EnsureExecutor(MutexAutoLock& lock) MOZ_REQUIRES(mMutex) {
     if (mExecutor) return NS_OK;
 
     
@@ -308,7 +308,7 @@ class ThrottledEventQueue::Inner final : public nsISupports {
     return IsPaused(lock);
   }
 
-  bool IsPaused(const MutexAutoLock& aProofOfLock) const REQUIRES(mMutex) {
+  bool IsPaused(const MutexAutoLock& aProofOfLock) const MOZ_REQUIRES(mMutex) {
     return mIsPaused;
   }
 

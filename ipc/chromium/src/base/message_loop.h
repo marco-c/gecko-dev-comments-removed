@@ -420,7 +420,7 @@ class MessageLoop : public base::MessagePump::Delegate {
   
   
   
-  TaskQueue incoming_queue_ GUARDED_BY(incoming_queue_lock_);
+  TaskQueue incoming_queue_ MOZ_GUARDED_BY(incoming_queue_lock_);
   
   mozilla::Mutex incoming_queue_lock_;
 

@@ -800,9 +800,9 @@ class GMut {
       
       
       
-      PUSH_IGNORE_THREAD_SAFETY
+      MOZ_PUSH_IGNORE_THREAD_SAFETY
       sMutex.Unlock();
-      POP_THREAD_SAFETY
+      MOZ_POP_THREAD_SAFETY
       *static_cast<uint8_t*>(aPtr) = 0;
       MOZ_CRASH("unreachable");
     }
@@ -880,8 +880,10 @@ class GMut {
   }
 
 #ifndef XP_WIN
-  static void prefork() NO_THREAD_SAFETY_ANALYSIS { sMutex.Lock(); }
-  static void postfork_parent() NO_THREAD_SAFETY_ANALYSIS { sMutex.Unlock(); }
+  static void prefork() MOZ_NO_THREAD_SAFETY_ANALYSIS { sMutex.Lock(); }
+  static void postfork_parent() MOZ_NO_THREAD_SAFETY_ANALYSIS {
+    sMutex.Unlock();
+  }
   static void postfork_child() { sMutex.Init(); }
 #endif
 

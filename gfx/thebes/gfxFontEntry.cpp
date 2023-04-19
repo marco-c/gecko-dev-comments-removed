@@ -520,7 +520,7 @@ hb_blob_t* gfxFontEntry::FontTableHashEntry::GetBlob() const {
 bool gfxFontEntry::GetExistingFontTable(uint32_t aTag, hb_blob_t** aBlob) {
   
   
-  PUSH_IGNORE_THREAD_SAFETY
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   if (MOZ_UNLIKELY(!mFontTableCache)) {
     
     
@@ -533,7 +533,7 @@ bool gfxFontEntry::GetExistingFontTable(uint32_t aTag, hb_blob_t** aBlob) {
     }
   }
   FontTableCache* cache = GetFontTableCache();
-  POP_THREAD_SAFETY
+  MOZ_POP_THREAD_SAFETY
 
   
   AutoReadLock lock(mLock);
@@ -548,7 +548,7 @@ bool gfxFontEntry::GetExistingFontTable(uint32_t aTag, hb_blob_t** aBlob) {
 
 hb_blob_t* gfxFontEntry::ShareFontTableAndGetBlob(uint32_t aTag,
                                                   nsTArray<uint8_t>* aBuffer) {
-  PUSH_IGNORE_THREAD_SAFETY
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   if (MOZ_UNLIKELY(!mFontTableCache)) {
     auto* newCache = new FontTableCache(8);
     if (MOZ_UNLIKELY(!mFontTableCache.compareExchange(nullptr, newCache))) {
@@ -556,7 +556,7 @@ hb_blob_t* gfxFontEntry::ShareFontTableAndGetBlob(uint32_t aTag,
     }
   }
   FontTableCache* cache = GetFontTableCache();
-  POP_THREAD_SAFETY
+  MOZ_POP_THREAD_SAFETY
 
   AutoWriteLock lock(mLock);
   FontTableHashEntry* entry = cache->PutEntry(aTag);

@@ -423,7 +423,7 @@ class ScriptPreloader : public nsIObserver,
   Result<Ok, nsresult> OpenCache();
 
   
-  Result<Ok, nsresult> WriteCache() REQUIRES(mSaveMonitor);
+  Result<Ok, nsresult> WriteCache() MOZ_REQUIRES(mSaveMonitor);
 
   void StartCacheWrite();
 
@@ -488,7 +488,7 @@ class ScriptPreloader : public nsIObserver,
   bool mSaveComplete = false;
   bool mDataPrepared = false;
   
-  bool mCacheInvalidated GUARDED_BY(mSaveMonitor) = false;
+  bool mCacheInvalidated MOZ_GUARDED_BY(mSaveMonitor) = false;
 
   
   
@@ -504,11 +504,11 @@ class ScriptPreloader : public nsIObserver,
 
   
   
-  bool mFinishDecodeRunnablePending GUARDED_BY(mMonitor) = false;
+  bool mFinishDecodeRunnablePending MOZ_GUARDED_BY(mMonitor) = false;
 
   
   
-  bool mWaitingForDecode GUARDED_BY(mMonitor) = false;
+  bool mWaitingForDecode MOZ_GUARDED_BY(mMonitor) = false;
 
   
   static ProcessType sProcessType;
@@ -534,7 +534,7 @@ class ScriptPreloader : public nsIObserver,
   AutoMemMap* mCacheData;
 
   Monitor mMonitor;
-  MonitorSingleWriter mSaveMonitor ACQUIRED_BEFORE(mMonitor);
+  MonitorSingleWriter mSaveMonitor MOZ_ACQUIRED_BEFORE(mMonitor);
 };
 
 }  
