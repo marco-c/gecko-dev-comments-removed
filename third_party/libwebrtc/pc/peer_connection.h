@@ -154,20 +154,6 @@ class PeerConnection : public PeerConnectionInternal,
       cricket::MediaType media_type,
       const RtpTransceiverInit& init) override;
 
-  
-  
-  
-  
-  
-  
-
-  RTC_DEPRECATED std::unique_ptr<rtc::SSLCertificate>
-  GetRemoteAudioSSLCertificate();
-
-  
-  RTC_DEPRECATED std::unique_ptr<rtc::SSLCertChain>
-  GetRemoteAudioSSLCertChain();
-
   rtc::scoped_refptr<RtpSenderInterface> CreateSender(
       const std::string& kind,
       const std::string& stream_id) override;
