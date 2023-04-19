@@ -27,7 +27,6 @@
 #include "api/units/timestamp.h"
 #include "modules/include/module.h"
 #include "modules/pacing/pacing_controller.h"
-#include "modules/pacing/packet_router.h"
 #include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -47,7 +46,7 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   
   TaskQueuePacedSender(
       Clock* clock,
-      PacketRouter* packet_router,
+      PacingController::PacketSender* packet_sender,
       RtcEventLog* event_log,
       const WebRtcKeyValueConfig* field_trials,
       TaskQueueFactory* task_queue_factory,
