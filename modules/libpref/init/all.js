@@ -2539,30 +2539,6 @@ pref("font.size.monospace.x-math", 13);
   pref("intl.keyboard.per_window_layout", false);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  pref("intl.ime.hack.set_input_scope_of_url_bar_to_default", true);
-
-  
   pref("intl.tsf.enable", true);
 
   
