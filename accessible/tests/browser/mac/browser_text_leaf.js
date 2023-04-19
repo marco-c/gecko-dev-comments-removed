@@ -40,7 +40,7 @@ addAccessibleTask(`hello<br>world`, async (browser, accDoc) => {
 
   is(
     children[1].getAttributeValue("AXValue"),
-    "world",
+    "world ",
     "Second child is world text"
   );
   
