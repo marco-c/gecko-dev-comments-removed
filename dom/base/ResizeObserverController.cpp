@@ -116,15 +116,7 @@ void ResizeObserverController::Notify() {
   RefPtr<Document> doc(mDocument);
 
   uint32_t shallowestTargetDepth = 0;
-
-  GatherAllActiveObservations(shallowestTargetDepth);
-
-  while (HasAnyActiveObservations()) {
-    DebugOnly<uint32_t> oldShallowestTargetDepth = shallowestTargetDepth;
-    shallowestTargetDepth = BroadcastAllActiveObservations();
-    NS_ASSERTION(oldShallowestTargetDepth < shallowestTargetDepth,
-                 "shallowestTargetDepth should be getting strictly deeper");
-
+  while (true) {
     
     
     
@@ -135,6 +127,15 @@ void ResizeObserverController::Notify() {
     
     
     GatherAllActiveObservations(shallowestTargetDepth);
+
+    if (!HasAnyActiveObservations()) {
+      break;
+    }
+
+    DebugOnly<uint32_t> oldShallowestTargetDepth = shallowestTargetDepth;
+    shallowestTargetDepth = BroadcastAllActiveObservations();
+    NS_ASSERTION(oldShallowestTargetDepth < shallowestTargetDepth,
+                 "shallowestTargetDepth should be getting strictly deeper");
   }
 
   if (HasAnySkippedObservations()) {
