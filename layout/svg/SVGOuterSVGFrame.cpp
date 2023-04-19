@@ -114,7 +114,7 @@ void SVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   
-  SVGSVGElement* svg = static_cast<SVGSVGElement*>(aContent);
+  auto* svg = static_cast<SVGSVGElement*>(aContent);
   if (!svg->PassesConditionalProcessingTests()) {
     AddStateBits(NS_FRAME_IS_NONDISPLAY);
   }
@@ -243,11 +243,8 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
   
   
   
-  
-  
-  
 
-  SVGSVGElement* content = static_cast<SVGSVGElement*>(GetContent());
+  auto* content = static_cast<SVGSVGElement*>(GetContent());
   const SVGAnimatedLength& width =
       content->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
   const SVGAnimatedLength& height =
@@ -265,18 +262,10 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
     }
   }
 
-  SVGViewElement* viewElement = content->GetCurrentViewElement();
-  const SVGViewBox* viewbox = nullptr;
-
-  
-  if (viewElement && viewElement->mViewBox.HasRect()) {
-    viewbox = &viewElement->mViewBox.GetAnimValue();
-  } else if (content->mViewBox.HasRect()) {
-    viewbox = &content->mViewBox.GetAnimValue();
-  }
-
-  if (viewbox) {
-    return AspectRatio::FromSize(viewbox->width, viewbox->height);
+  const auto& viewBox = content->GetViewBoxInternal();
+  if (viewBox.HasRect()) {
+    const auto& anim = viewBox.GetAnimValue();
+    return AspectRatio::FromSize(anim.width, anim.height);
   }
 
   return SVGDisplayContainerFrame::GetIntrinsicRatio();
