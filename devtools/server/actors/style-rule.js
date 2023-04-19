@@ -1123,24 +1123,45 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     });
   },
 
-  getQueryContainerForNode(ancestorRuleIndex, nodeFront) {
+  
+
+
+
+
+
+
+
+
+
+
+
+  getQueryContainerForNode(ancestorRuleIndex, nodeActor) {
     const ancestorRule = this.ancestorRules[ancestorRuleIndex];
     if (!ancestorRule) {
       console.error(
         `Couldn't not find an ancestor rule at index ${ancestorRuleIndex}`
       );
-      return null;
+      return { node: null };
     }
 
     const containerEl = ancestorRule.rawRule.queryContainerFor(
-      nodeFront.rawNode
+      nodeActor.rawNode
     );
 
+    
+    
+    
     if (!containerEl) {
-      return null;
+      return { node: null };
     }
 
-    return this.pageStyle.walker.getNode(containerEl);
+    const computedStyle = CssLogic.getComputedStyle(containerEl);
+    return {
+      node: this.pageStyle.walker.getNode(containerEl),
+      containerType: computedStyle.containerType,
+      inlineSize: computedStyle.inlineSize,
+      blockSize: computedStyle.blockSize,
+    };
   },
 
   
