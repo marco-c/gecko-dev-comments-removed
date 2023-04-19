@@ -48,6 +48,9 @@ using std::string;
 
 static constexpr size_t scLengthMax = size_t(JS::MaxStringLength);
 
+
+static constexpr size_t scLengthAccumulationThreshold = scLengthMax - 16 * 1024;
+
 NS_IMPL_ISUPPORTS(nsProfiler, nsIProfiler)
 
 nsProfiler::nsProfiler() : mGathering(false) {}
@@ -1042,8 +1045,19 @@ void nsProfiler::GatheredOOPProfile(base::ProcessId aChildPid,
                      "Should always have a writer if mGathering is true");
 
   if (!aProfile.IsEmpty()) {
-    
-    mWriter->Splice(PromiseFlatCString(aProfile));
+    if (mWriter->ChunkedWriteFunc().Length() + aProfile.Length() <
+        scLengthAccumulationThreshold) {
+      
+      mWriter->Splice(PromiseFlatCString(aProfile));
+    } else {
+      LogEvent([&](Json::Value& aEvent) {
+        aEvent.append(
+            Json::StaticString{"Discarded child profile that would make the "
+                               "full profile too big, pid and size:"});
+        aEvent.append(Json::Value::UInt64(aChildPid));
+        aEvent.append(Json::Value::UInt64{aProfile.Length()});
+      });
+    }
   }
 
   if (PendingProfile* pendingProfile = GetPendingProfile(aChildPid);
@@ -1154,7 +1168,21 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
       !exitProfiles.empty()) {
     for (auto& exitProfile : exitProfiles) {
       if (!exitProfile.IsEmpty()) {
-        mWriter->Splice(exitProfile);
+        if (mWriter->ChunkedWriteFunc().Length() + exitProfile.Length() <
+            scLengthAccumulationThreshold) {
+          mWriter->Splice(exitProfile);
+          LogEvent([&](Json::Value& aEvent) {
+            aEvent.append(Json::StaticString{"Added exit profile with size:"});
+            aEvent.append(Json::Value::UInt64{exitProfile.Length()});
+          });
+        } else {
+          LogEvent([&](Json::Value& aEvent) {
+            aEvent.append(
+                Json::StaticString{"Discarded an exit profile that would make "
+                                   "the full profile too big, size:"});
+            aEvent.append(Json::Value::UInt64{exitProfile.Length()});
+          });
+        }
       }
     }
 
