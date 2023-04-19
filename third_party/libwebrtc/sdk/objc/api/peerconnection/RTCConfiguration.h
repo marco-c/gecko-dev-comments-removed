@@ -233,6 +233,41 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, assign) BOOL offerExtmapAllowMixed;
 
+
+
+
+
+
+@property(nonatomic, copy, nullable) NSNumber *iceCheckIntervalStrongConnectivity;
+
+
+
+
+
+
+@property(nonatomic, copy, nullable) NSNumber *iceCheckIntervalWeakConnectivity;
+
+
+
+
+
+
+@property(nonatomic, copy, nullable) NSNumber *iceUnwritableTimeout;
+
+
+
+
+
+
+@property(nonatomic, copy, nullable) NSNumber *iceUnwritableMinChecks;
+
+
+
+
+
+
+@property(nonatomic, copy, nullable) NSNumber *iceInactiveTimeout;
+
 - (instancetype)init;
 
 @end
