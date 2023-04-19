@@ -135,36 +135,6 @@ void FontFaceSetWorkerImpl::InitializeOnMainThread() {
 
 void FontFaceSetWorkerImpl::Destroy() {
   RecursiveMutexAutoLock lock(mMutex);
-
-  class DestroyRunnable final : public Runnable {
-   public:
-    DestroyRunnable(FontFaceSetWorkerImpl* aFontFaceSet,
-                    nsTHashtable<nsPtrHashKey<nsFontFaceLoader>>&& aLoaders)
-        : Runnable("FontFaceSetWorkerImpl::Destroy"),
-          mFontFaceSet(aFontFaceSet),
-          mLoaders(std::move(aLoaders)) {}
-
-   protected:
-    ~DestroyRunnable() override = default;
-
-    NS_IMETHOD Run() override {
-      for (const auto& key : mLoaders.Keys()) {
-        key->Cancel();
-      }
-      return NS_OK;
-    }
-
-    
-    
-    RefPtr<FontFaceSetWorkerImpl> mFontFaceSet;
-    nsTHashtable<nsPtrHashKey<nsFontFaceLoader>> mLoaders;
-  };
-
-  if (!mLoaders.IsEmpty() && !NS_IsMainThread()) {
-    auto runnable = MakeRefPtr<DestroyRunnable>(this, std::move(mLoaders));
-    NS_DispatchToMainThread(runnable);
-  }
-
   mWorkerRef = nullptr;
   FontFaceSetImpl::Destroy();
 }
@@ -219,33 +189,6 @@ uint64_t FontFaceSetWorkerImpl::GetInnerWindowID() {
   }
 
   return mWorkerRef->Private()->WindowID();
-}
-
-void FontFaceSetWorkerImpl::FlushUserFontSet() {
-  RecursiveMutexAutoLock lock(mMutex);
-
-  
-  
-  bool modified = mNonRuleFacesDirty;
-  mNonRuleFacesDirty = false;
-
-  for (size_t i = 0, i_end = mNonRuleFaces.Length(); i < i_end; ++i) {
-    InsertNonRuleFontFace(mNonRuleFaces[i].mFontFace, modified);
-  }
-
-  
-  for (auto it = mFontFamilies.Iter(); !it.Done(); it.Next()) {
-    if (!it.Data()->FontListLength()) {
-      it.Remove();
-    }
-  }
-
-  if (modified) {
-    IncrementGeneration(true);
-    mHasLoadingFontFacesIsDirty = true;
-    CheckLoadingStarted();
-    CheckLoadingFinished();
-  }
 }
 
 nsresult FontFaceSetWorkerImpl::StartLoad(gfxUserFontEntry* aUserFontEntry,

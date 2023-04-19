@@ -1918,7 +1918,7 @@ void gfxFontFamily::SearchAllFontsForChar(GlobalFontMatch* aMatchData) {
 gfxFontFamily::~gfxFontFamily() {
   
   
-  MOZ_ASSERT(!gfxFontUtils::IsInServoTraversal());
+  MOZ_ASSERT(NS_IsMainThread() || gfxPlatformFontList::IsInitFontListThread());
 }
 
 

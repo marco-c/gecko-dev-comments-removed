@@ -6,8 +6,6 @@
 
 #include "OffscreenCanvasRenderingContext2D.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
-#include "mozilla/dom/FontFaceSetImpl.h"
-#include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/dom/OffscreenCanvasRenderingContext2DBinding.h"
 #include "mozilla/dom/OffscreenCanvas.h"
 #include "mozilla/dom/WorkerCommon.h"
@@ -127,17 +125,6 @@ static void SerializeFontForCanvas(const StyleFontFamilyList& aList,
 
 bool OffscreenCanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
                                                         ErrorResult& aError) {
-  nsIGlobalObject* global = GetParentObject();
-  FontFaceSet* fontFaceSet = global ? global->Fonts() : nullptr;
-  FontFaceSetImpl* fontFaceSetImpl =
-      fontFaceSet ? fontFaceSet->GetImpl() : nullptr;
-  RefPtr<URLExtraData> urlExtraData =
-      fontFaceSetImpl ? fontFaceSetImpl->GetURLExtraData() : nullptr;
-
-  if (fontFaceSetImpl) {
-    fontFaceSetImpl->FlushUserFontSet();
-  }
-
   
   
   
@@ -147,7 +134,7 @@ bool OffscreenCanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
   gfxFontStyle fontStyle;
   float size = 0.0f;
   if (!ServoCSSParser::ParseFontShorthandForMatching(
-          aFont, urlExtraData, list, fontStyle.style, fontStyle.stretch,
+          aFont, nullptr, list, fontStyle.style, fontStyle.stretch,
           fontStyle.weight, &size)) {
     return false;
   }
@@ -157,15 +144,15 @@ bool OffscreenCanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
   
   
   
-  gfxFontGroup* fontGroup = gfxPlatform::GetPlatform()->CreateFontGroup(
-      nullptr,          
-      list,             
-      &fontStyle,       
-      nullptr,          
-      false,            
-      nullptr,          
-      fontFaceSetImpl,  
-      1.0);             
+  gfxFontGroup* fontGroup =
+      gfxPlatform::GetPlatform()->CreateFontGroup(nullptr,  
+                                                  list,     
+                                                  &fontStyle,  
+                                                  nullptr,     
+                                                  false,    
+                                                  nullptr,  
+                                                  nullptr,  
+                                                  1.0);     
   CurrentState().fontGroup = fontGroup;
   SerializeFontForCanvas(list, fontStyle, CurrentState().font);
   CurrentState().fontFont = nsFont(StyleFontFamily{list, false, false},
