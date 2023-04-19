@@ -32,10 +32,7 @@ function SetUnion(iterable) {
 
   
   if (!IsObject(set)) {
-    ThrowTypeError(
-        JSMSG_OBJECT_REQUIRED,
-        set === null ? "null" : typeof set
-    );
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, set === null ? "null" : typeof set);
   }
 
   
@@ -67,10 +64,7 @@ function SetIntersection(iterable) {
 
   
   if (!IsObject(set)) {
-    ThrowTypeError(
-        JSMSG_OBJECT_REQUIRED,
-        set === null ? "null" : typeof set
-    );
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, set === null ? "null" : typeof set);
   }
 
   
@@ -152,10 +146,7 @@ function SetDifference(iterable) {
 
   
   if (!IsObject(set)) {
-    ThrowTypeError(
-        JSMSG_OBJECT_REQUIRED,
-        set === null ? "null" : typeof set
-    );
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, set === null ? "null" : typeof set);
   }
 
   
@@ -212,10 +203,7 @@ function SetSymmetricDifference(iterable) {
 
   
   if (!IsObject(set)) {
-    ThrowTypeError(
-        JSMSG_OBJECT_REQUIRED,
-        set === null ? "null" : typeof set
-    );
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, set === null ? "null" : typeof set);
   }
 
   
@@ -300,10 +288,7 @@ function SetIsSubsetOf(iterable) {
 
   
   if (!IsObject(iterable)) {
-    ThrowTypeError(
-        JSMSG_OBJECT_REQUIRED,
-        set === null ? "null" : typeof set
-    );
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, set === null ? "null" : typeof set);
   }
 
   
@@ -370,10 +355,7 @@ function SetIsSupersetOf(iterable) {
 
   
   if (!IsObject(set)) {
-    ThrowTypeError(
-        JSMSG_OBJECT_REQUIRED,
-        set === null ? "null" : typeof set
-    );
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, set === null ? "null" : typeof set);
   }
 
   
@@ -430,10 +412,7 @@ function SetIsDisjointFrom(iterable) {
 
   
   if (!IsObject(set)) {
-    ThrowTypeError(
-        JSMSG_OBJECT_REQUIRED,
-        set === null ? "null" : typeof set
-    );
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, set === null ? "null" : typeof set);
   }
 
   

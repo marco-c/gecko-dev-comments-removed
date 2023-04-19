@@ -29,8 +29,7 @@ function InsertionSort(array, from, to, comparefn) {
 function Merge(list, out, start, mid, end, comparefn) {
   
   
-  if (mid >= end || callContentFunction(comparefn, undefined,
-                                        list[mid], list[mid + 1]) <= 0) {
+  if (mid >= end || callContentFunction(comparefn, undefined, list[mid], list[mid + 1]) <= 0) {
     for (var i = start; i <= end; i++) {
       DefineDataProperty(out, i, list[i]);
     }
@@ -135,8 +134,7 @@ function MergeSort(array, len, comparefn) {
 function MergeTypedArray(list, out, start, mid, end, comparefn) {
   
   
-  if (mid >= end || callContentFunction(comparefn, undefined,
-                                        list[mid], list[mid + 1]) <= 0) {
+  if (mid >= end || callContentFunction(comparefn, undefined, list[mid], list[mid + 1]) <= 0) {
     for (var i = start; i <= end; i++) {
       out[i] = list[i];
     }
@@ -169,8 +167,7 @@ function MergeTypedArray(list, out, start, mid, end, comparefn) {
 
 
 function MergeSortTypedArray(array, len, comparefn) {
-  assert(IsPossiblyWrappedTypedArray(array),
-         "MergeSortTypedArray works only with typed arrays.");
+  assert(IsPossiblyWrappedTypedArray(array), "MergeSortTypedArray works only with typed arrays.");
 
   
   var C = ConstructorForTypedArray(array);

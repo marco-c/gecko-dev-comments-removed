@@ -222,16 +222,14 @@ function TupleConcat() {
 
 function TupleIncludes(valueToFind ) {
   var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
-  return callFunction(std_Array_includes, ThisTupleValue(this), valueToFind,
-                      fromIndex);
+  return callFunction(std_Array_includes, ThisTupleValue(this), valueToFind, fromIndex);
 }
 
 
 
 function TupleIndexOf(valueToFind ) {
   var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
-  return callFunction(std_Array_indexOf, ThisTupleValue(this),
-                      valueToFind, fromIndex);
+  return callFunction(std_Array_indexOf, ThisTupleValue(this), valueToFind, fromIndex);
 }
 
 
@@ -282,11 +280,9 @@ function TupleJoin(separator) {
 
 function TupleLastIndexOf(valueToFind ) {
   if (arguments.length < 2) {
-    return callFunction(std_Array_lastIndexOf, ThisTupleValue(this),
-                        valueToFind);
+    return callFunction(std_Array_lastIndexOf, ThisTupleValue(this), valueToFind);
   }
-  return callFunction(std_Array_lastIndexOf, ThisTupleValue(this),
-                      valueToFind, arguments[1]);
+  return callFunction(std_Array_lastIndexOf, ThisTupleValue(this), valueToFind, arguments[1]);
 }
 
 
@@ -307,8 +303,7 @@ function TupleToString() {
 
 function TupleToLocaleString(locales, options) {
   var T = ThisTupleValue(this);
-  return callContentFunction(ArrayToLocaleString, TupleToArray(T),
-                             locales, options);
+  return callContentFunction(ArrayToLocaleString, TupleToArray(T), locales, options);
 }
 
 
@@ -334,8 +329,7 @@ SetCanonicalName($TupleValues, "values");
 
 
 function TupleEvery(callbackfn) {
-  return callContentFunction(ArrayEvery, ThisTupleValue(this),
-                             callbackfn);
+  return callContentFunction(ArrayEvery, ThisTupleValue(this), callbackfn);
 }
 
 
@@ -385,22 +379,19 @@ function TupleFilter(callbackfn) {
 
 
 function TupleFind(predicate) {
-  return callContentFunction(ArrayFind, ThisTupleValue(this),
-                             predicate);
+  return callContentFunction(ArrayFind, ThisTupleValue(this), predicate);
 }
 
 
 
 function TupleFindIndex(predicate) {
-  return callContentFunction(ArrayFindIndex, ThisTupleValue(this),
-                             predicate);
+  return callContentFunction(ArrayFindIndex, ThisTupleValue(this), predicate);
 }
 
 
 
 function TupleForEach(callbackfn) {
-  return callContentFunction(ArrayForEach, ThisTupleValue(this),
-                             callbackfn);
+  return callContentFunction(ArrayForEach, ThisTupleValue(this), callbackfn);
 }
 
 
@@ -443,29 +434,24 @@ function TupleMap(callbackfn) {
 
 function TupleReduce(callbackfn ) {
   if (arguments.length < 2) {
-    return callContentFunction(ArrayReduce, ThisTupleValue(this),
-                               callbackfn);
+    return callContentFunction(ArrayReduce, ThisTupleValue(this), callbackfn);
   }
-  return callContentFunction(ArrayReduce, ThisTupleValue(this),
-                                 callbackfn, arguments[1]);
+  return callContentFunction(ArrayReduce, ThisTupleValue(this), callbackfn, arguments[1]);
 }
 
 
 
 function TupleReduceRight(callbackfn ) {
   if (arguments.length < 2) {
-    return callContentFunction(ArrayReduceRight, ThisTupleValue(this),
-                               callbackfn);
+    return callContentFunction(ArrayReduceRight, ThisTupleValue(this), callbackfn);
   }
-  return callContentFunction(ArrayReduceRight, ThisTupleValue(this),
-                                 callbackfn, arguments[1]);
+  return callContentFunction(ArrayReduceRight, ThisTupleValue(this), callbackfn, arguments[1]);
 }
 
 
 
 function TupleSome(callbackfn) {
-  return callContentFunction(ArraySome, ThisTupleValue(this),
-                             callbackfn);
+  return callContentFunction(ArraySome, ThisTupleValue(this), callbackfn);
 }
 
 function FlattenIntoTuple(target, source, depth) {
@@ -483,8 +469,10 @@ function FlattenIntoTuple(target, source, depth) {
   var mapperIsPresent = arguments.length > 3;
   if (mapperIsPresent) {
     mapperFunction = arguments[3];
-    assert(IsCallable(mapperFunction) && arguments.length > 4 && depth === 1,
-           "FlattenIntoTuple: mapper function must be callable, thisArg present, and depth === 1");
+    assert(
+      IsCallable(mapperFunction) && arguments.length > 4 && depth === 1,
+      "FlattenIntoTuple: mapper function must be callable, thisArg present, and depth === 1"
+    );
     thisArg = arguments[4];
   }
 

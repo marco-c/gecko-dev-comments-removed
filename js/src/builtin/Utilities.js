@@ -182,9 +182,7 @@ function CopyDataProperties(target, source, excludedItems) {
 
     
     
-    if (!hasOwn(key, excludedItems) &&
-        callFunction(std_Object_propertyIsEnumerable, from, key))
-    {
+    if (!hasOwn(key, excludedItems) && callFunction(std_Object_propertyIsEnumerable, from, key)) {
       DefineDataProperty(target, key, from[key]);
     }
   }
