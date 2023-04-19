@@ -6,7 +6,6 @@
 #}
 #[doc(hidden)]
 #[no_mangle]
-#[allow(clippy::let_unit_value)] 
 pub extern "C" fn r#{{ func.ffi_func().name() }}(
     {% call rs::arg_list_ffi_decl(func.ffi_func()) %}
 ) {% call rs::return_signature(func) %} {

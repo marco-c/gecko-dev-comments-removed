@@ -388,7 +388,7 @@ pub fn run_tests(
 
 
 
-pub fn guess_crate_root(udl_file: &Utf8Path) -> Result<&Utf8Path> {
+fn guess_crate_root(udl_file: &Utf8Path) -> Result<&Utf8Path> {
     let path_guess = udl_file
         .parent()
         .context("UDL file has no parent folder!")?
@@ -428,7 +428,7 @@ fn get_out_dir(udl_file: &Utf8Path, out_dir_override: Option<&Utf8Path>) -> Resu
     Ok(match out_dir_override {
         Some(s) => {
             
-            fs::create_dir_all(s)?;
+            fs::create_dir_all(&s)?;
             s.canonicalize_utf8().context("Unable to find out-dir")?
         }
         None => udl_file
@@ -539,7 +539,7 @@ enum Commands {
 
         
         #[clap(long)]
-        lib_file: Option<Utf8PathBuf>,
+        cdylib: Option<Utf8PathBuf>,
 
         
         udl_file: Utf8PathBuf,
@@ -594,14 +594,14 @@ pub fn run_main() -> Result<()> {
             out_dir,
             no_format,
             config,
-            lib_file,
+            cdylib,
             udl_file,
         } => crate::generate_bindings(
             udl_file,
             config.as_deref(),
             language.iter().map(String::as_str).collect(),
             out_dir.as_deref(),
-            lib_file.as_deref(),
+            cdylib.as_deref(),
             !no_format,
         ),
         Commands::Scaffolding {
