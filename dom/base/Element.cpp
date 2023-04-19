@@ -3803,14 +3803,19 @@ void Element::CloneAnimationsFrom(const Element& aOther) {
       EffectSet* const clonedEffects =
           EffectSet::GetOrCreateEffectSet(this, pseudoType);
       for (KeyframeEffect* const effect : *effects) {
+        auto* animation = effect->GetAnimation();
+        if (animation->AsCSSTransition()) {
+          
+          continue;
+        }
         
         RefPtr<KeyframeEffect> clonedEffect = new KeyframeEffect(
             OwnerDoc(), OwningAnimationTarget{this, pseudoType}, *effect);
 
         
         RefPtr<Animation> clonedAnimation = Animation::ClonePausedAnimation(
-            OwnerDoc()->GetParentObject(), *effect->GetAnimation(),
-            *clonedEffect, *timeline);
+            OwnerDoc()->GetParentObject(), *animation, *clonedEffect,
+            *timeline);
         clonedEffects->AddEffect(*clonedEffect);
       }
     }
