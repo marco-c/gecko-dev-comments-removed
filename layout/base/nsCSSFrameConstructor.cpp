@@ -542,12 +542,17 @@ inline void SetInitialSingleChild(nsContainerFrame* aParent, nsIFrame* aFrame) {
 
 
 namespace mozilla {
-struct AbsoluteFrameList : public nsFrameList {
+struct AbsoluteFrameList final : public nsFrameList {
   
   nsContainerFrame* containingBlock;
 
-  explicit AbsoluteFrameList(nsContainerFrame* aContainingBlock)
+  explicit AbsoluteFrameList(nsContainerFrame* aContainingBlock = nullptr)
       : containingBlock(aContainingBlock) {}
+
+  
+  
+  AbsoluteFrameList(AbsoluteFrameList&& aOther) = default;
+  AbsoluteFrameList& operator=(AbsoluteFrameList&& aOther) = default;
 
 #ifdef DEBUG
   
@@ -568,22 +573,24 @@ struct AbsoluteFrameList : public nsFrameList {
 class MOZ_STACK_CLASS nsFrameConstructorSaveState {
  public:
   typedef nsIFrame::ChildListID ChildListID;
-  nsFrameConstructorSaveState();
   ~nsFrameConstructorSaveState();
 
  private:
-  AbsoluteFrameList* mList;      
-  AbsoluteFrameList mSavedList;  
-
   
-  ChildListID mChildListID;
-  nsFrameConstructorState* mState;
+  AbsoluteFrameList* mList = nullptr;
 
   
   
-  AbsoluteFrameList mSavedFixedList;
+  
+  AbsoluteFrameList mSavedList;
 
-  bool mSavedFixedPosIsAbsPos;
+  
+  ChildListID mChildListID = kPrincipalList;
+  nsFrameConstructorState* mState = nullptr;
+
+  
+  
+  bool mSavedFixedPosIsAbsPos = false;
 
   friend class nsFrameConstructorState;
 };
@@ -857,7 +864,6 @@ void nsFrameConstructorState::PushAbsoluteContainingBlock(
   MOZ_ASSERT(!!aNewAbsoluteContainingBlock == !!aPositionedFrame,
              "We should have both or none");
   aSaveState.mList = &mAbsoluteList;
-  aSaveState.mSavedList = mAbsoluteList;
   aSaveState.mChildListID = nsIFrame::kAbsoluteList;
   aSaveState.mState = this;
   aSaveState.mSavedFixedPosIsAbsPos = mFixedPosIsAbsPos;
@@ -865,8 +871,11 @@ void nsFrameConstructorState::PushAbsoluteContainingBlock(
   if (mFixedPosIsAbsPos) {
     
     
-    aSaveState.mSavedFixedList = mFixedList;
-    mFixedList = mAbsoluteList;
+    aSaveState.mSavedList = std::move(mFixedList);
+    mFixedList = std::move(mAbsoluteList);
+  } else {
+    
+    aSaveState.mSavedList = std::move(mAbsoluteList);
   }
 
   mAbsoluteList = AbsoluteFrameList(aNewAbsoluteContainingBlock);
@@ -916,7 +925,7 @@ void nsFrameConstructorState::PushFloatContainingBlock(
       "We should not push a frame that is supposed to _suppress_ "
       "floats as a float containing block!");
   aSaveState.mList = &mFloatedList;
-  aSaveState.mSavedList = mFloatedList;
+  aSaveState.mSavedList = std::move(mFloatedList);
   aSaveState.mChildListID = nsIFrame::kFloatList;
   aSaveState.mState = this;
   mFloatedList = AbsoluteFrameList(aNewFloatContainingBlock);
@@ -1298,39 +1307,27 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
   MOZ_ASSERT(aFrameList.IsEmpty(), "How did that happen?");
 }
 
-nsFrameConstructorSaveState::nsFrameConstructorSaveState()
-    : mList(nullptr),
-      mSavedList(nullptr),
-      mChildListID(kPrincipalList),
-      mState(nullptr),
-      mSavedFixedList(nullptr),
-      mSavedFixedPosIsAbsPos(false) {}
-
 nsFrameConstructorSaveState::~nsFrameConstructorSaveState() {
   
   if (mList) {
-    NS_ASSERTION(mState, "Can't have mList set without having a state!");
+    MOZ_ASSERT(mState, "Can't have mList set without having a state!");
     mState->ProcessFrameInsertions(*mList, mChildListID);
-    *mList = mSavedList;
-#ifdef DEBUG
-    
-    
-    mSavedList.Clear();
-#endif
-    if (mList == &mState->mAbsoluteList) {
+
+    if (mSavedFixedPosIsAbsPos) {
+      MOZ_ASSERT(mList == &mState->mAbsoluteList);
       mState->mFixedPosIsAbsPos = mSavedFixedPosIsAbsPos;
-      if (mSavedFixedPosIsAbsPos) {
-        
-        
-        mState->mAbsoluteList = mState->mFixedList;
-        mState->mFixedList = mSavedFixedList;
-#ifdef DEBUG
-        mSavedFixedList.Clear();
-#endif
-      }
+      
+      
+      mState->mAbsoluteList = std::move(mState->mFixedList);
+      mState->mFixedList = std::move(mSavedList);
+    } else {
+      *mList = std::move(mSavedList);
     }
-    NS_ASSERTION(!mList->LastChild() || !mList->LastChild()->GetNextSibling(),
-                 "Something corrupted our list");
+
+    MOZ_ASSERT(mSavedList.IsEmpty(),
+               "Frames in mSavedList should've moved back into mState!");
+    MOZ_ASSERT(!mList->LastChild() || !mList->LastChild()->GetNextSibling(),
+               "Something corrupted our list!");
   }
 }
 
