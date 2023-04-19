@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/test/network_emulation_manager.h"
 #include "api/test/simulated_network.h"
 #include "call/simulated_network.h"
 #include "rtc_base/event.h"
@@ -46,12 +47,14 @@ struct TrafficCounterFixture {
   SimulatedClock clock{0};
   CountingReceiver counter;
   TaskQueueForTest task_queue_;
-  EmulatedEndpointImpl endpoint{1,
-                                rtc::IPAddress(kTestIpAddress),
-                                true,
-                                rtc::AdapterType::ADAPTER_TYPE_UNKNOWN,
-                                &task_queue_,
-                                &clock};
+  EmulatedEndpointImpl endpoint{
+      1,
+      rtc::IPAddress(kTestIpAddress),
+      EmulatedEndpointConfig::StatsGatheringMode::kDefault,
+      true,
+      rtc::AdapterType::ADAPTER_TYPE_UNKNOWN,
+      &task_queue_,
+      &clock};
 };
 
 }  

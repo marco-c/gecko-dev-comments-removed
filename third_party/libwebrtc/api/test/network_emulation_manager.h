@@ -46,6 +46,13 @@ class EmulatedRoute;
 
 struct EmulatedEndpointConfig {
   enum class IpAddressFamily { kIpv4, kIpv6 };
+  enum class StatsGatheringMode {
+    
+    kDefault,
+    
+    
+    kDebug
+  };
 
   IpAddressFamily generated_ip_family = IpAddressFamily::kIpv4;
   
@@ -56,6 +63,7 @@ struct EmulatedEndpointConfig {
   bool start_as_enabled = true;
   
   rtc::AdapterType type = rtc::AdapterType::ADAPTER_TYPE_UNKNOWN;
+  StatsGatheringMode stats_gathering_mode = StatsGatheringMode::kDefault;
 };
 
 

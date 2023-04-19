@@ -16,6 +16,7 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/numerics/samples_stats_counter.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/timestamp.h"
@@ -69,6 +70,12 @@ class EmulatedNetworkOutgoingStats {
 
   virtual DataSize BytesSent() const = 0;
 
+  
+  
+  
+  
+  virtual const SamplesStatsCounter& SentPacketsSizeCounter() const = 0;
+
   virtual DataSize FirstSentPacketSize() const = 0;
 
   
@@ -92,9 +99,20 @@ class EmulatedNetworkIncomingStats {
   
   virtual DataSize BytesReceived() const = 0;
   
+  
+  
+  
+  virtual const SamplesStatsCounter& ReceivedPacketsSizeCounter() const = 0;
+  
   virtual int64_t PacketsDropped() const = 0;
   
   virtual DataSize BytesDropped() const = 0;
+  
+  
+  
+  
+  
+  virtual const SamplesStatsCounter& DroppedPacketsSizeCounter() const = 0;
 
   virtual DataSize FirstReceivedPacketSize() const = 0;
 
@@ -120,6 +138,17 @@ class EmulatedNetworkStats {
   virtual int64_t PacketsSent() const = 0;
 
   virtual DataSize BytesSent() const = 0;
+  
+  
+  
+  
+  virtual const SamplesStatsCounter& SentPacketsSizeCounter() const = 0;
+  
+  
+  
+  
+  
+  virtual const SamplesStatsCounter& SentPacketsQueueWaitTimeUs() const = 0;
 
   virtual DataSize FirstSentPacketSize() const = 0;
   
@@ -135,9 +164,20 @@ class EmulatedNetworkStats {
   
   virtual DataSize BytesReceived() const = 0;
   
+  
+  
+  
+  virtual const SamplesStatsCounter& ReceivedPacketsSizeCounter() const = 0;
+  
   virtual int64_t PacketsDropped() const = 0;
   
   virtual DataSize BytesDropped() const = 0;
+  
+  
+  
+  
+  
+  virtual const SamplesStatsCounter& DroppedPacketsSizeCounter() const = 0;
 
   virtual DataSize FirstReceivedPacketSize() const = 0;
   
