@@ -13,19 +13,11 @@ const kWhitelist = new Set([
 ]);
 
 const kESModuleList = new Set([
-  /browser\/aboutlogins\/components\/.*\.js$/,
-  /browser\/aboutlogins\/.*\.js$/,
-  /browser\/protections.js$/,
   /browser\/lockwise-card.js$/,
   /browser\/monitor-card.js$/,
   /browser\/proxy-card.js$/,
   /browser\/vpn-card.js$/,
   /browser\/content\/browser\/certerror\/aboutNetError\.js$/,
-  /browser\/content\/browser\/firefoxview\.js$/,
-  /browser\/content\/browser\/recently-closed-tabs\.js$/,
-  /browser\/content\/browser\/tabs-pickup\.js$/,
-  /browser\/content\/browser\/helpers\.js$/,
-  /browser\/content\/browser\/tab-pickup-list\.js$/,
   /toolkit\/content\/global\/certviewer\/components\/.*\.js$/,
   /toolkit\/content\/global\/certviewer\/.*\.js$/,
   /chrome\/pdfjs\/content\/web\/.*\.js$/,
@@ -65,6 +57,10 @@ function uriIsWhiteListed(uri) {
 
 
 function uriIsESModule(uri) {
+  if (uri.filePath.endsWith(".mjs")) {
+    return true;
+  }
+
   for (let whitelistItem of kESModuleList) {
     if (whitelistItem.test(uri.spec)) {
       return true;
@@ -140,7 +136,7 @@ add_task(async function checkAllTheJS() {
     
     let startTimeMs = Date.now();
     info("Collecting URIs");
-    uris = await generateURIsFromDirTree(appDir, [".js", ".jsm"]);
+    uris = await generateURIsFromDirTree(appDir, [".js", ".jsm", ".mjs"]);
     info("Collected URIs in " + (Date.now() - startTimeMs) + "ms");
 
     
