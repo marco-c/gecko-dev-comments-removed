@@ -15,6 +15,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/gfx/gfxVars.h"
 
 extern "C" {
 
@@ -37,7 +38,7 @@ void AppleDecoderModule::Init() {
 
   sInitialized = true;
   if (RegisterSupplementalVP9Decoder()) {
-    sCanUseVP9Decoder = CanCreateVP9Decoder();
+    sCanUseVP9Decoder = CanCreateHWDecoder(media::MediaCodec::VP9);
   }
 }
 
@@ -96,11 +97,13 @@ media::DecodeSupportSet AppleDecoderModule::Supports(
   if (trackInfo.IsAudio()) {
     return SupportsMimeType(trackInfo.mMimeType, aDiagnostics);
   }
-  bool supports = trackInfo.GetAsVideoInfo() &&
-                  IsVideoSupported(*trackInfo.GetAsVideoInfo());
-  if (supports) {
-    
-    
+  bool checkSupport = trackInfo.GetAsVideoInfo() &&
+                      IsVideoSupported(*trackInfo.GetAsVideoInfo());
+  if (checkSupport) {
+    if (trackInfo.mMimeType == "video/vp9" &&
+        CanCreateHWDecoder(media::MediaCodec::VP9)) {
+      return media::DecodeSupport::HardwareDecode;
+    }
     return media::DecodeSupport::SoftwareDecode;
   }
   return media::DecodeSupport::Unsupported;
@@ -142,29 +145,40 @@ bool AppleDecoderModule::IsVideoSupported(
 }
 
 
-bool AppleDecoderModule::CanCreateVP9Decoder() {
+bool AppleDecoderModule::CanCreateHWDecoder(media::MediaCodec aCodec) {
   
+  if (!gfx::gfxVars::CanUseHardwareVideoDecoding()) {
+    return false;
+  }
+
+  VideoInfo info(1920, 1080);
+  bool checkSupport = false;
+
   
   if (__builtin_available(macOS 10.13, *)) {
-    
-    if (!VTIsHardwareDecodeSupported ||
-        !VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9)) {
+    if (!VTIsHardwareDecodeSupported) {
       return false;
     }
-
-    
-    VideoInfo info(1920, 1080);
-    info.mMimeType = "video/vp9";
-    VPXDecoder::GetVPCCBox(info.mExtraData, VPXDecoder::VPXStreamInfo());
-
+    switch (aCodec) {
+      case media::MediaCodec::VP9:
+        info.mMimeType = "video/vp9";
+        VPXDecoder::GetVPCCBox(info.mExtraData, VPXDecoder::VPXStreamInfo());
+        checkSupport = VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9);
+        break;
+      default:
+        break;
+    }
+  }
+  
+  if (checkSupport) {
     RefPtr<AppleVTDecoder> decoder =
         new AppleVTDecoder(info, nullptr, {}, nullptr);
     MediaResult rv = decoder->InitializeSession();
     decoder->Shutdown();
 
-    return NS_SUCCEEDED(rv);
+    nsAutoCString failureReason;
+    return (NS_SUCCEEDED(rv) && decoder->IsHardwareAccelerated(failureReason));
   }
-
   return false;
 }
 

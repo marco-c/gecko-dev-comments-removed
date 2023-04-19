@@ -53,7 +53,7 @@ class AppleDecoderModule : public PlatformDecoderModule {
   
   static bool RegisterSupplementalVP9Decoder();
   
-  static bool CanCreateVP9Decoder();
+  static bool CanCreateHWDecoder(media::MediaCodec aCodec);
 };
 
 }  
