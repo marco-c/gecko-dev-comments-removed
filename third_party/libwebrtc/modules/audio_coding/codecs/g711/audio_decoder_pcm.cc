@@ -40,8 +40,14 @@ int AudioDecoderPcmU::DecodeInternal(const uint8_t* encoded,
                                      int16_t* decoded,
                                      SpeechType* speech_type) {
   RTC_DCHECK_EQ(SampleRateHz(), sample_rate_hz);
+  
+  
+  const size_t encoded_len_adjusted =
+      PacketDuration(encoded, encoded_len) *
+      Channels();         
   int16_t temp_type = 1;  
-  size_t ret = WebRtcG711_DecodeU(encoded, encoded_len, decoded, &temp_type);
+  size_t ret =
+      WebRtcG711_DecodeU(encoded, encoded_len_adjusted, decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
   return static_cast<int>(ret);
 }
@@ -75,8 +81,14 @@ int AudioDecoderPcmA::DecodeInternal(const uint8_t* encoded,
                                      int16_t* decoded,
                                      SpeechType* speech_type) {
   RTC_DCHECK_EQ(SampleRateHz(), sample_rate_hz);
+  
+  
+  const size_t encoded_len_adjusted =
+      PacketDuration(encoded, encoded_len) *
+      Channels();         
   int16_t temp_type = 1;  
-  size_t ret = WebRtcG711_DecodeA(encoded, encoded_len, decoded, &temp_type);
+  size_t ret =
+      WebRtcG711_DecodeA(encoded, encoded_len_adjusted, decoded, &temp_type);
   *speech_type = ConvertSpeechType(temp_type);
   return static_cast<int>(ret);
 }
