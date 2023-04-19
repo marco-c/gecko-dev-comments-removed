@@ -68,19 +68,6 @@ using namespace mozilla::gfx;
 
 #define DRAG_IMAGE_ALPHA_LEVEL 0.5
 
-
-
-
-
-enum {
-  MOZ_GTK_DRAG_RESULT_SUCCESS,
-  MOZ_GTK_DRAG_RESULT_NO_TARGET,
-  MOZ_GTK_DRAG_RESULT_USER_CANCELLED,
-  MOZ_GTK_DRAG_RESULT_TIMEOUT_EXPIRED,
-  MOZ_GTK_DRAG_RESULT_GRAB_BROKEN,
-  MOZ_GTK_DRAG_RESULT_ERROR
-};
-
 #ifdef MOZ_LOGGING
 extern mozilla::LazyLogModule gWidgetDragLog;
 #  define LOGDRAGSERVICE(str, ...)                    \
@@ -1418,7 +1405,7 @@ void nsDragService::SourceEndDragSession(GdkDragContext* aContext,
 
   uint32_t dropEffect;
 
-  if (aResult == MOZ_GTK_DRAG_RESULT_SUCCESS) {
+  if (aResult == GTK_DRAG_RESULT_SUCCESS) {
     LOGDRAGSERVICE("  drop is accepted");
     
     
@@ -1450,7 +1437,7 @@ void nsDragService::SourceEndDragSession(GdkDragContext* aContext,
   } else {
     LOGDRAGSERVICE("  drop action is none");
     dropEffect = DRAGDROP_ACTION_NONE;
-    if (aResult != MOZ_GTK_DRAG_RESULT_NO_TARGET) {
+    if (aResult != GTK_DRAG_RESULT_NO_TARGET) {
       LOGDRAGSERVICE("  drop is user chancelled\n");
       mUserCancelled = true;
     }
@@ -2079,13 +2066,13 @@ static gboolean invisibleSourceDragFailed(GtkWidget* aWidget,
   
   
   
-  if (widget::GdkIsWaylandDisplay() && aResult == MOZ_GTK_DRAG_RESULT_ERROR) {
+  if (widget::GdkIsWaylandDisplay() && aResult == GTK_DRAG_RESULT_ERROR) {
     for (GList* tmp = gdk_drag_context_list_targets(aContext); tmp;
          tmp = tmp->next) {
       GdkAtom atom = GDK_POINTER_TO_ATOM(tmp->data);
       GUniquePtr<gchar> name(gdk_atom_name(atom));
       if (name && !strcmp(name.get(), gTabDropType)) {
-        aResult = MOZ_GTK_DRAG_RESULT_NO_TARGET;
+        aResult = GTK_DRAG_RESULT_NO_TARGET;
         LOGDRAGSERVICESTATIC(
             "invisibleSourceDragFailed(%p): Wayland tab drop\n", aContext);
         break;
@@ -2112,7 +2099,7 @@ static void invisibleSourceDragEnd(GtkWidget* aWidget, GdkDragContext* aContext,
   nsDragService* dragService = (nsDragService*)aData;
 
   
-  dragService->SourceEndDragSession(aContext, MOZ_GTK_DRAG_RESULT_SUCCESS);
+  dragService->SourceEndDragSession(aContext, GTK_DRAG_RESULT_SUCCESS);
 }
 
 
