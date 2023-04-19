@@ -782,8 +782,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static bool HasVariationFontSupport();
 
-  bool HasNativeColrFontSupport() const { return mHasNativeColrFontSupport; }
-
   
   static bool WebRenderPrefEnabled();
   
@@ -923,10 +921,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   
   static std::atomic<int8_t> sHasVariationFontSupport;
-
-  
-  
-  bool mHasNativeColrFontSupport = false;
 
   
   

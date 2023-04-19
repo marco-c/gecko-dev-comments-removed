@@ -2258,6 +2258,11 @@ class gfxFont {
   
   
   
+  virtual bool UseNativeColrFontSupport() const { return false; }
+
+  
+  
+  
   
   
   

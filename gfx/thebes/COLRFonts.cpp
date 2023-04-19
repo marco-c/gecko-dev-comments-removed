@@ -987,8 +987,17 @@ struct PaintGlyph {
     UniquePtr<Pattern> fillPattern =
         DispatchMakePattern(aState, aOffset + paintOffset);
     if (fillPattern) {
+      
+      
+      
+#if XP_MACOSX
+      RefPtr<Path> path =
+          aState.mScaledFont->GetPathForGlyphs(buffer, aState.mDrawTarget);
+      aState.mDrawTarget->Fill(path, *fillPattern, aState.mDrawOptions);
+#else
       aState.mDrawTarget->FillGlyphs(aState.mScaledFont, buffer, *fillPattern,
                                      aState.mDrawOptions);
+#endif
       return true;
     }
     RefPtr<Path> path =
