@@ -84,6 +84,9 @@ class LibaomAv1Encoder final : public VideoEncoder {
   EncoderInfo GetEncoderInfo() const override;
 
  private:
+  
+  int NumberOfThreads(int width, int height, int number_of_cores);
+
   bool SvcEnabled() const { return svc_params_.has_value(); }
   
   bool SetSvcParams(ScalableVideoController::StreamLayersConfig svc_config);
@@ -197,7 +200,8 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
   
   cfg_.g_w = encoder_settings_.width;
   cfg_.g_h = encoder_settings_.height;
-  cfg_.g_threads = settings.number_of_cores;
+  cfg_.g_threads =
+      NumberOfThreads(cfg_.g_w, cfg_.g_h, settings.number_of_cores);
   cfg_.g_timebase.num = 1;
   cfg_.g_timebase.den = kRtpTicksPerSecond;
   cfg_.rc_target_bitrate = encoder_settings_.maxBitrate;  
@@ -303,7 +307,43 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
+  ret = aom_codec_control(&ctx_, AV1E_SET_TILE_COLUMNS, cfg_.g_threads >> 1);
+  if (ret != AOM_CODEC_OK) {
+    RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::EncodeInit returned " << ret
+                        << " on control AV1E_SET_TILE_COLUMNS.";
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+
+  ret = aom_codec_control(&ctx_, AV1E_SET_ROW_MT, 1);
+  if (ret != AOM_CODEC_OK) {
+    RTC_LOG(LS_WARNING) << "LibaomAv1Encoder::EncodeInit returned " << ret
+                        << " on control AV1E_SET_ROW_MT.";
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+int LibaomAv1Encoder::NumberOfThreads(int width,
+                                      int height,
+                                      int number_of_cores) {
+  
+  
+  if (width * height >= 1280 * 720 && number_of_cores > 4) {
+    return 4;
+  } else if (width * height >= 640 * 360 && number_of_cores > 2) {
+    return 2;
+  } else {
+
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || \
+    defined(WEBRTC_ANDROID)
+    if (width * height >= 320 * 180 && number_of_cores > 2) {
+      return 2;
+    }
+#endif
+    
+    return 1;
+  }
 }
 
 bool LibaomAv1Encoder::SetSvcParams(
