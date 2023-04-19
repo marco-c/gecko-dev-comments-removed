@@ -78,7 +78,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   
   bool mSkiaLayer = false;
   
-  bool mWebglValid = true;
+  bool mWebglValid = false;
   
   bool mClipDirty = true;
   
