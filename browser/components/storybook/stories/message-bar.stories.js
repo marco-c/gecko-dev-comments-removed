@@ -2,14 +2,6 @@
 
 
 
-
-
-window.MozXULElement = { insertFTLIfNeeded() {} };
-document.l10n = {
-  connectRoot() {},
-  setAttributes() {},
-};
-
 import { html } from "lit";
 
 import "toolkit-widgets/message-bar.js";

@@ -2,31 +2,36 @@
 
 
 
-const path = require('path');
+
+const path = require("path");
 
 
 
 
 module.exports = {
-  "stories": [
+  stories: [
     "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|ts|tsx)"
+    "../stories/**/*.stories.@(js|jsx|ts|tsx)",
   ],
-  "addons": [
-    "@storybook/addon-links",
-    "@storybook/addon-essentials"
-  ],
-  "framework": "@storybook/web-components",
-  "webpackFinal": async (config, { configType }) => {
+  addons: ["@storybook/addon-links", "@storybook/addon-essentials"],
+  framework: "@storybook/web-components",
+  webpackFinal: async (config, { configType }) => {
     
     
     
 
     
     const projectRoot = path.resolve(__dirname, "../../../../");
-    config.resolve.alias["browser"] = `${projectRoot}/browser`;
-    config.resolve.alias["toolkit"] = `${projectRoot}/toolkit`;
-    config.resolve.alias["toolkit-widgets"] = `${projectRoot}/toolkit/content/widgets/`;
+    config.resolve.alias.browser = `${projectRoot}/browser`;
+    config.resolve.alias.toolkit = `${projectRoot}/toolkit`;
+    config.resolve.alias[
+      "toolkit-widgets"
+    ] = `${projectRoot}/toolkit/content/widgets/`;
+
+    config.module.rules.push({
+      test: /\.ftl$/,
+      type: "asset/source",
+    });
 
     config.optimization = {
       splitChunks: false,
@@ -40,7 +45,7 @@ module.exports = {
     
     return config;
   },
-  "core": {
-    "builder": "webpack5"
-  }
-}
+  core: {
+    builder: "webpack5",
+  },
+};
