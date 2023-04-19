@@ -213,6 +213,10 @@ class BaseChannel : public ChannelInterface,
     return remote_content_direction_;
   }
 
+  webrtc::RtpExtension::Filter extensions_filter() const {
+    return extensions_filter_;
+  }
+
   bool enabled() const RTC_RUN_ON(worker_thread()) { return enabled_; }
   rtc::Thread* signaling_thread() const { return signaling_thread_; }
 
@@ -252,13 +256,8 @@ class BaseChannel : public ChannelInterface,
   void ChannelWritable_n() RTC_RUN_ON(network_thread());
   void ChannelNotWritable_n() RTC_RUN_ON(network_thread());
 
-  bool AddRecvStream_w(const StreamParams& sp) RTC_RUN_ON(worker_thread());
-  bool RemoveRecvStream_w(uint32_t ssrc) RTC_RUN_ON(worker_thread());
-  void ResetUnsignaledRecvStream_w() RTC_RUN_ON(worker_thread());
   bool SetPayloadTypeDemuxingEnabled_w(bool enabled)
       RTC_RUN_ON(worker_thread());
-  bool AddSendStream_w(const StreamParams& sp) RTC_RUN_ON(worker_thread());
-  bool RemoveSendStream_w(uint32_t ssrc) RTC_RUN_ON(worker_thread());
 
   
   
@@ -269,7 +268,7 @@ class BaseChannel : public ChannelInterface,
                             webrtc::SdpType type,
                             std::string& error_desc)
       RTC_RUN_ON(worker_thread());
-  bool UpdateRemoteStreams_w(const std::vector<StreamParams>& streams,
+  bool UpdateRemoteStreams_w(const MediaContentDescription* content,
                              webrtc::SdpType type,
                              std::string& error_desc)
       RTC_RUN_ON(worker_thread());
@@ -292,7 +291,9 @@ class BaseChannel : public ChannelInterface,
   
   void MaybeAddHandledPayloadType(int payload_type) RTC_RUN_ON(worker_thread());
 
-  void ClearHandledPayloadTypes() RTC_RUN_ON(worker_thread());
+  
+  
+  bool ClearHandledPayloadTypes() RTC_RUN_ON(worker_thread());
 
   void UpdateRtpHeaderExtensionMap(
       const RtpHeaderExtensions& header_extensions);
@@ -329,22 +330,7 @@ class BaseChannel : public ChannelInterface,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const webrtc::CryptoOptions crypto_options_;
+  const webrtc::RtpExtension::Filter extensions_filter_;
 
   
   
