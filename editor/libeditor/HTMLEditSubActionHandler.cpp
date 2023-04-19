@@ -79,6 +79,7 @@ namespace mozilla {
 
 using namespace dom;
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
+using EmptyCheckOptions = HTMLEditUtils::EmptyCheckOptions;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 using StyleDifference = HTMLEditUtils::StyleDifference;
@@ -455,7 +456,7 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
     
     if (TopLevelEditSubActionDataRef().mNeedsToCleanUpEmptyElements) {
       nsresult rv = RemoveEmptyNodesIn(
-          MOZ_KnownLive(*TopLevelEditSubActionDataRef().mChangedRange));
+          EditorDOMRange(*TopLevelEditSubActionDataRef().mChangedRange));
       if (NS_FAILED(rv)) {
         NS_WARNING("HTMLEditor::RemoveEmptyNodesIn() failed");
         return rv;
@@ -9087,7 +9088,7 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
   return rv;
 }
 
-nsresult HTMLEditor::RemoveEmptyNodesIn(nsRange& aRange) {
+nsresult HTMLEditor::RemoveEmptyNodesIn(const EditorDOMRange& aRange) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aRange.IsPositioned());
 
@@ -9118,98 +9119,158 @@ nsresult HTMLEditor::RemoveEmptyNodesIn(nsRange& aRange) {
   
   
 
+  const RawRangeBoundary endOfRange = [&]() {
+    
+    
+    
+    if (aRange.Collapsed() || !aRange.IsInContentNodes() ||
+        !aRange.EndRef().IsStartOfContainer()) {
+      return aRange.EndRef().ToRawRangeBoundary();
+    }
+    nsINode* const commonAncestor =
+        nsContentUtils::GetClosestCommonInclusiveAncestor(
+            aRange.StartRef().ContainerAsContent(),
+            aRange.EndRef().ContainerAsContent());
+    if (!commonAncestor) {
+      return aRange.EndRef().ToRawRangeBoundary();
+    }
+    nsIContent* maybeRightContent = nullptr;
+    for (nsIContent* content : aRange.EndRef()
+                                   .ContainerAsContent()
+                                   ->InclusiveAncestorsOfType<nsIContent>()) {
+      if (!HTMLEditUtils::IsSimplyEditableNode(*content) ||
+          content == commonAncestor) {
+        break;
+      }
+      if (aRange.StartRef().ContainerAsContent() == content) {
+        break;
+      }
+      EmptyCheckOptions options = {EmptyCheckOption::TreatListItemAsVisible,
+                                   EmptyCheckOption::TreatTableCellAsVisible};
+      if (!HTMLEditUtils::IsBlockElement(*content)) {
+        options += EmptyCheckOption::TreatSingleBRElementAsVisible;
+      }
+      if (!HTMLEditUtils::IsEmptyNode(*content, options)) {
+        break;
+      }
+      maybeRightContent = content;
+    }
+    if (!maybeRightContent) {
+      return aRange.EndRef().ToRawRangeBoundary();
+    }
+    return EditorRawDOMPoint::After(*maybeRightContent).ToRawRangeBoundary();
+  }();
+
   PostContentIterator postOrderIter;
-  nsresult rv = postOrderIter.Init(&aRange);
+  nsresult rv =
+      postOrderIter.Init(aRange.StartRef().ToRawRangeBoundary(), endOfRange);
   if (NS_FAILED(rv)) {
     NS_WARNING("PostContentIterator::Init() failed");
     return rv;
   }
 
   AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfEmptyContents,
-      arrayOfEmptyCites, skipList;
+      arrayOfEmptyCites;
 
   
-  for (; !postOrderIter.IsDone(); postOrderIter.Next()) {
-    MOZ_ASSERT(postOrderIter.GetCurrentNode()->IsContent());
+  {
+    const bool isMailEditor = IsMailEditor();
+    AutoTArray<OwningNonNull<nsIContent>, 64> knownNonEmptyContents;
+    Maybe<AutoRangeArray> maybeSelectionRanges;
+    for (; !postOrderIter.IsDone(); postOrderIter.Next()) {
+      MOZ_ASSERT(postOrderIter.GetCurrentNode()->IsContent());
 
-    nsIContent* content = postOrderIter.GetCurrentNode()->AsContent();
-    nsIContent* parentContent = content->GetParent();
+      nsIContent* content = postOrderIter.GetCurrentNode()->AsContent();
+      nsIContent* parentContent = content->GetParent();
 
-    size_t idx = skipList.IndexOf(content);
-    if (idx != skipList.NoIndex) {
-      
-      
-      if (parentContent) {
-        skipList[idx] = parentContent;
+      size_t idx = knownNonEmptyContents.IndexOf(content);
+      if (idx != decltype(knownNonEmptyContents)::NoIndex) {
+        
+        
+        if (parentContent) {
+          knownNonEmptyContents[idx] = parentContent;
+        }
+        continue;
       }
-      continue;
-    }
 
-    bool isCandidate = false;
-    bool isMailCite = false;
-    if (content->IsElement()) {
-      if (content->IsHTMLElement(nsGkAtoms::body)) {
-        
-      } else if ((isMailCite =
-                      HTMLEditUtils::IsMailCite(*content->AsElement())) ||
-                 content->IsHTMLElement(nsGkAtoms::a) ||
-                 HTMLEditUtils::IsInlineStyle(content) ||
-                 HTMLEditUtils::IsAnyListElement(content) ||
-                 content->IsHTMLElement(nsGkAtoms::div)) {
-        
-        isCandidate = true;
-      } else if (HTMLEditUtils::IsFormatNode(content) ||
-                 HTMLEditUtils::IsListItem(content) ||
-                 content->IsHTMLElement(nsGkAtoms::blockquote)) {
-        
-        
-        
-        AutoRangeArray selectionRanges(SelectionRef());
-        isCandidate =
-            !selectionRanges
-                 .IsAtLeastOneContainerOfRangeBoundariesInclusiveDescendantOf(
-                     *content);
-      }
-    }
+      const bool isEmptyNode = [&]() {
+        if (!content->IsElement()) {
+          return false;
+        }
+        const bool isMailCite =
+            isMailEditor && HTMLEditUtils::IsMailCite(*content->AsElement());
+        const bool isCandidate = [&]() {
+          if (content->IsHTMLElement(nsGkAtoms::body)) {
+            
+            return false;
+          }
+          if (isMailCite || content->IsHTMLElement(nsGkAtoms::a) ||
+              HTMLEditUtils::IsInlineStyle(content) ||
+              HTMLEditUtils::IsAnyListElement(content) ||
+              content->IsHTMLElement(nsGkAtoms::div)) {
+            
+            return true;
+          }
+          if (HTMLEditUtils::IsFormatNode(content) ||
+              HTMLEditUtils::IsListItem(content) ||
+              content->IsHTMLElement(nsGkAtoms::blockquote)) {
+            
+            
+            
+            if (maybeSelectionRanges.isNothing()) {
+              maybeSelectionRanges.emplace(SelectionRef());
+            }
+            return !maybeSelectionRanges
+                        ->IsAtLeastOneContainerOfRangeBoundariesInclusiveDescendantOf(
+                            *content);
+          }
+          return false;
+        }();
 
-    bool isEmptyNode = false;
-    if (isCandidate) {
-      
-      
-      HTMLEditUtils::EmptyCheckOptions options{
-          EmptyCheckOption::TreatListItemAsVisible,
-          EmptyCheckOption::TreatTableCellAsVisible};
-      if (!isMailCite) {
-        options += EmptyCheckOption::TreatSingleBRElementAsVisible;
-      }
-      isEmptyNode = HTMLEditUtils::IsEmptyNode(*content, options);
-      if (isEmptyNode) {
+        if (!isCandidate) {
+          return false;
+        }
+
+        
+        
+        HTMLEditUtils::EmptyCheckOptions options{
+            EmptyCheckOption::TreatListItemAsVisible,
+            EmptyCheckOption::TreatTableCellAsVisible};
+        if (!isMailCite) {
+          options += EmptyCheckOption::TreatSingleBRElementAsVisible;
+        }
+        if (!HTMLEditUtils::IsEmptyNode(*content, options)) {
+          return false;
+        }
+
         if (isMailCite) {
           
           arrayOfEmptyCites.AppendElement(*content);
-        } else {
+        }
+        
+        
+        
+        
+        
+        else if (HTMLEditUtils::IsSimplyEditableNode(*content) &&
+                 HTMLEditUtils::IsRemovableNode(*content)) {
           arrayOfEmptyContents.AppendElement(*content);
         }
+        return true;
+      }();
+      if (!isEmptyNode && parentContent) {
+        knownNonEmptyContents.AppendElement(*parentContent);
       }
-    }
-
-    if (!isEmptyNode && parentContent) {
-      
-      skipList.AppendElement(*parentContent);
-    }
+    }  
   }
 
   
   for (OwningNonNull<nsIContent>& emptyContent : arrayOfEmptyContents) {
     
-    if (HTMLEditUtils::IsSimplyEditableNode(emptyContent)) {
-      
-      
-      nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(emptyContent));
-      if (NS_FAILED(rv)) {
-        NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-        return rv;
-      }
+    nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(emptyContent));
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+      return rv;
     }
   }
 
