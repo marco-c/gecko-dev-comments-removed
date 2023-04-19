@@ -1033,14 +1033,17 @@ static WebIDLUtilityActorName UtilityActorNameToWebIDL(
     mozilla::UtilityActorName aType) {
   
   static_assert(WebIDLUtilityActorNameValues::Count ==
-                    static_cast<size_t>(UtilityActorName::AudioDecoder) + 1,
+                    static_cast<size_t>(UtilityActorName::AudioDecoder_WMF) + 1,
                 "In order for this static cast to be okay, "
                 "UtilityActorName must match UtilityActorName exactly");
 
   
   switch (aType) {
     UTILITYACTORNAME_TO_WEBIDL_CASE(Unknown, Unknown);
-    UTILITYACTORNAME_TO_WEBIDL_CASE(AudioDecoder, AudioDecoder);
+    UTILITYACTORNAME_TO_WEBIDL_CASE(AudioDecoder_Generic, AudioDecoder_Generic);
+    UTILITYACTORNAME_TO_WEBIDL_CASE(AudioDecoder_AppleMedia,
+                                    AudioDecoder_AppleMedia);
+    UTILITYACTORNAME_TO_WEBIDL_CASE(AudioDecoder_WMF, AudioDecoder_WMF);
   }
 
   MOZ_ASSERT(false, "Unhandled case in WebIDLUtilityActorName");

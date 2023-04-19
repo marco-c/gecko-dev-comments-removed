@@ -764,7 +764,8 @@ void RunTestsGenericUtility(SandboxTestingChild* child) {
 #endif             
 }
 
-void RunTestsUtilityAudioDecoder(SandboxTestingChild* child) {
+void RunTestsUtilityAudioDecoder(SandboxTestingChild* child,
+                                 ipc::SandboxingKind aSandbox) {
   MOZ_ASSERT(child, "No SandboxTestingChild*?");
 
   RunGenericTests(child);
@@ -796,7 +797,9 @@ void RunTestsUtilityAudioDecoder(SandboxTestingChild* child) {
 #  elif XP_MACOSX  
   RunMacTestLaunchProcess(child);
   RunMacTestWindowServer(child);
-  RunMacTestAudioAPI(child, true);
+  RunMacTestAudioAPI(
+      child,
+      aSandbox == ipc::SandboxingKind::UTILITY_AUDIO_DECODING_APPLE_MEDIA);
 #  endif           
 #else              
 #  ifdef XP_WIN
