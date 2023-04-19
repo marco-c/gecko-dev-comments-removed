@@ -8246,25 +8246,20 @@ bool nsDisplayBackdropFilters::CreateWebRenderCommands(
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
   WrFiltersHolder wrFilters;
-  Maybe<nsRect> filterClip;
   const ComputedStyle& style = mStyle ? *mStyle : *mFrame->Style();
   auto filterChain = style.StyleEffects()->mBackdropFilters.AsSpan();
   bool initialized = true;
   if (!SVGIntegrationUtils::CreateWebRenderCSSFilters(filterChain, mFrame,
                                                       wrFilters) &&
-      !SVGIntegrationUtils::BuildWebRenderFilters(
-          mFrame, filterChain, wrFilters, filterClip, initialized)) {
-    if (mStyle) {
-      
-      
-      return true;
-    }
-    return false;
+      !SVGIntegrationUtils::BuildWebRenderFilters(mFrame, filterChain,
+                                                  wrFilters, initialized)) {
+    
+    
+    wrFilters = {};
   }
 
   if (!initialized) {
-    
-    return true;
+    wrFilters = {};
   }
 
   nsCSSRendering::ImageLayerClipState clip;
@@ -8347,8 +8342,8 @@ void nsDisplayFilters::PaintWithContentsPaintCallback(
                             : mFrame->StyleEffects()->mFilters.AsSpan();
   SVGIntegrationUtils::PaintFilter(
       params, filterChain,
-      [&](gfxContext& aContext, nsIFrame* aTarget, const gfxMatrix& aTransform,
-          const nsIntRect* aDirtyRect, imgDrawingParams& aImgParams) {
+      [&](gfxContext& aContext, imgDrawingParams&, const gfxMatrix*,
+          const nsIntRect*) {
         gfxContextMatrixAutoSaveRestore autoSR(&aContext);
         aContext.SetMatrixDouble(aContext.CurrentMatrixDouble().PreTranslate(
             -userSpaceToFrameSpaceOffset));
@@ -8364,33 +8359,41 @@ bool nsDisplayFilters::CreateWebRenderCommands(
     wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  float auPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-
   WrFiltersHolder wrFilters;
-  Maybe<nsRect> filterClip;
+  const ComputedStyle& style = mStyle ? *mStyle : *mFrame->Style();
+  auto filterChain = style.StyleEffects()->mFilters.AsSpan();
   bool initialized = true;
-  auto filterChain = mStyle ? mStyle->StyleEffects()->mFilters.AsSpan()
-                            : mFrame->StyleEffects()->mFilters.AsSpan();
   if (!SVGIntegrationUtils::CreateWebRenderCSSFilters(filterChain, mFrame,
                                                       wrFilters) &&
-      !SVGIntegrationUtils::BuildWebRenderFilters(
-          mFrame, filterChain, wrFilters, filterClip, initialized)) {
+      !SVGIntegrationUtils::BuildWebRenderFilters(mFrame, filterChain,
+                                                  wrFilters, initialized)) {
     if (mStyle) {
       
-      return true;
+      
+      wrFilters = {};
+    } else {
+      
+      return false;
     }
-    return false;
   }
 
   if (!initialized) {
     
-    return true;
+    
+    
+    
+    
+    
+    
+    
+    wrFilters = {};
   }
 
   uint64_t clipChainId;
-  if (filterClip) {
+  if (wrFilters.post_filters_clip) {
     auto devPxRect = LayoutDeviceRect::FromAppUnits(
-        filterClip.value() + ToReferenceFrame(), auPerDevPixel);
+        wrFilters.post_filters_clip.value() + ToReferenceFrame(),
+        mFrame->PresContext()->AppUnitsPerDevPixel());
     auto clipId =
         aBuilder.DefineRectClip(Nothing(), wr::ToLayoutRect(devPxRect));
     clipChainId = aBuilder.DefineClipChain({clipId}, true).id;
