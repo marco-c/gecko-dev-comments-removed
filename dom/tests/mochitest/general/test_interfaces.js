@@ -1557,6 +1557,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ondragenter", insecureContext: true },
   
+  { name: "ondragexit", insecureContext: true, nightly: false },
+  
   { name: "ondragleave", insecureContext: true },
   
   { name: "ondragover", insecureContext: true },
@@ -1779,7 +1781,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "resizeTo", insecureContext: true },
   
-  { name: "scheduler", insecureContext: true },
+  { name: "scheduler", insecureContext: true, nightly: true },
   
   { name: "screen", insecureContext: true },
   
@@ -1913,11 +1915,11 @@ function runTest(parentName, parent, ...interfaceGroups) {
 
     ok(
       name in parent,
-      `${name} is exposed as an own property on '" + parentName + "' but tests false for "in" in the global scope`
+      `${name} is exposed as an own property on '${parentName}' but tests false for "in" in the global scope`
     );
     ok(
       Object.getOwnPropertyDescriptor(parent, name),
-      `${name} is exposed as an own property on '" + parentName + "' but has no property descriptor in the global scope`
+      `${name} is exposed as an own property on '${parentName}' but has no property descriptor in the global scope`
     );
 
     delete interfaceMap[name];
