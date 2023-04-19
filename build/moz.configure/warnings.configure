@@ -121,6 +121,9 @@ check_and_add_warning("-Wduplicated-cond")
 check_and_add_warning("-Wimplicit-fallthrough", cxx_compiler)
 
 
+check_and_add_warning("-Wlogical-op")
+
+
 with only_when(depends(target)(lambda t: t.kernel == "Darwin")):
     
     check_and_add_warning("-Wduplicate-method-arg")
