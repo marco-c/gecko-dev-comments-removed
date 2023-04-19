@@ -2,10 +2,11 @@
 
 
 
-var EXPORTED_SYMBOLS = ["TabEngine", "TabSetRecord"];
+var EXPORTED_SYMBOLS = ["TabEngine", "TabProvider"];
 
 const TABS_TTL = 31622400; 
 const TAB_ENTRIES_LIMIT = 5; 
+const STORAGE_VERSION = 1; 
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -35,6 +36,10 @@ const { SyncRecord, SyncTelemetry } = ChromeUtils.import(
   "resource://services-sync/telemetry.js"
 );
 
+const { BridgedEngine, LogAdapter } = ChromeUtils.import(
+  "resource://services-sync/bridged_engine.js"
+);
+
 const FAR_FUTURE = 4102405200000; 
 
 const lazy = {};
@@ -46,6 +51,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
+  TabsStore: "resource://gre/modules/RustTabs.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -66,33 +72,88 @@ XPCOMUtils.defineLazyPreferenceGetter(
   0
 );
 
-function TabSetRecord(collection, id) {
-  CryptoWrapper.call(this, collection, id);
-}
-TabSetRecord.prototype = {
-  __proto__: CryptoWrapper.prototype,
-  _logName: "Sync.Record.Tabs",
-  ttl: TABS_TTL,
-};
-
-Utils.deferGetSet(TabSetRecord, "cleartext", ["clientName", "tabs"]);
 
 function TabEngine(service) {
-  SyncEngine.call(this, "Tabs", service);
+  BridgedEngine.call(this, "Tabs", service);
 }
-TabEngine.prototype = {
-  __proto__: SyncEngine.prototype,
-  _storeObj: TabStore,
-  _trackerObj: TabTracker,
-  _recordObj: TabSetRecord,
 
+TabEngine.prototype = {
+  __proto__: BridgedEngine.prototype,
+  _trackerObj: TabTracker,
   syncPriority: 3,
+
+  async prepareTheBridge(isQuickWrite) {
+    let clientsEngine = this.service.clientsEngine;
+    
+    
+    
+    let clientData = {
+      local_client_id: clientsEngine.localID,
+      recent_clients: {},
+    };
+
+    let tabs = await TabProvider.getAllTabs(true);
+    await this._rustStore.setLocalTabs(tabs);
+
+    for (let remoteClient of clientsEngine.remoteClients) {
+      let id = remoteClient.id;
+      if (!id) {
+        throw new Error("Remote client somehow did not have an id");
+      }
+      let client = {
+        fxa_device_id: remoteClient.fxaDeviceId,
+        
+        
+        device_name: clientsEngine.getClientName(id) ?? "",
+        device_type: clientsEngine.getClientType(id),
+      };
+      clientData.recent_clients[id] = client;
+    }
+
+    
+    clientData.recent_clients[clientsEngine.localID] = {
+      fxa_device_id: await clientsEngine.fxAccounts.device.getLocalId(),
+      device_name: clientsEngine.localName,
+      device_type: clientsEngine.localType,
+    };
+
+    
+    
+    if (isQuickWrite) {
+      await this.setLastSync(FAR_FUTURE);
+      await this._bridge.prepareForSync(JSON.stringify(clientData));
+      return;
+    }
+
+    
+    
+    
+    await this._bridge.setLastSync(0);
+    await this._bridge.prepareForSync(JSON.stringify(clientData));
+  },
+
+  async _syncStartup() {
+    await super._syncStartup();
+    await this.prepareTheBridge();
+  },
 
   async initialize() {
     await SyncEngine.prototype.initialize.call(this);
 
+    let path = PathUtils.join(PathUtils.profileDir, "synced-tabs.db");
+    this._rustStore = await lazy.TabsStore.init(path);
+    this._bridge = await this._rustStore.bridgedEngine();
+
+    
+    
+    this._bridge.storageVersion = STORAGE_VERSION;
+    this._bridge.allowSkippedRecord = true;
+
+    this._log.info("Got a bridged engine!");
+
     
     await this._resetClient();
+    this._tracker.modified = true;
   },
 
   async getChangedIDs() {
@@ -105,18 +166,25 @@ TabEngine.prototype = {
   },
 
   
-  getAllClients() {
-    return this._store._remoteClients;
-  },
-
-  getClientById(id) {
-    return this._store._remoteClients[id];
-  },
-
-  async _resetClient() {
-    await SyncEngine.prototype._resetClient.call(this);
-    await this._store.wipe();
-    this._tracker.modified = true;
+  async getAllClients() {
+    let remoteTabs = await this._rustStore.getAll();
+    let remoteClientTabs = [];
+    for (let remoteClient of this.service.clientsEngine.remoteClients) {
+      
+      
+      let rustClient = remoteTabs.find(
+        x => x.clientId === remoteClient.fxaDeviceId
+      );
+      if (!rustClient) {
+        continue;
+      }
+      let client = {
+        tabs: rustClient.remoteTabs,
+        ...remoteClient,
+      };
+      remoteClientTabs.push(client);
+    }
+    return remoteClientTabs;
   },
 
   async removeClientData() {
@@ -124,30 +192,9 @@ TabEngine.prototype = {
     await this.service.resource(url).delete();
   },
 
-  async _reconcile(item) {
-    
-    
-    if (await this._store.itemExists(item.id)) {
-      this._log.trace(
-        "Ignoring incoming tab item because of its id: " + item.id
-      );
-      return false;
-    }
-
-    return SyncEngine.prototype._reconcile.call(this, item);
-  },
-
   async trackRemainingChanges() {
     if (this._modified.count() > 0) {
       this._tracker.modified = true;
-    }
-  },
-
-  async _onRecordsWritten(succeeded, failed, serverModifiedTime) {
-    await super._onRecordsWritten(succeeded, failed, serverModifiedTime);
-    if (failed.length) {
-      
-      this._log.warn("the server rejected our tabs record");
     }
   },
 
@@ -203,10 +250,10 @@ TabEngine.prototype = {
         
         
         const origLastSync = await this.getLastSync();
-        await this.setLastSync(FAR_FUTURE);
         try {
           await this._doQuickWrite();
         } finally {
+          
           await this.setLastSync(origLastSync);
         }
       })();
@@ -235,12 +282,29 @@ TabEngine.prototype = {
       
       
       
-      
-      this._modified.replace(await this.pullChanges());
+      await this.prepareTheBridge(true);
       this._tracker.clearChangedIDs();
       this._tracker.resetScore();
 
+      Async.checkAppReady();
       
+      
+      
+      
+      
+      let outgoing = await this._bridge.apply();
+      
+      let mine = outgoing[0];
+      this._log.trace("outgoing envelope", mine);
+      
+      let record = this._recordObj.fromOutgoingEnvelope(
+        this.name,
+        JSON.parse(mine)
+      );
+      let changeset = {};
+      changeset[record.id] = { synced: false, record };
+      this._modified.replace(changeset);
+
       Async.checkAppReady();
       await this._uploadOutgoing();
       telemetryRecord.onEngineApplied(name, 1);
@@ -270,16 +334,7 @@ TabEngine.prototype = {
   },
 };
 
-function TabStore(name, engine) {
-  Store.call(this, name, engine);
-}
-TabStore.prototype = {
-  __proto__: Store.prototype,
-
-  async itemExists(id) {
-    return id == this.engine.service.clientsEngine.localID;
-  },
-
+const TabProvider = {
   getWindowEnumerator() {
     return Services.wm.getEnumerator("navigator:browser");
   },
@@ -327,7 +382,7 @@ TabStore.prototype = {
           title: tab.linkedBrowser.contentTitle || "",
           urlHistory: [url],
           icon: "",
-          lastUsed: Math.floor((tab.lastAccessed || 0) / 1000),
+          lastUsed: Math.floor(tab.lastAccessed || 0),
         };
         allTabs.push(thisTab);
         
@@ -347,76 +402,9 @@ TabStore.prototype = {
 
     await Promise.allSettled(iconPromises);
 
-    return allTabs;
-  },
-
-  async createRecord(id, collection) {
-    let record = new TabSetRecord(collection, id);
-    record.clientName = this.engine.service.clientsEngine.localName;
-
-    
-    let tabs = (await this.getAllTabs(true)).sort(function(a, b) {
+    return allTabs.sort(function(a, b) {
       return b.lastUsed - a.lastUsed;
     });
-    const maxPayloadSize = this.engine.service.getMemcacheMaxRecordPayloadSize();
-    let records = Utils.tryFitItems(tabs, maxPayloadSize);
-
-    if (records.length != tabs.length) {
-      this._log.warn(
-        `Can't fit all tabs in sync payload: have ${tabs.length}, but can only fit ${records.length}.`
-      );
-    }
-
-    if (this._log.level <= Log.Level.Trace) {
-      records.forEach(tab => {
-        this._log.trace("Wrapping tab: ", tab);
-      });
-    }
-
-    record.tabs = records;
-    return record;
-  },
-
-  async getAllIDs() {
-    
-    
-    let ids = {};
-    let allWindowsArePrivate = false;
-    for (let win of Services.wm.getEnumerator("navigator:browser")) {
-      if (lazy.PrivateBrowsingUtils.isWindowPrivate(win)) {
-        
-        allWindowsArePrivate = true;
-      } else {
-        
-        allWindowsArePrivate = false;
-        break;
-      }
-    }
-
-    if (
-      allWindowsArePrivate &&
-      !lazy.PrivateBrowsingUtils.permanentPrivateBrowsing
-    ) {
-      return ids;
-    }
-
-    ids[this.engine.service.clientsEngine.localID] = true;
-    return ids;
-  },
-
-  async wipe() {
-    this._remoteClients = {};
-  },
-
-  async create(record) {
-    this._log.debug("Adding remote tabs from " + record.id);
-    this._remoteClients[record.id] = Object.assign({}, record.cleartext, {
-      lastModified: record.modified,
-    });
-  },
-
-  async update(record) {
-    this._log.trace("Ignoring tab updates as local ones win");
   },
 };
 

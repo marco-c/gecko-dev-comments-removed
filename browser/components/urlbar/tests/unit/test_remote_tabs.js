@@ -73,8 +73,8 @@ add_task(async function setup() {
 
 add_task(async function test_minimal() {
   
-  configureEngine({
-    guid_desktop: {
+  configureEngine([
+    {
       id: "desktop",
       tabs: [
         {
@@ -82,7 +82,7 @@ add_task(async function test_minimal() {
         },
       ],
     },
-  });
+  ]);
 
   let query = "ex";
   let context = createContext(query, { isPrivate: false });
@@ -103,8 +103,8 @@ add_task(async function test_minimal() {
 
 add_task(async function test_maximal() {
   
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs: [
         {
@@ -114,7 +114,7 @@ add_task(async function test_maximal() {
         },
       ],
     },
-  });
+  ]);
 
   let query = "ex";
   let context = createContext(query, { isPrivate: false });
@@ -137,8 +137,8 @@ add_task(async function test_maximal() {
 
 add_task(async function test_noShowIcons() {
   Services.prefs.setBoolPref("services.sync.syncedTabs.showRemoteIcons", false);
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs: [
         {
@@ -148,7 +148,7 @@ add_task(async function test_noShowIcons() {
         },
       ],
     },
-  });
+  ]);
 
   let query = "ex";
   let context = createContext(query, { isPrivate: false });
@@ -173,8 +173,8 @@ add_task(async function test_noShowIcons() {
 
 add_task(async function test_dontMatchSyncedTabs() {
   Services.prefs.setBoolPref("services.sync.syncedTabs.showRemoteTabs", false);
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs: [
         {
@@ -184,7 +184,7 @@ add_task(async function test_dontMatchSyncedTabs() {
         },
       ],
     },
-  });
+  ]);
 
   let context = createContext("ex", { isPrivate: false });
   await check_results({
@@ -202,8 +202,8 @@ add_task(async function test_dontMatchSyncedTabs() {
 
 add_task(async function test_tabsDisabledInUrlbar() {
   Services.prefs.setBoolPref("browser.urlbar.suggest.remotetab", false);
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs: [
         {
@@ -213,7 +213,7 @@ add_task(async function test_tabsDisabledInUrlbar() {
         },
       ],
     },
-  });
+  ]);
 
   let context = createContext("ex", { isPrivate: false });
   await check_results({
@@ -231,8 +231,8 @@ add_task(async function test_tabsDisabledInUrlbar() {
 
 add_task(async function test_matches_title() {
   
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs: [
         {
@@ -241,7 +241,7 @@ add_task(async function test_matches_title() {
         },
       ],
     },
-  });
+  ]);
 
   let query = "ex";
   let context = createContext(query, { isPrivate: false });
@@ -266,8 +266,8 @@ add_task(async function test_localtab_matches_override() {
   
 
   
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs: [
         {
@@ -276,7 +276,7 @@ add_task(async function test_localtab_matches_override() {
         },
       ],
     },
-  });
+  ]);
 
   
   let uri = Services.io.newURI("http://foo.com/");
@@ -308,8 +308,8 @@ add_task(async function test_remotetab_matches_override() {
   
   let url = "http://foo.remote.com/";
   
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs: [
         {
@@ -318,7 +318,7 @@ add_task(async function test_remotetab_matches_override() {
         },
       ],
     },
-  });
+  ]);
 
   
   await PlacesTestUtils.addVisits(url);
@@ -354,12 +354,7 @@ add_task(async function test_mixed_result_types() {
       lastUsed: Math.floor(Date.now() / 1000) - i * 86400, 
     }));
   
-  configureEngine({
-    guid_mobile: {
-      id: "mobile",
-      tabs,
-    },
-  });
+  configureEngine([{ id: "mobile", tabs }]);
 
   
   let openTabUrl = url + "openpage/";
@@ -441,12 +436,12 @@ add_task(async function test_many_remotetab_results() {
     }));
 
   
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs,
     },
-  });
+  ]);
 
   let query = "rem";
   let context = createContext(query, { isPrivate: false });
@@ -533,16 +528,16 @@ add_task(async function multiple_clients() {
     lastUsed: Date.now() / 1000,
   });
 
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs: mobileTabs,
     },
-    guid_desktop: {
+    {
       id: "desktop",
       tabs: desktopTabs,
     },
-  });
+  ]);
 
   
   
@@ -598,12 +593,12 @@ add_task(async function test_restrictionCharacter() {
       title: "A title",
       lastUsed: Math.floor(Date.now() / 1000) - i,
     }));
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs,
     },
-  });
+  ]);
 
   
   let openTabUrl = url + "openpage/";
@@ -670,12 +665,12 @@ add_task(async function test_duplicate_remote_tabs() {
       title: "A title",
       lastUsed: Math.floor(Date.now() / 1000),
     }));
-  configureEngine({
-    guid_mobile: {
+  configureEngine([
+    {
       id: "mobile",
       tabs,
     },
-  });
+  ]);
 
   
   let query = UrlbarTokenizer.RESTRICT.OPENPAGE;

@@ -83,7 +83,6 @@ add_setup(async function() {
     TabsSetupFlowManager.resetInternalState();
   });
 
-  await promiseSyncReady();
   
   gSync.init();
 

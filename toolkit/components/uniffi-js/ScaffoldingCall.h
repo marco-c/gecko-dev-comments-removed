@@ -172,7 +172,7 @@ class ScaffoldingCallHandler {
       } else {
         
         return mozilla::Err(result.unwrapErr() +
-                            nsPrintfCString(" (arg %ld)", I));
+                            nsPrintfCString(" (arg %zu)", I));
       }
     }
   }

@@ -471,7 +471,9 @@ BridgedEngine.prototype = {
 
 
   async _onRecordsWritten(succeeded, failed, serverModifiedTime) {
-    await this._bridge.setUploaded(serverModifiedTime, succeeded);
+    
+    let serverModifiedMS = Math.round(serverModifiedTime * 1000);
+    await this._bridge.setUploaded(Math.floor(serverModifiedMS), succeeded);
   },
 
   async _createTombstone() {
