@@ -182,7 +182,7 @@
         return NodeFilter.FILTER_REJECT;
       }
       
-      if (cs.display == "-moz-popup" && node.state != "open") {
+      if (XULPopupElement.isInstance(node) && node.state != "open") {
         return NodeFilter.FILTER_REJECT;
       }
       
