@@ -821,10 +821,10 @@ void RtpVideoSender::OnBitrateUpdated(BitrateAllocationUpdate update,
     
   }
 
-    
-    
-    
-    
+  
+  
+  
+  
   uint32_t packetization_rate_bps =
       std::min(GetPacketizationOverheadRate(), encoder_target_rate_bps_ / 2);
   encoder_target_rate_bps_ -= packetization_rate_bps;
