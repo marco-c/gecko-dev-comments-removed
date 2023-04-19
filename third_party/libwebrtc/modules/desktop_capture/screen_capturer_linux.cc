@@ -34,9 +34,9 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
 
 #if defined(WEBRTC_USE_X11)
   return ScreenCapturerX11::CreateRawScreenCapturer(options);
-#endif  
-
+#else
   return nullptr;
+#endif  
 }
 
 }  
