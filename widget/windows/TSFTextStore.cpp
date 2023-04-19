@@ -1754,10 +1754,6 @@ class TSFPrefs final {
   }
 
   DECL_AND_IMPL_BOOL_PREF(
-      "intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_first_"
-      "char",
-      DoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar, true)
-  DECL_AND_IMPL_BOOL_PREF(
       "intl.tsf.hack.ms_japanese_ime.do_not_return_no_layout_error_at_caret",
       DoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret, true)
   DECL_AND_IMPL_BOOL_PREF(
@@ -4680,7 +4676,8 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
       
       
       
-      if (TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar() &&
+      if (StaticPrefs::
+              intl_tsf_hack_ms_japanese_ime_do_not_return_no_layout_error_at_first_char() &&
           aACPStart < aACPEnd) {
         aACPEnd = aACPStart;
         break;
