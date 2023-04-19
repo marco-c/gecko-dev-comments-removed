@@ -33,7 +33,7 @@ namespace mozilla::media {
 
 
 
-enum class MediaCodec {
+enum class MediaCodec : int {
 #define X(name) name,
   CODEC_LIST
 #undef X
@@ -50,7 +50,7 @@ enum class MediaCodec {
 
 
 
-enum class MediaCodecsSupport {
+enum class MediaCodecsSupport : int {
 #define X(name) SW_DECODE(name), HW_DECODE(name),
   CODEC_LIST
 #undef X
@@ -64,7 +64,7 @@ enum class MediaCodecsSupport {
 using MediaCodecsSupported = EnumSet<MediaCodecsSupport, uint64_t>;
 
 
-enum class DecodeSupport {
+enum class DecodeSupport : int {
   Unsupported = 0,
   SoftwareDecode,
   HardwareDecode,
