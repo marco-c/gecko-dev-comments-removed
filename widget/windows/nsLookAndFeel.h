@@ -58,22 +58,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   char16_t GetPasswordCharacterImpl() override;
 
  private:
-  
-
-
-
-
-  nsresult GetAccentColor(nscolor& aColor);
-
-  
-
-
-
-
-
-
-  nsresult GetAccentColorText(nscolor& aColor);
-
   nscolor GetColorForSysColorIndex(int index);
 
   LookAndFeelFont GetLookAndFeelFontInternal(const LOGFONTW& aLogFont,
@@ -82,20 +66,18 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   LookAndFeelFont GetLookAndFeelFont(LookAndFeel::FontID anID);
 
   
-  nscolor mColorMenuHoverText;
-  bool mHasColorMenuHoverText;
-  nscolor mColorAccent;
-  bool mHasColorAccent;
-  nscolor mColorAccentText;
-  bool mHasColorAccentText;
-  nscolor mColorMediaText;
-  bool mHasColorMediaText;
-  nscolor mColorCommunicationsText;
-  bool mHasColorCommunicationsText;
+  mozilla::Maybe<nscolor> mColorMenuHoverText;
+  mozilla::Maybe<nscolor> mColorAccent;
+  mozilla::Maybe<nscolor> mColorAccentText;
+  mozilla::Maybe<nscolor> mColorMediaText;
+  mozilla::Maybe<nscolor> mColorCommunicationsText;
+
+  mozilla::Maybe<nscolor> mDarkHighlight;
+  mozilla::Maybe<nscolor> mDarkHighlightText;
 
   nscolor mSysColorTable[SYS_COLOR_COUNT];
 
-  bool mInitialized;
+  bool mInitialized = false;
 
   void EnsureInit();
 
