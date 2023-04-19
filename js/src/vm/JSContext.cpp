@@ -275,6 +275,14 @@ static void MaybeReportOutOfMemoryForDifferentialTesting() {
   }
 }
 
+
+
+
+
+
+
+
+
 void JSContext::onOutOfMemory() {
   runtime()->hadOutOfMemory = true;
   gc::AutoSuppressGC suppressGC(this);
@@ -300,14 +308,6 @@ void JSContext::onOutOfMemory() {
 #endif
 }
 
-
-
-
-
-
-
-
-
 JS_PUBLIC_API void js::ReportOutOfMemory(JSContext* cx) {
   MaybeReportOutOfMemoryForDifferentialTesting();
 
@@ -316,6 +316,12 @@ JS_PUBLIC_API void js::ReportOutOfMemory(JSContext* cx) {
   }
 
   cx->onOutOfMemory();
+}
+
+JS_PUBLIC_API void js::ReportOutOfMemory(ErrorContext* ec) {
+  MaybeReportOutOfMemoryForDifferentialTesting();
+
+  ec->onOutOfMemory();
 }
 
 static void MaybeReportOverRecursedForDifferentialTesting() {
