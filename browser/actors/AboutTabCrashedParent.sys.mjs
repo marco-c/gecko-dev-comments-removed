@@ -1,24 +1,21 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["AboutTabCrashedParent"];
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const lazy = {};
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
 });
 
-
+// A list of all of the open about:tabcrashed pages.
 let gAboutTabCrashedPages = new Map();
 
-class AboutTabCrashedParent extends JSWindowActorParent {
+export class AboutTabCrashedParent extends JSWindowActorParent {
   didDestroy() {
     this.removeCrashedPage();
   }
@@ -26,8 +23,8 @@ class AboutTabCrashedParent extends JSWindowActorParent {
   async receiveMessage(message) {
     let browser = this.browsingContext.top.embedderElement;
     if (!browser) {
-      
-      
+      // If there is no browser, remove the crashed page from the set
+      // and return.
       this.removeCrashedPage();
       return;
     }
@@ -77,10 +74,10 @@ class AboutTabCrashedParent extends JSWindowActorParent {
   }
 
   updateTabCrashedCount() {
-    
-    
-    
-    
+    // Broadcast to all about:tabcrashed pages a count of
+    // how many about:tabcrashed pages exist, so that they
+    // can decide whether or not to display the "Restore All
+    // Crashed Tabs" button.
     let count = gAboutTabCrashedPages.size;
 
     for (let actor of gAboutTabCrashedPages.keys()) {
