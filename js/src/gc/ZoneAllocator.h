@@ -169,9 +169,11 @@ class ZoneAllocator : public JS::shadow::Zone,
   void updateCollectionRate(mozilla::TimeDuration mainThreadGCTime,
                             size_t initialBytesForAllZones);
 
+  void updateAllocationRate(mozilla::TimeDuration mutatorTime);
+
  public:
   
-  gc::HeapSizeChild gcHeapSize;
+  gc::PerZoneGCHeapSize gcHeapSize;
 
   
   gc::GCHeapThreshold gcHeapThreshold;
@@ -198,6 +200,11 @@ class ZoneAllocator : public JS::shadow::Zone,
   
   MainThreadData<mozilla::Maybe<double>> smoothedCollectionRate;
   MainThreadOrGCTaskData<mozilla::TimeDuration> perZoneGCTime;
+
+  
+  
+  MainThreadData<mozilla::Maybe<double>> smoothedAllocationRate;
+  MainThreadData<size_t> prevGCHeapSize;
 
  private:
 #ifdef DEBUG
