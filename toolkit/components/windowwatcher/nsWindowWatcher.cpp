@@ -1350,7 +1350,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       
       
       
-      if (aForceNoOpener) {
+      
+      
+      if (aForceNoOpener && !windowTypeIsChrome) {
         loadFlags |= nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
       }
     }
