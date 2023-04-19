@@ -142,7 +142,7 @@ using jsid = JS::PropertyKey;
 #endif
 
 
-#ifndef MOZ_DOM_STREAMS
+#ifdef MOZ_JS_STREAMS
 #  define IF_JS_STREAMS(x, ...) x
 #else
 #  define IF_JS_STREAMS(x, ...) __VA_ARGS__
