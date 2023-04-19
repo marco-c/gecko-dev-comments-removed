@@ -286,6 +286,12 @@ async function forEachLocalShortcutRow(callback) {
   for (let i = 0; i < UrlbarUtils.LOCAL_SEARCH_MODES.length; i++) {
     let shortcut = UrlbarUtils.LOCAL_SEARCH_MODES[i];
     let row = engines.length + i;
+    
+    
+    
+    if (shortcut.pref == "shortcuts.quickactions") {
+      continue;
+    }
     await callback(row, shortcut);
   }
 }

@@ -61,6 +61,7 @@ var UrlbarTokenizer = {
     RESTRICT_SEARCH: 8,
     RESTRICT_TITLE: 9,
     RESTRICT_URL: 10,
+    RESTRICT_ACTION: 11,
   },
 
   
@@ -77,6 +78,7 @@ var UrlbarTokenizer = {
     SEARCH: "?",
     TITLE: "#",
     URL: "$",
+    ACTION: ">",
   },
 
   
@@ -86,6 +88,7 @@ var UrlbarTokenizer = {
       this.RESTRICT.BOOKMARK,
       this.RESTRICT.OPENPAGE,
       this.RESTRICT.SEARCH,
+      this.RESTRICT.ACTION,
     ]);
   },
 

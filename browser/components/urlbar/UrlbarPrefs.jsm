@@ -195,6 +195,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["shortcuts.bookmarks", true],
   ["shortcuts.tabs", true],
   ["shortcuts.history", true],
+  ["shortcuts.quickactions", false],
 
   
   ["showSearchSuggestionsFirst", true],
@@ -224,6 +225,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   ["suggest.remotetab", true],
+
+  
+  ["quickactions.enabled", false],
 
   
   ["suggest.quicksuggest.nonsponsored", false],
