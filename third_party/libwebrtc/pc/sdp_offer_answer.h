@@ -556,11 +556,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider,
 
   
   
-  void OnCertificateReady(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
-
-  
-  
   cricket::ChannelManager* channel_manager() const;
   TransceiverList* transceivers();
   const TransceiverList* transceivers() const;
