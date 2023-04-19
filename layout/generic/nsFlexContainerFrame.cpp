@@ -4546,10 +4546,6 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
                                   ReflowOutput& aReflowOutput,
                                   const ReflowInput& aReflowInput,
                                   nsReflowStatus& aStatus) {
-  if (GetInFlowParent() && GetInFlowParent()->IsContentHiddenForLayout()) {
-    return;
-  }
-
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsFlexContainerFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aReflowOutput, aStatus);
@@ -5294,10 +5290,6 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
     const nscoord aSumOfPrevInFlowsChildrenBlockSize,
     const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis,
     FlexLayoutResult& aFlr) {
-  if (IsContentHiddenForLayout()) {
-    return {0, false};
-  }
-
   
   
   
@@ -5520,7 +5512,7 @@ void nsFlexContainerFrame::PopulateReflowOutput(
     
     
     NS_WARNING_ASSERTION(
-        IsContentHidden() || aLines[0].IsEmpty(),
+        aLines[0].IsEmpty(),
         "Have flex items but didn't get an ascent - that's odd (or there are "
         "just gigantic sizes involved)");
     
