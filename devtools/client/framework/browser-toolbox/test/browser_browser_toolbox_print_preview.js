@@ -24,9 +24,6 @@ add_task(async function() {
   await pushPref("devtools.browsertoolbox.panel", "inspector");
 
   
-  await pushPref("devtools.browsertoolbox.scope", "everything");
-
-  
   
   await addTab(`data:text/html,<div id="test-div">PRINT PREVIEW TEST</div>`);
 

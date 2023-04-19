@@ -22,8 +22,6 @@ add_task(async function() {
   await pushPref("devtools.webconsole.input.context", true);
   
   await pushPref("devtools.every-frame-target.enabled", true);
-  
-  await pushPref("devtools.browsertoolbox.scope", "everything");
 
   
   

@@ -23,8 +23,6 @@ requestLongerTimeout(4);
 add_task(async function() {
   
   await pushPref("devtools.browsertoolbox.panel", "inspector");
-  
-  await pushPref("devtools.browsertoolbox.scope", "everything");
 
   const ToolboxTask = await initBrowserToolboxTask({
     enableBrowserToolboxFission: true,

@@ -11,7 +11,6 @@ const TEST_URL =
 add_task(async function() {
   
   await pushPref("devtools.browsertoolbox.fission", true);
-  await pushPref("devtools.browsertoolbox.scope", "everything");
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
