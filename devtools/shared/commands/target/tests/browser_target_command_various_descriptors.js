@@ -91,11 +91,6 @@ async function testLocalTab() {
     "Descriptor front isTabDescriptor is correct"
   );
 
-  
-  
-  
-  descriptorFront.shouldCloseClient = false;
-
   const targetCommand = commands.targetCommand;
   await targetCommand.startListening();
 
