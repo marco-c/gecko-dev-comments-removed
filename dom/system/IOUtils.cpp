@@ -1995,8 +1995,28 @@ Result<Ok, IOUtils::IOError> IOUtils::DelMacXAttrSync(nsIFile* aFile,
 void IOUtils::GetProfileBeforeChange(GlobalObject& aGlobal,
                                      JS::MutableHandle<JS::Value> aClient,
                                      ErrorResult& aRv) {
+  return GetShutdownClient(aGlobal, aClient, aRv,
+                           ShutdownPhase::ProfileBeforeChange);
+}
+
+
+
+
+
+
+static void AssertHasShutdownClient(const IOUtils::ShutdownPhase aPhase) {
+  MOZ_RELEASE_ASSERT(aPhase >= IOUtils::ShutdownPhase::ProfileBeforeChange &&
+                     aPhase < IOUtils::ShutdownPhase::XpcomWillShutdown);
+}
+
+
+void IOUtils::GetShutdownClient(GlobalObject& aGlobal,
+                                JS::MutableHandle<JS::Value> aClient,
+                                ErrorResult& aRv,
+                                const IOUtils::ShutdownPhase aPhase) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  AssertHasShutdownClient(aPhase);
 
   if (auto state = GetState()) {
     MOZ_RELEASE_ASSERT(state.ref()->mBlockerStatus !=
@@ -2009,7 +2029,7 @@ void IOUtils::GetProfileBeforeChange(GlobalObject& aGlobal,
 
     MOZ_RELEASE_ASSERT(state.ref()->mBlockerStatus ==
                        ShutdownBlockerStatus::Initialized);
-    auto result = state.ref()->mEventQueue->GetProfileBeforeChangeClient();
+    auto result = state.ref()->mEventQueue->GetShutdownClient(aPhase);
     if (result.isErr()) {
       aRv.ThrowAbortError("IOUtils: could not get shutdown client");
       return;
@@ -2077,36 +2097,58 @@ void IOUtils::State::SetShutdownHooks() {
 nsresult IOUtils::EventQueue::SetShutdownHooks() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
+  constexpr static auto STACK = u"IOUtils::EventQueue::SetShutdownHooks"_ns;
+  constexpr static auto FILE = NS_LITERAL_STRING_FROM_CSTRING(__FILE__);
+
   nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdownService();
   if (!svc) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsCOMPtr<nsIAsyncShutdownBlocker> blocker = new IOUtilsShutdownBlocker(
-      IOUtilsShutdownBlocker::Phase::ProfileBeforeChange);
+  
+  {
+    nsCOMPtr<nsIAsyncShutdownBlocker> blocker =
+        new IOUtilsShutdownBlocker(ShutdownPhase::ProfileBeforeChange);
 
-  nsCOMPtr<nsIAsyncShutdownClient> profileBeforeChange;
-  MOZ_TRY(svc->GetProfileBeforeChange(getter_AddRefs(profileBeforeChange)));
-  MOZ_RELEASE_ASSERT(profileBeforeChange);
+    nsCOMPtr<nsIAsyncShutdownClient> profileBeforeChange;
+    MOZ_TRY(svc->GetProfileBeforeChange(getter_AddRefs(profileBeforeChange)));
+    MOZ_RELEASE_ASSERT(profileBeforeChange);
 
-  MOZ_TRY(profileBeforeChange->AddBlocker(
-      blocker, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__,
-      u"IOUtils::EventQueue::SetShutdownHooks"_ns));
+    MOZ_TRY(profileBeforeChange->AddBlocker(blocker, FILE, __LINE__, STACK));
+  }
 
-  nsCOMPtr<nsIAsyncShutdownClient> xpcomWillShutdown;
-  MOZ_TRY(svc->GetXpcomWillShutdown(getter_AddRefs(xpcomWillShutdown)));
-  MOZ_RELEASE_ASSERT(xpcomWillShutdown);
+  
+  
+  
+  
+  
+  {
+    nsCOMPtr<nsIAsyncShutdownBarrier> barrier;
 
-  blocker = new IOUtilsShutdownBlocker(
-      IOUtilsShutdownBlocker::Phase::XpcomWillShutdown);
-  MOZ_TRY(xpcomWillShutdown->AddBlocker(
-      blocker, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__,
-      u"IOUtils::EventQueue::SetShutdownHooks"_ns));
+    
+    
+    MOZ_TRY(svc->MakeBarrier(
+        u"IOUtils: waiting for profileBeforeChange IO to complete"_ns,
+        getter_AddRefs(barrier)));
+    MOZ_RELEASE_ASSERT(barrier);
 
-  MOZ_TRY(svc->MakeBarrier(
-      u"IOUtils: waiting for profileBeforeChange IO to complete"_ns,
-      getter_AddRefs(mProfileBeforeChangeBarrier)));
-  MOZ_RELEASE_ASSERT(mProfileBeforeChangeBarrier);
+    mBarriers[ShutdownPhase::ProfileBeforeChange] = std::move(barrier);
+  }
+
+  {
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIAsyncShutdownClient> xpcomWillShutdown;
+    MOZ_TRY(svc->GetXpcomWillShutdown(getter_AddRefs(xpcomWillShutdown)));
+    MOZ_RELEASE_ASSERT(xpcomWillShutdown);
+
+    nsCOMPtr<nsIAsyncShutdownBlocker> blocker =
+        new IOUtilsShutdownBlocker(ShutdownPhase::XpcomWillShutdown);
+    MOZ_TRY(xpcomWillShutdown->AddBlocker(blocker, FILE, __LINE__, STACK));
+  }
 
   return NS_OK;
 }
@@ -2131,25 +2173,29 @@ RefPtr<IOUtils::IOPromise<OkT>> IOUtils::EventQueue::Dispatch(Fn aFunc) {
   return promise;
 };
 
-Result<already_AddRefed<nsIAsyncShutdownClient>, nsresult>
-IOUtils::EventQueue::GetProfileBeforeChangeClient() {
-  if (!mProfileBeforeChangeBarrier) {
+Result<already_AddRefed<nsIAsyncShutdownBarrier>, nsresult>
+IOUtils::EventQueue::GetShutdownBarrier(const IOUtils::ShutdownPhase aPhase) {
+  AssertHasShutdownClient(aPhase);
+
+  if (!mBarriers[aPhase]) {
     return Err(NS_ERROR_NOT_AVAILABLE);
   }
 
-  nsCOMPtr<nsIAsyncShutdownClient> profileBeforeChange;
-  MOZ_TRY(mProfileBeforeChangeBarrier->GetClient(
-      getter_AddRefs(profileBeforeChange)));
-  return profileBeforeChange.forget();
+  return do_AddRef(mBarriers[aPhase]);
 }
 
-Result<already_AddRefed<nsIAsyncShutdownBarrier>, nsresult>
-IOUtils::EventQueue::GetProfileBeforeChangeBarrier() {
-  if (!mProfileBeforeChangeBarrier) {
+Result<already_AddRefed<nsIAsyncShutdownClient>, nsresult>
+IOUtils::EventQueue::GetShutdownClient(const IOUtils::ShutdownPhase aPhase) {
+  AssertHasShutdownClient(aPhase);
+
+  if (!mBarriers[aPhase]) {
     return Err(NS_ERROR_NOT_AVAILABLE);
   }
 
-  return do_AddRef(mProfileBeforeChangeBarrier);
+  nsCOMPtr<nsIAsyncShutdownClient> client;
+  MOZ_TRY(mBarriers[aPhase]->GetClient(getter_AddRefs(client)));
+
+  return do_AddRef(client);
 }
 
 
@@ -2243,27 +2289,16 @@ NS_IMPL_ISUPPORTS(IOUtilsShutdownBlocker, nsIAsyncShutdownBlocker,
 
 NS_IMETHODIMP IOUtilsShutdownBlocker::GetName(nsAString& aName) {
   aName = u"IOUtils Blocker ("_ns;
-
-  switch (mPhase) {
-    case Phase::ProfileBeforeChange:
-      aName.Append(u"profile-before-change"_ns);
-      break;
-
-    case Phase::XpcomWillShutdown:
-      aName.Append(u"xpcom-will-shutdown"_ns);
-      break;
-
-    default:
-      MOZ_CRASH("Unknown shutdown phase");
-  }
-
+  aName.Append(PHASE_NAMES[mPhase]);
   aName.Append(')');
+
   return NS_OK;
 }
 
 NS_IMETHODIMP IOUtilsShutdownBlocker::BlockShutdown(
     nsIAsyncShutdownClient* aBarrierClient) {
   using EventQueueStatus = IOUtils::EventQueueStatus;
+  using ShutdownPhase = IOUtils::ShutdownPhase;
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
@@ -2275,7 +2310,7 @@ NS_IMETHODIMP IOUtilsShutdownBlocker::BlockShutdown(
       
       
 
-      MOZ_RELEASE_ASSERT(mPhase == Phase::XpcomWillShutdown);
+      MOZ_RELEASE_ASSERT(mPhase == ShutdownPhase::XpcomWillShutdown);
       MOZ_RELEASE_ASSERT(!state->mEventQueue);
 
       Unused << NS_WARN_IF(NS_FAILED(aBarrierClient->RemoveBlocker(this)));
@@ -2288,8 +2323,9 @@ NS_IMETHODIMP IOUtilsShutdownBlocker::BlockShutdown(
 
     mParentClient = aBarrierClient;
 
-    barrier =
-        state->mEventQueue->GetProfileBeforeChangeBarrier().unwrapOr(nullptr);
+    barrier = state->mEventQueue
+                  ->GetShutdownBarrier(ShutdownPhase::ProfileBeforeChange)
+                  .unwrapOr(nullptr);
   }
 
   
