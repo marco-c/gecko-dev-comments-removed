@@ -851,44 +851,6 @@ TEST_F(DEPRECATED_AsyncInvokeTest,
   EXPECT_FALSE(reentrant_functor_run);
 }
 
-TEST_F(DEPRECATED_AsyncInvokeTest, Flush) {
-  DEPRECATED_AsyncInvoker invoker;
-  AtomicBool flag1;
-  AtomicBool flag2;
-  
-  invoker.AsyncInvoke<void>(RTC_FROM_HERE, Thread::Current(), FunctorB(&flag1));
-  invoker.AsyncInvoke<void>(RTC_FROM_HERE, Thread::Current(), FunctorB(&flag2));
-  
-  EXPECT_FALSE(flag1.get());
-  EXPECT_FALSE(flag2.get());
-  
-  invoker.Flush(Thread::Current());
-  EXPECT_TRUE(flag1.get());
-  EXPECT_TRUE(flag2.get());
-}
-
-TEST_F(DEPRECATED_AsyncInvokeTest, FlushWithIds) {
-  DEPRECATED_AsyncInvoker invoker;
-  AtomicBool flag1;
-  AtomicBool flag2;
-  
-  invoker.AsyncInvoke<void>(RTC_FROM_HERE, Thread::Current(), FunctorB(&flag1),
-                            5);
-  invoker.AsyncInvoke<void>(RTC_FROM_HERE, Thread::Current(), FunctorB(&flag2));
-  
-  EXPECT_FALSE(flag1.get());
-  EXPECT_FALSE(flag2.get());
-  
-  invoker.Flush(Thread::Current(), 5);
-  EXPECT_TRUE(flag1.get());
-  EXPECT_FALSE(flag2.get());
-  flag1 = false;
-  
-  invoker.Flush(Thread::Current());
-  EXPECT_FALSE(flag1.get());
-  EXPECT_TRUE(flag2.get());
-}
-
 void WaitAndSetEvent(Event* wait_event, Event* set_event) {
   wait_event->Wait(Event::kForever);
   set_event->Set();

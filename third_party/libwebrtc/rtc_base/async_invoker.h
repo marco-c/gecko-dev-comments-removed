@@ -124,13 +124,6 @@ class DEPRECATED_AsyncInvoker : public MessageHandlerAutoCleanup {
   
   
   
-  
-  
-  void Flush(Thread* thread, uint32_t id = MQID_ANY);
-
-  
-  
-  
   void Clear();
 
  private:
