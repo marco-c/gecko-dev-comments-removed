@@ -8489,27 +8489,17 @@ nsIFrame::FrameSearchResult nsTextFrame::PeekOffsetWord(
   return CONTINUE;
 }
 
-
-
-nsresult nsTextFrame::CheckVisibility(nsPresContext* aContext,
-                                      int32_t aStartIndex, int32_t aEndIndex,
-                                      bool aRecurse, bool* aFinished,
-                                      bool* aRetval) {
-  if (!aRetval) return NS_ERROR_NULL_POINTER;
-
+bool nsTextFrame::HasVisibleText() {
   
   
   
   for (nsTextFrame* f = this; f; f = f->GetNextContinuation()) {
     int32_t dummyOffset = 0;
     if (f->PeekOffsetNoAmount(true, &dummyOffset) == FOUND) {
-      *aRetval = true;
-      return NS_OK;
+      return true;
     }
   }
-
-  *aRetval = false;
-  return NS_OK;
+  return false;
 }
 
 std::pair<int32_t, int32_t> nsTextFrame::GetOffsets() const {

@@ -38,6 +38,7 @@
 #include "nsString.h"            
 #include "nsStyledElement.h"
 #include "nsTextFragment.h"  
+#include "nsTextFrame.h"     
 
 namespace mozilla {
 
@@ -451,39 +452,23 @@ bool HTMLEditUtils::IsVisibleTextNode(const Text& aText) {
 
 bool HTMLEditUtils::IsInVisibleTextFrames(nsPresContext* aPresContext,
                                           const Text& aText) {
+  
+  
+  
+  
+  
   MOZ_ASSERT(aPresContext);
-
-  nsIFrame* frame = aText.GetPrimaryFrame();
-  if (!frame) {
-    return false;
-  }
-
-  nsCOMPtr<nsISelectionController> selectionController;
-  nsresult rv = frame->GetSelectionController(
-      aPresContext, getter_AddRefs(selectionController));
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "nsIFrame::GetSelectionController() failed");
-  if (NS_FAILED(rv) || !selectionController) {
-    return false;
-  }
 
   if (!aText.TextDataLength()) {
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  bool isVisible = false;
-  rv = selectionController->CheckVisibilityContent(
-      const_cast<Text*>(&aText), 0, aText.TextDataLength(), &isVisible);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "nsISelectionController::CheckVisibilityContent() failed");
-  return NS_SUCCEEDED(rv) && isVisible;
+  nsTextFrame* textFrame = do_QueryFrame(aText.GetPrimaryFrame());
+  if (!textFrame) {
+    return false;
+  }
+
+  return textFrame->HasVisibleText();
 }
 
 Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(

@@ -3931,28 +3931,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual nsresult CheckVisibility(nsPresContext* aContext, int32_t aStartIndex,
-                                   int32_t aEndIndex, bool aRecurse,
-                                   bool* aFinished, bool* _retval);
-
-  
-
-
-
-
-
   virtual void ChildIsDirty(nsIFrame* aChild);
 
   
