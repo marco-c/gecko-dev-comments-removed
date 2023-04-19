@@ -147,11 +147,10 @@ class nsHttpResponseHead {
   bool GetContentTypeOptionsHeader(nsACString& aOutput) const;
 
  private:
-  [[nodiscard]] nsresult SetHeader_locked(
-      const nsHttpAtom& atom, const nsACString& h, const nsACString& v,
-      bool m = false,
-      const nsHttpHeaderArray::HeaderVariety& variety =
-          nsHttpHeaderArray::eVarietyResponse) MOZ_REQUIRES(mRecursiveMutex);
+  [[nodiscard]] nsresult SetHeader_locked(const nsHttpAtom& atom,
+                                          const nsACString& h,
+                                          const nsACString& v, bool m = false)
+      MOZ_REQUIRES(mRecursiveMutex);
   void AssignDefaultStatusText() MOZ_REQUIRES(mRecursiveMutex);
   void ParseVersion(const char*) MOZ_REQUIRES(mRecursiveMutex);
   void ParseCacheControl(const char*) MOZ_REQUIRES(mRecursiveMutex);
@@ -197,19 +196,6 @@ class nsHttpResponseHead {
     
     MOZ_ASSERT_IF(mCacheControlNoCache, mHasCacheControl);
     return mHasCacheControl ? mCacheControlNoCache : mPragmaNoCache;
-  }
-
-  
-  void UpdateOriginalHeaders(nsHttpResponseHead* aOther);
-
-  
-  bool CanIgnoreResponseHeaderTypes(const nsHttpAtom& header) const;
-
-  bool IsOriginalResponseHeader(
-      const nsHttpHeaderArray::HeaderVariety variety) const {
-    return (
-        (variety == nsHttpHeaderArray::eVarietyResponseNetOriginal) ||
-        (variety == nsHttpHeaderArray::eVarietyResponseNetOriginalAndResponse));
   }
 
  private:
