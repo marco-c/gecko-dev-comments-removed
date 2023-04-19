@@ -494,9 +494,7 @@ NS_IMETHODIMP
 nsFocusManager::ElementIsFocusable(Element* aElement, uint32_t aFlags,
                                    bool* aIsFocusable) {
   NS_ENSURE_TRUE(aElement, NS_ERROR_INVALID_ARG);
-
-  *aIsFocusable = FlushAndCheckIfFocusable(aElement, aFlags) != nullptr;
-
+  *aIsFocusable = !!FlushAndCheckIfFocusable(aElement, aFlags);
   return NS_OK;
 }
 
@@ -2134,7 +2132,7 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
         if (Element* focusedElement = innerWindow->GetFocusedElement()) {
           if (focusedElement->IsShadowIncludingInclusiveDescendantOf(
                   aElement)) {
-            return nullptr;
+            return focusedElement;
           }
         }
       }
@@ -2532,10 +2530,10 @@ void nsFocusManager::Focus(
     
     
     
-    if (FlushAndCheckIfFocusable(aElement, aFlags)) {
-      aWindow->SetFocusedElement(aElement, focusMethod);
+    if (RefPtr elementToFocus = FlushAndCheckIfFocusable(aElement, aFlags)) {
+      aWindow->SetFocusedElement(elementToFocus, focusMethod);
       if (aFocusChanged) {
-        ScrollIntoView(presShell, aElement, aFlags);
+        ScrollIntoView(presShell, elementToFocus, aFlags);
       }
     }
     return;
@@ -2614,33 +2612,35 @@ void nsFocusManager::Focus(
 
   
   
-  if (FlushAndCheckIfFocusable(aElement, aFlags) &&
+  RefPtr elementToFocus = FlushAndCheckIfFocusable(aElement, aFlags);
+  if (elementToFocus &&
       GetFocusedBrowsingContext() == aWindow->GetBrowsingContext() &&
       mFocusedElement == nullptr) {
-    mFocusedElement = aElement;
+    mFocusedElement = elementToFocus;
 
     nsIContent* focusedNode = aWindow->GetFocusedElement();
-    const bool sendFocusEvent = aElement && aElement->IsInComposedDoc() &&
-                                !IsNonFocusableRoot(aElement);
-    const bool isRefocus = focusedNode && focusedNode == aElement;
+    const bool sendFocusEvent = elementToFocus->IsInComposedDoc() &&
+                                !IsNonFocusableRoot(elementToFocus);
+    const bool isRefocus = focusedNode && focusedNode == elementToFocus;
     const bool shouldShowFocusRing =
-        sendFocusEvent && ShouldMatchFocusVisible(aWindow, *aElement, aFlags);
+        sendFocusEvent &&
+        ShouldMatchFocusVisible(aWindow, *elementToFocus, aFlags);
 
-    aWindow->SetFocusedElement(aElement, focusMethod, false);
+    aWindow->SetFocusedElement(elementToFocus, focusMethod, false);
 
     const RefPtr<nsPresContext> presContext = presShell->GetPresContext();
     if (sendFocusEvent) {
-      NotifyFocusStateChange(aElement, nullptr, aFlags,
+      NotifyFocusStateChange(elementToFocus, nullptr, aFlags,
                               true, shouldShowFocusRing);
 
       
       
       
-      if (presShell->GetDocument() == aElement->GetComposedDoc()) {
-        ActivateRemoteFrameIfNeeded(*aElement, aActionId);
+      if (presShell->GetDocument() == elementToFocus->GetComposedDoc()) {
+        ActivateRemoteFrameIfNeeded(*elementToFocus, aActionId);
       }
 
-      IMEStateManager::OnChangeFocus(presContext, aElement,
+      IMEStateManager::OnChangeFocus(presContext, elementToFocus,
                                      GetFocusMoveActionCause(aFlags));
 
       
@@ -2652,15 +2652,16 @@ void nsFocusManager::Focus(
 
       
       if (aFocusChanged) {
-        ScrollIntoView(presShell, aElement, aFlags);
+        ScrollIntoView(presShell, elementToFocus, aFlags);
       }
 
       if (!focusInOtherContentProcess) {
-        RefPtr<Document> composedDocument = aElement->GetComposedDoc();
+        RefPtr<Document> composedDocument = elementToFocus->GetComposedDoc();
         RefPtr<Element> relatedTargetElement =
             aBlurredElementInfo ? aBlurredElementInfo->mElement.get() : nullptr;
-        SendFocusOrBlurEvent(eFocus, presShell, composedDocument, aElement,
-                             aWindowRaised, isRefocus, relatedTargetElement);
+        SendFocusOrBlurEvent(eFocus, presShell, composedDocument,
+                             elementToFocus, aWindowRaised, isRefocus,
+                             relatedTargetElement);
       }
     } else {
       IMEStateManager::OnChangeFocus(presContext, nullptr,
@@ -2668,9 +2669,9 @@ void nsFocusManager::Focus(
       if (!aWindowRaised) {
         aWindow->UpdateCommands(u"focus"_ns, nullptr, 0);
       }
-      if (aFocusChanged && aElement) {
+      if (aFocusChanged) {
         
-        ScrollIntoView(presShell, aElement, aFlags);
+        ScrollIntoView(presShell, elementToFocus, aFlags);
       }
     }
   } else {
@@ -2693,7 +2694,7 @@ void nsFocusManager::Focus(
   
   
   
-  if (mFocusedElement == aElement) {
+  if (mFocusedElement == elementToFocus) {
     RefPtr<Element> focusedElement = mFocusedElement;
     UpdateCaret(aFocusChanged && !(aFlags & FLAG_BYMOUSE), aIsNewDocument,
                 focusedElement);
