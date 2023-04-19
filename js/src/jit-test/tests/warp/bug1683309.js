@@ -3,7 +3,6 @@
 
 
 
-
 if (helperThreadCount() > 0) {
   evalInWorker(`
   try{
