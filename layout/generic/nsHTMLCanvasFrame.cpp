@@ -546,6 +546,13 @@ void nsHTMLCanvasFrame::AppendDirectlyOwnedAnonBoxes(
   aResult.AppendElement(OwnedAnonBox(mFrames.FirstChild()));
 }
 
+void nsHTMLCanvasFrame::UnionChildOverflow(
+    mozilla::OverflowAreas& aOverflowAreas) {
+  
+  
+  
+}
+
 #ifdef ACCESSIBILITY
 a11y::AccType nsHTMLCanvasFrame::AccessibleType() {
   return a11y::eHTMLCanvasType;
