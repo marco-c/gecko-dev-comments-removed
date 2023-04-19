@@ -245,6 +245,8 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
 
   mState = State::Opening;
 
+  
+
   InvokeAsync(MutableIOTargetPtr(), __func__,
               [self = RefPtr<FileSystemDataManager>(this)]() mutable {
                 nsCOMPtr<nsISerialEventTarget> target =
