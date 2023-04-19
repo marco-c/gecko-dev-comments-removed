@@ -4962,6 +4962,15 @@ class nsIFrame : public nsQueryFrame {
 
   inline void PropagateWritingModeToSelfAndAncestors(mozilla::WritingMode aWM);
 
+  
+
+
+
+
+
+
+  void HandleLastRememberedSize();
+
  protected:
   static void DestroyAnonymousContent(nsPresContext* aPresContext,
                                       already_AddRefed<nsIContent>&& aContent);

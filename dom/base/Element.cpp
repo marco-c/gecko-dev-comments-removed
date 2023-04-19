@@ -2030,6 +2030,15 @@ void Element::UnbindFromTree(bool aNullParent) {
         nsContentUtils::UnregisterUnresolvedElement(this);
       }
     }
+
+    if (HasLastRememberedBSize() || HasLastRememberedISize()) {
+      
+      
+      
+      
+      document->UnobserveForLastRememberedSize(*this);
+      document->ObserveForLastRememberedSize(*this);
+    }
   }
 
   
