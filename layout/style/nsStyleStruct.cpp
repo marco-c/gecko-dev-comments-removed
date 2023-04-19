@@ -2432,13 +2432,9 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     hint |= nsChangeHint_NeedReflow | nsChangeHint_ReflowChangesSizeOrPosition;
   }
 
-  if (mScrollSnapAlign != aNewData.mScrollSnapAlign) {
-    
-    hint |= nsChangeHint_NeutralChange;
-  }
-  if (mScrollSnapType != aNewData.mScrollSnapType ||
+  if (mScrollSnapAlign != aNewData.mScrollSnapAlign ||
+      mScrollSnapType != aNewData.mScrollSnapType ||
       mScrollSnapStop != aNewData.mScrollSnapStop) {
-    
     hint |= nsChangeHint_RepaintFrame;
   }
   if (mScrollBehavior != aNewData.mScrollBehavior) {

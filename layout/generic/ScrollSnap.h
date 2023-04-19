@@ -64,6 +64,13 @@ struct ScrollSnapUtils {
   
   
   static void PostPendingResnapIfNeededFor(nsIFrame* aFrame);
+
+  
+  
+  
+  
+  
+  static void PostPendingResnapFor(nsIFrame* aFrame);
 };
 
 }  
