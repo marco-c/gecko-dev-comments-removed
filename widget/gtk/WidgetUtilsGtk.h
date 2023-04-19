@@ -39,7 +39,7 @@ GdkEvent* GetLastMousePressEvent();
 
 
 const char* GetSnapInstanceName();
-inline bool IsRunningUnderSnap() { return !!GetSnapInstanceName(); }
+bool IsRunningUnderSnap();
 bool IsRunningUnderFlatpak();
 inline bool IsRunningUnderFlatpakOrSnap() {
   return IsRunningUnderFlatpak() || IsRunningUnderSnap();
