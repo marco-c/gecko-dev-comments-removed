@@ -2199,6 +2199,9 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
   MOZ_ALWAYS_TRUE(selectionRanges.SaveAndTrackRanges(*this));
 
   for (HTMLStyle& style : removeStyles) {
+    const bool isCSSInvertibleStyle =
+        style.mProperty &&
+        CSSEditUtils::IsCSSInvertible(*style.mProperty, style.mAttribute);
     for (const OwningNonNull<nsRange>& range : selectionRanges.Ranges()) {
       if (style.mProperty == nsGkAtoms::name) {
         
@@ -2244,10 +2247,12 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
         continue;
       }
 
-      
-      AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
-      {  
-         
+      AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContentsToInvertStyle;
+      {
+        
+        
+        
+        AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContentsAroundRange;
         if (splitRange.InSameContainer() &&
             splitRange.StartRef().IsInTextNode()) {
           if (!EditorUtils::IsEditableContent(
@@ -2255,7 +2260,7 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
                   EditorType::HTML)) {
             continue;
           }
-          arrayOfContents.AppendElement(
+          arrayOfContentsAroundRange.AppendElement(
               *splitRange.StartRef().ContainerAs<Text>());
         } else if (splitRange.IsInTextNodes() &&
                    splitRange.InAdjacentSiblings()) {
@@ -2266,9 +2271,9 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
                   EditorType::HTML)) {
             continue;
           }
-          arrayOfContents.AppendElement(
+          arrayOfContentsAroundRange.AppendElement(
               *splitRange.StartRef().ContainerAs<Text>());
-          arrayOfContents.AppendElement(
+          arrayOfContentsAroundRange.AppendElement(
               *splitRange.EndRef().ContainerAs<Text>());
         } else {
           
@@ -2277,7 +2282,7 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
               EditorUtils::IsEditableContent(
                   *splitRange.StartRef().ContainerAs<Text>(),
                   EditorType::HTML)) {
-            arrayOfContents.AppendElement(
+            arrayOfContentsAroundRange.AppendElement(
                 *splitRange.StartRef().ContainerAs<Text>());
           }
           
@@ -2293,7 +2298,7 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
               if (node->IsContent() &&
                   EditorUtils::IsEditableContent(*node->AsContent(),
                                                  EditorType::HTML)) {
-                arrayOfContents.AppendElement(*node->AsContent());
+                arrayOfContentsAroundRange.AppendElement(*node->AsContent());
               }
             }
           }
@@ -2303,12 +2308,17 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
               !splitRange.EndRef().IsEndOfContainer() &&
               EditorUtils::IsEditableContent(
                   *splitRange.EndRef().ContainerAs<Text>(), EditorType::HTML)) {
-            arrayOfContents.AppendElement(
+            arrayOfContentsAroundRange.AppendElement(
                 *splitRange.EndRef().ContainerAs<Text>());
           }
         }
+        if (isCSSInvertibleStyle) {
+          arrayOfContentsToInvertStyle.SetCapacity(
+              arrayOfContentsAroundRange.Length());
+        }
 
-        for (OwningNonNull<nsIContent>& content : arrayOfContents) {
+        for (OwningNonNull<nsIContent>& content : arrayOfContentsAroundRange) {
+          
           if (content->IsElement()) {
             Result<EditorDOMPoint, nsresult> removeStyleResult =
                 RemoveStyleInside(MOZ_KnownLive(*content->AsElement()),
@@ -2329,6 +2339,12 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
             }
           }
 
+          if (isCSSInvertibleStyle) {
+            arrayOfContentsToInvertStyle.AppendElement(content);
+          }
+
+          
+          
           Result<bool, nsresult> isRemovableParentStyleOrError =
               IsRemovableParentStyleWithNewSpanElement(
                   MOZ_KnownLive(content), MOZ_KnownLive(style.mProperty),
@@ -2340,9 +2356,14 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
             return isRemovableParentStyleOrError.unwrapErr();
           }
           if (!isRemovableParentStyleOrError.unwrap()) {
+            
+            
             continue;
           }
 
+          
+          
+          
           if (!content->IsText()) {
             
             
@@ -2396,58 +2417,74 @@ nsresult HTMLEditor::RemoveInlinePropertyAsSubAction(
           
           
           wrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
+          
+          
+          
+          if (isCSSInvertibleStyle) {
+            MOZ_ASSERT(
+                wrapTextInStyledElementResult.GetMiddleContentAs<Text>());
+            if (Text* textNode =
+                    wrapTextInStyledElementResult.GetMiddleContentAs<Text>()) {
+              if (textNode != content) {
+                arrayOfContentsToInvertStyle.ReplaceElementAt(
+                    arrayOfContentsToInvertStyle.Length() - 1,
+                    OwningNonNull<nsIContent>(*textNode));
+              }
+            }
+          }
         }
       }
 
+      if (arrayOfContentsToInvertStyle.IsEmpty()) {
+        continue;
+      }
+      MOZ_ASSERT(isCSSInvertibleStyle);
+
       
       
-      if (style.mProperty &&
-          CSSEditUtils::IsCSSInvertible(*style.mProperty, style.mAttribute)) {
+      AutoTArray<OwningNonNull<Text>, 32> leafTextNodes;
+      for (const OwningNonNull<nsIContent>& content :
+           arrayOfContentsToInvertStyle) {
         
         
-        AutoTArray<OwningNonNull<Text>, 32> leafTextNodes;
-        for (OwningNonNull<nsIContent>& content : arrayOfContents) {
-          
-          
-          if (content->IsElement()) {
-            CollectEditableLeafTextNodes(*content->AsElement(), leafTextNodes);
-          }
-        }
-        for (OwningNonNull<Text>& textNode : leafTextNodes) {
-          Result<bool, nsresult> isRemovableParentStyleOrError =
-              IsRemovableParentStyleWithNewSpanElement(
-                  MOZ_KnownLive(textNode), MOZ_KnownLive(style.mProperty),
-                  MOZ_KnownLive(style.mAttribute));
-          if (isRemovableParentStyleOrError.isErr()) {
-            NS_WARNING(
-                "HTMLEditor::IsRemovableParentStyleWithNewSpanElement() "
-                "failed");
-            return isRemovableParentStyleOrError.unwrapErr();
-          }
-          if (!isRemovableParentStyleOrError.unwrap()) {
-            continue;
-          }
-          
-          
-          SplitRangeOffFromNodeResult wrapTextInStyledElementResult =
-              SetInlinePropertyOnTextNode(MOZ_KnownLive(textNode), 0,
-                                          textNode->TextLength(),
-                                          MOZ_KnownLive(*style.mProperty),
-                                          MOZ_KnownLive(style.mAttribute),
-                                          u"-moz-editor-invert-value"_ns);
-          if (wrapTextInStyledElementResult.isErr()) {
-            NS_WARNING(
-                "HTMLEditor::SetInlinePropertyOnTextNode(-moz-editor-invert-"
-                "value) failed");
-            return wrapTextInStyledElementResult.unwrapErr();
-          }
-          
-          
-          wrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
+        if (content->IsElement()) {
+          CollectEditableLeafTextNodes(*content->AsElement(), leafTextNodes);
         }
       }
-    }  
-  }    
+      for (const OwningNonNull<Text>& textNode : leafTextNodes) {
+        Result<bool, nsresult> isRemovableParentStyleOrError =
+            IsRemovableParentStyleWithNewSpanElement(
+                MOZ_KnownLive(textNode), MOZ_KnownLive(style.mProperty),
+                MOZ_KnownLive(style.mAttribute));
+        if (isRemovableParentStyleOrError.isErr()) {
+          NS_WARNING(
+              "HTMLEditor::IsRemovableParentStyleWithNewSpanElement() "
+              "failed");
+          return isRemovableParentStyleOrError.unwrapErr();
+        }
+        if (!isRemovableParentStyleOrError.unwrap()) {
+          continue;
+        }
+        
+        
+        SplitRangeOffFromNodeResult wrapTextInStyledElementResult =
+            SetInlinePropertyOnTextNode(MOZ_KnownLive(textNode), 0,
+                                        textNode->TextLength(),
+                                        MOZ_KnownLive(*style.mProperty),
+                                        MOZ_KnownLive(style.mAttribute),
+                                        u"-moz-editor-invert-value"_ns);
+        if (wrapTextInStyledElementResult.isErr()) {
+          NS_WARNING(
+              "HTMLEditor::SetInlinePropertyOnTextNode(-moz-editor-invert-"
+              "value) failed");
+          return wrapTextInStyledElementResult.unwrapErr();
+        }
+        
+        
+        wrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
+      }  
+    }    
+  }      
 
   MOZ_ASSERT(selectionRanges.HasSavedRanges());
   selectionRanges.RestoreFromSavedRanges();

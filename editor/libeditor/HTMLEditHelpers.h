@@ -832,6 +832,32 @@ class MOZ_STACK_CLASS SplitRangeOffFromNodeResult final {
   
 
 
+
+  MOZ_KNOWN_LIVE nsIContent* GetLeftmostContent() const {
+    return mLeftContent ? mLeftContent
+                        : (mMiddleContent ? mMiddleContent : mRightContent);
+  }
+  template <typename ContentNodeType>
+  MOZ_KNOWN_LIVE ContentNodeType* GetLeftmostContentAs() const {
+    return ContentNodeType::FromNodeOrNull(GetLeftmostContent());
+  }
+
+  
+
+
+
+  MOZ_KNOWN_LIVE nsIContent* GetRightmostContent() const {
+    return mRightContent ? mRightContent
+                         : (mMiddleContent ? mMiddleContent : mLeftContent);
+  }
+  template <typename ContentNodeType>
+  MOZ_KNOWN_LIVE ContentNodeType* GetRightmostContentAs() const {
+    return ContentNodeType::FromNodeOrNull(GetRightmostContent());
+  }
+
+  
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SuggestCaretPointTo(
       const HTMLEditor& aHTMLEditor, const SuggestCaretOptions& aOptions) const;
 
