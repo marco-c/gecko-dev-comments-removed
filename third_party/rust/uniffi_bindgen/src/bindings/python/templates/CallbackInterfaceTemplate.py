@@ -1,12 +1,11 @@
-{% import "macros.py" as py %}
-{%- let cbi = self.inner() %}
-{%- let canonical_name = cbi|canonical_name %}
-{%- let ffi_converter = cbi|ffi_converter_name %}
-{%- let foreign_callback = format!("foreignCallback{}", canonical_name) %}
+{%- let cbi = ci.get_callback_interface_definition(id).unwrap() %}
+{%- let foreign_callback = format!("foreignCallback{}", canonical_type_name) %}
+
+{% if self.include_once_check("CallbackInterfaceRuntime.py") %}{% include "CallbackInterfaceRuntime.py" %}{% endif %}
 
 
 
-class {{ cbi|type_name }}:
+class {{ type_name }}:
     {% for meth in cbi.methods() -%}
     def {{ meth.name()|fn_name }}({% call py::arg_list_decl(meth) %}):
         raise NotImplementedError
@@ -45,12 +44,12 @@ def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
         
     {% endfor %}
 
-    cb = {{ ffi_converter }}.lift(handle)
+    cb = {{ ffi_converter_name }}.lift(handle)
     if not cb:
         raise InternalError("No callback in handlemap; this is a Uniffi bug")
 
     if method == IDX_CALLBACK_FREE:
-        {{ ffi_converter }}.drop(handle)
+        {{ ffi_converter_name }}.drop(handle)
         
         
         return 0
@@ -80,4 +79,4 @@ def py_{{ foreign_callback }}(handle, method, args, buf_ptr):
 
 
 rust_call(lambda err: _UniFFILib.{{ cbi.ffi_init_callback().name() }}({{ foreign_callback }}, err))
-{{ ffi_converter }} = FfiConverterCallbackInterface({{ foreign_callback }})
+{{ ffi_converter_name }} = FfiConverterCallbackInterface({{ foreign_callback }})

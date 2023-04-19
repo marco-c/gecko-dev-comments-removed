@@ -2,14 +2,15 @@
 
 
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use askama::Template;
 use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
-use std::collections::{HashMap, HashSet};
+use std::cell::RefCell;
+use std::collections::{BTreeSet, HashMap, HashSet};
 
-use crate::backend::{CodeDeclaration, CodeOracle, CodeType, TemplateExpression, TypeIdentifier};
+use crate::backend::{CodeOracle, CodeType, TemplateExpression, TypeIdentifier};
 use crate::interface::*;
 use crate::MergeWith;
 
@@ -19,11 +20,55 @@ mod custom;
 mod enum_;
 mod error;
 mod external;
-mod function;
 mod miscellany;
 mod object;
 mod primitives;
 mod record;
+
+lazy_static::lazy_static! {
+    // Taken from Python's `keyword.py` module.
+    static ref KEYWORDS: HashSet<String> = {
+        let kwlist = vec![
+            "False",
+            "None",
+            "True",
+            "__peg_parser__",
+            "and",
+            "as",
+            "assert",
+            "async",
+            "await",
+            "break",
+            "class",
+            "continue",
+            "def",
+            "del",
+            "elif",
+            "else",
+            "except",
+            "finally",
+            "for",
+            "from",
+            "global",
+            "if",
+            "import",
+            "in",
+            "is",
+            "lambda",
+            "nonlocal",
+            "not",
+            "or",
+            "pass",
+            "raise",
+            "return",
+            "try",
+            "while",
+            "with",
+            "yield",
+        ];
+        HashSet::from_iter(kwlist.into_iter().map(|s| s.to_string()))
+    };
+}
 
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -72,9 +117,58 @@ impl MergeWith for Config {
 
 
 pub fn generate_python_bindings(config: &Config, ci: &ComponentInterface) -> Result<String> {
-    PythonWrapper::new(PythonCodeOracle, config.clone(), ci)
+    PythonWrapper::new(config.clone(), ci)
         .render()
-        .map_err(|_| anyhow::anyhow!("failed to render python bindings"))
+        .context("failed to render python bindings")
+}
+
+
+
+
+
+#[derive(Template)]
+#[template(syntax = "py", escape = "none", path = "Types.py")]
+pub struct TypeRenderer<'a> {
+    python_config: &'a Config,
+    ci: &'a ComponentInterface,
+    
+    include_once_names: RefCell<HashSet<String>>,
+    
+    imports: RefCell<BTreeSet<String>>,
+}
+
+impl<'a> TypeRenderer<'a> {
+    fn new(python_config: &'a Config, ci: &'a ComponentInterface) -> Self {
+        Self {
+            python_config,
+            ci,
+            include_once_names: RefCell::new(HashSet::new()),
+            imports: RefCell::new(BTreeSet::new()),
+        }
+    }
+
+    
+
+    
+    
+    
+    
+    fn include_once_check(&self, name: &str) -> bool {
+        self.include_once_names
+            .borrow_mut()
+            .insert(name.to_string())
+    }
+
+    
+    
+    
+    
+    
+    
+    fn add_import(&self, name: &str) -> &str {
+        self.imports.borrow_mut().insert(name.to_owned());
+        ""
+    }
 }
 
 #[derive(Template)]
@@ -82,96 +176,32 @@ pub fn generate_python_bindings(config: &Config, ci: &ComponentInterface) -> Res
 pub struct PythonWrapper<'a> {
     ci: &'a ComponentInterface,
     config: Config,
-    oracle: PythonCodeOracle,
+    type_helper_code: String,
+    type_imports: BTreeSet<String>,
 }
 impl<'a> PythonWrapper<'a> {
-    pub fn new(oracle: PythonCodeOracle, config: Config, ci: &'a ComponentInterface) -> Self {
-        Self { oracle, config, ci }
-    }
-
-    pub fn members(&self) -> Vec<Box<dyn CodeDeclaration + 'a>> {
-        let ci = self.ci;
-        vec![
-            Box::new(callback_interface::PythonCallbackInterfaceRuntime::new(ci))
-                as Box<dyn CodeDeclaration>,
-        ]
-        .into_iter()
-        .chain(
-            ci.iter_enum_definitions().into_iter().map(|inner| {
-                Box::new(enum_::PythonEnum::new(inner, ci)) as Box<dyn CodeDeclaration>
-            }),
-        )
-        .chain(ci.iter_function_definitions().into_iter().map(|inner| {
-            Box::new(function::PythonFunction::new(inner, ci)) as Box<dyn CodeDeclaration>
-        }))
-        .chain(ci.iter_object_definitions().into_iter().map(|inner| {
-            Box::new(object::PythonObject::new(inner, ci)) as Box<dyn CodeDeclaration>
-        }))
-        .chain(ci.iter_record_definitions().into_iter().map(|inner| {
-            Box::new(record::PythonRecord::new(inner, ci)) as Box<dyn CodeDeclaration>
-        }))
-        .chain(
-            ci.iter_error_definitions().into_iter().map(|inner| {
-                Box::new(error::PythonError::new(inner, ci)) as Box<dyn CodeDeclaration>
-            }),
-        )
-        .chain(
-            ci.iter_callback_interface_definitions()
-                .into_iter()
-                .map(|inner| {
-                    Box::new(callback_interface::PythonCallbackInterface::new(inner, ci))
-                        as Box<dyn CodeDeclaration>
-                }),
-        )
-        .chain(ci.iter_custom_types().into_iter().map(|(name, type_)| {
-            let config = self.config.custom_types.get(&name).cloned();
-            Box::new(custom::PythonCustomType::new(name, type_, config)) as Box<dyn CodeDeclaration>
-        }))
-        .collect()
-    }
-
-    pub fn initialization_code(&self) -> Vec<String> {
-        let oracle = &self.oracle;
-        self.members()
-            .into_iter()
-            .filter_map(|member| member.initialization_code(oracle))
-            .collect()
-    }
-
-    pub fn declaration_code(&self) -> Vec<String> {
-        let oracle = &self.oracle;
-        self.members()
-            .into_iter()
-            .filter_map(|member| member.definition_code(oracle))
-            .chain(
-                self.ci
-                    .iter_types()
-                    .into_iter()
-                    .filter_map(|type_| oracle.find(&type_).helper_code(oracle)),
-            )
-            .collect()
+    pub fn new(config: Config, ci: &'a ComponentInterface) -> Self {
+        let type_renderer = TypeRenderer::new(&config, ci);
+        let type_helper_code = type_renderer.render().unwrap();
+        let type_imports = type_renderer.imports.into_inner();
+        Self {
+            config,
+            ci,
+            type_helper_code,
+            type_imports,
+        }
     }
 
     pub fn imports(&self) -> Vec<String> {
-        let oracle = &self.oracle;
-        let mut imports: Vec<String> = self
-            .members()
-            .into_iter()
-            .filter_map(|member| member.imports(oracle))
-            .flatten()
-            .chain(
-                self.ci
-                    .iter_types()
-                    .into_iter()
-                    .filter_map(|type_| oracle.find(&type_).imports(oracle))
-                    .flatten(),
-            )
-            .collect::<HashSet<String>>()
-            .into_iter()
-            .collect();
+        self.type_imports.iter().cloned().collect()
+    }
+}
 
-        imports.sort();
-        imports
+fn fixup_keyword(name: String) -> String {
+    if KEYWORDS.contains(&name) {
+        format!("_{}", name)
+    } else {
+        name
     }
 }
 
@@ -179,11 +209,14 @@ impl<'a> PythonWrapper<'a> {
 pub struct PythonCodeOracle;
 
 impl PythonCodeOracle {
+    
+    
+    
+    
+    
+    
+    
     fn create_code_type(&self, type_: TypeIdentifier) -> Box<dyn CodeType> {
-        
-        
-
-        
         match type_ {
             Type::UInt8 => Box::new(primitives::UInt8CodeType),
             Type::Int8 => Box::new(primitives::Int8CodeType),
@@ -209,25 +242,10 @@ impl PythonCodeOracle {
                 Box::new(callback_interface::CallbackInterfaceCodeType::new(id))
             }
 
-            Type::Optional(ref inner) => {
-                let outer = type_.clone();
-                let inner = *inner.to_owned();
-                Box::new(compounds::OptionalCodeType::new(inner, outer))
-            }
-            Type::Sequence(ref inner) => {
-                let outer = type_.clone();
-                let inner = *inner.to_owned();
-                Box::new(compounds::SequenceCodeType::new(inner, outer))
-            }
-            Type::Map(ref key, ref value) => {
-                let outer = type_.clone();
-                let key = *key.to_owned();
-                let value = *value.to_owned();
-                Box::new(compounds::MapCodeType::new(key, value, outer))
-            }
-            Type::External { name, crate_name } => {
-                Box::new(external::ExternalCodeType::new(name, crate_name))
-            }
+            Type::Optional(inner) => Box::new(compounds::OptionalCodeType::new(*inner)),
+            Type::Sequence(inner) => Box::new(compounds::SequenceCodeType::new(*inner)),
+            Type::Map(key, value) => Box::new(compounds::MapCodeType::new(*key, *value)),
+            Type::External { name, .. } => Box::new(external::ExternalCodeType::new(name)),
             Type::Custom { name, .. } => Box::new(custom::CustomCodeType::new(name)),
         }
     }
@@ -240,38 +258,31 @@ impl CodeOracle for PythonCodeOracle {
 
     
     fn class_name(&self, nm: &str) -> String {
-        nm.to_string().to_upper_camel_case()
+        fixup_keyword(nm.to_string().to_upper_camel_case())
     }
 
     
     fn fn_name(&self, nm: &str) -> String {
-        nm.to_string().to_snake_case()
+        fixup_keyword(nm.to_string().to_snake_case())
     }
 
     
     fn var_name(&self, nm: &str) -> String {
-        nm.to_string().to_snake_case()
+        fixup_keyword(nm.to_string().to_snake_case())
     }
 
     
     fn enum_variant_name(&self, nm: &str) -> String {
-        nm.to_string().to_shouty_snake_case()
+        fixup_keyword(nm.to_string().to_shouty_snake_case())
     }
 
     
     
-    
-    
-    
     fn error_name(&self, nm: &str) -> String {
-        let name = nm.to_string();
+        let name = fixup_keyword(self.class_name(nm));
         match name.strip_suffix("Error") {
             None => name,
-            Some(stripped) => {
-                let mut py_exc_name = stripped.to_owned();
-                py_exc_name.push_str("Exception");
-                py_exc_name
-            }
+            Some(stripped) => format!("{}Exception", stripped),
         }
     }
 
@@ -287,7 +298,7 @@ impl CodeOracle for PythonCodeOracle {
             FFIType::UInt64 => "ctypes.c_uint64".to_string(),
             FFIType::Float32 => "ctypes.c_float".to_string(),
             FFIType::Float64 => "ctypes.c_double".to_string(),
-            FFIType::RustArcPtr => "ctypes.c_void_p".to_string(),
+            FFIType::RustArcPtr(_) => "ctypes.c_void_p".to_string(),
             FFIType::RustBuffer => "RustBuffer".to_string(),
             FFIType::ForeignBytes => "ForeignBytes".to_string(),
             FFIType::ForeignCallback => "FOREIGN_CALLBACK_T".to_string(),
@@ -366,10 +377,6 @@ pub mod filters {
         Ok(oracle().enum_variant_name(nm))
     }
 
-    
-    
-    
-    
     
     pub fn exception_name(nm: &str) -> Result<String, askama::Error> {
         Ok(oracle().error_name(nm))
