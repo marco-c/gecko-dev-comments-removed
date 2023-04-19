@@ -5,8 +5,8 @@
 
 
 
-const { VariablesView } = ChromeUtils.import(
-  "resource://devtools/client/storage/VariablesView.jsm"
+const { VariablesView } = ChromeUtils.importESModule(
+  "resource://devtools/client/storage/VariablesView.sys.mjs"
 );
 const { globals } = require("devtools/shared/loader/builtin-modules");
 

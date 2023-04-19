@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["StyleEditorUI"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { loader, require } = ChromeUtils.import(
   "resource://devtools/shared/loader/Loader.jsm"
@@ -82,17 +78,17 @@ const ALL_FILTERED_CLASSNAME = "splitview-all-filtered";
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
-
-
-
-
-
-
-
-
-
-
-class StyleEditorUI extends EventEmitter {
+/**
+ * StyleEditorUI is controls and builds the UI of the Style Editor, including
+ * maintaining a list of editors for each stylesheet on a debuggee.
+ *
+ * Emits events:
+ *   'editor-added': A new editor was added to the UI
+ *   'editor-selected': An editor was selected
+ *   'error': An error occured
+ *
+ */
+export class StyleEditorUI extends EventEmitter {
   #activeSummary = null;
   #commands;
   #contextMenu;
@@ -116,11 +112,11 @@ class StyleEditorUI extends EventEmitter {
   #sourceMapPrefObserver;
   #styleSheetBoundToSelect;
   #styleSheetToSelect;
-  
-
-
-
-
+  /**
+   * Maps keyed by summary element whose value is an object containing:
+   * - {Element} details: The associated details element (i.e. container for CodeMirror)
+   * - {StyleSheetEditor} editor: The associated editor, for easy retrieval
+   */
   #summaryDataMap = new WeakMap();
   #toolbox;
   #tplDetails;
@@ -128,13 +124,13 @@ class StyleEditorUI extends EventEmitter {
   #uiAbortController = new AbortController();
   #window;
 
-  
-
-
-
-
-
-
+  /**
+   * @param {Toolbox} toolbox
+   * @param {Object} commands Object defined from devtools/shared/commands to interact with the devtools backend
+   * @param {Document} panelDoc
+   *        Document of the toolbox panel to populate UI in.
+   * @param {CssProperties} A css properties database.
+   */
   constructor(toolbox, commands, panelDoc, cssProperties) {
     super();
 
@@ -168,32 +164,32 @@ class StyleEditorUI extends EventEmitter {
     return this.#commands.targetCommand.targetFront;
   }
 
-  
-
-
+  /*
+   * Index of selected stylesheet in document.styleSheets
+   */
   get selectedStyleSheetIndex() {
     return this.selectedEditor
       ? this.selectedEditor.styleSheet.styleSheetIndex
       : -1;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Initiates the style editor ui creation, and start to track TargetCommand updates.
+   *
+   * @params {Object} options
+   * @params {Object} options.stylesheetToSelect
+   * @params {StyleSheetResource} options.stylesheetToSelect.stylesheet
+   * @params {Integer} options.stylesheetToSelect.line
+   * @params {Integer} options.stylesheetToSelect.column
+   */
   async initialize(options = {}) {
     this.createUI();
 
     if (options.stylesheetToSelect) {
       const { stylesheet, line, column } = options.stylesheetToSelect;
-      
-      
-      
+      // If a stylesheet resource and its location was passed (e.g. user clicked on a stylesheet
+      // location in the rule view), we can directly add it to the list and select it
+      // before watching for resources, for improved performance.
       if (stylesheet.resourceId) {
         try {
           await this.#handleStyleSheetResource(stylesheet);
@@ -229,9 +225,9 @@ class StyleEditorUI extends EventEmitter {
     await this.#waitForLoadingStyleSheets();
   }
 
-  
-
-
+  /**
+   * Build the initial UI and wire buttons with event handlers.
+   */
   createUI() {
     this.#filterInput = this.#root.querySelector(".devtools-filterinput");
     this.#filterInputClearButton = this.#root.querySelector(
@@ -248,8 +244,8 @@ class StyleEditorUI extends EventEmitter {
 
     const eventListenersConfig = { signal: this.#uiAbortController.signal };
 
-    
-    
+    // Add click event on the "new stylesheet" button in the toolbar and on the
+    // "append a new stylesheet" link (visible when there are no stylesheets).
     for (const el of this.#root.querySelectorAll(".style-editor-newButton")) {
       el.addEventListener(
         "click",
@@ -326,7 +322,7 @@ class StyleEditorUI extends EventEmitter {
       eventListenersConfig
     );
 
-    
+    // items list focus and search-on-type handling
     this.#nav.addEventListener(
       "keydown",
       this.#onNavKeyDown,
@@ -355,7 +351,7 @@ class StyleEditorUI extends EventEmitter {
     this.#filterInputClearButton.toggleAttribute("hidden", !this.#filter);
 
     for (const summary of this.#nav.childNodes) {
-      
+      // Don't update nav class for every element, we do it after the loop.
       this.handleSummaryVisibility(summary, {
         triggerOnFilterStateChange: false,
       });
@@ -389,7 +385,7 @@ class StyleEditorUI extends EventEmitter {
   }
 
   #onFocusFilterInputKeyboardShortcut = e => {
-    
+    // Prevent the print modal to be displayed.
     if (e) {
       e.stopPropagation();
       e.preventDefault();
@@ -406,7 +402,7 @@ class StyleEditorUI extends EventEmitter {
       return node;
     }
 
-    
+    // do not steal focus from inside iframes or textboxes
     if (
       event.target.ownerDocument != this.#nav.ownerDocument ||
       event.target.tagName == "input" ||
@@ -416,12 +412,12 @@ class StyleEditorUI extends EventEmitter {
       return false;
     }
 
-    
+    // handle keyboard navigation within the items list
     const visibleElements = Array.from(
       this.#nav.querySelectorAll(`li:not(.${FILTERED_CLASSNAME})`)
     );
-    
-    
+    // Elements have a different visual order (due to the use of MozBoxOrdinalGroup), so
+    // we need to sort them by their data-ordinal attribute
     visibleElements.sort(
       (a, b) => a.getAttribute("data-ordinal") - b.getAttribute("data-ordinal")
     );
@@ -459,13 +455,13 @@ class StyleEditorUI extends EventEmitter {
     return true;
   };
 
-  
-
-
-
-
-
-
+  /**
+   * Opens the Options Popup Menu
+   *
+   * @params {number} screenX
+   * @params {number} screenY
+   *   Both obtained from the event object, used to position the popup
+   */
   #onOptionsButtonClick = ({ screenX, screenY }) => {
     this.#optionsMenu = optionsPopupMenu(
       this.#toggleOrigSources,
@@ -482,14 +478,14 @@ class StyleEditorUI extends EventEmitter {
     this.#optionsMenu.popup(screenX, screenY, this.#toolbox.doc);
   };
 
-  
-
-
+  /**
+   * Be called when changing the original sources pref.
+   */
   #onOrigSourcesPrefChanged = async () => {
     this.#clear();
-    
-    
-    
+    // When we toggle the source-map preference, we clear the panel and re-fetch the exact
+    // same stylesheet resources from ResourceCommand, but `_addStyleSheet` will trigger
+    // or ignore the additional source-map mapping.
     this.#root.classList.add("loading");
     for (const resource of this.#toolbox.resourceCommand.getAllResources(
       this.#toolbox.resourceCommand.TYPES.STYLESHEET
@@ -502,11 +498,11 @@ class StyleEditorUI extends EventEmitter {
     this.emit("stylesheets-refreshed");
   };
 
-  
-
-
+  /**
+   * Remove all editors and add loading indicator.
+   */
   #clear = () => {
-    
+    // remember selected sheet and line number for next load
     if (this.selectedEditor && this.selectedEditor.sourceEditor) {
       const href = this.selectedEditor.styleSheet.href;
       const { line, ch } = this.selectedEditor.sourceEditor.getCursor();
@@ -518,7 +514,7 @@ class StyleEditorUI extends EventEmitter {
       };
     }
 
-    
+    // remember saved file locations
     for (const editor of this.editors) {
       if (editor.savedFile) {
         const identifier = this.getStyleSheetIdentifier(editor.styleSheet);
@@ -527,30 +523,30 @@ class StyleEditorUI extends EventEmitter {
     }
 
     this.#clearStyleSheetEditors();
-    
+    // Clear the left sidebar items and their associated elements.
     while (this.#nav.hasChildNodes()) {
       this.removeSplitViewItem(this.#nav.firstChild);
     }
 
     this.selectedEditor = null;
-    
-    
+    // Here the keys are style sheet actors, and the values are
+    // promises that resolve to the sheet's editor.  See |_addStyleSheet|.
     this.#seenSheets = new Map();
 
     this.emit("stylesheets-clear");
   };
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Add an editor for this stylesheet. Add editors for its original sources
+   * instead (e.g. Sass sources), if applicable.
+   *
+   * @param  {Resource} resource
+   *         The STYLESHEET resource which is received from resource command.
+   * @return {Promise}
+   *         A promise that resolves to the style sheet's editor when the style sheet has
+   *         been fully loaded.  If the style sheet has a source map, and source mapping
+   *         is enabled, then the promise resolves to null.
+   */
   #addStyleSheet(resource) {
     if (!this.#seenSheets.has(resource)) {
       const promise = (async () => {
@@ -578,8 +574,8 @@ class StyleEditorUI extends EventEmitter {
           sourceMapBaseURL,
           sourceMapURL,
         });
-        
-        
+        // A single generated sheet might map to multiple original
+        // sheets, so make editors for each of them.
         if (sources && sources.length) {
           const parentEditorName = editor.friendlyName;
           this.#removeStyleSheetEditor(editor);
@@ -592,7 +588,7 @@ class StyleEditorUI extends EventEmitter {
               sourceMapService
             );
 
-            
+            // set so the first sheet will be selected, even if it's a source
             original.styleSheetIndex = resource.styleSheetIndex;
             original.relatedStyleSheet = resource;
             original.relatedEditorName = parentEditorName;
@@ -623,16 +619,16 @@ class StyleEditorUI extends EventEmitter {
     return this.editors.filter(editor => editor.isNew).length;
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Finds the index to be shown in the Style Editor for inline or
+   * user-created style sheets, returns undefined if not of either type.
+   *
+   * @param {StyleSheet}  styleSheet
+   *        Object representing stylesheet
+   * @return {(Number|undefined)}
+   *         Optional Integer representing the index of the current stylesheet
+   *         among all stylesheets of its type (inline or user-created)
+   */
   #getNextFriendlyIndex(styleSheet) {
     if (styleSheet.href) {
       return undefined;
@@ -643,14 +639,14 @@ class StyleEditorUI extends EventEmitter {
       : this.#getInlineStyleSheetsCount();
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Add a new editor to the UI for a source.
+   *
+   * @param  {Resource} resource
+   *         The resource which is received from resource command.
+   * @return {Promise} that is resolved with the created StyleSheetEditor when
+   *                   the editor is fully initialized or rejected on error.
+   */
   async #addStyleSheetEditor(resource) {
     const editor = new StyleSheetEditor(
       resource,
@@ -668,8 +664,8 @@ class StyleEditorUI extends EventEmitter {
       this.#onFocusFilterInputKeyboardShortcut
     );
 
-    
-    
+    // onMediaRulesChanged fires media-rules-changed, so call the function after
+    // registering the listener in order to ensure to get media-rules-changed event.
     editor.onMediaRulesChanged(resource.mediaRules);
 
     this.editors.push(editor);
@@ -677,7 +673,7 @@ class StyleEditorUI extends EventEmitter {
     try {
       await editor.fetchSource();
     } catch (e) {
-      
+      // if the editor was destroyed while fetching dependencies, we don't want to go further.
       if (!this.editors.includes(editor)) {
         return null;
       }
@@ -693,20 +689,20 @@ class StyleEditorUI extends EventEmitter {
     return editor;
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Import a style sheet from file and asynchronously create a
+   * new stylesheet on the debuggee for it.
+   *
+   * @param {mixed} file
+   *        Optional nsIFile or filename string.
+   *        If not set a file picker will be shown.
+   * @param {nsIWindow} parentWindow
+   *        Optional parent window for the file picker.
+   */
   #importFromFile(file, parentWindow) {
     const onFileSelected = selectedFile => {
       if (!selectedFile) {
-        
+        // nothing selected
         return;
       }
       lazy.NetUtil.asyncFetch(
@@ -739,50 +735,50 @@ class StyleEditorUI extends EventEmitter {
     showFilePicker(file, false, parentWindow, onFileSelected);
   }
 
-  
-
-
-
-
-
+  /**
+   * Forward any error from a stylesheet.
+   *
+   * @param  {data} data
+   *         The event data
+   */
   #onError = data => {
     this.emit("error", data);
   };
 
-  
-
-
+  /**
+   * Toggle the original sources pref.
+   */
   #toggleOrigSources() {
     const isEnabled = Services.prefs.getBoolPref(PREF_ORIG_SOURCES);
     Services.prefs.setBoolPref(PREF_ORIG_SOURCES, !isEnabled);
   }
 
-  
-
-
+  /**
+   * Toggle the pref for showing a @media rules sidebar in each editor.
+   */
   #toggleMediaSidebar() {
     const isEnabled = Services.prefs.getBoolPref(PREF_MEDIA_SIDEBAR);
     Services.prefs.setBoolPref(PREF_MEDIA_SIDEBAR, !isEnabled);
   }
 
-  
-
-
+  /**
+   * Toggle the @media sidebar in each editor depending on the setting.
+   */
   #onMediaPrefChanged = () => {
     this.editors.forEach(this.#updateMediaList);
   };
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * This method handles the following cases related to the context
+   * menu items "_openLinkNewTabItem" and "_copyUrlItem":
+   *
+   * 1) There was a stylesheet clicked on and it is external: show and
+   * enable the context menu item
+   * 2) There was a stylesheet clicked on and it is inline: show and
+   * disable the context menu item
+   * 3) There was no stylesheet clicked on (the right click happened
+   * below the list): hide the context menu
+   */
   #updateContextMenuItems = async () => {
     this.#openLinkNewTabItem.hidden = !this.#contextMenuStyleSheet;
     this.#copyUrlItem.hidden = !this.#contextMenuStyleSheet;
@@ -799,30 +795,30 @@ class StyleEditorUI extends EventEmitter {
     }
   };
 
-  
-
-
+  /**
+   * Open a particular stylesheet in a new tab.
+   */
   #openLinkNewTab = () => {
     if (this.#contextMenuStyleSheet) {
       lazy.openContentLink(this.#contextMenuStyleSheet.href);
     }
   };
 
-  
-
-
+  /**
+   * Copies a stylesheet's URL.
+   */
   #copyUrl = () => {
     if (this.#contextMenuStyleSheet) {
       lazy.copyString(this.#contextMenuStyleSheet.href);
     }
   };
 
-  
-
-
-
-
-
+  /**
+   * Remove a particular stylesheet editor from the UI
+   *
+   * @param {StyleSheetEditor}  editor
+   *        The editor to remove.
+   */
   #removeStyleSheetEditor(editor) {
     if (editor.summary) {
       this.removeSplitViewItem(editor.summary);
@@ -840,9 +836,9 @@ class StyleEditorUI extends EventEmitter {
     this.editors.splice(this.editors.indexOf(editor), 1);
   }
 
-  
-
-
+  /**
+   * Clear all the editors from the UI.
+   */
   #clearStyleSheetEditors() {
     for (const editor of this.editors) {
       editor.destroy();
@@ -850,15 +846,15 @@ class StyleEditorUI extends EventEmitter {
     this.editors = [];
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Called when a StyleSheetEditor's source has been fetched.
+   * Add new sidebar item and editor to the UI
+   *
+   * @param  {StyleSheetEditor} editor
+   *         Editor to create UI for.
+   */
   #sourceLoaded(editor) {
-    
+    // Create the detail and summary nodes from the templates node (declared in index.xhtml)
     const details = this.#tplDetails.cloneNode(true);
     details.id = "";
     const summary = this.#tplSummary.cloneNode(true);
@@ -938,7 +934,7 @@ class StyleEditorUI extends EventEmitter {
       "focus",
       function onSummaryFocus(event) {
         if (event.target == summary) {
-          
+          // autofocus the stylesheet name
           summary.querySelector(".stylesheet-name").focus();
         }
       },
@@ -958,7 +954,7 @@ class StyleEditorUI extends EventEmitter {
         const sidebarWidth = sidebar.getAttribute("width");
         Services.prefs.setIntPref(PREF_SIDEBAR_WIDTH, sidebarWidth);
 
-        
+        // update all @media sidebars for consistency
         const sidebars = [
           ...this.#panelDoc.querySelectorAll(".stylesheet-sidebar"),
         ];
@@ -969,7 +965,7 @@ class StyleEditorUI extends EventEmitter {
       eventListenersConfig
     );
 
-    
+    // autofocus if it's a new user-created stylesheet
     if (createdEditor.isNew) {
       this.#selectEditor(createdEditor);
     }
@@ -978,8 +974,8 @@ class StyleEditorUI extends EventEmitter {
       this.switchToSelectedSheet();
     }
 
-    
-    
+    // If this is the first stylesheet and there is no pending request to
+    // select a particular style sheet, select this sheet.
     if (
       !this.selectedEditor &&
       !this.#styleSheetBoundToSelect &&
@@ -991,21 +987,21 @@ class StyleEditorUI extends EventEmitter {
     this.emit("editor-added", createdEditor);
   }
 
-  
-
-
-
-
-
+  /**
+   * Switch to the editor that has been marked to be selected.
+   *
+   * @return {Promise}
+   *         Promise that will resolve when the editor is selected.
+   */
   switchToSelectedSheet() {
     const toSelect = this.#styleSheetToSelect;
 
     for (const editor of this.editors) {
       if (this.#isEditorToSelect(editor)) {
-        
-        
-        
-        
+        // The _styleSheetBoundToSelect will always hold the latest pending
+        // requested style sheet (with line and column) which is not yet
+        // selected by the source editor. Only after we select that particular
+        // editor and go the required line and column, it will become null.
         this.#styleSheetBoundToSelect = this.#styleSheetToSelect;
         this.#styleSheetToSelect = null;
         return this.#selectEditor(editor, toSelect.line, toSelect.col);
@@ -1015,13 +1011,13 @@ class StyleEditorUI extends EventEmitter {
     return Promise.resolve();
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Returns whether a given editor is the current editor to be selected. Tests
+   * based on href or underlying stylesheet.
+   *
+   * @param {StyleSheetEditor} editor
+   *        The editor to test.
+   */
   #isEditorToSelect(editor) {
     const toSelect = this.#styleSheetToSelect;
     if (!toSelect) {
@@ -1036,36 +1032,36 @@ class StyleEditorUI extends EventEmitter {
     );
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Select an editor in the UI.
+   *
+   * @param  {StyleSheetEditor} editor
+   *         Editor to switch to.
+   * @param  {number} line
+   *         Line number to jump to
+   * @param  {number} col
+   *         Column number to jump to
+   * @return {Promise}
+   *         Promise that will resolve when the editor is selected and ready
+   *         to be used.
+   */
   #selectEditor(editor, line = null, col = null) {
-    
+    // Don't go further if the editor was destroyed in the meantime
     if (!this.editors.includes(editor)) {
       return null;
     }
 
     const editorPromise = editor.getSourceEditor().then(() => {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // line/col are null when the style editor is initialized and the first stylesheet
+      // editor is selected. Unfortunately, this function might be called also when the
+      // panel is opened from clicking on a CSS warning in the WebConsole panel, in which
+      // case we have specific line+col.
+      // There's no guarantee which one could be called first, and it happened that we
+      // were setting the cursor once for the correct line coming from the webconsole,
+      // and then re-setting it to the default value (which was <0,0>).
+      // To avoid the race, we simply don't explicitly set the cursor to any default value,
+      // which is not a big deal as CodeMirror does init it to <0,0> anyway.
+      // See Bug 1738124 for more information.
       if (line !== null || col !== null) {
         editor.setCursor(line, col);
       }
@@ -1073,7 +1069,7 @@ class StyleEditorUI extends EventEmitter {
     });
 
     const summaryPromise = this.getEditorSummary(editor).then(summary => {
-      
+      // Don't go further if the editor was destroyed in the meantime
       if (!this.editors.includes(editor)) {
         throw new Error("Editor was destroyed");
       }
@@ -1117,29 +1113,29 @@ class StyleEditorUI extends EventEmitter {
     });
   }
 
-  
-
-
-
-
-
+  /**
+   * Returns an identifier for the given style sheet.
+   *
+   * @param {StyleSheet} styleSheet
+   *        The style sheet to be identified.
+   */
   getStyleSheetIdentifier(styleSheet) {
-    
-    
+    // Identify inline style sheets by their host page URI and index
+    // at the page.
     return styleSheet.href
       ? styleSheet.href
       : "inline-" + styleSheet.styleSheetIndex + "-at-" + styleSheet.nodeHref;
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Get the OriginalSource object for a given original sourceId returned from
+   * the sourcemap worker service.
+   *
+   * @param {string} sourceId
+   *        The ID to search for from the sourcemap worker.
+   *
+   * @return {OriginalSource | null}
+   */
   getOriginalSourceSheet(sourceId) {
     for (const editor of this.editors) {
       const { styleSheet } = editor;
@@ -1150,19 +1146,19 @@ class StyleEditorUI extends EventEmitter {
     return null;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Given an URL, find a stylesheet front with that URL, if one has been
+   * loaded into the editor.js
+   *
+   * Do not use this unless you have no other way to get a StyleSheetFront
+   * multiple sheets could share the same URL, so this will give you _one_
+   * of possibly many sheets with that URL.
+   *
+   * @param {string} url
+   *        An arbitrary URL to search for.
+   *
+   * @return {StyleSheetFront|null}
+   */
   getStylesheetFrontForGeneratedURL(url) {
     for (const styleSheet of this.#seenSheets.keys()) {
       const sheetURL = styleSheet.href || styleSheet.nodeHref;
@@ -1173,19 +1169,19 @@ class StyleEditorUI extends EventEmitter {
     return null;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * selects a stylesheet and optionally moves the cursor to a selected line
+   *
+   * @param {StyleSheetFront} [stylesheet]
+   *        Stylesheet to select or href of stylesheet to select
+   * @param {Number} [line]
+   *        Line to which the caret should be moved (zero-indexed).
+   * @param {Number} [col]
+   *        Column to which the caret should be moved (zero-indexed).
+   * @return {Promise}
+   *         Promise that will resolve when the editor is selected and ready
+   *         to be used.
+   */
   selectStyleSheet(stylesheet, line, col) {
     this.#styleSheetToSelect = {
       stylesheet,
@@ -1193,30 +1189,30 @@ class StyleEditorUI extends EventEmitter {
       col,
     };
 
-    
-
+    /* Switch to the editor for this sheet, if it exists yet.
+       Otherwise each editor will be checked when it's created. */
     return this.switchToSelectedSheet();
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Handler for an editor's 'property-changed' event.
+   * Update the summary in the UI.
+   *
+   * @param  {StyleSheetEditor} editor
+   *         Editor for which a property has changed
+   */
   #summaryChange(editor) {
     this.#updateSummaryForEditor(editor);
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Update split view summary of given StyleEditor instance.
+   *
+   * @param {StyleSheetEditor} editor
+   * @param {DOMElement} summary
+   *        Optional item's summary element to update. If none, item
+   *        corresponding to passed editor is used.
+   */
   #updateSummaryForEditor(editor, summary) {
     summary = summary || editor.summary;
     if (!summary) {
@@ -1258,18 +1254,18 @@ class StyleEditorUI extends EventEmitter {
       )
     );
 
-    
+    // We may need to change the summary visibility as a result of the changes.
     this.handleSummaryVisibility(summary);
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Update the @media rules sidebar for an editor. Hide if there are no rules
+   * Display a list of the @media rules in the editor's associated style sheet.
+   * Emits a 'media-list-changed' event after updating the UI.
+   *
+   * @param  {StyleSheetEditor} editor
+   *         Editor to update @media sidebar of
+   */
   #updateMediaList = editor => {
     (async function() {
       const details = await this.getEditorDetails(editor);
@@ -1303,7 +1299,7 @@ class StyleEditorUI extends EventEmitter {
           );
         }
 
-        
+        // this @media rule is from a different original source
         if (location.source != editor.styleSheet.href) {
           continue;
         }
@@ -1346,14 +1342,14 @@ class StyleEditorUI extends EventEmitter {
       .catch(console.error));
   };
 
-  
-
-
-
-
-
-
-
+  /**
+   * Used to safely inject media query links
+   *
+   * @param {HTMLElement} element
+   *        The element corresponding to the media sidebar condition
+   * @param {String} rawText
+   *        The raw condition text to parse
+   */
   #setConditionContents(element, rawText) {
     const minMaxPattern = /(min\-|max\-)(width|height):\s\d+(px)/gi;
 
@@ -1383,13 +1379,13 @@ class StyleEditorUI extends EventEmitter {
     element.appendChild(node);
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Called when a media condition is clicked
+   * If a responsive mode link is clicked, it will launch it.
+   *
+   * @param {object} e
+   *        Event object
+   */
   #onMediaConditionClick(e) {
     const conditionText = e.target.textContent;
     const isWidthCond = conditionText.toLowerCase().indexOf("width") > -1;
@@ -1401,12 +1397,12 @@ class StyleEditorUI extends EventEmitter {
     e.stopPropagation();
   }
 
-  
-
-
-
-
-
+  /**
+   * Launches the responsive mode with a specific width or height.
+   *
+   * @param  {object} options
+   *         Object with width or/and height properties.
+   */
   async #launchResponsiveMode(options = {}) {
     const tab = this.currentTarget.localTab;
     const win = this.currentTarget.localTab.ownerDocument.defaultView;
@@ -1421,12 +1417,12 @@ class StyleEditorUI extends EventEmitter {
     );
   }
 
-  
-
-
-
-
-
+  /**
+   * Jump cursor to the editor for a stylesheet and line number for a rule.
+   *
+   * @param  {object} location
+   *         Location object with 'line', 'column', and 'source' properties.
+   */
   #jumpToLocation(location) {
     const source = location.styleSheet || location.source;
     this.selectStyleSheet(source, location.line - 1, location.column - 1);
@@ -1450,11 +1446,11 @@ class StyleEditorUI extends EventEmitter {
 
   async #handleStyleSheetResource(resource) {
     try {
-      
+      // The fileName is in resource means this stylesheet was imported from file by user.
       const { fileName } = resource;
       let file = fileName ? new lazy.FileUtils.File(fileName) : null;
 
-      
+      // recall location of saved file for this sheet after page reload
       if (!file) {
         const identifier = this.getStyleSheetIdentifier(resource);
         const savedFile = this.savedLocations[identifier];
@@ -1471,13 +1467,13 @@ class StyleEditorUI extends EventEmitter {
     }
   }
 
-  
-  
+  // onAvailable is a mandatory argument for watchTargets,
+  // but we don't do anything when a new target gets created.
   #onTargetAvailable = ({ targetFront }) => {};
 
   #onTargetDestroyed = ({ targetFront }) => {
-    
-    
+    // Iterate over a copy of the list in order to prevent skipping
+    // over some items when removing items of this list
     const editorsCopy = [...this.editors];
     for (const editor of editorsCopy) {
       const { styleSheet } = editor;
@@ -1496,7 +1492,7 @@ class StyleEditorUI extends EventEmitter {
         const onStyleSheetHandled = this.#handleStyleSheetResource(resource);
 
         if (this.#loadingStyleSheets) {
-          
+          // In case of reloading/navigating and panel's opening
           this.#loadingStyleSheets.push(onStyleSheetHandled);
         }
         promises.push(onStyleSheetHandled);
@@ -1550,15 +1546,15 @@ class StyleEditorUI extends EventEmitter {
     }
   };
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Set the active item's summary element.
+   *
+   * @param DOMElement summary
+   * @param {Object} options
+   * @param {String=} options.reason: Indicates why the summary was selected. It's set to
+   *                  "filter-auto" when the summary was automatically selected as the result
+   *                  of the previous active summary being filtered out.
+   */
   setActiveSummary(summary, options = {}) {
     if (summary == this.#activeSummary) {
       return;
@@ -1584,22 +1580,22 @@ class StyleEditorUI extends EventEmitter {
     this.showSummaryEditor(summary, options);
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Show summary's associated editor
+   *
+   * @param DOMElement summary
+   * @param {Object} options
+   * @param {String=} options.reason: Indicates why the summary was selected. It's set to
+   *                  "filter-auto" when the summary was automatically selected as the result
+   *                  of the previous active summary being filtered out.
+   */
   async showSummaryEditor(summary, options) {
     const { details, editor } = this.#summaryDataMap.get(summary);
     this.selectedEditor = editor;
 
     try {
       if (!editor.sourceEditor) {
-        
+        // only initialize source editor when we switch to this view
         const inputElement = details.querySelector(".stylesheet-editor-input");
         await editor.load(inputElement, this.#cssProperties);
       }
@@ -1612,12 +1608,12 @@ class StyleEditorUI extends EventEmitter {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Remove an item from the split view.
+   *
+   * @param DOMElement summary
+   *        Summary element of the item to remove.
+   */
   removeSplitViewItem(summary) {
     if (summary == this.#activeSummary) {
       this.setActiveSummary(null);
@@ -1632,15 +1628,15 @@ class StyleEditorUI extends EventEmitter {
     data.details.remove();
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Make the passed element visible or not, depending if it matches the current filter
+   *
+   * @param {Element} summary
+   * @param {Object} options
+   * @param {Boolean} options.triggerOnFilterStateChange: Set to false to avoid calling
+   *                  #onFilterStateChange directly here. This can be useful when this
+   *                  function is called for every item of the list, like in `setFilter`.
+   */
   handleSummaryVisibility(summary, { triggerOnFilterStateChange = true } = {}) {
     if (!this.#filter) {
       summary.classList.remove(FILTERED_CLASSNAME);

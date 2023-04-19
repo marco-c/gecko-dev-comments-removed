@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["StyleSheetEditor"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { require, loader } = ChromeUtils.import(
   "resource://devtools/shared/loader/Loader.jsm"
@@ -52,50 +48,50 @@ const LOAD_ERROR = "error-load";
 const SAVE_ERROR = "error-save";
 const SELECTOR_HIGHLIGHTER_TYPE = "SelectorHighlighter";
 
-
-
+// max update frequency in ms (avoid potential typing lag and/or flicker)
+// @see StyleEditor.updateStylesheet
 const UPDATE_STYLESHEET_DELAY = 500;
 
-
+// Pref which decides if CSS autocompletion is enabled in Style Editor or not.
 const AUTOCOMPLETION_PREF = "devtools.styleeditor.autocompletion-enabled";
 
-
+// Pref which decides whether updates to the stylesheet use transitions
 const TRANSITION_PREF = "devtools.styleeditor.transitions";
 
-
-
+// How long to wait to update linked CSS file after original source was saved
+// to disk. Time in ms.
 const CHECK_LINKED_SHEET_DELAY = 500;
 
-
+// How many times to check for linked file changes
 const MAX_CHECK_COUNT = 10;
 
-
-
+// How much time should the mouse be still before the selector at that position
+// gets highlighted?
 const SELECTOR_HIGHLIGHT_TIMEOUT = 500;
 
-
+// Minimum delay between firing two media-rules-changed events.
 const EMIT_MEDIA_RULES_THROTTLING = 500;
 
 const STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR = "styleeditor";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function StyleSheetEditor(resource, win, styleSheetFriendlyIndex) {
+/**
+ * StyleSheetEditor controls the editor linked to a particular StyleSheet
+ * object.
+ *
+ * Emits events:
+ *   'property-change': A property on the underlying stylesheet has changed
+ *   'source-editor-load': The source editor for this editor has been loaded
+ *   'error': An error has occured
+ *
+ * @param  {Resource} resource
+ *         The STYLESHEET resource which is received from resource command.
+ * @param {DOMWindow}  win
+ *        panel window for style editor
+ * @param {Number} styleSheetFriendlyIndex
+ *        Optional Integer representing the index of the current stylesheet
+ *        among all stylesheets of its type (inline or user-created)
+ */
+export function StyleSheetEditor(resource, win, styleSheetFriendlyIndex) {
   EventEmitter.decorate(this);
 
   this._resource = resource;
@@ -105,11 +101,11 @@ function StyleSheetEditor(resource, win, styleSheetFriendlyIndex) {
   this._isNew = this.styleSheet.isNew;
   this.styleSheetFriendlyIndex = styleSheetFriendlyIndex;
 
-  
-  
+  // True when we've just set the editor text based on a style-applied
+  // event from the StyleSheetActor.
   this._justSetText = false;
 
-  
+  // state to use when inputElement attaches
   this._state = {
     text: "",
     selection: {
@@ -157,25 +153,25 @@ StyleSheetEditor.prototype = {
     return this._resource;
   },
 
-  
-
-
+  /**
+   * Whether there are unsaved changes in the editor
+   */
   get unsaved() {
     return this.sourceEditor && !this.sourceEditor.isClean();
   },
 
-  
-
-
-
+  /**
+   * Whether the editor is for a stylesheet created by the user
+   * through the style editor UI.
+   */
   get isNew() {
     return this._isNew;
   },
 
-  
-
-
-
+  /**
+   * The style sheet or the generated style sheet for this source if it's an
+   * original source.
+   */
   get cssSheet() {
     if (this.styleSheet.isOriginalSource) {
       return this.styleSheet.relatedStyleSheet;
@@ -193,11 +189,11 @@ StyleSheetEditor.prototype = {
     this.linkCSSFile();
   },
 
-  
-
-
-
-
+  /**
+   * Get a user-friendly name for the style sheet.
+   *
+   * @return string
+   */
   get friendlyName() {
     if (this.savedFile) {
       return this.savedFile.leafName;
@@ -209,9 +205,9 @@ StyleSheetEditor.prototype = {
     }
 
     if (!this.styleSheet.href) {
-      
-      
-      
+      // TODO(bug 176993): Probably a different index + string for
+      // constructable stylesheets, they can't be meaningfully edited right now
+      // because we don't have their original text.
       const index = this.styleSheetFriendlyIndex + 1 || 0;
       return getString("inlineStyleSheet", index);
     }
@@ -221,24 +217,24 @@ StyleSheetEditor.prototype = {
       try {
         this._friendlyName = decodeURI(this._friendlyName);
       } catch (ex) {
-        
+        // Ignore.
       }
     }
     return this._friendlyName;
   },
 
-  
-
-
-
-
+  /**
+   * Check if transitions are enabled for style changes.
+   *
+   * @return Boolean
+   */
   get transitionsEnabled() {
     return Services.prefs.getBoolPref(TRANSITION_PREF);
   },
 
-  
-
-
+  /**
+   * If this is an original source, get the path of the CSS file it generated.
+   */
   linkCSSFile() {
     if (!this.styleSheet.isOriginalSource) {
       return;
@@ -261,7 +257,7 @@ StyleSheetEditor.prototype = {
       const origUri = lazy.NetUtil.newURI(origHref);
       path = findLinkedFilePath(uri, origUri, this.savedFile);
     } else {
-      
+      // we can't determine path to generated file on disk
       return;
     }
 
@@ -273,7 +269,7 @@ StyleSheetEditor.prototype = {
 
     this.linkedCSSFileError = null;
 
-    
+    // save last file change time so we can compare when we check for changes.
     IOUtils.stat(path).then(info => {
       this._fileModDate = info.lastModified;
     }, this.markLinkedFileBroken);
@@ -281,19 +277,19 @@ StyleSheetEditor.prototype = {
     this.emit("linked-css-file");
   },
 
-  
-
-
-
-
-
+  /**
+   * A helper function that fetches the source text from the style
+   * sheet.
+   *
+   * This will set |this._state.text| to the new text.
+   */
   async _fetchSourceText(options = {}) {
     const styleSheetsFront = await this._getStyleSheetsFront();
 
     let longStr = null;
     if (this.styleSheet.isOriginalSource) {
-      
-      
+      // If the stylesheet is OriginalSource, we should get the texts from SourceMapService.
+      // So, for now, we use OriginalSource.getText() as it is.
       longStr = await this.styleSheet.getText();
     } else {
       longStr = await styleSheetsFront.getText(this.resourceId);
@@ -302,27 +298,27 @@ StyleSheetEditor.prototype = {
     this._state.text = await longStr.string();
   },
 
-  
-
-
-
-
-
+  /**
+   * Attempt to prettify the current text if the corresponding stylesheet is not
+   * an original source. The text will be read from |this._state.text|.
+   *
+   * This will set |this._state.text| to the prettified text if needed.
+   */
   _prettifySourceTextIfNeeded() {
     if (!this.styleSheet.isOriginalSource) {
       const ruleCount = this.styleSheet.ruleCount;
       const { result, mappings } = prettifyCSS(this._state.text, ruleCount);
-      
-      
-      
+      // Store the list of objects with mappings between CSS token positions from the
+      // original source to the prettified source. These will be used when requested to
+      // jump to a specific position within the editor.
       this._mappings = mappings;
       this._state.text = result;
     }
   },
 
-  
-
-
+  /**
+   * Start fetching the full text source for this editor's sheet.
+   */
   async fetchSource() {
     try {
       await this._fetchSourceText();
@@ -345,12 +341,12 @@ StyleSheetEditor.prototype = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Set the cursor at the given line and column location within the code editor.
+   *
+   * @param {Number} line
+   * @param {Number} column
+   */
   setCursor(line, column) {
     line = line || 0;
     column = column || 0;
@@ -359,17 +355,17 @@ StyleSheetEditor.prototype = {
     this.sourceEditor.setCursor({ line: position.line, ch: position.column });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * If the stylesheet was automatically prettified, there should be a list of line
+   * and column mappings from the original to the generated source that can be used
+   * to translate the cursor position to the correct location in the prettified source.
+   * If no mappings exist, return the original cursor position unchanged.
+   *
+   * @param  {Number} line
+   * @param  {Numer} column
+   *
+   * @return {Object}
+   */
   translateCursorPosition(line, column) {
     if (Array.isArray(this._mappings)) {
       for (const mapping of this._mappings) {
@@ -387,28 +383,28 @@ StyleSheetEditor.prototype = {
     return { line, column };
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Forward property-change event from stylesheet.
+   *
+   * @param  {string} event
+   *         Event type
+   * @param  {string} property
+   *         Property that has changed on sheet
+   */
   onPropertyChange(property, value) {
     this.emit("property-change", property, value);
   },
 
-  
-
-
-
+  /**
+   * Called when the stylesheet text changes.
+   * @param {Object} update: The stylesheet resource update packet.
+   */
   async onStyleApplied(update) {
     const updateIsFromSyleSheetEditor =
       update?.event?.cause === STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR;
 
     if (updateIsFromSyleSheetEditor) {
-      
+      // We just applied an edit in the editor, so we can drop this notification.
       this.emit("style-applied");
       return;
     }
@@ -416,11 +412,11 @@ StyleSheetEditor.prototype = {
     if (this.sourceEditor) {
       await this._fetchSourceText();
 
-      
+      // sourceEditor is already loaded, so we can prettify immediately.
       this._prettifySourceTextIfNeeded();
 
-      
-      
+      // The updated stylesheet text should have been set in this._state.text
+      // by _fetchSourceText and _prettifySourceTextIfNeeded.
       const sourceText = this._state.text;
 
       this._justSetText = true;
@@ -433,13 +429,13 @@ StyleSheetEditor.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Handles changes to the list of @media rules in the stylesheet.
+   * Emits 'media-rules-changed' if the list has changed.
+   *
+   * @param  {array} rules
+   *         Array of MediaRuleFronts for new media rules of sheet.
+   */
   onMediaRulesChanged(rules) {
     if (!rules.length && !this.mediaRules.length) {
       return;
@@ -449,23 +445,23 @@ StyleSheetEditor.prototype = {
     this.emitMediaRulesChanged();
   },
 
-  
-
-
+  /**
+   * Forward media-rules-changed event from stylesheet.
+   */
   emitMediaRulesChanged() {
     this.emit("media-rules-changed", this.mediaRules);
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Create source editor and load state into it.
+   * @param  {DOMElement} inputElement
+   *         Element to load source editor in
+   * @param  {CssProperties} cssProperties
+   *         A css properties database.
+   *
+   * @return {Promise}
+   *         Promise that will resolve when the style editor is loaded.
+   */
   async load(inputElement, cssProperties) {
     if (this._isDestroyed) {
       throw new Error(
@@ -476,7 +472,7 @@ StyleSheetEditor.prototype = {
 
     this._inputElement = inputElement;
 
-    
+    // Attempt to prettify the source before loading the source editor.
     this._prettifySourceTextIfNeeded();
 
     const walker = await this.getWalker();
@@ -524,18 +520,18 @@ StyleSheetEditor.prototype = {
       );
     }
 
-    
+    // Add the commands controller for the source-editor.
     sourceEditor.insertCommandsController();
 
     this.emit("source-editor-load");
   },
 
-  
-
-
-
-
-
+  /**
+   * Get the source editor for this editor.
+   *
+   * @return {Promise}
+   *         Promise that will resolve with the editor.
+   */
   getSourceEditor() {
     const self = this;
 
@@ -550,9 +546,9 @@ StyleSheetEditor.prototype = {
     });
   },
 
-  
-
-
+  /**
+   * Focus the Style Editor input.
+   */
   focus() {
     if (this.sourceEditor) {
       this.sourceEditor.focus();
@@ -561,40 +557,40 @@ StyleSheetEditor.prototype = {
     }
   },
 
-  
-
-
-
-
-
+  /**
+   * Event handler for when the editor is shown.
+   *
+   * @param {Object} options
+   * @param {String} options.reason: Indicates why the editor is shown
+   */
   onShow(options = {}) {
     if (this.sourceEditor) {
-      
-      
+      // CodeMirror needs refresh to restore scroll position after hiding and
+      // showing the editor.
       this.sourceEditor.refresh();
     }
 
-    
-    
+    // We don't want to focus the editor if it was shown because of the list being filtered,
+    // as the user might still be typing in the filter input.
     if (options.reason !== "filter-auto") {
       this.focus();
     }
   },
 
-  
-
-
+  /**
+   * Toggled the disabled state of the underlying stylesheet.
+   */
   async toggleDisabled() {
     const styleSheetsFront = await this._getStyleSheetsFront();
     styleSheetsFront.toggleDisabled(this.resourceId).catch(console.error);
   },
 
-  
-
-
+  /**
+   * Queue a throttled task to update the live style sheet.
+   */
   updateStyleSheet() {
     if (this._updateTask) {
-      
+      // cancel previous queued task not executed within throttle delay
       this._window.clearTimeout(this._updateTask);
     }
 
@@ -604,12 +600,12 @@ StyleSheetEditor.prototype = {
     );
   },
 
-  
-
-
+  /**
+   * Update live style sheet according to modifications.
+   */
   async _updateStyleSheet() {
     if (this.styleSheet.disabled) {
-      
+      // TODO: do we want to do this?
       return;
     }
 
@@ -618,10 +614,10 @@ StyleSheetEditor.prototype = {
       return;
     }
 
-    
-    
-    
-    
+    // reset only if we actually perform an update
+    // (stylesheet is enabled) so that 'missed' updates
+    // while the stylesheet is disabled can be performed
+    // when it is enabled back. @see enableStylesheet
     this._updateTask = null;
 
     if (this.sourceEditor) {
@@ -637,21 +633,21 @@ StyleSheetEditor.prototype = {
         STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR
       );
 
-      
-      
+      // Clear any existing mappings from automatic CSS prettification
+      // because they were likely invalided by manually editing the stylesheet.
       this._mappings = null;
     } catch (e) {
       console.error(e);
     }
   },
 
-  
-
-
-
+  /**
+   * Handle mousemove events, calling _highlightSelectorAt after a delay only
+   * and reseting the delay everytime.
+   */
   _onMouseMove(e) {
-    
-    
+    // As we only want to hide an existing highlighter, we can use this.highlighter directly
+    // (and not this.getHighlighter).
     if (this.highlighter) {
       this.highlighter.hide();
     }
@@ -666,13 +662,13 @@ StyleSheetEditor.prototype = {
     }, SELECTOR_HIGHLIGHT_TIMEOUT);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Highlight nodes matching the selector found at coordinates x,y in the
+   * editor, if any.
+   *
+   * @param {Number} x
+   * @param {Number} y
+   */
   async _highlightSelectorAt(x, y) {
     const pos = this.sourceEditor.getPositionFromCoords({ left: x, top: y });
     const info = this.sourceEditor.getInfoAt(pos);
@@ -695,11 +691,11 @@ StyleSheetEditor.prototype = {
     this.emit("node-highlighted");
   },
 
-  
-
-
-
-
+  /**
+   * Returns the walker front associated with this._resource target.
+   *
+   * @returns {Promise<WalkerFront>}
+   */
   async getWalker() {
     if (this.walker) {
       return this.walker;
@@ -711,11 +707,11 @@ StyleSheetEditor.prototype = {
     return this.walker;
   },
 
-  
-
-
-
-
+  /**
+   * Returns or creates the selector highlighter associated with this._resource target.
+   *
+   * @returns {CustomHighlighterFront|null}
+   */
   async getHighlighter() {
     if (this.highlighter) {
       return this.highlighter;
@@ -728,9 +724,9 @@ StyleSheetEditor.prototype = {
       );
       return this.highlighter;
     } catch (e) {
-      
-      
-      
+      // The selectorHighlighter can't always be instantiated, for example
+      // it doesn't work with XUL windows (until bug 1094959 gets fixed);
+      // or the selectorHighlighter doesn't exist on the backend.
       console.warn(
         "The selectorHighlighter couldn't be instantiated, " +
           "elements matching hovered selectors will not be highlighted"
@@ -739,22 +735,22 @@ StyleSheetEditor.prototype = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Save the editor contents into a file and set savedFile property.
+   * A file picker UI will open if file is not set and editor is not headless.
+   *
+   * @param mixed file
+   *        Optional nsIFile or string representing the filename to save in the
+   *        background, no UI will be displayed.
+   *        If not specified, the original style sheet URI is used.
+   *        To implement 'Save' instead of 'Save as', you can pass
+   *        savedFile here.
+   * @param function(nsIFile aFile) callback
+   *        Optional callback called when the operation has finished.
+   *        aFile has the nsIFile object for saved file or null if the operation
+   *        has failed or has been canceled by the user.
+   * @see savedFile
+   */
   saveToFile(file, callback) {
     const onFile = returnFile => {
       if (!returnFile) {
@@ -805,9 +801,9 @@ StyleSheetEditor.prototype = {
     );
   },
 
-  
-
-
+  /**
+   * Called when this source has been successfully saved to disk.
+   */
   onFileSaved(returnFile) {
     this._friendlyName = null;
     this.savedFile = returnFile;
@@ -818,7 +814,7 @@ StyleSheetEditor.prototype = {
 
     this.emit("property-change");
 
-    
+    // TODO: replace with file watching
     this._modCheckCount = 0;
     this._window.clearTimeout(this._timeout);
 
@@ -830,10 +826,10 @@ StyleSheetEditor.prototype = {
     }
   },
 
-  
-
-
-
+  /**
+   * Check to see if our linked CSS file has changed on disk, and
+   * if so, update the live style sheet.
+   */
   checkLinkedFileForChanges() {
     IOUtils.stat(this.linkedCSSFile).then(info => {
       const lastChange = info.lastModified;
@@ -851,7 +847,7 @@ StyleSheetEditor.prototype = {
         return;
       }
 
-      
+      // try again in a bit
       this._timeout = this._window.setTimeout(
         this.checkLinkedFileForChanges,
         CHECK_LINKED_SHEET_DELAY
@@ -859,13 +855,13 @@ StyleSheetEditor.prototype = {
     }, this.markLinkedFileBroken);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Notify that the linked CSS file (if this is an original source)
+   * doesn't exist on disk in the place we think it does.
+   *
+   * @param string error
+   *        The error we got when trying to access the file.
+   */
   markLinkedFileBroken(error) {
     this.linkedCSSFileError = error || true;
     this.emit("linked-css-file-error");
@@ -878,17 +874,17 @@ StyleSheetEditor.prototype = {
     console.error(error);
   },
 
-  
-
-
-
+  /**
+   * For original sources (e.g. Sass files). Fetch contents of linked CSS
+   * file from disk and live update the stylesheet object with the contents.
+   */
   updateLinkedStyleSheet() {
     IOUtils.read(this.linkedCSSFile).then(async array => {
       const decoder = new TextDecoder();
       const text = decoder.decode(array);
 
-      
-      
+      // Ensure we don't re-fetch the text from the original source
+      // actor when we're notified that the style sheet changed.
       const styleSheetsFront = await this._getStyleSheetsFront();
 
       await styleSheetsFront.update(
@@ -900,12 +896,12 @@ StyleSheetEditor.prototype = {
     }, this.markLinkedFileBroken);
   },
 
-  
-
-
-
-
-
+  /**
+   * Retrieve custom key bindings objects as expected by Editor.
+   * Editor action names are not displayed to the user.
+   *
+   * @return {array} key binding objects for the source editor
+   */
   _getKeyBindings() {
     const saveStyleSheetKeybind = Editor.accel(
       getString("saveStyleSheet.commandkey")
@@ -922,8 +918,8 @@ StyleSheetEditor.prototype = {
       ["Shift-" + saveStyleSheetKeybind]: () => {
         this.saveToFile();
       },
-      
-      
+      // We can't simply ignore this (with `false`, or returning `CodeMirror.Pass`), as the
+      // event isn't received by the event listener in StyleSheetUI.
       [focusFilterInputKeybind]: () => {
         this.emit("filter-input-keyboard-shortcut");
       },
@@ -934,9 +930,9 @@ StyleSheetEditor.prototype = {
     return this._resource.targetFront.getFront("stylesheets");
   },
 
-  
-
-
+  /**
+   * Clean up for this editor.
+   */
   destroy() {
     if (this._sourceEditor) {
       this._sourceEditor.off("dirty-change", this.onPropertyChange);
@@ -954,21 +950,21 @@ StyleSheetEditor.prototype = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Find a path on disk for a file given it's hosted uri, the uri of the
+ * original resource that generated it (e.g. Sass file), and the location of the
+ * local file for that source.
+ *
+ * @param {nsIURI} uri
+ *        The uri of the resource
+ * @param {nsIURI} origUri
+ *        The uri of the original source for the resource
+ * @param {nsIFile} file
+ *        The local file for the resource on disk
+ *
+ * @return {string}
+ *         The path of original file on disk
+ */
 function findLinkedFilePath(uri, origUri, file) {
   const { origBranch, branch } = findUnsharedBranches(origUri, uri);
   const project = findProjectPath(file, origBranch);
@@ -979,45 +975,45 @@ function findLinkedFilePath(uri, origUri, file) {
   return path;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Find the path of a project given a file in the project and its branch
+ * off the root. e.g.:
+ * /Users/moz/proj/src/a.css" and "src/a.css"
+ * would yield ["Users", "moz", "proj"]
+ *
+ * @param {nsIFile} file
+ *        file for that resource on disk
+ * @param {array} branch
+ *        path parts for branch to chop off file path.
+ * @return {array}
+ *        array of path parts
+ */
 function findProjectPath(file, branch) {
   const path = PathUtils.split(file.path);
 
   for (let i = 2; i <= branch.length; i++) {
-    
+    // work backwards until we find a differing directory name
     if (path[path.length - i] != branch[branch.length - i]) {
       return path.slice(0, path.length - i + 1);
     }
   }
 
-  
+  // if we don't find a differing directory, just chop off the branch
   return path.slice(0, path.length - branch.length);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Find the parts of a uri past the root it shares with another uri. e.g:
+ * "http://localhost/built/a.scss" and "http://localhost/src/a.css"
+ * would yield ["built", "a.scss"] and ["src", "a.css"]
+ *
+ * @param {nsIURI} origUri
+ *        uri to find unshared branch of. Usually is uri for original source.
+ * @param {nsIURI} uri
+ *        uri to compare against to get a shared root
+ * @return {object}
+ *         object with 'branch' and 'origBranch' array of path parts for branch
+ */
 function findUnsharedBranches(origUri, uri) {
   origUri = PathUtils.split(origUri.pathQueryRef);
   uri = PathUtils.split(uri.pathQueryRef);
@@ -1036,14 +1032,14 @@ function findUnsharedBranches(origUri, uri) {
   };
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Remove the query string from a url.
+ *
+ * @param  {string} href
+ *         Url to remove query string from
+ * @return {string}
+ *         Url without query string
+ */
 function removeQuery(href) {
   return href.replace(/\?.*/, "");
 }
