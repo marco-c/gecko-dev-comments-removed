@@ -1009,6 +1009,14 @@ parserCreate(const XML_Char *encodingName,
   parserInit(parser, encodingName);
 
   if (encodingName && !protocolEncodingName) {
+    if (dtd) {
+      
+      
+      
+      
+      
+      parser->m_dtd = NULL;
+    }
     XML_ParserFree(parser);
     return NULL;
   }
