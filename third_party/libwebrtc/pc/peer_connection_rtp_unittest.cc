@@ -1855,6 +1855,19 @@ TEST_F(SdpFormatReceivedTest, ComplexPlanBIsReportedAsComplexPlanB) {
       ElementsAre(Pair(kSdpFormatReceivedComplexPlanB, 1)));
 }
 
+TEST_F(SdpFormatReceivedTest, AnswerIsReported) {
+  auto caller = CreatePeerConnectionWithPlanB();
+  caller->AddAudioTrack("audio");
+  caller->AddVideoTrack("video");
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  ASSERT_TRUE(caller->SetRemoteDescription(callee->CreateAnswer()));
+  EXPECT_METRIC_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpFormatReceivedAnswer"),
+      ElementsAre(Pair(kSdpFormatReceivedSimple, 1)));
+}
+
 
 
 TEST_P(PeerConnectionRtpTest, CreateTwoSendersWithSameTrack) {

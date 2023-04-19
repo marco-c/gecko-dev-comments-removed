@@ -2009,7 +2009,8 @@ void SdpOfferAnswerHandler::DoSetRemoteDescription(
                  "Rollback not supported in Plan B"));
     return;
   }
-  if (desc->GetType() == SdpType::kOffer) {
+  if (desc->GetType() == SdpType::kOffer ||
+      desc->GetType() == SdpType::kAnswer) {
     
     pc_->ReportSdpFormatReceived(*desc);
   }
