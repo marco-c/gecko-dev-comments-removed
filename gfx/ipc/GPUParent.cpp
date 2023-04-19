@@ -149,8 +149,8 @@ GPUParent* GPUParent::GetSingleton() {
 #endif
 }
 
-bool GPUParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
-                     mozilla::ipc::ScopedPort aPort) {
+bool GPUParent::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
+                     const char* aParentBuildID) {
   
   
   if (NS_WARN_IF(NS_FAILED(nsThreadManager::get().Init()))) {
@@ -158,7 +158,7 @@ bool GPUParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
   }
 
   
-  if (NS_WARN_IF(!Open(std::move(aPort), aParentPid))) {
+  if (NS_WARN_IF(!aEndpoint.Bind(this))) {
     return false;
   }
 

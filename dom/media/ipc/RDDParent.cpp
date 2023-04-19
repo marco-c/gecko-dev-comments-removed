@@ -68,8 +68,8 @@ RDDParent* RDDParent::GetSingleton() {
   return sRDDParent;
 }
 
-bool RDDParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
-                     mozilla::ipc::ScopedPort aPort) {
+bool RDDParent::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
+                     const char* aParentBuildID) {
   
   
   if (NS_WARN_IF(NS_FAILED(nsThreadManager::get().Init()))) {
@@ -77,7 +77,7 @@ bool RDDParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
   }
 
   
-  if (NS_WARN_IF(!Open(std::move(aPort), aParentPid))) {
+  if (NS_WARN_IF(!aEndpoint.Bind(this))) {
     return false;
   }
 

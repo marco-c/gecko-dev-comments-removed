@@ -132,8 +132,8 @@ void VRParent::ActorDestroy(ActorDestroyReason aWhy) {
   XRE_ShutdownChildProcess();
 }
 
-bool VRParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
-                    mozilla::ipc::ScopedPort aPort) {
+bool VRParent::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
+                    const char* aParentBuildID) {
   
   
   if (NS_WARN_IF(NS_FAILED(nsThreadManager::get().Init()))) {
@@ -141,7 +141,7 @@ bool VRParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
   }
 
   
-  if (NS_WARN_IF(!Open(std::move(aPort), aParentPid))) {
+  if (NS_WARN_IF(!aEndpoint.Bind(this))) {
     return false;
   }
 
