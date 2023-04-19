@@ -15,6 +15,7 @@ class Element;
 class HTMLCanvasElement;
 }  
 namespace gfx {
+class DrawTarget;
 class SourceSurface;
 }  
 }  
@@ -34,14 +35,16 @@ class CanvasImageCache {
 
   static void NotifyDrawImage(dom::Element* aImage,
                               dom::HTMLCanvasElement* aCanvas,
-                              SourceSurface* aSource, const gfx::IntSize& aSize,
+                              gfx::DrawTarget* aTarget, SourceSurface* aSource,
+                              const gfx::IntSize& aSize,
                               const gfx::IntSize& aIntrinsicSize);
 
   
 
 
 
-  static SourceSurface* LookupAllCanvas(dom::Element* aImage);
+  static SourceSurface* LookupAllCanvas(dom::Element* aImage,
+                                        gfx::DrawTarget* aTarget);
 
   
 
@@ -49,6 +52,7 @@ class CanvasImageCache {
 
   static SourceSurface* LookupCanvas(dom::Element* aImage,
                                      dom::HTMLCanvasElement* aCanvas,
+                                     gfx::DrawTarget* aTarget,
                                      gfx::IntSize* aSizeOut,
                                      gfx::IntSize* aIntrinsicSizeOut);
 };
