@@ -28,7 +28,7 @@ enum class ConfigOptionID {
   kVoicePacing,            
   kExtendedFilter,         
   kDelayAgnostic,          
-  kExperimentalAgc,
+  kExperimentalAgc,        
   kExperimentalNs,
   kBeamforming,               
   kIntelligibility,           
