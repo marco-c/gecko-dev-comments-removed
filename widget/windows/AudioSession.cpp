@@ -22,6 +22,7 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/mscom/AgileReference.h"
 #include "mozilla/mscom/Utils.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/WindowsVersion.h"
@@ -250,8 +251,22 @@ void AudioSession::StopInternal(const MutexAutoLock& aProofOfLock) {
   
   
   
+  
+  
+  const IID IID_IAudioSessionControl = __uuidof(IAudioSessionControl);
+  auto agileAsc = MakeUnique<mozilla::mscom::AgileReference>(
+      IID_IAudioSessionControl, mAudioSessionControl);
+  mAudioSessionControl = nullptr;
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "FreeAudioSession", [asc = std::move(mAudioSessionControl)] {  }));
+      "FreeAudioSession",
+      [agileAsc = std::move(agileAsc), IID_IAudioSessionControl] {
+        RefPtr<IAudioSessionControl> toDelete;
+        [[maybe_unused]] HRESULT hr = agileAsc->Resolve(
+            IID_IAudioSessionControl, getter_AddRefs(toDelete));
+        MOZ_ASSERT(SUCCEEDED(hr));
+        
+        
+      }));
 }
 
 void CopynsID(nsID& lhs, const nsID& rhs) {
