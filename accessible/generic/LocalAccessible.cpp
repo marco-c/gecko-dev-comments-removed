@@ -3618,6 +3618,21 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   }
 
   if (aCacheDomain & CacheDomain::Relations && mContent) {
+    if (IsHTMLRadioButton()) {
+      
+      
+      
+      nsString name;
+      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+      if (!name.IsEmpty()) {
+        fields->SetAttribute(nsGkAtoms::radioLabel, std::move(name));
+      } else if (aUpdateType != CacheUpdateType::Initial) {
+        
+        
+        fields->SetAttribute(nsGkAtoms::radioLabel, DeleteEntry());
+      }
+    }
+
     for (auto const& data : kRelationTypeAtoms) {
       nsTArray<uint64_t> ids;
       nsStaticAtom* const relAtom = data.mAtom;
