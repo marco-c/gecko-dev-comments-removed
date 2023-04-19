@@ -670,15 +670,6 @@ static R Clamp(const T val, const R min, const R max) {
   return static_cast<R>(val);
 }
 
-template <typename T, typename A, typename B>
-static void ClampSelf(T* const out, const A min, const B max) {
-  if (*out < min) {
-    *out = T{min};
-  } else if (*out > max) {
-    *out = T{max};
-  }
-}
-
 void WebGLTexture::ClampLevelBaseAndMax() {
   if (!mImmutable) return;
 
@@ -687,8 +678,18 @@ void WebGLTexture::ClampLevelBaseAndMax() {
   
   
   
-  ClampSelf(&mBaseMipmapLevel, 0u, mImmutableLevelCount - 1u);
-  ClampSelf(&mMaxMipmapLevel, mBaseMipmapLevel, mImmutableLevelCount - 1u);
+  MOZ_ASSERT(mImmutableLevelCount > 0);
+  uint32_t new_base = Clamp(mBaseMipmapLevel, 0u, mImmutableLevelCount - 1u);
+  uint32_t new_max =
+      Clamp(mMaxMipmapLevel, new_base, mImmutableLevelCount - 1u);
+  if (new_base != mBaseMipmapLevel) {
+    mBaseMipmapLevelDirty = true;
+  }
+  mBaseMipmapLevel = new_base;
+  if (new_max != mMaxMipmapLevel) {
+    mMaxMipmapLevelDirty = true;
+  }
+  mMaxMipmapLevel = new_max;
 
   
 }
@@ -727,6 +728,10 @@ bool WebGLTexture::BindTexture(TexTarget texTarget) {
   }
 
   return true;
+}
+
+static constexpr GLint ClampMipmapLevelForDriver(uint32_t level) {
+  return Clamp(level, uint8_t{0}, WebGLTexture::kMaxLevelCount);
 }
 
 void WebGLTexture::GenerateMipmap() {
@@ -807,20 +812,32 @@ void WebGLTexture::GenerateMipmap() {
 
   if (gl->WorkAroundDriverBugs()) {
     
-    if (!(mImmutable && mBaseMipmapLevel >= mImmutableLevelCount)) {
-      
-      
-      
-      
-      
-      
-      
-      gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
-                         LOCAL_GL_NEAREST_MIPMAP_NEAREST);
-      gl->fGenerateMipmap(mTarget.get());
-      gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
-                         mSamplingState.minFilter.get());
+    
+    
+    
+    if (mBaseMipmapLevelDirty) {
+      gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_BASE_LEVEL,
+                         ClampMipmapLevelForDriver(mBaseMipmapLevel));
+      mBaseMipmapLevelDirty = false;
     }
+    if (mMaxMipmapLevelDirty) {
+      gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_MAX_LEVEL,
+                         ClampMipmapLevelForDriver(mMaxMipmapLevel));
+      mMaxMipmapLevelDirty = false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
+                       LOCAL_GL_NEAREST_MIPMAP_NEAREST);
+    gl->fGenerateMipmap(mTarget.get());
+    gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
+                       mSamplingState.minFilter.get());
   } else {
     gl->fGenerateMipmap(mTarget.get());
   }
@@ -1032,17 +1049,16 @@ void WebGLTexture::TexParameter(TexTarget texTarget, GLenum pname,
     case LOCAL_GL_TEXTURE_BASE_LEVEL: {
       mBaseMipmapLevel = clamped.i;
       ClampLevelBaseAndMax();
-      const auto forDriver =
-          Clamp(mBaseMipmapLevel, uint8_t{0}, kMaxLevelCount);
-      clamped = FloatOrInt(forDriver);
+      clamped = FloatOrInt(ClampMipmapLevelForDriver(mBaseMipmapLevel));
+      mBaseMipmapLevelDirty = false;
       break;
     }
 
     case LOCAL_GL_TEXTURE_MAX_LEVEL: {
       mMaxMipmapLevel = clamped.i;
       ClampLevelBaseAndMax();
-      const auto forDriver = Clamp(mMaxMipmapLevel, uint8_t{0}, kMaxLevelCount);
-      clamped = FloatOrInt(forDriver);
+      clamped = FloatOrInt(ClampMipmapLevelForDriver(mMaxMipmapLevel));
+      mMaxMipmapLevelDirty = false;
       break;
     }
 
