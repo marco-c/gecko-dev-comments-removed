@@ -1239,7 +1239,8 @@ void CanonicalBrowsingContext::CanonicalDiscard() {
   }
 
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
+    mCurrentLoad->Cancel(NS_BINDING_ABORTED,
+                         "CanonicalBrowsingContext::CanonicalDiscard"_ns);
   }
 
   if (mWebProgress) {
@@ -1401,7 +1402,7 @@ void CanonicalBrowsingContext::GoBack(
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD, ""_ns);
   }
 
   if (nsDocShell* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1427,7 +1428,7 @@ void CanonicalBrowsingContext::GoForward(
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD, ""_ns);
   }
 
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1453,7 +1454,7 @@ void CanonicalBrowsingContext::GoToIndex(
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD, ""_ns);
   }
 
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1477,7 +1478,7 @@ void CanonicalBrowsingContext::Reload(uint32_t aReloadFlags) {
 
   
   if (mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD, ""_ns);
   }
 
   if (auto* docShell = nsDocShell::Cast(GetDocShell())) {
@@ -1494,7 +1495,8 @@ void CanonicalBrowsingContext::Stop(uint32_t aStopFlags) {
 
   
   if (mCurrentLoad && (aStopFlags & nsIWebNavigation::STOP_NETWORK)) {
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
+    mCurrentLoad->Cancel(NS_BINDING_ABORTED,
+                         "CanonicalBrowsingContext::Stop"_ns);
   }
 
   
@@ -2194,7 +2196,7 @@ bool CanonicalBrowsingContext::StartDocumentLoad(
 
     
     if (!aLoad->IsDownload()) {
-      mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+      mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD, ""_ns);
     }
   }
   mCurrentLoad = aLoad;

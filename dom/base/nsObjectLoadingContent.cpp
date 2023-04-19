@@ -1776,7 +1776,8 @@ nsresult nsObjectLoadingContent::CloseChannel() {
     nsCOMPtr<nsIStreamListener> listenerGrip(mFinalListener);
     mChannel = nullptr;
     mFinalListener = nullptr;
-    channelGrip->Cancel(NS_BINDING_ABORTED);
+    channelGrip->CancelWithReason(NS_BINDING_ABORTED,
+                                  "nsObjectLoadingContent::CloseChannel"_ns);
     if (listenerGrip) {
       
       

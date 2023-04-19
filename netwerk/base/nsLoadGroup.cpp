@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=4 sts=2 et cin: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/DebugOnly.h"
 
@@ -29,22 +29,22 @@
 namespace mozilla {
 namespace net {
 
-
-
-
-
-
-
-
-
-
-
-
+//
+// Log module for nsILoadGroup logging...
+//
+// To enable logging (see prlog.h for full details):
+//
+//    set MOZ_LOG=LoadGroup:5
+//    set MOZ_LOG_FILE=network.log
+//
+// This enables LogLevel::Debug level information and places all output in
+// the file network.log.
+//
 static LazyLogModule gLoadGroupLog("LoadGroup");
 #undef LOG
 #define LOG(args) MOZ_LOG(gLoadGroupLog, mozilla::LogLevel::Debug, args)
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 class RequestMapEntry : public PLDHashEntryHdr {
  public:
@@ -64,7 +64,7 @@ static bool RequestHashMatchEntry(const PLDHashEntryHdr* entry,
 static void RequestHashClearEntry(PLDHashTable* table, PLDHashEntryHdr* entry) {
   RequestMapEntry* e = static_cast<RequestMapEntry*>(entry);
 
-  
+  // An entry is being cleared, let the entry do its own cleanup.
   e->~RequestMapEntry();
 }
 
@@ -72,7 +72,7 @@ static void RequestHashInitEntry(PLDHashEntryHdr* entry, const void* key) {
   const nsIRequest* const_request = static_cast<const nsIRequest*>(key);
   nsIRequest* request = const_cast<nsIRequest*>(const_request);
 
-  
+  // Initialize the entry with placement new
   new (entry) RequestMapEntry(request);
 }
 
@@ -91,7 +91,8 @@ nsLoadGroup::nsLoadGroup()
 }
 
 nsLoadGroup::~nsLoadGroup() {
-  DebugOnly<nsresult> rv = Cancel(NS_BINDING_ABORTED);
+  DebugOnly<nsresult> rv =
+      CancelWithReason(NS_BINDING_ABORTED, "nsLoadGroup::~nsLoadGroup"_ns);
   NS_ASSERTION(NS_SUCCEEDED(rv), "Cancel failed");
 
   mDefaultLoadRequest = nullptr;
@@ -111,18 +112,18 @@ nsLoadGroup::~nsLoadGroup() {
   LOG(("LOADGROUP [%p]: Destroyed.\n", this));
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsISupports methods:
 
 NS_IMPL_ISUPPORTS(nsLoadGroup, nsILoadGroup, nsILoadGroupChild, nsIRequest,
                   nsISupportsPriority, nsISupportsWeakReference, nsIObserver)
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIRequest methods:
 
 NS_IMETHODIMP
 nsLoadGroup::GetName(nsACString& result) {
-  
+  // XXX is this the right "name" for a load group?
 
   if (!mDefaultLoadRequest) {
     result.Truncate();
@@ -155,8 +156,8 @@ static bool AppendRequestsToArray(PLDHashTable* aTable,
     nsIRequest* request = e->mKey;
     NS_ASSERTION(request, "What? Null key in PLDHashTable entry?");
 
-    
-    
+    // XXX(Bug 1631371) Check if this should use a fallible operation as it
+    // pretended earlier.
     aArray->AppendElement(request);
     NS_ADDREF(request);
   }
@@ -197,14 +198,14 @@ nsLoadGroup::Cancel(nsresult status) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  
-  
-  
+  // set the load group status to our cancel status while we cancel
+  // all our requests...once the cancel is done, we'll reset it...
+  //
   mStatus = status;
 
-  
-  
-  
+  // Set the flag indicating that the loadgroup is being canceled...  This
+  // prevents any new channels from being added during the operation.
+  //
   mIsCanceling = true;
 
   nsresult firstError = NS_OK;
@@ -214,9 +215,9 @@ nsLoadGroup::Cancel(nsresult status) {
     NS_ASSERTION(request, "NULL request found in list.");
 
     if (!mRequests.Search(request)) {
-      
-      
-      
+      // |request| was removed already
+      // We need to null out the entry in the request array so we don't try
+      // to notify the observers for this request.
       nsCOMPtr<nsIRequest> request = dont_AddRef(requests.ElementAt(count));
       requests.ElementAt(count) = nullptr;
 
@@ -230,17 +231,17 @@ nsLoadGroup::Cancel(nsresult status) {
            nameStr.get()));
     }
 
-    
+    // Cancel the request...
     rv = request->Cancel(status);
 
-    
+    // Remember the first failure and return it...
     if (NS_FAILED(rv) && NS_SUCCEEDED(firstError)) firstError = rv;
 
     if (NS_FAILED(RemoveRequestFromHashtable(request, status))) {
-      
-      
-      
-      
+      // It's possible that request->Cancel causes the request to be removed
+      // from the loadgroup causing RemoveRequestFromHashtable to fail.
+      // In that case we shouldn't call NotifyRemovalObservers or decrement
+      // mForegroundCount since that has already happened.
       nsCOMPtr<nsIRequest> request = dont_AddRef(requests.ElementAt(count));
       requests.ElementAt(count) = nullptr;
 
@@ -280,10 +281,10 @@ nsLoadGroup::Suspend() {
   }
 
   firstError = NS_OK;
-  
-  
-  
-  
+  //
+  // Operate the elements from back to front so that if items get
+  // get removed from the list it won't affect our iteration
+  //
   while (count > 0) {
     nsCOMPtr<nsIRequest> request = dont_AddRef(requests.ElementAt(--count));
 
@@ -297,10 +298,10 @@ nsLoadGroup::Suspend() {
            nameStr.get()));
     }
 
-    
+    // Suspend the request...
     rv = request->Suspend();
 
-    
+    // Remember the first failure and return it...
     if (NS_FAILED(rv) && NS_SUCCEEDED(firstError)) firstError = rv;
   }
 
@@ -319,10 +320,10 @@ nsLoadGroup::Resume() {
   }
 
   firstError = NS_OK;
-  
-  
-  
-  
+  //
+  // Operate the elements from back to front so that if items get
+  // get removed from the list it won't affect our iteration
+  //
   while (count > 0) {
     nsCOMPtr<nsIRequest> request = dont_AddRef(requests.ElementAt(--count));
 
@@ -336,10 +337,10 @@ nsLoadGroup::Resume() {
            nameStr.get()));
     }
 
-    
+    // Resume the request...
     rv = request->Resume();
 
-    
+    // Remember the first failure and return it...
     if (NS_FAILED(rv) && NS_SUCCEEDED(firstError)) firstError = rv;
   }
 
@@ -381,8 +382,8 @@ nsLoadGroup::SetLoadGroup(nsILoadGroup* loadGroup) {
   return NS_OK;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsILoadGroup methods:
 
 NS_IMETHODIMP
 nsLoadGroup::GetDefaultLoadRequest(nsIRequest** aRequest) {
@@ -397,13 +398,13 @@ nsLoadGroup::SetDefaultLoadRequest(nsIRequest* aRequest) {
        aRequest));
 
   mDefaultLoadRequest = aRequest;
-  
+  // Inherit the group load flags from the default load request
   if (mDefaultLoadRequest) {
     mDefaultLoadRequest->GetLoadFlags(&mLoadFlags);
-    
-    
-    
-    
+    //
+    // Mask off any bits that are not part of the nsIRequest flags.
+    // in particular, nsIChannel::LOAD_DOCUMENT_URI...
+    //
     mLoadFlags &= nsIRequest::LOAD_REQUESTMASK;
 
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(aRequest);
@@ -413,7 +414,7 @@ nsLoadGroup::SetDefaultLoadRequest(nsIRequest* aRequest) {
       timedChannel->SetTimingEnabled(true);
     }
   }
-  
+  // Else, do not change the group's load flags (see bug 95981)
   return NS_OK;
 }
 
@@ -431,9 +432,9 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
   NS_ASSERTION(!mRequests.Search(request),
                "Entry added to loadgroup twice, don't do that");
 
-  
-  
-  
+  //
+  // Do not add the channel, if the loadgroup is being canceled...
+  //
   if (mIsCanceling) {
     LOG(
         ("LOADGROUP [%p]: AddChannel() ABORTED because LoadGroup is"
@@ -444,9 +445,9 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
   }
 
   nsLoadFlags flags;
-  
-  
-  
+  // if the request is the default load request or if the default load
+  // request is null, then the load group should inherit its load flags from
+  // the request, but also we need to enforce defaultLoadFlags.
   if (mDefaultLoadRequest == request || !mDefaultLoadRequest) {
     rv = MergeDefaultLoadFlags(request, flags);
   } else {
@@ -454,9 +455,9 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
   }
   if (NS_FAILED(rv)) return rv;
 
-  
-  
-  
+  //
+  // Add the request to the list of active requests...
+  //
 
   auto* entry = static_cast<RequestMapEntry*>(mRequests.Add(request, fallible));
   if (!entry) {
@@ -470,17 +471,17 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
 
   bool foreground = !(flags & nsIRequest::LOAD_BACKGROUND);
   if (foreground) {
-    
+    // Update the count of foreground URIs..
     mForegroundCount += 1;
   }
 
   if (foreground || mNotifyObserverAboutBackgroundRequests) {
-    
-    
-    
-    
-    
-    
+    //
+    // Fire the OnStartRequest notification out to the observer...
+    //
+    // If the notification fails then DO NOT add the request to
+    // the load group.
+    //
     nsCOMPtr<nsIRequestObserver> observer = do_QueryReferent(mObserver);
     if (observer) {
       LOG(
@@ -492,10 +493,10 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
       if (NS_FAILED(rv)) {
         LOG(("LOADGROUP [%p]: OnStartRequest for request %p FAILED.\n", this,
              request));
-        
-        
-        
-        
+        //
+        // The URI load has been canceled by the observer.  Clean up
+        // the damage...
+        //
 
         mRequests.Remove(request);
 
@@ -507,7 +508,7 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
       }
     }
 
-    
+    // Ensure that we're part of our loadgroup while pending
     if (foreground && mForegroundCount == 1 && mLoadGroup) {
       mLoadGroup->AddRequest(this, nullptr);
     }
@@ -519,8 +520,8 @@ nsLoadGroup::AddRequest(nsIRequest* request, nsISupports* ctxt) {
 NS_IMETHODIMP
 nsLoadGroup::RemoveRequest(nsIRequest* request, nsISupports* ctxt,
                            nsresult aStatus) {
-  
-  
+  // Make sure we have a owning reference to the request we're about
+  // to remove.
   nsCOMPtr<nsIRequest> kungFuDeathGrip(request);
 
   nsresult rv = RemoveRequestFromHashtable(request, aStatus);
@@ -545,11 +546,11 @@ nsresult nsLoadGroup::RemoveRequestFromHashtable(nsIRequest* request,
          mRequests.EntryCount() - 1));
   }
 
-  
-  
-  
-  
-  
+  //
+  // Remove the request from the group.  If this fails, it means that
+  // the request was *not* in the group so do not update the foreground
+  // count or it will get messed up...
+  //
   auto* entry = static_cast<RequestMapEntry*>(mRequests.Search(request));
 
   if (!entry) {
@@ -561,12 +562,12 @@ nsresult nsLoadGroup::RemoveRequestFromHashtable(nsIRequest* request,
 
   mRequests.RemoveEntry(entry);
 
-  
-  
+  // Collect telemetry stats only when default request is a timed channel.
+  // Don't include failed requests in the timing statistics.
   if (mDefaultLoadIsTimed && NS_SUCCEEDED(aStatus)) {
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(request);
     if (timedChannel) {
-      
+      // Figure out if this request was served from the cache
       ++mTimedRequests;
       TimeStamp timeStamp;
       rv = timedChannel->GetCacheReadStart(&timeStamp);
@@ -602,7 +603,7 @@ nsresult nsLoadGroup::RemoveRequestFromHashtable(nsIRequest* request,
 nsresult nsLoadGroup::NotifyRemovalObservers(nsIRequest* request,
                                              nsresult aStatus) {
   NS_ENSURE_ARG_POINTER(request);
-  
+  // Undo any group priority delta...
   if (mPriority != 0) RescheduleRequest(request, -mPriority);
 
   nsLoadFlags flags;
@@ -616,7 +617,7 @@ nsresult nsLoadGroup::NotifyRemovalObservers(nsIRequest* request,
   }
 
   if (foreground || mNotifyObserverAboutBackgroundRequests) {
-    
+    // Fire the OnStopRequest out to the observer...
     nsCOMPtr<nsIRequestObserver> observer = do_QueryReferent(mObserver);
     if (observer) {
       LOG(
@@ -632,7 +633,7 @@ nsresult nsLoadGroup::NotifyRemovalObservers(nsIRequest* request,
       }
     }
 
-    
+    // If that was the last request -> remove ourselves from loadgroup
     if (foreground && mForegroundCount == 0 && mLoadGroup) {
       mLoadGroup->RemoveRequest(this, nullptr, aStatus);
     }
@@ -702,8 +703,8 @@ nsLoadGroup::GetRequestContextID(uint64_t* aRCID) {
   return NS_OK;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsILoadGroupChild methods:
 
 NS_IMETHODIMP
 nsLoadGroup::GetParentLoadGroup(nsILoadGroup** aParentLoadGroup) {
@@ -728,21 +729,21 @@ nsLoadGroup::GetChildLoadGroup(nsILoadGroup** aChildLoadGroup) {
 
 NS_IMETHODIMP
 nsLoadGroup::GetRootLoadGroup(nsILoadGroup** aRootLoadGroup) {
-  
+  // first recursively try the root load group of our parent
   nsCOMPtr<nsILoadGroupChild> ancestor = do_QueryReferent(mParentLoadGroup);
   if (ancestor) return ancestor->GetRootLoadGroup(aRootLoadGroup);
 
-  
+  // next recursively try the root load group of our own load grop
   ancestor = do_QueryInterface(mLoadGroup);
   if (ancestor) return ancestor->GetRootLoadGroup(aRootLoadGroup);
 
-  
+  // finally just return this
   *aRootLoadGroup = do_AddRef(this).take();
   return NS_OK;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsISupportsPriority methods:
 
 NS_IMETHODIMP
 nsLoadGroup::GetPriority(int32_t* aValue) {
@@ -757,7 +758,7 @@ nsLoadGroup::SetPriority(int32_t aValue) {
 
 NS_IMETHODIMP
 nsLoadGroup::AdjustPriority(int32_t aDelta) {
-  
+  // Update the priority for each request that supports nsISupportsPriority
   if (aDelta != 0) {
     mPriority += aDelta;
     for (auto iter = mRequests.Iter(); !iter.Done(); iter.Next()) {
@@ -780,12 +781,12 @@ nsLoadGroup::SetDefaultLoadFlags(uint32_t aFlags) {
   return NS_OK;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 void nsLoadGroup::TelemetryReport() {
   nsresult defaultStatus = NS_ERROR_INVALID_ARG;
-  
-  
+  // We should only report HTTP_PAGE_* telemetry if the defaultRequest was
+  // actually successful.
   if (mDefaultLoadRequest) {
     mDefaultLoadRequest->GetStatus(&defaultStatus);
   }
@@ -815,7 +816,7 @@ void nsLoadGroup::TelemetryReportChannel(nsITimedChannel* aTimedChannel,
 
   TimeStamp asyncOpen;
   rv = aTimedChannel->GetAsyncOpen(&asyncOpen);
-  
+  // We do not check !asyncOpen.IsNull() bellow, prevent ASSERTIONs this way
   if (NS_FAILED(rv) || asyncOpen.IsNull()) return;
 
   TimeStamp cacheReadStart;
@@ -1029,12 +1030,12 @@ nsresult nsLoadGroup::MergeLoadFlags(nsIRequest* aRequest,
 
   oldFlags = flags;
 
-  
+  // Inherit the following bits...
   flags |= (mLoadFlags &
             (LOAD_BACKGROUND | LOAD_BYPASS_CACHE | LOAD_FROM_CACHE |
              VALIDATE_ALWAYS | VALIDATE_ONCE_PER_SESSION | VALIDATE_NEVER));
 
-  
+  // ... and force the default flags.
   flags |= mDefaultLoadFlags;
 
   if (flags != oldFlags) {
@@ -1056,7 +1057,7 @@ nsresult nsLoadGroup::MergeDefaultLoadFlags(nsIRequest* aRequest,
   }
 
   oldFlags = flags;
-  
+  // ... and force the default flags.
   flags |= mDefaultLoadFlags;
 
   if (flags != oldFlags) {
@@ -1119,7 +1120,7 @@ nsLoadGroup::GetIsBrowsingContextDiscarded(bool* aIsBrowsingContextDiscarded) {
   return NS_OK;
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
 #undef LOG
