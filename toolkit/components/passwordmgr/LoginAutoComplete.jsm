@@ -112,13 +112,10 @@ class InsecureLoginFormAutocompleteItem extends AutocompleteItem {
   constructor() {
     super("insecureWarning");
 
-    XPCOMUtils.defineLazyGetter(this, "label", () => {
-      let learnMoreString = getLocalizedString("insecureFieldWarningLearnMore");
-      return getLocalizedString(
-        "insecureFieldWarningDescription2",
-        learnMoreString
-      );
-    });
+    this.label = getLocalizedString(
+      "insecureFieldWarningDescription2",
+      getLocalizedString("insecureFieldWarningLearnMore")
+    );
   }
 }
 
@@ -137,39 +134,32 @@ class LoginAutocompleteItem extends AutocompleteItem {
     this.login = login.QueryInterface(Ci.nsILoginMetaInfo);
     this.#actor = actor;
 
-    let isDuplicateUsername =
+    const isDuplicateUsername =
       login.username && duplicateUsernames.has(login.username);
 
-    XPCOMUtils.defineLazyGetter(this, "label", () => {
-      let username = login.username;
-      
-      if (!username || isDuplicateUsername) {
-        if (!username) {
-          username = getLocalizedString("noUsername");
-        }
-        let time = lazy.dateAndTimeFormatter.format(
-          new Date(login.timePasswordChanged)
-        );
-        username = getLocalizedString("loginHostAge", username, time);
-      }
-      return username;
-    });
+    let username = login.username
+      ? login.username
+      : getLocalizedString("noUsername");
 
-    XPCOMUtils.defineLazyGetter(this, "value", () => {
-      return hasBeenTypePassword ? login.password : login.username;
-    });
+    
+    if (!login.username || isDuplicateUsername) {
+      const time = lazy.dateAndTimeFormatter.format(
+        new Date(login.timePasswordChanged)
+      );
+      username = getLocalizedString("loginHostAge", username, time);
+    }
 
-    XPCOMUtils.defineLazyGetter(this, "comment", () => {
-      return JSON.stringify({
-        guid: login.guid,
-        login,
-        isDuplicateUsername,
-        isOriginMatched,
-        comment:
-          isOriginMatched && login.httpRealm === null
-            ? getLocalizedString("displaySameOrigin")
-            : login.displayOrigin,
-      });
+    this.label = username;
+    this.value = hasBeenTypePassword ? login.password : login.username;
+    this.comment = JSON.stringify({
+      guid: login.guid,
+      login,
+      isDuplicateUsername,
+      isOriginMatched,
+      comment:
+        isOriginMatched && login.httpRealm === null
+          ? getLocalizedString("displaySameOrigin")
+          : login.displayOrigin,
     });
   }
 
@@ -188,17 +178,15 @@ class LoginAutocompleteItem extends AutocompleteItem {
 class GeneratedPasswordAutocompleteItem extends AutocompleteItem {
   constructor(generatedPassword, willAutoSaveGeneratedPassword) {
     super("generatedPassword");
-    XPCOMUtils.defineLazyGetter(this, "comment", () =>
-      JSON.stringify({
-        generatedPassword,
-        willAutoSaveGeneratedPassword,
-      })
-    );
+
+    this.label = getLocalizedString("useASecurelyGeneratedPassword");
+
     this.value = generatedPassword;
 
-    XPCOMUtils.defineLazyGetter(this, "label", () =>
-      getLocalizedString("useASecurelyGeneratedPassword")
-    );
+    this.comment = JSON.stringify({
+      generatedPassword,
+      willAutoSaveGeneratedPassword,
+    });
   }
 }
 
@@ -245,23 +233,20 @@ class ImportableLoginsAutocompleteItem extends AutocompleteItem {
 class LoginsFooterAutocompleteItem extends AutocompleteItem {
   constructor(formHostname, telemetryEventData) {
     super("loginsFooter");
-    XPCOMUtils.defineLazyGetter(this, "comment", () => {
-      
-      
-      
-      
-      return JSON.stringify({
-        telemetryEventData,
-        formHostname,
-        fillMessageName: "PasswordManager:OpenPreferences",
-        fillMessageData: {
-          entryPoint: "autocomplete",
-        },
-      });
-    });
 
-    XPCOMUtils.defineLazyGetter(this, "label", () => {
-      return getLocalizedString("viewSavedLogins.label");
+    this.label = getLocalizedString("viewSavedLogins.label");
+
+    
+    
+    
+    
+    this.comment = JSON.stringify({
+      telemetryEventData,
+      formHostname,
+      fillMessageName: "PasswordManager:OpenPreferences",
+      fillMessageData: {
+        entryPoint: "autocomplete",
+      },
     });
   }
 }
