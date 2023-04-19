@@ -1753,9 +1753,6 @@ class TSFPrefs final {
     return s##aName##Value;                                                   \
   }
 
-  DECL_AND_IMPL_BOOL_PREF(
-      "intl.tsf.hack.allow_to_stop_hacking_on_build_17643_or_later",
-      AllowToStopHackingOnBuild17643OrLater, false)
   DECL_AND_IMPL_BOOL_PREF("intl.tsf.hack.atok.create_native_caret",
                           NeedToCreateNativeCaretForLegacyATOK, true)
   DECL_AND_IMPL_BOOL_PREF(
@@ -4680,7 +4677,8 @@ bool TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart, LONG& aACPEnd) {
   
   static const bool sAlllowToStopHackingIfFine =
       IsWindows10BuildOrLater(17643) &&
-      TSFPrefs::AllowToStopHackingOnBuild17643OrLater();
+      StaticPrefs::
+          intl_tsf_hack_allow_to_stop_hacking_on_build_17643_or_later();
 
   
   
