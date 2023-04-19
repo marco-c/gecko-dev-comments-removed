@@ -145,7 +145,10 @@ void Vp9ReadQp(BitstreamReader& br, Vp9UncompressedHeader* frame_info) {
   frame_info->is_lossless = frame_info->base_qp == 0;
   for (int i = 0; i < 3; ++i) {
     if (br.Read<bool>()) {  
-      if (br.ReadBits(4) != 0) {
+      
+      
+      
+      if ((br.ReadBits(5) & 0b1111'0) != 0) {  
         frame_info->is_lossless = false;
       }
     }
