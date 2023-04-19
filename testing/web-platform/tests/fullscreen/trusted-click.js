@@ -1,5 +1,9 @@
 
 
+
+
+
+
 function trusted_click(test, callback, container)
 {
     var document = container.ownerDocument;
