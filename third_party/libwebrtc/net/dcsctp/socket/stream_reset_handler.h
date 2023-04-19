@@ -70,7 +70,8 @@ class StreamResetHandler {
                      TimerManager* timer_manager,
                      DataTracker* data_tracker,
                      ReassemblyQueue* reassembly_queue,
-                     RetransmissionQueue* retransmission_queue)
+                     RetransmissionQueue* retransmission_queue,
+                     const DcSctpSocketHandoverState* handover_state = nullptr)
       : log_prefix_(std::string(log_prefix) + "reset: "),
         ctx_(context),
         data_tracker_(data_tracker),
@@ -80,9 +81,15 @@ class StreamResetHandler {
             "re-config",
             absl::bind_front(&StreamResetHandler::OnReconfigTimerExpiry, this),
             TimerOptions(DurationMs(0)))),
-        next_outgoing_req_seq_nbr_(ReconfigRequestSN(*ctx_->my_initial_tsn())),
+        next_outgoing_req_seq_nbr_(
+            handover_state
+                ? ReconfigRequestSN(handover_state->tx.next_reset_req_sn)
+                : ReconfigRequestSN(*ctx_->my_initial_tsn())),
         last_processed_req_seq_nbr_(
-            ReconfigRequestSN(*ctx_->peer_initial_tsn() - 1)) {}
+            handover_state ? ReconfigRequestSN(
+                                 handover_state->rx.last_completed_reset_req_sn)
+                           : ReconfigRequestSN(*ctx_->peer_initial_tsn() - 1)) {
+  }
 
   
   
@@ -99,6 +106,10 @@ class StreamResetHandler {
 
   
   void HandleReConfig(ReConfigChunk chunk);
+
+  HandoverReadinessStatus GetHandoverReadiness() const;
+
+  void AddHandoverState(DcSctpSocketHandoverState& state);
 
  private:
   
