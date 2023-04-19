@@ -693,11 +693,26 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
   basePrin->GetURI(getter_AddRefs(sourceURI));
   if (!sourceURI) {
     if (basePrin->Is<ExpandedPrincipal>()) {
+      
+      
+      auto* targetPolicy =
+          ExtensionPolicyService::GetSingleton().GetByURL(aTargetURI);
+      bool contentAccessRequired =
+          targetPolicy &&
+          (targetPolicy->ManifestVersion() > 2 ||
+           StaticPrefs::extensions_content_web_accessible_enabled());
       auto expanded = basePrin->As<ExpandedPrincipal>();
       const auto& allowList = expanded->AllowList();
       
+      
+      
+      
       uint32_t flags = aFlags | nsIScriptSecurityManager::DONT_REPORT_ERRORS;
       for (size_t i = 0; i < allowList.Length() - 1; i++) {
+        if (contentAccessRequired &&
+            BasePrincipal::Cast(allowList[i])->AddonPolicy()) {
+          continue;
+        }
         nsresult rv = CheckLoadURIWithPrincipal(allowList[i], aTargetURI, flags,
                                                 aInnerWindowID);
         if (NS_SUCCEEDED(rv)) {
@@ -706,6 +721,19 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         }
       }
 
+      if (contentAccessRequired &&
+          BasePrincipal::Cast(allowList.LastElement())->AddonPolicy()) {
+        bool reportErrors =
+            !(aFlags & nsIScriptSecurityManager::DONT_REPORT_ERRORS);
+        if (reportErrors) {
+          ReportError("CheckLoadURI", sourceURI, aTargetURI,
+                      allowList.LastElement()
+                              ->OriginAttributesRef()
+                              .mPrivateBrowsingId > 0,
+                      aInnerWindowID);
+        }
+        return NS_ERROR_DOM_BAD_URI;
+      }
       
       return CheckLoadURIWithPrincipal(allowList.LastElement(), aTargetURI,
                                        aFlags, aInnerWindowID);
