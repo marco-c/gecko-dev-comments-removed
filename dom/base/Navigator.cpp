@@ -262,9 +262,9 @@ void Navigator::GetUserAgent(nsAString& aUserAgent, CallerType aCallerType,
   }
 
   nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
-
-  nsresult rv =
-      GetUserAgent(window, doc, aCallerType == CallerType::System, aUserAgent);
+  nsresult rv = GetUserAgent(
+      mWindow, doc, aCallerType == CallerType::System ? Some(false) : Nothing(),
+      aUserAgent);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
   }
@@ -2011,14 +2011,33 @@ void Navigator::ClearUserAgentCache() {
 }
 
 nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
-                                 Document* aCallerDoc, bool aIsCallerChrome,
+                                 Document* aCallerDoc,
+                                 Maybe<bool> aShouldResistFingerprinting,
                                  nsAString& aUserAgent) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool shouldResistFingerprinting =
+      aShouldResistFingerprinting.isSome()
+          ? aShouldResistFingerprinting.value()
+          : nsContentUtils::ShouldResistFingerprinting(aCallerDoc);
+
   
-  if (!aIsCallerChrome &&
-      !nsContentUtils::ShouldResistFingerprinting(aCallerDoc)) {
+  
+  if (!shouldResistFingerprinting) {
     nsAutoString override;
     nsresult rv =
         mozilla::Preferences::GetString("general.useragent.override", override);
@@ -2032,8 +2051,7 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
   
   
   
-  if (!aIsCallerChrome &&
-      nsContentUtils::ShouldResistFingerprinting(aCallerDoc)) {
+  if (shouldResistFingerprinting) {
     nsAutoCString spoofedUA;
     nsRFPService::GetSpoofedUserAgent(spoofedUA, false);
     CopyASCIItoUTF16(spoofedUA, aUserAgent);
@@ -2055,11 +2073,7 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
 
   CopyASCIItoUTF16(ua, aUserAgent);
 
-  
-  
-  
-  if (!aWindow || (nsContentUtils::ShouldResistFingerprinting(aCallerDoc) &&
-                   !aIsCallerChrome)) {
+  if (!aWindow) {
     return NS_OK;
   }
 
