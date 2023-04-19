@@ -94,11 +94,7 @@ exports.CommandsFactory = {
 
 
 
-
-
-
-
-  async forRemoteTabInTest({ browserId, client }) {
+  async forRemoteTab(browserId, { client } = {}) {
     if (!client) {
       client = await createLocalClient();
     }
@@ -113,8 +109,16 @@ exports.CommandsFactory = {
 
 
 
-  async forWorker(id) {
-    const client = await createLocalClient();
+
+
+
+
+
+
+  async forWorker(id, { client } = {}) {
+    if (!client) {
+      client = await createLocalClient();
+    }
 
     const descriptor = await client.mainRoot.getWorker(id);
     const commands = await createCommandsDictionary(descriptor);
@@ -145,16 +149,39 @@ exports.CommandsFactory = {
     return commands;
   },
 
-  async forAddon(id) {
-    const client = await createLocalClient();
+  
+
+
+
+
+
+
+
+
+  async forAddon(id, { client } = {}) {
+    if (!client) {
+      client = await createLocalClient();
+    }
 
     const descriptor = await client.mainRoot.getAddon({ id });
     const commands = await createCommandsDictionary(descriptor);
     return commands;
   },
 
-  async forProcess(osPid) {
-    const client = await createLocalClient();
+  
+
+
+
+
+
+
+
+
+
+  async forProcess(osPid, { client } = {}) {
+    if (!client) {
+      client = await createLocalClient();
+    }
 
     const descriptor = await client.mainRoot.getProcess(osPid);
     const commands = await createCommandsDictionary(descriptor);
