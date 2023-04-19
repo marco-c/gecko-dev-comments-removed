@@ -2316,6 +2316,14 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
   
   
   
+  if (aStrokeOptions &&
+      intBounds.width * intBounds.height >
+          (mViewportSize.width / 2) * (mViewportSize.height / 2)) {
+    return false;
+  }
+  
+  
+  
   Maybe<DeviceColor> color =
       aPattern.GetType() == PatternType::COLOR
           ? Some(static_cast<const ColorPattern&>(aPattern).mColor)
