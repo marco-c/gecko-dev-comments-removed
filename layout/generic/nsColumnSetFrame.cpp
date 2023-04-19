@@ -678,13 +678,12 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       
       
 
-      
-      const auto childMargin = kidReflowInput.ComputedLogicalMargin(wm);
-      const LogicalPoint origin(wm, childOrigin.I(wm) + childMargin.IStart(wm),
-                                childOrigin.B(wm) + childMargin.BStart(wm));
+      MOZ_ASSERT(kidReflowInput.ComputedLogicalMargin(wm).IsAllZero(),
+                 "-moz-column-content has no margin!");
       aStatus.Reset();
       ReflowChild(child, PresContext(), kidDesiredSize, kidReflowInput, wm,
-                  origin, containerSize, ReflowChildFlags::Default, aStatus);
+                  childOrigin, containerSize, ReflowChildFlags::Default,
+                  aStatus);
 
       reflowNext = aStatus.NextInFlowNeedsReflow();
 
