@@ -337,6 +337,8 @@ class FrameBuffer3Proxy : public FrameBufferProxy {
     std::unique_ptr<EncodedFrame> frame =
         CombineAndDeleteFrames(std::move(frames));
 
+    timing_->SetLastDecodeScheduledTimestamp(now_ms);
+
     decoder_ready_for_new_frame_ = false;
     
     decode_queue_->PostTask(ToQueuedTask(
