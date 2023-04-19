@@ -130,7 +130,29 @@ function ArraySort(comparefn) {
   var wrappedCompareFn = ArraySortCompare(comparefn);
 
   
-  return MergeSort(O, len, wrappedCompareFn);
+  
+  
+  var denseList = [];
+  var denseLen = 0;
+
+  for (var i = 0; i < len; i++) {
+    if (i in O) {
+      DefineDataProperty(denseList, denseLen++, O[i]);
+    }
+  }
+
+  if (denseLen < 1) {
+    return O;
+  }
+
+  var sorted = MergeSort(denseList, denseLen, wrappedCompareFn);
+
+  assert(IsPackedArray(sorted), "sorted is a packed array");
+  assert(sorted.length === denseLen, "sorted array has the correct length");
+
+  MoveHoles(O, len, sorted, denseLen);
+
+  return O;
 }
 
 
@@ -1401,7 +1423,12 @@ function ArrayToSorted(comparefn) {
   var wrappedCompareFn = ArraySortCompare(comparefn);
 
   
-  return MergeSort(items, len, wrappedCompareFn);
+  var sorted = MergeSort(items, len, wrappedCompareFn);
+
+  assert(IsPackedArray(sorted), "sorted is a packed array");
+  assert(sorted.length === len, "sorted array has the correct length");
+
+  return sorted;
 }
 
 #endif
