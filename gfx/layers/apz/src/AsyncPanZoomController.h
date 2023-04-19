@@ -1366,7 +1366,22 @@ class AsyncPanZoomController {
   AxisX mX;
   AxisY mY;
 
+  
+
+
+
+
   static bool IsPanningState(PanZoomState aState);
+
+  
+
+
+  bool IsDelayedTransformEndSet();
+
+  
+
+
+  void SetDelayedTransformEnd(bool aDelayedTransformEnd);
 
   
 
@@ -1400,7 +1415,14 @@ class AsyncPanZoomController {
 
 
 
-  void SetState(PanZoomState aState);
+  PanZoomState SetStateNoContentControllerDispatch(PanZoomState aNewState);
+
+  
+
+
+
+
+  void SetState(PanZoomState aNewState);
   
 
 
@@ -1507,6 +1529,11 @@ class AsyncPanZoomController {
   
   
   
+  bool mDelayedTransformEnd;
+
+  
+  
+  
   
   
   void HandleFlingOverscroll(
@@ -1536,6 +1563,11 @@ class AsyncPanZoomController {
 
   
   void DoDelayedRequestContentRepaint();
+
+  
+  
+  
+  void DoDelayedTransformEndNotification(PanZoomState aOldState);
 
   
   
