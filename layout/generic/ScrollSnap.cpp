@@ -583,4 +583,43 @@ void ScrollSnapUtils::PostPendingResnapFor(nsIFrame* aFrame) {
   }
 }
 
+bool ScrollSnapUtils::NeedsToRespectTargetWritingMode(
+    const nsSize& aSnapAreaSize, const nsSize& aSnapportSize) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return aSnapAreaSize.width > aSnapportSize.width ||
+         aSnapAreaSize.height > aSnapportSize.height;
+}
+
+static nsRect InflateByScrollMargin(const nsRect& aTargetRect,
+                                    const nsMargin& aScrollMargin,
+                                    const nsRect& aScrolledRect) {
+  
+  nsRect result = aTargetRect;
+  result.Inflate(aScrollMargin);
+
+  
+  return result.Intersect(aScrolledRect);
+}
+
+nsRect ScrollSnapUtils::GetSnapAreaFor(const nsIFrame* aFrame,
+                                       const nsIFrame* aScrolledFrame,
+                                       const nsRect& aScrolledRect) {
+  nsRect targetRect = nsLayoutUtils::TransformFrameRectToAncestor(
+      aFrame, aFrame->GetRectRelativeToSelf(), aScrolledFrame);
+
+  
+  
+  nsMargin scrollMargin = aFrame->StyleMargin()->GetScrollMargin();
+  return InflateByScrollMargin(targetRect, scrollMargin, aScrolledRect);
+}
+
 }  

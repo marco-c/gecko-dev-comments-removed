@@ -418,6 +418,10 @@ class ScrollFrameHelper : public nsIReflowCallback {
   bool NeedsScrollSnap() const;
 
   
+  
+  nsSize GetSnapportSize() const;
+
+  
   void ScheduleScrollAnimations();
   void TryScheduleScrollAnimations() {
     if (!mMayScheduleScrollAnimations) {

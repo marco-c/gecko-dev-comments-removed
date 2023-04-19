@@ -16,6 +16,7 @@ class nsIContent;
 class nsIFrame;
 struct nsPoint;
 struct nsRect;
+struct nsSize;
 
 namespace mozilla {
 
@@ -71,6 +72,21 @@ struct ScrollSnapUtils {
   
   
   static void PostPendingResnapFor(nsIFrame* aFrame);
+
+  
+  
+  
+  
+  
+  static bool NeedsToRespectTargetWritingMode(const nsSize& aSnapAreaSize,
+                                              const nsSize& aSnapportSize);
+
+  
+  
+  
+  static nsRect GetSnapAreaFor(const nsIFrame* aFrame,
+                               const nsIFrame* aScrolledFrame,
+                               const nsRect& aScrolledRect);
 };
 
 }  

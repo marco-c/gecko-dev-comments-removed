@@ -6228,6 +6228,13 @@ bool ScrollFrameHelper::NeedsScrollSnap() const {
          StyleScrollSnapStrictness::None;
 }
 
+nsSize ScrollFrameHelper::GetSnapportSize() const {
+  nsRect snapport = GetScrollPortRect();
+  nsMargin scrollPadding = GetScrollPadding();
+  snapport.Deflate(scrollPadding);
+  return snapport.Size();
+}
+
 bool ScrollFrameHelper::IsScrollbarOnRight() const {
   nsPresContext* presContext = mOuter->PresContext();
 
@@ -7685,17 +7692,6 @@ ScrollFrameHelper::GetAvailableScrollingDirectionsForUserInputEvents() const {
   return directions;
 }
 
-static nsRect InflateByScrollMargin(const nsRect& aTargetRect,
-                                    const nsMargin& aScrollMargin,
-                                    const nsRect& aScrolledRect) {
-  
-  nsRect result = aTargetRect;
-  result.Inflate(aScrollMargin);
-
-  
-  return result.Intersect(aScrolledRect);
-}
-
 
 
 
@@ -7705,32 +7701,17 @@ static void AppendScrollPositionsForSnap(
     const nsRect& aScrolledRect, const nsMargin& aScrollPadding,
     WritingMode aWritingModeOnScroller, ScrollSnapInfo& aSnapInfo,
     ScrollFrameHelper::SnapTargetSet* aSnapTargets) {
-  nsRect targetRect = nsLayoutUtils::TransformFrameRectToAncestor(
-      aFrame, aFrame->GetRectRelativeToSelf(), aScrolledFrame);
-
-  
-  
-  nsMargin scrollMargin = aFrame->StyleMargin()->GetScrollMargin();
-  nsRect snapArea =
-      InflateByScrollMargin(targetRect, scrollMargin, aScrolledRect);
-
   ScrollSnapTargetId targetId = ScrollSnapUtils::GetTargetIdFor(aFrame);
 
+  nsRect snapArea =
+      ScrollSnapUtils::GetSnapAreaFor(aFrame, aScrolledFrame, aScrolledRect);
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  WritingMode writingMode =
-      snapArea.width > aSnapInfo.mSnapportSize.width ||
-              snapArea.height > aSnapInfo.mSnapportSize.height
-          ? aFrame->GetWritingMode()
-          : aWritingModeOnScroller;
+  WritingMode writingMode = ScrollSnapUtils::NeedsToRespectTargetWritingMode(
+                                snapArea.Size(), aSnapInfo.mSnapportSize)
+                                ? aFrame->GetWritingMode()
+                                : aWritingModeOnScroller;
 
   
   
@@ -7952,14 +7933,10 @@ layers::ScrollSnapInfo ScrollFrameHelper::ComputeScrollSnapInfo() {
   WritingMode writingMode = mOuter->GetWritingMode();
   result.InitializeScrollSnapStrictness(writingMode, disp);
 
-  nsRect snapport = GetScrollPortRect();
-  nsMargin scrollPadding = GetScrollPadding();
-  snapport.Deflate(scrollPadding);
-
-  result.mSnapportSize = snapport.Size();
+  result.mSnapportSize = GetSnapportSize();
   CollectScrollPositionsForSnap(mScrolledFrame, mScrolledFrame,
-                                GetScrolledRect(), scrollPadding, writingMode,
-                                result, &mSnapTargets);
+                                GetScrolledRect(), GetScrollPadding(),
+                                writingMode, result, &mSnapTargets);
   return result;
 }
 
