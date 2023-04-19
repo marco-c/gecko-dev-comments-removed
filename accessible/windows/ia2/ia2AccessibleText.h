@@ -119,16 +119,12 @@ class ia2AccessibleText : public IAccessibleText {
        IA2TextSegment* oldText);
 
   static void InitTextChangeData();
-  static void UpdateTextChangeData(HyperTextAccessibleBase* aAcc, bool aInsert,
+  static void UpdateTextChangeData(HyperTextAccessibleWrap* aAcc, bool aInsert,
                                    const nsString& aStr, int32_t aStart,
                                    uint32_t aLen);
 
  protected:
-  
-  
-  
-  
-  static HyperTextAccessibleBase* sLastTextChangeAcc;
+  static StaticRefPtr<HyperTextAccessibleWrap> sLastTextChangeAcc;
   static StaticAutoPtr<nsString> sLastTextChangeString;
   static bool sLastTextChangeWasInsert;
   static uint32_t sLastTextChangeStart;

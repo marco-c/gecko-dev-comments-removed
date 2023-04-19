@@ -246,15 +246,6 @@ class Accessible {
 
   virtual Maybe<float> Opacity() const = 0;
 
-  
-
-
-
-
-  virtual void LiveRegionAttributes(nsAString* aLive, nsAString* aRelevant,
-                                    Maybe<bool>* aAtomic,
-                                    nsAString* aBusy) const = 0;
-
   LayoutDeviceIntSize Size() const;
 
   LayoutDeviceIntPoint Position(uint32_t aCoordType);

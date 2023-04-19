@@ -49,7 +49,7 @@ class nsAccUtils {
 
 
   static void SetLiveContainerAttributes(AccAttributes* aAttributes,
-                                         Accessible* aStartAcc);
+                                         nsIContent* aStartContent);
 
   
 
@@ -59,6 +59,12 @@ class nsAccUtils {
 
 
   static bool HasDefinedARIAToken(nsIContent* aContent, nsAtom* aAtom);
+
+  
+
+
+  static nsStaticAtom* GetARIAToken(mozilla::dom::Element* aElement,
+                                    nsAtom* aAttr);
 
   
 

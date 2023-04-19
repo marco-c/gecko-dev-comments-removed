@@ -194,11 +194,8 @@ void a11y::ProxyTextChangeEvent(RemoteAccessible* aText, const nsString& aStr,
     return;
   }
 
-  if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
-    MOZ_ASSERT(aText->IsHyperText());
-    ia2AccessibleText::UpdateTextChangeData(aText->AsHyperTextBase(), aInsert,
-                                            aStr, aStart, aLen);
-  }
+  
+  
   MsaaAccessible::FireWinEvent(aText, eventType);
 }
 
