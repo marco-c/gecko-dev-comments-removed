@@ -42,6 +42,21 @@ namespace layers {
 class NativeLayerRootSnapshotterCA;
 class SurfacePoolHandleCA;
 
+enum class VideoLowPowerType {
+  
+  NotVideo,           
+  Success,            
+                      
+  FailMultipleVideo,  
+  FailWindowed,       
+  FailOverlaid,       
+  FailBacking,        
+  FailMacOSVersion,   
+  FailPref,           
+  FailSurface,        
+  FailEnqueue,        
+};
+
 
 
 
@@ -122,7 +137,8 @@ class NativeLayerRootCA : public NativeLayerRoot {
       gfx::DeviceColor aColor) override;
 
   void SetWindowIsFullscreen(bool aFullscreen);
-  void NoteMouseMoveAtTime(const TimeStamp& aTime);
+
+  VideoLowPowerType CheckVideoLowPower();
 
  protected:
   explicit NativeLayerRootCA(CALayer* aLayer);
@@ -164,6 +180,12 @@ class NativeLayerRootCA : public NativeLayerRoot {
   
   
   bool mWindowIsFullscreen = false;
+
+  
+  
+  unsigned int mTelemetryCommitCount = 0;
+  static const unsigned int TELEMETRY_COMMIT_PERIOD =
+      600;  
 };
 
 class RenderSourceNLRS;
