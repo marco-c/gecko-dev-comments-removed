@@ -426,6 +426,18 @@ this.backgroundPage = class extends ExtensionAPI {
         return;
       }
 
+      
+      
+      
+      
+      
+      
+      
+      if (extension.backgroundContext?.hasActiveNativeAppPorts) {
+        extension.emit("background-script-reset-idle");
+        return;
+      }
+
       const childId = extension.backgroundContext?.childId;
       if (
         childId !== undefined &&
