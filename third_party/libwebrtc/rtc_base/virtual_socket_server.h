@@ -26,8 +26,129 @@
 namespace rtc {
 
 class Packet;
-class VirtualSocket;
+class VirtualSocketServer;
 class SocketAddressPair;
+
+
+
+class VirtualSocket : public Socket,
+                      public MessageHandler,
+                      public sigslot::has_slots<> {
+ public:
+  VirtualSocket(VirtualSocketServer* server, int family, int type);
+  ~VirtualSocket() override;
+
+  SocketAddress GetLocalAddress() const override;
+  SocketAddress GetRemoteAddress() const override;
+
+  int Bind(const SocketAddress& addr) override;
+  int Connect(const SocketAddress& addr) override;
+  int Close() override;
+  int Send(const void* pv, size_t cb) override;
+  int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
+  int Recv(void* pv, size_t cb, int64_t* timestamp) override;
+  int RecvFrom(void* pv,
+               size_t cb,
+               SocketAddress* paddr,
+               int64_t* timestamp) override;
+  int Listen(int backlog) override;
+  VirtualSocket* Accept(SocketAddress* paddr) override;
+
+  int GetError() const override;
+  void SetError(int error) override;
+  ConnState GetState() const override;
+  int GetOption(Option opt, int* value) override;
+  int SetOption(Option opt, int value) override;
+  void OnMessage(Message* pmsg) override;
+
+  size_t recv_buffer_size() const { return recv_buffer_size_; }
+  size_t send_buffer_size() const { return send_buffer_.size(); }
+  const char* send_buffer_data() const { return send_buffer_.data(); }
+
+  
+  void SetLocalAddress(const SocketAddress& addr);
+
+  bool was_any() { return was_any_; }
+  void set_was_any(bool was_any) { was_any_ = was_any; }
+
+  void SetToBlocked();
+
+  void UpdateRecv(size_t data_size);
+  void UpdateSend(size_t data_size);
+
+  void MaybeSignalWriteEvent(size_t capacity);
+
+  
+  uint32_t AddPacket(int64_t cur_time, size_t packet_size);
+
+  int64_t UpdateOrderedDelivery(int64_t ts);
+
+  
+  size_t PurgeNetworkPackets(int64_t cur_time);
+
+ private:
+  struct NetworkEntry {
+    size_t size;
+    int64_t done_time;
+  };
+
+  typedef std::deque<SocketAddress> ListenQueue;
+  typedef std::deque<NetworkEntry> NetworkQueue;
+  typedef std::vector<char> SendBuffer;
+  typedef std::list<Packet*> RecvBuffer;
+  typedef std::map<Option, int> OptionsMap;
+
+  int InitiateConnect(const SocketAddress& addr, bool use_delay);
+  void CompleteConnect(const SocketAddress& addr);
+  int SendUdp(const void* pv, size_t cb, const SocketAddress& addr);
+  int SendTcp(const void* pv, size_t cb);
+
+  void OnSocketServerReadyToSend();
+
+  VirtualSocketServer* const server_;
+  const int type_;
+  ConnState state_;
+  int error_;
+  SocketAddress local_addr_;
+  SocketAddress remote_addr_;
+
+  
+  std::unique_ptr<ListenQueue> listen_queue_ RTC_GUARDED_BY(mutex_)
+      RTC_PT_GUARDED_BY(mutex_);
+
+  
+  SendBuffer send_buffer_;
+  
+  
+  bool ready_to_send_ = true;
+
+  
+  webrtc::Mutex mutex_;
+
+  
+  NetworkQueue network_;
+  size_t network_size_;
+  
+  
+  int64_t last_delivery_time_ = 0;
+
+  
+  RecvBuffer recv_buffer_ RTC_GUARDED_BY(mutex_);
+  
+  size_t recv_buffer_size_;
+
+  
+  bool bound_;
+
+  
+  
+  
+  
+  bool was_any_;
+
+  
+  OptionsMap options_map_;
+};
 
 
 
@@ -115,7 +236,7 @@ class VirtualSocketServer : public SocketServer {
   void SetSendingBlocked(bool blocked);
 
   
-  Socket* CreateSocket(int family, int type) override;
+  VirtualSocket* CreateSocket(int family, int type) override;
 
   
   void SetMessageQueue(Thread* queue) override;
@@ -209,8 +330,6 @@ class VirtualSocketServer : public SocketServer {
   
   void Clear(VirtualSocket* socket);
 
-  void ProcessOneMessage();
-
   void PostSignalReadEvent(VirtualSocket* socket);
 
   
@@ -225,8 +344,6 @@ class VirtualSocketServer : public SocketServer {
 
  private:
   uint16_t GetNextPort();
-
-  VirtualSocket* CreateSocketInternal(int family, int type);
 
   
   VirtualSocket* LookupConnection(const SocketAddress& client,
@@ -321,128 +438,6 @@ class VirtualSocketServer : public SocketServer {
 
   bool sending_blocked_ = false;
   RTC_DISALLOW_COPY_AND_ASSIGN(VirtualSocketServer);
-};
-
-
-
-class VirtualSocket : public Socket,
-                      public MessageHandler,
-                      public sigslot::has_slots<> {
- public:
-  VirtualSocket(VirtualSocketServer* server, int family, int type, bool async);
-  ~VirtualSocket() override;
-
-  SocketAddress GetLocalAddress() const override;
-  SocketAddress GetRemoteAddress() const override;
-
-  int Bind(const SocketAddress& addr) override;
-  int Connect(const SocketAddress& addr) override;
-  int Close() override;
-  int Send(const void* pv, size_t cb) override;
-  int SendTo(const void* pv, size_t cb, const SocketAddress& addr) override;
-  int Recv(void* pv, size_t cb, int64_t* timestamp) override;
-  int RecvFrom(void* pv,
-               size_t cb,
-               SocketAddress* paddr,
-               int64_t* timestamp) override;
-  int Listen(int backlog) override;
-  VirtualSocket* Accept(SocketAddress* paddr) override;
-
-  int GetError() const override;
-  void SetError(int error) override;
-  ConnState GetState() const override;
-  int GetOption(Option opt, int* value) override;
-  int SetOption(Option opt, int value) override;
-  void OnMessage(Message* pmsg) override;
-
-  size_t recv_buffer_size() const { return recv_buffer_size_; }
-  size_t send_buffer_size() const { return send_buffer_.size(); }
-  const char* send_buffer_data() const { return send_buffer_.data(); }
-
-  
-  void SetLocalAddress(const SocketAddress& addr);
-
-  bool was_any() { return was_any_; }
-  void set_was_any(bool was_any) { was_any_ = was_any; }
-
-  void SetToBlocked();
-
-  void UpdateRecv(size_t data_size);
-  void UpdateSend(size_t data_size);
-
-  void MaybeSignalWriteEvent(size_t capacity);
-
-  
-  uint32_t AddPacket(int64_t cur_time, size_t packet_size);
-
-  int64_t UpdateOrderedDelivery(int64_t ts);
-
-  
-  size_t PurgeNetworkPackets(int64_t cur_time);
-
- private:
-  struct NetworkEntry {
-    size_t size;
-    int64_t done_time;
-  };
-
-  typedef std::deque<SocketAddress> ListenQueue;
-  typedef std::deque<NetworkEntry> NetworkQueue;
-  typedef std::vector<char> SendBuffer;
-  typedef std::list<Packet*> RecvBuffer;
-  typedef std::map<Option, int> OptionsMap;
-
-  int InitiateConnect(const SocketAddress& addr, bool use_delay);
-  void CompleteConnect(const SocketAddress& addr);
-  int SendUdp(const void* pv, size_t cb, const SocketAddress& addr);
-  int SendTcp(const void* pv, size_t cb);
-
-  void OnSocketServerReadyToSend();
-
-  VirtualSocketServer* const server_;
-  const int type_;
-  const bool async_;
-  ConnState state_;
-  int error_;
-  SocketAddress local_addr_;
-  SocketAddress remote_addr_;
-
-  
-  std::unique_ptr<ListenQueue> listen_queue_ RTC_GUARDED_BY(mutex_)
-      RTC_PT_GUARDED_BY(mutex_);
-
-  
-  SendBuffer send_buffer_;
-  
-  
-  bool ready_to_send_ = true;
-
-  
-  webrtc::Mutex mutex_;
-
-  
-  NetworkQueue network_;
-  size_t network_size_;
-  
-  
-  int64_t last_delivery_time_ = 0;
-
-  
-  RecvBuffer recv_buffer_ RTC_GUARDED_BY(mutex_);
-  
-  size_t recv_buffer_size_;
-
-  
-  bool bound_;
-
-  
-  
-  
-  
-  bool was_any_;
-
-  
-  OptionsMap options_map_;
 };
 
 }  
