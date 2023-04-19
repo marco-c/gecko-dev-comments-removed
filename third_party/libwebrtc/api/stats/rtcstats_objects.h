@@ -161,6 +161,7 @@ class RTC_EXPORT RTCIceCandidatePairStats final : public RTCStats {
   
   
   RTCStatsMember<std::string> state;
+  
   RTCStatsMember<uint64_t> priority;
   RTCStatsMember<bool> nominated;
   
@@ -208,6 +209,7 @@ class RTC_EXPORT RTCIceCandidateStats : public RTCStats {
   ~RTCIceCandidateStats() override;
 
   RTCStatsMember<std::string> transport_id;
+  
   RTCStatsMember<bool> is_remote;
   RTCStatsMember<std::string> network_type;
   RTCStatsMember<std::string> ip;
@@ -220,9 +222,6 @@ class RTC_EXPORT RTCIceCandidateStats : public RTCStats {
   RTCStatsMember<int32_t> priority;
   
   RTCStatsMember<std::string> url;
-  
-  
-  RTCStatsMember<bool> deleted;  
 
  protected:
   RTCIceCandidateStats(const std::string& id,
@@ -376,6 +375,7 @@ class RTC_EXPORT RTCRTPStreamStats : public RTCStats {
 
   RTCStatsMember<uint32_t> ssrc;
   RTCStatsMember<std::string> kind;
+  
   RTCStatsMember<std::string> track_id;
   RTCStatsMember<std::string> transport_id;
   RTCStatsMember<std::string> codec_id;
@@ -503,9 +503,6 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   
   RTCStatsMember<uint32_t> nack_count;
   RTCStatsMember<uint64_t> qp_sum;
-
-  
-  RTCStatsMember<bool> is_remote;  
 };
 
 
@@ -561,9 +558,6 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   
   RTCStatsMember<uint32_t> nack_count;
   RTCStatsMember<uint64_t> qp_sum;
-
-  
-  RTCStatsMember<bool> is_remote;  
 };
 
 
