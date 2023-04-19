@@ -6,8 +6,12 @@
 #ifndef GFX_ENV_H
 #define GFX_ENV_H
 
+#include "mozilla/Attributes.h"
+#include "nsDebug.h"
 #include "prenv.h"
 
+#include <sstream>
+#include <string_view>
 
 
 
@@ -18,86 +22,110 @@
 
 
 
-#define DECL_GFX_ENV(Env, Name)        \
-  static bool Name() {                 \
-    static bool isSet = IsEnvSet(Env); \
-    return isSet;                      \
+
+
+
+struct EnvVal {
+  std::string_view as_str;
+
+  static auto From(const char* const raw) {
+    auto ret = EnvVal{};
+
+    ret.as_str = std::string_view{};
+    
+    if (raw) {
+      ret.as_str = raw;
+    }
+
+    return ret;
   }
+
+  MOZ_IMPLICIT operator bool() const {
+    return !as_str.empty();  
+  }
+};
 
 class gfxEnv final {
  public:
-  
-  
-  
-  
+  gfxEnv() = delete;
 
-  
-  DECL_GFX_ENV("MOZ_DEBUG_SHADERS", DebugShaders);
-
-  
-  DECL_GFX_ENV("MOZ_DISABLE_CRASH_GUARD", DisableCrashGuard);
-  DECL_GFX_ENV("MOZ_FORCE_CRASH_GUARD_NIGHTLY", ForceCrashGuardNightly);
-
-  
-  
-  DECL_GFX_ENV("MOZ_DISABLE_FORCE_PRESENT", DisableForcePresent);
-
-  
-  
-  
-  
-  
-  
-  DECL_GFX_ENV("MOZ_DUMP_COMPOSITOR_TEXTURES", DumpCompositorTextures);
-
-  
-  DECL_GFX_ENV("MOZ_DUMP_PAINT", DumpPaint);
-  DECL_GFX_ENV("MOZ_DUMP_PAINT_ITEMS", DumpPaintItems);
-  DECL_GFX_ENV("MOZ_DUMP_PAINT_TO_FILE", DumpPaintToFile);
-
-  
-  DECL_GFX_ENV("MOZ_GFX_CRASH_MOZ_CRASH", GfxDevCrashMozCrash);
-  
-  DECL_GFX_ENV("MOZ_GFX_CRASH_TELEMETRY", GfxDevCrashTelemetry);
-
-  
-  DECL_GFX_ENV("MOZ_GL_DEBUG", GlDebug);
-  DECL_GFX_ENV("MOZ_GL_DEBUG_VERBOSE", GlDebugVerbose);
-
-  
-  DECL_GFX_ENV("MOZ_GL_DUMP_EXTS", GlDumpExtensions);
-
-  
-  DECL_GFX_ENV("MOZ_GL_SPEW", GlSpew);
-
-  
-  DECL_GFX_ENV("MOZ_GLX_DEBUG", GlxDebug);
-
-  
-  DECL_GFX_ENV("MOZ_LAYERS_PREFER_EGL", LayersPreferEGL);
-
-  
-  DECL_GFX_ENV("MOZ_LAYERS_PREFER_OFFSCREEN", LayersPreferOffscreen);
-
-  
-  
-  
-  
-
- private:
-  
-  static bool IsEnvSet(const char* aName) {
-    const char* val = PR_GetEnv(aName);
-    return (val != 0 && *val != '\0');
+  static EnvVal Uncached(const char* name) {
+    const auto raw = PR_GetEnv(name);
+    const auto ret = EnvVal::From(raw);
+    if (ret && ret.as_str == "0") {
+      auto msg = std::stringstream{};
+      msg << name << "=" << ret.as_str << " -> true!";
+      NS_WARNING(msg.str().c_str());
+    }
+    return ret;
   }
 
-  gfxEnv() = default;
-  ~gfxEnv() = default;
+#define DECL_GFX_ENV(Name)                      \
+  static const EnvVal& Name() {                 \
+    static const auto cached = Uncached(#Name); \
+    return cached;                              \
+  }
 
-  gfxEnv(const gfxEnv&) = delete;
-  gfxEnv& operator=(const gfxEnv&) = delete;
-};
+  
+  
+  
+  
+
+  
+  DECL_GFX_ENV(MOZ_DEBUG_SHADERS)
+
+  
+  DECL_GFX_ENV(MOZ_DISABLE_CRASH_GUARD)
+  DECL_GFX_ENV(MOZ_FORCE_CRASH_GUARD_NIGHTLY)
+
+  
+  
+  DECL_GFX_ENV(MOZ_DISABLE_FORCE_PRESENT)
+
+  
+  
+  
+  
+  
+  
+  DECL_GFX_ENV(MOZ_DUMP_COMPOSITOR_TEXTURES)
+
+  
+  DECL_GFX_ENV(MOZ_DUMP_PAINT)
+  DECL_GFX_ENV(MOZ_DUMP_PAINT_ITEMS)
+  DECL_GFX_ENV(MOZ_DUMP_PAINT_TO_FILE)
+
+  
+  DECL_GFX_ENV(MOZ_GFX_CRASH_MOZ_CRASH)
+  
+  DECL_GFX_ENV(MOZ_GFX_CRASH_TELEMETRY)
+
+  
+  DECL_GFX_ENV(MOZ_GL_DEBUG)
+  DECL_GFX_ENV(MOZ_GL_DEBUG_VERBOSE)
+  DECL_GFX_ENV(MOZ_GL_DEBUG_ABORT_ON_ERROR)
+
+  
+  DECL_GFX_ENV(MOZ_GL_DUMP_EXTS)
+
+  
+  DECL_GFX_ENV(MOZ_GL_SPEW)
+
+  
+  DECL_GFX_ENV(MOZ_GLX_DEBUG)
+
+  
+  DECL_GFX_ENV(MOZ_LAYERS_PREFER_EGL)
+
+  
+  DECL_GFX_ENV(MOZ_LAYERS_PREFER_OFFSCREEN)
+
+  
+  
+  
+  
 
 #undef DECL_GFX_ENV
+};
 
 #endif 

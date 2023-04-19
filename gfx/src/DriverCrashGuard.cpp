@@ -74,11 +74,11 @@ static inline bool AreCrashGuardsEnabled(CrashGuardType aType) {
   
   
   if (aType != CrashGuardType::WMFVPXVideo) {
-    return gfxEnv::ForceCrashGuardNightly();
+    return gfxEnv::MOZ_FORCE_CRASH_GUARD_NIGHTLY();
   }
 #endif
   
-  return !gfxEnv::DisableCrashGuard();
+  return !gfxEnv::MOZ_DISABLE_CRASH_GUARD();
 }
 
 void DriverCrashGuard::Initialize() {

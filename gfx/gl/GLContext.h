@@ -24,7 +24,7 @@
 
 
 #ifdef DEBUG
-#  define MOZ_GL_DEBUG 1
+#  define MOZ_GL_DEBUG_BUILD 1
 #endif
 
 #include "mozilla/IntegerRange.h"
@@ -693,7 +693,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   static void AssertNotPassingStackBufferToTheGL(const void* ptr);
 
-#ifdef MOZ_GL_DEBUG
+#ifdef MOZ_GL_DEBUG_BUILD
 
 #  define TRACKING_CONTEXT(a) \
     do {                      \
@@ -3681,7 +3681,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   auto MaxRenderbufferSize() const { return uint32_t(mMaxRenderbufferSize); }
   auto MaxTexOrRbSize() const { return mMaxTexOrRbSize; }
 
-#ifdef MOZ_GL_DEBUG
+#ifdef MOZ_GL_DEBUG_BUILD
   void CreatedProgram(GLContext* aOrigin, GLuint aName);
   void CreatedShader(GLContext* aOrigin, GLuint aName);
   void CreatedBuffers(GLContext* aOrigin, GLsizei aCount, GLuint* aNames);

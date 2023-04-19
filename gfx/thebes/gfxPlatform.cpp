@@ -374,11 +374,11 @@ void CrashStatsLogForwarder::CrashAction(LogReason aReason) {
 #ifndef RELEASE_OR_BETA
   
   
-  static bool useTelemetry = gfxEnv::GfxDevCrashTelemetry();
+  static bool useTelemetry = gfxEnv::MOZ_GFX_CRASH_TELEMETRY();
 #else
   
   
-  static bool useTelemetry = !gfxEnv::GfxDevCrashMozCrash();
+  static bool useTelemetry = !gfxEnv::MOZ_GFX_CRASH_MOZ_CRASH();
 #endif
 
   if (useTelemetry) {
