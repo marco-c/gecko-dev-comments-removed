@@ -1068,7 +1068,8 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
 
     
-    ProcessBorders(GetTableFrame(), aBuilder, aLists);
+    nsTableFrame* tableFrame = GetTableFrame();
+    ProcessBorders(tableFrame, aBuilder, aLists);
 
     
     if (IsSelected()) {
@@ -1098,7 +1099,9 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       DisplayListClipState::AutoSaveRestore clipState(aBuilder);
       nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
           aBuilder);
-      if (IsStackingContext()) {
+      if (IsStackingContext() || row->IsStackingContext() ||
+          rowGroup->IsStackingContext() || tableFrame->IsStackingContext()) {
+        
         
         
         
