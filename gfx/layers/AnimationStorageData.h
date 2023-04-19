@@ -8,10 +8,10 @@
 #define mozilla_layers_AnimationStorageData_h
 
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/ServoStyleConsts.h"        
-#include "mozilla/layers/LayersMessages.h"   
-#include "mozilla/layers/LayersTypes.h"      
-#include "mozilla/TimeStamp.h"               
+#include "mozilla/ServoStyleConsts.h"       
+#include "mozilla/layers/LayersMessages.h"  
+#include "mozilla/layers/LayersTypes.h"     
+#include "mozilla/TimeStamp.h"              
 #include "mozilla/TimingParams.h"
 #include "X11UndefineNone.h"
 
