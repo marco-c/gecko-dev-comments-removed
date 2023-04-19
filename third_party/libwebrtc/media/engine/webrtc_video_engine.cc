@@ -135,8 +135,15 @@ bool IsCodecValidForLowerRange(const VideoCodec& codec) {
     return true;
   } else if (absl::EqualsIgnoreCase(codec.name, kH264CodecName)) {
     std::string profileLevelId;
-    
+    std::string packetizationMode;
+
     if (codec.GetParam(kH264FmtpProfileLevelId, &profileLevelId)) {
+      if (absl::StartsWithIgnoreCase(profileLevelId, "4d00")) {
+        if (codec.GetParam(kH264FmtpPacketizationMode, &packetizationMode)) {
+          return packetizationMode == "0";
+        }
+      }
+      
       return absl::StartsWithIgnoreCase(profileLevelId, "f400");
     }
   }

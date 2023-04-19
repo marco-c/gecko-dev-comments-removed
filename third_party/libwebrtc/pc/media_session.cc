@@ -1112,6 +1112,25 @@ static Codecs MatchCodecPreference(
 }
 
 
+template <class C>
+std::vector<C> ComputeCodecsUnion(const std::vector<C>& codecs1,
+                                  const std::vector<C>& codecs2) {
+  std::vector<C> all_codecs;
+  UsedPayloadTypes used_payload_types;
+  for (const C& codec : codecs1) {
+    C codec_mutable = codec;
+    used_payload_types.FindAndSetIdUsed(&codec_mutable);
+    all_codecs.push_back(codec_mutable);
+  }
+
+  
+  
+  MergeCodecs<C>(codecs2, &all_codecs, &used_payload_types);
+
+  return all_codecs;
+}
+
+
 
 
 
@@ -2696,7 +2715,9 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
         }
       }
     }
+
     
+    VideoCodecs other_video_codecs;
     for (const VideoCodec& codec : supported_video_codecs) {
       if (FindMatchingCodec<VideoCodec>(supported_video_codecs, video_codecs,
                                         codec, nullptr) &&
@@ -2704,9 +2725,13 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
                                          filtered_codecs, codec, nullptr)) {
         
         
-        filtered_codecs.push_back(codec);
+        other_video_codecs.push_back(codec);
       }
     }
+
+    
+    filtered_codecs =
+        ComputeCodecsUnion<VideoCodec>(filtered_codecs, other_video_codecs);
   }
 
   if (session_options.raw_packetization_for_video) {
@@ -2900,27 +2925,11 @@ void MediaSessionDescriptionFactory::ComputeAudioCodecsIntersectionAndUnion() {
 
 void MediaSessionDescriptionFactory::ComputeVideoCodecsIntersectionAndUnion() {
   video_sendrecv_codecs_.clear();
-  all_video_codecs_.clear();
-  
-  for (const VideoCodec& send : video_send_codecs_) {
-    all_video_codecs_.push_back(send);
-    if (!FindMatchingCodec<VideoCodec>(video_send_codecs_, video_recv_codecs_,
-                                       send, nullptr)) {
-      
-      
-      
 
-      
-      
-      
-    }
-  }
-  for (const VideoCodec& recv : video_recv_codecs_) {
-    if (!FindMatchingCodec<VideoCodec>(video_recv_codecs_, video_send_codecs_,
-                                       recv, nullptr)) {
-      all_video_codecs_.push_back(recv);
-    }
-  }
+  
+  all_video_codecs_ =
+      ComputeCodecsUnion(video_recv_codecs_, video_send_codecs_);
+
   
   
   
