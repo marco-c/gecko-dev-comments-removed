@@ -902,13 +902,10 @@ static void CallSymbolicAddress(MacroAssembler& masm, bool isAbsolute,
 }
 
 
-static void GenerateJitEntryLoadInstance(MacroAssembler& masm,
-                                         unsigned frameSize) {
-  AssertExpectedSP(masm);
-
+static void GenerateJitEntryLoadInstance(MacroAssembler& masm) {
   
-  unsigned offset = frameSize + JitFrameLayout::offsetOfCalleeToken();
-  masm.loadFunctionFromCalleeToken(Address(masm.getStackPointer(), offset),
+  unsigned offset = JitFrameLayout::offsetOfCalleeToken();
+  masm.loadFunctionFromCalleeToken(Address(FramePointer, offset),
                                    ScratchIonEntry);
 
   
@@ -925,16 +922,14 @@ static void GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize) {
 
   MOZ_ASSERT(masm.framePushed() == frameSize);
 
-  GenerateJitEntryLoadInstance(masm, frameSize);
-
   masm.freeStack(frameSize);
   MoveSPForJitABI(masm);
 
   
   
-  masm.loadPtr(
-      Address(masm.getStackPointer(), JitFrameLayout::offsetOfCallerFramePtr()),
-      FramePointer);
+  masm.moveStackPtrTo(FramePointer);
+
+  GenerateJitEntryLoadInstance(masm);
 
   masm.loadPtr(Address(InstanceReg, Instance::offsetOfCx()), ScratchIonEntry);
   masm.enterFakeExitFrameForWasm(ScratchIonEntry, ScratchIonEntry,
@@ -1037,7 +1032,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
   uint32_t frameSize = masm.framePushed();
 
-  GenerateJitEntryLoadInstance(masm, frameSize);
+  GenerateJitEntryLoadInstance(masm);
 
   if (fe.funcType().hasUnexposableArgOrRet()) {
     CallSymbolicAddress(masm, !fe.hasEagerStubs(),
@@ -1061,8 +1056,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   Label oolCall;
   for (size_t i = 0; i < fe.funcType().args().length(); i++) {
-    unsigned jitArgOffset = frameSize + JitFrameLayout::offsetOfActualArg(i);
-    Address jitArgAddr(sp, jitArgOffset);
+    Address jitArgAddr(FramePointer, JitFrameLayout::offsetOfActualArg(i));
     masm.loadValue(jitArgAddr, scratchV);
 
     Label next;
@@ -1215,9 +1209,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   ArgTypeVector args(fe.funcType());
   for (WasmABIArgIter iter(args); !iter.done(); iter++) {
-    unsigned jitArgOffset =
-        frameSize + JitFrameLayout::offsetOfActualArg(iter.index());
-    Address argv(sp, jitArgOffset);
+    Address argv(FramePointer, JitFrameLayout::offsetOfActualArg(iter.index()));
     bool isStackArg = iter->kind() == ABIArg::Stack;
     switch (iter.mirType()) {
       case MIRType::Int32: {
@@ -1369,7 +1361,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
           case RefType::Extern:
             
             
-            GenerateJitEntryLoadInstance(masm, 0);
+            GenerateJitEntryLoadInstance(masm);
             UnboxAnyrefIntoValueReg(masm, InstanceReg, ReturnReg,
                                     JSReturnOperand, WasmJitEntryReturnScratch);
             break;
@@ -1416,7 +1408,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
     argsIter++;
 
     
-    Address argv(sp, masm.framePushed() + JitFrameLayout::offsetOfActualArg(0));
+    Address argv(FramePointer, JitFrameLayout::offsetOfActualArgs());
     if (argsIter->kind() == ABIArg::GPR) {
       masm.computeEffectiveAddress(argv, argsIter->gpr());
     } else {
