@@ -13,6 +13,7 @@
 
 #include <d3d11.h>
 #include <windows.graphics.capture.h>
+#include <windows.graphics.h>
 #include <wrl/client.h>
 
 #include <memory>
@@ -28,7 +29,8 @@ class WgcCaptureSession final {
   WgcCaptureSession(
       Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device,
       Microsoft::WRL::ComPtr<
-          ABI::Windows::Graphics::Capture::IGraphicsCaptureItem> item);
+          ABI::Windows::Graphics::Capture::IGraphicsCaptureItem> item,
+      ABI::Windows::Graphics::SizeInt32 size);
 
   
   WgcCaptureSession(const WgcCaptureSession&) = delete;
@@ -90,7 +92,7 @@ class WgcCaptureSession final {
   
   
   
-  ABI::Windows::Graphics::SizeInt32 previous_size_;
+  ABI::Windows::Graphics::SizeInt32 size_;
 
   
   
