@@ -39,9 +39,6 @@ extern bool gXPCOMMainThreadEventsAreDoomed;
 
 #ifdef __cplusplus
 #  include "nsStringFwd.h"
-namespace mozilla {
-struct Module;
-}  
 #endif
 
 
