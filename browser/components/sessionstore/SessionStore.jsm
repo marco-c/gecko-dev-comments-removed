@@ -4273,6 +4273,17 @@ var SessionStoreInternal = {
 
 
 
+  _resetClosedIds(tabData) {
+    for (let entry of tabData) {
+      entry.closedId = this._nextClosedId++;
+    }
+    return tabData;
+  },
+  
+
+
+
+
 
 
 
@@ -4391,6 +4402,8 @@ var SessionStoreInternal = {
     }
 
     let newClosedTabsData = winData._closedTabs || [];
+    newClosedTabsData = this._resetClosedIds(newClosedTabsData);
+
     let newLastClosedTabGroupCount = winData._lastClosedTabGroupCount || -1;
 
     if (overwriteTabs || firstWindow) {
