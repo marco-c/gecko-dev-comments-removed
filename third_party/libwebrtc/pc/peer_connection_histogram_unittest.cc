@@ -497,7 +497,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithMdnsCallee) {
                                                  expected_fingerprint_callee));
 }
 
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
 TEST_F(PeerConnectionUsageHistogramTest, FingerprintDataOnly) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
@@ -628,7 +628,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithPrivateIpv6Callee) {
 }
 
 #ifndef WEBRTC_ANDROID
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
 
 
 

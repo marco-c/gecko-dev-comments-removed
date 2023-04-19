@@ -3705,7 +3705,7 @@ TEST_P(PeerConnectionIntegrationTest, AddRtpDataChannelInSubsequentOffer) {
                  kDefaultTimeout);
 }
 
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
 
 
 
@@ -5188,7 +5188,7 @@ TEST_P(PeerConnectionIntegrationTest, ClosingConnectionStopsPacketFlow) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddAudioVideoTracks();
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
   caller()->CreateDataChannel();
 #endif
   caller()->CreateAndSetAndSignalOffer();
@@ -5208,7 +5208,7 @@ TEST_P(PeerConnectionIntegrationTest, ClosingConnectionStopsPacketFlow) {
 
 
 
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
 TEST_P(PeerConnectionIntegrationTest,
        TransportStatsReportedForDataChannelOnlyConnection) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
@@ -5910,7 +5910,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
             callee_track->state());
 }
 
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
 
 TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
        EndToEndCallWithBundledSctpDataChannel) {

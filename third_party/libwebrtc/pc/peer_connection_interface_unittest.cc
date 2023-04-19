@@ -2255,7 +2255,7 @@ TEST_P(PeerConnectionInterfaceTest, TestRejectRtpDataChannelInAnswer) {
   EXPECT_EQ(DataChannelInterface::kClosed, offer_channel->state());
 }
 
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
 
 TEST_P(PeerConnectionInterfaceTest, TestRejectSctpDataChannelInAnswer)
 #else
@@ -2310,7 +2310,7 @@ TEST_P(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
       cricket::GetFirstVideoContent(pc_->local_description()->description());
   ASSERT_TRUE(content != NULL);
   EXPECT_FALSE(content->rejected);
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
   content =
       cricket::GetFirstDataContent(pc_->local_description()->description());
   ASSERT_TRUE(content != NULL);
@@ -3593,7 +3593,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
 
 
 
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
 TEST_P(PeerConnectionInterfaceTest, DataChannelOnlyOfferWithMaxBundlePolicy) {
 #else
 TEST_P(PeerConnectionInterfaceTest,

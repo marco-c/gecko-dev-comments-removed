@@ -465,7 +465,7 @@ TEST_P(PeerConnectionEndToEndTest, CallWithCustomCodec) {
   EXPECT_NE(encoder_id1, encoder_id2);
 }
 
-#ifdef HAVE_SCTP
+#ifdef WEBRTC_HAVE_SCTP
 
 
 TEST_P(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
