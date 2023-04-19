@@ -30,4 +30,13 @@ void IdentityCredential::SetToken(const nsAString& aToken) {
   mToken.Assign(aToken);
 }
 
+
+RefPtr<IdentityCredential::GetIdentityCredentialPromise>
+IdentityCredential::DiscoverFromExternalSource(
+    nsPIDOMWindowInner* aParent, const CredentialRequestOptions& aOptions,
+    bool aSameOriginWithAncestors) {
+  return IdentityCredential::GetIdentityCredentialPromise::CreateAndReject(
+      NS_ERROR_FAILURE, __func__);
+}
+
 }  
