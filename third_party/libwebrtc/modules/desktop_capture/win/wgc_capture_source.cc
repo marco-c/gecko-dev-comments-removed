@@ -166,7 +166,7 @@ HRESULT WgcScreenSource::CreateCaptureItem(
   
   
   
-  if (!IsMonitorValid(*hmonitor_))
+  if (!IsMonitorValid(hmonitor_.value()))
     return E_ABORT;
 
   ComPtr<WGC::IGraphicsCaptureItem> item;
