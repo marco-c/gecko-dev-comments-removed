@@ -1,6 +1,9 @@
 
 
 
+
+
+
 "use strict";
 
 var { XPCOMUtils } = ChromeUtils.importESModule(
@@ -12,8 +15,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionCommon: "resource://gre/modules/ExtensionCommon.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
-
-
 
 
 const RESIZE_TIMEOUT = 100;
