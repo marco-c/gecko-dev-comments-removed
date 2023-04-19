@@ -197,12 +197,9 @@ ToolbarKeyboardNavigator = {
       
       
       
-      
-      
       if (
-        oldFocus &&
         this._isFocusMovingBackward &&
-        !gNavToolbox.contains(oldFocus)
+        (!oldFocus || !gNavToolbox.contains(oldFocus))
       ) {
         let allStops = Array.from(
           gNavToolbox.querySelectorAll("toolbartabstop")
