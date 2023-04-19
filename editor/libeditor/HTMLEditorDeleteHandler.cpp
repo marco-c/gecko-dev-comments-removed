@@ -5093,6 +5093,18 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContentsWithTransaction(
   }
   
   
+  if (const RefPtr<Element> inlineElement =
+          HTMLEditUtils::GetMostDistantAnscestorEditableEmptyInlineElement(
+              *lastLineBreakContent, &aEditingHost)) {
+    nsresult rv = DeleteNodeWithTransaction(*inlineElement);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+      return MoveNodeResult(rv);
+    }
+    return moveContentsInLineResult;
+  }
+  
+  
   nsresult rv = DeleteNodeWithTransaction(*lastLineBreakContent);
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
