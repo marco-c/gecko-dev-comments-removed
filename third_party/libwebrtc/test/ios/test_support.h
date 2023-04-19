@@ -28,6 +28,9 @@ void InitTestSuite(int (*test_suite)(void),
                    bool save_chartjson_result,
                    absl::optional<std::vector<std::string>> metrics_to_plot);
 
+
+bool ShouldRunIOSUnittestsWithXCTest();
+
 }  
 }  
 
