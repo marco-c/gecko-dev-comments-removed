@@ -258,18 +258,6 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   void ApplyCache(CacheUpdateType aUpdateType, AccAttributes* aFields) {
     const nsTArray<bool> relUpdatesNeeded = PreProcessRelations(aFields);
-    if (auto maybeViewportCache =
-            aFields->GetAttribute<nsTArray<uint64_t>>(nsGkAtoms::viewport)) {
-      
-      
-      
-      MOZ_ASSERT(IsDoc(),
-                 "Fetched the viewport cache from a non-doc accessible?");
-      for (auto id : *maybeViewportCache) {
-        AsDoc()->mOnScreenAccessibles.Insert(id);
-      }
-    }
-
     if (aUpdateType == CacheUpdateType::Initial) {
       mCachedFields = aFields;
     } else {
