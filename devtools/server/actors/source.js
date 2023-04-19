@@ -10,7 +10,6 @@ const {
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const { sourceSpec } = require("devtools/shared/specs/source");
 const {
-  resolveSourceURL,
   getSourcemapBaseURL,
 } = require("devtools/server/actors/utils/source-map-utils");
 const {
@@ -40,7 +39,25 @@ loader.lazyRequireGetter(this, "Services");
 
 const windowsDrive = /^([a-zA-Z]:)/;
 
-function getSourceURL(source, window) {
+function resolveSourceURL(sourceURL, targetActor) {
+  if (sourceURL) {
+    try {
+      let baseURL;
+      if (targetActor.window) {
+        baseURL = targetActor.window.location?.href;
+      }
+      
+      
+      if (targetActor.workerUrl) {
+        baseURL = targetActor.workerUrl;
+      }
+      return new URL(sourceURL, baseURL || undefined).href;
+    } catch (err) {}
+  }
+
+  return null;
+}
+function getSourceURL(source, targetActor) {
   
   
   let resourceURL = getDebuggerSourceURL(source) || "";
@@ -60,9 +77,9 @@ function getSourceURL(source, window) {
   
   
   
-  let result = resolveSourceURL(source.displayURL, window);
+  let result = resolveSourceURL(source.displayURL, targetActor);
   if (!result) {
-    result = resolveSourceURL(resourceURL, window) || resourceURL;
+    result = resolveSourceURL(resourceURL, targetActor) || resourceURL;
 
     
     
@@ -113,7 +130,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       
       this.__isInlineSource =
         source.introductionType === "inlineScript" &&
-        !resolveSourceURL(source.displayURL, this.threadActor._parent.window) &&
+        !resolveSourceURL(source.displayURL, this.threadActor._parent) &&
         !this.url.startsWith("about:srcdoc");
     }
     return this.__isInlineSource;
@@ -133,7 +150,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
   },
   get url() {
     if (this._url === undefined) {
-      this._url = getSourceURL(this._source, this.threadActor._parent.window);
+      this._url = getSourceURL(this._source, this.threadActor._parent);
     }
     return this._url;
   },

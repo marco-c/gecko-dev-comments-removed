@@ -99,6 +99,12 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
     }
 
     
+    
+    const absoluteURL = dbg.window?.location?.href
+      ? new URL(dbg.url, dbg.window.location.href).href
+      : dbg.url;
+
+    
     dbg.postMessage(
       JSON.stringify({
         type: "connect",
@@ -107,7 +113,7 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
         workerDebuggerData: {
           id: dbg.id,
           type: dbg.type,
-          url: dbg.url,
+          url: absoluteURL,
         },
       })
     );

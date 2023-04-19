@@ -66,6 +66,12 @@ exports.WorkerTargetActor = TargetActorMixin(
       this.manage(this._consoleActor);
     },
 
+    
+    
+    get workerUrl() {
+      return this._workerDebuggerData.url;
+    },
+
     form() {
       return {
         actor: this.actorID,
