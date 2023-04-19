@@ -23,6 +23,7 @@ use crate::de::{Error as RonError, Result};
 
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(transparent)]
 pub struct Map(MapInner);
 
 impl Map {
@@ -37,8 +38,8 @@ impl Map {
     }
 
     
-    pub fn is_empty(&self) -> usize {
-        self.0.len()
+    pub fn is_empty(&self) -> bool {
+        self.0.len() == 0
     }
 
     
@@ -279,7 +280,7 @@ impl Eq for Float {}
 
 impl Hash for Float {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_u64(self.0 as u64);
+        state.write_u64(self.0.to_bits());
     }
 }
 
