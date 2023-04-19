@@ -180,7 +180,6 @@ nsresult nsCertOverrideService::Init() {
   
   
   if (observerService) {
-    observerService->AddObserver(this, "profile-before-change", true);
     observerService->AddObserver(this, "profile-do-change", true);
     
     Observe(nullptr, "profile-do-change", nullptr);
@@ -193,13 +192,7 @@ nsresult nsCertOverrideService::Init() {
 NS_IMETHODIMP
 nsCertOverrideService::Observe(nsISupports*, const char* aTopic,
                                const char16_t* aData) {
-  
-  if (!nsCRT::strcmp(aTopic, "profile-before-change")) {
-    
-    
-
-    RemoveAllFromMemory();
-  } else if (!nsCRT::strcmp(aTopic, "profile-do-change")) {
+  if (!nsCRT::strcmp(aTopic, "profile-do-change")) {
     
     
     
@@ -220,18 +213,21 @@ nsCertOverrideService::Observe(nsISupports*, const char* aTopic,
   return NS_OK;
 }
 
-void nsCertOverrideService::RemoveAllFromMemory() {
-  MutexAutoLock lock(mMutex);
-  mSettingsTable.Clear();
-}
-
 void nsCertOverrideService::RemoveAllTemporaryOverrides() {
   MutexAutoLock lock(mMutex);
+  bool removedAny = false;
   for (auto iter = mSettingsTable.Iter(); !iter.Done(); iter.Next()) {
     nsCertOverrideEntry* entry = iter.Get();
     if (entry->mSettings->mIsTemporary) {
       entry->mSettings->mCert = nullptr;
       iter.Remove();
+      removedAny = true;
+    }
+  }
+  if (removedAny) {
+    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+    if (os) {
+      os->NotifyObservers(nullptr, "net:cancel-all-connections", nullptr);
     }
   }
   
@@ -608,6 +604,11 @@ nsCertOverrideService::ClearValidityOverride(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  if (os) {
+    os->NotifyObservers(nullptr, "net:cancel-all-connections", nullptr);
+  }
+
   return NS_OK;
 }
 NS_IMETHODIMP
@@ -639,6 +640,11 @@ nsCertOverrideService::ClearAllOverrides() {
     nss->ClearSSLExternalAndInternalSessionCache();
   } else {
     return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  if (os) {
+    os->NotifyObservers(nullptr, "net:cancel-all-connections", nullptr);
   }
 
   return NS_OK;
