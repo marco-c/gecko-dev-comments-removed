@@ -134,7 +134,7 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
     document
   );
 
-  const { devtoolsTab, devtoolsWindow } = await openAboutDevtoolsToolbox(
+  const { devtoolsWindow } = await openAboutDevtoolsToolbox(
     document,
     tab,
     window,
@@ -250,7 +250,7 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
   
   await onEvaluationResultAfterReload;
 
-  await closeAboutDevtoolsToolbox(document, devtoolsTab, window);
+  await closeWebExtAboutDevtoolsToolbox(devtoolsWindow, window);
 
   
   
@@ -301,7 +301,7 @@ add_task(async function testWebExtensionNoBgScript() {
     document
   );
 
-  const { devtoolsTab, devtoolsWindow } = await openAboutDevtoolsToolbox(
+  const { devtoolsWindow } = await openAboutDevtoolsToolbox(
     document,
     tab,
     window,
@@ -340,7 +340,7 @@ add_task(async function testWebExtensionNoBgScript() {
     "We get the addon's popup CSS error message"
   );
 
-  await closeAboutDevtoolsToolbox(document, devtoolsTab, window);
+  await closeWebExtAboutDevtoolsToolbox(devtoolsWindow, window);
   await removeTemporaryExtension(POPUPONLY_ADDON_NAME, document);
   await removeTab(tab);
 });
@@ -383,7 +383,7 @@ add_task(async function testWebExtensionTwoReloads() {
   
   const addonTarget = findDebugTargetByText(BACKGROUND_ADDON_NAME, document);
 
-  const { devtoolsTab, devtoolsWindow } = await openAboutDevtoolsToolbox(
+  const { devtoolsWindow } = await openAboutDevtoolsToolbox(
     document,
     tab,
     window,
@@ -431,7 +431,7 @@ add_task(async function testWebExtensionTwoReloads() {
   hud.ui.wrapper.dispatchEvaluateExpression("40+2");
   await waitUntil(() => findMessageByType(hud, "42", ".result"));
 
-  await closeAboutDevtoolsToolbox(document, devtoolsTab, window);
+  await closeWebExtAboutDevtoolsToolbox(devtoolsWindow, window);
   await removeTemporaryExtension(BACKGROUND_ADDON_NAME, document);
   await removeTab(tab);
 });
