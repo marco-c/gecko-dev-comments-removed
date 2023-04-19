@@ -123,6 +123,7 @@ class OffThreadErrorContext : public ErrorContext {
  private:
   js::OffThreadFrontendErrors errors_;
 
+ protected:
   
   
   
@@ -182,6 +183,24 @@ class OffThreadErrorContext : public ErrorContext {
  private:
   void ReportOutOfMemory();
   void addPendingOutOfMemory();
+};
+
+
+class MOZ_STACK_CLASS AutoReportFrontendContext : public OffThreadErrorContext {
+  
+  JSContext* cx_;
+
+  Warning warning_;
+
+ public:
+  explicit AutoReportFrontendContext(JSContext* cx,
+                                     Warning warning = Warning::Report)
+      : OffThreadErrorContext(), cx_(cx), warning_(warning) {
+    setCurrentJSContext(cx_);
+    MOZ_ASSERT(cx_ == maybeCx_);
+  }
+
+  ~AutoReportFrontendContext() { convertToRuntimeError(cx_, warning_); }
 };
 
 }  
