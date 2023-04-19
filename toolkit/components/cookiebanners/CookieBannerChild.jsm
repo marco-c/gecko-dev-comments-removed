@@ -43,11 +43,30 @@ class CookieBannerChild extends JSWindowActorChild {
   #clickRules;
   #originalBannerDisplay = null;
   #observerCleanUp;
+  #observerCleanUpTimer;
+  
+  #didLoad = false;
 
-  async handleEvent(event) {
-    if (event.type != "DOMContentLoaded") {
-      return;
+  handleEvent(event) {
+    switch (event.type) {
+      case "DOMContentLoaded":
+        this.#onDOMContentLoaded();
+        break;
+      case "load":
+        this.#onLoad();
+        break;
+      default:
+        lazy.logConsole.warn(`Unexpected event ${event.type}.`, event);
     }
+  }
+
+  
+
+
+
+  async #onDOMContentLoaded() {
+    lazy.logConsole.debug("onDOMContentLoaded", { didLoad: this.#didLoad });
+    this.#didLoad = false;
 
     let principal = this.document?.nodePrincipal;
 
@@ -86,6 +105,46 @@ class CookieBannerChild extends JSWindowActorChild {
     await this.handleCookieBanner();
 
     this.#maybeSendTestMessage();
+  }
+
+  
+
+
+
+  #onLoad() {
+    this.#didLoad = true;
+
+    
+    if (!this.#clickRules?.length) {
+      return;
+    }
+
+    lazy.logConsole.debug("Observed 'load' event", {
+      href: this.document?.location.href,
+      hasActiveObserver: !!this.#observerCleanUp,
+      observerCleanupTimer: this.#observerCleanUpTimer,
+    });
+
+    this.#startObserverCleanupTimer();
+  }
+
+  
+
+
+  #startObserverCleanupTimer() {
+    
+    
+    
+    if (!this.#observerCleanUp || this.#observerCleanUpTimer) {
+      return;
+    }
+    lazy.logConsole.debug("Starting MutationObserver cleanup timeout");
+    this.#observerCleanUpTimer = lazy.setTimeout(() => {
+      lazy.logConsole.debug(
+        `MutationObserver timeout after ${lazy.observeTimeout}ms.`
+      );
+      this.#observerCleanUp();
+    }, lazy.observeTimeout);
   }
 
   didDestroy() {
@@ -142,17 +201,16 @@ class CookieBannerChild extends JSWindowActorChild {
 
 
 
-
-  #promiseObserve(checkFn, timeout) {
+  #promiseObserve(checkFn) {
     if (this.#observerCleanUp) {
       throw new Error(
         "The promiseObserve is called before previous one resolves."
       );
     }
+    lazy.logConsole.debug("#promiseObserve", { didLoad: this.#didLoad });
 
     return new Promise(resolve => {
       let win = this.contentWindow;
-      let timer;
 
       let observer = new win.MutationObserver(mutationList => {
         lazy.logConsole.debug(
@@ -162,14 +220,9 @@ class CookieBannerChild extends JSWindowActorChild {
 
         let result = checkFn?.();
         if (result) {
-          cleanup(result, observer, timer);
+          cleanup(result, observer);
         }
       });
-
-      timer = lazy.setTimeout(() => {
-        lazy.logConsole.debug("#promiseObserve: timeout");
-        cleanup(null, observer);
-      }, timeout);
 
       observer.observe(win.document.body, {
         attributes: true,
@@ -177,20 +230,20 @@ class CookieBannerChild extends JSWindowActorChild {
         childList: true,
       });
 
-      let cleanup = (result, observer, timer) => {
+      let cleanup = (result, observer) => {
         lazy.logConsole.debug(
           "#promiseObserve cleanup",
           result,
           observer,
-          timer
+          this.#observerCleanUpTimer
         );
         if (observer) {
           observer.disconnect();
           observer = null;
         }
 
-        if (timer) {
-          lazy.clearTimeout(timer);
+        if (this.#observerCleanUpTimer) {
+          lazy.clearTimeout(this.#observerCleanUpTimer);
         }
 
         this.#observerCleanUp = null;
@@ -200,8 +253,15 @@ class CookieBannerChild extends JSWindowActorChild {
       
       
       this.#observerCleanUp = () => {
-        cleanup(null, observer, timer);
+        cleanup(null, observer);
       };
+
+      
+      
+      
+      if (this.#didLoad) {
+        this.#startObserverCleanupTimer();
+      }
     });
   }
 
