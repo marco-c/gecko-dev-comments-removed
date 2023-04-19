@@ -2420,6 +2420,13 @@ nsWindow::WaylandPopupGetPositionFromLayout() {
     hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE);
   }
 
+  
+  
+  
+  if (mPopupType == ePopupTypeTooltip) {
+    hints = GdkAnchorHints(GDK_ANCHOR_FLIP_Y | GDK_ANCHOR_SLIDE);
+  }
+
   return {
       anchorRect,
       rectAnchor,
