@@ -2554,7 +2554,7 @@ AttachDecision GetPropIRGenerator::tryAttachSparseElement(
   }
 
   
-  if (!nobj->is<ArrayObject>()) {
+  if (!nobj->is<ArrayObject>() && !nobj->is<PlainObject>()) {
     return AttachDecision::NoAction;
   }
 
@@ -2572,7 +2572,12 @@ AttachDecision GetPropIRGenerator::tryAttachSparseElement(
   }
 
   
-  writer.guardClass(objId, GuardClassKind::Array);
+  if (nobj->is<ArrayObject>()) {
+    writer.guardClass(objId, GuardClassKind::Array);
+  } else {
+    MOZ_ASSERT(nobj->is<PlainObject>());
+    writer.guardClass(objId, GuardClassKind::PlainObject);
+  }
 
   
   writer.guardIndexGreaterThanDenseInitLength(objId, indexId);
@@ -4259,26 +4264,33 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   }
 
   
-  if (!nobj->is<ArrayObject>()) {
-    return AttachDecision::NoAction;
-  }
-  ArrayObject* aobj = &nobj->as<ArrayObject>();
-
-  
-  bool isAdd = (index >= aobj->length());
-  if (isAdd && !aobj->lengthIsWritable()) {
+  if (!nobj->is<ArrayObject>() && !nobj->is<PlainObject>()) {
     return AttachDecision::NoAction;
   }
 
   
+  if (nobj->is<ArrayObject>()) {
+    ArrayObject* aobj = &nobj->as<ArrayObject>();
+    bool isAdd = (index >= aobj->length());
+    if (isAdd && !aobj->lengthIsWritable()) {
+      return AttachDecision::NoAction;
+    }
+  }
+
   
-  if (!CanAttachAddElement(aobj,  false,
+  
+  if (!CanAttachAddElement(nobj,  false,
                            AllowIndexedReceiver::Yes)) {
     return AttachDecision::NoAction;
   }
 
   
-  writer.guardClass(objId, GuardClassKind::Array);
+  if (nobj->is<ArrayObject>()) {
+    writer.guardClass(objId, GuardClassKind::Array);
+  } else {
+    MOZ_ASSERT(nobj->is<PlainObject>());
+    writer.guardClass(objId, GuardClassKind::PlainObject);
+  }
 
   
   writer.guardIndexGreaterThanDenseInitLength(objId, indexId);
@@ -4293,19 +4305,21 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   
   
   
-  GuardReceiverProto(writer, aobj, objId);
+  GuardReceiverProto(writer, nobj, objId);
 
   
   
   
   
   if (IsPropertySetOp(op)) {
-    ShapeGuardProtoChain(writer, aobj, objId);
+    ShapeGuardProtoChain(writer, nobj, objId);
   }
 
   
   
-  writer.guardIndexIsValidUpdateOrAdd(objId, indexId);
+  if (nobj->is<ArrayObject>()) {
+    writer.guardIndexIsValidUpdateOrAdd(objId, indexId);
+  }
 
   writer.callAddOrUpdateSparseElementHelper(
       objId, indexId, rhsId,
