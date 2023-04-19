@@ -127,6 +127,20 @@ function update(state = initialPauseState(), action) {
 
     case "FETCHED_FRAMES": {
       const { frames } = action;
+
+      
+      
+      
+      
+      
+      
+      
+      if (threadState().frames) {
+        const previousFirstFrame = threadState().frames[0];
+        if (previousFirstFrame.id == frames[0]?.id) {
+          frames.splice(0, 1, previousFirstFrame);
+        }
+      }
       return updateThreadState({ frames, framesLoading: false });
     }
 
