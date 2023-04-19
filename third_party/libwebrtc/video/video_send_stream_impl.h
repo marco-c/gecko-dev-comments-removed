@@ -121,6 +121,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   void OnBitrateAllocationUpdated(
       const VideoBitrateAllocation& allocation) override;
+  void OnVideoLayersAllocationUpdated(
+      VideoLayersAllocation allocation) override;
 
   
   
