@@ -434,7 +434,18 @@ class APZCTesterBase : public ::testing::Test {
  public:
   APZCTesterBase() { mcc = new NiceMock<MockContentControllerDelayed>(); }
 
-  virtual void SetUp() { gfxPlatform::GetPlatform(); }
+  void SetUp() override {
+    gfxPlatform::GetPlatform();
+    
+    
+    
+    
+    mTouchStartTolerance = StaticPrefs::apz_touch_start_tolerance();
+  }
+
+  void TearDown() override {
+    Preferences::SetFloat("apz.touch_start_tolerance", mTouchStartTolerance);
+  }
 
   enum class PanOptions {
     None = 0,
@@ -552,6 +563,9 @@ class APZCTesterBase : public ::testing::Test {
 
  protected:
   RefPtr<MockContentControllerDelayed> mcc;
+
+ private:
+  float mTouchStartTolerance;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(APZCTesterBase::PanOptions)
@@ -606,7 +620,9 @@ void APZCTesterBase::Pan(const RefPtr<InputReceiver>& aTarget,
   
   
   
-  Preferences::SetFloat("apz.touch_start_tolerance", 1.0f / 1000.0f);
+  const float touchStartTolerance = 0.1f;
+  const float panThreshold = touchStartTolerance * aTarget->GetDPI();
+  Preferences::SetFloat("apz.touch_start_tolerance", touchStartTolerance);
   Preferences::SetFloat("apz.touch_move_tolerance", 0.0f);
   int overcomeTouchToleranceX = 0;
   int overcomeTouchToleranceY = 0;
@@ -614,11 +630,17 @@ void APZCTesterBase::Pan(const RefPtr<InputReceiver>& aTarget,
     
     
     
-    if (aTouchStart.x != aTouchEnd.x) {
-      overcomeTouchToleranceX = 1;
-    }
-    if (aTouchStart.y != aTouchEnd.y) {
-      overcomeTouchToleranceY = 1;
+    if (aTouchStart.x != aTouchEnd.x && aTouchStart.y != aTouchEnd.y) {
+      
+      
+      
+      
+      overcomeTouchToleranceX = panThreshold / 10 * 6;
+      overcomeTouchToleranceY = panThreshold / 10 * 8;
+    } else if (aTouchStart.x != aTouchEnd.x) {
+      overcomeTouchToleranceX = panThreshold;
+    } else if (aTouchStart.y != aTouchEnd.y) {
+      overcomeTouchToleranceY = panThreshold;
     }
   }
 

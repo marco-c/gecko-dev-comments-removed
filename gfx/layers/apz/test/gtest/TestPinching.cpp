@@ -10,11 +10,30 @@
 #include "mozilla/StaticPrefs_apz.h"
 
 class APZCPinchTester : public APZCBasicTester {
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const int mDPI = 100;
+
  public:
   explicit APZCPinchTester(
       AsyncPanZoomController::GestureBehavior aGestureBehavior =
           AsyncPanZoomController::DEFAULT_GESTURES)
       : APZCBasicTester(aGestureBehavior) {}
+
+  void SetUp() override {
+    APZCBasicTester::SetUp();
+    tm->SetDPI(mDPI);
+  }
 
  protected:
   FrameMetrics GetPinchableFrameMetrics() {
@@ -138,8 +157,6 @@ class APZCPinchGestureDetectorTester : public APZCPinchTester {
 
 class APZCPinchLockingTester : public APZCPinchTester {
  private:
-  static const int mDPI = 160;
-
   ScreenIntPoint mFocus;
   float mSpan;
   int mPinchLockBufferMaxAge;
@@ -155,7 +172,6 @@ class APZCPinchLockingTester : public APZCPinchTester {
         StaticPrefs::apz_pinch_lock_buffer_max_age_AtStartup();
 
     APZCPinchTester::SetUp();
-    tm->SetDPI(mDPI);
     apzc->SetFrameMetrics(GetPinchableFrameMetrics());
     MakeApzcZoomable();
 

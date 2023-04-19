@@ -1766,6 +1766,16 @@ class AsyncPanZoomController {
   TimeStamp mTouchStartTime;
   
   
+  struct TouchSample {
+    ExternalPoint mPosition;
+    TimeStamp mTimeStamp;
+  };
+  
+  
+  
+  TouchSample mLastTouch;
+  
+  
   
   
   TimeDuration mTouchStartRestingTimeBeforePan;
@@ -1844,6 +1854,23 @@ class AsyncPanZoomController {
   Maybe<CSSSnapTarget> FindSnapPointNear(const CSSPoint& aDestination,
                                          ScrollUnit aUnit,
                                          ScrollSnapFlags aSnapFlags);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<std::pair<MultiTouchInput, MultiTouchInput>> MaybeSplitTouchMoveEvent(
+      const MultiTouchInput& aOriginalEvent, ScreenCoord aPanThreshold,
+      float aVectorLength, ExternalPoint& aExtPoint);
 
   friend std::ostream& operator<<(
       std::ostream& aOut, const AsyncPanZoomController::PanZoomState& aState);

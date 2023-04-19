@@ -641,7 +641,7 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Fling) {
 
   
   
-  Pan(childApzc, 60, 12);
+  Pan(childApzc, 60, 2);
 
   
   childApzc->AdvanceAnimationsUntilEnd();
@@ -657,7 +657,7 @@ TEST_F(APZScrollHandoffTester, ImmediateHandoffDisallowed_Fling) {
 
   
   
-  Pan(childApzc, 60, 50);
+  Pan(childApzc, 60, 40);
 
   
   childApzc->AdvanceAnimationsUntilEnd();
