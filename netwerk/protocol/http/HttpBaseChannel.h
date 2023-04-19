@@ -559,6 +559,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
       nsIURI*, nsIChannel*, bool preserveMethod, uint32_t redirectFlags);
 
   
+  virtual bool ShouldTaintReplacementChannelOrigin(nsIURI* aNewURI);
+
+  
   inline void CallOnModifyRequestObservers() {
     gHttpHandler->OnModifyRequest(this);
     MOZ_ASSERT(!LoadRequestObserversCalled());
@@ -640,9 +643,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   nsCOMPtr<nsIEventTarget> mCurrentThread;
 
  private:
-  
-  bool ShouldTaintReplacementChannelOrigin(nsIURI* aNewURI);
-
   
   void ReleaseMainThreadOnlyReferences();
 
