@@ -19,7 +19,6 @@ var createCredentialDefaultArgs = {
             
             rp: {
                 name: "Acme",
-                icon: "https://www.w3.org/StyleSheets/TR/2016/logos/W3C"
             },
 
             
@@ -27,7 +26,6 @@ var createCredentialDefaultArgs = {
                 id: new Uint8Array(16), 
                 name: "john.p.smith@example.com",
                 displayName: "John P. Smith",
-                icon: "https://pics.acme.com/00/p/aBjjjpqPb.png"
             },
 
             pubKeyCredParams: [{
