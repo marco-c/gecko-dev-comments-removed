@@ -1088,7 +1088,8 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
   
   nsString xmlRoles;
   if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::role,
-                                     xmlRoles)) {
+                                     xmlRoles) &&
+      !xmlRoles.IsEmpty()) {
     attributes->SetAttribute(nsGkAtoms::xmlroles, std::move(xmlRoles));
   } else if (nsAtom* landmark = LandmarkRole()) {
     
@@ -3589,15 +3590,30 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     if (mContent && mContent->IsElement()) {
       fields->SetAttribute(nsGkAtoms::tag, mContent->NodeInfo()->NameAtom());
 
+      dom::Element* el = mContent->AsElement();
       if (IsTextField() || IsDateTimeField()) {
         
         
-        if (const nsAttrValue* attr =
-                mContent->AsElement()->GetParsedAttr(nsGkAtoms::type)) {
+        if (const nsAttrValue* attr = el->GetParsedAttr(nsGkAtoms::type)) {
           RefPtr<nsAtom> inputType = attr->GetAsAtom();
           if (inputType) {
             fields->SetAttribute(nsGkAtoms::textInputType, inputType);
           }
+        }
+      }
+
+      
+      
+      if (const nsRoleMapEntry* roleMap = ARIARoleMap()) {
+        
+        
+        if (!el->AttrValueIs(kNameSpaceID_None, nsGkAtoms::role,
+                             roleMap->roleAtom, eIgnoreCase)) {
+          
+          
+          nsAutoString role;
+          el->GetAttr(kNameSpaceID_None, nsGkAtoms::role, role);
+          fields->SetAttribute(nsGkAtoms::role, std::move(role));
         }
       }
     }
