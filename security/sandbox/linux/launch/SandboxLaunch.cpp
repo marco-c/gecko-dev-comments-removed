@@ -463,7 +463,7 @@ static void RestoreSignals(const sigset_t* aOldSigs) {
   
   int rv = pthread_sigmask(SIG_SETMASK, aOldSigs, nullptr);
   if (rv != 0) {
-    SANDBOX_LOG_ERROR("pthread_sigmask (restore): %s", strerror(-rv));
+    SANDBOX_LOG_ERROR("pthread_sigmask (restore): %s", strerror(rv));
     MOZ_CRASH("pthread_sigmask");
   }
 }
