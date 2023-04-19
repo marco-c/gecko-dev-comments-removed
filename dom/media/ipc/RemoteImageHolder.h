@@ -28,7 +28,6 @@ class RemoteImageHolder final {
   RemoteImageHolder(layers::IGPUVideoSurfaceManager* aManager,
                     layers::VideoBridgeSource aSource,
                     const gfx::IntSize& aSize,
-                    const gfx::ColorDepth& aColorDepth,
                     const layers::SurfaceDescriptor& aSD);
   RemoteImageHolder(RemoteImageHolder&& aOther);
   
@@ -48,7 +47,6 @@ class RemoteImageHolder final {
   
   layers::VideoBridgeSource mSource = layers::VideoBridgeSource::GpuProcess;
   gfx::IntSize mSize;
-  gfx::ColorDepth mColorDepth;
   Maybe<layers::SurfaceDescriptor> mSD;
   RefPtr<layers::IGPUVideoSurfaceManager> mManager;
 };
