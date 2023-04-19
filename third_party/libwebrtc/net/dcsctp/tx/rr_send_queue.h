@@ -7,8 +7,8 @@
 
 
 
-#ifndef NET_DCSCTP_TX_FCFS_SEND_QUEUE_H_
-#define NET_DCSCTP_TX_FCFS_SEND_QUEUE_H_
+#ifndef NET_DCSCTP_TX_RR_SEND_QUEUE_H_
+#define NET_DCSCTP_TX_RR_SEND_QUEUE_H_
 
 #include <cstdint>
 #include <deque>
@@ -40,13 +40,12 @@ namespace dcsctp {
 
 
 
-
-class FCFSSendQueue : public SendQueue {
+class RRSendQueue : public SendQueue {
  public:
   
   static constexpr size_t kMinimumFragmentedPayload = 10;
 
-  FCFSSendQueue(absl::string_view log_prefix, size_t buffer_size)
+  RRSendQueue(absl::string_view log_prefix, size_t buffer_size)
       : log_prefix_(std::string(log_prefix) + "fcfs: "),
         buffer_size_(buffer_size) {}
 

@@ -49,10 +49,10 @@
 #include "net/dcsctp/socket/state_cookie.h"
 #include "net/dcsctp/socket/transmission_control_block.h"
 #include "net/dcsctp/timer/timer.h"
-#include "net/dcsctp/tx/fcfs_send_queue.h"
 #include "net/dcsctp/tx/retransmission_error_counter.h"
 #include "net/dcsctp/tx/retransmission_queue.h"
 #include "net/dcsctp/tx/retransmission_timeout.h"
+#include "net/dcsctp/tx/rr_send_queue.h"
 
 namespace dcsctp {
 
@@ -257,7 +257,7 @@ class DcSctpSocket : public DcSctpSocketInterface {
 
   
   
-  FCFSSendQueue send_queue_;
+  RRSendQueue send_queue_;
 
   
   
