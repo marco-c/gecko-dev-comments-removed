@@ -1512,8 +1512,11 @@ std::unique_ptr<SessionDescription> MediaSessionDescriptionFactory::CreateOffer(
   AudioCodecs offer_audio_codecs;
   VideoCodecs offer_video_codecs;
   RtpDataCodecs offer_rtp_data_codecs;
-  GetCodecsForOffer(current_active_contents, &offer_audio_codecs,
-                    &offer_video_codecs, &offer_rtp_data_codecs);
+  GetCodecsForOffer(
+      current_active_contents, &offer_audio_codecs, &offer_video_codecs,
+      session_options.data_channel_type == DataChannelType::DCT_SCTP
+          ? nullptr
+          : &offer_rtp_data_codecs);
   if (!session_options.vad_enabled) {
     
     StripCNCodecs(&offer_audio_codecs);
@@ -1930,7 +1933,10 @@ void MediaSessionDescriptionFactory::GetCodecsForOffer(
   
   MergeCodecs<AudioCodec>(all_audio_codecs_, audio_codecs, &used_pltypes);
   MergeCodecs<VideoCodec>(all_video_codecs_, video_codecs, &used_pltypes);
-  MergeCodecs<DataCodec>(rtp_data_codecs_, rtp_data_codecs, &used_pltypes);
+  
+  
+  if (rtp_data_codecs)
+    MergeCodecs<DataCodec>(rtp_data_codecs_, rtp_data_codecs, &used_pltypes);
 }
 
 
