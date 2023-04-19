@@ -3,7 +3,9 @@
 
 "use strict";
 
-const { Preferences } = require("resource://gre/modules/Preferences.jsm");
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
 const {
   assert,
   reportException,

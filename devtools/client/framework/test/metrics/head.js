@@ -143,7 +143,9 @@ function getDuplicatedModules(loaders) {
 
 
 function runDuplicatedModulesTest(loaders, allowedDupes) {
-  const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
+  const { AppConstants } = ChromeUtils.import(
+    "resource://gre/modules/AppConstants.jsm"
+  );
   if (AppConstants.DEBUG_JS_MODULES) {
     
     

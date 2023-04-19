@@ -15,7 +15,9 @@
 
 
 
-const jsmScope = require("resource://devtools/shared/loader/Loader.jsm");
+const jsmScope = ChromeUtils.import(
+  "resource://devtools/shared/loader/Loader.jsm"
+);
 
 const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 
@@ -233,16 +235,16 @@ function lazyGlobal(name, getter) {
 
 
 lazyGlobal("clearTimeout", () => {
-  return require("resource://gre/modules/Timer.jsm").clearTimeout;
+  return ChromeUtils.import("resource://gre/modules/Timer.jsm").clearTimeout;
 });
 lazyGlobal("setTimeout", () => {
-  return require("resource://gre/modules/Timer.jsm").setTimeout;
+  return ChromeUtils.import("resource://gre/modules/Timer.jsm").setTimeout;
 });
 lazyGlobal("clearInterval", () => {
-  return require("resource://gre/modules/Timer.jsm").clearInterval;
+  return ChromeUtils.import("resource://gre/modules/Timer.jsm").clearInterval;
 });
 lazyGlobal("setInterval", () => {
-  return require("resource://gre/modules/Timer.jsm").setInterval;
+  return ChromeUtils.import("resource://gre/modules/Timer.jsm").setInterval;
 });
 lazyGlobal("WebSocket", () => {
   return Services.appShell.hiddenDOMWindow.WebSocket;

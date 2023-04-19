@@ -24,7 +24,7 @@ const { worker } = ChromeUtils.import(
   "resource://devtools/shared/loader/worker-loader.js"
 );
 
-const { NetUtil } = require("resource://gre/modules/NetUtil.jsm");
+const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 
