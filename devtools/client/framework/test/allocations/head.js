@@ -10,14 +10,18 @@
 
 
 
-let tracker;
+let tracker, releaseTrackerLoader;
 {
-  const { DevToolsLoader } = ChromeUtils.importESModule(
+  const {
+    useDistinctSystemPrincipalLoader,
+    releaseDistinctSystemPrincipalLoader,
+  } = ChromeUtils.importESModule(
     "resource://devtools/shared/loader/Loader.sys.mjs"
   );
-  const loader = new DevToolsLoader({
-    invisibleToDebugger: true,
-  });
+
+  const requester = {};
+  const loader = useDistinctSystemPrincipalLoader(requester);
+  releaseTrackerLoader = () => releaseDistinctSystemPrincipalLoader(requester);
   const { allocationTracker } = loader.require(
     "chrome://mochitests/content/browser/devtools/shared/test-helpers/allocation-tracker.js"
   );
@@ -86,12 +90,16 @@ async function startRecordingAllocations({
       gBrowser.selectedBrowser,
       [DEBUG_ALLOCATIONS],
       async debug_allocations => {
-        const { DevToolsLoader } = ChromeUtils.importESModule(
+        const {
+          DevToolsLoader,
+          useDistinctSystemPrincipalLoader,
+          releaseDistinctSystemPrincipalLoader,
+        } = ChromeUtils.importESModule(
           "resource://devtools/shared/loader/Loader.sys.mjs"
         );
-        const loader = new DevToolsLoader({
-          invisibleToDebugger: true,
-        });
+
+        const requester = {};
+        const loader = useDistinctSystemPrincipalLoader(requester);
         const { allocationTracker } = loader.require(
           "chrome://mochitests/content/browser/devtools/shared/test-helpers/allocation-tracker.js"
         );
@@ -102,6 +110,8 @@ async function startRecordingAllocations({
         
         
         DevToolsLoader.tracker = tracker;
+        DevToolsLoader.releaseTrackerLoader = () =>
+          releaseDistinctSystemPrincipalLoader(requester);
 
         await tracker.startRecordingAllocations(debug_allocations);
       }
@@ -232,7 +242,19 @@ async function stopRecordingAllocations(
         },
       ],
     });
+
+    
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+      const { DevToolsLoader } = ChromeUtils.importESModule(
+        "resource://devtools/shared/loader/Loader.sys.mjs"
+      );
+      DevToolsLoader.releaseTrackerLoader();
+    });
   }
+
+  
+  releaseTrackerLoader();
+
   
   
   info("PERFHERDER_DATA: " + JSON.stringify(PERFHERDER_DATA));
