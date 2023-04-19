@@ -1863,10 +1863,17 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         
         static constexpr unsigned long kDmaBufType =
             static_cast<unsigned long>('b') << _IOC_TYPESHIFT;
+        
+        
+        
+        static constexpr unsigned long kFbDevType =
+            static_cast<unsigned long>('F') << _IOC_TYPESHIFT;
 
         
         return If(shifted_type == kDrmType, Allow())
             .ElseIf(shifted_type == kDmaBufType, Allow())
+            
+            .ElseIf(shifted_type == kFbDevType, Error(ENOTTY))
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
 
@@ -1897,6 +1904,14 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         
       case __NR_uname:
         return Allow();
+
+        
+        
+#ifdef __NR_mknod
+      case __NR_mknod:
+#endif
+      case __NR_mknodat:
+        return Error(EPERM);
 
         
       default:
