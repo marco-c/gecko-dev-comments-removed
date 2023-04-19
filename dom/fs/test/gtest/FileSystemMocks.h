@@ -37,6 +37,15 @@
 
 #include <memory>  
 
+namespace testing::internal {
+
+GTEST_API_ ::testing::AssertionResult CmpHelperSTREQ(const char* s1_expression,
+                                                     const char* s2_expression,
+                                                     const nsAString& s1,
+                                                     const nsAString& s2);
+
+}  
+
 namespace mozilla::dom::fs {
 
 inline std::ostream& operator<<(std::ostream& aOut,
@@ -47,6 +56,8 @@ inline std::ostream& operator<<(std::ostream& aOut,
 namespace test {
 
 nsIGlobalObject* GetGlobal();
+
+nsresult GetAsString(const RefPtr<Promise>& aPromise, nsAString& aString);
 
 mozilla::ipc::PrincipalInfo GetPrincipalInfo();
 
