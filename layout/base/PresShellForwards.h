@@ -36,12 +36,6 @@ enum class ResizeReflowOptions : uint32_t {
   
   
   BSizeLimit = 1 << 0,
-  
-  
-  
-  
-  
-  SuppressReflow = 1 << 1,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ResizeReflowOptions)
