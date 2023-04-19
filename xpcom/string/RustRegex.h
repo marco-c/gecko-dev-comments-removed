@@ -226,6 +226,12 @@ class RustRegexIter {
 
 
 
+
+
+
+
+
+
 class RustRegexOptions {
  public:
   RustRegexOptions() = default;
@@ -236,13 +242,79 @@ class RustRegexOptions {
 
 
 
+  RustRegexOptions& CaseInsensitive(bool aYes) {
+    return SetFlag(aYes, RURE_FLAG_CASEI);
+  }
+
+  
 
 
-  void SizeLimit(size_t aLimit) {
-    if (!mPtr) {
-      mPtr.reset(rure_options_new());
-    }
-    rure_options_size_limit(mPtr.get(), aLimit);
+
+
+
+
+
+  RustRegexOptions& MultiLine(bool aYes) {
+    return SetFlag(aYes, RURE_FLAG_MULTI);
+  }
+
+  
+
+
+
+
+
+
+
+
+  RustRegexOptions& DotMatchesNewLine(bool aYes) {
+    return SetFlag(aYes, RURE_FLAG_DOTNL);
+  }
+
+  
+
+
+
+
+
+
+
+  RustRegexOptions& SwapGreed(bool aYes) {
+    return SetFlag(aYes, RURE_FLAG_SWAP_GREED);
+  }
+
+  
+
+
+
+
+
+
+  RustRegexOptions& IgnoreWhitespace(bool aYes) {
+    return SetFlag(aYes, RURE_FLAG_SPACE);
+  }
+
+  
+
+
+
+
+
+  RustRegexOptions& Unicode(bool aYes) {
+    return SetFlag(aYes, RURE_FLAG_UNICODE);
+  }
+
+  
+
+
+
+
+
+
+
+  RustRegexOptions& SizeLimit(size_t aLimit) {
+    mSizeLimit = Some(aLimit);
+    return *this;
   }
 
   
@@ -257,21 +329,47 @@ class RustRegexOptions {
 
 
 
-  void DFASizeLimit(size_t aLimit) {
-    if (!mPtr) {
-      mPtr.reset(rure_options_new());
-    }
-    rure_options_dfa_size_limit(mPtr.get(), aLimit);
+  RustRegexOptions& DFASizeLimit(size_t aLimit) {
+    mDFASizeLimit = Some(aLimit);
+    return *this;
   }
 
  private:
   friend class RustRegex;
   friend class RustRegexSet;
 
-  struct Deleter {
+  struct OptionsDeleter {
     void operator()(rure_options* ptr) const { rure_options_free(ptr); }
   };
-  UniquePtr<rure_options, Deleter> mPtr;
+
+  UniquePtr<rure_options, OptionsDeleter> GetOptions() const {
+    UniquePtr<rure_options, OptionsDeleter> options;
+    if (mSizeLimit || mDFASizeLimit) {
+      options.reset(rure_options_new());
+      if (mSizeLimit) {
+        rure_options_size_limit(options.get(), *mSizeLimit);
+      }
+      if (mDFASizeLimit) {
+        rure_options_dfa_size_limit(options.get(), *mDFASizeLimit);
+      }
+    }
+    return options;
+  }
+
+  uint32_t GetFlags() const { return mFlags; }
+
+  RustRegexOptions& SetFlag(bool aYes, uint32_t aFlag) {
+    if (aYes) {
+      mFlags |= aFlag;
+    } else {
+      mFlags &= ~aFlag;
+    }
+    return *this;
+  }
+
+  uint32_t mFlags = RURE_DEFAULT_FLAGS;
+  Maybe<size_t> mSizeLimit;
+  Maybe<size_t> mDFASizeLimit;
 };
 
 
@@ -304,39 +402,11 @@ class RustRegex final {
 
 
 
-  enum Flags {
-    
-    ALL_DISABLED = 0,
-    
-    FLAG_CASEI = RURE_FLAG_CASEI,
-    
-    FLAG_MULTI = RURE_FLAG_MULTI,
-    
-    FLAG_DOTNL = RURE_FLAG_DOTNL,
-    
-    FLAG_SWAP_GREED = RURE_FLAG_SWAP_GREED,
-    
-    FLAG_SPACE = RURE_FLAG_SPACE,
-    
-    FLAG_UNICODE = RURE_FLAG_UNICODE,
-    
-    DEFAULT_FLAGS = RURE_DEFAULT_FLAGS,
-  };
-
-  
-
-
-
-
-
-
-
 
 
 
 
   explicit RustRegex(const std::string_view& aPattern,
-                     Flags aFlags = DEFAULT_FLAGS,
                      const RustRegexOptions& aOptions = {}) {
 #ifdef DEBUG
     rure_error* error = rure_error_new();
@@ -344,8 +414,8 @@ class RustRegex final {
     rure_error* error = nullptr;
 #endif
     mPtr.reset(rure_compile(reinterpret_cast<const uint8_t*>(aPattern.data()),
-                            aPattern.size(), aFlags, aOptions.mPtr.get(),
-                            error));
+                            aPattern.size(), aOptions.GetFlags(),
+                            aOptions.GetOptions().get(), error));
 #ifdef DEBUG
     if (!mPtr) {
       NS_WARNING(nsPrintfCString("RustRegex compile failed: %s",
@@ -536,12 +606,7 @@ class RustRegex final {
 
 class RustRegexSet final {
  public:
-  using Flags = RustRegex::Flags;
-
   
-
-
-
 
 
 
@@ -553,7 +618,6 @@ class RustRegexSet final {
 
   template <typename Patterns>
   explicit RustRegexSet(Patterns&& aPatterns,
-                        Flags aFlags = RustRegex::DEFAULT_FLAGS,
                         const RustRegexOptions& aOptions = {}) {
 #ifdef DEBUG
     rure_error* error = rure_error_new();
@@ -569,8 +633,8 @@ class RustRegexSet final {
       patternSizes.AppendElement(pattern.size());
     }
     mPtr.reset(rure_compile_set(patternPtrs.Elements(), patternSizes.Elements(),
-                                patternPtrs.Length(), aFlags,
-                                aOptions.mPtr.get(), error));
+                                patternPtrs.Length(), aOptions.GetFlags(),
+                                aOptions.GetOptions().get(), error));
 #ifdef DEBUG
     if (!mPtr) {
       NS_WARNING(nsPrintfCString("RustRegexSet compile failed: %s",
