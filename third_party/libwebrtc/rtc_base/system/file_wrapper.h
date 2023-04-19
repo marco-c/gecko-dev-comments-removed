@@ -38,7 +38,6 @@ class FileWrapper final {
   static FileWrapper OpenReadOnly(const std::string& file_name_utf8);
   static FileWrapper OpenWriteOnly(const char* file_name_utf8,
                                    int* error = nullptr);
-
   static FileWrapper OpenWriteOnly(const std::string& file_name_utf8,
                                    int* error = nullptr);
 
@@ -86,6 +85,11 @@ class FileWrapper final {
   bool SeekRelative(int64_t offset);
   
   bool SeekTo(int64_t position);
+
+  
+  
+  
+  long FileSize();
 
   
   size_t Read(void* buf, size_t length);
