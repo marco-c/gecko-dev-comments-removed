@@ -39,13 +39,10 @@ const intl::IDNA::ProcessingType kIDNA2008_DefaultProcessingType =
 
 
 
-
-
-
-
-static const uint32_t kMaxULabelSize = 256;
+static const uint32_t kMaxDNSNodeLen = 63;
 
 static const char kACEPrefix[] = "xn--";
+#define kACEPrefixLen 4
 
 
 
@@ -535,14 +532,14 @@ static nsresult utf16ToUcs4(const nsAString& in, uint32_t* out,
 }
 
 static nsresult punycode(const nsAString& in, nsACString& out) {
-  uint32_t ucs4Buf[kMaxULabelSize + 1];
+  uint32_t ucs4Buf[kMaxDNSNodeLen + 1];
   uint32_t ucs4Len = 0u;
-  nsresult rv = utf16ToUcs4(in, ucs4Buf, kMaxULabelSize, &ucs4Len);
+  nsresult rv = utf16ToUcs4(in, ucs4Buf, kMaxDNSNodeLen, &ucs4Len);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   
-  const uint32_t kEncodedBufSize = kMaxULabelSize * 20 / 8 + 1 + 1;
+  const uint32_t kEncodedBufSize = kMaxDNSNodeLen * 20 / 8 + 1 + 1;
   char encodedBuf[kEncodedBufSize];
   punycode_uint encodedLength = kEncodedBufSize;
 
@@ -591,12 +588,14 @@ nsresult nsIDNService::stringPrepAndACE(const nsAString& in, nsACString& out,
 
   out.Truncate();
 
+  if (in.Length() > kMaxDNSNodeLen) {
+    NS_WARNING("IDN node too large");
+    return NS_ERROR_MALFORMED_URI;
+  }
+
   if (IsAscii(in)) {
     LossyCopyUTF16toASCII(in, out);
-    
-    if (!StringBeginsWith(in, u"xn--"_ns)) {
-      return NS_OK;
-    }
+    return NS_OK;
   }
 
   nsAutoString strPrep;
@@ -615,7 +614,20 @@ nsresult nsIDNService::stringPrepAndACE(const nsAString& in, nsACString& out,
     return NS_OK;
   }
 
-  return punycode(strPrep, out);
+  rv = punycode(strPrep, out);
+  
+  
+  
+  
+  
+  
+  
+  if (out.Length() > kMaxDNSNodeLen) {
+    NS_WARNING("IDN node too large");
+    return NS_ERROR_MALFORMED_URI;
+  }
+
+  return rv;
 }
 
 
