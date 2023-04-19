@@ -9,6 +9,7 @@
 
 #include "UrlClassifierFeatureCryptominingAnnotation.h"
 #include "UrlClassifierFeatureCryptominingProtection.h"
+#include "UrlClassifierFeatureEmailTrackingDataCollection.h"
 #include "UrlClassifierFeatureEmailTrackingProtection.h"
 #include "UrlClassifierFeatureFingerprintingAnnotation.h"
 #include "UrlClassifierFeatureFingerprintingProtection.h"
@@ -35,6 +36,7 @@ void UrlClassifierFeatureFactory::Shutdown() {
 
   UrlClassifierFeatureCryptominingAnnotation::MaybeShutdown();
   UrlClassifierFeatureCryptominingProtection::MaybeShutdown();
+  UrlClassifierFeatureEmailTrackingDataCollection::MaybeShutdown();
   UrlClassifierFeatureEmailTrackingProtection::MaybeShutdown();
   UrlClassifierFeatureFingerprintingAnnotation::MaybeShutdown();
   UrlClassifierFeatureFingerprintingProtection::MaybeShutdown();
@@ -59,6 +61,16 @@ void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
   
   
   
+
+  
+  
+  
+  
+  feature =
+      UrlClassifierFeatureEmailTrackingDataCollection::MaybeCreate(aChannel);
+  if (feature) {
+    aFeatures.AppendElement(feature);
+  }
 
   
   feature = UrlClassifierFeatureEmailTrackingProtection::MaybeCreate(aChannel);
@@ -150,6 +162,13 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
 
   
   feature =
+      UrlClassifierFeatureEmailTrackingDataCollection::GetIfNameMatches(aName);
+  if (feature) {
+    return feature.forget();
+  }
+
+  
+  feature =
       UrlClassifierFeatureEmailTrackingProtection::GetIfNameMatches(aName);
   if (feature) {
     return feature.forget();
@@ -226,6 +245,12 @@ void UrlClassifierFeatureFactory::GetFeatureNames(nsTArray<nsCString>& aArray) {
 
   
   name.Assign(UrlClassifierFeatureCryptominingProtection::Name());
+  if (!name.IsEmpty()) {
+    aArray.AppendElement(name);
+  }
+
+  
+  name.Assign(UrlClassifierFeatureEmailTrackingDataCollection::Name());
   if (!name.IsEmpty()) {
     aArray.AppendElement(name);
   }
