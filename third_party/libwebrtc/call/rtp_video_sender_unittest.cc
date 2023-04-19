@@ -203,6 +203,14 @@ class RtpVideoSenderTestFixture {
   RateLimiter retransmission_rate_limiter_;
   std::unique_ptr<RtpVideoSender> router_;
 };
+
+BitrateAllocationUpdate CreateBitrateAllocationUpdate(int target_bitrate_bps) {
+  BitrateAllocationUpdate update;
+  update.target_bitrate = DataRate::BitsPerSec(target_bitrate_bps);
+  update.round_trip_time = TimeDelta::Zero();
+  return update;
+}
+
 }  
 
 TEST(RtpVideoSenderTest, SendOnOneModule) {
@@ -768,26 +776,10 @@ TEST(RtpVideoSenderTest, SupportsStoppingUsingDependencyDescriptor) {
       sent_packets.back().HasExtension<RtpDependencyDescriptorExtension>());
 }
 
-TEST(RtpVideoSenderTest, CanSetZeroBitrateWithOverhead) {
-  test::ScopedFieldTrials trials("WebRTC-SendSideBwe-WithOverhead/Enabled/");
+TEST(RtpVideoSenderTest, CanSetZeroBitrate) {
   RtpVideoSenderTestFixture test({kSsrc1}, {kRtxSsrc1}, kPayloadType, {});
-  BitrateAllocationUpdate update;
-  update.target_bitrate = DataRate::Zero();
-  update.packet_loss_ratio = 0;
-  update.round_trip_time = TimeDelta::Zero();
-
-  test.router()->OnBitrateUpdated(update,  0);
-}
-
-TEST(RtpVideoSenderTest, CanSetZeroBitrateWithoutOverhead) {
-  RtpVideoSenderTestFixture test({kSsrc1}, {kRtxSsrc1}, kPayloadType, {});
-
-  BitrateAllocationUpdate update;
-  update.target_bitrate = DataRate::Zero();
-  update.packet_loss_ratio = 0;
-  update.round_trip_time = TimeDelta::Zero();
-
-  test.router()->OnBitrateUpdated(update,  0);
+  test.router()->OnBitrateUpdated(CreateBitrateAllocationUpdate(0),
+                                   0);
 }
 
 TEST(RtpVideoSenderTest, SimulcastSenderRegistersFrameTransformers) {
@@ -802,4 +794,41 @@ TEST(RtpVideoSenderTest, SimulcastSenderRegistersFrameTransformers) {
   EXPECT_CALL(*transformer, UnregisterTransformedFrameSinkCallback(kSsrc1));
   EXPECT_CALL(*transformer, UnregisterTransformedFrameSinkCallback(kSsrc2));
 }
+
+TEST(RtpVideoSenderTest, OverheadIsSubtractedFromTargetBitrate) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-Video-UseFrameRateForOverhead/Enabled/");
+
+  
+  constexpr uint32_t kRtpHeaderSizeBytes = 20;
+  constexpr uint32_t kTransportPacketOverheadBytes = 40;
+  constexpr uint32_t kOverheadPerPacketBytes =
+      kRtpHeaderSizeBytes + kTransportPacketOverheadBytes;
+  RtpVideoSenderTestFixture test({kSsrc1}, {kRtxSsrc1}, kPayloadType, {});
+  test.router()->OnTransportOverheadChanged(kTransportPacketOverheadBytes);
+  test.router()->SetActive(true);
+
+  {
+    test.router()->OnBitrateUpdated(CreateBitrateAllocationUpdate(300000),
+                                     15);
+    
+    EXPECT_EQ(test.router()->GetPayloadBitrateBps(),
+              300000 - kOverheadPerPacketBytes * 8 * 30);
+  }
+  {
+    test.router()->OnBitrateUpdated(CreateBitrateAllocationUpdate(150000),
+                                     15);
+    
+    EXPECT_EQ(test.router()->GetPayloadBitrateBps(),
+              150000 - kOverheadPerPacketBytes * 8 * 15);
+  }
+  {
+    test.router()->OnBitrateUpdated(CreateBitrateAllocationUpdate(1000000),
+                                     30);
+    
+    EXPECT_EQ(test.router()->GetPayloadBitrateBps(),
+              1000000 - kOverheadPerPacketBytes * 8 * 30 * 3);
+  }
+}
+
 }  
