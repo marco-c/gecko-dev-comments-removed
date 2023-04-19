@@ -1,12 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["PageInfoChild"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -16,13 +12,13 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
-class PageInfoChild extends JSWindowActorChild {
+export class PageInfoChild extends JSWindowActorChild {
   async receiveMessage(message) {
     let window = this.contentWindow;
     let document = window.document;
 
-    
-    
+    //Handles two different types of messages: one for general info (PageInfo:getData)
+    //and one for media info (PageInfo:getMediaData)
     switch (message.name) {
       case "PageInfo:getData": {
         return Promise.resolve({
@@ -44,7 +40,7 @@ class PageInfoChild extends JSWindowActorChild {
   getMetaInfo(document) {
     let metaViewRows = [];
 
-    
+    // Get the meta tags from the page.
     let metaNodes = document.getElementsByTagName("meta");
 
     for (let metaNode of metaNodes) {
@@ -107,11 +103,11 @@ class PageInfoChild extends JSWindowActorChild {
     return docInfo;
   }
 
-  
-
-
-
-
+  /**
+   * Returns an array that stores all mediaItems found in the document
+   * Calls getMediaItems for all nodes within the constructed tree walker and forms
+   * resulting array.
+   */
   async getDocumentMedia(document) {
     let nodeCount = 0;
     let content = document.ownerGlobal;
@@ -126,7 +122,7 @@ class PageInfoChild extends JSWindowActorChild {
       let mediaItems = this.getMediaItems(document, iterator.currentNode);
 
       if (++nodeCount % 500 == 0) {
-        
+        // setTimeout every 500 elements so we don't keep blocking the content process.
         await new Promise(resolve => lazy.setTimeout(resolve, 10));
       }
       totalMediaItems.push(...mediaItems);
@@ -136,10 +132,10 @@ class PageInfoChild extends JSWindowActorChild {
   }
 
   getMediaItems(document, elem) {
-    
+    // Check for images defined in CSS (e.g. background, borders)
     let computedStyle = elem.ownerGlobal.getComputedStyle(elem);
-    
-    
+    // A node can have multiple media items associated with it - for example,
+    // multiple background images.
     let mediaItems = [];
     let content = document.ownerGlobal;
 
@@ -161,11 +157,11 @@ class PageInfoChild extends JSWindowActorChild {
           addMedia(url, type, "", elem, true, true);
         }
       };
-      
-      
-      
-      
-      
+      // FIXME: This is missing properties. See the implementation of
+      // getCSSImageURLs for a list of properties.
+      //
+      // If you don't care about the message you can also pass "all" here and
+      // get all the ones the browser knows about.
       addImgFunc("bg-img", computedStyle.getCSSImageURLs("background-image"));
       addImgFunc(
         "border-img",
@@ -175,7 +171,7 @@ class PageInfoChild extends JSWindowActorChild {
       addImgFunc("cursor", computedStyle.getCSSImageURLs("cursor"));
     }
 
-    
+    // One swi^H^H^Hif-else to rule them all.
     if (content.HTMLImageElement.isInstance(elem)) {
       addMedia(
         elem.src,
@@ -187,8 +183,8 @@ class PageInfoChild extends JSWindowActorChild {
       );
     } else if (content.SVGImageElement.isInstance(elem)) {
       try {
-        
-        
+        // Note: makeURLAbsolute will throw if either the baseURI is not a valid URI
+        //       or the URI formed from the baseURI and the URL is not a valid URI.
         if (elem.href.baseVal) {
           let href = Services.io.newURI(
             elem.href.baseVal,
@@ -229,10 +225,10 @@ class PageInfoChild extends JSWindowActorChild {
     return mediaItems;
   }
 
-  
-
-
-
+  /**
+   * Set up a JSON element object with all the instanceOf and other infomation that
+   * makePreview in pageInfo.js uses to figure out how to display the preview.
+   */
 
   serializeElementInfo(document, url, item, isBG) {
     let result = {};
@@ -268,7 +264,7 @@ class PageInfoChild extends JSWindowActorChild {
       !isBG &&
       item instanceof Ci.nsIImageLoadingContent
     ) {
-      
+      // Interface for image loading content.
       let imageRequest = item.getRequest(
         Ci.nsIImageLoadingContent.CURRENT_REQUEST
       );
@@ -283,7 +279,7 @@ class PageInfoChild extends JSWindowActorChild {
       }
     }
 
-    
+    // If we have a data url, get the MIME type from the url.
     if (!result.mimeType && url.startsWith("data:")) {
       let dataMimeType = /^data:(image\/[^;,]+)/i.exec(url);
       if (dataMimeType) {
@@ -300,21 +296,21 @@ class PageInfoChild extends JSWindowActorChild {
     result.HTMLAudioElement = content.HTMLAudioElement.isInstance(item);
 
     if (isBG) {
-      
-      
-      
-      
+      // Items that are showing this image as a background
+      // image might not necessarily have a width or height,
+      // so we'll dynamically generate an image and send up the
+      // natural dimensions.
       let img = content.document.createElement("img");
       img.src = url;
       result.naturalWidth = img.naturalWidth;
       result.naturalHeight = img.naturalHeight;
     } else if (!content.SVGImageElement.isInstance(item)) {
-      
-      
-      
+      // SVG items do not have integer values for height or width,
+      // so we must handle them differently in order to correctly
+      // serialize
 
-      
-      
+      // Otherwise, we can use the current width and height
+      // of the image.
       result.width = item.width;
       result.height = item.height;
     }
@@ -329,14 +325,14 @@ class PageInfoChild extends JSWindowActorChild {
     return result;
   }
 
-  
-  
-  
+  // Other Misc Stuff
+  // Modified from the Links Panel v2.3, http://segment7.net/mozilla/links/links.html
+  // parse a node to extract the contents of the node
   getValueText(node) {
     let valueText = "";
     let content = node.ownerGlobal;
 
-    
+    // Form input elements don't generally contain information that is useful to our callers, so return nothing.
     if (
       content.HTMLInputElement.isInstance(node) ||
       content.HTMLSelectElement.isInstance(node) ||
@@ -345,19 +341,19 @@ class PageInfoChild extends JSWindowActorChild {
       return valueText;
     }
 
-    
+    // Otherwise recurse for each child.
     let length = node.childNodes.length;
 
     for (let i = 0; i < length; i++) {
       let childNode = node.childNodes[i];
       let nodeType = childNode.nodeType;
 
-      
+      // Text nodes are where the goods are.
       if (nodeType == content.Node.TEXT_NODE) {
         valueText += " " + childNode.nodeValue;
       } else if (nodeType == content.Node.ELEMENT_NODE) {
-        
-        
+        // And elements can have more text inside them.
+        // Images are special, we want to capture the alt text as if the image weren't there.
         if (content.HTMLImageElement.isInstance(childNode)) {
           valueText += " " + this.getAltText(childNode);
         } else {
@@ -369,8 +365,8 @@ class PageInfoChild extends JSWindowActorChild {
     return this.stripWS(valueText);
   }
 
-  
-  
+  // Copied from the Links Panel v2.3, http://segment7.net/mozilla/links/links.html.
+  // Traverse the tree in search of an img or area element and grab its alt tag.
   getAltText(node) {
     let altText = "";
 
@@ -380,15 +376,15 @@ class PageInfoChild extends JSWindowActorChild {
     let length = node.childNodes.length;
     for (let i = 0; i < length; i++) {
       if ((altText = this.getAltText(node.childNodes[i]) != undefined)) {
-        
+        // stupid js warning...
         return altText;
       }
     }
     return "";
   }
 
-  
-  
+  // Copied from the Links Panel v2.3, http://segment7.net/mozilla/links/links.html.
+  // Strip leading and trailing whitespace, and replace multiple consecutive whitespace characters with a single space.
   stripWS(text) {
     let middleRE = /\s+/g;
     let endRE = /(^\s+)|(\s+$)/g;
