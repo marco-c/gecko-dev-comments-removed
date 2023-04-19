@@ -11,7 +11,6 @@
 #include "nsIUploadChannel.h"
 #include "nsIURI.h"
 #include "nsIUrlClassifierDBService.h"
-#include "nsIUrlClassifierRemoteSettingsService.h"
 #include "nsUrlClassifierUtils.h"
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
@@ -113,97 +112,78 @@ void nsUrlClassifierStreamUpdater::DownloadDone() {
 nsresult nsUrlClassifierStreamUpdater::FetchUpdate(
     nsIURI* aUpdateUrl, const nsACString& aRequestPayload, bool aIsPostRequest,
     const nsACString& aStreamTable) {
-  mBeganStream = false;
+#ifdef DEBUG
+  LOG(("Fetching update %s from %s", aRequestPayload.Data(),
+       aUpdateUrl->GetSpecOrDefault().get()));
+#endif
+
+  
+  
   nsresult rv;
-  
-  
-  
-  if (aUpdateUrl->SchemeIs("moz-sbrs")) {
-#ifdef DEBUG
-    LOG(("Fetching update %s from RemoteSettings", aRequestPayload.Data()));
-#endif
-    nsCOMPtr<nsIUrlClassifierRemoteSettingsService> rsService =
-        do_GetService("@mozilla.org/url-classifier/list-service;1");
-    if (!rsService) {
-      return NS_ERROR_FAILURE;
-    }
+  uint32_t loadFlags = nsIChannel::INHIBIT_CACHING |
+                       nsIChannel::LOAD_BYPASS_CACHE |
+                       nsIChannel::LOAD_BYPASS_URL_CLASSIFIER;
+  rv = NS_NewChannel(getter_AddRefs(mChannel), aUpdateUrl,
+                     nsContentUtils::GetSystemPrincipal(),
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+                     nsIContentPolicy::TYPE_OTHER,
+                     nullptr,  
+                     nullptr,  
+                     nullptr,  
+                     this,     
+                     loadFlags);
 
-    rv = rsService->FetchList(aRequestPayload, this);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-  } else {
-#ifdef DEBUG
-    LOG(("Fetching update %s from %s", aRequestPayload.Data(),
-         aUpdateUrl->GetSpecOrDefault().get()));
-#endif
-    uint32_t loadFlags = nsIChannel::INHIBIT_CACHING |
-                         nsIChannel::LOAD_BYPASS_CACHE |
-                         nsIChannel::LOAD_BYPASS_URL_CLASSIFIER;
+  NS_ENSURE_SUCCESS(rv, rv);
 
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+  mozilla::OriginAttributes attrs;
+  attrs.mFirstPartyDomain.AssignLiteral(NECKO_SAFEBROWSING_FIRST_PARTY_DOMAIN);
+  loadInfo->SetOriginAttributes(attrs);
+  
+  loadInfo->SetAllowDeprecatedSystemRequests(true);
+
+  mBeganStream = false;
+
+  if (!aIsPostRequest) {
     
     
-    rv = NS_NewChannel(getter_AddRefs(mChannel), aUpdateUrl,
-                       nsContentUtils::GetSystemPrincipal(),
-                       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-                       nsIContentPolicy::TYPE_OTHER,
-                       nullptr,  
-                       nullptr,  
-                       nullptr,  
-                       this,     
-                       loadFlags);
-
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
-    mozilla::OriginAttributes attrs;
-    attrs.mFirstPartyDomain.AssignLiteral(
-        NECKO_SAFEBROWSING_FIRST_PARTY_DOMAIN);
-    loadInfo->SetOriginAttributes(attrs);
-    
-    loadInfo->SetAllowDeprecatedSystemRequests(true);
-
-    if (!aIsPostRequest) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      rv = httpChannel->SetRequestHeader("X-HTTP-Method-Override"_ns, "POST"_ns,
-                                         false);
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else if (!aRequestPayload.IsEmpty()) {
-      rv = AddRequestBody(aRequestPayload);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    
-    
-    
-    if (aUpdateUrl->SchemeIs("file") || aUpdateUrl->SchemeIs("data")) {
-      mChannel->SetContentType("application/vnd.google.safebrowsing-update"_ns);
-    } else {
-      
-
-      
-      nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
-      NS_ENSURE_SUCCESS(rv, rv);
-      rv = httpChannel->SetRequestHeader("Connection"_ns, "close"_ns, false);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    
-    rv = mChannel->AsyncOpen(this);
+    rv = httpChannel->SetRequestHeader("X-HTTP-Method-Override"_ns, "POST"_ns,
+                                       false);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else if (!aRequestPayload.IsEmpty()) {
+    rv = AddRequestBody(aRequestPayload);
     NS_ENSURE_SUCCESS(rv, rv);
   }
+
+  
+  
+  
+  if (aUpdateUrl->SchemeIs("file") || aUpdateUrl->SchemeIs("data")) {
+    mChannel->SetContentType("application/vnd.google.safebrowsing-update"_ns);
+  } else {
+    
+
+    
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = httpChannel->SetRequestHeader("Connection"_ns, "close"_ns, false);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  rv = mChannel->AsyncOpen(this);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   mTelemetryClockStart = PR_IntervalNow();
   mStreamTable = aStreamTable;
@@ -716,7 +696,6 @@ nsUrlClassifierStreamUpdater::OnStopRequest(nsIRequest* request,
     LOG(("OnStopRequest::Canceling update [this=%p]", this));
     
     
-    mDownloadError = true;
     rv = mDBService->CancelUpdate();
   } else {
     LOG(("OnStopRequest::Finishing update [this=%p]", this));
