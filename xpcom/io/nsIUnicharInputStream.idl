@@ -28,7 +28,6 @@ interface nsIInputStream;
 
 
 
-
 typedef nsresult (*nsWriteUnicharSegmentFun)(nsIUnicharInputStream *aInStream,
                                              void *aClosure,
                                              const char16_t *aFromSegment,
@@ -86,10 +85,9 @@ interface nsIUnicharInputStream : nsISupports {
 
 
 
-
   unsigned long readString(in unsigned long aCount, out AString aString);
 
-  
+ 
 
 
 
