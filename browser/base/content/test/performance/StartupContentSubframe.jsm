@@ -37,15 +37,6 @@ class StartupContentSubframeChild extends JSWindowActorChild {
     );
     let collectStacks = AppConstants.NIGHTLY_BUILD || AppConstants.DEBUG;
 
-    let components = {};
-    for (let component of Cu.loadedComponents) {
-      
-      
-      components[component.replace(/.*\//, "")] = collectStacks
-        ? Cu.getComponentLoadStack(component)
-        : "";
-    }
-
     let modules = {};
     for (let module of Cu.loadedModules) {
       modules[module] = collectStacks ? Cu.getModuleImportStack(module) : "";
@@ -60,7 +51,6 @@ class StartupContentSubframeChild extends JSWindowActorChild {
       } catch (e) {}
     }
     this.sendAsyncMessage("LoadedScripts", {
-      components,
       modules,
       services,
     });

@@ -30,7 +30,6 @@ const MAC = AppConstants.platform == "macosx";
 const backgroundtaskPhases = {
   AfterRunBackgroundTaskNamed: {
     allowlist: {
-      components: [], 
       modules: [
         "resource://gre/modules/AppConstants.jsm",
         "resource://gre/modules/AsyncShutdown.jsm",
@@ -118,7 +117,6 @@ const backgroundtaskPhases = {
   },
   AfterFindRunBackgroundTask: {
     allowlist: {
-      components: [],
       modules: [
         
         "resource:///modules/backgroundtasks/BackgroundTask_wait.jsm",
@@ -133,7 +131,6 @@ const backgroundtaskPhases = {
   },
   AfterAwaitRunBackgroundTask: {
     allowlist: {
-      components: [],
       modules: [],
       services: [],
     },
@@ -225,7 +222,6 @@ add_task(async function test_xpcom_graph_wait() {
 
   function newMarkers() {
     return {
-      components: [], 
       modules: [], 
       services: [],
     };
@@ -251,7 +247,6 @@ add_task(async function test_xpcom_graph_wait() {
     if (
       ![
         "ChromeUtils.import", 
-        "JS XPCOM", 
         "GetService", 
       ].includes(markerName)
     ) {
@@ -264,27 +259,6 @@ add_task(async function test_xpcom_graph_wait() {
       if (!markersForAllPhases.modules.includes(module)) {
         markersForAllPhases.modules.push(module);
         markersForCurrentPhase.modules.push(module);
-      }
-    }
-
-    if (markerName == "JS XPCOM") {
-      
-      
-      let samples = markerData.stack.samples;
-      let stackId = samples.data[0][samples.schema.stack];
-      let stackLines = getStackFromProfile(profile, stackId, rootProfile.libs);
-
-      let component = stackLines
-        .filter(s => s.startsWith("mozJSComponentLoader::LoadModule"))[0]
-        .split(" ", 2)[1];
-
-      
-      
-      component = component.replace(/.*\//, "");
-
-      if (!markersForAllPhases.components.includes(component)) {
-        markersForAllPhases.components.push(component);
-        markersForCurrentPhase.components.push(component);
       }
     }
 

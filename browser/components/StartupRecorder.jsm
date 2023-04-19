@@ -81,7 +81,6 @@ StartupRecorder.prototype = {
   record(name) {
     ChromeUtils.addProfilerMarker("startupRecorder:" + name);
     this.data.code[name] = {
-      components: Cu.loadedComponents,
       modules: Cu.loadedModules,
       services: Object.keys(Cc).filter(c => {
         try {

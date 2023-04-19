@@ -132,14 +132,6 @@ add_task(async function() {
           "resource://gre/modules/AppConstants.jsm"
         );
         let collectStacks = AppConstants.NIGHTLY_BUILD || AppConstants.DEBUG;
-        let components = {};
-        for (let component of Cu.loadedComponents) {
-          
-
-          components[component.replace(/.*\//, "")] = collectStacks
-            ? Cu.getComponentLoadStack(component)
-            : "";
-        }
         let modules = {};
         for (let module of Cu.loadedModules) {
           modules[module] = collectStacks
@@ -157,7 +149,6 @@ add_task(async function() {
           } catch (e) {}
         }
         sendAsyncMessage("Test:LoadedScripts", {
-          components,
           modules,
           services,
         });
