@@ -172,6 +172,10 @@ class RtpVideoSender : public RtpVideoSenderInterface,
 
   
   
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker transport_checker_;
+
+  
+  
   mutable Mutex mutex_;
   bool active_ RTC_GUARDED_BY(mutex_);
 
