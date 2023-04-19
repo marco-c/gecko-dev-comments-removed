@@ -2144,35 +2144,6 @@ AutoTArray<nsIFrame::ChildList, 4> nsIFrame::CrossDocChildLists() {
   return childLists;
 }
 
-const nsAtom* nsIFrame::ComputePageValue() const {
-  if (!StaticPrefs::layout_css_named_pages_enabled()) {
-    return nsGkAtoms::_empty;
-  }
-  const nsAtom* value = nsGkAtoms::_empty;
-  const nsIFrame* frame = this;
-  do {
-    
-    if (const nsAtom* const startValue = frame->GetStartPageValue()) {
-      value = startValue;
-    }
-    MOZ_ASSERT(value, "Should not have a NULL page value.");
-    
-    const nsIFrame* firstNonPlaceholderFrame = nullptr;
-    
-    if (const nsContainerFrame* containerFrame = do_QueryFrame(frame)) {
-      for (const nsIFrame* childFrame :
-           containerFrame->GetChildList(nsIFrame::kPrincipalList)) {
-        if (!childFrame->IsPlaceholderFrame()) {
-          firstNonPlaceholderFrame = childFrame;
-          break;
-        }
-      }
-    }
-    frame = firstNonPlaceholderFrame;
-  } while (frame);
-  return value;
-}
-
 Visibility nsIFrame::GetVisibility() const {
   if (!HasAnyStateBits(NS_FRAME_VISIBILITY_IS_TRACKED)) {
     return Visibility::Untracked;

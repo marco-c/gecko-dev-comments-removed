@@ -2728,9 +2728,6 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
         ConstructPrintedSheetFrame(mPresShell, mPageSequenceFrame, nullptr);
     SetInitialSingleChild(mPageSequenceFrame, printedSheetFrame);
 
-    MOZ_ASSERT(!mNextPageContentFramePageName,
-               "Next page name should not have been set.");
-
     
     
     nsContainerFrame* canvasFrame;
@@ -2802,19 +2799,12 @@ nsContainerFrame* nsCSSFrameConstructor::ConstructPageFrame(
   
   pageFrame->Init(nullptr, aParentFrame, aPrevPageFrame);
 
-  RefPtr<const nsAtom> pageName;
-  if (mNextPageContentFramePageName) {
-    pageName = mNextPageContentFramePageName.forget();
-  } else if (aPrevPageFrame) {
-    pageName = aPrevPageFrame->ComputePageValue();
-    MOZ_ASSERT(pageName,
-               "Page name from prev-in-flow should not have been null");
-  }
   RefPtr<ComputedStyle> pageContentPseudoStyle =
-      styleSet->ResolvePageContentStyle(pageName);
+      styleSet->ResolveNonInheritingAnonymousBoxStyle(
+          PseudoStyleType::pageContent);
 
-  nsContainerFrame* pageContentFrame = NS_NewPageContentFrame(
-      aPresShell, pageContentPseudoStyle, pageName.forget());
+  nsContainerFrame* pageContentFrame =
+      NS_NewPageContentFrame(aPresShell, pageContentPseudoStyle);
 
   
   
@@ -3773,11 +3763,6 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
       aState.MaybePushFloatContainingBlock(newFrameAsContainer, floatSaveState);
 
       if (bits & FCDATA_USE_CHILD_ITEMS) {
-        
-        
-        
-        AutoFrameConstructionPageName pageNameTracker(aState,
-                                                      newFrameAsContainer);
         ConstructFramesFromItemList(
             aState, aItem.mChildItems, newFrameAsContainer,
             bits & FCDATA_IS_WRAPPER_ANON_BOX, childList);
@@ -6565,21 +6550,6 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
   nsFrameConstructorState state(
       mPresShell, GetAbsoluteContainingBlock(parentFrame, FIXED_POS),
       GetAbsoluteContainingBlock(parentFrame, ABS_POS), containingBlock);
-
-  if (mPresShell->GetPresContext()->IsPaginated() &&
-      StaticPrefs::layout_css_named_pages_enabled()) {
-    
-    
-    
-    
-    
-    
-    
-    state.mAutoPageNameValue = parentFrame->GetAutoPageValue();
-#ifdef DEBUG
-    parentFrame->mWasVisitedByAutoFrameConstructionPageName = true;
-#endif
-  }
 
   LayoutFrameType frameType = parentFrame->Type();
 

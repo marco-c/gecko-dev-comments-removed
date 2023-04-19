@@ -1638,10 +1638,6 @@ class nsIFrame : public nsQueryFrame {
 
   
   
-  const nsAtom* ComputePageValue() const MOZ_NONNULL_RETURN;
-
-  
-  
   
 
   

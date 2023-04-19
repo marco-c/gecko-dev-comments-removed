@@ -50,11 +50,7 @@ nsPageFrame::~nsPageFrame() = default;
 
 nsReflowStatus nsPageFrame::ReflowPageContent(
     nsPresContext* aPresContext, const ReflowInput& aPageReflowInput) {
-  nsPageContentFrame* const frame = PageContentFrame();
-  
-  
-  
-  frame->EnsurePageName();
+  nsIFrame* const frame = PageContentFrame();
   
   
   
