@@ -10452,7 +10452,7 @@ bool js::wasm::BaselineCompileFunctions(const ModuleEnvironment& moduleEnv,
   
 
   TempAllocator alloc(&lifo);
-  JitContext jitContext(alloc);
+  JitContext jitContext;
   MOZ_ASSERT(IsCompilingWasm());
   WasmMacroAssembler masm(alloc, moduleEnv);
 

@@ -477,7 +477,7 @@ enum class AssembleResult {
                  : NativeRegExpMacroAssembler::UC16;
     
     
-    jctx.emplace(cx, temp);
+    jctx.emplace(cx);
     stack_masm.emplace(temp);
 #ifdef DEBUG
     

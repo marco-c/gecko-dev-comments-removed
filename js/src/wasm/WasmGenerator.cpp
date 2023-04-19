@@ -613,7 +613,7 @@ static bool AppendForEach(Vec* dstVec, const Vec& srcVec, MutateOp mutateOp) {
 
 bool ModuleGenerator::linkCompiledCode(CompiledCode& code) {
   AutoCreatedBy acb(masm_, "ModuleGenerator::linkCompiledCode");
-  JitContext jcx(masmAlloc_);
+  JitContext jcx;
 
   
   

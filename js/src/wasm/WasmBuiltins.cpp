@@ -1714,7 +1714,7 @@ bool wasm::EnsureBuiltinThunksInitialized() {
 #ifdef DEBUG
   
   
-  JitContext jitContext(tempAlloc);
+  JitContext jitContext;
   bool oldFlag = jitContext.setIsCompilingWasm(false);
 #endif
 
