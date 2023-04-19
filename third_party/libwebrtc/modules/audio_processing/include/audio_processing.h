@@ -385,17 +385,6 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   };
 
   
-  enum ChannelLayout {
-    kMono,
-    
-    kStereo,
-    
-    kMonoAndKeyboard,
-    
-    kStereoAndKeyboard
-  };
-
-  
   
   class RuntimeSetting {
    public:
