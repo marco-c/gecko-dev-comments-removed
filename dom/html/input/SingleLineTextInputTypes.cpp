@@ -269,6 +269,17 @@ bool EmailInputType::PunycodeEncodeEmailAddress(const nsAString& aEmail,
     if (NS_FAILED(idnSrv->ConvertUTF8toACE(domain, domainACE))) {
       return false;
     }
+
+    
+    
+    
+    nsCCharSeparatedTokenizer tokenizer(domainACE, '.');
+    while (tokenizer.hasMoreTokens()) {
+      if (tokenizer.nextToken().Length() > 63) {
+        return false;
+      }
+    }
+
     value.Replace(indexOfDomain, domain.Length(), domainACE);
   }
 
