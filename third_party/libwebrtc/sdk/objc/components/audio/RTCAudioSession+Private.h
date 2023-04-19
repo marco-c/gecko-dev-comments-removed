@@ -74,6 +74,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSError *)configurationErrorWithDescription:(NSString *)description;
 
 
+- (void)notifyDidDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches;
+
+
+- (void)notifyAudioUnitStartFailedWithError:(OSStatus)error;
+
+
 - (void)notifyDidBeginInterruption;
 - (void)notifyDidEndInterruptionWithShouldResumeSession:(BOOL)shouldResumeSession;
 - (void)notifyDidChangeRouteWithReason:(AVAudioSessionRouteChangeReason)reason
@@ -83,7 +89,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)notifyDidChangeCanPlayOrRecord:(BOOL)canPlayOrRecord;
 - (void)notifyDidStartPlayOrRecord;
 - (void)notifyDidStopPlayOrRecord;
-- (void)notifyDidDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches;
 
 @end
 

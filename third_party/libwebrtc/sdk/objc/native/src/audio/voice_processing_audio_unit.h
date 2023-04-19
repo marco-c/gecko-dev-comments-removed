@@ -78,7 +78,7 @@ class VoiceProcessingAudioUnit {
   bool Initialize(Float64 sample_rate);
 
   
-  bool Start();
+  OSStatus Start();
 
   
   bool Stop();
