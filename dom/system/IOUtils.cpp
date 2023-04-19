@@ -2000,6 +2000,13 @@ void IOUtils::GetProfileBeforeChange(GlobalObject& aGlobal,
 }
 
 
+void IOUtils::GetSendTelemetry(GlobalObject& aGlobal,
+                               JS::MutableHandle<JS::Value> aClient,
+                               ErrorResult& aRv) {
+  return GetShutdownClient(aGlobal, aClient, aRv, ShutdownPhase::SendTelemetry);
+}
+
+
 
 
 
@@ -2139,6 +2146,43 @@ nsresult IOUtils::EventQueue::SetShutdownHooks() {
   }
 
   
+  nsCOMPtr<nsIAsyncShutdownBlocker> sendTelemetryBlocker;
+  {
+    sendTelemetryBlocker =
+        new IOUtilsShutdownBlocker(ShutdownPhase::SendTelemetry);
+
+    nsCOMPtr<nsIAsyncShutdownClient> globalClient;
+    MOZ_TRY(svc->GetSendTelemetry(getter_AddRefs(globalClient)));
+    MOZ_RELEASE_ASSERT(globalClient);
+
+    MOZ_TRY(
+        globalClient->AddBlocker(sendTelemetryBlocker, FILE, __LINE__, STACK));
+  }
+
+  
+  
+  
+  
+  
+  {
+    nsCOMPtr<nsIAsyncShutdownBarrier> barrier;
+
+    MOZ_TRY(svc->MakeBarrier(
+        u"IOUtils: waiting for sendTelemetry IO to complete"_ns,
+        getter_AddRefs(barrier)));
+    MOZ_RELEASE_ASSERT(barrier);
+
+    
+    nsCOMPtr<nsIAsyncShutdownClient> client;
+    MOZ_TRY(barrier->GetClient(getter_AddRefs(client)));
+
+    MOZ_TRY(
+        client->AddBlocker(profileBeforeChangeBlocker, FILE, __LINE__, STACK));
+
+    mBarriers[ShutdownPhase::ProfileBeforeChange] = std::move(barrier);
+  }
+
+  
   {
     nsCOMPtr<nsIAsyncShutdownClient> globalClient;
     MOZ_TRY(svc->GetXpcomWillShutdown(getter_AddRefs(globalClient)));
@@ -2171,7 +2215,7 @@ nsresult IOUtils::EventQueue::SetShutdownHooks() {
     nsCOMPtr<nsIAsyncShutdownClient> client;
     MOZ_TRY(barrier->GetClient(getter_AddRefs(client)));
 
-    client->AddBlocker(profileBeforeChangeBlocker, FILE, __LINE__,
+    client->AddBlocker(sendTelemetryBlocker, FILE, __LINE__,
                        u"IOUtils::EventQueue::SetShutdownHooks"_ns);
 
     mBarriers[ShutdownPhase::XpcomWillShutdown] = std::move(barrier);
@@ -2379,24 +2423,35 @@ NS_IMETHODIMP IOUtilsShutdownBlocker::Done() {
 
     
     
+    
     state->mEventQueue->Dispatch<Ok>([]() { return Ok{}; })
         ->Then(GetMainThreadSerialEventTarget(), __func__,
-               [self = RefPtr(this)]() {
-                 if (self->mParentClient) {
-                   Unused << NS_WARN_IF(
-                       NS_FAILED(self->mParentClient->RemoveBlocker(self)));
-                   self->mParentClient = nullptr;
+               [self = RefPtr(this)]() { self->OnFlush(); });
 
-                   auto state = IOUtils::sState.Lock();
-                   MOZ_RELEASE_ASSERT(state->mEventQueue);
-                   state->mEventQueue = nullptr;
-                 }
-               });
-
-    state->mQueueStatus = EventQueueStatus::Shutdown;
+    
+    
+    if (mPhase >= LAST_IO_PHASE) {
+      state->mQueueStatus = EventQueueStatus::Shutdown;
+    }
   }
 
   return NS_OK;
+}
+
+void IOUtilsShutdownBlocker::OnFlush() {
+  if (mParentClient) {
+    (void)NS_WARN_IF(NS_FAILED(mParentClient->RemoveBlocker(this)));
+    mParentClient = nullptr;
+
+    
+    
+    
+    if (mPhase >= LAST_IO_PHASE) {
+      auto state = IOUtils::sState.Lock();
+      MOZ_RELEASE_ASSERT(state->mEventQueue);
+      state->mEventQueue = nullptr;
+    }
+  }
 }
 
 NS_IMETHODIMP IOUtilsShutdownBlocker::GetState(nsIPropertyBag** aState) {
