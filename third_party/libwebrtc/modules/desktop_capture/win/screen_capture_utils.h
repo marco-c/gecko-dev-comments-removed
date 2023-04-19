@@ -39,6 +39,10 @@ bool IsMonitorValid(const HMONITOR monitor);
 
 
 
+DesktopRect GetMonitorRect(const HMONITOR monitor);
+
+
+
 
 
 bool IsScreenValid(const DesktopCapturer::SourceId screen,

@@ -75,8 +75,16 @@ WindowInfo CreateTestWindow(const WCHAR* window_title,
 }
 
 void ResizeTestWindow(const HWND hwnd, const int width, const int height) {
+  
   ::SetWindowPos(hwnd, HWND_TOP, 0, 0, width, height,
-                 SWP_SHOWWINDOW);
+                 SWP_SHOWWINDOW | SWP_NOMOVE);
+  ::UpdateWindow(hwnd);
+}
+
+void MoveTestWindow(const HWND hwnd, const int x, const int y) {
+  
+  ::SetWindowPos(hwnd, HWND_TOP, x, y, 0, 0,
+                 SWP_SHOWWINDOW | SWP_NOSIZE);
   ::UpdateWindow(hwnd);
 }
 
