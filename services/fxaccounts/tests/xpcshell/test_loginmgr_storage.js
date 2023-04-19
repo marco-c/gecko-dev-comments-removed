@@ -92,7 +92,7 @@ add_task(async function test_simple() {
   
   
   let path = PathUtils.join(PathUtils.profileDir, "signedInUser.json");
-  let data = await IOUtils.readJSON(path);
+  let data = await CommonUtils.readJSON(path);
 
   Assert.strictEqual(
     data.accountData.email,
@@ -190,7 +190,7 @@ add_task(async function test_MPLocked() {
   
   
   let path = PathUtils.join(PathUtils.profileDir, "signedInUser.json");
-  let data = await IOUtils.readJSON(path);
+  let data = await CommonUtils.readJSON(path);
 
   Assert.strictEqual(
     data.accountData.email,
