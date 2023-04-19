@@ -101,11 +101,6 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   
 
 
-  void SetWindow(nsPIDOMWindowInner* aInnerWindow);
-
-  
-
-
   void OnNavigation();
 
   void GetProduct(nsAString& aProduct);
