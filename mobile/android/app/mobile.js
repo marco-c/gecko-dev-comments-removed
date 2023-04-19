@@ -449,9 +449,6 @@ pref("media.realtime_decoder.enabled", true);
 
 pref("full-screen-api.enabled", true);
 
-pref("direct-texture.force.enabled", false);
-pref("direct-texture.force.disabled", false);
-
 
 pref("ui.scrolling.friction_slow", -1);
 
