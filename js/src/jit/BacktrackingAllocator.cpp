@@ -134,7 +134,7 @@ UsePosition* LiveRange::popUse() {
   return ret;
 }
 
-void LiveRange::distributeUses(LiveRange* other) {
+void LiveRange::tryToMoveDefAndUsesInto(LiveRange* other) {
   MOZ_ASSERT(&other->vreg() == &vreg());
   MOZ_ASSERT(this != other);
 
@@ -245,7 +245,7 @@ bool LiveBundle::addRangeAndDistributeUses(TempAllocator& alloc,
     return false;
   }
   addRange(range);
-  oldRange->distributeUses(range);
+  oldRange->tryToMoveDefAndUsesInto(range);
   return true;
 }
 
@@ -333,7 +333,7 @@ bool VirtualRegister::addInitialRange(TempAllocator& alloc, CodePosition from,
     }
 
     MOZ_ASSERT(!existing->hasDefinition());
-    existing->distributeUses(merged);
+    existing->tryToMoveDefAndUsesInto(merged);
     MOZ_ASSERT(!existing->hasUses());
 
     ranges_.removeAndIncrement(iter);
@@ -1384,8 +1384,8 @@ bool BacktrackingAllocator::tryMergeReusedRegister(VirtualRegister& def,
     return false;
   }
 
-  inputRange->distributeUses(preRange);
-  inputRange->distributeUses(postRange);
+  inputRange->tryToMoveDefAndUsesInto(preRange);
+  inputRange->tryToMoveDefAndUsesInto(postRange);
   MOZ_ASSERT(!inputRange->hasUses());
 
   JitSpewIfEnabled(JitSpew_RegAlloc,
@@ -1536,9 +1536,7 @@ bool BacktrackingAllocator::mergeAndQueueRegisters() {
 
 
 
-
-
-bool BacktrackingAllocator::splitAndRequeueBundles(
+bool BacktrackingAllocator::updateVirtualRegisterListsThenRequeueBundles(
     LiveBundle* bundle, const LiveBundleVector& newBundles) {
 #ifdef DEBUG
   if (newBundles.length() == 1) {
@@ -1851,7 +1849,7 @@ bool BacktrackingAllocator::splitAt(LiveBundle* bundle,
     return false;
   }
 
-  return splitAndRequeueBundles(bundle, filteredBundles);
+  return updateVirtualRegisterListsThenRequeueBundles(bundle, filteredBundles);
 }
 
 
@@ -2078,7 +2076,7 @@ bool BacktrackingAllocator::trySplitAcrossHotcode(LiveBundle* bundle,
   }
 
   *success = true;
-  return splitAndRequeueBundles(bundle, newBundles);
+  return updateVirtualRegisterListsThenRequeueBundles(bundle, newBundles);
 }
 
 bool BacktrackingAllocator::trySplitAfterLastRegisterUse(LiveBundle* bundle,
@@ -2672,7 +2670,7 @@ bool BacktrackingAllocator::spill(LiveBundle* bundle) {
       LiveRange* parentRange = spillParent->rangeFor(range->from());
       MOZ_ASSERT(parentRange->contains(range));
       MOZ_ASSERT(&range->vreg() == &parentRange->vreg());
-      range->distributeUses(parentRange);
+      range->tryToMoveDefAndUsesInto(parentRange);
       MOZ_ASSERT(!range->hasUses());
       range->vreg().removeRange(range);
     }
@@ -2931,9 +2929,7 @@ bool BacktrackingAllocator::deadRange(LiveRange* range) {
   return true;
 }
 
-
-
-bool BacktrackingAllocator::resolveControlFlow() {
+bool BacktrackingAllocator::createMoveGroupsFromLiveRangeTransitions() {
   
   JitSpew(JitSpew_RegAlloc, "ResolveControlFlow: begin");
 
@@ -3193,14 +3189,14 @@ static inline size_t NumReusingDefs(LInstruction* ins) {
   return num;
 }
 
-bool BacktrackingAllocator::reifyAllocations() {
-  JitSpew(JitSpew_RegAlloc, "Reifying Allocations");
+bool BacktrackingAllocator::installAllocationsInLIR() {
+  JitSpew(JitSpew_RegAlloc, "Installing Allocations");
 
   MOZ_ASSERT(!vregs[0u].hasRanges());
   for (size_t i = 1; i < graph.numVirtualRegisters(); i++) {
     VirtualRegister& reg = vregs[i];
 
-    if (mir->shouldCancel("Backtracking Reify Allocations (main loop)")) {
+    if (mir->shouldCancel("Backtracking Install Allocations (main loop)")) {
       return false;
     }
 
@@ -3746,11 +3742,11 @@ bool BacktrackingAllocator::go() {
   }
 #endif
 
-  if (!resolveControlFlow()) {
+  if (!createMoveGroupsFromLiveRangeTransitions()) {
     return false;
   }
 
-  if (!reifyAllocations()) {
+  if (!installAllocationsInLIR()) {
     return false;
   }
 
