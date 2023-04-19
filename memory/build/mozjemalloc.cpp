@@ -1393,11 +1393,7 @@ static inline bool ShouldStallAndRetry() {
   
   
   return true;
-#  elif 0 && defined(NIGHTLY_BUILD)
-  
-  
-  
-  
+#  elif defined(NIGHTLY_BUILD)
   
   return true;
 #  else
