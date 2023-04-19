@@ -40,7 +40,15 @@ enum class ImportAssertion { Type };
 using ImportAssertionVector =
     js::Vector<ImportAssertion, 1, js::SystemAllocPolicy>;
 
-using SupportedAssertionsHook = bool (*)(JSContext*,
+
+
+
+
+
+
+
+
+using SupportedAssertionsHook = bool (*)(JSContext* cx,
                                          ImportAssertionVector& values);
 
 
@@ -53,12 +61,37 @@ GetSupportedAssertionsHook(JSRuntime* rt);
 
 
 
-
 extern JS_PUBLIC_API void SetSupportedAssertionsHook(
     JSRuntime* rt, SupportedAssertionsHook func);
 
-using ModuleResolveHook = JSObject* (*)(JSContext*, Handle<Value>,
-                                        Handle<JSObject*>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using ModuleResolveHook = JSObject* (*)(JSContext* cx,
+                                        Handle<Value> referencingPrivate,
+                                        Handle<JSObject*> moduleRequest);
 
 
 
@@ -71,8 +104,19 @@ extern JS_PUBLIC_API ModuleResolveHook GetModuleResolveHook(JSRuntime* rt);
 extern JS_PUBLIC_API void SetModuleResolveHook(JSRuntime* rt,
                                                ModuleResolveHook func);
 
-using ModuleMetadataHook = bool (*)(JSContext*, Handle<Value>,
-                                    Handle<JSObject*>);
+
+
+
+
+
+
+
+
+
+
+
+using ModuleMetadataHook = bool (*)(JSContext* cx, Handle<Value> privateValue,
+                                    Handle<JSObject*> metaObject);
 
 
 
@@ -85,6 +129,24 @@ extern JS_PUBLIC_API ModuleMetadataHook GetModuleMetadataHook(JSRuntime* rt);
 
 extern JS_PUBLIC_API void SetModuleMetadataHook(JSRuntime* rt,
                                                 ModuleMetadataHook func);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 using ModuleDynamicImportHook = bool (*)(JSContext* cx,
                                          Handle<Value> referencingPrivate,
