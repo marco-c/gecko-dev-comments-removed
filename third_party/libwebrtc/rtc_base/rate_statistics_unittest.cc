@@ -148,12 +148,13 @@ TEST_F(RateStatisticsTest, ResetAfterSilence) {
 
   now_ms += kWindowMs + 1;
   EXPECT_FALSE(static_cast<bool>(stats_.Rate(now_ms)));
+  
   stats_.Update(1000, now_ms);
   ++now_ms;
   stats_.Update(1000, now_ms);
   
   
-  EXPECT_EQ(32000u, *stats_.Rate(now_ms));
+  EXPECT_EQ(kExpectedBitrate, *stats_.Rate(now_ms));
 
   
   stats_.Reset();
@@ -272,7 +273,14 @@ TEST_F(RateStatisticsTest, HandlesQuietPeriods) {
   EXPECT_FALSE(static_cast<bool>(stats_.Rate(now_ms)));
 
   
+  
+  
   now_ms += 2 * kWindowMs;
+  stats_.Update(0, now_ms);
+  bitrate = stats_.Rate(now_ms);
+  EXPECT_FALSE(static_cast<bool>(stats_.Rate(now_ms)));
+  
+  ++now_ms;
   stats_.Update(0, now_ms);
   bitrate = stats_.Rate(now_ms);
   EXPECT_TRUE(static_cast<bool>(bitrate));
