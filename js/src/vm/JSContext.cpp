@@ -264,6 +264,42 @@ bool AutoResolving::alreadyStartedSlow() const {
   return false;
 }
 
+static void MaybeReportOutOfMemoryForDifferentialTesting() {
+  
+
+
+
+
+  if (js::SupportDifferentialTesting()) {
+    fprintf(stderr, "ReportOutOfMemory called\n");
+  }
+}
+
+void JSContext::onOutOfMemory() {
+  runtime()->hadOutOfMemory = true;
+  gc::AutoSuppressGC suppressGC(this);
+
+  
+  if (JS::OutOfMemoryCallback oomCallback = runtime()->oomCallback) {
+    oomCallback(this, runtime()->oomCallbackData);
+  }
+
+  
+  
+  if (MOZ_UNLIKELY(!runtime()->hasInitializedSelfHosting())) {
+    return;
+  }
+
+  RootedValue oomMessage(this, StringValue(names().outOfMemory));
+  setPendingException(oomMessage, nullptr);
+  MOZ_ASSERT(status == JS::ExceptionStatus::Throwing);
+  status = JS::ExceptionStatus::OutOfMemory;
+
+#ifdef DEBUG
+  hadNondeterministicException_ = true;
+#endif
+}
+
 
 
 
@@ -273,41 +309,13 @@ bool AutoResolving::alreadyStartedSlow() const {
 
 
 JS_PUBLIC_API void js::ReportOutOfMemory(JSContext* cx) {
-  
-
-
-
-
-  if (js::SupportDifferentialTesting()) {
-    fprintf(stderr, "ReportOutOfMemory called\n");
-  }
+  MaybeReportOutOfMemoryForDifferentialTesting();
 
   if (cx->isHelperThreadContext()) {
     return cx->addPendingOutOfMemory();
   }
 
-  cx->runtime()->hadOutOfMemory = true;
-  gc::AutoSuppressGC suppressGC(cx);
-
-  
-  if (JS::OutOfMemoryCallback oomCallback = cx->runtime()->oomCallback) {
-    oomCallback(cx, cx->runtime()->oomCallbackData);
-  }
-
-  
-  
-  if (MOZ_UNLIKELY(!cx->runtime()->hasInitializedSelfHosting())) {
-    return;
-  }
-
-  RootedValue oomMessage(cx, StringValue(cx->names().outOfMemory));
-  cx->setPendingException(oomMessage, nullptr);
-  MOZ_ASSERT(cx->status == JS::ExceptionStatus::Throwing);
-  cx->status = JS::ExceptionStatus::OutOfMemory;
-
-#ifdef DEBUG
-  cx->hadNondeterministicException_ = true;
-#endif
+  cx->onOutOfMemory();
 }
 
 static void MaybeReportOverRecursedForDifferentialTesting() {
