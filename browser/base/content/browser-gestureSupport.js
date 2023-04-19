@@ -428,7 +428,24 @@ var gGestureSupport = {
 
 
   processSwipeEvent: function GS_processSwipeEvent(aEvent, aDir) {
-    this._doAction(aEvent, ["swipe", aDir.toLowerCase()]);
+    let dir = aDir.toLowerCase();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!gHistorySwipeAnimation.isLTR) {
+      if (dir == "right") {
+        dir = "left";
+      } else if (dir == "left") {
+        dir = "right";
+      }
+    }
+    this._doAction(aEvent, ["swipe", dir]);
   },
 
   
