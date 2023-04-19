@@ -397,7 +397,7 @@ nscoord nsVideoFrame::GetMinISize(gfxContext* aRenderingContext) {
   
   DISPLAY_MIN_INLINE_SIZE(this, result);
   
-  nsSize size = GetVideoIntrinsicSize();
+  nsSize size = GetIntrinsicSize().ToSize().valueOr(nsSize());
   result = GetWritingMode().IsVertical() ? size.height : size.width;
   return result;
 }
@@ -424,7 +424,7 @@ AspectRatio nsVideoFrame::GetIntrinsicRatio() const {
     return AspectRatio();
   }
 
-  HTMLVideoElement* element = static_cast<HTMLVideoElement*>(GetContent());
+  auto* element = static_cast<HTMLVideoElement*>(GetContent());
   if (Maybe<CSSIntSize> size = element->GetVideoSize()) {
     return AspectRatio::FromSize(*size);
   }
@@ -435,14 +435,22 @@ AspectRatio nsVideoFrame::GetIntrinsicRatio() const {
     }
   }
 
+  if (StylePosition()->mAspectRatio.HasRatio()) {
+    return AspectRatio();
+  }
+
   return AspectRatio::FromSize(kFallbackIntrinsicSizeInPixels);
 }
 
 bool nsVideoFrame::ShouldDisplayPoster() const {
-  if (!HasVideoElement()) return false;
+  if (!HasVideoElement()) {
+    return false;
+  }
 
-  HTMLVideoElement* element = static_cast<HTMLVideoElement*>(GetContent());
-  if (element->GetPlayedOrSeeked() && HasVideoData()) return false;
+  auto* element = static_cast<HTMLVideoElement*>(GetContent());
+  if (element->GetPlayedOrSeeked() && HasVideoData()) {
+    return false;
+  }
 
   nsCOMPtr<nsIImageLoadingContent> imgContent = do_QueryInterface(mPosterImage);
   NS_ENSURE_TRUE(imgContent, false);
@@ -461,48 +469,53 @@ bool nsVideoFrame::ShouldDisplayPoster() const {
   return true;
 }
 
-nsSize nsVideoFrame::GetVideoIntrinsicSize() const {
+IntrinsicSize nsVideoFrame::GetIntrinsicSize() {
   const auto containAxes = StyleDisplay()->GetContainSizeAxes();
   const auto isVideo = HasVideoElement();
   
   
   
+  
   if (containAxes.IsBoth()) {
-    return containAxes.ContainSize({}, *this);
-  }
-
-  
-  
-  if (!isVideo && !mFrames.LastChild()) {
-    return containAxes.ContainSize({}, *this);
+    return containAxes.ContainIntrinsicSize({}, *this);
   }
 
   if (!isVideo) {
-    return containAxes.ContainSize(kFallbackIntrinsicSize, *this);
+    
+    
+    if (!mFrames.LastChild()) {
+      return containAxes.ContainIntrinsicSize({}, *this);
+    }
+
+    return containAxes.ContainIntrinsicSize(
+        IntrinsicSize(kFallbackIntrinsicSize), *this);
   }
 
-  HTMLVideoElement* element = static_cast<HTMLVideoElement*>(GetContent());
+  auto* element = static_cast<HTMLVideoElement*>(GetContent());
   if (Maybe<CSSIntSize> size = element->GetVideoSize()) {
-    return containAxes.ContainSize(CSSPixel::ToAppUnits(*size), *this);
+    return containAxes.ContainIntrinsicSize(
+        IntrinsicSize(CSSPixel::ToAppUnits(*size)), *this);
   }
 
   if (ShouldDisplayPoster()) {
     if (Maybe<nsSize> imgSize = PosterImageSize()) {
-      return containAxes.ContainSize(*imgSize, *this);
+      return containAxes.ContainIntrinsicSize(IntrinsicSize(*imgSize), *this);
     }
   }
-  return containAxes.ContainSize(kFallbackIntrinsicSize, *this);
-}
 
-IntrinsicSize nsVideoFrame::GetIntrinsicSize() {
-  return IntrinsicSize(GetVideoIntrinsicSize());
+  if (StylePosition()->mAspectRatio.HasRatio()) {
+    return {};
+  }
+
+  return containAxes.ContainIntrinsicSize(IntrinsicSize(kFallbackIntrinsicSize),
+                                          *this);
 }
 
 void nsVideoFrame::UpdatePosterSource(bool aNotify) {
   NS_ASSERTION(HasVideoElement(), "Only call this on <video> elements.");
   HTMLVideoElement* element = static_cast<HTMLVideoElement*>(GetContent());
 
-  if (element->HasAttr(kNameSpaceID_None, nsGkAtoms::poster) &&
+  if (element->HasAttr(nsGkAtoms::poster) &&
       !element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::poster,
                             nsGkAtoms::_empty, eIgnoreCase)) {
     nsAutoString posterStr;
