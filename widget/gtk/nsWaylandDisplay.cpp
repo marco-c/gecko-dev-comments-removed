@@ -295,6 +295,13 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
     wl_display_roundtrip(mDisplay);
   }
   wl_registry_destroy(registry);
+
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(GetShm(), "We're missing shm interface!");
+  MOZ_DIAGNOSTIC_ASSERT(GetCompositor(), "We're missing compositor interface!");
+  MOZ_DIAGNOSTIC_ASSERT(GetSubcompositor(),
+                        "We're missing subcompositor interface!");
 }
 
 nsWaylandDisplay::~nsWaylandDisplay() {
