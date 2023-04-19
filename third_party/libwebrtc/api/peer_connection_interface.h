@@ -67,12 +67,16 @@
 #ifndef API_PEER_CONNECTION_INTERFACE_H_
 #define API_PEER_CONNECTION_INTERFACE_H_
 
+#include <stdint.h>
 #include <stdio.h>
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/base/attributes.h"
+#include "absl/types/optional.h"
 #include "api/adaptation/resource.h"
 #include "api/async_dns_resolver.h"
 #include "api/async_resolver_factory.h"
@@ -81,6 +85,7 @@
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_options.h"
 #include "api/call/call_factory_interface.h"
+#include "api/candidate.h"
 #include "api/crypto/crypto_options.h"
 #include "api/data_channel_interface.h"
 #include "api/dtls_transport_interface.h"
@@ -88,15 +93,18 @@
 #include "api/ice_transport_interface.h"
 #include "api/jsep.h"
 #include "api/media_stream_interface.h"
+#include "api/media_types.h"
 #include "api/neteq/neteq_factory.h"
 #include "api/network_state_predictor.h"
 #include "api/packet_socket_factory.h"
 #include "api/rtc_error.h"
 #include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "api/rtc_event_log_output.h"
+#include "api/rtp_parameters.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/rtp_sender_interface.h"
 #include "api/rtp_transceiver_interface.h"
+#include "api/scoped_refptr.h"
 #include "api/sctp_transport_interface.h"
 #include "api/set_local_description_observer_interface.h"
 #include "api/set_remote_description_observer_interface.h"
@@ -109,19 +117,25 @@
 #include "api/transport/sctp_transport_factory_interface.h"
 #include "api/transport/webrtc_key_value_config.h"
 #include "api/turn_customizer.h"
+#include "api/video/video_bitrate_allocator_factory.h"
 #include "media/base/media_config.h"
 #include "media/base/media_engine.h"
 
 
 
+#include "p2p/base/port.h"            
 #include "p2p/base/port_allocator.h"  
+#include "rtc_base/network.h"
+#include "rtc_base/network_constants.h"
 #include "rtc_base/network_monitor_factory.h"
+#include "rtc_base/ref_count.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/system/rtc_export.h"
+#include "rtc_base/thread.h"
 
 namespace rtc {
 class Thread;
@@ -1432,6 +1446,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
       PeerConnectionDependencies dependencies);
   
   
+  ABSL_DEPRECATED("Use CreatePeerConnectionOrError")
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       PeerConnectionDependencies dependencies);
@@ -1445,6 +1460,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
   
   
   
+  ABSL_DEPRECATED("Use CreatePeerConnectionOrError")
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const PeerConnectionInterface::RTCConfiguration& configuration,
       std::unique_ptr<cricket::PortAllocator> allocator,
