@@ -180,6 +180,9 @@ pref("app.update.langpack.enabled", true);
   pref("app.update.background.timeoutSec", 600);
   
   pref("app.update.background.interval", 25200);
+  
+  
+  pref("app.update.background.messaging.targeting.snapshot.intervalSec", 1800);
 #endif
 
 #ifdef XP_MACOSX

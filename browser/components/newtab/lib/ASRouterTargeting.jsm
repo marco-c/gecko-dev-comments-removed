@@ -692,6 +692,40 @@ const TargetingGetters = {
 const ASRouterTargeting = {
   Environment: TargetingGetters,
 
+  
+
+
+
+
+
+
+
+
+
+  async getEnvironmentSnapshot(target = ASRouterTargeting.Environment) {
+    
+    let promises = Object.keys(target).map(async name => [
+      name,
+      await target[name],
+    ]);
+
+    
+    let results = await Promise.allSettled(promises);
+
+    let environment = {};
+    for (let result of results) {
+      if (result.status === "fulfilled") {
+        let [name, value] = result.value;
+        environment[name] = value;
+      }
+    }
+
+    
+    const snapshot = { environment, version: 1 };
+
+    return snapshot;
+  },
+
   isTriggerMatch(trigger = {}, candidateMessageTrigger = {}) {
     if (trigger.id !== candidateMessageTrigger.id) {
       return false;
