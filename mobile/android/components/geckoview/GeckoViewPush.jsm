@@ -13,11 +13,9 @@ const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewPush");
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "EventDispatcher",
-  "resource://gre/modules/Messaging.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
+});
 
 
 

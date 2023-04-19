@@ -1,13 +1,6 @@
-
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-var EXPORTED_SYMBOLS = ["EventDispatcher"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const IS_PARENT_PROCESS =
   Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT;
@@ -17,7 +10,7 @@ class ChildActorDispatcher {
     this._actor = actor;
   }
 
-  
+  // TODO: Bug 1658980
   registerListener(aListener, aEvents) {
     throw new Error("Cannot registerListener in child actor");
   }
@@ -25,21 +18,21 @@ class ChildActorDispatcher {
     throw new Error("Cannot registerListener in child actor");
   }
 
-  
-
-
-
-
+  /**
+   * Sends a request to Java.
+   *
+   * @param aMsg      Message to send; must be an object with a "type" property
+   */
   sendRequest(aMsg) {
     this._actor.sendAsyncMessage("DispatcherMessage", aMsg);
   }
 
-  
-
-
-
-
-
+  /**
+   * Sends a request to Java, returning a Promise that resolves to the response.
+   *
+   * @param aMsg Message to send; must be an object with a "type" property
+   * @return A Promise resolving to the response
+   */
   sendRequestForResult(aMsg) {
     return this._actor.sendQuery("DispatcherQuery", aMsg);
   }
@@ -50,9 +43,9 @@ function DispatcherDelegate(aDispatcher, aMessageManager) {
   this._messageManager = aMessageManager;
 
   if (!aDispatcher) {
-    
-    
-    
+    // Child process.
+    // TODO: this doesn't work with Fission, remove this code path once every
+    // consumer has been migrated. Bug 1569360.
     this._replies = new Map();
     (aMessageManager || Services.cpmm).addMessageListener(
       "GeckoView:MessagingReply",
@@ -62,12 +55,12 @@ function DispatcherDelegate(aDispatcher, aMessageManager) {
 }
 
 DispatcherDelegate.prototype = {
-  
-
-
-
-
-
+  /**
+   * Register a listener to be notified of event(s).
+   *
+   * @param aListener Target listener implementing nsIAndroidEventListener.
+   * @param aEvents   String or array of strings of events to listen to.
+   */
   registerListener(aListener, aEvents) {
     if (!this._dispatcher) {
       throw new Error("Can only listen in parent process");
@@ -75,12 +68,12 @@ DispatcherDelegate.prototype = {
     this._dispatcher.registerListener(aListener, aEvents);
   },
 
-  
-
-
-
-
-
+  /**
+   * Unregister a previously-registered listener.
+   *
+   * @param aListener Registered listener implementing nsIAndroidEventListener.
+   * @param aEvents   String or array of strings of events to stop listening to.
+   */
   unregisterListener(aListener, aEvents) {
     if (!this._dispatcher) {
       throw new Error("Can only listen in parent process");
@@ -88,16 +81,16 @@ DispatcherDelegate.prototype = {
     this._dispatcher.unregisterListener(aListener, aEvents);
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Dispatch an event to registered listeners for that event, and pass an
+   * optional data object and/or a optional callback interface to the
+   * listeners.
+   *
+   * @param aEvent     Name of event to dispatch.
+   * @param aData      Optional object containing data for the event.
+   * @param aCallback  Optional callback implementing nsIAndroidEventCallback.
+   * @param aFinalizer Optional finalizer implementing nsIAndroidEventFinalizer.
+   */
   dispatch(aEvent, aData, aCallback, aFinalizer) {
     if (this._dispatcher) {
       this._dispatcher.dispatch(aEvent, aData, aCallback, aFinalizer);
@@ -123,31 +116,31 @@ DispatcherDelegate.prototype = {
     mm.sendAsyncMessage("GeckoView:Messaging", forwardData);
   },
 
-  
-
-
-
-
-
+  /**
+   * Sends a request to Java.
+   *
+   * @param aMsg      Message to send; must be an object with a "type" property
+   * @param aCallback Optional callback implementing nsIAndroidEventCallback.
+   */
   sendRequest(aMsg, aCallback) {
     const type = aMsg.type;
     aMsg.type = undefined;
     this.dispatch(type, aMsg, aCallback);
   },
 
-  
-
-
-
-
-
+  /**
+   * Sends a request to Java, returning a Promise that resolves to the response.
+   *
+   * @param aMsg Message to send; must be an object with a "type" property
+   * @return A Promise resolving to the response
+   */
   sendRequestForResult(aMsg) {
     return new Promise((resolve, reject) => {
       const type = aMsg.type;
       aMsg.type = undefined;
 
-      
-      
+      // Manually release the resolve/reject functions after one callback is
+      // received, so the JS GC is not tied up with the Java GC.
       const onCallback = (callback, ...args) => {
         if (callback) {
           callback(...args);
@@ -202,21 +195,21 @@ DispatcherDelegate.prototype = {
   },
 };
 
-var EventDispatcher = {
+export var EventDispatcher = {
   instance: new DispatcherDelegate(
     IS_PARENT_PROCESS ? Services.androidBridge : undefined
   ),
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Return an EventDispatcher instance for a chrome DOM window. In a content
+   * process, return a proxy through the message manager that automatically
+   * forwards events to the main process.
+   *
+   * To force using a message manager proxy (for example in a frame script
+   * environment), call forMessageManager.
+   *
+   * @param aWindow a chrome DOM window.
+   */
   for(aWindow) {
     const view =
       aWindow &&
@@ -238,10 +231,10 @@ var EventDispatcher = {
     return new DispatcherDelegate(view);
   },
 
-  
-
-
-
+  /**
+   * Returns a named EventDispatcher, which can communicate with the
+   * corresponding EventDispatcher on the java side.
+   */
   byName(aName) {
     if (!IS_PARENT_PROCESS) {
       return undefined;
@@ -250,36 +243,36 @@ var EventDispatcher = {
     return new DispatcherDelegate(dispatcher);
   },
 
-  
-
-
-
-
-
+  /**
+   * Return an EventDispatcher instance for a message manager associated with a
+   * window.
+   *
+   * @param aWindow a message manager.
+   */
   forMessageManager(aMessageManager) {
     return new DispatcherDelegate(null, aMessageManager);
   },
 
-  
-
-
-
-
+  /**
+   * Return the EventDispatcher instance associated with an actor.
+   *
+   * @param aActor an actor
+   */
   forActor(aActor) {
     return new ChildActorDispatcher(aActor);
   },
 
   receiveMessage(aMsg) {
-    
+    // aMsg.data includes keys: global, event, data, uuid
     let callback;
     if (aMsg.data.uuid) {
       const reply = (type, response) => {
         const mm = aMsg.data.global ? aMsg.target : aMsg.target.messageManager;
         if (!mm) {
           if (type === "finalize") {
-            
-            
-            
+            // It's normal for the finalize call to come after the browser has
+            // been destroyed. We can gracefully handle that case despite
+            // having no message manager.
             return;
           }
           throw Error(
