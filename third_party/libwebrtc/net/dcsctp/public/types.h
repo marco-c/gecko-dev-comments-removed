@@ -28,6 +28,12 @@ using TimeoutID = StrongAlias<class TimeoutTag, uint64_t>;
 
 using IsUnordered = StrongAlias<class IsUnorderedTag, bool>;
 
+
+using DurationMs = StrongAlias<class DurationMsTag, int32_t>;
+
+
+using TimeMs = StrongAlias<class TimeMsTag, int64_t>;
+
 }  
 
 #endif  
