@@ -11,12 +11,15 @@
 #include "rtc_base/task_utils/repeating_task.h"
 
 #include <atomic>
-#include <chrono>  
 #include <memory>
-#include <thread>  
 
+#include "api/task_queue/queued_task.h"
+#include "api/task_queue/task_queue_base.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue_for_test.h"
+#include "rtc_base/task_utils/to_queued_task.h"
+#include "system_wrappers/include/clock.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -31,12 +34,6 @@ using ::testing::NiceMock;
 using ::testing::Return;
 
 constexpr TimeDelta kTimeout = TimeDelta::Millis(1000);
-
-void Sleep(TimeDelta time_delta) {
-  
-  
-  std::this_thread::sleep_for(std::chrono::microseconds(time_delta.us()));
-}
 
 class MockClosure {
  public:
@@ -59,6 +56,51 @@ class MockTaskQueue : public TaskQueueBase {
   CurrentTaskQueueSetter task_queue_setter_;
 };
 
+class FakeTaskQueue : public TaskQueueBase {
+ public:
+  explicit FakeTaskQueue(SimulatedClock* clock)
+      : task_queue_setter_(this), clock_(clock) {}
+
+  void Delete() override {}
+
+  void PostTask(std::unique_ptr<QueuedTask> task) override {
+    PostDelayedTask(std::move(task), 0);
+  }
+
+  void PostDelayedTask(std::unique_ptr<QueuedTask> task,
+                       uint32_t milliseconds) override {
+    last_task_ = std::move(task);
+    last_delay_ = milliseconds;
+  }
+
+  bool AdvanceTimeAndRunLastTask() {
+    EXPECT_TRUE(last_task_);
+    EXPECT_TRUE(last_delay_);
+    clock_->AdvanceTimeMilliseconds(last_delay_.value_or(0));
+    last_delay_.reset();
+    auto task = std::move(last_task_);
+    bool delete_task = task->Run();
+    if (!delete_task) {
+      
+      task.release();
+    }
+    return delete_task;
+  }
+
+  bool IsTaskQueued() { return !!last_task_; }
+
+  uint32_t last_delay() const {
+    EXPECT_TRUE(last_delay_.has_value());
+    return last_delay_.value_or(-1);
+  }
+
+ private:
+  CurrentTaskQueueSetter task_queue_setter_;
+  SimulatedClock* clock_;
+  std::unique_ptr<QueuedTask> last_task_;
+  absl::optional<uint32_t> last_delay_;
+};
+
 class MoveOnlyClosure {
  public:
   explicit MoveOnlyClosure(MockClosure* mock) : mock_(mock) {}
@@ -79,65 +121,75 @@ class MoveOnlyClosure {
 
 TEST(RepeatingTaskTest, TaskIsStoppedOnStop) {
   const TimeDelta kShortInterval = TimeDelta::Millis(50);
-  const TimeDelta kLongInterval = TimeDelta::Millis(200);
-  const int kShortIntervalCount = 4;
-  const int kMargin = 1;
 
-  TaskQueueForTest task_queue("TestQueue");
+  SimulatedClock clock(Timestamp::Zero());
+  FakeTaskQueue task_queue(&clock);
   std::atomic_int counter(0);
-  auto handle = RepeatingTaskHandle::Start(task_queue.Get(), [&] {
-    if (++counter >= kShortIntervalCount)
-      return kLongInterval;
+  auto handle = RepeatingTaskHandle::Start(&task_queue, [&] {
+    counter++;
     return kShortInterval;
   });
-  
-  Sleep(kShortInterval * (kShortIntervalCount + kMargin));
-  EXPECT_EQ(counter.load(), kShortIntervalCount);
+  EXPECT_EQ(task_queue.last_delay(), 0u);
+  EXPECT_FALSE(task_queue.AdvanceTimeAndRunLastTask());
+  EXPECT_EQ(counter.load(), 1);
 
-  task_queue.PostTask(
-      [handle = std::move(handle)]() mutable { handle.Stop(); });
   
+  EXPECT_EQ(task_queue.last_delay(), kShortInterval.ms());
+
   
-  Sleep(kLongInterval * 2);
-  EXPECT_EQ(counter.load(), kShortIntervalCount);
+  handle.Stop();
+  EXPECT_TRUE(task_queue.AdvanceTimeAndRunLastTask());
+  EXPECT_EQ(counter.load(), 1);
 }
 
 TEST(RepeatingTaskTest, CompensatesForLongRunTime) {
-  const int kTargetCount = 20;
-  const int kTargetCountMargin = 2;
   const TimeDelta kRepeatInterval = TimeDelta::Millis(2);
   
   
   const TimeDelta kSleepDuration = TimeDelta::Millis(20);
-  const int kSleepAtCount = 3;
 
   std::atomic_int counter(0);
-  TaskQueueForTest task_queue("TestQueue");
-  RepeatingTaskHandle::Start(task_queue.Get(), [&] {
-    if (++counter == kSleepAtCount)
-      Sleep(kSleepDuration);
-    return kRepeatInterval;
-  });
-  Sleep(kRepeatInterval * kTargetCount);
+  SimulatedClock clock(Timestamp::Zero());
+  FakeTaskQueue task_queue(&clock);
+  RepeatingTaskHandle::Start(
+      &task_queue,
+      [&] {
+        ++counter;
+        
+        clock.AdvanceTime(kSleepDuration);
+        return kRepeatInterval;
+      },
+      &clock);
+
+  EXPECT_EQ(task_queue.last_delay(), 0u);
+  EXPECT_FALSE(task_queue.AdvanceTimeAndRunLastTask());
+
   
   
-  EXPECT_GE(counter.load(), kTargetCount - kTargetCountMargin);
+  EXPECT_EQ(task_queue.last_delay(), 0u);
+  EXPECT_EQ(counter.load(), 1);
 }
 
 TEST(RepeatingTaskTest, CompensatesForShortRunTime) {
+  SimulatedClock clock(Timestamp::Millis(0));
+  FakeTaskQueue task_queue(&clock);
   std::atomic_int counter(0);
-  TaskQueueForTest task_queue("TestQueue");
-  RepeatingTaskHandle::Start(task_queue.Get(), [&] {
-    ++counter;
-    
-    Sleep(TimeDelta::Millis(100));
-    return TimeDelta::Millis(300);
-  });
-  Sleep(TimeDelta::Millis(400));
+  RepeatingTaskHandle::Start(
+      &task_queue,
+      [&] {
+        
+        counter++;
+        clock.AdvanceTime(TimeDelta::Millis(100));
+        return TimeDelta::Millis(300);
+      },
+      &clock);
 
   
+  EXPECT_EQ(task_queue.last_delay(), 0u);
   
-  EXPECT_EQ(counter.load(), 2);
+  EXPECT_FALSE(task_queue.AdvanceTimeAndRunLastTask());
+  
+  EXPECT_EQ(task_queue.last_delay(), 200u);
 }
 
 TEST(RepeatingTaskTest, CancelDelayedTaskBeforeItRuns) {
@@ -168,16 +220,16 @@ TEST(RepeatingTaskTest, CancelTaskAfterItRuns) {
 
 TEST(RepeatingTaskTest, TaskCanStopItself) {
   std::atomic_int counter(0);
-  TaskQueueForTest task_queue("TestQueue");
-  RepeatingTaskHandle handle;
-  task_queue.PostTask([&] {
-    handle = RepeatingTaskHandle::Start(task_queue.Get(), [&] {
-      ++counter;
-      handle.Stop();
-      return TimeDelta::Millis(2);
-    });
+  SimulatedClock clock(Timestamp::Zero());
+  FakeTaskQueue task_queue(&clock);
+  RepeatingTaskHandle handle = RepeatingTaskHandle::Start(&task_queue, [&] {
+    ++counter;
+    handle.Stop();
+    return TimeDelta::Millis(2);
   });
-  Sleep(TimeDelta::Millis(10));
+  EXPECT_EQ(task_queue.last_delay(), 0u);
+  
+  EXPECT_TRUE(task_queue.AdvanceTimeAndRunLastTask());
   EXPECT_EQ(counter.load(), 1);
 }
 
