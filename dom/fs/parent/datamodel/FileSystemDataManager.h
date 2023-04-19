@@ -49,6 +49,8 @@ class FileSystemDataManager
   FileSystemDataManager(const quota::OriginMetadata& aOriginMetadata,
                         MovingNotNull<RefPtr<TaskQueue>> aIOTaskQueue);
 
+  
+  
   using CreatePromise = MozPromise<Registered<FileSystemDataManager>, nsresult,
                                     true>;
   static RefPtr<CreatePromise> GetOrCreateFileSystemDataManager(

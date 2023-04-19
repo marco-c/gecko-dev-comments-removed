@@ -367,6 +367,14 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
   mState = State::Opening;
 
   
+  
+
+  
+  
+
+  
+
+  
   auto connectionRes = fs::data::GetStorageConnection(mOriginMetadata.mOrigin);
   if (NS_WARN_IF(connectionRes.isErr())) {
     return BoolPromise::CreateAndReject(connectionRes.unwrapErr().NSResult(),
