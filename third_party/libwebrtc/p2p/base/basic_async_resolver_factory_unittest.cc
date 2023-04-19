@@ -79,11 +79,39 @@ TEST(WrappingAsyncDnsResolverFactoryTest, WrapOtherResolver) {
   resolver.reset();
 }
 
+#if GTEST_HAS_DEATH_TEST && defined(WEBRTC_LINUX)
+
+
+
+
 void CallResolver(WrappingAsyncDnsResolverFactory& factory) {
   rtc::SocketAddress address("", 0);
   std::unique_ptr<AsyncDnsResolverInterface> resolver(factory.Create());
   resolver->Start(address, [&resolver]() { resolver.reset(); });
   WAIT(!resolver.get(), 10000 );
 }
+
+TEST(WrappingAsyncDnsResolverFactoryDeathTest, DestroyResolverInCallback) {
+  
+  
+  
+  auto thread = rtc::Thread::CreateWithSocketServer();
+  thread->WrapCurrent();
+  
+  
+  WrappingAsyncDnsResolverFactory factory(
+      std::make_unique<BasicAsyncResolverFactory>());
+
+  
+  
+  RTC_EXPECT_DEATH(CallResolver(factory),
+                   "Check failed: !within_resolve_result_");
+  
+  thread->Quit();
+  thread->Run();
+  thread->UnwrapCurrent();
+  thread = nullptr;
+}
+#endif
 
 }  
