@@ -524,8 +524,9 @@ TabTracker.prototype = {
   onLocationChange(webProgress, request, locationURI, flags) {
     
     
+    
+    
     if (
-      flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT ||
       flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD ||
       !webProgress.isTopLevel ||
       !locationURI
@@ -588,7 +589,14 @@ TabTracker.prototype = {
         "tabsQuickWriteTimer"
       );
     } else if (scoreIncrement) {
+      this._log.debug(
+        "Detected a tab change, but conditions aren't met for a quick write - bumping score"
+      );
       this.score += scoreIncrement;
+    } else {
+      this._log.debug(
+        "Detected a tab change, but conditions aren't met for a quick write or a score bump"
+      );
     }
   },
 };
