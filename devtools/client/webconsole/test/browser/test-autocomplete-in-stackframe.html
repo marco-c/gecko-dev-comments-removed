@@ -2,19 +2,25 @@
 <html dir="ltr" lang="en">
   <head>
     <meta charset="utf8">
-    
-
-
-
+    <!--
+    - Any copyright is dedicated to the Public Domain.
+    - http://creativecommons.org/publicdomain/zero/1.0/
+    -->
     <title>Test for bug 842682 - use the debugger API for web console autocomplete</title>
     <script>
       /* eslint-disable */
       var foo1 = "globalFoo";
+      var shadowed = Object.assign(Object.create(null), {
+        foo: true
+      });
 
       var foo1Obj = Object.assign(Object.create(null), {
         prop1: "111",
         prop2: {
           prop21: "212121"
+        },
+        method() {
+          debugger;
         }
       });
 
@@ -32,6 +38,10 @@
 
       function secondCall() {
         var foo3 = "fooSecondCall";
+        var shadowed = Object.assign(Object.create(null), {
+          bar: true
+        });
+
 
         var foo3Obj = Object.assign(Object.create(null), {
           prop1: Object.assign(Object.create(null), {
@@ -39,7 +49,7 @@
           })
         });
 
-        debugger;
+        foo1Obj.method();
       }
     </script>
   </head>
