@@ -29,7 +29,7 @@ class MemoryDistributionMetric {
 
 
 
-  void Accumulate(uint64_t aSample) const;
+  void Accumulate(size_t aSample) const;
 
   
 
