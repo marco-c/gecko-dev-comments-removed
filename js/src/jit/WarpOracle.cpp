@@ -187,7 +187,7 @@ AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
   HashNumber hash = icScript->hash();
   if (outerScript_->jitScript()->hasFailedICHash()) {
     HashNumber oldHash = outerScript_->jitScript()->getFailedICHash();
-    MOZ_ASSERT_IF(hash == oldHash, cx_->hadNondeterministicException());
+    MOZ_ASSERT_IF(hash == oldHash, cx_->hadResourceExhaustion());
   }
   snapshot->setICHash(hash);
 #endif

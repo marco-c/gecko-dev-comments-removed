@@ -643,16 +643,24 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 #ifdef DEBUG
   
   
-  js::ContextData<bool> hadNondeterministicException_;
+  
+  
+  
+  js::ContextData<bool> hadResourceExhaustion_;
 
  public:
-  bool hadNondeterministicException() const {
-    return hadNondeterministicException_ ||
-           js::oom::simulator.isThreadSimulatingAny();
+  bool hadResourceExhaustion() const {
+    return hadResourceExhaustion_ || js::oom::simulator.isThreadSimulatingAny();
   }
 #endif
 
  public:
+  void reportResourceExhaustion() {
+#ifdef DEBUG
+    hadResourceExhaustion_ = true;
+#endif
+  }
+
   js::ContextData<int32_t> reportGranularity; 
 
   js::ContextData<js::AutoResolving*> resolvingList;
