@@ -2842,11 +2842,8 @@ bool BytecodeEmitter::emitIteratorNext(
     const Maybe<uint32_t>& callSourceCoordOffset,
     IteratorKind iterKind ,
     bool allowSelfHosted ) {
-  
-  MOZ_ASSERT(allowSelfHosted || emitterMode != BytecodeEmitter::SelfHosting ||
-                 (sc->isModuleContext() && sc->asModuleContext()->isAsync()),
-             ".next() iteration is prohibited in non-module self-hosted code "
-             "because it"
+  MOZ_ASSERT(allowSelfHosted || emitterMode != BytecodeEmitter::SelfHosting,
+             ".next() iteration is prohibited in self-hosted code because it"
              "can run user-modifiable iteration code");
 
   
@@ -2876,10 +2873,9 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
     IteratorKind iterKind ,
     CompletionKind completionKind ,
     bool allowSelfHosted ) {
-  MOZ_ASSERT(
-      allowSelfHosted || emitterMode != BytecodeEmitter::SelfHosting,
-      ".close() on iterators is prohibited in self-hosted code because it "
-      "can run user-modifiable iteration code");
+  MOZ_ASSERT(allowSelfHosted || emitterMode != BytecodeEmitter::SelfHosting,
+             ".close() on iterators is prohibited in self-hosted code because "
+             "it can run user-modifiable iteration code");
 
   if (iterKind == IteratorKind::Sync) {
     return emit2(JSOp::CloseIter, uint8_t(completionKind));
