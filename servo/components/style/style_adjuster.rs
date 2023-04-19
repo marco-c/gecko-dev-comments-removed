@@ -365,19 +365,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
 
     
     
-    #[cfg(feature = "gecko")]
-    fn adjust_for_mathvariant(&mut self) {
-        use crate::properties::longhands::_moz_math_variant::computed_value::T as MozMathVariant;
-        use crate::values::computed::font::{FontWeight, FontStyle};
-        if self.style.get_font().clone__moz_math_variant() != MozMathVariant::None {
-            let font_style = self.style.mutate_font();
-            font_style.set_font_weight(FontWeight::NORMAL);
-            font_style.set_font_style(FontStyle::NORMAL);
-        }
-    }
-
-    
-    
     
     
     #[cfg(feature = "servo")]
@@ -875,7 +862,6 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         #[cfg(feature = "gecko")]
         {
             self.adjust_for_table_text_align();
-            self.adjust_for_mathvariant();
             self.adjust_for_justify_items();
         }
         #[cfg(feature = "servo")]
