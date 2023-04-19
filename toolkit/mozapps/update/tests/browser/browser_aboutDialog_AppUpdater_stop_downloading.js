@@ -30,7 +30,9 @@ add_task(async function aboutDialog_AppUpdater_stop_downloading() {
       panelId: "checkForUpdates",
       
       
+      
       checkActiveUpdate: { state: STATE_DOWNLOADING },
+      expectedStateOverride: Ci.nsIApplicationUpdateService.STATE_DOWNLOADING,
     },
   ]);
 
