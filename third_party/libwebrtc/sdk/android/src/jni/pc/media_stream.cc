@@ -29,7 +29,7 @@ JavaMediaStream::JavaMediaStream(
   
   
   observer_.reset(new MediaStreamObserver(
-      media_stream,
+      media_stream.get(),
       [this](AudioTrackInterface* audio_track,
              MediaStreamInterface* media_stream) {
         OnAudioTrackAddedToStream(audio_track, media_stream);
