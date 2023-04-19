@@ -1088,18 +1088,26 @@ void nsWindow::RemovePopupFromHierarchyList() {
 
 
 bool nsWindow::WaylandPopupRemoveNegativePosition(int* aX, int* aY) {
-  LOG("nsWindow::WaylandPopupRemoveNegativePosition() [%p]\n", this);
-
-  int x, y;
-  GdkWindow* window = gtk_widget_get_window(mShell);
-  gdk_window_get_origin(window, &x, &y);
-  if (x >= 0 || y >= 0) {
-    LOG("  coordinates are correct");
+  
+  
+  if (mPopupType != ePopupTypeTooltip) {
     return false;
   }
 
+  LOG("nsWindow::WaylandPopupRemoveNegativePosition()");
+
+  int x, y;
+  gtk_window_get_position(GTK_WINDOW(mShell), &x, &y);
+  if (x >= 0 || y >= 0) {
+    LOG("  coordinates are correct (%d, %d)", x, y);
+    return false;
+  }
+
+  
   LOG("  wrong coord (%d, %d) move to 0,0", x, y);
+  GdkWindow* window = gtk_widget_get_window(mShell);
   gdk_window_move(window, 0, 0);
+  gtk_window_move(GTK_WINDOW(mShell), 0, 0);
 
   if (aX) {
     *aX = x;
@@ -1139,7 +1147,7 @@ void nsWindow::ShowWaylandPopupWindow() {
   gtk_widget_show(mShell);
   if (moved) {
     LOG("  move back to (%d, %d) and show", x, y);
-    gdk_window_move(gtk_widget_get_window(mShell), x, y);
+    gtk_window_move(GTK_WINDOW(mShell), x, y);
   }
 }
 
