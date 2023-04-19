@@ -3507,7 +3507,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 131;
+    const UI_VERSION = 133;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4308,7 +4308,21 @@ BrowserGlue.prototype = {
       migrateXULAttributeToStyle("sidebar-box", "width");
     }
 
-    if (currentUIVersion < 131) {
+    
+
+    if (currentUIVersion < 132) {
+      
+      for (let url of [
+        "chrome://browser/content/places/bookmarkProperties.xhtml",
+        "chrome://browser/content/places/bookmarkProperties2.xhtml",
+      ]) {
+        for (let attr of ["width", "screenX", "screenY"]) {
+          xulStore.removeValue(url, "bookmarkproperties", attr);
+        }
+      }
+    }
+
+    if (currentUIVersion < 133) {
       xulStore.removeValue(BROWSER_DOCURL, "urlbar-container", "width");
     }
 
