@@ -169,7 +169,7 @@ class MessageChannel : HasResultCodes {
   
   
   
-  bool Open(ScopedPort aPort, Side aSide,
+  bool Open(ScopedPort aPort, Side aSide, const nsID& aMessageChannelId,
             nsISerialEventTarget* aEventTarget = nullptr);
 
   
@@ -313,6 +313,11 @@ class MessageChannel : HasResultCodes {
 
   bool IsCrossProcess() const MOZ_REQUIRES(*mMonitor);
   void SetIsCrossProcess(bool aIsCrossProcess) MOZ_REQUIRES(*mMonitor);
+
+  nsID GetMessageChannelId() const {
+    MonitorAutoLock lock(*mMonitor);
+    return mMessageChannelId;
+  }
 
 #ifdef FUZZING_SNAPSHOT
   Maybe<mojo::core::ports::PortName> GetPortName() {
@@ -583,6 +588,13 @@ class MessageChannel : HasResultCodes {
  private:
   
   const char* const mName;
+
+  
+  
+  
+  
+  
+  nsID mMessageChannelId MOZ_GUARDED_BY(*mMonitor) = {};
 
   
   
