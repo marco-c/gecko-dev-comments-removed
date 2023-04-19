@@ -776,64 +776,6 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
 
 
 
-
-
-
-
-
-
-#define CASE_CHECK_AND_REPORT(violationType, directive, nonceOrHash, keyword,  \
-                              observerTopic)                                   \
-  case nsIContentSecurityPolicy::VIOLATION_TYPE_##violationType:               \
-    PR_BEGIN_MACRO                                                             \
-    static_assert(directive##_SRC_DIRECTIVE == SCRIPT_SRC_DIRECTIVE ||         \
-                  directive##_SRC_DIRECTIVE == STYLE_SRC_DIRECTIVE);           \
-    if (!mPolicies[p]->allows(directive##_SRC_DIRECTIVE, keyword, nonceOrHash, \
-                              false)) {                                        \
-      nsAutoString violatedDirective;                                          \
-      bool reportSample = false;                                               \
-      mPolicies[p]->getDirectiveStringAndReportSampleForContentType(           \
-          directive##_SRC_DIRECTIVE, violatedDirective, &reportSample);        \
-      nsAutoString effectiveDirective(violatedDirective);                      \
-      if (aViolationType == nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL ||   \
-          aViolationType ==                                                    \
-              nsIContentSecurityPolicy::VIOLATION_TYPE_WASM_EVAL) {            \
-        effectiveDirective = u"script-src"_ns;                                 \
-      }                                                                        \
-      AsyncReportViolation(aTriggeringElement, aCSPEventListener, nullptr,     \
-                           blockedContentSource, nullptr, violatedDirective,   \
-                           effectiveDirective, p,                              \
-                           NS_LITERAL_STRING_FROM_CSTRING(observerTopic),      \
-                           aSourceFile, reportSample ? aScriptSample : u""_ns, \
-                           aLineNum, aColumnNum);                              \
-    }                                                                          \
-    PR_END_MACRO;                                                              \
-    break
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 NS_IMETHODIMP
 nsCSPContext::LogViolationDetails(
     uint16_t aViolationType, Element* aTriggeringElement,
@@ -841,48 +783,40 @@ nsCSPContext::LogViolationDetails(
     const nsAString& aScriptSample, int32_t aLineNum, int32_t aColumnNum,
     const nsAString& aNonce, const nsAString& aContent) {
   EnsureIPCPoliciesRead();
+
+  BlockedContentSource blockedContentSource;
+  enum CSPKeyword keyword;
+  nsAutoString observerSubject;
+  if (aViolationType == nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL) {
+    blockedContentSource = BlockedContentSource::eEval;
+    keyword = CSP_UNSAFE_EVAL;
+    observerSubject.AssignLiteral(EVAL_VIOLATION_OBSERVER_TOPIC);
+  } else {
+    NS_ASSERTION(
+        aViolationType == nsIContentSecurityPolicy::VIOLATION_TYPE_WASM_EVAL,
+        "unexpected aViolationType");
+    blockedContentSource = BlockedContentSource::eWasmEval;
+    keyword = CSP_WASM_UNSAFE_EVAL;
+    observerSubject.AssignLiteral(WASM_EVAL_VIOLATION_OBSERVER_TOPIC);
+  }
+
   for (uint32_t p = 0; p < mPolicies.Length(); p++) {
     NS_ASSERTION(mPolicies[p], "null pointer in nsTArray<nsCSPPolicy>");
 
-    BlockedContentSource blockedContentSource = BlockedContentSource::eUnknown;
-    if (aViolationType == nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL) {
-      blockedContentSource = BlockedContentSource::eEval;
-    } else if (aViolationType ==
-               nsIContentSecurityPolicy::VIOLATION_TYPE_WASM_EVAL) {
-      blockedContentSource = BlockedContentSource::eWasmEval;
-    } else if (aViolationType ==
-                   nsIContentSecurityPolicy::VIOLATION_TYPE_INLINE_SCRIPT ||
-               aViolationType ==
-                   nsIContentSecurityPolicy::VIOLATION_TYPE_INLINE_STYLE) {
-      blockedContentSource = BlockedContentSource::eInline;
-    } else {
-      
-      
-      blockedContentSource = BlockedContentSource::eSelf;
+    if (mPolicies[p]->allows(SCRIPT_SRC_DIRECTIVE, keyword, u""_ns, false)) {
+      continue;
     }
 
-    switch (aViolationType) {
-      CASE_CHECK_AND_REPORT(EVAL, SCRIPT, u""_ns, CSP_UNSAFE_EVAL,
-                            EVAL_VIOLATION_OBSERVER_TOPIC);
-      CASE_CHECK_AND_REPORT(INLINE_STYLE, STYLE, u""_ns, CSP_UNSAFE_INLINE,
-                            INLINE_STYLE_VIOLATION_OBSERVER_TOPIC);
-      CASE_CHECK_AND_REPORT(INLINE_SCRIPT, SCRIPT, u""_ns, CSP_UNSAFE_INLINE,
-                            INLINE_SCRIPT_VIOLATION_OBSERVER_TOPIC);
-      CASE_CHECK_AND_REPORT(NONCE_SCRIPT, SCRIPT, aNonce, CSP_UNSAFE_INLINE,
-                            SCRIPT_NONCE_VIOLATION_OBSERVER_TOPIC);
-      CASE_CHECK_AND_REPORT(NONCE_STYLE, STYLE, aNonce, CSP_UNSAFE_INLINE,
-                            STYLE_NONCE_VIOLATION_OBSERVER_TOPIC);
-      CASE_CHECK_AND_REPORT(HASH_SCRIPT, SCRIPT, aContent, CSP_UNSAFE_INLINE,
-                            SCRIPT_HASH_VIOLATION_OBSERVER_TOPIC);
-      CASE_CHECK_AND_REPORT(HASH_STYLE, STYLE, aContent, CSP_UNSAFE_INLINE,
-                            STYLE_HASH_VIOLATION_OBSERVER_TOPIC);
-      CASE_CHECK_AND_REPORT(WASM_EVAL, SCRIPT, u""_ns, CSP_WASM_UNSAFE_EVAL,
-                            WASM_EVAL_VIOLATION_OBSERVER_TOPIC);
+    nsAutoString violatedDirective;
+    bool reportSample = false;
+    mPolicies[p]->getDirectiveStringAndReportSampleForContentType(
+        SCRIPT_SRC_DIRECTIVE, violatedDirective, &reportSample);
 
-      default:
-        NS_ASSERTION(false, "LogViolationDetails with invalid type");
-        break;
-    }
+    AsyncReportViolation(
+        aTriggeringElement, aCSPEventListener, nullptr, blockedContentSource,
+        nullptr, violatedDirective, u"script-src"_ns ,
+        p, observerSubject, aSourceFile, reportSample ? aScriptSample : u""_ns,
+        aLineNum, aColumnNum);
   }
   return NS_OK;
 }

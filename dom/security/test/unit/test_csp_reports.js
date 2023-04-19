@@ -221,7 +221,7 @@ function run_test() {
   );
 
   
-  makeTest(4, { "blocked-uri": "inline" }, true, function(csp) {
+  makeTest(4, { "blocked-uri": "eval" }, true, function(csp) {
     let evalOK = true,
       oReportViolation = { value: false };
     evalOK = csp.getAllowsEval(oReportViolation);
@@ -234,7 +234,7 @@ function run_test() {
     if (oReportViolation.value) {
       
       csp.logViolationDetails(
-        Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_INLINE_SCRIPT,
+        Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_EVAL,
         null, 
         null, 
         selfuri.asciiSpec,
