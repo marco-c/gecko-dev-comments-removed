@@ -1304,8 +1304,6 @@ var SessionStoreInternal = {
       
       
       lazy.TabState.copyFromCache(permanentKey, closedTab.tabData.state);
-      this._closedObjectsChanged = true;
-      this._notifyOfClosedObjectsChange();
     }
   },
 
