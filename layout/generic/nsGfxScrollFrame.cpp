@@ -2487,7 +2487,6 @@ void ScrollFrameHelper::CompleteAsyncScroll(
     ScrollOrigin aOrigin) {
   SetLastSnapTargetIds(std::move(aSnapTargetIds));
 
-  bool scrollPositionChanged = mDestination != GetScrollPosition();
   bool isNotHandledByApz =
       nsLayoutUtils::CanScrollOriginClobberApz(aOrigin) ||
       ScrollAnimationState().contains(AnimationState::MainThread);
@@ -2510,9 +2509,7 @@ void ScrollFrameHelper::CompleteAsyncScroll(
   
   
   
-  
-  
-  if (isNotHandledByApz && scrollPositionChanged) {
+  if (isNotHandledByApz) {
     PostScrollEndEvent();
   }
 }
