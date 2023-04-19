@@ -86,6 +86,13 @@ class CDP {
 
     lazy.RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
 
+    
+    
+    
+    
+    lazy.logger.debug(`Waiting for initial application window`);
+    await this.agent.browserStartupFinished;
+
     this.agent.server.registerPrefixHandler(
       "/json/",
       new lazy.JSONHandler(this)
@@ -100,13 +107,6 @@ class CDP {
     });
 
     await this.targetList.watchForTargets();
-
-    
-    
-    
-    
-    lazy.logger.debug(`Waiting for initial application window`);
-    await this.agent.browserStartupFinished;
 
     Cu.printStderr(`DevTools listening on ${this.address}\n`);
 
