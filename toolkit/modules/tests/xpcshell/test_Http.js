@@ -1,7 +1,9 @@
 
 
 
-const { httpRequest } = ChromeUtils.import("resource://gre/modules/Http.jsm");
+const { httpRequest } = ChromeUtils.importESModule(
+  "resource://gre/modules/Http.sys.mjs"
+);
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 const BinaryInputStream = Components.Constructor(

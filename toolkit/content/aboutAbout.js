@@ -2,8 +2,8 @@
 
 
 
-const { AboutPagesUtils } = ChromeUtils.import(
-  "resource://gre/modules/AboutPagesUtils.jsm"
+const { AboutPagesUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/AboutPagesUtils.sys.mjs"
 );
 
 var gContainer;

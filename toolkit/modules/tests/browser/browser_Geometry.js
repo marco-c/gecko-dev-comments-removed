@@ -2,8 +2,8 @@
 
 
 
-const { Point, Rect } = ChromeUtils.import(
-  "resource://gre/modules/Geometry.jsm"
+const { Point, Rect } = ChromeUtils.importESModule(
+  "resource://gre/modules/Geometry.sys.mjs"
 );
 
 function test() {

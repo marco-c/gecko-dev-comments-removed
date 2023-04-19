@@ -2,7 +2,9 @@
 
 
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const { Sqlite } = ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
+const { Sqlite } = ChromeUtils.importESModule(
+  "resource://gre/modules/Sqlite.sys.mjs"
+);
 
 XPCOMUtils.defineLazyServiceGetter(
   this,

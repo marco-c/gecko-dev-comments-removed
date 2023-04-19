@@ -4,8 +4,8 @@
 "use strict";
 
 add_task(async function test_getCreditCardLogo() {
-  const { CreditCard } = ChromeUtils.import(
-    "resource://gre/modules/CreditCard.jsm"
+  const { CreditCard } = ChromeUtils.importESModule(
+    "resource://gre/modules/CreditCard.sys.mjs"
   );
   
   

@@ -3,8 +3,8 @@
 
 "use strict";
 
-const { PropertyListUtils } = ChromeUtils.import(
-  "resource://gre/modules/PropertyListUtils.jsm"
+const { PropertyListUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/PropertyListUtils.sys.mjs"
 );
 
 function checkValue(aPropertyListObject, aType, aValue) {

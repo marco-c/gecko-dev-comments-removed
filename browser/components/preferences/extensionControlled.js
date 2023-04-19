@@ -12,9 +12,12 @@ var { XPCOMUtils } = ChromeUtils.importESModule(
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+});
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
-  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   ExtensionPreferencesManager:
     "resource://gre/modules/ExtensionPreferencesManager.jsm",

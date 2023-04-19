@@ -4,7 +4,7 @@
 
 
 
-var { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+var { Log } = ChromeUtils.importESModule("resource://gre/modules/Log.sys.mjs");
 var { CommonUtils } = ChromeUtils.import("resource://services-common/utils.js");
 var {
   HTTP_400,

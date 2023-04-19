@@ -42,8 +42,9 @@ const { MockFilePicker } = SpecialPowers;
 MockFilePicker.init(window);
 MockFilePicker.returnValue = MockFilePicker.returnOK;
 
-var FileUtils = ChromeUtils.import("resource://gre/modules/FileUtils.jsm")
-  .FileUtils;
+var FileUtils = ChromeUtils.importESModule(
+  "resource://gre/modules/FileUtils.sys.mjs"
+).FileUtils;
 
 
 

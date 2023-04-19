@@ -1,8 +1,8 @@
 
 
 
-const { CertUtils } = ChromeUtils.import(
-  "resource://gre/modules/CertUtils.jsm"
+const { CertUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/CertUtils.sys.mjs"
 );
 
 const PREF_PREFIX = "certutils.certs.";

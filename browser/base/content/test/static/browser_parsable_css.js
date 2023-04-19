@@ -409,8 +409,8 @@ add_task(async function checkAllTheCSS() {
   
   
   let testFile = getRootDirectory(gTestPath) + "dummy_page.html";
-  let { HiddenFrame } = ChromeUtils.import(
-    "resource://gre/modules/HiddenFrame.jsm"
+  let { HiddenFrame } = ChromeUtils.importESModule(
+    "resource://gre/modules/HiddenFrame.sys.mjs"
   );
   let hiddenFrame = new HiddenFrame();
   let win = await hiddenFrame.get();

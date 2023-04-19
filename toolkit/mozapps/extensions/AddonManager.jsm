@@ -79,8 +79,8 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 var { AsyncShutdown } = ChromeUtils.import(
   "resource://gre/modules/AsyncShutdown.jsm"
 );
-const { PromiseUtils } = ChromeUtils.import(
-  "resource://gre/modules/PromiseUtils.jsm"
+const { PromiseUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/PromiseUtils.sys.mjs"
 );
 
 const lazy = {};
@@ -119,7 +119,9 @@ var EXPORTED_SYMBOLS = [
 
 const CATEGORY_PROVIDER_MODULE = "addon-provider-module";
 
-const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { Log } = ChromeUtils.importESModule(
+  "resource://gre/modules/Log.sys.mjs"
+);
 
 
 const PARENT_LOGGER_ID = "addons";

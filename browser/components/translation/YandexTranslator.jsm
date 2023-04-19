@@ -6,11 +6,13 @@
 
 var EXPORTED_SYMBOLS = ["YandexTranslator"];
 
-const { PromiseUtils } = ChromeUtils.import(
-  "resource://gre/modules/PromiseUtils.jsm"
+const { PromiseUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/PromiseUtils.sys.mjs"
 );
 const { Async } = ChromeUtils.import("resource://services-common/async.js");
-const { httpRequest } = ChromeUtils.import("resource://gre/modules/Http.jsm");
+const { httpRequest } = ChromeUtils.importESModule(
+  "resource://gre/modules/Http.sys.mjs"
+);
 
 
 const MAX_REQUEST_DATA = 5000; 

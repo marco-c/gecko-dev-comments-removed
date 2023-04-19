@@ -46,8 +46,8 @@ function getClipboardCacheFDCount() {
     
     
 
-    let { FileUtils } = ChromeUtils.import(
-      "resource://gre/modules/FileUtils.jsm"
+    let { FileUtils } = ChromeUtils.importESModule(
+      "resource://gre/modules/FileUtils.sys.mjs"
     );
     
     dir = FileUtils.getFile("TmpD", ["mozilla-temp-files"]);

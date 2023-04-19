@@ -1,8 +1,8 @@
 
 
 
-const { BinarySearch } = ChromeUtils.import(
-  "resource://gre/modules/BinarySearch.jsm"
+const { BinarySearch } = ChromeUtils.importESModule(
+  "resource://gre/modules/BinarySearch.sys.mjs"
 );
 
 function run_test() {

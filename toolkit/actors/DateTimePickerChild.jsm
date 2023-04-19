@@ -3,11 +3,9 @@
 
 
 const lazy = {};
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "LayoutUtils",
-  "resource://gre/modules/LayoutUtils.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  LayoutUtils: "resource://gre/modules/LayoutUtils.sys.mjs",
+});
 
 var EXPORTED_SYMBOLS = ["DateTimePickerChild"];
 
