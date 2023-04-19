@@ -181,6 +181,7 @@ static UniquePtr<SpecifierMap> SortAndNormalizeSpecifierMap(
       
       
       
+      
       AutoTArray<nsString, 2> params;
       params.AppendElement(specifierKey);
       params.AppendElement(NS_ConvertUTF8toUTF16(address));
@@ -304,6 +305,7 @@ static UniquePtr<ScopeMap> SortAndNormalizeScopes(
   
   
   
+  
   return normalized;
 }
 
@@ -349,6 +351,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
   if (!importsVal.isUndefined()) {
     
     
+    
     bool isMap;
     if (!IsMapObject(aCx, importsVal, &isMap)) {
       return nullptr;
@@ -382,6 +385,7 @@ UniquePtr<ImportMap> ImportMap::ParseString(
 
   
   if (!scopesVal.isUndefined()) {
+    
     
     
     bool isMap;
@@ -607,6 +611,7 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
 
     
     for (auto&& [scopePrefix, scopeImports] : *aImportMap->mScopes) {
+      
       
       
       if (scopePrefix.Equals(baseURLString) ||
