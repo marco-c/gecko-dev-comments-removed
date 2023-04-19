@@ -1,20 +1,18 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
-
-var EXPORTED_SYMBOLS = ["BrowserTabParent"];
 
 const { BrowserWindowTracker } = ChromeUtils.import(
   "resource:///modules/BrowserWindowTracker.jsm"
 );
 
-class BrowserTabParent extends JSWindowActorParent {
+export class BrowserTabParent extends JSWindowActorParent {
   receiveMessage(message) {
     let browsingContext = this.manager.browsingContext;
     let browser = browsingContext.embedderElement;
     if (!browser) {
-      return; 
+      return; // Can happen sometimes if browser is being destroyed
     }
 
     let gBrowser = browser.ownerGlobal.gBrowser;
