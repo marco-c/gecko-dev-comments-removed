@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_timer.c 362054 2020-06-11 13:34:09Z tuexen $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #define _IP_VHL
@@ -114,7 +114,7 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			}
 		} else if ((net->pf_threshold < net->failure_threshold) &&
 		           (net->error_count > net->pf_threshold)) {
-			if (!(net->dest_state & SCTP_ADDR_PF)) {
+			if ((net->dest_state & SCTP_ADDR_PF) == 0) {
 				net->dest_state |= SCTP_ADDR_PF;
 				net->last_active = sctp_get_tick_count();
 				sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
@@ -132,20 +132,20 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		if ((net->dest_state & SCTP_ADDR_UNCONFIRMED) == 0) {
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_THRESHOLD_LOGGING) {
 				sctp_misc_ints(SCTP_THRESHOLD_INCR,
-					       stcb->asoc.overall_error_count,
-					       (stcb->asoc.overall_error_count+1),
-					       SCTP_FROM_SCTP_TIMER,
-					       __LINE__);
+				               stcb->asoc.overall_error_count,
+				               (stcb->asoc.overall_error_count+1),
+				               SCTP_FROM_SCTP_TIMER,
+				               __LINE__);
 			}
 			stcb->asoc.overall_error_count++;
 		}
 	} else {
 		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_THRESHOLD_LOGGING) {
 			sctp_misc_ints(SCTP_THRESHOLD_INCR,
-				       stcb->asoc.overall_error_count,
-				       (stcb->asoc.overall_error_count+1),
-				       SCTP_FROM_SCTP_TIMER,
-				       __LINE__);
+			               stcb->asoc.overall_error_count,
+			               (stcb->asoc.overall_error_count+1),
+			               SCTP_FROM_SCTP_TIMER,
+			               __LINE__);
 		}
 		stcb->asoc.overall_error_count++;
 	}
@@ -164,7 +164,7 @@ sctp_threshold_management(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 		                             "Association error counter exceeded");
 		inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_2;
-		sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
+		sctp_abort_an_association(inp, stcb, op_err, true, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
 	return (0);
@@ -181,7 +181,7 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 {
 	
 	struct sctp_nets *alt, *mnet, *min_errors_net = NULL , *max_cwnd_net = NULL;
-	int once;
+	bool looped;
 	
 	int min_errors = -1;
 	uint32_t max_cwnd = 0;
@@ -323,25 +323,22 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 			return (max_cwnd_net);
 		}
 	}
-	mnet = net;
-	once = 0;
-
-	if (mnet == NULL) {
-		mnet = TAILQ_FIRST(&stcb->asoc.nets);
-		if (mnet == NULL) {
-			return (NULL);
-		}
+	
+	if ((net != NULL) && ((net->dest_state & SCTP_ADDR_BEING_DELETED) == 0)) {
+		alt = TAILQ_NEXT(net, sctp_next);
+	} else {
+		alt = TAILQ_FIRST(&stcb->asoc.nets);
 	}
+	looped = false;
 	for (;;) {
-		alt = TAILQ_NEXT(mnet, sctp_next);
 		if (alt == NULL) {
-			once++;
-			if (once > 1) {
-				break;
+			if (!looped) {
+				alt = TAILQ_FIRST(&stcb->asoc.nets);
+				looped = true;
 			}
-			alt = TAILQ_FIRST(&stcb->asoc.nets);
+			
 			if (alt == NULL) {
-				return (NULL);
+				break;
 			}
 		}
 #if defined(__FreeBSD__) && !defined(__Userspace__)
@@ -361,43 +358,56 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 #else
 		    (alt->ro.ro_rt != NULL) &&
 #endif
-		    (!(alt->dest_state & SCTP_ADDR_UNCONFIRMED))) {
+		    ((alt->dest_state & SCTP_ADDR_UNCONFIRMED) == 0) &&
+		    (alt != net)) {
 			
 			break;
 		}
-		mnet = alt;
+		alt = TAILQ_NEXT(alt, sctp_next);
 	}
 
 	if (alt == NULL) {
 		
-		
-		once = 0;
-		mnet = net;
+
+
+
+		if ((net != NULL) && ((net->dest_state & SCTP_ADDR_BEING_DELETED) == 0)) {
+			alt = TAILQ_NEXT(net, sctp_next);
+		} else {
+			alt = TAILQ_FIRST(&stcb->asoc.nets);
+		}
+		looped = false;
 		for (;;) {
-			if (mnet == NULL) {
-				return (TAILQ_FIRST(&stcb->asoc.nets));
-			}
-			alt = TAILQ_NEXT(mnet, sctp_next);
 			if (alt == NULL) {
-				once++;
-				if (once > 1) {
-					break;
+				if (!looped) {
+					alt = TAILQ_FIRST(&stcb->asoc.nets);
+					looped = true;
 				}
-				alt = TAILQ_FIRST(&stcb->asoc.nets);
+				
 				if (alt == NULL) {
 					break;
 				}
 			}
-			if ((!(alt->dest_state & SCTP_ADDR_UNCONFIRMED)) &&
+			if (((alt->dest_state & SCTP_ADDR_UNCONFIRMED) == 0) &&
 			    (alt != net)) {
 				
 				break;
 			}
-			mnet = alt;
+			alt = TAILQ_NEXT(alt, sctp_next);
 		}
 	}
 	if (alt == NULL) {
-		return (net);
+		
+
+
+
+
+		if ((net != NULL) && ((net->dest_state & SCTP_ADDR_BEING_DELETED) == 0)) {
+			alt = net;
+		}
+		if (alt == NULL) {
+			alt = TAILQ_FIRST(&stcb->asoc.nets);
+		}
 	}
 	return (alt);
 }
@@ -497,8 +507,9 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	unsigned int cnt_mk;
 	uint32_t orig_flight, orig_tf;
 	uint32_t tsnlast, tsnfirst;
+#ifndef INVARIANTS
 	int recovery_cnt = 0;
-
+#endif
 
 	
 	audit_tf = 0;
@@ -537,8 +548,8 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 		min_wait.tv_sec = min_wait.tv_usec = 0;
 	}
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FR_LOGGING_ENABLE) {
-		sctp_log_fr(cur_rto, now.tv_sec, now.tv_usec, SCTP_FR_T3_MARK_TIME);
-		sctp_log_fr(0, min_wait.tv_sec, min_wait.tv_usec, SCTP_FR_T3_MARK_TIME);
+		sctp_log_fr(cur_rto, (uint32_t)now.tv_sec, now.tv_usec, SCTP_FR_T3_MARK_TIME);
+		sctp_log_fr(0, (uint32_t)min_wait.tv_sec, min_wait.tv_usec, SCTP_FR_T3_MARK_TIME);
 	}
 	
 
@@ -560,10 +571,10 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 			
 			SCTP_PRINTF("Our list is out of order? last_acked:%x chk:%x\n",
 			            (unsigned int)stcb->asoc.last_acked_seq, (unsigned int)chk->rec.data.tsn);
-			recovery_cnt++;
 #ifdef INVARIANTS
 			panic("last acked >= chk on sent-Q");
 #else
+			recovery_cnt++;
 			SCTP_PRINTF("Recover attempts a restart cnt:%d\n", recovery_cnt);
 			sctp_recover_sent_list(stcb);
 			if (recovery_cnt < 10) {
@@ -585,7 +596,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 			
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FR_LOGGING_ENABLE) {
 				sctp_log_fr(chk->rec.data.tsn,
-					    chk->sent_rcv_time.tv_sec,
+					    (uint32_t)chk->sent_rcv_time.tv_sec,
 					    chk->sent_rcv_time.tv_usec,
 					    SCTP_FR_T3_MARK_TIME);
 			}
@@ -597,7 +608,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 
 				if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FR_LOGGING_ENABLE) {
 					sctp_log_fr(0,
-						    chk->sent_rcv_time.tv_sec,
+						    (uint32_t)chk->sent_rcv_time.tv_sec,
 						    chk->sent_rcv_time.tv_usec,
 						    SCTP_FR_T3_STOPPED);
 				}
@@ -810,7 +821,6 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 	return (0);
 }
 
-
 int
 sctp_t3rxt_timer(struct sctp_inpcb *inp,
     struct sctp_tcb *stcb,
@@ -852,11 +862,11 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 			if (net != stcb->asoc.primary_destination) {
 				
 				struct timeval now;
-				unsigned int ms_goneby;
+				uint32_t ms_goneby;
 
 				(void)SCTP_GETTIME_TIMEVAL(&now);
 				if (net->last_sent_time.tv_sec) {
-					ms_goneby = (now.tv_sec - net->last_sent_time.tv_sec) * 1000;
+					ms_goneby = (uint32_t)(now.tv_sec - net->last_sent_time.tv_sec) * 1000;
 				} else {
 					ms_goneby = 0;
 				}
@@ -911,7 +921,7 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 	num_mk = 0;
 	num_abandoned = 0;
 	(void)sctp_mark_all_for_resend(stcb, net, alt, win_probe,
-				      &num_mk, &num_abandoned);
+	                               &num_mk, &num_abandoned);
 	
 	stcb->asoc.fast_retran_loss_recovery = 0;
 
@@ -930,7 +940,7 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 
 	
 	sctp_backoff_on_timeout(stcb, net, win_probe, num_mk, num_abandoned);
-	if ((!(net->dest_state & SCTP_ADDR_REACHABLE)) ||
+	if (((net->dest_state & SCTP_ADDR_REACHABLE) == 0) ||
 	    (net->dest_state & SCTP_ADDR_PF)) {
 		
 		sctp_move_chunks_from_net(stcb, net);
@@ -939,7 +949,7 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 
 
 
-		if (net->ro._s_addr) {
+		if (net->ro._s_addr != NULL) {
 			sctp_free_ifa(net->ro._s_addr);
 			net->ro._s_addr = NULL;
 		}
@@ -949,7 +959,7 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 		RO_NHFREE(&net->ro);
 #else
-		if (net->ro.ro_rt) {
+		if (net->ro.ro_rt != NULL) {
 			RTFREE(net->ro.ro_rt);
 			net->ro.ro_rt = NULL;
 		}
@@ -964,7 +974,7 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 
 
 
-			if (stcb->asoc.alternate) {
+			if (stcb->asoc.alternate != NULL) {
 				sctp_free_remote_addr(stcb->asoc.alternate);
 			}
 			stcb->asoc.alternate = alt;
@@ -1077,7 +1087,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 			op_err = sctp_generate_cause(SCTP_BASE_SYSCTL(sctp_diag_info_code),
 			                             "Cookie timer expired, but no cookie");
 			inp->last_abort_code = SCTP_FROM_SCTP_TIMER + SCTP_LOC_3;
-			sctp_abort_an_association(inp, stcb, op_err, SCTP_SO_NOT_LOCKED);
+			sctp_abort_an_association(inp, stcb, op_err, false, SCTP_SO_NOT_LOCKED);
 		} else {
 #ifdef INVARIANTS
 			panic("Cookie timer expires in wrong state?");
@@ -1163,7 +1173,7 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb)
 			atomic_add_int(&alt->ref_count, 1);
 		}
 	}
-	if (!(net->dest_state & SCTP_ADDR_REACHABLE)) {
+	if ((net->dest_state & SCTP_ADDR_REACHABLE) == 0) {
 		
 
 
@@ -1258,7 +1268,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			chk->sent = SCTP_DATAGRAM_RESEND;
 			chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 		}
-		if (!(net->dest_state & SCTP_ADDR_REACHABLE)) {
+		if ((net->dest_state & SCTP_ADDR_REACHABLE) == 0) {
 			
 
 
@@ -1349,17 +1359,17 @@ sctp_shutdownack_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 }
 
 static void
-sctp_audit_stream_queues_for_size(struct sctp_inpcb *inp,
-    struct sctp_tcb *stcb)
+sctp_audit_stream_queues_for_size(struct sctp_inpcb *inp, struct sctp_tcb *stcb)
 {
 	struct sctp_stream_queue_pending *sp;
 	unsigned int i, chks_in_queue = 0;
 	int being_filled = 0;
-	
 
-
-	if ((stcb == NULL) || (inp == NULL))
-		return;
+	KASSERT(inp != NULL, ("inp is NULL"));
+	KASSERT(stcb != NULL, ("stcb is NULL"));
+	SCTP_TCB_LOCK_ASSERT(stcb);
+	KASSERT(TAILQ_EMPTY(&stcb->asoc.send_queue), ("send_queue not empty"));
+	KASSERT(TAILQ_EMPTY(&stcb->asoc.sent_queue), ("sent_queue not empty"));
 
 	if (stcb->asoc.sent_queue_retran_cnt) {
 		SCTP_PRINTF("Hmm, sent_queue_retran_cnt is non-zero %d\n",
@@ -1368,7 +1378,7 @@ sctp_audit_stream_queues_for_size(struct sctp_inpcb *inp,
 	}
 	if (stcb->asoc.ss_functions.sctp_ss_is_empty(stcb, &stcb->asoc)) {
 		
-		stcb->asoc.ss_functions.sctp_ss_init(stcb, &stcb->asoc, 0);
+		stcb->asoc.ss_functions.sctp_ss_init(stcb, &stcb->asoc);
 		if (!stcb->asoc.ss_functions.sctp_ss_is_empty(stcb, &stcb->asoc)) {
 			
 			SCTP_PRINTF("Found additional streams NOT managed by scheduler, corrected\n");
@@ -1416,15 +1426,11 @@ int
 sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
     struct sctp_nets *net)
 {
-	uint8_t net_was_pf;
+	bool net_was_pf;
 
-	if (net->dest_state & SCTP_ADDR_PF) {
-		net_was_pf = 1;
-	} else {
-		net_was_pf = 0;
-	}
+	net_was_pf = (net->dest_state & SCTP_ADDR_PF) != 0;
 	if (net->hb_responded == 0) {
-		if (net->ro._s_addr) {
+		if (net->ro._s_addr != NULL) {
 			
 
 
@@ -1439,7 +1445,7 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		}
 	}
 	
-	if (net->partial_bytes_acked) {
+	if (net->partial_bytes_acked > 0) {
 		net->partial_bytes_acked = 0;
 	}
 	if ((stcb->asoc.total_output_queue_size > 0) &&
@@ -1447,8 +1453,9 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	    (TAILQ_EMPTY(&stcb->asoc.sent_queue))) {
 		sctp_audit_stream_queues_for_size(inp, stcb);
 	}
-	if (!(net->dest_state & SCTP_ADDR_NOHB) &&
-	    !((net_was_pf == 0) && (net->dest_state & SCTP_ADDR_PF))) {
+	if ((((net->dest_state & SCTP_ADDR_NOHB) == 0) ||
+	     (net->dest_state & SCTP_ADDR_UNCONFIRMED)) &&
+	    (net_was_pf || ((net->dest_state & SCTP_ADDR_PF) == 0))) {
 		
 
 		uint32_t ms_gone_by;
@@ -1472,6 +1479,7 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			ms_gone_by = 0xffffffff;
 		}
 		if ((ms_gone_by >= net->heart_beat_delay) ||
+		    (net->dest_state & SCTP_ADDR_UNCONFIRMED) ||
 		    (net->dest_state & SCTP_ADDR_PF)) {
 			sctp_send_hb(stcb, net, SCTP_SO_NOT_LOCKED);
 		}

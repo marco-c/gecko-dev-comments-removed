@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_header.h 309682 2016-12-07 19:30:59Z tuexen $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #ifndef _NETINET_SCTP_HEADER_H_
@@ -65,7 +65,6 @@ struct sctp_ipv4addr_param {
 } SCTP_PACKED;
 
 #define SCTP_V6_ADDR_BYTES 16
-
 
 struct sctp_ipv6addr_param {
 	struct sctp_paramhdr ph;
@@ -112,11 +111,9 @@ struct sctp_heartbeat_info_param {
 
 
 
-
 struct sctp_prsctp_supported_param {
 	struct sctp_paramhdr ph;
 } SCTP_PACKED;
-
 
 
 struct sctp_asconf_paramhdr {	
@@ -129,13 +126,11 @@ struct sctp_asconf_addr_param {
 	struct sctp_ipv6addr_param addrp;	
 } SCTP_PACKED;
 
-
 struct sctp_asconf_tag_param {	
 	struct sctp_asconf_paramhdr aph;	
-        uint32_t local_vtag;
-        uint32_t remote_vtag;
+	uint32_t local_vtag;
+	uint32_t remote_vtag;
 } SCTP_PACKED;
-
 
 struct sctp_asconf_addrv4_param {	
 	struct sctp_asconf_paramhdr aph;	
@@ -148,7 +143,6 @@ struct sctp_supported_chunk_types_param {
 	struct sctp_paramhdr ph;
 	uint8_t chunk_types[];
 } SCTP_PACKED;
-
 
 
 
@@ -261,7 +255,6 @@ struct sctp_init_msg {
 #define sctp_init_ack_msg	sctp_init_msg
 
 
-
 struct sctp_gap_ack_block {
 	uint16_t start;		
 	uint16_t end;		
@@ -298,7 +291,6 @@ struct sctp_nr_sack_chunk {
 } SCTP_PACKED;
 
 
-
 struct sctp_heartbeat {
 	struct sctp_heartbeat_info_param hb_info;
 } SCTP_PACKED;
@@ -313,7 +305,6 @@ struct sctp_heartbeat_chunk {
 #define sctp_heartbeat_ack_chunk	sctp_heartbeat_chunk
 
 
-
 struct sctp_abort_chunk {
 	struct sctp_chunkhdr ch;
 	
@@ -325,12 +316,10 @@ struct sctp_abort_msg {
 } SCTP_PACKED;
 
 
-
 struct sctp_shutdown_chunk {
 	struct sctp_chunkhdr ch;
 	uint32_t cumulative_tsn_ack;
 } SCTP_PACKED;
-
 
 
 struct sctp_shutdown_ack_chunk {
@@ -338,12 +327,10 @@ struct sctp_shutdown_ack_chunk {
 } SCTP_PACKED;
 
 
-
 struct sctp_error_chunk {
 	struct sctp_chunkhdr ch;
 	
 } SCTP_PACKED;
-
 
 
 struct sctp_cookie_echo_chunk {
@@ -436,7 +423,6 @@ struct sctp_chunk_desc {
 	uint32_t tsn_ifany;
 } SCTP_PACKED;
 
-
 struct sctp_pktdrop_chunk {
 	struct sctp_chunkhdr ch;
 	uint32_t bottle_bw;
@@ -487,10 +473,10 @@ struct sctp_stream_reset_response_tsn {
 } SCTP_PACKED;
 
 struct sctp_stream_reset_add_strm {
-  struct sctp_paramhdr ph;
-  uint32_t request_seq;
-  uint16_t number_of_streams;
-  uint16_t reserved;
+	struct sctp_paramhdr ph;
+	uint32_t request_seq;
+	uint16_t number_of_streams;
+	uint16_t reserved;
 } SCTP_PACKED;
 
 #define SCTP_STREAM_RESET_RESULT_NOTHING_TO_DO   0x00000000 /* XXX: unused */
@@ -563,43 +549,41 @@ struct sctp_auth_chunk {
 #ifndef SCTP_MAX_OVERHEAD
 #ifdef INET6
 #define SCTP_MAX_OVERHEAD (sizeof(struct sctp_data_chunk) + \
-			   sizeof(struct sctphdr) + \
-			   sizeof(struct sctp_ecne_chunk) + \
-			   sizeof(struct sctp_sack_chunk) + \
-			   sizeof(struct ip6_hdr))
+                           sizeof(struct sctphdr) + \
+                           sizeof(struct sctp_ecne_chunk) + \
+                           sizeof(struct sctp_sack_chunk) + \
+                           sizeof(struct ip6_hdr))
 
 #define SCTP_MED_OVERHEAD (sizeof(struct sctp_data_chunk) + \
-			   sizeof(struct sctphdr) + \
-			   sizeof(struct ip6_hdr))
-
+                           sizeof(struct sctphdr) + \
+                           sizeof(struct ip6_hdr))
 
 #define SCTP_MIN_OVERHEAD (sizeof(struct ip6_hdr) + \
-			   sizeof(struct sctphdr))
+                           sizeof(struct sctphdr))
 
 #else
 #define SCTP_MAX_OVERHEAD (sizeof(struct sctp_data_chunk) + \
-			   sizeof(struct sctphdr) + \
-			   sizeof(struct sctp_ecne_chunk) + \
-			   sizeof(struct sctp_sack_chunk) + \
-			   sizeof(struct ip))
+                           sizeof(struct sctphdr) + \
+                           sizeof(struct sctp_ecne_chunk) + \
+                           sizeof(struct sctp_sack_chunk) + \
+                           sizeof(struct ip))
 
 #define SCTP_MED_OVERHEAD (sizeof(struct sctp_data_chunk) + \
-			   sizeof(struct sctphdr) + \
-			   sizeof(struct ip))
-
+                           sizeof(struct sctphdr) + \
+                           sizeof(struct ip))
 
 #define SCTP_MIN_OVERHEAD (sizeof(struct ip) + \
-			   sizeof(struct sctphdr))
+                           sizeof(struct sctphdr))
 
 #endif 
 #endif 
 
 #define SCTP_MED_V4_OVERHEAD (sizeof(struct sctp_data_chunk) + \
-			      sizeof(struct sctphdr) + \
-			      sizeof(struct ip))
+                              sizeof(struct sctphdr) + \
+                              sizeof(struct ip))
 
 #define SCTP_MIN_V4_OVERHEAD (sizeof(struct ip) + \
-			      sizeof(struct sctphdr))
+                              sizeof(struct sctphdr))
 
 #if defined(_WIN32) && !defined(__Userspace__)
 #include <packoff.h>

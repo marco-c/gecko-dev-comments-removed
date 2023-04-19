@@ -113,6 +113,7 @@ void  m_freem(struct mbuf *);
 struct m_tag	*m_tag_alloc(uint32_t, int, int, int);
 struct mbuf	*m_copym(struct mbuf *, int, int, int);
 void		 m_copyback(struct mbuf *, int, int, caddr_t);
+int		 m_apply(struct mbuf *, int, int, int (*)(void *, void *, u_int), void *arg);
 struct mbuf	*m_pullup(struct mbuf *, int);
 struct mbuf	*m_pulldown(struct mbuf *, int off, int len, int *offp);
 int		 m_dup_pkthdr(struct mbuf *, struct mbuf *, int);
@@ -124,9 +125,6 @@ void		 m_copydata(const struct mbuf *, int, int, caddr_t);
 #define MBUF_MEM_NAME "mbuf"
 #define MBUF_CLUSTER_MEM_NAME "mbuf_cluster"
 #define	MBUF_EXTREFCNT_MEM_NAME	"mbuf_ext_refcnt"
-
-#define	MT_NOINIT	255	/* Not a type but a flag to allocate
-				   a non-initialized mbuf */
 
 
 
@@ -293,9 +291,6 @@ struct mbuf {
 #define	MT_OOBDATA	15	/* expedited data  */
 #define	MT_NTYPES	16	/* number of mbuf types for mbtypes[] */
 
-#define	MT_NOINIT	255	/* Not a type but a flag to allocate
-				   a non-initialized mbuf */
-
 
 
 
@@ -332,6 +327,10 @@ extern int max_protohdr;
 			 (!(((m)->m_flags & M_EXT)) ||			\
 			 (*((m)->m_ext.ref_cnt) == 1)) )		\
 
+
+#define M_ASSERTPKTHDR(m)						\
+	KASSERT((m) != NULL && (m)->m_flags & M_PKTHDR,			\
+	    ("%s: no mbuf packet header!", __func__))
 
 
 

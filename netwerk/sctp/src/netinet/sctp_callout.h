@@ -95,6 +95,11 @@ int sctp_os_timer_stop(sctp_os_timer_t *);
 void sctp_handle_tick(uint32_t);
 
 #define SCTP_OS_TIMER_INIT	sctp_os_timer_init
+
+
+
+
+
 #define SCTP_OS_TIMER_START	sctp_os_timer_start
 #define SCTP_OS_TIMER_STOP	sctp_os_timer_stop
 

@@ -34,7 +34,7 @@
 
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 362473 2020-06-21 23:12:56Z tuexen $");
+__FBSDID("$FreeBSD$");
 #endif
 
 #ifndef _NETINET_SCTP_UIO_H_
@@ -45,7 +45,6 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_uio.h 362473 2020-06-21 23:12:56Z tuex
 #define _KERNEL
 #endif
 #endif
-
 #if !defined(_WIN32)
 #if !defined(_KERNEL)
 #include <stdint.h>
@@ -115,7 +114,6 @@ struct sctp_initmsg {
 	uint16_t sinit_max_attempts;
 	uint16_t sinit_max_init_timeo;
 };
-
 
 
 
@@ -444,7 +442,6 @@ struct sctp_setadaption {
 
 
 
-
 struct sctp_pdapi_event {
 	uint16_t pdapi_type;
 	uint16_t pdapi_flags;
@@ -457,7 +454,6 @@ struct sctp_pdapi_event {
 
 
 #define SCTP_PARTIAL_DELIVERY_ABORTED	0x0001
-
 
 
 
@@ -478,14 +474,12 @@ struct sctp_authkey_event {
 #define SCTP_AUTH_NO_AUTH	0x0002
 #define SCTP_AUTH_FREE_KEY	0x0003
 
-
 struct sctp_sender_dry_event {
 	uint16_t sender_dry_type;
 	uint16_t sender_dry_flags;
 	uint32_t sender_dry_length;
 	sctp_assoc_t sender_dry_assoc_id;
 };
-
 
 
 
@@ -533,7 +527,6 @@ struct sctp_stream_change_event {
 
 #define SCTP_STREAM_CHANGE_DENIED	0x0004
 #define SCTP_STREAM_CHANGE_FAILED	0x0008
-
 
 
 struct sctp_tlv {
@@ -1141,7 +1134,6 @@ struct sctpstat {
 
 
 
-
 #if !(defined(__APPLE__) && !defined(__Userspace__))
 #if !defined(__Userspace__)
 #ifndef ntohll
@@ -1169,7 +1161,6 @@ struct sctpstat {
 #endif
 #endif
 #endif
-
 
 
 struct xsctp_inpcb {
@@ -1286,7 +1277,7 @@ int
 sctp_lower_sosend(struct socket *so,
     struct sockaddr *addr,
     struct uio *uio,
-    struct mbuf *i_pak,
+    struct mbuf *top,
     struct mbuf *control,
     int flags,
     struct sctp_sndrcvinfo *srcv

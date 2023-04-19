@@ -319,7 +319,8 @@ static RefPtr<DataChannelConnection> GetConnectionFromSocket(
 
 
 
-static int threshold_event(struct socket* sock, uint32_t sb_free) {
+static int threshold_event(struct socket* sock, uint32_t sb_free,
+                           void* ulp_info) {
   RefPtr<DataChannelConnection> connection = GetConnectionFromSocket(sock);
   connection->mLock.AssertCurrentThreadOwns();
   if (connection) {
