@@ -17,8 +17,6 @@ const { RemoteSettings } = ChromeUtils.import(
   "resource://services-settings/remote-settings.js"
 );
 
-
-
 const RS_SERVER_PREF = "services.settings.server";
 
 const FLUENT_CONTENT = "asrouter-test-string = Test Test Test\n";
