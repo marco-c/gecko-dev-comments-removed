@@ -1,2 +1,2 @@
 
-parseModule("").evaluation();
+moduleEvaluate(parseModule(""));

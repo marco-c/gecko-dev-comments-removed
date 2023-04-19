@@ -22,10 +22,10 @@ const m = g.parseModule(`
   debugger;
   await p;
 `);
-m.declarationInstantiation();
+moduleLink(m);
 
 
-m.evaluation();
+moduleEvaluate(m);
 
 drainJobQueue();
 

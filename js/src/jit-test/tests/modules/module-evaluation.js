@@ -5,8 +5,8 @@ load(libdir + "asserts.js");
 
 async function parseAndEvaluate(source) {
     let m = parseModule(source);
-    m.declarationInstantiation();
-    await m.evaluation();
+    moduleLink(m);
+    await moduleEvaluate(m);
     return m;
 }
 
@@ -19,26 +19,26 @@ async function parseAndEvaluate(source) {
   
   
   let m = parseModule("1");
-  m.declarationInstantiation();
-  assertEq(typeof m.evaluation(), "object");
-  assertEq(m.evaluation() instanceof Promise, true);
-  assertEq(m.evaluation(), m.evaluation());
-  await m.evaluation();
+  moduleLink(m);
+  assertEq(typeof moduleEvaluate(m), "object");
+  assertEq(moduleEvaluate(m) instanceof Promise, true);
+  assertEq(moduleEvaluate(m), moduleEvaluate(m));
+  await moduleEvaluate(m);
 })();
 
 (async () => {
   
   let m = parseModule("export var x = 2 + 2;");
   assertEq(typeof getModuleEnvironmentValue(m, "x"), "undefined");
-  m.declarationInstantiation();
-  await m.evaluation();
+  moduleLink(m);
+  await moduleEvaluate(m);
   assertEq(getModuleEnvironmentValue(m, "x"), 4);
 })();
 
 (async () => {
   let m = parseModule("export let x = 2 * 3;");
-  m.declarationInstantiation();
-  await m.evaluation();
+  moduleLink(m);
+  await moduleEvaluate(m);
   assertEq(getModuleEnvironmentValue(m, "x"), 6);
 })();
 
@@ -76,24 +76,24 @@ let a = registerModule('a',
 (async () => {
   
   let m = parseModule("import a from 'a'; export { a };")
-  m.declarationInstantiation();
-  await m.evaluation()
+  moduleLink(m);
+  await moduleEvaluate(m)
   assertEq(getModuleEnvironmentValue(m, "a"), 2);
 })();
 
 (async () => {
   
   let m = parseModule("import { x as y } from 'a'; export { y };")
-  m.declarationInstantiation();
-  await m.evaluation();
+  moduleLink(m);
+  await moduleEvaluate(m);
   assertEq(getModuleEnvironmentValue(m, "y"), 1);
 })();
 
 (async () => {
   
   let m = parseModule("import { f } from 'a'; export let x = f(3);")
-  m.declarationInstantiation();
-  await m.evaluation();
+  moduleLink(m);
+  await moduleEvaluate(m);
   assertEq(getModuleEnvironmentValue(m, "x"), 4);
 })();
 
@@ -117,8 +117,8 @@ let a = registerModule('a',
 (async () => {
   
   let m = await parseModule("import { x } from 'a'; function f() { return x; }")
-  m.declarationInstantiation();
-  m.evaluation();
+  moduleLink(m);
+  moduleEvaluate(m);
   let f = getModuleEnvironmentValue(m, "f");
   assertEq(f(), 1);
 })();
