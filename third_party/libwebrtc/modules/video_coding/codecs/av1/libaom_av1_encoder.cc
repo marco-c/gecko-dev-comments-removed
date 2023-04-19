@@ -588,11 +588,25 @@ int32_t LibaomAv1Encoder::Encode(
     
     
     
+    if (!converted_buffer) {
+      RTC_LOG(LS_ERROR) << "Failed to convert "
+                        << VideoFrameBufferTypeToString(
+                               converted_buffer->type())
+                        << " image to I420. Can't encode frame.";
+      return WEBRTC_VIDEO_CODEC_ENCODER_FAILURE;
+    }
     if (converted_buffer->type() != VideoFrameBuffer::Type::kI420 &&
         converted_buffer->type() != VideoFrameBuffer::Type::kI420A) {
       converted_buffer = converted_buffer->ToI420();
       RTC_CHECK(converted_buffer->type() == VideoFrameBuffer::Type::kI420 ||
                 converted_buffer->type() == VideoFrameBuffer::Type::kI420A);
+    }
+    if (!converted_buffer) {
+      RTC_LOG(LS_ERROR) << "Failed to convert "
+                        << VideoFrameBufferTypeToString(
+                               converted_buffer->type())
+                        << " image to I420. Can't encode frame.";
+      return WEBRTC_VIDEO_CODEC_ENCODER_FAILURE;
     }
     prepped_input_frame = VideoFrame(converted_buffer, frame.timestamp(),
                                      frame.render_time_ms(), frame.rotation());
