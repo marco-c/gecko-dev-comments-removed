@@ -208,7 +208,8 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   bool HasClonedDOMObjects() const {
     return !mBlobImplArray.IsEmpty() || !mWasmModuleArray.IsEmpty() ||
-           !mClonedSurfaces.IsEmpty() || !mInputStreamArray.IsEmpty();
+           !mClonedSurfaces.IsEmpty() || !mInputStreamArray.IsEmpty() ||
+           !mImages.IsEmpty();
   }
 
   nsTArray<RefPtr<BlobImpl>>& BlobImpls() {
@@ -263,6 +264,8 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   nsTArray<RefPtr<gfx::DataSourceSurface>>& GetSurfaces() {
     return mClonedSurfaces;
   }
+
+  nsTArray<RefPtr<layers::Image>>& Images() { return mImages; }
 
   
   
@@ -360,6 +363,9 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
   
   
   nsTArray<RefPtr<gfx::DataSourceSurface>> mClonedSurfaces;
+
+  
+  nsTArray<RefPtr<layers::Image>> mImages;
 
   
   nsIGlobalObject* MOZ_NON_OWNING_REF mGlobal;
