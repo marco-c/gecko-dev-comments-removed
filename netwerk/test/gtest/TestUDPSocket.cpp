@@ -10,6 +10,7 @@
 #include "nsINetAddr.h"
 #include "nsITimer.h"
 #include "nsContentUtils.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/net/DNS.h"
 #include "prerror.h"
 #include "nsComponentManagerUtils.h"
@@ -242,10 +243,10 @@ TEST(TestUDPSocket, TestUDPSocketMain)
   
   nsCOMPtr<nsIUDPSocket> server, client;
   server = do_CreateInstance("@mozilla.org/network/udp-socket;1", &rv);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   client = do_CreateInstance("@mozilla.org/network/udp-socket;1", &rv);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   RefPtr<WaitForCondition> waiter = new WaitForCondition();
 
@@ -256,7 +257,7 @@ TEST(TestUDPSocket, TestUDPSocketMain)
 
   
   rv = server->Init(0, false, systemPrincipal, true, 0);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   int32_t serverPort;
   server->GetPort(&serverPort);
   server->AsyncListen(serverListener);
@@ -274,34 +275,34 @@ TEST(TestUDPSocket, TestUDPSocketMain)
 
   phase = TEST_OUTPUT_STREAM;
   rv = client->Send("127.0.0.1"_ns, serverPort, data, &count);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   EXPECT_EQ(count, sizeof(uint32_t));
 
   
   waiter->Wait(1);
-  ASSERT_TRUE(NS_SUCCEEDED(serverListener->mResult));
+  ASSERT_NS_SUCCEEDED(serverListener->mResult);
 
   
-  ASSERT_TRUE(NS_SUCCEEDED(clientListener->mResult));
+  ASSERT_NS_SUCCEEDED(clientListener->mResult);
 
   mozilla::net::NetAddr clientAddr;
   rv = client->GetAddress(&clientAddr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   
   
   clientAddr.inet.ip = PR_htonl(127 << 24 | 1);
 
   phase = TEST_SEND_API;
   rv = server->SendWithAddress(&clientAddr, data, &count);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   EXPECT_EQ(count, sizeof(uint32_t));
 
   
   waiter->Wait(1);
-  ASSERT_TRUE(NS_SUCCEEDED(serverListener->mResult));
+  ASSERT_NS_SUCCEEDED(serverListener->mResult);
 
   
-  ASSERT_TRUE(NS_SUCCEEDED(clientListener->mResult));
+  ASSERT_NS_SUCCEEDED(clientListener->mResult);
 
   
   nsCOMPtr<nsITimer> timer = NS_NewTimer();
@@ -316,19 +317,19 @@ TEST(TestUDPSocket, TestUDPSocketMain)
   multicastAddr.inet.ip = PR_htonl(224 << 24 | 255);
   multicastAddr.inet.port = PR_htons(serverPort);
   rv = server->JoinMulticastAddr(multicastAddr, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   timerCb->mResult = NS_OK;
   timer->InitWithCallback(timerCb, MULTICAST_TIMEOUT, nsITimer::TYPE_ONE_SHOT);
   rv = client->SendWithAddress(&multicastAddr, data, &count);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   EXPECT_EQ(count, sizeof(uint32_t));
 
   
   waiter->Wait(1);
-  ASSERT_TRUE(NS_SUCCEEDED(serverListener->mResult));
-  ASSERT_TRUE(NS_SUCCEEDED(timerCb->mResult));
+  ASSERT_NS_SUCCEEDED(serverListener->mResult);
+  ASSERT_NS_SUCCEEDED(timerCb->mResult);
   timer->Cancel();
 
   
@@ -340,7 +341,7 @@ TEST(TestUDPSocket, TestUDPSocketMain)
   timerCb->mResult = NS_OK;
   timer->InitWithCallback(timerCb, MULTICAST_TIMEOUT, nsITimer::TYPE_ONE_SHOT);
   rv = client->SendWithAddress(&multicastAddr, data, &count);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   EXPECT_EQ(count, sizeof(uint32_t));
 
   
@@ -362,7 +363,7 @@ TEST(TestUDPSocket, TestUDPSocketMain)
   timerCb->mResult = NS_OK;
   timer->InitWithCallback(timerCb, MULTICAST_TIMEOUT, nsITimer::TYPE_ONE_SHOT);
   rv = client->SendWithAddress(&multicastAddr, data, &count);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   EXPECT_EQ(count, sizeof(uint32_t));
 
   
@@ -378,13 +379,13 @@ TEST(TestUDPSocket, TestUDPSocketMain)
 
   
   rv = server->LeaveMulticastAddr(multicastAddr, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   timerCb->mResult = NS_OK;
   timer->InitWithCallback(timerCb, MULTICAST_TIMEOUT, nsITimer::TYPE_ONE_SHOT);
   rv = client->SendWithAddress(&multicastAddr, data, &count);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   EXPECT_EQ(count, sizeof(uint32_t));
 
   

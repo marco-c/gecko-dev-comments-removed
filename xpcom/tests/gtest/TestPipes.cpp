@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "gtest/gtest.h"
 #include "Helpers.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Printf.h"
 #include "nsCOMPtr.h"
@@ -349,17 +350,17 @@ static void RunTests(uint32_t segSize, uint32_t segCount) {
     printf("Testing long writes...\n");
   }
   rv = NS_NewPipe(getter_AddRefs(in), getter_AddRefs(out), segSize, bufSize);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   rv = TestPipe(in, out);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
 
   if (gTrace) {
     printf("Testing short writes...\n");
   }
   rv = NS_NewPipe(getter_AddRefs(in), getter_AddRefs(out), segSize, bufSize);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   rv = TestShortWrites(in, out);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
 }
 
 TEST(Pipes, Main)
@@ -385,7 +386,7 @@ static void TestPipe2(uint32_t aNumBytes,
 
   nsresult rv = NS_NewPipe(getter_AddRefs(reader), getter_AddRefs(writer),
                            aSegmentSize, maxSize);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<char> inputData;
   testing::CreateData(aNumBytes, inputData);
@@ -441,7 +442,7 @@ static void TestPipeClone(uint32_t aTotalBytes, uint32_t aNumWrites,
   nsresult rv =
       NS_NewPipe(getter_AddRefs(reader), getter_AddRefs(writer), aSegmentSize,
                  maxSize, true, false);  
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsCOMPtr<nsICloneableInputStream> cloneable = do_QueryInterface(reader);
   ASSERT_TRUE(cloneable);
@@ -460,7 +461,7 @@ static void TestPipeClone(uint32_t aTotalBytes, uint32_t aNumWrites,
   for (uint32_t i = 0; i < aNumInitialClones; ++i) {
     nsCOMPtr<nsIInputStream>* clone = streamList.AppendElement();
     rv = cloneable->Clone(getter_AddRefs(*clone));
-    ASSERT_TRUE(NS_SUCCEEDED(rv));
+    ASSERT_NS_SUCCEEDED(rv);
     ASSERT_TRUE(*clone);
 
     outputDataList.AppendElement();
@@ -500,7 +501,7 @@ static void TestPipeClone(uint32_t aTotalBytes, uint32_t aNumWrites,
     for (uint32_t i = 0; i < aNumToCloneAfterWrite; ++i) {
       nsCOMPtr<nsIInputStream>* clone = streamList.AppendElement();
       rv = cloneable->Clone(getter_AddRefs(*clone));
-      ASSERT_TRUE(NS_SUCCEEDED(rv));
+      ASSERT_NS_SUCCEEDED(rv);
       ASSERT_TRUE(*clone);
 
       
@@ -539,7 +540,7 @@ static void TestPipeClone(uint32_t aTotalBytes, uint32_t aNumWrites,
   }
 
   rv = writer->Close();
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsDependentCSubstring inputString(inputData.Elements(), inputData.Length());
 
@@ -634,14 +635,14 @@ TEST(Pipes, Write_AsyncWait)
   nsresult rv = NS_NewPipe2(getter_AddRefs(reader), getter_AddRefs(writer),
                             true, true,  
                             segmentSize, numSegments);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<char> inputData;
   testing::CreateData(segmentSize, inputData);
 
   uint32_t numWritten = 0;
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
   ASSERT_EQ(NS_BASE_STREAM_WOULD_BLOCK, rv);
@@ -650,7 +651,7 @@ TEST(Pipes, Write_AsyncWait)
       new testing::OutputStreamCallback();
 
   rv = writer->AsyncWait(cb, 0, 0, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   ASSERT_FALSE(cb->Called());
 
@@ -670,18 +671,18 @@ TEST(Pipes, Write_AsyncWait_Clone)
   nsresult rv = NS_NewPipe2(getter_AddRefs(reader), getter_AddRefs(writer),
                             true, true,  
                             segmentSize, numSegments);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsCOMPtr<nsIInputStream> clone;
   rv = NS_CloneInputStream(reader, getter_AddRefs(clone));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<char> inputData;
   testing::CreateData(segmentSize, inputData);
 
   uint32_t numWritten = 0;
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   
@@ -692,7 +693,7 @@ TEST(Pipes, Write_AsyncWait_Clone)
       new testing::OutputStreamCallback();
 
   rv = writer->AsyncWait(cb, 0, 0, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   ASSERT_FALSE(cb->Called());
 
@@ -709,17 +710,17 @@ TEST(Pipes, Write_AsyncWait_Clone)
   
   
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   
   
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_FAILED(rv));
+  ASSERT_NS_FAILED(rv);
 
   cb = new testing::OutputStreamCallback();
   rv = writer->AsyncWait(cb, 0, 0, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   
@@ -753,18 +754,18 @@ TEST(Pipes, Write_AsyncWait_Clone_CloseOriginal)
   nsresult rv = NS_NewPipe2(getter_AddRefs(reader), getter_AddRefs(writer),
                             true, true,  
                             segmentSize, numSegments);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsCOMPtr<nsIInputStream> clone;
   rv = NS_CloneInputStream(reader, getter_AddRefs(clone));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<char> inputData;
   testing::CreateData(segmentSize, inputData);
 
   uint32_t numWritten = 0;
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   
@@ -775,7 +776,7 @@ TEST(Pipes, Write_AsyncWait_Clone_CloseOriginal)
       new testing::OutputStreamCallback();
 
   rv = writer->AsyncWait(cb, 0, 0, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   ASSERT_FALSE(cb->Called());
 
@@ -792,17 +793,17 @@ TEST(Pipes, Write_AsyncWait_Clone_CloseOriginal)
   
   
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   
   
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_FAILED(rv));
+  ASSERT_NS_FAILED(rv);
 
   cb = new testing::OutputStreamCallback();
   rv = writer->AsyncWait(cb, 0, 0, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   
@@ -819,13 +820,13 @@ TEST(Pipes, Write_AsyncWait_Clone_CloseOriginal)
 
   
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_FAILED(rv));
+  ASSERT_NS_FAILED(rv);
 
   
   
   nsCOMPtr<nsIInputStream> clone2;
   rv = NS_CloneInputStream(clone, getter_AddRefs(clone2));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<char> expectedCloneData;
   expectedCloneData.AppendElements(inputData);
@@ -841,12 +842,12 @@ TEST(Pipes, Write_AsyncWait_Clone_CloseOriginal)
 
   
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   cb = new testing::OutputStreamCallback();
   rv = writer->AsyncWait(cb, 0, 0, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   ASSERT_FALSE(cb->Called());
 
   
@@ -857,7 +858,7 @@ TEST(Pipes, Write_AsyncWait_Clone_CloseOriginal)
   
   ASSERT_FALSE(cb->Called());
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_FAILED(rv));
+  ASSERT_NS_FAILED(rv);
 
   
   expectedCloneData.AppendElements(inputData);
@@ -878,7 +879,7 @@ TEST(Pipes, Read_AsyncWait)
   nsresult rv = NS_NewPipe2(getter_AddRefs(reader), getter_AddRefs(writer),
                             true, true,  
                             segmentSize, numSegments);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<char> inputData;
   testing::CreateData(segmentSize, inputData);
@@ -886,13 +887,13 @@ TEST(Pipes, Read_AsyncWait)
   RefPtr<testing::InputStreamCallback> cb = new testing::InputStreamCallback();
 
   rv = reader->AsyncWait(cb, 0, 0, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   ASSERT_FALSE(cb->Called());
 
   uint32_t numWritten = 0;
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   ASSERT_TRUE(cb->Called());
 
@@ -910,11 +911,11 @@ TEST(Pipes, Read_AsyncWait_Clone)
   nsresult rv = NS_NewPipe2(getter_AddRefs(reader), getter_AddRefs(writer),
                             true, true,  
                             segmentSize, numSegments);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsCOMPtr<nsIInputStream> clone;
   rv = NS_CloneInputStream(reader, getter_AddRefs(clone));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsCOMPtr<nsIAsyncInputStream> asyncClone = do_QueryInterface(clone);
   ASSERT_TRUE(asyncClone);
@@ -927,18 +928,18 @@ TEST(Pipes, Read_AsyncWait_Clone)
   RefPtr<testing::InputStreamCallback> cb2 = new testing::InputStreamCallback();
 
   rv = reader->AsyncWait(cb, 0, 0, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   ASSERT_FALSE(cb->Called());
 
   rv = asyncClone->AsyncWait(cb2, 0, 0, nullptr);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   ASSERT_FALSE(cb2->Called());
 
   uint32_t numWritten = 0;
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   ASSERT_TRUE(cb->Called());
   ASSERT_TRUE(cb2->Called());
@@ -980,7 +981,7 @@ void TestCloseDuringRead(uint32_t aSegmentSize, uint32_t aDataSize) {
 
   nsresult rv = NS_NewPipe(getter_AddRefs(reader), getter_AddRefs(writer),
                            aSegmentSize, maxSize);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<char> inputData;
 
@@ -988,14 +989,14 @@ void TestCloseDuringRead(uint32_t aSegmentSize, uint32_t aDataSize) {
 
   uint32_t numWritten = 0;
   rv = writer->Write(inputData.Elements(), inputData.Length(), &numWritten);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsTArray<char> outputData;
 
   uint32_t numRead = 0;
   rv = reader->ReadSegments(CloseDuringReadFunc, &outputData,
                             inputData.Length(), &numRead);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   ASSERT_EQ(inputData.Length(), numRead);
 
   ASSERT_EQ(inputData, outputData);
@@ -1019,7 +1020,7 @@ TEST(Pipes, Interfaces)
   nsCOMPtr<nsIOutputStream> writer;
 
   nsresult rv = NS_NewPipe(getter_AddRefs(reader), getter_AddRefs(writer));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   nsCOMPtr<nsIAsyncInputStream> readerType1 = do_QueryInterface(reader);
   ASSERT_TRUE(readerType1);

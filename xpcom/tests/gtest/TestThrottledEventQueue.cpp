@@ -13,6 +13,7 @@
 #include "gtest/gtest.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CondVar.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThrottledEventQueue.h"
@@ -123,7 +124,7 @@ TEST(ThrottledEventQueue, RunnableQueue)
   Enqueue(queue, [&]() { log += 'c'; });
 
   ASSERT_EQ(log, "");
-  ASSERT_TRUE(NS_SUCCEEDED(queue->Run()));
+  ASSERT_NS_SUCCEEDED(queue->Run());
   ASSERT_EQ(log, "abc");
 }
 
@@ -136,7 +137,7 @@ TEST(ThrottledEventQueue, SimpleDispatch)
       ThrottledEventQueue::Create(base, "test queue 1");
 
   Enqueue(throttled, [&]() { log += 'a'; });
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "a");
 
   ASSERT_TRUE(base->IsEmpty());
@@ -182,7 +183,7 @@ TEST(ThrottledEventQueue, MixedDispatch)
   
   
   ASSERT_EQ(log, "");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "acb");
 
   ASSERT_TRUE(base->IsEmpty());
@@ -208,7 +209,7 @@ TEST(ThrottledEventQueue, EnqueueFromRun)
   Enqueue(throttled, [&]() { log += 'd'; });
 
   ASSERT_EQ(log, "");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "abdc");
 
   ASSERT_TRUE(base->IsEmpty());
@@ -228,14 +229,14 @@ TEST(ThrottledEventQueue, RunFromRun)
   Enqueue(throttled, [&]() {
     log += '(';
     
-    ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+    ASSERT_NS_SUCCEEDED(base->Run());
     log += ')';
   });
 
   Enqueue(throttled, [&]() { log += 'a'; });
 
   ASSERT_EQ(log, "");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "(a)");
 
   ASSERT_TRUE(base->IsEmpty());
@@ -256,7 +257,7 @@ TEST(ThrottledEventQueue, DropWhileRunning)
   }
 
   ASSERT_EQ(log, "");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "a");
 }
 
@@ -289,7 +290,7 @@ TEST(ThrottledEventQueue, AwaitIdle)
   nsCOMPtr<nsIThread> thread;
   nsresult rv =
       NS_NewNamedThread("TEQ AwaitIdle", getter_AddRefs(thread), await);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   
@@ -304,7 +305,7 @@ TEST(ThrottledEventQueue, AwaitIdle)
     ASSERT_FALSE(threadFinished);
   }
   ASSERT_FALSE(runnableFinished);
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_TRUE(runnableFinished);
 
   
@@ -314,7 +315,7 @@ TEST(ThrottledEventQueue, AwaitIdle)
     ASSERT_EQ(dequeue_await, "dequeue await");
   }
 
-  ASSERT_TRUE(NS_SUCCEEDED(thread->Shutdown()));
+  ASSERT_NS_SUCCEEDED(thread->Shutdown());
 }
 
 TEST(ThrottledEventQueue, AwaitIdleMixed)
@@ -376,7 +377,7 @@ TEST(ThrottledEventQueue, AwaitIdleMixed)
     ASSERT_EQ(log, "");
   }
 
-  ASSERT_TRUE(NS_SUCCEEDED(thread->Dispatch(await.forget())));
+  ASSERT_NS_SUCCEEDED(thread->Dispatch(await.forget()));
 
   
   
@@ -389,7 +390,7 @@ TEST(ThrottledEventQueue, AwaitIdleMixed)
   }
 
   
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
 
   {
     MutexAutoLock lock(mutex);
@@ -406,7 +407,7 @@ TEST(ThrottledEventQueue, AwaitIdleMixed)
     ASSERT_TRUE(log == "(a)b" || log == "(ab)");
   }
 
-  ASSERT_TRUE(NS_SUCCEEDED(thread->Shutdown()));
+  ASSERT_NS_SUCCEEDED(thread->Shutdown());
 }
 
 TEST(ThrottledEventQueue, SimplePauseResume)
@@ -422,23 +423,23 @@ TEST(ThrottledEventQueue, SimplePauseResume)
   Enqueue(throttled, [&]() { log += 'a'; });
 
   ASSERT_EQ(log, "");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "a");
 
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(true)));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(true));
   ASSERT_TRUE(throttled->IsPaused());
 
   Enqueue(throttled, [&]() { log += 'b'; });
 
   ASSERT_EQ(log, "a");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "a");
 
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(false)));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(false));
   ASSERT_FALSE(throttled->IsPaused());
 
   ASSERT_EQ(log, "a");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "ab");
 
   ASSERT_TRUE(base->IsEmpty());
@@ -464,7 +465,7 @@ TEST(ThrottledEventQueue, MixedPauseResume)
   Enqueue(base, [&]() { log += 'D'; });
 
   ASSERT_EQ(log, "");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   
   
   ASSERT_EQ(log, "AbD");
@@ -473,11 +474,11 @@ TEST(ThrottledEventQueue, MixedPauseResume)
   ASSERT_TRUE(throttled->IsPaused());
 
   Enqueue(base, [&]() { log += 'E'; });
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(false)));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(false));
   Enqueue(base, [&]() { log += 'F'; });
   ASSERT_FALSE(throttled->IsPaused());
 
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   
   
   ASSERT_EQ(log, "AbDEcF");
@@ -499,7 +500,7 @@ TEST(ThrottledEventQueue, AwaitIdlePaused)
   RefPtr<ThrottledEventQueue> throttled =
       ThrottledEventQueue::Create(base, "test queue 10");
 
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(true)));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(true));
 
   
   
@@ -520,7 +521,7 @@ TEST(ThrottledEventQueue, AwaitIdlePaused)
   nsCOMPtr<nsIThread> thread;
   nsresult rv =
       NS_NewNamedThread("AwaitIdlePaused", getter_AddRefs(thread), await);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   
@@ -538,14 +539,14 @@ TEST(ThrottledEventQueue, AwaitIdlePaused)
 
   
   
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_TRUE(base->IsEmpty());
   ASSERT_FALSE(throttled->IsEmpty());
 
   
   ASSERT_FALSE(runnableFinished);
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(false)));
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(false));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_TRUE(base->IsEmpty());
   ASSERT_TRUE(throttled->IsEmpty());
   ASSERT_TRUE(runnableFinished);
@@ -557,7 +558,7 @@ TEST(ThrottledEventQueue, AwaitIdlePaused)
     ASSERT_EQ(dequeue_await, "dequeue await");
   }
 
-  ASSERT_TRUE(NS_SUCCEEDED(thread->Shutdown()));
+  ASSERT_NS_SUCCEEDED(thread->Shutdown());
 }
 
 TEST(ThrottledEventQueue, ExecutorTransitions)
@@ -568,7 +569,7 @@ TEST(ThrottledEventQueue, ExecutorTransitions)
   RefPtr<ThrottledEventQueue> throttled =
       ThrottledEventQueue::Create(base, "test queue 11");
 
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(true)));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(true));
 
   
   
@@ -578,35 +579,35 @@ TEST(ThrottledEventQueue, ExecutorTransitions)
 
   
   
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(false)));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(false));
   ASSERT_EQ(throttled->Length(), 1U);
   ASSERT_EQ(base->Length(), 1U);
 
   
   
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(true)));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(true));
 
   ASSERT_EQ(log, "");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "");
   ASSERT_EQ(throttled->Length(), 1U);
   ASSERT_EQ(base->Length(), 0U);
 
   
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(false)));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(false));
   ASSERT_EQ(throttled->Length(), 1U);
   ASSERT_EQ(base->Length(), 1U);
 
   ASSERT_EQ(log, "");
-  ASSERT_TRUE(NS_SUCCEEDED(base->Run()));
+  ASSERT_NS_SUCCEEDED(base->Run());
   ASSERT_EQ(log, "a");
   ASSERT_EQ(throttled->Length(), 0U);
   ASSERT_EQ(base->Length(), 0U);
 
   
   
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(true)));
-  ASSERT_TRUE(NS_SUCCEEDED(throttled->SetIsPaused(false)));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(true));
+  ASSERT_NS_SUCCEEDED(throttled->SetIsPaused(false));
   ASSERT_EQ(throttled->Length(), 0U);
   ASSERT_EQ(base->Length(), 0U);
 }

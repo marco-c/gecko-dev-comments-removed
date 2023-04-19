@@ -22,6 +22,7 @@
 #include "prthread.h"
 
 #include "gtest/gtest.h"
+#include "mozilla/gtest/MozAssertions.h"
 
 #include <thread>
 
@@ -1908,7 +1909,7 @@ TEST(GeckoProfiler, DifferentThreads)
 
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread("GeckoProfGTest", getter_AddRefs(thread));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   
@@ -3803,7 +3804,7 @@ TEST(GeckoProfiler, StreamJSONForThisProcessThreaded)
   
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread("GeckoProfGTest", getter_AddRefs(thread));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   uint32_t features = ProfilerFeature::StackWalk;
   const char* filters[] = {"GeckoMain"};
@@ -3970,7 +3971,7 @@ TEST(GeckoProfiler, SuspendAndSample)
 {
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread("GeckoProfGTest", getter_AddRefs(thread));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   ProfilerThreadId tid = profiler_current_thread_id();
 

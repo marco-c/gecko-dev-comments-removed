@@ -6,6 +6,7 @@
 #include "nsCOMPtr.h"
 #include "gtest/gtest.h"
 
+#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/Unused.h"
 
 #define NS_IFOO_IID                                  \
@@ -187,12 +188,12 @@ TEST(COMPtr, Bloat_Raw_Unsafe)
   
   IBar* barP = 0;
   nsresult rv = CreateIBar(reinterpret_cast<void**>(&barP));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   ASSERT_TRUE(barP);
 
   IFoo* fooP = 0;
   rv = barP->QueryInterface(NS_GET_IID(IFoo), reinterpret_cast<void**>(&fooP));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   ASSERT_TRUE(fooP);
 
   NS_RELEASE(fooP);
@@ -204,11 +205,11 @@ TEST(COMPtr, Bloat_Smart)
   
   nsCOMPtr<IBar> barP;
   nsresult rv = CreateIBar(getter_AddRefs(barP));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   ASSERT_TRUE(barP);
 
   nsCOMPtr<IFoo> fooP(do_QueryInterface(static_cast<nsISupports*>(barP), &rv));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   ASSERT_TRUE(fooP);
 }
 

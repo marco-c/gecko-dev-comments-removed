@@ -23,7 +23,7 @@ static already_AddRefed<imgFrame> CreateEmptyFrame(
   nsresult rv =
       frame->InitForDecoder(aSize, mozilla::gfx::SurfaceFormat::OS_RGBA, false,
                             Some(animParams), aCanRecycle);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   RawAccessFrameRef frameRef = frame->RawAccessRef();
   
   

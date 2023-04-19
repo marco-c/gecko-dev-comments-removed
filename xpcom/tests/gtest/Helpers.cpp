@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include "gtest/gtest.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsIOutputStream.h"
 #include "nsStreamUtils.h"
 #include "nsTArray.h"
@@ -51,7 +52,7 @@ void Write(nsIOutputStream* aStream, const nsTArray<char>& aData,
     uint32_t numWritten;
     nsresult rv =
         aStream->Write(aData.Elements() + aOffset, remaining, &numWritten);
-    ASSERT_TRUE(NS_SUCCEEDED(rv));
+    ASSERT_NS_SUCCEEDED(rv);
     if (numWritten < 1) {
       break;
     }
@@ -80,7 +81,7 @@ void ConsumeAndValidateStream(nsIInputStream* aStream,
                               const nsACString& aExpectedData) {
   nsAutoCString outputData;
   nsresult rv = NS_ConsumeStream(aStream, UINT32_MAX, outputData);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   ASSERT_EQ(aExpectedData.Length(), outputData.Length());
   ASSERT_TRUE(aExpectedData.Equals(outputData));
 }
@@ -89,7 +90,7 @@ NS_IMPL_ISUPPORTS(OutputStreamCallback, nsIOutputStreamCallback);
 
 OutputStreamCallback::OutputStreamCallback() : mCalled(false) {}
 
-OutputStreamCallback::~OutputStreamCallback() {}
+OutputStreamCallback::~OutputStreamCallback() = default;
 
 NS_IMETHODIMP
 OutputStreamCallback::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
@@ -101,7 +102,7 @@ NS_IMPL_ISUPPORTS(InputStreamCallback, nsIInputStreamCallback);
 
 InputStreamCallback::InputStreamCallback() : mCalled(false) {}
 
-InputStreamCallback::~InputStreamCallback() {}
+InputStreamCallback::~InputStreamCallback() = default;
 
 NS_IMETHODIMP
 InputStreamCallback::OnInputStreamReady(nsIAsyncInputStream* aStream) {

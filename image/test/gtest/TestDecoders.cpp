@@ -132,13 +132,13 @@ void WithSingleChunkDecode(const ImageTestCase& aTestCase,
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   auto sourceBuffer = MakeNotNull<RefPtr<SourceBuffer>>();
   sourceBuffer->ExpectLength(length);
   rv = sourceBuffer->AppendFromInputStream(inputStream, length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   sourceBuffer->Complete(NS_OK);
 
   
@@ -182,7 +182,7 @@ void WithDelayedChunkDecode(const ImageTestCase& aTestCase,
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   auto sourceBuffer = MakeNotNull<RefPtr<SourceBuffer>>();
@@ -203,7 +203,7 @@ void WithDelayedChunkDecode(const ImageTestCase& aTestCase,
   
   sourceBuffer->ExpectLength(length);
   rv = sourceBuffer->AppendFromInputStream(inputStream, length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   sourceBuffer->Complete(NS_OK);
 
   
@@ -227,7 +227,7 @@ static void CheckDecoderMultiChunk(const ImageTestCase& aTestCase,
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   auto sourceBuffer = MakeNotNull<RefPtr<SourceBuffer>>();
@@ -251,11 +251,11 @@ static void CheckDecoderMultiChunk(const ImageTestCase& aTestCase,
     uint64_t available = 0;
     rv = inputStream->Available(&available);
     ASSERT_TRUE(available >= read);
-    ASSERT_TRUE(NS_SUCCEEDED(rv));
+    ASSERT_NS_SUCCEEDED(rv);
 
     
     rv = sourceBuffer->AppendFromInputStream(inputStream, read);
-    ASSERT_TRUE(NS_SUCCEEDED(rv));
+    ASSERT_NS_SUCCEEDED(rv);
 
     
     SpinPendingEvents();
@@ -333,7 +333,7 @@ static void CheckAnimationDecoderResults(const ImageTestCase& aTestCase,
   DrawableSurface drawableSurface(WrapNotNull(aProvider));
   for (size_t i = 0; i < framePixels.Length(); ++i) {
     nsresult rv = drawableSurface.Seek(i);
-    EXPECT_TRUE(NS_SUCCEEDED(rv));
+    EXPECT_NS_SUCCEEDED(rv);
 
     
     RawAccessFrameRef rawFrame = drawableSurface->RawAccessRef();
@@ -349,7 +349,7 @@ static void CheckAnimationDecoderResults(const ImageTestCase& aTestCase,
 
   
   nsresult rv = drawableSurface.Seek(framePixels.Length());
-  EXPECT_TRUE(NS_FAILED(rv));
+  EXPECT_NS_FAILED(rv);
 }
 
 template <typename Func>
@@ -369,13 +369,13 @@ static void WithSingleChunkAnimationDecode(const ImageTestCase& aTestCase,
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   NotNull<RefPtr<SourceBuffer>> sourceBuffer = WrapNotNull(new SourceBuffer());
   sourceBuffer->ExpectLength(length);
   rv = sourceBuffer->AppendFromInputStream(inputStream, length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   sourceBuffer->Complete(NS_OK);
 
   
@@ -435,16 +435,16 @@ static void CheckDecoderFrameFirst(const ImageTestCase& aTestCase) {
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   rv = image->OnImageDataAvailable(nullptr, inputStream, 0,
                                    static_cast<uint32_t>(length));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   rv = image->OnImageDataComplete(nullptr, NS_OK, true);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   RefPtr<ProgressTracker> tracker = image->GetProgressTracker();
   tracker->SyncNotifyProgress(FLAG_LOAD_COMPLETE);
@@ -462,9 +462,9 @@ static void CheckDecoderFrameFirst(const ImageTestCase& aTestCase) {
   
   IntSize imageSize(0, 0);
   rv = image->GetWidth(&imageSize.width);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   rv = image->GetHeight(&imageSize.height);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
 
   EXPECT_EQ(aTestCase.mSize.width, imageSize.width);
   EXPECT_EQ(aTestCase.mSize.height, imageSize.height);
@@ -509,7 +509,7 @@ static void CheckDecoderFrameFirst(const ImageTestCase& aTestCase) {
          true);
     ASSERT_EQ(MatchType::EXACT, result.Type());
 
-    EXPECT_TRUE(NS_SUCCEEDED(result.Surface().Seek(0)));
+    EXPECT_NS_SUCCEEDED(result.Surface().Seek(0));
     EXPECT_TRUE(bool(result.Surface()));
 
     RefPtr<imgFrame> partialFrame = result.Surface().GetFrame(1);
@@ -545,16 +545,16 @@ static void CheckDecoderFrameCurrent(const ImageTestCase& aTestCase) {
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   rv = image->OnImageDataAvailable(nullptr, inputStream, 0,
                                    static_cast<uint32_t>(length));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   rv = image->OnImageDataComplete(nullptr, NS_OK, true);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   RefPtr<ProgressTracker> tracker = image->GetProgressTracker();
   tracker->SyncNotifyProgress(FLAG_LOAD_COMPLETE);
@@ -570,9 +570,9 @@ static void CheckDecoderFrameCurrent(const ImageTestCase& aTestCase) {
   
   IntSize imageSize(0, 0);
   rv = image->GetWidth(&imageSize.width);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   rv = image->GetHeight(&imageSize.height);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
 
   EXPECT_EQ(aTestCase.mSize.width, imageSize.width);
   EXPECT_EQ(aTestCase.mSize.height, imageSize.height);
@@ -591,7 +591,7 @@ static void CheckDecoderFrameCurrent(const ImageTestCase& aTestCase) {
          true);
     ASSERT_EQ(MatchType::EXACT, result.Type());
 
-    EXPECT_TRUE(NS_SUCCEEDED(result.Surface().Seek(0)));
+    EXPECT_NS_SUCCEEDED(result.Surface().Seek(0));
     EXPECT_TRUE(bool(result.Surface()));
 
     RefPtr<imgFrame> partialFrame = result.Surface().GetFrame(1);
@@ -633,7 +633,7 @@ static void CheckDecoderFrameCurrent(const ImageTestCase& aTestCase) {
          true);
     ASSERT_EQ(MatchType::EXACT, result.Type());
 
-    EXPECT_TRUE(NS_SUCCEEDED(result.Surface().Seek(0)));
+    EXPECT_NS_SUCCEEDED(result.Surface().Seek(0));
     EXPECT_TRUE(bool(result.Surface()));
 
     RefPtr<imgFrame> partialFrame = result.Surface().GetFrame(1);
@@ -984,9 +984,9 @@ TEST_F(ImageDecoders, AnimatedGIFWithExtraImageSubBlocks) {
   
   IntSize imageSize(0, 0);
   nsresult rv = image->GetWidth(&imageSize.width);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   rv = image->GetHeight(&imageSize.height);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
 
   EXPECT_EQ(testCase.mSize.width, imageSize.width);
   EXPECT_EQ(testCase.mSize.height, imageSize.height);
@@ -1005,7 +1005,7 @@ TEST_F(ImageDecoders, AnimatedGIFWithExtraImageSubBlocks) {
                             true);
   ASSERT_EQ(MatchType::EXACT, result.Type());
 
-  EXPECT_TRUE(NS_SUCCEEDED(result.Surface().Seek(0)));
+  EXPECT_NS_SUCCEEDED(result.Surface().Seek(0));
   EXPECT_TRUE(bool(result.Surface()));
 
   RefPtr<imgFrame> partialFrame = result.Surface().GetFrame(1);
@@ -1054,16 +1054,16 @@ TEST_F(ImageDecoders, MultipleSizesICOSingleChunk) {
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   rv = image->OnImageDataAvailable(nullptr, inputStream, 0,
                                    static_cast<uint32_t>(length));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   rv = image->OnImageDataComplete(nullptr, NS_OK, true);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   RefPtr<ProgressTracker> tracker = image->GetProgressTracker();
   tracker->SyncNotifyProgress(FLAG_LOAD_COMPLETE);
@@ -1075,16 +1075,16 @@ TEST_F(ImageDecoders, MultipleSizesICOSingleChunk) {
   
   IntSize imageSize(0, 0);
   rv = image->GetWidth(&imageSize.width);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   rv = image->GetHeight(&imageSize.height);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
 
   EXPECT_EQ(testCase.mSize.width, imageSize.width);
   EXPECT_EQ(testCase.mSize.height, imageSize.height);
 
   nsTArray<IntSize> nativeSizes;
   rv = image->GetNativeSizes(nativeSizes);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   ASSERT_EQ(6u, nativeSizes.Length());
 
   IntSize expectedSizes[] = {IntSize(16, 16),   IntSize(32, 32),
@@ -1098,7 +1098,7 @@ TEST_F(ImageDecoders, MultipleSizesICOSingleChunk) {
   RefPtr<Image> image90 =
       ImageOps::Orient(image, Orientation(Angle::D90, Flip::Unflipped));
   rv = image90->GetNativeSizes(nativeSizes);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   ASSERT_EQ(6u, nativeSizes.Length());
 
   for (int i = 0; i < 5; ++i) {
@@ -1109,7 +1109,7 @@ TEST_F(ImageDecoders, MultipleSizesICOSingleChunk) {
   RefPtr<Image> image180 =
       ImageOps::Orient(image, Orientation(Angle::D180, Flip::Unflipped));
   rv = image180->GetNativeSizes(nativeSizes);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   ASSERT_EQ(6u, nativeSizes.Length());
 
   for (int i = 0; i < 6; ++i) {

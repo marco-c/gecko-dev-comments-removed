@@ -77,13 +77,13 @@ void ImageBenchmarkBase::SetUp() {
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   mSourceBuffer = new SourceBuffer();
   mSourceBuffer->ExpectLength(length);
   rv = mSourceBuffer->AppendFromInputStream(inputStream, length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   mSourceBuffer->Complete(NS_OK);
 }
 
@@ -133,7 +133,7 @@ void SpinPendingEvents() {
   do {
     processed = false;
     nsresult rv = mainThread->ProcessNextEvent(false, &processed);
-    EXPECT_TRUE(NS_SUCCEEDED(rv));
+    EXPECT_NS_SUCCEEDED(rv);
   } while (processed);
 }
 

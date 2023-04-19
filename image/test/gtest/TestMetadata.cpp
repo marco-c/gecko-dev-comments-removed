@@ -36,13 +36,13 @@ static void CheckMetadata(const ImageTestCase& aTestCase,
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   auto sourceBuffer = MakeNotNull<RefPtr<SourceBuffer>>();
   sourceBuffer->ExpectLength(length);
   rv = sourceBuffer->AppendFromInputStream(inputStream, length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
   sourceBuffer->Complete(NS_OK);
 
   
@@ -211,16 +211,16 @@ TEST_F(ImageDecoderMetadata, NoFrameDelayGIFFullDecode) {
   
   uint64_t length;
   nsresult rv = inputStream->Available(&length);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   rv = image->OnImageDataAvailable(nullptr, inputStream, 0,
                                    static_cast<uint32_t>(length));
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   
   rv = image->OnImageDataComplete(nullptr, NS_OK, true);
-  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_NS_SUCCEEDED(rv);
 
   RefPtr<ProgressTracker> tracker = image->GetProgressTracker();
   tracker->SyncNotifyProgress(FLAG_LOAD_COMPLETE);
@@ -232,9 +232,9 @@ TEST_F(ImageDecoderMetadata, NoFrameDelayGIFFullDecode) {
   
   IntSize imageSize(0, 0);
   rv = image->GetWidth(&imageSize.width);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
   rv = image->GetHeight(&imageSize.height);
-  EXPECT_TRUE(NS_SUCCEEDED(rv));
+  EXPECT_NS_SUCCEEDED(rv);
 
   EXPECT_EQ(testCase.mSize.width, imageSize.width);
   EXPECT_EQ(testCase.mSize.height, imageSize.height);
@@ -252,7 +252,7 @@ TEST_F(ImageDecoderMetadata, NoFrameDelayGIFFullDecode) {
                             true);
   ASSERT_EQ(MatchType::EXACT, result.Type());
 
-  EXPECT_TRUE(NS_SUCCEEDED(result.Surface().Seek(0)));
+  EXPECT_NS_SUCCEEDED(result.Surface().Seek(0));
   EXPECT_TRUE(bool(result.Surface()));
 
   RefPtr<imgFrame> partialFrame = result.Surface().GetFrame(1);

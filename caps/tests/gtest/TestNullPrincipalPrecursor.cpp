@@ -2,6 +2,7 @@
 
 
 #include "gtest/gtest.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/NullPrincipal.h"
 #include "nsIURIMutator.h"
 #include "nsPrintfCString.h"
@@ -38,10 +39,10 @@ TEST(NullPrincipalPrecursor, EscapingRoundTrips)
     
     
     nsCOMPtr<nsIURI> clone;
-    EXPECT_TRUE(
-        NS_SUCCEEDED(NS_MutateURI(baseURI).SetQuery(escaped).Finalize(clone)));
+    EXPECT_NS_SUCCEEDED(
+        NS_MutateURI(baseURI).SetQuery(escaped).Finalize(clone));
     nsCString query;
-    EXPECT_TRUE(NS_SUCCEEDED(clone->GetQuery(query)));
+    EXPECT_NS_SUCCEEDED(clone->GetQuery(query));
     EXPECT_EQ(escaped, query);
 
     
