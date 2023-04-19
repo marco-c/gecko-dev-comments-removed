@@ -13,8 +13,6 @@ const {
   getNextStatement,
 } = require(_path.resolve(__dirname, "./utils.js"));
 
-
-
 module.exports = function(fileInfo, api) {
   const { jscodeshift } = api;
   const root = jscodeshift(fileInfo.source);

@@ -10,8 +10,6 @@ const fs = require("fs");
 const _path = require("path");
 const { esmifyExtension } = require(_path.resolve(__dirname, "./utils.js"));
 
-
-
 const uri_map = JSON.parse(
   fs.readFileSync(_path.resolve(__dirname, "./map.json"))
 );
