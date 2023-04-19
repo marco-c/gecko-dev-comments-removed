@@ -18,10 +18,10 @@ namespace rnn_vad {
 namespace test {
 namespace {
 
-template <typename T, size_t S>
+template <typename T, int S>
 void CheckSymmetry(const SymmetricMatrixBuffer<T, S>* sym_matrix_buf) {
-  for (size_t row = 0; row < S - 1; ++row)
-    for (size_t col = row + 1; col < S; ++col)
+  for (int row = 0; row < S - 1; ++row)
+    for (int col = row + 1; col < S; ++col)
       EXPECT_EQ(sym_matrix_buf->GetValue(row, col),
                 sym_matrix_buf->GetValue(col, row));
 }
@@ -30,12 +30,12 @@ using PairType = std::pair<int, int>;
 
 
 
-template <size_t S>
+template <int S>
 bool CheckPairsWithValueExist(
     const SymmetricMatrixBuffer<PairType, S>* sym_matrix_buf,
     const int value) {
-  for (size_t row = 0; row < S - 1; ++row) {
-    for (size_t col = row + 1; col < S; ++col) {
+  for (int row = 0; row < S - 1; ++row) {
+    for (int col = row + 1; col < S; ++col) {
       auto p = sym_matrix_buf->GetValue(row, col);
       if (p.first == value || p.second == value)
         return true;
@@ -52,7 +52,7 @@ bool CheckPairsWithValueExist(
 TEST(RnnVadTest, SymmetricMatrixBufferUseCase) {
   
   constexpr int kRingBufSize = 10;
-  RingBuffer<int, 1, static_cast<size_t>(kRingBufSize)> ring_buf;
+  RingBuffer<int, 1, kRingBufSize> ring_buf;
   
   
   
@@ -81,8 +81,8 @@ TEST(RnnVadTest, SymmetricMatrixBufferUseCase) {
     CheckSymmetry(&sym_matrix_buf);
     
     
-    for (size_t delay1 = 0; delay1 < kRingBufSize - 1; ++delay1) {
-      for (size_t delay2 = delay1 + 1; delay2 < kRingBufSize; ++delay2) {
+    for (int delay1 = 0; delay1 < kRingBufSize - 1; ++delay1) {
+      for (int delay2 = delay1 + 1; delay2 < kRingBufSize; ++delay2) {
         const auto t1 = ring_buf.GetArrayView(delay1)[0];
         const auto t2 = ring_buf.GetArrayView(delay2)[0];
         ASSERT_LE(t2, t1);
@@ -93,7 +93,7 @@ TEST(RnnVadTest, SymmetricMatrixBufferUseCase) {
     }
     
     
-    for (size_t delay = 1; delay < kRingBufSize; ++delay) {
+    for (int delay = 1; delay < kRingBufSize; ++delay) {
       const auto t_prev = ring_buf.GetArrayView(delay)[0];
       EXPECT_TRUE(CheckPairsWithValueExist(&sym_matrix_buf, t_prev));
     }

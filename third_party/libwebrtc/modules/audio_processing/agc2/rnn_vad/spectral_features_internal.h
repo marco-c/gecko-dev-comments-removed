@@ -25,7 +25,7 @@ namespace rnn_vad {
 
 
 
-constexpr size_t kOpusBands24kHz = 20;
+constexpr int kOpusBands24kHz = 20;
 static_assert(kOpusBands24kHz < kNumBands,
               "The number of bands at 24 kHz must be less than those defined "
               "in the Opus scale at 48 kHz.");

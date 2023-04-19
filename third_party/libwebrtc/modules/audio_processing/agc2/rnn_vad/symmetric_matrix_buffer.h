@@ -18,6 +18,7 @@
 
 #include "api/array_view.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_compare.h"
 
 namespace webrtc {
 namespace rnn_vad {
@@ -29,7 +30,7 @@ namespace rnn_vad {
 
 
 
-template <typename T, size_t S>
+template <typename T, int S>
 class SymmetricMatrixBuffer {
   static_assert(S > 2, "");
 
@@ -55,9 +56,9 @@ class SymmetricMatrixBuffer {
     
     std::memmove(buf_.data(), buf_.data() + S, (buf_.size() - S) * sizeof(T));
     
-    for (size_t i = 0; i < values.size(); ++i) {
-      const size_t index = (S - 1 - i) * (S - 1) - 1;
-      RTC_DCHECK_LE(static_cast<size_t>(0), index);
+    for (int i = 0; rtc::SafeLt(i, values.size()); ++i) {
+      const int index = (S - 1 - i) * (S - 1) - 1;
+      RTC_DCHECK_GE(index, 0);
       RTC_DCHECK_LT(index, buf_.size());
       buf_[index] = values[i];
     }
@@ -65,9 +66,9 @@ class SymmetricMatrixBuffer {
   
   
   
-  T GetValue(size_t delay1, size_t delay2) const {
-    int row = S - 1 - static_cast<int>(delay1);
-    int col = S - 1 - static_cast<int>(delay2);
+  T GetValue(int delay1, int delay2) const {
+    int row = S - 1 - delay1;
+    int col = S - 1 - delay2;
     RTC_DCHECK_NE(row, col) << "The diagonal cannot be accessed.";
     if (row > col)
       std::swap(row, col);  

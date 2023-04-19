@@ -53,14 +53,14 @@ TEST(RnnVadTest, LpResidualPipelineBitExactness) {
   std::vector<float> expected_lp_residual(kBufSize24kHz);
 
   
-  const size_t num_frames = std::min(pitch_buf_24kHz_reader.second,
-                                     static_cast<size_t>(300));  
+  const int num_frames =
+      std::min(pitch_buf_24kHz_reader.second, 300);  
   ASSERT_GE(lp_residual_reader.second, num_frames);
 
   {
     
     
-    for (size_t i = 0; i < num_frames; ++i) {
+    for (int i = 0; i < num_frames; ++i) {
       
       ASSERT_TRUE(pitch_buf_24kHz_reader.first->ReadChunk(pitch_buf_data));
       

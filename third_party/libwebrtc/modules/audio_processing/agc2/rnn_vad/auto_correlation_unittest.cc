@@ -54,7 +54,7 @@ TEST(RnnVadTest, CheckAutoCorrelationOnConstantPitchBuffer) {
   }
   
   
-  constexpr size_t kFrameSize20ms12kHz = kFrameSize20ms24kHz / 2;
+  constexpr int kFrameSize20ms12kHz = kFrameSize20ms24kHz / 2;
   std::array<float, kNumPitchBufAutoCorrCoeffs> expected_output;
   std::fill(expected_output.begin(), expected_output.end(),
             static_cast<float>(kFrameSize20ms12kHz));

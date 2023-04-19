@@ -24,6 +24,7 @@
 #include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_compare.h"
 
 namespace webrtc {
 namespace rnn_vad {
@@ -47,7 +48,7 @@ void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
 template <typename T, typename D = T>
 class BinaryFileReader {
  public:
-  explicit BinaryFileReader(const std::string& file_path, size_t chunk_size = 0)
+  BinaryFileReader(const std::string& file_path, int chunk_size = 0)
       : is_(file_path, std::ios::binary | std::ios::ate),
         data_length_(is_.tellg() / sizeof(T)),
         chunk_size_(chunk_size) {
@@ -58,7 +59,7 @@ class BinaryFileReader {
   BinaryFileReader(const BinaryFileReader&) = delete;
   BinaryFileReader& operator=(const BinaryFileReader&) = delete;
   ~BinaryFileReader() = default;
-  size_t data_length() const { return data_length_; }
+  int data_length() const { return data_length_; }
   bool ReadValue(D* dst) {
     if (std::is_same<T, D>::value) {
       is_.read(reinterpret_cast<char*>(dst), sizeof(T));
@@ -72,7 +73,7 @@ class BinaryFileReader {
   
   
   bool ReadChunk(rtc::ArrayView<D> dst) {
-    RTC_DCHECK((chunk_size_ == 0) || (chunk_size_ == dst.size()));
+    RTC_DCHECK((chunk_size_ == 0) || rtc::SafeEq(chunk_size_, dst.size()));
     const std::streamsize bytes_to_read = dst.size() * sizeof(T);
     if (std::is_same<T, D>::value) {
       is_.read(reinterpret_cast<char*>(dst.data()), bytes_to_read);
@@ -83,13 +84,13 @@ class BinaryFileReader {
     }
     return is_.gcount() == bytes_to_read;
   }
-  void SeekForward(size_t items) { is_.seekg(items * sizeof(T), is_.cur); }
+  void SeekForward(int items) { is_.seekg(items * sizeof(T), is_.cur); }
   void SeekBeginning() { is_.seekg(0, is_.beg); }
 
  private:
   std::ifstream is_;
-  const size_t data_length_;
-  const size_t chunk_size_;
+  const int data_length_;
+  const int chunk_size_;
   std::vector<T> buf_;
 };
 
@@ -117,22 +118,22 @@ class BinaryFileWriter {
 
 
 
-std::pair<std::unique_ptr<BinaryFileReader<int16_t, float>>, const size_t>
-CreatePcmSamplesReader(const size_t frame_length);
+std::pair<std::unique_ptr<BinaryFileReader<int16_t, float>>, const int>
+CreatePcmSamplesReader(const int frame_length);
 
-std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
+std::pair<std::unique_ptr<BinaryFileReader<float>>, const int>
 CreatePitchBuffer24kHzReader();
 
 
-std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
+std::pair<std::unique_ptr<BinaryFileReader<float>>, const int>
 CreateLpResidualAndPitchPeriodGainReader();
 
-std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
+std::pair<std::unique_ptr<BinaryFileReader<float>>, const int>
 CreateVadProbsReader();
 
-constexpr size_t kNumPitchBufAutoCorrCoeffs = 147;
-constexpr size_t kNumPitchBufSquareEnergies = 385;
-constexpr size_t kPitchTestDataSize =
+constexpr int kNumPitchBufAutoCorrCoeffs = 147;
+constexpr int kNumPitchBufSquareEnergies = 385;
+constexpr int kPitchTestDataSize =
     kBufSize24kHz + kNumPitchBufSquareEnergies + kNumPitchBufAutoCorrCoeffs;
 
 

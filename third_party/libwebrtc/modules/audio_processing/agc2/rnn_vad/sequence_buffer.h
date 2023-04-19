@@ -29,7 +29,7 @@ namespace rnn_vad {
 
 
 
-template <typename T, size_t S, size_t N, size_t M = N>
+template <typename T, int S, int N, int M = N>
 class SequenceBuffer {
   static_assert(N <= S,
                 "The new chunk size cannot be larger than the sequence buffer "
@@ -45,8 +45,8 @@ class SequenceBuffer {
   SequenceBuffer(const SequenceBuffer&) = delete;
   SequenceBuffer& operator=(const SequenceBuffer&) = delete;
   ~SequenceBuffer() = default;
-  size_t size() const { return S; }
-  size_t chunks_size() const { return N; }
+  int size() const { return S; }
+  int chunks_size() const { return N; }
   
   void Reset() { std::fill(buffer_.begin(), buffer_.end(), 0); }
   
