@@ -20,7 +20,6 @@
 #include "api/video/render_resolution.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame.h"
-#include "api/video_codecs/video_codec.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -97,14 +96,7 @@ class RTC_EXPORT VideoDecoder {
 
   
   
-  
-  
-  virtual bool Configure(const Settings& settings);
-
-  
-  
-  virtual int32_t InitDecode(const VideoCodec* codec_settings,
-                             int32_t number_of_cores);
+  virtual bool Configure(const Settings& settings) = 0;
 
   virtual int32_t Decode(const EncodedImage& input_image,
                          bool missing_frames,
