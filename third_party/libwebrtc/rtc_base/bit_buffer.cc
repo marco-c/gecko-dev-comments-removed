@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "absl/numeric/bits.h"
 #include "rtc_base/checks.h"
 
 namespace {
@@ -57,16 +58,6 @@ uint8_t WritePartialByte(uint8_t source,
   
   
   return (target & ~mask) | (source >> target_bit_offset);
-}
-
-
-size_t CountBits(uint64_t val) {
-  size_t bit_count = 0;
-  while (val != 0) {
-    bit_count++;
-    val >>= 1;
-  }
-  return bit_count;
 }
 
 }  
@@ -206,7 +197,7 @@ bool BitBuffer::ReadNonSymmetric(uint32_t num_values, uint32_t& val) {
     val = 0;
     return true;
   }
-  size_t count_bits = CountBits(num_values);
+  size_t count_bits = absl::bit_width(num_values);
   uint32_t num_min_bits_values = (uint32_t{1} << count_bits) - num_values;
 
   if (!ReadBits(count_bits - 1, val)) {
@@ -354,7 +345,7 @@ bool BitBufferWriter::WriteNonSymmetric(uint32_t val, uint32_t num_values) {
     
     return true;
   }
-  size_t count_bits = CountBits(num_values);
+  size_t count_bits = absl::bit_width(num_values);
   uint32_t num_min_bits_values = (uint32_t{1} << count_bits) - num_values;
 
   return val < num_min_bits_values
@@ -366,7 +357,7 @@ size_t BitBufferWriter::SizeNonSymmetricBits(uint32_t val,
                                              uint32_t num_values) {
   RTC_DCHECK_LT(val, num_values);
   RTC_DCHECK_LE(num_values, uint32_t{1} << 31);
-  size_t count_bits = CountBits(num_values);
+  size_t count_bits = absl::bit_width(num_values);
   uint32_t num_min_bits_values = (uint32_t{1} << count_bits) - num_values;
 
   return val < num_min_bits_values ? (count_bits - 1) : count_bits;
@@ -383,7 +374,7 @@ bool BitBufferWriter::WriteExponentialGolomb(uint32_t val) {
   
   
   
-  return WriteBits(val_to_encode, CountBits(val_to_encode) * 2 - 1);
+  return WriteBits(val_to_encode, absl::bit_width(val_to_encode) * 2 - 1);
 }
 
 bool BitBufferWriter::WriteSignedExponentialGolomb(int32_t val) {
