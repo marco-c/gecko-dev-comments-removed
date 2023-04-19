@@ -56,7 +56,6 @@ def test(mod, path, entity=None):
     if mod == "dom":
         
         if path in (
-            "chrome/global.dtd",
             "chrome/accessibility/AccessFu.properties",
             "chrome/dom/dom.properties",
         ):
