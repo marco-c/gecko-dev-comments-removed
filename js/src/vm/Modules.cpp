@@ -150,7 +150,7 @@ JS_PUBLIC_API bool JS::ModuleEvaluate(JSContext* cx,
   CHECK_THREAD(cx);
   cx->releaseCheck(moduleRecord);
 
-  return ModuleObject::Evaluate(cx, moduleRecord.as<ModuleObject>(), rval);
+  return js::ModuleEvaluate(cx, moduleRecord.as<ModuleObject>(), rval);
 }
 
 JS_PUBLIC_API bool JS::ThrowOnModuleEvaluationFailure(
@@ -317,6 +317,10 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
 static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
                                MutableHandle<ModuleVector> stack, size_t index,
                                size_t* indexOut);
+static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
+                                  MutableHandle<ModuleVector> stack,
+                                  size_t index, size_t* indexOut);
+static bool ExecuteAsyncModule(JSContext* cx, Handle<ModuleObject*> module);
 
 static ArrayObject* NewList(JSContext* cx) {
   
@@ -1212,4 +1216,321 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   
   *indexOut = index;
   return true;
+}
+
+
+
+bool js::ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> moduleArg,
+                        MutableHandle<Value> result) {
+  Rooted<ModuleObject*> module(cx, moduleArg);
+
+  
+  
+  if (module->status() != MODULE_STATUS_LINKED &&
+      module->status() != MODULE_STATUS_EVALUATED &&
+      module->status() != MODULE_STATUS_EVALUATED_ERROR) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_BAD_MODULE_STATUS);
+    return false;
+  }
+
+  
+  
+  if (module->status() == MODULE_STATUS_EVALUATED) {
+    module = module->getCycleRoot();
+  }
+
+  
+  if (module->hasTopLevelCapability()) {
+    
+    result.set(ObjectValue(*module->topLevelCapability()));
+    return true;
+  }
+
+  
+  Rooted<ModuleVector> stack(cx);
+
+  
+  
+  Rooted<PromiseObject*> capability(
+      cx, ModuleObject::createTopLevelCapability(cx, module));
+  if (!capability) {
+    return false;
+  }
+
+  
+  size_t ignored;
+  bool ok = InnerModuleEvaluation(cx, module, &stack, 0, &ignored);
+
+  
+  if (!ok) {
+    if (!cx->isExceptionPending()) {
+      return false;  
+    }
+
+    Rooted<Value> error(cx);
+    if (!cx->getPendingException(&error)) {
+      return false;
+    }
+
+    cx->clearPendingException();
+
+    
+    for (ModuleObject* m : stack) {
+      
+      MOZ_ASSERT(m->status() == MODULE_STATUS_EVALUATING);
+
+      
+      
+      m->setEvaluationError(error);
+    }
+
+    
+    if (stack.empty()) {
+      module->setEvaluationError(error);
+    }
+
+    
+    MOZ_ASSERT(module->status() == MODULE_STATUS_EVALUATED_ERROR);
+
+    
+    MOZ_ASSERT(module->evaluationError() == error);
+
+    
+    
+    if (!ModuleObject::topLevelCapabilityReject(cx, module, error)) {
+      return false;
+    }
+  } else {
+    
+    
+    
+    MOZ_ASSERT(module->status() == MODULE_STATUS_EVALUATING ||
+               module->status() == MODULE_STATUS_EVALUATED);
+
+    
+    if (!module->isAsyncEvaluating()) {
+      
+      MOZ_ASSERT(module->status() == MODULE_STATUS_EVALUATED);
+
+      
+      
+      if (!ModuleObject::topLevelCapabilityResolve(cx, module)) {
+        return false;
+      }
+    }
+
+    
+    MOZ_ASSERT(stack.empty());
+  }
+
+  
+  result.set(ObjectValue(*capability));
+  return true;
+}
+
+
+
+static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
+                                  MutableHandle<ModuleVector> stack,
+                                  size_t index, size_t* indexOut) {
+  
+  
+  
+  
+
+  
+  
+  if (module->hadEvaluationError()) {
+    Rooted<Value> error(cx, module->evaluationError());
+    cx->setPendingException(error, ShouldCaptureStack::Maybe);
+    return false;
+  }
+  if (module->status() == MODULE_STATUS_EVALUATING ||
+      module->status() == MODULE_STATUS_EVALUATED) {
+    *indexOut = index;
+    return true;
+  }
+
+  
+  MOZ_ASSERT(module->status() == MODULE_STATUS_LINKED);
+
+  
+  
+  if (!stack.append(module)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  module->setStatus(MODULE_STATUS_EVALUATING);
+
+  
+  module->setDfsIndex(index);
+
+  
+  module->setDfsAncestorIndex(index);
+
+  
+  module->setPendingAsyncDependencies(0);
+
+  
+  index++;
+
+  
+  Rooted<ArrayObject*> requestedModules(cx, &module->requestedModules());
+  Rooted<ModuleRequestObject*> required(cx);
+  Rooted<ModuleObject*> requiredModule(cx);
+  for (uint32_t i = 0; i != requestedModules->length(); i++) {
+    required = requestedModules->getDenseElement(i)
+                   .toObject()
+                   .as<RequestedModuleObject>()
+                   .moduleRequest();
+
+    
+    
+    
+    
+    
+    requiredModule =
+        HostResolveImportedModule(cx, module, required, MODULE_STATUS_LINKED);
+    if (!requiredModule) {
+      return false;
+    }
+
+    
+    
+    if (!InnerModuleEvaluation(cx, requiredModule, stack, index, &index)) {
+      return false;
+    }
+
+    
+    
+    
+    MOZ_ASSERT(requiredModule->status() == MODULE_STATUS_EVALUATING ||
+               requiredModule->status() == MODULE_STATUS_EVALUATED);
+
+    
+    
+    MOZ_ASSERT((requiredModule->status() == MODULE_STATUS_EVALUATING) ==
+               ContainsElement(stack, requiredModule));
+
+    
+    if (requiredModule->status() == MODULE_STATUS_EVALUATING) {
+      
+      
+      
+      module->setDfsAncestorIndex(std::min(module->dfsAncestorIndex(),
+                                           requiredModule->dfsAncestorIndex()));
+    } else {
+      
+      
+      requiredModule = requiredModule->getCycleRoot();
+
+      
+      
+      MOZ_ASSERT(requiredModule->status() >= MODULE_STATUS_EVALUATED);
+
+      
+      
+      if (requiredModule->status() == MODULE_STATUS_EVALUATED_ERROR) {
+        Rooted<Value> error(cx, requiredModule->evaluationError());
+        cx->setPendingException(error, ShouldCaptureStack::Maybe);
+        return false;
+      }
+    }
+
+    
+    if (requiredModule->isAsyncEvaluating()) {
+      
+      if (!ModuleObject::appendAsyncParentModule(cx, requiredModule, module)) {
+        return false;
+      }
+
+      
+      
+      module->setPendingAsyncDependencies(module->pendingAsyncDependencies() +
+                                          1);
+    }
+  }
+
+  
+  
+  if (module->pendingAsyncDependencies() > 0 || module->isAsync()) {
+    
+    
+    MOZ_ASSERT(!module->isAsyncEvaluating() && !module->wasAsyncEvaluating());
+
+    
+    
+    
+    
+    module->setAsyncEvaluating();
+
+    
+    
+    if (module->pendingAsyncDependencies() == 0) {
+      if (!ExecuteAsyncModule(cx, module)) {
+        return false;
+      }
+    }
+  } else {
+    
+    if (!ModuleObject::execute(cx, module)) {
+      return false;
+    }
+  }
+
+  
+  MOZ_ASSERT(CountElements(stack, module) == 1);
+
+  
+  MOZ_ASSERT(module->dfsAncestorIndex() <= module->dfsIndex());
+
+  
+  if (module->dfsAncestorIndex() == module->dfsIndex()) {
+    
+    bool done = false;
+
+    
+    while (!done) {
+      
+      
+      requiredModule = stack.popCopy();
+
+      
+      
+      
+      
+      requiredModule->setStatus(MODULE_STATUS_EVALUATED);
+
+      
+      
+      done = requiredModule == module;
+
+      
+      requiredModule->setCycleRoot(module);
+    }
+  }
+
+  
+  *indexOut = index;
+  return true;
+}
+
+
+
+static bool ExecuteAsyncModule(JSContext* cx, Handle<ModuleObject*> module) {
+  
+  MOZ_ASSERT(module->status() == MODULE_STATUS_EVALUATING ||
+             module->status() == MODULE_STATUS_EVALUATED);
+
+  
+  MOZ_ASSERT(module->isAsync());
+
+  
+
+  
+  
+  return ModuleObject::execute(cx, module);
 }

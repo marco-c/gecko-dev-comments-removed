@@ -31,6 +31,10 @@ bool ModuleInitializeEnvironment(JSContext* cx, Handle<ModuleObject*> module);
 
 bool ModuleInstantiate(JSContext* cx, Handle<ModuleObject*> module);
 
+
+bool ModuleEvaluate(JSContext* cx, Handle<ModuleObject*> module,
+                    MutableHandle<Value> result);
+
 }  
 
 #endif  
