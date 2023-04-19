@@ -25,7 +25,7 @@
 #include "net/dcsctp/public/types.h"
 #include "net/dcsctp/timer/task_queue_timeout.h"
 #include "p2p/base/packet_transport_internal.h"
-#include "rtc_base/containers/flat_set.h"
+#include "rtc_base/containers/flat_map.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/random.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -111,7 +111,22 @@ class DcSctpTransport : public cricket::SctpTransportInternal,
   std::string debug_name_ = "DcSctpTransport";
   rtc::CopyOnWriteBuffer receive_buffer_;
 
-  flat_set<dcsctp::StreamID> local_close_;
+  
+  
+  
+  struct StreamClosingState {
+    
+    
+    
+    
+    bool closure_initiated = false;
+    
+    bool incoming_reset_done = false;
+    
+    bool outgoing_reset_done = false;
+  };
+
+  flat_map<dcsctp::StreamID, StreamClosingState> closing_states_;
   bool ready_to_send_data_ = false;
 };
 

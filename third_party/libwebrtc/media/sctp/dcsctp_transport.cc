@@ -212,19 +212,27 @@ bool DcSctpTransport::OpenStream(int sid) {
                       << "): Transport is not started.";
     return false;
   }
-  local_close_.erase(dcsctp::StreamID(static_cast<uint16_t>(sid)));
   return true;
 }
 
 bool DcSctpTransport::ResetStream(int sid) {
   RTC_LOG(LS_INFO) << debug_name_ << "->ResetStream(" << sid << ").";
   if (!socket_) {
-    RTC_LOG(LS_ERROR) << debug_name_ << "->OpenStream(sid=" << sid
+    RTC_LOG(LS_ERROR) << debug_name_ << "->ResetStream(sid=" << sid
                       << "): Transport is not started.";
     return false;
   }
+
   dcsctp::StreamID streams[1] = {dcsctp::StreamID(static_cast<uint16_t>(sid))};
-  local_close_.insert(streams[0]);
+
+  StreamClosingState& closing_state = closing_states_[streams[0]];
+  if (closing_state.closure_initiated || closing_state.incoming_reset_done ||
+      closing_state.outgoing_reset_done) {
+    
+    
+    return false;
+  }
+  closing_state.closure_initiated = true;
   socket_->ResetStreams(streams);
   return true;
 }
@@ -484,10 +492,14 @@ void DcSctpTransport::OnStreamsResetPerformed(
     RTC_LOG(LS_INFO) << debug_name_
                      << "->OnStreamsResetPerformed(...): Outgoing stream reset"
                      << ", sid=" << stream_id.value();
-    if (!local_close_.contains(stream_id)) {
+    StreamClosingState& closing_state = closing_states_[stream_id];
+    closing_state.outgoing_reset_done = true;
+
+    if (closing_state.incoming_reset_done) {
       
       
       SignalClosingProcedureComplete(stream_id.value());
+      closing_states_.erase(stream_id);
     }
   }
 }
@@ -498,17 +510,23 @@ void DcSctpTransport::OnIncomingStreamsReset(
     RTC_LOG(LS_INFO) << debug_name_
                      << "->OnIncomingStreamsReset(...): Incoming stream reset"
                      << ", sid=" << stream_id.value();
-    if (!local_close_.contains(stream_id)) {
+    StreamClosingState& closing_state = closing_states_[stream_id];
+    closing_state.incoming_reset_done = true;
+
+    if (!closing_state.closure_initiated) {
       
       
       
       dcsctp::StreamID streams[1] = {stream_id};
       socket_->ResetStreams(streams);
       SignalClosingProcedureStartedRemotely(stream_id.value());
-    } else {
+    }
+
+    if (closing_state.outgoing_reset_done) {
       
       
       SignalClosingProcedureComplete(stream_id.value());
+      closing_states_.erase(stream_id);
     }
   }
 }
