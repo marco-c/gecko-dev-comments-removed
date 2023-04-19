@@ -56,6 +56,8 @@ struct EmulatedEndpointConfig {
     kDebug
   };
 
+  
+  absl::optional<std::string> name = absl::nullopt;
   IpAddressFamily generated_ip_family = IpAddressFamily::kIpv4;
   
   
