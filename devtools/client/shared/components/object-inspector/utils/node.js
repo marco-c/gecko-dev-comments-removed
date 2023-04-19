@@ -288,7 +288,11 @@ function nodeHasEntries(item) {
     
     
     
-    (className === "URLSearchParams" && Array.isArray(value.preview?.entries))
+    (className === "URLSearchParams" && Array.isArray(value.preview?.entries)) ||
+    
+    
+    
+    (className === "Headers" && Array.isArray(value.preview?.entries))
   );
 }
 
