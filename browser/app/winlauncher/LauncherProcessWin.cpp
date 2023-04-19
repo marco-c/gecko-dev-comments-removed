@@ -450,7 +450,7 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
   }
 
   
-  STARTUPINFOW currentStartupInfo;
+  STARTUPINFOW currentStartupInfo = {.cb = sizeof(STARTUPINFOW)};
   GetStartupInfoW(&currentStartupInfo);
   if ((currentStartupInfo.dwFlags & STARTF_TITLEISLINKNAME) &&
       currentStartupInfo.lpTitle) {
