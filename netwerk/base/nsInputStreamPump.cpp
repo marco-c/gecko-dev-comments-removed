@@ -198,12 +198,31 @@ nsInputStreamPump::Cancel(nsresult status) {
 
   
   if (mAsyncStream) {
-    mAsyncStream->CloseWithStatus(status);
-    if (mSuspendCount == 0) EnsureWaiting();
     
     
     
     
+
+    nsCOMPtr<nsIEventTarget> currentTarget = NS_GetCurrentThread();
+    if (mTargetThread && currentTarget != mTargetThread) {
+      nsresult rv = mTargetThread->Dispatch(NS_NewRunnableFunction(
+          "nsInputStreamPump::Cancel", [self = RefPtr{this}, status] {
+            RecursiveMutexAutoLock lock(self->mMutex);
+            if (!self->mAsyncStream) {
+              return;
+            }
+            self->mAsyncStream->CloseWithStatus(status);
+            if (self->mSuspendCount == 0) {
+              self->EnsureWaiting();
+            }
+          }));
+      NS_ENSURE_SUCCESS(rv, rv);
+    } else {
+      mAsyncStream->CloseWithStatus(status);
+      if (mSuspendCount == 0) {
+        EnsureWaiting();
+      }
+    }
   }
   return NS_OK;
 }
