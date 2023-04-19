@@ -32,7 +32,6 @@
 #ifndef ZYCORE_LIST_H
 #define ZYCORE_LIST_H
 
-#include "zydis/ZycoreExportConfig.h"
 #include "zydis/Zycore/Allocator.h"
 #include "zydis/Zycore/Object.h"
 #include "zydis/Zycore/Status.h"
@@ -412,7 +411,7 @@ ZYCORE_EXPORT ZyanStatus ZyanListGetNodeDataMutableEx(const ZyanListNode* node, 
 
 
 
-ZYCORE_EXPORT ZyanStatus ZyanListSetNodeData(const ZyanList* list, const ZyanListNode* node, 
+ZYCORE_EXPORT ZyanStatus ZyanListSetNodeData(const ZyanList* list, const ZyanListNode* node,
     const void* value);
 
 
@@ -506,7 +505,7 @@ ZYCORE_EXPORT ZyanStatus ZyanListRemove(ZyanList* list, const ZyanListNode* node
 
 
 
-ZYCORE_EXPORT ZyanStatus ZyanListRemoveRange(ZyanList* list, const ZyanListNode* first, 
+ZYCORE_EXPORT ZyanStatus ZyanListRemoveRange(ZyanList* list, const ZyanListNode* first,
     const ZyanListNode* last);
 
 

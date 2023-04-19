@@ -32,7 +32,6 @@
 #ifndef ZYCORE_STRING_H
 #define ZYCORE_STRING_H
 
-#include "zydis/ZycoreExportConfig.h"
 #include "zydis/Zycore/Allocator.h"
 #include "zydis/Zycore/Status.h"
 #include "zydis/Zycore/Types.h"
@@ -55,12 +54,12 @@ extern "C" {
 
 
 
-#define ZYAN_STRING_DEFAULT_GROWTH_FACTOR       2.00f
+#define ZYAN_STRING_DEFAULT_GROWTH_FACTOR       2
 
 
 
 
-#define ZYAN_STRING_DEFAULT_SHRINK_THRESHOLD    0.25f
+#define ZYAN_STRING_DEFAULT_SHRINK_THRESHOLD    4
 
 
 
@@ -181,8 +180,8 @@ typedef struct ZyanStringView_
             /* vector */ \
             { \
                 /* allocator        */ ZYAN_NULL, \
-                /* growth_factor    */ 1.0f, \
-                /* shrink_threshold */ 0.0f, \
+                /* growth_factor    */ 1, \
+                /* shrink_threshold */ 0, \
                 /* size             */ sizeof(string), \
                 /* capacity         */ sizeof(string), \
                 /* element_size     */ sizeof(char), \
@@ -245,7 +244,7 @@ ZYCORE_EXPORT ZYAN_REQUIRES_LIBC ZyanStatus ZyanStringInit(ZyanString* string, Z
 
 
 ZYCORE_EXPORT ZyanStatus ZyanStringInitEx(ZyanString* string, ZyanUSize capacity,
-    ZyanAllocator* allocator, float growth_factor, float shrink_threshold);
+    ZyanAllocator* allocator, ZyanU8 growth_factor, ZyanU8 shrink_threshold);
 
 
 
@@ -336,7 +335,7 @@ ZYCORE_EXPORT ZYAN_REQUIRES_LIBC ZyanStatus ZyanStringDuplicate(ZyanString* dest
 
 ZYCORE_EXPORT ZyanStatus ZyanStringDuplicateEx(ZyanString* destination,
     const ZyanStringView* source, ZyanUSize capacity, ZyanAllocator* allocator,
-    float growth_factor, float shrink_threshold);
+    ZyanU8 growth_factor, ZyanU8 shrink_threshold);
 
 
 
@@ -431,8 +430,8 @@ ZYCORE_EXPORT ZYAN_REQUIRES_LIBC ZyanStatus ZyanStringConcat(ZyanString* destina
 
 
 ZYCORE_EXPORT ZyanStatus ZyanStringConcatEx(ZyanString* destination, const ZyanStringView* s1,
-    const ZyanStringView* s2, ZyanUSize capacity, ZyanAllocator* allocator, float growth_factor,
-    float shrink_threshold);
+    const ZyanStringView* s2, ZyanUSize capacity, ZyanAllocator* allocator, ZyanU8 growth_factor,
+    ZyanU8 shrink_threshold);
 
 
 

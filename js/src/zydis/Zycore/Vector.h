@@ -32,7 +32,6 @@
 #ifndef ZYCORE_VECTOR_H
 #define ZYCORE_VECTOR_H
 
-#include "zydis/ZycoreExportConfig.h"
 #include "zydis/Zycore/Allocator.h"
 #include "zydis/Zycore/Comparison.h"
 #include "zydis/Zycore/Object.h"
@@ -56,12 +55,12 @@ extern "C" {
 
 
 
-#define ZYAN_VECTOR_DEFAULT_GROWTH_FACTOR       2.00f
+#define ZYAN_VECTOR_DEFAULT_GROWTH_FACTOR       2
 
 
 
 
-#define ZYAN_VECTOR_DEFAULT_SHRINK_THRESHOLD    0.25f
+#define ZYAN_VECTOR_DEFAULT_SHRINK_THRESHOLD    4
 
 
 
@@ -82,11 +81,11 @@ typedef struct ZyanVector_
     
 
 
-    float growth_factor;
+    ZyanU8 growth_factor;
     
 
 
-    float shrink_threshold;
+    ZyanU8 shrink_threshold;
     
 
 
@@ -123,8 +122,8 @@ typedef struct ZyanVector_
 #define ZYAN_VECTOR_INITIALIZER \
     { \
         /* allocator        */ ZYAN_NULL, \
-        /* growth_factor    */ 0.0f, \
-        /* shrink_threshold */ 0.0f, \
+        /* growth_factor    */ 0, \
+        /* shrink_threshold */ 0, \
         /* size             */ 0, \
         /* capacity         */ 0, \
         /* element_size     */ 0, \
@@ -253,8 +252,8 @@ ZYCORE_EXPORT ZYAN_REQUIRES_LIBC ZyanStatus ZyanVectorInit(ZyanVector* vector,
 
 
 ZYCORE_EXPORT ZyanStatus ZyanVectorInitEx(ZyanVector* vector, ZyanUSize element_size,
-    ZyanUSize capacity, ZyanMemberProcedure destructor, ZyanAllocator* allocator, 
-    float growth_factor, float shrink_threshold);
+    ZyanUSize capacity, ZyanMemberProcedure destructor, ZyanAllocator* allocator,
+    ZyanU8 growth_factor, ZyanU8 shrink_threshold);
 
 
 
@@ -333,7 +332,7 @@ ZYCORE_EXPORT ZYAN_REQUIRES_LIBC ZyanStatus ZyanVectorDuplicate(ZyanVector* dest
 
 
 ZYCORE_EXPORT ZyanStatus ZyanVectorDuplicateEx(ZyanVector* destination, const ZyanVector* source,
-    ZyanUSize capacity, ZyanAllocator* allocator, float growth_factor, float shrink_threshold);
+    ZyanUSize capacity, ZyanAllocator* allocator, ZyanU8 growth_factor, ZyanU8 shrink_threshold);
 
 
 
@@ -542,7 +541,7 @@ ZYCORE_EXPORT ZyanStatus ZyanVectorDelete(ZyanVector* vector, ZyanUSize index);
 
 
 
-ZYCORE_EXPORT ZyanStatus ZyanVectorDeleteRange(ZyanVector* vector, ZyanUSize index, 
+ZYCORE_EXPORT ZyanStatus ZyanVectorDeleteRange(ZyanVector* vector, ZyanUSize index,
     ZyanUSize count);
 
 
@@ -666,7 +665,7 @@ ZYCORE_EXPORT ZyanStatus ZyanVectorResize(ZyanVector* vector, ZyanUSize size);
 
 
 
-ZYCORE_EXPORT ZyanStatus ZyanVectorResizeEx(ZyanVector* vector, ZyanUSize size, 
+ZYCORE_EXPORT ZyanStatus ZyanVectorResizeEx(ZyanVector* vector, ZyanUSize size,
     const void* initializer);
 
 

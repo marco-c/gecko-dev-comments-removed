@@ -68,6 +68,9 @@ ZyanStatus ZydisFormatterATTPrintMnemonic(const ZydisFormatter* formatter,
 ZyanStatus ZydisFormatterATTPrintRegister(const ZydisFormatter* formatter,
     ZydisFormatterBuffer* buffer, ZydisFormatterContext* context, ZydisRegister reg);
 
+ZyanStatus ZydisFormatterATTPrintAddressABS(const ZydisFormatter* formatter,
+    ZydisFormatterBuffer* buffer, ZydisFormatterContext* context);
+
 ZyanStatus ZydisFormatterATTPrintDISP(const ZydisFormatter* formatter,
     ZydisFormatterBuffer* buffer, ZydisFormatterContext* context);
 
@@ -92,6 +95,7 @@ static const ZydisFormatter FORMATTER_ATT =
      ZYDIS_FORMATTER_STYLE_ATT,
      ZYAN_FALSE,
      ZYAN_FALSE,
+     ZYAN_TRUE,
      ZYAN_FALSE,
      ZYAN_FALSE,
      ZYAN_FALSE,
@@ -157,7 +161,7 @@ static const ZydisFormatter FORMATTER_ATT =
      &ZydisFormatterBaseFormatOperandIMM,
      &ZydisFormatterATTPrintMnemonic,
      &ZydisFormatterATTPrintRegister,
-     &ZydisFormatterBasePrintAddressABS,
+     &ZydisFormatterATTPrintAddressABS,
      &ZydisFormatterBasePrintAddressREL,
      &ZydisFormatterATTPrintDISP,
      &ZydisFormatterATTPrintIMM,

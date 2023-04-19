@@ -32,7 +32,6 @@
 #ifndef ZYCORE_H
 #define ZYCORE_H
 
-#include "zydis/ZycoreExportConfig.h"
 #include "zydis/Zycore/Types.h"
 
 
@@ -52,7 +51,7 @@ extern "C" {
 
 
 
-#define ZYCORE_VERSION (ZyanU64)0x0001000000000000
+#define ZYCORE_VERSION (ZyanU64)0x0001000100000000
 
 
 

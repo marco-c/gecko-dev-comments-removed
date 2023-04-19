@@ -50,7 +50,6 @@ extern "C" {
 
 
 
-
 #define ZYDIS_RUNTIME_ADDRESS_NONE (ZyanU64)(-1)
 
 
@@ -120,6 +119,13 @@ typedef enum ZydisFormatterProperty_
 
 
     ZYDIS_FORMATTER_PROP_FORCE_SEGMENT,
+    
+
+
+
+
+
+     ZYDIS_FORMATTER_PROP_FORCE_SCALE_ONE,
     
 
 
@@ -757,6 +763,10 @@ struct ZydisFormatter_
 
 
     ZyanBool force_memory_segment;
+    
+
+
+    ZyanBool force_memory_scale;
     
 
 

@@ -107,6 +107,10 @@ typedef enum ZydisRegisterClass_
     
 
 
+    ZYDIS_REGCLASS_TMM,
+    
+
+
     ZYDIS_REGCLASS_FLAGS,
     
 

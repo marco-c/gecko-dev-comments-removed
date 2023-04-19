@@ -32,7 +32,6 @@
 #ifndef ZYCORE_BITSET_H
 #define ZYCORE_BITSET_H
 
-#include "zydis/ZycoreExportConfig.h"
 #include "zydis/Zycore/Allocator.h"
 #include "zydis/Zycore/Status.h"
 #include "zydis/Zycore/Types.h"
@@ -118,7 +117,7 @@ ZYCORE_EXPORT ZYAN_REQUIRES_LIBC ZyanStatus ZyanBitsetInit(ZyanBitset* bitset, Z
 
 
 ZYCORE_EXPORT ZyanStatus ZyanBitsetInitEx(ZyanBitset* bitset, ZyanUSize count,
-    ZyanAllocator* allocator, float growth_factor, float shrink_threshold);
+    ZyanAllocator* allocator, ZyanU8 growth_factor, ZyanU8 shrink_threshold);
 
 
 

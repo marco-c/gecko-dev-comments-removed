@@ -32,7 +32,6 @@
 #ifndef ZYCORE_FORMAT_H
 #define ZYCORE_FORMAT_H
 
-#include "zydis/ZycoreExportConfig.h"
 #include "zydis/Zycore/Status.h"
 #include "zydis/Zycore/String.h"
 #include "zydis/Zycore/Types.h"
@@ -44,6 +43,31 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ZYAN_INLINE ZyanU64 ZyanAbsI64(ZyanI64 x)
+{
+    
+    
+    
+    if (x == (-0x7fffffffffffffff - 1))
+    {
+        return 0x8000000000000000u;
+    }
+
+    return (ZyanU64)(x < 0 ? -x : x);
+}
 
 
 

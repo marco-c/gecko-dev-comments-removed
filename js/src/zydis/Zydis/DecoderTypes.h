@@ -53,6 +53,25 @@ extern "C" {
 
 
 
+typedef ZyanU8 ZydisOperandAttributes;
+
+
+
+
+
+
+
+
+
+#define ZYDIS_OATTRIB_IS_MULTISOURCE4   0x01 // (1 <<  0)
+
+
+
+
+
+
+
+
 typedef enum ZydisMemoryOperandType_
 {
     ZYDIS_MEMOP_TYPE_INVALID,
@@ -126,6 +145,10 @@ typedef struct ZydisDecodedOperand_
 
 
     ZyanU16 element_count;
+    
+
+
+    ZydisOperandAttributes attributes;
     
 
 
@@ -427,6 +450,14 @@ typedef ZyanU64 ZydisInstructionAttributes;
 
 
 
+#define ZYDIS_ATTRIB_ACCEPTS_NOTRACK            0x0000080000000000 // (1 << 43) // TODO: rebase
+ 
+
+
+#define ZYDIS_ATTRIB_HAS_NOTRACK                0x0000100000000000 // (1 << 44) // TODO: rebase
+
+
+
 
 
 
@@ -437,102 +468,142 @@ typedef ZyanU32 ZydisCPUFlags;
 
 
 
-typedef enum ZydisCPUFlag_
-{
-    
+typedef ZyanU8 ZydisCPUFlag;
 
 
-    ZYDIS_CPUFLAG_CF,
-    
 
 
-    ZYDIS_CPUFLAG_PF,
-    
+#define ZYDIS_CPUFLAG_CF     0
 
 
-    ZYDIS_CPUFLAG_AF,
-    
+
+#define ZYDIS_CPUFLAG_PF     2
 
 
-    ZYDIS_CPUFLAG_ZF,
-    
+
+#define ZYDIS_CPUFLAG_AF     4
 
 
-    ZYDIS_CPUFLAG_SF,
-    
+
+#define ZYDIS_CPUFLAG_ZF     6
 
 
-    ZYDIS_CPUFLAG_TF,
-    
+
+#define ZYDIS_CPUFLAG_SF     7
 
 
-    ZYDIS_CPUFLAG_IF,
-    
+
+#define ZYDIS_CPUFLAG_TF     8
 
 
-    ZYDIS_CPUFLAG_DF,
-    
+
+#define ZYDIS_CPUFLAG_IF     9
 
 
-    ZYDIS_CPUFLAG_OF,
-    
+
+#define ZYDIS_CPUFLAG_DF    10
 
 
-    ZYDIS_CPUFLAG_IOPL,
-    
+
+#define ZYDIS_CPUFLAG_OF    11
 
 
-    ZYDIS_CPUFLAG_NT,
-    
+
+#define ZYDIS_CPUFLAG_IOPL  12
 
 
-    ZYDIS_CPUFLAG_RF,
-    
+
+#define ZYDIS_CPUFLAG_NT    14
 
 
-    ZYDIS_CPUFLAG_VM,
-    
+
+#define ZYDIS_CPUFLAG_RF    16
 
 
-    ZYDIS_CPUFLAG_AC,
-    
+
+#define ZYDIS_CPUFLAG_VM    17
 
 
-    ZYDIS_CPUFLAG_VIF,
-    
+
+#define ZYDIS_CPUFLAG_AC    18
 
 
-    ZYDIS_CPUFLAG_VIP,
-    
+
+#define ZYDIS_CPUFLAG_VIF   19
 
 
-    ZYDIS_CPUFLAG_ID,
-    
+
+#define ZYDIS_CPUFLAG_VIP   20
 
 
-    ZYDIS_CPUFLAG_C0,
-    
+
+#define ZYDIS_CPUFLAG_ID    21
 
 
-    ZYDIS_CPUFLAG_C1,
-    
 
 
-    ZYDIS_CPUFLAG_C2,
-    
 
 
-    ZYDIS_CPUFLAG_C3,
-
-    
 
 
-    ZYDIS_CPUFLAG_MAX_VALUE = ZYDIS_CPUFLAG_C3,
-    
 
 
-    ZYDIS_CPUFLAG_REQUIRED_BITS = ZYAN_BITS_TO_REPRESENT(ZYDIS_CPUFLAG_MAX_VALUE)
-} ZydisCPUFlag;
+#define ZYDIS_CPUFLAG_C0    22
+
+
+
+
+
+
+
+#define ZYDIS_CPUFLAG_C1    23
+
+
+
+
+
+
+
+#define ZYDIS_CPUFLAG_C2    24
+
+
+
+
+
+
+
+#define ZYDIS_CPUFLAG_C3    25
+
+
+
+
+#define ZYDIS_CPUFLAG_MAX_VALUE     ZYDIS_CPUFLAG_C3
+
+ 
+
+ 
+
+
+typedef ZyanU8 ZydisFPUFlags;
+
+
+
+
+#define ZYDIS_FPUFLAG_C0    0x00 // (1 << 0)
+
+
+
+#define ZYDIS_FPUFLAG_C1    0x01 // (1 << 1)
+ 
+
+
+#define ZYDIS_FPUFLAG_C2    0x02 // (1 << 2)
+
+
+
+#define ZYDIS_FPUFLAG_C3    0x04 // (1 << 3)
+
+
 
 
 
@@ -664,11 +735,17 @@ typedef enum ZydisExceptionClass_
     ZYDIS_EXCEPTION_CLASS_E12NP,
     ZYDIS_EXCEPTION_CLASS_K20,
     ZYDIS_EXCEPTION_CLASS_K21,
+    ZYDIS_EXCEPTION_CLASS_AMXE1,
+    ZYDIS_EXCEPTION_CLASS_AMXE2,
+    ZYDIS_EXCEPTION_CLASS_AMXE3,
+    ZYDIS_EXCEPTION_CLASS_AMXE4,
+    ZYDIS_EXCEPTION_CLASS_AMXE5,
+    ZYDIS_EXCEPTION_CLASS_AMXE6,
 
     
 
 
-    ZYDIS_EXCEPTION_CLASS_MAX_VALUE = ZYDIS_EXCEPTION_CLASS_K21,
+    ZYDIS_EXCEPTION_CLASS_MAX_VALUE = ZYDIS_EXCEPTION_CLASS_AMXE6,
     
 
 
@@ -945,6 +1022,10 @@ typedef struct ZydisDecodedInstruction_
     
 
 
+
+
+
+
     struct ZydisDecodedInstructionAccessedFlags_
     {
         
@@ -955,6 +1036,32 @@ typedef struct ZydisDecodedInstruction_
 
         ZydisCPUFlagAction action;
     } accessed_flags[ZYDIS_CPUFLAG_MAX_VALUE + 1];
+    
+
+
+
+
+
+
+
+    ZydisCPUFlags cpu_flags_read;
+    
+
+
+
+
+
+
+
+    ZydisCPUFlags cpu_flags_written;
+    
+
+
+    ZydisFPUFlags fpu_flags_read;
+    
+
+
+    ZydisFPUFlags fpu_flags_written;
     
 
 
@@ -1236,7 +1343,7 @@ typedef struct ZydisDecodedInstruction_
             
 
 
-            ZyanU8 mm;
+            ZyanU8 mmm;
             
 
 

@@ -287,12 +287,17 @@ typedef struct ZydisInstructionEncodingInfo_
 
 
 
+extern const ZydisDecoderTreeNode zydis_decoder_tree_root;
 
 
 
 
 
-ZYDIS_NO_EXPORT const ZydisDecoderTreeNode* ZydisDecoderTreeGetRootNode(void);
+
+ZYAN_INLINE const ZydisDecoderTreeNode* ZydisDecoderTreeGetRootNode(void)
+{
+    return &zydis_decoder_tree_root;
+}
 
 
 

@@ -85,6 +85,9 @@
 #   define ZYAN_WINDOWS
 #elif defined(__EMSCRIPTEN__)
 #   define ZYAN_EMSCRIPTEN
+#elif defined(__wasi__) || defined(__WASI__)
+
+#   define ZYAN_WASI
 #elif defined(__APPLE__)
 #   define ZYAN_APPLE
 #   define ZYAN_POSIX
@@ -131,8 +134,8 @@
 #   define ZYAN_AARCH64
 #elif defined(_M_ARM) || defined(_M_ARMT) || defined(__arm__) || defined(__thumb__)
 #   define ZYAN_ARM
-#elif defined(__EMSCRIPTEN__)
-    
+#elif defined(__EMSCRIPTEN__) || defined(__wasm__) || defined(__WASM__)
+#   define ZYAN_WASM
 #else
 #   error "Unsupported architecture detected"
 #endif
@@ -161,10 +164,91 @@
 
 
 
+#if defined(ZYAN_GCC) || defined(ZYAN_CLANG)
+#   define ZYAN_DEPRECATED __attribute__((__deprecated__))
+#elif defined(ZYAN_MSVC)
+#   define ZYAN_DEPRECATED __declspec(deprecated)
+#else
+#   define ZYAN_DEPRECATED
+#endif
+
+
+
+
+
+#if defined(ZYAN_MSVC)
+#   define ZYAN_DLLEXPORT __declspec(dllexport)
+#   define ZYAN_DLLIMPORT __declspec(dllimport)
+#else
+#   define ZYAN_DLLEXPORT
+#   define ZYAN_DLLIMPORT
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(ZYCORE_STATIC_DEFINE)
+#   pragma message("ZYCORE_STATIC_DEFINE was renamed to ZYCORE_STATIC_BUILD.")
+#   define ZYCORE_STATIC_BUILD
+#endif
+#if defined(Zycore_EXPORTS)
+#   pragma message("Zycore_EXPORTS was renamed to ZYCORE_SHOULD_EXPORT.")
+#   define ZYCORE_SHOULD_EXPORT
+#endif
+
+
+
+
+#if defined(ZYCORE_STATIC_BUILD)
+#   define ZYCORE_EXPORT
+#else
+#   if defined(ZYCORE_SHOULD_EXPORT)
+#       define ZYCORE_EXPORT ZYAN_DLLEXPORT
+#   else
+#       define ZYCORE_EXPORT ZYAN_DLLIMPORT
+#   endif
+#endif
+
+
+
+
+#define ZYCORE_NO_EXPORT
+
+
+
+
+
+#if defined(ZYAN_CLANG)
+#   define ZYAN_NO_SANITIZE(what) __attribute__((no_sanitize(what)))
+#else
+#   define ZYAN_NO_SANITIZE(what)
+#endif
+
 #if defined(ZYAN_MSVC) || defined(ZYAN_BORLAND)
 #   define ZYAN_INLINE __inline
 #else
 #   define ZYAN_INLINE static inline
+#endif
+
+#if defined(ZYAN_MSVC)
+#   define ZYAN_NOINLINE __declspec(noinline)
+#elif defined(ZYAN_GCC) || defined(ZYAN_CLANG)
+#   define ZYAN_NOINLINE __attribute__((noinline))
+#else
+#   define ZYAN_NOINLINE
 #endif
 
 
@@ -250,7 +334,7 @@
 
 
 #if defined(ZYAN_GCC) && __GNUC__ >= 7
-#   define ZYAN_FALLTHROUGH __attribute__((fallthrough))
+#   define ZYAN_FALLTHROUGH __attribute__((__fallthrough__))
 #else
 #   define ZYAN_FALLTHROUGH
 #endif
@@ -358,7 +442,7 @@
 
 
 
-#define ZYAN_IS_ALIGNED_TO(x, align) ((x & (align - 1)) == 0)
+#define ZYAN_IS_ALIGNED_TO(x, align) (((x) & ((align) - 1)) == 0)
 
 
 

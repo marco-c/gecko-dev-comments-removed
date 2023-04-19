@@ -32,7 +32,6 @@
 #ifndef ZYCORE_ALLOCATOR_H
 #define ZYCORE_ALLOCATOR_H
 
-#include "zydis/ZycoreExportConfig.h"
 #include "zydis/Zycore/Status.h"
 #include "zydis/Zycore/Types.h"
 
