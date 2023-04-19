@@ -51,7 +51,7 @@ enum class StyleHyphens : uint8_t;
 
 
 
-struct gfxTextRunDrawCallbacks {
+struct MOZ_STACK_CLASS gfxTextRunDrawCallbacks {
   
 
 
