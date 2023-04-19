@@ -58,22 +58,6 @@ class RTC_EXPORT VideoDecoderFactory {
   }
 
   
-  
-  
-  virtual CodecSupport QueryCodecSupport(
-      const SdpVideoFormat& format,
-      absl::optional<std::string> scalability_mode) const {
-    
-    
-    
-    CodecSupport codec_support;
-    if (!scalability_mode) {
-      codec_support.is_supported = format.IsCodecInList(GetSupportedFormats());
-    }
-    return codec_support;
-  }
-
-  
   virtual std::unique_ptr<VideoDecoder> CreateVideoDecoder(
       const SdpVideoFormat& format) = 0;
 
