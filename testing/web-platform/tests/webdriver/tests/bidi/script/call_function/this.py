@@ -32,7 +32,6 @@ async def test_default_this(bidi_session, top_context):
         await_promise=False,
         target=ContextTarget(top_context["context"]))
 
-    
     recursive_compare({
         "type": 'window',
     }, result)
