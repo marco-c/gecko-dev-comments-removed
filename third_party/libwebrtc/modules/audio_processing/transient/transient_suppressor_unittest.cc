@@ -10,21 +10,37 @@
 
 #include "modules/audio_processing/transient/transient_suppressor.h"
 
+#include <vector>
+
+#include "absl/types/optional.h"
 #include "modules/audio_processing/transient/common.h"
 #include "modules/audio_processing/transient/transient_suppressor_impl.h"
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace {
+constexpr int kMono = 1;
 
-class TransientSuppressorImplTest
+
+
+absl::optional<int> FindFirstNonZeroSample(const std::vector<float>& samples) {
+  for (size_t i = 0; i < samples.size(); ++i) {
+    if (samples[i] != 0.0f) {
+      return i;
+    }
+  }
+  return absl::nullopt;
+}
+
+}  
+
+class TransientSuppressorVadModeParametrization
     : public ::testing::TestWithParam<TransientSuppressor::VadMode> {};
 
-TEST_P(TransientSuppressorImplTest,
+TEST_P(TransientSuppressorVadModeParametrization,
        TypingDetectionLogicWorksAsExpectedForMono) {
-  static const int kNumChannels = 1;
-
   TransientSuppressorImpl ts(GetParam(), ts::kSampleRate16kHz,
-                             ts::kSampleRate16kHz, kNumChannels);
+                             ts::kSampleRate16kHz, kMono);
 
   
   EXPECT_FALSE(ts.detection_enabled_);
@@ -88,10 +104,72 @@ TEST_P(TransientSuppressorImplTest,
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ,
     TransientSuppressorImplTest,
+    TransientSuppressorVadModeParametrization,
     ::testing::Values(TransientSuppressor::VadMode::kDefault,
                       TransientSuppressor::VadMode::kRnnVad,
                       TransientSuppressor::VadMode::kNoVad));
+
+class TransientSuppressorSampleRateParametrization
+    : public ::testing::TestWithParam<int> {};
+
+
+
+TEST_P(TransientSuppressorSampleRateParametrization,
+       CheckAudioAndVoiceProbabilityTemporallyAligned) {
+  const int sample_rate_hz = GetParam();
+  TransientSuppressorImpl ts(TransientSuppressor::VadMode::kDefault,
+                             sample_rate_hz,
+                             sample_rate_hz, kMono);
+
+  const int frame_size = sample_rate_hz * ts::kChunkSizeMs / 1000;
+  std::vector<float> frame(frame_size);
+
+  constexpr int kMaxAttempts = 3;
+  for (int i = 0; i < kMaxAttempts; ++i) {
+    SCOPED_TRACE(i);
+
+    
+    std::fill(frame.begin(), frame.end(), 1000.0f);
+    float delayed_voice_probability = ts.Suppress(
+        frame.data(), frame.size(), kMono, nullptr,
+        frame_size, nullptr,
+        frame_size, 1.0f,
+        false);
+
+    
+    absl::optional<int> frame_delay = FindFirstNonZeroSample(frame);
+
+    
+    
+    if (frame_delay.has_value()) {
+      if (*frame_delay == 0) {
+        
+        
+        
+        EXPECT_EQ(delayed_voice_probability, 1.0f);
+      } else {
+        
+        
+        
+        
+        
+        EXPECT_GT(delayed_voice_probability, 0.0f);
+      }
+      break;
+    } else {
+      
+      
+      EXPECT_EQ(delayed_voice_probability, 0.0f);
+    }
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(TransientSuppressorImplTest,
+                         TransientSuppressorSampleRateParametrization,
+                         ::testing::Values(ts::kSampleRate8kHz,
+                                           ts::kSampleRate16kHz,
+                                           ts::kSampleRate32kHz,
+                                           ts::kSampleRate48kHz));
 
 }  

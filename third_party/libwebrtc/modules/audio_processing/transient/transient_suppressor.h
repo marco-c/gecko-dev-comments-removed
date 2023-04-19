@@ -56,15 +56,18 @@ class TransientSuppressor {
   
   
   
-  virtual void Suppress(float* data,
-                        size_t data_length,
-                        int num_channels,
-                        const float* detection_data,
-                        size_t detection_length,
-                        const float* reference_data,
-                        size_t reference_length,
-                        float voice_probability,
-                        bool key_pressed) = 0;
+  
+  
+  
+  virtual float Suppress(float* data,
+                         size_t data_length,
+                         int num_channels,
+                         const float* detection_data,
+                         size_t detection_length,
+                         const float* reference_data,
+                         size_t reference_length,
+                         float voice_probability,
+                         bool key_pressed) = 0;
 };
 
 }  
