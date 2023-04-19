@@ -37,6 +37,7 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LauncherFlags);
 
 enum class DeelevationStatus : uint32_t {
   
+  
   Unknown = 0,
 
   
@@ -52,7 +53,17 @@ enum class DeelevationStatus : uint32_t {
   
   
   UnsuccessfullyDeelevated = 5,
+
+  
+  
+  
+  
+  DefaultStaticValue = 0x55AA55AA,
 };
+
+
+
+extern const volatile DeelevationStatus gDeelevationStatus;
 
 }  
 
