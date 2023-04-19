@@ -28,6 +28,7 @@
 #include "modules/include/module_fec_types.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"  
+#include "modules/rtp_rtcp/source/packet_sequencer.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
@@ -270,6 +271,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
     void AssignSequenceNumber(RtpPacketToSend* packet) override;
     
     RtpPacketHistory packet_history;
+    
+    PacketSequencer sequencer_;
     
     RtpSenderEgress packet_sender;
     

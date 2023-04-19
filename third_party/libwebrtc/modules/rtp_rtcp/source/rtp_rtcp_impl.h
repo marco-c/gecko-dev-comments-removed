@@ -27,6 +27,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"  
 #include "modules/rtp_rtcp/source/deprecated/deprecated_rtp_sender_egress.h"
+#include "modules/rtp_rtcp/source/packet_sequencer.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
@@ -278,6 +279,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
     explicit RtpSenderContext(const RtpRtcpInterface::Configuration& config);
     
     RtpPacketHistory packet_history;
+    
+    PacketSequencer sequencer_;
     
     DEPRECATED_RtpSenderEgress packet_sender;
     

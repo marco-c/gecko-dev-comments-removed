@@ -22,6 +22,7 @@
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_packet_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/packet_sequencer.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
@@ -137,8 +138,8 @@ class RtpSenderTest : public ::testing::Test {
                         std::vector<RtpExtensionSize>(),
                         nullptr,
                         clock_),
-        kMarkerBit(true) {
-  }
+        deferred_sequencing_(false),
+        kMarkerBit(true) {}
 
   void SetUp() override { SetUpRtpSender(true, false, nullptr); }
 
@@ -167,10 +168,29 @@ class RtpSenderTest : public ::testing::Test {
   void CreateSender(const RtpRtcpInterface::Configuration& config) {
     packet_history_ = std::make_unique<RtpPacketHistory>(
         config.clock, config.enable_rtx_padding_prioritization);
-    rtp_sender_ = std::make_unique<RTPSender>(config, packet_history_.get(),
-                                              config.paced_sender);
+    sequencer_.emplace(kSsrc, kRtxSsrc,
+                       !config.audio,
+                       clock_);
+    rtp_sender_ =
+        std::make_unique<RTPSender>(config, packet_history_.get(),
+                                    config.paced_sender, &sequencer_.value());
     rtp_sender_->SetSequenceNumber(kSeqNum);
     rtp_sender_->SetTimestampOffset(0);
+    deferred_sequencing_ = false;
+  }
+
+  void CreateSenderWithDeferredSequencing(
+      const RtpRtcpInterface::Configuration& config) {
+    packet_history_ = std::make_unique<RtpPacketHistory>(
+        config.clock, config.enable_rtx_padding_prioritization);
+    sequencer_.emplace(kSsrc, kRtxSsrc,
+                       !config.audio,
+                       clock_);
+    rtp_sender_ = std::make_unique<RTPSender>(config, packet_history_.get(),
+                                              config.paced_sender, nullptr);
+    sequencer_->set_media_sequence_number(kSeqNum);
+    rtp_sender_->SetTimestampOffset(0);
+    deferred_sequencing_ = true;
   }
 
   GlobalSimulatedTimeController time_controller_;
@@ -180,6 +200,8 @@ class RtpSenderTest : public ::testing::Test {
   RateLimiter retransmission_rate_limiter_;
   FlexfecSender flexfec_sender_;
 
+  bool deferred_sequencing_;
+  absl::optional<PacketSequencer> sequencer_;
   std::unique_ptr<RtpPacketHistory> packet_history_;
   std::unique_ptr<RTPSender> rtp_sender_;
 
@@ -196,7 +218,9 @@ class RtpSenderTest : public ::testing::Test {
     packet->SetMarker(marker_bit);
     packet->SetTimestamp(timestamp);
     packet->set_capture_time_ms(capture_time_ms);
-    EXPECT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
+    if (!deferred_sequencing_) {
+      EXPECT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
+    }
     return packet;
   }
 
@@ -224,9 +248,16 @@ class RtpSenderTest : public ::testing::Test {
                           rtp_sender_->ExpectedPerPacketOverhead());
   }
 
+  std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
+      size_t target_size_bytes) {
+    return rtp_sender_->GeneratePadding(
+        target_size_bytes, true,
+        sequencer_->CanSendPaddingOnMediaSsrc());
+  }
+
   size_t GenerateAndSendPadding(size_t target_size_bytes) {
     size_t generated_bytes = 0;
-    for (auto& packet : rtp_sender_->GeneratePadding(target_size_bytes, true)) {
+    for (auto& packet : GeneratePadding(target_size_bytes)) {
       generated_bytes += packet->payload_size() + packet->padding_size();
       rtp_sender_->SendToNetwork(std::move(packet));
     }
@@ -395,6 +426,7 @@ TEST_F(RtpSenderTest, SendPadding) {
                                      media_packet->Timestamp()))))));
     std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets =
         rtp_sender_->GeneratePadding(kPaddingTargetBytes,
+                                     true,
                                      true);
     ASSERT_THAT(padding_packets, SizeIs(1));
     rtp_sender_->SendToNetwork(std::move(padding_packets[0]));
@@ -415,14 +447,18 @@ TEST_F(RtpSenderTest, SendPadding) {
 }
 
 TEST_F(RtpSenderTest, NoPaddingAsFirstPacketWithoutBweExtensions) {
-  EXPECT_THAT(rtp_sender_->GeneratePadding(100,
-                                           false),
+  EXPECT_THAT(rtp_sender_->GeneratePadding(
+                  100,
+                  false,
+                  false),
               IsEmpty());
 
   
   EnableRtx();
-  EXPECT_THAT(rtp_sender_->GeneratePadding(100,
-                                           false),
+  EXPECT_THAT(rtp_sender_->GeneratePadding(
+                  100,
+                  false,
+                  false),
               IsEmpty());
 }
 
@@ -432,14 +468,18 @@ TEST_F(RtpSenderTest, AllowPaddingAsFirstPacketOnRtxWithTransportCc) {
 
   
   
-  EXPECT_THAT(rtp_sender_->GeneratePadding(100,
-                                           false),
+  EXPECT_THAT(rtp_sender_->GeneratePadding(
+                  100,
+                  false,
+                  false),
               IsEmpty());
 
   
   EnableRtx();
-  EXPECT_THAT(rtp_sender_->GeneratePadding(100,
-                                           false),
+  EXPECT_THAT(rtp_sender_->GeneratePadding(
+                  100,
+                  false,
+                  false),
               Not(IsEmpty()));
 }
 
@@ -449,14 +489,18 @@ TEST_F(RtpSenderTest, AllowPaddingAsFirstPacketOnRtxWithAbsSendTime) {
 
   
   
-  EXPECT_THAT(rtp_sender_->GeneratePadding(100,
-                                           false),
+  EXPECT_THAT(rtp_sender_->GeneratePadding(
+                  100,
+                  false,
+                  false),
               IsEmpty());
 
   
   EnableRtx();
-  EXPECT_THAT(rtp_sender_->GeneratePadding(100,
-                                           false),
+  EXPECT_THAT(rtp_sender_->GeneratePadding(
+                  100,
+                  false,
+                  false),
               Not(IsEmpty()));
 }
 
@@ -482,8 +526,7 @@ TEST_F(RtpSenderTest, UpdatesTimestampsOnPlainRtxPadding) {
 
   
   EXPECT_THAT(
-      rtp_sender_->GeneratePadding(100,
-                                   true),
+      GeneratePadding(100),
       Each(AllOf(
           Pointee(Property(&RtpPacketToSend::padding_size, kMaxPaddingLength)),
           Pointee(Property(
@@ -520,8 +563,7 @@ TEST_F(RtpSenderTest, KeepsTimestampsOnPayloadPadding) {
 
   
   EXPECT_THAT(
-      rtp_sender_->GeneratePadding(100,
-                                   true),
+      GeneratePadding(100),
       Each(AllOf(
           Pointee(Property(&RtpPacketToSend::padding_size, 0u)),
           Pointee(Property(&RtpPacketToSend::payload_size,
@@ -1004,7 +1046,7 @@ TEST_F(RtpSenderTest, GeneratedPaddingHasBweExtensions) {
 
   
   std::vector<std::unique_ptr<RtpPacketToSend>> generated_packets =
-      rtp_sender_->GeneratePadding(1, true);
+      GeneratePadding(1);
   ASSERT_THAT(generated_packets, SizeIs(1));
   auto& plain_padding = generated_packets.front();
   EXPECT_GT(plain_padding->padding_size(), 0u);
@@ -1014,7 +1056,7 @@ TEST_F(RtpSenderTest, GeneratedPaddingHasBweExtensions) {
   EXPECT_GT(plain_padding->padding_size(), 0u);
 
   
-  generated_packets = rtp_sender_->GeneratePadding(kMinPaddingSize, true);
+  generated_packets = GeneratePadding(kMinPaddingSize);
   ASSERT_EQ(generated_packets.size(), 1u);
   auto& payload_padding = generated_packets.front();
   EXPECT_EQ(payload_padding->padding_size(), 0u);
@@ -1048,7 +1090,7 @@ TEST_F(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
   
   
   std::vector<std::unique_ptr<RtpPacketToSend>> generated_packets =
-      rtp_sender_->GeneratePadding(kMinPaddingSize, true);
+      GeneratePadding(kMinPaddingSize);
   ASSERT_EQ(generated_packets.size(), 1u);
   auto& padding_packet = generated_packets.front();
   EXPECT_EQ(padding_packet->packet_type(), RtpPacketMediaType::kPadding);
@@ -1060,8 +1102,7 @@ TEST_F(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
   const size_t kPaddingBytesRequested = kMinPaddingSize - 1;
 
   size_t padding_bytes_generated = 0;
-  generated_packets =
-      rtp_sender_->GeneratePadding(kPaddingBytesRequested, true);
+  generated_packets = GeneratePadding(kPaddingBytesRequested);
   EXPECT_EQ(generated_packets.size(), 1u);
   for (auto& packet : generated_packets) {
     EXPECT_EQ(packet->packet_type(), RtpPacketMediaType::kPadding);
@@ -1105,14 +1146,14 @@ TEST_F(RtpSenderTest, LimitsPayloadPaddingSize) {
   
   
   EXPECT_THAT(
-      rtp_sender_->GeneratePadding(kMinTargerSizeForPayload, true),
+      GeneratePadding(kMinTargerSizeForPayload),
       AllOf(Not(IsEmpty()),
             Each(Pointee(Property(&RtpPacketToSend::padding_size, Eq(0u))))));
 
   
   
   EXPECT_THAT(
-      rtp_sender_->GeneratePadding(kMinTargerSizeForPayload - 1, true),
+      GeneratePadding(kMinTargerSizeForPayload - 1),
       AllOf(Not(IsEmpty()),
             Each(Pointee(Property(&RtpPacketToSend::padding_size, Gt(0u))))));
 }
@@ -1148,7 +1189,7 @@ TEST_F(RtpSenderTest, GeneratePaddingCreatesPurePaddingWithoutRtx) {
       (kPaddingBytesRequested + kMaxPaddingSize - 1) / kMaxPaddingSize;
   size_t padding_bytes_generated = 0;
   std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets =
-      rtp_sender_->GeneratePadding(kPaddingBytesRequested, true);
+      GeneratePadding(kPaddingBytesRequested);
   EXPECT_EQ(padding_packets.size(), kExpectedNumPaddingPackets);
   for (auto& packet : padding_packets) {
     EXPECT_EQ(packet->packet_type(), RtpPacketMediaType::kPadding);
@@ -1335,6 +1376,72 @@ TEST_F(RtpSenderTest, MarksPacketsWithKeyframeStatus) {
 
     time_controller_.AdvanceTime(TimeDelta::Millis(33));
   }
+}
+
+TEST_F(RtpSenderTest, PlainPaddingWithDeferredSequencing) {
+  CreateSenderWithDeferredSequencing(GetDefaultConfig());
+
+  EXPECT_THAT(
+      rtp_sender_->GeneratePadding(
+          500,
+          true,
+          true),
+      Each(Pointee(AllOf(Property(&RtpPacketToSend::SequenceNumber, 0),
+                         Property(&RtpPacketToSend::padding_size, Gt(0u)),
+                         Property(&RtpPacketToSend::Ssrc, kSsrc)))));
+}
+
+TEST_F(RtpSenderTest, PlainRtxPaddingWithDeferredSequencing) {
+  CreateSenderWithDeferredSequencing(GetDefaultConfig());
+  EnableRtx();
+
+  EXPECT_THAT(
+      rtp_sender_->GeneratePadding(
+          500,
+          true,
+          true),
+      Each(Pointee(AllOf(Property(&RtpPacketToSend::SequenceNumber, 0),
+                         Property(&RtpPacketToSend::padding_size, Gt(0u)),
+                         Property(&RtpPacketToSend::Ssrc, kRtxSsrc)))));
+}
+
+TEST_F(RtpSenderTest, PayloadPaddingWithDeferredSequencing) {
+  CreateSenderWithDeferredSequencing(GetDefaultConfig());
+  EnableRtx();
+  ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
+      TransportSequenceNumber::kUri, kTransportSequenceNumberExtensionId));
+
+  EXPECT_CALL(mock_paced_sender_, EnqueuePackets);
+  std::unique_ptr<RtpPacketToSend> media_packet =
+      SendPacket(clock_->TimeInMilliseconds(), 500);
+  packet_history_->PutRtpPacket(std::move(media_packet),
+                                clock_->TimeInMilliseconds());
+
+  EXPECT_THAT(
+      rtp_sender_->GeneratePadding(
+          500,
+          true,
+          true),
+      Each(Pointee(AllOf(Property(&RtpPacketToSend::SequenceNumber, 0),
+                         Property(&RtpPacketToSend::payload_size, Gt(0u)),
+                         Property(&RtpPacketToSend::Ssrc, kRtxSsrc)))));
+}
+
+TEST_F(RtpSenderTest, RtxRetransmissionWithDeferredSequencing) {
+  CreateSenderWithDeferredSequencing(GetDefaultConfig());
+  EnableRtx();
+
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  auto packet = BuildRtpPacket(kPayload, kMarkerBit, kTimestamp, now_ms);
+  packet->SetSequenceNumber(kSeqNum);
+  packet->set_allow_retransmission(true);
+  packet_history_->PutRtpPacket(std::move(packet), now_ms);
+
+  EXPECT_CALL(mock_paced_sender_,
+              EnqueuePackets(ElementsAre(Pointee(
+                  AllOf(Property(&RtpPacketToSend::Ssrc, kRtxSsrc),
+                        Property(&RtpPacketToSend::SequenceNumber, 0u))))));
+  EXPECT_TRUE(rtp_sender_->ReSendPacket(kSeqNum));
 }
 
 }  
