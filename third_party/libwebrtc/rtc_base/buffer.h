@@ -19,6 +19,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/type_traits.h"
@@ -116,6 +117,13 @@ class BufferT {
   BufferT(U (&array)[N]) : BufferT(array, N) {}
 
   ~BufferT() { MaybeZeroCompleteBuffer(); }
+
+  
+  template <typename U = T>
+  operator typename std::enable_if<internal::BufferCompat<U, char>::value,
+                                   absl::string_view>::type() const {
+    return absl::string_view(data<char>(), size());
+  }
 
   
   
