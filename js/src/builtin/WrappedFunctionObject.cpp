@@ -55,10 +55,10 @@ static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
   Rooted<JSObject*> callee(cx, &args.callee());
   MOZ_ASSERT(callee->is<WrappedFunctionObject>());
 
-  Handle<WrappedFunctionObject*> F = callee.as<WrappedFunctionObject>();
+  Handle<WrappedFunctionObject*> fun = callee.as<WrappedFunctionObject>();
 
   
-  Rooted<JSObject*> target(cx, F->getTargetFunction());
+  Rooted<JSObject*> target(cx, fun->getTargetFunction());
 
   
   MOZ_ASSERT(IsCallable(ObjectValue(*target)));
@@ -69,7 +69,7 @@ static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
   
-  Rooted<Realm*> callerRealm(cx, GetFunctionRealm(cx, F));
+  Rooted<Realm*> callerRealm(cx, GetFunctionRealm(cx, fun));
   if (!callerRealm) {
     return false;
   }
@@ -131,38 +131,40 @@ static bool WrappedFunction_Call(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static bool CopyNameAndLength(JSContext* cx, HandleObject F,
-                              HandleObject Target, char* prefix = nullptr,
-                              unsigned argCount = 0) {
+static bool CopyNameAndLength(JSContext* cx, HandleObject fun,
+                              HandleObject target) {
   
+  constexpr int32_t argCount = 0;
+
   
-  double L = 0;
+  double length = 0;
 
   
   
   
-  if (Target->is<JSFunction>() &&
-      !Target->as<JSFunction>().hasResolvedLength()) {
+  
+  if (target->is<JSFunction>() &&
+      !target->as<JSFunction>().hasResolvedLength()) {
     Rooted<Value> targetLen(cx);
-    if (!JSFunction::getUnresolvedLength(cx, Target.as<JSFunction>(),
+    if (!JSFunction::getUnresolvedLength(cx, target.as<JSFunction>(),
                                          &targetLen)) {
       return false;
     }
 
-    L = std::max(0.0, targetLen.toNumber() - argCount);
+    length = std::max(0.0, targetLen.toNumber() - argCount);
   } else {
     Rooted<jsid> lengthId(cx, NameToId(cx->names().length));
 
     bool targetHasLength;
-    if (!HasOwnProperty(cx, Target, lengthId, &targetHasLength)) {
+    if (!HasOwnProperty(cx, target, lengthId, &targetHasLength)) {
       return false;
     }
-    
+
     
     if (targetHasLength) {
       
       Rooted<Value> targetLen(cx);
-      if (!GetProperty(cx, Target, Target, lengthId, &targetLen)) {
+      if (!GetProperty(cx, target, target, lengthId, &targetLen)) {
         return false;
       }
 
@@ -174,22 +176,31 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
       
       
       if (targetLen.isNumber()) {
-        L = std::max(0.0, JS::ToInteger(targetLen.toNumber()) - argCount);
+        length = std::max(0.0, JS::ToInteger(targetLen.toNumber()) - argCount);
       }
     }
   }
 
   
-  Rooted<Value> rootedL(cx, DoubleValue(L));
-  if (!DefineDataProperty(cx, F, cx->names().length, rootedL,
+  Rooted<Value> rootedLength(cx, NumberValue(length));
+  if (!DefineDataProperty(cx, fun, cx->names().length, rootedLength,
                           JSPROP_READONLY)) {
     return false;
   }
 
   
+  
+  
   Rooted<Value> targetName(cx);
-  if (!GetProperty(cx, Target, Target, cx->names().name, &targetName)) {
-    return false;
+  if (target->is<JSFunction>() && !target->as<JSFunction>().hasResolvedName()) {
+    if (!JSFunction::getUnresolvedName(cx, target.as<JSFunction>(),
+                                       &targetName)) {
+      return false;
+    }
+  } else {
+    if (!GetProperty(cx, target, target, cx->names().name, &targetName)) {
+      return false;
+    }
   }
 
   
@@ -197,20 +208,8 @@ static bool CopyNameAndLength(JSContext* cx, HandleObject F,
     targetName = StringValue(cx->runtime()->emptyString);
   }
 
-  Rooted<JSString*> targetString(cx, targetName.toString());
-  Rooted<jsid> targetNameId(cx);
-  if (!JS_StringToId(cx, targetString, &targetNameId)) {
-    return false;
-  }
-
   
-  
-  Rooted<JSAtom*> funName(cx, IdToFunctionName(cx, targetNameId));
-  if (!funName) {
-    return false;
-  }
-  Rooted<Value> rootedFunName(cx, StringValue(funName));
-  return DefineDataProperty(cx, F, cx->names().name, rootedFunName,
+  return DefineDataProperty(cx, fun, cx->names().name, targetName,
                             JSPROP_READONLY);
 }
 
