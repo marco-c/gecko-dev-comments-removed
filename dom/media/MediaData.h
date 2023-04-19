@@ -496,6 +496,8 @@ class VideoData : public MediaData {
   
   RefPtr<Image> mImage;
 
+  ColorDepth GetColorDepth() const;
+
   uint32_t mFrameID;
 
   VideoData(int64_t aOffset, const media::TimeUnit& aTime,
