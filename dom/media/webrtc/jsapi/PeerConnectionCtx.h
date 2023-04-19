@@ -24,25 +24,25 @@ class SharedModuleThread;
 
 
 class NoTrialsConfig : public FieldTrialsView {
-  public:
-    NoTrialsConfig() = default;
-    std::string Lookup(absl::string_view key) const override {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if ("WebRTC-CongestionWindow" == key) {
-        return std::string("MinBitrate:30000,DropFrame:true");
-      }
-      return std::string();
+ public:
+  NoTrialsConfig() = default;
+  std::string Lookup(absl::string_view key) const override {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if ("WebRTC-CongestionWindow" == key) {
+      return std::string("MinBitrate:30000,DropFrame:true");
     }
+    return std::string();
+  }
 };
 }  
 

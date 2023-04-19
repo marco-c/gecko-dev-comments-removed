@@ -553,21 +553,21 @@ uint32_t DesktopCaptureImpl::CalculateFrameRate(int64_t now_ns) {
 }
 
 void DesktopCaptureImpl::LazyInitCaptureThread() {
-  MOZ_ASSERT(desktop_capturer_cursor_composer_, "DesktopCapturer must be initialized before the capture thread");
+  MOZ_ASSERT(desktop_capturer_cursor_composer_,
+             "DesktopCapturer must be initialized before the capture thread");
   if (capturer_thread_) {
     return;
   }
 #if defined(_WIN32)
   capturer_thread_ = std::make_unique<rtc::PlatformUIThread>(
-      std::function([self = (void*) this](){Run(self);}),
+      std::function([self = (void*)this]() { Run(self); }),
       "ScreenCaptureThread", rtc::ThreadAttributes{});
   capturer_thread_->RequestCallbackTimer(_maxFPSNeeded);
 #else
   auto self = rtc::scoped_refptr<DesktopCaptureImpl>(this);
-  capturer_thread_ = std::make_unique<rtc::PlatformThread>(rtc::PlatformThread::SpawnJoinable(
-      [self] {
-        self->process();
-      }, "ScreenCaptureThread"));
+  capturer_thread_ =
+      std::make_unique<rtc::PlatformThread>(rtc::PlatformThread::SpawnJoinable(
+          [self] { self->process(); }, "ScreenCaptureThread"));
 #endif
   started_ = true;
 }
@@ -577,11 +577,12 @@ int32_t DesktopCaptureImpl::StartCapture(
   rtc::CritScope lock(&_apiCs);
   
   
+  
   if (started_) {
     return 0;
   }
 
-  if(uint32_t err = LazyInitDesktopCapturer(); err) {
+  if (uint32_t err = LazyInitDesktopCapturer(); err) {
     return err;
   }
   started_ = true;
@@ -608,9 +609,11 @@ int32_t DesktopCaptureImpl::StopCapture() {
     MOZ_ASSERT(capturer_thread_, "Capturer thread should be initialized.");
 
 #if defined(_WIN32)
-    capturer_thread_->Stop();  
+    capturer_thread_
+        ->Stop();  
 #else
-    capturer_thread_->Finalize();  
+    capturer_thread_
+        ->Finalize();  
 #endif
     desktop_capturer_cursor_composer_.reset();
     cursor_composer_started_ = false;
