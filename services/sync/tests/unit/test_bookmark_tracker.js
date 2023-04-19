@@ -2,8 +2,8 @@
 
 
 const { Service } = ChromeUtils.import("resource://services-sync/service.js");
-const { PlacesTransactions } = ChromeUtils.import(
-  "resource://gre/modules/PlacesTransactions.jsm"
+const { PlacesTransactions } = ChromeUtils.importESModule(
+  "resource://gre/modules/PlacesTransactions.sys.mjs"
 );
 
 let engine;

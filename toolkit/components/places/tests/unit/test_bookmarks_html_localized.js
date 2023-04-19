@@ -4,8 +4,8 @@
 
 
 
-const { BookmarkHTMLUtils } = ChromeUtils.import(
-  "resource://gre/modules/BookmarkHTMLUtils.jsm"
+const { BookmarkHTMLUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/BookmarkHTMLUtils.sys.mjs"
 );
 
 add_task(async function setup_l10n() {

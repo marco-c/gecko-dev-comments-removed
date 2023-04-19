@@ -3,8 +3,8 @@
 
 
 
-const { PlacesDBUtils } = ChromeUtils.import(
-  "resource://gre/modules/PlacesDBUtils.jsm"
+const { PlacesDBUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/PlacesDBUtils.sys.mjs"
 );
 
 var histograms = {
