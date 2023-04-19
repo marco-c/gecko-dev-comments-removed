@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HTMLEditor.h"
 
@@ -61,16 +61,20 @@ nsresult HTMLEditor::SetSelectionToAbsoluteOrStaticAsAction(
   }
 
   if (aEnabled) {
-    EditActionResult result = SetSelectionToAbsoluteAsSubAction(*editingHost);
-    NS_WARNING_ASSERTION(
-        result.Succeeded(),
-        "HTMLEditor::SetSelectionToAbsoluteAsSubAction() failed");
-    return result.Rv();
+    Result<EditActionResult, nsresult> result =
+        SetSelectionToAbsoluteAsSubAction(*editingHost);
+    if (MOZ_UNLIKELY(result.isErr())) {
+      NS_WARNING("HTMLEditor::SetSelectionToAbsoluteAsSubAction() failed");
+      return result.unwrapErr();
+    }
+    return NS_OK;
   }
-  EditActionResult result = SetSelectionToStaticAsSubAction();
-  NS_WARNING_ASSERTION(result.Succeeded(),
-                       "HTMLEditor::SetSelectionToStaticAsSubAction() failed");
-  return result.Rv();
+  Result<EditActionResult, nsresult> result = SetSelectionToStaticAsSubAction();
+  if (MOZ_UNLIKELY(result.isErr())) {
+    NS_WARNING("HTMLEditor::SetSelectionToStaticAsSubAction() failed");
+    return result.unwrapErr();
+  }
+  return NS_OK;
 }
 
 already_AddRefed<Element>
@@ -132,7 +136,7 @@ NS_IMETHODIMP HTMLEditor::SetAbsolutePositioningEnabled(bool aIsEnabled) {
 Result<int32_t, nsresult> HTMLEditor::AddZIndexWithTransaction(
     nsStyledElement& aStyledElement, int32_t aChange) {
   if (!aChange) {
-    return 0;  
+    return 0;  // XXX Why don't we return current z-index value in this case?
   }
 
   int32_t zIndex = GetZIndex(aStyledElement);
@@ -183,10 +187,12 @@ nsresult HTMLEditor::AddZIndexAsAction(int32_t aChange,
     return EditorBase::ToGenericNSResult(rv);
   }
 
-  EditActionResult result = AddZIndexAsSubAction(aChange);
-  NS_WARNING_ASSERTION(result.Succeeded(),
-                       "HTMLEditor::AddZIndexAsSubAction() failed");
-  return EditorBase::ToGenericNSResult(result.Rv());
+  Result<EditActionResult, nsresult> result = AddZIndexAsSubAction(aChange);
+  if (MOZ_UNLIKELY(result.isErr())) {
+    NS_WARNING("HTMLEditor::AddZIndexAsSubAction() failed");
+    return EditorBase::ToGenericNSResult(result.unwrapErr());
+  }
+  return NS_OK;
 }
 
 int32_t HTMLEditor::GetZIndex(Element& aElement) {
@@ -208,8 +214,8 @@ int32_t HTMLEditor::GetZIndex(Element& aElement) {
       NS_WARNING("aElement was an orphan node or the root node");
       return 0;
     }
-    
-    
+    // we have to look at the positioned ancestors
+    // cf. CSS 2 spec section 9.9.1
     nsAutoString positionValue;
     for (RefPtr<Element> element = aElement.GetParentElement(); element;
          element = element->GetParentElement()) {
@@ -231,8 +237,8 @@ int32_t HTMLEditor::GetZIndex(Element& aElement) {
       if (!positionValue.EqualsLiteral("absolute")) {
         continue;
       }
-      
-      
+      // ah, we found one, what's its z-index ? If its z-index is auto,
+      // we have to continue climbing the document's tree
       rv = CSSEditUtils::GetComputedProperty(*element, *nsGkAtoms::z_index,
                                              zIndexValue);
       if (NS_FAILED(rv)) {
@@ -269,8 +275,8 @@ bool HTMLEditor::CreateGrabberInternal(nsIContent& aParentContent) {
   mGrabber = CreateAnonymousElement(nsGkAtoms::span, aParentContent,
                                     u"mozGrabber"_ns, false);
 
-  
-  
+  // mGrabber may be destroyed during creation due to there may be
+  // mutation event listener.
   if (!mGrabber) {
     NS_WARNING(
         "HTMLEditor::CreateAnonymousElement(nsGkAtoms::span, mozGrabber) "
@@ -334,15 +340,15 @@ void HTMLEditor::HideGrabberInternal() {
     return;
   }
 
-  
-  
+  // Move all members to the local variables first since mutation event
+  // listener may try to show grabber while we're hiding them.
   RefPtr<Element> absolutePositioningObject =
       std::move(mAbsolutelyPositionedObject);
   ManualNACPtr grabber = std::move(mGrabber);
   ManualNACPtr positioningShadow = std::move(mPositioningShadow);
 
-  
-  
+  // If we're still in dragging mode, it means that the dragging is canceled
+  // by the web app.
   if (mGrabberClicked || mIsMoving) {
     mGrabberClicked = false;
     mIsMoving = false;
@@ -362,9 +368,9 @@ void HTMLEditor::HideGrabberInternal() {
       NS_SUCCEEDED(rv),
       "Element::UnsetAttr(nsGkAtoms::_moz_abspos) failed, but ignored");
 
-  
-  
-  
+  // We allow the pres shell to be null; when it is, we presume there
+  // are no document observers to notify, but we still want to
+  // UnbindFromTree.
   RefPtr<PresShell> presShell = GetPresShell();
   if (grabber) {
     DeleteRefToAnonymousNode(std::move(grabber), presShell);
@@ -415,11 +421,11 @@ nsresult HTMLEditor::ShowGrabberInternal(Element& aElement) {
     return NS_ERROR_FAILURE;
   }
 
-  
-  
+  // If we succeeded to create the grabber, HideGrabberInternal() hasn't been
+  // called yet.  So, mAbsolutelyPositionedObject should be non-nullptr.
   MOZ_ASSERT(mAbsolutelyPositionedObject);
 
-  
+  // Finally, move the grabber to proper position.
   rv = RefreshGrabberInternal();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::RefereshGrabberInternal() failed");
@@ -434,7 +440,7 @@ nsresult HTMLEditor::StartMoving() {
     return NS_ERROR_FAILURE;
   }
 
-  
+  // now, let's create the resizing shadow
   mPositioningShadow =
       CreateShadow(*parentElement, *mAbsolutelyPositionedObject);
   if (!mPositioningShadow) {
@@ -455,14 +461,14 @@ nsresult HTMLEditor::StartMoving() {
     return rv;
   }
 
-  
+  // make the shadow appear
   DebugOnly<nsresult> rvIgnored =
       mPositioningShadow->UnsetAttr(kNameSpaceID_None, nsGkAtoms::_class, true);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rvIgnored),
       "Element::UnsetAttr(nsGkAtoms::_class) failed, but ignored");
 
-  
+  // position it
   if (RefPtr<nsStyledElement> positioningShadowStyledElement =
           nsStyledElement::FromNode(mPositioningShadow.get())) {
     nsresult rv;
@@ -493,7 +499,7 @@ nsresult HTMLEditor::StartMoving() {
   }
 
   mIsMoving = true;
-  return NS_OK;  
+  return NS_OK;  // XXX Looks like nobody refers this result
 }
 
 void HTMLEditor::SnapToGrid(int32_t& newX, int32_t& newY) const {
@@ -557,9 +563,9 @@ nsresult HTMLEditor::SetFinalPosition(int32_t aX, int32_t aY) {
     return rv;
   }
 
-  
-  
-  
+  // we have now to set the new width and height of the resized object
+  // we don't set the x and y position because we don't control that in
+  // a normal HTML layout
   int32_t newX = mPositionedObjectX + aX - mOriginalX -
                  (mPositionedObjectBorderLeft + mPositionedObjectMarginLeft);
   int32_t newY = mPositionedObjectY + aY - mOriginalY -
@@ -571,7 +577,7 @@ nsresult HTMLEditor::SetFinalPosition(int32_t aX, int32_t aY) {
   x.AppendInt(newX);
   y.AppendInt(newY);
 
-  
+  // we want one transaction only from a user's point of view
   AutoPlaceholderBatch treatAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
@@ -606,7 +612,7 @@ nsresult HTMLEditor::SetFinalPosition(int32_t aX, int32_t aY) {
         "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::left) "
         "failed, but ignored");
   }
-  
+  // keep track of that size
   mPositionedObjectX = newX;
   mPositionedObjectY = newY;
 
@@ -617,7 +623,7 @@ nsresult HTMLEditor::SetFinalPosition(int32_t aX, int32_t aY) {
 }
 
 void HTMLEditor::AddPositioningOffset(int32_t& aX, int32_t& aY) {
-  
+  // Get the positioning offset
   const int32_t positioningOffset = StaticPrefs::editor_positioning_offset();
   aX += positioningOffset;
   aY += positioningOffset;
@@ -631,7 +637,7 @@ nsresult HTMLEditor::SetPositionToAbsoluteOrStatic(Element& aElement,
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "CSSEditUtils::GetComputedProperty(nsGkAtoms::position) "
                        "failed, but ignored");
-  
+  // nothing to do if the element is already in the state we want
   if (positionValue.EqualsLiteral("absolute") == aEnabled) {
     return NS_OK;
   }
@@ -662,8 +668,8 @@ nsresult HTMLEditor::SetPositionToAbsolute(Element& aElement) {
 
   nsStyledElement* styledElement = nsStyledElement::FromNode(&aElement);
   if (styledElement) {
-    
-    
+    // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+    // by the caller because of MOZ_CAN_RUN_SCRIPT method.
     nsresult rv = CSSEditUtils::SetCSSPropertyWithTransaction(
         *this, MOZ_KnownLive(*styledElement), *nsGkAtoms::position,
         u"absolute"_ns);
@@ -682,8 +688,8 @@ nsresult HTMLEditor::SetPositionToAbsolute(Element& aElement) {
   AddPositioningOffset(x, y);
   SnapToGrid(x, y);
   if (styledElement) {
-    
-    
+    // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+    // by the caller because of MOZ_CAN_RUN_SCRIPT method.
     nsresult rv =
         SetTopAndLeftWithTransaction(MOZ_KnownLive(*styledElement), x, y);
     if (NS_FAILED(rv)) {
@@ -692,8 +698,8 @@ nsresult HTMLEditor::SetPositionToAbsolute(Element& aElement) {
     }
   }
 
-  
-  
+  // we may need to create a br if the positioned element is alone in its
+  // container
   nsINode* parentNode = aElement.GetParentNode();
   if (parentNode->GetChildCount() != 1) {
     return NS_OK;
@@ -704,7 +710,7 @@ nsresult HTMLEditor::SetPositionToAbsolute(Element& aElement) {
     NS_WARNING("HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
     return insertBRElementResult.unwrapErr();
   }
-  
+  // XXX Is this intentional selection change?
   nsresult rv = insertBRElementResult.inspect().SuggestCaretPointTo(
       *this, {SuggestCaret::OnlyIfHasSuggestion,
               SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
@@ -724,8 +730,8 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
   nsresult rv;
-  
-  
+  // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+  // by the caller because of MOZ_CAN_RUN_SCRIPT method.
   rv = CSSEditUtils::RemoveCSSPropertyWithTransaction(
       *this, MOZ_KnownLive(*styledElement), *nsGkAtoms::position, u""_ns);
   if (rv == NS_ERROR_EDITOR_DESTROYED) {
@@ -738,8 +744,8 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
       NS_SUCCEEDED(rv),
       "CSSEditUtils::RemoveCSSPropertyWithTransaction(nsGkAtoms::position) "
       "failed, but ignored");
-  
-  
+  // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+  // by the caller because of MOZ_CAN_RUN_SCRIPT method.
   rv = CSSEditUtils::RemoveCSSPropertyWithTransaction(
       *this, MOZ_KnownLive(*styledElement), *nsGkAtoms::top, u""_ns);
   if (rv == NS_ERROR_EDITOR_DESTROYED) {
@@ -752,8 +758,8 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
       NS_SUCCEEDED(rv),
       "CSSEditUtils::RemoveCSSPropertyWithTransaction(nsGkAtoms::top) "
       "failed, but ignored");
-  
-  
+  // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+  // by the caller because of MOZ_CAN_RUN_SCRIPT method.
   rv = CSSEditUtils::RemoveCSSPropertyWithTransaction(
       *this, MOZ_KnownLive(*styledElement), *nsGkAtoms::left, u""_ns);
   if (rv == NS_ERROR_EDITOR_DESTROYED) {
@@ -766,8 +772,8 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
       NS_SUCCEEDED(rv),
       "CSSEditUtils::RemoveCSSPropertyWithTransaction(nsGkAtoms::left) "
       "failed, but ignored");
-  
-  
+  // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+  // by the caller because of MOZ_CAN_RUN_SCRIPT method.
   rv = CSSEditUtils::RemoveCSSPropertyWithTransaction(
       *this, MOZ_KnownLive(*styledElement), *nsGkAtoms::z_index, u""_ns);
   if (rv == NS_ERROR_EDITOR_DESTROYED) {
@@ -782,8 +788,8 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
       "failed, but ignored");
 
   if (!HTMLEditUtils::IsImage(styledElement)) {
-    
-    
+    // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+    // by the caller because of MOZ_CAN_RUN_SCRIPT method.
     rv = CSSEditUtils::RemoveCSSPropertyWithTransaction(
         *this, MOZ_KnownLive(*styledElement), *nsGkAtoms::width, u""_ns);
     if (rv == NS_ERROR_EDITOR_DESTROYED) {
@@ -796,8 +802,8 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
         NS_SUCCEEDED(rv),
         "CSSEditUtils::RemoveCSSPropertyWithTransaction(nsGkAtoms::width) "
         "failed, but ignored");
-    
-    
+    // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+    // by the caller because of MOZ_CAN_RUN_SCRIPT method.
     rv = CSSEditUtils::RemoveCSSPropertyWithTransaction(
         *this, MOZ_KnownLive(*styledElement), *nsGkAtoms::height, u""_ns);
     if (rv == NS_ERROR_EDITOR_DESTROYED) {
@@ -818,11 +824,11 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
   }
 
   EditorDOMPoint pointToPutCaret;
-  
-  
+  // Make sure the first fild and last child of aElement starts/ends hard
+  // line(s) even after removing `aElement`.
   {
-    
-    
+    // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+    // by the caller because of MOZ_CAN_RUN_SCRIPT method.
     Result<CreateElementResult, nsresult>
         maybeInsertBRElementBeforeFirstChildResult =
             EnsureHardLineBeginsWithFirstChildOf(MOZ_KnownLive(*styledElement));
@@ -837,8 +843,8 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
     }
   }
   {
-    
-    
+    // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+    // by the caller because of MOZ_CAN_RUN_SCRIPT method.
     Result<CreateElementResult, nsresult>
         maybeInsertBRElementAfterLastChildResult =
             EnsureHardLineEndsWithLastChildOf(MOZ_KnownLive(*styledElement));
@@ -853,8 +859,8 @@ nsresult HTMLEditor::SetPositionToStatic(Element& aElement) {
     }
   }
   {
-    
-    
+    // MOZ_KnownLive(*styledElement): aElement's lifetime must be guarantted
+    // by the caller because of MOZ_CAN_RUN_SCRIPT method.
     Result<EditorDOMPoint, nsresult> unwrapStyledElementResult =
         RemoveContainerWithTransaction(MOZ_KnownLive(*styledElement));
     if (MOZ_UNLIKELY(unwrapStyledElementResult.isErr())) {
@@ -928,16 +934,16 @@ nsresult HTMLEditor::SetTopAndLeftWithTransaction(
 
 nsresult HTMLEditor::GetTemporaryStyleForFocusedPositionedElement(
     Element& aElement, nsAString& aReturn) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // we are going to outline the positioned element and bring it to the
+  // front to overlap any other element intersecting with it. But
+  // first, let's see what's the background and foreground colors of the
+  // positioned element.
+  // if background-image computed value is 'none,
+  //   If the background color is 'auto' and R G B values of the foreground are
+  //       each above #d0, use a black background
+  //   If the background color is 'auto' and at least one of R G B values of
+  //       the foreground is below #d0, use a white background
+  // Otherwise don't change background/foreground
   aReturn.Truncate();
 
   nsAutoString backgroundImageValue;
@@ -989,4 +995,4 @@ nsresult HTMLEditor::GetTemporaryStyleForFocusedPositionedElement(
   return NS_OK;
 }
 
-}  
+}  // namespace mozilla

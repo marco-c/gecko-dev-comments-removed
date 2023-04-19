@@ -37,32 +37,8 @@ using namespace dom;
 
 
 EditActionResult& EditActionResult::operator|=(
-    const Result<MoveNodeResult, nsresult>& aMoveNodeResult) {
-  mHandled |= aMoveNodeResult.isOk() && aMoveNodeResult.inspect().Handled();
-
-  
-  
-  if (EditorDestroyed() ||
-      (aMoveNodeResult.isErr() &&
-       aMoveNodeResult.inspectErr() == NS_ERROR_EDITOR_DESTROYED)) {
-    mRv = NS_ERROR_EDITOR_DESTROYED;
-    return *this;
-  }
-
-  
-  if (Failed() || aMoveNodeResult.isErr()) {
-    
-    if (Failed() && aMoveNodeResult.isErr() &&
-        mRv == aMoveNodeResult.inspectErr()) {
-      return *this;
-    }
-    
-    
-    mRv = NS_ERROR_FAILURE;
-    return *this;
-  }
-  
-  mRv = NS_OK;
+    const MoveNodeResult& aMoveNodeResult) {
+  mHandled |= aMoveNodeResult.Handled();
   return *this;
 }
 

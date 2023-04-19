@@ -414,14 +414,14 @@ class TextEditor final : public EditorBase,
 
 
 
-  EditActionResult MaybeTruncateInsertionStringForMaxLength(
+  Result<EditActionResult, nsresult> MaybeTruncateInsertionStringForMaxLength(
       nsAString& aInsertionString);
 
   
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
   InsertLineFeedCharacterAtSelection();
 
   
@@ -446,9 +446,10 @@ class TextEditor final : public EditorBase,
 
   void HandleNewLinesInStringForSingleLineEditor(nsString& aString) const;
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult HandleInsertText(
-      EditSubAction aEditSubAction, const nsAString& aInsertionString,
-      SelectionHandling aSelectionHandling) final;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
+  HandleInsertText(EditSubAction aEditSubAction,
+                   const nsAString& aInsertionString,
+                   SelectionHandling aSelectionHandling) final;
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertDroppedDataTransferAsAction(
       AutoEditActionDataSetter& aEditActionData,
@@ -463,7 +464,7 @@ class TextEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
   HandleDeleteSelectionInternal(nsIEditor::EDirection aDirectionAndAmount,
                                 nsIEditor::EStripWrappers aStripWrappers);
 
@@ -473,7 +474,7 @@ class TextEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
   HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
                         nsIEditor::EStripWrappers aStripWrappers) final;
 
@@ -484,7 +485,7 @@ class TextEditor final : public EditorBase,
 
 
 
-  EditActionResult ComputeValueFromTextNodeAndBRElement(
+  Result<EditActionResult, nsresult> ComputeValueFromTextNodeAndBRElement(
       nsAString& aValue) const;
 
   
@@ -492,7 +493,7 @@ class TextEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
   SetTextWithoutTransaction(const nsAString& aValue);
 
   

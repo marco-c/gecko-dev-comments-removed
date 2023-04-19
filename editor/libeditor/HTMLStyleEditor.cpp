@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ErrorList.h"
 #include "HTMLEditor.h"
@@ -73,7 +73,7 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsStaticAtom& aProperty,
   switch (editActionData.GetEditAction()) {
     case EditAction::eSetFontFamilyProperty:
       MOZ_ASSERT(!aValue.IsVoid());
-      
+      // XXX Should we trim unnecessary white-spaces?
       editActionData.SetData(aValue);
       break;
     case EditAction::eSetColorProperty:
@@ -91,8 +91,8 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsStaticAtom& aProperty,
     return EditorBase::ToGenericNSResult(rv);
   }
 
-  
-  
+  // XXX Due to bug 1659276 and bug 1659924, we should not scroll selection
+  //     into view after setting the new style.
   AutoPlaceholderBatch treatAsOneTransaction(*this, ScrollSelectionIntoView::No,
                                              __FUNCTION__);
 
@@ -102,17 +102,17 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsStaticAtom& aProperty,
 
   AutoTArray<EditorInlineStyle, 1> stylesToRemove;
   if (&aProperty == nsGkAtoms::sup) {
-    
+    // Superscript and Subscript styles are mutually exclusive.
     stylesToRemove.AppendElement(EditorInlineStyle(*nsGkAtoms::sub));
   } else if (&aProperty == nsGkAtoms::sub) {
-    
+    // Superscript and Subscript styles are mutually exclusive.
     stylesToRemove.AppendElement(EditorInlineStyle(*nsGkAtoms::sup));
   }
-  
-  
-  
-  
-  
+  // Handling `<tt>` element code was implemented for composer (bug 115922).
+  // This shouldn't work with `Document.execCommand()`.  Currently, aPrincipal
+  // is set only when the root caller is Document::ExecCommand() so that
+  // we should handle `<tt>` element only when aPrincipal is nullptr that
+  // must be only when XUL command is executed on composer.
   else if (!aPrincipal) {
     if (&aProperty == nsGkAtoms::tt) {
       stylesToRemove.AppendElement(
@@ -123,8 +123,8 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsStaticAtom& aProperty,
       } else {
         stylesToRemove.AppendElement(
             EditorInlineStyle(*nsGkAtoms::font, nsGkAtoms::face));
-        
-        
+        // Override property, attribute and value if the new font face value is
+        // "tt".
         property = nsGkAtoms::tt;
         attribute = nullptr;
         value.Truncate();
@@ -165,7 +165,7 @@ NS_IMETHODIMP HTMLEditor::SetInlineProperty(const nsAString& aProperty,
   switch (editActionData.GetEditAction()) {
     case EditAction::eSetFontFamilyProperty:
       MOZ_ASSERT(!aValue.IsVoid());
-      
+      // XXX Should we trim unnecessary white-spaces?
       editActionData.SetData(aValue);
       break;
     case EditAction::eSetColorProperty:
@@ -203,22 +203,26 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
                        "EditorBase::CommitComposition() failed, but ignored");
 
   if (SelectionRef().IsCollapsed()) {
-    
-    
+    // Manipulating text attributes on a collapsed selection only sets state
+    // for the next text insertion
     mPendingStylesToApplyToNewContent->PreserveStyles(aStylesToSet);
     return NS_OK;
   }
 
-  
+  // XXX Shouldn't we return before calling `CommitComposition()`?
   if (IsInPlaintextMode()) {
     return NS_OK;
   }
 
-  EditActionResult result = CanHandleHTMLEditSubAction();
-  if (result.Failed() || result.Canceled()) {
-    NS_WARNING_ASSERTION(result.Succeeded(),
-                         "HTMLEditor::CanHandleHTMLEditSubAction() failed");
-    return result.Rv();
+  {
+    Result<EditActionResult, nsresult> result = CanHandleHTMLEditSubAction();
+    if (MOZ_UNLIKELY(result.isErr())) {
+      NS_WARNING("HTMLEditor::CanHandleHTMLEditSubAction() failed");
+      return result.unwrapErr();
+    }
+    if (result.inspect().Canceled()) {
+      return NS_OK;
+    }
   }
 
   AutoPlaceholderBatch treatAsOneTransaction(
@@ -233,25 +237,25 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
       !ignoredError.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
-  
-  
-  
+  // TODO: We don't need AutoTransactionsConserveSelection here in the normal
+  //       cases, but removing this may cause the behavior with the legacy
+  //       mutation event listeners.  We should try to delete this in a bug.
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
   AutoRangeArray selectionRanges(SelectionRef());
   for (const EditorInlineStyleAndValue& styleToSet : aStylesToSet) {
-    
-    
-    
-    
-    
-    
-    
+    // The ranges may be updated by changing the DOM tree.  In strictly
+    // speaking, we should save and restore the ranges at every range loop,
+    // but we've never done so and it may be expensive if there are a lot of
+    // ranges.  Therefore, we should do it for every style handling for now.
+    // TODO: We should collect everything required for removing the style before
+    //       touching the DOM tree.  Then, we need to save and restore the
+    //       ranges only once.
     MOZ_ALWAYS_TRUE(selectionRanges.SaveAndTrackRanges(*this));
     for (const OwningNonNull<nsRange>& selectionRange :
          selectionRanges.Ranges()) {
-      
-      
+      // Adjust range to include any ancestors whose children are entirely
+      // selected
       nsresult rv = PromoteInlineRange(*selectionRange);
       if (NS_FAILED(rv)) {
         NS_WARNING("HTMLEditor::PromoteInlineRange() failed");
@@ -263,10 +267,10 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
         continue;
       }
 
-      
+      // If range is in a text node, apply new style simply.
       if (range.InSameContainer() && range.StartRef().IsInTextNode()) {
-        
-        
+        // MOZ_KnownLive(...ContainerAs<Text>()) because of grabbed by `range`.
+        // MOZ_KnownLive(styleToSet.*) due to bug 1622253.
         SplitRangeOffFromNodeResult wrapTextInStyledElementResult =
             SetInlinePropertyOnTextNode(
                 MOZ_KnownLive(*range.StartRef().ContainerAs<Text>()),
@@ -278,19 +282,19 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
           NS_WARNING("HTMLEditor::SetInlinePropertyOnTextNode() failed");
           return wrapTextInStyledElementResult.unwrapErr();
         }
-        
-        
+        // There is AutoTransactionsConserveSelection, so we don't need to
+        // update selection here.
         wrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
         continue;
       }
 
-      
+      // Collect editable nodes which are entirely contained in the range.
       AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContentsAroundRange;
       {
         ContentSubtreeIterator subtreeIter;
-        
-        
-        
+        // If there is no node which is entirely in the range,
+        // `ContentSubtreeIterator::Init()` fails, but this is possible case,
+        // don't warn it.
         if (NS_SUCCEEDED(
                 subtreeIter.Init(range.StartRef().ToRawRangeBoundary(),
                                  range.EndRef().ToRawRangeBoundary()))) {
@@ -308,12 +312,12 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
         }
       }
 
-      
+      // If start node is a text node, apply new style to a part of it.
       if (range.StartRef().IsInTextNode() &&
           EditorUtils::IsEditableContent(*range.StartRef().ContainerAs<Text>(),
                                          EditorType::HTML)) {
-        
-        
+        // MOZ_KnownLive(...ContainerAs<Text>()) because of grabbed by `range`.
+        // MOZ_KnownLive(styleToSet.*) due to bug 1622253.
         SplitRangeOffFromNodeResult wrapTextInStyledElementResult =
             SetInlinePropertyOnTextNode(
                 MOZ_KnownLive(*range.StartRef().ContainerAs<Text>()),
@@ -326,14 +330,14 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
           NS_WARNING("HTMLEditor::SetInlinePropertyOnTextNode() failed");
           return wrapTextInStyledElementResult.unwrapErr();
         }
-        
-        
+        // There is AutoTransactionsConserveSelection, so we don't need to
+        // update selection here.
         wrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
       }
 
-      
+      // Then, apply new style to all nodes in the range entirely.
       for (auto& content : arrayOfContentsAroundRange) {
-        
+        // MOZ_KnownLive due to bug 1622253.
         Result<EditorDOMPoint, nsresult> setStyleResult =
             SetInlinePropertyOnNode(MOZ_KnownLive(*content),
                                     MOZ_KnownLive(styleToSet.HTMLPropertyRef()),
@@ -343,16 +347,16 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
           NS_WARNING("HTMLEditor::SetInlinePropertyOnNode() failed");
           return setStyleResult.unwrapErr();
         }
-        
-        
+        // There is AutoTransactionsConserveSelection, so we don't need to
+        // update selection here.
       }
 
-      
+      // Finally, if end node is a text node, apply new style to a part of it.
       if (range.EndRef().IsInTextNode() &&
           EditorUtils::IsEditableContent(*range.EndRef().ContainerAs<Text>(),
                                          EditorType::HTML)) {
-        
-        
+        // MOZ_KnownLive(...ContainerAs<Text>()) because of grabbed by `range`.
+        // MOZ_KnownLive(styleToSet.mAttribute) due to bug 1622253.
         SplitRangeOffFromNodeResult wrapTextInStyledElementResult =
             SetInlinePropertyOnTextNode(
                 MOZ_KnownLive(*range.EndRef().ContainerAs<Text>()), 0,
@@ -364,8 +368,8 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
           NS_WARNING("HTMLEditor::SetInlinePropertyOnTextNode() failed");
           return wrapTextInStyledElementResult.unwrapErr();
         }
-        
-        
+        // There is AutoTransactionsConserveSelection, so we don't need to
+        // update selection here.
         wrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
       }
     }
@@ -385,17 +389,17 @@ nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
 Result<bool, nsresult> HTMLEditor::ElementIsGoodContainerForTheStyle(
     Element& aElement, nsAtom* aProperty, nsAtom* aAttribute,
     const nsAString* aValue) {
-  
+  // aContent can be null, in which case we'll return false in a few lines
   MOZ_ASSERT(aProperty);
   MOZ_ASSERT_IF(aAttribute, aValue);
 
-  
+  // First check for <b>, <i>, etc.
   if (aElement.IsHTMLElement(aProperty) && !aElement.GetAttrCount() &&
       !aAttribute) {
     return true;
   }
 
-  
+  // Special cases for various equivalencies: <strong>, <em>, <s>
   if (!aElement.GetAttrCount() &&
       ((aProperty == nsGkAtoms::b &&
         aElement.IsHTMLElement(nsGkAtoms::strong)) ||
@@ -405,23 +409,23 @@ Result<bool, nsresult> HTMLEditor::ElementIsGoodContainerForTheStyle(
     return true;
   }
 
-  
+  // Now look for things like <font>
   if (aAttribute) {
     nsString attrValue;
     if (aElement.IsHTMLElement(aProperty) &&
         IsOnlyAttribute(&aElement, aAttribute) &&
         aElement.GetAttr(kNameSpaceID_None, aAttribute, attrValue) &&
         attrValue.Equals(*aValue, nsCaseInsensitiveStringComparator)) {
-      
-      
-      
+      // This is not quite correct, because it excludes cases like
+      // <font face=000> being the same as <font face=#000000>.
+      // Property-specific handling is needed (bug 760211).
       return true;
     }
   }
 
-  
-  
-  
+  // No luck so far.  Now we check for a <span> with a single style=""
+  // attribute that sets only the style we're looking for, if this type of
+  // style supports it
   if (!CSSEditUtils::IsCSSEditableProperty(&aElement, aProperty, aAttribute) ||
       !aElement.IsHTMLElement(nsGkAtoms::span) ||
       aElement.GetAttrCount() != 1 ||
@@ -429,10 +433,10 @@ Result<bool, nsresult> HTMLEditor::ElementIsGoodContainerForTheStyle(
     return false;
   }
 
-  
-  
-  
-  
+  // Some CSS styles are not so simple.  For instance, underline is
+  // "text-decoration: underline", which decomposes into four different text-*
+  // properties.  So for now, we just create a span, add the desired style, and
+  // see if it matches.
   RefPtr<Element> newSpanElement = CreateHTMLContent(nsGkAtoms::span);
   if (!newSpanElement) {
     NS_WARNING("EditorBase::CreateHTMLContent(nsGkAtoms::span) failed");
@@ -443,15 +447,15 @@ Result<bool, nsresult> HTMLEditor::ElementIsGoodContainerForTheStyle(
   if (!styledNewSpanElement) {
     return false;
   }
-  
-  
+  // MOZ_KnownLive(*styledNewSpanElement): It's newSpanElement whose type is
+  // RefPtr.
   Result<int32_t, nsresult> result =
       CSSEditUtils::SetCSSEquivalentToHTMLStyleWithoutTransaction(
           *this, MOZ_KnownLive(*styledNewSpanElement), aProperty, aAttribute,
           aValue);
   if (result.isErr()) {
-    
-    
+    // The call shouldn't return destroyed error because it must be
+    // impossible to run script with modifying the new orphan node.
     MOZ_ASSERT_UNREACHABLE("How did you destroy this editor?");
     if (NS_WARN_IF(result.inspectErr() == NS_ERROR_EDITOR_DESTROYED)) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
@@ -474,15 +478,15 @@ SplitRangeOffFromNodeResult HTMLEditor::SetInlinePropertyOnTextNode(
     return SplitRangeOffFromNodeResult(nullptr, &aText, nullptr);
   }
 
-  
+  // Don't need to do anything if no characters actually selected
   if (aStartOffset == aEndOffset) {
     return SplitRangeOffFromNodeResult(nullptr, &aText, nullptr);
   }
 
-  
+  // Don't need to do anything if property already set on node
   if (CSSEditUtils::IsCSSEditableProperty(&aText, &aProperty, aAttribute)) {
-    
-    
+    // The HTML styles defined by aProperty/aAttribute have a CSS equivalence
+    // for node; let's check if it carries those CSS styles
     nsAutoString value(aValue);
     Result<bool, nsresult> isComputedCSSEquivalentToHTMLInlineStyleOrError =
         CSSEditUtils::IsComputedCSSEquivalentToHTMLInlineStyleSet(
@@ -501,13 +505,13 @@ SplitRangeOffFromNodeResult HTMLEditor::SetInlinePropertyOnTextNode(
     return SplitRangeOffFromNodeResult(nullptr, &aText, nullptr);
   }
 
-  
+  // Make the range an independent node.
   SplitNodeResult splitAtEndResult = [&]() MOZ_CAN_RUN_SCRIPT {
     EditorDOMPoint atEnd(&aText, aEndOffset);
     if (atEnd.IsEndOfContainer()) {
       return SplitNodeResult::NotHandled(atEnd, GetSplitNodeDirection());
     }
-    
+    // We need to split off back of text node
     SplitNodeResult splitNodeResult = SplitNodeWithTransaction(atEnd);
     if (splitNodeResult.isErr()) {
       NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
@@ -533,7 +537,7 @@ SplitRangeOffFromNodeResult HTMLEditor::SetInlinePropertyOnTextNode(
     if (atStart.IsStartOfContainer()) {
       return SplitNodeResult::NotHandled(atStart, GetSplitNodeDirection());
     }
-    
+    // We need to split off front of text node
     SplitNodeResult splitNodeResult = SplitNodeWithTransaction(atStart);
     if (splitNodeResult.isErr()) {
       NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
@@ -562,9 +566,9 @@ SplitRangeOffFromNodeResult HTMLEditor::SetInlinePropertyOnTextNode(
                 splitAtEndResult.GetPreviousContent()->IsText());
   MOZ_ASSERT_IF(splitAtEndResult.DidSplit(),
                 splitAtEndResult.GetNextContent()->IsText());
-  
-  
-  
+  // Note that those text nodes are grabbed by splitAtStartResult,
+  // splitAtEndResult or the callers.  Therefore, we don't need to make them
+  // strong pointer.
   Text* const leftTextNode =
       splitAtStartResult.DidSplit()
           ? Text::FromNode(splitAtStartResult.GetPreviousContent())
@@ -580,7 +584,7 @@ SplitRangeOffFromNodeResult HTMLEditor::SetInlinePropertyOnTextNode(
           ? Text::FromNode(splitAtEndResult.GetNextContent())
           : nullptr;
   if (aAttribute) {
-    
+    // Look for siblings that are correct type of node
     nsIContent* sibling = HTMLEditUtils::GetPreviousSibling(
         *middleTextNode, {WalkTreeOption::IgnoreNonEditableNode});
     if (sibling && sibling->IsElement()) {
@@ -592,7 +596,7 @@ SplitRangeOffFromNodeResult HTMLEditor::SetInlinePropertyOnTextNode(
         return SplitRangeOffFromNodeResult(result.unwrapErr());
       }
       if (result.inspect()) {
-        
+        // Previous sib is already right kind of inline node; slide this over
         Result<MoveNodeResult, nsresult> moveTextNodeResult =
             MoveNodeToEndWithTransaction(MOZ_KnownLive(*middleTextNode),
                                          element);
@@ -620,7 +624,7 @@ SplitRangeOffFromNodeResult HTMLEditor::SetInlinePropertyOnTextNode(
         return SplitRangeOffFromNodeResult(result.unwrapErr());
       }
       if (result.inspect()) {
-        
+        // Following sib is already right kind of inline node; slide this over
         Result<MoveNodeResult, nsresult> moveTextNodeResult =
             MoveNodeWithTransaction(MOZ_KnownLive(*middleTextNode),
                                     EditorDOMPoint(sibling, 0u));
@@ -639,7 +643,7 @@ SplitRangeOffFromNodeResult HTMLEditor::SetInlinePropertyOnTextNode(
     }
   }
 
-  
+  // Wrap the node inside inline node with appropriate {attribute,value}
   Result<EditorDOMPoint, nsresult> setStyleResult = SetInlinePropertyOnNode(
       MOZ_KnownLive(*middleTextNode), aProperty, aAttribute, aValue);
   if (MOZ_UNLIKELY(setStyleResult.isErr())) {
@@ -653,15 +657,15 @@ SplitRangeOffFromNodeResult HTMLEditor::SetInlinePropertyOnTextNode(
 Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
     nsIContent& aContent, nsAtom& aProperty, nsAtom* aAttribute,
     const nsAString& aValue) {
-  
-  
+  // If this is an element that can't be contained in a span, we have to
+  // recurse to its children.
   if (!HTMLEditUtils::CanNodeContain(*nsGkAtoms::span, aContent)) {
     if (!aContent.HasChildren()) {
       return EditorDOMPoint();
     }
 
     AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfContents;
-    
+    // Populate the list.
     for (nsCOMPtr<nsIContent> child = aContent.GetFirstChild(); child;
          child = child->GetNextSibling()) {
       if (EditorUtils::IsEditableContent(*child, EditorType::HTML) &&
@@ -671,11 +675,11 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
       }
     }
 
-    
+    // Then loop through the list, set the property on each node.
     EditorDOMPoint pointToPutCaret;
     for (const OwningNonNull<nsIContent>& content : arrayOfContents) {
-      
-      
+      // MOZ_KnownLive because 'arrayOfContents' is guaranteed to
+      // keep it alive.
       Result<EditorDOMPoint, nsresult> setInlinePropertyResult =
           SetInlinePropertyOnNode(MOZ_KnownLive(content), aProperty, aAttribute,
                                   aValue);
@@ -690,7 +694,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
     return pointToPutCaret;
   }
 
-  
+  // First check if there's an adjacent sibling we can put our node into.
   nsCOMPtr<nsIContent> previousSibling = HTMLEditUtils::GetPreviousSibling(
       aContent, {WalkTreeOption::IgnoreNonEditableNode});
   nsCOMPtr<nsIContent> nextSibling = HTMLEditUtils::GetNextSibling(
@@ -729,8 +733,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
       }
       unwrappedMoveNodeResult.IgnoreCaretPointSuggestion();
 
-      
-      
+      // JoinNodesWithTransaction (DoJoinNodes) tries to collapse selection to
+      // the joined point and we want to skip updating `Selection` here.
       AutoTransactionsConserveSelection dontChangeMySelection(*this);
       JoinNodesResult joinNodesResult =
           JoinNodesWithTransaction(*previousSibling, *nextSibling);
@@ -738,7 +742,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
         NS_WARNING("HTMLEditor::JoinNodesWithTransaction() failed");
         return Err(joinNodesResult.Rv());
       }
-      
+      // So, let's take it.
       return joinNodesResult.AtJoinedPoint<EditorDOMPoint>();
     }
   }
@@ -763,7 +767,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
     }
   }
 
-  
+  // Don't need to do anything if property already set on node
   if (CSSEditUtils::IsCSSEditableProperty(&aContent, &aProperty, aAttribute)) {
     nsAutoString value(aValue);
     Result<bool, nsresult> isComputedCSSEquivalentToHTMLInlineStyleOrError =
@@ -785,18 +789,18 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
   auto ShouldUseCSS = [&]() {
     return (IsCSSEnabled() && CSSEditUtils::IsCSSEditableProperty(
                                   &aContent, &aProperty, aAttribute)) ||
-           
+           // bgcolor is always done using CSS
            aAttribute == nsGkAtoms::bgcolor ||
-           
-           
+           // called for removing parent style, we should use CSS with
+           // `<span>` element.
            aValue.EqualsLiteral("-moz-editor-invert-value");
   };
 
   if (ShouldUseCSS()) {
     RefPtr<Element> spanElement;
     EditorDOMPoint pointToPutCaret;
-    
-    
+    // We only add style="" to <span>s with no attributes (bug 746515).  If we
+    // don't have one, we need to make one.
     if (aContent.IsHTMLElement(nsGkAtoms::span) &&
         !aContent.AsElement()->GetAttrCount()) {
       spanElement = aContent.AsElement();
@@ -817,11 +821,11 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
       spanElement = unwrappedWrapInSpanElementResult.UnwrapNewNode();
     }
 
-    
+    // Add the CSS styles corresponding to the HTML style request
     if (nsStyledElement* spanStyledElement =
             nsStyledElement::FromNode(spanElement)) {
-      
-      
+      // MOZ_KnownLive(*spanStyledElement): It's spanElement whose type is
+      // RefPtr.
       Result<int32_t, nsresult> result =
           CSSEditUtils::SetCSSEquivalentToHTMLStyleWithTransaction(
               *this, MOZ_KnownLive(*spanStyledElement), &aProperty, aAttribute,
@@ -841,12 +845,12 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
     return pointToPutCaret;
   }
 
-  
+  // is it already the right kind of node, but with wrong attribute?
   if (aContent.IsHTMLElement(&aProperty)) {
     if (NS_WARN_IF(!aAttribute)) {
       return Err(NS_ERROR_INVALID_ARG);
     }
-    
+    // Just set the attribute on it.
     nsresult rv = SetAttributeWithTransaction(
         MOZ_KnownLive(*aContent.AsElement()), *aAttribute, aValue);
     if (NS_WARN_IF(Destroyed())) {
@@ -859,7 +863,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
     return EditorDOMPoint();
   }
 
-  
+  // ok, chuck it in its very own container
   Result<CreateElementResult, nsresult> wrapWithNewElementToFormatResult =
       InsertContainerWithTransaction(
           aContent, aProperty, aAttribute ? *aAttribute : *nsGkAtoms::_empty,
@@ -896,7 +900,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNode(
   }
 
   if (aContent.GetParentNode()) {
-    
+    // The node is still where it was
     Result<EditorDOMPoint, nsresult> setStyleResult =
         SetInlinePropertyOnNodeImpl(aContent, aProperty, aAttribute, aValue);
     NS_WARNING_ASSERTION(setStyleResult.isOk(),
@@ -904,9 +908,9 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNode(
     return setStyleResult;
   }
 
-  
-  
-  
+  // It's vanished.  Use the old siblings for reference to construct a
+  // list.  But first, verify that the previous/next siblings are still
+  // where we expect them; otherwise we have to give up.
   if (NS_WARN_IF(previousSibling &&
                  previousSibling->GetParentNode() != parent) ||
       NS_WARN_IF(nextSibling && nextSibling->GetParentNode() != parent)) {
@@ -922,8 +926,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNode(
   }
 
   for (OwningNonNull<nsIContent>& content : nodesToSet) {
-    
-    
+    // MOZ_KnownLive because 'nodesToSet' is guaranteed to
+    // keep it alive.
     Result<EditorDOMPoint, nsresult> setStyleResult =
         SetInlinePropertyOnNodeImpl(MOZ_KnownLive(content), aProperty,
                                     aAttribute, aValue);
@@ -949,7 +953,7 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
 
   EditorDOMRange range(aRange);
 
-  
+  // split any matching style nodes above the start of range
   SplitNodeResult resultAtStart = [&]() MOZ_CAN_RUN_SCRIPT {
     AutoTrackDOMRange tracker(RangeUpdaterRef(), &range);
     SplitNodeResult result = SplitAncestorStyledInlineElementsAt(
@@ -977,7 +981,7 @@ SplitRangeOffResult HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
     return SplitRangeOffResult(resultAtStart.unwrapErr());
   }
 
-  
+  // second verse, same as the first...
   SplitNodeResult resultAtEnd = [&]() MOZ_CAN_RUN_SCRIPT {
     AutoTrackDOMRange tracker(RangeUpdaterRef(), &range);
     SplitNodeResult result = SplitAncestorStyledInlineElementsAt(
@@ -1017,17 +1021,17 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     return SplitNodeResult(NS_ERROR_INVALID_ARG);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // We assume that this method is called only when we're removing style(s).
+  // Even if we're in HTML mode and there is no presentation element in the
+  // block, we may need to overwrite the block's style with `<span>` element
+  // and CSS.  For example, `<h1>` element has `font-weight: bold;` as its
+  // default style.  If `Document.execCommand("bold")` is called for its
+  // text, we should make it unbold.  Therefore, we shouldn't check
+  // IsCSSEnabled() in most cases.  However, there is an exception.
+  // FontFaceStateCommand::SetState() calls RemoveInlinePropertyAsAction()
+  // with nsGkAtoms::tt before calling SetInlinePropertyAsAction() if we
+  // are handling a XUL command.  Only in that case, we need to check
+  // IsCSSEnabled().
   bool useCSS = aProperty != nsGkAtoms::tt || IsCSSEnabled();
 
   AutoTArray<OwningNonNull<nsIContent>, 24> arrayOfParents;
@@ -1041,7 +1045,7 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     arrayOfParents.AppendElement(*content);
   }
 
-  
+  // Split any matching style nodes above the point.
   SplitNodeResult result =
       SplitNodeResult::NotHandled(aPointToSplit, GetSplitNodeDirection());
   MOZ_ASSERT(!result.Handled());
@@ -1050,9 +1054,9 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     bool isSetByCSS = false;
     if (useCSS &&
         CSSEditUtils::IsCSSEditableProperty(content, aProperty, aAttribute)) {
-      
-      
-      
+      // The HTML style defined by aProperty/aAttribute has a CSS equivalence
+      // in this implementation for the node; let's check if it carries those
+      // CSS styles
       nsAutoString firstValue;
       Result<bool, nsresult> isSpecifiedByCSSOrError =
           CSSEditUtils::IsSpecifiedCSSEquivalentToHTMLInlineStyleSet(
@@ -1070,18 +1074,18 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
       if (!content->IsElement()) {
         continue;
       }
-      
-      
+      // If aProperty is set, we need to split only elements which applies the
+      // given style.
       if (aProperty) {
-        
-        
-        
+        // If the content is an inline element represents aProperty or
+        // the content is a link element and aProperty is `href`, we should
+        // split the content.
         if (!content->IsHTMLElement(aProperty) &&
             !(aProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(content))) {
           continue;
         }
       }
-      
+      // If aProperty is nullptr, we need to split any style.
       else if (!EditorUtils::IsEditableContent(content, EditorType::HTML) ||
                !HTMLEditUtils::IsRemovableInlineStyleElement(
                    *content->AsElement())) {
@@ -1089,11 +1093,11 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
       }
     }
 
-    
-    
-    
-    
-    
+    // Found a style node we need to split.
+    // XXX If first content is a text node and CSS is enabled, we call this
+    //     with text node but in such case, this does nothing, but returns
+    //     as handled with setting only previous or next node.  If its parent
+    //     is a block, we do nothing but return as handled.
     AutoTrackDOMPoint trackPointToPutCaret(RangeUpdaterRef(), &pointToPutCaret);
     SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
         MOZ_KnownLive(content), result.AtSplitPoint<EditorDOMPoint>(),
@@ -1106,13 +1110,13 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     splitNodeResult.MoveCaretPointTo(pointToPutCaret,
                                      {SuggestCaret::OnlyIfHasSuggestion});
 
-    
-    
-    
+    // If it's not handled, it means that `content` is not a splitable node
+    // like a void element even if it has some children, and the split point
+    // is middle of it.
     if (!splitNodeResult.Handled()) {
       continue;
     }
-    
+    // Mark the final result as handled forcibly.
     result = splitNodeResult.ToHandledResult();
     MOZ_ASSERT(result.Handled());
   }
@@ -1131,14 +1135,14 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
     return Err(NS_ERROR_INVALID_ARG);
   }
 
-  
-  
-  
-  
+  // TODO: We should rewrite this to stop unnecessary element creation and
+  //       deleting it later because it causes the original element may be
+  //       removed from the DOM tree even if same element is still in the
+  //       DOM tree from point of view of users.
 
-  
-  
-  
+  // First, split inline elements at the point.
+  // E.g., if aProperty is nsGkAtoms::b and `<p><b><i>a[]bc</i></b></p>`,
+  //       we want to make it as `<p><b><i>a</i></b><b><i>bc</i></b></p>`.
   EditorDOMPoint pointToPutCaret(aPoint);
   SplitNodeResult splitResult = SplitAncestorStyledInlineElementsAt(
       aPoint, aProperty, aAttribute,
@@ -1151,19 +1155,19 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
                                {SuggestCaret::OnlyIfHasSuggestion,
                                 SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
 
-  
-  
-  
+  // If there is no styled inline elements of aProperty/aAttribute, we just
+  // return the given point.
+  // E.g., `<p><i>a[]bc</i></p>` for nsGkAtoms::b.
   if (!splitResult.Handled()) {
     return pointToPutCaret;
   }
 
-  
-  
-  
-  
-  
-  
+  // If it did split nodes, but topmost ancestor inline element is split
+  // at start of it, we don't need the empty inline element.  Let's remove
+  // it now.  Then, we'll get the following DOM tree if there is no "a" in the
+  // above case:
+  // <p><b><i>bc</i></b></p>
+  //   ^^
   if (splitResult.GetPreviousContent() &&
       HTMLEditUtils::IsEmptyNode(
           *splitResult.GetPreviousContent(),
@@ -1171,9 +1175,9 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
            EmptyCheckOption::TreatListItemAsVisible,
            EmptyCheckOption::TreatTableCellAsVisible})) {
     AutoTrackDOMPoint trackPointToPutCaret(RangeUpdaterRef(), &pointToPutCaret);
-    
-    
-    
+    // Delete previous node if it's empty.
+    // MOZ_KnownLive(splitResult.GetPreviousContent()):
+    // It's grabbed by splitResult.
     nsresult rv = DeleteNodeWithTransaction(
         MOZ_KnownLive(*splitResult.GetPreviousContent()));
     if (NS_FAILED(rv)) {
@@ -1182,21 +1186,21 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
     }
   }
 
-  
-  
-  
-  
-  
+  // If we reached block from end of a text node, we can do nothing here.
+  // E.g., `<p style="font-weight: bold;">a[]bc</p>` for nsGkAtoms::b and
+  // we're in CSS mode.
+  // XXX Chrome resets block style and creates `<span>` elements for each
+  //     line in this case.
   if (!splitResult.GetNextContent()) {
     return pointToPutCaret;
   }
 
-  
-  
-  
-  
-  
-  
+  // Otherwise, the next node is topmost ancestor inline element which has
+  // the style.  We want to put caret between the split nodes, but we need
+  // to keep other styles.  Therefore, next, we need to split at start of
+  // the next node.  The first example should become
+  // `<p><b><i>a</i></b><b><i></i></b><b><i>bc</i></b></p>`.
+  //                    ^^^^^^^^^^^^^^
   nsIContent* firstLeafChildOfNextNode = HTMLEditUtils::GetFirstLeafContent(
       *splitResult.GetNextContent(), {LeafNodeType::OnlyLeafNode});
   EditorDOMPoint atStartOfNextNode(firstLeafChildOfNextNode
@@ -1204,12 +1208,12 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
                                        : splitResult.GetNextContent(),
                                    0);
   RefPtr<HTMLBRElement> brElement;
-  
-  
+  // But don't try to split non-containers like `<br>`, `<hr>` and `<img>`
+  // element.
   if (!atStartOfNextNode.IsInContentNode() ||
       !HTMLEditUtils::IsContainerNode(
           *atStartOfNextNode.ContainerAs<nsIContent>())) {
-    
+    // If it's a `<br>` element, let's move it into new node later.
     brElement = HTMLBRElement::FromNode(atStartOfNextNode.GetContainer());
     if (!atStartOfNextNode.GetContainerParentAs<nsIContent>()) {
       NS_WARNING("atStartOfNextNode was in an orphan node");
@@ -1232,26 +1236,26 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
 
   if (splitResultAtStartOfNextNode.Handled() &&
       splitResultAtStartOfNextNode.GetNextContent()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // If the right inline elements are empty, we should remove them.  E.g.,
+    // if the split point is at end of a text node (or end of an inline
+    // element), e.g., <div><b><i>abc[]</i></b></div>, then now, it's been
+    // changed to:
+    // <div><b><i>abc</i></b><b><i>[]</i></b><b><i></i></b></div>
+    //                                       ^^^^^^^^^^^^^^
+    // We will change it to:
+    // <div><b><i>abc</i></b><b><i>[]</i></b></div>
+    //                                      ^^
+    // And if it has only padding <br> element, we should move it into the
+    // previous <i> which will have new content.
     bool seenBR = false;
     if (HTMLEditUtils::IsEmptyNode(
             *splitResultAtStartOfNextNode.GetNextContent(),
             {EmptyCheckOption::TreatListItemAsVisible,
              EmptyCheckOption::TreatTableCellAsVisible},
             &seenBR)) {
-      
-      
-      
+      // Delete next node if it's empty.
+      // MOZ_KnownLive(splitResultAtStartOfNextNode.GetNextContent()):
+      // It's grabbed by splitResultAtStartOfNextNode.
       nsresult rv = DeleteNodeWithTransaction(
           MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextContent()));
       if (NS_FAILED(rv)) {
@@ -1265,11 +1269,11 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
     }
   }
 
-  
-  
+  // If there is no content, we should return here.
+  // XXX Is this possible case without mutation event listener?
   if (NS_WARN_IF(!splitResultAtStartOfNextNode.Handled()) ||
       !splitResultAtStartOfNextNode.GetPreviousContent()) {
-    
+    // XXX This is really odd, but we retrun this value...
     const EditorRawDOMPoint& splitPoint =
         splitResult.AtSplitPoint<EditorRawDOMPoint>();
     const EditorRawDOMPoint& splitPointAtStartOfNextNode =
@@ -1278,9 +1282,9 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
                           splitPointAtStartOfNextNode.Offset());
   }
 
-  
-  
-  
+  // Now, we want to put `<br>` element into the empty split node if
+  // it was in next node of the first split.
+  // E.g., `<p><b><i>a</i></b><b><i><br></i></b><b><i>bc</i></b></p>`
   nsIContent* firstLeafChildOfPreviousNode = HTMLEditUtils::GetFirstLeafContent(
       *splitResultAtStartOfNextNode.GetPreviousContent(),
       {LeafNodeType::OnlyLeafNode});
@@ -1289,9 +1293,9 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
                           : splitResultAtStartOfNextNode.GetPreviousContent(),
                       0);
 
-  
-  
-  
+  // If the right node starts with a `<br>`, suck it out of right node and into
+  // the left node left node.  This is so we you don't revert back to the
+  // previous style if you happen to click at the end of a line.
   if (brElement) {
     {
       Result<MoveNodeResult, nsresult> moveBRElementResult =
@@ -1310,20 +1314,20 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
 
     if (splitResultAtStartOfNextNode.GetNextContent() &&
         splitResultAtStartOfNextNode.GetNextContent()->IsInComposedDoc()) {
-      
-      
-      
-      
-      
-      
-      
+      // If we split inline elements at immediately before <br> element which is
+      // the last visible content in the right element, we don't need the right
+      // element anymore.  Otherwise, we'll create the following DOM tree:
+      // - <b>abc</b>{}<br><b></b>
+      //                   ^^^^^^^
+      // - <b><i>abc</i></b><i><br></i><b></b>
+      //                               ^^^^^^^
       if (HTMLEditUtils::IsEmptyNode(
               *splitResultAtStartOfNextNode.GetNextContent(),
               {EmptyCheckOption::TreatSingleBRElementAsVisible,
                EmptyCheckOption::TreatListItemAsVisible,
                EmptyCheckOption::TreatTableCellAsVisible})) {
-        
-        
+        // MOZ_KnownLive because the result is grabbed by
+        // splitResultAtStartOfNextNode.
         nsresult rv = DeleteNodeWithTransaction(
             MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextContent()));
         if (NS_FAILED(rv)) {
@@ -1331,12 +1335,12 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
           return Err(rv);
         }
       }
-      
-      
-      
-      
-      
-      
+      // If the next content has only one <br> element, there may be empty
+      // inline elements around it.  We don't need them anymore because user
+      // cannot put caret into them.  E.g., <b><i>abc[]<br></i><br></b> has
+      // been changed to <b><i>abc</i></b><i>{}<br></i><b><i></i><br></b> now.
+      //                                               ^^^^^^^^^^^^^^^^^^
+      // We don't need the empty <i>.
       else if (HTMLEditUtils::IsEmptyNode(
                    *splitResultAtStartOfNextNode.GetNextContent(),
                    {EmptyCheckOption::TreatListItemAsVisible,
@@ -1350,7 +1354,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
              EmptyCheckOption::TreatTableCellAsVisible});
         for (const OwningNonNull<nsIContent>& emptyInlineContainerElement :
              emptyInlineContainerElements) {
-          
+          // MOZ_KnownLive(emptyInlineContainerElement) due to bug 1622253.
           nsresult rv = DeleteNodeWithTransaction(
               MOZ_KnownLive(emptyInlineContainerElement));
           if (NS_FAILED(rv)) {
@@ -1361,24 +1365,24 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
       }
     }
 
-    
+    // Update the child.
     pointToPutCaret.Set(pointToPutCaret.GetContainer(), 0);
   }
-  
-  
-  
-  
-  
+  // Finally, remove the specified style in the previous node at the
+  // second split and tells good insertion point to the caller.  I.e., we
+  // want to make the first example as:
+  // `<p><b><i>a</i></b><i>[]</i><b><i>bc</i></b></p>`
+  //                    ^^^^^^^^^
   if (Element* previousElementOfSplitPoint = Element::FromNode(
           splitResultAtStartOfNextNode.GetPreviousContent())) {
-    
-    
-    
-    
-    
+    // Track the point at the new hierarchy.  This is so we can know where
+    // to put the selection after we call RemoveStyleInside().
+    // RemoveStyleInside() could remove any and all of those nodes, so I
+    // have to use the range tracking system to find the right spot to put
+    // selection.
     AutoTrackDOMPoint tracker(RangeUpdaterRef(), &pointToPutCaret);
-    
-    
+    // MOZ_KnownLive(previousElementOfSplitPoint):
+    // It's grabbed by splitResultAtStartOfNextNode.
     Result<EditorDOMPoint, nsresult> removeStyleResult =
         RemoveStyleInside(MOZ_KnownLive(*previousElementOfSplitPoint),
                           aProperty, aAttribute, aSpecifiedStyle);
@@ -1386,8 +1390,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
       NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
       return removeStyleResult;
     }
-    
-    
+    // We've already computed a suggested caret position at start of first leaf
+    // which is stored in pointToPutCaret, so we don't need to update it here.
   }
   return pointToPutCaret;
 }
@@ -1395,7 +1399,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
 Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
     Element& aElement, nsAtom* aProperty, nsAtom* aAttribute,
     SpecifiedStyle aSpecifiedStyle) {
-  
+  // First, handle all descendants.
   AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfChildContents;
   HTMLEditor::GetChildNodesOf(aElement, arrayOfChildContents);
   EditorDOMPoint pointToPutCaret;
@@ -1415,39 +1419,39 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
     }
   }
 
-  
+  // Next, remove the element or its attribute.
   auto ShouldRemoveHTMLStyle = [&]() {
     if (aProperty) {
       return
-          
+          // If the element is a presentation element of aProperty
           aElement.NodeInfo()->NameAtom() == aProperty ||
-          
+          // or an `<a>` element with `href` attribute
           (aProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(&aElement)) ||
-          
+          // or an `<a>` element with `name` attribute
           (aProperty == nsGkAtoms::name &&
            HTMLEditUtils::IsNamedAnchor(&aElement));
     }
-    
-    
+    // XXX Why do we check if aElement is editable only when aProperty is
+    //     nullptr?
     if (EditorUtils::IsEditableContent(aElement, EditorType::HTML)) {
-      
+      // or removing all styles and the element is a presentation element.
       return HTMLEditUtils::IsRemovableInlineStyleElement(aElement);
     }
     return false;
   };
 
   if (ShouldRemoveHTMLStyle()) {
-    
-    
+    // If aAttribute is nullptr, we want to remove any matching inline styles
+    // entirely.
     if (!aAttribute) {
-      
-      
-      
+      // If some style rules are specified to aElement, we need to keep them
+      // as far as possible.
+      // XXX Why don't we clone `id` attribute?
       if (aProperty && aSpecifiedStyle != SpecifiedStyle::Discard &&
           (aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::style) ||
            aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::_class))) {
-        
-        
+        // Move `style` attribute and `class` element to span element before
+        // removing aElement from the tree.
         Result<CreateElementResult, nsresult> wrapInSpanElementResult =
             InsertContainerWithTransaction(aElement, *nsGkAtoms::span);
         if (wrapInSpanElementResult.isErr()) {
@@ -1497,8 +1501,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
         pointToPutCaret = unwrapElementResult.unwrap();
       }
     }
-    
-    
+    // If aAttribute is specified, we want to remove only the attribute
+    // unless it's the last attribute of aElement.
     else if (aElement.HasAttr(kNameSpaceID_None, aAttribute)) {
       if (IsOnlyAttribute(&aElement, aAttribute)) {
         Result<EditorDOMPoint, nsresult> unwrapElementResult =
@@ -1523,9 +1527,9 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
     }
   }
 
-  
-  
-  
+  // Then, remove CSS style if specified.
+  // XXX aElement may have already been removed from the DOM tree.  Why
+  //     do we keep handling aElement here??
   if (CSSEditUtils::IsCSSEditableProperty(&aElement, aProperty, aAttribute)) {
     Result<bool, nsresult> elementHasSpecifiedCSSEquivalentStylesOrError =
         CSSEditUtils::HaveSpecifiedCSSEquivalentStyles(*this, aElement,
@@ -1537,9 +1541,9 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
     if (elementHasSpecifiedCSSEquivalentStylesOrError.unwrap()) {
       if (nsStyledElement* styledElement =
               nsStyledElement::FromNode(&aElement)) {
-        
-        
-        
+        // If aElement has CSS declaration of the given style, remove it.
+        // MOZ_KnownLive(*styledElement): It's aElement and its lifetime must be
+        // guaranteed by the caller because of MOZ_CAN_RUN_SCRIPT method.
         nsresult rv =
             CSSEditUtils::RemoveCSSEquivalentToHTMLStyleWithTransaction(
                 *this, MOZ_KnownLive(*styledElement), aProperty, aAttribute,
@@ -1555,8 +1559,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
             "CSSEditUtils::RemoveCSSEquivalentToHTMLStyleWithTransaction() "
             "failed, but ignored");
       }
-      
-      
+      // Additionally, remove aElement itself if it's a `<span>` or `<font>`
+      // and it does not have non-empty `style`, `id` nor `class` attribute.
       if (aElement.IsAnyOfHTMLElements(nsGkAtoms::span, nsGkAtoms::font) &&
           !HTMLEditor::HasStyleOrIdOrClassAttribute(aElement)) {
         Result<EditorDOMPoint, nsresult> unwrapSpanOrFontElementResult =
@@ -1583,8 +1587,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
     return pointToPutCaret;
   }
 
-  
-  
+  // Finally, remove aElement if it's a `<big>` or `<small>` element and
+  // we're removing `<font size>`.
   Result<EditorDOMPoint, nsresult> unwrapBigOrSmallElementResult =
       RemoveContainerWithTransaction(aElement);
   NS_WARNING_ASSERTION(unwrapBigOrSmallElementResult.isOk(),
@@ -1602,8 +1606,8 @@ bool HTMLEditor::IsOnlyAttribute(const Element* aElement, nsAtom* aAttribute) {
       return false;
     }
 
-    
-    
+    // if it's the attribute we know about, or a special _moz attribute,
+    // keep looking
     if (name->LocalName() != aAttribute) {
       nsAutoString attrString;
       name->LocalName()->ToString(attrString);
@@ -1612,14 +1616,14 @@ bool HTMLEditor::IsOnlyAttribute(const Element* aElement, nsAtom* aAttribute) {
       }
     }
   }
-  
-  
+  // if we made it through all of them without finding a real attribute
+  // other than aAttribute, then return true
   return true;
 }
 
 nsresult HTMLEditor::PromoteRangeIfStartsOrEndsInNamedAnchor(nsRange& aRange) {
-  
-  
+  // We assume that <a> is not nested.
+  // XXX Shouldn't ignore the editing host.
   if (NS_WARN_IF(!aRange.GetStartContainer()) ||
       NS_WARN_IF(!aRange.GetEndContainer())) {
     return NS_ERROR_INVALID_ARG;
@@ -1779,10 +1783,10 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsStaticAtom& aHTMLProperty,
 
   bool isCollapsed = SelectionRef().IsCollapsed();
   RefPtr<nsRange> range = SelectionRef().GetRangeAt(0);
-  
-  
+  // XXX: Should be a while loop, to get each separate range
+  // XXX: ERROR_HANDLING can currentItem be null?
   if (range) {
-    
+    // For each range, set a flag
     bool firstNodeInRange = true;
 
     if (isCollapsed) {
@@ -1839,7 +1843,7 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsStaticAtom& aHTMLProperty,
       return NS_OK;
     }
 
-    
+    // Non-collapsed selection
 
     nsAutoString firstValue, theValue;
 
@@ -1861,7 +1865,7 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsStaticAtom& aHTMLProperty,
         break;
       }
 
-      
+      // just ignore any non-editable nodes
       if (content->IsText() &&
           (!EditorUtils::IsEditableContent(*content, EditorType::HTML) ||
            !HTMLEditUtils::IsVisibleTextNode(*content->AsText()))) {
@@ -1877,7 +1881,7 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsStaticAtom& aHTMLProperty,
           continue;
         }
       } else if (content->IsElement()) {
-        
+        // handle non-text leaf nodes here
         continue;
       }
 
@@ -1887,9 +1891,9 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsStaticAtom& aHTMLProperty,
       if (first) {
         if (CSSEditUtils::IsCSSEditableProperty(content, &aHTMLProperty,
                                                 aAttribute)) {
-          
-          
-          
+          // The HTML styles defined by aHTMLProperty/aAttribute have a CSS
+          // equivalence in this implementation for node; let's check if it
+          // carries those CSS styles
           if (aValue) {
             firstValue.Assign(*aValue);
           }
@@ -1916,9 +1920,9 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsStaticAtom& aHTMLProperty,
       } else {
         if (CSSEditUtils::IsCSSEditableProperty(content, &aHTMLProperty,
                                                 aAttribute)) {
-          
-          
-          
+          // The HTML styles defined by aHTMLProperty/aAttribute have a CSS
+          // equivalence in this implementation for node; let's check if it
+          // carries those CSS styles
           if (aValue) {
             theValue.Assign(*aValue);
           }
@@ -1939,21 +1943,21 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsStaticAtom& aHTMLProperty,
         }
 
         if (firstValue != theValue &&
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            // For text-decoration related HTML properties, i.e. <u> and
+            // <strike>, we have to also check |isSet| because text-decoration
+            // is a shorthand property, and it may contains other unrelated
+            // longhand components, e.g. text-decoration-color, so we have to do
+            // an extra check before setting |*aAll| to false.
+            // e.g.
+            //   firstValue: "underline rgb(0, 0, 0)"
+            //   theValue: "underline rgb(0, 0, 238)" // <a> uses blue color
+            // These two values should be the same if we are checking `<u>`.
+            // That's why we need to check |*aFirst| and |isSet|.
+            //
+            // This is a work-around for text-decoration.
+            // The spec issue: https://github.com/w3c/editing/issues/241.
+            // Once this spec issue is resolved, we could drop this work-around
+            // check.
             (!useTextDecoration || *aFirst != isSet)) {
           *aAll = false;
         }
@@ -1967,8 +1971,8 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsStaticAtom& aHTMLProperty,
     }
   }
   if (!*aAny) {
-    
-    
+    // make sure that if none of the selection is set, we don't report all is
+    // set
     *aAll = false;
   }
   return NS_OK;
@@ -2004,7 +2008,7 @@ NS_IMETHODIMP HTMLEditor::GetInlinePropertyWithAttrValue(
     return NS_ERROR_INVALID_ARG;
   }
   nsStaticAtom* attribute = EditorUtils::GetAttributeAtom(aAttribute);
-  
+  // MOZ_KnownLive because nsStaticAtom is available until shutting down.
   nsresult rv = GetInlinePropertyWithAttrValue(MOZ_KnownLive(*property),
                                                MOZ_KnownLive(attribute), aValue,
                                                aFirst, aAny, aAll, outValue);
@@ -2167,12 +2171,12 @@ void HTMLEditor::AppendInlineStyleAndRelatedStyle(
         aStylesToRemove.AppendElement(std::move(small));
       }
     }
-    
-    
-    
-    
-    
-    
+    // Handling <tt> element code was implemented for composer (bug 115922).
+    // This shouldn't work with Document.execCommand() for compatibility with
+    // the other browsers.  Currently, edit action principal is set only when
+    // the root caller is Document::ExecCommand() so that we should handle <tt>
+    // element only when the principal is nullptr that must be only when XUL
+    // command is executed on composer.
     else if (aStyleToRemove.mAttribute == nsGkAtoms::face &&
              !GetEditActionPrincipal()) {
       EditorInlineStyle tt(*nsGkAtoms::tt);
@@ -2196,22 +2200,26 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
                        "EditorBase::CommitComposition() failed, but ignored");
 
   if (SelectionRef().IsCollapsed()) {
-    
-    
+    // Manipulating text attributes on a collapsed selection only sets state
+    // for the next text insertion
     mPendingStylesToApplyToNewContent->ClearStyles(aStylesToRemove);
     return NS_OK;
   }
 
-  
+  // XXX Shouldn't we quit before calling `CommitComposition()`?
   if (IsInPlaintextMode()) {
     return NS_OK;
   }
 
-  EditActionResult result = CanHandleHTMLEditSubAction();
-  if (result.Failed() || result.Canceled()) {
-    NS_WARNING_ASSERTION(result.Succeeded(),
-                         "HTMLEditor::CanHandleHTMLEditSubAction() failed");
-    return result.Rv();
+  {
+    Result<EditActionResult, nsresult> result = CanHandleHTMLEditSubAction();
+    if (MOZ_UNLIKELY(result.isErr())) {
+      NS_WARNING("HTMLEditor::CanHandleHTMLEditSubAction() failed");
+      return result.unwrapErr();
+    }
+    if (result.inspect().Canceled()) {
+      return NS_OK;
+    }
   }
 
   AutoPlaceholderBatch treatAsOneTransaction(
@@ -2227,20 +2235,20 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
       !ignoredError.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
-  
-  
-  
+  // TODO: We don't need AutoTransactionsConserveSelection here in the normal
+  //       cases, but removing this may cause the behavior with the legacy
+  //       mutation event listeners.  We should try to delete this in a bug.
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
   AutoRangeArray selectionRanges(SelectionRef());
   for (const EditorInlineStyle& styleToRemove : aStylesToRemove) {
-    
-    
-    
-    
-    
-    
-    
+    // The ranges may be updated by changing the DOM tree.  In strictly
+    // speaking, we should save and restore the ranges at every range loop,
+    // but we've never done so and it may be expensive if there are a lot of
+    // ranges.  Therefore, we should do it for every style handling for now.
+    // TODO: We should collect everything required for removing the style before
+    //       touching the DOM tree.  Then, we need to save and restore the
+    //       ranges only once.
     MOZ_ALWAYS_TRUE(selectionRanges.SaveAndTrackRanges(*this));
     const bool isCSSInvertibleStyle =
         styleToRemove.mHTMLProperty &&
@@ -2248,8 +2256,8 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
                                       styleToRemove.mAttribute);
     for (const OwningNonNull<nsRange>& range : selectionRanges.Ranges()) {
       if (styleToRemove.mHTMLProperty == nsGkAtoms::name) {
-        
-        
+        // Promote range if it starts or end in a named anchor and we want to
+        // remove named anchors
         nsresult rv = PromoteRangeIfStartsOrEndsInNamedAnchor(*range);
         if (NS_FAILED(rv)) {
           NS_WARNING(
@@ -2257,8 +2265,8 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
           return rv;
         }
       } else {
-        
-        
+        // Adjust range to include any ancestors whose children are entirely
+        // selected
         nsresult rv = PromoteInlineRange(*range);
         if (NS_FAILED(rv)) {
           NS_WARNING("HTMLEditor::PromoteInlineRange() failed");
@@ -2266,8 +2274,8 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
         }
       }
 
-      
-      
+      // Remove this style from ancestors of our range endpoints, splitting
+      // them as appropriate
       SplitRangeOffResult splitRangeOffResult =
           SplitAncestorStyledInlineElementsAtRangeEdges(
               EditorDOMRange(range), styleToRemove.mHTMLProperty,
@@ -2278,14 +2286,14 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
             "failed");
         return splitRangeOffResult.unwrapErr();
       }
-      
-      
+      // There is AutoTransactionsConserveSelection, so we don't need to
+      // update selection here.
       splitRangeOffResult.IgnoreCaretPointSuggestion();
 
-      
-      
-      
-      
+      // XXX Modifying `range` means that we may modify ranges in `Selection`.
+      //     Is this intentional?  Note that the range may be not in
+      //     `Selection` too.  It seems that at least one of them is not
+      //     an unexpected case.
       const EditorDOMRange& splitRange = splitRangeOffResult.RangeRef();
       if (NS_WARN_IF(!splitRange.IsPositioned())) {
         continue;
@@ -2293,9 +2301,9 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
 
       AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContentsToInvertStyle;
       {
-        
-        
-        
+        // Collect top level children in the range first.
+        // TODO: Perhaps, HTMLEditUtils::IsSplittableNode should be used here
+        //       instead of EditorUtils::IsEditableContent.
         AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContentsAroundRange;
         if (splitRange.InSameContainer() &&
             splitRange.StartRef().IsInTextNode()) {
@@ -2308,8 +2316,8 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
               *splitRange.StartRef().ContainerAs<Text>());
         } else if (splitRange.IsInTextNodes() &&
                    splitRange.InAdjacentSiblings()) {
-          
-          
+          // Adjacent siblings are in a same element, so the editable state of
+          // both text nodes are always same.
           if (!EditorUtils::IsEditableContent(
                   *splitRange.StartRef().ContainerAs<Text>(),
                   EditorType::HTML)) {
@@ -2320,7 +2328,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
           arrayOfContentsAroundRange.AppendElement(
               *splitRange.EndRef().ContainerAs<Text>());
         } else {
-          
+          // Append first node if it's a text node but selected not entirely.
           if (splitRange.StartRef().IsInTextNode() &&
               !splitRange.StartRef().IsStartOfContainer() &&
               EditorUtils::IsEditableContent(
@@ -2329,7 +2337,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
             arrayOfContentsAroundRange.AppendElement(
                 *splitRange.StartRef().ContainerAs<Text>());
           }
-          
+          // Append all entirely selected nodes.
           ContentSubtreeIterator subtreeIter;
           if (NS_SUCCEEDED(
                   subtreeIter.Init(splitRange.StartRef().ToRawRangeBoundary(),
@@ -2346,7 +2354,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
               }
             }
           }
-          
+          // Append last node if it's a text node but selected not entirely.
           if (!splitRange.InSameContainer() &&
               splitRange.EndRef().IsInTextNode() &&
               !splitRange.EndRef().IsEndOfContainer() &&
@@ -2362,7 +2370,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
         }
 
         for (OwningNonNull<nsIContent>& content : arrayOfContentsAroundRange) {
-          
+          // We should remove style from the element and its descendants.
           if (content->IsElement()) {
             Result<EditorDOMPoint, nsresult> removeStyleResult =
                 RemoveStyleInside(MOZ_KnownLive(*content->AsElement()),
@@ -2373,11 +2381,11 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
               NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
               return removeStyleResult.unwrapErr();
             }
-            
-            
+            // There is AutoTransactionsConserveSelection, so we don't need to
+            // update selection here.
 
-            
-            
+            // If the element was removed from the DOM tree by
+            // RemoveStyleInside, we need to do nothing for it anymore.
             if (!content->GetParentNode()) {
               continue;
             }
@@ -2387,8 +2395,8 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
             arrayOfContentsToInvertStyle.AppendElement(content);
           }
 
-          
-          
+          // If the style is specified in parent block and we can remove the
+          // style with inserting new <span> element, we should do it.
           Result<bool, nsresult> isRemovableParentStyleOrError =
               IsRemovableParentStyleWithNewSpanElement(
                   MOZ_KnownLive(content), styleToRemove.mHTMLProperty,
@@ -2400,19 +2408,19 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
             return isRemovableParentStyleOrError.unwrapErr();
           }
           if (!isRemovableParentStyleOrError.unwrap()) {
-            
-            
+            // E.g., text-decoration cannot be override visually in children.
+            // In such cases, we can do nothing.
             continue;
           }
 
-          
-          
-          
+          // If it's not a text node, should wrap it into a new element,
+          // move it into direct child which has same style, or specify
+          // the style to its parent.
           if (!content->IsText()) {
-            
-            
-            
-            
+            // XXX Do we need to call this even when data node or something?  If
+            //     so, for what?
+            // MOZ_KnownLive because 'arrayOfContents' is guaranteed to
+            // keep it alive.
             Result<EditorDOMPoint, nsresult> setStyleResult =
                 SetInlinePropertyOnNode(
                     MOZ_KnownLive(content), *styleToRemove.mHTMLProperty,
@@ -2429,16 +2437,16 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
                   "HTMLEditor::SetInlinePropertyOnNode(-moz-editor-invert-"
                   "value) failed, but ignored");
             }
-            
-            
+            // There is AutoTransactionsConserveSelection, so we don't need to
+            // update selection here.
             continue;
           }
 
-          
-          
-          
-          
-          
+          // If current node is a text node, we need to create `<span>` element
+          // for it to overwrite parent style.  Unfortunately, all browsers
+          // don't join text nodes when removing a style.  Therefore, there
+          // may be multiple text nodes as adjacent siblings.  That's the
+          // reason why we need to handle text nodes in this loop.
           uint32_t startOffset = content == splitRange.StartRef().GetContainer()
                                      ? splitRange.StartRef().Offset()
                                      : 0;
@@ -2456,12 +2464,12 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
                 "value) failed");
             return wrapTextInStyledElementResult.unwrapErr();
           }
-          
-          
+          // There is AutoTransactionsConserveSelection, so we don't need to
+          // update selection here.
           wrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
-          
-          
-          
+          // If we've split the content, let's swap content in
+          // arrayOfContentsToInvertStyle with the text node which is applied
+          // the style.
           if (isCSSInvertibleStyle) {
             MOZ_ASSERT(
                 wrapTextInStyledElementResult.GetMiddleContentAs<Text>());
@@ -2482,13 +2490,13 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
       }
       MOZ_ASSERT(isCSSInvertibleStyle);
 
-      
-      
+      // Finally, we should remove the style from all leaf text nodes if
+      // they still have the style.
       AutoTArray<OwningNonNull<Text>, 32> leafTextNodes;
       for (const OwningNonNull<nsIContent>& content :
            arrayOfContentsToInvertStyle) {
-        
-        
+        // XXX Should we ignore content which has already removed from the
+        //     DOM tree by the previous for-loop?
         if (content->IsElement()) {
           CollectEditableLeafTextNodes(*content->AsElement(), leafTextNodes);
         }
@@ -2507,8 +2515,8 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
         if (!isRemovableParentStyleOrError.unwrap()) {
           continue;
         }
-        
-        
+        // MOZ_KnownLive because 'leafTextNodes' is guaranteed to
+        // keep it alive.
         SplitRangeOffFromNodeResult wrapTextInStyledElementResult =
             SetInlinePropertyOnTextNode(
                 MOZ_KnownLive(textNode), 0, textNode->TextLength(),
@@ -2520,14 +2528,14 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
               "value) failed");
           return wrapTextInStyledElementResult.unwrapErr();
         }
-        
-        
+        // There is AutoTransactionsConserveSelection, so we don't need to
+        // update selection here.
         wrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
-      }  
-    }    
+      }  // for-loop of leafTextNodes
+    }    // for-loop of selectionRanges
     MOZ_ASSERT(selectionRanges.HasSavedRanges());
     selectionRanges.RestoreFromSavedRanges();
-  }  
+  }  // for-loop of styles
 
   MOZ_ASSERT(!selectionRanges.HasSavedRanges());
   nsresult rv = selectionRanges.ApplyTo(SelectionRef());
@@ -2540,29 +2548,29 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
 
 Result<bool, nsresult> HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
     nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute) const {
-  
+  // We don't support to remove all inline styles with this path.
   if (!aHTMLProperty) {
     return false;
   }
 
-  
-  
+  // First check whether the style is invertible since this is the fastest
+  // check.
   if (!CSSEditUtils::IsCSSInvertible(*aHTMLProperty, aAttribute)) {
     return false;
   }
 
-  
-  
+  // If parent block has the removing style, we should create `<span>`
+  // element to remove the style even in HTML mode since Chrome does it.
   if (!CSSEditUtils::IsCSSEditableProperty(&aContent, aHTMLProperty,
                                            aAttribute)) {
     return false;
   }
 
-  
-  
-  
-  
-  
+  // aContent's computed style indicates the CSS equivalence to
+  // the HTML style to remove is applied; but we found no element
+  // in the ancestors of aContent carrying specified styles;
+  // assume it comes from a rule and let's try to insert a span
+  // "inverting" the style
   nsAutoString emptyString;
   Result<bool, nsresult> isComputedCSSEquivalentToHTMLInlineStyleOrError =
       CSSEditUtils::IsComputedCSSEquivalentToHTMLInlineStyleSet(
@@ -2626,7 +2634,7 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
     FontSize aIncrementOrDecrement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  
+  // Committing composition and changing font size should be undone together.
   AutoPlaceholderBatch treatAsOneTransaction(
       *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
@@ -2634,13 +2642,13 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "EditorBase::CommitComposition() failed, but ignored");
 
-  
+  // If selection is collapsed, set typing state
   if (SelectionRef().IsCollapsed()) {
     nsStaticAtom& bigOrSmallTagName = aIncrementOrDecrement == FontSize::incr
                                           ? *nsGkAtoms::big
                                           : *nsGkAtoms::small;
 
-    
+    // Let's see in what kind of element the selection is
     if (!SelectionRef().RangeCount()) {
       return NS_OK;
     }
@@ -2658,8 +2666,8 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
       return NS_OK;
     }
 
-    
-    
+    // Manipulating text attributes on a collapsed selection only sets state
+    // for the next text insertion
     mPendingStylesToApplyToNewContent->PreserveStyle(bigOrSmallTagName, nullptr,
                                                      u""_ns);
     return NS_OK;
@@ -2675,19 +2683,19 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
       !ignoredError.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
-  
-  
-  
+  // TODO: We don't need AutoTransactionsConserveSelection here in the normal
+  //       cases, but removing this may cause the behavior with the legacy
+  //       mutation event listeners.  We should try to delete this in a bug.
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
   AutoRangeArray selectionRanges(SelectionRef());
   MOZ_ALWAYS_TRUE(selectionRanges.SaveAndTrackRanges(*this));
   for (const OwningNonNull<nsRange>& domRange : selectionRanges.Ranges()) {
-    
+    // Adjust range to include any ancestors with entirely selected children
     if (NS_FAILED(PromoteInlineRange(*domRange))) {
       NS_WARNING("HTMLEditor::PromoteInlineRange() failed");
-      
-      
+      // for consistency with setting/removing inline styles, we should keep
+      // handling the other ranges.
       continue;
     }
 
@@ -2706,24 +2714,24 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
         NS_WARNING("HTMLEditor::SetFontSizeOnTextNode() failed");
         return wrapInBigOrSmallElementResult.unwrapErr();
       }
-      
-      
+      // There is an AutoTransactionsConserveSelection instance so that we don't
+      // need to update selection for this change.
       wrapInBigOrSmallElementResult.inspect().IgnoreCaretPointSuggestion();
       continue;
     }
 
-    
-    
-    
-    
-    
+    // Not the easy case.  Range not contained in single text node.  There
+    // are up to three phases here.  There are all the nodes reported by the
+    // subtree iterator to be processed.  And there are potentially a
+    // starting textnode and an ending textnode which are only partially
+    // contained by the range.
 
-    
-    
-    
-    
+    // Let's handle the nodes reported by the iterator.  These nodes are
+    // entirely contained in the selection range.  We build up a list of them
+    // (since doing operations on the document during iteration would perturb
+    // the iterator).
 
-    
+    // Iterate range and build up array
     ContentSubtreeIterator subtreeIter;
     if (NS_SUCCEEDED(subtreeIter.Init(range.StartRef().ToRawRangeBoundary(),
                                       range.EndRef().ToRawRangeBoundary()))) {
@@ -2740,9 +2748,9 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
         }
       }
 
-      
+      // Now that we have the list, do the font size change on each node
       for (OwningNonNull<nsIContent>& content : arrayOfContents) {
-        
+        // MOZ_KnownLive because of bug 1622253
         Result<EditorDOMPoint, nsresult> fontChangeOnNodeResult =
             SetFontSizeWithBigOrSmallElement(MOZ_KnownLive(content),
                                              aIncrementOrDecrement);
@@ -2750,13 +2758,13 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
           NS_WARNING("HTMLEditor::SetFontSizeWithBigOrSmallElement() failed");
           return fontChangeOnNodeResult.unwrapErr();
         }
-        
-        
+        // There is an AutoTransactionsConserveSelection, so we don't need to
+        // update selection here.
       }
     }
-    
-    
-    
+    // Now check the start and end parents of the range to see if they need
+    // to be separately handled (they do if they are text nodes, due to how
+    // the subtree iterator works - it will not have reported them).
     if (range.StartRef().IsInTextNode() &&
         !range.StartRef().IsEndOfContainer() &&
         EditorUtils::IsEditableContent(*range.StartRef().ContainerAs<Text>(),
@@ -2771,8 +2779,8 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
         NS_WARNING("HTMLEditor::SetFontSizeOnTextNode() failed");
         return wrapInBigOrSmallElementResult.unwrapErr();
       }
-      
-      
+      // There is an AutoTransactionsConserveSelection instance so that we
+      // don't need to update selection for this change.
       wrapInBigOrSmallElementResult.inspect().IgnoreCaretPointSuggestion();
     }
     if (range.EndRef().IsInTextNode() && !range.EndRef().IsStartOfContainer() &&
@@ -2786,8 +2794,8 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
         NS_WARNING("HTMLEditor::SetFontSizeOnTextNode() failed");
         return wrapInBigOrSmallElementResult.unwrapErr();
       }
-      
-      
+      // There is an AutoTransactionsConserveSelection instance so that we
+      // don't need to update selection for this change.
       wrapInBigOrSmallElementResult.inspect().IgnoreCaretPointSuggestion();
     }
   }
@@ -2805,7 +2813,7 @@ nsresult HTMLEditor::IncrementOrDecrementFontSizeAsSubAction(
 Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
     Text& aTextNode, uint32_t aStartOffset, uint32_t aEndOffset,
     FontSize aIncrementOrDecrement) {
-  
+  // Don't need to do anything if no characters actually selected
   if (aStartOffset == aEndOffset) {
     return CreateElementResult::NotHandled();
   }
@@ -2818,7 +2826,7 @@ Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
 
   aEndOffset = std::min(aTextNode.Length(), aEndOffset);
 
-  
+  // Make the range an independent node.
   RefPtr<Text> textNodeForTheRange = &aTextNode;
 
   EditorDOMPoint pointToPutCaret;
@@ -2826,10 +2834,10 @@ Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
     auto pointToPutCaretOrError =
         [&]() MOZ_CAN_RUN_SCRIPT -> Result<EditorDOMPoint, nsresult> {
       EditorDOMPoint pointToPutCaret;
-      
+      // Split at the end of the range.
       EditorDOMPoint atEnd(textNodeForTheRange, aEndOffset);
       if (!atEnd.IsEndOfContainer()) {
-        
+        // We need to split off back of text node
         SplitNodeResult splitAtEndResult = SplitNodeWithTransaction(atEnd);
         if (splitAtEndResult.isErr()) {
           NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
@@ -2847,15 +2855,15 @@ Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
         textNodeForTheRange =
             Text::FromNodeOrNull(splitAtEndResult.GetPreviousContent());
         MOZ_DIAGNOSTIC_ASSERT(textNodeForTheRange);
-        
-        
+        // When adding caret suggestion to SplitNodeResult, here didn't change
+        // selection so that just ignore it.
         splitAtEndResult.IgnoreCaretPointSuggestion();
       }
 
-      
+      // Split at the start of the range.
       EditorDOMPoint atStart(textNodeForTheRange, aStartOffset);
       if (!atStart.IsStartOfContainer()) {
-        
+        // We need to split off front of text node
         SplitNodeResult splitAtStartResult = SplitNodeWithTransaction(atStart);
         if (splitAtStartResult.isErr()) {
           NS_WARNING("HTMLEditor::SplitNodeWithTransaction() failed");
@@ -2873,28 +2881,28 @@ Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
         textNodeForTheRange =
             Text::FromNodeOrNull(splitAtStartResult.GetNextContent());
         MOZ_DIAGNOSTIC_ASSERT(textNodeForTheRange);
-        
-        
+        // When adding caret suggestion to SplitNodeResult, here didn't change
+        // selection so that just ignore it.
         splitAtStartResult.IgnoreCaretPointSuggestion();
       }
 
       return pointToPutCaret;
     }();
     if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
-      
+      // Don't warn here since it should be done in the lambda.
       return pointToPutCaretOrError.propagateErr();
     }
     pointToPutCaret = pointToPutCaretOrError.unwrap();
   }
 
-  
+  // Look for siblings that are correct type of node
   nsStaticAtom* const bigOrSmallTagName =
       aIncrementOrDecrement == FontSize::incr ? nsGkAtoms::big
                                               : nsGkAtoms::small;
   nsCOMPtr<nsIContent> sibling = HTMLEditUtils::GetPreviousSibling(
       *textNodeForTheRange, {WalkTreeOption::IgnoreNonEditableNode});
   if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
-    
+    // Previous sib is already right kind of inline node; slide this over
     Result<MoveNodeResult, nsresult> moveTextNodeResult =
         MoveNodeToEndWithTransaction(*textNodeForTheRange, *sibling);
     if (MOZ_UNLIKELY(moveTextNodeResult.isErr())) {
@@ -2904,13 +2912,13 @@ Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
     MoveNodeResult unwrappedMoveTextNodeResult = moveTextNodeResult.unwrap();
     unwrappedMoveTextNodeResult.MoveCaretPointTo(
         pointToPutCaret, *this, {SuggestCaret::OnlyIfHasSuggestion});
-    
+    // XXX Should we return the new container?
     return CreateElementResult::NotHandled(std::move(pointToPutCaret));
   }
   sibling = HTMLEditUtils::GetNextSibling(
       *textNodeForTheRange, {WalkTreeOption::IgnoreNonEditableNode});
   if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
-    
+    // Following sib is already right kind of inline node; slide this over
     Result<MoveNodeResult, nsresult> moveTextNodeResult =
         MoveNodeWithTransaction(*textNodeForTheRange,
                                 EditorDOMPoint(sibling, 0u));
@@ -2921,11 +2929,11 @@ Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
     MoveNodeResult unwrappedMoveTextNodeResult = moveTextNodeResult.unwrap();
     unwrappedMoveTextNodeResult.MoveCaretPointTo(
         pointToPutCaret, *this, {SuggestCaret::OnlyIfHasSuggestion});
-    
+    // XXX Should we return the new container?
     return CreateElementResult::NotHandled(std::move(pointToPutCaret));
   }
 
-  
+  // Else wrap the node inside font node with appropriate relative size
   Result<CreateElementResult, nsresult> wrapTextInBigOrSmallElementResult =
       InsertContainerWithTransaction(*textNodeForTheRange,
                                      MOZ_KnownLive(*bigOrSmallTagName));
@@ -2944,21 +2952,21 @@ Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
 
 Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeOfFontElementChildren(
     nsIContent& aContent, FontSize aIncrementOrDecrement) {
-  
-  
-  
-  
+  // This routine looks for all the font nodes in the tree rooted by aNode,
+  // including aNode itself, looking for font nodes that have the size attr
+  // set.  Any such nodes need to have big or small put inside them, since
+  // they override any big/small that are above them.
 
-  
+  // If this is a font node with size, put big/small inside it.
   if (aContent.IsHTMLElement(nsGkAtoms::font) &&
       aContent.AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::size)) {
     EditorDOMPoint pointToPutCaret;
 
-    
+    // Cycle through children and adjust relative font size.
     AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfContents;
     HTMLEditor::GetChildNodesOf(aContent, arrayOfContents);
     for (const auto& child : arrayOfContents) {
-      
+      // MOZ_KnownLive because of bug 1622253
       Result<EditorDOMPoint, nsresult> setFontSizeOfChildResult =
           SetFontSizeWithBigOrSmallElement(MOZ_KnownLive(child),
                                            aIncrementOrDecrement);
@@ -2971,17 +2979,17 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeOfFontElementChildren(
       }
     }
 
-    
-    
+    // WrapContentInBigOrSmallElement already calls us recursively,
+    // so we don't need to check our children again.
     return pointToPutCaret;
   }
 
-  
+  // Otherwise cycle through the children.
   EditorDOMPoint pointToPutCaret;
   AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfContents;
   HTMLEditor::GetChildNodesOf(aContent, arrayOfContents);
   for (const auto& child : arrayOfContents) {
-    
+    // MOZ_KnownLive because of bug 1622253
     Result<EditorDOMPoint, nsresult> fontSizeChangeResult =
         SetFontSizeOfFontElementChildren(MOZ_KnownLive(child),
                                          aIncrementOrDecrement);
@@ -3003,12 +3011,12 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeWithBigOrSmallElement(
       aIncrementOrDecrement == FontSize::incr ? nsGkAtoms::big
                                               : nsGkAtoms::small;
 
-  
+  // Is aContent the opposite of what we want?
   if ((aIncrementOrDecrement == FontSize::incr &&
        aContent.IsHTMLElement(nsGkAtoms::small)) ||
       (aIncrementOrDecrement == FontSize::decr &&
        aContent.IsHTMLElement(nsGkAtoms::big))) {
-    
+    // First, populate any nested font elements that have the size attr set
     Result<EditorDOMPoint, nsresult> fontSizeChangeOfDescendantsResult =
         SetFontSizeOfFontElementChildren(aContent, aIncrementOrDecrement);
     if (MOZ_UNLIKELY(fontSizeChangeOfDescendantsResult.isErr())) {
@@ -3016,7 +3024,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeWithBigOrSmallElement(
       return fontSizeChangeOfDescendantsResult;
     }
     EditorDOMPoint pointToPutCaret = fontSizeChangeOfDescendantsResult.unwrap();
-    
+    // In that case, just unwrap the <big> or <small> element.
     Result<EditorDOMPoint, nsresult> unwrapBigOrSmallElementResult =
         RemoveContainerWithTransaction(MOZ_KnownLive(*aContent.AsElement()));
     if (MOZ_UNLIKELY(unwrapBigOrSmallElementResult.isErr())) {
@@ -3030,7 +3038,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeWithBigOrSmallElement(
   }
 
   if (HTMLEditUtils::CanNodeContain(*bigOrSmallTagName, aContent)) {
-    
+    // First, populate any nested font tags that have the size attr set
     Result<EditorDOMPoint, nsresult> fontSizeChangeOfDescendantsResult =
         SetFontSizeOfFontElementChildren(aContent, aIncrementOrDecrement);
     if (MOZ_UNLIKELY(fontSizeChangeOfDescendantsResult.isErr())) {
@@ -3040,7 +3048,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeWithBigOrSmallElement(
 
     EditorDOMPoint pointToPutCaret = fontSizeChangeOfDescendantsResult.unwrap();
 
-    
+    // Next, if next or previous is <big> or <small>, move aContent into it.
     nsCOMPtr<nsIContent> sibling = HTMLEditUtils::GetPreviousSibling(
         aContent, {WalkTreeOption::IgnoreNonEditableNode});
     if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
@@ -3071,7 +3079,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeWithBigOrSmallElement(
       return pointToPutCaret;
     }
 
-    
+    // Otherwise, wrap aContent in new <big> or <small>
     Result<CreateElementResult, nsresult> wrapInBigOrSmallElementResult =
         InsertContainerWithTransaction(aContent,
                                        MOZ_KnownLive(*bigOrSmallTagName));
@@ -3087,15 +3095,15 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeWithBigOrSmallElement(
     return pointToPutCaret;
   }
 
-  
-  
-  
-  
+  // none of the above?  then cycle through the children.
+  // MOOSE: we should group the children together if possible
+  // into a single "big" or "small".  For the moment they are
+  // each getting their own.
   EditorDOMPoint pointToPutCaret;
   AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfContents;
   HTMLEditor::GetChildNodesOf(aContent, arrayOfContents);
   for (const auto& child : arrayOfContents) {
-    
+    // MOZ_KnownLive because of bug 1622253
     Result<EditorDOMPoint, nsresult> setFontSizeOfChildResult =
         SetFontSizeWithBigOrSmallElement(MOZ_KnownLive(child),
                                          aIncrementOrDecrement);
@@ -3135,14 +3143,14 @@ NS_IMETHODIMP HTMLEditor::GetFontFaceState(bool* aMixed, nsAString& outFace) {
     return EditorBase::ToGenericNSResult(rv);
   }
   if (any && !all) {
-    return NS_OK;  
+    return NS_OK;  // mixed
   }
   if (all) {
     *aMixed = false;
     return NS_OK;
   }
 
-  
+  // if there is no font face, check for tt
   rv = GetInlinePropertyBase(*nsGkAtoms::tt, nullptr, nullptr, &first, &any,
                              &all, nullptr);
   if (NS_FAILED(rv)) {
@@ -3150,7 +3158,7 @@ NS_IMETHODIMP HTMLEditor::GetFontFaceState(bool* aMixed, nsAString& outFace) {
     return EditorBase::ToGenericNSResult(rv);
   }
   if (any && !all) {
-    return NS_OK;  
+    return NS_OK;  // mixed
   }
   if (all) {
     *aMixed = false;
@@ -3158,7 +3166,7 @@ NS_IMETHODIMP HTMLEditor::GetFontFaceState(bool* aMixed, nsAString& outFace) {
   }
 
   if (!any) {
-    
+    // there was no font face attrs of any kind.  We are in normal font.
     outFace.Truncate();
     *aMixed = false;
   }
@@ -3189,7 +3197,7 @@ nsresult HTMLEditor::GetFontColorState(bool* aMixed, nsAString& aOutColor) {
   }
 
   if (any && !all) {
-    return NS_OK;  
+    return NS_OK;  // mixed
   }
   if (all) {
     *aMixed = false;
@@ -3197,15 +3205,15 @@ nsresult HTMLEditor::GetFontColorState(bool* aMixed, nsAString& aOutColor) {
   }
 
   if (!any) {
-    
+    // there was no font color attrs of any kind..
     aOutColor.Truncate();
     *aMixed = false;
   }
   return NS_OK;
 }
 
-
-
+// The return value is true only if the instance of the HTML editor we created
+// can handle CSS styles and if the CSS preference is checked.
 NS_IMETHODIMP HTMLEditor::GetIsCSSEnabled(bool* aIsCSSEnabled) {
   *aIsCSSEnabled = IsCSSEnabled();
   return NS_OK;
@@ -3217,4 +3225,4 @@ bool HTMLEditor::HasStyleOrIdOrClassAttribute(Element& aElement) {
          aElement.HasNonEmptyAttr(nsGkAtoms::id);
 }
 
-}  
+}  // namespace mozilla
