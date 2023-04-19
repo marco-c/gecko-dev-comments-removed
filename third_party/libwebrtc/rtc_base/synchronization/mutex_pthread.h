@@ -19,6 +19,7 @@
 #endif
 
 #include "absl/base/attributes.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -39,14 +40,60 @@ class RTC_LOCKABLE MutexImpl final {
   MutexImpl& operator=(const MutexImpl&) = delete;
   ~MutexImpl() { pthread_mutex_destroy(&mutex_); }
 
-  void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION() { pthread_mutex_lock(&mutex_); }
-  ABSL_MUST_USE_RESULT bool TryLock() RTC_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
-    return pthread_mutex_trylock(&mutex_) == 0;
+  void Lock() RTC_EXCLUSIVE_LOCK_FUNCTION() {
+    pthread_mutex_lock(&mutex_);
+    owner_.SetOwner();
   }
-  void Unlock() RTC_UNLOCK_FUNCTION() { pthread_mutex_unlock(&mutex_); }
+  ABSL_MUST_USE_RESULT bool TryLock() RTC_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
+    if (pthread_mutex_trylock(&mutex_) != 0) {
+      return false;
+    }
+    owner_.SetOwner();
+    return true;
+  }
+  void AssertHeld() const RTC_ASSERT_EXCLUSIVE_LOCK() { owner_.AssertOwned(); }
+  void Unlock() RTC_UNLOCK_FUNCTION() {
+    owner_.ClearOwner();
+    pthread_mutex_unlock(&mutex_);
+  }
 
  private:
+  class OwnerRecord {
+   public:
+#if !RTC_DCHECK_IS_ON
+    void SetOwner() {}
+    void ClearOwner() {}
+    void AssertOwned() const {}
+#else
+    void SetOwner() {
+      latest_owner_ = pthread_self();
+      is_owned_ = true;
+    }
+    void ClearOwner() { is_owned_ = false; }
+    void AssertOwned() const {
+      RTC_CHECK(is_owned_);
+      RTC_CHECK(pthread_equal(latest_owner_, pthread_self()));
+    }
+
+   private:
+    
+    
+    bool is_owned_ = false;
+    pthread_t latest_owner_ = pthread_self();
+#endif
+  };
+
   pthread_mutex_t mutex_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RTC_NO_UNIQUE_ADDRESS OwnerRecord owner_;
 };
 
 }  
