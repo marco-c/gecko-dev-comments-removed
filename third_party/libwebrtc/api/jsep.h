@@ -137,6 +137,13 @@ class RTC_EXPORT SessionDescriptionInterface {
   virtual ~SessionDescriptionInterface() {}
 
   
+  
+  
+  virtual std::unique_ptr<SessionDescriptionInterface> Clone() {
+    return nullptr;
+  }
+
+  
   virtual cricket::SessionDescription* description() = 0;
   virtual const cricket::SessionDescription* description() const = 0;
 
