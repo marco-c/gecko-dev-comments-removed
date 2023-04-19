@@ -623,10 +623,8 @@ bool gfxWindowsPlatform::CreatePlatformFontList() {
   }
 
   
-  gfxPlatform::HasVariationFontSupport();
   
-  
-  sHasVariationFontSupport = false;
+  mHasVariationFontSupport = false;
 
   return gfxPlatformFontList::Initialize(new gfxGDIFontList);
 }
