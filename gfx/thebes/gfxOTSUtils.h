@@ -112,9 +112,7 @@ class MOZ_STACK_CLASS gfxOTSContext : public ots::OTSContext {
                               aTag == TRUETYPE_TAG('G', 'S', 'U', 'B')))) {
       return ots::TABLE_ACTION_PASSTHRU;
     }
-    if (aTag == TRUETYPE_TAG('S', 'V', 'G', ' ') ||
-        aTag == TRUETYPE_TAG('C', 'O', 'L', 'R') ||
-        aTag == TRUETYPE_TAG('C', 'P', 'A', 'L')) {
+    if (aTag == TRUETYPE_TAG('S', 'V', 'G', ' ')) {
       return ots::TABLE_ACTION_PASSTHRU;
     }
     if (mKeepColorBitmaps && (aTag == TRUETYPE_TAG('C', 'B', 'D', 'T') ||
