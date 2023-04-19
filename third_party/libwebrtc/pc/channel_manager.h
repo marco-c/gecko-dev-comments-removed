@@ -46,10 +46,16 @@ namespace cricket {
 class ChannelManager final {
  public:
   
-  ChannelManager(std::unique_ptr<MediaEngineInterface> media_engine,
-                 std::unique_ptr<DataEngineInterface> data_engine,
-                 rtc::Thread* worker_thread,
-                 rtc::Thread* network_thread);
+  
+  
+  static std::unique_ptr<ChannelManager> Create(
+      std::unique_ptr<MediaEngineInterface> media_engine,
+      std::unique_ptr<DataEngineInterface> data_engine,
+      bool enable_rtx,
+      rtc::Thread* worker_thread,
+      rtc::Thread* network_thread);
+
+  ChannelManager() = delete;
   ~ChannelManager();
 
   rtc::Thread* worker_thread() const { return worker_thread_; }
@@ -71,19 +77,12 @@ class ChannelManager final {
   GetSupportedVideoRtpHeaderExtensions() const;
 
   
-  bool initialized() const;
-  
-  bool Init();
-  
-  void Terminate();
-
-  
   
   
 
   
   VoiceChannel* CreateVoiceChannel(webrtc::Call* call,
-                                   const cricket::MediaConfig& media_config,
+                                   const MediaConfig& media_config,
                                    webrtc::RtpTransportInternal* rtp_transport,
                                    rtc::Thread* signaling_thread,
                                    const std::string& content_name,
@@ -99,7 +98,7 @@ class ChannelManager final {
   
   VideoChannel* CreateVideoChannel(
       webrtc::Call* call,
-      const cricket::MediaConfig& media_config,
+      const MediaConfig& media_config,
       webrtc::RtpTransportInternal* rtp_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
@@ -112,7 +111,7 @@ class ChannelManager final {
   void DestroyVideoChannel(VideoChannel* video_channel);
 
   RtpDataChannel* CreateRtpDataChannel(
-      const cricket::MediaConfig& media_config,
+      const MediaConfig& media_config,
       webrtc::RtpTransportInternal* rtp_transport,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
@@ -123,19 +122,7 @@ class ChannelManager final {
   void DestroyRtpDataChannel(RtpDataChannel* data_channel);
 
   
-  bool has_channels() const {
-    return (!voice_channels_.empty() || !video_channels_.empty() ||
-            !data_channels_.empty());
-  }
-
-  
-  
-  bool SetVideoRtxEnabled(bool enable);
-
-  
-  bool capturing() const { return capturing_; }
-
-  
+  bool has_channels() const;
 
   
   
@@ -146,20 +133,26 @@ class ChannelManager final {
   void StopAecDump();
 
  private:
-  std::unique_ptr<MediaEngineInterface> media_engine_;  
-  std::unique_ptr<DataEngineInterface> data_engine_;    
-  bool initialized_ RTC_GUARDED_BY(main_thread_) = false;
-  rtc::Thread* const main_thread_;
+  ChannelManager(std::unique_ptr<MediaEngineInterface> media_engine,
+                 std::unique_ptr<DataEngineInterface> data_engine,
+                 bool enable_rtx,
+                 rtc::Thread* worker_thread,
+                 rtc::Thread* network_thread);
+
+  const std::unique_ptr<MediaEngineInterface> media_engine_;  
+  const std::unique_ptr<DataEngineInterface> data_engine_;    
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
 
   
-  std::vector<std::unique_ptr<VoiceChannel>> voice_channels_;
-  std::vector<std::unique_ptr<VideoChannel>> video_channels_;
-  std::vector<std::unique_ptr<RtpDataChannel>> data_channels_;
+  std::vector<std::unique_ptr<VoiceChannel>> voice_channels_
+      RTC_GUARDED_BY(worker_thread_);
+  std::vector<std::unique_ptr<VideoChannel>> video_channels_
+      RTC_GUARDED_BY(worker_thread_);
+  std::vector<std::unique_ptr<RtpDataChannel>> data_channels_
+      RTC_GUARDED_BY(worker_thread_);
 
-  bool enable_rtx_ = false;
-  bool capturing_ = false;
+  const bool enable_rtx_;
 };
 
 }  

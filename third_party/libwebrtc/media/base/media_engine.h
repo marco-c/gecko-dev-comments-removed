@@ -122,8 +122,8 @@ class MediaEngineInterface {
   virtual ~MediaEngineInterface() {}
 
   
-  
   virtual bool Init() = 0;
+
   virtual VoiceEngineInterface& voice() = 0;
   virtual VideoEngineInterface& video() = 0;
   virtual const VoiceEngineInterface& voice() const = 0;
@@ -141,6 +141,8 @@ class CompositeMediaEngine : public MediaEngineInterface {
   CompositeMediaEngine(std::unique_ptr<VoiceEngineInterface> audio_engine,
                        std::unique_ptr<VideoEngineInterface> video_engine);
   ~CompositeMediaEngine() override;
+
+  
   bool Init() override;
 
   VoiceEngineInterface& voice() override;
@@ -150,8 +152,8 @@ class CompositeMediaEngine : public MediaEngineInterface {
 
  private:
   const std::unique_ptr<webrtc::WebRtcKeyValueConfig> trials_;
-  std::unique_ptr<VoiceEngineInterface> voice_engine_;
-  std::unique_ptr<VideoEngineInterface> video_engine_;
+  const std::unique_ptr<VoiceEngineInterface> voice_engine_;
+  const std::unique_ptr<VideoEngineInterface> video_engine_;
 };
 
 enum DataChannelType {
