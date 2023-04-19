@@ -34,22 +34,6 @@ char kTSanDefaultSuppressions[] =
 
     
     
-    "race:user_sctp_timer_iterate\n"
-
-    
-    "race:sctp_close\n"
-
-    
-    
-    "deadlock:usrsctp_conninput\n"
-    "deadlock:usrsctp_connect\n"
-
-    
-    
-    "race:sctp_process_cookie_existing\n"
-
-    
-    
     "deadlock:webrtc::test::UdpSocketManagerPosixImpl::RemoveSocket\n"
 
     

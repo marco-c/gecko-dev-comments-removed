@@ -56,13 +56,12 @@ namespace {
 #define DISABLED_ON_ANDROID(t) t
 #endif
 
-class DataChannelIntegrationTest : public PeerConnectionIntegrationBaseTest,
-                                   public ::testing::WithParamInterface<
-                                       std::tuple<SdpSemantics, std::string>> {
+class DataChannelIntegrationTest
+    : public PeerConnectionIntegrationBaseTest,
+      public ::testing::WithParamInterface<SdpSemantics> {
  protected:
   DataChannelIntegrationTest()
-      : PeerConnectionIntegrationBaseTest(std::get<0>(GetParam()),
-                                          std::get<1>(GetParam())) {}
+      : PeerConnectionIntegrationBaseTest(GetParam()) {}
 };
 
 
@@ -844,17 +843,8 @@ TEST_P(DataChannelIntegrationTest,
   EXPECT_GT(202u, callee()->data_observer()->received_message_count());
   EXPECT_LE(2u, callee()->data_observer()->received_message_count());
   
-  if (!trials().IsDisabled("WebRTC-DataChannel-Dcsctp")) {
-    
-    EXPECT_EQ(2u, callee()->data_observer()->received_message_count());
-  } else {
-    
-    
-    
-    
-    
-    EXPECT_EQ(90u, callee()->data_observer()->received_message_count());
-  }
+  
+  EXPECT_EQ(2u, callee()->data_observer()->received_message_count());
 }
 
 TEST_P(DataChannelIntegrationTest,
@@ -918,12 +908,10 @@ TEST_P(DataChannelIntegrationTest,
             callee()->data_observer()->received_message_count());
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    DataChannelIntegrationTest,
-    DataChannelIntegrationTest,
-    Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
-            Values("WebRTC-DataChannel-Dcsctp/Enabled/",
-                   "WebRTC-DataChannel-Dcsctp/Disabled/")));
+INSTANTIATE_TEST_SUITE_P(DataChannelIntegrationTest,
+                         DataChannelIntegrationTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
 
 TEST_F(DataChannelIntegrationTestUnifiedPlan,
        EndToEndCallWithBundledSctpDataChannel) {
