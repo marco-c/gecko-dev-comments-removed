@@ -125,29 +125,22 @@ UINT nsClipboard::GetFormat(const char* aMimeStr, bool aMapHTMLMime) {
 
 
 
-nsresult nsClipboard::CreateNativeDataObject(nsITransferable* aTransferable,
-                                             IDataObject** aDataObj,
-                                             nsIURI* uri) {
-  if (nullptr == aTransferable) {
+nsresult nsClipboard::CreateNativeDataObject(
+    nsITransferable* aTransferable, IDataObject** aDataObj, nsIURI* aUri,
+    MightNeedToFlush* aMightNeedToFlush) {
+  MOZ_ASSERT(aTransferable);
+  if (!aTransferable) {
     return NS_ERROR_FAILURE;
   }
 
   
-  
-  nsDataObj* dataObj = new nsDataObj(uri);
-
-  if (!dataObj) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  dataObj->AddRef();
+  RefPtr<nsDataObj> dataObj = new nsDataObj(aUri);
 
   
-  nsresult res = SetupNativeDataObject(aTransferable, dataObj);
-  if (NS_OK == res) {
-    *aDataObj = dataObj;
-  } else {
-    dataObj->Release();
+  nsresult res =
+      SetupNativeDataObject(aTransferable, dataObj, aMightNeedToFlush);
+  if (NS_SUCCEEDED(res)) {
+    dataObj.forget(aDataObj);
   }
   return res;
 }
@@ -176,13 +169,26 @@ static nsresult StoreValueInDataObject(nsDataObj* aObj,
 }
 
 
-nsresult nsClipboard::SetupNativeDataObject(nsITransferable* aTransferable,
-                                            IDataObject* aDataObj) {
-  if (nullptr == aTransferable || nullptr == aDataObj) {
+nsresult nsClipboard::SetupNativeDataObject(
+    nsITransferable* aTransferable, IDataObject* aDataObj,
+    MightNeedToFlush* aMightNeedToFlush) {
+  MOZ_ASSERT(aTransferable);
+  MOZ_ASSERT(aDataObj);
+  if (!aTransferable || !aDataObj) {
     return NS_ERROR_FAILURE;
   }
 
-  nsDataObj* dObj = static_cast<nsDataObj*>(aDataObj);
+  auto* dObj = static_cast<nsDataObj*>(aDataObj);
+
+  if (aMightNeedToFlush) {
+    *aMightNeedToFlush = MightNeedToFlush::No;
+  }
+
+  auto MarkAsPotentiallyNeedingToFlush = [&] {
+    if (aMightNeedToFlush) {
+      *aMightNeedToFlush = MightNeedToFlush::Yes;
+    }
+  };
 
   
   
@@ -217,6 +223,7 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable* aTransferable,
       FORMATETC textFE;
       SET_FORMATETC(textFE, CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
       dObj->AddDataFlavor(kTextMime, &textFE);
+      MarkAsPotentiallyNeedingToFlush();
     } else if (flavorStr.EqualsLiteral(kHTMLMime)) {
       
       
@@ -224,6 +231,7 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable* aTransferable,
       SET_FORMATETC(htmlFE, GetHtmlClipboardFormat(), 0, DVASPECT_CONTENT, -1,
                     TYMED_HGLOBAL);
       dObj->AddDataFlavor(kHTMLMime, &htmlFE);
+      MarkAsPotentiallyNeedingToFlush();
     } else if (flavorStr.EqualsLiteral(kURLMime)) {
       
       
@@ -246,6 +254,7 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable* aTransferable,
       SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_INETURLW), 0,
                     DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
       dObj->AddDataFlavor(kURLMime, &shortcutFE);
+      MarkAsPotentiallyNeedingToFlush();
     } else if (flavorStr.EqualsLiteral(kPNGImageMime) ||
                flavorStr.EqualsLiteral(kJPEGImageMime) ||
                flavorStr.EqualsLiteral(kJPGImageMime) ||
@@ -478,7 +487,7 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
   }
 
   
-  if (nullptr == mTransferable) {
+  if (!mTransferable) {
     return NS_ERROR_FAILURE;
   }
 
@@ -486,12 +495,14 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
   a11y::Compatibility::SuppressA11yForClipboardCopy();
 #endif
 
-  IDataObject* dataObj;
-  if (NS_SUCCEEDED(CreateNativeDataObject(mTransferable, &dataObj,
-                                          nullptr))) {  
+  RefPtr<IDataObject> dataObj;
+  auto mightNeedToFlush = MightNeedToFlush::No;
+  if (NS_SUCCEEDED(CreateNativeDataObject(mTransferable,
+                                          getter_AddRefs(dataObj), nullptr,
+                                          &mightNeedToFlush))) {
     RepeatedlyTryOleSetClipboard(dataObj);
-    dataObj->Release();
-    if (ShouldFlushClipboardAfterWriting()) {
+    if (mightNeedToFlush == MightNeedToFlush::Yes &&
+        ShouldFlushClipboardAfterWriting()) {
       RepeatedlyTry(::OleFlushClipboard, [](HRESULT) {});
     }
   } else {
