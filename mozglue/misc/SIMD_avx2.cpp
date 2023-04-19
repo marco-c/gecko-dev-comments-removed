@@ -8,7 +8,10 @@
 #include "mozilla/SSE.h"
 #include "mozilla/Assertions.h"
 
-#ifdef MOZILLA_MAY_SUPPORT_AVX2
+
+
+
+#if defined(MOZILLA_MAY_SUPPORT_AVX2) && defined(__x86_64__)
 
 #  include <cstring>
 #  include <immintrin.h>
