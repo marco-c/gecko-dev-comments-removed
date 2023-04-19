@@ -38,6 +38,15 @@ struct IceTransportStats {
   
   
   uint32_t selected_candidate_pair_changes = 0;
+
+  
+  
+  
+  
+  uint64_t bytes_sent = 0;
+  uint64_t bytes_received = 0;
+  uint64_t packets_sent = 0;
+  uint64_t packets_received = 0;
 };
 
 typedef std::vector<Candidate> Candidates;

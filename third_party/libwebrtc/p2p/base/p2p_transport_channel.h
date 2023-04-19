@@ -491,6 +491,12 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
       const webrtc::AsyncDnsResolverResult& result);
 
   
+  uint64_t bytes_sent_ = 0;
+  uint64_t bytes_received_ = 0;
+  uint64_t packets_sent_ = 0;
+  uint64_t packets_received_ = 0;
+
+  
   uint32_t selected_candidate_pair_changes_ = 0;
 
   
