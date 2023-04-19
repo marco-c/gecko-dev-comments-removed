@@ -268,14 +268,10 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImpl2Test, Rtt);
   FRIEND_TEST_ALL_PREFIXES(RtpRtcpImpl2Test, RttForReceiverOnly);
 
-  struct RtpSenderContext : public SequenceNumberAssigner {
+  struct RtpSenderContext {
     explicit RtpSenderContext(const RtpRtcpInterface::Configuration& config);
-    void AssignSequenceNumber(RtpPacketToSend* packet) override;
     
     RtpPacketHistory packet_history;
-    
-    
-    const bool deferred_sequencing_;
     SequenceChecker sequencing_checker;
     
     PacketSequencer sequencer RTC_GUARDED_BY(sequencing_checker);

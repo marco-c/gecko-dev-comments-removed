@@ -492,14 +492,5 @@ class SendPacketObserver {
                             uint32_t ssrc) = 0;
 };
 
-
-
-class SequenceNumberAssigner {
- public:
-  SequenceNumberAssigner() = default;
-  virtual ~SequenceNumberAssigner() = default;
-
-  virtual void AssignSequenceNumber(RtpPacketToSend* packet) = 0;
-};
 }  
 #endif  

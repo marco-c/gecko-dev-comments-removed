@@ -46,6 +46,11 @@ class RTPSender {
  public:
   RTPSender(const RtpRtcpInterface::Configuration& config,
             RtpPacketHistory* packet_history,
+            RtpPacketSender* packet_sender);
+
+  ABSL_DEPRECATED("bugs.webrtc.org/11340")
+  RTPSender(const RtpRtcpInterface::Configuration& config,
+            RtpPacketHistory* packet_history,
             RtpPacketSender* packet_sender,
             PacketSequencer* packet_sequencer);
 
@@ -138,23 +143,6 @@ class RTPSender {
   std::unique_ptr<RtpPacketToSend> AllocatePacket() const
       RTC_LOCKS_EXCLUDED(send_mutex_);
   
-  
-  
-  bool AssignSequenceNumber(RtpPacketToSend* packet)
-      RTC_LOCKS_EXCLUDED(send_mutex_);
-  
-  
-  bool AssignSequenceNumbersAndStoreLastPacketState(
-      rtc::ArrayView<std::unique_ptr<RtpPacketToSend>> packets)
-      RTC_LOCKS_EXCLUDED(send_mutex_);
-  
-  
-  
-  
-  
-  
-  bool deferred_sequence_numbering() const { return sequencer_ == nullptr; }
-  
   size_t FecOrPaddingPacketMaxRtpHeaderLength() const
       RTC_LOCKS_EXCLUDED(send_mutex_);
   
@@ -221,7 +209,6 @@ class RTPSender {
 
   
   uint32_t timestamp_offset_ RTC_GUARDED_BY(send_mutex_);
-  PacketSequencer* const sequencer_ RTC_PT_GUARDED_BY(send_mutex_);
   
   std::string rid_ RTC_GUARDED_BY(send_mutex_);
   
