@@ -74,6 +74,13 @@ class MOZ_STACK_CLASS CaretPoint {
 
   void IgnoreCaretPointSuggestion() const { mHandledCaretPoint = true; }
 
+  
+
+
+
+
+  void ForgetCaretPointSuggestion() { mCaretPoint.Clear(); }
+
   bool HasCaretPointSuggestion() const { return mCaretPoint.IsSet(); }
   constexpr const EditorDOMPoint& CaretPointRef() const { return mCaretPoint; }
   constexpr EditorDOMPoint&& UnwrapCaretPoint() {
