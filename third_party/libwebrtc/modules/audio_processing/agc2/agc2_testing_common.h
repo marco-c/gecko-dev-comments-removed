@@ -25,7 +25,7 @@ constexpr float kMaxS16 =
     static_cast<float>(std::numeric_limits<int16_t>::max());
 
 
-constexpr float kDecayMs = 500.f;
+constexpr float kDecayMs = 20.0f;
 
 
 constexpr float kLimiterMaxInputLevelDbFs = 1.f;

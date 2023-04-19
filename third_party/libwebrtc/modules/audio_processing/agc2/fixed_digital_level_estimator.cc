@@ -20,15 +20,16 @@
 namespace webrtc {
 namespace {
 
-constexpr float kInitialFilterStateLevel = 0.f;
+constexpr float kInitialFilterStateLevel = 0.0f;
 
 
-constexpr float kAttackFilterConstant = 0.f;
+constexpr float kAttackFilterConstant = 0.0f;
 
 
 
 
-constexpr float kDecayFilterConstant = 0.9998848773724686f;
+
+constexpr float kDecayFilterConstant = 0.9971259f;
 
 }  
 
