@@ -74,6 +74,12 @@ AudioMixer::Source::AudioFrameInfo AudioIngress::GetAudioFrameWithInfo(
   output_audio_level_.ComputeLevel(*audio_frame, kAudioSampleDurationSeconds);
 
   
+  if (!playing_) {
+    AudioFrameOperations::Mute(audio_frame);
+    muted = true;
+  }
+
+  
   if (first_rtp_timestamp_ < 0 && audio_frame->timestamp_ != 0) {
     first_rtp_timestamp_ = audio_frame->timestamp_;
   }
@@ -127,10 +133,6 @@ void AudioIngress::SetReceiveCodecs(
 }
 
 void AudioIngress::ReceivedRTPPacket(rtc::ArrayView<const uint8_t> rtp_packet) {
-  if (!IsPlaying()) {
-    return;
-  }
-
   RtpPacketReceived rtp_packet_received;
   rtp_packet_received.Parse(rtp_packet.data(), rtp_packet.size());
 
