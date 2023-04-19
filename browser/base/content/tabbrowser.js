@@ -6763,6 +6763,13 @@
             
             this.mBrowser.mIconURL = null;
           }
+
+          if (
+            aRequest instanceof Ci.nsIChannel &&
+            !isBlankPageURL(aRequest.originalURI.spec)
+          ) {
+            this.mBrowser.originalURI = aRequest.originalURI;
+          }
         }
 
         let userContextId = this.mBrowser.getAttribute("usercontextid") || 0;
