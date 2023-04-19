@@ -1,15 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["HandlerService"];
-
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const {
   saveToDisk,
@@ -24,12 +18,12 @@ const TOPIC_PDFJS_HANDLER_CHANGED = "pdfjs:handlerChanged";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  kHandlerList: "resource://gre/modules/handlers/HandlerList.sys.mjs",
+  kHandlerListVersion: "resource://gre/modules/handlers/HandlerList.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
 });
-const { Integration } = ChromeUtils.importESModule(
-  "resource://gre/modules/Integration.sys.mjs"
-);
+import { Integration } from "resource://gre/modules/Integration.sys.mjs";
 
 Integration.downloads.defineModuleGetter(
   lazy,
@@ -49,13 +43,9 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/mime;1",
   "nsIMIMEService"
 );
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  kHandlerList: "resource://gre/modules/handlers/HandlerList.jsm",
-  kHandlerListVersion: "resource://gre/modules/handlers/HandlerList.jsm",
-});
 
-function HandlerService() {
-  
+export function HandlerService() {
+  // Observe handlersvc-json-replace so we can switch to the datasource
   Services.obs.addObserver(this, "handlersvc-json-replace", true);
 }
 
@@ -78,8 +68,8 @@ HandlerService.prototype = {
       });
     }
 
-    
-    
+    // Always call this even if this.__store was set, since it may have been
+    // set by asyncInit, which might not have completed yet.
     this._ensureStoreInitialized();
     return this.__store;
   },
@@ -95,9 +85,9 @@ HandlerService.prototype = {
 
       Services.obs.notifyObservers(null, "handlersvc-store-initialized");
 
-      
-      
-      
+      // Bug 1736924: run migration for browser.download.improvements_to_download_panel if applicable.
+      // Since we need DownloadsViewInternally to verify mimetypes, we run this after
+      // DownloadsViewInternally is registered via the 'handlersvc-store-initialized' notification.
       this._migrateDownloadsImprovementsIfNeeded();
       this._migrateSVGXMLIfNeeded();
     }
@@ -114,10 +104,10 @@ HandlerService.prototype = {
         };
   },
 
-  
-
-
-
+  /**
+   * Injects new default protocol handlers if the version in the preferences is
+   * newer than the one in the data store.
+   */
   _injectDefaultProtocolHandlersIfNeeded() {
     try {
       let defaultHandlersVersion = Services.prefs.getIntPref(
@@ -130,7 +120,7 @@ HandlerService.prototype = {
           "gecko.handlerService.defaultHandlersVersion",
           lazy.kHandlerListVersion
         );
-        
+        // Now save the result:
         this._store.saveSoon();
       }
     } catch (ex) {
@@ -141,7 +131,7 @@ HandlerService.prototype = {
   _injectDefaultProtocolHandlers() {
     let locale = Services.locale.appLocaleAsBCP47;
 
-    
+    // Initialize handlers to default and update based on locale.
     let localeHandlers = lazy.kHandlerList.default;
     if (lazy.kHandlerList[locale]) {
       for (let scheme in lazy.kHandlerList[locale].schemes) {
@@ -150,39 +140,39 @@ HandlerService.prototype = {
       }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Now, we're going to cheat. Terribly. The idiologically correct way
+    // of implementing the following bit of code would be to fetch the
+    // handler info objects from the protocol service, manipulate those,
+    // and then store each of them.
+    // However, that's expensive. It causes us to talk to the OS about
+    // default apps, which causes the OS to go hit the disk.
+    // All we're trying to do is insert some web apps into the list. We
+    // don't care what's already in the file, we just want to do the
+    // equivalent of appending into the database. So let's just go do that:
     for (let scheme of Object.keys(localeHandlers.schemes)) {
       if (scheme == "mailto" && AppConstants.MOZ_APP_NAME == "thunderbird") {
-        
+        // Thunderbird IS a mailto handler, it doesn't need handlers added.
         continue;
       }
 
       let existingSchemeInfo = this._store.data.schemes[scheme];
       if (!existingSchemeInfo) {
-        
-        
+        // Haven't seen this scheme before. Default to asking which app the
+        // user wants to use:
         existingSchemeInfo = {
-          
-          
+          // Signal to future readers that we didn't ask the OS anything.
+          // When the entry is first used, get the info from the OS.
           stubEntry: true,
-          
-          
+          // The first item in the list is the preferred handler, and
+          // there isn't one, so we fill in null:
           handlers: [null],
         };
         this._store.data.schemes[scheme] = existingSchemeInfo;
       }
       let { handlers } = existingSchemeInfo;
       for (let newHandler of localeHandlers.schemes[scheme].handlers) {
-        
-        
+        // If there is already a handler registered with the same template
+        // URL, ignore the new one:
         let matchingTemplate = handler =>
           handler && handler.uriTemplate == newHandler.uriTemplate;
         if (!handlers.some(matchingTemplate)) {
@@ -192,16 +182,16 @@ HandlerService.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Execute any migrations. Migrations are defined here for any changes or removals for
+   * existing handlers. Additions are still handled via the localized prefs infrastructure.
+   *
+   * This depends on the browser.handlers.migrations pref being set by migrateUI in
+   * nsBrowserGlue (for Fx Desktop) or similar mechanisms for other products.
+   * This is a comma-separated list of identifiers of migrations that need running.
+   * This avoids both re-running older migrations and keeping an additional
+   * pref around permanently.
+   */
   _migrateProtocolHandlersIfNeeded() {
     const kMigrations = {
       "30boxes": () => {
@@ -212,7 +202,7 @@ HandlerService.prototype = {
         if (this.exists(webcalHandler)) {
           this.fillHandlerInfo(webcalHandler, "");
           let shouldStore = false;
-          
+          // First remove 30boxes from possible handlers.
           let handlers = webcalHandler.possibleApplicationHandlers;
           for (let i = handlers.length - 1; i >= 0; i--) {
             let app = handlers.queryElementAt(i, Ci.nsIHandlerApp);
@@ -224,7 +214,7 @@ HandlerService.prototype = {
               handlers.removeElementAt(i);
             }
           }
-          
+          // Then remove as a preferred handler.
           if (webcalHandler.preferredApplicationHandler) {
             let app = webcalHandler.preferredApplicationHandler;
             if (
@@ -235,13 +225,13 @@ HandlerService.prototype = {
               shouldStore = true;
             }
           }
-          
+          // Then store, if we changed anything.
           if (shouldStore) {
             this.store(webcalHandler);
           }
         }
       },
-      
+      // See https://bugzilla.mozilla.org/show_bug.cgi?id=1526890 for context.
       "secure-mail": () => {
         const kSubstitutions = new Map([
           [
@@ -282,18 +272,18 @@ HandlerService.prototype = {
           let shouldStore = false;
           for (let i = handlers.length - 1; i >= 0; i--) {
             let app = handlers.queryElementAt(i, Ci.nsIHandlerApp);
-            
-            
+            // Note: will evaluate the RHS because it's a binary rather than
+            // logical or.
             shouldStore |= maybeReplaceURL(app);
           }
-          
+          // Then check the preferred handler.
           if (mailHandler.preferredApplicationHandler) {
             shouldStore |= maybeReplaceURL(
               mailHandler.preferredApplicationHandler
             );
           }
-          
-          
+          // Then store, if we changed anything. Note that store() handles
+          // duplicates, so we don't have to.
           if (shouldStore) {
             this.store(mailHandler);
           }
@@ -329,7 +319,7 @@ HandlerService.prototype = {
     })().catch(Cu.reportError);
   },
 
-  
+  // nsIObserver
   observe(subject, topic, data) {
     if (topic != "handlersvc-json-replace") {
       return;
@@ -340,7 +330,7 @@ HandlerService.prototype = {
     });
   },
 
-  
+  // nsIHandlerService
   asyncInit() {
     if (!this.__store) {
       this.__store = new lazy.JSONFile({
@@ -353,7 +343,7 @@ HandlerService.prototype = {
       this.__store
         .load()
         .then(() => {
-          
+          // __store can be null if we called _onDBChange in the mean time.
           if (this.__store) {
             this._ensureStoreInitialized();
           }
@@ -362,23 +352,23 @@ HandlerService.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Update already existing handlers for non-internal mimetypes to have prefs set from alwaysAsk
+   * to saveToDisk. However, if reading an internal mimetype and set to alwaysAsk, update to use handleInternally.
+   * This migration is needed since browser.download.improvements_to_download_panel does not
+   * override user preferences if preferredAction = alwaysAsk. By doing so, we can ensure that file prompt
+   * behaviours remain consistent for most files.
+   *
+   * See Bug 1736924 for more information.
+   */
   _noInternalHandlingDefault: new Set([
     "text/xml",
     "application/xml",
     "image/svg+xml",
   ]),
   _migrateDownloadsImprovementsIfNeeded() {
-    
-    
+    // Migrate if the preference is enabled AND if the migration has never been run before.
+    // Otherwise, we risk overwriting preferences for existing profiles!
     if (
       Services.prefs.getBoolPref(
         "browser.download.improvements_to_download_panel"
@@ -400,9 +390,9 @@ HandlerService.prototype = {
             mimeInfo.action = saveToDisk;
           }
 
-          
-          
-          
+          // Sets alwaysAskBeforeHandling to false. Needed to ensure that:
+          // preferredAction appears as expected in preferences table; and
+          // downloads behaviour is updated to never show UCT window.
           mimeInfo.ask = false;
         }
       }
@@ -413,8 +403,8 @@ HandlerService.prototype = {
   },
 
   _migrateSVGXMLIfNeeded() {
-    
-    
+    // Migrate if the preference is enabled AND if the migration has never been run before.
+    // We need to make sure we only run this once.
     if (
       Services.prefs.getBoolPref(
         "browser.download.improvements_to_download_panel"
@@ -436,7 +426,7 @@ HandlerService.prototype = {
     }
   },
 
-  
+  // nsIHandlerService
   enumerate() {
     let handlers = Cc["@mozilla.org/array;1"].createInstance(
       Ci.nsIMutableArray
@@ -450,14 +440,14 @@ HandlerService.prototype = {
       handlers.appendElement(handler);
     }
     for (let type of Object.keys(this._store.data.schemes)) {
-      
-      
-      
-      
-      
-      
-      
-      
+      // nsIExternalProtocolService.getProtocolHandlerInfo can be expensive
+      // on Windows, so we return a proxy to delay retrieving the nsIHandlerInfo
+      // until one of its properties is accessed.
+      //
+      // Note: our caller still needs to yield periodically when iterating
+      // the enumerator and accessing handler properties to avoid monopolizing
+      // the main thread.
+      //
       let handler = new Proxy(
         {
           QueryInterface: ChromeUtils.generateQI(["nsIHandlerInfo"]),
@@ -483,25 +473,25 @@ HandlerService.prototype = {
     return handlers.enumerate(Ci.nsIHandlerInfo);
   },
 
-  
+  // nsIHandlerService
   store(handlerInfo) {
     let handlerList = this._getHandlerListByHandlerInfoType(handlerInfo);
 
-    
-    
+    // Retrieve an existing entry if present, instead of creating a new one, so
+    // that we preserve unknown properties for forward compatibility.
     let storedHandlerInfo = handlerList[handlerInfo.type];
     if (!storedHandlerInfo) {
       storedHandlerInfo = {};
       handlerList[handlerInfo.type] = storedHandlerInfo;
     }
 
-    
+    // Only a limited number of preferredAction values is allowed.
     if (
       handlerInfo.preferredAction == saveToDisk ||
       handlerInfo.preferredAction == useSystemDefault ||
       handlerInfo.preferredAction == handleInternally ||
-      
-      
+      // For files (ie mimetype rather than protocol handling info), ensure
+      // we can store the "always ask" state, too:
       (handlerInfo.preferredAction == alwaysAsk &&
         this._isMIMEInfo(handlerInfo) &&
         Services.prefs.getBoolPref(
@@ -519,7 +509,7 @@ HandlerService.prototype = {
       delete storedHandlerInfo.ask;
     }
 
-    
+    // Build a list of unique nsIHandlerInfo instances to process later.
     let handlers = [];
     if (handlerInfo.preferredApplicationHandler) {
       handlers.push(handlerInfo.preferredApplicationHandler);
@@ -527,15 +517,15 @@ HandlerService.prototype = {
     for (let handler of handlerInfo.possibleApplicationHandlers.enumerate(
       Ci.nsIHandlerApp
     )) {
-      
+      // If the caller stored duplicate handlers, we save them only once.
       if (!handlers.some(h => h.equals(handler))) {
         handlers.push(handler);
       }
     }
 
-    
-    
-    
+    // If any of the nsIHandlerInfo instances cannot be serialized, it is not
+    // included in the final list. The first element is always the preferred
+    // handler, or null if there is none.
     let serializableHandlers = handlers
       .map(h => this.handlerAppToSerializable(h))
       .filter(h => h);
@@ -552,7 +542,7 @@ HandlerService.prototype = {
       let extensions = storedHandlerInfo.extensions || [];
       for (let extension of handlerInfo.getFileExtensions()) {
         extension = extension.toLowerCase();
-        
+        // If the caller stored duplicate extensions, we save them only once.
         if (!extensions.includes(extension)) {
           extensions.push(extension);
         }
@@ -564,19 +554,19 @@ HandlerService.prototype = {
       }
     }
 
-    
+    // If we're saving *anything*, it stops being a stub:
     delete storedHandlerInfo.stubEntry;
 
     this._store.saveSoon();
 
-    
-    
+    // Now notify PDF.js. This is hacky, but a lot better than expecting all
+    // the consumers to do it...
     if (handlerInfo.type == "application/pdf") {
       Services.obs.notifyObservers(null, TOPIC_PDFJS_HANDLER_CHANGED);
     }
   },
 
-  
+  // nsIHandlerService
   fillHandlerInfo(handlerInfo, overrideType) {
     let type = overrideType || handlerInfo.type;
     let storedHandlerInfo = this._getHandlerListByHandlerInfoType(handlerInfo)[
@@ -590,13 +580,13 @@ HandlerService.prototype = {
     }
 
     let isStub = !!storedHandlerInfo.stubEntry;
-    
-    
+    // In the normal case, this is not a stub, so we can just read stored info
+    // and write to the handlerInfo object we were passed.
     if (!isStub) {
       handlerInfo.preferredAction = storedHandlerInfo.action;
       handlerInfo.alwaysAskBeforeHandling = !!storedHandlerInfo.ask;
     } else {
-      
+      // If we've got a stub, ensure the defaults are still set:
       lazy.externalProtocolService.setProtocolHandlerDefaults(
         handlerInfo,
         handlerInfo.hasDefaultHandler
@@ -605,16 +595,16 @@ HandlerService.prototype = {
         handlerInfo.preferredAction == alwaysAsk &&
         handlerInfo.alwaysAskBeforeHandling
       ) {
-        
-        
-        
+        // `store` will default to `useHelperApp` because `alwaysAsk` is
+        // not one of the 3 recognized options; for compatibility, do
+        // the same here.
         handlerInfo.preferredAction = useHelperApp;
       }
     }
-    
-    
-    
-    
+    // If it *is* a stub, don't override alwaysAskBeforeHandling or the
+    // preferred actions. Instead, just append the stored handlers, without
+    // overriding the preferred app, and then schedule a task to store proper
+    // info for this handler.
     this._appendStoredHandlers(handlerInfo, storedHandlerInfo.handlers, isStub);
 
     if (this._isMIMEInfo(handlerInfo) && storedHandlerInfo.extensions) {
@@ -626,24 +616,24 @@ HandlerService.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Private method to inject stored handler information into an nsIHandlerInfo
+   * instance.
+   * @param handlerInfo           the nsIHandlerInfo instance to write to
+   * @param storedHandlers        the stored handlers
+   * @param keepPreferredApp      whether to keep the handlerInfo's
+   *                              preferredApplicationHandler or override it
+   *                              (default: false, ie override it)
+   */
   _appendStoredHandlers(handlerInfo, storedHandlers, keepPreferredApp) {
-    
-    
+    // If the first item is not null, it is also the preferred handler. Since
+    // we cannot modify the stored array, use a boolean to keep track of this.
     let isFirstItem = true;
     for (let handler of storedHandlers || [null]) {
       let handlerApp = this.handlerAppFromSerializable(handler || {});
       if (isFirstItem) {
         isFirstItem = false;
-        
+        // Do not overwrite the preferred app unless that's allowed
         if (!keepPreferredApp) {
           handlerInfo.preferredApplicationHandler = handlerApp;
         }
@@ -654,11 +644,11 @@ HandlerService.prototype = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * @param handler
+   *        A nsIHandlerApp handler app
+   * @returns  Serializable representation of a handler app object.
+   */
   handlerAppToSerializable(handler) {
     if (handler instanceof Ci.nsILocalHandlerApp) {
       return {
@@ -684,16 +674,16 @@ HandlerService.prototype = {
         command: handler.command,
       };
     }
-    
-    
+    // If the handler is an unknown handler type, return null.
+    // Android default application handler is the case.
     return null;
   },
 
-  
-
-
-
-
+  /**
+   * @param handlerObj
+   *        Serializable representation of a handler object.
+   * @returns  {nsIHandlerApp}  the handler app, if any; otherwise null
+   */
   handlerAppFromSerializable(handlerObj) {
     let handlerApp;
     if ("path" in handlerObj) {
@@ -738,42 +728,42 @@ HandlerService.prototype = {
     return handlerApp;
   },
 
-  
-
-
-
+  /**
+   * The function returns a reference to the "mimeTypes" or "schemes" object
+   * based on which type of handlerInfo is provided.
+   */
   _getHandlerListByHandlerInfoType(handlerInfo) {
     return this._isMIMEInfo(handlerInfo)
       ? this._store.data.mimeTypes
       : this._store.data.schemes;
   },
 
-  
-
-
+  /**
+   * Determines whether an nsIHandlerInfo instance represents a MIME type.
+   */
   _isMIMEInfo(handlerInfo) {
-    
-    
-    
+    // We cannot rely only on the instanceof check because on Android both MIME
+    // types and protocols are instances of nsIMIMEInfo. We still do the check
+    // so that properties of nsIMIMEInfo become available to the callers.
     return (
       handlerInfo instanceof Ci.nsIMIMEInfo && handlerInfo.type.includes("/")
     );
   },
 
-  
+  // nsIHandlerService
   exists(handlerInfo) {
     return (
       handlerInfo.type in this._getHandlerListByHandlerInfoType(handlerInfo)
     );
   },
 
-  
+  // nsIHandlerService
   remove(handlerInfo) {
     delete this._getHandlerListByHandlerInfoType(handlerInfo)[handlerInfo.type];
     this._store.saveSoon();
   },
 
-  
+  // nsIHandlerService
   getTypeFromExtension(fileExtension) {
     let extension = fileExtension.toLowerCase();
     let mimeTypes = this._store.data.mimeTypes;
@@ -801,7 +791,7 @@ HandlerService.prototype = {
     }
   },
 
-  
+  // test-only: mock the handler instance for a particular protocol/scheme
   mockProtocolHandler(protocol) {
     if (!protocol) {
       this._mockedProtocol = null;
@@ -821,9 +811,9 @@ HandlerService.prototype = {
       },
       get executable() {
         if (AppConstants.platform == "macosx") {
-          
-          
-          
+          // We need an app path that isn't us, nor in our app bundle, and
+          // Apple no longer allows us to read the default-shipped apps
+          // in /Applications/ - except for Safari, it would appear!
           let f = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
           f.initWithPath("/Applications/Safari.app");
           return f;
