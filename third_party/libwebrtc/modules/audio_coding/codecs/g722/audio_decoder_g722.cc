@@ -89,16 +89,22 @@ int AudioDecoderG722StereoImpl::DecodeInternal(const uint8_t* encoded,
                                                int16_t* decoded,
                                                SpeechType* speech_type) {
   RTC_DCHECK_EQ(SampleRateHz(), sample_rate_hz);
+  
+  
+  const size_t encoded_len_adjusted = PacketDuration(encoded, encoded_len) *
+                                      Channels() /
+                                      2;  
   int16_t temp_type = 1;  
   
-  uint8_t* encoded_deinterleaved = new uint8_t[encoded_len];
-  SplitStereoPacket(encoded, encoded_len, encoded_deinterleaved);
+  uint8_t* encoded_deinterleaved = new uint8_t[encoded_len_adjusted];
+  SplitStereoPacket(encoded, encoded_len_adjusted, encoded_deinterleaved);
   
-  size_t decoded_len = WebRtcG722_Decode(dec_state_left_, encoded_deinterleaved,
-                                         encoded_len / 2, decoded, &temp_type);
+  size_t decoded_len =
+      WebRtcG722_Decode(dec_state_left_, encoded_deinterleaved,
+                        encoded_len_adjusted / 2, decoded, &temp_type);
   size_t ret = WebRtcG722_Decode(
-      dec_state_right_, &encoded_deinterleaved[encoded_len / 2],
-      encoded_len / 2, &decoded[decoded_len], &temp_type);
+      dec_state_right_, &encoded_deinterleaved[encoded_len_adjusted / 2],
+      encoded_len_adjusted / 2, &decoded[decoded_len], &temp_type);
   if (ret == decoded_len) {
     ret += decoded_len;  
     
@@ -117,7 +123,9 @@ int AudioDecoderG722StereoImpl::DecodeInternal(const uint8_t* encoded,
 int AudioDecoderG722StereoImpl::PacketDuration(const uint8_t* encoded,
                                                size_t encoded_len) const {
   
-  return static_cast<int>(2 * encoded_len / Channels());
+  
+  
+  return static_cast<int>(2 * (encoded_len / Channels()));
 }
 
 int AudioDecoderG722StereoImpl::SampleRateHz() const {
