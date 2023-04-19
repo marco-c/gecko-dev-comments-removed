@@ -532,7 +532,6 @@ class PreBarriered : public WriteBarriered<T> {
   
 
 
-
   MOZ_IMPLICIT PreBarriered(const T& v) : WriteBarriered<T>(v) {}
 
   explicit PreBarriered(const PreBarriered<T>& other)
