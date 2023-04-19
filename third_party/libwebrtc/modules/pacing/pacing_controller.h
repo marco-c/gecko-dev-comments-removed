@@ -41,7 +41,6 @@ namespace webrtc {
 
 
 
-
 class PacingController {
  public:
   
@@ -115,7 +114,7 @@ class PacingController {
   void SetTransportOverhead(DataSize overhead_per_packet);
 
   
-  TimeDelta OldestPacketWaitTime() const;
+  Timestamp OldestPacketEnqueueTime() const;
 
   
   size_t QueueSizePackets() const;
@@ -197,6 +196,7 @@ class PacingController {
   mutable Timestamp last_timestamp_;
   bool paused_;
 
+  
   
   
   

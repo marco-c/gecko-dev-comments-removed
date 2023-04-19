@@ -112,15 +112,15 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   
   struct Stats {
     Stats()
-        : oldest_packet_wait_time(TimeDelta::Zero()),
+        : oldest_packet_enqueue_time(Timestamp::MinusInfinity()),
           queue_size(DataSize::Zero()),
           expected_queue_time(TimeDelta::Zero()) {}
-    TimeDelta oldest_packet_wait_time;
+    Timestamp oldest_packet_enqueue_time;
     DataSize queue_size;
     TimeDelta expected_queue_time;
     absl::optional<Timestamp> first_sent_packet_time;
   };
-  virtual void OnStatsUpdated(const Stats& stats);
+  void OnStatsUpdated(const Stats& stats);
 
  private:
   
@@ -130,7 +130,7 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   
   void MaybeProcessPackets(Timestamp scheduled_process_time);
 
-  void MaybeUpdateStats(bool is_scheduled_call) RTC_RUN_ON(task_queue_);
+  void UpdateStats() RTC_RUN_ON(task_queue_);
   Stats GetStats() const;
 
   Clock* const clock_;
@@ -148,17 +148,7 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
 
   
   
-  
-
-  
-  
-  bool stats_update_scheduled_ RTC_GUARDED_BY(task_queue_);
-  
-  Timestamp last_stats_time_ RTC_GUARDED_BY(task_queue_);
-
-  
-  
-  bool is_started_ RTC_GUARDED_BY(task_queue_) = false;
+  bool is_started_ RTC_GUARDED_BY(task_queue_);
 
   
   
