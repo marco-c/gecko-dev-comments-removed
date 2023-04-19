@@ -111,6 +111,11 @@ class EncodeCompleteCallback {
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult ReceiveBlobImpl(already_AddRefed<BlobImpl> aBlobImpl) = 0;
 
+  
+  
+  
+  virtual bool CanBeDeletedOnAnyThread() = 0;
+
  protected:
   virtual ~EncodeCompleteCallback() = default;
 };
