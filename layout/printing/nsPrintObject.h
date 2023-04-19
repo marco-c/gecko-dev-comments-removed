@@ -22,8 +22,6 @@ namespace mozilla {
 class PresShell;
 }  
 
-enum PrintObjectType { eDoc = 0, eIFrame = 1 };
-
 
 
 
@@ -64,7 +62,6 @@ class nsPrintObject final {
   RefPtr<nsViewManager> mViewManager;
 
   nsCOMPtr<nsIContent> mContent;
-  const PrintObjectType mFrameType;
 
   nsTArray<mozilla::UniquePtr<nsPrintObject>> mKids;
   const nsPrintObject* mParent;  
