@@ -1,10 +1,14 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-// The maximum valid numeric value for the userContextId.
+
+
+var EXPORTED_SYMBOLS = ["ContextualIdentityService"];
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+
 const MAX_USER_CONTEXT_ID = -1 >>> 0;
 const LAST_CONTAINERS_JSON_VERSION = 4;
 const SAVE_DELAY_MS = 1500;
@@ -117,10 +121,10 @@ _ContextualIdentityService.prototype = {
       name: "userContextIdInternal.thumbnail",
       accessKey: "",
     },
-    // This userContextId is used by ExtensionStorageIDB.jsm to create an IndexedDB database
-    // opened with the extension principal but not directly accessible to the extension code
-    // (do not change the userContextId assigned here, otherwise the installed extensions will
-    // not be able to access the data previously stored with the browser.storage.local API).
+    
+    
+    
+    
     {
       userContextId: MAX_USER_CONTEXT_ID,
       public: false,
@@ -162,7 +166,7 @@ _ContextualIdentityService.prototype = {
   load() {
     return IOUtils.read(this._path).then(
       bytes => {
-        // If synchronous loading happened in the meantime, exit now.
+        
         if (this._dataReady) {
           return;
         }
@@ -182,16 +186,16 @@ _ContextualIdentityService.prototype = {
   resetDefault() {
     this._identities = [];
 
-    // Compute the last used context id (excluding the reserved userContextIds
-    // "userContextIdInternal.webextStorageLocal" which has UINT32_MAX as its
-    // userContextId).
+    
+    
+    
     this._lastUserContextId = this._defaultIdentities
       .filter(identity => identity.userContextId < MAX_USER_CONTEXT_ID)
       .map(identity => identity.userContextId)
       .sort((a, b) => a >= b)
       .pop();
 
-    // Clone the array
+    
     for (let identity of this._defaultIdentities) {
       this._identities.push(Object.assign({}, identity));
     }
@@ -199,8 +203,8 @@ _ContextualIdentityService.prototype = {
 
     this._dataReady = true;
 
-    // Let's delete all the data of any userContextId. 1 is the first valid
-    // userContextId value.
+    
+    
     this.deleteContainerData();
 
     this.saveSoon();
@@ -208,11 +212,11 @@ _ContextualIdentityService.prototype = {
 
   loadError(error) {
     if (error != null && error.name != "NotFoundError") {
-      // Let's report the error.
+      
       Cu.reportError(error);
     }
 
-    // If synchronous loading happened in the meantime, exit now.
+    
     if (this._dataReady) {
       return;
     }
@@ -257,12 +261,12 @@ _ContextualIdentityService.prototype = {
   create(name, icon, color) {
     this.ensureDataReady();
 
-    // Retrieve the next userContextId available.
+    
     let userContextId = ++this._lastUserContextId;
 
-    // Throw an error if the next userContextId available is invalid (the one associated to
-    // MAX_USER_CONTEXT_ID is already reserved to "userContextIdInternal.webextStorageLocal", which
-    // is also the last valid userContextId available, because its userContextId is equal to UINT32_MAX).
+    
+    
+    
     if (userContextId >= MAX_USER_CONTEXT_ID) {
       throw new Error(
         `Unable to create a new userContext with id '${userContextId}'`
@@ -376,7 +380,7 @@ _ContextualIdentityService.prototype = {
     this._identities = data.identities;
     this._lastUserContextId = data.lastUserContextId;
 
-    // If we had a migration, let's force the saving of the file.
+    
     if (saveNeeded) {
       this.saveSoon();
     }
@@ -390,7 +394,7 @@ _ContextualIdentityService.prototype = {
     }
 
     try {
-      // This reads the file and automatically detects the UTF-8 encoding.
+      
       let inputStream = Cc[
         "@mozilla.org/network/file-input-stream;1"
       ].createInstance(Ci.nsIFileInputStream);
@@ -436,9 +440,9 @@ _ContextualIdentityService.prototype = {
     );
   },
 
-  // getDefaultPrivateIdentity is similar to getPrivateIdentity but it only looks in the
-  // default identities (e.g. it is used in the data migration methods to retrieve a new default
-  // private identity and add it to the containers data stored on file).
+  
+  
+  
   getDefaultPrivateIdentity(name) {
     return Cu.cloneInto(
       this._defaultIdentities.find(info => !info.public && info.name == name),
@@ -462,7 +466,7 @@ _ContextualIdentityService.prototype = {
       return "";
     }
 
-    // We cannot localize the user-created identity names.
+    
     if (identity.name) {
       return identity.name;
     }
@@ -479,7 +483,7 @@ _ContextualIdentityService.prototype = {
     let identity = this.getPublicIdentityFromId(userContextId);
 
     let prefix = "identity-color-";
-    /* Remove the existing container color highlight if it exists */
+    
     for (let className of tab.classList) {
       if (className.startsWith(prefix)) {
         tab.classList.remove(className);
@@ -504,7 +508,7 @@ _ContextualIdentityService.prototype = {
       this._forEachContainerTab((tab, tabbrowser) => {
         let frameLoader = tab.linkedBrowser.frameLoader;
 
-        // We don't have remoteTab in non-e10s mode.
+        
         if (frameLoader.remoteTab) {
           remoteTabIds.add(frameLoader.remoteTab.tabId);
         }
@@ -523,8 +527,8 @@ _ContextualIdentityService.prototype = {
 
   notifyAllContainersCleared() {
     for (let identity of this._identities) {
-      // Don't clear the data related to private identities (e.g. the one used internally
-      // for the thumbnails and the one used for the storage.local IndexedDB backend).
+      
+      
       if (!identity.public) {
         continue;
       }
@@ -557,7 +561,7 @@ _ContextualIdentityService.prototype = {
   telemetry(userContextId) {
     let identity = this.getPublicIdentityFromId(userContextId);
 
-    // Let's ignore unknown identities for now.
+    
     if (!identity) {
       return;
     }
@@ -581,19 +585,19 @@ _ContextualIdentityService.prototype = {
   },
 
   deleteContainerData() {
-    // The userContextId 0 is reserved to the default firefox identity,
-    // and it should not be clear when we delete the public containers data.
+    
+    
     let minUserContextId = 1;
 
-    // Collect the userContextId related to the identities that should not be cleared
-    // (the ones marked as `public = false`).
+    
+    
     const keepDataContextIds = this.getPrivateUserContextIds();
 
-    // Collect the userContextIds currently used by any stored cookie.
+    
     let cookiesUserContextIds = new Set();
 
     for (let cookie of Services.cookies.cookies) {
-      // Skip any userContextIds that should not be cleared.
+      
       if (
         cookie.originAttributes.userContextId >= minUserContextId &&
         !keepDataContextIds.includes(cookie.originAttributes.userContextId)
@@ -610,20 +614,20 @@ _ContextualIdentityService.prototype = {
   },
 
   migrate2to3(data) {
-    // migrating from 2 to 3 is basically just increasing the version id.
-    // This migration was needed for bug 1419591. See bug 1419591 to know more.
+    
+    
     data.version = 3;
 
     return data;
   },
 
   migrate3to4(data) {
-    // Migrating from 3 to 4 is:
-    // - adding the reserver userContextId used by the webextension storage.local API
-    // - add the keepData property to all the existent identities
-    // - increasing the version id.
-    //
-    // This migration was needed for Bug 1406181. See bug 1406181 for rationale.
+    
+    
+    
+    
+    
+    
     const webextStorageLocalIdentity = this.getDefaultPrivateIdentity(
       "userContextIdInternal.webextStorageLocal"
     );
@@ -640,4 +644,4 @@ let path = PathUtils.join(
   Services.dirsvc.get("ProfD", Ci.nsIFile).path,
   "containers.json"
 );
-export var ContextualIdentityService = new _ContextualIdentityService(path);
+var ContextualIdentityService = new _ContextualIdentityService(path);
