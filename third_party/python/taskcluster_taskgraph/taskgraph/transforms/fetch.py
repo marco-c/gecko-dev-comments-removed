@@ -28,7 +28,7 @@ FETCH_SCHEMA = Schema(
         Required("name"): str,
         
         
-        Optional("task-from"): str,
+        Optional("job-from"): str,
         
         Required("description"): str,
         Optional("docker-image"): object,
