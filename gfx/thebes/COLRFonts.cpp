@@ -628,46 +628,59 @@ struct ColorLineT {
         aState.GetColor(stop->GetPaletteIndex(), stop->GetAlpha(aState)));
   }
 
-  already_AddRefed<GradientStops> MakeGradientStops(
-      const PaintState& aState, float* aFirstStop = nullptr,
-      float* aLastStop = nullptr, bool aReverse = false) const {
+  
+  
+  
+  
+  void CollectGradientStops(const PaintState& aState,
+                            nsTArray<GradientStop>& aStops, float* aFirstStop,
+                            float* aLastStop, bool aReverse = false) const {
+    MOZ_ASSERT(aStops.IsEmpty());
     uint16_t count = numStops;
     if (!count) {
-      return nullptr;
+      return;
     }
-    AutoTArray<GradientStop, 8> stops;
     const auto* stop = colorStops();
     if (reinterpret_cast<const char*>(stop) + count * sizeof(T) >
         aState.COLRv1BaseAddr() + aState.mCOLRLength) {
-      return nullptr;
+      return;
     }
-    stops.SetCapacity(count);
+    aStops.SetCapacity(count);
     for (uint16_t i = 0; i < count; ++i, ++stop) {
       DeviceColor color =
           aState.GetColor(stop->GetPaletteIndex(), stop->GetAlpha(aState));
-      stops.AppendElement(GradientStop{stop->GetStopOffset(aState), color});
+      aStops.AppendElement(GradientStop{stop->GetStopOffset(aState), color});
     }
-    stops.StableSort(nsDefaultComparator<GradientStop, GradientStop>());
+    if (count == 1) {
+      *aFirstStop = *aLastStop = aStops[0].offset;
+      return;
+    }
+    aStops.StableSort(nsDefaultComparator<GradientStop, GradientStop>());
     if (aReverse) {
-      float a = stops[0].offset;
-      float b = stops.LastElement().offset;
-      stops.Reverse();
-      for (auto& gs : stops) {
+      float a = aStops[0].offset;
+      float b = aStops.LastElement().offset;
+      aStops.Reverse();
+      for (auto& gs : aStops) {
         gs.offset = a + b - gs.offset;
       }
     }
-    if (aFirstStop && aLastStop) {
-      
-      
-      *aFirstStop = stops[0].offset;
-      *aLastStop = stops.LastElement().offset;
-      if (*aLastStop > *aFirstStop) {
-        float f = 1.0f / (*aLastStop - *aFirstStop);
-        for (auto& gs : stops) {
-          gs.offset = (gs.offset - *aFirstStop) * f;
-        }
+    
+    
+    *aFirstStop = aStops[0].offset;
+    *aLastStop = aStops.LastElement().offset;
+    if ((*aLastStop > *aFirstStop) &&
+        (*aLastStop != 1.0f || *aFirstStop != 0.0f)) {
+      float f = 1.0f / (*aLastStop - *aFirstStop);
+      for (auto& gs : aStops) {
+        gs.offset = (gs.offset - *aFirstStop) * f;
       }
     }
+  }
+
+  
+  
+  already_AddRefed<GradientStops> MakeGradientStops(
+      const PaintState& aState, nsTArray<GradientStop>& aStops) const {
     auto mapExtendMode = [](uint8_t aExtend) -> ExtendMode {
       switch (aExtend) {
         case EXTEND_REPEAT:
@@ -680,7 +693,18 @@ struct ColorLineT {
       }
     };
     return aState.mDrawTarget->CreateGradientStops(
-        stops.Elements(), stops.Length(), mapExtendMode(extend));
+        aStops.Elements(), aStops.Length(), mapExtendMode(extend));
+  }
+
+  already_AddRefed<GradientStops> MakeGradientStops(
+      const PaintState& aState, float* aFirstStop, float* aLastStop,
+      bool aReverse = false) const {
+    AutoTArray<GradientStop, 8> stops;
+    CollectGradientStops(aState, stops, aFirstStop, aLastStop, aReverse);
+    if (stops.IsEmpty()) {
+      return nullptr;
+    }
+    return MakeGradientStops(aState, stops);
   }
 };
 
@@ -919,6 +943,81 @@ struct PaintRadialGradient : public PaintPatternBase {
     return NormalizeAndMakeGradient(aState, colorLine, c1, c2, r1, r2);
   }
 
+  
+  void TruncateGradientStops(nsTArray<GradientStop>& aStops, float aStart,
+                             float aEnd) const {
+    
+    
+    
+    
+    MOZ_ASSERT(aStart == 0.0f || aEnd == 1.0f,
+               "Trimming both ends of color-line is untested!");
+
+    
+    auto interpolateColor = [](DeviceColor c1, DeviceColor c2, float r) {
+      return DeviceColor(
+          c2.r * r + c1.r * (1.0f - r), c2.g * r + c1.g * (1.0f - r),
+          c2.b * r + c1.b * (1.0f - r), c2.a * r + c1.a * (1.0f - r));
+    };
+
+    size_t count = aStops.Length();
+    MOZ_ASSERT(count > 1);
+
+    
+    if (aStart > 0.0f) {
+      
+      size_t i = 0;
+      while (i < count - 1 && aStops[i].offset < aStart) {
+        ++i;
+      }
+      
+      
+      if (i && aStops[i].offset > aStart) {
+        auto& prev = aStops[i - 1];
+        auto& curr = aStops[i];
+        float ratio = (aStart - prev.offset) / (curr.offset - prev.offset);
+        prev.color = interpolateColor(prev.color, curr.color, ratio);
+        prev.offset = aStart;
+        --i;  
+      }
+      aStops.RemoveElementsAt(0, i);
+      
+      if (aStart < 1.0f) {
+        float r = 1.0f / (1.0f - aStart);
+        for (auto& gs : aStops) {
+          gs.offset = r * (gs.offset - aStart);
+        }
+      }
+    }
+
+    
+    if (aEnd < 1.0f) {
+      
+      size_t i = count - 1;
+      while (i && aStops[i].offset > aEnd) {
+        --i;
+      }
+      
+      
+      if (i + 1 < count && aStops[i].offset < aEnd) {
+        auto& next = aStops[i + 1];
+        auto& curr = aStops[i];
+        float ratio = (aEnd - curr.offset) / (next.offset - curr.offset);
+        next.color = interpolateColor(curr.color, next.color, ratio);
+        next.offset = aEnd;
+        ++i;
+      }
+      aStops.RemoveElementsAt(i + 1, count - i - 1);
+      
+      if (aEnd > 0.0f) {
+        float r = 1.0f / aEnd;
+        for (auto& gs : aStops) {
+          gs.offset = r * gs.offset;
+        }
+      }
+    }
+  }
+
   template <typename T>
   UniquePtr<Pattern> NormalizeAndMakeGradient(const PaintState& aState,
                                               const T* aColorLine, Point c1,
@@ -932,26 +1031,95 @@ struct PaintRadialGradient : public PaintPatternBase {
       return solidColor;
     }
     float firstStop, lastStop;
-    RefPtr stops = aColorLine->MakeGradientStops(aState, &firstStop, &lastStop);
-    if (!stops) {
-      return nullptr;
+    AutoTArray<GradientStop, 8> stopArray;
+    aColorLine->CollectGradientStops(aState, stopArray, &firstStop, &lastStop);
+    if (stopArray.IsEmpty()) {
+      return MakeUnique<ColorPattern>(DeviceColor());
     }
-    if (firstStop != 0.0 || lastStop != 1.0) {
+    
+    
+    if (firstStop != 0.0f || lastStop != 1.0f) {
       if (firstStop == lastStop) {
         if (aColorLine->extend != T::EXTEND_PAD) {
           return MakeUnique<ColorPattern>(DeviceColor());
         }
       } else {
-        Point v = c2 - c1;
-        c1 += v * firstStop;
-        c2 -= v * (1.0f - lastStop);
+        
+        
+        Point vec = c2 - c1;
+        c1 += vec * firstStop;
+        c2 -= vec * (1.0f - lastStop);
         float deltaR = r2 - r1;
         r1 = r1 + deltaR * firstStop;
         r2 = r2 - deltaR * (1.0f - lastStop);
       }
     }
-    return MakeUnique<RadialGradientPattern>(c1, c2, fabsf(r1), fabsf(r2),
-                                             std::move(stops),
+    if ((r1 < 0.0f || r2 < 0.0f) && aColorLine->extend == T::EXTEND_PAD) {
+      
+      
+      
+      if (r1 < 0.0f && r2 < 0.0f) {
+        
+        
+        
+        if (r1 == r2) {
+          return MakeUnique<ColorPattern>(DeviceColor());
+        }
+        
+        
+        if (r1 < r2) {
+          
+          TruncateGradientStops(stopArray, 1.0f, 1.0f);
+        } else {
+          
+          TruncateGradientStops(stopArray, 0.0f, 0.0f);
+        }
+      } else {
+        
+        
+        if (r1 < r2) {
+          float start = r1 / (r1 - r2);
+          TruncateGradientStops(stopArray, start, 1.0f);
+          r1 = 0.0f;
+          c1 = c1 * (1.0f - start) + c2 * start;
+        } else if (r2 < r1) {
+          float end = 1.0f - r2 / (r2 - r1);
+          TruncateGradientStops(stopArray, 0.0f, end);
+          r2 = 0.0f;
+          c2 = c1 * (1.0f - end) + c2 * end;
+        }
+      }
+    }
+    
+    
+    if (r1 < 0.0f || r2 < 0.0f) {
+      float deltaR = r2 - r1;
+      
+      
+      
+      if (deltaR == 0.0f) {
+        return MakeUnique<ColorPattern>(DeviceColor());
+      }
+      Point vec = c2 - c1;
+      if (aColorLine->extend == T::EXTEND_REFLECT) {
+        deltaR *= 2.0f;
+        vec = vec * 2.0f;
+      }
+      if (r2 < r1) {
+        vec = -vec;
+        deltaR = -deltaR;
+      }
+      
+      float n = std::ceil(std::max(-r1, -r2) / deltaR);
+      deltaR *= n;
+      r1 += deltaR;
+      r2 += deltaR;
+      vec = vec * n;
+      c1 += vec;
+      c2 += vec;
+    }
+    RefPtr stops = aColorLine->MakeGradientStops(aState, stopArray);
+    return MakeUnique<RadialGradientPattern>(c1, c2, r1, r2, std::move(stops),
                                              Matrix::Scaling(1.0, -1.0));
   }
 };
