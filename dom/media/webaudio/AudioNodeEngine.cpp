@@ -394,7 +394,6 @@ void AudioNodeEngine::ProcessBlock(AudioNodeTrack* aTrack, GraphTime aFrom,
                                    const AudioBlock& aInput,
                                    AudioBlock* aOutput, bool* aFinished) {
   MOZ_ASSERT(mInputCount <= 1 && mOutputCount <= 1);
-  TRACE("AudioNodeEngine::ProcessBlock");
   *aOutput = aInput;
 }
 
@@ -404,7 +403,6 @@ void AudioNodeEngine::ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
                                            Span<AudioBlock> aOutput,
                                            bool* aFinished) {
   MOZ_ASSERT(mInputCount > 1 || mOutputCount > 1);
-  TRACE("AudioNodeEngine::ProcessBlocksOnPorts");
   
   aOutput[0] = aInput[0];
 }
