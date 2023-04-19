@@ -18,6 +18,7 @@ const lazy = {};
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   addDebuggerToGlobal: "resource://gre/modules/jsdebugger.jsm",
 
+  deserialize: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   getFramesFromStack: "chrome://remote/content/shared/Stack.jsm",
   isChromeFrame: "chrome://remote/content/shared/Stack.jsm",
@@ -144,6 +145,14 @@ class ScriptModule extends Module {
     }
   }
 
+  #cloneAsDebuggerObject(obj) {
+    
+    
+    
+    const proxyObject = Cu.cloneInto(obj, this.messageHandler.window);
+    return this.#global.makeDebuggeeValue(proxyObject);
+  }
+
   #toRawObject(maybeDebuggerObject) {
     if (maybeDebuggerObject instanceof Debugger.Object) {
       
@@ -183,10 +192,28 @@ class ScriptModule extends Module {
 
 
   async callFunctionDeclaration(options) {
-    const { awaitPromise, functionDeclaration } = options;
-    const rv = this.#global.executeInGlobal(`(${functionDeclaration})()`, {
-      url: this.messageHandler.window.document.baseURI,
-    });
+    const {
+      awaitPromise,
+      commandArguments = null,
+      functionDeclaration,
+    } = options;
+
+    const deserializedArguments =
+      commandArguments != null
+        ? commandArguments.map(a => lazy.deserialize(a))
+        : [];
+    const expression = `(${functionDeclaration}).apply(null, __bidi_args)`;
+
+    const rv = this.#global.executeInGlobalWithBindings(
+      expression,
+      {
+        __bidi_args: this.#cloneAsDebuggerObject(deserializedArguments),
+      },
+      {
+        url: this.messageHandler.window.document.baseURI,
+      }
+    );
+
     return this.#buildReturnValue(rv, awaitPromise);
   }
 

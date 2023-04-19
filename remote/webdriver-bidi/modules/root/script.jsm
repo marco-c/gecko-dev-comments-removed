@@ -178,9 +178,6 @@ class ScriptModule extends Module {
         commandArguments,
         `Expected "arguments" to be an array, got ${commandArguments}`
       );
-      throw new lazy.error.UnsupportedOperationError(
-        `"arguments" parameter is not supported yet`
-      );
     }
 
     if (thisParameter != null) {
