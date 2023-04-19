@@ -58,7 +58,19 @@ void XULButtonAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
 
 
 
-role XULButtonAccessible::NativeRole() const { return roles::PUSHBUTTON; }
+role XULButtonAccessible::NativeRole() const {
+  
+  
+  nsCOMPtr<nsIDOMXULButtonElement> xulButtonElement = Elm()->AsXULButton();
+  if (xulButtonElement) {
+    nsAutoString type;
+    xulButtonElement->GetType(type);
+    if (type.EqualsLiteral("checkbox") || type.EqualsLiteral("radio")) {
+      return roles::TOGGLE_BUTTON;
+    }
+  }
+  return roles::PUSHBUTTON;
+}
 
 uint64_t XULButtonAccessible::NativeState() const {
   
@@ -66,14 +78,8 @@ uint64_t XULButtonAccessible::NativeState() const {
   
   uint64_t state = LocalAccessible::NativeState();
 
-  
   nsCOMPtr<nsIDOMXULButtonElement> xulButtonElement = Elm()->AsXULButton();
   if (xulButtonElement) {
-    nsAutoString type;
-    xulButtonElement->GetType(type);
-    if (type.EqualsLiteral("checkbox") || type.EqualsLiteral("radio")) {
-      state |= states::CHECKABLE;
-    }
     
     
     bool checked = false;
@@ -90,6 +96,13 @@ uint64_t XULButtonAccessible::NativeState() const {
   }
 
   return state;
+}
+
+bool XULButtonAccessible::AttributeChangesState(nsAtom* aAttribute) {
+  if (aAttribute == nsGkAtoms::checked) {
+    return true;
+  }
+  return AccessibleWrap::AttributeChangesState(aAttribute);
 }
 
 
