@@ -209,6 +209,7 @@ void RemoteTextureMap::KeepTextureDataAliveForTextureHostIfNecessary(
 void RemoteTextureMap::UnregisterTextureOwner(
     const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid) {
   UniquePtr<TextureOwner> releasingOwner;  
+  RefPtr<TextureHost> releasingTexture;    
   {
     MutexAutoLock lock(mMutex);
 
@@ -217,6 +218,12 @@ void RemoteTextureMap::UnregisterTextureOwner(
     if (it == mTextureOwners.end()) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       return;
+    }
+
+    if (it->second->mLatestTextureHost) {
+      
+      releasingTexture = it->second->mLatestTextureHost;
+      it->second->mLatestTextureHost = nullptr;
     }
 
     KeepTextureDataAliveForTextureHostIfNecessary(
@@ -233,6 +240,8 @@ void RemoteTextureMap::UnregisterTextureOwners(
     const base::ProcessId aForPid) {
   std::vector<UniquePtr<TextureOwner>>
       releasingOwners;  
+  std::vector<RefPtr<TextureHost>>
+      releasingTextures;  
   {
     MutexAutoLock lock(mMutex);
 
@@ -242,6 +251,12 @@ void RemoteTextureMap::UnregisterTextureOwners(
       if (it == mTextureOwners.end()) {
         MOZ_ASSERT_UNREACHABLE("unexpected to be called");
         continue;
+      }
+
+      if (it->second->mLatestTextureHost) {
+        
+        releasingTextures.emplace_back(it->second->mLatestTextureHost);
+        it->second->mLatestTextureHost = nullptr;
       }
 
       KeepTextureDataAliveForTextureHostIfNecessary(
