@@ -19,6 +19,9 @@
 #include <type_traits>
 #include <vector>
 
+#if defined(WEBRTC_USE_GIO)
+#include "modules/desktop_capture/desktop_capture_metadata.h"
+#endif  
 #include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/shared_memory.h"
@@ -146,6 +149,12 @@ class RTC_EXPORT DesktopCapturer {
 
 #if defined(WEBRTC_USE_PIPEWIRE) || defined(WEBRTC_USE_X11)
   static bool IsRunningUnderWayland();
+#endif  
+
+#if defined(WEBRTC_USE_GIO)
+  
+  
+  virtual DesktopCaptureMetadata GetMetadata() { return {}; }
 #endif  
 
  protected:

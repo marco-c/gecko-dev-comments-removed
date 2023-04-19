@@ -15,11 +15,13 @@
 
 #include <string>
 
+#include "modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h"
 #include "modules/desktop_capture/linux/wayland/xdg_desktop_portal_utils.h"
+#include "modules/desktop_capture/linux/wayland/xdg_session_details.h"
 
 namespace webrtc {
 
-class ScreenCastPortal {
+class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
  public:
   using ProxyRequestResponseHandler = void (*)(GObject* object,
                                                GAsyncResult* result,
@@ -86,7 +88,8 @@ class ScreenCastPortal {
   
   
   
-  void Start();
+  void Start() override;
+  xdg_portal::SessionDetails GetSessionDetails() override;
 
   
   void PortalFailed(xdg_portal::RequestResponse result);

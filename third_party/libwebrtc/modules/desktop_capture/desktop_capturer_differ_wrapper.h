@@ -12,7 +12,9 @@
 #define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURER_DIFFER_WRAPPER_H_
 
 #include <memory>
-
+#if defined(WEBRTC_USE_GIO)
+#include "modules/desktop_capture/desktop_capture_metadata.h"
+#endif  
 #include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
@@ -52,7 +54,9 @@ class RTC_EXPORT DesktopCapturerDifferWrapper
   bool SelectSource(SourceId id) override;
   bool FocusOnSelectedSource() override;
   bool IsOccluded(const DesktopVector& pos) override;
-
+#if defined(WEBRTC_USE_GIO)
+  DesktopCaptureMetadata GetMetadata() override;
+#endif  
  private:
   
   void OnCaptureResult(Result result,
