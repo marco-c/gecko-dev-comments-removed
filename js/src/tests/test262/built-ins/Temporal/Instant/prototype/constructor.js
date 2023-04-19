@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Temporal.Instant.prototype, "constructor", {
+  value: Temporal.Instant,
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

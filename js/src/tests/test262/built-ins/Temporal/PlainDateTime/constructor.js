@@ -10,6 +10,6 @@
 
 
 
-assert.throws(TypeError, () => Temporal.PlainDateTime());
+assert.throws(TypeError, () => Temporal.PlainDateTime(1970, 1, 2, 12, 0, 0));
 
 reportCompare(0, 0);

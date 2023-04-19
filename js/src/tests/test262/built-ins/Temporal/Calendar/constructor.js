@@ -10,6 +10,6 @@
 
 
 
-assert.throws(TypeError, () => Temporal.Calendar());
+assert.throws(TypeError, () => Temporal.Calendar("iso8601"));
 
 reportCompare(0, 0);

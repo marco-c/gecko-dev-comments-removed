@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function yield() {}
+
+
+
+var C = @yield class {};
+
+reportCompare(0, 0);

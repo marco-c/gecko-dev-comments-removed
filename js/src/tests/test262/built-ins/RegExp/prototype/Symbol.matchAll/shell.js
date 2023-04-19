@@ -132,6 +132,12 @@ function testPropertyOfStrings(args) {
 
 
 
+const testExtendedCharacterClass = testPropertyOfStrings;
+
+
+
+
+
 
 
 

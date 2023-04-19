@@ -25,16 +25,15 @@ const tests = [
   [42n, "bigint"],
 
   
+  
   [Temporal.PlainDate.from("2019-05-17"), "PlainDate"],
   [Temporal.PlainDateTime.from("2019-05-17T12:34"), "PlainDateTime"],
   [Temporal.PlainMonthDay.from("2019-05-17"), "PlainMonthDay"],
   [Temporal.PlainTime.from("12:34"), "PlainTime"],
   [Temporal.PlainYearMonth.from("2019-05-17"), "PlainYearMonth"],
   [Temporal.ZonedDateTime.from("2019-05-17T12:34Z[UTC]"), "ZonedDateTime"],
-
   
   [{ year: 2021, calendar: "iso8601" }, "calendar"],
-
   
   [{ year: 2021, timeZone: "UTC" }, "timeZone"],
 

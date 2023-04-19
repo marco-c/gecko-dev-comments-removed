@@ -10,6 +10,6 @@
 
 
 
-assert.throws(TypeError, () => Temporal.PlainTime());
+assert.throws(TypeError, () => Temporal.PlainTime(12, 0, 0));
 
 reportCompare(0, 0);

@@ -8,15 +8,16 @@
 
 
 
-const calendar = {
+const customCalendar = {
   toString() { return "custom"; }
 };
-const date1 = new Temporal.PlainDate(2000, 5, 2);
-const date2 = new Temporal.PlainDate(2000, 5, 2, calendar);
-
+const customISOCalendar = {
+  toString() { return "iso8601"; }
+};
 [
-  [date1, "2000-05-02[u-ca=iso8601]"],
-  [date2, "2000-05-02[u-ca=custom]"],
+  [new Temporal.PlainDate(2000, 5, 2), "2000-05-02[u-ca=iso8601]"],
+  [new Temporal.PlainDate(2000, 5, 2, customCalendar), "2000-05-02[u-ca=custom]"],
+  [new Temporal.PlainDate(2000, 5, 2, customISOCalendar), "2000-05-02[u-ca=iso8601]"],
 ].forEach(([date, expected]) => {
   const result = date.toString({ calendarName: "always" });
   assert.sameValue(result, expected, "expected " + expected);

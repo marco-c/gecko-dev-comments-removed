@@ -13,9 +13,6 @@
 
 
 
-
-
-
 function resolveUseGrouping(option) {
   return new Intl.NumberFormat(undefined, { useGrouping: option }).resolvedOptions().useGrouping;
 }
@@ -33,7 +30,7 @@ for (let falsy of [0, null, ""]) {
 }
 
 for (let truthy of [42, "MIN2", {}]) {
-  assert.throws(RangeError, () => { resolveUseGrouping(truthy); }, "Invalid truthy value");
+  assert.sameValue(resolveUseGrouping(truthy), "auto");
 }
 
 reportCompare(0, 0);

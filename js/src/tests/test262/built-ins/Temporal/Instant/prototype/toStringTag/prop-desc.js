@@ -9,8 +9,7 @@
 
 
 
-const { Instant } = Temporal;
-verifyProperty(Instant.prototype, Symbol.toStringTag, {
+verifyProperty(Temporal.Instant.prototype, Symbol.toStringTag, {
   value: "Temporal.Instant",
   writable: false,
   enumerable: false,

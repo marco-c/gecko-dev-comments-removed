@@ -12,8 +12,6 @@
 
 
 
-
-
 function render(options) {
   var nf = new Intl.NumberFormat(undefined, options);
   return nf.resolvedOptions().useGrouping;
@@ -37,20 +35,9 @@ assert.sameValue(render({notation: 'compact', useGrouping: false}), false, 'comp
 assert.sameValue(render({notation: 'compact', useGrouping: null}), false, 'compact, null');
 assert.sameValue(render({notation: 'compact', useGrouping: 'min2'}), 'min2', 'compact, "min2"');
 
-assert.throws(RangeError, function() {
-  new Intl.NumberFormat(undefined, {useGrouping: 'undefined'});
-}, '"undefined"');
-
-assert.throws(RangeError, function() {
-  new Intl.NumberFormat(undefined, {useGrouping: 'false'});
-}, '"false"');
-
-assert.throws(RangeError, function() {
-  new Intl.NumberFormat(undefined, {useGrouping: 'true'});
-}, '"true"');
-
-assert.throws(RangeError, function() {
-  new Intl.NumberFormat(undefined, {useGrouping: 'min3'});
-}, '"min3"');
+assert.sameValue(render({useGrouping: 'undefined'}), 'auto', 'use fallback value');
+assert.sameValue(render({useGrouping: 'false'}), 'auto', 'use fallback value');
+assert.sameValue(render({useGrouping: 'true'}), 'auto', 'use fallback value');
+assert.sameValue(render({useGrouping: 'min3'}), 'auto', 'use fallback value');
 
 reportCompare(0, 0);

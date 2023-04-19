@@ -10,6 +10,6 @@
 
 
 
-assert.throws(TypeError, () => Temporal.Instant());
+assert.throws(TypeError, () => Temporal.Instant(0n));
 
 reportCompare(0, 0);

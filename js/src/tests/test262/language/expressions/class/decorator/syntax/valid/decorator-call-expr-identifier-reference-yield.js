@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function decorator() {
+  return () => {};
+}
+var yield = decorator;
+
+
+
+var C = @yield() class {};
+
+reportCompare(0, 0);

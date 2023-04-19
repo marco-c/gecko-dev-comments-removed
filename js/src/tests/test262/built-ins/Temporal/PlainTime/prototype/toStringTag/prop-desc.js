@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Temporal.PlainTime.prototype, Symbol.toStringTag, {
+  value: "Temporal.PlainTime",
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

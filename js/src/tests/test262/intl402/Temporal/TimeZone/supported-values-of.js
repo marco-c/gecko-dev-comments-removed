@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+for (let id of Intl.supportedValuesOf("timeZone")) {
+  let tz = new Temporal.TimeZone(id);
+
+  assert.sameValue(tz.id, id);
+}
+
+reportCompare(0, 0);

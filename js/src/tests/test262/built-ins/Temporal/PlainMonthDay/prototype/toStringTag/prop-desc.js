@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Temporal.PlainMonthDay.prototype, Symbol.toStringTag, {
+  value: "Temporal.PlainMonthDay",
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

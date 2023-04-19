@@ -16,4 +16,4 @@
 
 $DONOTEVALUATE();
 
-for (const x; false; ) label1: label2: function f() {}
+for (const x = 0; false; ) label1: label2: function f() {}
