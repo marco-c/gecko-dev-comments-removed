@@ -194,10 +194,10 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
   void set_default_local_addresses(const IPAddress& ipv4,
                                    const IPAddress& ipv6);
 
+  Network* GetNetworkFromAddress(const rtc::IPAddress& ip) const;
+
  private:
   friend class NetworkTest;
-
-  Network* GetNetworkFromAddress(const rtc::IPAddress& ip) const;
 
   EnumerationPermission enumeration_permission_;
 
@@ -225,6 +225,7 @@ class RTC_EXPORT NetworkManagerBase : public NetworkManager {
 
 class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
                                        public MessageHandlerAutoCleanup,
+                                       public NetworkBinderInterface,
                                        public sigslot::has_slots<> {
  public:
   BasicNetworkManager();
@@ -247,6 +248,15 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
     RTC_DCHECK(thread_ == nullptr);
     network_ignore_list_ = list;
   }
+
+  
+  
+  
+  
+  
+  
+  NetworkBindingResult BindSocketToNetwork(int socket_fd,
+                                           const IPAddress& address) override;
 
  protected:
 #if defined(WEBRTC_POSIX)
@@ -293,7 +303,8 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
       nullptr;
   std::unique_ptr<NetworkMonitorInterface> network_monitor_
       RTC_GUARDED_BY(thread_);
-  bool allow_mac_based_ipv6_ = false;
+  bool allow_mac_based_ipv6_ RTC_GUARDED_BY(thread_) = false;
+  bool bind_using_ifname_ RTC_GUARDED_BY(thread_) = false;
 };
 
 
