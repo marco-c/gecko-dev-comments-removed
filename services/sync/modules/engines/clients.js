@@ -55,7 +55,7 @@ const { PREF_ACCOUNT_ROOT } = ChromeUtils.import(
   "resource://gre/modules/FxAccountsCommon.js"
 );
 
-const CLIENTS_TTL = 1814400; 
+const CLIENTS_TTL = 15552000; 
 const CLIENTS_TTL_REFRESH = 604800; 
 const STALE_CLIENT_REMOTE_AGE = 604800; 
 
