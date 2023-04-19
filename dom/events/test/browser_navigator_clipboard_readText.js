@@ -29,6 +29,12 @@ const chromeDoc = window.document;
 const kPasteMenuPopupId = "clipboardReadTextPasteMenuPopup";
 const kPasteMenuItemId = "clipboardReadTextPasteMenuItem";
 
+function promiseBrowserReflow() {
+  return new Promise(resolve =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve))
+  );
+}
+
 function promiseClickPasteButton() {
   const pasteButton = chromeDoc.getElementById(kPasteMenuItemId);
 
@@ -86,10 +92,12 @@ function promisePasteButtonIsShown() {
 
     const pasteButton = chromeDoc.getElementById(kPasteMenuItemId);
 
-    return coordinatesRelativeToScreen({
-      target: pasteButton,
-      offsetX: 0,
-      offsetY: 0,
+    return promiseBrowserReflow().then(() => {
+      return coordinatesRelativeToScreen({
+        target: pasteButton,
+        offsetX: 0,
+        offsetY: 0,
+      });
     });
   });
 }
@@ -97,6 +105,7 @@ function promisePasteButtonIsShown() {
 function promisePasteButtonIsHidden() {
   return waitForPasteMenuPopupEvent("hidden").then(() => {
     ok(true, "Witnessed 'popuphidden' event for 'Paste' button.");
+    return promiseBrowserReflow();
   });
 }
 
@@ -184,8 +193,9 @@ function promiseDismissPasteButton() {
   return EventUtils.promiseNativeMouseEvent({
     type: "click",
     target: chromeDoc.body,
-    offsetX: 0,
-    offsetY: 0,
+    
+    
+    atCenter: true,
   });
 }
 
@@ -293,51 +303,48 @@ add_task(async function test_dismissing_paste_button() {
   });
 });
 
-if (AppConstants.platform != "win") {
-  
-  add_task(
-    async function test_multiple_readText_invocations_for_same_user_activation() {
-      
-      const clipboardText = await promiseWritingRandomTextToClipboard();
+add_task(
+  async function test_multiple_readText_invocations_for_same_user_activation() {
+    
+    const clipboardText = await promiseWritingRandomTextToClipboard();
 
-      await BrowserTestUtils.withNewTab(kContentFileUrl, async function(
-        browser
-      ) {
-        await promiseClickContentToTriggerClipboardReadText(browser, true);
-        const mutatedReadTextResultFromContentElement = promiseMutatedReadTextResultFromContentElement(
-          browser
-        );
-        const pasteButtonIsHidden = promisePasteButtonIsHidden();
-        await promiseClickPasteButton();
-        await mutatedReadTextResultFromContentElement.then(value => {
-          is(
-            value,
-            "Resolved 1: " + clipboardText + "; Resolved 2: " + clipboardText,
-            "Two calls of `navigator.clipboard.read()` both resolved with the expected text."
-          );
-        });
-
-        
-        await pasteButtonIsHidden;
-      });
-    }
-  );
-
-  add_task(async function test_new_user_activation_shows_paste_button_again() {
     await BrowserTestUtils.withNewTab(kContentFileUrl, async function(browser) {
+      const pasteButtonIsShown = promisePasteButtonIsShown();
+      await promiseClickContentToTriggerClipboardReadText(browser, true);
+      await pasteButtonIsShown;
+      const mutatedReadTextResultFromContentElement = promiseMutatedReadTextResultFromContentElement(
+        browser
+      );
+      const pasteButtonIsHidden = promisePasteButtonIsHidden();
+      await promiseClickPasteButton();
+      await mutatedReadTextResultFromContentElement.then(value => {
+        is(
+          value,
+          "Resolved 1: " + clipboardText + "; Resolved 2: " + clipboardText,
+          "Two calls of `navigator.clipboard.read()` both resolved with the expected text."
+        );
+      });
+
       
-      await promiseWritingRandomTextToClipboard();
-
-      for (let i = 0; i < 2; ++i) {
-        const pasteButtonIsShown = promisePasteButtonIsShown();
-        
-        await promiseClickContentToTriggerClipboardReadText(browser, false);
-        await pasteButtonIsShown;
-
-        const pasteButtonIsHidden = promisePasteButtonIsHidden();
-        await promiseClickPasteButton();
-        await pasteButtonIsHidden;
-      }
+      await pasteButtonIsHidden;
     });
+  }
+);
+
+add_task(async function test_new_user_activation_shows_paste_button_again() {
+  await BrowserTestUtils.withNewTab(kContentFileUrl, async function(browser) {
+    
+    await promiseWritingRandomTextToClipboard();
+
+    for (let i = 0; i < 2; ++i) {
+      const pasteButtonIsShown = promisePasteButtonIsShown();
+      
+      await promiseClickContentToTriggerClipboardReadText(browser, false);
+      await pasteButtonIsShown;
+
+      const pasteButtonIsHidden = promisePasteButtonIsHidden();
+      await promiseClickPasteButton();
+      await pasteButtonIsHidden;
+    }
   });
-}
+});
