@@ -1598,7 +1598,11 @@ var PanelView = class extends AssociatedToNode {
       tag == "textarea" ||
       
       tag == "browser" ||
-      tag == "iframe"
+      tag == "iframe" ||
+      
+      
+      
+      element.dataset?.navigableWithTabOnly === "true"
     );
   }
 
@@ -1617,12 +1621,24 @@ var PanelView = class extends AssociatedToNode {
       if (bounds.width == 0 || bounds.height == 0) {
         return NodeFilter.FILTER_REJECT;
       }
+      let isNavigableWithTabOnly = this._isNavigableWithTabOnly(node);
+      
+      
+      
+      
+      if (arrowKey && isNavigableWithTabOnly) {
+        return NodeFilter.FILTER_REJECT;
+      }
       if (
         node.tagName == "button" ||
         node.tagName == "toolbarbutton" ||
         node.tagName == "checkbox" ||
         node.classList.contains("text-link") ||
-        (!arrowKey && this._isNavigableWithTabOnly(node))
+        
+        
+        
+        node.classList.contains("complex-subviewbutton") ||
+        (!arrowKey && isNavigableWithTabOnly)
       ) {
         
         

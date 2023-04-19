@@ -13,6 +13,7 @@
 
 
 
+
 const promiseUnifiedExtensionsInitialized = async win => {
   await new Promise(resolve => {
     win.requestIdleCallback(resolve);
@@ -97,6 +98,26 @@ const openUnifiedExtensionsContextMenu = async (win, extensionId) => {
   await shown;
 
   return menu;
+};
+
+const clickUnifiedExtensionsItem = async (win, extensionId) => {
+  
+  await openExtensionsPanel(win);
+
+  const item = getUnifiedExtensionsItem(win, extensionId);
+  ok(item, `expected item for ${extensionId}`);
+
+  
+  
+  item.scrollIntoView({ block: "center" });
+
+  const popupHidden = BrowserTestUtils.waitForEvent(
+    win.document,
+    "popuphidden",
+    true
+  );
+  EventUtils.synthesizeMouseAtCenter(item, {}, win);
+  await popupHidden;
 };
 
 let extensionsCreated = 0;
