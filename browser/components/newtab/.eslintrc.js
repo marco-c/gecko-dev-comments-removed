@@ -30,7 +30,6 @@ module.exports = {
     "plugin:mozilla/recommended", 
     "plugin:mozilla/browser-test",
     "plugin:mozilla/mochitest-test",
-    "plugin:mozilla/xpcshell-test",
     "plugin:prettier/recommended", 
     "prettier", 
   ],
@@ -71,6 +70,10 @@ module.exports = {
       rules: {
         "no-implicit-globals": 0,
       },
+    },
+    {
+      files: "test/xpcshell/**",
+      extends: ["plugin:mozilla/xpcshell-test"],
     },
   ],
   rules: {

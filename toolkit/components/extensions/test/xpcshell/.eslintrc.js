@@ -5,5 +5,9 @@ module.exports = {
     
     
     webextensions: true,
+    
+    
+    
+    browser: true,
   },
 };
