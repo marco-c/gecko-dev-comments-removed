@@ -305,9 +305,9 @@ async function probeHSTSStatuses(inHosts) {
   
   
   let allResults = [];
-  while (inHosts.length > 0) {
+  while (inHosts.length) {
     let promises = [];
-    for (let i = 0; i < MAX_CONCURRENT_REQUESTS && inHosts.length > 0; i++) {
+    for (let i = 0; i < MAX_CONCURRENT_REQUESTS && inHosts.length; i++) {
       let host = inHosts.shift();
       promises.push(getHSTSStatus(host));
     }
