@@ -774,6 +774,10 @@ AppUpdater.STATUS = {
   READY_FOR_RESTART: 12,
 
   
+  
+  INTERNAL_ERROR: 13,
+
+  
 
 
 
