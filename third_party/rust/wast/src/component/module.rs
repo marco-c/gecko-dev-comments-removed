@@ -5,8 +5,10 @@ use crate::parser::{Parse, Parser, Result};
 use crate::token::{Id, NameAnnotation, Span};
 
 
+
+
 #[derive(Debug)]
-pub struct Module<'a> {
+pub struct CoreModule<'a> {
     
     pub span: Span,
     
@@ -18,18 +20,18 @@ pub struct Module<'a> {
     
     pub exports: core::InlineExport<'a>,
     
-    pub kind: ModuleKind<'a>,
+    pub kind: CoreModuleKind<'a>,
 }
 
 
 #[derive(Debug)]
-pub enum ModuleKind<'a> {
+pub enum CoreModuleKind<'a> {
     
     Import {
         
         import: InlineImport<'a>,
         
-        ty: ComponentTypeUse<'a, ModuleType<'a>>,
+        ty: CoreTypeUse<'a, ModuleType<'a>>,
     },
 
     
@@ -39,28 +41,18 @@ pub enum ModuleKind<'a> {
     },
 }
 
-impl<'a> Parse<'a> for Module<'a> {
+impl<'a> Parse<'a> for CoreModule<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if parser.parens_depth() > 100 {
-            return Err(parser.error("module nesting too deep"));
-        }
+        parser.depth_check()?;
 
-        let span = parser.parse::<kw::module>()?.0;
+        let span = parser.parse::<kw::core>()?.0;
+        parser.parse::<kw::module>()?;
         let id = parser.parse()?;
         let name = parser.parse()?;
         let exports = parser.parse()?;
 
         let kind = if let Some(import) = parser.parse()? {
-            ModuleKind::Import {
+            CoreModuleKind::Import {
                 import,
                 ty: parser.parse()?,
             }
@@ -69,10 +61,10 @@ impl<'a> Parse<'a> for Module<'a> {
             while !parser.is_empty() {
                 fields.push(parser.parens(|p| p.parse())?);
             }
-            ModuleKind::Inline { fields }
+            CoreModuleKind::Inline { fields }
         };
 
-        Ok(Module {
+        Ok(Self {
             span,
             id,
             name,

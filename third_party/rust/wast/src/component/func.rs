@@ -2,13 +2,75 @@ use crate::component::*;
 use crate::core;
 use crate::kw;
 use crate::parser::{Parse, Parser, Result};
-use crate::token::{Id, LParen, NameAnnotation, Span};
+use crate::token::{Id, Index, LParen, NameAnnotation, Span};
 
 
 
 
 #[derive(Debug)]
-pub struct ComponentFunc<'a> {
+pub struct CoreFunc<'a> {
+    
+    pub span: Span,
+    
+    
+    pub id: Option<Id<'a>>,
+    
+    pub name: Option<NameAnnotation<'a>>,
+    
+    pub kind: CoreFuncKind<'a>,
+}
+
+impl<'a> Parse<'a> for CoreFunc<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let span = parser.parse::<kw::core>()?.0;
+        parser.parse::<kw::func>()?;
+        let id = parser.parse()?;
+        let name = parser.parse()?;
+        let kind = parser.parse()?;
+
+        Ok(Self {
+            span,
+            id,
+            name,
+            kind,
+        })
+    }
+}
+
+
+#[derive(Debug)]
+pub enum CoreFuncKind<'a> {
+    
+    
+    
+    Lower(CanonLower<'a>),
+    
+    
+    
+    Alias(InlineExportAlias<'a>),
+}
+
+impl<'a> Parse<'a> for CoreFuncKind<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        parser.parens(|parser| {
+            let mut l = parser.lookahead1();
+            if l.peek::<kw::canon>() {
+                parser.parse::<kw::canon>()?;
+                Ok(Self::Lower(parser.parse()?))
+            } else if l.peek::<kw::alias>() {
+                Ok(Self::Alias(parser.parse()?))
+            } else {
+                Err(l.error())
+            }
+        })
+    }
+}
+
+
+
+
+#[derive(Debug)]
+pub struct Func<'a> {
     
     pub span: Span,
     
@@ -20,51 +82,18 @@ pub struct ComponentFunc<'a> {
     
     pub exports: core::InlineExport<'a>,
     
-    
-    pub kind: ComponentFuncKind<'a>,
+    pub kind: FuncKind<'a>,
 }
 
-
-#[derive(Debug)]
-pub enum ComponentFuncKind<'a> {
-    
-    
-    
-    
-    
-    Import {
-        
-        import: InlineImport<'a>,
-        
-        ty: ComponentTypeUse<'a, ComponentFunctionType<'a>>,
-    },
-
-    
-    Inline {
-        
-        body: ComponentFuncBody<'a>,
-    },
-}
-
-impl<'a> Parse<'a> for ComponentFunc<'a> {
+impl<'a> Parse<'a> for Func<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::func>()?.0;
         let id = parser.parse()?;
         let name = parser.parse()?;
         let exports = parser.parse()?;
+        let kind = parser.parse()?;
 
-        let kind = if let Some(import) = parser.parse()? {
-            ComponentFuncKind::Import {
-                import,
-                ty: parser.parse()?,
-            }
-        } else {
-            ComponentFuncKind::Inline {
-                body: parser.parens(|p| p.parse())?,
-            }
-        };
-
-        Ok(ComponentFunc {
+        Ok(Self {
             span,
             id,
             name,
@@ -76,53 +105,160 @@ impl<'a> Parse<'a> for ComponentFunc<'a> {
 
 
 #[derive(Debug)]
-pub enum ComponentFuncBody<'a> {
+pub enum FuncKind<'a> {
     
-    CanonLift(CanonLift<'a>),
     
-    CanonLower(CanonLower<'a>),
+    
+    
+    
+    Import {
+        
+        import: InlineImport<'a>,
+        
+        ty: ComponentTypeUse<'a, ComponentFunctionType<'a>>,
+    },
+    
+    
+    
+    Lift {
+        
+        ty: ComponentTypeUse<'a, ComponentFunctionType<'a>>,
+        
+        info: CanonLift<'a>,
+    },
+    
+    
+    
+    Alias(InlineExportAlias<'a>),
 }
 
-impl<'a> Parse<'a> for ComponentFuncBody<'a> {
+impl<'a> Parse<'a> for FuncKind<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        if parser.peek::<kw::canon_lift>() {
-            Ok(ComponentFuncBody::CanonLift(parser.parse()?))
-        } else if parser.peek::<kw::canon_lower>() {
-            Ok(ComponentFuncBody::CanonLower(parser.parse()?))
+        if let Some(import) = parser.parse()? {
+            Ok(Self::Import {
+                import,
+                ty: parser.parse()?,
+            })
+        } else if parser.peek::<LParen>() && parser.peek2::<kw::alias>() {
+            parser.parens(|parser| Ok(Self::Alias(parser.parse()?)))
         } else {
-            Err(parser.error("Expected canon.lift or canon.lower"))
+            Ok(Self::Lift {
+                ty: parser.parse()?,
+                info: parser.parens(|parser| {
+                    parser.parse::<kw::canon>()?;
+                    parser.parse()
+                })?,
+            })
+        }
+    }
+}
+
+
+
+
+#[derive(Debug)]
+pub struct CanonicalFunc<'a> {
+    
+    pub span: Span,
+    
+    
+    pub id: Option<Id<'a>>,
+    
+    pub name: Option<NameAnnotation<'a>>,
+    
+    pub kind: CanonicalFuncKind<'a>,
+}
+
+impl<'a> Parse<'a> for CanonicalFunc<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let span = parser.parse::<kw::canon>()?.0;
+
+        if parser.peek::<kw::lift>() {
+            let info = parser.parse()?;
+            let (id, name, ty) = parser.parens(|parser| {
+                parser.parse::<kw::func>()?;
+                let id = parser.parse()?;
+                let name = parser.parse()?;
+                let ty = parser.parse()?;
+                Ok((id, name, ty))
+            })?;
+
+            Ok(Self {
+                span,
+                id,
+                name,
+                kind: CanonicalFuncKind::Lift { info, ty },
+            })
+        } else if parser.peek::<kw::lower>() {
+            let info = parser.parse()?;
+            let (id, name) = parser.parens(|parser| {
+                parser.parse::<kw::core>()?;
+                parser.parse::<kw::func>()?;
+                let id = parser.parse()?;
+                let name = parser.parse()?;
+                Ok((id, name))
+            })?;
+
+            Ok(Self {
+                span,
+                id,
+                name,
+                kind: CanonicalFuncKind::Lower(info),
+            })
+        } else {
+            Err(parser.error("expected `canon lift` or `canon lower`"))
         }
     }
 }
 
 
 #[derive(Debug)]
+pub enum CanonicalFuncKind<'a> {
+    
+    Lift {
+        
+        ty: ComponentTypeUse<'a, ComponentFunctionType<'a>>,
+        
+        info: CanonLift<'a>,
+    },
+    
+    Lower(CanonLower<'a>),
+}
+
+
+#[derive(Debug)]
 pub struct CanonLift<'a> {
     
-    pub type_: ComponentTypeUse<'a, ComponentFunctionType<'a>>,
+    pub func: CoreItemRef<'a, kw::func>,
     
     pub opts: Vec<CanonOpt<'a>>,
-    
-    pub func: ItemRef<'a, kw::func>,
 }
 
 impl<'a> Parse<'a> for CanonLift<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        parser.parse::<kw::canon_lift>()?;
-        let type_ = if parser.peek2::<kw::func>() {
-            ComponentTypeUse::Inline(parser.parens(|p| {
-                p.parse::<kw::func>()?;
-                p.parse()
-            })?)
-        } else {
-            ComponentTypeUse::Ref(parser.parse()?)
-        };
-        let mut opts = Vec::new();
-        while !parser.peek2::<kw::func>() {
-            opts.push(parser.parse()?);
+        parser.parse::<kw::lift>()?;
+
+        Ok(Self {
+            func: parser.parens(|parser| {
+                parser.parse::<kw::core>()?;
+                parser.parse()
+            })?,
+            opts: parser.parse()?,
+        })
+    }
+}
+
+impl Default for CanonLift<'_> {
+    fn default() -> Self {
+        let span = Span::from_offset(0);
+        Self {
+            func: CoreItemRef {
+                kind: kw::func(span),
+                idx: Index::Num(0, span),
+                export_name: None,
+            },
+            opts: Vec::new(),
         }
-        let func = parser.parse()?;
-        Ok(CanonLift { type_, opts, func })
     }
 }
 
@@ -130,20 +266,33 @@ impl<'a> Parse<'a> for CanonLift<'a> {
 #[derive(Debug)]
 pub struct CanonLower<'a> {
     
-    pub opts: Vec<CanonOpt<'a>>,
-    
     pub func: ItemRef<'a, kw::func>,
+    
+    pub opts: Vec<CanonOpt<'a>>,
 }
 
 impl<'a> Parse<'a> for CanonLower<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        parser.parse::<kw::canon_lower>()?;
-        let mut opts = Vec::new();
-        while !parser.is_empty() && (!parser.peek::<LParen>() || !parser.peek2::<kw::func>()) {
-            opts.push(parser.parse()?);
+        parser.parse::<kw::lower>()?;
+
+        Ok(Self {
+            func: parser.parens(|parser| parser.parse())?,
+            opts: parser.parse()?,
+        })
+    }
+}
+
+impl Default for CanonLower<'_> {
+    fn default() -> Self {
+        let span = Span::from_offset(0);
+        Self {
+            func: ItemRef {
+                kind: kw::func(span),
+                idx: Index::Num(0, span),
+                export_names: Vec::new(),
+            },
+            opts: Vec::new(),
         }
-        let func = parser.parse()?;
-        Ok(CanonLower { opts, func })
     }
 }
 
@@ -157,9 +306,11 @@ pub enum CanonOpt<'a> {
     
     StringLatin1Utf16,
     
+    Memory(CoreItemRef<'a, kw::memory>),
     
+    Realloc(CoreItemRef<'a, kw::func>),
     
-    Into(ItemRef<'a, kw::instance>),
+    PostReturn(CoreItemRef<'a, kw::func>),
 }
 
 impl<'a> Parse<'a> for CanonOpt<'a> {
@@ -167,19 +318,32 @@ impl<'a> Parse<'a> for CanonOpt<'a> {
         let mut l = parser.lookahead1();
         if l.peek::<kw::string_utf8>() {
             parser.parse::<kw::string_utf8>()?;
-            Ok(CanonOpt::StringUtf8)
+            Ok(Self::StringUtf8)
         } else if l.peek::<kw::string_utf16>() {
             parser.parse::<kw::string_utf16>()?;
-            Ok(CanonOpt::StringUtf16)
+            Ok(Self::StringUtf16)
         } else if l.peek::<kw::string_latin1_utf16>() {
             parser.parse::<kw::string_latin1_utf16>()?;
-            Ok(CanonOpt::StringLatin1Utf16)
+            Ok(Self::StringLatin1Utf16)
         } else if l.peek::<LParen>() {
             parser.parens(|parser| {
                 let mut l = parser.lookahead1();
-                if l.peek::<kw::into>() {
-                    parser.parse::<kw::into>()?;
-                    Ok(CanonOpt::Into(parser.parse::<IndexOrRef<'_, _>>()?.0))
+                if l.peek::<kw::memory>() {
+                    let span = parser.parse::<kw::memory>()?.0;
+                    Ok(CanonOpt::Memory(parse_trailing_item_ref(
+                        kw::memory(span),
+                        parser,
+                    )?))
+                } else if l.peek::<kw::realloc>() {
+                    parser.parse::<kw::realloc>()?;
+                    Ok(CanonOpt::Realloc(
+                        parser.parse::<IndexOrCoreRef<'_, _>>()?.0,
+                    ))
+                } else if l.peek::<kw::post_return>() {
+                    parser.parse::<kw::post_return>()?;
+                    Ok(CanonOpt::PostReturn(
+                        parser.parse::<IndexOrCoreRef<'_, _>>()?.0,
+                    ))
                 } else {
                     Err(l.error())
                 }
@@ -190,8 +354,20 @@ impl<'a> Parse<'a> for CanonOpt<'a> {
     }
 }
 
-impl Default for kw::instance {
-    fn default() -> kw::instance {
-        kw::instance(Span::from_offset(0))
+fn parse_trailing_item_ref<'a, T>(kind: T, parser: Parser<'a>) -> Result<CoreItemRef<'a, T>> {
+    Ok(CoreItemRef {
+        kind,
+        idx: parser.parse()?,
+        export_name: parser.parse()?,
+    })
+}
+
+impl<'a> Parse<'a> for Vec<CanonOpt<'a>> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let mut funcs = Vec::new();
+        while !parser.is_empty() {
+            funcs.push(parser.parse()?);
+        }
+        Ok(funcs)
     }
 }

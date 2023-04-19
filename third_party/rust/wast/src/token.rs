@@ -38,6 +38,11 @@ impl Span {
         }
         (text.lines().count(), 0)
     }
+
+    
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
 }
 
 

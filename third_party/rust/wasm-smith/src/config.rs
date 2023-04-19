@@ -1,6 +1,8 @@
 
 
+use crate::InstructionKinds;
 use arbitrary::{Arbitrary, Result, Unstructured};
+use std::borrow::Cow;
 
 
 
@@ -60,6 +62,41 @@ pub trait Config: 'static + std::fmt::Debug {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn available_imports(&self) -> Option<Cow<'_, [u8]>> {
+        None
+    }
+
+    
+    
     fn min_funcs(&self) -> usize {
         0
     }
@@ -90,6 +127,12 @@ pub trait Config: 'static + std::fmt::Debug {
     
     fn max_exports(&self) -> usize {
         100
+    }
+
+    
+    
+    fn export_everything(&self) -> bool {
+        false
     }
 
     
@@ -183,6 +226,19 @@ pub trait Config: 'static + std::fmt::Debug {
     
     
     
+    fn max_table_elements(&self) -> u32 {
+        1_000_000
+    }
+
+    
+    
+    fn table_max_size_required(&self) -> bool {
+        false
+    }
+
+    
+    
+    
     
     fn max_instances(&self) -> usize {
         10
@@ -193,6 +249,22 @@ pub trait Config: 'static + std::fmt::Debug {
     
     
     fn max_modules(&self) -> usize {
+        10
+    }
+
+    
+    
+    
+    
+    fn max_components(&self) -> usize {
+        10
+    }
+
+    
+    
+    
+    
+    fn max_values(&self) -> usize {
         10
     }
 
@@ -237,10 +309,14 @@ pub trait Config: 'static + std::fmt::Debug {
 
     
     
+    
+    
     fn bulk_memory_enabled(&self) -> bool {
         false
     }
 
+    
+    
     
     
     fn reference_types_enabled(&self) -> bool {
@@ -249,10 +325,22 @@ pub trait Config: 'static + std::fmt::Debug {
 
     
     
+    
+    
     fn simd_enabled(&self) -> bool {
         false
     }
 
+    
+    
+    
+    
+    fn relaxed_simd_enabled(&self) -> bool {
+        false
+    }
+
+    
+    
     
     
     fn exceptions_enabled(&self) -> bool {
@@ -262,8 +350,22 @@ pub trait Config: 'static + std::fmt::Debug {
     
     
     
-    fn module_linking_enabled(&self) -> bool {
-        false
+    fn multi_value_enabled(&self) -> bool {
+        true
+    }
+
+    
+    
+    
+    fn saturating_float_to_int_enabled(&self) -> bool {
+        true
+    }
+
+    
+    
+    
+    fn sign_extension_ops_enabled(&self) -> bool {
+        true
     }
 
     
@@ -313,6 +415,40 @@ pub trait Config: 'static + std::fmt::Debug {
     fn canonicalize_nans(&self) -> bool {
         false
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn allowed_instructions(&self) -> InstructionKinds {
+        InstructionKinds::all()
+    }
+
+    
+    
+    
+    fn generate_custom_sections(&self) -> bool {
+        false
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn threads_enabled(&self) -> bool {
+        false
+    }
 }
 
 
@@ -336,50 +472,57 @@ impl Config for DefaultConfig {}
 #[derive(Clone, Debug)]
 #[allow(missing_docs)]
 pub struct SwarmConfig {
-    
-    pub max_types: usize,
-    pub max_imports: usize,
-    pub max_tags: usize,
-    pub max_funcs: usize,
-    pub max_globals: usize,
-    pub max_exports: usize,
+    pub allow_start_export: bool,
+    pub available_imports: Option<Vec<u8>>,
+    pub bulk_memory_enabled: bool,
+    pub canonicalize_nans: bool,
+    pub exceptions_enabled: bool,
+    pub export_everything: bool,
+    pub max_aliases: usize,
+    pub max_components: usize,
+    pub max_data_segments: usize,
     pub max_element_segments: usize,
     pub max_elements: usize,
-    pub max_data_segments: usize,
+    pub max_exports: usize,
+    pub max_funcs: usize,
+    pub max_globals: usize,
+    pub max_imports: usize,
+    pub max_instances: usize,
     pub max_instructions: usize,
     pub max_memories: usize,
-    pub min_uleb_size: u8,
-    pub max_tables: usize,
     pub max_memory_pages: u64,
-    pub bulk_memory_enabled: bool,
-    pub reference_types_enabled: bool,
-    pub module_linking_enabled: bool,
-    pub max_aliases: usize,
+    pub max_modules: usize,
     pub max_nesting_depth: usize,
-
-    
-    
+    pub max_tables: usize,
+    pub max_tags: usize,
+    pub max_type_size: u32,
+    pub max_types: usize,
+    pub max_values: usize,
     pub memory64_enabled: bool,
-    pub min_types: usize,
-    pub min_imports: usize,
-    pub min_tags: usize,
-    pub min_funcs: usize,
-    pub min_globals: usize,
-    pub min_exports: usize,
+    pub memory_max_size_required: bool,
+    pub memory_offset_choices: (u32, u32, u32),
     pub min_data_segments: usize,
     pub min_element_segments: usize,
     pub min_elements: usize,
+    pub min_exports: usize,
+    pub min_funcs: usize,
+    pub min_globals: usize,
+    pub min_imports: usize,
     pub min_memories: u32,
     pub min_tables: u32,
-    pub max_instances: usize,
-    pub max_modules: usize,
-    pub memory_offset_choices: (u32, u32, u32),
-    pub memory_max_size_required: bool,
+    pub min_tags: usize,
+    pub min_types: usize,
+    pub min_uleb_size: u8,
+    pub multi_value_enabled: bool,
+    pub reference_types_enabled: bool,
+    pub relaxed_simd_enabled: bool,
+    pub saturating_float_to_int_enabled: bool,
+    pub sign_extension_enabled: bool,
     pub simd_enabled: bool,
-    pub exceptions_enabled: bool,
-    pub allow_start_export: bool,
-    pub max_type_size: u32,
-    pub canonicalize_nans: bool,
+    pub threads_enabled: bool,
+    pub allowed_instructions: InstructionKinds,
+    pub max_table_elements: u32,
+    pub table_max_size_required: bool,
 }
 
 impl<'a> Arbitrary<'a> for SwarmConfig {
@@ -404,10 +547,26 @@ impl<'a> Arbitrary<'a> for SwarmConfig {
             max_tables,
             max_memory_pages: u.arbitrary()?,
             min_uleb_size: u.int_in_range(0..=5)?,
-            bulk_memory_enabled: u.arbitrary()?,
+            bulk_memory_enabled: reference_types_enabled || u.arbitrary()?,
             reference_types_enabled,
+            simd_enabled: u.arbitrary()?,
+            multi_value_enabled: u.arbitrary()?,
             max_aliases: u.int_in_range(0..=MAX_MAXIMUM)?,
             max_nesting_depth: u.int_in_range(0..=10)?,
+            saturating_float_to_int_enabled: u.arbitrary()?,
+            sign_extension_enabled: u.arbitrary()?,
+            allowed_instructions: {
+                use flagset::Flags;
+                let mut allowed = Vec::new();
+                for kind in crate::core::InstructionKind::LIST {
+                    if u.arbitrary()? {
+                        allowed.push(*kind);
+                    }
+                }
+                InstructionKinds::new(&allowed)
+            },
+            table_max_size_required: u.arbitrary()?,
+            max_table_elements: u.int_in_range(0..=1_000_000)?,
 
             
             
@@ -426,14 +585,18 @@ impl<'a> Arbitrary<'a> for SwarmConfig {
             memory_max_size_required: false,
             max_instances: 0,
             max_modules: 0,
+            max_components: 0,
+            max_values: 0,
             memory_offset_choices: (75, 24, 1),
             allow_start_export: true,
-            simd_enabled: false,
+            relaxed_simd_enabled: false,
             exceptions_enabled: false,
             memory64_enabled: false,
             max_type_size: 1000,
-            module_linking_enabled: false,
             canonicalize_nans: false,
+            available_imports: None,
+            threads_enabled: false,
+            export_everything: false,
         })
     }
 }
@@ -453,6 +616,12 @@ impl Config for SwarmConfig {
 
     fn max_imports(&self) -> usize {
         self.max_imports
+    }
+
+    fn available_imports(&self) -> Option<Cow<'_, [u8]>> {
+        self.available_imports
+            .as_ref()
+            .map(|is| Cow::Borrowed(&is[..]))
     }
 
     fn min_funcs(&self) -> usize {
@@ -477,6 +646,10 @@ impl Config for SwarmConfig {
 
     fn max_exports(&self) -> usize {
         self.max_exports
+    }
+
+    fn export_everything(&self) -> bool {
+        self.export_everything
     }
 
     fn min_element_segments(&self) -> usize {
@@ -559,16 +732,28 @@ impl Config for SwarmConfig {
         self.reference_types_enabled
     }
 
-    fn module_linking_enabled(&self) -> bool {
-        self.module_linking_enabled
-    }
-
     fn simd_enabled(&self) -> bool {
         self.simd_enabled
     }
 
+    fn relaxed_simd_enabled(&self) -> bool {
+        self.relaxed_simd_enabled
+    }
+
     fn exceptions_enabled(&self) -> bool {
         self.exceptions_enabled
+    }
+
+    fn multi_value_enabled(&self) -> bool {
+        self.multi_value_enabled
+    }
+
+    fn saturating_float_to_int_enabled(&self) -> bool {
+        self.saturating_float_to_int_enabled
+    }
+
+    fn sign_extension_ops_enabled(&self) -> bool {
+        self.sign_extension_enabled
     }
 
     fn allow_start_export(&self) -> bool {
@@ -583,11 +768,31 @@ impl Config for SwarmConfig {
         self.max_nesting_depth
     }
 
+    fn max_type_size(&self) -> u32 {
+        self.max_type_size
+    }
+
     fn memory64_enabled(&self) -> bool {
         self.memory64_enabled
     }
 
     fn canonicalize_nans(&self) -> bool {
         self.canonicalize_nans
+    }
+
+    fn threads_enabled(&self) -> bool {
+        self.threads_enabled
+    }
+
+    fn allowed_instructions(&self) -> InstructionKinds {
+        self.allowed_instructions
+    }
+
+    fn max_table_elements(&self) -> u32 {
+        self.max_table_elements
+    }
+
+    fn table_max_size_required(&self) -> bool {
+        self.table_max_size_required
     }
 }

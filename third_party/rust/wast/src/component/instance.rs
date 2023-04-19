@@ -2,7 +2,159 @@ use crate::component::*;
 use crate::core;
 use crate::kw;
 use crate::parser::{Parse, Parser, Result};
-use crate::token::{Id, Index, LParen, NameAnnotation, Span};
+use crate::token::{Id, LParen, NameAnnotation, Span};
+
+
+#[derive(Debug)]
+pub struct CoreInstance<'a> {
+    
+    pub span: Span,
+    
+    
+    pub id: Option<Id<'a>>,
+    
+    pub name: Option<NameAnnotation<'a>>,
+    
+    pub kind: CoreInstanceKind<'a>,
+}
+
+impl<'a> Parse<'a> for CoreInstance<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let span = parser.parse::<kw::core>()?.0;
+        parser.parse::<kw::instance>()?;
+        let id = parser.parse()?;
+        let name = parser.parse()?;
+        let kind = parser.parse()?;
+
+        Ok(Self {
+            span,
+            id,
+            name,
+            kind,
+        })
+    }
+}
+
+
+#[derive(Debug)]
+pub enum CoreInstanceKind<'a> {
+    
+    Instantiate {
+        
+        module: ItemRef<'a, kw::module>,
+        
+        args: Vec<CoreInstantiationArg<'a>>,
+    },
+    
+    BundleOfExports(Vec<CoreInstanceExport<'a>>),
+}
+
+impl<'a> Parse<'a> for CoreInstanceKind<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        if parser.peek::<LParen>() && parser.peek2::<kw::instantiate>() {
+            parser.parens(|parser| {
+                parser.parse::<kw::instantiate>()?;
+                Ok(Self::Instantiate {
+                    module: parser.parse::<IndexOrRef<'_, _>>()?.0,
+                    args: parser.parse()?,
+                })
+            })
+        } else {
+            Ok(Self::BundleOfExports(parser.parse()?))
+        }
+    }
+}
+
+impl Default for kw::module {
+    fn default() -> kw::module {
+        kw::module(Span::from_offset(0))
+    }
+}
+
+
+#[derive(Debug)]
+pub struct CoreInstantiationArg<'a> {
+    
+    pub name: &'a str,
+    
+    pub kind: CoreInstantiationArgKind<'a>,
+}
+
+impl<'a> Parse<'a> for CoreInstantiationArg<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        parser.parse::<kw::with>()?;
+        Ok(Self {
+            name: parser.parse()?,
+            kind: parser.parse()?,
+        })
+    }
+}
+
+impl<'a> Parse<'a> for Vec<CoreInstantiationArg<'a>> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let mut args = Vec::new();
+        while !parser.is_empty() {
+            args.push(parser.parens(|parser| parser.parse())?);
+        }
+        Ok(args)
+    }
+}
+
+
+#[derive(Debug)]
+pub enum CoreInstantiationArgKind<'a> {
+    
+    Instance(CoreItemRef<'a, kw::instance>),
+    
+    
+    
+    
+    BundleOfExports(Span, Vec<CoreInstanceExport<'a>>),
+}
+
+impl<'a> Parse<'a> for CoreInstantiationArgKind<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        parser.parens(|parser| {
+            if let Some(r) = parser.parse()? {
+                Ok(Self::Instance(r))
+            } else {
+                let span = parser.parse::<kw::instance>()?.0;
+                Ok(Self::BundleOfExports(span, parser.parse()?))
+            }
+        })
+    }
+}
+
+
+#[derive(Debug)]
+pub struct CoreInstanceExport<'a> {
+    
+    pub span: Span,
+    
+    pub name: &'a str,
+    
+    pub item: CoreItemRef<'a, core::ExportKind>,
+}
+
+impl<'a> Parse<'a> for CoreInstanceExport<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        Ok(Self {
+            span: parser.parse::<kw::export>()?.0,
+            name: parser.parse()?,
+            item: parser.parens(|parser| parser.parse())?,
+        })
+    }
+}
+
+impl<'a> Parse<'a> for Vec<CoreInstanceExport<'a>> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let mut exports = Vec::new();
+        while !parser.is_empty() {
+            exports.push(parser.parens(|parser| parser.parse())?);
+        }
+        Ok(exports)
+    }
+}
 
 
 #[derive(Debug)]
@@ -21,6 +173,24 @@ pub struct Instance<'a> {
     pub kind: InstanceKind<'a>,
 }
 
+impl<'a> Parse<'a> for Instance<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let span = parser.parse::<kw::instance>()?.0;
+        let id = parser.parse()?;
+        let name = parser.parse()?;
+        let exports = parser.parse()?;
+        let kind = parser.parse()?;
+
+        Ok(Self {
+            span,
+            id,
+            name,
+            exports,
+            kind,
+        })
+    }
+}
+
 
 #[derive(Debug)]
 pub enum InstanceKind<'a> {
@@ -31,223 +201,96 @@ pub enum InstanceKind<'a> {
         
         ty: ComponentTypeUse<'a, InstanceType<'a>>,
     },
-
     
-    Module {
-        
-        module: ItemRef<'a, kw::module>,
-        
-        args: Vec<NamedModuleArg<'a>>,
-    },
-
-    
-    Component {
+    Instantiate {
         
         component: ItemRef<'a, kw::component>,
         
-        args: Vec<NamedComponentArg<'a>>,
+        args: Vec<InstantiationArg<'a>>,
     },
-
     
-    
-    BundleOfExports {
-        
-        args: Vec<CoreExport<'a>>,
-    },
-
-    
-    
-    BundleOfComponentExports {
-        
-        args: Vec<ComponentExport<'a>>,
-    },
+    BundleOfExports(Vec<ComponentExport<'a>>),
 }
 
-
-#[derive(Debug)]
-#[allow(missing_docs)]
-pub struct NamedModuleArg<'a> {
-    pub name: &'a str,
-    pub arg: ModuleArg<'a>,
-}
-
-impl<'a> Parse<'a> for NamedModuleArg<'a> {
+impl<'a> Parse<'a> for InstanceKind<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        parser.parse::<kw::with>()?;
-        Ok(NamedModuleArg {
-            name: parser.parse()?,
-            arg: parser.parse()?,
-        })
+        if let Some(import) = parser.parse()? {
+            return Ok(Self::Import {
+                import,
+                ty: parser.parse()?,
+            });
+        }
+
+        if parser.peek::<LParen>() && parser.peek2::<kw::instantiate>() {
+            parser.parens(|parser| {
+                parser.parse::<kw::instantiate>()?;
+                Ok(Self::Instantiate {
+                    component: parser.parse::<IndexOrRef<'_, _>>()?.0,
+                    args: parser.parse()?,
+                })
+            })
+        } else {
+            Ok(Self::BundleOfExports(parser.parse()?))
+        }
+    }
+}
+
+impl Default for kw::component {
+    fn default() -> kw::component {
+        kw::component(Span::from_offset(0))
     }
 }
 
 
 #[derive(Debug)]
-#[allow(missing_docs)]
-pub struct NamedComponentArg<'a> {
+pub struct InstantiationArg<'a> {
+    
     pub name: &'a str,
-    pub arg: ComponentArg<'a>,
+    
+    pub kind: InstantiationArgKind<'a>,
 }
 
-impl<'a> Parse<'a> for NamedComponentArg<'a> {
+impl<'a> Parse<'a> for InstantiationArg<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         parser.parse::<kw::with>()?;
-        Ok(NamedComponentArg {
+        Ok(Self {
             name: parser.parse()?,
-            arg: parser.parse()?,
+            kind: parser.parse()?,
         })
     }
 }
 
-
-
-
-
-#[derive(Debug)]
-pub enum ModuleArg<'a> {
-    
-    Def(ItemRef<'a, kw::instance>),
-    
-    
-    BundleOfExports(Span, Vec<CoreExport<'a>>),
+impl<'a> Parse<'a> for Vec<InstantiationArg<'a>> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let mut args = Vec::new();
+        while !parser.is_empty() {
+            args.push(parser.parens(|parser| parser.parse())?);
+        }
+        Ok(args)
+    }
 }
 
 
-
-
-
-
-
-
-
 #[derive(Debug)]
-pub enum ComponentArg<'a> {
+pub enum InstantiationArgKind<'a> {
     
-    Def(ItemRef<'a, DefTypeKind>),
+    Item(ComponentExportKind<'a>),
+    
+    
     
     
     BundleOfExports(Span, Vec<ComponentExport<'a>>),
 }
 
-impl<'a> Parse<'a> for Instance<'a> {
+impl<'a> Parse<'a> for InstantiationArgKind<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        let span = parser.parse::<kw::instance>()?.0;
-        let id = parser.parse()?;
-        let name = parser.parse()?;
-        let exports = parser.parse()?;
-
-        let kind = if let Some(import) = parser.parse()? {
-            InstanceKind::Import {
-                import,
-                ty: parser.parse()?,
-            }
-        } else if parser.peek::<LParen>() && parser.peek2::<kw::instantiate>() {
-            parser.parens(|p| {
-                p.parse::<kw::instantiate>()?;
-                if p.peek2::<kw::module>() {
-                    let module = p.parse()?;
-                    let mut args = Vec::new();
-                    while !p.is_empty() {
-                        args.push(p.parens(|p| p.parse())?);
-                    }
-                    Ok(InstanceKind::Module { module, args })
-                } else if p.peek2::<kw::component>() {
-                    let component = p.parse()?;
-                    let mut args = Vec::new();
-                    while !p.is_empty() {
-                        args.push(p.parens(|p| p.parse())?);
-                    }
-                    Ok(InstanceKind::Component { component, args })
-                } else {
-                    return Err(parser.error("expected module or component"));
-                }
-            })?
-        } else if parser.peek::<kw::core>() {
-            parser.parse::<kw::core>()?;
-            let mut args = Vec::new();
-            while !parser.is_empty() {
-                args.push(parser.parens(|p| p.parse())?);
-            }
-            InstanceKind::BundleOfExports { args }
+        if let Some(item) = parser.parse()? {
+            Ok(Self::Item(item))
         } else {
-            let mut args = Vec::new();
-            while !parser.is_empty() {
-                args.push(parser.parens(|p| p.parse())?);
-            }
-            InstanceKind::BundleOfComponentExports { args }
-        };
-
-        Ok(Instance {
-            span,
-            id,
-            name,
-            exports,
-            kind,
-        })
-    }
-}
-
-impl<'a> Parse<'a> for ModuleArg<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        if parser.peek::<ItemRef<'a, kw::instance>>() && parser.peek3::<Index>() {
-            
-            let def = parser.parse::<ItemRef<kw::instance>>()?;
-            Ok(ModuleArg::Def(def))
-        } else if parser.peek::<LParen>() && parser.peek2::<kw::instance>() {
-            let (span, exports) = parser.parens(|p| {
-                let span = p.parse::<kw::instance>()?.0;
-                let mut exports = Vec::new();
-                while !parser.is_empty() {
-                    exports.push(parser.parens(|parser| parser.parse())?);
-                }
-                Ok((span, exports))
-            })?;
-            Ok(ModuleArg::BundleOfExports(span, exports))
-        } else {
-            Err(parser.error("expected an instance"))
+            parser.parens(|parser| {
+                let span = parser.parse::<kw::instance>()?.0;
+                Ok(Self::BundleOfExports(span, parser.parse()?))
+            })
         }
-    }
-}
-
-impl<'a> Parse<'a> for ComponentArg<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        if parser.peek::<ItemRef<'a, DefTypeKind>>() && parser.peek3::<Index>() {
-            
-            let def = parser.parse::<ItemRef<'a, DefTypeKind>>()?;
-            Ok(ComponentArg::Def(def))
-        } else if parser.peek::<LParen>() && parser.peek2::<kw::instance>() {
-            let (span, exports) = parser.parens(|p| {
-                let span = p.parse::<kw::instance>()?.0;
-                let mut exports = Vec::new();
-                while !p.is_empty() {
-                    exports.push(p.parens(|p| p.parse())?);
-                }
-                Ok((span, exports))
-            })?;
-            Ok(ComponentArg::BundleOfExports(span, exports))
-        } else {
-            Err(parser.error("expected def type, type, or instance"))
-        }
-    }
-}
-
-
-#[derive(Debug)]
-pub struct CoreExport<'a> {
-    
-    pub span: Span,
-    
-    pub name: &'a str,
-    
-    pub index: ItemRef<'a, core::ExportKind>,
-}
-
-impl<'a> Parse<'a> for CoreExport<'a> {
-    fn parse(parser: Parser<'a>) -> Result<Self> {
-        Ok(CoreExport {
-            span: parser.parse::<kw::export>()?.0,
-            name: parser.parse()?,
-            index: parser.parse()?,
-        })
     }
 }

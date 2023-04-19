@@ -82,6 +82,18 @@ use std::usize;
 
 
 
+pub(crate) const MAX_PARENS_DEPTH: usize = 100;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -388,7 +400,7 @@ impl ParseBuffer<'_> {
 
                 
                 
-                (Reserved(s), State::LParen) if s.starts_with("@") && s.len() > 0 => {
+                (Reserved(s), State::LParen) if s.starts_with('@') && !s.is_empty() => {
                     let offset = self.input_pos(s);
                     State::Annotation {
                         span: Span { offset },
@@ -415,7 +427,7 @@ impl ParseBuffer<'_> {
             };
         }
         if let State::Annotation { span, .. } = state {
-            return Err(Error::new(span, format!("unclosed annotation")));
+            return Err(Error::new(span, "unclosed annotation".to_string()));
         }
         Ok(())
     }
@@ -702,7 +714,7 @@ impl<'a> Parser<'a> {
         if res.is_err() {
             self.buf.cur.set(before);
         }
-        return res;
+        res
     }
 
     
@@ -711,6 +723,15 @@ impl<'a> Parser<'a> {
     
     pub fn parens_depth(&self) -> usize {
         self.buf.depth.get()
+    }
+
+    
+    pub(crate) fn depth_check(&self) -> Result<()> {
+        if self.parens_depth() > MAX_PARENS_DEPTH {
+            Err(self.error("item nesting too deep"))
+        } else {
+            Ok(())
+        }
     }
 
     fn cursor(self) -> Cursor<'a> {
@@ -756,7 +777,9 @@ impl<'a> Parser<'a> {
 
     
     pub fn prev_span(&self) -> Span {
-        self.cursor().prev_span().unwrap_or(Span::from_offset(0))
+        self.cursor()
+            .prev_span()
+            .unwrap_or_else(|| Span::from_offset(0))
     }
 
     
@@ -1087,7 +1110,7 @@ impl<'a> Cursor<'a> {
     
     pub fn annotation(self) -> Option<(&'a str, Self)> {
         let (token, cursor) = self.reserved()?;
-        if !token.starts_with("@") || token.len() <= 1 {
+        if !token.starts_with('@') || token.len() <= 1 {
             return None;
         }
         match &self.parser.buf.tokens.get(self.cur.wrapping_sub(1))?.0 {
@@ -1183,7 +1206,7 @@ impl<'a> Cursor<'a> {
             Some(Token::Reserved(n)) => n,
             _ => return None,
         };
-        if reserved.starts_with("@") && reserved.len() > 1 {
+        if reserved.starts_with('@') && reserved.len() > 1 {
             Some(&reserved[1..])
         } else {
             None

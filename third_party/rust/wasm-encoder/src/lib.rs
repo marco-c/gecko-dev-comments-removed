@@ -70,199 +70,104 @@
 
 #![deny(missing_docs, missing_debug_implementations)]
 
-mod aliases;
-mod code;
-mod custom;
-mod data;
-mod elements;
-mod exports;
-mod functions;
-mod globals;
-mod imports;
-mod instances;
-mod linking;
-mod memories;
-mod modules;
-mod start;
-mod tables;
-mod tags;
-mod types;
+mod component;
+mod core;
+mod raw;
 
-pub use aliases::*;
-pub use code::*;
-pub use custom::*;
-pub use data::*;
-pub use elements::*;
-pub use exports::*;
-pub use functions::*;
-pub use globals::*;
-pub use imports::*;
-pub use instances::*;
-pub use linking::*;
-pub use memories::*;
-pub use modules::*;
-pub use start::*;
-pub use tables::*;
-pub use tags::*;
-pub use types::*;
-
-pub mod encoders;
-
-use std::convert::TryFrom;
+pub use self::component::*;
+pub use self::core::*;
+pub use self::raw::*;
 
 
-#[derive(Clone, Debug)]
-pub struct Module {
-    bytes: Vec<u8>,
+pub trait Encode {
+    
+    fn encode(&self, sink: &mut Vec<u8>);
 }
 
-
-
-
-
-
-pub trait Section {
-    
-    
-    
-    fn id(&self) -> u8;
-
-    
-    fn encode<S>(&self, sink: &mut S)
-    where
-        S: Extend<u8>;
-}
-
-
-
-
-#[derive(Clone, Copy, Debug)]
-pub struct RawSection<'a> {
-    
-    pub id: u8,
-    
-    pub data: &'a [u8],
-}
-
-impl Section for RawSection<'_> {
-    fn id(&self) -> u8 {
-        self.id
-    }
-
-    fn encode<S>(&self, sink: &mut S)
-    where
-        S: Extend<u8>,
-    {
-        sink.extend(
-            encoders::u32(u32::try_from(self.data.len()).unwrap()).chain(self.data.iter().copied()),
-        );
+impl<T: Encode + ?Sized> Encode for &'_ T {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        T::encode(self, sink)
     }
 }
 
-impl Module {
-    
-    #[rustfmt::skip]
-    pub fn new() -> Self {
-        Module {
-            bytes: vec![
-                // Magic
-                0x00, 0x61, 0x73, 0x6D,
-                // Version
-                0x01, 0x00, 0x00, 0x00,
-            ],
+impl<T: Encode> Encode for [T] {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        self.len().encode(sink);
+        for item in self {
+            item.encode(sink);
         }
     }
+}
 
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn section(&mut self, section: &impl Section) -> &mut Self {
-        self.bytes.push(section.id());
-        section.encode(&mut self.bytes);
-        self
-    }
-
-    
-    pub fn as_slice(&self) -> &[u8] {
-        &self.bytes
-    }
-
-    
-    
-    pub fn finish(self) -> Vec<u8> {
-        self.bytes
+impl Encode for [u8] {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        self.len().encode(sink);
+        sink.extend(self);
     }
 }
 
-
-
-
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
-#[repr(u8)]
-#[allow(missing_docs)]
-pub enum SectionId {
-    Custom = 0,
-    Type = 1,
-    Import = 2,
-    Function = 3,
-    Table = 4,
-    Memory = 5,
-    Global = 6,
-    Export = 7,
-    Start = 8,
-    Element = 9,
-    Code = 10,
-    Data = 11,
-    DataCount = 12,
-    Tag = 13,
-    Module = 14,
-    Instance = 15,
-    Alias = 16,
-}
-
-impl From<SectionId> for u8 {
-    #[inline]
-    fn from(id: SectionId) -> u8 {
-        id as u8
+impl Encode for str {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        self.len().encode(sink);
+        sink.extend_from_slice(self.as_bytes());
     }
 }
 
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum ValType {
-    
-    I32 = 0x7F,
-    
-    I64 = 0x7E,
-    
-    F32 = 0x7D,
-    
-    F64 = 0x7C,
-    
-    
-    
-    V128 = 0x7B,
-    
-    
-    
-    
-    FuncRef = 0x70,
-    
-    
-    
-    ExternRef = 0x6F,
+impl Encode for usize {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        assert!(*self <= u32::max_value() as usize);
+        (*self as u32).encode(sink)
+    }
 }
 
-impl From<ValType> for u8 {
-    #[inline]
-    fn from(t: ValType) -> u8 {
-        t as u8
+impl Encode for u32 {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        leb128::write::unsigned(sink, (*self).into()).unwrap();
+    }
+}
+
+impl Encode for i32 {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        leb128::write::signed(sink, (*self).into()).unwrap();
+    }
+}
+
+impl Encode for u64 {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        leb128::write::unsigned(sink, *self).unwrap();
+    }
+}
+
+impl Encode for i64 {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        leb128::write::signed(sink, *self).unwrap();
+    }
+}
+
+fn encoding_size(n: u32) -> usize {
+    let mut buf = [0u8; 5];
+    leb128::write::unsigned(&mut &mut buf[..], n.into()).unwrap()
+}
+
+fn encode_section(sink: &mut Vec<u8>, count: u32, bytes: &[u8]) {
+    (encoding_size(count) + bytes.len()).encode(sink);
+    count.encode(sink);
+    sink.extend(bytes);
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn it_encodes_an_empty_module() {
+        let bytes = Module::new().finish();
+        assert_eq!(bytes, [0x00, b'a', b's', b'm', 0x01, 0x00, 0x00, 0x00]);
+    }
+
+    #[test]
+    fn it_encodes_an_empty_component() {
+        let bytes = Component::new().finish();
+        assert_eq!(bytes, [0x00, b'a', b's', b'm', 0x0a, 0x00, 0x01, 0x00]);
     }
 }

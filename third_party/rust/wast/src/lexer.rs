@@ -95,6 +95,7 @@ pub enum Token<'a> {
 
 
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum LexError {
     
     
@@ -147,9 +148,6 @@ pub enum LexError {
     
     
     ConfusingUnicode(char),
-
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 
@@ -746,8 +744,7 @@ impl<'a> Lexer<'a> {
                         'u' => {
                             Lexer::must_eat_char(it, '{')?;
                             let n = Lexer::hexnum(it)?;
-                            let c = char::from_u32(n)
-                                .ok_or_else(|| LexError::InvalidUnicodeValue(n))?;
+                            let c = char::from_u32(n).ok_or(LexError::InvalidUnicodeValue(n))?;
                             buf.extend(c.encode_utf8(&mut [0; 4]).as_bytes());
                             Lexer::must_eat_char(it, '}')?;
                         }
@@ -944,7 +941,6 @@ impl fmt::Display for LexError {
             InvalidUnicodeValue(c) => write!(f, "invalid unicode scalar value 0x{:x}", c)?,
             LoneUnderscore => write!(f, "bare underscore in numeric literal")?,
             ConfusingUnicode(c) => write!(f, "likely-confusing unicode character found {:?}", c)?,
-            __Nonexhaustive => unreachable!(),
         }
         Ok(())
     }

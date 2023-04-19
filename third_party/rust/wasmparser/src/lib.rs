@@ -23,20 +23,17 @@
 
 
 
-pub use crate::binary_reader::BinaryReader;
-pub use crate::binary_reader::Range;
+#![deny(missing_docs)]
 
-pub use crate::module_resources::*;
+pub use crate::binary_reader::{BinaryReader, BinaryReaderError, Result};
 pub use crate::parser::*;
-pub use crate::primitives::*;
 pub use crate::readers::*;
+pub use crate::resources::*;
 pub use crate::validator::*;
 
 mod binary_reader;
 mod limits;
-mod module_resources;
-mod operators_validator;
 mod parser;
-mod primitives;
 mod readers;
+mod resources;
 mod validator;

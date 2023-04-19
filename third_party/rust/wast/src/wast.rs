@@ -227,7 +227,7 @@ impl<'a> Parse<'a> for WastExecute<'a> {
     }
 }
 
-fn parse_wat<'a>(parser: Parser<'a>) -> Result<Wat<'a>> {
+fn parse_wat(parser: Parser) -> Result<Wat> {
     
     
     
@@ -293,11 +293,11 @@ impl QuoteWat<'_> {
                     return Err(Error::new(*span, "malformed UTF-8 encoding".to_string()));
                 }
             }
-            ret.push_str(" ");
+            ret.push(' ');
         }
         if let Some(prefix) = prefix {
             ret.insert_str(0, prefix);
-            ret.push_str(")");
+            ret.push(')');
         }
         let buf = ParseBuffer::new(&ret)?;
         let mut wat = parser::parse::<Wat<'_>>(&buf)?;
