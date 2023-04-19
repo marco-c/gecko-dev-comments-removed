@@ -592,8 +592,11 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
                    ErrorResult& aError);
 
   
-  virtual bool SetFontInternal(const nsACString& aFont,
-                               mozilla::ErrorResult& aError);
+  bool SetFontInternal(const nsACString& aFont, mozilla::ErrorResult& aError);
+
+  
+  bool SetFontInternalDisconnected(const nsACString& aFont,
+                                   mozilla::ErrorResult& aError);
 
   
   
