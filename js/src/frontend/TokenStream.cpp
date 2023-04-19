@@ -1905,34 +1905,46 @@ template <typename Unit, class AnyCharsAccess>
 TokenStreamSpecific<Unit, AnyCharsAccess>::matchIdentifierStart(
     IdentifierEscapes* sawEscape) {
   int32_t unit = getCodeUnit();
-  if (unicode::IsIdentifierStart(char16_t(unit))) {
-    ungetCodeUnit(unit);
+  if (unit == EOF) {
+    error(JSMSG_MISSING_PRIVATE_NAME);
+    return false;
+  }
+
+  if (MOZ_LIKELY(isAsciiCodePoint(unit))) {
+    if (unicode::IsIdentifierStart(char16_t(unit))) {
+      *sawEscape = IdentifierEscapes::None;
+      return true;
+    }
+
+    if (unit == '\\') {
+      char32_t codePoint;
+      uint32_t escapeLength = matchUnicodeEscapeIdStart(&codePoint);
+      if (escapeLength != 0) {
+        *sawEscape = IdentifierEscapes::SawUnicodeEscape;
+        return true;
+      }
+
+      
+      
+      
+      
+      ungetCodeUnit('\\');
+      error(JSMSG_BAD_ESCAPE);
+      return false;
+    }
+  }
+
+  
+  ungetCodeUnit(unit);
+
+  PeekedCodePoint<Unit> peeked = this->sourceUnits.peekCodePoint();
+  if (!peeked.isNone() && unicode::IsIdentifierStart(peeked.codePoint())) {
+    this->sourceUnits.consumeKnownCodePoint(peeked);
+
     *sawEscape = IdentifierEscapes::None;
     return true;
   }
 
-  if (unit == '\\') {
-    *sawEscape = IdentifierEscapes::SawUnicodeEscape;
-
-    char32_t codePoint;
-    uint32_t escapeLength = matchUnicodeEscapeIdStart(&codePoint);
-    if (escapeLength != 0) {
-      return true;
-    }
-
-    
-    
-    
-    
-    ungetCodeUnit('\\');
-    error(JSMSG_BAD_ESCAPE);
-    return false;
-  }
-
-  *sawEscape = IdentifierEscapes::None;
-
-  
-  ungetCodeUnit(unit);
   error(JSMSG_MISSING_PRIVATE_NAME);
   return false;
 }
