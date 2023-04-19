@@ -930,10 +930,13 @@ var SessionStoreInternal = {
             delete aWindow.__lastSessionWindowID;
           });
         }
-        
-        
-        state.windows.forEach(win => delete win._maybeDontRestoreTabs);
-        state._closedWindows.forEach(win => delete win._maybeDontRestoreTabs);
+
+        if (state?.windows) {
+          
+          
+          state.windows.forEach(win => delete win._maybeDontRestoreTabs);
+          state._closedWindows.forEach(win => delete win._maybeDontRestoreTabs);
+        }
       } catch (ex) {
         this._log.error("The session file is invalid: " + ex);
       }
