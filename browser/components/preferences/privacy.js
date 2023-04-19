@@ -2082,15 +2082,12 @@ var gPrivacyPane = {
     const bestMatchLearnMoreLink = document.getElementById(
       "firefoxSuggestBestMatchLearnMore"
     );
-    bestMatchLearnMoreLink.setAttribute(
-      "href",
-      UrlbarProviderQuickSuggest.bestMatchHelpUrl
-    );
+    bestMatchLearnMoreLink.setAttribute("href", QuickSuggest.HELP_URL);
 
     
     let links = document.querySelectorAll(".firefoxSuggestLearnMore");
     for (let link of links) {
-      link.setAttribute("href", UrlbarProviderQuickSuggest.helpUrl);
+      link.setAttribute("href", QuickSuggest.HELP_URL);
     }
 
     this._updateFirefoxSuggestSection(true);
