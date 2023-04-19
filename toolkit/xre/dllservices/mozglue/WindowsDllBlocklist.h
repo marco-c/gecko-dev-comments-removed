@@ -19,7 +19,8 @@
 enum DllBlocklistInitFlags {
   eDllBlocklistInitFlagDefault = 0,
   eDllBlocklistInitFlagIsChildProcess = 1,
-  eDllBlocklistInitFlagWasBootstrapped = 2
+  eDllBlocklistInitFlagWasBootstrapped = 2,
+  eDllBlocklistInitFlagIsUtilityProcess = 4
 };
 
 
