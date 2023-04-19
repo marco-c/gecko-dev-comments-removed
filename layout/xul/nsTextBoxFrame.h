@@ -62,6 +62,13 @@ class nsTextBoxFrame final : public nsLeafBoxFrame {
 
   virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
+  
+  
+  static void CropStringForWidth(nsAString& aText,
+                                 gfxContext& aRenderingContext,
+                                 nsFontMetrics& aFontMetrics, nscoord aWidth,
+                                 CroppingStyle aCropType);
+
  protected:
   friend class nsAsyncAccesskeyUpdate;
   friend class mozilla::nsDisplayXULTextBox;
