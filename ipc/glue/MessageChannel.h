@@ -293,22 +293,6 @@ class MessageChannel : HasResultCodes {
 
   
   
-  
-  
-  
-  void BeginPostponingSends() EXCLUDES(*mMonitor);
-
-  
-  
-  
-  
-  
-  
-  
-  void StopPostponingSends() EXCLUDES(*mMonitor);
-
-  
-  
   bool IsClosed() EXCLUDES(*mMonitor) {
     MonitorAutoLock lock(*mMonitor);
     return IsClosedLocked();
@@ -751,11 +735,6 @@ class MessageChannel : HasResultCodes {
 
   
   ChannelFlags mFlags = REQUIRE_DEFAULT;
-
-  
-  
-  bool mIsPostponingSends GUARDED_BY(*mMonitor) = false;
-  std::vector<UniquePtr<Message>> mPostponedSends GUARDED_BY(*mMonitor);
 
   bool mBuildIDsConfirmedMatch GUARDED_BY(*mMonitor) = false;
 
