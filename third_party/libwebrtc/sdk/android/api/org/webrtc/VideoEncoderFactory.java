@@ -28,6 +28,16 @@ public interface VideoEncoderFactory {
 
 
 
+    @Nullable
+    @CalledByNative("VideoEncoderSelector")
+    default VideoCodecInfo onResolutionChange(int widht, int height) {
+      return null;
+    }
+
+    
+
+
+
 
     @Nullable @CalledByNative("VideoEncoderSelector") VideoCodecInfo onEncoderBroken();
   }

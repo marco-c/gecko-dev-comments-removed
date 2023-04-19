@@ -17,6 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "api/units/data_rate.h"
+#include "api/video/render_resolution.h"
 #include "api/video_codecs/sdp_video_format.h"
 
 namespace webrtc {
@@ -46,6 +47,13 @@ class VideoEncoderFactory {
     
     virtual absl::optional<SdpVideoFormat> OnAvailableBitrate(
         const DataRate& rate) = 0;
+
+    
+    
+    virtual absl::optional<SdpVideoFormat> OnResolutionChange(
+        const RenderResolution& resolution) {
+      return absl::nullopt;
+    }
 
     
     
