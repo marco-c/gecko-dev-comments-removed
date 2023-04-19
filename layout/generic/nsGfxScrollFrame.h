@@ -274,7 +274,9 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
 
 
-  void ScrollToCSSPixelsForApz(const mozilla::CSSPoint& aScrollPosition);
+  void ScrollToCSSPixelsForApz(
+      const mozilla::CSSPoint& aScrollPosition,
+      mozilla::ScrollSnapTargetIds&& aLastSnapTargetIds);
 
   CSSIntPoint GetScrollPositionCSSPixels();
   
@@ -1102,8 +1104,11 @@ class nsHTMLScrollFrame : public nsContainerFrame,
                          ScrollMode aMode = ScrollMode::Instant) final {
     mHelper.ScrollToCSSPixels(aScrollPosition, aMode);
   }
-  void ScrollToCSSPixelsForApz(const mozilla::CSSPoint& aScrollPosition) final {
-    mHelper.ScrollToCSSPixelsForApz(aScrollPosition);
+  void ScrollToCSSPixelsForApz(
+      const mozilla::CSSPoint& aScrollPosition,
+      mozilla::ScrollSnapTargetIds&& aLastSnapTargetIds) final {
+    mHelper.ScrollToCSSPixelsForApz(aScrollPosition,
+                                    std::move(aLastSnapTargetIds));
   }
   
 
@@ -1581,8 +1586,11 @@ class nsXULScrollFrame final : public nsBoxFrame,
                          ScrollMode aMode = ScrollMode::Instant) final {
     mHelper.ScrollToCSSPixels(aScrollPosition, aMode);
   }
-  void ScrollToCSSPixelsForApz(const mozilla::CSSPoint& aScrollPosition) final {
-    mHelper.ScrollToCSSPixelsForApz(aScrollPosition);
+  void ScrollToCSSPixelsForApz(
+      const mozilla::CSSPoint& aScrollPosition,
+      mozilla::ScrollSnapTargetIds&& aLastSnapTargetIds) final {
+    mHelper.ScrollToCSSPixelsForApz(aScrollPosition,
+                                    std::move(aLastSnapTargetIds));
   }
   CSSIntPoint GetScrollPositionCSSPixels() final {
     return mHelper.GetScrollPositionCSSPixels();

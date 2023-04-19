@@ -1521,7 +1521,7 @@ class AsyncPanZoomController {
 
   
   
-  void SmoothMsdScrollTo(const CSSPoint& aDestination,
+  void SmoothMsdScrollTo(CSSSnapTarget&& aDestination,
                          ScrollTriggeredByScript aTriggeredByScript);
 
   
@@ -1754,6 +1754,7 @@ class AsyncPanZoomController {
   
   TimeDuration mTouchStartRestingTimeBeforePan;
   Maybe<ParentLayerCoord> mMinimumVelocityDuringPan;
+  ScrollSnapTargetIds mLastSnapTargetIds;
   
   CSSPoint mTestAsyncScrollOffset;
   
@@ -1794,20 +1795,19 @@ class AsyncPanZoomController {
   
   
   
-  bool MaybeAdjustDeltaForScrollSnapping(ScrollUnit aUnit,
-                                         ScrollSnapFlags aFlags,
-                                         ParentLayerPoint& aDelta,
-                                         CSSPoint& aStartPosition);
+  Maybe<CSSSnapTarget> MaybeAdjustDeltaForScrollSnapping(
+      ScrollUnit aUnit, ScrollSnapFlags aSnapFlags, ParentLayerPoint& aDelta,
+      CSSPoint& aStartPosition);
 
   
   
-  bool MaybeAdjustDeltaForScrollSnappingOnWheelInput(
+  Maybe<CSSSnapTarget> MaybeAdjustDeltaForScrollSnappingOnWheelInput(
       const ScrollWheelInput& aEvent, ParentLayerPoint& aDelta,
       CSSPoint& aStartPosition);
 
-  bool MaybeAdjustDestinationForScrollSnapping(const KeyboardInput& aEvent,
-                                               CSSPoint& aDestination,
-                                               ScrollSnapFlags aSnapFlags);
+  Maybe<CSSSnapTarget> MaybeAdjustDestinationForScrollSnapping(
+      const KeyboardInput& aEvent, CSSPoint& aDestination,
+      ScrollSnapFlags aSnapFlags);
 
   
   void ScrollSnap(ScrollSnapFlags aSnapFlags);
@@ -1824,9 +1824,9 @@ class AsyncPanZoomController {
   
   
   
-  Maybe<CSSPoint> FindSnapPointNear(const CSSPoint& aDestination,
-                                    ScrollUnit aUnit,
-                                    ScrollSnapFlags aSnapFlags);
+  Maybe<CSSSnapTarget> FindSnapPointNear(const CSSPoint& aDestination,
+                                         ScrollUnit aUnit,
+                                         ScrollSnapFlags aSnapFlags);
 
   friend std::ostream& operator<<(
       std::ostream& aOut, const AsyncPanZoomController::PanZoomState& aState);
