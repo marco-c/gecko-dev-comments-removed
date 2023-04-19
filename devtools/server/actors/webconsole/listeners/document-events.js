@@ -8,7 +8,6 @@
 
 const EventEmitter = require("devtools/shared/event-emitter");
 const { Ci } = require("chrome");
-const ChromeUtils = require("ChromeUtils");
 
 
 

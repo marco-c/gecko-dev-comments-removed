@@ -5,7 +5,6 @@
 "use strict";
 
 const { Ci } = require("chrome");
-const ChromeUtils = require("ChromeUtils");
 
 
 

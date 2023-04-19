@@ -15,10 +15,10 @@ module.exports = {
     "^devtools/shared/DevToolsUtils": `${fixturesDir}/devtools-utils`,
     
     "shared/DevToolsUtils$": `${fixturesDir}/devtools-utils`,
-    "^ChromeUtils": `${fixturesDir}/ChromeUtils`,
 
     
     "Services-mock": `${fixturesDir}/Services`,
+    "ChromeUtils-mock": `${fixturesDir}/ChromeUtils`,
 
     "^promise": `${fixturesDir}/promise`,
     "^chrome": `${fixturesDir}/Chrome`,

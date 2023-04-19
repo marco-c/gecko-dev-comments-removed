@@ -3,7 +3,6 @@
 
 "use strict";
 
-const ChromeUtils = require("ChromeUtils");
 const { Cu } = require("chrome");
 
 
