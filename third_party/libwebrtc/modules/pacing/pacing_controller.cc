@@ -112,8 +112,6 @@ PacingController::PacingController(Clock* clock,
       send_padding_if_silent_(
           IsEnabled(*field_trials_, "WebRTC-Pacer-PadInSilence")),
       pace_audio_(IsEnabled(*field_trials_, "WebRTC-Pacer-BlockAudio")),
-      small_first_probe_packet_(
-          !IsDisabled(*field_trials_, "WebRTC-Pacer-SmallFirstProbePacket")),
       ignore_transport_overhead_(
           IsEnabled(*field_trials_, "WebRTC-Pacer-IgnoreTransportOverhead")),
       padding_target_duration_(GetDynamicPaddingTarget(*field_trials_)),
@@ -519,7 +517,7 @@ void PacingController::ProcessPackets() {
   
   
   while (!paused_) {
-    if (small_first_probe_packet_ && first_packet_in_probe) {
+    if (first_packet_in_probe) {
       
       
       auto padding = packet_sender_->GeneratePadding(DataSize::Bytes(1));

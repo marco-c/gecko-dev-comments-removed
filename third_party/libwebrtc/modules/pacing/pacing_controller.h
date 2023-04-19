@@ -182,7 +182,6 @@ class PacingController {
   const bool drain_large_queues_;
   const bool send_padding_if_silent_;
   const bool pace_audio_;
-  const bool small_first_probe_packet_;
   const bool ignore_transport_overhead_;
   
   
