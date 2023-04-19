@@ -19,6 +19,7 @@
 
 #include "absl/types/optional.h"
 #include "api/call/transport.h"
+#include "api/units/time_delta.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
@@ -42,6 +43,32 @@ class RtcEventLog;
 
 class RTCPSender final {
  public:
+  struct Configuration {
+    
+    
+    static Configuration FromRtpRtcpConfiguration(
+        const RtpRtcpInterface::Configuration& config);
+
+    
+    
+    bool audio = false;
+    
+    
+    uint32_t local_media_ssrc = 0;
+    
+    Clock* clock = nullptr;
+    
+    
+    Transport* outgoing_transport = nullptr;
+    
+    
+    bool non_sender_rtt_measurement = false;
+
+    RtcEventLog* event_log = nullptr;
+    absl::optional<TimeDelta> rtcp_report_interval;
+    ReceiveStatisticsProvider* receive_statistics = nullptr;
+    RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer = nullptr;
+  };
   struct FeedbackState {
     FeedbackState();
     FeedbackState(const FeedbackState&);
@@ -63,6 +90,9 @@ class RTCPSender final {
     RTCPReceiver* receiver;
   };
 
+  explicit RTCPSender(const Configuration& config);
+  
+  
   explicit RTCPSender(const RtpRtcpInterface::Configuration& config);
 
   RTCPSender() = delete;
