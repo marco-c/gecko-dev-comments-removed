@@ -626,16 +626,6 @@ nsresult nsStandardURL::NormalizeIDN(const nsCString& host, nsCString& result) {
 
   
   
-  
-  bool isACE = false;
-  if (IsAscii(host) && NS_SUCCEEDED(gIDN->IsACE(host, &isACE)) && !isACE) {
-    mCheckedIfHostA = true;
-    result = host;
-    return NS_OK;
-  }
-
-  
-  
   rv = gIDN->ConvertUTF8toACE(host, result);
   if (NS_FAILED(rv)) {
     return rv;
