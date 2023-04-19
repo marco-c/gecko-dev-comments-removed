@@ -81,12 +81,6 @@ class WorkerDescriptorFront extends DescriptorMixin(
         return this;
       }
 
-      
-      
-      if (!this.traits.doNotAttach) {
-        await super.attach();
-      }
-
       if (this.isServiceWorker) {
         this.registration = await this._getRegistrationIfActive();
         if (this.registration) {

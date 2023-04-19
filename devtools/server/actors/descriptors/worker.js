@@ -65,11 +65,7 @@ const WorkerDescriptorActor = protocol.ActorClassWithSpec(
         threadActor: this._threadActor,
         id: this._dbg.id,
         url: this._dbg.url,
-        traits: {
-          
-          
-          doNotAttach: true,
-        },
+        traits: {},
         type: this._dbg.type,
       };
       if (this._dbg.type === Ci.nsIWorkerDebugger.TYPE_SERVICE) {
