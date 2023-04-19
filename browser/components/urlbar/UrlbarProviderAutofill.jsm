@@ -626,18 +626,6 @@ class ProviderAutofill extends UrlbarProvider {
       return [];
     }
 
-    
-    let urlCondition;
-    if (this._strippedPrefix) {
-      urlCondition =
-        "(h.url COLLATE NOCASE BETWEEN :searchString AND :searchString || X'FFFF')";
-    } else {
-      urlCondition = `
-        ((strip_prefix_and_userinfo(h.url) COLLATE NOCASE BETWEEN :searchString AND :searchString || X'FFFF') OR
-         (strip_prefix_and_userinfo(h.url) COLLATE NOCASE BETWEEN 'www.' || :searchString AND 'www.' || :searchString || X'FFFF'))
-      `;
-    }
-
     let selectTitle;
     let joinBookmarks;
     if (UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
@@ -650,28 +638,37 @@ class ProviderAutofill extends UrlbarProvider {
 
     const params = {
       queryType: QUERYTYPE.AUTOFILL_ADAPTIVE,
-      searchString: queryContext.searchString.toLowerCase(),
+      
+      
+      fullSearchString: queryContext.searchString.toLowerCase(),
+      searchString: this._searchString,
+      strippedPrefix: this._strippedPrefix,
       useCountThreshold: lazy.UrlbarPrefs.get(
         "autoFillAdaptiveHistoryUseCountThreshold"
       ),
     };
 
     const query = `
-      WITH matched(input, url, title, stripped_url, is_exact_match, id) AS (
+      WITH matched(input, url, title, stripped_url, is_exact_match, starts_with, id) AS (
         SELECT
           i.input AS input,
           h.url AS url,
           h.title AS title,
           strip_prefix_and_userinfo(h.url) AS stripped_url,
-          strip_prefix_and_userinfo(h.url) = strip_prefix_and_userinfo(:searchString) AS is_exact_match,
+          strip_prefix_and_userinfo(h.url) = :searchString AS is_exact_match,
+          (strip_prefix_and_userinfo(h.url) COLLATE NOCASE BETWEEN :searchString AND :searchString || X'FFFF') AS starts_with,
           h.id AS id
         FROM moz_places h
         JOIN moz_inputhistory i ON i.place_id = h.id
         WHERE LENGTH(i.input) != 0
-          AND :searchString BETWEEN i.input AND i.input || X'FFFF'
+          AND :fullSearchString BETWEEN i.input AND i.input || X'FFFF'
           AND ${sourceCondition}
           AND i.use_count >= :useCountThreshold
-          AND ${urlCondition}
+          AND (:strippedPrefix = '' OR get_prefix(h.url) = :strippedPrefix)
+          AND (
+            starts_with OR
+            (stripped_url COLLATE NOCASE BETWEEN 'www.' || :searchString AND 'www.' || :searchString || X'FFFF')
+          )
         ORDER BY is_exact_match DESC, i.use_count DESC, h.frecency DESC, h.id DESC
         LIMIT 1
       )
@@ -680,11 +677,13 @@ class ProviderAutofill extends UrlbarProvider {
         :searchString AS search_string,
         input,
         url,
+        iif(starts_with, stripped_url, fixup_url(stripped_url)) AS url_fixed,
         ${selectTitle} AS title,
         stripped_url
       FROM matched
       ${joinBookmarks}
     `;
+
     return [query, params];
   }
 
@@ -697,13 +696,44 @@ class ProviderAutofill extends UrlbarProvider {
 
   _processRow(row, queryContext) {
     let queryType = row.getResultByName("query_type");
-    let searchString = row.getResultByName("search_string");
     let title = row.getResultByName("title");
-    let autofilledValue, finalCompleteValue, autofilledType;
+
+    
+    
+    let searchString = row.getResultByName("search_string");
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let fixedURL;
+
+    
+    
+    
+    let finalCompleteValue;
+
+    let autofilledType;
     let adaptiveHistoryInput;
+
     switch (queryType) {
       case QUERYTYPE.AUTOFILL_ORIGIN: {
-        autofilledValue = row.getResultByName("host_fixed");
+        fixedURL = row.getResultByName("host_fixed");
         finalCompleteValue = row.getResultByName("url");
         autofilledType = "origin";
         break;
@@ -731,33 +761,21 @@ class ProviderAutofill extends UrlbarProvider {
           "/",
           strippedURLIndex + strippedURL.length - 1
         );
-        if (nextSlashIndex == -1) {
-          autofilledValue = url.substr(strippedURLIndex);
-        } else {
-          autofilledValue = url.substring(strippedURLIndex, nextSlashIndex + 1);
-        }
-        finalCompleteValue = strippedPrefix + autofilledValue;
-
+        fixedURL =
+          nextSlashIndex < 0
+            ? url.substr(strippedURLIndex)
+            : url.substring(strippedURLIndex, nextSlashIndex + 1);
+        finalCompleteValue = strippedPrefix + fixedURL;
         if (finalCompleteValue !== url) {
           title = null;
         }
-
         autofilledType = "url";
         break;
       }
       case QUERYTYPE.AUTOFILL_ADAPTIVE: {
         adaptiveHistoryInput = row.getResultByName("input");
+        fixedURL = row.getResultByName("url_fixed");
         finalCompleteValue = row.getResultByName("url");
-
-        if (this._strippedPrefix) {
-          autofilledValue = finalCompleteValue;
-        } else {
-          let strippedURL = row.getResultByName("stripped_url");
-          autofilledValue = strippedURL.substring(
-            strippedURL.toLowerCase().indexOf(adaptiveHistoryInput)
-          );
-        }
-
         autofilledType = "adaptive";
         break;
       }
@@ -765,9 +783,11 @@ class ProviderAutofill extends UrlbarProvider {
 
     
     
-    autofilledValue =
-      queryContext.searchString +
-      autofilledValue.substring(searchString.length);
+    
+    
+    
+    let autofilledValue =
+      queryContext.searchString + fixedURL.substring(searchString.length);
 
     
     

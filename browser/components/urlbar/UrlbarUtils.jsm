@@ -945,6 +945,7 @@ var UrlbarUtils = {
 
 
 
+
   stripURLPrefix(str) {
     let match = lazy.UrlbarTokenizer.REGEXP_PREFIX.exec(str);
     if (!match) {
