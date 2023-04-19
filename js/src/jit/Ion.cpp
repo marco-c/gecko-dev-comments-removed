@@ -328,20 +328,15 @@ static bool LinkBackgroundCodeGen(JSContext* cx, IonCompileTask* task) {
 }
 
 void jit::LinkIonScript(JSContext* cx, HandleScript calleeScript) {
-  IonCompileTask* task;
+  
+  MOZ_ASSERT(calleeScript->hasBaselineScript());
+  IonCompileTask* task =
+      calleeScript->baselineScript()->pendingIonCompileTask();
+  calleeScript->baselineScript()->removePendingIonCompileTask(cx->runtime(),
+                                                              calleeScript);
 
-  {
-    AutoLockHelperThreadState lock;
-
-    
-    MOZ_ASSERT(calleeScript->hasBaselineScript());
-    task = calleeScript->baselineScript()->pendingIonCompileTask();
-    calleeScript->baselineScript()->removePendingIonCompileTask(cx->runtime(),
-                                                                calleeScript);
-
-    
-    cx->runtime()->jitRuntime()->ionLazyLinkListRemove(cx->runtime(), task);
-  }
+  
+  cx->runtime()->jitRuntime()->ionLazyLinkListRemove(cx->runtime(), task);
 
   {
     gc::AutoSuppressGC suppressGC(cx);

@@ -26,6 +26,7 @@
 #include "js/Principals.h"
 #include "js/TypeDecls.h"
 #include "js/Vector.h"
+#include "threading/ProtectedData.h"
 #include "util/TrailingArray.h"
 #include "vm/JSScript.h"
 #include "vm/TraceLogging.h"
@@ -193,7 +194,7 @@ class alignas(uintptr_t) BaselineScript final : public TrailingArray {
   HeapPtr<JitCode*> method_ = nullptr;
 
   
-  IonCompileTask* pendingIonCompileTask_ = nullptr;
+  MainThreadData<IonCompileTask*> pendingIonCompileTask_{nullptr};
 
   
   
