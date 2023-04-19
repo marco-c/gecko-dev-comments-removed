@@ -12,8 +12,6 @@
 
 namespace js {
 
-class GlobalObject;
-
 
 class WeakCollectionObject : public NativeObject {
  public:

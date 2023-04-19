@@ -7,13 +7,16 @@
 #ifndef builtin_TestingUtility_h
 #define builtin_TestingUtility_h
 
-#include "js/CompileOptions.h"  
-#include "js/RootingAPI.h"      
-#include "js/Utility.h"         
+#include "js/RootingAPI.h"  
+#include "js/Utility.h"     
 
 struct JSContext;
 class JSObject;
 class JSString;
+
+namespace JS {
+class JS_PUBLIC_API CompileOptions;
+}
 
 namespace js {
 
