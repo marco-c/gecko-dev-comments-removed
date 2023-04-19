@@ -128,13 +128,15 @@ var gSyncPane = {
     
     Services.obs.notifyObservers(window, "sync-pane-loaded");
 
-    
     if (
-      location.href.includes("action=pair") &&
       location.hash == "#sync" &&
       UIState.get().status == UIState.STATUS_SIGNED_IN
     ) {
-      gSyncPane.pairAnotherDevice();
+      if (location.href.includes("action=pair")) {
+        gSyncPane.pairAnotherDevice();
+      } else if (location.href.includes("action=choose-what-to-sync")) {
+        gSyncPane._chooseWhatToSync(false);
+      }
     }
   },
 

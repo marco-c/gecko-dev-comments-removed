@@ -3,6 +3,8 @@
 
 "use strict";
 
+const { UIState } = ChromeUtils.import("resource://services-sync/UIState.jsm");
+
 
 
 
@@ -16,6 +18,20 @@ const syncPrefs = {
   "services.sync.engine.addresses": false,
   "services.sync.engine.creditcards": false,
 };
+
+add_setup(async () => {
+  UIState._internal.notifyStateUpdated = () => {};
+  const origNotifyStateUpdated = UIState._internal.notifyStateUpdated;
+  const origGet = UIState.get;
+  UIState.get = () => {
+    return { status: UIState.STATUS_SIGNED_IN, email: "foo@bar.com" };
+  };
+
+  registerCleanupFunction(() => {
+    UIState._internal.notifyStateUpdated = origNotifyStateUpdated;
+    UIState.get = origGet;
+  });
+});
 
 
 
@@ -133,4 +149,30 @@ add_task(async function testDialogCancel() {
   syncChooseDialog.cancelDialog();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   Assert.ok(callbackCalled, "Cancel callback was called");
+});
+
+
+
+
+
+add_task(async function testDialogLaunchFromURI() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["identity.fxaccounts.enabled", true]],
+  });
+
+  let dialogEventPromise = BrowserTestUtils.waitForEvent(
+    window,
+    "dialogopen",
+    true
+  );
+  await BrowserTestUtils.withNewTab(
+    "about:preferences?action=choose-what-to-sync#sync",
+    async browser => {
+      let dialogEvent = await dialogEventPromise;
+      Assert.equal(
+        dialogEvent.detail.dialog._frame.contentWindow.location,
+        "chrome://browser/content/preferences/dialogs/syncChooseWhatToSync.xhtml"
+      );
+    }
+  );
 });
