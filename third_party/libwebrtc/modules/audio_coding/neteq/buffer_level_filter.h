@@ -29,9 +29,7 @@ class BufferLevelFilter {
   virtual void Update(size_t buffer_size_samples, int time_stretched_samples);
 
   
-  
-  
-  virtual void SetTargetBufferLevel(int target_buffer_level_packets);
+  virtual void SetTargetBufferLevel(int target_buffer_level_ms);
 
   
   virtual int filtered_current_level() const {

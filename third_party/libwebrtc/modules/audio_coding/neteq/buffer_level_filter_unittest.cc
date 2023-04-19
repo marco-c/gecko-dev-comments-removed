@@ -30,7 +30,7 @@ TEST(BufferLevelFilter, ConvergenceTest) {
   for (int times = 10; times <= 50; times += 10) {
     for (int value = 100; value <= 200; value += 10) {
       filter.Reset();
-      filter.SetTargetBufferLevel(1);  
+      filter.SetTargetBufferLevel(20);  
       rtc::StringBuilder ss;
       ss << "times = " << times << ", value = " << value;
       SCOPED_TRACE(ss.str());  
@@ -57,7 +57,7 @@ TEST(BufferLevelFilter, FilterFactor) {
   const int kTimes = 10;
   const int kValue = 100;
 
-  filter.SetTargetBufferLevel(3);  
+  filter.SetTargetBufferLevel(60);  
   for (int i = 0; i < kTimes; ++i) {
     filter.Update(kValue, 0 );
   }
@@ -67,7 +67,7 @@ TEST(BufferLevelFilter, FilterFactor) {
   EXPECT_EQ(expected_value, filter.filtered_current_level());
 
   filter.Reset();
-  filter.SetTargetBufferLevel(7);  
+  filter.SetTargetBufferLevel(140);  
   for (int i = 0; i < kTimes; ++i) {
     filter.Update(kValue, 0 );
   }
@@ -77,7 +77,7 @@ TEST(BufferLevelFilter, FilterFactor) {
   EXPECT_EQ(expected_value, filter.filtered_current_level());
 
   filter.Reset();
-  filter.SetTargetBufferLevel(8);  
+  filter.SetTargetBufferLevel(160);  
   for (int i = 0; i < kTimes; ++i) {
     filter.Update(kValue, 0 );
   }
@@ -89,7 +89,7 @@ TEST(BufferLevelFilter, FilterFactor) {
 
 TEST(BufferLevelFilter, TimeStretchedSamples) {
   BufferLevelFilter filter;
-  filter.SetTargetBufferLevel(1);  
+  filter.SetTargetBufferLevel(20);  
   
   const int kTimes = 10;
   const int kValue = 100;
