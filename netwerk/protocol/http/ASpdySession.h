@@ -17,12 +17,14 @@ class nsISocketTransport;
 namespace mozilla {
 namespace net {
 
+class nsHttpConnection;
+
 class ASpdySession : public nsAHttpTransaction {
  public:
   ASpdySession() = default;
   virtual ~ASpdySession() = default;
 
-  [[nodiscard]] virtual bool AddStream(nsAHttpTransaction*, int32_t, bool, bool,
+  [[nodiscard]] virtual bool AddStream(nsAHttpTransaction*, int32_t, bool,
                                        nsIInterfaceRequestor*) = 0;
   virtual bool CanReuse() = 0;
   virtual bool RoomForMoreStreams() = 0;
@@ -36,15 +38,6 @@ class ASpdySession : public nsAHttpTransaction {
 
   virtual bool TestJoinConnection(const nsACString& hostname, int32_t port) = 0;
   virtual bool JoinConnection(const nsACString& hostname, int32_t port) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  virtual bool MaybeReTunnel(nsAHttpTransaction*) = 0;
 
   virtual void PrintDiagnostics(nsCString& log) = 0;
 
@@ -90,6 +83,10 @@ class ASpdySession : public nsAHttpTransaction {
 
   virtual void SetCleanShutdown(bool) = 0;
   virtual bool CanAcceptWebsocket() = 0;
+
+  virtual already_AddRefed<mozilla::net::nsHttpConnection> CreateTunnelStream(
+      nsAHttpTransaction* aHttpTransaction, nsIInterfaceRequestor* aCallbacks,
+      PRIntervalTime aRtt) = 0;
 };
 
 using ALPNCallback = bool (*)(nsISupports*);  

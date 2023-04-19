@@ -48,6 +48,7 @@ class Http2PushedStream final : public Http2StreamBase {
                                        uint32_t*) override;
   void AdjustInitialWindow() override;
 
+  nsAHttpTransaction* Transaction() override { return mTransaction; }
   nsIRequestContext* RequestContext() override { return mRequestContext; };
   void ConnectPushedStream(Http2StreamBase* stream);
 
@@ -76,6 +77,14 @@ class Http2PushedStream final : public Http2StreamBase {
 
   nsresult ConvertPushHeaders(Http2Decompressor* decompressor,
                               nsACString& aHeadersIn, nsACString& aHeadersOut);
+
+  nsresult Close(nsresult reason) override;
+
+ protected:
+  nsresult CallToReadData(uint32_t count, uint32_t* countRead) override;
+  nsresult CallToWriteData(uint32_t count, uint32_t* countWritten) override;
+  nsresult GenerateHeaders(nsCString& aCompressedData,
+                           uint8_t& firstFrameFlags) override;
 
  private:
   virtual ~Http2PushedStream() = default;
@@ -107,6 +116,12 @@ class Http2PushedStream final : public Http2StreamBase {
   nsCString mResourceUrl;
 
   uint32_t mDefaultPriorityDependency;
+
+  
+  
+  
+  
+  RefPtr<nsAHttpTransaction> const mTransaction;
 };
 
 class Http2PushTransactionBuffer final : public nsAHttpTransaction {

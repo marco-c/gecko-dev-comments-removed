@@ -334,9 +334,28 @@ void nsHttpConnection::StartSpdy(nsISSLSocketControl* sslControl,
   }
 
   if (!mDid0RTTSpdy && mTransaction) {
-    rv = MoveTransactionsToSpdy(status, list);
-    if (NS_FAILED(rv)) {
-      return;
+    if (spdyProxy) {
+      if (NS_FAILED(status)) {
+        mSpdySession->SetConnection(mTransaction->Connection());
+        mTransaction->SetConnection(nullptr);
+        mTransaction->DoNotRemoveAltSvc();
+        mTransaction->Close(NS_ERROR_NET_RESET);
+        mTransaction = nullptr;
+      } else {
+        for (auto trans : list) {
+          if (!mSpdySession->Connection()) {
+            mSpdySession->SetConnection(trans->Connection());
+          }
+          trans->SetConnection(nullptr);
+          trans->DoNotRemoveAltSvc();
+          trans->Close(NS_ERROR_NET_RESET);
+        }
+      }
+    } else {
+      rv = MoveTransactionsToSpdy(status, list);
+      if (NS_FAILED(rv)) {
+        return;
+      }
     }
   }
 
@@ -433,6 +452,14 @@ nsresult nsHttpConnection::OnTunnelNudged(TLSFilterTransaction* trans) {
     return NS_OK;
   }
   LOG(("nsHttpConnection::OnTunnelNudged %p Calling OnSocketWritable\n", this));
+  if (mInSpdyTunnel) {
+    
+    nsresult rv = ResumeRecv();
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    return ResumeSend();
+  }
   return OnSocketWritable();
 }
 
@@ -608,8 +635,8 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
        needTunnel ? " over tunnel" : (isWebsocket ? " websocket" : "")));
 
   if (mSpdySession) {
-    if (!mSpdySession->AddStream(httpTransaction, priority, needTunnel,
-                                 isWebsocket, mCallbacks)) {
+    if (!mSpdySession->AddStream(httpTransaction, priority, isWebsocket,
+                                 mCallbacks)) {
       MOZ_ASSERT(false);  
       httpTransaction->Close(NS_ERROR_ABORT);
       return NS_ERROR_FAILURE;
@@ -617,6 +644,19 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
   }
 
   Unused << ResumeSend();
+  return NS_OK;
+}
+
+nsresult nsHttpConnection::CreateTunnelStream(
+    nsAHttpTransaction* httpTransaction, nsHttpConnection** aHttpConnection) {
+  if (!mSpdySession) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  RefPtr<nsHttpConnection> conn =
+      mSpdySession->CreateTunnelStream(httpTransaction, mCallbacks, mRtt);
+
+  conn.forget(aHttpConnection);
   return NS_OK;
 }
 
@@ -681,7 +721,7 @@ void nsHttpConnection::Close(nsresult reason, bool aIsShutdown) {
       
       
       
-      if (mSocketIn && !aIsShutdown) {
+      if (mSocketIn && !aIsShutdown && !mInSpdyTunnel) {
         char buffer[4000];
         uint32_t count, total = 0;
         nsresult rv;
@@ -1008,6 +1048,7 @@ void nsHttpConnection::HandleTunnelResponse(uint16_t responseStatus,
     LOG(("proxy CONNECT failed! endtoendssl=%d onlyconnect=%d\n", isHttps,
          onlyConnect));
     mTransaction->SetProxyConnectFailed();
+    mDontReuse = true;
   }
 }
 
@@ -1503,6 +1544,11 @@ nsresult nsHttpConnection::OnReadSegment(const char* buf, uint32_t count,
   }
 
   nsresult rv = mSocketOut->Write(buf, count, countRead);
+
+  
+  if ((rv == NS_BASE_STREAM_WOULD_BLOCK) && mInSpdyTunnel) {
+    mSocketOut->AsyncWait(this, 0, 0, nullptr);
+  }
   if (NS_FAILED(rv)) {
     mSocketOutCondition = rv;
   } else if (*countRead == 0) {
@@ -1655,6 +1701,11 @@ nsresult nsHttpConnection::OnSocketWritable() {
 
         rv = ResumeRecv();  
       }
+      
+      
+      if ((mState != HttpConnectionState::SETTING_UP_TUNNEL) && !mSpdySession) {
+        mRequestDone = true;
+      }
       again = false;
     } else if (writeAttempts >= maxWriteAttempts) {
       LOG(("  yield for other transactions\n"));
@@ -1684,6 +1735,10 @@ nsresult nsHttpConnection::OnWriteSegment(char* buf, uint32_t count,
   }
 
   nsresult rv = mSocketIn->Read(buf, count, countWritten);
+  
+  if ((rv == NS_BASE_STREAM_WOULD_BLOCK) && mInSpdyTunnel) {
+    mSocketIn->AsyncWait(this, 0, 0, nullptr);
+  }
   if (NS_FAILED(rv)) {
     mSocketInCondition = rv;
   } else if (*countWritten == 0) {
@@ -1813,12 +1868,10 @@ void nsHttpConnection::SetupSecondaryTLS(
   mWeakTrans = do_GetWeakReference(aHttp2ConnectTransaction);
 }
 
-void nsHttpConnection::SetInSpdyTunnel(bool arg) {
-  MOZ_ASSERT(mTLSFilter);
-  mInSpdyTunnel = arg;
-
+void nsHttpConnection::SetInSpdyTunnel() {
   
-  SetTunnelSetupDone();
+  mInSpdyTunnel = true;
+  mForcePlainText = true;
 }
 
 
@@ -2411,9 +2464,8 @@ void nsHttpConnection::HandshakeDoneInternal() {
 }
 
 void nsHttpConnection::SetTunnelSetupDone() {
-  MOZ_ASSERT(mProxyConnectStream || mInSpdyTunnel);
-  MOZ_ASSERT((mState == HttpConnectionState::SETTING_UP_TUNNEL) ||
-             mInSpdyTunnel);
+  MOZ_ASSERT(mProxyConnectStream);
+  MOZ_ASSERT(mState == HttpConnectionState::SETTING_UP_TUNNEL);
 
   ChangeState(HttpConnectionState::REQUEST);
   mProxyConnectStream = nullptr;

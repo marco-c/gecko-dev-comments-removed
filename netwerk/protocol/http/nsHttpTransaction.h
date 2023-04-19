@@ -495,21 +495,11 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   Atomic<bool, Relaxed> mClassOfServiceIncremental{false};
 
  public:
-  
-  
-  
-  
-  
-  
-
-  void SetTunnelProvider(ASpdySession* provider) { mTunnelProvider = provider; }
-  ASpdySession* TunnelProvider() { return mTunnelProvider; }
   nsIInterfaceRequestor* SecurityCallbacks() { return mCallbacks; }
   
   void OnPendingQueueInserted(const nsACString& aConnectionHashKey);
 
  private:
-  RefPtr<ASpdySession> mTunnelProvider;
   TransactionObserverFunc mTransactionObserver;
   NetAddr mSelfAddr;
   NetAddr mPeerAddr;
