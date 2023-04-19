@@ -19,24 +19,36 @@
 #include <utility>      
 
 #include "js/Transcoding.h"  
-#include "js/UniquePtr.h"   
-#include "js/Utility.h"     
-#include "vm/JSContext.h"   
-#include "vm/StringType.h"  
+#include "js/UniquePtr.h"     
+#include "js/Utility.h"       
+#include "vm/ErrorContext.h"  
+#include "vm/JSContext.h"     
+#include "vm/StringType.h"    
 
 using namespace js;
 
 using mozilla::Utf8Unit;
 
 #ifdef DEBUG
-bool XDRCoderBase::validateResultCode(JSContext* cx,
+bool XDRCoderBase::validateResultCode(JSContext* cx, ErrorContext* ec,
                                       JS::TranscodeResult code) const {
   
   
   if (cx->isHelperThreadContext()) {
     return true;
   }
-  return cx->isExceptionPending() == bool(code == JS::TranscodeResult::Throw);
+
+  
+  
+  
+  
+  
+  
+  if (cx->isExceptionPending()) {
+    return bool(code == JS::TranscodeResult::Throw);
+  }
+
+  return ec->hadErrors() == bool(code == JS::TranscodeResult::Throw);
 }
 #endif
 
