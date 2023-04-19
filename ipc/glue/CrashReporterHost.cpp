@@ -177,19 +177,5 @@ void CrashReporterHost::AddAnnotation(CrashReporter::Annotation aKey,
   mExtraAnnotations[aKey] = aValue;
 }
 
-bool CrashReporterHost::IsLikelyOOM() {
-  
-  MOZ_ASSERT(mFinalized);
-
-  
-  
-  
-  
-  
-  
-  return mExtraAnnotations[CrashReporter::Annotation::OOMAllocationSize]
-             .Length() > 0;
-}
-
 }  
 }  

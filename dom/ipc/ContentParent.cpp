@@ -2095,11 +2095,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
           memWatcher->AddChildAnnotations(mCrashReporter);
 #endif
 
-          if (mCrashReporter->GenerateCrashReport(OtherPid())) {
-            
-            Unused << props->SetPropertyAsBool(u"isLikelyOOM"_ns,
-                                               mCrashReporter->IsLikelyOOM());
-          }
+          mCrashReporter->GenerateCrashReport(OtherPid());
         }
 
         if (mCrashReporter->HasMinidump()) {
