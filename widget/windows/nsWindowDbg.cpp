@@ -164,19 +164,24 @@ bool AppendFlagsInfo(nsCString& str, uint64_t flags,
 
 
 bool PrintEvent::PrintEventInternal() {
-  mozilla::LogLevel logLevel = (*gWindowsEventLog).Level();
+  mozilla::LogLevel const targetLogLevel = [&] {
+    
+    if (mMsg == WM_SETCURSOR || mMsg == WM_MOUSEMOVE || mMsg == WM_NCHITTEST) {
+      return LogLevel::Verbose;
+    }
+    if (gLastEventMsg == mMsg) {
+      return LogLevel::Debug;
+    }
+    return LogLevel::Info;
+  }();
+
   bool isPreCall = mResult.isNothing();
   if (isPreCall || mShouldLogPostCall) {
     bool recordInAboutPage = gEventsToRecordInAboutPage.find(mMsg) !=
                              gEventsToRecordInAboutPage.end();
     bool writeToWindowsLog;
     if (isPreCall) {
-      writeToWindowsLog =
-          (logLevel >= mozilla::LogLevel::Info &&
-           (logLevel >= mozilla::LogLevel::Debug || (gLastEventMsg != mMsg)) &&
-           (logLevel >= mozilla::LogLevel::Verbose ||
-            (mMsg != WM_SETCURSOR && mMsg != WM_MOUSEMOVE &&
-             mMsg != WM_NCHITTEST)));
+      writeToWindowsLog = MOZ_LOG_TEST(gWindowsEventLog, targetLogLevel);
       bool shouldLogAtAll = recordInAboutPage || writeToWindowsLog;
       
       
@@ -222,7 +227,7 @@ bool PrintEvent::PrintEventInternal() {
           msgText ? msgText : "Unknown",
           mResult.isSome() ? static_cast<uint64_t>(mRetValue) : 0, resultMsg);
       const char* logMessageData = logMessage.Data();
-      MOZ_LOG(gWindowsEventLog, LogLevel::Info, ("%s", logMessageData));
+      MOZ_LOG(gWindowsEventLog, targetLogLevel, ("%s", logMessageData));
     }
     return true;
   }
