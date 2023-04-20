@@ -14,7 +14,12 @@ function WorkerDispatcher() {
 
 WorkerDispatcher.prototype = {
   start(url) {
-    this.worker = new ChromeWorker(url);
+    
+    if (typeof ChromeWorker == "function") {
+      this.worker = new ChromeWorker(url);
+    } else {
+      this.worker = new Worker(url);
+    }
     this.worker.onerror = err => {
       console.error(`Error in worker ${url}`, err.message);
     };
