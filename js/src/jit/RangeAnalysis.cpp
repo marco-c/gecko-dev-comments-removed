@@ -2570,7 +2570,7 @@ void Range::wrapAroundToBoolean() {
   MOZ_ASSERT(isBoolean());
 }
 
-bool MDefinition::needTruncation(TruncateKind kind) const {
+bool MDefinition::needTruncation() const {
   
   return false;
 }
@@ -2579,12 +2579,10 @@ void MDefinition::truncate(TruncateKind kind) {
   MOZ_CRASH("No procedure defined for truncating this instruction.");
 }
 
-bool MConstant::needTruncation(TruncateKind kind) const {
-  return IsFloatingPointType(type());
-}
+bool MConstant::needTruncation() const { return IsFloatingPointType(type()); }
 
 void MConstant::truncate(TruncateKind kind) {
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
 
   
   int32_t res = ToInt32(numberToDouble());
@@ -2596,7 +2594,7 @@ void MConstant::truncate(TruncateKind kind) {
   }
 }
 
-bool MPhi::needTruncation(TruncateKind kind) const {
+bool MPhi::needTruncation() const {
   if (type() == MIRType::Double || type() == MIRType::Int32) {
     return true;
   }
@@ -2605,7 +2603,7 @@ bool MPhi::needTruncation(TruncateKind kind) const {
 }
 
 void MPhi::truncate(TruncateKind kind) {
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
   truncateKind_ = kind;
   setResultType(MIRType::Int32);
   if (kind >= TruncateKind::IndirectTruncate && range()) {
@@ -2613,12 +2611,12 @@ void MPhi::truncate(TruncateKind kind) {
   }
 }
 
-bool MAdd::needTruncation(TruncateKind kind) const {
+bool MAdd::needTruncation() const {
   return type() == MIRType::Double || type() == MIRType::Int32;
 }
 
 void MAdd::truncate(TruncateKind kind) {
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
 
   
   setTruncateKind(kind);
@@ -2629,12 +2627,12 @@ void MAdd::truncate(TruncateKind kind) {
   }
 }
 
-bool MSub::needTruncation(TruncateKind kind) const {
+bool MSub::needTruncation() const {
   return type() == MIRType::Double || type() == MIRType::Int32;
 }
 
 void MSub::truncate(TruncateKind kind) {
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
 
   
   setTruncateKind(kind);
@@ -2644,12 +2642,12 @@ void MSub::truncate(TruncateKind kind) {
   }
 }
 
-bool MMul::needTruncation(TruncateKind kind) const {
+bool MMul::needTruncation() const {
   return type() == MIRType::Double || type() == MIRType::Int32;
 }
 
 void MMul::truncate(TruncateKind kind) {
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
 
   
   setTruncateKind(kind);
@@ -2662,12 +2660,12 @@ void MMul::truncate(TruncateKind kind) {
   }
 }
 
-bool MDiv::needTruncation(TruncateKind kind) const {
+bool MDiv::needTruncation() const {
   return type() == MIRType::Double || type() == MIRType::Int32;
 }
 
 void MDiv::truncate(TruncateKind kind) {
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
 
   
   setTruncateKind(kind);
@@ -2681,13 +2679,13 @@ void MDiv::truncate(TruncateKind kind) {
   }
 }
 
-bool MMod::needTruncation(TruncateKind kind) const {
+bool MMod::needTruncation() const {
   return type() == MIRType::Double || type() == MIRType::Int32;
 }
 
 void MMod::truncate(TruncateKind kind) {
   
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
 
   
   setTruncateKind(kind);
@@ -2699,13 +2697,13 @@ void MMod::truncate(TruncateKind kind) {
   }
 }
 
-bool MToDouble::needTruncation(TruncateKind kind) const {
+bool MToDouble::needTruncation() const {
   MOZ_ASSERT(type() == MIRType::Double);
   return true;
 }
 
 void MToDouble::truncate(TruncateKind kind) {
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
   setTruncateKind(kind);
 
   
@@ -2718,10 +2716,10 @@ void MToDouble::truncate(TruncateKind kind) {
   }
 }
 
-bool MLimitedTruncate::needTruncation(TruncateKind kind) const { return true; }
+bool MLimitedTruncate::needTruncation() const { return true; }
 
 void MLimitedTruncate::truncate(TruncateKind kind) {
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
   setTruncateKind(kind);
   setResultType(MIRType::Int32);
   if (kind >= TruncateKind::IndirectTruncate && range()) {
@@ -2729,7 +2727,7 @@ void MLimitedTruncate::truncate(TruncateKind kind) {
   }
 }
 
-bool MCompare::needTruncation(TruncateKind kind) const {
+bool MCompare::needTruncation() const {
   
   
   
@@ -2752,7 +2750,7 @@ bool MCompare::needTruncation(TruncateKind kind) const {
 }
 
 void MCompare::truncate(TruncateKind kind) {
-  MOZ_ASSERT(needTruncation(kind));
+  MOZ_ASSERT(needTruncation());
   compareType_ = Compare_Int32;
 
   
@@ -3216,7 +3214,7 @@ bool RangeAnalysis::truncate() {
       TruncateKind kind = ComputeTruncateKind(*iter, &shouldClone);
 
       
-      if (!canTruncate(*iter, kind) || !iter->needTruncation(kind)) {
+      if (!canTruncate(*iter, kind) || !iter->needTruncation()) {
         continue;
       }
 
@@ -3253,8 +3251,7 @@ bool RangeAnalysis::truncate() {
       TruncateKind kind = ComputeTruncateKind(*iter, &shouldClone);
 
       
-      if (shouldClone || !canTruncate(*iter, kind) ||
-          !iter->needTruncation(kind)) {
+      if (shouldClone || !canTruncate(*iter, kind) || !iter->needTruncation()) {
         continue;
       }
 
