@@ -5,14 +5,14 @@
 
 
 
-use std::slice;
-use std::io;
-use std::ffi::{OsStr,OsString};
-use std::os::windows::ffi::{OsStrExt,OsStringExt};
-use super::winapi::shared::winerror;
-use super::{RegValue};
 use super::enums::*;
-use super::{to_utf16,v16_to_v8};
+use super::winapi::shared::winerror;
+use super::RegValue;
+use super::{to_utf16, v16_to_v8};
+use std::ffi::{OsStr, OsString};
+use std::io;
+use std::os::windows::ffi::OsStringExt;
+use std::slice;
 
 
 
@@ -21,7 +21,8 @@ use super::{to_utf16,v16_to_v8};
 
 
 
-pub trait FromRegValue : Sized {
+
+pub trait FromRegValue: Sized {
     fn from_reg_value(val: &RegValue) -> io::Result<Self>;
 }
 
@@ -30,16 +31,38 @@ impl FromRegValue for String {
         match val.vtype {
             REG_SZ | REG_EXPAND_SZ | REG_MULTI_SZ => {
                 let words = unsafe {
+                    #[allow(clippy::cast_ptr_alignment)]
                     slice::from_raw_parts(val.bytes.as_ptr() as *const u16, val.bytes.len() / 2)
                 };
                 let mut s = String::from_utf16_lossy(words);
-                while s.ends_with('\u{0}') {s.pop();}
+                while s.ends_with('\u{0}') {
+                    s.pop();
+                }
                 if val.vtype == REG_MULTI_SZ {
-                    return Ok(s.replace("\u{0}", "\n"))
+                    return Ok(s.replace("\u{0}", "\n"));
                 }
                 Ok(s)
-            },
-            _ => werr!(winerror::ERROR_BAD_FILE_TYPE)
+            }
+            _ => werr!(winerror::ERROR_BAD_FILE_TYPE),
+        }
+    }
+}
+
+impl FromRegValue for Vec<String> {
+    fn from_reg_value(val: &RegValue) -> io::Result<Vec<String>> {
+        match val.vtype {
+            REG_MULTI_SZ => {
+                let words = unsafe {
+                    slice::from_raw_parts(val.bytes.as_ptr() as *const u16, val.bytes.len() / 2)
+                };
+                let mut s = String::from_utf16_lossy(words);
+                while s.ends_with('\u{0}') {
+                    s.pop();
+                }
+                let v: Vec<String> = s.split('\u{0}').map(|x| x.to_owned()).collect();
+                Ok(v)
+            }
+            _ => werr!(winerror::ERROR_BAD_FILE_TYPE),
         }
     }
 }
@@ -48,13 +71,38 @@ impl FromRegValue for OsString {
     fn from_reg_value(val: &RegValue) -> io::Result<OsString> {
         match val.vtype {
             REG_SZ | REG_EXPAND_SZ | REG_MULTI_SZ => {
-                let words = unsafe {
+                let mut words = unsafe {
+                    #[allow(clippy::cast_ptr_alignment)]
                     slice::from_raw_parts(val.bytes.as_ptr() as *const u16, val.bytes.len() / 2)
                 };
+                while let Some(0) = words.last() {
+                    words = &words[0..words.len() - 1];
+                }
                 let s = OsString::from_wide(words);
                 Ok(s)
-            },
-            _ => werr!(winerror::ERROR_BAD_FILE_TYPE)
+            }
+            _ => werr!(winerror::ERROR_BAD_FILE_TYPE),
+        }
+    }
+}
+
+impl FromRegValue for Vec<OsString> {
+    fn from_reg_value(val: &RegValue) -> io::Result<Vec<OsString>> {
+        match val.vtype {
+            REG_MULTI_SZ => {
+                let mut words = unsafe {
+                    slice::from_raw_parts(val.bytes.as_ptr() as *const u16, val.bytes.len() / 2)
+                };
+                while let Some(0) = words.last() {
+                    words = &words[0..words.len() - 1];
+                }
+                let v: Vec<OsString> = words
+                    .split(|ch| *ch == 0u16)
+                    .map(|x| OsString::from_wide(x))
+                    .collect();
+                Ok(v)
+            }
+            _ => werr!(winerror::ERROR_BAD_FILE_TYPE),
         }
     }
 }
@@ -62,10 +110,9 @@ impl FromRegValue for OsString {
 impl FromRegValue for u32 {
     fn from_reg_value(val: &RegValue) -> io::Result<u32> {
         match val.vtype {
-            REG_DWORD => {
-                Ok(unsafe{ *(val.bytes.as_ptr() as *const u32) })
-            },
-            _ => werr!(winerror::ERROR_BAD_FILE_TYPE)
+            #[allow(clippy::cast_ptr_alignment)]
+            REG_DWORD => Ok(unsafe { *(val.bytes.as_ptr() as *const u32) }),
+            _ => werr!(winerror::ERROR_BAD_FILE_TYPE),
         }
     }
 }
@@ -73,14 +120,12 @@ impl FromRegValue for u32 {
 impl FromRegValue for u64 {
     fn from_reg_value(val: &RegValue) -> io::Result<u64> {
         match val.vtype {
-            REG_QWORD => {
-                Ok(unsafe{ *(val.bytes.as_ptr() as *const u64) })
-            },
-            _ => werr!(winerror::ERROR_BAD_FILE_TYPE)
+            #[allow(clippy::cast_ptr_alignment)]
+            REG_QWORD => Ok(unsafe { *(val.bytes.as_ptr() as *const u64) }),
+            _ => werr!(winerror::ERROR_BAD_FILE_TYPE),
         }
     }
 }
-
 
 
 
@@ -89,53 +134,66 @@ pub trait ToRegValue {
     fn to_reg_value(&self) -> RegValue;
 }
 
-impl ToRegValue for String {
-    fn to_reg_value(&self) -> RegValue {
-        RegValue{
-            bytes: v16_to_v8(&to_utf16(self)),
-            vtype: REG_SZ
+macro_rules! to_reg_value_sz {
+    ($t:ty$(, $l:lifetime)*) => {
+        impl<$($l,)*> ToRegValue for $t {
+            fn to_reg_value(&self) -> RegValue {
+                RegValue {
+                    bytes: v16_to_v8(&to_utf16(self)),
+                    vtype: REG_SZ,
+                }
+            }
         }
     }
 }
 
-impl<'a> ToRegValue for &'a str {
-    fn to_reg_value(&self) -> RegValue {
-        RegValue{
-            bytes: v16_to_v8(&to_utf16(self)),
-            vtype: REG_SZ
+to_reg_value_sz!(String);
+to_reg_value_sz!(&'a str, 'a);
+to_reg_value_sz!(OsString);
+to_reg_value_sz!(&'a OsStr, 'a);
+
+macro_rules! to_reg_value_multi_sz {
+    ($t:ty$(, $l:lifetime)*) => {
+        impl<$($l,)*> ToRegValue for Vec<$t> {
+            fn to_reg_value(&self) -> RegValue {
+                let mut os_strings = self
+                    .into_iter()
+                    .map(to_utf16)
+                    .collect::<Vec<_>>()
+                    .concat();
+                os_strings.push(0);
+                RegValue {
+                    bytes: v16_to_v8(&os_strings),
+                    vtype: REG_MULTI_SZ,
+                }
+            }
         }
     }
 }
 
-impl<'a> ToRegValue for &'a OsStr {
-    fn to_reg_value(&self) -> RegValue {
-        RegValue{
-            bytes: v16_to_v8(&(self.encode_wide().collect::<Vec<_>>())),
-            vtype: REG_SZ
-        }
-    }
-}
+to_reg_value_multi_sz!(String);
+to_reg_value_multi_sz!(&'a str, 'a);
+to_reg_value_multi_sz!(OsString);
+to_reg_value_multi_sz!(&'a OsStr, 'a);
 
 impl ToRegValue for u32 {
     fn to_reg_value(&self) -> RegValue {
-        let bytes: Vec<u8> = unsafe {
-            slice::from_raw_parts((self as *const u32) as *const u8, 4).to_vec()
-        };
-        RegValue{
-            bytes: bytes,
-            vtype: REG_DWORD
+        let bytes: Vec<u8> =
+            unsafe { slice::from_raw_parts((self as *const u32) as *const u8, 4).to_vec() };
+        RegValue {
+            bytes,
+            vtype: REG_DWORD,
         }
     }
 }
 
 impl ToRegValue for u64 {
     fn to_reg_value(&self) -> RegValue {
-        let bytes: Vec<u8> = unsafe {
-            slice::from_raw_parts((self as *const u64) as *const u8, 8).to_vec()
-        };
-        RegValue{
-            bytes: bytes,
-            vtype: REG_QWORD
+        let bytes: Vec<u8> =
+            unsafe { slice::from_raw_parts((self as *const u64) as *const u8, 8).to_vec() };
+        RegValue {
+            bytes,
+            vtype: REG_QWORD,
         }
     }
 }
