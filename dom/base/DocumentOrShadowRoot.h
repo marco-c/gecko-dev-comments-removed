@@ -93,7 +93,8 @@ class DocumentOrShadowRoot : public RadioGroupManager {
 
   void RemoveStyleSheet(StyleSheet&);
 
-  Element* GetElementById(const nsAString& aElementId);
+  Element* GetElementById(const nsAString& aElementId) const;
+  Element* GetElementById(nsAtom* aElementId) const;
 
   
 
@@ -201,7 +202,7 @@ class DocumentOrShadowRoot : public RadioGroupManager {
     return true;
   }
 
-  void ReportEmptyGetElementByIdArg();
+  void ReportEmptyGetElementByIdArg() const;
 
   
   MOZ_CAN_RUN_SCRIPT
