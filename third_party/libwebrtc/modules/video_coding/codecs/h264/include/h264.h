@@ -30,7 +30,8 @@ struct SdpVideoFormat;
 RTC_EXPORT SdpVideoFormat
 CreateH264Format(H264Profile profile,
                  H264Level level,
-                 const std::string& packetization_mode);
+                 const std::string& packetization_mode,
+                 bool add_scalability_modes = false);
 
 
 
@@ -40,7 +41,8 @@ RTC_EXPORT void DisableRtcUseH264();
 
 
 
-std::vector<SdpVideoFormat> SupportedH264Codecs();
+std::vector<SdpVideoFormat> SupportedH264Codecs(
+    bool add_scalability_modes = false);
 
 
 

@@ -19,7 +19,7 @@
 namespace webrtc {
 struct LibvpxVp9EncoderTemplateAdapter {
   static std::vector<SdpVideoFormat> SupportedFormats() {
-    return SupportedVP9Codecs();
+    return SupportedVP9Codecs(true);
   }
 
   static std::unique_ptr<VideoEncoder> CreateEncoder(

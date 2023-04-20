@@ -304,6 +304,7 @@ VideoCodec::VideoCodec() : Codec() {
 VideoCodec::VideoCodec(const webrtc::SdpVideoFormat& c)
     : Codec(0 , c.name, kVideoCodecClockrate) {
   params = c.parameters;
+  scalability_modes = c.scalability_modes;
 }
 
 VideoCodec::VideoCodec(const VideoCodec& c) = default;

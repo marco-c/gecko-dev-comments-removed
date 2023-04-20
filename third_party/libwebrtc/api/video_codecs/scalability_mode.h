@@ -11,6 +11,12 @@
 #ifndef API_VIDEO_CODECS_SCALABILITY_MODE_H_
 #define API_VIDEO_CODECS_SCALABILITY_MODE_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include "absl/strings/string_view.h"
+#include "rtc_base/system/rtc_export.h"
+
 namespace webrtc {
 
 
@@ -18,7 +24,7 @@ namespace webrtc {
 
 
 
-enum class ScalabilityMode {
+enum class ScalabilityMode : uint8_t {
   kL1T1,
   kL1T2,
   kL1T2h,
@@ -48,5 +54,44 @@ enum class ScalabilityMode {
   kS3T3,
 };
 
+inline constexpr ScalabilityMode kAllScalabilityModes[] = {
+    
+    ScalabilityMode::kL1T1,
+    ScalabilityMode::kL1T2,
+    ScalabilityMode::kL1T2h,
+    ScalabilityMode::kL1T3,
+    ScalabilityMode::kL1T3h,
+    ScalabilityMode::kL2T1,
+    ScalabilityMode::kL2T1h,
+    ScalabilityMode::kL2T1_KEY,
+    ScalabilityMode::kL2T2,
+    ScalabilityMode::kL2T2h,
+    ScalabilityMode::kL2T2_KEY,
+    ScalabilityMode::kL2T2_KEY_SHIFT,
+    ScalabilityMode::kL2T3,
+    ScalabilityMode::kL2T3h,
+    ScalabilityMode::kL2T3_KEY,
+    ScalabilityMode::kL3T1,
+    ScalabilityMode::kL3T1h,
+    ScalabilityMode::kL3T1_KEY,
+    ScalabilityMode::kL3T2,
+    ScalabilityMode::kL3T2h,
+    ScalabilityMode::kL3T2_KEY,
+    ScalabilityMode::kL3T3,
+    ScalabilityMode::kL3T3h,
+    ScalabilityMode::kL3T3_KEY,
+    ScalabilityMode::kS2T1,
+    ScalabilityMode::kS2T3,
+    ScalabilityMode::kS3T3,
+    
+};
+
+inline constexpr size_t kScalabilityModeCount =
+    sizeof(kAllScalabilityModes) / sizeof(ScalabilityMode);
+
+RTC_EXPORT
+absl::string_view ScalabilityModeToString(ScalabilityMode scalability_mode);
+
 }  
+
 #endif  

@@ -24,7 +24,8 @@ namespace webrtc {
 
 
 
-std::vector<SdpVideoFormat> SupportedVP9Codecs();
+std::vector<SdpVideoFormat> SupportedVP9Codecs(
+    bool add_scalability_modes = false);
 
 
 

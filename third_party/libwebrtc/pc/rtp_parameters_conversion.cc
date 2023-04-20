@@ -308,7 +308,18 @@ void ToRtpCodecCapabilityTypeSpecific<cricket::AudioCodec>(
 template <>
 void ToRtpCodecCapabilityTypeSpecific<cricket::VideoCodec>(
     const cricket::VideoCodec& cricket_codec,
-    RtpCodecCapability* codec) {}
+    RtpCodecCapability* codec) {
+  if (cricket_codec.scalability_modes.empty() ||
+      (cricket_codec.scalability_modes.size() == 1 &&
+       cricket_codec.scalability_modes[0] == ScalabilityMode::kL1T1)) {
+    
+    
+    
+    return;
+  }
+
+  codec->scalability_modes = cricket_codec.scalability_modes;
+}
 
 template <typename C>
 RtpCodecCapability ToRtpCodecCapability(const C& cricket_codec) {
