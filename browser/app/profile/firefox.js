@@ -507,7 +507,7 @@ pref("browser.urlbar.switchTabs.adoptIntoActiveWindow", false);
 pref("browser.urlbar.openintab", false);
 
 
-#ifdef NIGHTLY_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.urlbar.resultMenu", true);
 #else
 pref("browser.urlbar.resultMenu", false);
