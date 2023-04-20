@@ -191,35 +191,16 @@ already_AddRefed<Promise> BodyStream::PullCallback(
 
   MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
 
-  MOZ_DIAGNOSTIC_ASSERT(mState == eInitializing || mState == eWaiting ||
-                        mState == eChecking || mState == eReading);
-
-  RefPtr<Promise> resolvedWithUndefinedPromise =
-      Promise::CreateResolvedWithUndefined(aController.GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  if (mState == eReading) {
-    
-    return resolvedWithUndefinedPromise.forget();
-  }
-
-  if (mState == eChecking) {
-    
-    
-    MOZ_ASSERT(mInputStream);
-    mState = eReading;
-
-    return resolvedWithUndefinedPromise.forget();
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitializing || mState == eInitialized);
+  MOZ_ASSERT(!mPullPromise);
+  mPullPromise = Promise::CreateInfallible(aController.GetParentObject());
 
   if (mState == eInitializing) {
     
     mStreamHolder->MarkAsRead();
   }
 
-  mState = eReading;
+  mState = eInitialized;
 
   if (!mInputStream) {
     
@@ -241,6 +222,10 @@ already_AddRefed<Promise> BodyStream::PullCallback(
   MOZ_DIAGNOSTIC_ASSERT(mInputStream);
   MOZ_DIAGNOSTIC_ASSERT(!mOriginalInputStream);
 
+  
+  
+  mInputStream->AsyncWait(nullptr, 0, 0, nullptr);
+  
   nsresult rv = mInputStream->AsyncWait(this, 0, 0, mOwningEventTarget);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ErrorPropagation(aCx, stream, rv);
@@ -249,7 +234,7 @@ already_AddRefed<Promise> BodyStream::PullCallback(
   mAsyncWaitWorkerRef = mWorkerRef;
 
   
-  return resolvedWithUndefinedPromise.forget();
+  return do_AddRef(mPullPromise);
 }
 
 void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
@@ -263,8 +248,9 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
   MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
 
   MOZ_DIAGNOSTIC_ASSERT(mInputStream);
-  MOZ_DIAGNOSTIC_ASSERT(mState == eWriting);
-  mState = eChecking;
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitialized);
+  MOZ_DIAGNOSTIC_ASSERT(mPullPromise->State() ==
+                        Promise::PromiseState::Pending);
 
   uint32_t written;
   nsresult rv;
@@ -297,7 +283,8 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
     return;
   }
 
-  rv = mInputStream->AsyncWait(this, 0, 0, mOwningEventTarget);
+  rv = mInputStream->AsyncWait(this, nsIAsyncOutputStream::WAIT_CLOSURE_ONLY, 0,
+                               mOwningEventTarget);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ErrorPropagation(aCx, aStream, rv);
     return;
@@ -454,7 +441,7 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   AutoEntryScript aes(mGlobal, "fetch body data available");
 
   MOZ_DIAGNOSTIC_ASSERT(mInputStream);
-  MOZ_DIAGNOSTIC_ASSERT(mState == eReading || mState == eChecking);
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitialized);
 
   JSContext* cx = aes.cx();
   ReadableStream* stream = mStreamHolder->GetReadableStreamBody();
@@ -464,11 +451,7 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
 
   uint64_t size = 0;
   nsresult rv = mInputStream->Available(&size);
-  if (NS_SUCCEEDED(rv) && size == 0) {
-    
-    
-    rv = NS_BASE_STREAM_CLOSED;
-  }
+  MOZ_ASSERT_IF(NS_SUCCEEDED(rv), size > 0);
 
   
   if (rv == NS_BASE_STREAM_CLOSED || NS_WARN_IF(NS_FAILED(rv))) {
@@ -477,12 +460,14 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   }
 
   
-  if (mState == eChecking) {
-    mState = eWaiting;
+  
+  
+  if (!mPullPromise) {
     return NS_OK;
   }
 
-  mState = eWriting;
+  MOZ_DIAGNOSTIC_ASSERT(mPullPromise->State() ==
+                        Promise::PromiseState::Pending);
 
   ErrorResult errorResult;
   EnqueueChunkWithSizeIntoStream(cx, stream, size, errorResult);
@@ -491,6 +476,9 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
     ErrorPropagation(cx, stream, errorResult.StealNSResult());
     return NS_OK;
   }
+
+  mPullPromise->MaybeResolveWithUndefined();
+  mPullPromise = nullptr;
 
   
   
@@ -576,6 +564,10 @@ void BodyStream::ReleaseObjects() {
 
   mWorkerRef = nullptr;
   mGlobal = nullptr;
+  
+  
+  
+  mPullPromise = nullptr;
 
   RefPtr<BodyStream> self = mStreamHolder->TakeBodyStream();
   mStreamHolder->NullifyStream();

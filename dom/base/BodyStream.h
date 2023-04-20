@@ -141,19 +141,7 @@ class BodyStream final : public nsIInputStreamCallback,
     eInitializing,
 
     
-    
-    eWaiting,
-
-    
-    eReading,
-
-    
-    eWriting,
-
-    
-    
-    
-    eChecking,
+    eInitialized,
 
     
     eClosed,
@@ -166,6 +154,9 @@ class BodyStream final : public nsIInputStreamCallback,
   nsCOMPtr<nsIGlobalObject> mGlobal;
   RefPtr<BodyStreamHolder> mStreamHolder;
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
+  
+  
+  RefPtr<Promise> mPullPromise;
 
   
   
