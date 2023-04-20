@@ -23,9 +23,9 @@ add_setup(async function() {
 
 
 
-add_task(async function title_helpL10nId() {
-  let helpL10nId = "urlbar-tip-help-icon";
-  let provider = registerTestProvider(1, { helpL10nId });
+add_task(async function title_helpL10n() {
+  let helpL10n = { id: "urlbar-tip-help-icon" };
+  let provider = registerTestProvider(1, { helpL10n });
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "example",
     window,
@@ -40,7 +40,7 @@ add_task(async function title_helpL10nId() {
   let l10nAttrs = document.l10n.getAttributes(helpButton);
   Assert.deepEqual(
     l10nAttrs,
-    { id: helpL10nId, args: null },
+    { id: helpL10n.id, args: null },
     "The l10n ID attribute was correctly set"
   );
 
