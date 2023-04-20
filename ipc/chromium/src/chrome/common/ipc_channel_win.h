@@ -158,6 +158,11 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   
   
   
+  nsCOMPtr<nsITimer> connect_timeout_ MOZ_GUARDED_BY(IOThread());
+
+  
+  
+  
   bool waiting_connect_ MOZ_GUARDED_BY(chan_cap_) = true;
 
   
