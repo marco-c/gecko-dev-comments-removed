@@ -1,14 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["FormAutofillChild"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -22,10 +17,10 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   FormAutofillUtils: "resource://autofill/FormAutofillUtils.jsm",
 });
 
-
-
-
-class FormAutofillChild extends JSWindowActorChild {
+/**
+ * Handles content's interactions for the frame.
+ */
+export class FormAutofillChild extends JSWindowActorChild {
   constructor() {
     super();
 
@@ -92,8 +87,8 @@ class FormAutofillChild extends JSWindowActorChild {
       lazy.FormAutofillContent.identifyAutofillFields(this._nextHandleElement);
       this._hasPendingTask = false;
       this._nextHandleElement = null;
-      
-      
+      // This is for testing purpose only which sends a notification to indicate that the
+      // form has been identified, and ready to open popup.
       this.sendAsyncMessage("FormAutofill:FieldsIdentified");
       lazy.FormAutofillContent.updateActiveInput();
     });
@@ -165,11 +160,11 @@ class FormAutofillChild extends JSWindowActorChild {
     this._doIdentifyAutofillFields();
   }
 
-  
-
-
-
-
+  /**
+   * Handle the DOMFormBeforeSubmit event.
+   *
+   * @param {Event} evt
+   */
   onDOMFormBeforeSubmit(evt) {
     let formElement = evt.target;
 

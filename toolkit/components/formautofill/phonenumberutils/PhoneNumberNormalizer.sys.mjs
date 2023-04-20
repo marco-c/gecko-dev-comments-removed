@@ -1,21 +1,17 @@
+/* This Source Code Form is subject to the terms of the Apache License, Version
+ * 2.0. If a copy of the Apache License was not distributed with this file, You
+ * can obtain one at https://www.apache.org/licenses/LICENSE-2.0 */
 
+// This library came from https://github.com/andreasgal/PhoneNumber.js but will
+// be further maintained by our own in Form Autofill codebase.
 
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["PhoneNumberNormalizer"];
-
-var PhoneNumberNormalizer = (function() {
+export var PhoneNumberNormalizer = (function() {
   const UNICODE_DIGITS = /[\uFF10-\uFF19\u0660-\u0669\u06F0-\u06F9]/g;
   const VALID_ALPHA_PATTERN = /[a-zA-Z]/g;
   const LEADING_PLUS_CHARS_PATTERN = /^[+\uFF0B]+/g;
   const NON_DIALABLE_CHARS = /[^,#+\*\d]/g;
 
-  
+  // Map letters to numbers according to the ITU E.161 standard
   let E161 = {
     a: 2,
     b: 2,
@@ -45,8 +41,8 @@ var PhoneNumberNormalizer = (function() {
     z: 9,
   };
 
-  
-  
+  // Normalize a number by converting unicode numbers and symbols to their
+  // ASCII equivalents and removing all non-dialable characters.
   function NormalizeNumber(number, numbersOnly) {
     if (typeof number !== "string") {
       return "";
