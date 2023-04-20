@@ -444,16 +444,18 @@ void XULButtonElement::PostHandleEventForMenus(
             
             return false;
           }
-          auto* menubar = XULMenuBarElement::FromNode(*parent);
-          if (!menubar) {
+          if (auto* menubar = XULMenuBarElement::FromNode(*parent)) {
             
+            
+            return !menubar->IsActiveByKeyboard();
+          }
+          if (IsOnMenuList()) {
             
             
             return false;
           }
           
-          
-          return !menubar->IsActiveByKeyboard();
+          return true;
         }();
 
         if (shouldDeactivate) {
