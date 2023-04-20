@@ -212,7 +212,7 @@ test_description_schema = Schema(
         Required("build-label"): str,
         
         
-        Optional("build-signing-label"): str,
+        Optional("build-signing-label"): optionally_keyed_by("variant", str),
         
         Required("build-attributes"): {str: object},
         
