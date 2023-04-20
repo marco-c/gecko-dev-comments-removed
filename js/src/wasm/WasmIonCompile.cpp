@@ -3357,6 +3357,19 @@ class FunctionCompiler {
     
     MOZ_ASSERT((result == nullptr) == (callee.retType == MIRType::None));
 
+    
+    
+    
+    
+    
+    
+    if (inDeadCode()) {
+      if (result) {
+        *result = nullptr;
+      }
+      return true;
+    }
+
     CallCompileState ccsArgs;
     if (!passInstance(callee.argTypes[0], &ccsArgs)) {
       return false;
