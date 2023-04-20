@@ -100,6 +100,51 @@ function forEachThread(iteratee) {
   return Promise.all(promises);
 }
 
+
+
+
+
+
+
+async function startTracing(logMethod) {
+  
+  
+  
+  if (!commands.client.mainRoot.traits.supportsJavascriptTracing) {
+    return;
+  }
+  const targets = commands.targetCommand.getAllTargets(
+    commands.targetCommand.ALL_TYPES
+  );
+  await Promise.all(
+    targets.map(async targetFront => {
+      const tracerFront = await targetFront.getFront("tracer");
+      return tracerFront.startTracing(logMethod);
+    })
+  );
+}
+
+
+
+
+async function stopTracing() {
+  
+  
+  
+  if (!commands.client.mainRoot.traits.supportsJavascriptTracing) {
+    return;
+  }
+  const targets = commands.targetCommand.getAllTargets(
+    commands.targetCommand.ALL_TYPES
+  );
+  await Promise.all(
+    targets.map(async targetFront => {
+      const tracerFront = await targetFront.getFront("tracer");
+      return tracerFront.stopTracing();
+    })
+  );
+}
+
 function resume(thread, frameId) {
   return lookupThreadFront(thread).resume();
 }
@@ -428,6 +473,8 @@ const clientCommands = {
   loadObjectProperties,
   releaseActor,
   pauseGrip,
+  startTracing,
+  stopTracing,
   resume,
   stepIn,
   stepOut,

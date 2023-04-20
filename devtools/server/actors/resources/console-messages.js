@@ -119,7 +119,7 @@ class ConsoleMessageWatcher {
 
 
 
-  onLogPoint(message) {
+  emitMessage(message) {
     if (!this.listener) {
       throw new Error("This target actor isn't listening to console messages");
     }

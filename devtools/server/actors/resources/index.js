@@ -21,6 +21,7 @@ const TYPES = {
   SOURCE: "source",
   STYLESHEET: "stylesheet",
   THREAD_STATE: "thread-state",
+  TRACING_STATE: "tracing-state",
   WEBSOCKET: "websocket",
 
   
@@ -98,6 +99,9 @@ const FrameTargetResources = augmentResourceDictionary({
   [TYPES.THREAD_STATE]: {
     path: "devtools/server/actors/resources/thread-states",
   },
+  [TYPES.TRACING_STATE]: {
+    path: "devtools/server/actors/resources/tracing-state",
+  },
   [TYPES.SERVER_SENT_EVENT]: {
     path: "devtools/server/actors/resources/server-sent-events",
   },
@@ -126,6 +130,9 @@ const ProcessTargetResources = augmentResourceDictionary({
   [TYPES.THREAD_STATE]: {
     path: "devtools/server/actors/resources/thread-states",
   },
+  [TYPES.TRACING_STATE]: {
+    path: "devtools/server/actors/resources/tracing-state",
+  },
 });
 
 
@@ -146,6 +153,9 @@ const WorkerTargetResources = augmentResourceDictionary({
   },
   [TYPES.THREAD_STATE]: {
     path: "devtools/server/actors/resources/thread-states",
+  },
+  [TYPES.TRACING_STATE]: {
+    path: "devtools/server/actors/resources/tracing-state",
   },
 });
 

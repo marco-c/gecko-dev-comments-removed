@@ -93,5 +93,22 @@ class BaseTargetActor extends Actor {
       resource => (resource.browsingContextID = browsingContextID)
     );
   }
+
+  
+
+
+
+
+
+
+
+
+  getTargetScopedActor(prefix) {
+    if (this.isDestroyed()) {
+      return null;
+    }
+    const form = this.form();
+    return this.conn._getOrCreateActor(form[prefix + "Actor"]);
+  }
 }
 exports.BaseTargetActor = BaseTargetActor;

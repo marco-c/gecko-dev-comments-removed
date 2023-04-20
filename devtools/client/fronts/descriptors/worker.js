@@ -101,6 +101,7 @@ class WorkerDescriptorFront extends DescriptorMixin(
       
       this.targetForm.consoleActor = workerTargetForm.consoleActor;
       this.targetForm.threadActor = workerTargetForm.threadActor;
+      this.targetForm.tracerActor = workerTargetForm.tracerActor;
 
       if (this.isDestroyedOrBeingDestroyed()) {
         return this;
