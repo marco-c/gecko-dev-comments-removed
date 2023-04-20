@@ -1823,16 +1823,14 @@ class MGoto : public MAryControlInstruction<0, 1>, public NoTypePolicy::Data {
 
 
 class MTest : public MAryControlInstruction<1, 2>, public TestPolicy::Data {
+  
+  
   MTest(MDefinition* ins, MBasicBlock* trueBranch, MBasicBlock* falseBranch)
       : MAryControlInstruction(classOpcode) {
     initOperand(0, ins);
     setSuccessor(TrueBranchIndex, trueBranch);
     setSuccessor(FalseBranchIndex, falseBranch);
   }
-
-  
-  MTest(MDefinition* ins, MBasicBlock* falseBranch)
-      : MTest(ins, nullptr, falseBranch) {}
 
   TypeDataList observedTypes_;
 

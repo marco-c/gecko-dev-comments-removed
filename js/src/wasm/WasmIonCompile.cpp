@@ -856,8 +856,8 @@ class FunctionCompiler {
       return true;
     }
 
-    MBasicBlock* joinBlock = nullptr;
-    if (!newBlock(curBlock_, &joinBlock)) {
+    MBasicBlock* fallthroughBlock = nullptr;
+    if (!newBlock(curBlock_, &fallthroughBlock)) {
       return false;
     }
 
@@ -865,7 +865,7 @@ class FunctionCompiler {
     if (!check) {
       return false;
     }
-    MTest* test = MTest::New(alloc(), check, joinBlock);
+    MTest* test = MTest::New(alloc(), check, nullptr, fallthroughBlock);
     if (!addControlFlowPatch(test, relativeDepth, MTest::TrueBranchIndex)) {
       return false;
     }
@@ -875,7 +875,7 @@ class FunctionCompiler {
     }
 
     curBlock_->end(test);
-    curBlock_ = joinBlock;
+    curBlock_ = fallthroughBlock;
     return true;
   }
 
@@ -885,8 +885,8 @@ class FunctionCompiler {
       return true;
     }
 
-    MBasicBlock* joinBlock = nullptr;
-    if (!newBlock(curBlock_, &joinBlock)) {
+    MBasicBlock* fallthroughBlock = nullptr;
+    if (!newBlock(curBlock_, &fallthroughBlock)) {
       return false;
     }
 
@@ -894,7 +894,7 @@ class FunctionCompiler {
     if (!check) {
       return false;
     }
-    MTest* test = MTest::New(alloc(), check, joinBlock);
+    MTest* test = MTest::New(alloc(), check, nullptr, fallthroughBlock);
     if (!addControlFlowPatch(test, relativeDepth, MTest::TrueBranchIndex)) {
       return false;
     }
@@ -904,7 +904,7 @@ class FunctionCompiler {
     }
 
     curBlock_->end(test);
-    curBlock_ = joinBlock;
+    curBlock_ = fallthroughBlock;
     return true;
   }
 
@@ -2678,7 +2678,7 @@ class FunctionCompiler {
       return false;
     }
 
-    MTest* test = MTest::New(alloc(), condition, joinBlock);
+    MTest* test = MTest::New(alloc(), condition, nullptr, joinBlock);
     if (!addControlFlowPatch(test, relativeDepth, MTest::TrueBranchIndex)) {
       return false;
     }
@@ -4128,6 +4128,84 @@ class FunctionCompiler {
     
     
     return trapIfZero(wasm::Trap::BadCast, success);
+  }
+
+  
+  
+  [[nodiscard]] MDefinition* refTest(uint32_t lineOrBytecode, MDefinition* ref,
+                                     MDefinition* castToRTT) {
+    
+    MDefinition* success;
+    MDefinition* callArgs[3] = {ref, castToRTT, nullptr};
+    if (!emitInstanceCall(lineOrBytecode, SASigRefTest, callArgs, &success)) {
+      return nullptr;
+    }
+
+    MOZ_ASSERT(success && success->type() == MIRType::Int32);
+    return success;
+  }
+
+  
+  [[nodiscard]] bool brOnCastCommon(bool onSuccess, uint32_t lineOrBytecode,
+                                    uint32_t labelRelativeDepth,
+                                    uint32_t castTypeIndex,
+                                    const ResultType& labelType,
+                                    const DefVector& values) {
+    if (inDeadCode()) {
+      return true;
+    }
+
+    MBasicBlock* fallthroughBlock = nullptr;
+    if (!newBlock(curBlock_, &fallthroughBlock)) {
+      return false;
+    }
+
+    MDefinition* castToRTT = loadGcCanon(castTypeIndex);
+    if (!castToRTT) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(values.length() > 0);
+    MDefinition* ref = values.back();
+    MOZ_ASSERT(ref->type() == MIRType::RefOrNull);
+
+    
+    MDefinition* success;
+    MDefinition* callArgs[3] = {ref, castToRTT, nullptr};
+    if (!emitInstanceCall(lineOrBytecode, SASigRefTest, callArgs, &success)) {
+      return false;
+    }
+
+    MTest* test;
+    if (onSuccess) {
+      test = MTest::New(alloc(), success, nullptr, fallthroughBlock);
+      if (!addControlFlowPatch(test, labelRelativeDepth,
+                               MTest::TrueBranchIndex)) {
+        return false;
+      }
+    } else {
+      test = MTest::New(alloc(), success, fallthroughBlock, nullptr);
+      if (!addControlFlowPatch(test, labelRelativeDepth,
+                               MTest::FalseBranchIndex)) {
+        return false;
+      }
+    }
+
+    if (!pushDefs(values)) {
+      return false;
+    }
+
+    curBlock_->end(test);
+    curBlock_ = fallthroughBlock;
+    return true;
   }
 
   
@@ -6645,6 +6723,37 @@ static bool EmitStructNew(FunctionCompiler& f) {
   return true;
 }
 
+static bool EmitStructNewDefault(FunctionCompiler& f) {
+  uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
+
+  uint32_t typeIndex;
+  if (!f.iter().readStructNewDefault(&typeIndex)) {
+    return false;
+  }
+
+  if (f.inDeadCode()) {
+    return true;
+  }
+
+  
+  
+  MDefinition* structRTT = f.loadGcCanon(typeIndex);
+  if (!structRTT) {
+    return false;
+  }
+
+  
+  MDefinition* structObject;
+  MDefinition* callArgs[2] = {structRTT, nullptr};
+  if (!f.emitInstanceCall(lineOrBytecode, SASigStructNew, callArgs,
+                          &structObject)) {
+    return false;
+  }
+
+  f.iter().setResult(structObject);
+  return true;
+}
+
 static bool EmitStructSet(FunctionCompiler& f) {
   uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
 
@@ -7058,6 +7167,33 @@ static bool EmitArrayCopy(FunctionCompiler& f) {
   return f.emitInstanceCall(lineOrBytecode, SASigArrayCopy, callArgs);
 }
 
+static bool EmitRefTest(FunctionCompiler& f) {
+  uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
+
+  MDefinition* ref;
+  uint32_t typeIndex;
+  if (!f.iter().readRefTest(&typeIndex, &ref)) {
+    return false;
+  }
+
+  if (f.inDeadCode()) {
+    return true;
+  }
+
+  MDefinition* castToRTT = f.loadGcCanon(typeIndex);
+  if (!castToRTT) {
+    return false;
+  }
+
+  MDefinition* success = f.refTest(lineOrBytecode, ref, castToRTT);
+  if (!success) {
+    return false;
+  }
+
+  f.iter().setResult(success);
+  return true;
+}
+
 static bool EmitRefCast(FunctionCompiler& f) {
   uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
 
@@ -7077,6 +7213,49 @@ static bool EmitRefCast(FunctionCompiler& f) {
   }
 
   if (!f.refCast(lineOrBytecode, ref, castToRTT)) {
+    return false;
+  }
+
+  f.iter().setResult(ref);
+  return true;
+}
+
+static bool EmitBrOnCastCommon(FunctionCompiler& f, bool onSuccess) {
+  uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
+
+  uint32_t labelRelativeDepth;
+  uint32_t castTypeIndex;
+  ResultType labelType;
+  DefVector values;
+  if (onSuccess
+          ? !f.iter().readBrOnCast(&labelRelativeDepth, &castTypeIndex,
+                                   &labelType, &values)
+          : !f.iter().readBrOnCastFail(&labelRelativeDepth, &castTypeIndex,
+                                       &labelType, &values)) {
+    return false;
+  }
+
+  return f.brOnCastCommon(onSuccess, lineOrBytecode, labelRelativeDepth,
+                          castTypeIndex, labelType, values);
+}
+
+static bool EmitExternInternalize(FunctionCompiler& f) {
+  
+  
+  MDefinition* ref;
+  if (!f.iter().readRefConversion(RefType::extern_(), RefType::any(), &ref)) {
+    return false;
+  }
+
+  f.iter().setResult(ref);
+  return true;
+}
+
+static bool EmitExternExternalize(FunctionCompiler& f) {
+  
+  
+  MDefinition* ref;
+  if (!f.iter().readRefConversion(RefType::any(), RefType::extern_(), &ref)) {
     return false;
   }
 
@@ -7592,7 +7771,7 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
         if (!f.moduleEnv().gcEnabled()) {
           return f.iter().unrecognizedOpcode(&op);
         }
-        CHECK(EmitComparison(f, RefType::extern_(), JSOp::Eq,
+        CHECK(EmitComparison(f, RefType::eq(), JSOp::Eq,
                              MCompare::Compare_RefOrNull));
 #endif
       case uint16_t(Op::RefFunc):
@@ -7649,6 +7828,8 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
         switch (op.b1) {
           case uint32_t(GcOp::StructNew):
             CHECK(EmitStructNew(f));
+          case uint32_t(GcOp::StructNewDefault):
+            CHECK(EmitStructNewDefault(f));
           case uint32_t(GcOp::StructSet):
             CHECK(EmitStructSet(f));
           case uint32_t(GcOp::StructGet):
@@ -7681,8 +7862,18 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
             CHECK(EmitArrayLen(f, false));
           case uint32_t(GcOp::ArrayCopy):
             CHECK(EmitArrayCopy(f));
+          case uint32_t(GcOp::RefTest):
+            CHECK(EmitRefTest(f));
           case uint32_t(GcOp::RefCast):
             CHECK(EmitRefCast(f));
+          case uint32_t(GcOp::BrOnCast):
+            CHECK(EmitBrOnCastCommon(f, true));
+          case uint32_t(GcOp::BrOnCastFail):
+            CHECK(EmitBrOnCastCommon(f, false));
+          case uint16_t(GcOp::ExternInternalize):
+            CHECK(EmitExternInternalize(f));
+          case uint16_t(GcOp::ExternExternalize):
+            CHECK(EmitExternExternalize(f));
           default:
             return f.iter().unrecognizedOpcode(&op);
         }  

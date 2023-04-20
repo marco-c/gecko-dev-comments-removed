@@ -164,3 +164,22 @@ invalidTyping('(type $a (struct))', '$a', ['i32', 'f32', 'eqref'], ['f32', 'i32'
   testExtra(['i32', 'f32', 'i64', 'f64']);
   testExtra(['i32', 'f32', 'i64', 'f64', 'i32', 'f32', 'i64', 'f64']);
 }
+
+
+
+
+
+{
+    let tOnCast =
+    `(module
+       (type $a (struct))
+       (func (export "onCast") (param f32 i32 eqref) (result f32 i32 (ref $a))
+         local.get 0
+         local.get 1
+         local.get 2
+         br_on_cast 0 $a
+         unreachable
+       )
+     )`;
+    let { onCast } = wasmEvalText(tOnCast).exports;
+}

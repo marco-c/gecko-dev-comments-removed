@@ -3498,6 +3498,9 @@ inline bool OpIter<Policy>::readRefCast(uint32_t* typeIndex, Value* ref) {
 
 
 
+
+
+
 template <typename Policy>
 inline bool OpIter<Policy>::readBrOnCast(uint32_t* labelRelativeDepth,
                                          uint32_t* castTypeIndex,
@@ -3563,6 +3566,9 @@ inline bool OpIter<Policy>::readBrOnCast(uint32_t* labelRelativeDepth,
   return checkTopTypeMatches(ResultType::Vector(fallthroughType), values,
                              false);
 }
+
+
+
 
 
 
