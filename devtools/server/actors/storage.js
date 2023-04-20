@@ -1662,6 +1662,16 @@ const extensionStorageHelpers = {
   
   async setupStorageInParent(addonId) {
     const { extension } = WebExtensionPolicy.getByID(addonId);
+    try {
+      
+      
+      
+      
+      
+      await extension.apiManager.asyncGetAPI("storage", extension);
+    } catch (err) {
+      console.error(err);
+    }
     const parentResult = await ExtensionStorageIDB.selectBackend({ extension });
     const result = {
       ...parentResult,
