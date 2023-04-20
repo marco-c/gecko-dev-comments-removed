@@ -138,6 +138,7 @@ module.exports = {
     {
       ...removeOverrides(xpcshellTestConfig),
       files: testPaths.xpcshell.map(path => `${path}**`),
+      excludedFiles: ["**/*.jsm", "**/*.mjs"],
     },
     {
       
@@ -176,15 +177,21 @@ module.exports = {
     {
       ...browserTestConfig,
       files: testPaths.browser.map(path => `${path}**`),
+      excludedFiles: ["**/*.jsm", "**/*.mjs"],
     },
     {
       ...removeOverrides(mochitestTestConfig),
       files: testPaths.mochitest.map(path => `${path}**`),
-      excludedFiles: ["security/manager/ssl/tests/mochitest/browser/**"],
+      excludedFiles: [
+        "**/*.jsm",
+        "**/*.mjs",
+        "security/manager/ssl/tests/mochitest/browser/**",
+      ],
     },
     {
       ...removeOverrides(chromeTestConfig),
       files: testPaths.chrome.map(path => `${path}**`),
+      excludedFiles: ["**/*.jsm", "**/*.mjs"],
     },
     {
       env: {

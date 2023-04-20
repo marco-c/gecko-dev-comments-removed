@@ -4,6 +4,9 @@
 
 "use strict";
 
+
+
+
 var EXPORTED_SYMBOLS = ["PermissionPrompts"];
 
 const { BrowserTestUtils } = ChromeUtils.importESModule(
