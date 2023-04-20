@@ -11,6 +11,9 @@
 #ifndef MODULES_VIDEO_CODING_TIMING_JITTER_ESTIMATOR_H_
 #define MODULES_VIDEO_CODING_TIMING_JITTER_ESTIMATOR_H_
 
+#include <memory>
+
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/units/data_size.h"
@@ -19,6 +22,7 @@
 #include "api/units/timestamp.h"
 #include "modules/video_coding/timing/frame_delay_variation_kalman_filter.h"
 #include "modules/video_coding/timing/rtt_filter.h"
+#include "rtc_base/experiments/struct_parameters_parser.h"
 #include "rtc_base/rolling_accumulator.h"
 
 namespace webrtc {
@@ -27,10 +31,50 @@ class Clock;
 
 class JitterEstimator {
  public:
-  explicit JitterEstimator(Clock* clock, const FieldTrialsView& field_trials);
-  ~JitterEstimator();
+  
+  
+  struct Config {
+    static constexpr char kFieldTrialsKey[] = "WebRTC-JitterEstimatorConfig";
+
+    static Config Parse(absl::string_view field_trial) {
+      Config config;
+      config.Parser()->Parse(field_trial);
+      return config;
+    }
+
+    std::unique_ptr<StructParametersParser> Parser() {
+      return StructParametersParser::Create(
+          "num_stddev_delay_outlier", &num_stddev_delay_outlier,
+          "num_stddev_size_outlier", &num_stddev_size_outlier,
+          "congestion_rejection_factor", &congestion_rejection_factor);
+    }
+
+    
+    
+    
+    
+    
+    absl::optional<double> num_stddev_delay_outlier;
+
+    
+    
+    
+    
+    
+    absl::optional<double> num_stddev_size_outlier;
+
+    
+    
+    
+    
+    
+    absl::optional<double> congestion_rejection_factor;
+  };
+
+  JitterEstimator(Clock* clock, const FieldTrialsView& field_trials);
   JitterEstimator(const JitterEstimator&) = delete;
   JitterEstimator& operator=(const JitterEstimator&) = delete;
+  ~JitterEstimator();
 
   
   void Reset();
@@ -61,7 +105,15 @@ class JitterEstimator {
   
   void UpdateRtt(TimeDelta rtt);
 
+  
+  Config GetConfigForTest() const;
+
  private:
+  
+  double GetNumStddevDelayOutlier() const;
+  double GetNumStddevSizeOutlier() const;
+  double GetCongestionRejectionFactor() const;
+
   
   
   
@@ -81,6 +133,9 @@ class JitterEstimator {
 
   
   Frequency GetFrameRate() const;
+
+  
+  const Config config_;
 
   
   

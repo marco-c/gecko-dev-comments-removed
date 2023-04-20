@@ -11,11 +11,14 @@
 
 #include <stdint.h>
 
+#include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/field_trials.h"
 #include "api/units/data_size.h"
 #include "api/units/frequency.h"
 #include "api/units/time_delta.h"
@@ -53,10 +56,12 @@ class ValueGenerator {
 
 class JitterEstimatorTest : public ::testing::Test {
  protected:
-  JitterEstimatorTest()
+  explicit JitterEstimatorTest(const std::string& field_trials)
       : fake_clock_(0),
-        field_trials_(""),
-        estimator_(&fake_clock_, field_trials_) {}
+        field_trials_(FieldTrials::CreateNoGlobal(field_trials)),
+        estimator_(&fake_clock_, *field_trials_) {}
+  JitterEstimatorTest() : JitterEstimatorTest("") {}
+  virtual ~JitterEstimatorTest() {}
 
   void Run(int duration_s, int framerate_fps, ValueGenerator& gen) {
     TimeDelta tick = 1 / Frequency::Hertz(framerate_fps);
@@ -68,7 +73,7 @@ class JitterEstimatorTest : public ::testing::Test {
   }
 
   SimulatedClock fake_clock_;
-  test::ScopedKeyValueConfig field_trials_;
+  std::unique_ptr<FieldTrials> field_trials_;
   JitterEstimator estimator_;
 };
 
@@ -77,10 +82,6 @@ TEST_F(JitterEstimatorTest, SteadyStateConvergence) {
   Run(60, 30, gen);
   EXPECT_EQ(estimator_.GetJitterEstimate(0, absl::nullopt).ms(), 54);
 }
-
-
-
-
 
 TEST_F(JitterEstimatorTest,
        SizeOutlierIsNotRejectedAndIncreasesJitterEstimate) {
@@ -95,6 +96,7 @@ TEST_F(JitterEstimatorTest,
   estimator_.UpdateEstimate(gen.Delay(), 10 * gen.FrameSize());
   TimeDelta outlier_jitter = estimator_.GetJitterEstimate(0, absl::nullopt);
 
+  
   EXPECT_GT(outlier_jitter.ms(), 1.25 * steady_state_jitter.ms());
 }
 
@@ -141,6 +143,48 @@ TEST_F(JitterEstimatorTest, RttMultAddCap) {
   
   EXPECT_GT(*jitter_by_rtt_mult_cap[1].second.GetPercentile(1.0),
             *jitter_by_rtt_mult_cap[0].second.GetPercentile(1.0) * 1.25);
+}
+
+TEST_F(JitterEstimatorTest, EmptyFieldTrialsParsesToUnsetConfig) {
+  JitterEstimator::Config config = estimator_.GetConfigForTest();
+  EXPECT_FALSE(config.num_stddev_delay_outlier.has_value());
+  EXPECT_FALSE(config.num_stddev_size_outlier.has_value());
+  EXPECT_FALSE(config.congestion_rejection_factor.has_value());
+}
+
+class FieldTrialsOverriddenJitterEstimatorTest : public JitterEstimatorTest {
+ protected:
+  FieldTrialsOverriddenJitterEstimatorTest()
+      : JitterEstimatorTest(
+            "WebRTC-JitterEstimatorConfig/"
+            "num_stddev_delay_outlier:2,"
+            "num_stddev_size_outlier:3.1,"
+            "congestion_rejection_factor:-1.55/") {}
+  ~FieldTrialsOverriddenJitterEstimatorTest() {}
+};
+
+TEST_F(FieldTrialsOverriddenJitterEstimatorTest, FieldTrialsParsesCorrectly) {
+  JitterEstimator::Config config = estimator_.GetConfigForTest();
+  EXPECT_EQ(*config.num_stddev_delay_outlier, 2.0);
+  EXPECT_EQ(*config.num_stddev_size_outlier, 3.1);
+  EXPECT_EQ(*config.congestion_rejection_factor, -1.55);
+}
+
+TEST_F(FieldTrialsOverriddenJitterEstimatorTest,
+       DelayOutlierIsRejectedAndMaintainsJitterEstimate) {
+  ValueGenerator gen(10);
+
+  
+  Run(60, 30, gen);
+  TimeDelta steady_state_jitter =
+      estimator_.GetJitterEstimate(0, absl::nullopt);
+
+  
+  estimator_.UpdateEstimate(10 * gen.Delay(), gen.FrameSize());
+  TimeDelta outlier_jitter = estimator_.GetJitterEstimate(0, absl::nullopt);
+
+  
+  EXPECT_EQ(outlier_jitter.ms(), steady_state_jitter.ms());
 }
 
 }  

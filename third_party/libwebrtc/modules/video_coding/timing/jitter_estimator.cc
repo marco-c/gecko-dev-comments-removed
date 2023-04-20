@@ -79,9 +79,12 @@ constexpr Frequency kMaxFramerateEstimate = Frequency::Hertz(200);
 
 }  
 
+constexpr char JitterEstimator::Config::kFieldTrialsKey[];
+
 JitterEstimator::JitterEstimator(Clock* clock,
                                  const FieldTrialsView& field_trials)
-    : fps_counter_(30),  
+    : config_(Config::Parse(field_trials.Lookup(Config::kFieldTrialsKey))),
+      fps_counter_(30),  
                          
       clock_(clock) {
   Reset();
@@ -164,12 +167,14 @@ void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
       kalman_filter_.GetFrameDelayVariationEstimateTotal(delta_frame_bytes);
 
   
+  double num_stddev_delay_outlier = GetNumStddevDelayOutlier();
   bool abs_delay_is_not_outlier =
-      fabs(delay_deviation_ms) < kNumStdDevDelayOutlier * sqrt(var_noise_ms2_);
+      fabs(delay_deviation_ms) <
+      num_stddev_delay_outlier * sqrt(var_noise_ms2_);
   bool size_is_positive_outlier =
       frame_size.bytes() >
       avg_frame_size_bytes_ +
-          kNumStdDevSizeOutlier * sqrt(var_frame_size_bytes2_);
+          GetNumStddevSizeOutlier() * sqrt(var_frame_size_bytes2_);
 
   
   
@@ -186,14 +191,14 @@ void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
     
     
     if (delta_frame_bytes >
-        kCongestionRejectionFactor * max_frame_size_bytes_) {
+        GetCongestionRejectionFactor() * max_frame_size_bytes_) {
       
       kalman_filter_.PredictAndUpdate(frame_delay.ms(), delta_frame_bytes,
                                       max_frame_size_bytes_, var_noise_ms2_);
     }
   } else {
-    double num_stddev = (delay_deviation_ms >= 0) ? kNumStdDevDelayOutlier
-                                                  : -kNumStdDevDelayOutlier;
+    double num_stddev = (delay_deviation_ms >= 0) ? num_stddev_delay_outlier
+                                                  : -num_stddev_delay_outlier;
     EstimateRandomJitter(num_stddev * sqrt(var_noise_ms2_));
   }
   
@@ -210,6 +215,27 @@ void JitterEstimator::FrameNacked() {
     nack_count_++;
   }
   latest_nack_ = clock_->CurrentTime();
+}
+
+void JitterEstimator::UpdateRtt(TimeDelta rtt) {
+  rtt_filter_.Update(rtt);
+}
+
+JitterEstimator::Config JitterEstimator::GetConfigForTest() const {
+  return config_;
+}
+
+double JitterEstimator::GetNumStddevDelayOutlier() const {
+  return config_.num_stddev_delay_outlier.value_or(kNumStdDevDelayOutlier);
+}
+
+double JitterEstimator::GetNumStddevSizeOutlier() const {
+  return config_.num_stddev_size_outlier.value_or(kNumStdDevSizeOutlier);
+}
+
+double JitterEstimator::GetCongestionRejectionFactor() const {
+  return config_.congestion_rejection_factor.value_or(
+      kCongestionRejectionFactor);
 }
 
 
@@ -292,10 +318,6 @@ TimeDelta JitterEstimator::CalculateEstimate() {
 
 void JitterEstimator::PostProcessEstimate() {
   filter_jitter_estimate_ = CalculateEstimate();
-}
-
-void JitterEstimator::UpdateRtt(TimeDelta rtt) {
-  rtt_filter_.Update(rtt);
 }
 
 
