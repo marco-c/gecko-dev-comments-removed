@@ -177,7 +177,11 @@ class LintRoller(object):
         self._setupargs = setupargs or {}
 
         
-        self.result = ResultSummary(root)
+        self.result = ResultSummary(
+            root,
+            
+            fail_on_warnings=lintargs.get("show_warnings") != "soft",
+        )
 
         self.root = root
         self.exclude = exclude or []
