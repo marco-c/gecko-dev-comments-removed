@@ -148,6 +148,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CloseEvent", insecureContext: true },
   
+  { name: "CompressionStream", insecureContext: true },
+  
   { name: "CountQueuingStrategy", insecureContext: true },
   
   { name: "Crypto", insecureContext: true },
@@ -155,6 +157,8 @@ let interfaceNamesInGlobalScope = [
   { name: "CryptoKey" },
   
   { name: "CustomEvent", insecureContext: true },
+  
+  { name: "DecompressionStream", insecureContext: true },
   
   { name: "DedicatedWorkerGlobalScope", insecureContext: true },
   

@@ -143,6 +143,8 @@ let interfaceNamesInGlobalScope = [
   
   "CloseEvent",
   
+  "CompressionStream",
+  
   "CountQueuingStrategy",
   
   "Crypto",
@@ -150,6 +152,8 @@ let interfaceNamesInGlobalScope = [
   "CryptoKey",
   
   "CustomEvent",
+  
+  "DecompressionStream",
   
   "Directory",
   
