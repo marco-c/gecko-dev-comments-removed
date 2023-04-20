@@ -1,23 +1,24 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsDocShellTreeOwner_h__
 #define nsDocShellTreeOwner_h__
 
-
+// Helper Classes
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
-
+// Interfaces Needed
 #include "nsIBaseWindow.h"
 #include "nsIDocShellTreeOwner.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIWebBrowserChrome.h"
 #include "nsIDOMEventListener.h"
+#include "nsIEmbeddingSiteWindow.h"
 #include "nsIWebProgressListener.h"
 #include "nsWeakReference.h"
 #include "nsITimer.h"
@@ -30,8 +31,8 @@ namespace mozilla {
 namespace dom {
 class Event;
 class EventTarget;
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
 class nsIDocShellTreeItem;
 class nsWebBrowser;
@@ -75,30 +76,30 @@ class nsDocShellTreeOwner final : public nsIDocShellTreeOwner,
 
   void EnsureContentTreeOwner();
 
-  
-  
-  
-  
-  
+  // These helper functions return the correct instances of the requested
+  // interfaces.  If the object passed to SetWebBrowserChrome() implements
+  // nsISupportsWeakReference, then these functions call QueryReferent on
+  // that object.  Otherwise, they return an addrefed pointer.  If the
+  // WebBrowserChrome object doesn't exist, they return nullptr.
   already_AddRefed<nsIWebBrowserChrome> GetWebBrowserChrome();
-  already_AddRefed<nsIBaseWindow> GetOwnerWin();
+  already_AddRefed<nsIEmbeddingSiteWindow> GetOwnerWin();
   already_AddRefed<nsIInterfaceRequestor> GetOwnerRequestor();
 
  protected:
-  
+  // Weak References
   nsWebBrowser* mWebBrowser;
   nsIDocShellTreeOwner* mTreeOwner;
   nsIDocShellTreeItem* mPrimaryContentShell;
 
   nsIWebBrowserChrome* mWebBrowserChrome;
-  nsIBaseWindow* mOwnerWin;
+  nsIEmbeddingSiteWindow* mOwnerWin;
   nsIInterfaceRequestor* mOwnerRequestor;
 
-  nsWeakPtr mWebBrowserChromeWeak;  
+  nsWeakPtr mWebBrowserChromeWeak;  // nsIWebBrowserChrome
 
-  
-  
-  
+  // the objects that listen for chrome events like context menus and tooltips.
+  // They are separate objects to avoid circular references between |this|
+  // and the DOM.
   RefPtr<ChromeTooltipListener> mChromeTooltipListener;
 
   RefPtr<nsDocShellTreeOwner> mContentTreeOwner;
@@ -108,4 +109,4 @@ class nsDocShellTreeOwner final : public nsIDocShellTreeOwner,
   nsCOMPtr<nsIRemoteTab> mPrimaryRemoteTab;
 };
 
-#endif 
+#endif /* nsDocShellTreeOwner_h__ */

@@ -29,6 +29,7 @@
 #include "mozilla/dom/Document.h"
 #include "nsPIDOMWindow.h"
 #include "nsScreen.h"
+#include "nsIEmbeddingSiteWindow.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIIOService.h"
@@ -283,9 +284,13 @@ NS_IMETHODIMP AppWindow::GetInterface(const nsIID& aIID, void** aSink) {
   }
   if (aIID.Equals(NS_GET_IID(nsIWebBrowserChrome)) &&
       NS_SUCCEEDED(EnsureContentTreeOwner()) &&
-      NS_SUCCEEDED(mContentTreeOwner->QueryInterface(aIID, aSink))) {
+      NS_SUCCEEDED(mContentTreeOwner->QueryInterface(aIID, aSink)))
     return NS_OK;
-  }
+
+  if (aIID.Equals(NS_GET_IID(nsIEmbeddingSiteWindow)) &&
+      NS_SUCCEEDED(EnsureContentTreeOwner()) &&
+      NS_SUCCEEDED(mContentTreeOwner->QueryInterface(aIID, aSink)))
+    return NS_OK;
 
   return QueryInterface(aIID, aSink);
 }
@@ -786,23 +791,6 @@ NS_IMETHODIMP AppWindow::GetPositionAndSize(int32_t* x, int32_t* y, int32_t* cx,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-AppWindow::SetDimensions(DimensionRequest&& aRequest) {
-  
-  
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-AppWindow::GetDimensions(DimensionKind aDimensionKind, int32_t* aX, int32_t* aY,
-                         int32_t* aCX, int32_t* aCY) {
-  
-  
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
 NS_IMETHODIMP AppWindow::Center(nsIAppWindow* aRelative, bool aScreen,
                                 bool aAlert) {
   DesktopIntRect rect;
@@ -1117,39 +1105,48 @@ NS_IMETHODIMP AppWindow::ForceRoundedDimensions() {
     return NS_OK;
   }
 
-  CSSToLayoutDeviceScale scale = UnscaledDevicePixelsPerCSSPixel();
+  int32_t availWidthCSS = 0;
+  int32_t availHeightCSS = 0;
+  int32_t contentWidthCSS = 0;
+  int32_t contentHeightCSS = 0;
+  int32_t windowWidthCSS = 0;
+  int32_t windowHeightCSS = 0;
+  double devicePerCSSPixels = UnscaledDevicePixelsPerCSSPixel().scale;
 
-  CSSIntSize availSizeCSS;
-  GetAvailScreenSize(&availSizeCSS.width, &availSizeCSS.height);
-
-  
-  
-  SetSpecifiedSize(availSizeCSS.width, availSizeCSS.height);
-
-  
-  CSSIntSize windowSizeCSS = RoundedToInt(GetSize() / scale);
+  GetAvailScreenSize(&availWidthCSS, &availHeightCSS);
 
   
-  LayoutDeviceIntSize contentSizeDev;
-  GetPrimaryContentSize(&contentSizeDev.width, &contentSizeDev.height);
-  CSSIntSize contentSizeCSS = RoundedToInt(contentSizeDev / scale);
+  
+  SetSpecifiedSize(availWidthCSS, availHeightCSS);
 
   
-  CSSIntSize chromeSizeCSS = windowSizeCSS - contentSizeCSS;
+  GetSize(&windowWidthCSS, &windowHeightCSS);  
+  windowWidthCSS = NSToIntRound(windowWidthCSS / devicePerCSSPixels);
+  windowHeightCSS = NSToIntRound(windowHeightCSS / devicePerCSSPixels);
 
-  CSSIntSize targetSizeCSS;
+  
+  GetPrimaryContentSize(&contentWidthCSS, &contentHeightCSS);
+
+  
+  int32_t chromeWidth = 0, chromeHeight = 0;
+  chromeWidth = windowWidthCSS - contentWidthCSS;
+  chromeHeight = windowHeightCSS - contentHeightCSS;
+
+  int32_t targetContentWidth = 0, targetContentHeight = 0;
+
   
   
   nsContentUtils::CalcRoundedWindowSizeForResistingFingerprinting(
-      chromeSizeCSS.width, chromeSizeCSS.height, availSizeCSS.width,
-      availSizeCSS.height, availSizeCSS.width, availSizeCSS.height,
+      chromeWidth, chromeHeight, availWidthCSS, availHeightCSS, availWidthCSS,
+      availHeightCSS,
       false,  
       false,  
-      &targetSizeCSS.width, &targetSizeCSS.height);
+      &targetContentWidth, &targetContentHeight);
 
-  LayoutDeviceIntSize targetSizeDev = RoundedToInt(targetSizeCSS * scale);
+  targetContentWidth = NSToIntRound(targetContentWidth * devicePerCSSPixels);
+  targetContentHeight = NSToIntRound(targetContentHeight * devicePerCSSPixels);
 
-  SetPrimaryContentSize(targetSizeDev.width, targetSizeDev.height);
+  SetPrimaryContentSize(targetContentWidth, targetContentHeight);
 
   return NS_OK;
 }
@@ -1376,12 +1373,9 @@ void AppWindow::SetSpecifiedSize(int32_t aSpecWidth, int32_t aSpecHeight) {
   
   auto newSize = RoundedToInt(CSSIntSize(aSpecWidth, aSpecHeight) *
                               UnscaledDevicePixelsPerCSSPixel());
-
-  
-  
-  
-  
-  SetSize(newSize.width, newSize.height, false);
+  if (newSize != GetSize()) {
+    SetSize(newSize.width, newSize.height, false);
+  }
 }
 
 
@@ -2169,15 +2163,8 @@ nsresult AppWindow::GetPrimaryRemoteTabSize(int32_t* aWidth, int32_t* aHeight) {
   RefPtr<dom::Element> element = host->GetOwnerElement();
   NS_ENSURE_STATE(element);
 
-  CSSIntSize size(element->ClientWidth(), element->ClientHeight());
-  LayoutDeviceIntSize sizeDev =
-      RoundedToInt(size * UnscaledDevicePixelsPerCSSPixel());
-  if (aWidth) {
-    *aWidth = sizeDev.width;
-  }
-  if (aHeight) {
-    *aHeight = sizeDev.height;
-  }
+  *aWidth = element->ClientWidth();
+  *aHeight = element->ClientHeight();
   return NS_OK;
 }
 
@@ -2188,13 +2175,14 @@ nsresult AppWindow::GetPrimaryContentShellSize(int32_t* aWidth,
   nsCOMPtr<nsIBaseWindow> shellWindow(do_QueryInterface(mPrimaryContentShell));
   NS_ENSURE_STATE(shellWindow);
 
-  LayoutDeviceIntSize sizeDev = shellWindow->GetSize();
-  if (aWidth) {
-    *aWidth = sizeDev.width;
-  }
-  if (aHeight) {
-    *aHeight = sizeDev.height;
-  }
+  
+  
+  
+  
+  CSSIntSize size = RoundedToInt(
+      shellWindow->GetSize() / shellWindow->UnscaledDevicePixelsPerCSSPixel());
+  *aWidth = size.width;
+  *aHeight = size.height;
   return NS_OK;
 }
 
@@ -2202,8 +2190,7 @@ NS_IMETHODIMP
 AppWindow::SetPrimaryContentSize(int32_t aWidth, int32_t aHeight) {
   if (mPrimaryBrowserParent) {
     return SetPrimaryRemoteTabSize(aWidth, aHeight);
-  }
-  if (mPrimaryContentShell) {
+  } else if (mPrimaryContentShell) {
     return SizeShellTo(mPrimaryContentShell, aWidth, aHeight);
   }
   return NS_ERROR_UNEXPECTED;
@@ -2212,7 +2199,12 @@ AppWindow::SetPrimaryContentSize(int32_t aWidth, int32_t aHeight) {
 nsresult AppWindow::SetPrimaryRemoteTabSize(int32_t aWidth, int32_t aHeight) {
   int32_t shellWidth, shellHeight;
   GetPrimaryRemoteTabSize(&shellWidth, &shellHeight);
-  SizeShellToWithLimit(aWidth, aHeight, shellWidth, shellHeight);
+
+  
+  
+  double scale = UnscaledDevicePixelsPerCSSPixel().scale;
+  SizeShellToWithLimit(aWidth, aHeight, shellWidth * scale,
+                       shellHeight * scale);
   return NS_OK;
 }
 
@@ -2745,10 +2737,6 @@ NS_IMETHODIMP AppWindow::SetXULBrowserWindow(
   return NS_OK;
 }
 
-
-
-
-
 void AppWindow::SizeShellToWithLimit(int32_t aDesiredWidth,
                                      int32_t aDesiredHeight,
                                      int32_t shellItemWidth,
@@ -2756,22 +2744,19 @@ void AppWindow::SizeShellToWithLimit(int32_t aDesiredWidth,
   int32_t widthDelta = aDesiredWidth - shellItemWidth;
   int32_t heightDelta = aDesiredHeight - shellItemHeight;
 
-  int32_t winWidth = 0;
-  int32_t winHeight = 0;
+  if (widthDelta || heightDelta) {
+    int32_t winWidth = 0;
+    int32_t winHeight = 0;
 
-  GetSize(&winWidth, &winHeight);
-  
-  
-  
-  
-  winWidth = std::max(winWidth + widthDelta, aDesiredWidth);
-  winHeight = std::max(winHeight + heightDelta, aDesiredHeight);
-
-  
-  
-  
-  
-  SetSize(winWidth, winHeight, true);
+    GetSize(&winWidth, &winHeight);
+    
+    
+    
+    
+    winWidth = std::max(winWidth + widthDelta, aDesiredWidth);
+    winHeight = std::max(winHeight + heightDelta, aDesiredHeight);
+    SetSize(winWidth, winHeight, true);
+  }
 }
 
 nsresult AppWindow::GetTabCount(uint32_t* aResult) {

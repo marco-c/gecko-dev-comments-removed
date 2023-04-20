@@ -1,6 +1,0 @@
-
-
-
-"use strict";
-
-createGenericResizeTests(9, 10,  true, "Resize");
