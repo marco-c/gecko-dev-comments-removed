@@ -132,7 +132,7 @@ add_task(async function test_focus_after_selection() {
   info("Test behavior when selection is done on the month-year panel");
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
   EventUtils.synthesizeKey(" ");
 
   
