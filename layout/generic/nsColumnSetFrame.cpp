@@ -627,7 +627,26 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
       LogicalSize kidCBSize(wm, availSize.ISize(wm), computedBSize);
       ReflowInput kidReflowInput(PresContext(), aReflowInput, child, availSize,
                                  Some(kidCBSize));
-      kidReflowInput.mFlags.mIsTopOfPage = !aConfig.mIsBalancing;
+      kidReflowInput.mFlags.mIsTopOfPage = [&]() {
+        const bool isNestedMulticol =
+            aReflowInput.mParentReflowInput->mFrame->HasAnyStateBits(
+                NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
+        if (isNestedMulticol) {
+          if (aReflowInput.mFlags.mIsTopOfPage) {
+            
+            
+            return !aConfig.mIsBalancing || aConfig.mIsLastBalancingReflow;
+          }
+          
+          
+          
+          
+          return false;
+        }
+        
+        
+        return !aConfig.mIsBalancing;
+      }();
       kidReflowInput.mFlags.mTableIsSplittable = false;
       kidReflowInput.mFlags.mIsColumnBalancing = aConfig.mIsBalancing;
       kidReflowInput.mBreakType = ReflowInput::BreakType::Column;
@@ -1149,6 +1168,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
     
     
     COLUMN_SET_LOG("%s: Last attempt to call ReflowColumns", __func__);
+    aConfig.mIsLastBalancingReflow = true;
     const bool forceUnboundedLastColumn =
         aReflowInput.mParentReflowInput->AvailableBSize() ==
         NS_UNCONSTRAINEDSIZE;

@@ -110,6 +110,10 @@ class nsColumnSetFrame final : public nsContainerFrame {
 
     
     
+    bool mIsLastBalancingReflow = false;
+
+    
+    
     nscoord mKnownFeasibleBSize = NS_UNCONSTRAINEDSIZE;
 
     
