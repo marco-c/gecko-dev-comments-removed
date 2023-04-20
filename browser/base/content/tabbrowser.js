@@ -249,8 +249,6 @@
 
     _hoverTabTimer: null,
 
-    _featureCallout: null,
-
     get tabContainer() {
       delete this.tabContainer;
       return (this.tabContainer = document.getElementById("tabbrowser-tabs"));
@@ -324,31 +322,6 @@
       return this._selectedBrowser;
     },
 
-    get featureCallout() {
-      return this._featureCallout;
-    },
-
-    set featureCallout(val) {
-      this._featureCallout = val;
-    },
-
-    get instantiateFeatureCalloutTour() {
-      return this._instantiateFeatureCalloutTour;
-    },
-
-    _instantiateFeatureCalloutTour(location) {
-      
-      const { FeatureCallout } = ChromeUtils.importESModule(
-        "chrome://browser/content/featureCallout.mjs"
-      );
-      
-      
-      this._featureCallout = new FeatureCallout({
-        win: window,
-        prefName: "browser.pdfjs.feature-tour",
-        source: location.spec,
-      });
-    },
     _setupInitialBrowserAndTab() {
       
       
@@ -1086,16 +1059,6 @@
       }
 
       let newTab = this.getTabForBrowser(newBrowser);
-
-      if (this._featureCallout) {
-        this._featureCallout._endTour(true);
-        this._featureCallout = null;
-      }
-
-      if (newBrowser.currentURI.spec.endsWith(".pdf")) {
-        this._instantiateFeatureCalloutTour(newBrowser.currentURI.spec);
-        window.gBrowser.featureCallout.showFeatureCallout();
-      }
 
       if (!aForceUpdate) {
         TelemetryStopwatch.start("FX_TAB_SWITCH_UPDATE_MS");
@@ -6836,17 +6799,6 @@
             gBrowser._tabLayerCache.splice(tabCacheIndex, 1);
             gBrowser._getSwitcher().cleanUpTabAfterEviction(this.mTab);
           }
-        } else if (aLocation.spec.endsWith(".pdf")) {
-          
-          
-          
-          if (window.gBrowser.featureCallout) {
-            window.gBrowser.featureCallout._endTour(true);
-            window.gBrowser.featureCallout = null;
-          }
-
-          window.gBrowser.instantiateFeatureCalloutTour(aLocation);
-          window.gBrowser.featureCallout.showFeatureCallout();
         }
       }
 
@@ -6873,6 +6825,28 @@
         this.mBrowser.lastURI = aLocation;
         this.mBrowser.lastLocationChange = Date.now();
       }
+
+      
+      
+      
+      if (aLocation.spec.endsWith(".pdf")) {
+        this.showFeatureCalloutIfApplicable(aLocation);
+      }
+    }
+
+    showFeatureCalloutIfApplicable(location) {
+      
+      const { FeatureCallout } = ChromeUtils.importESModule(
+        "chrome://browser/content/featureCallout.mjs"
+      );
+      
+      
+      let Callout = new FeatureCallout({
+        win: window,
+        prefName: "browser.pdfjs.feature-tour",
+        source: location.spec,
+      });
+      Callout.showFeatureCallout();
     }
 
     onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
