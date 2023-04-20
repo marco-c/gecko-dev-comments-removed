@@ -5,6 +5,7 @@
 
 
 
+
 'use strict';
 
 
@@ -13,7 +14,9 @@ promise_test(async t => {
       new RemoteContextHelper({scripts: ['./resources/unload-helper.js']});
   
   const main = await rcHelper.addWindow();
-  const subframe = await main.addIframe();
-  await assertWindowRunsUnload(subframe, 'subframe', {shouldRunUnload: true});
+  const sameOriginSubframe = await main.addIframe();
+  const crossOriginSubframe = await main.addIframe({ origin: 'HTTP_REMOTE_ORIGIN' });
+  await assertWindowRunsUnload(sameOriginSubframe, 'sameOriginSubframe', { shouldRunUnload: true });
+  await assertWindowRunsUnload(crossOriginSubframe, 'crossOriginSubframe', { shouldRunUnload: true });
   await assertWindowRunsUnload(main, 'main', {shouldRunUnload: true});
 });
