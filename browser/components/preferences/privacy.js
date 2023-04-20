@@ -193,6 +193,10 @@ Preferences.addAll([
   
   { id: "browser.urlbar.quickactions.showPrefs", type: "bool" },
   { id: "browser.urlbar.suggest.quickactions", type: "bool" },
+
+  
+  { id: "cookiebanners.ui.desktop.enabled", type: "bool" },
+  { id: "cookiebanners.service.mode", type: "int" },
 ]);
 
 
@@ -753,6 +757,8 @@ var gPrivacyPane = {
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
       "storage-permissions";
     document.getElementById("siteDataLearnMoreLink").setAttribute("href", url);
+
+    this.initCookieBannerHandling();
 
     let notificationInfoURL =
       Services.urlFormatter.formatURLPref("app.support.baseURL") + "push";
@@ -1980,6 +1986,92 @@ var gPrivacyPane = {
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml"
     );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  initCookieBannerHandling() {
+    this._initCookieBannerHandlingLearnMore();
+
+    setSyncFromPrefListener("handleCookieBanners", () =>
+      this.readCookieBannerMode()
+    );
+    setSyncToPrefListener("handleCookieBanners", () =>
+      this.writeCookieBannerMode()
+    );
+
+    let preference = Preferences.get("cookiebanners.ui.desktop.enabled");
+    preference.on("change", () => this.updateCookieBannerHandlingVisibility());
+
+    this.updateCookieBannerHandlingVisibility();
+  },
+
+  _initCookieBannerHandlingLearnMore() {
+    let url =
+      Services.urlFormatter.formatURLPref("app.support.baseURL") +
+      "cookie-banner-reduction";
+    let learnMore = document.getElementById("cookieBannerHandlingLearnMore");
+    learnMore.setAttribute("href", url);
+  },
+
+  
+
+
+
+  readCookieBannerMode() {
+    let mode = Preferences.get("cookiebanners.service.mode").value;
+    let disabledModes = [
+      Ci.nsICookieBannerService.MODE_DISABLED,
+      Ci.nsICookieBannerService.MODE_DETECT_ONLY,
+    ];
+    let isEnabled = !disabledModes.includes(mode);
+    return isEnabled;
+  },
+
+  
+
+
+
+  writeCookieBannerMode() {
+    let checkbox = document.getElementById("handleCookieBanners");
+    let mode = checkbox.checked
+      ? Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT
+      : Ci.nsICookieBannerService.MODE_DISABLED;
+    return mode;
+  },
+
+  
+
+
+
+  updateCookieBannerHandlingVisibility() {
+    let groupbox = document.getElementById("cookieBannerHandlingGroup");
+    let isEnabled = Preferences.get("cookiebanners.ui.desktop.enabled").value;
+
+    
+    
+    if (isEnabled) {
+      groupbox.removeAttribute("style");
+    } else {
+      groupbox.setAttribute("style", "display: none !important");
+    }
   },
 
   

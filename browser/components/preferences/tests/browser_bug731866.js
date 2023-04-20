@@ -37,6 +37,15 @@ function checkElements(expectedPane) {
     }
 
     
+    if (element.id == "cookieBannerHandlingGroup") {
+      is_element_hidden(
+        element,
+        "Disabled cookieBannerHandlingGroup should be hidden"
+      );
+      continue;
+    }
+
+    
     if (
       updatePrefContainers.includes(element.id) &&
       updateContainersGroupDisabled
