@@ -93,9 +93,8 @@ class ClipManager {
   
   
   
-  typedef std::unordered_map<const DisplayItemClipChain*,
-                             AutoTArray<wr::WrClipId, 4>>
-      ClipIdMap;
+  using ClipIdMap = std::unordered_map<const DisplayItemClipChain*,
+                                       AutoTArray<wr::WrClipId, 4>>;
   std::stack<ClipIdMap> mCacheStack;
 
   
