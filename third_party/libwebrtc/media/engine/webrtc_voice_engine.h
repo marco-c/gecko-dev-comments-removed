@@ -91,7 +91,7 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   
   
   
-  bool ApplyOptions(const AudioOptions& options);
+  void ApplyOptions(const AudioOptions& options);
 
   int CreateVoEChannel();
 
