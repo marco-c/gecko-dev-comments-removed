@@ -34,6 +34,18 @@ function createDummyBrowser(spec) {
   };
 }
 
+function navigateDummyBrowser(browser, uri) {
+  
+  if (typeof uri == "string") {
+    uri = Services.io.newURI(uri);
+  }
+  browser.currentURI = uri;
+  browser.contentPrincipal = Services.scriptSecurityManager.createContentPrincipal(
+    browser.currentURI,
+    {}
+  );
+}
+
 
 
 
@@ -115,11 +127,11 @@ add_task(async function testAllowBlock() {
   ok(uriToPerm, "Entry should have uriToPerm object.");
   Assert.equal(Object.keys(uriToPerm).length, 2, "uriToPerm has 2 entries.");
 
-  let permissionsA = uriToPerm[BROWSER_A.currentURI.prePath];
+  let permissionsA = uriToPerm[BROWSER_A.contentPrincipal.origin];
   let permissionsB =
     uriToPerm[Services.eTLD.getBaseDomain(BROWSER_A.currentURI)];
 
-  ok(permissionsA, "Allow should be keyed under prePath");
+  ok(permissionsA, "Allow should be keyed under origin");
   ok(permissionsB, "Block should be keyed under baseDomain");
 
   let permissionA = permissionsA[PERM_A];
@@ -180,11 +192,11 @@ add_task(async function testAllowBlock() {
     "Should not longer have baseDomain permission entry"
   );
 
-  permissionsB = uriToPerm[BROWSER_A.currentURI.prePath];
+  permissionsB = uriToPerm[BROWSER_A.contentPrincipal.origin];
   permissionB = permissionsB[PERM_B];
   Assert.ok(
     permissionsB && permissionB,
-    "Overwritten permission should be keyed under prePath"
+    "Overwritten permission should be keyed under origin"
   );
   Assert.equal(
     permissionB.state,
@@ -404,7 +416,7 @@ add_task(async function testCallbackOnExpiry() {
       PERM_A,
       SitePermissions.BLOCK,
       100,
-      BROWSER_A.currentURI,
+      undefined,
       resolve
     );
   });
@@ -414,7 +426,7 @@ add_task(async function testCallbackOnExpiry() {
       PERM_A,
       SitePermissions.BLOCK,
       100,
-      BROWSER_B.currentURI,
+      BROWSER_B.contentPrincipal,
       resolve
     );
   });
@@ -447,7 +459,7 @@ add_task(async function testCallbackOnExpiryUpdatedBrowser() {
       PERM_A,
       SitePermissions.BLOCK,
       200,
-      BROWSER_A.currentURI,
+      undefined,
       resolve
     );
   });
@@ -510,10 +522,10 @@ add_task(async function testTemporaryPermissionScope() {
         "https://example.com",
         "https://example.com/sub/path",
         "https://example.com:443",
+        "https://name:password@example.com",
       ],
       different: [
         "https://example.com",
-        "https://name:password@example.com",
         "https://test1.example.com",
         "http://example.com",
         "http://example.org",
@@ -556,11 +568,14 @@ add_task(async function testTemporaryPermissionScope() {
           EXPIRY_MS_A
         );
 
+        ok(true, "origin:" + browser.contentPrincipal.origin);
+
         for (let otherUri of list) {
           if (uri == otherUri) {
             continue;
           }
-          browser.currentURI = Services.io.newURI(otherUri);
+          navigateDummyBrowser(browser, otherUri);
+          ok(true, "new origin:" + browser.contentPrincipal.origin);
 
           Assert.deepEqual(
             SitePermissions.getForPrincipal(null, PERM_A, browser),
@@ -587,17 +602,17 @@ add_task(async function testTemporaryPermissionScope() {
 
 
 
+
 add_task(async function testOverrideBrowserURI() {
   let testBrowser = createDummyBrowser("https://old.example.com/foo");
   let overrideURI = Services.io.newURI("https://test.example.org/test/path");
   SitePermissions.setForPrincipal(
-    null,
+    Services.scriptSecurityManager.createContentPrincipal(overrideURI, {}),
     PERM_A,
     SitePermissions.ALLOW,
     SitePermissions.SCOPE_TEMPORARY,
     testBrowser,
-    EXPIRY_MS_A,
-    overrideURI
+    EXPIRY_MS_A
   );
 
   Assert.deepEqual(
@@ -610,7 +625,7 @@ add_task(async function testOverrideBrowserURI() {
   );
 
   
-  testBrowser.currentURI = overrideURI;
+  navigateDummyBrowser(testBrowser, overrideURI);
 
   Assert.deepEqual(
     SitePermissions.getForPrincipal(null, PERM_A, testBrowser),
@@ -633,13 +648,12 @@ add_task(async function testPermissionUnsupportedScheme() {
 
   
   SitePermissions.setForPrincipal(
-    null,
+    Services.scriptSecurityManager.createContentPrincipal(aboutURI, {}),
     PERM_A,
     SitePermissions.ALLOW,
     SitePermissions.SCOPE_TEMPORARY,
     BROWSER_A,
-    EXPIRY_MS_B,
-    aboutURI
+    EXPIRY_MS_B
   );
   Assert.ok(
     SitePermissions._temporaryPermissions._stateByBrowser.has(BROWSER_A),
@@ -657,7 +671,7 @@ add_task(async function testPermissionUnsupportedScheme() {
   );
 
   
-  browser.currentURI = aboutURI;
+  navigateDummyBrowser(browser, aboutURI);
 
   
   SitePermissions.setForPrincipal(

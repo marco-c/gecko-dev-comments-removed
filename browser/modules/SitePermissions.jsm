@@ -72,19 +72,26 @@ const TemporaryPermissions = {
 
 
 
-  _getKeysFromURI(uri) {
-    return { strict: uri.prePath, nonStrict: this._uriToBaseDomain(uri) };
+  _getKeysFromPrincipal(principal) {
+    return { strict: principal.origin, nonStrict: principal.baseDomain };
   },
 
   
 
 
 
-  set(browser, id, state, expireTimeMS, browserURI, expireCallback) {
+  set(
+    browser,
+    id,
+    state,
+    expireTimeMS,
+    principal = browser.contentPrincipal,
+    expireCallback
+  ) {
     if (
       !browser ||
-      !browserURI ||
-      !SitePermissions.isSupportedScheme(browserURI.scheme)
+      !principal ||
+      !SitePermissions.isSupportedPrincipal(principal)
     ) {
       return false;
     }
@@ -95,7 +102,7 @@ const TemporaryPermissions = {
     }
     let { uriToPerm } = entry;
     
-    let { strict, nonStrict } = this._getKeysFromURI(browserURI);
+    let { strict, nonStrict } = this._getKeysFromPrincipal(principal);
     let setKey;
     let deleteKey;
     
@@ -161,14 +168,16 @@ const TemporaryPermissions = {
   remove(browser, id) {
     if (
       !browser ||
-      !SitePermissions.isSupportedScheme(browser.currentURI.scheme) ||
+      !SitePermissions.isSupportedPrincipal(browser.contentPrincipal) ||
       !this._stateByBrowser.has(browser)
     ) {
       return false;
     }
     
     
-    let { strict, nonStrict } = this._getKeysFromURI(browser.currentURI);
+    let { strict, nonStrict } = this._getKeysFromPrincipal(
+      browser.contentPrincipal
+    );
     let { uriToPerm } = this._stateByBrowser.get(browser);
     for (let key of [nonStrict, strict]) {
       if (uriToPerm[key]?.[id] != null) {
@@ -187,18 +196,20 @@ const TemporaryPermissions = {
   },
 
   
-  get(browser, id, browserURI = browser?.currentURI) {
+  get(browser, id) {
     if (
       !browser ||
-      !browser.currentURI ||
-      !SitePermissions.isSupportedScheme(browserURI.scheme) ||
+      !browser.contentPrincipal ||
+      !SitePermissions.isSupportedPrincipal(browser.contentPrincipal) ||
       !this._stateByBrowser.has(browser)
     ) {
       return null;
     }
     let { uriToPerm } = this._stateByBrowser.get(browser);
 
-    let { strict, nonStrict } = this._getKeysFromURI(browserURI);
+    let { strict, nonStrict } = this._getKeysFromPrincipal(
+      browser.contentPrincipal
+    );
     for (let key of [nonStrict, strict]) {
       if (uriToPerm[key]) {
         let permission = uriToPerm[key][id];
@@ -217,17 +228,19 @@ const TemporaryPermissions = {
   
   
   
-  getAll(browser, browserURI = browser?.currentURI) {
+  getAll(browser) {
     let permissions = [];
     if (
-      !SitePermissions.isSupportedScheme(browserURI.scheme) ||
+      !SitePermissions.isSupportedPrincipal(browser.contentPrincipal) ||
       !this._stateByBrowser.has(browser)
     ) {
       return permissions;
     }
     let { uriToPerm } = this._stateByBrowser.get(browser);
 
-    let { strict, nonStrict } = this._getKeysFromURI(browserURI);
+    let { strict, nonStrict } = this._getKeysFromPrincipal(
+      browser.contentPrincipal
+    );
     for (let key of [nonStrict, strict]) {
       if (uriToPerm[key]) {
         let perms = uriToPerm[key];
@@ -327,19 +340,20 @@ const GloballyBlockedPermissions = {
       this._stateByBrowser.set(browser, {});
     }
     let entry = this._stateByBrowser.get(browser);
-    let prePath = browser.currentURI.prePath;
-    if (!entry[prePath]) {
-      entry[prePath] = {};
+    let origin = browser.contentPrincipal.origin;
+    if (!entry[origin]) {
+      entry[origin] = {};
     }
 
-    if (entry[prePath][id]) {
+    if (entry[origin][id]) {
       return false;
     }
-    entry[prePath][id] = true;
+    entry[origin][id] = true;
 
     
     
     
+    let { prePath } = browser.currentURI;
     browser.addProgressListener(
       {
         QueryInterface: ChromeUtils.generateQI([
@@ -355,7 +369,7 @@ const GloballyBlockedPermissions = {
           );
 
           if (aWebProgress.isTopLevel && (hasLeftPage || isReload)) {
-            GloballyBlockedPermissions.remove(browser, id, prePath);
+            GloballyBlockedPermissions.remove(browser, id, origin);
             browser.removeProgressListener(this);
           }
         },
@@ -366,13 +380,13 @@ const GloballyBlockedPermissions = {
   },
 
   
-  remove(browser, id, prePath = null) {
+  remove(browser, id, origin = null) {
     let entry = this._stateByBrowser.get(browser);
-    if (!prePath) {
-      prePath = browser.currentURI.prePath;
+    if (!origin) {
+      origin = browser.contentPrincipal.origin;
     }
-    if (entry && entry[prePath]) {
-      delete entry[prePath][id];
+    if (entry && entry[origin]) {
+      delete entry[origin][id];
     }
   },
 
@@ -382,9 +396,9 @@ const GloballyBlockedPermissions = {
   getAll(browser) {
     let permissions = [];
     let entry = this._stateByBrowser.get(browser);
-    let prePath = browser.currentURI.prePath;
-    if (entry && entry[prePath]) {
-      let timeStamps = entry[prePath];
+    let origin = browser.contentPrincipal.origin;
+    if (entry && entry[origin]) {
+      let timeStamps = entry[origin];
       for (let id of Object.keys(timeStamps)) {
         permissions.push({
           id,
@@ -722,15 +736,7 @@ var SitePermissions = {
 
 
 
-
-
-
-  getForPrincipal(
-    principal,
-    permissionID,
-    browser,
-    browserURI = browser?.currentURI
-  ) {
+  getForPrincipal(principal, permissionID, browser) {
     if (!principal && !browser) {
       throw new Error(
         "Atleast one of the arguments, either principal or browser should not be null."
@@ -770,7 +776,7 @@ var SitePermissions = {
     if (result.state == defaultState) {
       
       
-      let value = TemporaryPermissions.get(browser, permissionID, browserURI);
+      let value = TemporaryPermissions.get(browser, permissionID);
 
       if (value) {
         result.state = value.state;
@@ -802,16 +808,13 @@ var SitePermissions = {
 
 
 
-
-
   setForPrincipal(
     principal,
     permissionID,
     state,
     scope = this.SCOPE_PERSISTENT,
     browser = null,
-    expireTimeMS = SitePermissions.temporaryPermissionExpireTime,
-    browserURI = browser?.currentURI
+    expireTimeMS = SitePermissions.temporaryPermissionExpireTime
   ) {
     if (!principal && !browser) {
       throw new Error(
@@ -860,7 +863,7 @@ var SitePermissions = {
           permissionID,
           state,
           expireTimeMS,
-          browserURI,
+          principal ?? browser.contentPrincipal,
           
           origBrowser => {
             if (!origBrowser.ownerGlobal) {
