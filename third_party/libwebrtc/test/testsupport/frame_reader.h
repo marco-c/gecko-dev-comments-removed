@@ -17,6 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
+#include "api/video/resolution.h"
 
 namespace webrtc {
 class I420Buffer;
@@ -25,76 +26,96 @@ namespace test {
 
 class FrameReader {
  public:
+  struct Ratio {
+    int num = 1;
+    int den = 1;
+  };
+
+  static constexpr Ratio kNoScale = Ratio({.num = 1, .den = 1});
+
   virtual ~FrameReader() {}
 
   
   
-  
-  virtual bool Init() = 0;
+  virtual rtc::scoped_refptr<I420Buffer> PullFrame() = 0;
 
   
   
-  virtual rtc::scoped_refptr<I420Buffer> ReadFrame() = 0;
+  
+  virtual rtc::scoped_refptr<I420Buffer> PullFrame(int* frame_num) = 0;
 
   
   
-  virtual void Close() = 0;
+  virtual rtc::scoped_refptr<I420Buffer> ReadFrame(int frame_num) = 0;
 
   
-  virtual size_t FrameLength() = 0;
   
-  virtual int NumberOfFrames() = 0;
+  
+  
+  
+  virtual rtc::scoped_refptr<I420Buffer> PullFrame(int* frame_num,
+                                                   Resolution resolution,
+                                                   Ratio framerate_scale) = 0;
+
+  
+  
+  virtual rtc::scoped_refptr<I420Buffer> ReadFrame(int frame_num,
+                                                   Resolution resolution) = 0;
+
+  
+  virtual int num_frames() const = 0;
 };
 
 class YuvFrameReaderImpl : public FrameReader {
  public:
   enum class RepeatMode { kSingle, kRepeat, kPingPong };
-  class DropperUtil {
-   public:
-    DropperUtil(int source_fps, int target_fps);
-
-    enum class DropDecision { kDropframe, kKeepFrame };
-    DropDecision UpdateLevel();
-
-   private:
-    const double frame_size_buckets_;
-    double bucket_level_;
-  };
 
   
   
   
   
-  YuvFrameReaderImpl(std::string input_filename, int width, int height);
-  YuvFrameReaderImpl(std::string input_filename,
-                     int input_width,
-                     int input_height,
-                     int desired_width,
-                     int desired_height,
-                     RepeatMode repeat_mode,
-                     absl::optional<int> clip_fps,
-                     int target_fps);
+  
+  YuvFrameReaderImpl(std::string filepath,
+                     Resolution resolution,
+                     RepeatMode repeat_mode);
+
   ~YuvFrameReaderImpl() override;
-  bool Init() override;
-  rtc::scoped_refptr<I420Buffer> ReadFrame() override;
-  void Close() override;
-  size_t FrameLength() override;
-  int NumberOfFrames() override;
+
+  virtual void Init();
+
+  rtc::scoped_refptr<I420Buffer> PullFrame() override;
+
+  rtc::scoped_refptr<I420Buffer> PullFrame(int* frame_num) override;
+
+  rtc::scoped_refptr<I420Buffer> PullFrame(int* frame_num,
+                                           Resolution resolution,
+                                           Ratio framerate_scale) override;
+
+  rtc::scoped_refptr<I420Buffer> ReadFrame(int frame_num) override;
+
+  rtc::scoped_refptr<I420Buffer> ReadFrame(int frame_num,
+                                           Resolution resolution) override;
+
+  int num_frames() const override { return num_frames_; }
 
  protected:
-  const std::string input_filename_;
-  
-  size_t frame_length_in_bytes_;
-  const int input_width_;
-  const int input_height_;
-  const int desired_width_;
-  const int desired_height_;
-  const size_t frame_size_bytes_;
+  class RateScaler {
+   public:
+    int Skip(Ratio framerate_scale);
+
+   private:
+    absl::optional<int> ticks_;
+  };
+
+  const std::string filepath_;
+  Resolution resolution_;
   const RepeatMode repeat_mode_;
-  int number_of_frames_;
-  int current_frame_index_;
-  std::unique_ptr<DropperUtil> dropper_;
-  FILE* input_file_;
+  int num_frames_;
+  int frame_num_;
+  int frame_size_bytes_;
+  int header_size_bytes_;
+  FILE* file_;
+  RateScaler framerate_scaler_;
 };
 
 class Y4mFrameReaderImpl : public YuvFrameReaderImpl {
@@ -103,15 +124,24 @@ class Y4mFrameReaderImpl : public YuvFrameReaderImpl {
   
   
   
-  Y4mFrameReaderImpl(std::string input_filename, int width, int height);
-  ~Y4mFrameReaderImpl() override;
-  bool Init() override;
-  rtc::scoped_refptr<I420Buffer> ReadFrame() override;
+  Y4mFrameReaderImpl(std::string filepath, RepeatMode repeat_mode);
 
- private:
-  
-  char* buffer_;
+  void Init() override;
 };
+
+std::unique_ptr<FrameReader> CreateYuvFrameReader(std::string filepath,
+                                                  Resolution resolution);
+
+std::unique_ptr<FrameReader> CreateYuvFrameReader(
+    std::string filepath,
+    Resolution resolution,
+    YuvFrameReaderImpl::RepeatMode repeat_mode);
+
+std::unique_ptr<FrameReader> CreateY4mFrameReader(std::string filepath);
+
+std::unique_ptr<FrameReader> CreateY4mFrameReader(
+    std::string filepath,
+    YuvFrameReaderImpl::RepeatMode repeat_mode);
 
 }  
 }  

@@ -127,12 +127,9 @@ TEST_F(PeerConnectionE2EQualityTestTest, OutputVideoIsDumpedWhenRequested) {
 
   fixture.Run(RunParams(TimeDelta::Seconds(2)));
 
-  test::Y4mFrameReaderImpl frame_reader(
-      test::JoinFilename(test_directory_, "alice_video_bob_320x180_15.y4m"),
-      320,
-      180);
-  ASSERT_TRUE(frame_reader.Init());
-  EXPECT_THAT(frame_reader.NumberOfFrames(), Eq(31));  
+  auto frame_reader = test::CreateY4mFrameReader(
+      test::JoinFilename(test_directory_, "alice_video_bob_320x180_15.y4m"));
+  EXPECT_THAT(frame_reader->num_frames(), Eq(31));  
 
   ExpectOutputFilesCount(1);
 }
