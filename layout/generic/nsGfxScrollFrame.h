@@ -203,6 +203,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
     return pt;
   }
   nsRect GetLayoutScrollRange() const;
+  nsRect GetUnsnappedLayoutScrollRange() const;
   
   nsRect GetScrollRange(nscoord aWidth, nscoord aHeight) const;
   nsSize GetVisualViewportSize() const;
