@@ -6,6 +6,7 @@
 
 #include "ChromeUtils.h"
 
+#include "JSOracleParent.h"
 #include "js/CharacterEncoding.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
@@ -1762,4 +1763,9 @@ bool ChromeUtils::IsDarkBackground(GlobalObject&, Element& aElement) {
 
 double ChromeUtils::DateNow(GlobalObject&) { return JS_Now() / 1000.0; }
 
+
+void ChromeUtils::EnsureJSOracleStarted(GlobalObject&) {
+  JSOracleParent::WithJSOracle(
+      [](JSOracleParent* aParent) { MOZ_DIAGNOSTIC_ASSERT(aParent); });
+}
 }  
