@@ -20,6 +20,8 @@
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/StaticPrefs_timer.h"
 
+#include "mozilla/glean/GleanMetrics.h"
+
 #include <math.h>
 
 using namespace mozilla;
@@ -539,6 +541,7 @@ TimerThread::Run() {
   mAllowedEarlyFiringMicroseconds = usIntervalResolution / 2;
   bool forceRunNextTimer = false;
 
+  uint64_t timersFiredThisWakeup = 0;
   while (!mShutdown) {
     
     TimeDuration waitFor;
@@ -581,6 +584,7 @@ TimerThread::Run() {
           
           
           {
+            ++timersFiredThisWakeup;
             LogTimerEvent::Run run(timerRef.get());
             PostTimerEvent(timerRef.forget());
           }
@@ -643,6 +647,10 @@ TimerThread::Run() {
     mWaiting = true;
     mNotified = false;
     {
+      
+      glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
+          {timersFiredThisWakeup});
+      timersFiredThisWakeup = 0;
       AUTO_PROFILER_TRACING_MARKER("TimerThread", "Wait", OTHER);
       mMonitor.Wait(waitFor);
     }
