@@ -7,7 +7,8 @@ const { MigrationWizardConstants } = ChromeUtils.importESModule(
   "chrome://browser/content/migration/migration-wizard-constants.mjs"
 );
 
-const DIALOG_URL = "chrome://browser/content/migration/migration-dialog.html";
+const DIALOG_URL =
+  "chrome://browser/content/migration/migration-dialog-window.html";
 
 
 
@@ -29,15 +30,13 @@ const DIALOG_URL = "chrome://browser/content/migration/migration-dialog.html";
 
 
 
-async function withMigrationWizardSubdialog(taskFn) {
-  let migrationDialogPromise = waitForMigrationWizardSubdialogTab();
+async function withMigrationWizardDialog(taskFn) {
+  let migrationDialogPromise = waitForMigrationWizardDialogTab();
   await MigrationUtils.showMigrationWizard(window, {});
   let prefsBrowser = await migrationDialogPromise;
 
   try {
-    await taskFn(
-      prefsBrowser.contentWindow.gSubDialog._dialogs[0]._frame.contentWindow
-    );
+    await taskFn(prefsBrowser.contentWindow);
   } finally {
     if (gBrowser.tabs.length > 1) {
       BrowserTestUtils.removeTab(gBrowser.getTabForBrowser(prefsBrowser));
@@ -57,7 +56,7 @@ async function withMigrationWizardSubdialog(taskFn) {
 
 
 
-async function waitForMigrationWizardSubdialogTab() {
+async function waitForMigrationWizardDialogTab() {
   let wizardReady = BrowserTestUtils.waitForEvent(
     window,
     "MigrationWizard:Ready"
@@ -77,14 +76,6 @@ async function waitForMigrationWizardSubdialogTab() {
 
   await wizardReady;
   info("Done waiting - migration subdialog loaded and ready.");
-
-  let dialogBrowser =
-    tab.linkedBrowser.contentWindow.gSubDialog._dialogs[0]._frame;
-  Assert.equal(
-    dialogBrowser.currentURI.spec,
-    DIALOG_URL,
-    "about:preferences is showing migration subdialog"
-  );
 
   return tab.linkedBrowser;
 }

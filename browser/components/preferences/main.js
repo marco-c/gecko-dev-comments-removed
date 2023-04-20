@@ -788,7 +788,7 @@ var gMainPane = {
 
   handleSubcategory(subcategory) {
     if (subcategory == "migrate") {
-      this.showMigrationWizardSubDialog();
+      this.showMigrationWizardDialog();
       return true;
     }
 
@@ -1714,16 +1714,25 @@ var gMainPane = {
   
 
 
-  showMigrationWizardSubDialog() {
-    let dialog = gSubDialog.open(
-      "chrome://browser/content/migration/migration-dialog.html",
-      { features: "resizable=no" },
-      {
-        onResize() {
-          dialog.resizeVertically();
-        },
-      }
+  async showMigrationWizardDialog() {
+    let migrationWizardDialog = document.getElementById(
+      "migrationWizardDialog"
     );
+
+    if (migrationWizardDialog.open) {
+      return;
+    }
+
+    await customElements.whenDefined("migration-wizard");
+
+    
+    
+    migrationWizardDialog.firstElementChild?.remove();
+    let wizard = document.createElement("migration-wizard");
+    wizard.toggleAttribute("dialog-mode", true);
+    migrationWizardDialog.appendChild(wizard);
+
+    migrationWizardDialog.showModal();
   },
 
   
@@ -3687,6 +3696,12 @@ const AppearanceChooser = {
       });
 
     this.warning = document.getElementById("web-appearance-override-warning");
+
+    document
+      .getElementById("migrationWizardDialog")
+      .addEventListener("MigrationWizard:Close", function(e) {
+        e.currentTarget.close();
+      });
 
     FORCED_COLORS_QUERY.addEventListener("change", this);
     Services.prefs.addObserver(PREF_USE_SYSTEM_COLORS, this);

@@ -7,15 +7,16 @@
 
 
 
+
 add_task(async function test_cancel_close() {
-  await withMigrationWizardSubdialog(async subdialogWin => {
-    let dialogBody = subdialogWin.document.body;
-    let wizard = dialogBody.querySelector("#wizard");
+  await withMigrationWizardDialog(async prefsWin => {
+    let dialog = prefsWin.document.querySelector("#migrationWizardDialog");
+    let wizard = dialog.querySelector("migration-wizard");
     let shadow = wizard.openOrClosedShadowRoot;
     let cancelButton = shadow.querySelector(
       'div[name="page-selection"] .cancel-close'
     );
-    let dialogClosed = BrowserTestUtils.waitForEvent(window, "dialogclose");
+    let dialogClosed = BrowserTestUtils.waitForEvent(dialog, "close");
     cancelButton.click();
     await dialogClosed;
     Assert.ok(true, "Clicking the cancel button closed the dialog.");
