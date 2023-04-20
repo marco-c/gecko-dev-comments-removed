@@ -600,6 +600,20 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState) {
   nsSize minSize = GetXULMinSize(aState);
   nsSize maxSize = GetXULMaxSize(aState);
   if (ShouldExpandToInflowParentOrAnchor()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (nsIScrollableFrame* sf = GetScrollFrame(this)) {
+      prefSize.width += sf->GetDesiredScrollbarSizes(&aState).LeftRight();
+    }
+
     nscoord menuListOrAnchorWidth = 0;
     if (nsIFrame* menuList = GetInFlowParent()) {
       menuListOrAnchorWidth = menuList->GetRect().width;
@@ -624,7 +638,7 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState) {
   
   if (sizeChanged) {
     shouldPosition = true;
-    SetXULBounds(aState, nsRect(0, 0, prefSize.width, prefSize.height), false);
+    SetXULBounds(aState, nsRect(nsPoint(), prefSize), false);
     mPrefSize = prefSize;
   }
 
