@@ -12,7 +12,6 @@
 
 #include "DAV1DDecoder.h"
 #include "gfxPlatform.h"
-#include "mozilla/gfx/Types.h"
 #include "YCbCrUtils.h"
 #include "libyuv.h"
 
@@ -204,146 +203,69 @@ Orientation GetImageOrientation(const Mp4parseAvifImage& image) {
   return Orientation{mozRot, mozFlip};
 }
 
-class AVIFParser {
- public:
-  static Mp4parseStatus Create(const Mp4parseIo* aIo,
-                               UniquePtr<AVIFParser>& aParserOut) {
-    MOZ_ASSERT(aIo);
-    MOZ_ASSERT(!aParserOut);
+Mp4parseStatus AVIFParser::Create(const Mp4parseIo* aIo,
+                                  UniquePtr<AVIFParser>& aParserOut) {
+  MOZ_ASSERT(aIo);
+  MOZ_ASSERT(!aParserOut);
 
-    UniquePtr<AVIFParser> p(new AVIFParser(aIo));
-    Mp4parseStatus status = p->Init();
+  UniquePtr<AVIFParser> p(new AVIFParser(aIo));
+  Mp4parseStatus status = p->Init();
 
-    if (status == MP4PARSE_STATUS_OK) {
-      MOZ_ASSERT(p->mParser);
-      aParserOut = std::move(p);
-    }
-
-    return status;
+  if (status == MP4PARSE_STATUS_OK) {
+    MOZ_ASSERT(p->mParser);
+    aParserOut = std::move(p);
   }
 
-  ~AVIFParser() {
-    MOZ_LOG(sAVIFLog, LogLevel::Debug, ("Destroy AVIFParser=%p", this));
-  }
+  return status;
+}
 
-  Mp4parseAvifImage* GetImage() {
-    MOZ_ASSERT(mParser);
+AVIFParser::~AVIFParser() {
+  MOZ_LOG(sAVIFLog, LogLevel::Debug, ("Destroy AVIFParser=%p", this));
+}
 
-    if (mAvifImage.isNothing()) {
-      mAvifImage.emplace();
-      Mp4parseStatus status =
-          mp4parse_avif_get_image(mParser.get(), mAvifImage.ptr());
-      MOZ_LOG(sAVIFLog, LogLevel::Debug,
-              ("[this=%p] mp4parse_avif_get_image -> %d; primary_item length: "
-               "%zu, alpha_item length: %zu",
-               this, status, mAvifImage->primary_image.coded_data.length,
-               mAvifImage->alpha_image.coded_data.length));
-      if (status != MP4PARSE_STATUS_OK) {
-        mAvifImage.reset();
-        return nullptr;
-      }
-    }
-    return mAvifImage.ptr();
-  }
+Mp4parseAvifImage* AVIFParser::GetImage() {
+  MOZ_ASSERT(mParser);
 
- private:
-  explicit AVIFParser(const Mp4parseIo* aIo) : mIo(aIo) {
-    MOZ_ASSERT(mIo);
-    MOZ_LOG(sAVIFLog, LogLevel::Debug,
-            ("Create AVIFParser=%p, image.avif.compliance_strictness: %d", this,
-             StaticPrefs::image_avif_compliance_strictness()));
-  }
-
-  Mp4parseStatus Init() {
-    MOZ_ASSERT(!mParser);
-
-    Mp4parseAvifParser* parser = nullptr;
+  if (mAvifImage.isNothing()) {
+    mAvifImage.emplace();
     Mp4parseStatus status =
-        mp4parse_avif_new(mIo,
-                          static_cast<enum Mp4parseStrictness>(
-                              StaticPrefs::image_avif_compliance_strictness()),
-                          &parser);
+        mp4parse_avif_get_image(mParser.get(), mAvifImage.ptr());
     MOZ_LOG(sAVIFLog, LogLevel::Debug,
-            ("[this=%p] mp4parse_avif_new status: %d", this, status));
-    if (status == MP4PARSE_STATUS_OK) {
-      mParser.reset(parser);
+            ("[this=%p] mp4parse_avif_get_image -> %d; primary_item length: "
+             "%zu, alpha_item length: %zu",
+             this, status, mAvifImage->primary_image.coded_data.length,
+             mAvifImage->alpha_image.coded_data.length));
+    if (status != MP4PARSE_STATUS_OK) {
+      mAvifImage.reset();
+      return nullptr;
     }
-    return status;
   }
+  return mAvifImage.ptr();
+}
 
-  struct FreeAvifParser {
-    void operator()(Mp4parseAvifParser* aPtr) { mp4parse_avif_free(aPtr); }
-  };
+AVIFParser::AVIFParser(const Mp4parseIo* aIo) : mIo(aIo) {
+  MOZ_ASSERT(mIo);
+  MOZ_LOG(sAVIFLog, LogLevel::Debug,
+          ("Create AVIFParser=%p, image.avif.compliance_strictness: %d", this,
+           StaticPrefs::image_avif_compliance_strictness()));
+}
 
-  const Mp4parseIo* mIo;
-  UniquePtr<Mp4parseAvifParser, FreeAvifParser> mParser;
-  Maybe<Mp4parseAvifImage> mAvifImage;
-};
+Mp4parseStatus AVIFParser::Init() {
+  MOZ_ASSERT(!mParser);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct AVIFDecodedData : layers::PlanarYCbCrData {
-  CICP::ColourPrimaries mColourPrimaries = CICP::CP_UNSPECIFIED;
-  CICP::TransferCharacteristics mTransferCharacteristics = CICP::TC_UNSPECIFIED;
-  CICP::MatrixCoefficients mMatrixCoefficients = CICP::MC_UNSPECIFIED;
-
-  void SetCicpValues(
-      const Mp4parseNclxColourInformation* aNclx,
-      const CICP::ColourPrimaries aAv1ColourPrimaries,
-      const CICP::TransferCharacteristics aAv1TransferCharacteristics,
-      const CICP::MatrixCoefficients aAv1MatrixCoefficients);
-};
+  Mp4parseAvifParser* parser = nullptr;
+  Mp4parseStatus status =
+      mp4parse_avif_new(mIo,
+                        static_cast<enum Mp4parseStrictness>(
+                            StaticPrefs::image_avif_compliance_strictness()),
+                        &parser);
+  MOZ_LOG(sAVIFLog, LogLevel::Debug,
+          ("[this=%p] mp4parse_avif_new status: %d", this, status));
+  if (status == MP4PARSE_STATUS_OK) {
+    mParser.reset(parser);
+  }
+  return status;
+}
 
 
 
@@ -465,42 +387,6 @@ void AVIFDecodedData::SetCicpValues(
   mMatrixCoefficients = mc;
 }
 
-
-class AVIFDecoderInterface {
- public:
-  using Dav1dResult = nsAVIFDecoder::Dav1dResult;
-  using NonAOMCodecError = nsAVIFDecoder::NonAOMCodecError;
-  using AOMResult = nsAVIFDecoder::AOMResult;
-  using NonDecoderResult = nsAVIFDecoder::NonDecoderResult;
-  using DecodeResult = nsAVIFDecoder::DecodeResult;
-
-  virtual ~AVIFDecoderInterface() = default;
-
-  
-  virtual DecodeResult Decode(bool aIsMetadataDecode,
-                              const Mp4parseAvifImage& parsedImg) = 0;
-  
-  AVIFDecodedData& GetDecodedData() {
-    MOZ_ASSERT(mDecodedData.isSome());
-    return mDecodedData.ref();
-  }
-
- protected:
-  explicit AVIFDecoderInterface(UniquePtr<AVIFParser>&& aParser)
-      : mParser(std::move(aParser)) {
-    MOZ_ASSERT(mParser);
-  }
-
-  inline static bool IsDecodeSuccess(const DecodeResult& aResult) {
-    return nsAVIFDecoder::IsDecodeSuccess(aResult);
-  }
-
-  UniquePtr<AVIFParser> mParser;
-
-  
-  Maybe<AVIFDecodedData> mDecodedData;
-};
-
 class Dav1dDecoder final : AVIFDecoderInterface {
  public:
   ~Dav1dDecoder() {
@@ -520,9 +406,8 @@ class Dav1dDecoder final : AVIFDecoderInterface {
     }
   }
 
-  static DecodeResult Create(UniquePtr<AVIFParser>&& aParser,
-                             UniquePtr<AVIFDecoderInterface>& aDecoder) {
-    UniquePtr<Dav1dDecoder> d(new Dav1dDecoder(std::move(aParser)));
+  static DecodeResult Create(UniquePtr<AVIFDecoderInterface>& aDecoder) {
+    UniquePtr<Dav1dDecoder> d(new Dav1dDecoder());
     Dav1dResult r = d->Init();
     if (r == 0) {
       MOZ_ASSERT(d->mContext);
@@ -533,7 +418,6 @@ class Dav1dDecoder final : AVIFDecoderInterface {
 
   DecodeResult Decode(bool aIsMetadataDecode,
                       const Mp4parseAvifImage& parsedImg) override {
-    MOZ_ASSERT(mParser);
     MOZ_ASSERT(mContext);
     MOZ_ASSERT(mPicture.isNothing());
     MOZ_ASSERT(mDecodedData.isNothing());
@@ -581,8 +465,7 @@ class Dav1dDecoder final : AVIFDecoderInterface {
   }
 
  private:
-  explicit Dav1dDecoder(UniquePtr<AVIFParser>&& aParser)
-      : AVIFDecoderInterface(std::move(aParser)) {
+  explicit Dav1dDecoder() {
     MOZ_LOG(sAVIFLog, LogLevel::Verbose, ("Create Dav1dDecoder=%p", this));
   }
 
@@ -679,9 +562,8 @@ class AOMDecoder final : AVIFDecoderInterface {
     }
   }
 
-  static DecodeResult Create(UniquePtr<AVIFParser>&& aParser,
-                             UniquePtr<AVIFDecoderInterface>& aDecoder) {
-    UniquePtr<AOMDecoder> d(new AOMDecoder(std::move(aParser)));
+  static DecodeResult Create(UniquePtr<AVIFDecoderInterface>& aDecoder) {
+    UniquePtr<AOMDecoder> d(new AOMDecoder());
     aom_codec_err_t e = d->Init();
     if (e == AOM_CODEC_OK) {
       MOZ_ASSERT(d->mContext);
@@ -692,7 +574,6 @@ class AOMDecoder final : AVIFDecoderInterface {
 
   DecodeResult Decode(bool aIsMetadataDecode,
                       const Mp4parseAvifImage& parsedImg) override {
-    MOZ_ASSERT(mParser);
     MOZ_ASSERT(mContext.isSome());
     MOZ_ASSERT(mDecodedData.isNothing());
 
@@ -756,8 +637,7 @@ class AOMDecoder final : AVIFDecoderInterface {
   }
 
  private:
-  explicit AOMDecoder(UniquePtr<AVIFParser>&& aParser)
-      : AVIFDecoderInterface(std::move(aParser)) {
+  explicit AOMDecoder() {
     MOZ_LOG(sAVIFLog, LogLevel::Verbose, ("Create AOMDecoder=%p", this));
   }
 
@@ -1191,6 +1071,15 @@ LexerResult nsAVIFDecoder::DoDecode(SourceBufferIterator& aIterator,
   return rv;
 }
 
+Mp4parseStatus nsAVIFDecoder::CreateParser() {
+  if (!mParser) {
+    Mp4parseIo io = {nsAVIFDecoder::ReadSource, this};
+    return AVIFParser::Create(&io, mParser);
+  }
+
+  return MP4PARSE_STATUS_OK;
+}
+
 nsAVIFDecoder::DecodeResult nsAVIFDecoder::Decode(
     SourceBufferIterator& aIterator, IResumable* aOnResume) {
   MOZ_LOG(sAVIFLog, LogLevel::Debug,
@@ -1238,15 +1127,13 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::Decode(
     }
   }
 
-  Mp4parseIo io = {nsAVIFDecoder::ReadSource, this};
-  UniquePtr<AVIFParser> parser;
-  Mp4parseStatus create_parser_status = AVIFParser::Create(&io, parser);
+  Mp4parseStatus parserStatus = CreateParser();
 
-  if (!parser) {
-    return AsVariant(create_parser_status);
+  if (parserStatus != MP4PARSE_STATUS_OK) {
+    return AsVariant(parserStatus);
   }
 
-  const Mp4parseAvifImage* parsedImagePtr = parser->GetImage();
+  const Mp4parseAvifImage* parsedImagePtr = mParser->GetImage();
   if (!parsedImagePtr) {
     return AsVariant(NonDecoderResult::NoPrimaryItem);
   }
@@ -1349,10 +1236,9 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::Decode(
             ("[this=%p] Parser returned no image size, decoding...", this));
   }
 
-  UniquePtr<AVIFDecoderInterface> decoder;
   DecodeResult r = StaticPrefs::image_avif_use_dav1d()
-                       ? Dav1dDecoder::Create(std::move(parser), decoder)
-                       : AOMDecoder::Create(std::move(parser), decoder);
+                       ? Dav1dDecoder::Create(mDecoder)
+                       : AOMDecoder::Create(mDecoder);
 
   MOZ_LOG(sAVIFLog, LogLevel::Debug,
           ("[this=%p] Create %sDecoder %ssuccessfully", this,
@@ -1363,8 +1249,8 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::Decode(
     return r;
   }
 
-  MOZ_ASSERT(decoder);
-  r = decoder->Decode(IsMetadataDecode(), parsedImg);
+  MOZ_ASSERT(mDecoder);
+  r = mDecoder->Decode(IsMetadataDecode(), parsedImg);
   MOZ_LOG(sAVIFLog, LogLevel::Debug,
           ("[this=%p] Decoder%s->Decode() %s", this,
            StaticPrefs::image_avif_use_dav1d() ? "Dav1d" : "AOM",
@@ -1374,7 +1260,7 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::Decode(
     return r;
   }
 
-  AVIFDecodedData& decodedData = decoder->GetDecodedData();
+  AVIFDecodedData& decodedData = mDecoder->GetDecodedData();
 
   MOZ_ASSERT(decodedData.mColourPrimaries !=
              CICP::ColourPrimaries::CP_UNSPECIFIED);
