@@ -60,3 +60,16 @@ async function waitForHoverTime(hoverWaitTimeMs) {
   await new Promise(resolve => step_timeout(resolve,hoverWaitTimeMs));
   await waitForRender();
 };
+async function blessTopLayer(visibleElement) {
+  
+  
+  
+  
+  const button = document.createElement('button');
+  button.innerHTML = "Click me to activate";
+  visibleElement.appendChild(button);
+  let wait_click = new Promise(resolve => button.addEventListener("click", resolve, {once: true}));
+  await test_driver.click(button);
+  await wait_click;
+  button.remove();
+}
