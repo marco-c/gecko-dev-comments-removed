@@ -74,22 +74,6 @@ impl PaperSize {
 
 
 #[derive(
-    Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
-)]
-#[repr(u8)]
-pub enum PageOrientation {
-    
-    Upright,
-    
-    RotateLeft,
-    
-    RotateRight,
-}
-
-
-
-
-#[derive(
     Clone,
     Copy,
     Debug,
