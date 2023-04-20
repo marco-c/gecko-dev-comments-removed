@@ -19,7 +19,7 @@ class BackgroundStarterParent final : public PBackgroundStarterParent {
       BackgroundStarterParent, override)
 
   
-  BackgroundStarterParent(mozilla::dom::ContentParent* aContent,
+  BackgroundStarterParent(mozilla::dom::ThreadsafeContentParentHandle* aContent,
                           bool aCrossProcess);
 
   void SetLiveActorArray(nsTArray<IToplevelProtocol*>* aLiveActorArray);
@@ -36,7 +36,7 @@ class BackgroundStarterParent final : public PBackgroundStarterParent {
 
   const bool mCrossProcess;
 
-  RefPtr<mozilla::dom::ContentParent> mContent;
+  const RefPtr<mozilla::dom::ThreadsafeContentParentHandle> mContent;
 
   
   

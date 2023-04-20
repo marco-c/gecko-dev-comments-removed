@@ -147,7 +147,7 @@ class ParentImpl final : public BackgroundParentImpl {
   static bool sShutdownHasStarted;
 
   
-  RefPtr<ContentParent> mContent;
+  const RefPtr<ThreadsafeContentParentHandle> mContent;
 
   
   
@@ -184,11 +184,7 @@ class ParentImpl final : public BackgroundParentImpl {
   static bool IsOtherProcessActor(PBackgroundParent* aBackgroundActor);
 
   
-  static already_AddRefed<ContentParent> GetContentParent(
-      PBackgroundParent* aBackgroundActor);
-
-  
-  static intptr_t GetRawContentParentForComparison(
+  static ThreadsafeContentParentHandle* GetContentParentHandle(
       PBackgroundParent* aBackgroundActor);
 
   
@@ -211,9 +207,9 @@ class ParentImpl final : public BackgroundParentImpl {
   
   
   
-  explicit ParentImpl(already_AddRefed<ContentParent>&& aContent,
+  explicit ParentImpl(ThreadsafeContentParentHandle* aContent,
                       bool aIsOtherProcessActor)
-      : mContent(std::move(aContent)),
+      : mContent(aContent),
         mLiveActorArray(nullptr),
         mIsOtherProcessActor(aIsOtherProcessActor),
         mActorDestroyed(false) {
@@ -224,7 +220,6 @@ class ParentImpl final : public BackgroundParentImpl {
   ~ParentImpl() {
     AssertIsInMainOrSocketProcess();
     AssertIsOnMainThread();
-    MOZ_ASSERT(!mContent);
   }
 
   void MainThreadActorDestroy();
@@ -675,15 +670,9 @@ bool BackgroundParent::IsOtherProcessActor(
 }
 
 
-already_AddRefed<ContentParent> BackgroundParent::GetContentParent(
+ThreadsafeContentParentHandle* BackgroundParent::GetContentParentHandle(
     PBackgroundParent* aBackgroundActor) {
-  return ParentImpl::GetContentParent(aBackgroundActor);
-}
-
-
-intptr_t BackgroundParent::GetRawContentParentForComparison(
-    PBackgroundParent* aBackgroundActor) {
-  return ParentImpl::GetRawContentParentForComparison(aBackgroundActor);
+  return ParentImpl::GetContentParentHandle(aBackgroundActor);
 }
 
 
@@ -799,48 +788,12 @@ bool ParentImpl::IsOtherProcessActor(PBackgroundParent* aBackgroundActor) {
 }
 
 
-already_AddRefed<ContentParent> ParentImpl::GetContentParent(
+ThreadsafeContentParentHandle* ParentImpl::GetContentParentHandle(
     PBackgroundParent* aBackgroundActor) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aBackgroundActor);
 
-  auto actor = static_cast<ParentImpl*>(aBackgroundActor);
-  if (actor->mActorDestroyed) {
-    MOZ_ASSERT(false, "GetContentParent called after ActorDestroy was called!");
-    return nullptr;
-  }
-
-  if (actor->mContent) {
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NewNonOwningRunnableMethod(
-        "ContentParent::AddRef", actor->mContent, &ContentParent::AddRef)));
-  }
-
-  return already_AddRefed<ContentParent>(actor->mContent.get());
-}
-
-
-intptr_t ParentImpl::GetRawContentParentForComparison(
-    PBackgroundParent* aBackgroundActor) {
-  AssertIsOnBackgroundThread();
-  MOZ_ASSERT(aBackgroundActor);
-
-  auto actor = static_cast<ParentImpl*>(aBackgroundActor);
-  if (actor->mActorDestroyed) {
-    MOZ_ASSERT(false,
-               "GetRawContentParentForComparison called after ActorDestroy was "
-               "called!");
-    return intptr_t(-1);
-  }
-
-  return intptr_t(static_cast<ContentParent*>(actor->mContent.get()));
+  return static_cast<ParentImpl*>(aBackgroundActor)->mContent.get();
 }
 
 
@@ -849,11 +802,6 @@ uint64_t ParentImpl::GetChildID(PBackgroundParent* aBackgroundActor) {
   MOZ_ASSERT(aBackgroundActor);
 
   auto actor = static_cast<ParentImpl*>(aBackgroundActor);
-  if (actor->mActorDestroyed) {
-    MOZ_ASSERT(false, "GetContentParent called after ActorDestroy was called!");
-    return 0;
-  }
-
   if (actor->mContent) {
     return actor->mContent->ChildID();
   }
@@ -877,8 +825,8 @@ bool ParentImpl::AllocStarter(ContentParent* aContent,
 
   sLiveActorCount++;
 
-  RefPtr<BackgroundStarterParent> actor =
-      new BackgroundStarterParent(aContent, aCrossProcess);
+  RefPtr<BackgroundStarterParent> actor = new BackgroundStarterParent(
+      aContent ? aContent->ThreadsafeHandle() : nullptr, aCrossProcess);
 
   if (NS_FAILED(sBackgroundThread->Dispatch(NS_NewRunnableFunction(
           "BackgroundStarterParent::ConnectActorRunnable",
@@ -1066,8 +1014,6 @@ void ParentImpl::MainThreadActorDestroy() {
   AssertIsOnMainThread();
   MOZ_ASSERT_IF(!mIsOtherProcessActor, !mContent);
 
-  mContent = nullptr;
-
   MOZ_ASSERT(sLiveActorCount);
   sLiveActorCount--;
 
@@ -1123,8 +1069,8 @@ ParentImpl::ShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-BackgroundStarterParent::BackgroundStarterParent(ContentParent* aContent,
-                                                 bool aCrossProcess)
+BackgroundStarterParent::BackgroundStarterParent(
+    ThreadsafeContentParentHandle* aContent, bool aCrossProcess)
     : mCrossProcess(aCrossProcess), mContent(aContent) {
   AssertIsOnMainThread();
   AssertIsInMainOrSocketProcess();
@@ -1154,22 +1100,7 @@ IPCResult BackgroundStarterParent::RecvInitBackground(
                     "Cannot initialize PBackground with invalid endpoint");
   }
 
-  if (mContent) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NewNonOwningRunnableMethod(
-        "ContentParent::AddRef", mContent, &ContentParent::AddRef)));
-  }
-
-  ParentImpl* actor = new ParentImpl(
-      already_AddRefed<ContentParent>(mContent.get()), mCrossProcess);
+  ParentImpl* actor = new ParentImpl(mContent, mCrossProcess);
 
   
   
@@ -1197,11 +1128,9 @@ void BackgroundStarterParent::ActorDestroy(ActorDestroyReason aReason) {
   }
 
   
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "BackgroundStarterParent::MainThreadDestroy", [self = RefPtr{this}] {
-        self->mContent = nullptr;
-        ParentImpl::sLiveActorCount--;
-      })));
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
+      NS_NewRunnableFunction("BackgroundStarterParent::MainThreadDestroy",
+                             [] { ParentImpl::sLiveActorCount--; })));
 }
 
 

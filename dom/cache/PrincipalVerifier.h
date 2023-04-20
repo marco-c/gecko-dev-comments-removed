@@ -20,7 +20,7 @@ class PBackgroundParent;
 
 namespace dom {
 
-class ContentParent;
+class ThreadsafeContentParentHandle;
 
 namespace cache {
 
@@ -62,9 +62,7 @@ class PrincipalVerifier final : public Runnable {
   
   nsTObserverArray<NotNull<Listener*>> mListenerList;
 
-  
-  
-  RefPtr<ContentParent> mActor;
+  RefPtr<ThreadsafeContentParentHandle> mHandle;
 
   const mozilla::ipc::PrincipalInfo mPrincipalInfo;
   nsCOMPtr<nsIEventTarget> mInitiatingEventTarget;

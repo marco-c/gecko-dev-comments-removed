@@ -32,6 +32,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 
+#include "MainThreadUtils.h"
 #include "nsClassHashtable.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
@@ -98,6 +99,7 @@ class TabContext;
 class GetFilesHelper;
 class MemoryReportRequestHost;
 class RemoteWorkerManager;
+class ThreadsafeContentParentHandle;
 struct CancelContentJSOptions;
 
 #define NS_CONTENTPARENT_IID                         \
@@ -1465,6 +1467,10 @@ class ContentParent final : public PContentParent,
   bool IsBlockingShutdown() { return mBlockShutdownCalled; }
 #endif
 
+  ThreadsafeContentParentHandle* ThreadsafeHandle() const {
+    return mThreadsafeHandle;
+  }
+
  private:
   
   static already_AddRefed<ContentParent> GetUsedBrowserProcess(
@@ -1525,21 +1531,7 @@ class ContentParent final : public PContentParent,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  struct RemoteWorkerActorData {
-    uint32_t mCount = 0;
-    bool mShutdownStarted = false;
-  };
-
-  DataMutex<RemoteWorkerActorData> mRemoteWorkerActorData;
+  const RefPtr<ThreadsafeContentParentHandle> mThreadsafeHandle;
 
   
   
@@ -1669,6 +1661,61 @@ class ContentParent final : public PContentParent,
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ContentParent, NS_CONTENTPARENT_IID)
+
+
+
+class ThreadsafeContentParentHandle final {
+  friend class ContentParent;
+
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ThreadsafeContentParentHandle);
+
+  
+  ContentParentId ChildID() const { return mChildID; }
+
+  
+  
+  
+  nsCString GetRemoteType() MOZ_EXCLUDES(mMutex);
+
+  
+  
+  already_AddRefed<ContentParent> GetContentParent()
+      MOZ_REQUIRES(sMainThreadCapability) {
+    return do_AddRef(mWeakActor);
+  }
+
+  
+  
+  
+  
+  
+  bool MaybeRegisterRemoteWorkerActor(
+      MoveOnlyFunction<bool(uint32_t, bool)> aCallback) MOZ_EXCLUDES(mMutex);
+
+  
+  void RegisterRemoteWorkerActor() MOZ_EXCLUDES(mMutex) {
+    MaybeRegisterRemoteWorkerActor([](uint32_t, bool) { return true; });
+  }
+
+ private:
+  ThreadsafeContentParentHandle(ContentParent* aActor, ContentParentId aChildID,
+                                const nsACString& aRemoteType)
+      : mChildID(aChildID), mRemoteType(aRemoteType), mWeakActor(aActor) {}
+  ~ThreadsafeContentParentHandle() { MOZ_ASSERT(!mWeakActor); }
+
+  mozilla::Mutex mMutex{"ContentParentIdentity"};
+
+  const ContentParentId mChildID;
+
+  nsCString mRemoteType MOZ_GUARDED_BY(mMutex);
+  uint32_t mRemoteWorkerActorCount MOZ_GUARDED_BY(mMutex) = 0;
+  bool mShutdownStarted MOZ_GUARDED_BY(mMutex) = false;
+
+  
+  
+  ContentParent* mWeakActor MOZ_GUARDED_BY(sMainThreadCapability);
+};
 
 
 const nsDependentCSubstring RemoteTypePrefix(

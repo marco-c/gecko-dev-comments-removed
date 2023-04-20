@@ -994,6 +994,10 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     
     
     preallocated->mRemoteType.Assign(aRemoteType);
+    {
+      MutexAutoLock lock(preallocated->mThreadsafeHandle->mMutex);
+      preallocated->mThreadsafeHandle->mRemoteType = preallocated->mRemoteType;
+    }
     preallocated->mRemoteTypeIsolationPrincipal =
         CreateRemoteTypeIsolationPrincipal(aRemoteType);
     preallocated->mActivateTS = TimeStamp::Now();
@@ -1755,15 +1759,18 @@ void ContentParent::MaybeAsyncSendShutDownMessage() {
   bool shouldKeepProcessAlive = ShouldKeepProcessAlive();
 #endif
 
-  auto lock = mRemoteWorkerActorData.Lock();
-  MOZ_ASSERT_IF(!lock->mCount, !shouldKeepProcessAlive);
+  {
+    MutexAutoLock lock(mThreadsafeHandle->mMutex);
+    MOZ_ASSERT_IF(!mThreadsafeHandle->mRemoteWorkerActorCount,
+                  !shouldKeepProcessAlive);
 
-  if (lock->mCount) {
-    return;
+    if (mThreadsafeHandle->mRemoteWorkerActorCount) {
+      return;
+    }
+
+    MOZ_ASSERT(!mThreadsafeHandle->mShutdownStarted);
+    mThreadsafeHandle->mShutdownStarted = true;
   }
-
-  MOZ_ASSERT(!lock->mShutdownStarted);
-  lock->mShutdownStarted = true;
 
   
   
@@ -2293,8 +2300,8 @@ bool ContentParent::HasActiveWorkerOrJSPlugin() {
 
   
   {
-    const auto lock = mRemoteWorkerActorData.Lock();
-    if (lock->mCount) {
+    MutexAutoLock lock(mThreadsafeHandle->mMutex);
+    if (mThreadsafeHandle->mRemoteWorkerActorCount) {
       return true;
     }
   }
@@ -2834,7 +2841,8 @@ ContentParent::ContentParent(const nsACString& aRemoteType, int32_t aJSPluginID)
       mChildID(gContentChildID++),
       mGeolocationWatchID(-1),
       mJSPluginID(aJSPluginID),
-      mRemoteWorkerActorData("ContentParent::mRemoteWorkerActorData"),
+      mThreadsafeHandle(
+          new ThreadsafeContentParentHandle(this, mChildID, mRemoteType)),
       mNumDestroyingTabs(0),
       mNumKeepaliveCalls(0),
       mLifecycleState(LifecycleState::LAUNCHING),
@@ -2893,7 +2901,10 @@ ContentParent::~ContentParent() {
     mForceKillTimer->Cancel();
   }
 
-  NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
+  AssertIsOnMainThread();
+
+  
+  mThreadsafeHandle->mWeakActor = nullptr;
 
   if (mIsAPreallocBlocker) {
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
@@ -7172,17 +7183,12 @@ mozilla::ipc::IPCResult ContentParent::RecvDiscardBrowsingContext(
   return IPC_OK();
 }
 
-void ContentParent::RegisterRemoteWorkerActor() {
-  auto lock = mRemoteWorkerActorData.Lock();
-  ++lock->mCount;
-}
-
 void ContentParent::UnregisterRemoveWorkerActor() {
   MOZ_ASSERT(NS_IsMainThread());
 
   {
-    auto lock = mRemoteWorkerActorData.Lock();
-    if (--lock->mCount) {
+    MutexAutoLock lock(mThreadsafeHandle->mMutex);
+    if (--mThreadsafeHandle->mRemoteWorkerActorCount) {
       return;
     }
   }
@@ -8149,6 +8155,21 @@ IPCResult ContentParent::RecvSignalFuzzingReady() {
   return IPC_OK();
 }
 #endif
+
+nsCString ThreadsafeContentParentHandle::GetRemoteType() {
+  MutexAutoLock lock(mMutex);
+  return mRemoteType;
+}
+
+bool ThreadsafeContentParentHandle::MaybeRegisterRemoteWorkerActor(
+    MoveOnlyFunction<bool(uint32_t, bool)> aCallback) {
+  MutexAutoLock lock(mMutex);
+  if (aCallback(mRemoteWorkerActorCount, mShutdownStarted)) {
+    ++mRemoteWorkerActorCount;
+    return true;
+  }
+  return false;
+}
 
 }  
 }  

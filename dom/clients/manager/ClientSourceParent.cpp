@@ -32,20 +32,21 @@ namespace {
 
 
 class KillContentParentRunnable final : public Runnable {
-  RefPtr<ContentParent> mContentParent;
+  RefPtr<ThreadsafeContentParentHandle> mHandle;
 
  public:
-  explicit KillContentParentRunnable(RefPtr<ContentParent>&& aContentParent)
-      : Runnable("KillContentParentRunnable"),
-        mContentParent(std::move(aContentParent)) {
-    MOZ_ASSERT(mContentParent);
+  explicit KillContentParentRunnable(
+      RefPtr<ThreadsafeContentParentHandle>&& aHandle)
+      : Runnable("KillContentParentRunnable"), mHandle(std::move(aHandle)) {
+    MOZ_ASSERT(mHandle);
   }
 
   NS_IMETHOD
   Run() override {
-    MOZ_ASSERT(NS_IsMainThread());
-    mContentParent->KillHard("invalid ClientSourceParent actor");
-    mContentParent = nullptr;
+    AssertIsOnMainThread();
+    if (RefPtr<ContentParent> contentParent = mHandle->GetContentParent()) {
+      contentParent->KillHard("invalid ClientSourceParent actor");
+    }
     return NS_OK;
   }
 };
@@ -54,8 +55,8 @@ class KillContentParentRunnable final : public Runnable {
 
 void ClientSourceParent::KillInvalidChild() {
   
-  RefPtr<ContentParent> process =
-      BackgroundParent::GetContentParent(Manager()->Manager());
+  RefPtr<ThreadsafeContentParentHandle> process =
+      BackgroundParent::GetContentParentHandle(Manager()->Manager());
 
   
   

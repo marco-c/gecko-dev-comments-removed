@@ -9,6 +9,8 @@
 
 #include "base/process.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/ContentParent.h"
+#include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
 
 #ifdef DEBUG
@@ -51,9 +53,11 @@ class BackgroundParent final {
   friend class mozilla::net::SocketProcessBridgeParent;
   friend class mozilla::net::SocketProcessParent;
 
-  typedef base::ProcessId ProcessId;
-  typedef mozilla::dom::BlobImpl BlobImpl;
-  typedef mozilla::dom::ContentParent ContentParent;
+  using ProcessId = base::ProcessId;
+  using BlobImpl = mozilla::dom::BlobImpl;
+  using ContentParent = mozilla::dom::ContentParent;
+  using ThreadsafeContentParentHandle =
+      mozilla::dom::ThreadsafeContentParentHandle;
 
  public:
   
@@ -68,16 +72,7 @@ class BackgroundParent final {
   
   
   
-  
-  
-  static already_AddRefed<ContentParent> GetContentParent(
-      PBackgroundParent* aBackgroundActor);
-
-  
-  
-  
-  
-  static intptr_t GetRawContentParentForComparison(
+  static ThreadsafeContentParentHandle* GetContentParentHandle(
       PBackgroundParent* aBackgroundActor);
 
   static uint64_t GetChildID(PBackgroundParent* aBackgroundActor);

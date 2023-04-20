@@ -447,17 +447,21 @@ void RemoteWorkerManager::LaunchInternal(
   
   
   if (aTargetActor != mParentActor) {
-    RefPtr<ContentParent> contentParent =
-        BackgroundParent::GetContentParent(aTargetActor->Manager());
+    RefPtr<ThreadsafeContentParentHandle> contentHandle =
+        BackgroundParent::GetContentParentHandle(aTargetActor->Manager());
 
     
     
     
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-        __func__, [contentParent = std::move(contentParent),
+        __func__, [contentHandle = std::move(contentHandle),
                    principalInfo = aData.principalInfo()] {
-          TransmitPermissionsAndBlobURLsForPrincipalInfo(contentParent,
-                                                         principalInfo);
+          AssertIsOnMainThread();
+          if (RefPtr<ContentParent> contentParent =
+                  contentHandle->GetContentParent()) {
+            TransmitPermissionsAndBlobURLsForPrincipalInfo(contentParent,
+                                                           principalInfo);
+          }
         });
 
     MOZ_ALWAYS_SUCCEEDS(
@@ -510,32 +514,21 @@ void RemoteWorkerManager::ForEachActor(
 
   uint32_t i = end;
 
-  nsTArray<RefPtr<ContentParent>> proxyReleaseArray;
-
   do {
     MOZ_ASSERT(i < mChildActors.Length());
     RemoteWorkerServiceParent* actor = mChildActors[i];
 
     if (MatchRemoteType(actor->GetRemoteType(), aRemoteType)) {
-      RefPtr<ContentParent> contentParent =
-          BackgroundParent::GetContentParent(actor->Manager());
+      ThreadsafeContentParentHandle* contentHandle =
+          BackgroundParent::GetContentParentHandle(actor->Manager());
 
-      auto scopeExit = MakeScopeExit(
-          [&]() { proxyReleaseArray.AppendElement(std::move(contentParent)); });
-
-      if (!aCallback(actor, std::move(contentParent))) {
+      if (!aCallback(actor, contentHandle)) {
         break;
       }
     }
 
     i = (i + 1) % length;
   } while (i != end);
-
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-      __func__, [proxyReleaseArray = std::move(proxyReleaseArray)] {});
-
-  MOZ_ALWAYS_SUCCEEDS(
-      SchedulerGroup::Dispatch(TaskCategory::Other, r.forget()));
 }
 
 
@@ -576,7 +569,7 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActorInternal(
 
   ForEachActor(
       [&](RemoteWorkerServiceParent* aActor,
-          RefPtr<ContentParent>&& aContentParent) {
+          ThreadsafeContentParentHandle* aContentHandle) {
         
         
         
@@ -585,16 +578,14 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActorInternal(
         
         
         
-        auto lock = aContentParent->mRemoteWorkerActorData.Lock();
-
-        if ((lock->mCount || !lock->mShutdownStarted) &&
-            (aActor->OtherPid() == aProcessId || !actor)) {
-          ++lock->mCount;
-
+        if (aContentHandle->MaybeRegisterRemoteWorkerActor(
+                [&](uint32_t count, bool shutdownStarted) -> bool {
+                  return (count || !shutdownStarted) &&
+                         (aActor->OtherPid() == aProcessId || !actor);
+                })) {
           actor = aActor;
           return false;
         }
-
         MOZ_ASSERT(!actor);
         return true;
       },
