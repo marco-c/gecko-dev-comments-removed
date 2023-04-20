@@ -1884,7 +1884,6 @@ nsresult nsTreeBodyFrame::GetImage(int32_t aRowIndex, nsTreeColumn* aCol,
       
       
       
-      
     }
     listener->UnsuppressInvalidation();
 

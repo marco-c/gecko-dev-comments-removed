@@ -77,8 +77,7 @@ uint64_t ImageAccessible::NativeState() const {
   if (!(mImageRequestStatus & imgIRequest::STATUS_SIZE_AVAILABLE)) {
     nsIFrame* frame = GetFrame();
     MOZ_ASSERT(!frame || frame->AccessibleType() == eImageType ||
-               frame->AccessibleType() == a11y::eHTMLImageMapType ||
-               frame->IsImageBoxFrame());
+               frame->AccessibleType() == a11y::eHTMLImageMapType);
     if (frame && !frame->HasAnyStateBits(IMAGE_SIZECONSTRAINED)) {
       
       

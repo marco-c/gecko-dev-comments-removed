@@ -108,6 +108,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
     return mKind == Kind::ImageLoadingContent;
   }
 
+  void UpdateXULImage();
   const mozilla::StyleImage* GetImageFromStyle() const;
 
 #ifdef ACCESSIBILITY
@@ -190,6 +191,8 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
     
     ImageLoadingContent,
     
+    XULImage,
+    
     ContentProperty,
     
     
@@ -204,6 +207,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
  private:
   friend nsIFrame* NS_NewImageFrame(mozilla::PresShell*, ComputedStyle*);
+  friend nsIFrame* NS_NewXULImageFrame(mozilla::PresShell*, ComputedStyle*);
   friend nsIFrame* NS_NewImageFrameForContentProperty(mozilla::PresShell*,
                                                       ComputedStyle*);
   friend nsIFrame* NS_NewImageFrameForGeneratedContentIndex(mozilla::PresShell*,
@@ -388,6 +392,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
   RefPtr<nsImageListener> mListener;
 
+  
   
   RefPtr<imgRequestProxy> mOwnedRequest;
 
