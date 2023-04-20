@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('sigmoid', '/webnn/resources/test_data/sigmoid.json', buildOperationWithSingleInput);
