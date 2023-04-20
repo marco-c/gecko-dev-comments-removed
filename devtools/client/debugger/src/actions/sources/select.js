@@ -122,8 +122,7 @@ export function selectSource(cx, sourceId, sourceActorId, location = {}) {
 
 
 export function selectLocation(cx, location, { keepContext = true } = {}) {
-  return async thunkArgs => {
-    const { dispatch, getState, client } = thunkArgs;
+  return async ({ dispatch, getState, sourceMapLoader, client }) => {
     const currentSource = getSelectedSource(getState());
 
     if (!client) {
@@ -161,7 +160,11 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
     ) {
       
       
-      location = await getRelatedMapLocation(location, thunkArgs);
+      location = await getRelatedMapLocation(
+        getState(),
+        sourceMapLoader,
+        location
+      );
       source = getLocationSource(getState(), location);
     }
 
@@ -244,14 +247,17 @@ export function selectSpecificLocation(cx, location) {
 
 
 export function jumpToMappedLocation(cx, location) {
-  return async function(thunkArgs) {
-    const { client, dispatch } = thunkArgs;
+  return async function({ dispatch, getState, client, sourceMapLoader }) {
     if (!client) {
       return null;
     }
 
     
-    const pairedLocation = await getRelatedMapLocation(location, thunkArgs);
+    const pairedLocation = await getRelatedMapLocation(
+      getState(),
+      sourceMapLoader,
+      location
+    );
 
     return dispatch(selectSpecificLocation(cx, pairedLocation));
   };
