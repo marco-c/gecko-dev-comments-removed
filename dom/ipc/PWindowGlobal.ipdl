@@ -109,40 +109,40 @@ parent:
   async InternalLoad(nsDocShellLoadState aLoadState);
 
   
-  async UpdateDocumentURI(nsIURI aUri);
+  [LazySend] async UpdateDocumentURI(nsIURI aUri);
 
   
   
   
   
-  async UpdateDocumentPrincipal(nsIPrincipal aPrincipal,
-                                nsIPrincipal aStoragePrincipal);
+  [LazySend] async UpdateDocumentPrincipal(nsIPrincipal aPrincipal,
+                                           nsIPrincipal aStoragePrincipal);
 
   
-  async UpdateDocumentHasLoaded(bool aDocumentHasLoaded);
+  [LazySend] async UpdateDocumentHasLoaded(bool aDocumentHasLoaded);
 
   
-  async UpdateDocumentHasUserInteracted(bool aDocumentHasUserInteracted);
+  [LazySend] async UpdateDocumentHasUserInteracted(bool aDocumentHasUserInteracted);
 
   
-  async UpdateSandboxFlags(uint32_t aSandboxFlags);
+  [LazySend] async UpdateSandboxFlags(uint32_t aSandboxFlags);
 
   
-  async UpdateDocumentCspSettings(bool aBlockAllMixedContent, bool aUpgradeInsecureRequests);
+  [LazySend] async UpdateDocumentCspSettings(bool aBlockAllMixedContent, bool aUpgradeInsecureRequests);
 
   
-  async UpdateCookieJarSettings(CookieJarSettingsArgs cookieJarSettings);
+  [LazySend] async UpdateCookieJarSettings(CookieJarSettingsArgs cookieJarSettings);
 
   
-  async UpdateDocumentTitle(nsString aTitle);
+  [LazySend] async UpdateDocumentTitle(nsString aTitle);
 
-  async UpdateDocumentSecurityInfo(nsITransportSecurityInfo aSecurityInfo);
-
-  
-  async UpdateHttpsOnlyStatus(uint32_t aHttpsOnlyStatus);
+  [LazySend] async UpdateDocumentSecurityInfo(nsITransportSecurityInfo aSecurityInfo);
 
   
-  async SetIsInitialDocument(bool aIsInitialDocument);
+  [LazySend] async UpdateHttpsOnlyStatus(uint32_t aHttpsOnlyStatus);
+
+  
+  [LazySend] async SetIsInitialDocument(bool aIsInitialDocument);
 
   
   async Share(IPCWebShareData aData) returns (nsresult rv);
@@ -151,7 +151,7 @@ parent:
   async GetContentBlockingEvents() returns (uint32_t events);
 
   
-  async SetClientInfo(IPCClientInfo aClientInfo);
+  [LazySend] async SetClientInfo(IPCClientInfo aClientInfo);
 
   
   
