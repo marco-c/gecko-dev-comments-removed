@@ -7,7 +7,7 @@ from html.parser import HTMLParser
 
 import mozpack.path as mozpath
 import yaml
-from fluent.syntax import parse, visitor
+from fluent.syntax import ast, parse, visitor
 from mozlint import result
 from mozlint.pathutils import expand_exclusions
 
@@ -64,6 +64,12 @@ class Linter(visitor.Visitor):
             
             
             "can_have_group_comment": True,
+            
+            "comment": "",
+            
+            "group_comment": "",
+            
+            "variables": [],
         }
 
         
@@ -107,6 +113,24 @@ class Linter(visitor.Visitor):
         self.last_message_id = node.id.name
 
         super().generic_visit(node)
+
+        
+        if self.state["variables"]:
+            comments = self.state["comment"] + self.state["group_comment"]
+            missing_references = [
+                v for v in self.state["variables"] if f"${v}" not in comments
+            ]
+            if missing_references:
+                self.add_error(
+                    node,
+                    "VC01",
+                    "Messages including variables should have a comment "
+                    "explaining what will replace the variable. "
+                    "Missing references: "
+                    + ", ".join([f"${m}" for m in missing_references]),
+                )
+        self.state["comment"] = ""
+        self.state["variables"] = []
 
     def visit_Term(self, node):
         
@@ -240,8 +264,25 @@ class Linter(visitor.Visitor):
         for variant in node.variants:
             super().generic_visit(variant.value)
 
+        
+        
+        if (
+            type(node.selector) == ast.VariableReference
+            and node.selector.id.name not in self.state["variables"]
+        ):
+            self.state["variables"].append(node.selector.id.name)
+
+    def visit_Comment(self, node):
+        
+
+        
+        self.state["comment"] = node.content
+
     def visit_GroupComment(self, node):
         
+
+        
+        self.state["group_comment"] = node.content
 
         if not self.state["can_have_group_comment"]:
             self.add_error(
@@ -249,7 +290,7 @@ class Linter(visitor.Visitor):
                 "GC04",
                 "Group comments (##) must be followed by at least one message "
                 "or term. Make sure that a single group comment with multiple "
-                "pararaphs is not separated by whitespace, as it will be "
+                "paragraphs is not separated by whitespace, as it will be "
                 "interpreted as two different comments.",
             )
             return
@@ -294,7 +335,9 @@ class Linter(visitor.Visitor):
     def visit_VariableReference(self, node):
         
         
-        pass
+
+        if node.id.name not in self.state["variables"]:
+            self.state["variables"].append(node.id.name)
 
     def add_error(self, node, rule, msg):
         (col, line) = self.span_to_line_and_col(node.span)
