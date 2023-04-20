@@ -83,7 +83,11 @@ void GPUChild::Init() {
 void GPUChild::OnVarChanged(const GfxVarUpdate& aVar) { SendUpdateVar(aVar); }
 
 bool GPUChild::EnsureGPUReady() {
-  if (mGPUReady) {
+  
+  
+  
+  
+  if (mGPUReady && !mWaitForVarUpdate) {
     return true;
   }
 
@@ -92,10 +96,15 @@ bool GPUChild::EnsureGPUReady() {
     return false;
   }
 
-  gfxPlatform::GetPlatform()->ImportGPUDeviceData(data);
-  Telemetry::AccumulateTimeDelta(Telemetry::GPU_PROCESS_LAUNCH_TIME_MS_2,
-                                 mHost->GetLaunchTime());
-  mGPUReady = true;
+  
+  if (!mGPUReady) {
+    gfxPlatform::GetPlatform()->ImportGPUDeviceData(data);
+    Telemetry::AccumulateTimeDelta(Telemetry::GPU_PROCESS_LAUNCH_TIME_MS_2,
+                                   mHost->GetLaunchTime());
+    mGPUReady = true;
+  }
+
+  mWaitForVarUpdate = false;
   return true;
 }
 

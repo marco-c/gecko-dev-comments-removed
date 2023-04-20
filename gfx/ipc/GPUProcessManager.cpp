@@ -616,8 +616,12 @@ bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
 
   
   
-  if (wantRestart && mProcess) {
+  
+  
+  
+  if (wantRestart && mProcess && mGPUChild) {
     mUnstableProcessAttempts = 1;
+    mGPUChild->MarkWaitForVarUpdate();
   }
 
   return true;
