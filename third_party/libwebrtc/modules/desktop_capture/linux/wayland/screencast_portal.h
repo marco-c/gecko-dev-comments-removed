@@ -59,6 +59,21 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
   };
 
   
+  
+  
+  enum class PersistMode : uint32_t {
+    
+    kDoNotPersist = 0b00,
+    
+    
+    
+    kTransient = 0b01,
+    
+    
+    kPersistent = 0b10
+  };
+
+  
   class PortalNotifier {
    public:
     virtual void OnScreenCastRequestResult(xdg_portal::RequestResponse result,
@@ -106,6 +121,11 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
   void SourcesRequest();
   void OpenPipeWireRemote();
 
+  
+  void SetPersistMode(ScreenCastPortal::PersistMode mode);
+  void SetRestoreToken(const std::string& token);
+  std::string RestoreToken() const;
+
  private:
   PortalNotifier* notifier_;
 
@@ -113,11 +133,15 @@ class ScreenCastPortal : public xdg_portal::ScreenCapturePortalInterface {
   uint32_t pw_stream_node_id_ = 0;
   
   int pw_fd_ = -1;
+  
+  std::string restore_token_;
 
   CaptureSourceType capture_source_type_ =
       ScreenCastPortal::CaptureSourceType::kScreen;
 
   CursorMode cursor_mode_ = ScreenCastPortal::CursorMode::kMetadata;
+
+  PersistMode persist_mode_ = ScreenCastPortal::PersistMode::kDoNotPersist;
 
   ProxyRequestResponseHandler proxy_request_response_handler_;
   SourcesRequestResponseSignalHandler sources_request_response_signal_handler_;
