@@ -942,7 +942,7 @@ void nsRange::DoSetRange(const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
       if (newCommonAncestor) {
         RegisterClosestCommonInclusiveAncestor(newCommonAncestor);
       } else {
-        NS_ASSERTION(!mIsPositioned, "unexpected disconnected nodes");
+        MOZ_DIAGNOSTIC_ASSERT(!mIsPositioned, "unexpected disconnected nodes");
         mSelection = nullptr;
         MOZ_DIAGNOSTIC_ASSERT(
             !mRegisteredClosestCommonInclusiveAncestor,
