@@ -95,27 +95,28 @@ define(function(require, exports, module) {
   
   
   
-  const escapeRegexp = new RegExp(
-    "[" +
-      
-      '"\\\\' +
-      
-      "\x00-\x1f" +
-      
-      "\x7f-\x9f" +
-      
-      "\ufeff" +
-      
-      "\ufff0-\ufffc\ufffe\uffff" +
-      
-      "\ud800-\udfff" +
-      
-      "\u2061-\u2064" +
-      
-      "\u2028-\u2029" +
-      
-      "\ue000-\uf8ff" +
-      "]",
+  const commonEscapes =
+    
+    "\\\\" +
+    
+    "\x00-\x1f" +
+    
+    "\x7f-\x9f" +
+    
+    "\ufeff" +
+    
+    "\ufff0-\ufffc\ufffe\uffff" +
+    
+    "\ud800-\udfff" +
+    
+    "\u2061-\u2064" +
+    
+    "\u2028-\u2029" +
+    
+    "\ue000-\uf8ff";
+  const escapeRegexp = new RegExp(`[${commonEscapes}]`, "g");
+  const escapeRegexpIncludingDoubleQuote = new RegExp(
+    `[${commonEscapes}"]`,
     "g"
   );
 
@@ -131,8 +132,21 @@ define(function(require, exports, module) {
 
 
 
+
+
   function escapeString(str, escapeWhitespace) {
-    return `"${str.replace(escapeRegexp, (match, offset) => {
+    let quote = '"';
+    let regexp = escapeRegexp;
+    if (str.includes('"')) {
+      if (!str.includes("'")) {
+        quote = "'";
+      } else if (!str.includes("`") && !str.includes("${")) {
+        quote = "`";
+      } else {
+        regexp = escapeRegexpIncludingDoubleQuote;
+      }
+    }
+    return `${quote}${str.replace(regexp, (match, offset) => {
       const c = match.charCodeAt(0);
       if (c in escapeMap) {
         if (!escapeWhitespace && (c === 9 || c === 0xa || c === 0xd)) {
@@ -164,7 +178,7 @@ define(function(require, exports, module) {
         return match;
       }
       return `\\u${`0000${c.toString(16)}`.substr(-4)}`;
-    })}"`;
+    })}${quote}`;
   }
 
   
