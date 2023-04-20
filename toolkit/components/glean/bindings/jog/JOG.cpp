@@ -13,7 +13,7 @@
 #include "mozilla/glean/bindings/jog/jog_ffi_generated.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Omnijar.h"
-
+#include "mozilla/StaticPrefs_telemetry.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsThreadUtils.h"
@@ -44,13 +44,6 @@ static Maybe<bool> sFoundAndLoadedJogfile;
 bool JOG::EnsureRuntimeMetricsRegistered(bool aForce) {
   MOZ_ASSERT(NS_IsMainThread());
 
-#ifdef MOZILLA_OFFICIAL
-  
-  
-  MOZ_LOG(sLog, LogLevel::Verbose, ("MOZILLA_OFFICIAL build. No JOG for you."));
-  return false;
-#endif
-
   if (sFoundAndLoadedJogfile) {
     return sFoundAndLoadedJogfile.value();
   }
@@ -58,11 +51,12 @@ bool JOG::EnsureRuntimeMetricsRegistered(bool aForce) {
 
   MOZ_LOG(sLog, LogLevel::Debug, ("Determining whether there's JOG for you."));
 
-  if (mozilla::IsPackagedBuild()) {
+  if (!mozilla::StaticPrefs::telemetry_fog_artifact_build()) {
     
     
     
-    MOZ_LOG(sLog, LogLevel::Debug, ("IsPackagedBuild. No JOG for you."));
+    MOZ_LOG(sLog, LogLevel::Debug,
+            ("!telemetry.fog.artifact_build. No JOG for you."));
     return false;
   }
   
