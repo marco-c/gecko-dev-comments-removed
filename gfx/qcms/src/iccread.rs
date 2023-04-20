@@ -416,7 +416,7 @@ pub extern "C" fn qcms_profile_is_bogus(profile: &mut Profile) -> bool {
         }
         i += 1
     }
-    if !cfg!(target_os = "macos") {
+    if false {
         negative = (rX < 0.)
             || (rY < 0.)
             || (rZ < 0.)
@@ -432,7 +432,6 @@ pub extern "C" fn qcms_profile_is_bogus(profile: &mut Profile) -> bool {
         
         
         
-
         
         negative = false; 
     }
