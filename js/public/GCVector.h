@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"       
 #include "mozilla/Attributes.h"       
 #include "mozilla/MemoryReporting.h"  
+#include "mozilla/Span.h"
 #include "mozilla/Vector.h"
 
 #include <stddef.h>  
@@ -71,6 +72,9 @@ class GCVector {
 
   T& back() { return vector.back(); }
   const T& back() const { return vector.back(); }
+
+  operator mozilla::Span<T>() { return vector; }
+  operator mozilla::Span<const T>() const { return vector; }
 
   bool initCapacity(size_t cap) { return vector.initCapacity(cap); }
   [[nodiscard]] bool reserve(size_t req) { return vector.reserve(req); }
