@@ -2692,7 +2692,7 @@ nsresult nsImageFrame::LoadIcon(const nsAString& aSpec,
       loadFlags, nullptr, contentPolicyType, u""_ns,
       false, 
       false, 
-      aRequest);
+      0, aRequest);
 }
 
 void nsImageFrame::GetDocumentCharacterSet(nsACString& aCharset) const {
