@@ -449,13 +449,13 @@ async function testPasswordChange(
             25
           );
         } catch (ex) {}
-        ok(!notif, "No doorhanger expected");
+        Assert.ok(!notif, "No doorhanger expected");
         
         return;
       }
 
       let notificationType = expected.doorhanger.type;
-      ok(
+      Assert.ok(
         /^password-save|password-change$/.test(notificationType),
         "test provided an expected notification type: " + notificationType
       );
@@ -468,7 +468,7 @@ async function testPasswordChange(
         notificationType,
         expected.doorhanger
       );
-      ok(notif, "Doorhanger was shown");
+      Assert.ok(notif, "Doorhanger was shown");
 
       let promiseHidden = BrowserTestUtils.waitForEvent(
         PopupNotifications.panel,
@@ -512,7 +512,11 @@ async function checkForm(browser, expected) {
     async function contentCheckForm(selectorValues) {
       for (let [sel, value] of Object.entries(selectorValues)) {
         let field = content.document.querySelector(sel);
-        is(field.value, value, sel + " has the expected initial value");
+        Assert.equal(
+          field.value,
+          value,
+          sel + " has the expected initial value"
+        );
       }
     }
   );
@@ -521,20 +525,20 @@ async function checkForm(browser, expected) {
 async function openAndVerifyDoorhanger(browser, type, expected) {
   
   let notif = getCaptureDoorhanger(type);
-  ok(notif, `${type} doorhanger was created`);
-  is(
+  Assert.ok(notif, `${type} doorhanger was created`);
+  Assert.equal(
     notif.dismissed,
     expected.dismissed,
     "Check notification dismissed property"
   );
-  is(
+  Assert.equal(
     notif.anchorElement.getAttribute("extraAttr"),
     expected.anchorExtraAttr,
     "Check icon extraAttr attribute"
   );
   let { panel } = PopupNotifications;
   
-  is(panel.state, "closed", "Panel is initially closed");
+  Assert.equal(panel.state, "closed", "Panel is initially closed");
   let promiseShown = BrowserTestUtils.waitForEvent(panel, "popupshown");
   
   
@@ -552,7 +556,7 @@ async function openAndVerifyDoorhanger(browser, type, expected) {
     
     
   } else if (expected.toggle == "hidden") {
-    ok(
+    Assert.ok(
       BrowserTestUtils.is_hidden(checkbox),
       "Toggle checkbox hidden as expected"
     );

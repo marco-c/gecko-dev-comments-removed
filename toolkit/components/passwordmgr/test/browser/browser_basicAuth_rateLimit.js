@@ -30,9 +30,9 @@ add_task(async function test() {
       "https://example.com/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs"
     );
     await authShown;
-    ok(true, "Seen dialog number 1");
+    Assert.ok(true, "Seen dialog number 1");
     await browserLoaded;
-    ok(true, "Loaded document number 1");
+    Assert.ok(true, "Loaded document number 1");
 
     
     
@@ -49,10 +49,10 @@ add_task(async function test() {
       });
       if (i < cancelDialogLimit) {
         await authShown;
-        ok(true, `Seen dialog number ${i + 1}`);
+        Assert.ok(true, `Seen dialog number ${i + 1}`);
       }
       await browserLoaded;
-      ok(true, `Loaded document number ${i + 1}`);
+      Assert.ok(true, `Loaded document number ${i + 1}`);
     }
 
     let reloadButton = document.getElementById("reload-button");
@@ -65,9 +65,9 @@ add_task(async function test() {
     browserLoaded = BrowserTestUtils.browserLoaded(browser);
     reloadButton.click();
     await authShown;
-    ok(true, "Seen dialog number 1");
+    Assert.ok(true, "Seen dialog number 1");
     await browserLoaded;
-    ok(true, "Loaded document number 1");
+    Assert.ok(true, "Loaded document number 1");
 
     
     browserLoaded = BrowserTestUtils.browserLoaded(browser);
@@ -100,11 +100,11 @@ add_task(async function test() {
 
       if (i < cancelDialogLimit) {
         await authShown;
-        ok(true, `Seen dialog number ${i + 1}`);
+        Assert.ok(true, `Seen dialog number ${i + 1}`);
       }
 
       await iframeLoaded;
-      ok(true, `Loaded iframe number ${i + 1}`);
+      Assert.ok(true, `Loaded iframe number ${i + 1}`);
     }
 
     
@@ -127,7 +127,10 @@ add_task(async function test() {
     });
 
     await iframeLoaded;
-    ok(true, "Loaded a third party iframe without showing the auth dialog");
+    Assert.ok(
+      true,
+      "Loaded a third party iframe without showing the auth dialog"
+    );
 
     
     authShown = promiseAuthWindowShown();

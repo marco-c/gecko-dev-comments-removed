@@ -22,7 +22,7 @@ add_task(async function test() {
   
   let dialog = await authPromptShown;
 
-  is(gBrowser.selectedTab, tab, "Should have selected the new tab");
+  Assert.equal(gBrowser.selectedTab, tab, "Should have selected the new tab");
 
   
   PromptTestUtils.handlePrompt(dialog, { buttonNumClick: 1 });

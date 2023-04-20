@@ -20,7 +20,7 @@ add_task(async function test_related_domain_matching() {
   
   let relatedRealms = records[0].relatedRealms;
   relatedRealms = relatedRealms.flat();
-  ok(relatedRealms);
+  Assert.ok(relatedRealms);
 
   let LRR = new LoginRelatedRealmsParent();
 
@@ -63,7 +63,7 @@ add_task(async function test_newly_synced_collection() {
   
   let originalRelatedRealms = records[0].relatedRealms;
   originalRelatedRealms = originalRelatedRealms.flat();
-  ok(originalRelatedRealms);
+  Assert.ok(originalRelatedRealms);
 
   const updatedRelatedRealms = ["completely-different.com", "example.com"];
   const record2 = {
@@ -113,7 +113,7 @@ add_task(async function test_no_related_domains() {
 
   let LRR = new LoginRelatedRealmsParent();
 
-  ok(LRR.findRelatedRealms, "Ensure findRelatedRealms exists");
+  Assert.ok(LRR.findRelatedRealms, "Ensure findRelatedRealms exists");
 
   let result = await LRR.findRelatedRealms("https://example.com");
   equal(result.length, 0, "Assert that there were no related realms found");

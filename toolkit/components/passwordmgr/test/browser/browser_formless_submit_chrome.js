@@ -10,7 +10,7 @@ async function fillTestPage(
   password = "my_password"
 ) {
   let notif = getCaptureDoorhanger("any", undefined, aBrowser);
-  ok(!notif, "No doorhangers should be present before filling the form");
+  Assert.ok(!notif, "No doorhangers should be present before filling the form");
 
   await changeContentFormValues(aBrowser, {
     "#form-basic-username": username,
@@ -20,7 +20,7 @@ async function fillTestPage(
     
     
     notif = await waitForDoorhanger(aBrowser, "any");
-    ok(notif.dismissed, "Only a dismissed doorhanger should be present");
+    Assert.ok(notif.dismissed, "Only a dismissed doorhanger should be present");
     await cleanupDoorhanger(notif);
   }
 }
@@ -39,7 +39,7 @@ function withTestPage(aTaskFn) {
       
       await new Promise(resolve => SimpleTest.executeSoon(resolve));
       let notif = getCaptureDoorhanger("any");
-      ok(!notif, "No doorhanger should be present");
+      Assert.ok(!notif, "No doorhanger should be present");
       await cleanupDoorhanger(notif);
     }
   );
@@ -102,7 +102,7 @@ add_task(async function test_backButton_forwardButton() {
 
     
     await new Promise(resolve => SimpleTest.executeSoon(resolve));
-    ok(!getCaptureDoorhanger("any"), "No doorhanger should be present");
+    Assert.ok(!getCaptureDoorhanger("any"), "No doorhanger should be present");
 
     
     await fillTestPage(aBrowser, "my_username", "password_3");
