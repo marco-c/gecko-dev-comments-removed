@@ -36,7 +36,7 @@ class NSSSocketControl final : public CommonSocketControl {
   NS_IMETHOD GetAlpnEarlySelection(nsACString& _retval) override;
   NS_IMETHOD GetEarlyDataAccepted(bool* aEarlyDataAccepted) override;
   NS_IMETHOD DriveHandshake(void) override;
-  using nsISSLSocketControl::GetKEAUsed;
+  using nsITLSSocketControl::GetKEAUsed;
   NS_IMETHOD GetKEAUsed(int16_t* aKEAUsed) override;
   NS_IMETHOD GetKEAKeyBits(uint32_t* aKEAKeyBits) override;
   NS_IMETHOD GetProviderTlsFlags(uint32_t* aProviderTlsFlags) override;

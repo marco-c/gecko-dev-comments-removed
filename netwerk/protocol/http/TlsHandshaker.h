@@ -9,7 +9,7 @@
 #include "nsITlsHandshakeListener.h"
 
 class nsISocketTransport;
-class nsISSLSocketControl;
+class nsITLSSocketControl;
 
 namespace mozilla::net {
 
@@ -26,7 +26,7 @@ class TlsHandshaker : public nsITlsHandshakeCallbackListener {
   void SetupSSL(bool aInSpdyTunnel, bool aForcePlainText);
   [[nodiscard]] nsresult InitSSLParams(bool connectingToProxy,
                                        bool ProxyStartSSL);
-  [[nodiscard]] nsresult SetupNPNList(nsISSLSocketControl* ssl, uint32_t caps,
+  [[nodiscard]] nsresult SetupNPNList(nsITLSSocketControl* ssl, uint32_t caps,
                                       bool connectingToProxy);
   
   
@@ -63,7 +63,7 @@ class TlsHandshaker : public nsITlsHandshakeCallbackListener {
  private:
   virtual ~TlsHandshaker();
 
-  void Check0RttEnabled(nsISSLSocketControl* ssl);
+  void Check0RttEnabled(nsITLSSocketControl* ssl);
 
   
   bool mSetupSSLCalled{false};
