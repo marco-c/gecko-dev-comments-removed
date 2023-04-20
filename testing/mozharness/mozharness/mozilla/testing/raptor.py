@@ -1081,8 +1081,13 @@ class Raptor(
             self.logcat_stop()
 
     def download_and_extract(self, extract_dirs=None, suite_categories=None):
+        
+        extract_dirs = [
+            "tools/wptserve/*",
+            "tools/wpt_third_party/pywebsocket3/*",
+        ]
         return super(Raptor, self).download_and_extract(
-            suite_categories=["common", "condprof", "raptor"]
+            extract_dirs=extract_dirs, suite_categories=["common", "condprof", "raptor"]
         )
 
     def create_virtualenv(self, **kwargs):
@@ -1122,17 +1127,22 @@ class Raptor(
 
         
         
+        
         if not self.run_local:
             mozbase_requirements = os.path.join(
                 self.query_abs_dirs()["abs_test_install_dir"],
                 "config",
                 "mozbase_requirements.txt",
             )
+            raptor_requirements = os.path.join(self.raptor_path, "requirements.txt")
         else:
             mozbase_requirements = os.path.join(
                 os.path.dirname(self.raptor_path),
                 "config",
                 "mozbase_source_requirements.txt",
+            )
+            raptor_requirements = os.path.join(
+                self.raptor_path, "source_requirements.txt"
             )
         self.register_virtualenv_module(
             requirements=[mozbase_requirements],
@@ -1172,9 +1182,7 @@ class Raptor(
         super(Raptor, self).create_virtualenv(modules=modules)
 
         
-        self.install_module(
-            requirements=[os.path.join(self.raptor_path, "requirements.txt")]
-        )
+        self.install_module(requirements=[raptor_requirements])
 
     def setup_local_ffmpeg(self):
         """Make use of the users local ffmpeg when running browsertime visual

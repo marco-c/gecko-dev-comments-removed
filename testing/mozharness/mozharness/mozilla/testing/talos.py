@@ -697,8 +697,13 @@ class Talos(
     
 
     def download_and_extract(self, extract_dirs=None, suite_categories=None):
+        
+        extract_dirs = [
+            "tools/wptserve/*",
+            "tools/wpt_third_party/pywebsocket3/*",
+        ]
         return super(Talos, self).download_and_extract(
-            suite_categories=["common", "talos"]
+            extract_dirs=extract_dirs, suite_categories=["common", "talos"]
         )
 
     def create_virtualenv(self, **kwargs):
@@ -731,17 +736,22 @@ class Talos(
 
         
         
+        
         if not self.run_local:
             mozbase_requirements = os.path.join(
                 self.query_abs_dirs()["abs_test_install_dir"],
                 "config",
                 "mozbase_requirements.txt",
             )
+            talos_requirements = os.path.join(self.talos_path, "requirements.txt")
         else:
             mozbase_requirements = os.path.join(
                 os.path.dirname(self.talos_path),
                 "config",
                 "mozbase_source_requirements.txt",
+            )
+            talos_requirements = os.path.join(
+                self.talos_path, "source_requirements.txt"
             )
         self.register_virtualenv_module(
             requirements=[mozbase_requirements],
@@ -751,9 +761,7 @@ class Talos(
         super(Talos, self).create_virtualenv()
         
         
-        self.install_module(
-            requirements=[os.path.join(self.talos_path, "requirements.txt")]
-        )
+        self.install_module(requirements=[talos_requirements])
 
     def _validate_treeherder_data(self, parser):
         
