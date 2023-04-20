@@ -353,7 +353,6 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
   if (aGlobal) {
     if (IsPrivateBrowsing(mWindow)) {
       mPrivateWindow = true;
-      mDisableLongTermStats = true;
     }
     mWindow->AddPeerConnection();
     mActiveOnWindow = true;
@@ -2198,32 +2197,6 @@ nsresult PeerConnectionImpl::CheckApiState(bool assert_ice_ready) const {
   return NS_OK;
 }
 
-void PeerConnectionImpl::StoreFinalStats(
-    UniquePtr<RTCStatsReportInternal>&& report) {
-  using namespace Telemetry;
-
-  report->mClosed = true;
-
-  for (const auto& inboundRtpStats : report->mInboundRtpStreamStats) {
-    bool isVideo = (inboundRtpStats.mId.Value().Find(u"video") != -1);
-    if (!isVideo) {
-      continue;
-    }
-    if (inboundRtpStats.mDiscardedPackets.WasPassed() &&
-        report->mCallDurationMs.WasPassed()) {
-      double mins = report->mCallDurationMs.Value() / (1000 * 60);
-      if (mins > 0) {
-        Accumulate(
-            WEBRTC_VIDEO_DECODER_DISCARDED_PACKETS_PER_CALL_PPM,
-            uint32_t(double(inboundRtpStats.mDiscardedPackets.Value()) / mins));
-      }
-    }
-  }
-
-  
-  mFinalStats = std::move(report);
-}
-
 NS_IMETHODIMP
 PeerConnectionImpl::Close() {
   CSFLogDebug(LOGTAG, "%s: for %s", __FUNCTION__, mHandle.c_str());
@@ -2240,6 +2213,11 @@ PeerConnectionImpl::Close() {
   
   
   
+  
+  
+  if (!mPrivateWindow) {
+    WebrtcGlobalInformation::StoreLongTermICEStatistics(*this);
+  }
   RecordEndOfCallTelemetry();
 
   CSFLogInfo(LOGTAG,
@@ -2291,48 +2269,26 @@ PeerConnectionImpl::Close() {
   }
 
   
-  RefPtr<GenericPromise> callDestroyPromise;
+  RefPtr<GenericPromise> promise;
   if (mCall) {
     
     
     auto callThread = mCall->mCallThread;
-    callDestroyPromise =
-        InvokeAsync(callThread, __func__, [call = std::move(mCall)]() {
-          call->Destroy();
-          return GenericPromise::CreateAndResolve(
-              true, "PCImpl->WebRtcCallWrapper::Destroy");
-        });
+    promise = InvokeAsync(callThread, __func__, [call = std::move(mCall)]() {
+      call->Destroy();
+      return GenericPromise::CreateAndResolve(
+          true, "PCImpl->WebRtcCallWrapper::Destroy");
+    });
   } else {
-    callDestroyPromise = GenericPromise::CreateAndResolve(true, __func__);
+    promise = GenericPromise::CreateAndResolve(true, __func__);
   }
 
-  mFinalStatsQuery =
-      GetStats(nullptr, true)
-          ->Then(
-              GetMainThreadSerialEventTarget(), __func__,
-              [this, self = RefPtr<PeerConnectionImpl>(this)](
-                  UniquePtr<dom::RTCStatsReportInternal>&& aReport) mutable {
-                StoreFinalStats(std::move(aReport));
-                return GenericNonExclusivePromise::CreateAndResolve(true,
-                                                                    __func__);
-              },
-              [](nsresult aError) {
-                return GenericNonExclusivePromise::CreateAndResolve(true,
-                                                                    __func__);
-              });
-
-  
-  
-  
-  
   
   
   
   
   MOZ_RELEASE_ASSERT(mSTSThread);
-  mFinalStatsQuery
-      ->Then(GetMainThreadSerialEventTarget(), __func__,
-             [callDestroyPromise]() mutable { return callDestroyPromise; })
+  promise
       ->Then(
           mSTSThread, __func__,
           [signalHandler = std::move(mSignalHandler)]() mutable {
@@ -3238,36 +3194,10 @@ nsTArray<dom::RTCCodecStats> PeerConnectionImpl::GetCodecStats(
 RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
     dom::MediaStreamTrack* aSelector, bool aInternalStats) {
   MOZ_ASSERT(NS_IsMainThread());
-
-  if (mFinalStatsQuery) {
-    
-    
-    
-    return mFinalStatsQuery->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [this, self = RefPtr<PeerConnectionImpl>(this)]() {
-          UniquePtr<dom::RTCStatsReportInternal> finalStats =
-              MakeUnique<dom::RTCStatsReportInternal>();
-          
-          if (mFinalStats) {
-            *finalStats = *mFinalStats;
-          }
-          return RTCStatsReportPromise::CreateAndResolve(std::move(finalStats),
-                                                         __func__);
-        });
-  }
-
   nsTArray<RefPtr<dom::RTCStatsPromise>> promises;
   DOMHighResTimeStamp now = mTimestampMaker.GetNow();
 
   nsTArray<dom::RTCCodecStats> codecStats = GetCodecStats(now);
-  std::set<std::string> transportIds;
-
-  if (!aSelector) {
-    
-    
-    transportIds.insert("");
-  }
 
   nsTArray<
       std::tuple<RTCRtpTransceiver*, RefPtr<RTCStatsPromise::AllPromiseType>>>
@@ -3278,24 +3208,19 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
     if (!sendSelected && !recvSelected) {
       continue;
     }
-
-    if (aSelector) {
-      transportIds.insert(transceiver->GetTransportId());
-    }
-
     nsTArray<RefPtr<RTCStatsPromise>> rtpStreamPromises;
-    
-    
     
     
     
     if (sendSelected) {
       rtpStreamPromises.AppendElements(
-          transceiver->Sender()->GetStatsInternal(true));
+          transceiver->Sender()->GetStatsInternal());
     }
     if (recvSelected) {
+      
+      
       rtpStreamPromises.AppendElements(
-          transceiver->Receiver()->GetStatsInternal(true));
+          transceiver->Receiver()->GetStatsInternal());
     }
     transceiverStatsPromises.AppendElement(
         std::make_tuple(transceiver.get(),
@@ -3306,8 +3231,17 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
   promises.AppendElement(RTCRtpTransceiver::ApplyCodecStats(
       std::move(codecStats), std::move(transceiverStatsPromises)));
 
-  for (const auto& transportId : transportIds) {
-    promises.AppendElement(mTransportHandler->GetIceStats(transportId, now));
+  
+  
+  
+  
+  if (aSelector) {
+    std::string transportId = GetTransportIdMatchingSendTrack(*aSelector);
+    if (!transportId.empty()) {
+      promises.AppendElement(mTransportHandler->GetIceStats(transportId, now));
+    }
+  } else {
+    promises.AppendElement(mTransportHandler->GetIceStats("", now));
   }
 
   promises.AppendElement(GetDataChannelStats(mDataConnection, now));

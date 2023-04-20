@@ -467,7 +467,6 @@ class PeerConnectionImpl final
   void OnSetDescriptionError();
 
   bool IsClosed() const;
-
   
   nsresult OnAlpnNegotiated(bool aPrivacyRequested);
 
@@ -524,14 +523,6 @@ class PeerConnectionImpl final
 
   void SendWarningToConsole(const nsCString& aWarning);
 
-  const UniquePtr<dom::RTCStatsReportInternal>& GetFinalStats() const {
-    return mFinalStats;
-  }
-
-  void DisableLongTermStats() { mDisableLongTermStats = true; }
-
-  bool LongTermStatsIsDisabled() const { return mDisableLongTermStats; }
-
  private:
   virtual ~PeerConnectionImpl();
   PeerConnectionImpl(const PeerConnectionImpl& rhs);
@@ -548,7 +539,6 @@ class PeerConnectionImpl final
                                      uint32_t aMaxMessageSize, bool aMMSSet);
 
   nsresult CheckApiState(bool assert_ice_ready) const;
-  void StoreFinalStats(UniquePtr<dom::RTCStatsReportInternal>&& report);
   void CheckThread() const { MOZ_ASSERT(NS_IsMainThread(), "Wrong thread"); }
 
   
@@ -665,13 +655,6 @@ class PeerConnectionImpl final
   
   bool mCallTelemStarted = false;
   bool mCallTelemEnded = false;
-
-  
-  
-  
-  RefPtr<GenericNonExclusivePromise> mFinalStatsQuery;
-  UniquePtr<dom::RTCStatsReportInternal> mFinalStats;
-  bool mDisableLongTermStats = false;
 
   
   mozilla::TimeStamp mIceStartTime;

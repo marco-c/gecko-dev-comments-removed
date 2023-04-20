@@ -84,20 +84,10 @@ static PeerConnectionCtx* GetPeerConnectionCtx() {
   return nullptr;
 }
 
-static nsTArray<dom::RTCStatsReportInternal>& GetWebrtcGlobalStatsStash() {
-  static StaticAutoPtr<nsTArray<dom::RTCStatsReportInternal>> sStash;
-  if (!sStash) {
-    sStash = new nsTArray<dom::RTCStatsReportInternal>();
-    ClearOnShutdown(&sStash);
-  }
-  return *sStash;
-}
-
 static RefPtr<PWebrtcGlobalParent::GetStatsPromise>
 GetStatsPromiseForThisProcess(const nsAString& aPcIdFilter) {
   nsTArray<RefPtr<dom::RTCStatsReportPromise>> promises;
 
-  std::set<nsString> pcids;
   if (auto ctx = GetPeerConnectionCtx()) {
     
     ctx->ForEachPeerConnection([&](PeerConnectionImpl* aPc) {
@@ -105,24 +95,15 @@ GetStatsPromiseForThisProcess(const nsAString& aPcIdFilter) {
           !aPcIdFilter.EqualsASCII(aPc->GetIdAsAscii().c_str())) {
         return;
       }
-      if (!aPc->IsClosed() || !aPc->LongTermStatsIsDisabled()) {
-        nsString id;
-        aPc->GetId(id);
-        pcids.insert(id);
-        promises.AppendElement(aPc->GetStats(nullptr, true));
+      if (aPc->IsClosed()) {
+        return;
       }
+      promises.AppendElement(aPc->GetStats(nullptr, true));
     });
 
     
-    
-    
-    
-    
-    
-    for (auto& report : GetWebrtcGlobalStatsStash()) {
-      report.mClosed = true;
-      if ((aPcIdFilter.IsEmpty() || aPcIdFilter == report.mPcid) &&
-          !pcids.count(report.mPcid)) {
+    for (const auto& report : ctx->mStatsForClosedPeerConnections) {
+      if (aPcIdFilter.IsEmpty() || aPcIdFilter == report.mPcid) {
         promises.AppendElement(dom::RTCStatsReportPromise::CreateAndResolve(
             MakeUnique<dom::RTCStatsReportInternal>(report), __func__));
       }
@@ -148,6 +129,15 @@ GetStatsPromiseForThisProcess(const nsAString& aPcIdFilter) {
              std::move(UnwrapUniquePtrs));
 }
 
+static nsTArray<dom::RTCStatsReportInternal>& GetWebrtcGlobalStatsStash() {
+  static StaticAutoPtr<nsTArray<dom::RTCStatsReportInternal>> sStash;
+  if (!sStash) {
+    sStash = new nsTArray<dom::RTCStatsReportInternal>();
+    ClearOnShutdown(&sStash);
+  }
+  return *sStash;
+}
+
 static std::map<int32_t, dom::Sequence<nsString>>& GetWebrtcGlobalLogStash() {
   static StaticAutoPtr<std::map<int32_t, dom::Sequence<nsString>>> sStash;
   if (!sStash) {
@@ -157,10 +147,10 @@ static std::map<int32_t, dom::Sequence<nsString>>& GetWebrtcGlobalLogStash() {
   return *sStash;
 }
 
-static void ClearLongTermStats() {
+static void ClearClosedStats() {
   GetWebrtcGlobalStatsStash().Clear();
   if (auto ctx = GetPeerConnectionCtx()) {
-    ctx->ClearClosedStats();
+    ctx->mStatsForClosedPeerConnections.Clear();
   }
 }
 
@@ -180,7 +170,7 @@ void WebrtcGlobalInformation::ClearAllStats(const GlobalObject& aGlobal) {
   }
 
   
-  ClearLongTermStats();
+  ClearClosedStats();
 }
 
 void WebrtcGlobalInformation::GetAllStats(
@@ -221,19 +211,14 @@ void WebrtcGlobalInformation::GetAllStats(
         WebrtcGlobalStatisticsReport flattened;
         MOZ_RELEASE_ASSERT(aResult.IsResolve(),
                            "AllSettled should never reject!");
-        
-        
-        
-        for (auto& processResult : aResult.ResolveValue()) {
+        for (auto& contentProcessResult : aResult.ResolveValue()) {
           
-          if (processResult.IsResolve()) {
-            for (auto& pcStats : processResult.ResolveValue()) {
-              if (!pcids.count(pcStats.mPcid)) {
-                pcids.insert(pcStats.mPcid);
-                if (!flattened.mReports.AppendElement(std::move(pcStats),
-                                                      fallible)) {
-                  mozalloc_handle_oom(0);
-                }
+          if (contentProcessResult.IsResolve()) {
+            for (auto& pcStats : contentProcessResult.ResolveValue()) {
+              pcids.insert(pcStats.mPcid);
+              if (!flattened.mReports.AppendElement(std::move(pcStats),
+                                                    fallible)) {
+                mozalloc_handle_oom(0);
               }
             }
           }
@@ -241,11 +226,45 @@ void WebrtcGlobalInformation::GetAllStats(
 
         if (filter.IsEmpty()) {
           
-          GetWebrtcGlobalStatsStash() = flattened.mReports;
-        } else if (!flattened.mReports.IsEmpty()) {
           
-          MOZ_ASSERT(flattened.mReports.Length() == 1);
-          StashStats(flattened.mReports[0]);
+          for (auto& pcStats : GetWebrtcGlobalStatsStash()) {
+            if (!pcids.count(pcStats.mPcid)) {
+              
+              
+              
+              pcStats.mClosed = true;
+              if (!flattened.mReports.AppendElement(std::move(pcStats),
+                                                    fallible)) {
+                mozalloc_handle_oom(0);
+              }
+            }
+          }
+          GetWebrtcGlobalStatsStash() = flattened.mReports;
+        } else {
+          
+          if (flattened.mReports.IsEmpty()) {
+            
+            for (auto& pcStats : GetWebrtcGlobalStatsStash()) {
+              if (pcStats.mPcid == filter) {
+                pcStats.mClosed = true;
+                if (!flattened.mReports.AppendElement(std::move(pcStats),
+                                                      fallible)) {
+                  mozalloc_handle_oom(0);
+                }
+              }
+            }
+          } else {
+            
+            for (size_t i = 0; i < GetWebrtcGlobalStatsStash().Length();) {
+              auto& pcStats = GetWebrtcGlobalStatsStash()[i];
+              if (pcStats.mPcid == filter) {
+                GetWebrtcGlobalStatsStash().RemoveElementAt(i);
+              } else {
+                ++i;
+              }
+            }
+            GetWebrtcGlobalStatsStash().AppendElements(flattened.mReports);
+          }
         }
 
         IgnoredErrorResult rv;
@@ -476,23 +495,6 @@ void WebrtcGlobalInformation::GetAecDebugLogDir(const GlobalObject& aGlobal,
   aDir = NS_ConvertASCIItoUTF16(sAecDebugLogDir.valueOr(""_ns));
 }
 
-
-void WebrtcGlobalInformation::StashStats(
-    const dom::RTCStatsReportInternal& aReport) {
-  
-  
-  for (size_t i = 0; i < GetWebrtcGlobalStatsStash().Length();) {
-    auto& pcStats = GetWebrtcGlobalStatsStash()[i];
-    if (pcStats.mPcid == aReport.mPcid) {
-      GetWebrtcGlobalStatsStash().RemoveElementAt(i);
-      break;
-    }
-    ++i;
-  }
-
-  GetWebrtcGlobalStatsStash().AppendElement(aReport);
-}
-
 WebrtcGlobalParent* WebrtcGlobalParent::Alloc() {
   return WebrtcContentParents::Alloc();
 }
@@ -541,7 +543,7 @@ mozilla::ipc::IPCResult WebrtcGlobalChild::RecvClearStats() {
     return IPC_OK();
   }
 
-  ClearLongTermStats();
+  ClearClosedStats();
   return IPC_OK();
 }
 
@@ -614,6 +616,53 @@ MOZ_IMPLICIT WebrtcGlobalChild::WebrtcGlobalChild() : mShutdown(false) {
 
 MOZ_IMPLICIT WebrtcGlobalChild::~WebrtcGlobalChild() {
   MOZ_COUNT_DTOR(WebrtcGlobalChild);
+}
+
+static void StoreLongTermICEStatisticsImpl_m(RTCStatsReportInternal* report) {
+  using namespace Telemetry;
+
+  report->mClosed = true;
+
+  for (const auto& inboundRtpStats : report->mInboundRtpStreamStats) {
+    bool isVideo = (inboundRtpStats.mId.Value().Find(u"video") != -1);
+    if (!isVideo) {
+      continue;
+    }
+    if (inboundRtpStats.mDiscardedPackets.WasPassed() &&
+        report->mCallDurationMs.WasPassed()) {
+      double mins = report->mCallDurationMs.Value() / (1000 * 60);
+      if (mins > 0) {
+        Accumulate(
+            WEBRTC_VIDEO_DECODER_DISCARDED_PACKETS_PER_CALL_PPM,
+            uint32_t(double(inboundRtpStats.mDiscardedPackets.Value()) / mins));
+      }
+    }
+  }
+
+  
+
+  if (auto ctx = GetPeerConnectionCtx()) {
+    if (!ctx->mStatsForClosedPeerConnections.AppendElement(*report, fallible)) {
+      mozalloc_handle_oom(0);
+    }
+  }
+}
+
+void WebrtcGlobalInformation::StoreLongTermICEStatistics(
+    PeerConnectionImpl& aPc) {
+  if (aPc.IceConnectionState() == RTCIceConnectionState::New) {
+    
+    
+    return;
+  }
+
+  aPc.GetStats(nullptr, true)
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [=](UniquePtr<dom::RTCStatsReportInternal>&& aReport) {
+            StoreLongTermICEStatisticsImpl_m(aReport.get());
+          },
+          [=](nsresult aError) {});
 }
 
 }  
