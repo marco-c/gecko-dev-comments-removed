@@ -68,16 +68,7 @@ namespace {
 
 
 
-
-const int32_t kChannels[] = {1, 2};
-const int kSampleRates[] = {8000, 16000, 32000, 48000};
-
-#if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
-
-const int kProcessSampleRates[] = {8000, 16000, 32000};
-#elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
-const int kProcessSampleRates[] = {8000, 16000, 32000, 48000};
-#endif
+const int kProcessSampleRates[] = {16000, 32000, 48000};
 
 enum StreamDirection { kForward = 0, kReverse };
 
@@ -299,6 +290,7 @@ void OpenFileAndReadMessage(const std::string& filename, MessageLite* msg) {
   ReadMessageFromFile(file, msg);
   fclose(file);
 }
+
 
 
 
@@ -1150,8 +1142,9 @@ void ApmTest::RunQuantizedVolumeDoesNotGetStuckTest(int sample_rate) {
 
 
 TEST_F(ApmTest, QuantizedVolumeDoesNotGetStuck) {
-  for (size_t i = 0; i < arraysize(kSampleRates); ++i) {
-    RunQuantizedVolumeDoesNotGetStuckTest(kSampleRates[i]);
+  for (size_t sample_rate_hz : kProcessSampleRates) {
+    SCOPED_TRACE(::testing::Message() << "sample_rate_hz=" << sample_rate_hz);
+    RunQuantizedVolumeDoesNotGetStuckTest(sample_rate_hz);
   }
 }
 
@@ -1205,8 +1198,9 @@ void ApmTest::RunManualVolumeChangeIsPossibleTest(int sample_rate) {
 }
 
 TEST_F(ApmTest, ManualVolumeChangeIsPossible) {
-  for (size_t i = 0; i < arraysize(kSampleRates); ++i) {
-    RunManualVolumeChangeIsPossibleTest(kSampleRates[i]);
+  for (size_t sample_rate_hz : kProcessSampleRates) {
+    SCOPED_TRACE(::testing::Message() << "sample_rate_hz=" << sample_rate_hz);
+    RunManualVolumeChangeIsPossibleTest(sample_rate_hz);
   }
 }
 
@@ -1227,9 +1221,18 @@ TEST_F(ApmTest, AllProcessingDisabledByDefault) {
   EXPECT_FALSE(config.noise_suppression.enabled);
 }
 
-TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
-  for (size_t i = 0; i < arraysize(kSampleRates); i++) {
-    Init(kSampleRates[i], kSampleRates[i], kSampleRates[i], 2, 2, 2, false);
+TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledInt) {
+  
+  
+  
+  
+  
+  
+  
+  constexpr int kSampleRatesHz[] = {8000, 16000, 22050, 32000, 44100, 48000};
+  for (size_t sample_rate_hz : kSampleRatesHz) {
+    SCOPED_TRACE(::testing::Message() << "sample_rate_hz=" << sample_rate_hz);
+    Init(sample_rate_hz, sample_rate_hz, sample_rate_hz, 2, 2, 2, false);
     SetFrameTo(&frame_, 1000, 2000);
     Int16FrameData frame_copy;
     frame_copy.CopyFrom(frame_);
@@ -1253,6 +1256,7 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
 }
 
 TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledFloat) {
+  
   
   const size_t kSamples = 160;
   const int sample_rate = 16000;
@@ -1644,15 +1648,16 @@ TEST_F(ApmTest, Process) {
   if (!absl::GetFlag(FLAGS_write_apm_ref_data)) {
     OpenFileAndReadMessage(ref_filename_, &ref_data);
   } else {
+    const int kChannels[] = {1, 2};
     
     for (size_t i = 0; i < arraysize(kChannels); i++) {
       for (size_t j = 0; j < arraysize(kChannels); j++) {
-        for (size_t l = 0; l < arraysize(kProcessSampleRates); l++) {
+        for (int sample_rate_hz : AudioProcessing::kNativeSampleRatesHz) {
           audioproc::Test* test = ref_data.add_test();
           test->set_num_reverse_channels(kChannels[i]);
           test->set_num_input_channels(kChannels[j]);
           test->set_num_output_channels(kChannels[j]);
-          test->set_sample_rate(kProcessSampleRates[l]);
+          test->set_sample_rate(sample_rate_hz);
           test->set_use_aec_extended_filter(false);
         }
       }
@@ -1821,6 +1826,8 @@ void UpdateBestSNR(const float* ref,
                    int expected_delay,
                    double* variance_acc,
                    double* sq_error_acc) {
+  RTC_CHECK_LT(expected_delay, length)
+      << "delay greater than signal length, cannot compute SNR";
   double best_snr = std::numeric_limits<double>::min();
   double best_variance = 0;
   double best_sq_error = 0;
@@ -1879,15 +1886,15 @@ class AudioProcessingTest
 
   static void SetUpTestSuite() {
     
-    const int kNativeRates[] = {8000, 16000, 32000, 48000};
     const size_t kNumChannels[] = {1, 2};
-    for (size_t i = 0; i < arraysize(kNativeRates); ++i) {
+    for (size_t i = 0; i < arraysize(kProcessSampleRates); ++i) {
       for (size_t j = 0; j < arraysize(kNumChannels); ++j) {
         for (size_t k = 0; k < arraysize(kNumChannels); ++k) {
           
-          ProcessFormat(kNativeRates[i], kNativeRates[i], kNativeRates[i],
-                        kNativeRates[i], kNumChannels[j], kNumChannels[j],
-                        kNumChannels[k], kNumChannels[k], "ref");
+          ProcessFormat(kProcessSampleRates[i], kProcessSampleRates[i],
+                        kProcessSampleRates[i], kProcessSampleRates[i],
+                        kNumChannels[j], kNumChannels[j], kNumChannels[k],
+                        kNumChannels[k], "ref");
         }
       }
     }
@@ -1912,11 +1919,10 @@ class AudioProcessingTest
                             size_t num_reverse_input_channels,
                             size_t num_reverse_output_channels,
                             const std::string& output_file_prefix) {
-    rtc::scoped_refptr<AudioProcessing> ap =
-        AudioProcessingBuilderForTesting().Create();
-    AudioProcessing::Config apm_config = ap->GetConfig();
+    AudioProcessing::Config apm_config;
     apm_config.gain_controller1.analog_gain_controller.enabled = false;
-    ap->ApplyConfig(apm_config);
+    rtc::scoped_refptr<AudioProcessing> ap =
+        AudioProcessingBuilderForTesting().SetConfig(apm_config).Create();
 
     EnableAllAPComponents(ap.get());
 
@@ -1949,14 +1955,16 @@ class AudioProcessingTest
     ASSERT_TRUE(out_file != NULL);
     ASSERT_TRUE(rev_out_file != NULL);
 
-    ChannelBuffer<float> fwd_cb(SamplesFromRate(input_rate),
+    ChannelBuffer<float> fwd_cb(AudioProcessing::GetFrameSize(input_rate),
                                 num_input_channels);
-    ChannelBuffer<float> rev_cb(SamplesFromRate(reverse_input_rate),
-                                num_reverse_input_channels);
-    ChannelBuffer<float> out_cb(SamplesFromRate(output_rate),
+    ChannelBuffer<float> rev_cb(
+        AudioProcessing::GetFrameSize(reverse_input_rate),
+        num_reverse_input_channels);
+    ChannelBuffer<float> out_cb(AudioProcessing::GetFrameSize(output_rate),
                                 num_output_channels);
-    ChannelBuffer<float> rev_out_cb(SamplesFromRate(reverse_output_rate),
-                                    num_reverse_output_channels);
+    ChannelBuffer<float> rev_out_cb(
+        AudioProcessing::GetFrameSize(reverse_output_rate),
+        num_reverse_output_channels);
 
     
     const int max_length =
@@ -2044,15 +2052,12 @@ TEST_P(AudioProcessingTest, Formats) {
 
       const int min_ref_rate = std::min(in_rate, out_rate);
       int ref_rate;
-
       if (min_ref_rate > 32000) {
         ref_rate = 48000;
       } else if (min_ref_rate > 16000) {
         ref_rate = 32000;
-      } else if (min_ref_rate > 8000) {
-        ref_rate = 16000;
       } else {
-        ref_rate = 8000;
+        ref_rate = 16000;
       }
 
       FILE* out_file = fopen(
@@ -2073,8 +2078,10 @@ TEST_P(AudioProcessingTest, Formats) {
       ASSERT_TRUE(out_file != NULL);
       ASSERT_TRUE(ref_file != NULL);
 
-      const size_t ref_length = SamplesFromRate(ref_rate) * out_num;
-      const size_t out_length = SamplesFromRate(out_rate) * out_num;
+      const size_t ref_length =
+          AudioProcessing::GetFrameSize(ref_rate) * out_num;
+      const size_t out_length =
+          AudioProcessing::GetFrameSize(out_rate) * out_num;
       
       std::unique_ptr<float[]> ref_data(new float[ref_length]);
       
@@ -2103,6 +2110,9 @@ TEST_P(AudioProcessingTest, Formats) {
         expected_delay_sec +=
             PushSincResampler::AlgorithmicDelaySeconds(out_rate);
       }
+      
+      
+      
       int expected_delay =
           std::floor(expected_delay_sec * ref_rate + 0.5f) * out_num;
 
@@ -2150,6 +2160,8 @@ TEST_P(AudioProcessingTest, Formats) {
 INSTANTIATE_TEST_SUITE_P(
     CommonFormats,
     AudioProcessingTest,
+    
+    
     ::testing::Values(std::make_tuple(48000, 48000, 48000, 48000, 0, 0),
                       std::make_tuple(48000, 48000, 32000, 48000, 40, 30),
                       std::make_tuple(48000, 48000, 16000, 48000, 40, 20),
@@ -2200,7 +2212,21 @@ INSTANTIATE_TEST_SUITE_P(
                       std::make_tuple(16000, 32000, 16000, 32000, 25, 20),
                       std::make_tuple(16000, 16000, 48000, 16000, 39, 20),
                       std::make_tuple(16000, 16000, 32000, 16000, 39, 20),
-                      std::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
+                      std::make_tuple(16000, 16000, 16000, 16000, 0, 0),
+
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      std::make_tuple(192000, 192000, 48000, 192000, 20, 40),
+                      std::make_tuple(176400, 176400, 48000, 176400, 20, 35),
+                      std::make_tuple(96000, 96000, 48000, 96000, 20, 40),
+                      std::make_tuple(88200, 88200, 48000, 88200, 20, 20),
+                      std::make_tuple(44100, 44100, 48000, 44100, 20, 20)));
 
 #elif defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
 INSTANTIATE_TEST_SUITE_P(
@@ -2256,7 +2282,13 @@ INSTANTIATE_TEST_SUITE_P(
                       std::make_tuple(16000, 32000, 16000, 32000, 25, 20),
                       std::make_tuple(16000, 16000, 48000, 16000, 28, 20),
                       std::make_tuple(16000, 16000, 32000, 16000, 28, 20),
-                      std::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
+                      std::make_tuple(16000, 16000, 16000, 16000, 0, 0),
+
+                      std::make_tuple(192000, 192000, 48000, 192000, 20, 40),
+                      std::make_tuple(176400, 176400, 48000, 176400, 20, 35),
+                      std::make_tuple(96000, 96000, 48000, 96000, 20, 40),
+                      std::make_tuple(88200, 88200, 48000, 88200, 20, 20),
+                      std::make_tuple(44100, 44100, 48000, 44100, 20, 20)));
 #endif
 
 
@@ -2297,11 +2329,12 @@ void RunApmRateAndChannelTest(
     rtc::ArrayView<const int> sample_rates_hz,
     rtc::ArrayView<const int> render_channel_counts,
     rtc::ArrayView<const int> capture_channel_counts) {
-  rtc::scoped_refptr<AudioProcessing> apm =
-      AudioProcessingBuilderForTesting().Create();
   webrtc::AudioProcessing::Config apm_config;
+  apm_config.pipeline.multi_channel_render = true;
+  apm_config.pipeline.multi_channel_capture = true;
   apm_config.echo_canceller.enabled = true;
-  apm->ApplyConfig(apm_config);
+  rtc::scoped_refptr<AudioProcessing> apm =
+      AudioProcessingBuilderForTesting().SetConfig(apm_config).Create();
 
   StreamConfig render_input_stream_config;
   StreamConfig render_output_stream_config;
@@ -2333,7 +2366,8 @@ void RunApmRateAndChannelTest(
                 cfg->set_sample_rate_hz(sample_rate_hz);
                 cfg->set_num_channels(num_channels);
 
-                size_t max_frame_size = ceil(sample_rate_hz / 100.f);
+                size_t max_frame_size =
+                    AudioProcessing::GetFrameSize(sample_rate_hz);
                 channels_data->resize(num_channels * max_frame_size);
                 std::fill(channels_data->begin(), channels_data->end(), 0.5f);
                 frame_data->resize(num_channels);
@@ -2821,8 +2855,13 @@ TEST(ApmConfiguration, HandlingOfChannelCombinations) {
 }
 
 TEST(ApmConfiguration, HandlingOfRateCombinations) {
-  std::array<int, 9> sample_rates_hz = {8000,  11025, 16000,  22050, 32000,
-                                        48000, 96000, 192000, 384000};
+  
+  
+  
+  
+  
+  std::array<int, 9> sample_rates_hz = {8000,  11025, 16000, 22050, 32000,
+                                        44100, 48000, 88200, 96000};
   std::array<int, 1> render_channel_counts = {2};
   std::array<int, 1> capture_channel_counts = {2};
   RunApmRateAndChannelTest(sample_rates_hz, render_channel_counts,

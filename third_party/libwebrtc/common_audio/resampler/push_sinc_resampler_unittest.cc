@@ -242,7 +242,7 @@ void PushSincResamplerTest::ResampleTest(bool int_format) {
   EXPECT_LE(low_freq_max_error, low_freq_error_);
 
   
-  static const double kHighFrequencyMaxError = -6.02;
+  static const double kHighFrequencyMaxError = -6.01;
   EXPECT_LE(high_freq_max_error, kHighFrequencyMaxError);
 }
 
@@ -266,10 +266,31 @@ INSTANTIATE_TEST_SUITE_P(
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        std::make_tuple(8000, 22000, kResamplingRMSError, -62.73),
+        std::make_tuple(11000, 22000, kResamplingRMSError, -74.17),
+        std::make_tuple(16000, 22000, kResamplingRMSError, -62.54),
+        std::make_tuple(22000, 22000, kResamplingRMSError, -73.53),
+        std::make_tuple(32000, 22000, kResamplingRMSError, -46.45),
+        std::make_tuple(44100, 22000, kResamplingRMSError, -28.34),
+        std::make_tuple(48000, 22000, -15.01, -25.56),
+        std::make_tuple(96000, 22000, -18.49, -13.30),
+        std::make_tuple(192000, 22000, -20.50, -9.20),
 
         
         ::testing::make_tuple(8000, 44100, kResamplingRMSError, -62.73),
+        ::testing::make_tuple(11000, 44100, kResamplingRMSError, -63.57),
         ::testing::make_tuple(16000, 44100, kResamplingRMSError, -62.54),
+        ::testing::make_tuple(22000, 44100, kResamplingRMSError, -62.73),
         ::testing::make_tuple(32000, 44100, kResamplingRMSError, -63.32),
         ::testing::make_tuple(44100, 44100, kResamplingRMSError, -73.53),
         ::testing::make_tuple(48000, 44100, -15.01, -64.04),
@@ -278,7 +299,9 @@ INSTANTIATE_TEST_SUITE_P(
 
         
         ::testing::make_tuple(8000, 48000, kResamplingRMSError, -63.43),
+        ::testing::make_tuple(11000, 48000, kResamplingRMSError, -63.96),
         ::testing::make_tuple(16000, 48000, kResamplingRMSError, -63.96),
+        ::testing::make_tuple(22000, 48000, kResamplingRMSError, -63.80),
         ::testing::make_tuple(32000, 48000, kResamplingRMSError, -64.04),
         ::testing::make_tuple(44100, 48000, kResamplingRMSError, -62.63),
         ::testing::make_tuple(48000, 48000, kResamplingRMSError, -73.52),
@@ -287,7 +310,9 @@ INSTANTIATE_TEST_SUITE_P(
 
         
         ::testing::make_tuple(8000, 96000, kResamplingRMSError, -63.19),
+        ::testing::make_tuple(11000, 96000, kResamplingRMSError, -63.89),
         ::testing::make_tuple(16000, 96000, kResamplingRMSError, -63.39),
+        ::testing::make_tuple(22000, 96000, kResamplingRMSError, -63.39),
         ::testing::make_tuple(32000, 96000, kResamplingRMSError, -63.95),
         ::testing::make_tuple(44100, 96000, kResamplingRMSError, -62.63),
         ::testing::make_tuple(48000, 96000, kResamplingRMSError, -73.52),
@@ -296,7 +321,9 @@ INSTANTIATE_TEST_SUITE_P(
 
         
         ::testing::make_tuple(8000, 192000, kResamplingRMSError, -63.10),
+        ::testing::make_tuple(11000, 192000, kResamplingRMSError, -63.17),
         ::testing::make_tuple(16000, 192000, kResamplingRMSError, -63.14),
+        ::testing::make_tuple(22000, 192000, kResamplingRMSError, -63.14),
         ::testing::make_tuple(32000, 192000, kResamplingRMSError, -63.38),
         ::testing::make_tuple(44100, 192000, kResamplingRMSError, -62.63),
         ::testing::make_tuple(48000, 192000, kResamplingRMSError, -73.44),
@@ -318,7 +345,9 @@ INSTANTIATE_TEST_SUITE_P(
 
         
         ::testing::make_tuple(8000, 16000, kResamplingRMSError, -70.30),
+        ::testing::make_tuple(11000, 16000, kResamplingRMSError, -72.31),
         ::testing::make_tuple(16000, 16000, kResamplingRMSError, -75.51),
+        ::testing::make_tuple(22000, 16000, kResamplingRMSError, -52.08),
         ::testing::make_tuple(32000, 16000, -18.48, -28.59),
         ::testing::make_tuple(44100, 16000, -19.30, -19.67),
         ::testing::make_tuple(48000, 16000, -19.81, -18.11),
@@ -326,7 +355,9 @@ INSTANTIATE_TEST_SUITE_P(
 
         
         ::testing::make_tuple(8000, 32000, kResamplingRMSError, -70.30),
+        ::testing::make_tuple(11000, 32000, kResamplingRMSError, -71.34),
         ::testing::make_tuple(16000, 32000, kResamplingRMSError, -75.51),
+        ::testing::make_tuple(22000, 32000, kResamplingRMSError, -72.05),
         ::testing::make_tuple(32000, 32000, kResamplingRMSError, -75.51),
         ::testing::make_tuple(44100, 32000, -16.44, -51.0349),
         ::testing::make_tuple(48000, 32000, -16.90, -43.9967),

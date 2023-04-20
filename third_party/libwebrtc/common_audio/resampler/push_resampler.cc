@@ -49,8 +49,8 @@ void CheckExpectedBufferSizes(size_t src_length,
 
 
 #if !defined(WEBRTC_WIN) && defined(__clang__)
-  const size_t src_size_10ms = src_sample_rate * num_channels / 100;
-  const size_t dst_size_10ms = dst_sample_rate * num_channels / 100;
+  const size_t src_size_10ms = (src_sample_rate / 100) * num_channels;
+  const size_t dst_size_10ms = (dst_sample_rate / 100) * num_channels;
   RTC_DCHECK_EQ(src_length, src_size_10ms);
   RTC_DCHECK_GE(dst_capacity, dst_size_10ms);
 #endif

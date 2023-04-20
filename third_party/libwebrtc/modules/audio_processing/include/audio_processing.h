@@ -706,7 +706,29 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   static constexpr int kMaxNativeSampleRateHz =
       kNativeSampleRatesHz[kNumNativeSampleRates - 1];
 
+  
+  
   static constexpr int kChunkSizeMs = 10;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static int GetFrameSize(int sample_rate_hz) { return sample_rate_hz / 100; }
 };
 
 class RTC_EXPORT AudioProcessingBuilder {
@@ -804,8 +826,7 @@ class StreamConfig {
 
  private:
   static size_t calculate_frames(int sample_rate_hz) {
-    return static_cast<size_t>(AudioProcessing::kChunkSizeMs * sample_rate_hz /
-                               1000);
+    return static_cast<size_t>(AudioProcessing::GetFrameSize(sample_rate_hz));
   }
 
   int sample_rate_hz_;
