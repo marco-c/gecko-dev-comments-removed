@@ -145,15 +145,20 @@ async function testPopupSize(
     : browserWin.PanelUI.overflowPanel;
   panel.setAttribute("animate", "false");
 
-  let panelMultiView = panel.firstElementChild;
-  let widgetId = makeWidgetId(extension.id);
-  
-  
-  let shownPromise = BrowserTestUtils.waitForEvent(
-    panelMultiView,
-    "ViewShown",
-    e => (e.originalTarget.id || "").includes(widgetId)
-  );
+  let shownPromise = Promise.resolve();
+
+  if (!browserWin.gUnifiedExtensions.isEnabled) {
+    let panelMultiView = panel.firstElementChild;
+    let widgetId = makeWidgetId(extension.id);
+    
+    
+    shownPromise = BrowserTestUtils.waitForEvent(
+      panelMultiView,
+      "ViewShown",
+      e => (e.originalTarget.id || "").includes(widgetId)
+    );
+  }
+
   let browser = await openBrowserActionPanel(extension, browserWin);
 
   
