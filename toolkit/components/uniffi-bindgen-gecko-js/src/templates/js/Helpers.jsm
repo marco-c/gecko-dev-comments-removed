@@ -202,12 +202,13 @@ class UniFFIInternalError extends UniFFIError {}
 
 
 class FfiConverter {
-    static checkType(name, value) {
+    
+    static checkType(value) {
         if (value === undefined ) {
-            throw TypeError(`${name} is undefined`);
+            throw new UniFFITypeError(`undefined`);
         }
         if (value === null ) {
-            throw TypeError(`${name} is null`);
+            throw new UniFFITypeError(`null`);
         }
     }
 }
@@ -230,3 +231,4 @@ class FfiConverterArrayBuffer extends FfiConverter {
 
 const uniffiObjectPtr = Symbol("uniffiObjectPtr");
 const constructUniffiObject = Symbol("constructUniffiObject");
+UnitTestObjs.uniffiObjectPtr = uniffiObjectPtr;

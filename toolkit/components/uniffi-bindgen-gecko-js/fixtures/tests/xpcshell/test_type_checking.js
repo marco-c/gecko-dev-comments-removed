@@ -6,40 +6,115 @@ const Arithmetic = ChromeUtils.import(
 );
 const Geometry = ChromeUtils.import("resource://gre/modules/RustGeometry.jsm");
 
-const { TodoList } = ChromeUtils.import(
-  "resource://gre/modules/RustTodolist.jsm"
-);
-const { Stringifier } = ChromeUtils.import(
+const TodoList = ChromeUtils.import("resource://gre/modules/RustTodolist.jsm");
+const Rondpoint = ChromeUtils.import(
   "resource://gre/modules/RustRondpoint.jsm"
 );
+const { UniFFITypeError } = ChromeUtils.importESModule(
+  "resource://gre/modules/UniFFI.sys.mjs"
+);
 
-add_task(async function() {
-  
-  
-  
-
+add_task(async function testFunctionArguments() {
   await Assert.rejects(
     Arithmetic.add(2),
-    /TypeError/,
+    UniFFITypeError,
     "add() call missing argument"
   );
   Assert.throws(
-    () => Geometry.Point(0.0),
-    /TypeError/,
+    () => new Geometry.Point(0.0),
+    UniFFITypeError,
     "Point constructor missing argument"
   );
+});
 
-  const todo = await TodoList.init();
-  const stringifier = await Stringifier.init();
+add_task(async function testObjectPointers() {
+  const todo = await TodoList.TodoList.init();
+  const stringifier = await Rondpoint.Stringifier.init();
   await todo.getEntries(); 
-  todo.ptr = stringifier.ptr;
+  todo[TodoList.UnitTestObjs.uniffiObjectPtr] =
+    stringifier[Rondpoint.UnitTestObjs.uniffiObjectPtr];
 
-  try {
-    await todo.getEntries(); 
-    Assert.fail("Should have thrown the pointer was an incorrect pointer");
-  } catch (e) {
-    
-    
-    
-  }
+  await Assert.rejects(
+    todo.getEntries(), 
+    /Bad pointer type/,
+    "getEntries() with wrong pointer type"
+  );
+});
+
+add_task(async function testEnumTypeCheck() {
+  await Assert.rejects(
+    Rondpoint.copieEnumeration("invalid"), 
+    /e:/, 
+    "copieEnumeration() with non-Enumeration value should throw"
+  );
+  await Assert.rejects(
+    Rondpoint.copieEnumeration(0), 
+    /e:/, 
+    "copieEnumeration() with non-Enumeration value should throw"
+  );
+  await Assert.rejects(
+    Rondpoint.copieEnumeration(4), 
+    /e:/, 
+    "copieEnumeration() with non-Enumeration value should throw"
+  );
+});
+
+add_task(async function testRecordTypeCheck() {
+  await Assert.rejects(
+    Geometry.gradient(123), 
+    UniFFITypeError,
+    "gradient with non-Line object should throw"
+  );
+
+  await Assert.rejects(
+    Geometry.gradient({
+      start: {
+        coordX: 0.0,
+        coordY: 0.0,
+      },
+      
+    }),
+    /ln.end/, 
+    "gradient with Line object with missing end field should throw"
+  );
+});
+
+add_task(async function testOptionTypeCheck() {
+  const optionneur = await Rondpoint.Optionneur.init();
+  await Assert.rejects(
+    optionneur.sinonNull(0),
+    UniFFITypeError,
+    "sinonNull with non-string should throw"
+  );
+});
+
+add_task(async function testSequenceTypeCheck() {
+  const todo = await TodoList.TodoList.init();
+  await Assert.rejects(
+    todo.addEntries("not a list"),
+    UniFFITypeError,
+    "addEntries with non-list should throw"
+  );
+
+  await Assert.rejects(
+    todo.addEntries(["not TodoEntry"]),
+    /entries\[0]/,
+    "addEntries with non TodoEntry item should throw"
+  );
+});
+
+add_task(async function testMapTypeCheck() {
+  await Assert.rejects(
+    Rondpoint.copieCarte("not a map"),
+    UniFFITypeError,
+    "copieCarte with a non-map should throw"
+  );
+
+  await Assert.rejects(
+    Rondpoint.copieCarte({ x: 1 }),
+    /c\[x]/,
+    "copieCarte with a wrong value type should throw"
+  );
+
+  
 });

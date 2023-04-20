@@ -1,6 +1,8 @@
 
 
 
+const { UniFFITypeError } = ChromeUtils.importESModule("resource://gre/modules/UniFFI.sys.mjs");
+
 
 
 "use strict";
@@ -192,12 +194,13 @@ class UniFFIInternalError extends UniFFIError {}
 
 
 class FfiConverter {
-    static checkType(name, value) {
+    
+    static checkType(value) {
         if (value === undefined ) {
-            throw TypeError(`${name} is undefined`);
+            throw new UniFFITypeError(`undefined`);
         }
         if (value === null ) {
-            throw TypeError(`${name} is null`);
+            throw new UniFFITypeError(`null`);
         }
     }
 }
@@ -220,15 +223,16 @@ class FfiConverterArrayBuffer extends FfiConverter {
 
 const uniffiObjectPtr = Symbol("uniffiObjectPtr");
 const constructUniffiObject = Symbol("constructUniffiObject");
+UnitTestObjs.uniffiObjectPtr = uniffiObjectPtr;
 
 class FfiConverterU64 extends FfiConverter {
-    static checkType(name, value) {
-        super.checkType(name, value);
+    static checkType(value) {
+        super.checkType(value);
         if (!Number.isSafeInteger(value)) {
-            throw TypeError(`${name} exceeds the safe integer bounds (${value})`);
+            throw new UniFFITypeError(`${value} exceeds the safe integer bounds`);
         }
         if (value < 0) {
-            throw TypeError(`${name} exceeds the U64 bounds (${value})`);
+            throw new UniFFITypeError(`${value} exceeds the U64 bounds`);
         }
     }
     static computeSize() {
@@ -277,6 +281,13 @@ class FfiConverterBool extends FfiConverter {
 EXPORTED_SYMBOLS.push("FfiConverterBool");
 
 class FfiConverterString extends FfiConverter {
+    static checkType(value) {
+        super.checkType(value);
+        if (typeof value !== "string") {
+            throw new UniFFITypeError(`${value} is not a string`);
+        }
+    }
+
     static lift(buf) {
         const decoder = new TextDecoder();
         const utf8Arr = new Uint8Array(buf);
@@ -361,8 +372,22 @@ function add(a,b) {
         const liftResult = (result) => FfiConverterU64.lift(result);
         const liftError = (data) => FfiConverterTypeArithmeticError.lift(data);
         const functionCall = () => {
-            FfiConverterU64.checkType("a", a);
-            FfiConverterU64.checkType("b", b);
+            try {
+                FfiConverterU64.checkType(a)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("a");
+                }
+                throw e;
+            }
+            try {
+                FfiConverterU64.checkType(b)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("b");
+                }
+                throw e;
+            }
             return UniFFIScaffolding.callAsync(
                 22, 
                 FfiConverterU64.lower(a),
@@ -382,8 +407,22 @@ function sub(a,b) {
         const liftResult = (result) => FfiConverterU64.lift(result);
         const liftError = (data) => FfiConverterTypeArithmeticError.lift(data);
         const functionCall = () => {
-            FfiConverterU64.checkType("a", a);
-            FfiConverterU64.checkType("b", b);
+            try {
+                FfiConverterU64.checkType(a)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("a");
+                }
+                throw e;
+            }
+            try {
+                FfiConverterU64.checkType(b)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("b");
+                }
+                throw e;
+            }
             return UniFFIScaffolding.callAsync(
                 23, 
                 FfiConverterU64.lower(a),
@@ -403,8 +442,22 @@ function div(dividend,divisor) {
         const liftResult = (result) => FfiConverterU64.lift(result);
         const liftError = null;
         const functionCall = () => {
-            FfiConverterU64.checkType("dividend", dividend);
-            FfiConverterU64.checkType("divisor", divisor);
+            try {
+                FfiConverterU64.checkType(dividend)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("dividend");
+                }
+                throw e;
+            }
+            try {
+                FfiConverterU64.checkType(divisor)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("divisor");
+                }
+                throw e;
+            }
             return UniFFIScaffolding.callAsync(
                 24, 
                 FfiConverterU64.lower(dividend),
@@ -424,8 +477,22 @@ function equal(a,b) {
         const liftResult = (result) => FfiConverterBool.lift(result);
         const liftError = null;
         const functionCall = () => {
-            FfiConverterU64.checkType("a", a);
-            FfiConverterU64.checkType("b", b);
+            try {
+                FfiConverterU64.checkType(a)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("a");
+                }
+                throw e;
+            }
+            try {
+                FfiConverterU64.checkType(b)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("b");
+                }
+                throw e;
+            }
             return UniFFIScaffolding.callAsync(
                 25, 
                 FfiConverterU64.lower(a),

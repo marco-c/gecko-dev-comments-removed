@@ -1,6 +1,8 @@
 
 
 
+const { UniFFITypeError } = ChromeUtils.importESModule("resource://gre/modules/UniFFI.sys.mjs");
+
 
 
 "use strict";
@@ -192,12 +194,13 @@ class UniFFIInternalError extends UniFFIError {}
 
 
 class FfiConverter {
-    static checkType(name, value) {
+    
+    static checkType(value) {
         if (value === undefined ) {
-            throw TypeError(`${name} is undefined`);
+            throw new UniFFITypeError(`undefined`);
         }
         if (value === null ) {
-            throw TypeError(`${name} is null`);
+            throw new UniFFITypeError(`null`);
         }
     }
 }
@@ -220,6 +223,7 @@ class FfiConverterArrayBuffer extends FfiConverter {
 
 const uniffiObjectPtr = Symbol("uniffiObjectPtr");
 const constructUniffiObject = Symbol("constructUniffiObject");
+UnitTestObjs.uniffiObjectPtr = uniffiObjectPtr;
 
 
 
@@ -418,13 +422,13 @@ class UniFFICallbackHandleMapEntry {
 }
 
 class FfiConverterI32 extends FfiConverter {
-    static checkType(name, value) {
-        super.checkType(name, value);
+    static checkType(value) {
+        super.checkType(value);
         if (!Number.isInteger(value)) {
-            throw TypeError(`${name} is not an integer(${value})`);
+            throw new UniFFITypeError(`${value} is not an integer`);
         }
         if (value < -2147483648 || value > 2147483647) {
-            throw TypeError(`${name} exceeds the I32 bounds (${value})`);
+            throw new UniFFITypeError(`${value} exceeds the I32 bounds`);
         }
     }
     static computeSize() {
@@ -448,6 +452,13 @@ class FfiConverterI32 extends FfiConverter {
 EXPORTED_SYMBOLS.push("FfiConverterI32");
 
 class FfiConverterString extends FfiConverter {
+    static checkType(value) {
+        super.checkType(value);
+        if (typeof value !== "string") {
+            throw new UniFFITypeError(`${value} is not a string`);
+        }
+    }
+
     static lift(buf) {
         const decoder = new TextDecoder();
         const utf8Arr = new Uint8Array(buf);
@@ -526,6 +537,22 @@ class FfiConverterSequencei32 extends FfiConverterArrayBuffer {
         }
         return size;
     }
+
+    static checkType(value) {
+        if (!Array.isArray(value)) {
+            throw new UniFFITypeError(`${value} is not an array`);
+        }
+        value.forEach((innerValue, idx) => {
+            try {
+                FfiConverterI32.checkType(innerValue);
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart(`[${idx}]`);
+                }
+                throw e;
+            }
+        })
+    }
 }
 
 
@@ -563,8 +590,22 @@ function logEvenNumbers(logger,items) {
         const liftResult = (result) => undefined;
         const liftError = null;
         const functionCall = () => {
-            FfiConverterCallbackInterfaceLogger.checkType("logger", logger);
-            FfiConverterSequencei32.checkType("items", items);
+            try {
+                FfiConverterCallbackInterfaceLogger.checkType(logger)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("logger");
+                }
+                throw e;
+            }
+            try {
+                FfiConverterSequencei32.checkType(items)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("items");
+                }
+                throw e;
+            }
             return UniFFIScaffolding.callAsync(
                 107, 
                 FfiConverterCallbackInterfaceLogger.lower(logger),
@@ -584,8 +625,22 @@ function logEvenNumbersMainThread(logger,items) {
         const liftResult = (result) => undefined;
         const liftError = null;
         const functionCall = () => {
-            FfiConverterCallbackInterfaceLogger.checkType("logger", logger);
-            FfiConverterSequencei32.checkType("items", items);
+            try {
+                FfiConverterCallbackInterfaceLogger.checkType(logger)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("logger");
+                }
+                throw e;
+            }
+            try {
+                FfiConverterSequencei32.checkType(items)
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart("items");
+                }
+                throw e;
+            }
             return UniFFIScaffolding.callSync(
                 108, 
                 FfiConverterCallbackInterfaceLogger.lower(logger),

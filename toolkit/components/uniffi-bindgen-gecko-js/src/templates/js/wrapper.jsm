@@ -1,6 +1,8 @@
 
 
 
+const { UniFFITypeError } = ChromeUtils.importESModule("resource://gre/modules/UniFFI.sys.mjs");
+
 {% import "macros.jsm" as js %}
 
 "use strict";
