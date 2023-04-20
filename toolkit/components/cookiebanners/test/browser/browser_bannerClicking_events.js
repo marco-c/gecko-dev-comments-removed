@@ -17,7 +17,7 @@ async function runEventTest({ mode, openPageOptions = {} }) {
   });
 
   
-  if (mode != Ci.nsICookieBannerService.MODE_DISABLED) {
+  if (Services.cookieBanners.isEnabled) {
     insertTestClickRules();
   }
 

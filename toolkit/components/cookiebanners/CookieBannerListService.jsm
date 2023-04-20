@@ -92,6 +92,15 @@ class CookieBannerListService {
 
     try {
       let rules = await this.#rs.get();
+
+      
+      
+      
+      if (!Services.cookieBanners.isEnabled) {
+        lazy.logConsole.warn("Skip import nsICookieBannerService is disabled");
+        return;
+      }
+
       this.#importRules(rules);
     } catch (error) {
       lazy.logConsole.error(
