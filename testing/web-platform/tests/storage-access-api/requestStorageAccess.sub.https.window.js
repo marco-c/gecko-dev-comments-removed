@@ -7,7 +7,10 @@
 
 
 
-const {testPrefix} = processQueryParams();
+
+
+
+const {testPrefix, topLevelDocument} = processQueryParams();
 
 
 test(() => {
@@ -19,53 +22,60 @@ promise_test(t => {
     "document.requestStorageAccess() call without user gesture");
 }, "[" + testPrefix + "] document.requestStorageAccess() should be rejected with a NotAllowedError by default with no user gesture");
 
-promise_test(
-    async () => {
-      await test_driver.set_permission(
-          {name: 'storage-access'}, 'granted');
 
-      const {promise} = await RunCallbackWithGesture('b1', () => document.requestStorageAccess());
-      await promise;
+if (topLevelDocument) {
+  
+  
+  
+  promise_test(t => {
+    const description = "document.requestStorageAccess() call in a detached frame";
+    
+    return RunRequestStorageAccessInDetachedFrame()
+      .then(t.unreached_func("Should have rejected: " + description), (e) => {
+        assert_equals(e.name, 'InvalidStateError', description);
+      });
+  }, "[non-fully-active] document.requestStorageAccess() should not resolve when run in a detached frame");
 
-      
-      await test_driver.set_permission(
-          {name: 'storage-access'}, 'prompt');
-    },
-    '[' + testPrefix +
-        '] document.requestStorageAccess() should be resolved when called properly with a user gesture');
+  promise_test(t => {
+    return promise_rejects_dom(t, 'InvalidStateError', RunRequestStorageAccessViaDomParser(),
+     "document.requestStorageAccess() in a detached DOMParser result");
+  }, "[non-fully-active] document.requestStorageAccess() should not resolve when run in a detached DOMParser document");
 
-if (testPrefix == 'cross-origin-frame' || testPrefix == 'nested-cross-origin-frame') {
-  promise_test(
-      async t => {
-        await test_driver.set_permission(
-            {name: 'storage-access'}, 'prompt');
+  
+  const sameOriginFramePromise = RunTestsInIFrame(
+      'resources/requestStorageAccess-iframe.html?testCase=same-origin-frame&rootdocument=false');
 
-        const {promise} = RunCallbackWithGesture('b2', () => {
-          return promise_rejects_dom(t, "NotAllowedError", document.requestStorageAccess(),
-            "document.requestStorageAccess() call without permission");
-        });
+  
+  const crossOriginFramePromise = RunTestsInIFrame(
+      'https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/requestStorageAccess-iframe.https.html?testCase=cross-origin-frame&rootdocument=false');
 
-        await promise;
-      },
-      '[' + testPrefix +
-          '] document.requestStorageAccess() should be rejected with a NotAllowedError without permission grant');
+  
+  
+  const nestedSameOriginFramePromise = RunTestsInNestedIFrame(
+      'resources/requestStorageAccess-iframe.html?testCase=nested-same-origin-frame&rootdocument=false');
 
-  promise_test(
-      async t => {
-        await test_driver.set_permission(
-            {name: 'storage-access'}, 'denied');
+  
+  
+  const nestedCrossOriginFramePromise = RunTestsInNestedIFrame(
+      'https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/requestStorageAccess-iframe.https.html?testCase=nested-cross-origin-frame&rootdocument=false');
 
-        const {promise} = RunCallbackWithGesture('b3', () => {
-          return promise_rejects_dom(t, "NotAllowedError", document.requestStorageAccess(),
-            "document.requestStorageAccess() call without permission");
-        });
-
-        await promise;
-
-        
-        await test_driver.set_permission(
-            {name: 'storage-access'}, 'prompt');
-      },
-      '[' + testPrefix +
-          '] document.requestStorageAccess() should be rejected with a NotAllowedError with denied permission');
+  
+  
+  
+  Promise
+      .all([
+        sameOriginFramePromise,
+        crossOriginFramePromise,
+        nestedSameOriginFramePromise,
+        nestedCrossOriginFramePromise,
+      ])
+      .then(() => {
+        promise_test(
+            async () => {
+              const {promise} = await RunCallbackWithGesture('b1', () => document.requestStorageAccess());
+              return promise;
+            },
+            '[' + testPrefix +
+                '] document.requestStorageAccess() should be resolved when called properly with a user gesture');
+      });
 }
