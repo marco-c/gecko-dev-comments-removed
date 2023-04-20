@@ -3445,8 +3445,11 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
   
   
   
-  if (StringEndsWith(fileName, u".lnk"_ns) ||
-      StringEndsWith(fileName, u".local"_ns)) {
+  if (StringEndsWith(fileName, u".lnk"_ns, nsCaseInsensitiveStringComparator) ||
+      StringEndsWith(fileName, u".local"_ns,
+                     nsCaseInsensitiveStringComparator) ||
+      StringEndsWith(fileName, u".url"_ns, nsCaseInsensitiveStringComparator) ||
+      StringEndsWith(fileName, u".scf"_ns, nsCaseInsensitiveStringComparator)) {
     fileName.AppendLiteral(".download");
   }
 
