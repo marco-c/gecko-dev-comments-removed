@@ -61,7 +61,7 @@ Table::Table(JSContext* cx, const TableDesc& desc,
 SharedTable Table::create(JSContext* cx, const TableDesc& desc,
                           Handle<WasmTableObject*> maybeObject) {
   
-  MOZ_RELEASE_ASSERT(desc.elemType.isNullable());
+  
 
   switch (desc.elemType.tableRepr()) {
     case TableRepr::Func: {
@@ -330,8 +330,6 @@ bool Table::copy(JSContext* cx, const Table& srcTable, uint32_t dstIndex,
 }
 
 uint32_t Table::grow(uint32_t delta) {
-  MOZ_RELEASE_ASSERT(elemType_.isNullable());
-
   
   
   if (!delta) {
@@ -402,6 +400,58 @@ bool Table::addMovingGrowObserver(JSContext* cx, WasmInstanceObject* instance) {
 
   return true;
 }
+
+void Table::fillUninitialized(uint32_t index, uint32_t fillCount,
+                              HandleAnyRef ref, JSContext* cx) {
+#ifdef DEBUG
+  assertRangeNull(index, fillCount);
+#endif  
+  switch (repr()) {
+    case TableRepr::Func: {
+      MOZ_RELEASE_ASSERT(!isAsmJS_);
+      fillFuncRef(index, fillCount, FuncRef::fromAnyRefUnchecked(ref), cx);
+      break;
+    }
+    case TableRepr::Ref: {
+      fillAnyRef(index, fillCount, ref);
+      break;
+    }
+  }
+}
+
+#ifdef DEBUG
+void Table::assertRangeNull(uint32_t index, uint32_t length) const {
+  switch (repr()) {
+    case TableRepr::Func:
+      for (uint32_t i = index; i < index + length; i++) {
+        MOZ_ASSERT(getFuncRef(i).instance == nullptr);
+        MOZ_ASSERT(getFuncRef(i).code == nullptr);
+      }
+      break;
+    case TableRepr::Ref:
+      for (uint32_t i = index; i < index + length; i++) {
+        MOZ_ASSERT(getAnyRef(i).isNull());
+      }
+      break;
+  }
+}
+
+void Table::assertRangeNotNull(uint32_t index, uint32_t length) const {
+  switch (repr()) {
+    case TableRepr::Func:
+      for (uint32_t i = index; i < index + length; i++) {
+        MOZ_ASSERT_IF(!isAsmJS_, getFuncRef(i).instance != nullptr);
+        MOZ_ASSERT(getFuncRef(i).code != nullptr);
+      }
+      break;
+    case TableRepr::Ref:
+      for (uint32_t i = index; i < index + length; i++) {
+        MOZ_ASSERT(!getAnyRef(i).isNull());
+      }
+      break;
+  }
+}
+#endif  
 
 size_t Table::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
   if (isFunction()) {

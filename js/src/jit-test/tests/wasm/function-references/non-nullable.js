@@ -162,7 +162,7 @@ assertErrorMessage(() => runMultiNullStack(), TypeError, /cannot pass null to no
 
 wasmFailValidateText(`(module
   (table (ref extern) (elem))
-)`, /non-nullable references not supported in tables/);
+)`, /table with non-nullable references requires initializer/);
 
 
 let {t} = wasmEvalText(`(module

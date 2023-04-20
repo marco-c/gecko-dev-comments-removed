@@ -1029,18 +1029,14 @@ static int32_t MemDiscardShared(Instance* instance, I byteOffset, I byteLen,
   uint32_t oldSize = table.grow(delta);
 
   if (oldSize != uint32_t(-1) && initValue != nullptr) {
-    switch (table.repr()) {
-      case TableRepr::Ref:
-        table.fillAnyRef(oldSize, delta, ref);
-        break;
-      case TableRepr::Func:
-        MOZ_RELEASE_ASSERT(!table.isAsmJS());
-        table.fillFuncRef(oldSize, delta, FuncRef::fromAnyRefUnchecked(ref),
-                          cx);
-        break;
-    }
+    table.fillUninitialized(oldSize, delta, ref, cx);
   }
 
+#ifdef DEBUG
+  if (!table.elemType().isNullable()) {
+    table.assertRangeNotNull(oldSize, delta);
+  }
+#endif  
   return oldSize;
 }
 
@@ -1707,7 +1703,28 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
     TableInstanceData& table = tableInstanceData(td);
     table.length = tables_[i]->length();
     table.elements = tables_[i]->instanceElements();
+    
+    
+    if (!td.isImported && td.initExpr) {
+      Rooted<WasmInstanceObject*> instanceObj(cx, object());
+      RootedVal val(cx);
+      if (!td.initExpr->evaluate(cx, instanceObj, &val)) {
+        return false;
+      }
+      RootedAnyRef ref(cx, val.get().ref());
+      tables_[i]->fillUninitialized(0, tables_[i]->length(), ref, cx);
+    }
   }
+
+#ifdef DEBUG
+  
+  for (size_t i = 0; i < tables_.length(); i++) {
+    const TableDesc& td = metadata().tables[i];
+    if (!td.elemType.isNullable()) {
+      tables_[i]->assertRangeNotNull(0, tables_[i]->length());
+    }
+  }
+#endif  
 
   
   for (size_t i = 0; i < metadata().tags.length(); i++) {

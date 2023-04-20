@@ -100,6 +100,9 @@ enum class TypeCode {
   Array = 0x5e,  
 
   
+  TableHasInitExpr = 0x40,
+
+  
   BlockVoid = 0x40,  
 
   

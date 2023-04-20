@@ -481,9 +481,6 @@ class WasmTableObject : public NativeObject {
   
   bool fillRange(JSContext* cx, uint32_t index, uint32_t length,
                  HandleValue value) const;
-#ifdef DEBUG
-  void assertRangeNull(uint32_t index, uint32_t length) const;
-#endif
 };
 
 
