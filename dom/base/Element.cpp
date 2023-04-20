@@ -32,6 +32,7 @@
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/EffectSet.h"
+#include "mozilla/ElementAnimationData.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
@@ -75,6 +76,7 @@
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/Flex.h"
+#include "mozilla/dom/FragmentOrElement.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/Grid.h"
 #include "mozilla/dom/HTMLDivElement.h"
@@ -1865,6 +1867,12 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   
   
+  
+  
+  
+  
+  
+  
   if (aParent.IsInUncomposedDoc() && MayHaveAnimations()) {
     PseudoStyleType pseudoType = GetPseudoElementType();
     if ((pseudoType == PseudoStyleType::NotPseudo ||
@@ -1946,11 +1954,8 @@ void Element::UnbindFromTree(bool aNullParent) {
     Document::ExitFullscreenInDocTree(OwnerDoc());
   }
 
-  if (HasServoData()) {
-    MOZ_ASSERT(document);
-    MOZ_ASSERT(IsInNativeAnonymousSubtree());
-  }
-
+  MOZ_ASSERT_IF(HasServoData(), document);
+  MOZ_ASSERT_IF(HasServoData(), IsInNativeAnonymousSubtree());
   if (document) {
     ClearServoData(document);
   }
@@ -1965,15 +1970,9 @@ void Element::UnbindFromTree(bool aNullParent) {
   
   
   
-  if (MayHaveAnimations()) {
-    RemoveProperty(nsGkAtoms::transitionsOfBeforeProperty);
-    RemoveProperty(nsGkAtoms::transitionsOfAfterProperty);
-    RemoveProperty(nsGkAtoms::transitionsOfMarkerProperty);
-    RemoveProperty(nsGkAtoms::transitionsProperty);
-    RemoveProperty(nsGkAtoms::animationsOfBeforeProperty);
-    RemoveProperty(nsGkAtoms::animationsOfAfterProperty);
-    RemoveProperty(nsGkAtoms::animationsOfMarkerProperty);
-    RemoveProperty(nsGkAtoms::animationsProperty);
+  
+  if (auto* data = GetAnimationData()) {
+    data->ClearAllAnimationCollections();
     if (document) {
       if (nsPresContext* presContext = document->GetPresContext()) {
         
@@ -4229,6 +4228,14 @@ void Element::ClearServoData(Document* aDoc) {
   if (aDoc->GetServoRestyleRoot() == this) {
     aDoc->ClearServoRestyleRoot();
   }
+}
+
+ElementAnimationData& Element::CreateAnimationData() {
+  MOZ_ASSERT(!GetAnimationData());
+  SetMayHaveAnimations();
+  auto* slots = ExtendedDOMSlots();
+  slots->mAnimations = MakeUnique<ElementAnimationData>();
+  return *slots->mAnimations;
 }
 
 void Element::SetCustomElementData(UniquePtr<CustomElementData> aData) {

@@ -36,6 +36,7 @@ namespace mozilla {
 class DeclarationBlock;
 enum class ContentRelevancyReason;
 using ContentRelevancy = EnumSet<ContentRelevancyReason, uint8_t>;
+class ElementAnimationData;
 namespace dom {
 struct CustomElementData;
 class Element;
@@ -160,7 +161,7 @@ class FragmentOrElement : public nsIContent {
     ~nsExtendedDOMSlots();
 
     void TraverseExtendedSlots(nsCycleCollectionTraversalCallback&) final;
-    void UnlinkExtendedSlots() final;
+    void UnlinkExtendedSlots(nsIContent&) final;
 
     size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const final;
 
@@ -198,6 +199,11 @@ class FragmentOrElement : public nsIContent {
     
 
 
+    UniquePtr<ElementAnimationData> mAnimations;
+
+    
+
+
 
     Maybe<float> mLastRememberedBSize;
     Maybe<float> mLastRememberedISize;
@@ -221,7 +227,7 @@ class FragmentOrElement : public nsIContent {
     ~nsDOMSlots();
 
     void Traverse(nsCycleCollectionTraversalCallback&) final;
-    void Unlink() final;
+    void Unlink(nsINode&) final;
 
     size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 

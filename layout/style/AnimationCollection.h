@@ -21,71 +21,40 @@ namespace mozilla {
 namespace dom {
 class Element;
 }
-
-
-
-
-
-template <class AnimationType>
-struct AnimationTypeTraits {};
+enum class PseudoStyleType : uint8_t;
 
 template <class AnimationType>
 class AnimationCollection
     : public LinkedListElement<AnimationCollection<AnimationType>> {
   typedef AnimationCollection<AnimationType> SelfType;
-  typedef AnimationTypeTraits<AnimationType> TraitsType;
 
-  AnimationCollection(dom::Element* aElement, nsAtom* aElementProperty)
-      : mElement(aElement), mElementProperty(aElementProperty) {
+ public:
+  AnimationCollection(dom::Element& aOwner, PseudoStyleType aPseudoType)
+      : mElement(aOwner), mPseudo(aPseudoType) {
     MOZ_COUNT_CTOR(AnimationCollection);
   }
 
- public:
-  ~AnimationCollection() {
-    MOZ_ASSERT(mCalledPropertyDtor,
-               "must call destructor through element property dtor");
-    MOZ_COUNT_DTOR(AnimationCollection);
-    LinkedListElement<SelfType>::remove();
-  }
+  ~AnimationCollection();
 
   void Destroy();
 
-  static void PropertyDtor(void* aObject, nsAtom* aPropertyName,
-                           void* aPropertyValue, void* aData);
-
-  
-  
-  static AnimationCollection<AnimationType>* GetAnimationCollection(
-      const dom::Element* aElement, PseudoStyleType aPseudoType);
-
   
   
   
   
-  static AnimationCollection<AnimationType>* GetAnimationCollection(
-      const nsIFrame* aFrame);
+  static AnimationCollection* Get(const nsIFrame* aFrame);
+  static AnimationCollection* Get(const dom::Element* aElement,
+                                  PseudoStyleType aPseudoType);
 
   
   
   
-  
-  
-  
-  static AnimationCollection<AnimationType>* GetOrCreateAnimationCollection(
-      dom::Element* aElement, PseudoStyleType aPseudoType,
-      bool* aCreatedCollection);
-
-  dom::Element* mElement;
-
-  
-  
-  nsAtom* mElementProperty;
+  dom::Element& mElement;
+  const PseudoStyleType mPseudo;
 
   nsTArray<RefPtr<AnimationType>> mAnimations;
 
  private:
-  static nsAtom* GetPropertyAtomForPseudoType(PseudoStyleType aPseudoType);
-
   
   
   
@@ -95,10 +64,6 @@ class AnimationCollection
   
   
   bool mCalledDestroy = false;
-
-#ifdef DEBUG
-  bool mCalledPropertyDtor = false;
-#endif
 };
 
 }  

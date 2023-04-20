@@ -225,22 +225,6 @@ class CSSTransition final : public Animation {
 
 }  
 
-template <>
-struct AnimationTypeTraits<dom::CSSTransition> {
-  static nsAtom* ElementPropertyAtom() {
-    return nsGkAtoms::transitionsProperty;
-  }
-  static nsAtom* BeforePropertyAtom() {
-    return nsGkAtoms::transitionsOfBeforeProperty;
-  }
-  static nsAtom* AfterPropertyAtom() {
-    return nsGkAtoms::transitionsOfAfterProperty;
-  }
-  static nsAtom* MarkerPropertyAtom() {
-    return nsGkAtoms::transitionsOfMarkerProperty;
-  }
-};
-
 }  
 
 #endif  

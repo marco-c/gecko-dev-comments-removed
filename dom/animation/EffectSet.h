@@ -32,28 +32,17 @@ class EffectSet {
  public:
   EffectSet()
       : mCascadeNeedsUpdate(false),
-        mAnimationGeneration(0)
-#ifdef DEBUG
-        ,
-        mActiveIterators(0),
-        mCalledPropertyDtor(false)
-#endif
-        ,
         mMayHaveOpacityAnim(false),
         mMayHaveTransformAnim(false) {
     MOZ_COUNT_CTOR(EffectSet);
   }
 
   ~EffectSet() {
-    MOZ_ASSERT(mCalledPropertyDtor,
-               "must call destructor through element property dtor");
-    MOZ_ASSERT(mActiveIterators == 0,
+    MOZ_ASSERT(!IsBeingEnumerated(),
                "Effect set should not be destroyed while it is being "
                "enumerated");
     MOZ_COUNT_DTOR(EffectSet);
   }
-  static void PropertyDtor(void* aObject, nsAtom* aPropertyName,
-                           void* aPropertyValue, void* aData);
 
   
   void Traverse(nsCycleCollectionTraversalCallback& aCallback);
@@ -193,24 +182,20 @@ class EffectSet {
   void UpdateAnimationGeneration(nsPresContext* aPresContext);
   uint64_t GetAnimationGeneration() const { return mAnimationGeneration; }
 
-  static nsAtom** GetEffectSetPropertyAtoms();
-
   const nsCSSPropertyIDSet& PropertiesWithImportantRules() const {
     return mPropertiesWithImportantRules;
   }
   nsCSSPropertyIDSet& PropertiesWithImportantRules() {
     return mPropertiesWithImportantRules;
   }
-  nsCSSPropertyIDSet& PropertiesForAnimationsLevel() {
+  nsCSSPropertyIDSet PropertiesForAnimationsLevel() const {
     return mPropertiesForAnimationsLevel;
   }
-  nsCSSPropertyIDSet PropertiesForAnimationsLevel() const {
+  nsCSSPropertyIDSet& PropertiesForAnimationsLevel() {
     return mPropertiesForAnimationsLevel;
   }
 
  private:
-  static nsAtom* GetEffectSetPropertyAtom(PseudoStyleType aPseudoType);
-
   OwningEffectSet mEffects;
 
   
@@ -228,15 +213,7 @@ class EffectSet {
   
   
   
-  bool mCascadeNeedsUpdate;
-
-  
-  
-  
-  
-  
-  
-  uint64_t mAnimationGeneration;
+  uint64_t mAnimationGeneration = 0;
 
   
   
@@ -249,13 +226,19 @@ class EffectSet {
 #ifdef DEBUG
   
   
-  uint64_t mActiveIterators;
-
-  bool mCalledPropertyDtor;
+  uint64_t mActiveIterators = 0;
 #endif
 
-  bool mMayHaveOpacityAnim;
-  bool mMayHaveTransformAnim;
+  
+  
+  
+  
+  
+  
+  bool mCascadeNeedsUpdate = false;
+
+  bool mMayHaveOpacityAnim = false;
+  bool mMayHaveTransformAnim = false;
 };
 
 }  
