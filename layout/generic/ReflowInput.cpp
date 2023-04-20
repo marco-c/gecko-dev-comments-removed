@@ -140,9 +140,6 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext, nsIFrame* aFrame,
   if (!aFlags.contains(InitFlag::CallerWillInit)) {
     Init(aPresContext);
   }
-  
-  
-  mFlags.mCanHaveClassABreakpoints = false;
 }
 
 
@@ -201,49 +198,6 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   mFlags.mDummyParentReflowInput = false;
   mFlags.mStaticPosIsCBOrigin = aFlags.contains(InitFlag::StaticPosIsCBOrigin);
   mFlags.mIOffsetsNeedCSSAlign = mFlags.mBOffsetsNeedCSSAlign = false;
-
-  
-  
-  if (aParentReflowInput.mFlags.mCanHaveClassABreakpoints) {
-    MOZ_ASSERT(aPresContext->IsPaginated(),
-               "mCanHaveClassABreakpoints set during non-paginated reflow.");
-    MOZ_ASSERT(StaticPrefs::layout_css_named_pages_enabled(),
-               "mCanHaveClassABreakpoints should not be set when "
-               "layout.css.named_pages.enabled is false");
-  }
-
-  {
-    using mozilla::LayoutFrameType;
-    switch (mFrame->Type()) {
-      case LayoutFrameType::PageContent:
-        
-        MOZ_ASSERT(aPresContext->IsPaginated(),
-                   "nsPageContentFrame should not be in non-paginated reflow");
-        MOZ_ASSERT(!mFlags.mCanHaveClassABreakpoints,
-                   "mFlags.mCanHaveClassABreakpoints should have been "
-                   "initalized to false before we found nsPageContentFrame");
-        mFlags.mCanHaveClassABreakpoints =
-            StaticPrefs::layout_css_named_pages_enabled();
-        break;
-      case LayoutFrameType::Block:          
-      case LayoutFrameType::Canvas:         
-      case LayoutFrameType::FlexContainer:  
-      case LayoutFrameType::GridContainer:
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(mFlags.mCanHaveClassABreakpoints ==
-                   aParentReflowInput.mFlags.mCanHaveClassABreakpoints);
-        break;
-      default:
-        mFlags.mCanHaveClassABreakpoints = false;
-        break;
-    }
-  }
 
   if (aFlags.contains(InitFlag::DummyParentReflowInput) ||
       (mParentReflowInput->mFlags.mDummyParentReflowInput &&

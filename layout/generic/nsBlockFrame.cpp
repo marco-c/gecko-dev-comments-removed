@@ -2647,22 +2647,10 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   
   const nsPresContext* const presCtx = aState.mPresContext;
   const bool canBreakForPageNames =
-      aState.mReflowInput.mFlags.mCanHaveClassABreakpoints &&
       aState.mReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
+      presCtx->IsPaginated() && StaticPrefs::layout_css_named_pages_enabled() &&
       presCtx->GetPresShell()->GetRootFrame()->GetWritingMode().IsVertical() ==
           GetWritingMode().IsVertical();
-
-  
-  
-  
-  if (canBreakForPageNames) {
-    MOZ_ASSERT(presCtx->IsPaginated(),
-               "canBreakForPageNames should not be set during non-paginated "
-               "reflow");
-    MOZ_ASSERT(StaticPrefs::layout_css_named_pages_enabled(),
-               "canBreakForPageNames should not be set when "
-               "layout.css.named_pages.enabled is false");
-  }
 
   
   for (; line != line_end; ++line, aState.AdvanceToNextLine()) {
