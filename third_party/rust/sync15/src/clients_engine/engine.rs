@@ -4,14 +4,14 @@
 
 use std::collections::{HashMap, HashSet};
 
+use crate::bso::{IncomingKind, OutgoingBso, OutgoingEnvelope};
 use crate::client::{
     CollState, CollectionKeys, CollectionUpdate, GlobalState, InfoConfiguration,
     Sync15StorageClient,
 };
 use crate::client_types::{ClientData, RemoteClient};
 use crate::engine::{CollectionRequest, IncomingChangeset, OutgoingChangeset};
-use crate::error::Result;
-use crate::{KeyBundle, Payload};
+use crate::{error::Result, Guid, KeyBundle};
 use interrupt_support::Interruptee;
 
 use super::{
@@ -62,22 +62,21 @@ impl<'a> Driver<'a> {
 
         let mut has_own_client_record = false;
 
-        for (payload, _) in inbound.changes {
+        for bso in inbound.changes {
             self.interruptee.err_if_interrupted()?;
 
-            
-            if payload.is_tombstone() {
-                log::debug!("Record has been deleted; skipping...");
-                continue;
-            }
+            let content = bso.into_content();
 
-            
-            let client: ClientRecord = match payload.into_record() {
-                Ok(client) => client,
-                Err(e) => {
-                    log::debug!("Error in unpacking record: {:?}", e);
+            let client: ClientRecord = match content.kind {
+                IncomingKind::Malformed => {
+                    log::debug!("Error unpacking record");
                     continue;
                 }
+                IncomingKind::Tombstone => {
+                    log::debug!("Record has been deleted; skipping...");
+                    continue;
+                }
+                IncomingKind::Content(client) => client,
             };
 
             if client.id == self.command_processor.settings().fxa_device_id {
@@ -122,17 +121,16 @@ impl<'a> Driver<'a> {
 
                 
                 
-                
-                
-                
-                
-                let mut client_compare = client.clone();
-                client_compare.ttl = current_client_record.ttl;
-                if should_refresh_client || client_compare != current_client_record {
+                if should_refresh_client || client != current_client_record {
                     log::debug!("Will update our client record on the server");
+                    let envelope = OutgoingEnvelope {
+                        id: content.envelope.id,
+                        ttl: Some(CLIENTS_TTL),
+                        ..Default::default()
+                    };
                     outgoing
                         .changes
-                        .push(Payload::from_record(current_client_record)?);
+                        .push(OutgoingBso::from_content(envelope, current_client_record)?);
                 }
             } else {
                 
@@ -173,10 +171,14 @@ impl<'a> Driver<'a> {
                     self.memcache_max_record_payload_size(),
                 )?;
 
-                
-                
-                new_client.ttl = CLIENTS_TTL;
-                outgoing.changes.push(Payload::from_record(new_client)?);
+                let envelope = OutgoingEnvelope {
+                    id: content.envelope.id,
+                    ttl: Some(CLIENTS_TTL),
+                    ..Default::default()
+                };
+                outgoing
+                    .changes
+                    .push(OutgoingBso::from_content(envelope, new_client)?);
             }
         }
 
@@ -184,9 +186,14 @@ impl<'a> Driver<'a> {
         if !has_own_client_record {
             let current_client_record = self.current_client_record();
             self.note_recent_client(&current_client_record);
+            let envelope = OutgoingEnvelope {
+                id: Guid::new(&current_client_record.id),
+                ttl: Some(CLIENTS_TTL),
+                ..Default::default()
+            };
             outgoing
                 .changes
-                .push(Payload::from_record(current_client_record)?);
+                .push(OutgoingBso::from_content(envelope, current_client_record)?);
         }
 
         Ok(outgoing)
@@ -208,7 +215,6 @@ impl<'a> Driver<'a> {
             app_package: None,
             application: None,
             device: None,
-            ttl: CLIENTS_TTL,
         }
     }
 
@@ -221,6 +227,8 @@ impl<'a> Driver<'a> {
         }
     }
 
+    
+    
     
     
     
@@ -354,12 +362,13 @@ impl<'a> Engine<'a> {
 #[cfg(test)]
 mod tests {
     use super::super::{CommandStatus, DeviceType, Settings};
+    use super::*;
+    use crate::bso::IncomingBso;
     use crate::ServerTimestamp;
     use anyhow::Result;
     use interrupt_support::NeverInterrupts;
     use serde_json::{json, Value};
-
-    use super::*;
+    use std::iter::zip;
 
     struct TestProcessor {
         settings: Settings,
@@ -392,7 +401,7 @@ mod tests {
         if let Value::Array(clients) = clients {
             let changes = clients
                 .into_iter()
-                .map(|c| (Payload::from_json(c).unwrap(), ServerTimestamp(0)))
+                .map(IncomingBso::from_test_content)
                 .collect();
             IncomingChangeset {
                 changes,
@@ -466,7 +475,9 @@ mod tests {
         
         
         let mut outgoing = driver.sync(inbound, false).expect("Should sync clients");
-        outgoing.changes.sort_by(|a, b| a.id.cmp(&b.id));
+        outgoing
+            .changes
+            .sort_by(|a, b| a.envelope.id.cmp(&b.envelope.id));
 
         
         let expected_ids = &["deviceAAAAAA", "deviceBBBBBB", "deviceCCCCCC"];
@@ -515,7 +526,6 @@ mod tests {
             }],
             "fxaDeviceId": "deviceAAAAAA",
             "protocols": ["1.5"],
-            "ttl": CLIENTS_TTL,
         }, {
             "id": "deviceBBBBBB",
             "name": "iPhone",
@@ -530,7 +540,6 @@ mod tests {
             "fxaDeviceId": "iPhooooooone",
             "protocols": ["1.5"],
             "device": "iPhone",
-            "ttl": CLIENTS_TTL,
         }, {
             "id": "deviceCCCCCC",
             "name": "Fenix",
@@ -543,11 +552,22 @@ mod tests {
                 "args": ["history"],
             }],
             "fxaDeviceId": "deviceCCCCCC",
-            "ttl": CLIENTS_TTL,
         }]);
+        
+        let incoming = IncomingChangeset {
+            changes: outgoing
+                .changes
+                .into_iter()
+                .map(|c| OutgoingBso::to_test_incoming(&c))
+                .collect(),
+            timestamp: outgoing.timestamp,
+            collection: outgoing.collection,
+        };
         if let Value::Array(expected) = expected {
-            for (i, record) in expected.into_iter().enumerate() {
-                assert_eq!(outgoing.changes[i], Payload::from_json(record).unwrap());
+            for (incoming_cleartext, exp_client) in zip(incoming.changes, expected) {
+                let incoming_client: ClientRecord =
+                    incoming_cleartext.into_content().content().unwrap();
+                assert_eq!(incoming_client, serde_json::from_value(exp_client).unwrap());
             }
         } else {
             unreachable!("`expected_clients` must be an array of client records")
@@ -635,7 +655,7 @@ mod tests {
 
         let mut driver = Driver::new(&processor, &NeverInterrupts, &config);
 
-        let inbound = inbound_from_clients(json!([{
+        let test_clients = json!([{
             "id": "deviceBBBBBB",
             "name": "iPhone",
             "type": "mobile",
@@ -646,7 +666,6 @@ mod tests {
             "fxaDeviceId": "iPhooooooone",
             "protocols": ["1.5"],
             "device": "iPhone",
-            "ttl": CLIENTS_TTL,
         }, {
             "id": "deviceAAAAAA",
             "name": "Laptop",
@@ -654,11 +673,10 @@ mod tests {
             "commands": [],
             "fxaDeviceId": "deviceAAAAAA",
             "protocols": ["1.5"],
-            "ttl": CLIENTS_TTL,
-        }]));
+        }]);
 
         let outgoing = driver
-            .sync(inbound.clone(), false)
+            .sync(inbound_from_clients(test_clients.clone()), false)
             .expect("Should sync clients");
         
         assert_eq!(outgoing.changes.len(), 0);
@@ -671,7 +689,9 @@ mod tests {
         assert_eq!(actual_ids, expected_ids);
 
         
-        let outgoing = driver.sync(inbound, true).expect("Should sync clients");
+        let outgoing = driver
+            .sync(inbound_from_clients(test_clients), true)
+            .expect("Should sync clients");
         assert_eq!(outgoing.changes.len(), 1);
 
         
@@ -720,7 +740,7 @@ mod tests {
         let inbound = if let Value::Array(clients) = clients {
             let changes = clients
                 .into_iter()
-                .map(|c| (Payload::from_json(c).unwrap(), ServerTimestamp(0)))
+                .map(IncomingBso::from_test_content)
                 .collect();
             IncomingChangeset {
                 changes,
@@ -734,7 +754,9 @@ mod tests {
         
         
         let mut outgoing = driver.sync(inbound, false).expect("Should sync clients");
-        outgoing.changes.sort_by(|a, b| a.id.cmp(&b.id));
+        outgoing
+            .changes
+            .sort_by(|a, b| a.envelope.id.cmp(&b.envelope.id));
 
         
         let expected_ids = &["deviceAAAAAA", "deviceBBBBBB"];
@@ -770,8 +792,20 @@ mod tests {
             "ttl": CLIENTS_TTL,
         }]);
         if let Value::Array(expected) = expected {
-            for (i, record) in expected.into_iter().enumerate() {
-                assert_eq!(outgoing.changes[i], Payload::from_json(record).unwrap());
+            
+            let incoming = IncomingChangeset {
+                changes: outgoing
+                    .changes
+                    .into_iter()
+                    .map(|c| OutgoingBso::to_test_incoming(&c))
+                    .collect(),
+                timestamp: outgoing.timestamp,
+                collection: outgoing.collection,
+            };
+            for (incoming_cleartext, record) in zip(incoming.changes, expected) {
+                let incoming_client: ClientRecord =
+                    incoming_cleartext.into_content().content().unwrap();
+                assert_eq!(incoming_client, serde_json::from_value(record).unwrap());
             }
         } else {
             unreachable!("`expected_clients` must be an array of client records")

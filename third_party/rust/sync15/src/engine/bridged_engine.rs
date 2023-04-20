@@ -2,11 +2,9 @@
 
 
 
-use std::{error::Error, fmt};
+use crate::bso::{IncomingBso, OutgoingBso};
 
-use serde::{Deserialize, Serialize};
-
-use crate::{Guid, Payload, ServerTimestamp};
+use crate::Guid;
 
 
 
@@ -64,7 +62,7 @@ pub trait BridgedEngine {
     
     
     
-    fn store_incoming(&self, incoming_payloads: &[IncomingEnvelope]) -> Result<(), Self::Error>;
+    fn store_incoming(&self, incoming_records: Vec<IncomingBso>) -> Result<(), Self::Error>;
 
     
     
@@ -91,10 +89,12 @@ pub trait BridgedEngine {
     fn wipe(&self) -> Result<(), Self::Error>;
 }
 
-#[derive(Clone, Debug, Default)]
+
+
+#[derive(Debug, Default)]
 pub struct ApplyResults {
     
-    pub envelopes: Vec<OutgoingEnvelope>,
+    pub records: Vec<OutgoingBso>,
     
     
     
@@ -102,125 +102,20 @@ pub struct ApplyResults {
 }
 
 impl ApplyResults {
-    pub fn new(envelopes: Vec<OutgoingEnvelope>, num_reconciled: impl Into<Option<usize>>) -> Self {
+    pub fn new(records: Vec<OutgoingBso>, num_reconciled: impl Into<Option<usize>>) -> Self {
         Self {
-            envelopes,
+            records,
             num_reconciled: num_reconciled.into(),
         }
     }
 }
 
 
-impl From<Vec<OutgoingEnvelope>> for ApplyResults {
-    fn from(envelopes: Vec<OutgoingEnvelope>) -> Self {
+impl From<Vec<OutgoingBso>> for ApplyResults {
+    fn from(records: Vec<OutgoingBso>) -> Self {
         Self {
-            envelopes,
+            records,
             num_reconciled: None,
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct IncomingEnvelope {
-    pub id: Guid,
-    pub modified: ServerTimestamp,
-    #[serde(default)]
-    pub sortindex: Option<i32>,
-    #[serde(default)]
-    pub ttl: Option<u32>,
-    
-    
-    payload: String,
-}
-
-impl IncomingEnvelope {
-    
-    
-    pub fn payload(&self) -> Result<Payload, PayloadError> {
-        let payload: Payload = serde_json::from_str(&self.payload)?;
-        if payload.id != self.id {
-            return Err(PayloadError::MismatchedId {
-                envelope: self.id.clone(),
-                payload: payload.id,
-            });
-        }
-        
-        Ok(payload
-            .with_auto_field("ttl", self.ttl)
-            .with_auto_field("sortindex", self.sortindex))
-    }
-}
-
-
-
-
-#[derive(Clone, Debug, Serialize)]
-pub struct OutgoingEnvelope {
-    id: Guid,
-    payload: String,
-    sortindex: Option<i32>,
-    ttl: Option<u32>,
-}
-
-impl From<Payload> for OutgoingEnvelope {
-    fn from(mut payload: Payload) -> Self {
-        let id = payload.id.clone();
-        
-        let ttl = payload.take_auto_field("ttl");
-        let sortindex = payload.take_auto_field("sortindex");
-        OutgoingEnvelope {
-            id,
-            payload: payload.into_json_string(),
-            sortindex,
-            ttl,
-        }
-    }
-}
-
-
-#[derive(Debug)]
-pub enum PayloadError {
-    
-    Invalid(serde_json::Error),
-    
-    MismatchedId { envelope: Guid, payload: Guid },
-}
-
-impl Error for PayloadError {}
-
-impl From<serde_json::Error> for PayloadError {
-    fn from(err: serde_json::Error) -> PayloadError {
-        PayloadError::Invalid(err)
-    }
-}
-
-impl fmt::Display for PayloadError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PayloadError::Invalid(err) => err.fmt(f),
-            PayloadError::MismatchedId { envelope, payload } => write!(
-                f,
-                "ID `{}` in envelope doesn't match `{}` in payload",
-                envelope, payload
-            ),
         }
     }
 }

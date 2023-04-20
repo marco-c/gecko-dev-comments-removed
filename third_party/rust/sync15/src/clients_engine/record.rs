@@ -55,14 +55,6 @@ pub struct ClientRecord {
     
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub device: Option<String>,
-
-    
-    
-    
-    
-    
-    #[serde(default)]
-    pub ttl: u32,
 }
 
 impl From<&ClientRecord> for crate::RemoteClient {
@@ -128,35 +120,5 @@ impl From<Command> for CommandRecord {
                 flow_id: None,
             },
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::Payload;
-
-    #[test]
-    fn test_ttl() {
-        
-        
-        let record = ClientRecord {
-            id: "id".into(),
-            name: "my device".into(),
-            typ: Some(crate::DeviceType::VR),
-            commands: Vec::new(),
-            fxa_device_id: Some("12345".into()),
-            version: None,
-            protocols: vec!["1.5".into()],
-            form_factor: None,
-            os: None,
-            app_package: None,
-            application: None,
-            device: None,
-            ttl: 123,
-        };
-        let p = Payload::from_record(record).unwrap();
-        let bso = crate::CleartextBso::from_payload(p, "clients");
-        assert_eq!(bso.ttl, Some(123));
     }
 }

@@ -12,17 +12,20 @@ use crate::schema::create_empty_sync_temp_tables;
 use crate::sync::incoming::{apply_actions, get_incoming, plan_incoming, stage_incoming};
 use crate::sync::outgoing::{get_outgoing, record_uploaded, stage_outgoing};
 use crate::sync::test::new_syncable_mem_db;
-use crate::sync::{Record, RecordData};
+use crate::sync::WebextRecord;
 use interrupt_support::NeverInterrupts;
 use rusqlite::{Connection, Row, Transaction};
 use serde_json::json;
 use sql_support::ConnExt;
-use sync15::Payload;
+use sync15::bso::{IncomingBso, IncomingContent, OutgoingBso};
 use sync_guid::Guid;
 
 
 
-fn do_sync(tx: &Transaction<'_>, incoming_payloads: Vec<Payload>) -> Result<Vec<Payload>> {
+fn do_sync(
+    tx: &Transaction<'_>,
+    incoming_payloads: &[IncomingContent<WebextRecord>],
+) -> Result<Vec<OutgoingBso>> {
     log::info!("test do_sync() starting");
     
     stage_incoming(tx, incoming_payloads, &NeverInterrupts)?;
@@ -42,7 +45,7 @@ fn do_sync(tx: &Transaction<'_>, incoming_payloads: Vec<Payload>) -> Result<Vec<
         tx,
         outgoing
             .iter()
-            .map(|p| p.id.clone())
+            .map(|p| p.envelope.id.clone())
             .collect::<Vec<Guid>>()
             .as_slice(),
         &NeverInterrupts,
@@ -69,11 +72,11 @@ fn check_finished_with(conn: &Connection, ext_id: &str, val: serde_json::Value) 
     Ok(())
 }
 
-fn get_mirror_guid(conn: &Connection, extid: &str) -> Result<String> {
+fn get_mirror_guid(conn: &Connection, extid: &str) -> Result<Guid> {
     let guid = conn.query_row_and_then(
         "SELECT m.guid FROM storage_sync_mirror m WHERE m.ext_id = ?;",
         [extid],
-        |row| row.get::<_, String>(0),
+        |row| row.get::<_, Guid>(0),
     )?;
     Ok(guid)
 }
@@ -105,7 +108,7 @@ fn _get(conn: &Connection, id_name: &str, expected_extid: &str, table: &str) -> 
         DbData::NoRow
     } else {
         let item = items.pop().expect("it exists");
-        assert_eq!(item.0, expected_extid);
+        assert_eq!(Guid::new(&item.0), expected_extid);
         match item.1 {
             None => DbData::NullRow,
             Some(v) => DbData::Data(v),
@@ -121,6 +124,19 @@ fn get_local_data(conn: &Connection, expected_extid: &str) -> DbData {
     _get(conn, "ext_id", expected_extid, "storage_sync_data")
 }
 
+fn make_incoming(
+    guid: &Guid,
+    ext_id: &str,
+    data: &serde_json::Value,
+) -> IncomingContent<WebextRecord> {
+    let content = json!({"id": guid, "extId": ext_id, "data": data.to_string()});
+    IncomingBso::from_test_content(content).into_content()
+}
+
+fn make_incoming_tombstone(guid: &Guid) -> IncomingContent<WebextRecord> {
+    IncomingBso::new_test_tombstone(guid.clone()).into_content()
+}
+
 #[test]
 fn test_simple_outgoing_sync() -> Result<()> {
     
@@ -128,7 +144,7 @@ fn test_simple_outgoing_sync() -> Result<()> {
     let tx = db.transaction()?;
     let data = json!({"key1": "key1-value", "key2": "key2-value"});
     set(&tx, "ext-id", data.clone())?;
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     check_finished_with(&tx, "ext-id", data)?;
     Ok(())
 }
@@ -138,14 +154,8 @@ fn test_simple_incoming_sync() -> Result<()> {
     let mut db = new_syncable_mem_db();
     let tx = db.transaction()?;
     let data = json!({"key1": "key1-value", "key2": "key2-value"});
-    let payload = Payload::from_record(Record {
-        guid: Guid::from("guid"),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: data.to_string(),
-        },
-    })?;
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 0);
+    let bridge_record = make_incoming(&Guid::new("guid"), "ext-id", &data);
+    assert_eq!(do_sync(&tx, &[bridge_record])?.len(), 0);
     let key1_from_api = get(&tx, "ext-id", json!("key1"))?;
     assert_eq!(key1_from_api, json!({"key1": "key1-value"}));
     check_finished_with(&tx, "ext-id", data)?;
@@ -169,7 +179,7 @@ fn test_outgoing_tombstone() -> Result<()> {
     assert_eq!(get_local_data(&tx, "ext-id"), DbData::NoRow);
     
     set(&tx, "ext-id", data)?;
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     assert!(get_local_data(&tx, "ext-id").has_data());
     let guid = get_mirror_guid(&tx, "ext-id")?;
     assert!(get_mirror_data(&tx, &guid).has_data());
@@ -177,7 +187,7 @@ fn test_outgoing_tombstone() -> Result<()> {
     assert_eq!(get_local_data(&tx, "ext-id"), DbData::NullRow);
     
     
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     assert_eq!(get_local_data(&tx, "ext-id"), DbData::NoRow);
     assert_eq!(get_mirror_data(&tx, &guid), DbData::NullRow);
     Ok(())
@@ -196,15 +206,14 @@ fn test_incoming_tombstone_exists() -> Result<()> {
         DbData::Data(data.to_string())
     );
     
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     assert!(get_local_data(&tx, "ext-id").has_data());
     let guid = get_mirror_guid(&tx, "ext-id")?;
     assert!(get_mirror_data(&tx, &guid).has_data());
     
-    let payload = Payload::new_tombstone(guid.clone());
-
+    let tombstone = make_incoming_tombstone(&guid);
     assert_eq!(
-        do_sync(&tx, vec![payload])?.len(),
+        do_sync(&tx, &[tombstone])?.len(),
         0,
         "expect no outgoing records"
     );
@@ -218,17 +227,16 @@ fn test_incoming_tombstone_not_exists() -> Result<()> {
     let mut db = new_syncable_mem_db();
     let tx = db.transaction()?;
     
-    let guid = "guid";
-    let payload = Payload::new_tombstone(guid);
-
+    let guid = Guid::new("guid");
+    let tombstone = make_incoming_tombstone(&guid);
     assert_eq!(
-        do_sync(&tx, vec![payload])?.len(),
+        do_sync(&tx, &[tombstone])?.len(),
         0,
         "expect no outgoing records"
     );
     
     assert_eq!(get_local_data(&tx, "ext-id"), DbData::NoRow);
-    assert_eq!(get_mirror_data(&tx, guid), DbData::NullRow);
+    assert_eq!(get_mirror_data(&tx, &guid), DbData::NullRow);
     Ok(())
 }
 
@@ -239,15 +247,9 @@ fn test_reconciled() -> Result<()> {
     let data = json!({"key1": "key1-value"});
     set(&tx, "ext-id", data)?;
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from("guid"),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: json!({"key1": "key1-value"}).to_string(),
-        },
-    })?;
+    let record = make_incoming(&Guid::new("guid"), "ext-id", &json!({"key1": "key1-value"}));
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 0);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 0);
     check_finished_with(&tx, "ext-id", json!({"key1": "key1-value"}))?;
     Ok(())
 }
@@ -261,21 +263,15 @@ fn test_reconcile_with_null_payload() -> Result<()> {
     let data = json!({"key1": "key1-value"});
     set(&tx, "ext-id", data.clone())?;
     
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     let guid = get_mirror_guid(&tx, "ext-id")?;
     assert_eq!(get_mirror_data(&tx, &guid), DbData::Data(data.to_string()));
     
     
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from(guid),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: data.to_string(),
-        },
-    })?;
+    let record = make_incoming(&guid, "ext-id", &data);
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 0);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 0);
     check_finished_with(&tx, "ext-id", data)?;
     Ok(())
 }
@@ -288,20 +284,15 @@ fn test_accept_incoming_when_local_is_deleted() -> Result<()> {
     
     let data = json!({"key1": "key1-value"});
     set(&tx, "ext-id", data)?;
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     let guid = get_mirror_guid(&tx, "ext-id")?;
     clear(&tx, "ext-id")?;
     
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from(guid),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: json!({"key2": "key2-value"}).to_string(),
-        },
-    })?;
+    let record = make_incoming(&guid, "ext-id", &json!({"key2": "key2-value"}));
+
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 0);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 0);
     check_finished_with(&tx, "ext-id", json!({"key2": "key2-value"}))?;
     Ok(())
 }
@@ -312,20 +303,16 @@ fn test_accept_incoming_when_local_is_deleted_no_mirror() -> Result<()> {
     let tx = db.transaction()?;
     let data = json!({"key1": "key1-value"});
     set(&tx, "ext-id", data)?;
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     clear(&tx, "ext-id")?;
-    let payload = Payload::from_record(Record {
-        
-        
-        
-        guid: Guid::from("guid"),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: json!({"key2": "key2-value"}).to_string(),
-        },
-    })?;
+
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 0);
+    
+    
+    let record = make_incoming(&Guid::new("guid"), "ext-id", &json!({"key2": "key2-value"}));
+
+    
+    assert_eq!(do_sync(&tx, &[record])?.len(), 0);
     check_finished_with(&tx, "ext-id", json!({"key2": "key2-value"}))?;
     Ok(())
 }
@@ -336,19 +323,13 @@ fn test_accept_deleted_key_mirrored() -> Result<()> {
     let tx = db.transaction()?;
     let data = json!({"key1": "key1-value", "key2": "key2-value"});
     set(&tx, "ext-id", data)?;
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     let guid = get_mirror_guid(&tx, "ext-id")?;
     
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from(guid),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: json!({"key2": "key2-value"}).to_string(),
-        },
-    })?;
+    let record = make_incoming(&guid, "ext-id", &json!({"key2": "key2-value"}));
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 0);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 0);
     check_finished_with(&tx, "ext-id", json!({"key2": "key2-value"}))?;
     Ok(())
 }
@@ -362,14 +343,8 @@ fn test_merged_no_mirror() -> Result<()> {
     
     
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from("guid"),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: json!({"key2": "key2-value"}).to_string(),
-        },
-    })?;
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 1);
+    let record = make_incoming(&Guid::new("guid"), "ext-id", &json!({"key2": "key2-value"}));
+    assert_eq!(do_sync(&tx, &[record])?.len(), 1);
     check_finished_with(
         &tx,
         "ext-id",
@@ -384,7 +359,7 @@ fn test_merged_incoming() -> Result<()> {
     let tx = db.transaction()?;
     let old_data = json!({"key1": "key1-value", "key2": "key2-value", "doomed_key": "deletable"});
     set(&tx, "ext-id", old_data)?;
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     let guid = get_mirror_guid(&tx, "ext-id")?;
     
     let local_data = json!({"key1": "key1-new", "key2": "key2-value", "doomed_key": "deletable"});
@@ -393,15 +368,13 @@ fn test_merged_incoming() -> Result<()> {
     
     
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from(guid),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: json!({"key1": "key1-value", "key2": "key2-incoming"}).to_string(),
-        },
-    })?;
+    let record = make_incoming(
+        &guid,
+        "ext-id",
+        &json!({"key1": "key1-value", "key2": "key2-incoming"}),
+    );
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 1);
     check_finished_with(
         &tx,
         "ext-id",
@@ -417,7 +390,7 @@ fn test_merged_with_null_payload() -> Result<()> {
     let old_data = json!({"key1": "key1-value"});
     set(&tx, "ext-id", old_data.clone())?;
     
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     let guid = get_mirror_guid(&tx, "ext-id")?;
     assert_eq!(
         get_mirror_data(&tx, &guid),
@@ -426,16 +399,10 @@ fn test_merged_with_null_payload() -> Result<()> {
     let local_data = json!({"key1": "key1-new", "key2": "key2-value"});
     set(&tx, "ext-id", local_data.clone())?;
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from(guid),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: old_data.to_string(),
-        },
-    })?;
+    let record = make_incoming(&guid, "ext-id", &old_data);
     
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 1);
     check_finished_with(&tx, "ext-id", local_data)?;
     Ok(())
 }
@@ -446,16 +413,13 @@ fn test_deleted_mirrored_object_accept() -> Result<()> {
     let tx = db.transaction()?;
     let data = json!({"key1": "key1-value", "key2": "key2-value"});
     set(&tx, "ext-id", data)?;
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     let guid = get_mirror_guid(&tx, "ext-id")?;
     
     
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from(guid.clone()),
-        data: RecordData::Tombstone,
-    })?;
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 0);
+    let record = make_incoming_tombstone(&guid);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 0);
     assert_eq!(get_local_data(&tx, "ext-id"), DbData::NoRow);
     assert_eq!(get_mirror_data(&tx, &guid), DbData::NullRow);
     Ok(())
@@ -466,7 +430,7 @@ fn test_deleted_mirrored_object_merged() -> Result<()> {
     let mut db = new_syncable_mem_db();
     let tx = db.transaction()?;
     set(&tx, "ext-id", json!({"key1": "key1-value"}))?;
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     let guid = get_mirror_guid(&tx, "ext-id")?;
     set(
         &tx,
@@ -476,12 +440,9 @@ fn test_deleted_mirrored_object_merged() -> Result<()> {
     
     
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from(guid),
-        data: RecordData::Tombstone,
-    })?;
+    let record = make_incoming_tombstone(&guid);
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 1);
     check_finished_with(&tx, "ext-id", json!({"key2": "key2-value"}))?;
     Ok(())
 }
@@ -493,25 +454,19 @@ fn test_deleted_mirrored_tombstone_merged() -> Result<()> {
     let tx = db.transaction()?;
     
     set(&tx, "ext-id", json!({"key1": "key1-value"}))?;
-    assert_eq!(do_sync(&tx, vec![])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[])?.len(), 1);
     let guid = get_mirror_guid(&tx, "ext-id")?;
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from(guid.clone()),
-        data: RecordData::Tombstone,
-    })?;
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 0);
+    let record = make_incoming_tombstone(&guid);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 0);
     assert_eq!(get_mirror_data(&tx, &guid), DbData::NullRow);
 
     
     set(&tx, "ext-id", json!({"key2": "key2-value"}))?;
-    let payload = Payload::from_record(Record {
-        guid: Guid::from(guid),
-        data: RecordData::Tombstone,
-    })?;
+    let record = make_incoming_tombstone(&guid);
     
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 1);
     check_finished_with(&tx, "ext-id", json!({"key2": "key2-value"}))?;
     Ok(())
 }
@@ -523,14 +478,11 @@ fn test_deleted_not_mirrored_object_merged() -> Result<()> {
     let data = json!({"key1": "key1-value", "key2": "key2-value"});
     set(&tx, "ext-id", data)?;
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from("guid"),
-        data: RecordData::Tombstone,
-    })?;
+    let record = make_incoming_tombstone(&Guid::new("guid"));
     
     
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 1);
     check_finished_with(
         &tx,
         "ext-id",
@@ -548,19 +500,30 @@ fn test_conflicting_incoming() -> Result<()> {
     
     
     
-    let payload = Payload::from_record(Record {
-        guid: Guid::from("guid"),
-        data: RecordData::Data {
-            ext_id: "ext-id".to_string(),
-            data: json!({"key2": "key2-incoming"}).to_string(),
-        },
-    })?;
+    let record = make_incoming(
+        &Guid::new("guid"),
+        "ext-id",
+        &json!({"key2": "key2-incoming"}),
+    );
     
-    assert_eq!(do_sync(&tx, vec![payload])?.len(), 1);
+    assert_eq!(do_sync(&tx, &[record])?.len(), 1);
     check_finished_with(
         &tx,
         "ext-id",
         json!({"key1": "key1-value", "key2": "key2-incoming"}),
     )?;
+    Ok(())
+}
+
+#[test]
+fn test_invalid_incoming() -> Result<()> {
+    let mut db = new_syncable_mem_db();
+    let tx = db.transaction()?;
+    let json = json!({"id": "id", "payload": json!("").to_string()});
+    let bso = serde_json::from_value::<IncomingBso>(json).unwrap();
+    let record = bso.into_content();
+
+    
+    assert_eq!(do_sync(&tx, &[record])?.len(), 0);
     Ok(())
 }

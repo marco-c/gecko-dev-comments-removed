@@ -12,7 +12,7 @@ mod sync_tests;
 use crate::api::{StorageChanges, StorageValueChange};
 use crate::db::StorageDb;
 use crate::error::*;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use serde_derive::*;
 use sql_support::ConnExt;
 use sync_guid::Guid as SyncGuid;
@@ -24,40 +24,14 @@ type JsonMap = serde_json::Map<String, serde_json::Value>;
 
 pub const STORAGE_VERSION: usize = 1;
 
-
-
-
-
-
-
-
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(untagged)]
-pub enum RecordData {
-    Data {
-        #[serde(rename = "extId")]
-        ext_id: String,
-        data: String,
-    },
-    #[serde(skip_deserializing)]
-    Tombstone,
-}
-
-#[allow(clippy::unnecessary_wraps)]
-fn deserialize_record_data<'de, D>(deserializer: D) -> Result<RecordData, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Ok(RecordData::deserialize(deserializer).unwrap_or(RecordData::Tombstone))
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Record {
+pub struct WebextRecord {
     #[serde(rename = "id")]
     guid: SyncGuid,
-    #[serde(flatten, deserialize_with = "deserialize_record_data")]
-    data: RecordData,
+    #[serde(rename = "extId")]
+    ext_id: String,
+    data: String,
 }
 
 
@@ -221,34 +195,14 @@ mod tests {
     #[test]
     fn test_serde_record_ser() {
         assert_eq!(
-            serde_json::to_string(&Record {
+            serde_json::to_string(&WebextRecord {
                 guid: "guid".into(),
-                data: RecordData::Data {
-                    ext_id: "ext_id".to_string(),
-                    data: "data".to_string()
-                }
+                ext_id: "ext_id".to_string(),
+                data: "data".to_string()
             })
             .unwrap(),
             r#"{"id":"guid","extId":"ext_id","data":"data"}"#
         );
-    }
-
-    #[test]
-    fn test_serde_record_de() {
-        let p: Record = serde_json::from_str(r#"{"id":"guid","deleted":true}"#).unwrap();
-        assert_eq!(p.data, RecordData::Tombstone);
-        let p: Record =
-            serde_json::from_str(r#"{"id":"guid","extId": "ext-id", "data":"foo"}"#).unwrap();
-        assert_eq!(
-            p.data,
-            RecordData::Data {
-                ext_id: "ext-id".into(),
-                data: "foo".into()
-            }
-        );
-        
-        let p: Record = serde_json::from_str(r#"{"id":"guid"}"#).unwrap();
-        assert_eq!(p.data, RecordData::Tombstone);
     }
 
     

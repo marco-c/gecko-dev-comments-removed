@@ -295,7 +295,11 @@ impl MigrationInfo {
                     
                     
                     debug_assert!(false, "Failed to read migration JSON: {:?}", e);
-                    log::error!("Failed to read migration JSON: {}", e);
+                    error_support::report_error!(
+                        "webext-storage-migration-json",
+                        "Failed to read migration JSON: {}",
+                        e
+                    );
                     Ok(None)
                 }
             }

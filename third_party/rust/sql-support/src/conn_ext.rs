@@ -59,6 +59,11 @@ pub trait ConnExt {
     }
 
     
+    fn execute_one(&self, stmt: &str) -> SqlResult<()> {
+        self.execute_all(&[stmt])
+    }
+
+    
     
     fn execute_cached<P: Params>(&self, sql: &str, params: P) -> SqlResult<usize> {
         let mut stmt = self.conn().prepare_cached(sql)?;

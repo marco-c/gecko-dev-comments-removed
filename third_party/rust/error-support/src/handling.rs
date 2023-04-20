@@ -106,10 +106,7 @@ where
         
         
         
-        #[cfg(feature = "reporting")]
-        crate::report_error(report_class, e.to_string());
-        #[cfg(not(feature = "reporting"))]
-        let _ = report_class; 
+        crate::report_error_to_app(report_class, e.to_string());
     }
     handling.err
 }

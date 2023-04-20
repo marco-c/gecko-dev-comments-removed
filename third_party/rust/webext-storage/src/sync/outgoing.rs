@@ -8,28 +8,28 @@
 use interrupt_support::Interruptee;
 use rusqlite::{Connection, Row, Transaction};
 use sql_support::ConnExt;
-use sync15::Payload;
+use sync15::bso::OutgoingBso;
 use sync_guid::Guid as SyncGuid;
 
 use crate::error::*;
 
-use super::{Record, RecordData};
+use super::WebextRecord;
 
-fn outgoing_from_row(row: &Row<'_>) -> Result<Payload> {
+fn outgoing_from_row(row: &Row<'_>) -> Result<OutgoingBso> {
     let guid: SyncGuid = row.get("guid")?;
     let ext_id: String = row.get("ext_id")?;
     let raw_data: Option<String> = row.get("data")?;
-    let payload = match raw_data {
-        Some(raw_data) => Payload::from_record(Record {
-            guid,
-            data: RecordData::Data {
+    Ok(match raw_data {
+        Some(raw_data) => {
+            let record = WebextRecord {
+                guid,
                 ext_id,
                 data: raw_data,
-            },
-        })?,
-        None => Payload::new_tombstone(guid),
-    };
-    Ok(payload)
+            };
+            OutgoingBso::from_content_with_id(record)?
+        }
+        None => OutgoingBso::new_tombstone(guid.into()),
+    })
 }
 
 
@@ -70,7 +70,7 @@ pub fn stage_outgoing(tx: &Transaction<'_>) -> Result<()> {
 }
 
 
-pub fn get_outgoing(conn: &Connection, signal: &dyn Interruptee) -> Result<Vec<Payload>> {
+pub fn get_outgoing(conn: &Connection, signal: &dyn Interruptee) -> Result<Vec<OutgoingBso>> {
     let sql = "SELECT guid, ext_id, data FROM storage_sync_outgoing_staging";
     let elts = conn
         .conn()
@@ -139,13 +139,16 @@ mod tests {
         stage_outgoing(&tx)?;
         let changes = get_outgoing(&tx, &NeverInterrupts)?;
         assert_eq!(changes.len(), 1);
-        assert_eq!(changes[0].data["extId"], "ext_with_changes".to_string());
+        let record: serde_json::Value = serde_json::from_str(&changes[0].payload).unwrap();
+        let ext_id = record.get("extId").unwrap().as_str().unwrap();
+
+        assert_eq!(ext_id, "ext_with_changes");
 
         record_uploaded(
             &tx,
             changes
                 .into_iter()
-                .map(|p| p.id)
+                .map(|p| p.envelope.id)
                 .collect::<Vec<SyncGuid>>()
                 .as_slice(),
             &NeverInterrupts,
@@ -160,20 +163,24 @@ mod tests {
 
     #[test]
     fn test_payload_serialization() {
-        let payload = Payload::from_record(Record {
+        let record = WebextRecord {
             guid: SyncGuid::new("guid"),
-            data: RecordData::Data {
-                ext_id: "ext-id".to_string(),
-                data: "{}".to_string(),
-            },
-        })
-        .unwrap();
+            ext_id: "ext-id".to_string(),
+            data: "{}".to_string(),
+        };
+
+        let outgoing = OutgoingBso::from_content_with_id(record).unwrap();
+
         
-        assert_eq!(payload.id.to_string(), "guid");
-        
-        assert!(!payload.data.contains_key("id"));
-        assert!(payload.data.contains_key("data"));
-        assert!(payload.data.contains_key("extId"));
-        assert_eq!(payload.data.len(), 2);
+        assert_eq!(outgoing.envelope.id, "guid");
+
+        let outgoing_payload =
+            serde_json::from_str::<serde_json::Value>(&outgoing.payload).unwrap();
+        let outgoing_map = outgoing_payload.as_object().unwrap();
+
+        assert!(!outgoing_map.contains_key("id"));
+        assert!(outgoing_map.contains_key("data"));
+        assert!(outgoing_map.contains_key("extId"));
+        assert_eq!(outgoing_map.len(), 2);
     }
 }
