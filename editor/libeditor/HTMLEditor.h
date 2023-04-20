@@ -1946,18 +1946,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Result<bool, nsresult> CanMoveOrDeleteSomethingInHardLine(
-      const EditorDOMPoint& aPointInHardLine,
-      const Element& aEditingHost) const;
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -4502,7 +4490,6 @@ class HTMLEditor final : public EditorBase,
                                     
   friend class
       WhiteSpaceVisibilityKeeper;  
-                                   
                                    
                                    
                                    

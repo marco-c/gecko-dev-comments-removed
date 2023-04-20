@@ -241,6 +241,15 @@ class MOZ_STACK_CLASS HTMLEditor::AutoMoveOneLineHandler final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult> Run(
       HTMLEditor& aHTMLEditor, const Element& aEditingHost);
 
+  
+
+
+
+
+
+  static Result<bool, nsresult> CanMoveOrDeleteSomethingInLine(
+      const EditorDOMPoint& aPointInHardLine, const Element& aEditingHost);
+
   AutoMoveOneLineHandler(const AutoMoveOneLineHandler& aOther) = delete;
   AutoMoveOneLineHandler(AutoMoveOneLineHandler&& aOther) = delete;
 

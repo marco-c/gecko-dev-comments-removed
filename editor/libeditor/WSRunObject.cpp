@@ -289,7 +289,7 @@ Result<EditActionResult, nsresult> WhiteSpaceVisibilityKeeper::
                  "The relation is not guaranteed but assumed");
 #ifdef DEBUG
     Result<bool, nsresult> firstLineHasContent =
-        aHTMLEditor.CanMoveOrDeleteSomethingInHardLine(
+        HTMLEditor::AutoMoveOneLineHandler::CanMoveOrDeleteSomethingInLine(
             EditorDOMPoint(rightBlockElement, afterRightBlockChild.Offset()),
             aEditingHost);
 #endif  
@@ -536,7 +536,7 @@ Result<EditActionResult, nsresult> WhiteSpaceVisibilityKeeper::
 
 #ifdef DEBUG
     Result<bool, nsresult> firstLineHasContent =
-        aHTMLEditor.CanMoveOrDeleteSomethingInHardLine(
+        HTMLEditor::AutoMoveOneLineHandler::CanMoveOrDeleteSomethingInLine(
             EditorDOMPoint(&aRightBlockElement, 0u), aEditingHost);
 #endif  
 
@@ -720,7 +720,7 @@ Result<EditActionResult, nsresult> WhiteSpaceVisibilityKeeper::
   } else {
 #ifdef DEBUG
     Result<bool, nsresult> firstLineHasContent =
-        aHTMLEditor.CanMoveOrDeleteSomethingInHardLine(
+        HTMLEditor::AutoMoveOneLineHandler::CanMoveOrDeleteSomethingInLine(
             EditorDOMPoint(&aRightBlockElement, 0u), aEditingHost);
 #endif  
 
