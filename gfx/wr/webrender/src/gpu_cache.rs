@@ -47,7 +47,7 @@ pub const GPU_CACHE_INITIAL_HEIGHT: i32 = 20;
 const NEW_ROWS_PER_RESIZE: i32 = 10;
 
 
-const FRAMES_BEFORE_EVICTION: usize = 10;
+const FRAMES_BEFORE_EVICTION: u64 = 10;
 
 
 
