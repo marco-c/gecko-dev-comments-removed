@@ -284,7 +284,7 @@ template <typename Unit>
 #endif  
 
   if (input.options.selfHostingMode) {
-    if (!input.initForSelfHostingGlobal(cx)) {
+    if (!input.initForSelfHostingGlobal(fc)) {
       return false;
     }
   } else {
