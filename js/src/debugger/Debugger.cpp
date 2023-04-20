@@ -950,6 +950,7 @@ NativeResumeMode DebugAPI::slowPathOnNativeCall(JSContext* cx,
   
   
   
+  
   if (!cx->insideDebuggerEvaluationWithOnNativeCallHook) {
     return NativeResumeMode::Continue;
   }

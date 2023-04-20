@@ -2360,6 +2360,11 @@ Maybe<Completion> DebuggerObject::call(JSContext* cx,
   }
 
   
+  
+  AutoNoteDebuggerEvaluationWithOnNativeCallHook noteEvaluation(
+      cx, dbg->observesNativeCalls() ? dbg : nullptr);
+
+  
   LeaveDebuggeeNoExecute nnx(cx);
 
   RootedValue result(cx);
