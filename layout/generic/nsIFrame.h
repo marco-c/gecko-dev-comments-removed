@@ -1301,6 +1301,8 @@ class nsIFrame : public nsQueryFrame {
   
   
   struct PageValues {
+    PageValues() = default;
+    PageValues(const PageValues& other) = default;
     
     
     RefPtr<const nsAtom> mStartPageValue = nullptr;
@@ -1309,16 +1311,14 @@ class nsIFrame : public nsQueryFrame {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(PageValuesProperty, PageValues)
 
   const nsAtom* GetStartPageValue() const {
-    if (const PageValues* const values =
-            FirstInFlow()->GetProperty(PageValuesProperty())) {
+    if (const PageValues* const values = GetProperty(PageValuesProperty())) {
       return values->mStartPageValue;
     }
     return nullptr;
   }
 
   const nsAtom* GetEndPageValue() const {
-    if (const PageValues* const values =
-            FirstInFlow()->GetProperty(PageValuesProperty())) {
+    if (const PageValues* const values = GetProperty(PageValuesProperty())) {
       return values->mEndPageValue;
     }
     return nullptr;
