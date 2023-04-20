@@ -1,0 +1,6 @@
+import { ExpressionBuilder } from '../expression.js';
+
+
+export function unary(op: string): ExpressionBuilder {
+  return value => `${op}(${value})`;
+}

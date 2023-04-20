@@ -1,0 +1,10 @@
+
+
+
+
+export class StacklessError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.stack = undefined;
+  }
+}

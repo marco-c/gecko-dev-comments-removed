@@ -1,0 +1,2 @@
+
+export const validQueryPart = /^[a-zA-Z0-9_]+$/;

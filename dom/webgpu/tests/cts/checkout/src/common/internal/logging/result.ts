@@ -1,0 +1,21 @@
+import { LogMessageWithStack } from './log_message.js';
+
+
+export type Expectation = 'pass' | 'skip' | 'fail';
+
+export type Status = 'running' | 'warn' | Expectation;
+
+export interface TestCaseResult {
+  status: Status;
+  timems: number;
+}
+
+export interface LiveTestCaseResult extends TestCaseResult {
+  logs?: LogMessageWithStack[];
+}
+
+export interface TransferredTestCaseResult extends TestCaseResult {
+  
+  
+  logs?: Error[];
+}

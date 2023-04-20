@@ -1,0 +1,6 @@
+import { ExpressionBuilder } from '../../expression.js';
+
+
+export function builtin(name: string): ExpressionBuilder {
+  return values => `${name}(${values.join(', ')})`;
+}
