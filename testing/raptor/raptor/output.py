@@ -1751,6 +1751,15 @@ class BrowsertimeOutput(PerftestOutput):
                 },
             )
             
+            for alert_option, schema_name in (
+                ("min_back_window", "minBackWindow"),
+                ("max_back_window", "maxBackWindow"),
+                ("fore_window", "foreWindow"),
+            ):
+                if test.get(alert_option, None) is not None:
+                    suite[schema_name] = int(test[alert_option])
+
+            
             if self.app in ("chrome", "chrome-m", "chromium"):
                 suite["shouldAlert"] = False
             
