@@ -13,6 +13,11 @@ def js_standalone(build_project):
 
 
 
+set_define("JS_DEBUG", True, when=moz_debug)
+
+
+
+
 option(
     "--with-app-name",
     env="MOZ_APP_NAME",
