@@ -1,7 +1,7 @@
 
 'use strict';
 
-const {expectAccessAllowed, testPrefix, topLevelDocument} = processQueryParams();
+const {testPrefix, topLevelDocument} = processQueryParams();
 
 
 test(() => {
