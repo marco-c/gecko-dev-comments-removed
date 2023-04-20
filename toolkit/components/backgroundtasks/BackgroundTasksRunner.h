@@ -7,35 +7,16 @@
 #define TOOLKIT_COMPONENTS_BACKGROUNDTASKS_BACKGROUNDTASKSRUNNER_H_
 
 #include "nsString.h"
+#include "nsIBackgroundTasksRunner.h"
 
 namespace mozilla {
 
-class BackgroundTasksRunner final {
+class BackgroundTasksRunner final : public nsIBackgroundTasksRunner {
  public:
-  
-
-
-
-
-
-
-
-
-
-
-  static nsresult RunInDetachedProcess(const nsACString& aTaskName,
-                                       const nsTArray<nsCString>& aArgs);
-
-  
-
-
-
-
-
-
-  static nsresult RemoveDirectoryInDetachedProcess(
-      const nsCString& aParentDirPath, const nsCString& aChildDirName,
-      const nsCString& aSecondsToWait, const nsCString& aOtherFoldersSuffix);
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIBACKGROUNDTASKSRUNNER
+ protected:
+  ~BackgroundTasksRunner() = default;
 };
 
 }  
