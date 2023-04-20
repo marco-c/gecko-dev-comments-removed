@@ -7,6 +7,7 @@
 #ifndef mozilla_URLQueryStringStripper_h
 #define mozilla_URLQueryStringStripper_h
 
+#include "nsIURLQueryStringStripper.h"
 #include "nsIURLQueryStrippingListService.h"
 
 #include "nsStringFwd.h"
@@ -16,42 +17,27 @@ class nsIURI;
 
 namespace mozilla {
 
-
-
-
-
-
-
-
-
-
-
-
-class URLQueryStringStripper final : public nsIURLQueryStrippingListObserver {
- public:
+class URLQueryStringStripper final : public nsIURLQueryStringStripper,
+                                     public nsIURLQueryStrippingListObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIURLQUERYSTRIPPINGLISTOBSERVER
 
-  
-  
-  
-  static uint32_t Strip(nsIURI* aURI, bool aIsPBM, nsCOMPtr<nsIURI>& aOutput);
+  NS_DECL_NSIURLQUERYSTRINGSTRIPPER
 
-  
-  static void TestGetStripList(nsACString& aStripList);
+ public:
+  static already_AddRefed<URLQueryStringStripper> GetSingleton();
 
  private:
   URLQueryStringStripper();
   ~URLQueryStringStripper() = default;
 
-  static URLQueryStringStripper* GetOrCreate();
-
   static void OnPrefChange(const char* aPref, void* aData);
 
-  nsresult Init();
-  nsresult Shutdown();
+  [[nodiscard]] nsresult Init();
+  [[nodiscard]] nsresult Shutdown();
 
-  uint32_t StripQueryString(nsIURI* aURI, nsCOMPtr<nsIURI>& aOutput);
+  nsresult StripQueryString(nsIURI* aURI, nsIURI** aOutput,
+                            uint32_t* aStripCount);
 
   bool CheckAllowList(nsIURI* aURI);
 
