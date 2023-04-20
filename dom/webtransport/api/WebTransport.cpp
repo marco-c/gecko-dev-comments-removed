@@ -12,7 +12,9 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PWebTransport.h"
 #include "mozilla/dom/ReadableStream.h"
+#include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/WebTransportDatagramDuplexStream.h"
+#include "mozilla/dom/WebTransportError.h"
 #include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/ipc/BackgroundChild.h"
@@ -301,6 +303,91 @@ already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
 
 already_AddRefed<ReadableStream> WebTransport::IncomingUnidirectionalStreams() {
   return do_AddRef(mIncomingUnidirectionalStreams);
+}
+
+
+
+void WebTransport::Cleanup(WebTransportError* aError,
+                           const WebTransportCloseInfo* aCloseInfo,
+                           ErrorResult& aRv) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<WritableStream>> sendStreams;
+  sendStreams.SwapElements(mSendStreams);
+  nsTArray<RefPtr<ReadableStream>> receiveStreams;
+  receiveStreams.SwapElements(mReceiveStreams);
+
+  
+  
+  mState = aCloseInfo ? WebTransportState::CLOSED : WebTransportState::FAILED;
+
+  
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mGlobal)) {
+    aRv.ThrowUnknownError("Internal error");
+    return;
+  }
+  JSContext* cx = jsapi.cx();
+  JS::Rooted<JS::Value> errorValue(cx);
+  bool ok = ToJSValue(cx, aError, &errorValue);
+  if (!ok) {
+    aRv.ThrowUnknownError("Internal error");
+    return;
+  }
+
+  
+  for (const auto& stream : sendStreams) {
+    RefPtr<WritableStreamDefaultController> controller = stream->Controller();
+    WritableStreamDefaultControllerErrorIfNeeded(cx, controller, errorValue,
+                                                 IgnoreErrors());
+  }
+  
+  
+  for (const auto& stream : receiveStreams) {
+    RefPtr<ReadableStreamDefaultController> controller =
+        stream->Controller()->AsDefault();
+    
+    ReadableStreamDefaultControllerError(cx, controller, errorValue,
+                                         IgnoreErrors());
+  }
+  
+  if (aCloseInfo) {
+    
+    mClosed->MaybeResolve(aCloseInfo);
+    
+    MOZ_ASSERT(mReady->State() != Promise::PromiseState::Pending);
+    
+    RefPtr<ReadableStream> stream = mIncomingBidirectionalStreams;
+    stream->CloseNative(cx, IgnoreErrors());
+    
+    stream = mIncomingUnidirectionalStreams;
+    stream->CloseNative(cx, IgnoreErrors());
+  } else {
+    
+    
+    mClosed->MaybeReject(errorValue);
+    
+    mReady->MaybeReject(errorValue);
+    
+    RefPtr<ReadableStreamDefaultController> controller =
+        mIncomingBidirectionalStreams->Controller()->AsDefault();
+    
+    ReadableStreamDefaultControllerError(cx, controller, errorValue,
+                                         IgnoreErrors());
+    
+    controller = mIncomingUnidirectionalStreams->Controller()->AsDefault();
+    ReadableStreamDefaultControllerError(cx, controller, errorValue,
+                                         IgnoreErrors());
+  }
 }
 
 }  
