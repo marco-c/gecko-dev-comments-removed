@@ -1350,15 +1350,6 @@ loader.lazyRequireGetter(
 
 
 
-loader.lazyRequireGetter(
-  LegacyListeners,
-  ResourceCommand.TYPES.LAST_PRIVATE_CONTEXT_EXIT,
-  "resource://devtools/shared/commands/resource/legacy-listeners/last-private-context-exit.js"
-);
-
-
-
-
 
 const ResourceTransformers = {};
 
