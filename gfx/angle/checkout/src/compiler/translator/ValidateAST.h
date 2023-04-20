@@ -24,18 +24,42 @@ struct ValidateASTOptions
     
     bool validateSingleParent = true;
     
+    
     bool validateVariableReferences = true;
     
     
+    bool validateSpecConstReferences = false;
     
-    bool validateFunctionCall = true;  
+    
+    bool validateBuiltInOps = true;
+    
+    
+    
+    bool validateFunctionCall = true;
+    
+    
+    bool validateNoRawFunctionCalls = true;
     
     
     bool validateNullNodes = true;
     
     
     
-    bool validateQualifiers = true;  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool validateQualifiers = true;
+    
+    
+    bool validatePrecision = true;
     
     
     bool validateInitializers = true;  
@@ -43,14 +67,36 @@ struct ValidateASTOptions
     
     bool validateUniqueFunctions = true;  
     
-    
-    
-    
     bool validateStructUsage = true;
     
-    bool validateExpressionTypes = true;  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool validateExpressionTypes = true;
     
     bool validateMultiDeclarations = false;
+    
+    
+    bool validateNoStatementsAfterBranch = false;
+    
+    
+    bool validateNoSwizzleOfSwizzle = true;
+
+    
+    
+    bool validateNoMoreTransformations = false;
 };
 
 

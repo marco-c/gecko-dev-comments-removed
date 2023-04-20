@@ -17,14 +17,11 @@ struct TPragma
     };
 
     
-    
-    
-    TPragma() : optimize(true), debug(false), debugShaderPrecision(true) {}
-    TPragma(bool o, bool d) : optimize(o), debug(d), debugShaderPrecision(true) {}
+    TPragma() : optimize(true), debug(false) {}
+    TPragma(bool o, bool d) : optimize(o), debug(d) {}
 
     bool optimize;
     bool debug;
-    bool debugShaderPrecision;
     STDGL stdgl;
 };
 

@@ -94,7 +94,7 @@ class TIntermTraverser : angle::NonCopyable
     
     
     
-    ANGLE_NO_DISCARD bool updateTree(TCompiler *compiler, TIntermNode *node);
+    [[nodiscard]] bool updateTree(TCompiler *compiler, TIntermNode *node);
 
   protected:
     void setMaxAllowedDepth(int depth);
@@ -111,9 +111,10 @@ class TIntermTraverser : angle::NonCopyable
     void decrementDepth() { mPath.pop_back(); }
 
     int getCurrentTraversalDepth() const { return static_cast<int>(mPath.size()) - 1; }
+    int getCurrentBlockDepth() const { return static_cast<int>(mParentBlockStack.size()) - 1; }
 
     
-    class ScopedNodeInTraversalPath
+    class [[nodiscard]] ScopedNodeInTraversalPath
     {
       public:
         ScopedNodeInTraversalPath(TIntermTraverser *traverser, TIntermNode *current)
@@ -147,6 +148,22 @@ class TIntermTraverser : angle::NonCopyable
             return mPath[mPath.size() - n - 2u];
         }
         return nullptr;
+    }
+
+    
+    
+    
+    size_t getParentChildIndex(Visit visit) const
+    {
+        ASSERT(visit == PreVisit);
+        return mCurrentChildIndex;
+    }
+    
+    
+    size_t getLastTraversedChildIndex(Visit visit) const
+    {
+        ASSERT(visit != PreVisit);
+        return mCurrentChildIndex;
     }
 
     const TIntermBlock *getParentBlock() const;
@@ -213,6 +230,30 @@ class TIntermTraverser : angle::NonCopyable
                                     TIntermNode *original,
                                     TIntermNode *replacement,
                                     OriginalNode originalStatus);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    void queueAccessChainReplacement(TIntermTyped *replacement);
 
     const bool preVisit;
     const bool inVisit;
@@ -287,6 +328,8 @@ class TIntermTraverser : angle::NonCopyable
 
     
     TVector<TIntermNode *> mPath;
+    
+    size_t mCurrentChildIndex;
 
     
     std::vector<ParentBlock> mParentBlockStack;

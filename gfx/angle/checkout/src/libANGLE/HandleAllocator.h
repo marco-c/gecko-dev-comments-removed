@@ -39,8 +39,6 @@ class HandleAllocator final : angle::NonCopyable
   private:
     GLuint mBaseValue;
     GLuint mNextValue;
-    typedef std::vector<GLuint> HandleList;
-    HandleList mFreeValues;
 
     
     struct HandleRange

@@ -38,7 +38,6 @@
 
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-#include <wayland-client.h>
 #include "vulkan_wayland.h"
 #endif
 
@@ -84,7 +83,6 @@
 #include <screen/screen.h>
 #include "vulkan_screen.h"
 #endif
-
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 #include "vulkan_beta.h"

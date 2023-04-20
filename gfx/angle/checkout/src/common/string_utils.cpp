@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <sstream>
 
@@ -206,6 +207,31 @@ bool EndsWith(const char *str, const char *suffix)
     return EndsWithSuffix(str, strlen(str), suffix, strlen(suffix));
 }
 
+bool ContainsToken(const std::string &tokenStr, char delimiter, const std::string &token)
+{
+    if (token.empty())
+    {
+        return false;
+    }
+    
+    std::string::size_type start = 0u;
+    do
+    {
+        std::string::size_type end = tokenStr.find(delimiter, start);
+        if (end == std::string::npos)
+        {
+            end = tokenStr.length();
+        }
+        const std::string::size_type length = end - start;
+        if (length == token.length() && tokenStr.compare(start, length, token) == 0)
+        {
+            return true;
+        }
+        start = end + 1u;
+    } while (start < tokenStr.size());
+    return false;
+}
+
 void ToLower(std::string *str)
 {
     for (char &ch : *str)
@@ -235,6 +261,42 @@ bool ReplaceSubstring(std::string *str,
     return true;
 }
 
+int ReplaceAllSubstrings(std::string *str,
+                         const std::string &substring,
+                         const std::string &replacement)
+{
+    int count = 0;
+    while (ReplaceSubstring(str, substring, replacement))
+    {
+        count++;
+    }
+    return count;
+}
+
+std::string ToCamelCase(const std::string &str)
+{
+    std::string result;
+
+    bool lastWasUnderscore = false;
+    for (char c : str)
+    {
+        if (c == '_')
+        {
+            lastWasUnderscore = true;
+            continue;
+        }
+
+        if (lastWasUnderscore)
+        {
+            c                 = static_cast<char>(std::toupper(c));
+            lastWasUnderscore = false;
+        }
+        result += c;
+    }
+
+    return result;
+}
+
 std::vector<std::string> GetStringsFromEnvironmentVarOrAndroidProperty(const char *varName,
                                                                        const char *propertyName,
                                                                        const char *separator)
@@ -253,25 +315,25 @@ std::vector<std::string> GetCachedStringsFromEnvironmentVarOrAndroidProperty(
 }
 
 
-bool NamesMatchWithWildcard(const char *ref, const char *testName)
+bool NamesMatchWithWildcard(const char *glob, const char *name)
 {
     
-    const char *firstWildcard = strchr(ref, '*');
+    const char *firstWildcard = strchr(glob, '*');
 
     
     if (firstWildcard == nullptr)
     {
-        return strcmp(ref, testName) == 0;
+        return strcmp(glob, name) == 0;
     }
 
     
-    size_t preWildcardLen = firstWildcard - ref;
-    if (strncmp(ref, testName, preWildcardLen) != 0)
+    size_t preWildcardLen = firstWildcard - glob;
+    if (strncmp(glob, name, preWildcardLen) != 0)
     {
         return false;
     }
 
-    const char *postWildcardRef = ref + preWildcardLen + 1;
+    const char *postWildcardRef = glob + preWildcardLen + 1;
 
     
     
@@ -281,9 +343,9 @@ bool NamesMatchWithWildcard(const char *ref, const char *testName)
     }
 
     
-    for (size_t matchSize = 0; testName[matchSize] != '\0'; ++matchSize)
+    for (size_t matchSize = 0; name[matchSize] != '\0'; ++matchSize)
     {
-        if (NamesMatchWithWildcard(postWildcardRef, testName + matchSize))
+        if (NamesMatchWithWildcard(postWildcardRef, name + matchSize))
         {
             return true;
         }

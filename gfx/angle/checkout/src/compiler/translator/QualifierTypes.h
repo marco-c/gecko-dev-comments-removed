@@ -198,7 +198,8 @@ class TTypeQualifierBuilder : angle::NonCopyable
     
     
     
-    TTypeQualifier getParameterTypeQualifier(TDiagnostics *diagnostics) const;
+    TTypeQualifier getParameterTypeQualifier(TBasicType parameterBasicType,
+                                             TDiagnostics *diagnostics) const;
     
     
     TTypeQualifier getVariableTypeQualifier(TDiagnostics *diagnostics) const;

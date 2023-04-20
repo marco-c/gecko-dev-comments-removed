@@ -15,9 +15,6 @@
 #include <string>
 #include <vector>
 
-
-using ShCompileOptions = uint64_t;
-
 namespace sh
 {
 
@@ -33,6 +30,8 @@ enum InterpolationType
     INTERPOLATION_NOPERSPECTIVE
 };
 
+const char *InterpolationTypeToString(InterpolationType type);
+
 
 bool InterpolationTypesMatch(InterpolationType a, InterpolationType b);
 
@@ -46,12 +45,16 @@ enum BlockLayoutType
     BLOCKLAYOUT_SHARED
 };
 
+const char *BlockLayoutTypeToString(BlockLayoutType type);
+
 
 enum class BlockType
 {
     BLOCK_UNIFORM,
     BLOCK_BUFFER,
 };
+
+const char *BlockTypeToString(BlockType type);
 
 
 
@@ -210,6 +213,7 @@ struct ShaderVariable
     int binding;
     GLenum imageUnitFormat;
     int offset;
+    bool rasterOrdered;
     bool readonly;
     bool writeonly;
 

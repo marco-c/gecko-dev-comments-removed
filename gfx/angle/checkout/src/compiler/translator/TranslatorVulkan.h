@@ -27,31 +27,32 @@ class TranslatorVulkan : public TCompiler
     TranslatorVulkan(sh::GLenum type, ShShaderSpec spec);
 
   protected:
-    ANGLE_NO_DISCARD bool translate(TIntermBlock *root,
-                                    ShCompileOptions compileOptions,
-                                    PerformanceDiagnostics *perfDiagnostics) override;
+    [[nodiscard]] bool translate(TIntermBlock *root,
+                                 const ShCompileOptions &compileOptions,
+                                 PerformanceDiagnostics *perfDiagnostics) override;
     bool shouldFlattenPragmaStdglInvariantAll() override;
 
     
     
-    ANGLE_NO_DISCARD bool translateImpl(TInfoSinkBase &sink,
-                                        TIntermBlock *root,
-                                        ShCompileOptions compileOptions,
-                                        PerformanceDiagnostics *perfDiagnostics,
-                                        SpecConst *specConst,
-                                        DriverUniform *driverUniforms);
+    [[nodiscard]] bool translateImpl(TInfoSinkBase &sink,
+                                     TIntermBlock *root,
+                                     const ShCompileOptions &compileOptions,
+                                     PerformanceDiagnostics *perfDiagnostics,
+                                     SpecConst *specConst,
+                                     DriverUniform *driverUniforms);
+
+    void writeExtensionBehavior(const ShCompileOptions &compileOptions, TInfoSinkBase &sink);
 
     
     
-    ANGLE_NO_DISCARD virtual bool transformDepthBeforeCorrection(
-        TIntermBlock *root,
-        const DriverUniform *driverUniforms)
+    [[nodiscard]] virtual bool transformDepthBeforeCorrection(TIntermBlock *root,
+                                                              const DriverUniform *driverUniforms)
     {
         return true;
     }
 
     
-    ANGLE_NO_DISCARD bool compileToSpirv(const TInfoSinkBase &glsl);
+    [[nodiscard]] bool compileToSpirv(const TInfoSinkBase &glsl);
 };
 
 }  

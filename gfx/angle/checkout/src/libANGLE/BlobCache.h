@@ -97,6 +97,12 @@ class BlobCache final : angle::NonCopyable
     void put(const BlobCache::Key &key, angle::MemoryBuffer &&value);
 
     
+    
+    bool compressAndPut(const BlobCache::Key &key,
+                        angle::MemoryBuffer &&uncompressedValue,
+                        size_t *compressedSize);
+
+    
     void putApplication(const BlobCache::Key &key, const angle::MemoryBuffer &value);
 
     
@@ -107,15 +113,26 @@ class BlobCache final : angle::NonCopyable
 
     
     
-    ANGLE_NO_DISCARD bool get(angle::ScratchBuffer *scratchBuffer,
-                              const BlobCache::Key &key,
-                              BlobCache::Value *valueOut,
-                              size_t *bufferSizeOut);
+    [[nodiscard]] bool get(angle::ScratchBuffer *scratchBuffer,
+                           const BlobCache::Key &key,
+                           BlobCache::Value *valueOut,
+                           size_t *bufferSizeOut);
 
     
-    ANGLE_NO_DISCARD bool getAt(size_t index,
-                                const BlobCache::Key **keyOut,
-                                BlobCache::Value *valueOut);
+    [[nodiscard]] bool getAt(size_t index,
+                             const BlobCache::Key **keyOut,
+                             BlobCache::Value *valueOut);
+
+    enum class GetAndDecompressResult
+    {
+        GetSuccess,
+        NotFound,
+        DecompressFailure,
+    };
+    [[nodiscard]] GetAndDecompressResult getAndDecompress(
+        angle::ScratchBuffer *scratchBuffer,
+        const BlobCache::Key &key,
+        angle::MemoryBuffer *uncompressedValueOut);
 
     
     void remove(const BlobCache::Key &key);
@@ -147,11 +164,13 @@ class BlobCache final : angle::NonCopyable
 
     bool isCachingEnabled() const { return areBlobCacheFuncsSet() || maxSize() > 0; }
 
+    std::mutex &getMutex() { return mBlobCacheMutex; }
+
   private:
     
     using CacheEntry = std::pair<angle::MemoryBuffer, CacheSource>;
 
-    std::mutex mBlobCacheMutex;
+    mutable std::mutex mBlobCacheMutex;
     angle::SizedMRUCache<BlobCache::Key, CacheEntry> mBlobCache;
 
     EGLSetBlobFuncANDROID mSetBlobFunc;

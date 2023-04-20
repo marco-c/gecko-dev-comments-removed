@@ -117,11 +117,8 @@ class FramebufferAttachment final
     bool isMultiview() const;
     GLint getBaseViewIndex() const;
 
-    bool isRenderToTexture() const
-    {
-        return mRenderToTextureSamples != kDefaultRenderToTextureSamples;
-    }
-    GLsizei getRenderToTextureSamples() const { return mRenderToTextureSamples; }
+    bool isRenderToTexture() const;
+    GLsizei getRenderToTextureSamples() const;
 
     
     
@@ -136,6 +133,7 @@ class FramebufferAttachment final
     bool isAttached() const { return mType != GL_NONE; }
     bool isRenderable(const Context *context) const;
     bool isYUV() const;
+    bool isCreatedWithAHB() const;
 
     Renderbuffer *getRenderbuffer() const;
     Texture *getTexture() const;
@@ -195,6 +193,14 @@ class FramebufferAttachment final
     GLsizei mNumViews;
     bool mIsMultiview;
     GLint mBaseViewIndex;
+    
+    
+    
+    
+    
+    
+    
+    
     GLsizei mRenderToTextureSamples;
 };
 
@@ -212,14 +218,18 @@ class FramebufferAttachmentObject : public angle::Subject, public angle::Observe
                               GLenum binding,
                               const ImageIndex &imageIndex) const                          = 0;
     virtual bool isYUV() const                                                             = 0;
+    virtual bool isCreatedWithAHB() const                                                  = 0;
+    virtual bool hasProtectedContent() const                                               = 0;
 
     virtual void onAttach(const Context *context, rx::Serial framebufferSerial) = 0;
     virtual void onDetach(const Context *context, rx::Serial framebufferSerial) = 0;
     virtual GLuint getId() const                                                = 0;
 
     
-    virtual InitState initState(const ImageIndex &imageIndex) const              = 0;
-    virtual void setInitState(const ImageIndex &imageIndex, InitState initState) = 0;
+    virtual InitState initState(GLenum binding, const ImageIndex &imageIndex) const = 0;
+    virtual void setInitState(GLenum binding,
+                              const ImageIndex &imageIndex,
+                              InitState initState)                                  = 0;
 
     angle::Result getAttachmentRenderTarget(const Context *context,
                                             GLenum binding,
@@ -227,7 +237,9 @@ class FramebufferAttachmentObject : public angle::Subject, public angle::Observe
                                             GLsizei samples,
                                             rx::FramebufferAttachmentRenderTarget **rtOut) const;
 
-    angle::Result initializeContents(const Context *context, const ImageIndex &imageIndex);
+    angle::Result initializeContents(const Context *context,
+                                     GLenum binding,
+                                     const ImageIndex &imageIndex);
 
   protected:
     virtual rx::FramebufferAttachmentObjectImpl *getAttachmentImpl() const = 0;
@@ -253,8 +265,7 @@ inline Format FramebufferAttachment::getFormat() const
 
 inline GLsizei FramebufferAttachment::getSamples() const
 {
-    return (mRenderToTextureSamples != kDefaultRenderToTextureSamples) ? getRenderToTextureSamples()
-                                                                       : getResourceSamples();
+    return isRenderToTexture() ? getRenderToTextureSamples() : getResourceSamples();
 }
 
 inline GLsizei FramebufferAttachment::getResourceSamples() const
@@ -283,6 +294,12 @@ inline bool FramebufferAttachment::isYUV() const
 {
     ASSERT(mResource);
     return mResource->isYUV();
+}
+
+inline bool FramebufferAttachment::isCreatedWithAHB() const
+{
+    ASSERT(mResource);
+    return mResource->isCreatedWithAHB();
 }
 
 }  

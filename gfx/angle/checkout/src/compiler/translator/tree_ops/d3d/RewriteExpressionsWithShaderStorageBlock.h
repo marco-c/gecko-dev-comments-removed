@@ -29,9 +29,9 @@ class TCompiler;
 class TIntermNode;
 class TSymbolTable;
 
-ANGLE_NO_DISCARD bool RewriteExpressionsWithShaderStorageBlock(TCompiler *compiler,
-                                                               TIntermNode *root,
-                                                               TSymbolTable *symbolTable);
+[[nodiscard]] bool RewriteExpressionsWithShaderStorageBlock(TCompiler *compiler,
+                                                            TIntermNode *root,
+                                                            TSymbolTable *symbolTable);
 }  
 
 #endif  

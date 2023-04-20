@@ -22,8 +22,11 @@ namespace sh
 {
 class TCompiler;
 class TIntermNode;
+class TSymbolTable;
 
-ANGLE_NO_DISCARD bool SeparateDeclarations(TCompiler *compiler, TIntermNode *root);
+[[nodiscard]] bool SeparateDeclarations(TCompiler *compiler,
+                                        TIntermNode *root,
+                                        TSymbolTable *symbolTable);
 }  
 
 #endif  

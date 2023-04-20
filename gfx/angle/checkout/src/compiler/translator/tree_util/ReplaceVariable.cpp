@@ -104,19 +104,19 @@ class GetDeclaratorReplacementsTraverser : public TIntermTraverser
 }  
 
 
-ANGLE_NO_DISCARD bool ReplaceVariable(TCompiler *compiler,
-                                      TIntermBlock *root,
-                                      const TVariable *toBeReplaced,
-                                      const TVariable *replacement)
+[[nodiscard]] bool ReplaceVariable(TCompiler *compiler,
+                                   TIntermBlock *root,
+                                   const TVariable *toBeReplaced,
+                                   const TVariable *replacement)
 {
     ReplaceVariableTraverser traverser(toBeReplaced, new TIntermSymbol(replacement));
     root->traverse(&traverser);
     return traverser.updateTree(compiler, root);
 }
 
-ANGLE_NO_DISCARD bool ReplaceVariables(TCompiler *compiler,
-                                       TIntermBlock *root,
-                                       const VariableReplacementMap &variableMap)
+[[nodiscard]] bool ReplaceVariables(TCompiler *compiler,
+                                    TIntermBlock *root,
+                                    const VariableReplacementMap &variableMap)
 {
     ReplaceVariablesTraverser traverser(variableMap);
     root->traverse(&traverser);
@@ -132,10 +132,10 @@ void GetDeclaratorReplacements(TSymbolTable *symbolTable,
 }
 
 
-ANGLE_NO_DISCARD bool ReplaceVariableWithTyped(TCompiler *compiler,
-                                               TIntermBlock *root,
-                                               const TVariable *toBeReplaced,
-                                               const TIntermTyped *replacement)
+[[nodiscard]] bool ReplaceVariableWithTyped(TCompiler *compiler,
+                                            TIntermBlock *root,
+                                            const TVariable *toBeReplaced,
+                                            const TIntermTyped *replacement)
 {
     ReplaceVariableTraverser traverser(toBeReplaced, replacement);
     root->traverse(&traverser);

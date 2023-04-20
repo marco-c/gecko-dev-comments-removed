@@ -52,12 +52,12 @@ d3d11::BlendStateKey RenderStateCache::GetBlendStateKey(const gl::Context *conte
     
     
     
-    key.blendStateExt                      = gl::BlendStateExt(blendStateExt.mMaxDrawBuffers);
+    key.blendStateExt                      = gl::BlendStateExt(blendStateExt.getDrawBufferCount());
     const gl::AttachmentList &colorbuffers = framebuffer11->getColorAttachmentsForRender(context);
     const gl::DrawBufferMask colorAttachmentsForRenderMask =
         framebuffer11->getLastColorAttachmentsForRenderMask();
 
-    ASSERT(blendStateExt.mMaxDrawBuffers <= colorAttachmentsForRenderMask.size());
+    ASSERT(blendStateExt.getDrawBufferCount() <= colorAttachmentsForRenderMask.size());
     ASSERT(colorbuffers.size() == colorAttachmentsForRenderMask.count());
 
     size_t keyBlendIndex = 0;
@@ -89,7 +89,7 @@ d3d11::BlendStateKey RenderStateCache::GetBlendStateKey(const gl::Context *conte
         
         
         
-        if (blendStateExt.mEnabledMask.test(sourceIndex) && !internalFormat.isInt())
+        if (blendStateExt.getEnabledMask().test(sourceIndex) && !internalFormat.isInt())
         {
             key.blendStateExt.setEnabledIndexed(keyBlendIndex, true);
             key.blendStateExt.setEquationsIndexed(keyBlendIndex, sourceIndex, blendStateExt);
@@ -127,11 +127,11 @@ angle::Result RenderStateCache::getBlendState(const gl::Context *context,
     
     
 
-    for (size_t i = 0; i < blendStateExt.mMaxDrawBuffers; i++)
+    for (size_t i = 0; i < blendStateExt.getDrawBufferCount(); i++)
     {
         D3D11_RENDER_TARGET_BLEND_DESC &rtDesc = blendDesc.RenderTarget[i];
 
-        if (blendStateExt.mEnabledMask.test(i))
+        if (blendStateExt.getEnabledMask().test(i))
         {
             rtDesc.BlendEnable = true;
             rtDesc.SrcBlend =

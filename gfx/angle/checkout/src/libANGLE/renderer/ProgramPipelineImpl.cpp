@@ -18,4 +18,9 @@ angle::Result ProgramPipelineImpl::link(const gl::Context *context,
     return angle::Result::Continue;
 }
 
+angle::Result ProgramPipelineImpl::onLabelUpdate(const gl::Context *context)
+{
+    return angle::Result::Continue;
+}
+
 }  

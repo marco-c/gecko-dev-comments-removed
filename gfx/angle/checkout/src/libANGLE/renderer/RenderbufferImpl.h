@@ -90,6 +90,8 @@ class RenderbufferImpl : public FramebufferAttachmentObjectImpl
     
     virtual GLint getMemorySize() const;
 
+    virtual angle::Result onLabelUpdate(const gl::Context *context);
+
   protected:
     const gl::RenderbufferState &mState;
 };

@@ -16,7 +16,7 @@
 #include "libANGLE/renderer/d3d/d3d9/RenderTarget9.h"
 #include "libANGLE/renderer/d3d/d3d9/formatutils9.h"
 #include "libANGLE/renderer/driver_utils.h"
-#include "platform/FeaturesD3D.h"
+#include "platform/FeaturesD3D_autogen.h"
 #include "platform/PlatformMethods.h"
 
 #include "third_party/systeminfo/SystemInfo.h"
@@ -398,7 +398,7 @@ unsigned int GetReservedVertexUniformVectors()
 
 unsigned int GetReservedFragmentUniformVectors()
 {
-    return 3;  
+    return 4;  
 }
 
 GLsizei GetSamplesCount(D3DMULTISAMPLE_TYPE type)
@@ -438,6 +438,16 @@ static gl::TextureCaps GenerateTextureFormatCaps(GLenum internalFormat,
                                                   D3DRTYPE_TEXTURE, d3dFormatInfo.texFormat)) &&
                 SUCCEEDED(d3d9->CheckDeviceFormat(adapter, deviceType, adapterFormat, 0,
                                                   D3DRTYPE_CUBETEXTURE, d3dFormatInfo.texFormat));
+            if (textureCaps.texturable && (formatInfo.colorEncoding == GL_SRGB))
+            {
+                textureCaps.texturable =
+                    SUCCEEDED(d3d9->CheckDeviceFormat(adapter, deviceType, adapterFormat,
+                                                      D3DUSAGE_QUERY_SRGBREAD, D3DRTYPE_TEXTURE,
+                                                      d3dFormatInfo.texFormat)) &&
+                    SUCCEEDED(d3d9->CheckDeviceFormat(adapter, deviceType, adapterFormat,
+                                                      D3DUSAGE_QUERY_SRGBREAD, D3DRTYPE_CUBETEXTURE,
+                                                      d3dFormatInfo.texFormat));
+            }
         }
 
         textureCaps.filterable = SUCCEEDED(
@@ -450,6 +460,12 @@ static gl::TextureCaps GenerateTextureFormatCaps(GLenum internalFormat,
         textureCaps.textureAttachment = SUCCEEDED(
             d3d9->CheckDeviceFormat(adapter, deviceType, adapterFormat, D3DUSAGE_RENDERTARGET,
                                     D3DRTYPE_TEXTURE, d3dFormatInfo.renderFormat));
+        if (textureCaps.textureAttachment && (formatInfo.colorEncoding == GL_SRGB))
+        {
+            textureCaps.textureAttachment = SUCCEEDED(d3d9->CheckDeviceFormat(
+                adapter, deviceType, adapterFormat, D3DUSAGE_QUERY_SRGBWRITE, D3DRTYPE_TEXTURE,
+                d3dFormatInfo.renderFormat));
+        }
 
         if ((formatInfo.depthBits > 0 || formatInfo.stencilBits > 0) &&
             !textureCaps.textureAttachment)
@@ -505,11 +521,6 @@ void GenerateCaps(IDirect3D9 *d3d9,
         textureCapsMap->insert(internalFormat, textureCaps);
 
         maxSamples = std::max(maxSamples, textureCaps.getMaxSamples());
-
-        if (gl::GetSizedInternalFormatInfo(internalFormat).compressed)
-        {
-            caps->compressedTextureFormats.push_back(internalFormat);
-        }
     }
 
     
@@ -653,24 +664,27 @@ void GenerateCaps(IDirect3D9 *d3d9,
     extensions->setTextureExtensionSupport(*textureCapsMap);
     extensions->elementIndexUintOES = deviceCaps.MaxVertexIndex >= (1 << 16);
     extensions->getProgramBinaryOES = true;
-    extensions->rgb8rgba8OES        = true;
-    extensions->readFormatBGRA      = true;
+    extensions->rgb8Rgba8OES        = true;
+    extensions->readFormatBgraEXT   = true;
     extensions->pixelBufferObjectNV = false;
-    extensions->mapBufferOES        = false;
-    extensions->mapBufferRange      = false;
+    extensions->mapbufferOES        = false;
+    extensions->mapBufferRangeEXT   = false;
 
     
     
     extensions->depthTextureOES = false;
 
     
-    extensions->textureRG = false;
+    extensions->textureRgEXT = false;
+
+    
+    extensions->parallelShaderCompileKHR = true;
 
     D3DADAPTER_IDENTIFIER9 adapterId = {};
     if (SUCCEEDED(d3d9->GetAdapterIdentifier(adapter, 0, &adapterId)))
     {
         
-        extensions->textureNPOTOES =
+        extensions->textureNpotOES =
             !(deviceCaps.TextureCaps & D3DPTEXTURECAPS_POW2) &&
             !(deviceCaps.TextureCaps & D3DPTEXTURECAPS_CUBEMAP_POW2) &&
             !(deviceCaps.TextureCaps & D3DPTEXTURECAPS_NONPOW2CONDITIONAL) &&
@@ -685,21 +699,21 @@ void GenerateCaps(IDirect3D9 *d3d9,
     }
     else
     {
-        extensions->textureNPOTOES = false;
+        extensions->textureNpotOES = false;
     }
 
-    extensions->drawBuffers    = false;
-    extensions->textureStorage = true;
+    extensions->drawBuffersEXT    = false;
+    extensions->textureStorageEXT = true;
 
     
     
-    extensions->textureFilterAnisotropic =
+    extensions->textureFilterAnisotropicEXT =
         (deviceCaps.RasterCaps & D3DPRASTERCAPS_ANISOTROPY) != 0 && deviceCaps.MaxAnisotropy >= 2;
-    extensions->maxTextureAnisotropy = static_cast<GLfloat>(deviceCaps.MaxAnisotropy);
+    caps->maxTextureAnisotropy = static_cast<GLfloat>(deviceCaps.MaxAnisotropy);
 
     
     IDirect3DQuery9 *occlusionQuery = nullptr;
-    extensions->occlusionQueryBoolean =
+    extensions->occlusionQueryBooleanEXT =
         SUCCEEDED(device->CreateQuery(D3DQUERYTYPE_OCCLUSION, &occlusionQuery)) && occlusionQuery;
     SafeRelease(occlusionQuery);
 
@@ -709,45 +723,45 @@ void GenerateCaps(IDirect3D9 *d3d9,
         SUCCEEDED(device->CreateQuery(D3DQUERYTYPE_EVENT, &eventQuery)) && eventQuery;
     SafeRelease(eventQuery);
 
-    extensions->disjointTimerQuery = false;
-    extensions->robustness         = true;
+    extensions->disjointTimerQueryEXT = false;
+    extensions->robustnessEXT         = true;
     
     
     
-    extensions->robustBufferAccessBehavior = false;
-    extensions->blendMinMax                = true;
+    extensions->robustBufferAccessBehaviorKHR = false;
+    extensions->blendMinmaxEXT                = true;
     
     
     
     
     
-    extensions->floatBlend             = true;
-    extensions->framebufferBlitANGLE   = true;
-    extensions->framebufferMultisample = true;
-    extensions->instancedArraysANGLE   = deviceCaps.PixelShaderVersion >= D3DPS_VERSION(3, 0);
+    extensions->floatBlendEXT               = true;
+    extensions->framebufferBlitANGLE        = true;
+    extensions->framebufferMultisampleANGLE = true;
+    extensions->instancedArraysANGLE        = deviceCaps.PixelShaderVersion >= D3DPS_VERSION(3, 0);
     
     
-    extensions->instancedArraysEXT  = false;
-    extensions->packReverseRowOrder = true;
+    extensions->instancedArraysEXT       = false;
+    extensions->packReverseRowOrderANGLE = true;
     extensions->standardDerivativesOES =
         (deviceCaps.PS20Caps.Caps & D3DPS20CAPS_GRADIENTINSTRUCTIONS) != 0;
-    extensions->shaderTextureLOD       = true;
-    extensions->fragDepth              = true;
-    extensions->textureUsage           = true;
-    extensions->translatedShaderSource = true;
-    extensions->fboRenderMipmapOES     = false;
-    extensions->discardFramebuffer     = false;  
-                                                 
-    extensions->colorBufferFloat      = false;
-    extensions->debugMarker           = true;
-    extensions->eglImageOES           = true;
-    extensions->eglImageExternalOES   = true;
-    extensions->unpackSubimage        = true;
-    extensions->packSubimage          = true;
-    extensions->syncQuery             = extensions->fenceNV;
-    extensions->copyTexture           = true;
+    extensions->shaderTextureLodEXT         = true;
+    extensions->fragDepthEXT                = true;
+    extensions->textureUsageANGLE           = true;
+    extensions->translatedShaderSourceANGLE = true;
+    extensions->fboRenderMipmapOES          = true;
+    extensions->discardFramebufferEXT = false;  
+                                                
+    extensions->colorBufferFloatEXT   = false;
+    extensions->debugMarkerEXT        = true;
+    extensions->EGLImageOES           = true;
+    extensions->EGLImageExternalOES   = true;
+    extensions->unpackSubimageEXT     = true;
+    extensions->packSubimageNV        = true;
+    extensions->syncQueryCHROMIUM     = extensions->fenceNV;
+    extensions->copyTextureCHROMIUM   = true;
     extensions->textureBorderClampOES = true;
-    extensions->webglVideoTexture     = true;
+    extensions->videoTextureWEBGL     = true;
 
     
     
@@ -762,11 +776,17 @@ void GenerateCaps(IDirect3D9 *d3d9,
     limitations->noSimultaneousConstantColorAndAlphaBlendFunc = true;
 
     
+    limitations->noUnclampedBlendColor = true;
+
+    
     
     limitations->noFlexibleVaryingPacking = true;
 
     
     limitations->noVertexAttributeAliasing = true;
+
+    
+    limitations->compressedBaseMipLevelMultipleOfFour = true;
 }
 
 }  
@@ -818,10 +838,6 @@ void InitializeFeatures(angle::FeaturesD3D *features)
 
     
     ANGLE_FEATURE_CONDITION(features, allowClearForRobustResourceInit, true);
-
-    
-    auto *platform = ANGLEPlatformCurrent();
-    platform->overrideWorkaroundsD3D(platform, features);
 }
 
 }  

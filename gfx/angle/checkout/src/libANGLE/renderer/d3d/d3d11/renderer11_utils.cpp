@@ -29,7 +29,7 @@
 #include "libANGLE/renderer/d3d/d3d11/texture_format_table.h"
 #include "libANGLE/renderer/driver_utils.h"
 #include "libANGLE/renderer/dxgi_support_table.h"
-#include "platform/FeaturesD3D.h"
+#include "platform/FeaturesD3D_autogen.h"
 #include "platform/PlatformMethods.h"
 
 namespace rx
@@ -849,7 +849,6 @@ std::array<GLint, 3> GetMaxComputeWorkGroupCount(D3D_FEATURE_LEVEL featureLevel)
             return {{D3D11_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION,
                      D3D11_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION,
                      D3D11_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION}};
-            break;
         default:
             return {{0, 0, 0}};
     }
@@ -863,7 +862,6 @@ std::array<GLint, 3> GetMaxComputeWorkGroupSize(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_11_0:
             return {{D3D11_CS_THREAD_GROUP_MAX_X, D3D11_CS_THREAD_GROUP_MAX_Y,
                      D3D11_CS_THREAD_GROUP_MAX_Z}};
-            break;
         default:
             return {{0, 0, 0}};
     }
@@ -1241,11 +1239,8 @@ IntelDriverVersion GetIntelDriverVersion(const Optional<LARGE_INTEGER> driverVer
     if (!driverVersion.valid())
         return IntelDriverVersion(0);
 
-    
-    
-    
-    WORD part = LOWORD(driverVersion.value().LowPart);
-    return IntelDriverVersion(part);
+    DWORD lowPart = driverVersion.value().LowPart;
+    return IntelDriverVersion(HIWORD(lowPart) * 10000 + LOWORD(lowPart));
 }
 
 }  
@@ -1284,7 +1279,7 @@ unsigned int GetReservedFragmentUniformVectors(D3D_FEATURE_LEVEL featureLevel)
         case D3D_FEATURE_LEVEL_9_3:
         case D3D_FEATURE_LEVEL_9_2:
         case D3D_FEATURE_LEVEL_9_1:
-            return 3;
+            return 4;  
 
         default:
             UNREACHABLE();
@@ -1379,6 +1374,43 @@ int GetMaxSampleMaskWords(D3D_FEATURE_LEVEL featureLevel)
     }
 }
 
+bool HasTextureBufferSupport(ID3D11Device *device, const Renderer11DeviceCaps &renderer11DeviceCaps)
+{
+    if (renderer11DeviceCaps.featureLevel < D3D_FEATURE_LEVEL_11_0)
+        return false;
+
+    if (!renderer11DeviceCaps.supportsTypedUAVLoadAdditionalFormats)
+        return false;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    const std::array<DXGI_FORMAT, 2> &optionalFormats = {
+        DXGI_FORMAT_R32G32B32A32_FLOAT,  
+                                         
+        DXGI_FORMAT_R8G8B8A8_SNORM,      
+    };
+
+    for (DXGI_FORMAT dxgiFormat : optionalFormats)
+    {
+        D3D11_FEATURE_DATA_FORMAT_SUPPORT FormatSupport = {dxgiFormat, 0};
+        if (!SUCCEEDED(device->CheckFeatureSupport(D3D11_FEATURE_FORMAT_SUPPORT, &FormatSupport,
+                                                   sizeof(FormatSupport))))
+        {
+            WARN() << "Error checking typed load support for format 0x" << std::hex << dxgiFormat;
+            return false;
+        }
+        if ((FormatSupport.OutFormatSupport & D3D11_FORMAT_SUPPORT2_UAV_TYPED_LOAD) == 0)
+            return false;
+    }
+    return true;
+}
+
 void GenerateCaps(ID3D11Device *device,
                   ID3D11DeviceContext *deviceContext,
                   const Renderer11DeviceCaps &renderer11DeviceCaps,
@@ -1397,11 +1429,6 @@ void GenerateCaps(ID3D11Device *device,
             GenerateTextureFormatCaps(GetMaximumClientVersion(renderer11DeviceCaps), internalFormat,
                                       device, renderer11DeviceCaps);
         textureCapsMap->insert(internalFormat, textureCaps);
-
-        if (gl::GetSizedInternalFormatInfo(internalFormat).compressed)
-        {
-            caps->compressedTextureFormats.push_back(internalFormat);
-        }
     }
 
     
@@ -1572,95 +1599,98 @@ void GenerateCaps(ID3D11Device *device,
     caps->minProgramTextureGatherOffset = GetMinimumTextureGatherOffset(featureLevel);
     caps->maxProgramTextureGatherOffset = GetMaximumTextureGatherOffset(featureLevel);
 
+    caps->maxTextureAnisotropy        = GetMaximumAnisotropy(featureLevel);
+    caps->queryCounterBitsTimeElapsed = 64;
+    caps->queryCounterBitsTimestamp = 0;  
+    caps->maxDualSourceDrawBuffers  = 1;
+
     
     extensions->setTextureExtensionSupport(*textureCapsMap);
 
     
     
-    extensions->compressedETC1RGB8TextureOES = false;
-    extensions->compressedETC1RGB8SubTexture = false;
+    extensions->compressedETC1RGB8TextureOES    = false;
+    extensions->compressedETC1RGB8SubTextureEXT = false;
 
     extensions->elementIndexUintOES = true;
     extensions->getProgramBinaryOES = true;
-    extensions->rgb8rgba8OES        = true;
-    extensions->readFormatBGRA      = true;
+    extensions->rgb8Rgba8OES        = true;
+    extensions->readFormatBgraEXT   = true;
     extensions->pixelBufferObjectNV = true;
-    extensions->mapBufferOES        = true;
-    extensions->mapBufferRange      = true;
-    extensions->textureNPOTOES      = GetNPOTTextureSupport(featureLevel);
-    extensions->drawBuffers         = GetMaximumSimultaneousRenderTargets(featureLevel) > 1;
+    extensions->mapbufferOES        = true;
+    extensions->mapBufferRangeEXT   = true;
+    extensions->textureNpotOES      = GetNPOTTextureSupport(featureLevel);
+    extensions->drawBuffersEXT      = GetMaximumSimultaneousRenderTargets(featureLevel) > 1;
     extensions->drawBuffersIndexedEXT =
         (renderer11DeviceCaps.featureLevel >= D3D_FEATURE_LEVEL_10_1);
     extensions->drawBuffersIndexedOES       = extensions->drawBuffersIndexedEXT;
-    extensions->textureStorage              = true;
-    extensions->textureFilterAnisotropic    = true;
-    extensions->maxTextureAnisotropy        = GetMaximumAnisotropy(featureLevel);
-    extensions->occlusionQueryBoolean       = GetOcclusionQuerySupport(featureLevel);
+    extensions->textureStorageEXT           = true;
+    extensions->textureFilterAnisotropicEXT = true;
+    extensions->occlusionQueryBooleanEXT    = GetOcclusionQuerySupport(featureLevel);
     extensions->fenceNV                     = GetEventQuerySupport(featureLevel);
-    extensions->disjointTimerQuery          = true;
-    extensions->queryCounterBitsTimeElapsed = 64;
-    extensions->queryCounterBitsTimestamp =
-        0;  
-    extensions->robustness = true;
+    extensions->disjointTimerQueryEXT       = true;
+    extensions->robustnessEXT               = true;
     
     
     
-    extensions->robustBufferAccessBehavior = true;
-    extensions->blendMinMax                = true;
+    extensions->robustBufferAccessBehaviorKHR = true;
+    extensions->blendMinmaxEXT                = true;
     
-    extensions->floatBlend             = true;
-    extensions->framebufferBlitANGLE   = GetFramebufferBlitSupport(featureLevel);
-    extensions->framebufferMultisample = GetFramebufferMultisampleSupport(featureLevel);
-    extensions->instancedArraysANGLE   = GetInstancingSupport(featureLevel);
-    extensions->instancedArraysEXT     = GetInstancingSupport(featureLevel);
-    extensions->packReverseRowOrder    = true;
-    extensions->standardDerivativesOES = GetDerivativeInstructionSupport(featureLevel);
-    extensions->shaderTextureLOD       = GetShaderTextureLODSupport(featureLevel);
-    extensions->fragDepth              = true;
-    extensions->multiview              = IsMultiviewSupported(featureLevel);
-    extensions->multiview2             = IsMultiviewSupported(featureLevel);
-    if (extensions->multiview || extensions->multiview2)
+    extensions->floatBlendEXT               = true;
+    extensions->framebufferBlitANGLE        = GetFramebufferBlitSupport(featureLevel);
+    extensions->framebufferBlitNV           = extensions->framebufferBlitANGLE;
+    extensions->framebufferMultisampleANGLE = GetFramebufferMultisampleSupport(featureLevel);
+    extensions->instancedArraysANGLE        = GetInstancingSupport(featureLevel);
+    extensions->instancedArraysEXT          = GetInstancingSupport(featureLevel);
+    extensions->packReverseRowOrderANGLE    = true;
+    extensions->standardDerivativesOES      = GetDerivativeInstructionSupport(featureLevel);
+    extensions->shaderTextureLodEXT         = GetShaderTextureLODSupport(featureLevel);
+    extensions->fragDepthEXT                = true;
+    extensions->multiviewOVR                = IsMultiviewSupported(featureLevel);
+    extensions->multiview2OVR               = IsMultiviewSupported(featureLevel);
+    if (extensions->multiviewOVR || extensions->multiview2OVR)
     {
-        extensions->maxViews =
-            std::min(static_cast<GLuint>(gl::IMPLEMENTATION_ANGLE_MULTIVIEW_MAX_VIEWS),
-                     std::min(static_cast<GLuint>(GetMaximum2DTextureArraySize(featureLevel)),
-                              GetMaxViewportAndScissorRectanglesPerPipeline(featureLevel)));
+        caps->maxViews = std::min(static_cast<GLuint>(GetMaximum2DTextureArraySize(featureLevel)),
+                                  GetMaxViewportAndScissorRectanglesPerPipeline(featureLevel));
     }
-    extensions->textureUsage       = true;  
-    extensions->discardFramebuffer = true;
-    extensions->translatedShaderSource              = true;
+    extensions->textureUsageANGLE = true;  
+    extensions->discardFramebufferEXT               = true;
+    extensions->translatedShaderSourceANGLE         = true;
     extensions->fboRenderMipmapOES                  = true;
-    extensions->debugMarker                         = true;
-    extensions->eglImageOES                         = true;
-    extensions->eglImageExternalOES                 = true;
-    extensions->eglImageExternalWrapModesEXT        = true;
-    extensions->eglImageExternalEssl3OES            = true;
-    extensions->eglStreamConsumerExternalNV         = true;
-    extensions->unpackSubimage                      = true;
-    extensions->packSubimage                        = true;
-    extensions->lossyETCDecode                      = true;
-    extensions->syncQuery                           = GetEventQuerySupport(featureLevel);
-    extensions->copyTexture                         = true;
-    extensions->copyCompressedTexture               = true;
-    extensions->textureStorageMultisample2DArrayOES = true;
-    extensions->multiviewMultisample     = ((extensions->multiview || extensions->multiview2) &&
-                                        extensions->textureStorageMultisample2DArrayOES);
-    extensions->copyTexture3d            = true;
-    extensions->textureBorderClampOES    = true;
-    extensions->textureMultisample       = true;
-    extensions->provokingVertex          = true;
-    extensions->blendFuncExtended        = true;
-    extensions->maxDualSourceDrawBuffers = 1;
+    extensions->debugMarkerEXT                      = true;
+    extensions->EGLImageOES                         = true;
+    extensions->EGLImageExternalOES                 = true;
+    extensions->EGLImageExternalWrapModesEXT        = true;
+    extensions->EGLImageExternalEssl3OES            = true;
+    extensions->EGLStreamConsumerExternalNV         = true;
+    extensions->unpackSubimageEXT                   = true;
+    extensions->packSubimageNV                      = true;
+    extensions->lossyEtcDecodeANGLE                 = true;
+    extensions->syncQueryCHROMIUM                   = GetEventQuerySupport(featureLevel);
+    extensions->copyTextureCHROMIUM                 = true;
+    extensions->copyCompressedTextureCHROMIUM       = true;
+    extensions->textureStorageMultisample2dArrayOES = true;
+    extensions->multiviewMultisampleANGLE =
+        ((extensions->multiviewOVR || extensions->multiview2OVR) &&
+         extensions->textureStorageMultisample2dArrayOES);
+    extensions->copyTexture3dANGLE      = true;
+    extensions->textureBorderClampOES   = true;
+    extensions->multiDrawIndirectEXT    = true;
+    extensions->textureMultisampleANGLE = true;
+    extensions->provokingVertexANGLE    = true;
+    extensions->blendFuncExtendedEXT    = true;
     
-    extensions->texture3DOES              = false;
-    extensions->baseVertexBaseInstance    = true;
-    extensions->drawElementsBaseVertexOES = true;
-    extensions->drawElementsBaseVertexEXT = true;
+    extensions->texture3DOES                             = false;
+    extensions->baseInstanceEXT                          = true;
+    extensions->baseVertexBaseInstanceANGLE              = true;
+    extensions->baseVertexBaseInstanceShaderBuiltinANGLE = true;
+    extensions->drawElementsBaseVertexOES                = true;
+    extensions->drawElementsBaseVertexEXT                = true;
     if (!strstr(description, "Adreno"))
     {
-        extensions->multisampledRenderToTexture = true;
+        extensions->multisampledRenderToTextureEXT = true;
     }
-    extensions->webglVideoTexture = true;
+    extensions->videoTextureWEBGL = true;
 
     
     
@@ -1670,6 +1700,23 @@ void GenerateCaps(ID3D11Device *device,
     extensions->readDepthNV         = false;
     extensions->readStencilNV       = false;
     extensions->depthBufferFloat2NV = false;
+
+    
+    extensions->clipControlEXT = (renderer11DeviceCaps.featureLevel >= D3D_FEATURE_LEVEL_9_3);
+
+    
+    extensions->parallelShaderCompileKHR = true;
+
+    
+    extensions->textureBufferEXT = HasTextureBufferSupport(device, renderer11DeviceCaps);
+
+    
+    extensions->textureBufferOES = extensions->textureBufferEXT;
+
+    
+    extensions->shaderPixelLocalStorageANGLE = (featureLevel >= D3D_FEATURE_LEVEL_11_0);
+    extensions->shaderPixelLocalStorageCoherentANGLE =
+        renderer11DeviceCaps.supportsRasterizerOrderViews;
 
     
     
@@ -1699,6 +1746,16 @@ void GenerateCaps(ID3D11Device *device,
 
     
     limitations->noVertexAttributeAliasing = true;
+
+    
+    limitations->compressedBaseMipLevelMultipleOfFour = true;
+
+    if (extensions->textureBufferAny())
+    {
+        caps->maxTextureBufferSize = 1 << D3D11_REQ_BUFFER_RESOURCE_TEXEL_COUNT_2_TO_EXP;
+        
+        caps->textureBufferOffsetAlignment = 16;
+    }
 
 #ifdef ANGLE_ENABLE_WINDOWS_UWP
     
@@ -2289,35 +2346,30 @@ bool operator!=(const RasterizerStateKey &a, const RasterizerStateKey &b)
     return !(a == b);
 }
 
-HRESULT SetDebugName(ID3D11DeviceChild *resource, const char *name)
+HRESULT SetDebugName(ID3D11DeviceChild *resource,
+                     const char *internalName,
+                     const std::string *khrDebugName)
 {
-    UINT existingDataSize = 0;
-    resource->GetPrivateData(WKPDID_D3DDebugObjectName, &existingDataSize, nullptr);
     
-    
-
-    if (existingDataSize > 0)
+    std::string d3dName = "ANGLE";
+    bool sendNameToD3D  = false;
+    if (internalName && internalName[0] != '\0')
     {
-        
-        
-        
-        
-        static const char *multipleNamesUsed = "MultipleNamesSetByANGLE";
-
-        
-        const HRESULT hr = resource->SetPrivateData(WKPDID_D3DDebugObjectName, 0, nullptr);
-        if (FAILED(hr))
-        {
-            return hr;
-        }
-
-        name = multipleNamesUsed;
+        d3dName += std::string("_") + internalName;
+        sendNameToD3D = true;
     }
-
+    if (khrDebugName && !khrDebugName->empty())
+    {
+        d3dName += std::string("_") + *khrDebugName;
+        sendNameToD3D = true;
+    }
     
-    const std::string d3dName = std::string("ANGLE_") + name;
-    return resource->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(d3dName.size()),
-                                    d3dName.c_str());
+    if (sendNameToD3D)
+    {
+        return resource->SetPrivateData(WKPDID_D3DDebugObjectName,
+                                        static_cast<UINT>(d3dName.size()), d3dName.c_str());
+    }
+    return S_OK;
 }
 
 
@@ -2333,7 +2385,7 @@ angle::Result LazyResource<ResourceT>::resolveImpl(d3d::Context *context,
     if (!mResource.valid())
     {
         ANGLE_TRY(renderer->allocateResource(context, desc, initData, &mResource));
-        mResource.setDebugName(name);
+        mResource.setInternalName(name);
     }
     return angle::Result::Continue;
 }
@@ -2447,7 +2499,7 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     ANGLE_FEATURE_CONDITION(features, mrtPerfWorkaround, true);
     ANGLE_FEATURE_CONDITION(features, zeroMaxLodWorkaround, isFeatureLevel9_3);
     ANGLE_FEATURE_CONDITION(features, useInstancedPointSpriteEmulation, isFeatureLevel9_3);
-    ANGLE_FEATURE_CONDITION(features, allowES3OnFL10_0, false);
+    ANGLE_FEATURE_CONDITION(features, allowES3OnFL100, false);
 
     
     ANGLE_FEATURE_CONDITION(features, expandIntegerPowExpressions, true);
@@ -2461,15 +2513,19 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     ANGLE_FEATURE_CONDITION(features, useSystemMemoryForConstantBuffers, isIntel);
 
     ANGLE_FEATURE_CONDITION(features, callClearTwice,
-                            isIntel && isSkylake && capsVersion < IntelDriverVersion(4771));
+                            isIntel && isSkylake && capsVersion >= IntelDriverVersion(160000) &&
+                                capsVersion < IntelDriverVersion(164771));
     ANGLE_FEATURE_CONDITION(features, emulateIsnanFloat,
-                            isIntel && isSkylake && capsVersion < IntelDriverVersion(4542));
-    ANGLE_FEATURE_CONDITION(
-        features, rewriteUnaryMinusOperator,
-        isIntel && (isBroadwell || isHaswell) && capsVersion < IntelDriverVersion(4624));
+                            isIntel && isSkylake && capsVersion >= IntelDriverVersion(160000) &&
+                                capsVersion < IntelDriverVersion(164542));
+    ANGLE_FEATURE_CONDITION(features, rewriteUnaryMinusOperator,
+                            isIntel && (isBroadwell || isHaswell) &&
+                                capsVersion >= IntelDriverVersion(150000) &&
+                                capsVersion < IntelDriverVersion(154624));
 
     ANGLE_FEATURE_CONDITION(features, addMockTextureNoRenderTarget,
-                            isIntel && capsVersion < IntelDriverVersion(4815));
+                            isIntel && capsVersion >= IntelDriverVersion(160000) &&
+                                capsVersion < IntelDriverVersion(164815));
 
     
     
@@ -2480,7 +2536,9 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     ANGLE_FEATURE_CONDITION(features, emulateClearViewAfterDualSourceBlending, isSandyBridge);
 
     ANGLE_FEATURE_CONDITION(features, disableB5G6R5Support,
-                            (isIntel && capsVersion < IntelDriverVersion(4539)) || isAMD);
+                            (isIntel && capsVersion >= IntelDriverVersion(150000) &&
+                             capsVersion < IntelDriverVersion(154539)) ||
+                                isAMD);
 
     
     
@@ -2504,10 +2562,14 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
     
     ANGLE_FEATURE_CONDITION(features, allowTranslateUniformBlockToStructuredBuffer,
                             IsWin10OrGreater());
+}
 
-    
-    auto *platform = ANGLEPlatformCurrent();
-    platform->overrideWorkaroundsD3D(platform, features);
+void InitializeFrontendFeatures(const DXGI_ADAPTER_DESC &adapterDesc,
+                                angle::FrontendFeatures *features)
+{
+    bool isAMD = IsAMD(adapterDesc.VendorId);
+
+    ANGLE_FEATURE_CONDITION(features, forceDepthAttachmentInitOnClear, isAMD);
 }
 
 void InitConstantBufferDesc(D3D11_BUFFER_DESC *constantBufferDescription, size_t byteWidth)
@@ -2548,6 +2610,11 @@ void TextureHelper11::getDesc(D3D11_TEXTURE3D_DESC *desc) const
     static_cast<ID3D11Texture3D *>(mData->object)->GetDesc(desc);
 }
 
+void TextureHelper11::getDesc(D3D11_BUFFER_DESC *desc) const
+{
+    static_cast<ID3D11Buffer *>(mData->object)->GetDesc(desc);
+}
+
 void TextureHelper11::initDesc(const D3D11_TEXTURE2D_DESC &desc2D)
 {
     mData->resourceType = ResourceType::Texture2D;
@@ -2563,6 +2630,15 @@ void TextureHelper11::initDesc(const D3D11_TEXTURE3D_DESC &desc3D)
     mExtents.width      = static_cast<int>(desc3D.Width);
     mExtents.height     = static_cast<int>(desc3D.Height);
     mExtents.depth      = static_cast<int>(desc3D.Depth);
+    mSampleCount        = 1;
+}
+
+void TextureHelper11::initDesc(const D3D11_BUFFER_DESC &descBuffer)
+{
+    mData->resourceType = ResourceType::Buffer;
+    mExtents.width      = static_cast<int>(descBuffer.ByteWidth);
+    mExtents.height     = 1;
+    mExtents.depth      = 1;
     mSampleCount        = 1;
 }
 
@@ -2643,4 +2719,29 @@ IndexStorageType ClassifyIndexStorage(const gl::State &glState,
     
     return IndexStorageType::Dynamic;
 }
+
+bool SwizzleRequired(const gl::TextureState &textureState)
+{
+    
+    return textureState.swizzleRequired() || textureState.isStencilMode();
+}
+
+gl::SwizzleState GetEffectiveSwizzle(const gl::TextureState &textureState)
+{
+    const gl::SwizzleState &swizzle = textureState.getSwizzleState();
+    if (textureState.isStencilMode())
+    {
+        
+        
+        
+        std::unordered_map<GLenum, GLenum> map = {{GL_RED, GL_GREEN}, {GL_GREEN, GL_ZERO},
+                                                  {GL_BLUE, GL_ZERO}, {GL_ALPHA, GL_ONE},
+                                                  {GL_ZERO, GL_ZERO}, {GL_ONE, GL_ONE}};
+
+        return gl::SwizzleState(map[swizzle.swizzleRed], map[swizzle.swizzleGreen],
+                                map[swizzle.swizzleBlue], map[swizzle.swizzleAlpha]);
+    }
+    return swizzle;
+}
+
 }  

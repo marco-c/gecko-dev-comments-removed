@@ -24,12 +24,12 @@ class TSymbolTable;
 
 
 
-ANGLE_NO_DISCARD bool EmulateGLFragColorBroadcast(TCompiler *compiler,
-                                                  TIntermBlock *root,
-                                                  int maxDrawBuffers,
-                                                  std::vector<ShaderVariable> *outputVariables,
-                                                  TSymbolTable *symbolTable,
-                                                  int shaderVersion);
+[[nodiscard]] bool EmulateGLFragColorBroadcast(TCompiler *compiler,
+                                               TIntermBlock *root,
+                                               int maxDrawBuffers,
+                                               std::vector<ShaderVariable> *outputVariables,
+                                               TSymbolTable *symbolTable,
+                                               int shaderVersion);
 }  
 
 #endif  

@@ -55,7 +55,7 @@ class TokenLexer : public Lexer
 
 }  
 
-class MacroExpander::ScopedMacroReenabler final : angle::NonCopyable
+class [[nodiscard]] MacroExpander::ScopedMacroReenabler final : angle::NonCopyable
 {
   public:
     ScopedMacroReenabler(MacroExpander *expander);
