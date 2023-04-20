@@ -80,103 +80,103 @@ class nsFontMetrics final {
   
 
 
-  nscoord XHeight();
+  nscoord XHeight() const;
 
   
 
 
-  nscoord CapHeight();
-
-  
-
-
-
-
-  nscoord SuperscriptOffset();
+  nscoord CapHeight() const;
 
   
 
 
 
 
-  nscoord SubscriptOffset();
+  nscoord SuperscriptOffset() const;
 
   
 
 
 
 
-  void GetStrikeout(nscoord& aOffset, nscoord& aSize);
+  nscoord SubscriptOffset() const;
 
   
 
 
 
 
-  void GetUnderline(nscoord& aOffset, nscoord& aSize);
+  void GetStrikeout(nscoord& aOffset, nscoord& aSize) const;
 
   
 
 
 
 
-  nscoord InternalLeading();
+  void GetUnderline(nscoord& aOffset, nscoord& aSize) const;
 
   
 
 
 
 
-  nscoord ExternalLeading();
+  nscoord InternalLeading() const;
 
   
 
 
 
-  nscoord EmHeight();
 
-  
-
-
-  nscoord EmAscent();
-
-  
-
-
-  nscoord EmDescent();
+  nscoord ExternalLeading() const;
 
   
 
 
 
-  nscoord MaxHeight();
+  nscoord EmHeight() const;
+
+  
+
+
+  nscoord EmAscent() const;
+
+  
+
+
+  nscoord EmDescent() const;
 
   
 
 
 
-  nscoord MaxAscent();
+  nscoord MaxHeight() const;
 
   
 
 
 
-  nscoord MaxDescent();
+  nscoord MaxAscent() const;
 
   
 
 
-  nscoord MaxAdvance();
+
+  nscoord MaxDescent() const;
 
   
 
 
-  nscoord AveCharWidth();
+  nscoord MaxAdvance() const;
 
   
 
 
-  nscoord SpaceWidth();
+  nscoord AveCharWidth() const;
+
+  
+
+
+  nscoord SpaceWidth() const;
 
   
 
@@ -194,32 +194,32 @@ class nsFontMetrics final {
 
   FontOrientation Orientation() const { return mOrientation; }
 
-  int32_t GetMaxStringLength();
+  int32_t GetMaxStringLength() const;
 
   
   
   
   nscoord GetWidth(const char* aString, uint32_t aLength,
-                   DrawTarget* aDrawTarget);
+                   DrawTarget* aDrawTarget) const;
   nscoord GetWidth(const char16_t* aString, uint32_t aLength,
-                   DrawTarget* aDrawTarget);
+                   DrawTarget* aDrawTarget) const;
 
   
   void DrawString(const char* aString, uint32_t aLength, nscoord aX, nscoord aY,
-                  gfxContext* aContext);
+                  gfxContext* aContext) const;
   void DrawString(const char16_t* aString, uint32_t aLength, nscoord aX,
                   nscoord aY, gfxContext* aContext,
-                  DrawTarget* aTextRunConstructionDrawTarget);
+                  DrawTarget* aTextRunConstructionDrawTarget) const;
 
   nsBoundingMetrics GetBoundingMetrics(const char16_t* aString,
                                        uint32_t aLength,
-                                       DrawTarget* aDrawTarget);
+                                       DrawTarget* aDrawTarget) const;
 
   
   
   nsBoundingMetrics GetInkBoundsForInkOverflow(const char16_t* aString,
                                                uint32_t aLength,
-                                               DrawTarget* aDrawTarget);
+                                               DrawTarget* aDrawTarget) const;
 
   void SetTextRunRTL(bool aIsRTL) { mTextRunRTL = aIsRTL; }
   bool GetTextRunRTL() const { return mTextRunRTL; }
@@ -245,23 +245,23 @@ class nsFontMetrics final {
   
   ~nsFontMetrics();
 
-  nsFont mFont;
+  const nsFont mFont;
   RefPtr<gfxFontGroup> mFontGroup;
-  RefPtr<nsAtom> mLanguage;
+  RefPtr<nsAtom> const mLanguage;
   
   
   nsPresContext* MOZ_NON_OWNING_REF mPresContext;
-  int32_t mP2A;
+  const int32_t mP2A;
 
   
   
   
-  FontOrientation mOrientation;
+  const FontOrientation mOrientation;
 
   
   
   
-  bool mExplicitLanguage;
+  const bool mExplicitLanguage;
 
   
   
