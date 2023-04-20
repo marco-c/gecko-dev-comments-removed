@@ -1048,11 +1048,20 @@ void AudioCallbackDriver::StateCallback(cubeb_state aState) {
   LOG(LogLevel::Debug,
       ("AudioCallbackDriver(%p) State: %s", this, StateToString(aState)));
 
-  AudioStreamState streamState = mAudioStreamState;
-  if (aState != CUBEB_STATE_STARTED) {
-    
-    streamState = mAudioStreamState.exchange(AudioStreamState::None);
+  if (aState == CUBEB_STATE_STARTED) {
+    return;
   }
+
+  if (!IsStarted()) {
+    
+    
+    
+    return;
+  }
+
+  
+  AudioStreamState streamState =
+      mAudioStreamState.exchange(AudioStreamState::None);
 
   if (aState == CUBEB_STATE_ERROR) {
     

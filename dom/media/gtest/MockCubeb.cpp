@@ -236,6 +236,14 @@ int MockCubebStream::Stop() {
   return rv;
 }
 
+void MockCubebStream::Destroy() {
+  
+  
+  NotifyStateChanged(CUBEB_STATE_STOPPED);
+
+  MockCubeb::AsMock(context)->StreamDestroy(AsCubebStream());
+}
+
 int MockCubebStream::RegisterDeviceChangedCallback(
     cubeb_device_changed_callback aDeviceChangedCallback) {
   if (mDeviceChangedCallback && aDeviceChangedCallback) {

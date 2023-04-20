@@ -1163,6 +1163,7 @@ TEST(TestAudioTrackGraph, ErrorCallback)
   
   
   
+  
   RefPtr<AudioProcessingTrack> processingTrack;
   RefPtr<AudioInputProcessing> listener;
   auto started = Invoke([&] {
@@ -1176,6 +1177,7 @@ TEST(TestAudioTrackGraph, ErrorCallback)
     processingTrack->ConnectDeviceInput(deviceId, listener,
                                         PRINCIPAL_HANDLE_NONE);
     EXPECT_EQ(processingTrack->DeviceId().value(), deviceId);
+    processingTrack->AddAudioOutput(reinterpret_cast<void*>(1));
     return graph->NotifyWhenDeviceStarted(processingTrack);
   });
 
@@ -1187,16 +1189,17 @@ TEST(TestAudioTrackGraph, ErrorCallback)
   DispatchFunction([&] { stream->ForceError(); });
 
   
-  bool errored = false, init = false;
+  
+  bool errored = false;
   MediaEventListener errorListener = stream->ErrorForcedEvent().Connect(
       AbstractThread::GetCurrent(), [&] { errored = true; });
-  MediaEventListener initListener = cubeb->StreamInitEvent().Connect(
-      AbstractThread::GetCurrent(), [&] { init = true; });
-  SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-      "TEST(TestAudioTrackGraph, ErrorCallback)"_ns,
-      [&] { return errored && init; });
+  stream = WaitFor(cubeb->StreamInitEvent());
+  WaitFor(stream->FramesVerifiedEvent());
+  
+  
+  
   errorListener.Disconnect();
-  initListener.Disconnect();
+  EXPECT_TRUE(errored);
 
   
   DispatchFunction([&] {
