@@ -3,8 +3,8 @@
 
 
 
-import json
 import glob
+import json
 import os
 
 import buildconfig
