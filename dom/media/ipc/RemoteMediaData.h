@@ -149,12 +149,12 @@ class RemoteArrayOfByteBuffer {
   AlignedBuffer<Type> AlignedBufferAt(size_t aIndex) const {
     MOZ_ASSERT(aIndex < Count());
     const OffsetEntry& entry = mOffsets[aIndex];
-    size_t entrySize = std::get<1>(entry);
+    size_t entrySize = Get<1>(entry);
     if (!mBuffers || !entrySize) {
       
       return AlignedBuffer<Type>();
     }
-    if (!Check(std::get<0>(entry), entrySize)) {
+    if (!Check(Get<0>(entry), entrySize)) {
       
       
       
@@ -165,7 +165,7 @@ class RemoteArrayOfByteBuffer {
       return AlignedBuffer<Type>();
     }
     return AlignedBuffer<Type>(
-        reinterpret_cast<Type*>(BuffersStartAddress() + std::get<0>(entry)),
+        reinterpret_cast<Type*>(BuffersStartAddress() + Get<0>(entry)),
         entrySize / sizeof(Type));
   }
 
@@ -173,7 +173,7 @@ class RemoteArrayOfByteBuffer {
   
   already_AddRefed<MediaByteBuffer> MediaByteBufferAt(size_t aIndex) const;
   
-  size_t SizeAt(size_t aIndex) const { return std::get<1>(mOffsets[aIndex]); }
+  size_t SizeAt(size_t aIndex) const { return Get<1>(mOffsets[aIndex]); }
   
   bool IsValid() const { return mIsValid; };
   
@@ -198,7 +198,7 @@ class RemoteArrayOfByteBuffer {
   Maybe<ipc::Shmem> mBuffers;
   
   
-  typedef std::tuple<size_t, size_t> OffsetEntry;
+  typedef Tuple<size_t, size_t> OffsetEntry;
   nsTArray<OffsetEntry> mOffsets;
 };
 

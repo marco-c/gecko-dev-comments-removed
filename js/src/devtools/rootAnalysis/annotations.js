@@ -268,7 +268,7 @@ var ignoreFunctions = {
 
     
     
-    "void mozilla::ProfilerLabelEnd(std::tuple<void*, unsigned int>*)" : true,
+    "void mozilla::ProfilerLabelEnd(mozilla::Tuple<void*, unsigned int>*)" : true,
 
     
     

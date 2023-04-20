@@ -9,6 +9,7 @@
 
 #include "nsISupports.h"
 
+#include "mozilla/Tuple.h"
 #include "mozilla/dom/FetchEventOpProxyParent.h"
 #include "mozilla/dom/PFetchEventOpParent.h"
 
@@ -24,8 +25,7 @@ class FetchEventOpParent final : public PFetchEventOpParent {
 
   
   
-  std::tuple<Maybe<ParentToParentInternalResponse>, Maybe<ResponseEndArgs>>
-  OnStart(
+  Tuple<Maybe<ParentToParentInternalResponse>, Maybe<ResponseEndArgs>> OnStart(
       MovingNotNull<RefPtr<FetchEventOpProxyParent>> aFetchEventOpProxyParent);
 
   

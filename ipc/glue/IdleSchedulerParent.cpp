@@ -214,7 +214,7 @@ IPCResult IdleSchedulerParent::RecvInitForIdleUse(
   
   mChildId = unusedId;
 
-  aResolve(std::tuple<mozilla::Maybe<SharedMemoryHandle>&&, const uint32_t&>(
+  aResolve(Tuple<mozilla::Maybe<SharedMemoryHandle>&&, const uint32_t&>(
       std::move(activeCounter), mChildId));
   return IPC_OK();
 }

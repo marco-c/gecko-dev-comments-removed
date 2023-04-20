@@ -9,6 +9,7 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Tuple.h"
 
 #include <stdint.h>
 #include <type_traits>
@@ -184,7 +185,7 @@ class ThreadTrampoline {
   
   
   
-  std::tuple<std::decay_t<Args>...> args;
+  mozilla::Tuple<std::decay_t<Args>...> args;
 
   
   Mutex createMutex MOZ_UNANNOTATED;
@@ -216,7 +217,7 @@ class ThreadTrampoline {
     
     createMutex.lock();
     createMutex.unlock();
-    f(std::move(std::get<Indices>(args))...);
+    f(std::move(mozilla::Get<Indices>(args))...);
   }
 };
 

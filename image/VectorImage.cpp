@@ -24,7 +24,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/SVGObserverUtils.h"  
-
+#include "mozilla/Tuple.h"
 #include "nsIStreamListener.h"
 #include "nsMimeTypes.h"
 #include "nsPresContext.h"
@@ -692,7 +692,9 @@ VectorImage::GetFrameAtSize(const IntSize& aSize, uint32_t aWhichFrame,
 
   uint32_t whichFrame = mHaveAnimations ? aWhichFrame : FRAME_FIRST;
 
-  auto [sourceSurface, decodeSize] =
+  RefPtr<SourceSurface> sourceSurface;
+  IntSize decodeSize;
+  Tie(sourceSurface, decodeSize) =
       LookupCachedSurface(aSize, SVGImageContext(), aFlags);
   if (sourceSurface) {
     return sourceSurface.forget();
@@ -1006,7 +1008,7 @@ VectorImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
   
   
   RefPtr<SourceSurface> sourceSurface;
-  std::tie(sourceSurface, params.size) =
+  Tie(sourceSurface, params.size) =
       LookupCachedSurface(aSize, params.svgContext, aFlags);
   if (sourceSurface) {
     RefPtr<gfxDrawable> drawable =
@@ -1049,7 +1051,7 @@ already_AddRefed<gfxDrawable> VectorImage::CreateSVGDrawable(
   return svgDrawable.forget();
 }
 
-std::tuple<RefPtr<SourceSurface>, IntSize> VectorImage::LookupCachedSurface(
+Tuple<RefPtr<SourceSurface>, IntSize> VectorImage::LookupCachedSurface(
     const IntSize& aSize, const SVGImageContext& aSVGContext, uint32_t aFlags) {
   
   
@@ -1057,7 +1059,7 @@ std::tuple<RefPtr<SourceSurface>, IntSize> VectorImage::LookupCachedSurface(
   
   if (aFlags & (FLAG_BYPASS_SURFACE_CACHE | FLAG_RECORD_BLOB) ||
       mHaveAnimations) {
-    return std::make_tuple(RefPtr<SourceSurface>(), aSize);
+    return MakeTuple(RefPtr<SourceSurface>(), aSize);
   }
 
   LookupResult result(MatchType::NOT_FOUND);
@@ -1075,7 +1077,7 @@ std::tuple<RefPtr<SourceSurface>, IntSize> VectorImage::LookupCachedSurface(
   MOZ_ASSERT(result.Type() != MatchType::SUBSTITUTE_BECAUSE_PENDING);
   if (!result || result.Type() == MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND) {
     
-    return std::make_tuple(RefPtr<SourceSurface>(), rasterSize);
+    return MakeTuple(RefPtr<SourceSurface>(), rasterSize);
   }
 
   RefPtr<SourceSurface> sourceSurface = result.Surface()->GetSourceSurface();
@@ -1083,10 +1085,10 @@ std::tuple<RefPtr<SourceSurface>, IntSize> VectorImage::LookupCachedSurface(
     
     
     RecoverFromLossOfSurfaces();
-    return std::make_tuple(RefPtr<SourceSurface>(), rasterSize);
+    return MakeTuple(RefPtr<SourceSurface>(), rasterSize);
   }
 
-  return std::make_tuple(std::move(sourceSurface), rasterSize);
+  return MakeTuple(std::move(sourceSurface), rasterSize);
 }
 
 already_AddRefed<SourceSurface> VectorImage::CreateSurface(

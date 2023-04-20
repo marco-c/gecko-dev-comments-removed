@@ -409,7 +409,7 @@ template <typename T>
 
 template <typename... Elements>
 [[nodiscard]] bool ToJSValue(JSContext* aCx,
-                             const std::tuple<Elements...>& aArguments,
+                             const Tuple<Elements...>& aArguments,
                              JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
@@ -420,11 +420,9 @@ template <typename... Elements>
   }
   bool ok = true;
   size_t i = 0;
-  auto Callable = [aCx, &ok, &v, &i](auto& aElem) {
+  ForEach(aArguments, [aCx, &ok, &v, &i](auto& aElem) {
     ok = ok && ToJSValue(aCx, aElem, v[i++]);
-  };
-  std::apply([Callable](auto&&... args) { (Callable(args), ...); }, aArguments);
-
+  });
   if (!ok) {
     return false;
   }
