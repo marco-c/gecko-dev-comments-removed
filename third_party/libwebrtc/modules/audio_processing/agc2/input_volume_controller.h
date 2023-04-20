@@ -183,9 +183,7 @@ class InputVolumeController final {
 
 class MonoInputVolumeController {
  public:
-  MonoInputVolumeController(int startup_min_level,
-                            int clipped_level_min,
-                            int min_mic_level);
+  MonoInputVolumeController(int clipped_level_min, int min_mic_level);
   ~MonoInputVolumeController();
   MonoInputVolumeController(const MonoInputVolumeController&) = delete;
   MonoInputVolumeController& operator=(const MonoInputVolumeController&) =
@@ -214,7 +212,6 @@ class MonoInputVolumeController {
 
   
   int min_mic_level() const { return min_mic_level_; }
-  int startup_min_level() const { return startup_min_level_; }
 
  private:
   
@@ -240,7 +237,6 @@ class MonoInputVolumeController {
   bool capture_output_used_ = true;
   bool check_volume_on_next_process_ = true;
   bool startup_ = true;
-  int startup_min_level_;
 
   
   

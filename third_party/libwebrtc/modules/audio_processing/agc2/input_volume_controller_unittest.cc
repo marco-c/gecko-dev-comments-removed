@@ -947,8 +947,6 @@ TEST(InputVolumeControllerTest, AgcMinMicLevelExperimentDefault) {
       CreateInputVolumeController(kInitialInputVolume, kClippedLevelStep,
                                   kClippedRatioThreshold, kClippedWaitFrames);
   EXPECT_EQ(manager->channel_controllers_[0]->min_mic_level(), kMinMicLevel);
-  EXPECT_EQ(manager->channel_controllers_[0]->startup_min_level(),
-            kInitialInputVolume);
 }
 
 TEST(InputVolumeControllerTest, AgcMinMicLevelExperimentDisabled) {
@@ -960,8 +958,6 @@ TEST(InputVolumeControllerTest, AgcMinMicLevelExperimentDisabled) {
                                     kClippedRatioThreshold, kClippedWaitFrames);
 
     EXPECT_EQ(manager->channel_controllers_[0]->min_mic_level(), kMinMicLevel);
-    EXPECT_EQ(manager->channel_controllers_[0]->startup_min_level(),
-              kInitialInputVolume);
   }
 }
 
@@ -974,8 +970,6 @@ TEST(InputVolumeControllerTest, AgcMinMicLevelExperimentOutOfRangeAbove) {
       CreateInputVolumeController(kInitialInputVolume, kClippedLevelStep,
                                   kClippedRatioThreshold, kClippedWaitFrames);
   EXPECT_EQ(manager->channel_controllers_[0]->min_mic_level(), kMinMicLevel);
-  EXPECT_EQ(manager->channel_controllers_[0]->startup_min_level(),
-            kInitialInputVolume);
 }
 
 
@@ -987,8 +981,6 @@ TEST(InputVolumeControllerTest, AgcMinMicLevelExperimentOutOfRangeBelow) {
       CreateInputVolumeController(kInitialInputVolume, kClippedLevelStep,
                                   kClippedRatioThreshold, kClippedWaitFrames);
   EXPECT_EQ(manager->channel_controllers_[0]->min_mic_level(), kMinMicLevel);
-  EXPECT_EQ(manager->channel_controllers_[0]->startup_min_level(),
-            kInitialInputVolume);
 }
 
 
@@ -1007,8 +999,6 @@ TEST(InputVolumeControllerTest, AgcMinMicLevelExperimentEnabled50) {
 
     EXPECT_EQ(manager->channel_controllers_[0]->min_mic_level(),
               kMinMicLevelOverride);
-    EXPECT_EQ(manager->channel_controllers_[0]->startup_min_level(),
-              kInitialInputVolume);
   }
 }
 
