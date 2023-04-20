@@ -11,6 +11,7 @@
 #include "rtc_base/null_socket_server.h"
 
 #include "rtc_base/checks.h"
+#include "rtc_base/event.h"
 
 namespace rtc {
 
@@ -21,7 +22,10 @@ bool NullSocketServer::Wait(int cms, bool process_io) {
   
   
   
-  event_.Wait(cms, Event::kForever);
+  event_.Wait(cms == kForever
+                  ? Event::kForever
+                  : webrtc::TimeDelta::Millis(cms),
+              Event::kForever);
   return true;
 }
 

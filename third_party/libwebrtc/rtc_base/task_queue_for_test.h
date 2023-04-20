@@ -35,7 +35,7 @@ inline void SendTask(TaskQueueBase* task_queue,
   absl::Cleanup cleanup = [&event] { event.Set(); };
   task_queue->PostTask([task, cleanup = std::move(cleanup)] { task(); });
   RTC_CHECK(event.Wait(rtc::Event::kForever,
-                       10'000));
+                       TimeDelta::Seconds(10)));
 }
 
 class RTC_LOCKABLE TaskQueueForTest : public rtc::TaskQueue {

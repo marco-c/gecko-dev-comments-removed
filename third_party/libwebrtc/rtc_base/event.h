@@ -11,6 +11,7 @@
 #ifndef RTC_BASE_EVENT_H_
 #define RTC_BASE_EVENT_H_
 
+#include "api/units/time_delta.h"
 #if defined(WEBRTC_WIN)
 #include <windows.h>
 #elif defined(WEBRTC_POSIX)
@@ -23,7 +24,9 @@ namespace rtc {
 
 class Event {
  public:
-  static const int kForever = -1;
+  
+  static constexpr webrtc::TimeDelta kForever =
+      webrtc::TimeDelta::PlusInfinity();
 
   Event();
   Event(bool manual_reset, bool initially_signaled);
@@ -42,15 +45,34 @@ class Event {
   
   
   
-  bool Wait(int give_up_after_ms, int warn_after_ms);
+  
+  
+  bool Wait(webrtc::TimeDelta give_up_after, webrtc::TimeDelta warn_after);
 
   
-  bool Wait(int give_up_after_ms) {
-    return Wait(give_up_after_ms,
-                give_up_after_ms == kForever ? 3000 : kForever);
+  
+  
+  template <class T>
+  bool Wait(T give_up_after) {
+    webrtc::TimeDelta duration = ToTimeDelta(give_up_after);
+    return Wait(duration, duration.IsPlusInfinity()
+                              ? webrtc::TimeDelta::Seconds(3)
+                              : kForever);
   }
 
  private:
+  
+  static webrtc::TimeDelta ToTimeDelta(int duration) {
+    
+    
+    constexpr int kForeverMs = -1;
+    return duration == kForeverMs ? kForever
+                                  : webrtc::TimeDelta::Millis(duration);
+  }
+  static webrtc::TimeDelta ToTimeDelta(webrtc::TimeDelta duration) {
+    return duration;
+  }
+
 #if defined(WEBRTC_WIN)
   HANDLE event_handle_;
 #elif defined(WEBRTC_POSIX)
