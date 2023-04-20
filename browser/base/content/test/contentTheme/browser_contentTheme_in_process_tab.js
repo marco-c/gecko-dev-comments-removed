@@ -77,11 +77,4 @@ add_task(async function test_in_process_tab() {
   );
 
   await BrowserTestUtils.closeWindow(win);
-
-  
-  
-  
-  
-  
-  Cu.forceGC();
 });

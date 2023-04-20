@@ -508,6 +508,8 @@ void nsBaseWidget::SetAttachedWidgetListener(nsIWidgetListener* aListener) {
 
 
 void nsBaseWidget::Destroy() {
+  DestroyCompositor();
+
   
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
   

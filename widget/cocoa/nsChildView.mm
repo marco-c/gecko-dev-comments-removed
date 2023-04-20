@@ -368,17 +368,19 @@ nsCocoaWindow* nsChildView::GetAppWindowWidget() const {
 void nsChildView::Destroy() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  
-  
-  MutexAutoLock lock(mCompositingLock);
-
   if (mOnDestroyCalled) return;
   mOnDestroyCalled = true;
 
   
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
 
-  [mView widgetDestroyed];
+  {
+    
+    
+    MutexAutoLock lock(mCompositingLock);
+
+    [mView widgetDestroyed];
+  }
 
   nsBaseWidget::Destroy();
 
