@@ -105,6 +105,8 @@ var FathomHeuristicsRegExp = {
         "|nom.*(titulaire|détenteur)" +
         "|(titulaire|détenteur).*(carte)" +
         
+        "|titolare.*carta" +
+        
         "|cc-?name" +
         "|card-?name" +
         "|cardholder-?name" +
@@ -126,6 +128,8 @@ var FathomHeuristicsRegExp = {
         
         "(cc|kk)nr" +
         "|(kredit)?(karten)(nummer|nr)" +
+        
+        "|numero.*carta" +
         
         "|(numero|número|numéro).*(carte)" +
         
@@ -1186,6 +1190,7 @@ const biases = [
   ["cc-exp-month", -8.844199180603027],
   ["cc-exp-year", -6.499860763549805],
 ];
+
 
 
 
