@@ -18,14 +18,12 @@ import sys
 import tempfile
 import time
 import traceback
-
 from copy import deepcopy
 
 import mozversion
-
-from mozprofile import Profile
-from mozrunner import Runner, FennecEmulatorRunner
 import six
+from mozprofile import Profile
+from mozrunner import FennecEmulatorRunner, Runner
 from six import reraise
 
 from . import errors
@@ -69,6 +67,8 @@ class GeckoInstance(object):
         
         "dom.max_chrome_script_run_time": 0,
         "dom.max_script_run_time": 0,
+        
+        "dom.navigation.locationChangeRateLimit.count": 0,
         
         "dom.push.connection.enabled": False,
         
