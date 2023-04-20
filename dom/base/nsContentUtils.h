@@ -2684,22 +2684,6 @@ class nsContentUtils {
 
 
 
-
-
-  static nsresult IsUserIdle(uint32_t aRequestedIdleTimeInMS,
-                             bool* aUserIsIdle);
-
-  
-
-
-
-
-
-
-
-
-
-
   static void GetSelectionInTextControl(mozilla::dom::Selection* aSelection,
                                         Element* aRoot,
                                         uint32_t& aOutStartOffset,
