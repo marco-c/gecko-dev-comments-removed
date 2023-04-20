@@ -75,6 +75,8 @@ class GeckoInstance(object):
         
         "dom.push.connection.enabled": False,
         
+        "dom.screenorientation.allow-lock": True,
+        
         "dom.successive_dialog_time_limit": 0,
         
         
