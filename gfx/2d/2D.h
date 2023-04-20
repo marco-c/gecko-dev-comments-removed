@@ -1933,6 +1933,11 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
   virtual void DetachAllSnapshots() = 0;
 
+  
+
+
+  virtual bool RemoveAllClips() { return false; }
+
  protected:
   UserData mUserData;
   Matrix mTransform;

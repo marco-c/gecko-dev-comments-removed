@@ -622,6 +622,8 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   bool EnsureTarget(const gfx::Rect* aCoveredRect = nullptr,
                     bool aWillClear = false);
+  
+  bool BorrowTarget(const gfx::IntRect& aPersistedRect, bool aNeedsClear);
 
   void RestoreClipsAndTransformToTarget();
 

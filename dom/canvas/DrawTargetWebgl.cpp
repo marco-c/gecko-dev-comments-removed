@@ -1334,6 +1334,19 @@ void DrawTargetWebgl::PopClip() {
   mClipStack.pop_back();
 }
 
+bool DrawTargetWebgl::RemoveAllClips() {
+  if (mClipStack.empty()) {
+    return true;
+  }
+  if (!mSkia->RemoveAllClips()) {
+    return false;
+  }
+  mClipChanged = true;
+  mRefreshClipState = true;
+  mClipStack.clear();
+  return true;
+}
+
 
 static inline bool SupportsDrawOptions(const DrawOptions& aOptions) {
   switch (aOptions.mCompositionOp) {

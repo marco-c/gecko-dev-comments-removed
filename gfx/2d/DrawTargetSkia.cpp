@@ -1913,6 +1913,12 @@ void DrawTargetSkia::PopClip() {
   SetTransform(GetTransform());
 }
 
+bool DrawTargetSkia::RemoveAllClips() {
+  mCanvas->restoreToCount(1);
+  SetTransform(GetTransform());
+  return true;
+}
+
 
 
 
