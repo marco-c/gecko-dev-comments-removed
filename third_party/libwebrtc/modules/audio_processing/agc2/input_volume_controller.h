@@ -17,18 +17,14 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "modules/audio_processing/agc/agc.h"
 #include "modules/audio_processing/agc2/clipping_predictor.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/gtest_prod_util.h"
 
 namespace webrtc {
 
-class RecommendedInputVolumeEstimator;
-class GainControl;
-
+class MonoInputVolumeController;
 
 
 
@@ -40,23 +36,42 @@ class GainControl;
 class InputVolumeController final {
  public:
   
+  struct Config {
+    bool enabled = false;
+    
+    int startup_min_volume = 0;
+    
+    
+    int clipped_level_min = 70;
+    
+    bool digital_adaptive_follows = true;
+    
+    
+    int clipped_level_step = 15;
+    
+    
+    float clipped_ratio_threshold = 0.1f;
+    
+    
+    int clipped_wait_frames = 300;
+    
+    bool enable_clipping_predictor = false;
+    
+    
+    int max_digital_gain_db = 30;
+    int min_digital_gain_db = 0;
+  };
+
   
   
-  InputVolumeController(
-      int num_capture_channels,
-      const AudioProcessing::Config::GainController1::AnalogGainController&
-          analog_config);
+  
+  InputVolumeController(int num_capture_channels, const Config& config);
 
   ~InputVolumeController();
   InputVolumeController(const InputVolumeController&) = delete;
   InputVolumeController& operator=(const InputVolumeController&) = delete;
 
   void Initialize();
-
-  
-  
-  
-  void SetupDigitalGainControl(GainControl& gain_control) const;
 
   
   void set_stream_analog_level(int level);
@@ -73,15 +88,8 @@ class InputVolumeController final {
   
   
   
-  
-  
-  void Process(const AudioBuffer& audio_buffer,
-               absl::optional<float> speech_probability,
+  void Process(absl::optional<float> speech_probability,
                absl::optional<float> speech_level_dbfs);
-
-  
-  
-  void Process(const AudioBuffer& audio_buffer);
 
   
   
@@ -138,25 +146,17 @@ class InputVolumeController final {
                            UnusedClippingPredictionsProduceEqualAnalogLevels);
   FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
                            EmptyRmsErrorOverrideHasNoEffect);
-  FRIEND_TEST_ALL_PREFIXES(InputVolumeControllerParametrizedTest,
-                           NonEmptyRmsErrorOverrideHasEffect);
-
-  
-  
-  InputVolumeController(
-      const AudioProcessing::Config::GainController1::AnalogGainController&
-          analog_config,
-      Agc* agc);
 
   void AggregateChannelLevels();
 
   const bool analog_controller_enabled_;
 
   const absl::optional<int> min_mic_level_override_;
-  std::unique_ptr<ApmDataDumper> data_dumper_;
   static std::atomic<int> instance_counter_;
   const bool use_min_channel_level_;
   const int num_capture_channels_;
+
+  
   const bool disable_digital_adaptive_;
 
   int frames_since_clipped_;
@@ -178,8 +178,7 @@ class InputVolumeController final {
   const float clipped_ratio_threshold_;
   const int clipped_wait_frames_;
 
-  std::vector<std::unique_ptr<RecommendedInputVolumeEstimator>> channel_agcs_;
-  std::vector<absl::optional<int>> new_compressions_to_set_;
+  std::vector<std::unique_ptr<MonoInputVolumeController>> channel_controllers_;
 
   const std::unique_ptr<ClippingPredictor> clipping_predictor_;
   const bool use_clipping_predictor_step_;
@@ -189,18 +188,18 @@ class InputVolumeController final {
 
 
 
-class RecommendedInputVolumeEstimator {
+class MonoInputVolumeController {
  public:
-  RecommendedInputVolumeEstimator(ApmDataDumper* data_dumper,
-                                  int startup_min_level,
-                                  int clipped_level_min,
-                                  bool disable_digital_adaptive,
-                                  int min_mic_level);
-  ~RecommendedInputVolumeEstimator();
-  RecommendedInputVolumeEstimator(const RecommendedInputVolumeEstimator&) =
+  MonoInputVolumeController(int startup_min_level,
+                            int clipped_level_min,
+                            bool disable_digital_adaptive,
+                            int min_mic_level,
+                            int max_digital_gain_db,
+                            int min_digital_gain_db);
+  ~MonoInputVolumeController();
+  MonoInputVolumeController(const MonoInputVolumeController&) = delete;
+  MonoInputVolumeController& operator=(const MonoInputVolumeController&) =
       delete;
-  RecommendedInputVolumeEstimator& operator=(
-      const RecommendedInputVolumeEstimator&) = delete;
 
   void Initialize();
   void HandleCaptureOutputUsedChange(bool capture_output_used);
@@ -215,23 +214,14 @@ class RecommendedInputVolumeEstimator {
 
   
   
-  
-  
-  
-  void Process(rtc::ArrayView<const int16_t> audio,
-               absl::optional<int> rms_error_override);
+  void Process(absl::optional<int> rms_error_override);
 
   
   int recommended_analog_level() const { return recommended_input_volume_; }
 
-  float voice_probability() const { return agc_->voice_probability(); }
   void ActivateLogging() { log_to_histograms_ = true; }
-  absl::optional<int> new_compression() const {
-    return new_compression_to_set_;
-  }
 
   
-  void set_agc(Agc* agc) { agc_.reset(agc); }
   int min_mic_level() const { return min_mic_level_; }
   int startup_min_level() const { return startup_min_level_; }
 
@@ -242,27 +232,25 @@ class RecommendedInputVolumeEstimator {
 
   
   
-  
   void SetMaxLevel(int level);
 
   int CheckVolumeAndReset();
   void UpdateGain(int rms_error_db);
-  void UpdateCompressor();
 
   const int min_mic_level_;
+
+  
   const bool disable_digital_adaptive_;
-  std::unique_ptr<Agc> agc_;
+  const int max_digital_gain_db_;
+  const int min_digital_gain_db_;
+
   int level_ = 0;
   int max_level_;
-  int max_compression_gain_;
-  int target_compression_;
-  int compression_;
-  float compression_accumulator_;
+
   bool capture_output_used_ = true;
   bool check_volume_on_next_process_ = true;
   bool startup_ = true;
   int startup_min_level_;
-  int calls_since_last_gain_log_ = 0;
 
   
   
@@ -272,13 +260,12 @@ class RecommendedInputVolumeEstimator {
   
   int recommended_input_volume_ = 0;
 
-  absl::optional<int> new_compression_to_set_;
   bool log_to_histograms_ = false;
+
   const int clipped_level_min_;
 
   
   int frames_since_update_gain_ = 0;
-  
   bool is_first_frame_ = true;
 };
 
