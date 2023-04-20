@@ -723,6 +723,8 @@ class TopSitesFeed {
             
             
             sponsored_position: positionIndex + 1,
+            
+            hostname: shortURL({ url: spoc.url }),
           };
           sponsored.push(link);
         }
