@@ -194,11 +194,10 @@ pub extern "C" fn fog_test_get_experiment_data(
 
 #[no_mangle]
 pub extern "C" fn fog_set_metrics_feature_config(config_json: &nsACString) {
-    
     if config_json == "null" || config_json.is_empty() {
-        glean::glean_set_metrics_enabled_config("{}".to_owned());
+        glean::glean_set_metrics_disabled_config("{}".to_owned());
     }
-    glean::glean_set_metrics_enabled_config(config_json.to_string());
+    glean::glean_set_metrics_disabled_config(config_json.to_string());
 }
 
 
