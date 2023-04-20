@@ -4189,4 +4189,4 @@ pref("cookiebanners.listService.testSkipRemoteSettings", false);
 
 
 
-pref("dom.sitepermsaddon-provider.separatedBlocklistedDomains", "shopee.co.th");
+pref("dom.sitepermsaddon-provider.separatedBlocklistedDomains", "shopee.co.th,alipay.com,miravia.es");
