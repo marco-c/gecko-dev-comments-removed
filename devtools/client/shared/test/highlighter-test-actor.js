@@ -96,6 +96,16 @@ var highlighterTestSpec = protocol.generateActorSpec({
         value: RetVal("string"),
       },
     },
+    getHighlighterComputedStyle: {
+      request: {
+        nodeID: Arg(0, "string"),
+        property: Arg(1, "string"),
+        actorID: Arg(2, "string"),
+      },
+      response: {
+        value: RetVal("string"),
+      },
+    },
     getHighlighterNodeTextContent: {
       request: {
         nodeID: Arg(0, "string"),
@@ -252,7 +262,6 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
 
 
 
-
   getHighlighterAttribute(nodeID, name, actorID) {
     const helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
 
@@ -261,6 +270,24 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
     }
 
     return helper.getAttributeForElement(nodeID, name);
+  },
+
+  
+
+
+
+
+
+
+
+  getHighlighterComputedStyle(nodeID, property, actorID) {
+    const helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
+
+    if (!helper) {
+      throw new Error(`Highlighter not found`);
+    }
+
+    return helper.getElement(nodeID).computedStyle.getPropertyValue(property);
   },
 
   
@@ -545,6 +572,21 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
   getHighlighterNodeTextContent(nodeID, highlighter) {
     return super.getHighlighterNodeTextContent(
       nodeID,
+      (highlighter || this.highlighter).actorID
+    );
+  }
+
+  
+
+
+
+
+
+
+  getHighlighterComputedStyle(nodeID, property, highlighter) {
+    return super.getHighlighterComputedStyle(
+      nodeID,
+      property,
       (highlighter || this.highlighter).actorID
     );
   }
