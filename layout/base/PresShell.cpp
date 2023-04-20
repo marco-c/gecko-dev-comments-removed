@@ -5523,7 +5523,6 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
   const nsStyleDisplay* disp = rootStyleFrame->StyleDisplay();
   StyleAppearance appearance = disp->EffectiveAppearance();
   if (rootStyleFrame->IsThemed(disp) &&
-      appearance != StyleAppearance::MozWinGlass &&
       appearance != StyleAppearance::MozWinBorderlessGlass) {
     
     

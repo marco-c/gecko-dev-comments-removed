@@ -293,7 +293,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
         
         BufferMode doubleBuffering = mozilla::layers::BufferMode::BUFFER_NONE;
         switch (mTransparencyMode) {
-          case eTransparencyGlass:
           case eTransparencyBorderlessGlass:
           default:
             

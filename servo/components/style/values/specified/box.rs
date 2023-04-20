@@ -2011,9 +2011,6 @@ pub enum Appearance {
     MozWinMediaToolbox,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWinBrowsertabbarToolbox,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    MozWinGlass,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWinBorderlessGlass,
     

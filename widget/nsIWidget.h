@@ -163,10 +163,8 @@ typedef void* nsNativeWidget;
 
 
 enum nsTransparencyMode {
-  eTransparencyOpaque = 0,   
-  eTransparencyTransparent,  
-  eTransparencyGlass,  
-                       
+  eTransparencyOpaque = 0,      
+  eTransparencyTransparent,     
   eTransparencyBorderlessGlass  
                                 
                                 
