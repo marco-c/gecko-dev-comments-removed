@@ -118,7 +118,7 @@ var PageThumbUtils = {
       utils.getScrollbarSize(false, sbWidth, sbHeight);
     } catch (e) {
       
-      Cu.reportError("Unable to get scrollbar size in determineCropSize.");
+      console.error("Unable to get scrollbar size in determineCropSize.");
       sbWidth.value = sbHeight.value = 0;
     }
 
@@ -313,7 +313,7 @@ var PageThumbUtils = {
       utils.getScrollbarSize(false, sbWidth, sbHeight);
     } catch (e) {
       
-      Cu.reportError("Unable to get scrollbar size in determineCropSize.");
+      console.error("Unable to get scrollbar size in determineCropSize.");
       sbWidth.value = sbHeight.value = 0;
     }
 

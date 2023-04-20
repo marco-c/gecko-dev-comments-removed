@@ -108,7 +108,7 @@ var CrashMonitorInternal = {
       } catch (ex) {
         
         if (ex.name !== "NotFoundError") {
-          Cu.reportError(
+          console.error(
             `Error while loading crash monitor data: ${ex.message}`
           );
         }
@@ -117,7 +117,7 @@ var CrashMonitorInternal = {
 
       
       if (Object(notifications) !== notifications) {
-        Cu.reportError(
+        console.error(
           "Error while parsing crash monitor data: invalid monitor data"
         );
         return null;

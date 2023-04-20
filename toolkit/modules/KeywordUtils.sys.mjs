@@ -53,7 +53,7 @@ export var KeywordUtils = {
         }
       } catch (ex) {
         
-        Cu.reportError(ex);
+        console.error(ex);
       }
     }
 

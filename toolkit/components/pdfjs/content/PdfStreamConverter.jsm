@@ -288,7 +288,7 @@ class ChromeActions {
     } catch (err) {
       
       
-      Cu.reportError(err);
+      console.error(err);
       return sendResp(false);
     }
 
@@ -967,7 +967,7 @@ PdfStreamConverter.prototype = {
     rv.shouldOpen = true;
     
     
-    Cu.reportError("Found unusable PDF preferences. Fixing back to PDF.js");
+    console.error("Found unusable PDF preferences. Fixing back to PDF.js");
 
     mime.preferredAction = Ci.nsIHandlerInfo.handleInternally;
     mime.alwaysAskBeforeHandling = false;

@@ -342,7 +342,7 @@ function internalSave(
 
         continueSave();
       })
-      .catch(Cu.reportError);
+      .catch(console.error);
   }
 
   function continueSave() {
@@ -835,7 +835,7 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
     
     let list = await Downloads.getList(Downloads.ALL);
     list.add(download);
-  })().catch(Cu.reportError);
+  })().catch(console.error);
 }
 
 

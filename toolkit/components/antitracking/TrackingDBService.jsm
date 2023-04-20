@@ -290,7 +290,7 @@ TrackingDBService.prototype = {
         }
       });
     } catch (e) {
-      Cu.reportError(e);
+      console.error(e);
     }
 
     
