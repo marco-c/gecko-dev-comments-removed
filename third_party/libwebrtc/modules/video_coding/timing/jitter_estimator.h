@@ -39,12 +39,7 @@ class JitterEstimator {
   
   
   
-  
-  
-  
-  void UpdateEstimate(TimeDelta frame_delay,
-                      DataSize frame_size,
-                      bool incomplete_frame = false);
+  void UpdateEstimate(TimeDelta frame_delay, DataSize frame_size);
 
   
   
@@ -94,9 +89,7 @@ class JitterEstimator {
   
   
   
-  
-  
-  void EstimateRandomJitter(double d_dT, bool incomplete_frame);
+  void EstimateRandomJitter(double d_dT);
 
   double NoiseThreshold() const;
 

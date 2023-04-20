@@ -869,7 +869,7 @@ void VCMJitterBuffer::UpdateJitterEstimate(const VCMFrameBuffer& frame,
 void VCMJitterBuffer::UpdateJitterEstimate(int64_t latest_packet_time_ms,
                                            uint32_t timestamp,
                                            unsigned int frame_size,
-                                           bool incomplete_frame) {
+                                           bool ) {
   if (latest_packet_time_ms == -1) {
     return;
   }
@@ -880,8 +880,7 @@ void VCMJitterBuffer::UpdateJitterEstimate(int64_t latest_packet_time_ms,
   
   if (not_reordered) {
     
-    jitter_estimate_.UpdateEstimate(*frame_delay, DataSize::Bytes(frame_size),
-                                    incomplete_frame);
+    jitter_estimate_.UpdateEstimate(*frame_delay, DataSize::Bytes(frame_size));
   }
 }
 
