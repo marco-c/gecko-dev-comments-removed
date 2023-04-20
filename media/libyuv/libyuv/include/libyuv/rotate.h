@@ -87,6 +87,60 @@ int I444Rotate(const uint8_t* src_y,
 
 
 LIBYUV_API
+int I010Rotate(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height,
+               enum RotationMode mode);
+
+
+LIBYUV_API
+int I210Rotate(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height,
+               enum RotationMode mode);
+
+
+LIBYUV_API
+int I410Rotate(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_u,
+               int dst_stride_u,
+               uint16_t* dst_v,
+               int dst_stride_v,
+               int width,
+               int height,
+               enum RotationMode mode);
+
+
+LIBYUV_API
 int NV12ToI420Rotate(const uint8_t* src_y,
                      int src_stride_y,
                      const uint8_t* src_uv,
@@ -155,6 +209,16 @@ void RotatePlane270(const uint8_t* src,
                     int dst_stride,
                     int width,
                     int height);
+
+
+LIBYUV_API
+int RotatePlane_16(const uint16_t* src,
+                   int src_stride,
+                   uint16_t* dst,
+                   int dst_stride,
+                   int width,
+                   int height,
+                   enum RotationMode mode);
 
 
 
