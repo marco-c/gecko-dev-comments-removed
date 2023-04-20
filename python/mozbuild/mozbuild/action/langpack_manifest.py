@@ -180,23 +180,38 @@ def parse_flat_ftl(path):
 
 
 
+
+
+
+
 def get_title_and_description(app, locale):
     dir = os.path.dirname(__file__)
     with open(os.path.join(dir, "langpack_localeNames.json"), encoding="utf-8") as nf:
         names = json.load(nf)
+
+    nameCharLimit = 45
+    descCharLimit = 132
+    nameTemplate = "Language: {}"
+    descTemplate = "{} Language Pack for {}"
+
     if locale in names:
         data = names[locale]
         native = data["native"]
         english = data["english"] if "english" in data else native
-        titleName = f"{native} ({english})" if english != native else native
-        descName = f"{native} ({locale})"
-    else:
-        titleName = locale
-        descName = locale
 
-    title = f"Language Pack: {titleName}"
-    description = f"{app} Language Pack for {descName}"
-    return title, description
+        if english != native:
+            title = nameTemplate.format(f"{native} ({english})")
+            if len(title) > nameCharLimit:
+                title = nameTemplate.format(native)
+            description = descTemplate.format(app, f"{native} ({locale}) – {english}")
+        else:
+            title = nameTemplate.format(native)
+            description = descTemplate.format(app, f"{native} ({locale})")
+    else:
+        title = nameTemplate.format(locale)
+        description = descTemplate.format(app, locale)
+
+    return title[:nameCharLimit], description[:descCharLimit]
 
 
 
