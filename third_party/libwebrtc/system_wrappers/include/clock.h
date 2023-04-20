@@ -39,11 +39,7 @@ class RTC_EXPORT Clock {
   int64_t TimeInMicroseconds() { return CurrentTime().us(); }
 
   
-  
-  
-  virtual NtpTime CurrentNtpTime() {
-    return ConvertTimestampToNtpTime(CurrentTime());
-  }
+  NtpTime CurrentNtpTime() { return ConvertTimestampToNtpTime(CurrentTime()); }
   int64_t CurrentNtpInMilliseconds() { return CurrentNtpTime().ToMs(); }
 
   
