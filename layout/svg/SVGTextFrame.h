@@ -391,7 +391,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
 
-  void NotifyGlyphMetricsChange();
+  void NotifyGlyphMetricsChange(bool aUpdateTextCorrespondence);
 
   
 
