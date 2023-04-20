@@ -5,6 +5,37 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std::{
     ffi::{CStr, CString},
     os::raw::{c_char, c_int, c_void},
@@ -45,6 +76,9 @@ pub struct AndroidSystemProperties {
     read_callback_fn: Option<SystemPropertyReadCallbackFn>,
 }
 
+unsafe impl Send for AndroidSystemProperties {}
+unsafe impl Sync for AndroidSystemProperties {}
+
 impl AndroidSystemProperties {
     #[cfg(not(target_os = "android"))]
     
@@ -60,8 +94,7 @@ impl AndroidSystemProperties {
     #[cfg(target_os = "android")]
     
     pub fn new() -> Self {
-        let libc_name = CString::new("libc.so").unwrap();
-        let libc_so = unsafe { libc::dlopen(libc_name.as_ptr(), libc::RTLD_NOLOAD) };
+        let libc_so = unsafe { libc::dlopen(b"libc.so\0".as_ptr().cast(), libc::RTLD_NOLOAD) };
 
         let mut properties = AndroidSystemProperties {
             libc_so,
@@ -75,9 +108,8 @@ impl AndroidSystemProperties {
         }
 
 
-        unsafe fn load_fn(libc_so: *mut c_void, name: &str) -> Option<*const c_void> {
-            let cname = CString::new(name).unwrap();
-            let fn_ptr = libc::dlsym(libc_so, cname.as_ptr());
+        unsafe fn load_fn(libc_so: *mut c_void, name: &[u8]) -> Option<*const c_void> {
+            let fn_ptr = libc::dlsym(libc_so, name.as_ptr().cast());
 
             if fn_ptr.is_null() {
                 return None;
@@ -87,15 +119,15 @@ impl AndroidSystemProperties {
         }
 
         unsafe {
-            properties.read_callback_fn = load_fn(libc_so, "__system_property_read_callback")
+            properties.read_callback_fn = load_fn(libc_so, b"__system_property_read_callback\0")
                 .map(|raw| mem::transmute::<*const c_void, SystemPropertyReadCallbackFn>(raw));
 
-            properties.find_fn = load_fn(libc_so, "__system_property_find")
+            properties.find_fn = load_fn(libc_so, b"__system_property_find\0")
                 .map(|raw| mem::transmute::<*const c_void, SystemPropertyFindFn>(raw));
 
             
             if properties.read_callback_fn.is_none() || properties.find_fn.is_none() {
-                properties.get_fn = load_fn(libc_so, "__system_property_get")
+                properties.get_fn = load_fn(libc_so, b"__system_property_get\0")
                     .map(|raw| mem::transmute::<*const c_void, SystemPropertyGetFn>(raw));
             }
         }
@@ -106,9 +138,39 @@ impl AndroidSystemProperties {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn get(&self, name: &str) -> Option<String> {
-        let cname = CString::new(name).unwrap();
+        let cname = CString::new(name).ok()?;
+        self.get_from_cstr(&cname)
+    }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get_from_cstr(&self, cname: &std::ffi::CStr) -> Option<String> {
         
         if let (Some(find_fn), Some(read_callback_fn)) = (self.find_fn, self.read_callback_fn) {
             let info = unsafe { (find_fn)(cname.as_ptr()) };
@@ -153,7 +215,7 @@ impl Drop for AndroidSystemProperties {
         if !self.libc_so.is_null() {
             unsafe {
                 libc::dlclose(self.libc_so);
-            }    
+            }
         }
     }
 }
