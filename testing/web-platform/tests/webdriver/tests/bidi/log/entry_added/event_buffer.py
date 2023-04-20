@@ -11,6 +11,10 @@ async def test_console_log_cached_messages(
     bidi_session, wait_for_event, log_type, new_tab
 ):
     
+    await bidi_session.session.subscribe(events=["log.entryAdded"])
+    await bidi_session.session.unsubscribe(events=["log.entryAdded"])
+
+    
     expected_text = await create_log(bidi_session, new_tab, log_type, "cached_message")
 
     
@@ -63,6 +67,10 @@ async def test_console_log_cached_messages(
 async def test_console_log_cached_message_after_refresh(
     bidi_session, subscribe_events, new_tab, log_type
 ):
+    
+    await bidi_session.session.subscribe(events=["log.entryAdded"])
+    await bidi_session.session.unsubscribe(events=["log.entryAdded"])
+
     
     events = []
 
