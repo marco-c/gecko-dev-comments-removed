@@ -58,13 +58,9 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     
     
     const { resourceCommand } = this.targetFront.commands;
-
-    
     
     this.resourceCommand = resourceCommand;
-
     await resourceCommand.watchResources([resourceCommand.TYPES.STYLESHEET], {
-      
       onAvailable: this.noopStylesheetListener,
     });
 
