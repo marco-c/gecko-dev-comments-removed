@@ -106,6 +106,13 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   
 
   
+  MOZ_CAN_RUN_SCRIPT static already_AddRefed<ReadableStream> CreateNative(
+      JSContext* aCx, nsIGlobalObject* aGlobal,
+      UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
+      mozilla::Maybe<double> aHighWaterMark,
+      QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv);
+
+  
   MOZ_CAN_RUN_SCRIPT static already_AddRefed<ReadableStream> CreateByteNative(
       JSContext* aCx, nsIGlobalObject* aGlobal,
       UnderlyingSourceAlgorithmsWrapper& aAlgorithms,

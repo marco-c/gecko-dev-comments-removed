@@ -1006,6 +1006,45 @@ already_AddRefed<ReadableStream> CreateReadableByteStream(
 
 
 
+already_AddRefed<ReadableStream> ReadableStream::CreateNative(
+    JSContext* aCx, nsIGlobalObject* aGlobal,
+    UnderlyingSourceAlgorithmsWrapper& aAlgorithms,
+    mozilla::Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
+    ErrorResult& aRv) {
+  
+  double highWaterMark = aHighWaterMark.valueOr(1);
+  
+  MOZ_ASSERT(IsNonNegativeNumber(highWaterMark));
+
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  auto stream = MakeRefPtr<ReadableStream>(aGlobal);
+
+  
+  auto controller = MakeRefPtr<ReadableStreamDefaultController>(aGlobal);
+
+  
+  
+  
+  SetUpReadableStreamDefaultController(aCx, stream, controller, &aAlgorithms,
+                                       highWaterMark, aSizeAlgorithm, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+  return stream.forget();
+}
+
+
+
+
 already_AddRefed<ReadableStream> ReadableStream::CreateByteNative(
     JSContext* aCx, nsIGlobalObject* aGlobal,
     UnderlyingSourceAlgorithmsWrapper& aAlgorithms,

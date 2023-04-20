@@ -788,4 +788,15 @@ void WritableStream::SetUpNative(JSContext* aCx,
                                        highWaterMark, aSizeAlgorithm, aRv);
 }
 
+
+
+
+void WritableStream::ErrorNative(JSContext* aCx, JS::Handle<JS::Value> aError,
+                                 ErrorResult& aRv) {
+  
+  
+  WritableStreamDefaultControllerErrorIfNeeded(aCx, MOZ_KnownLive(mController),
+                                               aError, aRv);
+}
+
 }  

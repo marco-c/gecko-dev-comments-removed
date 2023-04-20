@@ -225,8 +225,8 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
       new WebTransportIncomingStreamsAlgorithms(mIncomingBidirectionalPromise,
                                                 false, this);
 
-  mIncomingBidirectionalStreams = CreateReadableStream(
-      cx, global, algorithm, Some(0.0), nullptr, aError);  
+  mIncomingBidirectionalStreams = ReadableStream::CreateNative(
+      cx, global, *algorithm, Some(0.0), nullptr, aError);  
   if (aError.Failed()) {
     return;
   }
@@ -245,8 +245,8 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   algorithm = new WebTransportIncomingStreamsAlgorithms(
       mIncomingUnidirectionalPromise, true, this);
 
-  mIncomingUnidirectionalStreams =
-      CreateReadableStream(cx, global, algorithm, Some(0.0), nullptr, aError);
+  mIncomingUnidirectionalStreams = ReadableStream::CreateNative(
+      cx, global, *algorithm, Some(0.0), nullptr, aError);
   if (aError.Failed()) {
     return;
   }
@@ -494,18 +494,13 @@ void WebTransport::Cleanup(WebTransportError* aError,
   }
 
   for (const auto& stream : sendStreams) {
-    RefPtr<WritableStreamDefaultController> controller = stream->Controller();
-    WritableStreamDefaultControllerErrorIfNeeded(cx, controller, errorValue,
-                                                 IgnoreErrors());
+    
+    MOZ_KnownLive(stream)->ErrorNative(cx, errorValue, IgnoreErrors());
   }
   
   
   for (const auto& stream : receiveStreams) {
-    RefPtr<ReadableStreamDefaultController> controller =
-        stream->Controller()->AsDefault();
-    
-    ReadableStreamDefaultControllerError(cx, controller, errorValue,
-                                         IgnoreErrors());
+    stream->ErrorNative(cx, errorValue, IgnoreErrors());
   }
   
   if (aCloseInfo) {
@@ -527,15 +522,9 @@ void WebTransport::Cleanup(WebTransportError* aError,
     
     mReady->MaybeReject(errorValue);
     
-    RefPtr<ReadableStreamDefaultController> controller =
-        mIncomingBidirectionalStreams->Controller()->AsDefault();
+    mIncomingBidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
     
-    ReadableStreamDefaultControllerError(cx, controller, errorValue,
-                                         IgnoreErrors());
-    
-    controller = mIncomingUnidirectionalStreams->Controller()->AsDefault();
-    ReadableStreamDefaultControllerError(cx, controller, errorValue,
-                                         IgnoreErrors());
+    mIncomingUnidirectionalStreams->ErrorNative(cx, errorValue, IgnoreErrors());
   }
   
   mIncomingUnidirectionalPromise->MaybeResolveWithUndefined();

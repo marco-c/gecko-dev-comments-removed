@@ -163,7 +163,15 @@ class WritableStream : public nsISupports, public nsWrapperCache {
       Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
       ErrorResult& aRv);
 
+  
+  
+
  public:
+  
+  MOZ_CAN_RUN_SCRIPT void ErrorNative(JSContext* aCx,
+                                      JS::Handle<JS::Value> aError,
+                                      ErrorResult& aRv);
+
   
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
