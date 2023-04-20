@@ -10,6 +10,13 @@ const DEFAULT_INTEREST_GROUP_NAME = 'default name';
 
 
 
+const TRUSTED_BIDDING_SIGNALS_URL =
+    `${BASE_URL}resources/trusted_bidding_signals.py`;
+
+
+
+
+
 
 function createTrackerUrl(origin, uuid, dispatch, id = null) {
   let url = new URL(`${origin}${BASE_PATH}resources/request_tracker.py`);
@@ -230,6 +237,18 @@ async function runBasicFledgeAuctionAndNavigate(test, uuid,
   fencedFrame.src = url;
   document.body.appendChild(fencedFrame);
   test.add_cleanup(() => { document.body.removeChild(fencedFrame); });
+}
+
+
+
+
+async function runBasicFledgeTestExpectingWinner(test, testConfig = {}) {
+  const uuid = generateUuid(test);
+  await joinInterestGroup(test, uuid, testConfig.interestGroupOverrides);
+  let url = await runBasicFledgeAuction(
+      test, uuid, testConfig.auctionConfigOverrides);
+  assert_equals(typeof url, 'string',
+      `Wrong value type returned from auction: ${typeof url}`);
 }
 
 
