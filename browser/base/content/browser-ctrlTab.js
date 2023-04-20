@@ -18,51 +18,126 @@ var tabPreviews = {
     return (this.aspectRatio = height / width);
   },
 
-  get: function tabPreviews_get(aTab) {
-    let uri = aTab.linkedBrowser.currentURI.spec;
+  
 
+
+
+
+
+
+
+  loadImage: async function tabPreviews_loadImage(uri) {
+    let img = new Image();
+    img.src = PageThumbs.getThumbnailURL(uri);
+    if (img.complete && img.naturalWidth) {
+      return img;
+    }
+    return new Promise(resolve => {
+      const controller = new AbortController();
+      img.addEventListener(
+        "load",
+        () => {
+          clearTimeout(timeout);
+          controller.abort();
+          resolve(img);
+        },
+        { signal: controller.signal }
+      );
+      const timeout = setTimeout(() => {
+        controller.abort();
+        resolve(null);
+      }, 1000);
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  get: async function tabPreviews_get(aTab) {
+    let browser = aTab.linkedBrowser;
+    let uri = browser.currentURI.spec;
+
+    
     if (aTab.__thumbnail_lastURI && aTab.__thumbnail_lastURI != uri) {
       aTab.__thumbnail = null;
       aTab.__thumbnail_lastURI = null;
     }
 
+    
     if (aTab.__thumbnail) {
       return aTab.__thumbnail;
     }
 
-    if (aTab.getAttribute("pending") == "true") {
-      let img = new Image();
-      img.src = PageThumbs.getThumbnailURL(uri);
-      return img;
+    
+    
+    if (!browser.browsingContext) {
+      return this.loadImage(uri);
     }
 
+    
     return this.capture(aTab, !aTab.hasAttribute("busy"));
   },
 
-  capture: function tabPreviews_capture(aTab, aShouldCache) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  capture: async function tabPreviews_capture(aTab, aShouldCache) {
     let browser = aTab.linkedBrowser;
     let uri = browser.currentURI.spec;
     let canvas = PageThumbs.createCanvas(window);
-    PageThumbs.shouldStoreThumbnail(browser).then(aDoStore => {
-      if (aDoStore && aShouldCache) {
-        PageThumbs.captureAndStore(browser).then(function() {
-          let img = new Image();
-          img.src = PageThumbs.getThumbnailURL(uri);
-          aTab.__thumbnail = img;
-          aTab.__thumbnail_lastURI = uri;
-          canvas.getContext("2d").drawImage(img, 0, 0);
-        });
+    const doStore = await PageThumbs.shouldStoreThumbnail(browser);
+
+    if (doStore && aShouldCache) {
+      await PageThumbs.captureAndStore(browser);
+      let img = await this.loadImage(uri);
+      if (img) {
+        
+        aTab.__thumbnail = img;
+        aTab.__thumbnail_lastURI = uri;
+        
+        canvas.getContext("2d").drawImage(img, 0, 0);
       } else {
-        PageThumbs.captureToCanvas(browser, canvas)
-          .then(() => {
-            if (aShouldCache) {
-              aTab.__thumbnail = canvas;
-              aTab.__thumbnail_lastURI = uri;
-            }
-          })
-          .catch(e => Cu.reportError(e));
+        canvas = null;
       }
-    });
+    } else {
+      try {
+        await PageThumbs.captureToCanvas(browser, canvas);
+        if (aShouldCache) {
+          
+          aTab.__thumbnail = canvas;
+          aTab.__thumbnail_lastURI = uri;
+        }
+      } catch (error) {
+        console.error(error);
+        canvas = null;
+      }
+    }
+
     return canvas;
   },
 };
@@ -266,10 +341,6 @@ var ctrlTab = {
 
     aPreview._tab = aTab;
 
-    if (aPreview._canvas.firstElementChild) {
-      aPreview._canvas.firstElementChild.remove();
-    }
-
     if (aTab) {
       let canvas = aPreview._canvas;
       let canvasWidth = this.canvasWidth;
@@ -279,7 +350,26 @@ var ctrlTab = {
       canvas.style.maxWidth = canvasWidth + "px";
       canvas.style.minHeight = canvasHeight + "px";
       canvas.style.maxHeight = canvasHeight + "px";
-      canvas.appendChild(tabPreviews.get(aTab));
+      tabPreviews
+        .get(aTab)
+        .then(img => {
+          switch (aPreview._tab) {
+            case aTab:
+              this._clearCanvas(canvas);
+              if (img) {
+                canvas.appendChild(img);
+              }
+              break;
+            case null:
+              
+              this._clearCanvas(canvas);
+              break;
+            
+            
+            
+          }
+        })
+        .catch(error => console.error(error));
 
       aPreview._label.setAttribute("value", aTab.label);
       aPreview.setAttribute("tooltiptext", aTab.label);
@@ -290,10 +380,18 @@ var ctrlTab = {
       }
       aPreview.hidden = false;
     } else {
+      this._clearCanvas(aPreview._canvas);
       aPreview.hidden = true;
       aPreview._label.removeAttribute("value");
       aPreview.removeAttribute("tooltiptext");
       aPreview._favicon.removeAttribute("src");
+    }
+  },
+
+  
+  _clearCanvas(canvas) {
+    while (canvas.firstElementChild) {
+      canvas.firstElementChild.remove();
     }
   },
 
