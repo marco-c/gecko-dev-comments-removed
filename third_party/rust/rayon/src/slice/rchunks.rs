@@ -314,7 +314,7 @@ impl<'data, T: Send> RChunksExactMut<'data, T> {
     
     
     pub fn take_remainder(&mut self) -> &'data mut [T] {
-        std::mem::replace(&mut self.rem, &mut [])
+        std::mem::take(&mut self.rem)
     }
 }
 

@@ -91,19 +91,14 @@ where
     
     registry.increment_terminate_count();
 
-    Box::new(HeapJob::new({
+    HeapJob::new({
         let registry = Arc::clone(registry);
         move || {
-            match unwind::halt_unwinding(func) {
-                Ok(()) => {}
-                Err(err) => {
-                    registry.handle_panic(err);
-                }
-            }
+            registry.catch_unwind(func);
             registry.terminate(); 
         }
-    }))
-    .as_job_ref()
+    })
+    .into_static_job_ref()
 }
 
 

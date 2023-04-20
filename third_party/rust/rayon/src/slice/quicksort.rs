@@ -192,24 +192,24 @@ where
     let sift_down = |v: &mut [T], mut node| {
         loop {
             
-            let left = 2 * node + 1;
-            let right = 2 * node + 2;
-
-            
-            let greater = if right < v.len() && is_less(&v[left], &v[right]) {
-                right
-            } else {
-                left
-            };
-
-            
-            if greater >= v.len() || !is_less(&v[node], &v[greater]) {
+            let mut child = 2 * node + 1;
+            if child >= v.len() {
                 break;
             }
 
             
-            v.swap(node, greater);
-            node = greater;
+            if child + 1 < v.len() && is_less(&v[child], &v[child + 1]) {
+                child += 1;
+            }
+
+            
+            if !is_less(&v[node], &v[child]) {
+                break;
+            }
+
+            
+            v.swap(node, child);
+            node = child;
         }
     };
 
@@ -426,7 +426,7 @@ where
             
             
             
-            l = unsafe { l.offset(block_l as isize) };
+            l = unsafe { l.add(block_l) };
         }
 
         if start_r == end_r {
@@ -629,8 +629,7 @@ fn break_patterns<T>(v: &mut [T]) {
             random
         };
         let mut gen_usize = || {
-            
-            if mem::size_of::<usize>() <= 4 {
+            if usize::BITS <= 32 {
                 gen_u32() as usize
             } else {
                 (((gen_u32() as u64) << 32) | (gen_u32() as u64)) as usize
@@ -676,6 +675,7 @@ where
     let len = v.len();
 
     
+    #[allow(clippy::identity_op)]
     let mut a = len / 4 * 1;
     let mut b = len / 4 * 2;
     let mut c = len / 4 * 3;
@@ -850,8 +850,7 @@ where
     }
 
     
-    
-    let limit = mem::size_of::<usize>() as u32 * 8 - v.len().leading_zeros();
+    let limit = usize::BITS - v.len().leading_zeros();
 
     recurse(v, &is_less, None, limit);
 }
@@ -864,7 +863,7 @@ mod tests {
 
     #[test]
     fn test_heapsort() {
-        let ref mut rng = thread_rng();
+        let rng = &mut thread_rng();
 
         for len in (0..25).chain(500..501) {
             for &modulus in &[5, 10, 100] {
@@ -891,8 +890,8 @@ mod tests {
         heapsort(&mut v, &|_, _| thread_rng().gen());
         heapsort(&mut v, &|a, b| a < b);
 
-        for i in 0..v.len() {
-            assert_eq!(v[i], i);
+        for (i, &entry) in v.iter().enumerate() {
+            assert_eq!(entry, i);
         }
     }
 }

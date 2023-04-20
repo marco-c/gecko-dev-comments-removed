@@ -1,12 +1,9 @@
-use crossbeam_deque::{Steal, Stealer, Worker};
-
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Mutex, TryLockError};
-use std::thread::yield_now;
+use std::sync::Mutex;
 
-use crate::current_num_threads;
 use crate::iter::plumbing::{bridge_unindexed, Folder, UnindexedConsumer, UnindexedProducer};
 use crate::iter::ParallelIterator;
+use crate::{current_num_threads, current_thread_index};
 
 
 
@@ -78,47 +75,27 @@ where
     where
         C: UnindexedConsumer<Self::Item>,
     {
-        let split_count = AtomicUsize::new(current_num_threads());
-        let worker = Worker::new_fifo();
-        let stealer = worker.stealer();
-        let done = AtomicBool::new(false);
-        let iter = Mutex::new((self.iter, worker));
+        let num_threads = current_num_threads();
+        let threads_started: Vec<_> = (0..num_threads).map(|_| AtomicBool::new(false)).collect();
 
         bridge_unindexed(
-            IterParallelProducer {
-                split_count: &split_count,
-                done: &done,
-                iter: &iter,
-                items: stealer,
+            &IterParallelProducer {
+                split_count: AtomicUsize::new(num_threads),
+                iter: Mutex::new(self.iter.fuse()),
+                threads_started: &threads_started,
             },
             consumer,
         )
     }
 }
 
-struct IterParallelProducer<'a, Iter: Iterator> {
-    split_count: &'a AtomicUsize,
-    done: &'a AtomicBool,
-    iter: &'a Mutex<(Iter, Worker<Iter::Item>)>,
-    items: Stealer<Iter::Item>,
+struct IterParallelProducer<'a, Iter> {
+    split_count: AtomicUsize,
+    iter: Mutex<std::iter::Fuse<Iter>>,
+    threads_started: &'a [AtomicBool],
 }
 
-
-impl<'a, Iter: Iterator + 'a> Clone for IterParallelProducer<'a, Iter> {
-    fn clone(&self) -> Self {
-        IterParallelProducer {
-            split_count: self.split_count,
-            done: self.done,
-            iter: self.iter,
-            items: self.items.clone(),
-        }
-    }
-}
-
-impl<'a, Iter: Iterator + Send + 'a> UnindexedProducer for IterParallelProducer<'a, Iter>
-where
-    Iter::Item: Send,
-{
+impl<Iter: Iterator + Send> UnindexedProducer for &IterParallelProducer<'_, Iter> {
     type Item = Iter::Item;
 
     fn split(self) -> (Self, Option<Self>) {
@@ -126,23 +103,18 @@ where
 
         loop {
             
-            let done = self.done.load(Ordering::SeqCst) && self.items.is_empty();
-
-            match count.checked_sub(1) {
-                Some(new_count) if !done => {
-                    match self.split_count.compare_exchange_weak(
-                        count,
-                        new_count,
-                        Ordering::SeqCst,
-                        Ordering::SeqCst,
-                    ) {
-                        Ok(_) => return (self.clone(), Some(self)),
-                        Err(last_count) => count = last_count,
-                    }
+            if let Some(new_count) = count.checked_sub(1) {
+                match self.split_count.compare_exchange_weak(
+                    count,
+                    new_count,
+                    Ordering::SeqCst,
+                    Ordering::SeqCst,
+                ) {
+                    Ok(_) => return (self, Some(self)),
+                    Err(last_count) => count = last_count,
                 }
-                _ => {
-                    return (self, None);
-                }
+            } else {
+                return (self, None);
             }
         }
     }
@@ -151,66 +123,39 @@ where
     where
         F: Folder<Self::Item>,
     {
+        
+        
+        
+        
+        
+        
+        if let Some(i) = current_thread_index() {
+            
+            
+            
+            let thread_started = &self.threads_started[i % self.threads_started.len()];
+            if thread_started.swap(true, Ordering::Relaxed) {
+                
+                
+                return folder;
+            }
+        }
+
         loop {
-            match self.items.steal() {
-                Steal::Success(it) => {
+            if let Ok(mut iter) = self.iter.lock() {
+                if let Some(it) = iter.next() {
+                    drop(iter);
                     folder = folder.consume(it);
                     if folder.full() {
                         return folder;
                     }
+                } else {
+                    return folder;
                 }
-                Steal::Empty => {
-                    
-                    if self.done.load(Ordering::SeqCst) {
-                        
-                        if self.items.is_empty() {
-                            
-                            return folder;
-                        }
-                    } else {
-                        
-                        match self.iter.try_lock() {
-                            Ok(mut guard) => {
-                                
-                                
-                                if self.done.load(Ordering::SeqCst) {
-                                    if self.items.is_empty() {
-                                        return folder;
-                                    }
-                                    continue;
-                                }
-
-                                let count = current_num_threads();
-                                let count = (count * count) * 2;
-
-                                let (ref mut iter, ref worker) = *guard;
-
-                                
-                                
-                                
-                                
-                                for _ in 0..count {
-                                    if let Some(it) = iter.next() {
-                                        worker.push(it);
-                                    } else {
-                                        self.done.store(true, Ordering::SeqCst);
-                                        break;
-                                    }
-                                }
-                            }
-                            Err(TryLockError::WouldBlock) => {
-                                
-                                yield_now(); 
-                            }
-                            Err(TryLockError::Poisoned(_)) => {
-                                
-                                
-                                return folder;
-                            }
-                        }
-                    }
-                }
-                Steal::Retry => (),
+            } else {
+                
+                
+                return folder;
             }
         }
     }

@@ -119,6 +119,8 @@ mod flat_map_iter;
 mod flatten;
 mod flatten_iter;
 mod fold;
+mod fold_chunks;
+mod fold_chunks_with;
 mod for_each;
 mod from_par_iter;
 mod inspect;
@@ -140,6 +142,7 @@ mod repeat;
 mod rev;
 mod skip;
 mod splitter;
+mod step_by;
 mod sum;
 mod take;
 mod try_fold;
@@ -165,6 +168,8 @@ pub use self::{
     flatten::Flatten,
     flatten_iter::FlattenIter,
     fold::{Fold, FoldWith},
+    fold_chunks::FoldChunks,
+    fold_chunks_with::FoldChunksWith,
     inspect::Inspect,
     interleave::Interleave,
     interleave_shortest::InterleaveShortest,
@@ -181,6 +186,7 @@ pub use self::{
     rev::Rev,
     skip::Skip,
     splitter::{split, Split},
+    step_by::StepBy,
     take::Take,
     try_fold::{TryFold, TryFoldWith},
     update::Update,
@@ -188,10 +194,6 @@ pub use self::{
     zip::Zip,
     zip_eq::ZipEq,
 };
-
-mod step_by;
-#[cfg(has_step_by_rev)]
-pub use self::step_by::StepBy;
 
 
 
@@ -2241,6 +2243,8 @@ impl<T: ParallelIterator> IntoParallelIterator for T {
 
 
 
+
+#[allow(clippy::len_without_is_empty)]
 pub trait IndexedParallelIterator: ParallelIterator {
     
     
@@ -2339,13 +2343,18 @@ pub trait IndexedParallelIterator: ParallelIterator {
     
     
     
+    #[track_caller]
     fn zip_eq<Z>(self, zip_op: Z) -> ZipEq<Self, Z::Iter>
     where
         Z: IntoParallelIterator,
         Z::Iter: IndexedParallelIterator,
     {
         let zip_op_iter = zip_op.into_par_iter();
-        assert_eq!(self.len(), zip_op_iter.len());
+        assert_eq!(
+            self.len(),
+            zip_op_iter.len(),
+            "iterators must have the same length"
+        );
         ZipEq::new(self, zip_op_iter)
     }
 
@@ -2413,6 +2422,89 @@ pub trait IndexedParallelIterator: ParallelIterator {
     fn chunks(self, chunk_size: usize) -> Chunks<Self> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         Chunks::new(self, chunk_size)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    fn fold_chunks<T, ID, F>(
+        self,
+        chunk_size: usize,
+        identity: ID,
+        fold_op: F,
+    ) -> FoldChunks<Self, ID, F>
+    where
+        ID: Fn() -> T + Send + Sync,
+        F: Fn(T, Self::Item) -> T + Send + Sync,
+        T: Send,
+    {
+        assert!(chunk_size != 0, "chunk_size must not be zero");
+        FoldChunks::new(self, chunk_size, identity, fold_op)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    fn fold_chunks_with<T, F>(
+        self,
+        chunk_size: usize,
+        init: T,
+        fold_op: F,
+    ) -> FoldChunksWith<Self, T, F>
+    where
+        T: Send + Clone,
+        F: Fn(T, Self::Item) -> T + Send + Sync,
+    {
+        assert!(chunk_size != 0, "chunk_size must not be zero");
+        FoldChunksWith::new(self, chunk_size, init, fold_op)
     }
 
     
@@ -2601,11 +2693,6 @@ pub trait IndexedParallelIterator: ParallelIterator {
     
     
     
-    
-    
-    
-    
-    #[cfg(has_step_by_rev)]
     fn step_by(self, step: usize) -> StepBy<Self> {
         StepBy::new(self, step)
     }
@@ -3146,19 +3233,8 @@ pub trait ParallelDrainRange<Idx = usize> {
 
 mod private {
     use std::convert::Infallible;
+    use std::ops::ControlFlow::{self, Break, Continue};
     use std::task::Poll;
-
-    #[cfg(has_control_flow)]
-    pub(crate) use std::ops::ControlFlow;
-
-    #[cfg(not(has_control_flow))]
-    #[allow(missing_debug_implementations)]
-    pub enum ControlFlow<B, C = ()> {
-        Continue(C),
-        Break(B),
-    }
-
-    use self::ControlFlow::{Break, Continue};
 
     
     
@@ -3176,7 +3252,6 @@ mod private {
         fn branch(self) -> ControlFlow<Self::Residual, Self::Output>;
     }
 
-    #[cfg(has_control_flow)]
     impl<B, C> Try for ControlFlow<B, C> {
         private_impl! {}
 

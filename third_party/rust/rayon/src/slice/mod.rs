@@ -85,6 +85,7 @@ pub trait ParallelSlice<T: Sync> {
     
     
     
+    #[track_caller]
     fn par_chunks(&self, chunk_size: usize) -> Chunks<'_, T> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         Chunks::new(chunk_size, self.as_parallel_slice())
@@ -104,6 +105,7 @@ pub trait ParallelSlice<T: Sync> {
     
     
     
+    #[track_caller]
     fn par_chunks_exact(&self, chunk_size: usize) -> ChunksExact<'_, T> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         ChunksExact::new(chunk_size, self.as_parallel_slice())
@@ -123,6 +125,7 @@ pub trait ParallelSlice<T: Sync> {
     
     
     
+    #[track_caller]
     fn par_rchunks(&self, chunk_size: usize) -> RChunks<'_, T> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         RChunks::new(chunk_size, self.as_parallel_slice())
@@ -142,6 +145,7 @@ pub trait ParallelSlice<T: Sync> {
     
     
     
+    #[track_caller]
     fn par_rchunks_exact(&self, chunk_size: usize) -> RChunksExact<'_, T> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         RChunksExact::new(chunk_size, self.as_parallel_slice())
@@ -199,6 +203,7 @@ pub trait ParallelSliceMut<T: Send> {
     
     
     
+    #[track_caller]
     fn par_chunks_mut(&mut self, chunk_size: usize) -> ChunksMut<'_, T> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         ChunksMut::new(chunk_size, self.as_parallel_slice_mut())
@@ -220,6 +225,7 @@ pub trait ParallelSliceMut<T: Send> {
     
     
     
+    #[track_caller]
     fn par_chunks_exact_mut(&mut self, chunk_size: usize) -> ChunksExactMut<'_, T> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         ChunksExactMut::new(chunk_size, self.as_parallel_slice_mut())
@@ -241,6 +247,7 @@ pub trait ParallelSliceMut<T: Send> {
     
     
     
+    #[track_caller]
     fn par_rchunks_mut(&mut self, chunk_size: usize) -> RChunksMut<'_, T> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         RChunksMut::new(chunk_size, self.as_parallel_slice_mut())
@@ -262,6 +269,7 @@ pub trait ParallelSliceMut<T: Send> {
     
     
     
+    #[track_caller]
     fn par_rchunks_exact_mut(&mut self, chunk_size: usize) -> RChunksExactMut<'_, T> {
         assert!(chunk_size != 0, "chunk_size must not be zero");
         RChunksExactMut::new(chunk_size, self.as_parallel_slice_mut())

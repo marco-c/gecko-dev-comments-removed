@@ -1,6 +1,3 @@
-#![cfg(has_min_const_generics)]
-
-
 
 
 
@@ -14,7 +11,6 @@ use crate::slice::{Iter, IterMut};
 use crate::vec::DrainProducer;
 use std::mem::ManuallyDrop;
 
-
 impl<'data, T: Sync + 'data, const N: usize> IntoParallelIterator for &'data [T; N] {
     type Item = &'data T;
     type Iter = Iter<'data, T>;
@@ -24,7 +20,6 @@ impl<'data, T: Sync + 'data, const N: usize> IntoParallelIterator for &'data [T;
     }
 }
 
-
 impl<'data, T: Send + 'data, const N: usize> IntoParallelIterator for &'data mut [T; N] {
     type Item = &'data mut T;
     type Iter = IterMut<'data, T>;
@@ -33,7 +28,6 @@ impl<'data, T: Send + 'data, const N: usize> IntoParallelIterator for &'data mut
         <&mut [T]>::into_par_iter(self)
     }
 }
-
 
 impl<T: Send, const N: usize> IntoParallelIterator for [T; N] {
     type Item = T;

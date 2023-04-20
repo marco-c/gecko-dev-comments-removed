@@ -61,10 +61,12 @@ const THREADS_BITS: usize = 8;
 
 
 
+#[allow(clippy::erasing_op)]
 const SLEEPING_SHIFT: usize = 0 * THREADS_BITS;
 
 
 
+#[allow(clippy::identity_op)]
 const INACTIVE_SHIFT: usize = 1 * THREADS_BITS;
 
 

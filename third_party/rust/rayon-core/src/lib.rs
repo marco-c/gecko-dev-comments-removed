@@ -44,7 +44,6 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/rayon-core/1.9")]
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 #![deny(unreachable_pub)]
@@ -63,6 +62,7 @@ mod log;
 #[macro_use]
 mod private;
 
+mod broadcast;
 mod job;
 mod join;
 mod latch;
@@ -76,6 +76,7 @@ mod unwind;
 mod compile_fail;
 mod test;
 
+pub use self::broadcast::{broadcast, spawn_broadcast, BroadcastContext};
 pub use self::join::{join, join_context};
 pub use self::registry::ThreadBuilder;
 pub use self::scope::{in_place_scope, scope, Scope};
@@ -185,6 +186,7 @@ pub struct ThreadPoolBuilder<S = DefaultSpawn> {
 
 
 #[deprecated(note = "Use `ThreadPoolBuilder`")]
+#[derive(Default)]
 pub struct Configuration {
     builder: ThreadPoolBuilder,
 }
@@ -330,6 +332,39 @@ impl ThreadPoolBuilder {
 }
 
 impl<S> ThreadPoolBuilder<S> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -745,15 +780,6 @@ impl<S> fmt::Debug for ThreadPoolBuilder<S> {
             .field("exit_handler", &exit_handler)
             .field("breadth_first", &breadth_first)
             .finish()
-    }
-}
-
-#[allow(deprecated)]
-impl Default for Configuration {
-    fn default() -> Self {
-        Configuration {
-            builder: Default::default(),
-        }
     }
 }
 

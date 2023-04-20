@@ -196,14 +196,14 @@ impl<'r> Latch for SpinLatch<'r> {
             
             
             cross_registry = Arc::clone(self.registry);
-            &*cross_registry
+            &cross_registry
         } else {
             
             
             
             
             
-            &**self.registry
+            self.registry
         };
         let target_worker_index = self.target_worker_index;
 
@@ -286,9 +286,14 @@ pub(super) struct CountLatch {
 impl CountLatch {
     #[inline]
     pub(super) fn new() -> CountLatch {
+        Self::with_count(1)
+    }
+
+    #[inline]
+    pub(super) fn with_count(n: usize) -> CountLatch {
         CountLatch {
             core_latch: CoreLatch::new(),
-            counter: AtomicUsize::new(1),
+            counter: AtomicUsize::new(n),
         }
     }
 
@@ -337,10 +342,10 @@ pub(super) struct CountLockLatch {
 
 impl CountLockLatch {
     #[inline]
-    pub(super) fn new() -> CountLockLatch {
+    pub(super) fn with_count(n: usize) -> CountLockLatch {
         CountLockLatch {
             lock_latch: LockLatch::new(),
-            counter: AtomicUsize::new(1),
+            counter: AtomicUsize::new(n),
         }
     }
 

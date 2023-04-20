@@ -3,12 +3,11 @@
 
 
 
+use crate::broadcast::{self, BroadcastContext};
 use crate::join;
 use crate::registry::{Registry, ThreadSpawn, WorkerThread};
 use crate::scope::{do_in_place_scope, do_in_place_scope_fifo};
 use crate::spawn;
-#[allow(deprecated)]
-use crate::Configuration;
 use crate::{scope, Scope};
 use crate::{scope_fifo, ScopeFifo};
 use crate::{ThreadPoolBuildError, ThreadPoolBuilder};
@@ -57,7 +56,7 @@ impl ThreadPool {
     #[deprecated(note = "Use `ThreadPoolBuilder::build`")]
     #[allow(deprecated)]
     
-    pub fn new(configuration: Configuration) -> Result<ThreadPool, Box<dyn Error>> {
+    pub fn new(configuration: crate::Configuration) -> Result<ThreadPool, Box<dyn Error>> {
         Self::build(configuration.into_builder()).map_err(Box::from)
     }
 
@@ -109,6 +108,57 @@ impl ThreadPool {
         R: Send,
     {
         self.registry.in_worker(|_, _| op())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn broadcast<OP, R>(&self, op: OP) -> Vec<R>
+    where
+        OP: Fn(BroadcastContext<'_>) -> R + Sync,
+        R: Send,
+    {
+        
+        unsafe { broadcast::broadcast_in(op, &self.registry) }
     }
 
     
@@ -276,6 +326,18 @@ impl ThreadPool {
     {
         
         unsafe { spawn::spawn_fifo_in(op, &self.registry) }
+    }
+
+    
+    
+    
+    
+    pub fn spawn_broadcast<OP>(&self, op: OP)
+    where
+        OP: Fn(BroadcastContext<'_>) + Send + Sync + 'static,
+    {
+        
+        unsafe { broadcast::spawn_broadcast_in(op, &self.registry) }
     }
 }
 

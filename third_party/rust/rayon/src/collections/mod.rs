@@ -56,7 +56,7 @@ mod drain_guard {
         pub(super) fn new(collection: &'a mut C) -> Self {
             Self {
                 
-                vec: Vec::from(mem::replace(collection, C::default())),
+                vec: Vec::from(mem::take(collection)),
                 collection,
             }
         }
@@ -65,7 +65,7 @@ mod drain_guard {
     impl<'a, T, C: From<Vec<T>>> Drop for DrainGuard<'a, T, C> {
         fn drop(&mut self) {
             
-            *self.collection = C::from(mem::replace(&mut self.vec, Vec::new()));
+            *self.collection = C::from(mem::take(&mut self.vec));
         }
     }
 
