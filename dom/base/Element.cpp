@@ -1406,14 +1406,14 @@ void Element::NotifyUAWidgetTeardown(UnattachShadowRoot aUnattachShadowRoot) {
 }
 
 void Element::UnattachShadow() {
-  ShadowRoot* shadowRoot = GetShadowRoot();
+  RefPtr<ShadowRoot> shadowRoot = GetShadowRoot();
   if (!shadowRoot) {
     return;
   }
 
   nsAutoScriptBlocker scriptBlocker;
 
-  if (Document* doc = GetComposedDoc()) {
+  if (RefPtr<Document> doc = GetComposedDoc()) {
     if (PresShell* presShell = doc->GetPresShell()) {
       presShell->DestroyFramesForAndRestyle(this);
 #ifdef ACCESSIBILITY
@@ -1428,13 +1428,18 @@ void Element::UnattachShadow() {
       }
 #endif
     }
+    
+    
+    [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+      if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
+        fm->ContentRemoved(doc, shadowRoot);
+      }
+    }();
   }
   MOZ_ASSERT(!GetPrimaryFrame());
 
   shadowRoot->Unattach();
   SetShadowRoot(nullptr);
-
-  
 }
 
 void Element::GetAttribute(const nsAString& aName, DOMString& aReturn) {
