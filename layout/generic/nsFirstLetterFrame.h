@@ -79,10 +79,6 @@ class nsFirstLetterFrame final : public nsContainerFrame {
                                            nsIFrame** aContinuation,
                                            bool aIsFluid);
 
-  
-  
-  bool UseTightBounds() const;
-
  protected:
   nscoord mBaseline;
 
