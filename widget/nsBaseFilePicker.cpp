@@ -80,7 +80,7 @@ class nsBaseFilePicker::AsyncShowFilePicker : public mozilla::Runnable {
     
     
     
-    int16_t result = nsIFilePicker::returnCancel;
+    nsIFilePicker::ResultCode result = nsIFilePicker::returnCancel;
     nsresult rv = mFilePicker->Show(&result);
     if (NS_FAILED(rv)) {
       NS_ERROR("FilePicker's Show() implementation failed!");

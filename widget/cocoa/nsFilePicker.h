@@ -19,6 +19,7 @@ class nsILocalFileMac;
 class nsFilePicker : public nsBaseFilePicker {
  public:
   nsFilePicker();
+  using nsIFilePicker::ResultCode;
 
   NS_DECL_ISUPPORTS
 
@@ -45,15 +46,15 @@ class nsFilePicker : public nsBaseFilePicker {
   virtual ~nsFilePicker();
 
   virtual void InitNative(nsIWidget* aParent, const nsAString& aTitle) override;
-  nsresult Show(int16_t* _retval) override;
+  nsresult Show(ResultCode* _retval) override;
 
   
   
   
   
-  int16_t GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& outFiles);
-  int16_t GetLocalFolder(nsIFile** outFile);
-  int16_t PutLocalFile(nsIFile** outFile);
+  ResultCode GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& outFiles);
+  ResultCode GetLocalFolder(nsIFile** outFile);
+  ResultCode PutLocalFile(nsIFile** outFile);
 
   void SetDialogTitle(const nsString& inTitle, id aDialog);
   NSString* PanelDefaultDirectory();

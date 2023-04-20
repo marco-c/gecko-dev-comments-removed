@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_filepicker_message_utils_h__
+#define mozilla_dom_filepicker_message_utils_h__
+
+#include "ipc/EnumSerializer.h"
+#include "nsIFilePicker.h"
+
+namespace IPC {
+template <>
+struct ParamTraits<nsIFilePicker::ResultCode>
+    : public ContiguousEnumSerializerInclusive<
+          nsIFilePicker::ResultCode, nsIFilePicker::ResultCode::returnOK,
+          nsIFilePicker::ResultCode::returnReplace> {};
+}  
+
+#endif  
