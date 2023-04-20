@@ -362,6 +362,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void AddFinalDiscardListener(std::function<void(uint64_t)>&& aListener);
 
+  bool ForceAppWindowActive() const { return mForceAppWindowActive; }
+  void SetForceAppWindowActive(bool, ErrorResult&);
+  void RecomputeAppWindowVisibility();
+
  protected:
   
   void CanonicalDiscard();
@@ -547,11 +551,14 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   RefPtr<RestoreState> mRestoreState;
 
+  nsCOMPtr<nsITimer> mSessionStoreSessionStorageUpdateTimer;
+
   
   
   bool mPriorityActive = false;
 
-  nsCOMPtr<nsITimer> mSessionStoreSessionStorageUpdateTimer;
+  
+  bool mForceAppWindowActive = false;
 
   bool mIsReplaced = false;
 
