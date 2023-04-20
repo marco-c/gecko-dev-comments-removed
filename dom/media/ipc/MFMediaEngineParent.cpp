@@ -172,8 +172,11 @@ void MFMediaEngineParent::CreateMediaEngine() {
 
 #ifdef MOZ_WMF_CDM
   
-  RETURN_VOID_IF_FAILED(MakeAndInitialize<MFContentProtectionManager>(
-      &mContentProtectionManager));
+  
+  if (StaticPrefs::media_eme_playready_enabled()) {
+    RETURN_VOID_IF_FAILED(MakeAndInitialize<MFContentProtectionManager>(
+        &mContentProtectionManager));
+  }
 #endif
 
   LOG("Created media engine successfully");
