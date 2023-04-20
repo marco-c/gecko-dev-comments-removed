@@ -139,7 +139,7 @@ var PreferenceRollouts = {
 
 
   async recordOriginalValues(originalPreferences) {
-    for (const rollout of await this.getAllActiveExperiments()) {
+    for (const rollout of await this.getAllActive()) {
       let shouldSaveRollout = false;
 
       
@@ -177,7 +177,7 @@ var PreferenceRollouts = {
   async init() {
     lazy.CleanupManager.addCleanupHandler(() => this.saveStartupPrefs());
 
-    for (const rollout of await this.getAllActiveExperiments()) {
+    for (const rollout of await this.getAllActive()) {
       if (this.GRADUATION_SET.has(rollout.slug)) {
         await this.graduate(rollout, "in-graduation-set");
         continue;
@@ -322,7 +322,7 @@ var PreferenceRollouts = {
   },
 
   
-  async getAllActiveExperiments() {
+  async getAllActive() {
     const rollouts = await this.getAll();
     return rollouts.filter(rollout => rollout.state === this.STATE_ACTIVE);
   },
@@ -337,7 +337,7 @@ var PreferenceRollouts = {
       prefBranch.clearUserPref(pref);
     }
 
-    for (const rollout of await this.getAllActiveExperiments()) {
+    for (const rollout of await this.getAllActive()) {
       for (const prefSpec of rollout.preferences) {
         lazy.PrefUtils.setPref(
           STARTUP_PREFS_BRANCH + prefSpec.preferenceName,

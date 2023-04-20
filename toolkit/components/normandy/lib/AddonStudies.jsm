@@ -164,7 +164,7 @@ var AddonStudies = {
   },
 
   async init() {
-    for (const study of await this.getAllActiveExperiments()) {
+    for (const study of await this.getAllActive()) {
       
       const addon = await lazy.AddonManager.getAddonByID(study.addonId);
       if (!addon) {
@@ -247,7 +247,7 @@ var AddonStudies = {
     },
 
     async migration02RemoveOldAddonStudyAction() {
-      const studies = await AddonStudies.getAllActiveExperiments({
+      const studies = await AddonStudies.getAllActive({
         branched: AddonStudies.FILTER_NOT_BRANCHED,
       });
       if (!studies.length) {
@@ -340,7 +340,7 @@ var AddonStudies = {
 
 
 
-  async getAllActiveExperiments(options) {
+  async getAllActive(options) {
     return (await this.getAll(options)).filter(study => study.active);
   },
 
