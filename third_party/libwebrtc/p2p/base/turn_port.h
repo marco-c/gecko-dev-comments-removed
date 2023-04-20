@@ -231,9 +231,6 @@ class TurnPort : public Port {
 
   
   
-  
-  
-  bool CreateOrRefreshEntry(const rtc::SocketAddress& addr, int channel_number);
   bool CreateOrRefreshEntry(Connection* conn, int channel_number);
 
   bool CreateOrRefreshEntry(const rtc::SocketAddress& addr,
