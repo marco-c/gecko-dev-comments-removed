@@ -176,6 +176,11 @@ static Result CheckCandidates(TrustDomain& trustDomain,
                               nsTArray<Input>& candidates,
                               Input* nameConstraintsInputPtr, bool& keepGoing) {
   for (Input candidate : candidates) {
+    
+    if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+      keepGoing = false;
+      return Success;
+    }
     if (ShouldSkipSelfSignedNonTrustAnchor(trustDomain, candidate)) {
       continue;
     }
@@ -331,6 +336,9 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
   nsTArray<nsTArray<uint8_t>> nssIntermediateCandidates;
   RefPtr<Runnable> getCandidatesTask =
       NS_NewRunnableFunction("NSSCertDBTrustDomain::FindIssuer", [&]() {
+        if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+          return;
+        }
         
         
         
@@ -449,6 +457,10 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   Result result = Result::FATAL_ERROR_LIBRARY_FAILURE;
   RefPtr<Runnable> getTrustTask =
       NS_NewRunnableFunction("NSSCertDBTrustDomain::GetCertTrust", [&]() {
+        if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+          result = Result::FATAL_ERROR_LIBRARY_FAILURE;
+          return;
+        }
         
         
         
@@ -1017,9 +1029,12 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
     uint16_t maxOCSPLifetimeInDays, const Result cachedResponseResult,
     const Result stapledOCSPResponseResult, const bool crliteCoversCertificate,
     const Result crliteResult,  bool& softFailure) {
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+
   uint8_t ocspRequestBytes[OCSP_REQUEST_MAX_LENGTH];
   size_t ocspRequestLength;
-
   Result rv = CreateEncodedOCSPRequest(*this, certID, ocspRequestBytes,
                                        ocspRequestLength);
   if (rv != Success) {
@@ -1290,6 +1305,10 @@ nsresult isDistrustedCertificateChain(
 
   RefPtr<Runnable> isDistrustedChainTask =
       NS_NewRunnableFunction("isDistrustedCertificateChain", [&]() {
+        if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+          runnableRV = SECFailure;
+          return;
+        }
         
         CERTCertDBHandle* certDB(CERT_GetDefaultCertDB());
         const nsTArray<uint8_t>& certRootDER = certArray.LastElement();
