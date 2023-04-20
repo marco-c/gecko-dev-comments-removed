@@ -58,6 +58,12 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
   
 
 
+  [[nodiscard]] bool ElementIsGoodContainerToSetStyle(
+      nsStyledElement& aStyledElement) const;
+
+  
+
+
 
 
 

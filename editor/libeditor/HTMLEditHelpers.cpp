@@ -113,8 +113,14 @@ bool EditorInlineStyle::IsRepresentedBy(const nsIContent& aContent) const {
     return false;
   }
   const Element& element = *aContent.AsElement();
-  if (element.NodeInfo()->NameAtom() == mHTMLProperty) {
-    return true;
+  if (mHTMLProperty == element.NodeInfo()->NameAtom() ||
+      mHTMLProperty == GetSimilarElementNameAtom()) {
+    
+    
+    if (mHTMLProperty == nsGkAtoms::a) {
+      return true;
+    }
+    return !mAttribute || element.HasAttr(kNameSpaceID_None, mAttribute);
   }
   
   if ((mHTMLProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(&element)) ||
