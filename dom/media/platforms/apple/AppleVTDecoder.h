@@ -18,6 +18,7 @@
 #include "TimeUnits.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/gfx/Types.h"
+#include "mozilla/ProfilerUtils.h"
 
 namespace mozilla {
 
@@ -82,6 +83,8 @@ class AppleVTDecoder : public MediaDataDecoder,
   void ProcessDecode(MediaRawData* aSample);
   void MaybeResolveBufferedFrames();
 
+  void MaybeRegisterCallbackThread();
+
   void AssertOnTaskQueue() { MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn()); }
 
   AppleFrameRef* CreateAppleFrameRef(const MediaRawData* aSample);
@@ -116,6 +119,7 @@ class AppleVTDecoder : public MediaDataDecoder,
   
   
   Atomic<bool> mIsFlushing;
+  std::atomic<ProfilerThreadId> mCallbackThreadId;
   
   Monitor mMonitor MOZ_UNANNOTATED;
   ReorderQueue mReorderQueue;
