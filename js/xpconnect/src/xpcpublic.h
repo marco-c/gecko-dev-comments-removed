@@ -558,6 +558,15 @@ nsGlobalWindowInner* WindowGlobalOrNull(JSObject* aObj);
 
 
 
+
+
+nsGlobalWindowInner* AssociatedWindowOrNull(JSObject* aObj, JSContext* aCx);
+
+
+
+
+
+
 nsGlobalWindowInner* SandboxWindowOrNull(JSObject* aObj, JSContext* aCx);
 
 
