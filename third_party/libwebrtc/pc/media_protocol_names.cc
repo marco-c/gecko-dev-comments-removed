@@ -77,7 +77,7 @@ bool IsRtpProtocol(absl::string_view protocol) {
     return false;
   }
   
-  if (pos == 0 || !isalpha(protocol[pos - 1])) {
+  if (pos == 0 || !isalpha(static_cast<unsigned char>(protocol[pos - 1]))) {
     return true;
   }
   return false;
