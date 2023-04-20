@@ -181,11 +181,6 @@ class RTCStatsCollector : public rtc::RefCountInterface,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
       RTCStatsReport* report) const;
   
-  void ProduceCodecStats_n(
-      int64_t timestamp_us,
-      const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,
-      RTCStatsReport* report) const;
-  
   void ProduceDataChannelStats_s(int64_t timestamp_us,
                                  RTCStatsReport* report) const;
   
@@ -208,6 +203,8 @@ class RTCStatsCollector : public rtc::RefCountInterface,
   
   void ProducePeerConnectionStats_s(int64_t timestamp_us,
                                     RTCStatsReport* report) const;
+  
+  
   
   
   
