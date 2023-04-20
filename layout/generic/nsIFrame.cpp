@@ -11415,33 +11415,6 @@ gfx::Matrix nsIFrame::ComputeWidgetTransform() {
   return result2d;
 }
 
-ContainSizeAxes nsIFrame::GetContainSizeAxes() const {
-  auto contain = StyleDisplay()->mEffectiveContainment;
-  
-  if (MOZ_LIKELY(!contain)) {
-    return ContainSizeAxes(false, false);
-  }
-
-  
-  
-  bool isNonReplacedInline = IsFrameOfType(nsIFrame::eLineParticipant) &&
-                             !IsFrameOfType(nsIFrame::eReplaced);
-  if (isNonReplacedInline || StyleDisplay()->PrecludesSizeContainment()) {
-    return ContainSizeAxes(false, false);
-  }
-
-  
-  
-  
-  if (MOZ_LIKELY(!(contain & StyleContain::SIZE)) &&
-      MOZ_UNLIKELY(HidesContent())) {
-    contain |= StyleContain::SIZE;
-  }
-
-  return ContainSizeAxes(static_cast<bool>(contain & StyleContain::INLINE_SIZE),
-                         static_cast<bool>(contain & StyleContain::BLOCK_SIZE));
-}
-
 void nsIFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoRestyleState& aRestyleState) {
   
   
