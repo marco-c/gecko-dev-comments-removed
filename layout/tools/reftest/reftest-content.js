@@ -23,7 +23,7 @@ const { onSpellCheck } = ChromeUtils.importESModule(
 );
 
 
-ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm");
+ChromeUtils.importESModule("resource://gre/modules/CustomElementsListener.sys.mjs");
 
 var gBrowserIsRemote;
 var gHaveCanvasSnapshot = false;
