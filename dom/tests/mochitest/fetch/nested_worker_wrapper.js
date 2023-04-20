@@ -1,5 +1,10 @@
 function getScriptUrl() {
-  return new URL(location.href).searchParams.get("script");
+  const params = new URL(location.href).searchParams;
+  let scriptUrl = params.get("script");
+  if (params.has("orbEnabled")) {
+    scriptUrl += "&orbEnabled";
+  }
+  return scriptUrl;
 }
 
 
