@@ -19,9 +19,10 @@
 #include <memory>
 #include <string>
 
+#include "api/task_queue/task_queue_base.h"
 #include "api/transport/stun.h"
-#include "rtc_base/message_handler.h"
-#include "rtc_base/thread.h"
+#include "api/units/time_delta.h"
+#include "rtc_base/task_utils/pending_task_safety_flag.h"
 
 namespace cricket {
 
@@ -39,7 +40,7 @@ const int STUN_TOTAL_TIMEOUT = 39750;
 class StunRequestManager {
  public:
   StunRequestManager(
-      rtc::Thread* thread,
+      webrtc::TaskQueueBase* thread,
       std::function<void(const void*, size_t, StunRequest*)> send_packet);
   ~StunRequestManager();
 
@@ -50,8 +51,12 @@ class StunRequestManager {
   
   
   
+  
+  
   void FlushForTest(int msg_type);
 
+  
+  
   
   
   bool HasRequestForTest(int msg_type);
@@ -69,27 +74,26 @@ class StunRequestManager {
 
   bool empty() const;
 
-  
-  rtc::Thread* network_thread() const { return thread_; }
+  webrtc::TaskQueueBase* network_thread() const { return thread_; }
 
   void SendPacket(const void* data, size_t size, StunRequest* request);
 
  private:
   typedef std::map<std::string, std::unique_ptr<StunRequest>> RequestMap;
 
-  rtc::Thread* const thread_;
+  webrtc::TaskQueueBase* const thread_;
   RequestMap requests_ RTC_GUARDED_BY(thread_);
   const std::function<void(const void*, size_t, StunRequest*)> send_packet_;
 };
 
 
 
-class StunRequest : public rtc::MessageHandler {
+class StunRequest {
  public:
   explicit StunRequest(StunRequestManager& manager);
   StunRequest(StunRequestManager& manager,
               std::unique_ptr<StunMessage> message);
-  ~StunRequest() override;
+  virtual ~StunRequest();
 
   
   StunRequestManager* manager() { return &manager_; }
@@ -114,6 +118,13 @@ class StunRequest : public rtc::MessageHandler {
  protected:
   friend class StunRequestManager;
 
+  
+  void Send(webrtc::TimeDelta delay);
+
+  
+  
+  void ResetTasksForTest();
+
   StunMessage* mutable_msg() { return msg_.get(); }
 
   
@@ -132,14 +143,18 @@ class StunRequest : public rtc::MessageHandler {
   void set_timed_out();
 
  private:
+  void SendInternal();
   
-  void OnMessage(rtc::Message* pmsg) override;
+  
+  void SendDelayed(webrtc::TimeDelta delay);
 
   StunRequestManager& manager_;
   const std::unique_ptr<StunMessage> msg_;
   int64_t tstamp_ RTC_GUARDED_BY(network_thread());
   int count_ RTC_GUARDED_BY(network_thread());
   bool timeout_ RTC_GUARDED_BY(network_thread());
+  webrtc::ScopedTaskSafety task_safety_{
+      webrtc::PendingTaskSafetyFlag::CreateDetachedInactive()};
 };
 
 }  
