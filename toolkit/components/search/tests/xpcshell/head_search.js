@@ -148,6 +148,7 @@ const kTestEngineName = "Test search engine";
 
 
 
+
 function promiseAfterSettings() {
   return SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
@@ -313,6 +314,7 @@ async function setupRemoteSettings() {
 
 
 
+
 function useCustomGeoServer(region, waitToRespond = Promise.resolve()) {
   let srv = useHttpServer();
   srv.registerPathHandler("/fetch_region", async (req, res) => {
@@ -328,6 +330,7 @@ function useCustomGeoServer(region, waitToRespond = Promise.resolve()) {
     `http://localhost:${srv.identity.primaryPort}/fetch_region`
   );
 }
+
 
 
 
