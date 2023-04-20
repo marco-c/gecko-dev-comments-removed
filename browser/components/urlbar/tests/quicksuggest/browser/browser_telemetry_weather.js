@@ -61,8 +61,15 @@ add_task(async function() {
       }
     },
     
+    exposure: {
+      scalars: {
+        [TELEMETRY_SCALARS.EXPOSURE_WEATHER]: position,
+      },
+    },
+    
     impressionOnly: {
       scalars: {
+        [TELEMETRY_SCALARS.EXPOSURE_WEATHER]: position,
         [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
         [TELEMETRY_SCALARS.IMPRESSION_WEATHER]: position,
       },
@@ -82,6 +89,7 @@ add_task(async function() {
       
       "urlbarView-row-inner": {
         scalars: {
+          [TELEMETRY_SCALARS.EXPOSURE_WEATHER]: position,
           [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
           [TELEMETRY_SCALARS.IMPRESSION_WEATHER]: position,
           [TELEMETRY_SCALARS.CLICK_NONSPONSORED]: position,
@@ -102,6 +110,7 @@ add_task(async function() {
       
       "urlbarView-button-block": {
         scalars: {
+          [TELEMETRY_SCALARS.EXPOSURE_WEATHER]: position,
           [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
           [TELEMETRY_SCALARS.IMPRESSION_WEATHER]: position,
           [TELEMETRY_SCALARS.BLOCK_NONSPONSORED]: position,
@@ -122,6 +131,7 @@ add_task(async function() {
       
       "urlbarView-button-help": {
         scalars: {
+          [TELEMETRY_SCALARS.EXPOSURE_WEATHER]: position,
           [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED]: position,
           [TELEMETRY_SCALARS.IMPRESSION_WEATHER]: position,
           [TELEMETRY_SCALARS.HELP_NONSPONSORED]: position,
