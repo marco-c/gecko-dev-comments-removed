@@ -66,7 +66,7 @@ class ComputedStyle {
 
   
   void GetComputedPropertyValue(nsCSSPropertyID aId, nsACString& aOut) const {
-    Servo_GetPropertyValue(this, aId, &aOut);
+    Servo_GetComputedValue(this, aId, &aOut);
   }
 
   

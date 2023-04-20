@@ -5,6 +5,7 @@
 
 
 
+use crate::media_queries::Device;
 use crate::properties::ComputedValues;
 use crate::ArcSlice;
 use cssparser;
@@ -17,11 +18,21 @@ mod counters;
 use crate::values::computed;
 
 
+pub struct ResolvedElementInfo<'a> {
+    
+    #[cfg(feature = "gecko")]
+    pub element: crate::gecko::wrapper::GeckoElement<'a>,
+}
+
+
 pub struct Context<'a> {
     
     pub style: &'a ComputedValues,
     
     
+    pub device: &'a Device,
+    
+    pub element_info: ResolvedElementInfo<'a>,
 }
 
 

@@ -3130,20 +3130,14 @@ impl ComputedValues {
     
     
     
-    
-    
-    
-    pub fn get_resolved_value(
+    pub fn computed_or_resolved_value(
         &self,
         property_id: LonghandId,
+        context: Option<<&resolved::Context>,
         dest: &mut CssStringWriter,
     ) -> fmt::Result {
         use crate::values::resolved::ToResolvedValue;
-
         let mut dest = CssWriter::new(dest);
-        let context = resolved::Context {
-            style: self,
-        };
         match property_id {
             % for specified_type, props in groupby(data.longhands, key=lambda x: x.specified_type()):
             <% props = list(props) %>
@@ -3154,34 +3148,39 @@ impl ComputedValues {
                     % endfor
                     _ => unsafe { debug_unreachable!() },
                 };
-                value.to_resolved_value(&context).to_css(&mut dest)
+                if let Some(c) = context {
+                    value.to_resolved_value(c).to_css(&mut dest)
+                } else {
+                    value.to_css(&mut dest)
+                }
             }
             % endfor
         }
     }
 
     
-    pub fn resolved_declaration(&self, property_id: LonghandId) -> PropertyDeclaration {
+    pub fn computed_or_resolved_declaration(
+        &self,
+        property_id: LonghandId,
+        context: Option<<&resolved::Context>,
+    ) -> PropertyDeclaration {
         use crate::values::resolved::ToResolvedValue;
         use crate::values::computed::ToComputedValue;
-
-        let context = resolved::Context {
-            style: self,
-        };
-
         match property_id {
             % for specified_type, props in groupby(data.longhands, key=lambda x: x.specified_type()):
             <% props = list(props) %>
             ${" |\n".join("LonghandId::{}".format(p.camel_case) for p in props)} => {
-                let value = match property_id {
+                let mut computed_value = match property_id {
                     % for prop in props:
                     LonghandId::${prop.camel_case} => self.clone_${prop.ident}(),
                     % endfor
                     _ => unsafe { debug_unreachable!() },
                 };
-                let resolved = value.to_resolved_value(&context);
-                let computed = ToResolvedValue::from_resolved_value(resolved);
-                let specified = ToComputedValue::from_computed_value(&computed);
+                if let Some(c) = context {
+                    let resolved = computed_value.to_resolved_value(c);
+                    computed_value = ToResolvedValue::from_resolved_value(resolved);
+                }
+                let specified = ToComputedValue::from_computed_value(&computed_value);
                 % if props[0].boxed:
                 let specified = Box::new(specified);
                 % endif

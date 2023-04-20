@@ -725,10 +725,16 @@ struct ReflowInput : public SizeComputationInput {
 
 
 
-  static nscoord CalcLineHeight(nsIContent* aContent,
-                                const ComputedStyle* aComputedStyle,
+  static nscoord CalcLineHeight(const ComputedStyle&,
                                 nsPresContext* aPresContext,
-                                nscoord aBlockBSize, float aFontSizeInflation);
+                                const nsIContent* aContent, nscoord aBlockBSize,
+                                float aFontSizeInflation);
+
+  static nscoord CalcLineHeight(const StyleLineHeight&,
+                                const nsStyleFont& aRelativeToFont,
+                                nsPresContext* aPresContext, bool aIsVertical,
+                                const nsIContent* aContent, nscoord aBlockBSize,
+                                float aFontSizeInflation);
 
   mozilla::LogicalSize ComputeContainingBlockRectangle(
       nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const;
