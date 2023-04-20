@@ -18,6 +18,7 @@ enum class TrialInliningState : uint8_t {
   Initial = 0,
   Candidate,
   Inlined,
+  MonomorphicInlined,
   Failure,
 };
 
@@ -38,7 +39,7 @@ class ICState {
   uint8_t mode_ : 2;
 
   
-  uint8_t trialInliningState_ : 2;
+  uint8_t trialInliningState_ : 3;
 
   
   
@@ -183,6 +184,7 @@ class ICState {
     
     
     
+    
     if (state != TrialInliningState::Failure) {
       switch (trialInliningState()) {
         case TrialInliningState::Initial:
@@ -190,9 +192,11 @@ class ICState {
           break;
         case TrialInliningState::Candidate:
           MOZ_ASSERT(state == TrialInliningState::Candidate ||
-                     state == TrialInliningState::Inlined);
+                     state == TrialInliningState::Inlined ||
+                     state == TrialInliningState::MonomorphicInlined);
           break;
         case TrialInliningState::Inlined:
+        case TrialInliningState::MonomorphicInlined:
         case TrialInliningState::Failure:
           MOZ_CRASH("Inlined and Failure can only change to Failure");
           break;
