@@ -25,6 +25,7 @@
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/framerate_controller_deprecated.h"
+#include "modules/video_coding/utility/vp8_constants.h"
 #include "rtc_base/experiments/cpu_speed_experiment.h"
 #include "rtc_base/experiments/encoder_info_settings.h"
 #include "rtc_base/experiments/rate_control_settings.h"
@@ -138,7 +139,7 @@ class LibvpxVp8Encoder : public VideoEncoder {
     
     float framerate_limit = 5.0;
     
-    int steady_state_qp = 15;
+    int steady_state_qp = kVp8SteadyStateQpThreshold;
     
     
     int steady_state_undershoot_percentage = 30;
