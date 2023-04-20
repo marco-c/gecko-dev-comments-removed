@@ -25,7 +25,12 @@ static constexpr int kMaxWaitMs = 2000;
 
 
 
+#if defined(MOZ_ASAN) || defined(MOZ_TSAN)
+
+static constexpr int kShutdownWaitMs = 40000;
+#else
 static constexpr int kShutdownWaitMs = 8000;
+#endif
 
 namespace {
 

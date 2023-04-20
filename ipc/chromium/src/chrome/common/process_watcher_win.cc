@@ -24,6 +24,9 @@ static constexpr int kWaitInterval = 2000;
 
 
 static constexpr DWORD kShutdownWaitMs = 80000;
+#elif defined(MOZ_ASAN) || defined(MOZ_TSAN)
+
+static constexpr DWORD kShutdownWaitMs = 40000;
 #else
 static constexpr DWORD kShutdownWaitMs = 8000;
 #endif
