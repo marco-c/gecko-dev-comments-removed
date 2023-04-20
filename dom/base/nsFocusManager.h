@@ -853,6 +853,11 @@ class nsFocusManager final : public nsIFocusManager,
 
   static uint64_t GenerateFocusActionId();
 
+  
+  
+  static mozilla::dom::Element* GetTheFocusableArea(
+      mozilla::dom::Element* aTarget, uint32_t aFlags);
+
  private:
   
   

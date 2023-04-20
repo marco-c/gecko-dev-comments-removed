@@ -2092,27 +2092,6 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
 
   
   
-  if (aElement == doc->GetRootElement()) {
-    return aElement;
-  }
-
-  nsIFrame* frame = aElement->GetPrimaryFrame();
-  if (!frame) {
-    LOGCONTENT("Cannot focus %s as it has no frame", aElement)
-    return nullptr;
-  }
-
-  if (aElement->IsHTMLElement(nsGkAtoms::area)) {
-    
-    
-    
-    return frame->IsVisibleConsideringAncestors() && aElement->IsFocusable()
-               ? aElement
-               : nullptr;
-  }
-
-  
-  
   
   
   
@@ -2132,33 +2111,7 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
     }
   }
 
-  if (frame->IsFocusable(aFlags & FLAG_BYMOUSE)) {
-    return aElement;
-  }
-
-  if (ShadowRoot* root = aElement->GetShadowRoot()) {
-    if (root->DelegatesFocus()) {
-      
-      
-      
-      if (nsPIDOMWindowInner* innerWindow =
-              aElement->OwnerDoc()->GetInnerWindow()) {
-        if (Element* focusedElement = innerWindow->GetFocusedElement()) {
-          if (focusedElement->IsShadowIncludingInclusiveDescendantOf(
-                  aElement)) {
-            return focusedElement;
-          }
-        }
-      }
-
-      if (Element* firstFocusable =
-              root->GetFocusDelegate(aFlags & FLAG_BYMOUSE)) {
-        return firstFocusable;
-      }
-    }
-  }
-
-  return nullptr;
+  return GetTheFocusableArea(aElement, aFlags);
 }
 
 bool nsFocusManager::Blur(BrowsingContext* aBrowsingContextToClear,
@@ -5371,6 +5324,69 @@ bool nsFocusManager::CanSkipFocus(nsIContent* aContent) {
   }
 
   return false;
+}
+
+
+Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
+                                             uint32_t aFlags) {
+  MOZ_ASSERT(aTarget);
+  nsIFrame* frame = aTarget->GetPrimaryFrame();
+  if (!frame) {
+    return nullptr;
+  }
+
+  
+  if (aTarget == aTarget->OwnerDoc()->GetRootElement()) {
+    
+    
+    return aTarget;
+  }
+
+  
+  
+  if (aTarget->IsHTMLElement(nsGkAtoms::area)) {
+    
+    
+    
+    return frame->IsVisibleConsideringAncestors() && aTarget->IsFocusable()
+               ? aTarget
+               : nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (frame->IsFocusable(aFlags & FLAG_BYMOUSE)) {
+    return aTarget;
+  }
+
+  
+  
+  if (ShadowRoot* root = aTarget->GetShadowRoot()) {
+    if (root->DelegatesFocus()) {
+      
+      
+      
+      if (nsPIDOMWindowInner* innerWindow =
+              aTarget->OwnerDoc()->GetInnerWindow()) {
+        if (Element* focusedElement = innerWindow->GetFocusedElement()) {
+          if (focusedElement->IsShadowIncludingInclusiveDescendantOf(aTarget)) {
+            return focusedElement;
+          }
+        }
+      }
+
+      if (Element* firstFocusable =
+              root->GetFocusDelegate(aFlags & FLAG_BYMOUSE)) {
+        return firstFocusable;
+      }
+    }
+  }
+  return nullptr;
 }
 
 nsresult NS_NewFocusManager(nsIFocusManager** aResult) {
