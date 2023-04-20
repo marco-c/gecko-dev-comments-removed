@@ -17,7 +17,7 @@ const ROOT_PATH = getRootDirectory(gTestPath).replace(
 );
 
 
-requestLongerTimeout(7);
+requestLongerTimeout(3);
 
 const DIALOG_URL_APP_CHOOSER =
   "chrome://mozapps/content/handling/appChooser.xhtml";
