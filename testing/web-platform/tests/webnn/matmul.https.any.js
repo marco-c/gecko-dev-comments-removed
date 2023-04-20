@@ -7,12 +7,4 @@
 
 
 
-const buildMatmul= (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const [inputOperandA, inputOperandB] = createMultiInputOperands(builder, resources);
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperandA, inputOperandB);
-  return namedOutputOperand;
-};
-
-testWebNNOperation('matmul', '/webnn/resources/test_data/matmul.json', buildMatmul);
+testWebNNOperation('matmul', buildOperationWithTwoInputs);

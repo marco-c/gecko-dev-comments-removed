@@ -7,4 +7,4 @@
 
 
 
-testWebNNOperation('tanh', '/webnn/resources/test_data/tanh.json', buildOperationWithSingleInput);
+testWebNNOperation('tanh', buildOperationWithSingleInput);

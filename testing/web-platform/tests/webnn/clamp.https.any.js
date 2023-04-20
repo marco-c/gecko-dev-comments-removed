@@ -7,4 +7,4 @@
 
 
 
-testWebNNOperation('clamp', '/webnn/resources/test_data/clamp.json', buildOperationWithSingleInput);
+testWebNNOperation('clamp', buildOperationWithSingleInput);

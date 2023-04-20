@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation(['add', 'sub', 'mul', 'div', 'max', 'min', 'pow'], buildOperationWithTwoInputs);

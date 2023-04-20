@@ -7,4 +7,4 @@
 
 
 
-testWebNNOperation('squeeze', '/webnn/resources/test_data/squeeze.json', buildOperationWithSingleInput);
+testWebNNOperation('squeeze', buildOperationWithSingleInput);
