@@ -6,6 +6,7 @@
 
 #include "TransformerCallbackHelpers.h"
 
+#include "StreamUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/TransformStreamDefaultController.h"
 
@@ -84,30 +85,11 @@ already_AddRefed<Promise> TransformerAlgorithms::FlushCallback(
              CallbackObject::eRethrowExceptions);
 }
 
-
-
-template <typename T>
-MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise> Promisify(
-    nsIGlobalObject* aGlobal, T aFunc, mozilla::ErrorResult& aRv) {
-  
-  
-  aFunc(aRv);
-  if (aRv.Failed()) {
-    return Promise::CreateRejectedWithErrorResult(aGlobal, aRv);
-  }
-
-  
-  
-
-  
-  return Promise::CreateResolvedWithUndefined(aGlobal, aRv);
-}
-
 already_AddRefed<Promise> TransformerAlgorithmsWrapper::TransformCallback(
     JSContext*, JS::Handle<JS::Value> aChunk,
     TransformStreamDefaultController& aController, ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> global = aController.GetParentObject();
-  return Promisify(
+  return PromisifyAlgorithm(
       global,
       [this, &aChunk, &aController](ErrorResult& aRv)
           MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
@@ -120,7 +102,7 @@ already_AddRefed<Promise> TransformerAlgorithmsWrapper::FlushCallback(
     JSContext*, TransformStreamDefaultController& aController,
     ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> global = aController.GetParentObject();
-  return Promisify(
+  return PromisifyAlgorithm(
       global,
       [this, &aController](ErrorResult& aRv) MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
         return FlushCallbackImpl(aController, aRv);

@@ -6,6 +6,9 @@
 #define mozilla_dom_StreamUtils_h
 
 #include "mozilla/ErrorResult.h"
+#include "mozilla/dom/Promise.h"
+
+class nsIGlobalObject;
 
 namespace mozilla::dom {
 
@@ -13,6 +16,37 @@ struct QueuingStrategy;
 
 double ExtractHighWaterMark(const QueuingStrategy& aStrategy,
                             double aDefaultHWM, ErrorResult& aRv);
+
+
+
+
+
+
+
+template <typename T>
+MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise> PromisifyAlgorithm(
+    nsIGlobalObject* aGlobal, T aFunc, mozilla::ErrorResult& aRv) {
+  
+  
+  RefPtr<Promise> result;
+  if constexpr (!std::is_same<decltype(aFunc(aRv)), void>::value) {
+    result = aFunc(aRv);
+  } else {
+    aFunc(aRv);
+  }
+
+  if (aRv.Failed()) {
+    return Promise::CreateRejectedWithErrorResult(aGlobal, aRv);
+  }
+
+  
+  if (result) {
+    return result.forget();
+  }
+
+  
+  return Promise::CreateResolvedWithUndefined(aGlobal, aRv);
+}
 
 }  
 
