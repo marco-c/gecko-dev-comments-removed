@@ -528,8 +528,6 @@ static void NotifyDidRender(layers::CompositorBridgeParent* aBridge,
 }
 
 static void NotifyDidStartRender(layers::CompositorBridgeParent* aBridge) {
-  
-  
   if (aBridge->GetWrBridge()) {
     aBridge->GetWrBridge()->RetrySkippedComposite();
   }

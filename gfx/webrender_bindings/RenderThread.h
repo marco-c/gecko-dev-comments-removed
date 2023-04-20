@@ -349,8 +349,6 @@ class RenderThread final {
 
   struct WindowInfo {
     int64_t PendingCount() { return mPendingFrames.size(); }
-    
-    
     std::queue<PendingFrameInfo> mPendingFrames;
     uint8_t mPendingFrameBuild = 0;
     bool mIsDestroyed = false;
