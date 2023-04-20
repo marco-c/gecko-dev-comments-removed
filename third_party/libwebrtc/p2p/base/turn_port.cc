@@ -19,6 +19,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "api/task_queue/pending_task_safety_flag.h"
 #include "api/transport/stun.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/p2p_constants.h"
@@ -144,7 +145,7 @@ class TurnChannelBindRequest : public StunRequest {
 class TurnEntry : public sigslot::has_slots<> {
  public:
   enum BindState { STATE_UNBOUND, STATE_BINDING, STATE_BOUND };
-  TurnEntry(TurnPort* port, int channel_id, const rtc::SocketAddress& ext_addr);
+  TurnEntry(TurnPort* port, Connection* conn, int channel_id);
 
   TurnPort* port() { return port_; }
 
@@ -157,13 +158,18 @@ class TurnEntry : public sigslot::has_slots<> {
 
   
   
-  absl::optional<int64_t> destruction_timestamp() {
-    return destruction_timestamp_;
-  }
-  void set_destruction_timestamp(int64_t destruction_timestamp) {
-    destruction_timestamp_.emplace(destruction_timestamp);
-  }
-  void reset_destruction_timestamp() { destruction_timestamp_.reset(); }
+  
+  
+  void TrackConnection(Connection* conn);
+
+  
+  
+  
+  
+  
+  
+  rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> UntrackConnection(
+      Connection* conn);
 
   
   void SendCreatePermissionRequest(int delay);
@@ -192,8 +198,8 @@ class TurnEntry : public sigslot::has_slots<> {
   
   
   
-  
-  absl::optional<int64_t> destruction_timestamp_;
+  std::vector<Connection*> connections_;
+  webrtc::ScopedTaskSafety task_safety_;
 };
 
 TurnPort::TurnPort(TaskQueueBase* thread,
@@ -574,15 +580,13 @@ Connection* TurnPort::CreateConnection(const Candidate& remote_candidate,
     if (local_candidate.type() == RELAY_PORT_TYPE &&
         local_candidate.address().family() ==
             remote_candidate.address().family()) {
-      
-      
-      if (CreateOrRefreshEntry(remote_candidate.address(),
-                               next_channel_number_)) {
-        
-        next_channel_number_++;
-      }
       ProxyConnection* conn =
           new ProxyConnection(NewWeakPtr(), index, remote_candidate);
+      
+      
+      if (CreateOrRefreshEntry(conn, next_channel_number_)) {
+        next_channel_number_++;
+      }
       AddOrReplaceConnection(conn);
       return conn;
     }
@@ -1195,57 +1199,26 @@ bool TurnPort::EntryExists(TurnEntry* e) {
 }
 
 bool TurnPort::CreateOrRefreshEntry(Connection* conn, int channel_number) {
-  return CreateOrRefreshEntry(conn->remote_candidate().address(),
-                              channel_number);
-}
+  const Candidate& remote_candidate = conn->remote_candidate();
+  TurnEntry* entry = FindEntry(remote_candidate.address());
 
-bool TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr,
-                                    int channel_number) {
-  TurnEntry* entry = FindEntry(addr);
   if (entry == nullptr) {
-    entry = new TurnEntry(this, channel_number, addr);
+    entry = new TurnEntry(this, conn, channel_number);
     entries_.push_back(entry);
     return true;
   }
 
-  if (entry->destruction_timestamp()) {
-    
-    
-    
-    RTC_DCHECK(!GetConnection(addr));
-    
-    
-    
-    
-    entry->reset_destruction_timestamp();
-  } else {
-    
-    
-    RTC_DCHECK(GetConnection(addr));
-  }
+  
+  
+  entry->TrackConnection(conn);
 
   return false;
 }
 
 void TurnPort::DestroyEntry(TurnEntry* entry) {
-  RTC_DCHECK(entry != NULL);
   entry->destroyed_callback_list_.Send(entry);
   entries_.remove(entry);
   delete entry;
-}
-
-void TurnPort::DestroyEntryIfNotCancelled(TurnEntry* entry, int64_t timestamp) {
-  if (!EntryExists(entry)) {
-    return;
-  }
-  
-  
-  
-  
-  if (entry->destruction_timestamp() &&
-      timestamp == *entry->destruction_timestamp()) {
-    DestroyEntry(entry);
-  }
 }
 
 void TurnPort::HandleConnectionDestroyed(Connection* conn) {
@@ -1262,15 +1235,18 @@ void TurnPort::HandleConnectionDestroyed(Connection* conn) {
     return;
   }
 
-  RTC_DCHECK(!entry->destruction_timestamp().has_value());
-  int64_t timestamp = rtc::TimeMillis();
-  entry->set_destruction_timestamp(timestamp);
-  thread()->PostDelayedTask(SafeTask(task_safety_.flag(),
-                                     [this, entry, timestamp] {
-                                       DestroyEntryIfNotCancelled(entry,
-                                                                  timestamp);
-                                     }),
-                            kTurnPermissionTimeout);
+  rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> flag =
+      entry->UntrackConnection(conn);
+  if (flag) {
+    
+    
+    
+    
+    
+    thread()->PostDelayedTask(
+        SafeTask(flag, [this, entry] { DestroyEntry(entry); }),
+        kTurnPermissionTimeout);
+  }
 }
 
 void TurnPort::SetCallbacksForTest(CallbacksForTest* callbacks) {
@@ -1766,15 +1742,28 @@ void TurnChannelBindRequest::OnTimeout() {
   }
 }
 
-TurnEntry::TurnEntry(TurnPort* port,
-                     int channel_id,
-                     const rtc::SocketAddress& ext_addr)
+TurnEntry::TurnEntry(TurnPort* port, Connection* conn, int channel_id)
     : port_(port),
       channel_id_(channel_id),
-      ext_addr_(ext_addr),
-      state_(STATE_UNBOUND) {
+      ext_addr_(conn->remote_candidate().address()),
+      state_(STATE_UNBOUND),
+      connections_({conn}) {
   
   SendCreatePermissionRequest(0);
+}
+
+void TurnEntry::TrackConnection(Connection* conn) {
+  RTC_DCHECK(absl::c_find(connections_, conn) == connections_.end());
+  if (connections_.empty()) {
+    task_safety_.reset();
+  }
+  connections_.push_back(conn);
+}
+
+rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> TurnEntry::UntrackConnection(
+    Connection* conn) {
+  connections_.erase(absl::c_find(connections_, conn));
+  return connections_.empty() ? task_safety_.flag() : nullptr;
 }
 
 void TurnEntry::SendCreatePermissionRequest(int delay) {

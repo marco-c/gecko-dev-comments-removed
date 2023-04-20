@@ -233,8 +233,6 @@ class TurnPort : public Port {
   
   bool CreateOrRefreshEntry(Connection* conn, int channel_number);
 
-  bool CreateOrRefreshEntry(const rtc::SocketAddress& addr, int channel_number);
-
   rtc::DiffServCodePoint StunDscpValue() const override;
 
   
@@ -300,9 +298,6 @@ class TurnPort : public Port {
   TurnEntry* FindEntry(int channel_id) const;
   bool EntryExists(TurnEntry* e);
   void DestroyEntry(TurnEntry* entry);
-  
-  
-  void DestroyEntryIfNotCancelled(TurnEntry* entry, int64_t timestamp);
 
   
   
