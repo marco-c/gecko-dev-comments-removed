@@ -846,7 +846,12 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
     return IPC_FAIL(this, "binding to nonexistant proxy!");
   }
 
+#ifdef XP_WIN
+  WeakPtr<RemoteAccessible> outerDoc = e->mProxy;
+#else
   RemoteAccessible* outerDoc = e->mProxy;
+#endif
+
   MOZ_ASSERT(outerDoc);
 
   
@@ -903,6 +908,9 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
 #  endif  
           }
         }
+        if (!outerDoc) {
+          return IPC_FAIL(this, "OuterDoc removed while adding child doc");
+        }
         
         
         
@@ -939,6 +947,9 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
                 topDocHolder.GetPreservedStream();
 #  endif  
           }
+        }
+        if (!outerDoc) {
+          return IPC_FAIL(this, "OuterDoc removed while adding child doc");
         }
       }
       if (nsWinUtils::IsWindowEmulationStarted()) {
