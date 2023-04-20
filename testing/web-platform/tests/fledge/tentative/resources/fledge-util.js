@@ -238,7 +238,7 @@ async function runBasicFledgeTestExpectingNoWinner(test, testConfig = {}) {
   await joinInterestGroup(test, uuid, testConfig.interestGroupOverrides);
   let result = await runBasicFledgeAuction(
       test, uuid, testConfig.auctionConfigOverrides);
-  assert_equals(result, null, 'Auction unexpectedly had a winner');
+  assert_true(result === null, 'Auction unexpectedly had a winner');
 }
 
 

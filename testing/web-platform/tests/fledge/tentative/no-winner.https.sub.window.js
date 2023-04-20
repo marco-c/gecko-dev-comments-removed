@@ -10,6 +10,7 @@
 
 
 const COMMON_SCRIPT_ERRORS = [
+  'error=close-connection',
   'error=http-error',
   'error=no-content-type',
   'error=wrong-content-type',
