@@ -51,6 +51,15 @@ except ImportError:
 HARNESS_TIMEOUT = 5 * 60
 
 
+
+
+
+
+
+
+
+
+
 NUM_THREADS = int(cpu_count() * 4)
 
 EXPECTED_LOG_ACTIONS = set(
@@ -1798,14 +1807,14 @@ class XPCShellTests(object):
                 return False
 
         if (
-            "tsan" in self.mozInfo
-            and self.mozInfo["tsan"]
-            and not options.get("threadCount")
-        ):
+            ("tsan" in self.mozInfo and self.mozInfo["tsan"])
+            or ("asan" in self.mozInfo and self.mozInfo["asan"])
+        ) and not options.get("threadCount"):
             
             
             
-            self.threadCount = self.threadCount / 2
+            
+            self.threadCount = max(self.threadCount / 2, 2)
 
         self.stack_fixer_function = None
         if self.utility_path and os.path.exists(self.utility_path):
