@@ -513,6 +513,9 @@ void nsImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   mListener = new nsImageListener(this);
 
+  GetImageMap();  
+                  
+
   if (!gIconLoad) {
     LoadIcons(PresContext());
   }
