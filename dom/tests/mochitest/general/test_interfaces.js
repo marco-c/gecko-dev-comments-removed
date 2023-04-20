@@ -277,6 +277,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSConditionRule", insecureContext: true },
   
+  { name: "CSSContainerRule", insecureContext: true, nightly: true },
+  
   { name: "CSSCounterStyleRule", insecureContext: true },
   
   { name: "CSSFontFaceRule", insecureContext: true },
