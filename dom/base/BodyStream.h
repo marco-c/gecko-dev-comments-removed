@@ -130,7 +130,7 @@ class BodyStream final : public nsIInputStreamCallback,
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void EnqueueChunkWithSizeIntoStream(
-      JSContext* aCx, ReadableStream* aStream, uint64_t bytes,
+      JSContext* aCx, ReadableStream* aStream, uint64_t aAvailableData,
       ErrorResult& aRv);
 
   void ErrorPropagation(JSContext* aCx,

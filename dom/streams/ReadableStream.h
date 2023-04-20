@@ -120,6 +120,10 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT void CloseNative(JSContext* aCx, ErrorResult& aRv);
 
   
+  void ErrorNative(JSContext* aCx, JS::Handle<JS::Value> aError,
+                   ErrorResult& aRv);
+
+  
   MOZ_CAN_RUN_SCRIPT void EnqueueNative(JSContext* aCx,
                                         JS::Handle<JS::Value> aChunk,
                                         ErrorResult& aRv);
@@ -151,7 +155,7 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
       ErrorResult& aRv);
 
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> PipeTo(
-      WritableStream& aDestinaton, const StreamPipeOptions& aOptions,
+      WritableStream& aDestination, const StreamPipeOptions& aOptions,
       ErrorResult& aRv);
 
   MOZ_CAN_RUN_SCRIPT void Tee(JSContext* aCx,

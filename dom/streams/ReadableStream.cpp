@@ -1067,6 +1067,21 @@ void ReadableStream::CloseNative(JSContext* aCx, ErrorResult& aRv) {
 }
 
 
+void ReadableStream::ErrorNative(JSContext* aCx, JS::Handle<JS::Value> aError,
+                                 ErrorResult& aRv) {
+  
+  
+  if (mController->IsByte()) {
+    ReadableByteStreamControllerError(mController->AsByte(), aError, aRv);
+    return;
+  }
+  
+  
+  ReadableStreamDefaultControllerError(aCx, mController->AsDefault(), aError,
+                                       aRv);
+}
+
+
 static void CurrentBYOBRequestView(JSContext* aCx,
                                    ReadableByteStreamController& aController,
                                    JS::MutableHandle<JSObject*> aRetVal,
