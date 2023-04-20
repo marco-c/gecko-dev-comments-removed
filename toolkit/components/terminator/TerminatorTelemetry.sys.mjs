@@ -1,15 +1,13 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80 filetype=javascript: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-"use strict";
-
-
-
-
-
+/**
+ * Read the data saved by nsTerminator during shutdown and feed it to the
+ * relevant telemetry histograms.
+ */
 
 const lazy = {};
 
@@ -18,7 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
-function nsTerminatorTelemetry() {
+export function nsTerminatorTelemetry() {
   this._wasNotified = false;
   this._deferred = lazy.PromiseUtils.defer();
 
@@ -44,8 +42,8 @@ var HISTOGRAMS = {
   "xpcom-will-shutdown": "SHUTDOWN_PHASE_DURATION_TICKS_XPCOM_WILL_SHUTDOWN",
   "xpcom-shutdown": "SHUTDOWN_PHASE_DURATION_TICKS_XPCOM_SHUTDOWN",
 
-  
-  
+  // The following keys appear in the JSON, but do not have associated
+  // histograms.
   "xpcom-shutdown-threads": null,
   XPCOMShutdownFinal: null,
   CCPostLastCycleCollection: null,
@@ -54,20 +52,20 @@ var HISTOGRAMS = {
 nsTerminatorTelemetry.prototype = {
   classID: Components.ID("{3f78ada1-cba2-442a-82dd-d5fb300ddea7}"),
 
-  
+  // nsISupports
 
   QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
 
-  
+  // nsIObserver
 
   observe: function DS_observe(aSubject, aTopic, aData) {
     this._wasNotified = true;
 
     (async () => {
       try {
-        
-        
-        
+        //
+        // This data is hardly critical, reading it can wait for a few seconds.
+        //
         await new Promise(resolve => lazy.setTimeout(resolve, 3000));
 
         let PATH = PathUtils.join(
@@ -81,18 +79,18 @@ nsTerminatorTelemetry.prototype = {
           if (DOMException.isInstance(ex) && ex.name == "NotFoundError") {
             return;
           }
-          
+          // Let other errors be reported by Promise's error-reporting.
           throw ex;
         }
 
-        
+        // Clean up
         await IOUtils.remove(PATH);
         await IOUtils.remove(PATH + ".tmp");
 
         for (let k of Object.keys(data)) {
           let id = HISTOGRAMS[k];
           if (id === null) {
-            
+            // No histogram associated with this entry.
             continue;
           }
 
@@ -100,14 +98,14 @@ nsTerminatorTelemetry.prototype = {
             let histogram = Services.telemetry.getHistogramById(id);
             histogram.add(Number.parseInt(data[k]));
           } catch (ex) {
-            
-            
+            // Make sure that the error is reported and causes test failures,
+            // but otherwise, ignore it.
             Promise.reject(ex);
             continue;
           }
         }
 
-        
+        // Inform observers that we are done.
         Services.obs.notifyObservers(
           null,
           "shutdown-terminator-telemetry-updated"
@@ -119,6 +117,4 @@ nsTerminatorTelemetry.prototype = {
   },
 };
 
-
-
-var EXPORTED_SYMBOLS = ["nsTerminatorTelemetry"];
+// Module
