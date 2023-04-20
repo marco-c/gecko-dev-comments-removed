@@ -68,6 +68,7 @@ fn hue_to_rgb(t1: f32, t2: f32, hue: f32) -> f32 {
 }
 
 
+
 #[inline]
 pub fn hsl_to_rgb(from: &ColorComponents) -> ColorComponents {
     let ColorComponents(hue, saturation, lightness) = *from;
@@ -93,20 +94,20 @@ pub fn rgb_to_hsl(from: &ColorComponents) -> ColorComponents {
 
     let (hue, min, max) = rgb_to_hue_min_max(red, green, blue);
 
-    let light = (min + max) / 2.0;
+    let lightness = (min + max) / 2.0;
     let delta = max - min;
 
-    let sat = if delta != 0.0 {
-        if light == 0.0 || light == 1.0 {
+    let saturation = if delta != 0.0 {
+        if lightness == 0.0 || lightness == 1.0 {
             0.0
         } else {
-            (max - light) / light.min(1.0 - light)
+            (max - lightness) / lightness.min(1.0 - lightness)
         }
     } else {
         0.0
     };
 
-    ColorComponents(hue, sat, light)
+    ColorComponents(hue, saturation, lightness)
 }
 
 
@@ -136,6 +137,30 @@ pub fn rgb_to_hwb(from: &ColorComponents) -> ColorComponents {
     let blackness = 1.0 - max;
 
     ColorComponents(hue, whiteness, blackness)
+}
+
+
+
+#[inline]
+pub fn lab_to_lch(from: &ColorComponents) -> ColorComponents {
+    let ColorComponents(lightness, a, b) = *from;
+
+    let hue = normalize_hue(b.atan2(a) * 180.0 / PI);
+    let chroma = (a.powf(2.0) + b.powf(2.0)).sqrt();
+
+    ColorComponents(lightness, chroma, hue)
+}
+
+
+
+#[inline]
+pub fn lch_to_lab(from: &ColorComponents) -> ColorComponents {
+    let ColorComponents(lightness, chroma, hue) = *from;
+
+    let a = chroma * (hue * PI / 180.0).cos();
+    let b = chroma * (hue * PI / 180.0).sin();
+
+    ColorComponents(lightness, a, b)
 }
 
 #[inline]
@@ -302,6 +327,56 @@ impl ColorSpaceConversion for Srgb {
                 12.92 * value
             }
         })
+    }
+}
+
+
+pub struct Hsl;
+
+impl ColorSpaceConversion for Hsl {
+    const WHITE_POINT: WhitePoint = Srgb::WHITE_POINT;
+
+    fn to_linear_light(from: &ColorComponents) -> ColorComponents {
+        Srgb::to_linear_light(&hsl_to_rgb(from))
+    }
+
+    #[inline]
+    fn to_xyz(from: &ColorComponents) -> ColorComponents {
+        Srgb::to_xyz(from)
+    }
+
+    #[inline]
+    fn from_xyz(from: &ColorComponents) -> ColorComponents {
+        Srgb::from_xyz(from)
+    }
+
+    fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
+        rgb_to_hsl(&Srgb::to_gamma_encoded(from))
+    }
+}
+
+
+pub struct Hwb;
+
+impl ColorSpaceConversion for Hwb {
+    const WHITE_POINT: WhitePoint = Srgb::WHITE_POINT;
+
+    fn to_linear_light(from: &ColorComponents) -> ColorComponents {
+        Srgb::to_linear_light(&hwb_to_rgb(from))
+    }
+
+    #[inline]
+    fn to_xyz(from: &ColorComponents) -> ColorComponents {
+        Srgb::to_xyz(from)
+    }
+
+    #[inline]
+    fn from_xyz(from: &ColorComponents) -> ColorComponents {
+        Srgb::from_xyz(from)
+    }
+
+    fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
+        rgb_to_hwb(&Srgb::to_gamma_encoded(from))
     }
 }
 
