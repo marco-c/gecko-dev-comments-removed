@@ -92,8 +92,6 @@ use std::str::FromStr;
 #[allow(unused_imports, deprecated)]
 use std::ascii::AsciiExt;
 
-#[cfg(feature = "percent-encode")]
-use percent_encoding::{AsciiSet, percent_encode as encode};
 use time::{Duration, OffsetDateTime, UtcOffset, macros::datetime};
 
 use crate::parse::parse_cookie;
@@ -1108,28 +1106,50 @@ assert_eq!(&c.stripped().encoded().to_string(), "key%3F=value");
     }
 }
 
-
 #[cfg(feature = "percent-encode")]
-const FRAGMENT_ENCODE_SET: &AsciiSet = &percent_encoding::CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
+mod encoding {
+    use percent_encoding::{AsciiSet, CONTROLS};
 
+    
+    const FRAGMENT: &AsciiSet = &CONTROLS
+        .add(b' ')
+        .add(b'"')
+        .add(b'<')
+        .add(b'>')
+        .add(b'`');
 
-#[cfg(feature = "percent-encode")]
-const PATH_ENCODE_SET: &AsciiSet = &FRAGMENT_ENCODE_SET.add(b'#').add(b'?').add(b'{').add(b'}');
+    
+    const PATH: &AsciiSet = &FRAGMENT
+        .add(b'#')
+        .add(b'?')
+        .add(b'{')
+        .add(b'}');
 
+    
+    const USERINFO: &AsciiSet = &PATH
+        .add(b'/')
+        .add(b':')
+        .add(b';')
+        .add(b'=')
+        .add(b'@')
+        .add(b'[')
+        .add(b'\\')
+        .add(b']')
+        .add(b'^')
+        .add(b'|')
+        .add(b'%');
 
-#[cfg(feature = "percent-encode")]
-const USERINFO_ENCODE_SET: &AsciiSet = &PATH_ENCODE_SET
-    .add(b'/')
-    .add(b':')
-    .add(b';')
-    .add(b'=')
-    .add(b'@')
-    .add(b'[')
-    .add(b'\\')
-    .add(b']')
-    .add(b'^')
-    .add(b'|')
-    .add(b'%');
+    
+    const COOKIE: &AsciiSet = &USERINFO
+        .add(b'(')
+        .add(b')')
+        .add(b',');
+
+    
+    pub fn encode(string: &str) -> impl std::fmt::Display + '_ {
+        percent_encoding::percent_encode(string.as_bytes(), COOKIE)
+    }
+}
 
 
 
@@ -1164,8 +1184,8 @@ impl<'a, 'c: 'a> fmt::Display for Display<'a, 'c> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         #[cfg(feature = "percent-encode")] {
             if self.encode {
-                let name = encode(self.cookie.name().as_bytes(), USERINFO_ENCODE_SET);
-                let value = encode(self.cookie.value().as_bytes(), USERINFO_ENCODE_SET);
+                let name = encoding::encode(self.cookie.name());
+                let value = encoding::encode(self.cookie.value());
                 write!(f, "{}={}", name, value)?;
             } else {
                 write!(f, "{}={}", self.cookie.name(), self.cookie.value())?;
@@ -1392,11 +1412,11 @@ mod tests {
     #[test]
     #[cfg(feature = "percent-encode")]
     fn format_encoded() {
-        let cookie = Cookie::build("foo !?=", "bar;; a").finish();
+        let cookie = Cookie::build("foo !%?=", "bar;;, a").finish();
         let cookie_str = cookie.encoded().to_string();
-        assert_eq!(&cookie_str, "foo%20!%3F%3D=bar%3B%3B%20a");
+        assert_eq!(&cookie_str, "foo%20!%25%3F%3D=bar%3B%3B%2C%20a");
 
         let cookie = Cookie::parse_encoded(cookie_str).unwrap();
-        assert_eq!(cookie.name_value(), ("foo !?=", "bar;; a"));
+        assert_eq!(cookie.name_value(), ("foo !%?=", "bar;;, a"));
     }
 }

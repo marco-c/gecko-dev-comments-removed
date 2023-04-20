@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 const SIGNING_KEY_LEN: usize = 32;
 const ENCRYPTION_KEY_LEN: usize = 32;
 const COMBINED_KEY_LENGTH: usize = SIGNING_KEY_LEN + ENCRYPTION_KEY_LEN;
@@ -53,14 +55,12 @@ impl Key {
     
     
     
+    
+    
+    
+    #[inline]
     pub fn from(key: &[u8]) -> Key {
-        if key.len() < 64 {
-            panic!("bad key length: expected >= 64 bytes, found {}", key.len());
-        }
-
-        let mut output = Key::zero();
-        output.0.copy_from_slice(&key[..COMBINED_KEY_LENGTH]);
-        output
+        Key::try_from(key).unwrap()
     }
 
     
@@ -185,6 +185,66 @@ impl Key {
     }
 }
 
+
+#[cfg_attr(all(nightly, doc), doc(cfg(any(feature = "private", feature = "signed"))))]
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum KeyError {
+    
+    
+    
+    TooShort(usize),
+}
+
+impl std::error::Error for KeyError { }
+
+impl std::fmt::Display for KeyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            KeyError::TooShort(n) => {
+                write!(f, "key material is too short: expected >= {} bytes, got {} bytes",
+                       COMBINED_KEY_LENGTH, n)
+            }
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for Key {
+    type Error = KeyError;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_from(key: &[u8]) -> Result<Self, Self::Error> {
+        if key.len() < COMBINED_KEY_LENGTH {
+            Err(KeyError::TooShort(key.len()))
+        } else {
+            let mut output = Key::zero();
+            output.0.copy_from_slice(&key[..COMBINED_KEY_LENGTH]);
+            Ok(output)
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::Key;
@@ -198,6 +258,17 @@ mod test {
 
         let encryption: Vec<u8> = (32..64).collect();
         assert_eq!(key.encryption(), &*encryption);
+    }
+
+    #[test]
+    fn try_from_works() {
+        use core::convert::TryInto;
+        let data = (0..64).collect::<Vec<_>>();
+        let key_res: Result<Key, _> = data[0..63].try_into();
+        assert!(key_res.is_err());
+
+        let key_res: Result<Key, _> = data.as_slice().try_into();
+        assert!(key_res.is_ok());
     }
 
     #[test]
