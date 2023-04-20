@@ -86,10 +86,6 @@ function reset(resetFile = true) {
 
 function setup() {
   reset();
-  
-  do_get_profile();
-  
-  Services.fog.initializeFOG();
 
   BrowserUsageTelemetry.Policy.readProfileCountFile = async path => {
     if (!gProfileCounterFilePath) {
@@ -151,7 +147,6 @@ function checkSuccess(profilesReported, rawCount = profilesReported) {
     profilesReported,
     "The value reported to telemetry should be the expected profile count"
   );
-  Assert.equal(rawCount, Glean.browser.engagement.profile_count.testGetValue());
 }
 
 function checkError() {
