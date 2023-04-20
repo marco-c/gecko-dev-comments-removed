@@ -19,7 +19,6 @@
 #include "absl/types/optional.h"
 #include "api/neteq/tick_timer.h"
 #include "modules/audio_coding/neteq/histogram.h"
-#include "modules/audio_coding/neteq/relative_arrival_delay_tracker.h"
 #include "modules/audio_coding/neteq/reorder_optimizer.h"
 #include "modules/audio_coding/neteq/underrun_optimizer.h"
 
@@ -36,7 +35,6 @@ class DelayManager {
     double forget_factor = 0.983;
     absl::optional<double> start_forget_weight = 2;
     absl::optional<int> resample_interval_ms = 500;
-    int max_history_ms = 2000;
 
     bool use_reorder_optimizer = true;
     double reorder_forget_factor = 0.9993;
@@ -58,10 +56,7 @@ class DelayManager {
   
   
   
-  
-  virtual absl::optional<int> Update(uint32_t timestamp,
-                                     int sample_rate_hz,
-                                     bool reset = false);
+  virtual void Update(int arrival_delay_ms, bool reordered);
 
   
   virtual void Reset();
@@ -105,7 +100,6 @@ class DelayManager {
   const int max_packets_in_buffer_;
   UnderrunOptimizer underrun_optimizer_;
   std::unique_ptr<ReorderOptimizer> reorder_optimizer_;
-  RelativeArrivalDelayTracker relative_arrival_delay_tracker_;
 
   int base_minimum_delay_ms_;
   int effective_minimum_delay_ms_;  
