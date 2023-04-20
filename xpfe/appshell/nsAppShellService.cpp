@@ -671,21 +671,20 @@ nsresult nsAppShellService::JustCreateTopWindow(
 
   widgetInitData.mRTL = LocaleService::GetInstance()->IsAppLocaleRTL();
 
-  nsresult rv =
-      window->Initialize(parent, center ? aParent : nullptr, aInitialWidth,
-                         aInitialHeight, aIsHiddenWindow, widgetInitData);
-
-  NS_ENSURE_SUCCESS(rv, rv);
-
   
   bool isPrivateBrowsingWindow =
       StaticPrefs::browser_privatebrowsing_autostart();
-
   if (aChromeMask & nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW) {
     
     isPrivateBrowsingWindow = true;
   }
   widgetInitData.mIsPrivate = isPrivateBrowsingWindow;
+
+  nsresult rv =
+      window->Initialize(parent, center ? aParent : nullptr, aInitialWidth,
+                         aInitialHeight, aIsHiddenWindow, widgetInitData);
+
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<mozIDOMWindowProxy> domWin = do_GetInterface(aParent);
   nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(domWin);
