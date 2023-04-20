@@ -260,17 +260,19 @@ var gLanguagesDialog = {
     if (!this._availableLanguagesList.length) {
       this._loadAvailableLanguages();
     }
+    let languageName = "";
     for (var i = 0; i < this._availableLanguagesList.length; ++i) {
       if (localeCode == this._availableLanguagesList[i].code) {
         return this._availableLanguagesList[i].name;
       }
       
+      
       if (localeCode.split("-")[0] == this._availableLanguagesList[i].code) {
-        return this._availableLanguagesList[i].name;
+        languageName = this._availableLanguagesList[i].name;
       }
     }
 
-    return "";
+    return languageName;
   },
 
   moveUp() {
