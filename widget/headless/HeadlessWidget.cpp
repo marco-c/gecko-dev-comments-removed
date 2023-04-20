@@ -69,6 +69,7 @@ HeadlessWidget::HeadlessWidget()
     : mEnabled(true),
       mVisible(false),
       mDestroyed(false),
+      mAlwaysOnTop(false),
       mTopLevel(nullptr),
       mCompositorWidget(nullptr),
       mSizeMode(nsSizeMode_Normal),
@@ -124,6 +125,8 @@ nsresult HeadlessWidget::Create(nsIWidget* aParent,
 
   mBounds = aRect;
   mRestoreBounds = aRect;
+
+  mAlwaysOnTop = aInitData && aInitData->mAlwaysOnTop;
 
   if (aParent) {
     mTopLevel = aParent->GetTopLevelWidget();
@@ -196,7 +199,9 @@ void HeadlessWidget::Show(bool aState) {
   LOG(("HeadlessWidget::Show [%p] state %d\n", (void*)this, aState));
 
   
-  if (aState &&
+  
+  
+  if (aState && !mAlwaysOnTop &&
       (mWindowType == WindowType::TopLevel ||
        mWindowType == WindowType::Dialog || mWindowType == WindowType::Sheet)) {
     RaiseWindow();
