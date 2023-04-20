@@ -409,8 +409,12 @@ class IOUtils final {
 
 
 
+
+
+
+
   static Result<Ok, IOError> RemoveSync(nsIFile* aFile, bool aIgnoreAbsent,
-                                        bool aRecursive);
+                                        bool aRecursive, bool aRetryReadonly);
 
   
 
