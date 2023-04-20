@@ -468,7 +468,6 @@ enum class IntConversionBehavior {
   NegativeZeroCheck,  
   
   Truncate,
-  TruncateNoWrap,
   ClampToUint8,
 };
 
