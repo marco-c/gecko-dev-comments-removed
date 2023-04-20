@@ -70,13 +70,14 @@
 
 use std::cell::Cell;
 use std::collections::hash_map::DefaultHasher;
+use std::convert::TryInto;
 use std::hash::{Hash, Hasher};
 use std::ops::{Bound, RangeBounds};
 use std::thread;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", not(target_os = "wasi")))]
 use instant::Instant;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(all(target_arch = "wasm32", not(target_os = "wasi"))))]
 use std::time::Instant;
 
 
@@ -281,6 +282,7 @@ impl Rng {
 
     
     #[inline]
+    #[must_use = "this creates a new instance of `Rng`; if you want to initialize the thread-local generator, use `fastrand::seed()` instead"]
     pub fn with_seed(seed: u64) -> Self {
         let rng = Rng(Cell::new(0));
 
@@ -441,6 +443,30 @@ impl Rng {
         }
     }
 
+    
+    #[inline]
+    pub fn fill(&self, slice: &mut [u8]) {
+        
+        
+        let mut chunks = slice.chunks_exact_mut(core::mem::size_of::<u64>());
+        for chunk in chunks.by_ref() {
+            let n = self.gen_u64().to_ne_bytes();
+            
+            chunk.copy_from_slice(&n);
+        }
+
+        let remainder = chunks.into_remainder();
+
+        
+        if !remainder.is_empty() {
+            
+            let n = self.gen_u64().to_ne_bytes();
+
+            
+            remainder.copy_from_slice(&n[..remainder.len()]);
+        }
+    }
+
     rng_integer!(
         u8,
         u8,
@@ -528,7 +554,7 @@ impl Rng {
     
     #[inline]
     pub fn char(&self, range: impl RangeBounds<char>) -> char {
-        use std::convert::{TryFrom, TryInto};
+        use std::convert::TryFrom;
 
         let panic_empty_range = || {
             panic!(
