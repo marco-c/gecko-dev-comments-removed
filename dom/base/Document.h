@@ -249,6 +249,7 @@ class FeaturePolicy;
 class FontFaceSet;
 class FrameRequestCallback;
 class ImageTracker;
+class HighlightRegistry;
 class HTMLAllCollection;
 class HTMLBodyElement;
 class HTMLInputElement;
@@ -1181,8 +1182,8 @@ class Document : public nsINode,
 
 
 
-  already_AddRefed<PresShell> CreatePresShell(nsPresContext* aContext,
-                                              nsViewManager* aViewManager);
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<PresShell> CreatePresShell(
+      nsPresContext* aContext, nsViewManager* aViewManager);
   void DeletePresShell();
 
   PresShell* GetPresShell() const {
@@ -4115,6 +4116,12 @@ class Document : public nsINode,
 
   bool DidHitCompleteSheetCache() const { return mDidHitCompleteSheetCache; }
 
+  
+
+
+
+  HighlightRegistry& HighlightRegistry();
+
   bool ShouldResistFingerprinting() const {
     return mShouldResistFingerprinting;
   }
@@ -5363,6 +5370,9 @@ class Document : public nsINode,
   
   
   nsTArray<const BrowserBridgeChild*> mOOPChildrenLoading;
+
+  
+  RefPtr<class HighlightRegistry> mHighlightRegistry;
 
  public:
   

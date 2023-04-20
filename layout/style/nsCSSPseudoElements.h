@@ -13,6 +13,7 @@
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/Compiler.h"
 #include "mozilla/PseudoStyleType.h"
+#include "mozilla/StaticPrefs_dom.h"
 
 
 
@@ -118,6 +119,10 @@ class nsCSSPseudoElements {
   }
 
   static bool EnabledInContent(Type aType) {
+    if (aType == Type::highlight &&
+        !mozilla::StaticPrefs::dom_customHighlightAPI_enabled()) {
+      return false;
+    }
     return !PseudoElementHasAnyFlag(
         aType, CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME);
   }

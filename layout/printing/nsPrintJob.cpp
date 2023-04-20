@@ -1333,8 +1333,11 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   
   
   
-  aPO->mPresShell =
-      aPO->mDocument->CreatePresShell(aPO->mPresContext, aPO->mViewManager);
+  RefPtr<Document> doc = aPO->mDocument;
+  RefPtr<nsPresContext> presContext = aPO->mPresContext;
+  RefPtr<nsViewManager> viewManager = aPO->mViewManager;
+
+  aPO->mPresShell = doc->CreatePresShell(presContext, viewManager);
   if (!aPO->mPresShell) {
     return NS_ERROR_FAILURE;
   }
