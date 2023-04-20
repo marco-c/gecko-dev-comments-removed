@@ -3287,6 +3287,7 @@ toolbar#nav-bar {
                 "e10s": options.e10s,
                 "fission": not options.disable_fission,
                 "headless": options.headless,
+                "http3": options.useHttp3Server,
                 
                 
                 
