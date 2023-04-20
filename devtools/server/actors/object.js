@@ -308,28 +308,28 @@ const proto = {
 
 
   enumProperties(options) {
-    return PropertyIteratorActor(this, options, this.conn);
+    return new PropertyIteratorActor(this, options, this.conn);
   },
 
   
 
 
   enumEntries() {
-    return PropertyIteratorActor(this, { enumEntries: true }, this.conn);
+    return new PropertyIteratorActor(this, { enumEntries: true }, this.conn);
   },
 
   
 
 
   enumSymbols() {
-    return SymbolIteratorActor(this, this.conn);
+    return new SymbolIteratorActor(this, this.conn);
   },
 
   
 
 
   enumPrivateProperties() {
-    return PrivatePropertiesIteratorActor(this, this.conn);
+    return new PrivatePropertiesIteratorActor(this, this.conn);
   },
 
   
