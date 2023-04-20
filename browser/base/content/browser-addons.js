@@ -1540,7 +1540,7 @@ var gUnifiedExtensions = {
     return triggerNode.closest(".unified-extensions-item")?.id;
   },
 
-  onPinToToolbarChange(menu, event) {
+  async onPinToToolbarChange(menu, event) {
     let shouldPinToToolbar = event.target.getAttribute("checked") == "true";
     
     
@@ -1554,6 +1554,11 @@ var gUnifiedExtensions = {
     if (!widgetId) {
       return;
     }
+
+    if (shouldPinToToolbar) {
+      await this.togglePanel();
+    }
+
     this.pinToToolbar(widgetId, shouldPinToToolbar);
   },
 
