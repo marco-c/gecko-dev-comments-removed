@@ -8,8 +8,6 @@
 
 
 
-#include "lib/jxl/aux_out.h"
-#include "lib/jxl/aux_out_fwd.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/base/status.h"
@@ -19,15 +17,7 @@
 
 namespace jxl {
 
-
-Status EncodePreview(const CompressParams& cparams, const ImageBundle& ib,
-                     const CodecMetadata* metadata, const JxlCmsInterface& cms,
-                     ThreadPool* pool, BitWriter* JXL_RESTRICT writer);
-
-
-
-Status WriteHeaders(CodecMetadata* metadata, BitWriter* writer,
-                    AuxOut* aux_out);
+struct AuxOut;
 
 
 
@@ -35,20 +25,6 @@ Status EncodeFile(const CompressParams& params, const CodecInOut* io,
                   PassesEncoderState* passes_enc_state, PaddedBytes* compressed,
                   const JxlCmsInterface& cms, AuxOut* aux_out = nullptr,
                   ThreadPool* pool = nullptr);
-
-
-
-struct FrameEncCache {};
-JXL_INLINE Status EncodeFile(const CompressParams& params, const CodecInOut* io,
-                             FrameEncCache* ,
-                             PaddedBytes* compressed,
-                             const JxlCmsInterface& cms,
-                             AuxOut* aux_out = nullptr,
-                             ThreadPool* pool = nullptr) {
-  PassesEncoderState passes_enc_state;
-  return EncodeFile(params, io, &passes_enc_state, compressed, cms, aux_out,
-                    pool);
-}
 
 }  
 

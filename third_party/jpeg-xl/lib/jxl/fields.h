@@ -19,51 +19,32 @@
 #include <cmath>  
 #include <cstdarg>
 
-#include "lib/jxl/aux_out_fwd.h"
 #include "lib/jxl/base/bits.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/common.h"
 #include "lib/jxl/dec_bit_reader.h"
-#include "lib/jxl/enc_bit_writer.h"
 #include "lib/jxl/field_encodings.h"
 
 namespace jxl {
 
+struct AuxOut;
+struct BitWriter;
 
 
 
-class BitsCoder {
- public:
-  static size_t MaxEncodedBits(const size_t bits) { return bits; }
 
-  static Status CanEncode(const size_t bits, const uint32_t value,
-                          size_t* JXL_RESTRICT encoded_bits) {
-    *encoded_bits = bits;
-    if (value >= (1ULL << bits)) {
-      return JXL_FAILURE("Value %u too large for %" PRIu64 " bits", value,
-                         static_cast<uint64_t>(bits));
-    }
-    return true;
-  }
+namespace BitsCoder {
+size_t MaxEncodedBits(size_t bits);
 
-  static uint32_t Read(const size_t bits, BitReader* JXL_RESTRICT reader) {
-    return reader->ReadBits(bits);
-  }
+Status CanEncode(size_t bits, uint32_t value,
+                 size_t* JXL_RESTRICT encoded_bits);
 
-  
-  static Status Write(const size_t bits, const uint32_t value,
-                      BitWriter* JXL_RESTRICT writer) {
-    if (value >= (1ULL << bits)) {
-      return JXL_FAILURE("Value %d too large to encode in %" PRIu64 " bits",
-                         value, static_cast<uint64_t>(bits));
-    }
-    writer->Write(bits, value);
-    return true;
-  }
-};
+uint32_t Read(size_t bits, BitReader* JXL_RESTRICT reader);
 
 
+Status Write(size_t bits, uint32_t value, BitWriter* JXL_RESTRICT writer);
+}  
 
 
 
@@ -79,62 +60,49 @@ class BitsCoder {
 
 
 
-class U32Coder {
- public:
-  static size_t MaxEncodedBits(U32Enc enc);
-  static Status CanEncode(U32Enc enc, uint32_t value,
-                          size_t* JXL_RESTRICT encoded_bits);
-  static uint32_t Read(U32Enc enc, BitReader* JXL_RESTRICT reader);
 
-  
-  static Status Write(U32Enc enc, uint32_t value,
-                      BitWriter* JXL_RESTRICT writer);
 
- private:
-  static Status ChooseSelector(U32Enc enc, uint32_t value,
-                               uint32_t* JXL_RESTRICT selector,
-                               size_t* JXL_RESTRICT total_bits);
-};
+namespace U32Coder {
+size_t MaxEncodedBits(U32Enc enc);
+Status CanEncode(U32Enc enc, uint32_t value, size_t* JXL_RESTRICT encoded_bits);
+uint32_t Read(U32Enc enc, BitReader* JXL_RESTRICT reader);
 
 
+Status Write(U32Enc enc, uint32_t value, BitWriter* JXL_RESTRICT writer);
 
 
+Status ChooseSelector(U32Enc enc, uint32_t value,
+                      uint32_t* JXL_RESTRICT selector,
+                      size_t* JXL_RESTRICT total_bits);
+}  
 
-class U64Coder {
- public:
-  static constexpr size_t MaxEncodedBits() {
-    return 2 + 12 + 6 * (8 + 1) + (4 + 1);
-  }
 
-  static uint64_t Read(BitReader* JXL_RESTRICT reader);
 
-  
-  static Status Write(uint64_t value, BitWriter* JXL_RESTRICT writer);
 
-  
-  static Status CanEncode(uint64_t value, size_t* JXL_RESTRICT encoded_bits);
-};
 
+namespace U64Coder {
+constexpr size_t MaxEncodedBits() { return 2 + 12 + 6 * (8 + 1) + (4 + 1); }
 
-class F16Coder {
- public:
-  static constexpr size_t MaxEncodedBits() { return 16; }
+uint64_t Read(BitReader* JXL_RESTRICT reader);
 
-  
-  static Status Read(BitReader* JXL_RESTRICT reader, float* JXL_RESTRICT value);
 
-  
-  static Status Write(float value, BitWriter* JXL_RESTRICT writer);
-  static Status CanEncode(float value, size_t* JXL_RESTRICT encoded_bits);
-};
+Status Write(uint64_t value, BitWriter* JXL_RESTRICT writer);
 
 
+Status CanEncode(uint64_t value, size_t* JXL_RESTRICT encoded_bits);
+}  
 
 
+namespace F16Coder {
+constexpr size_t MaxEncodedBits() { return 16; }
 
 
+Status Read(BitReader* JXL_RESTRICT reader, float* JXL_RESTRICT value);
 
 
+Status Write(float value, BitWriter* JXL_RESTRICT writer);
+Status CanEncode(float value, size_t* JXL_RESTRICT encoded_bits);
+}  
 
 
 
@@ -179,48 +147,52 @@ class F16Coder {
 
 
 
-class Bundle {
- public:
-  static constexpr size_t kMaxExtensions = 64;  
 
-  
-  
-  
-  static void Init(Fields* JXL_RESTRICT fields);
 
-  
-  static void SetDefault(Fields* JXL_RESTRICT fields);
 
-  
-  
-  static bool AllDefault(const Fields& fields);
 
-  
-  static size_t MaxBits(const Fields& fields);
 
-  
-  
-  
-  static Status CanEncode(const Fields& fields,
-                          size_t* JXL_RESTRICT extension_bits,
-                          size_t* JXL_RESTRICT total_bits);
 
-  static Status Read(BitReader* reader, Fields* JXL_RESTRICT fields);
 
-  
-  
-  
-  
-  
-  
-  
-  static bool CanRead(BitReader* reader, Fields* JXL_RESTRICT fields);
 
-  static Status Write(const Fields& fields, BitWriter* JXL_RESTRICT writer,
-                      size_t layer, AuxOut* aux_out);
+namespace Bundle {
+constexpr size_t kMaxExtensions = 64;  
 
- private:
-};
+
+
+
+void Init(Fields* JXL_RESTRICT fields);
+
+
+void SetDefault(Fields* JXL_RESTRICT fields);
+
+
+
+bool AllDefault(const Fields& fields);
+
+
+size_t MaxBits(const Fields& fields);
+
+
+
+
+Status CanEncode(const Fields& fields, size_t* JXL_RESTRICT extension_bits,
+                 size_t* JXL_RESTRICT total_bits);
+
+Status Read(BitReader* reader, Fields* JXL_RESTRICT fields);
+
+
+
+
+
+
+
+
+bool CanRead(BitReader* reader, Fields* JXL_RESTRICT fields);
+
+Status Write(const Fields& fields, BitWriter* JXL_RESTRICT writer, size_t layer,
+             AuxOut* aux_out);
+}  
 
 
 
@@ -284,6 +256,121 @@ class Visitor {
   virtual Status BeginExtensions(uint64_t* JXL_RESTRICT extensions) = 0;
   virtual Status EndExtensions() = 0;
 };
+
+namespace fields_internal {
+
+
+class ExtensionStates {
+ public:
+  void Push() {
+    
+    begun_ <<= 1;
+    ended_ <<= 1;
+  }
+
+  
+  void Pop() {
+    begun_ >>= 1;
+    ended_ >>= 1;
+  }
+
+  
+  Status IsBegun() const { return (begun_ & 1) != 0; }
+  
+  Status IsEnded() const { return (ended_ & 1) != 0; }
+
+  void Begin() {
+    JXL_ASSERT(!IsBegun());
+    JXL_ASSERT(!IsEnded());
+    begun_ += 1;
+  }
+
+  void End() {
+    JXL_ASSERT(IsBegun());
+    JXL_ASSERT(!IsEnded());
+    ended_ += 1;
+  }
+
+ private:
+  
+  uint64_t begun_ = 0;
+  uint64_t ended_ = 0;
+};
+
+
+
+
+
+class VisitorBase : public Visitor {
+ public:
+  explicit VisitorBase() {}
+  ~VisitorBase() override { JXL_ASSERT(depth_ == 0); }
+
+  
+  
+  Status Visit(Fields* fields) override {
+    depth_ += 1;
+    JXL_ASSERT(depth_ <= Bundle::kMaxExtensions);
+    extension_states_.Push();
+
+    const Status ok = fields->VisitFields(this);
+
+    if (ok) {
+      
+      
+      JXL_ASSERT(!extension_states_.IsBegun() || extension_states_.IsEnded());
+    } else {
+      
+      
+    }
+
+    extension_states_.Pop();
+    JXL_ASSERT(depth_ != 0);
+    depth_ -= 1;
+
+    return ok;
+  }
+
+  
+  
+  
+  Status VisitConst(const Fields& t) { return Visit(const_cast<Fields*>(&t)); }
+
+  
+  
+
+  Status Bool(bool default_value, bool* JXL_RESTRICT value) override {
+    uint32_t bits = *value ? 1 : 0;
+    JXL_RETURN_IF_ERROR(Bits(1, static_cast<uint32_t>(default_value), &bits));
+    JXL_DASSERT(bits <= 1);
+    *value = bits == 1;
+    return true;
+  }
+
+  
+  
+  
+  Status BeginExtensions(uint64_t* JXL_RESTRICT extensions) override {
+    JXL_RETURN_IF_ERROR(U64(0, extensions));
+
+    extension_states_.Begin();
+    return true;
+  }
+
+  
+  
+  
+  
+  Status EndExtensions() override {
+    extension_states_.End();
+    return true;
+  }
+
+ private:
+  size_t depth_ = 0;  
+  ExtensionStates extension_states_;
+};
+}  
 
 }  
 

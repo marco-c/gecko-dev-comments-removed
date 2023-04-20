@@ -24,6 +24,8 @@
 
 namespace jxl {
 
+struct AuxOut;
+
 
 
 

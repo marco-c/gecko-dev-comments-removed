@@ -12,10 +12,11 @@
 #include <vector>
 
 #include "lib/jxl/ac_context.h"
-#include "lib/jxl/aux_out.h"
 #include "lib/jxl/enc_bit_writer.h"
 
 namespace jxl {
+
+struct AuxOut;
 
 
 

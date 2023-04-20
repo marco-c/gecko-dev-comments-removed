@@ -22,6 +22,8 @@
 
 namespace jxl {
 
+struct AuxOut;
+
 struct BitWriter {
   
   
@@ -84,13 +86,14 @@ struct BitWriter {
       return histogram_bits_;
     }
 
-    
-    
+    void ReclaimAndCharge(BitWriter* JXL_RESTRICT writer, size_t layer,
+                          AuxOut* JXL_RESTRICT aux_out);
+
+   private:
     void PrivateReclaim(BitWriter* JXL_RESTRICT writer,
                         size_t* JXL_RESTRICT used_bits,
                         size_t* JXL_RESTRICT unused_bits);
 
-   private:
     size_t prev_bits_written_;
     const size_t max_bits_;
     size_t histogram_bits_ = 0;

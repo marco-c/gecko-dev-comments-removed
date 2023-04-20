@@ -28,7 +28,6 @@ namespace jxl {
 namespace HWY_NAMESPACE {
 
 
-using hwy::HWY_NAMESPACE::Broadcast;
 using hwy::HWY_NAMESPACE::MulAdd;
 
 void OpsinToLinearInplace(Image3F* JXL_RESTRICT inout, ThreadPool* pool,

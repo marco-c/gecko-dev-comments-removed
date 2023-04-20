@@ -14,7 +14,6 @@
 
 #include <string>
 
-#include "lib/jxl/aux_out_fwd.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/override.h"
 #include "lib/jxl/base/padded_bytes.h"
@@ -22,12 +21,12 @@
 #include "lib/jxl/coeff_order_fwd.h"
 #include "lib/jxl/common.h"
 #include "lib/jxl/dec_bit_reader.h"
-#include "lib/jxl/enc_bit_writer.h"
 #include "lib/jxl/fields.h"
 #include "lib/jxl/image_metadata.h"
 #include "lib/jxl/loop_filter.h"
 
 namespace jxl {
+
 
 
 static inline Status VisitNameString(Visitor* JXL_RESTRICT visitor,
@@ -494,9 +493,6 @@ struct FrameHeader : public Fields {
 
 Status ReadFrameHeader(BitReader* JXL_RESTRICT reader,
                        FrameHeader* JXL_RESTRICT frame);
-
-Status WriteFrameHeader(const FrameHeader& frame,
-                        BitWriter* JXL_RESTRICT writer, AuxOut* aux_out);
 
 
 

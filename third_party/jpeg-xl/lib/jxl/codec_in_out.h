@@ -9,12 +9,15 @@
 
 
 #include <stddef.h>
+#include <stdint.h>
 
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "lib/jxl/alpha.h"
 #include "lib/jxl/base/data_parallel.h"
+#include "lib/jxl/base/status.h"
 #include "lib/jxl/common.h"
 #include "lib/jxl/frame_header.h"
 #include "lib/jxl/headers.h"
@@ -24,36 +27,6 @@
 #include "lib/jxl/size_constraints.h"
 
 namespace jxl {
-
-
-
-
-struct CodecInterval {
-  CodecInterval() = default;
-  constexpr CodecInterval(float min, float max) : min(min), width(max - min) {}
-  
-  float min = 0.0f;
-  float width = 1.0f;
-};
-
-template <typename T,
-          class = typename std::enable_if<std::is_unsigned<T>::value>::type>
-Status VerifyDimensions(const SizeConstraints* constraints, T xs, T ys) {
-  if (!constraints) return true;
-
-  if (xs == 0 || ys == 0) return JXL_FAILURE("Empty image.");
-  if (xs > constraints->dec_max_xsize) return JXL_FAILURE("Image too wide.");
-  if (ys > constraints->dec_max_ysize) return JXL_FAILURE("Image too tall.");
-
-  const uint64_t num_pixels = static_cast<uint64_t>(xs) * ys;
-  if (num_pixels > constraints->dec_max_pixels) {
-    return JXL_FAILURE("Image too big.");
-  }
-
-  return true;
-}
-
-using CodecIntervals = std::array<CodecInterval, 4>;  
 
 
 struct Blobs {
@@ -92,7 +65,7 @@ class CodecInOut {
   
   void SetFromImage(Image3F&& color, const ColorEncoding& c_current) {
     Main().SetFromImage(std::move(color), c_current);
-    SetIntensityTarget(this);
+    SetIntensityTarget(&this->metadata.m);
     SetSize(Main().xsize(), Main().ysize());
   }
 
@@ -123,17 +96,6 @@ class CodecInOut {
     SetSize(xsize, ysize);
   }
 
-  
-  Status TransformTo(const ColorEncoding& c_desired, const JxlCmsInterface& cms,
-                     ThreadPool* pool = nullptr) {
-    if (metadata.m.have_preview) {
-      JXL_RETURN_IF_ERROR(preview_frame.TransformTo(c_desired, cms, pool));
-    }
-    for (ImageBundle& ib : frames) {
-      JXL_RETURN_IF_ERROR(ib.TransformTo(c_desired, cms, pool));
-    }
-    return true;
-  }
   
   bool PremultiplyAlpha() {
     const auto doPremultiplyAlpha = [](ImageBundle& bundle) {

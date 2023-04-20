@@ -9,6 +9,7 @@
 
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #include "lib/jxl/base/sanitizer_definitions.h"
 

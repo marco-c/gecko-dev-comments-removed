@@ -34,8 +34,8 @@ void SetDepth(const HuffmanTree& p, HuffmanTree* pool, uint8_t* depth,
 
 
 
-void CreateHuffmanTree(const uint32_t* data, const size_t length,
-                       const int tree_limit, uint8_t* depth);
+void CreateHuffmanTree(const uint32_t* data, size_t length, int tree_limit,
+                       uint8_t* depth);
 
 
 

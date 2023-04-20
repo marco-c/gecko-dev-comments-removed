@@ -5,6 +5,13 @@
 
 #include "jxl/decode.h"
 
+#include <algorithm>
+#include <array>
+#include <functional>
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "jxl/types.h"
 #include "lib/jxl/base/byte_order.h"
 #include "lib/jxl/base/span.h"
@@ -539,9 +546,6 @@ struct JxlDecoderStruct {
   }
 #endif
 
-  
-  uint64_t dec_pixels;
-
   const uint8_t* next_in;
   size_t avail_in;
   bool input_closed;
@@ -716,7 +720,7 @@ void JxlDecoderRewindDecodingState(JxlDecoder* dec) {
   dec->recon_output_jpeg = JpegReconStage::kNone;
 #endif
 
-  dec->events_wanted = 0;
+  dec->events_wanted = dec->orig_events_wanted;
   dec->basic_info_size_hint = InitialBasicInfoSizeHint();
   dec->have_container = 0;
   dec->box_count = 0;
@@ -730,7 +734,6 @@ void JxlDecoderRewindDecodingState(JxlDecoder* dec) {
   dec->image_out_size = 0;
   dec->image_out_bit_depth.type = JXL_BIT_DEPTH_FROM_PIXEL_FORMAT;
   dec->extra_channel_output.clear();
-  dec->dec_pixels = 0;
   dec->next_in = 0;
   dec->avail_in = 0;
   dec->input_closed = false;
@@ -770,6 +773,7 @@ void JxlDecoderReset(JxlDecoder* dec) {
   dec->coalescing = true;
   dec->desired_intensity_target = 0;
   dec->orig_events_wanted = 0;
+  dec->events_wanted = 0;
   dec->frame_references.clear();
   dec->frame_saved_as.clear();
   dec->frame_external_to_internal.clear();
@@ -886,11 +890,11 @@ JxlDecoderStatus JxlDecoderSubscribeEvents(JxlDecoder* dec, int events_wanted) {
 }
 
 JxlDecoderStatus JxlDecoderSetKeepOrientation(JxlDecoder* dec,
-                                              JXL_BOOL keep_orientation) {
+                                              JXL_BOOL skip_reorientation) {
   if (dec->stage != DecoderStage::kInited) {
     return JXL_API_ERROR("Must set keep_orientation option before starting");
   }
-  dec->keep_orientation = !!keep_orientation;
+  dec->keep_orientation = !!skip_reorientation;
   return JXL_DEC_SUCCESS;
 }
 

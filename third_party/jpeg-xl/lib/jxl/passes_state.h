@@ -74,12 +74,7 @@ struct PassesSharedState {
   Image3F dc_frames[4];
 
   struct {
-    ImageBundle storage;
-    
-    
-    
-    
-    ImageBundle* JXL_RESTRICT frame = &storage;
+    ImageBundle frame;
     
     bool ib_is_in_xyb = false;
   } reference_frames[4] = {};

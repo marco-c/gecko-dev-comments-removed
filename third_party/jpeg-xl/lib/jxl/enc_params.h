@@ -54,6 +54,10 @@ enum class SpeedTier {
 
 struct CompressParams {
   float butteraugli_distance = 1.0f;
+
+  
+  
+  std::vector<float> ec_distance;
   size_t target_size = 0;
   float target_bitrate = 0.0f;
 
@@ -70,7 +74,6 @@ struct CompressParams {
   SpeedTier speed_tier = SpeedTier::kSquirrel;
   int brotli_effort = -1;
 
-  
   
   
   
@@ -150,17 +153,32 @@ struct CompressParams {
   bool lossy_palette = false;
 
   
-  bool IsLossless() const {
+  bool IsLossless() const { return modular_mode && ModularPartIsLossless(); }
+
+  bool ModularPartIsLossless() const {
+    if (modular_mode) {
+      
+      
+      if (butteraugli_distance != 0 ||
+          color_transform == jxl::ColorTransform::kXYB)
+        return false;
+    }
+    for (float f : ec_distance) {
+      if (f > 0) return false;
+      if (f < 0 && butteraugli_distance != 0) return false;
+    }
     
     
-    return modular_mode && butteraugli_distance == 0.0f &&
-           color_transform != jxl::ColorTransform::kXYB;
+    if (!modular_mode && ec_distance.empty()) return false;
+    
+    return true;
   }
 
   
   void SetLossless() {
     modular_mode = true;
     butteraugli_distance = 0.0f;
+    for (float &f : ec_distance) f = 0.0f;
     color_transform = jxl::ColorTransform::kNone;
   }
 

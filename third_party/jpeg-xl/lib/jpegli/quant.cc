@@ -572,13 +572,17 @@ void FinalizeQuantMatrices(j_compress_ptr cinfo) {
   int quant_max = m->force_baseline ? 255 : 32767U;
   for (int c = 0; c < cinfo->num_components; ++c) {
     int quant_idx = cinfo->comp_info[c].quant_tbl_no;
+    if (quant_idx < 0 || quant_idx >= NUM_QUANT_TBLS) {
+      JPEGLI_ERROR("Invalid quant table index %d for component %d", quant_idx,
+                   c);
+    }
     JQUANT_TBL** qtable = &cinfo->quant_tbl_ptrs[quant_idx];
     if (*qtable != nullptr) {
       
       
       continue;
     }
-    if (quant_idx < 0 || quant_idx > 2) {
+    if (quant_idx > 2) {
       JPEGLI_ERROR("Missing quantization table %d for component %d", quant_idx,
                    c);
     }

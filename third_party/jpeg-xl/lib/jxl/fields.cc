@@ -18,118 +18,7 @@ namespace jxl {
 
 namespace {
 
-
-
-class ExtensionStates {
- public:
-  void Push() {
-    
-    begun_ <<= 1;
-    ended_ <<= 1;
-  }
-
-  
-  void Pop() {
-    begun_ >>= 1;
-    ended_ >>= 1;
-  }
-
-  
-  Status IsBegun() const { return (begun_ & 1) != 0; }
-  
-  Status IsEnded() const { return (ended_ & 1) != 0; }
-
-  void Begin() {
-    JXL_ASSERT(!IsBegun());
-    JXL_ASSERT(!IsEnded());
-    begun_ += 1;
-  }
-
-  void End() {
-    JXL_ASSERT(IsBegun());
-    JXL_ASSERT(!IsEnded());
-    ended_ += 1;
-  }
-
- private:
-  
-  uint64_t begun_ = 0;
-  uint64_t ended_ = 0;
-};
-
-
-
-
-
-class VisitorBase : public Visitor {
- public:
-  explicit VisitorBase() {}
-  ~VisitorBase() override { JXL_ASSERT(depth_ == 0); }
-
-  
-  
-  Status Visit(Fields* fields) override {
-    depth_ += 1;
-    JXL_ASSERT(depth_ <= Bundle::kMaxExtensions);
-    extension_states_.Push();
-
-    const Status ok = fields->VisitFields(this);
-
-    if (ok) {
-      
-      
-      JXL_ASSERT(!extension_states_.IsBegun() || extension_states_.IsEnded());
-    } else {
-      
-      
-    }
-
-    extension_states_.Pop();
-    JXL_ASSERT(depth_ != 0);
-    depth_ -= 1;
-
-    return ok;
-  }
-
-  
-  
-  
-  Status VisitConst(const Fields& t) { return Visit(const_cast<Fields*>(&t)); }
-
-  
-  
-
-  Status Bool(bool default_value, bool* JXL_RESTRICT value) override {
-    uint32_t bits = *value ? 1 : 0;
-    JXL_RETURN_IF_ERROR(Bits(1, static_cast<uint32_t>(default_value), &bits));
-    JXL_DASSERT(bits <= 1);
-    *value = bits == 1;
-    return true;
-  }
-
-  
-  
-  
-  Status BeginExtensions(uint64_t* JXL_RESTRICT extensions) override {
-    JXL_RETURN_IF_ERROR(U64(0, extensions));
-
-    extension_states_.Begin();
-    return true;
-  }
-
-  
-  
-  
-  
-  Status EndExtensions() override {
-    extension_states_.End();
-    return true;
-  }
-
- private:
-  size_t depth_ = 0;  
-  ExtensionStates extension_states_;
-};
+using ::jxl::fields_internal::VisitorBase;
 
 struct InitVisitor : public VisitorBase {
   Status Bits(const size_t , const uint32_t default_value,
@@ -517,64 +406,6 @@ class CanEncodeVisitor : public VisitorBase {
   
   uint64_t pos_after_ext_ = 0;
 };
-
-class WriteVisitor : public VisitorBase {
- public:
-  WriteVisitor(const size_t extension_bits, BitWriter* JXL_RESTRICT writer)
-      : extension_bits_(extension_bits), writer_(writer) {}
-
-  Status Bits(const size_t bits, const uint32_t ,
-              uint32_t* JXL_RESTRICT value) override {
-    ok_ &= BitsCoder::Write(bits, *value, writer_);
-    return true;
-  }
-  Status U32(const U32Enc enc, const uint32_t ,
-             uint32_t* JXL_RESTRICT value) override {
-    ok_ &= U32Coder::Write(enc, *value, writer_);
-    return true;
-  }
-
-  Status U64(const uint64_t ,
-             uint64_t* JXL_RESTRICT value) override {
-    ok_ &= U64Coder::Write(*value, writer_);
-    return true;
-  }
-
-  Status F16(const float ,
-             float* JXL_RESTRICT value) override {
-    ok_ &= F16Coder::Write(*value, writer_);
-    return true;
-  }
-
-  Status BeginExtensions(uint64_t* JXL_RESTRICT extensions) override {
-    JXL_QUIET_RETURN_IF_ERROR(VisitorBase::BeginExtensions(extensions));
-    if (*extensions == 0) {
-      JXL_ASSERT(extension_bits_ == 0);
-      return true;
-    }
-    
-    
-    
-    
-    ok_ &= U64Coder::Write(extension_bits_, writer_);
-    
-    for (uint64_t remaining_extensions = *extensions & (*extensions - 1);
-         remaining_extensions != 0;
-         remaining_extensions &= remaining_extensions - 1) {
-      ok_ &= U64Coder::Write(0, writer_);
-    }
-    return true;
-  }
-  
-
-  Status OK() const { return ok_; }
-
- private:
-  const size_t extension_bits_;
-  BitWriter* JXL_RESTRICT writer_;
-  bool ok_ = true;
-};
-
 }  
 
 void Bundle::Init(Fields* fields) {
@@ -627,17 +458,21 @@ bool Bundle::CanRead(BitReader* reader, Fields* fields) {
   
   return status.code() != StatusCode::kNotEnoughBytes;
 }
-Status Bundle::Write(const Fields& fields, BitWriter* writer, size_t layer,
-                     AuxOut* aux_out) {
-  size_t extension_bits, total_bits;
-  JXL_RETURN_IF_ERROR(CanEncode(fields, &extension_bits, &total_bits));
 
-  BitWriter::Allotment allotment(writer, total_bits);
-  WriteVisitor visitor(extension_bits, writer);
-  JXL_RETURN_IF_ERROR(visitor.VisitConst(fields));
-  JXL_RETURN_IF_ERROR(visitor.OK());
-  ReclaimAndCharge(writer, &allotment, layer, aux_out);
+size_t BitsCoder::MaxEncodedBits(const size_t bits) { return bits; }
+
+Status BitsCoder::CanEncode(const size_t bits, const uint32_t value,
+                            size_t* JXL_RESTRICT encoded_bits) {
+  *encoded_bits = bits;
+  if (value >= (1ULL << bits)) {
+    return JXL_FAILURE("Value %u too large for %" PRIu64 " bits", value,
+                       static_cast<uint64_t>(bits));
+  }
   return true;
+}
+
+uint32_t BitsCoder::Read(const size_t bits, BitReader* JXL_RESTRICT reader) {
+  return reader->ReadBits(bits);
 }
 
 size_t U32Coder::MaxEncodedBits(const U32Enc enc) {
@@ -670,25 +505,6 @@ uint32_t U32Coder::Read(const U32Enc enc, BitReader* JXL_RESTRICT reader) {
   } else {
     return reader->ReadBits(d.ExtraBits()) + d.Offset();
   }
-}
-
-
-Status U32Coder::Write(const U32Enc enc, const uint32_t value,
-                       BitWriter* JXL_RESTRICT writer) {
-  uint32_t selector;
-  size_t total_bits;
-  JXL_RETURN_IF_ERROR(ChooseSelector(enc, value, &selector, &total_bits));
-
-  writer->Write(2, selector);
-
-  const U32Distr d = enc.GetDistr(selector);
-  if (!d.IsDirect()) {  
-    const uint32_t offset = d.Offset();
-    JXL_ASSERT(value >= offset);
-    writer->Write(total_bits - 2, value - offset);
-  }
-
-  return true;
 }
 
 Status U32Coder::ChooseSelector(const U32Enc enc, const uint32_t value,
@@ -762,46 +578,6 @@ uint64_t U64Coder::Read(BitReader* JXL_RESTRICT reader) {
 }
 
 
-Status U64Coder::Write(uint64_t value, BitWriter* JXL_RESTRICT writer) {
-  if (value == 0) {
-    
-    writer->Write(2, 0);
-  } else if (value <= 16) {
-    
-    writer->Write(2, 1);
-    writer->Write(4, value - 1);
-  } else if (value <= 272) {
-    
-    writer->Write(2, 2);
-    writer->Write(8, value - 17);
-  } else {
-    
-    writer->Write(2, 3);
-    writer->Write(12, value & 4095);
-    value >>= 12;
-    int shift = 12;
-    while (value > 0 && shift < 60) {
-      
-      writer->Write(1, 1);
-      writer->Write(8, value & 255);
-      value >>= 8;
-      shift += 8;
-    }
-    if (value > 0) {
-      
-      writer->Write(1, 1);
-      writer->Write(4, value & 15);
-      
-    } else {
-      
-      writer->Write(1, 0);
-    }
-  }
-
-  return true;
-}
-
-
 Status U64Coder::CanEncode(uint64_t value, size_t* JXL_RESTRICT encoded_bits) {
   if (value == 0) {
     *encoded_bits = 2;  
@@ -852,46 +628,6 @@ Status F16Coder::Read(BitReader* JXL_RESTRICT reader,
   const uint32_t mantissa32 = mantissa << (23 - 10);
   const uint32_t bits32 = (sign << 31) | (biased_exp32 << 23) | mantissa32;
   memcpy(value, &bits32, sizeof(bits32));
-  return true;
-}
-
-Status F16Coder::Write(float value, BitWriter* JXL_RESTRICT writer) {
-  uint32_t bits32;
-  memcpy(&bits32, &value, sizeof(bits32));
-  const uint32_t sign = bits32 >> 31;
-  const uint32_t biased_exp32 = (bits32 >> 23) & 0xFF;
-  const uint32_t mantissa32 = bits32 & 0x7FFFFF;
-
-  const int32_t exp = static_cast<int32_t>(biased_exp32) - 127;
-  if (JXL_UNLIKELY(exp > 15)) {
-    return JXL_FAILURE("Too big to encode, CanEncode should return false");
-  }
-
-  
-  if (exp < -24) {
-    writer->Write(16, 0);
-    return true;
-  }
-
-  uint32_t biased_exp16, mantissa16;
-
-  
-  if (JXL_UNLIKELY(exp < -14)) {
-    biased_exp16 = 0;
-    const uint32_t sub_exp = static_cast<uint32_t>(-14 - exp);
-    JXL_ASSERT(1 <= sub_exp && sub_exp < 11);
-    mantissa16 = (1 << (10 - sub_exp)) + (mantissa32 >> (13 + sub_exp));
-  } else {
-    
-    biased_exp16 = static_cast<uint32_t>(exp + 15);
-    JXL_ASSERT(1 <= biased_exp16 && biased_exp16 < 31);
-    mantissa16 = mantissa32 >> 13;
-  }
-
-  JXL_ASSERT(mantissa16 < 1024);
-  const uint32_t bits16 = (sign << 15) | (biased_exp16 << 10) | mantissa16;
-  JXL_ASSERT(bits16 < 0x10000);
-  writer->Write(16, bits16);
   return true;
 }
 

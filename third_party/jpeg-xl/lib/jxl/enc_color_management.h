@@ -8,12 +8,12 @@
 
 
 
+#include <jxl/cms_interface.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <vector>
 
-#include "jxl/cms_interface.h"
 #include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/color_encoding_internal.h"

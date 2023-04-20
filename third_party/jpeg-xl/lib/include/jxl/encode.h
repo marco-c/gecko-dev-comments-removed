@@ -1150,6 +1150,22 @@ JxlEncoderOptionsSetDistance(JxlEncoderFrameSettings*, float);
 
 
 
+JXL_EXPORT JxlEncoderStatus JxlEncoderSetExtraChannelDistance(
+    JxlEncoderFrameSettings* frame_settings, size_t index, float distance);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 JXL_EXPORT JxlEncoderFrameSettings* JxlEncoderFrameSettingsCreate(

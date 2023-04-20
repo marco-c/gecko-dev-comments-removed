@@ -727,6 +727,15 @@ bool SaveJpegXlImage(const gint32 image_id, const gint32 drawable_id,
   }
 
   
+  jxl_save_opts.SetModel(jxl_save_opts.is_linear);
+
+  if (JXL_ENC_SUCCESS !=
+      JxlEncoderSetBasicInfo(enc.get(), &jxl_save_opts.basic_info)) {
+    g_printerr(SAVE_PROC " Error: JxlEncoderSetBasicInfo failed\n");
+    return false;
+  }
+
+  
   if (!icc.empty() && !jxl_save_opts.is_gray) {
     if (JXL_ENC_SUCCESS ==
         JxlEncoderSetICCProfile(enc.get(), icc.data(), icc.size())) {
@@ -785,15 +794,6 @@ bool SaveJpegXlImage(const gint32 image_id, const gint32 drawable_id,
   }
 
   
-  jxl_save_opts.SetModel(jxl_save_opts.is_linear);
-
-  if (JXL_ENC_SUCCESS !=
-      JxlEncoderSetBasicInfo(enc.get(), &jxl_save_opts.basic_info)) {
-    g_printerr(SAVE_PROC " Error: JxlEncoderSetBasicInfo failed\n");
-    return false;
-  }
-
-  
   if (jxl_save_opts.is_linear &&
       jxl_save_opts.basic_info.bits_per_sample < 32) {
     gimp_image_convert_precision(duplicate, GIMP_PRECISION_FLOAT_LINEAR);
@@ -831,11 +831,7 @@ bool SaveJpegXlImage(const gint32 image_id, const gint32 drawable_id,
     g_clear_object(&buffer);
 
     
-    if (jxl_save_opts.icc_attached) {
-      jxl_save_opts.SetModel(jxl_save_opts.is_linear);
-    } else {
-      jxl_save_opts.SetModel(!jxl_save_opts.is_linear);
-    }
+    jxl_save_opts.SetModel(jxl_save_opts.is_linear);
     jxl_save_opts.pixel_format.data_type = JXL_TYPE_FLOAT;
     jxl_save_opts.SetBablType("float");
     const Babl* destination_format =

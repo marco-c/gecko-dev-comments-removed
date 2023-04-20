@@ -38,6 +38,7 @@ struct JXLCompressParams {
   std::vector<JXLOption> options;
   
   float distance = 1.0f;
+  float alpha_distance = 1.0f;
   
   bool use_container = false;
   
