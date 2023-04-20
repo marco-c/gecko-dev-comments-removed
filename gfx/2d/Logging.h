@@ -15,6 +15,7 @@
 #ifdef MOZ_LOGGING
 #  include "mozilla/Logging.h"
 #endif
+#include "mozilla/Tuple.h"
 
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "nsDebug.h"
@@ -195,7 +196,7 @@ struct CriticalLogger {
 
 
 
-typedef std::tuple<int32_t, std::string, double> LoggingRecordEntry;
+typedef mozilla::Tuple<int32_t, std::string, double> LoggingRecordEntry;
 
 
 

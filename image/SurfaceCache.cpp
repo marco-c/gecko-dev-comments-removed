@@ -29,7 +29,7 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPtr.h"
-
+#include "mozilla/Tuple.h"
 #include "nsExpirationTracker.h"
 #include "nsHashKeys.h"
 #include "nsIMemoryReporter.h"
@@ -330,21 +330,19 @@ class ImageSurfaceCache {
 
 
 
-  std::tuple<already_AddRefed<CachedSurface>, MatchType, IntSize>
-  LookupBestMatch(const SurfaceKey& aIdealKey) {
+  Tuple<already_AddRefed<CachedSurface>, MatchType, IntSize> LookupBestMatch(
+      const SurfaceKey& aIdealKey) {
     
     RefPtr<CachedSurface> exactMatch;
     mSurfaces.Get(aIdealKey, getter_AddRefs(exactMatch));
     if (exactMatch) {
       if (exactMatch->IsDecoded()) {
-        return std::make_tuple(exactMatch.forget(), MatchType::EXACT,
-                               IntSize());
+        return MakeTuple(exactMatch.forget(), MatchType::EXACT, IntSize());
       }
     } else if (aIdealKey.Region()) {
       
       
-      return std::make_tuple(exactMatch.forget(), MatchType::NOT_FOUND,
-                             IntSize());
+      return MakeTuple(exactMatch.forget(), MatchType::NOT_FOUND, IntSize());
     } else if (!mFactor2Mode) {
       
       
@@ -360,9 +358,8 @@ class ImageSurfaceCache {
         mSurfaces.Get(compactKey, getter_AddRefs(exactMatch));
         if (exactMatch && exactMatch->IsDecoded()) {
           MOZ_ASSERT(suggestedSize != aIdealKey.Size());
-          return std::make_tuple(exactMatch.forget(),
-                                 MatchType::SUBSTITUTE_BECAUSE_BEST,
-                                 suggestedSize);
+          return MakeTuple(exactMatch.forget(),
+                           MatchType::SUBSTITUTE_BECAUSE_BEST, suggestedSize);
         }
       }
     }
@@ -442,7 +439,7 @@ class ImageSurfaceCache {
       }
     }
 
-    return std::make_tuple(bestMatch.forget(), matchType, suggestedSize);
+    return MakeTuple(bestMatch.forget(), matchType, suggestedSize);
   }
 
   void MaybeSetFactor2Mode() {
@@ -1032,7 +1029,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     MatchType matchType = MatchType::NOT_FOUND;
     IntSize suggestedSize;
     while (true) {
-      std::tie(surface, matchType, suggestedSize) =
+      Tie(surface, matchType, suggestedSize) =
           cache->LookupBestMatch(aSurfaceKey);
 
       if (!surface) {

@@ -36,7 +36,9 @@ void JSValidatorParent::IsOpaqueResponseAllowed(
               const IsOpaqueResponseAllowedPromise::ResolveOrRejectValue&
                   aResult) {
             if (aResult.IsResolve()) {
-              auto [data, result] = aResult.ResolveValue();
+              Maybe<Shmem> data;
+              ValidatorResult result;
+              Tie(data, result) = aResult.ResolveValue();
               aCallback(std::move(data), result);
             } else {
               
