@@ -27,9 +27,14 @@ const AUTH_URL = TEST_PATH_AUTH + "auth-route.sjs";
 
 
 
-async function trigger401AndHandle(doConfirmPrompt, crossDomain) {
+
+
+async function trigger401AndHandle(doConfirmPrompt, crossDomain, prefEnabled) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.authPromptSpoofingProtection", prefEnabled]],
+  });
   let url = crossDomain ? CROSS_DOMAIN_URL : SAME_DOMAIN_URL;
-  let dialogShown = waitForDialog(doConfirmPrompt, crossDomain);
+  let dialogShown = waitForDialog(doConfirmPrompt, crossDomain, prefEnabled);
   await BrowserTestUtils.withNewTab(url, async function() {
     await dialogShown;
   });
@@ -41,70 +46,90 @@ async function trigger401AndHandle(doConfirmPrompt, crossDomain) {
   });
 }
 
-async function waitForDialog(doConfirmPrompt, crossDomain) {
+async function waitForDialog(doConfirmPrompt, crossDomain, prefEnabled) {
   await TestUtils.topicObserved("common-dialog-loaded");
   let dialog = gBrowser.getTabDialogBox(gBrowser.selectedBrowser)
     ._tabDialogManager._topDialog;
   let dialogDocument = dialog._frame.contentDocument;
   if (crossDomain) {
-    Assert.equal(
-      dialog._overlay.getAttribute("hideContent"),
-      "true",
-      "Dialog overlay hides the current sites content"
-    );
-    Assert.equal(
-      window.gURLBar.value,
-      AUTH_URL,
-      "Correct location is provided by the prompt"
-    );
-    Assert.equal(
-      window.gBrowser.selectedTab.label,
-      "example.org",
-      "Tab title is manipulated"
-    );
+    if (prefEnabled) {
+      Assert.equal(
+        dialog._overlay.getAttribute("hideContent"),
+        "true",
+        "Dialog overlay hides the current sites content"
+      );
+      Assert.equal(
+        window.gURLBar.value,
+        AUTH_URL,
+        "Correct location is provided by the prompt"
+      );
+      Assert.equal(
+        window.gBrowser.selectedTab.label,
+        "example.org",
+        "Tab title is manipulated"
+      );
+      
+      let tab = await BrowserTestUtils.openNewForegroundTab(
+        gBrowser,
+        "https://example.org:443"
+      );
+      Assert.equal(
+        window.gURLBar.value,
+        "https://example.org",
+        "No location is provided by the prompt, correct location is displayed"
+      );
+      Assert.equal(
+        window.gBrowser.selectedTab.label,
+        "mochitest index /",
+        "Tab title is not manipulated"
+      );
+      
+      BrowserTestUtils.removeTab(tab);
+      Assert.equal(
+        window.gURLBar.value,
+        AUTH_URL,
+        "Correct location is provided by the prompt"
+      );
+      Assert.equal(
+        window.gBrowser.selectedTab.label,
+        "example.org",
+        "Tab title is manipulated"
+      );
+      
+      gBrowser.selectedBrowser.userTypedValue = "user value";
+      gURLBar.setURI();
+      Assert.equal(
+        window.gURLBar.value,
+        "user value",
+        "User typed value is shown"
+      );
+      
+      gBrowser.selectedBrowser.userTypedValue = "";
+      gURLBar.setURI(null, true);
+      Assert.equal(
+        window.gURLBar.value,
+        AUTH_URL,
+        "Correct location is provided by the prompt"
+      );
+      
+    } else {
+      Assert.equal(
+        dialog._overlay.getAttribute("hideContent"),
+        "",
+        "Dialog overlay does not hide the current sites content"
+      );
+      Assert.equal(
+        window.gURLBar.value,
+        CROSS_DOMAIN_URL,
+        "No location is provided by the prompt, correct location is displayed"
+      );
+      Assert.equal(
+        window.gBrowser.selectedTab.label,
+        "example.com",
+        "Tab title is not manipulated"
+      );
+    }
     
-    let tab = await BrowserTestUtils.openNewForegroundTab(
-      gBrowser,
-      "https://example.org:443"
-    );
-    Assert.equal(
-      window.gURLBar.value,
-      "https://example.org",
-      "No location is provided by the prompt, correct location is displayed"
-    );
-    Assert.equal(
-      window.gBrowser.selectedTab.label,
-      "mochitest index /",
-      "Tab title is not manipulated"
-    );
-    
-    BrowserTestUtils.removeTab(tab);
-    Assert.equal(
-      window.gURLBar.value,
-      AUTH_URL,
-      "Correct location is provided by the prompt"
-    );
-    Assert.equal(
-      window.gBrowser.selectedTab.label,
-      "example.org",
-      "Tab title is manipulated"
-    );
-    
-    gBrowser.selectedBrowser.userTypedValue = "user value";
-    gURLBar.setURI();
-    Assert.equal(
-      window.gURLBar.value,
-      "user value",
-      "User typed value is shown"
-    );
-    
-    gBrowser.selectedBrowser.userTypedValue = "";
-    gURLBar.setURI(null, true);
-    Assert.equal(
-      window.gURLBar.value,
-      AUTH_URL,
-      "Correct location is provided by the prompt"
-    );
   } else {
     Assert.equal(
       dialog._overlay.getAttribute("hideContent"),
@@ -152,34 +177,56 @@ async function waitForDialog(doConfirmPrompt, crossDomain) {
   );
 }
 
-
-
-
-
-add_task(async function testCrossDomainCancel() {
-  await trigger401AndHandle(false, true);
+add_setup(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.authPromptSpoofingProtection", true]],
+  });
 });
 
 
 
 
 
-add_task(async function testCrossDomainAccept() {
-  await trigger401AndHandle(true, true);
+add_task(async function testCrossDomainCancelPrefEnabled() {
+  await trigger401AndHandle(false, true, true);
 });
 
 
 
 
 
-add_task(async function testSameDomainCancel() {
-  await trigger401AndHandle(false, false);
+add_task(async function testCrossDomainAcceptPrefEnabled() {
+  await trigger401AndHandle(true, true, true);
 });
 
 
 
 
 
-add_task(async function testSameDomainAccept() {
-  await trigger401AndHandle(true, false);
+add_task(async function testCrossDomainCancelPrefDisabled() {
+  await trigger401AndHandle(false, true, false);
+});
+
+
+
+
+
+add_task(async function testCrossDomainAcceptPrefDisabled() {
+  await trigger401AndHandle(true, true, false);
+});
+
+
+
+
+
+add_task(async function testSameDomainCancelPrefEnabled() {
+  await trigger401AndHandle(false, false, true);
+});
+
+
+
+
+
+add_task(async function testSameDomainAcceptPrefEnabled() {
+  await trigger401AndHandle(true, false, true);
 });

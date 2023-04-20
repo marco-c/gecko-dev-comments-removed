@@ -319,7 +319,16 @@ class PromptParent extends JSWindowActorParent {
         let currentLocationsTabLabel;
 
         let targetTab = win.gBrowser.getTabForBrowser(browser);
-        if (args.isTopLevelCrossDomainAuth) {
+        if (
+          !Services.prefs.getBoolPref(
+            "privacy.authPromptSpoofingProtection",
+            false
+          )
+        ) {
+          args.isTopLevelCrossDomainAuth = false;
+        }
+        
+        if (args.isTopLevelCrossDomainAuth && targetTab) {
           
           
           
