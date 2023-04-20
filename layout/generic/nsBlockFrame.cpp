@@ -3462,6 +3462,8 @@ nsIFrame* nsBlockFrame::PullFrameFrom(nsLineBox* aLine,
   MOZ_ASSERT(fromLine, "bad line to pull from");
   MOZ_ASSERT(fromLine->GetChildCount(), "empty line");
   MOZ_ASSERT(aLine->GetChildCount(), "empty line");
+  MOZ_ASSERT(!HasProperty(LineIteratorProperty()),
+             "Shouldn't have line iterators mid-reflow");
 
   NS_ASSERTION(fromLine->IsBlock() == fromLine->mFirstChild->IsBlockOutside(),
                "Disagreement about whether it's a block or not");
