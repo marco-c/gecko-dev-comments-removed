@@ -100,7 +100,7 @@ class ClippedTime {
 inline ClippedTime TimeClip(double time) {
   
   const double MaxTimeMagnitude = 8.64e15;
-  if (!mozilla::IsFinite(time) || mozilla::Abs(time) > MaxTimeMagnitude) {
+  if (!std::isfinite(time) || mozilla::Abs(time) > MaxTimeMagnitude) {
     return ClippedTime(mozilla::UnspecifiedNaN<double>());
   }
 

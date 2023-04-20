@@ -183,7 +183,7 @@ ComputedTiming AnimationEffect::GetComputedTimingAt(
   }
 
   
-  if (IsFinite(overallProgress)) {
+  if (std::isfinite(overallProgress)) {
     overallProgress += result.mIterationStart;
   }
 
@@ -200,7 +200,7 @@ ComputedTiming AnimationEffect::GetComputedTimingAt(
   
   
   
-  double progress = IsFinite(overallProgress)
+  double progress = std::isfinite(overallProgress)
                         ? fmod(overallProgress, 1.0)
                         : fmod(result.mIterationStart, 1.0);
 
@@ -260,7 +260,7 @@ ComputedTiming AnimationEffect::GetComputedTimingAt(
     progress = fn->At(progress, result.mBeforeFlag);
   }
 
-  MOZ_ASSERT(IsFinite(progress), "Progress value should be finite");
+  MOZ_ASSERT(std::isfinite(progress), "Progress value should be finite");
   result.mProgress.SetValue(progress);
   return result;
 }

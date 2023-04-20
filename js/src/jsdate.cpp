@@ -65,7 +65,6 @@ using mozilla::BitwiseCast;
 using mozilla::IsAsciiAlpha;
 using mozilla::IsAsciiDigit;
 using mozilla::IsAsciiLowercaseAlpha;
-using mozilla::IsFinite;
 using mozilla::NumbersAreIdentical;
 using mozilla::Relaxed;
 
@@ -175,7 +174,7 @@ static DateTimeInfo::ShouldRFP ShouldRFP(const Realm* realm) {
 
 static inline double PositiveModulo(double dividend, double divisor) {
   MOZ_ASSERT(divisor > 0);
-  MOZ_ASSERT(IsFinite(divisor));
+  MOZ_ASSERT(std::isfinite(divisor));
 
   double result = fmod(dividend, divisor);
   if (result < 0) {
@@ -195,7 +194,7 @@ static inline bool IsLeapYear(double year) {
 }
 
 static inline double DaysInYear(double year) {
-  if (!IsFinite(year)) {
+  if (!std::isfinite(year)) {
     return GenericNaN();
   }
   return IsLeapYear(year) ? 366 : 365;
@@ -211,7 +210,7 @@ static inline double TimeFromYear(double y) {
 }
 
 static double YearFromTime(double t) {
-  if (!IsFinite(t)) {
+  if (!std::isfinite(t)) {
     return GenericNaN();
   }
 
@@ -241,12 +240,12 @@ static inline int DaysInFebruary(double year) {
 
 
 static inline double DayWithinYear(double t, double year) {
-  MOZ_ASSERT_IF(IsFinite(t), YearFromTime(t) == year);
+  MOZ_ASSERT_IF(std::isfinite(t), YearFromTime(t) == year);
   return Day(t) - DayFromYear(year);
 }
 
 static double MonthFromTime(double t) {
-  if (!IsFinite(t)) {
+  if (!std::isfinite(t)) {
     return GenericNaN();
   }
 
@@ -292,7 +291,7 @@ static double MonthFromTime(double t) {
 
 
 static double DateFromTime(double t) {
-  if (!IsFinite(t)) {
+  if (!std::isfinite(t)) {
     return GenericNaN();
   }
 
@@ -380,7 +379,7 @@ static inline int DayFromMonth(T month, bool isLeapYear) = delete;
 
 static double MakeDay(double year, double month, double date) {
   
-  if (!IsFinite(year) || !IsFinite(month) || !IsFinite(date)) {
+  if (!std::isfinite(year) || !std::isfinite(month) || !std::isfinite(date)) {
     return GenericNaN();
   }
 
@@ -407,7 +406,7 @@ static double MakeDay(double year, double month, double date) {
 
 static inline double MakeDate(double day, double time) {
   
-  if (!IsFinite(day) || !IsFinite(time)) {
+  if (!std::isfinite(day) || !std::isfinite(time)) {
     return GenericNaN();
   }
 
@@ -463,7 +462,7 @@ JS_PUBLIC_API void JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter) {
 
 double DateTimeHelper::localTZA(DateTimeInfo::ShouldRFP shouldRFP, double t,
                                 DateTimeInfo::TimeZoneOffset offset) {
-  MOZ_ASSERT(IsFinite(t));
+  MOZ_ASSERT(std::isfinite(t));
 
   int64_t milliseconds = static_cast<int64_t>(t);
   int32_t offsetMilliseconds =
@@ -474,7 +473,7 @@ double DateTimeHelper::localTZA(DateTimeInfo::ShouldRFP shouldRFP, double t,
 
 
 double DateTimeHelper::localTime(DateTimeInfo::ShouldRFP shouldRFP, double t) {
-  if (!IsFinite(t)) {
+  if (!std::isfinite(t)) {
     return GenericNaN();
   }
 
@@ -485,7 +484,7 @@ double DateTimeHelper::localTime(DateTimeInfo::ShouldRFP shouldRFP, double t) {
 
 
 double DateTimeHelper::UTC(DateTimeInfo::ShouldRFP shouldRFP, double t) {
-  if (!IsFinite(t)) {
+  if (!std::isfinite(t)) {
     return GenericNaN();
   }
 
@@ -614,7 +613,8 @@ static double msFromTime(double t) { return PositiveModulo(t, msPerSecond); }
 
 static double MakeTime(double hour, double min, double sec, double ms) {
   
-  if (!IsFinite(hour) || !IsFinite(min) || !IsFinite(sec) || !IsFinite(ms)) {
+  if (!std::isfinite(hour) || !std::isfinite(min) || !std::isfinite(sec) ||
+      !std::isfinite(ms)) {
     return GenericNaN();
   }
 
@@ -1637,7 +1637,7 @@ void DateObject::fillLocalTimeSlots() {
 
   double utcTime = UTCTime().toNumber();
 
-  if (!IsFinite(utcTime)) {
+  if (!std::isfinite(utcTime)) {
     for (size_t ind = COMPONENTS_START_SLOT; ind < RESERVED_SLOTS; ind++) {
       setReservedSlot(ind, DoubleValue(utcTime));
     }
@@ -1810,7 +1810,7 @@ static bool date_getUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   double result = unwrapped->UTCTime().toNumber();
-  if (IsFinite(result)) {
+  if (std::isfinite(result)) {
     result = YearFromTime(result);
   }
 
@@ -1867,7 +1867,7 @@ static bool date_getUTCDate(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   double result = unwrapped->UTCTime().toNumber();
-  if (IsFinite(result)) {
+  if (std::isfinite(result)) {
     result = DateFromTime(result);
   }
 
@@ -1897,7 +1897,7 @@ static bool date_getUTCDay(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   double result = unwrapped->UTCTime().toNumber();
-  if (IsFinite(result)) {
+  if (std::isfinite(result)) {
     result = WeekDay(result);
   }
 
@@ -1937,7 +1937,7 @@ static bool date_getUTCHours(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   double result = unwrapped->UTCTime().toNumber();
-  if (IsFinite(result)) {
+  if (std::isfinite(result)) {
     result = HourFromTime(result);
   }
 
@@ -1978,7 +1978,7 @@ static bool date_getUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   double result = unwrapped->UTCTime().toNumber();
-  if (IsFinite(result)) {
+  if (std::isfinite(result)) {
     result = MinFromTime(result);
   }
 
@@ -2018,7 +2018,7 @@ static bool date_getUTCSeconds(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   double result = unwrapped->UTCTime().toNumber();
-  if (IsFinite(result)) {
+  if (std::isfinite(result)) {
     result = SecFromTime(result);
   }
 
@@ -2047,7 +2047,7 @@ static bool getMilliseconds(JSContext* cx, unsigned argc, Value* vp,
   }
 
   double result = unwrapped->UTCTime().toNumber();
-  if (IsFinite(result)) {
+  if (std::isfinite(result)) {
     result = msFromTime(result);
   }
 
@@ -2759,7 +2759,7 @@ static bool date_toUTCString(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   double utctime = unwrapped->UTCTime().toNumber();
-  if (!IsFinite(utctime)) {
+  if (!std::isfinite(utctime)) {
     args.rval().setString(cx->names().InvalidDate);
     return true;
   }
@@ -2791,7 +2791,7 @@ static bool date_toISOString(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   double utctime = unwrapped->UTCTime().toNumber();
-  if (!IsFinite(utctime)) {
+  if (!std::isfinite(utctime)) {
     JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                               JSMSG_INVALID_DATE);
     return false;
@@ -2839,7 +2839,7 @@ static bool date_toJSON(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  if (tv.isDouble() && !IsFinite(tv.toDouble())) {
+  if (tv.isDouble() && !std::isfinite(tv.toDouble())) {
     args.rval().setNull();
     return true;
   }
@@ -2977,7 +2977,7 @@ enum class FormatSpec { DateTime, Date, Time };
 static bool FormatDate(JSContext* cx, DateTimeInfo::ShouldRFP shouldRFP,
                        double utcTime, FormatSpec format,
                        MutableHandleValue rval) {
-  if (!IsFinite(utcTime)) {
+  if (!std::isfinite(utcTime)) {
     rval.setString(cx->names().InvalidDate);
     return true;
   }
