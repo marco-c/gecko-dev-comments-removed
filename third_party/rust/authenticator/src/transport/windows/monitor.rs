@@ -44,27 +44,37 @@ where
     }
 
     pub fn run(&mut self, alive: &dyn Fn() -> bool) -> Result<(), Box<dyn Error>> {
-        let mut stored = HashSet::new();
+        let mut current = HashSet::new();
+        let mut previous;
 
         while alive() {
             let device_info_set = DeviceInfoSet::new()?;
-            let devices = HashSet::from_iter(device_info_set.devices());
+            previous = current;
+            current = HashSet::from_iter(device_info_set.devices());
 
             
-            for path in stored.difference(&devices) {
+            for path in previous.difference(&current) {
                 self.remove_device(path);
             }
 
-            let paths: Vec<_> = devices.difference(&stored).cloned().collect();
-            self.selector_sender
-                .send(DeviceSelectorEvent::DevicesAdded(paths.clone()))?;
+            let added: Vec<String> = current.difference(&previous).cloned().collect();
+
             
-            for path in paths {
-                self.add_device(&path);
+            
+            if !added.is_empty()
+                && self
+                    .selector_sender
+                    .send(DeviceSelectorEvent::DevicesAdded(added.clone()))
+                    .is_err()
+            {
+                
+                break;
             }
 
             
-            stored = devices;
+            for path in added {
+                self.add_device(&path);
+            }
 
             
             thread::sleep(Duration::from_millis(100));

@@ -1,42 +1,39 @@
-use super::{ByteBuf, COSEKey, ECDHSecret, ECDSACurve};
-use serde::Serialize;
+use super::CryptoError;
 
 
 
 
-pub type Result<T> = std::result::Result<T, BackendError>;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub enum BackendError {}
+pub type Result<T> = std::result::Result<T, CryptoError>;
 
-pub(crate) fn serialize_key(_curve: ECDSACurve, key: &[u8]) -> Result<(ByteBuf, ByteBuf)> {
-    
-    let length = key[1..].len() / 2;
-    let chunks: Vec<_> = key[1..].chunks_exact(length).collect();
-    Ok((
-        ByteBuf::from(chunks[0].to_vec()),
-        ByteBuf::from(chunks[1].to_vec()),
-    ))
-}
-
-pub(crate) fn encapsulate(_key: &COSEKey) -> Result<ECDHSecret> {
+pub fn ecdhe_p256_raw(_peer_spki: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
     unimplemented!()
 }
 
-pub(crate) fn encrypt(
+pub fn encrypt_aes_256_cbc_no_pad(
     _key: &[u8],
-    _plain_text: &[u8], 
-) -> Result<Vec<u8> > {
+    _iv: Option<&[u8]>,
+    _data: &[u8],
+) -> Result<Vec<u8>> {
     unimplemented!()
 }
 
-pub(crate) fn decrypt(
+pub fn decrypt_aes_256_cbc_no_pad(
     _key: &[u8],
-    _cypher_text: &[u8], 
-) -> Result<Vec<u8> > {
+    _iv: Option<&[u8]>,
+    _data: &[u8],
+) -> Result<Vec<u8>> {
     unimplemented!()
 }
 
-pub(crate) fn authenticate(_token: &[u8], _input: &[u8]) -> Result<Vec<u8>> {
+pub fn hmac_sha256(_key: &[u8], _data: &[u8]) -> Result<Vec<u8>> {
+    unimplemented!()
+}
+
+pub fn sha256(_data: &[u8]) -> Result<Vec<u8>> {
+    unimplemented!()
+}
+
+pub fn random_bytes(_count: usize) -> Result<Vec<u8>> {
     unimplemented!()
 }

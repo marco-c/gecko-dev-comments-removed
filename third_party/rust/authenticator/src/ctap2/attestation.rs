@@ -80,6 +80,12 @@ pub struct Extension {
     pub hmac_secret: Option<HmacSecretResponse>,
 }
 
+impl Extension {
+    fn has_some(&self) -> bool {
+        self.pin_min_length.is_some() || self.hmac_secret.is_some()
+    }
+}
+
 fn parse_extensions(input: &[u8]) -> IResult<&[u8], Extension, NomError<&[u8]>> {
     serde_to_nom(input)
 }
@@ -284,21 +290,45 @@ impl<'de> Deserialize<'de> for AuthenticatorData {
 }
 
 impl AuthenticatorData {
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn to_vec(&self) -> Result<Vec<u8>, AuthenticatorError> {
         let mut data = Vec::new();
-        data.extend(self.rp_id_hash.0);
-        data.extend([self.flags.bits()]);
-        data.extend(self.counter.to_be_bytes());
+        data.extend(self.rp_id_hash.0); 
+        data.extend([self.flags.bits()]); 
+        data.extend(self.counter.to_be_bytes()); 
 
         
         
         if let Some(cred) = &self.credential_data {
-            data.extend(cred.aaguid.0);
-            data.extend((cred.credential_id.len() as u16).to_be_bytes());
-            data.extend(&cred.credential_id);
+            
+            
+            
+            
+            
+            
+            
+            data.extend(cred.aaguid.0); 
+            data.extend((cred.credential_id.len() as u16).to_be_bytes()); 
+            data.extend(&cred.credential_id); 
             data.extend(
+                
                 &serde_cbor::to_vec(&cred.credential_public_key)
                     .map_err(CommandError::Serializing)?,
+            );
+        }
+        
+        
+        if self.extensions.has_some() {
+            data.extend(
+                
+                &serde_cbor::to_vec(&self.extensions).map_err(CommandError::Serializing)?,
             );
         }
         Ok(data)
@@ -383,20 +413,22 @@ pub enum AttestationStatement {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 
-pub struct AttestationStatementFidoU2F {
-    pub sig: Signature,
 
-    #[serde(rename = "x5c")]
+
+
+
+pub struct AttestationStatementFidoU2F {
     
-    pub attestation_cert: Vec<AttestationCertificate>,
+    #[serde(rename = "x5c")]
+    pub attestation_cert: Vec<AttestationCertificate>, 
+    pub sig: Signature, 
 }
 
-#[allow(dead_code)] 
 impl AttestationStatementFidoU2F {
     pub fn new(cert: &[u8], signature: &[u8]) -> Self {
         AttestationStatementFidoU2F {
-            sig: Signature(ByteBuf::from(signature)),
             attestation_cert: vec![AttestationCertificate(Vec::from(cert))],
+            sig: Signature(ByteBuf::from(signature)),
         }
     }
 }
@@ -404,13 +436,20 @@ impl AttestationStatementFidoU2F {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 
 
-pub struct AttestationStatementPacked {
-    pub alg: COSEAlgorithm,
-    pub sig: Signature,
 
-    #[serde(rename = "x5c")]
+
+
+
+
+
+
+
+pub struct AttestationStatementPacked {
+    pub alg: COSEAlgorithm, 
+    pub sig: Signature,     
     
-    pub attestation_cert: Vec<AttestationCertificate>,
+    #[serde(rename = "x5c", skip_serializing_if = "Vec::is_empty", default)]
+    pub attestation_cert: Vec<AttestationCertificate>, 
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -523,31 +562,32 @@ impl Serialize for AttestationObject {
         let map_len = 3;
         let mut map = serializer.serialize_map(Some(map_len))?;
 
-        let auth_data = self
-            .auth_data
-            .to_vec()
-            .map(serde_cbor::Value::Bytes)
-            .map_err(|_| SerError::custom("Failed to serialize auth_data"))?;
-
+        
         
         
         match self.att_statement {
             AttestationStatement::None => {
                 
-                map.serialize_entry(&"fmt", &"none")?;
+                map.serialize_entry(&"fmt", &"none")?; 
                 let v = serde_cbor::Value::Map(std::collections::BTreeMap::new());
-                map.serialize_entry(&"attStmt", &v)?;
+                map.serialize_entry(&"attStmt", &v)?; 
             }
             AttestationStatement::Packed(ref v) => {
-                map.serialize_entry(&"fmt", &"packed")?;
-                map.serialize_entry(&"attStmt", v)?;
+                map.serialize_entry(&"fmt", &"packed")?; 
+                map.serialize_entry(&"attStmt", v)?; 
             }
             AttestationStatement::FidoU2F(ref v) => {
-                map.serialize_entry(&"fmt", &"fido-u2f")?;
-                map.serialize_entry(&"attStmt", v)?;
+                map.serialize_entry(&"fmt", &"fido-u2f")?; 
+                map.serialize_entry(&"attStmt", v)?; 
             }
         }
-        map.serialize_entry(&"authData", &auth_data)?;
+
+        let auth_data = self
+            .auth_data
+            .to_vec()
+            .map(serde_cbor::Value::Bytes)
+            .map_err(|_| SerError::custom("Failed to serialize auth_data"))?;
+        map.serialize_entry(&"authData", &auth_data)?; 
         map.end()
     }
 }
