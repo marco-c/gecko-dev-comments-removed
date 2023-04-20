@@ -34,8 +34,13 @@ class nsIScreenManager;
 class nsIWidget;
 struct nsRect;
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace dom {
 enum class ScreenColorGamut : uint8_t;
+}  
+namespace widget {
+class Screen;
+}  
 }  
 
 class nsDeviceContext final {
@@ -50,8 +55,7 @@ class nsDeviceContext final {
 
 
 
-
-  nsresult Init(nsIWidget* aWidget);
+  void Init(nsIWidget* aWidget);
 
   
 
@@ -257,7 +261,7 @@ class nsDeviceContext final {
   void SetDPI();
   void ComputeClientRectUsingScreen(nsRect* outRect);
   void ComputeFullAreaUsingScreen(nsRect* outRect);
-  void FindScreen(nsIScreen** outScreen);
+  already_AddRefed<mozilla::widget::Screen> FindScreen();
 
   
   bool CalcPrintingSize();
@@ -273,13 +277,10 @@ class nsDeviceContext final {
   gfxPoint mPrintingTranslate;
 
   nsCOMPtr<nsIWidget> mWidget;
-  nsCOMPtr<nsIScreenManager> mScreenManager;
   nsCOMPtr<nsIDeviceContextSpec> mDeviceContextSpec;
   RefPtr<PrintTarget> mPrintTarget;
   bool mIsCurrentlyPrintingDoc;
-#ifdef DEBUG
-  bool mIsInitialized;
-#endif
+  bool mIsInitialized = false;
 };
 
 #endif 
