@@ -46,18 +46,18 @@ const loadResources = (file) => {
 
 
 
-const getExpectedData = (resources, outputName) => {
-  let data;
+const getExpectedDataAndType = (resources, outputName) => {
+  let ret;
   for (let subResources of resources) {
     if (subResources.name === outputName) {
-      data = subResources.data;
+      ret = [subResources.data, subResources.type];
       break;
     }
   }
-  if (data === undefined) {
-    throw new Error(`Failed to get expected data sources by ${outputName}`);
+  if (ret === undefined) {
+    throw new Error(`Failed to get expected data sources and type by ${outputName}`);
   }
-  return data;
+  return ret;
 };
 
 
@@ -82,6 +82,7 @@ const PrecisionMetrics = {
   sigmoid: {ULP: {float32: 32+2, float16: 3}}, 
   slice: {ULP: {float32: 0, float16: 0}},
   softmax: {ULP: {float32: getSoftmaxPrecisionTolerance, float16: getSoftmaxPrecisionTolerance}},
+  split: {ULP: {float32: 0, float16: 0}},
   squeeze: {ULP: {float32: 0, float16: 0}},
   tanh: {ATOL: {float32: 1/1024, float16: 1/512}},
   transpose: {ULP: {float32: 0, float16: 0}},
@@ -94,13 +95,13 @@ const PrecisionMetrics = {
 
 
 
-const getPrecisonTolerance = (operationName, metricType, resources) => {
-  
-  const precisionType = Array.isArray(resources.expected) ? resources.expected[0].type : resources.expected.type;
+
+
+const getPrecisonTolerance = (operationName, metricType, precisionType) => {
   let tolerance = PrecisionMetrics[operationName][metricType][precisionType];
   
   if (tolerance instanceof Function) {
-    tolerance = tolerance(resources);
+    tolerance = tolerance(resources, operationName);
   }
   return tolerance;
 };
@@ -190,21 +191,25 @@ const doAssert = (operationName, actual, expected, tolerance, operandType, metri
 
 const checkResults = (operationName, namedOutputOperands, outputs, resources) => {
   const metricType = Object.keys(PrecisionMetrics[operationName])[0];
-  const tolerance = getPrecisonTolerance(operationName, metricType, resources);
   const expected = resources.expected;
-  const operandType = expected.type;
+  let tolerance;
+  let operandType;
   let outputData;
   let expectedData;
   if (Array.isArray(expected)) {
     
     for (let operandName in namedOutputOperands) {
       outputData = outputs[operandName];
-      expectedData = getExpectedData(expected, operandName);
+      
+      [expectedData, operandType] = getExpectedDataAndType(expected, operandName);
+      tolerance = getPrecisonTolerance(operationName, metricType, operandType);
       doAssert(operationName, outputData, expectedData, tolerance, operandType, metricType)
     }
   } else {
     outputData = outputs[expected.name];
     expectedData = expected.data;
+    operandType = expected.type;
+    tolerance = getPrecisonTolerance(operationName, metricType, operandType);
     doAssert(operationName, outputData, expectedData, tolerance, operandType, metricType)
   }
 };
