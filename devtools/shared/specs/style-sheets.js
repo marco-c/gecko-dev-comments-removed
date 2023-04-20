@@ -9,18 +9,16 @@ const {
   generateActorSpec,
 } = require("resource://devtools/shared/protocol.js");
 
-
-require("resource://devtools/shared/specs/style-sheet.js");
-
 const styleSheetsSpec = generateActorSpec({
   typeName: "stylesheets",
 
   events: {
+    
+    
+    
+    
     "stylesheet-added": {
       type: "stylesheetAdded",
-      sheet: Arg(0, "stylesheet"),
-      isNew: Arg(1, "boolean"),
-      fileName: Arg(2, "nullable:string"),
     },
   },
 
@@ -28,10 +26,6 @@ const styleSheetsSpec = generateActorSpec({
     getTraits: {
       request: {},
       response: { traits: RetVal("json") },
-    },
-    getStyleSheets: {
-      request: {},
-      response: { styleSheets: RetVal("array:stylesheet") },
     },
     addStyleSheet: {
       request: {

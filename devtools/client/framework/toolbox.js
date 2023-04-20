@@ -4312,8 +4312,8 @@ Toolbox.prototype = {
 
 
 
-  async viewSourceInStyleEditorByFront(stylesheetFront, line, column) {
-    if (!stylesheetFront || typeof stylesheetFront !== "object") {
+  async viewSourceInStyleEditorByResource(stylesheetResource, line, column) {
+    if (!stylesheetResource || typeof stylesheetResource !== "object") {
       console.warn("Failed to open source, no stylesheet given");
       return false;
     }
@@ -4330,7 +4330,7 @@ Toolbox.prototype = {
 
     return viewSource.viewSourceInStyleEditor(
       this,
-      stylesheetFront,
+      stylesheetResource,
       line,
       column
     );

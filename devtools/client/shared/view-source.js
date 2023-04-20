@@ -20,7 +20,7 @@
 
 exports.viewSourceInStyleEditor = async function(
   toolbox,
-  stylesheetFrontOrGeneratedURL,
+  stylesheetResourceOrGeneratedURL,
   generatedLine,
   generatedColumn
 ) {
@@ -32,25 +32,25 @@ exports.viewSourceInStyleEditor = async function(
       
       
       stylesheetToSelect: {
-        stylesheet: stylesheetFrontOrGeneratedURL,
+        stylesheet: stylesheetResourceOrGeneratedURL,
         line: generatedLine,
         column: generatedColumn,
       },
     });
 
-    let stylesheetFront;
-    if (typeof stylesheetFrontOrGeneratedURL === "string") {
-      stylesheetFront = panel.getStylesheetFrontForGeneratedURL(
-        stylesheetFrontOrGeneratedURL
+    let stylesheetResource;
+    if (typeof stylesheetResourceOrGeneratedURL === "string") {
+      stylesheetResource = panel.getStylesheetResourceForGeneratedURL(
+        stylesheetResourceOrGeneratedURL
       );
     } else {
-      stylesheetFront = stylesheetFrontOrGeneratedURL;
+      stylesheetResource = stylesheetResourceOrGeneratedURL;
     }
 
-    const originalLocation = stylesheetFront
+    const originalLocation = stylesheetResource
       ? await getOriginalLocation(
           toolbox,
-          stylesheetFront.resourceId,
+          stylesheetResource.resourceId,
           generatedLine,
           generatedColumn
         )
@@ -65,9 +65,9 @@ exports.viewSourceInStyleEditor = async function(
       return true;
     }
 
-    if (stylesheetFront) {
+    if (stylesheetResource) {
       await panel.selectStyleSheet(
-        stylesheetFront,
+        stylesheetResource,
         generatedLine,
         generatedColumn
       );
@@ -81,10 +81,10 @@ exports.viewSourceInStyleEditor = async function(
   
   exports.viewSource(
     toolbox,
-    typeof stylesheetFrontOrGeneratedURL === "string"
-      ? stylesheetFrontOrGeneratedURL
-      : stylesheetFrontOrGeneratedURL.href ||
-          stylesheetFrontOrGeneratedURL.nodeHref,
+    typeof stylesheetResourceOrGeneratedURL === "string"
+      ? stylesheetResourceOrGeneratedURL
+      : stylesheetResourceOrGeneratedURL.href ||
+          stylesheetResourceOrGeneratedURL.nodeHref,
     generatedLine
   );
 

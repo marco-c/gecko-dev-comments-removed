@@ -69,7 +69,7 @@ ChromeUtils.defineModuleGetter(lazy, "ExtensionContent", EXTENSION_CONTENT_JSM);
 
 loader.lazyRequireGetter(
   this,
-  ["StyleSheetActor", "getSheetText"],
+  ["getSheetText"],
   "resource://devtools/server/actors/style-sheet.js",
   true
 );
@@ -258,10 +258,6 @@ const windowGlobalTargetPrototype = {
 
 
 
-
-
-
-
   initialize(
     connection,
     {
@@ -294,9 +290,6 @@ const windowGlobalTargetPrototype = {
     
     this._extraActors = {};
     this._sourcesManager = null;
-
-    
-    this._styleSheetActors = new Map();
 
     this._shouldAddNewGlobalAsDebuggee = this._shouldAddNewGlobalAsDebuggee.bind(
       this
@@ -698,7 +691,6 @@ const windowGlobalTargetPrototype = {
     this._destroyThreadActor();
 
     
-    this._styleSheetActors.clear();
     if (this._targetScopedActorPool) {
       this._targetScopedActorPool.destroy();
       this._targetScopedActorPool = null;
@@ -1573,33 +1565,6 @@ const windowGlobalTargetPrototype = {
       state: "stop",
       isFrameSwitching,
     });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  createStyleSheetActor(styleSheet) {
-    assert(
-      !this.isDestroyed(),
-      "Target must not be destroyed to create a sheet actor."
-    );
-    if (this._styleSheetActors.has(styleSheet)) {
-      return this._styleSheetActors.get(styleSheet);
-    }
-    const actor = new StyleSheetActor(styleSheet, this);
-    this._styleSheetActors.set(styleSheet, actor);
-
-    this._targetScopedActorPool.manage(actor);
-    this.emit("stylesheet-added", actor);
-
-    return actor;
   },
 
   removeActorByName(name) {
