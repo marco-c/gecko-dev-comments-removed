@@ -676,6 +676,10 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
 
   
   
+  RemoveLeadingCanceledTimersInternal();
+
+  
+  
   
   
   
