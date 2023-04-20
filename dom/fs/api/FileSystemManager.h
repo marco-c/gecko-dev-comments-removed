@@ -16,6 +16,7 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
+#include "nsTObserverArray.h"
 
 class nsIGlobalObject;
 
@@ -31,6 +32,8 @@ class StorageManager;
 
 namespace fs {
 class FileSystemRequestHandler;
+template <typename Manager, typename PromiseType>
+class ManagedMozPromiseRequestHolder;
 }  
 
 
@@ -47,6 +50,10 @@ class FileSystemRequestHandler;
 
 class FileSystemManager : public nsISupports {
  public:
+  template <typename PromiseType>
+  using PromiseRequestHolder =
+      fs::ManagedMozPromiseRequestHolder<FileSystemManager, PromiseType>;
+
   FileSystemManager(
       nsIGlobalObject* aGlobal, RefPtr<StorageManager> aStorageManager,
       RefPtr<FileSystemBackgroundRequestHandler> aBackgroundRequestHandler);
@@ -60,6 +67,11 @@ class FileSystemManager : public nsISupports {
   bool IsShutdown() const { return mShutdown; }
 
   void Shutdown();
+
+  void RegisterPromiseRequestHolder(PromiseRequestHolder<BoolPromise>* aHolder);
+
+  void UnregisterPromiseRequestHolder(
+      PromiseRequestHolder<BoolPromise>* aHolder);
 
   void BeginRequest(
       std::function<void(const RefPtr<FileSystemManagerChild>&)>&& aSuccess,
@@ -77,8 +89,7 @@ class FileSystemManager : public nsISupports {
   const RefPtr<FileSystemBackgroundRequestHandler> mBackgroundRequestHandler;
   const UniquePtr<fs::FileSystemRequestHandler> mRequestHandler;
 
-  MozPromiseRequestHolder<BoolPromise>
-      mCreateFileSystemManagerChildPromiseRequestHolder;
+  nsTObserverArray<PromiseRequestHolder<BoolPromise>*> mPromiseRequestHolders;
 
   FlippedOnce<false> mShutdown;
 };
