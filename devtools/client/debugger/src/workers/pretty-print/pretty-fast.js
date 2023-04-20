@@ -4,8 +4,6 @@
 
 
 
-
-
 var acorn = require("acorn");
 var sourceMap = require("source-map");
 var SourceNode = sourceMap.SourceNode;
@@ -543,14 +541,8 @@ const sanitize = (function() {
     "'": "\\'",
   };
 
-  const regExpString =
-    "(" +
-    Object.keys(escapeCharacters)
-      .map(function(c) {
-        return escapeCharacters[c];
-      })
-      .join("|") +
-    ")";
+  
+  const regExpString = "(" + Object.values(escapeCharacters).join("|") + ")";
   const escapeCharactersRegExp = new RegExp(regExpString, "g");
 
   return function(str) {
@@ -570,7 +562,7 @@ const sanitize = (function() {
 function addToken(token, write) {
   if (token.type.label == "string") {
     write(
-      "'" + sanitize(token.value) + "'",
+      `'${sanitize(token.value)}'`,
       token.loc.start.line,
       token.loc.start.column
     );
@@ -694,8 +686,8 @@ function addComment(
     
     write(
       text
-        .split(new RegExp("/\n" + indentString + "/", "g"))
-        .join("\n" + indentString),
+        .split(new RegExp(`/\n${indentString}/`, "g"))
+        .join(`\n${indentString}`),
       null,
       null,
       true
