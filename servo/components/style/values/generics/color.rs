@@ -42,7 +42,7 @@ pub enum GenericColor<RGBA, Percentage> {
     ToShmem,
 )]
 #[repr(u8)]
-pub enum ColorSpace {
+pub enum InterpolationColorSpace {
     
     Srgb,
     
@@ -63,7 +63,7 @@ pub enum ColorSpace {
     
 }
 
-impl ColorSpace {
+impl InterpolationColorSpace {
     
     pub fn is_polar(self) -> bool {
         match self {
@@ -120,7 +120,7 @@ pub enum HueInterpolationMethod {
 #[repr(C)]
 pub struct ColorInterpolationMethod {
     
-    pub space: ColorSpace,
+    pub space: InterpolationColorSpace,
     
     pub hue: HueInterpolationMethod,
 }
@@ -129,7 +129,7 @@ impl ColorInterpolationMethod {
     
     pub fn srgb() -> Self {
         Self {
-            space: ColorSpace::Srgb,
+            space: InterpolationColorSpace::Srgb,
             hue: HueInterpolationMethod::Shorter,
         }
     }
@@ -141,7 +141,7 @@ impl Parse for ColorInterpolationMethod {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         input.expect_ident_matching("in")?;
-        let space = ColorSpace::parse(input)?;
+        let space = InterpolationColorSpace::parse(input)?;
         
         
         
