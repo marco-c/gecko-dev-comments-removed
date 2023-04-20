@@ -89,9 +89,10 @@ int VP8LEncodeImage(const WebPConfig* const config,
 
 
 
-WebPEncodingError VP8LEncodeStream(const WebPConfig* const config,
-                                   const WebPPicture* const picture,
-                                   VP8LBitWriter* const bw, int use_cache);
+
+int VP8LEncodeStream(const WebPConfig* const config,
+                     const WebPPicture* const picture, VP8LBitWriter* const bw,
+                     int use_cache);
 
 #if (WEBP_NEAR_LOSSLESS == 1)
 
@@ -103,13 +104,18 @@ int VP8ApplyNearLossless(const WebPPicture* const picture, int quality,
 
 
 
-void VP8LResidualImage(int width, int height, int bits, int low_effort,
-                       uint32_t* const argb, uint32_t* const argb_scratch,
-                       uint32_t* const image, int near_lossless, int exact,
-                       int used_subtract_green);
 
-void VP8LColorSpaceTransform(int width, int height, int bits, int quality,
-                             uint32_t* const argb, uint32_t* image);
+
+int VP8LResidualImage(int width, int height, int bits, int low_effort,
+                      uint32_t* const argb, uint32_t* const argb_scratch,
+                      uint32_t* const image, int near_lossless, int exact,
+                      int used_subtract_green, const WebPPicture* const pic,
+                      int percent_range, int* const percent);
+
+int VP8LColorSpaceTransform(int width, int height, int bits, int quality,
+                            uint32_t* const argb, uint32_t* image,
+                            const WebPPicture* const pic, int percent_range,
+                            int* const percent);
 
 
 

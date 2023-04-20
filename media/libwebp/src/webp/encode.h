@@ -455,7 +455,7 @@ WEBP_EXTERN int WebPPictureIsView(const WebPPicture* picture);
 
 
 
-WEBP_EXTERN int WebPPictureRescale(WebPPicture* pic, int width, int height);
+WEBP_EXTERN int WebPPictureRescale(WebPPicture* picture, int width, int height);
 
 
 
@@ -526,7 +526,7 @@ WEBP_EXTERN int WebPPictureHasTransparency(const WebPPicture* picture);
 
 
 
-WEBP_EXTERN void WebPBlendAlpha(WebPPicture* pic, uint32_t background_rgb);
+WEBP_EXTERN void WebPBlendAlpha(WebPPicture* picture, uint32_t background_rgb);
 
 
 

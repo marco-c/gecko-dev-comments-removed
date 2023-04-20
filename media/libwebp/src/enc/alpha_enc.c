@@ -86,7 +86,7 @@ static int EncodeLossless(const uint8_t* const data, int width, int height,
   
   
   
-  ok = (VP8LEncodeStream(&config, &picture, bw, 0 ) == VP8_ENC_OK);
+  ok = VP8LEncodeStream(&config, &picture, bw, 0);
   WebPPictureFree(&picture);
   ok = ok && !bw->error_;
   if (!ok) {

@@ -32,7 +32,7 @@ extern "C" {
 
 #define ENC_MAJ_VERSION 1
 #define ENC_MIN_VERSION 2
-#define ENC_REV_VERSION 2
+#define ENC_REV_VERSION 4
 
 enum { MAX_LF_LEVELS = 64,       
        MAX_VARIABLE_LEVEL = 67,  
@@ -470,7 +470,8 @@ int VP8EncAnalyze(VP8Encoder* const enc);
 
 void VP8SetSegmentParams(VP8Encoder* const enc, float quality);
 
-int VP8Decimate(VP8EncIterator* const it, VP8ModeScore* const rd,
+int VP8Decimate(VP8EncIterator* WEBP_RESTRICT const it,
+                VP8ModeScore* WEBP_RESTRICT const rd,
                 VP8RDLevel rd_opt);
 
   
@@ -491,18 +492,23 @@ int VP8FilterStrengthFromDelta(int sharpness, int delta);
   
 
 
+
+
+int WebPValidatePicture(const WebPPicture* const picture);
+
+
 void WebPPictureResetBuffers(WebPPicture* const picture);
 
 
 
 
-int WebPPictureAllocARGB(WebPPicture* const picture, int width, int height);
+int WebPPictureAllocARGB(WebPPicture* const picture);
 
 
 
 
 
-int WebPPictureAllocYUVA(WebPPicture* const picture, int width, int height);
+int WebPPictureAllocYUVA(WebPPicture* const picture);
 
 
 

@@ -137,7 +137,8 @@ int VP8LHashChainInit(VP8LHashChain* const p, int size);
 
 int VP8LHashChainFill(VP8LHashChain* const p, int quality,
                       const uint32_t* const argb, int xsize, int ysize,
-                      int low_effort);
+                      int low_effort, const WebPPicture* const pic,
+                      int percent_range, int* const percent);
 void VP8LHashChainClear(VP8LHashChain* const p);  
 
 static WEBP_INLINE int VP8LHashChainFindOffset(const VP8LHashChain* const p,
@@ -227,11 +228,14 @@ enum VP8LLZ77Type {
 
 
 
-WebPEncodingError VP8LGetBackwardReferences(
+
+
+int VP8LGetBackwardReferences(
     int width, int height, const uint32_t* const argb, int quality,
     int low_effort, int lz77_types_to_try, int cache_bits_max, int do_no_cache,
     const VP8LHashChain* const hash_chain, VP8LBackwardRefs* const refs,
-    int* const cache_bits_best);
+    int* const cache_bits_best, const WebPPicture* const pic, int percent_range,
+    int* const percent);
 
 #ifdef __cplusplus
 }

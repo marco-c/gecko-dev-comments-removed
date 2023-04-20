@@ -182,9 +182,9 @@ extern VP8LPredictorAddSubFunc VP8LPredictorsSub_C[16];
 
 
 
-typedef double (*VP8LCostFunc)(const uint32_t* population, int length);
-typedef double (*VP8LCostCombinedFunc)(const uint32_t* X, const uint32_t* Y,
-                                       int length);
+typedef float (*VP8LCostFunc)(const uint32_t* population, int length);
+typedef float (*VP8LCostCombinedFunc)(const uint32_t* X, const uint32_t* Y,
+                                      int length);
 typedef float (*VP8LCombinedShannonEntropyFunc)(const int X[256],
                                                 const int Y[256]);
 
@@ -198,7 +198,7 @@ typedef struct {
 } VP8LStreaks;
 
 typedef struct {            
-  double entropy;           
+  float entropy;            
   uint32_t sum;             
   int nonzeros;             
   uint32_t max_val;         
