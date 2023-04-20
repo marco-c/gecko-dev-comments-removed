@@ -16,7 +16,6 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     
     COMMON_PACKAGES = [
         "build-essential",
-        "libpython3-dev",
         "m4",
         "unzip",
     ]
