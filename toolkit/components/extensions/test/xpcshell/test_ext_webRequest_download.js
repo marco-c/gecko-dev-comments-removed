@@ -2,6 +2,7 @@
 
 
 
+
 add_task(async function testDownload() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
