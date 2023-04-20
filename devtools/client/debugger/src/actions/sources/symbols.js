@@ -2,10 +2,7 @@
 
 
 
-import {
-  getSymbols,
-  getSourceActorForSymbols,
-} from "../../selectors";
+import { getSymbols } from "../../selectors";
 
 import { PROMISE } from "../utils/middleware/promise";
 import { loadSourceText } from "./loadSourceText";
@@ -36,15 +33,6 @@ export const setSymbols = memoizeableAction("setSymbols", {
 
     const symbols = getSymbols(getState(), location);
     if (!symbols) {
-      return null;
-    }
-
-    
-    if (
-      location.sourceActor?.id &&
-      getSourceActorForSymbols(getState(), location.source) !==
-        location.sourceActor.id
-    ) {
       return null;
     }
 
