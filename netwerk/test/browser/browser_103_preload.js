@@ -6,6 +6,11 @@
 
 Services.prefs.setBoolPref("network.early-hints.enabled", true);
 
+Services.prefs.setBoolPref(
+  "security.mixed_content.upgrade_display_content",
+  false
+);
+
 const {
   request_count_checking,
   test_hint_preload_internal,
