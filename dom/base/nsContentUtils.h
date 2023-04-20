@@ -1441,14 +1441,6 @@ class nsContentUtils {
 
 
 
-  static bool IsUpgradableDisplayType(ExtContentPolicyType aType);
-
-  
-
-
-
-
-
 
 
 

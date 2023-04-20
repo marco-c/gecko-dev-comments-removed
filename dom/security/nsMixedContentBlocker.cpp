@@ -371,6 +371,15 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(nsIURI* aURI) {
 }
 
 
+bool nsMixedContentBlocker::IsUpgradableContentType(nsContentPolicyType aType) {
+  MOZ_ASSERT(NS_IsMainThread());
+  return (aType == nsIContentPolicy::TYPE_INTERNAL_IMAGE ||
+          aType == nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD ||
+          aType == nsIContentPolicy::TYPE_INTERNAL_AUDIO ||
+          aType == nsIContentPolicy::TYPE_INTERNAL_VIDEO);
+}
+
+
 
 
 
@@ -754,12 +763,14 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  bool isUpgradableDisplayType =
-      nsContentUtils::IsUpgradableDisplayType(contentType) &&
-      StaticPrefs::security_mixed_content_upgrade_display_content();
-  if (isHttpScheme && isUpgradableDisplayType) {
-    *aDecision = ACCEPT;
-    return NS_OK;
+  if (isHttpScheme) {
+    bool isUpgradableContentType =
+        IsUpgradableContentType(internalContentType) &&
+        StaticPrefs::security_mixed_content_upgrade_display_content();
+    if (isUpgradableContentType) {
+      *aDecision = ACCEPT;
+      return NS_OK;
+    }
   }
 
   

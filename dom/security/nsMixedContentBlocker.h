@@ -62,6 +62,12 @@ class nsMixedContentBlocker : public nsIContentPolicy,
 
 
 
+  static bool IsUpgradableContentType(nsContentPolicyType aType);
+
+  
+
+
+
 
 
 
