@@ -112,9 +112,9 @@ function handleMessages(engine) {
 
       switch (data.type) {
         case "translation-request": {
-          const { messageBatch, messageId } = data;
+          const { messageBatch, messageId, isHTML } = data;
           try {
-            const translations = engine.translate(messageBatch);
+            const translations = engine.translate(messageBatch, isHTML);
             postMessage({
               type: "translation-response",
               translations,
@@ -201,11 +201,13 @@ class Engine {
 
 
 
-  translate(messageBatch, withQualityEstimation = false) {
+
+  translate(messageBatch, isHTML, withQualityEstimation = false) {
     let response;
     const { messages, options } = BergamotUtils.getTranslationArgs(
       this.bergamot,
       messageBatch,
+      isHTML,
       withQualityEstimation
     );
     try {
@@ -446,7 +448,12 @@ class BergamotUtils {
 
 
 
-  static getTranslationArgs(bergamot, messageBatch, withQualityEstimation) {
+  static getTranslationArgs(
+    bergamot,
+    messageBatch,
+    isHTML,
+    withQualityEstimation
+  ) {
     const messages = new bergamot.VectorString();
     const options = new bergamot.VectorResponseOptions();
     for (const message of messageBatch) {
@@ -455,14 +462,20 @@ class BergamotUtils {
         continue;
       }
 
-      
-      
+      if (withQualityEstimation && !isHTML) {
+        
+        
+        
+        throw new Error(
+          "Quality estimates on non-hTML is not curently supported."
+        );
+      }
 
       messages.push_back(message);
       options.push_back({
         qualityScores: withQualityEstimation,
         alignment: true,
-        html: false,
+        html: isHTML,
       });
     }
     return { messages, options };
