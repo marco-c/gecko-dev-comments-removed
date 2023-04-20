@@ -28,7 +28,7 @@ add_task(async function() {
     
     
     let stopped = BrowserTestUtils.browserStopped(aBrowser, TEST_URL, true);
-    BrowserTestUtils.loadURI(aBrowser, TEST_URL);
+    BrowserTestUtils.loadURIString(aBrowser, TEST_URL);
     await stopped;
 
     let newPid = await SpecialPowers.spawn(aBrowser, [], () => {
@@ -44,7 +44,7 @@ add_task(async function() {
     
     
     let loaded = BrowserTestUtils.browserLoaded(aBrowser, false, BLANK_URL);
-    BrowserTestUtils.loadURI(aBrowser, BLANK_URL);
+    BrowserTestUtils.loadURIString(aBrowser, BLANK_URL);
     await loaded;
 
     newPid = await SpecialPowers.spawn(aBrowser, [], () => {

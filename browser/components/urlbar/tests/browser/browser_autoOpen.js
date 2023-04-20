@@ -81,7 +81,7 @@ add_task(async function newtabAndHome() {
         
         await checkOpensOnFocus();
         
-        BrowserTestUtils.loadURI(
+        BrowserTestUtils.loadURIString(
           gBrowser.selectedBrowser,
           "http://example.com/"
         );

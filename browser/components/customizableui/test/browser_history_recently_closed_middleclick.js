@@ -14,7 +14,10 @@ async function setupTest() {
   
   
   let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "https://example.com");
+  BrowserTestUtils.loadURIString(
+    gBrowser.selectedBrowser,
+    "https://example.com"
+  );
   await loadPromise;
 
   

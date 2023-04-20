@@ -136,7 +136,7 @@ add_task(async function move_tab_into_existing_window() {
     false,
     expectedSearchUrl
   );
-  BrowserTestUtils.loadURI(browser, expectedSearchUrl);
+  BrowserTestUtils.loadURIString(browser, expectedSearchUrl);
   await browserLoadedPromise;
 
   

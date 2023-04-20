@@ -122,7 +122,7 @@ add_task(async function() {
     false,
     testPage1
   );
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, testPage1);
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, testPage1);
   await page1Promise;
 
   

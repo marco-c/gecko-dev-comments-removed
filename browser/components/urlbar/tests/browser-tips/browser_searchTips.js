@@ -367,7 +367,10 @@ add_task(async function noPersistTipInWindowWithNonSerpTab() {
     false,
     SEARCH_SERP_URL
   );
-  BrowserTestUtils.loadURI(newWindow.gBrowser.selectedBrowser, SEARCH_SERP_URL);
+  BrowserTestUtils.loadURIString(
+    newWindow.gBrowser.selectedBrowser,
+    SEARCH_SERP_URL
+  );
   await browserLoadedPromise;
 
   
@@ -442,7 +445,7 @@ add_task(async function noSearchTipWhileAnotherPageLoads() {
 
   
   
-  BrowserTestUtils.loadURI(tab.linkedBrowser, SLOW_PAGE);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, SLOW_PAGE);
 
   
   

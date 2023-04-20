@@ -63,7 +63,10 @@ var tests = [
     loadTabInWindow(window, function(tab) {
       
       
-      BrowserTestUtils.loadURI(tab.linkedBrowser, "http://test1.example.com");
+      BrowserTestUtils.loadURIString(
+        tab.linkedBrowser,
+        "http://test1.example.com"
+      );
       tab.linkedBrowser.stop();
       is(
         gURLBar.value,

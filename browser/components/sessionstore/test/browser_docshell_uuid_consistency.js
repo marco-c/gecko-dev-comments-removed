@@ -69,7 +69,7 @@ add_task(async function contentToChromeNavigate() {
   }
 
   
-  BrowserTestUtils.loadURI(tab.linkedBrowser, "about:config");
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:config");
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   
