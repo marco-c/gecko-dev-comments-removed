@@ -38,6 +38,7 @@
 #include "api/test/frame_generator_interface.h"
 #include "api/test/pclf/media_configuration.h"
 #include "api/test/pclf/media_quality_test_params.h"
+#include "api/test/pclf/peer_configurer.h"
 #include "api/test/peer_network_dependencies.h"
 #include "api/test/simulated_network.h"
 #include "api/test/stats_observer_interface.h"
@@ -76,127 +77,7 @@ class PeerConnectionE2EQualityTestFixture {
   using VideoSubscription = ::webrtc::webrtc_pc_e2e::VideoSubscription;
   using EchoEmulationConfig = ::webrtc::webrtc_pc_e2e::EchoEmulationConfig;
   using RunParams = ::webrtc::webrtc_pc_e2e::RunParams;
-
-  
-  class PeerConfigurer {
-   public:
-    virtual ~PeerConfigurer() = default;
-
-    
-    
-    
-    virtual PeerConfigurer* SetName(absl::string_view name) = 0;
-
-    
-    
-    
-    virtual PeerConfigurer* SetTaskQueueFactory(
-        std::unique_ptr<TaskQueueFactory> task_queue_factory) = 0;
-    virtual PeerConfigurer* SetCallFactory(
-        std::unique_ptr<CallFactoryInterface> call_factory) = 0;
-    virtual PeerConfigurer* SetEventLogFactory(
-        std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory) = 0;
-    virtual PeerConfigurer* SetFecControllerFactory(
-        std::unique_ptr<FecControllerFactoryInterface>
-            fec_controller_factory) = 0;
-    virtual PeerConfigurer* SetNetworkControllerFactory(
-        std::unique_ptr<NetworkControllerFactoryInterface>
-            network_controller_factory) = 0;
-    virtual PeerConfigurer* SetVideoEncoderFactory(
-        std::unique_ptr<VideoEncoderFactory> video_encoder_factory) = 0;
-    virtual PeerConfigurer* SetVideoDecoderFactory(
-        std::unique_ptr<VideoDecoderFactory> video_decoder_factory) = 0;
-    
-    virtual PeerConfigurer* SetNetEqFactory(
-        std::unique_ptr<NetEqFactory> neteq_factory) = 0;
-    virtual PeerConfigurer* SetAudioProcessing(
-        rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) = 0;
-    virtual PeerConfigurer* SetAudioMixer(
-        rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) = 0;
-
-    
-    
-    virtual PeerConfigurer* SetUseNetworkThreadAsWorkerThread() = 0;
-
-    
-    
-    
-    virtual PeerConfigurer* SetAsyncResolverFactory(
-        std::unique_ptr<webrtc::AsyncResolverFactory>
-            async_resolver_factory) = 0;
-    virtual PeerConfigurer* SetRTCCertificateGenerator(
-        std::unique_ptr<rtc::RTCCertificateGeneratorInterface>
-            cert_generator) = 0;
-    virtual PeerConfigurer* SetSSLCertificateVerifier(
-        std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier) = 0;
-    virtual PeerConfigurer* SetIceTransportFactory(
-        std::unique_ptr<IceTransportFactory> factory) = 0;
-    
-    
-    
-    virtual PeerConfigurer* SetPortAllocatorExtraFlags(
-        uint32_t extra_flags) = 0;
-
-    
-    
-    virtual PeerConfigurer* AddVideoConfig(VideoConfig config) = 0;
-    
-    
-    virtual PeerConfigurer* AddVideoConfig(
-        VideoConfig config,
-        std::unique_ptr<test::FrameGeneratorInterface> generator) = 0;
-    
-    
-    virtual PeerConfigurer* AddVideoConfig(
-        VideoConfig config,
-        CapturingDeviceIndex capturing_device_index) = 0;
-    
-    
-    
-    virtual PeerConfigurer* SetVideoSubscription(
-        VideoSubscription subscription) = 0;
-    
-    
-    
-    
-    
-    
-    virtual PeerConfigurer* SetVideoCodecs(
-        std::vector<VideoCodecConfig> video_codecs) = 0;
-    
-    
-    virtual PeerConfigurer* SetAudioConfig(AudioConfig config) = 0;
-
-    
-    virtual PeerConfigurer* SetUseUlpFEC(bool value) = 0;
-    
-    
-    
-    virtual PeerConfigurer* SetUseFlexFEC(bool value) = 0;
-    
-    
-    
-    
-    
-    
-    virtual PeerConfigurer* SetVideoEncoderBitrateMultiplier(
-        double multiplier) = 0;
-
-    
-    
-    virtual PeerConfigurer* SetRtcEventLogPath(std::string path) = 0;
-    
-    
-    virtual PeerConfigurer* SetAecDumpPath(std::string path) = 0;
-    virtual PeerConfigurer* SetRTCConfiguration(
-        PeerConnectionInterface::RTCConfiguration configuration) = 0;
-    virtual PeerConfigurer* SetRTCOfferAnswerOptions(
-        PeerConnectionInterface::RTCOfferAnswerOptions options) = 0;
-    
-    
-    virtual PeerConfigurer* SetBitrateSettings(
-        BitrateSettings bitrate_settings) = 0;
-  };
+  using PeerConfigurer = ::webrtc::webrtc_pc_e2e::PeerConfigurer;
 
   
   class QualityMetricsReporter : public StatsObserverInterface {

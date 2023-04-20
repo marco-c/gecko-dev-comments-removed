@@ -11,7 +11,6 @@
 #define API_TEST_PCLF_PEER_CONFIGURER_H_
 
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -27,7 +26,6 @@
 #include "api/test/pclf/media_configuration.h"
 #include "api/test/pclf/media_quality_test_params.h"
 #include "api/test/peer_network_dependencies.h"
-#include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/transport/network_control.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -41,19 +39,17 @@ namespace webrtc {
 namespace webrtc_pc_e2e {
 
 
-class PeerConfigurerImpl final
-    : public PeerConnectionE2EQualityTestFixture::PeerConfigurer {
+class PeerConfigurer {
  public:
   using VideoSource =
       absl::variant<std::unique_ptr<test::FrameGeneratorInterface>,
                     CapturingDeviceIndex>;
 
-  explicit PeerConfigurerImpl(
-      const PeerNetworkDependencies& network_dependencies);
+  explicit PeerConfigurer(const PeerNetworkDependencies& network_dependencies);
 
-  PeerConfigurerImpl(rtc::Thread* network_thread,
-                     rtc::NetworkManager* network_manager,
-                     rtc::PacketSocketFactory* packet_socket_factory)
+  PeerConfigurer(rtc::Thread* network_thread,
+                 rtc::NetworkManager* network_manager,
+                 rtc::PacketSocketFactory* packet_socket_factory)
       : components_(
             std::make_unique<InjectableComponents>(network_thread,
                                                    network_manager,
@@ -64,113 +60,107 @@ class PeerConfigurerImpl final
   
   
   
-  PeerConfigurer* SetName(absl::string_view name) override;
+  PeerConfigurer* SetName(absl::string_view name);
 
   
   
   
   PeerConfigurer* SetTaskQueueFactory(
-      std::unique_ptr<TaskQueueFactory> task_queue_factory) override;
+      std::unique_ptr<TaskQueueFactory> task_queue_factory);
   PeerConfigurer* SetCallFactory(
-      std::unique_ptr<CallFactoryInterface> call_factory) override;
+      std::unique_ptr<CallFactoryInterface> call_factory);
   PeerConfigurer* SetEventLogFactory(
-      std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory) override;
+      std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory);
   PeerConfigurer* SetFecControllerFactory(
-      std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory)
-      override;
+      std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory);
   PeerConfigurer* SetNetworkControllerFactory(
       std::unique_ptr<NetworkControllerFactoryInterface>
-          network_controller_factory) override;
+          network_controller_factory);
   PeerConfigurer* SetVideoEncoderFactory(
-      std::unique_ptr<VideoEncoderFactory> video_encoder_factory) override;
+      std::unique_ptr<VideoEncoderFactory> video_encoder_factory);
   PeerConfigurer* SetVideoDecoderFactory(
-      std::unique_ptr<VideoDecoderFactory> video_decoder_factory) override;
+      std::unique_ptr<VideoDecoderFactory> video_decoder_factory);
   
-  PeerConfigurer* SetNetEqFactory(
-      std::unique_ptr<NetEqFactory> neteq_factory) override;
+  PeerConfigurer* SetNetEqFactory(std::unique_ptr<NetEqFactory> neteq_factory);
   PeerConfigurer* SetAudioProcessing(
-      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) override;
+      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing);
   PeerConfigurer* SetAudioMixer(
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer) override;
+      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer);
 
   
   
-  PeerConfigurer* SetUseNetworkThreadAsWorkerThread() override;
+  PeerConfigurer* SetUseNetworkThreadAsWorkerThread();
 
   
   
   
   PeerConfigurer* SetAsyncResolverFactory(
-      std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory)
-      override;
+      std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory);
   PeerConfigurer* SetRTCCertificateGenerator(
-      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator)
-      override;
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator);
   PeerConfigurer* SetSSLCertificateVerifier(
-      std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier) override;
+      std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier);
   PeerConfigurer* SetIceTransportFactory(
-      std::unique_ptr<IceTransportFactory> factory) override;
+      std::unique_ptr<IceTransportFactory> factory);
   
   
   
-  PeerConfigurer* SetPortAllocatorExtraFlags(uint32_t extra_flags) override;
+  PeerConfigurer* SetPortAllocatorExtraFlags(uint32_t extra_flags);
 
   
   
-  PeerConfigurer* AddVideoConfig(VideoConfig config) override;
+  PeerConfigurer* AddVideoConfig(VideoConfig config);
   
   
   PeerConfigurer* AddVideoConfig(
       VideoConfig config,
-      std::unique_ptr<test::FrameGeneratorInterface> generator) override;
+      std::unique_ptr<test::FrameGeneratorInterface> generator);
   
   
-  PeerConfigurer* AddVideoConfig(
-      VideoConfig config,
-      CapturingDeviceIndex capturing_device_index) override;
+  PeerConfigurer* AddVideoConfig(VideoConfig config,
+                                 CapturingDeviceIndex capturing_device_index);
   
   
   
-  PeerConfigurer* SetVideoSubscription(VideoSubscription subscription) override;
-  
-  
+  PeerConfigurer* SetVideoSubscription(VideoSubscription subscription);
   
   
   
   
-  PeerConfigurer* SetVideoCodecs(
-      std::vector<VideoCodecConfig> video_codecs) override;
   
   
-  PeerConfigurer* SetAudioConfig(AudioConfig config) override;
+  PeerConfigurer* SetVideoCodecs(std::vector<VideoCodecConfig> video_codecs);
+  
+  
+  PeerConfigurer* SetAudioConfig(AudioConfig config);
 
   
-  PeerConfigurer* SetUseUlpFEC(bool value) override;
+  PeerConfigurer* SetUseUlpFEC(bool value);
   
   
   
-  PeerConfigurer* SetUseFlexFEC(bool value) override;
+  PeerConfigurer* SetUseFlexFEC(bool value);
   
   
   
   
   
   
-  PeerConfigurer* SetVideoEncoderBitrateMultiplier(double multiplier) override;
+  PeerConfigurer* SetVideoEncoderBitrateMultiplier(double multiplier);
 
   
   
-  PeerConfigurer* SetRtcEventLogPath(std::string path) override;
+  PeerConfigurer* SetRtcEventLogPath(std::string path);
   
   
-  PeerConfigurer* SetAecDumpPath(std::string path) override;
+  PeerConfigurer* SetAecDumpPath(std::string path);
   PeerConfigurer* SetRTCConfiguration(
-      PeerConnectionInterface::RTCConfiguration configuration) override;
+      PeerConnectionInterface::RTCConfiguration configuration);
   PeerConfigurer* SetRTCOfferAnswerOptions(
-      PeerConnectionInterface::RTCOfferAnswerOptions options) override;
+      PeerConnectionInterface::RTCOfferAnswerOptions options);
   
   
-  PeerConfigurer* SetBitrateSettings(BitrateSettings bitrate_settings) override;
+  PeerConfigurer* SetBitrateSettings(BitrateSettings bitrate_settings);
 
   
   
@@ -204,53 +194,6 @@ class PeerConfigurerImpl final
   std::unique_ptr<Params> params_;
   std::unique_ptr<ConfigurableParams> configurable_params_;
   std::vector<VideoSource> video_sources_;
-};
-
-class DefaultNamesProvider {
- public:
-  
-  
-  explicit DefaultNamesProvider(
-      absl::string_view prefix,
-      rtc::ArrayView<const absl::string_view> default_names = {});
-
-  void MaybeSetName(absl::optional<std::string>& name);
-
- private:
-  std::string GenerateName();
-
-  std::string GenerateNameInternal();
-
-  const std::string prefix_;
-  const rtc::ArrayView<const absl::string_view> default_names_;
-
-  std::set<std::string> known_names_;
-  size_t counter_ = 0;
-};
-
-class PeerParamsPreprocessor {
- public:
-  PeerParamsPreprocessor();
-
-  
-  
-  
-  
-  
-  void SetDefaultValuesForMissingParams(PeerConfigurerImpl& peer);
-
-  
-  
-  void ValidateParams(const PeerConfigurerImpl& peer);
-
- private:
-  DefaultNamesProvider peer_names_provider_;
-
-  std::set<std::string> peer_names_;
-  std::set<std::string> video_labels_;
-  std::set<std::string> audio_labels_;
-  std::set<std::string> video_sync_groups_;
-  std::set<std::string> audio_sync_groups_;
 };
 
 }  
