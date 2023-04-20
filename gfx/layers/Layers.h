@@ -68,10 +68,6 @@ class Compositor;
 class TransformData;
 struct PropertyAnimationGroup;
 
-#ifdef MOZ_DUMP_PAINTING
-void WriteSnapshotToDumpFile(Compositor* aCompositor, gfx::DrawTarget* aTarget);
-#endif
-
 
 gfx::IntRect ToOutsideIntRect(const gfxRect& aRect);
 
