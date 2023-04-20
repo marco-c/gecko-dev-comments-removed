@@ -114,6 +114,7 @@ VideoCaptureAvFoundation::VideoCaptureAvFoundation(AVCaptureDevice* _Nonnull aDe
 
 VideoCaptureAvFoundation::~VideoCaptureAvFoundation() {
   
+  MOZ_RELEASE_ASSERT(mOkToDestroy);
   StopCapture();
 }
 
