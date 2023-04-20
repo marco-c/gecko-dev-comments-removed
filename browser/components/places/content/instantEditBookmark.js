@@ -1111,7 +1111,6 @@ var gEditItemOverlay = {
     
     if (!ip) {
       ip = new PlacesInsertionPoint({
-        parentId: PlacesUtils.bookmarksMenuFolderId,
         parentGuid: PlacesUtils.bookmarks.menuGuid,
       });
     }

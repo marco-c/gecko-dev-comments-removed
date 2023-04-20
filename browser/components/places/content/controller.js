@@ -31,17 +31,13 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 
-
-
 function PlacesInsertionPoint({
-  parentId,
   parentGuid,
   index = PlacesUtils.bookmarks.DEFAULT_INDEX,
   orientation = Ci.nsITreeView.DROP_ON,
   tagName = null,
   dropNearNode = null,
 }) {
-  this.itemId = parentId;
   this.guid = parentGuid;
   this._index = index;
   this.orientation = orientation;
