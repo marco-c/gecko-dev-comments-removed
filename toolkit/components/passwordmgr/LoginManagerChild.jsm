@@ -426,6 +426,19 @@ Services.obs.addObserver(observer, "autocomplete-did-enter-text");
 
 
 
+class FormScenario {}
+
+
+
+
+class SignUpFormScenario extends FormScenario {
+  usernameField;
+  passwordField;
+}
+
+
+
+
 
 
 
@@ -443,7 +456,6 @@ class LoginFormState {
 
   lastSubmittedValuesByRootElement = new WeakMap();
   fieldModificationsByRootElement = new WeakMap();
-  loginFormRootElements = new WeakSet();
   
 
 
@@ -469,7 +481,7 @@ class LoginFormState {
 
 
   #cachedIsInferredUsernameField = new WeakMap();
-  cachedIsInferredEmailField = new WeakMap();
+  #cachedIsInferredEmailField = new WeakMap();
   #cachedIsInferredLoginForm = new WeakMap();
 
   
@@ -483,6 +495,18 @@ class LoginFormState {
   numFormHasPossibleUsernameEvent = 0;
 
   captureLoginTimeStamp = 0;
+
+  
+  #scenariosByRoot = new WeakMap();
+
+  getScenario(inputElement) {
+    const formLikeRoot = lazy.FormLikeFactory.findRootForField(inputElement);
+    return this.#scenariosByRoot.get(formLikeRoot);
+  }
+
+  setScenario(formLikeRoot, scenario) {
+    this.#scenariosByRoot.set(formLikeRoot, scenario);
+  }
 
   storeUserInput(field) {
     if (field.value && lazy.LoginHelper.captureInputChanges) {
@@ -502,10 +526,14 @@ class LoginFormState {
 
 
   isProbablyAnEmailField(inputElement) {
-    let result = this.cachedIsInferredEmailField.get(inputElement);
+    if (!inputElement) {
+      return false;
+    }
+
+    let result = this.#cachedIsInferredEmailField.get(inputElement);
     if (result === undefined) {
       result = lazy.LoginHelper.isInferredEmailField(inputElement);
-      this.cachedIsInferredEmailField.set(inputElement, result);
+      this.#cachedIsInferredEmailField.set(inputElement, result);
     }
 
     return result;
@@ -2763,6 +2791,20 @@ class LoginManagerChild extends JSWindowActorChild {
       newPasswordField: passwordField,
     } = docState._getFormFields(form, false, recipes);
 
+    const passwordACFieldName = passwordField?.getAutocompleteInfo().fieldName;
+
+    let scenario;
+    
+    
+    if (usernameField && passwordACFieldName == "new-password") {
+      scenario = new SignUpFormScenario(usernameField, passwordField);
+    }
+
+    if (scenario) {
+      docState.setScenario(form.rootElement, scenario);
+      lazy.gFormFillService.markAsLoginManagerField(usernameField);
+    }
+
     try {
       
       
@@ -2883,9 +2925,6 @@ class LoginManagerChild extends JSWindowActorChild {
         autofillResult = AUTOFILL_RESULT.NO_LOGINS_FIT;
         return;
       }
-
-      const passwordACFieldName = passwordField?.getAutocompleteInfo()
-        .fieldName;
 
       if (passwordField) {
         if (!userTriggered && passwordField.type != "password") {
@@ -3108,5 +3147,10 @@ class LoginManagerChild extends JSWindowActorChild {
         formid: form.rootElement.id,
       });
     }
+  }
+
+  getScenario(inputElement) {
+    const docState = this.stateForDocument(inputElement.ownerDocument);
+    return docState.getScenario(inputElement);
   }
 }

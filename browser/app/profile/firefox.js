@@ -2177,7 +2177,12 @@ pref("extensions.pocket.refresh.hideRecentSaves.enabled", false);
 pref("signon.management.page.fileImport.enabled", false);
 
 #ifdef NIGHTLY_BUILD
-pref("signon.management.page.os-auth.enabled", true);
+pref("signon.management.page.os-auth.enabled", false);
+
+
+
+
+pref("signon.firefoxRelay.feature", "available");
 #else
 pref("signon.management.page.os-auth.enabled", false);
 #endif
