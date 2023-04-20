@@ -107,7 +107,18 @@ using namespace mozilla::dom;
 
 
 static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
-  if (aContent->GetPrimaryFrame()->IsFocusable()) return true;
+  nsIFrame* frame = aContent->GetPrimaryFrame();
+  MOZ_ASSERT(frame);
+  if (frame->IsFocusable()) {
+    return true;
+  }
+
+  
+  
+  
+  if (frame->IsTransformed() && aContent->HasChildren()) {
+    return true;
+  }
 
   if (aContent->IsElement()) {
     uint32_t attrCount = aContent->AsElement()->GetAttrCount();
@@ -422,21 +433,28 @@ void nsAccessibilityService::NotifyOfPossibleBoundsChange(
 
 void nsAccessibilityService::NotifyOfComputedStyleChange(
     mozilla::PresShell* aPresShell, nsIContent* aContent) {
-  if (!IPCAccessibilityActive() ||
-      !StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+  DocAccessible* document = GetDocAccessible(aPresShell);
+  if (!document) {
     return;
   }
 
-  DocAccessible* document = GetDocAccessible(aPresShell);
-  if (document) {
+  
+  
+  LocalAccessible* accessible = aContent == document->GetContent()
+                                    ? document
+                                    : document->GetAccessible(aContent);
+  if (!accessible && aContent && aContent->HasChildren()) {
     
     
-    LocalAccessible* accessible = aContent == document->GetContent()
-                                      ? document
-                                      : document->GetAccessible(aContent);
-    if (accessible) {
-      accessible->MaybeQueueCacheUpdateForStyleChanges();
+    
+    const nsIFrame* frame = aContent->GetPrimaryFrame();
+    const ComputedStyle* newStyle = frame ? frame->Style() : nullptr;
+    if (newStyle && newStyle->StyleDisplay()->HasTransform(frame)) {
+      document->ContentInserted(aContent, aContent->GetNextSibling());
     }
+  } else if (accessible && IPCAccessibilityActive() &&
+             StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    accessible->MaybeQueueCacheUpdateForStyleChanges();
   }
 }
 
