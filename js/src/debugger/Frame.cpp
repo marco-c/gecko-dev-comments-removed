@@ -1608,7 +1608,8 @@ static bool DebuggerArguments_getArg(JSContext* cx, unsigned argc, Value* vp) {
         if (fi.argumentSlot() == unsigned(i)) {
           
           
-          if (fi.closedOver() && frame.hasInitialEnvironment()) {
+          if (fi.closedOver() && frame.hasInitialEnvironment() &&
+              iter.pc() >= script->main()) {
             arg = frame.callObj().aliasedBinding(fi);
           } else {
             arg = frame.unaliasedActual(i, DONT_CHECK_ALIASING);
