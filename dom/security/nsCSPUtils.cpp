@@ -304,7 +304,6 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
       return nsIContentSecurityPolicy::WEB_MANIFEST_SRC_DIRECTIVE;
 
     case nsIContentPolicy::TYPE_INTERNAL_WORKER:
-    case nsIContentPolicy::TYPE_INTERNAL_WORKER_STATIC_MODULE:
     case nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER:
     case nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER:
       return nsIContentSecurityPolicy::WORKER_SRC_DIRECTIVE;
@@ -354,7 +353,6 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
     
     
     case nsIContentPolicy::TYPE_INVALID:
-    case nsIContentPolicy::TYPE_END:
       MOZ_ASSERT(false, "Can not map nsContentPolicyType to CSPDirective");
       
   }

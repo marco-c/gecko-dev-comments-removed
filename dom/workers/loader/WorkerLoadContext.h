@@ -88,10 +88,6 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
     
     
     
-    StaticImport,
-    
-    
-    
     DebuggerScript
   };
 
