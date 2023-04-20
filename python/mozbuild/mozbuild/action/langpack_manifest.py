@@ -454,7 +454,7 @@ def create_webmanifest(
     manifest = {
         "langpack_id": main_locale,
         "manifest_version": 2,
-        "applications": {
+        "browser_specific_settings": {
             "gecko": {
                 "id": langpack_eid,
                 "strict_min_version": min_app_ver,
