@@ -1894,25 +1894,23 @@ class Document : public nsINode,
   nsTArray<Element*> GetTopLayer() const;
 
   
-
-
-
-
-
-
-
-
-
-
-  void AsyncRequestFullscreen(UniquePtr<FullscreenRequest>);
-
-  
   
   
   bool FullscreenElementReadyCheck(FullscreenRequest&);
 
   
-  
+
+
+
+
+
+
+
+
+
+
+
+
   void RequestFullscreen(UniquePtr<FullscreenRequest> aRequest,
                          bool aApplyFullscreenDirectly = false);
 
