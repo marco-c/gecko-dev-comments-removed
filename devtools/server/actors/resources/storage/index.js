@@ -4,7 +4,7 @@
 
 "use strict";
 
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const specs = require("resource://devtools/shared/specs/storage.js");
 
 loader.lazyRequireGetter(
@@ -29,10 +29,8 @@ exports.DEFAULT_VALUE = DEFAULT_VALUE;
 const SEPARATOR_GUID = "{9d414cc5-8319-0a04-0586-c0a6ae01670a}";
 exports.SEPARATOR_GUID = SEPARATOR_GUID;
 
-
-const StorageActors = {};
-exports.StorageActors = StorageActors;
-
+class BaseStorageActor extends Actor {
+  
 
 
 
@@ -54,228 +52,142 @@ exports.StorageActors = StorageActors;
 
 
 
+  constructor(storageActor, typeName) {
+    super(storageActor.conn, specs.childSpecs[typeName]);
+
+    this.storageActor = storageActor;
+
+    this.populateStoresForHosts();
+
+    this.onWindowReady = this.onWindowReady.bind(this);
+    this.onWindowDestroyed = this.onWindowDestroyed.bind(this);
+    this.storageActor.on("window-ready", this.onWindowReady);
+    this.storageActor.on("window-destroyed", this.onWindowDestroyed);
+  }
+
+  destroy() {
+    if (!this.storageActor) {
+      return;
+    }
+
+    this.storageActor.off("window-ready", this.onWindowReady);
+    this.storageActor.off("window-destroyed", this.onWindowDestroyed);
+
+    this.hostVsStores.clear();
+
+    super.destroy();
+
+    this.storageActor = null;
+  }
+
+  
 
 
 
 
-function defaults(typeName, observationTopics) {
-  return {
-    typeName,
+  get hosts() {
+    const hosts = new Set();
+    for (const { location } of this.storageActor.windows) {
+      const host = this.getHostName(location);
 
-    
-
-
-
-
-    get hosts() {
-      const hosts = new Set();
-      for (const { location } of this.storageActor.windows) {
-        const host = this.getHostName(location);
-
-        if (host) {
-          hosts.add(host);
-        }
+      if (host) {
+        hosts.add(host);
       }
-      if (this._internalHosts) {
-        for (const host of this._internalHosts) {
-          hosts.add(host);
-        }
+    }
+    if (this._internalHosts) {
+      for (const host of this._internalHosts) {
+        hosts.add(host);
       }
-      return hosts;
-    },
+    }
+    return hosts;
+  }
 
-    
-
-
-
-    get windows() {
-      return this.storageActor.windows;
-    },
-
-    
+  
 
 
-    getHostName(location) {
-      if (!location) {
-        
+
+  get windows() {
+    return this.storageActor.windows;
+  }
+
+  
+
+
+  getHostName(location) {
+    if (!location) {
+      
+      
+      return null;
+    }
+
+    if (this.storageActor.getHostName) {
+      return this.storageActor.getHostName(location);
+    }
+
+    switch (location.protocol) {
+      case "about:":
+        return `${location.protocol}${location.pathname}`;
+      case "chrome:":
         
         return null;
-      }
+      case "data:":
+        
+        return null;
+      case "file:":
+        return `${location.protocol}//${location.pathname}`;
+      case "javascript:":
+        return location.href;
+      case "moz-extension:":
+        return location.origin;
+      case "resource:":
+        return `${location.origin}${location.pathname}`;
+      default:
+        
+        return `${location.protocol}//${location.host}`;
+    }
+  }
 
-      if (this.storageActor.getHostName) {
-        return this.storageActor.getHostName(location);
-      }
+  getNamesForHost(host) {
+    return [...this.hostVsStores.get(host).keys()];
+  }
 
-      switch (location.protocol) {
-        case "about:":
-          return `${location.protocol}${location.pathname}`;
-        case "chrome:":
-          
-          return null;
-        case "data:":
-          
-          return null;
-        case "file:":
-          return `${location.protocol}//${location.pathname}`;
-        case "javascript:":
-          return location.href;
-        case "moz-extension:":
-          return location.origin;
-        case "resource:":
-          return `${location.origin}${location.pathname}`;
-        default:
-          
-          return `${location.protocol}//${location.host}`;
-      }
-    },
+  getValuesForHost(host, name) {
+    if (name) {
+      return [this.hostVsStores.get(host).get(name)];
+    }
+    return [...this.hostVsStores.get(host).values()];
+  }
 
-    initialize(storageActor) {
-      protocol.Actor.prototype.initialize.call(this, null);
+  getObjectsSize(host, names) {
+    return names.length;
+  }
 
-      this.storageActor = storageActor;
+  
 
-      this.populateStoresForHosts();
-      if (observationTopics) {
-        observationTopics.forEach(observationTopic => {
-          Services.obs.addObserver(this, observationTopic);
-        });
-      }
-      this.onWindowReady = this.onWindowReady.bind(this);
-      this.onWindowDestroyed = this.onWindowDestroyed.bind(this);
-      this.storageActor.on("window-ready", this.onWindowReady);
-      this.storageActor.on("window-destroyed", this.onWindowDestroyed);
-    },
 
-    destroy() {
+
+
+
+
+  async onWindowReady(window) {
+    if (!this.hostVsStores) {
+      return;
+    }
+    const host = this.getHostName(window.location);
+    if (host && !this.hostVsStores.has(host)) {
+      await this.populateStoresForHost(host, window);
       if (!this.storageActor) {
-        return;
-      }
-
-      if (observationTopics) {
-        observationTopics.forEach(observationTopic => {
-          Services.obs.removeObserver(this, observationTopic);
-        });
-      }
-      this.storageActor.off("window-ready", this.onWindowReady);
-      this.storageActor.off("window-destroyed", this.onWindowDestroyed);
-
-      this.hostVsStores.clear();
-
-      protocol.Actor.prototype.destroy.call(this);
-
-      this.storageActor = null;
-    },
-
-    getNamesForHost(host) {
-      return [...this.hostVsStores.get(host).keys()];
-    },
-
-    getValuesForHost(host, name) {
-      if (name) {
-        return [this.hostVsStores.get(host).get(name)];
-      }
-      return [...this.hostVsStores.get(host).values()];
-    },
-
-    getObjectsSize(host, names) {
-      return names.length;
-    },
-
-    
-
-
-
-
-
-
-    async onWindowReady(window) {
-      if (!this.hostVsStores) {
-        return;
-      }
-      const host = this.getHostName(window.location);
-      if (host && !this.hostVsStores.has(host)) {
-        await this.populateStoresForHost(host, window);
-        if (!this.storageActor) {
-          
-          return;
-        }
-
-        const data = {};
-        data[host] = this.getNamesForHost(host);
-        this.storageActor.update("added", typeName, data);
-      }
-    },
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    onWindowDestroyed(window, { dontCheckHost } = {}) {
-      if (!this.hostVsStores) {
-        return;
-      }
-      if (!window.location) {
         
         return;
       }
-      const host = this.getHostName(window.location);
-      if (host && (!this.hosts.has(host) || dontCheckHost)) {
-        this.hostVsStores.delete(host);
-        const data = {};
-        data[host] = [];
-        this.storageActor.update("deleted", typeName, data);
-      }
-    },
 
-    form() {
-      const hosts = {};
-      for (const host of this.hosts) {
-        hosts[host] = [];
-      }
+      const data = {};
+      data[host] = this.getNamesForHost(host);
+      this.storageActor.update("added", this.typeName, data);
+    }
+  }
 
-      return {
-        actor: this.actorID,
-        hosts,
-        traits: this._getTraits(),
-      };
-    },
-
-    
-    _getTraits() {
-      return {
-        
-        
-        
-        supportsAddItem: typeof this.addItem === "function",
-        
-        
-        supportsRemoveItem: typeof this.removeItem === "function",
-        supportsRemoveAll: typeof this.removeAll === "function",
-        supportsRemoveAllSessionCookies:
-          typeof this.removeAllSessionCookies === "function",
-      };
-    },
-
-    
-
-
-    populateStoresForHosts() {
-      this.hostVsStores = new Map();
-      for (const host of this.hosts) {
-        this.populateStoresForHost(host);
-      }
-    },
-
-    
+  
 
 
 
@@ -288,6 +200,63 @@ function defaults(typeName, observationTopics) {
 
 
 
+  onWindowDestroyed(window, { dontCheckHost } = {}) {
+    if (!this.hostVsStores) {
+      return;
+    }
+    if (!window.location) {
+      
+      return;
+    }
+    const host = this.getHostName(window.location);
+    if (host && (!this.hosts.has(host) || dontCheckHost)) {
+      this.hostVsStores.delete(host);
+      const data = {};
+      data[host] = [];
+      this.storageActor.update("deleted", this.typeName, data);
+    }
+  }
+
+  form() {
+    const hosts = {};
+    for (const host of this.hosts) {
+      hosts[host] = [];
+    }
+
+    return {
+      actor: this.actorID,
+      hosts,
+      traits: this._getTraits(),
+    };
+  }
+
+  
+  _getTraits() {
+    return {
+      
+      
+      
+      supportsAddItem: typeof this.addItem === "function",
+      
+      
+      supportsRemoveItem: typeof this.removeItem === "function",
+      supportsRemoveAll: typeof this.removeAll === "function",
+      supportsRemoveAllSessionCookies:
+        typeof this.removeAllSessionCookies === "function",
+    };
+  }
+
+  
+
+
+  populateStoresForHosts() {
+    this.hostVsStores = new Map();
+    for (const host of this.hosts) {
+      this.populateStoresForHost(host);
+    }
+  }
+
+  
 
 
 
@@ -306,146 +275,126 @@ function defaults(typeName, observationTopics) {
 
 
 
-    async getStoreObjects(host, names, options = {}) {
-      const offset = options.offset || 0;
-      let size = options.size || MAX_STORE_OBJECT_COUNT;
-      if (size > MAX_STORE_OBJECT_COUNT) {
-        size = MAX_STORE_OBJECT_COUNT;
-      }
-      const sortOn = options.sortOn || "name";
 
-      const toReturn = {
-        offset,
-        total: 0,
-        data: [],
-      };
 
-      let principal = null;
-      if (this.typeName === "indexedDB") {
-        
-        
-        const win = this.storageActor.getWindowFromHost(host);
-        principal = this.getPrincipal(win);
-      }
 
-      if (names) {
-        for (const name of names) {
-          const values = await this.getValuesForHost(
-            host,
-            name,
-            options,
-            this.hostVsStores,
-            principal
-          );
 
-          const { result, objectStores } = values;
 
-          if (result && typeof result.objectsSize !== "undefined") {
-            for (const { key, count } of result.objectsSize) {
-              this.objectsSize[key] = count;
-            }
-          }
 
-          if (result) {
-            toReturn.data.push(...result.data);
-          } else if (objectStores) {
-            toReturn.data.push(...objectStores);
-          } else {
-            toReturn.data.push(...values);
-          }
-        }
 
-        if (this.typeName === "Cache") {
-          
-          
-          
-          toReturn.total = toReturn.data.length;
-        } else {
-          toReturn.total = this.getObjectsSize(host, names, options);
-        }
-      } else {
-        let obj = await this.getValuesForHost(
+
+
+
+
+
+  async getStoreObjects(host, names, options = {}) {
+    const offset = options.offset || 0;
+    let size = options.size || MAX_STORE_OBJECT_COUNT;
+    if (size > MAX_STORE_OBJECT_COUNT) {
+      size = MAX_STORE_OBJECT_COUNT;
+    }
+    const sortOn = options.sortOn || "name";
+
+    const toReturn = {
+      offset,
+      total: 0,
+      data: [],
+    };
+
+    let principal = null;
+    if (this.typeName === "indexedDB") {
+      
+      
+      const win = this.storageActor.getWindowFromHost(host);
+      principal = this.getPrincipal(win);
+    }
+
+    if (names) {
+      for (const name of names) {
+        const values = await this.getValuesForHost(
           host,
-          undefined,
-          undefined,
+          name,
+          options,
           this.hostVsStores,
           principal
         );
-        if (obj.dbs) {
-          obj = obj.dbs;
+
+        const { result, objectStores } = values;
+
+        if (result && typeof result.objectsSize !== "undefined") {
+          for (const { key, count } of result.objectsSize) {
+            this.objectsSize[key] = count;
+          }
         }
 
-        toReturn.total = obj.length;
-        toReturn.data = obj;
-      }
-
-      if (offset > toReturn.total) {
-        
-        toReturn.offset = toReturn.total;
-        toReturn.data = [];
-      } else {
-        
-        const sorted = toReturn.data.sort((a, b) => {
-          return naturalSortCaseInsensitive(
-            a[sortOn],
-            b[sortOn],
-            options.sessionString
-          );
-        });
-        let sliced;
-        if (this.typeName === "indexedDB") {
-          
-          
-          
-          sliced = sorted;
+        if (result) {
+          toReturn.data.push(...result.data);
+        } else if (objectStores) {
+          toReturn.data.push(...objectStores);
         } else {
-          sliced = sorted.slice(offset, offset + size);
+          toReturn.data.push(...values);
         }
-        toReturn.data = sliced.map(a => this.toStoreObject(a));
       }
 
-      return toReturn;
-    },
-
-    getPrincipal(win) {
-      if (win) {
-        return win.document.effectiveStoragePrincipal;
+      if (this.typeName === "Cache") {
+        
+        
+        
+        toReturn.total = toReturn.data.length;
+      } else {
+        toReturn.total = this.getObjectsSize(host, names, options);
       }
-      
-      
-      return Cc["@mozilla.org/systemprincipal;1"].createInstance(
-        Ci.nsIPrincipal
+    } else {
+      let obj = await this.getValuesForHost(
+        host,
+        undefined,
+        undefined,
+        this.hostVsStores,
+        principal
       );
-    },
-  };
-}
+      if (obj.dbs) {
+        obj = obj.dbs;
+      }
 
+      toReturn.total = obj.length;
+      toReturn.data = obj;
+    }
 
+    if (offset > toReturn.total) {
+      
+      toReturn.offset = toReturn.total;
+      toReturn.data = [];
+    } else {
+      
+      const sorted = toReturn.data.sort((a, b) => {
+        return naturalSortCaseInsensitive(
+          a[sortOn],
+          b[sortOn],
+          options.sessionString
+        );
+      });
+      let sliced;
+      if (this.typeName === "indexedDB") {
+        
+        
+        
+        sliced = sorted;
+      } else {
+        sliced = sorted.slice(offset, offset + size);
+      }
+      toReturn.data = sliced.map(a => this.toStoreObject(a));
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-StorageActors.createActor = function(options = {}, overrides = {}) {
-  const actorObject = defaults(
-    options.typeName,
-    options.observationTopics || null
-  );
-  for (const key in overrides) {
-    actorObject[key] = overrides[key];
+    return toReturn;
   }
 
-  const actorSpec = specs.childSpecs[options.typeName];
-  return protocol.ActorClassWithSpec(actorSpec, actorObject);
-};
+  getPrincipal(win) {
+    if (win) {
+      return win.document.effectiveStoragePrincipal;
+    }
+    
+    
+    return Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal);
+  }
+}
+exports.BaseStorageActor = BaseStorageActor;
