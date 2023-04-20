@@ -152,12 +152,17 @@ class CookieBannerListService {
     
     
     rules
-      .map(({ id, domain }) => {
+      .map(({ id, domain, domains }) => {
+        
+        if (domain) {
+          domains = [domain];
+        }
+
         let rule = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
           Ci.nsICookieBannerRule
         );
         rule.id = id;
-        rule.domain = domain;
+        rule.domains = domains;
         return rule;
       })
       .forEach(r => {
@@ -172,7 +177,12 @@ class CookieBannerListService {
   #importRules(rules) {
     lazy.logConsole.debug("importRules", rules);
 
-    rules.forEach(({ id, domains, cookies, click }) => {
+    rules.forEach(({ id, domain, domains, cookies, click }) => {
+      
+      if (domain) {
+        domains = [domain];
+      }
+
       let rule = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
         Ci.nsICookieBannerRule
       );
