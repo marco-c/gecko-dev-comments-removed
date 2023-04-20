@@ -340,21 +340,22 @@ class RtpReplayer final {
   
   static void Replay(const std::string& replay_config_path,
                      const std::string& rtp_dump_path) {
+    webrtc::RtcEventLogNull event_log;
+    Call::Config call_config(&event_log);
+    call_config.trials = new FieldTrialBasedConfig();
+
     std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory =
-        webrtc::CreateDefaultTaskQueueFactory();
+        webrtc::CreateDefaultTaskQueueFactory(call_config.trials);
     auto worker_thread = task_queue_factory->CreateTaskQueue(
         "worker_thread", TaskQueueFactory::Priority::NORMAL);
     rtc::Event sync_event(false,
                           false);
-    webrtc::RtcEventLogNull event_log;
-    Call::Config call_config(&event_log);
     call_config.task_queue_factory = task_queue_factory.get();
-    call_config.trials = new FieldTrialBasedConfig();
-    std::unique_ptr<Call> call;
-    std::unique_ptr<StreamState> stream_state;
 
     
     
+    std::unique_ptr<Call> call;
+    std::unique_ptr<StreamState> stream_state;
     worker_thread->PostTask([&]() {
       call.reset(Call::Create(call_config));
 

@@ -13,6 +13,7 @@
 #include <functional>
 #include <memory>
 
+#include "api/field_trials_view.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "test/gtest.h"
 
@@ -31,9 +32,9 @@ namespace webrtc {
 
 
 
-class TaskQueueTest : public ::testing::TestWithParam<
-                          std::function<std::unique_ptr<TaskQueueFactory>()>> {
-};
+class TaskQueueTest
+    : public ::testing::TestWithParam<std::function<
+          std::unique_ptr<TaskQueueFactory>(const FieldTrialsView*)>> {};
 
 }  
 

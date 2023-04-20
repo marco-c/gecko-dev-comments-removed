@@ -7,19 +7,17 @@
 
 
 
-#ifndef API_TASK_QUEUE_DEFAULT_TASK_QUEUE_FACTORY_H_
-#define API_TASK_QUEUE_DEFAULT_TASK_QUEUE_FACTORY_H_
-
 #include <memory>
 
 #include "api/field_trials_view.h"
 #include "api/task_queue/task_queue_factory.h"
+#include "rtc_base/task_queue_gcd.h"
 
 namespace webrtc {
 
 std::unique_ptr<TaskQueueFactory> CreateDefaultTaskQueueFactory(
-    const FieldTrialsView* field_trials = nullptr);
+    const FieldTrialsView* field_trials) {
+  return CreateTaskQueueGcdFactory();
+}
 
 }  
-
-#endif  
