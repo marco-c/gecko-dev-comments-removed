@@ -2,11 +2,9 @@
 
 
 
-
 import lzma
 import shutil
 import struct
-import sys
 
 
 class Pbzx(object):
@@ -61,7 +59,3 @@ def extract_pbzx(pbzx_path):
         pbzx = Pbzx(f)
         with open(pbzx_path + ".cpio", "wb") as out:
             shutil.copyfileobj(pbzx, out)
-
-
-if __name__ == "__main__":
-    extract_pbzx(sys.argv[1])
