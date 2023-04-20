@@ -306,12 +306,6 @@ var CaptivePortalWatcher = {
         callback: () => {
           this.ensureCaptivePortalTab();
 
-          Services.telemetry.recordEvent(
-            "networking.captive_portal",
-            "login_button_pressed",
-            "login_button"
-          );
-
           
           return true;
         },
@@ -337,12 +331,6 @@ var CaptivePortalWatcher = {
         eventCallback: closeHandler,
       },
       buttons
-    );
-
-    Services.telemetry.recordEvent(
-      "networking.captive_portal",
-      "login_infobar_shown",
-      "infobar"
     );
 
     gBrowser.tabContainer.addEventListener("TabSelect", this);
