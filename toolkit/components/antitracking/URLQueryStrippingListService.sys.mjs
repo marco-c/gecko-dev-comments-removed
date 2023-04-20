@@ -1,12 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -27,7 +23,7 @@ XPCOMUtils.defineLazyGetter(lazy, "logger", () => {
   });
 });
 
-class URLQueryStrippingListService {
+export class URLQueryStrippingListService {
   classId = Components.ID("{afff16f0-3fd2-4153-9ccd-c6d9abd879e4}");
   QueryInterface = ChromeUtils.generateQI(["nsIURLQueryStrippingListService"]);
 
@@ -58,7 +54,7 @@ class URLQueryStrippingListService {
   }
 
   async #init() {
-    
+    // If there is already an init pending wait for it to complete.
     if (this.#pendingInit) {
       lazy.logger.debug("#init: Waiting for pending init");
       await this.#pendingInit;
@@ -69,8 +65,8 @@ class URLQueryStrippingListService {
       lazy.logger.debug("#init: Skip, already initialized");
       return;
     }
-    
-    
+    // Create a promise that resolves when init is complete. This allows us to
+    // handle incoming init calls while we're still initializing.
     this.#pendingInit = new Promise(initResolve => {
       this.#initResolver = initResolve;
     });
@@ -78,8 +74,8 @@ class URLQueryStrippingListService {
 
     lazy.logger.debug("#init: Run");
 
-    
-    
+    // We can only access the remote settings in the parent process. For content
+    // processes, we will use sharedData to sync the list to content processes.
     if (this.isParentProcess) {
       this.#rs = lazy.RemoteSettings(COLLECTION_NAME);
 
@@ -88,24 +84,24 @@ class URLQueryStrippingListService {
         this.#rs.on("sync", this.#onSyncCallback);
       }
 
-      
+      // Get the initially available entries for remote settings.
       let entries;
       try {
         entries = await this.#rs.get();
       } catch (e) {}
       this._onRemoteSettingsUpdate(entries || []);
     } else {
-      
-      
+      // Register the message listener for the remote settings update from the
+      // sharedData.
       Services.cpmm.sharedData.addEventListener("change", this);
 
-      
+      // Get the remote settings data from the shared data.
       let data = this._getListFromSharedData();
 
       this._onRemoteSettingsUpdate(data);
     }
 
-    
+    // Get the list from pref.
     this._onPrefUpdate(
       PREF_STRIP_LIST_NAME,
       Services.prefs.getStringPref(PREF_STRIP_LIST_NAME, "")
@@ -125,12 +121,12 @@ class URLQueryStrippingListService {
   }
 
   async #shutdown() {
-    
+    // Ensure any pending init is done before shutdown.
     if (this.#pendingInit) {
       await this.#pendingInit;
     }
 
-    
+    // Already shut down.
     if (!this.#isInitialized) {
       return;
     }
@@ -138,7 +134,7 @@ class URLQueryStrippingListService {
 
     lazy.logger.debug("#shutdown");
 
-    
+    // Unregister RemoteSettings listener (if it was registered).
     if (this.#onSyncCallback) {
       this.#rs.off("sync", this.#onSyncCallback);
       this.#onSyncCallback = null;
@@ -163,9 +159,9 @@ class URLQueryStrippingListService {
       }
     }
 
-    
-    
-    
+    // Because only the parent process will get the remote settings update, so
+    // we will sync the list to the shared data so that content processes can
+    // get the list.
     if (this.isParentProcess) {
       Services.ppmm.sharedData.set(SHARED_DATA_KEY, {
         stripList: this.remoteStripList,
@@ -264,14 +260,14 @@ class URLQueryStrippingListService {
       return;
     }
 
-    
+    // Ensure init.
     await this.#init();
 
-    
+    // Clear the lists of remote settings.
     this._onRemoteSettingsUpdate([]);
 
-    
-    
+    // Clear the user pref for the strip list. The pref change observer will
+    // handle the rest of the work.
     Services.prefs.clearUserPref(PREF_STRIP_LIST_NAME);
     Services.prefs.clearUserPref(PREF_ALLOW_LIST_NAME);
   }
@@ -313,5 +309,3 @@ class URLQueryStrippingListService {
     return this.#isInitialized;
   }
 }
-
-var EXPORTED_SYMBOLS = ["URLQueryStrippingListService"];

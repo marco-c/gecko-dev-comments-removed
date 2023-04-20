@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["PurgeTrackerService"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const THREE_DAYS_MS = 3 * 24 * 60 * 1000;
 
@@ -44,24 +38,24 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "privacy.purge_trackers.consider_entity_list"
 );
 
-function PurgeTrackerService() {}
+export function PurgeTrackerService() {}
 
 PurgeTrackerService.prototype = {
   classID: Components.ID("{90d1fd17-2018-4e16-b73c-a04a26fa6dd4}"),
   QueryInterface: ChromeUtils.generateQI(["nsIPurgeTrackerService"]),
 
-  
-  
+  // Purging is batched for cookies to avoid clearing too much data
+  // at once. This flag tells us whether this is the first daily iteration.
   _firstIteration: true,
 
-  
-  
+  // We can only know asynchronously if a host is matched by the tracking
+  // protection list, so we cache the result for faster future lookups.
   _trackingState: new Map(),
 
   observe(aSubject, aTopic, aData) {
     switch (aTopic) {
       case "idle-daily":
-        
+        // only allow one idle-daily listener to trigger until the list has been fully parsed.
         Services.obs.removeObserver(this, "idle-daily");
         this.purgeTrackingCookieJars();
         break;
@@ -83,8 +77,8 @@ PurgeTrackerService.prototype = {
     }
 
     if (!this._trackingState.has(host)) {
-      
-      
+      // Temporarily set to false to avoid doing several lookups if a site has
+      // several subframes on the same domain.
       this._trackingState.set(host, false);
 
       await new Promise(resolve => {
@@ -101,7 +95,7 @@ PurgeTrackerService.prototype = {
             }
           );
         } catch {
-          
+          // Error in asyncClassifyLocalWithFeatures, it is not a tracker.
           this._trackingState.set(host, false);
           resolve();
         }
@@ -138,19 +132,19 @@ PurgeTrackerService.prototype = {
     let origin = principal.origin;
     lazy.logger.debug(`Maybe purging ${origin}.`);
 
-    
-    
+    // First, check if any site with that base domain had received
+    // user interaction in the last N days.
     let hasInteraction = this._baseDomainsWithInteraction.has(
       principal.baseDomain
     );
-    
-    
+    // Exit early unless we want to see if we're dealing with a tracker,
+    // for telemetry.
     if (hasInteraction && !Services.telemetry.canRecordPrereleaseData) {
       lazy.logger.debug(`${origin} has user interaction, exiting.`);
       return;
     }
 
-    
+    // Second, confirm that we're looking at a tracker.
     let isTracker = await this.isTracker(principal);
     if (!isTracker) {
       lazy.logger.debug(`${origin} is not a tracker, exiting.`);
@@ -162,7 +156,7 @@ PurgeTrackerService.prototype = {
         principal.baseDomain
       );
 
-      
+      // Collect how much longer the user interaction will be valid for, in hours.
       let timeRemaining = Math.floor(
         (expireTimeMs - Date.now()) / 1000 / 60 / 60 / 24
       );
@@ -226,10 +220,10 @@ PurgeTrackerService.prototype = {
   },
 
   resetPurgeList() {
-    
-    
+    // We've reached the end of the cookies.
+    // Restore the idle-daily listener so it will purge again tomorrow.
     Services.obs.addObserver(this, "idle-daily");
-    
+    // Set the date to 0 so we will start at the beginning of the list next time.
     Services.prefs.setStringPref(
       "privacy.purge_trackers.date_in_cookie_database",
       "0"
@@ -274,11 +268,11 @@ PurgeTrackerService.prototype = {
     durationHistogram.add(duration);
   },
 
-  
-
-
-
-
+  /**
+   * This loops through all cookies saved in the database and checks if they are a tracking cookie, if it is it checks
+   * that they have an interaction permission which is still valid. If the Permission is not valid we delete all data
+   * associated with the site that owns that cookie.
+   */
   async purgeTrackingCookieJars() {
     let purgeEnabled = Services.prefs.getBoolPref(
       "privacy.purge_trackers.enabled",
@@ -300,9 +294,9 @@ PurgeTrackerService.prototype = {
       false
     );
 
-    
-    
-    
+    // This is a hotfix for bug 1672394. It avoids purging if the user has enabled mechanisms
+    // that regularly clear the storageAccessAPI permission, such as clearing history or
+    // "site settings" (permissions) on shutdown.
     if (
       sanitizeOnShutdownEnabled &&
       (clearHistoryOnShutdown || clearSiteSettingsOnShutdown)
@@ -319,11 +313,11 @@ PurgeTrackerService.prototype = {
       return;
     }
 
-    
-    
-    
-    
-    
+    // Purge cookie jars for following cookie behaviors.
+    //   * BEHAVIOR_REJECT_FOREIGN
+    //   * BEHAVIOR_LIMIT_FOREIGN
+    //   * BEHAVIOR_REJECT_TRACKER (ETP)
+    //   * BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN (dFPI)
     let cookieBehavior = Services.cookies.getCookieBehavior(false);
 
     let activeWithCookieBehavior =
@@ -341,7 +335,7 @@ PurgeTrackerService.prototype = {
       return;
     }
     lazy.logger.log("Purging trackers enabled, beginning batch.");
-    
+    // How many cookies to loop through in each batch before we quit
     const MAX_PURGE_COUNT = Services.prefs.getIntPref(
       "privacy.purge_trackers.max_purge_count",
       100
@@ -367,16 +361,16 @@ PurgeTrackerService.prototype = {
       }
     }
 
-    
-    
-    
+    // Record how long this iteration took for telemetry.
+    // This is a tuple of start and end time, the second
+    // part will be added at the end of this function.
     let duration = [Cu.now()];
 
-    
-
-
-
-
+    /**
+     * We record the creationTime of the last cookie we looked at and
+     * start from there next time. This way even if new cookies are added or old ones are deleted we
+     * have a reliable way of finding our spot.
+     **/
     let saved_date = Services.prefs.getStringPref(
       "privacy.purge_trackers.date_in_cookie_database",
       "0"
@@ -384,7 +378,7 @@ PurgeTrackerService.prototype = {
 
     let maybeClearPrincipals = new Map();
 
-    
+    // TODO We only need the host name and creationTime, this gives too much info. See bug 1610373.
     let cookies = Services.cookies.getCookiesSince(saved_date);
     cookies = cookies.slice(0, MAX_PURGE_COUNT);
 
@@ -429,8 +423,8 @@ PurgeTrackerService.prototype = {
       saved_date = cookie.creationTime;
     }
 
-    
-    
+    // We only consider recently active storage and don't batch it,
+    // so only do this in the first iteration.
     if (this._firstIteration) {
       let startDate = Date.now() - THREE_DAYS_MS;
       let storagePrincipals = lazy.gStorageActivityService.getActiveOrigins(
@@ -455,7 +449,7 @@ PurgeTrackerService.prototype = {
     duration.push(Cu.now());
     this._telemetryData.durationIntervals.push(duration);
 
-    
+    // We've reached the end, no need to repeat again until next idle-daily.
     if (!cookies.length || cookies.length < 100) {
       lazy.logger.log(
         "All cookie purging finished, resetting list until tomorrow."

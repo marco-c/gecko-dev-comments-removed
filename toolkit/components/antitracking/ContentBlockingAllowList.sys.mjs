@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ContentBlockingAllowList"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -12,14 +8,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
-
-
-
-
-
-
-
-const ContentBlockingAllowList = {
+/**
+ * A helper module to manage the Content Blocking Allow List.
+ *
+ * This module provides a couple of utility APIs for adding or
+ * removing a given browser object to the Content Blocking allow
+ * list.
+ */
+export const ContentBlockingAllowList = {
   _observingLastPBContext: false,
 
   _maybeSetupLastPBContextObserver() {
@@ -45,7 +41,7 @@ const ContentBlockingAllowList = {
     let principal =
       browser.browsingContext.currentWindowGlobal
         ?.contentBlockingAllowListPrincipal;
-    
+    // We can only use content principals for this purpose.
     if (!principal || !principal.isContentPrincipal) {
       return null;
     }
@@ -64,20 +60,20 @@ const ContentBlockingAllowList = {
       : Ci.nsIPermissionManager.EXPIRE_NEVER;
   },
 
-  
-
-
-
-
+  /**
+   * Returns false if this module cannot handle the current document loaded in
+   * the browser object.  This can happen for example for about: or file:
+   * documents.
+   */
   canHandle(browser) {
     return this._basePrincipalForAntiTrackingCommon(browser) != null;
   },
 
-  
-
-
+  /**
+   * Add the given browser object to the Content Blocking allow list.
+   */
   add(browser) {
-    
+    // Start observing PB last-context-exit notification to do the needed cleanup.
     this._maybeSetupLastPBContextObserver();
 
     let prin = this._basePrincipalForAntiTrackingCommon(browser);
@@ -91,19 +87,19 @@ const ContentBlockingAllowList = {
     );
   },
 
-  
-
-
+  /**
+   * Remove the given browser object from the Content Blocking allow list.
+   */
   remove(browser) {
     let prin = this._basePrincipalForAntiTrackingCommon(browser);
     let type = this._permissionTypeFor(browser);
     Services.perms.removeFromPrincipal(prin, type);
   },
 
-  
-
-
-
+  /**
+   * Returns true if the current browser has loaded a document that is on the
+   * Content Blocking allow list.
+   */
   includes(browser) {
     let prin = this._basePrincipalForAntiTrackingCommon(browser);
     let type = this._permissionTypeFor(browser);

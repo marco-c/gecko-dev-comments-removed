@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-function URLDecorationAnnotationsService() {}
+export function URLDecorationAnnotationsService() {}
 
 const lazy = {};
 
@@ -24,9 +24,9 @@ URLDecorationAnnotationsService.prototype = {
   _prefBranch: null,
 
   onDataAvailable(entries) {
-    
-    
-    
+    // Use this technique in order to ensure the pref cannot be changed by the
+    // user e.g. through about:config.  This preferences is only intended as a
+    // mechanism for reflecting this data to content processes.
     if (this._prefBranch === null) {
       this._prefBranch = Services.prefs.getDefaultBranch("");
     }
@@ -60,13 +60,11 @@ URLDecorationAnnotationsService.prototype = {
       this.onDataAvailable(current);
     });
 
-    
-    
+    // Now trigger an update from the server if necessary to get a fresh copy
+    // of the data
     return client.get({}).then(entries => {
       this.onDataAvailable(entries);
       return undefined;
     });
   },
 };
-
-var EXPORTED_SYMBOLS = ["URLDecorationAnnotationsService"];
