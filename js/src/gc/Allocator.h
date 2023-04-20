@@ -101,7 +101,7 @@ namespace detail {
 
 
 template <AllowGC allowGC = CanGC>
-gc::TenuredCell* AllocateTenuredImpl(JSContext* cx, gc::AllocKind kind,
+gc::TenuredCell* AllocateTenuredCell(JSContext* cx, gc::AllocKind kind,
                                      size_t size);
 
 }  
@@ -109,30 +109,43 @@ gc::TenuredCell* AllocateTenuredImpl(JSContext* cx, gc::AllocKind kind,
 
 
 
+
+
+
+
+
 template <typename T, AllowGC allowGC, typename... Args>
 T* gc::CellAllocator::NewCell(JSContext* cx, Args&&... args) {
   static_assert(std::is_base_of_v<gc::Cell, T>);
-  if constexpr (std::is_base_of_v<JSString, T> &&
-                !std::is_base_of_v<JSAtom, T> &&
-                !std::is_base_of_v<JSExternalString, T>) {
-    return AllocateString<T, allowGC>(cx, std::forward<Args>(args)...);
-  } else if constexpr (std::is_base_of_v<JS::BigInt, T>) {
-    return AllocateBigInt<allowGC>(cx, std::forward<Args>(args)...);
-  } else if constexpr (std::is_base_of_v<JSObject, T>) {
+
+  
+  if constexpr (std::is_base_of_v<JSObject, T>) {
     return static_cast<T*>(
         AllocateObject<allowGC>(cx, std::forward<Args>(args)...));
-  } else {
-    
-    
-    
-    
-    
+  }
+
+  
+  else if constexpr (std::is_base_of_v<JS::BigInt, T>) {
+    return AllocateBigInt<allowGC>(cx, std::forward<Args>(args)...);
+  }
+
+  
+  
+  
+  
+  else if constexpr (std::is_base_of_v<JSString, T> &&
+                     !std::is_base_of_v<JSAtom, T> &&
+                     !std::is_base_of_v<JSExternalString, T>) {
+    return AllocateString<T, allowGC>(cx, std::forward<Args>(args)...);
+  }
+
+  else {
     
     
     
     gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
     gc::TenuredCell* cell =
-        gc::detail::AllocateTenuredImpl<allowGC>(cx, kind, sizeof(T));
+        gc::detail::AllocateTenuredCell<allowGC>(cx, kind, sizeof(T));
     if (!cell) {
       return nullptr;
     }
