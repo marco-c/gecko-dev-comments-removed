@@ -624,13 +624,6 @@ nsresult HTMLEditor::SetFinalPosition(int32_t aX, int32_t aY) {
   return rv;
 }
 
-void HTMLEditor::AddPositioningOffset(int32_t& aX, int32_t& aY) {
-  
-  const int32_t positioningOffset = StaticPrefs::editor_positioning_offset();
-  aX += positioningOffset;
-  aY += positioningOffset;
-}
-
 nsresult HTMLEditor::SetPositionToAbsoluteOrStatic(Element& aElement,
                                                    bool aEnabled) {
   nsAutoString positionValue;
@@ -687,7 +680,6 @@ nsresult HTMLEditor::SetPositionToAbsolute(Element& aElement) {
         "absolute) failed, but ignored");
   }
 
-  AddPositioningOffset(x, y);
   SnapToGrid(x, y);
   if (styledElement) {
     
