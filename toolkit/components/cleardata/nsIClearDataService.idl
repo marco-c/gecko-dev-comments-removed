@@ -155,6 +155,13 @@ interface nsIClearDataService : nsISupports
 
 
 
+
+  void cleanupAfterDeletionAtShutdown(in uint32_t aFlags, in nsIClearDataCallback aCallback);
+
+  
+
+
+
   
 
 
