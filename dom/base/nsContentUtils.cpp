@@ -741,9 +741,10 @@ class nsContentUtils::UserInteractionObserver final
 
 static constexpr nsLiteralCString kRfpPrefs[] = {
     "privacy.resistFingerprinting"_ns,
-    "privacy.resistFingerprintingLite"_ns,
-    "privacy.resistFingerprintingLite.overrides"_ns,
-    "privacy.resistFingerprinting.testGranularityMask"_ns,
+    "privacy.resistFingerprinting.pbmode"_ns,
+    "privacy.fingerprintingProtection"_ns,
+    "privacy.fingerprintingProtection.pbmode"_ns,
+    "privacy.fingerprintingProtection.overrides"_ns,
 };
 
 static void RecomputeResistFingerprintingAllDocs(const char*, void*) {
@@ -2202,10 +2203,6 @@ inline bool CookieJarSettingsSaysShouldResistFingerprinting(
   return cookieJarSettings->GetShouldResistFingerprinting();
 }
 
-
-const unsigned int sWebExtensionExemptMask = 0x01;
-const unsigned int sNonPBMExemptMask = 0x02;
-const unsigned int sSpecificDomainsExemptMask = 0x04;
 const char* kExemptedDomainsPrefName =
     "privacy.resistFingerprinting.exemptedDomains";
 
@@ -2331,8 +2328,10 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     return false;
   }
 
-  if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-      sNonPBMExemptMask) {
+  if (!StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
+      !StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly()) {
+    
+    
     
     if (aOriginAttributes.mPrivateBrowsingId == 0) {
       return false;
@@ -2342,30 +2341,21 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
   bool isExemptDomain = false;
   
   if (aURI->SchemeIs("about") || aURI->SchemeIs("chrome") ||
-      aURI->SchemeIs("resource") || aURI->SchemeIs("view-source")) {
+      aURI->SchemeIs("resource") || aURI->SchemeIs("view-source") ||
+      aURI->SchemeIs("moz-extension")) {
     return false;
   }
 
-  if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-      sWebExtensionExemptMask) {
-    if (aURI->SchemeIs("moz-extension")) {
-      return false;
-    }
-  }
+  nsAutoCString list;
+  Preferences::GetCString(kExemptedDomainsPrefName, list);
+  ToLowerCase(list);
+  isExemptDomain = IsURIInList(aURI, list);
 
-  if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-      sSpecificDomainsExemptMask) {
-    nsAutoCString list;
-    Preferences::GetCString(kExemptedDomainsPrefName, list);
-    ToLowerCase(list);
-    isExemptDomain = IsURIInList(aURI, list);
-
-    if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
-                     mozilla::LogLevel::Debug)) {
-      nsAutoCString url;
-      aURI->GetHost(url);
-      LogDomainAndPrefList(kExemptedDomainsPrefName, url, isExemptDomain);
-    }
+  if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
+                   mozilla::LogLevel::Debug)) {
+    nsAutoCString url;
+    aURI->GetHost(url);
+    LogDomainAndPrefList(kExemptedDomainsPrefName, url, isExemptDomain);
   }
 
   return !isExemptDomain;
@@ -2419,8 +2409,10 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
 
   auto originAttributes =
       BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
-  if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-      sNonPBMExemptMask) {
+  if (!StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
+      !StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly()) {
+    
+    
     
     if (originAttributes.mPrivateBrowsingId == 0) {
       return false;
@@ -2433,24 +2425,19 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     return false;
   }
 
-  if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-      sWebExtensionExemptMask) {
-    if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
-      return false;
-    }
+  
+  if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
+    return false;
   }
 
   bool isExemptDomain = false;
-  if (StaticPrefs::privacy_resistFingerprinting_testGranularityMask() &
-      sSpecificDomainsExemptMask) {
-    aPrincipal->IsURIInPrefList(kExemptedDomainsPrefName, &isExemptDomain);
+  aPrincipal->IsURIInPrefList(kExemptedDomainsPrefName, &isExemptDomain);
 
-    if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
-                     mozilla::LogLevel::Debug)) {
-      nsAutoCString origin;
-      aPrincipal->GetAsciiOrigin(origin);
-      LogDomainAndPrefList(kExemptedDomainsPrefName, origin, isExemptDomain);
-    }
+  if (MOZ_LOG_TEST(nsContentUtils::ResistFingerprintingLog(),
+                   mozilla::LogLevel::Debug)) {
+    nsAutoCString origin;
+    aPrincipal->GetAsciiOrigin(origin);
+    LogDomainAndPrefList(kExemptedDomainsPrefName, origin, isExemptDomain);
   }
 
   
