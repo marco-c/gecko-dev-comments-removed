@@ -114,30 +114,16 @@ class CachePanel extends Component {
       cache.storageDataSize ||
       cache.lastModified ||
       cache.expirationTime ||
-      cache.deviceID ||
-      
-      
-      
-      cache.dataSize ||
-      cache.expires ||
-      cache.device
+      cache.deviceID
     ) {
       object = {
         [CACHE]: {
           [LAST_FETCHED]: this.getDate(cache.lastFetched) || NOT_AVAILABLE,
           [FETCH_COUNT]: cache.fetchCount || NOT_AVAILABLE,
-          
-          
-          [DATA_SIZE]: cache.storageDataSize || cache.dataSize || NOT_AVAILABLE,
+          [DATA_SIZE]: cache.storageDataSize || NOT_AVAILABLE,
           [LAST_MODIFIED]: this.getDate(cache.lastModified) || NOT_AVAILABLE,
-          [EXPIRES]:
-            
-            
-            this.getDate(cache.expirationTime || cache.expires) ||
-            NOT_AVAILABLE,
-          
-          
-          [DEVICE]: cache.deviceID || cache.device || NOT_AVAILABLE,
+          [EXPIRES]: this.getDate(cache.expirationTime) || NOT_AVAILABLE,
+          [DEVICE]: cache.deviceID || NOT_AVAILABLE,
         },
       };
     } else {
