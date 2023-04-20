@@ -7,6 +7,8 @@
 #include "WebTransportParent.h"
 #include "Http3WebTransportSession.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/ipc/BackgroundParent.h"
@@ -71,7 +73,6 @@ void WebTransportParent::Create(
   }
 
   mOwningEventTarget = GetCurrentSerialEventTarget();
-
   MOZ_ASSERT(aPrincipal);
   nsCOMPtr<nsIURI> uri;
   rv = NS_NewURI(getter_AddRefs(uri), aURL);
@@ -535,14 +536,45 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
   return NS_OK;
 }
 
+
+
+
+::mozilla::ipc::IPCResult WebTransportParent::RecvOutgoingDatagram(
+    nsTArray<uint8_t>&& aData, const TimeStamp& aExpirationTime,
+    OutgoingDatagramResolver&& aResolver) {
+  LOG(("WebTransportParent sending datagram"));
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  MOZ_ASSERT(!mOutgoingDatagramResolver);
+  MOZ_ASSERT(mWebTransport);
+
+  Unused << aExpirationTime;
+
+  mOutgoingDatagramResolver = std::move(aResolver);
+  
+  
+  
+  
+  Unused << mWebTransport->SendDatagram(aData, 0);
+
+  return IPC_OK();
+}
+
 NS_IMETHODIMP WebTransportParent::OnDatagramReceived(
     const nsTArray<uint8_t>& aData) {
   
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+
+  LOG(("WebTransportParent received datagram"));
+
+  TimeStamp ts = TimeStamp::Now();
+  Unused << SendIncomingDatagram(aData, ts);
+
   return NS_OK;
 }
 
 NS_IMETHODIMP WebTransportParent::OnDatagramReceivedInternal(
     nsTArray<uint8_t>&& aData) {
+  
   
   return NS_OK;
 }
@@ -550,11 +582,26 @@ NS_IMETHODIMP WebTransportParent::OnDatagramReceivedInternal(
 NS_IMETHODIMP
 WebTransportParent::OnOutgoingDatagramOutCome(
     uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome) {
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
   
+  nsresult result = NS_ERROR_FAILURE;
+  Unused << aId;
+
+  if (aOutCome == WebTransportSessionEventListener::DatagramOutcome::SENT) {
+    result = NS_OK;
+  }
+
+  MOZ_ASSERT(mOutgoingDatagramResolver);
+  mOutgoingDatagramResolver(result);
+
+  
+  mOutgoingDatagramResolver = nullptr;
+
   return NS_OK;
 }
 
 NS_IMETHODIMP WebTransportParent::OnMaxDatagramSize(uint64_t aSize) {
+  
   
   return NS_OK;
 }
