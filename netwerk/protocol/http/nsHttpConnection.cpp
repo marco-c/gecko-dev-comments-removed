@@ -653,8 +653,8 @@ nsresult nsHttpConnection::CreateTunnelStream(
     return NS_ERROR_UNEXPECTED;
   }
 
-  RefPtr<nsHttpConnection> conn =
-      mSpdySession->CreateTunnelStream(httpTransaction, mCallbacks, mRtt);
+  RefPtr<nsHttpConnection> conn = mSpdySession->CreateTunnelStream(
+      httpTransaction, mCallbacks, mRtt, aIsWebSocket);
   
   
   
