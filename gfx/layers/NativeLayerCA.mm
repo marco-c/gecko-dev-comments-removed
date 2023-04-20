@@ -862,8 +862,11 @@ bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
   MOZ_ASSERT(mTextureHost);
 
   
-  if (mTextureHost->IsFromDRMSource()) {
-    return true;
+  
+  if (@available(macOS 10.15, iOS 13.0, *)) {
+    if (mTextureHost->IsFromDRMSource()) {
+      return true;
+    }
   }
 
   
