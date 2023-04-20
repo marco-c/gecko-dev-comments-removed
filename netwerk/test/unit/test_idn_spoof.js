@@ -229,13 +229,13 @@ let testCases = [
   
   ["xn--u8j5tr47nw5ya.jp", "\u304b\u30fc\u91ce\u7403.jp", kSafe],
   
-  ["xn--weka801xo02a.com", "\u30fc\u52d5\u753b\u30fc.com", kUnsafe, "DISABLED"],
+  ["xn--weka801xo02a.com", "\u30fc\u52d5\u753b\u30fc.com", kUnsafe],
   
-  ["xn--wekz60nb2ay85atj0b.jp", "\u65e5\u672c\u30fc\u91ce\u7403.jp", kUnsafe, "DISABLED"],
+  ["xn--wekz60nb2ay85atj0b.jp", "\u65e5\u672c\u30fc\u91ce\u7403.jp", kUnsafe],
   
-  ["xn--wek060nb2a.jp", "\u30fc\u65e5\u672c.jp", kUnsafe, "DISABLED"],
+  ["xn--wek060nb2a.jp", "\u30fc\u65e5\u672c.jp", kUnsafe],
   
-  ["xn--abcdef-r64e.jp", "abc\u30fcdef.jp", kUnsafe, "DISABLED"],
+  ["xn--abcdef-r64e.jp", "abc\u30fcdef.jp", kUnsafe],
 
   
   
