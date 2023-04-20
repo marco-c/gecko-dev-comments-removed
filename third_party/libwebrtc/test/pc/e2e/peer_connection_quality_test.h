@@ -96,6 +96,7 @@ class PeerConnectionE2EQualityTest
   
   std::string GetFieldTrials(const RunParams& run_params);
   void OnTrackCallback(absl::string_view peer_name,
+                       VideoSubscription peer_subscription,
                        rtc::scoped_refptr<RtpTransceiverInterface> transceiver,
                        std::vector<VideoConfig> remote_video_configs);
   
