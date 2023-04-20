@@ -2621,8 +2621,7 @@ auto nsIFrame::ComputeShouldPaintBackground() const -> ShouldPaintBackground {
 
 bool nsIFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
                                               const nsDisplayListSet& aLists) {
-  const bool hitTesting = aBuilder->IsForEventDelivery();
-  if (hitTesting && !aBuilder->HitTestIsForVisibility()) {
+  if (aBuilder->IsForEventDelivery() && !aBuilder->HitTestIsForVisibility()) {
     
     
     
@@ -2632,21 +2631,11 @@ bool nsIFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
     return false;
   }
 
-  AppendedBackgroundType result = AppendedBackgroundType::None;
-  
-  
-  if (hitTesting || !StyleBackground()->IsTransparent(this) ||
-      StyleDisplay()->HasAppearance() ||
-      
-      
-      
-      EffectCompositor::HasAnimationsForCompositor(
-          this, DisplayItemType::TYPE_BACKGROUND_COLOR)) {
-    result = nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
-        aBuilder, this,
-        GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this),
-        aLists.BorderBackground());
-  }
+  const AppendedBackgroundType result =
+      nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
+          aBuilder, this,
+          GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this),
+          aLists.BorderBackground());
 
   if (result == AppendedBackgroundType::None) {
     aBuilder->BuildCompositorHitTestInfoIfNeeded(this,
