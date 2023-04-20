@@ -2338,17 +2338,6 @@ public class GeckoSession {
 
 
 
-
-  @AnyThread
-  public @NonNull GeckoResult<Boolean> hasCookieBannerRuleForBrowsingContextTree() {
-    return mEventDispatcher.queryBoolean("GeckoView:HasCookieBannerRuleForBrowsingContextTree");
-  }
-
-  
-
-
-
-
   @AnyThread
   public @NonNull SessionPdfFileSaver getPdfFileSaver() {
     if (mPdfFileSaver == null) {
