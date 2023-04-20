@@ -168,27 +168,27 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::gc::ArenaLists arenas;
 
   
-  js::ZoneData<void*> data;
+  js::MainThreadData<void*> data;
 
-  js::ZoneData<uint32_t> tenuredBigInts;
+  js::MainThreadData<uint32_t> tenuredBigInts;
 
-  js::ZoneOrIonCompileData<uint64_t> nurseryAllocatedStrings;
-
-  
-  js::ZoneOrGCTaskData<size_t> markedStrings;
-  js::ZoneOrGCTaskData<size_t> finalizedStrings;
-
-  js::ZoneData<bool> allocNurseryStrings;
-  js::ZoneData<bool> allocNurseryBigInts;
+  js::MainThreadOrIonCompileData<uint64_t> nurseryAllocatedStrings;
 
   
+  js::MainThreadOrGCTaskData<size_t> markedStrings;
+  js::MainThreadOrGCTaskData<size_t> finalizedStrings;
+
+  js::MainThreadData<bool> allocNurseryStrings;
+  js::MainThreadData<bool> allocNurseryBigInts;
+
   
   
   
   
   
   
-  js::ZoneData<bool> suppressAllocationMetadataBuilder;
+  
+  js::MainThreadData<bool> suppressAllocationMetadataBuilder;
 
   
   
@@ -204,8 +204,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::UniquePtr<js::ScriptFinalWarmUpCountMap> scriptFinalWarmUpCountMap;
 #endif
 
-  js::ZoneData<js::StringStats> previousGCStringStats;
-  js::ZoneData<js::StringStats> stringStats;
+  js::MainThreadData<js::StringStats> previousGCStringStats;
+  js::MainThreadData<js::StringStats> stringStats;
 
 #ifdef DEBUG
   js::MainThreadData<unsigned> gcSweepGroupIndex;
@@ -215,13 +215,14 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
  private:
   
-  js::ZoneOrGCTaskData<js::gc::UniqueIdMap> uniqueIds_;
+  js::MainThreadOrGCTaskData<js::gc::UniqueIdMap> uniqueIds_;
 
   
   uint32_t tenuredAllocsSinceMinorGC_ = 0;
 
   
-  js::ZoneOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>> gcWeakMapList_;
+  js::MainThreadOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>>
+      gcWeakMapList_;
 
   
   using CompartmentVector =
@@ -233,13 +234,15 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   
-  js::ZoneOrGCTaskData<mozilla::LinkedList<detail::WeakCacheBase>> weakCaches_;
+  js::MainThreadOrGCTaskData<mozilla::LinkedList<detail::WeakCacheBase>>
+      weakCaches_;
 
   
   
   
-  js::ZoneOrGCTaskData<js::gc::EphemeronEdgeTable> gcEphemeronEdges_;
-  js::ZoneOrGCTaskData<js::gc::EphemeronEdgeTable> gcNurseryEphemeronEdges_;
+  js::MainThreadOrGCTaskData<js::gc::EphemeronEdgeTable> gcEphemeronEdges_;
+  js::MainThreadOrGCTaskData<js::gc::EphemeronEdgeTable>
+      gcNurseryEphemeronEdges_;
 
   
   
@@ -253,30 +256,30 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
                     js::MovableCellHasher<js::HeapPtr<JSObject*>>,
                     js::SystemAllocPolicy>;
 
-  js::ZoneData<JS::WeakCache<RttValueObjectSet>> rttValueObjects_;
+  js::MainThreadData<JS::WeakCache<RttValueObjectSet>> rttValueObjects_;
 
   js::MainThreadData<js::UniquePtr<js::RegExpZone>> regExps_;
 
   
-  js::ZoneOrGCTaskData<js::SparseBitmap> markedAtoms_;
+  js::MainThreadOrGCTaskData<js::SparseBitmap> markedAtoms_;
 
   
-  js::ZoneOrGCTaskData<js::AtomSet> atomCache_;
+  js::MainThreadOrGCTaskData<js::AtomSet> atomCache_;
 
   
-  js::ZoneOrGCTaskData<js::ExternalStringCache> externalStringCache_;
+  js::MainThreadOrGCTaskData<js::ExternalStringCache> externalStringCache_;
 
   
-  js::ZoneOrGCTaskData<js::FunctionToStringCache> functionToStringCache_;
+  js::MainThreadOrGCTaskData<js::FunctionToStringCache> functionToStringCache_;
 
   
-  js::ZoneData<js::ShapeZone> shapeZone_;
+  js::MainThreadData<js::ShapeZone> shapeZone_;
 
   
-  js::ZoneOrGCTaskData<js::UniquePtr<js::gc::FinalizationObservers>>
+  js::MainThreadOrGCTaskData<js::UniquePtr<js::gc::FinalizationObservers>>
       finalizationObservers_;
 
-  js::ZoneOrGCTaskData<js::jit::JitZone*> jitZone_;
+  js::MainThreadOrGCTaskData<js::jit::JitZone*> jitZone_;
 
   
   
@@ -285,7 +288,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<bool> gcScheduled_;
   js::MainThreadData<bool> gcScheduledSaved_;
   js::MainThreadData<bool> gcPreserveCode_;
-  js::ZoneData<bool> keepPropMapTables_;
+  js::MainThreadData<bool> keepPropMapTables_;
   js::MainThreadData<bool> wasCollected_;
 
   
@@ -298,7 +301,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
                     js::MovableCellHasher<js::HeapPtr<JSObject*>>,
                     js::ZoneAllocPolicy>;
   friend class js::WeakRefObject;
-  js::ZoneOrGCTaskData<KeptAliveSet> keptObjects;
+  js::MainThreadOrGCTaskData<KeptAliveSet> keptObjects;
 
  public:
   static JS::Zone* from(ZoneAllocator* zoneAlloc) {

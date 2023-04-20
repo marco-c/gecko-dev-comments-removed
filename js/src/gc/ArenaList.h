@@ -268,29 +268,29 @@ class ArenaLists {
   
   UnprotectedData<AllAllocKindArray<ConcurrentUseState>> concurrentUseState_;
 
-  ZoneData<FreeLists> freeLists_;
+  MainThreadData<FreeLists> freeLists_;
 
   
-  ArenaListData<AllAllocKindArray<ArenaList>> arenaLists_;
+  MainThreadOrGCTaskData<AllAllocKindArray<ArenaList>> arenaLists_;
 
   
 
 
 
-  ZoneOrGCTaskData<AllAllocKindArray<ArenaList>> collectingArenaLists_;
+  MainThreadOrGCTaskData<AllAllocKindArray<ArenaList>> collectingArenaLists_;
 
   
-  ZoneOrGCTaskData<AllocKind> incrementalSweptArenaKind;
-  ZoneOrGCTaskData<ArenaList> incrementalSweptArenas;
-
-  
-  
-  ZoneData<Arena*> gcCompactPropMapArenasToUpdate;
-  ZoneData<Arena*> gcNormalPropMapArenasToUpdate;
+  MainThreadOrGCTaskData<AllocKind> incrementalSweptArenaKind;
+  MainThreadOrGCTaskData<ArenaList> incrementalSweptArenas;
 
   
   
-  ZoneOrGCTaskData<Arena*> savedEmptyArenas;
+  MainThreadData<Arena*> gcCompactPropMapArenasToUpdate;
+  MainThreadData<Arena*> gcNormalPropMapArenasToUpdate;
+
+  
+  
+  MainThreadOrGCTaskData<Arena*> savedEmptyArenas;
 
  public:
   explicit ArenaLists(JS::Zone* zone);
