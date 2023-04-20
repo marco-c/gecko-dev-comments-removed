@@ -36,15 +36,15 @@ add_task(async () => {
     URL_ROOT + "helper_content_response_timeout.html"
   );
 
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-    await content.wrappedJSObject.promiseApzFlushedRepaints();
-    await content.wrappedJSObject.waitUntilApzStable();
-  });
-
   let scrollPromise = BrowserTestUtils.waitForContentEvent(
     tab.linkedBrowser,
     "scroll"
   );
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await content.wrappedJSObject.promiseApzFlushedRepaints();
+    await content.wrappedJSObject.waitUntilApzStable();
+  });
 
   
   
