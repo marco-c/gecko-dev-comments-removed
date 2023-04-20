@@ -1452,6 +1452,8 @@ var PlacesControllerDragHelper = {
   
 
 
+
+
   currentDropTarget: null,
 
   
@@ -1561,16 +1563,37 @@ var PlacesControllerDragHelper = {
 
         
         
+        
         if (
           dragged.type == PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER ||
           (dragged.uri && dragged.uri.startsWith("place:"))
         ) {
-          let parentId = ip.itemId;
-          while (parentId != PlacesUtils.placesRootId) {
-            if (dragged.concreteId == parentId || dragged.id == parentId) {
+          let dragOverPlacesNode = this.currentDropTarget;
+          if (!(dragOverPlacesNode instanceof Ci.nsINavHistoryResultNode)) {
+            
+            
+            
+            dragOverPlacesNode =
+              dragOverPlacesNode._placesNode ??
+              dragOverPlacesNode.parentNode?._placesNode;
+          }
+
+          
+          
+          if (dragOverPlacesNode) {
+            let guid = dragged.concreteGuid ?? dragged.itemGuid;
+            
+            if (PlacesUtils.getConcreteItemGuid(dragOverPlacesNode) == guid) {
               return false;
             }
-            parentId = PlacesUtils.bookmarks.getFolderIdForItem(parentId);
+            
+            for (let ancestor of PlacesUtils.nodeAncestors(
+              dragOverPlacesNode
+            )) {
+              if (PlacesUtils.getConcreteItemGuid(ancestor) == guid) {
+                return false;
+              }
+            }
           }
         }
 

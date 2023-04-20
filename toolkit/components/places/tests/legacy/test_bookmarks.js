@@ -86,23 +86,6 @@ add_task(async function test_bookmarks() {
   Assert.ok(bs.toolbarFolder > 0);
 
   
-  try {
-    bs.getFolderIdForItem(0);
-    do_throw("getFolderIdForItem accepted bad input");
-  } catch (ex) {}
-
-  
-  try {
-    bs.getFolderIdForItem(-1);
-    do_throw("getFolderIdForItem accepted bad input");
-  } catch (ex) {}
-
-  
-  Assert.equal(bs.getFolderIdForItem(bs.bookmarksMenuFolder), bs.placesRoot);
-  Assert.equal(bs.getFolderIdForItem(bs.tagsFolder), bs.placesRoot);
-  Assert.equal(bs.getFolderIdForItem(bs.toolbarFolder), bs.placesRoot);
-
-  
   
   let testRoot = bs.createFolder(
     root,
@@ -178,10 +161,6 @@ add_task(async function test_bookmarks() {
     bs.getItemTitle(-3);
     do_throw("getItemTitle accepted bad input");
   } catch (ex) {}
-
-  
-  let folderId = bs.getFolderIdForItem(newId);
-  Assert.equal(folderId, testRoot);
 
   
   let workFolder = bs.createFolder(testRoot, "Work", 0);
