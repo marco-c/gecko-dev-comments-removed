@@ -30,7 +30,11 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
   static rtc::scoped_refptr<VideoCaptureModule> Create(const char* _Nullable aDeviceUniqueIdUTF8);
 
   
+
+  
+  
   int32_t StartCapture(const VideoCaptureCapability& aCapability) MOZ_EXCLUDES(api_lock_) override;
+  
   int32_t StopCapture() MOZ_EXCLUDES(api_lock_) override;
   bool CaptureStarted() MOZ_EXCLUDES(api_lock_) override;
   int32_t CaptureSettings(VideoCaptureCapability& aSettings) override;
@@ -52,8 +56,12 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
   AVCaptureDevice* _Nonnull mDevice RTC_GUARDED_BY(mChecker);
   VideoCaptureAdapter* _Nonnull mAdapter RTC_GUARDED_BY(mChecker);
   RTC_OBJC_TYPE(RTCCameraVideoCapturer) * _Nullable mCapturer RTC_GUARDED_BY(mChecker);
+  
+  
   mozilla::Maybe<VideoCaptureCapability> mCapability MOZ_GUARDED_BY(api_lock_);
+  
   mozilla::Maybe<nsCString> mTrackingId MOZ_GUARDED_BY(api_lock_);
+  
   mozilla::PerformanceRecorderMulti<mozilla::CaptureStage> mPerformanceRecorder;
   std::atomic<ProfilerThreadId> mCallbackThreadId;
 };
