@@ -5,10 +5,7 @@
 
 "use strict";
 
-
-var UnitTestObjs = {};
-
-var EXPORTED_SYMBOLS = ["UnitTestObjs"];
+var EXPORTED_SYMBOLS = [];
 
 
 class ArrayBufferDataStream {
@@ -106,6 +103,7 @@ class ArrayBufferDataStream {
         this.pos += 8;
     }
 
+
     readFloat32() {
         let rv = this.dataView.getFloat32(this.pos);
         this.pos += 4;
@@ -201,10 +199,6 @@ function handleRustResult(result, liftCallback, liftErrCallback) {
 class UniFFIError {
     constructor(message) {
         this.message = message;
-    }
-
-    toString() {
-        return `UniFFIError: ${this.message}`
     }
 }
 
@@ -310,20 +304,20 @@ class Sprite {
 
 
     static init(initialPosition) {
-        const liftResult = (result) => FfiConverterTypeSprite.lift(result);
-        const liftError = null;
-        const functionCall = () => {
-            FfiConverterOptionalTypePoint.checkType("initialPosition", initialPosition);
-            return UniFFIScaffolding.callAsync(
-                86, 
-                FfiConverterOptionalTypePoint.lower(initialPosition),
-            )
-        }
-        try {
-            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-        }  catch (error) {
-            return Promise.reject(error)
-        }}
+    const liftResult = (result) => FfiConverterTypeSprite.lift(result);
+    const liftError = null;
+    const functionCall = () => {
+        FfiConverterOptionalTypePoint.checkType("initialPosition", initialPosition);
+        return UniFFIScaffolding.callAsync(
+            86, 
+            FfiConverterOptionalTypePoint.lower(initialPosition),
+        )
+    }
+    try {
+        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+    }  catch (error) {
+        return Promise.reject(error)
+    }}
     
 
 
@@ -331,74 +325,68 @@ class Sprite {
 
 
     static newRelativeTo(reference,direction) {
-        const liftResult = (result) => FfiConverterTypeSprite.lift(result);
-        const liftError = null;
-        const functionCall = () => {
-            FfiConverterTypePoint.checkType("reference", reference);
-            FfiConverterTypeVector.checkType("direction", direction);
-            return UniFFIScaffolding.callAsync(
-                87, 
-                FfiConverterTypePoint.lower(reference),
-                FfiConverterTypeVector.lower(direction),
-            )
-        }
-        try {
-            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-        }  catch (error) {
-            return Promise.reject(error)
-        }}
-
+    const liftResult = (result) => FfiConverterTypeSprite.lift(result);
+    const liftError = null;
+    const functionCall = () => {
+        FfiConverterTypePoint.checkType("reference", reference);
+        FfiConverterTypeVector.checkType("direction", direction);
+        return UniFFIScaffolding.callAsync(
+            87, 
+            FfiConverterTypePoint.lower(reference),
+            FfiConverterTypeVector.lower(direction),
+        )
+    }
+    try {
+        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+    }  catch (error) {
+        return Promise.reject(error)
+    }}
     getPosition() {
-        const liftResult = (result) => FfiConverterTypePoint.lift(result);
-        const liftError = null;
-        const functionCall = () => {
-            return UniFFIScaffolding.callAsync(
-                88, 
-                FfiConverterTypeSprite.lower(this),
-            )
-        }
-        try {
-            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-        }  catch (error) {
-            return Promise.reject(error)
-        }
+    const liftResult = (result) => FfiConverterTypePoint.lift(result);
+    const liftError = null;
+    const functionCall = () => {
+        return UniFFIScaffolding.callAsync(
+            88, 
+            FfiConverterTypeSprite.lower(this),
+        )
     }
-
+    try {
+        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+    }  catch (error) {
+        return Promise.reject(error)
+    }}
     moveTo(position) {
-        const liftResult = (result) => undefined;
-        const liftError = null;
-        const functionCall = () => {
-            FfiConverterTypePoint.checkType("position", position);
-            return UniFFIScaffolding.callAsync(
-                89, 
-                FfiConverterTypeSprite.lower(this),
-                FfiConverterTypePoint.lower(position),
-            )
-        }
-        try {
-            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-        }  catch (error) {
-            return Promise.reject(error)
-        }
+    const liftResult = (result) => undefined;
+    const liftError = null;
+    const functionCall = () => {
+        FfiConverterTypePoint.checkType("position", position);
+        return UniFFIScaffolding.callAsync(
+            89, 
+            FfiConverterTypeSprite.lower(this),
+            FfiConverterTypePoint.lower(position),
+        )
     }
-
+    try {
+        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+    }  catch (error) {
+        return Promise.reject(error)
+    }}
     moveBy(direction) {
-        const liftResult = (result) => undefined;
-        const liftError = null;
-        const functionCall = () => {
-            FfiConverterTypeVector.checkType("direction", direction);
-            return UniFFIScaffolding.callAsync(
-                90, 
-                FfiConverterTypeSprite.lower(this),
-                FfiConverterTypeVector.lower(direction),
-            )
-        }
-        try {
-            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-        }  catch (error) {
-            return Promise.reject(error)
-        }
+    const liftResult = (result) => undefined;
+    const liftError = null;
+    const functionCall = () => {
+        FfiConverterTypeVector.checkType("direction", direction);
+        return UniFFIScaffolding.callAsync(
+            90, 
+            FfiConverterTypeSprite.lower(this),
+            FfiConverterTypeVector.lower(direction),
+        )
     }
+    try {
+        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+    }  catch (error) {
+        return Promise.reject(error)
+    }}
 
 }
 
@@ -573,22 +561,22 @@ EXPORTED_SYMBOLS.push("FfiConverterOptionalTypePoint");
 
 function translate(position,direction) {
     
-        const liftResult = (result) => FfiConverterTypePoint.lift(result);
-        const liftError = null;
-        const functionCall = () => {
-            FfiConverterTypePoint.checkType("position", position);
-            FfiConverterTypeVector.checkType("direction", direction);
-            return UniFFIScaffolding.callAsync(
-                91, 
-                FfiConverterTypePoint.lower(position),
-                FfiConverterTypeVector.lower(direction),
-            )
-        }
-        try {
-            return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
-        }  catch (error) {
-            return Promise.reject(error)
-        }
+    const liftResult = (result) => FfiConverterTypePoint.lift(result);
+    const liftError = null;
+    const functionCall = () => {
+        FfiConverterTypePoint.checkType("position", position);
+        FfiConverterTypeVector.checkType("direction", direction);
+        return UniFFIScaffolding.callAsync(
+            91, 
+            FfiConverterTypePoint.lower(position),
+            FfiConverterTypeVector.lower(direction),
+        )
+    }
+    try {
+        return functionCall().then((result) => handleRustResult(result, liftResult, liftError));
+    }  catch (error) {
+        return Promise.reject(error)
+    }
 }
 
 EXPORTED_SYMBOLS.push("translate");

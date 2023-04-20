@@ -3,37 +3,37 @@
 
 
 
-use crate::Config;
 use extend::ext;
-use uniffi_bindgen::interface::{Function, Method, Object};
+use uniffi_bindgen::interface::{Constructor, FFIFunction, Function, Method};
 
-fn is_async(config: &Config, spec: &str) -> bool {
-    if config.receiver_thread.main.contains(spec) {
-        false
-    } else if config.receiver_thread.worker.contains(spec) {
+#[ext]
+pub impl FFIFunction {
+    fn is_async(&self) -> bool {
+        
         true
-    } else {
-        match &config.receiver_thread.default {
-            Some(t) => t != "main",
-            _ => true,
-        }
     }
 }
 
 #[ext]
 pub impl Function {
-    fn is_async(&self, config: &Config) -> bool {
-        is_async(config, self.name())
+    fn is_async(&self) -> bool {
+        
+        true
     }
 }
 
 #[ext]
-pub impl Object {
-    fn is_constructor_async(&self, config: &Config) -> bool {
-        is_async(config, self.name())
+pub impl Constructor {
+    fn is_async(&self) -> bool {
+        
+        true
     }
+}
 
-    fn is_method_async(&self, method: &Method, config: &Config) -> bool {
-        is_async(config, &format!("{}.{}", self.name(), method.name()))
+#[ext]
+pub impl Method {
+    fn is_async(&self) -> bool {
+        
+        true
     }
 }

@@ -2,15 +2,13 @@
 
 
 
-use crate::{CallbackIds, Config, FunctionIds, ObjectIds};
+use crate::{FunctionIds, ObjectIds};
 use askama::Template;
 use extend::ext;
-use heck::{ToShoutySnakeCase, ToUpperCamelCase};
+use heck::ToUpperCamelCase;
 use std::collections::HashSet;
 use std::iter;
-use uniffi_bindgen::interface::{
-    CallbackInterface, ComponentInterface, FFIArgument, FFIFunction, FFIType, Object,
-};
+use uniffi_bindgen::interface::{ComponentInterface, FFIArgument, FFIFunction, FFIType, Object};
 
 #[derive(Template)]
 #[template(path = "UniFFIScaffolding.cpp", escape = "none")]
@@ -22,17 +20,16 @@ pub struct CPPScaffoldingTemplate<'a> {
     
     
     pub prefix: &'a str,
-    pub components: &'a Vec<(ComponentInterface, Config)>,
+    pub ci_list: &'a Vec<ComponentInterface>,
     pub function_ids: &'a FunctionIds<'a>,
     pub object_ids: &'a ObjectIds<'a>,
-    pub callback_ids: &'a CallbackIds<'a>,
 }
 
 impl<'a> CPPScaffoldingTemplate<'a> {
     fn has_any_objects(&self) -> bool {
-        self.components
+        self.ci_list
             .iter()
-            .any(|(ci, _)| ci.object_definitions().len() > 0)
+            .any(|ci| ci.object_definitions().len() > 0)
     }
 }
 
@@ -66,11 +63,6 @@ pub impl ComponentInterface {
             .object_definitions()
             .iter()
             .map(|o| o.ffi_object_free().name())
-            .chain(
-                self.callback_interface_definitions()
-                    .iter()
-                    .map(|cbi| cbi.ffi_init_callback().name()),
-            )
             .collect();
         self.iter_user_ffi_function_definitions()
             .filter(move |f| !excluded.contains(f.name()))
@@ -148,8 +140,8 @@ pub impl FFIType {
             FFIType::Float64 => "double",
             FFIType::RustBuffer => "RustBuffer",
             FFIType::RustArcPtr(_) => "void *",
-            FFIType::ForeignCallback => "ForeignCallback",
             FFIType::ForeignBytes => unimplemented!("ForeignBytes not supported"),
+            FFIType::ForeignCallback => unimplemented!("ForeignCallback not supported"),
         }
         .to_owned()
     }
@@ -166,25 +158,5 @@ pub impl FFIArgument {
 pub impl Object {
     fn nm(&self) -> String {
         self.name().to_upper_camel_case()
-    }
-}
-
-#[ext(name=CallbackInterfaceCppExt)]
-pub impl CallbackInterface {
-    fn nm(&self) -> String {
-        self.name().to_upper_camel_case()
-    }
-
-    
-    fn js_handler(&self) -> String {
-        format!("JS_CALLBACK_HANDLER_{}", self.name().to_shouty_snake_case())
-    }
-
-    
-    fn c_handler(&self, prefix: &str) -> String {
-        format!(
-            "{prefix}CallbackHandler{}",
-            self.name().to_upper_camel_case()
-        )
     }
 }
