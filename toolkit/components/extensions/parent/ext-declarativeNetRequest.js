@@ -52,6 +52,13 @@ this.declarativeNetRequest = class extends ExtensionAPI {
           return ruleManager.enabledStaticRulesetIds;
         },
 
+        updateEnabledRulesets({ disableRulesetIds, enableRulesetIds }) {
+          return ExtensionDNR.updateEnabledStaticRulesets(extension, {
+            disableRulesetIds,
+            enableRulesetIds,
+          });
+        },
+
         getSessionRules() {
           
           
