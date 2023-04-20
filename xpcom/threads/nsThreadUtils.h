@@ -55,6 +55,7 @@ class nsIThread;
 
 
 
+
 extern nsresult NS_NewNamedThread(
     const nsACString& aName, nsIThread** aResult,
     nsIRunnable* aInitialEvent = nullptr,
