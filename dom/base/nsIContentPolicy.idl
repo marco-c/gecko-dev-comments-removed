@@ -441,10 +441,15 @@ interface nsIContentPolicy : nsISupports
     
 
 
+    TYPE_WEB_TRANSPORT = 59,
+
+    
 
 
 
-    TYPE_END = 59,
+
+
+    TYPE_END = 60,
 
 
     
