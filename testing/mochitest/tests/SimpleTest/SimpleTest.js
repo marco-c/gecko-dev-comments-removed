@@ -26,14 +26,21 @@ let isSameOrigin = function(w) {
 };
 let isXOrigin = !isSameOrigin(window);
 
+
 function isErrorObj(err) {
   
   
   if (!err) {
     return false;
   }
-  let glob = SpecialPowers.Cu.getGlobalForObject(err);
-  return err instanceof glob.Error;
+  try {
+    let glob = SpecialPowers.Cu.getGlobalForObject(err);
+    return err instanceof glob.Error;
+  } catch {
+    
+    
+  }
+  return err instanceof Error;
 }
 
 
@@ -2139,7 +2146,10 @@ var add_task = (function() {
           } catch (ex) {
             try {
               let serializedEx;
-              if (isErrorObj(ex)) {
+              if (
+                typeof ex == "string" ||
+                (typeof ex == "object" && isErrorObj(ex))
+              ) {
                 serializedEx = `${ex}`;
               } else {
                 serializedEx = JSON.stringify(ex);
