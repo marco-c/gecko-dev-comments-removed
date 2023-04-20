@@ -2,10 +2,8 @@ import asyncio
 import json
 
 import pytest
-
-from webdriver.bidi.modules.script import ContextTarget
-
 from tests.support.sync import AsyncPoll
+from webdriver.bidi.modules.script import ContextTarget
 
 from .. import assert_before_request_sent_event
 
@@ -13,6 +11,7 @@ PAGE_EMPTY_HTML = "/webdriver/tests/bidi/network/support/empty.html"
 PAGE_EMPTY_TEXT = "/webdriver/tests/bidi/network/support/empty.txt"
 PAGE_REDIRECT_HTTP_EQUIV = "/webdriver/tests/bidi/network/support/redirect_http_equiv.html"
 PAGE_REDIRECTED_HTML = "/webdriver/tests/bidi/network/support/redirected.html"
+
 
 
 
@@ -59,6 +58,7 @@ async def setup_network_test(bidi_session, subscribe_events, top_context, url):
         )
         events = []
         await subscribe_events(["network.beforeRequestSent"])
+
         async def on_event(method, data):
             events.append(data)
 
