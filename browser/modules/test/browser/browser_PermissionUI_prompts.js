@@ -19,8 +19,18 @@ add_task(async function test_geo_permission_prompt() {
 });
 
 
+add_task(async function test_geo_permission_prompt_local_file() {
+  await testPrompt(PermissionUI.GeolocationPermissionPrompt, true);
+});
+
+
 add_task(async function test_xr_permission_prompt() {
   await testPrompt(PermissionUI.XRPermissionPrompt);
+});
+
+
+add_task(async function test_xr_permission_prompt_local_file() {
+  await testPrompt(PermissionUI.XRPermissionPrompt, true);
 });
 
 
@@ -58,17 +68,29 @@ add_task(async function test_midi_permission_prompt() {
 });
 
 
+add_task(async function test_midi_permission_prompt_local_file() {
+  if (Services.prefs.getBoolPref(SITEPERMS_ADDON_PROVIDER_PREF, false)) {
+    ok(
+      true,
+      "PermissionUI.MIDIPermissionPrompt uses SitePermsAddon install flow"
+    );
+    return;
+  }
+  await testPrompt(PermissionUI.MIDIPermissionPrompt, true);
+});
+
+
 add_task(async function test_storage_access_permission_prompt() {
   Services.prefs.setBoolPref("dom.storage_access.auto_grants", false);
   await testPrompt(PermissionUI.StorageAccessPermissionPrompt);
   Services.prefs.clearUserPref("dom.storage_access.auto_grants");
 });
 
-async function testPrompt(Prompt) {
+async function testPrompt(Prompt, useLocalFile = false) {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "http://example.com",
+      url: useLocalFile ? `file://${PathUtils.tempDir}` : "http://example.com",
     },
     async function(browser) {
       let mockRequest = makeMockPermissionRequest(browser);
