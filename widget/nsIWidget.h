@@ -1397,13 +1397,6 @@ class nsIWidget : public nsISupports {
   
 
 
-
-
-  virtual void CaptureMouse(bool aCapture) = 0;
-
-  
-
-
   virtual void SetWindowClass(const nsAString& xulWinType) = 0;
 
   

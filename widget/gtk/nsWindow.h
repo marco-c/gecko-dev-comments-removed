@@ -189,7 +189,6 @@ class nsWindow final : public nsBaseWidget {
   void SetIcon(const nsAString& aIconSpec) override;
   void SetWindowClass(const nsAString& xulWinType) override;
   LayoutDeviceIntPoint WidgetToScreenOffset() override;
-  void CaptureMouse(bool aCapture) override;
   void CaptureRollupEvents(bool aDoCapture) override;
   [[nodiscard]] nsresult GetAttention(int32_t aCycleCount) override;
   bool HasPendingInputEvent() override;
@@ -769,6 +768,9 @@ class nsWindow final : public nsBaseWidget {
   
   
   bool mGotNonBlankPaint : 1;
+
+  
+  bool mNeedsToRetryCapturingMouse : 1;
 
   
   
