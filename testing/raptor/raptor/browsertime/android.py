@@ -1,8 +1,8 @@
-#!/usr/bin/env python
 
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
 
 from __future__ import absolute_import
 
@@ -15,8 +15,8 @@ from logger.logger import RaptorLogger
 from mozdevice import ADBDeviceFactory
 from performance_tuning import tune_performance
 from perftest import PerftestAndroid
+from power import disable_charging, enable_charging
 
-from power import enable_charging, disable_charging
 from .base import Browsertime
 
 LOG = RaptorLogger(component="raptor-browsertime-android")
@@ -109,23 +109,23 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
                 ]
             )
 
-        # Setup power testing
+        
         if self.config["power_test"]:
             args_list.extend(["--androidPower", "true"])
 
         if self.config["app"] == "fenix":
-            # See bug 1768889
+            
             args_list.extend(["--ignoreShutdownFailures", "true"])
 
-            # If running on Fenix we must add the intent as we use a
-            # special non-default one there
+            
+            
             if self.config.get("intent") is not None:
                 args_list.extend(["--firefox.android.intentArgument=-a"])
                 args_list.extend(
                     ["--firefox.android.intentArgument", self.config["intent"]]
                 )
 
-                # Change glean ping names in all cases on Fenix
+                
                 args_list.extend(
                     [
                         "--firefox.android.intentArgument=--es",
@@ -178,7 +178,7 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
     def build_browser_profile(self):
         super(BrowsertimeAndroid, self).build_browser_profile()
 
-        # Merge in the Android profile.
+        
         path = os.path.join(self.profile_data_dir, "raptor-android")
         LOG.info("Merging profile: {}".format(path))
         self.profile.merge(path)
@@ -186,9 +186,9 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
             {"browser.tabs.remote.autostart": self.config["e10s"]}
         )
 
-        # There's no great way to have "after" advice in Python, so we do this
-        # in super and then again here since the profile merging re-introduces
-        # the "#MozRunner" delimiters.
+        
+        
+        
         self.remove_mozprofile_delimiters_from_profile()
 
     def setup_adb_device(self):
@@ -203,7 +203,7 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
             "%s-geckodriver-profile" % self.config["binary"],
         )
 
-        # make sure no remote profile exists
+        
         if self.device.exists(self.geckodriver_profile):
             self.device.rm(self.geckodriver_profile, force=True, recursive=True)
 
@@ -244,7 +244,7 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
         self.setup_adb_device()
 
         if self.config["app"] == "chrome-m":
-            # Make sure that chrome is enabled on the device
+            
             self.device.shell_output("pm enable com.android.chrome")
 
         try:

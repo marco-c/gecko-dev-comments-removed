@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 import json
 import re
+
 import six
 from mozlog import get_proxy_logger
 
@@ -20,10 +21,10 @@ MAX_FORWARDED_REQUESTS = 3
 
 if six.PY2:
     
-    from urllib2 import urlopen, Request
+    from urllib2 import Request, urlopen
 else:
     
-    from urllib.request import urlopen, Request
+    from urllib.request import Request, urlopen
 
     
     

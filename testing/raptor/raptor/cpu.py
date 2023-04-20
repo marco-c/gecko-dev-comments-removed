@@ -3,8 +3,8 @@
 
 from __future__ import absolute_import, division
 
-import time
 import threading
+import time
 
 from logger.logger import RaptorLogger
 

@@ -9,10 +9,11 @@
 This script manages Desktop repacks for nightly builds.
 """
 from __future__ import absolute_import
-import os
+
 import glob
-import sys
+import os
 import shlex
+import sys
 
 
 sys.path.insert(1, os.path.dirname(sys.path[0]))  

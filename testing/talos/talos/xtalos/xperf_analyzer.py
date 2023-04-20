@@ -5,13 +5,15 @@
 
 
 from __future__ import absolute_import, print_function
-from abc import ABCMeta, abstractmethod
-from collections import deque
+
 import csv
 import os
 import re
 import subprocess
+from abc import ABCMeta, abstractmethod
+from collections import deque
 from uuid import UUID
+
 import six
 
 

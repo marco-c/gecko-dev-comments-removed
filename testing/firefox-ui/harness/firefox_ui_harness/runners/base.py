@@ -3,6 +3,7 @@
 
 
 from __future__ import absolute_import
+
 import os
 
 from marionette_harness import BaseMarionetteTestRunner, MarionetteTestCase

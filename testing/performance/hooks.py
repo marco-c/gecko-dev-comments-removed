@@ -2,9 +2,10 @@
 
 
 from __future__ import absolute_import
-import os
-from mozperftest.test.browsertime import add_options, add_option
 
+import os
+
+from mozperftest.test.browsertime import add_option, add_options
 
 sites = os.path.join(os.path.dirname(__file__), "sites.txt")
 with open(sites) as f:

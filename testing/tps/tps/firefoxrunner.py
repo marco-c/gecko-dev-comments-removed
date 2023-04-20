@@ -2,9 +2,9 @@
 
 
 
-import httplib2
 import os
 
+import httplib2
 import mozfile
 import mozinstall
 from mozprofile import Profile

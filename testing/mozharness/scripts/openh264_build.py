@@ -5,22 +5,22 @@
 
 
 from __future__ import absolute_import
-import sys
-import os
+
 import glob
+import os
 import re
 import subprocess
+import sys
 
 
 sys.path.insert(1, os.path.dirname(sys.path[0]))
 
 
 import mozharness
-from mozharness.base.vcs.vcsbase import VCSScript
-from mozharness.base.log import ERROR, DEBUG, FATAL
+from mozharness.base.log import DEBUG, ERROR, FATAL
 from mozharness.base.transfer import TransferMixin
+from mozharness.base.vcs.vcsbase import VCSScript
 from mozharness.mozilla.tooltool import TooltoolMixin
-
 
 external_tools_path = os.path.join(
     os.path.abspath(os.path.dirname(os.path.dirname(mozharness.__file__))),

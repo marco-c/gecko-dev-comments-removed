@@ -5,22 +5,15 @@
 
 from __future__ import absolute_import
 
-from logging import getLogger as getSysLogger
-from logging import *
-
-
-
-
-from logging import (
-    getLoggerClass,
-    addLevelName,
-    setLoggerClass,
-    shutdown,
-    debug,
-    info,
-    basicConfig,
-)
 import json
+
+
+
+
+from logging import *
+from logging import addLevelName, basicConfig, debug
+from logging import getLogger as getSysLogger
+from logging import getLoggerClass, info, setLoggerClass, shutdown
 
 _default_level = INFO
 _LoggerClass = getLoggerClass()

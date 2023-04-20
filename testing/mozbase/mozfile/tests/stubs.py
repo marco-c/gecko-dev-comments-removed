@@ -5,7 +5,6 @@ import shutil
 import tempfile
 
 
-
 files = [
     ("foo.txt",),
     (

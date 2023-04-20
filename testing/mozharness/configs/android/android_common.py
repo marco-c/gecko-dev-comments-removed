@@ -8,8 +8,8 @@
 
 
 from __future__ import absolute_import
-import os
 
+import os
 
 NODEJS_PATH = None
 if "MOZ_FETCHES_DIR" in os.environ:

@@ -2,12 +2,13 @@
 
 
 from __future__ import absolute_import
+
 import logging
-import sys
 import os
+import sys
 import tempfile
 
-from mach.decorators import CommandArgument, Command
+from mach.decorators import Command, CommandArgument
 from mozbuild.base import BinaryNotFoundException
 
 requirements = os.path.join(os.path.dirname(__file__), "requirements", "base.txt")

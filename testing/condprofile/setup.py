@@ -3,8 +3,8 @@
 
 
 from __future__ import absolute_import
-from setuptools import setup, find_packages
 
+from setuptools import find_packages, setup
 
 entry_points = """
       [console_scripts]

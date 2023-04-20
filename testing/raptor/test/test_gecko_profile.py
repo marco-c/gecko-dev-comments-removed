@@ -3,12 +3,14 @@
 
 
 from __future__ import absolute_import, unicode_literals
+
 import os
-import tempfile
-import mozunit
 import shutil
-import tarfile
 import sys
+import tarfile
+import tempfile
+
+import mozunit
 
 
 here = os.path.abspath(os.path.dirname(__file__))

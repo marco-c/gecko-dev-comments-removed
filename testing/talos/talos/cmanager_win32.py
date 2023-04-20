@@ -3,28 +3,21 @@
 
 from __future__ import absolute_import
 
-import six
 import struct
 from ctypes import (
-    byref,
-    create_string_buffer,
-    memmove,
+    Structure,
     Union,
+    byref,
     c_double,
     c_longlong,
+    create_string_buffer,
+    memmove,
     pointer,
-    Structure,
+    windll,
 )
-from ctypes import windll
-from ctypes.wintypes import (
-    DWORD,
-    HANDLE,
-    LPSTR,
-    LPCSTR,
-    LPCWSTR,
-    LONG,
-)
+from ctypes.wintypes import DWORD, HANDLE, LONG, LPCSTR, LPCWSTR, LPSTR
 
+import six
 from talos.cmanager_base import CounterManager
 from talos.utils import TalosError
 
