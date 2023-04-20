@@ -149,6 +149,7 @@ pub unsafe trait UnsafeFutureObj<'a, T>: 'a {
     
     
     
+    #[allow(clippy::unnecessary_safety_doc)]
     fn into_raw(self) -> *mut (dyn Future<Output = T> + 'a);
 
     

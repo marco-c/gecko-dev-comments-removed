@@ -1521,7 +1521,6 @@ pub trait StreamExt: Stream {
     
     
     
-    
     #[cfg(feature = "alloc")]
     fn ready_chunks(self, capacity: usize) -> ReadyChunks<Self>
     where

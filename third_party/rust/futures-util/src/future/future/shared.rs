@@ -4,7 +4,9 @@ use futures_core::task::{Context, Poll, Waker};
 use slab::Slab;
 use std::cell::UnsafeCell;
 use std::fmt;
+use std::hash::Hasher;
 use std::pin::Pin;
+use std::ptr;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::{Acquire, SeqCst};
 use std::sync::{Arc, Mutex, Weak};
@@ -103,7 +105,6 @@ impl<Fut: Future> Shared<Fut> {
 impl<Fut> Shared<Fut>
 where
     Fut: Future,
-    Fut::Output: Clone,
 {
     
     
@@ -139,6 +140,7 @@ where
     
     
     
+    #[allow(clippy::unnecessary_safety_doc)]
     pub fn strong_count(&self) -> Option<usize> {
         self.inner.as_ref().map(|arc| Arc::strong_count(arc))
     }
@@ -152,15 +154,44 @@ where
     
     
     
+    #[allow(clippy::unnecessary_safety_doc)]
     pub fn weak_count(&self) -> Option<usize> {
         self.inner.as_ref().map(|arc| Arc::weak_count(arc))
+    }
+
+    
+    pub fn ptr_hash<H: Hasher>(&self, state: &mut H) {
+        match self.inner.as_ref() {
+            Some(arc) => {
+                state.write_u8(1);
+                ptr::hash(Arc::as_ptr(arc), state);
+            }
+            None => {
+                state.write_u8(0);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    pub fn ptr_eq(&self, rhs: &Self) -> bool {
+        let lhs = match self.inner.as_ref() {
+            Some(lhs) => lhs,
+            None => return false,
+        };
+        let rhs = match rhs.inner.as_ref() {
+            Some(rhs) => rhs,
+            None => return false,
+        };
+        Arc::ptr_eq(lhs, rhs)
     }
 }
 
 impl<Fut> Inner<Fut>
 where
     Fut: Future,
-    Fut::Output: Clone,
 {
     
     
@@ -170,6 +201,13 @@ where
             FutureOrOutput::Future(_) => unreachable!(),
         }
     }
+}
+
+impl<Fut> Inner<Fut>
+where
+    Fut: Future,
+    Fut::Output: Clone,
+{
     
     fn record_waker(&self, waker_key: &mut usize, cx: &mut Context<'_>) {
         let mut wakers_guard = self.notifier.wakers.lock().unwrap();

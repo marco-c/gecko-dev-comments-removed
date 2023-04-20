@@ -61,7 +61,6 @@ pub(super) enum PopResult<T> {
     Inconsistent,
 }
 
-#[derive(Debug)]
 struct Node<T> {
     next: AtomicPtr<Self>,
     value: Option<T>,
@@ -70,7 +69,6 @@ struct Node<T> {
 
 
 
-#[derive(Debug)]
 pub(super) struct Queue<T> {
     head: AtomicPtr<Node<T>>,
     tail: UnsafeCell<*mut Node<T>>,
