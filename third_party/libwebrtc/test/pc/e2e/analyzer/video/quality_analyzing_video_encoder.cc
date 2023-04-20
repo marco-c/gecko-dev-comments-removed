@@ -284,14 +284,10 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
         delegate_->GetEncoderInfo().implementation_name;
   }
 
-  if (!discard) {
-    
-    
-    VideoQualityAnalyzerInterface::EncoderStats stats;
-    stats.encoder_name = codec_name;
-    stats.target_encode_bitrate = target_encode_bitrate;
-    analyzer_->OnFrameEncoded(peer_name_, frame_id, encoded_image, stats);
-  }
+  VideoQualityAnalyzerInterface::EncoderStats stats;
+  stats.encoder_name = codec_name;
+  stats.target_encode_bitrate = target_encode_bitrate;
+  analyzer_->OnFrameEncoded(peer_name_, frame_id, encoded_image, stats);
 
   
   
