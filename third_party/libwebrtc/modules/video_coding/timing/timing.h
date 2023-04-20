@@ -69,7 +69,8 @@ class VCMTiming {
 
   
   
-  void IncomingTimestamp(uint32_t rtp_timestamp, Timestamp last_packet_time);
+  virtual void IncomingTimestamp(uint32_t rtp_timestamp,
+                                 Timestamp last_packet_time);
 
   
   
