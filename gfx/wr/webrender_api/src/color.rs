@@ -111,7 +111,8 @@ impl Hash for PremultipliedColorF {
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Hash, Eq, Debug, Deserialize, MallocSizeOf, PartialEq, PartialOrd, Ord, Serialize)]
+#[derive(Clone, Copy, Hash, Eq, Debug, Deserialize, MallocSizeOf, PartialEq)]
+#[derive(PartialOrd, Ord, Serialize, PeekPoke, Default)]
 pub struct ColorU {
     pub r: u8,
     pub g: u8,

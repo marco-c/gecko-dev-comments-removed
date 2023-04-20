@@ -116,6 +116,7 @@ use crate::internal_types::{PlaneSplitterIndex, PlaneSplitAnchor, TextureSource}
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, PictureContext};
 use crate::gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
 use crate::gpu_types::{UvRectKind, ZBufferId};
+use peek_poke::{PeekPoke, poke_into_vec, peek_from_slice, ensure_red_zone};
 use plane_split::{Clipper, Polygon};
 use crate::prim_store::{PrimitiveTemplateKind, PictureIndex, PrimitiveInstance, PrimitiveInstanceKind};
 use crate::prim_store::{ColorBindingStorage, ColorBindingIndex, PrimitiveScratchBuffer};
@@ -287,10 +288,6 @@ const MAX_COMPOSITOR_SURFACES_SIZE: f32 = 8192.0;
 
 
 
-const MAX_PRIM_SUB_DEPS: usize = u8::MAX as usize;
-
-
-
 static NEXT_TILE_ID: AtomicUsize = AtomicUsize::new(0);
 
 fn clamp(value: i32, low: i32, high: i32) -> i32 {
@@ -317,12 +314,18 @@ pub struct BindingInfo<T> {
 }
 
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, PeekPoke)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum Binding<T> {
     Value(T),
     Binding(PropertyBindingId),
+}
+
+impl<T: Default> Default for Binding<T> {
+    fn default() -> Self {
+        Binding::Value(T::default())
+    }
 }
 
 impl<T> From<PropertyBinding<T>> for Binding<T> {
@@ -340,8 +343,27 @@ pub type OpacityBindingInfo = BindingInfo<f32>;
 pub type ColorBinding = Binding<ColorU>;
 pub type ColorBindingInfo = BindingInfo<ColorU>;
 
+#[derive(PeekPoke)]
+enum PrimitiveDependency {
+    OpacityBinding {
+        binding: OpacityBinding,
+    },
+    ColorBinding {
+        binding: ColorBinding,
+    },
+    SpatialNode {
+        index: SpatialNodeIndex,
+    },
+    Clip {
+        clip: ItemUid,
+    },
+    Image {
+        image: ImageDependency,
+    },
+}
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, PeekPoke, Default)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SpatialNodeKey {
@@ -788,10 +810,6 @@ pub struct Tile {
     pub local_valid_rect: PictureBox2D,
     
     pub z_id: ZBufferId,
-    
-    
-    pub last_updated_frame_id: FrameId,
-
     pub sub_graphs: Vec<(PictureRect, Vec<(PictureCompositeMode, SurfaceIndex)>)>,
 }
 
@@ -820,7 +838,6 @@ impl Tile {
             invalidation_reason: None,
             local_valid_rect: PictureBox2D::zero(),
             z_id: ZBufferId::invalid(),
-            last_updated_frame_id: FrameId::INVALID,
             sub_graphs: Vec::new(),
         }
     }
@@ -979,7 +996,7 @@ impl Tile {
 
         
         
-        self.last_updated_frame_id = ctx.frame_id;
+        self.current_descriptor.last_updated_frame_id = ctx.frame_id;
     }
 
     
@@ -997,31 +1014,6 @@ impl Tile {
         
         
         self.local_valid_rect = self.local_valid_rect.union(&info.prim_clip_box);
-
-        
-        self.current_descriptor.images.extend_from_slice(&info.images);
-
-        
-        self.current_descriptor.opacity_bindings.extend_from_slice(&info.opacity_bindings);
-
-        
-        self.current_descriptor.clips.extend_from_slice(&info.clips);
-
-        
-        for spatial_node_index in &info.spatial_nodes {
-            self.current_descriptor.transforms.push(
-                SpatialNodeKey {
-                    spatial_node_index: *spatial_node_index,
-                    frame_id: self.last_updated_frame_id,
-                }
-            );
-        }
-
-        
-        if info.color_binding.is_some() {
-            self.current_descriptor.color_bindings.insert(
-                self.current_descriptor.color_bindings.len(), info.color_binding.unwrap());
-        }
 
         
         
@@ -1054,20 +1046,64 @@ impl Tile {
         let prim_index = PrimitiveDependencyIndex(self.current_descriptor.prims.len() as u32);
 
         
-        
-        debug_assert!(info.spatial_nodes.len() <= MAX_PRIM_SUB_DEPS);
-        debug_assert!(info.clips.len() <= MAX_PRIM_SUB_DEPS);
-        debug_assert!(info.images.len() <= MAX_PRIM_SUB_DEPS);
-        debug_assert!(info.opacity_bindings.len() <= MAX_PRIM_SUB_DEPS);
+        let dep_offset = self.current_descriptor.dep_data.len() as u32;
+        let mut dep_count = 0;
+
+        for clip in &info.clips {
+            dep_count += 1;
+            poke_into_vec(
+                &PrimitiveDependency::Clip {
+                    clip: *clip,
+                },
+                &mut self.current_descriptor.dep_data,
+            );
+        }
+
+        for spatial_node_index in &info.spatial_nodes {
+            dep_count += 1;
+            poke_into_vec(
+                &PrimitiveDependency::SpatialNode {
+                    index: *spatial_node_index,
+                },
+                &mut self.current_descriptor.dep_data,
+            );
+        }
+
+        for image in &info.images {
+            dep_count += 1;
+            poke_into_vec(
+                &PrimitiveDependency::Image {
+                    image: *image,
+                },
+                &mut self.current_descriptor.dep_data,
+            );
+        }
+
+        for binding in &info.opacity_bindings {
+            dep_count += 1;
+            poke_into_vec(
+                &PrimitiveDependency::OpacityBinding {
+                    binding: *binding,
+                },
+                &mut self.current_descriptor.dep_data,
+            );
+        }
+
+        if let Some(ref binding) = info.color_binding {
+            dep_count += 1;
+            poke_into_vec(
+                &PrimitiveDependency::ColorBinding {
+                    binding: *binding,
+                },
+                &mut self.current_descriptor.dep_data,
+            );
+        }
 
         self.current_descriptor.prims.push(PrimitiveDescriptor {
             prim_uid: info.prim_uid,
             prim_clip_box,
-            transform_dep_count: info.spatial_nodes.len()  as u8,
-            clip_dep_count: info.clips.len() as u8,
-            image_dep_count: info.images.len() as u8,
-            opacity_binding_dep_count: info.opacity_bindings.len() as u8,
-            color_binding_dep_count: if info.color_binding.is_some() { 1 } else { 0 } as u8,
+            dep_offset,
+            dep_count,
         });
 
         
@@ -1083,10 +1119,13 @@ impl Tile {
         frame_context: &FrameVisibilityContext,
     ) {
         
+        ensure_red_zone::<PrimitiveDependency>(&mut self.current_descriptor.dep_data);
+
         
         
         
-        state.spatial_node_comparer.retain_for_frame(self.last_updated_frame_id);
+        
+        state.spatial_node_comparer.retain_for_frame(self.current_descriptor.last_updated_frame_id);
 
         
         
@@ -1313,22 +1352,15 @@ impl Tile {
 }
 
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveDescriptor {
-    
     pub prim_uid: ItemUid,
-    
-    
-    
     pub prim_clip_box: PictureBox2D,
     
-    transform_dep_count: u8,
-    image_dep_count: u8,
-    opacity_binding_dep_count: u8,
-    clip_dep_count: u8,
-    color_binding_dep_count: u8,
+    pub dep_offset: u32,
+    pub dep_count: u32,
 }
 
 impl PartialEq for PrimitiveDescriptor {
@@ -1352,83 +1384,11 @@ impl PartialEq for PrimitiveDescriptor {
             return false;
         }
 
-        true
-    }
-}
-
-
-struct CompareHelper<'a, T> where T: Copy {
-    offset_curr: usize,
-    offset_prev: usize,
-    curr_items: &'a [T],
-    prev_items: &'a [T],
-}
-
-impl<'a, T> CompareHelper<'a, T> where T: Copy + PartialEq {
-    
-    fn new(
-        prev_items: &'a [T],
-        curr_items: &'a [T],
-    ) -> Self {
-        CompareHelper {
-            offset_curr: 0,
-            offset_prev: 0,
-            curr_items,
-            prev_items,
-        }
-    }
-
-    
-    fn reset(&mut self) {
-        self.offset_prev = 0;
-        self.offset_curr = 0;
-    }
-
-    
-    
-    fn is_same<F>(
-        &self,
-        prev_count: u8,
-        curr_count: u8,
-        mut f: F,
-    ) -> bool where F: FnMut(&T, &T) -> bool {
-        
-        if prev_count != curr_count {
-            return false;
-        }
-        
-        if curr_count == 0 {
-            return true;
-        }
-        
-        
-        if curr_count as usize == MAX_PRIM_SUB_DEPS {
+        if self.dep_count != other.dep_count {
             return false;
         }
 
-        let end_prev = self.offset_prev + prev_count as usize;
-        let end_curr = self.offset_curr + curr_count as usize;
-
-        let curr_items = &self.curr_items[self.offset_curr .. end_curr];
-        let prev_items = &self.prev_items[self.offset_prev .. end_prev];
-
-        for (curr, prev) in curr_items.iter().zip(prev_items.iter()) {
-            if !f(prev, curr) {
-                return false;
-            }
-        }
-
         true
-    }
-
-    
-    fn advance_prev(&mut self, count: u8) {
-        self.offset_prev += count as usize;
-    }
-
-    
-    fn advance_curr(&mut self, count: u8) {
-        self.offset_curr  += count as usize;
     }
 }
 
@@ -1441,40 +1401,26 @@ pub struct TileDescriptor {
     
     
     
-    pub prims: Vec<PrimitiveDescriptor>,
-
-    
-    clips: Vec<ItemUid>,
-
-    
-    images: Vec<ImageDependency>,
-
-    
-    
-    opacity_bindings: Vec<OpacityBinding>,
-
-    
-    
-    transforms: Vec<SpatialNodeKey>,
+    prims: Vec<PrimitiveDescriptor>,
 
     
     pub local_valid_rect: PictureRect,
 
     
     
-    color_bindings: Vec<ColorBinding>,
+    last_updated_frame_id: FrameId,
+
+    
+    dep_data: Vec<u8>,
 }
 
 impl TileDescriptor {
     fn new() -> Self {
         TileDescriptor {
-            prims: Vec::new(),
-            clips: Vec::new(),
-            opacity_bindings: Vec::new(),
-            images: Vec::new(),
-            transforms: Vec::new(),
             local_valid_rect: PictureRect::zero(),
-            color_bindings: Vec::new(),
+            dep_data: Vec::new(),
+            prims: Vec::new(),
+            last_updated_frame_id: FrameId::INVALID,
         }
     }
 
@@ -1491,62 +1437,9 @@ impl TileDescriptor {
                 prim.prim_clip_box.max.x,
                 prim.prim_clip_box.max.y,
             ));
-            pt.add_item(format!("deps: t={} i={} o={} c={} color={}",
-                prim.transform_dep_count,
-                prim.image_dep_count,
-                prim.opacity_binding_dep_count,
-                prim.clip_dep_count,
-                prim.color_binding_dep_count,
-            ));
             pt.end_level();
         }
         pt.end_level();
-
-        if !self.clips.is_empty() {
-            pt.new_level("clips".to_string());
-            for clip in &self.clips {
-                pt.new_level(format!("clip uid={}", clip.get_uid()));
-                pt.end_level();
-            }
-            pt.end_level();
-        }
-
-        if !self.images.is_empty() {
-            pt.new_level("images".to_string());
-            for info in &self.images {
-                pt.new_level(format!("key={:?}", info.key));
-                pt.add_item(format!("generation={:?}", info.generation));
-                pt.end_level();
-            }
-            pt.end_level();
-        }
-
-        if !self.opacity_bindings.is_empty() {
-            pt.new_level("opacity_bindings".to_string());
-            for opacity_binding in &self.opacity_bindings {
-                pt.new_level(format!("binding={:?}", opacity_binding));
-                pt.end_level();
-            }
-            pt.end_level();
-        }
-
-        if !self.transforms.is_empty() {
-            pt.new_level("transforms".to_string());
-            for transform in &self.transforms {
-                pt.new_level(format!("spatial_node={:?}", transform));
-                pt.end_level();
-            }
-            pt.end_level();
-        }
-
-        if !self.color_bindings.is_empty() {
-            pt.new_level("color_bindings".to_string());
-            for color_binding in &self.color_bindings {
-                pt.new_level(format!("binding={:?}", color_binding));
-                pt.end_level();
-            }
-            pt.end_level();
-        }
 
         pt.end_level();
     }
@@ -1554,13 +1447,9 @@ impl TileDescriptor {
     
     
     fn clear(&mut self) {
-        self.prims.clear();
-        self.clips.clear();
-        self.opacity_bindings.clear();
-        self.images.clear();
-        self.transforms.clear();
         self.local_valid_rect = PictureRect::zero();
-        self.color_bindings.clear();
+        self.prims.clear();
+        self.dep_data.clear();
     }
 }
 
@@ -3401,7 +3290,7 @@ impl TileCacheInstance {
                 
             }
         };
-        
+
         
         
         
@@ -3487,7 +3376,7 @@ impl TileCacheInstance {
                         )
                         .unwrap_or(PictureRect::zero());
                 }
-                
+
                 
                 
                 
@@ -3500,7 +3389,7 @@ impl TileCacheInstance {
                         self.found_prims_after_backdrop = false;
                         self.backdrop.kind = Some(kind);
                         self.backdrop.backdrop_rect = backdrop_candidate.opaque_rect;
-                        
+
                         
                         
                         
@@ -3525,13 +3414,6 @@ impl TileCacheInstance {
                 frame_context.spatial_tree,
             );
         }
-
-        
-        
-        prim_info.clips.truncate(MAX_PRIM_SUB_DEPS);
-        prim_info.opacity_bindings.truncate(MAX_PRIM_SUB_DEPS);
-        prim_info.spatial_nodes.truncate(MAX_PRIM_SUB_DEPS);
-        prim_info.images.truncate(MAX_PRIM_SUB_DEPS);
 
         
         
@@ -4969,7 +4851,7 @@ impl PicturePrimitive {
                                     if let Some(background_color) = tile_cache.background_color {
                                         clear_color = background_color;
                                     }
-                                    
+
                                     
                                     
                                     
@@ -6421,7 +6303,7 @@ struct PrimitiveComparisonKey {
 }
 
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, PeekPoke, Default)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ImageDependency {
@@ -6448,11 +6330,10 @@ struct DeferredDirtyTest {
 
 
 struct PrimitiveComparer<'a> {
-    clip_comparer: CompareHelper<'a, ItemUid>,
-    transform_comparer: CompareHelper<'a, SpatialNodeKey>,
-    image_comparer: CompareHelper<'a, ImageDependency>,
-    opacity_comparer: CompareHelper<'a, OpacityBinding>,
-    color_comparer: CompareHelper<'a, ColorBinding>,
+    prev_data: &'a [u8],
+    curr_data: &'a [u8],
+    prev_frame_id: FrameId,
+    curr_frame_id: FrameId,
     resource_cache: &'a ResourceCache,
     spatial_node_comparer: &'a mut SpatialNodeComparer,
     opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,
@@ -6468,37 +6349,11 @@ impl<'a> PrimitiveComparer<'a> {
         opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,
         color_bindings: &'a FastHashMap<PropertyBindingId, ColorBindingInfo>,
     ) -> Self {
-        let clip_comparer = CompareHelper::new(
-            &prev.clips,
-            &curr.clips,
-        );
-
-        let transform_comparer = CompareHelper::new(
-            &prev.transforms,
-            &curr.transforms,
-        );
-
-        let image_comparer = CompareHelper::new(
-            &prev.images,
-            &curr.images,
-        );
-
-        let opacity_comparer = CompareHelper::new(
-            &prev.opacity_bindings,
-            &curr.opacity_bindings,
-        );
-
-        let color_comparer = CompareHelper::new(
-            &prev.color_bindings,
-            &curr.color_bindings,
-        );
-
         PrimitiveComparer {
-            clip_comparer,
-            transform_comparer,
-            image_comparer,
-            opacity_comparer,
-            color_comparer,
+            prev_data: &prev.dep_data,
+            curr_data: &curr.dep_data,
+            prev_frame_id: prev.last_updated_frame_id,
+            curr_frame_id: curr.last_updated_frame_id,
             resource_cache,
             spatial_node_comparer,
             opacity_bindings,
@@ -6506,35 +6361,11 @@ impl<'a> PrimitiveComparer<'a> {
         }
     }
 
-    fn reset(&mut self) {
-        self.clip_comparer.reset();
-        self.transform_comparer.reset();
-        self.image_comparer.reset();
-        self.opacity_comparer.reset();
-        self.color_comparer.reset();
-    }
-
-    fn advance_prev(&mut self, prim: &PrimitiveDescriptor) {
-        self.clip_comparer.advance_prev(prim.clip_dep_count);
-        self.transform_comparer.advance_prev(prim.transform_dep_count);
-        self.image_comparer.advance_prev(prim.image_dep_count);
-        self.opacity_comparer.advance_prev(prim.opacity_binding_dep_count);
-        self.color_comparer.advance_prev(prim.color_binding_dep_count);
-    }
-
-    fn advance_curr(&mut self, prim: &PrimitiveDescriptor) {
-        self.clip_comparer.advance_curr(prim.clip_dep_count);
-        self.transform_comparer.advance_curr(prim.transform_dep_count);
-        self.image_comparer.advance_curr(prim.image_dep_count);
-        self.opacity_comparer.advance_curr(prim.opacity_binding_dep_count);
-        self.color_comparer.advance_curr(prim.color_binding_dep_count);
-    }
-
     
     fn compare_prim(
         &mut self,
-        prev: &PrimitiveDescriptor,
-        curr: &PrimitiveDescriptor,
+        prev_desc: &PrimitiveDescriptor,
+        curr_desc: &PrimitiveDescriptor,
     ) -> PrimitiveCompareResult {
         let resource_cache = self.resource_cache;
         let spatial_node_comparer = &mut self.spatial_node_comparer;
@@ -6542,88 +6373,81 @@ impl<'a> PrimitiveComparer<'a> {
         let color_bindings = self.color_bindings;
 
         
-        if prev != curr {
+        if prev_desc != curr_desc {
             return PrimitiveCompareResult::Descriptor;
         }
 
-        
-        if !self.clip_comparer.is_same(
-            prev.clip_dep_count,
-            curr.clip_dep_count,
-            |prev, curr| {
-                prev == curr
-            },
-        ) {
-            return PrimitiveCompareResult::Clip;
-        }
+        let mut prev_dep_data = &self.prev_data[prev_desc.dep_offset as usize ..];
+        let mut curr_dep_data = &self.curr_data[curr_desc.dep_offset as usize ..];
 
-        
-        if !self.transform_comparer.is_same(
-            prev.transform_dep_count,
-            curr.transform_dep_count,
-            |prev, curr| {
-                spatial_node_comparer.are_transforms_equivalent(prev, curr)
-            },
-        ) {
-            return PrimitiveCompareResult::Transform;
-        }
+        let mut prev_dep = PrimitiveDependency::SpatialNode { index: SpatialNodeIndex::INVALID };
+        let mut curr_dep = PrimitiveDependency::SpatialNode { index: SpatialNodeIndex::INVALID };
 
-        
-        if !self.image_comparer.is_same(
-            prev.image_dep_count,
-            curr.image_dep_count,
-            |prev, curr| {
-                prev == curr &&
-                resource_cache.get_image_generation(curr.key) == curr.generation
-            },
-        ) {
-            return PrimitiveCompareResult::Image;
-        }
+        debug_assert_eq!(prev_desc.dep_count, curr_desc.dep_count);
 
-        
-        if !self.opacity_comparer.is_same(
-            prev.opacity_binding_dep_count,
-            curr.opacity_binding_dep_count,
-            |prev, curr| {
-                if prev != curr {
-                    return false;
-                }
+        for _ in 0 .. prev_desc.dep_count {
+            prev_dep_data = peek_from_slice(prev_dep_data, &mut prev_dep);
+            curr_dep_data = peek_from_slice(curr_dep_data, &mut curr_dep);
 
-                if let OpacityBinding::Binding(id) = curr {
-                    if opacity_bindings
-                        .get(id)
-                        .map_or(true, |info| info.changed) {
-                        return false;
+            match (&prev_dep, &curr_dep) {
+                (PrimitiveDependency::Clip { clip: prev }, PrimitiveDependency::Clip { clip: curr }) => {
+                    if prev != curr {
+                        return PrimitiveCompareResult::Clip;
                     }
                 }
-
-                true
-            },
-        ) {
-            return PrimitiveCompareResult::OpacityBinding;
-        }
-
-        
-        if !self.color_comparer.is_same(
-            prev.color_binding_dep_count,
-            curr.color_binding_dep_count,
-            |prev, curr| {
-                if prev != curr {
-                    return false;
-                }
-
-                if let ColorBinding::Binding(id) = curr {
-                    if color_bindings
-                        .get(id)
-                        .map_or(true, |info| info.changed) {
-                        return false;
+                (PrimitiveDependency::SpatialNode { index: prev }, PrimitiveDependency::SpatialNode { index: curr }) => {
+                    let prev_key = SpatialNodeKey {
+                        spatial_node_index: *prev,
+                        frame_id: self.prev_frame_id,
+                    };
+                    let curr_key = SpatialNodeKey {
+                        spatial_node_index: *curr,
+                        frame_id: self.curr_frame_id,
+                    };
+                    if !spatial_node_comparer.are_transforms_equivalent(&prev_key, &curr_key) {
+                        return PrimitiveCompareResult::Transform;
                     }
                 }
+                (PrimitiveDependency::OpacityBinding { binding: prev }, PrimitiveDependency::OpacityBinding { binding: curr }) => {
+                    if prev != curr {
+                        return PrimitiveCompareResult::OpacityBinding;
+                    }
 
-                true
-            },
-        ) {
-            return PrimitiveCompareResult::ColorBinding;
+                    if let OpacityBinding::Binding(id) = curr {
+                        if opacity_bindings
+                            .get(id)
+                            .map_or(true, |info| info.changed) {
+                            return PrimitiveCompareResult::OpacityBinding;
+                        }
+                    }
+                }
+                (PrimitiveDependency::ColorBinding { binding: prev }, PrimitiveDependency::ColorBinding { binding: curr }) => {
+                    if prev != curr {
+                        return PrimitiveCompareResult::ColorBinding;
+                    }
+
+                    if let ColorBinding::Binding(id) = curr {
+                        if color_bindings
+                            .get(id)
+                            .map_or(true, |info| info.changed) {
+                            return PrimitiveCompareResult::ColorBinding;
+                        }
+                    }
+                }
+                (PrimitiveDependency::Image { image: prev }, PrimitiveDependency::Image { image: curr }) => {
+                    if prev != curr {
+                        return PrimitiveCompareResult::Image;
+                    }
+
+                    if resource_cache.get_image_generation(curr.key) != curr.generation {
+                        return PrimitiveCompareResult::Image;
+                    }
+                }
+                _ => {
+                    
+                    return PrimitiveCompareResult::Descriptor;
+                }
+            }
         }
 
         PrimitiveCompareResult::Equal
@@ -7006,23 +6830,10 @@ impl TileNode {
             TileNodeKind::Leaf { ref prev_indices, ref curr_indices, ref mut dirty_tracker, .. } => {
                 
                 if prev_indices.len() == curr_indices.len() {
-                    let mut prev_i0 = 0;
-                    let mut prev_i1 = 0;
-                    prim_comparer.reset();
-
                     
                     for (prev_index, curr_index) in prev_indices.iter().zip(curr_indices.iter()) {
                         let i0 = prev_index.0 as usize;
                         let i1 = curr_index.0 as usize;
-
-                        
-                        
-                        for i in prev_i0 .. i0 {
-                            prim_comparer.advance_prev(&prev_prims[i]);
-                        }
-                        for i in prev_i1 .. i1 {
-                            prim_comparer.advance_curr(&curr_prims[i]);
-                        }
 
                         
                         
@@ -7048,9 +6859,6 @@ impl TileNode {
                             *dirty_tracker = *dirty_tracker | 1;
                             break;
                         }
-
-                        prev_i0 = i0;
-                        prev_i1 = i1;
                     }
                 } else {
                     if invalidation_reason.is_none() {
