@@ -277,6 +277,11 @@ pub unsafe extern "C" fn midir_impl_init(callback: AddCallback) -> *mut MidirWra
     if let Ok(mut midir_impl) = MidirWrapper::new() {
         midir_impl.refresh(callback, None);
 
+        
+        
+        fn assert_send<T: Send>(_: &T) {}
+        assert_send(&midir_impl);
+
         let midir_box = Box::new(midir_impl);
         
         Box::leak(midir_box) as *mut _

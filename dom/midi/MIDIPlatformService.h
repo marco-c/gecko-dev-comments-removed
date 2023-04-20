@@ -69,6 +69,17 @@ class MIDIPlatformService {
   void MaybeStop();
 
   
+  static void InitStatics();
+
+  
+  static nsISerialEventTarget* OwnerThread();
+
+  
+  static void AssertThread() {
+    MOZ_DIAGNOSTIC_ASSERT(OwnerThread()->IsOnCurrentThread());
+  }
+
+  
   static bool IsRunning();
 
   
