@@ -2227,13 +2227,21 @@ HttpBaseChannel::SetIsMainDocumentChannel(bool aValue) {
 
 NS_IMETHODIMP
 HttpBaseChannel::GetProtocolVersion(nsACString& aProtocolVersion) {
-  nsAutoCString protocol;
-  if (mSecurityInfo &&
-      NS_SUCCEEDED(mSecurityInfo->GetNegotiatedNPN(protocol)) &&
-      !protocol.IsEmpty()) {
-    
-    aProtocolVersion = protocol;
-    return NS_OK;
+  
+  
+  
+  
+  
+  if (!mConnectionInfo || !mConnectionInfo->UsingHttpsProxy() ||
+      mConnectionInfo->EndToEndSSL()) {
+    nsAutoCString protocol;
+    if (mSecurityInfo &&
+        NS_SUCCEEDED(mSecurityInfo->GetNegotiatedNPN(protocol)) &&
+        !protocol.IsEmpty()) {
+      
+      aProtocolVersion = protocol;
+      return NS_OK;
+    }
   }
 
   if (mResponseHead) {
