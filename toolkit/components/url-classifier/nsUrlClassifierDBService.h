@@ -183,7 +183,10 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
   
   
   
-  bool IsBusyUpdating() const { return !!mUpdateObserver; }
+  bool IsBusyUpdating() {
+    mozilla::MutexAutoLock lock(mUpdateObserverLock);
+    return !!mUpdateObserver;
+  }
 
   
   
@@ -243,7 +246,12 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
   nsresult mUpdateStatus;
   nsTArray<nsCString> mUpdateTables;
 
-  nsCOMPtr<nsIUrlClassifierUpdateObserver> mUpdateObserver;
+  
+  
+  mozilla::Mutex mUpdateObserverLock;
+
+  nsCOMPtr<nsIUrlClassifierUpdateObserver> mUpdateObserver
+      MOZ_GUARDED_BY(mUpdateObserverLock);
   bool mInStream;
 
   
