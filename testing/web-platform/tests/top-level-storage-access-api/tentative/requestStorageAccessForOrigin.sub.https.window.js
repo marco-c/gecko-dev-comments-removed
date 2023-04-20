@@ -28,6 +28,8 @@ queryParams.forEach((param) => {
   }
 });
 
+const requestedOrigin = 'https://foo.com';
+
 
 
 function RunRequestStorageAccessForOriginInDetachedFrame(site) {
@@ -52,6 +54,12 @@ test(
     '[' + testPrefix +
         '] document.requestStorageAccessForOrigin() should be supported on the document interface');
 
+
+promise_setup(async () => {
+  await test_driver.set_permission(
+    { name: 'top-level-storage-access', requestedOrigin }, 'prompt');
+});
+
 promise_test(
   t => {
     return promise_rejects_js(t, TypeError,
@@ -65,7 +73,7 @@ if (topLevelDocument) {
   promise_test(
       t => {
         return promise_rejects_dom(t, 'NotAllowedError',
-          document.requestStorageAccessForOrigin('https://test.com'),
+          document.requestStorageAccessForOrigin(requestedOrigin),
          'document.requestStorageAccessForOrigin() call without user gesture');
       },
       '[' + testPrefix +
@@ -75,7 +83,7 @@ if (topLevelDocument) {
     const description =
         'document.requestStorageAccessForOrigin() call in a detached frame';
     
-    return RunRequestStorageAccessForOriginInDetachedFrame('https://foo.com')
+    return RunRequestStorageAccessForOriginInDetachedFrame(requestedOrigin)
         .then(t.unreached_func('Should have rejected: ' + description))
         .catch((e) => {
           assert_equals(e.name, 'InvalidStateError', description);
@@ -85,12 +93,22 @@ if (topLevelDocument) {
   promise_test(async t => {
     const description =
         'document.requestStorageAccessForOrigin() in a detached DOMParser result';
-    return RunRequestStorageAccessForOriginViaDomParser('https://foo.com')
+    return RunRequestStorageAccessForOriginViaDomParser(requestedOrigin)
         .then(t.unreached_func('Should have rejected: ' + description))
         .catch((e) => {
           assert_equals(e.name, 'InvalidStateError', description);
         });
   }, '[non-fully-active] document.requestStorageAccessForOrigin() should not resolve when run in a detached DOMParser document');
+
+  promise_test(
+    async t => {
+      await test_driver.set_permission(
+        { name: 'top-level-storage-access', requestedOrigin }, 'granted');
+
+      await document.requestStorageAccessForOrigin(requestedOrigin);
+    },
+    '[' + testPrefix +
+    '] document.requestStorageAccessForOrigin() should be resolved without a user gesture with an existing permission');
 
   
   
@@ -123,18 +141,6 @@ if (topLevelDocument) {
       },
       '[' + testPrefix +
           '] document.requestStorageAccessForOrigin() should be rejected when called with an opaque origin');
-
-
-  promise_test(
-    async t => {
-      await test_driver.set_permission(
-        { name: 'top-level-storage-access', requestedOrigin: 'https://foo.com' }, 'granted');
-
-      await RunCallbackWithGesture(
-        () => document.requestStorageAccessForOrigin('https://foo.com'));
-    },
-    '[' + testPrefix +
-    '] document.requestStorageAccessForOrigin() should be resolved when called properly with a user gesture');
 
 } else {
   promise_test(
