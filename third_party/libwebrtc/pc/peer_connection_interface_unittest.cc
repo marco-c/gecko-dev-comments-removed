@@ -437,7 +437,6 @@ static const char kDtlsSdesFallbackSdp[] =
 class RtcEventLogOutputNull final : public RtcEventLogOutput {
  public:
   bool IsActive() const override { return true; }
-  bool Write(const std::string& ) override { return true; }
   bool Write(const absl::string_view ) override { return true; }
 };
 

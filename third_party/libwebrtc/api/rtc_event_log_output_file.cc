@@ -54,10 +54,6 @@ bool RtcEventLogOutputFile::IsActive() const {
   return IsActiveInternal();
 }
 
-bool RtcEventLogOutputFile::Write(const std::string& output) {
-  return Write(absl::string_view(output));
-}
-
 bool RtcEventLogOutputFile::Write(absl::string_view output) {
   RTC_DCHECK(IsActiveInternal());
   
