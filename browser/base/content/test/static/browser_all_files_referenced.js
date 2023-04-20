@@ -224,11 +224,6 @@ var whitelist = [
     platforms: ["linux", "macosx"],
   },
   
-  {
-    file: "resource://gre/modules/OSCrypto.jsm",
-    platforms: ["linux", "macosx"],
-  },
-  
   { file: "chrome://remote/content/marionette/test_dialog.properties" },
   { file: "chrome://remote/content/marionette/test_dialog.xhtml" },
   { file: "chrome://remote/content/marionette/test_menupopup.xhtml" },
