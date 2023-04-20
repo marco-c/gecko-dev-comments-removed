@@ -1310,14 +1310,28 @@ nsresult ContentEventHandler::HandleQueryContentEvent(
 
 
 
-static nsresult GetFrameForTextRect(const nsINode* aNode, int32_t aNodeOffset,
-                                    bool aHint, nsIFrame** aReturnFrame) {
-  NS_ENSURE_TRUE(aNode && aNode->IsContent(), NS_ERROR_UNEXPECTED);
-  nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
-  NS_ENSURE_TRUE(frame, NS_ERROR_FAILURE);
+static Result<nsIFrame*, nsresult> GetFrameForTextRect(const nsINode* aNode,
+                                                       int32_t aNodeOffset,
+                                                       bool aHint) {
+  const nsIContent* content = nsIContent::FromNodeOrNull(aNode);
+  if (NS_WARN_IF(!content)) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+  nsIFrame* frame = content->GetPrimaryFrame();
+  
+  
+  
+  if (!frame) {
+    return nullptr;
+  }
   int32_t childNodeOffset = 0;
-  return frame->GetChildFrameContainingOffset(aNodeOffset, aHint,
-                                              &childNodeOffset, aReturnFrame);
+  nsIFrame* returnFrame = nullptr;
+  nsresult rv = frame->GetChildFrameContainingOffset(
+      aNodeOffset, aHint, &childNodeOffset, &returnFrame);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
+  }
+  return returnFrame;
 }
 
 nsresult ContentEventHandler::OnQuerySelectedText(
@@ -1403,15 +1417,16 @@ nsresult ContentEventHandler::OnQuerySelectedText(
                                            OffsetAndDataFor::SelectedString);
   }
 
-  nsIFrame* frame = nullptr;
-  rv = GetFrameForTextRect(
+  Result<nsIFrame*, nsresult> frameForTextRectOrError = GetFrameForTextRect(
       focusRef.Container(),
       focusRef.Offset(RangeBoundary::OffsetFilter::kValidOffsets).valueOr(0),
-      true, &frame);
-  if (NS_SUCCEEDED(rv) && frame) {
-    aEvent->mReply->mWritingMode = frame->GetWritingMode();
-  } else {
+      true);
+  if (NS_WARN_IF(frameForTextRectOrError.isErr()) ||
+      !frameForTextRectOrError.inspect()) {
     aEvent->mReply->mWritingMode = WritingMode();
+  } else {
+    aEvent->mReply->mWritingMode =
+        frameForTextRectOrError.inspect()->GetWritingMode();
   }
 
   MOZ_ASSERT(aEvent->Succeeded());
@@ -1518,13 +1533,14 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(
     return FrameAndNodeOffset();
   }
 
-  nsIFrame* firstFrame = nullptr;
-  GetFrameForTextRect(
+  Result<nsIFrame*, nsresult> firstFrameOrError = GetFrameForTextRect(
       nodePosition.Container(),
-      *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets), true,
-      &firstFrame);
+      *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets), true);
+  if (NS_WARN_IF(firstFrameOrError.isErr()) || !firstFrameOrError.inspect()) {
+    return FrameAndNodeOffset();
+  }
   return FrameAndNodeOffset(
-      firstFrame,
+      firstFrameOrError.inspect(),
       *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets));
 }
 
@@ -1607,25 +1623,23 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange) {
     return FrameAndNodeOffset();
   }
 
-  nsIFrame* lastFrame = nullptr;
-  GetFrameForTextRect(
+  Result<nsIFrame*, nsresult> lastFrameOrError = GetFrameForTextRect(
       nodePosition.Container(),
-      *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets), true,
-      &lastFrame);
-  if (!lastFrame) {
+      *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets), true);
+  if (NS_WARN_IF(lastFrameOrError.isErr()) || !lastFrameOrError.inspect()) {
     return FrameAndNodeOffset();
   }
 
   
   
   
-  if (!lastFrame->IsTextFrame()) {
+  if (!lastFrameOrError.inspect()->IsTextFrame()) {
     return FrameAndNodeOffset(
-        lastFrame,
+        lastFrameOrError.inspect(),
         *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets));
   }
 
-  int32_t start = lastFrame->GetOffsets().first;
+  int32_t start = lastFrameOrError.inspect()->GetOffsets().first;
 
   
   
@@ -1638,17 +1652,16 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange) {
         *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets);
     MOZ_ASSERT(newNodePositionOffset != 0);
     nodePosition = {nodePosition.Container(), newNodePositionOffset - 1u};
-    GetFrameForTextRect(
+    lastFrameOrError = GetFrameForTextRect(
         nodePosition.Container(),
-        *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets), true,
-        &lastFrame);
-    if (NS_WARN_IF(!lastFrame)) {
+        *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets), true);
+    if (NS_WARN_IF(lastFrameOrError.isErr()) || !lastFrameOrError.inspect()) {
       return FrameAndNodeOffset();
     }
   }
 
   return FrameAndNodeOffset(
-      lastFrame,
+      lastFrameOrError.inspect(),
       *nodePosition.Offset(NodePosition::OffsetFilter::kValidOffsets));
 }
 
@@ -1741,13 +1754,14 @@ ContentEventHandler::GuessLineBreakerRectAfter(const Text& aTextNode) {
   
   
   
-  nsIFrame* lastTextFrame = nullptr;
-  nsresult rv = GetFrameForTextRect(&aTextNode, length, true, &lastTextFrame);
-  if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!lastTextFrame)) {
+  Result<nsIFrame*, nsresult> lastTextFrameOrError =
+      GetFrameForTextRect(&aTextNode, length, true);
+  if (NS_WARN_IF(lastTextFrameOrError.isErr()) ||
+      !lastTextFrameOrError.inspect()) {
     return result;
   }
-  const nsRect kLastTextFrameRect = lastTextFrame->GetRect();
-  if (lastTextFrame->GetWritingMode().IsVertical()) {
+  const nsRect kLastTextFrameRect = lastTextFrameOrError.inspect()->GetRect();
+  if (lastTextFrameOrError.inspect()->GetWritingMode().IsVertical()) {
     
     result.mRect.SetRect(0, kLastTextFrameRect.height, kLastTextFrameRect.width,
                          0);
@@ -1756,7 +1770,7 @@ ContentEventHandler::GuessLineBreakerRectAfter(const Text& aTextNode) {
     result.mRect.SetRect(kLastTextFrameRect.width, 0, 0,
                          kLastTextFrameRect.height);
   }
-  result.mBaseFrame = lastTextFrame;
+  result.mBaseFrame = lastTextFrameOrError.unwrap();
   return result;
 }
 
