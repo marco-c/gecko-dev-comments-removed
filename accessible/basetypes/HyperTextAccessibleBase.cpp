@@ -239,10 +239,8 @@ LayoutDeviceIntRect HyperTextAccessibleBase::TextBounds(int32_t aStartOffset,
   
   
   
-  
-  
 
-  TextLeafPoint currPoint = ToTextLeafPoint(aStartOffset, false);
+  TextLeafPoint startPoint = ToTextLeafPoint(aStartOffset, false);
   TextLeafPoint endPoint =
       ToTextLeafPoint(ConvertMagicOffset(aEndOffset), true);
   if (!endPoint) {
@@ -254,41 +252,15 @@ LayoutDeviceIntRect HyperTextAccessibleBase::TextBounds(int32_t aStartOffset,
   
   endPoint = endPoint.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR,
                                    eDirPrevious, false);
-
-  if (endPoint == currPoint) {
-    result = currPoint.CharBounds();
-    nsAccUtils::ConvertScreenCoordsTo(&result.x, &result.y, aCoordType, Acc());
-    return result;
-  } else if (endPoint < currPoint) {
+  if (endPoint < startPoint) {
     return result;
   }
 
-  bool locatedFinalLine = false;
-  result = currPoint.CharBounds();
-
-  
-  
-  while (!locatedFinalLine) {
-    
-    
-    
-    
-    TextLeafPoint lineStartPoint =
-        currPoint.FindBoundary(nsIAccessibleText::BOUNDARY_LINE_START, eDirNext,
-                                false);
-    TextLeafPoint lastPointInLine = lineStartPoint.FindBoundary(
-        nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
-         false);
-    if (endPoint <= lastPointInLine) {
-      lastPointInLine = endPoint;
-      locatedFinalLine = true;
-    }
-
-    LayoutDeviceIntRect currLine = currPoint.CharBounds();
-    currLine.UnionRect(currLine, lastPointInLine.CharBounds());
-    result.UnionRect(result, currLine);
-
-    currPoint = lineStartPoint;
+  if (endPoint == startPoint) {
+    result = startPoint.CharBounds();
+  } else {
+    TextLeafRange range(startPoint, endPoint);
+    result = range.Bounds();
   }
 
   

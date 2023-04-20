@@ -1493,6 +1493,43 @@ bool TextLeafPoint::ContainsPoint(int32_t aX, int32_t aY) {
   return CharBounds().Contains(aX, aY);
 }
 
+LayoutDeviceIntRect TextLeafRange::Bounds() const {
+  if (mEnd == mStart || mEnd < mStart) {
+    return LayoutDeviceIntRect();
+  }
+
+  bool locatedFinalLine = false;
+  TextLeafPoint currPoint = mStart;
+  LayoutDeviceIntRect result = currPoint.CharBounds();
+
+  
+  
+  while (!locatedFinalLine) {
+    
+    
+    
+    
+    TextLeafPoint lineStartPoint =
+        currPoint.FindBoundary(nsIAccessibleText::BOUNDARY_LINE_START, eDirNext,
+                                false);
+    TextLeafPoint lastPointInLine = lineStartPoint.FindBoundary(
+        nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
+         false);
+    if (mEnd <= lastPointInLine) {
+      lastPointInLine = mEnd;
+      locatedFinalLine = true;
+    }
+
+    LayoutDeviceIntRect currLine = currPoint.CharBounds();
+    currLine.UnionRect(currLine, lastPointInLine.CharBounds());
+    result.UnionRect(result, currLine);
+
+    currPoint = lineStartPoint;
+  }
+
+  return result;
+}
+
 TextLeafRange::Iterator TextLeafRange::Iterator::BeginIterator(
     const TextLeafRange& aRange) {
   Iterator result(aRange);

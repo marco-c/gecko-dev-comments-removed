@@ -249,6 +249,13 @@ class TextLeafRange final {
   TextLeafPoint End() const { return mEnd; }
   void SetEnd(const TextLeafPoint& aEnd) { mEnd = aEnd; }
 
+  
+
+
+
+
+  LayoutDeviceIntRect Bounds() const;
+
  private:
   TextLeafPoint mStart;
   TextLeafPoint mEnd;
