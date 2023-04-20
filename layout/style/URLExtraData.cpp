@@ -9,6 +9,7 @@
 #include "mozilla/URLExtraData.h"
 
 #include "mozilla/NullPrincipal.h"
+#include "nsAboutProtocolUtils.h"
 #include "ReferrerInfo.h"
 
 namespace mozilla {
@@ -27,6 +28,32 @@ void URLExtraData::Init() {
       new URLExtraData(baseURI.forget(), referrerInfo.forget(),
                        NullPrincipal::CreateWithoutOriginAttributes());
   sDummyChrome->mChromeRulesEnabled = true;
+}
+
+static bool IsPrivilegedAboutURIForCSS(nsIURI* aURI) {
+#ifdef MOZ_THUNDERBIRD
+  if (!aURI->SchemeIs("about")) {
+    return false;
+  }
+  
+  
+  
+  nsAutoCString name;
+  if (NS_WARN_IF(NS_FAILED(NS_GetAboutModuleName(aURI, name)))) {
+    return false;
+  }
+  return name.EqualsLiteral("3pane") || name.EqualsLiteral("addressbook");
+#else
+  return false;
+#endif
+}
+
+bool URLExtraData::ChromeRulesEnabled(nsIURI* aURI) {
+  if (!aURI) {
+    return false;
+  }
+  return aURI->SchemeIs("chrome") || aURI->SchemeIs("resource") ||
+         IsPrivilegedAboutURIForCSS(aURI);
 }
 
 
