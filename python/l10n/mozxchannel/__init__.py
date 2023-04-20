@@ -46,25 +46,6 @@ def get_default_config(topsrcdir, strings_path):
                     "mobile/android/locales/l10n.toml",
                 ],
             },
-            "comm-central": {
-                "path": topsrcdir / "comm",
-                "post-clobber": True,
-                "url": "https://hg.mozilla.org/comm-central/",
-                "heads": {
-                    
-                    
-                    
-                    
-                    "comm": "comm-central",
-                    "comm-beta": "releases/comm-beta",
-                    "comm-esr102": "releases/comm-esr102",
-                },
-                "config_files": [
-                    "comm/calendar/locales/l10n.toml",
-                    "comm/mail/locales/l10n.toml",
-                    "comm/suite/locales/l10n.toml",
-                ],
-            },
         },
     }
 
