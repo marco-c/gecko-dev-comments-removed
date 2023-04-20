@@ -207,16 +207,9 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
 
   
   void NullifyStream() override {
-    mReadableStreamBody = nullptr;
+    BodyStreamHolder::NullifyStream();
     mReadableStreamReader = nullptr;
     mFetchStreamReader = nullptr;
-  }
-
-  void SetReadableStreamBody(ReadableStream* aBody) override {
-    mReadableStreamBody = aBody;
-  }
-  ReadableStream* GetReadableStreamBody() override {
-    return mReadableStreamBody;
   }
 
   void MarkAsRead() override { mBodyUsed = true; }
@@ -234,10 +227,6 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
 
  protected:
   nsCOMPtr<nsIGlobalObject> mOwner;
-
-  
-  
-  RefPtr<ReadableStream> mReadableStreamBody;
 
   
   
