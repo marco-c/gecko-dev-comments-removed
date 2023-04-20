@@ -62,10 +62,6 @@ class FlexfecReceiveStreamImpl : public FlexfecReceiveStream {
   void SetRtpExtensions(std::vector<RtpExtension> extensions) override;
   RtpHeaderExtensionMap GetRtpExtensionMap() const override;
 
-  
-  
-  void SetLocalSsrc(uint32_t local_ssrc);
-
   uint32_t remote_ssrc() const { return config_.rtp.remote_ssrc; }
   bool transport_cc() const override {
     RTC_DCHECK_RUN_ON(&packet_sequence_checker_);

@@ -132,10 +132,6 @@ class VideoReceiveStream2
   void SetSync(Syncable* audio_syncable);
 
   
-  
-  void SetLocalSsrc(uint32_t local_ssrc);
-
-  
   void Start() override;
   void Stop() override;
 

@@ -266,10 +266,6 @@ class Call final : public webrtc::Call,
 
   void OnLocalSsrcUpdated(webrtc::AudioReceiveStream& stream,
                           uint32_t local_ssrc) override;
-  void OnLocalSsrcUpdated(VideoReceiveStream& stream,
-                          uint32_t local_ssrc) override;
-  void OnLocalSsrcUpdated(FlexfecReceiveStream& stream,
-                          uint32_t local_ssrc) override;
 
   void OnUpdateSyncGroup(webrtc::AudioReceiveStream& stream,
                          const std::string& sync_group) override;
@@ -418,8 +414,6 @@ class Call final : public webrtc::Call,
   std::map<uint32_t, ReceiveStream*> receive_rtp_config_
       RTC_GUARDED_BY(&receive_11993_checker_);
 
-  
-  
   
   std::map<uint32_t, AudioSendStream*> audio_send_ssrcs_
       RTC_GUARDED_BY(worker_thread_);
@@ -1378,17 +1372,6 @@ void Call::OnLocalSsrcUpdated(webrtc::AudioReceiveStream& stream,
   auto it = audio_send_ssrcs_.find(local_ssrc);
   receive_stream.AssociateSendStream(it != audio_send_ssrcs_.end() ? it->second
                                                                    : nullptr);
-}
-
-void Call::OnLocalSsrcUpdated(VideoReceiveStream& stream, uint32_t local_ssrc) {
-  RTC_DCHECK_RUN_ON(worker_thread_);
-  static_cast<VideoReceiveStream2&>(stream).SetLocalSsrc(local_ssrc);
-}
-
-void Call::OnLocalSsrcUpdated(FlexfecReceiveStream& stream,
-                              uint32_t local_ssrc) {
-  RTC_DCHECK_RUN_ON(worker_thread_);
-  static_cast<FlexfecReceiveStreamImpl&>(stream).SetLocalSsrc(local_ssrc);
 }
 
 void Call::OnUpdateSyncGroup(webrtc::AudioReceiveStream& stream,

@@ -185,9 +185,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   void UpdateRtt(int64_t max_rtt_ms);
 
-  
-  void OnLocalSsrcChange(uint32_t local_ssrc);
-
   absl::optional<int64_t> LastReceivedPacketMs() const;
   absl::optional<int64_t> LastReceivedKeyframePacketMs() const;
 
