@@ -217,7 +217,7 @@ class CreditCards extends CreditCardsBase {
 
 
 
-  async *getDuplicateRecord(record) {
+  async *getDuplicateRecords(record) {
     if (!record["cc-number"]) {
       return null;
     }
