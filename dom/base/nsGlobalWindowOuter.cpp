@@ -111,6 +111,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_full_screen_api.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/ThrottledEventQueue.h"
@@ -4367,7 +4368,7 @@ nsresult nsGlobalWindowOuter::ProcessWidgetFullscreenRequest(
   
   
   
-  if (!Preferences::GetBool("full-screen-api.ignore-widgets", false) &&
+  if (!StaticPrefs::full_screen_api_ignore_widgets() &&
       !mForceFullScreenInWidget) {
     if (MakeWidgetFullscreen(this, aReason, aFullscreen)) {
       

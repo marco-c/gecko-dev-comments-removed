@@ -3399,8 +3399,6 @@ pref("alerts.showFavicons", false);
   pref("full-screen-api.macos-native-full-screen", false);
 #endif
 
-pref("full-screen-api.ignore-widgets", false);
-
 #ifndef MOZ_WIDGET_GTK
   pref("full-screen-api.transition-duration.enter", "200 200");
   pref("full-screen-api.transition-duration.leave", "200 200");
