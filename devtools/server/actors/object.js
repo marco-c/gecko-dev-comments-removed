@@ -4,11 +4,11 @@
 
 "use strict";
 
+const { Actor } = require("resource://devtools/shared/protocol/Actor.js");
+const { objectSpec } = require("resource://devtools/shared/specs/object.js");
+
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
 const { assert } = DevToolsUtils;
-
-const protocol = require("resource://devtools/shared/protocol.js");
-const { objectSpec } = require("resource://devtools/shared/specs/object.js");
 
 loader.lazyRequireGetter(
   this,
@@ -68,7 +68,7 @@ const {
   isTypedArray,
 } = require("resource://devtools/server/actors/object/utils.js");
 
-const proto = {
+class ObjectActor extends Actor {
   
 
 
@@ -89,7 +89,8 @@ const proto = {
 
 
 
-  initialize(
+
+  constructor(
     obj,
     {
       thread,
@@ -103,13 +104,13 @@ const proto = {
     },
     conn
   ) {
+    super(conn, objectSpec);
+
     assert(
       !obj.optimizedOut,
       "Should not create object actors for optimized out values!"
     );
-    protocol.Actor.prototype.initialize.call(this, conn);
 
-    this.conn = conn;
     this.obj = obj;
     this.thread = thread;
     this.hooks = {
@@ -121,23 +122,23 @@ const proto = {
       customFormatterObjectTagDepth,
       customFormatterConfigDbgObj,
     };
-  },
+  }
 
   rawValue() {
     return this.obj.unsafeDereference();
-  },
+  }
 
   addWatchpoint(property, label, watchpointType) {
     this.thread.addWatchpoint(this, { property, label, watchpointType });
-  },
+  }
 
   removeWatchpoint(property) {
     this.thread.removeWatchpoint(this, property);
-  },
+  }
 
   removeWatchpoints() {
     this.thread.removeWatchpoint(this);
-  },
+  }
 
   
 
@@ -218,11 +219,11 @@ const proto = {
     }
 
     return g;
-  },
+  }
 
   customFormatterBody() {
     return customFormatterBody(this, this._customFormatterItem);
-  },
+  }
 
   _getOwnPropertyLength() {
     if (isTypedArray(this.obj)) {
@@ -242,7 +243,7 @@ const proto = {
     }
 
     return null;
-  },
+  }
 
   getRawObject() {
     let raw = this.obj.unsafeDereference();
@@ -258,7 +259,7 @@ const proto = {
     }
 
     return raw;
-  },
+  }
 
   
 
@@ -279,7 +280,7 @@ const proto = {
         DevToolsUtils.reportException(msg, e);
       }
     }
-  },
+  }
 
   
 
@@ -302,7 +303,7 @@ const proto = {
     }
 
     return { promiseState };
-  },
+  }
 
   
 
@@ -312,28 +313,28 @@ const proto = {
 
   enumProperties(options) {
     return new PropertyIteratorActor(this, options, this.conn);
-  },
+  }
 
   
 
 
   enumEntries() {
     return new PropertyIteratorActor(this, { enumEntries: true }, this.conn);
-  },
+  }
 
   
 
 
   enumSymbols() {
     return new SymbolIteratorActor(this, this.conn);
-  },
+  }
 
   
 
 
   enumPrivateProperties() {
     return new PrivatePropertiesIteratorActor(this, this.conn);
-  },
+  }
 
   
 
@@ -386,7 +387,7 @@ const proto = {
       ownSymbols,
       safeGetterValues: this._findSafeGetterValues(names),
     };
-  },
+  }
 
   
 
@@ -482,7 +483,7 @@ const proto = {
     }
 
     return safeGetterValues;
-  },
+  }
 
   
 
@@ -502,7 +503,7 @@ const proto = {
     }
 
     return getterValue;
-  },
+  }
 
   
 
@@ -554,7 +555,7 @@ const proto = {
 
     object._safeGetters = getters;
     return getters;
-  },
+  }
 
   
 
@@ -565,7 +566,7 @@ const proto = {
       objProto = this.obj.proto;
     }
     return { prototype: this.hooks.createValueGrip(objProto) };
-  },
+  }
 
   
 
@@ -583,7 +584,7 @@ const proto = {
     }
 
     return { descriptor: this._propertyDescriptor(name) };
-  },
+  }
 
   
 
@@ -621,7 +622,7 @@ const proto = {
       : this.obj.getProperty(name);
 
     return { value: this._buildCompletion(value) };
-  },
+  }
 
   
 
@@ -648,7 +649,7 @@ const proto = {
     const value = this.obj.apply(debugeeContext, debugeeArgs);
 
     return { value: this._buildCompletion(value) };
-  },
+  }
 
   _getValueFromGrip(grip) {
     if (typeof grip !== "object" || !grip) {
@@ -672,7 +673,7 @@ const proto = {
     }
 
     return actor.obj;
-  },
+  }
 
   
 
@@ -697,7 +698,7 @@ const proto = {
     }
 
     return completionGrip;
-  },
+  }
 
   
 
@@ -767,7 +768,7 @@ const proto = {
       }
     }
     return retval;
-  },
+  }
 
   
 
@@ -787,7 +788,7 @@ const proto = {
       proxyTarget: this.hooks.createValueGrip(this.obj.proxyTarget),
       proxyHandler: this.hooks.createValueGrip(this.obj.proxyHandler),
     };
-  },
+  }
 
   
 
@@ -798,11 +799,10 @@ const proto = {
       this.hooks.customFormatterConfigDbgObj = null;
     }
     this._customFormatterItem = null;
-  },
-};
+  }
+}
 
-exports.ObjectActor = protocol.ActorClassWithSpec(objectSpec, proto);
-exports.ObjectActorProto = proto;
+exports.ObjectActor = ObjectActor;
 
 function safeGetOwnPropertyDescriptor(obj, name) {
   let desc = null;
