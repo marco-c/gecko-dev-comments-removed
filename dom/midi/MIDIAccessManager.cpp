@@ -16,7 +16,7 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_midi.h"
 
 using namespace mozilla::ipc;
 
@@ -58,6 +58,18 @@ already_AddRefed<Promise> MIDIAccessManager::RequestMIDIAccess(
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
+
+#ifndef MOZ_WEBMIDI_MIDIR_IMPL
+  if (!StaticPrefs::midi_testing()) {
+    
+    
+    
+    
+    
+    aRv.ThrowSecurityError("Access not allowed");
+    return nullptr;
+  }
+#endif
 
   if (!FeaturePolicyUtils::IsFeatureAllowed(doc, u"midi"_ns)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
