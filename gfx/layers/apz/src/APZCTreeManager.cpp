@@ -2876,16 +2876,15 @@ APZCTreeManager::BuildOverscrollHandoffChain(
   while (apzc != nullptr) {
     result->Add(apzc);
 
-    if (apzc->GetScrollHandoffParentId() ==
-        ScrollableLayerGuid::NULL_SCROLL_ID) {
-      if (!apzc->IsRootForLayersId()) {
-        
-        NS_WARNING("Found a non-root APZ with no handoff parent");
-      }
-    }
-
     APZCTreeManager::TargetApzcForNodeResult handoffResult =
         FindHandoffParent(apzc);
+
+    if (!handoffResult.mIsFixed && !apzc->IsRootForLayersId() &&
+        apzc->GetScrollHandoffParentId() ==
+            ScrollableLayerGuid::NULL_SCROLL_ID) {
+      
+      NS_WARNING("Found a non-root APZ with no handoff parent");
+    }
 
     
     
