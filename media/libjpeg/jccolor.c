@@ -17,7 +17,6 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jsimd.h"
-#include "jconfigint.h"
 
 
 
@@ -83,6 +82,18 @@ typedef my_color_converter *my_cconvert_ptr;
 #define G_CR_OFF        (6 * (MAXJSAMPLE + 1))
 #define B_CR_OFF        (7 * (MAXJSAMPLE + 1))
 #define TABLE_SIZE      (8 * (MAXJSAMPLE + 1))
+
+
+
+
+
+
+
+#if BITS_IN_JSAMPLE == 12
+#define RANGE_LIMIT(value)  ((value) & 0xFFF)
+#else
+#define RANGE_LIMIT(value)  (value)
+#endif
 
 
 
@@ -392,9 +403,9 @@ cmyk_ycck_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
     outptr3 = output_buf[3][output_row];
     output_row++;
     for (col = 0; col < num_cols; col++) {
-      r = MAXJSAMPLE - inptr[0];
-      g = MAXJSAMPLE - inptr[1];
-      b = MAXJSAMPLE - inptr[2];
+      r = MAXJSAMPLE - RANGE_LIMIT(inptr[0]);
+      g = MAXJSAMPLE - RANGE_LIMIT(inptr[1]);
+      b = MAXJSAMPLE - RANGE_LIMIT(inptr[2]);
       
       outptr3[col] = inptr[3];
       inptr += 4;

@@ -23,7 +23,6 @@
 #include "../../../jdct.h"
 #include "../../../jsimddct.h"
 #include "../../jsimd.h"
-#include "jconfigint.h"
 
 #include <ctype.h>
 
@@ -31,10 +30,10 @@
 #define JSIMD_FASTST3  2
 #define JSIMD_FASTTBL  4
 
-static unsigned int simd_support = ~0;
-static unsigned int simd_huffman = 1;
-static unsigned int simd_features = JSIMD_FASTLD3 | JSIMD_FASTST3 |
-                                    JSIMD_FASTTBL;
+static THREAD_LOCAL unsigned int simd_support = ~0;
+static THREAD_LOCAL unsigned int simd_huffman = 1;
+static THREAD_LOCAL unsigned int simd_features = JSIMD_FASTLD3 |
+                                                 JSIMD_FASTST3 | JSIMD_FASTTBL;
 
 #if defined(__linux__) || defined(ANDROID) || defined(__ANDROID__)
 
@@ -106,8 +105,6 @@ parse_proc_cpuinfo(int bufsize)
 }
 
 #endif
-
-
 
 
 
@@ -1021,7 +1018,7 @@ jsimd_can_encode_mcu_AC_first_prepare(void)
 GLOBAL(void)
 jsimd_encode_mcu_AC_first_prepare(const JCOEF *block,
                                   const int *jpeg_natural_order_start, int Sl,
-                                  int Al, JCOEF *values, size_t *zerobits)
+                                  int Al, UJCOEF *values, size_t *zerobits)
 {
   jsimd_encode_mcu_AC_first_prepare_neon(block, jpeg_natural_order_start,
                                          Sl, Al, values, zerobits);
@@ -1048,7 +1045,7 @@ jsimd_can_encode_mcu_AC_refine_prepare(void)
 GLOBAL(int)
 jsimd_encode_mcu_AC_refine_prepare(const JCOEF *block,
                                    const int *jpeg_natural_order_start, int Sl,
-                                   int Al, JCOEF *absvalues, size_t *bits)
+                                   int Al, UJCOEF *absvalues, size_t *bits)
 {
   return jsimd_encode_mcu_AC_refine_prepare_neon(block,
                                                  jpeg_natural_order_start,

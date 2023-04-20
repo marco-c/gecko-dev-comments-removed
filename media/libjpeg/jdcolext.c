@@ -65,7 +65,7 @@ ycc_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
       
       
 #ifdef RGB_ALPHA
-      outptr[RGB_ALPHA] = 0xFF;
+      outptr[RGB_ALPHA] = MAXJSAMPLE;
 #endif
       outptr += RGB_PIXELSIZE;
     }
@@ -97,7 +97,7 @@ gray_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
       
       
 #ifdef RGB_ALPHA
-      outptr[RGB_ALPHA] = 0xFF;
+      outptr[RGB_ALPHA] = MAXJSAMPLE;
 #endif
       outptr += RGB_PIXELSIZE;
     }
@@ -133,7 +133,7 @@ rgb_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
       
       
 #ifdef RGB_ALPHA
-      outptr[RGB_ALPHA] = 0xFF;
+      outptr[RGB_ALPHA] = MAXJSAMPLE;
 #endif
       outptr += RGB_PIXELSIZE;
     }

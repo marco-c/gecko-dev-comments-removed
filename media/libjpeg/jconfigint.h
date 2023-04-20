@@ -1,15 +1,22 @@
 
-#define BUILD "20210810"
+#define BUILD  "20230208"
 
 
 #include "mozilla/Attributes.h"
 #define INLINE MOZ_ALWAYS_INLINE
 
 
+#if defined(_MSC_VER)
+#define THREAD_LOCAL __declspec(thread)
+#else
+#define THREAD_LOCAL __thread
+#endif
+
+
 #define PACKAGE_NAME "libjpeg-turbo"
 
 
-#define VERSION "2.1.1"
+#define VERSION  "2.1.5.1"
 
 
 #ifdef HAVE_64BIT_BUILD

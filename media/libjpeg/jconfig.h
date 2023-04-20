@@ -1,15 +1,13 @@
 
 
 
-
-#define JPEG_LIB_VERSION 62
-
-
-#define LIBJPEG_TURBO_VERSION 2.0.6
+#define JPEG_LIB_VERSION  62
 
 
-#define LIBJPEG_TURBO_VERSION_NUMBER 2000006
+#define LIBJPEG_TURBO_VERSION  2.1.5.1
 
+
+#define LIBJPEG_TURBO_VERSION_NUMBER  2001005
 
 
 
@@ -18,6 +16,7 @@
 
 
 
+#define MEM_SRCDST_SUPPORTED 1
 
 
 #define WITH_SIMD 1
@@ -30,41 +29,8 @@
 
 
 
+
 #define BITS_IN_JSAMPLE  8      /* use 8 or 12 */
-
-
-
-
-
-#define HAVE_STDDEF_H 1
-
-
-#define HAVE_STDLIB_H 1
-
-
-#define NEED_SYS_TYPES_H 1
-
-
-
-
-
-#define HAVE_UNSIGNED_CHAR 1
-
-
-#define HAVE_UNSIGNED_SHORT 1
-
-
-
-
-
-
-
-
-#ifndef __CHAR_UNSIGNED__
-
-#endif
-
-
 
 
 

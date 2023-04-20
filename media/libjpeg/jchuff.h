@@ -27,6 +27,14 @@
 
 
 
+
+
+
+
+typedef unsigned short UJCOEF;
+
+
+
 typedef struct {
   unsigned int ehufco[256];     
   char ehufsi[256];             
