@@ -16,6 +16,7 @@
 #include "nsContentUtils.h"
 #include "nsHashKeys.h"
 #include "nsISupports.h"
+#include "nsRFPService.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
@@ -64,18 +65,9 @@ class ModuleLoaderBase;
 
 
 
-enum class RTPCallerType : uint8_t {
-  Normal = 0,
-  SystemPrincipal = (1 << 0),
-  ResistFingerprinting = (1 << 1),
-  CrossOriginIsolated = (1 << 2)
-};
-
-
-
-
 class nsIGlobalObject : public nsISupports,
                         public mozilla::dom::DispatcherTrait {
+ private:
   nsTArray<nsCString> mHostObjectURIs;
 
   
@@ -91,6 +83,7 @@ class nsIGlobalObject : public nsISupports,
   nsIGlobalObject();
 
  public:
+  using RTPCallerType = mozilla::RTPCallerType;
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IGLOBALOBJECT_IID)
 
   
