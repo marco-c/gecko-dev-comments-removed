@@ -1,9 +1,11 @@
 function testScript(script) {
-  function makeWrapperUrl(wrapper) {
-    return wrapper + "?script=" + script;
+  function makeWrapperUrl(wrapper, orbEnabled) {
+    let url = wrapper + "?script=" + script;
+    if (orbEnabled) {
+      url += "&orbEnabled";
+    }
+    return url;
   }
-  let workerWrapperUrl = makeWrapperUrl("worker_wrapper.js");
-
   
   
   
@@ -52,9 +54,11 @@ function testScript(script) {
     });
   }
 
-  function nestedWorkerTest() {
+  function nestedWorkerTest(orbEnabled) {
     return new Promise(function(resolve, reject) {
-      var worker = new Worker(makeWrapperUrl("nested_worker_wrapper.js"));
+      var worker = new Worker(
+        makeWrapperUrl("nested_worker_wrapper.js", orbEnabled)
+      );
       worker.onmessage = function(event) {
         if (event.data.context != "NestedWorker") {
           return;
@@ -137,32 +141,57 @@ function testScript(script) {
   
   
   
-  setupPrefs()
-    .then(function() {
-      return windowTest();
-    })
-    .then(function() {
-      return workerTest();
-    })
-    .then(function() {
-      return nestedWorkerTest();
-    })
-    .then(function() {
-      return serviceWorkerTest();
-    })
-    .catch(function(e) {
-      ok(false, "Some test failed in " + script);
-      info(e);
-      info(e.message);
-      return Promise.resolve();
-    })
-    .then(function() {
-      try {
-        if (parent && parent.finishTest) {
-          parent.finishTest();
-          return;
+  function run(orbEnabled) {
+    const shouldFinishTest = !orbEnabled;
+    return setupPrefs()
+      .then(function() {
+        
+        
+        return windowTest();
+      })
+      .then(function() {
+        return SpecialPowers.pushPrefEnv({
+          set: [
+            ["browser.opaqueResponseBlocking", orbEnabled],
+            ["browser.opaqueResponseBlocking.javascriptValidator", orbEnabled],
+          ],
+        });
+      })
+      .then(function() {
+        return workerTest();
+      })
+      .then(function() {
+        return nestedWorkerTest(orbEnabled);
+      })
+      .then(function() {
+        return serviceWorkerTest();
+      })
+      .catch(function(e) {
+        ok(false, "Some test failed in " + script);
+        info(e);
+        info(e.message);
+        return Promise.resolve();
+      })
+      .then(function() {
+        try {
+          if (parent && parent.finishTest) {
+            if (shouldFinishTest) {
+              parent.finishTest();
+            }
+            return;
+          }
+        } catch {}
+        if (shouldFinishTest) {
+          SimpleTest.finish();
         }
-      } catch {}
-      SimpleTest.finish();
-    });
+      });
+  }
+
+  let orbEnabled = true;
+  let workerWrapperUrl = makeWrapperUrl("worker_wrapper.js", orbEnabled);
+  run(orbEnabled).then(function() {
+    orbEnabled = false;
+    workerWrapperUrl = makeWrapperUrl("worker_wrapper.js", orbEnabled);
+    run(orbEnabled);
+  });
 }
