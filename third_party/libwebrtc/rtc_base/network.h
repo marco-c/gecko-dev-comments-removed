@@ -422,6 +422,9 @@ class RTC_EXPORT Network {
   int prefix_length() const { return prefix_length_; }
 
   
+  int family() const { return prefix_.family(); }
+
+  
   
   std::string key() const { return key_; }
 

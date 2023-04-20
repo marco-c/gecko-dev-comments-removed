@@ -128,17 +128,19 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
     network_.set_type(adapter_type);
   }
 
-  void CreateStunPort(const rtc::SocketAddress& server_addr) {
+  void CreateStunPort(const rtc::SocketAddress& server_addr,
+                      const webrtc::FieldTrialsView* field_trials = nullptr) {
     ServerAddresses stun_servers;
     stun_servers.insert(server_addr);
-    CreateStunPort(stun_servers);
+    CreateStunPort(stun_servers, field_trials);
   }
 
-  void CreateStunPort(const ServerAddresses& stun_servers) {
+  void CreateStunPort(const ServerAddresses& stun_servers,
+                      const webrtc::FieldTrialsView* field_trials = nullptr) {
     stun_port_ = cricket::StunPort::Create(
         rtc::Thread::Current(), socket_factory(), &network_, 0, 0,
         rtc::CreateRandomString(16), rtc::CreateRandomString(22), stun_servers,
-        absl::nullopt, &field_trials_);
+        absl::nullopt, field_trials);
     stun_port_->set_stun_keepalive_delay(stun_keepalive_delay_);
     
     
@@ -152,8 +154,10 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
         this, &StunPortTestBase::OnCandidateError);
   }
 
-  void CreateSharedUdpPort(const rtc::SocketAddress& server_addr,
-                           rtc::AsyncPacketSocket* socket) {
+  void CreateSharedUdpPort(
+      const rtc::SocketAddress& server_addr,
+      rtc::AsyncPacketSocket* socket,
+      const webrtc::FieldTrialsView* field_trials = nullptr) {
     if (socket) {
       socket_.reset(socket);
     } else {
@@ -165,7 +169,7 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
     stun_port_ = cricket::UDPPort::Create(
         rtc::Thread::Current(), socket_factory(), &network_, socket_.get(),
         rtc::CreateRandomString(16), rtc::CreateRandomString(22), false,
-        absl::nullopt, &field_trials_);
+        absl::nullopt, field_trials);
     ASSERT_TRUE(stun_port_ != NULL);
     ServerAddresses stun_servers;
     stun_servers.insert(server_addr);
@@ -236,7 +240,6 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
 
  protected:
   cricket::IceCandidateErrorEvent error_event_;
-  webrtc::test::ScopedKeyValueConfig field_trials_;
 };
 
 class StunPortTestWithRealClock : public StunPortTestBase {};
@@ -378,6 +381,7 @@ TEST_F(StunPortTestWithRealClock,
   SendData(data.c_str(), data.length());
   
 }
+
 
 
 TEST_F(StunPortTest, TestNoDuplicatedAddressWithTwoStunServers) {
@@ -633,6 +637,29 @@ TEST_F(StunIPv6PortTestWithMockDnsResolver, TestPrepareAddressHostname) {
                             Return(true)));
       });
   CreateStunPort(kValidHostnameAddr);
+  PrepareAddress();
+  EXPECT_TRUE_SIMULATED_WAIT(done(), kTimeoutMs, fake_clock);
+  ASSERT_EQ(1U, port()->Candidates().size());
+  EXPECT_TRUE(kIPv6LocalAddr.EqualIPs(port()->Candidates()[0].address()));
+  EXPECT_EQ(kIPv6StunCandidatePriority, port()->Candidates()[0].priority());
+}
+
+TEST_F(StunIPv6PortTestWithMockDnsResolver, TestPrepareAddressHostnameFamily) {
+  webrtc::test::ScopedKeyValueConfig field_trials(
+      "WebRTC-IPv6NetworkResolutionFixes/Enabled/");
+  SetDnsResolverExpectations(
+      [](webrtc::MockAsyncDnsResolver* resolver,
+         webrtc::MockAsyncDnsResolverResult* resolver_result) {
+        EXPECT_CALL(*resolver, Start(kValidHostnameAddr, AF_INET6, _))
+            .WillOnce(InvokeArgument<2>());
+        EXPECT_CALL(*resolver, result)
+            .WillRepeatedly(ReturnPointee(resolver_result));
+        EXPECT_CALL(*resolver_result, GetError).WillOnce(Return(0));
+        EXPECT_CALL(*resolver_result, GetResolvedAddress(AF_INET6, _))
+            .WillOnce(DoAll(SetArgPointee<1>(SocketAddress("::1", 5000)),
+                            Return(true)));
+      });
+  CreateStunPort(kValidHostnameAddr, &field_trials);
   PrepareAddress();
   EXPECT_TRUE_SIMULATED_WAIT(done(), kTimeoutMs, fake_clock);
   ASSERT_EQ(1U, port()->Candidates().size());
