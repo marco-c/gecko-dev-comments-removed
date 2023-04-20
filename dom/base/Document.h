@@ -1469,7 +1469,7 @@ class Document : public nsINode,
 
 
   void ChangeContentEditableCount(Element*, int32_t aChange);
-  void DeferredContentEditableCountChange(Element*);
+  MOZ_CAN_RUN_SCRIPT void DeferredContentEditableCountChange(Element*);
 
   enum class EditingState : int8_t {
     eTearingDown = -2,
@@ -3405,7 +3405,16 @@ class Document : public nsINode,
   
   nsIContent* GetUnretargetedFocusedContent(
       IncludeChromeOnly = IncludeChromeOnly::No) const;
+  
+
+
   bool HasFocus(ErrorResult& rv) const;
+
+  
+
+
+  bool ThisDocumentHasFocus() const;
+
   void GetDesignMode(nsAString& aDesignMode);
   void SetDesignMode(const nsAString& aDesignMode,
                      nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& rv);
@@ -3874,6 +3883,8 @@ class Document : public nsINode,
   bool ShouldNotifyFormOrPasswordRemoved() const {
     return mShouldNotifyFormOrPasswordRemoved;
   }
+
+  HTMLEditor* GetHTMLEditor() const;
 
   
 

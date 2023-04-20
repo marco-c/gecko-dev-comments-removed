@@ -224,6 +224,14 @@ class EditorBase : public nsIEditor,
   
 
 
+  [[nodiscard]] nsIContent* GetSelectionAncestorLimiter() const {
+    Selection* selection = GetSelection(SelectionType::eNormal);
+    return selection ? selection->GetAncestorLimiter() : nullptr;
+  }
+
+  
+
+
   Element* GetRoot() const { return mRootElement; }
 
   

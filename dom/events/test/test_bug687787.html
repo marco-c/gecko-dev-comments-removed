@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=687787
+-->
 <head>
   <title>Test for Bug 687787</title>
   <script type="text/javascript" src="/MochiKit/MochiKit.js"></script>
@@ -18,6 +18,8 @@
 
 <pre id="test">
 <script class="testbody" type="text/javascript">
+
+SimpleTest.expectAssertions(1); // in IMEStateManager::OnChangeFocusInternal, bug 1820470
 
 var eventStack = [];
 

@@ -29,7 +29,8 @@
 #include "mozilla/ContentIterator.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EditorForwards.h"
-#include "mozilla/Encoding.h"      
+#include "mozilla/Encoding.h"  
+#include "mozilla/IMEStateManager.h"
 #include "mozilla/IntegerRange.h"  
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/mozInlineSpellChecker.h"
@@ -737,6 +738,43 @@ void HTMLEditor::UpdateRootElement() {
   }
 }
 
+nsresult HTMLEditor::FocusedElementOrDocumentBecomesEditable(
+    Document& aDocument, Element* aElement) {
+  
+  
+  if (GetSelectionAncestorLimiter()) {
+    return NS_OK;
+  }
+  
+  
+  if (IsInDesignMode() && (!aElement || aElement->IsInDesignMode())) {
+    MOZ_ASSERT(&aDocument == GetDocument());
+    nsresult rv = OnFocus(aDocument);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::OnFocus() failed");
+    return rv;
+  }
+
+  if (NS_WARN_IF(!aElement)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  
+  
+  MOZ_ASSERT(nsFocusManager::GetFocusManager()->GetFocusedElement() ==
+             aElement);
+  nsresult rv = OnFocus(*aElement);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::OnFocus() failed");
+
+  
+  
+  
+  
+  
+  
+
+  return rv;
+}
+
 nsresult HTMLEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
   
   
@@ -750,6 +788,66 @@ nsresult HTMLEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
   }
 
   return EditorBase::OnFocus(aOriginalEventTargetNode);
+}
+
+nsresult HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
+    HTMLEditor* aHTMLEditor, Document& aDocument, Element* aElement) {
+  nsresult rv = [&]() MOZ_CAN_RUN_SCRIPT {
+    
+    
+    if (!aHTMLEditor) {
+      return NS_OK;
+    }
+
+    nsIContent* const limiter = aHTMLEditor->GetSelectionAncestorLimiter();
+    
+    
+    if (!limiter) {
+      return NS_OK;
+    }
+
+    
+    
+    if (aHTMLEditor->IsInDesignMode() &&
+        (!aElement || aElement->IsInDesignMode())) {
+      MOZ_ASSERT(aHTMLEditor->GetDocument() == &aDocument);
+      nsresult rv = aHTMLEditor->OnBlur(&aDocument);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::OnBlur() failed");
+      return rv;
+    }
+    
+    
+    
+    if (aElement != limiter) {
+      return NS_OK;
+    }
+
+    
+    
+    
+    
+    nsresult rv = aHTMLEditor->OnBlur(aElement);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::OnBlur() failed");
+    return rv;
+  }();
+
+  
+  
+  
+  
+  RefPtr<Element> focusedElement = aElement ? aElement
+                                   : aHTMLEditor
+                                       ? aHTMLEditor->GetFocusedElement()
+                                       : nullptr;
+  RefPtr<nsPresContext> presContext =
+      focusedElement ? focusedElement->GetPresContext(
+                           Element::PresContextFor::eForComposedDoc)
+                     : aDocument.GetPresContext();
+  if (presContext) {
+    IMEStateManager::MaybeOnEditableStateDisabled(*presContext, focusedElement);
+  }
+
+  return rv;
 }
 
 nsresult HTMLEditor::OnBlur(const EventTarget* aEventTarget) {
@@ -766,8 +864,6 @@ nsresult HTMLEditor::OnBlur(const EventTarget* aEventTarget) {
     return NS_OK;
   }
 
-  
-  
   
   
   

@@ -160,6 +160,10 @@ class IMEStateManager {
 
 
 
+
+
+
+
   MOZ_CAN_RUN_SCRIPT static nsresult OnChangeFocus(
       nsPresContext* aPresContext, dom::Element* aElement,
       InputContextAction::Cause aCause);
@@ -234,6 +238,12 @@ class IMEStateManager {
   
   MOZ_CAN_RUN_SCRIPT static void OnReFocus(nsPresContext& aPresContext,
                                            dom::Element& aElement);
+
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT static void MaybeOnEditableStateDisabled(
+      nsPresContext& aPresContext, dom::Element* aElement);
 
   
 

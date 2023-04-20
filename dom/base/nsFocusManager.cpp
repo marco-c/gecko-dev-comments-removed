@@ -2669,7 +2669,11 @@ void nsFocusManager::Focus(
                              relatedTargetElement);
       }
     } else {
-      IMEStateManager::OnChangeFocus(presContext, nullptr,
+      
+      
+      
+      
+      IMEStateManager::OnChangeFocus(presContext, elementToFocus,
                                      GetFocusMoveActionCause(aFlags));
       if (!aWindowRaised) {
         aWindow->UpdateCommands(u"focus"_ns, nullptr, 0);

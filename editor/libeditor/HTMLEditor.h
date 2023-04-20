@@ -212,6 +212,22 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  MOZ_CAN_RUN_SCRIPT nsresult FocusedElementOrDocumentBecomesEditable(
+      Document& aDocument, Element* aElement);
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT static nsresult FocusedElementOrDocumentBecomesNotEditable(
+      HTMLEditor* aHTMLEditor, Document& aDocument, Element* aElement);
+
+  
+
+
+
+
 
 
   MOZ_CAN_RUN_SCRIPT nsresult GetBackgroundColorState(bool* aMixed,
