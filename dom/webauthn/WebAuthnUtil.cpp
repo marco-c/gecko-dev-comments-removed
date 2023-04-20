@@ -16,6 +16,12 @@
 
 namespace mozilla::dom {
 
+
+constexpr auto kGoogleAccountsAppId1 =
+    u"https://www.gstatic.com/securitykey/origins.json"_ns;
+constexpr auto kGoogleAccountsAppId2 =
+    u"https://www.gstatic.com/securitykey/a/google.com/origins.json"_ns;
+
 const uint8_t FLAG_TUP = 0x01;  
 const uint8_t FLAG_AT = 0x40;   
 
@@ -92,6 +98,13 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
 
   if (html->IsRegistrableDomainSuffixOfOrEqualTo(
           NS_ConvertUTF8toUTF16(lowestFacetHost), appIdHost)) {
+    return true;
+  }
+
+  
+  if (lowestFacetHost.EqualsLiteral("google.com") &&
+      (aAppId.Equals(kGoogleAccountsAppId1) ||
+       aAppId.Equals(kGoogleAccountsAppId2))) {
     return true;
   }
 
