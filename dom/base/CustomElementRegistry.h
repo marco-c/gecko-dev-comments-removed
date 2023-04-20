@@ -133,13 +133,13 @@ struct CustomElementDefinition {
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(CustomElementDefinition)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(CustomElementDefinition)
 
-  CustomElementDefinition(nsAtom* aType, nsAtom* aLocalName,
-                          int32_t aNamespaceID,
-                          CustomElementConstructor* aConstructor,
-                          nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
-                          UniquePtr<LifecycleCallbacks>&& aCallbacks,
-                          bool aFormAssociated, bool aDisableInternals,
-                          bool aDisableShadow);
+  CustomElementDefinition(
+      nsAtom* aType, nsAtom* aLocalName, int32_t aNamespaceID,
+      CustomElementConstructor* aConstructor,
+      nsTArray<RefPtr<nsAtom>>&& aObservedAttributes,
+      UniquePtr<LifecycleCallbacks>&& aCallbacks,
+      UniquePtr<FormAssociatedLifecycleCallbacks>&& aFormAssociatedCallbacks,
+      bool aFormAssociated, bool aDisableInternals, bool aDisableShadow);
 
   
   
@@ -159,6 +159,7 @@ struct CustomElementDefinition {
 
   
   UniquePtr<LifecycleCallbacks> mCallbacks;
+  UniquePtr<FormAssociatedLifecycleCallbacks> mFormAssociatedCallbacks;
 
   
   
