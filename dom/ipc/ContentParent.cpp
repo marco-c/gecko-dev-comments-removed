@@ -3759,7 +3759,7 @@ class RequestContentJSInterruptRunnable final : public Runnable {
   
   
   
-  PProcessHangMonitorParent* mHangMonitorActor;
+  RefPtr<PProcessHangMonitorParent> mHangMonitorActor;
 };
 
 void ContentParent::SignalImpendingShutdownToContentJS() {
