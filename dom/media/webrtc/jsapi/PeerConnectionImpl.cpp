@@ -2298,6 +2298,21 @@ void PeerConnectionImpl::BreakCycles() {
   mTransceivers.Clear();
 }
 
+bool PeerConnectionImpl::HasPendingSetParameters() const {
+  for (const auto& transceiver : mTransceivers) {
+    if (transceiver->Sender()->HasPendingSetParameters()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void PeerConnectionImpl::InvalidateLastReturnedParameters() {
+  for (const auto& transceiver : mTransceivers) {
+    transceiver->Sender()->InvalidateLastReturnedParameters();
+  }
+}
+
 nsresult PeerConnectionImpl::SetConfiguration(
     const RTCConfiguration& aConfiguration) {
   nsresult rv = mTransportHandler->SetIceConfig(
@@ -2503,21 +2518,36 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
 
         
         
-        for (auto& transceiver : mTransceivers) {
-          if (!mUncommittedJsepSession->GetTransceiver(
-                  transceiver->GetJsepTransceiverId())) {
-            if (aSdpType == dom::RTCSdpType::Offer && aRemote) {
+        if (aSdpType == dom::RTCSdpType::Offer ||
+            aSdpType == dom::RTCSdpType::Answer) {
+          bool setParametersRace = HasPendingSetParameters();
+          for (auto& transceiver : mTransceivers) {
+            if (setParametersRace || !mUncommittedJsepSession->GetTransceiver(
+                                         transceiver->GetJsepTransceiverId())) {
+              
+              
+              
+              
               
               mUncommittedJsepSession.reset(mJsepSession->Clone());
-              JsepSession::Result result =
-                  mUncommittedJsepSession->SetRemoteDescription(
-                      kJsepSdpOffer, mRemoteRequestedSDP);
+              JsepSession::Result result;
+              if (aRemote) {
+                mUncommittedJsepSession->SetRemoteDescription(
+                    aSdpType == dom::RTCSdpType::Offer ? kJsepSdpOffer
+                                                       : kJsepSdpAnswer,
+                    mRemoteRequestedSDP);
+              } else {
+                mUncommittedJsepSession->SetLocalDescription(
+                    aSdpType == dom::RTCSdpType::Offer ? kJsepSdpOffer
+                                                       : kJsepSdpAnswer,
+                    mLocalRequestedSDP);
+              }
               MOZ_ASSERT(!!mUncommittedJsepSession->GetTransceiver(
                   transceiver->GetJsepTransceiverId()));
               if (result.mError.isSome()) {
                 
                 aP->MaybeRejectWithOperationError(
-                    "When redoing sRD(offer) because it raced against "
+                    "When redoing sRD/sLD because it raced against "
                     "addTrack, we encountered a failure that did not happen "
                     "the first time. This should never happen.");
                 MOZ_ASSERT(false);
@@ -2526,6 +2556,12 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
               }
               return;
             }
+          }
+        }
+
+        for (auto& transceiver : mTransceivers) {
+          if (!mUncommittedJsepSession->GetTransceiver(
+                  transceiver->GetJsepTransceiverId())) {
             
             
             mUncommittedJsepSession->AddTransceiver(
@@ -2540,6 +2576,11 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
 
         auto newSignalingState = GetSignalingState();
         SyncFromJsep();
+        if (aRemote || aSdpType == dom::RTCSdpType::Pranswer ||
+            aSdpType == dom::RTCSdpType::Answer) {
+          InvalidateLastReturnedParameters();
+        }
+
         
         if (aSdpType == dom::RTCSdpType::Rollback) {
           
