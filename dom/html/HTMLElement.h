@@ -25,6 +25,7 @@ class HTMLElement final : public nsGenericHTMLFormElement {
 
   
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
+  nsINode* GetScopeChainParent() const override;
 
   
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
