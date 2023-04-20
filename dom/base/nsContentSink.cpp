@@ -172,7 +172,6 @@ nsresult nsContentSink::Init(Document* aDoc, nsIURI* aURI,
 
   if (StaticPrefs::content_sink_enable_perf_mode() != 0) {
     mDynamicLowerValue = StaticPrefs::content_sink_enable_perf_mode() == 1;
-    FavorPerformanceHint(!mDynamicLowerValue, 0);
   }
 
   return NS_OK;
@@ -731,14 +730,6 @@ nsresult nsContentSink::DidProcessATokenImpl() {
 
 
 
-void nsContentSink::FavorPerformanceHint(bool perfOverStarvation,
-                                         uint32_t starvationDelay) {
-  static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
-  nsCOMPtr<nsIAppShell> appShell = do_GetService(kAppShellCID);
-  if (appShell)
-    appShell->FavorPerformanceHint(perfOverStarvation, starvationDelay);
-}
-
 void nsContentSink::BeginUpdate(Document* aDocument) {
   
   if (mInNotification > 0 && mUpdatesInNotification < 2) {
@@ -811,12 +802,6 @@ void nsContentSink::DropParserAndPerfHint(void) {
   RefPtr<nsParserBase> kungFuDeathGrip = std::move(mParser);
   mozilla::Unused << kungFuDeathGrip;
 
-  if (mDynamicLowerValue) {
-    
-    
-    FavorPerformanceHint(true, 0);
-  }
-
   
   
   
@@ -857,7 +842,6 @@ nsresult nsContentSink::WillParseImpl(void) {
                             StaticPrefs::content_sink_interactive_time());
 
     if (mDynamicLowerValue != newDynLower) {
-      FavorPerformanceHint(!newDynLower, 0);
       mDynamicLowerValue = newDynLower;
     }
   }

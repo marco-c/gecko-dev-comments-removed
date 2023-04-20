@@ -96,7 +96,6 @@
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "ReferrerInfo.h"
 
-#include "nsIAppShell.h"
 #include "nsIAuthPrompt.h"
 #include "nsIAuthPrompt2.h"
 #include "nsICachingChannel.h"
@@ -265,17 +264,6 @@ using mozilla::ipc::Endpoint;
 
 #define REFRESH_REDIRECT_TIMER 15000
 
-
-
-
-
-#define NS_EVENT_STARVATION_DELAY_HINT 2000
-
-static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
-
-
-static int32_t gNumberOfDocumentsLoading = 0;
-
 static mozilla::LazyLogModule gCharsetMenuLog("CharsetMenu");
 
 #define LOGCHARSETMENU(args) \
@@ -296,16 +284,6 @@ extern mozilla::LazyLogModule gSHIPBFCacheLog;
 
 const char kAppstringsBundleURL[] =
     "chrome://global/locale/appstrings.properties";
-
-static void FavorPerformanceHint(bool aPerfOverStarvation) {
-  nsCOMPtr<nsIAppShell> appShell = do_GetService(kAppShellCID);
-  if (appShell) {
-    appShell->FavorPerformanceHint(
-        aPerfOverStarvation,
-        Preferences::GetUint("docshell.event_starvation_delay_hint",
-                             NS_EVENT_STARVATION_DELAY_HINT));
-  }
-}
 
 static bool IsTopLevelDoc(BrowsingContext* aBrowsingContext,
                           nsILoadInfo* aLoadInfo) {
@@ -6470,14 +6448,6 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
     mIsExecutingOnLoadHandler = false;
 
     mEODForCurrentDocument = true;
-
-    
-    
-    
-    if (--gNumberOfDocumentsLoading == 0) {
-      
-      FavorPerformanceHint(false);
-    }
   }
   
 
@@ -7615,12 +7585,6 @@ nsresult nsDocShell::RestoreFromHistory() {
   mSavingOldViewer = false;
   mEODForCurrentDocument = false;
 
-  
-  
-  if (++gNumberOfDocumentsLoading == 1) {
-    FavorPerformanceHint(true);
-  }
-
   if (document) {
     RefPtr<nsDocShell> parent = GetInProcessParentDocshell();
     if (parent) {
@@ -8110,16 +8074,6 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
         doc->SetPartID(partID);
       }
     }
-  }
-
-  
-  
-  
-  if (++gNumberOfDocumentsLoading == 1) {
-    
-    
-    
-    FavorPerformanceHint(true);
   }
 
   if (errorOnLocationChangeNeeded) {
