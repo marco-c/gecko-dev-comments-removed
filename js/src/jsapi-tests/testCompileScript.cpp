@@ -12,6 +12,7 @@
 #include "js/SourceText.h"                  
 #include "jsapi-tests/tests.h"
 #include "vm/ErrorReporting.h"
+#include "vm/JSONPrinter.h"  
 
 using namespace JS;
 
