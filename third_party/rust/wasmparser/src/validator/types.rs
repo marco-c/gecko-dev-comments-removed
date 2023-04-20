@@ -2,8 +2,8 @@
 
 use super::{component::ComponentState, core::Module};
 use crate::{
-    Export, ExternalKind, FuncType, GlobalType, Import, MemoryType, PrimitiveValType, RefType,
-    TableType, TypeRef, ValType,
+    ComponentExport, ComponentImport, Export, ExternalKind, FuncType, GlobalType, Import,
+    MemoryType, PrimitiveValType, TableType, TypeRef, ValType,
 };
 use indexmap::{IndexMap, IndexSet};
 use std::collections::HashMap;
@@ -1477,7 +1477,7 @@ impl<'a> TypesRef<'a> {
     
     
     
-    pub fn element_at(&self, index: u32) -> Option<RefType> {
+    pub fn element_at(&self, index: u32) -> Option<ValType> {
         match &self.kind {
             TypesRefKind::Module(module) => module.element_types.get(index as usize).copied(),
             TypesRefKind::Component(_) => None,
@@ -1615,12 +1615,29 @@ impl<'a> TypesRef<'a> {
     }
 
     
-    pub fn component_entity_type_of_extern(&self, name: &str) -> Option<ComponentEntityType> {
+    pub fn component_entity_type_from_import(
+        &self,
+        import: &ComponentImport,
+    ) -> Option<ComponentEntityType> {
         match &self.kind {
             TypesRefKind::Module(_) => None,
             TypesRefKind::Component(component) => {
-                let key = KebabStr::new(name)?;
-                Some(component.externs.get(key)?.1)
+                let key = KebabStr::new(import.name)?;
+                Some(component.imports.get(key)?.1)
+            }
+        }
+    }
+
+    
+    pub fn component_entity_type_from_export(
+        &self,
+        export: &ComponentExport,
+    ) -> Option<ComponentEntityType> {
+        match &self.kind {
+            TypesRefKind::Module(_) => None,
+            TypesRefKind::Component(component) => {
+                let key = KebabStr::new(export.name)?;
+                Some(component.exports.get(key)?.1)
             }
         }
     }
@@ -1768,11 +1785,8 @@ impl Types {
     
     
     
-    pub fn element_at(&self, index: u32) -> Option<RefType> {
-        match &self.kind {
-            TypesKind::Module(module) => module.element_types.get(index as usize).copied(),
-            TypesKind::Component(_) => None,
-        }
+    pub fn element_at(&self, index: u32) -> Option<ValType> {
+        self.as_ref().element_at(index)
     }
 
     
@@ -1884,9 +1898,19 @@ impl Types {
     }
 
     
+    pub fn component_entity_type_from_import(
+        &self,
+        import: &ComponentImport,
+    ) -> Option<ComponentEntityType> {
+        self.as_ref().component_entity_type_from_import(import)
+    }
+
     
-    pub fn component_entity_type_of_extern(&self, name: &str) -> Option<ComponentEntityType> {
-        self.as_ref().component_entity_type_of_extern(name)
+    pub fn component_entity_type_from_export(
+        &self,
+        export: &ComponentExport,
+    ) -> Option<ComponentEntityType> {
+        self.as_ref().component_entity_type_from_export(export)
     }
 
     

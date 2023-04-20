@@ -14,8 +14,8 @@
 
 
 use crate::{
-    BinaryReader, BinaryReaderError, ConstExpr, ExternalKind, FromReader, RefType, Result,
-    SectionLimited,
+    BinaryReader, BinaryReaderError, ConstExpr, ExternalKind, FromReader, Result, SectionLimited,
+    ValType,
 };
 use std::ops::Range;
 
@@ -27,7 +27,7 @@ pub struct Element<'a> {
     
     pub items: ElementItems<'a>,
     
-    pub ty: RefType,
+    pub ty: ValType,
     
     pub range: Range<usize>,
 }
@@ -107,7 +107,7 @@ impl<'a> FromReader<'a> for Element<'a> {
                 reader.read()?
             } else {
                 match reader.read()? {
-                    ExternalKind::Func => RefType::FUNCREF,
+                    ExternalKind::Func => ValType::FuncRef,
                     _ => {
                         return Err(BinaryReaderError::new(
                             "only the function external type is supported in elem segment",
@@ -117,7 +117,7 @@ impl<'a> FromReader<'a> for Element<'a> {
                 }
             }
         } else {
-            RefType::FUNCREF
+            ValType::FuncRef
         };
         
         let data = reader.skip(|reader| {
