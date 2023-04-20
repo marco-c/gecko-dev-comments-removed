@@ -102,7 +102,7 @@ def generic_worker_spidermonkey(config, job, taskdesc):
 
     run["using"] = "run-task"
     run["command"] = [
-        "c:\\mozilla-build\\msys2\\usr\\bin\\bash.exe "  
+        "c:\\mozilla-build\\msys\\bin\\bash.exe "  
         '"./src/taskcluster/scripts/builder/%s"' % script
     ]
 
