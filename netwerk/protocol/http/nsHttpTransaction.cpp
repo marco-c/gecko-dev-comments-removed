@@ -710,7 +710,10 @@ nsresult nsHttpTransaction::ReadRequestSegment(nsIInputStream* stream,
 
   nsHttpTransaction* trans = (nsHttpTransaction*)closure;
   nsresult rv = trans->mReader->OnReadSegment(buf, count, countRead);
-  if (NS_FAILED(rv)) return rv;
+  if (NS_FAILED(rv)) {
+    trans->MaybeRefreshSecurityInfo();
+    return rv;
+  }
 
   LOG(("nsHttpTransaction::ReadRequestSegment %p read=%u", trans, *countRead));
 
@@ -735,12 +738,7 @@ nsresult nsHttpTransaction::ReadSegments(nsAHttpSegmentReader* reader,
 
   if (!mConnected && !m0RTTInProgress) {
     mConnected = true;
-    nsCOMPtr<nsITLSSocketControl> tlsSocketControl;
-    mConnection->GetTLSSocketControl(getter_AddRefs(tlsSocketControl));
-    if (tlsSocketControl) {
-      MutexAutoLock lock(mLock);
-      tlsSocketControl->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
-    }
+    MaybeRefreshSecurityInfo();
   }
 
   mDeferredSendProgress = false;
@@ -817,7 +815,10 @@ nsresult nsHttpTransaction::WritePipeSegment(nsIOutputStream* stream,
   
   
   rv = trans->mWriter->OnWriteSegment(buf, count, countWritten);
-  if (NS_FAILED(rv)) return rv;  
+  if (NS_FAILED(rv)) {
+    trans->MaybeRefreshSecurityInfo();
+    return rv;  
+  }
 
   LOG(("nsHttpTransaction::WritePipeSegment %p written=%u", trans,
        *countWritten));
@@ -1400,13 +1401,7 @@ void nsHttpTransaction::Close(nsresult reason) {
     connReused = mConnection->IsReused();
     isHttp2or3 = mConnection->Version() >= HttpVersion::v2_0;
     if (!mConnected) {
-      
-      nsCOMPtr<nsITLSSocketControl> tlsSocketControl;
-      mConnection->GetTLSSocketControl(getter_AddRefs(tlsSocketControl));
-      if (tlsSocketControl) {
-        MutexAutoLock lock(mLock);
-        tlsSocketControl->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
-      }
+      MaybeRefreshSecurityInfo();
     }
   }
   mConnected = false;
@@ -3007,12 +3002,7 @@ nsresult nsHttpTransaction::Finish0RTT(bool aRestart,
   } else if (!mConnected) {
     
     mConnected = true;
-    nsCOMPtr<nsITLSSocketControl> tlsSocketControl;
-    mConnection->GetTLSSocketControl(getter_AddRefs(tlsSocketControl));
-    if (tlsSocketControl) {
-      MutexAutoLock lock(mLock);
-      tlsSocketControl->GetSecurityInfo(getter_AddRefs(mSecurityInfo));
-    }
+    MaybeRefreshSecurityInfo();
   }
   return NS_OK;
 }
