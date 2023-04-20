@@ -279,7 +279,7 @@ class GCMarker {
   void reset();
 
   
-  template <typename T>
+  template <uint32_t = gc::MarkingOptions::None, typename T>
   void markAndTraverse(T* thing);
 
   
