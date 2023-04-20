@@ -23,6 +23,7 @@
 #include "test/gtest.h"
 
 using ::testing::_;
+using ::testing::AtLeast;
 using ::testing::Ge;
 using ::testing::Invoke;
 
@@ -39,16 +40,8 @@ class PipeWireStreamTest : public ::testing::Test,
                            public TestScreenCastStreamProvider::Observer,
                            public SharedScreenCastStream::Observer {
  public:
-  PipeWireStreamTest()
-      : test_screencast_stream_provider_(
-            std::make_unique<TestScreenCastStreamProvider>(this,
-                                                           kWidth,
-                                                           kHeight)) {
-    shared_screencast_stream_ = SharedScreenCastStream::CreateDefault();
-    shared_screencast_stream_->SetObserver(this);
-  }
-
-  ~PipeWireStreamTest() override {}
+  PipeWireStreamTest() = default;
+  ~PipeWireStreamTest() = default;
 
   
   MOCK_METHOD(void, OnBufferAdded, (), (override));
@@ -62,6 +55,14 @@ class PipeWireStreamTest : public ::testing::Test,
   MOCK_METHOD(void, OnCursorShapeChanged, (), (override));
   MOCK_METHOD(void, OnDesktopFrameChanged, (), (override));
   MOCK_METHOD(void, OnFailedToProcessBuffer, (), (override));
+  MOCK_METHOD(void, OnStreamConfigured, (), (override));
+
+  void SetUp() override {
+    shared_screencast_stream_ = SharedScreenCastStream::CreateDefault();
+    shared_screencast_stream_->SetObserver(this);
+    test_screencast_stream_provider_ =
+        std::make_unique<TestScreenCastStreamProvider>(this, kWidth, kHeight);
+  }
 
   void StartScreenCastStream(uint32_t stream_node_id) {
     shared_screencast_stream_->StartScreenCastStream(stream_node_id);
@@ -78,15 +79,16 @@ class PipeWireStreamTest : public ::testing::Test,
 TEST_F(PipeWireStreamTest, TestPipeWire) {
   
   rtc::Event waitConnectEvent;
-  rtc::Event waitAddBufferEvent;
+  rtc::Event waitStartStreamingEvent;
 
   EXPECT_CALL(*this, OnStreamReady(_))
       .WillOnce(Invoke(this, &PipeWireStreamTest::StartScreenCastStream));
-  EXPECT_CALL(*this, OnStartStreaming).WillOnce([&waitConnectEvent] {
+  EXPECT_CALL(*this, OnStreamConfigured).WillOnce([&waitConnectEvent] {
     waitConnectEvent.Set();
   });
-  EXPECT_CALL(*this, OnBufferAdded).WillRepeatedly([&waitAddBufferEvent] {
-    waitAddBufferEvent.Set();
+  EXPECT_CALL(*this, OnBufferAdded).Times(AtLeast(3));
+  EXPECT_CALL(*this, OnStartStreaming).WillOnce([&waitStartStreamingEvent] {
+    waitStartStreamingEvent.Set();
   });
 
   
@@ -94,7 +96,7 @@ TEST_F(PipeWireStreamTest, TestPipeWire) {
   waitConnectEvent.Wait(kLongWait);
 
   
-  waitAddBufferEvent.Wait(kShortWait);
+  waitStartStreamingEvent.Wait(kShortWait);
 
   rtc::Event frameRetrievedEvent;
   EXPECT_CALL(*this, OnFrameRecorded).Times(3);
