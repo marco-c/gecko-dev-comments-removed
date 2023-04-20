@@ -167,7 +167,7 @@ let Player = {
 
     let closeButton = document.getElementById("close");
     let closeShortcut = document.getElementById("closeShortcut");
-    document.l10n.setAttributes(closeButton, "pictureinpicture-close-cmd", {
+    document.l10n.setAttributes(closeButton, "pictureinpicture-close-btn", {
       shortcut: ShortcutUtils.prettifyShortcut(closeShortcut),
     });
 
@@ -251,7 +251,10 @@ let Player = {
       this.scrubber.hidden = false;
     }
 
+    this.alignEndControlsButtonTooltips();
+
     this.resizeDebouncer = new DeferredTask(() => {
+      this.alignEndControlsButtonTooltips();
       this.recordEvent("resize", {
         width: window.outerWidth.toString(),
         height: window.outerHeight.toString(),
@@ -370,8 +373,8 @@ let Player = {
         
         const fullscreenButton = document.getElementById("fullscreen");
         let strId = this.isFullscreen
-          ? `pictureinpicture-exit-fullscreen-cmd`
-          : `pictureinpicture-fullscreen-cmd`;
+          ? `pictureinpicture-exit-fullscreen-btn`
+          : `pictureinpicture-fullscreen-btn`;
         document.l10n.setAttributes(fullscreenButton, strId);
 
         if (this.isFullscreen) {
@@ -878,6 +881,7 @@ let Player = {
     for (let ele of subtitlesContent) {
       ele.hidden = false;
     }
+    this.alignEndControlsButtonTooltips();
     this.captionsToggleEnabled = true;
     
     
@@ -891,6 +895,39 @@ let Player = {
     let subtitlesContent = document.querySelectorAll(".subtitles");
     for (let ele of subtitlesContent) {
       ele.hidden = true;
+    }
+    this.alignEndControlsButtonTooltips();
+  },
+
+  
+
+
+  alignEndControlsButtonTooltips() {
+    let fullscreenBtn = document.getElementById("fullscreen");
+    let subtitlesBtn = document.getElementById("closed-caption");
+    let audioBtn = document.getElementById("audio");
+    let playPauseButton = document.getElementById("playpause");
+    let height = window.outerHeight;
+
+    if (!fullscreenBtn.hidden) {
+      
+      audioBtn.classList.replace("inline-end-tooltip", "center-tooltip");
+      subtitlesBtn.classList.replace("inline-end-tooltip", "center-tooltip");
+    } else if (fullscreenBtn.hidden && !subtitlesBtn.hidden && height > 325) {
+      
+      audioBtn.classList.replace("inline-end-tooltip", "center-tooltip");
+      playPauseButton.classList.replace("inline-end-tooltip", "center-tooltip");
+      subtitlesBtn.classList.replace("center-tooltip", "inline-end-tooltip");
+    } else if (
+      fullscreenBtn.hidden &&
+      (subtitlesBtn.hidden || height < 325) &&
+      !audioBtn.hidden
+    ) {
+      
+      audioBtn.classList.replace("center-tooltip", "inline-end-tooltip");
+    } else {
+      
+      playPauseButton.classList.replace("center-tooltip", "inline-end-tooltip");
     }
   },
 
@@ -948,8 +985,8 @@ let Player = {
     this.controls.classList.toggle("playing", isPlaying);
     const playButton = document.getElementById("playpause");
     let strId = isPlaying
-      ? `pictureinpicture-pause-cmd`
-      : `pictureinpicture-play-cmd`;
+      ? `pictureinpicture-pause-btn`
+      : `pictureinpicture-play-btn`;
     document.l10n.setAttributes(playButton, strId);
   },
 
@@ -971,8 +1008,8 @@ let Player = {
     this.controls.classList.toggle("muted", isMuted);
     const audioButton = document.getElementById("audio");
     let strId = isMuted
-      ? `pictureinpicture-unmute-cmd`
-      : `pictureinpicture-mute-cmd`;
+      ? `pictureinpicture-unmute-btn`
+      : `pictureinpicture-mute-btn`;
     let shortcutId = isMuted ? "unMuteShortcut" : "muteShortcut";
     let shortcut = document.getElementById(shortcutId);
     document.l10n.setAttributes(audioButton, strId, {
