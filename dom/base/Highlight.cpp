@@ -90,12 +90,13 @@ already_AddRefed<Selection> Highlight::CreateHighlightSelection(
   selection->SetHighlightName(aHighlightName);
   AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__);
   selectionBatcher.AddFrameSelection(aFrameSelection);
-  
-  for (const RefPtr<AbstractRange> range : mRanges) {
+  for (const RefPtr<AbstractRange>& range : mRanges) {
     if (range->GetComposedDocOfContainers() ==
         aFrameSelection->GetPresShell()->GetDocument()) {
-      selection->AddHighlightRangeAndSelectFramesAndNotifyListeners(*range,
-                                                                    aRv);
+      
+      
+      selection->AddHighlightRangeAndSelectFramesAndNotifyListeners(
+          MOZ_KnownLive(*range), aRv);
     }
   }
   return selection.forget();
@@ -110,12 +111,14 @@ void Highlight::Add(AbstractRange& aRange, ErrorResult& aRv) {
     mRanges.AppendElement(&aRange);
     AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__,
                                                mHighlightRegistries.Count());
-    for (const RefPtr<HighlightRegistry> registry :
+    for (const RefPtr<HighlightRegistry>& registry :
          mHighlightRegistries.Keys()) {
       auto frameSelection = registry->GetFrameSelection();
       selectionBatcher.AddFrameSelection(frameSelection);
-
-      registry->MaybeAddRangeToHighlightSelection(aRange, *this, aRv);
+      
+      
+      MOZ_KnownLive(registry)->MaybeAddRangeToHighlightSelection(aRange, *this,
+                                                                 aRv);
       if (aRv.Failed()) {
         return;
       }
