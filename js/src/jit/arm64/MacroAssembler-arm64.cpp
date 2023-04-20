@@ -2806,20 +2806,27 @@ void MacroAssembler::speculationBarrier() {
 
 void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
                                          Label* fail) {
-  Label handleZero;
-  
-  Label fin;
   ARMFPRegister iFlt(src, 32);
   ARMRegister o64(dest, 64);
   ARMRegister o32(dest, 32);
+
+  Label handleZero;
+  Label fin;
+
+  
   Fcmp(iFlt, 0.0);
   B(Assembler::Equal, &handleZero);
   
-  
   B(Assembler::Overflow, fail);
+
+  
   Fcvtms(o64, iFlt);
+
+  
   Cmp(o64, Operand(o64, vixl::SXTW));
   B(NotEqual, fail);
+
+  
   Uxtw(o64, o64);
   B(&fin);
 
@@ -2833,20 +2840,27 @@ void MacroAssembler::floorFloat32ToInt32(FloatRegister src, Register dest,
 
 void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
-  Label handleZero;
-  
-  Label fin;
   ARMFPRegister iDbl(src, 64);
   ARMRegister o64(dest, 64);
   ARMRegister o32(dest, 32);
+
+  Label handleZero;
+  Label fin;
+
+  
   Fcmp(iDbl, 0.0);
   B(Assembler::Equal, &handleZero);
   
-  
   B(Assembler::Overflow, fail);
+
+  
   Fcvtms(o64, iDbl);
+
+  
   Cmp(o64, Operand(o64, vixl::SXTW));
   B(NotEqual, fail);
+
+  
   Uxtw(o64, o64);
   B(&fin);
 
@@ -2860,22 +2874,33 @@ void MacroAssembler::floorDoubleToInt32(FloatRegister src, Register dest,
 
 void MacroAssembler::ceilFloat32ToInt32(FloatRegister src, Register dest,
                                         Label* fail) {
-  Label handleZero;
-  Label fin;
   ARMFPRegister iFlt(src, 32);
   ARMRegister o64(dest, 64);
   ARMRegister o32(dest, 32);
+
+  Label handleZero;
+  Label fin;
+
   Fcmp(iFlt, 0.0);
 
   
   B(Assembler::Overflow, fail);
+
+  
   Fcvtps(o64, iFlt);
+
+  
   Cmp(o64, Operand(o64, vixl::SXTW));
   B(NotEqual, fail);
+
+  
   Cbz(o64, &handleZero);
+
+  
   Uxtw(o64, o64);
   B(&fin);
 
+  
   bind(&handleZero);
   
   
@@ -2886,25 +2911,36 @@ void MacroAssembler::ceilFloat32ToInt32(FloatRegister src, Register dest,
 
 void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
                                        Label* fail) {
-  Label handleZero;
-  Label fin;
   ARMFPRegister iDbl(src, 64);
   ARMRegister o64(dest, 64);
   ARMRegister o32(dest, 32);
+
+  Label handleZero;
+  Label fin;
+
   Fcmp(iDbl, 0.0);
   B(Assembler::Overflow, fail);
+
+  
   Fcvtps(o64, iDbl);
+
+  
   Cmp(o64, Operand(o64, vixl::SXTW));
   B(NotEqual, fail);
+
+  
   Cbz(o64, &handleZero);
+
+  
   Uxtw(o64, o64);
   B(&fin);
 
+  
   bind(&handleZero);
-  vixl::UseScratchRegisterScope temps(this);
-  const ARMRegister scratch = temps.AcquireX();
-  Fmov(scratch, iDbl);
-  Cbnz(scratch, fail);
+  
+  
+  Fmov(o64, iDbl);
+  Cbnz(o64, fail);
   bind(&fin);
 }
 
