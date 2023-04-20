@@ -209,7 +209,6 @@ struct BaseCompiler final {
   
   
   NonAssertingLabel debugTrapStub_;
-  uint32_t previousBreakablePoint_;
 
   
   

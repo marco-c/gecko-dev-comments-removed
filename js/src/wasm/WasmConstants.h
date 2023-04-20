@@ -985,38 +985,6 @@ struct OpBytes {
     b1 = 0;
   }
   OpBytes() = default;
-
-  
-  
-  
-  bool shouldHaveBreakpoint() const {
-    switch (Op(b0)) {
-      
-      
-      case Op::Block:
-      case Op::Loop:
-      case Op::If:
-      case Op::Else:
-      case Op::Try:
-      case Op::Delegate:
-      case Op::Catch:
-      case Op::CatchAll:
-      case Op::End:
-      
-      
-      case Op::LocalGet:
-      case Op::GlobalGet:
-      case Op::I32Const:
-      case Op::I64Const:
-      case Op::F32Const:
-      case Op::F64Const:
-      case Op::RefNull:
-      case Op::Drop:
-        return false;
-      default:
-        return true;
-    }
-  }
 };
 
 static const char NameSectionName[] = "name";

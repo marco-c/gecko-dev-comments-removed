@@ -28,7 +28,7 @@ var offsets1 = getAllOffsets('(module \
 
 var usedOffsets = Object.create(null),
     usedLines = Object.create(null);
-assertEq(offsets1.length, 5);
+assertEq(offsets1.length, 8);
 
 offsets1.forEach(({offset, lineNumber, columnNumber}) => {
   assertEq(offset > 0, true);
@@ -37,5 +37,5 @@ offsets1.forEach(({offset, lineNumber, columnNumber}) => {
   usedOffsets[offset] = true;
   usedLines[lineNumber] = true;
 });
-assertEq(Object.keys(usedOffsets).length, 5);
-assertEq(Object.keys(usedLines).length, 5);
+assertEq(Object.keys(usedOffsets).length, 8);
+assertEq(Object.keys(usedLines).length, 8);
