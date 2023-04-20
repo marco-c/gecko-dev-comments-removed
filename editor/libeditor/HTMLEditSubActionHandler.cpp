@@ -9059,8 +9059,8 @@ nsresult HTMLEditor::GetInlineStyles(
                      
     
     if (!useCSS || (property == nsGkAtoms::size)) {
-      isSet = HTMLEditUtils::IsInlineStyleSetByElement(
-          aContent, *style.mHTMLProperty, style.mAttribute, nullptr, &value);
+      isSet = HTMLEditUtils::IsInlineStyleSetByElement(aContent, style, nullptr,
+                                                       &value);
     } else {
       Result<bool, nsresult> isComputedCSSEquivalentToStyleOrError =
           CSSEditUtils::IsComputedCSSEquivalentTo(*this, aContent, style,

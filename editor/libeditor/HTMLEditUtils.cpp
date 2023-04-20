@@ -5,14 +5,15 @@
 
 #include "HTMLEditUtils.h"
 
-#include "AutoRangeArray.h"  
-#include "CSSEditUtils.h"    
-#include "EditAction.h"      
-#include "EditorBase.h"      
-#include "EditorDOMPoint.h"  
-#include "EditorForwards.h"  
-#include "EditorUtils.h"     
-#include "WSRunObject.h"     
+#include "AutoRangeArray.h"   
+#include "CSSEditUtils.h"     
+#include "EditAction.h"       
+#include "EditorBase.h"       
+#include "EditorDOMPoint.h"   
+#include "EditorForwards.h"   
+#include "EditorUtils.h"      
+#include "HTMLEditHelpers.h"  
+#include "WSRunObject.h"      
 
 #include "mozilla/ArrayUtils.h"   
 #include "mozilla/Assertions.h"   
@@ -2043,6 +2044,36 @@ HTMLEditUtils::ComputePointToPutCaretInElementIfOutside(
   }
   
   return EditorDOMPointType(firstEditableContent, 0u);
+}
+
+
+bool HTMLEditUtils::IsInlineStyleSetByElement(
+    const nsIContent& aContent, const EditorInlineStyle& aStyle,
+    const nsAString* aValue, nsAString* aOutValue ) {
+  for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
+    if (aStyle.mHTMLProperty != element->NodeInfo()->NameAtom()) {
+      continue;
+    }
+    if (!aStyle.mAttribute) {
+      return true;
+    }
+    nsAutoString value;
+    element->GetAttr(kNameSpaceID_None, aStyle.mAttribute, value);
+    if (aOutValue) {
+      *aOutValue = value;
+    }
+    if (!value.IsEmpty()) {
+      if (!aValue) {
+        return true;
+      }
+      if (aValue->Equals(value, nsCaseInsensitiveStringComparator)) {
+        return true;
+      }
+      
+      return false;
+    }
+  }
+  return false;
 }
 
 

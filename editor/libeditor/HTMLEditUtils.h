@@ -2024,39 +2024,9 @@ class HTMLEditUtils final {
 
 
 
-
-
-
-  static bool IsInlineStyleSetByElement(const nsIContent& aContent,
-                                        const nsAtom& aProperty,
-                                        const nsAtom* aAttribute,
-                                        const nsAString* aValue,
-                                        nsAString* aOutValue = nullptr) {
-    for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
-      if (&aProperty != element->NodeInfo()->NameAtom()) {
-        continue;
-      }
-      if (!aAttribute) {
-        return true;
-      }
-      nsAutoString value;
-      element->GetAttr(kNameSpaceID_None, aAttribute, value);
-      if (aOutValue) {
-        *aOutValue = value;
-      }
-      if (!value.IsEmpty()) {
-        if (!aValue) {
-          return true;
-        }
-        if (aValue->Equals(value, nsCaseInsensitiveStringComparator)) {
-          return true;
-        }
-        
-        return false;
-      }
-    }
-    return false;
-  }
+  [[nodiscard]] static bool IsInlineStyleSetByElement(
+      const nsIContent& aContent, const EditorInlineStyle& aStyle,
+      const nsAString* aValue, nsAString* aOutValue = nullptr);
 
   
 
