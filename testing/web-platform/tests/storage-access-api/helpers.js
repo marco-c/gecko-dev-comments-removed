@@ -151,6 +151,35 @@ async function CanFrameWriteCookies(frame, keep_after_writing = false) {
 }
 
 
+
+async function CanAccessCookiesViaHTTP() {
+  await create_cookie(window.location.origin, "cookie", "1", "samesite=None;Secure");
+  const http_cookies = await fetch(`${window.location.origin}/storage-access-api/resources/echo-cookie-header.py`)
+      .then((resp) => resp.text());
+  const can_access = cookieStringHasCookie("cookie", "1", http_cookies);
+
+  erase_cookie_from_js("cookie", "SameSite=None;Secure;Path=/");
+
+  return can_access;
+}
+
+
+
+
+function CanAccessCookiesViaJS() {
+  erase_cookie_from_js("cookie", "SameSite=None;Secure;Path=/");
+  assert_false(cookieStringHasCookie("cookie", "1", document.cookie));
+
+  document.cookie = "cookie=1;SameSite=None;Secure;Path=/";
+  const can_access = cookieStringHasCookie("cookie", "1", document.cookie);
+
+  erase_cookie_from_js("cookie", "SameSite=None;Secure;Path=/");
+  assert_false(cookieStringHasCookie("cookie", "1", document.cookie));
+
+  return can_access;
+}
+
+
 function GetHTTPCookiesFromFrame(frame) {
   return PostMessageAndAwaitReply(
       { command: "httpCookies" }, frame.contentWindow);
