@@ -699,6 +699,12 @@ class GMut {
     return page.mState != AllocPageState::InUse && aNow >= page.mReuseTime;
   }
 
+  
+  
+  uint8_t* AllocPageBaseAddr(GMutLock, uintptr_t aIndex) {
+    return mAllocPages[aIndex].mBaseAddr;
+  }
+
   Maybe<arena_id_t> PageArena(GMutLock aLock, uintptr_t aIndex) {
     const AllocPageInfo& page = mAllocPages[aIndex];
     AssertAllocPageInUse(aLock, page);
@@ -1368,12 +1374,17 @@ static size_t replace_malloc_usable_size(usable_ptr_t aPtr) {
   }
 
   
+  
+  
   uintptr_t index = pk.AllocPageIndex();
 
   MutexAutoLock lock(GMut::sMutex);
 
-  
-  gMut->EnsureValidAndInUse(lock, const_cast<void*>(aPtr), index);
+  void* pageBaseAddr = gMut->AllocPageBaseAddr(lock, index);
+
+  if (MOZ_UNLIKELY(aPtr < pageBaseAddr)) {
+    return 0;
+  }
 
   return gMut->PageUsableSize(lock, index);
 }
