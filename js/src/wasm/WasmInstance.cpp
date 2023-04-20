@@ -1852,6 +1852,10 @@ bool Instance::memoryAccessInGuardRegion(const uint8_t* addr,
 }
 
 void Instance::tracePrivate(JSTracer* trc) {
+  
+  
+  
+  MOZ_ASSERT_IF(trc->isMarkingTracer(), gc::IsMarked(trc->runtime(), object_));
   TraceEdge(trc, &object_, "wasm instance object");
 
   
@@ -1899,6 +1903,15 @@ void Instance::tracePrivate(JSTracer* trc) {
   if (maybeDebug_) {
     maybeDebug_->trace(trc);
   }
+}
+
+void Instance::trace(JSTracer* trc) {
+  
+  
+  
+  
+  
+  TraceEdge(trc, &object_, "wasm instance object");
 }
 
 uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,

@@ -640,7 +640,7 @@ inline void JSFunction::trace(JSTracer* trc) {
   MOZ_ASSERT(!getFixedSlot(NativeJitInfoOrInterpretedScriptSlot).isGCThing());
   if (isInterpreted() && hasBaseScript()) {
     if (BaseScript* script = baseScript()) {
-      TraceManuallyBarrieredEdge(trc, &script, "JSFunction script");
+      TraceManuallyBarrieredEdge(trc, &script, "script");
       
       
       if (baseScript() != script) {
@@ -654,9 +654,9 @@ inline void JSFunction::trace(JSTracer* trc) {
   if (isAsmJSNative() || isWasm()) {
     const Value& v = getExtendedSlot(FunctionExtended::WASM_INSTANCE_SLOT);
     if (!v.isUndefined()) {
-      auto* instance = static_cast<js::wasm::Instance*>(v.toPrivate());
-      WasmInstanceObject* obj = instance->objectUnbarriered();
-      TraceManuallyBarrieredEdge(trc, &obj, "JSFunction wasm instance");
+      js::wasm::Instance* instance =
+          static_cast<js::wasm::Instance*>(v.toPrivate());
+      instance->trace(trc);
     }
   }
 }
