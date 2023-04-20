@@ -53,7 +53,7 @@ bool ParallelMarker::markOneColor(MarkColor color, SliceBudget& sliceBudget) {
     
     
     
-    if (!marker->hasEntries(color) && gc->marker().hasEntries(color)) {
+    if (!marker->hasEntries(color) && gc->marker().hasStealableWork()) {
       marker->stealWorkFrom(&gc->marker());
     }
   }
