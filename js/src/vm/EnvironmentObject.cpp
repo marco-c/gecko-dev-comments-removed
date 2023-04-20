@@ -3516,6 +3516,7 @@ bool js::CheckLexicalNameConflict(
   const char* redeclKind = nullptr;
   RootedId id(cx, NameToId(name));
   mozilla::Maybe<PropertyInfo> prop;
+  bool shadowsExistingProperty = false;
   if (varObj->is<GlobalObject>() &&
       varObj->as<GlobalObject>().isInVarNames(name)) {
     
@@ -3529,6 +3530,8 @@ bool js::CheckLexicalNameConflict(
     
     if (!prop->configurable()) {
       redeclKind = "non-configurable global property";
+    } else {
+      shadowsExistingProperty = true;
     }
   } else {
     
@@ -3536,14 +3539,23 @@ bool js::CheckLexicalNameConflict(
     if (!GetOwnPropertyDescriptor(cx, varObj, id, &desc)) {
       return false;
     }
-    if (desc.isSome() && !desc->configurable()) {
-      redeclKind = "non-configurable global property";
+    if (desc.isSome()) {
+      if (!desc->configurable()) {
+        redeclKind = "non-configurable global property";
+      } else {
+        shadowsExistingProperty = true;
+      }
     }
   }
 
   if (redeclKind) {
     ReportRuntimeRedeclaration(cx, name, redeclKind);
     return false;
+  }
+  if (shadowsExistingProperty && varObj->is<GlobalObject>()) {
+    
+    
+    varObj->as<GlobalObject>().bumpGenerationCount();
   }
 
   return true;
