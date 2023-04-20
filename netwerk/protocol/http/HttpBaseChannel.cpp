@@ -5356,6 +5356,15 @@ void HttpBaseChannel::MaybeReportTimingData() {
     return;
   }
 
+  
+  
+  
+  bool isInDevToolsContext;
+  mLoadInfo->GetIsInDevToolsContext(&isInDevToolsContext);
+  if (isInDevToolsContext) {
+    return;
+  }
+
   mozilla::dom::PerformanceStorage* documentPerformance =
       mLoadInfo->GetPerformanceStorage();
   if (documentPerformance) {
