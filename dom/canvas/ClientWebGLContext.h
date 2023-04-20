@@ -758,6 +758,7 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
  public:
   const auto& Limits() const { return mNotLost->info.limits; }
+  const auto& Vendor() const { return mNotLost->info.vendor; }
   
   const WebGLContextOptions& ActualContextParameters() const {
     MOZ_ASSERT(mNotLost != nullptr);

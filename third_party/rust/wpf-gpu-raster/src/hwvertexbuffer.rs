@@ -638,12 +638,19 @@ pub struct CHwTVertexBuffer<'z, TVertex>
     #[cfg(debug_assertions)]
     
     
-    m_fDbgNonLineSegmentTriangleStrip: bool
+    m_fDbgNonLineSegmentTriangleStrip: bool,
+    subpixel_bias: f32,
 }
 
 impl<'z, TVertex: Default> CHwTVertexBuffer<'z, TVertex> {
-    pub fn new(output_buffer: Option<&'z mut [TVertex]>) -> Self {
+    pub fn new(rasterization_truncates: bool, output_buffer: Option<&'z mut [TVertex]>) -> Self {
         CHwTVertexBuffer::<TVertex> {
+            subpixel_bias: if rasterization_truncates {
+                
+                1./512.
+            } else {
+                0.
+            },
             m_rgVerticesBuffer: output_buffer,
             m_rgVerticesBufferOffset: 0,
             ..Default::default()
@@ -715,6 +722,7 @@ struct CHwTVertexMappings<TVertex>
 
 
     m_vStatic: TVertex,
+    subpixel_bias: f32,
 }
 
 impl<TVertex> CHwTVertexBuffer<'_, TVertex> {
@@ -2316,10 +2324,20 @@ impl CHwVertexBuffer<'_> {
     
 
     
+    
+    
+    
+    
+    
+    
+    let subpixel_bias = self.subpixel_bias;
+
+
+    
     self.AddTriVertices(
         OutputVertex{ x: x0, y: y - 0.5, coverage: dwDiffuse },
         OutputVertex{ x: x0, y: y + 0.5, coverage: dwDiffuse },
-        OutputVertex{ x: x1, y, coverage: dwDiffuse },
+        OutputVertex{ x: x1, y: y + subpixel_bias, coverage: dwDiffuse },
     );
 
     self.AddedNonLineSegment();
