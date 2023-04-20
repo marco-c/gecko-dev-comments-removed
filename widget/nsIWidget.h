@@ -597,6 +597,11 @@ class nsIWidget : public nsISupports {
   
 
 
+  static float GetFallbackDPI();
+
+  
+
+
 
 
   virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() = 0;
@@ -617,6 +622,11 @@ class nsIWidget : public nsISupports {
 
 
   mozilla::CSSToLayoutDeviceScale GetDefaultScale();
+
+  
+
+
+  static mozilla::CSSToLayoutDeviceScale GetFallbackDefaultScale();
 
   
 

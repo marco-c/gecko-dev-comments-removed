@@ -473,10 +473,10 @@ ParentShowInfo BrowserParent::GetShowInfo() {
   TryCacheDPIAndScale();
   if (mFrameElement) {
     nsAutoString name;
-    mFrameElement->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
+    mFrameElement->GetAttr(nsGkAtoms::name, name);
     bool isTransparent =
         nsContentUtils::IsChromeDoc(mFrameElement->OwnerDoc()) &&
-        mFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::transparent);
+        mFrameElement->HasAttr(nsGkAtoms::transparent);
     return ParentShowInfo(name, false, isTransparent, mDPI, mRounding,
                           mDefaultScale.scale);
   }
@@ -546,6 +546,10 @@ void BrowserParent::SetOwnerElement(Element* aElement) {
 #endif
 
   AddWindowListeners();
+
+  
+  
+  mDPI = -1;
   TryCacheDPIAndScale();
 
   if (mRemoteLayerTreeOwner.IsInitialized()) {
@@ -3427,17 +3431,17 @@ void BrowserParent::TryCacheDPIAndScale() {
     return;
   }
 
+  const auto oldDefaultScale = mDefaultScale;
   nsCOMPtr<nsIWidget> widget = GetWidget();
+  mDPI = widget ? widget->GetDPI() : nsIWidget::GetFallbackDPI();
+  mRounding = widget ? widget->RoundsWidgetCoordinatesTo() : 1;
+  mDefaultScale =
+      widget ? widget->GetDefaultScale() : nsIWidget::GetFallbackDefaultScale();
 
-  if (widget) {
-    mDPI = widget->GetDPI();
-    mRounding = widget->RoundsWidgetCoordinatesTo();
-    if (mDefaultScale != widget->GetDefaultScale()) {
-      
-      
-      mUpdatedDimensions = false;
-    }
-    mDefaultScale = widget->GetDefaultScale();
+  if (mDefaultScale != oldDefaultScale) {
+    
+    
+    mUpdatedDimensions = false;
   }
 }
 
@@ -3582,18 +3586,19 @@ void BrowserParent::PreserveLayers(bool aPreserveLayers) {
 }
 
 void BrowserParent::NotifyResolutionChanged() {
-  if (!mIsDestroyed) {
-    
-    
-    mDPI = -1;
-    TryCacheDPIAndScale();
-    
-    
-    
-    
-    Unused << SendUIResolutionChanged(mDPI, mRounding,
-                                      mDPI < 0 ? -1.0 : mDefaultScale.scale);
+  if (mIsDestroyed) {
+    return;
   }
+  
+  
+  mDPI = -1;
+  TryCacheDPIAndScale();
+  
+  
+  
+  
+  Unused << SendUIResolutionChanged(mDPI, mRounding,
+                                    mDPI < 0 ? -1.0 : mDefaultScale.scale);
 }
 
 bool BrowserParent::CanCancelContentJS(
