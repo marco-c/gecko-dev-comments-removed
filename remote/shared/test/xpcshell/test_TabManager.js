@@ -44,3 +44,13 @@ add_task(async function test_getIdForBrowsingContext() {
     TabManager.getIdForBrowser(browser)
   );
 });
+
+add_task(async function test_removeTab() {
+  
+  await TabManager.removeTab(null);
+});
+
+add_task(async function test_selectTab() {
+  
+  await TabManager.selectTab(null);
+});
