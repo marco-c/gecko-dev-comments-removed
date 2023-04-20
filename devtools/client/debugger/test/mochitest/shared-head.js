@@ -201,6 +201,8 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
     getSelectedSourceTextContent,
     getSymbols,
     getBreakableLines,
+    getSourceActorsForSource,
+    getSourceActorBreakableLines,
   } = dbg.selectors;
 
   return waitForState(
@@ -224,7 +226,23 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         }
       }
 
-      return getSymbols(source) && getBreakableLines(source.id);
+      
+      if (!getSymbols(source)) {
+        return false;
+      }
+
+      
+      if (source.isHTML) {
+        
+        
+        
+        const sourceActors = getSourceActorsForSource(source.id);
+        const allSourceActorsProcessed = sourceActors.every(
+          sourceActor => !!getSourceActorBreakableLines(sourceActor.id)
+        );
+        return allSourceActorsProcessed;
+      }
+      return getBreakableLines(source.id);
     },
     "selected source"
   );
