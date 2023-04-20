@@ -1550,7 +1550,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "oncontextmenu", insecureContext: true },
   
+  { name: "oncopy", insecureContext: true },
+  
   { name: "oncuechange", insecureContext: true },
+  
+  { name: "oncut", insecureContext: true },
   
   { name: "ondblclick", insecureContext: true },
   
@@ -1647,6 +1651,8 @@ let interfaceNamesInGlobalScope = [
   { name: "onpagehide", insecureContext: true },
   
   { name: "onpageshow", insecureContext: true },
+  
+  { name: "onpaste", insecureContext: true },
   
   { name: "onpause", insecureContext: true },
   
