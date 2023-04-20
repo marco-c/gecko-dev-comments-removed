@@ -136,6 +136,9 @@ class VideoFramePool<LIBAV_VER> {
   
   
   Maybe<bool> mTextureCreationWorks;
+  
+  
+  Maybe<bool> mTextureCopyWorks;
 };
 
 }  

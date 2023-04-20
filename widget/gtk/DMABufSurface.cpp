@@ -909,7 +909,18 @@ already_AddRefed<DMABufSurfaceYUV> DMABufSurfaceYUV::CreateYUVSurface(
   RefPtr<DMABufSurfaceYUV> surf = new DMABufSurfaceYUV();
   LOGDMABUF(("DMABufSurfaceYUV::CreateYUVSurface() UID %d from desc\n",
              surf->GetUID()));
-  if (!surf->UpdateYUVData(aDesc, aWidth, aHeight, false)) {
+  if (!surf->UpdateYUVData(aDesc, aWidth, aHeight,  false)) {
+    return nullptr;
+  }
+  return surf.forget();
+}
+
+already_AddRefed<DMABufSurfaceYUV> DMABufSurfaceYUV::CopyYUVSurface(
+    const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth, int aHeight) {
+  RefPtr<DMABufSurfaceYUV> surf = new DMABufSurfaceYUV();
+  LOGDMABUF(("DMABufSurfaceYUV::CreateYUVSurfaceCopy() UID %d from desc\n",
+             surf->GetUID()));
+  if (!surf->UpdateYUVData(aDesc, aWidth, aHeight,  true)) {
     return nullptr;
   }
   return surf.forget();
@@ -1023,11 +1034,20 @@ bool DMABufSurfaceYUV::MoveYUVDataImpl(const VADRMPRIMESurfaceDescriptor& aDesc,
     unsigned int object = aDesc.layers[i].object_index[0];
     
     
-    int fd = aDesc.objects[object].fd;
-    bool dupFD = (object != i);
-    mDmabufFds[i] = dupFD ? dup(fd) : fd;
+    mDmabufFds[i] = dup(aDesc.objects[object].fd);
   }
   return true;
+}
+
+void DMABufSurfaceYUV::ReleaseVADRMPRIMESurfaceDescriptor(
+    VADRMPRIMESurfaceDescriptor& aDesc) {
+  for (unsigned int i = 0; i < aDesc.num_layers; i++) {
+    unsigned int object = aDesc.layers[i].object_index[0];
+    if (aDesc.objects[object].fd != -1) {
+      close(aDesc.objects[object].fd);
+      aDesc.objects[object].fd = -1;
+    }
+  }
 }
 
 bool DMABufSurfaceYUV::CreateYUVPlane(int aPlane) {
