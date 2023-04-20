@@ -13,9 +13,10 @@
 
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/string_view.h"
+#include "api/function_view.h"
 #include "api/task_queue/task_queue_base.h"
-#include "api/task_queue/to_queued_task.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/location.h"
@@ -24,13 +25,14 @@
 
 namespace webrtc {
 
-template <typename Closure>
-void SendTask(rtc::Location loc, TaskQueueBase* task_queue, Closure&& task) {
+inline void SendTask(rtc::Location loc,
+                     TaskQueueBase* task_queue,
+                     rtc::FunctionView<void()> task) {
   RTC_CHECK(!task_queue->IsCurrent())
       << "Called SendTask to a queue from the same queue at " << loc.ToString();
   rtc::Event event;
-  task_queue->PostTask(
-      ToQueuedTask(std::forward<Closure>(task), [&event] { event.Set(); }));
+  absl::Cleanup cleanup = [&event] { event.Set(); };
+  task_queue->PostTask([task, cleanup = std::move(cleanup)] { task(); });
   RTC_CHECK(event.Wait(rtc::Event::kForever,
                        10'000))
       << "Waited too long at " << loc.ToString();
@@ -47,24 +49,8 @@ class RTC_LOCKABLE TaskQueueForTest : public rtc::TaskQueue {
 
   
   
-  
-  
-  
-  template <class Closure>
-  void SendTask(Closure* task) {
-    RTC_CHECK(!IsCurrent());
-    rtc::Event event;
-    PostTask(ToQueuedTask(
-        [&task] { RTC_CHECK_EQ(false, static_cast<QueuedTask*>(task)->Run()); },
-        [&event] { event.Set(); }));
-    event.Wait(rtc::Event::kForever);
-  }
-
-  
-  
-  template <class Closure>
-  void SendTask(Closure&& task, rtc::Location loc) {
-    ::webrtc::SendTask(loc, Get(), std::forward<Closure>(task));
+  void SendTask(rtc::FunctionView<void()> task, rtc::Location loc) {
+    ::webrtc::SendTask(loc, Get(), task);
   }
 
   
