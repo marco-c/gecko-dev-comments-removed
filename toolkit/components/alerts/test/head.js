@@ -6,9 +6,25 @@
 {
   const chromeScript = SpecialPowers.loadChromeScript(_ => {
     
+    const { BrowserTestUtils } = ChromeUtils.importESModule(
+      "resource://testing-common/BrowserTestUtils.sys.mjs"
+    );
+
     addMessageListener("anyXULAlertsVisible", () => {
       let windows = Services.wm.getEnumerator("alert:alert");
       return windows.hasMoreElements();
+    });
+
+    addMessageListener("waitXULAlertWindowsClosed", () => {
+      let windows = Services.wm.getEnumerator("alert:alert");
+
+      let closed = Array.from(windows, win => {
+        return BrowserTestUtils.domWindowClosed(win).catch(error => {
+          info("Error waiting for alert window closure: " + error.message);
+        });
+      });
+
+      return Promise.allSettled(closed);
     });
   });
 
@@ -18,5 +34,13 @@
       !alertsVisible,
       "Alerts should not be present at the start of the test."
     );
+  });
+
+  SimpleTest.registerCleanupFunction(async () => {
+    
+    
+    
+    
+    await chromeScript.sendQuery("waitXULAlertWindowsClosed");
   });
 }
