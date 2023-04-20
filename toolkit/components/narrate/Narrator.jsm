@@ -1,11 +1,15 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Maximum time into paragraph when pressing "skip previous" will go
-// to previous paragraph and not the start of current one.
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Narrator"];
+
+
+
 const PREV_THRESHOLD = 2000;
-// All text-related style rules that we should copy over to the highlight node.
+
 const kTextStylesRules = [
   "font-family",
   "font-kerning",
@@ -21,7 +25,7 @@ const kTextStylesRules = [
   "word-spacing",
 ];
 
-export function Narrator(win, languagePromise) {
+function Narrator(win, languagePromise) {
   this._winRef = Cu.getWeakReference(win);
   this._languagePromise = languagePromise;
   this._inTest = Services.prefs.getBoolPref("narrate.test");
@@ -47,31 +51,31 @@ Narrator.prototype = {
       let filter = {
         _matches: new Set(),
 
-        // We want high-level elements that have non-empty text nodes.
-        // For example, paragraphs. But nested anchors and other elements
-        // are not interesting since their text already appears in their
-        // parent's textContent.
+        
+        
+        
+        
         acceptNode(node) {
           if (this._matches.has(node.parentNode)) {
-            // Reject sub-trees of accepted nodes.
+            
             return nf.FILTER_REJECT;
           }
 
           if (!/\S/.test(node.textContent)) {
-            // Reject nodes with no text.
+            
             return nf.FILTER_REJECT;
           }
 
           let bb = wu.getBoundsWithoutFlushing(node);
           if (!bb.width || !bb.height) {
-            // Skip non-rendered nodes. We don't reject because a zero-sized
-            // container can still have visible, "overflowed", content.
+            
+            
             return nf.FILTER_SKIP;
           }
 
           for (let c = node.firstChild; c; c = c.nextSibling) {
             if (c.nodeType == c.TEXT_NODE && /\S/.test(c.textContent)) {
-              // If node has a non-empty text child accept it.
+              
               this._matches.add(node);
               return nf.FILTER_ACCEPT;
             }
@@ -83,9 +87,9 @@ Narrator.prototype = {
 
       this._treeWalkerRef = new WeakMap();
 
-      // We can't hold a weak reference on the treewalker, because there
-      // are no other strong references, and it will be GC'ed. Instead,
-      // we rely on the window's lifetime and use it as a weak reference.
+      
+      
+      
       this._treeWalkerRef.set(
         this._win,
         this._doc.createTreeWalker(
@@ -200,7 +204,7 @@ Narrator.prototype = {
 
       utterance.addEventListener("end", () => {
         if (!this._win) {
-          // page got unloaded, don't do anything.
+          
           return;
         }
 
@@ -212,7 +216,7 @@ Narrator.prototype = {
         }
 
         if (this._stopped) {
-          // User pressed stopped.
+          
           resolve();
         } else {
           tw.currentNode = tw.nextNode() || tw.root;
@@ -226,7 +230,7 @@ Narrator.prototype = {
 
       utterance.addEventListener("boundary", e => {
         if (e.name != "word") {
-          // We are only interested in word boundaries for now.
+          
           return;
         }
 
@@ -289,13 +293,13 @@ Narrator.prototype = {
 
   setRate(rate) {
     this._speechOptions.rate = rate;
-    /* repeat current paragraph */
+    
     this._goBackParagraphs(1);
   },
 
   setVoice(voice) {
     this._speechOptions.voice = this._getVoice(voice);
-    /* repeat current paragraph */
+    
     this._goBackParagraphs(1);
   },
 
@@ -310,22 +314,22 @@ Narrator.prototype = {
   },
 };
 
-/**
- * The Highlighter class is used to highlight a range of text in a container.
- *
- * @param {Element} container a text container
- */
+
+
+
+
+
 function Highlighter(container) {
   this.container = container;
 }
 
 Highlighter.prototype = {
-  /**
-   * Highlight the range within offsets relative to the container.
-   *
-   * @param {number} startOffset the start offset
-   * @param {number} length the length in characters of the range
-   */
+  
+
+
+
+
+
   highlight(startOffset, length) {
     let containerRect = this.container.getBoundingClientRect();
     let range = this._getRange(startOffset, startOffset + length);
@@ -353,29 +357,29 @@ Highlighter.prototype = {
         textStyle
       );
 
-      // Enables us to vary the CSS transition on a line change.
+      
       node.classList.toggle("newline", style.top != node.dataset.top);
       node.dataset.top = style.top;
 
-      // Enables CSS animations.
+      
       node.classList.remove("animate");
       win.requestAnimationFrame(() => {
         node.classList.add("animate");
       });
 
-      // Enables alternative word display with a CSS pseudo-element.
+      
       node.dataset.word = range.toString();
 
-      // Apply style
+      
       node.style = Object.entries(style)
         .map(s => `${s[0]}: ${s[1]};`)
         .join(" ");
     }
   },
 
-  /**
-   * Releases reference to container and removes all highlight nodes.
-   */
+  
+
+
   remove() {
     for (let node of this._nodes) {
       node.remove();
@@ -384,22 +388,22 @@ Highlighter.prototype = {
     this.container = null;
   },
 
-  /**
-   * Returns specified amount of highlight nodes. Creates new ones if necessary
-   * and purges any additional nodes that are not needed.
-   *
-   * @param {number} count number of nodes needed
-   */
+  
+
+
+
+
+
   _getFreshHighlightNodes(count) {
     let doc = this.container.ownerDocument;
     let nodes = Array.from(this._nodes);
 
-    // Remove nodes we don't need anymore (nodes.length - count > 0).
+    
     for (let toRemove = 0; toRemove < nodes.length - count; toRemove++) {
       nodes.shift().remove();
     }
 
-    // Add additional nodes if we need them (count - nodes.length > 0).
+    
     for (let toAdd = 0; toAdd < count - nodes.length; toAdd++) {
       let node = doc.createElement("div");
       node.className = "narrate-word-highlight";
@@ -410,13 +414,13 @@ Highlighter.prototype = {
     return nodes;
   },
 
-  /**
-   * Create and return a range object with the start and end offsets relative
-   * to the container node.
-   *
-   * @param {number} startOffset the start offset
-   * @param {number} endOffset the end offset
-   */
+  
+
+
+
+
+
+
   _getRange(startOffset, endOffset) {
     let doc = this.container.ownerDocument;
     let i = 0;
@@ -435,7 +439,7 @@ Highlighter.prototype = {
         i += length;
       } while ((node = treeWalker.nextNode()));
 
-      // Offset is out of bounds, return last offset of last node.
+      
       node = treeWalker.lastChild();
       return [node, node.data.length];
     }
@@ -447,9 +451,9 @@ Highlighter.prototype = {
     return range;
   },
 
-  /*
-   * Get all existing highlight nodes for container.
-   */
+  
+
+
   get _nodes() {
     return this.container.querySelectorAll(".narrate-word-highlight");
   },

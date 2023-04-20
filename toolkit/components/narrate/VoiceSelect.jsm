@@ -1,13 +1,17 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-export function VoiceSelect(win, label) {
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["VoiceSelect"];
+
+function VoiceSelect(win, label) {
   this._winRef = Cu.getWeakReference(win);
 
   let element = win.document.createElement("div");
   element.classList.add("voiceselect");
-  // eslint-disable-next-line no-unsanitized/property
+  
   element.innerHTML = `<button class="select-toggle" aria-controls="voice-options">
       <span class="label">${label}</span> <span class="current-voice"></span>
     </button>
@@ -113,8 +117,8 @@ VoiceSelect.prototype = {
         break;
 
       case "wheel":
-        // Don't let wheel events bubble to document. It will scroll the page
-        // and close the entire narrate dialog.
+        
+        
         evt.stopPropagation();
         break;
 

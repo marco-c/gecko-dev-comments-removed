@@ -1,22 +1,32 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AsyncPrefs } from "resource://gre/modules/AsyncPrefs.sys.mjs";
-import { Narrator } from "resource://gre/modules/narrate/Narrator.sys.mjs";
-import { VoiceSelect } from "resource://gre/modules/narrate/VoiceSelect.sys.mjs";
+
+
+
+"use strict";
+
+const { VoiceSelect } = ChromeUtils.import(
+  "resource://gre/modules/narrate/VoiceSelect.jsm"
+);
+const { Narrator } = ChromeUtils.import(
+  "resource://gre/modules/narrate/Narrator.jsm"
+);
+const { AsyncPrefs } = ChromeUtils.importESModule(
+  "resource://gre/modules/AsyncPrefs.sys.mjs"
+);
+
+var EXPORTED_SYMBOLS = ["NarrateControls"];
 
 var gStrings = Services.strings.createBundle(
   "chrome://global/locale/narrate.properties"
 );
 
-export function NarrateControls(win, languagePromise) {
+function NarrateControls(win, languagePromise) {
   this._winRef = Cu.getWeakReference(win);
   this._languagePromise = languagePromise;
 
   win.addEventListener("unload", this);
 
-  // Append content style sheet in document head
+  
   let style = win.document.createElement("link");
   style.rel = "stylesheet";
   style.href = "chrome://global/skin/narrate.css";
@@ -128,7 +138,7 @@ export function NarrateControls(win, languagePromise) {
   let rateRange = dropdown.querySelector(".narrate-rate > input");
   rateRange.addEventListener("change", this);
 
-  // The rate is stored as an integer.
+  
   rateRange.value = branch.getIntPref("rate");
 
   this._setupVoices();
@@ -159,9 +169,9 @@ NarrateControls.prototype = {
     }
   },
 
-  /**
-   * Returns true if synth voices are available.
-   */
+  
+
+
   _setupVoices() {
     return this._languagePromise.then(language => {
       this.voiceSelect.clear();
@@ -200,7 +210,7 @@ NarrateControls.prototype = {
       let initial = !this._voicesInitialized;
       this._voicesInitialized = true;
 
-      // if language is null, re-assign it to "unknown-language"
+      
       if (language == null) {
         language = "unknown-language";
       }
@@ -210,11 +220,11 @@ NarrateControls.prototype = {
       }
 
       if (options.length && narrateToggle.hidden) {
-        // About to show for the first time..
+        
         histogram.add(language, 1);
       }
 
-      // We disable this entire feature if there are no available voices.
+      
       narrateToggle.hidden = !options.length;
     });
   },
@@ -274,7 +284,7 @@ NarrateControls.prototype = {
   _updateSpeechControls(speaking) {
     let dropdown = this._doc.querySelector(".narrate-dropdown");
     if (!dropdown) {
-      // Elements got destroyed, but window lingers on for a bit.
+      
       return;
     }
 
@@ -294,25 +304,25 @@ NarrateControls.prototype = {
   },
 
   _createVoiceLabel(voice) {
-    // This is a highly imperfect method of making human-readable labels
-    // for system voices. Because each platform has a different naming scheme
-    // for voices, we use a different method for each platform.
+    
+    
+    
     switch (Services.appinfo.OS) {
       case "WINNT":
-        // On windows the language is included in the name, so just use the name
+        
         return voice.name;
       case "Linux":
-        // On Linux, the name is usually the unlocalized language name.
-        // Use a localized language name, and have the language tag in
-        // parenthisis. This is to avoid six languages called "English".
+        
+        
+        
         return gStrings.formatStringFromName("voiceLabel", [
           this._getLanguageName(voice.lang) || voice.name,
           voice.lang,
         ]);
       default:
-        // On Mac the language is not included in the name, find a localized
-        // language name or show the tag if none exists.
-        // This is the ideal naming scheme so it is also the "default".
+        
+        
+        
         return gStrings.formatStringFromName("voiceLabel", [
           voice.name,
           this._getLanguageName(voice.lang) || voice.lang,
@@ -322,7 +332,7 @@ NarrateControls.prototype = {
 
   _getLanguageName(lang) {
     try {
-      // This may throw if the lang can't be parsed.
+      
       let langCode = new Services.intl.Locale(lang).language;
 
       return Services.intl.getLanguageDisplayNames(undefined, [langCode]);
@@ -332,9 +342,9 @@ NarrateControls.prototype = {
   },
 
   _convertRate(rate) {
-    // We need to convert a relative percentage value to a fraction rate value.
-    // eg. -100 is half the speed, 100 is twice the speed in percentage,
-    // 0.5 is half the speed and 2 is twice the speed in fractions.
+    
+    
+    
     return Math.pow(Math.abs(rate / 100) + 1, rate < 0 ? -1 : 1);
   },
 
