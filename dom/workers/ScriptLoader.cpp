@@ -258,7 +258,12 @@ void LoadAllScripts(WorkerPrivate* aWorkerPrivate,
     return;
   }
 
-  loader->CreateScriptRequests(aScriptURLs, aDocumentEncoding, aIsMainScript);
+  bool ok = loader->CreateScriptRequests(aScriptURLs, aDocumentEncoding,
+                                         aIsMainScript);
+
+  if (!ok) {
+    return;
+  }
 
   if (loader->DispatchLoadScripts()) {
     syncLoop.Run();
@@ -431,14 +436,31 @@ void WorkerScriptLoader::InitModuleLoader() {
   mWorkerRef->Private()->DebuggerGlobalScope()->InitModuleLoader(moduleLoader);
 }
 
-void WorkerScriptLoader::CreateScriptRequests(
+bool WorkerScriptLoader::CreateScriptRequests(
     const nsTArray<nsString>& aScriptURLs,
     const mozilla::Encoding* aDocumentEncoding, bool aIsMainScript) {
+  
+  
+  
+  
+  
+  
+  if (mWorkerRef->Private()->WorkerType() == WorkerType::Module &&
+      !aIsMainScript) {
+    
+    
+    mRv.ThrowTypeError(
+        "Using `ImportScripts` inside a Module Worker is "
+        "disallowed.");
+    return false;
+  }
   for (const nsString& scriptURL : aScriptURLs) {
     RefPtr<ScriptLoadRequest> request =
         CreateScriptLoadRequest(scriptURL, aDocumentEncoding, aIsMainScript);
     mLoadingRequests.AppendElement(request);
   }
+
+  return true;
 }
 
 nsTArray<RefPtr<ThreadSafeRequestHandle>> WorkerScriptLoader::GetLoadingList() {
