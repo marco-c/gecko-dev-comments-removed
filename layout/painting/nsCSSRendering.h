@@ -448,7 +448,7 @@ struct nsCSSRendering {
 
 
 
-    PAINTBG_HIGH_QUALITY_SCALING = 0x16,
+    PAINTBG_HIGH_QUALITY_SCALING = 0x10,
   };
 
   struct PaintBGParams {
