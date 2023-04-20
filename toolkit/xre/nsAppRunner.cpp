@@ -4192,7 +4192,7 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   
   
   
-  SetupMacApplicationDelegate(&gRestartedByOS);
+  SetupMacApplicationDelegate();
 
   if (EnvHasValue("MOZ_LAUNCHED_CHILD")) {
     
