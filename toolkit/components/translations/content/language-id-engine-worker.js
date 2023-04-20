@@ -127,6 +127,23 @@ class LanguageIdWorker {
 
 
 
+
+
+
+
+
+  #formatLanguageLabel(label) {
+    return label.slice(-2);
+  }
+
+  
+
+
+
+
+
+
+
   onMessage({ data }) {
     if (data.type === "initialize") {
       throw new Error("The Language Id engine must not be re-initialized.");
@@ -149,7 +166,7 @@ class LanguageIdWorker {
 
           postMessage({
             type: "language-id-response",
-            languageLabel,
+            languageLabel: this.#formatLanguageLabel(languageLabel),
             confidence,
             messageId,
           });
