@@ -79,6 +79,13 @@ class TRRService : public TRRServiceBase,
 
   bool IsUsingAutoDetectedURL() { return mURISetByDetection; }
 
+  void SetHeuristicDetectionResult(TRRSkippedReason aValue) {
+    mHeuristicDetectionValue = aValue;
+  }
+  TRRSkippedReason GetHeuristicDetectionResult() {
+    return mHeuristicDetectionValue;
+  }
+
   
   
   static const nsCString& ProviderKey();
@@ -145,6 +152,9 @@ class TRRService : public TRRServiceBase,
   nsTHashSet<nsCString> mExcludedDomains MOZ_GUARDED_BY(mLock);
   nsTHashSet<nsCString> mDNSSuffixDomains MOZ_GUARDED_BY(mLock);
   nsTHashSet<nsCString> mEtcHostsDomains MOZ_GUARDED_BY(mLock);
+
+  
+  TRRSkippedReason mHeuristicDetectionValue = nsITRRSkipReason::TRR_UNSET;
 
   enum class ConfirmationEvent {
     Init,
