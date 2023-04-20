@@ -36,6 +36,11 @@ class KeyboardEvent : public UIEvent {
   bool ShiftKey(CallerType aCallerType = CallerType::System);
   bool MetaKey();
 
+  
+  
+  bool IsMenuAccessKeyPressed() const;
+  Modifiers GetModifiersForMenuAccessKey() const;
+
   bool GetModifierState(const nsAString& aKey,
                         CallerType aCallerType = CallerType::System) {
     bool modifierState = GetModifierStateInternal(aKey);

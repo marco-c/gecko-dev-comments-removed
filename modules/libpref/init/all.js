@@ -1967,12 +1967,6 @@ pref("extensions.manifestV3.enabled", true);
 pref("extensions.install_origins.enabled", false);
 
 
-
-
-pref("ui.key.accelKey", 17);
-pref("ui.key.menuAccessKey", 18);
-
-
 pref("middlemouse.paste", false);
 pref("middlemouse.contentLoadURL", false);
 pref("middlemouse.scrollbarPosition", false);
@@ -2804,11 +2798,6 @@ pref("font.size.monospace.x-math", 13);
   pref("font.weight-override.HelveticaNeue-Light", 300); 
   pref("font.weight-override.HelveticaNeue-LightItalic", 300);
   pref("font.weight-override.HelveticaNeue-MediumItalic", 500); 
-
-  
-  
-  pref("ui.key.menuAccessKey", 0);
-  pref("ui.key.accelKey", 224);
 
   
   pref("ui.panel.default_level_parent", false);

@@ -24,6 +24,7 @@ class nsIFrame;
 
 namespace mozilla {
 
+using Modifiers = uint16_t;
 struct StyleColorSchemeFlags;
 
 namespace dom {
@@ -345,6 +346,12 @@ class LookAndFeel {
   static bool UseOverlayScrollbars() {
     return GetInt(IntID::UseOverlayScrollbars);
   }
+
+  
+  
+  static uint32_t GetMenuAccessKey();
+  
+  static Modifiers GetMenuAccessKeyModifiers();
 
   enum {
     eScrollArrow_None = 0,

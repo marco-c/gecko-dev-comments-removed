@@ -1609,7 +1609,7 @@ void nsCSSFrameConstructor::CreateGeneratedContent(
     case Type::MozLabelContent: {
       nsAutoString accesskey;
       if (!aOriginatingElement.GetAttr(nsGkAtoms::accesskey, accesskey) ||
-          accesskey.IsEmpty() || !nsMenuBarListener::GetMenuAccessKey()) {
+          accesskey.IsEmpty() || !LookAndFeel::GetMenuAccessKey()) {
         
         nsCOMPtr<nsIContent> content;
         NS_NewAttributeContent(mDocument->NodeInfoManager(), kNameSpaceID_None,

@@ -20,6 +20,7 @@
 
 #include "nsContentUtils.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/TextEvents.h"
@@ -42,9 +43,6 @@ using mozilla::dom::KeyboardEvent;
 NS_IMPL_ISUPPORTS(nsMenuBarListener, nsIDOMEventListener)
 
 
-
-int32_t nsMenuBarListener::mAccessKey = -1;
-Modifiers nsMenuBarListener::mAccessKeyMask = 0;
 
 nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
                                      nsIContent* aMenuBarContent)
@@ -116,48 +114,6 @@ void nsMenuBarListener::OnDestroyMenuBarFrame() {
   mTopWindowEventTarget = nullptr;
 }
 
-int32_t nsMenuBarListener::GetMenuAccessKey() {
-  InitAccessKey();
-  return mAccessKey;
-}
-
-void nsMenuBarListener::InitAccessKey() {
-  if (mAccessKey >= 0) return;
-
-    
-    
-#ifdef XP_MACOSX
-  mAccessKey = 0;
-  mAccessKeyMask = 0;
-#else
-  mAccessKey = dom::KeyboardEvent_Binding::DOM_VK_ALT;
-  mAccessKeyMask = MODIFIER_ALT;
-#endif
-
-  
-  mAccessKey = Preferences::GetInt("ui.key.menuAccessKey", mAccessKey);
-  switch (mAccessKey) {
-    case dom::KeyboardEvent_Binding::DOM_VK_SHIFT:
-      mAccessKeyMask = MODIFIER_SHIFT;
-      break;
-    case dom::KeyboardEvent_Binding::DOM_VK_CONTROL:
-      mAccessKeyMask = MODIFIER_CONTROL;
-      break;
-    case dom::KeyboardEvent_Binding::DOM_VK_ALT:
-      mAccessKeyMask = MODIFIER_ALT;
-      break;
-    case dom::KeyboardEvent_Binding::DOM_VK_META:
-      mAccessKeyMask = MODIFIER_META;
-      break;
-    case dom::KeyboardEvent_Binding::DOM_VK_WIN:
-      mAccessKeyMask = MODIFIER_OS;
-      break;
-    default:
-      
-      break;
-  }
-}
-
 void nsMenuBarListener::ToggleMenuActiveState() {
   if (mMenuBarFrame->IsActive()) {
     mMenuBarFrame->SetActive(false);
@@ -176,22 +132,20 @@ nsresult nsMenuBarListener::KeyUp(Event* aKeyEvent) {
     return NS_OK;
   }
 
-  InitAccessKey();
-
   
   if (!nativeKeyEvent->IsTrusted()) {
     return NS_OK;
   }
 
-  if (!mAccessKey || !StaticPrefs::ui_key_menuAccessKeyFocuses()) {
+  const auto accessKey = LookAndFeel::GetMenuAccessKey();
+  if (!accessKey || !StaticPrefs::ui_key_menuAccessKeyFocuses()) {
     return NS_OK;
   }
 
   
   
   if (!nativeKeyEvent->DefaultPrevented() && mAccessKeyDown &&
-      !mAccessKeyDownCanceled &&
-      static_cast<int32_t>(nativeKeyEvent->mKeyCode) == mAccessKey) {
+      !mAccessKeyDownCanceled && nativeKeyEvent->mKeyCode == accessKey) {
     
     
     bool toggleMenuActiveState = true;
@@ -244,127 +198,107 @@ nsresult nsMenuBarListener::KeyPress(Event* aKeyEvent) {
     return NS_OK;
   }
 
-  InitAccessKey();
+  auto accessKey = LookAndFeel::GetMenuAccessKey();
+  if (!accessKey) {
+    return NS_OK;
+  }
+  
+  
+  WidgetKeyboardEvent* nativeKeyEvent =
+      aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
+  if (!nativeKeyEvent) {
+    return NS_OK;
+  }
 
-  if (mAccessKey) {
-    
-    
-    WidgetKeyboardEvent* nativeKeyEvent =
-        aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
-    if (!nativeKeyEvent) {
-      return NS_OK;
-    }
+  RefPtr<KeyboardEvent> keyEvent = aKeyEvent->AsKeyboardEvent();
+  uint32_t keyCode = keyEvent->KeyCode();
 
-    RefPtr<KeyboardEvent> keyEvent = aKeyEvent->AsKeyboardEvent();
-    uint32_t keyCode = keyEvent->KeyCode();
-
-    
-    if (keyCode != (uint32_t)mAccessKey) {
-      mAccessKeyDownCanceled = true;
-    }
+  
+  if (keyCode != accessKey) {
+    mAccessKeyDownCanceled = true;
+  }
 
 #ifndef XP_MACOSX
-    
-    if (nativeKeyEvent->mMessage == eKeyPress && keyCode == NS_VK_F10) {
-      if ((GetModifiersForAccessKey(*keyEvent) & ~MODIFIER_CONTROL) == 0) {
-        
-        
-        
-        
-        
-        
-        if (nativeKeyEvent->WillBeSentToRemoteProcess()) {
-          nativeKeyEvent->StopImmediatePropagation();
-          nativeKeyEvent->MarkAsWaitingReplyFromRemoteProcess();
-          return NS_OK;
-        }
-        
-        
-        mMenuBarFrame->SetActiveByKeyboard();
-        ToggleMenuActiveState();
-
-        if (mMenuBarFrame->IsActive()) {
-#  ifdef MOZ_WIDGET_GTK
-          RefPtr child = mContent->GetActiveMenuChild();
-          
-          child->OpenMenuPopup(false);
-#  endif
-          aKeyEvent->StopPropagation();
-          aKeyEvent->PreventDefault();
-        }
+  
+  if (nativeKeyEvent->mMessage == eKeyPress && keyCode == NS_VK_F10) {
+    if ((keyEvent->GetModifiersForMenuAccessKey() & ~MODIFIER_CONTROL) == 0) {
+      
+      
+      
+      
+      
+      
+      if (nativeKeyEvent->WillBeSentToRemoteProcess()) {
+        nativeKeyEvent->StopImmediatePropagation();
+        nativeKeyEvent->MarkAsWaitingReplyFromRemoteProcess();
+        return NS_OK;
       }
+      
+      
+      mMenuBarFrame->SetActiveByKeyboard();
+      ToggleMenuActiveState();
 
-      return NS_OK;
+      if (mMenuBarFrame->IsActive()) {
+#  ifdef MOZ_WIDGET_GTK
+        RefPtr child = mContent->GetActiveMenuChild();
+        
+        child->OpenMenuPopup(false);
+#  endif
+        aKeyEvent->StopPropagation();
+        aKeyEvent->PreventDefault();
+      }
     }
+
+    return NS_OK;
+  }
 #endif  
 
-    RefPtr menuForKey = GetMenuForKeyEvent(*keyEvent);
-    if (!menuForKey) {
+  RefPtr menuForKey = GetMenuForKeyEvent(*keyEvent);
+  if (!menuForKey) {
 #ifdef XP_WIN
-      
-      
-      
-      
-      if (mMenuBarFrame->IsActive()) {
-        if (nsCOMPtr<nsISound> sound = do_GetService("@mozilla.org/sound;1")) {
-          sound->Beep();
-        }
-        mMenuBarFrame->SetActive(false);
+    
+    
+    
+    
+    if (mMenuBarFrame->IsActive()) {
+      if (nsCOMPtr<nsISound> sound = do_GetService("@mozilla.org/sound;1")) {
+        sound->Beep();
       }
+      mMenuBarFrame->SetActive(false);
+    }
 #endif
-      return NS_OK;
-    }
-
-    
-    
-    
-    
-    
-    
-    if (nativeKeyEvent->WillBeSentToRemoteProcess()) {
-      nativeKeyEvent->StopImmediatePropagation();
-      nativeKeyEvent->MarkAsWaitingReplyFromRemoteProcess();
-      return NS_OK;
-    }
-
-    mMenuBarFrame->SetActiveByKeyboard();
-    mMenuBarFrame->SetActive(true);
-    menuForKey->OpenMenuPopup(true);
-
-    
-    
-    mAccessKeyDown = mAccessKeyDownCanceled = false;
-
-    aKeyEvent->StopPropagation();
-    aKeyEvent->PreventDefault();
+    return NS_OK;
   }
+
+  
+  
+  
+  
+  
+  
+  if (nativeKeyEvent->WillBeSentToRemoteProcess()) {
+    nativeKeyEvent->StopImmediatePropagation();
+    nativeKeyEvent->MarkAsWaitingReplyFromRemoteProcess();
+    return NS_OK;
+  }
+
+  mMenuBarFrame->SetActiveByKeyboard();
+  mMenuBarFrame->SetActive(true);
+  menuForKey->OpenMenuPopup(true);
+
+  
+  
+  mAccessKeyDown = mAccessKeyDownCanceled = false;
+
+  aKeyEvent->StopPropagation();
+  aKeyEvent->PreventDefault();
 
   return NS_OK;
 }
 
-bool nsMenuBarListener::IsAccessKeyPressed(KeyboardEvent& aKeyEvent) {
-  InitAccessKey();
-  
-  uint32_t modifiers = GetModifiersForAccessKey(aKeyEvent);
-
-  return (mAccessKeyMask != MODIFIER_SHIFT && (modifiers & mAccessKeyMask) &&
-          (modifiers & ~(mAccessKeyMask | MODIFIER_SHIFT)) == 0);
-}
-
-Modifiers nsMenuBarListener::GetModifiersForAccessKey(
-    KeyboardEvent& aKeyEvent) {
-  WidgetInputEvent* inputEvent = aKeyEvent.WidgetEventPtr()->AsInputEvent();
-  MOZ_ASSERT(inputEvent);
-
-  static const Modifiers kPossibleModifiersForAccessKey =
-      (MODIFIER_SHIFT | MODIFIER_CONTROL | MODIFIER_ALT | MODIFIER_META |
-       MODIFIER_OS);
-  return inputEvent->mModifiers & kPossibleModifiersForAccessKey;
-}
-
 dom::XULButtonElement* nsMenuBarListener::GetMenuForKeyEvent(
     KeyboardEvent& aKeyEvent) {
-  if (!IsAccessKeyPressed(aKeyEvent)) {
+  if (!aKeyEvent.IsMenuAccessKeyPressed()) {
     return nullptr;
   }
 
@@ -397,8 +331,6 @@ void nsMenuBarListener::ReserveKeyIfNeeded(Event* aKeyEvent) {
 
 
 nsresult nsMenuBarListener::KeyDown(Event* aKeyEvent) {
-  InitAccessKey();
-
   
   if (!aKeyEvent || !aKeyEvent->IsTrusted()) {
     return NS_OK;
@@ -410,26 +342,27 @@ nsresult nsMenuBarListener::KeyDown(Event* aKeyEvent) {
   }
 
   uint32_t theChar = keyEvent->KeyCode();
-
   uint16_t eventPhase = keyEvent->EventPhase();
   bool capturing = (eventPhase == dom::Event_Binding::CAPTURING_PHASE);
 
 #ifndef XP_MACOSX
   if (capturing && !mAccessKeyDown && theChar == NS_VK_F10 &&
-      (GetModifiersForAccessKey(*keyEvent) & ~MODIFIER_CONTROL) == 0) {
+      (keyEvent->GetModifiersForMenuAccessKey() & ~MODIFIER_CONTROL) == 0) {
     ReserveKeyIfNeeded(aKeyEvent);
   }
 #endif
 
-  if (mAccessKey && StaticPrefs::ui_key_menuAccessKeyFocuses()) {
+  const auto accessKey = LookAndFeel::GetMenuAccessKey();
+  if (accessKey && StaticPrefs::ui_key_menuAccessKeyFocuses()) {
     bool defaultPrevented = aKeyEvent->DefaultPrevented();
 
     
     
     
     bool isAccessKeyDownEvent =
-        ((theChar == (uint32_t)mAccessKey) &&
-         (GetModifiersForAccessKey(*keyEvent) & ~mAccessKeyMask) == 0);
+        theChar == accessKey &&
+        (keyEvent->GetModifiersForMenuAccessKey() &
+         ~LookAndFeel::GetMenuAccessKeyModifiers()) == 0;
 
     if (!capturing && !mAccessKeyDown) {
       
@@ -456,7 +389,7 @@ nsresult nsMenuBarListener::KeyDown(Event* aKeyEvent) {
     mAccessKeyDownCanceled = !isAccessKeyDownEvent;
   }
 
-  if (capturing && mAccessKey) {
+  if (capturing && LookAndFeel::GetMenuAccessKey()) {
     if (GetMenuForKeyEvent(*keyEvent)) {
       ReserveKeyIfNeeded(aKeyEvent);
     }

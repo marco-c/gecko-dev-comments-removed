@@ -48,18 +48,6 @@ class nsMenuBarListener final : public nsIDOMEventListener {
 
   void OnDestroyMenuBarFrame();
 
-  
-
-
-
-  static int32_t GetMenuAccessKey();
-
-  
-
-
-
-  static bool IsAccessKeyPressed(mozilla::dom::KeyboardEvent&);
-
  protected:
   virtual ~nsMenuBarListener();
 
@@ -72,11 +60,6 @@ class nsMenuBarListener final : public nsIDOMEventListener {
   MOZ_CAN_RUN_SCRIPT nsresult OnWindowDeactivated(mozilla::dom::Event* aEvent);
   MOZ_CAN_RUN_SCRIPT nsresult MouseDown(mozilla::dom::Event* aMouseEvent);
   MOZ_CAN_RUN_SCRIPT nsresult Fullscreen(mozilla::dom::Event* aEvent);
-
-  static void InitAccessKey();
-
-  static mozilla::Modifiers GetModifiersForAccessKey(
-      mozilla::dom::KeyboardEvent& event);
 
   
 
@@ -112,10 +95,6 @@ class nsMenuBarListener final : public nsIDOMEventListener {
   bool mAccessKeyDown;
   
   bool mAccessKeyDownCanceled;
-  
-  static int32_t mAccessKey;
-  
-  static mozilla::Modifiers mAccessKeyMask;
 };
 
 #endif  

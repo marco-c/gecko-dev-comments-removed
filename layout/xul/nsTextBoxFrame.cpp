@@ -727,8 +727,10 @@ void nsTextBoxFrame::UpdateAccessTitle() {
 
 
 
-  int32_t menuAccessKey = nsMenuBarListener::GetMenuAccessKey();
-  if (!menuAccessKey || mAccessKey.IsEmpty()) return;
+  uint32_t menuAccessKey = LookAndFeel::GetMenuAccessKey();
+  if (!menuAccessKey || mAccessKey.IsEmpty()) {
+    return;
+  }
 
   if (!AlwaysAppendAccessKey() &&
       FindInReadable(mAccessKey, mTitle, nsCaseInsensitiveStringComparator))
@@ -774,49 +776,49 @@ void nsTextBoxFrame::UpdateAccessTitle() {
 }
 
 void nsTextBoxFrame::UpdateAccessIndex() {
-  int32_t menuAccessKey = nsMenuBarListener::GetMenuAccessKey();
-  if (menuAccessKey) {
-    if (mAccessKey.IsEmpty()) {
-      if (mAccessKeyInfo) {
-        delete mAccessKeyInfo;
-        mAccessKeyInfo = nullptr;
-      }
-    } else {
-      if (!mAccessKeyInfo) {
-        mAccessKeyInfo = new nsAccessKeyInfo();
-        if (!mAccessKeyInfo) return;
-      }
-
-      nsAString::const_iterator start, end;
-
-      mCroppedTitle.BeginReading(start);
-      mCroppedTitle.EndReading(end);
-
-      
-      nsAString::const_iterator originalStart = start;
-
-      bool found;
-      if (!AlwaysAppendAccessKey()) {
-        
-        
-        found = FindInReadable(mAccessKey, start, end);
-        if (!found) {
-          
-          start = originalStart;
-          found = FindInReadable(mAccessKey, start, end,
-                                 nsCaseInsensitiveStringComparator);
-        }
-      } else {
-        found = RFindInReadable(mAccessKey, start, end,
-                                nsCaseInsensitiveStringComparator);
-      }
-
-      if (found)
-        mAccessKeyInfo->mAccesskeyIndex = Distance(originalStart, start);
-      else
-        mAccessKeyInfo->mAccesskeyIndex = kNotFound;
-    }
+  uint32_t menuAccessKey = LookAndFeel::GetMenuAccessKey();
+  if (!menuAccessKey) {
+    return;
   }
+  if (mAccessKey.IsEmpty()) {
+    if (mAccessKeyInfo) {
+      delete mAccessKeyInfo;
+      mAccessKeyInfo = nullptr;
+    }
+    return;
+  }
+  if (!mAccessKeyInfo) {
+    mAccessKeyInfo = new nsAccessKeyInfo();
+  }
+
+  nsAString::const_iterator start, end;
+
+  mCroppedTitle.BeginReading(start);
+  mCroppedTitle.EndReading(end);
+
+  
+  nsAString::const_iterator originalStart = start;
+
+  bool found;
+  if (!AlwaysAppendAccessKey()) {
+    
+    
+    found = FindInReadable(mAccessKey, start, end);
+    if (!found) {
+      
+      start = originalStart;
+      found = FindInReadable(mAccessKey, start, end,
+                             nsCaseInsensitiveStringComparator);
+    }
+  } else {
+    found = RFindInReadable(mAccessKey, start, end,
+                            nsCaseInsensitiveStringComparator);
+  }
+
+  if (found)
+    mAccessKeyInfo->mAccesskeyIndex = Distance(originalStart, start);
+  else
+    mAccessKeyInfo->mAccesskeyIndex = kNotFound;
 }
 
 void nsTextBoxFrame::RecomputeTitle() {
