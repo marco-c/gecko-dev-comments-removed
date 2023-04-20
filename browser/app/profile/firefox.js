@@ -2765,3 +2765,26 @@ pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
 
 
 pref("cookiebanners.ui.desktop.enabled", false);
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef XP_MACOSX
+  pref("browser.swipe.navigation-icon-start-position", -20);
+  pref("browser.swipe.navigation-icon-end-position", 0);
+  pref("browser.swipe.navigation-icon-min-radius", -1);
+  pref("browser.swipe.navigation-icon-max-radius", -1);
+#else
+  pref("browser.swipe.navigation-icon-start-position", -40);
+  pref("browser.swipe.navigation-icon-end-position", 60);
+  pref("browser.swipe.navigation-icon-min-radius", 12);
+  pref("browser.swipe.navigation-icon-max-radius", 20);
+#endif
