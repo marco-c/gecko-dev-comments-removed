@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/Maybe.h"
 #include "mozilla/Sprintf.h"
 
 #include <algorithm>
@@ -559,6 +560,12 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   }
 
   
+#ifdef DEBUG
+  size_t savedQueuePos = gc->queuePos;
+  mozilla::Maybe<MarkColor> savedQueueColor = gc->queueMarkColor;
+#endif
+
+  
 
 
 
@@ -654,6 +661,11 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
     }
   }
 
+#ifdef DEBUG
+  gc->queuePos = savedQueuePos;
+  gc->queueMarkColor = savedQueueColor;
+#endif
+
   gc->incrementalState = state;
 }
 
@@ -709,7 +721,7 @@ void js::gc::MarkingValidator::validate() {
             ok = false;
             const char* color = TenuredCell::getColor(bitmap, cell).name();
             fprintf(stderr,
-                    "%p: cell not marked, but would be marked by %s "
+                    "%p: cell not marked, but would be marked %s by "
                     "non-incremental marking\n",
                     cell, color);
 #  ifdef DEBUG
