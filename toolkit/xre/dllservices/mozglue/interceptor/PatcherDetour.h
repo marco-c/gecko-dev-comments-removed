@@ -22,10 +22,10 @@
 #include "mozilla/interceptor/Trampoline.h"
 #include "mozilla/interceptor/VMSharingPolicies.h"
 
-#define COPY_CODES(NBYTES)                          \
-  do {                                              \
-    tramp.CopyFrom(origBytes.GetAddress(), NBYTES); \
-    origBytes += NBYTES;                            \
+#define COPY_CODES(NBYTES)                           \
+  do {                                               \
+    tramp.CopyCodes(origBytes.GetAddress(), NBYTES); \
+    origBytes += NBYTES;                             \
   } while (0)
 
 namespace mozilla {
@@ -213,6 +213,11 @@ class WindowsDllDetourPatcher final
 
       origBytes.Commit();
 #  elif defined(_M_X64)
+      
+      
+      
+      
+      
       if (opcode1 == 0x49) {
         if (!Clear13BytePatch(origBytes, tramp.GetCurrentRemoteAddress())) {
           continue;
@@ -1669,6 +1674,14 @@ class WindowsDllDetourPatcher final
     if (!trampPtr) {
       return;
     }
+
+#ifdef _M_X64
+    if constexpr (MMPolicyT::kSupportsUnwindInfo) {
+      DebugOnly<bool> unwindInfoAdded = tramp.AddUnwindInfo(
+          origBytes.GetBaseAddress(), origBytes.GetOffset());
+      MOZ_ASSERT(unwindInfoAdded);
+    }
+#endif  
 
     WritableTargetFunction<MMPolicyT> target(origBytes.Promote());
     if (!target) {

@@ -13,6 +13,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Types.h"
 #include "mozilla/WindowsProcessMitigations.h"
+#include "mozilla/WindowsUnwindInfo.h"
 
 namespace mozilla {
 namespace interceptor {
@@ -28,6 +29,10 @@ class MOZ_STACK_CLASS Trampoline final {
         mRemoteBase(aRemoteBase),
         mOffset(0),
         mExeOffset(0),
+#ifdef _M_X64
+        mCopyCodesEndOffset(0),
+        mExeEndOffset(0),
+#endif  
         mMaxOffset(aChunkSize),
         mAccumulatedStatus(true) {
     if (!::VirtualProtect(aLocalBase, aChunkSize,
@@ -44,6 +49,10 @@ class MOZ_STACK_CLASS Trampoline final {
         mRemoteBase(aOther.mRemoteBase),
         mOffset(aOther.mOffset),
         mExeOffset(aOther.mExeOffset),
+#ifdef _M_X64
+        mCopyCodesEndOffset(aOther.mCopyCodesEndOffset),
+        mExeEndOffset(aOther.mExeEndOffset),
+#endif  
         mMaxOffset(aOther.mMaxOffset),
         mAccumulatedStatus(aOther.mAccumulatedStatus) {
     aOther.mPrevLocalProt = 0;
@@ -57,8 +66,13 @@ class MOZ_STACK_CLASS Trampoline final {
         mRemoteBase(0),
         mOffset(0),
         mExeOffset(0),
+#ifdef _M_X64
+        mCopyCodesEndOffset(0),
+        mExeEndOffset(0),
+#endif  
         mMaxOffset(0),
-        mAccumulatedStatus(false) {}
+        mAccumulatedStatus(false) {
+  }
 
   Trampoline(const Trampoline&) = delete;
   Trampoline& operator=(const Trampoline&) = delete;
@@ -72,6 +86,10 @@ class MOZ_STACK_CLASS Trampoline final {
     mRemoteBase = aOther.mRemoteBase;
     mOffset = aOther.mOffset;
     mExeOffset = aOther.mExeOffset;
+#ifdef _M_X64
+    mCopyCodesEndOffset = aOther.mCopyCodesEndOffset;
+    mExeEndOffset = aOther.mExeEndOffset;
+#endif  
     mMaxOffset = aOther.mMaxOffset;
     mAccumulatedStatus = aOther.mAccumulatedStatus;
 
@@ -243,6 +261,22 @@ class MOZ_STACK_CLASS Trampoline final {
     mOffset += kDelta;
   }
 
+  void WriteBytes(void* aAddr, size_t aSize) {
+    if (!mMMPolicy) {
+      
+      mOffset += aSize;
+      return;
+    }
+
+    if (mOffset + aSize > mMaxOffset) {
+      mAccumulatedStatus = false;
+      return;
+    }
+
+    std::memcpy(reinterpret_cast<void*>(mLocalBase + mOffset), aAddr, aSize);
+    mOffset += aSize;
+  }
+
 #endif
 
   void WritePointer(uintptr_t aValue) {
@@ -325,6 +359,15 @@ class MOZ_STACK_CLASS Trampoline final {
     mOffset += aNumBytes;
   }
 
+  void CopyCodes(uintptr_t aOrigBytes, uint32_t aNumBytes) {
+#ifdef _M_X64
+    if (mOffset == mCopyCodesEndOffset) {
+      mCopyCodesEndOffset += aNumBytes;
+    }
+#endif  
+    CopyFrom(aOrigBytes, aNumBytes);
+  }
+
   void Rewind() { mOffset = 0; }
 
   uintptr_t GetCurrentRemoteAddress() const { return mRemoteBase + mOffset; }
@@ -332,12 +375,19 @@ class MOZ_STACK_CLASS Trampoline final {
   void StartExecutableCode() {
     MOZ_ASSERT(!mExeOffset);
     mExeOffset = mOffset;
+#ifdef _M_X64
+    mCopyCodesEndOffset = mOffset;
+#endif  
   }
 
-  void* EndExecutableCode() const {
+  void* EndExecutableCode() {
     if (!mAccumulatedStatus || !mMMPolicy) {
       return nullptr;
     }
+
+#ifdef _M_X64
+    mExeEndOffset = mOffset;
+#endif  
 
     
     
@@ -345,6 +395,208 @@ class MOZ_STACK_CLASS Trampoline final {
   }
 
   uint32_t GetCurrentExecutableCodeLen() const { return mOffset - mExeOffset; }
+
+#ifdef _M_X64
+
+  void Align(uint32_t aAlignment) {
+    
+    MOZ_ASSERT(!(aAlignment & (aAlignment - 1)));
+
+    uint32_t alignedOffset = (mOffset + aAlignment - 1) & ~(aAlignment - 1);
+    if (alignedOffset > mMaxOffset) {
+      mAccumulatedStatus = false;
+      return;
+    }
+    mOffset = alignedOffset;
+  }
+
+  
+  
+  
+  
+  
+  
+  bool AddUnwindInfo(uintptr_t aOrigFuncAddr, uintptr_t aOrigFuncStopOffset) {
+    if constexpr (!MMPolicy::kSupportsUnwindInfo) {
+      return false;
+    }
+
+    if (!mMMPolicy) {
+      return false;
+    }
+
+    uint32_t origFuncOffsetFromBeginAddr = 0;
+    uint32_t origFuncOffsetToEndAddr = 0;
+    uintptr_t origImageBase = 0;
+    auto unwindInfoData =
+        mMMPolicy->LookupUnwindInfo(aOrigFuncAddr, &origFuncOffsetFromBeginAddr,
+                                    &origFuncOffsetToEndAddr, &origImageBase);
+    if (!unwindInfoData) {
+      
+      
+      return true;
+    }
+
+    
+    
+    MOZ_ASSERT(origFuncOffsetFromBeginAddr == 0);
+    if (origFuncOffsetFromBeginAddr != 0) {
+      return false;
+    }
+
+    IterableUnwindInfo unwindInfoIt(unwindInfoData.get());
+    auto& unwindInfo = unwindInfoIt.Info();
+
+    
+    
+    
+    
+    
+    
+    if (mCopyCodesEndOffset < aOrigFuncStopOffset &&
+        unwindInfo.size_of_prolog > mCopyCodesEndOffset) {
+      return false;
+    }
+
+    
+    
+    
+    
+#  ifdef DEBUG
+    uint8_t previousOffset = 0xFF;
+    for (const auto& unwindCode : unwindInfoIt) {
+      MOZ_ASSERT(unwindCode.offset_in_prolog <= previousOffset);
+      previousOffset = unwindCode.offset_in_prolog;
+    }
+#  endif  
+
+    
+    
+    
+    uint8_t firstRelevantCode = 0;
+    uint8_t countOfCodes = 0;
+    auto it = unwindInfoIt.begin();
+    for (; it != unwindInfoIt.end(); ++it) {
+      const auto& unwindCode = *it;
+      if (unwindCode.offset_in_prolog <= aOrigFuncStopOffset) {
+        
+        firstRelevantCode = it.Index();
+        countOfCodes = unwindInfo.count_of_codes - firstRelevantCode;
+        break;
+      }
+    }
+
+    
+    if (!it.IsValid() && !it.IsAtEnd()) {
+      return false;
+    }
+
+    
+    
+    
+    if (unwindInfo.flags & UNW_FLAG_CHAININFO) {
+      MOZ_ASSERT(
+          false,
+          "Tried to detour at a location with chained unwind information");
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+#  ifdef DEBUG
+    if (aOrigFuncStopOffset > unwindInfo.size_of_prolog) {
+      MOZ_ASSERT(!(unwindInfo.flags & (UNW_FLAG_EHANDLER | UNW_FLAG_UHANDLER)));
+    }
+#  endif  
+
+    
+    Align(sizeof(uint32_t));
+    if (!mAccumulatedStatus) {
+      return false;
+    }
+    uintptr_t unwindInfoOffset = mOffset;
+
+    unwindInfo.flags &=
+        ~(UNW_FLAG_CHAININFO | UNW_FLAG_EHANDLER | UNW_FLAG_UHANDLER);
+    unwindInfo.count_of_codes = countOfCodes;
+    if (aOrigFuncStopOffset < unwindInfo.size_of_prolog) {
+      unwindInfo.size_of_prolog = aOrigFuncStopOffset;
+    }
+
+    WriteBytes(reinterpret_cast<void*>(&unwindInfo),
+               offsetof(UnwindInfo, unwind_code));
+    if (!mAccumulatedStatus) {
+      return false;
+    }
+
+    WriteBytes(
+        reinterpret_cast<void*>(&unwindInfo.unwind_code[firstRelevantCode]),
+        countOfCodes * sizeof(UnwindCode));
+    if (!mAccumulatedStatus) {
+      return false;
+    }
+
+    
+    Align(sizeof(uint32_t));
+    if (!mAccumulatedStatus) {
+      return false;
+    }
+    uintptr_t functionTableOffset = mOffset;
+
+    WriteInteger(mExeOffset);
+    if (!mAccumulatedStatus) {
+      return false;
+    }
+
+    WriteInteger(mExeEndOffset);
+    if (!mAccumulatedStatus) {
+      return false;
+    }
+
+    WriteInteger(unwindInfoOffset);
+    if (!mAccumulatedStatus) {
+      return false;
+    }
+
+    return mMMPolicy->AddFunctionTable(mRemoteBase + functionTableOffset, 1,
+                                       mRemoteBase);
+  }
+
+#endif  
 
   Trampoline<MMPolicy>& operator--() {
     MOZ_ASSERT(mOffset);
@@ -375,6 +627,10 @@ class MOZ_STACK_CLASS Trampoline final {
   uintptr_t mRemoteBase;
   uint32_t mOffset;
   uint32_t mExeOffset;
+#ifdef _M_X64
+  uint32_t mCopyCodesEndOffset;
+  uint32_t mExeEndOffset;
+#endif  
   uint32_t mMaxOffset;
   bool mAccumulatedStatus;
 };
@@ -386,9 +642,9 @@ class MOZ_STACK_CLASS TrampolineCollection final {
    public:
     Trampoline<MMPolicy> operator*() {
       uint32_t offset = mCurTramp * mCollection.mTrampSize;
-      return Trampoline<MMPolicy>(nullptr, mCollection.mLocalBase + offset,
-                                  mCollection.mRemoteBase + offset,
-                                  mCollection.mTrampSize);
+      return Trampoline<MMPolicy>(
+          &mCollection.mMMPolicy, mCollection.mLocalBase + offset,
+          mCollection.mRemoteBase + offset, mCollection.mTrampSize);
     }
 
     TrampolineIterator& operator++() {
