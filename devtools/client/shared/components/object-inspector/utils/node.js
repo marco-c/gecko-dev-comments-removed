@@ -279,11 +279,8 @@ function nodeHasEntries(item) {
     className === "URLSearchParams" ||
     className === "Headers" ||
     className === "FormData" ||
-    
-    
-    
-    (className === "MIDIInputMap" && Array.isArray(value.preview?.entries)) ||
-    (className === "MIDIOutputMap" && Array.isArray(value.preview?.entries))
+    className === "MIDIInputMap" ||
+    className === "MIDIOutputMap"
   );
 }
 
