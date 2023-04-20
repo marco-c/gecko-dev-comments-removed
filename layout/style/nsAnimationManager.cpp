@@ -205,23 +205,65 @@ static void UpdateOldAnimationPropertiesWithNew(
   }
 }
 
+static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
+    dom::Document* aDocument, const NonOwningAnimationTarget& aTarget,
+    const nsAtom* aName) {
+  
+  
+  
+  
+  
+  for (Element* curr = aTarget.mElement; curr;
+       curr = curr->GetParentElement()) {
+    
+    
+    
+    
+    
+    for (Element* e = curr; e; e = e->GetPreviousElementSibling()) {
+      const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(e);
+      
+      if (!style) {
+        continue;
+      }
+
+      const nsStyleUIReset* ui = style->StyleUIReset();
+      
+      
+      
+      for (uint32_t i = 0; i < ui->mScrollTimelineNameCount; ++i) {
+        const auto& timeline = ui->mScrollTimelines[i];
+        if (timeline.GetName() == aName) {
+          return ScrollTimeline::MakeNamed(aDocument, e, timeline);
+        }
+      }
+
+      
+    }
+  }
+
+  
+  
+  
+  return nullptr;
+}
+
 static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     const StyleAnimationTimeline& aStyleTimeline, nsPresContext* aPresContext,
     const NonOwningAnimationTarget& aTarget) {
   switch (aStyleTimeline.tag) {
     case StyleAnimationTimeline::Tag::Timeline: {
       
-      nsAtom* name = aStyleTimeline.AsTimeline().AsAtom();
+      const nsAtom* name = aStyleTimeline.AsTimeline().AsAtom();
       return name != nsGkAtoms::_empty
-                 ? ScrollTimeline::FromNamedScroll(aPresContext->Document(),
-                                                   aTarget, name)
+                 ? GetNamedProgressTimeline(aPresContext->Document(), aTarget,
+                                            name)
                  : nullptr;
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();
-      return ScrollTimeline::FromAnonymousScroll(aPresContext->Document(),
-                                                 aTarget, scroll._0, scroll._1);
-      break;
+      return ScrollTimeline::MakeAnonymous(aPresContext->Document(), aTarget,
+                                           scroll._0, scroll._1);
     }
     case StyleAnimationTimeline::Tag::Auto:
       return do_AddRef(aTarget.mElement->OwnerDoc()->Timeline());

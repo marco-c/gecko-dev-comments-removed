@@ -52,8 +52,24 @@ ScrollTimeline::ScrollTimeline(Document* aDocument, const Scroller& aScroller,
   RegisterWithScrollSource();
 }
 
+static Element* FindNearestScroller(const Element* aSubject) {
+  MOZ_ASSERT(aSubject);
+  Element* curr = aSubject->GetFlattenedTreeParentElement();
+  Element* root = aSubject->OwnerDoc()->GetDocumentElement();
+  while (curr && curr != root) {
+    const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(curr);
+    MOZ_ASSERT(style, "The ancestor should be styled.");
+    if (style->StyleDisplay()->IsScrollableOverflow()) {
+      break;
+    }
+    curr = curr->GetFlattenedTreeParentElement();
+  }
+  
+  return curr ? curr : root;
+}
 
-already_AddRefed<ScrollTimeline> ScrollTimeline::FromAnonymousScroll(
+
+already_AddRefed<ScrollTimeline> ScrollTimeline::MakeAnonymous(
     Document* aDocument, const NonOwningAnimationTarget& aTarget,
     StyleScrollAxis aAxis, StyleScroller aScroller) {
   MOZ_ASSERT(aTarget);
@@ -62,19 +78,10 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromAnonymousScroll(
     case StyleScroller::Root:
       scroller = Scroller::Root(aTarget.mElement->OwnerDoc());
       break;
+
     case StyleScroller::Nearest: {
-      Element* curr = aTarget.mElement->GetFlattenedTreeParentElement();
-      Element* root = aTarget.mElement->OwnerDoc()->GetDocumentElement();
-      while (curr && curr != root) {
-        const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(curr);
-        MOZ_ASSERT(style, "The ancestor should be styled.");
-        if (style->StyleDisplay()->IsScrollableOverflow()) {
-          break;
-        }
-        curr = curr->GetFlattenedTreeParentElement();
-      }
-      
-      scroller = Scroller::Nearest(curr ? curr : root);
+      scroller = Scroller::Nearest(FindNearestScroller(aTarget.mElement));
+      break;
     }
   }
 
@@ -88,65 +95,14 @@ already_AddRefed<ScrollTimeline> ScrollTimeline::FromAnonymousScroll(
   return MakeAndAddRef<ScrollTimeline>(aDocument, scroller, aAxis);
 }
 
- already_AddRefed<ScrollTimeline> ScrollTimeline::FromNamedScroll(
-    Document* aDocument, const NonOwningAnimationTarget& aTarget,
-    const nsAtom* aName) {
+ already_AddRefed<ScrollTimeline> ScrollTimeline::MakeNamed(
+    Document* aDocument, Element* aReferenceElement,
+    const StyleScrollTimeline& aStyleTimeline) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aTarget);
 
-  
-  
-  
-  
-  
-  Element* result = nullptr;
-  StyleScrollAxis axis = StyleScrollAxis::Block;
-  for (Element* curr = aTarget.mElement; curr;
-       curr = curr->GetParentElement()) {
-    
-    
-    
-    
-    
-    for (Element* e = curr; e; e = e->GetPreviousElementSibling()) {
-      const ComputedStyle* style = Servo_Element_GetMaybeOutOfDateStyle(e);
-      
-      if (!style) {
-        continue;
-      }
-
-      const nsStyleUIReset* ui = style->StyleUIReset();
-      
-      
-      for (uint32_t i = 0; i < ui->mScrollTimelineNameCount; ++i) {
-        const auto& timeline = ui->mScrollTimelines[i];
-        if (timeline.GetName() == aName) {
-          result = e;
-          axis = timeline.GetAxis();
-          break;
-        }
-      }
-
-      if (result) {
-        break;
-      }
-    }
-
-    if (result) {
-      break;
-    }
-  }
-
-  
-  
-  
-  if (!result) {
-    return nullptr;
-  }
-
-  
-  Scroller scroller = Scroller::Named(result);
-  return MakeAndAddRef<ScrollTimeline>(aDocument, std::move(scroller), axis);
+  Scroller scroller = Scroller::Named(aReferenceElement);
+  return MakeAndAddRef<ScrollTimeline>(aDocument, std::move(scroller),
+                                       aStyleTimeline.GetAxis());
 }
 
 Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
