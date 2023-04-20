@@ -32,6 +32,10 @@ let $0 = instantiate(`(module
 
   (global $$z1 i32 (global.get 0))
   (global $$z2 i64 (global.get 1))
+  (global $$z3 i32 (i32.add (i32.sub (i32.mul (i32.const 20) (i32.const 2)) (i32.const 2)) (i32.const 4)))
+  (global $$z4 i64 (i64.add (i64.sub (i64.mul (i64.const 20) (i64.const 2)) (i64.const 2)) (i64.const 5)))
+  (global $$z5 i32 (i32.add (global.get 0) (i32.const 42)))
+  (global $$z6 i64 (i64.add (global.get 1) (i64.const 42)))
 
   (global $$r externref (ref.null extern))
   (global $$mr (mut externref) (ref.null extern))
@@ -45,6 +49,10 @@ let $0 = instantiate(`(module
   (func (export "get-y") (result i64) (global.get $$y))
   (func (export "get-z1") (result i32) (global.get $$z1))
   (func (export "get-z2") (result i64) (global.get $$z2))
+  (func (export "get-z3") (result i32) (global.get $$z3))
+  (func (export "get-z4") (result i64) (global.get $$z4))
+  (func (export "get-z5") (result i32) (global.get $$z5))
+  (func (export "get-z6") (result i64) (global.get $$z6))
   (func (export "set-x") (param i32) (global.set $$x (local.get 0)))
   (func (export "set-y") (param i64) (global.set $$y (local.get 0)))
   (func (export "set-mr") (param externref) (global.set $$mr (local.get 0)))
@@ -232,6 +240,18 @@ assert_return(() => invoke($0, `get-z1`, []), [value("i32", 666)]);
 
 
 assert_return(() => invoke($0, `get-z2`, []), [value("i64", 666n)]);
+
+
+assert_return(() => invoke($0, `get-z3`, []), [value("i32", 42)]);
+
+
+assert_return(() => invoke($0, `get-z4`, []), [value("i64", 43n)]);
+
+
+assert_return(() => invoke($0, `get-z5`, []), [value("i32", 708)]);
+
+
+assert_return(() => invoke($0, `get-z6`, []), [value("i64", 708n)]);
 
 
 assert_return(() => invoke($0, `get-3`, []), [value("f32", -3)]);

@@ -478,6 +478,18 @@ assert_invalid(
 
 
 assert_invalid(
+  () => instantiate(`(module (global i32 (i32.const 0)) (global i32 (global.get 0)))`),
+  `unknown global`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module (global $$g i32 (i32.const 0)) (global i32 (global.get $$g)))`),
+  `unknown global`,
+);
+
+
+assert_invalid(
   () => instantiate(`(module (global i32 (global.get 1)) (global i32 (i32.const 0)))`),
   `unknown global`,
 );

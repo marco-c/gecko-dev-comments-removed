@@ -25,9 +25,6 @@ let $0 = instantiate(`(module
   (func (export "grow") (param $$sz i32) (param $$init externref) (result i32)
     (table.grow $$t (local.get $$init) (local.get $$sz))
   )
-  (func (export "grow-abbrev") (param $$sz i32) (param $$init externref) (result i32)
-    (table.grow (local.get $$init) (local.get $$sz))
-  )
   (func (export "size") (result i32) (table.size $$t))
 )`);
 
@@ -62,7 +59,7 @@ assert_trap(() => invoke($0, `set`, [1, externref(2)]), `out of bounds table acc
 assert_trap(() => invoke($0, `get`, [1]), `out of bounds table access`);
 
 
-assert_return(() => invoke($0, `grow-abbrev`, [4, externref(3)]), [value("i32", 1)]);
+assert_return(() => invoke($0, `grow`, [4, externref(3)]), [value("i32", 1)]);
 
 
 assert_return(() => invoke($0, `size`, []), [value("i32", 5)]);

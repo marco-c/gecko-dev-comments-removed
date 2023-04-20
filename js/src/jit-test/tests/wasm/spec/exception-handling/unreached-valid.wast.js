@@ -83,6 +83,3 @@ let $1 = instantiate(`(module
     (drop)
   )
 )`);
-
-
-assert_trap(() => invoke($1, `meet-bottom`, []), `unreachable`);

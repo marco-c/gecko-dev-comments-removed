@@ -16,8 +16,6 @@
 
 
 
-
-
 let $0 = instantiate(`(module
   (func (export "i8x16_extract_lane_s-first") (param v128) (result i32)
     (i8x16.extract_lane_s 0 (local.get 0)))
@@ -2692,13 +2690,13 @@ assert_invalid(
 
 
 assert_invalid(
-  () => instantiate(`(module (func (result v128) (f32x4.replace_lane 4 (v128.const f32x4 0 0 0 0) (f32.const 1))))`),
+  () => instantiate(`(module (func (result v128) (f32x4.replace_lane 4 (v128.const f32x4 0 0 0 0) (i32.const 1))))`),
   `invalid lane index`,
 );
 
 
 assert_invalid(
-  () => instantiate(`(module (func (result v128) (f32x4.replace_lane 255 (v128.const f32x4 0 0 0 0) (f32.const 1))))`),
+  () => instantiate(`(module (func (result v128) (f32x4.replace_lane 255 (v128.const f32x4 0 0 0 0) (i32.const 1))))`),
   `invalid lane index`,
 );
 
@@ -2788,7 +2786,7 @@ assert_invalid(
 
 
 assert_invalid(
-  () => instantiate(`(module (func (result v128) (f32x4.replace_lane 4 (v128.const i8x16 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) (f32.const 1))))`),
+  () => instantiate(`(module (func (result v128) (f32x4.replace_lane 4 (v128.const i8x16 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) (i32.const 1))))`),
   `invalid lane index`,
 );
 

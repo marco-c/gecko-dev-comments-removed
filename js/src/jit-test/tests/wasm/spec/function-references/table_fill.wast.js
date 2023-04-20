@@ -23,10 +23,6 @@ let $0 = instantiate(`(module
     (table.fill $$t (local.get $$i) (local.get $$r) (local.get $$n))
   )
 
-  (func (export "fill-abbrev") (param $$i i32) (param $$r externref) (param $$n i32)
-    (table.fill (local.get $$i) (local.get $$r) (local.get $$n))
-  )
-
   (func (export "get") (param $$i i32) (result externref)
     (table.get $$t (local.get $$i))
   )
@@ -105,7 +101,7 @@ assert_return(() => invoke($0, `get`, [8]), [value('externref', externref(4))]);
 assert_return(() => invoke($0, `get`, [9]), [value('externref', externref(4))]);
 
 
-assert_return(() => invoke($0, `fill-abbrev`, [9, null, 1]), []);
+assert_return(() => invoke($0, `fill`, [9, null, 1]), []);
 
 
 assert_return(() => invoke($0, `get`, [8]), [value('externref', externref(4))]);
