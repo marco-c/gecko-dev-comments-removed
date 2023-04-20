@@ -258,7 +258,7 @@ class gfxTextRun : public gfxShapedText {
     gfxPattern* textStrokePattern = nullptr;
     const mozilla::gfx::StrokeOptions* strokeOpts = nullptr;
     const mozilla::gfx::DrawOptions* drawOpts = nullptr;
-    PropertyProvider* provider = nullptr;
+    const PropertyProvider* provider = nullptr;
     
     gfxFloat* advanceWidth = nullptr;
     mozilla::SVGContextPaint* contextPaint = nullptr;
@@ -297,7 +297,7 @@ class gfxTextRun : public gfxShapedText {
 
   void DrawEmphasisMarks(gfxContext* aContext, gfxTextRun* aMark,
                          gfxFloat aMarkAdvance, mozilla::gfx::Point aPt,
-                         Range aRange, PropertyProvider* aProvider) const;
+                         Range aRange, const PropertyProvider* aProvider) const;
 
   
 
@@ -306,11 +306,11 @@ class gfxTextRun : public gfxShapedText {
 
   Metrics MeasureText(Range aRange, gfxFont::BoundingBoxType aBoundingBoxType,
                       DrawTarget* aDrawTargetForTightBoundingBox,
-                      PropertyProvider* aProvider) const;
+                      const PropertyProvider* aProvider) const;
 
   Metrics MeasureText(gfxFont::BoundingBoxType aBoundingBoxType,
                       DrawTarget* aDrawTargetForTightBoundingBox,
-                      PropertyProvider* aProvider = nullptr) const {
+                      const PropertyProvider* aProvider = nullptr) const {
     return MeasureText(Range(this), aBoundingBoxType,
                        aDrawTargetForTightBoundingBox, aProvider);
   }
@@ -328,7 +328,7 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-  gfxFloat GetAdvanceWidth(Range aRange, PropertyProvider* aProvider,
+  gfxFloat GetAdvanceWidth(Range aRange, const PropertyProvider* aProvider,
                            PropertyProvider::Spacing* aSpacing = nullptr) const;
 
   gfxFloat GetAdvanceWidth() const {
@@ -449,15 +449,16 @@ class gfxTextRun : public gfxShapedText {
 
 
 
-
   uint32_t BreakAndMeasureText(
       uint32_t aStart, uint32_t aMaxLength, bool aLineBreakBefore,
-      gfxFloat aWidth, PropertyProvider* aProvider,
-      SuppressBreak aSuppressBreak, gfxFloat* aTrimmableWhitespace,
-      Metrics* aMetrics, gfxFont::BoundingBoxType aBoundingBoxType,
-      DrawTarget* aDrawTargetForTightBoundingBox, bool* aUsedHyphenation,
-      uint32_t* aLastBreak, bool aCanWordWrap, bool aCanWhitespaceWrap,
-      gfxBreakPriority* aBreakPriority);
+      gfxFloat aWidth, const PropertyProvider& aProvider,
+      SuppressBreak aSuppressBreak, gfxFont::BoundingBoxType aBoundingBoxType,
+      DrawTarget* aRefDrawTarget, bool aCanWordWrap, bool aCanWhitespaceWrap,
+      
+      gfxFloat* aOutTrimmableWhitespace,  
+      Metrics& aOutMetrics, bool& aOutUsedHyphenation, uint32_t& aOutLastBreak,
+      
+      gfxBreakPriority& aBreakPriority);
 
   
 
@@ -810,7 +811,7 @@ class gfxTextRun : public gfxShapedText {
   
   
   bool GetAdjustedSpacingArray(
-      Range aRange, PropertyProvider* aProvider, Range aSpacingRange,
+      Range aRange, const PropertyProvider* aProvider, Range aSpacingRange,
       nsTArray<PropertyProvider::Spacing>* aSpacing) const;
 
   CompressedGlyph& EnsureComplexGlyph(uint32_t aIndex) {
@@ -824,12 +825,12 @@ class gfxTextRun : public gfxShapedText {
 
   
   LigatureData ComputeLigatureData(Range aPartRange,
-                                   PropertyProvider* aProvider) const;
+                                   const PropertyProvider* aProvider) const;
   gfxFloat ComputePartialLigatureWidth(Range aPartRange,
-                                       PropertyProvider* aProvider) const;
+                                       const PropertyProvider* aProvider) const;
   void DrawPartialLigature(gfxFont* aFont, Range aRange,
                            mozilla::gfx::Point* aPt,
-                           PropertyProvider* aProvider,
+                           const PropertyProvider* aProvider,
                            TextRunDrawParams& aParams,
                            mozilla::gfx::ShapedTextFlags aOrientation) const;
   
@@ -839,23 +840,24 @@ class gfxTextRun : public gfxShapedText {
   bool ShrinkToLigatureBoundaries(Range* aRange) const;
   
   gfxFloat GetPartialLigatureWidth(Range aRange,
-                                   PropertyProvider* aProvider) const;
+                                   const PropertyProvider* aProvider) const;
   void AccumulatePartialLigatureMetrics(
       gfxFont* aFont, Range aRange, gfxFont::BoundingBoxType aBoundingBoxType,
-      DrawTarget* aRefDrawTarget, PropertyProvider* aProvider,
+      DrawTarget* aRefDrawTarget, const PropertyProvider* aProvider,
       mozilla::gfx::ShapedTextFlags aOrientation, Metrics* aMetrics) const;
 
   
   void AccumulateMetricsForRun(gfxFont* aFont, Range aRange,
                                gfxFont::BoundingBoxType aBoundingBoxType,
                                DrawTarget* aRefDrawTarget,
-                               PropertyProvider* aProvider, Range aSpacingRange,
+                               const PropertyProvider* aProvider,
+                               Range aSpacingRange,
                                mozilla::gfx::ShapedTextFlags aOrientation,
                                Metrics* aMetrics) const;
 
   
   void DrawGlyphs(gfxFont* aFont, Range aRange, mozilla::gfx::Point* aPt,
-                  PropertyProvider* aProvider, Range aSpacingRange,
+                  const PropertyProvider* aProvider, Range aSpacingRange,
                   TextRunDrawParams& aParams,
                   mozilla::gfx::ShapedTextFlags aOrientation) const;
 
