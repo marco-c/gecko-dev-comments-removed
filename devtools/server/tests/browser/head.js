@@ -37,23 +37,6 @@ const SEPARATOR_GUID = "{9d414cc5-8319-0a04-0586-c0a6ae01670a}";
 waitForExplicitFinish();
 
 
-
-
-
-
-
-
-var addTab = async function(url) {
-  info(`Adding a new tab with URL: ${url}`);
-  const tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, url));
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-
-  info(`Tab added a URL ${url} loaded`);
-
-  return tab.linkedBrowser;
-};
-
-
 async function addTabTarget(url) {
   info(`Adding a new tab with URL: ${url}`);
   const tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, url));

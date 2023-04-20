@@ -24,7 +24,7 @@ async function openTabAndSetupStorage(url) {
     set: [[LEGACY_ACTORS_PREF, true]],
   });
 
-  const content = await addTab(url);
+  await addTab(url);
 
   
   const browsingContexts = gBrowser.selectedBrowser.browsingContext.getAllBrowsingContextsInSubtree();
