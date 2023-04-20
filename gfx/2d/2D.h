@@ -2018,11 +2018,6 @@ class GFX2D_API Factory {
   
 
 
-  static bool CheckBufferSize(int32_t bufSize);
-
-  
-
-
   static bool ReasonableSurfaceSize(const IntSize& aSize);
 
   static bool AllowedSurfaceSize(const IntSize& aSize);
