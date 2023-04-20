@@ -1450,6 +1450,27 @@ var gBrowserInit = {
 
   _tabToAdopt: undefined,
 
+  _setupFirstContentWindowPaintPromise() {
+    let lastTransactionId = window.windowUtils.lastTransactionId;
+    let layerTreeListener = () => {
+      if (this.getTabToAdopt()) {
+        
+        
+        
+        return;
+      }
+      removeEventListener("MozLayerTreeReady", layerTreeListener);
+      let listener = e => {
+        if (e.transactionId > lastTransactionId) {
+          window.removeEventListener("MozAfterPaint", listener);
+          this._firstContentWindowPaintDeferred.resolve();
+        }
+      };
+      addEventListener("MozAfterPaint", listener);
+    };
+    addEventListener("MozLayerTreeReady", layerTreeListener);
+  },
+
   getTabToAdopt() {
     if (this._tabToAdopt !== undefined) {
       return this._tabToAdopt;
@@ -1480,6 +1501,8 @@ var gBrowserInit = {
   },
 
   onBeforeInitialXULLayout() {
+    this._setupFirstContentWindowPaintPromise();
+
     BookmarkingUI.updateEmptyToolbarMessage();
     setToolbarVisibility(
       BookmarkingUI.toolbar,
@@ -2034,6 +2057,7 @@ var gBrowserInit = {
   
 
 
+
   get firstContentWindowPaintPromise() {
     return this._firstContentWindowPaintDeferred.promise;
   },
@@ -2071,7 +2095,7 @@ var gBrowserInit = {
       
       
       let promise = gBrowser.selectedBrowser.isRemoteBrowser
-        ? this._firstContentWindowPaintDeferred.promise
+        ? this.firstContentWindowPaintPromise
         : Promise.resolve();
 
       promise.then(() => {
