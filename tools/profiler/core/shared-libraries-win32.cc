@@ -127,11 +127,11 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
 
     const nsString& pdbNameStr =
         PromiseFlatString(mozilla::nt::GetLeafName(pdbPathStr));
-    SharedLibrary shlib(modStart, modEnd,
-                        0,  
-                        breakpadId, PromiseFlatString(moduleNameStr),
-                        nsDependentString(aModulePath), pdbNameStr, pdbPathStr,
-                        versionStr, "");
+    SharedLibrary shlib(
+        modStart, modEnd,
+        0,  
+        breakpadId, nsCString(), PromiseFlatString(moduleNameStr),
+        nsDependentString(aModulePath), pdbNameStr, pdbPathStr, versionStr, "");
     sharedLibraryInfo.AddSharedLibrary(shlib);
   };
 
