@@ -14063,12 +14063,29 @@ void CodeGenerator::visitObjectToIterator(LObjectToIterator* lir) {
   masm.storePtr(
       obj, Address(nativeIter, NativeIterator::offsetOfObjectBeingIterated()));
   masm.or32(Imm32(NativeIterator::Flags::Active), iterFlagsAddr);
-  
-  
 
   Register enumeratorsAddr = temp2;
   masm.movePtr(ImmPtr(lir->mir()->enumeratorsAddr()), enumeratorsAddr);
   masm.registerIterator(enumeratorsAddr, nativeIter, temp3);
+
+  
+  
+  Label skipBarrier;
+  masm.branchPtrInNurseryChunk(Assembler::NotEqual, obj, temp2, &skipBarrier);
+  {
+    LiveRegisterSet save = liveVolatileRegs(lir);
+    save.takeUnchecked(temp);
+    save.takeUnchecked(temp2);
+    save.takeUnchecked(temp3);
+    if (iterObj.volatile_()) {
+      save.addUnchecked(iterObj);
+    }
+
+    masm.PushRegsInMask(save);
+    emitPostWriteBarrier(iterObj);
+    masm.PopRegsInMask(save);
+  }
+  masm.bind(&skipBarrier);
 
   masm.bind(ool->rejoin());
 }
