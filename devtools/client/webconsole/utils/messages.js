@@ -713,6 +713,13 @@ function replaceURL(text, replacementText = "") {
 
 
 function getWarningGroupType(message) {
+  
+  
+  
+  if (!message) {
+    return null;
+  }
+
   if (
     message.level !== MESSAGE_LEVEL.WARN &&
     
