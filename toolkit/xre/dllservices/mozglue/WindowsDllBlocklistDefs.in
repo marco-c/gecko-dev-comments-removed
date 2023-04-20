@@ -305,6 +305,9 @@ BROWSER_PROCESS += [
 
     
     DllBlocklistEntry("asuswsshellext64.dll", (1, 1, 0, 27)),
+
+    
+    DllBlocklistEntry("explorerpatcher.amd64.dll", ALL_VERSIONS),
 ]
 
 CHILD_PROCESSES += [
