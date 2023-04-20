@@ -40,6 +40,9 @@ async function clickTestSetup() {
     ],
   });
 
+  
+  Services.fog.testResetFOG();
+
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("cookiebanners.service.mode");
     Services.prefs.clearUserPref("cookiebanners.service.mode.privateBrowsing");
@@ -253,4 +256,64 @@ function insertTestClickRules() {
     "button#optIn"
   );
   Services.cookieBanners.insertRule(ruleD);
+}
+
+
+
+
+
+
+
+
+async function testClickResultTelemetry(expected, resetFOG = true) {
+  
+  await Services.fog.testFlushAllChildren();
+
+  let labels = [
+    "success",
+    "success_dom_content_loaded",
+    "success_mutation_pre_load",
+    "success_mutation_post_load",
+    "fail",
+    "fail_banner_not_found",
+    "fail_banner_not_visible",
+    "fail_button_not_found",
+    "fail_no_rule_for_mode",
+    "fail_actor_destroyed",
+  ];
+
+  let testMetricState = doAssert => {
+    for (let label of labels) {
+      if (doAssert) {
+        is(
+          Glean.cookieBannersClick.result[label].testGetValue(),
+          expected[label],
+          `Counter for label '${label}' has correct state.`
+        );
+      } else if (
+        Glean.cookieBannersClick.result[label].testGetValue() !==
+        expected[label]
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  
+  
+  try {
+    await TestUtils.waitForCondition(
+      testMetricState,
+      "Waiting for cookieBannersClick.result metric to match."
+    );
+  } finally {
+    
+    testMetricState(true);
+  }
+
+  if (resetFOG) {
+    Services.fog.testResetFOG();
+  }
 }
