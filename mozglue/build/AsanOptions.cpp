@@ -108,6 +108,9 @@ extern "C" const char* __lsan_default_suppressions() {
          
 
          
+         "leak:xdg_mime_init\n"
+
+         
          
          "leak:PR_Sleep\n"
 
