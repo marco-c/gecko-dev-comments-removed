@@ -797,7 +797,7 @@ static void TraceRootArrays(JSTracer* trc, gc::MarkColor color) {
 
       if (array) {
         
-        for (uint32_t i = 0; i < array->length(); i++) {
+        for (uint32_t i = 0; i < array->getDenseInitializedLength(); i++) {
           Value& value = const_cast<Value&>(array->getDenseElement(i));
           TraceManuallyBarrieredEdge(trc, &value, "shell root array element");
         }
