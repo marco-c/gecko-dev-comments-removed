@@ -1369,12 +1369,6 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
 
   
   
-  if (mObserver) {
-    mObserver->OnReportPerformanceTiming();
-  }
-
-  
-  
   
   if (NS_FAILED(aStatusCode) || !mObserver) {
     nsCOMPtr<nsIAsyncOutputStream> outputStream =

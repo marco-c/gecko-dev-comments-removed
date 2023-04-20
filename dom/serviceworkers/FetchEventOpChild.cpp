@@ -248,24 +248,6 @@ FetchEventOpChild::FetchEventOpChild(
             })
         ->Track(mPreloadResponseAvailablePromiseRequestHolder);
 
-    mPreloadResponseReadyPromises->GetResponseTimingPromise()
-        ->Then(
-            GetCurrentSerialEventTarget(), __func__,
-            [this](ResponseTiming&& aTiming) {
-              if (!mWasSent) {
-                
-                
-                mArgs.preloadResponseTiming() = Some(std::move(aTiming));
-              } else {
-                SendPreloadResponseTiming(aTiming);
-              }
-              mPreloadResponseTimingPromiseRequestHolder.Complete();
-            },
-            [this](const CopyableErrorResult&) {
-              mPreloadResponseTimingPromiseRequestHolder.Complete();
-            })
-        ->Track(mPreloadResponseTimingPromiseRequestHolder);
-
     mPreloadResponseReadyPromises->GetResponseEndPromise()
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
@@ -368,7 +350,6 @@ mozilla::ipc::IPCResult FetchEventOpChild::Recv__delete__(
   
   
   mPreloadResponseAvailablePromiseRequestHolder.DisconnectIfExists();
-  mPreloadResponseTimingPromiseRequestHolder.DisconnectIfExists();
   mPreloadResponseEndPromiseRequestHolder.DisconnectIfExists();
   if (mPreloadResponseReadyPromises) {
     RefPtr<FetchService> fetchService = FetchService::GetInstance();
