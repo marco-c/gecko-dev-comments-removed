@@ -9,6 +9,7 @@
 
 
 
+
 setup(() => {
   assert_true(window.isSecureContext);
 });
@@ -34,6 +35,7 @@ promise_test_parallel(t => iframeTest(t, {
   target: { server: Server.HTTPS_PUBLIC },
   expected: IframeTestResult.SUCCESS,
 }), "local to public: no preflight required.");
+
 
 
 
@@ -172,3 +174,44 @@ promise_test_parallel(t => iframeTest(t, {
   target: { server: Server.HTTPS_PUBLIC },
   expected: IframeTestResult.SUCCESS,
 }), "treat-as-public-address to public: no preflight required.");
+
+
+
+
+
+
+iframeGrandparentTest({
+  name: "local to local, grandparent navigates: no preflight required.",
+  grandparentServer: Server.HTTPS_LOCAL,
+  child: { server: Server.HTTPS_PUBLIC },
+  grandchild: { server: Server.HTTPS_LOCAL },
+  expected: IframeTestResult.SUCCESS,
+});
+
+iframeGrandparentTest({
+  name: "public to local, grandparent navigates: failure.",
+  grandparentServer: Server.HTTPS_PUBLIC,
+  child: {
+    server: Server.HTTPS_LOCAL,
+    behavior: { preflight: PreflightBehavior.success(token()) },
+  },
+  grandchild: {
+    server: Server.HTTPS_LOCAL,
+    behavior: { preflight: PreflightBehavior.failure() },
+  },
+  expected: IframeTestResult.FAILURE,
+});
+
+iframeGrandparentTest({
+  name: "public to local, grandparent navigates: success.",
+  grandparentServer: Server.HTTPS_PUBLIC,
+  child: {
+    server: Server.HTTPS_LOCAL,
+    behavior: { preflight: PreflightBehavior.success(token()) },
+  },
+  grandchild: {
+    server: Server.HTTPS_LOCAL,
+    behavior: { preflight: PreflightBehavior.success(token()) },
+  },
+  expected: IframeTestResult.SUCCESS,
+});

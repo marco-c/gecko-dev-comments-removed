@@ -9,6 +9,7 @@
 
 
 
+
 setup(() => {
   
   assert_false(window.isSecureContext);
@@ -56,7 +57,6 @@ promise_test_parallel(t => iframeTest(t, {
   expected: IframeTestResult.FAILURE,
 }), "public to local: failure.");
 
-
 promise_test_parallel(t => iframeTest(t, {
   source: { server: Server.HTTP_PUBLIC },
   target: { server: Server.HTTP_PRIVATE },
@@ -95,3 +95,16 @@ promise_test_parallel(t => iframeTest(t, {
   target: { server: Server.HTTP_PUBLIC },
   expected: IframeTestResult.SUCCESS,
 }), "treat-as-public-address to public: no preflight required.");
+
+
+
+
+
+
+iframeGrandparentTest({
+  name: "local to local, grandparent navigates: success.",
+  grandparentServer: Server.HTTP_LOCAL,
+  child: { server: Server.HTTP_PUBLIC },
+  grandchild: { server: Server.HTTP_LOCAL },
+  expected: IframeTestResult.SUCCESS,
+});
