@@ -8147,7 +8147,11 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
   if (shouldSubtractDynamicToolbar == SubtractDynamicToolbar::Yes) {
     if (RefPtr<MobileViewportManager> MVM =
             aPresContext->PresShell()->GetMobileViewportManager()) {
-      CSSSize intrinsicCompositionSize = MVM->GetIntrinsicCompositionSize();
+      
+      
+      
+      nsSize intrinsicCompositionSize =
+          CSSSize::ToAppUnits(MVM->GetIntrinsicCompositionSize());
 
       if (nsIScrollableFrame* rootScrollableFrame =
               aPresContext->PresShell()->GetRootScrollFrameAsScrollable()) {
@@ -8156,9 +8160,8 @@ bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
         
         
         if (intrinsicCompositionSize.height <
-            CSSPixel::FromAppUnits(
-                CalculateScrollableRectForFrame(rootScrollableFrame, nullptr)
-                    .Height())) {
+            CalculateScrollableRectForFrame(rootScrollableFrame, nullptr)
+                .Height()) {
           shouldSubtractDynamicToolbar = SubtractDynamicToolbar::No;
         }
       }
