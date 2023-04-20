@@ -70,12 +70,14 @@ test_metrics = [
 
 
 
-metrics_yamls = set(
-    gecko_metrics
-    + firefox_desktop_metrics
-    + background_update_metrics
-    + background_tasks_metrics
-    + test_metrics
+metrics_yamls = sorted(
+    set(
+        gecko_metrics
+        + firefox_desktop_metrics
+        + background_update_metrics
+        + background_tasks_metrics
+        + test_metrics
+    )
 )
 
 
@@ -127,12 +129,14 @@ pings_by_app_id = {
 
 
 
-pings_yamls = set(
-    gecko_pings
-    + firefox_desktop_pings
-    + background_update_pings
-    + background_tasks_pings
-    + test_pings
+pings_yamls = sorted(
+    set(
+        gecko_pings
+        + firefox_desktop_pings
+        + background_update_pings
+        + background_tasks_pings
+        + test_pings
+    )
 )
 
 
