@@ -112,12 +112,6 @@ void ScriptLoadRequest::Cancel() {
   if (HasScriptLoadContext()) {
     GetScriptLoadContext()->MaybeCancelOffThreadScript();
   }
-  if (HasWorkerLoadContext()) {
-    
-    
-    
-    GetWorkerLoadContext()->mRequest = nullptr;
-  }
 }
 
 void ScriptLoadRequest::DropBytecodeCacheReferences() {
