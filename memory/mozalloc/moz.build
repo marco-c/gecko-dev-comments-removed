@@ -21,7 +21,7 @@ if CONFIG["WRAP_STL_INCLUDES"]:
             "msvc_raise_wrappers.cpp",
         ]
 
-if CONFIG["MOZ_MEMORY"] and CONFIG["OS_TARGET"] == "WINNT":
+if CONFIG["OS_TARGET"] == "WINNT":
     
     SOURCES += [
         "winheap.cpp",
