@@ -72,6 +72,15 @@ interface nsIEventTarget : nsISupports
 
 
 
+  const unsigned long DISPATCH_IGNORE_BLOCK_DISPATCH = 8;
+
+  
+
+
+
+
+
+
 
 
 
@@ -216,6 +225,7 @@ public:
 #define NS_DISPATCH_SYNC   nsIEventTarget::DISPATCH_SYNC
 #define NS_DISPATCH_AT_END nsIEventTarget::DISPATCH_AT_END
 #define NS_DISPATCH_EVENT_MAY_BLOCK nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK
+#define NS_DISPATCH_IGNORE_BLOCK_DISPATCH nsIEventTarget::DISPATCH_IGNORE_BLOCK_DISPATCH
 
 
 #define NS_DECL_NSIEVENTTARGET_FULL                                   \
