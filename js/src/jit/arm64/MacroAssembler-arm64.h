@@ -1555,6 +1555,17 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
         Operand(JS::detail::ValueGCThingPayloadMask));
   }
 
+  
+  void getGCThingValueChunk(const Address& src, Register dest) {
+    loadPtr(src, dest);
+    And(ARMRegister(dest, 64), ARMRegister(dest, 64),
+        Operand(JS::detail::ValueGCThingPayloadChunkMask));
+  }
+  void getGCThingValueChunk(const ValueOperand& src, Register dest) {
+    And(ARMRegister(dest, 64), ARMRegister(src.valueReg(), 64),
+        Operand(JS::detail::ValueGCThingPayloadChunkMask));
+  }
+
   inline void unboxValue(const ValueOperand& src, AnyRegister dest,
                          JSValueType type);
 
