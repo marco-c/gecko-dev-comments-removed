@@ -1111,12 +1111,13 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
   
   mozilla::ipc::GeckoChildProcessHost::GetAll(
       [&requests](mozilla::ipc::GeckoChildProcessHost* aGeckoProcess) {
-        base::ProcessId childPid = aGeckoProcess->GetChildProcessId();
-        if (childPid == 0) {
+        auto handle = aGeckoProcess->GetChildProcessHandle();
+        if (!handle) {
           
           
           return;
         }
+        base::ProcessId childPid = base::GetProcId(handle);
         mozilla::ProcType type = mozilla::ProcType::Unknown;
 
         switch (aGeckoProcess->GetProcessType()) {
@@ -1182,8 +1183,8 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
       
       continue;
     }
-    base::ProcessId pid = contentParent->Process()->GetChildProcessId();
-    if (pid == 0) {
+    auto handle = contentParent->Process()->GetChildProcessHandle();
+    if (!handle) {
       
       continue;
     }
@@ -1265,7 +1266,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
       }
     }
     requests.EmplaceBack(
-         pid,
+         base::GetProcId(handle),
          type,
          origin,
          std::move(windows),
