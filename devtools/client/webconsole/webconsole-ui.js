@@ -84,14 +84,6 @@ class WebConsoleUI {
 
 
 
-  get webConsoleFront() {
-    return this._webConsoleFront;
-  }
-
-  
-
-
-
 
   init() {
     if (this._initializer) {
@@ -189,7 +181,6 @@ class WebConsoleUI {
 
     this.stopWatchingNetworkResources();
 
-    this._webConsoleFront = null;
     this.networkDataProvider.destroy();
     this.networkDataProvider = null;
 
@@ -259,7 +250,7 @@ class WebConsoleUI {
   }
 
   inspectObjectActor(objectActor) {
-    const { webConsoleFront } = this;
+    const { targetFront } = this.hud.commands.targetCommand;
     this.wrapper.dispatchMessageAdd(
       {
         helperResult: {
@@ -267,7 +258,7 @@ class WebConsoleUI {
           object:
             objectActor && objectActor.getGrip
               ? objectActor
-              : getAdHocFrontOrPrimitiveGrip(objectActor, webConsoleFront),
+              : getAdHocFrontOrPrimitiveGrip(objectActor, targetFront),
         },
       },
       true
@@ -559,10 +550,6 @@ class WebConsoleUI {
       await front.setPreferences({
         "NetworkMonitor.saveRequestAndResponseBodies": saveBodies,
       });
-    }
-
-    if (targetFront.isTopLevel) {
-      this._webConsoleFront = await targetFront.getFront("console");
     }
   }
 
