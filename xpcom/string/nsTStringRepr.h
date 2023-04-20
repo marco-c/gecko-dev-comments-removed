@@ -420,6 +420,35 @@ class nsTStringRepr {
 
   int32_t RFindCharInSet(const string_view& aSet, int32_t aOffset = -1) const;
 
+  
+
+
+
+
+
+
+
+
+  double ToDouble(nsresult* aErrorCode) const;
+
+  
+
+
+
+
+
+
+
+
+  float ToFloat(nsresult* aErrorCode) const;
+
+  
+
+
+
+  double ToDoubleAllowTrailingChars(nsresult* aErrorCode) const;
+  float ToFloatAllowTrailingChars(nsresult* aErrorCode) const;
+
  protected:
   nsTStringRepr() = delete;  
 

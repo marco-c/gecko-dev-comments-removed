@@ -186,37 +186,6 @@ class nsTString : public nsTSubstring<T> {
 
 
 
-  double ToDouble(nsresult* aErrorCode) const {
-    return ToDouble( false, aErrorCode);
-  }
-
-  
-
-
-
-
-
-  float ToFloat(nsresult* aErrorCode) const {
-    return float(ToDouble(aErrorCode));
-  }
-
-  
-
-
-
-  double ToDoubleAllowTrailingChars(nsresult* aErrorCode) const {
-    return ToDouble( true, aErrorCode);
-  }
-  float ToFloatAllowTrailingChars(nsresult* aErrorCode) const {
-    return float(ToDoubleAllowTrailingChars(aErrorCode));
-  }
-
-  
-
-
-
-
-
 
   bool SetCharAt(char16_t aChar, index_type aIndex);
 
@@ -248,21 +217,12 @@ class nsTString : public nsTSubstring<T> {
   friend const nsTString<char>& VoidCString();
   friend const nsTString<char16_t>& VoidString();
 
-  double ToDouble(bool aAllowTrailingChars, nsresult* aErrorCode) const;
-
   
   explicit nsTString(DataFlags aDataFlags)
       : substring_type(char_traits::sEmptyBuffer, 0,
                        aDataFlags | DataFlags::TERMINATED,
                        ClassFlags::NULL_TERMINATED) {}
 };
-
-template <>
-double nsTString<char>::ToDouble(bool aAllowTrailingChars,
-                                 nsresult* aErrorCode) const;
-template <>
-double nsTString<char16_t>::ToDouble(bool aAllowTrailingChars,
-                                     nsresult* aErrorCode) const;
 
 extern template class nsTString<char>;
 extern template class nsTString<char16_t>;
