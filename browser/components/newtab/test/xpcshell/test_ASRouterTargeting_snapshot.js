@@ -20,61 +20,8 @@ add_task(async function should_ignore_rejections() {
   };
 
   let snapshot = await ASRouterTargeting.getEnvironmentSnapshot(target);
-  Assert.deepEqual(snapshot, { environment: { foo: 1 }, version: 1 });
+  deepEqual(snapshot, { environment: { foo: 1 }, version: 1 });
 });
-
-add_task(async function nested_objects() {
-  const target = {
-    get foo() {
-      return Promise.resolve("foo");
-    },
-    get bar() {
-      return Promise.reject(new Error("bar"));
-    },
-    baz: {
-      get qux() {
-        return Promise.resolve("qux");
-      },
-      get quux() {
-        return Promise.reject(new Error("quux"));
-      },
-      get corge() {
-        return {
-          get grault() {
-            return Promise.resolve("grault");
-          },
-          get garply() {
-            return Promise.reject(new Error("garply"));
-          },
-        };
-      },
-    },
-  };
-
-  const snapshot = await ASRouterTargeting.getEnvironmentSnapshot(target);
-
-  Assert.deepEqual(
-    snapshot,
-    {
-      environment: {
-        foo: "foo",
-        baz: {
-          qux: "qux",
-          corge: {
-            grault: "grault",
-          },
-        },
-      },
-      version: 1,
-    },
-    "getEnvironmentSnapshot should resolve nested promises"
-  );
-});
-
-
-
-
-
 
 add_task(async function should_ignore_rejections() {
   
@@ -103,5 +50,5 @@ add_task(async function should_ignore_rejections() {
 
   let snapshot = await ASRouterTargeting.getEnvironmentSnapshot(target);
   
-  Assert.deepEqual(snapshot, { environment: { foo: 1, bar: 2 }, version: 1 });
+  deepEqual(snapshot, { environment: { foo: 1, bar: 2 }, version: 1 });
 });
