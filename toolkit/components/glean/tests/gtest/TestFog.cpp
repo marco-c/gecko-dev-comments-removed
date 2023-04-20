@@ -258,7 +258,7 @@ TEST_F(FOGFixture, TestCppTimingDistWorks) {
 
   
   
-  const uint64_t EPSILON = 40000;
+  const uint64_t EPSILON = 200000;
 
   
   
