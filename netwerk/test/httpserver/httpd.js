@@ -993,15 +993,27 @@ class NodeServer {
 
 
 
+
+
+
+
+
+
+
+
+
 const HOST_REGEX = new RegExp(
   "^(?:" +
     
     "(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)*" +
     
-    "[a-z](?:[a-z0-9-]*[a-z0-9])?" +
+    "[a-z](?:[a-z0-9-]*[a-z0-9])?\\.?" +
     "|" +
     
     "\\d+\\.\\d+\\.\\d+\\.\\d+" +
+    "|" +
+    
+    "\\[[:0-9a-f]+\\]" +
     ")$",
   "i"
 );
@@ -1243,7 +1255,7 @@ ServerIdentity.prototype = {
       dumpStack();
       throw Components.Exception("", Cr.NS_ERROR_ILLEGAL_VALUE);
     }
-    if (!HOST_REGEX.test(host) && host != "[::1]") {
+    if (!HOST_REGEX.test(host)) {
       dumpn("*** unexpected host: '" + host + "'");
       throw Components.Exception("", Cr.NS_ERROR_ILLEGAL_VALUE);
     }
@@ -1706,10 +1718,7 @@ RequestReader.prototype = {
         
         
         
-        if (
-          (!HOST_REGEX.test(host) && host != "[::1]") ||
-          !/^\d*$/.test(port)
-        ) {
+        if (!HOST_REGEX.test(host) || !/^\d*$/.test(port)) {
           dumpn(
             "*** malformed hostname (" +
               hostPort +
@@ -1876,7 +1885,15 @@ RequestReader.prototype = {
         var uri = Services.io.newURI(fullPath);
         fullPath = uri.pathQueryRef;
         scheme = uri.scheme;
-        host = metadata._host = uri.asciiHost;
+        host = uri.asciiHost;
+        if (host.includes(":")) {
+          
+          
+          
+          
+          host = `[${host}]`;
+        }
+        metadata._host = host;
         port = uri.port;
         if (port === -1) {
           if (scheme === "http") {
