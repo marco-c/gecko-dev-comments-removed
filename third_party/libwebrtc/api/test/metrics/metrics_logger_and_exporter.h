@@ -49,7 +49,7 @@ class MetricsLoggerAndExporter {
                             double value,
                             Unit unit,
                             ImprovementDirection improvement_direction,
-                            std::map<std::string, std::string> metadata);
+                            std::map<std::string, std::string> metadata = {});
 
   
   
@@ -58,7 +58,7 @@ class MetricsLoggerAndExporter {
                  const SamplesStatsCounter& values,
                  Unit unit,
                  ImprovementDirection improvement_direction,
-                 std::map<std::string, std::string> metadata);
+                 std::map<std::string, std::string> metadata = {});
 
   
   
@@ -68,7 +68,7 @@ class MetricsLoggerAndExporter {
                  const Metric::Stats& metric_stats,
                  Unit unit,
                  ImprovementDirection improvement_direction,
-                 std::map<std::string, std::string> metadata);
+                 std::map<std::string, std::string> metadata = {});
 
   
   std::vector<Metric> GetCollectedMetrics() const {
