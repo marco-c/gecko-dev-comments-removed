@@ -345,12 +345,6 @@ EarlyHintPreloader::AsyncOnChannelRedirect(
   }
 
   
-  if (!newURI->SchemeIs("https")) {
-    callback->OnRedirectVerifyCallback(NS_ERROR_ABORT);
-    return NS_OK;
-  }
-
-  
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aNewChannel);
   NS_ENSURE_STATE(httpChannel);
 
