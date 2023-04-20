@@ -47,6 +47,7 @@ class VCMTiming {
   void SetJitterDelay(TimeDelta required_delay);
 
   
+  TimeDelta min_playout_delay() const;
   void set_min_playout_delay(TimeDelta min_playout_delay);
 
   
