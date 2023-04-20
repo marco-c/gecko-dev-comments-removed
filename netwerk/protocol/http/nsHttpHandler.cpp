@@ -2262,8 +2262,12 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
   if (mDebugObservations && obsService) {
     
     
+
+    
+    nsPrintfCString debugURL("%s%s", aURI->GetSpecOrDefault().get(),
+                             anonymous ? "anonymous" : "use-credentials");
     obsService->NotifyObservers(nullptr, "speculative-connect-request",
-                                nullptr);
+                                NS_ConvertUTF8toUTF16(debugURL).get());
     for (auto* cp :
          dom::ContentParent::AllProcesses(dom::ContentParent::eLive)) {
       PNeckoParent* neckoParent =
