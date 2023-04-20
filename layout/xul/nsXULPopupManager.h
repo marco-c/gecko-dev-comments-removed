@@ -623,13 +623,15 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void PopupMoved(nsIFrame* aFrame, nsIntPoint aPoint, bool aByMoveToRect);
+  void PopupMoved(nsIFrame* aFrame, const mozilla::LayoutDeviceIntPoint& aPoint,
+                  bool aByMoveToRect);
 
   
 
 
 
-  void PopupResized(nsIFrame* aFrame, mozilla::LayoutDeviceIntSize aSize);
+  void PopupResized(nsIFrame* aFrame,
+                    const mozilla::LayoutDeviceIntSize& aSize);
 
   
 

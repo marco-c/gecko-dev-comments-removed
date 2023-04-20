@@ -5801,8 +5801,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   mLastSizeRequest = mBounds.Size();
 
   GtkWidget* eventWidget = nullptr;
-  bool popupNeedsAlphaVisual = (mWindowType == WindowType::Popup &&
-                                (aInitData && aInitData->mSupportTranslucency));
+  bool popupNeedsAlphaVisual = mWindowType == WindowType::Popup &&
+                               (aInitData && aInitData->mTransparencyMode ==
+                                                 TransparencyMode::Transparent);
 
   
   GdkWindow* parentGdkWindow = nullptr;

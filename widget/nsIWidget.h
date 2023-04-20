@@ -163,24 +163,6 @@ typedef void* nsNativeWidget;
 
 
 
-namespace mozilla::widget {
-
-enum class TransparencyMode : uint8_t {
-  Opaque = 0,       
-  Transparent,      
-  BorderlessGlass,  
-                    
-                    
-  
-  
-};
-
-}
-
-
-
-
-
 enum nsCursor {  
   eCursor_standard,
   
@@ -265,8 +247,7 @@ enum nsTopLevelWidgetZPlacement {
 
 #define NS_WIDGET_MAC_APP_ACTIVATE_OBSERVER_TOPIC "mac_app_activate"
 
-namespace mozilla {
-namespace widget {
+namespace mozilla::widget {
 
 
 
@@ -347,7 +328,6 @@ struct AutoObserverNotifier {
   static nsTHashMap<uint64_t, nsCOMPtr<nsIObserver>> sSavedObservers;
 };
 
-}  
 }  
 
 

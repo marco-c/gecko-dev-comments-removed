@@ -73,6 +73,16 @@ enum class BorderStyle : int16_t {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(BorderStyle)
 
+enum class TransparencyMode : uint8_t {
+  Opaque = 0,       
+  Transparent,      
+  BorderlessGlass,  
+                    
+                    
+  
+  
+};
+
 
 
 struct InitData {
@@ -80,6 +90,7 @@ struct InitData {
   BorderStyle mBorderStyle = BorderStyle::Default;
   PopupType mPopupHint = PopupType::Panel;
   PopupLevel mPopupLevel = PopupLevel::Top;
+  TransparencyMode mTransparencyMode = TransparencyMode::Opaque;
   
   bool mClipChildren = false;
   bool mClipSiblings = false;
@@ -90,7 +101,6 @@ struct InitData {
   
   bool mIsAnimationSuppressed = false;
   
-  bool mSupportTranslucency = false;
   bool mHasRemoteContent = false;
   bool mAlwaysOnTop = false;
   

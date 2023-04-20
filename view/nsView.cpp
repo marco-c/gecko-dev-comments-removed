@@ -24,6 +24,7 @@
 #include "nsIWidgetListener.h"
 #include "nsContentUtils.h"  
 #include "nsDocShell.h"
+#include "nsLayoutUtils.h"
 #include "mozilla/TimelineConsumers.h"
 #include "mozilla/CompositeTimelineMarker.h"
 #include "mozilla/StartupTimeline.h"
@@ -207,7 +208,37 @@ bool nsView::IsEffectivelyVisible() {
   return true;
 }
 
-LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType) {
+
+
+
+static LayoutDeviceIntRect MaybeRoundToDisplayPixels(
+    const LayoutDeviceIntRect& aRect, TransparencyMode aTransparency,
+    int32_t aRound) {
+  if (aRound == 1) {
+    return aRect;
+  }
+
+  auto Truncate = [&](int32_t i) { return (i / aRound) * aRound; };
+  auto Round = [&](int32_t i) { return Truncate(i + aRound / 2); };
+  auto RoundSize = [&](int32_t i) {
+    if (i % aRound == 0) {
+      return i;
+    }
+    const auto truncated = Truncate(i);
+    if (NS_WARN_IF(aTransparency == TransparencyMode::Opaque)) {
+      
+      
+      return truncated;
+    }
+    return truncated + aRound;
+  };
+
+  return LayoutDeviceIntRect(Round(aRect.x), Round(aRect.y),
+                             RoundSize(aRect.width), RoundSize(aRect.height));
+}
+
+LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType,
+                                             TransparencyMode aTransparency) {
   int32_t p2a = mViewManager->AppUnitsPerDevPixel();
 
   nsRect viewBounds(mDimBounds);
@@ -229,45 +260,28 @@ LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType) {
   }
 
   
-  LayoutDeviceIntRect newBounds =
-      LayoutDeviceIntRect::FromUnknownRect(viewBounds.ToNearestPixels(p2a));
+  const LayoutDeviceIntRect newBounds = [&] {
+    
+    
+    if (aType != WindowType::Popup) {
+      return LayoutDeviceIntRect::FromUnknownRect(
+          viewBounds.ToNearestPixels(p2a));
+    }
+    
+    
+    
+    const bool opaque = aTransparency == TransparencyMode::Opaque;
+    const auto idealBounds = LayoutDeviceIntRect::FromUnknownRect(
+        opaque ? viewBounds.ToNearestPixels(p2a)
+               : viewBounds.ToOutsidePixels(p2a));
 
-#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
-  
-  
-  
-  nsIWidget* widget = parentWidget ? parentWidget : mWindow.get();
-  uint32_t round;
-  if (aType == WindowType::Popup && widget &&
-      ((round = widget->RoundsWidgetCoordinatesTo()) > 1)) {
-    LayoutDeviceIntSize pixelRoundedSize = newBounds.Size();
-    
-    newBounds.x =
-        NSToIntRoundUp(NSAppUnitsToDoublePixels(viewBounds.x, p2a) / round) *
-        round;
-    newBounds.y =
-        NSToIntRoundUp(NSAppUnitsToDoublePixels(viewBounds.y, p2a) / round) *
-        round;
-    newBounds.width =
-        NSToIntRoundUp(NSAppUnitsToDoublePixels(viewBounds.XMost(), p2a) /
-                       round) *
-            round -
-        newBounds.x;
-    newBounds.height =
-        NSToIntRoundUp(NSAppUnitsToDoublePixels(viewBounds.YMost(), p2a) /
-                       round) *
-            round -
-        newBounds.y;
-    
-    
-    if (newBounds.width > pixelRoundedSize.width) {
-      newBounds.width -= round;
+    nsIWidget* widget = parentWidget ? parentWidget : mWindow.get();
+    if (!widget) {
+      return idealBounds;
     }
-    if (newBounds.height > pixelRoundedSize.height) {
-      newBounds.height -= round;
-    }
-  }
-#endif
+    const int32_t round = widget->RoundsWidgetCoordinatesTo();
+    return MaybeRoundToDisplayPixels(idealBounds, aTransparency, round);
+  }();
 
   
   
@@ -283,6 +297,12 @@ LayoutDeviceIntRect nsView::CalcWidgetBounds(WindowType aType) {
                         viewBounds.TopLeft() - roundedOffset;
 
   return newBounds;
+}
+
+LayoutDeviceIntRect nsView::RecalcWidgetBounds() {
+  MOZ_ASSERT(mWindow);
+  return CalcWidgetBounds(mWindow->GetWindowType(),
+                          mWindow->GetTransparencyMode());
 }
 
 void nsView::DoResetWidgetBounds(bool aMoveOnly, bool aInvalidateChangedSize) {
@@ -311,7 +331,7 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly, bool aInvalidateChangedSize) {
   if (invisiblePopup) {
     
   } else {
-    newBounds = CalcWidgetBounds(type);
+    newBounds = CalcWidgetBounds(type, widget->GetTransparencyMode());
     invisiblePopup = newBounds.IsEmpty();
   }
 
@@ -532,7 +552,8 @@ nsresult nsView::CreateWidget(widget::InitData* aWidgetInitData,
 
   DefaultWidgetInitData defaultInitData;
   aWidgetInitData = aWidgetInitData ? aWidgetInitData : &defaultInitData;
-  LayoutDeviceIntRect trect = CalcWidgetBounds(aWidgetInitData->mWindowType);
+  LayoutDeviceIntRect trect = CalcWidgetBounds(
+      aWidgetInitData->mWindowType, aWidgetInitData->mTransparencyMode);
 
   nsIWidget* parentWidget =
       GetParent() ? GetParent()->GetNearestWidget(nullptr) : nullptr;
@@ -566,7 +587,8 @@ nsresult nsView::CreateWidgetForParent(nsIWidget* aParentWidget,
   DefaultWidgetInitData defaultInitData;
   aWidgetInitData = aWidgetInitData ? aWidgetInitData : &defaultInitData;
 
-  LayoutDeviceIntRect trect = CalcWidgetBounds(aWidgetInitData->mWindowType);
+  LayoutDeviceIntRect trect = CalcWidgetBounds(
+      aWidgetInitData->mWindowType, aWidgetInitData->mTransparencyMode);
 
   mWindow = aParentWidget->CreateChild(trect, aWidgetInitData);
   if (!mWindow) {
@@ -579,15 +601,14 @@ nsresult nsView::CreateWidgetForParent(nsIWidget* aParentWidget,
 }
 
 nsresult nsView::CreateWidgetForPopup(widget::InitData* aWidgetInitData,
-                                      nsIWidget* aParentWidget,
-                                      bool aEnableDragDrop,
-                                      bool aResetVisibility) {
+                                      nsIWidget* aParentWidget) {
   AssertNoWindow();
   MOZ_ASSERT(aWidgetInitData, "Widget init data required");
   MOZ_ASSERT(aWidgetInitData->mWindowType == WindowType::Popup,
              "Use one of the other CreateWidget methods");
 
-  LayoutDeviceIntRect trect = CalcWidgetBounds(aWidgetInitData->mWindowType);
+  LayoutDeviceIntRect trect = CalcWidgetBounds(
+      aWidgetInitData->mWindowType, aWidgetInitData->mTransparencyMode);
 
   
   
@@ -612,7 +633,7 @@ nsresult nsView::CreateWidgetForPopup(widget::InitData* aWidgetInitData,
     return NS_ERROR_FAILURE;
   }
 
-  InitializeWindow(aEnableDragDrop, aResetVisibility);
+  InitializeWindow( true,  true);
 
   return NS_OK;
 }
@@ -671,8 +692,7 @@ nsresult nsView::AttachToTopLevelWidget(nsIWidget* aWidget) {
   mWidgetIsTopLevel = true;
 
   
-  CalcWidgetBounds(mWindow->GetWindowType());
-
+  RecalcWidgetBounds();
   return NS_OK;
 }
 
@@ -924,7 +944,7 @@ bool nsView::WindowMoved(nsIWidget* aWidget, int32_t x, int32_t y,
                          ByMoveToRect aByMoveToRect) {
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm && IsPopupWidget(aWidget)) {
-    pm->PopupMoved(mFrame, nsIntPoint(x, y),
+    pm->PopupMoved(mFrame, LayoutDeviceIntPoint(x, y),
                    aByMoveToRect == ByMoveToRect::Yes);
     return true;
   }

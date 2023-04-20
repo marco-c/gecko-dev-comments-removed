@@ -26,6 +26,7 @@ namespace mozilla {
 class PresShell;
 namespace widget {
 struct InitData;
+enum class TransparencyMode : uint8_t;
 enum class WindowType : uint8_t;
 }  
 }  
@@ -311,9 +312,7 @@ class nsView final : public nsIWidgetListener {
 
 
   nsresult CreateWidgetForPopup(mozilla::widget::InitData*,
-                                nsIWidget* aParentWidget = nullptr,
-                                bool aEnableDragDrop = true,
-                                bool aResetVisibility = true);
+                                nsIWidget* aParentWidget = nullptr);
 
   
 
@@ -395,7 +394,10 @@ class nsView final : public nsIWidgetListener {
 
   bool IsRoot() const;
 
-  LayoutDeviceIntRect CalcWidgetBounds(mozilla::widget::WindowType);
+  LayoutDeviceIntRect CalcWidgetBounds(mozilla::widget::WindowType,
+                                       mozilla::widget::TransparencyMode);
+
+  LayoutDeviceIntRect RecalcWidgetBounds();
 
   
   
