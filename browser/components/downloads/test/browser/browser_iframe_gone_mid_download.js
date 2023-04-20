@@ -47,7 +47,7 @@ function test_deleted_iframe(perSitePref, windowOptions = {}) {
         false,
         "Got an exception trying to get the directory where things should be saved."
       );
-      Cu.reportError(ex);
+      console.error(ex);
     }
     
     isnot(
@@ -63,7 +63,7 @@ function test_deleted_iframe(perSitePref, windowOptions = {}) {
         false,
         "Got an exception trying to set the directory where things should be saved."
       );
-      Cu.reportError(ex);
+      console.error(ex);
     }
 
     await BrowserTestUtils.closeWindow(win);
