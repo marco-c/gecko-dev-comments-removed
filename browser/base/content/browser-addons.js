@@ -1325,13 +1325,21 @@ var gUnifiedExtensions = {
     
     
     let addons = await AddonManager.getAddonsByTypes(["extension"]);
-    addons = addons.filter(
-      addon =>
-        !addon.hidden &&
-        addon.isActive &&
-        (all ||
-          !WebExtensionPolicy.getByID(addon.id).extension.hasBrowserActionUI)
-    );
+    addons = addons.filter(addon => {
+      if (addon.hidden || !addon.isActive) {
+        return false;
+      }
+
+      const extension = WebExtensionPolicy.getByID(addon.id)?.extension;
+      
+      
+      
+      if (!extension?.canAccessWindow(window)) {
+        return false;
+      }
+
+      return all || !extension?.hasBrowserActionUI;
+    });
     addons.sort((a1, a2) => a1.name.localeCompare(a2.name));
 
     return addons;
