@@ -4,16 +4,14 @@
 
 promise_test(async testCase => {
   const inboxBucket = await navigator.storageBuckets.open('inbox_bucket');
-  testCase.add_cleanup(() => {
-    navigator.storageBuckets.delete('inbox_bucket');
-  });
   const outboxBucket = await navigator.storageBuckets.open('outbox_bucket');
-  testCase.add_cleanup(() => {
-    navigator.storageBuckets.delete('outbox_bucket');
+  testCase.add_cleanup(async () => {
+    await navigator.storageBuckets.delete('inbox_bucket');
+    await navigator.storageBuckets.delete('outbox_bucket');
   });
 
   
-  const inboxDb = await new Promise(resolve => {
+  const inboxDb = await new Promise((resolve, reject) => {
     const request = inboxBucket.indexedDB.open('messages');
     request.onupgradeneeded = (event) => {
       const inboxStore =
@@ -30,7 +28,7 @@ promise_test(async testCase => {
   txn.commit();
   await promiseForTransaction(testCase, txn);
 
-  const outboxDb = await new Promise(resolve => {
+  const outboxDb = await new Promise((resolve, reject) => {
     const request = outboxBucket.indexedDB.open('messages');
     request.onupgradeneeded = (event) => {
       const outboxStore =
@@ -48,7 +46,7 @@ promise_test(async testCase => {
   await promiseForTransaction(testCase, txn2);
 
   
-  const inboxMessage = await new Promise(resolve => {
+  const inboxMessage = await new Promise((resolve, reject) => {
     const txn3 = inboxDb.transaction(['primary'], 'readonly');
     const inboxLookup = txn3.objectStore('primary').get('42');
     inboxLookup.onsuccess = (e) => resolve(inboxLookup.result);
@@ -57,7 +55,7 @@ promise_test(async testCase => {
   assert_equals(inboxMessage.subject, 'Bonjour');
 
   
-  const outboxMessage = await new Promise(resolve => {
+  const outboxMessage = await new Promise((resolve, reject) => {
     const txn4 = outboxDb.transaction(['primary'], 'readonly');
     const outboxLookup = txn4.objectStore('primary').get('47');
     outboxLookup.onsuccess = (e) => resolve(outboxLookup.result);
@@ -67,7 +65,7 @@ promise_test(async testCase => {
 
   
   
-  const nonexistentInboxMessage = await new Promise(resolve => {
+  const nonexistentInboxMessage = await new Promise((resolve, reject) => {
     const txn5 = inboxDb.transaction(['primary'], 'readonly');
     const nonexistentInboxLookup = txn5.objectStore('primary').get('47');
     nonexistentInboxLookup.onsuccess = (e) =>
@@ -77,3 +75,15 @@ promise_test(async testCase => {
   });
   assert_equals(nonexistentInboxMessage, undefined);
 }, 'Basic test that buckets create independent databases.');
+
+promise_test(async testCase => {
+  const inboxBucket = await navigator.storageBuckets.open('inbox');
+  await navigator.storageBuckets.delete('inbox');
+
+  return promise_rejects_dom(
+      testCase, 'UnknownError', new Promise((resolve, reject) => {
+        const request = inboxBucket.indexedDB.open('messages');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      }));
+}, 'Tests trying to use indexedDB in a deleted bucket.');
