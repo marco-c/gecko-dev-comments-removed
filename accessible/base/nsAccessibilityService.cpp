@@ -1230,7 +1230,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
                          nsGkAtoms::mpadded_, nsGkAtoms::mphantom_,
                          nsGkAtoms::maligngroup_, nsGkAtoms::malignmark_,
                          nsGkAtoms::mspace_, nsGkAtoms::semantics_)) {
-        newAcc = new HyperTextAccessible(content, document);
+        newAcc = new HyperTextAccessibleWrap(content, document);
       }
     } else if (content->IsGeneratedContentContainerForMarker()) {
       if (aContext->IsHTMLListItem()) {
@@ -1254,7 +1254,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     
     
     
-    if (content->IsHTMLElement()) {
+    if (content->IsHTMLElement() || content->IsMathMLElement()) {
       
       
       newAcc = new HyperTextAccessibleWrap(content, document);
