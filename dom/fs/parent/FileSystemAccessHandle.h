@@ -7,6 +7,7 @@
 #ifndef DOM_FS_PARENT_FILESYSTEMACCESSHANDLE_H_
 #define DOM_FS_PARENT_FILESYSTEMACCESSHANDLE_H_
 
+#include "mozilla/MozPromise.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/FileSystemTypes.h"
@@ -16,9 +17,6 @@
 enum class nsresult : uint32_t;
 
 namespace mozilla {
-
-template <typename V, typename E>
-class Result;
 
 namespace dom {
 
@@ -38,7 +36,15 @@ class FileSystemDataManager;
 
 class FileSystemAccessHandle {
  public:
-  static Result<fs::Registered<FileSystemAccessHandle>, nsresult> Create(
+  
+  
+  
+  
+  
+  using CreatePromise =
+      MozPromise<fs::Registered<FileSystemAccessHandle>, nsresult,
+                  true>;
+  static RefPtr<CreatePromise> Create(
       RefPtr<fs::data::FileSystemDataManager> aDataManager,
       const fs::EntryId& aEntryId);
 
