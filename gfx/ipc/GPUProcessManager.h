@@ -200,6 +200,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   GPUProcessHost* Process() { return mProcess; }
 
   
+  
+  void SetAppInForeground(bool aInForeground);
+
+  
 
 
 
@@ -284,6 +288,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void EnsureCompositorManagerChild();
   void EnsureImageBridgeChild();
   void EnsureVRManager();
+
+#if defined(XP_WIN)
+  void SetProcessIsForeground();
+#endif
 
 #if defined(MOZ_WIDGET_ANDROID)
   already_AddRefed<UiCompositorControllerChild> CreateUiCompositorController(

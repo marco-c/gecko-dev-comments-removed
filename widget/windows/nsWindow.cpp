@@ -6194,6 +6194,10 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       }
     } break;
 
+    case WM_ACTIVATEAPP: {
+      GPUProcessManager::Get()->SetAppInForeground(wParam);
+    } break;
+
     case WM_MOUSEACTIVATE:
       
       
