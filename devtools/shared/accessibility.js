@@ -75,7 +75,7 @@ function getContrastRatioScore(ratio, isLargeText) {
 
 function getTextProperties(computedStyle) {
   const { color, fontSize, fontWeight } = computedStyle;
-  let { r, g, b, a } = colorUtils.colorToRGBA(color, true);
+  let { r, g, b, a } = InspectorUtils.colorToRGBA(color);
 
   
   
