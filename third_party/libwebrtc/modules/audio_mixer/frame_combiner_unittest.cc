@@ -21,6 +21,7 @@
 #include "api/array_view.h"
 #include "api/rtp_packet_info.h"
 #include "api/rtp_packet_infos.h"
+#include "api/units/timestamp.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "modules/audio_mixer/gain_change_calculator.h"
 #include "modules/audio_mixer/sine_wave_generator.h"
@@ -69,18 +70,15 @@ AudioFrame frame1;
 AudioFrame frame2;
 
 void SetUpFrames(int sample_rate_hz, int number_of_channels) {
-  RtpPacketInfo packet_info1(
-      1001, {}, 1000,
-      absl::nullopt, absl::nullopt,
-      1);
-  RtpPacketInfo packet_info2(
-      4004, {}, 1234,
-      absl::nullopt, absl::nullopt,
-      2);
-  RtpPacketInfo packet_info3(
-      7007, {}, 1333,
-      absl::nullopt, absl::nullopt,
-      2);
+  RtpPacketInfo packet_info1(1001, {},
+                             1000,
+                             Timestamp::Millis(1));
+  RtpPacketInfo packet_info2(4004, {},
+                             1234,
+                             Timestamp::Millis(2));
+  RtpPacketInfo packet_info3(7007, {},
+                             1333,
+                             Timestamp::Millis(2));
 
   frame1.packet_infos_ = RtpPacketInfos({packet_info1});
   frame2.packet_infos_ = RtpPacketInfos({packet_info2, packet_info3});

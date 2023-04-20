@@ -27,12 +27,23 @@ RtpPacketInfos::vector_type ToVector(Iterator begin, Iterator end) {
 }  
 
 TEST(RtpPacketInfosTest, BasicFunctionality) {
-  RtpPacketInfo p0(123, {1, 2}, 89, 5, AbsoluteCaptureTime{45, 78},
+  RtpPacketInfo p0(123, {1, 2}, 89,
                    Timestamp::Millis(7));
-  RtpPacketInfo p1(456, {3, 4}, 89, 4, AbsoluteCaptureTime{13, 21},
+  p0.set_audio_level(5);
+  p0.set_absolute_capture_time(AbsoluteCaptureTime{
+      .absolute_capture_timestamp = 45, .estimated_capture_clock_offset = 78});
+
+  RtpPacketInfo p1(456, {3, 4}, 89,
                    Timestamp::Millis(1));
-  RtpPacketInfo p2(789, {5, 6}, 88, 1, AbsoluteCaptureTime{99, 78},
+  p1.set_audio_level(4);
+  p1.set_absolute_capture_time(AbsoluteCaptureTime{
+      .absolute_capture_timestamp = 13, .estimated_capture_clock_offset = 21});
+
+  RtpPacketInfo p2(789, {5, 6}, 88,
                    Timestamp::Millis(7));
+  p2.set_audio_level(1);
+  p2.set_absolute_capture_time(AbsoluteCaptureTime{
+      .absolute_capture_timestamp = 99, .estimated_capture_clock_offset = 78});
 
   RtpPacketInfos x({p0, p1, p2});
 
@@ -55,12 +66,23 @@ TEST(RtpPacketInfosTest, BasicFunctionality) {
 }
 
 TEST(RtpPacketInfosTest, CopyShareData) {
-  RtpPacketInfo p0(123, {1, 2}, 89, 5, AbsoluteCaptureTime{45, 78},
+  RtpPacketInfo p0(123, {1, 2}, 89,
                    Timestamp::Millis(7));
-  RtpPacketInfo p1(456, {3, 4}, 89, 4, AbsoluteCaptureTime{13, 21},
+  p0.set_audio_level(5);
+  p0.set_absolute_capture_time(AbsoluteCaptureTime{
+      .absolute_capture_timestamp = 45, .estimated_capture_clock_offset = 78});
+
+  RtpPacketInfo p1(456, {3, 4}, 89,
                    Timestamp::Millis(1));
-  RtpPacketInfo p2(789, {5, 6}, 88, 1, AbsoluteCaptureTime{99, 78},
+  p1.set_audio_level(4);
+  p1.set_absolute_capture_time(AbsoluteCaptureTime{
+      .absolute_capture_timestamp = 13, .estimated_capture_clock_offset = 21});
+
+  RtpPacketInfo p2(789, {5, 6}, 88,
                    Timestamp::Millis(7));
+  p2.set_audio_level(1);
+  p2.set_absolute_capture_time(AbsoluteCaptureTime{
+      .absolute_capture_timestamp = 99, .estimated_capture_clock_offset = 78});
 
   RtpPacketInfos lhs({p0, p1, p2});
   RtpPacketInfos rhs = lhs;

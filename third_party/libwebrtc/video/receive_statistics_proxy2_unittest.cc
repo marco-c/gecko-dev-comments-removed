@@ -190,8 +190,8 @@ TEST_F(ReceiveStatisticsProxy2Test, OnDecodedFrameIncreasesProcessingDelay) {
   
   
   
-  RtpPacketInfos::vector_type packet_infos = {
-      RtpPacketInfo({}, {}, {}, {}, {}, Now())};
+  RtpPacketInfos::vector_type packet_infos = {RtpPacketInfo(
+      {}, {}, {}, Now())};
   frame.set_packet_infos(RtpPacketInfos(packet_infos));
   for (int i = 1; i <= 3; ++i) {
     time_controller_.AdvanceTime(kProcessingDelay);
@@ -228,8 +228,8 @@ TEST_F(ReceiveStatisticsProxy2Test, OnDecodedFrameIncreasesAssemblyTime) {
 
   
   
-  RtpPacketInfos::vector_type single_packet_frame = {
-      RtpPacketInfo({}, {}, {}, {}, {}, Now())};
+  RtpPacketInfos::vector_type single_packet_frame = {RtpPacketInfo(
+      {}, {}, {}, Now())};
   frame.set_packet_infos(RtpPacketInfos(single_packet_frame));
   statistics_proxy_->OnDecodedFrame(frame, absl::nullopt, TimeDelta::Millis(1),
                                     VideoContentType::UNSPECIFIED);
@@ -243,9 +243,12 @@ TEST_F(ReceiveStatisticsProxy2Test, OnDecodedFrameIncreasesAssemblyTime) {
 
   
   RtpPacketInfos::vector_type ordered_frame = {
-      RtpPacketInfo({}, {}, {}, {}, {}, Now()),
-      RtpPacketInfo({}, {}, {}, {}, {}, Now() + kAssemblyTime),
-      RtpPacketInfo({}, {}, {}, {}, {}, Now() + 2 * kAssemblyTime),
+      RtpPacketInfo({}, {}, {},
+                    Now()),
+      RtpPacketInfo({}, {}, {},
+                    Now() + kAssemblyTime),
+      RtpPacketInfo({}, {}, {},
+                    Now() + 2 * kAssemblyTime),
   };
   frame.set_packet_infos(RtpPacketInfos(ordered_frame));
   statistics_proxy_->OnDecodedFrame(frame, 1u, TimeDelta::Millis(3),
@@ -264,9 +267,12 @@ TEST_F(ReceiveStatisticsProxy2Test, OnDecodedFrameIncreasesAssemblyTime) {
 
   
   RtpPacketInfos::vector_type unordered_frame = {
-      RtpPacketInfo({}, {}, {}, {}, {}, Now() + 2 * kAssemblyTime),
-      RtpPacketInfo({}, {}, {}, {}, {}, Now()),
-      RtpPacketInfo({}, {}, {}, {}, {}, Now() + kAssemblyTime),
+      RtpPacketInfo({}, {}, {},
+                    Now() + 2 * kAssemblyTime),
+      RtpPacketInfo({}, {}, {},
+                    Now()),
+      RtpPacketInfo({}, {}, {},
+                    Now() + kAssemblyTime),
   };
   frame.set_packet_infos(RtpPacketInfos(unordered_frame));
   statistics_proxy_->OnDecodedFrame(frame, 1u, TimeDelta::Millis(3),

@@ -136,9 +136,9 @@ bool RedPayloadSplitter::SplitRed(PacketList* packet_list) {
             red_packet.packet_info.ssrc(),
             std::vector<uint32_t>(),
             new_packet.timestamp,
-            red_packet.packet_info.audio_level(),
-            absl::nullopt,
             red_packet.packet_info.receive_time());
+        new_packet.packet_info.set_audio_level(
+            red_packet.packet_info.audio_level());
         new_packets.push_front(std::move(new_packet));
         payload_ptr += payload_length;
       }

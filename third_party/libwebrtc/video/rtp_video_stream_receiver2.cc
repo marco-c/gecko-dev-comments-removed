@@ -512,15 +512,13 @@ void RtpVideoStreamReceiver2::OnReceivedPayloadData(
 
   int64_t unwrapped_rtp_seq_num =
       rtp_seq_num_unwrapper_.Unwrap(rtp_packet.SequenceNumber());
-  auto& packet_info =
+
+  RtpPacketInfo& packet_info =
       packet_infos_
-          .emplace(
-              unwrapped_rtp_seq_num,
-              RtpPacketInfo(
-                  rtp_packet.Ssrc(), rtp_packet.Csrcs(), rtp_packet.Timestamp(),
-                  absl::nullopt,
-                  rtp_packet.GetExtension<AbsoluteCaptureTimeExtension>(),
-                  clock_->CurrentTime()))
+          .emplace(unwrapped_rtp_seq_num,
+                   RtpPacketInfo(rtp_packet.Ssrc(), rtp_packet.Csrcs(),
+                                 rtp_packet.Timestamp(),
+                                 clock_->CurrentTime()))
           .first->second;
 
   
@@ -530,7 +528,8 @@ void RtpVideoStreamReceiver2::OnReceivedPayloadData(
                                                      packet_info.csrcs()),
           packet_info.rtp_timestamp(),
           
-          kVideoPayloadTypeFrequency, packet_info.absolute_capture_time()));
+          kVideoPayloadTypeFrequency,
+          rtp_packet.GetExtension<AbsoluteCaptureTimeExtension>()));
 
   RTPVideoHeader& video_header = packet->video_header;
   video_header.rotation = kVideoRotation_0;

@@ -34,6 +34,13 @@ class RTC_EXPORT RtpPacketInfo {
   RtpPacketInfo(uint32_t ssrc,
                 std::vector<uint32_t> csrcs,
                 uint32_t rtp_timestamp,
+                Timestamp receive_time);
+
+  
+  
+  RtpPacketInfo(uint32_t ssrc,
+                std::vector<uint32_t> csrcs,
+                uint32_t rtp_timestamp,
                 absl::optional<uint8_t> audio_level,
                 absl::optional<AbsoluteCaptureTime> absolute_capture_time,
                 Timestamp receive_time);
@@ -64,30 +71,35 @@ class RTC_EXPORT RtpPacketInfo {
   uint32_t rtp_timestamp() const { return rtp_timestamp_; }
   void set_rtp_timestamp(uint32_t value) { rtp_timestamp_ = value; }
 
-  absl::optional<uint8_t> audio_level() const { return audio_level_; }
-  void set_audio_level(absl::optional<uint8_t> value) { audio_level_ = value; }
-
-  const absl::optional<AbsoluteCaptureTime>& absolute_capture_time() const {
-    return absolute_capture_time_;
-  }
-  void set_absolute_capture_time(
-      const absl::optional<AbsoluteCaptureTime>& value) {
-    absolute_capture_time_ = value;
-  }
-
-  const absl::optional<int64_t>& local_capture_clock_offset() const {
-    return local_capture_clock_offset_;
-  }
-
-  void set_local_capture_clock_offset(const absl::optional<int64_t>& value) {
-    local_capture_clock_offset_ = value;
-  }
-
   Timestamp receive_time() const { return receive_time_; }
   void set_receive_time(Timestamp value) { receive_time_ = value; }
   
   
   int64_t receive_time_ms() const { return receive_time_.ms(); }
+
+  absl::optional<uint8_t> audio_level() const { return audio_level_; }
+  RtpPacketInfo& set_audio_level(absl::optional<uint8_t> value) {
+    audio_level_ = value;
+    return *this;
+  }
+
+  const absl::optional<AbsoluteCaptureTime>& absolute_capture_time() const {
+    return absolute_capture_time_;
+  }
+  RtpPacketInfo& set_absolute_capture_time(
+      const absl::optional<AbsoluteCaptureTime>& value) {
+    absolute_capture_time_ = value;
+    return *this;
+  }
+
+  const absl::optional<int64_t>& local_capture_clock_offset() const {
+    return local_capture_clock_offset_;
+  }
+  RtpPacketInfo& set_local_capture_clock_offset(
+      const absl::optional<int64_t>& value) {
+    local_capture_clock_offset_ = value;
+    return *this;
+  }
 
  private:
   
@@ -95,6 +107,9 @@ class RTC_EXPORT RtpPacketInfo {
   uint32_t ssrc_;
   std::vector<uint32_t> csrcs_;
   uint32_t rtp_timestamp_;
+
+  
+  Timestamp receive_time_;
 
   
   
@@ -112,9 +127,6 @@ class RTC_EXPORT RtpPacketInfo {
   
   
   absl::optional<int64_t> local_capture_clock_offset_;
-
-  
-  Timestamp receive_time_;
 };
 
 bool operator==(const RtpPacketInfo& lhs, const RtpPacketInfo& rhs);
