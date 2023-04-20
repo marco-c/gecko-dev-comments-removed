@@ -815,14 +815,26 @@ where
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToResolvedValue)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem
+)]
 #[repr(C)]
+#[value_info(other_values = "normal")]
 pub struct FontLanguageOverride(pub u32);
 
 impl FontLanguageOverride {
     #[inline]
     
-    pub fn zero() -> FontLanguageOverride {
+    pub fn normal() -> FontLanguageOverride {
         FontLanguageOverride(0)
     }
 
@@ -837,23 +849,6 @@ impl FontLanguageOverride {
             unsafe { std::str::from_utf8_unchecked(&storage[..]) }
         };
         slice.trim_end()
-    }
-
-    
-    
-    #[inline]
-    pub fn from_str(lang: &str) -> Self {
-        if lang.is_empty() || lang.len() > 4 {
-            return Self::zero();
-        }
-        let mut bytes = [b' '; 4];
-        for (byte, lang_byte) in bytes.iter_mut().zip(lang.as_bytes()) {
-            if !lang_byte.is_ascii() {
-                return Self::zero();
-            }
-            *byte = *lang_byte;
-        }
-        Self(u32::from_be_bytes(bytes))
     }
 
     

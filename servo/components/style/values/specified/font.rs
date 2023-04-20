@@ -1715,55 +1715,8 @@ impl Parse for FontVariantNumeric {
 
 pub type FontFeatureSettings = FontSettings<FeatureTagValue<Integer>>;
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 
-
-pub enum FontLanguageOverride {
-    
-    
-    
-    Normal,
-    
-    
-    
-    Override(Box<str>),
-}
-
-impl FontLanguageOverride {
-    #[inline]
-    
-    pub fn normal() -> FontLanguageOverride {
-        FontLanguageOverride::Normal
-    }
-
-    
-    
-    #[inline]
-    pub fn compute_non_system(&self) -> computed::FontLanguageOverride {
-        match *self {
-            FontLanguageOverride::Normal => computed::FontLanguageOverride::zero(),
-            FontLanguageOverride::Override(ref lang) => {
-                computed::FontLanguageOverride::from_str(lang)
-            },
-        }
-    }
-}
-
-impl ToComputedValue for FontLanguageOverride {
-    type ComputedValue = computed::FontLanguageOverride;
-
-    #[inline]
-    fn to_computed_value(&self, _: &Context) -> computed::FontLanguageOverride {
-        self.compute_non_system()
-    }
-    #[inline]
-    fn from_computed_value(computed: &computed::FontLanguageOverride) -> Self {
-        if *computed == computed::FontLanguageOverride::zero() {
-            return FontLanguageOverride::Normal;
-        }
-        FontLanguageOverride::Override(computed.to_str(&mut [0; 4]).into())
-    }
-}
+pub use crate::values::computed::font::FontLanguageOverride;
 
 impl Parse for FontLanguageOverride {
     
@@ -1775,13 +1728,23 @@ impl Parse for FontLanguageOverride {
             .try_parse(|input| input.expect_ident_matching("normal"))
             .is_ok()
         {
-            return Ok(FontLanguageOverride::Normal);
+            return Ok(FontLanguageOverride::normal());
         }
 
         let string = input.expect_string()?;
-        Ok(FontLanguageOverride::Override(
-            string.as_ref().to_owned().into_boxed_str(),
-        ))
+
+        
+        
+        if string.is_empty() || string.len() > 4 || !string.is_ascii() {
+            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        }
+
+        let mut bytes = [b' '; 4];
+        for (byte, str_byte) in bytes.iter_mut().zip(string.as_bytes()) {
+            *byte = *str_byte;
+        }
+
+        Ok(FontLanguageOverride(u32::from_be_bytes(bytes)))
     }
 }
 
