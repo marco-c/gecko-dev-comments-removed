@@ -144,6 +144,7 @@ export class Coverage {
 
 
 
+
   async startJSCoverage(options: JSCoverageOptions = {}): Promise<void> {
     return await this.#jsCoverage.start(options);
   }

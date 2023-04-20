@@ -24,11 +24,7 @@ import {
   PuppeteerLaunchOptions,
   PuppeteerNode,
 } from '../../lib/cjs/puppeteer/node/Puppeteer.js';
-import {
-  describeChromeOnly,
-  getTestState,
-  itFailsWindows,
-} from './mocha-utils.js';
+import {getTestState} from './mocha-utils.js';
 
 const rmAsync = promisify(rimraf);
 const mkdtempAsync = promisify(fs.mkdtemp);
@@ -44,7 +40,7 @@ const serviceWorkerExtensionPath = path.join(
   'extension'
 );
 
-describeChromeOnly('headful tests', function () {
+describe('headful tests', function () {
   
 
 
@@ -214,43 +210,40 @@ describeChromeOnly('headful tests', function () {
       expect(pages).toEqual(['about:blank']);
       await browser.close();
     });
-    itFailsWindows(
-      'headless should be able to read cookies written by headful',
-      async () => {
-        
-        const {server, puppeteer} = getTestState();
+    it('headless should be able to read cookies written by headful', async () => {
+      
+      const {server, puppeteer} = getTestState();
 
-        const userDataDir = await mkdtempAsync(TMP_FOLDER);
-        
-        const headfulBrowser = await launchBrowser(
-          puppeteer,
-          Object.assign({userDataDir}, headfulOptions)
-        );
-        const headfulPage = await headfulBrowser.newPage();
-        await headfulPage.goto(server.EMPTY_PAGE);
-        await headfulPage.evaluate(() => {
-          return (document.cookie =
-            'foo=true; expires=Fri, 31 Dec 9999 23:59:59 GMT');
-        });
-        await headfulBrowser.close();
-        
-        const headlessBrowser = await launchBrowser(
-          puppeteer,
-          Object.assign({userDataDir}, headlessOptions)
-        );
-        const headlessPage = await headlessBrowser.newPage();
-        await headlessPage.goto(server.EMPTY_PAGE);
-        const cookie = await headlessPage.evaluate(() => {
-          return document.cookie;
-        });
-        await headlessBrowser.close();
-        
-        await rmAsync(userDataDir).catch(() => {});
-        expect(cookie).toBe('foo=true');
-      }
-    );
+      const userDataDir = await mkdtempAsync(TMP_FOLDER);
+      
+      const headfulBrowser = await launchBrowser(
+        puppeteer,
+        Object.assign({userDataDir}, headfulOptions)
+      );
+      const headfulPage = await headfulBrowser.newPage();
+      await headfulPage.goto(server.EMPTY_PAGE);
+      await headfulPage.evaluate(() => {
+        return (document.cookie =
+          'foo=true; expires=Fri, 31 Dec 9999 23:59:59 GMT');
+      });
+      await headfulBrowser.close();
+      
+      const headlessBrowser = await launchBrowser(
+        puppeteer,
+        Object.assign({userDataDir}, headlessOptions)
+      );
+      const headlessPage = await headlessBrowser.newPage();
+      await headlessPage.goto(server.EMPTY_PAGE);
+      const cookie = await headlessPage.evaluate(() => {
+        return document.cookie;
+      });
+      await headlessBrowser.close();
+      
+      await rmAsync(userDataDir).catch(() => {});
+      expect(cookie).toBe('foo=true');
+    });
     
-    xit('OOPIF: should report google.com frame', async () => {
+    it.skip('OOPIF: should report google.com frame', async () => {
       const {server, puppeteer} = getTestState();
 
       

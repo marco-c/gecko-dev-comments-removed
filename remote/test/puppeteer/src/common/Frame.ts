@@ -1,3 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import {Protocol} from 'devtools-protocol';
 import {assert} from '../util/assert.js';
 import {isErrorLike} from '../util/ErrorLike.js';
@@ -36,7 +52,7 @@ export interface FrameWaitForFunctionOptions {
 
 
 
-  polling?: string | number;
+  polling?: 'raf' | 'mutation' | number;
   
 
 
@@ -150,7 +166,6 @@ export interface FrameAddStyleTagOptions {
 
 
 export class Frame {
-  #parentFrame: Frame | null;
   #url = '';
   #detached = false;
   #client!: CDPSession;
@@ -186,29 +201,24 @@ export class Frame {
   
 
 
-  _childFrames: Set<Frame>;
+  _parentId?: string;
 
   
 
 
   constructor(
     frameManager: FrameManager,
-    parentFrame: Frame | null,
     frameId: string,
+    parentFrameId: string | undefined,
     client: CDPSession
   ) {
     this._frameManager = frameManager;
-    this.#parentFrame = parentFrame ?? null;
     this.#url = '';
     this._id = frameId;
+    this._parentId = parentFrameId;
     this.#detached = false;
 
     this._loaderId = '';
-
-    this._childFrames = new Set();
-    if (this.#parentFrame) {
-      this.#parentFrame._childFrames.add(this);
-    }
 
     this.updateClient(client);
   }
@@ -220,7 +230,7 @@ export class Frame {
     this.#client = client;
     this.worlds = {
       [MAIN_WORLD]: new IsolatedWorld(this),
-      [PUPPETEER_WORLD]: new IsolatedWorld(this, true),
+      [PUPPETEER_WORLD]: new IsolatedWorld(this),
     };
   }
 
@@ -664,7 +674,6 @@ export class Frame {
     options: FrameWaitForFunctionOptions = {},
     ...args: Params
   ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
-    
     return this.worlds[MAIN_WORLD].waitForFunction(
       pageFunction,
       options,
@@ -721,14 +730,14 @@ export class Frame {
 
 
   parentFrame(): Frame | null {
-    return this.#parentFrame;
+    return this._frameManager._frameTree.parentFrame(this._id) || null;
   }
 
   
 
 
   childFrames(): Frame[] {
-    return Array.from(this._childFrames);
+    return this._frameManager._frameTree.childFrames(this._id);
   }
 
   
@@ -776,8 +785,8 @@ export class Frame {
 
     return this.worlds[MAIN_WORLD].transferHandle(
       await this.worlds[PUPPETEER_WORLD].evaluateHandle(
-        async ({url, id, type, content}) => {
-          const promise = InjectedUtil.createDeferredPromise<void>();
+        async ({createDeferredPromise}, {url, id, type, content}) => {
+          const promise = createDeferredPromise<void>();
           const script = document.createElement('script');
           script.type = type;
           script.text = content;
@@ -809,6 +818,7 @@ export class Frame {
           await promise;
           return script;
         },
+        await this.worlds[PUPPETEER_WORLD].puppeteerUtil,
         {...options, type, content}
       )
     );
@@ -858,8 +868,8 @@ export class Frame {
 
     return this.worlds[MAIN_WORLD].transferHandle(
       await this.worlds[PUPPETEER_WORLD].evaluateHandle(
-        async ({url, content}) => {
-          const promise = InjectedUtil.createDeferredPromise<void>();
+        async ({createDeferredPromise}, {url, content}) => {
+          const promise = createDeferredPromise<void>();
           let element: HTMLStyleElement | HTMLLinkElement;
           if (!url) {
             element = document.createElement('style');
@@ -892,6 +902,7 @@ export class Frame {
           await promise;
           return element;
         },
+        await this.worlds[PUPPETEER_WORLD].puppeteerUtil,
         options
       )
     );
@@ -1089,9 +1100,5 @@ export class Frame {
     this.#detached = true;
     this.worlds[MAIN_WORLD]._detach();
     this.worlds[PUPPETEER_WORLD]._detach();
-    if (this.#parentFrame) {
-      this.#parentFrame._childFrames.delete(this);
-    }
-    this.#parentFrame = null;
   }
 }

@@ -18,7 +18,6 @@ import {ChildProcess} from 'child_process';
 import {Protocol} from 'devtools-protocol';
 import {assert} from '../util/assert.js';
 import {CDPSession, Connection, ConnectionEmittedEvents} from './Connection.js';
-import {EventEmitter} from './EventEmitter.js';
 import {waitWithTimeout} from './util.js';
 import {Page} from './Page.js';
 import {Viewport} from './PuppeteerViewport.js';
@@ -27,196 +26,24 @@ import {TaskQueue} from './TaskQueue.js';
 import {TargetManager, TargetManagerEmittedEvents} from './TargetManager.js';
 import {ChromeTargetManager} from './ChromeTargetManager.js';
 import {FirefoxTargetManager} from './FirefoxTargetManager.js';
-
-
-
-
-
-
-export interface BrowserContextOptions {
-  
-
-
-
-  proxyServer?: string;
-  
-
-
-  proxyBypassList?: string[];
-}
-
-
-
-
-export type BrowserCloseCallback = () => Promise<void> | void;
-
-
-
-
-export type TargetFilterCallback = (
-  target: Protocol.Target.TargetInfo
-) => boolean;
-
-
-
-
-export type IsPageTargetCallback = (
-  target: Protocol.Target.TargetInfo
-) => boolean;
-
-const WEB_PERMISSION_TO_PROTOCOL_PERMISSION = new Map<
+import {
+  Browser as BrowserBase,
+  BrowserContext,
+  BrowserCloseCallback,
+  TargetFilterCallback,
+  IsPageTargetCallback,
+  BrowserEmittedEvents,
+  BrowserContextEmittedEvents,
+  BrowserContextOptions,
+  WEB_PERMISSION_TO_PROTOCOL_PERMISSION,
+  WaitForTargetOptions,
   Permission,
-  Protocol.Browser.PermissionType
->([
-  ['geolocation', 'geolocation'],
-  ['midi', 'midi'],
-  ['notifications', 'notifications'],
-  
-  
-  ['camera', 'videoCapture'],
-  ['microphone', 'audioCapture'],
-  ['background-sync', 'backgroundSync'],
-  ['ambient-light-sensor', 'sensors'],
-  ['accelerometer', 'sensors'],
-  ['gyroscope', 'sensors'],
-  ['magnetometer', 'sensors'],
-  ['accessibility-events', 'accessibilityEvents'],
-  ['clipboard-read', 'clipboardReadWrite'],
-  ['clipboard-write', 'clipboardReadWrite'],
-  ['payment-handler', 'paymentHandler'],
-  ['persistent-storage', 'durableStorage'],
-  ['idle-detection', 'idleDetection'],
-  
-  ['midi-sysex', 'midiSysex'],
-]);
+} from '../api/Browser.js';
 
 
 
 
-export type Permission =
-  | 'geolocation'
-  | 'midi'
-  | 'notifications'
-  | 'camera'
-  | 'microphone'
-  | 'background-sync'
-  | 'ambient-light-sensor'
-  | 'accelerometer'
-  | 'gyroscope'
-  | 'magnetometer'
-  | 'accessibility-events'
-  | 'clipboard-read'
-  | 'clipboard-write'
-  | 'payment-handler'
-  | 'persistent-storage'
-  | 'idle-detection'
-  | 'midi-sysex';
-
-
-
-
-export interface WaitForTargetOptions {
-  
-
-
-
-  timeout?: number;
-}
-
-
-
-
-
-
-export const enum BrowserEmittedEvents {
-  
-
-
-
-
-
-
-
-  Disconnected = 'disconnected',
-
-  
-
-
-
-
-
-
-  TargetChanged = 'targetchanged',
-
-  
-
-
-
-
-
-
-
-
-
-
-  TargetCreated = 'targetcreated',
-  
-
-
-
-
-
-
-
-  TargetDestroyed = 'targetdestroyed',
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class Browser extends EventEmitter {
+export class CDPBrowser extends BrowserBase {
   
 
 
@@ -230,8 +57,8 @@ export class Browser extends EventEmitter {
     closeCallback?: BrowserCloseCallback,
     targetFilterCallback?: TargetFilterCallback,
     isPageTargetCallback?: IsPageTargetCallback
-  ): Promise<Browser> {
-    const browser = new Browser(
+  ): Promise<CDPBrowser> {
+    const browser = new CDPBrowser(
       product,
       connection,
       contextIds,
@@ -252,15 +79,15 @@ export class Browser extends EventEmitter {
   #closeCallback: BrowserCloseCallback;
   #targetFilterCallback: TargetFilterCallback;
   #isPageTargetCallback!: IsPageTargetCallback;
-  #defaultContext: BrowserContext;
-  #contexts: Map<string, BrowserContext>;
+  #defaultContext: CDPBrowserContext;
+  #contexts: Map<string, CDPBrowserContext>;
   #screenshotTaskQueue: TaskQueue;
   #targetManager: TargetManager;
 
   
 
 
-  get _targets(): Map<string, Target> {
+  override get _targets(): Map<string, Target> {
     return this.#targetManager.getAvailableTargets();
   }
 
@@ -305,12 +132,12 @@ export class Browser extends EventEmitter {
         this.#targetFilterCallback
       );
     }
-    this.#defaultContext = new BrowserContext(this.#connection, this);
+    this.#defaultContext = new CDPBrowserContext(this.#connection, this);
     this.#contexts = new Map();
     for (const contextId of contextIds) {
       this.#contexts.set(
         contextId,
-        new BrowserContext(this.#connection, this, contextId)
+        new CDPBrowserContext(this.#connection, this, contextId)
       );
     }
   }
@@ -322,7 +149,7 @@ export class Browser extends EventEmitter {
   
 
 
-  async _attach(): Promise<void> {
+  override async _attach(): Promise<void> {
     this.#connection.on(
       ConnectionEmittedEvents.Disconnected,
       this.#emitDisconnected
@@ -349,7 +176,7 @@ export class Browser extends EventEmitter {
   
 
 
-  _detach(): void {
+  override _detach(): void {
     this.#connection.off(
       ConnectionEmittedEvents.Disconnected,
       this.#emitDisconnected
@@ -376,7 +203,7 @@ export class Browser extends EventEmitter {
 
 
 
-  process(): ChildProcess | null {
+  override process(): ChildProcess | null {
     return this.#process ?? null;
   }
 
@@ -402,7 +229,7 @@ export class Browser extends EventEmitter {
   
 
 
-  _getIsPageTargetCallback(): IsPageTargetCallback | undefined {
+  override _getIsPageTargetCallback(): IsPageTargetCallback | undefined {
     return this.#isPageTargetCallback;
   }
 
@@ -424,9 +251,9 @@ export class Browser extends EventEmitter {
 
 
 
-  async createIncognitoBrowserContext(
+  override async createIncognitoBrowserContext(
     options: BrowserContextOptions = {}
-  ): Promise<BrowserContext> {
+  ): Promise<CDPBrowserContext> {
     const {proxyServer, proxyBypassList} = options;
 
     const {browserContextId} = await this.#connection.send(
@@ -436,7 +263,7 @@ export class Browser extends EventEmitter {
         proxyBypassList: proxyBypassList && proxyBypassList.join(','),
       }
     );
-    const context = new BrowserContext(
+    const context = new CDPBrowserContext(
       this.#connection,
       this,
       browserContextId
@@ -449,21 +276,21 @@ export class Browser extends EventEmitter {
 
 
 
-  browserContexts(): BrowserContext[] {
+  override browserContexts(): CDPBrowserContext[] {
     return [this.#defaultContext, ...Array.from(this.#contexts.values())];
   }
 
   
 
 
-  defaultBrowserContext(): BrowserContext {
+  override defaultBrowserContext(): CDPBrowserContext {
     return this.#defaultContext;
   }
 
   
 
 
-  async _disposeContext(contextId?: string): Promise<void> {
+  override async _disposeContext(contextId?: string): Promise<void> {
     if (!contextId) {
       return;
     }
@@ -564,7 +391,7 @@ export class Browser extends EventEmitter {
 
 
 
-  wsEndpoint(): string {
+  override wsEndpoint(): string {
     return this.#connection.url();
   }
 
@@ -572,14 +399,14 @@ export class Browser extends EventEmitter {
 
 
 
-  async newPage(): Promise<Page> {
+  override async newPage(): Promise<Page> {
     return this.#defaultContext.newPage();
   }
 
   
 
 
-  async _createPageInContext(contextId?: string): Promise<Page> {
+  override async _createPageInContext(contextId?: string): Promise<Page> {
     const {targetId} = await this.#connection.send('Target.createTarget', {
       url: 'about:blank',
       browserContextId: contextId || undefined,
@@ -605,7 +432,7 @@ export class Browser extends EventEmitter {
 
 
 
-  targets(): Target[] {
+  override targets(): Target[] {
     return Array.from(
       this.#targetManager.getAvailableTargets().values()
     ).filter(target => {
@@ -616,7 +443,7 @@ export class Browser extends EventEmitter {
   
 
 
-  target(): Target {
+  override target(): Target {
     const browserTarget = this.targets().find(target => {
       return target.type() === 'browser';
     });
@@ -643,7 +470,7 @@ export class Browser extends EventEmitter {
 
 
 
-  async waitForTarget(
+  override async waitForTarget(
     predicate: (x: Target) => boolean | Promise<boolean>,
     options: WaitForTargetOptions = {}
   ): Promise<Target> {
@@ -683,7 +510,7 @@ export class Browser extends EventEmitter {
 
 
 
-  async pages(): Promise<Page[]> {
+  override async pages(): Promise<Page[]> {
     const contextPages = await Promise.all(
       this.browserContexts().map(context => {
         return context.pages();
@@ -705,7 +532,7 @@ export class Browser extends EventEmitter {
 
 
 
-  async version(): Promise<string> {
+  override async version(): Promise<string> {
     const version = await this.#getVersion();
     return version.product;
   }
@@ -714,7 +541,7 @@ export class Browser extends EventEmitter {
 
 
 
-  async userAgent(): Promise<string> {
+  override async userAgent(): Promise<string> {
     const version = await this.#getVersion();
     return version.userAgent;
   }
@@ -723,7 +550,8 @@ export class Browser extends EventEmitter {
 
 
 
-  async close(): Promise<void> {
+
+  override async close(): Promise<void> {
     await this.#closeCallback.call(null);
     this.disconnect();
   }
@@ -733,7 +561,7 @@ export class Browser extends EventEmitter {
 
 
 
-  disconnect(): void {
+  override disconnect(): void {
     this.#targetManager.dispose();
     this.#connection.dispose();
   }
@@ -741,7 +569,7 @@ export class Browser extends EventEmitter {
   
 
 
-  isConnected(): boolean {
+  override isConnected(): boolean {
     return !this.#connection._closed;
   }
 
@@ -752,72 +580,16 @@ export class Browser extends EventEmitter {
 
 
 
-export const enum BrowserContextEmittedEvents {
-  
 
-
-
-  TargetChanged = 'targetchanged',
-
-  
-
-
-
-
-
-
-
-  TargetCreated = 'targetcreated',
-  
-
-
-
-  TargetDestroyed = 'targetdestroyed',
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class BrowserContext extends EventEmitter {
+export class CDPBrowserContext extends BrowserContext {
   #connection: Connection;
-  #browser: Browser;
+  #browser: CDPBrowser;
   #id?: string;
 
   
 
 
-  constructor(connection: Connection, browser: Browser, contextId?: string) {
+  constructor(connection: Connection, browser: CDPBrowser, contextId?: string) {
     super();
     this.#connection = connection;
     this.#browser = browser;
@@ -827,7 +599,7 @@ export class BrowserContext extends EventEmitter {
   
 
 
-  targets(): Target[] {
+  override targets(): Target[] {
     return this.#browser.targets().filter(target => {
       return target.browserContext() === this;
     });
@@ -853,7 +625,7 @@ export class BrowserContext extends EventEmitter {
 
 
 
-  waitForTarget(
+  override waitForTarget(
     predicate: (x: Target) => boolean | Promise<boolean>,
     options: {timeout?: number} = {}
   ): Promise<Target> {
@@ -869,7 +641,7 @@ export class BrowserContext extends EventEmitter {
 
 
 
-  async pages(): Promise<Page[]> {
+  override async pages(): Promise<Page[]> {
     const pages = await Promise.all(
       this.targets()
         .filter(target => {
@@ -897,7 +669,7 @@ export class BrowserContext extends EventEmitter {
 
 
 
-  isIncognito(): boolean {
+  override isIncognito(): boolean {
     return !!this.#id;
   }
 
@@ -915,7 +687,7 @@ export class BrowserContext extends EventEmitter {
 
 
 
-  async overridePermissions(
+  override async overridePermissions(
     origin: string,
     permissions: Permission[]
   ): Promise<void> {
@@ -946,7 +718,7 @@ export class BrowserContext extends EventEmitter {
 
 
 
-  async clearPermissionOverrides(): Promise<void> {
+  override async clearPermissionOverrides(): Promise<void> {
     await this.#connection.send('Browser.resetPermissions', {
       browserContextId: this.#id || undefined,
     });
@@ -955,14 +727,14 @@ export class BrowserContext extends EventEmitter {
   
 
 
-  newPage(): Promise<Page> {
+  override newPage(): Promise<Page> {
     return this.#browser._createPageInContext(this.#id);
   }
 
   
 
 
-  browser(): Browser {
+  override browser(): CDPBrowser {
     return this.#browser;
   }
 
@@ -973,7 +745,7 @@ export class BrowserContext extends EventEmitter {
 
 
 
-  async close(): Promise<void> {
+  override async close(): Promise<void> {
     assert(this.#id, 'Non-incognito profiles cannot be closed!');
     await this.#browser._disposeContext(this.#id);
   }

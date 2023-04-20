@@ -13,8 +13,11 @@
 
 
 
-import {Browser} from './Browser.js';
-import {BrowserConnectOptions, _connectToBrowser} from './BrowserConnector.js';
+import {Browser} from '../api/Browser.js';
+import {
+  BrowserConnectOptions,
+  _connectToCDPBrowser,
+} from './BrowserConnector.js';
 import {ConnectionTransport} from './ConnectionTransport.js';
 import {devices} from './DeviceDescriptors.js';
 import {errors} from './Errors.js';
@@ -54,7 +57,13 @@ export interface ConnectOptions extends BrowserConnectOptions {
 
 
 export class Puppeteer {
+  
+
+
   protected _isPuppeteerCore: boolean;
+  
+
+
   protected _changedProduct = false;
 
   
@@ -75,7 +84,7 @@ export class Puppeteer {
 
 
   connect(options: ConnectOptions): Promise<Browser> {
-    return _connectToBrowser(options);
+    return _connectToCDPBrowser(options);
   }
 
   
