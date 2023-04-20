@@ -5,9 +5,11 @@
 
 
 #include "nsArrayEnumerator.h"
+#include "nsComponentManagerUtils.h"
 #include "nsCOMArray.h"
 #include "nsLocalFile.h"
 #include "nsMIMEInfoWin.h"
+#include "nsIMIMEService.h"
 #include "nsNetUtil.h"
 #include <windows.h>
 #include <shellapi.h>
@@ -98,7 +100,8 @@ nsMIMEInfoWin::LaunchWithFile(nsIFile* aFile) {
 
   if (mPreferredAction == useSystemDefault) {
     nsCOMPtr<nsIFile> defaultApp = GetDefaultApplication();
-    if (defaultApp && StaticPrefs::browser_pdf_launchDefaultEdgeAsApp()) {
+    if (defaultApp &&
+        mozilla::StaticPrefs::browser_pdf_launchDefaultEdgeAsApp()) {
       
       
       
@@ -295,7 +298,8 @@ nsresult nsMIMEInfoWin::LoadUriInternal(nsIURI* aURL) {
     
     
     
-    LauncherResult<_bstr_t> validatedUri = UrlmonValidateUri(utf16Spec.get());
+    mozilla::LauncherResult<_bstr_t> validatedUri =
+        mozilla::UrlmonValidateUri(utf16Spec.get());
     if (validatedUri.isErr()) {
       return NS_ERROR_FAILURE;
     }
