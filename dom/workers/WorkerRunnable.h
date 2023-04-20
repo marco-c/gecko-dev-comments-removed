@@ -425,13 +425,13 @@ class WorkerProxyToMainThreadRunnable : public Runnable {
 
 
 class MainThreadStopSyncLoopRunnable : public WorkerSyncRunnable {
-  bool mResult;
+  nsresult mResult;
 
  public:
   
   MainThreadStopSyncLoopRunnable(WorkerPrivate* aWorkerPrivate,
                                  nsCOMPtr<nsIEventTarget>&& aSyncLoopTarget,
-                                 bool aResult);
+                                 nsresult aResult);
 
   
   
