@@ -21,9 +21,9 @@
 
 #include "DNSLogging.h"
 
-#if defined(XP_WIN) && !defined(__MINGW32__)
-#  include <shlobj_core.h>  
-#endif                      
+#if defined(XP_WIN)
+#  include <shlobj.h>  
+#endif                 
 
 namespace mozilla {
 namespace net {
@@ -352,7 +352,7 @@ void TRRServiceBase::DoReadEtcHostsFile(ParsingCallback aCallback) {
 
   auto readHostsTask = [aCallback]() {
     MOZ_ASSERT(!NS_IsMainThread(), "Must not run on the main thread");
-#if defined(XP_WIN) && !defined(__MINGW32__)
+#if defined(XP_WIN)
     
     
     
@@ -369,8 +369,6 @@ void TRRServiceBase::DoReadEtcHostsFile(ParsingCallback aCallback) {
 
     path.SetLength(strlen(path.get()));
     path.Append("\\drivers\\etc\\hosts");
-#elif defined(__MINGW32__)
-    nsAutoCString path("C:\\windows\\system32\\drivers\\etc\\hosts"_ns);
 #else
     nsAutoCString path("/etc/hosts"_ns);
 #endif
