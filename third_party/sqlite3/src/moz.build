@@ -98,6 +98,10 @@ if CONFIG["OS_TARGET"] == "Linux" or CONFIG["OS_TARGET"] == "Android":
     ]
 
 
+if CONFIG['OS_TARGET'] == 'Android' and not CONFIG['HAVE_64BIT_BUILD']:
+    DEFINES['HAVE_LOG2'] = 0
+
+
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     CFLAGS += [
         '-Wno-sign-compare',
