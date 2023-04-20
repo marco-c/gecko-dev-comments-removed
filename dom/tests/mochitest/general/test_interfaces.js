@@ -1516,7 +1516,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onabort", insecureContext: true },
   
-  { name: "onabsolutedeviceorientation", insecureContext: true },
+  { name: "ondeviceorientationabsolute", insecureContext: true },
   
   { name: "onafterprint", insecureContext: true },
   
