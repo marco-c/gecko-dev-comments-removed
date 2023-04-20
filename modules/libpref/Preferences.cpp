@@ -88,6 +88,7 @@
 #include "plbase64.h"
 #include "PLDHashTable.h"
 #include "plstr.h"
+#include "prdtoa.h"
 #include "prlink.h"
 #include "xpcpublic.h"
 #include "js/RootingAPI.h"
@@ -421,6 +422,35 @@ static void StrEscape(const char* aOriginal, nsCString& aResult) {
   }
 
   aResult.Append('"');
+}
+
+
+
+
+
+
+
+static float ParsePrefFloat(const nsCString& aString, nsresult* aError) {
+  if (aString.IsEmpty()) {
+    *aError = NS_ERROR_ILLEGAL_VALUE;
+    return 0.f;
+  }
+
+  
+  char* stopped = nullptr;
+  float result = PR_strtod(aString.get(), &stopped);
+
+  
+  
+  
+  if (mozilla::IsNaN(result)) {
+    MOZ_ASSERT_UNREACHABLE("PR_strtod shouldn't return NaN");
+    *aError = NS_ERROR_ILLEGAL_VALUE;
+    return 0.f;
+  }
+
+  *aError = (stopped == aString.EndReading()) ? NS_OK : NS_ERROR_ILLEGAL_VALUE;
+  return result;
 }
 
 namespace mozilla {
@@ -1153,7 +1183,8 @@ class MOZ_STACK_CLASS PrefWrapper : public PrefWrapperBase {
     nsresult rv = GetValue(aKind, result);
     if (NS_SUCCEEDED(rv)) {
       
-      *aResult = result.ToFloat(&rv);
+      
+      *aResult = ParsePrefFloat(result, &rv);
     }
     return rv;
   }
@@ -2259,7 +2290,7 @@ nsPrefBranch::GetFloatPref(const char* aPrefName, float* aRetVal) {
   nsresult rv = GetCharPref(aPrefName, stringVal);
   if (NS_SUCCEEDED(rv)) {
     
-    *aRetVal = stringVal.ToFloat(&rv);
+    *aRetVal = ParsePrefFloat(stringVal, &rv);
   }
 
   return rv;
