@@ -69,9 +69,6 @@ class nsDeviceContextSpecWin : public nsIDeviceContextSpec {
   
   
   nsCOMPtr<nsIFile> mTempFile;
-
- private:
-  nsresult DoEndDocument();
 };
 
 
