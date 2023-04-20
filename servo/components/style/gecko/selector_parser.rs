@@ -18,6 +18,7 @@ use cssparser::{CowRcStr, SourceLocation, ToCss, Token};
 use dom::{DocumentState, ElementState};
 use selectors::parser::SelectorParseErrorKind;
 use selectors::SelectorList;
+use servo_arc::Arc;
 use std::fmt;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss as ToCss_};
 
@@ -235,7 +236,7 @@ pub struct SelectorImpl;
 
 
 #[derive(Default)]
-pub struct ExtraMatchingData<'a> {
+pub struct ExtraMatchingData {
     
     pub invalidation_data: InvalidationMatchingData,
 
@@ -245,11 +246,11 @@ pub struct ExtraMatchingData<'a> {
 
     
     
-    pub originating_element_style: Option<&'a ComputedValues>,
+    pub originating_element_style: Option<Arc<ComputedValues>>,
 }
 
 impl ::selectors::SelectorImpl for SelectorImpl {
-    type ExtraMatchingData<'a> = ExtraMatchingData<'a>;
+    type ExtraMatchingData = ExtraMatchingData;
     type AttrValue = AtomString;
     type Identifier = AtomIdent;
     type LocalName = AtomIdent;
