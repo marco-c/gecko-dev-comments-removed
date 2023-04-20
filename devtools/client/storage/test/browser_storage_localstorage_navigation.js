@@ -6,18 +6,7 @@
 
 "use strict";
 
-
 add_task(async function() {
-  await testNavigation();
-});
-
-
-add_task(async function() {
-  enableTargetSwitching();
-  await testNavigation();
-});
-
-async function testNavigation() {
   const URL1 = buildURLWithContent(
     "example.com",
     `<h1>example.com</h1>` +
@@ -73,4 +62,4 @@ async function testNavigation() {
     "Local Storage",
     "localStorage item is properly displayed"
   );
-}
+});

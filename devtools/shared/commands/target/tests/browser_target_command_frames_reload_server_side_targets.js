@@ -17,9 +17,6 @@ const TEST_URL =
 
 add_task(async function() {
   
-  await pushPref("devtools.target-switching.server.enabled", true);
-
-  
   const tab = await addTab(TEST_URL);
   const commands = await CommandsFactory.forTab(tab);
   const targetCommand = commands.targetCommand;

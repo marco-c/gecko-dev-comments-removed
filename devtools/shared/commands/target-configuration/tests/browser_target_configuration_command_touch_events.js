@@ -11,9 +11,6 @@ add_task(async function() {
   
   await pushPref("ui.click_hold_context_menus", false);
   await pushPref("apz.allow_double_tap_zooming", false);
-  
-  
-  await pushPref("devtools.target-switching.server.enabled", true);
 
   const tab = await addTab(TEST_URI);
 

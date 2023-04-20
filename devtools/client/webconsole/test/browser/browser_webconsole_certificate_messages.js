@@ -25,11 +25,6 @@ registerCleanupFunction(function() {
 });
 
 add_task(async function() {
-  
-  
-  
-  await pushPref("devtools.target-switching.server.enabled", true);
-
   const hud = await openNewTabAndConsole(TEST_URI);
 
   info("Test TLS warnings");

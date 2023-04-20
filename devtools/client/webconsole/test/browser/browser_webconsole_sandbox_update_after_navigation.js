@@ -39,10 +39,10 @@ add_task(async function() {
   
   
   
-  const promises = [hud.ui.once("messages-cleared")];
-  if (isFissionEnabled() || isServerTargetSwitchingEnabled()) {
-    promises.push(hud.commands.targetCommand.once("switched-target"));
-  }
+  const promises = [
+    hud.ui.once("messages-cleared"),
+    hud.commands.targetCommand.once("switched-target"),
+  ];
 
   gBrowser.goBack();
 

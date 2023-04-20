@@ -12,10 +12,6 @@ add_task(async function() {
   await testIframeNavigation();
   await testBfCacheNavigation();
   await testDomCompleteWithWindowStop();
-
-  
-  
-  await pushPref("devtools.target-switching.server.enabled", true);
   await testCrossOriginNavigation();
 });
 

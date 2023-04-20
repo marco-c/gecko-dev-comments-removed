@@ -5,18 +5,7 @@
 
 "use strict";
 
-
 add_task(async function() {
-  await testNavigation();
-});
-
-
-add_task(async function() {
-  enableTargetSwitching();
-  await testNavigation();
-});
-
-async function testNavigation() {
   
   await SpecialPowers.pushPrefEnv({
     set: [["network.cookie.sameSite.laxByDefault", false]],
@@ -148,4 +137,4 @@ async function testNavigation() {
   );
 
   SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
-}
+});

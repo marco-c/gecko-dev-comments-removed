@@ -8,10 +8,7 @@
 
 add_task(async function() {
   
-  if (
-    (!isFissionEnabled() || !isServerTargetSwitchingEnabled()) &&
-    !isEveryFrameTargetEnabled()
-  ) {
+  if (!isFissionEnabled() && !isEveryFrameTargetEnabled()) {
     return;
   }
 

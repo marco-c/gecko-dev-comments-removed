@@ -8,18 +8,7 @@
 
 requestLongerTimeout(3);
 
-
 add_task(async function() {
-  await testNavigation(true);
-});
-
-
-add_task(async function() {
-  enableTargetSwitching();
-  await testNavigation();
-});
-
-async function testNavigation(shallCleanup = false) {
   const URL1 = URL_ROOT_COM_SSL + "storage-indexeddb-simple.html";
   const URL2 = URL_ROOT_NET_SSL + "storage-indexeddb-simple-alt.html";
 
@@ -75,12 +64,7 @@ async function testNavigation(shallCleanup = false) {
     "Indexed DB",
     "indexedDB item is properly displayed"
   );
-
-  
-  if (shallCleanup) {
-    await clearStorage();
-  }
-}
+});
 
 async function clearStorage() {
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
