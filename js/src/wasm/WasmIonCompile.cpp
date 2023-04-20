@@ -3984,6 +3984,26 @@ class FunctionCompiler {
     return arrayObject;
   }
 
+  [[nodiscard]] MDefinition* createUninitializedArrayObject(
+      uint32_t lineOrBytecode, uint32_t typeIndex, MDefinition* numElements) {
+    
+    MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
+    if (!typeDefData) {
+      return nullptr;
+    }
+
+    
+    
+    
+    MDefinition* arrayObject;
+    if (!emitInstanceCall2(lineOrBytecode, SASigArrayNewUninit, numElements,
+                           typeDefData, &arrayObject)) {
+      return nullptr;
+    }
+
+    return arrayObject;
+  }
+
   
   
   
@@ -4030,8 +4050,8 @@ class FunctionCompiler {
     const ArrayType& arrayType = (*moduleEnv_.types)[typeIndex].arrayType();
 
     
-    MDefinition* arrayObject = createDefaultInitializedArrayObject(
-        lineOrBytecode, typeIndex, numElements);
+    MDefinition* arrayObject =
+        createUninitializedArrayObject(lineOrBytecode, typeIndex, numElements);
     if (!arrayObject) {
       return nullptr;
     }
@@ -6571,7 +6591,7 @@ static bool EmitStructNew(FunctionCompiler& f) {
 
   
   MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, typeDefData,
+  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNewUninit, typeDefData,
                            &structObject)) {
     return false;
   }

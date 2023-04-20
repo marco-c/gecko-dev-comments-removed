@@ -1182,6 +1182,20 @@ static int32_t MemDiscardNotShared(Instance* instance, I byteOffset, I byteLen,
   return WasmStructObject::createStruct(cx, typeDef, args);
 }
 
+ void* Instance::structNewUninit(Instance* instance,
+                                             TypeDefInstanceData* typeDefData) {
+  MOZ_ASSERT(SASigStructNew.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+
+  const TypeDef* typeDef = typeDefData->typeDef;
+  WasmGcObject::AllocArgs args(cx, typeDefData);
+  
+  if (typeDefData->clasp == &WasmStructObject::classInline_) {
+    args.initialHeap = typeDefData->allocSite.initialHeap();
+  }
+  return WasmStructObject::createStruct<false>(cx, typeDef, args);
+}
+
  void* Instance::arrayNew(Instance* instance, uint32_t numElements,
                                       TypeDefInstanceData* typeDefData) {
   MOZ_ASSERT(SASigArrayNew.failureMode == FailureMode::FailOnNullPtr);
@@ -1192,6 +1206,19 @@ static int32_t MemDiscardNotShared(Instance* instance, I byteOffset, I byteLen,
   
   
   return WasmArrayObject::createArray(cx, typeDef, numElements, args);
+}
+
+ void* Instance::arrayNewUninit(Instance* instance,
+                                            uint32_t numElements,
+                                            TypeDefInstanceData* typeDefData) {
+  MOZ_ASSERT(SASigArrayNew.failureMode == FailureMode::FailOnNullPtr);
+  JSContext* cx = instance->cx();
+
+  const TypeDef* typeDef = typeDefData->typeDef;
+  WasmGcObject::AllocArgs args(cx, typeDefData);
+  
+  
+  return WasmArrayObject::createArray<false>(cx, typeDef, numElements, args);
 }
 
 

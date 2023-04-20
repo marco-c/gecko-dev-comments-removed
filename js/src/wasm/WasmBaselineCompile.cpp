@@ -6681,7 +6681,7 @@ bool BaseCompiler::emitStructNew() {
   
   
   pushPtr(loadTypeDefInstanceData(typeIndex));
-  if (!emitInstanceCall(SASigStructNew)) {
+  if (!emitInstanceCall(SASigStructNewUninit)) {
     return false;
   }
 
@@ -6907,7 +6907,7 @@ bool BaseCompiler::emitArrayNew() {
   
   
   pushPtr(loadTypeDefInstanceData(typeIndex));
-  if (!emitInstanceCall(SASigArrayNew)) {
+  if (!emitInstanceCall(SASigArrayNewUninit)) {
     return false;
   }
 
