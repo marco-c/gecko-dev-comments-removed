@@ -28,7 +28,15 @@ struct SinglePosFormat1
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
                   coverage.sanitize (c, this) &&
+                  
+
+
+
+
+
+                  c->check_ops ((this + coverage).get_population () >> 1) &&
                   valueFormat.sanitize_value (c, this, values));
+
   }
 
   bool intersects (const hb_set_t *glyphs) const
