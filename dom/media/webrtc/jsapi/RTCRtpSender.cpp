@@ -511,7 +511,9 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   
   Maybe<RTCRtpSendParameters> oldParams;
   if (mAllowOldSetParameters) {
-    if (mPendingParameters.isSome()) {
+    if (mLastReturnedParameters.isSome()) {
+      oldParams = mLastReturnedParameters;
+    } else if (mPendingParameters.isSome()) {
       oldParams = mPendingParameters;
     } else {
       oldParams = Some(mParameters);
