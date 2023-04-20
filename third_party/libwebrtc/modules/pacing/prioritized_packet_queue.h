@@ -21,29 +21,63 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "modules/pacing/pacing_controller.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 
 namespace webrtc {
 
-class PrioritizedPacketQueue : public PacingController::PacketQueue {
+class PrioritizedPacketQueue {
  public:
   explicit PrioritizedPacketQueue(Timestamp creation_time);
   PrioritizedPacketQueue(const PrioritizedPacketQueue&) = delete;
   PrioritizedPacketQueue& operator=(const PrioritizedPacketQueue&) = delete;
 
-  void Push(Timestamp enqueue_time,
-            std::unique_ptr<RtpPacketToSend> packet) override;
-  std::unique_ptr<RtpPacketToSend> Pop() override;
-  int SizeInPackets() const override;
-  DataSize SizeInPayloadBytes() const override;
+  
+  
+  void Push(Timestamp enqueue_time, std::unique_ptr<RtpPacketToSend> packet);
+
+  
+  
+  
+  
+  
+  std::unique_ptr<RtpPacketToSend> Pop();
+
+  
+  int SizeInPackets() const;
+
+  
+  
+  DataSize SizeInPayloadBytes() const;
+
+  
+  bool Empty() const;
+
+  
+  
   const std::array<int, kNumMediaTypes>& SizeInPacketsPerRtpPacketMediaType()
-      const override;
-  Timestamp LeadingAudioPacketEnqueueTime() const override;
-  Timestamp OldestEnqueueTime() const override;
-  TimeDelta AverageQueueTime() const override;
-  void UpdateAverageQueueTime(Timestamp now) override;
-  void SetPauseState(bool paused, Timestamp now) override;
+      const;
+
+  
+  
+  Timestamp LeadingAudioPacketEnqueueTime() const;
+
+  
+  
+  Timestamp OldestEnqueueTime() const;
+
+  
+  
+  
+  
+  TimeDelta AverageQueueTime() const;
+
+  
+  
+  
+  void UpdateAverageQueueTime(Timestamp now);
+
+  
+  void SetPauseState(bool paused, Timestamp now);
 
  private:
   static constexpr int kNumPriorityLevels = 4;

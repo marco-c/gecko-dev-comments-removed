@@ -26,6 +26,7 @@
 #include "api/transport/network_types.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
+#include "modules/pacing/prioritized_packet_queue.h"
 #include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/include/rtp_packet_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -51,52 +52,6 @@ class PacingController {
     virtual std::vector<std::unique_ptr<RtpPacketToSend>> FetchFec() = 0;
     virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
         DataSize size) = 0;
-  };
-
-  
-  
-  
-  
-  class PacketQueue {
-   public:
-    virtual ~PacketQueue() = default;
-
-    virtual void Push(Timestamp enqueue_time,
-                      std::unique_ptr<RtpPacketToSend> packet) = 0;
-    virtual std::unique_ptr<RtpPacketToSend> Pop() = 0;
-
-    virtual int SizeInPackets() const = 0;
-    bool Empty() const { return SizeInPackets() == 0; }
-    virtual DataSize SizeInPayloadBytes() const = 0;
-
-    
-    
-    virtual const std::array<int, kNumMediaTypes>&
-    SizeInPacketsPerRtpPacketMediaType() const = 0;
-
-    
-    
-    
-    
-    virtual Timestamp LeadingAudioPacketEnqueueTime() const = 0;
-
-    
-    
-    virtual Timestamp OldestEnqueueTime() const = 0;
-
-    
-    
-    
-    
-    virtual TimeDelta AverageQueueTime() const = 0;
-
-    
-    
-    
-    virtual void UpdateAverageQueueTime(Timestamp now) = 0;
-
-    
-    virtual void SetPauseState(bool paused, Timestamp now) = 0;
   };
 
   
@@ -260,7 +215,7 @@ class PacingController {
   absl::optional<Timestamp> first_sent_packet_time_;
   bool seen_first_packet_;
 
-  std::unique_ptr<PacketQueue> packet_queue_;
+  PrioritizedPacketQueue packet_queue_;
 
   bool congested_;
 
