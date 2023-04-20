@@ -363,6 +363,10 @@ void WebTransport::RejectWaitingConnection(nsresult aRv,
                                            WebTransportChild* aChild) {
   LOG(("Rejected connection %p %x", this, (uint32_t)aRv));
   
+
+  
+  
+  
   
 
   
@@ -371,16 +375,18 @@ void WebTransport::RejectWaitingConnection(nsresult aRv,
   
   if (mState == WebTransportState::CLOSED ||
       mState == WebTransportState::FAILED) {
+    aChild->Shutdown(true);
+    
+    
     return;
   }
 
   
   
   RefPtr<WebTransportError> error = new WebTransportError(
-      "WebTransport session rejected"_ns, WebTransportErrorSource::Session);
+      "WebTransport connection rejected"_ns, WebTransportErrorSource::Session);
   
-  ErrorResult errorresult;
-  Cleanup(error, nullptr, errorresult);
+  Cleanup(error, nullptr, IgnoreErrors());
 
   
   aChild->Shutdown(true);
