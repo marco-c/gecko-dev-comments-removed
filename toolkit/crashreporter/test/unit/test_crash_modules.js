@@ -19,9 +19,7 @@ add_task(async function run_test() {
       runMinidumpAnalyzer(mdump);
 
       
-      let data = await OS.File.read(extraFile.path);
-      let decoder = new TextDecoder();
-      extra = JSON.parse(decoder.decode(data));
+      extra = await IOUtils.readJSON(extraFile.path);
 
       
       const unloadedModules = extra.StackTraces.unloaded_modules;

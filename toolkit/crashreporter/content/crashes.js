@@ -7,7 +7,6 @@ let reportURL;
 const { CrashReports } = ChromeUtils.import(
   "resource://gre/modules/CrashReports.jsm"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -190,8 +189,8 @@ async function clearUnsubmittedReports() {
     return;
   }
 
-  await cleanupFolder(CrashReports.pendingDir.path);
-  await clearOldReports();
+  await enqueueCleanup(() => cleanupFolder(CrashReports.pendingDir.path));
+  await enqueueCleanup(clearOldReports);
   document.getElementById("reportListUnsubmitted").classList.add("hidden");
 }
 
@@ -224,11 +223,13 @@ async function clearSubmittedReports() {
     return;
   }
 
-  await cleanupFolder(
-    CrashReports.submittedDir.path,
-    async entry => entry.name.startsWith("bp-") && entry.name.endsWith(".txt")
+  await enqueueCleanup(async () =>
+    cleanupFolder(
+      CrashReports.submittedDir.path,
+      async entry => entry.name.startsWith("bp-") && entry.name.endsWith(".txt")
+    )
   );
-  await clearOldReports();
+  await enqueueCleanup(clearOldReports);
   document.getElementById("reportListSubmitted").classList.add("hidden");
   document.getElementById("noSubmittedReports").classList.remove("hidden");
 }
@@ -246,12 +247,8 @@ async function clearOldReports() {
       return false;
     }
 
-    let date = entry.winLastWriteDate;
-    if (!date) {
-      const stat = await OS.File.stat(entry.path);
-      date = stat.lastModificationDate;
-    }
-    return date < oneYearAgo;
+    const stat = await IOUtils.stat(entry.path);
+    return stat.lastModified < oneYearAgo;
   });
 }
 
@@ -264,19 +261,25 @@ async function clearOldReports() {
 
 
 async function cleanupFolder(path, filter) {
-  const iterator = new OS.File.DirectoryIterator(path);
+  function entry(path) {
+    return {
+      path,
+      name: PathUtils.filename(path),
+    };
+  }
+  let children;
   try {
-    await iterator.forEach(async entry => {
-      if (!filter || (await filter(entry))) {
-        await OS.File.remove(entry.path);
-      }
-    });
+    children = await IOUtils.getChildren(path);
   } catch (e) {
-    if (!(e instanceof OS.File.Error) || !e.becauseNoSuchFile) {
+    if (DOMException.isInstance(e) || e.name !== "NotFoundError") {
       throw e;
     }
-  } finally {
-    iterator.close();
+  }
+
+  for (const childPath of children) {
+    if (!filter || (await filter(entry(childPath)))) {
+      await IOUtils.remove(childPath);
+    }
   }
 }
 
@@ -289,4 +292,27 @@ function dispatchEvent(name) {
   const event = document.createEvent("Events");
   event.initEvent(name, true, false);
   document.dispatchEvent(event);
+}
+
+let cleanupQueue = Promise.resolve();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function enqueueCleanup(fn) {
+  cleanupQueue = cleanupQueue.then(fn);
+  return cleanupQueue;
 }
