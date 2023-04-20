@@ -112,6 +112,7 @@ class nsCORSListenerProxy final : public nsIStreamListener,
   
   
   bool mHasBeenCrossSite;
+  bool mIsRedirect = false;
   
   
   
