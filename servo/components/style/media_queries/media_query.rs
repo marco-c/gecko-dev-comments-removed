@@ -49,7 +49,7 @@ impl MediaType {
         
         
         match_ignore_ascii_case! { name,
-            "not" | "or" | "and" | "only" => Err(()),
+            "not" | "or" | "and" | "only" | "layer" => Err(()),
             _ => Ok(MediaType(CustomIdent(Atom::from(string_as_ascii_lowercase(name))))),
         }
     }
