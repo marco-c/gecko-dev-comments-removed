@@ -30,10 +30,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
-
-
-
-Cu.importGlobalProperties(["TextEncoder"]);
+Cu.importGlobalProperties(["IOUtils", "PathUtils"]);
 
 const Cm = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 
@@ -144,13 +141,16 @@ TalosPowersService.prototype = {
 
 
 
-  profilerFinish(profileFile) {
+
+
+  profilerFinish(profileDir, profileFile) {
+    const profilePath = PathUtils.join(profileDir, profileFile);
     return new Promise((resolve, reject) => {
       Services.profiler.Pause();
       Services.profiler.getProfileDataAsync().then(
         profile =>
-          IOUtils.writeJSON(profileFile, profile, {
-            tmpPath: `${profileFile}.tmp`,
+          IOUtils.writeJSON(profilePath, profile, {
+            tmpPath: `${profilePath}.tmp`,
           }).then(() => {
             Services.profiler.StopProfiler();
             resolve();
@@ -244,7 +244,7 @@ TalosPowersService.prototype = {
 
       case "Profiler:Finish": {
         
-        this.profilerFinish(data.profileFile).then(() => {
+        this.profilerFinish(data.profileDir, data.profileFile).then(() => {
           mm.sendAsyncMessage(ACK_NAME, { name });
         });
         break;
