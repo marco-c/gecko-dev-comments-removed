@@ -607,7 +607,8 @@ static void FileTimeToPRTime(const FILETIME* aFiletime, PRTime* aPrtm) {
 
 
 
-static nsresult GetFileInfo(const nsString& aName, PRFileInfo64* aInfo) {
+static nsresult GetFileInfo(const nsString& aName,
+                            nsLocalFile::FileInfo* aInfo) {
   if (aName.IsEmpty()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -638,14 +639,15 @@ static nsresult GetFileInfo(const nsString& aName, PRFileInfo64* aInfo) {
   aInfo->size = fileData.nFileSizeHigh;
   aInfo->size = (aInfo->size << 32) + fileData.nFileSizeLow;
 
-  FileTimeToPRTime(&fileData.ftLastWriteTime, &aInfo->modifyTime);
-
   if (0 == fileData.ftCreationTime.dwLowDateTime &&
       0 == fileData.ftCreationTime.dwHighDateTime) {
     aInfo->creationTime = aInfo->modifyTime;
   } else {
     FileTimeToPRTime(&fileData.ftCreationTime, &aInfo->creationTime);
   }
+
+  FileTimeToPRTime(&fileData.ftLastAccessTime, &aInfo->accessTime);
+  FileTimeToPRTime(&fileData.ftLastWriteTime, &aInfo->modifyTime);
 
   return NS_OK;
 }
@@ -948,12 +950,12 @@ nsresult nsLocalFile::ResolveAndStat() {
 
   
   
-  nsresult rv = GetFileInfo(nsprPath, &mFileInfo64);
+  nsresult rv = GetFileInfo(nsprPath, &mFileInfo);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  if (mFileInfo64.type != PR_FILE_OTHER) {
+  if (mFileInfo.type != PR_FILE_OTHER) {
     mResolveDirty = false;
     mDirty = false;
     return NS_OK;
@@ -970,7 +972,7 @@ nsresult nsLocalFile::ResolveAndStat() {
 
   mResolveDirty = false;
   
-  rv = GetFileInfo(mResolvedPath, &mFileInfo64);
+  rv = GetFileInfo(mResolvedPath, &mFileInfo);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -2356,64 +2358,86 @@ nsLocalFile::Remove(bool aRecursive) {
   return rv;
 }
 
-NS_IMETHODIMP
-nsLocalFile::GetLastModifiedTime(PRTime* aLastModifiedTime) {
+nsresult nsLocalFile::GetDateImpl(PRTime* aTime,
+                                  nsLocalFile::TimeField aTimeField,
+                                  bool aFollowLinks) {
   
   CHECK_mWorkingPath();
 
-  if (NS_WARN_IF(!aLastModifiedTime)) {
+  if (NS_WARN_IF(!aTime)) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  
-  
-  
+  FileInfo symlinkInfo{};
+  FileInfo* pInfo;
 
-  nsresult rv = ResolveAndStat();
-  if (NS_FAILED(rv)) {
-    return rv;
+  if (aFollowLinks) {
+    if (nsresult rv = GetFileInfo(mWorkingPath, &symlinkInfo); NS_FAILED(rv)) {
+      return rv;
+    }
+
+    pInfo = &symlinkInfo;
+  } else {
+    if (nsresult rv = ResolveAndStat(); NS_FAILED(rv)) {
+      return rv;
+    }
+
+    pInfo = &mFileInfo;
   }
 
-  
-  *aLastModifiedTime = mFileInfo64.modifyTime / PR_USEC_PER_MSEC;
+  switch (aTimeField) {
+    case TimeField::AccessedTime:
+      *aTime = pInfo->accessTime / PR_USEC_PER_MSEC;
+      break;
+
+    case TimeField::ModifiedTime:
+      *aTime = pInfo->modifyTime / PR_USEC_PER_MSEC;
+      break;
+
+    default:
+      MOZ_CRASH("Unknown time field");
+  }
+
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsLocalFile::GetLastAccessedTime(PRTime* aLastAccessedTime) {
+  return GetDateImpl(aLastAccessedTime, TimeField::AccessedTime,
+                      true);
+}
+
+NS_IMETHODIMP
+nsLocalFile::GetLastAccessedTimeOfLink(PRTime* aLastAccessedTime) {
+  return GetDateImpl(aLastAccessedTime, TimeField::AccessedTime,
+                      false);
+}
+
+NS_IMETHODIMP
+nsLocalFile::SetLastAccessedTime(PRTime aLastAccessedTime) {
+  return SetDateImpl(aLastAccessedTime, TimeField::AccessedTime);
+}
+
+NS_IMETHODIMP
+nsLocalFile::SetLastAccessedTimeOfLink(PRTime aLastAccessedTime) {
+  return SetLastAccessedTime(aLastAccessedTime);
+}
+
+NS_IMETHODIMP
+nsLocalFile::GetLastModifiedTime(PRTime* aLastModifiedTime) {
+  return GetDateImpl(aLastModifiedTime, TimeField::ModifiedTime,
+                      true);
 }
 
 NS_IMETHODIMP
 nsLocalFile::GetLastModifiedTimeOfLink(PRTime* aLastModifiedTime) {
-  
-  CHECK_mWorkingPath();
-
-  if (NS_WARN_IF(!aLastModifiedTime)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  
-  
-
-  PRFileInfo64 info;
-  nsresult rv = GetFileInfo(mWorkingPath, &info);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  *aLastModifiedTime = info.modifyTime / PR_USEC_PER_MSEC;
-  return NS_OK;
+  return GetDateImpl(aLastModifiedTime, TimeField::ModifiedTime,
+                      false);
 }
 
 NS_IMETHODIMP
 nsLocalFile::SetLastModifiedTime(PRTime aLastModifiedTime) {
-  
-  CHECK_mWorkingPath();
-
-  nsresult rv = SetModDate(aLastModifiedTime, mWorkingPath.get());
-  if (NS_SUCCEEDED(rv)) {
-    MakeDirty();
-  }
-
-  return rv;
+  return SetDateImpl(aLastModifiedTime, TimeField::ModifiedTime);
 }
 
 NS_IMETHODIMP
@@ -2432,7 +2456,7 @@ nsLocalFile::GetCreationTime(PRTime* aCreationTime) {
   nsresult rv = ResolveAndStat();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  *aCreationTime = mFileInfo64.creationTime / PR_USEC_PER_MSEC;
+  *aCreationTime = mFileInfo.creationTime / PR_USEC_PER_MSEC;
 
   return NS_OK;
 }
@@ -2445,7 +2469,7 @@ nsLocalFile::GetCreationTimeOfLink(PRTime* aCreationTime) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  PRFileInfo64 info;
+  FileInfo info;
   nsresult rv = GetFileInfo(mWorkingPath, &info);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -2454,17 +2478,21 @@ nsLocalFile::GetCreationTimeOfLink(PRTime* aCreationTime) {
   return NS_OK;
 }
 
-nsresult nsLocalFile::SetModDate(PRTime aLastModifiedTime,
-                                 const wchar_t* aFilePath) {
+nsresult nsLocalFile::SetDateImpl(PRTime aTime,
+                                  nsLocalFile::TimeField aTimeField) {
+  
+  CHECK_mWorkingPath();
+
   
   
-  HANDLE file = ::CreateFileW(aFilePath,      
-                              GENERIC_WRITE,  
-                              0,              
-                              nullptr,        
-                              OPEN_EXISTING,  
-                              FILE_FLAG_BACKUP_SEMANTICS,  
-                              nullptr);
+  HANDLE file =
+      ::CreateFileW(mWorkingPath.get(),  
+                    GENERIC_WRITE,       
+                    0,                   
+                    nullptr,             
+                    OPEN_EXISTING,       
+                    FILE_FLAG_BACKUP_SEMANTICS,  
+                    nullptr);
 
   if (file == INVALID_HANDLE_VALUE) {
     return ConvertWinError(GetLastError());
@@ -2474,8 +2502,12 @@ nsresult nsLocalFile::SetModDate(PRTime aLastModifiedTime,
   SYSTEMTIME st;
   PRExplodedTime pret;
 
+  if (aTime == 0) {
+    aTime = PR_Now();
+  }
+
   
-  PR_ExplodeTime(aLastModifiedTime * PR_USEC_PER_MSEC, PR_GMTParameters, &pret);
+  PR_ExplodeTime(aTime * PR_USEC_PER_MSEC, PR_GMTParameters, &pret);
   st.wYear = pret.tm_year;
   st.wMonth =
       pret.tm_month + 1;  
@@ -2486,14 +2518,25 @@ nsresult nsLocalFile::SetModDate(PRTime aLastModifiedTime,
   st.wSecond = pret.tm_sec;
   st.wMilliseconds = pret.tm_usec / 1000;
 
+  const FILETIME* accessTime = nullptr;
+  const FILETIME* modifiedTime = nullptr;
+
+  if (aTimeField == TimeField::AccessedTime) {
+    accessTime = &ft;
+  } else {
+    modifiedTime = &ft;
+  }
+
   nsresult rv = NS_OK;
+
   
   if (!(SystemTimeToFileTime(&st, &ft) != 0 &&
-        SetFileTime(file, nullptr, nullptr, &ft) != 0)) {
+        SetFileTime(file, nullptr, accessTime, modifiedTime) != 0)) {
     rv = ConvertWinError(GetLastError());
   }
 
   CloseHandle(file);
+
   return rv;
 }
 
@@ -2624,7 +2667,7 @@ nsLocalFile::GetFileSize(int64_t* aFileSize) {
     return rv;
   }
 
-  *aFileSize = mFileInfo64.size;
+  *aFileSize = mFileInfo.size;
   return NS_OK;
 }
 
@@ -2640,7 +2683,7 @@ nsLocalFile::GetFileSizeOfLink(int64_t* aFileSize) {
   
   
 
-  PRFileInfo64 info;
+  FileInfo info{};
   if (NS_FAILED(GetFileInfo(mWorkingPath, &info))) {
     return NS_ERROR_FILE_INVALID_PATH;
   }
@@ -2713,7 +2756,7 @@ nsLocalFile::GetDiskSpaceAvailable(int64_t* aDiskSpaceAvailable) {
     return rv;
   }
 
-  if (mFileInfo64.type == PR_FILE_FILE) {
+  if (mFileInfo.type == PR_FILE_FILE) {
     
     nsCOMPtr<nsIFile> parent;
     if (NS_SUCCEEDED(GetParent(getter_AddRefs(parent))) && parent) {
@@ -2739,7 +2782,7 @@ nsLocalFile::GetDiskCapacity(int64_t* aDiskCapacity) {
     return rv;
   }
 
-  if (mFileInfo64.type == PR_FILE_FILE) {
+  if (mFileInfo.type == PR_FILE_FILE) {
     
     nsCOMPtr<nsIFile> parent;
     if (NS_SUCCEEDED(GetParent(getter_AddRefs(parent))) && parent) {
