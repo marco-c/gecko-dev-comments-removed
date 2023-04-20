@@ -10,9 +10,7 @@ use crate::values::computed::{
     Angle, Context, Integer, Length, NonNegativeLength, NonNegativeNumber, Number, Percentage,
     ToComputedValue,
 };
-use crate::values::generics::font::{
-    FeatureTagValue, FontSettings, TaggedFontValue, VariationValue,
-};
+use crate::values::generics::font::{FeatureTagValue, FontSettings, VariationValue};
 use crate::values::generics::{font as generics, NonNegative};
 use crate::values::specified::font::{
     self as specified, KeywordInfo, MAX_FONT_WEIGHT, MIN_FONT_WEIGHT,
@@ -28,12 +26,8 @@ use style_traits::{CssWriter, ParseError, ToCss};
 pub use crate::values::computed::Length as MozScriptMinSize;
 pub use crate::values::specified::font::FontPalette;
 pub use crate::values::specified::font::{FontSynthesis, MozScriptSizeMultiplier};
-pub use crate::values::specified::font::{
-    FontVariantAlternates, FontVariantEastAsian, FontVariantLigatures, FontVariantNumeric, XLang,
-    XTextZoom,
-};
+pub use crate::values::specified::font::{FontVariantAlternates, FontVariantEastAsian, FontVariantLigatures, FontVariantNumeric, XLang, XTextZoom};
 pub use crate::values::specified::Integer as SpecifiedInteger;
-pub use crate::values::specified::Number as SpecifiedNumber;
 
 
 
@@ -726,56 +720,6 @@ pub type FontVariationSettings = FontSettings<VariationValue<Number>>;
 
 
 
-fn dedup_font_settings<T>(settings_list: &mut Vec<T>)
-where
-    T: TaggedFontValue,
-{
-    if settings_list.len() > 1 {
-        settings_list.sort_by_key(|k| k.tag().0);
-        
-        
-        let mut prev_tag = settings_list.last().unwrap().tag();
-        for i in (0..settings_list.len() - 1).rev() {
-            let cur_tag = settings_list[i].tag();
-            if cur_tag == prev_tag {
-                settings_list.remove(i);
-            }
-            prev_tag = cur_tag;
-        }
-    }
-}
-
-impl<T> ToComputedValue for FontSettings<T>
-where
-    T: ToComputedValue,
-    <T as ToComputedValue>::ComputedValue: TaggedFontValue,
-{
-    type ComputedValue = FontSettings<T::ComputedValue>;
-
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        let mut v = self
-            .0
-            .iter()
-            .map(|item| item.to_computed_value(context))
-            .collect::<Vec<_>>();
-        dedup_font_settings(&mut v);
-        FontSettings(v.into_boxed_slice())
-    }
-
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        Self(
-            computed
-                .0
-                .iter()
-                .map(T::from_computed_value)
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
-        )
-    }
-}
-
-
-
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToResolvedValue)]
@@ -1019,7 +963,7 @@ impl ToAnimatedValue for FontStyle {
             
             
             
-            return generics::FontStyle::Oblique(Angle::from_degrees(0.0));
+            return generics::FontStyle::Oblique(Angle::from_degrees(0.0))
         }
         if self == Self::ITALIC {
             return generics::FontStyle::Italic;
@@ -1032,14 +976,13 @@ impl ToAnimatedValue for FontStyle {
         match animated {
             generics::FontStyle::Normal => Self::NORMAL,
             generics::FontStyle::Italic => Self::ITALIC,
-            generics::FontStyle::Oblique(ref angle) => {
+            generics::FontStyle::Oblique(ref angle) =>
                 if angle.degrees() == 0.0 {
                     
                     Self::NORMAL
                 } else {
                     Self::oblique(angle.degrees())
-                }
-            },
+                },
         }
     }
 }

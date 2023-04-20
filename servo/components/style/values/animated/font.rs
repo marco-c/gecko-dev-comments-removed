@@ -6,42 +6,27 @@
 
 use super::{Animate, Procedure, ToAnimatedZero};
 use crate::values::computed::font::FontVariationSettings;
+use crate::values::computed::Number;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
-use crate::values::generics::font::FontSettings as GenericFontSettings;
-
-
-
-
+use crate::values::generics::font::{FontSettings as GenericFontSettings, FontTag, VariationValue};
 
 
 impl Animate for FontVariationSettings {
     #[inline]
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
-        if self.0.len() == other.0.len() {
-            self.0
-                .iter()
-                .zip(other.0.iter())
-                .map(|(st, ot)| st.animate(&ot, procedure))
-                .collect::<Result<Vec<_>, ()>>()
-                .map(|v| GenericFontSettings(v.into_boxed_slice()))
-        } else {
-            Err(())
-        }
+        FontSettingTagIter::new(self, other)?
+            .map(|r| r.and_then(|(st, ot)| st.animate(&ot, procedure)))
+            .collect::<Result<Vec<ComputedVariationValue>, ()>>()
+            .map(|v| GenericFontSettings(v.into_boxed_slice()))
     }
 }
 
 impl ComputeSquaredDistance for FontVariationSettings {
     #[inline]
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
-        if self.0.len() == other.0.len() {
-            self.0
-                .iter()
-                .zip(other.0.iter())
-                .map(|(st, ot)| st.compute_squared_distance(&ot))
-                .sum()
-        } else {
-            Err(())
-        }
+        FontSettingTagIter::new(self, other)?
+            .map(|r| r.and_then(|(st, ot)| st.compute_squared_distance(&ot)))
+            .sum()
     }
 }
 
@@ -49,5 +34,118 @@ impl ToAnimatedZero for FontVariationSettings {
     #[inline]
     fn to_animated_zero(&self) -> Result<Self, ()> {
         Err(())
+    }
+}
+
+type ComputedVariationValue = VariationValue<Number>;
+
+
+struct FontSettingTagIterState<'a> {
+    tags: Vec<&'a ComputedVariationValue>,
+    index: usize,
+    prev_tag: FontTag,
+}
+
+impl<'a> FontSettingTagIterState<'a> {
+    fn new(tags: Vec<&'a ComputedVariationValue>) -> FontSettingTagIterState<'a> {
+        FontSettingTagIterState {
+            index: tags.len(),
+            tags,
+            prev_tag: FontTag(0),
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct FontSettingTagIter<'a> {
+    a_state: FontSettingTagIterState<'a>,
+    b_state: FontSettingTagIterState<'a>,
+}
+
+impl<'a> FontSettingTagIter<'a> {
+    fn new(
+        a_settings: &'a FontVariationSettings,
+        b_settings: &'a FontVariationSettings,
+    ) -> Result<FontSettingTagIter<'a>, ()> {
+        if a_settings.0.is_empty() || b_settings.0.is_empty() {
+            return Err(());
+        }
+
+        fn as_new_sorted_tags(tags: &[ComputedVariationValue]) -> Vec<&ComputedVariationValue> {
+            use std::iter::FromIterator;
+            let mut sorted_tags = Vec::from_iter(tags.iter());
+            sorted_tags.sort_by_key(|k| k.tag.0);
+            sorted_tags
+        }
+
+        Ok(FontSettingTagIter {
+            a_state: FontSettingTagIterState::new(as_new_sorted_tags(&a_settings.0)),
+            b_state: FontSettingTagIterState::new(as_new_sorted_tags(&b_settings.0)),
+        })
+    }
+
+    fn next_tag(state: &mut FontSettingTagIterState<'a>) -> Option<&'a ComputedVariationValue> {
+        if state.index == 0 {
+            return None;
+        }
+
+        state.index -= 1;
+        let tag = state.tags[state.index];
+        if tag.tag == state.prev_tag {
+            FontSettingTagIter::next_tag(state)
+        } else {
+            state.prev_tag = tag.tag;
+            Some(tag)
+        }
+    }
+}
+
+impl<'a> Iterator for FontSettingTagIter<'a> {
+    type Item = Result<(&'a ComputedVariationValue, &'a ComputedVariationValue), ()>;
+
+    fn next(
+        &mut self,
+    ) -> Option<Result<(&'a ComputedVariationValue, &'a ComputedVariationValue), ()>> {
+        match (
+            FontSettingTagIter::next_tag(&mut self.a_state),
+            FontSettingTagIter::next_tag(&mut self.b_state),
+        ) {
+            (Some(at), Some(bt)) if at.tag == bt.tag => Some(Ok((at, bt))),
+            (None, None) => None,
+            _ => Some(Err(())), 
+        }
     }
 }

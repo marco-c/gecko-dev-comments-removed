@@ -14,13 +14,6 @@ use style_traits::{CssWriter, ParseError};
 use style_traits::{StyleParseErrorKind, ToCss};
 
 
-
-pub trait TaggedFontValue {
-    
-    fn tag(&self) -> FontTag;
-}
-
-
 #[derive(
     Clone,
     Debug,
@@ -37,12 +30,6 @@ pub struct FeatureTagValue<Integer> {
     pub tag: FontTag,
     
     pub value: Integer,
-}
-
-impl<T> TaggedFontValue for FeatureTagValue<T> {
-    fn tag(&self) -> FontTag {
-        self.tag
-    }
 }
 
 impl<Integer> ToCss for FeatureTagValue<Integer>
@@ -89,15 +76,18 @@ pub struct VariationValue<Number> {
     pub value: Number,
 }
 
-impl<T> TaggedFontValue for VariationValue<T> {
-    fn tag(&self) -> FontTag {
-        self.tag
-    }
-}
-
 
 #[derive(
-    Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToResolvedValue, ToShmem,
+    Clone,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 #[css(comma)]
 pub struct FontSettings<T>(#[css(if_empty = "normal", iterable)] pub Box<[T]>);
