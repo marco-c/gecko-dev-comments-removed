@@ -200,30 +200,6 @@ const webconsoleSpecPrototype = {
 
 
 
-    getPreferences: {
-      request: {
-        preferences: Arg(0, "array:string"),
-      },
-      response: RetVal("json"),
-    },
-    
-
-
-
-
-
-    setPreferences: {
-      request: {
-        preferences: Arg(0, "json"),
-      },
-      response: RetVal("json"),
-    },
-    
-
-
-
-
-
     sendHTTPRequest: {
       request: {
         request: Arg(0, "json"),
