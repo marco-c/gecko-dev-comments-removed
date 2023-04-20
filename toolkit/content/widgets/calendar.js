@@ -22,9 +22,8 @@
 
 
 function Calendar(options, context) {
-  const DAYS_IN_A_WEEK = 7;
-
   this.context = context;
+  this.context.DAYS_IN_A_WEEK = 7;
   this.state = {
     days: [],
     weekHeaders: [],
@@ -33,7 +32,10 @@ function Calendar(options, context) {
     getWeekHeaderString: options.getWeekHeaderString,
   };
   this.elements = {
-    weekHeaders: this._generateNodes(DAYS_IN_A_WEEK, context.weekHeader),
+    weekHeaders: this._generateNodes(
+      this.context.DAYS_IN_A_WEEK,
+      context.weekHeader
+    ),
     daysView: this._generateNodes(options.calViewSize, context.daysView),
   };
 
@@ -107,6 +109,10 @@ Calendar.prototype = {
 
 
   _render({ elements, items, prevState }) {
+    let selectedEl;
+    let todayEl;
+    let firstDayEl;
+
     for (let i = 0, l = items.length; i < l; i++) {
       let el = elements[i];
 
@@ -117,6 +123,56 @@ Calendar.prototype = {
       if (!prevState[i] || prevState[i].className != items[i].className) {
         el.className = items[i].className;
       }
+
+      if (el.tagName === "td") {
+        el.setAttribute("role", "gridcell");
+
+        
+        el.removeAttribute("tabindex");
+        el.removeAttribute("aria-disabled");
+        el.removeAttribute("aria-selected");
+        el.removeAttribute("aria-current");
+
+        
+        if (el.classList.contains("today")) {
+          
+          el.setAttribute("aria-current", "date");
+          todayEl = el;
+        }
+        if (el.classList.contains("selection")) {
+          
+          el.setAttribute("aria-selected", "true");
+          if (!el.classList.contains("outside")) {
+            selectedEl = el;
+          }
+        } else if (el.classList.contains("out-of-range")) {
+          
+          el.setAttribute("aria-disabled", "true");
+          el.removeAttribute("aria-selected");
+        } else {
+          
+          el.setAttribute("aria-selected", "false");
+        }
+        
+        
+        if (el.textContent === "1" && !firstDayEl) {
+          let firstDay = new Date(items[i].dateObj);
+          firstDay.setUTCDate("1");
+          if (this._isSameDay(items[i].dateObj, firstDay)) {
+            firstDayEl = el;
+          }
+        }
+      }
+    }
+
+    
+    
+    if (selectedEl) {
+      selectedEl.setAttribute("tabindex", "0");
+    } else if (todayEl) {
+      todayEl.setAttribute("tabindex", "0");
+    } else if (firstDayEl) {
+      firstDayEl.setAttribute("tabindex", "0");
     }
   },
 
@@ -131,11 +187,30 @@ Calendar.prototype = {
     let frag = document.createDocumentFragment();
     let refs = [];
 
+    
+    let rowEl = document.createElement("tr");
     for (let i = 0; i < size; i++) {
-      let el = document.createElement("div");
+      
+      let el;
+      if (context.classList.contains("week-header")) {
+        el = document.createElement("th");
+        el.setAttribute("scope", "col");
+        
+        el.setAttribute("role", "columnheader");
+      } else {
+        el = document.createElement("td");
+      }
+
       el.dataset.id = i;
       refs.push(el);
-      frag.appendChild(el);
+      rowEl.appendChild(el);
+
+      
+      
+      if ((i + 1) % this.context.DAYS_IN_A_WEEK === 0) {
+        frag.appendChild(rowEl);
+        rowEl = document.createElement("tr");
+      }
     }
     context.appendChild(frag);
 
@@ -149,7 +224,7 @@ Calendar.prototype = {
   handleEvent(event) {
     switch (event.type) {
       case "click": {
-        if (event.target.parentNode == this.context.daysView) {
+        if (event.target.parentNode.parentNode == this.context.daysView) {
           let targetId = event.target.dataset.id;
           let targetObj = this.state.days[targetId];
           if (targetObj.enabled) {
@@ -159,6 +234,20 @@ Calendar.prototype = {
         break;
       }
     }
+  },
+
+  
+
+
+
+
+
+  _isSameDay(dateObj1, dateObj2) {
+    return (
+      dateObj1.getUTCFullYear() == dateObj2.getUTCFullYear() &&
+      dateObj1.getUTCMonth() == dateObj2.getUTCMonth() &&
+      dateObj1.getUTCDate() == dateObj2.getUTCDate()
+    );
   },
 
   
