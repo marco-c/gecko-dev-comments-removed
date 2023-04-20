@@ -11,7 +11,7 @@
 
 namespace sandbox {
 
-#if defined(ENABLE_TESTS) && defined(MOZ_DEBUG)
+#if defined(ENABLE_TESTS)
 
 static const std::ptrdiff_t kMaxBrokeredLen = 50;
 
