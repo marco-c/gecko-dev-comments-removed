@@ -5,9 +5,6 @@
 
 include("/dom/media/webrtc/third_party_build/webrtc.mozbuild")
 
-
-DEFINES["TRACING"] = True
-
 LOCAL_INCLUDES += [
     "!/ipc/ipdl/_ipdlheaders",
     "/dom/media/gmp",  
