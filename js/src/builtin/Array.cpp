@@ -5173,17 +5173,23 @@ bool js::ArraySpeciesLookup::tryOptimizeArray(JSContext* cx,
 
   
   
+
   
   
-  ShapePropertyIter<NoGC> iter(array->shape());
-  MOZ_ASSERT(!iter.done(), "Array must have at least one property");
-  DebugOnly<PropertyKey> key = iter->key();
-  iter++;
-  if (!iter.done()) {
+  
+  MOZ_ASSERT(array->shape()->propMapLength() > 0);
+  PropertyKey lengthKey = NameToId(cx->names().length);
+  if (MOZ_LIKELY(array->getLastProperty().key() == lengthKey)) {
+    MOZ_ASSERT(array->shape()->propMapLength() == 1, "Expected one property");
+    return true;
+  }
+
+  
+  uint32_t index;
+  if (array->shape()->lookup(cx, NameToId(cx->names().constructor), &index)) {
     return false;
   }
 
-  MOZ_ASSERT(key.inspect().isAtom(cx->names().length));
   return true;
 }
 
