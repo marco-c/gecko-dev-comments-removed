@@ -257,6 +257,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ConstantSourceNode", insecureContext: true },
   
+  { name: "ContentVisibilityAutoStateChangeEvent", nightly: true },
+  
   { name: "ConvolverNode", insecureContext: true },
   
   { name: "CountQueuingStrategy", insecureContext: true },
