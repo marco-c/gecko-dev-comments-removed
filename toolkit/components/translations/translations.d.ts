@@ -27,7 +27,7 @@ export interface Attachment {
 
 
 
-export interface ModelRecord {
+export interface TranslationModelRecord {
   
   name: string;
   
@@ -183,35 +183,35 @@ interface RemoteSettingsClient {
 
 
 
-interface LanguageModelFile {
+interface LanguageTranslationModelFile {
   buffer: ArrayBuffer,
-  record: ModelRecord,
+  record: TranslationModelRecord,
 }
 
 
 
 
 
-interface LanguageModelFiles {
+interface LanguageTranslationModelFiles {
   
-  model: LanguageModelFile,
+  model: LanguageTranslationModelFile,
   
   
-  lex: LanguageModelFile,
+  lex: LanguageTranslationModelFile,
   
-  qualityModel?: LanguageModelFile,
+  qualityModel?: LanguageTranslationModelFile,
 
   
-  vocab?: LanguageModelFile,
+  vocab?: LanguageTranslationModelFile,
 
   
-  srcvocab?: LanguageModelFile,
-  trgvocab?: LanguageModelFile,
+  srcvocab?: LanguageTranslationModelFile,
+  trgvocab?: LanguageTranslationModelFile,
 };
 
 
 
 
-type LanguageModelFilesAligned = {
-  [K in keyof LanguageModelFiles]: AlignedMemory
+type LanguageTranslationModelFilesAligned = {
+  [K in keyof LanguageTranslationModelFiles]: AlignedMemory
 };
