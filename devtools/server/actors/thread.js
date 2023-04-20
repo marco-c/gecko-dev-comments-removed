@@ -1446,7 +1446,10 @@ class ThreadActor extends Actor {
     const urlMap = {};
     for (const url of this.dbg.findSourceURLs()) {
       if (url !== "self-hosted") {
-        urlMap[url] = 1 + (urlMap[url] || 0);
+        if (!urlMap[url]) {
+          urlMap[url] = { count: 0, sources: [] };
+        }
+        urlMap[url].count++;
       }
     }
 
@@ -1463,15 +1466,16 @@ class ThreadActor extends Actor {
       
       
       
-      if (!source.introductionScript) {
-        urlMap[source.url]--;
+      if (!source.introductionScript && urlMap[source.url]) {
+        urlMap[source.url].count--;
+        urlMap[source.url].sources.push(source);
       }
     }
 
     
-    for (const [url, count] of Object.entries(urlMap)) {
-      if (count > 0) {
-        this._resurrectSource(url);
+    for (const [url, data] of Object.entries(urlMap)) {
+      if (data.count > 0) {
+        this._resurrectSource(url, data.sources);
       }
     }
   }
@@ -2134,7 +2138,10 @@ class ThreadActor extends Actor {
 
 
 
-  async _resurrectSource(url) {
+
+
+
+  async _resurrectSource(url, existingInlineSources) {
     let {
       content,
       contentType,
@@ -2170,38 +2177,63 @@ class ThreadActor extends Actor {
       
       
       const scripts = document.querySelectorAll("script");
-      for (const script of scripts) {
-        if (script.src) {
-          continue;
-        }
-
+      scripts.forEach(script => {
         const text = script.innerText;
-        for (const offset of scriptStartOffsets) {
-          if (content.substring(offset, offset + text.length) == text) {
-            const allLineBreaks = [
-              ...content.substring(0, offset).matchAll("\n"),
-            ];
-            const startLine = 1 + allLineBreaks.length;
-            const startColumn = offset - allLineBreaks.at(-1).index - 1;
 
-            try {
-              const global = this.dbg.getDebuggees()[0];
-              this._addSource(
-                global.createSource({
-                  text,
-                  url,
-                  startLine,
-                  startColumn,
-                  isScriptElement: true,
-                })
-              );
-            } catch (e) {
-              
-            }
-            break;
-          }
+        
+        if (script.src) {
+          return;
         }
-      }
+
+        
+        if (!text.trim()) {
+          return;
+        }
+
+        const scriptStartOffsetIndex = scriptStartOffsets.find(
+          offset => content.substring(offset, offset + text.length) == text
+        );
+        
+        if (scriptStartOffsetIndex == -1) {
+          return;
+        }
+
+        const scriptStartOffset = scriptStartOffsets[scriptStartOffsetIndex];
+        
+        
+        scriptStartOffsets.splice(scriptStartOffsetIndex, 1);
+
+        const allLineBreaks = [
+          ...content.substring(0, scriptStartOffset).matchAll("\n"),
+        ];
+        const startLine = 1 + allLineBreaks.length;
+        const startColumn = scriptStartOffset - allLineBreaks.at(-1).index - 1;
+
+        
+        if (
+          existingInlineSources.find(
+            source =>
+              source.startLine == startLine && source.startColumn == startColumn
+          )
+        ) {
+          return;
+        }
+
+        try {
+          const global = this.dbg.getDebuggees()[0];
+          this._addSource(
+            global.createSource({
+              text,
+              url,
+              startLine,
+              startColumn,
+              isScriptElement: true,
+            })
+          );
+        } catch (e) {
+          
+        }
+      });
 
       
       
