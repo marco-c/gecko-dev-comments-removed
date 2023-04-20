@@ -534,6 +534,10 @@ class PeerConnectionE2EQualityTestFixture {
 
     
     
+    virtual PeerConfigurer* SetUseNetworkThreadAsWorkerThread() = 0;
+
+    
+    
     
     virtual PeerConfigurer* SetAsyncResolverFactory(
         std::unique_ptr<webrtc::AsyncResolverFactory>

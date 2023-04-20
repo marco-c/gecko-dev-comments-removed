@@ -173,6 +173,8 @@ class TestPeer final : public StatsProvider {
       nullptr;
 
   
+  
+  
   std::unique_ptr<rtc::Thread> worker_thread_;
   std::unique_ptr<PeerConnectionWrapper> wrapper_;
   std::vector<PeerConfigurerImpl::VideoSource> video_sources_;
