@@ -38,14 +38,12 @@ TlsHandshaker::HandshakeDone() {
 
     
     
-    RefPtr<TlsHandshaker> self(this);
-    NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-        "TlsHandshaker::HandshakeDoneInternal", [self{std::move(self)}]() {
-          if (self->mTlsHandshakeComplitionPending && self->mOwner) {
-            self->mOwner->HandshakeDoneInternal();
-            self->mTlsHandshakeComplitionPending = false;
-          }
-        }));
+    
+    
+    
+    
+    
+    Unused << mOwner->ForceSend();
   }
   return NS_OK;
 }
@@ -181,7 +179,9 @@ bool TlsHandshaker::EnsureNPNComplete() {
   }
 
   if (mTlsHandshakeComplitionPending) {
-    return false;
+    mOwner->HandshakeDoneInternal();
+    mTlsHandshakeComplitionPending = false;
+    return true;
   }
 
   nsCOMPtr<nsITLSSocketControl> ssl;
@@ -206,6 +206,12 @@ bool TlsHandshaker::EnsureNPNComplete() {
   nsresult rv = ssl->DriveHandshake();
   if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
     FinishNPNSetup(false, true);
+    return true;
+  }
+
+  if (mTlsHandshakeComplitionPending) {
+    mOwner->HandshakeDoneInternal();
+    mTlsHandshakeComplitionPending = false;
     return true;
   }
 
