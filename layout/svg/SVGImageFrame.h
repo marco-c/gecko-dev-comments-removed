@@ -59,6 +59,7 @@ class SVGImageFrame final : public SVGGeometryFrame, public nsIReflowCallback {
                 const nsIntRect* aDirtyRect = nullptr) override;
   nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) override;
   void ReflowSVG() override;
+  void NotifySVGChanged(uint32_t aFlags) override;
 
   
   uint16_t GetHitTestFlags() override;
