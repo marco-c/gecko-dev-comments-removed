@@ -1170,7 +1170,7 @@ void ScriptLoaderRunnable::DispatchProcessPendingRequests() {
     
     
     auto firstItToExecute = std::find_if(
-        begin, end, [](const ThreadSafeRequestHandle* requestHandle) {
+        begin, end, [](const RefPtr<ThreadSafeRequestHandle>& requestHandle) {
           return !requestHandle->mExecutionScheduled;
         });
 
@@ -1181,18 +1181,19 @@ void ScriptLoaderRunnable::DispatchProcessPendingRequests() {
     
     
     
-    const auto firstItUnexecutable = std::find_if(
-        firstItToExecute, end, [](ThreadSafeRequestHandle* requestHandle) {
-          MOZ_ASSERT(!requestHandle->IsEmpty());
-          if (!requestHandle->Finished()) {
-            return true;
-          }
+    const auto firstItUnexecutable =
+        std::find_if(firstItToExecute, end,
+                     [](RefPtr<ThreadSafeRequestHandle>& requestHandle) {
+                       MOZ_ASSERT(!requestHandle->IsEmpty());
+                       if (!requestHandle->Finished()) {
+                         return true;
+                       }
 
-          
-          requestHandle->mExecutionScheduled = true;
+                       
+                       requestHandle->mExecutionScheduled = true;
 
-          return false;
-        });
+                       return false;
+                     });
 
     return firstItUnexecutable == firstItToExecute
                ? Nothing()
@@ -1264,7 +1265,7 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
       mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
       "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
 
-  for (const auto requestHandle : mLoadedRequests) {
+  for (const auto& requestHandle : mLoadedRequests) {
     
     MOZ_ASSERT(!requestHandle->IsEmpty());
 
