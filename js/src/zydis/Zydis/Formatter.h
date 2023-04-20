@@ -306,6 +306,16 @@ typedef enum ZydisFormatterProperty_
 
 
 
+
+    ZYDIS_FORMATTER_PROP_HEX_FORCE_LEADING_NUMBER,
+    
+
+
+
+
+
+
+
     ZYDIS_FORMATTER_PROP_HEX_PREFIX,
     
 
@@ -385,6 +395,7 @@ typedef enum ZydisSignedness_
 
     ZYDIS_SIGNEDNESS_REQUIRED_BITS = ZYAN_BITS_TO_REPRESENT(ZYDIS_SIGNEDNESS_MAX_VALUE)
 } ZydisSignedness;
+
 
 
 
@@ -644,12 +655,19 @@ typedef struct ZydisFormatterContext_
     
 
 
+    const ZydisDecodedOperand* operands;
+    
+
+
     const ZydisDecodedOperand* operand;
     
 
 
     ZyanU64 runtime_address;
     
+
+
+
 
 
     void* user_data;
@@ -850,6 +868,10 @@ struct ZydisFormatter_
     
 
 
+    ZyanBool hex_force_leading_number;
+    
+
+
 
 
 
@@ -1027,27 +1049,17 @@ ZYDIS_EXPORT ZyanStatus ZydisFormatterSetHook(ZydisFormatter* formatter,
 
 
 
+
+
+
+
+
 ZYDIS_EXPORT ZyanStatus ZydisFormatterFormatInstruction(const ZydisFormatter* formatter,
-    const ZydisDecodedInstruction* instruction, char* buffer, ZyanUSize length,
-    ZyanU64 runtime_address);
+    const ZydisDecodedInstruction* instruction, const ZydisDecodedOperand* operands,
+    ZyanU8 operand_count, char* buffer, ZyanUSize length, ZyanU64 runtime_address,
+    void* user_data);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-ZYDIS_EXPORT ZyanStatus ZydisFormatterFormatInstructionEx(const ZydisFormatter* formatter,
-    const ZydisDecodedInstruction* instruction, char* buffer, ZyanUSize length,
-    ZyanU64 runtime_address, void* user_data);
 
 
 
@@ -1066,30 +1078,13 @@ ZYDIS_EXPORT ZyanStatus ZydisFormatterFormatInstructionEx(const ZydisFormatter* 
 
 
 ZYDIS_EXPORT ZyanStatus ZydisFormatterFormatOperand(const ZydisFormatter* formatter,
-    const ZydisDecodedInstruction* instruction, ZyanU8 index, char* buffer, ZyanUSize length,
-    ZyanU64 runtime_address);
+    const ZydisDecodedInstruction* instruction, const ZydisDecodedOperand* operand,
+    char* buffer, ZyanUSize length, ZyanU64 runtime_address, void* user_data);
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ZYDIS_EXPORT ZyanStatus ZydisFormatterFormatOperandEx(const ZydisFormatter* formatter,
-    const ZydisDecodedInstruction* instruction, ZyanU8 index, char* buffer, ZyanUSize length,
-    ZyanU64 runtime_address, void* user_data);
 
 
 
@@ -1109,27 +1104,10 @@ ZYDIS_EXPORT ZyanStatus ZydisFormatterFormatOperandEx(const ZydisFormatter* form
 
 
 ZYDIS_EXPORT ZyanStatus ZydisFormatterTokenizeInstruction(const ZydisFormatter* formatter,
-    const ZydisDecodedInstruction* instruction, void* buffer, ZyanUSize length,
-    ZyanU64 runtime_address, ZydisFormatterTokenConst** token);
+    const ZydisDecodedInstruction* instruction, const ZydisDecodedOperand* operands,
+    ZyanU8 operand_count, void* buffer, ZyanUSize length, ZyanU64 runtime_address,
+    ZydisFormatterTokenConst** token, void* user_data);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ZYDIS_EXPORT ZyanStatus ZydisFormatterTokenizeInstructionEx(const ZydisFormatter* formatter,
-    const ZydisDecodedInstruction* instruction, void* buffer, ZyanUSize length,
-    ZyanU64 runtime_address, ZydisFormatterTokenConst** token, void* user_data);
 
 
 
@@ -1149,31 +1127,9 @@ ZYDIS_EXPORT ZyanStatus ZydisFormatterTokenizeInstructionEx(const ZydisFormatter
 
 
 ZYDIS_EXPORT ZyanStatus ZydisFormatterTokenizeOperand(const ZydisFormatter* formatter,
-    const ZydisDecodedInstruction* instruction, ZyanU8 index, void* buffer, ZyanUSize length,
-    ZyanU64 runtime_address, ZydisFormatterTokenConst** token);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ZYDIS_EXPORT ZyanStatus ZydisFormatterTokenizeOperandEx(const ZydisFormatter* formatter,
-    const ZydisDecodedInstruction* instruction, ZyanU8 index, void* buffer, ZyanUSize length,
-    ZyanU64 runtime_address, ZydisFormatterTokenConst** token, void* user_data);
+    const ZydisDecodedInstruction* instruction, const ZydisDecodedOperand* operand,
+    void* buffer, ZyanUSize length, ZyanU64 runtime_address, ZydisFormatterTokenConst** token,
+    void* user_data);
 
 
 
