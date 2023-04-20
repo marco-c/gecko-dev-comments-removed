@@ -24,7 +24,6 @@
                                withSize:(NSSize)aSize
                             presContext:(const nsPresContext*)aPresContext
                           computedStyle:(const mozilla::ComputedStyle*)aComputedStyle
-                                subrect:(const nsIntRect&)aSubRect
                             scaleFactor:(CGFloat)aScaleFactor {
   bool isEntirelyBlack = false;
   NSImage* retainedImage = nil;
@@ -48,32 +47,6 @@
   int32_t origWidth = 0, origHeight = 0;
   aImage->GetWidth(&origWidth);
   aImage->GetHeight(&origHeight);
-
-  
-  
-  if (!aSubRect.IsEmpty() && (aSubRect.XMost() > origWidth || aSubRect.YMost() > origHeight)) {
-    return nil;
-  }
-
-  bool createSubImage =
-      !aSubRect.IsEmpty() && !(aSubRect.x == 0 && aSubRect.y == 0 && aSubRect.width == origWidth &&
-                               aSubRect.height == origHeight);
-
-  if (createSubImage) {
-    
-    
-    NSRect subRect = NSMakeRect(aSubRect.x, aSubRect.y, aSubRect.width, aSubRect.height);
-    NSImage* subImage = [NSImage imageWithSize:aSize
-                                       flipped:NO
-                                drawingHandler:^BOOL(NSRect subImageRect) {
-                                  [image drawInRect:NSMakeRect(0, 0, aSize.width, aSize.height)
-                                           fromRect:subRect
-                                          operation:NSCompositingOperationCopy
-                                           fraction:1.0f];
-                                  return YES;
-                                }];
-    image = subImage;
-  }
 
   
   
