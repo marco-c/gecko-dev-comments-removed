@@ -55,7 +55,16 @@ class InputVolumeController final {
     
     bool enable_clipping_predictor = false;
     
-    int max_digital_gain_db = 30;
+    
+    
+    
+    
+    
+    
+    
+    
+    int target_range_max_dbfs = -18;
+    int target_range_min_dbfs = -48;
   };
 
   
@@ -179,6 +188,13 @@ class InputVolumeController final {
   const bool use_clipping_predictor_step_;
   float clipping_rate_log_;
   int clipping_rate_log_counter_;
+
+  
+  
+  
+  
+  const int target_range_max_dbfs_;
+  const int target_range_min_dbfs_;
 };
 
 
@@ -187,8 +203,7 @@ class MonoInputVolumeController {
  public:
   MonoInputVolumeController(int startup_min_level,
                             int clipped_level_min,
-                            int min_mic_level,
-                            int max_digital_gain_db);
+                            int min_mic_level);
   ~MonoInputVolumeController();
   MonoInputVolumeController(const MonoInputVolumeController&) = delete;
   MonoInputVolumeController& operator=(const MonoInputVolumeController&) =
@@ -207,7 +222,8 @@ class MonoInputVolumeController {
 
   
   
-  void Process(absl::optional<int> rms_error);
+  
+  void Process(absl::optional<int> rms_error_dbfs);
 
   
   int recommended_analog_level() const { return recommended_input_volume_; }
@@ -228,11 +244,13 @@ class MonoInputVolumeController {
   void SetMaxLevel(int level);
 
   int CheckVolumeAndReset();
-  void UpdateGain(int rms_error_db);
+
+  
+  
+  
+  void UpdateInputVolume(int rms_error_dbfs);
 
   const int min_mic_level_;
-
-  const int max_digital_gain_db_;
 
   int level_ = 0;
   int max_level_;
