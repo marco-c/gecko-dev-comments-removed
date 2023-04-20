@@ -2285,9 +2285,14 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetSendParameters(
 webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     const webrtc::RtpParameters& new_parameters) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
+  
+  
+  
+  
   webrtc::RTCError error = CheckRtpParametersInvalidModificationAndValues(
       rtp_parameters_, new_parameters);
   if (!error.ok()) {
+    
     return error;
   }
 

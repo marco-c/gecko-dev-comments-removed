@@ -83,6 +83,11 @@ class RtpSenderInternal : public RtpSenderInterface {
       const RtpParameters& parameters) = 0;
 
   
+  virtual RTCError CheckSVCParameters(const RtpParameters& parameters) {
+    return webrtc::RTCError::OK();
+  }
+
+  
   
   
   virtual int AttachmentId() const = 0;
@@ -93,6 +98,11 @@ class RtpSenderInternal : public RtpSenderInterface {
       const std::vector<std::string>& rid) = 0;
 
   virtual void SetTransceiverAsStopped() = 0;
+
+  
+  
+  virtual void SetVideoCodecPreferences(
+      std::vector<cricket::VideoCodec> codec_preferences) = 0;
 };
 
 
@@ -203,6 +213,11 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
     is_transceiver_stopped_ = true;
   }
 
+  void SetVideoCodecPreferences(
+      std::vector<cricket::VideoCodec> codec_preferences) override {
+    video_codec_preferences_ = codec_preferences;
+  }
+
  protected:
   
   
@@ -238,6 +253,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
   std::vector<std::string> stream_ids_;
   RtpParameters init_parameters_;
+  std::vector<cricket::VideoCodec> video_codec_preferences_;
 
   
   
@@ -394,6 +410,8 @@ class VideoRtpSender : public RtpSenderBase {
   }
 
   rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
+
+  RTCError CheckSVCParameters(const RtpParameters& parameters) override;
 
  protected:
   VideoRtpSender(rtc::Thread* worker_thread,
