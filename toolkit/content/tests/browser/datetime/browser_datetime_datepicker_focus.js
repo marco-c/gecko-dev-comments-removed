@@ -32,6 +32,7 @@ add_task(async function test_focus_after_selection() {
   await helper.openPicker(
     `data:text/html, <input type="date" value=${inputValue}>`
   );
+  let browser = helper.tab.linkedBrowser;
 
   info("Test behavior when selection is done on the calendar grid");
 
@@ -45,20 +46,60 @@ add_task(async function test_focus_after_selection() {
     "The calendar is updated to show the second previous month (2022-10)."
   );
 
+  
+  const focusedDayEl = getDayEl(24);
+
+  Assert.ok(
+    focusedDayEl.matches(":focus"),
+    "An expected focusable day within a calendar grid is focused"
+  );
+
   let closed = helper.promisePickerClosed();
 
   
-  EventUtils.synthesizeKey(" ");
+  EventUtils.synthesizeKey(" ", {});
+
+  
+  await SpecialPowers.spawn(browser, [], async () => {
+    const body = content.document.body;
+    
+    Assert.deepEqual(
+      body,
+      content.document.activeElement,
+      `The main content's <body> received programmatic focus`
+    );
+  });
 
   await closed;
+
+  Assert.equal(
+    helper.panel.state,
+    "closed",
+    "Panel is closed when the selection is made"
+  );
 
   let ready = helper.waitForPickerReady();
 
   
-  EventUtils.synthesizeKey("KEY_Tab");
-  EventUtils.synthesizeKey(" ");
+  EventUtils.synthesizeKey("KEY_Tab", {});
+
+  
+  await SpecialPowers.spawn(browser, [], async () => {
+    const input = content.document.querySelector("input");
+    
+    Assert.deepEqual(
+      input,
+      content.document.activeElement,
+      `The input field includes programmatic focus`
+    );
+  });
+
+  
+  EventUtils.synthesizeKey(" ", {});
 
   await ready;
+
+  Assert.equal(helper.panel.state, "open", "Panel is reopened");
 
   
   
@@ -66,8 +107,7 @@ add_task(async function test_focus_after_selection() {
 
   
   const focusedDay = getDayEl(12);
-
-  let monthYearEl = helper.getElement(MONTH_YEAR);
+  const monthYearEl = helper.getElement(MONTH_YEAR);
 
   await BrowserTestUtils.waitForMutationCondition(
     monthYearEl,
@@ -117,7 +157,7 @@ add_task(async function test_focus_after_selection() {
   );
 
   
-  EventUtils.synthesizeKey(" ");
+  EventUtils.synthesizeKey(" ", {});
 
   Assert.ok(
     BrowserTestUtils.is_hidden(helper.getElement(MONTH_YEAR_VIEW)),
