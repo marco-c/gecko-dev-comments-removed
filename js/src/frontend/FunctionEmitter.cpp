@@ -483,6 +483,12 @@ bool FunctionScriptEmitter::emitEndBody() {
   MOZ_ASSERT(state_ == State::Body);
   
 
+  if (bodyEnd_) {
+    if (!bce_->updateSourceCoordNotes(*bodyEnd_)) {
+      return false;
+    }
+  }
+
   if (funbox_->needsFinalYield()) {
     
     
@@ -614,12 +620,6 @@ bool FunctionScriptEmitter::emitEndBody() {
   }
   functionEmitterScope_.reset();
   tdzCache_.reset();
-
-  if (bodyEnd_) {
-    if (!bce_->updateSourceCoordNotes(*bodyEnd_)) {
-      return false;
-    }
-  }
 
   
   

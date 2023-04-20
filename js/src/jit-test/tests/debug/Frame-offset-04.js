@@ -43,7 +43,7 @@ dbg.onEnterFrame = function(f) {
 
   assertEq(ranges.length, 2);
   assertEq(ranges[1][0], 3);
-  assertEq(ranges[1][1], 3);
+  assertEq(ranges[1][1], 4);
 
   
   assertThrowsInstanceOf(() => frame.offset, Error);

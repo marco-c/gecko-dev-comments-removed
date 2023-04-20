@@ -65,7 +65,7 @@ it.next();
 
 assertEq(ranges.length, 5);
 assertEq(ranges[4][0], 5);
-assertEq(ranges[4][1], 5);
+assertEq(ranges[4][1], 6);
 
 
 assertThrowsInstanceOf(() => frame.offset, Error);
