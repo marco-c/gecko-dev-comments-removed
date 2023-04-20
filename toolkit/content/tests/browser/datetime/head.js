@@ -172,7 +172,6 @@ registerCleanupFunction(() => {
 const BTN_MONTH_YEAR = "#month-year-label",
   BTN_NEXT_MONTH = ".next",
   BTN_PREV_MONTH = ".prev",
-  BTN_CLEAR = "#clear-button",
   DAY_SELECTED = ".selection",
   DAY_TODAY = ".today",
   DAYS_VIEW = ".days-view",
@@ -363,7 +362,7 @@ async function testKeyOnSpinners(key, document, tabs = 1) {
 
   
   
-  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
 }
 
 

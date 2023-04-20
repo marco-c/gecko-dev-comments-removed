@@ -21,7 +21,7 @@ add_task(async function test_monthyear_close_date() {
     .contentDocument;
 
   
-  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
 
   
   await testKeyOnSpinners("KEY_Enter", pickerDoc);
@@ -51,7 +51,7 @@ add_task(async function test_monthyear_close_datetime() {
     .contentDocument;
 
   
-  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
 
   
   await testKeyOnSpinners("KEY_Enter", pickerDoc);
@@ -79,7 +79,7 @@ add_task(async function test_monthyear_escape_date() {
     .contentDocument;
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
 
   
   await testKeyOnSpinners("KEY_Escape", pickerDoc);
@@ -150,7 +150,7 @@ add_task(async function test_monthyear_escape_datetime() {
     .contentDocument;
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
 
   
   await testKeyOnSpinners("KEY_Escape", pickerDoc);

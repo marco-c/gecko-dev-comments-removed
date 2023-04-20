@@ -40,7 +40,7 @@ add_task(async function test_spinner_month_keyboard_arrows() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
   
   EventUtils.synthesizeKey(" ", {});
 
@@ -161,7 +161,7 @@ add_task(async function test_spinner_month_keyboard_pageup_pagedown() {
   );
   
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
   
   EventUtils.synthesizeKey(" ", {});
 
@@ -252,7 +252,7 @@ add_task(async function test_spinner_month_keyboard_home_end() {
   );
   
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
   
   EventUtils.synthesizeKey(" ", {});
 
@@ -345,7 +345,7 @@ add_task(async function test_spinner_year_keyboard_arrows() {
   info("Testing general keyboard navigation");
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
   
   EventUtils.synthesizeKey(" ", {});
 
@@ -451,7 +451,7 @@ add_task(async function test_spinner_year_keyboard_pageup_pagedown() {
   );
   
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
   
   EventUtils.synthesizeKey(" ", {});
 
@@ -545,7 +545,7 @@ add_task(async function test_spinner_year_keyboard_home_end() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
   
   EventUtils.synthesizeKey(" ", {});
 

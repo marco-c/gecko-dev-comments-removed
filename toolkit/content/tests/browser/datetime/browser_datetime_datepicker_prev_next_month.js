@@ -17,8 +17,8 @@ add_task(async function test_datepicker_prev_month_btn() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
-  EventUtils.synthesizeKey(" ", {});
+  EventUtils.synthesizeKey("KEY_Tab");
+  EventUtils.synthesizeKey(" ");
 
   
   const focusableDay = getDayEl(15);
@@ -114,8 +114,8 @@ add_task(async function test_datepicker_next_month_btn() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 4 });
-  EventUtils.synthesizeKey(" ", {});
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey(" ");
 
   
   const focusableDay = getDayEl(15);
@@ -188,7 +188,7 @@ add_task(async function test_datepicker_next_month_btn() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", {});
+  EventUtils.synthesizeKey("KEY_Tab");
 
   Assert.ok(
     focusableDay.matches(":focus"),
@@ -213,8 +213,8 @@ add_task(async function test_datepicker_prev_month_btn_rtl() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
-  EventUtils.synthesizeKey(" ", {});
+  EventUtils.synthesizeKey("KEY_Tab");
+  EventUtils.synthesizeKey(" ");
 
   
   const focusableDay = getDayEl(15);
@@ -266,8 +266,8 @@ add_task(async function test_datepicker_next_month_btn_rtl() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", { repeat: 4 });
-  EventUtils.synthesizeKey(" ", {});
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  EventUtils.synthesizeKey(" ");
 
   
   const focusableDay = getDayEl(15);
@@ -293,7 +293,7 @@ add_task(async function test_datepicker_next_month_btn_rtl() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_Tab", {});
+  EventUtils.synthesizeKey("KEY_Tab");
 
   Assert.ok(
     focusableDay.matches(":focus"),
