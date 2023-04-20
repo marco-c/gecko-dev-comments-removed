@@ -16,7 +16,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 loader.lazyGetter(this, "hostname", () => {
   try {
     
-    return Services.dns.myHostName;
+    return Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService)
+      .myHostName;
   } catch (e) {
     return "";
   }

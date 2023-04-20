@@ -28,7 +28,10 @@ add_test(function test_default_device_name() {
   
   
   
-  let hostname = Services.sysinfo.get("device") || Services.dns.myHostName;
+  let hostname =
+    Services.sysinfo.get("device") ||
+    Cc["@mozilla.org/network/dns-service;1"].getService(Ci.nsIDNSService)
+      .myHostName;
   _("hostname is " + hostname);
   ok(!!hostname.length);
   

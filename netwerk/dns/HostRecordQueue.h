@@ -26,7 +26,7 @@ class HostRecordQueue final {
 
   
   
-  void InsertRecord(nsHostRecord* aRec, nsIDNSService::DNSFlags aFlags,
+  void InsertRecord(nsHostRecord* aRec, uint16_t aFlags,
                     const MutexAutoLock& aProofOfLock);
   
   
@@ -45,7 +45,7 @@ class HostRecordQueue final {
   
   void MaybeRemoveFromQ(nsHostRecord* aRec, const MutexAutoLock& aProofOfLock);
   
-  void MoveToAnotherPendingQ(nsHostRecord* aRec, nsIDNSService::DNSFlags aFlags,
+  void MoveToAnotherPendingQ(nsHostRecord* aRec, uint16_t aFlags,
                              const MutexAutoLock& aProofOfLock);
   
   

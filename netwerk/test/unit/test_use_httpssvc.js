@@ -8,6 +8,9 @@ ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 let h2Port;
 
+const dns = Cc["@mozilla.org/network/dns-service;1"].getService(
+  Ci.nsIDNSService
+);
 const certOverrideService = Cc[
   "@mozilla.org/security/certoverride;1"
 ].getService(Ci.nsICertOverrideService);
@@ -32,7 +35,6 @@ add_setup(async function setup() {
   });
 
   if (mozinfo.socketprocess_networking) {
-    Services.dns; 
     await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
   }
 
@@ -67,7 +69,7 @@ add_task(async function testUseHTTPSSVCForHttpsUpgrade() {
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
   );
-  Services.dns.clearCache(true);
+  dns.clearCache(true);
 
   certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
     true
@@ -109,7 +111,7 @@ add_task(async function testUseHTTPSSVCAsHSTS() {
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
   );
-  Services.dns.clearCache(true);
+  dns.clearCache(true);
 
   certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
     true
@@ -154,7 +156,7 @@ add_task(async function testUseHTTPSSVC() {
   
   
   await new TRRDNSListener("test.httpssvc.com", {
-    type: Ci.nsIDNSService.RESOLVE_TYPE_HTTPSSVC,
+    type: dns.RESOLVE_TYPE_HTTPSSVC,
   });
 
   
@@ -216,7 +218,7 @@ add_task(async function testFallback() {
   });
 
   let { inRecord } = await new TRRDNSListener("test.fallback.com", {
-    type: Ci.nsIDNSService.RESOLVE_TYPE_HTTPSSVC,
+    type: dns.RESOLVE_TYPE_HTTPSSVC,
   });
 
   let record = inRecord
