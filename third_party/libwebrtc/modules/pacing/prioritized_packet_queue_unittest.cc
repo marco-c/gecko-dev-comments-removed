@@ -214,21 +214,39 @@ TEST(PrioritizedPacketQueue, SubtractsPusedTimeFromAverageQueueTime) {
   EXPECT_EQ(queue.AverageQueueTime(), TimeDelta::Millis(750));
 }
 
-TEST(PrioritizedPacketQueue, ReportsLeadingAudioEnqueueTime) {
+TEST(PrioritizedPacketQueue, ReportsLeadingPacketEnqueueTime) {
   PrioritizedPacketQueue queue(Timestamp::Zero());
-  EXPECT_EQ(queue.LeadingAudioPacketEnqueueTime(), Timestamp::MinusInfinity());
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kAudio),
+            Timestamp::MinusInfinity());
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kVideo),
+            Timestamp::MinusInfinity());
 
   queue.Push(Timestamp::Millis(10),
              CreatePacket(RtpPacketMediaType::kVideo, 1));
-  EXPECT_EQ(queue.LeadingAudioPacketEnqueueTime(), Timestamp::MinusInfinity());
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kAudio),
+            Timestamp::MinusInfinity());
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kVideo),
+            Timestamp::Millis(10));
 
   queue.Push(Timestamp::Millis(20),
              CreatePacket(RtpPacketMediaType::kAudio, 2));
 
-  EXPECT_EQ(queue.LeadingAudioPacketEnqueueTime(), Timestamp::Millis(20));
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kAudio),
+            Timestamp::Millis(20));
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kVideo),
+            Timestamp::Millis(10));
 
   queue.Pop();  
-  EXPECT_EQ(queue.LeadingAudioPacketEnqueueTime(), Timestamp::MinusInfinity());
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kAudio),
+            Timestamp::MinusInfinity());
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kVideo),
+            Timestamp::Millis(10));
+
+  queue.Pop();  
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kAudio),
+            Timestamp::MinusInfinity());
+  EXPECT_EQ(queue.LeadingPacketEnqueueTime(RtpPacketMediaType::kVideo),
+            Timestamp::MinusInfinity());
 }
 
 TEST(PrioritizedPacketQueue,

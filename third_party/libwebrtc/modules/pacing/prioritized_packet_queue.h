@@ -59,7 +59,8 @@ class PrioritizedPacketQueue {
 
   
   
-  Timestamp LeadingAudioPacketEnqueueTime() const;
+  
+  Timestamp LeadingPacketEnqueueTime(RtpPacketMediaType type) const;
 
   
   
@@ -110,7 +111,7 @@ class PrioritizedPacketQueue {
 
     bool HasPacketsAtPrio(int priority_level) const;
     bool IsEmpty() const;
-    Timestamp LeadingAudioPacketEnqueueTime() const;
+    Timestamp LeadingPacketEnqueueTime(int priority_level) const;
     Timestamp LastEnqueueTime() const;
 
    private:
