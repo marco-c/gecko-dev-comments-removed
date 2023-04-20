@@ -1,6 +1,0 @@
-
-
-
-"use strict";
-
-createGenericMoveTests( false, "Move");

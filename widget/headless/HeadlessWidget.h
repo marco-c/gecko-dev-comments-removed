@@ -161,10 +161,6 @@ class HeadlessWidget : public nsBaseWidget {
   LayoutDeviceIntRect mRestoreBounds;
   void ApplySizeModeSideEffects();
   
-  void MoveInternal(int32_t aX, int32_t aY);
-  
-  void ResizeInternal(int32_t aWidth, int32_t aHeight, bool aRepaint);
-  
   
   void RaiseWindow();
   
