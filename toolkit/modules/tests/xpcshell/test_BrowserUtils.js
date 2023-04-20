@@ -184,6 +184,8 @@ add_task(async function test_shouldShowPinPromo() {
 });
 
 add_task(async function test_shouldShowRelayPromo() {
+  
+  Preferences.set("identity.fxaccounts.autoconfig.uri", "");
   Assert.ok(BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.RELAY));
 
   
