@@ -887,22 +887,6 @@ license file's hash.
 
         
         
-        def recursive_sort(
-            obj: TomlItem, name: typing.Optional[str] = None
-        ) -> TomlItem:
-            if isinstance(obj, dict):
-                return {
-                    k: recursive_sort(v, k)
-                    for k, v in sorted(obj.items(), reverse=(name == "source"))
-                }
-            if isinstance(obj, list):
-                return [recursive_sort(o) for o in obj]
-            return obj
-
-        config = recursive_sort(config)
-
-        
-        
         
         def toml_dump(data):
             dump = toml.dumps(data)
