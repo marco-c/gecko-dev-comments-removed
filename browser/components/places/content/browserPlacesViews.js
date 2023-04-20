@@ -8,7 +8,7 @@
 
 
 
-this.PlacesViewBase = class {
+class PlacesViewBase {
   
 
 
@@ -864,12 +864,12 @@ this.PlacesViewBase = class {
       aObject.removeEventListener(aEventNames[i], this, aCapturing);
     }
   }
-};
+}
 
 
 
 
-this.PlacesToolbar = class extends PlacesViewBase {
+class PlacesToolbar extends PlacesViewBase {
   constructor(aPlace) {
     let startTime = Date.now();
     super(aPlace, {
@@ -1965,14 +1965,14 @@ this.PlacesToolbar = class extends PlacesViewBase {
       target.open = true;
     }
   }
-};
+}
 
 
 
 
 
 
-this.PlacesMenu = class extends PlacesViewBase {
+class PlacesMenu extends PlacesViewBase {
   
 
 
@@ -2070,12 +2070,12 @@ this.PlacesMenu = class extends PlacesViewBase {
       PlacesUIUtils.setupSpeculativeConnection(target._placesNode.uri, window);
     }
   }
-};
+}
 
 
 
 
-this.PlacesPanelMenuView = class extends PlacesViewBase {
+class PlacesPanelMenuView extends PlacesViewBase {
   constructor(aPlace, aViewId, aRootId, aOptions = {}) {
     aOptions.rootElt = document.getElementById(aRootId);
     aOptions.viewElt = document.getElementById(aViewId);
@@ -2199,9 +2199,11 @@ this.PlacesPanelMenuView = class extends PlacesViewBase {
     }
     this._rootElt.appendChild(fragment);
   }
-};
+}
 
-this.PlacesPanelview = class extends PlacesViewBase {
+
+
+this.PlacesPanelview = class PlacesPanelview extends PlacesViewBase {
   constructor(container, panelview, place, options = {}) {
     options.rootElt = container;
     options.viewElt = panelview;
