@@ -5312,7 +5312,8 @@ class OverflowableToolbar {
 
 
 
-  #webExtList = null;
+
+  #webExtListRef = null;
 
   
 
@@ -5665,7 +5666,7 @@ class OverflowableToolbar {
       return;
     }
 
-    let webExtList = this.#getWebExtList();
+    let webExtList = this.#webExtList;
 
     let child = this.#target.lastElementChild;
     while (child && isOverflowing) {
@@ -6011,16 +6012,20 @@ class OverflowableToolbar {
 
 
 
-  #getWebExtList() {
-    if (!this.#webExtList) {
+  get #webExtList() {
+    if (!this.#webExtListRef) {
       let targetID = this.#toolbar.getAttribute("addon-webext-overflowtarget");
-      if (targetID) {
-        let win = this.#toolbar.ownerGlobal;
-        let { panel } = win.gUnifiedExtensions;
-        this.#webExtList = panel.querySelector(`#${targetID}`);
+      if (!targetID) {
+        throw new Error(
+          "addon-webext-overflowtarget was not defined on the " +
+            `overflowable toolbar with id: ${this.#toolbar.id}`
+        );
       }
+      let win = this.#toolbar.ownerGlobal;
+      let { panel } = win.gUnifiedExtensions;
+      this.#webExtListRef = panel.querySelector(`#${targetID}`);
     }
-    return this.#webExtList;
+    return this.#webExtListRef;
   }
 
   
@@ -6031,7 +6036,7 @@ class OverflowableToolbar {
 
 
   #isOverflowList(aNode) {
-    return aNode && (aNode == this.#defaultList || aNode == this.#webExtList);
+    return aNode == this.#defaultList || aNode == this.#webExtList;
   }
 
   
