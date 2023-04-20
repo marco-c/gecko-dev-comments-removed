@@ -87,7 +87,7 @@ if (topLevelDocument) {
   
   
   RunTestsInIFrame(
-      './resources/requestStorageAccessForOrigin-iframe.html?testCase=same-origin-frame&rootdocument=false');
+      './resources/requestStorageAccessForOrigin-iframe.https.html?testCase=same-origin-frame&rootdocument=false');
 
   promise_test(
       async t => {
