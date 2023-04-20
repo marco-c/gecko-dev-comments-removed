@@ -1278,7 +1278,12 @@ let cookieBannerHandling = new (class {
   }
 
   async #disableCookieBannerHandling() {
-    await SiteDataManager.remove(this.#currentBaseDomain);
+    
+    
+    
+    if (!this.#isPrivateBrowsing) {
+      await SiteDataManager.remove(this.#currentBaseDomain);
+    }
     Services.cookieBanners.setDomainPref(
       gBrowser.currentURI,
       Ci.nsICookieBannerService.MODE_DISABLED,
