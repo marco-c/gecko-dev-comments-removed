@@ -1,30 +1,30 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * This file contains a helper macro includes all supported non-tree-structural
+ * pseudo-classes.
+ *
+ * FIXME: Find a way to autogenerate this file.
+ *
+ * Expected usage is as follows:
+ * ```
+ * macro_rules! pseudo_class_macro{
+ *     ([$(($css:expr, $name:ident, $gecko_type:tt, $state:tt, $flags:tt),)*]) => {
+ *         // do stuff
+ *     }
+ * }
+ * apply_non_ts_list!(pseudo_class_macro)
+ * ```
+ *
+ * $gecko_type can be either "_" or an ident in Gecko's CSSPseudoClassType.
+ * $state can be either "_" or an expression of type ElementState.  If present,
+ *        the semantics are that the pseudo-class matches if any of the bits in
+ *        $state are set on the element.
+ * $flags can be either "_" or an expression of type NonTSPseudoClassFlag,
+ * see selector_parser.rs for more details.
+ */
 
 macro_rules! apply_non_ts_list {
     ($apply_macro:ident) => {
@@ -39,6 +39,7 @@ macro_rules! apply_non_ts_list {
                 ("active", Active, ACTIVE, _),
                 ("autofill", Autofill, AUTOFILL, _),
                 ("checked", Checked, CHECKED, _),
+                ("closed", Closed, CLOSED, PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME),
                 ("defined", Defined, DEFINED, _),
                 ("disabled", Disabled, DISABLED, _),
                 ("enabled", Enabled, ENABLED, _),
@@ -69,7 +70,7 @@ macro_rules! apply_non_ts_list {
                 ("-moz-math-increment-script-level", MozMathIncrementScriptLevel, INCREMENT_SCRIPT_LEVEL, _),
 
                 ("required", Required, REQUIRED, _),
-                ("popover-open", PopoverOpen, POPOVER_OPEN, PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME),
+                ("open", Open, OPEN, PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME),
                 ("optional", Optional, OPTIONAL_, _),
                 ("valid", Valid, VALID, _),
                 ("invalid", Invalid, INVALID, _),
