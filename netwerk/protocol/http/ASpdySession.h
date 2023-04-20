@@ -89,7 +89,7 @@ class ASpdySession : public nsAHttpTransaction {
       PRIntervalTime aRtt) = 0;
 };
 
-using ALPNCallback = bool (*)(nsITLSSocketControl*);
+using ALPNCallback = bool (*)(nsISSLSocketControl*);
 
 
 

@@ -29,7 +29,7 @@
 #include "nsITlsHandshakeListener.h"
 
 class nsISocketTransport;
-class nsITLSSocketControl;
+class nsISSLSocketControl;
 
 namespace mozilla {
 namespace net {
@@ -236,7 +236,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   bool IsAlive();
 
   
-  void StartSpdy(nsITLSSocketControl* ssl, SpdyVersion spdyVersion);
+  void StartSpdy(nsISSLSocketControl* ssl, SpdyVersion spdyVersion);
   
   
   void Start0RTTSpdy(SpdyVersion spdyVersion);
