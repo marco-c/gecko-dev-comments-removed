@@ -1662,7 +1662,7 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
   
   
   if (!SupportsDrawOptions(aOptions) || !SupportsPattern(aPattern) ||
-      !mCurrentTarget->MarkChanged()) {
+      aStrokeOptions || !mCurrentTarget->MarkChanged()) {
     
     
     if (!aAccelOnly) {
@@ -1764,10 +1764,9 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
             {(const uint8_t*)viewportData, sizeof(viewportData)});
         mDirtyViewport = false;
       }
-      if (mDirtyAA || aStrokeOptions || aVertexRange) {
+      if (mDirtyAA || aVertexRange) {
         
-        
-        float aaData = aStrokeOptions || aVertexRange ? 0.0f : 1.0f;
+        float aaData = aVertexRange ? 0.0f : 1.0f;
         mWebgl->UniformData(LOCAL_GL_FLOAT, mSolidProgramAA, false,
                             {(const uint8_t*)&aaData, sizeof(aaData)});
         mDirtyAA = aaData == 0.0f;
@@ -1792,8 +1791,7 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
                            GLsizei(aVertexRange->mLength));
       } else {
         
-        mWebgl->DrawArrays(
-            aStrokeOptions ? LOCAL_GL_LINE_LOOP : LOCAL_GL_TRIANGLE_FAN, 0, 4);
+        mWebgl->DrawArrays(LOCAL_GL_TRIANGLE_FAN, 0, 4);
       }
       success = true;
       break;
@@ -1978,14 +1976,14 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
             {(const uint8_t*)viewportData, sizeof(viewportData)});
         mDirtyViewport = false;
       }
-      if (mDirtyAA || aStrokeOptions || aVertexRange) {
+      if (mDirtyAA || aVertexRange) {
         
         
 
-        float aaData = mLastCompositionOp == CompositionOp::OP_SOURCE ||
-                               aStrokeOptions || aVertexRange
-                           ? 0.0f
-                           : 1.0f;
+        float aaData =
+            mLastCompositionOp == CompositionOp::OP_SOURCE || aVertexRange
+                ? 0.0f
+                : 1.0f;
         mWebgl->UniformData(LOCAL_GL_FLOAT, mImageProgramAA, false,
                             {(const uint8_t*)&aaData, sizeof(aaData)});
         mDirtyAA = aaData == 0.0f;
@@ -2083,8 +2081,7 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
                            GLsizei(aVertexRange->mLength));
       } else {
         
-        mWebgl->DrawArrays(
-            aStrokeOptions ? LOCAL_GL_LINE_LOOP : LOCAL_GL_TRIANGLE_FAN, 0, 4);
+        mWebgl->DrawArrays(LOCAL_GL_TRIANGLE_FAN, 0, 4);
       }
 
       
@@ -2902,28 +2899,13 @@ void DrawTargetWebgl::SetTransform(const Matrix& aTransform) {
   mSkia->SetTransform(aTransform);
 }
 
-bool DrawTargetWebgl::StrokeRectAccel(const Rect& aRect,
-                                      const Pattern& aPattern,
-                                      const StrokeOptions& aStrokeOptions,
-                                      const DrawOptions& aOptions) {
-  
-  
-  if (mWebglValid && SupportsPattern(aPattern) &&
-      aStrokeOptions == StrokeOptions() && mTransform.PreservesDistance()) {
-    DrawRect(aRect, aPattern, aOptions, Nothing(), nullptr, true, true, false,
-             false, &aStrokeOptions);
-    return true;
-  }
-  return false;
-}
-
 void DrawTargetWebgl::StrokeRect(const Rect& aRect, const Pattern& aPattern,
                                  const StrokeOptions& aStrokeOptions,
                                  const DrawOptions& aOptions) {
   if (!mWebglValid) {
     MarkSkiaChanged(aOptions);
     mSkia->StrokeRect(aRect, aPattern, aStrokeOptions, aOptions);
-  } else if (!StrokeRectAccel(aRect, aPattern, aStrokeOptions, aOptions)) {
+  } else {
     
     
     SkPath skiaPath;
@@ -3004,40 +2986,33 @@ void DrawTargetWebgl::Stroke(const Path* aPath, const Pattern& aPattern,
     return;
   }
   const auto& skiaPath = static_cast<const PathSkia*>(aPath)->GetPath();
-  SkRect rect;
   if (!mWebglValid) {
     MarkSkiaChanged(aOptions);
     mSkia->Stroke(aPath, aPattern, aStrokeOptions, aOptions);
     return;
   }
-  if (skiaPath.isRect(&rect)) {
-    if (StrokeRectAccel(SkRectToRect(rect), aPattern, aStrokeOptions,
-                        aOptions)) {
-      return;
-    }
-    
-  } else {
-    
-    
-    
-    int numVerbs = skiaPath.countVerbs();
-    if (numVerbs >= 2 && numVerbs <= 3) {
-      uint8_t verbs[3];
-      skiaPath.getVerbs(verbs, numVerbs);
-      if (verbs[0] == SkPath::kMove_Verb && verbs[1] == SkPath::kLine_Verb &&
-          (numVerbs < 3 || verbs[2] == SkPath::kClose_Verb)) {
-        Point start = SkPointToPoint(skiaPath.getPoint(0));
-        Point end = SkPointToPoint(skiaPath.getPoint(1));
-        if (StrokeLineAccel(start, end, aPattern, aStrokeOptions, aOptions)) {
-          if (numVerbs >= 3) {
-            StrokeLineAccel(end, start, aPattern, aStrokeOptions, aOptions);
-          }
-          return;
+
+  
+  
+  
+  int numVerbs = skiaPath.countVerbs();
+  if (numVerbs >= 2 && numVerbs <= 3) {
+    uint8_t verbs[3];
+    skiaPath.getVerbs(verbs, numVerbs);
+    if (verbs[0] == SkPath::kMove_Verb && verbs[1] == SkPath::kLine_Verb &&
+        (numVerbs < 3 || verbs[2] == SkPath::kClose_Verb)) {
+      Point start = SkPointToPoint(skiaPath.getPoint(0));
+      Point end = SkPointToPoint(skiaPath.getPoint(1));
+      if (StrokeLineAccel(start, end, aPattern, aStrokeOptions, aOptions)) {
+        if (numVerbs >= 3) {
+          StrokeLineAccel(end, start, aPattern, aStrokeOptions, aOptions);
         }
-        
+        return;
       }
+      
     }
   }
+
   DrawPath(aPath, aPattern, aOptions, &aStrokeOptions);
 }
 
