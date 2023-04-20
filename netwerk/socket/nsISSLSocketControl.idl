@@ -7,9 +7,8 @@
 #include "nsISupports.idl"
 
 interface nsIInterfaceRequestor;
-interface nsITlsHandshakeCallbackListener;
-interface nsITransportSecurityInfo;
 interface nsIX509Cert;
+interface nsITlsHandshakeCallbackListener;
 
 %{C++
 #include "nsStringFwd.h"
@@ -17,12 +16,10 @@ interface nsIX509Cert;
 %}
 [ref] native nsCStringTArrayRef(nsTArray<nsCString>);
 
-
-
-
-
 [scriptable, builtinclass, uuid(418265c8-654e-4fbb-ba62-4eed27de1f03)]
-interface nsITLSSocketControl : nsISupports {
+interface nsISSLSocketControl : nsISupports {
+    attribute nsIInterfaceRequestor     notificationCallbacks;
+
     void proxyStartSSL();
     void StartTLS();
 
@@ -96,6 +93,11 @@ interface nsITLSSocketControl : nsISupports {
     readonly attribute uint32_t providerFlags;
 
     
+
+
+    readonly attribute uint32_t providerTlsFlags;
+
+    
     const short SSL_VERSION_3   = 0x0300;
     const short TLS_VERSION_1   = 0x0301;
     const short TLS_VERSION_1_1 = 0x0302;
@@ -160,23 +162,4 @@ interface nsITLSSocketControl : nsISupports {
     [noscript] void disableEarlyData();
 
     [noscript] void setHandshakeCallbackListener(in nsITlsHandshakeCallbackListener callback);
-
-    
-
-
-    readonly attribute ACString peerId;
-
-    
-
-
-    readonly attribute nsITransportSecurityInfo securityInfo;
-
-    
-
-
-
-
-
-    [implicit_jscontext, must_use]
-    Promise asyncGetSecurityInfo();
 };

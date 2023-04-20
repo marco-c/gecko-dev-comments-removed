@@ -415,6 +415,9 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
         !protocol.IsEmpty()) {
       mProtocolVersion.Assign(protocol);
     }
+    
+    nsAutoCString unused;
+    securityInfo->GetPeerId(unused);
   }
 
   UniquePtr<nsHttpResponseHead> head(mTransaction->TakeResponseHead());

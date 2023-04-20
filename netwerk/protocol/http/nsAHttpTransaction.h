@@ -19,8 +19,8 @@ typedef __StatusTmp Status;
 class nsIDNSHTTPSSVCRecord;
 class nsIInterfaceRequestor;
 class nsIRequestContext;
+class nsISSLSocketControl;
 class nsISVCBRecord;
-class nsITLSSocketControl;
 class nsITransport;
 
 namespace mozilla {
@@ -174,7 +174,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   
   
   [[nodiscard]] virtual nsresult GetTransactionTLSSocketControl(
-      nsITLSSocketControl**) {
+      nsISSLSocketControl**) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 

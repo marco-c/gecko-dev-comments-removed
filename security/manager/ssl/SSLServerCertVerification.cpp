@@ -90,6 +90,7 @@
 
 
 
+
 #include "SSLServerCertVerification.h"
 
 #include <cstring>
@@ -98,12 +99,12 @@
 #include "CryptoTask.h"
 #include "ExtendedValidation.h"
 #include "NSSCertDBTrustDomain.h"
-#include "NSSSocketControl.h"
 #include "PSMRunnable.h"
 #include "RootCertificateTelemetryUtils.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
 #include "SharedSSLState.h"
+#include "TransportSecurityInfo.h"
 #include "VerifySSLServerCertChild.h"
 #include "cert.h"
 #include "mozilla/Assertions.h"
@@ -381,23 +382,16 @@ static nsresult OverrideAllowedForHost(
 
 
 static SECStatus BlockServerCertChangeForSpdy(
-    NSSSocketControl* socketControl, const UniqueCERTCertificate& serverCert) {
-  if (!socketControl->IsHandshakeCompleted()) {
+    nsNSSSocketInfo* infoObject, const UniqueCERTCertificate& serverCert) {
+  if (!infoObject->IsHandshakeCompleted()) {
     
     
     return SECSuccess;
   }
 
   
-  nsCOMPtr<nsITransportSecurityInfo> securityInfo;
-  nsresult rv = socketControl->GetSecurityInfo(getter_AddRefs(securityInfo));
-  MOZ_ASSERT(NS_SUCCEEDED(rv), "GetSecurityInfo() failed during renegotiation");
-  if (NS_FAILED(rv) || !securityInfo) {
-    PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
-    return SECFailure;
-  }
   nsAutoCString negotiatedNPN;
-  rv = securityInfo->GetNegotiatedNPN(negotiatedNPN);
+  nsresult rv = infoObject->GetNegotiatedNPN(negotiatedNPN);
   MOZ_ASSERT(NS_SUCCEEDED(rv),
              "GetNegotiatedNPN() failed during renegotiation");
 
@@ -412,7 +406,8 @@ static SECStatus BlockServerCertChangeForSpdy(
   }
 
   
-  nsCOMPtr<nsIX509Cert> cert(socketControl->GetServerCert());
+  nsCOMPtr<nsIX509Cert> cert;
+  infoObject->GetServerCert(getter_AddRefs(cert));
   if (!cert) {
     PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
     return SECFailure;
@@ -818,7 +813,7 @@ SSLServerCertVerificationJob::Run() {
 
 
 SECStatus AuthCertificateHookInternal(
-    CommonSocketControl* socketControl, const void* aPtrForLogging,
+    TransportSecurityInfo* infoObject, const void* aPtrForLogging,
     const nsACString& hostName, nsTArray<nsTArray<uint8_t>>&& peerCertChain,
     Maybe<nsTArray<uint8_t>>& stapledOCSPResponse,
     Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension,
@@ -829,7 +824,7 @@ SECStatus AuthCertificateHookInternal(
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
           ("[%p] starting AuthCertificateHookInternal\n", aPtrForLogging));
 
-  if (!socketControl || peerCertChain.IsEmpty()) {
+  if (!infoObject || peerCertChain.IsEmpty()) {
     PR_SetError(PR_INVALID_STATE_ERROR, 0);
     return SECFailure;
   }
@@ -857,12 +852,12 @@ SECStatus AuthCertificateHookInternal(
 
   uint64_t addr = reinterpret_cast<uintptr_t>(aPtrForLogging);
   RefPtr<SSLServerCertVerificationResult> resultTask =
-      new SSLServerCertVerificationResult(socketControl);
+      new SSLServerCertVerificationResult(infoObject);
 
   if (XRE_IsSocketProcess()) {
     return RemoteProcessCertVerification(
-        std::move(peerCertChain), hostName, socketControl->GetPort(),
-        socketControl->GetOriginAttributes(), stapledOCSPResponse,
+        std::move(peerCertChain), hostName, infoObject->GetPort(),
+        infoObject->GetOriginAttributes(), stapledOCSPResponse,
         sctsFromTLSExtension, dcInfo, providerFlags, certVerifierFlags,
         resultTask);
   }
@@ -872,8 +867,8 @@ SECStatus AuthCertificateHookInternal(
   
   
   return SSLServerCertVerificationJob::Dispatch(
-      addr, socketControl, std::move(peerCertChain), hostName,
-      socketControl->GetPort(), socketControl->GetOriginAttributes(),
+      addr, infoObject, std::move(peerCertChain), hostName,
+      infoObject->GetPort(), infoObject->GetOriginAttributes(),
       stapledOCSPResponse, sctsFromTLSExtension, dcInfo, providerFlags, Now(),
       certVerifierFlags, resultTask);
 }
@@ -895,7 +890,7 @@ SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
   
   MOZ_ASSERT(!isServer, "AuthCertificateHook: isServer unexpectedly true");
 
-  NSSSocketControl* socketInfo = static_cast<NSSSocketControl*>(arg);
+  nsNSSSocketInfo* socketInfo = static_cast<nsNSSSocketInfo*>(arg);
 
   UniqueCERTCertificate serverCert(SSL_PeerCertificate(fd));
 
@@ -987,7 +982,7 @@ SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
 
 
 SECStatus AuthCertificateHookWithInfo(
-    CommonSocketControl* socketControl, const nsACString& aHostName,
+    TransportSecurityInfo* infoObject, const nsACString& aHostName,
     const void* aPtrForLogging, nsTArray<nsTArray<uint8_t>>&& peerCertChain,
     Maybe<nsTArray<nsTArray<uint8_t>>>& stapledOCSPResponses,
     Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension, uint32_t providerFlags) {
@@ -1015,7 +1010,7 @@ SECStatus AuthCertificateHookWithInfo(
   
   Maybe<DelegatedCredentialInfo> dcInfo;
 
-  return AuthCertificateHookInternal(socketControl, aPtrForLogging, aHostName,
+  return AuthCertificateHookInternal(infoObject, aPtrForLogging, aHostName,
                                      std::move(peerCertChain),
                                      stapledOCSPResponse, sctsFromTLSExtension,
                                      dcInfo, providerFlags, certVerifierFlags);
@@ -1024,9 +1019,9 @@ SECStatus AuthCertificateHookWithInfo(
 NS_IMPL_ISUPPORTS_INHERITED0(SSLServerCertVerificationResult, Runnable)
 
 SSLServerCertVerificationResult::SSLServerCertVerificationResult(
-    CommonSocketControl* socketControl)
+    TransportSecurityInfo* infoObject)
     : Runnable("psm::SSLServerCertVerificationResult"),
-      mSocketControl(socketControl),
+      mInfoObject(infoObject),
       mCertificateTransparencyStatus(0),
       mEVStatus(EVStatus::NotEV),
       mSucceeded(false),
@@ -1096,33 +1091,33 @@ SSLServerCertVerificationResult::Run() {
     SaveIntermediateCerts(mBuiltChain);
   }
 
-  mSocketControl->SetMadeOCSPRequests(mMadeOCSPRequests);
+  mInfoObject->SetMadeOCSPRequest(mMadeOCSPRequests);
 
   if (mSucceeded) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("SSLServerCertVerificationResult::Run setting NEW cert"));
     nsTArray<uint8_t> certBytes(mBuiltChain.ElementAt(0).Clone());
     nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(std::move(certBytes)));
-    mSocketControl->SetServerCert(cert, mEVStatus);
-    mSocketControl->SetSucceededCertChain(std::move(mBuiltChain));
+    mInfoObject->SetServerCert(cert, mEVStatus);
+    mInfoObject->SetSucceededCertChain(std::move(mBuiltChain));
 
-    mSocketControl->SetIsBuiltCertChainRootBuiltInRoot(
+    mInfoObject->SetIsBuiltCertChainRootBuiltInRoot(
         mIsBuiltCertChainRootBuiltInRoot);
-    mSocketControl->SetCertificateTransparencyStatus(
+    mInfoObject->SetCertificateTransparencyStatus(
         mCertificateTransparencyStatus);
   } else {
     nsTArray<uint8_t> certBytes(mPeerCertChain.ElementAt(0).Clone());
     nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(std::move(certBytes)));
     
     
-    mSocketControl->SetFailedCertChain(std::move(mPeerCertChain));
+    mInfoObject->SetFailedCertChain(std::move(mPeerCertChain));
     if (mOverridableErrorCategory !=
         nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET) {
-      mSocketControl->SetStatusErrorBits(cert, mOverridableErrorCategory);
+      mInfoObject->SetStatusErrorBits(cert, mOverridableErrorCategory);
     }
   }
 
-  mSocketControl->SetCertVerificationResult(mFinalError);
+  mInfoObject->SetCertVerificationResult(mFinalError);
   return NS_OK;
 }
 

@@ -7,15 +7,16 @@
 #ifndef nsNSSIOLayer_h
 #define nsNSSIOLayer_h
 
+#include "CommonSocketControl.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
+#include "nsTHashMap.h"
 #include "nsIProxyInfo.h"
-#include "nsITLSSocketControl.h"
+#include "nsISSLSocketControl.h"
 #include "nsITlsHandshakeListener.h"
 #include "nsNSSCertificate.h"
-#include "nsTHashMap.h"
 #include "nsTHashtable.h"
 #include "sslt.h"
 
@@ -38,6 +39,226 @@ enum class EchExtensionStatus {
   kNotPresent,  
   kGREASE,      
   kReal         
+};
+
+class nsNSSSocketInfo final : public CommonSocketControl {
+ public:
+  nsNSSSocketInfo(mozilla::psm::SharedSSLState& aState, uint32_t providerFlags,
+                  uint32_t providerTlsFlags);
+
+  NS_DECL_ISUPPORTS_INHERITED
+
+  void SetForSTARTTLS(bool aForSTARTTLS);
+  bool GetForSTARTTLS();
+
+  nsresult GetFileDescPtr(PRFileDesc** aFilePtr);
+  nsresult SetFileDescPtr(PRFileDesc* aFilePtr);
+
+  bool IsHandshakePending() const { return mHandshakePending; }
+  void SetHandshakeNotPending() { mHandshakePending = false; }
+
+  void SetTLSVersionRange(SSLVersionRange range) { mTLSVersionRange = range; }
+  SSLVersionRange GetTLSVersionRange() const { return mTLSVersionRange; };
+
+  
+  NS_IMETHOD ProxyStartSSL(void) override;
+  NS_IMETHOD StartTLS(void) override;
+  NS_IMETHOD SetNPNList(nsTArray<nsCString>& aNPNList) override;
+  NS_IMETHOD GetAlpnEarlySelection(nsACString& _retval) override;
+  NS_IMETHOD GetEarlyDataAccepted(bool* aEarlyDataAccepted) override;
+  NS_IMETHOD DriveHandshake(void) override;
+  using nsISSLSocketControl::GetKEAUsed;
+  NS_IMETHOD GetKEAUsed(int16_t* aKEAUsed) override;
+  NS_IMETHOD GetKEAKeyBits(uint32_t* aKEAKeyBits) override;
+  NS_IMETHOD GetProviderTlsFlags(uint32_t* aProviderTlsFlags) override;
+  NS_IMETHOD GetSSLVersionOffered(int16_t* aSSLVersionOffered) override;
+  NS_IMETHOD GetMACAlgorithmUsed(int16_t* aMACAlgorithmUsed) override;
+  bool GetDenyClientCert() override;
+  void SetDenyClientCert(bool aDenyClientCert) override;
+  NS_IMETHOD GetEsniTxt(nsACString& aEsniTxt) override;
+  NS_IMETHOD SetEsniTxt(const nsACString& aEsniTxt) override;
+  NS_IMETHOD GetEchConfig(nsACString& aEchConfig) override;
+  NS_IMETHOD SetEchConfig(const nsACString& aEchConfig) override;
+  NS_IMETHOD GetPeerId(nsACString& aResult) override;
+  NS_IMETHOD GetRetryEchConfig(nsACString& aEchConfig) override;
+  NS_IMETHOD DisableEarlyData(void) override;
+  NS_IMETHOD SetHandshakeCallbackListener(
+      nsITlsHandshakeCallbackListener* callback) override;
+
+  PRStatus CloseSocketAndDestroy();
+
+  void SetNegotiatedNPN(const char* value, uint32_t length);
+  void SetEarlyDataAccepted(bool aAccepted);
+
+  void SetHandshakeCompleted();
+  bool IsHandshakeCompleted() const { return mHandshakeCompleted; }
+  void NoteTimeUntilReady();
+
+  void SetFalseStartCallbackCalled() { mFalseStartCallbackCalled = true; }
+  void SetFalseStarted() { mFalseStarted = true; }
+
+  
+  
+  void SetFullHandshake() { mIsFullHandshake = true; }
+  bool IsFullHandshake() const { return mIsFullHandshake; }
+
+  void UpdateEchExtensionStatus(EchExtensionStatus aEchExtensionStatus) {
+    mEchExtensionStatus = std::max(aEchExtensionStatus, mEchExtensionStatus);
+  }
+  EchExtensionStatus GetEchExtensionStatus() const {
+    return mEchExtensionStatus;
+  }
+
+  bool GetJoined() { return mJoined; }
+
+  uint32_t GetProviderTlsFlags() const { return mProviderTlsFlags; }
+
+  mozilla::psm::SharedSSLState& SharedState();
+
+  
+  enum CertVerificationState {
+    before_cert_verification,
+    waiting_for_cert_verification,
+    after_cert_verification
+  };
+  void SetCertVerificationWaiting();
+  
+  void SetCertVerificationResult(PRErrorCode errorCode) override;
+
+  void ClientAuthCertificateSelected(
+      nsTArray<uint8_t>& certBytes,
+      nsTArray<nsTArray<uint8_t>>& certChainBytes);
+
+  
+  PRBool IsWaitingForCertVerification() const {
+    return mCertVerificationState == waiting_for_cert_verification;
+  }
+  void AddPlaintextBytesRead(uint64_t val) { mPlaintextBytesRead += val; }
+
+  bool IsPreliminaryHandshakeDone() const { return mPreliminaryHandshakeDone; }
+  void SetPreliminaryHandshakeDone() { mPreliminaryHandshakeDone = true; }
+
+  void SetKEAUsed(uint16_t kea) { mKEAUsed = kea; }
+
+  void SetKEAKeyBits(uint32_t keaBits) { mKEAKeyBits = keaBits; }
+
+  void SetMACAlgorithmUsed(int16_t mac) { mMACAlgorithmUsed = mac; }
+
+  void SetShortWritePending(int32_t amount, unsigned char data) {
+    mIsShortWritePending = true;
+    mShortWriteOriginalAmount = amount;
+    mShortWritePendingByte = data;
+  }
+
+  bool IsShortWritePending() { return mIsShortWritePending; }
+
+  unsigned char const* GetShortWritePendingByteRef() {
+    return &mShortWritePendingByte;
+  }
+
+  int32_t ResetShortWritePending() {
+    mIsShortWritePending = false;
+    return mShortWriteOriginalAmount;
+  }
+
+#ifdef DEBUG
+  
+  
+  
+  void RememberShortWrittenBuffer(const unsigned char* data) {
+    mShortWriteBufferCheck =
+        mozilla::MakeUnique<char[]>(mShortWriteOriginalAmount);
+    memcpy(mShortWriteBufferCheck.get(), data, mShortWriteOriginalAmount);
+  }
+  void CheckShortWrittenBuffer(const unsigned char* data, int32_t amount) {
+    if (!mShortWriteBufferCheck) return;
+    MOZ_ASSERT(amount >= mShortWriteOriginalAmount,
+               "unexpected amount length after short write");
+    MOZ_ASSERT(
+        !memcmp(mShortWriteBufferCheck.get(), data, mShortWriteOriginalAmount),
+        "unexpected buffer content after short write");
+    mShortWriteBufferCheck = nullptr;
+  }
+#endif
+
+  void SetSharedOwningReference(mozilla::psm::SharedSSLState* ref);
+
+  nsresult SetResumptionTokenFromExternalCache();
+
+ protected:
+  virtual ~nsNSSSocketInfo();
+
+ private:
+  PRFileDesc* mFd;
+
+  CertVerificationState mCertVerificationState;
+
+  mozilla::psm::SharedSSLState& mSharedState;
+  bool mForSTARTTLS;
+  SSLVersionRange mTLSVersionRange;
+  bool mHandshakePending;
+  bool mPreliminaryHandshakeDone;  
+
+  nsresult ActivateSSL();
+
+  nsCString mEsniTxt;
+  nsCString mEchConfig;
+  bool mEarlyDataAccepted;
+  bool mDenyClientCert;
+  bool mFalseStartCallbackCalled;
+  bool mFalseStarted;
+  bool mIsFullHandshake;
+  bool mNotedTimeUntilReady;
+  EchExtensionStatus mEchExtensionStatus;  
+
+  
+  
+  bool mIsShortWritePending;
+
+  
+  
+  
+  
+  unsigned char mShortWritePendingByte;
+
+  
+  
+  int32_t mShortWriteOriginalAmount;
+
+#ifdef DEBUG
+  mozilla::UniquePtr<char[]> mShortWriteBufferCheck;
+#endif
+
+  
+  
+  int16_t mKEAUsed;
+  uint32_t mKEAKeyBits;
+  int16_t mMACAlgorithmUsed;
+
+  uint32_t mProviderTlsFlags;
+  mozilla::TimeStamp mSocketCreationTimestamp;
+  uint64_t mPlaintextBytesRead;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::UniqueCERTCertList mClientCertChain;
+
+  
+  
+  
+  
+  
+  RefPtr<mozilla::psm::SharedSSLState> mOwningSharedRef;
+
+  nsCOMPtr<nsITlsHandshakeCallbackListener> mTlsHandshakeCallback;
 };
 
 class nsSSLIOLayerHelpers {
@@ -107,7 +328,7 @@ nsresult nsSSLIOLayerNewSocket(int32_t family, const char* host, int32_t port,
                                nsIProxyInfo* proxy,
                                const OriginAttributes& originAttributes,
                                PRFileDesc** fd,
-                               nsITLSSocketControl** tlsSocketControl,
+                               nsISSLSocketControl** tlsSocketControl,
                                bool forSTARTTLS, uint32_t flags,
                                uint32_t tlsFlags);
 
@@ -115,7 +336,7 @@ nsresult nsSSLIOLayerAddToSocket(int32_t family, const char* host, int32_t port,
                                  nsIProxyInfo* proxy,
                                  const OriginAttributes& originAttributes,
                                  PRFileDesc* fd,
-                                 nsITLSSocketControl** tlsSocketControl,
+                                 nsISSLSocketControl** tlsSocketControl,
                                  bool forSTARTTLS, uint32_t flags,
                                  uint32_t tlsFlags);
 
