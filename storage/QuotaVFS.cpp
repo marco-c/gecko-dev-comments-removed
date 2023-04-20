@@ -8,10 +8,12 @@
 #include "mozilla/dom/quota/PersistenceType.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/QuotaObject.h"
+#include "mozilla/dom/quota/ResultExtensions.h"
+#include "nsDirectoryServiceDefs.h"
 #include "nsEscape.h"
 #include "mozilla/StaticPrefs_storage.h"
 
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(XP_UNIX)
 #  include "mozilla/StaticPrefs_dom.h"
 #endif
 
@@ -427,6 +429,60 @@ int QuotaFullPathname(sqlite3_vfs* vfs, const char* zName, int nOut,
       index++;
     }
     zOut[index] = '\0';
+
+    return SQLITE_OK;
+  }
+#elif defined(XP_UNIX)
+  
+  
+  
+  
+  
+  
+
+  if (StaticPrefs::dom_quotaManager_overrideXFullPathnameUnix()) {
+    if (nOut < 0) {
+      
+      
+      return SQLITE_CANTOPEN;
+    }
+
+    QM_TRY_INSPECT(
+        const auto& path, ([&zName]() -> Result<nsString, nsresult> {
+          NS_ConvertUTF8toUTF16 name(zName);
+
+          if (name.First() == '/') {
+            return name;
+          }
+
+          QM_TRY_INSPECT(const auto& file,
+                         MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<nsIFile>,
+                                                    NS_GetSpecialDirectory,
+                                                    NS_OS_CURRENT_WORKING_DIR));
+
+          QM_TRY(MOZ_TO_RESULT(file->Append(name)));
+
+          QM_TRY_RETURN(
+              MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsString, file, GetPath));
+        }()),
+        SQLITE_CANTOPEN);
+
+    QM_TRY_INSPECT(const auto& quotaFile, QM_NewLocalFile(path),
+                   SQLITE_CANTOPEN);
+
+    QM_TRY_INSPECT(
+        const auto& quotaPath,
+        MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsString, quotaFile, GetPath),
+        SQLITE_CANTOPEN);
+
+    NS_ConvertUTF16toUTF8 sqlitePath(quotaPath);
+
+    if (sqlitePath.Length() > (unsigned int)nOut) {
+      return SQLITE_CANTOPEN;
+    }
+
+    nsCharTraits<char>::copy(zOut, sqlitePath.get(), sqlitePath.Length());
+    zOut[sqlitePath.Length()] = '\0';
 
     return SQLITE_OK;
   }
