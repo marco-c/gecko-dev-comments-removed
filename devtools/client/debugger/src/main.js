@@ -67,11 +67,7 @@ async function loadInitialState(commands, toolbox) {
   const eventListenerBreakpoints = await asyncStore.eventListenerBreakpoints;
   const breakpoints = initialBreakpointsState(xhrBreakpoints);
   const sourceBlackBox = initialSourceBlackBoxState({ blackboxedRanges });
-  const sources = initialSourcesState({
-    
-    
-    isOverridesSupported: toolbox.target.getTrait("isOverridesSupported"),
-  });
+  const sources = initialSourcesState();
   const ui = initialUIState({
     supportsJavascriptTracing:
       commands.client.mainRoot.traits.supportsJavascriptTracing,

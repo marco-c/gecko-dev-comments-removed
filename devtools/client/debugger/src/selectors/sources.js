@@ -329,9 +329,3 @@ export function isSourceOverridden(state, source) {
   }
   return state.sources.mutableOverrideSources.has(source.url);
 }
-
-
-
-export function getOverridesSupport(state) {
-  return state.sources.isOverridesSupported;
-}

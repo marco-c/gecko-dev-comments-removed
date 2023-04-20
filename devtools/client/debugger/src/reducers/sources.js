@@ -23,11 +23,6 @@ export function initialSourcesState(state) {
 
 
 
-    isOverridesSupported: state?.isOverridesSupported || false,
-    
-
-
-
 
     mutableOverrideSources: state?.mutableOverrideSources || new Map(),
 
