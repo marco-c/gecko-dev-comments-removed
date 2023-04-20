@@ -1603,17 +1603,18 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
   }
 
   
+  
+  if (!EditorUtils::IsEditableContent(aElement, EditorType::HTML)) {
+    return pointToPutCaret;
+  }
+
+  
   auto ShouldRemoveHTMLStyle = [&]() {
     if (!aStyleToRemove.IsStyleToClearAllInlineStyles()) {
       return aStyleToRemove.IsRepresentedBy(aElement);
     }
     
-    
-    if (EditorUtils::IsEditableContent(aElement, EditorType::HTML)) {
-      
-      return HTMLEditUtils::IsRemovableInlineStyleElement(aElement);
-    }
-    return false;
+    return HTMLEditUtils::IsRemovableInlineStyleElement(aElement);
   };
 
   if (ShouldRemoveHTMLStyle()) {
