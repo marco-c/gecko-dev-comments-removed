@@ -415,15 +415,10 @@ static bool ModuleGetExportedNames(JSContext* cx, Handle<ModuleObject*> module,
   }
 
   
-  Rooted<ArrayObject*> localExportEntries(cx, &module->localExportEntries());
-  Rooted<ExportEntryObject*> e(cx);
-  for (uint32_t i = 0; i != localExportEntries->length(); i++) {
-    e = &localExportEntries->getDenseElement(i)
-             .toObject()
-             .as<ExportEntryObject>();
+  for (const ExportEntry& e : module->localExportEntries()) {
     
     
-    if (!exportedNames.append(e->exportName())) {
+    if (!exportedNames.append(e.exportName())) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -431,34 +426,24 @@ static bool ModuleGetExportedNames(JSContext* cx, Handle<ModuleObject*> module,
 
   
   
-  Rooted<ArrayObject*> indirectExportEntries(cx,
-                                             &module->indirectExportEntries());
-  for (uint32_t i = 0; i != indirectExportEntries->length(); i++) {
-    e = &indirectExportEntries->getDenseElement(i)
-             .toObject()
-             .as<ExportEntryObject>();
+  for (const ExportEntry& e : module->indirectExportEntries()) {
     
     
-    if (!exportedNames.append(e->exportName())) {
+    if (!exportedNames.append(e.exportName())) {
       ReportOutOfMemory(cx);
       return false;
     }
   }
 
   
-  Rooted<ArrayObject*> starExportEntries(cx, &module->starExportEntries());
   Rooted<ModuleRequestObject*> moduleRequest(cx);
   Rooted<ModuleObject*> requestedModule(cx);
   Rooted<ArrayObject*> starNames(cx);
   Rooted<JSAtom*> name(cx);
-  for (uint32_t i = 0; i != starExportEntries->length(); i++) {
-    e = &starExportEntries->getDenseElement(i)
-             .toObject()
-             .as<ExportEntryObject>();
-
+  for (const ExportEntry& e : module->starExportEntries()) {
     
     
-    moduleRequest = e->moduleRequest();
+    moduleRequest = e.moduleRequest();
     requestedModule = HostResolveImportedModule(cx, module, moduleRequest,
                                                 ModuleStatus::Unlinked);
     if (!requestedModule) {
@@ -581,39 +566,28 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
   }
 
   
-  Rooted<ArrayObject*> localExportEntries(cx, &module->localExportEntries());
-  Rooted<ExportEntryObject*> e(cx);
-  for (uint32_t i = 0; i != localExportEntries->length(); i++) {
-    e = &localExportEntries->getDenseElement(i)
-             .toObject()
-             .as<ExportEntryObject>();
-
+  for (const ExportEntry& e : module->localExportEntries()) {
     
-    if (exportName == e->exportName()) {
+    if (exportName == e.exportName()) {
       
       
       
-      Rooted<JSAtom*> localName(cx, e->localName());
+      Rooted<JSAtom*> localName(cx, e.localName());
       return CreateResolvedBindingObject(cx, module, localName, result);
     }
   }
 
   
   
-  Rooted<ArrayObject*> indirectExportEntries(cx,
-                                             &module->indirectExportEntries());
   Rooted<ModuleRequestObject*> moduleRequest(cx);
   Rooted<ModuleObject*> importedModule(cx);
   Rooted<JSAtom*> name(cx);
-  for (uint32_t i = 0; i != indirectExportEntries->length(); i++) {
-    e = &indirectExportEntries->getDenseElement(i)
-             .toObject()
-             .as<ExportEntryObject>();
+  for (const ExportEntry& e : module->indirectExportEntries()) {
     
-    if (exportName == e->exportName()) {
+    if (exportName == e.exportName()) {
       
       
-      moduleRequest = e->moduleRequest();
+      moduleRequest = e.moduleRequest();
       importedModule = HostResolveImportedModule(cx, module, moduleRequest,
                                                  ModuleStatus::Unlinked);
       if (!importedModule) {
@@ -621,7 +595,7 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
       }
 
       
-      if (!e->importName()) {
+      if (!e.importName()) {
         
         
         
@@ -634,7 +608,7 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
         
         
         
-        name = e->importName();
+        name = e.importName();
         return ModuleResolveExport(cx, importedModule, name, resolveSet,
                                    result);
       }
@@ -656,16 +630,12 @@ static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
   Rooted<ResolvedBindingObject*> starResolution(cx);
 
   
-  Rooted<ArrayObject*> starExportEntries(cx, &module->starExportEntries());
   Rooted<Value> resolution(cx);
   Rooted<ResolvedBindingObject*> binding(cx);
-  for (uint32_t i = 0; i != starExportEntries->length(); i++) {
-    e = &starExportEntries->getDenseElement(i)
-             .toObject()
-             .as<ExportEntryObject>();
+  for (const ExportEntry& e : module->starExportEntries()) {
     
     
-    moduleRequest = e->moduleRequest();
+    moduleRequest = e.moduleRequest();
     importedModule = HostResolveImportedModule(cx, module, moduleRequest,
                                                ModuleStatus::Unlinked);
     if (!importedModule) {
@@ -924,18 +894,11 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
 
   
   
-  Rooted<ArrayObject*> indirectExportEntries(cx,
-                                             &module->indirectExportEntries());
-  Rooted<ExportEntryObject*> e(cx);
   Rooted<JSAtom*> exportName(cx);
   Rooted<Value> resolution(cx);
-  for (uint32_t i = 0; i != indirectExportEntries->length(); i++) {
-    e = &indirectExportEntries->getDenseElement(i)
-             .toObject()
-             .as<ExportEntryObject>();
-
+  for (const ExportEntry& e : module->indirectExportEntries()) {
     
-    exportName = e->exportName();
+    exportName = e.exportName();
     if (!ModuleResolveExport(cx, module, exportName, &resolution)) {
       return false;
     }
@@ -944,7 +907,7 @@ bool js::ModuleInitializeEnvironment(JSContext* cx,
     
     if (!IsResolvedBinding(cx, resolution)) {
       ThrowResolutionError(cx, module, resolution, false, exportName,
-                           e->lineNumber(), e->columnNumber());
+                           e.lineNumber(), e.columnNumber());
       return false;
     }
   }
