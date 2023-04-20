@@ -147,8 +147,6 @@ let interfaceNamesInGlobalScope = [
   
   "Crypto",
   
-  "CryptoKey",
-  
   "CustomEvent",
   
   "Directory",
