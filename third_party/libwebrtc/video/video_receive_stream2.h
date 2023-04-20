@@ -339,8 +339,6 @@ class VideoReceiveStream2
   
   FieldTrialParameter<int> maximum_pre_stream_decoders_;
 
-  DecodeSynchronizer* decode_sync_;
-
   
   rtc::TaskQueue decode_queue_;
 
