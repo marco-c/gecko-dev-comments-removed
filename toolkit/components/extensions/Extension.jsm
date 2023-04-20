@@ -128,6 +128,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "[]"
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "dnrEnabled",
+  "extensions.dnr.enabled",
+  true
+);
+
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -219,8 +226,6 @@ if (
   }
 }
 
-const PREF_DNR_ENABLED = "extensions.dnr.enabled";
-
 
 
 
@@ -277,15 +282,6 @@ function isMozillaExtension(extension) {
   return isSigned && isMozillaLineExtension;
 }
 
-function isDNRPermissionAllowed(perm) {
-  
-  if (!Services.prefs.getBoolPref(PREF_DNR_ENABLED, false)) {
-    return false;
-  }
-
-  return true;
-}
-
 
 
 
@@ -318,10 +314,7 @@ function classifyPermission(perm, restrictSchemes, isPrivileged) {
     return { api: match[2] };
   } else if (!isPrivileged && PRIVILEGED_PERMS.has(match[1])) {
     return { invalid: perm, privileged: true };
-  } else if (
-    perm.startsWith("declarativeNetRequest") &&
-    !isDNRPermissionAllowed(perm)
-  ) {
+  } else if (perm.startsWith("declarativeNetRequest") && !lazy.dnrEnabled) {
     return { invalid: perm };
   }
   return { permission: perm };
