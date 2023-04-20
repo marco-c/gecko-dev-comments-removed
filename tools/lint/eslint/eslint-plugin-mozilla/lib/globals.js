@@ -45,6 +45,10 @@ const callExpressionMultiDefinitions = [
   "loader.lazyRequireGetter(globalThis,",
 ];
 
+const subScriptMatches = [
+  /Services\.scriptloader\.loadSubScript\("(.*?)", this\)/,
+];
+
 const workerImportFilenameMatch = /(.*\/)*((.*?)\.jsm?)/;
 
 
@@ -154,6 +158,19 @@ function convertCallExpressionToGlobals(node, isGlobal) {
   
   if (!isGlobal) {
     return [];
+  }
+
+  for (let reg of subScriptMatches) {
+    let match = source.match(reg);
+    if (match) {
+      return getGlobalsForScript(match[1], "script").map(g => {
+        
+        
+        
+        g.explicit = false;
+        return g;
+      });
+    }
   }
 
   for (let reg of callExpressionDefinitions) {
@@ -278,6 +295,47 @@ function convertWorkerExpressionToGlobals(node, isGlobal, dirname) {
   }
 
   return results;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getGlobalsForScript(src, type, dir) {
+  let scriptName;
+  if (src.includes("http:")) {
+    
+  } else if (src.startsWith("chrome://mochikit/content/")) {
+    
+    src = src.replace("chrome://mochikit/content/", "/");
+    scriptName = path.join(helpers.rootDir, "testing", "mochitest", src);
+  } else if (src.startsWith("chrome://mochitests/content/browser")) {
+    src = src.replace("chrome://mochitests/content/browser", "");
+    scriptName = path.join(helpers.rootDir, src);
+  } else if (src.includes("SimpleTest")) {
+    
+    scriptName = path.join(helpers.rootDir, "testing", "mochitest", src);
+  } else if (src.startsWith("/tests/")) {
+    scriptName = path.join(helpers.rootDir, src.substring(7));
+  } else if (dir) {
+    
+    scriptName = path.join(dir, src);
+  }
+  if (scriptName && fs.existsSync(scriptName)) {
+    return module.exports.getGlobalsForFile(scriptName, {
+      ecmaVersion: helpers.getECMAVersion(),
+      sourceType: type,
+    });
+  }
+  return [];
 }
 
 
@@ -554,40 +612,7 @@ module.exports = {
       if (!script.src) {
         continue;
       }
-      let scriptName;
-      if (script.src.includes("http:")) {
-        
-      } else if (script.src.includes("chrome")) {
-        
-        script.src = script.src.replace("chrome://mochikit/content/", "/");
-        scriptName = path.join(
-          helpers.rootDir,
-          "testing",
-          "mochitest",
-          script.src
-        );
-      } else if (script.src.includes("SimpleTest")) {
-        
-        scriptName = path.join(
-          helpers.rootDir,
-          "testing",
-          "mochitest",
-          script.src
-        );
-      } else if (script.src.startsWith("/tests/")) {
-        scriptName = path.join(helpers.rootDir, script.src.substring(7));
-      } else {
-        
-        scriptName = path.join(dir, script.src);
-      }
-      if (scriptName && fs.existsSync(scriptName)) {
-        globals.push(
-          ...module.exports.getGlobalsForFile(scriptName, {
-            ecmaVersion: helpers.getECMAVersion(),
-            sourceType: script.type,
-          })
-        );
-      }
+      globals.push(...getGlobalsForScript(script.src, script.type, dir));
     }
 
     lastHTMLGlobals.filePath = filePath;
