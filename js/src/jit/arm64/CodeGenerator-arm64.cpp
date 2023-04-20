@@ -205,15 +205,13 @@ void CodeGenerator::visitMinMaxF(LMinMaxF* ins) {
   }
 }
 
-
 template <typename T>
-ARMRegister toWRegister(const T* a) {
+static ARMRegister toWRegister(const T* a) {
   return ARMRegister(ToRegister(a), 32);
 }
 
-
 template <typename T>
-ARMRegister toXRegister(const T* a) {
+static ARMRegister toXRegister(const T* a) {
   return ARMRegister(ToRegister(a), 64);
 }
 
