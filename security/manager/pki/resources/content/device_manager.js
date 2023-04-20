@@ -12,11 +12,6 @@ var skip_enable_buttons = false;
 
 
 function LoadModules() {
-  Services.telemetry.keyedScalarSet(
-    "security.psm_ui_interaction",
-    "pkcs11_module_manager",
-    true
-  );
   secmoddb = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
     Ci.nsIPKCS11ModuleDB
   );
@@ -294,11 +289,6 @@ function AddInfoRow(l10nID, col2, cell_id) {
 
 
 function doLogin() {
-  Services.telemetry.keyedScalarSet(
-    "security.psm_ui_interaction",
-    "pkcs11_module_manager_login",
-    true
-  );
   getSelectedItem();
   
   var selected_token = selected_slot.getToken();
@@ -318,11 +308,6 @@ function doLogin() {
 
 
 function doLogout() {
-  Services.telemetry.keyedScalarSet(
-    "security.psm_ui_interaction",
-    "pkcs11_module_manager_logout",
-    true
-  );
   getSelectedItem();
   
   var selected_token = selected_slot.getToken();
@@ -340,11 +325,6 @@ function doLogout() {
 
 
 function doLoad() {
-  Services.telemetry.keyedScalarSet(
-    "security.psm_ui_interaction",
-    "pkcs11_module_manager_load",
-    true
-  );
   window.browsingContext.topChromeWindow.open(
     "load_device.xhtml",
     "loaddevice",
@@ -370,11 +350,6 @@ async function deleteSelected() {
 }
 
 async function doUnload() {
-  Services.telemetry.keyedScalarSet(
-    "security.psm_ui_interaction",
-    "pkcs11_module_manager_unload",
-    true
-  );
   if (await deleteSelected()) {
     ClearDeviceList();
     RefreshDeviceList();
@@ -382,11 +357,6 @@ async function doUnload() {
 }
 
 function changePassword() {
-  Services.telemetry.keyedScalarSet(
-    "security.psm_ui_interaction",
-    "pkcs11_module_manager_change_pw",
-    true
-  );
   getSelectedItem();
   let params = Cc["@mozilla.org/embedcomp/dialogparam;1"].createInstance(
     Ci.nsIDialogParamBlock
@@ -432,11 +402,6 @@ function showTokenInfo() {
 }
 
 function toggleFIPS() {
-  Services.telemetry.keyedScalarSet(
-    "security.psm_ui_interaction",
-    "pkcs11_module_manager_fips",
-    true
-  );
   if (!secmoddb.isFIPSEnabled) {
     
     
