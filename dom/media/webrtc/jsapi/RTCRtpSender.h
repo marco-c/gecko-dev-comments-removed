@@ -76,13 +76,12 @@ class RTCRtpSender : public nsISupports,
   nsTArray<RefPtr<RTCStatsPromise>> GetStatsInternal(
       bool aSkipIceStats = false);
 
-  
-  
-  
-  
-  void SetStreams(const Sequence<OwningNonNull<DOMMediaStream>>& aStreams);
+  void SetStreams(const Sequence<OwningNonNull<DOMMediaStream>>& aStreams,
+                  ErrorResult& aRv);
   
   void GetStreams(nsTArray<RefPtr<DOMMediaStream>>& aStreams);
+  
+  void SetStreamsImpl(const Sequence<OwningNonNull<DOMMediaStream>>& aStreams);
   
   void SetTrack(const RefPtr<MediaStreamTrack>& aTrack);
   void Shutdown();
