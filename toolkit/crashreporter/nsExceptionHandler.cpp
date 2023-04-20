@@ -3835,14 +3835,16 @@ bool CreateMinidumpsAndPair(ProcessHandle aTargetHandle,
   return true;
 }
 
-bool UnsetRemoteExceptionHandler() {
+bool UnsetRemoteExceptionHandler(bool wasSet) {
   
   
   
 #if !defined(XP_LINUX) || !defined(MOZ_SANDBOX)
-  std::set_terminate(oldTerminateHandler);
-  delete gExceptionHandler;
-  gExceptionHandler = nullptr;
+  if (wasSet) {
+    std::set_terminate(oldTerminateHandler);
+    delete gExceptionHandler;
+    gExceptionHandler = nullptr;
+  }
 #endif
   TeardownAnnotationFacilities();
 
