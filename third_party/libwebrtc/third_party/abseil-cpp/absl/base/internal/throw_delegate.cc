@@ -32,6 +32,7 @@ namespace base_internal {
 
 namespace {
 #ifdef ABSL_HAVE_EXCEPTIONS
+static_assert(false, "Mozilla - ABSL_HAVE_EXCEPTIONS has been turned on");
 template <typename T>
 [[noreturn]] void Throw(const T& error) {
   throw error;
