@@ -353,6 +353,13 @@ void HTMLTextAreaElement::GetDefaultValue(nsAString& aDefaultValue,
 
 void HTMLTextAreaElement::SetDefaultValue(const nsAString& aDefaultValue,
                                           ErrorResult& aError) {
+  
+  
+  
+  
+  
+  
+  nsContentUtils::SetNodeTextContent(this, EmptyString(), true);
   nsresult rv = nsContentUtils::SetNodeTextContent(this, aDefaultValue, true);
   if (NS_SUCCEEDED(rv) && !mValueChanged) {
     Reset();
@@ -848,6 +855,24 @@ void HTMLTextAreaElement::ContentRemoved(nsIContent* aChild,
 void HTMLTextAreaElement::ContentChanged(nsIContent* aContent) {
   if (!mValueChanged && mDoneAddingChildren &&
       nsContentUtils::IsInSameAnonymousTree(this, aContent)) {
+    if (mState->IsSelectionCached()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      auto& props = mState->GetSelectionProperties();
+      nsAutoString resetVal;
+      GetDefaultValue(resetVal, IgnoreErrors());
+      props.SetMaxLength(resetVal.Length());
+      props.SetStart(props.GetStart());
+      props.SetEnd(props.GetEnd());
+    }
     
     
     nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
