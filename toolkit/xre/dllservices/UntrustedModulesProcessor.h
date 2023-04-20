@@ -51,15 +51,13 @@ struct UnprocessedModuleLoadInfoContainer final
 using UnprocessedModuleLoads =
     AutoCleanLinkedList<UnprocessedModuleLoadInfoContainer>;
 
-class UntrustedModulesProcessor final : public nsIObserver,
-                                        public nsIThreadPoolListener {
+class UntrustedModulesProcessor final : public nsIObserver {
  public:
   static RefPtr<UntrustedModulesProcessor> Create(
       bool aIsReadyForBackgroundProcessing);
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
-  NS_DECL_NSITHREADPOOLLISTENER
 
   
   
@@ -95,10 +93,8 @@ class UntrustedModulesProcessor final : public nsIObserver,
   void AddObservers();
   void RemoveObservers();
 
-  void ScheduleNonEmptyQueueProcessing(const MutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(mUnprocessedMutex);
-  void CancelScheduledProcessing(const MutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(mUnprocessedMutex);
+  void ScheduleNonEmptyQueueProcessing(const MutexAutoLock& aProofOfLock);
+  void CancelScheduledProcessing(const MutexAutoLock& aProofOfLock);
   void DispatchBackgroundProcessing();
 
   void BackgroundProcessModuleLoadQueue();
@@ -154,17 +150,12 @@ class UntrustedModulesProcessor final : public nsIObserver,
  private:
   RefPtr<LazyIdleThread> mThread;
 
-  Mutex mThreadHandleMutex;
-  Mutex mUnprocessedMutex;
-  Mutex mModuleCacheMutex;
+  Mutex mUnprocessedMutex MOZ_UNANNOTATED;
+  Mutex mModuleCacheMutex MOZ_UNANNOTATED;
 
   
-  nsAutoHandle mThreadHandle MOZ_GUARDED_BY(mThreadHandleMutex);
-
-  
-  UnprocessedModuleLoads mUnprocessedModuleLoads
-      MOZ_GUARDED_BY(mUnprocessedMutex);
-  nsCOMPtr<nsIRunnable> mIdleRunnable MOZ_GUARDED_BY(mUnprocessedMutex);
+  UnprocessedModuleLoads mUnprocessedModuleLoads;
+  nsCOMPtr<nsIRunnable> mIdleRunnable;
 
   
   UntrustedModulesData mProcessedModuleLoads;
@@ -177,7 +168,7 @@ class UntrustedModulesProcessor final : public nsIObserver,
   
   
   
-  ModulesMap mGlobalModuleCache MOZ_GUARDED_BY(mModuleCacheMutex);
+  ModulesMap mGlobalModuleCache;
 };
 
 }  

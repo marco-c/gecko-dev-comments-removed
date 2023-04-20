@@ -273,7 +273,7 @@ nsresult JumpListSeparator::GetSeparator(RefPtr<IShellLinkW>& aShellLink) {
 
 nsresult JumpListShortcut::GetShellLink(nsCOMPtr<nsIJumpListItem>& item,
                                         RefPtr<IShellLinkW>& aShellLink,
-                                        RefPtr<LazyIdleThread>& aIOThread) {
+                                        nsCOMPtr<nsIThread>& aIOThread) {
   HRESULT hr;
   IShellLinkW* psl;
   nsresult rv;
