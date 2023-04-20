@@ -345,11 +345,12 @@ class TextDrawTarget : public DrawTarget {
                        false, aFilter, aKey, true, aColor);
   }
 
+  LayoutDeviceRect GeckoClipRect() { return mClipStack.LastElement(); }
+
  private:
   wr::LayoutRect ClipRect() {
     return wr::ToLayoutRect(mClipStack.LastElement());
   }
-  LayoutDeviceRect GeckoClipRect() { return mClipStack.LastElement(); }
   
   
   
