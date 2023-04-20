@@ -179,7 +179,13 @@ function onDocumentEventAvailable(events) {
     if (!event.targetFront.isTopLevel) continue;
     
     
-    if (event.isFrameSwitching) {
+    
+    
+    
+    if (
+      event.isFrameSwitching &&
+      !commands.descriptorFront.isWebExtensionDescriptor
+    ) {
       continue;
     }
     if (event.name == "will-navigate") {
