@@ -8,7 +8,9 @@
 
 
 
-const { Pool } = require("resource://devtools/shared/protocol.js");
+const { Actor, Pool } = require("resource://devtools/shared/protocol.js");
+const { rootSpec } = require("resource://devtools/shared/specs/root.js");
+
 const {
   LazyPool,
   createExtraActors,
@@ -16,8 +18,6 @@ const {
 const {
   DevToolsServer,
 } = require("resource://devtools/server/devtools-server.js");
-const protocol = require("resource://devtools/shared/protocol.js");
-const { rootSpec } = require("resource://devtools/shared/specs/root.js");
 const Resources = require("resource://devtools/server/actors/resources/index.js");
 
 loader.lazyRequireGetter(
@@ -101,9 +101,26 @@ loader.lazyRequireGetter(
 
 
 
-exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
-  initialize(conn, parameters) {
-    protocol.Actor.prototype.initialize.call(this, conn);
+class RootActor extends Actor {
+  constructor(conn, parameters) {
+    super(conn, rootSpec);
+
+    
+
+
+
+
+
+
+
+
+    this.requestTypes.echo = function(request) {
+      
+
+
+
+      return Cu.cloneInto(request, {});
+    };
 
     this._parameters = parameters;
     this._onTabListChanged = this.onTabListChanged.bind(this);
@@ -137,7 +154,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
           )
         : true,
     };
-  },
+  }
 
   
 
@@ -150,7 +167,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       testConnectionPrefix: this.conn.prefix,
       traits: this.traits,
     };
-  },
+  }
 
   forwardingCancelled(prefix) {
     return {
@@ -158,7 +175,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       type: "forwardingCancelled",
       prefix,
     };
-  },
+  }
 
   
 
@@ -166,7 +183,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
   destroy() {
     Resources.unwatchAllResources(this);
 
-    protocol.Actor.prototype.destroy.call(this);
+    super.destroy();
 
     
     if (this._parameters.tabList) {
@@ -211,11 +228,10 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       this._serviceWorkerRegistrationActorPool.destroy();
     }
     this._extraActors = null;
-    this.conn = null;
     this._tabDescriptorActorPool = null;
     this._globalActorPool = null;
     this._parameters = null;
-  },
+  }
 
   
 
@@ -233,7 +249,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     );
 
     return actors;
-  },
+  }
 
   
 
@@ -273,7 +289,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     this._tabDescriptorActorPool = newActorPool;
 
     return tabDescriptorActors;
-  },
+  }
 
   
 
@@ -316,13 +332,13 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     this._tabDescriptorActorPool.manage(descriptorActor);
 
     return descriptorActor;
-  },
+  }
 
   onTabListChanged() {
     this.conn.send({ from: this.actorID, type: "tabListChanged" });
     
     this._parameters.tabList.onListChanged = null;
-  },
+  }
 
   
 
@@ -362,12 +378,12 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     this._addonTargetActorPool = addonTargetActorPool;
 
     return addonTargetActors;
-  },
+  }
 
   onAddonListChanged() {
     this.conn.send({ from: this.actorID, type: "addonListChanged" });
     this._parameters.addonList.onListChanged = null;
-  },
+  }
 
   listWorkers() {
     const workerList = this._parameters.workerList;
@@ -399,12 +415,12 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
         workers: actors,
       };
     });
-  },
+  }
 
   onWorkerListChanged() {
     this.conn.send({ from: this.actorID, type: "workerListChanged" });
     this._parameters.workerList.onListChanged = null;
-  },
+  }
 
   listServiceWorkerRegistrations() {
     const registrationList = this._parameters.serviceWorkerRegistrationList;
@@ -433,7 +449,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
         registrations: actors,
       };
     });
-  },
+  }
 
   onServiceWorkerRegistrationListChanged() {
     this.conn.send({
@@ -441,7 +457,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       type: "serviceWorkerRegistrationListChanged",
     });
     this._parameters.serviceWorkerRegistrationList.onListChanged = null;
-  },
+  }
 
   listProcesses() {
     const { processList } = this._parameters;
@@ -471,12 +487,12 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     }
     this._processDescriptorActorPool = pool;
     return [...this._processDescriptorActorPool.poolChildren()];
-  },
+  }
 
   onProcessListChanged() {
     this.conn.send({ from: this.actorID, type: "processListChanged" });
     this._parameters.processList.onListChanged = null;
-  },
+  }
 
   async getProcess(id) {
     if (!DevToolsServer.allowChromeProcess) {
@@ -506,7 +522,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       this._processDescriptorActorPool.manage(processDescriptor);
     }
     return processDescriptor;
-  },
+  }
 
   _getKnownDescriptor(id, pool) {
     
@@ -519,7 +535,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       }
     }
     return null;
-  },
+  }
 
   
 
@@ -540,7 +556,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       }
       delete this._extraActors[name];
     }
-  },
+  }
 
   
 
@@ -549,7 +565,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
   async watchResources(resourceTypes) {
     await Resources.watchResources(this, resourceTypes);
-  },
+  }
 
   
 
@@ -558,7 +574,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
   unwatchResources(resourceTypes) {
     Resources.unwatchResources(this, resourceTypes);
-  },
+  }
 
   
 
@@ -567,7 +583,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
   clearResources(resourceTypes) {
     Resources.clearResources(this, resourceTypes);
-  },
+  }
 
   
 
@@ -599,22 +615,7 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       default:
         throw new Error("Unsupported update type: " + updateType);
     }
-  },
-});
+  }
+}
 
-
-
-
-
-
-
-
-
-
-exports.RootActor.prototype.requestTypes.echo = function(request) {
-  
-
-
-
-  return Cu.cloneInto(request, {});
-};
+exports.RootActor = RootActor;
