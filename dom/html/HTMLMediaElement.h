@@ -375,7 +375,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   void UpdateInitialMediaSize(const nsIntSize& aSize);
 
-  void Invalidate(bool aImageSizeChanged, Maybe<nsIntSize>& aNewIntrinsicSize,
+  void Invalidate(bool aImageSizeChanged,
+                  const Maybe<nsIntSize>& aNewIntrinsicSize,
                   bool aForceInvalidate) override;
 
   
