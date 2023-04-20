@@ -97,10 +97,8 @@ std::vector<PCFullStackTestParams> ParameterizedTestParams() {
           
           
           
-          {
-           
-           
-           
+          {.use_network_thread_as_worker_thread = true,
+           .field_trials = "WebRTC-SendPacketsOnWorkerThread/Enabled/",
            .test_case_name_postfix = "_ReducedThreads"}};
 }
 
