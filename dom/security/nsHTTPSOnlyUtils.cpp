@@ -504,10 +504,19 @@ nsHTTPSOnlyUtils::PotentiallyDowngradeHttpsFirstRequest(nsIChannel* aChannel,
   nsresult rv = aChannel->GetURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, nullptr);
 
-  
   nsAutoCString spec;
+  nsCOMPtr<nsIURI> newURI;
+
+  
   if (uri->SchemeIs("https")) {
     rv = uri->GetSpec(spec);
+    NS_ENSURE_SUCCESS(rv, nullptr);
+
+    rv = NS_NewURI(getter_AddRefs(newURI), spec);
+    NS_ENSURE_SUCCESS(rv, nullptr);
+
+    rv = NS_MutateURI(newURI).SetScheme("http"_ns).Finalize(
+        getter_AddRefs(newURI));
     NS_ENSURE_SUCCESS(rv, nullptr);
   } else if (uri->SchemeIs("view-source")) {
     nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(uri);
@@ -520,26 +529,22 @@ nsHTTPSOnlyUtils::PotentiallyDowngradeHttpsFirstRequest(nsIChannel* aChannel,
     if (!innerURI || !innerURI->SchemeIs("https")) {
       return nullptr;
     }
+    rv = NS_MutateURI(innerURI).SetScheme("http"_ns).Finalize(
+        getter_AddRefs(innerURI));
+    NS_ENSURE_SUCCESS(rv, nullptr);
+
     nsAutoCString innerSpec;
     rv = innerURI->GetSpec(innerSpec);
     NS_ENSURE_SUCCESS(rv, nullptr);
 
     spec.Append("view-source:");
     spec.Append(innerSpec);
+
+    rv = NS_NewURI(getter_AddRefs(newURI), spec);
+    NS_ENSURE_SUCCESS(rv, nullptr);
   } else {
     return nullptr;
   }
-
-  
-  if (spec.Find("https://") < 0) {
-    MOZ_ASSERT(false, "how can we end up here not dealing with an https: URI?");
-    return nullptr;
-  }
-  spec.ReplaceSubstring("https://", "http://");
-
-  nsCOMPtr<nsIURI> newURI;
-  rv = NS_NewURI(getter_AddRefs(newURI), spec);
-  NS_ENSURE_SUCCESS(rv, nullptr);
 
   
   NS_ConvertUTF8toUTF16 reportSpec(uri->GetSpecOrDefault());
