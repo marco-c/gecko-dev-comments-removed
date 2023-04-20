@@ -833,30 +833,30 @@ bool ValueNumberer::visitDefinition(MDefinition* def) {
     if (rep == nullptr) {
       return false;
     }
-    if (rep->updateForReplacement(def)) {
+
+    rep->updateForReplacement(def);
+
 #ifdef JS_JITSPEW
-      JitSpew(JitSpew_GVN, "      Replacing %s%u with %s%u", def->opName(),
-              def->id(), rep->opName(), rep->id());
+    JitSpew(JitSpew_GVN, "      Replacing %s%u with %s%u", def->opName(),
+            def->id(), rep->opName(), rep->id());
 #endif
-      ReplaceAllUsesWith(def, rep);
+    ReplaceAllUsesWith(def, rep);
 
-      
-      
-      
-      def->setNotGuardUnchecked();
+    
+    
+    
+    def->setNotGuardUnchecked();
 
-      if (DeadIfUnused(def)) {
-        
-        
-        mozilla::DebugOnly<bool> r = discardDef(def);
-        MOZ_ASSERT(
-            r,
-            "discardDef shouldn't have tried to add anything to the worklist, "
-            "so it shouldn't have failed");
-        MOZ_ASSERT(deadDefs_.empty(),
-                   "discardDef shouldn't have added anything to the worklist");
-      }
-      def = rep;
+    if (DeadIfUnused(def)) {
+      
+      
+      mozilla::DebugOnly<bool> r = discardDef(def);
+      MOZ_ASSERT(
+          r,
+          "discardDef shouldn't have tried to add anything to the worklist, "
+          "so it shouldn't have failed");
+      MOZ_ASSERT(deadDefs_.empty(),
+                 "discardDef shouldn't have added anything to the worklist");
     }
   }
 

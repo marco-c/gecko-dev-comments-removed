@@ -829,9 +829,7 @@ class MDefinition : public MNode {
   
   
   
-  [[nodiscard]] virtual bool updateForReplacement(MDefinition* ins) {
-    return true;
-  }
+  virtual void updateForReplacement(MDefinition* ins) {}
 
   void setVirtualRegister(uint32_t vreg) {
     virtualRegister_ = vreg;
@@ -6134,7 +6132,7 @@ class MPhi final : public MDefinition,
   MDefinition* foldsTernary(TempAllocator& alloc);
 
   bool congruentTo(const MDefinition* ins) const override;
-  bool updateForReplacement(MDefinition* def) override;
+  void updateForReplacement(MDefinition* def) override;
 
   bool isIterator() const { return isIterator_; }
   void setIterator() { isIterator_ = true; }
