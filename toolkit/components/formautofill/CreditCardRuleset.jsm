@@ -1,70 +1,85 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * Fathom ML model for identifying the fields of credit-card forms
- *
- * This is developed out-of-tree at https://github.com/mozilla-services/fathom-
- * form-autofill, where there is also over a GB of training, validation, and
- * testing data. To make changes, do your edits there (whether adding new
- * training pages, adding new rules, or both), retrain and evaluate as
- * documented at https://mozilla.github.io/fathom/training.html, paste the
- * coefficients emitted by the trainer into the ruleset, and finally copy the
- * ruleset's "CODE TO COPY INTO PRODUCTION" section to this file's "CODE FROM
- * TRAINING REPOSITORY" section.
- */
 
-/**
- * CODE UNIQUE TO PRODUCTION--NOT IN THE TRAINING REPOSITORY:
- */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-import {
-  element as clickedElement,
+
+
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+const EXPORTED_SYMBOLS = ["creditCardRulesets"];
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const {
+  element: clickedElement,
   out,
   rule,
   ruleset,
   score,
   type,
-} from "resource://gre/modules/third_party/fathom/fathom.mjs";
-import {
-  CreditCard,
-  NETWORK_NAMES,
-} from "resource://gre/modules/CreditCard.sys.mjs";
+} = ChromeUtils.importESModule(
+  "resource://gre/modules/third_party/fathom/fathom.mjs"
+);
+const { CreditCard } = ChromeUtils.importESModule(
+  "resource://gre/modules/CreditCard.sys.mjs"
+);
+const { NETWORK_NAMES } = ChromeUtils.importESModule(
+  "resource://gre/modules/CreditCard.sys.mjs"
+);
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  FormAutofillUtils: "resource://autofill/FormAutofillUtils.sys.mjs",
   FormLikeFactory: "resource://gre/modules/FormLikeFactory.sys.mjs",
-  LabelUtils: "resource://autofill/FormAutofillUtils.sys.mjs",
+});
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "FormAutofillUtils",
+  "resource://autofill/FormAutofillUtils.jsm"
+);
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  LabelUtils: "resource://autofill/FormAutofillUtils.jsm",
 });
 
-/**
- * Callthrough abstraction to allow .getAutocompleteInfo() to be mocked out
- * during training
- *
- * @param {Element} element DOM element to get info about
- * @returns {object} Page-author-provided autocomplete metadata
- */
+
+
+
+
+
+
+
 function getAutocompleteInfo(element) {
   return element.getAutocompleteInfo();
 }
 
-/**
- * @param {string} selector A CSS selector that prunes away ineligible elements
- * @returns {Lhs} An LHS yielding the element the user has clicked or, if
- *  pruned, none
- */
+
+
+
+
+
 function queriedOrClickedElements(selector) {
   return clickedElement(selector);
 }
 
-/**
- * START OF CODE PASTED FROM TRAINING REPOSITORY
- */
+
+
+
 
 var FathomHeuristicsRegExp = {
   RULES: {
@@ -78,46 +93,46 @@ var FathomHeuristicsRegExp = {
 
   RULE_SETS: [
     {
-      /* eslint-disable */
-      // Let us keep our consistent wrapping.
+      
+      
       "cc-name":
-        // Firefox-specific rules
+        
         "account.*holder.*name" +
-        // de-DE
+        
         "|^(kredit)?(karten|konto)inhaber" +
         "|^(name).*karte" +
-        // fr-FR
+        
         "|nom.*(titulaire|détenteur)" +
         "|(titulaire|détenteur).*(carte)" +
-        // it-IT
+        
         "|titolare.*carta" +
-        // Rules from Bitwarden
+        
         "|cc-?name" +
         "|card-?name" +
         "|cardholder-?name" +
         "|(^nom$)" +
-        // Rules are from Chromium source codes
+        
         "|card.?(?:holder|owner)|name.*(\\b)?on(\\b)?.*card" +
         "|(?:card|cc).?name|cc.?full.?name" +
         "|(?:card|cc).?owner" +
-        "|nombre.*tarjeta" + // es
-        "|nom.*carte" + // fr-FR
-        "|nome.*cart" + // it-IT
-        "|名前" + // ja-JP
-        "|Имя.*карты" + // ru
-        "|信用卡开户名|开户名|持卡人姓名" + // zh-CN
-        "|持卡人姓名", // zh-TW
+        "|nombre.*tarjeta" + 
+        "|nom.*carte" + 
+        "|nome.*cart" + 
+        "|名前" + 
+        "|Имя.*карты" + 
+        "|信用卡开户名|开户名|持卡人姓名" + 
+        "|持卡人姓名", 
 
       "cc-number":
-        // Firefox-specific rules
-        // de-DE
+        
+        
         "(cc|kk)nr" +
         "|(kredit)?(karten)(nummer|nr)" +
-        // it-IT
+        
         "|numero.*carta" +
-        // fr-FR
+        
         "|(numero|número|numéro).*(carte)" +
-        // Rules from Bitwarden
+        
         "|cc-?number" +
         "|cc-?num" +
         "|card-?number" +
@@ -127,21 +142,21 @@ var FathomHeuristicsRegExp = {
         "|numero-?carte" +
         "|num-?carte" +
         "|cb-?num" +
-        // Rules are from Chromium source codes
+        
         "|(add)?(?:card|cc|acct).?(?:number|#|no|num)" +
-        "|カード番号" + // ja-JP
-        "|Номер.*карты" + // ru
-        "|信用卡号|信用卡号码" + // zh-CN
-        "|信用卡卡號" + // zh-TW
-        "|카드", // ko-KR
+        "|カード番号" + 
+        "|Номер.*карты" + 
+        "|信用卡号|信用卡号码" + 
+        "|信用卡卡號" + 
+        "|카드", 
 
       "cc-exp":
-        // Firefox-specific rules
+        
         "mm\\s*(\/|\\|-)\\s*(yy|jj|aa)" +
         "|(month|mois)\\s*(\/|\\|-|et)\\s*(year|année)" +
-        // de-DE
-        // fr-FR
-        // Rules from Bitwarden
+        
+        
+        
         "|(^cc-?exp$)" +
         "|(^card-?exp$)" +
         "|(^cc-?expiration$)" +
@@ -160,20 +175,20 @@ var FathomHeuristicsRegExp = {
         "|expiration-?date" +
         "|payment-?card-?expiration" +
         "|(^payment-?cc-?date$)" +
-        // Rules are from Chromium source codes
+        
         "|expir|exp.*date|^expfield$" +
-        "|ablaufdatum|gueltig|gültig" + // de-DE
-        "|fecha" + // es
-        "|date.*exp" + // fr-FR
-        "|scadenza" + // it-IT
-        "|有効期限" + // ja-JP
-        "|validade" + // pt-BR, pt-PT
-        "|Срок действия карты", // ru
+        "|ablaufdatum|gueltig|gültig" + 
+        "|fecha" + 
+        "|date.*exp" + 
+        "|scadenza" + 
+        "|有効期限" + 
+        "|validade" + 
+        "|Срок действия карты", 
 
       "cc-exp-month":
-        // Firefox-specific rules
-        "(cc|kk)month" + // de-DE
-        // Rules from Bitwarden
+        
+        "(cc|kk)month" + 
+        
         "|(^exp-?month$)" +
         "|(^cc-?exp-?month$)" +
         "|(^cc-?month$)" +
@@ -213,21 +228,21 @@ var FathomHeuristicsRegExp = {
         "|(^exp-?date-?mo$)" +
         "|(^cb-?date-?mois$)" +
         "|(^date-?m$)" +
-        // Rules are from Chromium source codes
+        
         "|exp.*mo|ccmonth|cardmonth|addmonth" +
-        "|monat" + // de-DE
-        // "|fecha" + // es
-        // "|date.*exp" + // fr-FR
-        // "|scadenza" + // it-IT
-        // "|有効期限" + // ja-JP
-        // "|validade" + // pt-BR, pt-PT
-        // "|Срок действия карты" + // ru
-        "|月", // zh-CN
+        "|monat" + 
+        
+        
+        
+        
+        
+        
+        "|月", 
 
       "cc-exp-year":
-        // Firefox-specific rules
-        "(cc|kk)year" + // de-DE
-        // Rules from Bitwarden
+        
+        "(cc|kk)year" + 
+        
         "|(^exp-?year$)" +
         "|(^cc-?exp-?year$)" +
         "|(^cc-?year$)" +
@@ -271,28 +286,28 @@ var FathomHeuristicsRegExp = {
         "|(^validity-?year$)" +
         "|(^exp-?date-?year$)" +
         "|(^date-?y$)" +
-        // Rules are from Chromium source codes
+        
         "|(add)?year" +
-        "|jahr" + // de-DE
-        // "|fecha" + // es
-        // "|scadenza" + // it-IT
-        // "|有効期限" + // ja-JP
-        // "|validade" + // pt-BR, pt-PT
-        // "|Срок действия карты" + // ru
-        "|年|有效期", // zh-CN
+        "|jahr" + 
+        
+        
+        
+        
+        
+        "|年|有效期", 
 
       "cc-type":
-        // Firefox-specific rules
+        
         "type" +
-        // de-DE
+        
         "|Kartenmarke" +
-        // Rules from Bitwarden
+        
         "|(^cc-?type$)" +
         "|(^card-?type$)" +
         "|(^card-?brand$)" +
         "|(^cc-?brand$)" +
         "|(^cb-?type$)",
-        // Rules are from Chromium source codes
+        
     },
   ],
 
@@ -391,8 +406,8 @@ function previousFieldMatchesExpMonthAutocomplete(fnode) {
   );
 }
 
-//////////////////////////////////////////////
-// Attribute Regular Expression Rules
+
+
 function idOrNameMatchRegExp(element, regExp) {
   for (const str of [element.id, element.name]) {
     if (regExp.test(str)) {
@@ -422,20 +437,20 @@ function labelsMatchRegExp(element, regExp) {
   }
 
   const parentElement = element.parentElement;
-  // Bug 1634819: element.parentElement is null if element.parentNode is a ShadowRoot
+  
   if (!parentElement) {
     return false;
   }
-  // Check if the input is in a <td>, and, if so, check the textContent of the containing <tr>
+  
   if (parentElement.tagName === "TD" && parentElement.parentElement) {
-    // TODO: How bad is the assumption that the <tr> won't be the parent of the <td>?
+    
     return regExp.test(parentElement.parentElement.textContent);
   }
 
-  // Check if the input is in a <dd>, and, if so, check the textContent of the preceding <dt>
+  
   if (
     parentElement.tagName === "DD" &&
-    // previousElementSibling can be null
+    
     parentElement.previousElementSibling
   ) {
     return regExp.test(parentElement.previousElementSibling.textContent);
@@ -517,11 +532,11 @@ function previousFieldAriaLabelMatchesRegExp(element, regExp) {
     ariaLabelMatchesRegExp(previousField, regExp)
   );
 }
-//////////////////////////////////////////////
+
 
 function isSelectWithCreditCardOptions(fnode) {
-  // Check every select for options that match credit card network names in
-  // value or label.
+  
+  
   const element = fnode.element;
   if (element.tagName === "SELECT") {
     for (let option of element.querySelectorAll("option")) {
@@ -536,13 +551,13 @@ function isSelectWithCreditCardOptions(fnode) {
   return false;
 }
 
-/**
- * If any of the regular expressions match multiple times, we assume the tested
- * string belongs to a radio button for payment type instead of card type.
- *
- * @param {Fnode} fnode
- * @returns {boolean}
- */
+
+
+
+
+
+
+
 function isRadioWithCreditCardText(fnode) {
   const element = fnode.element;
   const inputType = element.type;
@@ -552,7 +567,7 @@ function isRadioWithCreditCardText(fnode) {
       return valueMatches.length === 1;
     }
 
-    // Here we are checking that only one label matches only one entry in the regular expression.
+    
     const labels = getElementLabels(element);
     let labelsMatched = 0;
     for (const label of labels) {
@@ -594,8 +609,8 @@ function isExpirationMonthLikely(element) {
     .fill(1)
     .map((v, i) => v + i);
 
-  // The number of month options shouldn't be less than 12 or larger than 13
-  // including the default option.
+  
+  
   if (options.length < 12 || options.length > 13) {
     return false;
   }
@@ -618,8 +633,8 @@ function isExpirationYearLikely(element) {
   }
 
   const options = [...element.options];
-  // A normal expiration year select should contain at least the last three years
-  // in the list.
+  
+  
   const curYear = new Date().getFullYear();
   const desiredValues = Array(3)
     .fill(0)
@@ -689,15 +704,15 @@ function idOrNameMatchFirstAndLast(fnode) {
   );
 }
 
-/**
- * Compactly generate a series of rules that all take a single LHS type with no
- * .when() clause and have only a score() call on the right- hand side.
- *
- * @param {Lhs} inType The incoming fnode type that all rules take
- * @param {object} ruleMap A simple object used as a map with rule names
- *   pointing to scoring callbacks
- * @yields {Rule}
- */
+
+
+
+
+
+
+
+
+
 function* simpleScoringRules(inType, ruleMap) {
   for (const [name, scoringCallback] of Object.entries(ruleMap)) {
     yield rule(type(inType), score(scoringCallback), { name });
@@ -707,11 +722,11 @@ function* simpleScoringRules(inType, ruleMap) {
 function makeRuleset(coeffs, biases) {
   return ruleset(
     [
-      /**
-       * Factor out the page scan just for a little more speed during training.
-       * This selector is good for most fields. cardType is an exception: it
-       * cannot be type=month.
-       */
+      
+
+
+
+
       rule(
         queriedOrClickedElements(
           "input:not([type]), input[type=text], input[type=textbox], input[type=email], input[type=tel], input[type=number], input[type=month], select, button"
@@ -719,9 +734,9 @@ function makeRuleset(coeffs, biases) {
         type("typicalCandidates")
       ),
 
-      /**
-       * number rules
-       */
+      
+
+
       rule(type("typicalCandidates"), type("cc-number")),
       ...simpleScoringRules("cc-number", {
         idOrNameMatchNumberRegExp: fnode =>
@@ -758,9 +773,9 @@ function makeRuleset(coeffs, biases) {
       }),
       rule(type("cc-number"), out("cc-number")),
 
-      /**
-       * name rules
-       */
+      
+
+
       rule(type("typicalCandidates"), type("cc-name")),
       ...simpleScoringRules("cc-name", {
         idOrNameMatchNameRegExp: fnode =>
@@ -802,9 +817,9 @@ function makeRuleset(coeffs, biases) {
       }),
       rule(type("cc-name"), out("cc-name")),
 
-      /**
-       * cardType rules
-       */
+      
+
+
       rule(
         queriedOrClickedElements(
           "input:not([type]), input[type=text], input[type=textbox], input[type=email], input[type=tel], input[type=number], input[type=radio], select, button"
@@ -831,9 +846,9 @@ function makeRuleset(coeffs, biases) {
       }),
       rule(type("cc-type"), out("cc-type")),
 
-      /**
-       * expiration rules
-       */
+      
+
+
       rule(type("typicalCandidates"), type("cc-exp")),
       ...simpleScoringRules("cc-exp", {
         labelsMatchExpRegExp: fnode =>
@@ -879,9 +894,9 @@ function makeRuleset(coeffs, biases) {
       }),
       rule(type("cc-exp"), out("cc-exp")),
 
-      /**
-       * expirationMonth rules
-       */
+      
+
+
       rule(type("typicalCandidates"), type("cc-exp-month")),
       ...simpleScoringRules("cc-exp-month", {
         idOrNameMatchExpMonthRegExp: fnode =>
@@ -960,9 +975,9 @@ function makeRuleset(coeffs, biases) {
       }),
       rule(type("cc-exp-month"), out("cc-exp-month")),
 
-      /**
-       * expirationYear rules
-       */
+      
+
+
       rule(type("typicalCandidates"), type("cc-exp-year")),
       ...simpleScoringRules("cc-exp-year", {
         idOrNameMatchExpYearRegExp: fnode =>
@@ -1176,19 +1191,19 @@ const biases = [
   ["cc-exp-year", -6.499860763549805],
 ];
 
-/**
- * END OF CODE PASTED FROM TRAINING REPOSITORY
- */
 
-/**
- * MORE CODE UNIQUE TO PRODUCTION--NOT IN THE TRAINING REPOSITORY:
- */
-// Currently there is a bug when a ruleset has multple types (ex, cc-name, cc-number)
-// and those types also has the same rules (ex. rule `hasTemplatedValue` is used in
-// all the tyoes). When the above case exists, the coefficient of the rule will be
-// overwritten, which means, we can't have different coefficient for the same rule on
-// different types. To workaround this issue, we create a new ruleset for each type.
-export var creditCardRulesets = {
+
+
+
+
+
+
+
+
+
+
+
+var creditCardRulesets = {
   init() {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
@@ -1208,5 +1223,4 @@ export var creditCardRulesets = {
     return this.supportedTypes;
   },
 };
-
-creditCardRulesets.init();
+this.creditCardRulesets.init();

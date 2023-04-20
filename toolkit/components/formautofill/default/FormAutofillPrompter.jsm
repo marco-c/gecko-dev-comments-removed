@@ -1,19 +1,30 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * Implements doorhanger singleton that wraps up the PopupNotifications and handles
- * the doorhager UI for formautofill related features.
- */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
-import { FormAutofillUtils } from "resource://autofill/FormAutofillUtils.sys.mjs";
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+
+
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["FormAutofillPrompter"];
+
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const { AutofillTelemetry } = ChromeUtils.import(
   "resource://autofill/AutofillTelemetry.jsm"
+);
+const { FormAutofill } = ChromeUtils.import(
+  "resource://autofill/FormAutofill.jsm"
+);
+const { FormAutofillUtils } = ChromeUtils.import(
+  "resource://autofill/FormAutofillUtils.jsm"
+);
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
 
 const lazy = {};
@@ -23,7 +34,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () =>
-  FormAutofill.defineLogGetter(lazy, "FormAutofillPrompter")
+  FormAutofill.defineLogGetter(lazy, EXPORTED_SYMBOLS[0])
 );
 
 const { ENABLED_AUTOFILL_CREDITCARDS_PREF } = FormAutofill;
@@ -63,7 +74,7 @@ const CONTENT = {
           return Services.prefs.getBoolPref("services.sync.engine.addresses");
         },
         get label() {
-          // If sync account is not set, return null label to hide checkbox
+          
           return Services.prefs.prefHasUserValue("services.sync.username")
             ? GetStringFromName("addressesSyncCheckbox")
             : null;
@@ -178,11 +189,11 @@ const CONTENT = {
           return Services.prefs.getBoolPref("services.sync.engine.creditcards");
         },
         get label() {
-          // Only set the label when the fallowing conditions existed:
-          // - sync account is set
-          // - credit card sync is disabled
-          // - credit card sync is available
-          // otherwise return null label to hide checkbox.
+          
+          
+          
+          
+          
           return Services.prefs.prefHasUserValue("services.sync.username") &&
             !Services.prefs.getBoolPref("services.sync.engine.creditcards") &&
             Services.prefs.getBoolPref(
@@ -239,20 +250,20 @@ const CONTENT = {
   },
 };
 
-export let FormAutofillPrompter = {
-  /**
-   * Generate the main action and secondary actions from content parameters and
-   * promise resolve.
-   *
-   * @private
-   * @param  {object} mainActionParams
-   *         Parameters for main action.
-   * @param  {Array<object>} secondaryActionParams
-   *         Array of the parameters for secondary actions.
-   * @param  {Function} resolve Should be called in action callback.
-   * @returns {Array<object>}
-              Return the mainAction and secondary actions in an array for showing doorhanger
-   */
+let FormAutofillPrompter = {
+  
+
+
+
+
+
+
+
+
+
+
+
+
   _createActions(mainActionParams, secondaryActionParams, resolve) {
     if (!mainActionParams) {
       return [null, null];
@@ -283,16 +294,16 @@ export let FormAutofillPrompter = {
     let chromeDoc = browser.ownerDocument;
     return chromeDoc.getElementById(notificationId);
   },
-  /**
-   * Append the link label element to the popupnotificationcontent.
-   *
-   * @param  {XULElement} content
-   *         popupnotificationcontent
-   * @param  {string} message
-   *         The localized string for link title.
-   * @param  {string} link
-   *         Makes it possible to open and highlight a section in preferences
-   */
+  
+
+
+
+
+
+
+
+
+
   _appendPrivacyPanelLink(content, message, link) {
     let chromeDoc = content.ownerDocument;
     let privacyLinkElement = chromeDoc.createXULElement("label", {
@@ -307,18 +318,18 @@ export let FormAutofillPrompter = {
     content.appendChild(privacyLinkElement);
   },
 
-  /**
-   * Append the description section to the popupnotificationcontent.
-   *
-   * @param  {XULElement} content
-   *         popupnotificationcontent
-   * @param  {string} descriptionLabel
-   *         The label showing above description.
-   * @param  {string} descriptionIcon
-   *         The src of description icon.
-   * @param  {string} descriptionId
-   *         The id of description
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   _appendDescription(
     content,
     descriptionLabel,
@@ -359,20 +370,20 @@ export let FormAutofillPrompter = {
     element.textContent = description;
   },
 
-  /**
-   * Create an image element for notification anchor if it doesn't already exist.
-   *
-   * @param  {XULElement} browser
-   *         Target browser element for showing doorhanger.
-   * @param  {object} anchor
-   *         Anchor options for setting the anchor element.
-   * @param  {string} anchor.id
-   *         ID of the anchor element.
-   * @param  {string} anchor.URL
-   *         Path of the icon asset.
-   * @param  {string} anchor.tooltiptext
-   *         Tooltip string for the anchor.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   _setAnchor(browser, anchor) {
     let chromeDoc = browser.ownerDocument;
     let { id, URL, tooltiptext } = anchor;
@@ -381,7 +392,7 @@ export let FormAutofillPrompter = {
       let notificationPopupBox = chromeDoc.getElementById(
         "notification-popup-box"
       );
-      // Icon shown on URL bar
+      
       let anchorElement = chromeDoc.createXULElement("image");
       anchorElement.id = id;
       anchorElement.setAttribute("src", URL);
@@ -413,17 +424,17 @@ export let FormAutofillPrompter = {
     }
   },
 
-  /**
-   * Show save or update address doorhanger
-   *
-   * @param {Element<browser>} browser  Browser to show the save/update address prompt
-   * @param {object} storage Address storage
-   * @param {object} newRecord Address record to save
-   * @param {string} flowId Unique GUID to record a series of the same user action
-   * @param {object} options
-   * @param {object} [options.mergeableRecord] Record to be merged
-   * @param {Array}  [options.mergeableFields] List of field name that can be merged
-   */
+  
+
+
+
+
+
+
+
+
+
+
   async promptToSaveAddress(
     browser,
     storage,
@@ -431,7 +442,7 @@ export let FormAutofillPrompter = {
     flowId,
     { mergeableRecord, mergeableFields }
   ) {
-    // Overwrite the guid if there is a duplicate
+    
     let doorhangerType;
     if (mergeableRecord) {
       doorhangerType = "updateAddress";
@@ -441,7 +452,7 @@ export let FormAutofillPrompter = {
       doorhangerType = "addFirstTimeUse";
       this._updateStorageAfterInteractWithPrompt("save", storage, newRecord);
 
-      // Show first time use doorhanger
+      
       if (FormAutofill.isAutofillAddressesFirstTimeUse) {
         Services.prefs.setBoolPref(
           FormAutofill.ADDRESSES_FIRST_TIME_USE_PREF,
@@ -481,7 +492,7 @@ export let FormAutofillPrompter = {
   },
 
   async promptToSaveCreditCard(browser, storage, record, flowId) {
-    // Overwrite the guid if there is a duplicate
+    
     let doorhangerType;
     const duplicateRecord = (await storage.getDuplicateRecords(record).next())
       .value;
@@ -546,18 +557,18 @@ export let FormAutofillPrompter = {
     return FormAutofillUtils.getCreditCardLogo(network);
   },
 
-  /**
-   * Show different types of doorhanger by leveraging PopupNotifications.
-   *
-   * @param {XULElement} browser Target browser element for showing doorhanger.
-   * @param {string} type The type of the doorhanger. There will have first time use/update/credit card.
-   * @param {string} description The message that provides more information on doorhanger.
-   * @param {string} flowId guid used to correlate events relating to the same form
-   * @param {object} [options = {}] a list of options for this method
-   * @param {string} options.descriptionIcon The icon for descriotion
-   * @param {string} options.additionalDescription The message that provides more information on doorhanger.
-   * @returns {Promise} Resolved with action type when action callback is triggered.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
   async _showCCorAddressCaptureDoorhanger(
     browser,
     type,
@@ -597,13 +608,13 @@ export let FormAutofillPrompter = {
           return;
         }
 
-        // The doorhanger is customizable only when notification box is shown
+        
         if (topic != "shown") {
           return;
         }
         this._addCheckboxListener(browser, { notificationId, options });
 
-        // There's no preferences link or other customization in first time use doorhanger.
+        
         if (type == "addFirstTimeUse") {
           return;
         }

@@ -1,0 +1,410 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["FormAutofillNameUtils"];
+
+
+
+var FormAutofillNameUtils = {
+  NAME_PREFIXES: [
+    "1lt",
+    "1st",
+    "2lt",
+    "2nd",
+    "3rd",
+    "admiral",
+    "capt",
+    "captain",
+    "col",
+    "cpt",
+    "dr",
+    "gen",
+    "general",
+    "lcdr",
+    "lt",
+    "ltc",
+    "ltg",
+    "ltjg",
+    "maj",
+    "major",
+    "mg",
+    "mr",
+    "mrs",
+    "ms",
+    "pastor",
+    "prof",
+    "rep",
+    "reverend",
+    "rev",
+    "sen",
+    "st",
+  ],
+
+  NAME_SUFFIXES: [
+    "b.a",
+    "ba",
+    "d.d.s",
+    "dds",
+    "i",
+    "ii",
+    "iii",
+    "iv",
+    "ix",
+    "jr",
+    "m.a",
+    "m.d",
+    "ma",
+    "md",
+    "ms",
+    "ph.d",
+    "phd",
+    "sr",
+    "v",
+    "vi",
+    "vii",
+    "viii",
+    "x",
+  ],
+
+  FAMILY_NAME_PREFIXES: [
+    "d'",
+    "de",
+    "del",
+    "der",
+    "di",
+    "la",
+    "le",
+    "mc",
+    "san",
+    "st",
+    "ter",
+    "van",
+    "von",
+  ],
+
+  
+  
+  COMMON_CJK_MULTI_CHAR_SURNAMES: [
+    
+    
+    "남궁",
+    "사공",
+    "서문",
+    "선우",
+    "제갈",
+    "황보",
+    "독고",
+    "망절",
+
+    
+    
+    
+    "欧阳",
+    "令狐",
+    "皇甫",
+    "上官",
+    "司徒",
+    "诸葛",
+    "司马",
+    "宇文",
+    "呼延",
+    "端木",
+    
+    "張簡",
+    "歐陽",
+    "諸葛",
+    "申屠",
+    "尉遲",
+    "司馬",
+    "軒轅",
+    "夏侯",
+  ],
+
+  
+  
+  KOREAN_MULTI_CHAR_SURNAMES: [
+    "강전",
+    "남궁",
+    "독고",
+    "동방",
+    "망절",
+    "사공",
+    "서문",
+    "선우",
+    "소봉",
+    "어금",
+    "장곡",
+    "제갈",
+    "황목",
+    "황보",
+  ],
+
+  
+  
+  WHITESPACE: [
+    "\u0009", 
+    "\u000A", 
+    "\u000B", 
+    "\u000C", 
+    "\u000D", 
+    "\u0020", 
+    "\u0085", 
+    "\u00A0", 
+    "\u1680", 
+    "\u2000", 
+    "\u2001", 
+    "\u2002", 
+    "\u2003", 
+    "\u2004", 
+    "\u2005", 
+    "\u2006", 
+    "\u2007", 
+    "\u2008", 
+    "\u2009", 
+    "\u200A", 
+    "\u2028", 
+    "\u2029", 
+    "\u202F", 
+    "\u205F", 
+    "\u3000", 
+  ],
+
+  
+  MIDDLE_DOT: [
+    "\u30FB", 
+    "\u00B7", 
+  ],
+
+  
+  
+  
+  
+  CJK_RANGE: [
+    "\u1100-\u11FF", 
+    "\u3040-\u309F", 
+    "\u30A0-\u30FF", 
+    "\u3105-\u312C", 
+    "\u3130-\u318F", 
+    "\u31F0-\u31FF", 
+    "\u3200-\u32FF", 
+    "\u3400-\u4DBF", 
+    "\u4E00-\u9FFF", 
+    "\uA960-\uA97F", 
+    "\uAC00-\uD7AF", 
+    "\uD7B0-\uD7FF", 
+    "\uFF00-\uFFEF", 
+  ],
+
+  HANGUL_RANGE: [
+    "\u1100-\u11FF", 
+    "\u3130-\u318F", 
+    "\uA960-\uA97F", 
+    "\uAC00-\uD7AF", 
+    "\uD7B0-\uD7FF", 
+  ],
+
+  _dataLoaded: false,
+
+  
+  _containsString(set, token) {
+    let target = token.replace(/\.$/, "").toLowerCase();
+    return set.includes(target);
+  },
+
+  
+  _stripPrefixes(nameTokens) {
+    for (let i in nameTokens) {
+      if (!this._containsString(this.NAME_PREFIXES, nameTokens[i])) {
+        return nameTokens.slice(i);
+      }
+    }
+    return [];
+  },
+
+  
+  _stripSuffixes(nameTokens) {
+    for (let i = nameTokens.length - 1; i >= 0; i--) {
+      if (!this._containsString(this.NAME_SUFFIXES, nameTokens[i])) {
+        return nameTokens.slice(0, i + 1);
+      }
+    }
+    return [];
+  },
+
+  _isCJKName(name) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (!name) {
+      return false;
+    }
+
+    let previousWasCJK = false;
+    let wordCount = 0;
+
+    for (let c of name) {
+      let isMiddleDot = this.MIDDLE_DOT.includes(c);
+      let isCJK = !isMiddleDot && this.reCJK.test(c);
+      if (!isCJK && !isMiddleDot && !this.WHITESPACE.includes(c)) {
+        return false;
+      }
+      if (isCJK && !previousWasCJK) {
+        wordCount++;
+      }
+      previousWasCJK = isCJK;
+    }
+
+    return wordCount > 0 && wordCount < 3;
+  },
+
+  
+  
+  _splitCJKName(nameTokens) {
+    
+    
+    
+    
+    
+
+    let reHangulName = new RegExp(
+      "^[" + this.HANGUL_RANGE.join("") + this.WHITESPACE.join("") + "]+$",
+      "u"
+    );
+    let nameParts = {
+      given: "",
+      middle: "",
+      family: "",
+    };
+
+    if (nameTokens.length == 1) {
+      
+      
+      
+      
+      
+      let name = nameTokens[0];
+      let isKorean = reHangulName.test(name);
+      let surnameLength = 0;
+
+      
+      
+      
+      let multiCharSurnames =
+        isKorean && name.length > 3
+          ? this.KOREAN_MULTI_CHAR_SURNAMES
+          : this.COMMON_CJK_MULTI_CHAR_SURNAMES;
+
+      
+      surnameLength = multiCharSurnames.some(surname =>
+        name.startsWith(surname)
+      )
+        ? 2
+        : 1;
+
+      nameParts.family = name.substr(0, surnameLength);
+      nameParts.given = name.substr(surnameLength);
+    } else if (nameTokens.length == 2) {
+      
+      
+      nameParts.family = nameTokens[0];
+      nameParts.given = nameTokens[1];
+    } else {
+      return null;
+    }
+
+    return nameParts;
+  },
+
+  init() {
+    if (this._dataLoaded) {
+      return;
+    }
+    this._dataLoaded = true;
+
+    this.reCJK = new RegExp("[" + this.CJK_RANGE.join("") + "]", "u");
+  },
+
+  splitName(name) {
+    let nameParts = {
+      given: "",
+      middle: "",
+      family: "",
+    };
+
+    if (!name) {
+      return nameParts;
+    }
+
+    let nameTokens = name.trim().split(/[ ,\u3000\u30FB\u00B7]+/);
+    nameTokens = this._stripPrefixes(nameTokens);
+
+    if (this._isCJKName(name)) {
+      let parts = this._splitCJKName(nameTokens);
+      if (parts) {
+        return parts;
+      }
+    }
+
+    
+    if (nameTokens.length > 2) {
+      nameTokens = this._stripSuffixes(nameTokens);
+    }
+
+    if (!nameTokens.length) {
+      
+      nameParts.given = name;
+      return nameParts;
+    }
+
+    
+    if (nameTokens.length == 1) {
+      nameParts.given = nameTokens[0];
+      return nameParts;
+    }
+
+    
+    
+    let familyTokens = [nameTokens.pop()];
+    while (nameTokens.length) {
+      let lastToken = nameTokens[nameTokens.length - 1];
+      if (!this._containsString(this.FAMILY_NAME_PREFIXES, lastToken)) {
+        break;
+      }
+      familyTokens.unshift(lastToken);
+      nameTokens.pop();
+    }
+    nameParts.family = familyTokens.join(" ");
+
+    
+    
+    if (nameTokens.length >= 2) {
+      nameParts.middle = nameTokens.pop();
+    }
+
+    
+    nameParts.given = nameTokens.join(" ");
+
+    return nameParts;
+  },
+
+  joinNameParts({ given, middle, family }) {
+    if (this._isCJKName(given) && this._isCJKName(family) && !middle) {
+      return family + given;
+    }
+    return [given, middle, family]
+      .filter(part => part && part.length)
+      .join(" ");
+  },
+};
+
+FormAutofillNameUtils.init();

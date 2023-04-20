@@ -1,9 +1,17 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { FormAutofillCreditCardSection } from "resource://autofill/FormAutofillHandler.sys.mjs";
-import { FormAutofillUtils } from "resource://autofill/FormAutofillUtils.sys.mjs";
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["AutofillTelemetry", "AddressTelemetry"];
+
+const { FormAutofillUtils } = ChromeUtils.import(
+  "resource://autofill/FormAutofillUtils.jsm"
+);
+const { FormAutofillCreditCardSection } = ChromeUtils.import(
+  "resource://autofill/FormAutofillHandler.jsm"
+);
 
 const { FIELD_STATES } = FormAutofillUtils;
 
@@ -46,7 +54,7 @@ class AutofillTelemetryBase {
       if (detail._reason == "autocomplete") {
         this.#setFormEventExtra(extra, detail.fieldName, "true");
       } else {
-        // confidence exists only when a field is identified by fathom.
+        
         let confidence =
           detail.confidence > 0 ? Math.floor(100 * detail.confidence) / 100 : 0;
         this.#setFormEventExtra(extra, detail.fieldName, confidence.toString());
@@ -62,7 +70,7 @@ class AutofillTelemetryBase {
   }
 
   recordFormFilled(section, profile) {
-    // Calculate values for telemetry
+    
     let extra = this.#initFormEventExtra("unavailable");
 
     for (let fieldDetail of section.fieldDetails) {
@@ -90,9 +98,9 @@ class AutofillTelemetryBase {
     let extra = this.#initFormEventExtra("unavailable");
 
     if (record.guid !== null) {
-      // If the `guid` is not null, it means we're editing an existing record.
-      // In that case, all fields in the record are autofilled, and fields in
-      // `untouchedFields` are unmodified.
+      
+      
+      
       for (const [fieldName, value] of Object.entries(record.record)) {
         if (record.untouchedFields?.includes(fieldName)) {
           this.#setFormEventExtra(extra, fieldName, "autofilled");
@@ -114,8 +122,8 @@ class AutofillTelemetryBase {
   recordFormCleared(section, fieldName) {
     const extra = { field_name: fieldName };
 
-    // Note that when a form is cleared, we also record `filled_modified` events
-    // for all the fields that have been cleared.
+    
+    
     this.recordFormEvent("cleared", section.flowId, extra);
   }
 
@@ -203,7 +211,7 @@ class AutofillTelemetryBase {
   }
 }
 
-export class AddressTelemetry extends AutofillTelemetryBase {
+class AddressTelemetry extends AutofillTelemetryBase {
   EVENT_CATEGORY = "address";
   EVENT_OBJECT_FORM_INTERACTION = "address_form";
   EVENT_OBJECT_FORM_INTERACTION_EXT = "address_form_ext";
@@ -218,7 +226,7 @@ export class AddressTelemetry extends AutofillTelemetryBase {
   HISTOGRAM_PROFILE_NUM_USES = "AUTOFILL_PROFILE_NUM_USES";
   HISTOGRAM_PROFILE_NUM_USES_KEY = "address";
 
-  // Fields that are record in `address_form` and `address_form_ext` telemetry
+  
   SUPPORTED_FIELDS = {
     "street-address": "street_address",
     "address-line1": "address_line1",
@@ -237,7 +245,7 @@ export class AddressTelemetry extends AutofillTelemetryBase {
     tel: "tel",
   };
 
-  // Fields that are record in `address_form` event telemetry extra_keys
+  
   static SUPPORTED_FIELDS_IN_FORM = [
     "street_address",
     "address_line1",
@@ -249,7 +257,7 @@ export class AddressTelemetry extends AutofillTelemetryBase {
     "country",
   ];
 
-  // Fields that are record in `address_form_ext` event telemetry extra_keys
+  
   static SUPPORTED_FIELDS_IN_FORM_EXT = [
     "name",
     "given_name",
@@ -306,8 +314,8 @@ class CreditCardTelemetry extends AutofillTelemetryBase {
   HISTOGRAM_PROFILE_NUM_USES = "AUTOFILL_PROFILE_NUM_USES";
   HISTOGRAM_PROFILE_NUM_USES_KEY = "credit_card";
 
-  // Mapping of field name used in formautofill code to the field name
-  // used in the telemetry.
+  
+  
   SUPPORTED_FIELDS = {
     "cc-name": "cc_name",
     "cc-number": "cc_number",
@@ -355,7 +363,7 @@ class CreditCardTelemetry extends AutofillTelemetryBase {
 
   recordFormFilled(section, profile) {
     super.recordFormFilled(section, profile);
-    // Calculate values for telemetry
+    
     let extra = {
       cc_name: "unavailable",
       cc_number: "unavailable",
@@ -397,17 +405,17 @@ class CreditCardTelemetry extends AutofillTelemetryBase {
     this.recordLegacyFormEvent("filled_modified", section.flowId, extra);
   }
 
-  /**
-   * Called when a credit card form is submitted
-   *
-   * @param {object} section Section that produces this record
-   * @param {object} record Credit card record filled in the form.
-   * @param {Array<HTMLForm>} form Form that contains the section
-   */
+  
+
+
+
+
+
+
   recordFormSubmitted(section, record, form) {
     super.recordFormSubmitted(section, record, form);
 
-    // For legacy cc_form event telemetry
+    
     let extra = {
       fields_not_auto: "0",
       fields_auto: "0",
@@ -423,8 +431,8 @@ class CreditCardTelemetry extends AutofillTelemetryBase {
       extra.fields_auto = autofilledCount.toString();
       extra.fields_modified = (autofilledCount - unmodifiedCount).toString();
     } else {
-      // If the `guid` is null, we're filling a new form.
-      // In that case, all not-null fields are manually filled.
+      
+      
       extra.fields_not_auto = Array.from(form.elements)
         .filter(element => !!element.value?.trim().length)
         .length.toString();
@@ -451,11 +459,11 @@ class CreditCardTelemetry extends AutofillTelemetryBase {
   }
 }
 
-export class AutofillTelemetry {
+class AutofillTelemetry {
   static #creditCardTelemetry = new CreditCardTelemetry();
   static #addressTelemetry = new AddressTelemetry();
 
-  // const for `type` parameter used in the utility functions
+  
   static ADDRESS = "address";
   static CREDIT_CARD = "creditcard";
 
@@ -470,12 +478,12 @@ export class AutofillTelemetry {
       ? this.#creditCardTelemetry
       : this.#addressTelemetry;
   }
-  /**
-   * Utility functions for `doorhanger` event (defined in Events.yaml)
-   *
-   * Category: address or creditcard
-   * Event name: doorhanger
-   */
+  
+
+
+
+
+
 
   static recordDoorhangerShown(type, flowId, isCapture) {
     const telemetry = this.#getTelemetryByType(type);
@@ -485,7 +493,7 @@ export class AutofillTelemetry {
   static recordDoorhangerClicked(type, method, flowId, isCapture) {
     const telemetry = this.#getTelemetryByType(type);
 
-    // We don't have `create` method in telemetry, we treat `create` as `save`
+    
     switch (method) {
       case "create":
         method = "save";
@@ -498,12 +506,12 @@ export class AutofillTelemetry {
     telemetry.recordDoorhangerEvent(method, flowId, isCapture);
   }
 
-  /**
-   * Utility functions for form event (defined in Events.yaml)
-   *
-   * Category: address or creditcard
-   * Event name: cc_form, cc_form_v2, or address_form
-   */
+  
+
+
+
+
+
 
   static recordFormInteractionEvent(
     method,
@@ -519,12 +527,12 @@ export class AutofillTelemetry {
     });
   }
 
-  /**
-   * Utility functions for submitted section count scalar (defined in Scalars.yaml)
-   *
-   * Category: formautofill.creditCards or formautofill.addresses
-   * Scalar name: submitted_sections_count
-   */
+  
+
+
+
+
+
   static recordDetectedSectionCount(section) {
     const telemetry = this.#getTelemetryBySection(section);
     telemetry.recordDetectedSectionCount();
@@ -545,9 +553,9 @@ export class AutofillTelemetry {
     telemetry.recordAutofillProfileCount(count);
   }
 
-  /**
-   * Utility functions for address/credit card number of use
-   */
+  
+
+
   static recordNumberOfUse(type, records) {
     const telemetry = this.#getTelemetryByType(type);
     telemetry.recordNumberOfUse(records);
