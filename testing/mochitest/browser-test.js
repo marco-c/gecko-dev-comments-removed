@@ -1198,6 +1198,13 @@ Tester.prototype = {
     }
 
     
+    
+    
+    Cc["@mozilla.org/widget/useridleservice;1"]
+      .getService(Ci.nsIUserIdleServiceInternal)
+      .resetIdleTimeOut(0);
+
+    
     var currentTestDirPath = this.currentTest.path.substr(
       0,
       this.currentTest.path.lastIndexOf("/")
