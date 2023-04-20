@@ -1631,14 +1631,25 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitExternInternalize();
   [[nodiscard]] bool emitExternExternalize();
 
+  
+  
+  struct NoNullCheck {
+    static void emitNullCheck(BaseCompiler*, RegRef) {}
+    static void emitTrapSite(BaseCompiler*) {}
+  };
+  struct SignalNullCheck {
+    static void emitNullCheck(BaseCompiler* bc, RegRef rp);
+    static void emitTrapSite(BaseCompiler* bc);
+  };
+
   void emitGcCanon(uint32_t typeIndex);
-  void emitGcNullCheck(RegRef rp);
   RegPtr emitGcArrayGetData(RegRef rp);
+  template <typename NullCheckPolicy>
   RegI32 emitGcArrayGetNumElements(RegRef rp);
   void emitGcArrayBoundsCheck(RegI32 index, RegI32 numElements);
-  template <typename T>
+  template <typename T, typename NullCheckPolicy>
   void emitGcGet(FieldType type, FieldWideningOp wideningOp, const T& src);
-  template <typename T>
+  template <typename T, typename NullCheckPolicy>
   void emitGcSetScalar(const T& dst, FieldType type, AnyReg value);
 
   
@@ -1646,6 +1657,7 @@ struct BaseCompiler final {
   
   
   
+  template <typename NullCheckPolicy>
   [[nodiscard]] bool emitGcStructSet(RegRef object, RegPtr areaBase,
                                      uint32_t areaOffset, FieldType fieldType,
                                      AnyReg value);

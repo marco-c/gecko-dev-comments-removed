@@ -4431,12 +4431,17 @@ void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
 
   
   
+  
 
   Label fastCall;
   Label done;
   const Register newInstanceTemp = WasmCallRefCallScratchReg1;
   size_t instanceSlotOffset = FunctionExtended::offsetOfExtendedSlot(
       FunctionExtended::WASM_INSTANCE_SLOT);
+  static_assert(FunctionExtended::WASM_INSTANCE_SLOT < wasm::NullPtrGuardSize);
+  wasm::BytecodeOffset trapOffset(desc.lineOrBytecode());
+  append(wasm::Trap::NullPointerDereference,
+         wasm::TrapSite(currentOffset(), trapOffset));
   loadPtr(Address(calleeFnObj, instanceSlotOffset), newInstanceTemp);
   branchPtr(Assembler::Equal, InstanceReg, newInstanceTemp, &fastCall);
 

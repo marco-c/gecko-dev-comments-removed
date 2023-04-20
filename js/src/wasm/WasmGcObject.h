@@ -336,6 +336,11 @@ inline uint8_t* WasmStructObject::fieldOffsetToAddress(FieldType fieldType,
          areaOffset;
 }
 
+
+
+static_assert(WasmStructObject_MaxInlineBytes <= wasm::NullPtrGuardSize);
+static_assert(sizeof(WasmArrayObject) <= wasm::NullPtrGuardSize);
+
 }  
 
 

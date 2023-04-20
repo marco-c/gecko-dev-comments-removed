@@ -1611,7 +1611,6 @@ void BaseCompiler::callRef(const Stk& calleeRef, const FunctionCall& call,
   CalleeDesc callee = CalleeDesc::wasmFuncRef();
 
   loadRef(calleeRef, RegRef(WasmCallRefReg));
-  emitGcNullCheck(RegRef(WasmCallRefReg));
   masm.wasmCallRef(desc, callee, fastCallOffset, slowCallOffset);
 }
 #endif
@@ -6314,11 +6313,21 @@ void BaseCompiler::emitGcCanon(uint32_t typeIndex) {
   pushRef(rp);
 }
 
-void BaseCompiler::emitGcNullCheck(RegRef rp) {
+
+void BaseCompiler::SignalNullCheck::emitNullCheck(BaseCompiler* bc, RegRef rp) {
   Label ok;
+  MacroAssembler& masm = bc->masm;
   masm.branchTestPtr(Assembler::NonZero, rp, rp, &ok);
-  trap(Trap::NullPointerDereference);
+  bc->trap(Trap::NullPointerDereference);
   masm.bind(&ok);
+}
+
+
+void BaseCompiler::SignalNullCheck::emitTrapSite(BaseCompiler* bc) {
+  wasm::BytecodeOffset trapOffset(bc->bytecodeOffset());
+  MacroAssembler& masm = bc->masm;
+  masm.append(wasm::Trap::NullPointerDereference,
+              wasm::TrapSite(masm.currentOffset(), trapOffset));
 }
 
 RegPtr BaseCompiler::emitGcArrayGetData(RegRef rp) {
@@ -6329,11 +6338,13 @@ RegPtr BaseCompiler::emitGcArrayGetData(RegRef rp) {
   return rdata;
 }
 
+template <typename NullCheckPolicy>
 RegI32 BaseCompiler::emitGcArrayGetNumElements(RegRef rp) {
   
   
   STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
   RegI32 numElements = needI32();
+  NullCheckPolicy::emitTrapSite(this);
   masm.load32(Address(rp, WasmArrayObject::offsetOfNumElements()), numElements);
   return numElements;
 }
@@ -6345,13 +6356,14 @@ void BaseCompiler::emitGcArrayBoundsCheck(RegI32 index, RegI32 numElements) {
   masm.bind(&inBounds);
 }
 
-template <typename T>
+template <typename T, typename NullCheckPolicy>
 void BaseCompiler::emitGcGet(FieldType type, FieldWideningOp wideningOp,
                              const T& src) {
   switch (type.kind()) {
     case FieldType::I8: {
       MOZ_ASSERT(wideningOp != FieldWideningOp::None);
       RegI32 r = needI32();
+      NullCheckPolicy::emitTrapSite(this);
       if (wideningOp == FieldWideningOp::Unsigned) {
         masm.load8ZeroExtend(src, r);
       } else {
@@ -6363,6 +6375,7 @@ void BaseCompiler::emitGcGet(FieldType type, FieldWideningOp wideningOp,
     case FieldType::I16: {
       MOZ_ASSERT(wideningOp != FieldWideningOp::None);
       RegI32 r = needI32();
+      NullCheckPolicy::emitTrapSite(this);
       if (wideningOp == FieldWideningOp::Unsigned) {
         masm.load16ZeroExtend(src, r);
       } else {
@@ -6374,6 +6387,7 @@ void BaseCompiler::emitGcGet(FieldType type, FieldWideningOp wideningOp,
     case FieldType::I32: {
       MOZ_ASSERT(wideningOp == FieldWideningOp::None);
       RegI32 r = needI32();
+      NullCheckPolicy::emitTrapSite(this);
       masm.load32(src, r);
       pushI32(r);
       break;
@@ -6381,6 +6395,7 @@ void BaseCompiler::emitGcGet(FieldType type, FieldWideningOp wideningOp,
     case FieldType::I64: {
       MOZ_ASSERT(wideningOp == FieldWideningOp::None);
       RegI64 r = needI64();
+      NullCheckPolicy::emitTrapSite(this);
       masm.load64(src, r);
       pushI64(r);
       break;
@@ -6388,6 +6403,7 @@ void BaseCompiler::emitGcGet(FieldType type, FieldWideningOp wideningOp,
     case FieldType::F32: {
       MOZ_ASSERT(wideningOp == FieldWideningOp::None);
       RegF32 r = needF32();
+      NullCheckPolicy::emitTrapSite(this);
       masm.loadFloat32(src, r);
       pushF32(r);
       break;
@@ -6395,6 +6411,7 @@ void BaseCompiler::emitGcGet(FieldType type, FieldWideningOp wideningOp,
     case FieldType::F64: {
       MOZ_ASSERT(wideningOp == FieldWideningOp::None);
       RegF64 r = needF64();
+      NullCheckPolicy::emitTrapSite(this);
       masm.loadDouble(src, r);
       pushF64(r);
       break;
@@ -6403,6 +6420,7 @@ void BaseCompiler::emitGcGet(FieldType type, FieldWideningOp wideningOp,
     case FieldType::V128: {
       MOZ_ASSERT(wideningOp == FieldWideningOp::None);
       RegV128 r = needV128();
+      NullCheckPolicy::emitTrapSite(this);
       masm.loadUnalignedSimd128(src, r);
       pushV128(r);
       break;
@@ -6411,6 +6429,7 @@ void BaseCompiler::emitGcGet(FieldType type, FieldWideningOp wideningOp,
     case FieldType::Ref: {
       MOZ_ASSERT(wideningOp == FieldWideningOp::None);
       RegRef r = needRef();
+      NullCheckPolicy::emitTrapSite(this);
       masm.loadPtr(src, r);
       pushRef(r);
       break;
@@ -6421,8 +6440,9 @@ void BaseCompiler::emitGcGet(FieldType type, FieldWideningOp wideningOp,
   }
 }
 
-template <typename T>
+template <typename T, typename NullCheckPolicy>
 void BaseCompiler::emitGcSetScalar(const T& dst, FieldType type, AnyReg value) {
+  NullCheckPolicy::emitTrapSite(this);
   switch (type.kind()) {
     case FieldType::I8: {
       masm.store8(value.i32(), dst);
@@ -6460,12 +6480,14 @@ void BaseCompiler::emitGcSetScalar(const T& dst, FieldType type, AnyReg value) {
   }
 }
 
+template <typename NullCheckPolicy>
 bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr areaBase,
                                    uint32_t areaOffset, FieldType fieldType,
                                    AnyReg value) {
   
   if (!fieldType.isRefRepr()) {
-    emitGcSetScalar(Address(areaBase, areaOffset), fieldType, value);
+    emitGcSetScalar<Address, NullCheckPolicy>(Address(areaBase, areaOffset),
+                                              fieldType, value);
     freeAny(value);
     return true;
   }
@@ -6475,6 +6497,8 @@ bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr areaBase,
   RegPtr valueAddr = RegPtr(PreBarrierReg);
   needPtr(valueAddr);
   masm.computeEffectiveAddress(Address(areaBase, areaOffset), valueAddr);
+
+  NullCheckPolicy::emitNullCheck(this, object);
 
   
   if (!emitBarrieredStore(Some(object), valueAddr, value.ref(),
@@ -6510,8 +6534,8 @@ bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
 
   
   if (!arrayType.elementType_.isRefRepr()) {
-    emitGcSetScalar(BaseIndex(data, index, scale, 0), arrayType.elementType_,
-                    value);
+    emitGcSetScalar<BaseIndex, NoNullCheck>(BaseIndex(data, index, scale, 0),
+                                            arrayType.elementType_, value);
     return true;
   }
 
@@ -6617,7 +6641,8 @@ bool BaseCompiler::emitStructNew() {
     }
 
     
-    if (!emitGcStructSet(rp, rbase, areaOffset, fieldType, value)) {
+    if (!emitGcStructSet<NoNullCheck>(rp, rbase, areaOffset, fieldType,
+                                      value)) {
       return false;
     }
   }
@@ -6660,9 +6685,6 @@ bool BaseCompiler::emitStructGet(FieldWideningOp wideningOp) {
   RegRef rp = popRef();
 
   
-  emitGcNullCheck(rp);
-
-  
   FieldType fieldType = structType.fields_[fieldIndex].type;
   uint32_t fieldOffset = structType.fields_[fieldIndex].offset;
 
@@ -6674,14 +6696,18 @@ bool BaseCompiler::emitStructGet(FieldWideningOp wideningOp) {
   
   RegPtr rbase = needPtr();
   if (areaIsOutline) {
+    SignalNullCheck::emitTrapSite(this);
     masm.loadPtr(Address(rp, WasmStructObject::offsetOfOutlineData()), rbase);
+    
+    emitGcGet<Address, NoNullCheck>(fieldType, wideningOp,
+                                    Address(rbase, areaOffset));
   } else {
     masm.computeEffectiveAddress(
         Address(rp, WasmStructObject::offsetOfInlineData()), rbase);
+    
+    emitGcGet<Address, SignalNullCheck>(fieldType, wideningOp,
+                                        Address(rbase, areaOffset));
   }
-
-  
-  emitGcGet(fieldType, wideningOp, Address(rbase, areaOffset));
 
   freePtr(rbase);
   freeRef(rp);
@@ -6720,9 +6746,6 @@ bool BaseCompiler::emitStructSet() {
   }
 
   
-  emitGcNullCheck(rp);
-
-  
   FieldType fieldType = structType.fields_[fieldIndex].type;
   uint32_t fieldOffset = structType.fields_[fieldIndex].offset;
 
@@ -6733,15 +6756,20 @@ bool BaseCompiler::emitStructSet() {
 
   
   if (areaIsOutline) {
+    SignalNullCheck::emitTrapSite(this);
     masm.loadPtr(Address(rp, WasmStructObject::offsetOfOutlineData()), rbase);
+    if (!emitGcStructSet<NoNullCheck>(rp, rbase, areaOffset, fieldType,
+                                      value)) {
+      return false;
+    }
   } else {
     masm.computeEffectiveAddress(
         Address(rp, WasmStructObject::offsetOfInlineData()), rbase);
-  }
-
-  
-  if (!emitGcStructSet(rp, rbase, areaOffset, fieldType, value)) {
-    return false;
+    
+    if (!emitGcStructSet<SignalNullCheck>(rp, rbase, areaOffset, fieldType,
+                                          value)) {
+      return false;
+    }
   }
 
   freePtr(rbase);
@@ -6783,7 +6811,7 @@ bool BaseCompiler::emitArrayNew() {
   RegPtr rdata = emitGcArrayGetData(rp);
 
   
-  RegI32 numElements = emitGcArrayGetNumElements(rp);
+  RegI32 numElements = emitGcArrayGetNumElements<NoNullCheck>(rp);
 
   
   if (arrayType.elementType_.isRefRepr()) {
@@ -6959,10 +6987,7 @@ bool BaseCompiler::emitArrayGet(FieldWideningOp wideningOp) {
   RegRef rp = popRef();
 
   
-  emitGcNullCheck(rp);
-
-  
-  RegI32 numElements = emitGcArrayGetNumElements(rp);
+  RegI32 numElements = emitGcArrayGetNumElements<SignalNullCheck>(rp);
 
   
   emitGcArrayBoundsCheck(index, numElements);
@@ -6974,12 +6999,13 @@ bool BaseCompiler::emitArrayGet(FieldWideningOp wideningOp) {
   
   uint32_t shift = arrayType.elementType_.indexingShift();
   if (IsShiftInScaleRange(shift)) {
-    emitGcGet(arrayType.elementType_, wideningOp,
-              BaseIndex(rdata, index, ShiftToScale(shift), 0));
+    emitGcGet<BaseIndex, NoNullCheck>(
+        arrayType.elementType_, wideningOp,
+        BaseIndex(rdata, index, ShiftToScale(shift), 0));
   } else {
     masm.lshiftPtr(Imm32(shift), index);
-    emitGcGet(arrayType.elementType_, wideningOp,
-              BaseIndex(rdata, index, TimesOne, 0));
+    emitGcGet<BaseIndex, NoNullCheck>(arrayType.elementType_, wideningOp,
+                                      BaseIndex(rdata, index, TimesOne, 0));
   }
 
   freePtr(rdata);
@@ -7013,10 +7039,7 @@ bool BaseCompiler::emitArraySet() {
   RegRef rp = popRef();
 
   
-  emitGcNullCheck(rp);
-
-  
-  RegI32 numElements = emitGcArrayGetNumElements(rp);
+  RegI32 numElements = emitGcArrayGetNumElements<SignalNullCheck>(rp);
 
   
   emitGcArrayBoundsCheck(index, numElements);
@@ -7058,10 +7081,7 @@ bool BaseCompiler::emitArrayLen(bool decodeIgnoredTypeIndex) {
   RegRef rp = popRef();
 
   
-  emitGcNullCheck(rp);
-
-  
-  RegI32 numElements = emitGcArrayGetNumElements(rp);
+  RegI32 numElements = emitGcArrayGetNumElements<SignalNullCheck>(rp);
   pushI32(numElements);
 
   freeRef(rp);

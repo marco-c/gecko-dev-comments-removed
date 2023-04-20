@@ -196,6 +196,11 @@ static_assert(HugeMappedSize % PageSize == 0);
 
 static const size_t GuardSize = PageSize;
 
+
+
+
+static const size_t NullPtrGuardSize = 4096;
+
 }  
 }  
 
