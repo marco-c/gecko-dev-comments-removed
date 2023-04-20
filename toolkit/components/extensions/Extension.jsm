@@ -2676,6 +2676,11 @@ class Extension extends ExtensionData {
     return common == this.baseURL;
   }
 
+  checkLoadURI(uri, options = {}) {
+    return ExtensionCommon.checkLoadURI(uri, this.principal, options);
+  }
+
+  
   checkLoadURL(url, options = {}) {
     
     
