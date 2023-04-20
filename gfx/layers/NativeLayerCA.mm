@@ -1232,6 +1232,9 @@ void NativeLayerCA::HandlePartialUpdate(const MutexAutoLock& aProofOfLock,
   
   
   
+  
+  
+  
 
   if (!mDisplayRect.IsEqualInterior(aDisplayRect)) {
     gfx::IntRegion exposedRegion(aDisplayRect);
@@ -1243,7 +1246,10 @@ void NativeLayerCA::HandlePartialUpdate(const MutexAutoLock& aProofOfLock,
       exposedRegion.AndWith(mFrontSurface->mInvalidRegion);
     }
 
-    if (!aUpdateRegion.Contains(exposedRegion)) {
+    gfx::IntRegion invalidRegion(exposedRegion);
+    invalidRegion.SubOut(aUpdateRegion);
+    IntRect invalidBounds = invalidRegion.GetBounds();
+    if (invalidBounds.width > 1 && invalidBounds.height > 1) {
       
       std::ostringstream reason;
       reason << "The update region " << aUpdateRegion << " must cover the invalid region "
