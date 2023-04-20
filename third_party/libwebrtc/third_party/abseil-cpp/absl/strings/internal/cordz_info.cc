@@ -20,6 +20,7 @@
 #include "absl/debugging/stacktrace.h"
 #include "absl/strings/internal/cord_internal.h"
 #include "absl/strings/internal/cord_rep_btree.h"
+#include "absl/strings/internal/cord_rep_crc.h"
 #include "absl/strings/internal/cord_rep_ring.h"
 #include "absl/strings/internal/cordz_handle.h"
 #include "absl/strings/internal/cordz_statistics.h"
@@ -33,7 +34,9 @@ namespace cord_internal {
 
 using ::absl::base_internal::SpinLockHolder;
 
+#ifdef ABSL_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
 constexpr int CordzInfo::kMaxStackDepth;
+#endif
 
 ABSL_CONST_INIT CordzInfo::List CordzInfo::global_list_{absl::kConstInit};
 
@@ -82,6 +85,14 @@ class CordRepAnalyzer {
     RepRef repref{rep, (refcount > 1) ? refcount - 1 : 1};
 
     
+    if (repref.rep->tag == CRC) {
+      statistics_.node_count++;
+      statistics_.node_counts.crc++;
+      memory_usage_.Add(sizeof(CordRepCrc), repref.refcount);
+      repref = repref.Child(repref.rep->crc()->child);
+    }
+
+    
     repref = CountLinearReps(repref, memory_usage_);
 
     if (repref.rep != nullptr) {
@@ -89,8 +100,6 @@ class CordRepAnalyzer {
         AnalyzeRing(repref);
       } else if (repref.rep->tag == BTREE) {
         AnalyzeBtree(repref);
-      } else if (repref.rep->tag == CONCAT) {
-        AnalyzeConcat(repref);
       } else {
         
         assert(false);
@@ -131,14 +140,6 @@ class CordRepAnalyzer {
       fair_share += static_cast<double>(size) / refcount;
     }
   };
-
-  
-  
-  static RepRef AssertConcat(RepRef repref) {
-    const CordRep* rep = repref.rep;
-    assert(rep == nullptr || rep->tag == CONCAT);
-    return (rep != nullptr && rep->tag == CONCAT) ? repref : RepRef{nullptr, 0};
-  }
 
   
   void CountFlat(size_t size) {
@@ -190,34 +191,6 @@ class CordRepAnalyzer {
     }
 
     return rep;
-  }
-
-  
-  void AnalyzeConcat(RepRef rep) {
-    absl::InlinedVector<RepRef, 47> pending;
-
-    while (rep.rep != nullptr) {
-      const CordRepConcat* concat = rep.rep->concat();
-      RepRef left = rep.Child(concat->left);
-      RepRef right = rep.Child(concat->right);
-
-      statistics_.node_count++;
-      statistics_.node_counts.concat++;
-      memory_usage_.Add(sizeof(CordRepConcat), rep.refcount);
-
-      right = AssertConcat(CountLinearReps(right, memory_usage_));
-      rep = AssertConcat(CountLinearReps(left, memory_usage_));
-      if (rep.rep != nullptr) {
-        if (right.rep != nullptr) {
-          pending.push_back(right);
-        }
-      } else if (right.rep != nullptr) {
-        rep = right;
-      } else if (!pending.empty()) {
-        rep = pending.back();
-        pending.pop_back();
-      }
-    }
   }
 
   

@@ -214,23 +214,29 @@ class AlphaNum {
   
 
   AlphaNum(int x)  
-      : piece_(digits_,
-               numbers_internal::FastIntToBuffer(x, digits_) - &digits_[0]) {}
+      : piece_(digits_, static_cast<size_t>(
+                            numbers_internal::FastIntToBuffer(x, digits_) -
+                            &digits_[0])) {}
   AlphaNum(unsigned int x)  
-      : piece_(digits_,
-               numbers_internal::FastIntToBuffer(x, digits_) - &digits_[0]) {}
+      : piece_(digits_, static_cast<size_t>(
+                            numbers_internal::FastIntToBuffer(x, digits_) -
+                            &digits_[0])) {}
   AlphaNum(long x)  
-      : piece_(digits_,
-               numbers_internal::FastIntToBuffer(x, digits_) - &digits_[0]) {}
+      : piece_(digits_, static_cast<size_t>(
+                            numbers_internal::FastIntToBuffer(x, digits_) -
+                            &digits_[0])) {}
   AlphaNum(unsigned long x)  
-      : piece_(digits_,
-               numbers_internal::FastIntToBuffer(x, digits_) - &digits_[0]) {}
+      : piece_(digits_, static_cast<size_t>(
+                            numbers_internal::FastIntToBuffer(x, digits_) -
+                            &digits_[0])) {}
   AlphaNum(long long x)  
-      : piece_(digits_,
-               numbers_internal::FastIntToBuffer(x, digits_) - &digits_[0]) {}
+      : piece_(digits_, static_cast<size_t>(
+                            numbers_internal::FastIntToBuffer(x, digits_) -
+                            &digits_[0])) {}
   AlphaNum(unsigned long long x)  
-      : piece_(digits_,
-               numbers_internal::FastIntToBuffer(x, digits_) - &digits_[0]) {}
+      : piece_(digits_, static_cast<size_t>(
+                            numbers_internal::FastIntToBuffer(x, digits_) -
+                            &digits_[0])) {}
 
   AlphaNum(float f)  
       : piece_(digits_, numbers_internal::SixDigitsToBuffer(f, digits_)) {}
@@ -245,7 +251,8 @@ class AlphaNum {
       const strings_internal::AlphaNumBuffer<size>& buf)
       : piece_(&buf.data[0], buf.size) {}
 
-  AlphaNum(const char* c_str) : piece_(c_str) {}  
+  AlphaNum(const char* c_str)                     
+      : piece_(NullSafeStringView(c_str)) {}      
   AlphaNum(absl::string_view pc) : piece_(pc) {}  
 
   template <typename Allocator>

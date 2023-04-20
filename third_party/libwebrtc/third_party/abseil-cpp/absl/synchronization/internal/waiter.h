@@ -72,9 +72,6 @@ class Waiter {
   Waiter& operator=(const Waiter&) = delete;
 
   
-  ~Waiter();
-
-  
   
   
   bool Wait(KernelTimeout t);
@@ -106,6 +103,12 @@ class Waiter {
 #endif
 
  private:
+  
+  
+  
+  
+  ~Waiter() = delete;
+
 #if ABSL_WAITER_MODE == ABSL_WAITER_MODE_FUTEX
   
   
@@ -136,6 +139,9 @@ class Waiter {
   
   void InternalCondVarPoke();
 
+  
+  
+  
   
   
   alignas(void*) unsigned char mu_storage_[sizeof(void*)];

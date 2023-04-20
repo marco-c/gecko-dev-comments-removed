@@ -177,6 +177,9 @@ class ABSL_LOCKABLE Mutex {
   
   
   
+  
+  
+  
   void AssertHeld() const ABSL_ASSERT_EXCLUSIVE_LOCK();
 
   
@@ -234,6 +237,10 @@ class ABSL_LOCKABLE Mutex {
   
   bool ReaderTryLock() ABSL_SHARED_TRYLOCK_FUNCTION(true);
 
+  
+  
+  
+  
   
   
   
@@ -991,7 +998,8 @@ inline Condition::Condition(const T *object,
 
 
 
-void RegisterMutexProfiler(void (*fn)(int64_t wait_timestamp));
+
+void RegisterMutexProfiler(void (*fn)(int64_t wait_cycles));
 
 
 

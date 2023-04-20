@@ -147,7 +147,7 @@ bool bernoulli_distribution::Generate(double p,
     
     
     
-    const uint64_t c = static_cast<int64_t>(p * kP32);
+    const uint64_t c = static_cast<uint64_t>(static_cast<int64_t>(p * kP32));
     const uint32_t v = fast_u32(g);
     
     

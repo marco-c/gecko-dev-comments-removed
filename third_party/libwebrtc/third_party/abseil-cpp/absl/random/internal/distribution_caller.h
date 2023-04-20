@@ -18,6 +18,7 @@
 #define ABSL_RANDOM_INTERNAL_DISTRIBUTION_CALLER_H_
 
 #include <utility>
+#include <type_traits>
 
 #include "absl/base/config.h"
 #include "absl/base/internal/fast_type_id.h"
@@ -32,6 +33,8 @@ namespace random_internal {
 
 template <typename URBG>
 struct DistributionCaller {
+  static_assert(!std::is_pointer<URBG>::value,
+                "You must pass a reference, not a pointer.");
   
   
   

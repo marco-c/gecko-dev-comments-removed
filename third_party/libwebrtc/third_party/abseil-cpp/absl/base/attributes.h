@@ -136,9 +136,10 @@
 
 
 
-#if (ABSL_HAVE_ATTRIBUTE(weak) ||                   \
-     (defined(__GNUC__) && !defined(__clang__))) && \
-    (!defined(_WIN32) || __clang_major__ < 9) && !defined(__MINGW32__)
+#if (ABSL_HAVE_ATTRIBUTE(weak) ||                                         \
+     (defined(__GNUC__) && !defined(__clang__))) &&                       \
+    (!defined(_WIN32) || (defined(__clang__) && __clang_major__ >= 9)) && \
+    !defined(__MINGW32__)
 #undef ABSL_ATTRIBUTE_WEAK
 #define ABSL_ATTRIBUTE_WEAK __attribute__((weak))
 #define ABSL_HAVE_ATTRIBUTE_WEAK 1
@@ -212,6 +213,9 @@
 
 #if ABSL_HAVE_ATTRIBUTE(no_sanitize_address)
 #define ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#elif defined(_MSC_VER) && _MSC_VER >= 1928
+
+#define ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS __declspec(no_sanitize_address)
 #else
 #define ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS
 #endif
@@ -316,9 +320,16 @@
 
 
 
-
 #ifndef ABSL_ATTRIBUTE_SECTION_VARIABLE
+#ifdef _AIX
+
+
+
+
+#define ABSL_ATTRIBUTE_SECTION_VARIABLE(name)
+#else
 #define ABSL_ATTRIBUTE_SECTION_VARIABLE(name) __attribute__((section(#name)))
+#endif
 #endif
 
 
@@ -330,8 +341,8 @@
 
 
 #ifndef ABSL_DECLARE_ATTRIBUTE_SECTION_VARS
-#define ABSL_DECLARE_ATTRIBUTE_SECTION_VARS(name) \
-  extern char __start_##name[] ABSL_ATTRIBUTE_WEAK;    \
+#define ABSL_DECLARE_ATTRIBUTE_SECTION_VARS(name)   \
+  extern char __start_##name[] ABSL_ATTRIBUTE_WEAK; \
   extern char __stop_##name[] ABSL_ATTRIBUTE_WEAK
 #endif
 #ifndef ABSL_DEFINE_ATTRIBUTE_SECTION_VARS
@@ -418,9 +429,13 @@
 
 
 
-#if ABSL_HAVE_ATTRIBUTE(nodiscard)
-#define ABSL_MUST_USE_RESULT [[nodiscard]]
-#elif defined(__clang__) && ABSL_HAVE_ATTRIBUTE(warn_unused_result)
+
+
+
+
+
+
+#if defined(__clang__) && ABSL_HAVE_ATTRIBUTE(warn_unused_result)
 #define ABSL_MUST_USE_RESULT __attribute__((warn_unused_result))
 #else
 #define ABSL_MUST_USE_RESULT
@@ -490,7 +505,7 @@
 #define ABSL_XRAY_NEVER_INSTRUMENT [[clang::xray_never_instrument]]
 #if ABSL_HAVE_CPP_ATTRIBUTE(clang::xray_log_args)
 #define ABSL_XRAY_LOG_ARGS(N) \
-    [[clang::xray_always_instrument, clang::xray_log_args(N)]]
+  [[clang::xray_always_instrument, clang::xray_log_args(N)]]
 #else
 #define ABSL_XRAY_LOG_ARGS(N) [[clang::xray_always_instrument]]
 #endif
@@ -544,6 +559,12 @@
 #else
 #define ABSL_ATTRIBUTE_INITIAL_EXEC
 #endif
+
+
+
+
+
+
 
 
 
@@ -641,11 +662,17 @@
 
 
 
-#if defined(__clang__) && defined(__cplusplus) && __cplusplus >= 201103L
-#define ABSL_DEPRECATED(message) __attribute__((deprecated(message)))
-#endif
 
-#ifndef ABSL_DEPRECATED
+
+
+
+
+
+
+
+#if ABSL_HAVE_ATTRIBUTE(deprecated)
+#define ABSL_DEPRECATED(message) __attribute__((deprecated(message)))
+#else
 #define ABSL_DEPRECATED(message)
 #endif
 
@@ -669,11 +696,25 @@
 
 
 
-#if ABSL_HAVE_CPP_ATTRIBUTE(clang::require_constant_initialization)
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__cpp_constinit) && __cpp_constinit >= 201907L
+#define ABSL_CONST_INIT constinit
+#elif ABSL_HAVE_CPP_ATTRIBUTE(clang::require_constant_initialization)
 #define ABSL_CONST_INIT [[clang::require_constant_initialization]]
 #else
 #define ABSL_CONST_INIT
-#endif  
+#endif
 
 
 

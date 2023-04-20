@@ -20,7 +20,7 @@
 
 #include "absl/base/config.h"
 
-#if ABSL_HAVE_MMAP
+#ifdef ABSL_HAVE_MMAP
 
 #include <sys/mman.h>
 
@@ -41,7 +41,7 @@
 
 #ifdef __mips__
 
-#ifdef __BIONIC__
+#if defined(__BIONIC__) || !defined(__GLIBC__)
 
 
 #include <asm/sgidefs.h>

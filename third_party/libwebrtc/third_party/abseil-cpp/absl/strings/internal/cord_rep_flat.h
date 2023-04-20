@@ -20,6 +20,8 @@
 #include <cstdint>
 #include <memory>
 
+#include "absl/base/config.h"
+#include "absl/base/macros.h"
 #include "absl/strings/internal/cord_internal.h"
 
 namespace absl {
@@ -42,23 +44,45 @@ static constexpr size_t kMinFlatSize = 32;
 static constexpr size_t kMaxFlatSize = 4096;
 static constexpr size_t kMaxFlatLength = kMaxFlatSize - kFlatOverhead;
 static constexpr size_t kMinFlatLength = kMinFlatSize - kFlatOverhead;
+static constexpr size_t kMaxLargeFlatSize = 256 * 1024;
+static constexpr size_t kMaxLargeFlatLength = kMaxLargeFlatSize - kFlatOverhead;
+
+
+
+static constexpr uint8_t kTagBase = FLAT - 4;
+
 
 constexpr uint8_t AllocatedSizeToTagUnchecked(size_t size) {
-  return static_cast<uint8_t>((size <= 1024) ? size / 8 + 1
-                                             : 129 + size / 32 - 1024 / 32);
+  return static_cast<uint8_t>(size <= 512 ? kTagBase + size / 8
+                              : size <= 8192
+                                  ? kTagBase + 512 / 8 + size / 64 - 512 / 64
+                                  : kTagBase + 512 / 8 + ((8192 - 512) / 64) +
+                                        size / 4096 - 8192 / 4096);
 }
 
-static_assert(kMinFlatSize / 8 + 1 >= FLAT, "");
-static_assert(AllocatedSizeToTagUnchecked(kMaxFlatSize) <= MAX_FLAT_TAG, "");
+
+constexpr size_t TagToAllocatedSize(uint8_t tag) {
+  return (tag <= kTagBase + 512 / 8) ? tag * 8 - kTagBase * 8
+         : (tag <= kTagBase + (512 / 8) + ((8192 - 512) / 64))
+             ? 512 + tag * 64 - kTagBase * 64 - 512 / 8 * 64
+             : 8192 + tag * 4096 - kTagBase * 4096 -
+                   ((512 / 8) + ((8192 - 512) / 64)) * 4096;
+}
+
+static_assert(AllocatedSizeToTagUnchecked(kMinFlatSize) == FLAT, "");
+static_assert(AllocatedSizeToTagUnchecked(kMaxLargeFlatSize) == MAX_FLAT_TAG,
+              "");
 
 
-constexpr size_t DivUp(size_t n, size_t m) { return (n + m - 1) / m; }
-constexpr size_t RoundUp(size_t n, size_t m) { return DivUp(n, m) * m; }
+
+constexpr size_t RoundUp(size_t n, size_t m) {
+  return (n + m - 1) & (0 - m);
+}
 
 
 
 inline size_t RoundUpForTag(size_t size) {
-  return RoundUp(size, (size <= 1024) ? 8 : 32);
+  return RoundUp(size, (size <= 512) ? 8 : (size <= 8192 ? 64 : 4096));
 }
 
 
@@ -72,25 +96,25 @@ inline uint8_t AllocatedSizeToTag(size_t size) {
 }
 
 
-constexpr size_t TagToAllocatedSize(uint8_t tag) {
-  return (tag <= 129) ? ((tag - 1) * 8) : (1024 + (tag - 129) * 32);
-}
-
-
 constexpr size_t TagToLength(uint8_t tag) {
   return TagToAllocatedSize(tag) - kFlatOverhead;
 }
 
 
-static_assert(TagToAllocatedSize(225) == kMaxFlatSize, "Bad tag logic");
+static_assert(TagToAllocatedSize(MAX_FLAT_TAG) == kMaxLargeFlatSize,
+              "Bad tag logic");
 
 struct CordRepFlat : public CordRep {
   
-  static CordRepFlat* New(size_t len) {
+  struct Large {};
+
+  
+  template <size_t max_flat_size, typename... Args>
+  static CordRepFlat* NewImpl(size_t len, Args... args ABSL_ATTRIBUTE_UNUSED) {
     if (len <= kMinFlatLength) {
       len = kMinFlatLength;
-    } else if (len > kMaxFlatLength) {
-      len = kMaxFlatLength;
+    } else if (len > max_flat_size - kFlatOverhead) {
+      len = max_flat_size - kFlatOverhead;
     }
 
     
@@ -99,6 +123,12 @@ struct CordRepFlat : public CordRep {
     CordRepFlat* rep = new (raw_rep) CordRepFlat();
     rep->tag = AllocatedSizeToTag(size);
     return rep;
+  }
+
+  static CordRepFlat* New(size_t len) { return NewImpl<kMaxFlatSize>(len); }
+
+  static CordRepFlat* New(Large, size_t len) {
+    return NewImpl<kMaxLargeFlatSize>(len);
   }
 
   
@@ -115,6 +145,17 @@ struct CordRepFlat : public CordRep {
     rep->~CordRep();
     ::operator delete(rep);
 #endif
+  }
+
+  
+  
+  
+  static CordRepFlat* Create(absl::string_view data, size_t extra = 0) {
+    assert(data.size() <= kMaxFlatLength);
+    CordRepFlat* flat = New(data.size() + (std::min)(extra, kMaxFlatLength));
+    memcpy(flat->Data(), data.data(), data.size());
+    flat->length = data.size();
+    return flat;
   }
 
   

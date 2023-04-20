@@ -22,8 +22,8 @@
 #include "absl/base/config.h"
 #include "absl/base/internal/raw_logging.h"
 #include "absl/base/optimization.h"
+#include "absl/strings/internal/cord_data_edge.h"
 #include "absl/strings/internal/cord_internal.h"
-#include "absl/strings/internal/cord_rep_btree.h"
 #include "absl/strings/internal/cord_rep_flat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
@@ -165,6 +165,15 @@ class CordRepBtree : public CordRep {
   static void Destroy(CordRepBtree* tree);
 
   
+  static void Delete(CordRepBtree* tree) { delete tree; }
+
+  
+  using CordRep::Unref;
+
+  
+  static void Unref(absl::Span<CordRep* const> edges);
+
+  
   
   
   
@@ -200,6 +209,19 @@ class CordRepBtree : public CordRep {
   CordRep* SubTree(size_t offset, size_t n);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static CordRep* RemoveSuffix(CordRepBtree* tree, size_t n);
+
+  
   char GetCharacter(size_t offset) const;
 
   
@@ -226,6 +248,36 @@ class CordRepBtree : public CordRep {
   
   
   Span<char> GetAppendBuffer(size_t size);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static ExtractResult ExtractAppendBuffer(CordRepBtree* tree,
+                                           size_t extra_capacity = 1);
 
   
   
@@ -258,13 +310,6 @@ class CordRepBtree : public CordRep {
   
   
   inline absl::string_view Data(size_t index) const;
-
-  static const char* EdgeDataPtr(const CordRep* r);
-  static absl::string_view EdgeData(const CordRep* r);
-
-  
-  
-  static bool IsDataEdge(const CordRep* rep);
 
   
   
@@ -325,6 +370,11 @@ class CordRepBtree : public CordRep {
   
   static CordRepBtree* New(CordRepBtree* front, CordRepBtree* back);
 
+  
+  
+  
+  static CordRepBtree* Rebuild(CordRepBtree* tree);
+
  private:
   CordRepBtree() = default;
   ~CordRepBtree() = default;
@@ -372,6 +422,12 @@ class CordRepBtree : public CordRep {
   
   
   
+  
+  Position IndexOfLength(size_t n) const;
+
+  
+  
+  
   Position IndexBefore(Position front, size_t offset) const;
 
   
@@ -380,12 +436,6 @@ class CordRepBtree : public CordRep {
   
   
   Position IndexBeyond(size_t offset) const;
-
-  
-  static void DestroyLeaf(CordRepBtree* tree, size_t begin, size_t end);
-  static void DestroyNonLeaf(CordRepBtree* tree, size_t begin, size_t end);
-  static void DestroyTree(CordRepBtree* tree, size_t begin, size_t end);
-  static void Delete(CordRepBtree* tree) { delete tree; }
 
   
   
@@ -410,7 +460,24 @@ class CordRepBtree : public CordRep {
   
   
   
+  
+  
+  
+  static CordRepBtree* ConsumeBeginTo(CordRepBtree* tree, size_t end,
+                                      size_t new_length);
+
+  
+  
+  
   CordRepBtree* CopyToEndFrom(size_t begin, size_t new_length) const;
+
+  
+  
+  
+  
+  
+  
+  static CordRep* ExtractFront(CordRepBtree* tree);
 
   
   static CordRepBtree* MergeTrees(CordRepBtree* left, CordRepBtree* right);
@@ -420,6 +487,12 @@ class CordRepBtree : public CordRep {
   static CordRepBtree* CreateSlow(CordRep* rep);
   static CordRepBtree* AppendSlow(CordRepBtree*, CordRep* rep);
   static CordRepBtree* PrependSlow(CordRepBtree*, CordRep* rep);
+
+  
+  
+  
+  
+  static void Rebuild(CordRepBtree** stack, CordRepBtree* tree, bool consume);
 
   
   
@@ -464,7 +537,7 @@ class CordRepBtree : public CordRep {
   
   
   
-  CopyResult CopyPrefix(size_t n);
+  CopyResult CopyPrefix(size_t n, bool allow_folding = true);
 
   
   
@@ -552,32 +625,9 @@ inline absl::Span<CordRep* const> CordRepBtree::Edges(size_t begin,
   return {edges_ + begin, static_cast<size_t>(end - begin)};
 }
 
-inline const char* CordRepBtree::EdgeDataPtr(const CordRep* r) {
-  assert(IsDataEdge(r));
-  size_t offset = 0;
-  if (r->tag == SUBSTRING) {
-    offset = r->substring()->start;
-    r = r->substring()->child;
-  }
-  return (r->tag >= FLAT ? r->flat()->Data() : r->external()->base) + offset;
-}
-
-inline absl::string_view CordRepBtree::EdgeData(const CordRep* r) {
-  return absl::string_view(EdgeDataPtr(r), r->length);
-}
-
 inline absl::string_view CordRepBtree::Data(size_t index) const {
   assert(height() == 0);
   return EdgeData(Edge(index));
-}
-
-inline bool CordRepBtree::IsDataEdge(const CordRep* rep) {
-  
-  
-  
-  if (rep->tag == EXTERNAL || rep->tag >= FLAT) return true;
-  if (rep->tag == SUBSTRING) rep = rep->substring()->child;
-  return rep->tag == EXTERNAL || rep->tag >= FLAT;
 }
 
 inline CordRepBtree* CordRepBtree::New(int height) {
@@ -607,23 +657,18 @@ inline CordRepBtree* CordRepBtree::New(CordRepBtree* front,
   return tree;
 }
 
-inline void CordRepBtree::DestroyTree(CordRepBtree* tree, size_t begin,
-                                      size_t end) {
-  if (tree->height() == 0) {
-    DestroyLeaf(tree, begin, end);
-  } else {
-    DestroyNonLeaf(tree, begin, end);
+inline void CordRepBtree::Unref(absl::Span<CordRep* const> edges) {
+  for (CordRep* edge : edges) {
+    if (ABSL_PREDICT_FALSE(!edge->refcount.Decrement())) {
+      CordRep::Destroy(edge);
+    }
   }
-}
-
-inline void CordRepBtree::Destroy(CordRepBtree* tree) {
-  DestroyTree(tree, tree->begin(), tree->end());
 }
 
 inline CordRepBtree* CordRepBtree::CopyRaw() const {
   auto* tree = static_cast<CordRepBtree*>(::operator new(sizeof(CordRepBtree)));
   memcpy(static_cast<void*>(tree), this, sizeof(CordRepBtree));
-  new (&tree->refcount) Refcount;
+  new (&tree->refcount) RefcountAndFlags;
   return tree;
 }
 
@@ -671,7 +716,7 @@ inline void CordRepBtree::AlignBegin() {
     
     
     
-    ABSL_INTERNAL_ASSUME(new_end <= kMaxCapacity);
+    ABSL_ASSUME(new_end <= kMaxCapacity);
 #ifdef __clang__
 #pragma unroll 1
 #endif
@@ -689,7 +734,7 @@ inline void CordRepBtree::AlignEnd() {
     const size_t new_end = end() + delta;
     set_begin(new_begin);
     set_end(new_end);
-    ABSL_INTERNAL_ASSUME(new_end <= kMaxCapacity);
+    ABSL_ASSUME(new_end <= kMaxCapacity);
 #ifdef __clang__
 #pragma unroll 1
 #endif
@@ -761,6 +806,14 @@ inline CordRepBtree::Position CordRepBtree::IndexBefore(Position front,
   offset = offset + front.n;
   while (offset > edges_[index]->length) offset -= edges_[index++]->length;
   return {index, offset};
+}
+
+inline CordRepBtree::Position CordRepBtree::IndexOfLength(size_t n) const {
+  assert(n <= length);
+  size_t index = back();
+  size_t strip = length - n;
+  while (strip >= edges_[index]->length) strip -= edges_[index--]->length;
+  return {index, edges_[index]->length - strip};
 }
 
 inline CordRepBtree::Position CordRepBtree::IndexBeyond(

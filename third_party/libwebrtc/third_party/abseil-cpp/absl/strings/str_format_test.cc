@@ -719,6 +719,7 @@ TEST_F(FormatWrapperTest, ParsedFormat) {
 ABSL_NAMESPACE_END
 }  
 
+namespace {
 using FormatExtensionTest = ::testing::Test;
 
 struct Point {
@@ -750,6 +751,7 @@ TEST_F(FormatExtensionTest, AbslFormatConvertExample) {
   
   EXPECT_FALSE(absl::FormatUntyped(&actual, f1, {absl::FormatArg(p)}));
 }
+}  
 
 
 

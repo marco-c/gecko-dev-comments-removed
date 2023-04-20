@@ -81,17 +81,8 @@ ABSL_NAMESPACE_END
 #include <utility>
 
 #include "absl/base/internal/fast_type_id.h"
-#include "absl/base/macros.h"
 #include "absl/meta/type_traits.h"
 #include "absl/types/bad_any_cast.h"
-
-
-
-#ifdef ABSL_ANY_DETAIL_HAS_RTTI
-#error ABSL_ANY_DETAIL_HAS_RTTI cannot be directly set
-#elif !defined(__GNUC__) || defined(__GXX_RTTI)
-#define ABSL_ANY_DETAIL_HAS_RTTI 1
-#endif  
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -348,7 +339,7 @@ class any {
   
   bool has_value() const noexcept { return obj_ != nullptr; }
 
-#if ABSL_ANY_DETAIL_HAS_RTTI
+#ifdef ABSL_INTERNAL_HAS_RTTI
   
   
   const std::type_info& type() const noexcept {
@@ -367,7 +358,7 @@ class any {
     virtual ~ObjInterface() = default;
     virtual std::unique_ptr<ObjInterface> Clone() const = 0;
     virtual const void* ObjTypeId() const noexcept = 0;
-#if ABSL_ANY_DETAIL_HAS_RTTI
+#ifdef ABSL_INTERNAL_HAS_RTTI
     virtual const std::type_info& Type() const noexcept = 0;
 #endif  
   };
@@ -386,7 +377,7 @@ class any {
 
     const void* ObjTypeId() const noexcept final { return IdForType<T>(); }
 
-#if ABSL_ANY_DETAIL_HAS_RTTI
+#ifdef ABSL_INTERNAL_HAS_RTTI
     const std::type_info& Type() const noexcept final { return typeid(T); }
 #endif  
 
@@ -520,8 +511,6 @@ T* any_cast(any* operand) noexcept {
 
 ABSL_NAMESPACE_END
 }  
-
-#undef ABSL_ANY_DETAIL_HAS_RTTI
 
 #endif  
 

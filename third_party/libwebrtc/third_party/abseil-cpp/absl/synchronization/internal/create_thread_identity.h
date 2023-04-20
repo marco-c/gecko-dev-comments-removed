@@ -38,10 +38,6 @@ base_internal::ThreadIdentity* CreateThreadIdentity();
 
 
 
-void ReclaimThreadIdentity(void* v);
-
-
-
 
 
 inline base_internal::ThreadIdentity* GetOrCreateCurrentThreadIdentity() {

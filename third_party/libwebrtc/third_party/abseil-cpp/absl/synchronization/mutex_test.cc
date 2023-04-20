@@ -26,6 +26,7 @@
 #include <random>
 #include <string>
 #include <thread>  
+#include <type_traits>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -870,33 +871,6 @@ TEST(Mutex, LockedMutexDestructionBug) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-static void ReaderForReaderOnCondVar(absl::Mutex *mu, absl::CondVar *cv,
-                                     int *running) {
-  std::random_device dev;
-  std::mt19937 gen(dev());
-  std::uniform_int_distribution<int> random_millis(0, 15);
-  mu->ReaderLock();
-  while (*running == 3) {
-    absl::SleepFor(absl::Milliseconds(random_millis(gen)));
-    cv->WaitWithTimeout(mu, absl::Milliseconds(random_millis(gen)));
-  }
-  mu->ReaderUnlock();
-  mu->Lock();
-  (*running)--;
-  mu->Unlock();
-}
-
 struct True {
   template <class... Args>
   bool operator()(Args...) const {
@@ -943,6 +917,33 @@ TEST(Mutex, FunctorCondition) {
     value = 0;
     EXPECT_TRUE(c.Eval());
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+static void ReaderForReaderOnCondVar(absl::Mutex *mu, absl::CondVar *cv,
+                                     int *running) {
+  std::random_device dev;
+  std::mt19937 gen(dev());
+  std::uniform_int_distribution<int> random_millis(0, 15);
+  mu->ReaderLock();
+  while (*running == 3) {
+    absl::SleepFor(absl::Milliseconds(random_millis(gen)));
+    cv->WaitWithTimeout(mu, absl::Milliseconds(random_millis(gen)));
+  }
+  mu->ReaderUnlock();
+  mu->Lock();
+  (*running)--;
+  mu->Unlock();
 }
 
 static bool IntIsZero(int *x) { return *x == 0; }
@@ -1701,6 +1702,32 @@ TEST(Mutex, MuTime) {
   int threads = 10;  
   int iterations = 1;
   EXPECT_EQ(RunTest(&TestMuTime, threads, iterations, 1), threads * iterations);
+}
+
+TEST(Mutex, SignalExitedThread) {
+  
+  
+#if defined(__wasm__) || defined(__asmjs__)
+  constexpr int kThreads = 1;  
+#else
+  constexpr int kThreads = 100;
+#endif
+  std::vector<std::thread> top;
+  for (unsigned i = 0; i < 2 * std::thread::hardware_concurrency(); i++) {
+    top.emplace_back([&]() {
+      for (int i = 0; i < kThreads; i++) {
+        absl::Mutex mu;
+        std::thread t([&]() {
+          mu.Lock();
+          mu.Unlock();
+        });
+        mu.Lock();
+        mu.Unlock();
+        t.join();
+      }
+    });
+  }
+  for (auto &th : top) th.join();
 }
 
 }  

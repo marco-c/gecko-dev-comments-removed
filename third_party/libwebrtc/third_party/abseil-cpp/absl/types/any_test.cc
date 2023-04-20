@@ -754,26 +754,23 @@ TEST(AnyTest, FailedCopy) {
 
 
 TEST(AnyTest, FailedEmplace) {
-  {
-    BadCopyable bad;
-    absl::any target;
-    ABSL_ANY_TEST_EXPECT_BAD_COPY(target.emplace<BadCopyable>(bad));
-  }
+  BadCopyable bad;
+  absl::any target;
+  ABSL_ANY_TEST_EXPECT_BAD_COPY(target.emplace<BadCopyable>(bad));
+}
 
-  {
-    BadCopyable bad;
-    absl::any target(absl::in_place_type<int>);
-    ABSL_ANY_TEST_EXPECT_BAD_COPY(target.emplace<BadCopyable>(bad));
-#if defined(ABSL_USES_STD_ANY) && defined(__GLIBCXX__)
-    
-    
-#define ABSL_GLIBCXX_ANY_EMPLACE_EXCEPTION_BUG 1
+
+
+
+#ifdef __GNUC__
+TEST(AnyTest, DISABLED_FailedEmplaceInPlace) {
+#else
+TEST(AnyTest, FailedEmplaceInPlace) {
 #endif
-#if defined(ABSL_HAVE_EXCEPTIONS) && \
-    !defined(ABSL_GLIBCXX_ANY_EMPLACE_EXCEPTION_BUG)
-    EXPECT_FALSE(target.has_value());
-#endif
-  }
+  BadCopyable bad;
+  absl::any target(absl::in_place_type<int>);
+  ABSL_ANY_TEST_EXPECT_BAD_COPY(target.emplace<BadCopyable>(bad));
+  EXPECT_FALSE(target.has_value());
 }
 
 }  

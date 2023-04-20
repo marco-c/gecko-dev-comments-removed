@@ -18,6 +18,7 @@
 #include <cassert>
 
 #include "absl/base/config.h"
+#include "absl/strings/internal/cord_data_edge.h"
 #include "absl/strings/internal/cord_internal.h"
 #include "absl/strings/internal/cord_rep_btree.h"
 #include "absl/strings/internal/cord_rep_btree_navigator.h"
@@ -26,10 +27,6 @@
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace cord_internal {
-
-
-
-
 
 
 
@@ -104,7 +101,8 @@ class CordRepBtreeReader {
   
   
   
-  size_t consumed() const;
+  
+  size_t remaining() const { return remaining_; }
 
   
   void Reset() { navigator_.Reset(); }
@@ -157,7 +155,7 @@ class CordRepBtreeReader {
   absl::string_view Seek(size_t offset);
 
  private:
-  size_t consumed_;
+  size_t remaining_ = 0;
   CordRepBtreeNavigator navigator_;
 };
 
@@ -166,24 +164,19 @@ inline size_t CordRepBtreeReader::length() const {
   return btree()->length;
 }
 
-inline size_t CordRepBtreeReader::consumed() const {
-  assert(btree() != nullptr);
-  return consumed_;
-}
-
 inline absl::string_view CordRepBtreeReader::Init(CordRepBtree* tree) {
   assert(tree != nullptr);
   const CordRep* edge = navigator_.InitFirst(tree);
-  consumed_ = edge->length;
-  return CordRepBtree::EdgeData(edge);
+  remaining_ = tree->length - edge->length;
+  return EdgeData(edge);
 }
 
 inline absl::string_view CordRepBtreeReader::Next() {
-  assert(consumed() < length());
+  if (remaining_ == 0) return {};
   const CordRep* edge = navigator_.Next();
   assert(edge != nullptr);
-  consumed_ += edge->length;
-  return CordRepBtree::EdgeData(edge);
+  remaining_ -= edge->length;
+  return EdgeData(edge);
 }
 
 inline absl::string_view CordRepBtreeReader::Skip(size_t skip) {
@@ -192,23 +185,23 @@ inline absl::string_view CordRepBtreeReader::Skip(size_t skip) {
   const size_t edge_length = navigator_.Current()->length;
   CordRepBtreeNavigator::Position pos = navigator_.Skip(skip + edge_length);
   if (ABSL_PREDICT_FALSE(pos.edge == nullptr)) {
-    consumed_ = length();
+    remaining_ = 0;
     return {};
   }
   
   
-  consumed_ += skip - pos.offset + pos.edge->length;
-  return CordRepBtree::EdgeData(pos.edge).substr(pos.offset);
+  remaining_ -= skip - pos.offset + pos.edge->length;
+  return EdgeData(pos.edge).substr(pos.offset);
 }
 
 inline absl::string_view CordRepBtreeReader::Seek(size_t offset) {
   const CordRepBtreeNavigator::Position pos = navigator_.Seek(offset);
   if (ABSL_PREDICT_FALSE(pos.edge == nullptr)) {
-    consumed_ = length();
+    remaining_ = 0;
     return {};
   }
-  absl::string_view chunk = CordRepBtree::EdgeData(pos.edge).substr(pos.offset);
-  consumed_ = offset + chunk.length();
+  absl::string_view chunk = EdgeData(pos.edge).substr(pos.offset);
+  remaining_ = length() - offset - chunk.length();
   return chunk;
 }
 

@@ -18,6 +18,10 @@
 #if defined(ABSL_HAVE_ALARM)
 #include <signal.h>
 #include <unistd.h>
+#ifdef _AIX
+
+typedef void (*sig_t)(int);
+#endif
 #elif defined(__linux__) || defined(__APPLE__)
 #error all known Linux and Apple targets have alarm
 #endif

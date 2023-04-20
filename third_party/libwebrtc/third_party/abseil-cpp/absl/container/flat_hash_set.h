@@ -95,6 +95,10 @@ struct FlatHashSetPolicy;
 
 
 
+
+
+
+
 template <class T, class Hash = absl::container_internal::hash_default_hash<T>,
           class Eq = absl::container_internal::hash_default_eq<T>,
           class Allocator = std::allocator<T>>
@@ -443,9 +447,11 @@ class flat_hash_set
 
 
 
+
 template <typename T, typename H, typename E, typename A, typename Predicate>
-void erase_if(flat_hash_set<T, H, E, A>& c, Predicate pred) {
-  container_internal::EraseIf(pred, &c);
+typename flat_hash_set<T, H, E, A>::size_type erase_if(
+    flat_hash_set<T, H, E, A>& c, Predicate pred) {
+  return container_internal::EraseIf(pred, &c);
 }
 
 namespace container_internal {

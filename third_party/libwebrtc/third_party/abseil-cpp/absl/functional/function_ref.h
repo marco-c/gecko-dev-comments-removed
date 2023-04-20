@@ -50,6 +50,7 @@
 #include <functional>
 #include <type_traits>
 
+#include "absl/base/attributes.h"
 #include "absl/functional/internal/function_ref.h"
 #include "absl/meta/type_traits.h"
 
@@ -62,6 +63,7 @@ ABSL_NAMESPACE_BEGIN
 
 template <typename T>
 class FunctionRef;
+
 
 
 
@@ -98,7 +100,8 @@ class FunctionRef<R(Args...)> {
  public:
   
   template <typename F, typename = EnableIfCompatible<const F&>>
-  FunctionRef(const F& f)  
+  
+  FunctionRef(const F& f ABSL_ATTRIBUTE_LIFETIME_BOUND)
       : invoker_(&absl::functional_internal::InvokeObject<F, R, Args...>) {
     absl::functional_internal::AssertNonNull(f);
     ptr_.obj = &f;

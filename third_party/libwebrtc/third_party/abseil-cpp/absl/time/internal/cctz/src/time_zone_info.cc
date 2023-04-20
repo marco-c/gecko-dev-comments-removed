@@ -39,6 +39,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <sstream>
@@ -649,7 +650,7 @@ std::unique_ptr<ZoneInfoSource> FileZoneInfoSource::Open(
 
   
   auto fp = FOpen(path.c_str(), "rb");
-  if (fp.get() == nullptr) return nullptr;
+  if (fp == nullptr) return nullptr;
   return std::unique_ptr<ZoneInfoSource>(new FileZoneInfoSource(std::move(fp)));
 }
 
@@ -674,7 +675,7 @@ std::unique_ptr<ZoneInfoSource> AndroidZoneInfoSource::Open(
   for (const char* tzdata : {"/data/misc/zoneinfo/current/tzdata",
                              "/system/usr/share/zoneinfo/tzdata"}) {
     auto fp = FOpen(tzdata, "rb");
-    if (fp.get() == nullptr) continue;
+    if (fp == nullptr) continue;
 
     char hbuf[24];  
     if (fread(hbuf, 1, sizeof(hbuf), fp.get()) != sizeof(hbuf)) continue;
@@ -708,6 +709,69 @@ std::unique_ptr<ZoneInfoSource> AndroidZoneInfoSource::Open(
   return nullptr;
 }
 
+
+
+
+
+
+
+
+
+
+class FuchsiaZoneInfoSource : public FileZoneInfoSource {
+ public:
+  static std::unique_ptr<ZoneInfoSource> Open(const std::string& name);
+  std::string Version() const override { return version_; }
+
+ private:
+  explicit FuchsiaZoneInfoSource(FilePtr fp, std::string version)
+      : FileZoneInfoSource(std::move(fp)), version_(std::move(version)) {}
+  std::string version_;
+};
+
+std::unique_ptr<ZoneInfoSource> FuchsiaZoneInfoSource::Open(
+    const std::string& name) {
+  
+  const std::size_t pos = (name.compare(0, 5, "file:") == 0) ? 5 : 0;
+
+  
+  
+  const auto kTzdataPrefixes = {
+      "/config/data/tzdata/",
+      "/pkg/data/tzdata/",
+      "/data/tzdata/",
+  };
+  const auto kEmptyPrefix = {""};
+  const bool name_absolute = (pos != name.size() && name[pos] == '/');
+  const auto prefixes = name_absolute ? kEmptyPrefix : kTzdataPrefixes;
+
+  
+  for (const std::string prefix : prefixes) {
+    std::string path = prefix;
+    if (!prefix.empty()) path += "zoneinfo/tzif2/";  
+    path.append(name, pos, std::string::npos);
+
+    auto fp = FOpen(path.c_str(), "rb");
+    if (fp == nullptr) continue;
+
+    std::string version;
+    if (!prefix.empty()) {
+      
+      std::ifstream version_stream(prefix + "revision.txt");
+      if (version_stream.is_open()) {
+        
+        
+        std::getline(version_stream, version);
+      }
+    }
+
+    return std::unique_ptr<ZoneInfoSource>(
+        new FuchsiaZoneInfoSource(std::move(fp), std::move(version)));
+  }
+
+  return nullptr;
+}
+
 }  
 
 bool TimeZoneInfo::Load(const std::string& name) {
@@ -725,6 +789,7 @@ bool TimeZoneInfo::Load(const std::string& name) {
       name, [](const std::string& n) -> std::unique_ptr<ZoneInfoSource> {
         if (auto z = FileZoneInfoSource::Open(n)) return z;
         if (auto z = AndroidZoneInfoSource::Open(n)) return z;
+        if (auto z = FuchsiaZoneInfoSource::Open(n)) return z;
         return nullptr;
       });
   return zip != nullptr && Load(zip.get());

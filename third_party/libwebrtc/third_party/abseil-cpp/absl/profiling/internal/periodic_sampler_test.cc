@@ -12,7 +12,7 @@
 
 
 
-#include "absl/base/internal/periodic_sampler.h"
+#include "absl/profiling/internal/periodic_sampler.h"
 
 #include <thread>  
 
@@ -23,7 +23,7 @@
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-namespace base_internal {
+namespace profiling_internal {
 namespace {
 
 using testing::Eq;

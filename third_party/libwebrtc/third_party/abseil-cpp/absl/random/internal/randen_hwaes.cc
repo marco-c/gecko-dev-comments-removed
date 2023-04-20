@@ -30,43 +30,13 @@
 
 
 
-#if defined(ABSL_ARCH_X86_64) || defined(ABSL_ARCH_X86_32)
-
-
-#if (ABSL_HAVE_ACCELERATED_AES || ABSL_RANDOM_INTERNAL_AES_DISPATCH)
-#define ABSL_RANDEN_HWAES_IMPL 1
-#endif
-#elif defined(ABSL_ARCH_PPC)
-
-
-
-
-
 #if ABSL_HAVE_ACCELERATED_AES
+
+#if defined(ABSL_ARCH_X86_64) || defined(ABSL_ARCH_X86_32) || \
+    defined(ABSL_ARCH_PPC) || defined(ABSL_ARCH_ARM) ||       \
+    defined(ABSL_ARCH_AARCH64)
 #define ABSL_RANDEN_HWAES_IMPL 1
 #endif
-#elif defined(ABSL_ARCH_ARM) || defined(ABSL_ARCH_AARCH64)
-
-#if ABSL_HAVE_ACCELERATED_AES || \
-    (defined(__ARM_NEON) && defined(__ARM_FEATURE_CRYPTO))
-#define ABSL_RANDEN_HWAES_IMPL 1
-
-#elif ABSL_RANDOM_INTERNAL_AES_DISPATCH && !defined(__APPLE__) && \
-    (defined(__GNUC__) && __GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ > 9)
-
-
-#define ABSL_RANDEN_HWAES_IMPL 1
-#define ABSL_RANDEN_HWAES_IMPL_CRYPTO_DIRECTIVE 1
-#endif
-#else
-
-
-
-
-
-
-
-
 #endif
 
 #if !defined(ABSL_RANDEN_HWAES_IMPL)
@@ -194,22 +164,6 @@ inline ABSL_TARGET_CRYPTO void SwapEndian(absl::uint128* state) {
 
 
 
-#if ABSL_RANDEN_HWAES_IMPL_CRYPTO_DIRECTIVE
-asm(".arch_extension  crypto\n");
-
-
-#if !defined(__ARM_NEON)
-#define __ARM_NEON 1
-#endif
-
-#if !defined(__ARM_FEATURE_CRYPTO)
-#define __ARM_FEATURE_CRYPTO 1
-#endif
-
-#endif
-
-
-
 
 
 
@@ -257,7 +211,7 @@ inline ABSL_TARGET_CRYPTO void SwapEndian(void*) {}
 
 #elif defined(ABSL_ARCH_X86_64) || defined(ABSL_ARCH_X86_32)
 
-#include <wmmintrin.h>
+#include <immintrin.h>
 
 namespace {
 

@@ -112,11 +112,16 @@ static int UnwindImpl(void** result, int* sizes, int max_depth, int skip_count,
     
     
     const int kMaxUnwind = 200;
-    int j = 0;
-    for (; sp != nullptr && j < kMaxUnwind; j++) {
+    int num_dropped_frames = 0;
+    for (int j = 0; sp != nullptr && j < kMaxUnwind; j++) {
+      if (skip_count > 0) {
+        skip_count--;
+      } else {
+        num_dropped_frames++;
+      }
       sp = NextStackFrame<!IS_STACK_FRAMES>(sp);
     }
-    *min_dropped_frames = j;
+    *min_dropped_frames = num_dropped_frames;
   }
   return n;
 }

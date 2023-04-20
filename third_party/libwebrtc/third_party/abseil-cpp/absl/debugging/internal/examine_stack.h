@@ -25,15 +25,37 @@ namespace debugging_internal {
 
 
 
-
-void* GetProgramCounter(void* vuc);
-
+typedef void OutputWriter(const char*, void*);
 
 
-void DumpPCAndFrameSizesAndStackTrace(
-    void* pc, void* const stack[], int frame_sizes[], int depth,
-    int min_dropped_frames, bool symbolize_stacktrace,
-    void (*writerfn)(const char*, void*), void* writerfn_arg);
+
+
+typedef void (*SymbolizeUrlEmitter)(void* const stack[], int depth,
+                                    OutputWriter* writer, void* writer_arg);
+
+
+
+void RegisterDebugStackTraceHook(SymbolizeUrlEmitter hook);
+SymbolizeUrlEmitter GetDebugStackTraceHook();
+
+
+
+
+void* GetProgramCounter(void* const vuc);
+
+
+
+void DumpPCAndFrameSizesAndStackTrace(void* const pc, void* const stack[],
+                                      int frame_sizes[], int depth,
+                                      int min_dropped_frames,
+                                      bool symbolize_stacktrace,
+                                      OutputWriter* writer, void* writer_arg);
+
+
+
+void DumpStackTrace(int min_dropped_frames, int max_num_frames,
+                    bool symbolize_stacktrace, OutputWriter* writer,
+                    void* writer_arg);
 
 }  
 ABSL_NAMESPACE_END

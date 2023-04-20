@@ -67,105 +67,15 @@ ABSL_NAMESPACE_BEGIN
 
 
 
+
+
+
+
 #if !defined(_MSC_VER) || defined(__clang__)
 template <typename T>
 using Flag = flags_internal::Flag<T>;
 #else
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace flags_internal {
-absl::Mutex* GetGlobalConstructionGuard();
-}  
-
-template <typename T>
-class Flag {
- public:
-  
-  
-  
-#if _MSC_VER <= 1900
-  constexpr Flag(const char* name, const char* filename,
-                 const flags_internal::HelpGenFunc help_gen,
-                 const flags_internal::FlagDfltGenFunc default_value_gen)
-      : name_(name),
-        filename_(filename),
-        help_gen_(help_gen),
-        default_value_gen_(default_value_gen),
-        inited_(false),
-        impl_(nullptr) {}
-#endif
-
-  flags_internal::Flag<T>& GetImpl() const {
-    if (!inited_.load(std::memory_order_acquire)) {
-      absl::MutexLock l(flags_internal::GetGlobalConstructionGuard());
-
-      if (inited_.load(std::memory_order_acquire)) {
-        return *impl_;
-      }
-
-      impl_ = new flags_internal::Flag<T>(
-          name_, filename_,
-          {flags_internal::FlagHelpMsg(help_gen_),
-           flags_internal::FlagHelpKind::kGenFunc},
-          {flags_internal::FlagDefaultSrc(default_value_gen_),
-           flags_internal::FlagDefaultKind::kGenFunc});
-      inited_.store(true, std::memory_order_release);
-    }
-
-    return *impl_;
-  }
-
-  
-  
-  bool IsRetired() const { return GetImpl().IsRetired(); }
-  absl::string_view Name() const { return GetImpl().Name(); }
-  std::string Help() const { return GetImpl().Help(); }
-  bool IsModified() const { return GetImpl().IsModified(); }
-  bool IsSpecifiedOnCommandLine() const {
-    return GetImpl().IsSpecifiedOnCommandLine();
-  }
-  std::string Filename() const { return GetImpl().Filename(); }
-  std::string DefaultValue() const { return GetImpl().DefaultValue(); }
-  std::string CurrentValue() const { return GetImpl().CurrentValue(); }
-  template <typename U>
-  inline bool IsOfType() const {
-    return GetImpl().template IsOfType<U>();
-  }
-  T Get() const {
-    return flags_internal::FlagImplPeer::InvokeGet<T>(GetImpl());
-  }
-  void Set(const T& v) {
-    flags_internal::FlagImplPeer::InvokeSet(GetImpl(), v);
-  }
-  void InvokeCallback() { GetImpl().InvokeCallback(); }
-
-  const CommandLineFlag& Reflect() const {
-    return flags_internal::FlagImplPeer::InvokeReflect(GetImpl());
-  }
-
-  
-  
-  const char* name_;
-  const char* filename_;
-  const flags_internal::HelpGenFunc help_gen_;
-  const flags_internal::FlagDfltGenFunc default_value_gen_;
-
-  mutable std::atomic<bool> inited_;
-  mutable flags_internal::Flag<T>* impl_;
-};
+#include "absl/flags/internal/flag_msvc.inc"
 #endif
 
 
@@ -335,8 +245,8 @@ ABSL_NAMESPACE_END
     /* default value argument. That keeps temporaries alive */               \
     /* long enough for NonConst to work correctly.          */               \
     static constexpr absl::string_view Value(                                \
-        absl::string_view v = ABSL_FLAG_IMPL_FLAGHELP(txt)) {                \
-      return v;                                                              \
+        absl::string_view absl_flag_help = ABSL_FLAG_IMPL_FLAGHELP(txt)) {   \
+      return absl_flag_help;                                                 \
     }                                                                        \
     static std::string NonConst() { return std::string(Value()); }           \
   };                                                                         \
@@ -348,8 +258,8 @@ ABSL_NAMESPACE_END
 #define ABSL_FLAG_IMPL_DECLARE_DEF_VAL_WRAPPER(name, Type, default_value)     \
   struct AbslFlagDefaultGenFor##name {                                        \
     Type value = absl::flags_internal::InitDefaultValue<Type>(default_value); \
-    static void Gen(void* p) {                                                \
-      new (p) Type(AbslFlagDefaultGenFor##name{}.value);                      \
+    static void Gen(void* absl_flag_default_loc) {                            \
+      new (absl_flag_default_loc) Type(AbslFlagDefaultGenFor##name{}.value);  \
     }                                                                         \
   };
 
@@ -359,6 +269,7 @@ ABSL_NAMESPACE_END
 
 
 #define ABSL_FLAG_IMPL(Type, name, default_value, help)                       \
+  extern ::absl::Flag<Type> FLAGS_##name;                                     \
   namespace absl /* block flags in namespaces */ {}                           \
   ABSL_FLAG_IMPL_DECLARE_DEF_VAL_WRAPPER(name, Type, default_value)           \
   ABSL_FLAG_IMPL_DECLARE_HELP_WRAPPER(name, help)                             \

@@ -27,6 +27,37 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 
+#if defined(__cplusplus) && __cplusplus >= 202002L
+
+#define ABSL_VOLATILE_RETURN_TYPES_DEPRECATED 1
+#endif
+
+
+
+
+
+
+template <class T, class...>
+using GccIceHelper1 = T;
+template <typename T>
+struct GccIceHelper2 {};
+template <typename T>
+class GccIce {
+  template <typename U,
+            typename SecondTemplateArgHasToExistForSomeReason = void,
+            typename DependentType = void,
+            typename = std::is_assignable<GccIceHelper1<T, DependentType>&, U>>
+  GccIce& operator=(GccIceHelper2<U> const&) {}
+};
+
+TEST(OptionalTest, InternalCompilerErrorInGcc5ToGcc10) {
+  GccIce<int> instantiate_ice_with_same_type_as_optional;
+  static_cast<void>(instantiate_ice_with_same_type_as_optional);
+  absl::optional<int> val1;
+  absl::optional<int> val2;
+  val1 = val2;
+}
+
 struct Hashable {};
 
 namespace std {
@@ -205,6 +236,7 @@ TEST(optionalTest, CopyConstructor) {
     EXPECT_TRUE(opt42_copy);
     EXPECT_EQ(42, *opt42_copy);
   }
+#if !defined(ABSL_VOLATILE_RETURN_TYPES_DEPRECATED)
   {
     absl::optional<volatile int> empty, opt42 = 42;
     absl::optional<volatile int> empty_copy(empty);
@@ -213,6 +245,7 @@ TEST(optionalTest, CopyConstructor) {
     EXPECT_TRUE(opt42_copy);
     EXPECT_EQ(42, *opt42_copy);
   }
+#endif
   
   EXPECT_TRUE(std::is_copy_constructible<absl::optional<int>>::value);
   EXPECT_TRUE(std::is_copy_constructible<absl::optional<Copyable>>::value);
@@ -224,18 +257,11 @@ TEST(optionalTest, CopyConstructor) {
 
   EXPECT_FALSE(
       absl::is_trivially_copy_constructible<absl::optional<Copyable>>::value);
-#if defined(ABSL_USES_STD_OPTIONAL) && defined(__GLIBCXX__)
-  
-  
-  
-#define ABSL_GLIBCXX_OPTIONAL_TRIVIALITY_BUG 1
-#endif
-#ifndef ABSL_GLIBCXX_OPTIONAL_TRIVIALITY_BUG
   EXPECT_TRUE(
       absl::is_trivially_copy_constructible<absl::optional<int>>::value);
   EXPECT_TRUE(
       absl::is_trivially_copy_constructible<absl::optional<const int>>::value);
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(ABSL_VOLATILE_RETURN_TYPES_DEPRECATED)
   
   
   
@@ -244,7 +270,6 @@ TEST(optionalTest, CopyConstructor) {
   
   EXPECT_TRUE(absl::is_trivially_copy_constructible<
               absl::optional<volatile int>>::value);
-#endif  
 #endif  
 
   
@@ -275,17 +300,10 @@ TEST(optionalTest, CopyConstructor) {
     EXPECT_TRUE(absl::is_trivially_copy_constructible<
                 absl::optional<const TrivialCopyable>>::value);
 #endif
-    
-    
-    
-    
-#if defined(ABSL_USES_STD_OPTIONAL) && defined(_MSC_VER) && _MSC_VER >= 1911
-#define ABSL_MSVC_OPTIONAL_VOLATILE_COPY_BUG 1
-#endif
-#ifndef ABSL_MSVC_OPTIONAL_VOLATILE_COPY_BUG
+#if !defined(ABSL_VOLATILE_RETURN_TYPES_DEPRECATED)
     EXPECT_FALSE(std::is_copy_constructible<
                  absl::optional<volatile TrivialCopyable>>::value);
-#endif
+#endif  
   }
 }
 
@@ -305,11 +323,9 @@ TEST(optionalTest, MoveConstructor) {
   EXPECT_FALSE(std::is_move_constructible<absl::optional<NonMovable>>::value);
   
   EXPECT_TRUE(std::is_nothrow_move_constructible<absl::optional<int>>::value);
-#ifndef ABSL_USES_STD_OPTIONAL
   EXPECT_EQ(
       absl::default_allocator_is_nothrow::value,
       std::is_nothrow_move_constructible<absl::optional<MoveableThrow>>::value);
-#endif
   EXPECT_TRUE(std::is_nothrow_move_constructible<
               absl::optional<MoveableNoThrow>>::value);
 }
@@ -638,8 +654,7 @@ TEST(optionalTest, CopyAssignment) {
   EXPECT_TRUE(absl::is_copy_assignable<NonTrivial>::value);
   EXPECT_FALSE(absl::is_trivially_copy_assignable<NonTrivial>::value);
 
-  
-#ifndef ABSL_USES_STD_OPTIONAL
+#if !defined(ABSL_VOLATILE_RETURN_TYPES_DEPRECATED)
   {
     StructorListener listener;
     Listenable::listener = &listener;
@@ -681,8 +696,7 @@ TEST(optionalTest, MoveAssignment) {
     EXPECT_EQ(1, listener.destruct);
     EXPECT_EQ(1, listener.move_assign);
   }
-  
-#ifndef ABSL_USES_STD_OPTIONAL
+#if !defined(ABSL_VOLATILE_RETURN_TYPES_DEPRECATED)
   {
     StructorListener listener;
     Listenable::listener = &listener;
@@ -1038,6 +1052,7 @@ TEST(optionalTest, Value) {
 #endif
   EXPECT_EQ("c&&", TypeQuals(OC(absl::in_place, "xvalue_c").value()));
 
+#if !defined(ABSL_VOLATILE_RETURN_TYPES_DEPRECATED)
   
   using OV = absl::optional<volatile int>;
   OV lvalue_v(absl::in_place, 42);
@@ -1045,6 +1060,7 @@ TEST(optionalTest, Value) {
   EXPECT_EQ(42, OV(42).value());
   EXPECT_TRUE((std::is_same<volatile int&, decltype(lvalue_v.value())>::value));
   EXPECT_TRUE((std::is_same<volatile int&&, decltype(OV(42).value())>::value));
+#endif  
 
   
   absl::optional<int> empty;
@@ -1087,6 +1103,7 @@ TEST(optionalTest, DerefOperator) {
 #endif
   EXPECT_EQ("c&&", TypeQuals(*OC(absl::in_place, "xvalue_c")));
 
+#if !defined(ABSL_VOLATILE_RETURN_TYPES_DEPRECATED)
   
   using OV = absl::optional<volatile int>;
   OV lvalue_v(absl::in_place, 42);
@@ -1094,6 +1111,7 @@ TEST(optionalTest, DerefOperator) {
   EXPECT_EQ(42, *OV(42));
   EXPECT_TRUE((std::is_same<volatile int&, decltype(*lvalue_v)>::value));
   EXPECT_TRUE((std::is_same<volatile int&&, decltype(*OV(42))>::value));
+#endif  
 
   constexpr absl::optional<int> opt1(1);
   static_assert(*opt1 == 1, "");
@@ -1558,12 +1576,10 @@ TEST(optionalTest, NoExcept) {
   static_assert(
       std::is_nothrow_move_constructible<absl::optional<MoveMeNoThrow>>::value,
       "");
-#ifndef ABSL_USES_STD_OPTIONAL
   static_assert(absl::default_allocator_is_nothrow::value ==
                     std::is_nothrow_move_constructible<
                         absl::optional<MoveMeThrow>>::value,
                 "");
-#endif
   std::vector<absl::optional<MoveMeNoThrow>> v;
   for (int i = 0; i < 10; ++i) v.emplace_back();
 }

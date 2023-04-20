@@ -78,62 +78,74 @@ TYPED_TEST(UniformRealDistributionTest, ParamSerializeTest) {
   GTEST_SKIP()
       << "Skipping the test because we detected x87 floating-point semantics";
 #endif
+  using DistributionType = absl::uniform_real_distribution<TypeParam>;
+  using real_type = TypeParam;
+  using param_type = typename DistributionType::param_type;
 
-  using param_type =
-      typename absl::uniform_real_distribution<TypeParam>::param_type;
+  constexpr const real_type kMax = std::numeric_limits<real_type>::max();
+  constexpr const real_type kMin = std::numeric_limits<real_type>::min();
+  constexpr const real_type kEpsilon =
+      std::numeric_limits<real_type>::epsilon();
+  constexpr const real_type kLowest =
+      std::numeric_limits<real_type>::lowest();  
 
-  constexpr const TypeParam a{1152921504606846976};
+  const real_type kDenormMax = std::nextafter(kMin, real_type{0});
+  const real_type kOneMinusE =
+      std::nextafter(real_type{1}, real_type{0});  
+
+  constexpr const real_type kTwo60{1152921504606846976};  
 
   constexpr int kCount = 1000;
   absl::InsecureBitGen gen;
   for (const auto& param : {
            param_type(),
-           param_type(TypeParam(2.0), TypeParam(2.0)),  
-           param_type(TypeParam(-0.1), TypeParam(0.1)),
-           param_type(TypeParam(0.05), TypeParam(0.12)),
-           param_type(TypeParam(-0.05), TypeParam(0.13)),
-           param_type(TypeParam(-0.05), TypeParam(-0.02)),
+           param_type(real_type{0}, real_type{1}),
+           param_type(real_type(-0.1), real_type(0.1)),
+           param_type(real_type(0.05), real_type(0.12)),
+           param_type(real_type(-0.05), real_type(0.13)),
+           param_type(real_type(-0.05), real_type(-0.02)),
+           
+           param_type(real_type(2.0), real_type(2.0)),  
            
            
-           param_type(a, TypeParam(1152921504606847040)),
+           param_type(kTwo60, real_type(1152921504606847040)),
            
-           param_type(a, TypeParam(1152921504606847104)),
-           
-           
-           param_type(a, TypeParam(1152921504606847232)),
+           param_type(kTwo60, real_type(1152921504606847104)),
            
            
-           param_type(a, TypeParam(1152921573326323712)),
-           
-           param_type(a, TypeParam(1152921642045800448)),
+           param_type(kTwo60, real_type(1152921504606847232)),
            
            
-           param_type(a, TypeParam(1152921779484753920)),
+           param_type(kTwo60, real_type(1152921573326323712)),
            
-           param_type(0, std::numeric_limits<TypeParam>::max()),
-           param_type(std::numeric_limits<TypeParam>::lowest(), 0),
-           param_type(0, std::numeric_limits<TypeParam>::epsilon()),
-           param_type(-std::numeric_limits<TypeParam>::epsilon(),
-                      std::numeric_limits<TypeParam>::epsilon()),
-           param_type(std::numeric_limits<TypeParam>::epsilon(),
-                      2 * std::numeric_limits<TypeParam>::epsilon()),
+           param_type(kTwo60, real_type(1152921642045800448)),
+           
+           
+           param_type(kTwo60, real_type(1152921779484753920)),
+           
+           param_type(0, kMax),
+           param_type(kLowest, 0),
+           param_type(0, kMin),
+           param_type(0, kEpsilon),
+           param_type(-kEpsilon, kEpsilon),
+           param_type(0, kOneMinusE),
+           param_type(0, kDenormMax),
        }) {
     
     const auto a = param.a();
     const auto b = param.b();
-    absl::uniform_real_distribution<TypeParam> before(a, b);
+    DistributionType before(a, b);
     EXPECT_EQ(before.a(), param.a());
     EXPECT_EQ(before.b(), param.b());
 
     {
-      absl::uniform_real_distribution<TypeParam> via_param(param);
+      DistributionType via_param(param);
       EXPECT_EQ(via_param, before);
     }
 
     std::stringstream ss;
     ss << before;
-    absl::uniform_real_distribution<TypeParam> after(TypeParam(1.0),
-                                                     TypeParam(3.1));
+    DistributionType after(real_type(1.0), real_type(3.1));
 
     EXPECT_NE(before.a(), after.a());
     EXPECT_NE(before.b(), after.b());
@@ -168,7 +180,7 @@ TYPED_TEST(UniformRealDistributionTest, ParamSerializeTest) {
       }
     }
 
-    if (!std::is_same<TypeParam, long double>::value) {
+    if (!std::is_same<real_type, long double>::value) {
       
       std::string msg = absl::StrCat("Range: ", static_cast<double>(sample_min),
                                      ", ", static_cast<double>(sample_max));
@@ -182,33 +194,52 @@ TYPED_TEST(UniformRealDistributionTest, ParamSerializeTest) {
 #pragma warning(disable:4756)  // Constant arithmetic overflow.
 #endif
 TYPED_TEST(UniformRealDistributionTest, ViolatesPreconditionsDeathTest) {
+  using DistributionType = absl::uniform_real_distribution<TypeParam>;
+  using real_type = TypeParam;
+
 #if GTEST_HAS_DEATH_TEST
   
-  EXPECT_DEBUG_DEATH(
-      { absl::uniform_real_distribution<TypeParam> dist(10.0, 1.0); }, "");
+  EXPECT_DEBUG_DEATH({ DistributionType dist(10.0, 1.0); }, "");
 
   
   EXPECT_DEBUG_DEATH(
       {
-        absl::uniform_real_distribution<TypeParam> dist(
-            std::numeric_limits<TypeParam>::lowest(),
-            std::numeric_limits<TypeParam>::max());
+        DistributionType dist(std::numeric_limits<real_type>::lowest(),
+                              std::numeric_limits<real_type>::max());
       },
       "");
+
+  
+  const auto kEpsilon = std::nexttoward(
+      (std::numeric_limits<real_type>::max() -
+       std::nexttoward(std::numeric_limits<real_type>::max(), 0.0)) /
+          2,
+      std::numeric_limits<real_type>::max());
+  EXPECT_DEBUG_DEATH(
+      {
+        DistributionType dist(-kEpsilon, std::numeric_limits<real_type>::max());
+      },
+      "");
+  EXPECT_DEBUG_DEATH(
+      {
+        DistributionType dist(std::numeric_limits<real_type>::lowest(),
+                              kEpsilon);
+      },
+      "");
+
 #endif  
 #if defined(NDEBUG)
   
   
   absl::InsecureBitGen gen;
   {
-    absl::uniform_real_distribution<TypeParam> dist(10.0, 1.0);
+    DistributionType dist(10.0, 1.0);
     auto x = dist(gen);
     EXPECT_FALSE(std::isnan(x)) << x;
   }
   {
-    absl::uniform_real_distribution<TypeParam> dist(
-        std::numeric_limits<TypeParam>::lowest(),
-        std::numeric_limits<TypeParam>::max());
+    DistributionType dist(std::numeric_limits<real_type>::lowest(),
+                          std::numeric_limits<real_type>::max());
     auto x = dist(gen);
     
     EXPECT_FALSE(std::isfinite(x)) << x;
@@ -220,6 +251,8 @@ TYPED_TEST(UniformRealDistributionTest, ViolatesPreconditionsDeathTest) {
 #endif
 
 TYPED_TEST(UniformRealDistributionTest, TestMoments) {
+  using DistributionType = absl::uniform_real_distribution<TypeParam>;
+
   constexpr int kSize = 1000000;
   std::vector<double> values(kSize);
 
@@ -228,7 +261,7 @@ TYPED_TEST(UniformRealDistributionTest, TestMoments) {
   
   absl::random_internal::pcg64_2018_engine rng{0x2B7E151628AED2A6};
 
-  absl::uniform_real_distribution<TypeParam> dist;
+  DistributionType dist;
   for (int i = 0; i < kSize; i++) {
     values[i] = dist(rng);
   }
@@ -242,9 +275,10 @@ TYPED_TEST(UniformRealDistributionTest, TestMoments) {
 }
 
 TYPED_TEST(UniformRealDistributionTest, ChiSquaredTest50) {
+  using DistributionType = absl::uniform_real_distribution<TypeParam>;
+  using param_type = typename DistributionType::param_type;
+
   using absl::random_internal::kChiSquared;
-  using param_type =
-      typename absl::uniform_real_distribution<TypeParam>::param_type;
 
   constexpr size_t kTrials = 100000;
   constexpr int kBuckets = 50;
@@ -269,7 +303,7 @@ TYPED_TEST(UniformRealDistributionTest, ChiSquaredTest50) {
     const double factor = kBuckets / (max_val - min_val);
 
     std::vector<int32_t> counts(kBuckets, 0);
-    absl::uniform_real_distribution<TypeParam> dist(param);
+    DistributionType dist(param);
     for (size_t i = 0; i < kTrials; i++) {
       auto x = dist(rng);
       auto bucket = static_cast<size_t>((x - min_val) * factor);
@@ -297,6 +331,9 @@ TYPED_TEST(UniformRealDistributionTest, ChiSquaredTest50) {
 }
 
 TYPED_TEST(UniformRealDistributionTest, StabilityTest) {
+  using DistributionType = absl::uniform_real_distribution<TypeParam>;
+  using real_type = TypeParam;
+
   
   
   absl::random_internal::sequence_urbg urbg(
@@ -307,9 +344,9 @@ TYPED_TEST(UniformRealDistributionTest, StabilityTest) {
 
   std::vector<int> output(12);
 
-  absl::uniform_real_distribution<TypeParam> dist;
+  DistributionType dist;
   std::generate(std::begin(output), std::end(output), [&] {
-    return static_cast<int>(TypeParam(1000000) * dist(urbg));
+    return static_cast<int>(real_type(1000000) * dist(urbg));
   });
 
   EXPECT_THAT(

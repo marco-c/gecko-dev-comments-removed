@@ -43,10 +43,8 @@ class Randen {
 
   
   
-  template <typename T, size_t N>
-  void Generate(T (&state)[N]) const {
-    static_assert(N * sizeof(T) == kStateBytes,
-                  "Randen::Generate() requires kStateBytes of state");
+  
+  inline void Generate(void* state) const {
 #if ABSL_RANDOM_INTERNAL_AES_DISPATCH
     
     if (has_crypto_) {
@@ -65,13 +63,9 @@ class Randen {
 
   
   
-  template <typename S, size_t M, typename T, size_t N>
-  void Absorb(const S (&seed)[M], T (&state)[N]) const {
-    static_assert(M * sizeof(S) == RandenTraits::kSeedBytes,
-                  "Randen::Absorb() requires kSeedBytes of seed");
-
-    static_assert(N * sizeof(T) == RandenTraits::kStateBytes,
-                  "Randen::Absorb() requires kStateBytes of state");
+  
+  
+  inline void Absorb(const void* seed, void* state) const {
 #if ABSL_RANDOM_INTERNAL_AES_DISPATCH
     
     if (has_crypto_) {

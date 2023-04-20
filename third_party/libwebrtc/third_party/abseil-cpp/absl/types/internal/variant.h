@@ -16,8 +16,8 @@
 
 
 
-#ifndef ABSL_TYPES_variant_internal_H_
-#define ABSL_TYPES_variant_internal_H_
+#ifndef ABSL_TYPES_VARIANT_INTERNAL_H_
+#define ABSL_TYPES_VARIANT_INTERNAL_H_
 
 #include <cassert>
 #include <cstddef>

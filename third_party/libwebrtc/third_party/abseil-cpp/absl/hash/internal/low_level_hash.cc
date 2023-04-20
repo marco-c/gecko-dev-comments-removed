@@ -15,6 +15,7 @@
 #include "absl/hash/internal/low_level_hash.h"
 
 #include "absl/base/internal/unaligned_access.h"
+#include "absl/numeric/bits.h"
 #include "absl/numeric/int128.h"
 
 namespace absl {
@@ -22,9 +23,20 @@ ABSL_NAMESPACE_BEGIN
 namespace hash_internal {
 
 static uint64_t Mix(uint64_t v0, uint64_t v1) {
+#if !defined(__aarch64__)
+  
   absl::uint128 p = v0;
   p *= v1;
   return absl::Uint128Low64(p) ^ absl::Uint128High64(p);
+#else
+  
+  
+  
+  
+  uint64_t p = v0 ^ absl::rotl(v1, 40);
+  p *= v1 ^ absl::rotl(v0, 39);
+  return p ^ (p >> 11);
+#endif
 }
 
 uint64_t LowLevelHash(const void* data, size_t len, uint64_t seed,

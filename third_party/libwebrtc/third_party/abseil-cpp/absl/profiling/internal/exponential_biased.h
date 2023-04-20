@@ -12,8 +12,8 @@
 
 
 
-#ifndef ABSL_BASE_INTERNAL_EXPONENTIAL_BIASED_H_
-#define ABSL_BASE_INTERNAL_EXPONENTIAL_BIASED_H_
+#ifndef ABSL_PROFILING_INTERNAL_EXPONENTIAL_BIASED_H_
+#define ABSL_PROFILING_INTERNAL_EXPONENTIAL_BIASED_H_
 
 #include <stdint.h>
 
@@ -22,7 +22,7 @@
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-namespace base_internal {
+namespace profiling_internal {
 
 
 

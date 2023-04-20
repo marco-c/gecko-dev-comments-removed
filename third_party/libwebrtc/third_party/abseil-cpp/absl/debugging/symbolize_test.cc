@@ -392,12 +392,14 @@ TEST(Symbolize, InstallAndRemoveSymbolDecorators) {
                 DummySymbolDecorator, &c_message),
             0);
 
-  char *address = reinterpret_cast<char *>(1);
-  EXPECT_STREQ("abc", TrySymbolize(address++));
+  
+  
+  char *address = reinterpret_cast<char *>(4);
+  EXPECT_STREQ("abc", TrySymbolize(address));
 
   EXPECT_TRUE(absl::debugging_internal::RemoveSymbolDecorator(ticket_b));
 
-  EXPECT_STREQ("ac", TrySymbolize(address++));
+  EXPECT_STREQ("ac", TrySymbolize(address + 4));
 
   
   
@@ -481,7 +483,12 @@ void ABSL_ATTRIBUTE_NOINLINE TestWithPCInsideInlineFunction() {
 }
 }
 
-#if defined(__arm__) && ABSL_HAVE_ATTRIBUTE(target)
+#if defined(__arm__) && ABSL_HAVE_ATTRIBUTE(target) && \
+    ((__ARM_ARCH >= 7) || !defined(__ARM_PCS_VFP))
+
+
+
+
 
 
 
@@ -520,6 +527,7 @@ void ABSL_ATTRIBUTE_NOINLINE TestArmThumbOverlap() {
 }
 
 #endif  
+        
 
 #elif defined(_WIN32)
 #if !defined(ABSL_CONSUME_DLL)
@@ -594,7 +602,8 @@ int main(int argc, char **argv) {
   TestWithPCInsideInlineFunction();
   TestWithPCInsideNonInlineFunction();
   TestWithReturnAddress();
-#if defined(__arm__) && ABSL_HAVE_ATTRIBUTE(target)
+#if defined(__arm__) && ABSL_HAVE_ATTRIBUTE(target) && \
+    ((__ARM_ARCH >= 7) || !defined(__ARM_PCS_VFP))
   TestArmThumbOverlap();
 #endif
 #endif

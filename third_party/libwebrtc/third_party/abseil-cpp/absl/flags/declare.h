@@ -60,6 +60,14 @@ ABSL_NAMESPACE_END
 
 
 
-#define ABSL_DECLARE_FLAG(type, name) extern ::absl::Flag<type> FLAGS_##name
+#define ABSL_DECLARE_FLAG(type, name) ABSL_DECLARE_FLAG_INTERNAL(type, name)
+
+
+
+#define ABSL_DECLARE_FLAG_INTERNAL(type, name)               \
+  extern absl::Flag<type> FLAGS_##name;                      \
+  namespace absl /* block flags in namespaces */ {}          \
+  /* second redeclaration is to allow applying attributes */ \
+  extern absl::Flag<type> FLAGS_##name
 
 #endif  

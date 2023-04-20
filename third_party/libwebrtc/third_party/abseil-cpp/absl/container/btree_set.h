@@ -44,6 +44,8 @@
 
 
 
+
+
 #ifndef ABSL_CONTAINER_BTREE_SET_H_
 #define ABSL_CONTAINER_BTREE_SET_H_
 
@@ -52,6 +54,17 @@
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
+
+namespace container_internal {
+
+template <typename Key>
+struct set_slot_policy;
+
+template <typename Key, typename Compare, typename Alloc, int TargetNodeSize,
+          bool IsMulti>
+struct set_params;
+
+}  
 
 
 
@@ -337,6 +350,28 @@ class btree_set
   
   
   
+  
+  
+  
+  
+  
+  
+  using Base::lower_bound;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using Base::upper_bound;
+
+  
+  
+  
   using Base::get_allocator;
 
   
@@ -363,15 +398,11 @@ void swap(btree_set<K, C, A> &x, btree_set<K, C, A> &y) {
 
 
 
+
 template <typename K, typename C, typename A, typename Pred>
-void erase_if(btree_set<K, C, A> &set, Pred pred) {
-  for (auto it = set.begin(); it != set.end();) {
-    if (pred(*it)) {
-      it = set.erase(it);
-    } else {
-      ++it;
-    }
-  }
+typename btree_set<K, C, A>::size_type erase_if(btree_set<K, C, A> &set,
+                                                Pred pred) {
+  return container_internal::btree_access::erase_if(set, std::move(pred));
 }
 
 
@@ -584,7 +615,6 @@ class btree_multiset
   
   
   
-  
   using Base::merge;
 
   
@@ -640,6 +670,30 @@ class btree_multiset
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  using Base::lower_bound;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using Base::upper_bound;
+
+  
+  
+  
   using Base::get_allocator;
 
   
@@ -666,16 +720,72 @@ void swap(btree_multiset<K, C, A> &x, btree_multiset<K, C, A> &y) {
 
 
 
+
 template <typename K, typename C, typename A, typename Pred>
-void erase_if(btree_multiset<K, C, A> &set, Pred pred) {
-  for (auto it = set.begin(); it != set.end();) {
-    if (pred(*it)) {
-      it = set.erase(it);
-    } else {
-      ++it;
-    }
-  }
+typename btree_multiset<K, C, A>::size_type erase_if(
+   btree_multiset<K, C, A> & set, Pred pred) {
+  return container_internal::btree_access::erase_if(set, std::move(pred));
 }
+
+namespace container_internal {
+
+
+
+template <typename Key>
+struct set_slot_policy {
+  using slot_type = Key;
+  using value_type = Key;
+  using mutable_value_type = Key;
+
+  static value_type &element(slot_type *slot) { return *slot; }
+  static const value_type &element(const slot_type *slot) { return *slot; }
+
+  template <typename Alloc, class... Args>
+  static void construct(Alloc *alloc, slot_type *slot, Args &&...args) {
+    absl::allocator_traits<Alloc>::construct(*alloc, slot,
+                                             std::forward<Args>(args)...);
+  }
+
+  template <typename Alloc>
+  static void construct(Alloc *alloc, slot_type *slot, slot_type *other) {
+    absl::allocator_traits<Alloc>::construct(*alloc, slot, std::move(*other));
+  }
+
+  template <typename Alloc>
+  static void construct(Alloc *alloc, slot_type *slot, const slot_type *other) {
+    absl::allocator_traits<Alloc>::construct(*alloc, slot, *other);
+  }
+
+  template <typename Alloc>
+  static void destroy(Alloc *alloc, slot_type *slot) {
+    absl::allocator_traits<Alloc>::destroy(*alloc, slot);
+  }
+
+  template <typename Alloc>
+  static void transfer(Alloc *alloc, slot_type *new_slot, slot_type *old_slot) {
+    construct(alloc, new_slot, old_slot);
+    destroy(alloc, old_slot);
+  }
+};
+
+
+
+template <typename Key, typename Compare, typename Alloc, int TargetNodeSize,
+          bool IsMulti>
+struct set_params : common_params<Key, Compare, Alloc, TargetNodeSize, IsMulti,
+                                  false, set_slot_policy<Key>> {
+  using value_type = Key;
+  using slot_type = typename set_params::common_params::slot_type;
+
+  template <typename V>
+  static const V &key(const V &value) {
+    return value;
+  }
+  static const Key &key(const slot_type *slot) { return *slot; }
+  static const Key &key(slot_type *slot) { return *slot; }
+};
+
+}  
 
 ABSL_NAMESPACE_END
 }  

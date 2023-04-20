@@ -38,8 +38,9 @@
 #include <type_traits>
 
 #include "absl/algorithm/container.h"
+#include "absl/base/macros.h"
 #include "absl/container/internal/hash_function_defaults.h"  
-#include "absl/container/internal/node_hash_policy.h"
+#include "absl/container/internal/node_slot_policy.h"
 #include "absl/container/internal/raw_hash_set.h"  
 #include "absl/memory/memory.h"
 
@@ -49,6 +50,10 @@ namespace container_internal {
 template <typename T>
 struct NodeHashSetPolicy;
 }  
+
+
+
+
 
 
 
@@ -433,16 +438,18 @@ class node_hash_set
 
 
 
+
 template <typename T, typename H, typename E, typename A, typename Predicate>
-void erase_if(node_hash_set<T, H, E, A>& c, Predicate pred) {
-  container_internal::EraseIf(pred, &c);
+typename node_hash_set<T, H, E, A>::size_type erase_if(
+    node_hash_set<T, H, E, A>& c, Predicate pred) {
+  return container_internal::EraseIf(pred, &c);
 }
 
 namespace container_internal {
 
 template <class T>
 struct NodeHashSetPolicy
-    : absl::container_internal::node_hash_policy<T&, NodeHashSetPolicy<T>> {
+    : absl::container_internal::node_slot_policy<T&, NodeHashSetPolicy<T>> {
   using key_type = T;
   using init_type = T;
   using constant_iterators = std::true_type;

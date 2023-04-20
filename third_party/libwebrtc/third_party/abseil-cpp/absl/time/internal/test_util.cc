@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <memory>
 
 #include "absl/base/config.h"
 #include "absl/base/internal/raw_logging.h"
@@ -68,10 +69,6 @@ const struct ZoneInfo {
     {"", nullptr, 0},
 
     
-    {"US/Pacific",  
-     reinterpret_cast<char*>(America_Los_Angeles), America_Los_Angeles_len},
-
-    
 #ifdef _MSC_VER
     {"localtime",  
      reinterpret_cast<char*>(America_Los_Angeles), America_Los_Angeles_len},
@@ -114,7 +111,10 @@ std::unique_ptr<cctz::ZoneInfoSource> TestFactory(
           new TestZoneInfoSource(zoneinfo.data, zoneinfo.length));
     }
   }
-  ABSL_RAW_LOG(FATAL, "Unexpected time zone \"%s\" in test", name.c_str());
+
+  
+  
+  
   return nullptr;
 }
 

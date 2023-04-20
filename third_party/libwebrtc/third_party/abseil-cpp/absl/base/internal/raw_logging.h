@@ -111,10 +111,7 @@ void RawLog(absl::LogSeverity severity, const char* file, int line,
 
 
 
-
-
-
-void SafeWriteToStderr(const char *s, size_t len);
+void AsyncSignalSafeWriteToStderr(const char* s, size_t len);
 
 
 
@@ -151,8 +148,12 @@ bool RawLoggingFullySupported();
 
 
 
-using LogPrefixHook = bool (*)(absl::LogSeverity severity, const char* file,
-                               int line, char** buffer, int* buf_size);
+using LogFilterAndPrefixHook = bool (*)(absl::LogSeverity severity,
+                                        const char* file, int line, char** buf,
+                                        int* buf_size);
+
+
+
 
 
 
@@ -184,7 +185,7 @@ ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES ABSL_DLL extern base_internal::AtomicHook<
 
 
 
-void RegisterLogPrefixHook(LogPrefixHook func);
+void RegisterLogFilterAndPrefixHook(LogFilterAndPrefixHook func);
 void RegisterAbortHook(AbortHook func);
 void RegisterInternalLogFunction(InternalLogFunction func);
 

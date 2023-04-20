@@ -12,15 +12,15 @@
 
 
 
-#include "absl/base/internal/periodic_sampler.h"
+#include "absl/profiling/internal/periodic_sampler.h"
 
 #include <atomic>
 
-#include "absl/base/internal/exponential_biased.h"
+#include "absl/profiling/internal/exponential_biased.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-namespace base_internal {
+namespace profiling_internal {
 
 int64_t PeriodicSamplerBase::GetExponentialBiased(int period) noexcept {
   return rng_.GetStride(period);

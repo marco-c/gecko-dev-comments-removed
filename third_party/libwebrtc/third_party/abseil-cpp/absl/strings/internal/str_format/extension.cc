@@ -33,6 +33,8 @@ std::string FlagsToString(Flags v) {
   return s;
 }
 
+#ifdef ABSL_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
+
 #define ABSL_INTERNAL_X_VAL(id) \
   constexpr absl::FormatConversionChar FormatConversionCharInternal::id;
 ABSL_INTERNAL_CONVERSION_CHARS_EXPAND_(ABSL_INTERNAL_X_VAL, )
@@ -45,16 +47,13 @@ constexpr absl::FormatConversionChar FormatConversionCharInternal::kNone;
 ABSL_INTERNAL_CONVERSION_CHARS_EXPAND_(ABSL_INTERNAL_CHAR_SET_CASE, )
 #undef ABSL_INTERNAL_CHAR_SET_CASE
 
-
 constexpr FormatConversionCharSet FormatConversionCharSetInternal::kStar;
-
 constexpr FormatConversionCharSet FormatConversionCharSetInternal::kIntegral;
-
 constexpr FormatConversionCharSet FormatConversionCharSetInternal::kFloating;
-
 constexpr FormatConversionCharSet FormatConversionCharSetInternal::kNumeric;
-
 constexpr FormatConversionCharSet FormatConversionCharSetInternal::kPointer;
+
+#endif  
 
 bool FormatSinkImpl::PutPaddedString(string_view value, int width,
                                      int precision, bool left) {

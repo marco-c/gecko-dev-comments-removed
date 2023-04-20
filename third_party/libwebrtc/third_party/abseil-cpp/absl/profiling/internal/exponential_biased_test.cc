@@ -12,7 +12,7 @@
 
 
 
-#include "absl/base/internal/exponential_biased.h"
+#include "absl/profiling/internal/exponential_biased.h"
 
 #include <stddef.h>
 
@@ -28,7 +28,8 @@ using ::testing::Ge;
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-namespace base_internal {
+namespace profiling_internal {
+namespace {
 
 MATCHER_P2(IsBetween, a, b,
            absl::StrCat(std::string(negation ? "isn't" : "is"), " between ", a,
@@ -194,6 +195,7 @@ TEST(ExponentialBiasedTest, InitializationModes) {
   EXPECT_THAT(eb_stack.GetSkipCount(2), Ge(0));
 }
 
+}  
 }  
 ABSL_NAMESPACE_END
 }  

@@ -766,13 +766,14 @@ void AppendNumberUnit(std::string* out, double n, DisplayUnit unit) {
 
 
 std::string FormatDuration(Duration d) {
-  const Duration min_duration = Seconds(kint64min);
-  if (d == min_duration) {
-    
-    
-    return "-2562047788015215h30m8s";
-  }
+  constexpr Duration kMinDuration = Seconds(kint64min);
   std::string s;
+  if (d == kMinDuration) {
+    
+    
+    s = "-2562047788015215h30m8s";
+    return s;
+  }
   if (d < ZeroDuration()) {
     s.append("-");
     d = -d;

@@ -47,14 +47,6 @@
 
 
 
-#ifdef ABSL_FLAGS_INTERNAL_HAS_RTTI
-#error ABSL_FLAGS_INTERNAL_HAS_RTTI cannot be directly set
-#elif !defined(__GNUC__) || defined(__GXX_RTTI)
-#define ABSL_FLAGS_INTERNAL_HAS_RTTI 1
-#endif  
-
-
-
 #define ABSL_FLAGS_INTERNAL_BUILTIN_TYPES(A) \
   A(bool, bool)                              \
   A(short, short)                            \

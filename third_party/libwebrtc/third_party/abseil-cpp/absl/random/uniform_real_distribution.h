@@ -73,12 +73,12 @@ class uniform_real_distribution {
         : lo_(lo), hi_(hi), range_(hi - lo) {
       
       assert(lo <= hi);
+
       
       
       
       
       assert(range_ <= (std::numeric_limits<result_type>::max)());
-      assert(std::isfinite(range_));
     }
 
     result_type a() const { return lo_; }

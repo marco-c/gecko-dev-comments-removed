@@ -16,24 +16,14 @@
 
 
 
-#include "absl/base/attributes.h"
+
+
 #include "absl/debugging/leak_check.h"
 
-#ifndef LEAK_SANITIZER
+#include "absl/base/attributes.h"
+#include "absl/base/config.h"
 
-namespace absl {
-ABSL_NAMESPACE_BEGIN
-bool HaveLeakSanitizer() { return false; }
-bool LeakCheckerIsActive() { return false; }
-void DoIgnoreLeak(const void*) { }
-void RegisterLivePointers(const void*, size_t) { }
-void UnRegisterLivePointers(const void*, size_t) { }
-LeakCheckDisabler::LeakCheckDisabler() { }
-LeakCheckDisabler::~LeakCheckDisabler() { }
-ABSL_NAMESPACE_END
-}  
-
-#else
+#if defined(ABSL_HAVE_LEAK_SANITIZER)
 
 #include <sanitizer/lsan_interface.h>
 
@@ -63,6 +53,20 @@ void UnRegisterLivePointers(const void* ptr, size_t size) {
 }
 LeakCheckDisabler::LeakCheckDisabler() { __lsan_disable(); }
 LeakCheckDisabler::~LeakCheckDisabler() { __lsan_enable(); }
+ABSL_NAMESPACE_END
+}  
+
+#else  
+
+namespace absl {
+ABSL_NAMESPACE_BEGIN
+bool HaveLeakSanitizer() { return false; }
+bool LeakCheckerIsActive() { return false; }
+void DoIgnoreLeak(const void*) { }
+void RegisterLivePointers(const void*, size_t) { }
+void UnRegisterLivePointers(const void*, size_t) { }
+LeakCheckDisabler::LeakCheckDisabler() { }
+LeakCheckDisabler::~LeakCheckDisabler() { }
 ABSL_NAMESPACE_END
 }  
 

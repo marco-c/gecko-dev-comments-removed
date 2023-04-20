@@ -22,6 +22,7 @@
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/raw_logging.h"
+#include "absl/strings/internal/cord_data_edge.h"
 #include "absl/strings/internal/cord_internal.h"
 #include "absl/strings/internal/cord_rep_consume.h"
 #include "absl/strings/internal/cord_rep_flat.h"
@@ -32,7 +33,9 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace cord_internal {
 
-constexpr size_t CordRepBtree::kMaxCapacity;  
+#ifdef ABSL_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
+constexpr size_t CordRepBtree::kMaxCapacity;
+#endif
 
 namespace {
 
@@ -69,7 +72,7 @@ void DumpAll(const CordRep* rep, bool include_contents, std::ostream& stream,
       
       constexpr size_t kMaxDataLength = 60;
       stream << ", data = \""
-             << CordRepBtree::EdgeData(r).substr(0, kMaxDataLength)
+             << EdgeData(r).substr(0, kMaxDataLength)
              << (r->length > kMaxDataLength ? "\"..." : "\"");
     }
     stream << '\n';
@@ -96,7 +99,8 @@ void DumpAll(const CordRep* rep, bool include_contents, std::ostream& stream,
     maybe_dump_data(rep);
     DumpAll(substring->child, include_contents, stream, depth + 1);
   } else if (rep->tag >= FLAT) {
-    stream << "Flat, len = " << rep->length;
+    stream << "Flat, len = " << rep->length
+           << ", cap = " << rep->flat()->Capacity();
     maybe_dump_data(rep);
   } else if (rep->tag == EXTERNAL) {
     stream << "Extn, len = " << rep->length;
@@ -118,6 +122,7 @@ CordRepSubstring* CreateSubstring(CordRep* rep, size_t offset, size_t n) {
     rep = CordRep::Ref(substring->child);
     CordRep::Unref(substring);
   }
+  assert(rep->IsExternal() || rep->IsFlat());
   CordRepSubstring* substring = new CordRepSubstring();
   substring->length = n;
   substring->tag = SUBSTRING;
@@ -137,6 +142,26 @@ inline CordRep* MakeSubstring(CordRep* rep, size_t offset, size_t n) {
 inline CordRep* MakeSubstring(CordRep* rep, size_t offset) {
   if (offset == 0) return rep;
   return CreateSubstring(rep, offset, rep->length - offset);
+}
+
+
+
+
+
+
+
+CordRep* ResizeEdge(CordRep* edge, size_t length, bool is_mutable) {
+  assert(length > 0);
+  assert(length <= edge->length);
+  assert(IsDataEdge(edge));
+  if (length >= edge->length) return edge;
+
+  if (is_mutable && (edge->tag >= FLAT || edge->tag == SUBSTRING)) {
+    edge->length = length;
+    return edge;
+  }
+
+  return CreateSubstring(edge, 0, length);
 }
 
 template <EdgeType edge_type>
@@ -170,23 +195,28 @@ inline void FastUnref(R* r, Fn&& fn) {
 }
 
 
-
-void DeleteLeafEdge(CordRep* rep) {
-  for (;;) {
+void DeleteSubstring(CordRepSubstring* substring) {
+  CordRep* rep = substring->child;
+  if (!rep->refcount.Decrement()) {
     if (rep->tag >= FLAT) {
       CordRepFlat::Delete(rep->flat());
-      return;
-    }
-    if (rep->tag == EXTERNAL) {
+    } else {
+      assert(rep->tag == EXTERNAL);
       CordRepExternal::Delete(rep->external());
-      return;
     }
-    assert(rep->tag == SUBSTRING);
-    CordRepSubstring* substring = rep->substring();
-    rep = substring->child;
-    assert(rep->tag == EXTERNAL || rep->tag >= FLAT);
-    delete substring;
-    if (rep->refcount.Decrement()) return;
+  }
+  delete substring;
+}
+
+
+void DeleteLeafEdge(CordRep* rep) {
+  assert(IsDataEdge(rep));
+  if (rep->tag >= FLAT) {
+    CordRepFlat::Delete(rep->flat());
+  } else if (rep->tag == EXTERNAL) {
+    CordRepExternal::Delete(rep->external());
+  } else {
+    DeleteSubstring(rep->substring());
   }
 }
 
@@ -239,11 +269,14 @@ struct StackOperations {
   static inline CordRepBtree* Finalize(CordRepBtree* tree, OpResult result) {
     switch (result.action) {
       case CordRepBtree::kPopped:
-        if (ABSL_PREDICT_FALSE(tree->height() >= CordRepBtree::kMaxHeight)) {
-          ABSL_RAW_LOG(FATAL, "Max height exceeded");
-        }
-        return edge_type == kBack ? CordRepBtree::New(tree, result.tree)
+        tree = edge_type == kBack ? CordRepBtree::New(tree, result.tree)
                                   : CordRepBtree::New(result.tree, tree);
+        if (ABSL_PREDICT_FALSE(tree->height() > CordRepBtree::kMaxHeight)) {
+          tree = CordRepBtree::Rebuild(tree);
+          ABSL_RAW_CHECK(tree->height() <= CordRepBtree::kMaxHeight,
+                         "Max height exceeded");
+        }
+        return tree;
       case CordRepBtree::kCopied:
         CordRep::Unref(tree);
         ABSL_FALLTHROUGH_INTENDED;
@@ -348,19 +381,37 @@ void CordRepBtree::Dump(const CordRep* rep, std::ostream& stream) {
   Dump(rep, absl::string_view(), false, stream);
 }
 
-void CordRepBtree::DestroyLeaf(CordRepBtree* tree, size_t begin, size_t end) {
-  for (CordRep* edge : tree->Edges(begin, end)) {
-    FastUnref(edge, DeleteLeafEdge);
+template <size_t size>
+static void DestroyTree(CordRepBtree* tree) {
+  for (CordRep* node : tree->Edges()) {
+    if (node->refcount.Decrement()) continue;
+    for (CordRep* edge : node->btree()->Edges()) {
+      if (edge->refcount.Decrement()) continue;
+      if (size == 1) {
+        DeleteLeafEdge(edge);
+      } else {
+        CordRepBtree::Destroy(edge->btree());
+      }
+    }
+    CordRepBtree::Delete(node->btree());
   }
-  Delete(tree);
+  CordRepBtree::Delete(tree);
 }
 
-void CordRepBtree::DestroyNonLeaf(CordRepBtree* tree, size_t begin,
-                                  size_t end) {
-  for (CordRep* edge : tree->Edges(begin, end)) {
-    FastUnref(edge->btree(), Destroy);
+void CordRepBtree::Destroy(CordRepBtree* tree) {
+  switch (tree->height()) {
+    case 0:
+      for (CordRep* edge : tree->Edges()) {
+        if (!edge->refcount.Decrement()) {
+          DeleteLeafEdge(edge);
+        }
+      }
+      return CordRepBtree::Delete(tree);
+    case 1:
+      return DestroyTree<1>(tree);
+    default:
+      return DestroyTree<2>(tree);
   }
-  Delete(tree);
 }
 
 bool CordRepBtree::IsValid(const CordRepBtree* tree, bool shallow) {
@@ -691,7 +742,7 @@ CopyResult CordRepBtree::CopySuffix(size_t offset) {
   return result;
 }
 
-CopyResult CordRepBtree::CopyPrefix(size_t n) {
+CopyResult CordRepBtree::CopyPrefix(size_t n, bool allow_folding) {
   assert(n > 0);
   assert(n <= this->length);
 
@@ -703,10 +754,12 @@ CopyResult CordRepBtree::CopyPrefix(size_t n) {
   int height = this->height();
   CordRepBtree* node = this;
   CordRep* front = node->Edge(kFront);
-  while (front->length >= n) {
-    if (--height < 0) return {MakeSubstring(CordRep::Ref(front), 0, n), -1};
-    node = front->btree();
-    front = node->Edge(kFront);
+  if (allow_folding) {
+    while (front->length >= n) {
+      if (--height < 0) return {MakeSubstring(CordRep::Ref(front), 0, n), -1};
+      node = front->btree();
+      front = node->Edge(kFront);
+    }
   }
   if (node->length == n) return {CordRep::Ref(node), height};
 
@@ -743,6 +796,97 @@ CopyResult CordRepBtree::CopyPrefix(size_t n) {
   sub->set_end(pos.index);
   AssertValid(result.edge->btree());
   return result;
+}
+
+CordRep* CordRepBtree::ExtractFront(CordRepBtree* tree) {
+  CordRep* front = tree->Edge(tree->begin());
+  if (tree->refcount.IsOne()) {
+    Unref(tree->Edges(tree->begin() + 1, tree->end()));
+    CordRepBtree::Delete(tree);
+  } else {
+    CordRep::Ref(front);
+    CordRep::Unref(tree);
+  }
+  return front;
+}
+
+CordRepBtree* CordRepBtree::ConsumeBeginTo(CordRepBtree* tree, size_t end,
+                                           size_t new_length) {
+  assert(end <= tree->end());
+  if (tree->refcount.IsOne()) {
+    Unref(tree->Edges(end, tree->end()));
+    tree->set_end(end);
+    tree->length = new_length;
+  } else {
+    CordRepBtree* old = tree;
+    tree = tree->CopyBeginTo(end, new_length);
+    CordRep::Unref(old);
+  }
+  return tree;
+}
+
+CordRep* CordRepBtree::RemoveSuffix(CordRepBtree* tree, size_t n) {
+  
+  assert(tree != nullptr);
+  assert(n <= tree->length);
+  const size_t len = tree->length;
+  if (ABSL_PREDICT_FALSE(n == 0)) {
+    return tree;
+  }
+  if (ABSL_PREDICT_FALSE(n >= len)) {
+    CordRepBtree::Unref(tree);
+    return nullptr;
+  }
+
+  size_t length = len - n;
+  int height = tree->height();
+  bool is_mutable = tree->refcount.IsOne();
+
+  
+  Position pos = tree->IndexOfLength(length);
+  while (pos.index == tree->begin()) {
+    CordRep* edge = ExtractFront(tree);
+    is_mutable &= edge->refcount.IsOne();
+    if (height-- == 0) return ResizeEdge(edge, length, is_mutable);
+    tree = edge->btree();
+    pos = tree->IndexOfLength(length);
+  }
+
+  
+  
+  
+  
+  
+  CordRepBtree* top = tree = ConsumeBeginTo(tree, pos.index + 1, length);
+  CordRep* edge = tree->Edge(pos.index);
+  length = pos.n;
+  while (length != edge->length) {
+    
+    assert(tree->refcount.IsOne());
+    const bool edge_is_mutable = edge->refcount.IsOne();
+
+    if (height-- == 0) {
+      tree->edges_[pos.index] = ResizeEdge(edge, length, edge_is_mutable);
+      return AssertValid(top);
+    }
+
+    if (!edge_is_mutable) {
+      
+      
+      tree->edges_[pos.index] = edge->btree()->CopyPrefix(length, false).edge;
+      CordRep::Unref(edge);
+      return AssertValid(top);
+    }
+
+    
+    tree = edge->btree();
+    pos = tree->IndexOfLength(length);
+    tree = ConsumeBeginTo(edge->btree(), pos.index + 1, length);
+    edge = tree->Edge(pos.index);
+    length = pos.n;
+  }
+
+  return AssertValid(top);
 }
 
 CordRep* CordRepBtree::SubTree(size_t offset, size_t n) {
@@ -948,6 +1092,136 @@ template CordRepBtree* CordRepBtree::AddData<kFront>(CordRepBtree* tree,
 template CordRepBtree* CordRepBtree::AddData<kBack>(CordRepBtree* tree,
                                                     absl::string_view data,
                                                     size_t extra);
+
+void CordRepBtree::Rebuild(CordRepBtree** stack, CordRepBtree* tree,
+                           bool consume) {
+  bool owned = consume && tree->refcount.IsOne();
+  if (tree->height() == 0) {
+    for (CordRep* edge : tree->Edges()) {
+      if (!owned) edge = CordRep::Ref(edge);
+      size_t height = 0;
+      size_t length = edge->length;
+      CordRepBtree* node = stack[0];
+      OpResult result = node->AddEdge<kBack>(true, edge, length);
+      while (result.action == CordRepBtree::kPopped) {
+        stack[height] = result.tree;
+        if (stack[++height] == nullptr) {
+          result.action = CordRepBtree::kSelf;
+          stack[height] = CordRepBtree::New(node, result.tree);
+        } else {
+          node = stack[height];
+          result = node->AddEdge<kBack>(true, result.tree, length);
+        }
+      }
+      while (stack[++height] != nullptr) {
+        stack[height]->length += length;
+      }
+    }
+  } else {
+    for (CordRep* rep : tree->Edges()) {
+      Rebuild(stack, rep->btree(), owned);
+    }
+  }
+  if (consume) {
+    if (owned) {
+      CordRepBtree::Delete(tree);
+    } else {
+      CordRepBtree::Unref(tree);
+    }
+  }
+}
+
+CordRepBtree* CordRepBtree::Rebuild(CordRepBtree* tree) {
+  
+  CordRepBtree* node = CordRepBtree::New();
+  CordRepBtree* stack[CordRepBtree::kMaxDepth + 1] = {node};
+
+  
+  Rebuild(stack, tree,  true);
+
+  
+  for (CordRepBtree* parent : stack) {
+    if (parent == nullptr) return node;
+    node = parent;
+  }
+
+  
+  assert(false);
+  return nullptr;
+}
+
+CordRepBtree::ExtractResult CordRepBtree::ExtractAppendBuffer(
+    CordRepBtree* tree, size_t extra_capacity) {
+  int depth = 0;
+  NodeStack stack;
+
+  
+  ExtractResult result;
+  result.tree = tree;
+  result.extracted = nullptr;
+
+  
+  while (tree->height() > 0) {
+    if (!tree->refcount.IsOne()) return result;
+    stack[depth++] = tree;
+    tree = tree->Edge(kBack)->btree();
+  }
+  if (!tree->refcount.IsOne()) return result;
+
+  
+  CordRep* rep = tree->Edge(kBack);
+  if (!(rep->IsFlat() && rep->refcount.IsOne())) return result;
+
+  
+  CordRepFlat* flat = rep->flat();
+  const size_t length = flat->length;
+  const size_t avail = flat->Capacity() - flat->length;
+  if (extra_capacity > avail) return result;
+
+  
+  result.extracted = flat;
+
+  
+  while (tree->size() == 1) {
+    CordRepBtree::Delete(tree);
+    if (--depth < 0) {
+      
+      result.tree = nullptr;
+      return result;
+    }
+    rep = tree;
+    tree = stack[depth];
+  }
+
+  
+  tree->set_end(tree->end() - 1);
+  tree->length -= length;
+
+  
+  while (depth > 0) {
+    tree = stack[--depth];
+    tree->length -= length;
+  }
+
+  
+  
+  
+  while (tree->size() == 1) {
+    int height = tree->height();
+    rep = tree->Edge(kBack);
+    Delete(tree);
+    if (height == 0) {
+      
+      result.tree = rep;
+      return result;
+    }
+    tree = rep->btree();
+  }
+
+  
+  result.tree = tree;
+  return result;
+}
 
 }  
 ABSL_NAMESPACE_END

@@ -27,6 +27,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <limits>
 
 #include "absl/base/macros.h"
 #include "absl/base/port.h"
@@ -158,7 +159,8 @@ static uintptr_t GetFP(const void *vuc) {
 template <bool STRICT_UNWINDING, bool WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
-static void **NextStackFrame(void **old_fp, const void *uc) {
+static void **NextStackFrame(void **old_fp, const void *uc,
+                             size_t stack_low, size_t stack_high) {
   void **new_fp = (void **)*old_fp;
 
 #if defined(__linux__) && defined(__i386__)
@@ -257,6 +259,18 @@ static void **NextStackFrame(void **old_fp, const void *uc) {
     
     if (new_fp_u <= old_fp_u) return nullptr;
     if (new_fp_u - old_fp_u > kMaxFrameBytes) return nullptr;
+
+    if (stack_low < old_fp_u && old_fp_u <= stack_high) {
+      
+      if (!(stack_low < new_fp_u && new_fp_u <= stack_high)) {
+        
+        
+        return nullptr;
+      }
+    } else {
+      
+      
+    }
   } else {
     if (new_fp == nullptr) return nullptr;  
     
@@ -296,13 +310,17 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
   int n = 0;
   void **fp = reinterpret_cast<void **>(__builtin_frame_address(0));
 
+  size_t stack_low = getpagesize();  
+  size_t stack_high = std::numeric_limits<size_t>::max() - sizeof(void *);
+
   while (fp && n < max_depth) {
     if (*(fp + 1) == reinterpret_cast<void *>(0)) {
       
       
       break;
     }
-    void **next_fp = NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(fp, ucp);
+    void **next_fp = NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(
+        fp, ucp, stack_low, stack_high);
     if (skip_count > 0) {
       skip_count--;
     } else {
@@ -323,11 +341,17 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
     
     
     const int kMaxUnwind = 1000;
-    int j = 0;
-    for (; fp != nullptr && j < kMaxUnwind; j++) {
-      fp = NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(fp, ucp);
+    int num_dropped_frames = 0;
+    for (int j = 0; fp != nullptr && j < kMaxUnwind; j++) {
+      if (skip_count > 0) {
+        skip_count--;
+      } else {
+        num_dropped_frames++;
+      }
+      fp = NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(fp, ucp, stack_low,
+                                                             stack_high);
     }
-    *min_dropped_frames = j;
+    *min_dropped_frames = num_dropped_frames;
   }
   return n;
 }

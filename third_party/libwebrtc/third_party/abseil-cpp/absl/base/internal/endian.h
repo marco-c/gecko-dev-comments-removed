@@ -16,16 +16,9 @@
 #ifndef ABSL_BASE_INTERNAL_ENDIAN_H_
 #define ABSL_BASE_INTERNAL_ENDIAN_H_
 
-
-#ifdef _MSC_VER
-#include <stdlib.h>  
-#elif defined(__FreeBSD__)
-#include <sys/endian.h>
-#elif defined(__GLIBC__)
-#include <byteswap.h>  
-#endif
-
 #include <cstdint>
+#include <cstdlib>
+
 #include "absl/base/casts.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/unaligned_access.h"
@@ -34,47 +27,11 @@
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 
-
-
-
-
-#if defined(__clang__) || \
-    (defined(__GNUC__) && \
-     ((__GNUC__ == 4 && __GNUC_MINOR__ >= 8) || __GNUC__ >= 5))
 inline uint64_t gbswap_64(uint64_t host_int) {
+#if ABSL_HAVE_BUILTIN(__builtin_bswap64) || defined(__GNUC__)
   return __builtin_bswap64(host_int);
-}
-inline uint32_t gbswap_32(uint32_t host_int) {
-  return __builtin_bswap32(host_int);
-}
-inline uint16_t gbswap_16(uint16_t host_int) {
-  return __builtin_bswap16(host_int);
-}
-
 #elif defined(_MSC_VER)
-inline uint64_t gbswap_64(uint64_t host_int) {
   return _byteswap_uint64(host_int);
-}
-inline uint32_t gbswap_32(uint32_t host_int) {
-  return _byteswap_ulong(host_int);
-}
-inline uint16_t gbswap_16(uint16_t host_int) {
-  return _byteswap_ushort(host_int);
-}
-
-#else
-inline uint64_t gbswap_64(uint64_t host_int) {
-#if defined(__GNUC__) && defined(__x86_64__) && !defined(__APPLE__)
-  
-  if (__builtin_constant_p(host_int)) {
-    return __bswap_constant_64(host_int);
-  } else {
-    uint64_t result;
-    __asm__("bswap %0" : "=r"(result) : "0"(host_int));
-    return result;
-  }
-#elif defined(__GLIBC__)
-  return bswap_64(host_int);
 #else
   return (((host_int & uint64_t{0xFF}) << 56) |
           ((host_int & uint64_t{0xFF00}) << 40) |
@@ -84,12 +41,14 @@ inline uint64_t gbswap_64(uint64_t host_int) {
           ((host_int & uint64_t{0xFF0000000000}) >> 24) |
           ((host_int & uint64_t{0xFF000000000000}) >> 40) |
           ((host_int & uint64_t{0xFF00000000000000}) >> 56));
-#endif  
+#endif
 }
 
 inline uint32_t gbswap_32(uint32_t host_int) {
-#if defined(__GLIBC__)
-  return bswap_32(host_int);
+#if ABSL_HAVE_BUILTIN(__builtin_bswap32) || defined(__GNUC__)
+  return __builtin_bswap32(host_int);
+#elif defined(_MSC_VER)
+  return _byteswap_ulong(host_int);
 #else
   return (((host_int & uint32_t{0xFF}) << 24) |
           ((host_int & uint32_t{0xFF00}) << 8) |
@@ -99,21 +58,17 @@ inline uint32_t gbswap_32(uint32_t host_int) {
 }
 
 inline uint16_t gbswap_16(uint16_t host_int) {
-#if defined(__GLIBC__)
-  return bswap_16(host_int);
+#if ABSL_HAVE_BUILTIN(__builtin_bswap16) || defined(__GNUC__)
+  return __builtin_bswap16(host_int);
+#elif defined(_MSC_VER)
+  return _byteswap_ushort(host_int);
 #else
   return (((host_int & uint16_t{0xFF}) << 8) |
           ((host_int & uint16_t{0xFF00}) >> 8));
 #endif
 }
 
-#endif  
-
 #ifdef ABSL_IS_LITTLE_ENDIAN
-
-
-
-
 
 
 

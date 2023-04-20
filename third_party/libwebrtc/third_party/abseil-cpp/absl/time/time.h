@@ -162,7 +162,7 @@ class Duration {
   constexpr Duration() : rep_hi_(0), rep_lo_(0) {}  
 
   
-#if !defined(__clang__) && defined(_MSC_VER) && _MSC_VER < 1910
+#if !defined(__clang__) && defined(_MSC_VER) && _MSC_VER < 1930
   
   constexpr Duration(const Duration& d)
       : rep_hi_(d.rep_hi_), rep_lo_(d.rep_lo_) {}
@@ -487,6 +487,7 @@ Duration Hours(T n) {
 
 
 
+
 ABSL_ATTRIBUTE_PURE_FUNCTION int64_t ToInt64Nanoseconds(Duration d);
 ABSL_ATTRIBUTE_PURE_FUNCTION int64_t ToInt64Microseconds(Duration d);
 ABSL_ATTRIBUTE_PURE_FUNCTION int64_t ToInt64Milliseconds(Duration d);
@@ -749,23 +750,24 @@ constexpr Time UnixEpoch() { return Time(); }
 constexpr Time UniversalEpoch() {
   
   
-  return Time(time_internal::MakeDuration(-24 * 719162 * int64_t{3600}, 0U));
+  return Time(
+      time_internal::MakeDuration(-24 * 719162 * int64_t{3600}, uint32_t{0}));
 }
 
 
 
 
 constexpr Time InfiniteFuture() {
-  return Time(
-      time_internal::MakeDuration((std::numeric_limits<int64_t>::max)(), ~0U));
+  return Time(time_internal::MakeDuration((std::numeric_limits<int64_t>::max)(),
+                                          ~uint32_t{0}));
 }
 
 
 
 
 constexpr Time InfinitePast() {
-  return Time(
-      time_internal::MakeDuration((std::numeric_limits<int64_t>::min)(), ~0U));
+  return Time(time_internal::MakeDuration((std::numeric_limits<int64_t>::min)(),
+                                          ~uint32_t{0}));
 }
 
 
@@ -1421,14 +1423,17 @@ constexpr int64_t GetRepHi(Duration d) { return d.rep_hi_; }
 constexpr uint32_t GetRepLo(Duration d) { return d.rep_lo_; }
 
 
-constexpr bool IsInfiniteDuration(Duration d) { return GetRepLo(d) == ~0U; }
+constexpr bool IsInfiniteDuration(Duration d) {
+  return GetRepLo(d) == ~uint32_t{0};
+}
 
 
 
 constexpr Duration OppositeInfinity(Duration d) {
   return GetRepHi(d) < 0
-             ? MakeDuration((std::numeric_limits<int64_t>::max)(), ~0U)
-             : MakeDuration((std::numeric_limits<int64_t>::min)(), ~0U);
+             ? MakeDuration((std::numeric_limits<int64_t>::max)(), ~uint32_t{0})
+             : MakeDuration((std::numeric_limits<int64_t>::min)(),
+                            ~uint32_t{0});
 }
 
 
@@ -1567,7 +1572,7 @@ constexpr Duration operator-(Duration d) {
 
 constexpr Duration InfiniteDuration() {
   return time_internal::MakeDuration((std::numeric_limits<int64_t>::max)(),
-                                     ~0U);
+                                     ~uint32_t{0});
 }
 
 constexpr Duration FromChrono(const std::chrono::nanoseconds& d) {

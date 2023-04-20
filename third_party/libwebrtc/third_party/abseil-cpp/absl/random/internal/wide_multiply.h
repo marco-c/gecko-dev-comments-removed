@@ -35,43 +35,6 @@ ABSL_NAMESPACE_BEGIN
 namespace random_internal {
 
 
-
-
-
-inline absl::uint128 MultiplyU64ToU128(uint64_t a, uint64_t b) {
-#if defined(ABSL_HAVE_INTRINSIC_INT128)
-  return absl::uint128(static_cast<__uint128_t>(a) * b);
-#elif defined(ABSL_INTERNAL_USE_UMUL128)
-  
-  uint64_t high = 0;
-  const uint64_t low = _umul128(a, b, &high);
-  return absl::MakeUint128(high, low);
-#else
-  
-  
-  
-  
-  const uint64_t a00 = static_cast<uint32_t>(a);
-  const uint64_t a32 = a >> 32;
-  const uint64_t b00 = static_cast<uint32_t>(b);
-  const uint64_t b32 = b >> 32;
-
-  const uint64_t c00 = a00 * b00;
-  const uint64_t c32a = a00 * b32;
-  const uint64_t c32b = a32 * b00;
-  const uint64_t c64 = a32 * b32;
-
-  const uint32_t carry =
-      static_cast<uint32_t>(((c00 >> 32) + static_cast<uint32_t>(c32a) +
-                             static_cast<uint32_t>(c32b)) >>
-                            32);
-
-  return absl::MakeUint128(c64 + (c32a >> 32) + (c32b >> 32) + carry,
-                           c00 + (c32a << 32) + (c32b << 32));
-#endif
-}
-
-
 template <typename UIntType>
 struct wide_multiply {
   static constexpr size_t kN = std::numeric_limits<UIntType>::digits;
@@ -82,27 +45,49 @@ struct wide_multiply {
     return static_cast<result_type>(a) * b;
   }
 
-  static input_type hi(result_type r) { return r >> kN; }
-  static input_type lo(result_type r) { return r; }
+  static input_type hi(result_type r) {
+    return static_cast<input_type>(r >> kN);
+  }
+  static input_type lo(result_type r) { return static_cast<input_type>(r); }
 
   static_assert(std::is_unsigned<UIntType>::value,
                 "Class-template wide_multiply<> argument must be unsigned.");
 };
 
-#ifndef ABSL_HAVE_INTRINSIC_INT128
-template <>
-struct wide_multiply<uint64_t> {
-  using input_type = uint64_t;
-  using result_type = absl::uint128;
 
-  static result_type multiply(uint64_t a, uint64_t b) {
-    return MultiplyU64ToU128(a, b);
+inline U256 MultiplyU128ToU256(uint128 a, uint128 b) {
+  const uint128 a00 = static_cast<uint64_t>(a);
+  const uint128 a64 = a >> 64;
+  const uint128 b00 = static_cast<uint64_t>(b);
+  const uint128 b64 = b >> 64;
+
+  const uint128 c00 = a00 * b00;
+  const uint128 c64a = a00 * b64;
+  const uint128 c64b = a64 * b00;
+  const uint128 c128 = a64 * b64;
+
+  const uint64_t carry =
+      static_cast<uint64_t>(((c00 >> 64) + static_cast<uint64_t>(c64a) +
+                             static_cast<uint64_t>(c64b)) >>
+                            64);
+
+  return {c128 + (c64a >> 64) + (c64b >> 64) + carry,
+          c00 + (c64a << 64) + (c64b << 64)};
+}
+
+
+template <>
+struct wide_multiply<uint128> {
+  using input_type = uint128;
+  using result_type = U256;
+
+  static result_type multiply(input_type a, input_type b) {
+    return MultiplyU128ToU256(a, b);
   }
 
-  static uint64_t hi(result_type r) { return absl::Uint128High64(r); }
-  static uint64_t lo(result_type r) { return absl::Uint128Low64(r); }
+  static input_type hi(result_type r) { return r.hi; }
+  static input_type lo(result_type r) { return r.lo; }
 };
-#endif
 
 }  
 ABSL_NAMESPACE_END

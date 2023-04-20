@@ -93,12 +93,6 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-
-
-
-
-
-
 inline strings_internal::AlphaNumFormatterImpl AlphaNumFormatter() {
   return strings_internal::AlphaNumFormatterImpl();
 }

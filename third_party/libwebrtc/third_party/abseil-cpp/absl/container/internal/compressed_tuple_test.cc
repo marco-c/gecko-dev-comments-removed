@@ -403,6 +403,16 @@ TEST(CompressedTupleTest, EmptyFinalClass) {
 }
 #endif
 
+
+TEST(CompressedTupleTest, DISABLED_NestedEbo) {
+  struct Empty1 {};
+  struct Empty2 {};
+  CompressedTuple<Empty1, CompressedTuple<Empty2>, int> x;
+  CompressedTuple<Empty1, Empty2, int> y;
+  
+  EXPECT_EQ(sizeof(x), sizeof(y));
+}
+
 }  
 }  
 ABSL_NAMESPACE_END

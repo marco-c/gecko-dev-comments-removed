@@ -42,11 +42,13 @@ ABSL_NAMESPACE_BEGIN
 
 
 
+
 inline bool ConsumePrefix(absl::string_view* str, absl::string_view expected) {
   if (!absl::StartsWith(*str, expected)) return false;
   str->remove_prefix(expected.size());
   return true;
 }
+
 
 
 

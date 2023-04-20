@@ -167,7 +167,7 @@ TEST(CordzSampleTokenTest, MultiThreaded) {
           if (cord.data.is_profiled()) {
             
             cord.data.cordz_info()->Untrack();
-            cord.data.clear_cordz_info();;
+            cord.data.clear_cordz_info();
           } else {
             
             CordzInfo::TrackCord(cord.data, kTrackCordMethod);

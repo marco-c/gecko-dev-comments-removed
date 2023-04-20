@@ -14,7 +14,7 @@
 
 #include "absl/base/internal/thread_identity.h"
 
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(__MINGW32__)
 #include <pthread.h>
 #include <signal.h>
 #endif
@@ -56,6 +56,7 @@ void AllocateThreadIdentityKey(ThreadIdentityReclaimerFunction reclaimer) {
 
 
 
+ABSL_CONST_INIT  
 #if ABSL_HAVE_ATTRIBUTE(visibility) && !defined(__APPLE__)
 __attribute__((visibility("protected")))
 #endif  

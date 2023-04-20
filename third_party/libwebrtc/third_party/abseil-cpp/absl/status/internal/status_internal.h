@@ -15,7 +15,9 @@
 #define ABSL_STATUS_INTERNAL_STATUS_INTERNAL_H_
 
 #include <string>
+#include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/cord.h"
 
@@ -25,7 +27,14 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 
 
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(nodiscard)
+class [[nodiscard]] Status;
+#else
 class ABSL_MUST_USE_RESULT Status;
+#endif
 ABSL_NAMESPACE_END
 }  
 #endif  
@@ -61,6 +70,14 @@ struct StatusRep {
 };
 
 absl::StatusCode MapToLocalCode(int value);
+
+
+
+
+
+std::string* MakeCheckFailString(const absl::Status* status,
+                                 const char* prefix);
+
 }  
 
 ABSL_NAMESPACE_END

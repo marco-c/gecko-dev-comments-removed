@@ -174,6 +174,14 @@ class Arg {
   
   Arg(const void* value);  
 
+  
+  
+  template <typename T,
+            typename = typename std::enable_if<
+                std::is_enum<T>{} && !std::is_convertible<T, int>{}>::type>
+  Arg(T value)  
+      : Arg(static_cast<typename std::underlying_type<T>::type>(value)) {}
+
   Arg(const Arg&) = delete;
   Arg& operator=(const Arg&) = delete;
 

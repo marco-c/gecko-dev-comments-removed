@@ -28,8 +28,10 @@ struct FastTypeTag {
   constexpr static char dummy_var = 0;
 };
 
+#ifdef ABSL_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
 template <typename Type>
 constexpr char FastTypeTag<Type>::dummy_var;
+#endif
 
 
 

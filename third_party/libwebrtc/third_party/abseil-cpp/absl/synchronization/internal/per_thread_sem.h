@@ -67,10 +67,6 @@ class PerThreadSem {
   static void Init(base_internal::ThreadIdentity* identity);
 
   
-  
-  static void Destroy(base_internal::ThreadIdentity* identity);
-
-  
   static inline void Post(base_internal::ThreadIdentity* identity);
 
   
@@ -81,8 +77,7 @@ class PerThreadSem {
   
   friend class PerThreadSemTest;
   friend class absl::Mutex;
-  friend absl::base_internal::ThreadIdentity* CreateThreadIdentity();
-  friend void ReclaimThreadIdentity(void* v);
+  friend void OneTimeInitThreadIdentity(absl::base_internal::ThreadIdentity*);
 };
 
 }  

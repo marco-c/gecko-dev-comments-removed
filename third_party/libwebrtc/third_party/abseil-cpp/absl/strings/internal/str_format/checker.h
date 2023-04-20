@@ -22,9 +22,14 @@
 
 
 #ifndef ABSL_INTERNAL_ENABLE_FORMAT_CHECKER
-#if ABSL_HAVE_ATTRIBUTE(enable_if) && !defined(__native_client__)
+
+
+
+#if ABSL_HAVE_ATTRIBUTE(enable_if) && !defined(__native_client__) && \
+    !defined(__INTELLISENSE__)
 #define ABSL_INTERNAL_ENABLE_FORMAT_CHECKER 1
 #endif  
+        
 #endif  
 
 namespace absl {

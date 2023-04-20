@@ -70,15 +70,45 @@
 
 
 
+
+
+
+
+
 #ifndef ABSL_HASH_HASH_H_
 #define ABSL_HASH_HASH_H_
 
 #include <tuple>
+#include <utility>
 
+#include "absl/functional/function_ref.h"
 #include "absl/hash/internal/hash.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -278,6 +308,7 @@ size_t HashOf(const Types&... values) {
 
 
 
+
 class HashState : public hash_internal::HashStateBase<HashState> {
  public:
   
@@ -318,6 +349,8 @@ class HashState : public hash_internal::HashStateBase<HashState> {
  private:
   HashState() = default;
 
+  friend class HashState::HashStateBase;
+
   template <typename T>
   static void CombineContiguousImpl(void* p, const unsigned char* first,
                                     size_t size) {
@@ -329,16 +362,57 @@ class HashState : public hash_internal::HashStateBase<HashState> {
   void Init(T* state) {
     state_ = state;
     combine_contiguous_ = &CombineContiguousImpl<T>;
+    run_combine_unordered_ = &RunCombineUnorderedImpl<T>;
+  }
+
+  template <typename HS>
+  struct CombineUnorderedInvoker {
+    template <typename T, typename ConsumerT>
+    void operator()(T inner_state, ConsumerT inner_cb) {
+      f(HashState::Create(&inner_state),
+        [&](HashState& inner_erased) { inner_cb(inner_erased.Real<T>()); });
+    }
+
+    absl::FunctionRef<void(HS, absl::FunctionRef<void(HS&)>)> f;
+  };
+
+  template <typename T>
+  static HashState RunCombineUnorderedImpl(
+      HashState state,
+      absl::FunctionRef<void(HashState, absl::FunctionRef<void(HashState&)>)>
+          f) {
+    
+    
+    
+    T& real_state = state.Real<T>();
+    real_state = T::RunCombineUnordered(
+        std::move(real_state), CombineUnorderedInvoker<HashState>{f});
+    return state;
+  }
+
+  template <typename CombinerT>
+  static HashState RunCombineUnordered(HashState state, CombinerT combiner) {
+    auto* run = state.run_combine_unordered_;
+    return run(std::move(state), std::ref(combiner));
   }
 
   
   void Init(HashState* state) {
     state_ = state->state_;
     combine_contiguous_ = state->combine_contiguous_;
+    run_combine_unordered_ = state->run_combine_unordered_;
+  }
+
+  template <typename T>
+  T& Real() {
+    return *static_cast<T*>(state_);
   }
 
   void* state_;
   void (*combine_contiguous_)(void*, const unsigned char*, size_t);
+  HashState (*run_combine_unordered_)(
+      HashState state,
+      absl::FunctionRef<void(HashState, absl::FunctionRef<void(HashState&)>)>);
 };
 
 ABSL_NAMESPACE_END

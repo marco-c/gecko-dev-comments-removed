@@ -25,6 +25,8 @@
 #include <atomic>
 #include <chrono>  
 
+#include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/base/internal/unscaledcycleclock.h"
 
 namespace absl {
@@ -33,44 +35,20 @@ namespace base_internal {
 
 #if ABSL_USE_UNSCALED_CYCLECLOCK
 
-namespace {
-
-#ifdef NDEBUG
-#ifdef ABSL_INTERNAL_UNSCALED_CYCLECLOCK_FREQUENCY_IS_CPU_FREQUENCY
-
-
-
-static constexpr int32_t kShift = 1;
-#else
-
-
-
-static constexpr int32_t kShift = 0;
-#endif
-#else
-
-
-static constexpr int32_t kShift = 2;
+#ifdef ABSL_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
+constexpr int32_t CycleClock::kShift;
+constexpr double CycleClock::kFrequencyScale;
 #endif
 
-static constexpr double kFrequencyScale = 1.0 / (1 << kShift);
-static std::atomic<CycleClockSourceFunc> cycle_clock_source;
+ABSL_CONST_INIT std::atomic<CycleClockSourceFunc>
+    CycleClock::cycle_clock_source_{nullptr};
 
-CycleClockSourceFunc LoadCycleClockSource() {
+void CycleClockSource::Register(CycleClockSourceFunc source) {
   
-  
-  if (cycle_clock_source.load(std::memory_order_relaxed) == nullptr) {
-    return nullptr;
-  }
-  
-  
-  
-  
-  return cycle_clock_source.load(std::memory_order_acquire);
+  CycleClock::cycle_clock_source_.store(source, std::memory_order_release);
 }
 
-}  
-
+#ifdef _WIN32
 int64_t CycleClock::Now() {
   auto fn = LoadCycleClockSource();
   if (fn == nullptr) {
@@ -78,15 +56,7 @@ int64_t CycleClock::Now() {
   }
   return fn() >> kShift;
 }
-
-double CycleClock::Frequency() {
-  return kFrequencyScale * base_internal::UnscaledCycleClock::Frequency();
-}
-
-void CycleClockSource::Register(CycleClockSourceFunc source) {
-  
-  cycle_clock_source.store(source, std::memory_order_release);
-}
+#endif
 
 #else
 

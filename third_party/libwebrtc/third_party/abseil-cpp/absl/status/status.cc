@@ -13,9 +13,12 @@
 
 #include "absl/status/status.h"
 
+#include <errno.h>
+
 #include <cassert>
 
 #include "absl/base/internal/raw_logging.h"
+#include "absl/base/internal/strerror.h"
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
 #include "absl/status/status_payload_printer.h"
@@ -161,7 +164,7 @@ bool Status::ErasePayload(absl::string_view type_url) {
 }
 
 void Status::ForEachPayload(
-    const std::function<void(absl::string_view, const absl::Cord&)>& visitor)
+    absl::FunctionRef<void(absl::string_view, const absl::Cord&)> visitor)
     const {
   if (auto* payloads = GetPayloads()) {
     bool in_reverse =
@@ -185,11 +188,16 @@ void Status::ForEachPayload(
 }
 
 const std::string* Status::EmptyString() {
-  static std::string* empty_string = new std::string();
-  return empty_string;
+  static union EmptyString {
+    std::string str;
+    ~EmptyString() {}
+  } empty = {{}};
+  return &empty.str;
 }
 
+#ifdef ABSL_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
 constexpr const char Status::kMovedFromString[];
+#endif
 
 const std::string* Status::MovedFromString() {
   static std::string* moved_from_string = new std::string(kMovedFromString);
@@ -439,6 +447,170 @@ bool IsUnimplemented(const Status& status) {
 bool IsUnknown(const Status& status) {
   return status.code() == absl::StatusCode::kUnknown;
 }
+
+StatusCode ErrnoToStatusCode(int error_number) {
+  switch (error_number) {
+    case 0:
+      return StatusCode::kOk;
+    case EINVAL:        
+    case ENAMETOOLONG:  
+    case E2BIG:         
+    case EDESTADDRREQ:  
+    case EDOM:          
+    case EFAULT:        
+    case EILSEQ:        
+    case ENOPROTOOPT:   
+    case ENOSTR:        
+    case ENOTSOCK:      
+    case ENOTTY:        
+    case EPROTOTYPE:    
+    case ESPIPE:        
+      return StatusCode::kInvalidArgument;
+    case ETIMEDOUT:  
+    case ETIME:      
+      return StatusCode::kDeadlineExceeded;
+    case ENODEV:  
+    case ENOENT:  
+#ifdef ENOMEDIUM
+    case ENOMEDIUM:  
+#endif
+    case ENXIO:  
+    case ESRCH:  
+      return StatusCode::kNotFound;
+    case EEXIST:         
+    case EADDRNOTAVAIL:  
+    case EALREADY:       
+#ifdef ENOTUNIQ
+    case ENOTUNIQ:  
+#endif
+      return StatusCode::kAlreadyExists;
+    case EPERM:   
+    case EACCES:  
+#ifdef ENOKEY
+    case ENOKEY:  
+#endif
+    case EROFS:  
+      return StatusCode::kPermissionDenied;
+    case ENOTEMPTY:   
+    case EISDIR:      
+    case ENOTDIR:     
+    case EADDRINUSE:  
+    case EBADF:       
+#ifdef EBADFD
+    case EBADFD:  
+#endif
+    case EBUSY:    
+    case ECHILD:   
+    case EISCONN:  
+#ifdef EISNAM
+    case EISNAM:  
+#endif
+#ifdef ENOTBLK
+    case ENOTBLK:  
+#endif
+    case ENOTCONN:  
+    case EPIPE:     
+#ifdef ESHUTDOWN
+    case ESHUTDOWN:  
+#endif
+    case ETXTBSY:  
+#ifdef EUNATCH
+    case EUNATCH:  
+#endif
+      return StatusCode::kFailedPrecondition;
+    case ENOSPC:  
+#ifdef EDQUOT
+    case EDQUOT:  
+#endif
+    case EMFILE:   
+    case EMLINK:   
+    case ENFILE:   
+    case ENOBUFS:  
+    case ENODATA:  
+    case ENOMEM:   
+    case ENOSR:    
+#ifdef EUSERS
+    case EUSERS:  
+#endif
+      return StatusCode::kResourceExhausted;
+#ifdef ECHRNG
+    case ECHRNG:  
+#endif
+    case EFBIG:      
+    case EOVERFLOW:  
+    case ERANGE:     
+      return StatusCode::kOutOfRange;
+#ifdef ENOPKG
+    case ENOPKG:  
+#endif
+    case ENOSYS:        
+    case ENOTSUP:       
+    case EAFNOSUPPORT:  
+#ifdef EPFNOSUPPORT
+    case EPFNOSUPPORT:  
+#endif
+    case EPROTONOSUPPORT:  
+#ifdef ESOCKTNOSUPPORT
+    case ESOCKTNOSUPPORT:  
+#endif
+    case EXDEV:  
+      return StatusCode::kUnimplemented;
+    case EAGAIN:  
+#ifdef ECOMM
+    case ECOMM:  
+#endif
+    case ECONNREFUSED:  
+    case ECONNABORTED:  
+    case ECONNRESET:    
+    case EINTR:         
+#ifdef EHOSTDOWN
+    case EHOSTDOWN:  
+#endif
+    case EHOSTUNREACH:  
+    case ENETDOWN:      
+    case ENETRESET:     
+    case ENETUNREACH:   
+    case ENOLCK:        
+    case ENOLINK:       
+#ifdef ENONET
+    case ENONET:  
+#endif
+      return StatusCode::kUnavailable;
+    case EDEADLK:  
+#ifdef ESTALE
+    case ESTALE:  
+#endif
+      return StatusCode::kAborted;
+    case ECANCELED:  
+      return StatusCode::kCancelled;
+    default:
+      return StatusCode::kUnknown;
+  }
+}
+
+namespace {
+std::string MessageForErrnoToStatus(int error_number,
+                                    absl::string_view message) {
+  return absl::StrCat(message, ": ",
+                      absl::base_internal::StrError(error_number));
+}
+}  
+
+Status ErrnoToStatus(int error_number, absl::string_view message) {
+  return Status(ErrnoToStatusCode(error_number),
+                MessageForErrnoToStatus(error_number, message));
+}
+
+namespace status_internal {
+
+std::string* MakeCheckFailString(const absl::Status* status,
+                                 const char* prefix) {
+  return new std::string(
+      absl::StrCat(prefix, " (",
+                   status->ToString(StatusToStringMode::kWithEverything), ")"));
+}
+
+}  
 
 ABSL_NAMESPACE_END
 }  

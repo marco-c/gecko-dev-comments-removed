@@ -20,6 +20,7 @@
 #include <sstream>
 #include <string>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/internal/parse.h"
@@ -47,8 +48,10 @@ struct UDT {
   UDT(const UDT&) = default;
   UDT& operator=(const UDT&) = default;
 };
-bool AbslParseFlag(absl::string_view, UDT*, std::string*) { return true; }
-std::string AbslUnparseFlag(const UDT&) { return "UDT{}"; }
+static bool AbslParseFlag(absl::string_view, UDT*, std::string*) {
+  return true;
+}
+static std::string AbslUnparseFlag(const UDT&) { return "UDT{}"; }
 
 ABSL_FLAG(UDT, usage_reporting_test_flag_05, {},
           "usage_reporting_test_flag_05 help message");
@@ -103,14 +106,19 @@ class UsageReportingTest : public testing::Test {
 using UsageReportingDeathTest = UsageReportingTest;
 
 TEST_F(UsageReportingDeathTest, TestSetProgramUsageMessage) {
-  EXPECT_EQ(absl::ProgramUsageMessage(), kTestUsageMessage);
-
-#ifndef _WIN32
+#if !defined(GTEST_HAS_ABSL) || !GTEST_HAS_ABSL
   
+  EXPECT_EQ(absl::ProgramUsageMessage(), kTestUsageMessage);
+#else
+  
+  EXPECT_THAT(absl::ProgramUsageMessage(),
+              ::testing::HasSubstr(
+                  "This program contains tests written using Google Test"));
+#endif
+
   EXPECT_DEATH_IF_SUPPORTED(
       absl::SetProgramUsageMessage("custom usage message"),
-      ".*SetProgramUsageMessage\\(\\) called twice.*");
-#endif
+      ::testing::HasSubstr("SetProgramUsageMessage() called twice"));
 }
 
 
@@ -487,8 +495,10 @@ path.
 int main(int argc, char* argv[]) {
   (void)absl::GetFlag(FLAGS_undefok);  
   flags::SetProgramInvocationName("usage_test");
+#if !defined(GTEST_HAS_ABSL) || !GTEST_HAS_ABSL
+  
   absl::SetProgramUsageMessage(kTestUsageMessage);
+#endif
   ::testing::InitGoogleTest(&argc, argv);
-
   return RUN_ALL_TESTS();
 }

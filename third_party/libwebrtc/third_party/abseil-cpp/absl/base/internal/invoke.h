@@ -32,8 +32,30 @@
 
 
 
+
+
 #ifndef ABSL_BASE_INTERNAL_INVOKE_H_
 #define ABSL_BASE_INTERNAL_INVOKE_H_
+
+#include "absl/base/config.h"
+
+#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
+
+#include <functional>
+
+namespace absl {
+ABSL_NAMESPACE_BEGIN
+namespace base_internal {
+
+using std::invoke;
+using std::invoke_result_t;
+using std::is_invocable_r;
+
+}  
+ABSL_NAMESPACE_END
+}  
+
+#else  
 
 #include <algorithm>
 #include <type_traits>
@@ -80,8 +102,18 @@ struct MemFunAndRef : StrippedAccept<MemFunAndRef> {
   static decltype((std::declval<Obj>().*
                    std::declval<MemFun>())(std::declval<Args>()...))
   Invoke(MemFun&& mem_fun, Obj&& obj, Args&&... args) {
+
+
+#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(11, 0)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
     return (std::forward<Obj>(obj).*
             std::forward<MemFun>(mem_fun))(std::forward<Args>(args)...);
+#if ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(11, 0)
+#pragma GCC diagnostic pop
+#endif
   }
 };
 
@@ -180,8 +212,30 @@ invoke_result_t<F, Args...> invoke(F&& f, Args&&... args) {
   return Invoker<F, Args...>::type::Invoke(std::forward<F>(f),
                                            std::forward<Args>(args)...);
 }
+
+template <typename AlwaysVoid, typename, typename, typename...>
+struct IsInvocableRImpl : std::false_type {};
+
+template <typename R, typename F, typename... Args>
+struct IsInvocableRImpl<
+    absl::void_t<absl::base_internal::invoke_result_t<F, Args...> >, R, F,
+    Args...>
+    : std::integral_constant<
+          bool,
+          std::is_convertible<absl::base_internal::invoke_result_t<F, Args...>,
+                              R>::value ||
+              std::is_void<R>::value> {};
+
+
+
+
+template <typename R, typename F, typename... Args>
+using is_invocable_r = IsInvocableRImpl<void, R, F, Args...>;
+
 }  
 ABSL_NAMESPACE_END
 }  
+
+#endif  
 
 #endif  

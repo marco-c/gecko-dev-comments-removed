@@ -12,12 +12,12 @@
 
 
 
+#include "absl/profiling/internal/periodic_sampler.h"
 #include "benchmark/benchmark.h"
-#include "absl/base/internal/periodic_sampler.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-namespace base_internal {
+namespace profiling_internal {
 namespace {
 
 template <typename Sampler>

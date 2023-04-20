@@ -208,21 +208,10 @@ string_view::size_type string_view::find_last_not_of(
 }
 
 
-
-
-
-
-
-#ifdef _MSC_VER
-#define ABSL_STRING_VIEW_SELECTANY __declspec(selectany)
-#else
-#define ABSL_STRING_VIEW_SELECTANY
-#endif
-
-ABSL_STRING_VIEW_SELECTANY
+#ifdef ABSL_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
 constexpr string_view::size_type string_view::npos;
-ABSL_STRING_VIEW_SELECTANY
 constexpr string_view::size_type string_view::kMaxSize;
+#endif
 
 ABSL_NAMESPACE_END
 }  

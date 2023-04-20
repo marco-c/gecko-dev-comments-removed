@@ -17,6 +17,7 @@
 #include <cassert>
 
 #include "absl/base/config.h"
+#include "absl/strings/internal/cord_data_edge.h"
 #include "absl/strings/internal/cord_internal.h"
 #include "absl/strings/internal/cord_rep_btree.h"
 #include "absl/strings/internal/cord_rep_btree_navigator.h"
@@ -44,7 +45,7 @@ absl::string_view CordRepBtreeReader::Read(size_t n, size_t chunk_size,
   
   
   
-  if (n < chunk_size) return CordRepBtree::EdgeData(edge).substr(result.n);
+  if (n < chunk_size) return EdgeData(edge).substr(result.n);
 
   
   
@@ -52,15 +53,15 @@ absl::string_view CordRepBtreeReader::Read(size_t n, size_t chunk_size,
   
   
   const size_t consumed_by_read = n - chunk_size - result.n;
-  if (consumed_ + consumed_by_read >= length()) {
-    consumed_ = length();
+  if (consumed_by_read >= remaining_) {
+    remaining_ = 0;
     return {};
   }
 
   
   edge = navigator_.Current();
-  consumed_ += consumed_by_read + edge->length;
-  return CordRepBtree::EdgeData(edge).substr(result.n);
+  remaining_ -= consumed_by_read + edge->length;
+  return EdgeData(edge).substr(result.n);
 }
 
 }  

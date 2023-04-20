@@ -41,9 +41,10 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/base/macros.h"
 #include "absl/container/internal/container_memory.h"
 #include "absl/container/internal/hash_function_defaults.h"  
-#include "absl/container/internal/node_hash_policy.h"
+#include "absl/container/internal/node_slot_policy.h"
 #include "absl/container/internal/raw_hash_map.h"  
 #include "absl/memory/memory.h"
 
@@ -53,6 +54,10 @@ namespace container_internal {
 template <class Key, class Value>
 class NodeHashMapPolicy;
 }  
+
+
+
+
 
 
 
@@ -525,17 +530,19 @@ class node_hash_map
 
 
 
+
 template <typename K, typename V, typename H, typename E, typename A,
           typename Predicate>
-void erase_if(node_hash_map<K, V, H, E, A>& c, Predicate pred) {
-  container_internal::EraseIf(pred, &c);
+typename node_hash_map<K, V, H, E, A>::size_type erase_if(
+    node_hash_map<K, V, H, E, A>& c, Predicate pred) {
+  return container_internal::EraseIf(pred, &c);
 }
 
 namespace container_internal {
 
 template <class Key, class Value>
 class NodeHashMapPolicy
-    : public absl::container_internal::node_hash_policy<
+    : public absl::container_internal::node_slot_policy<
           std::pair<const Key, Value>&, NodeHashMapPolicy<Key, Value>> {
   using value_type = std::pair<const Key, Value>;
 

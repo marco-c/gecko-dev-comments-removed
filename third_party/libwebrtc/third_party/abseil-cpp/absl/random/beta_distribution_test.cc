@@ -45,16 +45,26 @@ namespace {
 template <typename IntType>
 class BetaDistributionInterfaceTest : public ::testing::Test {};
 
+constexpr bool ShouldExerciseLongDoubleTests() {
+  
+  
+  
+  
+  
+  
+  
+  
+#if defined(__i686__) && defined(__x86_64__)
+  return !absl::numeric_internal::IsDoubleDouble();
+#else
+  return false;
+#endif
+}
 
-
-
-
-
-using RealTypes =
-    std::conditional<absl::numeric_internal::IsDoubleDouble(),
-                     ::testing::Types<float, double>,
-                     ::testing::Types<float, double, long double>>::type;
-TYPED_TEST_CASE(BetaDistributionInterfaceTest, RealTypes);
+using RealTypes = std::conditional<ShouldExerciseLongDoubleTests(),
+                                   ::testing::Types<float, double, long double>,
+                                   ::testing::Types<float, double>>::type;
+TYPED_TEST_SUITE(BetaDistributionInterfaceTest, RealTypes);
 
 TYPED_TEST(BetaDistributionInterfaceTest, SerializeTest) {
   
@@ -431,13 +441,13 @@ std::string ParamName(
   return absl::StrReplaceAll(name, {{"+", "_"}, {"-", "_"}, {".", "_"}});
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     TestSampleStatisticsCombinations, BetaDistributionTest,
     ::testing::Combine(::testing::Values(0.1, 0.2, 0.9, 1.1, 2.5, 10.0, 123.4),
                        ::testing::Values(0.1, 0.2, 0.9, 1.1, 2.5, 10.0, 123.4)),
     ParamName);
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     TestSampleStatistics_SelectedPairs, BetaDistributionTest,
     ::testing::Values(std::make_pair(0.5, 1000), std::make_pair(1000, 0.5),
                       std::make_pair(900, 1000), std::make_pair(10000, 20000),

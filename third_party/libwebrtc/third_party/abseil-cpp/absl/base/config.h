@@ -56,6 +56,25 @@
 #include <cstddef>
 #endif  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(_MSVC_LANG)
+#define ABSL_INTERNAL_CPLUSPLUS_LANG _MSVC_LANG
+#elif defined(__cplusplus)
+#define ABSL_INTERNAL_CPLUSPLUS_LANG __cplusplus
+#endif
+
 #if defined(__APPLE__)
 
 
@@ -65,6 +84,35 @@
 
 #include "absl/base/options.h"
 #include "absl/base/policy_checks.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#undef ABSL_LTS_RELEASE_VERSION
+#undef ABSL_LTS_RELEASE_PATCH_LEVEL
 
 
 #define ABSL_INTERNAL_DO_TOKEN_STR(x) #x
@@ -154,12 +202,6 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #define ABSL_HAVE_BUILTIN(x) 0
 #endif
 
-#if defined(__is_identifier)
-#define ABSL_INTERNAL_HAS_KEYWORD(x) !(__is_identifier(x))
-#else
-#define ABSL_INTERNAL_HAS_KEYWORD(x) 0
-#endif
-
 #ifdef __has_feature
 #define ABSL_HAVE_FEATURE(f) __has_feature(f)
 #else
@@ -187,7 +229,8 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_TLS
 #error ABSL_HAVE_TLS cannot be directly set
-#elif defined(__linux__) && (defined(__clang__) || defined(_GLIBCXX_HAVE_TLS))
+#elif (defined(__linux__) || defined(__ASYLO__)) && \
+    (defined(__clang__) || defined(_GLIBCXX_HAVE_TLS))
 #define ABSL_HAVE_TLS 1
 #endif
 
@@ -220,25 +263,14 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #error ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE cannot be directly set
 #elif defined(ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE)
 #error ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE cannot directly set
-#elif (defined(__clang__) && defined(_LIBCPP_VERSION)) ||                \
-    (!defined(__clang__) && ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(7, 4) && \
-     (defined(_LIBCPP_VERSION) || defined(__GLIBCXX__))) ||              \
+#elif (defined(__clang__) && defined(_LIBCPP_VERSION)) ||                    \
+    (!defined(__clang__) &&                                                  \
+     ((ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(7, 4) && defined(__GLIBCXX__)) || \
+      (ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(8, 2) &&                          \
+       defined(_LIBCPP_VERSION)))) ||                                        \
     (defined(_MSC_VER) && !defined(__NVCC__))
 #define ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE 1
 #define ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE 1
-#endif
-
-
-
-
-
-#ifndef ABSL_HAVE_SOURCE_LOCATION_CURRENT
-#if ABSL_INTERNAL_HAS_KEYWORD(__builtin_LINE) && \
-    ABSL_INTERNAL_HAS_KEYWORD(__builtin_FILE)
-#define ABSL_HAVE_SOURCE_LOCATION_CURRENT 1
-#elif ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(5, 0)
-#define ABSL_HAVE_SOURCE_LOCATION_CURRENT 1
-#endif
 #endif
 
 
@@ -379,10 +411,12 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_MMAP
 #error ABSL_HAVE_MMAP cannot be directly set
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) ||   \
-    defined(__ros__) || defined(__native_client__) || defined(__asmjs__) || \
-    defined(__wasm__) || defined(__Fuchsia__) || defined(__sun) || \
-    defined(__ASYLO__) || defined(__myriad2__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || \
+    defined(_AIX) || defined(__ros__) || defined(__native_client__) ||    \
+    defined(__asmjs__) || defined(__wasm__) || defined(__Fuchsia__) ||    \
+    defined(__sun) || defined(__ASYLO__) || defined(__myriad2__) ||       \
+    defined(__HAIKU__) || defined(__OpenBSD__) || defined(__NetBSD__) ||  \
+    defined(__QNX__)
 #define ABSL_HAVE_MMAP 1
 #endif
 
@@ -393,7 +427,8 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #ifdef ABSL_HAVE_PTHREAD_GETSCHEDPARAM
 #error ABSL_HAVE_PTHREAD_GETSCHEDPARAM cannot be directly set
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || \
-    defined(__ros__)
+    defined(_AIX) || defined(__ros__) || defined(__OpenBSD__) ||          \
+    defined(__NetBSD__)
 #define ABSL_HAVE_PTHREAD_GETSCHEDPARAM 1
 #endif
 
@@ -495,15 +530,34 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
-#if defined(__APPLE__) && defined(_LIBCPP_VERSION) && \
-  ((defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) && \
-   __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101400) || \
-  (defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) && \
-   __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 120000) || \
-  (defined(__ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__) && \
-   __ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__ < 50000) || \
-  (defined(__ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__) && \
-   __ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__ < 120000))
+
+
+
+
+
+
+
+
+
+#if defined(__APPLE__) && defined(_LIBCPP_VERSION) &&               \
+    ((_LIBCPP_VERSION >= 11000 &&         \
+      ((defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) &&   \
+        __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101300) ||  \
+       (defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) &&  \
+        __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 110000) || \
+       (defined(__ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__) &&   \
+        __ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__ < 40000) ||   \
+       (defined(__ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__) &&      \
+        __ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__ < 110000))) ||   \
+     (_LIBCPP_VERSION < 11000 &&               \
+      ((defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) &&   \
+        __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101400) ||  \
+       (defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) &&  \
+        __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 120000) || \
+       (defined(__ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__) &&   \
+        __ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__ < 50000) ||   \
+       (defined(__ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__) &&      \
+        __ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__ < 120000))))
 #define ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE 1
 #else
 #define ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE 0
@@ -673,8 +727,6 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #endif
 #endif
 
-#undef ABSL_INTERNAL_HAS_KEYWORD
-
 
 
 
@@ -700,8 +752,6 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_MEMORY_SANITIZER
 #error "ABSL_HAVE_MEMORY_SANITIZER cannot be directly set."
-#elif defined(__SANITIZE_MEMORY__)
-#define ABSL_HAVE_MEMORY_SANITIZER 1
 #elif !defined(__native_client__) && ABSL_HAVE_FEATURE(memory_sanitizer)
 #define ABSL_HAVE_MEMORY_SANITIZER 1
 #endif
@@ -731,10 +781,133 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
+
+
+#ifdef ABSL_HAVE_HWADDRESS_SANITIZER
+#error "ABSL_HAVE_HWADDRESS_SANITIZER cannot be directly set."
+#elif defined(__SANITIZE_HWADDRESS__)
+#define ABSL_HAVE_HWADDRESS_SANITIZER 1
+#elif ABSL_HAVE_FEATURE(hwaddress_sanitizer)
+#define ABSL_HAVE_HWADDRESS_SANITIZER 1
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef ABSL_HAVE_LEAK_SANITIZER
+#error "ABSL_HAVE_LEAK_SANITIZER cannot be directly set."
+#elif defined(LEAK_SANITIZER)
+
+
+
+#define ABSL_HAVE_LEAK_SANITIZER 1
+
+#elif ABSL_HAVE_FEATURE(leak_sanitizer)
+#define ABSL_HAVE_LEAK_SANITIZER 1
+#elif defined(ABSL_HAVE_ADDRESS_SANITIZER)
+
+#define ABSL_HAVE_LEAK_SANITIZER 1
+#endif
+
+
+
+
 #ifdef ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION
 #error "ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION cannot be directly set."
 #elif defined(__cpp_deduction_guides)
 #define ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION 1
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
+    ABSL_INTERNAL_CPLUSPLUS_LANG < 201703L
+#define ABSL_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL 1
+#endif
+
+
+
+#ifdef ABSL_INTERNAL_HAS_RTTI
+#error ABSL_INTERNAL_HAS_RTTI cannot be directly set
+#elif !defined(__GNUC__) || defined(__GXX_RTTI)
+#define ABSL_INTERNAL_HAS_RTTI 1
+#endif  
+
+
+
+
+#ifdef ABSL_INTERNAL_HAVE_SSE
+#error ABSL_INTERNAL_HAVE_SSE cannot be directly set
+#elif defined(__SSE__)
+#define ABSL_INTERNAL_HAVE_SSE 1
+#elif defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 1)
+
+
+
+
+#define ABSL_INTERNAL_HAVE_SSE 1
+#endif
+
+
+
+
+#ifdef ABSL_INTERNAL_HAVE_SSE2
+#error ABSL_INTERNAL_HAVE_SSE2 cannot be directly set
+#elif defined(__SSE2__)
+#define ABSL_INTERNAL_HAVE_SSE2 1
+#elif defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+
+
+
+
+#define ABSL_INTERNAL_HAVE_SSE2 1
+#endif
+
+
+
+
+
+
+
+
+
+
+#ifdef ABSL_INTERNAL_HAVE_SSSE3
+#error ABSL_INTERNAL_HAVE_SSSE3 cannot be directly set
+#elif defined(__SSSE3__)
+#define ABSL_INTERNAL_HAVE_SSSE3 1
+#endif
+
+
+
+#ifdef ABSL_INTERNAL_HAVE_ARM_NEON
+#error ABSL_INTERNAL_HAVE_ARM_NEON cannot be directly set
+#elif defined(__ARM_NEON)
+#define ABSL_INTERNAL_HAVE_ARM_NEON 1
 #endif
 
 #endif

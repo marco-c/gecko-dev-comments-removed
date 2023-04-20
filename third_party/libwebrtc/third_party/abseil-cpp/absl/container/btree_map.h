@@ -44,6 +44,9 @@
 
 
 
+
+
+
 #ifndef ABSL_CONTAINER_BTREE_MAP_H_
 #define ABSL_CONTAINER_BTREE_MAP_H_
 
@@ -52,6 +55,14 @@
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
+
+namespace container_internal {
+
+template <typename Key, typename Data, typename Compare, typename Alloc,
+          int TargetNodeSize, bool IsMulti>
+struct map_params;
+
+}  
 
 
 
@@ -409,6 +420,30 @@ class btree_map
   
   
   
+  using Base::lower_bound;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using Base::upper_bound;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -443,15 +478,11 @@ void swap(btree_map<K, V, C, A> &x, btree_map<K, V, C, A> &y) {
 
 
 
+
 template <typename K, typename V, typename C, typename A, typename Pred>
-void erase_if(btree_map<K, V, C, A> &map, Pred pred) {
-  for (auto it = map.begin(); it != map.end();) {
-    if (pred(*it)) {
-      it = map.erase(it);
-    } else {
-      ++it;
-    }
-  }
+typename btree_map<K, V, C, A>::size_type erase_if(
+    btree_map<K, V, C, A> &map, Pred pred) {
+  return container_internal::btree_access::erase_if(map, std::move(pred));
 }
 
 
@@ -671,7 +702,6 @@ class btree_multimap
   
   
   
-  
   using Base::merge;
 
   
@@ -727,6 +757,30 @@ class btree_multimap
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  using Base::lower_bound;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using Base::upper_bound;
+
+  
+  
+  
   using Base::get_allocator;
 
   
@@ -751,16 +805,45 @@ void swap(btree_multimap<K, V, C, A> &x, btree_multimap<K, V, C, A> &y) {
 
 
 
+
 template <typename K, typename V, typename C, typename A, typename Pred>
-void erase_if(btree_multimap<K, V, C, A> &map, Pred pred) {
-  for (auto it = map.begin(); it != map.end();) {
-    if (pred(*it)) {
-      it = map.erase(it);
-    } else {
-      ++it;
-    }
-  }
+typename btree_multimap<K, V, C, A>::size_type erase_if(
+    btree_multimap<K, V, C, A> &map, Pred pred) {
+  return container_internal::btree_access::erase_if(map, std::move(pred));
 }
+
+namespace container_internal {
+
+
+
+template <typename Key, typename Data, typename Compare, typename Alloc,
+          int TargetNodeSize, bool IsMulti>
+struct map_params : common_params<Key, Compare, Alloc, TargetNodeSize, IsMulti,
+                                  true, map_slot_policy<Key, Data>> {
+  using super_type = typename map_params::common_params;
+  using mapped_type = Data;
+  
+  
+  using slot_policy = typename super_type::slot_policy;
+  using slot_type = typename super_type::slot_type;
+  using value_type = typename super_type::value_type;
+  using init_type = typename super_type::init_type;
+
+  template <typename V>
+  static auto key(const V &value) -> decltype(value.first) {
+    return value.first;
+  }
+  static const Key &key(const slot_type *s) { return slot_policy::key(s); }
+  static const Key &key(slot_type *s) { return slot_policy::key(s); }
+  
+  static auto mutable_key(slot_type *s)
+      -> decltype(slot_policy::mutable_key(s)) {
+    return slot_policy::mutable_key(s);
+  }
+  static mapped_type &value(value_type *value) { return value->second; }
+};
+
+}  
 
 ABSL_NAMESPACE_END
 }  

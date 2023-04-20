@@ -12,19 +12,19 @@
 
 
 
-#ifndef ABSL_BASE_INTERNAL_PERIODIC_SAMPLER_H_
-#define ABSL_BASE_INTERNAL_PERIODIC_SAMPLER_H_
+#ifndef ABSL_PROFILING_INTERNAL_PERIODIC_SAMPLER_H_
+#define ABSL_PROFILING_INTERNAL_PERIODIC_SAMPLER_H_
 
 #include <stdint.h>
 
 #include <atomic>
 
-#include "absl/base/internal/exponential_biased.h"
 #include "absl/base/optimization.h"
+#include "absl/profiling/internal/exponential_biased.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-namespace base_internal {
+namespace profiling_internal {
 
 
 
@@ -149,7 +149,7 @@ class PeriodicSamplerBase {
   
   
   uint64_t stride_ = 0;
-  ExponentialBiased rng_;
+  absl::profiling_internal::ExponentialBiased rng_;
 };
 
 inline bool PeriodicSamplerBase::SubtleMaybeSample() noexcept {

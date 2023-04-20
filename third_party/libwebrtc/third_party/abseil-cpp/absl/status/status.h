@@ -55,6 +55,7 @@
 #include <string>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
 #include "absl/status/internal/status_internal.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
@@ -470,6 +471,7 @@ class Status final {
   
   
   
+  
   ABSL_MUST_USE_RESULT bool ok() const;
 
   
@@ -590,7 +592,7 @@ class Status final {
   
   
   void ForEachPayload(
-      const std::function<void(absl::string_view, const absl::Cord&)>& visitor)
+      absl::FunctionRef<void(absl::string_view, const absl::Cord&)> visitor)
       const;
 
  private:
@@ -611,10 +613,6 @@ class Status final {
   const status_internal::Payloads* GetPayloads() const;
   status_internal::Payloads* GetPayloads();
 
-  
-  static uintptr_t NewRep(
-      absl::StatusCode code, absl::string_view msg,
-      std::unique_ptr<status_internal::Payloads> payload);
   static bool EqualsSlow(const absl::Status& a, const absl::Status& b);
 
   
@@ -739,6 +737,19 @@ Status UnauthenticatedError(absl::string_view message);
 Status UnavailableError(absl::string_view message);
 Status UnimplementedError(absl::string_view message);
 Status UnknownError(absl::string_view message);
+
+
+
+
+
+
+absl::StatusCode ErrnoToStatusCode(int error_number);
+
+
+
+
+
+Status ErrnoToStatus(int error_number, absl::string_view message);
 
 
 

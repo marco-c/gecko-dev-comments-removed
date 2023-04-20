@@ -69,10 +69,8 @@ class log_uniform_int_distribution {
       if (base_ == 2) {
         
         
-        log_range_ =
-            (std::min)(bit_width(range()),
-                       static_cast<unsigned_type>(
-                           std::numeric_limits<unsigned_type>::digits));
+        log_range_ = (std::min)(random_internal::BitWidth(range()),
+                                std::numeric_limits<unsigned_type>::digits);
       } else {
         
         
@@ -83,7 +81,7 @@ class log_uniform_int_distribution {
         
         
         
-        const double inv_log_base = 1.0 / std::log(base_);
+        const double inv_log_base = 1.0 / std::log(static_cast<double>(base_));
         const double log_range = std::log(static_cast<double>(range()) + 0.5);
         log_range_ = static_cast<int>(std::ceil(inv_log_base * log_range));
       }
@@ -113,7 +111,7 @@ class log_uniform_int_distribution {
     unsigned_type range_;  
     int log_range_;        
 
-    static_assert(std::is_integral<IntType>::value,
+    static_assert(random_internal::IsIntegral<IntType>::value,
                   "Class-template absl::log_uniform_int_distribution<> must be "
                   "parameterized using an integral type.");
   };
@@ -139,7 +137,7 @@ class log_uniform_int_distribution {
   template <typename URBG>
   result_type operator()(URBG& g,  
                          const param_type& p) {
-    return (p.min)() + Generate(g, p);
+    return static_cast<result_type>((p.min)() + Generate(g, p));
   }
 
   result_type(min)() const { return (param_.min)(); }
@@ -193,8 +191,8 @@ log_uniform_int_distribution<IntType>::Generate(
                 ? (std::numeric_limits<unsigned_type>::max)()
                 : (static_cast<unsigned_type>(1) << e) - 1;
   } else {
-    const double r = std::pow(p.base(), d);
-    const double s = (r * p.base()) - 1.0;
+    const double r = std::pow(static_cast<double>(p.base()), d);
+    const double s = (r * static_cast<double>(p.base())) - 1.0;
 
     base_e =
         (r > static_cast<double>((std::numeric_limits<unsigned_type>::max)()))
@@ -211,7 +209,8 @@ log_uniform_int_distribution<IntType>::Generate(
   const unsigned_type hi = (top_e >= p.range()) ? p.range() : top_e;
 
   
-  return absl::uniform_int_distribution<result_type>(lo, hi)(g);
+  return absl::uniform_int_distribution<result_type>(
+      static_cast<result_type>(lo), static_cast<result_type>(hi))(g);
 }
 
 template <typename CharT, typename Traits, typename IntType>

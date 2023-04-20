@@ -12,7 +12,7 @@
 
 
 
-#include "absl/container/internal/node_hash_policy.h"
+#include "absl/container/internal/node_slot_policy.h"
 
 #include <memory>
 
@@ -27,7 +27,7 @@ namespace {
 
 using ::testing::Pointee;
 
-struct Policy : node_hash_policy<int&, Policy> {
+struct Policy : node_slot_policy<int&, Policy> {
   using key_type = int;
   using init_type = int;
 

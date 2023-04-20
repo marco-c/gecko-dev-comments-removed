@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/internal/endian.h"
 #include "absl/base/internal/invoke.h"
@@ -33,16 +34,27 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace cord_internal {
 
+
+
+
+
+struct CordRep;
+struct CordRepConcat;
+struct CordRepExternal;
+struct CordRepFlat;
+struct CordRepSubstring;
+struct CordRepCrc;
+class CordRepRing;
+class CordRepBtree;
+
 class CordzInfo;
 
 
 enum CordFeatureDefaults {
-  kCordEnableBtreeDefault = false,
   kCordEnableRingBufferDefault = false,
   kCordShallowSubcordsDefault = false
 };
 
-extern std::atomic<bool> cord_btree_enabled;
 extern std::atomic<bool> cord_ring_buffer_enabled;
 extern std::atomic<bool> shallow_subcords_enabled;
 
@@ -51,10 +63,6 @@ extern std::atomic<bool> shallow_subcords_enabled;
 
 
 extern std::atomic<bool> cord_btree_exhaustive_validation;
-
-inline void enable_cord_btree(bool enable) {
-  cord_btree_enabled.store(enable, std::memory_order_relaxed);
-}
 
 inline void enable_cord_ring_buffer(bool enable) {
   cord_ring_buffer_enabled.store(enable, std::memory_order_relaxed);
@@ -81,11 +89,15 @@ enum Constants {
 };
 
 
-class Refcount {
+ABSL_ATTRIBUTE_NORETURN void LogFatalNodeType(CordRep* rep);
+
+
+
+class RefcountAndFlags {
  public:
-  constexpr Refcount() : count_{kRefIncrement} {}
+  constexpr RefcountAndFlags() : count_{kRefIncrement} {}
   struct Immortal {};
-  explicit constexpr Refcount(Immortal) : count_(kImmortalTag) {}
+  explicit constexpr RefcountAndFlags(Immortal) : count_(kImmortalFlag) {}
 
   
   inline void Increment() {
@@ -100,24 +112,25 @@ class Refcount {
   
   
   inline bool Decrement() {
-    int32_t refcount = count_.load(std::memory_order_acquire);
-    assert(refcount > 0 || refcount & kImmortalTag);
+    int32_t refcount = count_.load(std::memory_order_acquire) & kRefcountMask;
+    assert(refcount > 0 || refcount & kImmortalFlag);
     return refcount != kRefIncrement &&
-           count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel) !=
-               kRefIncrement;
+           (count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel) &
+            kRefcountMask) != kRefIncrement;
   }
 
   
   inline bool DecrementExpectHighRefcount() {
     int32_t refcount =
-        count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel);
-    assert(refcount > 0 || refcount & kImmortalTag);
+        count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel) &
+        kRefcountMask;
+    assert(refcount > 0 || refcount & kImmortalFlag);
     return refcount != kRefIncrement;
   }
 
   
   inline int32_t Get() const {
-    return count_.load(std::memory_order_acquire) >> kImmortalShift;
+    return count_.load(std::memory_order_acquire) >> kNumFlags;
   }
 
   
@@ -129,11 +142,12 @@ class Refcount {
   
   
   inline bool IsOne() {
-    return count_.load(std::memory_order_acquire) == kRefIncrement;
+    return (count_.load(std::memory_order_acquire) & kRefcountMask) ==
+           kRefIncrement;
   }
 
   bool IsImmortal() const {
-    return (count_.load(std::memory_order_relaxed) & kImmortalTag) != 0;
+    return (count_.load(std::memory_order_relaxed) & kImmortalFlag) != 0;
   }
 
  private:
@@ -142,35 +156,31 @@ class Refcount {
   
   
   
-  
-  enum {
-    kImmortalShift = 1,
-    kRefIncrement = 1 << kImmortalShift,
-    kImmortalTag = kRefIncrement - 1
+  enum Flags {
+    kNumFlags = 2,
+
+    kImmortalFlag = 0x1,
+    kReservedFlag = 0x2,
+    kRefIncrement = (1 << kNumFlags),
+
+    
+    
+    
+    
+    kRefcountMask = ~kReservedFlag,
   };
 
   std::atomic<int32_t> count_;
 };
 
 
-
-
-
-
-struct CordRepConcat;
-struct CordRepExternal;
-struct CordRepFlat;
-struct CordRepSubstring;
-class CordRepRing;
-class CordRepBtree;
-
-
 enum CordRepKind {
-  CONCAT = 0,
+  UNUSED_0 = 0,
   SUBSTRING = 1,
-  BTREE = 2,
-  RING = 3,
-  EXTERNAL = 4,
+  CRC = 2,
+  BTREE = 3,
+  RING = 4,
+  EXTERNAL = 5,
 
   
   
@@ -178,8 +188,11 @@ enum CordRepKind {
   
   
   
-  FLAT = 5,
-  MAX_FLAT_TAG = 225
+  
+  
+  
+  FLAT = 6,
+  MAX_FLAT_TAG = 248
 };
 
 
@@ -194,14 +207,26 @@ static_assert(EXTERNAL == RING + 1, "BTREE and EXTERNAL not consecutive");
 static_assert(FLAT == EXTERNAL + 1, "EXTERNAL and FLAT not consecutive");
 
 struct CordRep {
+  
+  
+  
+  
+  
+  
+  
+  struct ExtractResult {
+    CordRep* tree;
+    CordRep* extracted;
+  };
+
   CordRep() = default;
-  constexpr CordRep(Refcount::Immortal immortal, size_t l)
+  constexpr CordRep(RefcountAndFlags::Immortal immortal, size_t l)
       : length(l), refcount(immortal), tag(EXTERNAL), storage{} {}
 
   
   
   size_t length;
-  Refcount refcount;
+  RefcountAndFlags refcount;
   
   
   uint8_t tag;
@@ -218,18 +243,18 @@ struct CordRep {
 
   
   constexpr bool IsRing() const { return tag == RING; }
-  constexpr bool IsConcat() const { return tag == CONCAT; }
   constexpr bool IsSubstring() const { return tag == SUBSTRING; }
+  constexpr bool IsCrc() const { return tag == CRC; }
   constexpr bool IsExternal() const { return tag == EXTERNAL; }
   constexpr bool IsFlat() const { return tag >= FLAT; }
   constexpr bool IsBtree() const { return tag == BTREE; }
 
   inline CordRepRing* ring();
   inline const CordRepRing* ring() const;
-  inline CordRepConcat* concat();
-  inline const CordRepConcat* concat() const;
   inline CordRepSubstring* substring();
   inline const CordRepSubstring* substring() const;
+  inline CordRepCrc* crc();
+  inline const CordRepCrc* crc() const;
   inline CordRepExternal* external();
   inline const CordRepExternal* external() const;
   inline CordRepFlat* flat();
@@ -252,17 +277,23 @@ struct CordRep {
   static inline void Unref(CordRep* rep);
 };
 
-struct CordRepConcat : public CordRep {
-  CordRep* left;
-  CordRep* right;
-
-  uint8_t depth() const { return storage[0]; }
-  void set_depth(uint8_t depth) { storage[0] = depth; }
-};
-
 struct CordRepSubstring : public CordRep {
   size_t start;  
   CordRep* child;
+
+  
+  
+  
+  
+  static inline CordRepSubstring* Create(CordRep* child, size_t pos, size_t n);
+
+  
+  
+  
+  
+  
+  
+  static inline CordRep* Substring(CordRep* rep, size_t pos, size_t n);
 };
 
 
@@ -275,7 +306,7 @@ using ExternalReleaserInvoker = void (*)(CordRepExternal*);
 struct CordRepExternal : public CordRep {
   CordRepExternal() = default;
   explicit constexpr CordRepExternal(absl::string_view str)
-      : CordRep(Refcount::Immortal{}, str.size()),
+      : CordRep(RefcountAndFlags::Immortal{}, str.size()),
         base(str.data()),
         releaser_invoker(nullptr) {}
 
@@ -326,6 +357,47 @@ struct CordRepExternalImpl
   }
 };
 
+inline CordRepSubstring* CordRepSubstring::Create(CordRep* child, size_t pos,
+                                                  size_t n) {
+  assert(child != nullptr);
+  assert(n > 0);
+  assert(n < child->length);
+  assert(pos < child->length);
+  assert(n <= child->length - pos);
+
+  
+  
+  if (ABSL_PREDICT_FALSE(!(child->IsExternal() || child->IsFlat()))) {
+    LogFatalNodeType(child);
+  }
+
+  CordRepSubstring* rep = new CordRepSubstring();
+  rep->length = n;
+  rep->tag = SUBSTRING;
+  rep->start = pos;
+  rep->child = child;
+  return rep;
+}
+
+inline CordRep* CordRepSubstring::Substring(CordRep* rep, size_t pos,
+                                            size_t n) {
+  assert(rep != nullptr);
+  assert(n != 0);
+  assert(pos < rep->length);
+  assert(n <= rep->length - pos);
+  if (n == rep->length) return CordRep::Ref(rep);
+  if (rep->IsSubstring()) {
+    pos += rep->substring()->start;
+    rep = rep->substring()->child;
+  }
+  CordRepSubstring* substr = new CordRepSubstring();
+  substr->length = n;
+  substr->tag = SUBSTRING;
+  substr->start = pos;
+  substr->child = CordRep::Ref(rep);
+  return substr;
+}
+
 inline void CordRepExternal::Delete(CordRep* rep) {
   assert(rep != nullptr && rep->IsExternal());
   auto* rep_external = static_cast<CordRepExternal*>(rep);
@@ -339,7 +411,8 @@ struct ConstInitExternalStorage {
 };
 
 template <typename Str>
-CordRepExternal ConstInitExternalStorage<Str>::value(Str::value);
+ABSL_CONST_INIT CordRepExternal
+    ConstInitExternalStorage<Str>::value(Str::value);
 
 enum {
   kMaxInline = 15,
@@ -425,8 +498,8 @@ class InlineData {
   
   CordzInfo* cordz_info() const {
     assert(is_tree());
-    intptr_t info =
-        static_cast<intptr_t>(absl::big_endian::ToHost64(as_tree_.cordz_info));
+    intptr_t info = static_cast<intptr_t>(
+        absl::big_endian::ToHost64(static_cast<uint64_t>(as_tree_.cordz_info)));
     assert(info & 1);
     return reinterpret_cast<CordzInfo*>(info - 1);
   }
@@ -436,8 +509,9 @@ class InlineData {
   
   void set_cordz_info(CordzInfo* cordz_info) {
     assert(is_tree());
-    intptr_t info = reinterpret_cast<intptr_t>(cordz_info) | 1;
-    as_tree_.cordz_info = absl::big_endian::FromHost64(info);
+    uintptr_t info = reinterpret_cast<uintptr_t>(cordz_info) | 1;
+    as_tree_.cordz_info =
+        static_cast<cordz_info_t>(absl::big_endian::FromHost64(info));
   }
 
   
@@ -529,23 +603,13 @@ class InlineData {
   
   
   
-  union  {
+  union {
     char as_chars_[kMaxInline + 1];
     AsTree as_tree_;
   };
 };
 
 static_assert(sizeof(InlineData) == kMaxInline + 1, "");
-
-inline CordRepConcat* CordRep::concat() {
-  assert(IsConcat());
-  return static_cast<CordRepConcat*>(this);
-}
-
-inline const CordRepConcat* CordRep::concat() const {
-  assert(IsConcat());
-  return static_cast<const CordRepConcat*>(this);
-}
 
 inline CordRepSubstring* CordRep::substring() {
   assert(IsSubstring());
@@ -568,7 +632,9 @@ inline const CordRepExternal* CordRep::external() const {
 }
 
 inline CordRep* CordRep::Ref(CordRep* rep) {
-  assert(rep != nullptr);
+  
+  
+  ABSL_ASSUME(rep != nullptr);
   rep->refcount.Increment();
   return rep;
 }

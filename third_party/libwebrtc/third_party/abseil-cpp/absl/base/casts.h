@@ -29,25 +29,16 @@
 #include <type_traits>
 #include <utility>
 
+#if defined(__cpp_lib_bit_cast) && __cpp_lib_bit_cast >= 201806L
+#include <bit>  
+#endif  
+
 #include "absl/base/internal/identity.h"
 #include "absl/base/macros.h"
 #include "absl/meta/type_traits.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-
-namespace internal_casts {
-
-template <class Dest, class Source>
-struct is_bitcastable
-    : std::integral_constant<
-          bool,
-          sizeof(Dest) == sizeof(Source) &&
-              type_traits_internal::is_trivially_copyable<Source>::value &&
-              type_traits_internal::is_trivially_copyable<Dest>::value &&
-              std::is_default_constructible<Dest>::value> {};
-
-}  
 
 
 
@@ -148,38 +139,40 @@ constexpr To implicit_cast(typename absl::internal::identity_t<To> to) {
 
 
 
-template <
-    typename Dest, typename Source,
-    typename std::enable_if<internal_casts::is_bitcastable<Dest, Source>::value,
-                            int>::type = 0>
+
+
+
+
+#if defined(__cpp_lib_bit_cast) && __cpp_lib_bit_cast >= 201806L
+
+using std::bit_cast;
+
+#else  
+
+template <typename Dest, typename Source,
+          typename std::enable_if<
+              sizeof(Dest) == sizeof(Source) &&
+                  type_traits_internal::is_trivially_copyable<Source>::value &&
+                  type_traits_internal::is_trivially_copyable<Dest>::value
+#if !ABSL_HAVE_BUILTIN(__builtin_bit_cast)
+                  && std::is_default_constructible<Dest>::value
+#endif  
+              ,
+              int>::type = 0>
+#if ABSL_HAVE_BUILTIN(__builtin_bit_cast)
+inline constexpr Dest bit_cast(const Source& source) {
+  return __builtin_bit_cast(Dest, source);
+}
+#else
 inline Dest bit_cast(const Source& source) {
   Dest dest;
   memcpy(static_cast<void*>(std::addressof(dest)),
          static_cast<const void*>(std::addressof(source)), sizeof(dest));
   return dest;
 }
+#endif  
 
-
-
-
-
-template <
-    typename Dest, typename Source,
-    typename std::enable_if<
-        !internal_casts::is_bitcastable<Dest, Source>::value,
-        int>::type = 0>
-ABSL_DEPRECATED(
-    "absl::bit_cast type requirements were violated. Update the types "
-    "being used such that they are the same size and are both "
-    "TriviallyCopyable.")
-inline Dest bit_cast(const Source& source) {
-  static_assert(sizeof(Dest) == sizeof(Source),
-                "Source and destination types should have equal sizes.");
-
-  Dest dest;
-  memcpy(&dest, &source, sizeof(dest));
-  return dest;
-}
+#endif
 
 ABSL_NAMESPACE_END
 }  

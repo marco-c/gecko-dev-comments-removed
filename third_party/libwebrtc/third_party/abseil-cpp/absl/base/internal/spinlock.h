@@ -24,6 +24,8 @@
 
 
 
+
+
 #ifndef ABSL_BASE_INTERNAL_SPINLOCK_H_
 #define ABSL_BASE_INTERNAL_SPINLOCK_H_
 
@@ -116,6 +118,14 @@ class ABSL_LOCKABLE SpinLock {
   
   inline bool IsHeld() const {
     return (lockword_.load(std::memory_order_relaxed) & kSpinLockHeld) != 0;
+  }
+
+  
+  
+  inline void AssertHeld() const ABSL_ASSERT_EXCLUSIVE_LOCK() {
+    if (!IsHeld()) {
+      ABSL_RAW_LOG(FATAL, "thread should hold the lock on SpinLock");
+    }
   }
 
  protected:

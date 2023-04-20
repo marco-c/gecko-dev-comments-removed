@@ -22,6 +22,7 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
@@ -65,15 +66,19 @@ class SaltedSeedSeq {
 
   template <typename RandomAccessIterator>
   void generate(RandomAccessIterator begin, RandomAccessIterator end) {
+    using U = typename std::iterator_traits<RandomAccessIterator>::value_type;
+
     
     
     
-    using tag = absl::conditional_t<
-        (std::is_pointer<RandomAccessIterator>::value &&
-         std::is_same<absl::decay_t<decltype(*begin)>, uint32_t>::value),
+    using TagType = absl::conditional_t<
+        (std::is_same<U, uint32_t>::value &&
+         (std::is_pointer<RandomAccessIterator>::value ||
+          std::is_same<RandomAccessIterator,
+                       typename std::vector<U>::iterator>::value)),
         ContiguousAndUint32Tag, DefaultTag>;
     if (begin != end) {
-      generate_impl(begin, end, tag{});
+      generate_impl(TagType{}, begin, end, std::distance(begin, end));
     }
   }
 
@@ -89,8 +94,15 @@ class SaltedSeedSeq {
   struct DefaultTag {};
 
   
-  void generate_impl(uint32_t* begin, uint32_t* end, ContiguousAndUint32Tag) {
-    generate_contiguous(absl::MakeSpan(begin, end));
+  
+  
+  template <typename Contiguous>
+  void generate_impl(ContiguousAndUint32Tag, Contiguous begin, Contiguous end,
+                     size_t n) {
+    seq_->generate(begin, end);
+    const uint32_t salt = absl::random_internal::GetSaltMaterial().value_or(0);
+    auto span = absl::Span<uint32_t>(&*begin, n);
+    MixIntoSeedMaterial(absl::MakeConstSpan(&salt, 1), span);
   }
 
   
@@ -98,27 +110,13 @@ class SaltedSeedSeq {
   
   
   template <typename RandomAccessIterator>
-  void generate_impl(RandomAccessIterator begin, RandomAccessIterator end,
-                     DefaultTag) {
-    return generate_and_copy(std::distance(begin, end), begin);
-  }
-
-  
-  
-  void generate_contiguous(absl::Span<uint32_t> buffer) {
-    seq_->generate(buffer.begin(), buffer.end());
-    const uint32_t salt = absl::random_internal::GetSaltMaterial().value_or(0);
-    MixIntoSeedMaterial(absl::MakeConstSpan(&salt, 1), buffer);
-  }
-
-  
-  
-  template <typename Iterator>
-  void generate_and_copy(size_t n, Iterator out) {
+  void generate_impl(DefaultTag, RandomAccessIterator begin,
+                     RandomAccessIterator, size_t n) {
+    
     
     absl::InlinedVector<uint32_t, 8> data(n, 0);
-    generate_contiguous(absl::MakeSpan(data.data(), data.size()));
-    std::copy(data.begin(), data.end(), out);
+    generate_impl(ContiguousAndUint32Tag{}, data.begin(), data.end(), n);
+    std::copy(data.begin(), data.end(), begin);
   }
 
   

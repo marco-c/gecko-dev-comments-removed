@@ -41,6 +41,7 @@ struct CordzStatistics {
     size_t concat = 0;     
     size_t ring = 0;       
     size_t btree = 0;      
+    size_t crc = 0;        
   };
 
   

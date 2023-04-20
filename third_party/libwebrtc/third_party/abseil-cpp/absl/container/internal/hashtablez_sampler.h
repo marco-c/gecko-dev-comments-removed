@@ -44,9 +44,10 @@
 #include <memory>
 #include <vector>
 
+#include "absl/base/config.h"
 #include "absl/base/internal/per_thread_tls.h"
 #include "absl/base/optimization.h"
-#include "absl/container/internal/have_sse.h"
+#include "absl/profiling/internal/sample_recorder.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/utility/utility.h"
 
@@ -57,7 +58,7 @@ namespace container_internal {
 
 
 
-struct HashtablezInfo {
+struct HashtablezInfo : public profiling_internal::Sample<HashtablezInfo> {
   
   HashtablezInfo();
   ~HashtablezInfo();
@@ -66,7 +67,8 @@ struct HashtablezInfo {
 
   
   
-  void PrepareForSampling() ABSL_EXCLUSIVE_LOCKS_REQUIRED(init_mu);
+  void PrepareForSampling(int64_t stride, size_t inline_element_size_value)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(init_mu);
 
   
   
@@ -79,14 +81,7 @@ struct HashtablezInfo {
   std::atomic<size_t> hashes_bitwise_or;
   std::atomic<size_t> hashes_bitwise_and;
   std::atomic<size_t> hashes_bitwise_xor;
-
-  
-  
-  
-  
-  absl::Mutex init_mu;
-  HashtablezInfo* next;
-  HashtablezInfo* dead ABSL_GUARDED_BY(init_mu);
+  std::atomic<size_t> max_reserve;
 
   
   
@@ -97,10 +92,11 @@ struct HashtablezInfo {
   absl::Time create_time;
   int32_t depth;
   void* stack[kMaxStackDepth];
+  size_t inline_element_size;  
 };
 
 inline void RecordRehashSlow(HashtablezInfo* info, size_t total_probe_length) {
-#if ABSL_INTERNAL_RAW_HASH_SET_HAVE_SSE2
+#ifdef ABSL_INTERNAL_HAVE_SSE2
   total_probe_length /= 16;
 #else
   total_probe_length /= 8;
@@ -112,6 +108,18 @@ inline void RecordRehashSlow(HashtablezInfo* info, size_t total_probe_length) {
   info->num_rehashes.store(
       1 + info->num_rehashes.load(std::memory_order_relaxed),
       std::memory_order_relaxed);
+}
+
+inline void RecordReservationSlow(HashtablezInfo* info,
+                                  size_t target_capacity) {
+  info->max_reserve.store(
+      (std::max)(info->max_reserve.load(std::memory_order_relaxed),
+                 target_capacity),
+      std::memory_order_relaxed);
+}
+
+inline void RecordClearedReservationSlow(HashtablezInfo* info) {
+  info->max_reserve.store(0, std::memory_order_relaxed);
 }
 
 inline void RecordStorageChangedSlow(HashtablezInfo* info, size_t size,
@@ -137,7 +145,15 @@ inline void RecordEraseSlow(HashtablezInfo* info) {
       std::memory_order_relaxed);
 }
 
-HashtablezInfo* SampleSlow(int64_t* next_sample);
+struct SamplingState {
+  int64_t next_sample;
+  
+  
+  int64_t sample_stride;
+};
+
+HashtablezInfo* SampleSlow(SamplingState& next_sample,
+                           size_t inline_element_size);
 void UnsampleSlow(HashtablezInfo* info);
 
 #if defined(ABSL_INTERNAL_HASHTABLEZ_SAMPLE)
@@ -177,6 +193,16 @@ class HashtablezInfoHandle {
     RecordRehashSlow(info_, total_probe_length);
   }
 
+  inline void RecordReservation(size_t target_capacity) {
+    if (ABSL_PREDICT_TRUE(info_ == nullptr)) return;
+    RecordReservationSlow(info_, target_capacity);
+  }
+
+  inline void RecordClearedReservation() {
+    if (ABSL_PREDICT_TRUE(info_ == nullptr)) return;
+    RecordClearedReservationSlow(info_);
+  }
+
   inline void RecordInsert(size_t hash, size_t distance_from_desired) {
     if (ABSL_PREDICT_TRUE(info_ == nullptr)) return;
     RecordInsertSlow(info_, hash, distance_from_desired);
@@ -206,6 +232,8 @@ class HashtablezInfoHandle {
 
   inline void RecordStorageChanged(size_t , size_t ) {}
   inline void RecordRehash(size_t ) {}
+  inline void RecordReservation(size_t ) {}
+  inline void RecordClearedReservation() {}
   inline void RecordInsert(size_t , size_t ) {}
   inline void RecordErase() {}
 
@@ -215,98 +243,47 @@ class HashtablezInfoHandle {
 #endif  
 
 #if defined(ABSL_INTERNAL_HASHTABLEZ_SAMPLE)
-extern ABSL_PER_THREAD_TLS_KEYWORD int64_t global_next_sample;
+extern ABSL_PER_THREAD_TLS_KEYWORD SamplingState global_next_sample;
 #endif  
 
 
 
-inline HashtablezInfoHandle Sample() {
+inline HashtablezInfoHandle Sample(
+    size_t inline_element_size ABSL_ATTRIBUTE_UNUSED) {
 #if defined(ABSL_INTERNAL_HASHTABLEZ_SAMPLE)
-  if (ABSL_PREDICT_TRUE(--global_next_sample > 0)) {
+  if (ABSL_PREDICT_TRUE(--global_next_sample.next_sample > 0)) {
     return HashtablezInfoHandle(nullptr);
   }
-  return HashtablezInfoHandle(SampleSlow(&global_next_sample));
+  return HashtablezInfoHandle(
+      SampleSlow(global_next_sample, inline_element_size));
 #else
   return HashtablezInfoHandle(nullptr);
 #endif  
 }
 
+using HashtablezSampler =
+    ::absl::profiling_internal::SampleRecorder<HashtablezInfo>;
 
 
+HashtablezSampler& GlobalHashtablezSampler();
+
+using HashtablezConfigListener = void (*)();
+void SetHashtablezConfigListener(HashtablezConfigListener l);
 
 
-class HashtablezSampler {
- public:
-  
-  static HashtablezSampler& Global();
-
-  HashtablezSampler();
-  ~HashtablezSampler();
-
-  
-  HashtablezInfo* Register();
-
-  
-  void Unregister(HashtablezInfo* sample);
-
-  
-  
-  
-  
-  using DisposeCallback = void (*)(const HashtablezInfo&);
-  DisposeCallback SetDisposeCallback(DisposeCallback f);
-
-  
-  
-  int64_t Iterate(const std::function<void(const HashtablezInfo& stack)>& f);
-
- private:
-  void PushNew(HashtablezInfo* sample);
-  void PushDead(HashtablezInfo* sample);
-  HashtablezInfo* PopDead();
-
-  std::atomic<size_t> dropped_samples_;
-  std::atomic<size_t> size_estimate_;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  std::atomic<HashtablezInfo*> all_;
-  HashtablezInfo graveyard_;
-
-  std::atomic<DisposeCallback> dispose_;
-};
-
-
+bool IsHashtablezEnabled();
 void SetHashtablezEnabled(bool enabled);
+void SetHashtablezEnabledInternal(bool enabled);
 
 
+int32_t GetHashtablezSampleParameter();
 void SetHashtablezSampleParameter(int32_t rate);
+void SetHashtablezSampleParameterInternal(int32_t rate);
 
 
+int32_t GetHashtablezMaxSamples();
 void SetHashtablezMaxSamples(int32_t max);
+void SetHashtablezMaxSamplesInternal(int32_t max);
 
 
 

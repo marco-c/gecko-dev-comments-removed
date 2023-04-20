@@ -42,7 +42,7 @@ namespace random_internal {
 
 
 template <typename T>
-class alignas(16) randen_engine {
+class alignas(8) randen_engine {
  public:
   
   using result_type = T;
@@ -58,7 +58,8 @@ class alignas(16) randen_engine {
     return (std::numeric_limits<result_type>::max)();
   }
 
-  explicit randen_engine(result_type seed_value = 0) { seed(seed_value); }
+  randen_engine() : randen_engine(0) {}
+  explicit randen_engine(result_type seed_value) { seed(seed_value); }
 
   template <class SeedSequence,
             typename = typename absl::enable_if_t<
@@ -67,17 +68,27 @@ class alignas(16) randen_engine {
     seed(seq);
   }
 
-  randen_engine(const randen_engine&) = default;
+  
+  randen_engine(const randen_engine& other)
+      : next_(other.next_), impl_(other.impl_) {
+    std::memcpy(state(), other.state(), kStateSizeT * sizeof(result_type));
+  }
+  randen_engine& operator=(const randen_engine& other) {
+    next_ = other.next_;
+    impl_ = other.impl_;
+    std::memcpy(state(), other.state(), kStateSizeT * sizeof(result_type));
+    return *this;
+  }
 
   
   result_type operator()() {
     
+    auto* begin = state();
     if (next_ >= kStateSizeT) {
       next_ = kCapacityT;
-      impl_.Generate(state_);
+      impl_.Generate(begin);
     }
-
-    return little_endian::ToHost(state_[next_++]);
+    return little_endian::ToHost(begin[next_++]);
   }
 
   template <class SeedSequence>
@@ -93,8 +104,9 @@ class alignas(16) randen_engine {
     next_ = kStateSizeT;
     
     
-    std::fill(std::begin(state_), std::begin(state_) + kCapacityT, 0);
-    std::fill(std::begin(state_) + kCapacityT, std::end(state_), seed_value);
+    auto* begin = state();
+    std::fill(begin, begin + kCapacityT, 0);
+    std::fill(begin + kCapacityT, begin + kStateSizeT, seed_value);
   }
 
   
@@ -105,7 +117,6 @@ class alignas(16) randen_engine {
     using sequence_result_type = typename SeedSequence::result_type;
     static_assert(sizeof(sequence_result_type) == 4,
                   "SeedSequence::result_type must be 32-bit");
-
     constexpr size_t kBufferSize =
         Randen::kSeedBytes / sizeof(sequence_result_type);
     alignas(16) sequence_result_type buffer[kBufferSize];
@@ -119,8 +130,15 @@ class alignas(16) randen_engine {
     if (entropy_size < kBufferSize) {
       
       const size_t requested_entropy = (entropy_size == 0) ? 8u : entropy_size;
-      std::fill(std::begin(buffer) + requested_entropy, std::end(buffer), 0);
-      seq.generate(std::begin(buffer), std::begin(buffer) + requested_entropy);
+      std::fill(buffer + requested_entropy, buffer + kBufferSize, 0);
+      seq.generate(buffer, buffer + requested_entropy);
+#ifdef ABSL_IS_BIG_ENDIAN
+      
+      
+      for (sequence_result_type& e : buffer) {
+        e = absl::little_endian::FromHost(e);
+      }
+#endif
       
       
       
@@ -139,9 +157,9 @@ class alignas(16) randen_engine {
         std::swap(buffer[--dst], buffer[--src]);
       }
     } else {
-      seq.generate(std::begin(buffer), std::end(buffer));
+      seq.generate(buffer, buffer + kBufferSize);
     }
-    impl_.Absorb(buffer, state_);
+    impl_.Absorb(buffer, state());
 
     
     next_ = kStateSizeT;
@@ -152,9 +170,10 @@ class alignas(16) randen_engine {
     count -= step;
 
     constexpr uint64_t kRateT = kStateSizeT - kCapacityT;
+    auto* begin = state();
     while (count > 0) {
       next_ = kCapacityT;
-      impl_.Generate(state_);
+      impl_.Generate(*reinterpret_cast<result_type(*)[kStateSizeT]>(begin));
       step = std::min<uint64_t>(kRateT, count);
       count -= step;
     }
@@ -162,9 +181,9 @@ class alignas(16) randen_engine {
   }
 
   bool operator==(const randen_engine& other) const {
+    const auto* begin = state();
     return next_ == other.next_ &&
-           std::equal(std::begin(state_), std::end(state_),
-                      std::begin(other.state_));
+           std::equal(begin, begin + kStateSizeT, other.state());
   }
 
   bool operator!=(const randen_engine& other) const {
@@ -178,11 +197,12 @@ class alignas(16) randen_engine {
     using numeric_type =
         typename random_internal::stream_format_type<result_type>::type;
     auto saver = random_internal::make_ostream_state_saver(os);
-    for (const auto& elem : engine.state_) {
+    auto* it = engine.state();
+    for (auto* end = it + kStateSizeT; it < end; ++it) {
       
       
       
-      os << static_cast<numeric_type>(little_endian::FromHost(elem))
+      os << static_cast<numeric_type>(little_endian::FromHost(*it))
          << os.fill();
     }
     os << engine.next_;
@@ -208,7 +228,7 @@ class alignas(16) randen_engine {
     if (is.fail()) {
       return is;
     }
-    std::memcpy(engine.state_, state, sizeof(engine.state_));
+    std::memcpy(engine.state(), state, sizeof(state));
     engine.next_ = next;
     return is;
   }
@@ -220,7 +240,19 @@ class alignas(16) randen_engine {
       Randen::kCapacityBytes / sizeof(result_type);
 
   
-  alignas(16) result_type state_[kStateSizeT];
+  
+  result_type* state() {
+    return reinterpret_cast<result_type*>(
+        (reinterpret_cast<uintptr_t>(&raw_state_) & 0xf) ? (raw_state_ + 8)
+                                                         : raw_state_);
+  }
+  const result_type* state() const {
+    return const_cast<randen_engine*>(this)->state();
+  }
+
+  
+  
+  alignas(8) char raw_state_[Randen::kStateBytes + 8];
   size_t next_;  
   Randen impl_;
 };

@@ -21,7 +21,7 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace strings_internal {
 
-const char kBase64Chars[] =
+ABSL_CONST_INIT const char kBase64Chars[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 size_t CalculateBase64EscapedLenInternal(size_t input_len, bool do_padding) {
@@ -102,8 +102,8 @@ size_t Base64EscapeInternal(const unsigned char* src, size_t szsrc, char* dest,
     }
   }
   
-  szdest = limit_dest - cur_dest;
-  szsrc = limit_src - cur_src;
+  szdest = static_cast<size_t>(limit_dest - cur_dest);
+  szsrc = static_cast<size_t>(limit_src - cur_src);
 
   
   switch (szsrc) {
@@ -154,7 +154,8 @@ size_t Base64EscapeInternal(const unsigned char* src, size_t szsrc, char* dest,
       
       
       if (szdest < 4) return 0;
-      uint32_t in = (cur_src[0] << 16) + absl::big_endian::Load16(cur_src + 1);
+      uint32_t in =
+          (uint32_t{cur_src[0]} << 16) + absl::big_endian::Load16(cur_src + 1);
       cur_dest[0] = base64[in >> 18];
       in &= 0x3FFFF;
       cur_dest[1] = base64[in >> 12];
@@ -172,7 +173,7 @@ size_t Base64EscapeInternal(const unsigned char* src, size_t szsrc, char* dest,
       ABSL_RAW_LOG(FATAL, "Logic problem? szsrc = %zu", szsrc);
       break;
   }
-  return (cur_dest - dest);
+  return static_cast<size_t>(cur_dest - dest);
 }
 
 }  

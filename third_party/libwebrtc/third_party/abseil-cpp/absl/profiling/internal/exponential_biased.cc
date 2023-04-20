@@ -12,7 +12,7 @@
 
 
 
-#include "absl/base/internal/exponential_biased.h"
+#include "absl/profiling/internal/exponential_biased.h"
 
 #include <stdint.h>
 
@@ -26,7 +26,7 @@
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-namespace base_internal {
+namespace profiling_internal {
 
 
 

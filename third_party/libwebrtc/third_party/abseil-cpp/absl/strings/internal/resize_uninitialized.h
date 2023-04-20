@@ -31,6 +31,7 @@ namespace strings_internal {
 
 
 
+
 template <typename string_type, typename = void>
 struct ResizeUninitializedTraits {
   using HasMember = std::false_type;
@@ -81,12 +82,34 @@ void STLStringReserveAmortized(string_type* s, size_t new_size) {
 
 
 
+template <typename string_type, typename = void>
+struct AppendUninitializedTraits {
+  static void Append(string_type* s, size_t n) {
+    s->append(n, typename string_type::value_type());
+  }
+};
+
+template <typename string_type>
+struct AppendUninitializedTraits<
+    string_type, absl::void_t<decltype(std::declval<string_type&>()
+                                           .__append_default_init(237))> > {
+  static void Append(string_type* s, size_t n) {
+    s->__append_default_init(n);
+  }
+};
+
+
+
 
 
 template <typename string_type>
 void STLStringResizeUninitializedAmortized(string_type* s, size_t new_size) {
-  STLStringReserveAmortized(s, new_size);
-  STLStringResizeUninitialized(s, new_size);
+  const size_t size = s->size();
+  if (new_size > size) {
+    AppendUninitializedTraits<string_type>::Append(s, new_size - size);
+  } else {
+    s->erase(new_size);
+  }
 }
 
 }  
