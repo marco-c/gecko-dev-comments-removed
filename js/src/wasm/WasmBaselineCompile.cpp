@@ -6685,12 +6685,14 @@ bool BaseCompiler::emitStructNew() {
   
   
 
+  bool isOutlineStruct = structType.size_ > WasmStructObject_MaxInlineBytes;
+
   
   
   needPtr(RegPtr(PreBarrierReg));
 
-  RegRef rp = popRef();
-  RegPtr rbase = needPtr();
+  RegRef object = popRef();
+  RegPtr outlineBase = isOutlineStruct ? needPtr() : RegPtr();
 
   
   freePtr(RegPtr(PreBarrierReg));
@@ -6718,34 +6720,40 @@ bool BaseCompiler::emitStructNew() {
                                                  &areaIsOutline, &areaOffset);
 
     
-    if (areaIsOutline) {
-      masm.loadPtr(Address(rp, WasmStructObject::offsetOfOutlineData()), rbase);
-    } else {
-      masm.computeEffectiveAddress(
-          Address(rp, WasmStructObject::offsetOfInlineData()), rbase);
-    }
-
-    
     if (fieldType.isRefRepr()) {
       needPtr(RegPtr(PreBarrierReg));
     }
-
     AnyReg value = popAny();
-
     
     if (fieldType.isRefRepr()) {
       freePtr(RegPtr(PreBarrierReg));
     }
 
-    
-    if (!emitGcStructSet<NoNullCheck>(rp, rbase, areaOffset, fieldType,
-                                      value)) {
-      return false;
+    if (areaIsOutline) {
+      
+      masm.loadPtr(Address(object, WasmStructObject::offsetOfOutlineData()),
+                   outlineBase);
+
+      
+      if (!emitGcStructSet<NoNullCheck>(object, outlineBase, areaOffset,
+                                        fieldType, value)) {
+        return false;
+      }
+    } else {
+      
+      if (!emitGcStructSet<NoNullCheck>(
+              object, RegPtr(object),
+              WasmStructObject::offsetOfInlineData() + areaOffset, fieldType,
+              value)) {
+        return false;
+      }
     }
   }
 
-  freePtr(rbase);
-  pushRef(rp);
+  if (isOutlineStruct) {
+    freePtr(outlineBase);
+  }
+  pushRef(object);
 
   return true;
 }
@@ -6779,8 +6787,6 @@ bool BaseCompiler::emitStructGet(FieldWideningOp wideningOp) {
 
   const StructType& structType = (*moduleEnv_.types)[typeIndex].structType();
 
-  RegRef rp = popRef();
-
   
   FieldType fieldType = structType.fields_[fieldIndex].type;
   uint32_t fieldOffset = structType.fields_[fieldIndex].offset;
@@ -6790,24 +6796,23 @@ bool BaseCompiler::emitStructGet(FieldWideningOp wideningOp) {
   WasmStructObject::fieldOffsetToAreaAndOffset(fieldType, fieldOffset,
                                                &areaIsOutline, &areaOffset);
 
-  
-  RegPtr rbase = needPtr();
+  RegRef object = popRef();
   if (areaIsOutline) {
+    RegPtr outlineBase = needPtr();
     SignalNullCheck::emitTrapSite(this);
-    masm.loadPtr(Address(rp, WasmStructObject::offsetOfOutlineData()), rbase);
+    masm.loadPtr(Address(object, WasmStructObject::offsetOfOutlineData()),
+                 outlineBase);
     
     emitGcGet<Address, NoNullCheck>(fieldType, wideningOp,
-                                    Address(rbase, areaOffset));
+                                    Address(outlineBase, areaOffset));
+    freePtr(outlineBase);
   } else {
-    masm.computeEffectiveAddress(
-        Address(rp, WasmStructObject::offsetOfInlineData()), rbase);
     
-    emitGcGet<Address, SignalNullCheck>(fieldType, wideningOp,
-                                        Address(rbase, areaOffset));
+    emitGcGet<Address, SignalNullCheck>(
+        fieldType, wideningOp,
+        Address(object, WasmStructObject::offsetOfInlineData() + areaOffset));
   }
-
-  freePtr(rbase);
-  freeRef(rp);
+  freeRef(object);
 
   return true;
 }
@@ -6828,21 +6833,6 @@ bool BaseCompiler::emitStructSet() {
   const StructField& structField = structType.fields_[fieldIndex];
 
   
-  
-  if (structField.type.isRefRepr()) {
-    needPtr(RegPtr(PreBarrierReg));
-  }
-
-  RegPtr rbase = needPtr();
-  AnyReg value = popAny();
-  RegRef rp = popRef();
-
-  
-  if (structField.type.isRefRepr()) {
-    freePtr(RegPtr(PreBarrierReg));
-  }
-
-  
   FieldType fieldType = structType.fields_[fieldIndex].type;
   uint32_t fieldOffset = structType.fields_[fieldIndex].offset;
 
@@ -6852,25 +6842,43 @@ bool BaseCompiler::emitStructSet() {
                                                &areaIsOutline, &areaOffset);
 
   
+  
+  if (structField.type.isRefRepr()) {
+    needPtr(RegPtr(PreBarrierReg));
+  }
+
+  RegPtr outlineBase = areaIsOutline ? needPtr() : RegPtr();
+  AnyReg value = popAny();
+  RegRef object = popRef();
+
+  
+  if (structField.type.isRefRepr()) {
+    freePtr(RegPtr(PreBarrierReg));
+  }
+
+  
   if (areaIsOutline) {
     SignalNullCheck::emitTrapSite(this);
-    masm.loadPtr(Address(rp, WasmStructObject::offsetOfOutlineData()), rbase);
-    if (!emitGcStructSet<NoNullCheck>(rp, rbase, areaOffset, fieldType,
-                                      value)) {
+    masm.loadPtr(Address(object, WasmStructObject::offsetOfOutlineData()),
+                 outlineBase);
+    if (!emitGcStructSet<NoNullCheck>(object, outlineBase, areaOffset,
+                                      fieldType, value)) {
       return false;
     }
   } else {
-    masm.computeEffectiveAddress(
-        Address(rp, WasmStructObject::offsetOfInlineData()), rbase);
     
-    if (!emitGcStructSet<SignalNullCheck>(rp, rbase, areaOffset, fieldType,
-                                          value)) {
+    if (!emitGcStructSet<SignalNullCheck>(
+            object, RegPtr(object),
+            WasmStructObject::offsetOfInlineData() + areaOffset, fieldType,
+            value)) {
       return false;
     }
   }
 
-  freePtr(rbase);
-  freeRef(rp);
+  if (areaIsOutline) {
+    freePtr(outlineBase);
+  }
+  freeRef(object);
 
   return true;
 }
