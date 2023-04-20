@@ -18,7 +18,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/types/optional.h"
 #include "api/field_trials_view.h"
 #include "api/function_view.h"
@@ -42,10 +41,6 @@ namespace webrtc {
 
 class PacingController {
  public:
-  
-  
-  enum class ProcessMode { kPeriodic, kDynamic };
-
   class PacketSender {
    public:
     virtual ~PacketSender() = default;
@@ -124,12 +119,6 @@ class PacingController {
   PacingController(Clock* clock,
                    PacketSender* packet_sender,
                    const FieldTrialsView& field_trials);
-
-  ABSL_DEPRECATED("Use constructor without mode parameter instead.")
-  PacingController(Clock* clock,
-                   PacketSender* packet_sender,
-                   const FieldTrialsView& field_trials,
-                   ProcessMode mode);
 
   ~PacingController();
 
