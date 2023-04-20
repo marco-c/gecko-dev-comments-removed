@@ -461,6 +461,20 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   
   
   
+  
+  
+  
+  
+  
+  absl::optional<VideoSourceRestrictions> latest_restrictions_
+      RTC_GUARDED_BY(&encoder_queue_);
+  absl::optional<VideoSourceRestrictions> animate_restrictions_
+      RTC_GUARDED_BY(&encoder_queue_);
+
+  
+  
+  
+  
   ScopedTaskSafety task_safety_;
 
   
