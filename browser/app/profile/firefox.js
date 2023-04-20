@@ -2780,6 +2780,9 @@ pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
 pref("cookiebanners.ui.desktop.enabled", false);
 
 
+pref("cookiebanners.ui.desktop.cfrVariant", 0);
+
+
 
 
 
