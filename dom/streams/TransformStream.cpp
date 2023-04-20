@@ -137,7 +137,7 @@ void TransformStreamErrorWritableAndUnblockWrite(JSContext* aCx,
   
   
   if (aStream->Backpressure()) {
-    aStream->SetBackpressure(false, aRv);
+    aStream->SetBackpressure(false);
   }
 }
 
@@ -460,7 +460,7 @@ class TransformStreamUnderlyingSourceAlgorithms final
     MOZ_ASSERT(mStream->BackpressureChangePromise());
 
     
-    mStream->SetBackpressure(false, aRv);
+    mStream->SetBackpressure(false);
 
     
     return do_AddRef(mStream->BackpressureChangePromise());
@@ -506,7 +506,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourceAlgorithmsBase)
 
 
-void TransformStream::SetBackpressure(bool aBackpressure, ErrorResult& aRv) {
+void TransformStream::SetBackpressure(bool aBackpressure) {
   
   MOZ_ASSERT(Backpressure() != aBackpressure);
 
@@ -569,7 +569,7 @@ void TransformStream::Initialize(JSContext* aCx, Promise* aStartPromise,
   mBackpressureChangePromise = nullptr;
 
   
-  SetBackpressure(true, aRv);
+  SetBackpressure(true);
   if (aRv.Failed()) {
     return;
   }

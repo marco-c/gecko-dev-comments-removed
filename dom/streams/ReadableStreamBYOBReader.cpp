@@ -60,10 +60,7 @@ void SetUpReadableStreamBYOBReader(ReadableStreamBYOBReader* reader,
   }
 
   
-  ReadableStreamReaderGenericInitialize(reader, &stream, rv);
-  if (rv.Failed()) {
-    return;
-  }
+  ReadableStreamReaderGenericInitialize(reader, &stream);
 
   
   reader->ReadIntoRequests().clear();

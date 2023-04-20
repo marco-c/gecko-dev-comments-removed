@@ -177,7 +177,7 @@ class SetUpTransformWritableMessageEventListener final
   
   Promise* BackpressurePromise() { return mBackpressurePromise; }
 
-  void CreateBackpressurePromise(ErrorResult& aRv) {
+  void CreateBackpressurePromise() {
     mBackpressurePromise =
         Promise::CreateInfallible(mController->GetParentObject());
   }
@@ -317,10 +317,7 @@ class CrossRealmWritableUnderlyingSinkAlgorithms final
     
     
     if (!mListener->BackpressurePromise()) {
-      mListener->CreateBackpressurePromise(aRv);
-      if (aRv.Failed()) {
-        return nullptr;
-      }
+      mListener->CreateBackpressurePromise();
       mListener->BackpressurePromise()->MaybeResolveWithUndefined();
     }
 
@@ -333,11 +330,7 @@ class CrossRealmWritableUnderlyingSinkAlgorithms final
                MessagePort* aPort,
                JS::Handle<JS::Value> aChunk) -> already_AddRefed<Promise> {
               
-              aListener->CreateBackpressurePromise(aRv);
-              if (aRv.Failed()) {
-                aPort->Close();
-                return nullptr;
-              }
+              aListener->CreateBackpressurePromise();
 
               
               

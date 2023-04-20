@@ -168,10 +168,7 @@ void SetUpWritableStreamDefaultController(
   bool backpressure = aController->GetBackpressure();
 
   
-  aStream->UpdateBackpressure(backpressure, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  aStream->UpdateBackpressure(backpressure);
 
   
   
@@ -342,10 +339,7 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessWrite(
               bool backpressure = aController->GetBackpressure();
               
               
-              stream->UpdateBackpressure(backpressure, aRv);
-              if (aRv.Failed()) {
-                return;
-              }
+              stream->UpdateBackpressure(backpressure);
             }
 
             
@@ -483,10 +477,7 @@ void WritableStreamDefaultControllerWrite(
 
     
     
-    stream->UpdateBackpressure(backpressure, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+    stream->UpdateBackpressure(backpressure);
   }
 
   

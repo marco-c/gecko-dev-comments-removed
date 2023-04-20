@@ -392,10 +392,7 @@ void WritableStream::StartErroring(JSContext* aCx,
   
   
   if (writer) {
-    WritableStreamDefaultWriterEnsureReadyPromiseRejected(writer, aReason, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+    WritableStreamDefaultWriterEnsureReadyPromiseRejected(writer, aReason);
   }
 
   
@@ -407,7 +404,7 @@ void WritableStream::StartErroring(JSContext* aCx,
 }
 
 
-void WritableStream::UpdateBackpressure(bool aBackpressure, ErrorResult& aRv) {
+void WritableStream::UpdateBackpressure(bool aBackpressure) {
   
   MOZ_ASSERT(mState == WriterState::Writable);
   
@@ -723,8 +720,8 @@ already_AddRefed<WritableStreamDefaultWriter> WritableStream::GetWriter(
 }
 
 
-already_AddRefed<Promise> WritableStreamAddWriteRequest(WritableStream* aStream,
-                                                        ErrorResult& aRv) {
+already_AddRefed<Promise> WritableStreamAddWriteRequest(
+    WritableStream* aStream) {
   
   MOZ_ASSERT(IsWritableStreamLocked(aStream));
 
