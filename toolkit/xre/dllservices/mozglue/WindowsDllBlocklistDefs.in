@@ -310,6 +310,12 @@ BROWSER_PROCESS += [
 
     
     DllBlocklistEntry("explorerpatcher.amd64.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("ss3devprops.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("audiodevprops2.dll", (2, 6, 14, 0)),
 ]
 
 CHILD_PROCESSES += [
