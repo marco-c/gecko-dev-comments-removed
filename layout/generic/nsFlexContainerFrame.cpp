@@ -1124,6 +1124,23 @@ struct nsFlexContainerFrame::PerFragmentFlexData final {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nscoord mCumulativeBEndEdgeShift = 0;
+
+  
+  
+  
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Prop, PerFragmentFlexData)
 };
 
@@ -4472,28 +4489,18 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     fragmentData = *fragmentDataProp;
   }
 
-  const LogicalSize contentBoxSize =
-      axisTracker.LogicalSizeFromFlexRelativeSizes(flr.mContentBoxMainSize,
-                                                   flr.mContentBoxCrossSize);
+  LogicalSize contentBoxSize = axisTracker.LogicalSizeFromFlexRelativeSizes(
+      flr.mContentBoxMainSize, flr.mContentBoxCrossSize);
+
   const nscoord consumedBSize = CalcAndCacheConsumedBSize();
   const nscoord effectiveContentBSize =
       contentBoxSize.BSize(wm) - consumedBSize;
   LogicalMargin borderPadding = aReflowInput.ComputedLogicalBorderPadding(wm);
-  bool mayNeedNextInFlow = false;
   if (MOZ_UNLIKELY(aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE)) {
     
     
     
     borderPadding.ApplySkipSides(PreReflowBlockLevelLogicalSkipSides());
-    
-    
-    const LogicalSize availableSizeForItems =
-        ComputeAvailableSizeForItems(aReflowInput, borderPadding);
-    mayNeedNextInFlow = effectiveContentBSize > availableSizeForItems.BSize(wm);
-    if (mayNeedNextInFlow && aReflowInput.mStyleBorder->mBoxDecorationBreak ==
-                                 StyleBoxDecorationBreak::Slice) {
-      borderPadding.BEnd(wm) = 0;
-    }
   }
 
   
@@ -4526,6 +4533,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
       ReflowChildren(aReflowInput, containerSize, availableSizeForItems,
                      borderPadding, axisTracker, flr, fragmentData);
 
+  bool mayNeedNextInFlow = false;
   if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
     
     
@@ -4536,6 +4544,23 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     fragmentData.mSumOfChildrenBSize +=
         std::max(maxBlockEndEdgeOfChildren - borderPadding.BStart(wm),
                  availableSizeForItems.BSize(wm));
+
+    
+    
+    
+    if (aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
+      contentBoxSize.BSize(wm) = aReflowInput.ApplyMinMaxBSize(
+          contentBoxSize.BSize(wm) + fragmentData.mCumulativeBEndEdgeShift);
+    }
+
+    
+    
+    mayNeedNextInFlow = contentBoxSize.BSize(wm) - consumedBSize >
+                        availableSizeForItems.BSize(wm);
+    if (mayNeedNextInFlow && aReflowInput.mStyleBorder->mBoxDecorationBreak ==
+                                 StyleBoxDecorationBreak::Slice) {
+      borderPadding.BEnd(wm) = 0;
+    }
   }
 
   PopulateReflowOutput(aReflowOutput, aReflowInput, aStatus, contentBoxSize,
@@ -5134,6 +5159,64 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
   return flr;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct FirstLineOrFirstItemBAxisMetrics final {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nscoord mBEndEdgeShift = 0;
+
+  
+  
+  
+  
+  
+  Maybe<std::pair<nscoord, nscoord>> mMaxBEndEdge;
+};
+
 std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
     const ReflowInput& aReflowInput, const nsSize& aContainerSize,
     const LogicalSize& aAvailableSizeForItems,
@@ -5158,17 +5241,29 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
   
   nscoord maxBlockEndEdgeOfChildren = containerContentBoxOrigin.B(flexWM);
 
+  FirstLineOrFirstItemBAxisMetrics bAxisMetrics;
   FrameHashtable pushedItems;
   FrameHashtable incompleteItems;
   FrameHashtable overflowIncompleteItems;
 
+  const bool isSingleLine =
+      StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
+
   
   
   for (const FlexLine& line : aFlr.mLines) {
+    const bool isInFirstLine = &line == &aFlr.mLines[0];
+
     for (const FlexItem& item : line.Items()) {
       LogicalPoint framePos = aAxisTracker.LogicalPointFromFlexRelativePoint(
           item.MainPosition(), item.CrossPosition(), aFlr.mContentBoxMainSize,
           aFlr.mContentBoxCrossSize);
+      
+      
+      
+      
+      
+      Maybe<nscoord> frameBPosBeforePerItemShift;
 
       if (item.Frame()->GetPrevInFlow()) {
         
@@ -5177,7 +5272,60 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
       } else if (GetPrevInFlow()) {
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         framePos.B(flexWM) -= aFragmentData.mSumOfChildrenBSize;
+        framePos.B(flexWM) += aFragmentData.mCumulativeBEndEdgeShift;
+
+        
+        auto GetPerItemPositionShiftToBEnd = [&]() {
+          if (framePos.B(flexWM) >= 0) {
+            
+            
+            return 0;
+          }
+
+          
+          
+          
+          
+          
+          
+          
+          return -framePos.B(flexWM);
+        };
+
+        if (aAxisTracker.IsRowOriented()) {
+          if (isInFirstLine) {
+            frameBPosBeforePerItemShift.emplace(framePos.B(flexWM));
+            framePos.B(flexWM) += GetPerItemPositionShiftToBEnd();
+          } else {
+            
+            
+            
+            framePos.B(flexWM) += bAxisMetrics.mBEndEdgeShift;
+          }
+        } else {
+          MOZ_ASSERT(aAxisTracker.IsColumnOriented());
+          if (isSingleLine) {
+            if (&item == firstItem) {
+              bAxisMetrics.mBEndEdgeShift = GetPerItemPositionShiftToBEnd();
+            }
+            framePos.B(flexWM) += bAxisMetrics.mBEndEdgeShift;
+          } else {
+            
+            
+            
+          }
+        }
       }
 
       
@@ -5201,6 +5349,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
       const bool childBPosExceedAvailableSpaceBEnd =
           availableBSizeForItem != NS_UNCONSTRAINEDSIZE &&
           availableBSizeForItem <= 0;
+      bool itemInPushedItems = false;
       if (childBPosExceedAvailableSpaceBEnd) {
         
         
@@ -5214,6 +5363,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
             "next-in-flow due to position below available space's block-end",
             item.Frame());
         pushedItems.Insert(item.Frame());
+        itemInPushedItems = true;
       } else if (item.NeedsFinalReflow(aReflowInput)) {
         
         const WritingMode itemWM = item.GetWritingMode();
@@ -5226,7 +5376,31 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
             ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
                            availableSize, aContainerSize);
 
-        if (childReflowStatus.IsIncomplete()) {
+        const bool shouldPushItem = [&]() {
+          if (framePos.B(flexWM) == containerContentBoxOrigin.B(flexWM)) {
+            
+            
+            return false;
+          }
+          if (item.Frame()->BSize() <= availableBSizeForItem) {
+            return false;
+          }
+          if (aAxisTracker.IsColumnOriented() &&
+              item.Frame()->StyleDisplay()->mBreakBefore ==
+                  StyleBreakBetween::Avoid) {
+            return false;
+          }
+          return true;
+        }();
+        if (shouldPushItem) {
+          FLEX_LOG(
+              "[frag] Flex item %p needed to be pushed to container's "
+              "next-in-flow because its block-size is larger than the "
+              "available space",
+              item.Frame());
+          pushedItems.Insert(item.Frame());
+          itemInPushedItems = true;
+        } else if (childReflowStatus.IsIncomplete()) {
           incompleteItems.Insert(item.Frame());
         } else if (childReflowStatus.IsOverflowIncomplete()) {
           overflowIncompleteItems.Insert(item.Frame());
@@ -5235,13 +5409,33 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
         MoveFlexItemToFinalPosition(item, framePos, aContainerSize);
       }
 
-      if (!childBPosExceedAvailableSpaceBEnd) {
+      if (!itemInPushedItems) {
+        const nscoord itemBSize = item.Frame()->BSize(flexWM);
+        const nscoord bEndEdgeAfterPerItemShift =
+            framePos.B(flexWM) + itemBSize;
+
         
         
         
         maxBlockEndEdgeOfChildren =
-            std::max(maxBlockEndEdgeOfChildren,
-                     framePos.B(flexWM) + item.Frame()->BSize(flexWM));
+            std::max(maxBlockEndEdgeOfChildren, bEndEdgeAfterPerItemShift);
+
+        if (frameBPosBeforePerItemShift) {
+          
+          
+          const nscoord bEndEdgeBeforePerItemShift =
+              containerContentBoxOrigin.B(flexWM) +
+              *frameBPosBeforePerItemShift + itemBSize;
+
+          if (bAxisMetrics.mMaxBEndEdge) {
+            auto& [before, after] = *bAxisMetrics.mMaxBEndEdge;
+            before = std::max(before, bEndEdgeBeforePerItemShift);
+            after = std::max(after, bEndEdgeAfterPerItemShift);
+          } else {
+            bAxisMetrics.mMaxBEndEdge.emplace(bEndEdgeBeforePerItemShift,
+                                              bEndEdgeAfterPerItemShift);
+          }
+        }
       }
 
       
@@ -5262,6 +5456,15 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
         aFlr.mAscent = framePos.B(flexWM) + item.ResolvedAscent(true);
       }
     }
+
+    
+    
+    
+    if (GetPrevInFlow() && aAxisTracker.IsRowOriented() && isInFirstLine &&
+        bAxisMetrics.mMaxBEndEdge) {
+      auto& [before, after] = *bAxisMetrics.mMaxBEndEdge;
+      bAxisMetrics.mBEndEdgeShift = after - before;
+    }
   }
 
   if (!aFlr.mPlaceholders.IsEmpty()) {
@@ -5274,6 +5477,10 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
 
   if (!pushedItems.IsEmpty()) {
     AddStateBits(NS_STATE_FLEX_DID_PUSH_ITEMS);
+  }
+
+  if (GetPrevInFlow()) {
+    aFragmentData.mCumulativeBEndEdgeShift += bAxisMetrics.mBEndEdgeShift;
   }
 
   return {maxBlockEndEdgeOfChildren, anyChildIncomplete};
