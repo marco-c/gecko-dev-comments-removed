@@ -35,6 +35,9 @@ computeExpectedScore = (impactRegionArea, moveDistance) => {
 };
 
 
+let watcher_entry_record = [];
+
+
 
 
 
@@ -61,6 +64,7 @@ ScoreWatcher = function() {
     list.getEntries().forEach(entry => {
       this.lastEntry = entry;
       this.score += entry.value;
+      watcher_entry_record.push({startTime: entry.startTime, score: entry.value});
       if (!entry.hadRecentInput)
         this.scoreWithInputExclusion += entry.value;
       this.resolve();
@@ -74,6 +78,10 @@ ScoreWatcher.prototype.checkExpectation = function(expectation) {
     assert_equals(this.score, expectation.score);
   if (expectation.sources)
     check_sources(expectation.sources, this.lastEntry.sources);
+};
+
+ScoreWatcher.prototype.get_entry_record = function() {
+  return watcher_entry_record;
 };
 
 check_sources = (expect_sources, actual_sources) => {
