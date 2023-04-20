@@ -104,12 +104,17 @@ function withFullyLoadedAboutHome(taskFn) {
 
 
 
+
+
+
+
 async function simulateRestart(
   browser,
   {
     withAutoShutdownWrite = true,
     ensureCacheWinsRace = true,
     expectTimeout = false,
+    skipAboutHomeLoad = false,
   } = {}
 ) {
   info("Simulating restart of the browser");
@@ -174,11 +179,13 @@ async function simulateRestart(
     }
   }
 
-  info("Waiting for about:home to load");
-  let loaded = BrowserTestUtils.browserLoaded(browser, false, "about:home");
-  BrowserTestUtils.loadURIString(browser, "about:home");
-  await loaded;
-  info("about:home loaded");
+  if (!skipAboutHomeLoad) {
+    info("Waiting for about:home to load");
+    let loaded = BrowserTestUtils.browserLoaded(browser, false, "about:home");
+    BrowserTestUtils.loadURIString(browser, "about:home");
+    await loaded;
+    info("about:home loaded");
+  }
 }
 
 

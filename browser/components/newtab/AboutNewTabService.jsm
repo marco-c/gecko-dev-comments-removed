@@ -97,6 +97,7 @@ const AboutHomeStartupCacheChild = {
     PAGE_CONSUMED: 2,
     PAGE_AND_SCRIPT_CONSUMED: 3,
     FAILED: 4,
+    DISQUALIFIED: 5,
   },
   REQUEST_TYPE: {
     PAGE: 0,
@@ -381,6 +382,19 @@ const AboutHomeStartupCacheChild = {
       );
     }
   },
+
+  
+
+
+
+
+
+  disqualifyCache() {
+    if (this._state === this.STATES.UNCONSUMED) {
+      this.setState(this.STATES.DISQUALIFIED);
+      this.reportUsageResult(false );
+    }
+  },
 };
 
 
@@ -483,6 +497,20 @@ class AboutNewTabChildService extends BaseAboutNewTabService {
     );
     fileChannel.originalURI = uri;
     return fileChannel;
+  }
+
+  get defaultURL() {
+    if (IS_PRIVILEGED_PROCESS) {
+      
+      
+      
+      
+      
+      
+      AboutHomeStartupCacheChild.disqualifyCache();
+    }
+
+    return super.defaultURL;
   }
 }
 

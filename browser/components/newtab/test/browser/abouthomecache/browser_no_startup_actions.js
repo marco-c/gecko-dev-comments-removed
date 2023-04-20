@@ -13,6 +13,11 @@
 add_task(async function test_no_startup_actions() {
   await withFullyLoadedAboutHome(async browser => {
     
+    
+    
+    
+    
+    await simulateRestart(browser);
     await clearCache();
     await simulateRestart(browser);
     await ensureCachedAboutHome(browser);
