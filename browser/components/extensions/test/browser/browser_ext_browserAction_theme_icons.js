@@ -65,22 +65,13 @@ async function testStaticTheme(options) {
   
   
   if (defaultArea == "menupanel") {
-    if (window.gUnifiedExtensions.isEnabled) {
-      let shown = BrowserTestUtils.waitForPopupEvent(
-        window.gUnifiedExtensions.panel,
-        "shown"
-      );
-      window.gUnifiedExtensions.togglePanel();
-      await shown;
-    } else {
-      let overflowButton = document.getElementById("nav-bar-overflow-button");
-      await waitForElementShown(overflowButton.icon);
-      info("Open overflow menu");
-      let menu = document.getElementById("widget-overflow");
-      let shown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-      overflowButton.click();
-      await shown;
-    }
+    let overflowButton = document.getElementById("nav-bar-overflow-button");
+    await waitForElementShown(overflowButton.icon);
+    info("Open overflow menu");
+    let menu = document.getElementById("widget-overflow");
+    let shown = BrowserTestUtils.waitForEvent(menu, "popupshown");
+    overflowButton.click();
+    await shown;
   }
 
   
@@ -344,7 +335,6 @@ add_task(async function browseraction_theme_icons_dynamic_theme() {
     manifest: {
       browser_action: {
         default_icon: "default.png",
-        default_area: "navbar",
         theme_icons: [
           {
             light: "light.png",
