@@ -45,6 +45,9 @@ class NamesCollection {
   size_t size() const { return size_; }
 
   
+  size_t GetKnownSize() const { return names_.size(); }
+
+  
   
   size_t index(absl::string_view name) const { return index_.at(name); }
 
