@@ -89,7 +89,7 @@ define(function(require, exports, module) {
     
     
     
-    let [tagName, ...attributesAndChildren] = jsonMl;
+    let [tagName, ...attributesAndChildren] = jsonMl ?? [];
 
     if (!ALLOWED_TAGS.has(tagName)) {
       tagName = "div";
