@@ -3,7 +3,7 @@
 
 
 
-from FrameClass import Frame, AbstractFrame, LEAF, NOT_LEAF, DYNAMIC_LEAF
+from FrameClass import DYNAMIC_LEAF, LEAF, NOT_LEAF, AbstractFrame, Frame
 
 FRAME_CLASSES = [
     Frame("BRFrame", "Br", LEAF),

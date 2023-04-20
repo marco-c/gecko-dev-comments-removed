@@ -2,22 +2,16 @@
 
 
 
-from __future__ import absolute_import, unicode_literals, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import re
 import sys
 from argparse import Namespace
 
-from mozbuild.base import (
-    MachCommandConditions as conditions,
-    MozbuildObject,
-)
-
-from mach.decorators import (
-    Command,
-)
-
+from mach.decorators import Command
+from mozbuild.base import MachCommandConditions as conditions
+from mozbuild.base import MozbuildObject
 
 parser = None
 
@@ -279,8 +273,8 @@ def _run_reftest(command_context, **kwargs):
     reftest.log_manager.enable_unstructured()
     if conditions.is_android(command_context):
         from mozrunner.devices.android_device import (
-            verify_android_device,
             InstallIntent,
+            verify_android_device,
         )
 
         install = InstallIntent.NO if kwargs.get("no_install") else InstallIntent.YES
