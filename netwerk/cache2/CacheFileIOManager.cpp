@@ -38,6 +38,7 @@
 
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasksRunner.h"
+#  include "nsIBackgroundTasks.h"
 #endif
 
 
@@ -1371,6 +1372,22 @@ nsresult CacheFileIOManager::OnProfile() {
   return NS_OK;
 }
 
+static bool inBackgroundTask() {
+  MOZ_ASSERT(NS_IsMainThread(), "backgroundtasks are main thread only");
+#if defined(MOZ_BACKGROUNDTASKS)
+  nsCOMPtr<nsIBackgroundTasks> backgroundTaskService =
+      do_GetService("@mozilla.org/backgroundtasks;1");
+  if (!backgroundTaskService) {
+    return false;
+  }
+  bool isBackgroundTask = false;
+  backgroundTaskService->GetIsBackgroundTaskMode(&isBackgroundTask);
+  return isBackgroundTask;
+#else
+  return false;
+#endif
+}
+
 
 nsresult CacheFileIOManager::OnDelayedStartupFinished() {
   
@@ -1380,6 +1397,12 @@ nsresult CacheFileIOManager::OnDelayedStartupFinished() {
     return NS_OK;
   }
   if (!StaticPrefs::network_cache_shutdown_purge_in_background_task()) {
+    return NS_OK;
+  }
+
+  
+  
+  if (inBackgroundTask()) {
     return NS_OK;
   }
 
@@ -4119,6 +4142,12 @@ nsresult CacheFileIOManager::DispatchPurgeTask(
 void CacheFileIOManager::SyncRemoveAllCacheFiles() {
   LOG(("CacheFileIOManager::SyncRemoveAllCacheFiles()"));
   nsresult rv;
+
+  
+  
+  if (inBackgroundTask()) {
+    return;
+  }
 
   if (StaticPrefs::network_cache_shutdown_purge_in_background_task()) {
     rv = [&]() -> nsresult {
