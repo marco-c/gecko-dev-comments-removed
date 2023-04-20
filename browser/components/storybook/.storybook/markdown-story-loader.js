@@ -17,6 +17,8 @@
 
 const path = require("path");
 
+const projectRoot = path.resolve(__dirname, "../../../../");
+
 
 
 
@@ -56,7 +58,22 @@ function toPascalCase(str) {
 
 module.exports = function markdownStoryLoader(source) {
   
-  let storyTitle = getDocsStoryTitle(this.resourcePath);
+  let storyPath = "Docs";
+
+  
+  let relativePath = path
+    .relative(projectRoot, this.resourcePath)
+    .replaceAll(path.sep, "/");
+
+  if (relativePath.includes("toolkit/content/widgets")) {
+    let storyNameRegex = /(?<=\/widgets\/)(?<name>.*?)(?=\/)/g;
+    let componentName = storyNameRegex.exec(relativePath)?.groups?.name;
+    if (componentName) {
+      storyPath = `Design System/Experiments/${toPascalCase(componentName)}`;
+    }
+  }
+
+  let storyTitle = getDocsStoryTitle(relativePath);
 
   
   
@@ -64,7 +81,7 @@ module.exports = function markdownStoryLoader(source) {
 import { Meta, Description } from "@storybook/addon-docs";
 
 <Meta 
-  title="Docs/${storyTitle}" 
+  title="${storyPath}/${storyTitle}" 
   parameters={{
     previewTabs: {
       canvas: { hidden: true },

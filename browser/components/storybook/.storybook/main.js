@@ -37,7 +37,7 @@ module.exports = {
     "../**/*.stories.md",
     "../stories/**/*.stories.mdx",
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
-    `${projectRoot}/toolkit/**/*.stories.@(js|jsx|mjs|ts|tsx)`,
+    `${projectRoot}/toolkit/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
   ],
   
   
@@ -77,8 +77,10 @@ module.exports = {
     
     
     
+    config.resolve.alias["@storybook/addon-docs"] =
+      "browser/components/storybook/node_modules/@storybook/addon-docs";
     config.resolve.alias["@mdx-js/react"] =
-      "browser/components/storybook/node_modules/@storybook/addon-docs/node_modules/@mdx-js/react";
+      "@storybook/addon-docs/node_modules/@mdx-js/react";
 
     
     
