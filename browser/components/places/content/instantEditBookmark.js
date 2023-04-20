@@ -307,7 +307,11 @@ var gEditItemOverlay = {
       if (visible) {
         visibleRows.add(rowId);
       }
-      return !(this._element(rowId).collapsed = !visible);
+      const cells = document.getElementsByClassName("editBMPanel_" + rowId);
+      for (const cell of cells) {
+        cell.hidden = !visible;
+      }
+      return visible;
     };
 
     if (showOrCollapse("nameRow", !bulkTagging, "name")) {
@@ -336,7 +340,7 @@ var gEditItemOverlay = {
     
     if (showOrCollapse("tagsRow", isURI || bulkTagging, "tags")) {
       this._initTagsField();
-    } else if (!this._element("tagsSelectorRow").collapsed) {
+    } else if (!this._element("tagsSelectorRow").hidden) {
       this.toggleTagsSelector().catch(Cu.reportError);
     }
 
@@ -395,7 +399,7 @@ var gEditItemOverlay = {
           )
         );
       } else if (focusedElement === "first") {
-        elt = document.querySelector("vbox:not([collapsed=true]) > input");
+        elt = document.querySelector('input:not([hidden="true"])');
       }
       if (elt) {
         elt.focus({ preventScroll: true });
@@ -566,13 +570,13 @@ var gEditItemOverlay = {
     if (aHideCollapsibleElements) {
       
       var folderTreeRow = this._element("folderTreeRow");
-      if (!folderTreeRow.collapsed) {
+      if (!folderTreeRow.hidden) {
         this.toggleFolderTreeVisibility();
       }
 
       
       var tagsSelectorRow = this._element("tagsSelectorRow");
-      if (!tagsSelectorRow.collapsed) {
+      if (!tagsSelectorRow.hidden) {
         this.toggleTagsSelector().catch(Cu.reportError);
       }
     }
@@ -833,15 +837,15 @@ var gEditItemOverlay = {
   toggleFolderTreeVisibility() {
     let expander = this._element("foldersExpander");
     let folderTreeRow = this._element("folderTreeRow");
-    let wasCollapsed = folderTreeRow.collapsed;
-    expander.classList.toggle("expander-up", wasCollapsed);
-    expander.classList.toggle("expander-down", !wasCollapsed);
-    if (!wasCollapsed) {
+    let wasHidden = folderTreeRow.hidden;
+    expander.classList.toggle("expander-up", wasHidden);
+    expander.classList.toggle("expander-down", !wasHidden);
+    if (!wasHidden) {
       expander.setAttribute(
         "tooltiptext",
         expander.getAttribute("tooltiptextdown")
       );
-      folderTreeRow.collapsed = true;
+      folderTreeRow.hidden = true;
       this._element("chooseFolderSeparator").hidden = this._element(
         "chooseFolderMenuItem"
       ).hidden = false;
@@ -856,7 +860,7 @@ var gEditItemOverlay = {
         "tooltiptext",
         expander.getAttribute("tooltiptextup")
       );
-      folderTreeRow.collapsed = false;
+      folderTreeRow.hidden = false;
 
       
       
@@ -952,7 +956,7 @@ var gEditItemOverlay = {
 
     
     var folderTreeRow = this._element("folderTreeRow");
-    if (!folderTreeRow.collapsed) {
+    if (!folderTreeRow.hidden) {
       var selectedNode = this._folderTree.selectedNode;
       if (
         !selectedNode ||
@@ -987,7 +991,7 @@ var gEditItemOverlay = {
   onFolderTreeSelect() {
     
     
-    if (this._element("folderTreeRow").collapsed) {
+    if (this._element("folderTreeRow").hidden) {
       return;
     }
 
@@ -1014,7 +1018,7 @@ var gEditItemOverlay = {
   async _rebuildTagsSelectorList() {
     let tagsSelector = this._element("tagsSelector");
     let tagsSelectorRow = this._element("tagsSelectorRow");
-    if (tagsSelectorRow.collapsed) {
+    if (tagsSelectorRow.hidden) {
       return;
     }
 
@@ -1061,14 +1065,14 @@ var gEditItemOverlay = {
     var tagsSelector = this._element("tagsSelector");
     var tagsSelectorRow = this._element("tagsSelectorRow");
     var expander = this._element("tagsSelectorExpander");
-    expander.classList.toggle("expander-up", tagsSelectorRow.collapsed);
-    expander.classList.toggle("expander-down", !tagsSelectorRow.collapsed);
-    if (tagsSelectorRow.collapsed) {
+    expander.classList.toggle("expander-up", tagsSelectorRow.hidden);
+    expander.classList.toggle("expander-down", !tagsSelectorRow.hidden);
+    if (tagsSelectorRow.hidden) {
       expander.setAttribute(
         "tooltiptext",
         expander.getAttribute("tooltiptextup")
       );
-      tagsSelectorRow.collapsed = false;
+      tagsSelectorRow.hidden = false;
       await this._rebuildTagsSelectorList();
 
       
@@ -1079,7 +1083,7 @@ var gEditItemOverlay = {
         "tooltiptext",
         expander.getAttribute("tooltiptextdown")
       );
-      tagsSelectorRow.collapsed = true;
+      tagsSelectorRow.hidden = true;
 
       
       tagsSelector.removeEventListener("mousedown", this);

@@ -280,15 +280,15 @@ var BookmarkPropertiesPanel = {
     
     this._mutationObserver = new MutationObserver(mutations => {
       for (let { target, oldValue } of mutations) {
-        let collapsed = target.getAttribute("collapsed") == "true";
+        let hidden = target.getAttribute("hidden") == "true";
         if (
-          /^editBMPanel_.*(Row|Checkbox)$/.test(target.id) &&
-          collapsed != (oldValue == "true")
+          target.classList.contains("hideable") &&
+          hidden != (oldValue == "true")
         ) {
           
           
           
-          if (collapsed) {
+          if (hidden) {
             let diff = this._mutationObserver._heightsById.get(target.id);
             window.resizeBy(0, -diff);
           } else {
@@ -304,7 +304,7 @@ var BookmarkPropertiesPanel = {
     this._mutationObserver.observe(document, {
       subtree: true,
       attributeOldValue: true,
-      attributeFilter: ["collapsed"],
+      attributeFilter: ["hidden"],
     });
 
     switch (this._action) {

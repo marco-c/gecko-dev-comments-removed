@@ -41,7 +41,7 @@ add_task(async function() {
 
   
   StarUI._createPanelIfNeeded();
-  document.getElementById("editBMPanel_tagsSelectorRow").collapsed = false;
+  document.getElementById("editBMPanel_tagsSelectorRow").hidden = false;
 
   
   let bm = await PlacesUtils.bookmarks.insert({
