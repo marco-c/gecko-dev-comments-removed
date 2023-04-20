@@ -637,7 +637,10 @@ def printDigest(args, digest):
                 cond = is_match
             elif arg.startswith("!"):
                 key = arg[1:]
-                def cond(rec, key): return not is_match(rec, key)  
+
+                def cond(rec, key):
+                    return not is_match(rec, key)  
+
             else:
                 key = arg
                 cond = is_match
