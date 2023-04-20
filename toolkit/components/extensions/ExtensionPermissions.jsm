@@ -444,7 +444,13 @@ var OriginControls = {
 
   getState(policy, uri) {
     let allDomains = new MatchPattern("*://*/*");
-    let activeTab = policy.permissions.includes("activeTab");
+
+    
+    
+    let activeTab =
+      policy.permissions.includes("activeTab") &&
+      (policy.manifestVersion >= 3 || policy.extension?.hasBrowserActionUI);
+
     let couldRequest = policy.extension.optionalOrigins.matches(uri);
     let hasAccess = policy.canAccessURI(uri);
 

@@ -130,6 +130,7 @@ add_task(async function test_keyboard_navigation_opens_menu() {
   });
   const extension3 = ExtensionTestUtils.loadExtension({
     manifest: {
+      manifest_version: 3,
       name: "3",
       
       permissions: ["activeTab"],
