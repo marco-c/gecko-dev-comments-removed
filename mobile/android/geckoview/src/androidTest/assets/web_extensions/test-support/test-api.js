@@ -42,10 +42,20 @@ this.test = class extends ExtensionAPI {
   }
 
   getAPI(context) {
-    function windowActor(tabId) {
+    
+
+
+
+
+
+
+
+
+
+    function getActorForTab(tabId, actorName = "TestSupport") {
       const tab = context.extension.tabManager.get(tabId);
       const { browsingContext } = tab.browser;
-      return browsingContext.currentWindowGlobal.getActor("TestSupport");
+      return browsingContext.currentWindowGlobal.getActor(actorName);
     }
 
     return {
@@ -83,7 +93,10 @@ this.test = class extends ExtensionAPI {
 
         
         async getLinkColor(tabId, selector) {
-          return windowActor(tabId).sendQuery("GetLinkColor", { selector });
+          return getActorForTab(tabId, "TestSupport").sendQuery(
+            "GetLinkColor",
+            { selector }
+          );
         },
 
         async getRequestedLocales() {
@@ -134,9 +147,12 @@ this.test = class extends ExtensionAPI {
         },
 
         async setResolutionAndScaleTo(tabId, resolution) {
-          return windowActor(tabId).sendQuery("SetResolutionAndScaleTo", {
-            resolution,
-          });
+          return getActorForTab(tabId, "TestSupport").sendQuery(
+            "SetResolutionAndScaleTo",
+            {
+              resolution,
+            }
+          );
         },
 
         async getActive(tabId) {
@@ -155,11 +171,15 @@ this.test = class extends ExtensionAPI {
           
           
           
-          await windowActor(tabId).sendQuery("FlushApzRepaints");
+          await getActorForTab(tabId, "TestSupport").sendQuery(
+            "FlushApzRepaints"
+          );
         },
 
         async promiseAllPaintsDone(tabId) {
-          await windowActor(tabId).sendQuery("PromiseAllPaintsDone");
+          await getActorForTab(tabId, "TestSupport").sendQuery(
+            "PromiseAllPaintsDone"
+          );
         },
 
         async usingGpuProcess() {
@@ -188,6 +208,20 @@ this.test = class extends ExtensionAPI {
             Ci.nsISiteSecurityService
           );
           return sss.clearAll();
+        },
+
+        async triggerCookieBannerDetected(tabId) {
+          const actor = getActorForTab(tabId, "CookieBanner");
+          return actor.receiveMessage({
+            name: "CookieBanner::DetectedBanner",
+          });
+        },
+
+        async triggerCookieBannerHandled(tabId) {
+          const actor = getActorForTab(tabId, "CookieBanner");
+          return actor.receiveMessage({
+            name: "CookieBanner::HandledBanner",
+          });
         },
       },
     };
