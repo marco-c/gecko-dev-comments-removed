@@ -43,9 +43,11 @@ NS_IMPL_ISUPPORTS(ServiceWorkerUnregisterJob::PushUnsubscribeCallback,
                   nsIUnsubscribeResultCallback)
 
 ServiceWorkerUnregisterJob::ServiceWorkerUnregisterJob(nsIPrincipal* aPrincipal,
-                                                       const nsACString& aScope)
+                                                       const nsACString& aScope,
+                                                       bool aSendToParent)
     : ServiceWorkerJob(Type::Unregister, aPrincipal, aScope, ""_ns),
-      mResult(false) {}
+      mResult(false),
+      mSendToParent(aSendToParent) {}
 
 bool ServiceWorkerUnregisterJob::GetResult() const {
   MOZ_ASSERT(NS_IsMainThread());
@@ -108,7 +110,9 @@ void ServiceWorkerUnregisterJob::Unregister() {
   
   
   
-  swm->MaybeSendUnregister(mPrincipal, mScope);
+  if (mSendToParent) {
+    swm->MaybeSendUnregister(mPrincipal, mScope);
+  }
 
   swm->EvictFromBFCache(registration);
 

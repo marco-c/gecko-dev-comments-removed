@@ -3999,10 +3999,6 @@ bool HttpBaseChannel::ShouldIntercept(nsIURI* aURI) {
   GetCallback(controller);
   bool shouldIntercept = false;
 
-  if (!StaticPrefs::dom_serviceWorkers_enabled()) {
-    return false;
-  }
-
   
   
   
