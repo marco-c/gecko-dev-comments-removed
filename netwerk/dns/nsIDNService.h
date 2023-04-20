@@ -31,6 +31,7 @@ class nsIDNService final : public nsIIDNService {
   nsIDNService();
 
   nsresult Init();
+  enum ScriptCombo : int32_t;
 
  protected:
   virtual ~nsIDNService();
@@ -144,8 +145,8 @@ class nsIDNService final : public nsIIDNService {
 
 
 
-  bool illegalScriptCombo(mozilla::intl::Script script, int32_t& savedScript)
-      MOZ_REQUIRES_SHARED(mLock);
+  bool illegalScriptCombo(mozilla::intl::Script script,
+                          ScriptCombo& savedScript) MOZ_REQUIRES_SHARED(mLock);
 
   
 
