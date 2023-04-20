@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <map>
+#include <memory>
 
 #include "absl/types/optional.h"
 #include "api/sequence_checker.h"
@@ -32,9 +33,9 @@ class VCMDecoderDatabase {
 
   
   
-  VideoDecoder* DeregisterExternalDecoder(uint8_t payload_type);
+  void DeregisterExternalDecoder(uint8_t payload_type);
   void RegisterExternalDecoder(uint8_t payload_type,
-                               VideoDecoder* external_decoder);
+                               std::unique_ptr<VideoDecoder> external_decoder);
   bool IsExternalDecoderRegistered(uint8_t payload_type) const;
 
   void RegisterReceiveCodec(uint8_t payload_type,
@@ -63,7 +64,7 @@ class VCMDecoderDatabase {
   
   std::map<uint8_t, VideoDecoder::Settings> decoder_settings_;
   
-  std::map<uint8_t, VideoDecoder*> decoders_
+  std::map<uint8_t, std::unique_ptr<VideoDecoder>> decoders_
       RTC_GUARDED_BY(decoder_sequence_checker_);
 };
 

@@ -58,10 +58,6 @@ class VideoReceiver2 {
   VCMDecodedFrameCallback decoded_frame_callback_;
   
   
-  std::vector<std::unique_ptr<VideoDecoder>> video_decoders_;
-
-  
-  
   
   VCMDecoderDatabase codec_database_;
 };
