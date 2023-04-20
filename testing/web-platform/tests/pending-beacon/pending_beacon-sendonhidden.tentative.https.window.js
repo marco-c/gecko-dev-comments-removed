@@ -78,7 +78,6 @@ for (const beaconType of BeaconTypes) {
     
     rc1.navigateToNew();
 
-    
-    await expectBeacon(uuid, {count: 0});
+    await expectBeacon(uuid, {count: 1});
   }, `${beaconName}: sends on page entering hidden state (w/o BFCache).`);
 }
