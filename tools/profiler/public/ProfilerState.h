@@ -266,6 +266,11 @@ class RacyFeatures {
     return (af & Active) && (af & aFeature);
   }
 
+  [[nodiscard]] static bool IsActiveWithoutFeature(uint32_t aFeature) {
+    uint32_t af = sActiveAndFeatures;  
+    return (af & Active) && !(af & aFeature);
+  }
+
   
   
   
@@ -366,6 +371,11 @@ profiler_features_if_active_and_unpaused() {
 
 
 [[nodiscard]] bool profiler_feature_active(uint32_t aFeature);
+
+
+
+
+[[nodiscard]] bool profiler_active_without_feature(uint32_t aFeature);
 
 
 
