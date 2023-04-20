@@ -999,13 +999,7 @@ void nsCSPContext::logToConsole(const char* aName,
 
 
 
-
-
-
-
-void StripURIForReporting(nsIURI* aSelfURI, nsIURI* aURI,
-                          const nsAString& aEffectiveDirective,
-                          nsACString& outStrippedURI) {
+void StripURIForReporting(nsIURI* aURI, nsACString& outStrippedURI) {
   
   
   
@@ -1019,18 +1013,6 @@ void StripURIForReporting(nsIURI* aSelfURI, nsIURI* aURI,
     
     aURI->GetScheme(outStrippedURI);
     return;
-  }
-
-  
-  
-  
-  if (aEffectiveDirective.EqualsLiteral("frame-src") ||
-      aEffectiveDirective.EqualsLiteral("object-src")) {
-    nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-    if (NS_FAILED(ssm->CheckSameOriginURI(aSelfURI, aURI, false, false))) {
-      aURI->GetPrePath(outStrippedURI);
-      return;
-    }
   }
 
   
@@ -1053,8 +1035,7 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
 
   
   nsAutoCString reportDocumentURI;
-  StripURIForReporting(mSelfURI, mSelfURI, aEffectiveDirective,
-                       reportDocumentURI);
+  StripURIForReporting(mSelfURI, reportDocumentURI);
   CopyUTF8toUTF16(reportDocumentURI, aViolationEventInit.mDocumentURI);
 
   
@@ -1063,8 +1044,8 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
   
   if (aBlockedURI) {
     nsAutoCString reportBlockedURI;
-    StripURIForReporting(mSelfURI, aOriginalURI ? aOriginalURI : aBlockedURI,
-                         aEffectiveDirective, reportBlockedURI);
+    StripURIForReporting(aOriginalURI ? aOriginalURI : aBlockedURI,
+                         reportBlockedURI);
     CopyUTF8toUTF16(reportBlockedURI, aViolationEventInit.mBlockedURI);
   } else {
     CopyUTF8toUTF16(aBlockedString, aViolationEventInit.mBlockedURI);
@@ -1092,7 +1073,7 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
     NS_NewURI(getter_AddRefs(sourceURI), aSourceFile);
     if (sourceURI) {
       nsAutoCString spec;
-      StripURIForReporting(mSelfURI, sourceURI, aEffectiveDirective, spec);
+      StripURIForReporting(sourceURI, spec);
       CopyUTF8toUTF16(spec, aViolationEventInit.mSourceFile);
     } else {
       aViolationEventInit.mSourceFile = aSourceFile;
