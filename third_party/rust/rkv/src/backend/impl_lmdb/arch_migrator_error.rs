@@ -8,7 +8,11 @@
 
 
 
-use std::{io, num, str};
+use std::{
+    io,
+    num,
+    str,
+};
 
 use thiserror::Error;
 

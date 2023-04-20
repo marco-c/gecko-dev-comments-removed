@@ -7,8 +7,6 @@
 
 
 
-#![allow(dead_code)] 
-#![allow(clippy::upper_case_acronyms)] 
 
 
 
@@ -58,18 +56,38 @@
 
 
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{
+        BTreeMap,
+        HashMap,
+    },
     convert::TryFrom,
     fs::File,
-    io::{Cursor, Read, Seek, SeekFrom, Write},
-    path::{Path, PathBuf},
+    io::{
+        Cursor,
+        Read,
+        Seek,
+        SeekFrom,
+        Write,
+    },
+    path::{
+        Path,
+        PathBuf,
+    },
     rc::Rc,
     str,
 };
 
 use bitflags::bitflags;
-use byteorder::{LittleEndian, ReadBytesExt};
-use lmdb::{DatabaseFlags, Environment, Transaction, WriteFlags};
+use byteorder::{
+    LittleEndian,
+    ReadBytesExt,
+};
+use lmdb::{
+    DatabaseFlags,
+    Environment,
+    Transaction,
+    WriteFlags,
+};
 
 pub use super::arch_migrator_error::MigrateError;
 
@@ -258,7 +276,9 @@ impl Page {
 
         match Self::parse_page_header(&mut cursor, bits)? {
             PageHeader::Regular {
-                mp_flags, pb_lower, ..
+                mp_flags,
+                pb_lower,
+                ..
             } => {
                 if mp_flags.contains(PageFlags::LEAF2) || mp_flags.contains(PageFlags::SUBP) {
                     
@@ -277,21 +297,22 @@ impl Page {
                 } else {
                     Err(MigrateError::UnexpectedPageHeaderVariant)
                 }
-            }
-            PageHeader::Overflow { .. } => {
+            },
+            PageHeader::Overflow {
+                ..
+            } => {
                 
                 
                 
                 Err(MigrateError::UnexpectedPageHeaderVariant)
-            }
+            },
         }
     }
 
     fn parse_page_header(cursor: &mut Cursor<&[u8]>, bits: Bits) -> MigrateResult<PageHeader> {
         let mp_pgno = cursor.read_uint::<LittleEndian>(bits.size())?;
         let _mp_pad = cursor.read_u16::<LittleEndian>()?;
-        let mp_flags = PageFlags::from_bits(cursor.read_u16::<LittleEndian>()?)
-            .ok_or(MigrateError::InvalidPageBits)?;
+        let mp_flags = PageFlags::from_bits(cursor.read_u16::<LittleEndian>()?).ok_or(MigrateError::InvalidPageBits)?;
 
         if mp_flags.contains(PageFlags::OVERFLOW) {
             let pb_pages = cursor.read_u32::<LittleEndian>()?;
@@ -312,7 +333,7 @@ impl Page {
         }
     }
 
-    fn parse_meta_data(cursor: &mut Cursor<&[u8]>, bits: Bits) -> MigrateResult<MetaData> {
+    fn parse_meta_data(mut cursor: &mut Cursor<&[u8]>, bits: Bits) -> MigrateResult<MetaData> {
         cursor.seek(SeekFrom::Start(page_header_size(bits)))?;
 
         Ok(MetaData {
@@ -321,19 +342,15 @@ impl Page {
             mm_address: cursor.read_uint::<LittleEndian>(bits.size())?,
             mm_mapsize: cursor.read_uint::<LittleEndian>(bits.size())?,
             mm_dbs: Databases {
-                free: Database::new(cursor, bits)?,
-                main: Database::new(cursor, bits)?,
+                free: Database::new(&mut cursor, bits)?,
+                main: Database::new(&mut cursor, bits)?,
             },
             mm_last_pg: cursor.read_uint::<LittleEndian>(bits.size())?,
             mm_txnid: cursor.read_uint::<LittleEndian>(bits.size())?,
         })
     }
 
-    fn parse_leaf_nodes(
-        cursor: &mut Cursor<&[u8]>,
-        pb_lower: u16,
-        bits: Bits,
-    ) -> MigrateResult<Vec<LeafNode>> {
+    fn parse_leaf_nodes(cursor: &mut Cursor<&[u8]>, pb_lower: u16, bits: Bits) -> MigrateResult<Vec<LeafNode>> {
         cursor.set_position(page_header_size(bits));
         let num_keys = Self::num_keys(pb_lower, bits);
         let mp_ptrs = Self::parse_mp_ptrs(cursor, num_keys)?;
@@ -354,8 +371,7 @@ impl Page {
         let mn_lo = cursor.read_u16::<LittleEndian>()?;
         let mn_hi = cursor.read_u16::<LittleEndian>()?;
 
-        let mn_flags = NodeFlags::from_bits(cursor.read_u16::<LittleEndian>()?)
-            .ok_or(MigrateError::InvalidNodeBits)?;
+        let mn_flags = NodeFlags::from_bits(cursor.read_u16::<LittleEndian>()?).ok_or(MigrateError::InvalidNodeBits)?;
         let mn_ksize = cursor.read_u16::<LittleEndian>()?;
 
         let start = usize::try_from(cursor.position())?;
@@ -412,11 +428,7 @@ impl Page {
         u32::from(mn_lo) + ((u32::from(mn_hi)) << 16)
     }
 
-    fn parse_branch_nodes(
-        cursor: &mut Cursor<&[u8]>,
-        pb_lower: u16,
-        bits: Bits,
-    ) -> MigrateResult<Vec<BranchNode>> {
+    fn parse_branch_nodes(cursor: &mut Cursor<&[u8]>, pb_lower: u16, bits: Bits) -> MigrateResult<Vec<BranchNode>> {
         let num_keys = Self::num_keys(pb_lower, bits);
         let mp_ptrs = Self::parse_mp_ptrs(cursor, num_keys)?;
 
@@ -509,7 +521,10 @@ impl Migrator {
             }
         };
 
-        Ok(Migrator { file, bits })
+        Ok(Migrator {
+            file,
+            bits,
+        })
     }
 
     
@@ -532,9 +547,8 @@ impl Migrator {
         let pairs;
         if let Some(database) = database {
             let subdbs = self.get_subdbs(root_page)?;
-            let database = subdbs
-                .get(database.as_bytes())
-                .ok_or_else(|| MigrateError::DatabaseNotFound(database.to_string()))?;
+            let database =
+                subdbs.get(database.as_bytes()).ok_or_else(|| MigrateError::DatabaseNotFound(database.to_string()))?;
             let root_page_num = database.md_root;
             let root_page = Rc::new(self.get_page(root_page_num)?);
             pairs = self.get_pairs(root_page)?;
@@ -545,7 +559,7 @@ impl Migrator {
         out.write_all(b"VERSION=3\n")?;
         out.write_all(b"format=bytevalue\n")?;
         if let Some(database) = database {
-            writeln!(out, "database={database}")?;
+            writeln!(out, "database={}", database)?;
         }
         out.write_all(b"type=btree\n")?;
         writeln!(out, "mapsize={}", meta_data.mm_mapsize)?;
@@ -556,12 +570,12 @@ impl Migrator {
         for (key, value) in pairs {
             out.write_all(b" ")?;
             for byte in key {
-                write!(out, "{byte:02x}")?;
+                write!(out, "{:02x}", byte)?;
             }
             out.write_all(b"\n")?;
             out.write_all(b" ")?;
             for byte in value {
-                write!(out, "{byte:02x}")?;
+                write!(out, "{:02x}", byte)?;
             }
             out.write_all(b"\n")?;
         }
@@ -600,7 +614,7 @@ impl Migrator {
         
         env.create_db(None, meta_data.mm_dbs.main.md_flags)?;
         for (subdb_name, subdb_info) in &subdbs {
-            env.create_db(Some(str::from_utf8(subdb_name)?), subdb_info.md_flags)?;
+            env.create_db(Some(str::from_utf8(&subdb_name)?), subdb_info.md_flags)?;
         }
 
         
@@ -619,7 +633,7 @@ impl Migrator {
         for (subdb_name, subdb_info) in &subdbs {
             let root_page = Rc::new(self.get_page(subdb_info.md_root)?);
             let pairs = self.get_pairs(root_page)?;
-            let db = env.open_db(Some(str::from_utf8(subdb_name)?))?;
+            let db = env.open_db(Some(str::from_utf8(&subdb_name)?))?;
             for (key, value) in pairs {
                 
                 
@@ -642,17 +656,22 @@ impl Migrator {
                     for branch in nodes {
                         pages.push(Rc::new(self.get_page(branch.mp_pgno)?));
                     }
-                }
+                },
                 Page::LEAF(nodes) => {
                     for leaf in nodes {
-                        if let LeafNode::SubData { key, db, .. } = leaf {
+                        if let LeafNode::SubData {
+                            key,
+                            db,
+                            ..
+                        } = leaf
+                        {
                             subdbs.insert(key.to_vec(), db.clone());
                         };
                     }
-                }
+                },
                 _ => {
                     return Err(MigrateError::UnexpectedPageVariant);
-                }
+                },
             }
         }
 
@@ -669,13 +688,17 @@ impl Migrator {
                     for branch in nodes {
                         pages.push(Rc::new(self.get_page(branch.mp_pgno)?));
                     }
-                }
+                },
                 Page::LEAF(nodes) => {
                     for leaf in nodes {
                         match leaf {
-                            LeafNode::Regular { key, value, .. } => {
+                            LeafNode::Regular {
+                                key,
+                                value,
+                                ..
+                            } => {
                                 pairs.insert(key.to_vec(), value.to_vec());
-                            }
+                            },
                             LeafNode::BigData {
                                 mv_size,
                                 key,
@@ -686,13 +709,14 @@ impl Migrator {
                                 
                                 
                                 let value = self.read_data(
-                                    *overflow_pgno * u64::from(PAGESIZE)
-                                        + page_header_size(self.bits),
+                                    *overflow_pgno * u64::from(PAGESIZE) + page_header_size(self.bits),
                                     *mv_size as usize,
                                 )?;
                                 pairs.insert(key.to_vec(), value);
-                            }
-                            LeafNode::SubData { .. } => {
+                            },
+                            LeafNode::SubData {
+                                ..
+                            } => {
                                 
                                 
                                 
@@ -702,13 +726,13 @@ impl Migrator {
                                 
                                 
                                 
-                            }
+                            },
                         };
                     }
-                }
+                },
                 _ => {
                     return Err(MigrateError::UnexpectedPageVariant);
-                }
+                },
             }
         }
 
@@ -723,10 +747,7 @@ impl Migrator {
     }
 
     fn get_page(&mut self, page_no: u64) -> MigrateResult<Page> {
-        Page::new(
-            self.read_data(page_no * u64::from(PAGESIZE), usize::from(PAGESIZE))?,
-            self.bits,
-        )
+        Page::new(self.read_data(page_no * u64::from(PAGESIZE), usize::from(PAGESIZE))?, self.bits)
     }
 
     fn get_meta_data(&mut self) -> MigrateResult<MetaData> {
@@ -746,7 +767,7 @@ impl Migrator {
                     return Err(MigrateError::InvalidDataVersion);
                 }
                 Ok(meta)
-            }
+            },
             _ => Err(MigrateError::UnexpectedPageVariant),
         }
     }
@@ -756,10 +777,20 @@ impl Migrator {
 mod tests {
     use super::*;
 
-    use std::{env, fs, mem::size_of};
+    use std::{
+        env,
+        fs,
+        mem::size_of,
+    };
 
-    use lmdb::{Environment, Error as LmdbError};
-    use tempfile::{tempdir, tempfile};
+    use lmdb::{
+        Environment,
+        Error as LmdbError,
+    };
+    use tempfile::{
+        tempdir,
+        tempfile,
+    };
 
     fn compare_files(ref_file: &mut File, new_file: &mut File) -> MigrateResult<()> {
         ref_file.seek(SeekFrom::Start(0))?;
@@ -770,15 +801,17 @@ mod tests {
 
         loop {
             match ref_file.read(ref_buf) {
-                Err(err) => panic!("{}", err),
-                Ok(ref_len) => match new_file.read(new_buf) {
-                    Err(err) => panic!("{}", err),
-                    Ok(new_len) => {
-                        assert_eq!(ref_len, new_len);
-                        if ref_len == 0 {
-                            break;
-                        };
-                        assert_eq!(ref_buf[0..ref_len], new_buf[0..new_len]);
+                Err(err) => panic!(err),
+                Ok(ref_len) => {
+                    match new_file.read(new_buf) {
+                        Err(err) => panic!(err),
+                        Ok(new_len) => {
+                            assert_eq!(ref_len, new_len);
+                            if ref_len == 0 {
+                                break;
+                            };
+                            assert_eq!(ref_buf[0..ref_len], new_buf[0..new_len]);
+                        },
                     }
                 },
             }
@@ -820,9 +853,7 @@ mod tests {
         migrator.dump(Some("subdb"), &new_dump_file)?;
 
         
-        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"]
-            .iter()
-            .collect();
+        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"].iter().collect();
         let mut ref_dump_file = File::open(ref_dump_file_path)?;
 
         
@@ -864,9 +895,7 @@ mod tests {
         migrator.dump(Some("subdb"), &new_dump_file)?;
 
         
-        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"]
-            .iter()
-            .collect();
+        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"].iter().collect();
         let mut ref_dump_file = File::open(ref_dump_file_path)?;
 
         
@@ -887,14 +916,12 @@ mod tests {
         migrator.migrate(new_env.path())?;
 
         
-        let mut migrator = Migrator::new(new_env.path())?;
+        let mut migrator = Migrator::new(&new_env.path())?;
         let mut new_dump_file = tempfile()?;
         migrator.dump(Some("subdb"), &new_dump_file)?;
 
         
-        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"]
-            .iter()
-            .collect();
+        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"].iter().collect();
         let mut ref_dump_file = File::open(ref_dump_file_path)?;
 
         
@@ -915,14 +942,12 @@ mod tests {
         migrator.migrate(new_env.path())?;
 
         
-        let mut migrator = Migrator::new(new_env.path())?;
+        let mut migrator = Migrator::new(&new_env.path())?;
         let mut new_dump_file = tempfile()?;
         migrator.dump(Some("subdb"), &new_dump_file)?;
 
         
-        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"]
-            .iter()
-            .collect();
+        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"].iter().collect();
         let mut ref_dump_file = File::open(ref_dump_file_path)?;
 
         
@@ -944,18 +969,12 @@ mod tests {
         let test_env_path: PathBuf = [cwd, "tests", "envs", test_env_name].iter().collect();
 
         let old_env = tempdir()?;
-        fs::copy(
-            test_env_path.join("data.mdb"),
-            old_env.path().join("data.mdb"),
-        )?;
-        fs::copy(
-            test_env_path.join("lock.mdb"),
-            old_env.path().join("lock.mdb"),
-        )?;
+        fs::copy(test_env_path.join("data.mdb"), old_env.path().join("data.mdb"))?;
+        fs::copy(test_env_path.join("lock.mdb"), old_env.path().join("lock.mdb"))?;
 
         
         assert_eq!(
-            match Environment::new().open(old_env.path()) {
+            match Environment::new().open(&old_env.path()) {
                 Err(err) => err,
                 _ => panic!("opening the environment should have failed"),
             },
@@ -964,18 +983,16 @@ mod tests {
 
         
         let new_env = tempdir()?;
-        let mut migrator = Migrator::new(old_env.path())?;
+        let mut migrator = Migrator::new(&old_env.path())?;
         migrator.migrate(new_env.path())?;
 
         
-        let mut migrator = Migrator::new(new_env.path())?;
+        let mut migrator = Migrator::new(&new_env.path())?;
         let mut new_dump_file = tempfile()?;
         migrator.dump(Some("subdb"), &new_dump_file)?;
 
         
-        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"]
-            .iter()
-            .collect();
+        let ref_dump_file_path: PathBuf = [cwd, "tests", "envs", "ref_dump_subdb.txt"].iter().collect();
         let mut ref_dump_file = File::open(ref_dump_file_path)?;
 
         
@@ -983,15 +1000,9 @@ mod tests {
 
         
         
-        fs::copy(
-            new_env.path().join("data.mdb"),
-            old_env.path().join("data.mdb"),
-        )?;
-        fs::copy(
-            new_env.path().join("lock.mdb"),
-            old_env.path().join("lock.mdb"),
-        )?;
-        assert!(Environment::new().open(old_env.path()).is_ok());
+        fs::copy(new_env.path().join("data.mdb"), old_env.path().join("data.mdb"))?;
+        fs::copy(new_env.path().join("lock.mdb"), old_env.path().join("lock.mdb"))?;
+        assert!(Environment::new().open(&old_env.path()).is_ok());
 
         Ok(())
     }
