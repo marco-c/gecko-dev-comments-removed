@@ -1535,9 +1535,8 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   
   
-  bool compressedMediaAndImageDetectorStarted = false;
-  OpaqueResponse opaqueResponse = PerformOpaqueResponseSafelistCheckBeforeSniff(
-      compressedMediaAndImageDetectorStarted);
+  OpaqueResponse opaqueResponse =
+      PerformOpaqueResponseSafelistCheckBeforeSniff();
   if (opaqueResponse == OpaqueResponse::Block) {
     SetChannelBlockedByOpaqueResponse();
     CancelWithReason(NS_ERROR_FAILURE,
@@ -1595,14 +1594,18 @@ nsresult nsHttpChannel::CallOnStartRequest() {
 
   
   
-  if (!unknownDecoderStarted && !compressedMediaAndImageDetectorStarted &&
-      opaqueResponse == OpaqueResponse::Sniff) {
-    MOZ_DIAGNOSTIC_ASSERT(mORB);
-    nsresult rv = mORB->EnsureOpaqueResponseIsAllowedAfterSniff(this);
-    MOZ_DIAGNOSTIC_ASSERT(!mORB->IsSniffing());
+  if (!unknownDecoderStarted) {
+    if (opaqueResponse == OpaqueResponse::SniffCompressed) {
+      mListener = new nsCompressedAudioVideoImageDetector(
+          mListener, &HttpBaseChannel::CallTypeSniffers);
+    } else if (opaqueResponse == OpaqueResponse::Sniff) {
+      MOZ_DIAGNOSTIC_ASSERT(mORB);
+      nsresult rv = mORB->EnsureOpaqueResponseIsAllowedAfterSniff(this);
+      MOZ_DIAGNOSTIC_ASSERT(!mORB->IsSniffing());
 
-    if (NS_FAILED(rv)) {
-      return rv;
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
     }
   }
 
