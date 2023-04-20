@@ -2342,12 +2342,24 @@ class nsIFrame : public nsQueryFrame {
 
   bool HasAnyStateBits(nsFrameState aBits) const { return mState & aBits; }
 
+ private:
+  
+
+
+  void InitPrimaryFrame();
+
+ public:
   
 
 
   bool IsPrimaryFrame() const { return mIsPrimaryFrame; }
 
-  void SetIsPrimaryFrame(bool aIsPrimary) { mIsPrimaryFrame = aIsPrimary; }
+  void SetIsPrimaryFrame(bool aIsPrimary) {
+    mIsPrimaryFrame = aIsPrimary;
+    if (aIsPrimary) {
+      InitPrimaryFrame();
+    }
+  }
 
   bool IsPrimaryFrameOfRootOrBodyElement() const;
 
