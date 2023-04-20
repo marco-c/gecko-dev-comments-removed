@@ -85,12 +85,6 @@ enum class StyleDisplay : uint16_t {
                               StyleDisplayInside::RubyText),
   RubyTextContainer = StyleDisplayFrom(StyleDisplayOutside::InternalRuby,
                                        StyleDisplayInside::RubyTextContainer),
-
-  
-  MozBox =
-      StyleDisplayFrom(StyleDisplayOutside::Block, StyleDisplayInside::MozBox),
-  MozInlineBox =
-      StyleDisplayFrom(StyleDisplayOutside::Inline, StyleDisplayInside::MozBox),
 };
 
 bool operator<(const StyleDisplay&, const StyleDisplay&) = delete;
@@ -511,12 +505,6 @@ enum class StyleTextOrientation : uint8_t {
   Mixed,
   Upright,
   Sideways,
-};
-
-
-enum class StyleMozBoxLayout : uint8_t {
-  Flex,
-  Legacy,
 };
 
 

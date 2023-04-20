@@ -46,27 +46,6 @@ NS_QUERYFRAME_TAIL_INHERITING(nsIFrame)
 #endif
 
 
-nsSize nsPlaceholderFrame::GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) {
-  nsSize size(0, 0);
-  DISPLAY_MIN_SIZE(this, size);
-  return size;
-}
-
-
-nsSize nsPlaceholderFrame::GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState) {
-  nsSize size(0, 0);
-  DISPLAY_PREF_SIZE(this, size);
-  return size;
-}
-
-
-nsSize nsPlaceholderFrame::GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState) {
-  nsSize size(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
-  DISPLAY_MAX_SIZE(this, size);
-  return size;
-}
-
-
 void nsPlaceholderFrame::AddInlineMinISize(
     gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
   

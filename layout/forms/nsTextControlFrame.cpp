@@ -628,7 +628,6 @@ LogicalSize nsTextControlFrame::ComputeAutoSize(
       LogicalSize ancestorAutoSize = nsContainerFrame::ComputeAutoSize(
           aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
           aBorderPadding, aSizeOverrides, aFlags);
-      
       MOZ_ASSERT(inflation != 1.0f ||
                      ancestorAutoSize.ISize(aWM) == autoSize.ISize(aWM),
                  "Incorrect size computed by ComputeAutoSize?");
@@ -815,16 +814,6 @@ void nsTextControlFrame::ReflowTextControlChild(
 
   
   aParentDesiredSize.mOverflowAreas.UnionWith(desiredSize.mOverflowAreas);
-}
-
-nsSize nsTextControlFrame::GetXULMinSize(nsBoxLayoutState& aState) {
-  
-  return nsIFrame::GetUncachedXULMinSize(aState);
-}
-
-bool nsTextControlFrame::IsXULCollapsed() {
-  
-  return false;
 }
 
 

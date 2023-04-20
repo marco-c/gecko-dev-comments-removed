@@ -54,7 +54,6 @@ static bool IsLegacyBox(const nsIFrame* aFlexContainer) {
   MOZ_ASSERT(aFlexContainer->IsFlexContainerFrame(),
              "only flex containers may be passed to this function");
   return aFlexContainer->HasAnyStateBits(
-      NS_STATE_FLEX_IS_EMULATING_LEGACY_MOZ_BOX |
       NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
 }
 
@@ -2747,9 +2746,7 @@ void nsFlexContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   
   
-  if (displayInside == StyleDisplayInside::MozBox) {
-    AddStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_MOZ_BOX);
-  } else if (displayInside == StyleDisplayInside::WebkitBox) {
+  if (displayInside == StyleDisplayInside::WebkitBox) {
     AddStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
   }
 }
@@ -3850,7 +3847,7 @@ void FlexboxAxisInfo::InitAxesFromLegacyProps(const nsIFrame* aFlexContainer) {
   const nsStyleXUL* styleXUL = aFlexContainer->StyleXUL();
 
   const bool boxOrientIsVertical =
-      (styleXUL->mBoxOrient == StyleBoxOrient::Vertical);
+      styleXUL->mBoxOrient == StyleBoxOrient::Vertical;
   const bool wmIsVertical = aFlexContainer->GetWritingMode().IsVertical();
 
   
@@ -4932,7 +4929,7 @@ bool nsFlexContainerFrame::IsItemInlineAxisMainAxis(nsIFrame* aFrame) {
     
     
     bool boxOrientIsVertical =
-        (flexContainer->StyleXUL()->mBoxOrient == StyleBoxOrient::Vertical);
+        flexContainer->StyleXUL()->mBoxOrient == StyleBoxOrient::Vertical;
     return flexItemWM.IsVertical() == boxOrientIsVertical;
   }
 

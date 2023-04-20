@@ -24,7 +24,6 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "nsFontMetrics.h"
-#include "nsBoxLayoutState.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "nsScrollbarFrame.h"
 #include "nsINode.h"
@@ -535,8 +534,7 @@ ScrollReflowInput::ScrollReflowInput(nsHTMLScrollFrame* aFrame,
     
     
     
-    MOZ_ASSERT(scrollbar->IsXULCollapsed() ||
-                   (mHScrollbarPrefSize.width && mHScrollbarPrefSize.height),
+    MOZ_ASSERT(mHScrollbarPrefSize.width && mHScrollbarPrefSize.height,
                "Shouldn't have a zero horizontal scrollbar-size");
   } else {
     mHScrollbar = ShowScrollbar::Never;
@@ -546,8 +544,7 @@ ScrollReflowInput::ScrollReflowInput(nsHTMLScrollFrame* aFrame,
     scrollbar->SetScrollbarMediatorContent(mReflowInput.mFrame->GetContent());
     mVScrollbarPrefSize = scrollbar->ScrollbarMinSize();
     
-    MOZ_ASSERT(scrollbar->IsXULCollapsed() ||
-                   (mVScrollbarPrefSize.width && mVScrollbarPrefSize.height),
+    MOZ_ASSERT(mVScrollbarPrefSize.width && mVScrollbarPrefSize.height,
                "Shouldn't have a zero vertical scrollbar-size");
   } else {
     mVScrollbar = ShowScrollbar::Never;
@@ -1282,19 +1279,6 @@ nscoord nsHTMLScrollFrame::GetPrefISize(gfxContext* aRenderingContext) {
   DISPLAY_PREF_INLINE_SIZE(this, result);
   return NSCoordSaturatingAdd(
       result, IntrinsicScrollbarGutterSizeAtInlineEdges(aRenderingContext));
-}
-
-nsresult nsHTMLScrollFrame::GetXULPadding(nsMargin& aMargin) {
-  
-  
-  
-  aMargin.SizeTo(0, 0, 0, 0);
-  return NS_OK;
-}
-
-bool nsHTMLScrollFrame::IsXULCollapsed() {
-  
-  return false;
 }
 
 

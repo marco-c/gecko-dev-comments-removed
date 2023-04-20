@@ -111,8 +111,6 @@ class nsFrameSelection;
 class nsIWidget;
 class nsIScrollableFrame;
 class nsISelectionController;
-class nsBoxLayoutState;
-class nsBoxLayout;
 class nsILineIterator;
 class gfxSkipChars;
 class gfxSkipCharsIterator;
@@ -125,7 +123,6 @@ class nsStyleChangeList;
 class nsViewManager;
 class nsWindowSizes;
 
-struct nsBoxLayoutMetrics;
 struct CharacterDataChangeInfo;
 
 namespace mozilla {
@@ -2403,9 +2400,6 @@ class nsIFrame : public nsQueryFrame {
 
   virtual void MarkIntrinsicISizesDirty();
 
- private:
-  nsBoxLayoutMetrics* BoxMetrics() const;
-
  public:
   
 
@@ -3294,23 +3288,22 @@ class nsIFrame : public nsQueryFrame {
     
     
     eLineParticipant = 1 << 6,
-    eXULBox = 1 << 7,
-    eCanContainOverflowContainers = 1 << 8,
-    eTablePart = 1 << 9,
-    eSupportsCSSTransforms = 1 << 10,
+    eCanContainOverflowContainers = 1 << 7,
+    eTablePart = 1 << 8,
+    eSupportsCSSTransforms = 1 << 9,
 
     
     
     
-    eReplacedSizing = 1 << 11,
+    eReplacedSizing = 1 << 10,
 
     
     
     
-    eSupportsContainLayoutAndPaint = 1 << 12,
+    eSupportsContainLayoutAndPaint = 1 << 11,
 
     
-    eSupportsAspectRatio = 1 << 13,
+    eSupportsAspectRatio = 1 << 12,
 
     
     
@@ -4267,93 +4260,6 @@ class nsIFrame : public nsQueryFrame {
   [[nodiscard]] Focusable IsFocusable(bool aWithMouse = false,
                                       bool aCheckVisibility = true);
 
-  
-  
-  
-  bool IsXULBoxFrame() const { return IsFrameOfType(nsIFrame::eXULBox); }
-
-  enum Halignment { hAlign_Left, hAlign_Right, hAlign_Center };
-
-  enum Valignment { vAlign_Top, vAlign_Middle, vAlign_BaseLine, vAlign_Bottom };
-
-  
-
-
-
-
-  virtual nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState);
-
-  
-
-
-
-
-  virtual nsSize GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState);
-
-  
-
-
-
-
-  virtual nsSize GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState);
-
-  int32_t GetXULFlex() const;
-  virtual nscoord GetXULBoxAscent(nsBoxLayoutState& aBoxLayoutState);
-  virtual bool IsXULCollapsed();
-  
-  
-  
-  
-  
-  virtual void SetXULBounds(nsBoxLayoutState& aBoxLayoutState,
-                            const nsRect& aRect,
-                            bool aRemoveOverflowAreas = false);
-  nsresult XULLayout(nsBoxLayoutState& aBoxLayoutState);
-  
-  
-  virtual nsresult GetXULBorderAndPadding(nsMargin& aBorderAndPadding);
-  virtual nsresult GetXULBorder(nsMargin& aBorder);
-  virtual nsresult GetXULPadding(nsMargin& aBorderAndPadding);
-  virtual nsresult GetXULMargin(nsMargin& aMargin);
-  virtual void SetXULLayoutManager(nsBoxLayout* aLayout) {}
-  virtual nsBoxLayout* GetXULLayoutManager() { return nullptr; }
-  nsresult GetXULClientRect(nsRect& aContentRect);
-
-  virtual ReflowChildFlags GetXULLayoutFlags() {
-    return ReflowChildFlags::Default;
-  }
-
-  
-  virtual Valignment GetXULVAlign() const { return vAlign_Top; }
-  virtual Halignment GetXULHAlign() const { return hAlign_Left; }
-
-  nsresult XULRedraw(nsBoxLayoutState& aState);
-
-  static bool AddXULPrefSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth,
-                             bool& aHeightSet);
-  static bool AddXULMinSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth,
-                            bool& aHeightSet);
-  static bool AddXULMaxSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth,
-                            bool& aHeightSet);
-  static int32_t ComputeXULFlex(nsIFrame* aBox);
-
-  void AddXULBorderAndPadding(nsSize& aSize);
-
-  static void AddXULBorderAndPadding(nsIFrame* aBox, nsSize& aSize);
-  static void AddXULMargin(nsIFrame* aChild, nsSize& aSize);
-  static void AddXULMargin(nsSize& aSize, const nsMargin& aMargin);
-
-  static nsSize XULBoundsCheckMinMax(const nsSize& aMinSize,
-                                     const nsSize& aMaxSize);
-  static nsSize XULBoundsCheck(const nsSize& aMinSize, const nsSize& aPrefSize,
-                               const nsSize& aMaxSize);
-  static nscoord XULBoundsCheck(nscoord aMinSize, nscoord aPrefSize,
-                                nscoord aMaxSize);
-
-  static nsIFrame* GetChildXULBox(const nsIFrame* aFrame);
-  static nsIFrame* GetNextXULBox(const nsIFrame* aFrame);
-  static nsIFrame* GetParentXULBox(const nsIFrame* aFrame);
-
  protected:
   
   bool IsFocusableDueToScrollFrame();
@@ -4362,30 +4268,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual bool DoesClipChildrenInBothAxes();
-
-  
-  
-  virtual bool XULComputesOwnOverflowArea() { return true; }
-
-  nsresult SyncXULLayout(nsBoxLayoutState& aBoxLayoutState);
-
-  bool XULNeedsRecalc(const nsSize& aSize);
-  bool XULNeedsRecalc(nscoord aCoord);
-  void XULSizeNeedsRecalc(nsSize& aSize);
-  void XULCoordNeedsRecalc(nscoord& aCoord);
-
-  nsresult BeginXULLayout(nsBoxLayoutState& aState);
-  NS_IMETHOD DoXULLayout(nsBoxLayoutState& aBoxLayoutState);
-  nsresult EndXULLayout(nsBoxLayoutState& aState);
-
-  nsSize GetUncachedXULMinSize(nsBoxLayoutState& aBoxLayoutState);
-  nsSize GetUncachedXULPrefSize(nsBoxLayoutState& aBoxLayoutState);
-  nsSize GetUncachedXULMaxSize(nsBoxLayoutState& aBoxLayoutState);
-
-  
-  
-  
+  bool DoesClipChildrenInBothAxes() const;
 
   
 
@@ -4399,13 +4282,6 @@ class nsIFrame : public nsQueryFrame {
                             bool aConstrainBSize = true);
 
  private:
-  void BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
-                 ReflowOutput& aDesiredSize, gfxContext* aRenderingContext,
-                 nscoord aX, nscoord aY, nscoord aWidth, nscoord aHeight,
-                 bool aMoveFrame = true);
-
-  NS_IMETHODIMP RefreshSizeCache(nsBoxLayoutState& aState);
-
   Maybe<nscoord> ComputeInlineSizeFromAspectRatio(
       mozilla::WritingMode aWM, const mozilla::LogicalSize& aCBSize,
       const mozilla::LogicalSize& aContentEdgeToBoxSizing,

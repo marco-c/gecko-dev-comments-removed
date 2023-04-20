@@ -1569,7 +1569,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   const FrameConstructionData* FindDisplayData(const nsStyleDisplay&,
-                                               mozilla::StyleMozBoxLayout,
                                                const Element&);
 
   

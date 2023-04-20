@@ -98,7 +98,6 @@
 #include "imgIRequest.h"
 #include "nsError.h"
 #include "nsContainerFrame.h"
-#include "nsBoxLayoutState.h"
 #include "nsBlockFrame.h"
 #include "nsDisplayList.h"
 #include "nsChangeHint.h"
@@ -189,21 +188,6 @@ std::ostream& operator<<(std::ostream& aStream, const nsDirection& aDirection) {
   return aStream << (aDirection == eDirNext ? "eDirNext" : "eDirPrevious");
 }
 
-
-struct nsBoxLayoutMetrics {
-  nsSize mPrefSize;
-  nsSize mMinSize;
-  nsSize mMaxSize;
-
-  nsSize mBlockMinSize;
-  nsSize mBlockPrefSize;
-  nscoord mBlockAscent;
-
-  nscoord mAscent;
-
-  nsSize mLastSize;
-};
-
 struct nsContentAndOffset {
   nsIContent* mContent = nullptr;
   int32_t mOffset = 0;
@@ -216,21 +200,6 @@ struct nsContentAndOffset {
 
 #include "nsILineIterator.h"
 #include "prenv.h"
-
-NS_DECLARE_FRAME_PROPERTY_DELETABLE(BoxMetricsProperty, nsBoxLayoutMetrics)
-
-static void InitBoxMetrics(nsIFrame* aFrame, bool aClear) {
-  if (aClear) {
-    aFrame->RemoveProperty(BoxMetricsProperty());
-  }
-
-  nsBoxLayoutMetrics* metrics = new nsBoxLayoutMetrics();
-  aFrame->SetProperty(BoxMetricsProperty(), metrics);
-
-  aFrame->nsIFrame::MarkIntrinsicISizesDirty();
-  metrics->mBlockAscent = 0;
-  metrics->mLastSize.SizeTo(0, 0);
-}
 
 
 
@@ -246,11 +215,6 @@ static void SetOrUpdateRectValuedProperty(
   } else {
     *rectStorage = aNewValue;
   }
-}
-
-static bool IsXULBoxWrapped(const nsIFrame* aFrame) {
-  return aFrame->GetParent() && aFrame->GetParent()->IsXULBoxFrame() &&
-         !aFrame->IsXULBoxFrame();
 }
 
 
@@ -567,8 +531,7 @@ static bool IsFontSizeInflationContainer(nsIFrame* aFrame,
         
         (content->IsAnyOfHTMLElements(
             nsGkAtoms::option, nsGkAtoms::optgroup, nsGkAtoms::select,
-            nsGkAtoms::input, nsGkAtoms::button, nsGkAtoms::textarea)))) &&
-      !(aFrame->IsXULBoxFrame() && aFrame->GetParent()->IsXULBoxFrame());
+            nsGkAtoms::input, nsGkAtoms::button, nsGkAtoms::textarea))));
   NS_ASSERTION(!aFrame->IsFrameOfType(nsIFrame::eLineParticipant) || isInline ||
                    
                    
@@ -773,8 +736,6 @@ void nsIFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   }
 
   DidSetComputedStyle(nullptr);
-
-  if (::IsXULBoxWrapped(this)) ::InitBoxMetrics(this, false);
 
   
   
@@ -2490,8 +2451,7 @@ bool nsIFrame::CanBeDynamicReflowRoot() const {
   if (IsFrameOfType(nsIFrame::eLineParticipant) ||
       nsStyleDisplay::IsRubyDisplayType(display.mDisplay) ||
       display.DisplayOutside() == StyleDisplayOutside::InternalTable ||
-      display.DisplayInside() == StyleDisplayInside::Table ||
-      (GetParent() && GetParent()->IsXULBoxFrame())) {
+      display.DisplayInside() == StyleDisplayInside::Table) {
     
     
     MOZ_ASSERT(!HasAnyStateBits(NS_FRAME_DYNAMIC_REFLOW_ROOT),
@@ -5890,19 +5850,6 @@ Maybe<nsIFrame::Cursor> nsIFrame::GetCursor(const nsPoint&) {
 void nsIFrame::MarkIntrinsicISizesDirty() {
   
   
-  if (::IsXULBoxWrapped(this)) {
-    nsBoxLayoutMetrics* metrics = BoxMetrics();
-
-    XULSizeNeedsRecalc(metrics->mPrefSize);
-    XULSizeNeedsRecalc(metrics->mMinSize);
-    XULSizeNeedsRecalc(metrics->mMaxSize);
-    XULSizeNeedsRecalc(metrics->mBlockPrefSize);
-    XULSizeNeedsRecalc(metrics->mBlockMinSize);
-    XULCoordNeedsRecalc(metrics->mAscent);
-  }
-
-  
-  
   if (IsFlexItem()) {
     nsFlexContainerFrame::MarkCachedFlexMeasurementsDirty(this);
   }
@@ -5935,8 +5882,7 @@ void nsIFrame::MarkSubtreeDirty() {
   }
   while (!stack.IsEmpty()) {
     nsIFrame* f = stack.PopLastElement();
-    if (f->HasAnyStateBits(NS_FRAME_IS_DIRTY) || f->IsTableColGroupFrame() ||
-        f->IsXULBoxFrame()) {
+    if (f->HasAnyStateBits(NS_FRAME_IS_DIRTY) || f->IsTableColGroupFrame()) {
       continue;
     }
 
@@ -6349,8 +6295,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   }
   const bool isFlexItem =
       IsFlexItem() && !parentFrame->HasAnyStateBits(
-                          NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX |
-                          NS_STATE_FLEX_IS_EMULATING_LEGACY_MOZ_BOX);
+                          NS_STATE_FLEX_IS_EMULATING_LEGACY_WEBKIT_BOX);
   
   
   
@@ -7943,14 +7888,10 @@ bool nsIFrame::UpdateOverflow() {
   UnionChildOverflow(overflowAreas);
 
   if (FinishAndStoreOverflow(overflowAreas, GetSize())) {
-    nsView* view = GetView();
-    if (view) {
-      ReflowChildFlags flags = GetXULLayoutFlags();
-      if (!(flags & ReflowChildFlags::NoSizeView)) {
-        
-        nsViewManager* vm = view->GetViewManager();
-        vm->ResizeView(view, overflowAreas.InkOverflow(), true);
-      }
+    if (nsView* view = GetView()) {
+      
+      nsViewManager* vm = view->GetViewManager();
+      vm->ResizeView(view, overflowAreas.InkOverflow(), true);
     }
 
     return true;
@@ -7969,10 +7910,16 @@ bool nsIFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
   return true;
 }
 
+bool nsIFrame::DoesClipChildrenInBothAxes() const {
+  nsIScrollableFrame* sf = do_QueryFrame(this);
+  const nsStyleDisplay* display = StyleDisplay();
+  return sf || (display->mOverflowX == StyleOverflow::Clip &&
+                display->mOverflowY == StyleOverflow::Clip);
+}
+
 
 void nsIFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
-  if (!DoesClipChildrenInBothAxes() &&
-      !(IsXULCollapsed() && (IsXULBoxFrame() || ::IsXULBoxWrapped(this)))) {
+  if (!DoesClipChildrenInBothAxes()) {
     nsLayoutUtils::UnionChildOverflow(this, aOverflowAreas);
   }
 }
@@ -10088,19 +10035,6 @@ bool nsIFrame::FinishAndStoreOverflow(OverflowAreas& aOverflowAreas,
                                  OverflowClipMargin(overflowClipAxes));
   }
 
-  
-  
-  if (!::IsXULBoxWrapped(this) && IsThemed(disp)) {
-    nsRect r(bounds);
-    nsPresContext* presContext = PresContext();
-    if (presContext->Theme()->GetWidgetOverflow(
-            presContext->DeviceContext(), this, disp->EffectiveAppearance(),
-            &r)) {
-      nsRect& vo = aOverflowAreas.InkOverflow();
-      vo = vo.UnionEdges(r);
-    }
-  }
-
   ComputeAndIncludeOutlineArea(this, aOverflowAreas, aNewSize);
 
   
@@ -10701,500 +10635,6 @@ Maybe<StyleVerticalAlignKeyword> nsIFrame::VerticalAlignEnum() const {
   return Nothing();
 }
 
-NS_IMETHODIMP
-nsIFrame::RefreshSizeCache(nsBoxLayoutState& aState) {
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  gfxContext* rendContext = aState.GetRenderingContext();
-  if (rendContext) {
-    nsPresContext* presContext = aState.PresContext();
-
-    
-    
-    nsBoxLayoutMetrics* metrics = BoxMetrics();
-    if (!XULNeedsRecalc(metrics->mBlockPrefSize)) {
-      return NS_OK;
-    }
-
-    
-    nsRect rect = GetRect();
-
-    nsMargin bp(0, 0, 0, 0);
-    GetXULBorderAndPadding(bp);
-
-    {
-      
-      
-      AutoMaybeDisableFontInflation an(this);
-
-      metrics->mBlockPrefSize.width =
-          GetPrefISize(rendContext) + bp.LeftRight();
-      metrics->mBlockMinSize.width = GetMinISize(rendContext) + bp.LeftRight();
-    }
-
-    
-    const WritingMode wm = aState.OuterReflowInput()
-                               ? aState.OuterReflowInput()->GetWritingMode()
-                               : GetWritingMode();
-    ReflowOutput desiredSize(wm);
-    BoxReflow(aState, presContext, desiredSize, rendContext, rect.x, rect.y,
-              metrics->mBlockPrefSize.width, NS_UNCONSTRAINEDSIZE);
-
-    metrics->mBlockMinSize.height = 0;
-    
-    
-    AutoAssertNoDomMutations guard;
-    if (IsBlockFrameOrSubclass()) {
-      nsILineIterator* lines = GetLineIterator();
-      MOZ_ASSERT(lines);
-      metrics->mBlockMinSize.height = 0;
-      int32_t lineCount = lines->GetNumLines();
-      for (int32_t i = 0; i < lineCount; ++i) {
-        auto line = lines->GetLine(i).unwrap();
-
-        if (line.mLineBounds.height > metrics->mBlockMinSize.height) {
-          metrics->mBlockMinSize.height = line.mLineBounds.height;
-        }
-      }
-    } else {
-      metrics->mBlockMinSize.height = desiredSize.Height();
-    }
-
-    metrics->mBlockPrefSize.height = metrics->mBlockMinSize.height;
-
-    if (desiredSize.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
-      if (!nsLayoutUtils::GetFirstLineBaseline(wm, this,
-                                               &metrics->mBlockAscent))
-        metrics->mBlockAscent = GetLogicalBaseline(wm);
-    } else {
-      metrics->mBlockAscent = desiredSize.BlockStartAscent();
-    }
-
-#ifdef DEBUG_adaptor
-    printf("min=(%d,%d), pref=(%d,%d), ascent=%d\n",
-           metrics->mBlockMinSize.width, metrics->mBlockMinSize.height,
-           metrics->mBlockPrefSize.width, metrics->mBlockPrefSize.height,
-           metrics->mBlockAscent);
-#endif
-  }
-
-  return NS_OK;
-}
-
-nsSize nsIFrame::GetXULPrefSize(nsBoxLayoutState& aState) {
-  nsSize size(0, 0);
-  DISPLAY_PREF_SIZE(this, size);
-  
-  
-  nsBoxLayoutMetrics* metrics = BoxMetrics();
-  if (!XULNeedsRecalc(metrics->mPrefSize)) {
-    size = metrics->mPrefSize;
-    return size;
-  }
-
-  if (IsXULCollapsed()) return size;
-
-  
-  bool widthSet, heightSet;
-  bool completelyRedefined =
-      nsIFrame::AddXULPrefSize(this, size, widthSet, heightSet);
-
-  
-  if (!completelyRedefined) {
-    RefreshSizeCache(aState);
-    nsSize blockSize = metrics->mBlockPrefSize;
-
-    
-    
-    if (!widthSet) size.width = blockSize.width;
-    if (!heightSet) size.height = blockSize.height;
-  }
-
-  metrics->mPrefSize = size;
-  return size;
-}
-
-nsSize nsIFrame::GetXULMinSize(nsBoxLayoutState& aState) {
-  nsSize size(0, 0);
-  DISPLAY_MIN_SIZE(this, size);
-  
-  
-  nsBoxLayoutMetrics* metrics = BoxMetrics();
-  if (!XULNeedsRecalc(metrics->mMinSize)) {
-    size = metrics->mMinSize;
-    return size;
-  }
-
-  if (IsXULCollapsed()) return size;
-
-  
-  bool widthSet, heightSet;
-  bool completelyRedefined =
-      nsIFrame::AddXULMinSize(this, size, widthSet, heightSet);
-
-  
-  if (!completelyRedefined) {
-    RefreshSizeCache(aState);
-    nsSize blockSize = metrics->mBlockMinSize;
-
-    if (!widthSet) size.width = blockSize.width;
-    if (!heightSet) size.height = blockSize.height;
-  }
-
-  metrics->mMinSize = size;
-  return size;
-}
-
-nsSize nsIFrame::GetXULMaxSize(nsBoxLayoutState& aState) {
-  nsSize size(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
-  DISPLAY_MAX_SIZE(this, size);
-  
-  
-  nsBoxLayoutMetrics* metrics = BoxMetrics();
-  if (!XULNeedsRecalc(metrics->mMaxSize)) {
-    size = metrics->mMaxSize;
-    return size;
-  }
-
-  if (IsXULCollapsed()) return size;
-
-  size = nsIFrame::GetUncachedXULMaxSize(aState);
-  metrics->mMaxSize = size;
-
-  return size;
-}
-
-int32_t nsIFrame::GetXULFlex() const {
-  return clamped(int32_t(StyleXUL()->mBoxFlex), 0, nscoord_MAX - 1);
-}
-
-nscoord nsIFrame::GetXULBoxAscent(nsBoxLayoutState& aState) {
-  nsBoxLayoutMetrics* metrics = BoxMetrics();
-  if (!XULNeedsRecalc(metrics->mAscent)) {
-    return metrics->mAscent;
-  }
-
-  if (IsXULCollapsed()) {
-    metrics->mAscent = 0;
-  } else {
-    
-    RefreshSizeCache(aState);
-    metrics->mAscent = metrics->mBlockAscent;
-  }
-
-  return metrics->mAscent;
-}
-
-nsresult nsIFrame::DoXULLayout(nsBoxLayoutState& aState) {
-  nsRect ourRect(mRect);
-
-  gfxContext* rendContext = aState.GetRenderingContext();
-  nsPresContext* presContext = aState.PresContext();
-  WritingMode ourWM = GetWritingMode();
-  const WritingMode outerWM = aState.OuterReflowInput()
-                                  ? aState.OuterReflowInput()->GetWritingMode()
-                                  : ourWM;
-  ReflowOutput desiredSize(outerWM);
-  LogicalSize ourSize = GetLogicalSize(outerWM);
-
-  if (rendContext) {
-    BoxReflow(aState, presContext, desiredSize, rendContext, ourRect.x,
-              ourRect.y, ourRect.width, ourRect.height);
-
-    if (IsXULCollapsed()) {
-      SetSize(nsSize(0, 0));
-    } else {
-      
-      
-      
-      if (desiredSize.ISize(outerWM) > ourSize.ISize(outerWM) ||
-          desiredSize.BSize(outerWM) > ourSize.BSize(outerWM)) {
-#ifdef DEBUG_GROW
-        XULDumpBox(stdout);
-        printf(" GREW from (%d,%d) -> (%d,%d)\n", ourSize.ISize(outerWM),
-               ourSize.BSize(outerWM), desiredSize.ISize(outerWM),
-               desiredSize.BSize(outerWM));
-#endif
-
-        if (desiredSize.ISize(outerWM) > ourSize.ISize(outerWM)) {
-          ourSize.ISize(outerWM) = desiredSize.ISize(outerWM);
-        }
-
-        if (desiredSize.BSize(outerWM) > ourSize.BSize(outerWM)) {
-          ourSize.BSize(outerWM) = desiredSize.BSize(outerWM);
-        }
-      }
-
-      
-      
-      SetSize(ourSize.ConvertTo(ourWM, outerWM));
-    }
-  }
-
-  
-  LogicalSize size(GetLogicalSize(outerWM));
-  desiredSize.ISize(outerWM) = size.ISize(outerWM);
-  desiredSize.BSize(outerWM) = size.BSize(outerWM);
-  desiredSize.UnionOverflowAreasWithDesiredBounds();
-
-  if (HasAbsolutelyPositionedChildren()) {
-    
-    ReflowInput reflowInput(aState.PresContext(), this,
-                            aState.GetRenderingContext(),
-                            LogicalSize(ourWM, ISize(), NS_UNCONSTRAINEDSIZE),
-                            ReflowInput::InitFlag::DummyParentReflowInput);
-
-    AddStateBits(NS_FRAME_IN_REFLOW);
-    
-    
-    nsReflowStatus reflowStatus;
-    ReflowAbsoluteFrames(aState.PresContext(), desiredSize, reflowInput,
-                         reflowStatus);
-    RemoveStateBits(NS_FRAME_IN_REFLOW);
-  }
-
-  nsSize oldSize(ourRect.Size());
-  FinishAndStoreOverflow(desiredSize.mOverflowAreas,
-                         size.GetPhysicalSize(outerWM), &oldSize);
-
-  SyncXULLayout(aState);
-
-  return NS_OK;
-}
-
-void nsIFrame::BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
-                         ReflowOutput& aDesiredSize,
-                         gfxContext* aRenderingContext, nscoord aX, nscoord aY,
-                         nscoord aWidth, nscoord aHeight, bool aMoveFrame) {
-  DO_GLOBAL_REFLOW_COUNT("nsBoxToBlockAdaptor");
-
-  nsBoxLayoutMetrics* metrics = BoxMetrics();
-  if (MOZ_UNLIKELY(!metrics)) {
-    
-    
-    
-    
-    
-    MOZ_RELEASE_ASSERT(!XRE_IsContentProcess(),
-                       "Starting XUL BoxReflow w/o BoxMetrics (in content)?");
-    MOZ_ASSERT_UNREACHABLE("Starting XUL BoxReflow w/o BoxMetrics?");
-    return;
-  }
-
-  nsReflowStatus status;
-
-  bool needsReflow = IsSubtreeDirty();
-
-  
-  
-  
-  if (!needsReflow) {
-    if (aWidth != NS_UNCONSTRAINEDSIZE && aHeight != NS_UNCONSTRAINEDSIZE) {
-      
-      if ((metrics->mLastSize.width == 0 || metrics->mLastSize.height == 0) &&
-          (aWidth == 0 || aHeight == 0)) {
-        needsReflow = false;
-        aDesiredSize.Width() = aWidth;
-        aDesiredSize.Height() = aHeight;
-        SetSize(aDesiredSize.Size(GetWritingMode()));
-      } else {
-        aDesiredSize.Width() = metrics->mLastSize.width;
-        aDesiredSize.Height() = metrics->mLastSize.height;
-
-        
-        
-        if (metrics->mLastSize.width == aWidth &&
-            metrics->mLastSize.height == aHeight)
-          needsReflow = false;
-        else
-          needsReflow = true;
-      }
-    } else {
-      
-      
-      needsReflow = true;
-    }
-  }
-
-  
-  if (needsReflow) {
-    aDesiredSize.ClearSize();
-
-    
-
-    
-    
-    nsMargin margin(0, 0, 0, 0);
-    GetXULMargin(margin);
-
-    nsSize parentSize(aWidth, aHeight);
-    if (parentSize.height != NS_UNCONSTRAINEDSIZE)
-      parentSize.height += margin.TopBottom();
-    if (parentSize.width != NS_UNCONSTRAINEDSIZE)
-      parentSize.width += margin.LeftRight();
-
-    nsIFrame* parentFrame = GetParent();
-    WritingMode parentWM = parentFrame->GetWritingMode();
-    ReflowInput parentReflowInput(
-        aPresContext, parentFrame, aRenderingContext,
-        LogicalSize(parentWM, parentSize),
-        ReflowInput::InitFlag::DummyParentReflowInput);
-
-    
-    if (parentSize.width != NS_UNCONSTRAINEDSIZE)
-      parentReflowInput.SetComputedWidth(std::max(parentSize.width, 0));
-    if (parentSize.height != NS_UNCONSTRAINEDSIZE)
-      parentReflowInput.SetComputedHeight(std::max(parentSize.height, 0));
-    parentReflowInput.SetComputedLogicalMargin(parentWM,
-                                               LogicalMargin(parentWM));
-    
-    nsMargin padding;
-    parentFrame->GetXULPadding(padding);
-    parentReflowInput.SetComputedLogicalPadding(
-        parentWM, LogicalMargin(parentWM, padding));
-    nsMargin border;
-    parentFrame->GetXULBorder(border);
-    parentReflowInput.SetComputedLogicalBorderPadding(
-        parentWM, LogicalMargin(parentWM, border + padding));
-
-    
-    
-    const ReflowInput* outerReflowInput = aState.OuterReflowInput();
-    NS_ASSERTION(!outerReflowInput || outerReflowInput->mFrame != this,
-                 "in and out of XUL on a single frame?");
-    const ReflowInput* parentRI;
-    if (outerReflowInput && outerReflowInput->mFrame == parentFrame) {
-      
-      
-      
-      
-      
-      parentRI = outerReflowInput;
-    } else {
-      parentRI = &parentReflowInput;
-    }
-
-    
-    
-    WritingMode wm = GetWritingMode();
-    LogicalSize logicalSize(wm, nsSize(aWidth, aHeight));
-    logicalSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-    ReflowInput reflowInput(aPresContext, *parentRI, this, logicalSize,
-                            Nothing(),
-                            ReflowInput::InitFlag::DummyParentReflowInput);
-
-    
-    
-    
-    reflowInput.mCBReflowInput = parentRI;
-
-    reflowInput.mReflowDepth = aState.GetReflowDepth();
-
-    
-    
-    if (aWidth != NS_UNCONSTRAINEDSIZE) {
-      nscoord computedWidth =
-          aWidth - reflowInput.ComputedPhysicalBorderPadding().LeftRight();
-      computedWidth = std::max(computedWidth, 0);
-      reflowInput.SetComputedWidth(computedWidth);
-    }
-
-    
-    
-    
-    
-    
-    if (!IsBlockFrameOrSubclass()) {
-      if (aHeight != NS_UNCONSTRAINEDSIZE) {
-        nscoord computedHeight =
-            aHeight - reflowInput.ComputedPhysicalBorderPadding().TopBottom();
-        computedHeight = std::max(computedHeight, 0);
-        reflowInput.SetComputedHeight(computedHeight);
-      } else {
-        reflowInput.SetComputedHeight(
-            ComputeSize(
-                aRenderingContext, wm, logicalSize, logicalSize.ISize(wm),
-                reflowInput.ComputedLogicalMargin(wm).Size(wm),
-                reflowInput.ComputedLogicalBorderPadding(wm).Size(wm), {}, {})
-                .mLogicalSize.Height(wm));
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    if (metrics->mLastSize.width != aWidth) {
-      reflowInput.SetHResize(true);
-
-      
-      
-      
-      if (nsLayoutUtils::FontSizeInflationEnabled(aPresContext)) {
-        this->MarkSubtreeDirty();
-      }
-    }
-    if (metrics->mLastSize.height != aHeight) {
-      reflowInput.SetVResize(true);
-    }
-
-    
-
-    Reflow(aPresContext, aDesiredSize, reflowInput, status);
-
-    NS_ASSERTION(status.IsComplete(), "bad status");
-
-    ReflowChildFlags layoutFlags = aState.LayoutFlags();
-    nsContainerFrame::FinishReflowChild(
-        this, aPresContext, aDesiredSize, &reflowInput, aX, aY,
-        layoutFlags | ReflowChildFlags::NoMoveFrame);
-
-    
-    if (IsXULCollapsed()) {
-      metrics->mAscent = 0;
-    } else {
-      if (aDesiredSize.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
-        if (!nsLayoutUtils::GetFirstLineBaseline(wm, this, &metrics->mAscent))
-          metrics->mAscent = GetLogicalBaseline(wm);
-      } else
-        metrics->mAscent = aDesiredSize.BlockStartAscent();
-    }
-
-  } else {
-    aDesiredSize.SetBlockStartAscent(metrics->mBlockAscent);
-  }
-
-  metrics->mLastSize.width = aDesiredSize.Width();
-  metrics->mLastSize.height = aDesiredSize.Height();
-}
-
-nsBoxLayoutMetrics* nsIFrame::BoxMetrics() const {
-  nsBoxLayoutMetrics* metrics = GetProperty(BoxMetricsProperty());
-  NS_ASSERTION(
-      metrics,
-      "A box layout method was called but InitBoxMetrics was never called");
-  return metrics;
-}
-
 void nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
                                          ServoRestyleState& aRestyleState) {
 #ifdef DEBUG
@@ -11347,14 +10787,6 @@ void nsIFrame::SetParent(nsContainerFrame* aParent) {
   
   mParent = aParent;
   MOZ_DIAGNOSTIC_ASSERT(!mParent || PresShell() == mParent->PresShell());
-  if (::IsXULBoxWrapped(this)) {
-    ::InitBoxMetrics(this, true);
-  } else {
-    
-    
-    
-    
-  }
 
   if (HasAnyStateBits(NS_FRAME_HAS_VIEW | NS_FRAME_HAS_CHILD_WITH_VIEW)) {
     for (nsIFrame* f = aParent;
@@ -12475,7 +11907,6 @@ void DR_State::InitFrameTypeTable() {
   AddFrameTypeInfo(LayoutFrameType::TextInput, "textCtl", "textInput");
   AddFrameTypeInfo(LayoutFrameType::Text, "text", "text");
   AddFrameTypeInfo(LayoutFrameType::Viewport, "VP", "viewport");
-  AddFrameTypeInfo(LayoutFrameType::Box, "Box", "Box");
   AddFrameTypeInfo(LayoutFrameType::Slider, "Slider", "Slider");
   AddFrameTypeInfo(LayoutFrameType::None, "unknown", "unknown");
 }

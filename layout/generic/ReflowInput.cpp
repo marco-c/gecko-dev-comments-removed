@@ -697,8 +697,7 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
                           mStylePosition->MinBSizeDependsOnContainer(wm) ||
                           mStylePosition->MaxBSizeDependsOnContainer(wm) ||
                           mStylePosition->mOffset.GetBStart(wm).HasPercent() ||
-                          !mStylePosition->mOffset.GetBEnd(wm).IsAuto() ||
-                          mFrame->IsXULBoxFrame();
+                          !mStylePosition->mOffset.GetBEnd(wm).IsAuto();
 
   
   
@@ -1041,12 +1040,6 @@ void ReflowInput::ApplyRelativePositioning(
       mozilla::LogicalPoint(aWritingMode, pos, aContainerSize - frameSize);
 }
 
-
-
-static bool IsXULCollapsedXULFrame(nsIFrame* aFrame) {
-  return aFrame && aFrame->IsXULBoxFrame() && aFrame->IsXULCollapsed();
-}
-
 nsIFrame* ReflowInput::GetHypotheticalBoxContainer(nsIFrame* aFrame,
                                                    nscoord& aCBIStartEdge,
                                                    LogicalSize& aCBSize) const {
@@ -1082,20 +1075,9 @@ nsIFrame* ReflowInput::GetHypotheticalBoxContainer(nsIFrame* aFrame,
     WritingMode wm = aFrame->GetWritingMode();
     
     
-    
-    
-    
-    
-    
-    aCBIStartEdge = 0;
-    aCBSize = aFrame->GetLogicalSize(wm);
-    if (!aCBSize.IsAllZero() || !IsXULCollapsedXULFrame(aFrame->GetParent())) {
-      
-      
-      LogicalMargin borderPadding = aFrame->GetLogicalUsedBorderAndPadding(wm);
-      aCBIStartEdge += borderPadding.IStart(wm);
-      aCBSize -= borderPadding.Size(wm);
-    }
+    const auto& bp = aFrame->GetLogicalUsedBorderAndPadding(wm);
+    aCBIStartEdge = bp.IStart(wm);
+    aCBSize = aFrame->GetLogicalSize(wm) - bp.Size(wm);
   }
 
   return aFrame;
@@ -2152,11 +2134,6 @@ void ReflowInput::InitConstraints(
     nsPresContext* aPresContext, const Maybe<LogicalSize>& aContainingBlockSize,
     const Maybe<LogicalMargin>& aBorder, const Maybe<LogicalMargin>& aPadding,
     LayoutFrameType aFrameType) {
-  MOZ_ASSERT(!mStyleDisplay->IsFloating(mFrame) ||
-                 (mStyleDisplay->mDisplay != StyleDisplay::MozBox &&
-                  mStyleDisplay->mDisplay != StyleDisplay::MozInlineBox),
-             "Please don't try to float a -moz-box or a -moz-inline-box");
-
   WritingMode wm = GetWritingMode();
   LogicalSize cbSize = aContainingBlockSize.valueOr(
       LogicalSize(mWritingMode, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE));

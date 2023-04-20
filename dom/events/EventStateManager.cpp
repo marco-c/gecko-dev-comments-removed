@@ -3119,8 +3119,7 @@ void EventStateManager::DecideGestureEvent(WidgetGestureNotifyEvent* aEvent,
     }
 
     
-    nsTreeBodyFrame* treeFrame = do_QueryFrame(current);
-    if (treeFrame) {
+    if (nsTreeBodyFrame* treeFrame = do_QueryFrame(current)) {
       if (treeFrame->GetHorizontalOverflow()) {
         panDirection = WidgetGestureNotifyEvent::ePanHorizontal;
       }
@@ -3131,39 +3130,19 @@ void EventStateManager::DecideGestureEvent(WidgetGestureNotifyEvent* aEvent,
     }
 
     if (nsIScrollableFrame* scrollableFrame = do_QueryFrame(current)) {
-      if (current->IsFrameOfType(nsIFrame::eXULBox)) {
+      layers::ScrollDirections scrollbarVisibility =
+          scrollableFrame->GetScrollbarVisibility();
+
+      
+      if (scrollbarVisibility.contains(layers::ScrollDirection::eVertical)) {
+        panDirection = WidgetGestureNotifyEvent::ePanVertical;
         displayPanFeedback = true;
+        break;
+      }
 
-        nsRect scrollRange = scrollableFrame->GetScrollRange();
-        bool canScrollHorizontally = scrollRange.width > 0;
-
-        
-        
-        if (scrollRange.height > 0) {
-          panDirection = WidgetGestureNotifyEvent::ePanVertical;
-          break;
-        }
-
-        if (canScrollHorizontally) {
-          panDirection = WidgetGestureNotifyEvent::ePanHorizontal;
-          displayPanFeedback = false;
-        }
-      } else {  
-        layers::ScrollDirections scrollbarVisibility =
-            scrollableFrame->GetScrollbarVisibility();
-
-        
-        if (scrollbarVisibility.contains(layers::ScrollDirection::eVertical)) {
-          panDirection = WidgetGestureNotifyEvent::ePanVertical;
-          displayPanFeedback = true;
-          break;
-        }
-
-        if (scrollbarVisibility.contains(
-                layers::ScrollDirection::eHorizontal)) {
-          panDirection = WidgetGestureNotifyEvent::ePanHorizontal;
-          displayPanFeedback = true;
-        }
+      if (scrollbarVisibility.contains(layers::ScrollDirection::eHorizontal)) {
+        panDirection = WidgetGestureNotifyEvent::ePanHorizontal;
+        displayPanFeedback = true;
       }
     }  
   }    
