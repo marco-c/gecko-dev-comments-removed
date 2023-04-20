@@ -85,7 +85,7 @@ already_AddRefed<nsIURI> AntiTrackingUtils::MaybeGetDocumentURIBeingLoaded(
     
     
     
-    rv = aChannel->GetURI(getter_AddRefs(uriBeingLoaded));
+    rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uriBeingLoaded));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return nullptr;
     }
