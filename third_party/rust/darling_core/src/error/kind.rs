@@ -6,10 +6,10 @@ type DeriveInputShape = String;
 type FieldName = String;
 type MetaFormat = String;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 
 
-#[cfg_attr(test, derive(Clone, PartialEq, Eq))]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 pub(in crate::error) enum ErrorKind {
     
     Custom(String),
@@ -104,10 +104,10 @@ impl From<ErrorUnknownField> for ErrorKind {
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 
 
-#[cfg_attr(test, derive(Clone, PartialEq, Eq))]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 pub(in crate::error) struct ErrorUnknownField {
     name: String,
     did_you_mean: Option<String>,

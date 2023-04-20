@@ -80,6 +80,20 @@ pub trait FromMeta: Sized {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from_none() -> Option<Self> {
+        None
+    }
+
+    
+    
     fn from_word() -> Result<Self> {
         Err(Error::unsupported_format("word"))
     }
@@ -390,18 +404,30 @@ impl FromMeta for ident_case::RenameRule {
 }
 
 impl<T: FromMeta> FromMeta for Option<T> {
+    fn from_none() -> Option<Self> {
+        Some(None)
+    }
+
     fn from_meta(item: &Meta) -> Result<Self> {
         FromMeta::from_meta(item).map(Some)
     }
 }
 
 impl<T: FromMeta> FromMeta for Box<T> {
+    fn from_none() -> Option<Self> {
+        T::from_none().map(Box::new)
+    }
+
     fn from_meta(item: &Meta) -> Result<Self> {
         FromMeta::from_meta(item).map(Box::new)
     }
 }
 
 impl<T: FromMeta> FromMeta for Result<T> {
+    fn from_none() -> Option<Self> {
+        T::from_none().map(Ok)
+    }
+
     fn from_meta(item: &Meta) -> Result<Self> {
         Ok(FromMeta::from_meta(item))
     }
@@ -418,18 +444,30 @@ impl<T: FromMeta> FromMeta for ::std::result::Result<T, Meta> {
 }
 
 impl<T: FromMeta> FromMeta for Rc<T> {
+    fn from_none() -> Option<Self> {
+        T::from_none().map(Rc::new)
+    }
+
     fn from_meta(item: &Meta) -> Result<Self> {
         FromMeta::from_meta(item).map(Rc::new)
     }
 }
 
 impl<T: FromMeta> FromMeta for Arc<T> {
+    fn from_none() -> Option<Self> {
+        T::from_none().map(Arc::new)
+    }
+
     fn from_meta(item: &Meta) -> Result<Self> {
         FromMeta::from_meta(item).map(Arc::new)
     }
 }
 
 impl<T: FromMeta> FromMeta for RefCell<T> {
+    fn from_none() -> Option<Self> {
+        T::from_none().map(RefCell::new)
+    }
+
     fn from_meta(item: &Meta) -> Result<Self> {
         FromMeta::from_meta(item).map(RefCell::new)
     }
@@ -583,7 +621,7 @@ mod tests {
 
     #[test]
     fn unit_succeeds() {
-        let () = fm::<()>(quote!(ignore));
+        fm::<()>(quote!(ignore));
     }
 
     #[test]

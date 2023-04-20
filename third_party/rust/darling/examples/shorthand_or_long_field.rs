@@ -39,7 +39,6 @@ impl MyDeriveInput {
 #[derive(Debug, Clone, FromMeta)]
 struct Table {
     name: String,
-    #[darling(default)]
     value: Option<Path>,
 }
 

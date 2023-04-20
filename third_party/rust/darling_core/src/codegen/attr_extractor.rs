@@ -9,11 +9,6 @@ pub trait ExtractAttribute {
     fn local_declarations(&self) -> TokenStream;
 
     
-    
-    
-    fn immutable_declarations(&self) -> TokenStream;
-
-    
     fn attr_names(&self) -> &PathList;
 
     fn forwarded_attrs(&self) -> Option<&ForwardAttrs>;
@@ -32,17 +27,9 @@ pub trait ExtractAttribute {
     
     fn core_loop(&self) -> TokenStream;
 
-    fn declarations(&self) -> TokenStream {
-        if !self.attr_names().is_empty() {
-            self.local_declarations()
-        } else {
-            self.immutable_declarations()
-        }
-    }
-
     
     fn extractor(&self) -> TokenStream {
-        let declarations = self.declarations();
+        let declarations = self.local_declarations();
 
         let will_parse_any = !self.attr_names().is_empty();
         let will_fwd_any = self

@@ -6,7 +6,7 @@ use crate::{FromMeta, Result};
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct OuterFrom {
     
     pub ident: Option<Ident>,
