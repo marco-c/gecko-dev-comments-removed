@@ -1282,10 +1282,6 @@ class TelemetryFeed {
         newtab_visit_id: session.session_id,
         source,
       });
-      
-      
-      
-      Glean.serverKnobs.validation.record();
     }
   }
 
