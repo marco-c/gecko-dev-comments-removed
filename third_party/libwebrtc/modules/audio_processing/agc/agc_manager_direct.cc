@@ -69,7 +69,7 @@ bool UseMaxAnalogChannelLevel() {
 
 absl::optional<int> GetMinMicLevelOverride() {
   constexpr char kMinMicLevelFieldTrial[] =
-      "WebRTC-Audio-AgcMinMicLevelExperiment";
+      "WebRTC-Audio-2ndAgcMinMicLevelExperiment";
   if (!webrtc::field_trial::IsEnabled(kMinMicLevelFieldTrial)) {
     return absl::nullopt;
   }
@@ -722,9 +722,8 @@ void AgcManagerDirect::AggregateChannelLevels() {
       }
     }
   }
-  
-  
-  if (min_mic_level_override_.has_value()) {
+
+  if (min_mic_level_override_.has_value() && stream_analog_level_ > 0) {
     stream_analog_level_ =
         std::max(stream_analog_level_, *min_mic_level_override_);
   }
