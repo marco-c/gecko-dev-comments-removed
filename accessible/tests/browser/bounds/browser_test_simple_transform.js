@@ -88,6 +88,27 @@ addAccessibleTask(
 </div>
   `,
   async function(browser, docAcc) {
+    if (isCacheEnabled) {
+      
+      
+      
+      
+      
+      
+      
+      let hasTransform;
+      try {
+        const willChangeInner = findAccessibleChildByID(
+          docAcc,
+          "willChangeInner"
+        );
+        willChangeInner.cache.getStringProperty("transform");
+        hasTransform = true;
+      } catch (e) {
+        hasTransform = false;
+      }
+      ok(!hasTransform, "willChangeInner has no cached transform");
+    }
     await testBoundsWithContent(docAcc, "willChangeTopP2", browser);
     await testBoundsWithContent(docAcc, "willChangeInnerP2", browser);
   },
