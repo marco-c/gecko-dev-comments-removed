@@ -552,12 +552,8 @@ MOZ_ALWAYS_INLINE bool Proxy::setInternal(JSContext* cx, HandleObject proxy,
   
   
   
-  if (id.isPrivateName()) {
-    if (handler->useProxyExpandoObjectForPrivateFields()) {
-      return ProxySetOnExpando(cx, proxy, id, v, receiver, result);
-    }
-
-    return handler->set(cx, proxy, id, v, receiver, result);
+  if (id.isPrivateName() && handler->useProxyExpandoObjectForPrivateFields()) {
+    return ProxySetOnExpando(cx, proxy, id, v, receiver, result);
   }
 
   
