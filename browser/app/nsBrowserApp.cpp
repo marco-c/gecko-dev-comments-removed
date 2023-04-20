@@ -308,12 +308,6 @@ int main(int argc, char* argv[], char* envp[]) {
     
     CrashReporter::RegisterRuntimeExceptionModule();
 
-#  ifdef HAS_DLL_BLOCKLIST
-    uint32_t initFlags =
-        gBlocklistInitFlags | eDllBlocklistInitFlagIsChildProcess;
-    SetDllBlocklistProcessTypeFlags(initFlags, GetGeckoProcessType());
-    DllBlocklist_Initialize(initFlags);
-#  endif  
 #  if defined(XP_WIN) && defined(MOZ_SANDBOX)
     
     
@@ -323,7 +317,16 @@ int main(int argc, char* argv[], char* envp[]) {
     if (win32kLockedDown.isSome() && *win32kLockedDown) {
       mozilla::SetWin32kLockedDownInPolicy();
     }
+#  endif
 
+#  ifdef HAS_DLL_BLOCKLIST
+    uint32_t initFlags =
+        gBlocklistInitFlags | eDllBlocklistInitFlagIsChildProcess;
+    SetDllBlocklistProcessTypeFlags(initFlags, GetGeckoProcessType());
+    DllBlocklist_Initialize(initFlags);
+#  endif  
+
+#  if defined(XP_WIN) && defined(MOZ_SANDBOX)
     
     
     if (IsSandboxedProcess() && !sandboxing::GetInitializedTargetServices()) {
