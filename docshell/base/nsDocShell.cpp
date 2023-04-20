@@ -975,7 +975,6 @@ bool nsDocShell::MaybeHandleSubframeHistory(
       
       
       
-      MOZ_ASSERT(!aLoadState->IsFormSubmission());
       bool inOnLoadHandler = false;
       GetIsExecutingOnLoadHandler(&inOnLoadHandler);
       if (inOnLoadHandler) {
@@ -13086,20 +13085,11 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
     CopyUTF8toUTF16(type, typeHint);
   }
 
-  uint32_t loadType;
-  if (aLoadState->IsFormSubmission()) {
-    
-    
-    
-    
-    loadType = mEODForCurrentDocument ? LOAD_LINK : LOAD_NORMAL_REPLACE;
-  } else {
-    
-    
-    bool inOnLoadHandler = false;
-    GetIsExecutingOnLoadHandler(&inOnLoadHandler);
-    loadType = inOnLoadHandler ? LOAD_NORMAL_REPLACE : LOAD_LINK;
-  }
+  
+  
+  bool inOnLoadHandler = false;
+  GetIsExecutingOnLoadHandler(&inOnLoadHandler);
+  uint32_t loadType = inOnLoadHandler ? LOAD_NORMAL_REPLACE : LOAD_LINK;
 
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
       elementCanHaveNoopener ? new ReferrerInfo(*aContent->AsElement())
