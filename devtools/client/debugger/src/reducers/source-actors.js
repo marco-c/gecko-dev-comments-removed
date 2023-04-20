@@ -2,8 +2,6 @@
 
 
 
-import { asyncActionAsValue } from "../actions/utils/middleware/promise";
-
 
 
 
@@ -17,7 +15,6 @@ function initialSourceActorsState() {
     
     mutableSourceActors: new Map(),
 
-    
     
     
     mutableBreakableLines: new Map(),
@@ -86,7 +83,6 @@ function clearSourceActorMapURL(state, sourceActorId) {
 }
 
 function updateBreakableLines(state, action) {
-  const value = asyncActionAsValue(action);
   const { sourceActorId } = action;
 
   
@@ -94,7 +90,7 @@ function updateBreakableLines(state, action) {
     return state;
   }
 
-  state.mutableBreakableLines.set(sourceActorId, value);
+  state.mutableBreakableLines.set(sourceActorId, action.breakableLines);
   return {
     ...state,
   };
