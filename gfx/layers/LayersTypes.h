@@ -246,6 +246,8 @@ enum TextureDumpMode {
   DoNotCompress  
 };
 
+
+
 typedef uint32_t TouchBehaviorFlags;
 
 
