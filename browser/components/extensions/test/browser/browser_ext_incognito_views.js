@@ -2,6 +2,12 @@
 
 "use strict";
 
+add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.openPopupWithoutUserGesture.enabled", true]],
+  });
+});
+
 add_task(async function testIncognitoViews() {
   
   EventUtils.synthesizeMouseAtCenter(
