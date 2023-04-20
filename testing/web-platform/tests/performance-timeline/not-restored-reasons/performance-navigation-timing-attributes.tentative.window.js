@@ -26,35 +26,29 @@ promise_test(async t => {
         scripts: [],
         headers: [],
       },
-       {id: 'test-id'},
+       {id: '', name: ''},
   );
   
-  await useWebSocket(rc1_child);
+  await useWebSocket(rc1);
   const rc1_child_url = await rc1_child.executeScript(() => {
     return location.href;
   });
   
-  const rc1_grand_child = await rc1_child.addIframe();
-  const rc1_grand_child_url = await rc1_grand_child.executeScript(() => {
-    return location.href;
-  });
-
-  
   await assertBFCache(rc1,  false);
   await assertNotRestoredReasonsEquals(
       rc1,
-       false,
+       true,
        rc1_url,
        null,
        null,
        null,
-      [],
+      ['WebSocket'],
       [{
-        'blocked': true,
+        'blocked': false,
         'url': null,
         'src': rc1_child_url,
-        'id': 'test-id',
         
+        'id': '',
         'name': '',
         'reasons': [],
         'children': []
