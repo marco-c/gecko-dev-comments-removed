@@ -1228,15 +1228,11 @@ void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
   
   
   as_ftintrz_l_d(fpscratch, src);
-
-  
-  as_movfcsr2gr(scratch);
-  as_bstrpick_w(scratch, scratch, Assembler::CauseO, Assembler::CauseO);
-  ma_b(scratch, Imm32(0), fail, Assembler::NotEqual);
-
   moveFromDouble(fpscratch, dest);
+
   
-  as_slli_w(dest, dest, 0);
+  as_slli_w(scratch, dest, 0);
+  ma_b(dest, scratch, fail, Assembler::NotEqual);
 }
 
 template <typename T>
