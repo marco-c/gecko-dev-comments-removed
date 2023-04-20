@@ -68,11 +68,6 @@ interface nsISHEntry : nsISupports
     
 
 
-    [infallible] attribute nsIURI unstrippedURI;
-
-    
-
-
     [infallible] attribute boolean loadReplace;
 
     
@@ -329,7 +324,6 @@ interface nsISHEntry : nsISupports
                            in boolean dynamicCreation,
                            in nsIURI originalURI,
                            in nsIURI resultPrincipalURI,
-                           in nsIURI unstrippedURI,
                            in bool loadReplace,
                            in nsIReferrerInfo referrerInfo,
                            in AString srcdoc,
