@@ -14,14 +14,9 @@
 importScripts("chrome://global/content/translations/bergamot-translator.js");
 
 
-let _loggingLevel = "Error";
+let _isLoggingEnabled = false;
 function log(...args) {
-  if (_loggingLevel !== "Error" && _loggingLevel !== "Warn") {
-    console.log("Translations:", ...args);
-  }
-}
-function trace(...args) {
-  if (_loggingLevel === "Trace" || _loggingLevel === "All") {
+  if (_isLoggingEnabled) {
     console.log("Translations:", ...args);
   }
 }
@@ -65,7 +60,7 @@ async function handleInitializationMessage({ data }) {
       fromLanguage,
       toLanguage,
       enginePayload,
-      logLevel,
+      isLoggingEnabled,
       innerWindowId,
     } = data;
 
@@ -76,9 +71,9 @@ async function handleInitializationMessage({ data }) {
       throw new Error('Worker initialization missing "toLanguage"');
     }
 
-    if (logLevel) {
+    if (isLoggingEnabled) {
       
-      _loggingLevel = logLevel;
+      _isLoggingEnabled = true;
     }
 
     let engine;
@@ -107,6 +102,7 @@ async function handleInitializationMessage({ data }) {
     handleMessages(engine);
     postMessage({ type: "initialization-success" });
   } catch (error) {
+    
     console.error(error);
     postMessage({ type: "initialization-error", error: error?.message });
   }
@@ -145,16 +141,6 @@ function handleMessages(engine) {
               isHTML,
               innerWindowId
             );
-
-            
-            
-            
-            trace("Translation complete", {
-              messageBatch,
-              translations,
-              isHTML,
-              innerWindowId,
-            });
 
             postMessage({
               type: "translation-response",
@@ -534,8 +520,6 @@ class BergamotUtils {
 
       
       const bergamot = loadBergamot({
-        
-        INITIAL_MEMORY: 459_276_288,
         preRun: [],
         onAbort() {
           reject(new Error("Error loading Bergamot wasm module."));

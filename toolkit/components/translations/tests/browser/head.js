@@ -3,9 +3,9 @@
 
 "use strict";
 
-
-const BLANK_PAGE =
-  "data:text/html;charset=utf-8,<title>Blank</title>Blank page";
+const { TranslationsParent } = ChromeUtils.importESModule(
+  "resource://gre/actors/TranslationsParent.sys.mjs"
+);
 
 
 
@@ -74,21 +74,20 @@ async function openAboutTranslations({
   
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    BLANK_PAGE,
+    "about:blank",
     true 
   );
 
   
-  if (!languagePairs) {
-    throw new Error(
-      "Expected language pairs for mocking the translations engine."
+  if (languagePairs) {
+    TranslationsParent.mockLanguagePairs(languagePairs);
+  }
+  if (detectedLanguageLabel && detectedLanguageConfidence) {
+    TranslationsParent.mockLanguageIdentification(
+      detectedLanguageLabel,
+      detectedLanguageConfidence
     );
   }
-  TranslationsParent.mockLanguagePairs(languagePairs);
-  TranslationsParent.mockLanguageIdentification(
-    detectedLanguageLabel ?? "en",
-    detectedLanguageConfidence ?? "0.5"
-  );
 
   
   BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:translations");
@@ -257,20 +256,19 @@ async function reorderingTranslator(message) {
   return [translatedDoc.body.innerHTML];
 }
 
-async function loadTestPage({ runInPage, languagePairs, page, prefs }) {
+async function loadTestPage({ runInPage, languagePairs, page }) {
   await SpecialPowers.pushPrefEnv({
     set: [
       
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
-      ...(prefs ?? []),
     ],
   });
 
   
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    BLANK_PAGE,
+    "about:blank",
     true 
   );
 

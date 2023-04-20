@@ -3781,17 +3781,11 @@ pref("browser.sanitizer.loglevel", "Warn");
 
 pref("browser.translations.enable", false);
 
-
-
 pref("browser.translations.logLevel", "Error");
 
 
 
 pref("browser.translations.useHTML", false);
-
-
-
-pref("browser.translations.autoTranslate", false);
 
 
 
