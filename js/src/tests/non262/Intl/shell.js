@@ -140,6 +140,10 @@ const numberingSystems = {
     "algorithmic": false,
     "digits": "꤀꤁꤂꤃꤄꤅꤆꤇꤈꤉"
   },
+  "kawi": {
+    "algorithmic": false,
+    "digits": "𑽐𑽑𑽒𑽓𑽔𑽕𑽖𑽗𑽘𑽙"
+  },
   "khmr": {
     "algorithmic": false,
     "digits": "០១២៣៤៥៦៧៨៩"
@@ -223,6 +227,10 @@ const numberingSystems = {
   "mymrtlng": {
     "algorithmic": false,
     "digits": "꧰꧱꧲꧳꧴꧵꧶꧷꧸꧹"
+  },
+  "nagm": {
+    "algorithmic": false,
+    "digits": "𞓰𞓱𞓲𞓳𞓴𞓵𞓶𞓷𞓸𞓹"
   },
   "newa": {
     "algorithmic": false,
