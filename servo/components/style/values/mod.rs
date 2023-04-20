@@ -350,7 +350,7 @@ where
     W: Write,
 {
     (value * 100.).to_css(dest)?;
-    dest.write_str("%")
+    dest.write_char('%')
 }
 
 

@@ -71,9 +71,9 @@ impl ToCssWithGuard for StyleRule {
         declaration_block.to_css(dest)?;
         
         if !declaration_block.declarations().is_empty() {
-            dest.write_str(" ")?;
+            dest.write_char(' ')?;
         }
         
-        dest.write_str("}")
+        dest.write_char('}')
     }
 }
