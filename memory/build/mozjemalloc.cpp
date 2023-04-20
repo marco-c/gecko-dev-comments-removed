@@ -803,6 +803,7 @@ class FastDivisor {
   static const unsigned divide_inv_shift = 17;
 
   
+  
   T inv;
 
  public:
@@ -815,6 +816,9 @@ class FastDivisor {
     
     MOZ_ASSERT((1U << divide_inv_shift) >= div);
 
+    
+    
+    
     unsigned inv_ = ((1U << divide_inv_shift) + div - 1 -
                      (((1U << divide_inv_shift) - 1) % div)) /
                     div;
