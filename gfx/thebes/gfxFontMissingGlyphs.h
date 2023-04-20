@@ -39,11 +39,8 @@ class gfxFontMissingGlyphs final {
 
 
 
-
-
   static void DrawMissingGlyph(uint32_t aChar, const Rect& aRect,
                                DrawTarget& aDrawTarget, const Pattern& aPattern,
-                               uint32_t aAppUnitsPerDevPixel,
                                const Matrix* aMat = nullptr);
   
 

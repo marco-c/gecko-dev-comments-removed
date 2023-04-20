@@ -378,7 +378,6 @@ void gfxFontMissingGlyphs::Shutdown() { Purge(); }
 void gfxFontMissingGlyphs::DrawMissingGlyph(uint32_t aChar, const Rect& aRect,
                                             DrawTarget& aDrawTarget,
                                             const Pattern& aPattern,
-                                            uint32_t aAppUnitsPerDevPixel,
                                             const Matrix* aMat) {
   Rect rect(aRect);
   
@@ -426,10 +425,19 @@ void gfxFontMissingGlyphs::DrawMissingGlyph(uint32_t aChar, const Rect& aRect,
   Point center = rect.Center();
   Float halfGap = HEX_CHAR_GAP / 2.f;
   Float top = -(MINIFONT_HEIGHT + halfGap);
+
   
   
-  int32_t devPixelsPerCSSPx =
-      std::max<int32_t>(1, AppUnitsPerCSSPixel() / aAppUnitsPerDevPixel);
+  Float width = HEX_CHAR_GAP + MINIFONT_WIDTH + HEX_CHAR_GAP + MINIFONT_WIDTH +
+                ((aChar < 0x10000) ? 0 : HEX_CHAR_GAP + MINIFONT_WIDTH) +
+                HEX_CHAR_GAP;
+  Float height = HEX_CHAR_GAP + MINIFONT_HEIGHT + HEX_CHAR_GAP +
+                 MINIFONT_HEIGHT + HEX_CHAR_GAP;
+  Float scaling = std::min(rect.Height() / height, rect.Width() / width);
+
+  
+  
+  int32_t devPixelsPerCSSPx = std::max<int32_t>(1, std::floor(scaling));
 
   Matrix tempMat;
   if (aMat) {
