@@ -6286,15 +6286,6 @@ bool profiler_feature_active(uint32_t aFeature) {
   return RacyFeatures::IsActiveWithFeature(aFeature);
 }
 
-bool profiler_active_without_feature(uint32_t aFeature) {
-  
-
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  
-  return RacyFeatures::IsActiveWithoutFeature(aFeature);
-}
-
 void profiler_write_active_configuration(JSONWriter& aWriter) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
   PSAutoLock lock;
@@ -6796,8 +6787,7 @@ UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
   AUTO_PROFILER_LABEL("profiler_capture_backtrace", PROFILER);
 
   
-  
-  if (!profiler_active_without_feature(ProfilerFeature::NoMarkerStacks)) {
+  if (!profiler_is_active()) {
     return nullptr;
   }
 
