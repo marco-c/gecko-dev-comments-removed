@@ -4642,31 +4642,29 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     UpdateFlexLineAndItemInfo(*containerInfo, flr.mLines);
   }
 
-  if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
-    
-    
-    if (!prevInFlow) {
-      SharedFlexData* sharedData = GetProperty(SharedFlexData::Prop());
-      if (!aStatus.IsFullyComplete()) {
-        if (!sharedData) {
-          sharedData = new SharedFlexData;
-          SetProperty(SharedFlexData::Prop(), sharedData);
-        }
-        sharedData->Update(std::move(flr));
-
-        SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
-      } else if (sharedData && !GetNextInFlow()) {
-        
-        
-        
-        
-        
-        RemoveProperty(SharedFlexData::Prop());
-        RemoveProperty(SumOfChildrenBlockSizeProperty());
+  
+  
+  if (!prevInFlow) {
+    SharedFlexData* sharedData = GetProperty(SharedFlexData::Prop());
+    if (!aStatus.IsFullyComplete()) {
+      if (!sharedData) {
+        sharedData = new SharedFlexData;
+        SetProperty(SharedFlexData::Prop(), sharedData);
       }
-    } else {
+      sharedData->Update(std::move(flr));
+
       SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
+    } else if (sharedData && !GetNextInFlow()) {
+      
+      
+      
+      
+      
+      RemoveProperty(SharedFlexData::Prop());
+      RemoveProperty(SumOfChildrenBlockSizeProperty());
     }
+  } else {
+    SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
   }
 }
 
