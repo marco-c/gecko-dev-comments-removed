@@ -18,6 +18,8 @@ namespace mozilla::nt {
 
 struct NS_NO_VTABLE SharedSection {
   virtual Span<const wchar_t> GetDependentModules() = 0;
+  
+  
   virtual Span<const DllBlockInfoT<UNICODE_STRING>> GetDynamicBlocklist() = 0;
 };
 
