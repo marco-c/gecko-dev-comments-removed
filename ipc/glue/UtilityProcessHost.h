@@ -144,6 +144,7 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   RefPtr<GenericNonExclusivePromise::Private> mLaunchPromise{};
   bool mLaunchPromiseSettled = false;
+  bool mLaunchPromiseLaunched = false;
   
   
   
