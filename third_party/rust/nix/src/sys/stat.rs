@@ -1,15 +1,23 @@
 pub use libc::{dev_t, mode_t};
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "openbsd"))]
+pub use libc::c_uint;
+#[cfg(any(
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly"
+))]
+pub use libc::c_ulong;
 pub use libc::stat as FileStat;
 
-use {Result, NixPath};
-use errno::Errno;
-use fcntl::{AtFlags, at_rawfd};
-use libc;
+use crate::{Result, NixPath, errno::Errno};
+#[cfg(not(target_os = "redox"))]
+use crate::fcntl::{AtFlags, at_rawfd};
 use std::mem;
 use std::os::unix::io::RawFd;
-use sys::time::{TimeSpec, TimeVal};
+use crate::sys::time::{TimeSpec, TimeVal};
 
 libc_bitflags!(
+    /// "File type" flags for `mknod` and related functions.
     pub struct SFlag: mode_t {
         S_IFIFO;
         S_IFCHR;
@@ -23,6 +31,7 @@ libc_bitflags!(
 );
 
 libc_bitflags! {
+    /// "File mode / permissions" flags.
     pub struct Mode: mode_t {
         S_IRWXU;
         S_IRUSR;
@@ -42,30 +51,153 @@ libc_bitflags! {
     }
 }
 
+#[cfg(any(target_os = "macos", target_os = "ios", target_os="openbsd"))]
+pub type type_of_file_flag = c_uint;
+#[cfg(any(
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly"
+))]
+pub type type_of_file_flag = c_ulong;
+
+#[cfg(any(
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "macos",
+    target_os = "ios"
+))]
+libc_bitflags! {
+    /// File flags.
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    pub struct FileFlag: type_of_file_flag {
+        /// The file may only be appended to.
+        SF_APPEND;
+        /// The file has been archived.
+        SF_ARCHIVED;
+        #[cfg(any(target_os = "dragonfly"))]
+        SF_CACHE;
+        /// The file may not be changed.
+        SF_IMMUTABLE;
+        /// Indicates a WAPBL journal file.
+        #[cfg(any(target_os = "netbsd"))]
+        SF_LOG;
+        /// Do not retain history for file
+        #[cfg(any(target_os = "dragonfly"))]
+        SF_NOHISTORY;
+        /// The file may not be renamed or deleted.
+        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        SF_NOUNLINK;
+        /// Mask of superuser changeable flags
+        SF_SETTABLE;
+        /// Snapshot is invalid.
+        #[cfg(any(target_os = "netbsd"))]
+        SF_SNAPINVAL;
+        /// The file is a snapshot file.
+        #[cfg(any(target_os = "netbsd", target_os = "freebsd"))]
+        SF_SNAPSHOT;
+        #[cfg(any(target_os = "dragonfly"))]
+        SF_XLINK;
+        /// The file may only be appended to.
+        UF_APPEND;
+        /// The file needs to be archived.
+        #[cfg(any(target_os = "freebsd"))]
+        UF_ARCHIVE;
+        #[cfg(any(target_os = "dragonfly"))]
+        UF_CACHE;
+        /// File is compressed at the file system level.
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        UF_COMPRESSED;
+        /// The file may be hidden from directory listings at the application's
+        /// discretion.
+        #[cfg(any(
+            target_os = "freebsd",
+            target_os = "macos",
+            target_os = "ios",
+        ))]
+        UF_HIDDEN;
+        /// The file may not be changed.
+        UF_IMMUTABLE;
+        /// Do not dump the file.
+        UF_NODUMP;
+        #[cfg(any(target_os = "dragonfly"))]
+        UF_NOHISTORY;
+        /// The file may not be renamed or deleted.
+        #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+        UF_NOUNLINK;
+        /// The file is offline, or has the Windows and CIFS
+        /// `FILE_ATTRIBUTE_OFFLINE` attribute.
+        #[cfg(any(target_os = "freebsd"))]
+        UF_OFFLINE;
+        /// The directory is opaque when viewed through a union stack.
+        UF_OPAQUE;
+        /// The file is read only, and may not be written or appended.
+        #[cfg(any(target_os = "freebsd"))]
+        UF_READONLY;
+        /// The file contains a Windows reparse point.
+        #[cfg(any(target_os = "freebsd"))]
+        UF_REPARSE;
+        /// Mask of owner changeable flags.
+        UF_SETTABLE;
+        /// The file has the Windows `FILE_ATTRIBUTE_SPARSE_FILE` attribute.
+        #[cfg(any(target_os = "freebsd"))]
+        UF_SPARSE;
+        /// The file has the DOS, Windows and CIFS `FILE_ATTRIBUTE_SYSTEM`
+        
+        #[cfg(any(target_os = "freebsd"))]
+        UF_SYSTEM;
+        /// File renames and deletes are tracked.
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        UF_TRACKED;
+        #[cfg(any(target_os = "dragonfly"))]
+        UF_XLINK;
+    }
+}
+
+
 pub fn mknod<P: ?Sized + NixPath>(path: &P, kind: SFlag, perm: Mode, dev: dev_t) -> Result<()> {
-    let res = path.with_nix_path(|cstr| {
-        unsafe {
-            libc::mknod(cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
-        }
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::mknod(cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
+    })?;
+
+    Errno::result(res).map(drop)
+}
+
+
+#[cfg(not(any(target_os = "ios", target_os = "macos", target_os = "redox", target_os = "haiku")))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub fn mknodat<P: ?Sized + NixPath>(
+    dirfd: RawFd,
+    path: &P,
+    kind: SFlag,
+    perm: Mode,
+    dev: dev_t,
+) -> Result<()> {
+    let res = path.with_nix_path(|cstr| unsafe {
+        libc::mknodat(dirfd, cstr.as_ptr(), kind.bits | perm.bits() as mode_t, dev)
     })?;
 
     Errno::result(res).map(drop)
 }
 
 #[cfg(target_os = "linux")]
-pub fn major(dev: dev_t) -> u64 {
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub const fn major(dev: dev_t) -> u64 {
     ((dev >> 32) & 0xffff_f000) |
     ((dev >>  8) & 0x0000_0fff)
 }
 
 #[cfg(target_os = "linux")]
-pub fn minor(dev: dev_t) -> u64 {
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub const fn minor(dev: dev_t) -> u64 {
     ((dev >> 12) & 0xffff_ff00) |
     ((dev      ) & 0x0000_00ff)
 }
 
 #[cfg(target_os = "linux")]
-pub fn makedev(major: u64, minor: u64) -> dev_t {
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub const fn makedev(major: u64, minor: u64) -> dev_t {
     ((major & 0xffff_f000) << 32) |
     ((major & 0x0000_0fff) <<  8) |
     ((minor & 0xffff_ff00) << 12) |
@@ -78,49 +210,51 @@ pub fn umask(mode: Mode) -> Mode {
 }
 
 pub fn stat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
-    let mut dst = unsafe { mem::uninitialized() };
+    let mut dst = mem::MaybeUninit::uninit();
     let res = path.with_nix_path(|cstr| {
         unsafe {
-            libc::stat(cstr.as_ptr(), &mut dst as *mut FileStat)
+            libc::stat(cstr.as_ptr(), dst.as_mut_ptr())
         }
     })?;
 
     Errno::result(res)?;
 
-    Ok(dst)
+    Ok(unsafe{dst.assume_init()})
 }
 
 pub fn lstat<P: ?Sized + NixPath>(path: &P) -> Result<FileStat> {
-    let mut dst = unsafe { mem::uninitialized() };
+    let mut dst = mem::MaybeUninit::uninit();
     let res = path.with_nix_path(|cstr| {
         unsafe {
-            libc::lstat(cstr.as_ptr(), &mut dst as *mut FileStat)
+            libc::lstat(cstr.as_ptr(), dst.as_mut_ptr())
         }
     })?;
 
     Errno::result(res)?;
 
-    Ok(dst)
+    Ok(unsafe{dst.assume_init()})
 }
 
 pub fn fstat(fd: RawFd) -> Result<FileStat> {
-    let mut dst = unsafe { mem::uninitialized() };
-    let res = unsafe { libc::fstat(fd, &mut dst as *mut FileStat) };
+    let mut dst = mem::MaybeUninit::uninit();
+    let res = unsafe { libc::fstat(fd, dst.as_mut_ptr()) };
 
     Errno::result(res)?;
 
-    Ok(dst)
+    Ok(unsafe{dst.assume_init()})
 }
 
+#[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn fstatat<P: ?Sized + NixPath>(dirfd: RawFd, pathname: &P, f: AtFlags) -> Result<FileStat> {
-    let mut dst = unsafe { mem::uninitialized() };
+    let mut dst = mem::MaybeUninit::uninit();
     let res = pathname.with_nix_path(|cstr| {
-        unsafe { libc::fstatat(dirfd, cstr.as_ptr(), &mut dst as *mut FileStat, f.bits() as libc::c_int) }
+        unsafe { libc::fstatat(dirfd, cstr.as_ptr(), dst.as_mut_ptr(), f.bits() as libc::c_int) }
     })?;
 
     Errno::result(res)?;
 
-    Ok(dst)
+    Ok(unsafe{dst.assume_init()})
 }
 
 
@@ -157,6 +291,8 @@ pub enum FchmodatFlags {
 
 
 
+#[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn fchmodat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
@@ -215,6 +351,7 @@ pub fn utimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -
           target_os = "macos",
           target_os = "freebsd",
           target_os = "netbsd"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn lutimes<P: ?Sized + NixPath>(path: &P, atime: &TimeVal, mtime: &TimeVal) -> Result<()> {
     let times: [libc::timeval; 2] = [*atime.as_ref(), *mtime.as_ref()];
     let res = path.with_nix_path(|cstr| unsafe {
@@ -236,6 +373,7 @@ pub fn futimens(fd: RawFd, atime: &TimeSpec, mtime: &TimeSpec) -> Result<()> {
 
     Errno::result(res).map(drop)
 }
+
 
 
 #[derive(Clone, Copy, Debug)]
@@ -260,6 +398,8 @@ pub enum UtimensatFlags {
 
 
 
+#[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn utimensat<P: ?Sized + NixPath>(
     dirfd: Option<RawFd>,
     path: &P,
@@ -285,6 +425,8 @@ pub fn utimensat<P: ?Sized + NixPath>(
     Errno::result(res).map(drop)
 }
 
+#[cfg(not(target_os = "redox"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
 pub fn mkdirat<P: ?Sized + NixPath>(fd: RawFd, path: &P, mode: Mode) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
         unsafe { libc::mkdirat(fd, cstr.as_ptr(), mode.bits() as mode_t) }

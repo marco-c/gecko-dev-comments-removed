@@ -1,9 +1,10 @@
-use errno::Errno;
+use cfg_if::cfg_if;
+use crate::errno::Errno;
 use libc::{self, c_int};
 use std::ptr;
-use sys::signal::Signal;
-use unistd::Pid;
-use Result;
+use crate::sys::signal::Signal;
+use crate::unistd::Pid;
+use crate::Result;
 
 pub type RequestType = c_int;
 
@@ -23,15 +24,18 @@ cfg_if! {
 libc_enum! {
     #[repr(i32)]
     /// Ptrace Request enum defining the action to be taken.
+    #[non_exhaustive]
     pub enum Request {
         PT_TRACE_ME,
         PT_READ_I,
         PT_READ_D,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_READ_U,
         PT_WRITE_I,
         PT_WRITE_D,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_WRITE_U,
         PT_CONTINUE,
         PT_KILL,
@@ -45,10 +49,13 @@ libc_enum! {
         PT_ATTACH,
         PT_DETACH,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_SIGEXC,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_THUPDATE,
         #[cfg(target_os = "macos")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PT_ATTACHEXC
     }
 }
@@ -85,8 +92,15 @@ pub fn attach(pid: Pid) -> Result<()> {
 
 
 
-pub fn detach(pid: Pid) -> Result<()> {
-    unsafe { ptrace_other(Request::PT_DETACH, pid, ptr::null_mut(), 0).map(drop) }
+
+pub fn detach<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as c_int,
+        None => 0,
+    };
+    unsafe {
+        ptrace_other(Request::PT_DETACH, pid, ptr::null_mut(), data).map(drop)
+    }
 }
 
 
@@ -135,9 +149,6 @@ pub fn kill(pid: Pid) -> Result<()> {
 
 
 
-
-
-
 #[cfg(
     any(
         any(target_os = "dragonfly", target_os = "freebsd", target_os = "macos"),
@@ -156,6 +167,9 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 }
 
 
+
+
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn read(pid: Pid, addr: AddressType) -> Result<c_int> {
     unsafe {
         
@@ -165,6 +179,9 @@ pub fn read(pid: Pid, addr: AddressType) -> Result<c_int> {
 }
 
 
+
+
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn write(pid: Pid, addr: AddressType, data: c_int) -> Result<()> {
     unsafe { ptrace_other(Request::PT_WRITE_D, pid, addr, data).map(drop) }
 }

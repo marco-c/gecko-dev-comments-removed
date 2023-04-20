@@ -10,26 +10,23 @@
 
 
 
-
 #include <alsa/asoundlib.h>
-
-#if (SND_LIB_MAJOR == 1) && (SND_LIB_MINOR == 0) && (SND_LIB_SUBMINOR < 29)
 
 extern "C" {
 
-int snd_pcm_sw_params_set_tstamp_type(void) {
-  MOZ_CRASH(
-      "The replacement for snd_pcm_sw_params_set_tstamp_type() should never be "
-      "called");
-  return -1;
-}
+#define ALSA_DIVERT(func)                       \
+  int func(void) {                              \
+    MOZ_CRASH(#func "should never be called."); \
+    return -1;                                  \
+  }
 
-int snd_pcm_sw_params_get_tstamp_type(void) {
-  MOZ_CRASH(
-      "The replacement for snd_pcm_sw_params_get_tstamp_type() should never be "
-      "called");
-  return -1;
-}
-}
-
+#if (SND_LIB_MAJOR == 1) && (SND_LIB_MINOR == 0) && (SND_LIB_SUBMINOR < 29)
+ALSA_DIVERT(snd_pcm_sw_params_set_tstamp_type)
+ALSA_DIVERT(snd_pcm_sw_params_get_tstamp_type)
 #endif
+
+#if (SND_LIB_MAJOR == 1) && (SND_LIB_MINOR < 1)
+ALSA_DIVERT(snd_pcm_hw_params_supports_audio_ts_type)
+ALSA_DIVERT(snd_pcm_status_set_audio_htstamp_config)
+#endif
+}

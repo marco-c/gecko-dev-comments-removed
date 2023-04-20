@@ -3,16 +3,15 @@
 
 
 
+use cfg_if::cfg_if;
 use std::ffi;
 use std::iter::Iterator;
 use std::mem;
 use std::option::Option;
 
-use libc;
-
-use {Result, Errno};
-use sys::socket::SockAddr;
-use net::if_::*;
+use crate::{Result, Errno};
+use crate::sys::socket::{SockaddrLike, SockaddrStorage};
+use crate::net::if_::*;
 
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -22,13 +21,13 @@ pub struct InterfaceAddress {
     
     pub flags: InterfaceFlags,
     
-    pub address: Option<SockAddr>,
+    pub address: Option<SockaddrStorage>,
     
-    pub netmask: Option<SockAddr>,
+    pub netmask: Option<SockaddrStorage>,
     
-    pub broadcast: Option<SockAddr>,
+    pub broadcast: Option<SockaddrStorage>,
     
-    pub destination: Option<SockAddr>,
+    pub destination: Option<SockaddrStorage>,
 }
 
 cfg_if! {
@@ -47,22 +46,22 @@ impl InterfaceAddress {
     
     fn from_libc_ifaddrs(info: &libc::ifaddrs) -> InterfaceAddress {
         let ifname = unsafe { ffi::CStr::from_ptr(info.ifa_name) };
-        let address = unsafe { SockAddr::from_libc_sockaddr(info.ifa_addr) };
-        let netmask = unsafe { SockAddr::from_libc_sockaddr(info.ifa_netmask) };
+        let address = unsafe { SockaddrStorage::from_raw(info.ifa_addr, None) };
+        let netmask = unsafe { SockaddrStorage::from_raw(info.ifa_netmask, None) };
         let mut addr = InterfaceAddress {
             interface_name: ifname.to_string_lossy().to_string(),
             flags: InterfaceFlags::from_bits_truncate(info.ifa_flags as i32),
-            address: address,
-            netmask: netmask,
+            address,
+            netmask,
             broadcast: None,
             destination: None,
         };
 
         let ifu = get_ifu_from_sockaddr(info);
         if addr.flags.contains(InterfaceFlags::IFF_POINTOPOINT) {
-            addr.destination = unsafe { SockAddr::from_libc_sockaddr(ifu) };
+            addr.destination = unsafe { SockaddrStorage::from_raw(ifu, None) };
         } else if addr.flags.contains(InterfaceFlags::IFF_BROADCAST) {
-            addr.broadcast = unsafe { SockAddr::from_libc_sockaddr(ifu) };
+            addr.broadcast = unsafe { SockaddrStorage::from_raw(ifu, None) };
         }
 
         addr
@@ -125,13 +124,15 @@ impl Iterator for InterfaceAddressIterator {
 
 
 pub fn getifaddrs() -> Result<InterfaceAddressIterator> {
-    let mut addrs: *mut libc::ifaddrs = unsafe { mem::uninitialized() };
-    Errno::result(unsafe { libc::getifaddrs(&mut addrs) }).map(|_| {
-        InterfaceAddressIterator {
-            base: addrs,
-            next: addrs,
-        }
-    })
+    let mut addrs = mem::MaybeUninit::<*mut libc::ifaddrs>::uninit();
+    unsafe {
+        Errno::result(libc::getifaddrs(addrs.as_mut_ptr())).map(|_| {
+            InterfaceAddressIterator {
+                base: addrs.assume_init(),
+                next: addrs.assume_init(),
+            }
+        })
+    }
 }
 
 #[cfg(test)]

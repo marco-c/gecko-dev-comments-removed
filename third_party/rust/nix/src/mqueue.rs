@@ -2,31 +2,65 @@
 
 
 
-use Result;
-use errno::Errno;
 
-use libc::{self, c_char, c_long, mqd_t, size_t};
-use std::ffi::CString;
-use sys::stat::Mode;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use crate::Result;
+use crate::errno::Errno;
+
+use libc::{self, c_char, mqd_t, size_t};
+use std::ffi::CStr;
+use crate::sys::stat::Mode;
 use std::mem;
 
 libc_bitflags!{
+    /// Used with [`mq_open`].
     pub struct MQ_OFlag: libc::c_int {
+        /// Open the message queue for receiving messages.
         O_RDONLY;
+        /// Open the queue for sending messages.
         O_WRONLY;
+        /// Open the queue for both receiving and sending messages
         O_RDWR;
+        /// Create a message queue.
         O_CREAT;
+        /// If set along with `O_CREAT`, `mq_open` will fail if the message
+        /// queue name exists.
         O_EXCL;
+        /// `mq_send` and `mq_receive` should fail with `EAGAIN` rather than
+        /// wait for resources that are not currently available.
         O_NONBLOCK;
+        /// Set the close-on-exec flag for the message queue descriptor.
         O_CLOEXEC;
     }
 }
 
-libc_bitflags!{
-    pub struct FdFlag: libc::c_int {
-        FD_CLOEXEC;
-    }
-}
+
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -34,22 +68,69 @@ pub struct MqAttr {
     mq_attr: libc::mq_attr,
 }
 
+
+
+
+#[repr(transparent)]
+#[derive(Debug)]
+#[allow(missing_copy_implementations)]
+pub struct MqdT(mqd_t);
+
+
+
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub type mq_attr_member_t = i64;
+
+#[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub type mq_attr_member_t = libc::c_long;
+
 impl MqAttr {
-    pub fn new(mq_flags: c_long,
-               mq_maxmsg: c_long,
-               mq_msgsize: c_long,
-               mq_curmsgs: c_long)
-               -> MqAttr {
-        let mut attr = unsafe { mem::uninitialized::<libc::mq_attr>() };
-        attr.mq_flags = mq_flags;
-        attr.mq_maxmsg = mq_maxmsg;
-        attr.mq_msgsize = mq_msgsize;
-        attr.mq_curmsgs = mq_curmsgs;
-        MqAttr { mq_attr: attr }
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(mq_flags: mq_attr_member_t,
+               mq_maxmsg: mq_attr_member_t,
+               mq_msgsize: mq_attr_member_t,
+               mq_curmsgs: mq_attr_member_t)
+               -> MqAttr
+    {
+        let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
+        unsafe {
+            let p = attr.as_mut_ptr();
+            (*p).mq_flags = mq_flags;
+            (*p).mq_maxmsg = mq_maxmsg;
+            (*p).mq_msgsize = mq_msgsize;
+            (*p).mq_curmsgs = mq_curmsgs;
+            MqAttr { mq_attr: attr.assume_init() }
+        }
     }
 
-    pub fn flags(&self) -> c_long {
+    
+    pub const fn flags(&self) -> mq_attr_member_t {
         self.mq_attr.mq_flags
+    }
+
+    
+    pub const fn maxmsg(&self) -> mq_attr_member_t {
+        self.mq_attr.mq_maxmsg
+    }
+
+    
+    pub const fn msgsize(&self) -> mq_attr_member_t {
+        self.mq_attr.mq_msgsize
+    }
+
+    
+    pub const fn curmsgs(&self) -> mq_attr_member_t {
+        self.mq_attr.mq_curmsgs
     }
 }
 
@@ -57,11 +138,13 @@ impl MqAttr {
 
 
 
-pub fn mq_open(name: &CString,
+
+#[allow(clippy::cast_lossless)]
+pub fn mq_open(name: &CStr,
                oflag: MQ_OFlag,
                mode: Mode,
                attr: Option<&MqAttr>)
-               -> Result<mqd_t> {
+               -> Result<MqdT> {
     let res = match attr {
         Some(mq_attr) => unsafe {
             libc::mq_open(name.as_ptr(),
@@ -71,13 +154,13 @@ pub fn mq_open(name: &CString,
         },
         None => unsafe { libc::mq_open(name.as_ptr(), oflag.bits()) },
     };
-    Errno::result(res)
+    Errno::result(res).map(MqdT)
 }
 
 
 
 
-pub fn mq_unlink(name: &CString) -> Result<()> {
+pub fn mq_unlink(name: &CStr) -> Result<()> {
     let res = unsafe { libc::mq_unlink(name.as_ptr()) };
     Errno::result(res).map(drop)
 }
@@ -85,18 +168,18 @@ pub fn mq_unlink(name: &CString) -> Result<()> {
 
 
 
-pub fn mq_close(mqdes: mqd_t) -> Result<()> {
-    let res = unsafe { libc::mq_close(mqdes) };
+pub fn mq_close(mqdes: MqdT) -> Result<()> {
+    let res = unsafe { libc::mq_close(mqdes.0) };
     Errno::result(res).map(drop)
 }
 
 
 
 
-pub fn mq_receive(mqdes: mqd_t, message: &mut [u8], msg_prio: &mut u32) -> Result<usize> {
+pub fn mq_receive(mqdes: &MqdT, message: &mut [u8], msg_prio: &mut u32) -> Result<usize> {
     let len = message.len() as size_t;
     let res = unsafe {
-        libc::mq_receive(mqdes,
+        libc::mq_receive(mqdes.0,
                          message.as_mut_ptr() as *mut c_char,
                          len,
                          msg_prio as *mut u32)
@@ -107,9 +190,9 @@ pub fn mq_receive(mqdes: mqd_t, message: &mut [u8], msg_prio: &mut u32) -> Resul
 
 
 
-pub fn mq_send(mqdes: mqd_t, message: &[u8], msq_prio: u32) -> Result<()> {
+pub fn mq_send(mqdes: &MqdT, message: &[u8], msq_prio: u32) -> Result<()> {
     let res = unsafe {
-        libc::mq_send(mqdes,
+        libc::mq_send(mqdes.0,
                       message.as_ptr() as *const c_char,
                       message.len(),
                       msq_prio)
@@ -120,10 +203,10 @@ pub fn mq_send(mqdes: mqd_t, message: &[u8], msq_prio: u32) -> Result<()> {
 
 
 
-pub fn mq_getattr(mqd: mqd_t) -> Result<MqAttr> {
-    let mut attr = unsafe { mem::uninitialized::<libc::mq_attr>() };
-    let res = unsafe { libc::mq_getattr(mqd, &mut attr) };
-    Errno::result(res).map(|_| MqAttr { mq_attr: attr })
+pub fn mq_getattr(mqd: &MqdT) -> Result<MqAttr> {
+    let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
+    let res = unsafe { libc::mq_getattr(mqd.0, attr.as_mut_ptr()) };
+    Errno::result(res).map(|_| unsafe{MqAttr { mq_attr: attr.assume_init() }})
 }
 
 
@@ -131,18 +214,21 @@ pub fn mq_getattr(mqd: mqd_t) -> Result<MqAttr> {
 
 
 
-pub fn mq_setattr(mqd: mqd_t, newattr: &MqAttr) -> Result<MqAttr> {
-    let mut attr = unsafe { mem::uninitialized::<libc::mq_attr>() };
-    let res = unsafe { libc::mq_setattr(mqd, &newattr.mq_attr as *const libc::mq_attr, &mut attr) };
-    Errno::result(res).map(|_| MqAttr { mq_attr: attr })
+pub fn mq_setattr(mqd: &MqdT, newattr: &MqAttr) -> Result<MqAttr> {
+    let mut attr = mem::MaybeUninit::<libc::mq_attr>::uninit();
+    let res = unsafe {
+        libc::mq_setattr(mqd.0, &newattr.mq_attr as *const libc::mq_attr, attr.as_mut_ptr())
+    };
+    Errno::result(res).map(|_| unsafe{ MqAttr { mq_attr: attr.assume_init() }})
 }
 
 
 
 
-pub fn mq_set_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
+#[allow(clippy::useless_conversion)]    
+pub fn mq_set_nonblock(mqd: &MqdT) -> Result<MqAttr> {
     let oldattr = mq_getattr(mqd)?;
-    let newattr = MqAttr::new(MQ_OFlag::O_NONBLOCK.bits() as c_long,
+    let newattr = MqAttr::new(mq_attr_member_t::from(MQ_OFlag::O_NONBLOCK.bits()),
                               oldattr.mq_attr.mq_maxmsg,
                               oldattr.mq_attr.mq_msgsize,
                               oldattr.mq_attr.mq_curmsgs);
@@ -152,7 +238,7 @@ pub fn mq_set_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
 
 
 
-pub fn mq_remove_nonblock(mqd: mqd_t) -> Result<(MqAttr)> {
+pub fn mq_remove_nonblock(mqd: &MqdT) -> Result<MqAttr> {
     let oldattr = mq_getattr(mqd)?;
     let newattr = MqAttr::new(0,
                               oldattr.mq_attr.mq_maxmsg,

@@ -1,13 +1,20 @@
 use libc::{self, SI_LOAD_SHIFT};
-use std::{cmp, mem};
 use std::time::Duration;
+use std::{cmp, mem};
 
-use Result;
-use errno::Errno;
+use crate::errno::Errno;
+use crate::Result;
 
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
 pub struct SysInfo(libc::sysinfo);
+
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
+type mem_blocks_t = u64;
+#[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
+type mem_blocks_t = libc::c_ulong;
 
 impl SysInfo {
     
@@ -57,7 +64,7 @@ impl SysInfo {
         self.scale_mem(self.0.freeram)
     }
 
-    fn scale_mem(&self, units: libc::c_ulong) -> u64 {
+    fn scale_mem(&self, units: mem_blocks_t) -> u64 {
         units as u64 * self.0.mem_unit as u64
     }
 }
@@ -66,7 +73,7 @@ impl SysInfo {
 
 
 pub fn sysinfo() -> Result<SysInfo> {
-    let mut info: libc::sysinfo = unsafe { mem::uninitialized() };
-    let res = unsafe { libc::sysinfo(&mut info) };
-    Errno::result(res).map(|_| SysInfo(info))
+    let mut info = mem::MaybeUninit::uninit();
+    let res = unsafe { libc::sysinfo(info.as_mut_ptr()) };
+    Errno::result(res).map(|_| unsafe { SysInfo(info.assume_init()) })
 }

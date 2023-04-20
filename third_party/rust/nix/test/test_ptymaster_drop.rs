@@ -1,21 +1,20 @@
-extern crate nix;
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+mod t {
+    use nix::fcntl::OFlag;
+    use nix::pty::*;
+    use nix::unistd::close;
+    use std::os::unix::io::AsRawFd;
 
-use nix::fcntl::OFlag;
-use nix::pty::*;
-use nix::unistd::close;
-use std::os::unix::io::AsRawFd;
-
-
-
-
-
-#[test]
-#[should_panic(expected = "Closing an invalid file descriptor!")]
-
-
-#[cfg_attr(all(target_env = "musl", target_arch = "x86"), ignore)]
-fn test_double_close() {
-    let m = posix_openpt(OFlag::O_RDWR).unwrap();
-    close(m.as_raw_fd()).unwrap();
-    drop(m);            
+    
+    
+    
+    
+    
+    #[test]
+    #[should_panic(expected = "Closing an invalid file descriptor!")]
+    fn test_double_close() {
+        let m = posix_openpt(OFlag::O_RDWR).unwrap();
+        close(m.as_raw_fd()).unwrap();
+        drop(m); 
+    }
 }

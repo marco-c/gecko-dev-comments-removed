@@ -1,20 +1,27 @@
 
 #[doc(hidden)]
+#[cfg(not(target_os = "illumos"))]
 pub type ioctl_num_type = ::libc::c_ulong;
+
+#[doc(hidden)]
+#[cfg(target_os = "illumos")]
+pub type ioctl_num_type = ::libc::c_int;
+
 
 #[doc(hidden)]
 pub type ioctl_param_type = ::libc::c_int;
 
 mod consts {
-    use ::sys::ioctl::ioctl_num_type;
+    use crate::sys::ioctl::ioctl_num_type;
     #[doc(hidden)]
     pub const VOID: ioctl_num_type = 0x2000_0000;
     #[doc(hidden)]
     pub const OUT: ioctl_num_type = 0x4000_0000;
     #[doc(hidden)]
+    #[allow(overflowing_literals)]
     pub const IN: ioctl_num_type = 0x8000_0000;
     #[doc(hidden)]
-    pub const INOUT: ioctl_num_type = (IN|OUT);
+    pub const INOUT: ioctl_num_type = IN | OUT;
     #[doc(hidden)]
     pub const IOCPARM_MASK: ioctl_num_type = 0x1fff;
 }
@@ -24,9 +31,14 @@ pub use self::consts::*;
 #[macro_export]
 #[doc(hidden)]
 macro_rules! ioc {
-    ($inout:expr, $group:expr, $num:expr, $len:expr) => (
-        $inout | (($len as $crate::sys::ioctl::ioctl_num_type & $crate::sys::ioctl::IOCPARM_MASK) << 16) | (($group as $crate::sys::ioctl::ioctl_num_type) << 8) | ($num as $crate::sys::ioctl::ioctl_num_type)
-    )
+    ($inout:expr, $group:expr, $num:expr, $len:expr) => {
+        $inout
+            | (($len as $crate::sys::ioctl::ioctl_num_type
+                & $crate::sys::ioctl::IOCPARM_MASK)
+                << 16)
+            | (($group as $crate::sys::ioctl::ioctl_num_type) << 8)
+            | ($num as $crate::sys::ioctl::ioctl_num_type)
+    };
 }
 
 
@@ -46,7 +58,9 @@ macro_rules! ioc {
 
 #[macro_export(local_inner_macros)]
 macro_rules! request_code_none {
-    ($g:expr, $n:expr) => (ioc!($crate::sys::ioctl::VOID, $g, $n, 0))
+    ($g:expr, $n:expr) => {
+        ioc!($crate::sys::ioctl::VOID, $g, $n, 0)
+    };
 }
 
 
@@ -57,7 +71,14 @@ macro_rules! request_code_none {
 
 #[macro_export(local_inner_macros)]
 macro_rules! request_code_write_int {
-    ($g:expr, $n:expr) => (ioc!($crate::sys::ioctl::VOID, $g, $n, ::std::mem::size_of::<$crate::libc::c_int>()))
+    ($g:expr, $n:expr) => {
+        ioc!(
+            $crate::sys::ioctl::VOID,
+            $g,
+            $n,
+            ::std::mem::size_of::<$crate::libc::c_int>()
+        )
+    };
 }
 
 
@@ -72,7 +93,9 @@ macro_rules! request_code_write_int {
 
 #[macro_export(local_inner_macros)]
 macro_rules! request_code_read {
-    ($g:expr, $n:expr, $len:expr) => (ioc!($crate::sys::ioctl::OUT, $g, $n, $len))
+    ($g:expr, $n:expr, $len:expr) => {
+        ioc!($crate::sys::ioctl::OUT, $g, $n, $len)
+    };
 }
 
 
@@ -87,7 +110,9 @@ macro_rules! request_code_read {
 
 #[macro_export(local_inner_macros)]
 macro_rules! request_code_write {
-    ($g:expr, $n:expr, $len:expr) => (ioc!($crate::sys::ioctl::IN, $g, $n, $len))
+    ($g:expr, $n:expr, $len:expr) => {
+        ioc!($crate::sys::ioctl::IN, $g, $n, $len)
+    };
 }
 
 
@@ -98,5 +123,7 @@ macro_rules! request_code_write {
 
 #[macro_export(local_inner_macros)]
 macro_rules! request_code_readwrite {
-    ($g:expr, $n:expr, $len:expr) => (ioc!($crate::sys::ioctl::INOUT, $g, $n, $len))
+    ($g:expr, $n:expr, $len:expr) => {
+        ioc!($crate::sys::ioctl::INOUT, $g, $n, $len)
+    };
 }

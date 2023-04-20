@@ -2,94 +2,169 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![crate_name = "nix"]
 #![cfg(unix)]
+#![cfg_attr(docsrs, doc(cfg(all())))]
 #![allow(non_camel_case_types)]
-
-
-#![allow(dead_code)]
 #![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
 #![deny(unused)]
+#![allow(unused_macros)]
+#![cfg_attr(not(feature = "default"), allow(unused_imports))]
 #![deny(unstable_features)]
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
+#![warn(missing_docs)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![deny(clippy::cast_ptr_alignment)]
 
-#![allow(deprecated)]
+
+pub use libc;
 
 
 #[macro_use]
-extern crate bitflags;
-#[macro_use]
-extern crate cfg_if;
-extern crate void;
+mod macros;
 
 
-pub extern crate libc;
-
-
-#[macro_use] mod macros;
-
-
-pub mod dir;
+#[cfg(not(target_os = "redox"))]
+feature! {
+    #![feature = "dir"]
+    pub mod dir;
+}
+feature! {
+    #![feature = "env"]
+    pub mod env;
+}
+#[allow(missing_docs)]
 pub mod errno;
-#[deny(missing_docs)]
-pub mod features;
+feature! {
+    #![feature = "feature"]
+
+    #[deny(missing_docs)]
+    pub mod features;
+}
+#[allow(missing_docs)]
 pub mod fcntl;
-#[deny(missing_docs)]
-#[cfg(any(target_os = "android",
-          target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          target_os = "linux",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
-pub mod ifaddrs;
-#[cfg(any(target_os = "android",
-          target_os = "linux"))]
-pub mod kmod;
-#[cfg(any(target_os = "android",
-          target_os = "linux"))]
-pub mod mount;
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "fushsia",
-          target_os = "linux",
-          target_os = "netbsd"))]
-pub mod mqueue;
-#[deny(missing_docs)]
-pub mod net;
-#[deny(missing_docs)]
-pub mod poll;
-#[deny(missing_docs)]
-pub mod pty;
-pub mod sched;
+feature! {
+    #![feature = "net"]
+
+    #[cfg(any(target_os = "android",
+              target_os = "dragonfly",
+              target_os = "freebsd",
+              target_os = "ios",
+              target_os = "linux",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "illumos",
+              target_os = "openbsd"))]
+    #[deny(missing_docs)]
+    pub mod ifaddrs;
+    #[cfg(not(target_os = "redox"))]
+    #[deny(missing_docs)]
+    pub mod net;
+}
+#[cfg(any(target_os = "android", target_os = "linux"))]
+feature! {
+    #![feature = "kmod"]
+    #[allow(missing_docs)]
+    pub mod kmod;
+}
+#[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+feature! {
+    #![feature = "mount"]
+    pub mod mount;
+}
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "linux",
+    target_os = "netbsd"
+))]
+feature! {
+    #![feature = "mqueue"]
+    pub mod mqueue;
+}
+feature! {
+    #![feature = "poll"]
+    pub mod poll;
+}
+#[cfg(not(any(target_os = "redox", target_os = "fuchsia")))]
+feature! {
+    #![feature = "term"]
+    #[deny(missing_docs)]
+    pub mod pty;
+}
+feature! {
+    #![feature = "sched"]
+    pub mod sched;
+}
 pub mod sys;
+feature! {
+    #![feature = "time"]
+    #[allow(missing_docs)]
+    pub mod time;
+}
 
 
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86", target_arch = "x86_64")))]
-pub mod ucontext;
+#[cfg(all(
+    target_os = "linux",
+    any(target_arch = "s390x", target_arch = "x86", target_arch = "x86_64")
+))]
+feature! {
+    #![feature = "ucontext"]
+    #[allow(missing_docs)]
+    pub mod ucontext;
+}
+#[allow(missing_docs)]
 pub mod unistd;
 
-
-
-
-
-
-
-use libc::{c_char, PATH_MAX};
-
-use std::{error, fmt, ptr, result};
-use std::ffi::{CStr, OsStr};
+use std::ffi::{CStr, CString, OsStr};
+use std::mem::MaybeUninit;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
+use std::{ptr, result, slice};
 
 use errno::Errno;
 
 
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T> = result::Result<T, Errno>;
 
 
 
@@ -98,187 +173,162 @@ pub type Result<T> = result::Result<T, Error>;
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Error {
-    Sys(Errno),
-    InvalidPath,
-    
-    
-    InvalidUtf8,
-    
-    
-    UnsupportedOperation,
-}
 
-impl Error {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn as_errno(&self) -> Option<Errno> {
-        if let &Error::Sys(ref e) = self {
-            Some(*e)
-        } else {
-            None
-        }
-    }
 
-    
-    pub fn from_errno(errno: Errno) -> Error {
-        Error::Sys(errno)
-    }
 
-    
-    pub fn last() -> Error {
-        Error::Sys(Errno::last())
-    }
+pub type Error = Errno;
 
-    
-    pub fn invalid_argument() -> Error {
-        Error::Sys(Errno::EINVAL)
-    }
-
-}
-
-impl From<Errno> for Error {
-    fn from(errno: Errno) -> Error { Error::from_errno(errno) }
-}
-
-impl From<std::string::FromUtf8Error> for Error {
-    fn from(_: std::string::FromUtf8Error) -> Error { Error::InvalidUtf8 }
-}
-
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::InvalidPath => "Invalid path",
-            Error::InvalidUtf8 => "Invalid UTF-8 string",
-            Error::UnsupportedOperation => "Unsupported Operation",
-            Error::Sys(ref errno) => errno.desc(),
-        }
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Error::InvalidPath => write!(f, "Invalid path"),
-            Error::InvalidUtf8 => write!(f, "Invalid UTF-8 string"),
-            Error::UnsupportedOperation => write!(f, "Unsupported Operation"),
-            Error::Sys(errno) => write!(f, "{:?}: {}", errno, errno.desc()),
-        }
-    }
-}
 
 pub trait NixPath {
+    
+    fn is_empty(&self) -> bool;
+
+    
     fn len(&self) -> usize;
 
+    
+    
+    
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-        where F: FnOnce(&CStr) -> T;
+    where
+        F: FnOnce(&CStr) -> T;
 }
 
 impl NixPath for str {
+    fn is_empty(&self) -> bool {
+        NixPath::is_empty(OsStr::new(self))
+    }
+
     fn len(&self) -> usize {
         NixPath::len(OsStr::new(self))
     }
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-        where F: FnOnce(&CStr) -> T {
-            OsStr::new(self).with_nix_path(f)
-        }
+    where
+        F: FnOnce(&CStr) -> T,
+    {
+        OsStr::new(self).with_nix_path(f)
+    }
 }
 
 impl NixPath for OsStr {
+    fn is_empty(&self) -> bool {
+        self.as_bytes().is_empty()
+    }
+
     fn len(&self) -> usize {
         self.as_bytes().len()
     }
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-        where F: FnOnce(&CStr) -> T {
-            self.as_bytes().with_nix_path(f)
-        }
+    where
+        F: FnOnce(&CStr) -> T,
+    {
+        self.as_bytes().with_nix_path(f)
+    }
 }
 
 impl NixPath for CStr {
+    fn is_empty(&self) -> bool {
+        self.to_bytes().is_empty()
+    }
+
     fn len(&self) -> usize {
         self.to_bytes().len()
     }
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&CStr) -> T {
-        
-        if self.len() >= PATH_MAX as usize {
-            return Err(Error::InvalidPath);
-        }
-
+    where
+        F: FnOnce(&CStr) -> T,
+    {
         Ok(f(self))
     }
 }
 
 impl NixPath for [u8] {
+    fn is_empty(&self) -> bool {
+        self.is_empty()
+    }
+
     fn len(&self) -> usize {
         self.len()
     }
 
     fn with_nix_path<T, F>(&self, f: F) -> Result<T>
-            where F: FnOnce(&CStr) -> T {
-        let mut buf = [0u8; PATH_MAX as usize];
+    where
+        F: FnOnce(&CStr) -> T,
+    {
+        
+        
+        
+        
+        
+        
+        const MAX_STACK_ALLOCATION: usize = 1024;
 
-        if self.len() >= PATH_MAX as usize {
-            return Err(Error::InvalidPath);
+        if self.len() >= MAX_STACK_ALLOCATION {
+            return with_nix_path_allocating(self, f);
         }
 
-        match self.iter().position(|b| *b == 0) {
-            Some(_) => Err(Error::InvalidPath),
-            None => {
-                unsafe {
-                    
-                    ptr::copy_nonoverlapping(self.as_ptr(), buf.as_mut_ptr(), self.len());
-                    Ok(f(CStr::from_ptr(buf.as_ptr() as *const c_char)))
-                }
+        let mut buf = MaybeUninit::<[u8; MAX_STACK_ALLOCATION]>::uninit();
+        let buf_ptr = buf.as_mut_ptr() as *mut u8;
 
-            }
+        unsafe {
+            ptr::copy_nonoverlapping(self.as_ptr(), buf_ptr, self.len());
+            buf_ptr.add(self.len()).write(0);
+        }
+
+        match CStr::from_bytes_with_nul(unsafe {
+            slice::from_raw_parts(buf_ptr, self.len() + 1)
+        }) {
+            Ok(s) => Ok(f(s)),
+            Err(_) => Err(Errno::EINVAL),
         }
     }
 }
 
+#[cold]
+#[inline(never)]
+fn with_nix_path_allocating<T, F>(from: &[u8], f: F) -> Result<T>
+where
+    F: FnOnce(&CStr) -> T,
+{
+    match CString::new(from) {
+        Ok(s) => Ok(f(&s)),
+        Err(_) => Err(Errno::EINVAL),
+    }
+}
+
 impl NixPath for Path {
+    fn is_empty(&self) -> bool {
+        NixPath::is_empty(self.as_os_str())
+    }
+
     fn len(&self) -> usize {
         NixPath::len(self.as_os_str())
     }
 
-    fn with_nix_path<T, F>(&self, f: F) -> Result<T> where F: FnOnce(&CStr) -> T {
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+    where
+        F: FnOnce(&CStr) -> T,
+    {
         self.as_os_str().with_nix_path(f)
     }
 }
 
 impl NixPath for PathBuf {
+    fn is_empty(&self) -> bool {
+        NixPath::is_empty(self.as_os_str())
+    }
+
     fn len(&self) -> usize {
         NixPath::len(self.as_os_str())
     }
 
-    fn with_nix_path<T, F>(&self, f: F) -> Result<T> where F: FnOnce(&CStr) -> T {
+    fn with_nix_path<T, F>(&self, f: F) -> Result<T>
+    where
+        F: FnOnce(&CStr) -> T,
+    {
         self.as_os_str().with_nix_path(f)
-    }
-}
-
-
-impl<'a, NP: ?Sized + NixPath>  NixPath for Option<&'a NP> {
-    fn len(&self) -> usize {
-        self.map_or(0, NixPath::len)
-    }
-
-    fn with_nix_path<T, F>(&self, f: F) -> Result<T> where F: FnOnce(&CStr) -> T {
-        if let Some(nix_path) = *self {
-            nix_path.with_nix_path(f)
-        } else {
-            unsafe { CStr::from_ptr("\0".as_ptr() as *const _).with_nix_path(f) }
-        }
     }
 }

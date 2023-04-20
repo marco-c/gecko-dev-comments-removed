@@ -1,23 +1,27 @@
 
 
+use cfg_if::cfg_if;
 use std::{mem, ptr};
-use {Error, Result};
-use errno::Errno;
+use crate::Result;
+use crate::errno::Errno;
 use libc::{self, c_void, c_long, siginfo_t};
-use ::unistd::Pid;
-use sys::signal::Signal;
+use crate::unistd::Pid;
+use crate::sys::signal::Signal;
 
 pub type AddressType = *mut ::libc::c_void;
 
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86_64",
-              target_arch = "x86"),
-          target_env = "gnu"))]
+#[cfg(all(
+    target_os = "linux",
+    any(all(target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")),
+        all(target_arch = "x86", target_env = "gnu"))
+))]
 use libc::user_regs_struct;
 
 cfg_if! {
     if #[cfg(any(all(target_os = "linux", target_arch = "s390x"),
-                 all(target_os = "linux", target_env = "gnu")))] {
+                 all(target_os = "linux", target_env = "gnu"),
+                 target_env = "uclibc"))] {
         #[doc(hidden)]
         pub type RequestType = ::libc::c_uint;
     } else {
@@ -27,9 +31,10 @@ cfg_if! {
 }
 
 libc_enum!{
-    #[cfg_attr(not(any(target_env = "musl", target_os = "android")), repr(u32))]
-    #[cfg_attr(any(target_env = "musl", target_os = "android"), repr(i32))]
+    #[cfg_attr(not(any(target_env = "musl", target_env = "uclibc", target_os = "android")), repr(u32))]
+    #[cfg_attr(any(target_env = "musl", target_env = "uclibc", target_os = "android"), repr(i32))]
     /// Ptrace Request enum defining the action to be taken.
+    #[non_exhaustive]
     pub enum Request {
         PTRACE_TRACEME,
         PTRACE_PEEKTEXT,
@@ -94,11 +99,11 @@ libc_enum!{
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
                                                target_arch = "mips64"))))]
         PTRACE_SETREGSET,
-        #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
-                                               target_arch = "mips64"))))]
+        #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PTRACE_SEIZE,
-        #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
-                                               target_arch = "mips64"))))]
+        #[cfg(target_os = "linux")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         PTRACE_INTERRUPT,
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
                                                target_arch = "mips64"))))]
@@ -106,6 +111,12 @@ libc_enum!{
         #[cfg(all(target_os = "linux", not(any(target_arch = "mips",
                                                target_arch = "mips64"))))]
         PTRACE_PEEKSIGINFO,
+        #[cfg(all(target_os = "linux", target_env = "gnu",
+                  any(target_arch = "x86", target_arch = "x86_64")))]
+        PTRACE_SYSEMU,
+        #[cfg(all(target_os = "linux", target_env = "gnu",
+                  any(target_arch = "x86", target_arch = "x86_64")))]
+        PTRACE_SYSEMU_SINGLESTEP,
     }
 }
 
@@ -114,6 +125,7 @@ libc_enum!{
     /// Using the ptrace options the tracer can configure the tracee to stop
     /// at certain events. This enum is used to define those events as defined
     /// in `man ptrace`.
+    #[non_exhaustive]
     pub enum Event {
         /// Event that stops before a return from fork or clone.
         PTRACE_EVENT_FORK,
@@ -128,9 +140,11 @@ libc_enum!{
         /// Event for a stop before an exit. Unlike the waitpid Exit status program.
         /// registers can still be examined
         PTRACE_EVENT_EXIT,
-        /// STop triggered by a seccomp rule on a tracee.
+        /// Stop triggered by a seccomp rule on a tracee.
         PTRACE_EVENT_SECCOMP,
-        // PTRACE_EVENT_STOP not provided by libc because it's defined in glibc 2.26
+        /// Stop triggered by the `INTERRUPT` syscall, or a group stop,
+        /// or when a new child is attached.
+        PTRACE_EVENT_STOP,
     }
 }
 
@@ -160,24 +174,7 @@ libc_bitflags! {
         PTRACE_O_TRACESECCOMP;
         /// Send a SIGKILL to the tracee if the tracer exits.  This is useful
         /// for ptrace jailers to prevent tracees from escaping their control.
-        #[cfg(any(target_os = "android", target_os = "linux"))]
         PTRACE_O_EXITKILL;
-    }
-}
-
-
-
-#[deprecated(
-    since="0.10.0",
-    note="usages of `ptrace()` should be replaced with the specialized helper functions instead"
-)]
-pub unsafe fn ptrace(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {
-    use self::Request::*;
-    match request {
-        PTRACE_PEEKTEXT | PTRACE_PEEKDATA | PTRACE_GETSIGINFO | 
-            PTRACE_GETEVENTMSG | PTRACE_SETSIGINFO | PTRACE_SETOPTIONS | 
-            PTRACE_POKETEXT | PTRACE_POKEDATA | PTRACE_KILL => Err(Error::UnsupportedOperation),
-        _ => ptrace_other(request, pid, addr, data)
     }
 }
 
@@ -187,25 +184,29 @@ fn ptrace_peek(request: Request, pid: Pid, addr: AddressType, data: *mut c_void)
         libc::ptrace(request as RequestType, libc::pid_t::from(pid), addr, data)
     };
     match Errno::result(ret) {
-        Ok(..) | Err(Error::Sys(Errno::UnknownErrno)) => Ok(ret),
+        Ok(..) | Err(Errno::UnknownErrno) => Ok(ret),
         err @ Err(..) => err,
     }
 }
 
 
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86_64",
-              target_arch = "x86"),
-          target_env = "gnu"))]
+#[cfg(all(
+    target_os = "linux",
+    any(all(target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")),
+        all(target_arch = "x86", target_env = "gnu"))
+))]
 pub fn getregs(pid: Pid) -> Result<user_regs_struct> {
     ptrace_get_data::<user_regs_struct>(Request::PTRACE_GETREGS, pid)
 }
 
 
-#[cfg(all(target_os = "linux",
-          any(target_arch = "x86_64",
-              target_arch = "x86"),
-          target_env = "gnu"))]
+#[cfg(all(
+    target_os = "linux",
+    any(all(target_arch = "x86_64",
+            any(target_env = "gnu", target_env = "musl")),
+        all(target_arch = "x86", target_env = "gnu"))
+))]
 pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
     let res = unsafe {
         libc::ptrace(Request::PTRACE_SETREGS as RequestType,
@@ -221,16 +222,15 @@ pub fn setregs(pid: Pid, regs: user_regs_struct) -> Result<()> {
 
 
 fn ptrace_get_data<T>(request: Request, pid: Pid) -> Result<T> {
-    
-    let data: T = unsafe { mem::uninitialized() };
+    let mut data = mem::MaybeUninit::uninit();
     let res = unsafe {
         libc::ptrace(request as RequestType,
                      libc::pid_t::from(pid),
                      ptr::null_mut::<T>(),
-                     &data as *const _ as *const c_void)
+                     data.as_mut_ptr() as *const _ as *const c_void)
     };
     Errno::result(res)?;
-    Ok(data)
+    Ok(unsafe{ data.assume_init() })
 }
 
 unsafe fn ptrace_other(request: Request, pid: Pid, addr: AddressType, data: *mut c_void) -> Result<c_long> {
@@ -291,14 +291,36 @@ pub fn traceme() -> Result<()> {
 
 
 
-pub fn syscall(pid: Pid) -> Result<()> {
+
+pub fn syscall<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
     unsafe {
         ptrace_other(
             Request::PTRACE_SYSCALL,
             pid,
             ptr::null_mut(),
-            ptr::null_mut(),
+            data,
         ).map(drop) 
+    }
+}
+
+
+
+
+
+
+#[cfg(all(target_os = "linux", target_env = "gnu", any(target_arch = "x86", target_arch = "x86_64")))]
+pub fn sysemu<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
+    unsafe {
+        ptrace_other(Request::PTRACE_SYSEMU, pid, ptr::null_mut(), data).map(drop)
+        
     }
 }
 
@@ -319,13 +341,34 @@ pub fn attach(pid: Pid) -> Result<()> {
 
 
 
-pub fn detach(pid: Pid) -> Result<()> {
+#[cfg(target_os = "linux")]
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub fn seize(pid: Pid, options: Options) -> Result<()> {
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_SEIZE,
+            pid,
+            ptr::null_mut(),
+            options.bits() as *mut c_void,
+        ).map(drop) 
+    }
+}
+
+
+
+
+
+pub fn detach<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
     unsafe {
         ptrace_other(
             Request::PTRACE_DETACH,
             pid,
             ptr::null_mut(),
-            ptr::null_mut()
+            data
         ).map(drop)
     }
 }
@@ -347,13 +390,22 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 
 
 
+#[cfg(target_os = "linux")]
+#[cfg_attr(docsrs, doc(cfg(all())))]
+pub fn interrupt(pid: Pid) -> Result<()> {
+    unsafe {
+        ptrace_other(Request::PTRACE_INTERRUPT, pid, ptr::null_mut(), ptr::null_mut()).map(drop)
+    }
+}
+
+
+
+
 pub fn kill(pid: Pid) -> Result<()> {
     unsafe {
         ptrace_other(Request::PTRACE_KILL, pid, ptr::null_mut(), ptr::null_mut()).map(drop)
     }
 }
-
-
 
 
 
@@ -390,13 +442,63 @@ pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
 
 
 
+
+
+
+
+#[cfg(all(target_os = "linux", target_env = "gnu", any(target_arch = "x86", target_arch = "x86_64")))]
+pub fn sysemu_step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
+    let data = match sig.into() {
+        Some(s) => s as i32 as *mut c_void,
+        None => ptr::null_mut(),
+    };
+    unsafe {
+        ptrace_other(
+            Request::PTRACE_SYSEMU_SINGLESTEP,
+            pid,
+            ptr::null_mut(),
+            data,
+        )
+        .map(drop) 
+    }
+}
+
+
 pub fn read(pid: Pid, addr: AddressType) -> Result<c_long> {
     ptrace_peek(Request::PTRACE_PEEKDATA, pid, addr, ptr::null_mut())
 }
 
 
-pub fn write(pid: Pid, addr: AddressType, data: *mut c_void) -> Result<()> {
-    unsafe {
-        ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop)
-    }
+
+
+
+
+
+pub unsafe fn write(
+    pid: Pid,
+    addr: AddressType,
+    data: *mut c_void) -> Result<()>
+{
+    ptrace_other(Request::PTRACE_POKEDATA, pid, addr, data).map(drop)
+}
+
+
+
+pub fn read_user(pid: Pid, offset: AddressType) -> Result<c_long> {
+    ptrace_peek(Request::PTRACE_PEEKUSER, pid, offset, ptr::null_mut())
+}
+
+
+
+
+
+
+
+
+pub unsafe fn write_user(
+    pid: Pid,
+    offset: AddressType,
+    data: *mut c_void) -> Result<()>
+{
+    ptrace_other(Request::PTRACE_POKEUSER, pid, offset, data).map(drop)
 }

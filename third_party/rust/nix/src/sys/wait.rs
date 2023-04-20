@@ -1,30 +1,53 @@
-use libc::{self, c_int};
-use Result;
-use errno::Errno;
-use unistd::Pid;
 
-use sys::signal::Signal;
+use crate::errno::Errno;
+use crate::sys::signal::Signal;
+use crate::unistd::Pid;
+use crate::Result;
+use cfg_if::cfg_if;
+use libc::{self, c_int};
+use std::convert::TryFrom;
+#[cfg(any(
+    target_os = "android",
+    all(target_os = "linux", not(target_env = "uclibc")),
+))]
+use std::os::unix::io::RawFd;
 
 libc_bitflags!(
+    /// Controls the behavior of [`waitpid`].
     pub struct WaitPidFlag: c_int {
+        /// Do not block when there are no processes wishing to report status.
         WNOHANG;
+        /// Report the status of selected processes which are stopped due to a
+        /// [`SIGTTIN`](crate::sys::signal::Signal::SIGTTIN),
+        /// [`SIGTTOU`](crate::sys::signal::Signal::SIGTTOU),
+        /// [`SIGTSTP`](crate::sys::signal::Signal::SIGTSTP), or
+        /// [`SIGSTOP`](crate::sys::signal::Signal::SIGSTOP) signal.
         WUNTRACED;
+        /// Report the status of selected processes which have terminated.
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
                   target_os = "ios",
                   target_os = "linux",
+                  target_os = "redox",
                   target_os = "macos",
                   target_os = "netbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         WEXITED;
+        /// Report the status of selected processes that have continued from a
+        /// job control stop by receiving a
+        /// [`SIGCONT`](crate::sys::signal::Signal::SIGCONT) signal.
         WCONTINUED;
+        /// An alias for WUNTRACED.
         #[cfg(any(target_os = "android",
                   target_os = "freebsd",
                   target_os = "haiku",
                   target_os = "ios",
                   target_os = "linux",
+                  target_os = "redox",
                   target_os = "macos",
                   target_os = "netbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         WSTOPPED;
         /// Don't reap, just poll status.
         #[cfg(any(target_os = "android",
@@ -32,16 +55,22 @@ libc_bitflags!(
                   target_os = "haiku",
                   target_os = "ios",
                   target_os = "linux",
+                  target_os = "redox",
                   target_os = "macos",
                   target_os = "netbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         WNOWAIT;
         /// Don't wait on children of other threads in this group
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         __WNOTHREAD;
         /// Wait on all children, regardless of type
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         __WALL;
-        #[cfg(any(target_os = "android", target_os = "linux"))]
+        /// Wait for "clone" children only.
+        #[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         __WCLONE;
     }
 );
@@ -79,6 +108,7 @@ pub enum WaitStatus {
     
     
     #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     PtraceEvent(Pid, Signal, c_int),
     
     
@@ -86,6 +116,7 @@ pub enum WaitStatus {
     
     
     #[cfg(any(target_os = "linux", target_os = "android"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     PtraceSyscall(Pid),
     
     
@@ -104,8 +135,7 @@ impl WaitStatus {
     pub fn pid(&self) -> Option<Pid> {
         use self::WaitStatus::*;
         match *self {
-            Exited(p, _)  | Signaled(p, _, _) |
-                Stopped(p, _) | Continued(p) => Some(p),
+            Exited(p, _) | Signaled(p, _, _) | Stopped(p, _) | Continued(p) => Some(p),
             StillAlive => None,
             #[cfg(any(target_os = "android", target_os = "linux"))]
             PtraceEvent(p, _, _) | PtraceSyscall(p) => Some(p),
@@ -114,31 +144,31 @@ impl WaitStatus {
 }
 
 fn exited(status: i32) -> bool {
-    unsafe { libc::WIFEXITED(status) }
+    libc::WIFEXITED(status)
 }
 
 fn exit_status(status: i32) -> i32 {
-    unsafe { libc::WEXITSTATUS(status) }
+    libc::WEXITSTATUS(status)
 }
 
 fn signaled(status: i32) -> bool {
-    unsafe { libc::WIFSIGNALED(status) }
+    libc::WIFSIGNALED(status)
 }
 
 fn term_signal(status: i32) -> Result<Signal> {
-    Signal::from_c_int(unsafe { libc::WTERMSIG(status) })
+    Signal::try_from(libc::WTERMSIG(status))
 }
 
 fn dumped_core(status: i32) -> bool {
-    unsafe { libc::WCOREDUMP(status) }
+    libc::WCOREDUMP(status)
 }
 
 fn stopped(status: i32) -> bool {
-    unsafe { libc::WIFSTOPPED(status) }
+    libc::WIFSTOPPED(status)
 }
 
 fn stop_signal(status: i32) -> Result<Signal> {
-    Signal::from_c_int(unsafe { libc::WSTOPSIG(status) })
+    Signal::try_from(libc::WSTOPSIG(status))
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -147,7 +177,7 @@ fn syscall_stop(status: i32) -> bool {
     
     
     
-    unsafe { libc::WSTOPSIG(status) == libc::SIGTRAP | 0x80 }
+    libc::WSTOPSIG(status) == libc::SIGTRAP | 0x80
 }
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -156,7 +186,7 @@ fn stop_additional(status: i32) -> c_int {
 }
 
 fn continued(status: i32) -> bool {
-    unsafe { libc::WIFCONTINUED(status) }
+    libc::WIFCONTINUED(status)
 }
 
 impl WaitStatus {
@@ -208,7 +238,65 @@ impl WaitStatus {
             WaitStatus::Continued(pid)
         })
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(any(
+        target_os = "android",
+        target_os = "freebsd",
+        target_os = "haiku",
+        all(target_os = "linux", not(target_env = "uclibc")),
+    ))]
+    unsafe fn from_siginfo(siginfo: &libc::siginfo_t) -> Result<WaitStatus> {
+        let si_pid = siginfo.si_pid();
+        if si_pid == 0 {
+            return Ok(WaitStatus::StillAlive);
+        }
+
+        assert_eq!(siginfo.si_signo, libc::SIGCHLD);
+
+        let pid = Pid::from_raw(si_pid);
+        let si_status = siginfo.si_status();
+
+        let status = match siginfo.si_code {
+            libc::CLD_EXITED => WaitStatus::Exited(pid, si_status),
+            libc::CLD_KILLED | libc::CLD_DUMPED => WaitStatus::Signaled(
+                pid,
+                Signal::try_from(si_status)?,
+                siginfo.si_code == libc::CLD_DUMPED,
+            ),
+            libc::CLD_STOPPED => WaitStatus::Stopped(pid, Signal::try_from(si_status)?),
+            libc::CLD_CONTINUED => WaitStatus::Continued(pid),
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            libc::CLD_TRAPPED => {
+                if si_status == libc::SIGTRAP | 0x80 {
+                    WaitStatus::PtraceSyscall(pid)
+                } else {
+                    WaitStatus::PtraceEvent(
+                        pid,
+                        Signal::try_from(si_status & 0xff)?,
+                        (si_status >> 8) as c_int,
+                    )
+                }
+            }
+            _ => return Err(Errno::EINVAL),
+        };
+
+        Ok(status)
+    }
 }
+
+
+
 
 pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Result<WaitStatus> {
     use self::WaitStatus::*;
@@ -222,7 +310,7 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
 
     let res = unsafe {
         libc::waitpid(
-            pid.into().unwrap_or(Pid::from_raw(-1)).into(),
+            pid.into().unwrap_or_else(|| Pid::from_raw(-1)).into(),
             &mut status as *mut c_int,
             option_bits,
         )
@@ -234,6 +322,60 @@ pub fn waitpid<P: Into<Option<Pid>>>(pid: P, options: Option<WaitPidFlag>) -> Re
     }
 }
 
+
+
+
 pub fn wait() -> Result<WaitStatus> {
     waitpid(None, None)
+}
+
+
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "haiku",
+    all(target_os = "linux", not(target_env = "uclibc")),
+))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Id {
+    
+    All,
+    
+    Pid(Pid),
+    
+    
+    
+    PGid(Pid),
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    PIDFd(RawFd),
+}
+
+
+
+
+#[cfg(any(
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "haiku",
+    all(target_os = "linux", not(target_env = "uclibc")),
+))]
+pub fn waitid(id: Id, flags: WaitPidFlag) -> Result<WaitStatus> {
+    let (idtype, idval) = match id {
+        Id::All => (libc::P_ALL, 0),
+        Id::Pid(pid) => (libc::P_PID, pid.as_raw() as libc::id_t),
+        Id::PGid(pid) => (libc::P_PGID, pid.as_raw() as libc::id_t),
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        Id::PIDFd(fd) => (libc::P_PIDFD, fd as libc::id_t),
+    };
+
+    let siginfo = unsafe {
+        
+        
+        let mut siginfo: libc::siginfo_t = std::mem::zeroed();
+        Errno::result(libc::waitid(idtype, idval, &mut siginfo, flags.bits()))?;
+        siginfo
+    };
+
+    unsafe { WaitStatus::from_siginfo(&siginfo) }
 }

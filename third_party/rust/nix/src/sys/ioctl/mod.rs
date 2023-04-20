@@ -221,39 +221,51 @@
 
 
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+use cfg_if::cfg_if;
+
+#[cfg(any(target_os = "android", target_os = "linux", target_os = "redox"))]
 #[macro_use]
 mod linux;
 
-#[cfg(any(target_os = "android", target_os = "linux"))]
+#[cfg(any(
+    target_os = "android",
+    target_os = "linux",
+    target_os = "redox"
+))]
 pub use self::linux::*;
 
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "illumos",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "haiku",
+    target_os = "openbsd"
+))]
 #[macro_use]
 mod bsd;
 
-#[cfg(any(target_os = "dragonfly",
-          target_os = "freebsd",
-          target_os = "ios",
-          target_os = "macos",
-          target_os = "netbsd",
-          target_os = "openbsd"))]
+#[cfg(any(
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "illumos",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "haiku",
+    target_os = "openbsd"
+))]
 pub use self::bsd::*;
 
 
 #[macro_export]
 #[doc(hidden)]
 macro_rules! convert_ioctl_res {
-    ($w:expr) => (
-        {
-            $crate::errno::Errno::result($w)
-        }
-    );
+    ($w:expr) => {{
+        $crate::errno::Errno::result($w)
+    }};
 }
 
 
@@ -297,7 +309,6 @@ macro_rules! ioctl_none {
         }
     )
 }
-
 
 
 
@@ -401,7 +412,6 @@ macro_rules! ioctl_read {
 
 
 
-
 #[macro_export(local_inner_macros)]
 macro_rules! ioctl_read_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr, $ty:ty) => (
@@ -475,7 +485,6 @@ macro_rules! ioctl_write_ptr {
 
 
 
-
 #[macro_export(local_inner_macros)]
 macro_rules! ioctl_write_ptr_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr, $ty:ty) => (
@@ -488,7 +497,7 @@ macro_rules! ioctl_write_ptr_bad {
     )
 }
 
-cfg_if!{
+cfg_if! {
     if #[cfg(any(target_os = "dragonfly", target_os = "freebsd"))] {
         /// Generates a wrapper function for a ioctl that writes an integer to the kernel.
         ///
@@ -571,7 +580,6 @@ cfg_if!{
         }
     }
 }
-
 
 
 

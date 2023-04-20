@@ -1,10 +1,12 @@
+use std::convert::TryFrom;
+
 #[test]
 fn test_signalfd() {
+    use nix::sys::signal::{self, raise, SigSet, Signal};
     use nix::sys::signalfd::SignalFd;
-    use nix::sys::signal::{self, raise, Signal, SigSet};
 
     
-    let _m = ::SIGNAL_MTX.lock().expect("Mutex got poisoned by another test");
+    let _m = crate::SIGNAL_MTX.lock();
 
     
     let mut mask = SigSet::empty();
@@ -20,6 +22,6 @@ fn test_signalfd() {
 
     
     let res = fd.read_signal().unwrap().unwrap();
-    let signo = Signal::from_c_int(res.ssi_signo as i32).unwrap();
+    let signo = Signal::try_from(res.ssi_signo as i32).unwrap();
     assert_eq!(signo, signal::SIGUSR1);
 }

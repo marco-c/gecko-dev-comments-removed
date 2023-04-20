@@ -1,16 +1,25 @@
 
 
 
-use {Error, Result};
-use errno::Errno;
+use cfg_if::cfg_if;
+use crate::{Result, errno::Errno};
 use libc::{self, c_void, c_int, iovec, socklen_t, size_t,
         CMSG_FIRSTHDR, CMSG_NXTHDR, CMSG_DATA, CMSG_LEN};
+use std::convert::TryInto;
 use std::{mem, ptr, slice};
 use std::os::unix::io::RawFd;
-use sys::time::TimeVal;
-use sys::uio::IoVec;
+#[cfg(feature = "net")]
+use std::net;
+#[cfg(target_os = "linux")]
+#[cfg(feature = "uio")]
+use crate::sys::time::TimeSpec;
+#[cfg(feature = "uio")]
+use crate::sys::time::TimeVal;
+use std::io::{IoSlice, IoSliceMut};
 
+#[deny(missing_docs)]
 mod addr;
+#[deny(missing_docs)]
 pub mod sockopt;
 
 
@@ -19,42 +28,79 @@ pub mod sockopt;
 
 
 
+pub use self::addr::{SockaddrLike, SockaddrStorage};
+
+#[cfg(not(any(target_os = "illumos", target_os = "solaris")))]
+#[allow(deprecated)]
 pub use self::addr::{
     AddressFamily,
     SockAddr,
-    InetAddr,
     UnixAddr,
+};
+#[allow(deprecated)]
+#[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
+#[cfg(feature = "net")]
+pub use self::addr::{
+    InetAddr,
     IpAddr,
     Ipv4Addr,
     Ipv6Addr,
     LinkAddr,
+    SockaddrIn,
+    SockaddrIn6
 };
-#[cfg(any(target_os = "android", target_os = "linux"))]
-pub use ::sys::socket::addr::netlink::NetlinkAddr;
-#[cfg(any(target_os = "android", target_os = "linux"))]
-pub use sys::socket::addr::alg::AlgAddr;
-#[cfg(target_os = "linux")]
-pub use sys::socket::addr::vsock::VsockAddr;
+#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+#[allow(deprecated)]
+pub use self::addr::{
+    AddressFamily,
+    SockAddr,
+    UnixAddr,
+};
+#[allow(deprecated)]
+#[cfg(any(target_os = "illumos", target_os = "solaris", target_os = "haiku"))]
+#[cfg(feature = "net")]
+pub use self::addr::{
+    InetAddr,
+    IpAddr,
+    Ipv4Addr,
+    Ipv6Addr,
+    SockaddrIn,
+    SockaddrIn6
+};
 
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+#[cfg(feature = "ioctl")]
+pub use crate::sys::socket::addr::sys_control::SysControlAddr;
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub use crate::sys::socket::addr::netlink::NetlinkAddr;
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub use crate::sys::socket::addr::alg::AlgAddr;
+#[cfg(any(target_os = "android", target_os = "linux"))]
+pub use crate::sys::socket::addr::vsock::VsockAddr;
+
+#[cfg(feature = "uio")]
+pub use libc::{cmsghdr, msghdr};
 pub use libc::{
-    cmsghdr,
-    msghdr,
     sa_family_t,
     sockaddr,
-    sockaddr_in,
-    sockaddr_in6,
     sockaddr_storage,
     sockaddr_un,
 };
+#[cfg(feature = "net")]
+pub use libc::{sockaddr_in, sockaddr_in6};
 
 
 #[doc(hidden)]
 pub use libc::{c_uint, CMSG_SPACE};
 
+#[cfg(feature = "net")]
+use crate::sys::socket::addr::{ipv4addr_to_libc, ipv6addr_to_libc};
+
 
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(i32)]
+#[non_exhaustive]
 pub enum SockType {
     
     
@@ -72,6 +118,7 @@ pub enum SockType {
     Raw = libc::SOCK_RAW,
     
     
+    #[cfg(not(any(target_os = "haiku")))]
     Rdm = libc::SOCK_RDM,
 }
 
@@ -79,6 +126,7 @@ pub enum SockType {
 
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[non_exhaustive]
 pub enum SockProtocol {
     
     Tcp = libc::IPPROTO_TCP,
@@ -87,11 +135,114 @@ pub enum SockProtocol {
     
     
     #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     KextEvent = libc::SYSPROTO_EVENT,
     
     
     #[cfg(any(target_os = "ios", target_os = "macos"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     KextControl = libc::SYSPROTO_CONTROL,
+    
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkRoute = libc::NETLINK_ROUTE,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkUserSock = libc::NETLINK_USERSOCK,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkSockDiag = libc::NETLINK_SOCK_DIAG,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkSELinux = libc::NETLINK_SELINUX,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkISCSI = libc::NETLINK_ISCSI,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkAudit = libc::NETLINK_AUDIT,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkFIBLookup = libc::NETLINK_FIB_LOOKUP,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkNetFilter = libc::NETLINK_NETFILTER,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkSCSITransport = libc::NETLINK_SCSITRANSPORT,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkRDMA = libc::NETLINK_RDMA,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkIPv6Firewall = libc::NETLINK_IP6_FW,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkDECNetRoutingMessage = libc::NETLINK_DNRTMSG,
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkKObjectUEvent = libc::NETLINK_KOBJECT_UEVENT,
+    
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    NetlinkCrypto = libc::NETLINK_CRYPTO,
+    
+    
+    
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    EthAll = libc::ETH_P_ALL.to_be(),
+}
+
+#[cfg(any(target_os = "linux"))]
+libc_bitflags! {
+    /// Configuration flags for `SO_TIMESTAMPING` interface
+    ///
+    /// For use with [`Timestamping`][sockopt::Timestamping].
+    /// [Further reading](https://www.kernel.org/doc/html/latest/networking/timestamping.html)
+    pub struct TimestampingFlag: c_uint {
+        /// Report any software timestamps when available.
+        SOF_TIMESTAMPING_SOFTWARE;
+        /// Report hardware timestamps as generated by SOF_TIMESTAMPING_TX_HARDWARE when available.
+        SOF_TIMESTAMPING_RAW_HARDWARE;
+        /// Collect transmiting timestamps as reported by hardware
+        SOF_TIMESTAMPING_TX_HARDWARE;
+        /// Collect transmiting timestamps as reported by software
+        SOF_TIMESTAMPING_TX_SOFTWARE;
+        /// Collect receiving timestamps as reported by hardware
+        SOF_TIMESTAMPING_RX_HARDWARE;
+        /// Collect receiving timestamps as reported by software
+        SOF_TIMESTAMPING_RX_SOFTWARE;
+    }
 }
 
 libc_bitflags!{
@@ -101,24 +252,30 @@ libc_bitflags!{
         #[cfg(any(target_os = "android",
                   target_os = "dragonfly",
                   target_os = "freebsd",
+                  target_os = "illumos",
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_NONBLOCK;
         /// Set close-on-exec on the new descriptor
         #[cfg(any(target_os = "android",
                   target_os = "dragonfly",
                   target_os = "freebsd",
+                  target_os = "illumos",
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_CLOEXEC;
         /// Return `EPIPE` instead of raising `SIGPIPE`
         #[cfg(target_os = "netbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_NOSIGPIPE;
         /// For domains `AF_INET(6)`, only allow `connect(2)`, `sendto(2)`, or `sendmsg(2)`
         
         #[cfg(target_os = "openbsd")]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         SOCK_DNS;
     }
 }
@@ -144,7 +301,7 @@ libc_bitflags!{
         /// (via the [`fcntl`](../../fcntl/fn.fcntl.html)
         /// `F_SETFL` operation), but differs in that `MSG_DONTWAIT` is a per-
         /// call option, whereas `O_NONBLOCK` is a setting on the open file
-        /// description (see [open(2)](http://man7.org/linux/man-pages/man2/open.2.html)),
+        /// description (see [open(2)](https://man7.org/linux/man-pages/man2/open.2.html)),
         /// which will affect all threads in
         /// the calling process and as well as other processes that hold
         /// file descriptors referring to the same open file description.
@@ -167,12 +324,13 @@ libc_bitflags!{
         /// the socket error queue. (For more details, see
         /// [recvfrom(2)](https://linux.die.net/man/2/recvfrom))
         #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MSG_ERRQUEUE;
         /// Set the `close-on-exec` flag for the file descriptor received via a UNIX domain
         /// file descriptor using the `SCM_RIGHTS` operation (described in
         /// [unix(7)](https://linux.die.net/man/7/unix)).
         /// This flag is useful for the same reasons as the `O_CLOEXEC` flag of
-        /// [open(2)](http://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html).
+        /// [open(2)](https://pubs.opengroup.org/onlinepubs/9699919799/functions/open.html).
         ///
         /// Only used in [`recvmsg`](fn.recvmsg.html) function.
         #[cfg(any(target_os = "android",
@@ -181,7 +339,22 @@ libc_bitflags!{
                   target_os = "linux",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         MSG_CMSG_CLOEXEC;
+        /// Requests not to send `SIGPIPE` errors when the other end breaks the connection.
+        /// (For more details, see [send(2)](https://linux.die.net/man/2/send)).
+        #[cfg(any(target_os = "android",
+                  target_os = "dragonfly",
+                  target_os = "freebsd",
+                  target_os = "fuchsia",
+                  target_os = "haiku",
+                  target_os = "illumos",
+                  target_os = "linux",
+                  target_os = "netbsd",
+                  target_os = "openbsd",
+                  target_os = "solaris"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
+        MSG_NOSIGNAL;
     }
 }
 
@@ -189,12 +362,25 @@ cfg_if! {
     if #[cfg(any(target_os = "android", target_os = "linux"))] {
         /// Unix credentials of the sending process.
         ///
-        /// This struct is used with the `SO_PEERCRED` ancillary message for UNIX sockets.
-        #[repr(C)]
+        /// This struct is used with the `SO_PEERCRED` ancillary message
+        /// and the `SCM_CREDENTIALS` control message for UNIX sockets.
+        #[repr(transparent)]
         #[derive(Clone, Copy, Debug, Eq, PartialEq)]
         pub struct UnixCredentials(libc::ucred);
 
         impl UnixCredentials {
+            /// Creates a new instance with the credentials of the current process
+            pub fn new() -> Self {
+                // Safe because these FFI functions are inherently safe
+                unsafe {
+                    UnixCredentials(libc::ucred {
+                        pid: libc::getpid(),
+                        uid: libc::getuid(),
+                        gid: libc::getgid()
+                    })
+                }
+            }
+
             /// Returns the process identifier
             pub fn pid(&self) -> libc::pid_t {
                 self.0.pid
@@ -211,77 +397,157 @@ cfg_if! {
             }
         }
 
+        impl Default for UnixCredentials {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
         impl From<libc::ucred> for UnixCredentials {
             fn from(cred: libc::ucred) -> Self {
                 UnixCredentials(cred)
             }
         }
 
-        impl Into<libc::ucred> for UnixCredentials {
-            fn into(self) -> libc::ucred {
-                self.0
+        impl From<UnixCredentials> for libc::ucred {
+            fn from(uc: UnixCredentials) -> Self {
+                uc.0
+            }
+        }
+    } else if #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))] {
+        /// Unix credentials of the sending process.
+        ///
+        /// This struct is used with the `SCM_CREDS` ancillary message for UNIX sockets.
+        #[repr(transparent)]
+        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+        pub struct UnixCredentials(libc::cmsgcred);
+
+        impl UnixCredentials {
+            /// Returns the process identifier
+            pub fn pid(&self) -> libc::pid_t {
+                self.0.cmcred_pid
+            }
+
+            /// Returns the real user identifier
+            pub fn uid(&self) -> libc::uid_t {
+                self.0.cmcred_uid
+            }
+
+            /// Returns the effective user identifier
+            pub fn euid(&self) -> libc::uid_t {
+                self.0.cmcred_euid
+            }
+
+            /// Returns the real group identifier
+            pub fn gid(&self) -> libc::gid_t {
+                self.0.cmcred_gid
+            }
+
+            /// Returns a list group identifiers (the first one being the effective GID)
+            pub fn groups(&self) -> &[libc::gid_t] {
+                unsafe {
+                    slice::from_raw_parts(
+                        self.0.cmcred_groups.as_ptr() as *const libc::gid_t,
+                        self.0.cmcred_ngroups as _
+                    )
+                }
+            }
+        }
+
+        impl From<libc::cmsgcred> for UnixCredentials {
+            fn from(cred: libc::cmsgcred) -> Self {
+                UnixCredentials(cred)
             }
         }
     }
 }
 
+cfg_if!{
+    if #[cfg(any(
+                target_os = "dragonfly",
+                target_os = "freebsd",
+                target_os = "macos",
+                target_os = "ios"
+        ))] {
+        /// Return type of [`LocalPeerCred`](crate::sys::socket::sockopt::LocalPeerCred)
+        #[repr(transparent)]
+        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+        pub struct XuCred(libc::xucred);
 
+        impl XuCred {
+            /// Structure layout version
+            pub fn version(&self) -> u32 {
+                self.0.cr_version
+            }
 
+            /// Effective user ID
+            pub fn uid(&self) -> libc::uid_t {
+                self.0.cr_uid
+            }
 
-#[repr(C)]
+            /// Returns a list of group identifiers (the first one being the
+            /// effective GID)
+            pub fn groups(&self) -> &[libc::gid_t] {
+                &self.0.cr_groups
+            }
+        }
+    }
+}
+
+feature! {
+#![feature = "net"]
+/// Request for multicast socket operations
+///
+/// This is a wrapper type around `ip_mreq`.
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct IpMembershipRequest(libc::ip_mreq);
 
 impl IpMembershipRequest {
-    
-    
-    
-    pub fn new(group: Ipv4Addr, interface: Option<Ipv4Addr>) -> Self {
+    /// Instantiate a new `IpMembershipRequest`
+    ///
+    /// If `interface` is `None`, then `Ipv4Addr::any()` will be used for the interface.
+    pub fn new(group: net::Ipv4Addr, interface: Option<net::Ipv4Addr>)
+        -> Self
+    {
+        let imr_addr = match interface {
+            None => net::Ipv4Addr::UNSPECIFIED,
+            Some(addr) => addr
+        };
         IpMembershipRequest(libc::ip_mreq {
-            imr_multiaddr: group.0,
-            imr_interface: interface.unwrap_or_else(Ipv4Addr::any).0,
+            imr_multiaddr: ipv4addr_to_libc(group),
+            imr_interface: ipv4addr_to_libc(imr_addr)
         })
     }
 }
 
-
-
-
-#[repr(C)]
+/// Request for ipv6 multicast socket operations
+///
+/// This is a wrapper type around `ipv6_mreq`.
+#[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ipv6MembershipRequest(libc::ipv6_mreq);
 
 impl Ipv6MembershipRequest {
-    
-    pub fn new(group: Ipv6Addr) -> Self {
+    /// Instantiate a new `Ipv6MembershipRequest`
+    pub const fn new(group: net::Ipv6Addr) -> Self {
         Ipv6MembershipRequest(libc::ipv6_mreq {
-            ipv6mr_multiaddr: group.0,
+            ipv6mr_multiaddr: ipv6addr_to_libc(&group),
             ipv6mr_interface: 0,
         })
     }
 }
-
-cfg_if! {
-    // Darwin and DragonFly BSD always align struct cmsghdr to 32-bit only.
-    if #[cfg(any(target_os = "dragonfly", target_os = "ios", target_os = "macos"))] {
-        type align_of_cmsg_data = u32;
-    } else {
-        type align_of_cmsg_data = size_t;
-    }
 }
 
+feature! {
+#![feature = "uio"]
 
-
-pub trait CmsgBuffer {
-    fn as_bytes_mut(&mut self) -> &mut [u8];
-}
-
-
-
-
-
-
-
+/// Create a buffer large enough for storing some control messages as returned
+/// by [`recvmsg`](fn.recvmsg.html).
+///
+/// # Examples
+///
+/// ```
 
 
 
@@ -302,80 +568,28 @@ pub trait CmsgBuffer {
 macro_rules! cmsg_space {
     ( $( $x:ty ),* ) => {
         {
-            use nix::sys::socket::{c_uint, CMSG_SPACE};
-            use std::mem;
             let mut space = 0;
             $(
                 
                 space += unsafe {
-                    CMSG_SPACE(mem::size_of::<$x>() as c_uint)
+                    $crate::sys::socket::CMSG_SPACE(::std::mem::size_of::<$x>() as $crate::sys::socket::c_uint)
                 } as usize;
             )*
-            let mut v = Vec::<u8>::with_capacity(space);
-            // safe because any bit pattern is a valid u8
-            unsafe {v.set_len(space)};
-            v
+            Vec::<u8>::with_capacity(space)
         }
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct CmsgSpace<T> {
-    _hdr: cmsghdr,
-    _pad: [align_of_cmsg_data; 0],
-    _data: T,
-}
-
-impl<T> CmsgSpace<T> {
-    
-    
-    #[deprecated( since="0.14.0", note="Use the cmsg_space! macro instead")]
-    pub fn new() -> Self {
-        
-        unsafe { mem::uninitialized() }
-    }
-}
-
-impl<T> CmsgBuffer for CmsgSpace<T> {
-    fn as_bytes_mut(&mut self) -> &mut [u8] {
-        
-        unsafe {
-            slice::from_raw_parts_mut(self as *mut CmsgSpace<T> as *mut u8,
-                                      mem::size_of::<Self>())
-        }
-    }
-}
-
-impl CmsgBuffer for Vec<u8> {
-    fn as_bytes_mut(&mut self) -> &mut [u8] {
-        &mut self[..]
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct RecvMsg<'a> {
+pub struct RecvMsg<'a, S> {
     pub bytes: usize,
     cmsghdr: Option<&'a cmsghdr>,
-    pub address: Option<SockAddr>,
+    pub address: Option<S>,
     pub flags: MsgFlags,
     mhdr: msghdr,
 }
 
-impl<'a> RecvMsg<'a> {
+impl<'a, S> RecvMsg<'a, S> {
     
     
     pub fn cmsgs(&self) -> CmsgIterator {
@@ -426,14 +640,18 @@ impl<'a> Iterator for CmsgIterator<'a> {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum ControlMessageOwned {
-    
     
     ScmRights(Vec<RawFd>),
     
-    
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    ScmCredentials(libc::ucred),
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    ScmCredentials(UnixCredentials),
+    
+    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    ScmCreds(UnixCredentials),
     
     
     
@@ -444,8 +662,7 @@ pub enum ControlMessageOwned {
     
     
     
-    #[cfg_attr(not(all(target_os = "freebsd", target_arch = "x86")), doc = " ```")]
-    #[cfg_attr(all(target_os = "freebsd", target_arch = "x86"), doc = " ```no_run")]
+    
     
     
     
@@ -493,6 +710,17 @@ pub enum ControlMessageOwned {
     
     
     ScmTimestamp(TimeVal),
+    
+    
+    
+    #[cfg(all(target_os = "linux"))]
+    ScmTimestampsns(Timestamps),
+    
+    
+    
+    #[cfg(all(target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    ScmTimestampns(TimeSpec),
     #[cfg(any(
         target_os = "android",
         target_os = "ios",
@@ -500,6 +728,8 @@ pub enum ControlMessageOwned {
         target_os = "macos",
         target_os = "netbsd",
     ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4PacketInfo(libc::in_pktinfo),
     #[cfg(any(
         target_os = "android",
@@ -511,6 +741,8 @@ pub enum ControlMessageOwned {
         target_os = "openbsd",
         target_os = "netbsd",
     ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv6PacketInfo(libc::in6_pktinfo),
     #[cfg(any(
         target_os = "freebsd",
@@ -519,6 +751,8 @@ pub enum ControlMessageOwned {
         target_os = "netbsd",
         target_os = "openbsd",
     ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvIf(libc::sockaddr_dl),
     #[cfg(any(
         target_os = "freebsd",
@@ -527,10 +761,69 @@ pub enum ControlMessageOwned {
         target_os = "netbsd",
         target_os = "openbsd",
     ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
     Ipv4RecvDstAddr(libc::in_addr),
+    #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4OrigDstAddr(libc::sockaddr_in),
+    #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv6OrigDstAddr(libc::sockaddr_in6),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    UdpGroSegments(u16),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    RxqOvfl(u32),
+
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4RecvErr(libc::sock_extended_err, Option<sockaddr_in>),
+    
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv6RecvErr(libc::sock_extended_err, Option<sockaddr_in6>),
+
     
     #[doc(hidden)]
     Unknown(UnknownCmsg),
+}
+
+
+#[cfg(all(target_os = "linux"))]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Timestamps {
+    
+    pub system: TimeSpec,
+    
+    pub hw_trans: TimeSpec,
+    
+    pub hw_raw: TimeSpec,
 }
 
 impl ControlMessageOwned {
@@ -542,7 +835,7 @@ impl ControlMessageOwned {
     
     
     
-    
+    #[allow(clippy::cast_ptr_alignment)]
     unsafe fn decode_from(header: &cmsghdr) -> ControlMessageOwned
     {
         let p = CMSG_DATA(header);
@@ -553,21 +846,43 @@ impl ControlMessageOwned {
                 let n = len / mem::size_of::<RawFd>();
                 let mut fds = Vec::with_capacity(n);
                 for i in 0..n {
-                    let fdp = (p as *const RawFd).offset(i as isize);
+                    let fdp = (p as *const RawFd).add(i);
                     fds.push(ptr::read_unaligned(fdp));
                 }
-                let cmo = ControlMessageOwned::ScmRights(fds);
-                cmo
+                ControlMessageOwned::ScmRights(fds)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
             (libc::SOL_SOCKET, libc::SCM_CREDENTIALS) => {
                 let cred: libc::ucred = ptr::read_unaligned(p as *const _);
-                ControlMessageOwned::ScmCredentials(cred)
+                ControlMessageOwned::ScmCredentials(cred.into())
             }
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            (libc::SOL_SOCKET, libc::SCM_CREDS) => {
+                let cred: libc::cmsgcred = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::ScmCreds(cred.into())
+            }
+            #[cfg(not(target_os = "haiku"))]
             (libc::SOL_SOCKET, libc::SCM_TIMESTAMP) => {
                 let tv: libc::timeval = ptr::read_unaligned(p as *const _);
                 ControlMessageOwned::ScmTimestamp(TimeVal::from(tv))
             },
+            #[cfg(all(target_os = "linux"))]
+            (libc::SOL_SOCKET, libc::SCM_TIMESTAMPNS) => {
+                let ts: libc::timespec = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::ScmTimestampns(TimeSpec::from(ts))
+            }
+            #[cfg(all(target_os = "linux"))]
+            (libc::SOL_SOCKET, libc::SCM_TIMESTAMPING) => {
+                let tp = p as *const libc::timespec;
+                let ts: libc::timespec = ptr::read_unaligned(tp);
+                let system = TimeSpec::from(ts);
+                let ts: libc::timespec = ptr::read_unaligned(tp.add(1));
+                let hw_trans = TimeSpec::from(ts);
+                let ts: libc::timespec = ptr::read_unaligned(tp.add(2));
+                let hw_raw = TimeSpec::from(ts);
+                let timestamping = Timestamps { system, hw_trans, hw_raw };
+                ControlMessageOwned::ScmTimestampsns(timestamping)
+            }
             #[cfg(any(
                 target_os = "android",
                 target_os = "freebsd",
@@ -575,6 +890,7 @@ impl ControlMessageOwned {
                 target_os = "linux",
                 target_os = "macos"
             ))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IPV6, libc::IPV6_PKTINFO) => {
                 let info = ptr::read_unaligned(p as *const libc::in6_pktinfo);
                 ControlMessageOwned::Ipv6PacketInfo(info)
@@ -586,6 +902,7 @@ impl ControlMessageOwned {
                 target_os = "macos",
                 target_os = "netbsd",
             ))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_PKTINFO) => {
                 let info = ptr::read_unaligned(p as *const libc::in_pktinfo);
                 ControlMessageOwned::Ipv4PacketInfo(info)
@@ -597,6 +914,7 @@ impl ControlMessageOwned {
                 target_os = "netbsd",
                 target_os = "openbsd",
             ))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVIF) => {
                 let dl = ptr::read_unaligned(p as *const libc::sockaddr_dl);
                 ControlMessageOwned::Ipv4RecvIf(dl)
@@ -608,15 +926,71 @@ impl ControlMessageOwned {
                 target_os = "netbsd",
                 target_os = "openbsd",
             ))]
+            #[cfg(feature = "net")]
             (libc::IPPROTO_IP, libc::IP_RECVDSTADDR) => {
                 let dl = ptr::read_unaligned(p as *const libc::in_addr);
                 ControlMessageOwned::Ipv4RecvDstAddr(dl)
             },
+            #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_ORIGDSTADDR) => {
+                let dl = ptr::read_unaligned(p as *const libc::sockaddr_in);
+                ControlMessageOwned::Ipv4OrigDstAddr(dl)
+            },
+            #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
+            (libc::SOL_UDP, libc::UDP_GRO) => {
+                let gso_size: u16 = ptr::read_unaligned(p as *const _);
+                ControlMessageOwned::UdpGroSegments(gso_size)
+            },
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            (libc::SOL_SOCKET, libc::SO_RXQ_OVFL) => {
+                let drop_counter = ptr::read_unaligned(p as *const u32);
+                ControlMessageOwned::RxqOvfl(drop_counter)
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IP, libc::IP_RECVERR) => {
+                let (err, addr) = Self::recv_err_helper::<sockaddr_in>(p, len);
+                ControlMessageOwned::Ipv4RecvErr(err, addr)
+            },
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IPV6, libc::IPV6_RECVERR) => {
+                let (err, addr) = Self::recv_err_helper::<sockaddr_in6>(p, len);
+                ControlMessageOwned::Ipv6RecvErr(err, addr)
+            },
+            #[cfg(any(target_os = "android", target_os = "freebsd", target_os = "linux"))]
+            #[cfg(feature = "net")]
+            (libc::IPPROTO_IPV6, libc::IPV6_ORIGDSTADDR) => {
+                let dl = ptr::read_unaligned(p as *const libc::sockaddr_in6);
+                ControlMessageOwned::Ipv6OrigDstAddr(dl)
+            },
             (_, _) => {
                 let sl = slice::from_raw_parts(p, len);
-                let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(&sl[..]));
+                let ucmsg = UnknownCmsg(*header, Vec::<u8>::from(sl));
                 ControlMessageOwned::Unknown(ucmsg)
             }
+        }
+    }
+
+    #[cfg(any(target_os = "android", target_os = "linux"))]
+    #[cfg(feature = "net")]
+    #[allow(clippy::cast_ptr_alignment)]    
+    unsafe fn recv_err_helper<T>(p: *mut libc::c_uchar, len: usize) -> (libc::sock_extended_err, Option<T>) {
+        let ee = p as *const libc::sock_extended_err;
+        let err = ptr::read_unaligned(ee);
+
+        
+        
+        
+        
+        let addrp = libc::SO_EE_OFFENDER(ee) as *const T;
+
+        if addrp.offset(1) as usize - (p as usize) > len {
+            (err, None)
+        } else {
+            (err, Some(ptr::read_unaligned(addrp)))
         }
     }
 }
@@ -627,6 +1001,7 @@ impl ControlMessageOwned {
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum ControlMessage<'a> {
     
     
@@ -650,10 +1025,24 @@ pub enum ControlMessage<'a> {
     
     
     
-    
-    
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    ScmCredentials(&'a libc::ucred),
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    ScmCredentials(&'a UnixCredentials),
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    ScmCreds,
 
     
     
@@ -663,6 +1052,7 @@ pub enum ControlMessage<'a> {
         target_os = "android",
         target_os = "linux",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AlgSetIv(&'a [u8]),
     
     
@@ -673,6 +1063,7 @@ pub enum ControlMessage<'a> {
         target_os = "android",
         target_os = "linux",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AlgSetOp(&'a libc::c_int),
     
     
@@ -683,8 +1074,76 @@ pub enum ControlMessage<'a> {
         target_os = "android",
         target_os = "linux",
     ))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
     AlgSetAeadAssoclen(&'a u32),
 
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    UdpGsoSegments(&'a u16),
+
+    
+    
+    
+    
+    #[cfg(any(target_os = "linux",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "android",
+              target_os = "ios",))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4PacketInfo(&'a libc::in_pktinfo),
+
+    
+    
+    
+    
+    #[cfg(any(target_os = "linux",
+              target_os = "macos",
+              target_os = "netbsd",
+              target_os = "freebsd",
+              target_os = "android",
+              target_os = "ios",))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv6PacketInfo(&'a libc::in6_pktinfo),
+
+    
+    #[cfg(any(
+        target_os = "netbsd",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "dragonfly",
+    ))]
+    #[cfg(feature = "net")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
+    Ipv4SendSrcAddr(&'a libc::in_addr),
+
+    
+    
+    
+    
+    
+    #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+    #[cfg_attr(docsrs, doc(cfg(all())))]
+    RxqOvfl(&'a u32),
+
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    TxTime(&'a u64),
 }
 
 
@@ -715,34 +1174,80 @@ impl<'a> ControlMessage<'a> {
 
     
     fn copy_to_cmsg_data(&self, cmsg_data: *mut u8) {
-        let data_ptr = match self {
-            &ControlMessage::ScmRights(fds) => {
+        let data_ptr = match *self {
+            ControlMessage::ScmRights(fds) => {
                 fds as *const _ as *const u8
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::ScmCredentials(creds) => {
-                creds as *const libc::ucred as *const u8
+            ControlMessage::ScmCredentials(creds) => {
+                &creds.0 as *const libc::ucred as *const u8
+            }
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            ControlMessage::ScmCreds => {
+                
+                
+                unsafe { ptr::write_bytes(cmsg_data, 0, self.len()) };
+                return
             }
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetIv(iv) => {
+            ControlMessage::AlgSetIv(iv) => {
+                #[allow(deprecated)] 
+                let af_alg_iv = libc::af_alg_iv {
+                    ivlen: iv.len() as u32,
+                    iv: [0u8; 0],
+                };
+
+                let size = mem::size_of_val(&af_alg_iv);
+
                 unsafe {
-                    let alg_iv = cmsg_data as *mut libc::af_alg_iv;
-                    (*alg_iv).ivlen = iv.len() as u32;
+                    ptr::copy_nonoverlapping(
+                        &af_alg_iv as *const _ as *const u8,
+                        cmsg_data,
+                        size,
+                    );
                     ptr::copy_nonoverlapping(
                         iv.as_ptr(),
-                        (*alg_iv).iv.as_mut_ptr(),
+                        cmsg_data.add(size),
                         iv.len()
                     );
                 };
+
                 return
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetOp(op) => {
+            ControlMessage::AlgSetOp(op) => {
                 op as *const _ as *const u8
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetAeadAssoclen(len) => {
+            ControlMessage::AlgSetAeadAssoclen(len) => {
                 len as *const _ as *const u8
+            },
+            #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
+            ControlMessage::UdpGsoSegments(gso_size) => {
+                gso_size as *const _ as *const u8
+            },
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "android",
+                      target_os = "ios",))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4PacketInfo(info) => info as *const _ as *const u8,
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "freebsd",
+                      target_os = "android", target_os = "ios",))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv6PacketInfo(info) => info as *const _ as *const u8,
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
+                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4SendSrcAddr(addr) => addr as *const _ as *const u8,
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            ControlMessage::RxqOvfl(drop_count) => {
+                drop_count as *const _ as *const u8
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::TxTime(tx_time) => {
+                tx_time as *const _ as *const u8
             },
         };
         unsafe {
@@ -756,59 +1261,141 @@ impl<'a> ControlMessage<'a> {
 
     
     fn len(&self) -> usize {
-        match self {
-            &ControlMessage::ScmRights(fds) => {
+        match *self {
+            ControlMessage::ScmRights(fds) => {
                 mem::size_of_val(fds)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::ScmCredentials(creds) => {
+            ControlMessage::ScmCredentials(creds) => {
                 mem::size_of_val(creds)
             }
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            ControlMessage::ScmCreds => {
+                mem::size_of::<libc::cmsgcred>()
+            }
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetIv(iv) => {
-                mem::size_of::<libc::af_alg_iv>() + iv.len()
+            ControlMessage::AlgSetIv(iv) => {
+                mem::size_of_val(&iv) + iv.len()
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetOp(op) => {
+            ControlMessage::AlgSetOp(op) => {
                 mem::size_of_val(op)
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetAeadAssoclen(len) => {
+            ControlMessage::AlgSetAeadAssoclen(len) => {
                 mem::size_of_val(len)
+            },
+            #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
+            ControlMessage::UdpGsoSegments(gso_size) => {
+                mem::size_of_val(gso_size)
+            },
+            #[cfg(any(target_os = "linux", target_os = "macos",
+              target_os = "netbsd", target_os = "android",
+              target_os = "ios",))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4PacketInfo(info) => mem::size_of_val(info),
+            #[cfg(any(target_os = "linux", target_os = "macos",
+              target_os = "netbsd", target_os = "freebsd",
+              target_os = "android", target_os = "ios",))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv6PacketInfo(info) => mem::size_of_val(info),
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
+                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4SendSrcAddr(addr) => mem::size_of_val(addr),
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            ControlMessage::RxqOvfl(drop_count) => {
+                mem::size_of_val(drop_count)
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::TxTime(tx_time) => {
+                mem::size_of_val(tx_time)
             },
         }
     }
 
     
     fn cmsg_level(&self) -> libc::c_int {
-        match self {
-            &ControlMessage::ScmRights(_) => libc::SOL_SOCKET,
+        match *self {
+            ControlMessage::ScmRights(_) => libc::SOL_SOCKET,
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::ScmCredentials(_) => libc::SOL_SOCKET,
+            ControlMessage::ScmCredentials(_) => libc::SOL_SOCKET,
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            ControlMessage::ScmCreds => libc::SOL_SOCKET,
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetIv(_) | &ControlMessage::AlgSetOp(_) | &ControlMessage::AlgSetAeadAssoclen(_) => {
-                libc::SOL_ALG
-            },
+            ControlMessage::AlgSetIv(_) | ControlMessage::AlgSetOp(_) |
+                ControlMessage::AlgSetAeadAssoclen(_) => libc::SOL_ALG,
+            #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
+            ControlMessage::UdpGsoSegments(_) => libc::SOL_UDP,
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "android",
+                      target_os = "ios",))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4PacketInfo(_) => libc::IPPROTO_IP,
+            #[cfg(any(target_os = "linux", target_os = "macos",
+              target_os = "netbsd", target_os = "freebsd",
+              target_os = "android", target_os = "ios",))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv6PacketInfo(_) => libc::IPPROTO_IPV6,
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
+                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4SendSrcAddr(_) => libc::IPPROTO_IP,
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            ControlMessage::RxqOvfl(_) => libc::SOL_SOCKET,
+            #[cfg(target_os = "linux")]
+            ControlMessage::TxTime(_) => libc::SOL_SOCKET,
         }
     }
 
     
     fn cmsg_type(&self) -> libc::c_int {
-        match self {
-            &ControlMessage::ScmRights(_) => libc::SCM_RIGHTS,
+        match *self {
+            ControlMessage::ScmRights(_) => libc::SCM_RIGHTS,
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::ScmCredentials(_) => libc::SCM_CREDENTIALS,
+            ControlMessage::ScmCredentials(_) => libc::SCM_CREDENTIALS,
+            #[cfg(any(target_os = "freebsd", target_os = "dragonfly"))]
+            ControlMessage::ScmCreds => libc::SCM_CREDS,
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetIv(_) => {
+            ControlMessage::AlgSetIv(_) => {
                 libc::ALG_SET_IV
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetOp(_) => {
+            ControlMessage::AlgSetOp(_) => {
                 libc::ALG_SET_OP
             },
             #[cfg(any(target_os = "android", target_os = "linux"))]
-            &ControlMessage::AlgSetAeadAssoclen(_) => {
+            ControlMessage::AlgSetAeadAssoclen(_) => {
                 libc::ALG_SET_AEAD_ASSOCLEN
+            },
+            #[cfg(target_os = "linux")]
+            #[cfg(feature = "net")]
+            ControlMessage::UdpGsoSegments(_) => {
+                libc::UDP_SEGMENT
+            },
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "android",
+                      target_os = "ios",))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4PacketInfo(_) => libc::IP_PKTINFO,
+            #[cfg(any(target_os = "linux", target_os = "macos",
+                      target_os = "netbsd", target_os = "freebsd",
+                      target_os = "android", target_os = "ios",))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv6PacketInfo(_) => libc::IPV6_PKTINFO,
+            #[cfg(any(target_os = "netbsd", target_os = "freebsd",
+                      target_os = "openbsd", target_os = "dragonfly"))]
+            #[cfg(feature = "net")]
+            ControlMessage::Ipv4SendSrcAddr(_) => libc::IP_SENDSRCADDR,
+            #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
+            ControlMessage::RxqOvfl(_) => {
+                libc::SO_RXQ_OVFL
+            },
+            #[cfg(target_os = "linux")]
+            ControlMessage::TxTime(_) => {
+                libc::SCM_TXTIME
             },
         }
     }
@@ -829,63 +1416,73 @@ impl<'a> ControlMessage<'a> {
 
 
 
-pub fn sendmsg(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
-               flags: MsgFlags, addr: Option<&SockAddr>) -> Result<usize>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn sendmsg<S>(fd: RawFd, iov: &[IoSlice<'_>], cmsgs: &[ControlMessage],
+               flags: MsgFlags, addr: Option<&S>) -> Result<usize>
+    where S: SockaddrLike
 {
     let capacity = cmsgs.iter().map(|c| c.space()).sum();
 
     
     
-    let cmsg_buffer = vec![0u8; capacity];
+    let mut cmsg_buffer = vec![0u8; capacity];
 
-    
-    let (name, namelen) = match addr {
-        Some(addr) => {
-            let (x, y) = unsafe { addr.as_ffi_pair() };
-            (x as *const _, y)
-        },
-        None => (ptr::null(), 0),
-    };
-
-    
-    let cmsg_ptr = if capacity > 0 {
-        cmsg_buffer.as_ptr() as *mut c_void
-    } else {
-        ptr::null_mut()
-    };
-
-    let mhdr = {
-        
-        
-        let mut mhdr: msghdr = unsafe{mem::uninitialized()};
-        mhdr.msg_name = name as *mut _;
-        mhdr.msg_namelen = namelen;
-        
-        
-        mhdr.msg_iov = iov.as_ptr() as *mut _;
-        mhdr.msg_iovlen = iov.len() as _;
-        mhdr.msg_control = cmsg_ptr;
-        mhdr.msg_controllen = capacity as _;
-        mhdr.msg_flags = 0;
-        mhdr
-    };
-
-    
-    
-    
-    let mut pmhdr: *mut cmsghdr = unsafe{CMSG_FIRSTHDR(&mhdr as *const msghdr)};
-    for cmsg in cmsgs {
-        assert_ne!(pmhdr, ptr::null_mut());
-        
-        
-        unsafe { cmsg.encode_into(pmhdr) };
-        
-        pmhdr = unsafe{CMSG_NXTHDR(&mhdr as *const msghdr, pmhdr)};
-    }
+    let mhdr = pack_mhdr_to_send(&mut cmsg_buffer[..], &iov, &cmsgs, addr);
 
     let ret = unsafe { libc::sendmsg(fd, &mhdr, flags.bits()) };
 
     Errno::result(ret).map(|r| r as usize)
+}
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+#[derive(Debug)]
+pub struct SendMmsgData<'a, I, C, S>
+    where
+        I: AsRef<[IoSlice<'a>]>,
+        C: AsRef<[ControlMessage<'a>]>,
+        S: SockaddrLike + 'a
+{
+    pub iov: I,
+    pub cmsgs: C,
+    pub addr: Option<S>,
+    pub _lt: std::marker::PhantomData<&'a I>,
 }
 
 
@@ -894,57 +1491,338 @@ pub fn sendmsg(fd: RawFd, iov: &[IoVec<&[u8]>], cmsgs: &[ControlMessage],
 
 
 
-pub fn recvmsg<'a>(fd: RawFd, iov: &[IoVec<&mut [u8]>],
-                   cmsg_buffer: Option<&'a mut dyn CmsgBuffer>,
-                   flags: MsgFlags) -> Result<RecvMsg<'a>>
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+pub fn sendmmsg<'a, I, C, S>(
+    fd: RawFd,
+    data: impl std::iter::IntoIterator<Item=&'a SendMmsgData<'a, I, C, S>>,
+    flags: MsgFlags
+) -> Result<Vec<usize>>
+    where
+        I: AsRef<[IoSlice<'a>]> + 'a,
+        C: AsRef<[ControlMessage<'a>]> + 'a,
+        S: SockaddrLike + 'a
 {
-    let mut address: sockaddr_storage = unsafe { mem::uninitialized() };
-    let (msg_control, msg_controllen) = match cmsg_buffer {
-        Some(cmsgspace) => {
-            let msg_buf = cmsgspace.as_bytes_mut();
-            (msg_buf.as_mut_ptr(), msg_buf.len())
-        },
-        None => (ptr::null_mut(), 0),
+    let iter = data.into_iter();
+
+    let size_hint = iter.size_hint();
+    let reserve_items = size_hint.1.unwrap_or(size_hint.0);
+
+    let mut output = Vec::<libc::mmsghdr>::with_capacity(reserve_items);
+
+    let mut cmsgs_buffers = Vec::<Vec<u8>>::with_capacity(reserve_items);
+
+    for d in iter {
+        let capacity: usize = d.cmsgs.as_ref().iter().map(|c| c.space()).sum();
+        let mut cmsgs_buffer = vec![0u8; capacity];
+
+        output.push(libc::mmsghdr {
+            msg_hdr: pack_mhdr_to_send(
+                &mut cmsgs_buffer,
+                &d.iov,
+                &d.cmsgs,
+                d.addr.as_ref()
+            ),
+            msg_len: 0,
+        });
+        cmsgs_buffers.push(cmsgs_buffer);
     };
-    let mut mhdr = {
+
+    let ret = unsafe { libc::sendmmsg(fd, output.as_mut_ptr(), output.len() as _, flags.bits() as _) };
+
+    let sent_messages = Errno::result(ret)? as usize;
+    let mut sent_bytes = Vec::with_capacity(sent_messages);
+
+    for item in &output {
+        sent_bytes.push(item.msg_len as usize);
+    }
+
+    Ok(sent_bytes)
+}
+
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+#[derive(Debug)]
+pub struct RecvMmsgData<'a, I>
+    where
+        I: AsRef<[IoSliceMut<'a>]> + 'a,
+{
+    pub iov: I,
+    pub cmsg_buffer: Option<&'a mut Vec<u8>>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(any(
+    target_os = "linux",
+    target_os = "android",
+    target_os = "freebsd",
+    target_os = "netbsd",
+))]
+#[allow(clippy::needless_collect)]  
+pub fn recvmmsg<'a, I, S>(
+    fd: RawFd,
+    data: impl std::iter::IntoIterator<Item=&'a mut RecvMmsgData<'a, I>,
+        IntoIter=impl ExactSizeIterator + Iterator<Item=&'a mut RecvMmsgData<'a, I>>>,
+    flags: MsgFlags,
+    timeout: Option<crate::sys::time::TimeSpec>
+) -> Result<Vec<RecvMsg<'a, S>>>
+    where
+        I: AsRef<[IoSliceMut<'a>]> + 'a,
+        S: Copy + SockaddrLike + 'a
+{
+    let iter = data.into_iter();
+
+    let num_messages = iter.len();
+
+    let mut output: Vec<libc::mmsghdr> = Vec::with_capacity(num_messages);
+
+    
+    
+    
+    let mut addresses = vec![mem::MaybeUninit::uninit(); num_messages]
+        .into_boxed_slice();
+
+    let results: Vec<_> = iter.enumerate().map(|(i, d)| {
+        let (msg_controllen, mhdr) = unsafe {
+            pack_mhdr_to_receive(
+                d.iov.as_ref(),
+                &mut d.cmsg_buffer,
+                addresses[i].as_mut_ptr(),
+            )
+        };
+
+        output.push(
+            libc::mmsghdr {
+                msg_hdr: mhdr,
+                msg_len: 0,
+            }
+        );
+
+        (msg_controllen as usize, &mut d.cmsg_buffer)
+    }).collect();
+
+    let timeout = if let Some(mut t) = timeout {
+        t.as_mut() as *mut libc::timespec
+    } else {
+        ptr::null_mut()
+    };
+
+    let ret = unsafe { libc::recvmmsg(fd, output.as_mut_ptr(), output.len() as _, flags.bits() as _, timeout) };
+
+    let _ = Errno::result(ret)?;
+
+    Ok(output
+        .into_iter()
+        .take(ret as usize)
+        .zip(addresses.iter().map(|addr| unsafe{addr.assume_init()}))
+        .zip(results.into_iter())
+        .map(|((mmsghdr, address), (msg_controllen, cmsg_buffer))| {
+            unsafe {
+                read_mhdr(
+                    mmsghdr.msg_hdr,
+                    mmsghdr.msg_len as isize,
+                    msg_controllen,
+                    address,
+                    cmsg_buffer
+                )
+            }
+        })
+        .collect())
+}
+
+unsafe fn read_mhdr<'a, 'b, S>(
+    mhdr: msghdr,
+    r: isize,
+    msg_controllen: usize,
+    address: S,
+    cmsg_buffer: &'a mut Option<&'b mut Vec<u8>>
+) -> RecvMsg<'b, S>
+    where S: SockaddrLike
+{
+    let cmsghdr = {
+        if mhdr.msg_controllen > 0 {
+            
+            cmsg_buffer
+                .as_mut()
+                .unwrap()
+                .set_len(mhdr.msg_controllen as usize);
+            debug_assert!(!mhdr.msg_control.is_null());
+            debug_assert!(msg_controllen >= mhdr.msg_controllen as usize);
+            CMSG_FIRSTHDR(&mhdr as *const msghdr)
+        } else {
+            ptr::null()
+        }.as_ref()
+    };
+
+    RecvMsg {
+        bytes: r as usize,
+        cmsghdr,
+        address: Some(address),
+        flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
+        mhdr,
+    }
+}
+
+unsafe fn pack_mhdr_to_receive<'outer, 'inner, I, S>(
+    iov: I,
+    cmsg_buffer: &mut Option<&mut Vec<u8>>,
+    address: *mut S,
+) -> (usize, msghdr)
+    where
+        I: AsRef<[IoSliceMut<'inner>]> + 'outer,
+        S: SockaddrLike + 'outer
+{
+    let (msg_control, msg_controllen) = cmsg_buffer.as_mut()
+        .map(|v| (v.as_mut_ptr(), v.capacity()))
+        .unwrap_or((ptr::null_mut(), 0));
+
+    let mhdr = {
         
         
-        let mut mhdr: msghdr = unsafe{mem::uninitialized()};
-        mhdr.msg_name = &mut address as *mut sockaddr_storage as *mut c_void;
-        mhdr.msg_namelen = mem::size_of::<sockaddr_storage>() as socklen_t;
-        mhdr.msg_iov = iov.as_ptr() as *mut iovec;
-        mhdr.msg_iovlen = iov.len() as _;
-        mhdr.msg_control = msg_control as *mut c_void;
-        mhdr.msg_controllen = msg_controllen as _;
-        mhdr.msg_flags = 0;
-        mhdr
+        let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
+        let p = mhdr.as_mut_ptr();
+        (*p).msg_name = (*address).as_mut_ptr() as *mut c_void;
+        (*p).msg_namelen = S::size();
+        (*p).msg_iov = iov.as_ref().as_ptr() as *mut iovec;
+        (*p).msg_iovlen = iov.as_ref().len() as _;
+        (*p).msg_control = msg_control as *mut c_void;
+        (*p).msg_controllen = msg_controllen as _;
+        (*p).msg_flags = 0;
+        mhdr.assume_init()
+    };
+
+    (msg_controllen, mhdr)
+}
+
+fn pack_mhdr_to_send<'a, I, C, S>(
+    cmsg_buffer: &mut [u8],
+    iov: I,
+    cmsgs: C,
+    addr: Option<&S>
+) -> msghdr
+    where
+        I: AsRef<[IoSlice<'a>]>,
+        C: AsRef<[ControlMessage<'a>]>,
+        S: SockaddrLike + 'a
+{
+    let capacity = cmsg_buffer.len();
+
+    
+    let cmsg_ptr = if capacity > 0 {
+        cmsg_buffer.as_ptr() as *mut c_void
+    } else {
+        ptr::null_mut()
+    };
+
+    let mhdr = unsafe {
+        
+        
+        let mut mhdr = mem::MaybeUninit::<msghdr>::zeroed();
+        let p = mhdr.as_mut_ptr();
+        (*p).msg_name = addr.map(S::as_ptr).unwrap_or(ptr::null()) as *mut _;
+        (*p).msg_namelen = addr.map(S::len).unwrap_or(0);
+        
+        
+        (*p).msg_iov = iov.as_ref().as_ptr() as *mut _;
+        (*p).msg_iovlen = iov.as_ref().len() as _;
+        (*p).msg_control = cmsg_ptr;
+        (*p).msg_controllen = capacity as _;
+        (*p).msg_flags = 0;
+        mhdr.assume_init()
+    };
+
+    
+    
+    
+    let mut pmhdr: *mut cmsghdr = unsafe { CMSG_FIRSTHDR(&mhdr as *const msghdr) };
+    for cmsg in cmsgs.as_ref() {
+        assert_ne!(pmhdr, ptr::null_mut());
+        
+        
+        unsafe { cmsg.encode_into(pmhdr) };
+        
+        pmhdr = unsafe { CMSG_NXTHDR(&mhdr as *const msghdr, pmhdr) };
+    }
+
+    mhdr
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn recvmsg<'a, 'outer, 'inner, S>(fd: RawFd, iov: &'outer mut [IoSliceMut<'inner>],
+                   mut cmsg_buffer: Option<&'a mut Vec<u8>>,
+                   flags: MsgFlags) -> Result<RecvMsg<'a, S>>
+    where S: SockaddrLike + 'a
+{
+    let mut address = mem::MaybeUninit::uninit();
+
+    let (msg_controllen, mut mhdr) = unsafe {
+        pack_mhdr_to_receive::<_, S>(iov, &mut cmsg_buffer, address.as_mut_ptr())
     };
 
     let ret = unsafe { libc::recvmsg(fd, &mut mhdr, flags.bits()) };
 
-    Errno::result(ret).map(|r| {
-        let cmsghdr = unsafe {
-            if mhdr.msg_controllen > 0 {
-                
-                debug_assert!(!mhdr.msg_control.is_null());
-                debug_assert!(msg_controllen >= mhdr.msg_controllen as usize);
-                CMSG_FIRSTHDR(&mhdr as *const msghdr)
-            } else {
-                ptr::null()
-            }.as_ref()
-        };
+    let r = Errno::result(ret)?;
 
-        let address = unsafe {
-            sockaddr_storage_to_addr(&address, mhdr.msg_namelen as usize).ok()
-        };
-        RecvMsg {
-            bytes: r as usize,
-            cmsghdr,
-            address,
-            flags: MsgFlags::from_bits_truncate(mhdr.msg_flags),
-            mhdr,
-        }
-    })
+    Ok(unsafe { read_mhdr(mhdr, r, msg_controllen, address.assume_init(), &mut cmsg_buffer) })
+}
 }
 
 
@@ -1011,10 +1889,9 @@ pub fn listen(sockfd: RawFd, backlog: usize) -> Result<()> {
 
 
 
-pub fn bind(fd: RawFd, addr: &SockAddr) -> Result<()> {
+pub fn bind(fd: RawFd, addr: &dyn SockaddrLike) -> Result<()> {
     let res = unsafe {
-        let (ptr, len) = addr.as_ffi_pair();
-        libc::bind(fd, ptr, len)
+        libc::bind(fd, addr.as_ptr(), addr.len())
     };
 
     Errno::result(res).map(drop)
@@ -1032,9 +1909,21 @@ pub fn accept(sockfd: RawFd) -> Result<RawFd> {
 
 
 
-#[cfg(any(target_os = "android",
+#[cfg(any(all(
+            target_os = "android",
+            any(
+                target_arch = "aarch64",
+                target_arch = "x86",
+                target_arch = "x86_64"
+            )
+          ),
+          target_os = "dragonfly",
+          target_os = "emscripten",
           target_os = "freebsd",
+          target_os = "fuchsia",
+          target_os = "illumos",
           target_os = "linux",
+          target_os = "netbsd",
           target_os = "openbsd"))]
 pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
     let res = unsafe { libc::accept4(sockfd, ptr::null_mut(), ptr::null_mut(), flags.bits()) };
@@ -1045,10 +1934,9 @@ pub fn accept4(sockfd: RawFd, flags: SockFlag) -> Result<RawFd> {
 
 
 
-pub fn connect(fd: RawFd, addr: &SockAddr) -> Result<()> {
+pub fn connect(fd: RawFd, addr: &dyn SockaddrLike) -> Result<()> {
     let res = unsafe {
-        let (ptr, len) = addr.as_ffi_pair();
-        libc::connect(fd, ptr, len)
+        libc::connect(fd, addr.as_ptr(), addr.len())
     };
 
     Errno::result(res).map(drop)
@@ -1074,31 +1962,42 @@ pub fn recv(sockfd: RawFd, buf: &mut [u8], flags: MsgFlags) -> Result<usize> {
 
 
 
-pub fn recvfrom(sockfd: RawFd, buf: &mut [u8]) -> Result<(usize, SockAddr)> {
+
+pub fn recvfrom<T:SockaddrLike>(sockfd: RawFd, buf: &mut [u8])
+    -> Result<(usize, Option<T>)>
+{
     unsafe {
-        let addr: sockaddr_storage = mem::zeroed();
-        let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
+        let mut addr = mem::MaybeUninit::<T>::uninit();
+        let mut len = mem::size_of_val(&addr) as socklen_t;
 
         let ret = Errno::result(libc::recvfrom(
             sockfd,
             buf.as_ptr() as *mut c_void,
             buf.len() as size_t,
             0,
-            mem::transmute(&addr),
-            &mut len as *mut socklen_t))?;
+            addr.as_mut_ptr() as *mut libc::sockaddr,
+            &mut len as *mut socklen_t))? as usize;
 
-        sockaddr_storage_to_addr(&addr, len as usize)
-            .map(|addr| (ret as usize, addr))
+        Ok((ret, T::from_raw(
+            addr.assume_init().as_ptr() as *const libc::sockaddr,
+            Some(len))
+        ))
     }
 }
 
 
 
 
-pub fn sendto(fd: RawFd, buf: &[u8], addr: &SockAddr, flags: MsgFlags) -> Result<usize> {
+pub fn sendto(fd: RawFd, buf: &[u8], addr: &dyn SockaddrLike, flags: MsgFlags) -> Result<usize> {
     let ret = unsafe {
-        let (ptr, len) = addr.as_ffi_pair();
-        libc::sendto(fd, buf.as_ptr() as *const c_void, buf.len() as size_t, flags.bits(), ptr, len)
+        libc::sendto(
+            fd,
+            buf.as_ptr() as *const c_void,
+            buf.len() as size_t,
+            flags.bits(),
+            addr.as_ptr(),
+            addr.len()
+        )
     };
 
     Errno::result(ret).map(|r| r as usize)
@@ -1122,38 +2021,18 @@ pub fn send(fd: RawFd, buf: &[u8], flags: MsgFlags) -> Result<usize> {
 
 
 
-
-
-
-#[repr(i32)]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum SockLevel {
-    Socket = libc::SOL_SOCKET,
-    Tcp = libc::IPPROTO_TCP,
-    Ip = libc::IPPROTO_IP,
-    Ipv6 = libc::IPPROTO_IPV6,
-    Udp = libc::IPPROTO_UDP,
-    #[cfg(any(target_os = "android", target_os = "linux"))]
-    Netlink = libc::SOL_NETLINK,
-    #[cfg(any(target_os = "android", target_os = "linux"))]
-    Alg = libc::SOL_ALG,
-}
-
-
-
 pub trait GetSockOpt : Copy {
     type Val;
 
-    #[doc(hidden)]
+    
     fn get(&self, fd: RawFd) -> Result<Self::Val>;
 }
-
 
 
 pub trait SetSockOpt : Clone {
     type Val;
 
-    #[doc(hidden)]
+    
     fn set(&self, fd: RawFd, val: &Self::Val) -> Result<()>;
 }
 
@@ -1188,32 +2067,42 @@ pub fn setsockopt<O: SetSockOpt>(fd: RawFd, opt: O, val: &O::Val) -> Result<()> 
 
 
 
-pub fn getpeername(fd: RawFd) -> Result<SockAddr> {
+pub fn getpeername<T: SockaddrLike>(fd: RawFd) -> Result<T> {
     unsafe {
-        let addr: sockaddr_storage = mem::uninitialized();
-        let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
+        let mut addr = mem::MaybeUninit::<T>::uninit();
+        let mut len = T::size();
 
-        let ret = libc::getpeername(fd, mem::transmute(&addr), &mut len);
+        let ret = libc::getpeername(
+            fd,
+            addr.as_mut_ptr() as *mut libc::sockaddr,
+            &mut len
+        );
 
         Errno::result(ret)?;
 
-        sockaddr_storage_to_addr(&addr, len as usize)
+        T::from_raw(addr.assume_init().as_ptr(), Some(len))
+            .ok_or(Errno::EINVAL)
     }
 }
 
 
 
 
-pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
+pub fn getsockname<T: SockaddrLike>(fd: RawFd) -> Result<T> {
     unsafe {
-        let addr: sockaddr_storage = mem::uninitialized();
-        let mut len = mem::size_of::<sockaddr_storage>() as socklen_t;
+        let mut addr = mem::MaybeUninit::<T>::uninit();
+        let mut len = T::size();
 
-        let ret = libc::getsockname(fd, mem::transmute(&addr), &mut len);
+        let ret = libc::getsockname(
+            fd,
+            addr.as_mut_ptr() as *mut libc::sockaddr,
+            &mut len
+        );
 
         Errno::result(ret)?;
 
-        sockaddr_storage_to_addr(&addr, len as usize)
+        T::from_raw(addr.assume_init().as_ptr(), Some(len))
+            .ok_or(Errno::EINVAL)
     }
 }
 
@@ -1223,43 +2112,82 @@ pub fn getsockname(fd: RawFd) -> Result<SockAddr> {
 
 
 
-pub unsafe fn sockaddr_storage_to_addr(
+
+
+#[deprecated(
+    since = "0.24.0",
+    note = "use SockaddrLike or SockaddrStorage instead"
+)]
+#[allow(deprecated)]
+pub fn sockaddr_storage_to_addr(
     addr: &sockaddr_storage,
     len: usize) -> Result<SockAddr> {
 
+    assert!(len <= mem::size_of::<sockaddr_storage>());
     if len < mem::size_of_val(&addr.ss_family) {
-        return Err(Error::Sys(Errno::ENOTCONN));
+        return Err(Errno::ENOTCONN);
     }
 
-    match addr.ss_family as c_int {
+    match c_int::from(addr.ss_family) {
+        #[cfg(feature = "net")]
         libc::AF_INET => {
-            assert!(len as usize == mem::size_of::<sockaddr_in>());
-            let ret = *(addr as *const _ as *const sockaddr_in);
-            Ok(SockAddr::Inet(InetAddr::V4(ret)))
+            assert!(len as usize >= mem::size_of::<sockaddr_in>());
+            let sin = unsafe {
+                *(addr as *const sockaddr_storage as *const sockaddr_in)
+            };
+            Ok(SockAddr::Inet(InetAddr::V4(sin)))
         }
+        #[cfg(feature = "net")]
         libc::AF_INET6 => {
-            assert!(len as usize == mem::size_of::<sockaddr_in6>());
-            Ok(SockAddr::Inet(InetAddr::V6(*(addr as *const _ as *const sockaddr_in6))))
+            assert!(len as usize >= mem::size_of::<sockaddr_in6>());
+            let sin6 = unsafe {
+                *(addr as *const _ as *const sockaddr_in6)
+            };
+            Ok(SockAddr::Inet(InetAddr::V6(sin6)))
         }
         libc::AF_UNIX => {
-            let sun = *(addr as *const _ as *const sockaddr_un);
-            let pathlen = len - offset_of!(sockaddr_un, sun_path);
-            Ok(SockAddr::Unix(UnixAddr(sun, pathlen)))
+            unsafe {
+                let sun = *(addr as *const _ as *const sockaddr_un);
+                let sun_len = len.try_into().unwrap();
+                Ok(SockAddr::Unix(UnixAddr::from_raw_parts(sun, sun_len)))
+            }
+        }
+        #[cfg(any(target_os = "android", target_os = "linux"))]
+        #[cfg(feature = "net")]
+        libc::AF_PACKET => {
+            use libc::sockaddr_ll;
+            
+            
+            
+            
+            let sll = unsafe {
+                *(addr as *const _ as *const sockaddr_ll)
+            };
+            Ok(SockAddr::Link(LinkAddr(sll)))
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_NETLINK => {
             use libc::sockaddr_nl;
-            Ok(SockAddr::Netlink(NetlinkAddr(*(addr as *const _ as *const sockaddr_nl))))
+            let snl = unsafe {
+                *(addr as *const _ as *const sockaddr_nl)
+            };
+            Ok(SockAddr::Netlink(NetlinkAddr(snl)))
         }
         #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_ALG => {
             use libc::sockaddr_alg;
-            Ok(SockAddr::Alg(AlgAddr(*(addr as *const _ as *const sockaddr_alg))))
+            let salg = unsafe {
+                *(addr as *const _ as *const sockaddr_alg)
+            };
+            Ok(SockAddr::Alg(AlgAddr(salg)))
         }
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "android", target_os = "linux"))]
         libc::AF_VSOCK => {
             use libc::sockaddr_vm;
-            Ok(SockAddr::Vsock(VsockAddr(*(addr as *const _ as *const sockaddr_vm))))
+            let svm = unsafe {
+                *(addr as *const _ as *const sockaddr_vm)
+            };
+            Ok(SockAddr::Vsock(VsockAddr(svm)))
         }
         af => panic!("unexpected address family {}", af),
     }
@@ -1290,5 +2218,13 @@ pub fn shutdown(df: RawFd, how: Shutdown) -> Result<()> {
         };
 
         Errno::result(shutdown(df, how)).map(drop)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn can_use_cmsg_space() {
+        let _ = cmsg_space!(u8);
     }
 }

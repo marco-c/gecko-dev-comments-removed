@@ -2,12 +2,11 @@
 
 
 
-use libc;
 use std::ffi::CStr;
 use std::os::unix::io::AsRawFd;
 
-use errno::Errno;
-use Result;
+use crate::errno::Errno;
+use crate::Result;
 
 
 
@@ -96,7 +95,7 @@ pub fn finit_module<T: AsRawFd>(fd: &T, param_values: &CStr, flags: ModuleInitFl
 libc_bitflags!(
     /// Flags used by `delete_module`.
     ///
-    /// See [`man delete_module(2)`](http://man7.org/linux/man-pages/man2/delete_module.2.html)
+    /// See [`man delete_module(2)`](https://man7.org/linux/man-pages/man2/delete_module.2.html)
     /// for a detailed description how these flags work.
     pub struct DeleteModuleFlags: libc::c_int {
         O_NONBLOCK;

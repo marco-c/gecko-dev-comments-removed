@@ -21,25 +21,35 @@
 
 
 
-use {Error, Result};
-use errno::Errno;
-use std::os::unix::io::RawFd;
-use libc::{c_void, off_t, size_t};
-use libc;
-use std::borrow::{Borrow, BorrowMut};
-use std::fmt;
-use std::fmt::Debug;
-use std::marker::PhantomData;
-use std::mem;
-use std::ptr::{null, null_mut};
-use sys::signal::*;
-use std::thread;
-use sys::time::TimeSpec;
+
+
+#[cfg(target_os = "freebsd")]
+use std::io::{IoSlice, IoSliceMut};
+use std::{
+    convert::TryFrom,
+    fmt::{self, Debug},
+    marker::{PhantomData, PhantomPinned},
+    mem,
+    os::unix::io::RawFd,
+    pin::Pin,
+    ptr,
+    thread,
+};
+
+use libc::{c_void, off_t};
+use pin_utils::unsafe_pinned;
+
+use crate::{
+    errno::Errno,
+    sys::{signal::*, time::TimeSpec},
+    Result,
+};
 
 libc_enum! {
     /// Mode for `AioCb::fsync`.  Controls whether only data or both data and
     /// metadata are synced.
     #[repr(i32)]
+    #[non_exhaustive]
     pub enum AioFsyncMode {
         /// do it like `fsync`
         O_SYNC,
@@ -49,20 +59,10 @@ libc_enum! {
                   target_os = "macos",
                   target_os = "netbsd",
                   target_os = "openbsd"))]
+        #[cfg_attr(docsrs, doc(cfg(all())))]
         O_DSYNC
     }
-}
-
-libc_enum! {
-    /// When used with [`lio_listio`](fn.lio_listio.html), determines whether a
-    /// given `aiocb` should be used for a read operation, a write operation, or
-    /// ignored.  Has no effect for any other aio functions.
-    #[repr(i32)]
-    pub enum LioOpcode {
-        LIO_NOP,
-        LIO_WRITE,
-        LIO_READ,
-    }
+    impl TryFrom<i32>
 }
 
 libc_enum! {
@@ -92,731 +92,88 @@ pub enum AioCancelStat {
 }
 
 
+#[repr(transparent)]
+struct LibcAiocb(libc::aiocb);
 
-pub enum Buffer<'a> {
-    
-    
-    
-    
-    None,
-    
-    Phantom(PhantomData<&'a mut [u8]>),
-    
-    BoxedSlice(Box<dyn Borrow<[u8]>>),
-    
-    BoxedMutSlice(Box<dyn BorrowMut<[u8]>>),
-}
-
-impl<'a> Debug for Buffer<'a> {
-    
-    
-    
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Buffer::None => write!(fmt, "None"),
-            Buffer::Phantom(p) => p.fmt(fmt),
-            Buffer::BoxedSlice(ref bs) => {
-                let borrowed : &dyn Borrow<[u8]> = bs.borrow();
-                write!(fmt, "BoxedSlice({:?})",
-                    borrowed as *const dyn Borrow<[u8]>)
-            },
-            Buffer::BoxedMutSlice(ref bms) => {
-                let borrowed : &dyn BorrowMut<[u8]> = bms.borrow();
-                write!(fmt, "BoxedMutSlice({:?})",
-                    borrowed as *const dyn BorrowMut<[u8]>)
-            }
-        }
-    }
-}
+unsafe impl Send for LibcAiocb {}
+unsafe impl Sync for LibcAiocb {}
 
 
 
 
 
-pub struct AioCb<'a> {
-    aiocb: libc::aiocb,
+
+
+
+#[repr(C)]
+struct AioCb {
+    aiocb:       LibcAiocb,
     
-    mutable: bool,
+    
+    
+    
+    
+    
     
     in_progress: bool,
-    
-    
-    
-    
-    buffer: Buffer<'a>
 }
 
-impl<'a> AioCb<'a> {
-    
-    
-    
-    
-    pub fn buffer(&mut self) -> Buffer<'a> {
-        assert!(!self.in_progress);
-        let mut x = Buffer::None;
-        mem::swap(&mut self.buffer, &mut x);
-        x
-    }
+impl AioCb {
+    pin_utils::unsafe_unpinned!(aiocb: LibcAiocb);
 
-    
-    
-    
-    
-    
-    
-    
-    pub fn boxed_slice(&mut self) -> Option<Box<dyn Borrow<[u8]>>> {
-        assert!(!self.in_progress, "Can't remove the buffer from an AioCb that's still in-progress.  Did you forget to call aio_return?");
-        if let Buffer::BoxedSlice(_) = self.buffer {
-            let mut oldbuffer = Buffer::None;
-            mem::swap(&mut self.buffer, &mut oldbuffer);
-            if let Buffer::BoxedSlice(inner) = oldbuffer {
-                Some(inner)
-            } else {
-                unreachable!();
-            }
-        } else {
-            None
+    fn aio_return(mut self: Pin<&mut Self>) -> Result<usize> {
+        self.in_progress = false;
+        unsafe {
+            let p: *mut libc::aiocb = &mut self.aiocb.0;
+            Errno::result(libc::aio_return(p))
         }
+        .map(|r| r as usize)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    pub fn boxed_mut_slice(&mut self) -> Option<Box<dyn BorrowMut<[u8]>>> {
-        assert!(!self.in_progress, "Can't remove the buffer from an AioCb that's still in-progress.  Did you forget to call aio_return?");
-        if let Buffer::BoxedMutSlice(_) = self.buffer {
-            let mut oldbuffer = Buffer::None;
-            mem::swap(&mut self.buffer, &mut oldbuffer);
-            if let Buffer::BoxedMutSlice(inner) = oldbuffer {
-                Some(inner)
-            } else {
-                unreachable!();
-            }
-        } else {
-            None
-        }
-    }
-
-    
-    pub fn fd(&self) -> RawFd {
-        self.aiocb.aio_fildes
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn from_fd(fd: RawFd, prio: libc::c_int,
-                    sigev_notify: SigevNotify) -> AioCb<'a> {
-        let mut a = AioCb::common_init(fd, prio, sigev_notify);
-        a.aio_offset = 0;
-        a.aio_nbytes = 0;
-        a.aio_buf = null_mut();
-
-        AioCb {
-            aiocb: a,
-            mutable: false,
-            in_progress: false,
-            buffer: Buffer::None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn from_mut_slice(fd: RawFd, offs: off_t, buf: &'a mut [u8],
-                          prio: libc::c_int, sigev_notify: SigevNotify,
-                          opcode: LioOpcode) -> AioCb<'a> {
-        let mut a = AioCb::common_init(fd, prio, sigev_notify);
-        a.aio_offset = offs;
-        a.aio_nbytes = buf.len() as size_t;
-        a.aio_buf = buf.as_ptr() as *mut c_void;
-        a.aio_lio_opcode = opcode as libc::c_int;
-
-        AioCb {
-            aiocb: a,
-            mutable: true,
-            in_progress: false,
-            buffer: Buffer::Phantom(PhantomData),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn from_boxed_slice(fd: RawFd, offs: off_t, buf: Box<dyn Borrow<[u8]>>,
-                      prio: libc::c_int, sigev_notify: SigevNotify,
-                      opcode: LioOpcode) -> AioCb<'a> {
-        let mut a = AioCb::common_init(fd, prio, sigev_notify);
-        {
-            let borrowed : &dyn Borrow<[u8]> = buf.borrow();
-            let slice : &[u8] = borrowed.borrow();
-            a.aio_nbytes = slice.len() as size_t;
-            a.aio_buf = slice.as_ptr() as *mut c_void;
-        }
-        a.aio_offset = offs;
-        a.aio_lio_opcode = opcode as libc::c_int;
-
-        AioCb {
-            aiocb: a,
-            mutable: false,
-            in_progress: false,
-            buffer: Buffer::BoxedSlice(buf),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn from_boxed_mut_slice(fd: RawFd, offs: off_t,
-                                mut buf: Box<dyn BorrowMut<[u8]>>,
-                                prio: libc::c_int, sigev_notify: SigevNotify,
-                                opcode: LioOpcode) -> AioCb<'a> {
-        let mut a = AioCb::common_init(fd, prio, sigev_notify);
-        {
-            let borrowed : &mut dyn BorrowMut<[u8]> = buf.borrow_mut();
-            let slice : &mut [u8] = borrowed.borrow_mut();
-            a.aio_nbytes = slice.len() as size_t;
-            a.aio_buf = slice.as_mut_ptr() as *mut c_void;
-        }
-        a.aio_offset = offs;
-        a.aio_lio_opcode = opcode as libc::c_int;
-
-        AioCb {
-            aiocb: a,
-            mutable: true,
-            in_progress: false,
-            buffer: Buffer::BoxedMutSlice(buf),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn from_mut_ptr(fd: RawFd, offs: off_t,
-                           buf: *mut c_void, len: usize,
-                           prio: libc::c_int, sigev_notify: SigevNotify,
-                           opcode: LioOpcode) -> AioCb<'a> {
-        let mut a = AioCb::common_init(fd, prio, sigev_notify);
-        a.aio_offset = offs;
-        a.aio_nbytes = len;
-        a.aio_buf = buf;
-        a.aio_lio_opcode = opcode as libc::c_int;
-
-        AioCb {
-            aiocb: a,
-            mutable: true,
-            in_progress: false,
-            buffer: Buffer::None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn from_ptr(fd: RawFd, offs: off_t,
-                           buf: *const c_void, len: usize,
-                           prio: libc::c_int, sigev_notify: SigevNotify,
-                           opcode: LioOpcode) -> AioCb<'a> {
-        let mut a = AioCb::common_init(fd, prio, sigev_notify);
-        a.aio_offset = offs;
-        a.aio_nbytes = len;
-        
-        
-        a.aio_buf = buf as *mut c_void;
-        a.aio_lio_opcode = opcode as libc::c_int;
-
-        AioCb {
-            aiocb: a,
-            mutable: false,
-            in_progress: false,
-            buffer: Buffer::None
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn from_slice(fd: RawFd, offs: off_t, buf: &'a [u8],
-                      prio: libc::c_int, sigev_notify: SigevNotify,
-                      opcode: LioOpcode) -> AioCb {
-        let mut a = AioCb::common_init(fd, prio, sigev_notify);
-        a.aio_offset = offs;
-        a.aio_nbytes = buf.len() as size_t;
-        
-        
-        
-        a.aio_buf = buf.as_ptr() as *mut c_void;
-        assert!(opcode != LioOpcode::LIO_READ, "Can't read into an immutable buffer");
-        a.aio_lio_opcode = opcode as libc::c_int;
-
-        AioCb {
-            aiocb: a,
-            mutable: false,
-            in_progress: false,
-            buffer: Buffer::None,
-        }
-    }
-
-    fn common_init(fd: RawFd, prio: libc::c_int,
-                   sigev_notify: SigevNotify) -> libc::aiocb {
-        
-        
-        
-        
-        let mut a = unsafe { mem::zeroed::<libc::aiocb>()};
-        a.aio_fildes = fd;
-        a.aio_reqprio = prio;
-        a.aio_sigevent = SigEvent::new(sigev_notify).sigevent();
-        a
-    }
-
-    
-    pub fn set_sigev_notify(&mut self, sigev_notify: SigevNotify) {
-        self.aiocb.aio_sigevent = SigEvent::new(sigev_notify).sigevent();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn cancel(&mut self) -> Result<AioCancelStat> {
-        match unsafe { libc::aio_cancel(self.aiocb.aio_fildes, &mut self.aiocb) } {
+    fn cancel(mut self: Pin<&mut Self>) -> Result<AioCancelStat> {
+        let r = unsafe {
+            libc::aio_cancel(self.aiocb.0.aio_fildes, &mut self.aiocb.0)
+        };
+        match r {
             libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
             libc::AIO_NOTCANCELED => Ok(AioCancelStat::AioNotCanceled),
             libc::AIO_ALLDONE => Ok(AioCancelStat::AioAllDone),
-            -1 => Err(Error::last()),
-            _ => panic!("unknown aio_cancel return value")
+            -1 => Err(Errno::last()),
+            _ => panic!("unknown aio_cancel return value"),
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn error(&mut self) -> Result<()> {
-        match unsafe { libc::aio_error(&mut self.aiocb as *mut libc::aiocb) } {
+    fn common_init(fd: RawFd, prio: i32, sigev_notify: SigevNotify) -> Self {
+        
+        
+        
+        
+        let mut a = unsafe { mem::zeroed::<libc::aiocb>() };
+        a.aio_fildes = fd;
+        a.aio_reqprio = prio;
+        a.aio_sigevent = SigEvent::new(sigev_notify).sigevent();
+        AioCb {
+            aiocb:       LibcAiocb(a),
+            in_progress: false,
+        }
+    }
+
+    fn error(self: Pin<&mut Self>) -> Result<()> {
+        let r = unsafe { libc::aio_error(&self.aiocb().0) };
+        match r {
             0 => Ok(()),
-            num if num > 0 => Err(Error::from_errno(Errno::from_i32(num))),
-            -1 => Err(Error::last()),
-            num => panic!("unknown aio_error return value {:?}", num)
+            num if num > 0 => Err(Errno::from_i32(num)),
+            -1 => Err(Errno::last()),
+            num => panic!("unknown aio_error return value {:?}", num),
         }
+    }
+
+    fn in_progress(&self) -> bool {
+        self.in_progress
+    }
+
+    fn set_in_progress(mut self: Pin<&mut Self>) {
+        self.as_mut().in_progress = true;
     }
 
     
@@ -824,27 +181,376 @@ impl<'a> AioCb<'a> {
     
     
     
-    pub fn fsync(&mut self, mode: AioFsyncMode) -> Result<()> {
-        let p: *mut libc::aiocb = &mut self.aiocb;
-        Errno::result(unsafe {
-                libc::aio_fsync(mode as libc::c_int, p)
-        }).map(|_| {
-            self.in_progress = true;
+    fn set_sigev_notify(&mut self, sigev_notify: SigevNotify) {
+        assert!(
+            !self.in_progress,
+            "Can't change notification settings for an in-progress operation"
+        );
+        self.aiocb.0.aio_sigevent = SigEvent::new(sigev_notify).sigevent();
+    }
+}
+
+impl Debug for AioCb {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("AioCb")
+            .field("aiocb", &self.aiocb.0)
+            .field("in_progress", &self.in_progress)
+            .finish()
+    }
+}
+
+impl Drop for AioCb {
+    
+    
+    fn drop(&mut self) {
+        assert!(
+            thread::panicking() || !self.in_progress,
+            "Dropped an in-progress AioCb"
+        );
+    }
+}
+
+
+pub trait Aio {
+    
+    type Output;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn aio_return(self: Pin<&mut Self>) -> Result<Self::Output>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn cancel(self: Pin<&mut Self>) -> Result<AioCancelStat>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn error(self: Pin<&mut Self>) -> Result<()>;
+
+    
+    fn fd(&self) -> RawFd;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn in_progress(&self) -> bool;
+
+    
+    fn priority(&self) -> i32;
+
+    
+    
+    fn set_sigev_notify(&mut self, sev: SigevNotify);
+
+    
+    fn sigevent(&self) -> SigEvent;
+
+    
+    
+    
+    
+    fn submit(self: Pin<&mut Self>) -> Result<()>;
+}
+
+macro_rules! aio_methods {
+    () => {
+        fn cancel(self: Pin<&mut Self>) -> Result<AioCancelStat> {
+            self.aiocb().cancel()
+        }
+
+        fn error(self: Pin<&mut Self>) -> Result<()> {
+            self.aiocb().error()
+        }
+
+        fn fd(&self) -> RawFd {
+            self.aiocb.aiocb.0.aio_fildes
+        }
+
+        fn in_progress(&self) -> bool {
+            self.aiocb.in_progress()
+        }
+
+        fn priority(&self) -> i32 {
+            self.aiocb.aiocb.0.aio_reqprio
+        }
+
+        fn set_sigev_notify(&mut self, sev: SigevNotify) {
+            self.aiocb.set_sigev_notify(sev)
+        }
+
+        fn sigevent(&self) -> SigEvent {
+            SigEvent::from(&self.aiocb.aiocb.0.aio_sigevent)
+        }
+    };
+    ($func:ident) => {
+        aio_methods!();
+
+        fn aio_return(self: Pin<&mut Self>) -> Result<<Self as Aio>::Output> {
+            self.aiocb().aio_return()
+        }
+
+        fn submit(mut self: Pin<&mut Self>) -> Result<()> {
+            let p: *mut libc::aiocb = &mut self.as_mut().aiocb().aiocb.0;
+            Errno::result({ unsafe { libc::$func(p) } }).map(|_| {
+                self.aiocb().set_in_progress();
+            })
+        }
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct AioFsync {
+    aiocb: AioCb,
+    _pin:  PhantomPinned,
+}
+
+impl AioFsync {
+    unsafe_pinned!(aiocb: AioCb);
+
+    
+    pub fn mode(&self) -> AioFsyncMode {
+        AioFsyncMode::try_from(self.aiocb.aiocb.0.aio_lio_opcode).unwrap()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(
+        fd: RawFd,
+        mode: AioFsyncMode,
+        prio: i32,
+        sigev_notify: SigevNotify,
+    ) -> Self {
+        let mut aiocb = AioCb::common_init(fd, prio, sigev_notify);
+        
+        
+        
+        
+        aiocb.aiocb.0.aio_lio_opcode = mode as libc::c_int;
+        AioFsync {
+            aiocb,
+            _pin: PhantomPinned,
+        }
+    }
+}
+
+impl Aio for AioFsync {
+    type Output = ();
+
+    aio_methods!();
+
+    fn aio_return(self: Pin<&mut Self>) -> Result<()> {
+        self.aiocb().aio_return().map(drop)
+    }
+
+    fn submit(mut self: Pin<&mut Self>) -> Result<()> {
+        let aiocb = &mut self.as_mut().aiocb().aiocb.0;
+        let mode = mem::replace(&mut aiocb.aio_lio_opcode, 0);
+        let p: *mut libc::aiocb = aiocb;
+        Errno::result(unsafe { libc::aio_fsync(mode, p) }).map(|_| {
+            self.aiocb().set_in_progress();
         })
     }
+}
 
-    
-    
-    
-    
-    pub fn lio_opcode(&self) -> Option<LioOpcode> {
-        match self.aiocb.aio_lio_opcode {
-            libc::LIO_READ => Some(LioOpcode::LIO_READ),
-            libc::LIO_WRITE => Some(LioOpcode::LIO_WRITE),
-            libc::LIO_NOP => Some(LioOpcode::LIO_NOP),
-            _ => None
-        }
+
+
+impl AsRef<libc::aiocb> for AioFsync {
+    fn as_ref(&self) -> &libc::aiocb {
+        &self.aiocb.aiocb.0
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct AioRead<'a> {
+    aiocb: AioCb,
+    _data: PhantomData<&'a [u8]>,
+    _pin:  PhantomPinned,
+}
+
+impl<'a> AioRead<'a> {
+    unsafe_pinned!(aiocb: AioCb);
 
     
     
@@ -852,75 +558,420 @@ impl<'a> AioCb<'a> {
     
     
     pub fn nbytes(&self) -> usize {
-        self.aiocb.aio_nbytes
+        self.aiocb.aiocb.0.aio_nbytes
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(
+        fd: RawFd,
+        offs: off_t,
+        buf: &'a mut [u8],
+        prio: i32,
+        sigev_notify: SigevNotify,
+    ) -> Self {
+        let mut aiocb = AioCb::common_init(fd, prio, sigev_notify);
+        aiocb.aiocb.0.aio_nbytes = buf.len();
+        aiocb.aiocb.0.aio_buf = buf.as_mut_ptr() as *mut c_void;
+        aiocb.aiocb.0.aio_lio_opcode = libc::LIO_READ;
+        aiocb.aiocb.0.aio_offset = offs;
+        AioRead {
+            aiocb,
+            _data: PhantomData,
+            _pin: PhantomPinned,
+        }
     }
 
     
     pub fn offset(&self) -> off_t {
-        self.aiocb.aio_offset
+        self.aiocb.aiocb.0.aio_offset
     }
+}
 
-    
-    pub fn priority(&self) -> libc::c_int {
-        self.aiocb.aio_reqprio
+impl<'a> Aio for AioRead<'a> {
+    type Output = usize;
+
+    aio_methods!(aio_read);
+}
+
+impl<'a> AsMut<libc::aiocb> for AioRead<'a> {
+    fn as_mut(&mut self) -> &mut libc::aiocb {
+        &mut self.aiocb.aiocb.0
     }
+}
 
-    
-    
-    
-    
-    
-    pub fn read(&mut self) -> Result<()> {
-        assert!(self.mutable, "Can't read into an immutable buffer");
-        let p: *mut libc::aiocb = &mut self.aiocb;
-        Errno::result(unsafe {
-            libc::aio_read(p)
-        }).map(|_| {
-            self.in_progress = true;
-        })
+impl<'a> AsRef<libc::aiocb> for AioRead<'a> {
+    fn as_ref(&self) -> &libc::aiocb {
+        &self.aiocb.aiocb.0
     }
-
-    
-    pub fn sigevent(&self) -> SigEvent {
-        SigEvent::from(&self.aiocb.aio_sigevent)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn aio_return(&mut self) -> Result<isize> {
-        let p: *mut libc::aiocb = &mut self.aiocb;
-        self.in_progress = false;
-        Errno::result(unsafe { libc::aio_return(p) })
-    }
-
-    
-    
-    
-    
-    
-    pub fn write(&mut self) -> Result<()> {
-        let p: *mut libc::aiocb = &mut self.aiocb;
-        Errno::result(unsafe {
-            libc::aio_write(p)
-        }).map(|_| {
-            self.in_progress = true;
-        })
-    }
-
 }
 
 
 
 
 
+
+
+
+
+
+#[cfg_attr(fbsd14, doc = " ```")]
+#[cfg_attr(not(fbsd14), doc = " ```no_run")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(target_os = "freebsd")]
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct AioReadv<'a> {
+    aiocb: AioCb,
+    _data: PhantomData<&'a [&'a [u8]]>,
+    _pin:  PhantomPinned,
+}
+
+#[cfg(target_os = "freebsd")]
+impl<'a> AioReadv<'a> {
+    unsafe_pinned!(aiocb: AioCb);
+
+    
+    pub fn iovlen(&self) -> usize {
+        self.aiocb.aiocb.0.aio_nbytes
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(
+        fd: RawFd,
+        offs: off_t,
+        bufs: &mut [IoSliceMut<'a>],
+        prio: i32,
+        sigev_notify: SigevNotify,
+    ) -> Self {
+        let mut aiocb = AioCb::common_init(fd, prio, sigev_notify);
+        
+        
+        aiocb.aiocb.0.aio_nbytes = bufs.len();
+        aiocb.aiocb.0.aio_buf = bufs.as_mut_ptr() as *mut c_void;
+        aiocb.aiocb.0.aio_lio_opcode = libc::LIO_READV;
+        aiocb.aiocb.0.aio_offset = offs;
+        AioReadv {
+            aiocb,
+            _data: PhantomData,
+            _pin: PhantomPinned,
+        }
+    }
+
+    
+    pub fn offset(&self) -> off_t {
+        self.aiocb.aiocb.0.aio_offset
+    }
+}
+
+#[cfg(target_os = "freebsd")]
+impl<'a> Aio for AioReadv<'a> {
+    type Output = usize;
+
+    aio_methods!(aio_readv);
+}
+
+#[cfg(target_os = "freebsd")]
+impl<'a> AsMut<libc::aiocb> for AioReadv<'a> {
+    fn as_mut(&mut self) -> &mut libc::aiocb {
+        &mut self.aiocb.aiocb.0
+    }
+}
+
+#[cfg(target_os = "freebsd")]
+impl<'a> AsRef<libc::aiocb> for AioReadv<'a> {
+    fn as_ref(&self) -> &libc::aiocb {
+        &self.aiocb.aiocb.0
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct AioWrite<'a> {
+    aiocb: AioCb,
+    _data: PhantomData<&'a [u8]>,
+    _pin:  PhantomPinned,
+}
+
+impl<'a> AioWrite<'a> {
+    unsafe_pinned!(aiocb: AioCb);
+
+    
+    
+    
+    
+    
+    pub fn nbytes(&self) -> usize {
+        self.aiocb.aiocb.0.aio_nbytes
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(
+        fd: RawFd,
+        offs: off_t,
+        buf: &'a [u8],
+        prio: i32,
+        sigev_notify: SigevNotify,
+    ) -> Self {
+        let mut aiocb = AioCb::common_init(fd, prio, sigev_notify);
+        aiocb.aiocb.0.aio_nbytes = buf.len();
+        
+        
+        
+        
+        aiocb.aiocb.0.aio_buf = buf.as_ptr() as *mut c_void;
+        aiocb.aiocb.0.aio_lio_opcode = libc::LIO_WRITE;
+        aiocb.aiocb.0.aio_offset = offs;
+        AioWrite {
+            aiocb,
+            _data: PhantomData,
+            _pin: PhantomPinned,
+        }
+    }
+
+    
+    pub fn offset(&self) -> off_t {
+        self.aiocb.aiocb.0.aio_offset
+    }
+}
+
+impl<'a> Aio for AioWrite<'a> {
+    type Output = usize;
+
+    aio_methods!(aio_write);
+}
+
+impl<'a> AsMut<libc::aiocb> for AioWrite<'a> {
+    fn as_mut(&mut self) -> &mut libc::aiocb {
+        &mut self.aiocb.aiocb.0
+    }
+}
+
+impl<'a> AsRef<libc::aiocb> for AioWrite<'a> {
+    fn as_ref(&self) -> &libc::aiocb {
+        &self.aiocb.aiocb.0
+    }
+}
+
+
+
+
+
+
+
+
+
+#[cfg_attr(fbsd14, doc = " ```")]
+#[cfg_attr(not(fbsd14), doc = " ```no_run")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(target_os = "freebsd")]
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct AioWritev<'a> {
+    aiocb: AioCb,
+    _data: PhantomData<&'a [&'a [u8]]>,
+    _pin:  PhantomPinned,
+}
+
+#[cfg(target_os = "freebsd")]
+impl<'a> AioWritev<'a> {
+    unsafe_pinned!(aiocb: AioCb);
+
+    
+    pub fn iovlen(&self) -> usize {
+        self.aiocb.aiocb.0.aio_nbytes
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(
+        fd: RawFd,
+        offs: off_t,
+        bufs: &[IoSlice<'a>],
+        prio: i32,
+        sigev_notify: SigevNotify,
+    ) -> Self {
+        let mut aiocb = AioCb::common_init(fd, prio, sigev_notify);
+        
+        
+        aiocb.aiocb.0.aio_nbytes = bufs.len();
+        
+        
+        
+        
+        aiocb.aiocb.0.aio_buf = bufs.as_ptr() as *mut c_void;
+        aiocb.aiocb.0.aio_lio_opcode = libc::LIO_WRITEV;
+        aiocb.aiocb.0.aio_offset = offs;
+        AioWritev {
+            aiocb,
+            _data: PhantomData,
+            _pin: PhantomPinned,
+        }
+    }
+
+    
+    pub fn offset(&self) -> off_t {
+        self.aiocb.aiocb.0.aio_offset
+    }
+}
+
+#[cfg(target_os = "freebsd")]
+impl<'a> Aio for AioWritev<'a> {
+    type Output = usize;
+
+    aio_methods!(aio_writev);
+}
+
+#[cfg(target_os = "freebsd")]
+impl<'a> AsMut<libc::aiocb> for AioWritev<'a> {
+    fn as_mut(&mut self) -> &mut libc::aiocb {
+        &mut self.aiocb.aiocb.0
+    }
+}
+
+#[cfg(target_os = "freebsd")]
+impl<'a> AsRef<libc::aiocb> for AioWritev<'a> {
+    fn as_ref(&self) -> &libc::aiocb {
+        &self.aiocb.aiocb.0
+    }
+}
 
 
 
@@ -960,12 +1011,12 @@ impl<'a> AioCb<'a> {
 
 
 pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
-    match unsafe { libc::aio_cancel(fd, null_mut()) } {
+    match unsafe { libc::aio_cancel(fd, ptr::null_mut()) } {
         libc::AIO_CANCELED => Ok(AioCancelStat::AioCanceled),
         libc::AIO_NOTCANCELED => Ok(AioCancelStat::AioNotCanceled),
         libc::AIO_ALLDONE => Ok(AioCancelStat::AioAllDone),
-        -1 => Err(Error::last()),
-        _ => panic!("unknown aio_cancel return value")
+        -1 => Err(Errno::last()),
+        _ => panic!("unknown aio_cancel return value"),
     }
 }
 
@@ -997,284 +1048,197 @@ pub fn aio_cancel_all(fd: RawFd) -> Result<AioCancelStat> {
 
 
 
-
-
-
-
-
-
-
-
-
-pub fn aio_suspend(list: &[&AioCb], timeout: Option<TimeSpec>) -> Result<()> {
-    let plist = list as *const [&AioCb] as *const [*const libc::aiocb];
-    let p = plist as *const *const libc::aiocb;
+pub fn aio_suspend(
+    list: &[&dyn AsRef<libc::aiocb>],
+    timeout: Option<TimeSpec>,
+) -> Result<()> {
+    let p = list as *const [&dyn AsRef<libc::aiocb>]
+        as *const [*const libc::aiocb]
+        as *const *const libc::aiocb;
     let timep = match timeout {
-        None    => null::<libc::timespec>(),
-        Some(x) => x.as_ref() as *const libc::timespec
+        None => ptr::null::<libc::timespec>(),
+        Some(x) => x.as_ref() as *const libc::timespec,
     };
+    Errno::result(unsafe { libc::aio_suspend(p, list.len() as i32, timep) })
+        .map(drop)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn lio_listio(
+    mode: LioMode,
+    list: &mut [Pin<&mut dyn AsMut<libc::aiocb>>],
+    sigev_notify: SigevNotify,
+) -> Result<()> {
+    let p = list as *mut [Pin<&mut dyn AsMut<libc::aiocb>>]
+        as *mut [*mut libc::aiocb]
+        as *mut *mut libc::aiocb;
+    let sigev = SigEvent::new(sigev_notify);
+    let sigevp = &mut sigev.sigevent() as *mut libc::sigevent;
     Errno::result(unsafe {
-        libc::aio_suspend(p, list.len() as i32, timep)
-    }).map(drop)
+        libc::lio_listio(mode as i32, p, list.len() as i32, sigevp)
+    })
+    .map(drop)
 }
 
-impl<'a> Debug for AioCb<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("AioCb")
-            .field("aiocb", &self.aiocb)
-            .field("mutable", &self.mutable)
-            .field("in_progress", &self.in_progress)
-            .finish()
-    }
-}
-
-impl<'a> Drop for AioCb<'a> {
-    
-    
-    fn drop(&mut self) {
-        assert!(thread::panicking() || !self.in_progress,
-                "Dropped an in-progress AioCb");
-    }
-}
-
-
-
-
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
-pub struct LioCb<'a> {
-    
-    
-    
-    
-    
-    pub aiocbs: Vec<AioCb<'a>>,
+#[cfg(test)]
+mod t {
+    use super::*;
 
     
     
-    
-    
-    
-    list: Vec<*mut libc::aiocb>,
+    #[test]
+    fn casting() {
+        let sev = SigevNotify::SigevNone;
+        let aiof = AioFsync::new(666, AioFsyncMode::O_SYNC, 0, sev);
+        assert_eq!(
+            aiof.as_ref() as *const libc::aiocb,
+            &aiof as *const AioFsync as *const libc::aiocb
+        );
 
-    
-    
-    results: Vec<Option<Result<isize>>>
-}
+        let mut rbuf = [];
+        let aior = AioRead::new(666, 0, &mut rbuf, 0, sev);
+        assert_eq!(
+            aior.as_ref() as *const libc::aiocb,
+            &aior as *const AioRead as *const libc::aiocb
+        );
 
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
-impl<'a> LioCb<'a> {
-    
-    pub fn with_capacity(capacity: usize) -> LioCb<'a> {
-        LioCb {
-            aiocbs: Vec::with_capacity(capacity),
-            list: Vec::with_capacity(capacity),
-            results: Vec::with_capacity(capacity)
-        }
+        let wbuf = [];
+        let aiow = AioWrite::new(666, 0, &wbuf, 0, sev);
+        assert_eq!(
+            aiow.as_ref() as *const libc::aiocb,
+            &aiow as *const AioWrite as *const libc::aiocb
+        );
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn listio(&mut self, mode: LioMode,
-                  sigev_notify: SigevNotify) -> Result<()> {
-        let sigev = SigEvent::new(sigev_notify);
-        let sigevp = &mut sigev.sigevent() as *mut libc::sigevent;
-        self.list.clear();
-        for a in &mut self.aiocbs {
-            a.in_progress = true;
-            self.list.push(a as *mut AioCb<'a>
-                             as *mut libc::aiocb);
-        }
-        let p = self.list.as_ptr();
-        Errno::result(unsafe {
-            libc::lio_listio(mode as i32, p, self.list.len() as i32, sigevp)
-        }).map(drop)
-    }
+    #[cfg(target_os = "freebsd")]
+    #[test]
+    fn casting_vectored() {
+        let sev = SigevNotify::SigevNone;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn listio_resubmit(&mut self, mode:LioMode,
-                           sigev_notify: SigevNotify) -> Result<()> {
-        let sigev = SigEvent::new(sigev_notify);
-        let sigevp = &mut sigev.sigevent() as *mut libc::sigevent;
-        self.list.clear();
+        let mut rbuf = [];
+        let mut rbufs = [IoSliceMut::new(&mut rbuf)];
+        let aiorv = AioReadv::new(666, 0, &mut rbufs[..], 0, sev);
+        assert_eq!(
+            aiorv.as_ref() as *const libc::aiocb,
+            &aiorv as *const AioReadv as *const libc::aiocb
+        );
 
-        while self.results.len() < self.aiocbs.len() {
-            self.results.push(None);
-        }
-
-        for (i, a) in self.aiocbs.iter_mut().enumerate() {
-            if self.results[i].is_some() {
-                
-                continue;
-            }
-            match a.error() {
-                Ok(()) => {
-                    
-                    self.results[i] = Some(a.aio_return());
-                },
-                Err(Error::Sys(Errno::EAGAIN)) => {
-                    self.list.push(a as *mut AioCb<'a> as *mut libc::aiocb);
-                },
-                Err(Error::Sys(Errno::EINPROGRESS)) => {
-                    
-                    ()
-                },
-                Err(Error::Sys(Errno::EINVAL)) => panic!(
-                    "AioCb was never submitted, or already finalized"),
-                _ => unreachable!()
-            }
-        }
-        let p = self.list.as_ptr();
-        Errno::result(unsafe {
-            libc::lio_listio(mode as i32, p, self.list.len() as i32, sigevp)
-        }).map(drop)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn aio_return(&mut self, i: usize) -> Result<isize> {
-        if i >= self.results.len() || self.results[i].is_none() {
-            self.aiocbs[i].aio_return()
-        } else {
-            self.results[i].unwrap()
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn error(&mut self, i: usize) -> Result<()> {
-        if i >= self.results.len() || self.results[i].is_none() {
-            self.aiocbs[i].error()
-        } else {
-            Ok(())
-        }
-    }
-}
-
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
-impl<'a> Debug for LioCb<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("LioCb")
-            .field("aiocbs", &self.aiocbs)
-            .finish()
-    }
-}
-
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
-impl<'a> From<Vec<AioCb<'a>>> for LioCb<'a> {
-    fn from(src: Vec<AioCb<'a>>) -> LioCb<'a> {
-        LioCb {
-            list: Vec::with_capacity(src.capacity()),
-            results: Vec::with_capacity(src.capacity()),
-            aiocbs: src,
-        }
+        let wbuf = [];
+        let wbufs = [IoSlice::new(&wbuf)];
+        let aiowv = AioWritev::new(666, 0, &wbufs, 0, sev);
+        assert_eq!(
+            aiowv.as_ref() as *const libc::aiocb,
+            &aiowv as *const AioWritev as *const libc::aiocb
+        );
     }
 }

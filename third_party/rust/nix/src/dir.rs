@@ -1,10 +1,13 @@
-use {Error, NixPath, Result};
-use errno::Errno;
-use fcntl::{self, OFlag};
-use libc;
+
+
+use crate::{Error, NixPath, Result};
+use crate::errno::Errno;
+use crate::fcntl::{self, OFlag};
 use std::os::unix::io::{AsRawFd, IntoRawFd, RawFd};
-use std::{ffi, ptr};
-use sys;
+use std::ptr;
+use std::ffi;
+use crate::sys;
+use cfg_if::cfg_if;
 
 #[cfg(target_os = "linux")]
 use libc::{dirent64 as dirent, readdir64_r as readdir_r};
@@ -25,7 +28,7 @@ use libc::{dirent, readdir_r};
 
 
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Dir(
     ptr::NonNull<libc::DIR>
 );
@@ -52,15 +55,14 @@ impl Dir {
     }
 
     
+    #[cfg_attr(has_doc_alias, doc(alias("fdopendir")))]
     pub fn from_fd(fd: RawFd) -> Result<Self> {
-        let d = unsafe { libc::fdopendir(fd) };
-        if d.is_null() {
+        let d = ptr::NonNull::new(unsafe { libc::fdopendir(fd) }).ok_or_else(|| {
             let e = Error::last();
             unsafe { libc::close(fd) };
-            return Err(e);
-        };
-        
-        Ok(Dir(ptr::NonNull::new(d).unwrap()))
+            e
+        })?;
+        Ok(Dir(d))
     }
 
     
@@ -85,9 +87,35 @@ impl AsRawFd for Dir {
 
 impl Drop for Dir {
     fn drop(&mut self) {
-        unsafe { libc::closedir(self.0.as_ptr()) };
+        let e = Errno::result(unsafe { libc::closedir(self.0.as_ptr()) });
+        if !std::thread::panicking() && e == Err(Errno::EBADF) {
+            panic!("Closing an invalid file descriptor!");
+        };
     }
 }
+
+fn next(dir: &mut Dir) -> Option<Result<Entry>> {
+    unsafe {
+        
+        
+        
+        
+        
+        let mut ent = std::mem::MaybeUninit::<dirent>::uninit();
+        let mut result = ptr::null_mut();
+        if let Err(e) = Errno::result(
+            readdir_r(dir.0.as_ptr(), ent.as_mut_ptr(), &mut result))
+        {
+            return Some(Err(e));
+        }
+        if result.is_null() {
+            return None;
+        }
+        assert_eq!(result, ent.as_mut_ptr());
+        Some(Ok(Entry(ent.assume_init())))
+    }
+}
+
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Iter<'d>(&'d mut Dir);
@@ -96,23 +124,7 @@ impl<'d> Iterator for Iter<'d> {
     type Item = Result<Entry>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        unsafe {
-            
-            
-            
-            
-            
-            let mut ent: Entry = Entry(::std::mem::uninitialized());
-            let mut result = ptr::null_mut();
-            if let Err(e) = Errno::result(readdir_r((self.0).0.as_ptr(), &mut ent.0, &mut result)) {
-                return Some(Err(e));
-            }
-            if result == ptr::null_mut() {
-                return None;
-            }
-            assert_eq!(result, &mut ent.0 as *mut dirent);
-            return Some(Ok(ent));
-        }
+        next(self.0)
     }
 }
 
@@ -123,49 +135,96 @@ impl<'d> Drop for Iter<'d> {
 }
 
 
+#[derive(Debug, Eq, Hash, PartialEq)]
+pub struct OwningIter(Dir);
+
+impl Iterator for OwningIter {
+    type Item = Result<Entry>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        next(&mut self.0)
+    }
+}
+
+
+
+impl AsRawFd for OwningIter {
+    fn as_raw_fd(&self) -> RawFd {
+        self.0.as_raw_fd()
+    }
+}
+
+impl IntoIterator for Dir {
+    type Item = Result<Entry>;
+    type IntoIter = OwningIter;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn into_iter(self) -> Self::IntoIter {
+        OwningIter(self)
+    }
+}
+
+
 
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[repr(transparent)]
 pub struct Entry(dirent);
+
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Type {
+    
     Fifo,
+    
     CharacterDevice,
+    
     Directory,
+    
     BlockDevice,
+    
     File,
+    
     Symlink,
+    
     Socket,
 }
 
 impl Entry {
     
-    #[cfg(any(target_os = "android",
-              target_os = "emscripten",
-              target_os = "fuchsia",
-              target_os = "haiku",
-              target_os = "ios",
-              target_os = "l4re",
-              target_os = "linux",
-              target_os = "macos",
-              target_os = "solaris"))]
+    #[allow(clippy::useless_conversion)]    
     pub fn ino(&self) -> u64 {
-        self.0.d_ino as u64
-    }
-
-    
-    #[cfg(not(any(target_os = "android",
-                  target_os = "emscripten",
-                  target_os = "fuchsia",
-                  target_os = "haiku",
-                  target_os = "ios",
-                  target_os = "l4re",
-                  target_os = "linux",
-                  target_os = "macos",
-                  target_os = "solaris")))]
-    pub fn ino(&self) -> u64 {
-        self.0.d_fileno as u64
+        cfg_if! {
+            if #[cfg(any(target_os = "android",
+                         target_os = "emscripten",
+                         target_os = "fuchsia",
+                         target_os = "haiku",
+                         target_os = "illumos",
+                         target_os = "ios",
+                         target_os = "l4re",
+                         target_os = "linux",
+                         target_os = "macos",
+                         target_os = "solaris"))] {
+                self.0.d_ino as u64
+            } else {
+                u64::from(self.0.d_fileno)
+            }
+        }
     }
 
     
@@ -179,6 +238,7 @@ impl Entry {
     
     
     pub fn file_type(&self) -> Option<Type> {
+        #[cfg(not(any(target_os = "illumos", target_os = "solaris", target_os = "haiku")))]
         match self.0.d_type {
             libc::DT_FIFO => Some(Type::Fifo),
             libc::DT_CHR => Some(Type::CharacterDevice),
@@ -189,5 +249,9 @@ impl Entry {
             libc::DT_SOCK => Some(Type::Socket),
              _ => None,
         }
+
+        
+        #[cfg(any(target_os = "illumos", target_os = "solaris", target_os = "haiku"))]
+        None
     }
 }
