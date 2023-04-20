@@ -17,6 +17,8 @@
 
 namespace mozilla {
 
+class MFCDMProxy;
+
 
 struct SampleRequest {
   SampleRequest(TrackInfo::TrackType aType, bool aIsEnough)
@@ -33,12 +35,11 @@ struct SampleRequest {
 
 
 
-
-class MFMediaSource
-    : public Microsoft::WRL::RuntimeClass<
-          Microsoft::WRL::RuntimeClassFlags<
-              Microsoft::WRL::RuntimeClassType::ClassicCom>,
-          IMFMediaSource, IMFRateControl, IMFRateSupport, IMFGetService> {
+class MFMediaSource : public Microsoft::WRL::RuntimeClass<
+                          Microsoft::WRL::RuntimeClassFlags<
+                              Microsoft::WRL::RuntimeClassType::ClassicCom>,
+                          IMFMediaSource, IMFRateControl, IMFRateSupport,
+                          IMFGetService, IMFTrustedInput> {
  public:
   MFMediaSource();
   ~MFMediaSource();
@@ -85,8 +86,16 @@ class MFMediaSource
   IFACEMETHODIMP SetRate(BOOL aSupportsThinning, float aRate) override;
   IFACEMETHODIMP GetRate(BOOL* aSupportsThinning, float* aRate) override;
 
+  
+  IFACEMETHODIMP GetInputTrustAuthority(DWORD aStreamId, REFIID aRiid,
+                                        IUnknown** aITAOut) override;
+
   MFMediaEngineStream* GetAudioStream();
   MFMediaEngineStream* GetVideoStream();
+
+  MFMediaEngineStream* GetStreamByIndentifier(DWORD aStreamId) const;
+
+  void SetCDMProxy(MFCDMProxy* aCDMProxy);
 
   TaskQueue* GetTaskQueue() const { return mTaskQueue; }
 
@@ -164,6 +173,8 @@ class MFMediaSource
 
   
   float mPlaybackRate = 0.0f;
+
+  RefPtr<MFCDMProxy> mCDMProxy;
 };
 
 }  
