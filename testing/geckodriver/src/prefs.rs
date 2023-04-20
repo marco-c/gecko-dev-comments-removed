@@ -13,9 +13,6 @@ use mozprofile::preferences::Pref;
 
 
 
-
-
-
 lazy_static! {
     pub static ref DEFAULT: Vec<(&'static str, Pref)> = vec![
         // Make sure Shield doesn't hit the network.
