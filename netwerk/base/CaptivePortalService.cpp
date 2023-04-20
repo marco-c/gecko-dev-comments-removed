@@ -11,6 +11,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsXULAppAPI.h"
 #include "xpcpublic.h"
+#include "xpcprivate.h"
 
 static constexpr auto kInterfaceName = u"captive-portal-inteface"_ns;
 
@@ -64,6 +65,13 @@ nsresult CaptivePortalService::PerformCheck() {
   }
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  }
+  
+  
+  
+  
+  if (!XPCJSRuntime::Get()) {
+    return NS_ERROR_NOT_INITIALIZED;
   }
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
   nsresult rv;
