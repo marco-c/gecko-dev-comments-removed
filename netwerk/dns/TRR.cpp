@@ -559,7 +559,8 @@ nsresult TRR::ReceivePush(nsIHttpChannel* pushed, nsHostRecord* pushedRec) {
   
   
   if (hostRecord->mEffectiveTRRMode == nsIRequest::TRR_DEFAULT_MODE) {
-    hostRecord->mEffectiveTRRMode = pushedRec->mEffectiveTRRMode;
+    hostRecord->mEffectiveTRRMode =
+        static_cast<nsIRequest::TRRMode>(pushedRec->mEffectiveTRRMode);
   }
 
   rv = mHostResolver->TrrLookup_unlocked(hostRecord, this);
@@ -669,7 +670,8 @@ void TRR::SaveAdditionalRecords(
     
     hostRecord->Reset();
     hostRecord->mResolving++;
-    hostRecord->mEffectiveTRRMode = mRec->mEffectiveTRRMode;
+    hostRecord->mEffectiveTRRMode =
+        static_cast<nsIRequest::TRRMode>(mRec->mEffectiveTRRMode);
     LOG(("Completing lookup for additional: %s",
          nsCString(recordEntry.GetKey()).get()));
     (void)mHostResolver->CompleteLookup(hostRecord, NS_OK, ai, mPB,
@@ -708,7 +710,8 @@ void TRR::StoreIPHintAsDNSRecord(const struct SVCB& aSVCBRecord) {
   
   
   hostRecord->mResolving++;
-  hostRecord->mEffectiveTRRMode = mRec->mEffectiveTRRMode;
+  hostRecord->mEffectiveTRRMode =
+      static_cast<nsIRequest::TRRMode>(mRec->mEffectiveTRRMode);
   (void)mHostResolver->CompleteLookup(hostRecord, NS_OK, ai, mPB, mOriginSuffix,
                                       TRRSkippedReason::TRR_OK, this);
 }
