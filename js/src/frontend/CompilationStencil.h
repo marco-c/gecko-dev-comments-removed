@@ -990,8 +990,9 @@ struct SharedDataContainer {
   js::SharedImmutableScriptData* get(ScriptIndex index) const;
 
   
-  [[nodiscard]] bool add(ScriptIndex index,
-                         js::SharedImmutableScriptData* data);
+  [[nodiscard]] bool addAndShare(JSContext* cx, FrontendContext* fc,
+                                 ScriptIndex index,
+                                 js::SharedImmutableScriptData* data);
 
   
   

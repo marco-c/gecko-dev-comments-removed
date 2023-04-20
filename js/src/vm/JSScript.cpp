@@ -2167,8 +2167,10 @@ void JSScript::relazify(JSRuntime* rt) {
 
 
 bool SharedImmutableScriptData::shareScriptData(
-    JSContext* cx, RefPtr<SharedImmutableScriptData>& sisd) {
+    JSContext* cx, FrontendContext* fc,
+    RefPtr<SharedImmutableScriptData>& sisd) {
   MOZ_ASSERT(sisd);
+  MOZ_ASSERT(sisd->refCount() == 1);
 
   SharedImmutableScriptData* data = sisd.get();
 
@@ -2181,18 +2183,20 @@ bool SharedImmutableScriptData::shareScriptData(
   SharedImmutableScriptDataTable::AddPtr p =
       cx->scriptDataTable(lock).lookupForAdd(lookup);
   if (p) {
-    
-    
+    MOZ_ASSERT(data != *p);
     sisd = *p;
   } else {
     if (!cx->scriptDataTable(lock).add(p, data)) {
-      ReportOutOfMemory(cx);
+      ReportOutOfMemory(fc);
       return false;
     }
 
     
     data->AddRef();
   }
+
+  
+  MOZ_ASSERT(sisd->refCount() >= 2);
 
   return true;
 }
@@ -2426,18 +2430,11 @@ bool JSScript::fullyInitFromStencil(
   }
 
   auto* scriptData = stencil.sharedData.get(scriptIndex);
-  MOZ_ASSERT(scriptData);
   MOZ_ASSERT_IF(
       script->isGenerator() || script->isAsync(),
       scriptData->nfixed() <= frontend::ParseContext::Scope::FixedSlotLimit);
 
-  
-  RefPtr<SharedImmutableScriptData> ref(scriptData);
-  if (!SharedImmutableScriptData::shareScriptData(cx, ref)) {
-    return false;
-  }
-
-  script->initSharedData(ref.get());
+  script->initSharedData(scriptData);
 
   
   rollbackGuard.release();
