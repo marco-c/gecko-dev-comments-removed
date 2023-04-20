@@ -3,6 +3,12 @@
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
+const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+
 add_task(async () => {
   await setupStubs();
 });
@@ -12,14 +18,34 @@ add_task(async () => {
 
 
 add_task(async function testValidAttrCodes() {
+  let currentCode = null;
   for (let entry of validAttrCodes) {
+    currentCode = entry.code;
+    
+    
+    
+    
+    
+    
+    if (
+      AppConstants.platform === "win" &&
+      Services.sysinfo.getProperty("hasWinPackageId")
+    ) {
+      
+      
+      
+      sinon
+        .stub(AttributionCode, "msixCampaignId")
+        .get(() => decodeURIComponent(currentCode));
+    } else {
+      await AttributionCode.writeAttributionFile(currentCode);
+    }
     AttributionCode._clearCache();
-    await AttributionCode.writeAttributionFile(entry.code);
     let result = await AttributionCode.getAttrDataAsync();
     Assert.deepEqual(
       result,
       entry.parsed,
-      "Parsed code should match expected value, code was: " + entry.code
+      "Parsed code should match expected value, code was: " + currentCode
     );
   }
   AttributionCode._clearCache();
@@ -29,11 +55,35 @@ add_task(async function testValidAttrCodes() {
 
 
 add_task(async function testInvalidAttrCodes() {
+  let currentCode = null;
   for (let code of invalidAttrCodes) {
+    currentCode = code;
+
+    if (
+      AppConstants.platform === "win" &&
+      Services.sysinfo.getProperty("hasWinPackageId")
+    ) {
+      if (code.includes("not set")) {
+        
+        
+        
+        
+        continue;
+      }
+
+      sinon
+        .stub(AttributionCode, "msixCampaignId")
+        .get(() => decodeURIComponent(currentCode));
+    } else {
+      await AttributionCode.writeAttributionFile(currentCode);
+    }
     AttributionCode._clearCache();
-    await AttributionCode.writeAttributionFile(code);
     let result = await AttributionCode.getAttrDataAsync();
-    Assert.deepEqual(result, {}, "Code should have failed to parse: " + code);
+    Assert.deepEqual(
+      result,
+      {},
+      "Code should have failed to parse: " + currentCode
+    );
   }
   AttributionCode._clearCache();
 });
@@ -42,7 +92,14 @@ add_task(async function testInvalidAttrCodes() {
 
 
 
-add_task(async function testDeletedFile() {
+let condition = {
+  
+  
+  skip_if: () =>
+    AppConstants.platform === "win" &&
+    Services.sysinfo.getProperty("hasWinPackageId"),
+};
+add_task(condition, async function testDeletedFile() {
   
   await AttributionCode.writeAttributionFile(validAttrCodes[0].code);
   let result = await AttributionCode.getAttrDataAsync();

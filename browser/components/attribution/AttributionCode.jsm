@@ -71,6 +71,16 @@ var AttributionCode = {
 
 
 
+  get msixCampaignId() {
+    return Cc["@mozilla.org/windows-package-manager;1"]
+      .createInstance(Ci.nsIWindowsPackageManager)
+      .getCampaignId();
+  },
+
+  
+
+
+
 
   get attributionFile() {
     if (AppConstants.platform == "win") {
@@ -355,13 +365,7 @@ var AttributionCode = {
           )}`
         );
         let encoder = new TextEncoder();
-        bytes = encoder.encode(
-          encodeURIComponent(
-            Cc["@mozilla.org/windows-package-manager;1"]
-              .createInstance(Ci.nsIWindowsPackageManager)
-              .getCampaignId()
-          )
-        );
+        bytes = encoder.encode(encodeURIComponent(this.msixCampaignId));
       } else {
         bytes = await AttributionIOUtils.read(attributionFile.path);
       }
