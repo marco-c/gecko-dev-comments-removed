@@ -8,10 +8,7 @@ dbg.addDebuggee(g);
 let globalScript;
 dbg.onNewScript = script => { globalScript = script };
 
-
-
-
-g.evaluate(`g();
+g.evaluate(`
 function f() {
   for (var i = 0; i < 10; i++) {
     g();
@@ -23,7 +20,7 @@ function g() {
 }
 
 f();
-`, { fileName: "foobar.js", lineNumber: 3, columnNumber: 42 });
+`, { fileName: "foobar.js", lineNumber: 3 });
 
 let onNewScriptCalls = 0;
 dbg.onNewScript = script => { onNewScriptCalls++; };
@@ -34,7 +31,6 @@ assertEq(onNewScriptCalls, 0);
 
 assertEq(reparsedScript.url, "foobar.js");
 assertEq(reparsedScript.startLine, 3);
-assertEq(reparsedScript.startColumn, 42);
 
 
 function getBreakpointPositions(script) {

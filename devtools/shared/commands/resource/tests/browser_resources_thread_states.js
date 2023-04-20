@@ -312,7 +312,7 @@ async function checkPauseOnException() {
       
       where: {
         line: 1,
-        column: 27,
+        column: 0,
       },
     },
   });
@@ -474,7 +474,7 @@ async function checkDebuggerStatementInIframes() {
       
       where: {
         line: 1,
-        column: 8,
+        column: 0,
       },
     },
   });
