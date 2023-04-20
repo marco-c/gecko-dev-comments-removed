@@ -196,6 +196,17 @@ this.DateTimeBoxWidget = class {
       },
       false
     );
+    
+    
+    this.isAndroid = this.window.navigator.appVersion.includes("Android");
+    if (this.isAndroid) {
+      this.mInputElement.addEventListener(
+        "click",
+        this,
+        { mozSystemGroup: true },
+        false
+      );
+    }
 
     
     
@@ -733,7 +744,12 @@ this.DateTimeBoxWidget = class {
     }
 
     
-    if (aEvent.originalTarget == this.mCalendarButton) {
+    
+    
+    if (
+      aEvent.originalTarget == this.mCalendarButton ||
+      (this.isAndroid && aEvent.target != this.mCalendarButton)
+    ) {
       if (
         !this.mIsPickerOpen &&
         this.shouldOpenDateTimePickerOnClick(aEvent.originalTarget)
