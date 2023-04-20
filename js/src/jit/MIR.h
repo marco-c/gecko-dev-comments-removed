@@ -6908,8 +6908,6 @@ class MStoreHoleValueElement : public MBinaryInstruction,
 class MStoreElementHole
     : public MQuaternaryInstruction,
       public MixPolicy<SingleObjectPolicy, NoFloatPolicy<3>>::Data {
-  bool needsNegativeIntCheck_ = true;
-
   MStoreElementHole(MDefinition* object, MDefinition* elements,
                     MDefinition* index, MDefinition* value)
       : MQuaternaryInstruction(classOpcode, object, elements, index, value) {
@@ -6923,15 +6921,11 @@ class MStoreElementHole
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, object), (1, elements), (2, index), (3, value))
 
-  bool needsNegativeIntCheck() const { return needsNegativeIntCheck_; }
-
   AliasSet getAliasSet() const override {
     
     
     return AliasSet::Store(AliasSet::ObjectFields | AliasSet::Element);
   }
-
-  void collectRangeInfoPreTrunc() override;
 
   ALLOW_CLONE(MStoreElementHole)
 };

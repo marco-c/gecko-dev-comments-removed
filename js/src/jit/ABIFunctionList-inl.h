@@ -13,12 +13,12 @@
 #include "jsnum.h"      
                         
 
-#include "builtin/Array.h"      
-#include "builtin/MapObject.h"  
-                                
-#include "builtin/Object.h"     
-#include "builtin/RegExp.h"     
-                                
+#include "builtin/Array.h"             
+#include "builtin/MapObject.h"         
+                                       
+#include "builtin/Object.h"            
+#include "builtin/RegExp.h"            
+                                       
 #include "builtin/TestingFunctions.h"  
 
 #include "irregexp/RegExpAPI.h"
@@ -159,7 +159,6 @@ namespace jit {
   _(js::jit::PostWriteElementBarrier<IndexInBounds::Maybe>)           \
   _(js::jit::Printf0)                                                 \
   _(js::jit::Printf1)                                                 \
-  _(js::jit::SetDenseElementPure)                                     \
   _(js::jit::SetNativeDataPropertyPure)                               \
   _(js::jit::StringFromCharCodeNoGC)                                  \
   _(js::jit::TypeOfNameObject)                                        \

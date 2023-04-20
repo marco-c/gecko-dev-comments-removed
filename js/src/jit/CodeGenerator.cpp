@@ -11753,7 +11753,6 @@ void CodeGenerator::visitSpectreMaskIndex(LSpectreMaskIndex* lir) {
 
 class OutOfLineStoreElementHole : public OutOfLineCodeBase<CodeGenerator> {
   LInstruction* ins_;
-  Label rejoinStore_;
 
  public:
   explicit OutOfLineStoreElementHole(LInstruction* ins) : ins_(ins) {
@@ -11769,7 +11768,6 @@ class OutOfLineStoreElementHole : public OutOfLineCodeBase<CodeGenerator> {
                                        : ins_->toStoreElementHoleT()->mir();
   }
   LInstruction* ins() const { return ins_; }
-  Label* rejoinStore() { return &rejoinStore_; }
 };
 
 void CodeGenerator::emitStoreHoleCheck(Register elements,
@@ -11862,11 +11860,9 @@ void CodeGenerator::visitStoreElementHoleT(LStoreElementHoleT* lir) {
 
   emitPreBarrier(elements, lir->index());
 
-  masm.bind(ool->rejoinStore());
+  masm.bind(ool->rejoin());
   emitStoreElementTyped(lir->value(), lir->mir()->value()->type(), elements,
                         lir->index());
-
-  masm.bind(ool->rejoin());
 }
 
 void CodeGenerator::visitStoreElementHoleV(LStoreElementHoleV* lir) {
@@ -11883,10 +11879,8 @@ void CodeGenerator::visitStoreElementHoleV(LStoreElementHoleV* lir) {
 
   emitPreBarrier(elements, lir->index());
 
-  masm.bind(ool->rejoinStore());
-  masm.storeValue(value, BaseObjectElementIndex(elements, index));
-
   masm.bind(ool->rejoin());
+  masm.storeValue(value, BaseObjectElementIndex(elements, index));
 }
 
 void CodeGenerator::visitOutOfLineStoreElementHole(
@@ -11920,84 +11914,65 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
     temp = ToRegister(store->temp0());
   }
 
+  Address initLength(elements, ObjectElements::offsetOfInitializedLength());
+
   
   
   
   
   
-  Label callStub;
+  Label allocElement, addNewElement;
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64) || \
     defined(JS_CODEGEN_LOONG64)
   
-  Address initLength(elements, ObjectElements::offsetOfInitializedLength());
-  masm.branch32(Assembler::NotEqual, initLength, index, &callStub);
+  bailoutCmp32(Assembler::NotEqual, initLength, index, ins->snapshot());
 #else
-  masm.j(Assembler::NotEqual, &callStub);
+  bailoutIf(Assembler::NotEqual, ins->snapshot());
 #endif
 
   
+  
   masm.spectreBoundsCheck32(
       index, Address(elements, ObjectElements::offsetOfCapacity()), temp,
-      &callStub);
+      &allocElement);
+  masm.jump(&addNewElement);
 
-  
-  
-  masm.add32(Imm32(1), index);
-  masm.store32(index,
-               Address(elements, ObjectElements::offsetOfInitializedLength()));
+  masm.bind(&allocElement);
 
-  
-  Label dontUpdate;
-  masm.branch32(Assembler::AboveOrEqual,
-                Address(elements, ObjectElements::offsetOfLength()), index,
-                &dontUpdate);
-  masm.store32(index, Address(elements, ObjectElements::offsetOfLength()));
-  masm.bind(&dontUpdate);
-
-  masm.sub32(Imm32(1), index);
-
-  
-  masm.jump(ool->rejoinStore());
-
-  masm.bind(&callStub);
-
-  if (ool->mir()->needsNegativeIntCheck()) {
-    bailoutCmp32(Assembler::LessThan, index, Imm32(0), ins->snapshot());
-  }
-
-  
-  
-  Register valueTemp = elements;
-
-  
   
   LiveRegisterSet liveRegs = liveVolatileRegs(ins);
   liveRegs.takeUnchecked(temp);
-  liveRegs.addUnchecked(elements);
-
   masm.PushRegsInMask(liveRegs);
-
-  masm.Push(value.ref());
-  masm.moveStackPtrTo(valueTemp);
 
   masm.setupAlignedABICall();
   masm.loadJSContext(temp);
   masm.passABIArg(temp);
   masm.passABIArg(object);
-  masm.passABIArg(index);
-  masm.passABIArg(valueTemp);
 
-  using Fn = bool (*)(JSContext*, NativeObject*, int32_t, Value*);
-  masm.callWithABI<Fn, jit::SetDenseElementPure>();
+  using Fn = bool (*)(JSContext*, NativeObject*);
+  masm.callWithABI<Fn, NativeObject::addDenseElementPure>();
   masm.storeCallPointerResult(temp);
 
-  masm.freeStack(sizeof(Value));  
-
-  MOZ_ASSERT(!liveRegs.has(temp));
   masm.PopRegsInMask(liveRegs);
-
   bailoutIfFalseBool(temp, ins->snapshot());
 
+  
+  masm.loadPtr(Address(object, NativeObject::offsetOfElements()), elements);
+
+  masm.bind(&addNewElement);
+
+  
+  masm.add32(Imm32(1), initLength);
+
+  
+  Label skipIncrementLength;
+  Address length(elements, ObjectElements::offsetOfLength());
+  masm.branch32(Assembler::Above, length, index, &skipIncrementLength);
+  masm.add32(Imm32(1), length);
+  masm.bind(&skipIncrementLength);
+
+  
+  
   masm.jump(ool->rejoin());
 }
 
