@@ -18,6 +18,7 @@
 #include "nsICommandLine.h"
 #include "nsCommandLine.h"
 #include "nsIDocShell.h"
+#include "nsThreadUtils.h"
 #include "WinRemoteMessage.h"
 
 HWND hwndForDOMWindow(mozIDOMWindowProxy* window) {
@@ -53,7 +54,13 @@ LRESULT CALLBACK WindowProc(HWND msgWindow, UINT msg, WPARAM wp, LPARAM lp) {
   if (msg == WM_COPYDATA) {
     WinRemoteMessageReceiver receiver;
     if (NS_SUCCEEDED(receiver.Parse(reinterpret_cast<COPYDATASTRUCT*>(lp)))) {
-      receiver.CommandLineRunner()->Run();
+      nsCOMPtr<nsICommandLineRunner> runner = receiver.CommandLineRunner();
+
+      
+      
+      
+      NS_DispatchToMainThread(
+          NS_NewRunnableFunction(__func__, [runner]() { runner->Run(); }));
     } else {
       NS_ERROR("Error initializing command line.");
     }
