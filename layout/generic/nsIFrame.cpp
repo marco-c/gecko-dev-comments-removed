@@ -2105,17 +2105,39 @@ void nsIFrame::SetAdditionalComputedStyle(int32_t aIndex,
   MOZ_ASSERT(aIndex >= 0, "invalid index number");
 }
 
-nscoord nsIFrame::GetLogicalBaseline(WritingMode aWritingMode) const {
+nscoord nsIFrame::SynthesizeFallbackBaseline(
+    WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
+  const auto margin = GetLogicalUsedMargin(aWM);
   NS_ASSERTION(!IsSubtreeDirty(), "frame must not be dirty");
   
   
-  if (aWritingMode.IsLineInverted()) {
-    return -GetLogicalUsedMargin(aWritingMode).BStart(aWritingMode);
+  if (aWM.IsLineInverted()) {
+    const auto marginStart = margin.BStart(aWM);
+    return aBaselineGroup == BaselineSharingGroup::First
+               ? -marginStart
+               : BSize(aWM) + marginStart;
   }
   
   
-  return BSize(aWritingMode) +
-         GetLogicalUsedMargin(aWritingMode).BEnd(aWritingMode);
+  const auto marginEnd = margin.BEnd(aWM);
+  return aBaselineGroup == BaselineSharingGroup::First ? BSize(aWM) + marginEnd
+                                                       : -marginEnd;
+}
+
+nscoord nsIFrame::GetLogicalBaseline(WritingMode aWM) const {
+  return GetLogicalBaseline(aWM, GetDefaultBaselineSharingGroup());
+}
+
+nscoord nsIFrame::GetLogicalBaseline(
+    WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
+  nscoord result;
+  if (!GetNaturalBaselineBOffset(aWM, aBaselineGroup, &result)) {
+    result = SynthesizeFallbackBaseline(aWM, aBaselineGroup);
+  }
+  if (aBaselineGroup == BaselineSharingGroup::Last) {
+    result = BSize(aWM) - result;
+  }
+  return result;
 }
 
 const nsFrameList& nsIFrame::GetChildList(ChildListID aListID) const {

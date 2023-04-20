@@ -1347,7 +1347,9 @@ static void GetScrollableOverflowForPerspective(
   }
 }
 
-nscoord nsHTMLScrollFrame::GetLogicalBaseline(WritingMode aWritingMode) const {
+bool nsHTMLScrollFrame::GetNaturalBaselineBOffset(
+    WritingMode aWM, BaselineSharingGroup aBaselineGroup,
+    nscoord* aBaseline) const {
   
   
   
@@ -1355,22 +1357,30 @@ nscoord nsHTMLScrollFrame::GetLogicalBaseline(WritingMode aWritingMode) const {
   
   
   
-  if (mHelper.mScrolledFrame->IsBlockFrameOrSubclass() ||
-      StyleDisplay()->IsContainLayout()) {
-    return nsContainerFrame::GetLogicalBaseline(aWritingMode);
+  if (mHelper.mScrolledFrame->IsBlockFrameOrSubclass()) {
+    *aBaseline = SynthesizeFallbackBaseline(aWM, aBaselineGroup);
+    return true;
+  }
+
+  if (StyleDisplay()->IsContainLayout()) {
+    return false;
+  }
+
+  
+  nscoord scrolledBaseline;
+  if (!mHelper.mScrolledFrame->GetNaturalBaselineBOffset(aWM, aBaselineGroup,
+                                                         &scrolledBaseline)) {
+    return false;
   }
 
   
   
   
+  LogicalMargin border = GetLogicalUsedBorder(aWM);
+  const auto bSize = GetLogicalSize(aWM).BSize(aWM);
   
-  LogicalMargin border = GetLogicalUsedBorder(aWritingMode);
-
-  
-  return std::clamp(
-      border.BStart(aWritingMode) +
-          mHelper.mScrolledFrame->GetLogicalBaseline(aWritingMode),
-      0, GetLogicalSize(aWritingMode).BSize(aWritingMode));
+  *aBaseline = std::clamp(border.BStart(aWM) + scrolledBaseline, 0, bSize);
+  return true;
 }
 
 void nsHTMLScrollFrame::AdjustForPerspective(nsRect& aScrollableOverflow) {

@@ -1527,11 +1527,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-
-  virtual nscoord GetLogicalBaseline(mozilla::WritingMode aWritingMode) const;
+  nscoord GetLogicalBaseline(mozilla::WritingMode aWM) const;
+  nscoord GetLogicalBaseline(mozilla::WritingMode aWM,
+                             BaselineSharingGroup aBaselineGroup) const;
 
   
 
@@ -1580,35 +1578,6 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-
-
-
-
-
-
-
-  inline nscoord BaselineBOffset(mozilla::WritingMode aWM,
-                                 BaselineSharingGroup aBaselineGroup,
-                                 AlignmentContext aAlignmentContext) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  virtual bool GetVerticalAlignBaseline(mozilla::WritingMode aWM,
-                                        nscoord* aBaseline) const {
-    return false;
-  }
-
-  
 
 
 
@@ -1703,7 +1672,25 @@ class nsIFrame : public nsQueryFrame {
       Visibility aNewVisibility,
       const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
 
+  
+
+
+
+
+
+
+
+  virtual nscoord SynthesizeFallbackBaseline(
+      mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup) const;
+
  public:
+  
+
+
+  virtual BaselineSharingGroup GetDefaultBaselineSharingGroup() const {
+    return BaselineSharingGroup::First;
+  }
+
   
   
   

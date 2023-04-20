@@ -70,6 +70,12 @@ nsListControlFrame::nsListControlFrame(ComputedStyle* aStyle,
 
 nsListControlFrame::~nsListControlFrame() = default;
 
+bool nsListControlFrame::GetNaturalBaselineBOffset(
+    WritingMode aWM, BaselineSharingGroup aBaselineGroup,
+    nscoord* aBaseline) const {
+  
+  return false;
+}
 
 void nsListControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
                                      PostDestroyData& aPostDestroyData) {
