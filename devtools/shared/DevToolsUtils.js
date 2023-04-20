@@ -15,7 +15,6 @@ var {
 } = require("resource://devtools/shared/platform/stack.js");
 
 const lazy = {};
-ChromeUtils.defineModuleGetter(lazy, "OS", "resource://gre/modules/osfile.jsm");
 
 ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
@@ -565,7 +564,23 @@ function mainThreadFetch(
         
 
         
-        const available = stream.available();
+
+        let available;
+        try {
+          available = stream.available();
+        } catch (ex) {
+          if (ex.name === "NS_BASE_STREAM_CLOSED") {
+            
+            
+            resolve({
+              content: "",
+              contentType: "text/plan",
+            });
+            return;
+          }
+
+          reject(ex);
+        }
         let source = NetUtil.readInputStreamToString(stream, available);
         stream.close();
 
@@ -639,35 +654,7 @@ function mainThreadFetch(
           sourceMapURL,
         });
       } catch (ex) {
-        const uri = request.originalURI;
-        if (
-          ex.name === "NS_BASE_STREAM_CLOSED" &&
-          uri instanceof Ci.nsIFileURL
-        ) {
-          
-          
-          
-
-          uri.QueryInterface(Ci.nsIFileURL);
-          
-          
-          const result = lazy.OS.File.read(uri.file.path).then(bytes => {
-            
-            const decoder = new TextDecoder();
-            const content = decoder.decode(bytes);
-
-            
-            
-            return {
-              content,
-              contentType: "text/plain",
-            };
-          });
-
-          resolve(result);
-        } else {
-          reject(ex);
-        }
+        reject(ex);
       }
     };
 
