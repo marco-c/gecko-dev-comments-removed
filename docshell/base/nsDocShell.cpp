@@ -9870,6 +9870,9 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
         isSrcdoc);
   }
 
+  
+  aLoadState->MaybeStripTrackerQueryStrings(aBrowsingContext);
+
   OriginAttributes attrs;
 
   
@@ -10539,19 +10542,6 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
 
   nsLoadFlags loadFlags = aLoadState->CalculateChannelLoadFlags(
       mBrowsingContext, Some(uriModified), Some(isXFOError));
-
-  
-  
-  nsCOMPtr<nsIURI> currentUnstrippedURI;
-  nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel();
-  if (docChannel) {
-    nsCOMPtr<nsILoadInfo> docLoadInfo = docChannel->LoadInfo();
-    docLoadInfo->GetUnstrippedURI(getter_AddRefs(currentUnstrippedURI));
-  }
-
-  
-  aLoadState->MaybeStripTrackerQueryStrings(mBrowsingContext,
-                                            currentUnstrippedURI);
 
   nsCOMPtr<nsIChannel> channel;
   if (DocumentChannel::CanUseDocumentChannel(aLoadState->URI()) &&
@@ -11573,6 +11563,9 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     newSHEntry->SetOriginalURI(aNewURI);
     
     
+    newSHEntry->SetUnstrippedURI(nullptr);
+    
+    
     
     newSHEntry->SetResultPrincipalURI(nullptr);
     newSHEntry->SetLoadReplace(false);
@@ -11798,6 +11791,7 @@ nsresult nsDocShell::AddToSessionHistory(
   nsCOMPtr<nsIInputStream> inputStream;
   nsCOMPtr<nsIURI> originalURI;
   nsCOMPtr<nsIURI> resultPrincipalURI;
+  nsCOMPtr<nsIURI> unstrippedURI;
   bool loadReplace = false;
   nsCOMPtr<nsIReferrerInfo> referrerInfo;
   uint32_t cacheKey = 0;
@@ -11850,6 +11844,8 @@ nsresult nsDocShell::AddToSessionHistory(
     }
 
     loadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
+
+    loadInfo->GetUnstrippedURI(getter_AddRefs(unstrippedURI));
 
     userActivation = loadInfo->GetHasValidUserGestureActivation();
 
@@ -11920,8 +11916,9 @@ nsresult nsDocShell::AddToSessionHistory(
                 triggeringPrincipal,  
                 principalToInherit, partitionedPrincipalToInherit, csp,
                 HistoryID(), GetCreatedDynamically(), originalURI,
-                resultPrincipalURI, loadReplace, referrerInfo, srcdoc,
-                srcdocEntry, baseURI, saveLayoutState, expired, userActivation);
+                resultPrincipalURI, unstrippedURI, loadReplace, referrerInfo,
+                srcdoc, srcdocEntry, baseURI, saveLayoutState, expired,
+                userActivation);
 
   if (mBrowsingContext->IsTop() && GetSessionHistory()) {
     bool shouldPersist = ShouldAddToSessionHistory(aURI, aChannel);
@@ -12006,6 +12003,7 @@ void nsDocShell::UpdateActiveEntry(
         aURI, aTriggeringPrincipal, nullptr, nullptr, aCsp, mContentTypeHint);
   }
   mActiveEntry->SetOriginalURI(aOriginalURI);
+  mActiveEntry->SetUnstrippedURI(nullptr);
   mActiveEntry->SetReferrerInfo(aReferrerInfo);
   mActiveEntry->SetTitle(aTitle);
   mActiveEntry->SetStateData(static_cast<nsStructuredCloneContainer*>(aData));

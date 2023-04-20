@@ -249,6 +249,8 @@ class nsDocShellLoadState final {
 
   nsIURI* GetUnstrippedURI() const;
 
+  void SetUnstrippedURI(nsIURI* aUnstrippedURI);
+
   
   
   
@@ -329,8 +331,7 @@ class nsDocShellLoadState final {
   void SetLoadIsFromSessionHistory(int32_t aOffset, bool aLoadingCurrentEntry);
   void ClearLoadIsFromSessionHistory();
 
-  void MaybeStripTrackerQueryStrings(mozilla::dom::BrowsingContext* aContext,
-                                     nsIURI* aCurrentUnstrippedURI = nullptr);
+  void MaybeStripTrackerQueryStrings(mozilla::dom::BrowsingContext* aContext);
 
  protected:
   
