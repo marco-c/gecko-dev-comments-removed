@@ -10,6 +10,15 @@
 
 add_setup(async function() {
   await initGroupTest();
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.urlbar.searchEngagementTelemetry.pauseImpressionIntervalMs",
+        500,
+      ],
+    ],
+  });
 });
 
 add_task(async function heuristics() {
