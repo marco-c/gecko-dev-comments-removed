@@ -31,6 +31,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   NativeManifests: "resource://gre/modules/NativeManifests.jsm",
+  OS: "resource://gre/modules/osfile.jsm",
 });
 
 
@@ -89,25 +90,20 @@ var NativeApp = class extends EventEmitter {
         let command = hostInfo.manifest.path;
         if (AppConstants.platform == "win") {
           
-          command = command.replaceAll("/", "\\");
-
-          if (!PathUtils.isAbsolute(command)) {
-            const parentPath = PathUtils.parent(
-              hostInfo.path.replaceAll("/", "\\")
-            );
-            command = PathUtils.joinRelative(parentPath, command);
-          }
-        } else if (!PathUtils.isAbsolute(command)) {
           
-          throw new Error(
-            "NativeApp requires absolute path to command on this platform"
+          
+          command = lazy.OS.Path.join(
+            lazy.OS.Path.dirname(hostInfo.path),
+            command
           );
+          
+          command = command.replaceAll("/", "\\");
         }
 
         let subprocessOpts = {
           command: command,
           arguments: [hostInfo.path, context.extension.id],
-          workdir: PathUtils.parent(command),
+          workdir: lazy.OS.Path.dirname(command),
           stderr: "pipe",
           disclaim: true,
         };
