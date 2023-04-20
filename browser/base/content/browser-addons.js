@@ -643,8 +643,12 @@ var gXPInstallObserver = {
         let hasHost = !!options.displayURI;
 
         if (isSitePermissionAddon) {
+          
+          
+          
+          
           messageString = gNavigatorBundle.getString(
-            "sitePermissionInstallFirstPrompt.header"
+            "sitePermissionInstallFirstPrompt.midi.header"
           );
         } else if (hasHost) {
           messageString = gNavigatorBundle.getFormattedString(
@@ -675,7 +679,7 @@ var gXPInstallObserver = {
 
           if (isSitePermissionAddon) {
             message.textContent = gNavigatorBundle.getString(
-              "sitePermissionInstallFirstPrompt.message"
+              "sitePermissionInstallFirstPrompt.midi.message"
             );
           } else if (hasHost) {
             let text = gNavigatorBundle.getString(
