@@ -214,7 +214,8 @@ class RemoteVideoDecoder : public RemoteDataDecoder {
     
     
     
-    if (java::sdk::Build::HARDWARE()->ToString().EqualsASCII("mt6735")) {
+    const auto hardware = java::sdk::Build::HARDWARE()->ToString();
+    if (hardware.EqualsASCII("mt6735") || hardware.EqualsASCII("kirin980")) {
       mTransformOverride = Some(
           gfx::Matrix4x4::Scaling(1.0, -1.0, 1.0).PostTranslate(0.0, 1.0, 0.0));
     }
