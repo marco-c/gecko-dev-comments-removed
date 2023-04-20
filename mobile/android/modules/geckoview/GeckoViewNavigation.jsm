@@ -264,7 +264,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         
         
         
-        this.browser.loadURI(uri, {
+        this.browser.fixupAndLoadURIString(uri, {
           flags: navFlags,
           referrerInfo,
           triggeringPrincipal,

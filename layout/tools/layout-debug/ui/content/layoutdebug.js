@@ -163,7 +163,7 @@ function autoCloseIfNeeded(aCrash) {
       
       
       document.documentElement.appendChild(browser);
-      browser.loadURI("about:crashparent", {
+      browser.loadURI(Services.io.newURI("about:crashparent"), {
         triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       });
       return;
@@ -357,7 +357,7 @@ function OnLDBLoad() {
         
         
         updateBrowserRemotenessByURL(gArgs.url);
-        setTimeout(() => loadURI(gArgs.url), 3000);
+        setTimeout(() => fixupAndLoadURIString(gArgs.url), 3000);
         return;
       }
     } else {
@@ -369,7 +369,7 @@ function OnLDBLoad() {
   gDebugger._pagedMode = gArgs.paged;
 
   if (gArgs.url) {
-    loadURI(gArgs.url);
+    fixupAndLoadURIString(gArgs.url);
   }
 
   
@@ -452,7 +452,7 @@ function openFile() {
       fp.fileURL.spec &&
       fp.fileURL.spec.length > 0
     ) {
-      loadURI(fp.fileURL.spec);
+      gBrowser.loadURI(fp.fileURL);
     }
   });
 }
@@ -483,11 +483,11 @@ function updateBrowserRemotenessByURL(aURL) {
   }
 }
 
-function loadURI(aURL) {
+function fixupAndLoadURIString(aURL) {
   
   
   updateBrowserRemotenessByURL(aURL);
-  gBrowser.loadURI(aURL, {
+  gBrowser.fixupAndLoadURIString(aURL, {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   });
 }
@@ -498,6 +498,6 @@ function focusURLBar() {
 }
 
 function go() {
-  loadURI(gURLBar.value);
+  fixupAndLoadURIString(gURLBar.value);
   gBrowser.focus();
 }
