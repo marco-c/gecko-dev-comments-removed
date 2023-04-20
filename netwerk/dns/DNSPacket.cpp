@@ -767,6 +767,7 @@ nsresult DNSPacket::DecodeInternal(
           if (!available.isValid()) {
             return NS_ERROR_UNEXPECTED;
           }
+          aTTL = TTL;
           while (available.value() >= 4) {
             
             
@@ -846,7 +847,6 @@ nsresult DNSPacket::DecodeInternal(
             results.AppendElement(parsed);
           }
 
-          aTTL = TTL;
           break;
         }
         default:
