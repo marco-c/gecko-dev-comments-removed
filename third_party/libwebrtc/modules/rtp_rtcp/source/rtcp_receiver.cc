@@ -682,13 +682,6 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
   
   
   
-
-  
-  
-  
-  
-  
-  
   if (send_time_ntp != 0) {
     uint32_t delay_ntp = report_block.delay_since_last_sr();
     

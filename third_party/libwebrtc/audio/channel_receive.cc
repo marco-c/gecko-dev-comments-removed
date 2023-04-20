@@ -1102,8 +1102,6 @@ int64_t ChannelReceive::GetRTT() const {
     return associated_send_channel_->GetRTT();
   }
 
-  
-  
   for (const ReportBlockData& data : report_blocks) {
     if (data.report_block().sender_ssrc == remote_ssrc_) {
       return data.last_rtt_ms();
