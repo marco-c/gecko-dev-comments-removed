@@ -1629,10 +1629,11 @@ void AppWindow::SyncAttributesToWidget() {
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
+  nsAutoString windowClassAttr, windowNameAttr;
   windowElement->GetAttr(nsGkAtoms::windowtype, attr);
-  if (!attr.IsEmpty()) {
-    mWindow->SetWindowClass(attr);
-  }
+  windowElement->GetAttribute(u"windowclass"_ns, windowClassAttr);
+  windowElement->GetAttribute(u"windowname"_ns, windowNameAttr);
+  mWindow->SetWindowClass(attr, windowClassAttr, windowNameAttr);
 
   NS_ENSURE_TRUE_VOID(mWindow);
 

@@ -232,7 +232,8 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
       const nsTArray<ThemeGeometry>& aThemeGeometries) override {}
   void SetModal(bool aModal) override {}
   uint32_t GetMaxTouchPoints() const override;
-  void SetWindowClass(const nsAString& xulWinType) override {}
+  void SetWindowClass(const nsAString& xulWinType, const nsAString& xulWinClass,
+                      const nsAString& xulWinName) override {}
   
   
   

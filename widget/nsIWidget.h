@@ -1390,7 +1390,21 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual void SetWindowClass(const nsAString& xulWinType) = 0;
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual void SetWindowClass(const nsAString& xulWinType,
+                              const nsAString& xulWinClass,
+                              const nsAString& xulWinName) = 0;
 
   
 
