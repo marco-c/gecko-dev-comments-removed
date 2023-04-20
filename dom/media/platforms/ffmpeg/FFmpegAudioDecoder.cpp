@@ -31,8 +31,8 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
   }
 
   if (mCodecID == AV_CODEC_ID_MP3) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        aConfig.mCodecSpecificConfig.is<Mp3CodecSpecificData>());
+    
+    MOZ_ASSERT(aConfig.mCodecSpecificConfig.is<Mp3CodecSpecificData>());
     
     
     
