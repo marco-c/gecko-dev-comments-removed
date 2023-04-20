@@ -7,9 +7,13 @@
 #ifndef nsDirection_h___
 #define nsDirection_h___
 
+#include <ostream>
+
 
 
 
 enum nsDirection { eDirNext = 0, eDirPrevious = 1 };
+
+std::ostream& operator<<(std::ostream& aStream, const nsDirection& aDirection);
 
 #endif

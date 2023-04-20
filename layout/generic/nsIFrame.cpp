@@ -184,6 +184,10 @@ const nsIFrame::FrameClassBits nsIFrame::sFrameClassBits[
 #undef ABSTRACT_FRAME_ID
 };
 
+std::ostream& operator<<(std::ostream& aStream, const nsDirection& aDirection) {
+  return aStream << (aDirection == eDirNext ? "eDirNext" : "eDirPrevious");
+}
+
 
 struct nsBoxLayoutMetrics {
   nsSize mPrefSize;
