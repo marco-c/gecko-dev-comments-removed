@@ -159,16 +159,6 @@
     }
 
     
-    set crop(val) {
-      this.setAttribute("crop", val);
-    }
-
-    
-    get crop() {
-      return this.getAttribute("crop");
-    }
-
-    
     set image(val) {
       this.setAttribute("image", val);
     }
