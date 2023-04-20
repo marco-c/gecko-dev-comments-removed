@@ -8,6 +8,7 @@
 #define mozilla_PresShellForwards_h
 
 #include "mozilla/TypedEnumBits.h"
+#include "mozilla/Maybe.h"
 
 struct CapturingContentInfo;
 
@@ -57,15 +58,26 @@ enum class ReflowRootHandling {
 };
 
 
+struct WhereToScroll {
+  
+  
+  Maybe<int16_t> mPercentage;
 
+  
+  constexpr WhereToScroll() = default;
 
-typedef int16_t WhereToScroll;
-static const WhereToScroll kScrollToTop = 0;
-static const WhereToScroll kScrollToLeft = 0;
-static const WhereToScroll kScrollToCenter = 50;
-static const WhereToScroll kScrollToBottom = 100;
-static const WhereToScroll kScrollToRight = 100;
-static const WhereToScroll kScrollMinimum = -1;
+  explicit constexpr WhereToScroll(int16_t aPercentage)
+      : mPercentage(Some(aPercentage)) {}
+
+  enum { Nearest };
+  MOZ_IMPLICIT constexpr WhereToScroll(decltype(Nearest)) : WhereToScroll() {}
+  enum { Start };
+  MOZ_IMPLICIT constexpr WhereToScroll(decltype(Start)) : WhereToScroll(0) {}
+  enum { Center };
+  MOZ_IMPLICIT constexpr WhereToScroll(decltype(Center)) : WhereToScroll(50) {}
+  enum { End };
+  MOZ_IMPLICIT constexpr WhereToScroll(decltype(End)) : WhereToScroll(100) {}
+};
 
 
 enum class WhenToScroll : uint8_t {
@@ -110,7 +122,7 @@ struct ScrollAxis final {
 
 
 
-  explicit ScrollAxis(WhereToScroll aWhere = kScrollMinimum,
+  explicit ScrollAxis(WhereToScroll aWhere = WhereToScroll::Nearest,
                       WhenToScroll aWhen = WhenToScroll::IfNotFullyVisible,
                       bool aOnlyIfPerceivedScrollableDirection = false)
       : mWhereToScroll(aWhere),

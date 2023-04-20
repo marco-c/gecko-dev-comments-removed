@@ -3082,8 +3082,8 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
   
   
   presShell->ScrollContentIntoView(
-      element, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
-      ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
+      element, ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
+      ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
       ScrollFlags::ScrollOverflowHidden);
 
   if (shouldSkip) {

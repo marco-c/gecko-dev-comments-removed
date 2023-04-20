@@ -3245,7 +3245,8 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
       
       ScrollingInteractionContext scrollToAnchorContext(true);
       MOZ_TRY(ScrollContentIntoView(
-          target, ScrollAxis(kScrollToTop, WhenToScroll::Always), ScrollAxis(),
+          target, ScrollAxis(WhereToScroll::Start, WhenToScroll::Always),
+          ScrollAxis(),
           ScrollFlags::AnchorScrollFlags | aAdditionalScrollFlags));
 
       if (nsIScrollableFrame* rootScroll = GetRootScrollFrameAsScrollable()) {
@@ -3358,9 +3359,9 @@ nsresult PresShell::ScrollToAnchor() {
       mLastAnchorScrollPositionY != rootScroll->GetScrollPosition().y) {
     return NS_OK;
   }
-  return ScrollContentIntoView(lastAnchor,
-                               ScrollAxis(kScrollToTop, WhenToScroll::Always),
-                               ScrollAxis(), ScrollFlags::AnchorScrollFlags);
+  return ScrollContentIntoView(
+      lastAnchor, ScrollAxis(WhereToScroll::Start, WhenToScroll::Always),
+      ScrollAxis(), ScrollFlags::AnchorScrollFlags);
 }
 
 
@@ -3461,7 +3462,7 @@ static nscoord ComputeWhereToScroll(WhereToScroll aWhereToScroll,
                                     nscoord* aRangeMax) {
   nscoord resultCoord = aOriginalCoord;
   nscoord scrollPortLength = aViewMax - aViewMin;
-  if (kScrollMinimum == aWhereToScroll) {
+  if (!aWhereToScroll.mPercentage) {
     
     
     
@@ -3469,10 +3470,10 @@ static nscoord ComputeWhereToScroll(WhereToScroll aWhereToScroll,
     nscoord max = std::max(aRectMin, aRectMax - scrollPortLength);
     resultCoord = std::min(std::max(aOriginalCoord, min), max);
   } else {
-    nscoord frameAlignCoord = NSToCoordRound(
-        aRectMin + (aRectMax - aRectMin) * (aWhereToScroll / 100.0f));
-    resultCoord = NSToCoordRound(frameAlignCoord -
-                                 scrollPortLength * (aWhereToScroll / 100.0f));
+    float percent = aWhereToScroll.mPercentage.value() / 100.0f;
+    nscoord frameAlignCoord =
+        NSToCoordRound(aRectMin + (aRectMax - aRectMin) * percent);
+    resultCoord = NSToCoordRound(frameAlignCoord - scrollPortLength * percent);
   }
   
   *aRangeMin = std::min(resultCoord, aRectMax - scrollPortLength);
@@ -3498,11 +3499,11 @@ static WhereToScroll GetApplicableWhereToScroll(
     case StyleScrollSnapAlignKeyword::None:
       return aOriginal;
     case StyleScrollSnapAlignKeyword::Start:
-      return kScrollToTop;
+      return WhereToScroll::Start;
     case StyleScrollSnapAlignKeyword::Center:
-      return kScrollToCenter;
+      return WhereToScroll::Center;
     case StyleScrollSnapAlignKeyword::End:
-      return kScrollToBottom;
+      return WhereToScroll::End;
   }
   return aOriginal;
 }
@@ -9019,12 +9020,12 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
     
     
     
-    rv =
-        MOZ_KnownLive(mPresShell)
-            ->ScrollContentIntoView(
-                content, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
-                ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
-                ScrollFlags::ScrollOverflowHidden);
+    rv = MOZ_KnownLive(mPresShell)
+             ->ScrollContentIntoView(
+                 content,
+                 ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
+                 ScrollAxis(WhereToScroll::Nearest, WhenToScroll::IfNotVisible),
+                 ScrollFlags::ScrollOverflowHidden);
     NS_ENSURE_SUCCESS(rv, false);
     frame = content->GetPrimaryFrame();
     NS_WARNING_ASSERTION(frame, "No frame for focused content?");
