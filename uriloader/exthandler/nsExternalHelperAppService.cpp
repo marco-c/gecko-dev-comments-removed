@@ -3448,24 +3448,20 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
     }
   }
 
-#ifdef XP_WIN
-  nsLocalFile::CheckForReservedFileName(fileName);
-#endif
+  CheckDefaultFileName(fileName, aFlags);
 
   
-  
-  
-  if (StringEndsWith(fileName, u".lnk"_ns, nsCaseInsensitiveStringComparator) ||
-      StringEndsWith(fileName, u".local"_ns,
-                     nsCaseInsensitiveStringComparator) ||
-      StringEndsWith(fileName, u".url"_ns, nsCaseInsensitiveStringComparator) ||
-      StringEndsWith(fileName, u".scf"_ns, nsCaseInsensitiveStringComparator)) {
-    fileName.AppendLiteral(".download");
-  }
+  SanitizeFileName(fileName, aFlags);
 
+  aFileName = fileName;
+  return mimeInfo.forget();
+}
+
+void nsExternalHelperAppService::CheckDefaultFileName(nsAString& aFileName,
+                                                      uint32_t aFlags) {
   
   if (!(aFlags & VALIDATE_NO_DEFAULT_FILENAME) &&
-      (fileName.Length() == 0 || fileName.RFind(u".") == 0)) {
+      (aFileName.Length() == 0 || aFileName.RFind(u".") == 0)) {
     nsCOMPtr<nsIStringBundleService> stringService =
         mozilla::components::StringBundle::Service();
     if (stringService) {
@@ -3476,21 +3472,15 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
         nsAutoString defaultFileName;
         bundle->GetStringFromName("UntitledSaveFileName", defaultFileName);
         
-        fileName = defaultFileName + fileName;
+        aFileName = defaultFileName + aFileName;
       }
     }
 
     
-    if (!fileName.Length()) {
-      fileName.AssignLiteral("Untitled");
+    if (!aFileName.Length()) {
+      aFileName.AssignLiteral("Untitled");
     }
   }
-
-  
-  SanitizeFileName(fileName, aFlags);
-
-  aFileName = fileName;
-  return mimeInfo.forget();
 }
 
 void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
@@ -3679,6 +3669,30 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
     
     
     outFileName.Truncate(lastNonTrimmable);
+  }
+
+#ifdef XP_WIN
+  if (nsLocalFile::CheckForReservedFileName(outFileName)) {
+    outFileName.Truncate();
+    CheckDefaultFileName(outFileName, aFlags);
+  }
+
+#endif
+
+  if (!(aFlags & VALIDATE_ALLOW_INVALID_FILENAMES)) {
+    
+    
+    
+    if (StringEndsWith(outFileName, u".lnk"_ns,
+                       nsCaseInsensitiveStringComparator) ||
+        StringEndsWith(outFileName, u".local"_ns,
+                       nsCaseInsensitiveStringComparator) ||
+        StringEndsWith(outFileName, u".url"_ns,
+                       nsCaseInsensitiveStringComparator) ||
+        StringEndsWith(outFileName, u".scf"_ns,
+                       nsCaseInsensitiveStringComparator)) {
+      outFileName.AppendLiteral(".download");
+    }
   }
 
   aFileName = outFileName;

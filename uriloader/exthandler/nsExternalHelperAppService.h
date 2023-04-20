@@ -217,6 +217,10 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
   
   
+  void CheckDefaultFileName(nsAString& aFileName, uint32_t aFlags);
+
+  
+  
   
   
   void SanitizeFileName(nsAString& aFileName, uint32_t aFlags);

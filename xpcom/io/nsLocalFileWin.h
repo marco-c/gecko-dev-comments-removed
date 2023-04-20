@@ -51,7 +51,7 @@ class nsLocalFile final : public nsILocalFileWin {
 
   
   
-  static void CheckForReservedFileName(nsString& aFileName);
+  static bool CheckForReservedFileName(const nsString& aFileName);
 
   
   struct FileInfo {
