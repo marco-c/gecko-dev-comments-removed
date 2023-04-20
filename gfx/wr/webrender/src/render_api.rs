@@ -11,9 +11,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::u32;
 use time::precise_time_ns;
-
 use crate::api::channel::{Sender, single_msg_channel, unbounded_channel};
-use crate::api::{ColorF, BuiltDisplayList, IdNamespace, ExternalScrollId, Parameter, BoolParameter};
+use crate::api::{BuiltDisplayList, IdNamespace, ExternalScrollId, Parameter, BoolParameter};
 use crate::api::{FontKey, FontInstanceKey, NativeFontHandle};
 use crate::api::{BlobImageData, BlobImageKey, ImageData, ImageDescriptor, ImageKey, Epoch, QualitySettings};
 use crate::api::{BlobImageParams, BlobImageRequest, BlobImageResult, AsyncBlobImageRasterizer, BlobImageHandler};
@@ -276,13 +275,9 @@ impl Transaction {
     
     
     
-    
-    
     pub fn set_display_list(
         &mut self,
         epoch: Epoch,
-        background: Option<ColorF>,
-        viewport_size: LayoutSize,
         (pipeline_id, mut display_list): (PipelineId, BuiltDisplayList),
     ) {
         display_list.set_send_time_ns(precise_time_ns());
@@ -291,8 +286,6 @@ impl Transaction {
                 display_list,
                 epoch,
                 pipeline_id,
-                background,
-                viewport_size,
             }
         );
     }
@@ -775,10 +768,6 @@ pub enum SceneMsg {
         epoch: Epoch,
         
         pipeline_id: PipelineId,
-        
-        background: Option<ColorF>,
-        
-        viewport_size: LayoutSize,
     },
     
     SetDocumentView {
