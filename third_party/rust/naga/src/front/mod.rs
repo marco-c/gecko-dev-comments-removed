@@ -65,6 +65,34 @@ impl super::ConstantInner {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Default)]
 pub struct Typifier {
     resolutions: Vec<TypeResolution>,
@@ -89,6 +117,34 @@ impl Typifier {
         self.resolutions[expr_handle.index()].inner_with(types)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn register_type(
+        &self,
+        expr_handle: Handle<crate::Expression>,
+        types: &mut UniqueArena<crate::Type>,
+    ) -> Handle<crate::Type> {
+        match self[expr_handle].clone() {
+            TypeResolution::Handle(handle) => handle,
+            TypeResolution::Value(inner) => {
+                types.insert(crate::Type { name: None, inner }, crate::Span::UNDEFINED)
+            }
+        }
+    }
+
+    
     pub fn grow(
         &mut self,
         expr_handle: Handle<crate::Expression>,
@@ -106,6 +162,9 @@ impl Typifier {
         Ok(())
     }
 
+    
+    
+    
     
     
     

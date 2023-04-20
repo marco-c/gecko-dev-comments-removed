@@ -12,6 +12,7 @@
 #[cfg(any(feature = "serde", test))]
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
+use std::path::PathBuf;
 use std::{num::NonZeroU32, ops::Range};
 
 pub mod assertions;
@@ -726,17 +727,20 @@ impl Features {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase", default))]
 pub struct Limits {
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "maxTextureDimension1D"))]
     pub max_texture_dimension_1d: u32,
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "maxTextureDimension2D"))]
     pub max_texture_dimension_2d: u32,
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "maxTextureDimension3D"))]
     pub max_texture_dimension_3d: u32,
     
     
@@ -770,20 +774,15 @@ pub struct Limits {
     
     
     
+    
+    pub max_buffer_size: u64,
+    
+    
+    
     pub max_vertex_attributes: u32,
     
     
     pub max_vertex_buffer_array_stride: u32,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub max_push_constant_size: u32,
     
     
     
@@ -817,7 +816,12 @@ pub struct Limits {
     
     
     
-    pub max_buffer_size: u64,
+    
+    
+    
+    
+    
+    pub max_push_constant_size: u32,
 }
 
 impl Default for Limits {
@@ -834,24 +838,24 @@ impl Default for Limits {
             max_sampled_textures_per_shader_stage: 16,
             max_samplers_per_shader_stage: 16,
             max_storage_buffers_per_shader_stage: 8,
-            max_storage_textures_per_shader_stage: 8,
+            max_storage_textures_per_shader_stage: 4,
             max_uniform_buffers_per_shader_stage: 12,
             max_uniform_buffer_binding_size: 64 << 10,
             max_storage_buffer_binding_size: 128 << 20,
             max_vertex_buffers: 8,
+            max_buffer_size: 1 << 28,
             max_vertex_attributes: 16,
             max_vertex_buffer_array_stride: 2048,
-            max_push_constant_size: 0,
             min_uniform_buffer_offset_alignment: 256,
             min_storage_buffer_offset_alignment: 256,
             max_inter_stage_shader_components: 60,
-            max_compute_workgroup_storage_size: 16352,
+            max_compute_workgroup_storage_size: 16384,
             max_compute_invocations_per_workgroup: 256,
             max_compute_workgroup_size_x: 256,
             max_compute_workgroup_size_y: 256,
             max_compute_workgroup_size_z: 64,
             max_compute_workgroups_per_dimension: 65535,
-            max_buffer_size: 1 << 28,
+            max_push_constant_size: 0,
         }
     }
 }
@@ -1139,6 +1143,11 @@ bitflags::bitflags! {
         ///
         /// Corresponds to Vulkan's `VkPhysicalDeviceFeatures.depthBiasClamp`
         const DEPTH_BIAS_CLAMP = 1 << 18;
+
+        /// Supports specifying which view format values are allowed when create_view() is called on a texture.
+        ///
+        /// The WebGL and GLES backends doesn't support this.
+        const VIEW_FORMATS = 1 << 19;
     }
 }
 
@@ -2535,6 +2544,29 @@ impl TextureFormat {
                 allowed_usages,
                 flags,
             },
+        }
+    }
+
+    
+    pub fn remove_srgb_suffix(&self) -> TextureFormat {
+        match *self {
+            Self::Rgba8UnormSrgb => Self::Rgba8Unorm,
+            Self::Bgra8UnormSrgb => Self::Bgra8Unorm,
+            Self::Bc1RgbaUnormSrgb => Self::Bc1RgbaUnorm,
+            Self::Bc2RgbaUnormSrgb => Self::Bc2RgbaUnorm,
+            Self::Bc3RgbaUnormSrgb => Self::Bc3RgbaUnorm,
+            Self::Bc7RgbaUnormSrgb => Self::Bc7RgbaUnorm,
+            Self::Etc2Rgb8UnormSrgb => Self::Etc2Rgb8Unorm,
+            Self::Etc2Rgb8A1UnormSrgb => Self::Etc2Rgb8A1Unorm,
+            Self::Etc2Rgba8UnormSrgb => Self::Etc2Rgba8Unorm,
+            Self::Astc {
+                block,
+                channel: AstcChannel::UnormSrgb,
+            } => Self::Astc {
+                block,
+                channel: AstcChannel::Unorm,
+            },
+            _ => *self,
         }
     }
 }
@@ -4319,7 +4351,7 @@ fn test_max_mips() {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct TextureDescriptor<L> {
+pub struct TextureDescriptor<L, V> {
     
     pub label: L,
     
@@ -4337,11 +4369,16 @@ pub struct TextureDescriptor<L> {
     
     pub usage: TextureUsages,
     
+    
+    
+    
+    
+    pub view_formats: V,
 }
 
-impl<L> TextureDescriptor<L> {
+impl<L, V: Clone> TextureDescriptor<L, V> {
     
-    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> TextureDescriptor<K> {
+    pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> TextureDescriptor<K, V> {
         TextureDescriptor {
             label: fun(&self.label),
             size: self.size,
@@ -4350,9 +4387,30 @@ impl<L> TextureDescriptor<L> {
             dimension: self.dimension,
             format: self.format,
             usage: self.usage,
+            view_formats: self.view_formats.clone(),
         }
     }
 
+    
+    pub fn map_label_and_view_formats<K, M>(
+        &self,
+        l_fun: impl FnOnce(&L) -> K,
+        v_fun: impl FnOnce(V) -> M,
+    ) -> TextureDescriptor<K, M> {
+        TextureDescriptor {
+            label: l_fun(&self.label),
+            size: self.size,
+            mip_level_count: self.mip_level_count,
+            sample_count: self.sample_count,
+            dimension: self.dimension,
+            format: self.format,
+            usage: self.usage,
+            view_formats: v_fun(self.view_formats.clone()),
+        }
+    }
+
+    
+    
     
     
     
@@ -5087,7 +5145,7 @@ impl ImageSubresourceRange {
     }
 
     
-    pub fn mip_range<L>(&self, texture_desc: &TextureDescriptor<L>) -> Range<u32> {
+    pub fn mip_range<L, V>(&self, texture_desc: &TextureDescriptor<L, V>) -> Range<u32> {
         self.base_mip_level..match self.mip_level_count {
             Some(mip_level_count) => self.base_mip_level + mip_level_count.get(),
             None => texture_desc.mip_level_count,
@@ -5095,7 +5153,7 @@ impl ImageSubresourceRange {
     }
 
     
-    pub fn layer_range<L>(&self, texture_desc: &TextureDescriptor<L>) -> Range<u32> {
+    pub fn layer_range<L, V>(&self, texture_desc: &TextureDescriptor<L, V>) -> Range<u32> {
         self.base_array_layer..match self.array_layer_count {
             Some(array_layer_count) => self.base_array_layer + array_layer_count.get(),
             None => {
@@ -5303,5 +5361,52 @@ impl ShaderBoundChecks {
 impl Default for ShaderBoundChecks {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, Default)]
+pub enum Dx12Compiler {
+    
+    
+    
+    #[default]
+    Fxc,
+    
+    
+    
+    
+    Dxc {
+        
+        dxil_path: Option<PathBuf>,
+        
+        dxc_path: Option<PathBuf>,
+    },
+}
+
+
+pub struct InstanceDescriptor {
+    
+    pub backends: Backends,
+    
+    pub dx12_shader_compiler: Dx12Compiler,
+}
+
+impl Default for InstanceDescriptor {
+    fn default() -> Self {
+        Self {
+            backends: Backends::all(),
+            dx12_shader_compiler: Dx12Compiler::default(),
+        }
     }
 }

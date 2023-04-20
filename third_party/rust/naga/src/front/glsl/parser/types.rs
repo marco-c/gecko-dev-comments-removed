@@ -385,15 +385,18 @@ fn map_image_format(word: &str) -> Option<crate::StorageFormat> {
         "r11f_g11f_b10f" => Sf::Rg11b10Float,
         "r32f" => Sf::R32Float,
         "r16f" => Sf::R16Float,
-        "rgba16" => Sf::Rgba16Float,
+        "rgba16" => Sf::Rgba16Unorm,
         "rgb10_a2" => Sf::Rgb10a2Unorm,
         "rgba8" => Sf::Rgba8Unorm,
-        "rg16" => Sf::Rg16Float,
+        "rg16" => Sf::Rg16Unorm,
         "rg8" => Sf::Rg8Unorm,
-        "r16" => Sf::R16Float,
+        "r16" => Sf::R16Unorm,
         "r8" => Sf::R8Unorm,
+        "rgba16_snorm" => Sf::Rgba16Snorm,
         "rgba8_snorm" => Sf::Rgba8Snorm,
+        "rg16_snorm" => Sf::Rg16Snorm,
         "rg8_snorm" => Sf::Rg8Snorm,
+        "r16_snorm" => Sf::R16Snorm,
         "r8_snorm" => Sf::R8Snorm,
         
         "rgba32i" => Sf::Rgba32Sint,
@@ -415,9 +418,6 @@ fn map_image_format(word: &str) -> Option<crate::StorageFormat> {
         "r32ui" => Sf::R32Uint,
         "r16ui" => Sf::R16Uint,
         "r8ui" => Sf::R8Uint,
-        
-        
-        
         
         
         _ => return None,

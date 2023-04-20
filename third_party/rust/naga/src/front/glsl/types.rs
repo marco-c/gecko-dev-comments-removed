@@ -300,20 +300,7 @@ impl Parser {
         meta: Span,
     ) -> Result<Handle<Type>> {
         self.typifier_grow(ctx, expr, meta)?;
-        let resolution = &ctx.typifier[expr];
-        Ok(match *resolution {
-            
-            crate::proc::TypeResolution::Handle(ty) => ty,
-            
-            crate::proc::TypeResolution::Value(_) => match resolution.clone() {
-                
-                crate::proc::TypeResolution::Handle(ty) => ty,
-                
-                crate::proc::TypeResolution::Value(inner) => {
-                    self.module.types.insert(Type { name: None, inner }, meta)
-                }
-            },
-        })
+        Ok(ctx.typifier.register_type(expr, &mut self.module.types))
     }
 
     

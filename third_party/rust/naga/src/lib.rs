@@ -185,8 +185,6 @@
 
 
 
-
-
 #![allow(
     clippy::new_without_default,
     clippy::unneeded_field_pattern,
@@ -533,6 +531,14 @@ pub enum StorageFormat {
     Rgba32Uint,
     Rgba32Sint,
     Rgba32Float,
+
+    
+    R16Unorm,
+    R16Snorm,
+    Rg16Unorm,
+    Rg16Snorm,
+    Rgba16Unorm,
+    Rgba16Snorm,
 }
 
 

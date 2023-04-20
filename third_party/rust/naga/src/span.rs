@@ -19,6 +19,14 @@ impl Span {
     }
 
     
+    pub const fn until(&self, other: &Self) -> Self {
+        Span {
+            start: self.start,
+            end: other.end,
+        }
+    }
+
+    
     
     pub fn subsume(&mut self, other: Self) {
         *self = if !self.is_defined() {
@@ -82,6 +90,15 @@ impl From<Range<usize>> for Span {
             start: range.start as u32,
             end: range.end as u32,
         }
+    }
+}
+
+impl std::ops::Index<Span> for str {
+    type Output = str;
+
+    #[inline]
+    fn index(&self, span: Span) -> &str {
+        &self[span.start as usize..span.end as usize]
     }
 }
 
