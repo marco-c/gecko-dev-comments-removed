@@ -491,8 +491,11 @@ int SimulcastEncoderAdapter::Encode(
     
     
     std::vector<VideoFrameType> stream_frame_types(
-        bypass_mode_ ? total_streams_count_ : 1,
+        bypass_mode_
+            ? std::max<unsigned char>(codec_.numberOfSimulcastStreams, 1)
+            : 1,
         VideoFrameType::kVideoFrameDelta);
+
     bool keyframe_requested = false;
     if (is_keyframe_needed) {
       std::fill(stream_frame_types.begin(), stream_frame_types.end(),
@@ -501,15 +504,12 @@ int SimulcastEncoderAdapter::Encode(
     } else if (frame_types) {
       if (bypass_mode_) {
         
-        
-        for (const auto& frame_type : *frame_types) {
-          if (frame_type == VideoFrameType::kVideoFrameKey) {
-            std::fill(stream_frame_types.begin(), stream_frame_types.end(),
-                      VideoFrameType::kVideoFrameKey);
-            keyframe_requested = true;
-            break;
-          }
-        }
+        RTC_DCHECK_EQ(frame_types->size(), stream_frame_types.size());
+        stream_frame_types = *frame_types;
+        keyframe_requested =
+            absl::c_any_of(*frame_types, [](const VideoFrameType frame_type) {
+              return frame_type == VideoFrameType::kVideoFrameKey;
+            });
       } else {
         size_t stream_idx = static_cast<size_t>(layer.stream_idx());
         if (frame_types->size() >= stream_idx &&

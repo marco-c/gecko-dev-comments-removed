@@ -35,6 +35,7 @@ class SimulcastTestFixtureImpl final : public SimulcastTestFixture {
 
   
   void TestKeyFrameRequestsOnAllStreams() override;
+  void TestKeyFrameRequestsOnSpecificStreams() override;
   void TestPaddingAllStreams() override;
   void TestPaddingTwoStreams() override;
   void TestPaddingTwoStreamsOneMaxedOut() override;
