@@ -3,13 +3,6 @@
 const { AboutWelcomeParent } = ChromeUtils.import(
   "resource:///actors/AboutWelcomeParent.jsm"
 );
-const {
-  assertFirefoxViewTabSelected,
-  closeFirefoxViewTab,
-} = ChromeUtils.importESModule(
-  "resource://testing-common/FirefoxViewTestUtils.sys.mjs"
-);
-
 const { AWScreenUtils } = ChromeUtils.import(
   "resource://activity-stream/lib/AWScreenUtils.jsm"
 );
@@ -240,7 +233,7 @@ add_task(async function test_aboutwelcome_mr_template_get_started() {
   await popPrefs();
 });
 
-add_task(async function test_aboutwelcome_show_firefox_view() {
+add_task(async function test_aboutwelcome_gratitude() {
   const TEST_CONTENT = [
     {
       id: "AW_GRATITUDE",
@@ -262,15 +255,6 @@ add_task(async function test_aboutwelcome_show_firefox_view() {
             string_id: "mr2022-onboarding-gratitude-primary-button-label",
           },
           action: {
-            type: "OPEN_FIREFOX_VIEW",
-            navigate: true,
-          },
-        },
-        secondary_button: {
-          label: {
-            string_id: "mr2022-onboarding-gratitude-secondary-button-label",
-          },
-          action: {
             navigate: true,
           },
         },
@@ -283,19 +267,26 @@ add_task(async function test_aboutwelcome_show_firefox_view() {
   
   await test_screen_content(
     browser,
+    "doesn't render secondary button on gratitude screen",
     
-    ["main.UPGRADE_GRATITUDE"],
+    ["main.AW_GRATITUDE", "button[value='primary_button']"],
+
     
-    []
+    ["button[value='secondary_button']"]
   );
   await clickVisibleButton(browser, ".action-buttons button.primary");
 
   
-  await BrowserTestUtils.waitForEvent(gBrowser, "TabSwitchDone");
-  assertFirefoxViewTabSelected(gBrowser.ownerGlobal);
+  await test_screen_content(
+    browser,
+    
+    ["body.activity-stream"],
+
+    
+    ["main.AW_GRATITUDE"]
+  );
 
   
   await SpecialPowers.popPrefEnv(); 
-  closeFirefoxViewTab(gBrowser.ownerGlobal);
   await cleanup();
 });
