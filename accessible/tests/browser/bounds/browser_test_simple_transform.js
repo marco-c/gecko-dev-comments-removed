@@ -5,6 +5,9 @@
 "use strict";
 
 
+loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
+
+
 addAccessibleTask(
   `<p id="translate">hello world</p>`,
   async function(browser, iframeDocAcc, contentDocAcc) {
@@ -111,6 +114,35 @@ addAccessibleTask(
     }
     await testBoundsWithContent(docAcc, "willChangeTopP2", browser);
     await testBoundsWithContent(docAcc, "willChangeInnerP2", browser);
+  },
+  { topLevel: true, iframe: true, remoteIframe: true }
+);
+
+
+addAccessibleTask(
+  `
+<div id="div-transform" style="transform:translate(100px,100px);">
+  <p>test</p>
+</div>
+
+<div id="div-presentational" role="presentation" style="transform:translate(100px,100px);">
+  <p>test</p>
+</div>
+  `,
+  async function(browser, docAcc) {
+    const tree = { SECTION: [{ PARAGRAPH: [{ TEXT_LEAF: [] }] }] };
+
+    const divWithTransform = findAccessibleChildByID(docAcc, "div-transform");
+    testAccessibleTree(divWithTransform, tree);
+    await testBoundsWithContent(docAcc, "div-transform", browser);
+
+    
+    const divPresentational = findAccessibleChildByID(
+      docAcc,
+      "div-presentational"
+    );
+    testAccessibleTree(divPresentational, tree);
+    await testBoundsWithContent(docAcc, "div-presentational", browser);
   },
   { topLevel: true, iframe: true, remoteIframe: true }
 );

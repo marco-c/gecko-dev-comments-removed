@@ -107,7 +107,18 @@ using namespace mozilla::dom;
 
 
 static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
-  if (aContent->GetPrimaryFrame()->IsFocusable()) return true;
+  nsIFrame* frame = aContent->GetPrimaryFrame();
+  MOZ_ASSERT(frame);
+  if (frame->IsFocusable()) {
+    return true;
+  }
+
+  
+  
+  
+  if (frame->IsTransformed()) {
+    return true;
+  }
 
   if (aContent->IsElement()) {
     uint32_t attrCount = aContent->AsElement()->GetAttrCount();
