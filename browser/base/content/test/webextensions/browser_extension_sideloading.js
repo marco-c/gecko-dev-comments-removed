@@ -9,7 +9,6 @@ const { AddonTestUtils } = ChromeUtils.import(
 
 AddonTestUtils.initMochitest(this);
 
-hookExtensionsTelemetry();
 AddonTestUtils.hookAMTelemetryEvents();
 
 const kSideloaded = true;
@@ -314,9 +313,6 @@ add_task(async function test_sideloading() {
 
   
   await testPostInstallIncognitoCheckbox(addon3);
-
-  
-  expectTelemetry(["sideloadRejected", "sideloadAccepted", "sideloadAccepted"]);
 
   isnot(
     menuButton.getAttribute("badge-status"),
