@@ -201,8 +201,6 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
     getSelectedSourceTextContent,
     getSymbols,
     getBreakableLines,
-    getSourceActorsForSource,
-    getSourceActorBreakableLines,
   } = dbg.selectors;
 
   return waitForState(
@@ -226,23 +224,7 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         }
       }
 
-      
-      if (!getSymbols(source)) {
-        return false;
-      }
-
-      
-      if (source.isHTML) {
-        
-        
-        
-        const sourceActors = getSourceActorsForSource(source.id);
-        const allSourceActorsProcessed = sourceActors.every(
-          sourceActor => !!getSourceActorBreakableLines(sourceActor.id)
-        );
-        return allSourceActorsProcessed;
-      }
-      return getBreakableLines(source.id);
+      return getSymbols(source) && getBreakableLines(source.id);
     },
     "selected source"
   );
@@ -856,35 +838,8 @@ function deleteExpression(dbg, input) {
 
 
 async function reload(dbg, ...sources) {
-  await reloadBrowser();
-  return waitForSources(dbg, ...sources);
-}
-
-
-
-
-
-
-
-async function reloadWhenPausedBeforePageLoaded(dbg, ...sources) {
   
-  
-  const { resourceCommand } = dbg.commands;
-  const {
-    onResource: onTopLevelDomLoading,
-  } = await resourceCommand.waitForNextResource(
-    resourceCommand.TYPES.DOCUMENT_EVENT,
-    {
-      ignoreExistingResources: true,
-      predicate: resource =>
-        resource.targetFront.isTopLevel && resource.name === "dom-loading",
-    }
-  );
-
-  gBrowser.reloadTab(gBrowser.selectedTab);
-
-  info("Wait for DOCUMENT_EVENT dom-loading after reload");
-  await onTopLevelDomLoading;
+  await reloadBrowser({ waitForLoad: false });
   return waitForSources(dbg, ...sources);
 }
 

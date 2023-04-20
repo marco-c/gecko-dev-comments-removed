@@ -45,32 +45,21 @@ async function testSourcesOnNavigation() {
 async function testDebuggerPauseStateOnNavigation() {
   info("Test the debugger pause state when navigating using the BFCache");
 
-  info("Open debugger on the first page");
   const dbg = await initDebugger("doc-bfcache1.html");
 
   await addBreakpoint(dbg, "doc-bfcache1.html", 4);
 
-  info("Navigate to the second page");
   await navigate(dbg, "doc-bfcache2.html");
   await waitForSources(dbg, "doc-bfcache2.html");
 
-  info("Navigate back to the first page (which should resurect from bfcache)");
   await goBack(`${EXAMPLE_URL}doc-bfcache1.html`);
   await waitForSources(dbg, "doc-bfcache1.html");
 
-  
-  
-  
-  
-  info("Reload the first page (which was in bfcache)");
-  await reloadWhenPausedBeforePageLoaded(dbg);
+  await reload(dbg);
   await waitForPaused(dbg);
 
   ok(dbg.toolbox.isHighlighted("jsdebugger"), "Debugger is highlighted");
 
-  info(
-    "Navigate forward to the second page (which should also coming from bfcache)"
-  );
   await goForward(`${EXAMPLE_URL}doc-bfcache2.html`);
 
   await waitUntil(() => !dbg.toolbox.isHighlighted("jsdebugger"));

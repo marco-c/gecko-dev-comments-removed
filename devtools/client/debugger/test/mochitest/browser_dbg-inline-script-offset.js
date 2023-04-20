@@ -6,35 +6,11 @@
 
 "use strict";
 
-const TEST_PAGE = "doc-inline-script-offset.html";
-
 add_task(async function() {
-  const dbg = await initDebugger(TEST_PAGE);
-  await selectSource(dbg, TEST_PAGE);
-
-  
-  await assertBreakableLines(dbg, TEST_PAGE, 16, [
-    ...getRange(3, 5),
-    ...getRange(11, 13),
-    15,
-  ]);
-
-  await reload(dbg, TEST_PAGE);
-
-  
-  await assertBreakableLines(dbg, TEST_PAGE, 16, [
-    ...getRange(3, 5),
-    ...getRange(11, 13),
-    15,
-  ]);
-
-  await addBreakpoint(dbg, "doc-inline-script-offset.html", 15, 66);
-
-  const onReloaded = reload(dbg);
+  const dbg = await initDebugger("doc-inline-script-offset.html");
+  await selectSource(dbg, "doc-inline-script-offset.html");
+  await addBreakpoint(dbg, "doc-inline-script-offset.html", 6, 66);
+  await reload(dbg);
   await waitForPaused(dbg);
   ok(true, "paused after reloading at column breakpoint");
-
-  await resume(dbg);
-  info("Wait for reload to complete after resume");
-  await onReloaded;
 });
