@@ -5,16 +5,13 @@
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 use std::fs;
-use std::io;
 use std::num::NonZeroU64;
 use std::path::Path;
 use std::str;
 use std::sync::RwLock;
 
-use crate::ErrorKind;
-
 use rkv::migrator::Migrator;
-use rkv::{MigrateError, StoreError, StoreOptions};
+use rkv::StoreOptions;
 
 
 
@@ -84,6 +81,8 @@ fn delete_lmdb_database(path: &Path) {
 
 
 pub fn migrate(path: &Path, dst_env: &Rkv) {
+    use rkv::{MigrateError, StoreError};
+
     log::debug!("Migrating files in {}", path.display());
 
     
@@ -709,22 +708,7 @@ impl Database {
             writer.commit()?;
             Ok(())
         });
-
         if let Err(e) = res {
-            
-            
-            
-            if let ErrorKind::Rkv(StoreError::IoError(ioerr)) = e.kind() {
-                if let io::ErrorKind::NotFound = ioerr.kind() {
-                    log::debug!(
-                        "Could not clear store for lifetime {:?}: {:?}",
-                        lifetime,
-                        ioerr
-                    );
-                    return;
-                }
-            }
-
             log::warn!("Could not clear store for lifetime {:?}: {:?}", lifetime, e);
         }
     }
