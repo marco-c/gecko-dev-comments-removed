@@ -115,6 +115,11 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   
   uint16_t GetNextFrameId() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
+  void AddExistingFramesInFlightForStreamToComparator(size_t stream_index,
+                                                      StreamState& stream_state,
+                                                      size_t peer_index)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+
   
   void ReportResults();
   void ReportResults(const std::string& test_case_name,
