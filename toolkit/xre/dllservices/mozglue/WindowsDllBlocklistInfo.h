@@ -33,6 +33,7 @@ struct DllBlockInfoT {
   
   
   
+  
   enum Flags {
     FLAGS_DEFAULT = 0,
     BLOCK_WIN7_AND_OLDER = 1 << 0,
@@ -43,6 +44,7 @@ struct DllBlockInfoT {
     REDIRECT_TO_NOOP_ENTRYPOINT = 1 << 5,
     UTILITY_PROCESSES_ONLY = 1 << 6,
     SOCKET_PROCESSES_ONLY = 1 << 7,
+    GPU_PROCESSES_ONLY = 1 << 8,
   } mFlags;
 
   bool IsVersionBlocked(const uint64_t aOther) const {

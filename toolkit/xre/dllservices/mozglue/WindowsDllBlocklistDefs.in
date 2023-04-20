@@ -330,6 +330,14 @@ CHILD_PROCESSES += [
     DllBlocklistEntry("hmpalert.dll", (3, 8, 8, 889)),
 ]
 
+GPU_PROCESSES += [
+]
+
+GPU_PROCESSES_TESTS += [
+    
+    DllBlocklistEntry("testdllblocklist_gpuprocessonly.dll", ALL_VERSIONS),
+]
+
 SOCKET_PROCESSES += [
     
     DllBlocklistEntry("ipseng64.dll", (17, 2, 6, 25)),
