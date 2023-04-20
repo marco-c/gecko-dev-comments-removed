@@ -23,6 +23,7 @@
 #include "nsNetCID.h"
 #include "nsCRT.h"
 #include "nsSimpleNestedURI.h"
+#include "nsSocketTransport2.h"
 #include "nsTArray.h"
 #include "nsIConsoleService.h"
 #include "nsIUploadChannel2.h"
@@ -64,10 +65,7 @@
 #include "mozilla/StaticPrefs_security.h"
 #include "nsNSSComponent.h"
 #include "ssl.h"
-
-#ifdef MOZ_WIDGET_GTK
-#  include "nsGIOProtocolHandler.h"
-#endif
+#include "StaticComponents.h"
 
 namespace mozilla {
 namespace net {
@@ -88,6 +86,7 @@ using mozilla::dom::ServiceWorkerDescriptor;
 #define NETWORK_CAPTIVE_PORTAL_PREF "network.captive-portal-service.enabled"
 #define WEBRTC_PREF_PREFIX "media.peerconnection."
 #define NETWORK_DNS_PREF "network.dns."
+#define FORCE_EXTERNAL_PREF_PREFIX "network.protocol-handler.external."
 
 #define MAX_RECURSION_COUNT 50
 
@@ -213,6 +212,7 @@ static const char* gCallbackPrefs[] = {
     NECKO_BUFFER_CACHE_COUNT_PREF,
     NECKO_BUFFER_CACHE_SIZE_PREF,
     NETWORK_CAPTIVE_PORTAL_PREF,
+    FORCE_EXTERNAL_PREF_PREFIX,
     nullptr,
 };
 
@@ -846,121 +846,65 @@ nsresult nsIOService::AsyncOnChannelRedirect(
   return NS_OK;
 }
 
-nsresult nsIOService::CacheProtocolHandler(const char* scheme,
-                                           nsIProtocolHandler* handler) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  for (unsigned int i = 0; i < NS_N(gScheme); i++) {
-    if (!nsCRT::strcasecmp(scheme, gScheme[i])) {
-      nsresult rv;
-      NS_ASSERTION(!mWeakHandler[i], "Protocol handler already cached");
-      
-      nsCOMPtr<nsISupportsWeakReference> factoryPtr =
-          do_QueryInterface(handler, &rv);
-      if (!factoryPtr) {
-        
-        
-#ifdef DEBUG_dp
-        printf(
-            "DEBUG: %s protcol handler doesn't support weak ref. Not cached.\n",
-            scheme);
-#endif 
-        return NS_ERROR_FAILURE;
-      }
-      mWeakHandler[i] = do_GetWeakReference(handler);
-      return NS_OK;
-    }
-  }
-  return NS_ERROR_FAILURE;
-}
-
-nsresult nsIOService::GetCachedProtocolHandler(const char* scheme,
-                                               nsIProtocolHandler** result,
-                                               uint32_t start, uint32_t end) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  uint32_t len = end - start - 1;
-  for (unsigned int i = 0; i < NS_N(gScheme); i++) {
-    if (!mWeakHandler[i]) continue;
-
-    
-    
-    if (end ? (!nsCRT::strncasecmp(scheme + start, gScheme[i], len) &&
-               gScheme[i][len] == '\0')
-            : (!nsCRT::strcasecmp(scheme, gScheme[i]))) {
-      return CallQueryReferent(mWeakHandler[i].get(), result);
-    }
-  }
-  return NS_ERROR_FAILURE;
-}
-
-static bool UsesExternalProtocolHandler(const char* aScheme) {
-  if ("file"_ns.Equals(aScheme) || "chrome"_ns.Equals(aScheme) ||
-      "resource"_ns.Equals(aScheme)) {
+bool nsIOService::UsesExternalProtocolHandler(const nsACString& aScheme) {
+  if (aScheme == "file"_ns || aScheme == "chrome"_ns ||
+      aScheme == "resource"_ns) {
     
     
     
     return false;
   }
 
-  for (const auto& forcedExternalScheme : gForcedExternalSchemes) {
-    if (!nsCRT::strcasecmp(forcedExternalScheme, aScheme)) {
+  if (aScheme == "place"_ns || aScheme == "fake-favicon-uri"_ns ||
+      aScheme == "favicon"_ns || aScheme == "moz-nullprincipal"_ns) {
+    
+    
+    
+    return true;
+  }
+
+  
+  for (const auto& scheme : mForceExternalSchemes) {
+    if (aScheme == scheme) {
       return true;
     }
   }
+  return false;
+}
 
-  nsAutoCString pref("network.protocol-handler.external.");
-  pref += aScheme;
+ProtocolHandlerInfo nsIOService::LookupProtocolHandler(
+    const nsACString& aScheme) {
+  
+  
+  nsAutoCString scheme(aScheme);
+  ToLowerCase(scheme);
 
-  return Preferences::GetBool(pref.get(), false);
+  
+  
+  
+  AutoReadLock lock(mLock);
+  if (!UsesExternalProtocolHandler(scheme)) {
+    
+    
+    if (const xpcom::StaticProtocolHandler* handler =
+            xpcom::StaticProtocolHandler::Lookup(scheme)) {
+      return ProtocolHandlerInfo(*handler);
+    }
+    if (auto handler = mRuntimeProtocolHandlers.Lookup(scheme)) {
+      return ProtocolHandlerInfo(handler.Data());
+    }
+  }
+  return ProtocolHandlerInfo(xpcom::StaticProtocolHandler::Default());
 }
 
 NS_IMETHODIMP
 nsIOService::GetProtocolHandler(const char* scheme,
                                 nsIProtocolHandler** result) {
-  nsresult rv;
-
+  AssertIsOnMainThread();
   NS_ENSURE_ARG_POINTER(scheme);
-  
-  
-  
 
-  rv = GetCachedProtocolHandler(scheme, result);
-  if (NS_SUCCEEDED(rv)) return rv;
-
-  if (scheme[0] != '\0' && !UsesExternalProtocolHandler(scheme)) {
-    nsAutoCString contractID(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX);
-    contractID += scheme;
-    ToLowerCase(contractID);
-
-    rv = CallGetService(contractID.get(), result);
-    if (NS_SUCCEEDED(rv)) {
-      CacheProtocolHandler(scheme, *result);
-      return rv;
-    }
-
-#ifdef MOZ_WIDGET_GTK
-    
-    
-
-    RefPtr<nsGIOProtocolHandler> gioHandler =
-        nsGIOProtocolHandler::GetSingleton();
-    if (gioHandler->IsSupportedProtocol(nsCString(scheme))) {
-      gioHandler.forget(result);
-      return NS_OK;
-    }
-#endif
-  }
-
-  
-  
-  
-  
-
-  rv = CallGetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "default", result);
-  if (NS_FAILED(rv)) return NS_ERROR_UNKNOWN_PROTOCOL;
-
-  return rv;
+  *result = LookupProtocolHandler(nsDependentCString(scheme)).Handler().take();
+  return *result ? NS_OK : NS_ERROR_UNKNOWN_PROTOCOL;
 }
 
 NS_IMETHODIMP
@@ -1016,19 +960,32 @@ nsIOService::HostnameIsSharedIPAddress(nsIURI* aURI, bool* aResult) {
 
 NS_IMETHODIMP
 nsIOService::GetProtocolFlags(const char* scheme, uint32_t* flags) {
-  nsCOMPtr<nsIProtocolHandler> handler;
-  nsresult rv = GetProtocolHandler(scheme, getter_AddRefs(handler));
-  if (NS_FAILED(rv)) return rv;
+  NS_ENSURE_ARG_POINTER(scheme);
 
-  
-  
-  
-  rv = handler->GetProtocolFlags(flags);
-#if !IS_ORIGIN_IS_FULL_SPEC_DEFINED
-  MOZ_RELEASE_ASSERT(!(*flags & nsIProtocolHandler::ORIGIN_IS_FULL_SPEC),
-                     "ORIGIN_IS_FULL_SPEC is unsupported but used");
-#endif
-  return rv;
+  *flags =
+      LookupProtocolHandler(nsDependentCString(scheme)).StaticProtocolFlags();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsIOService::GetDynamicProtocolFlags(nsIURI* uri, uint32_t* flags) {
+  AssertIsOnMainThread();
+  NS_ENSURE_ARG(uri);
+
+  nsAutoCString scheme;
+  nsresult rv = uri->GetScheme(scheme);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return LookupProtocolHandler(scheme).DynamicProtocolFlags(uri, flags);
+}
+
+NS_IMETHODIMP
+nsIOService::GetDefaultPort(const char* scheme, int32_t* defaultPort) {
+  NS_ENSURE_ARG_POINTER(scheme);
+
+  *defaultPort =
+      LookupProtocolHandler(nsDependentCString(scheme)).DefaultPort();
+  return NS_OK;
 }
 
 class AutoIncrement {
@@ -1154,10 +1111,6 @@ nsresult nsIOService::NewChannelFromURIWithProxyFlagsInternal(
 
   nsCOMPtr<nsIProtocolHandler> handler;
   rv = GetProtocolHandler(scheme.get(), getter_AddRefs(handler));
-  if (NS_FAILED(rv)) return rv;
-
-  uint32_t protoFlags;
-  rv = handler->DoGetProtocolFlags(aURI, &protoFlags);
   if (NS_FAILED(rv)) return rv;
 
   nsCOMPtr<nsIChannel> channel;
@@ -1464,7 +1417,7 @@ nsIOService::AllowPort(int32_t inPort, const char* scheme, bool* _retval) {
 
   nsTArray<int32_t> restrictedPortList;
   {
-    MutexAutoLock lock(mMutex);
+    AutoReadLock lock(mLock);
     restrictedPortList.Assign(mRestrictedPortList);
   }
   
@@ -1558,13 +1511,30 @@ void nsIOService::PrefsChanged(const char* pref) {
       }
     }
   }
+
+  if (!pref || strncmp(pref, FORCE_EXTERNAL_PREF_PREFIX,
+                       strlen(FORCE_EXTERNAL_PREF_PREFIX)) == 0) {
+    nsTArray<nsCString> prefs;
+    if (nsIPrefBranch* prefRootBranch = Preferences::GetRootBranch()) {
+      prefRootBranch->GetChildList(FORCE_EXTERNAL_PREF_PREFIX, prefs);
+    }
+    nsTArray<nsCString> forceExternalSchemes;
+    for (const auto& pref : prefs) {
+      if (Preferences::GetBool(pref.get(), false)) {
+        forceExternalSchemes.AppendElement(
+            Substring(pref, strlen(FORCE_EXTERNAL_PREF_PREFIX)));
+      }
+    }
+    AutoWriteLock lock(mLock);
+    mForceExternalSchemes = std::move(forceExternalSchemes);
+  }
 }
 
 void nsIOService::ParsePortList(const char* pref, bool remove) {
   nsAutoCString portList;
   nsTArray<int32_t> restrictedPortList;
   {
-    MutexAutoLock lock(mMutex);
+    AutoWriteLock lock(mLock);
     restrictedPortList.Assign(std::move(mRestrictedPortList));
   }
   
@@ -1605,7 +1575,7 @@ void nsIOService::ParsePortList(const char* pref, bool remove) {
     }
   }
 
-  MutexAutoLock lock(mMutex);
+  AutoWriteLock lock(mLock);
   mRestrictedPortList.Assign(std::move(restrictedPortList));
 }
 
@@ -1713,6 +1683,13 @@ nsIOService::Observe(nsISupports* subject, const char* topic,
                                        gCallbackSecurityPrefs, this);
       PrepareForShutdownInSocketProcess();
     }
+
+    
+    
+    {
+      AutoWriteLock lock(mLock);
+      mRuntimeProtocolHandlers.Clear();
+    }
   } else if (!strcmp(topic, NS_NETWORK_LINK_TOPIC)) {
     OnNetworkLinkEvent(NS_ConvertUTF16toUTF8(data).get());
   } else if (!strcmp(topic, NS_NETWORK_ID_CHANGED_TOPIC)) {
@@ -1755,13 +1732,16 @@ nsIOService::ProtocolHasFlags(nsIURI* uri, uint32_t flags, bool* result) {
   nsresult rv = uri->GetScheme(scheme);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  auto handler = LookupProtocolHandler(scheme);
+
   uint32_t protocolFlags;
-  nsCOMPtr<nsIProtocolHandler> handler;
-  rv = GetProtocolHandler(scheme.get(), getter_AddRefs(handler));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = handler->DoGetProtocolFlags(uri, &protocolFlags);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (flags & nsIProtocolHandler::DYNAMIC_URI_FLAGS) {
+    AssertIsOnMainThread();
+    rv = handler.DynamicProtocolFlags(uri, &protocolFlags);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else {
+    protocolFlags = handler.StaticProtocolFlags();
+  }
 
   *result = (protocolFlags & flags) == flags;
   return NS_OK;
@@ -2119,6 +2099,60 @@ nsIOService::GetSocketProcessId(uint64_t* aPid) {
   }
 
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsIOService::RegisterProtocolHandler(const nsACString& aScheme,
+                                     nsIProtocolHandler* aHandler,
+                                     uint32_t aProtocolFlags,
+                                     int32_t aDefaultPort) {
+  if (mShutdown) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  if (aScheme.IsEmpty()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsAutoCString scheme(aScheme);
+  ToLowerCase(scheme);
+
+  AutoWriteLock lock(mLock);
+  return mRuntimeProtocolHandlers.WithEntryHandle(scheme, [&](auto&& entry) {
+    if (entry) {
+      NS_WARNING("Cannot override an existing dynamic protocol handler");
+      return NS_ERROR_FACTORY_EXISTS;
+    }
+    if (xpcom::StaticProtocolHandler::Lookup(scheme)) {
+      NS_WARNING("Cannot override an existing static protocol handler");
+      return NS_ERROR_FACTORY_EXISTS;
+    }
+    nsMainThreadPtrHandle handler(
+        new nsMainThreadPtrHolder("RuntimeProtocolHandler", aHandler));
+    entry.Insert(RuntimeProtocolHandler{
+        .mHandler = std::move(handler),
+        .mProtocolFlags = aProtocolFlags,
+        .mDefaultPort = aDefaultPort,
+    });
+    return NS_OK;
+  });
+}
+
+NS_IMETHODIMP
+nsIOService::UnregisterProtocolHandler(const nsACString& aScheme) {
+  if (mShutdown) {
+    return NS_OK;
+  }
+  if (aScheme.IsEmpty()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsAutoCString scheme(aScheme);
+  ToLowerCase(scheme);
+
+  AutoWriteLock lock(mLock);
+  return mRuntimeProtocolHandlers.Remove(scheme)
+             ? NS_OK
+             : NS_ERROR_FACTORY_NOT_REGISTERED;
 }
 
 }  
