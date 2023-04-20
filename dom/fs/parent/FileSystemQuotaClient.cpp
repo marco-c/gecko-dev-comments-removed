@@ -6,27 +6,15 @@
 
 #include "FileSystemQuotaClient.h"
 
-#include "GetDirectoryForOrigin.h"
-#include "ResultStatement.h"
-#include "datamodel/FileSystemDatabaseManager.h"
-#include "datamodel/FileSystemFileManager.h"
-#include "mozIStorageService.h"
-#include "mozStorageCID.h"
 #include "mozilla/dom/FileSystemDataManager.h"
 #include "mozilla/dom/quota/Assertions.h"
 #include "mozilla/dom/quota/Client.h"
-#include "mozilla/dom/quota/QuotaCommon.h"
-#include "mozilla/dom/quota/QuotaManager.h"
-#include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/dom/quota/UsageInfo.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "nsIFile.h"
 
 namespace mozilla::dom::fs {
 
 namespace {
-
-auto toNSResult = [](const auto& aRv) { return ToNSResult(aRv); };
 
 class QuotaClient final : public mozilla::dom::quota::Client {
  public:
@@ -77,27 +65,6 @@ class QuotaClient final : public mozilla::dom::quota::Client {
   void FinalizeShutdown() override;
 };
 
-Result<ResultConnection, QMResult> GetStorageConnection(const Origin& aOrigin) {
-  QM_TRY_INSPECT(const nsCOMPtr<nsIFile>& databaseFile,
-                 data::GetDatabaseFile(aOrigin));
-
-  QM_TRY_INSPECT(
-      const auto& storageService,
-      QM_TO_RESULT_TRANSFORM(MOZ_TO_RESULT_GET_TYPED(
-          nsCOMPtr<mozIStorageService>, MOZ_SELECT_OVERLOAD(do_GetService),
-          MOZ_STORAGE_SERVICE_CONTRACTID)));
-
-  QM_TRY_UNWRAP(
-      auto connection,
-      QM_TO_RESULT_TRANSFORM(MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-          nsCOMPtr<mozIStorageConnection>, storageService, OpenDatabase,
-          databaseFile, mozIStorageService::CONNECTION_DEFAULT)));
-
-  ResultConnection result(connection);
-
-  return result;
-}
-
 }  
 
 QuotaClient::QuotaClient() { ::mozilla::ipc::AssertIsOnBackgroundThread(); }
@@ -111,82 +78,23 @@ Result<quota::UsageInfo, nsresult> QuotaClient::InitOrigin(
     const quota::OriginMetadata& aOriginMetadata, const AtomicBool& aCanceled) {
   quota::AssertIsOnIOThread();
 
-  const Origin& origin = aOriginMetadata.mOrigin;
-
-  {
-    QM_TRY_INSPECT(const nsCOMPtr<nsIFile>& databaseFile,
-                   data::GetDatabaseFile(origin).mapErr(toNSResult));
-
-    bool exists = false;
-    QM_TRY(MOZ_TO_RESULT(databaseFile->Exists(&exists)));
-    
-    if (!exists) {
-      return quota::UsageInfo();
-    }
-  }
-
-  QM_TRY_INSPECT(const ResultConnection& conn,
-                 GetStorageConnection(origin).mapErr(toNSResult));
-
-  return data::FileSystemDatabaseManager::GetUsage(conn, origin)
-      .mapErr(toNSResult);
+  return quota::UsageInfo{};
 }
 
 nsresult QuotaClient::InitOriginWithoutTracking(
-    quota::PersistenceType ,
-    const quota::OriginMetadata& ,
-    const AtomicBool& ) {
+    quota::PersistenceType aPersistenceType,
+    const quota::OriginMetadata& aOriginMetadata, const AtomicBool& aCanceled) {
   quota::AssertIsOnIOThread();
-
-  
-  
-  
-  
-  UNKNOWN_FILE_WARNING(
-      NS_LITERAL_STRING_FROM_CSTRING(FILESYSTEM_DIRECTORY_NAME));
 
   return NS_OK;
 }
 
 Result<quota::UsageInfo, nsresult> QuotaClient::GetUsageForOrigin(
     quota::PersistenceType aPersistenceType,
-    const quota::OriginMetadata& aOriginMetadata,
-    const AtomicBool& ) {
+    const quota::OriginMetadata& aOriginMetadata, const AtomicBool& aCanceled) {
   quota::AssertIsOnIOThread();
 
-  MOZ_ASSERT(aPersistenceType ==
-             quota::PersistenceType::PERSISTENCE_TYPE_DEFAULT);
-
-#if FS_QUOTA_MANAGEMENT_ENABLED
-  quota::QuotaManager* quotaManager = quota::QuotaManager::Get();
-  MOZ_ASSERT(quotaManager);
-
-  
-  
-  return quotaManager->GetUsageForClient(aPersistenceType, aOriginMetadata,
-                                         quota::Client::FILESYSTEM);
-#else
-  const Origin& origin = aOriginMetadata.mOrigin;
-
-  {
-    QM_TRY_INSPECT(const nsCOMPtr<nsIFile>& databaseFile,
-                   data::GetDatabaseFile(origin).mapErr(toNSResult));
-
-    bool exists = false;
-    QM_TRY(MOZ_TO_RESULT(databaseFile->Exists(&exists)));
-    
-    if (!exists) {
-      return quota::UsageInfo();
-    }
-  }
-
-  
-  QM_TRY_INSPECT(const ResultConnection& conn,
-                 GetStorageConnection(origin).mapErr(toNSResult));
-
-  return data::FileSystemDatabaseManager::GetUsage(conn, origin)
-      .mapErr(toNSResult);
-#endif
+  return quota::UsageInfo{};
 }
 
 void QuotaClient::OnOriginClearCompleted(
