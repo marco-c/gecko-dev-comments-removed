@@ -343,9 +343,7 @@ struct MOZ_STACK_CLASS BidiParagraphData {
   }
 
   nsresult SetPara() {
-    if (mPresContext->GetBidiEngine()
-            .SetParagraph(mBuffer, mParaLevel)
-            .isErr()) {
+    if (mPresContext->BidiEngine().SetParagraph(mBuffer, mParaLevel).isErr()) {
       return NS_ERROR_FAILURE;
     };
     return NS_OK;
@@ -362,17 +360,17 @@ struct MOZ_STACK_CLASS BidiParagraphData {
     BidiEmbeddingLevel paraLevel = mParaLevel;
     if (paraLevel == BidiEmbeddingLevel::DefaultLTR() ||
         paraLevel == BidiEmbeddingLevel::DefaultRTL()) {
-      paraLevel = mPresContext->GetBidiEngine().GetParagraphEmbeddingLevel();
+      paraLevel = mPresContext->BidiEngine().GetParagraphEmbeddingLevel();
     }
     return paraLevel;
   }
 
   BidiEngine::ParagraphDirection GetParagraphDirection() {
-    return mPresContext->GetBidiEngine().GetParagraphDirection();
+    return mPresContext->BidiEngine().GetParagraphDirection();
   }
 
   nsresult CountRuns(int32_t* runCount) {
-    auto result = mPresContext->GetBidiEngine().CountRuns();
+    auto result = mPresContext->BidiEngine().CountRuns();
     if (result.isErr()) {
       return NS_ERROR_FAILURE;
     }
@@ -382,8 +380,8 @@ struct MOZ_STACK_CLASS BidiParagraphData {
 
   void GetLogicalRun(int32_t aLogicalStart, int32_t* aLogicalLimit,
                      BidiEmbeddingLevel* aLevel) {
-    mPresContext->GetBidiEngine().GetLogicalRun(aLogicalStart, aLogicalLimit,
-                                                aLevel);
+    mPresContext->BidiEngine().GetLogicalRun(aLogicalStart, aLogicalLimit,
+                                             aLevel);
     if (mIsVisual) {
       *aLevel = GetParagraphEmbeddingLevel();
     }
@@ -2476,7 +2474,7 @@ nsresult nsBidiPresUtils::ProcessTextForRenderingContext(
   text.ReplaceChar(kSeparators, ' ');
   return ProcessText(text.BeginReading(), text.Length(), aBaseLevel,
                      aPresContext, processor, aMode, aPosResolve,
-                     aPosResolveCount, aWidth, &aPresContext->GetBidiEngine());
+                     aPosResolveCount, aWidth, &aPresContext->BidiEngine());
 }
 
 
