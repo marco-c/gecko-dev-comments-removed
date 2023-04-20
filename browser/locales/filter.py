@@ -35,6 +35,4 @@ def test(mod, path, entity=None):
     if mod == "extensions/spellcheck":
         
         return "error"
-    if path == "defines.inc":
-        return "ignore" if entity == "MOZ_LANGPACK_CONTRIBUTORS" else "error"
     return "error"

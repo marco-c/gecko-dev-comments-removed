@@ -8,24 +8,26 @@
 
 
 
+
+
+
 from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
-import sys
-import os
-import json
-import io
 import datetime
-import requests
-import mozversioncontrol
+import io
+import json
+import logging
+import os
+import sys
+
+import fluent.syntax.ast as FTL
 import mozpack.path as mozpath
-from mozpack.chrome.manifest import (
-    Manifest,
-    ManifestLocale,
-    parse_manifest,
-)
+import mozversioncontrol
+import requests
+from fluent.syntax.parser import FluentParser
 from mozbuild.configure.util import Version
-from mozbuild.preprocessor import Preprocessor
+from mozpack.chrome.manifest import Manifest, ManifestLocale, parse_manifest
 
 
 def write_file(path, content):
@@ -128,37 +130,32 @@ def get_timestamp_for_locale(path):
 
 
 
-def parse_defines(paths):
-    pp = Preprocessor()
-    for path in paths:
-        pp.do_include(path)
-
-    return pp.context
 
 
 
+def parse_flat_ftl(path):
+    parser = FluentParser(with_spans=False)
+    try:
+        with open(path, encoding="utf-8") as file:
+            res = parser.parse(file.read())
+    except FileNotFoundError as err:
+        logging.warning(err)
+        return {}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def convert_contributors(str):
-    str = str.replace("<em:contributor>", "")
-    tokens = str.split("</em:contributor>")
-    tokens = map(lambda t: t.strip(), tokens)
-    tokens = filter(lambda t: t != "", tokens)
-    return ", ".join(tokens)
+    result = {}
+    for entry in res.body:
+        if isinstance(entry, FTL.Message) and isinstance(entry.value, FTL.Pattern):
+            flat = ""
+            for elem in entry.value.elements:
+                if isinstance(elem, FTL.TextElement):
+                    flat += elem.value
+                elif isinstance(elem.expression, FTL.Literal):
+                    flat += elem.expression.parse()["value"]
+                else:
+                    name = type(elem.expression).__name__
+                    raise Exception(f"Unsupported {name} for {entry.id.name} in {path}")
+            result[entry.id.name] = flat.strip()
+    return result
 
 
 
@@ -178,14 +175,13 @@ def convert_contributors(str):
 
 
 
-
-
-
-def build_author_string(author, contributors):
-    contrib = convert_contributors(contributors)
-    if len(contrib) == 0:
+def get_author(ftl):
+    author = ftl["langpack-creator"] if "langpack-creator" in ftl else "mozilla.org"
+    contrib = ftl["langpack-contributors"] if "langpack-contributors" in ftl else ""
+    if contrib:
+        return f"{author} (contributors: {contrib})"
+    else:
         return author
-    return "{0} (contributors: {1})".format(author, contrib)
 
 
 
@@ -392,18 +388,12 @@ def create_webmanifest(
     app_name,
     l10n_basedir,
     langpack_eid,
-    defines,
+    ftl,
     chrome_entries,
 ):
     locales = list(map(lambda loc: loc.strip(), locstr.split(",")))
     main_locale = locales[0]
-
-    author = build_author_string(
-        defines["MOZ_LANGPACK_CREATOR"],
-        defines["MOZ_LANGPACK_CONTRIBUTORS"]
-        if "MOZ_LANGPACK_CONTRIBUTORS" in defines
-        else "",
-    )
+    author = get_author(ftl)
 
     manifest = {
         "langpack_id": main_locale,
@@ -415,7 +405,7 @@ def create_webmanifest(
                 "strict_max_version": max_app_ver,
             }
         },
-        "name": "{0} Language Pack".format(defines["MOZ_LANG_TITLE"]),
+        "name": "{0} Language Pack".format(ftl["langpack-title"] or main_locale),
         "description": "Language pack for {0} for {1}".format(app_name, main_locale),
         "version": get_version_maybe_buildid(version),
         "languages": {},
@@ -466,10 +456,8 @@ def main(args):
         "--langpack-eid", help="Language pack id to use for this locale"
     )
     parser.add_argument(
-        "--defines",
-        default=[],
-        nargs="+",
-        help="List of defines files to load data from",
+        "--metadata",
+        help="FTL file defining langpack metadata",
     )
     parser.add_argument("--input", help="Langpack directory.")
 
@@ -480,7 +468,7 @@ def main(args):
         os.path.join(args.input, "chrome.manifest"), args.input, chrome_entries
     )
 
-    defines = parse_defines(args.defines)
+    ftl = parse_flat_ftl(args.metadata)
 
     
     min_app_version = args.app_version
@@ -502,7 +490,7 @@ def main(args):
         args.app_name,
         args.l10n_basedir,
         args.langpack_eid,
-        defines,
+        ftl,
         chrome_entries,
     )
     write_file(os.path.join(args.input, "manifest.json"), res)
