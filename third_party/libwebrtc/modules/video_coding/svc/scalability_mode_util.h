@@ -18,6 +18,11 @@
 
 namespace webrtc {
 
+enum class ScalabilityModeResolutionRatio {
+  kTwoToOne,    
+  kThreeToTwo,  
+};
+
 absl::optional<ScalabilityMode> ScalabilityModeFromString(
     absl::string_view scalability_mode_string);
 
@@ -27,6 +32,9 @@ InterLayerPredMode ScalabilityModeToInterLayerPredMode(
 int ScalabilityModeToNumSpatialLayers(ScalabilityMode scalability_mode);
 
 int ScalabilityModeToNumTemporalLayers(ScalabilityMode scalability_mode);
+
+absl::optional<ScalabilityModeResolutionRatio> ScalabilityModeToResolutionRatio(
+    ScalabilityMode scalability_mode);
 
 }  
 
