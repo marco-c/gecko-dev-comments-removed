@@ -262,12 +262,6 @@ class nsIGlobalObject : public nsISupports,
 
 
 
-  virtual uint32_t GetPrincipalHashValue() const { return 0; }
-
-  
-
-
-
   virtual JS::loader::ModuleLoaderBase* GetModuleLoader(JSContext* aCx) {
     return nullptr;
   }
@@ -283,8 +277,6 @@ class nsIGlobalObject : public nsISupports,
 
  protected:
   virtual ~nsIGlobalObject();
-
-  virtual bool IsSystemPrincipal() const;
 
   void StartDying() { mIsDying = true; }
 
