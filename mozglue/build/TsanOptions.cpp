@@ -295,6 +295,12 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "thread:glean::initialize\n"
 
+         
+         
+         
+         
+         "race:libvulkan_lvp.so\n"
+
       
       ;  
 }
