@@ -175,6 +175,47 @@ def parse_flat_ftl(path):
 
 
 
+
+
+
+
+
+def get_title_and_description(app, locale):
+    dir = os.path.dirname(__file__)
+    with open(os.path.join(dir, "langpack_localeNames.json"), encoding="utf-8") as nf:
+        names = json.load(nf)
+    if locale in names:
+        data = names[locale]
+        native = data["native"]
+        english = data["english"] if "english" in data else native
+        titleName = f"{native} ({english})" if english != native else native
+        descName = f"{native} ({locale})"
+    else:
+        titleName = locale
+        descName = locale
+
+    title = f"Language Pack: {titleName}"
+    description = f"{app} Language Pack for {descName}"
+    return title, description
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def get_author(ftl):
     author = ftl["langpack-creator"] if "langpack-creator" in ftl else "mozilla.org"
     contrib = ftl["langpack-contributors"] if "langpack-contributors" in ftl else ""
@@ -393,6 +434,7 @@ def create_webmanifest(
 ):
     locales = list(map(lambda loc: loc.strip(), locstr.split(",")))
     main_locale = locales[0]
+    title, description = get_title_and_description(app_name, main_locale)
     author = get_author(ftl)
 
     manifest = {
@@ -405,8 +447,8 @@ def create_webmanifest(
                 "strict_max_version": max_app_ver,
             }
         },
-        "name": "{0} Language Pack".format(ftl["langpack-title"] or main_locale),
-        "description": "Language pack for {0} for {1}".format(app_name, main_locale),
+        "name": title,
+        "description": description,
         "version": get_version_maybe_buildid(version),
         "languages": {},
         "sources": {"browser": {"base_path": "browser/"}},
