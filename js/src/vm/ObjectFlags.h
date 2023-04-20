@@ -63,11 +63,6 @@ enum class ObjectFlag : uint16_t {
 
   
   UseWatchtowerTestingLog = 1 << 11,
-
-  
-  
-  
-  GenerationCountedGlobal = 1 << 12,
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;

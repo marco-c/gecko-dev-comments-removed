@@ -17,7 +17,6 @@
 #include "vm/Compartment-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Realm-inl.h"
-#include "vm/Shape-inl.h"
 
 using namespace js;
 
@@ -202,10 +201,6 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
     InvalidateMegamorphicCache(cx, obj);
   }
 
-  if (obj->isGenerationCountedGlobal()) {
-    obj->as<GlobalObject>().bumpGenerationCount();
-  }
-
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingLog())) {
     RootedValue val(cx, IdToValue(id));
     if (!AddToWatchtowerLog(cx, "remove-prop", obj, val)) {
@@ -218,27 +213,12 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
 
 
 bool Watchtower::watchPropertyChangeSlow(JSContext* cx,
-                                         Handle<NativeObject*> obj, HandleId id,
-                                         PropertyFlags flags) {
+                                         Handle<NativeObject*> obj,
+                                         HandleId id) {
   MOZ_ASSERT(watchesPropertyChange(obj));
 
   if (obj->isUsedAsPrototype() && !id.isInt()) {
     InvalidateMegamorphicCache(cx, obj);
-  }
-
-  if (obj->isGenerationCountedGlobal()) {
-    
-    
-    
-    uint32_t propIndex;
-    Rooted<PropMap*> map(cx, obj->shape()->lookup(cx, id, &propIndex));
-    MOZ_ASSERT(map);
-    PropertyInfo prop = map->getPropertyInfo(propIndex);
-    bool wasAccessor = prop.isAccessorProperty();
-    bool isAccessor = flags.isAccessorProperty();
-    if (wasAccessor != isAccessor) {
-      obj->as<GlobalObject>().bumpGenerationCount();
-    }
   }
 
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingLog())) {
