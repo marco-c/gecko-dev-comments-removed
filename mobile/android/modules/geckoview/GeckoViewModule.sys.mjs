@@ -1,18 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["GeckoViewModule"];
-
-const { GeckoViewUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/GeckoViewUtils.sys.mjs"
-);
+import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
 const { debug, warn } = GeckoViewUtils.initLogging("Module");
 
-class GeckoViewModule {
+export class GeckoViewModule {
   static initLogging(aModuleName) {
     const tag = aModuleName.replace("GeckoView", "");
     return GeckoViewUtils.initLogging(tag);
@@ -63,32 +57,32 @@ class GeckoViewModule {
     return this._info.manager;
   }
 
-  
+  // Override to initialize the browser before it is bound to the window.
   onInitBrowser() {}
 
-  
+  // Override to initialize module.
   onInit() {}
 
-  
+  // Override to cleanup when the window is closed
   onDestroy() {}
 
-  
+  // Override to detect settings change. Access settings via this.settings.
   onSettingsUpdate() {}
 
-  
+  // Override to enable module after setting a Java delegate.
   onEnable() {}
 
-  
+  // Override to disable module after clearing the Java delegate.
   onDisable() {}
 
-  
-  
+  // Override to perform actions when content module has started loading;
+  // by default, pause events so events that depend on content modules can work.
   onLoadContentModule() {
     this._eventProxy.enableQueuing(true);
   }
 
-  
-  
+  // Override to perform actions when content module has finished loading;
+  // by default, un-pause events and flush queued events.
   onContentModuleLoaded() {
     this._eventProxy.enableQueuing(false);
     this._eventProxy.dispatchQueuedEvents();
