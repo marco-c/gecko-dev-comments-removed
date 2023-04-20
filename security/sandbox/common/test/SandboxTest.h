@@ -29,11 +29,12 @@ class SandboxTest : public mozISandboxTest {
   
   
   
-  using ProcessPromise = MozPromise<SandboxTestingParent*, nsresult, true>;
+  using ProcessPromise =
+      MozPromise<RefPtr<SandboxTestingParent>, nsresult, true>;
 
  private:
   virtual ~SandboxTest() = default;
-  nsTArray<SandboxTestingParent*> mSandboxTestingParents;
+  nsTArray<RefPtr<SandboxTestingParent>> mSandboxTestingParents;
   RefPtr<gmp::GMPContentParent::CloseBlocker> mGMPContentParentWrapper;
 #if defined(XP_WIN)
   bool mChromeDirExisted = false;
