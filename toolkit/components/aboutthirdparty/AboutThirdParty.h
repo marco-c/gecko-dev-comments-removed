@@ -83,7 +83,12 @@ class AboutThirdParty final : public nsIAboutThirdParty {
 
 #if defined(MOZ_LAUNCHER_PROCESS)
   Atomic<DynamicBlocklistWriter*> mPendingWriter;
+  
+  
+  
   nsTHashSet<nsStringCaseInsensitiveHashKey> mDynamicBlocklist;
+  
+  nsTHashSet<nsStringCaseInsensitiveHashKey> mDynamicBlocklistAtLaunch;
 #endif
 
   ~AboutThirdParty() = default;
