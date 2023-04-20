@@ -55,7 +55,7 @@ void SharedSurfacesParent::MappingTracker::NotifyHandlerEnd() {
 SharedSurfacesParent::SharedSurfacesParent()
     : mTracker(
           StaticPrefs::image_mem_shared_unmap_min_expiration_ms_AtStartup(),
-          mozilla::GetCurrentSerialEventTarget()) {}
+          mozilla::GetCurrentEventTarget()) {}
 
 
 void SharedSurfacesParent::Initialize() {

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set sw=2 ts=8 et tw=80 ft=cpp : */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "WebrtcTCPSocket.h"
 
@@ -58,7 +58,7 @@ WebrtcTCPSocket::WebrtcTCPSocket(WebrtcTCPSocketCallback* aCallbacks)
       mSocketIn(nullptr),
       mSocketOut(nullptr) {
   LOG(("WebrtcTCPSocket::WebrtcTCPSocket %p\n", this));
-  mMainThread = GetMainThreadSerialEventTarget();
+  mMainThread = GetMainThreadEventTarget();
   mSocketThread = do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID);
   MOZ_RELEASE_ASSERT(mMainThread, "no main thread");
   MOZ_RELEASE_ASSERT(mSocketThread, "no socket thread");
@@ -106,7 +106,7 @@ void WebrtcTCPSocket::CloseWithReason(nsresult aReason) {
   if (!OnSocketThread()) {
     MOZ_ASSERT(NS_IsMainThread(), "not on main thread");
 
-    // Let's pretend we got an open even if we didn't to prevent an Open later.
+    
     mOpened = true;
 
     DebugOnly<nsresult> rv =
@@ -114,10 +114,10 @@ void WebrtcTCPSocket::CloseWithReason(nsresult aReason) {
             "WebrtcTCPSocket::CloseWithReason", this,
             &WebrtcTCPSocket::CloseWithReason, aReason));
 
-    // This was MOZ_ALWAYS_SUCCEEDS, but that now uses NS_WARNING_ASSERTION.
-    // In order to convert this back to MOZ_ALWAYS_SUCCEEDS we would need
-    // OnSocketThread to return true if we're shutting down and doing the
-    // "running all of STS's queued events on main" thing.
+    
+    
+    
+    
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to dispatch to STS");
 
     return;
@@ -197,8 +197,8 @@ nsresult WebrtcTCPSocket::Open(
     return NS_OK;
   }
 
-  // We need to figure out whether a proxy needs to be used for mURI before
-  // we can start on establishing a connection.
+  
+  
   rv = DoProxyConfigLookup();
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -234,7 +234,7 @@ nsresult WebrtcTCPSocket::DoProxyConfigLookup() {
     return rv;
   }
 
-  // We pick back up in OnProxyAvailable
+  
 
   return NS_OK;
 }
@@ -346,8 +346,8 @@ void WebrtcTCPSocket::OpenWithoutHttpProxy(nsIProxyInfo* aSocksProxyInfo) {
     return;
   }
 
-  // Binding to a V4 address is not sufficient to cause this socket to use
-  // V4, and the same goes for V6. So, we disable as needed here.
+  
+  
   uint32_t flags = 0;
   if (addr.raw.family == AF_INET) {
     flags |= nsISocketTransport::DISABLE_IPV6;
@@ -401,12 +401,12 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
   nsCOMPtr<nsILoadInfo> loadInfo;
   Maybe<net::LoadInfoArgs> loadInfoArgs = Some(mProxyConfig->loadInfoArgs());
 
-  // FIXME: We don't know the remote type of the process which provided these
-  // LoadInfoArgs. Pass in `NOT_REMOTE_TYPE` as the origin process to blindly
-  // accept whatever value was passed by the other side for now, as we aren't
-  // using it for security checks here.
-  // If this code ever starts checking the triggering remote type, this needs to
-  // be changed.
+  
+  
+  
+  
+  
+  
   rv = ipc::LoadInfoArgsToLoadInfo(loadInfoArgs, NOT_REMOTE_TYPE,
                                    getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
@@ -414,20 +414,20 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
     return rv;
   }
 
-  // -need to always tunnel since we're using a proxy
-  // -there shouldn't be an opportunity to send cookies, but explicitly disallow
-  // them anyway.
-  // -the previous proxy tunnel didn't support redirects e.g. 307. don't need to
-  // introduce new behavior. can't follow redirects on connect anyway.
+  
+  
+  
+  
+  
   nsCOMPtr<nsIChannel> localChannel;
   rv = ioService->NewChannelFromURIWithProxyFlags(
       mURI, nullptr,
-      // Proxy flags are overridden by SetConnectOnly()
+      
       0, loadInfo->LoadingNode(), loadInfo->GetLoadingPrincipal(),
       loadInfo->TriggeringPrincipal(),
       nsILoadInfo::SEC_COOKIES_OMIT |
-          // We need this flag to allow loads from any origin since this channel
-          // is being used to CONNECT to an HTTP proxy.
+          
+          
           nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
       nsIContentPolicy::TYPE_PROXIED_WEBRTC_MEDIA,
       getter_AddRefs(localChannel));
@@ -451,8 +451,8 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
 
   httpChannel->SetNotificationCallbacks(this);
 
-  // don't block webrtc proxy setup with other requests
-  // often more than one of these channels will be created all at once by ICE
+  
+  
   nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(localChannel);
   if (cos) {
     cos->AddClassFlags(nsIClassOfService::Unblocked |
@@ -478,9 +478,9 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
     return rv;
   }
 
-  // This picks back up in OnTransportAvailable once we have connected to the
-  // proxy, and performed the http upgrade to switch the proxy into passthrough
-  // mode.
+  
+  
+  
 
   return NS_OK;
 }
@@ -553,21 +553,21 @@ void WebrtcTCPSocket::InvokeOnRead(nsTArray<uint8_t>&& aReadData) {
   mProxyCallbacks->OnRead(std::move(aReadData));
 }
 
-// nsIHttpUpgradeListener
+
 NS_IMETHODIMP
 WebrtcTCPSocket::OnTransportAvailable(nsISocketTransport* aTransport,
                                       nsIAsyncInputStream* aSocketIn,
                                       nsIAsyncOutputStream* aSocketOut) {
-  // This is called only in the http proxy case, once we have connected to the
-  // http proxy and performed the http upgrade to switch it over to passthrough
-  // mode. That process is started async by OpenWithHttpProxy.
+  
+  
+  
   LOG(("WebrtcTCPSocket::OnTransportAvailable %p\n", this));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(!mTransport,
              "already called transport available on webrtc TCP socket");
 
-  // Cancel any pending callbacks. The caller doesn't always cancel these
-  // awaits. We need to make sure they don't get them.
+  
+  
   aSocketIn->AsyncWait(nullptr, 0, 0, nullptr);
   aSocketOut->AsyncWait(nullptr, 0, 0, nullptr);
 
@@ -580,7 +580,7 @@ WebrtcTCPSocket::OnTransportAvailable(nsISocketTransport* aTransport,
   mSocketIn = aSocketIn;
   mSocketOut = aSocketOut;
 
-  // pulled from nr_socket_prsock.cpp
+  
   uint32_t minBufferSize = 256 * 1024;
   nsresult rv = mTransport->SetSendBufferSize(minBufferSize);
   if (NS_FAILED(rv)) {
@@ -601,10 +601,10 @@ WebrtcTCPSocket::OnTransportAvailable(nsISocketTransport* aTransport,
 
 void WebrtcTCPSocket::FinishOpen() {
   MOZ_ASSERT(OnSocketThread());
-  // mTransport, mSocketIn, and mSocketOut are all set. We may have set them in
-  // OnTransportAvailable (in the http/https proxy case), or in
-  // OpenWithoutHttpProxy. From here on out, this class functions the same for
-  // these two cases.
+  
+  
+  
+  
 
   mSocketIn->AsyncWait(this, 0, 0, nullptr);
 
@@ -634,7 +634,7 @@ WebrtcTCPSocket::OnWebSocketConnectionAvailable(
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-// nsIRequestObserver (from nsIStreamListener)
+
 NS_IMETHODIMP
 WebrtcTCPSocket::OnStartRequest(nsIRequest* aRequest) {
   LOG(("WebrtcTCPSocket::OnStartRequest %p\n", this));
@@ -647,7 +647,7 @@ WebrtcTCPSocket::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   LOG(("WebrtcTCPSocket::OnStopRequest %p status=%u\n", this,
        static_cast<uint32_t>(aStatusCode)));
 
-  // see nsHttpChannel::ProcessFailedProxyConnect for most error codes
+  
   if (NS_FAILED(aStatusCode)) {
     CloseWithReason(aStatusCode);
     return aStatusCode;
@@ -656,7 +656,7 @@ WebrtcTCPSocket::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   return NS_OK;
 }
 
-// nsIStreamListener
+
 NS_IMETHODIMP
 WebrtcTCPSocket::OnDataAvailable(nsIRequest* aRequest,
                                  nsIInputStream* aInputStream, uint64_t aOffset,
@@ -666,7 +666,7 @@ WebrtcTCPSocket::OnDataAvailable(nsIRequest* aRequest,
   return NS_OK;
 }
 
-// nsIInputStreamCallback
+
 NS_IMETHODIMP
 WebrtcTCPSocket::OnInputStreamReady(nsIAsyncInputStream* in) {
   LOG(("WebrtcTCPSocket::OnInputStreamReady %p unwritten=%zu\n", this,
@@ -694,7 +694,7 @@ WebrtcTCPSocket::OnInputStreamReady(nsIAsyncInputStream* in) {
       return rv;
     }
 
-    // base stream closed
+    
     if (count == 0) {
       LOG(("WebrtcTCPSocket::OnInputStreamReady %p connection closed\n", this));
       CloseWithReason(NS_ERROR_FAILURE);
@@ -717,7 +717,7 @@ WebrtcTCPSocket::OnInputStreamReady(nsIAsyncInputStream* in) {
   return NS_OK;
 }
 
-// nsIOutputStreamCallback
+
 NS_IMETHODIMP
 WebrtcTCPSocket::OnOutputStreamReady(nsIAsyncOutputStream* out) {
   LOG(("WebrtcTCPSocket::OnOutputStreamReady %p unwritten=%zu\n", this,
@@ -760,7 +760,7 @@ WebrtcTCPSocket::OnOutputStreamReady(nsIAsyncOutputStream* out) {
   return NS_OK;
 }
 
-// nsIInterfaceRequestor
+
 NS_IMETHODIMP
 WebrtcTCPSocket::GetInterface(const nsIID& iid, void** result) {
   LOG(("WebrtcTCPSocket::GetInterface %p\n", this));
@@ -782,4 +782,4 @@ size_t WebrtcTCPSocket::CountUnwrittenBytes() const {
   return count;
 }
 
-}  // namespace mozilla::net
+}  

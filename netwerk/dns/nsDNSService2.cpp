@@ -1039,7 +1039,7 @@ nsresult nsDNSService::AsyncResolveInternal(
   
   nsCOMPtr<nsIXPConnectWrappedJS> wrappedListener = do_QueryInterface(listener);
   if (wrappedListener && !target) {
-    target = GetMainThreadSerialEventTarget();
+    target = GetMainThreadEventTarget();
   }
 
   if (target) {

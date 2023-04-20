@@ -405,7 +405,7 @@ bool CanvasTranslator::CheckForFreshCanvasDevice(int aLineNumber) {
 
   
   
-  SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), runnable,
+  SyncRunnable::DispatchToThread(GetMainThreadEventTarget(), runnable,
                                   true);
 
   mDevice = gfx::DeviceManagerDx::Get()->GetCanvasDevice();

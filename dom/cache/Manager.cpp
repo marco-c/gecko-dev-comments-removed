@@ -1959,7 +1959,8 @@ void Manager::Init(Maybe<Manager&> aOldManager) {
   
   
   SafeRefPtr<Context> ref = Context::Create(
-      SafeRefPtrFromThis(), mIOThread, MakeSafeRefPtr<SetupAction>(),
+      SafeRefPtrFromThis(), mIOThread->SerialEventTarget(),
+      MakeSafeRefPtr<SetupAction>(),
       aOldManager ? SomeRef(*aOldManager->mContext) : Nothing());
   mContext = ref.unsafeGetRawPtr();
 }

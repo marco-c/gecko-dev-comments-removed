@@ -158,7 +158,7 @@ void MediaKeys::OnInnerWindowDestroy() {
   
   
   
-  GetMainThreadSerialEventTarget()->Dispatch(
+  GetMainThreadEventTarget()->Dispatch(
       NewRunnableMethod("MediaKeys::Shutdown", this, &MediaKeys::Shutdown));
 }
 

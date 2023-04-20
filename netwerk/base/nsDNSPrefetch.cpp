@@ -65,7 +65,7 @@ nsresult nsDNSPrefetch::Prefetch(nsIDNSService::DNSFlags flags) {
   
   
   
-  nsCOMPtr<nsIEventTarget> target = mozilla::GetCurrentSerialEventTarget();
+  nsCOMPtr<nsIEventTarget> target = mozilla::GetCurrentEventTarget();
 
   flags |= nsIDNSService::GetFlagsFromTRRMode(mTRRMode);
 
@@ -127,7 +127,7 @@ nsresult nsDNSPrefetch::FetchHTTPSSVC(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsCOMPtr<nsIEventTarget> target = mozilla::GetCurrentSerialEventTarget();
+  nsCOMPtr<nsIEventTarget> target = mozilla::GetCurrentEventTarget();
   nsIDNSService::DNSFlags flags = nsIDNSService::GetFlagsFromTRRMode(mTRRMode);
   if (aRefreshDNS) {
     flags |= nsIDNSService::RESOLVE_BYPASS_CACHE;

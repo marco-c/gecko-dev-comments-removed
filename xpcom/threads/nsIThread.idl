@@ -168,6 +168,24 @@ interface nsIThread : nsISerialEventTarget
 
 
 
+
+  readonly attribute nsIEventTarget eventTarget;
+
+  
+
+
+  [noscript,notxpcom] nsIEventTargetPtr EventTarget();
+
+  
+
+
+
+  [noscript,notxpcom] nsISerialEventTargetPtr SerialEventTarget();
+
+  
+
+
+
   [noscript] readonly attribute TimeStamp lastLongTaskEnd;
   [noscript] readonly attribute TimeStamp lastLongNonIdleTaskEnd;
 

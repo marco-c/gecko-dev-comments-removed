@@ -1977,7 +1977,7 @@ static bool DispatchToEventLoop(void* closure,
   
   
 
-  nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadSerialEventTarget();
+  nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadEventTarget();
   if (!mainTarget) {
     return false;
   }

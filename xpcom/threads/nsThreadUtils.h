@@ -1803,19 +1803,15 @@ class SerialEventTargetGuard {
 
 
 
+nsIEventTarget* GetCurrentEventTarget();
 
+nsIEventTarget* GetMainThreadEventTarget();
 
 
 
 
 
 nsISerialEventTarget* GetCurrentSerialEventTarget();
-
-
-
-
-
-
 
 nsISerialEventTarget* GetMainThreadSerialEventTarget();
 

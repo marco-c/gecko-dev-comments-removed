@@ -218,7 +218,6 @@ void NS_SetMainThread() {
   
   
   SerialEventTargetGuard::InitTLS();
-  nsThreadPool::InitTLS();
 }
 
 #ifdef DEBUG
