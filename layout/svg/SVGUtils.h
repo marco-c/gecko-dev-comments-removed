@@ -246,8 +246,7 @@ class SVGUtils final {
 
   static void PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
                                     const gfxMatrix& aTransform,
-                                    imgDrawingParams& aImgParams,
-                                    const nsIntRect* aDirtyRect = nullptr);
+                                    imgDrawingParams& aImgParams);
 
   
 

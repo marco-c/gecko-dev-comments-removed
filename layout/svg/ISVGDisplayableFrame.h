@@ -75,12 +75,8 @@ class ISVGDisplayableFrame : public nsQueryFrame {
 
 
 
-
-
-
   virtual void PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
-                        imgDrawingParams& aImgParams,
-                        const nsIntRect* aDirtyRect = nullptr) = 0;
+                        imgDrawingParams& aImgParams) = 0;
 
   
 

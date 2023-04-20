@@ -310,8 +310,7 @@ bool SVGImageFrame::TransformContextForPainting(gfxContext* aGfxContext,
 
 
 void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
-                             imgDrawingParams& aImgParams,
-                             const nsIntRect* aDirtyRect) {
+                             imgDrawingParams& aImgParams) {
   if (!StyleVisibility()->IsVisible()) {
     return;
   }
@@ -362,37 +361,6 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
     }
 
     nscoord appUnitsPerDevPx = PresContext()->AppUnitsPerDevPixel();
-    nsRect dirtyRect;  
-    if (aDirtyRect) {
-      NS_ASSERTION(HasAnyStateBits(NS_FRAME_IS_NONDISPLAY),
-                   "Display lists handle dirty rect intersection test");
-      dirtyRect = ToAppUnits(*aDirtyRect, appUnitsPerDevPx);
-
-      
-      
-      Rect dir(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
-      dir.Scale(1.f / AppUnitsPerCSSPixel());
-
-      
-      
-      
-      
-      auto mat = SVGContentUtils::GetCTM(imgElem, false);
-      if (mat.IsSingular()) {
-        return;
-      }
-
-      mat.Invert();
-      dir = mat.TransformRect(dir);
-
-      
-      dir.MoveBy(-x, -y);
-
-      dir.Scale(AppUnitsPerCSSPixel());
-      dir.Round();
-      dirtyRect = nsRect(dir.x, dir.y, dir.width, dir.height);
-    }
-
     uint32_t flags = aImgParams.imageFlags;
     if (mForceSyncDecoding) {
       flags |= imgIContainer::FLAG_SYNC_DECODE;
@@ -420,13 +388,13 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
       
       aImgParams.result &= nsLayoutUtils::DrawSingleImage(
           aContext, PresContext(), mImageContainer,
-          nsLayoutUtils::GetSamplingFilterForFrame(this), destRect,
-          aDirtyRect ? dirtyRect : destRect, context, flags);
+          nsLayoutUtils::GetSamplingFilterForFrame(this), destRect, destRect,
+          context, flags);
     } else {  
       aImgParams.result &= nsLayoutUtils::DrawSingleUnscaledImage(
           aContext, PresContext(), mImageContainer,
           nsLayoutUtils::GetSamplingFilterForFrame(this), nsPoint(0, 0),
-          aDirtyRect ? &dirtyRect : nullptr, SVGImageContext(), flags);
+          nullptr, SVGImageContext(), flags);
     }
 
     if (opacity != 1.0f ||
