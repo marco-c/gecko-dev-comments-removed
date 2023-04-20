@@ -224,9 +224,11 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
     
     
     if (path == "blank"_ns || path == "srcdoc"_ns) {
+      MOZ_ASSERT(NS_IsContentAccessibleAboutURI(aURI));
       return IsolationBehavior::WebContent;
     }
 
+    MOZ_ASSERT(!NS_IsContentAccessibleAboutURI(aURI));
     
     
     if (path == "reader"_ns && aForChannelCreationURI) {
