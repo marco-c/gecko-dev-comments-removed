@@ -63,10 +63,28 @@ void BodyStreamHolder::StoreBodyStream(BodyStream* aBodyStream) {
 
 
 
+class BodyStream::WorkerShutdown final : public WorkerControlRunnable {
+ public:
+  WorkerShutdown(WorkerPrivate* aWorkerPrivate, RefPtr<BodyStream> aStream)
+      : WorkerControlRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount),
+        mStream(std::move(aStream)) {}
 
+  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
+    mStream->ReleaseObjects();
+    return true;
+  }
 
+  
+  
 
+  bool PreDispatch(WorkerPrivate* aWorkerPrivate) override { return true; }
 
+  void PostDispatch(WorkerPrivate* aWorkerPrivate,
+                    bool aDispatchResult) override {}
+
+ private:
+  RefPtr<BodyStream> mStream;
+};
 
 NS_IMPL_ISUPPORTS(BodyStream, nsIInputStreamCallback, nsIObserver,
                   nsISupportsWeakReference)
@@ -142,11 +160,10 @@ void BodyStream::Create(JSContext* aCx, BodyStreamHolder* aStreamHolder,
     if (NS_WARN_IF(aRv.Failed())) {
       return;
     }
+
   } else {
     WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(aCx);
     MOZ_ASSERT(workerPrivate);
-
-    workerPrivate->AssertIsOnWorkerThread();
 
     RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
         workerPrivate, "BodyStream", [stream]() { stream->Close(); });
@@ -189,14 +206,39 @@ already_AddRefed<Promise> BodyStream::PullCallback(
 
   MOZ_DIAGNOSTIC_ASSERT(stream->Disturbed());
 
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
+  AssertIsOnOwningThread();
 
-  MOZ_DIAGNOSTIC_ASSERT(!IsClosed());
-  MOZ_ASSERT(!mPullPromise);
-  mPullPromise = Promise::CreateInfallible(aController.GetParentObject());
+  MutexSingleWriterAutoLock lock(mMutex);
 
-  
-  mStreamHolder->MarkAsRead();
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitializing || mState == eWaiting ||
+                        mState == eChecking || mState == eReading);
+
+  RefPtr<Promise> resolvedWithUndefinedPromise =
+      Promise::CreateResolvedWithUndefined(aController.GetParentObject(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (mState == eReading) {
+    
+    return resolvedWithUndefinedPromise.forget();
+  }
+
+  if (mState == eChecking) {
+    
+    
+    MOZ_ASSERT(mInputStream);
+    mState = eReading;
+
+    return resolvedWithUndefinedPromise.forget();
+  }
+
+  if (mState == eInitializing) {
+    
+    mStreamHolder->MarkAsRead();
+  }
+
+  mState = eReading;
 
   if (!mInputStream) {
     
@@ -207,7 +249,7 @@ already_AddRefed<Promise> BodyStream::PullCallback(
     nsresult rv = NS_MakeAsyncNonBlockingInputStream(
         mOriginalInputStream.forget(), getter_AddRefs(asyncStream));
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      ErrorPropagation(aCx, stream, rv);
+      ErrorPropagation(aCx, lock, stream, rv);
       return nullptr;
     }
 
@@ -220,13 +262,13 @@ already_AddRefed<Promise> BodyStream::PullCallback(
 
   nsresult rv = mInputStream->AsyncWait(this, 0, 0, mOwningEventTarget);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    ErrorPropagation(aCx, stream, rv);
+    ErrorPropagation(aCx, lock, stream, rv);
     return nullptr;
   }
   mAsyncWaitWorkerRef = mWorkerRef;
 
   
-  return do_AddRef(mPullPromise);
+  return resolvedWithUndefinedPromise.forget();
 }
 
 void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
@@ -237,12 +279,13 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
   MOZ_DIAGNOSTIC_ASSERT(aBuffer);
   MOZ_DIAGNOSTIC_ASSERT(aByteWritten);
 
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
+  AssertIsOnOwningThread();
+
+  MutexSingleWriterAutoLock lock(mMutex);
 
   MOZ_DIAGNOSTIC_ASSERT(mInputStream);
-  MOZ_DIAGNOSTIC_ASSERT(!IsClosed());
-  MOZ_DIAGNOSTIC_ASSERT(mPullPromise->State() ==
-                        Promise::PromiseState::Pending);
+  MOZ_DIAGNOSTIC_ASSERT(mState == eWriting);
+  mState = eChecking;
 
   uint32_t written;
   nsresult rv;
@@ -263,7 +306,7 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
 
     rv = mInputStream->Read(static_cast<char*>(buffer), aLength, &written);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      ErrorPropagation(aCx, aStream, rv);
+      ErrorPropagation(aCx, lock, aStream, rv);
       return;
     }
   }
@@ -271,17 +314,24 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
   *aByteWritten = written;
 
   if (written == 0) {
-    CloseAndReleaseObjects(aCx, aStream);
+    CloseAndReleaseObjects(aCx, lock, aStream);
     return;
   }
+
+  rv = mInputStream->AsyncWait(this, 0, 0, mOwningEventTarget);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    ErrorPropagation(aCx, lock, aStream, rv);
+    return;
+  }
+  mAsyncWaitWorkerRef = mWorkerRef;
 
   
 }
 
 void BodyStream::CloseInputAndReleaseObjects() {
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
+  mMutex.AssertOnWritingThread();
 
-  if (mStreamHolder) {
+  if (mState == eInitializing) {
     
     mStreamHolder->MarkAsRead();
   }
@@ -303,7 +353,9 @@ void BodyStream::CloseInputAndReleaseObjects() {
 BodyStream::BodyStream(nsIGlobalObject* aGlobal,
                        BodyStreamHolder* aStreamHolder,
                        nsIInputStream* aInputStream)
-    : mGlobal(aGlobal),
+    : mMutex("BodyStream::mMutex", this),
+      mState(eInitializing),
+      mGlobal(aGlobal),
       mStreamHolder(aStreamHolder),
       mOwningEventTarget(aGlobal->EventTargetFor(TaskCategory::Other)),
       mOriginalInputStream(aInputStream) {
@@ -311,22 +363,20 @@ BodyStream::BodyStream(nsIGlobalObject* aGlobal,
   MOZ_DIAGNOSTIC_ASSERT(aStreamHolder);
 }
 
-BodyStream::~BodyStream() {
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
-}
-
-void BodyStream::ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
-                                  nsresult aError) {
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
+void BodyStream::ErrorPropagation(JSContext* aCx,
+                                  const MutexSingleWriterAutoLock& aProofOfLock,
+                                  ReadableStream* aStream, nsresult aError) {
+  mMutex.AssertOnWritingThread();
+  mMutex.AssertCurrentThreadOwns();
 
   
-  if (IsClosed()) {
+  if (mState == eClosed) {
     return;
   }
 
   
   if (aError == NS_BASE_STREAM_CLOSED) {
-    CloseAndReleaseObjects(aCx, aStream);
+    CloseAndReleaseObjects(aCx, aProofOfLock, aStream);
     return;
   }
 
@@ -341,13 +391,14 @@ void BodyStream::ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
   MOZ_RELEASE_ASSERT(ok, "ToJSValue never fails for ErrorResult");
 
   {
+    MutexSingleWriterAutoUnlock unlock(mMutex);
     
     IgnoredErrorResult rv;
     aStream->ErrorNative(aCx, errorValue, rv);
     NS_WARNING_ASSERTION(!rv.Failed(), "Failed to error BodyStream");
   }
 
-  if (mStreamHolder) {
+  if (mState == eInitializing) {
     
     mStreamHolder->MarkAsRead();
   }
@@ -356,7 +407,7 @@ void BodyStream::ErrorPropagation(JSContext* aCx, ReadableStream* aStream,
     mInputStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
   }
 
-  ReleaseObjects();
+  ReleaseObjects(aProofOfLock);
 }
 
 
@@ -404,14 +455,20 @@ void BodyStream::EnqueueChunkWithSizeIntoStream(JSContext* aCx,
   aStream->EnqueueNative(aCx, chunkValue, aRv);
 }
 
+
 NS_IMETHODIMP
-BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
+BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream)
+    MOZ_NO_THREAD_SAFETY_ANALYSIS {
+  AssertIsOnOwningThread();
   MOZ_DIAGNOSTIC_ASSERT(aStream);
   mAsyncWaitWorkerRef = nullptr;
 
   
-  if (IsClosed()) {
+  Maybe<MutexSingleWriterAutoLock> lock;
+  lock.emplace(mMutex);
+
+  
+  if (mState == eClosed) {
     return NS_OK;
   }
 
@@ -424,8 +481,7 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   AutoEntryScript aes(mGlobal, "fetch body data available");
 
   MOZ_DIAGNOSTIC_ASSERT(mInputStream);
-  MOZ_DIAGNOSTIC_ASSERT(mPullPromise->State() ==
-                        Promise::PromiseState::Pending);
+  MOZ_DIAGNOSTIC_ASSERT(mState == eReading || mState == eChecking);
 
   JSContext* cx = aes.cx();
   ReadableStream* stream = mStreamHolder->GetReadableStreamBody();
@@ -435,24 +491,37 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
 
   uint64_t size = 0;
   nsresult rv = mInputStream->Available(&size);
-  MOZ_ASSERT_IF(NS_SUCCEEDED(rv), size > 0);
+  if (NS_SUCCEEDED(rv) && size == 0) {
+    
+    
+    rv = NS_BASE_STREAM_CLOSED;
+  }
 
   
   if (rv == NS_BASE_STREAM_CLOSED || NS_WARN_IF(NS_FAILED(rv))) {
-    ErrorPropagation(cx, stream, rv);
+    ErrorPropagation(cx, *lock, stream, rv);
     return NS_OK;
   }
 
+  
+  if (mState == eChecking) {
+    mState = eWaiting;
+    return NS_OK;
+  }
+
+  mState = eWriting;
+
+  
+  
+  lock.reset();
   ErrorResult errorResult;
   EnqueueChunkWithSizeIntoStream(cx, stream, size, errorResult);
   errorResult.WouldReportJSException();
   if (errorResult.Failed()) {
-    ErrorPropagation(cx, stream, errorResult.StealNSResult());
+    lock.emplace(mMutex);
+    ErrorPropagation(cx, *lock, stream, errorResult.StealNSResult());
     return NS_OK;
   }
-
-  mPullPromise->MaybeResolveWithUndefined();
-  mPullPromise = nullptr;
 
   
   
@@ -471,7 +540,7 @@ nsresult BodyStream::RetrieveInputStream(BodyStreamHolder* aStream,
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(stream->mOwningEventTarget->IsOnCurrentThread());
+  stream->AssertIsOnOwningThread();
 
   
   
@@ -485,32 +554,38 @@ nsresult BodyStream::RetrieveInputStream(BodyStreamHolder* aStream,
 }
 
 void BodyStream::Close() {
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
+  AssertIsOnOwningThread();
 
-  if (IsClosed()) {
+  MutexSingleWriterAutoLock lock(mMutex);
+
+  if (mState == eClosed) {
     return;
   }
 
   AutoJSAPI jsapi;
   if (NS_WARN_IF(!jsapi.Init(mGlobal))) {
-    ReleaseObjects();
+    ReleaseObjects(lock);
     return;
   }
   ReadableStream* stream = mStreamHolder->GetReadableStreamBody();
   if (stream) {
     JSContext* cx = jsapi.cx();
-    CloseAndReleaseObjects(cx, stream);
+    CloseAndReleaseObjects(cx, lock, stream);
   } else {
-    ReleaseObjects();
+    ReleaseObjects(lock);
   }
 }
 
-void BodyStream::CloseAndReleaseObjects(JSContext* aCx,
-                                        ReadableStream* aStream) {
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
-  MOZ_DIAGNOSTIC_ASSERT(!IsClosed());
+void BodyStream::CloseAndReleaseObjects(
+    JSContext* aCx, const MutexSingleWriterAutoLock& aProofOfLock,
+    ReadableStream* aStream) {
+  AssertIsOnOwningThread();
+  mMutex.AssertCurrentThreadOwns();
+  MOZ_DIAGNOSTIC_ASSERT(mState != eClosed);
 
-  ReleaseObjects();
+  ReleaseObjects(aProofOfLock);
+
+  MutexSingleWriterAutoUnlock unlock(mMutex);
 
   if (aStream->State() == ReadableStream::ReaderState::Readable) {
     IgnoredErrorResult rv;
@@ -520,12 +595,41 @@ void BodyStream::CloseAndReleaseObjects(JSContext* aCx,
 }
 
 void BodyStream::ReleaseObjects() {
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
+  MutexSingleWriterAutoLock lock(mMutex);
+  ReleaseObjects(lock);
+}
 
-  if (IsClosed()) {
+void BodyStream::ReleaseObjects(const MutexSingleWriterAutoLock& aProofOfLock) {
+  
+  
+  
+  
+
+  if (mState == eClosed) {
     
     return;
   }
+
+  if (!NS_IsMainThread() && !IsCurrentThreadRunningWorker()) {
+    
+    if (mWorkerRef) {
+      RefPtr<WorkerShutdown> r =
+          new WorkerShutdown(mWorkerRef->Private(), this);
+      Unused << NS_WARN_IF(!r->Dispatch());
+      return;
+    }
+
+    
+    RefPtr<BodyStream> self = this;
+    RefPtr<Runnable> r = NS_NewRunnableFunction(
+        "BodyStream::ReleaseObjects", [self]() { self->ReleaseObjects(); });
+    mOwningEventTarget->Dispatch(r.forget());
+    return;
+  }
+
+  AssertIsOnOwningThread();
+
+  mState = eClosed;
 
   if (NS_IsMainThread()) {
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -536,15 +640,29 @@ void BodyStream::ReleaseObjects() {
 
   mWorkerRef = nullptr;
   mGlobal = nullptr;
-  
-  
-  
-  mPullPromise = nullptr;
 
-  RefPtr<BodyStream> self = mStreamHolder->TakeBodyStream();
+  
+  
+  
+  
+  GetCurrentSerialEventTarget()->Dispatch(NS_NewCancelableRunnableFunction(
+      "BodyStream::ReleaseObjects",
+      [streamHolder = RefPtr{mStreamHolder->TakeBodyStream()}] {
+        
+        
+        
+        
+        
+      }));
   mStreamHolder->NullifyStream();
   mStreamHolder = nullptr;
 }
+
+#ifdef DEBUG
+void BodyStream::AssertIsOnOwningThread() const {
+  NS_ASSERT_OWNINGTHREAD(BodyStream);
+}
+#endif
 
 
 
@@ -553,7 +671,7 @@ NS_IMETHODIMP
 BodyStream::Observe(nsISupports* aSubject, const char* aTopic,
                     const char16_t* aData) {
   AssertIsOnMainThread();
-  MOZ_DIAGNOSTIC_ASSERT(mOwningEventTarget->IsOnCurrentThread());
+  AssertIsOnOwningThread();
 
   MOZ_ASSERT(strcmp(aTopic, DOM_WINDOW_DESTROYED_TOPIC) == 0);
 
