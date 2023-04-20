@@ -4,7 +4,6 @@ from base64 import decodebytes
 from webdriver import Element, NoSuchAlertException, WebDriverException
 
 
-
 errors = {
     "detached shadow root": 404,
     "element click intercepted": 400,
