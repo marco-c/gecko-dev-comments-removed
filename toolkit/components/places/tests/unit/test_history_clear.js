@@ -68,13 +68,13 @@ add_task(async function test_history_clear() {
   
   
   let stmt = mDBConn.createStatement(
-    "SELECT h.id FROM moz_places h WHERE h.frecency > 0 "
+    "SELECT h.id FROM moz_places h WHERE frecency <> 0 AND h.recalc_frecency = 0 "
   );
   Assert.ok(!stmt.executeStep());
   stmt.finalize();
 
   stmt = mDBConn.createStatement(
-    `SELECT h.id FROM moz_places h WHERE h.frecency < 0
+    `SELECT h.id FROM moz_places h WHERE h.recalc_frecency = 1
        AND EXISTS (SELECT id FROM moz_bookmarks WHERE fk = h.id) LIMIT 1`
   );
   Assert.ok(stmt.executeStep());

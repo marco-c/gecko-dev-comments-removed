@@ -954,24 +954,23 @@ add_autofill_task(async function bookmarkAboveThreshold() {
 
 
 
-
 add_autofill_task(async function zeroThreshold() {
+  const pageUrl = "http://" + url;
   await PlacesTestUtils.addBookmarkWithDetails({
-    uri: "http://" + url,
+    uri: pageUrl,
   });
 
   await PlacesUtils.history.clear();
+  await PlacesUtils.withConnectionWrapper("zeroThreshold", async db => {
+    await db.execute("UPDATE moz_places SET frecency = -1 WHERE url = :url", {
+      url: pageUrl,
+    });
+    await db.executeCached("DELETE FROM moz_updateoriginsupdate_temp");
+  });
 
   
-  
-  
-  
-  
-  let placeFrecency = await PlacesTestUtils.fieldInDB(
-    "http://" + url,
-    "frecency"
-  );
-  Assert.ok(placeFrecency <= 0);
+  let placeFrecency = await PlacesTestUtils.fieldInDB(pageUrl, "frecency");
+  Assert.equal(placeFrecency, -1);
 
   
   let originFrecency = await getOriginFrecency("http://", host);
