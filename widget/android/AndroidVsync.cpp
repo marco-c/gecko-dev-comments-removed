@@ -6,7 +6,6 @@
 
 #include "AndroidVsync.h"
 
-#include "AndroidBridge.h"
 #include "nsTArray.h"
 
 
@@ -114,8 +113,6 @@ void AndroidVsync::Impl::UpdateObservingVsync() {
 
 
 void AndroidVsync::NotifyVsync(int64_t aFrameTimeNanos) {
-  MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
-
   
   
   
@@ -134,13 +131,13 @@ void AndroidVsync::NotifyVsync(int64_t aFrameTimeNanos) {
 }
 
 void AndroidVsync::OnMaybeUpdateRefreshRate() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  auto impl = mImpl.Lock();
-
+  
   nsTArray<Observer*> observers;
-  observers.AppendElements(impl->mRenderObservers);
-
+  {
+    auto impl = mImpl.Lock();
+    observers.AppendElements(impl->mInputObservers);
+    observers.AppendElements(impl->mRenderObservers);
+  }
   for (Observer* observer : observers) {
     observer->OnMaybeUpdateRefreshRate();
   }
