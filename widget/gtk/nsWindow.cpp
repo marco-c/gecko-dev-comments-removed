@@ -4330,15 +4330,19 @@ Maybe<GdkWindowEdge> nsWindow::CheckResizerEdge(
       
       return true;
     }
-    if (mDrawInTitlebar) {
-      
-      
-      
-      return !mIsTiled;
+    if (!mDrawInTitlebar) {
+      return false;
     }
     
     
-    return false;
+    
+    
+    
+    
+    
+    
+    
+    return mDrawInTitlebar && IsKdeDesktopEnvironment();
   }();
 
   if (!canResize) {
