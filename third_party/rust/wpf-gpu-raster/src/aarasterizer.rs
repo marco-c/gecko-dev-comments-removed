@@ -112,10 +112,10 @@ macro_rules! ASSERTACTIVELISTORDER {
 
 
 pub fn AdvanceDDAAndUpdateActiveEdgeList(nSubpixelYCurrent: INT, pEdgeActiveList: Ref<CEdge>) {
-
-        let mut nOutOfOrderCount: INT = 0;
+        let mut outOfOrder = false;
         let mut pEdgePrevious: Ref<CEdge> = pEdgeActiveList;
         let mut pEdgeCurrent: Ref<CEdge> = pEdgeActiveList.Next.get();
+        let mut prevX = pEdgePrevious.X.get();
 
         
 
@@ -135,21 +135,23 @@ pub fn AdvanceDDAAndUpdateActiveEdgeList(nSubpixelYCurrent: INT, pEdgeActiveList
 
             
 
-            pEdgeCurrent.X.set(pEdgeCurrent.X.get() + pEdgeCurrent.Dx);
-            pEdgeCurrent.Error.set(pEdgeCurrent.Error.get()+ pEdgeCurrent.ErrorUp);
-            if (pEdgeCurrent.Error.get() >= 0) {
-                pEdgeCurrent.Error.set(pEdgeCurrent.Error.get() - pEdgeCurrent.ErrorDown);
-                pEdgeCurrent.X.set(pEdgeCurrent.X.get() + 1);
+            let mut x = pEdgeCurrent.X.get() + pEdgeCurrent.Dx;
+            let mut error = pEdgeCurrent.Error.get() + pEdgeCurrent.ErrorUp;
+            if (error >= 0) {
+                error -= pEdgeCurrent.ErrorDown;
+                x += 1;
             }
+            pEdgeCurrent.X.set(x);
+            pEdgeCurrent.Error.set(error);
 
             
-
-            nOutOfOrderCount += (pEdgePrevious.X > pEdgeCurrent.X) as i32;
+            outOfOrder |= (prevX > x);
 
             
 
             pEdgePrevious = pEdgeCurrent;
             pEdgeCurrent = pEdgeCurrent.Next.get();
+            prevX = x;
         }
 
         
@@ -162,7 +164,7 @@ pub fn AdvanceDDAAndUpdateActiveEdgeList(nSubpixelYCurrent: INT, pEdgeActiveList
         
         
 
-        if (nOutOfOrderCount != 0) {
+        if (outOfOrder) {
             SortActiveEdges(pEdgeActiveList);
         }
         ASSERTACTIVELISTORDER!(pEdgeActiveList);
