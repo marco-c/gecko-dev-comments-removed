@@ -11,7 +11,6 @@ module.exports = {
   globals: {
     
     SpecialPowers: false,
-    XPCNativeWrapper: false,
     extractJarToTmp: false,
     getChromeDir: false,
     getJar: false,
