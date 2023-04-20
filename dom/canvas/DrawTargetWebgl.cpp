@@ -3137,8 +3137,12 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
           entry->SetVertexRange(vertexRange);
         }
         
+        
+        
+        
         mWebgl->RawBufferSubData(LOCAL_GL_ARRAY_BUFFER, mPathVertexOffset,
-                                 vbData, vertexBytes);
+                                 vbData, vertexBytes,
+                                  true);
         mPathVertexOffset += vertexBytes;
         if (wgrVB) {
           WGR::wgr_vertex_buffer_release(wgrVB.ref());

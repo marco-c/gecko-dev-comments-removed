@@ -689,8 +689,14 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   void BufferData(GLenum target, uint64_t dataLen, const uint8_t* data,
                   GLenum usage) const;
+  
+  
+  
+  
+  
+  
   void BufferSubData(GLenum target, uint64_t dstByteOffset, uint64_t srcDataLen,
-                     const uint8_t* srcData) const;
+                     const uint8_t* srcData, bool unsynchronized = false) const;
 
  protected:
   
