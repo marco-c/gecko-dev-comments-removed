@@ -1,15 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = [
-  "FormAutofillUtils",
-  "AddressDataLoader",
-  "LabelUtils",
-];
-let FormAutofillUtils;
+export let FormAutofillUtils;
 
 const ADDRESS_METADATA_PATH = "resource://autofill/addressmetadata/";
 const ADDRESS_REFERENCES = "addressReferences.js";
@@ -59,13 +52,12 @@ const SECTION_TYPES = {
 
 const ELIGIBLE_INPUT_TYPES = ["text", "email", "tel", "number", "month"];
 
-
-
+// The maximum length of data to be saved in a single field for preventing DoS
+// attacks that fill the user's hard drive(s).
 const MAX_FIELD_VALUE_LENGTH = 200;
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const { FormAutofill } = ChromeUtils.import(
   "resource://autofill/FormAutofill.jsm"
 );
@@ -80,25 +72,25 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   FormAutofillNameUtils: "resource://autofill/FormAutofillNameUtils.jsm",
 });
 
-let AddressDataLoader = {
-  
-  
-  
-  
+export let AddressDataLoader = {
+  // Status of address data loading. We'll load all the countries with basic level 1
+  // information while requesting conutry information, and set country to true.
+  // Level 1 Set is for recording which country's level 1/level 2 data is loaded,
+  // since we only load this when getCountryAddressData called with level 1 parameter.
   _dataLoaded: {
     country: false,
     level1: new Set(),
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Load address data and extension script into a sandbox from different paths.
+   *
+   * @param   {string} path
+   *          The path for address data and extension script. It could be root of the address
+   *          metadata folder(addressmetadata/) or under specific country(addressmetadata/TW/).
+   * @returns {object}
+   *          A sandbox that contains address data object with properties from extension.
+   */
   _loadScripts(path) {
     let sandbox = {};
     let extSandbox = {};
@@ -109,8 +101,8 @@ let AddressDataLoader = {
         path + ADDRESS_REFERENCES_EXT
       );
     } catch (e) {
-      
-      
+      // Will return only address references if extension loading failed or empty sandbox if
+      // address references loading failed.
       return sandbox;
     }
 
@@ -127,13 +119,13 @@ let AddressDataLoader = {
     return sandbox;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Convert certain properties' string value into array. We should make sure
+   * the cached data is parsed.
+   *
+   * @param   {object} data Original metadata from addressReferences.
+   * @returns {object} parsed metadata with property value that converts to array.
+   */
   _parse(data) {
     if (!data) {
       return null;
@@ -150,7 +142,7 @@ let AddressDataLoader = {
       if (!data[key]) {
         continue;
       }
-      
+      // No need to normalize data if the value is array already.
       if (Array.isArray(data[key])) {
         return data;
       }
@@ -160,23 +152,23 @@ let AddressDataLoader = {
     return data;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * We'll cache addressData in the loader once the data loaded from scripts.
+   * It'll become the example below after loading addressReferences with extension:
+   * addressData: {
+   *               "data/US": {"lang": ["en"], ...// Data defined in libaddressinput metadata
+   *                           "alternative_names": ... // Data defined in extension }
+   *               "data/CA": {} // Other supported country metadata
+   *               "data/TW": {} // Other supported country metadata
+   *               "data/TW/台北市": {} // Other supported country level 1 metadata
+   *              }
+   *
+   * @param   {string} country
+   * @param   {string?} level1
+   * @returns {object} Default locale metadata
+   */
   _loadData(country, level1 = null) {
-    
+    // Load the addressData if needed
     if (!this._dataLoaded.country) {
       this._addressData = this._loadScripts(ADDRESS_METADATA_PATH).addressData;
       this._dataLoaded.country = true;
@@ -184,8 +176,8 @@ let AddressDataLoader = {
     if (!level1) {
       return this._parse(this._addressData[`data/${country}`]);
     }
-    
-    
+    // If level1 is set, load addressReferences under country folder with specific
+    // country/level 1 for level 2 information.
     if (!this._dataLoaded.level1.has(country)) {
       Object.assign(
         this._addressData,
@@ -196,13 +188,13 @@ let AddressDataLoader = {
     return this._parse(this._addressData[`data/${country}/${level1}`]);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Return the region metadata with default locale and other locales (if exists).
+   *
+   * @param   {string} country
+   * @param   {string?} level1
+   * @returns {object} Return default locale and other locales metadata.
+   */
   getData(country, level1 = null) {
     let defaultLocale = this._loadData(country, level1);
     if (!defaultLocale) {
@@ -211,8 +203,8 @@ let AddressDataLoader = {
 
     let countryData = this._parse(this._addressData[`data/${country}`]);
     let locales = [];
-    
-    
+    // TODO: Should be able to support multi-locale level 1/ level 2 metadata query
+    //      in Bug 1421886
     if (countryData.languages) {
       let list = countryData.languages.filter(key => key !== countryData.lang);
       locales = list.map(key =>
@@ -296,11 +288,11 @@ FormAutofillUtils = {
     );
   },
 
-  
-
-
-
-
+  /**
+   * Get the array of credit card network ids ("types") we expect and offer as valid choices
+   *
+   * @returns {Array}
+   */
   getCreditCardNetworks() {
     return lazy.CreditCard.getSupportedNetworks();
   },
@@ -321,33 +313,33 @@ FormAutofillUtils = {
   },
 
   getAddressSeparator() {
-    
-    
+    // The separator should be based on the L10N address format, and using a
+    // white space is a temporary solution.
     return " ";
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Get address display label. It should display information separated
+   * by a comma.
+   *
+   * @param  {object} address
+   * @returns {string}
+   */
   getAddressLabel(address) {
-    
-    
-    
+    // TODO: Implement a smarter way for deciding what to display
+    //       as option text. Possibly improve the algorithm in
+    //       ProfileAutoCompleteResult.jsm and reuse it here.
     let fieldOrder = [
       "name",
-      "-moz-street-address-one-line", 
-      "address-level3", 
-      "address-level2", 
-      "organization", 
-      "address-level1", 
-      "country-name", 
-      "postal-code", 
-      "tel", 
-      "email", 
+      "-moz-street-address-one-line", // Street address
+      "address-level3", // Townland / Neighborhood / Village
+      "address-level2", // City/Town
+      "organization", // Company or organization name
+      "address-level1", // Province/State (Standardized code if possible)
+      "country-name", // Country name
+      "postal-code", // Postal code
+      "tel", // Phone number
+      "email", // Email address
     ];
 
     address = { ...address };
@@ -375,14 +367,14 @@ FormAutofillUtils = {
     return parts.join(", ");
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Internal method to split an address to multiple parts per the provided delimiter,
+   * removing blank parts.
+   *
+   * @param {string} address The address the split
+   * @param {string} [delimiter] The separator that is used between lines in the address
+   * @returns {string[]}
+   */
   _toStreetAddressParts(address, delimiter = "\n") {
     let array = typeof address == "string" ? address.split(delimiter) : address;
 
@@ -392,27 +384,27 @@ FormAutofillUtils = {
     return array.map(s => (s ? s.trim() : "")).filter(s => s);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Converts a street address to a single line, removing linebreaks marked by the delimiter
+   *
+   * @param {string} address The address the convert
+   * @param {string} [delimiter] The separator that is used between lines in the address
+   * @returns {string}
+   */
   toOneLineAddress(address, delimiter = "\n") {
     let addressParts = this._toStreetAddressParts(address, delimiter);
     return addressParts.join(this.getAddressSeparator());
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Compares two addresses, removing internal whitespace
+   *
+   * @param {string} a The first address to compare
+   * @param {string} b The second address to compare
+   * @param {Array} collators Search collators that will be used for comparison
+   * @param {string} [delimiter="\n"] The separator that is used between lines in the address
+   * @returns {boolean} True if the addresses are equal, false otherwise
+   */
   compareStreetAddress(a, b, collators, delimiter = "\n") {
     let oneLineA = this._toStreetAddressParts(a, delimiter)
       .map(p => p.replace(/\s/g, ""))
@@ -423,12 +415,12 @@ FormAutofillUtils = {
     return this.strCompare(oneLineA, oneLineB, collators);
   },
 
-  
-
-
-
-
-
+  /**
+   * In-place concatenate tel-related components into a single "tel" field and
+   * delete unnecessary fields.
+   *
+   * @param {object} address An address record.
+   */
   compressTel(address) {
     let telCountryCode = address["tel-country-code"] || "";
     let telAreaCode = address["tel-area-code"] || "";
@@ -458,26 +450,26 @@ FormAutofillUtils = {
     return doc.querySelectorAll("input, select");
   },
 
-  
-
-
-
-
-
+  /**
+   * Determines if an element can be autofilled or not.
+   *
+   * @param {HTMLElement} element
+   * @returns {boolean} true if the element can be autofilled
+   */
   isFieldAutofillable(element) {
     return element && !element.readOnly && !element.disabled;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   *  Determines if an element is visually hidden or not.
+   *
+   * NOTE: this does not encompass every possible way of hiding an element.
+   * Instead, we check some of the more common methods of hiding for performance reasons.
+   * See Bug 1727832 for follow up.
+   *
+   * @param {HTMLElement} element
+   * @returns {boolean} true if the element is visible
+   */
   isFieldVisible(element) {
     if (element.hidden) {
       return false;
@@ -488,22 +480,22 @@ FormAutofillUtils = {
     return true;
   },
 
-  
-
-
-
-
-
+  /**
+   * Determines if an element is eligible to be used by credit card or address autofill.
+   *
+   * @param {HTMLElement} element
+   * @returns {boolean} true if element can be used by credit card or address autofill
+   */
   isCreditCardOrAddressFieldType(element) {
     if (!element) {
       return false;
     }
     if (HTMLInputElement.isInstance(element)) {
-      
+      // `element.type` can be recognized as `text`, if it's missing or invalid.
       if (!ELIGIBLE_INPUT_TYPES.includes(element.type)) {
         return false;
       }
-      
+      // If the field is visually invisible, we do not want to autofill into it.
       if (!this.isFieldVisible(element)) {
         return false;
       }
@@ -519,20 +511,20 @@ FormAutofillUtils = {
     return sandbox;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Get country address data and fallback to US if not found.
+   * See AddressDataLoader._loadData for more details of addressData structure.
+   *
+   * @param {string} [country=FormAutofill.DEFAULT_REGION]
+   *        The country code for requesting specific country's metadata. It'll be
+   *        default region if parameter is not set.
+   * @param {string} [level1=null]
+   *        Return address level 1/level 2 metadata if parameter is set.
+   * @returns {object|null}
+   *          Return metadata of specific region with default locale and other supported
+   *          locales. We need to return a default country metadata for layout format
+   *          and collator, but for sub-region metadata we'll just return null if not found.
+   */
   getCountryAddressRawData(
     country = FormAutofill.DEFAULT_REGION,
     level1 = null
@@ -542,62 +534,62 @@ FormAutofillUtils = {
       if (level1) {
         return null;
       }
-      
+      // Fallback to default region if we couldn't get data from given country.
       if (country != FormAutofill.DEFAULT_REGION) {
         metadata = AddressDataLoader.getData(FormAutofill.DEFAULT_REGION);
       }
     }
 
-    
-    
+    // TODO: Now we fallback to US if we couldn't get data from default region,
+    //       but it could be removed in bug 1423464 if it's not necessary.
     if (!metadata) {
       metadata = AddressDataLoader.getData("US");
     }
     return metadata;
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Get country address data with default locale.
+   *
+   * @param {string} country
+   * @param {string} level1
+   * @returns {object|null} Return metadata of specific region with default locale.
+   *          NOTE: The returned data may be for a default region if the
+   *          specified one cannot be found. Callers who only want the specific
+   *          region should check the returned country code.
+   */
   getCountryAddressData(country, level1) {
     let metadata = this.getCountryAddressRawData(country, level1);
     return metadata && metadata.defaultLocale;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Get country address data with all locales.
+   *
+   * @param {string} country
+   * @param {string} level1
+   * @returns {Array<object> | null}
+   *          Return metadata of specific region with all the locales.
+   *          NOTE: The returned data may be for a default region if the
+   *          specified one cannot be found. Callers who only want the specific
+   *          region should check the returned country code.
+   */
   getCountryAddressDataWithLocales(country, level1) {
     let metadata = this.getCountryAddressRawData(country, level1);
     return metadata && [metadata.defaultLocale, ...metadata.locales];
   },
 
-  
-
-
-
-
-
+  /**
+   * Get the collators based on the specified country.
+   *
+   * @param   {string} country The specified country.
+   * @returns {Array} An array containing several collator objects.
+   */
   getSearchCollators(country) {
-    
-    
-    
-    
+    // TODO: Only one language should be used at a time per country. The locale
+    //       of the page should be taken into account to do this properly.
+    //       We are going to support more countries in bug 1370193 and this
+    //       should be addressed when we start to implement that bug.
 
     if (!this._collators[country]) {
       let dataset = this.getCountryAddressData(country);
@@ -614,8 +606,8 @@ FormAutofillUtils = {
     return this._collators[country];
   },
 
-  
-  
+  // Based on the list of fields abbreviations in
+  // https://github.com/googlei18n/libaddressinput/wiki/AddressValidationMetadata
   FIELDS_LOOKUP: {
     N: "name",
     O: "organization",
@@ -627,32 +619,32 @@ FormAutofillUtils = {
     n: "newLine",
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Parse a country address format string and outputs an array of fields.
+   * Spaces, commas, and other literals are ignored in this implementation.
+   * For example, format string "%A%n%C, %S" should return:
+   * [
+   *   {fieldId: "street-address", newLine: true},
+   *   {fieldId: "address-level2"},
+   *   {fieldId: "address-level1"},
+   * ]
+   *
+   * @param   {string} fmt Country address format string
+   * @returns {Array<object>} List of fields
+   */
   parseAddressFormat(fmt) {
     if (!fmt) {
       throw new Error("fmt string is missing.");
     }
 
     return fmt.match(/%[^%]/g).reduce((parsed, part) => {
-      
+      // Take the first letter of each segment and try to identify it
       let fieldId = this.FIELDS_LOOKUP[part[1]];
-      
+      // Early return if cannot identify part.
       if (!fieldId) {
         return parsed;
       }
-      
+      // If a new line is detected, add an attribute to the previous field.
       if (fieldId == "newLine") {
         let size = parsed.length;
         if (size) {
@@ -664,19 +656,19 @@ FormAutofillUtils = {
     }, []);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Used to populate dropdowns in the UI (e.g. FormAutofill preferences).
+   * Use findAddressSelectOption for matching a value to a region.
+   *
+   * @param {string[]} subKeys An array of regionCode strings
+   * @param {string[]} subIsoids An array of ISO ID strings, if provided will be preferred over the key
+   * @param {string[]} subNames An array of regionName strings
+   * @param {string[]} subLnames An array of latinised regionName strings
+   * @returns {Map?} Returns null if subKeys or subNames are not truthy.
+   *                   Otherwise, a Map will be returned mapping keys -> names.
+   */
   buildRegionMapIfAvailable(subKeys, subIsoids, subNames, subLnames) {
-    
+    // Not all regions have sub_keys. e.g. DE
     if (
       !subKeys ||
       !subKeys.length ||
@@ -687,7 +679,7 @@ FormAutofillUtils = {
       return null;
     }
 
-    
+    // Overwrite subKeys with subIsoids, when available
     if (subIsoids && subIsoids.length && subIsoids.length == subKeys.length) {
       for (let i = 0; i < subIsoids.length; i++) {
         if (subIsoids[i]) {
@@ -696,20 +688,20 @@ FormAutofillUtils = {
       }
     }
 
-    
+    // Apply sub_lnames if sub_names does not exist
     let names = subNames || subLnames;
     return new Map(subKeys.map((key, index) => [key, names[index]]));
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Parse a require string and outputs an array of fields.
+   * Spaces, commas, and other literals are ignored in this implementation.
+   * For example, a require string "ACS" should return:
+   * ["street-address", "address-level2", "address-level1"]
+   *
+   * @param   {string} requireString Country address require string
+   * @returns {Array<string>} List of fields
+   */
   parseRequireString(requireString) {
     if (!requireString) {
       throw new Error("requireString string is missing.");
@@ -718,15 +710,15 @@ FormAutofillUtils = {
     return requireString.split("").map(fieldId => this.FIELDS_LOOKUP[fieldId]);
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Use alternative country name list to identify a country code from a
+   * specified country name.
+   *
+   * @param   {string} countryName A country name to be identified
+   * @param   {string} [countrySpecified] A country code indicating that we only
+   *                                      search its alternative names if specified.
+   * @returns {string} The matching country code.
+   */
   identifyCountryCode(countryName, countrySpecified) {
     let countries = countrySpecified
       ? [countrySpecified]
@@ -736,8 +728,8 @@ FormAutofillUtils = {
       let collators = this.getSearchCollators(country);
       let metadata = this.getCountryAddressData(country);
       if (country != metadata.key) {
-        
-        
+        // We hit the fallback logic in getCountryAddressRawData so ignore it as
+        // it's not related to `country` and use the name from l10n instead.
         metadata = {
           id: `data/${country}`,
           key: country,
@@ -786,13 +778,13 @@ FormAutofillUtils = {
     return null;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Try to find the abbreviation of the given sub-region name
+   *
+   * @param   {string[]} subregionValues A list of inferable sub-region values.
+   * @param   {string} [country] A country name to be identified.
+   * @returns {string} The matching sub-region abbreviation.
+   */
   getAbbreviatedSubregionName(subregionValues, country) {
     let values = Array.isArray(subregionValues)
       ? subregionValues
@@ -806,10 +798,10 @@ FormAutofillUtils = {
         sub_lnames: subLnames,
       } = metadata;
       if (!subKeys) {
-        
+        // Not all regions have sub_keys. e.g. DE
         continue;
       }
-      
+      // Apply sub_lnames if sub_names does not exist
       subNames = subNames || subLnames;
 
       let speculatedSubIndexes = [];
@@ -824,7 +816,7 @@ FormAutofillUtils = {
           return identifiedValue;
         }
 
-        
+        // Predict the possible state by partial-matching if no exact match.
         [subKeys, subNames].forEach(sub => {
           speculatedSubIndexes.push(
             sub.findIndex(token => {
@@ -845,22 +837,22 @@ FormAutofillUtils = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Find the option element from select element.
+   * 1. Try to find the locale using the country from address.
+   * 2. First pass try to find exact match.
+   * 3. Second pass try to identify values from address value and options,
+   *    and look for a match.
+   *
+   * @param   {DOMElement} selectEl
+   * @param   {object} address
+   * @param   {string} fieldName
+   * @returns {DOMElement}
+   */
   findAddressSelectOption(selectEl, address, fieldName) {
     if (selectEl.options.length > 512) {
-      
-      
+      // Allow enough space for all countries (roughly 300 distinct values) and all
+      // timezones (roughly 400 distinct values), plus some extra wiggle room.
       return null;
     }
     let value = address[fieldName];
@@ -886,21 +878,21 @@ FormAutofillUtils = {
           [value],
           country
         );
-        
+        // No point going any further if we cannot identify value from address level 1
         if (!identifiedValue) {
           return null;
         }
         for (let dataset of this.getCountryAddressDataWithLocales(country)) {
           let keys = dataset.sub_keys;
           if (!keys) {
-            
+            // Not all regions have sub_keys. e.g. DE
             continue;
           }
-          
+          // Apply sub_lnames if sub_names does not exist
           let names = dataset.sub_names || dataset.sub_lnames;
 
-          
-          
+          // Go through options one by one to find a match.
+          // Also check if any option contain the address-level1 key.
           let pattern = new RegExp(
             "\\b" + this.escapeRegExp(identifiedValue) + "\\b",
             "i"
@@ -995,19 +987,19 @@ FormAutofillUtils = {
           return null;
         }
         let patterns = [
-          oneDigitMonth + "/" + twoDigitsYear, 
-          oneDigitMonth + "/" + fourDigitsYear, 
-          twoDigitsMonth + "/" + twoDigitsYear, 
-          twoDigitsMonth + "/" + fourDigitsYear, 
-          oneDigitMonth + "-" + twoDigitsYear, 
-          oneDigitMonth + "-" + fourDigitsYear, 
-          twoDigitsMonth + "-" + twoDigitsYear, 
-          twoDigitsMonth + "-" + fourDigitsYear, 
-          twoDigitsYear + "-" + twoDigitsMonth, 
-          fourDigitsYear + "-" + twoDigitsMonth, 
-          fourDigitsYear + "/" + oneDigitMonth, 
-          twoDigitsMonth + twoDigitsYear, 
-          twoDigitsYear + twoDigitsMonth, 
+          oneDigitMonth + "/" + twoDigitsYear, // 8/22
+          oneDigitMonth + "/" + fourDigitsYear, // 8/2022
+          twoDigitsMonth + "/" + twoDigitsYear, // 08/22
+          twoDigitsMonth + "/" + fourDigitsYear, // 08/2022
+          oneDigitMonth + "-" + twoDigitsYear, // 8-22
+          oneDigitMonth + "-" + fourDigitsYear, // 8-2022
+          twoDigitsMonth + "-" + twoDigitsYear, // 08-22
+          twoDigitsMonth + "-" + fourDigitsYear, // 08-2022
+          twoDigitsYear + "-" + twoDigitsMonth, // 22-08
+          fourDigitsYear + "-" + twoDigitsMonth, // 2022-08
+          fourDigitsYear + "/" + oneDigitMonth, // 2022/8
+          twoDigitsMonth + twoDigitsYear, // 0822
+          twoDigitsYear + twoDigitsMonth, // 2208
         ];
 
         for (let option of options) {
@@ -1039,15 +1031,15 @@ FormAutofillUtils = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Try to match value with keys and names, but always return the key.
+   *
+   * @param   {Array<string>} keys
+   * @param   {Array<string>} names
+   * @param   {string} value
+   * @param   {Array} collators
+   * @returns {string}
+   */
   identifyValue(keys, names, value, collators) {
     let resultKey = keys.find(key => this.strCompare(value, key, collators));
     if (resultKey) {
@@ -1064,26 +1056,26 @@ FormAutofillUtils = {
     return null;
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Compare if two strings are the same.
+   *
+   * @param   {string} a
+   * @param   {string} b
+   * @param   {Array} collators
+   * @returns {boolean}
+   */
   strCompare(a = "", b = "", collators) {
     return collators.some(collator => !collator.compare(a, b));
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Determine whether one string(b) may be found within another string(a)
+   *
+   * @param   {string} a
+   * @param   {string} b
+   * @param   {Array} collators
+   * @returns {boolean} True if the string is found
+   */
   strInclude(a = "", b = "", collators) {
     const len = a.length - b.length;
     for (let i = 0; i <= len; i++) {
@@ -1094,50 +1086,50 @@ FormAutofillUtils = {
     return false;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Escaping user input to be treated as a literal string within a regular
+   * expression.
+   *
+   * @param   {string} string
+   * @returns {string}
+   */
   escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Get formatting information of a given country
+   *
+   * @param   {string} country
+   * @returns {object}
+   *         {
+   *           {string} addressLevel3L10nId
+   *           {string} addressLevel2L10nId
+   *           {string} addressLevel1L10nId
+   *           {string} postalCodeL10nId
+   *           {object} fieldsOrder
+   *           {string} postalCodePattern
+   *         }
+   */
   getFormFormat(country) {
     let dataset = this.getCountryAddressData(country);
-    
+    // We hit a country fallback in `getCountryAddressRawData` but it's not relevant here.
     if (country != dataset.key) {
-      
+      // Use a sparse object so the below default values take effect.
       dataset = {
-        
-
-
-
-
-
+        /**
+         * Even though data/ZZ only has address-level2, include the other levels
+         * in case they are needed for unknown countries. Users can leave the
+         * unnecessary fields blank which is better than forcing users to enter
+         * the data in incorrect fields.
+         */
         fmt: "%N%n%O%n%A%n%C %S %Z",
       };
     }
     return {
-      
-      
-      
+      // When particular values are missing for a country, the
+      // data/ZZ value should be used instead:
+      // https://chromium-i18n.appspot.com/ssl-aggregate-address/data/ZZ
       addressLevel3L10nId: this.getAddressFieldL10nId(
         dataset.sublocality_name_type || "suburb"
       ),
@@ -1173,13 +1165,13 @@ FormAutofillUtils = {
     return this.ccHeuristicsMode != this.CC_FATHOM_NONE;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Transform the key in FormAutofillConfidences (defined in ChromeUtils.webidl)
+   * to fathom recognized field type.
+   *
+   * @param {string} key key from FormAutofillConfidences dictionary
+   * @returns {string} fathom field type
+   */
   formAutofillConfidencesKeyToCCFieldType(key) {
     const MAP = {
       ccNumber: "cc-number",
@@ -1193,36 +1185,36 @@ FormAutofillUtils = {
   },
 };
 
-const LabelUtils = {
-  
-  
-  
+export const LabelUtils = {
+  // The tag name list is from Chromium except for "STYLE":
+  // eslint-disable-next-line max-len
+  // https://cs.chromium.org/chromium/src/components/autofill/content/renderer/form_autofill_util.cc?l=216&rcl=d33a171b7c308a64dc3372fac3da2179c63b419e
   EXCLUDED_TAGS: ["SCRIPT", "NOSCRIPT", "OPTION", "STYLE"],
 
-  
-  
-  
+  // A map object, whose keys are the id's of form fields and each value is an
+  // array consisting of label elements correponding to the id.
+  // @type {Map<string, array>}
   _mappedLabels: null,
 
-  
-  
-  
+  // An array consisting of label elements whose correponding form field doesn't
+  // have an id attribute.
+  // @type {Array<[HTMLLabelElement, HTMLElement]>}
   _unmappedLabelControls: null,
 
-  
-  
+  // A weak map consisting of label element and extracted strings pairs.
+  // @type {WeakMap<HTMLLabelElement, array>}
   _labelStrings: null,
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Extract all strings of an element's children to an array.
+   * "element.textContent" is a string which is merged of all children nodes,
+   * and this function provides an array of the strings contains in an element.
+   *
+   * @param  {object} element
+   *         A DOM element to be extracted.
+   * @returns {Array}
+   *          All strings in an element.
+   */
   extractLabelStrings(element) {
     if (this._labelStrings.has(element)) {
       return this._labelStrings.get(element);
@@ -1277,7 +1269,7 @@ const LabelUtils = {
           this._mappedLabels.set(id, [label]);
         }
       } else {
-        
+        // control must be non-empty here
         this._unmappedLabelControls.push({ label, control });
       }
     }
