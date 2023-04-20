@@ -4,6 +4,7 @@
 
 
 
+
 'use strict';
 
 promise_test(async t => {
@@ -13,13 +14,18 @@ promise_test(async t => {
   const rc1 = await rcHelper.addWindow(
        null,  {features: 'noopener'});
 
-  await rc1.executeScript(() => {
-    
-    const db = indexedDB.open( 'test_idb',  1);
-    db.onupgradeneeded = () => {
-      db.result.createObjectStore('store');
-    };
-  });
-
+  await createIndexedDBForTesting(rc1, 'test_idb', 1);
   await assertBFCache(rc1,  true);
+
+  
+  
+  
+  await createIndexedDBForTesting(rc1, 'test_idb_2', 1);
+
+  const rc2 = await rc1.navigateToNew();
+  
+  await createIndexedDBForTesting(rc2, 'test_idb_2', 2);
+  await rc2.historyBack();
+  
+  await assert_not_bfcached(rc1);
 });
