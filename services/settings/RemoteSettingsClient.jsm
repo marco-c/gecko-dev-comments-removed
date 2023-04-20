@@ -316,6 +316,20 @@ class RemoteSettingsClient extends EventEmitter {
       lastCheckTimePref,
     } = {}
   ) {
+    
+    
+    
+    
+    
+    if (
+      !AppConstants.RELEASE_OR_BETA &&
+      Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT
+    ) {
+      throw new Error(
+        "Cannot instantiate Remote Settings client in child processes."
+      );
+    }
+
     super(["sync"]); 
 
     this.collectionName = collectionName;
