@@ -11,7 +11,7 @@
 XPCOMUtils.defineLazyGetter(
   this,
   "gClient",
-  () => UrlbarProviderQuickSuggest._merino
+  () => UrlbarProviderQuickSuggest._test_merino
 );
 
 add_task(async function init() {

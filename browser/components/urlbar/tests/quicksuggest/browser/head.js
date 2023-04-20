@@ -181,11 +181,15 @@ async function setUpTelemetryTest({
 
 
 
+
+
+
 async function doTelemetryTest({
   index,
   suggestion,
   impressionOnly,
   selectables,
+  providerName = UrlbarProviderQuickSuggest.name,
   teardown = null,
   showSuggestion = () =>
     UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -203,6 +207,7 @@ async function doTelemetryTest({
   let selectableClassLists = await doImpressionOnlyTest({
     index,
     suggestion,
+    providerName,
     showSuggestion,
     expected: impressionOnly,
   });
@@ -264,6 +269,7 @@ async function doTelemetryTest({
 
     await doSelectableTest({
       suggestion,
+      providerName,
       showSuggestion,
       index,
       className,
@@ -315,9 +321,13 @@ async function doTelemetryTest({
 
 
 
+
+
+
 async function doImpressionOnlyTest({
   index,
   suggestion,
+  providerName,
   expected,
   showSuggestion,
 }) {
@@ -330,11 +340,11 @@ async function doImpressionOnlyTest({
   await showSuggestion();
 
   
-  let row = await validateSuggestionRow(index, suggestion);
+  let row = await validateSuggestionRow(index, suggestion, providerName);
   if (!row) {
     Assert.ok(
       false,
-      "Couldn't get quick suggest row, stopping impression-only test"
+      "Couldn't get suggestion row, stopping impression-only test"
     );
     await spyCleanup();
     return null;
@@ -351,8 +361,8 @@ async function doImpressionOnlyTest({
       let r = await UrlbarTestUtils.waitForAutocompleteResultAt(window, i);
       Assert.notEqual(
         r.result.providerName,
-        UrlbarProviderQuickSuggest.name,
-        "No other row should be a quick suggest: index = " + i
+        providerName,
+        "No other row should be from expected provider: index = " + i
       );
       if (
         !otherRow &&
@@ -368,7 +378,7 @@ async function doImpressionOnlyTest({
   if (!otherRow) {
     Assert.ok(
       false,
-      "Couldn't get a selectable non-quick-suggest row with a URL, stopping impression-only test"
+      "Couldn't get a different selectable row with a URL, stopping impression-only test"
     );
     await spyCleanup();
     return null;
@@ -384,13 +394,13 @@ async function doImpressionOnlyTest({
   
   
   
-  info("Clicking non-quick-suggest row and waiting for view to close");
+  info("Clicking different row and waiting for view to close");
   let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeMouseAtCenter(otherRow, {})
   );
 
-  info("Waiting for page to load after clicking non-quick-suggest row");
+  info("Waiting for page to load after clicking different row");
   await loadPromise;
 
   
@@ -439,9 +449,13 @@ async function doImpressionOnlyTest({
 
 
 
+
+
+
 async function doSelectableTest({
   index,
   suggestion,
+  providerName,
   className,
   expected,
   showSuggestion,
@@ -454,12 +468,9 @@ async function doSelectableTest({
   info("Showing suggestion");
   await showSuggestion();
 
-  let row = await validateSuggestionRow(index, suggestion);
+  let row = await validateSuggestionRow(index, suggestion, providerName);
   if (!row) {
-    Assert.ok(
-      false,
-      "Couldn't get quick suggest row, stopping selectable test"
-    );
+    Assert.ok(false, "Couldn't get suggestion row, stopping selectable test");
     await spyCleanup();
     return;
   }
@@ -520,12 +531,15 @@ async function doSelectableTest({
 
 
 
-async function validateSuggestionRow(index, suggestion) {
+
+
+
+async function validateSuggestionRow(index, suggestion, providerName) {
   let rowCount = UrlbarTestUtils.getResultCount(window);
   Assert.less(
     index,
     rowCount,
-    "Expected quick suggest row index should be < row count"
+    "Expected suggestion row index should be < row count"
   );
   if (rowCount <= index) {
     return null;
@@ -534,16 +548,16 @@ async function validateSuggestionRow(index, suggestion) {
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, index);
   Assert.equal(
     row.result.providerName,
-    UrlbarProviderQuickSuggest.name,
-    "Expected quick suggest row should actually be a quick suggest"
+    providerName,
+    "Expected suggestion row should be from expected provider"
   );
   Assert.equal(
     row.result.payload.url,
     suggestion.url,
-    "The quick suggest row should represent the expected suggestion"
+    "The suggestion row should represent the expected suggestion"
   );
   if (
-    row.result.providerName != UrlbarProviderQuickSuggest.name ||
+    row.result.providerName != providerName ||
     row.result.payload.url != suggestion.url
   ) {
     return null;
