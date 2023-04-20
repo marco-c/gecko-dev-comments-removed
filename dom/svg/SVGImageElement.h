@@ -47,9 +47,6 @@ class SVGImageElement final : public SVGImageElementBase,
   void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
 
   
-  CORSMode GetCORSMode() override;
-
-  
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                       const nsAString& aValue,
                       nsIPrincipal* aMaybeScriptedPrincipal,
@@ -95,15 +92,6 @@ class SVGImageElement final : public SVGImageElementBase,
   already_AddRefed<DOMSVGAnimatedLength> Height();
   already_AddRefed<DOMSVGAnimatedPreserveAspectRatio> PreserveAspectRatio();
   already_AddRefed<DOMSVGAnimatedString> Href();
-  void GetCrossOrigin(nsAString& aCrossOrigin) {
-    
-    
-    
-    GetEnumAttr(nsGkAtoms::crossorigin, nullptr, aCrossOrigin);
-  }
-  void SetCrossOrigin(const nsAString& aCrossOrigin, ErrorResult& aError) {
-    SetOrRemoveNullableStringAttr(nsGkAtoms::crossorigin, aCrossOrigin, aError);
-  }
 
   void SetDecoding(const nsAString& aDecoding, ErrorResult& aError) {
     SetAttr(nsGkAtoms::decoding, aDecoding, aError);
