@@ -1106,11 +1106,8 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   
   
   
-  
-  
-  
   virtual RTCError SetConfiguration(
-      const PeerConnectionInterface::RTCConfiguration& config);
+      const PeerConnectionInterface::RTCConfiguration& config) = 0;
 
   
   
