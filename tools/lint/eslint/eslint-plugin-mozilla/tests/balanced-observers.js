@@ -16,10 +16,16 @@ const ruleTester = new RuleTester({ parserOptions: { ecmaVersion: 6 } });
 
 
 
-function error(code, message) {
+function error(code, observable) {
   return {
     code,
-    errors: [{ message, type: "Identifier" }],
+    errors: [
+      {
+        messageId: "noCorresponding",
+        type: "Identifier",
+        data: { observable },
+      },
+    ],
   };
 }
 
@@ -34,41 +40,41 @@ ruleTester.run("balanced-observers", rule, {
     error(
       
       "Services.obs.addObserver(observer, 'observable');",
-      "No corresponding 'removeObserver(\"observable\")' was found."
+      "observable"
     ),
 
     error(
       
       "Services.obs.addObserver(observer, 'observable');" +
         "Services.obs.removeObserver(observer, 'different-observable');",
-      "No corresponding 'removeObserver(\"observable\")' was found."
+      "observable"
     ),
 
     error(
       
       "Services.prefs.addObserver('preference.name', otherObserver);",
-      "No corresponding 'removeObserver(\"preference.name\")' was found."
+      "preference.name"
     ),
 
     error(
       
       "Services.prefs.addObserver('preference.name', otherObserver);" +
         "Services.prefs.removeObserver('other.preference', otherObserver);",
-      "No corresponding 'removeObserver(\"preference.name\")' was found."
+      "preference.name"
     ),
 
     error(
       
       "Services.obs.addObserver(observer, 'observable');" +
         "Services.prefs.removeObserver(observer, 'observable');",
-      "No corresponding 'removeObserver(\"observable\")' was found."
+      "observable"
     ),
 
     error(
       "Services.prefs.addObserver('preference.name', otherObserver);" +
         
         "Services.obs.removeObserver('preference.name', otherObserver);",
-      "No corresponding 'removeObserver(\"preference.name\")' was found."
+      "preference.name"
     ),
   ],
 });
