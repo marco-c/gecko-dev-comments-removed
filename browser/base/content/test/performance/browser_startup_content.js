@@ -41,10 +41,6 @@ const known_scripts = {
     "resource://gre/modules/Readerable.jsm",
 
     
-    "resource:///actors/InteractionsChild.sys.mjs",
-    "resource:///modules/InteractionsBlocklist.sys.mjs",
-
-    
     "resource://gre/modules/TelemetryControllerBase.sys.mjs", 
     "resource://gre/modules/TelemetryControllerContent.sys.mjs", 
 
@@ -65,6 +61,14 @@ const known_scripts = {
 if (!gFissionBrowser) {
   known_scripts.modules.add(
     "resource:///modules/sessionstore/ContentSessionStore.sys.mjs"
+  );
+}
+
+if (AppConstants.NIGHTLY_BUILD) {
+  
+  known_scripts.modules.add("resource:///actors/InteractionsChild.sys.mjs");
+  known_scripts.modules.add(
+    "resource:///modules/InteractionsBlocklist.sys.mjs"
   );
 }
 
