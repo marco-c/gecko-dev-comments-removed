@@ -1,0 +1,24 @@
+import { timeout } from './timeout.js';
+
+
+
+
+
+
+
+
+
+
+export function takeScreenshot() {
+  document.documentElement.classList.remove('reftest-wait');
+}
+
+
+
+
+
+export function takeScreenshotDelayed(ms: number) {
+  timeout(() => {
+    takeScreenshot();
+  }, ms);
+}

@@ -1,0 +1,6 @@
+
+
+ 
+export function builtin(name) {
+  return values => `${name}(${values.join(', ')})`;
+}

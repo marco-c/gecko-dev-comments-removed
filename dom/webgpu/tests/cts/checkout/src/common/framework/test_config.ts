@@ -1,0 +1,20 @@
+export type TestConfig = {
+  maxSubcasesInFlight: number;
+  testHeartbeatCallback: () => void;
+  noRaceWithRejectOnTimeout: boolean;
+
+  
+
+
+
+
+
+  unrollConstEvalLoops: boolean;
+};
+
+export const globalTestConfig: TestConfig = {
+  maxSubcasesInFlight: 500,
+  testHeartbeatCallback: () => {},
+  noRaceWithRejectOnTimeout: false,
+  unrollConstEvalLoops: false,
+};
