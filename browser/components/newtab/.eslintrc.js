@@ -126,6 +126,10 @@ module.exports = {
     "react/no-unknown-property": 2,
     "react/require-render-return": 2,
 
+    
+    
+    "mozilla/no-cu-reportError": "off",
+
     "accessor-pairs": [2, { setWithoutGet: true, getWithoutSet: false }],
     "array-callback-return": 2,
     "block-scoped-var": 2,
