@@ -206,6 +206,8 @@ def make_task_description(config, jobs):
 
         
         if "macosx" in build_platform and config.kind == "build-mac-notarization":
+            task["worker"]["mac-behavior"] = "apple_notarization"
+        elif "macosx" in build_platform and config.kind == "build-mac-signing":
             task["worker"]["mac-behavior"] = "mac_sign"
         elif "macosx" in build_platform:
             
