@@ -1893,6 +1893,7 @@ void MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(
           FramePointer);
   loadPtr(Address(StackPointer, ResumeFromException::offsetOfStackPointer()),
           StackPointer);
+  ma_li(InstanceReg, ImmWord(wasm::FailInstanceReg));
   ret();
 
   

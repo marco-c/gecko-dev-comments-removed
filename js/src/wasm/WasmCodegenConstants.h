@@ -35,7 +35,7 @@ static const unsigned MaxRegisterResults = 1;
 
 
 
-static const unsigned FailFP = 0xbad;
+static const unsigned FailInstanceReg = 0xbad;
 
 
 

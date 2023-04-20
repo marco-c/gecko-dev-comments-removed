@@ -654,8 +654,9 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
   
   
   rfe->kind = ExceptionResumeKind::Wasm;
-  rfe->framePointer = (uint8_t*)wasm::FailFP;
+  rfe->framePointer = (uint8_t*)iter.unwoundCallerFP();
   rfe->stackPointer = (uint8_t*)iter.unwoundAddressOfReturnAddress();
+  rfe->instance = (Instance*)FailInstanceReg;
   rfe->target = nullptr;
   return false;
 }

@@ -758,8 +758,50 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   Register scratch = ABINonArgReturnReg1;
 
   
+  masm.moveStackPtrTo(scratch);
+
   
-  const unsigned argBase = sizeof(void*) + masm.framePushed();
+  
+#ifdef JS_CODEGEN_ARM64
+  static_assert(WasmStackAlignment == 16, "ARM64 SP alignment");
+#else
+  masm.andToStackPtr(Imm32(~(WasmStackAlignment - 1)));
+#endif
+  masm.assertStackAlignment(WasmStackAlignment);
+
+  
+  const size_t FakeFrameSize = 2 * sizeof(void*);
+#ifdef JS_CODEGEN_ARM64
+  masm.Ldr(ARMRegister(ABINonArgReturnReg0, 64),
+           MemOperand(ARMRegister(scratch, 64), nonVolatileRegsPushSize));
+#else
+  masm.Push(Address(scratch, nonVolatileRegsPushSize));
+#endif
+  
+  
+  
+  
+  masm.andPtr(Imm32(int32_t(~ExitFPTag)), FramePointer);
+#ifdef JS_CODEGEN_ARM64
+  masm.asVIXL().Push(ARMRegister(ABINonArgReturnReg0, 64),
+                     ARMRegister(FramePointer, 64));
+  masm.moveStackPtrTo(FramePointer);
+#else
+  masm.Push(FramePointer);
+#endif
+
+  masm.moveStackPtrTo(FramePointer);
+  masm.setFramePushed(FakeFrameSize);
+#ifdef JS_CODEGEN_ARM64
+  const size_t FakeFramePushed = 0;
+#else
+  const size_t FakeFramePushed = sizeof(void*);
+  masm.Push(scratch);
+#endif
+
+  
+  
+  const unsigned argBase = sizeof(void*) + nonVolatileRegsPushSize;
   ABIArgGenerator abi;
   ABIArg arg;
 
@@ -768,9 +810,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   if (arg.kind() == ABIArg::GPR) {
     masm.movePtr(arg.gpr(), argv);
   } else {
-    masm.loadPtr(
-        Address(masm.getStackPointer(), argBase + arg.offsetFromArgBase()),
-        argv);
+    masm.loadPtr(Address(scratch, argBase + arg.offsetFromArgBase()), argv);
   }
 
   
@@ -778,9 +818,8 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   if (arg.kind() == ABIArg::GPR) {
     masm.movePtr(arg.gpr(), InstanceReg);
   } else {
-    masm.loadPtr(
-        Address(masm.getStackPointer(), argBase + arg.offsetFromArgBase()),
-        InstanceReg);
+    masm.loadPtr(Address(scratch, argBase + arg.offsetFromArgBase()),
+                 InstanceReg);
   }
 
   WasmPush(masm, InstanceReg);
@@ -788,23 +827,8 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   WasmPush(masm, argv);
 
-  
-  
-  const unsigned framePushedBeforeAlign =
-      nonVolatileRegsPushSize + NumExtraPushed * WasmPushSize;
-
-  MOZ_ASSERT(masm.framePushed() == framePushedBeforeAlign);
-  masm.setFramePushed(0);
-
-  
-  
-#ifdef JS_CODEGEN_ARM64
-  static_assert(WasmStackAlignment == 16, "ARM64 SP alignment");
-#else
-  masm.moveStackPtrTo(scratch);
-  masm.andToStackPtr(Imm32(~(WasmStackAlignment - 1)));
-  masm.Push(scratch);
-#endif
+  MOZ_ASSERT(masm.framePushed() ==
+             NumExtraPushed * WasmPushSize + FakeFrameSize + FakeFramePushed);
 
   
   unsigned argDecrement =
@@ -814,12 +838,6 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
 
   
   SetupABIArguments(masm, fe, funcType, argv, scratch);
-
-  
-  
-  
-  
-  masm.andPtr(Imm32(int32_t(~ExitFPTag)), FramePointer);
 
   masm.loadWasmPinnedRegsFromInstance();
 
@@ -833,16 +851,21 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   masm.assertStackAlignment(WasmStackAlignment);
 
   
-  masm.freeStack(argDecrement);
+  
+  Label success, join;
+  masm.branchPtr(Assembler::NotEqual, InstanceReg, Imm32(FailInstanceReg),
+                 &success);
+  masm.move32(Imm32(false), scratch);
+  masm.jump(&join);
+  masm.bind(&success);
+  masm.move32(Imm32(true), scratch);
+  masm.bind(&join);
 
   
-#ifdef JS_CODEGEN_ARM64
-  static_assert(WasmStackAlignment == 16, "ARM64 SP alignment");
-#else
-  masm.PopStackPtr();
-#endif
-  MOZ_ASSERT(masm.framePushed() == 0);
-  masm.setFramePushed(framePushedBeforeAlign);
+  masm.freeStack(argDecrement);
+
+  masm.setFramePushed(NumExtraPushed * WasmPushSize + FakeFrameSize +
+                      FakeFramePushed);
 
   
   WasmPop(masm, argv);
@@ -850,21 +873,21 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   WasmPop(masm, InstanceReg);
 
   
+#ifdef JS_CODEGEN_ARM64
+  static_assert(WasmStackAlignment == 16, "ARM64 SP alignment");
+  masm.freeStack(FakeFrameSize);
+#else
+  masm.PopStackPtr();
+#endif
+
+  
   
   StoreRegisterResult(masm, fe, funcType, argv);
 
-  
-  
-  
-  Label success, join;
-  masm.branchPtr(Assembler::NotEqual, FramePointer, Imm32(FailFP), &success);
-  masm.move32(Imm32(false), ReturnReg);
-  masm.jump(&join);
-  masm.bind(&success);
-  masm.move32(Imm32(true), ReturnReg);
-  masm.bind(&join);
+  masm.move32(scratch, ReturnReg);
 
   
+  masm.setFramePushed(nonVolatileRegsPushSize);
   masm.PopRegsInMask(NonVolatileRegs);
   MOZ_ASSERT(masm.framePushed() == 0);
 
@@ -919,10 +942,6 @@ static void GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize) {
 
   masm.freeStack(frameSize);
   MoveSPForJitABI(masm);
-
-  
-  
-  masm.moveStackPtrTo(FramePointer);
 
   GenerateJitEntryLoadInstance(masm);
 
@@ -1284,7 +1303,8 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   
   Label exception;
-  masm.branchPtr(Assembler::Equal, FramePointer, Imm32(FailFP), &exception);
+  masm.branchPtr(Assembler::Equal, InstanceReg, Imm32(FailInstanceReg),
+                 &exception);
 
   
   masm.freeStack(frameSizeExclFP);
@@ -1582,7 +1602,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 #endif
   masm.assertStackAlignment(WasmStackAlignment);
 
-  masm.branchPtr(Assembler::Equal, FramePointer, Imm32(wasm::FailFP),
+  masm.branchPtr(Assembler::Equal, InstanceReg, Imm32(wasm::FailInstanceReg),
                  masm.exceptionLabel());
 
   
@@ -1629,9 +1649,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   GenPrintf(DebugChannel::Function, masm, "\n");
 
   
-  size_t fpOffset = bytesNeeded + ExitFooterFrame::Size() +
-                    ExitFrameLayout::offsetOfCallerFramePtr();
-  masm.loadPtr(Address(masm.getStackPointer(), fpOffset), FramePointer);
+  masm.loadPtr(Address(FramePointer, 0), FramePointer);
 
   
   masm.leaveExitFrame(bytesNeeded + ExitFrameLayout::Size());
@@ -2853,6 +2871,8 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
   masm.bind(&leaveWasm);
   masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfFramePointer()),
                FramePointer);
+  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfInstance()),
+               InstanceReg);
   masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfStackPointer()),
                scratch1);
   masm.moveToStackPtr(scratch1);

@@ -180,7 +180,7 @@ void JitFrameIter::settle() {
 
   if (isWasm()) {
     const wasm::WasmFrameIter& wasmFrame = asWasm();
-    if (!wasmFrame.unwoundJitCallerFP()) {
+    if (!wasmFrame.hasUnwoundJitFrame()) {
       return;
     }
 
@@ -195,7 +195,7 @@ void JitFrameIter::settle() {
     
 
     MOZ_ASSERT(wasmFrame.done());
-    uint8_t* prevFP = wasmFrame.unwoundJitCallerFP();
+    uint8_t* prevFP = wasmFrame.unwoundCallerFP();
     jit::FrameType prevFrameType = wasmFrame.unwoundJitFrameType();
 
     if (mustUnwindActivation_) {
