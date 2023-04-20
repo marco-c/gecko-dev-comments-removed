@@ -44,6 +44,10 @@ Address CacheRegisterAllocator::addressOf(MacroAssembler& masm,
                                           BaselineFrameSlot slot) const {
   uint32_t offset =
       stackPushed_ + ICStackValueOffset + slot.slot() * sizeof(JS::Value);
+  if (JitOptions.enableICFramePointers) {
+    
+    offset += sizeof(uintptr_t);
+  }
   return Address(masm.getStackPointer(), offset);
 }
 BaseValueIndex CacheRegisterAllocator::addressOf(MacroAssembler& masm,
@@ -51,6 +55,10 @@ BaseValueIndex CacheRegisterAllocator::addressOf(MacroAssembler& masm,
                                                  BaselineFrameSlot slot) const {
   uint32_t offset =
       stackPushed_ + ICStackValueOffset + slot.slot() * sizeof(JS::Value);
+  if (JitOptions.enableICFramePointers) {
+    
+    offset += sizeof(uintptr_t);
+  }
   return BaseValueIndex(masm.getStackPointer(), argcReg, offset);
 }
 
@@ -76,6 +84,11 @@ void AutoStubFrame::enter(MacroAssembler& masm, Register scratch,
                           CallCanGC canGC) {
   MOZ_ASSERT(compiler.allocator.stackPushed() == 0);
 
+  if (JitOptions.enableICFramePointers) {
+    
+    
+    masm.pop(FramePointer);
+  }
   EmitBaselineEnterStubFrame(masm, scratch);
 
 #ifdef DEBUG
@@ -97,6 +110,11 @@ void AutoStubFrame::leave(MacroAssembler& masm) {
 #endif
 
   EmitBaselineLeaveStubFrame(masm);
+  if (JitOptions.enableICFramePointers) {
+    
+    
+    masm.push(FramePointer);
+  }
 }
 
 #ifdef DEBUG
@@ -127,6 +145,33 @@ JitCode* BaselineCacheIRCompiler::compile() {
 #ifdef JS_CODEGEN_ARM
   masm.setSecondScratchReg(BaselineSecondScratchReg);
 #endif
+  if (JitOptions.enableICFramePointers) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    masm.push(FramePointer);
+    masm.moveStackPtrTo(FramePointer);
+
+    MOZ_ASSERT(baselineFrameReg() != FramePointer);
+    masm.loadPtr(Address(FramePointer, 0), baselineFrameReg());
+  }
+
   
   
   Address enteredCount(ICStubReg, ICCacheIRStub::offsetOfEnteredCount());
@@ -157,6 +202,9 @@ JitCode* BaselineCacheIRCompiler::compile() {
   for (size_t i = 0; i < failurePaths.length(); i++) {
     if (!emitFailurePath(i)) {
       return nullptr;
+    }
+    if (JitOptions.enableICFramePointers) {
+      masm.pop(FramePointer);
     }
     EmitStubGuardFailure(masm);
   }
@@ -615,7 +663,7 @@ bool BaselineCacheIRCompiler::emitFrameIsConstructingResult() {
   Register outputScratch = output.valueReg().scratchReg();
 
   
-  Address tokenAddr(FramePointer, JitFrameLayout::offsetOfCalleeToken());
+  Address tokenAddr(baselineFrameReg(), JitFrameLayout::offsetOfCalleeToken());
   masm.loadPtr(tokenAddr, outputScratch);
 
   
@@ -1708,7 +1756,7 @@ bool BaselineCacheIRCompiler::emitProxySetByValue(ObjOperandId objId,
   
   
   int scratchOffset = BaselineFrame::reverseOffsetOfScratchValue();
-  masm.storePtr(obj, Address(FramePointer, scratchOffset));
+  masm.storePtr(obj, Address(baselineFrameReg(), scratchOffset));
 
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, obj);
@@ -1770,7 +1818,7 @@ bool BaselineCacheIRCompiler::emitMegamorphicSetElement(ObjOperandId objId,
   
   
   int scratchOffset = BaselineFrame::reverseOffsetOfScratchValue();
-  masm.storePtr(obj, Address(FramePointer, scratchOffset));
+  masm.storePtr(obj, Address(baselineFrameReg_, scratchOffset));
 
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, obj);
@@ -1797,6 +1845,9 @@ bool BaselineCacheIRCompiler::emitMegamorphicSetElement(ObjOperandId objId,
 bool BaselineCacheIRCompiler::emitReturnFromIC() {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   allocator.discardStack(masm);
+  if (JitOptions.enableICFramePointers) {
+    masm.pop(FramePointer);
+  }
   EmitReturnFromIC(masm);
   return true;
 }
@@ -1986,6 +2037,10 @@ bool BaselineCacheIRCompiler::init(CacheKind kind) {
 
   
   liveFloatRegs_ = LiveFloatRegisterSet(FloatRegisterSet());
+
+  if (JitOptions.enableICFramePointers) {
+    baselineFrameReg_ = available.takeAny();
+  }
 
   allocator.initAvailableRegs(available);
   return true;
@@ -2557,6 +2612,8 @@ void BaselineCacheIRCompiler::pushArguments(Register argcReg,
 void BaselineCacheIRCompiler::pushStandardArguments(
     Register argcReg, Register scratch, Register scratch2, uint32_t argcFixed,
     bool isJitCall, bool isConstructing) {
+  MOZ_ASSERT(enteredStubFrame_);
+
   
   
   
@@ -2624,6 +2681,8 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
                                                  Register scratch2,
                                                  bool isJitCall,
                                                  bool isConstructing) {
+  MOZ_ASSERT(enteredStubFrame_);
+
   
   Register startReg = scratch;
   size_t arrayOffset =
@@ -2756,6 +2815,8 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
                                                   Register scratch,
                                                   Register scratch2,
                                                   bool isJitCall) {
+  MOZ_ASSERT(enteredStubFrame_);
+
   
   Register argsReg = scratch;
   masm.unboxObject(Address(FramePointer, BaselineStubFrameLayout::Size()),

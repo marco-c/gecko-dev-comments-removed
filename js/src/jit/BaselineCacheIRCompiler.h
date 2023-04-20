@@ -52,6 +52,16 @@ ICAttachResult AttachBaselineCacheIRStub(JSContext* cx,
 
 class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
   bool makesGCCalls_;
+  Register baselineFrameReg_ = FramePointer;
+
+  
+  
+  
+  
+  inline Register baselineFrameReg() {
+    MOZ_ASSERT(!enteredStubFrame_);
+    return baselineFrameReg_;
+  }
 
   [[nodiscard]] bool emitStoreSlotShared(bool isFixed, ObjOperandId objId,
                                          uint32_t offsetOffset,
