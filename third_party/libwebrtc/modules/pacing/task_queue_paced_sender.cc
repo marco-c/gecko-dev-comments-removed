@@ -87,11 +87,10 @@ TaskQueuePacedSender::TaskQueuePacedSender(
     }
   }
   
-  if (burst_interval.has_value() &&
-      (!burst.has_value() || burst.value() < burst_interval.value())) {
+  
+  if (!burst.has_value()) {
     burst = burst_interval;
   }
-
   if (burst.has_value()) {
     pacing_controller_.SetSendBurstInterval(burst.value());
   }
