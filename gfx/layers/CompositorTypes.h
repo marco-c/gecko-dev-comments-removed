@@ -92,9 +92,11 @@ enum class TextureFlags : uint32_t {
   REMOTE_TEXTURE = 1 << 20,
   
   DRM_SOURCE = 1 << 21,
+  
+  DUMMY_TEXTURE = 1 << 22,
 
   
-  ALL_BITS = (1 << 22) - 1,
+  ALL_BITS = (1 << 23) - 1,
   
   DEFAULT = NO_FLAGS
 };
