@@ -134,7 +134,7 @@ add_task(async function validate_filename_method() {
   );
 
   
-  Assert.equal(checkFilename(".png", 0), "index.png");
+  Assert.equal(checkFilename(".png", 0), "png.png");
 
   
   Assert.equal(

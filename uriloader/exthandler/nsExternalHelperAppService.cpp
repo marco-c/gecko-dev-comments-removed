@@ -3284,6 +3284,13 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
   
   
   
+  
+  
+  fileName.Trim(".");
+
+  
+  
+  
   nsCOMPtr<nsIMIMEService> mimeService = do_GetService("@mozilla.org/mime;1");
   if (mimeService) {
     if (fileName.IsEmpty()) {
@@ -3294,8 +3301,9 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
         nsAutoCString leafName;
         url->GetFileName(leafName);
         if (!leafName.IsEmpty()) {
-          if (NS_SUCCEEDED(UnescapeFragment(leafName, url, fileName))) {
-            CopyUTF8toUTF16(leafName, aFileName);  
+          if (NS_FAILED(UnescapeFragment(leafName, url, fileName))) {
+            CopyUTF8toUTF16(leafName, fileName);  
+            fileName.Trim(".");
           }
         }
 
@@ -3355,10 +3363,6 @@ nsExternalHelperAppService::ValidateFileNameForSaving(
       }
     }
   }
-
-  
-  
-  fileName.Trim(".", false);
 
   
   
