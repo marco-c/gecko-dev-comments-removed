@@ -53,6 +53,12 @@ background_update_metrics = [
 
 
 
+background_tasks_metrics = [
+    "toolkit/components/backgroundtasks/metrics.yaml",
+]
+
+
+
 test_metrics = [
     "toolkit/components/glean/tests/test_metrics.yaml",
 ]
@@ -60,7 +66,11 @@ test_metrics = [
 
 
 metrics_yamls = (
-    gecko_metrics + firefox_desktop_metrics + background_update_metrics + test_metrics
+    gecko_metrics
+    + firefox_desktop_metrics
+    + background_update_metrics
+    + background_tasks_metrics
+    + test_metrics
 )
 
 
@@ -87,6 +97,12 @@ background_update_pings = [
 
 
 
+background_tasks_pings = [
+    "toolkit/components/backgroundtasks/pings.yaml",
+]
+
+
+
 test_pings = [
     "toolkit/components/glean/tests/test_pings.yaml",
 ]
@@ -103,7 +119,13 @@ pings_by_app_id = {
 
 
 
-pings_yamls = gecko_pings + firefox_desktop_pings + background_update_pings + test_pings
+pings_yamls = (
+    gecko_pings
+    + firefox_desktop_pings
+    + background_update_pings
+    + background_tasks_pings
+    + test_pings
+)
 
 
 
