@@ -165,6 +165,7 @@ impl Builder {
     }
 
     
+    #[allow(clippy::wrong_self_convention)]
     pub(crate) fn is_test(&mut self, is_test: bool) -> &mut Self {
         self.is_test = is_test;
         self
