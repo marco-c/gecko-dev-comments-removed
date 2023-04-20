@@ -485,9 +485,6 @@ void NotificationController::ProcessMutationEvents() {
     acc->SetShowEventTarget(false);
     acc->SetHideEventTarget(false);
     acc->SetReorderEventTarget(false);
-    
-    
-    event->SetPrevEvent(nullptr);
   }
   
   RefPtr<AccTreeMutationEvent> firstEvent = mFirstMutationEvent;
@@ -630,6 +627,21 @@ void NotificationController::ProcessMutationEvents() {
         return;
       }
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<AccTreeMutationEvent> event = firstEvent;
+  while (event) {
+    RefPtr<AccTreeMutationEvent> next = event->NextEvent();
+    event->SetNextEvent(nullptr);
+    event->SetPrevEvent(nullptr);
+    event = next;
   }
 }
 
