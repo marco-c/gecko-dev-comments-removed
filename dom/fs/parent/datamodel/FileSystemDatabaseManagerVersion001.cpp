@@ -184,7 +184,7 @@ Result<bool, QMResult> IsAncestor(const FileSystemConnection& aConnection,
   return stmt.YesOrNoQuery();
 }
 
-Result<bool, QMResult> DoesFileExist(const FileSystemConnection& mConnection,
+Result<bool, QMResult> DoesFileExist(const FileSystemConnection& aConnection,
                                      const FileSystemChildMetadata& aHandle) {
   MOZ_ASSERT(!aHandle.parentId().IsEmpty());
 
@@ -194,10 +194,10 @@ Result<bool, QMResult> DoesFileExist(const FileSystemConnection& mConnection,
       "WHERE Files.name = :name AND Entries.parent = :parent ) "
       ";"_ns;
 
-  QM_TRY_RETURN(ApplyEntryExistsQuery(mConnection, existsQuery, aHandle));
+  QM_TRY_RETURN(ApplyEntryExistsQuery(aConnection, existsQuery, aHandle));
 }
 
-Result<bool, QMResult> DoesFileExist(const FileSystemConnection& mConnection,
+Result<bool, QMResult> DoesFileExist(const FileSystemConnection& aConnection,
                                      const EntryId& aEntry) {
   MOZ_ASSERT(!aEntry.IsEmpty());
 
@@ -206,7 +206,29 @@ Result<bool, QMResult> DoesFileExist(const FileSystemConnection& mConnection,
       "(SELECT 1 FROM Files WHERE handle = :handle ) "
       ";"_ns;
 
-  QM_TRY_RETURN(ApplyEntryExistsQuery(mConnection, existsQuery, aEntry));
+  QM_TRY_RETURN(ApplyEntryExistsQuery(aConnection, existsQuery, aEntry));
+}
+
+Result<EntryId, QMResult> FindParent(const FileSystemConnection& aConnection,
+                                     const EntryId& aEntryId) {
+  const nsCString aParentQuery =
+      "SELECT handle FROM Entries "
+      "WHERE handle IN ( "
+      "SELECT parent FROM Entries WHERE "
+      "handle = :entryId ) "
+      ";"_ns;
+
+  QM_TRY_UNWRAP(ResultStatement stmt,
+                ResultStatement::Create(aConnection, aParentQuery));
+  QM_TRY(QM_TO_RESULT(stmt.BindEntryIdByName("entryId"_ns, aEntryId)));
+  QM_TRY_UNWRAP(bool moreResults, stmt.ExecuteStep());
+
+  if (!moreResults) {
+    return Err(QMResult(NS_ERROR_DOM_NOT_FOUND_ERR));
+  }
+
+  QM_TRY_UNWRAP(EntryId parentId, stmt.GetEntryIdByColumn( 0u));
+  return parentId;
 }
 
 nsresult GetFileAttributes(const FileSystemConnection& aConnection,
@@ -363,10 +385,7 @@ nsresult PerformRename(const FileSystemConnection& aConnection,
   MOZ_ASSERT(!aHandle.entryId().IsEmpty());
   MOZ_ASSERT(IsValidName(aHandle.entryName()));
 
-  if (aHandle.entryName() == aNewName) {
-    return NS_OK;
-  }
-
+  
   if (!IsValidName(aNewName)) {
     return NS_ERROR_DOM_TYPE_MISMATCH_ERR;
   }
@@ -817,6 +836,22 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RenameEntry(
     return true;
   }
 
+  
+  FileSystemChildMetadata destination;
+  QM_TRY_UNWRAP(EntryId parent, FindParent(mConnection, aHandle.entryId()));
+  destination.parentId() = parent;
+  destination.childName() = aNewName;
+
+  QM_TRY_UNWRAP(bool exists, DoesFileExist(mConnection, destination));
+  if (exists) {
+    return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
+  }
+
+  QM_TRY_UNWRAP(exists, DoesDirectoryExist(mConnection, destination));
+  if (exists) {
+    return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
+  }
+
   mozStorageTransaction transaction(
       mConnection.get(), false, mozIStorageConnection::TRANSACTION_IMMEDIATE);
 
@@ -868,17 +903,14 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::MoveEntry(
 
   
   
-
-  
-  
   QM_TRY_UNWRAP(bool exists, DoesFileExist(mConnection, aNewDesignation));
   if (exists) {
-    return Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR));
+    return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
   }
 
   QM_TRY_UNWRAP(exists, DoesDirectoryExist(mConnection, aNewDesignation));
   if (exists) {
-    return Err(QMResult(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR));
+    return Err(QMResult(NS_ERROR_DOM_INVALID_MODIFICATION_ERR));
   }
 
   

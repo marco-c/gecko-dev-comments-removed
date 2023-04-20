@@ -494,7 +494,7 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateMoveDirectories)
                                  false};
     const FileSystemChildMetadata& dest = firstChildDescendantMeta;
     TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-    ASSERT_NSEQ(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR, rv);
+    ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
   }
 
   {
@@ -504,7 +504,7 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateMoveDirectories)
                                  true};
     const FileSystemChildMetadata& dest = testFileMeta;
     TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-    ASSERT_NSEQ(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR, rv);
+    ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
   }
 
   {
@@ -566,7 +566,7 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateMoveDirectories)
     FileSystemChildMetadata dest{firstChildDir,
                                  firstChildDescendantMeta.childName()};
     TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-    ASSERT_NSEQ(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR, rv);
+    ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
   }
 
   
@@ -586,7 +586,7 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateMoveDirectories)
     FileSystemChildMetadata dest{firstChildDir,
                                  firstChildDescendantMeta.childName()};
     TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-    ASSERT_NSEQ(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR, rv);
+    ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
   }
 
   {
@@ -596,7 +596,7 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateMoveDirectories)
                                  true};
     FileSystemChildMetadata dest{rootId, firstChildDescendantMeta.childName()};
     TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-    ASSERT_NSEQ(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR, rv);
+    ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
   }
 
   
@@ -656,7 +656,7 @@ TEST(TestFileSystemDatabaseManagerVersion001, smokeTestCreateMoveDirectories)
                                  true};
     FileSystemChildMetadata dest{rootId, firstChildMeta.childName()};
     TEST_TRY_UNWRAP_ERR(nsresult rv, dm->MoveEntry(src, dest));
-    ASSERT_NSEQ(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR, rv);
+    ASSERT_NSEQ(NS_ERROR_DOM_INVALID_MODIFICATION_ERR, rv);
   }
 
   
