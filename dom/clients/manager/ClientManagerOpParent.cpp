@@ -7,6 +7,7 @@
 #include "ClientManagerOpParent.h"
 
 #include "ClientManagerService.h"
+#include "mozilla/dom/PClientManagerParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 
 namespace mozilla::dom {
@@ -15,10 +16,13 @@ using mozilla::ipc::BackgroundParent;
 
 template <typename Method, typename... Args>
 void ClientManagerOpParent::DoServiceOp(Method aMethod, Args&&... aArgs) {
+  ThreadsafeContentParentHandle* originContent =
+      BackgroundParent::GetContentParentHandle(Manager()->Manager());
+
   
   
   RefPtr<ClientOpPromise> p =
-      (mService->*aMethod)(std::forward<Args>(aArgs)...);
+      (mService->*aMethod)(originContent, std::forward<Args>(aArgs)...);
 
   
   
