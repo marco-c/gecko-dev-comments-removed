@@ -5838,7 +5838,8 @@ bool nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
       return false;
     }
 
-    if (fType == LayoutFrameType::FieldSet) {
+    if (fType == LayoutFrameType::FieldSet ||
+        fType == LayoutFrameType::ColumnSet) {
       LinePosition kidPosition;
       nsIFrame* kid = aFrame->PrincipalChildList().FirstChild();
       
@@ -5848,29 +5849,6 @@ bool nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
         return true;
       }
       return false;
-    }
-
-    if (fType == LayoutFrameType::ColumnSet) {
-      
-      
-      
-      
-      
-      
-      LinePosition kidPosition;
-      for (const auto* kid : aFrame->PrincipalChildList()) {
-        LinePosition position;
-        if (!GetFirstLinePosition(aWM, kid, &position)) {
-          continue;
-        }
-        if (position.mBaseline < kidPosition.mBaseline) {
-          kidPosition = position;
-        }
-      }
-      if (kidPosition.mBaseline != nscoord_MAX) {
-        *aResult = kidPosition;
-        return true;
-      }
     }
 
     
@@ -5926,21 +5904,6 @@ bool nsLayoutUtils::GetLastLineBaseline(WritingMode aWM, const nsIFrame* aFrame,
       const auto maxBaseline = aFrame->GetLogicalSize(aWM).BSize(aWM);
       
       *aResult = std::clamp(*aResult, 0, maxBaseline);
-      return true;
-    }
-
-    
-    
-    
-    
-    
-    if (aFrame->IsColumnSetFrame()) {
-      const auto baseline =
-          aFrame->GetNaturalBaselineBOffset(aWM, BaselineSharingGroup::Last);
-      if (!baseline) {
-        return false;
-      }
-      *aResult = aFrame->BSize(aWM) - *baseline;
       return true;
     }
     
