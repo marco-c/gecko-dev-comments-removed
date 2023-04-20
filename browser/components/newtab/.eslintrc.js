@@ -28,8 +28,6 @@ module.exports = {
     "eslint:recommended",
     "plugin:jsx-a11y/recommended", 
     "plugin:mozilla/recommended", 
-    "plugin:mozilla/browser-test",
-    "plugin:mozilla/mochitest-test",
     "plugin:prettier/recommended", 
     "prettier", 
   ],
@@ -75,6 +73,10 @@ module.exports = {
     {
       files: "test/xpcshell/**",
       extends: ["plugin:mozilla/xpcshell-test"],
+    },
+    {
+      files: "test/browser/**",
+      extends: ["plugin:mozilla/browser-test"],
     },
     {
       
