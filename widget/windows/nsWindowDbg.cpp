@@ -79,6 +79,10 @@ PrintEvent::~PrintEvent() {
       ++gEventCounter;
     }
   }
+  if (mMsg == WM_DESTROY) {
+    
+    WindowClosed(mHwnd);
+  }
 }
 
 void EventMsgInfo::LogParameters(nsCString& str, WPARAM wParam, LPARAM lParam,
