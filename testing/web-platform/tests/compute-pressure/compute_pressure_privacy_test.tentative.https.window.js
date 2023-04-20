@@ -18,7 +18,9 @@ promise_test(async t => {
   const iframe = document.createElement('iframe');
   iframe.src = get_host_info().HTTPS_REMOTE_ORIGIN +
       '/compute-pressure/resources/support-iframe.html';
+  const iframeLoadWatcher = new EventWatcher(t, iframe, 'load');
   document.body.appendChild(iframe);
+  await iframeLoadWatcher.wait_for('load');
   
   
   
@@ -48,7 +50,9 @@ promise_test(async t => {
   const iframe = document.createElement('iframe');
   iframe.src = get_host_info().HTTPS_REMOTE_ORIGIN +
       '/compute-pressure/resources/support-iframe.html';
+  const iframeLoadWatcher = new EventWatcher(t, iframe, 'load');
   document.body.appendChild(iframe);
+  await iframeLoadWatcher.wait_for('load');
   
   
   
