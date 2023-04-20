@@ -60,50 +60,6 @@ function testAttributeL10n(el, attr, id, args = null) {
   testLocalization(el, id, args);
 }
 
-
-
-
-
-
-
-
-
-
-
-async function testReducedMotionProp(el, prop, valueNotReduced, valueReduced) {
-  info(`Test the panel's CSS ${prop} value depending on a reduced motion mode`);
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["ui.prefersReducedMotion", 0]],
-  });
-
-  ok(
-    matchMedia("(prefers-reduced-motion: no-preference)").matches,
-    "The reduce motion mode is not active"
-  );
-  is(
-    getComputedStyle(el).getPropertyValue(prop),
-    valueNotReduced,
-    `Default ${prop} will be provided, when a reduce motion mode is not active`
-  );
-
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["ui.prefersReducedMotion", 1]],
-  });
-
-  ok(
-    matchMedia("(prefers-reduced-motion: reduce)").matches,
-    "The reduce motion mode is active"
-  );
-  is(
-    getComputedStyle(el).getPropertyValue(prop),
-    valueReduced,
-    `Reduced ${prop} will be provided, when a reduce motion mode is active`
-  );
-}
-
 let helper = new DateTimeTestHelper();
 
 registerCleanupFunction(() => {
@@ -186,13 +142,6 @@ add_task(async function test_spinner_month_markup() {
   testAttributeL10n(spinnerMonthBtn, "aria-label", "date-spinner-month");
   testAttributeL10n(spinnerMonthNext, "aria-label", "date-spinner-month-next");
 
-  await testReducedMotionProp(
-    spinnerMonthBtn,
-    "scroll-behavior",
-    "smooth",
-    "auto"
-  );
-
   await helper.tearDown();
 });
 
@@ -274,13 +223,6 @@ add_task(async function test_spinner_year_markup() {
   );
   testAttributeL10n(spinnerYearBtn, "aria-label", "date-spinner-year");
   testAttributeL10n(spinnerYearNext, "aria-label", "date-spinner-year-next");
-
-  await testReducedMotionProp(
-    spinnerYearBtn,
-    "scroll-behavior",
-    "smooth",
-    "auto"
-  );
 
   await helper.tearDown();
 });

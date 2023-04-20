@@ -128,10 +128,14 @@ function Spinner(props, context) {
       if (this._isArrayDiff(newItems, items)) {
         this.state = Object.assign(this.state, newState);
         this._updateItems();
-        this._scrollTo(newValue,  true,  false);
+        this._scrollTo(newValue, true);
       } else if (newValue != value) {
         this.state = Object.assign(this.state, newState);
-        this._scrollTo(newValue,  true, smoothScroll);
+        if (smoothScroll) {
+          this._smoothScrollTo(newValue, true);
+        } else {
+          this._scrollTo(newValue, true);
+        }
       }
 
       this.elements.spinner.setAttribute(
@@ -526,20 +530,14 @@ function Spinner(props, context) {
 
 
 
-    _scrollToIndex(index, smooth) {
+    _scrollTo(value, centering) {
+      const index = this._getScrollIndex(value, centering);
       
-      if (index < 0) {
-        return;
+      if (index > -1) {
+        this.state.index = index;
+        this.elements.spinner.scrollTop =
+          this.state.index * ITEM_HEIGHT * this.props.rootFontSize;
       }
-      this.state.index = index;
-      const element = this.elements.spinner.children[index];
-      if (!element) {
-        return;
-      }
-      element.scrollIntoView({
-        behavior: smooth ? "auto" : "instant",
-        block: "start",
-      });
     },
 
     
@@ -547,19 +545,28 @@ function Spinner(props, context) {
 
 
 
-
-
-    _scrollTo(value, centering, smooth) {
-      const index = this._getScrollIndex(value, centering);
-      this._scrollToIndex(index, smooth);
-    },
-
     _smoothScrollTo(value) {
-      this._scrollTo(value,  false,  true);
+      const index = this._getScrollIndex(value);
+      
+      if (index > -1) {
+        this.state.index = index;
+        this._smoothScrollToIndex(this.state.index);
+      }
     },
+
+    
+
+
+
 
     _smoothScrollToIndex(index) {
-      this._scrollToIndex(index,  true);
+      const element = this.elements.spinner.children[index];
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
     },
 
     
