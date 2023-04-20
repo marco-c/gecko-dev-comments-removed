@@ -69,12 +69,6 @@ class ChannelManager : public ChannelFactoryInterface {
   void GetSupportedAudioReceiveCodecs(std::vector<AudioCodec>* codecs) const;
   void GetSupportedVideoSendCodecs(std::vector<VideoCodec>* codecs) const;
   void GetSupportedVideoReceiveCodecs(std::vector<VideoCodec>* codecs) const;
-  RtpHeaderExtensions GetDefaultEnabledAudioRtpHeaderExtensions() const;
-  std::vector<webrtc::RtpHeaderExtensionCapability>
-  GetSupportedAudioRtpHeaderExtensions() const;
-  RtpHeaderExtensions GetDefaultEnabledVideoRtpHeaderExtensions() const;
-  std::vector<webrtc::RtpHeaderExtensionCapability>
-  GetSupportedVideoRtpHeaderExtensions() const;
 
   
   
@@ -101,14 +95,6 @@ class ChannelManager : public ChannelFactoryInterface {
       const VideoOptions& options,
       webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory)
       override;
-
-  
-  
-  
-  bool StartAecDump(webrtc::FileWrapper file, int64_t max_size_bytes);
-
-  
-  void StopAecDump();
 
  protected:
   ChannelManager(std::unique_ptr<MediaEngineInterface> media_engine,
