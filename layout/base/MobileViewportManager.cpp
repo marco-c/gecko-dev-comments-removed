@@ -433,6 +433,11 @@ void MobileViewportManager::UpdateResolutionForContentSizeChange(
   
   
   
+  if (MOZ_LOG_TEST(gLog, LogLevel::Debug)) {
+    MVM_LOG("%p: conditions preventing shrink-to-fit: %d %d %d\n", this,
+            mRestoreResolution.isSome(), mContext->IsResolutionUpdatedByApz(),
+            viewportInfo.IsDefaultZoomValid());
+  }
   if (!mRestoreResolution && !mContext->IsResolutionUpdatedByApz() &&
       !viewportInfo.IsDefaultZoomValid()) {
     if (zoom != intrinsicScale) {
