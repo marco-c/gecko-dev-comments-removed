@@ -346,13 +346,13 @@ macro_rules! define_string_types {
         begin_writing = $begin_writing: ident, $fallible_begin_writing: ident;
         start_bulk_write = $start_bulk_write: ident;
     } => {
-        /// The representation of a ns[C]String type in C++. This type is
-        /// used internally by our definition of ns[C]String to ensure layout
-        /// compatibility with the C++ ns[C]String type.
+        /// The representation of a `ns[C]String` type in C++. This type is
+        /// used internally by our definition of `ns[C]String` to ensure layout
+        /// compatibility with the C++ `ns[C]String` type.
         ///
-        /// This type may also be used in place of a C++ ns[C]String inside of
+        /// This type may also be used in place of a C++ `ns[C]String` inside of
         /// struct definitions which are shared with C++, as it has identical
-        /// layout to our ns[C]String type.
+        /// layout to our `ns[C]String` type.
         ///
         /// This struct will leak its data if dropped from rust. See the module
         /// documentation for more information on this type.
