@@ -274,17 +274,11 @@ void UntrustedModulesFixture::ValidateUntrustedModules(
     const wchar_t* mName;
     ModuleLoadInfo::Status mStatus;
   } kKnownModules[] = {
-    
-    {L"TestDllBlocklist_MatchByName.dll", ModuleLoadInfo::Status::Blocked},
-    {L"TestDllBlocklist_MatchByVersion.dll", ModuleLoadInfo::Status::Blocked},
-    {L"TestDllBlocklist_NoOpEntryPoint.dll",
-     ModuleLoadInfo::Status::Redirected},
-#if !defined(MOZ_ASAN)
-    
-    
-    
-    {L"TestDllBlocklist_UserBlocked.dll", ModuleLoadInfo::Status::Blocked},
-#endif  
+      
+      {L"TestDllBlocklist_MatchByName.dll", ModuleLoadInfo::Status::Blocked},
+      {L"TestDllBlocklist_MatchByVersion.dll", ModuleLoadInfo::Status::Blocked},
+      {L"TestDllBlocklist_NoOpEntryPoint.dll",
+       ModuleLoadInfo::Status::Redirected},
   };
 
   EXPECT_EQ(aData.mProcessType, GeckoProcessType_Default);

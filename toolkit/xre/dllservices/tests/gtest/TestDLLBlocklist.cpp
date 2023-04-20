@@ -124,25 +124,6 @@ TEST(TestDllBlocklist, NoOpEntryPoint)
   EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
 #  endif
 }
-
-
-TEST(TestDllBlocklist, UserBlocked)
-{
-  constexpr auto kLeafName = u"TestDllBlocklist_UserBlocked.dll"_ns;
-  nsString dllPath = GetFullPath(kLeafName);
-
-  nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
-
-
-
-#  if !defined(MOZ_ASAN)
-  EXPECT_TRUE(!hDll);
-  EXPECT_TRUE(!::GetModuleHandleW(kLeafName.get()));
-#  endif
-  hDll.own(::LoadLibraryExW(dllPath.get(), nullptr, LOAD_LIBRARY_AS_DATAFILE));
-  
-  EXPECT_TRUE(hDll);
-}
 #endif  
 
 #define DLL_BLOCKLIST_ENTRY(name, ...) {name, __VA_ARGS__},

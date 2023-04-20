@@ -327,13 +327,4 @@ struct FreeSidDeleter {
 
 
 typedef mozilla::UniquePtr<void, FreeSidDeleter> UniqueSidPtr;
-
-
-
-
-
-inline bool IsDynamicBlocklistDisabled(bool isSafeMode,
-                                       bool hasCommandLineDisableArgument) {
-  return isSafeMode || hasCommandLineDisableArgument;
-}
 #endif

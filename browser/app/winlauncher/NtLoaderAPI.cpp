@@ -13,9 +13,6 @@ namespace mozilla {
 
 extern "C" MOZ_EXPORT nt::LoaderAPI* GetNtLoaderAPI(
     nt::LoaderObserver* aNewObserver) {
-  
-  
-  
   const bool isCallerMozglue =
       CheckForAddress(RETURN_ADDRESS(), L"mozglue.dll");
   MOZ_ASSERT(isCallerMozglue);

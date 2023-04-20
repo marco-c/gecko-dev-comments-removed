@@ -433,29 +433,25 @@ static void AddCachedDirRule(sandbox::TargetPolicy* aPolicy,
 static const Maybe<Vector<const wchar_t*>>& GetPrespawnCigExceptionModules() {
   
   
-#if defined(EARLY_BETA_OR_EARLIER)
-  
-  
   
   static Maybe<Vector<const wchar_t*>> sDependentModules =
       []() -> Maybe<Vector<const wchar_t*>> {
-    RefPtr<DllServices> dllSvc(DllServices::Get());
-    auto sharedSection = dllSvc->GetSharedSection();
-    if (!sharedSection) {
+    using GetDependentModulePathsFn = const wchar_t* (*)();
+    GetDependentModulePathsFn getDependentModulePaths =
+        reinterpret_cast<GetDependentModulePathsFn>(::GetProcAddress(
+            ::GetModuleHandleW(nullptr), "GetDependentModulePaths"));
+    if (!getDependentModulePaths) {
       return Nothing();
     }
 
-    Span<const wchar_t> dependentModules = sharedSection->GetDependentModules();
-    if (dependentModules.IsEmpty()) {
+    const wchar_t* arrayBase = getDependentModulePaths();
+    if (!arrayBase) {
       return Nothing();
     }
 
     
     Vector<const wchar_t*> paths;
-    for (const wchar_t* p = dependentModules.data();
-         (p - dependentModules.data() <
-              static_cast<long long>(dependentModules.size()) &&
-          *p);) {
+    for (const wchar_t* p = arrayBase; *p;) {
       Unused << paths.append(p);
       while (*p) {
         ++p;
@@ -467,9 +463,6 @@ static const Maybe<Vector<const wchar_t*>>& GetPrespawnCigExceptionModules() {
   }();
 
   return sDependentModules;
-#else
-  return Nothing();
-#endif
 }
 
 static sandbox::ResultCode InitSignedPolicyRulesToBypassCig(
