@@ -23,7 +23,7 @@ export function toggleTracing(logMethod) {
 
     
     if (!isTracingEnabled && logMethod == "console") {
-      await panel.toolbox.openSplitConsole();
+      await panel.toolbox.openSplitConsole({ focusConsoleInput: false });
     }
 
     return dispatch({

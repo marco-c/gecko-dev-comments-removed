@@ -2974,7 +2974,11 @@ Toolbox.prototype = {
 
 
 
-  openSplitConsole() {
+
+
+
+
+  openSplitConsole({ focusConsoleInput = true } = {}) {
     this._splitConsole = true;
     Services.prefs.setBoolPref(SPLITCONSOLE_ENABLED_PREF, true);
     this._refreshConsoleDisplay();
@@ -2992,7 +2996,9 @@ Toolbox.prototype = {
         width: Math.ceil(this.win.outerWidth / 50) * 50,
       });
       this.emit("split-console");
-      this.focusConsoleInput();
+      if (focusConsoleInput) {
+        this.focusConsoleInput();
+      }
     });
   },
 
