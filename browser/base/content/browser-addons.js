@@ -1433,7 +1433,17 @@ var gUnifiedExtensions = {
   async togglePanel(aEvent) {
     if (!CustomizationHandler.isCustomizing()) {
       if (aEvent) {
-        if (aEvent.button !== 0) {
+        if (
+          
+          
+          
+          (aEvent.type == "mousedown" &&
+            (aEvent.button !== 0 ||
+              (AppConstants.platform === "macosx" && aEvent.ctrlKey))) ||
+          (aEvent.type === "keypress" &&
+            aEvent.charCode !== KeyEvent.DOM_VK_SPACE &&
+            aEvent.keyCode !== KeyEvent.DOM_VK_RETURN)
+        ) {
           return;
         }
 
