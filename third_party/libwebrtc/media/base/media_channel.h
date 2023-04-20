@@ -923,7 +923,10 @@ class VideoMediaChannel : public MediaChannel, public Delayable {
   
   virtual void ClearRecordableEncodedFrameCallback(uint32_t ssrc) = 0;
   
-  virtual void GenerateKeyFrame(uint32_t ssrc) = 0;
+  
+  virtual void RequestRecvKeyFrame(uint32_t ssrc) = 0;
+  
+  virtual void GenerateSendKeyFrame(uint32_t ssrc) = 0;
 
   virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
 };

@@ -279,7 +279,7 @@ void VideoRtpReceiver::SetMediaChannel_w(cricket::MediaChannel* media_channel) {
   if (media_channel_) {
     if (saved_generate_keyframe_) {
       
-      media_channel_->GenerateKeyFrame(ssrc_.value_or(0));
+      media_channel_->RequestRecvKeyFrame(ssrc_.value_or(0));
       saved_generate_keyframe_ = false;
     }
     if (encoded_sink_enabled) {
@@ -331,7 +331,7 @@ void VideoRtpReceiver::OnGenerateKeyFrame() {
     return;
   }
   
-  media_channel_->GenerateKeyFrame(ssrc_.value_or(0));
+  media_channel_->RequestRecvKeyFrame(ssrc_.value_or(0));
   
   
   
