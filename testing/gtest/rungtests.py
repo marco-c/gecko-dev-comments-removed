@@ -161,23 +161,26 @@ class GTests(object):
             else:
                 env[pathvar] = self.xre_path
 
-        
+        symbolizer_path = None
         if mozinfo.info["asan"]:
+            symbolizer_path = "ASAN_SYMBOLIZER_PATH"
+        elif mozinfo.info["tsan"]:
+            symbolizer_path = "TSAN_SYMBOLIZER_PATH"
+
+        if symbolizer_path is not None:
             
-            if "ASAN_SYMBOLIZER_PATH" in env and os.path.isfile(
-                env["ASAN_SYMBOLIZER_PATH"]
-            ):
-                llvmsym = env["ASAN_SYMBOLIZER_PATH"]
+            if symbolizer_path in env and os.path.isfile(env[symbolizer_path]):
+                llvmsym = env[symbolizer_path]
             else:
                 llvmsym = os.path.join(
                     self.xre_path, "llvm-symbolizer" + mozinfo.info["bin_suffix"]
                 )
             if os.path.isfile(llvmsym):
-                env["ASAN_SYMBOLIZER_PATH"] = llvmsym
-                log.info("gtest | ASan using symbolizer at %s", llvmsym)
+                env[symbolizer_path] = llvmsym
+                log.info("Using LLVM symbolizer at %s", llvmsym)
             else:
                 
-                log.info("gtest | Failed to find ASan symbolizer at %s", llvmsym)
+                log.info("Failed to find LLVM symbolizer at %s", llvmsym)
 
         
         env["MOZ_WEBRENDER"] = "1"
