@@ -263,16 +263,6 @@ class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
                                        public sigslot::has_slots<> {
  public:
   
-  ABSL_DEPRECATED(
-      "Use the version with socket_factory, see bugs.webrtc.org/13145")
-  explicit BasicNetworkManager(
-      const webrtc::FieldTrialsView* field_trials = nullptr)
-      : BasicNetworkManager(
-             nullptr,
-             nullptr,
-            field_trials) {}
-
-  
   BasicNetworkManager(SocketFactory* socket_factory,
                       const webrtc::FieldTrialsView* field_trials = nullptr)
       : BasicNetworkManager( nullptr,
