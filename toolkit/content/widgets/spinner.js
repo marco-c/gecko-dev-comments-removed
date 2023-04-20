@@ -128,14 +128,10 @@ function Spinner(props, context) {
       if (this._isArrayDiff(newItems, items)) {
         this.state = Object.assign(this.state, newState);
         this._updateItems();
-        this._scrollTo(newValue, true);
+        this._scrollTo(newValue,  true,  false);
       } else if (newValue != value) {
         this.state = Object.assign(this.state, newState);
-        if (smoothScroll) {
-          this._smoothScrollTo(newValue, true);
-        } else {
-          this._scrollTo(newValue, true);
-        }
+        this._scrollTo(newValue,  true, smoothScroll);
       }
 
       this.elements.spinner.setAttribute(
@@ -530,43 +526,40 @@ function Spinner(props, context) {
 
 
 
-    _scrollTo(value, centering) {
-      const index = this._getScrollIndex(value, centering);
+    _scrollToIndex(index, smooth) {
       
-      if (index > -1) {
-        this.state.index = index;
-        this.elements.spinner.scrollTop =
-          this.state.index * ITEM_HEIGHT * this.props.rootFontSize;
+      if (index < 0) {
+        return;
       }
+      this.state.index = index;
+      const element = this.elements.spinner.children[index];
+      if (!element) {
+        return;
+      }
+      element.scrollIntoView({
+        behavior: smooth ? "auto" : "instant",
+        block: "start",
+      });
     },
 
     
 
 
 
+
+
+
+    _scrollTo(value, centering, smooth) {
+      const index = this._getScrollIndex(value, centering);
+      this._scrollToIndex(index, smooth);
+    },
 
     _smoothScrollTo(value) {
-      const index = this._getScrollIndex(value);
-      
-      if (index > -1) {
-        this.state.index = index;
-        this._smoothScrollToIndex(this.state.index);
-      }
+      this._scrollTo(value,  false,  true);
     },
 
-    
-
-
-
-
     _smoothScrollToIndex(index) {
-      const element = this.elements.spinner.children[index];
-      if (element) {
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }
+      this._scrollToIndex(index,  true);
     },
 
     
