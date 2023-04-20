@@ -1150,16 +1150,32 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
       LogicalSize availSpace(wm, prevRect.ISize(wm),
                              aReflowInput.AvailableSize(wm).BSize(wm));
       ReflowOutput desiredSize(aReflowInput);
-      ReflowInput frameState(aPresContext, aReflowInput, frame, availSpace);
-      nsReflowStatus frameStatus;
 
-      
+      StyleSizeOverrides sizeOverride;
+      if (frame->IsFlexItem()) {
+        
+        
+        
+        
+        
+        sizeOverride.mStyleISize.emplace(
+            StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(
+                frame->StylePosition()->mBoxSizing == StyleBoxSizing::Border
+                    ? prevRect.ISize(wm)
+                    : prevInFlow->ContentSize(wm).ISize(wm))));
+
+        
+        sizeOverride.mStyleBSize.emplace(
+            StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(0)));
+      }
+      ReflowInput reflowInput(aPresContext, aReflowInput, frame, availSpace,
+                              Nothing(), {}, sizeOverride);
+
       LogicalPoint pos(wm, prevRect.IStart(wm), 0);
-      ReflowChild(frame, aPresContext, desiredSize, frameState, wm, pos,
+      nsReflowStatus frameStatus;
+      ReflowChild(frame, aPresContext, desiredSize, reflowInput, wm, pos,
                   containerSize, aFlags, frameStatus, &tracker);
-      
-      
-      FinishReflowChild(frame, aPresContext, desiredSize, &frameState, wm, pos,
+      FinishReflowChild(frame, aPresContext, desiredSize, &reflowInput, wm, pos,
                         containerSize, aFlags);
 
       
