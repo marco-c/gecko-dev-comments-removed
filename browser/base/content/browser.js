@@ -10122,8 +10122,8 @@ var gCookieBannerHandlingExperiment = {
 
     
     
-    Services.prefs.setIntPref("cookiebanners.service.mode", 3);
-    Services.prefs.setIntPref("cookiebanners.service.mode.privateBrowsing", 3);
+    Services.prefs.setIntPref("cookiebanners.service.mode", 1);
+    Services.prefs.setIntPref("cookiebanners.service.mode.privateBrowsing", 1);
 
     
     
