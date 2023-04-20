@@ -174,9 +174,10 @@ def generateTestFor(mathvariant, mathml):
 
 
 generateTestFor(mathvariant="auto", mathml=False)
+generateTestFor(mathvariant="auto", mathml=True)
 
 
 
 
-for mathvariant in mathvariantTransforms:
-    generateTestFor(mathvariant, mathml=True)
+
+
