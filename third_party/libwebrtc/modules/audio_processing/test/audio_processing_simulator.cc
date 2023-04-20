@@ -118,7 +118,7 @@ AudioProcessingSimulator::AudioProcessingSimulator(
     std::unique_ptr<AudioProcessingBuilder> ap_builder)
     : settings_(settings),
       ap_(std::move(audio_processing)),
-      analog_mic_level_(settings.initial_mic_level),
+      applied_input_volume_(settings.initial_mic_level),
       fake_recording_device_(
           settings.initial_mic_level,
           settings_.simulate_mic_gain ? *settings.simulated_mic_kind : 0),
@@ -211,26 +211,47 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
   
   if (settings_.simulate_mic_gain) {
     RTC_DCHECK(!settings_.use_analog_mic_gain_emulation);
-    if (settings_.aec_dump_input_filename) {
+    
+    fake_recording_device_.SetMicLevel(applied_input_volume_);
+
+    if (settings_.aec_dump_input_filename &&
+        aec_dump_applied_input_level_.has_value()) {
       
       
-      
-      fake_recording_device_.SetUndoMicLevel(aec_dump_mic_level_);
+      fake_recording_device_.SetUndoMicLevel(*aec_dump_applied_input_level_);
     }
 
+    
     if (fixed_interface) {
       fake_recording_device_.SimulateAnalogGain(fwd_frame_.data);
     } else {
       fake_recording_device_.SimulateAnalogGain(in_buf_.get());
     }
+  }
 
+  
+  
+  bool applied_input_volume_set = false;
+  if (settings_.simulate_mic_gain) {
+    
     
     ap_->set_stream_analog_level(fake_recording_device_.MicLevel());
+    applied_input_volume_set = true;
   } else if (!settings_.use_analog_mic_gain_emulation) {
     
-    ap_->set_stream_analog_level(settings_.aec_dump_input_filename
-                                     ? aec_dump_mic_level_
-                                     : analog_mic_level_);
+    
+    if (settings_.aec_dump_input_filename &&
+        aec_dump_applied_input_level_.has_value()) {
+      
+      ap_->set_stream_analog_level(*aec_dump_applied_input_level_);
+      applied_input_volume_set = true;
+    } else if (!settings_.aec_dump_input_filename) {
+      
+      
+      
+      ap_->set_stream_analog_level(applied_input_volume_);
+      applied_input_volume_set = true;
+    }
   }
 
   
@@ -268,11 +289,10 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
 
   
   
-  
-  analog_mic_level_ = ap_->recommended_stream_analog_level();
-  if (settings_.simulate_mic_gain) {
-    fake_recording_device_.SetMicLevel(analog_mic_level_);
+  if (applied_input_volume_set) {
+    applied_input_volume_ = ap_->recommended_stream_analog_level();
   }
+
   if (buffer_memory_writer_) {
     RTC_CHECK(!buffer_file_writer_);
     buffer_memory_writer_->Write(*out_buf_);

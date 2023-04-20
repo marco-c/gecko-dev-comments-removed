@@ -591,6 +591,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
   
   
   
+  
   virtual int recommended_stream_analog_level() const = 0;
 
   

@@ -47,7 +47,8 @@ float RunAgc2WithConstantInput(GainController2& agc2,
   
   for (int i = 0; i < num_frames + 1; ++i) {
     SetAudioBufferSamples(input_level, ab);
-    agc2.Process(absl::nullopt, &ab);
+    agc2.Process(absl::nullopt,
+                 false, &ab);
   }
 
   
@@ -283,12 +284,14 @@ TEST(GainController2, CheckFinalGainWithAdaptiveDigitalController) {
       x *= gain;
     }
     test::CopyVectorToAudioBuffer(stream_config, frame, &audio_buffer);
-    agc2.Process(absl::nullopt, &audio_buffer);
+    agc2.Process(absl::nullopt,
+                 false, &audio_buffer);
   }
 
   
   SetAudioBufferSamples(1.0f, audio_buffer);
-  agc2.Process(absl::nullopt, &audio_buffer);
+  agc2.Process(absl::nullopt,
+               false, &audio_buffer);
   const float applied_gain_db =
       20.0f * std::log10(audio_buffer.channels_const()[0][0]);
 
@@ -343,10 +346,13 @@ TEST(GainController2,
       x *= gain;
     }
     test::CopyVectorToAudioBuffer(stream_config, frame, &audio_buffer);
-    agc2.Process(kSpeechProbabilities[j], &audio_buffer);
+    agc2.Process(kSpeechProbabilities[j], false,
+                 &audio_buffer);
     test::CopyVectorToAudioBuffer(stream_config, frame,
                                   &audio_buffer_reference);
-    agc2_reference.Process(absl::nullopt, &audio_buffer_reference);
+    agc2_reference.Process(absl::nullopt,
+                           false,
+                           &audio_buffer_reference);
 
     
     for (int i = 0; i < kStereo; ++i) {
@@ -407,10 +413,13 @@ TEST(GainController2,
       x *= gain;
     }
     test::CopyVectorToAudioBuffer(stream_config, frame, &audio_buffer);
-    agc2.Process(kSpeechProbabilities[j], &audio_buffer);
+    agc2.Process(kSpeechProbabilities[j], false,
+                 &audio_buffer);
     test::CopyVectorToAudioBuffer(stream_config, frame,
                                   &audio_buffer_reference);
-    agc2_reference.Process(absl::nullopt, &audio_buffer_reference);
+    agc2_reference.Process(absl::nullopt,
+                           false,
+                           &audio_buffer_reference);
     
     for (int i = 0; i < kStereo; ++i) {
       for (int j = 0; j < static_cast<int>(audio_buffer.num_frames()); ++j) {
@@ -472,11 +481,13 @@ TEST(GainController2,
     }
     test::CopyVectorToAudioBuffer(stream_config, frame,
                                   &audio_buffer_reference);
-    agc2_reference.Process(absl::nullopt, &audio_buffer_reference);
+    agc2_reference.Process(absl::nullopt, false,
+                           &audio_buffer_reference);
     test::CopyVectorToAudioBuffer(stream_config, frame, &audio_buffer);
-    agc2.Process(vad.Analyze(AudioFrameView<const float>(
-                     audio_buffer.channels(), audio_buffer.num_channels(),
-                     audio_buffer.num_frames())),
+    float speech_probability = vad.Analyze(AudioFrameView<const float>(
+        audio_buffer.channels(), audio_buffer.num_channels(),
+        audio_buffer.num_frames()));
+    agc2.Process(speech_probability, false,
                  &audio_buffer);
     
     for (int i = 0; i < kStereo; ++i) {

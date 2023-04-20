@@ -51,10 +51,11 @@ class GainController2 {
   
   
   
-  void Process(absl::optional<float> speech_probability, AudioBuffer* audio);
-
   
-  void NotifyAnalogLevel(int level);
+  
+  void Process(absl::optional<float> speech_probability,
+               bool input_volume_changed,
+               AudioBuffer* audio);
 
   static bool Validate(const AudioProcessing::Config::GainController2& config);
 
@@ -69,7 +70,6 @@ class GainController2 {
   std::unique_ptr<AdaptiveDigitalGainController> adaptive_digital_controller_;
   Limiter limiter_;
   int calls_since_last_limiter_log_;
-  int analog_level_;
 };
 
 }  
