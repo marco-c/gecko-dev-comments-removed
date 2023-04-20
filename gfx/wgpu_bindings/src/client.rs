@@ -16,11 +16,7 @@ use parking_lot::Mutex;
 
 use nsstring::nsACString;
 
-use std::{
-    borrow::Cow,
-    num::NonZeroU8,
-    ptr,
-};
+use std::{borrow::Cow, num::NonZeroU8, ptr};
 
 
 
