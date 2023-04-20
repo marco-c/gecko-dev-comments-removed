@@ -1374,27 +1374,19 @@ Toolbox.prototype = {
   
 
 
-  _createSourceMapService() {
-    if (this._sourceMapService) {
-      return this._sourceMapService;
+
+
+  get sourceMapLoader() {
+    if (this._sourceMapLoader) {
+      return this._sourceMapLoader;
     }
-    const service = require("devtools/client/shared/source-map-loader/index");
-    this._sourceMapService = service;
-    service.on("source-map-error", message =>
+    this._sourceMapLoader = require("devtools/client/shared/source-map-loader/index");
+    this._sourceMapLoader.on("source-map-error", message =>
       this.target.logWarningInPage(message, "source map")
     );
-    service.startSourceMapWorker();
+    this._sourceMapLoader.startSourceMapWorker();
 
-    return this._sourceMapService;
-  },
-
-  
-
-
-
-
-  get sourceMapService() {
-    return this._createSourceMapService();
+    return this._sourceMapLoader;
   },
 
   
@@ -1427,10 +1419,9 @@ Toolbox.prototype = {
     if (this._sourceMapURLService) {
       return this._sourceMapURLService;
     }
-    const sourceMaps = this._createSourceMapService();
     this._sourceMapURLService = new SourceMapURLService(
       this.commands,
-      sourceMaps
+      this.sourceMapLoader
     );
     return this._sourceMapURLService;
   },
@@ -4037,11 +4028,11 @@ Toolbox.prototype = {
     this._lastFocusedElement = null;
     this._pausedTargets = null;
 
-    if (this._sourceMapService) {
-      this._sourceMapService.stopSourceMapWorker();
+    if (this._sourceMapLoader) {
+      this._sourceMapLoader.stopSourceMapWorker();
       
-      this._sourceMapService.clearEvents();
-      this._sourceMapService = null;
+      this._sourceMapLoader.clearEvents();
+      this._sourceMapLoader = null;
     }
 
     if (this._parserService) {

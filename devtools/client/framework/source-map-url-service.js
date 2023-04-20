@@ -17,9 +17,9 @@ const SOURCE_MAP_PREF = "devtools.source-map.client-service.enabled";
 
 
 class SourceMapURLService {
-  constructor(commands, sourceMapService) {
+  constructor(commands, sourceMapLoader) {
     this._commands = commands;
-    this._sourceMapService = sourceMapService;
+    this._sourceMapLoader = sourceMapLoader;
 
     this._prefValue = Services.prefs.getBoolPref(SOURCE_MAP_PREF);
     this._pendingIDSubscriptions = new Map();
@@ -40,7 +40,7 @@ class SourceMapURLService {
     
     
     
-    this._sourceMapService.on(
+    this._sourceMapLoader.on(
       "source-map-applied",
       this.newSourceMapCreated.bind(this)
     );
@@ -221,7 +221,7 @@ class SourceMapURLService {
   }
 
   _clearAllState() {
-    this._sourceMapService.clearSourceMaps();
+    this._sourceMapLoader.clearSourceMaps();
     this._pendingIDSubscriptions.clear();
     this._pendingURLSubscriptions.clear();
     this._urlToIDMap.clear();
@@ -305,7 +305,7 @@ class SourceMapURLService {
       
       
       if (!map.loaded) {
-        map.loaded = this._sourceMapService.getOriginalURLs({
+        map.loaded = this._sourceMapLoader.getOriginalURLs({
           id: map.id,
           url: map.url,
           sourceMapBaseURL: map.sourceMapBaseURL,
@@ -318,7 +318,7 @@ class SourceMapURLService {
         try {
           await map.loaded;
 
-          const position = await this._sourceMapService.getOriginalLocation({
+          const position = await this._sourceMapLoader.getOriginalLocation({
             sourceId: map.id,
             line: query.line,
             column: query.column,
