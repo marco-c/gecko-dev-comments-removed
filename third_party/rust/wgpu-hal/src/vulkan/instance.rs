@@ -153,6 +153,7 @@ impl super::Instance {
 
     pub fn required_extensions(
         entry: &ash::Entry,
+        _driver_api_version: u32,
         flags: crate::InstanceFlags,
     ) -> Result<Vec<&'static CStr>, crate::InstanceError> {
         let instance_extensions = entry
@@ -164,6 +165,8 @@ impl super::Instance {
 
         
         let mut extensions: Vec<&'static CStr> = Vec::new();
+
+        
         extensions.push(khr::Surface::name());
 
         
@@ -172,28 +175,39 @@ impl super::Instance {
             not(target_os = "android"),
             not(target_os = "macos")
         )) {
+            
             extensions.push(khr::XlibSurface::name());
+            
             extensions.push(khr::XcbSurface::name());
+            
             extensions.push(khr::WaylandSurface::name());
         }
         if cfg!(target_os = "android") {
+            
             extensions.push(khr::AndroidSurface::name());
         }
         if cfg!(target_os = "windows") {
+            
             extensions.push(khr::Win32Surface::name());
         }
         if cfg!(target_os = "macos") {
+            
             extensions.push(ext::MetalSurface::name());
         }
 
         if flags.contains(crate::InstanceFlags::DEBUG) {
+            
             extensions.push(ext::DebugUtils::name());
         }
 
-        extensions.push(vk::KhrGetPhysicalDeviceProperties2Fn::name());
-
+        
         
         extensions.push(vk::ExtSwapchainColorspaceFn::name());
+
+        
+        
+        
+        extensions.push(vk::KhrGetPhysicalDeviceProperties2Fn::name());
 
         
         extensions.retain(|&ext| {
@@ -262,19 +276,16 @@ impl super::Instance {
             None
         };
 
-        
-        
-        let get_physical_device_properties = if driver_api_version >= vk::API_VERSION_1_1
-            && extensions.contains(&khr::GetPhysicalDeviceProperties2::name())
-        {
-            log::info!("Enabling device properties2");
-            Some(khr::GetPhysicalDeviceProperties2::new(
-                &entry,
-                &raw_instance,
-            ))
-        } else {
-            None
-        };
+        let get_physical_device_properties =
+            if extensions.contains(&khr::GetPhysicalDeviceProperties2::name()) {
+                log::info!("Enabling device properties2");
+                Some(khr::GetPhysicalDeviceProperties2::new(
+                    &entry,
+                    &raw_instance,
+                ))
+            } else {
+                None
+            };
 
         Ok(Self {
             shared: Arc::new(super::InstanceShared {
@@ -519,7 +530,7 @@ impl crate::Instance<super::Api> for super::Instance {
                 },
             );
 
-        let extensions = Self::required_extensions(&entry, desc.flags)?;
+        let extensions = Self::required_extensions(&entry, driver_api_version, desc.flags)?;
 
         let instance_layers = entry.enumerate_instance_layer_properties().map_err(|e| {
             log::info!("enumerate_instance_layer_properties: {:?}", e);

@@ -192,6 +192,7 @@
     clippy::unneeded_field_pattern,
     clippy::match_like_matches_macro,
     clippy::if_same_then_else,
+    clippy::collapsible_if,
     clippy::derive_partial_eq_without_eq
 )]
 #![warn(
@@ -202,7 +203,7 @@
     clippy::pattern_type_mismatch,
     clippy::missing_const_for_fn
 )]
-#![deny(clippy::panic)]
+#![cfg_attr(not(test), deny(clippy::panic))]
 
 mod arena;
 pub mod back;
@@ -251,6 +252,7 @@ pub(crate) type NamedExpressions = FastHashMap<Handle<Expression>, String>;
 
 
 
+
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
@@ -258,6 +260,7 @@ pub(crate) type NamedExpressions = FastHashMap<Handle<Expression>, String>;
 pub struct EarlyDepthTest {
     conservative: Option<ConservativeDepth>,
 }
+
 
 
 
@@ -337,6 +340,7 @@ pub enum BuiltIn {
     VertexIndex,
     
     FragDepth,
+    PointCoord,
     FrontFacing,
     PrimitiveIndex,
     SampleIndex,
@@ -1399,11 +1403,7 @@ pub enum Expression {
     
     CallResult(Handle<Function>),
     
-    AtomicResult {
-        kind: ScalarKind,
-        width: Bytes,
-        comparison: bool,
-    },
+    AtomicResult { ty: Handle<Type>, comparison: bool },
     
     
     
@@ -1463,6 +1463,22 @@ pub enum Statement {
         accept: Block,
         reject: Block,
     },
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     Switch {
         selector: Handle<Expression>, 
