@@ -58,6 +58,10 @@ class EncodedImageDataExtractor {
 
   
   
+  virtual void RemoveParticipantInCall() = 0;
+
+  
+  
   
   virtual EncodedImageExtractionResult ExtractData(
       const EncodedImage& source) = 0;

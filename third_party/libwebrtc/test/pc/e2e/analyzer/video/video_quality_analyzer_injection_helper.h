@@ -76,9 +76,14 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   void Start(std::string test_case_name,
              rtc::ArrayView<const std::string> peer_names,
              int max_threads_count = 1);
+
   
   
   void RegisterParticipantInCall(absl::string_view peer_name);
+
+  
+  
+  void UnregisterParticipantInCall(absl::string_view peer_name);
 
   
   
