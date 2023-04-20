@@ -5,16 +5,24 @@
 
 
 EXPORTS.mozilla.dom += [
+    "WindowsLocationChild.h",
+    "WindowsLocationParent.h",
     "WindowsUtilsChild.h",
     "WindowsUtilsParent.h",
 ]
 
 UNIFIED_SOURCES += [
     "nsHapticFeedback.cpp",
+    "WindowsLocationParent.cpp",
     "WindowsLocationProvider.cpp",
 ]
 
+SOURCES += [
+    "WindowsLocationChild.cpp",  
+]
+
 IPDL_SOURCES += [
+    "PWindowsLocation.ipdl",
     "PWindowsUtils.ipdl",
 ]
 
