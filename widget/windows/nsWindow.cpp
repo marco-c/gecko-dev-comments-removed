@@ -5100,9 +5100,9 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
                               LRESULT* aRetValue) {
   
   
-  PrintEvent printEvent(mWnd, msg, wParam, lParam, *aRetValue);
+  PrintEvent printEvent(mWnd, msg, wParam, lParam);
   bool result = ProcessMessageInternal(msg, wParam, lParam, aRetValue);
-  printEvent.SetResult(result);
+  printEvent.SetResult(*aRetValue, result);
 
   return result;
 }

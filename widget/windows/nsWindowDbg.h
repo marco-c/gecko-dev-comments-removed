@@ -43,21 +43,25 @@ extern std::unordered_map<UINT, EventMsgInfo> gAllEvents;
 
 class PrintEvent final {
  public:
-  PrintEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam,
-             LRESULT retValue);
-  void SetResult(bool result) { mResult = mozilla::Some(result); }
+  PrintEvent(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+  void SetResult(LRESULT lresult, bool result) {
+    mRetValue = lresult;
+    mResult = mozilla::Some(result);
+  }
   ~PrintEvent();
 
  private:
   bool PrintEventInternal();
+
   const HWND mHwnd;
   const UINT mMsg;
   const WPARAM mWParam;
   const LPARAM mLParam;
-  const LRESULT mRetValue;
   mozilla::Maybe<long> mEventCounter;
   
   mozilla::Maybe<bool> mResult;
+  LRESULT mRetValue = 0;
+
   bool mShouldLogPostCall;
 };
 
