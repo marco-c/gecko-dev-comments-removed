@@ -675,6 +675,8 @@ pref("toolkit.telemetry.unified", true);
 
 pref("toolkit.telemetry.dap_enabled", false);
 
+pref("toolkit.telemetry.dap_task1_enabled", false);
+
 pref("toolkit.telemetry.dap_leader", "https://interop-00.api.divviup.org");
 
 pref("toolkit.telemetry.dap_leader_owner", "ISRG");
