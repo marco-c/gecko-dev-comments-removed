@@ -848,8 +848,8 @@ VectorImage::GetImageProvider(WindowRenderer* aRenderer,
       return ImgDrawResult::TEMPORARY_ERROR;
     }
 
-    if (!SurfaceCache::IsLegalSize(aSize) ||
-        !Factory::AllowedSurfaceSize(aSize)) {
+    if (!SurfaceCache::IsLegalSize(rasterSize) ||
+        !Factory::AllowedSurfaceSize(rasterSize)) {
       
       
       
