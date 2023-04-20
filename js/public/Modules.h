@@ -191,6 +191,13 @@ extern JS_PUBLIC_API void SetModulePrivate(JSObject* module,
 
 
 
+
+
+extern JS_PUBLIC_API void ClearModulePrivate(JSObject* module);
+
+
+
+
 extern JS_PUBLIC_API Value GetModulePrivate(JSObject* module);
 
 

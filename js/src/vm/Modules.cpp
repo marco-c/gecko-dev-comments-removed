@@ -138,6 +138,12 @@ JS_PUBLIC_API void JS::SetModulePrivate(JSObject* module, const Value& value) {
   module->as<ModuleObject>().scriptSourceObject()->setPrivate(rt, value);
 }
 
+JS_PUBLIC_API void JS::ClearModulePrivate(JSObject* module) {
+  
+  JSRuntime* rt = module->zone()->runtimeFromMainThread();
+  module->as<ModuleObject>().scriptSourceObject()->clearPrivate(rt);
+}
+
 JS_PUBLIC_API JS::Value JS::GetModulePrivate(JSObject* module) {
   return module->as<ModuleObject>().scriptSourceObject()->getPrivate();
 }

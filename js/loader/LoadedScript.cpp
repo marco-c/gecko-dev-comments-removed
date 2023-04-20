@@ -147,9 +147,14 @@ void ModuleScript::UnlinkModuleRecord() {
   
   
   
+  
+  
+  
+  
   if (mModuleRecord) {
-    MOZ_ASSERT(JS::GetModulePrivate(mModuleRecord).toPrivate() == this);
-    JS::SetModulePrivate(mModuleRecord, JS::UndefinedValue());
+    JSObject* module = mModuleRecord.unbarrieredGet();
+    MOZ_ASSERT(JS::GetModulePrivate(module).toPrivate() == this);
+    JS::ClearModulePrivate(module);
     mModuleRecord = nullptr;
   }
 }
