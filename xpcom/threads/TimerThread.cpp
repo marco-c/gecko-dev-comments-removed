@@ -804,27 +804,30 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  const bool wakeUpTimerThread =
-      mWaiting &&
-      (mTimers.Length() == 0 || aTimer->mTimeout < mTimers[0].Timeout() ||
-       aTimer->mDelay.IsZero());
+  const bool fireImmediately = aTimer->mDelay.IsZero();
+  if (fireImmediately) {
+    RefPtr<nsTimerImpl> timerRef(aTimer);
+    LogTimerEvent::Run run(aTimer);
+    PostTimerEvent(timerRef.forget());
+  } else {
+    
+    
+    
+    
+    
+    const bool wakeUpTimerThread =
+        mWaiting &&
+        (mTimers.Length() == 0 || aTimer->mTimeout < mTimers[0].Timeout());
 
-  
-  if (!AddTimerInternal(aTimer)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+    
+    if (!AddTimerInternal(aTimer)) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
 
-  if (wakeUpTimerThread) {
-    mNotified = true;
-    mMonitor.Notify();
+    if (wakeUpTimerThread) {
+      mNotified = true;
+      mMonitor.Notify();
+    }
   }
 
   if (profiler_thread_is_being_profiled_for_markers(mProfilerThreadId)) {
