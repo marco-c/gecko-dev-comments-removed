@@ -90,8 +90,6 @@ class ScreenOrientation final : public DOMEventTargetHelper {
 
   nsCOMPtr<nsIRunnable> DispatchChangeEventAndResolvePromise();
 
-  bool ShouldResistFingerprinting() const;
-
   LockPermission GetLockOrientationPermission(bool aCheckSandbox) const;
 
   
