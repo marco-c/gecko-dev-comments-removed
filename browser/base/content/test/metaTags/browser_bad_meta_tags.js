@@ -27,6 +27,7 @@ add_task(async function test_bad_meta_tags() {
   );
   is(
     pageInfo.previewImageURL.href,
+    
     "http://test.com/twitter-image.jpg",
     "did not collect og:image because of invalid loading principal"
   );

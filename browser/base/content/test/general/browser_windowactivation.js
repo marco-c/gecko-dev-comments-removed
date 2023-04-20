@@ -6,6 +6,7 @@ const testPageChrome =
   getRootDirectory(gTestPath) + "file_window_activation.html";
 const testPageHttp = testPageChrome.replace(
   "chrome://mochitests/content",
+  
   "http://example.com"
 );
 const testPageWindow =
