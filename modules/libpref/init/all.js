@@ -4115,7 +4115,7 @@ pref("devtools.remote.wifi.scan", true);
 pref("devtools.remote.adb.extensionID", "adb@mozilla.org");
 
 
-pref("devtools.remote.adb.extensionURL", "https://ftp.mozilla.org/pub/mozilla.org/labs/devtools/adb-extension/#OS#/adb-extension-latest-#OS#.xpi");
+pref("devtools.remote.adb.extensionURL", "https://ftp.mozilla.org/pub/labs/devtools/adb-extension/#OS#/adb-extension-latest-#OS#.xpi");
 
 
 pref("devtools.inspector.inactive.css.enabled", true);
