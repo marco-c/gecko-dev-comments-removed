@@ -30,8 +30,7 @@ def repackage_dmg(infile, output):
 
     with mozfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
-        with tarfile.open(infile) as tar:
-            tar.extractall(path=tmpdir)
+        mozfile.extract_tarball(infile, tmpdir)
 
         
         
