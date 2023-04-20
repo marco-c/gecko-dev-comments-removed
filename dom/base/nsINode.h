@@ -1645,6 +1645,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
   bool UnoptimizableCCNode() const;
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FireNodeRemovedForChildren();
+
  private:
   mozilla::dom::SVGUseElement* DoGetContainingSVGUseShadowHost() const;
 

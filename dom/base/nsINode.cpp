@@ -2139,11 +2139,30 @@ void nsINode::ReplaceChildren(nsINode* aNode, ErrorResult& aRv) {
       return;
     }
   }
+  nsCOMPtr<nsINode> node = aNode;
+
+  
+  mozAutoSubtreeModified subtree(OwnerDoc(), nullptr);
+
+  if (nsContentUtils::HasMutationListeners(
+          OwnerDoc(), NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
+    FireNodeRemovedForChildren();
+    if (node) {
+      if (node->NodeType() == DOCUMENT_FRAGMENT_NODE) {
+        node->FireNodeRemovedForChildren();
+      } else if (nsCOMPtr<nsINode> parent = node->GetParentNode()) {
+        nsContentUtils::MaybeFireNodeRemoved(node, parent);
+      }
+    }
+  }
 
   
   mozAutoDocUpdate updateBatch(OwnerDoc(), true);
 
   nsAutoMutationBatch mb(this, true, true);
+
+  
+  nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
 
   
   while (mFirstChild) {
@@ -3555,6 +3574,21 @@ void nsINode::RemoveMutationObserver(
     nsMultiMutationObserver* aMultiMutationObserver) {
   if (aMultiMutationObserver) {
     aMultiMutationObserver->RemoveMutationObserverFromNode(this);
+  }
+}
+
+void nsINode::FireNodeRemovedForChildren() {
+  Document* doc = OwnerDoc();
+  
+  if (!nsContentUtils::HasMutationListeners(
+          doc, NS_EVENT_BITS_MUTATION_NODEREMOVED)) {
+    return;
+  }
+
+  nsCOMPtr<nsINode> child;
+  for (child = GetFirstChild(); child && child->GetParentNode() == this;
+       child = child->GetNextSibling()) {
+    nsContentUtils::MaybeFireNodeRemoved(child, this);
   }
 }
 
