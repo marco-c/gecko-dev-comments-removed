@@ -2024,12 +2024,19 @@ class MOZ_STACK_CLASS CharIterator {
 
 
 
-  bool IsClusterAndLigatureGroupStart() const;
+  bool IsClusterAndLigatureGroupStart() const {
+    return mTextRun->IsLigatureGroupStart(
+               mSkipCharsIterator.GetSkippedOffset()) &&
+           mTextRun->IsClusterStart(mSkipCharsIterator.GetSkippedOffset());
+  }
 
   
 
 
-  const gfxTextRun::GlyphRun& GlyphRun() const;
+  const gfxTextRun::GlyphRun& GlyphRun() const {
+    return *mTextRun->FindFirstGlyphRunContaining(
+        mSkipCharsIterator.GetSkippedOffset());
+  }
 
   
 
@@ -2270,21 +2277,6 @@ bool CharIterator::AdvanceToSubtree() {
     }
   }
   return true;
-}
-
-bool CharIterator::IsClusterAndLigatureGroupStart() const {
-  return mTextRun->IsLigatureGroupStart(
-             mSkipCharsIterator.GetSkippedOffset()) &&
-         mTextRun->IsClusterStart(mSkipCharsIterator.GetSkippedOffset());
-}
-
-const gfxTextRun::GlyphRun& CharIterator::GlyphRun() const {
-  uint32_t numRuns;
-  const gfxTextRun::GlyphRun* glyphRuns = mTextRun->GetGlyphRuns(&numRuns);
-  uint32_t runIndex = mTextRun->FindFirstGlyphRunContaining(
-      mSkipCharsIterator.GetSkippedOffset());
-  MOZ_ASSERT(runIndex < numRuns);
-  return glyphRuns[runIndex];
 }
 
 bool CharIterator::IsOriginalCharTrimmed() const {

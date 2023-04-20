@@ -819,12 +819,12 @@ void ContentEventHandler::AppendFontRanges(FontRangeArray& aFontRanges,
 
     gfxTextRun::Range skipRange(iter.ConvertOriginalToSkipped(frameXPStart),
                                 iter.ConvertOriginalToSkipped(frameXPEnd));
-    gfxTextRun::GlyphRunIterator runIter(textRun, skipRange);
     uint32_t lastXPEndOffset = frameXPStart;
-    while (runIter.NextRun()) {
-      gfxFont* font = runIter.GetGlyphRun()->mFont.get();
+    for (gfxTextRun::GlyphRunIterator runIter(textRun, skipRange);
+         !runIter.AtEnd(); runIter.NextRun()) {
+      gfxFont* font = runIter.GlyphRun()->mFont.get();
       uint32_t startXPOffset =
-          iter.ConvertSkippedToOriginal(runIter.GetStringStart());
+          iter.ConvertSkippedToOriginal(runIter.StringStart());
       
       
       if (startXPOffset >= frameXPEnd) {
@@ -853,8 +853,7 @@ void ContentEventHandler::AppendFontRanges(FontRangeArray& aFontRanges,
 
       
       
-      uint32_t endXPOffset =
-          iter.ConvertSkippedToOriginal(runIter.GetStringEnd());
+      uint32_t endXPOffset = iter.ConvertSkippedToOriginal(runIter.StringEnd());
       endXPOffset = std::min(frameXPEnd, endXPOffset);
       baseOffset += GetTextLengthInRange(aTextNode, startXPOffset, endXPOffset,
                                          aLineBreakType);

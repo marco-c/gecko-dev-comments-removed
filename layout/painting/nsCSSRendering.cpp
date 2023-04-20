@@ -4058,15 +4058,15 @@ void nsCSSRendering::PaintDecorationLine(
   
   auto currentGlyphRunAdvance = [&]() {
     return textRun->GetAdvanceWidth(
-               gfxTextRun::Range(iter.GetStringStart(), iter.GetStringEnd()),
+               gfxTextRun::Range(iter.StringStart(), iter.StringEnd()),
                aParams.provider) /
            appUnitsPerDevPixel;
   };
 
-  while (iter.NextRun()) {
-    if (iter.GetGlyphRun()->mOrientation ==
+  for (; !iter.AtEnd(); iter.NextRun()) {
+    if (iter.GlyphRun()->mOrientation ==
             mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT ||
-        (iter.GetGlyphRun()->mIsCJK &&
+        (iter.GlyphRun()->mIsCJK &&
          skipInk == mozilla::StyleTextDecorationSkipInk::Auto)) {
       
       
@@ -4080,7 +4080,7 @@ void nsCSSRendering::PaintDecorationLine(
       continue;
     }
 
-    gfxFont* font = iter.GetGlyphRun()->mFont;
+    gfxFont* font = iter.GlyphRun()->mFont;
     
     
     
@@ -4100,7 +4100,7 @@ void nsCSSRendering::PaintDecorationLine(
     
     sk_sp<const SkTextBlob> textBlob =
         CreateTextBlob(textRun, characterGlyphs, skiafont, spacing.Elements(),
-                       iter.GetStringStart(), iter.GetStringEnd(),
+                       iter.StringStart(), iter.StringEnd(),
                        (float)appUnitsPerDevPixel, textPos, spacingOffset);
 
     if (!textBlob) {
