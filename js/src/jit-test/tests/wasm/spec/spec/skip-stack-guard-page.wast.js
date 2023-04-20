@@ -2290,61 +2290,31 @@ let $0 = instantiate(`(module
 )`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [0]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [0]), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [100]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [100]), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [200]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [200]), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [300]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [300]), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [400]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [400]), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [500]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [500]), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [600]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [600]), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [700]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [700]), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [800]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [800]), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `test-guard-page-skip`, [900]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `test-guard-page-skip`, [900]), `call stack exhausted`);

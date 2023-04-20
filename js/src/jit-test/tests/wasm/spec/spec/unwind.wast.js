@@ -232,25 +232,19 @@ assert_trap(() => invoke($0, `func-unwind-by-unreachable`, []), `unreachable`);
 assert_return(() => invoke($0, `func-unwind-by-br`, []), []);
 
 
-assert_return(() => invoke($0, `func-unwind-by-br-value`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `func-unwind-by-br-value`, []), [value("i32", 9)]);
 
 
 assert_return(() => invoke($0, `func-unwind-by-br_if`, []), []);
 
 
-assert_return(() => invoke($0, `func-unwind-by-br_if-value`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `func-unwind-by-br_if-value`, []), [value("i32", 9)]);
 
 
 assert_return(() => invoke($0, `func-unwind-by-br_table`, []), []);
 
 
-assert_return(() => invoke($0, `func-unwind-by-br_table-value`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `func-unwind-by-br_table-value`, []), [value("i32", 9)]);
 
 
 assert_return(() => invoke($0, `func-unwind-by-return`, []), [value("i32", 9)]);
@@ -262,73 +256,46 @@ assert_trap(() => invoke($0, `block-unwind-by-unreachable`, []), `unreachable`);
 assert_return(() => invoke($0, `block-unwind-by-br`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-unwind-by-br-value`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-unwind-by-br-value`, []), [value("i32", 9)]);
 
 
 assert_return(() => invoke($0, `block-unwind-by-br_if`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-unwind-by-br_if-value`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-unwind-by-br_if-value`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-unwind-by-br_table`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-unwind-by-br_table`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-unwind-by-br_table-value`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-unwind-by-br_table-value`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-unwind-by-return`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-unwind-by-return`, []), [value("i32", 9)]);
 
 
-assert_trap(
-  () => invoke($0, `block-nested-unwind-by-unreachable`, []),
-  `unreachable`,
-);
+assert_trap(() => invoke($0, `block-nested-unwind-by-unreachable`, []), `unreachable`);
 
 
-assert_return(() => invoke($0, `block-nested-unwind-by-br`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-nested-unwind-by-br`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-nested-unwind-by-br-value`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-nested-unwind-by-br-value`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-nested-unwind-by-br_if`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-nested-unwind-by-br_if`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-nested-unwind-by-br_if-value`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-nested-unwind-by-br_if-value`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-nested-unwind-by-br_table`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-nested-unwind-by-br_table`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-nested-unwind-by-br_table-value`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-nested-unwind-by-br_table-value`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-nested-unwind-by-return`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-nested-unwind-by-return`, []), [value("i32", 9)]);
 
 
 assert_trap(() => invoke($0, `unary-after-unreachable`, []), `unreachable`);
@@ -376,49 +343,31 @@ assert_return(() => invoke($0, `select-after-br_table`, []), [value("i32", 9)]);
 assert_return(() => invoke($0, `select-after-return`, []), [value("i32", 9)]);
 
 
-assert_trap(
-  () => invoke($0, `block-value-after-unreachable`, []),
-  `unreachable`,
-);
+assert_trap(() => invoke($0, `block-value-after-unreachable`, []), `unreachable`);
 
 
 assert_return(() => invoke($0, `block-value-after-br`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-value-after-br_if`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-value-after-br_if`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-value-after-br_table`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-value-after-br_table`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `block-value-after-return`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `block-value-after-return`, []), [value("i32", 9)]);
 
 
-assert_trap(
-  () => invoke($0, `loop-value-after-unreachable`, []),
-  `unreachable`,
-);
+assert_trap(() => invoke($0, `loop-value-after-unreachable`, []), `unreachable`);
 
 
 assert_return(() => invoke($0, `loop-value-after-br`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `loop-value-after-br_if`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `loop-value-after-br_if`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `loop-value-after-br_table`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `loop-value-after-br_table`, []), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `loop-value-after-return`, []), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `loop-value-after-return`, []), [value("i32", 9)]);

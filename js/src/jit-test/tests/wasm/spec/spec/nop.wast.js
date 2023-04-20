@@ -428,9 +428,7 @@ assert_return(() => invoke($0, `as-br_table-mid`, [5]), [value("i32", 5)]);
 assert_return(() => invoke($0, `as-br_table-last`, [6]), [value("i32", 6)]);
 
 
-assert_return(() => invoke($0, `as-br_table-everywhere`, [7]), [
-  value("i32", 7),
-]);
+assert_return(() => invoke($0, `as-br_table-everywhere`, [7]), [value("i32", 7)]);
 
 
 assert_return(() => invoke($0, `as-return-first`, [5]), [value("i32", 5)]);
@@ -451,14 +449,10 @@ assert_return(() => invoke($0, `as-call-mid1`, [3, 1, 2]), [value("i32", 2)]);
 assert_return(() => invoke($0, `as-call-mid2`, [0, 3, 1]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($0, `as-call-last`, [10, 9, -1]), [
-  value("i32", 20),
-]);
+assert_return(() => invoke($0, `as-call-last`, [10, 9, -1]), [value("i32", 20)]);
 
 
-assert_return(() => invoke($0, `as-call-everywhere`, [2, 1, 5]), [
-  value("i32", -2),
-]);
+assert_return(() => invoke($0, `as-call-everywhere`, [2, 1, 5]), [value("i32", -2)]);
 
 
 assert_return(() => invoke($0, `as-unary-first`, [30]), [value("i32", 1)]);
@@ -500,9 +494,7 @@ assert_return(() => invoke($0, `as-compare-mid`, [3]), [value("i32", 0)]);
 assert_return(() => invoke($0, `as-compare-last`, [3]), [value("i32", 0)]);
 
 
-assert_return(() => invoke($0, `as-compare-everywhere`, [3]), [
-  value("i32", 1),
-]);
+assert_return(() => invoke($0, `as-compare-everywhere`, [3]), [value("i32", 1)]);
 
 
 assert_return(() => invoke($0, `as-memory.grow-first`, [0]), [value("i32", 1)]);
@@ -511,14 +503,10 @@ assert_return(() => invoke($0, `as-memory.grow-first`, [0]), [value("i32", 1)]);
 assert_return(() => invoke($0, `as-memory.grow-last`, [2]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($0, `as-memory.grow-everywhere`, [12]), [
-  value("i32", 3),
-]);
+assert_return(() => invoke($0, `as-memory.grow-everywhere`, [12]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($0, `as-call_indirect-first`, []), [
-  value("i32", 1),
-]);
+assert_return(() => invoke($0, `as-call_indirect-first`, []), [value("i32", 1)]);
 
 
 assert_return(() => invoke($0, `as-call_indirect-mid1`, []), [value("i32", 1)]);
@@ -530,9 +518,7 @@ assert_return(() => invoke($0, `as-call_indirect-mid2`, []), [value("i32", 1)]);
 assert_return(() => invoke($0, `as-call_indirect-last`, []), [value("i32", 1)]);
 
 
-assert_return(() => invoke($0, `as-call_indirect-everywhere`, []), [
-  value("i32", 1),
-]);
+assert_return(() => invoke($0, `as-call_indirect-everywhere`, []), [value("i32", 1)]);
 
 
 assert_return(() => invoke($0, `as-local.set-first`, [1]), [value("i32", 2)]);
@@ -541,9 +527,7 @@ assert_return(() => invoke($0, `as-local.set-first`, [1]), [value("i32", 2)]);
 assert_return(() => invoke($0, `as-local.set-last`, [1]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($0, `as-local.set-everywhere`, [1]), [
-  value("i32", 2),
-]);
+assert_return(() => invoke($0, `as-local.set-everywhere`, [1]), [value("i32", 2)]);
 
 
 assert_return(() => invoke($0, `as-local.tee-first`, [1]), [value("i32", 2)]);
@@ -552,9 +536,7 @@ assert_return(() => invoke($0, `as-local.tee-first`, [1]), [value("i32", 2)]);
 assert_return(() => invoke($0, `as-local.tee-last`, [1]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($0, `as-local.tee-everywhere`, [1]), [
-  value("i32", 2),
-]);
+assert_return(() => invoke($0, `as-local.tee-everywhere`, [1]), [value("i32", 2)]);
 
 
 assert_return(() => invoke($0, `as-global.set-first`, []), [value("i32", 2)]);
@@ -563,9 +545,7 @@ assert_return(() => invoke($0, `as-global.set-first`, []), [value("i32", 2)]);
 assert_return(() => invoke($0, `as-global.set-last`, []), [value("i32", 2)]);
 
 
-assert_return(() => invoke($0, `as-global.set-everywhere`, []), [
-  value("i32", 2),
-]);
+assert_return(() => invoke($0, `as-global.set-everywhere`, []), [value("i32", 2)]);
 
 
 assert_return(() => invoke($0, `as-load-first`, [100]), [value("i32", 0)]);

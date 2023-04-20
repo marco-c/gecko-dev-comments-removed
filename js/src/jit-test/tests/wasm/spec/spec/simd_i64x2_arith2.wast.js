@@ -24,163 +24,116 @@ let $0 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x1n, 0x1n])]), [
-  i64x2([0x1n, 0x1n]),
-]);
+assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x1n, 0x1n])]), [i64x2([0x1n, 0x1n])]);
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0xffffffffffffffffn, 0xffffffffffffffffn]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0xffffffffffffffffn, 0xffffffffffffffffn])]),
   [i64x2([0x1n, 0x1n])],
 );
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0xffffffffffffffffn, 0xffffffffffffffffn]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0xffffffffffffffffn, 0xffffffffffffffffn])]),
   [i64x2([0x1n, 0x1n])],
 );
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0xffffffffffffffffn, 0xffffffffffffffffn]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0xffffffffffffffffn, 0xffffffffffffffffn])]),
   [i64x2([0x1n, 0x1n])],
 );
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0x8000000000000000n, 0x8000000000000000n]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0x8000000000000000n, 0x8000000000000000n])]),
   [i64x2([0x8000000000000000n, 0x8000000000000000n])],
 );
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0x8000000000000000n, 0x8000000000000000n]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0x8000000000000000n, 0x8000000000000000n])]),
   [i64x2([0x8000000000000000n, 0x8000000000000000n])],
 );
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0x8000000000000000n, 0x8000000000000000n]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0x8000000000000000n, 0x8000000000000000n])]),
   [i64x2([0x8000000000000000n, 0x8000000000000000n])],
 );
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0x8000000000000000n, 0x8000000000000000n]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0x8000000000000000n, 0x8000000000000000n])]),
   [i64x2([0x8000000000000000n, 0x8000000000000000n])],
 );
 
 
-assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x7bn, 0x7bn])]), [
-  i64x2([0x7bn, 0x7bn]),
-]);
+assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x7bn, 0x7bn])]), [i64x2([0x7bn, 0x7bn])]);
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0xffffffffffffff85n, 0xffffffffffffff85n]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0xffffffffffffff85n, 0xffffffffffffff85n])]),
   [i64x2([0x7bn, 0x7bn])],
 );
 
 
-assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x80n, 0x80n])]), [
-  i64x2([0x80n, 0x80n]),
-]);
+assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x80n, 0x80n])]), [i64x2([0x80n, 0x80n])]);
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0xffffffffffffff80n, 0xffffffffffffff80n]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0xffffffffffffff80n, 0xffffffffffffff80n])]),
   [i64x2([0x80n, 0x80n])],
 );
 
 
-assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x80n, 0x80n])]), [
-  i64x2([0x80n, 0x80n]),
-]);
+assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x80n, 0x80n])]), [i64x2([0x80n, 0x80n])]);
 
 
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0xffffffffffffff80n, 0xffffffffffffff80n]),
-    ]),
+  () => invoke($0, `i64x2.abs`, [i64x2([0xffffffffffffff80n, 0xffffffffffffff80n])]),
   [i64x2([0x80n, 0x80n])],
 );
 
 
-assert_return(() => invoke($0, `i64x2.abs_with_const_0`, []), [
-  i64x2([0x8000000000000000n, 0x7fffffffffffffffn]),
-]);
-
-
 assert_return(
-  () =>
-    invoke($0, `i64x2.abs`, [
-      i64x2([0x8000000000000000n, 0x7fffffffffffffffn]),
-    ]),
+  () => invoke($0, `i64x2.abs_with_const_0`, []),
   [i64x2([0x8000000000000000n, 0x7fffffffffffffffn])],
 );
 
 
-assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x0n, 0x0n])]), [
-  i64x2([0x0n, 0x0n]),
-]);
+assert_return(
+  () => invoke($0, `i64x2.abs`, [i64x2([0x8000000000000000n, 0x7fffffffffffffffn])]),
+  [i64x2([0x8000000000000000n, 0x7fffffffffffffffn])],
+);
 
 
-assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x0n, 0x0n])]), [
-  i64x2([0x0n, 0x0n]),
-]);
+assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x0n, 0x0n])]), [i64x2([0x0n, 0x0n])]);
 
 
-assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x0n, 0x0n])]), [
-  i64x2([0x0n, 0x0n]),
-]);
+assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x0n, 0x0n])]), [i64x2([0x0n, 0x0n])]);
 
 
-assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x0n, 0x0n])]), [
-  i64x2([0x0n, 0x0n]),
-]);
+assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x0n, 0x0n])]), [i64x2([0x0n, 0x0n])]);
+
+
+assert_return(() => invoke($0, `i64x2.abs`, [i64x2([0x0n, 0x0n])]), [i64x2([0x0n, 0x0n])]);
 
 
 assert_invalid(
-  () =>
-    instantiate(`(module (func (result v128) (i64x2.abs (f32.const 0.0))))`),
+  () => instantiate(`(module (func (result v128) (i64x2.abs (f32.const 0.0))))`),
   `type mismatch`,
 );
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (func $$i64x2.abs-arg-empty (result v128)
       (i64x2.abs)
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
 let $1 = instantiate(`(module
@@ -189,9 +142,8 @@ let $1 = instantiate(`(module
 
 
 assert_return(
-  () =>
-    invoke($1, `i64x2.abs-i64x2.abs`, [
-      i64x2([0xffffffffffffffffn, 0xffffffffffffffffn]),
-    ]),
+  () => invoke($1, `i64x2.abs-i64x2.abs`, [
+    i64x2([0xffffffffffffffffn, 0xffffffffffffffffn]),
+  ]),
   [i64x2([0x1n, 0x1n])],
 );

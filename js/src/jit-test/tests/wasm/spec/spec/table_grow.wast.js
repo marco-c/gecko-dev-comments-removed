@@ -32,10 +32,7 @@ let $0 = instantiate(`(module
 assert_return(() => invoke($0, `size`, []), [value("i32", 0)]);
 
 
-assert_trap(
-  () => invoke($0, `set`, [0, externref(2)]),
-  `out of bounds table access`,
-);
+assert_trap(() => invoke($0, `set`, [0, externref(2)]), `out of bounds table access`);
 
 
 assert_trap(() => invoke($0, `get`, [0]), `out of bounds table access`);
@@ -47,19 +44,16 @@ assert_return(() => invoke($0, `grow`, [1, null]), [value("i32", 0)]);
 assert_return(() => invoke($0, `size`, []), [value("i32", 1)]);
 
 
-assert_return(() => invoke($0, `get`, [0]), [value("externref", null)]);
+assert_return(() => invoke($0, `get`, [0]), [value('externref', null)]);
 
 
 assert_return(() => invoke($0, `set`, [0, externref(2)]), []);
 
 
-assert_return(() => invoke($0, `get`, [0]), [value("externref", externref(2))]);
+assert_return(() => invoke($0, `get`, [0]), [value('externref', externref(2))]);
 
 
-assert_trap(
-  () => invoke($0, `set`, [1, externref(2)]),
-  `out of bounds table access`,
-);
+assert_trap(() => invoke($0, `set`, [1, externref(2)]), `out of bounds table access`);
 
 
 assert_trap(() => invoke($0, `get`, [1]), `out of bounds table access`);
@@ -71,31 +65,28 @@ assert_return(() => invoke($0, `grow`, [4, externref(3)]), [value("i32", 1)]);
 assert_return(() => invoke($0, `size`, []), [value("i32", 5)]);
 
 
-assert_return(() => invoke($0, `get`, [0]), [value("externref", externref(2))]);
+assert_return(() => invoke($0, `get`, [0]), [value('externref', externref(2))]);
 
 
 assert_return(() => invoke($0, `set`, [0, externref(2)]), []);
 
 
-assert_return(() => invoke($0, `get`, [0]), [value("externref", externref(2))]);
+assert_return(() => invoke($0, `get`, [0]), [value('externref', externref(2))]);
 
 
-assert_return(() => invoke($0, `get`, [1]), [value("externref", externref(3))]);
+assert_return(() => invoke($0, `get`, [1]), [value('externref', externref(3))]);
 
 
-assert_return(() => invoke($0, `get`, [4]), [value("externref", externref(3))]);
+assert_return(() => invoke($0, `get`, [4]), [value('externref', externref(3))]);
 
 
 assert_return(() => invoke($0, `set`, [4, externref(4)]), []);
 
 
-assert_return(() => invoke($0, `get`, [4]), [value("externref", externref(4))]);
+assert_return(() => invoke($0, `get`, [4]), [value('externref', externref(4))]);
 
 
-assert_trap(
-  () => invoke($0, `set`, [5, externref(2)]),
-  `out of bounds table access`,
-);
+assert_trap(() => invoke($0, `set`, [5, externref(2)]), `out of bounds table access`);
 
 
 assert_trap(() => invoke($0, `get`, [5]), `out of bounds table access`);
@@ -191,77 +182,87 @@ let $4 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($4, `check-table-null`, [0, 9]), [
-  value("anyfunc", null),
-]);
+assert_return(() => invoke($4, `check-table-null`, [0, 9]), [value('anyfunc', null)]);
 
 
 assert_return(() => invoke($4, `grow`, [10]), [value("i32", 10)]);
 
 
-assert_return(() => invoke($4, `check-table-null`, [0, 19]), [
-  value("anyfunc", null),
-]);
+assert_return(() => invoke($4, `check-table-null`, [0, 19]), [value('anyfunc', null)]);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (table $$t 0 externref)
     (func $$type-init-size-empty-vs-i32-externref (result i32)
       (table.grow $$t)
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (table $$t 0 externref)
     (func $$type-size-empty-vs-i32 (result i32)
       (table.grow $$t (ref.null extern))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (table $$t 0 externref)
     (func $$type-init-empty-vs-externref (result i32)
       (table.grow $$t (i32.const 1))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (table $$t 0 externref)
     (func $$type-size-f32-vs-i32 (result i32)
       (table.grow $$t (ref.null extern) (f32.const 1))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (table $$t 0 funcref)
     (func $$type-init-externref-vs-funcref (param $$r externref) (result i32)
       (table.grow $$t (local.get $$r) (i32.const 1))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (table $$t 1 externref)
     (func $$type-result-i32-vs-empty
       (table.grow $$t (ref.null extern) (i32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (table $$t 1 externref)
     (func $$type-result-i32-vs-f32 (result f32)
       (table.grow $$t (ref.null extern) (i32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);

@@ -133,8 +133,7 @@ assert_return(
 
 
 assert_invalid(
-  () =>
-    instantiate(`(module (memory 1)
+  () => instantiate(`(module (memory 1)
           (func (param $$x v128) (result v128)
             (v128.load64_lane 0 (local.get $$x) (i32.const 0))))`),
   `type mismatch`,
@@ -142,8 +141,7 @@ assert_invalid(
 
 
 assert_invalid(
-  () =>
-    instantiate(`(module (memory 1)
+  () => instantiate(`(module (memory 1)
           (func (param $$x v128) (result v128)
             (v128.load64_lane 2 (i32.const 0) (local.get $$x))))`),
   `invalid lane index`,
@@ -151,8 +149,7 @@ assert_invalid(
 
 
 assert_invalid(
-  () =>
-    instantiate(`(module (memory 1)
+  () => instantiate(`(module (memory 1)
           (func (param $$x v128) (result v128)
           (v128.load64_lane align=16 0 (i32.const 0) (local.get $$x))))`),
   `alignment must not be larger than natural`,

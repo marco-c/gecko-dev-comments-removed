@@ -33,28 +33,16 @@ let $0 = instantiate(`(module
 assert_return(() => invoke($0, `size`, []), [value("i64", 0n)]);
 
 
-assert_trap(
-  () => invoke($0, `store_at_zero`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `store_at_zero`, []), `out of bounds memory access`);
 
 
-assert_trap(
-  () => invoke($0, `load_at_zero`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `load_at_zero`, []), `out of bounds memory access`);
 
 
-assert_trap(
-  () => invoke($0, `store_at_page_size`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `store_at_page_size`, []), `out of bounds memory access`);
 
 
-assert_trap(
-  () => invoke($0, `load_at_page_size`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `load_at_page_size`, []), `out of bounds memory access`);
 
 
 assert_return(() => invoke($0, `grow`, [1n]), [value("i64", 0n)]);
@@ -72,16 +60,10 @@ assert_return(() => invoke($0, `store_at_zero`, []), []);
 assert_return(() => invoke($0, `load_at_zero`, []), [value("i32", 2)]);
 
 
-assert_trap(
-  () => invoke($0, `store_at_page_size`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `store_at_page_size`, []), `out of bounds memory access`);
 
 
-assert_trap(
-  () => invoke($0, `load_at_page_size`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `load_at_page_size`, []), `out of bounds memory access`);
 
 
 assert_return(() => invoke($0, `grow`, [4n]), [value("i64", 1n)]);
@@ -184,46 +166,34 @@ let $3 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [0n, 65535n]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [0n, 65535n]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1n]), [value("i64", 1n)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [65536n, 131071n]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [65536n, 131071n]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1n]), [value("i64", 2n)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [131072n, 196607n]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [131072n, 196607n]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1n]), [value("i64", 3n)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [196608n, 262143n]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [196608n, 262143n]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1n]), [value("i64", 4n)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [262144n, 327679n]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [262144n, 327679n]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1n]), [value("i64", 5n)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [327680n, 393215n]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [327680n, 393215n]), [value("i32", 0)]);

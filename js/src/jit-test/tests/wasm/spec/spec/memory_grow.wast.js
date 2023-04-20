@@ -33,28 +33,16 @@ let $0 = instantiate(`(module
 assert_return(() => invoke($0, `size`, []), [value("i32", 0)]);
 
 
-assert_trap(
-  () => invoke($0, `store_at_zero`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `store_at_zero`, []), `out of bounds memory access`);
 
 
-assert_trap(
-  () => invoke($0, `load_at_zero`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `load_at_zero`, []), `out of bounds memory access`);
 
 
-assert_trap(
-  () => invoke($0, `store_at_page_size`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `store_at_page_size`, []), `out of bounds memory access`);
 
 
-assert_trap(
-  () => invoke($0, `load_at_page_size`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `load_at_page_size`, []), `out of bounds memory access`);
 
 
 assert_return(() => invoke($0, `grow`, [1]), [value("i32", 0)]);
@@ -72,16 +60,10 @@ assert_return(() => invoke($0, `store_at_zero`, []), []);
 assert_return(() => invoke($0, `load_at_zero`, []), [value("i32", 2)]);
 
 
-assert_trap(
-  () => invoke($0, `store_at_page_size`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `store_at_page_size`, []), `out of bounds memory access`);
 
 
-assert_trap(
-  () => invoke($0, `load_at_page_size`, []),
-  `out of bounds memory access`,
-);
+assert_trap(() => invoke($0, `load_at_page_size`, []), `out of bounds memory access`);
 
 
 assert_return(() => invoke($0, `grow`, [4]), [value("i32", 1)]);
@@ -190,49 +172,37 @@ let $3 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [0, 65535]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [0, 65535]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [65536, 131071]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [65536, 131071]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [131072, 196607]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [131072, 196607]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1]), [value("i32", 3)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [196608, 262143]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [196608, 262143]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1]), [value("i32", 4)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [262144, 327679]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [262144, 327679]), [value("i32", 0)]);
 
 
 assert_return(() => invoke($3, `grow`, [1]), [value("i32", 5)]);
 
 
-assert_return(() => invoke($3, `check-memory-zero`, [327680, 393215]), [
-  value("i32", 0),
-]);
+assert_return(() => invoke($3, `check-memory-zero`, [327680, 393215]), [value("i32", 0)]);
 
 
 let $4 = instantiate(`(module
@@ -412,9 +382,7 @@ assert_return(() => invoke($4, `as-br_table-index`, []), []);
 assert_return(() => invoke($4, `as-br_table-value`, []), [value("i32", 1)]);
 
 
-assert_return(() => invoke($4, `as-br_table-value-index`, []), [
-  value("i32", 6),
-]);
+assert_return(() => invoke($4, `as-br_table-value-index`, []), [value("i32", 6)]);
 
 
 assert_return(() => invoke($4, `as-return-value`, []), [value("i32", 1)]);
@@ -447,23 +415,16 @@ assert_return(() => invoke($4, `as-call-mid`, []), [value("i32", -1)]);
 assert_return(() => invoke($4, `as-call-last`, []), [value("i32", -1)]);
 
 
-assert_return(() => invoke($4, `as-call_indirect-first`, []), [
-  value("i32", -1),
-]);
+assert_return(() => invoke($4, `as-call_indirect-first`, []), [value("i32", -1)]);
 
 
 assert_return(() => invoke($4, `as-call_indirect-mid`, []), [value("i32", -1)]);
 
 
-assert_return(() => invoke($4, `as-call_indirect-last`, []), [
-  value("i32", -1),
-]);
+assert_return(() => invoke($4, `as-call_indirect-last`, []), [value("i32", -1)]);
 
 
-assert_trap(
-  () => invoke($4, `as-call_indirect-index`, []),
-  `undefined element`,
-);
+assert_trap(() => invoke($4, `as-call_indirect-index`, []), `undefined element`);
 
 
 assert_return(() => invoke($4, `as-local.set-value`, []), []);
@@ -514,67 +475,81 @@ assert_return(() => invoke($4, `as-compare-right`, []), [value("i32", 1)]);
 assert_return(() => invoke($4, `as-memory.grow-size`, []), [value("i32", 1)]);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (memory 0)
     (func $$type-size-empty-vs-i32 (result i32)
       (memory.grow)
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (memory 0)
     (func $$type-size-empty-vs-i32-in-block (result i32)
       (i32.const 0)
       (block (result i32) (memory.grow))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (memory 0)
     (func $$type-size-empty-vs-i32-in-loop (result i32)
       (i32.const 0)
       (loop (result i32) (memory.grow))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (memory 0)
     (func $$type-size-empty-vs-i32-in-then (result i32)
       (i32.const 0) (i32.const 0)
       (if (result i32) (then (memory.grow)))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (memory 1)
     (func $$type-size-f32-vs-i32 (result i32)
       (memory.grow (f32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (memory 1)
     (func $$type-result-i32-vs-empty
       (memory.grow (i32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (memory 1)
     (func $$type-result-i32-vs-f32 (result f32)
       (memory.grow (i32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);

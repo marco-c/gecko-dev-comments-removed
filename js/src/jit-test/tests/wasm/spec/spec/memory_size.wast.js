@@ -152,19 +152,23 @@ assert_return(() => invoke($3, `grow`, [1]), []);
 assert_return(() => invoke($3, `size`, []), [value("i32", 8)]);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (memory 1)
     (func $$type-result-i32-vs-empty
       (memory.size)
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (memory 1)
     (func $$type-result-i32-vs-f32 (result f32)
       (memory.size)
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);

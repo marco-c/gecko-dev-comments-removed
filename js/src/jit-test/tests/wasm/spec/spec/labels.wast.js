@@ -383,27 +383,18 @@ assert_return(() => invoke($0, `redefinition`, []), [value("i32", 5)]);
 
 
 assert_invalid(
-  () =>
-    instantiate(
-      `(module (func (block $$l (f32.neg (br_if $$l (i32.const 1))) (nop))))`,
-    ),
+  () => instantiate(`(module (func (block $$l (f32.neg (br_if $$l (i32.const 1))) (nop))))`),
   `type mismatch`,
 );
 
 
 assert_invalid(
-  () =>
-    instantiate(
-      `(module (func (block $$l (br_if $$l (f32.const 0) (i32.const 1)))))`,
-    ),
+  () => instantiate(`(module (func (block $$l (br_if $$l (f32.const 0) (i32.const 1)))))`),
   `type mismatch`,
 );
 
 
 assert_invalid(
-  () =>
-    instantiate(
-      `(module (func (block $$l (br_if $$l (f32.const 0) (i32.const 1)))))`,
-    ),
+  () => instantiate(`(module (func (block $$l (br_if $$l (f32.const 0) (i32.const 1)))))`),
   `type mismatch`,
 );

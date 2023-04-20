@@ -16,24 +16,25 @@
 
 
 
+assert_invalid(() => instantiate(`(module (func) (start 1))`), `unknown function`);
+
+
 assert_invalid(
-  () => instantiate(`(module (func) (start 1))`),
-  `unknown function`,
+  () => instantiate(`(module
+    (func $$main (result i32) (return (i32.const 0)))
+    (start $$main)
+  )`),
+  `start function`,
 );
 
 
-assert_invalid(() =>
-  instantiate(`(module
-    (func $$main (result i32) (return (i32.const 0)))
-    (start $$main)
-  )`), `start function`);
-
-
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (func $$main (param $$a i32))
     (start $$main)
-  )`), `start function`);
+  )`),
+  `start function`,
+);
 
 
 let $0 = instantiate(`(module
@@ -144,9 +145,6 @@ assert_trap(
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(module (func $$a (unreachable)) (func $$b (unreachable)) (start $$a) (start $$b)) `,
-    ),
+  () => instantiate(`(module (func $$a (unreachable)) (func $$b (unreachable)) (start $$a) (start $$b)) `),
   `multiple start sections`,
 );

@@ -497,10 +497,7 @@ assert_return(() => invoke($0, `type-f32`, []), [value("f32", 3890)]);
 assert_return(() => invoke($0, `type-f64`, []), [value("f64", 3940)]);
 
 
-assert_return(() => invoke($0, `type-f64-i32`, []), [
-  value("f64", 3940),
-  value("i32", 32),
-]);
+assert_return(() => invoke($0, `type-f64-i32`, []), [value("f64", 3940), value("i32", 32)]);
 
 
 assert_return(() => invoke($0, `type-index`, []), [value("i64", 100n)]);
@@ -530,22 +527,13 @@ assert_return(() => invoke($0, `type-second-f32`, []), [value("f32", 32)]);
 assert_return(() => invoke($0, `type-second-f64`, []), [value("f64", 64.1)]);
 
 
-assert_return(() => invoke($0, `type-all-f64-i32`, []), [
-  value("f64", 3940),
-  value("i32", 32),
-]);
+assert_return(() => invoke($0, `type-all-f64-i32`, []), [value("f64", 3940), value("i32", 32)]);
 
 
-assert_return(() => invoke($0, `type-all-i32-f64`, []), [
-  value("i32", 1),
-  value("f64", 2),
-]);
+assert_return(() => invoke($0, `type-all-i32-f64`, []), [value("i32", 1), value("f64", 2)]);
 
 
-assert_return(() => invoke($0, `type-all-i32-i64`, []), [
-  value("i64", 2n),
-  value("i32", 1),
-]);
+assert_return(() => invoke($0, `type-all-i32-i64`, []), [value("i64", 2n), value("i32", 1)]);
 
 
 assert_return(() => invoke($0, `dispatch`, [5, 2n]), [value("i64", 2n)]);
@@ -563,16 +551,10 @@ assert_return(() => invoke($0, `dispatch`, [13, 5n]), [value("i64", 8n)]);
 assert_return(() => invoke($0, `dispatch`, [20, 2n]), [value("i64", 2n)]);
 
 
-assert_trap(
-  () => invoke($0, `dispatch`, [0, 2n]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch`, [0, 2n]), `indirect call type mismatch`);
 
 
-assert_trap(
-  () => invoke($0, `dispatch`, [15, 2n]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch`, [15, 2n]), `indirect call type mismatch`);
 
 
 assert_trap(() => invoke($0, `dispatch`, [32, 2n]), `undefined element`);
@@ -581,138 +563,79 @@ assert_trap(() => invoke($0, `dispatch`, [32, 2n]), `undefined element`);
 assert_trap(() => invoke($0, `dispatch`, [-1, 2n]), `undefined element`);
 
 
-assert_trap(
-  () => invoke($0, `dispatch`, [1213432423, 2n]),
-  `undefined element`,
-);
+assert_trap(() => invoke($0, `dispatch`, [1213432423, 2n]), `undefined element`);
 
 
-assert_return(() => invoke($0, `dispatch-structural-i64`, [5]), [
-  value("i64", 9n),
-]);
+assert_return(() => invoke($0, `dispatch-structural-i64`, [5]), [value("i64", 9n)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-i64`, [12]), [
-  value("i64", 362880n),
-]);
+assert_return(() => invoke($0, `dispatch-structural-i64`, [12]), [value("i64", 362880n)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-i64`, [13]), [
-  value("i64", 55n),
-]);
+assert_return(() => invoke($0, `dispatch-structural-i64`, [13]), [value("i64", 55n)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-i64`, [20]), [
-  value("i64", 9n),
-]);
+assert_return(() => invoke($0, `dispatch-structural-i64`, [20]), [value("i64", 9n)]);
 
 
-assert_trap(
-  () => invoke($0, `dispatch-structural-i64`, [11]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch-structural-i64`, [11]), `indirect call type mismatch`);
 
 
-assert_trap(
-  () => invoke($0, `dispatch-structural-i64`, [22]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch-structural-i64`, [22]), `indirect call type mismatch`);
 
 
-assert_return(() => invoke($0, `dispatch-structural-i32`, [4]), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `dispatch-structural-i32`, [4]), [value("i32", 9)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-i32`, [23]), [
-  value("i32", 362880),
-]);
+assert_return(() => invoke($0, `dispatch-structural-i32`, [23]), [value("i32", 362880)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-i32`, [26]), [
-  value("i32", 55),
-]);
+assert_return(() => invoke($0, `dispatch-structural-i32`, [26]), [value("i32", 55)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-i32`, [19]), [
-  value("i32", 9),
-]);
+assert_return(() => invoke($0, `dispatch-structural-i32`, [19]), [value("i32", 9)]);
 
 
-assert_trap(
-  () => invoke($0, `dispatch-structural-i32`, [9]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch-structural-i32`, [9]), `indirect call type mismatch`);
 
 
-assert_trap(
-  () => invoke($0, `dispatch-structural-i32`, [21]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch-structural-i32`, [21]), `indirect call type mismatch`);
 
 
-assert_return(() => invoke($0, `dispatch-structural-f32`, [6]), [
-  value("f32", 9),
-]);
+assert_return(() => invoke($0, `dispatch-structural-f32`, [6]), [value("f32", 9)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-f32`, [24]), [
-  value("f32", 362880),
-]);
+assert_return(() => invoke($0, `dispatch-structural-f32`, [24]), [value("f32", 362880)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-f32`, [27]), [
-  value("f32", 55),
-]);
+assert_return(() => invoke($0, `dispatch-structural-f32`, [27]), [value("f32", 55)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-f32`, [21]), [
-  value("f32", 9),
-]);
+assert_return(() => invoke($0, `dispatch-structural-f32`, [21]), [value("f32", 9)]);
 
 
-assert_trap(
-  () => invoke($0, `dispatch-structural-f32`, [8]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch-structural-f32`, [8]), `indirect call type mismatch`);
 
 
-assert_trap(
-  () => invoke($0, `dispatch-structural-f32`, [19]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch-structural-f32`, [19]), `indirect call type mismatch`);
 
 
-assert_return(() => invoke($0, `dispatch-structural-f64`, [7]), [
-  value("f64", 9),
-]);
+assert_return(() => invoke($0, `dispatch-structural-f64`, [7]), [value("f64", 9)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-f64`, [25]), [
-  value("f64", 362880),
-]);
+assert_return(() => invoke($0, `dispatch-structural-f64`, [25]), [value("f64", 362880)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-f64`, [28]), [
-  value("f64", 55),
-]);
+assert_return(() => invoke($0, `dispatch-structural-f64`, [28]), [value("f64", 55)]);
 
 
-assert_return(() => invoke($0, `dispatch-structural-f64`, [22]), [
-  value("f64", 9),
-]);
+assert_return(() => invoke($0, `dispatch-structural-f64`, [22]), [value("f64", 9)]);
 
 
-assert_trap(
-  () => invoke($0, `dispatch-structural-f64`, [10]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch-structural-f64`, [10]), `indirect call type mismatch`);
 
 
-assert_trap(
-  () => invoke($0, `dispatch-structural-f64`, [18]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($0, `dispatch-structural-f64`, [18]), `indirect call type mismatch`);
 
 
 assert_return(() => invoke($0, `fac-i64`, [0n]), [value("i64", 1n)]);
@@ -724,9 +647,7 @@ assert_return(() => invoke($0, `fac-i64`, [1n]), [value("i64", 1n)]);
 assert_return(() => invoke($0, `fac-i64`, [5n]), [value("i64", 120n)]);
 
 
-assert_return(() => invoke($0, `fac-i64`, [25n]), [
-  value("i64", 7034535277573963776n),
-]);
+assert_return(() => invoke($0, `fac-i64`, [25n]), [value("i64", 7034535277573963776n)]);
 
 
 assert_return(() => invoke($0, `fac-i32`, [0]), [value("i32", 1)]);
@@ -741,44 +662,28 @@ assert_return(() => invoke($0, `fac-i32`, [5]), [value("i32", 120)]);
 assert_return(() => invoke($0, `fac-i32`, [10]), [value("i32", 3628800)]);
 
 
-assert_return(() => invoke($0, `fac-f32`, [value("f32", 0)]), [
-  value("f32", 1),
-]);
+assert_return(() => invoke($0, `fac-f32`, [value("f32", 0)]), [value("f32", 1)]);
 
 
-assert_return(() => invoke($0, `fac-f32`, [value("f32", 1)]), [
-  value("f32", 1),
-]);
+assert_return(() => invoke($0, `fac-f32`, [value("f32", 1)]), [value("f32", 1)]);
 
 
-assert_return(() => invoke($0, `fac-f32`, [value("f32", 5)]), [
-  value("f32", 120),
-]);
+assert_return(() => invoke($0, `fac-f32`, [value("f32", 5)]), [value("f32", 120)]);
 
 
-assert_return(() => invoke($0, `fac-f32`, [value("f32", 10)]), [
-  value("f32", 3628800),
-]);
+assert_return(() => invoke($0, `fac-f32`, [value("f32", 10)]), [value("f32", 3628800)]);
 
 
-assert_return(() => invoke($0, `fac-f64`, [value("f64", 0)]), [
-  value("f64", 1),
-]);
+assert_return(() => invoke($0, `fac-f64`, [value("f64", 0)]), [value("f64", 1)]);
 
 
-assert_return(() => invoke($0, `fac-f64`, [value("f64", 1)]), [
-  value("f64", 1),
-]);
+assert_return(() => invoke($0, `fac-f64`, [value("f64", 1)]), [value("f64", 1)]);
 
 
-assert_return(() => invoke($0, `fac-f64`, [value("f64", 5)]), [
-  value("f64", 120),
-]);
+assert_return(() => invoke($0, `fac-f64`, [value("f64", 5)]), [value("f64", 120)]);
 
 
-assert_return(() => invoke($0, `fac-f64`, [value("f64", 10)]), [
-  value("f64", 3628800),
-]);
+assert_return(() => invoke($0, `fac-f64`, [value("f64", 10)]), [value("f64", 3628800)]);
 
 
 assert_return(() => invoke($0, `fib-i64`, [0n]), [value("i64", 1n)]);
@@ -811,54 +716,34 @@ assert_return(() => invoke($0, `fib-i32`, [5]), [value("i32", 8)]);
 assert_return(() => invoke($0, `fib-i32`, [20]), [value("i32", 10946)]);
 
 
-assert_return(() => invoke($0, `fib-f32`, [value("f32", 0)]), [
-  value("f32", 1),
-]);
+assert_return(() => invoke($0, `fib-f32`, [value("f32", 0)]), [value("f32", 1)]);
 
 
-assert_return(() => invoke($0, `fib-f32`, [value("f32", 1)]), [
-  value("f32", 1),
-]);
+assert_return(() => invoke($0, `fib-f32`, [value("f32", 1)]), [value("f32", 1)]);
 
 
-assert_return(() => invoke($0, `fib-f32`, [value("f32", 2)]), [
-  value("f32", 2),
-]);
+assert_return(() => invoke($0, `fib-f32`, [value("f32", 2)]), [value("f32", 2)]);
 
 
-assert_return(() => invoke($0, `fib-f32`, [value("f32", 5)]), [
-  value("f32", 8),
-]);
+assert_return(() => invoke($0, `fib-f32`, [value("f32", 5)]), [value("f32", 8)]);
 
 
-assert_return(() => invoke($0, `fib-f32`, [value("f32", 20)]), [
-  value("f32", 10946),
-]);
+assert_return(() => invoke($0, `fib-f32`, [value("f32", 20)]), [value("f32", 10946)]);
 
 
-assert_return(() => invoke($0, `fib-f64`, [value("f64", 0)]), [
-  value("f64", 1),
-]);
+assert_return(() => invoke($0, `fib-f64`, [value("f64", 0)]), [value("f64", 1)]);
 
 
-assert_return(() => invoke($0, `fib-f64`, [value("f64", 1)]), [
-  value("f64", 1),
-]);
+assert_return(() => invoke($0, `fib-f64`, [value("f64", 1)]), [value("f64", 1)]);
 
 
-assert_return(() => invoke($0, `fib-f64`, [value("f64", 2)]), [
-  value("f64", 2),
-]);
+assert_return(() => invoke($0, `fib-f64`, [value("f64", 2)]), [value("f64", 2)]);
 
 
-assert_return(() => invoke($0, `fib-f64`, [value("f64", 5)]), [
-  value("f64", 8),
-]);
+assert_return(() => invoke($0, `fib-f64`, [value("f64", 5)]), [value("f64", 8)]);
 
 
-assert_return(() => invoke($0, `fib-f64`, [value("f64", 20)]), [
-  value("f64", 10946),
-]);
+assert_return(() => invoke($0, `fib-f64`, [value("f64", 20)]), [value("f64", 10946)]);
 
 
 assert_return(() => invoke($0, `even`, [0]), [value("i32", 44)]);
@@ -888,10 +773,7 @@ assert_return(() => invoke($0, `odd`, [77]), [value("i32", 44)]);
 assert_exhaustion(() => invoke($0, `runaway`, []), `call stack exhausted`);
 
 
-assert_exhaustion(
-  () => invoke($0, `mutual-runaway`, []),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `mutual-runaway`, []), `call stack exhausted`);
 
 
 assert_return(() => invoke($0, `as-select-first`, []), [value("i32", 306)]);
@@ -1027,229 +909,219 @@ assert_return(() => invoke($1, `call-3`, [2, 3, 1]), [value("i32", 6)]);
 assert_trap(() => invoke($1, `call-3`, [2, 3, 2]), `uninitialized element`);
 
 
-assert_trap(
-  () => invoke($1, `call-3`, [2, 3, 3]),
-  `indirect call type mismatch`,
-);
+assert_trap(() => invoke($1, `call-3`, [2, 3, 3]), `indirect call type mismatch`);
 
 
 assert_trap(() => invoke($1, `call-3`, [2, 3, 4]), `undefined element`);
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (type $$sig) (result i32) (param i32)     (i32.const 0) (i32.const 0)   ) ) `,
-    ),
+  () => instantiate(`(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (type $$sig) (result i32) (param i32)     (i32.const 0) (i32.const 0)   ) ) `),
   `unexpected token`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (param i32) (type $$sig) (result i32)     (i32.const 0) (i32.const 0)   ) ) `,
-    ),
+  () => instantiate(`(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (param i32) (type $$sig) (result i32)     (i32.const 0) (i32.const 0)   ) ) `),
   `unexpected token`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (param i32) (result i32) (type $$sig)     (i32.const 0) (i32.const 0)   ) ) `,
-    ),
+  () => instantiate(`(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (param i32) (result i32) (type $$sig)     (i32.const 0) (i32.const 0)   ) ) `),
   `unexpected token`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (result i32) (type $$sig) (param i32)     (i32.const 0) (i32.const 0)   ) ) `,
-    ),
+  () => instantiate(`(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (result i32) (type $$sig) (param i32)     (i32.const 0) (i32.const 0)   ) ) `),
   `unexpected token`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (result i32) (param i32) (type $$sig)     (i32.const 0) (i32.const 0)   ) ) `,
-    ),
+  () => instantiate(`(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (result i32) (param i32) (type $$sig)     (i32.const 0) (i32.const 0)   ) ) `),
   `unexpected token`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(table 0 funcref) (func (result i32)   (call_indirect (result i32) (param i32) (i32.const 0) (i32.const 0)) ) `,
-    ),
+  () => instantiate(`(table 0 funcref) (func (result i32)   (call_indirect (result i32) (param i32) (i32.const 0) (i32.const 0)) ) `),
   `unexpected token`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(table 0 funcref) (func (call_indirect (param $$x i32) (i32.const 0) (i32.const 0))) `,
-    ),
+  () => instantiate(`(table 0 funcref) (func (call_indirect (param $$x i32) (i32.const 0) (i32.const 0))) `),
   `unexpected token`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(type $$sig (func)) (table 0 funcref) (func (result i32)   (call_indirect (type $$sig) (result i32) (i32.const 0)) ) `,
-    ),
+  () => instantiate(`(type $$sig (func)) (table 0 funcref) (func (result i32)   (call_indirect (type $$sig) (result i32) (i32.const 0)) ) `),
   `inline function type`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (type $$sig) (result i32) (i32.const 0)) ) `,
-    ),
+  () => instantiate(`(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (type $$sig) (result i32) (i32.const 0)) ) `),
   `inline function type`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func   (call_indirect (type $$sig) (param i32) (i32.const 0) (i32.const 0)) ) `,
-    ),
+  () => instantiate(`(type $$sig (func (param i32) (result i32))) (table 0 funcref) (func   (call_indirect (type $$sig) (param i32) (i32.const 0) (i32.const 0)) ) `),
   `inline function type`,
 );
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(type $$sig (func (param i32 i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (type $$sig) (param i32) (result i32)     (i32.const 0) (i32.const 0)   ) ) `,
-    ),
+  () => instantiate(`(type $$sig (func (param i32 i32) (result i32))) (table 0 funcref) (func (result i32)   (call_indirect (type $$sig) (param i32) (result i32)     (i32.const 0) (i32.const 0)   ) ) `),
   `inline function type`,
 );
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func))
     (func $$no-table (call_indirect (type 0) (i32.const 0)))
-  )`), `unknown table`);
+  )`),
+  `unknown table`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func))
     (table 0 funcref)
     (func $$type-void-vs-num (i32.eqz (call_indirect (type 0) (i32.const 0))))
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func (result i64)))
     (table 0 funcref)
     (func $$type-num-vs-num (i32.eqz (call_indirect (type 0) (i32.const 0))))
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func (param i32)))
     (table 0 funcref)
     (func $$arity-0-vs-1 (call_indirect (type 0) (i32.const 0)))
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func (param f64 i32)))
     (table 0 funcref)
     (func $$arity-0-vs-2 (call_indirect (type 0) (i32.const 0)))
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func))
     (table 0 funcref)
     (func $$arity-1-vs-0 (call_indirect (type 0) (i32.const 1) (i32.const 0)))
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func))
     (table 0 funcref)
     (func $$arity-2-vs-0
       (call_indirect (type 0) (f64.const 2) (i32.const 1) (i32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func (param i32)))
     (table 0 funcref)
     (func $$type-func-void-vs-i32 (call_indirect (type 0) (i32.const 1) (nop)))
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func (param i32)))
     (table 0 funcref)
     (func $$type-func-num-vs-i32 (call_indirect (type 0) (i32.const 0) (i64.const 1)))
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func (param i32 i32)))
     (table 0 funcref)
     (func $$type-first-void-vs-num
       (call_indirect (type 0) (nop) (i32.const 1) (i32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func (param i32 i32)))
     (table 0 funcref)
     (func $$type-second-void-vs-num
       (call_indirect (type 0) (i32.const 1) (nop) (i32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func (param i32 f64)))
     (table 0 funcref)
     (func $$type-first-num-vs-num
       (call_indirect (type 0) (f64.const 1) (i32.const 1) (i32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type (func (param f64 i32)))
     (table 0 funcref)
     (func $$type-second-num-vs-num
       (call_indirect (type 0) (i32.const 1) (f64.const 1) (i32.const 0))
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (func $$f (param i32))
     (type $$sig (func (param i32)))
     (table funcref (elem $$f))
@@ -1258,11 +1130,13 @@ assert_invalid(() =>
         (call_indirect (type $$sig) (i32.const 0))
       )
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (func $$f (param i32 i32))
     (type $$sig (func (param i32 i32)))
     (table funcref (elem $$f))
@@ -1271,11 +1145,13 @@ assert_invalid(() =>
         (call_indirect (type $$sig) (i32.const 0) (i32.const 0))
       )
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (func $$f (param i32))
     (type $$sig (func (param i32)))
     (table funcref (elem $$f))
@@ -1284,11 +1160,13 @@ assert_invalid(() =>
         (call_indirect (type $$sig) (i32.const 0))
       )
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (func $$f (param i32 i32))
     (type $$sig (func (param i32 i32)))
     (table funcref (elem $$f))
@@ -1297,11 +1175,13 @@ assert_invalid(() =>
         (call_indirect (type $$sig) (i32.const 0) (i32.const 0))
       )
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (func $$f (param i32))
     (type $$sig (func (param i32)))
     (table funcref (elem $$f))
@@ -1313,11 +1193,13 @@ assert_invalid(() =>
         )
       )
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (func $$f (param i32 i32))
     (type $$sig (func (param i32 i32)))
     (table funcref (elem $$f))
@@ -1329,21 +1211,27 @@ assert_invalid(() =>
         )
       )
     )
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (table 0 funcref)
     (func $$unbound-type (call_indirect (type 1) (i32.const 0)))
-  )`), `unknown type`);
+  )`),
+  `unknown type`,
+);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (table 0 funcref)
     (func $$large-type (call_indirect (type 1012321300) (i32.const 0)))
-  )`), `unknown type`);
+  )`),
+  `unknown type`,
+);
 
 
 assert_invalid(

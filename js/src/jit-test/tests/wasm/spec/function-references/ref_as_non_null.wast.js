@@ -53,12 +53,14 @@ assert_return(() => invoke($0, `nonnullable-f`, []), [value("i32", 7)]);
 assert_return(() => invoke($0, `nullable-f`, []), [value("i32", 7)]);
 
 
-assert_invalid(() =>
-  instantiate(`(module
+assert_invalid(
+  () => instantiate(`(module
     (type $$t (func (result i32)))
     (func $$g (param $$r (ref $$t)) (drop (ref.as_non_null (local.get $$r))))
     (func (call $$g (ref.null $$t)))
-  )`), `type mismatch`);
+  )`),
+  `type mismatch`,
+);
 
 
 let $1 = instantiate(`(module

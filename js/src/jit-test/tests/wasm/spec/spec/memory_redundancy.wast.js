@@ -83,9 +83,10 @@ assert_return(() => invoke($0, `test_redundant_load`, []), [value("i32", 128)]);
 invoke($0, `zero_everything`, []);
 
 
-assert_return(() => invoke($0, `test_dead_store`, []), [
-  value("f32", 0.000000000000000000000000000000000000000000049),
-]);
+assert_return(
+  () => invoke($0, `test_dead_store`, []),
+  [value("f32", 0.000000000000000000000000000000000000000000049)],
+);
 
 
 invoke($0, `zero_everything`, []);

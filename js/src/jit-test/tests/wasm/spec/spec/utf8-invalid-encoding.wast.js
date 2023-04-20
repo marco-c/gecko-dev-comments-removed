@@ -22,40 +22,22 @@ assert_malformed(
 );
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\80")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\80")) `), `malformed UTF-8 encoding`);
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\8f")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\8f")) `), `malformed UTF-8 encoding`);
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\90")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\90")) `), `malformed UTF-8 encoding`);
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\9f")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\9f")) `), `malformed UTF-8 encoding`);
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\a0")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\a0")) `), `malformed UTF-8 encoding`);
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\bf")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\bf")) `), `malformed UTF-8 encoding`);
 
 
 assert_malformed(
@@ -112,10 +94,7 @@ assert_malformed(
 );
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\c2")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\c2")) `), `malformed UTF-8 encoding`);
 
 
 assert_malformed(
@@ -286,10 +265,7 @@ assert_malformed(
 );
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\e1")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\e1")) `), `malformed UTF-8 encoding`);
 
 
 assert_malformed(
@@ -712,10 +688,7 @@ assert_malformed(
 );
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\f1")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\f1")) `), `malformed UTF-8 encoding`);
 
 
 assert_malformed(
@@ -952,10 +925,7 @@ assert_malformed(
 );
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\f8")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\f8")) `), `malformed UTF-8 encoding`);
 
 
 assert_malformed(
@@ -1030,10 +1000,7 @@ assert_malformed(
 );
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\fc")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\fc")) `), `malformed UTF-8 encoding`);
 
 
 assert_malformed(
@@ -1042,10 +1009,7 @@ assert_malformed(
 );
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\fe")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\fe")) `), `malformed UTF-8 encoding`);
 
 
 assert_malformed(
@@ -1054,10 +1018,7 @@ assert_malformed(
 );
 
 
-assert_malformed(
-  () => instantiate(`(func (export "\\ff")) `),
-  `malformed UTF-8 encoding`,
-);
+assert_malformed(() => instantiate(`(func (export "\\ff")) `), `malformed UTF-8 encoding`);
 
 
 assert_malformed(

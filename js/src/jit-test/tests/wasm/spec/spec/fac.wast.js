@@ -118,37 +118,22 @@ let $0 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($0, `fac-rec`, [25n]), [
-  value("i64", 7034535277573963776n),
-]);
+assert_return(() => invoke($0, `fac-rec`, [25n]), [value("i64", 7034535277573963776n)]);
 
 
-assert_return(() => invoke($0, `fac-iter`, [25n]), [
-  value("i64", 7034535277573963776n),
-]);
+assert_return(() => invoke($0, `fac-iter`, [25n]), [value("i64", 7034535277573963776n)]);
 
 
-assert_return(() => invoke($0, `fac-rec-named`, [25n]), [
-  value("i64", 7034535277573963776n),
-]);
+assert_return(() => invoke($0, `fac-rec-named`, [25n]), [value("i64", 7034535277573963776n)]);
 
 
-assert_return(() => invoke($0, `fac-iter-named`, [25n]), [
-  value("i64", 7034535277573963776n),
-]);
+assert_return(() => invoke($0, `fac-iter-named`, [25n]), [value("i64", 7034535277573963776n)]);
 
 
-assert_return(() => invoke($0, `fac-opt`, [25n]), [
-  value("i64", 7034535277573963776n),
-]);
+assert_return(() => invoke($0, `fac-opt`, [25n]), [value("i64", 7034535277573963776n)]);
 
 
-assert_return(() => invoke($0, `fac-ssa`, [25n]), [
-  value("i64", 7034535277573963776n),
-]);
+assert_return(() => invoke($0, `fac-ssa`, [25n]), [value("i64", 7034535277573963776n)]);
 
 
-assert_exhaustion(
-  () => invoke($0, `fac-rec`, [1073741824n]),
-  `call stack exhausted`,
-);
+assert_exhaustion(() => invoke($0, `fac-rec`, [1073741824n]), `call stack exhausted`);

@@ -30,9 +30,7 @@ let $0 = instantiate(`(module
 assert_return(() => invoke($0, `i32.load`, []), [value("i32", 2141192192)]);
 
 
-assert_return(() => invoke($0, `f32.load`, []), [
-  bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
-]);
+assert_return(() => invoke($0, `f32.load`, []), [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]);
 
 
 invoke($0, `reset`, []);
@@ -50,9 +48,7 @@ invoke($0, `f32.store`, []);
 assert_return(() => invoke($0, `i32.load`, []), [value("i32", 2141192192)]);
 
 
-assert_return(() => invoke($0, `f32.load`, []), [
-  bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
-]);
+assert_return(() => invoke($0, `f32.load`, []), [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]);
 
 
 invoke($0, `reset`, []);
@@ -70,9 +66,7 @@ invoke($0, `i32.store`, []);
 assert_return(() => invoke($0, `i32.load`, []), [value("i32", 2141192192)]);
 
 
-assert_return(() => invoke($0, `f32.load`, []), [
-  bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
-]);
+assert_return(() => invoke($0, `f32.load`, []), [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]);
 
 
 let $1 = instantiate(`(module
@@ -86,14 +80,13 @@ let $1 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($1, `i64.load`, []), [
-  value("i64", 9219994337134247936n),
-]);
+assert_return(() => invoke($1, `i64.load`, []), [value("i64", 9219994337134247936n)]);
 
 
-assert_return(() => invoke($1, `f64.load`, []), [
-  bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
-]);
+assert_return(
+  () => invoke($1, `f64.load`, []),
+  [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
+);
 
 
 invoke($1, `reset`, []);
@@ -108,14 +101,13 @@ assert_return(() => invoke($1, `f64.load`, []), [value("f64", 0)]);
 invoke($1, `f64.store`, []);
 
 
-assert_return(() => invoke($1, `i64.load`, []), [
-  value("i64", 9219994337134247936n),
-]);
+assert_return(() => invoke($1, `i64.load`, []), [value("i64", 9219994337134247936n)]);
 
 
-assert_return(() => invoke($1, `f64.load`, []), [
-  bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
-]);
+assert_return(
+  () => invoke($1, `f64.load`, []),
+  [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
+);
 
 
 invoke($1, `reset`, []);
@@ -130,14 +122,13 @@ assert_return(() => invoke($1, `f64.load`, []), [value("f64", 0)]);
 invoke($1, `i64.store`, []);
 
 
-assert_return(() => invoke($1, `i64.load`, []), [
-  value("i64", 9219994337134247936n),
-]);
+assert_return(() => invoke($1, `i64.load`, []), [value("i64", 9219994337134247936n)]);
 
 
-assert_return(() => invoke($1, `f64.load`, []), [
-  bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
-]);
+assert_return(
+  () => invoke($1, `f64.load`, []),
+  [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
+);
 
 
 let $2 = instantiate(`(module
@@ -154,9 +145,7 @@ let $2 = instantiate(`(module
 assert_return(() => invoke($2, `i32.load`, []), [value("i32", 2141192192)]);
 
 
-assert_return(() => invoke($2, `f32.load`, []), [
-  bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
-]);
+assert_return(() => invoke($2, `f32.load`, []), [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]);
 
 
 invoke($2, `reset`, []);
@@ -174,9 +163,7 @@ invoke($2, `f32.store`, []);
 assert_return(() => invoke($2, `i32.load`, []), [value("i32", 2141192192)]);
 
 
-assert_return(() => invoke($2, `f32.load`, []), [
-  bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
-]);
+assert_return(() => invoke($2, `f32.load`, []), [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]);
 
 
 invoke($2, `reset`, []);
@@ -194,9 +181,7 @@ invoke($2, `i32.store`, []);
 assert_return(() => invoke($2, `i32.load`, []), [value("i32", 2141192192)]);
 
 
-assert_return(() => invoke($2, `f32.load`, []), [
-  bytes("f32", [0x0, 0x0, 0xa0, 0x7f]),
-]);
+assert_return(() => invoke($2, `f32.load`, []), [bytes("f32", [0x0, 0x0, 0xa0, 0x7f])]);
 
 
 let $3 = instantiate(`(module
@@ -210,14 +195,13 @@ let $3 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($3, `i64.load`, []), [
-  value("i64", 9219994337134247936n),
-]);
+assert_return(() => invoke($3, `i64.load`, []), [value("i64", 9219994337134247936n)]);
 
 
-assert_return(() => invoke($3, `f64.load`, []), [
-  bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
-]);
+assert_return(
+  () => invoke($3, `f64.load`, []),
+  [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
+);
 
 
 invoke($3, `reset`, []);
@@ -232,14 +216,13 @@ assert_return(() => invoke($3, `f64.load`, []), [value("f64", 0)]);
 invoke($3, `f64.store`, []);
 
 
-assert_return(() => invoke($3, `i64.load`, []), [
-  value("i64", 9219994337134247936n),
-]);
+assert_return(() => invoke($3, `i64.load`, []), [value("i64", 9219994337134247936n)]);
 
 
-assert_return(() => invoke($3, `f64.load`, []), [
-  bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
-]);
+assert_return(
+  () => invoke($3, `f64.load`, []),
+  [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
+);
 
 
 invoke($3, `reset`, []);
@@ -254,14 +237,13 @@ assert_return(() => invoke($3, `f64.load`, []), [value("f64", 0)]);
 invoke($3, `i64.store`, []);
 
 
-assert_return(() => invoke($3, `i64.load`, []), [
-  value("i64", 9219994337134247936n),
-]);
+assert_return(() => invoke($3, `i64.load`, []), [value("i64", 9219994337134247936n)]);
 
 
-assert_return(() => invoke($3, `f64.load`, []), [
-  bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f]),
-]);
+assert_return(
+  () => invoke($3, `f64.load`, []),
+  [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf4, 0x7f])],
+);
 
 
 let $4 = instantiate(`(module
@@ -278,9 +260,7 @@ let $4 = instantiate(`(module
 assert_return(() => invoke($4, `i32.load`, []), [value("i32", 2144337921)]);
 
 
-assert_return(() => invoke($4, `f32.load`, []), [
-  bytes("f32", [0x1, 0x0, 0xd0, 0x7f]),
-]);
+assert_return(() => invoke($4, `f32.load`, []), [bytes("f32", [0x1, 0x0, 0xd0, 0x7f])]);
 
 
 invoke($4, `reset`, []);
@@ -298,9 +278,7 @@ invoke($4, `f32.store`, []);
 assert_return(() => invoke($4, `i32.load`, []), [value("i32", 2144337921)]);
 
 
-assert_return(() => invoke($4, `f32.load`, []), [
-  bytes("f32", [0x1, 0x0, 0xd0, 0x7f]),
-]);
+assert_return(() => invoke($4, `f32.load`, []), [bytes("f32", [0x1, 0x0, 0xd0, 0x7f])]);
 
 
 invoke($4, `reset`, []);
@@ -318,9 +296,7 @@ invoke($4, `i32.store`, []);
 assert_return(() => invoke($4, `i32.load`, []), [value("i32", 2144337921)]);
 
 
-assert_return(() => invoke($4, `f32.load`, []), [
-  bytes("f32", [0x1, 0x0, 0xd0, 0x7f]),
-]);
+assert_return(() => invoke($4, `f32.load`, []), [bytes("f32", [0x1, 0x0, 0xd0, 0x7f])]);
 
 
 let $5 = instantiate(`(module
@@ -334,14 +310,13 @@ let $5 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($5, `i64.load`, []), [
-  value("i64", 9222246136947933185n),
-]);
+assert_return(() => invoke($5, `i64.load`, []), [value("i64", 9222246136947933185n)]);
 
 
-assert_return(() => invoke($5, `f64.load`, []), [
-  bytes("f64", [0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0xfc, 0x7f]),
-]);
+assert_return(
+  () => invoke($5, `f64.load`, []),
+  [bytes("f64", [0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0xfc, 0x7f])],
+);
 
 
 invoke($5, `reset`, []);
@@ -356,14 +331,13 @@ assert_return(() => invoke($5, `f64.load`, []), [value("f64", 0)]);
 invoke($5, `f64.store`, []);
 
 
-assert_return(() => invoke($5, `i64.load`, []), [
-  value("i64", 9222246136947933185n),
-]);
+assert_return(() => invoke($5, `i64.load`, []), [value("i64", 9222246136947933185n)]);
 
 
-assert_return(() => invoke($5, `f64.load`, []), [
-  bytes("f64", [0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0xfc, 0x7f]),
-]);
+assert_return(
+  () => invoke($5, `f64.load`, []),
+  [bytes("f64", [0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0xfc, 0x7f])],
+);
 
 
 invoke($5, `reset`, []);
@@ -378,11 +352,10 @@ assert_return(() => invoke($5, `f64.load`, []), [value("f64", 0)]);
 invoke($5, `i64.store`, []);
 
 
-assert_return(() => invoke($5, `i64.load`, []), [
-  value("i64", 9222246136947933185n),
-]);
+assert_return(() => invoke($5, `i64.load`, []), [value("i64", 9222246136947933185n)]);
 
 
-assert_return(() => invoke($5, `f64.load`, []), [
-  bytes("f64", [0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0xfc, 0x7f]),
-]);
+assert_return(
+  () => invoke($5, `f64.load`, []),
+  [bytes("f64", [0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0xfc, 0x7f])],
+);

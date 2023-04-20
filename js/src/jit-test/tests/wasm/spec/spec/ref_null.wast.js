@@ -25,7 +25,7 @@ let $0 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($0, `externref`, []), [value("externref", null)]);
+assert_return(() => invoke($0, `externref`, []), [value('externref', null)]);
 
 
-assert_return(() => invoke($0, `funcref`, []), [value("anyfunc", null)]);
+assert_return(() => invoke($0, `funcref`, []), [value('anyfunc', null)]);

@@ -16,8 +16,8 @@
 
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -26,11 +26,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -39,11 +41,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -52,11 +56,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -65,11 +71,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -78,11 +86,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -91,11 +101,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -104,11 +116,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -117,11 +131,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -130,11 +146,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -143,11 +161,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -156,11 +176,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -169,11 +191,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -182,11 +206,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -195,11 +221,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -208,11 +236,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -221,11 +251,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -234,11 +266,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -247,11 +281,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -260,11 +296,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -273,11 +311,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -286,11 +326,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -299,11 +341,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -312,11 +356,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -325,11 +371,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -338,11 +386,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -351,11 +401,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -364,11 +416,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -377,11 +431,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -390,11 +446,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -403,11 +461,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -416,11 +476,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -429,11 +491,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -442,11 +506,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -455,11 +521,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -468,11 +536,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -481,11 +551,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -494,11 +566,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -507,11 +581,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -520,11 +596,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -533,11 +611,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -546,11 +626,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -559,11 +641,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -572,11 +656,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -585,11 +671,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -598,11 +686,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -611,11 +701,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -624,11 +716,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -637,11 +731,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -650,11 +746,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -663,11 +761,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -676,11 +776,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -689,11 +791,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -702,11 +806,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -715,11 +821,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -728,11 +836,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -741,11 +851,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -754,11 +866,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -767,11 +881,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -780,11 +896,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -793,11 +911,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -806,11 +926,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -819,11 +941,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -832,11 +956,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -845,11 +971,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -858,11 +986,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -871,11 +1001,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -884,11 +1016,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -897,11 +1031,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -910,11 +1046,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -923,11 +1061,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -936,11 +1076,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -949,11 +1091,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -962,11 +1106,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -975,11 +1121,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -988,11 +1136,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1001,11 +1151,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1014,11 +1166,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1027,11 +1181,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1040,11 +1196,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1053,11 +1211,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1066,11 +1226,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1079,11 +1241,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0f"                       ;; import section
     "\\01"                          ;; length 1
@@ -1092,11 +1256,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1105,11 +1271,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1118,11 +1286,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -1131,11 +1301,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1144,11 +1316,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -1157,11 +1331,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -1170,11 +1346,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1183,11 +1361,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1196,11 +1376,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1209,11 +1391,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1222,11 +1406,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1235,11 +1421,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1248,11 +1436,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1261,11 +1451,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1274,11 +1466,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1287,11 +1481,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1300,11 +1496,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1313,11 +1511,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1326,11 +1526,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1339,11 +1541,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1352,11 +1556,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1365,11 +1571,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1378,11 +1586,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1391,11 +1601,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1404,11 +1616,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1417,11 +1631,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1430,11 +1646,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1443,11 +1661,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1456,11 +1676,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1469,11 +1691,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1482,11 +1706,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1495,11 +1721,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1508,11 +1736,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1521,11 +1751,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1534,11 +1766,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1547,11 +1781,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1560,11 +1796,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1573,11 +1811,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1586,11 +1826,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1599,11 +1841,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1612,11 +1856,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1625,11 +1871,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1638,11 +1886,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1651,11 +1901,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1664,11 +1916,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1677,11 +1931,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1690,11 +1946,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1703,11 +1961,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1716,11 +1976,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1729,11 +1991,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1742,11 +2006,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1755,11 +2021,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1768,11 +2036,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1781,11 +2051,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1794,11 +2066,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1807,11 +2081,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1820,11 +2096,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1833,11 +2111,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1846,11 +2126,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1859,11 +2141,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1872,11 +2156,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1885,11 +2171,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1898,11 +2186,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1911,11 +2201,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\10"                       ;; import section
     "\\01"                          ;; length 1
@@ -1924,11 +2216,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1937,11 +2231,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0f"                       ;; import section
     "\\01"                          ;; length 1
@@ -1950,11 +2246,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -1963,11 +2261,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -1976,11 +2276,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -1989,11 +2291,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -2002,11 +2306,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -2015,11 +2321,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -2028,11 +2336,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0f"                       ;; import section
     "\\01"                          ;; length 1
@@ -2041,11 +2351,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0f"                       ;; import section
     "\\01"                          ;; length 1
@@ -2054,11 +2366,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\11"                       ;; import section
     "\\01"                          ;; length 1
@@ -2067,11 +2381,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0f"                       ;; import section
     "\\01"                          ;; length 1
@@ -2080,11 +2396,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\10"                       ;; import section
     "\\01"                          ;; length 1
@@ -2093,11 +2411,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -2106,11 +2426,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0f"                       ;; import section
     "\\01"                          ;; length 1
@@ -2119,11 +2441,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -2132,11 +2456,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -2145,11 +2471,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -2158,11 +2486,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0d"                       ;; import section
     "\\01"                          ;; length 1
@@ -2171,11 +2501,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -2184,11 +2516,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -2197,11 +2531,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\10"                       ;; import section
     "\\01"                          ;; length 1
@@ -2210,11 +2546,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\10"                       ;; import section
     "\\01"                          ;; length 1
@@ -2223,11 +2561,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -2236,11 +2576,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0b"                       ;; import section
     "\\01"                          ;; length 1
@@ -2249,11 +2591,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -2262,11 +2606,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -2275,11 +2621,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0c"                       ;; import section
     "\\01"                          ;; length 1
@@ -2288,11 +2636,13 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);
 
 
-assert_malformed(() =>
-  instantiate(`(module binary
+assert_malformed(
+  () => instantiate(`(module binary
     "\\00asm" "\\01\\00\\00\\00"
     "\\02\\0e"                       ;; import section
     "\\01"                          ;; length 1
@@ -2301,4 +2651,6 @@ assert_malformed(() =>
     "\\03"                          ;; GlobalImport
     "\\7f"                          ;; i32
     "\\00"                          ;; immutable
-  )`), `malformed UTF-8 encoding`);
+  )`),
+  `malformed UTF-8 encoding`,
+);

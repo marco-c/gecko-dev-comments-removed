@@ -34,59 +34,40 @@ let $4 = instantiate(`(module (memory 1 256))`);
 let $5 = instantiate(`(module (memory 0 65536))`);
 
 
+assert_invalid(() => instantiate(`(module (memory 0) (memory 0))`), `multiple memories`);
+
+
 assert_invalid(
-  () => instantiate(`(module (memory 0) (memory 0))`),
+  () => instantiate(`(module (memory (import "spectest" "memory") 0) (memory 0))`),
   `multiple memories`,
 );
 
 
-assert_invalid(
-  () =>
-    instantiate(`(module (memory (import "spectest" "memory") 0) (memory 0))`),
-  `multiple memories`,
-);
-
-
-let $6 = instantiate(
-  `(module (memory (data)) (func (export "memsize") (result i32) (memory.size)))`,
-);
+let $6 = instantiate(`(module (memory (data)) (func (export "memsize") (result i32) (memory.size)))`);
 
 
 assert_return(() => invoke($6, `memsize`, []), [value("i32", 0)]);
 
 
-let $7 = instantiate(
-  `(module (memory (data "")) (func (export "memsize") (result i32) (memory.size)))`,
-);
+let $7 = instantiate(`(module (memory (data "")) (func (export "memsize") (result i32) (memory.size)))`);
 
 
 assert_return(() => invoke($7, `memsize`, []), [value("i32", 0)]);
 
 
-let $8 = instantiate(
-  `(module (memory (data "x")) (func (export "memsize") (result i32) (memory.size)))`,
-);
+let $8 = instantiate(`(module (memory (data "x")) (func (export "memsize") (result i32) (memory.size)))`);
 
 
 assert_return(() => invoke($8, `memsize`, []), [value("i32", 1)]);
 
 
-assert_invalid(
-  () => instantiate(`(module (data (i32.const 0)))`),
-  `unknown memory`,
-);
+assert_invalid(() => instantiate(`(module (data (i32.const 0)))`), `unknown memory`);
 
 
-assert_invalid(
-  () => instantiate(`(module (data (i32.const 0) ""))`),
-  `unknown memory`,
-);
+assert_invalid(() => instantiate(`(module (data (i32.const 0) ""))`), `unknown memory`);
 
 
-assert_invalid(
-  () => instantiate(`(module (data (i32.const 0) "x"))`),
-  `unknown memory`,
-);
+assert_invalid(() => instantiate(`(module (data (i32.const 0) "x"))`), `unknown memory`);
 
 
 assert_invalid(
@@ -307,37 +288,25 @@ assert_return(() => invoke($9, `i32_load16_u`, [40000]), [value("i32", 40000)]);
 assert_return(() => invoke($9, `i32_load8_s`, [-19110589]), [value("i32", 67)]);
 
 
-assert_return(() => invoke($9, `i32_load8_s`, [878104047]), [
-  value("i32", -17),
-]);
+assert_return(() => invoke($9, `i32_load8_s`, [878104047]), [value("i32", -17)]);
 
 
 assert_return(() => invoke($9, `i32_load8_u`, [-19110589]), [value("i32", 67)]);
 
 
-assert_return(() => invoke($9, `i32_load8_u`, [878104047]), [
-  value("i32", 239),
-]);
+assert_return(() => invoke($9, `i32_load8_u`, [878104047]), [value("i32", 239)]);
 
 
-assert_return(() => invoke($9, `i32_load16_s`, [-19110589]), [
-  value("i32", 25923),
-]);
+assert_return(() => invoke($9, `i32_load16_s`, [-19110589]), [value("i32", 25923)]);
 
 
-assert_return(() => invoke($9, `i32_load16_s`, [878104047]), [
-  value("i32", -12817),
-]);
+assert_return(() => invoke($9, `i32_load16_s`, [878104047]), [value("i32", -12817)]);
 
 
-assert_return(() => invoke($9, `i32_load16_u`, [-19110589]), [
-  value("i32", 25923),
-]);
+assert_return(() => invoke($9, `i32_load16_u`, [-19110589]), [value("i32", 25923)]);
 
 
-assert_return(() => invoke($9, `i32_load16_u`, [878104047]), [
-  value("i32", 52719),
-]);
+assert_return(() => invoke($9, `i32_load16_u`, [878104047]), [value("i32", 52719)]);
 
 
 assert_return(() => invoke($9, `i64_load8_s`, [-1n]), [value("i64", -1n)]);
@@ -355,9 +324,7 @@ assert_return(() => invoke($9, `i64_load16_u`, [-1n]), [value("i64", 65535n)]);
 assert_return(() => invoke($9, `i64_load32_s`, [-1n]), [value("i64", -1n)]);
 
 
-assert_return(() => invoke($9, `i64_load32_u`, [-1n]), [
-  value("i64", 4294967295n),
-]);
+assert_return(() => invoke($9, `i64_load32_u`, [-1n]), [value("i64", 4294967295n)]);
 
 
 assert_return(() => invoke($9, `i64_load8_s`, [100n]), [value("i64", 100n)]);
@@ -366,84 +333,52 @@ assert_return(() => invoke($9, `i64_load8_s`, [100n]), [value("i64", 100n)]);
 assert_return(() => invoke($9, `i64_load8_u`, [200n]), [value("i64", 200n)]);
 
 
-assert_return(() => invoke($9, `i64_load16_s`, [20000n]), [
-  value("i64", 20000n),
-]);
+assert_return(() => invoke($9, `i64_load16_s`, [20000n]), [value("i64", 20000n)]);
 
 
-assert_return(() => invoke($9, `i64_load16_u`, [40000n]), [
-  value("i64", 40000n),
-]);
+assert_return(() => invoke($9, `i64_load16_u`, [40000n]), [value("i64", 40000n)]);
 
 
-assert_return(() => invoke($9, `i64_load32_s`, [20000n]), [
-  value("i64", 20000n),
-]);
+assert_return(() => invoke($9, `i64_load32_s`, [20000n]), [value("i64", 20000n)]);
 
 
-assert_return(() => invoke($9, `i64_load32_u`, [40000n]), [
-  value("i64", 40000n),
-]);
+assert_return(() => invoke($9, `i64_load32_u`, [40000n]), [value("i64", 40000n)]);
 
 
-assert_return(() => invoke($9, `i64_load8_s`, [-81985529755441853n]), [
-  value("i64", 67n),
-]);
+assert_return(() => invoke($9, `i64_load8_s`, [-81985529755441853n]), [value("i64", 67n)]);
 
 
-assert_return(() => invoke($9, `i64_load8_s`, [3771275841602506223n]), [
-  value("i64", -17n),
-]);
+assert_return(() => invoke($9, `i64_load8_s`, [3771275841602506223n]), [value("i64", -17n)]);
 
 
-assert_return(() => invoke($9, `i64_load8_u`, [-81985529755441853n]), [
-  value("i64", 67n),
-]);
+assert_return(() => invoke($9, `i64_load8_u`, [-81985529755441853n]), [value("i64", 67n)]);
 
 
-assert_return(() => invoke($9, `i64_load8_u`, [3771275841602506223n]), [
-  value("i64", 239n),
-]);
+assert_return(() => invoke($9, `i64_load8_u`, [3771275841602506223n]), [value("i64", 239n)]);
 
 
-assert_return(() => invoke($9, `i64_load16_s`, [-81985529755441853n]), [
-  value("i64", 25923n),
-]);
+assert_return(() => invoke($9, `i64_load16_s`, [-81985529755441853n]), [value("i64", 25923n)]);
 
 
-assert_return(() => invoke($9, `i64_load16_s`, [3771275841602506223n]), [
-  value("i64", -12817n),
-]);
+assert_return(() => invoke($9, `i64_load16_s`, [3771275841602506223n]), [value("i64", -12817n)]);
 
 
-assert_return(() => invoke($9, `i64_load16_u`, [-81985529755441853n]), [
-  value("i64", 25923n),
-]);
+assert_return(() => invoke($9, `i64_load16_u`, [-81985529755441853n]), [value("i64", 25923n)]);
 
 
-assert_return(() => invoke($9, `i64_load16_u`, [3771275841602506223n]), [
-  value("i64", 52719n),
-]);
+assert_return(() => invoke($9, `i64_load16_u`, [3771275841602506223n]), [value("i64", 52719n)]);
 
 
-assert_return(() => invoke($9, `i64_load32_s`, [-81985529755441853n]), [
-  value("i64", 1446274371n),
-]);
+assert_return(() => invoke($9, `i64_load32_s`, [-81985529755441853n]), [value("i64", 1446274371n)]);
 
 
-assert_return(() => invoke($9, `i64_load32_s`, [3771275841602506223n]), [
-  value("i64", -1732588049n),
-]);
+assert_return(() => invoke($9, `i64_load32_s`, [3771275841602506223n]), [value("i64", -1732588049n)]);
 
 
-assert_return(() => invoke($9, `i64_load32_u`, [-81985529755441853n]), [
-  value("i64", 1446274371n),
-]);
+assert_return(() => invoke($9, `i64_load32_u`, [-81985529755441853n]), [value("i64", 1446274371n)]);
 
 
-assert_return(() => invoke($9, `i64_load32_u`, [3771275841602506223n]), [
-  value("i64", 2562379247n),
-]);
+assert_return(() => invoke($9, `i64_load32_u`, [3771275841602506223n]), [value("i64", 2562379247n)]);
 
 
 assert_malformed(
@@ -459,9 +394,6 @@ assert_malformed(
 
 
 assert_malformed(
-  () =>
-    instantiate(
-      `(import "" "" (memory $$foo 1)) (import "" "" (memory $$foo 1)) `,
-    ),
+  () => instantiate(`(import "" "" (memory $$foo 1)) (import "" "" (memory $$foo 1)) `),
   `duplicate memory`,
 );
