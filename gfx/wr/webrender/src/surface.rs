@@ -3,11 +3,12 @@
 
 
 use api::units::*;
-use crate::command_buffer::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBuilder, CommandBufferIndex};
+use crate::command_buffer::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBuilder, CommandBufferIndex, PrimitiveCommand};
 use crate::internal_types::FastHashMap;
 use crate::picture::{SurfaceInfo, SurfaceIndex, TileKey, SubSliceIndex};
 use crate::prim_store::{PictureIndex};
 use crate::render_task_graph::{RenderTaskId, RenderTaskGraphBuilder};
+use crate::spatial_tree::SpatialNodeIndex;
 use crate::render_target::ResolveOp;
 use crate::render_task::{RenderTask, RenderTaskKind, RenderTaskLocation};
 use crate::visibility::{VisibilityState, PrimitiveVisibility};
@@ -30,8 +31,6 @@ pub struct SurfaceTileDescriptor {
     
     
     pub composite_task_id: Option<RenderTaskId>,
-    
-    pub dirty_rect: PictureRect,
 }
 
 
@@ -43,30 +42,31 @@ pub enum SurfaceDescriptorKind {
     
     Simple {
         render_task_id: RenderTaskId,
-        dirty_rect: PictureRect,
     },
     
     Chained {
         render_task_id: RenderTaskId,
         root_task_id: RenderTaskId,
-        dirty_rect: PictureRect,
     },
 }
 
 
 pub struct SurfaceDescriptor {
     kind: SurfaceDescriptorKind,
+    dirty_rects: Vec<PictureRect>,
 }
 
 impl SurfaceDescriptor {
     
     pub fn new_tiled(
         tiles: FastHashMap<TileKey, SurfaceTileDescriptor>,
+        dirty_rects: Vec<PictureRect>,
     ) -> Self {
         SurfaceDescriptor {
             kind: SurfaceDescriptorKind::Tiled {
                 tiles,
             },
+            dirty_rects,
         }
     }
 
@@ -80,8 +80,8 @@ impl SurfaceDescriptor {
             kind: SurfaceDescriptorKind::Chained {
                 render_task_id,
                 root_task_id,
-                dirty_rect,
             },
+            dirty_rects: vec![dirty_rect],
         }
     }
 
@@ -93,8 +93,8 @@ impl SurfaceDescriptor {
         SurfaceDescriptor {
             kind: SurfaceDescriptorKind::Simple {
                 render_task_id,
-                dirty_rect,
             },
+            dirty_rects: vec![dirty_rect],
         }
     }
 }
@@ -102,68 +102,93 @@ impl SurfaceDescriptor {
 
 
 
-struct CommandBufferTargets {
-    available_cmd_buffers: Vec<Vec<(PictureRect, CommandBufferIndex)>>,
+enum CommandBufferTargets {
+    
+    Tiled {
+        tiles: FastHashMap<TileKey, CommandBufferIndex>,
+    },
+    
+    Simple {
+        cmd_buffer_index: CommandBufferIndex,
+    },
 }
 
 impl CommandBufferTargets {
-    fn new() -> Self {
-        CommandBufferTargets {
-            available_cmd_buffers: vec![Vec::new(); 8],
-        }
-    }
-
+    
     fn init(
         &mut self,
         cb: &CommandBufferBuilder,
         rg_builder: &RenderTaskGraphBuilder,
     ) {
-        for available_cmd_buffers in &mut self.available_cmd_buffers {
-            available_cmd_buffers.clear();
-        }
-
-        match cb.kind {
+        let new_target = match cb.kind {
             CommandBufferBuilderKind::Tiled { ref tiles, .. } => {
+                let mut cb_tiles = FastHashMap::default();
+
                 for (key, desc) in tiles {
                     let task = rg_builder.get_task(desc.current_task_id);
                     match task.kind {
                         RenderTaskKind::Picture(ref info) => {
-                            let available_cmd_buffers = &mut self.available_cmd_buffers[key.sub_slice_index.as_usize()];
-                            available_cmd_buffers.push((desc.dirty_rect, info.cmd_buffer_index));
+                            cb_tiles.insert(*key, info.cmd_buffer_index);
                         }
                         _ => unreachable!("bug: not a picture"),
                     }
                 }
+
+                CommandBufferTargets::Tiled { tiles: cb_tiles }
             }
-            CommandBufferBuilderKind::Simple { render_task_id, dirty_rect, .. } => {
+            CommandBufferBuilderKind::Simple { render_task_id, .. } => {
                 let task = rg_builder.get_task(render_task_id);
                 match task.kind {
                     RenderTaskKind::Picture(ref info) => {
-                        let available_cmd_buffers = &mut self.available_cmd_buffers[0];
-                        available_cmd_buffers.push((dirty_rect, info.cmd_buffer_index));
+                        CommandBufferTargets::Simple { cmd_buffer_index: info.cmd_buffer_index }
                     }
                     _ => unreachable!("bug: not a picture"),
                 }
             }
-            CommandBufferBuilderKind::Invalid => {}
+            CommandBufferBuilderKind::Invalid => {
+                CommandBufferTargets::Tiled { tiles: FastHashMap::default() }
+            }
         };
+
+        *self = new_target;
     }
 
     
-    fn get_cmd_buffer_targets_for_rect(
+    fn push_prim(
         &mut self,
-        rect: &PictureRect,
+        prim_cmd: &PrimitiveCommand,
+        spatial_node_index: SpatialNodeIndex,
+        tile_rect: crate::picture::TileRect,
         sub_slice_index: SubSliceIndex,
-        targets: &mut Vec<CommandBufferIndex>,
-    ) -> bool {
-
-        for (dirty_rect, cmd_buffer_index) in &self.available_cmd_buffers[sub_slice_index.as_usize()] {
-            if dirty_rect.intersects(rect) {
-                targets.push(*cmd_buffer_index);
+        cmd_buffers: &mut CommandBufferList,
+    ) {
+        match self {
+            CommandBufferTargets::Tiled { ref mut tiles } => {
+                
+                
+                for y in tile_rect.min.y .. tile_rect.max.y {
+                    for x in tile_rect.min.x .. tile_rect.max.x {
+                        let key = TileKey {
+                            tile_offset: crate::picture::TileOffset::new(x, y),
+                            sub_slice_index,
+                        };
+                        if let Some(cmd_buffer_index) = tiles.get(&key) {
+                            cmd_buffers.get_mut(*cmd_buffer_index).add_prim(
+                                prim_cmd,
+                                spatial_node_index,
+                            );
+                        }
+                    }
+                }
+            }
+            CommandBufferTargets::Simple { cmd_buffer_index, .. } => {
+                
+                cmd_buffers.get_mut(*cmd_buffer_index).add_prim(
+                    prim_cmd,
+                    spatial_node_index,
+                );
             }
         }
-
-        !targets.is_empty()
     }
 }
 
@@ -175,6 +200,8 @@ pub struct SurfaceBuilder {
     
     builder_stack: Vec<CommandBufferBuilder>,
     
+    dirty_rect_stack: Vec<Vec<PictureRect>>,
+    
     
     pub sub_graph_output_map: FastHashMap<PictureIndex, RenderTaskId>,
 }
@@ -182,8 +209,9 @@ pub struct SurfaceBuilder {
 impl SurfaceBuilder {
     pub fn new() -> Self {
         SurfaceBuilder {
-            current_cmd_buffers: CommandBufferTargets::new(),
+            current_cmd_buffers: CommandBufferTargets::Tiled { tiles: FastHashMap::default() },
             builder_stack: Vec::new(),
+            dirty_rect_stack: Vec::new(),
             sub_graph_output_map: FastHashMap::default(),
         }
     }
@@ -223,26 +251,26 @@ impl SurfaceBuilder {
         
         surfaces[surface_index.0].clipping_rect = clipping_rect;
 
+        self.dirty_rect_stack.push(descriptor.dirty_rects);
+
         let builder = match descriptor.kind {
             SurfaceDescriptorKind::Tiled { tiles } => {
                 CommandBufferBuilder::new_tiled(
                     tiles,
                 )
             }
-            SurfaceDescriptorKind::Simple { render_task_id, dirty_rect, .. } => {
+            SurfaceDescriptorKind::Simple { render_task_id } => {
                 CommandBufferBuilder::new_simple(
                     render_task_id,
                     is_sub_graph,
                     None,
-                    dirty_rect,
                 )
             }
-            SurfaceDescriptorKind::Chained { render_task_id, root_task_id, dirty_rect, .. } => {
+            SurfaceDescriptorKind::Chained { render_task_id, root_task_id } => {
                 CommandBufferBuilder::new_simple(
                     render_task_id,
                     is_sub_graph,
                     Some(root_task_id),
-                    dirty_rect,
                 )
             }
         };
@@ -295,13 +323,10 @@ impl SurfaceBuilder {
 
     
     
-    pub fn get_cmd_buffer_targets_for_prim(
-        &mut self,
+    pub fn is_prim_visible_and_in_dirty_region(
+        &self,
         vis: &PrimitiveVisibility,
-        targets: &mut Vec<CommandBufferIndex>,
     ) -> bool {
-        targets.clear();
-
         match vis.state {
             VisibilityState::Unset => {
                 panic!("bug: invalid vis state");
@@ -309,16 +334,43 @@ impl SurfaceBuilder {
             VisibilityState::Culled => {
                 false
             }
-            VisibilityState::Visible { sub_slice_index, .. } => {
-                self.current_cmd_buffers.get_cmd_buffer_targets_for_rect(
-                    &vis.clip_chain.pic_coverage_rect,
-                    sub_slice_index,
-                    targets,
-                )
+            VisibilityState::Visible { .. } => {
+                self.dirty_rect_stack
+                    .last()
+                    .unwrap()
+                    .iter()
+                    .any(|dirty_rect| {
+                        dirty_rect.intersects(&vis.clip_chain.pic_coverage_rect)
+                    })
             }
             VisibilityState::PassThrough => {
                 true
             }
+        }
+    }
+
+    
+    pub fn push_prim(
+        &mut self,
+        prim_cmd: &PrimitiveCommand,
+        spatial_node_index: SpatialNodeIndex,
+        vis: &PrimitiveVisibility,
+        cmd_buffers: &mut CommandBufferList,
+    ) {
+        match vis.state {
+            VisibilityState::Unset => {
+                panic!("bug: invalid vis state");
+            }
+            VisibilityState::Visible { tile_rect, sub_slice_index, .. } => {
+                self.current_cmd_buffers.push_prim(
+                    prim_cmd,
+                    spatial_node_index,
+                    tile_rect,
+                    sub_slice_index,
+                    cmd_buffers,
+                )
+            }
+            VisibilityState::PassThrough | VisibilityState::Culled => {}
         }
     }
 
@@ -329,6 +381,8 @@ impl SurfaceBuilder {
         rg_builder: &mut RenderTaskGraphBuilder,
         cmd_buffers: &mut CommandBufferList,
     ) {
+        self.dirty_rect_stack.pop().unwrap();
+
         let builder = self.builder_stack.pop().unwrap();
 
         if builder.establishes_sub_graph {
@@ -337,7 +391,7 @@ impl SurfaceBuilder {
                 CommandBufferBuilderKind::Tiled { .. } | CommandBufferBuilderKind::Invalid => {
                     unreachable!("bug: sub-graphs can only be simple surfaces");
                 }
-                CommandBufferBuilderKind::Simple { render_task_id: child_render_task_id, root_task_id: child_root_task_id, .. } => {
+                CommandBufferBuilderKind::Simple { render_task_id: child_render_task_id, root_task_id: child_root_task_id } => {
                     
                     if let Some(resolve_task_id) = builder.resolve_source {
                         let mut src_task_ids = Vec::new();
@@ -547,7 +601,7 @@ impl SurfaceBuilder {
                         }
                     }
                 }
-                CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id, .. } => {
+                CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id } => {
                     match self.builder_stack.last().unwrap().kind {
                         CommandBufferBuilderKind::Tiled { ref tiles } => {
                             

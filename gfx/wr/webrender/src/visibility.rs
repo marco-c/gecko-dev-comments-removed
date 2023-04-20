@@ -17,7 +17,7 @@ use crate::clip::{ClipChainInstance, ClipTree};
 use crate::frame_builder::FrameBuilderConfig;
 use crate::gpu_cache::GpuCache;
 use crate::picture::{PictureCompositeMode, ClusterFlags, SurfaceInfo, TileCacheInstance};
-use crate::picture::{SurfaceIndex, RasterConfig, SubSliceIndex};
+use crate::picture::{SurfaceIndex, RasterConfig, TileRect, SubSliceIndex};
 use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveInstanceKind};
 use crate::prim_store::{PrimitiveStore, PrimitiveInstance};
 use crate::render_backend::{DataStores, ScratchBuffer};
@@ -93,6 +93,9 @@ pub enum VisibilityState {
         
         
         vis_flags: PrimitiveVisibilityFlags,
+
+        
+        tile_rect: TileRect,
 
         
         sub_slice_index: SubSliceIndex,
