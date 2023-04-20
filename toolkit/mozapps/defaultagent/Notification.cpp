@@ -131,23 +131,6 @@ struct Strings {
 
 
 
-static bool GetString(const wchar_t* iniPath, const char* section,
-                      const char* key,
-                      mozilla::UniquePtr<wchar_t[]>& toastString) {
-  IniReader reader(iniPath, section);
-  reader.AddKey(key, &toastString);
-  int result = reader.Read();
-  if (result != OK) {
-    LOG_ERROR_MESSAGE(
-        L"Unable to retrieve INI string: section=%S, key=%S, result=%d",
-        section, key, result);
-    return false;
-  }
-  return true;
-}
-
-
-
 static bool GetStrings(Strings& strings) {
   mozilla::UniquePtr<wchar_t[]> installPath;
   bool success = GetInstallDirectory(installPath);
@@ -546,28 +529,10 @@ static NotificationActivities ShowNotification(
 
 
 
-bool FirefoxInstallIsEnglish() {
-  mozilla::UniquePtr<wchar_t[]> installPath;
-  bool success = GetInstallDirectory(installPath);
-  if (!success) {
-    LOG_ERROR_MESSAGE(L"Failed to get install directory when getting strings");
-    return false;
-  }
-  const wchar_t* iniFormat = L"%s\\locale.ini";
-  int bufferSize = _scwprintf(iniFormat, installPath.get());
-  ++bufferSize;  
-  mozilla::UniquePtr<wchar_t[]> iniPath =
-      mozilla::MakeUnique<wchar_t[]>(bufferSize);
-  _snwprintf_s(iniPath.get(), bufferSize, _TRUNCATE, iniFormat,
-               installPath.get());
 
-  mozilla::UniquePtr<wchar_t[]> firefoxLocale;
-  if (!GetString(iniPath.get(), "locale", "locale", firefoxLocale)) {
-    return false;
-  }
 
-  return _wcsnicmp(firefoxLocale.get(), L"en-", 3) == 0;
-}
+
+bool FirefoxInstallIsEnglish() { return false; }
 
 
 
