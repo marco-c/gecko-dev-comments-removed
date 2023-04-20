@@ -383,17 +383,50 @@ fn parse_knobs(mut input: syn::ItemFn, is_test: bool, config: FinalConfig) -> To
 
     let body = &input.block;
     let brace_token = input.block.brace_token;
-    input.block = syn::parse2(quote_spanned! {last_stmt_end_span=>
+    let body_ident = quote! { body };
+    let block_expr = quote_spanned! {last_stmt_end_span=>
+        #[allow(clippy::expect_used, clippy::diverging_sub_expression)]
         {
+            return #rt
+                .enable_all()
+                .build()
+                .expect("Failed building the Runtime")
+                .block_on(#body_ident);
+        }
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let body = if is_test {
+        let output_type = match &input.sig.output {
+            
+            
+            
+            syn::ReturnType::Default => quote! { () },
+            syn::ReturnType::Type(_, ret_type) => quote! { #ret_type },
+        };
+        quote! {
             let body = async #body;
-            #[allow(clippy::expect_used, clippy::diverging_sub_expression)]
-            {
-                return #rt
-                    .enable_all()
-                    .build()
-                    .expect("Failed building the Runtime")
-                    .block_on(body);
-            }
+            #crate_ident::pin!(body);
+            let body: ::std::pin::Pin<&mut dyn ::std::future::Future<Output = #output_type>> = body;
+        }
+    } else {
+        quote! {
+            let body = async #body;
+        }
+    };
+
+    input.block = syn::parse2(quote! {
+        {
+            #body
+            #block_expr
         }
     })
     .expect("Parsing failure");
@@ -447,7 +480,7 @@ pub(crate) fn test(args: TokenStream, item: TokenStream, rt_multi_thread: bool) 
     };
     let config = if let Some(attr) = input.attrs.iter().find(|attr| attr.path.is_ident("test")) {
         let msg = "second test attribute is supplied";
-        Err(syn::Error::new_spanned(&attr, msg))
+        Err(syn::Error::new_spanned(attr, msg))
     } else {
         AttributeArgs::parse_terminated
             .parse(args)
