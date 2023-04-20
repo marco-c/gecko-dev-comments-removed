@@ -1,6 +1,5 @@
 
 
-use core::convert::TryInto;
 use core::mem::MaybeUninit;
 
 use crate::{OffsetDateTime, UtcOffset};
@@ -45,7 +44,21 @@ unsafe fn timestamp_to_tm(timestamp: i64) -> Option<libc::tm> {
 
 
 
-#[cfg(not(any(target_os = "solaris", target_os = "illumos")))]
+#[cfg(any(
+    target_os = "redox",
+    target_os = "linux",
+    target_os = "l4re",
+    target_os = "android",
+    target_os = "emscripten",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "watchos",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "haiku",
+))]
 fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
     let seconds: i32 = tm.tm_gmtoff.try_into().ok()?;
     UtcOffset::from_hms(
@@ -57,10 +70,23 @@ fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
 }
 
 
-
 #[cfg(all(
     not(unsound_local_offset),
-    any(target_os = "solaris", target_os = "illumos")
+    not(any(
+        target_os = "redox",
+        target_os = "linux",
+        target_os = "l4re",
+        target_os = "android",
+        target_os = "emscripten",
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "watchos",
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "haiku",
+    ))
 ))]
 #[allow(unused_variables, clippy::missing_const_for_fn)]
 fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
@@ -68,13 +94,30 @@ fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
 }
 
 
+
+
+
+
+
 #[cfg(all(
     unsound_local_offset,
-    any(target_os = "solaris", target_os = "illumos")
+    not(any(
+        target_os = "redox",
+        target_os = "linux",
+        target_os = "l4re",
+        target_os = "android",
+        target_os = "emscripten",
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "watchos",
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "haiku",
+    ))
 ))]
 fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
-    use core::convert::TryFrom;
-
     use crate::Date;
 
     let mut tm = tm;

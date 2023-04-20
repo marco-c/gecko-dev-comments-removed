@@ -34,11 +34,9 @@
 
 
 
-
-
 use alloc::boxed::Box;
 
-use quickcheck_dep::{empty_shrinker, single_shrinker, Arbitrary, Gen};
+use quickcheck::{empty_shrinker, single_shrinker, Arbitrary, Gen};
 
 use crate::{Date, Duration, Month, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday};
 
@@ -159,9 +157,9 @@ impl Arbitrary for OffsetDateTime {
 
     fn shrink(&self) -> Box<dyn Iterator<Item = Self>> {
         Box::new(
-            (self.utc_datetime.utc_to_offset(self.offset), self.offset)
+            (self.local_datetime, self.offset)
                 .shrink()
-                .map(|(utc_datetime, offset)| utc_datetime.assume_offset(offset)),
+                .map(|(local_datetime, offset)| local_datetime.assume_offset(offset)),
         )
     }
 }
@@ -176,7 +174,10 @@ impl Arbitrary for Weekday {
             3 => Thursday,
             4 => Friday,
             5 => Saturday,
-            _ => Sunday,
+            val => {
+                debug_assert!(val == 6);
+                Sunday
+            }
         }
     }
 
@@ -203,7 +204,10 @@ impl Arbitrary for Month {
             9 => September,
             10 => October,
             11 => November,
-            _ => December,
+            val => {
+                debug_assert!(val == 12);
+                December
+            }
         }
     }
 

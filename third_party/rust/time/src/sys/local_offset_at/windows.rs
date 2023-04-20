@@ -1,13 +1,12 @@
 
 
-use core::convert::TryInto;
 use core::mem::MaybeUninit;
 
 use crate::{OffsetDateTime, UtcOffset};
 
 
 #[repr(C)]
-#[allow(non_snake_case)]
+#[allow(non_snake_case, clippy::missing_docs_in_private_items)]
 struct FileTime {
     dwLowDateTime: u32,
     dwHighDateTime: u32,
@@ -15,7 +14,7 @@ struct FileTime {
 
 
 #[repr(C)]
-#[allow(non_snake_case)]
+#[allow(non_snake_case, clippy::missing_docs_in_private_items)]
 struct SystemTime {
     wYear: u16,
     wMonth: u16,
@@ -34,7 +33,7 @@ extern "system" {
 
     
     fn SystemTimeToTzSpecificLocalTime(
-        lpTimeZoneInformation: *const std::ffi::c_void, 
+        lpTimeZoneInformation: *const core::ffi::c_void, 
         lpUniversalTime: *const SystemTime,
         lpLocalTime: *mut SystemTime,
     ) -> i32;

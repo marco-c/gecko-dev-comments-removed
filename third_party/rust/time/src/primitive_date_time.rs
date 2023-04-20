@@ -13,7 +13,7 @@ use crate::parsing::Parsable;
 use crate::{error, util, Date, Duration, Month, OffsetDateTime, Time, UtcOffset, Weekday};
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct PrimitiveDateTime {
     #[allow(clippy::missing_docs_in_private_items)]
     pub(crate) date: Date,
@@ -32,7 +32,22 @@ impl PrimitiveDateTime {
     
     
     
-    
+    #[cfg_attr(
+        feature = "large-dates",
+        doc = "// Assuming `large-dates` feature is enabled."
+    )]
+    #[cfg_attr(
+        feature = "large-dates",
+        doc = "assert_eq!(PrimitiveDateTime::MIN, datetime!(-999999-01-01 0:00));"
+    )]
+    #[cfg_attr(
+        not(feature = "large-dates"),
+        doc = "// Assuming `large-dates` feature is disabled."
+    )]
+    #[cfg_attr(
+        not(feature = "large-dates"),
+        doc = "assert_eq!(PrimitiveDateTime::MIN, datetime!(-9999-01-01 0:00));"
+    )]
     
     pub const MIN: Self = Self::new(Date::MIN, Time::MIN);
 
@@ -46,10 +61,26 @@ impl PrimitiveDateTime {
     
     
     
-    
+    #[cfg_attr(
+        feature = "large-dates",
+        doc = "// Assuming `large-dates` feature is enabled."
+    )]
+    #[cfg_attr(
+        feature = "large-dates",
+        doc = "assert_eq!(PrimitiveDateTime::MAX, datetime!(+999999-12-31 23:59:59.999_999_999));"
+    )]
+    #[cfg_attr(
+        not(feature = "large-dates"),
+        doc = "// Assuming `large-dates` feature is disabled."
+    )]
+    #[cfg_attr(
+        not(feature = "large-dates"),
+        doc = "assert_eq!(PrimitiveDateTime::MAX, datetime!(+9999-12-31 23:59:59.999_999_999));"
+    )]
     
     pub const MAX: Self = Self::new(Date::MAX, Time::MAX);
 
+    
     
     
     
@@ -97,6 +128,7 @@ impl PrimitiveDateTime {
         self.date.year()
     }
 
+    
     
     
     
@@ -189,6 +221,7 @@ impl PrimitiveDateTime {
     
     
     
+    
     pub const fn to_calendar_date(self) -> (i32, Month, u8) {
         self.date.to_calendar_date()
     }
@@ -228,10 +261,12 @@ impl PrimitiveDateTime {
     
     
     
+    
     pub const fn to_iso_week_date(self) -> (i32, u8, Weekday) {
         self.date.to_iso_week_date()
     }
 
+    
     
     
     
@@ -430,7 +465,7 @@ impl PrimitiveDateTime {
     
     pub const fn assume_offset(self, offset: UtcOffset) -> OffsetDateTime {
         OffsetDateTime {
-            utc_datetime: self.offset_to_utc(offset),
+            local_datetime: self,
             offset,
         }
     }
@@ -446,10 +481,7 @@ impl PrimitiveDateTime {
     
     
     pub const fn assume_utc(self) -> OffsetDateTime {
-        OffsetDateTime {
-            utc_datetime: self,
-            offset: UtcOffset::UTC,
-        }
+        self.assume_offset(UtcOffset::UTC)
     }
     
 
@@ -768,45 +800,6 @@ impl PrimitiveDateTime {
 
 
 
-
-impl PrimitiveDateTime {
-    
-    
-    pub(crate) const fn offset_to_utc(self, offset: UtcOffset) -> Self {
-        let mut second = self.second() as i8 - offset.seconds_past_minute();
-        let mut minute = self.minute() as i8 - offset.minutes_past_hour();
-        let mut hour = self.hour() as i8 - offset.whole_hours();
-        let (mut year, mut ordinal) = self.date.to_ordinal_date();
-
-        cascade!(second in 0..60 => minute);
-        cascade!(minute in 0..60 => hour);
-        cascade!(hour in 0..24 => ordinal);
-        cascade!(ordinal => year);
-
-        Self {
-            date: Date::__from_ordinal_date_unchecked(year, ordinal),
-            time: Time::__from_hms_nanos_unchecked(
-                hour as _,
-                minute as _,
-                second as _,
-                self.nanosecond(),
-            ),
-        }
-    }
-
-    
-    
-    pub(crate) const fn utc_to_offset(self, offset: UtcOffset) -> Self {
-        self.offset_to_utc(UtcOffset::__from_hms_unchecked(
-            -offset.whole_hours(),
-            -offset.minutes_past_hour(),
-            -offset.seconds_past_minute(),
-        ))
-    }
-}
-
-
-
 #[cfg(feature = "formatting")]
 impl PrimitiveDateTime {
     
@@ -819,6 +812,7 @@ impl PrimitiveDateTime {
         format.format_into(output, Some(self.date), Some(self.time), None)
     }
 
+    
     
     
     
@@ -850,6 +844,7 @@ impl PrimitiveDateTime {
     
     
     
+    
     pub fn parse(
         input: &str,
         description: &(impl Parsable + ?Sized),
@@ -861,6 +856,12 @@ impl PrimitiveDateTime {
 impl fmt::Display for PrimitiveDateTime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} {}", self.date, self.time)
+    }
+}
+
+impl fmt::Debug for PrimitiveDateTime {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 

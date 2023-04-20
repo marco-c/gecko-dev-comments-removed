@@ -20,7 +20,7 @@ use crate::OffsetDateTime;
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct UtcOffset {
     #[allow(clippy::missing_docs_in_private_items)]
     hours: i8,
@@ -37,6 +37,7 @@ impl UtcOffset {
     
     
     
+    
     pub const UTC: Self = Self::__from_hms_unchecked(0, 0, 0);
 
     
@@ -45,6 +46,22 @@ impl UtcOffset {
     
     #[doc(hidden)]
     pub const fn __from_hms_unchecked(hours: i8, minutes: i8, seconds: i8) -> Self {
+        if hours < 0 {
+            debug_assert!(minutes <= 0);
+            debug_assert!(seconds <= 0);
+        } else if hours > 0 {
+            debug_assert!(minutes >= 0);
+            debug_assert!(seconds >= 0);
+        }
+        if minutes < 0 {
+            debug_assert!(seconds <= 0);
+        } else if minutes > 0 {
+            debug_assert!(seconds >= 0);
+        }
+        debug_assert!(hours.unsigned_abs() < 24);
+        debug_assert!(minutes.unsigned_abs() < 60);
+        debug_assert!(seconds.unsigned_abs() < 60);
+
         Self {
             hours,
             minutes,
@@ -274,6 +291,7 @@ impl UtcOffset {
     
     
     
+    
     pub fn format(self, format: &(impl Formattable + ?Sized)) -> Result<String, error::Format> {
         format.format(None, None, Some(self))
     }
@@ -281,6 +299,7 @@ impl UtcOffset {
 
 #[cfg(feature = "parsing")]
 impl UtcOffset {
+    
     
     
     
@@ -308,6 +327,12 @@ impl fmt::Display for UtcOffset {
             self.minutes.abs(),
             self.seconds.abs()
         )
+    }
+}
+
+impl fmt::Debug for UtcOffset {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 

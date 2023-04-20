@@ -14,18 +14,17 @@ use crate::util::{days_in_year, days_in_year_month, is_leap_year, weeks_in_year}
 use crate::{error, Duration, Month, PrimitiveDateTime, Time, Weekday};
 
 
-#[cfg(feature = "large-dates")]
-pub(crate) const MIN_YEAR: i32 = -999_999;
+pub(crate) const MIN_YEAR: i32 = if cfg!(feature = "large-dates") {
+    -999_999
+} else {
+    -9999
+};
 
-#[cfg(feature = "large-dates")]
-pub(crate) const MAX_YEAR: i32 = 999_999;
-
-
-#[cfg(not(feature = "large-dates"))]
-pub(crate) const MIN_YEAR: i32 = -9999;
-
-#[cfg(not(feature = "large-dates"))]
-pub(crate) const MAX_YEAR: i32 = 9999;
+pub(crate) const MAX_YEAR: i32 = if cfg!(feature = "large-dates") {
+    999_999
+} else {
+    9999
+};
 
 
 
@@ -39,16 +38,7 @@ pub struct Date {
     
     
     
-    pub(crate) value: i32,
-}
-
-impl fmt::Debug for Date {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        f.debug_struct("Date")
-            .field("year", &self.year())
-            .field("ordinal", &self.ordinal())
-            .finish()
-    }
+    value: i32,
 }
 
 impl Date {
@@ -67,6 +57,11 @@ impl Date {
     
     #[doc(hidden)]
     pub const fn __from_ordinal_date_unchecked(year: i32, ordinal: u16) -> Self {
+        debug_assert!(year >= MIN_YEAR);
+        debug_assert!(year <= MAX_YEAR);
+        debug_assert!(ordinal != 0);
+        debug_assert!(ordinal <= days_in_year(year));
+
         Self {
             value: (year << 9) | ordinal as i32,
         }
@@ -182,6 +177,7 @@ impl Date {
     
     
     
+    
     #[doc(alias = "from_julian_date")]
     pub const fn from_julian_day(julian_day: i32) -> Result<Self, error::ComponentRange> {
         ensure_value_in_range!(
@@ -196,24 +192,27 @@ impl Date {
     
     #[doc(alias = "from_julian_date_unchecked")]
     pub(crate) const fn from_julian_day_unchecked(julian_day: i32) -> Self {
-        #![allow(trivial_numeric_casts)] 
-
-        
-        
-        #[cfg(feature = "large-dates")]
-        type MaybeWidened = i64;
-        #[allow(clippy::missing_docs_in_private_items)]
-        #[cfg(not(feature = "large-dates"))]
-        type MaybeWidened = i32;
+        debug_assert!(julian_day >= Self::MIN.to_julian_day());
+        debug_assert!(julian_day <= Self::MAX.to_julian_day());
 
         
 
         let z = julian_day - 1_721_119;
-        let g = 100 * z as MaybeWidened - 25;
-        let a = (g / 3_652_425) as i32;
-        let b = a - a / 4;
-        let mut year = div_floor!(100 * b as MaybeWidened + g, 36525) as i32;
-        let mut ordinal = (b + z - div_floor!(36525 * year as MaybeWidened, 100) as i32) as _;
+        let (mut year, mut ordinal) = if julian_day < -19_752_948 || julian_day > 23_195_514 {
+            let g = 100 * z as i64 - 25;
+            let a = (g / 3_652_425) as i32;
+            let b = a - a / 4;
+            let year = div_floor!(100 * b as i64 + g, 36525) as i32;
+            let ordinal = (b + z - div_floor!(36525 * year as i64, 100) as i32) as _;
+            (year, ordinal)
+        } else {
+            let g = 100 * z - 25;
+            let a = g / 3_652_425;
+            let b = a - a / 4;
+            let year = div_floor!(100 * b + g, 36525);
+            let ordinal = (b + z - div_floor!(36525 * year, 100)) as _;
+            (year, ordinal)
+        };
 
         if is_leap_year(year) {
             ordinal += 60;
@@ -240,6 +239,7 @@ impl Date {
         self.value >> 9
     }
 
+    
     
     
     
@@ -384,6 +384,7 @@ impl Date {
     
     
     
+    
     pub const fn to_calendar_date(self) -> (i32, Month, u8) {
         let (month, day) = self.month_day();
         (self.year(), month, day)
@@ -399,6 +400,7 @@ impl Date {
         (self.year(), self.ordinal())
     }
 
+    
     
     
     
@@ -443,6 +445,7 @@ impl Date {
     
     
     
+    
     pub const fn weekday(self) -> Weekday {
         match self.to_julian_day() % 7 {
             -6 | 1 => Weekday::Tuesday,
@@ -451,10 +454,14 @@ impl Date {
             -3 | 4 => Weekday::Friday,
             -2 | 5 => Weekday::Saturday,
             -1 | 6 => Weekday::Sunday,
-            _ => Weekday::Monday,
+            val => {
+                debug_assert!(val == 0);
+                Weekday::Monday
+            }
         }
     }
 
+    
     
     
     
@@ -487,6 +494,7 @@ impl Date {
         }
     }
 
+    
     
     
     
@@ -572,6 +580,8 @@ impl Date {
     
     
     
+    
+    
     pub const fn checked_add(self, duration: Duration) -> Option<Self> {
         let whole_days = duration.whole_days();
         if whole_days < i32::MIN as i64 || whole_days > i32::MAX as i64 {
@@ -586,6 +596,8 @@ impl Date {
         }
     }
 
+    
+    
     
     
     
@@ -658,16 +670,21 @@ impl Date {
     
     
     
+    
+    
     pub const fn saturating_add(self, duration: Duration) -> Self {
         if let Some(datetime) = self.checked_add(duration) {
             datetime
         } else if duration.is_negative() {
             Self::MIN
         } else {
+            debug_assert!(duration.is_positive());
             Self::MAX
         }
     }
 
+    
+    
     
     
     
@@ -701,6 +718,7 @@ impl Date {
         } else if duration.is_negative() {
             Self::MAX
         } else {
+            debug_assert!(duration.is_positive());
             Self::MIN
         }
     }
@@ -726,15 +744,11 @@ impl Date {
 
         
         if ordinal <= 59 {
-            return Ok(Self {
-                value: year << 9 | ordinal as i32,
-            });
+            return Ok(Self::__from_ordinal_date_unchecked(year, ordinal));
         }
 
         match (is_leap_year(self.year()), is_leap_year(year)) {
-            (false, false) | (true, true) => Ok(Self {
-                value: year << 9 | ordinal as i32,
-            }),
+            (false, false) | (true, true) => Ok(Self::__from_ordinal_date_unchecked(year, ordinal)),
             
             (true, false) if ordinal == 60 => Err(error::ComponentRange {
                 name: "day",
@@ -745,14 +759,10 @@ impl Date {
             }),
             
             
-            (false, true) => Ok(Self {
-                value: year << 9 | (ordinal + 1) as i32,
-            }),
+            (false, true) => Ok(Self::__from_ordinal_date_unchecked(year, ordinal + 1)),
             
             
-            (true, false) => Ok(Self {
-                value: year << 9 | (ordinal - 1) as i32,
-            }),
+            (true, false) => Ok(Self::__from_ordinal_date_unchecked(year, ordinal - 1)),
         }
     }
 
@@ -933,6 +943,7 @@ impl Date {
     
     
     
+    
     pub fn format(self, format: &(impl Formattable + ?Sized)) -> Result<String, error::Format> {
         format.format(Some(self), None, None)
     }
@@ -940,6 +951,7 @@ impl Date {
 
 #[cfg(feature = "parsing")]
 impl Date {
+    
     
     
     
@@ -977,6 +989,12 @@ impl fmt::Display for Date {
                 width = 4 + (self.year() < 0) as usize
             )
         }
+    }
+}
+
+impl fmt::Debug for Date {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        fmt::Display::fmt(self, f)
     }
 }
 

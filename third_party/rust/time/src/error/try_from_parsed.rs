@@ -1,13 +1,11 @@
 
 
-use core::convert::TryFrom;
 use core::fmt;
 
 use crate::error;
 
 
 #[non_exhaustive]
-#[cfg_attr(__time_03_docs, doc(cfg(feature = "parsing")))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TryFromParsed {
     
@@ -55,14 +53,12 @@ impl std::error::Error for TryFromParsed {
     }
 }
 
-#[cfg_attr(__time_03_docs, doc(cfg(feature = "parsing")))]
 impl From<TryFromParsed> for crate::Error {
     fn from(original: TryFromParsed) -> Self {
         Self::TryFromParsed(original)
     }
 }
 
-#[cfg_attr(__time_03_docs, doc(cfg(feature = "parsing")))]
 impl TryFrom<crate::Error> for TryFromParsed {
     type Error = error::DifferentVariant;
 

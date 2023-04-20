@@ -1,7 +1,6 @@
 
 
 use core::cmp::Ordering;
-use core::convert::{TryFrom, TryInto};
 use core::fmt;
 use core::iter::Sum;
 use core::ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign};
@@ -186,9 +185,14 @@ impl Duration {
 
     
     
-    #[allow(clippy::missing_const_for_fn)] 
-    #[cfg(feature = "std")]
-    pub(crate) fn abs_std(self) -> StdDuration {
+    
+    
+    
+    
+    
+    
+    
+    pub const fn unsigned_abs(self) -> StdDuration {
         StdDuration::new(self.seconds.unsigned_abs(), self.nanoseconds.unsigned_abs())
     }
     
@@ -196,6 +200,16 @@ impl Duration {
     
     
     pub(crate) const fn new_unchecked(seconds: i64, nanoseconds: i32) -> Self {
+        if seconds < 0 {
+            debug_assert!(nanoseconds <= 0);
+            debug_assert!(nanoseconds > -1_000_000_000);
+        } else if seconds > 0 {
+            debug_assert!(nanoseconds >= 0);
+            debug_assert!(nanoseconds < 1_000_000_000);
+        } else {
+            debug_assert!(nanoseconds.unsigned_abs() < 1_000_000_000);
+        }
+
         Self {
             seconds,
             nanoseconds,
@@ -213,13 +227,18 @@ impl Duration {
     
     
     pub const fn new(mut seconds: i64, mut nanoseconds: i32) -> Self {
-        seconds += nanoseconds as i64 / 1_000_000_000;
+        seconds = expect_opt!(
+            seconds.checked_add(nanoseconds as i64 / 1_000_000_000),
+            "overflow constructing `time::Duration`"
+        );
         nanoseconds %= 1_000_000_000;
 
         if seconds > 0 && nanoseconds < 0 {
+            
             seconds -= 1;
             nanoseconds += 1_000_000_000;
         } else if seconds < 0 && nanoseconds > 0 {
+            
             seconds += 1;
             nanoseconds -= 1_000_000_000;
         }
@@ -235,7 +254,10 @@ impl Duration {
     
     
     pub const fn weeks(weeks: i64) -> Self {
-        Self::seconds(weeks * 604_800)
+        Self::seconds(expect_opt!(
+            weeks.checked_mul(604_800),
+            "overflow constructing `time::Duration`"
+        ))
     }
 
     
@@ -246,7 +268,10 @@ impl Duration {
     
     
     pub const fn days(days: i64) -> Self {
-        Self::seconds(days * 86_400)
+        Self::seconds(expect_opt!(
+            days.checked_mul(86_400),
+            "overflow constructing `time::Duration`"
+        ))
     }
 
     
@@ -257,7 +282,10 @@ impl Duration {
     
     
     pub const fn hours(hours: i64) -> Self {
-        Self::seconds(hours * 3_600)
+        Self::seconds(expect_opt!(
+            hours.checked_mul(3_600),
+            "overflow constructing `time::Duration`"
+        ))
     }
 
     
@@ -268,7 +296,10 @@ impl Duration {
     
     
     pub const fn minutes(minutes: i64) -> Self {
-        Self::seconds(minutes * 60)
+        Self::seconds(expect_opt!(
+            minutes.checked_mul(60),
+            "overflow constructing `time::Duration`"
+        ))
     }
 
     
@@ -289,6 +320,12 @@ impl Duration {
     
     
     pub fn seconds_f64(seconds: f64) -> Self {
+        if seconds > i64::MAX as f64 || seconds < i64::MIN as f64 {
+            crate::expect_failed("overflow constructing `time::Duration`");
+        }
+        if seconds.is_nan() {
+            crate::expect_failed("passed NaN to `time::Duration::seconds_f64`");
+        }
         Self::new_unchecked(seconds as _, ((seconds % 1.) * 1_000_000_000.) as _)
     }
 
@@ -300,6 +337,12 @@ impl Duration {
     
     
     pub fn seconds_f32(seconds: f32) -> Self {
+        if seconds > i64::MAX as f32 || seconds < i64::MIN as f32 {
+            crate::expect_failed("overflow constructing `time::Duration`");
+        }
+        if seconds.is_nan() {
+            crate::expect_failed("passed NaN to `time::Duration::seconds_f32`");
+        }
         Self::new_unchecked(seconds as _, ((seconds % 1.) * 1_000_000_000.) as _)
     }
 
@@ -350,10 +393,14 @@ impl Duration {
     
     
     pub(crate) const fn nanoseconds_i128(nanoseconds: i128) -> Self {
-        Self::new_unchecked(
-            (nanoseconds / 1_000_000_000) as _,
-            (nanoseconds % 1_000_000_000) as _,
-        )
+        let seconds = nanoseconds / 1_000_000_000;
+        let nanoseconds = nanoseconds % 1_000_000_000;
+
+        if seconds > i64::MAX as i128 || seconds < i64::MIN as i128 {
+            crate::expect_failed("overflow constructing `time::Duration`");
+        }
+
+        Self::new_unchecked(seconds as _, nanoseconds as _)
     }
     
 
@@ -744,36 +791,79 @@ impl Duration {
 
 
 
+
+
+
+
+
+
+
+
+
+
 impl fmt::Display for Duration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        
-        macro_rules! item {
-            ($name:literal, $value:expr) => {
-                match $value {
-                    0 => Ok(()),
-                    value => value.fmt(f).and(f.write_str($name)),
-                }
-            };
-        }
-
-        if self.is_zero() {
-            return f.write_str("0s");
-        }
-
-        let seconds = self.seconds.unsigned_abs();
-        let nanoseconds = self.nanoseconds.unsigned_abs();
-
         if self.is_negative() {
             f.write_str("-")?;
         }
 
-        item!("d", seconds / 86_400)?;
-        item!("h", seconds / 3_600 % 24)?;
-        item!("m", seconds / 60 % 60)?;
-        item!("s", seconds % 60)?;
-        item!("ms", nanoseconds / 1_000_000)?;
-        item!("µs", nanoseconds / 1_000 % 1_000)?;
-        item!("ns", nanoseconds % 1_000)?;
+        if let Some(_precision) = f.precision() {
+            
+
+            if self.is_zero() {
+                
+                return (0.).fmt(f).and_then(|_| f.write_str("s"));
+            }
+
+            
+            macro_rules! item {
+                ($name:literal, $value:expr) => {
+                    let value = $value;
+                    if value >= 1.0 {
+                        return value.fmt(f).and_then(|_| f.write_str($name));
+                    }
+                };
+            }
+
+            
+            let seconds = self.unsigned_abs().as_secs_f64();
+
+            item!("d", seconds / 86_400.);
+            item!("h", seconds / 3_600.);
+            item!("m", seconds / 60.);
+            item!("s", seconds);
+            item!("ms", seconds * 1_000.);
+            item!("µs", seconds * 1_000_000.);
+            item!("ns", seconds * 1_000_000_000.);
+        } else {
+            
+
+            if self.is_zero() {
+                return f.write_str("0s");
+            }
+
+            
+            macro_rules! item {
+                ($name:literal, $value:expr) => {
+                    match $value {
+                        0 => Ok(()),
+                        value => value.fmt(f).and_then(|_| f.write_str($name)),
+                    }
+                };
+            }
+
+            let seconds = self.seconds.unsigned_abs();
+            let nanoseconds = self.nanoseconds.unsigned_abs();
+
+            item!("d", seconds / 86_400)?;
+            item!("h", seconds / 3_600 % 24)?;
+            item!("m", seconds / 60 % 60)?;
+            item!("s", seconds % 60)?;
+            item!("ms", nanoseconds / 1_000_000)?;
+            item!("µs", nanoseconds / 1_000 % 1_000)?;
+            item!("ns", nanoseconds % 1_000)?;
+        }
+
         Ok(())
     }
 }

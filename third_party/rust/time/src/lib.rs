@@ -78,16 +78,20 @@
 
 
 
+
+
+
 #![doc(html_playground_url = "https://play.rust-lang.org")]
-#![cfg_attr(__time_03_docs, feature(doc_cfg, doc_auto_cfg, doc_notable_trait))]
-#![cfg_attr(
-    __time_03_docs,
-    deny(rustdoc::broken_intra_doc_links, rustdoc::private_intra_doc_links)
-)]
+#![cfg_attr(__time_03_docs, feature(doc_auto_cfg, doc_notable_trait))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(
     anonymous_parameters,
     clippy::all,
+    clippy::alloc_instead_of_core,
+    clippy::explicit_auto_deref,
+    clippy::obfuscated_if_else,
+    clippy::std_instead_of_core,
+    clippy::undocumented_unsafe_blocks,
     const_err,
     illegal_floating_point_literal_pattern,
     late_bound_lifetime_arguments,
@@ -97,9 +101,10 @@
     trivial_casts,
     trivial_numeric_casts,
     unreachable_pub,
-    unsafe_code,
     unsafe_op_in_unsafe_fn,
-    unused_extern_crates
+    unused_extern_crates,
+    rustdoc::broken_intra_doc_links,
+    rustdoc::private_intra_doc_links
 )]
 #![warn(
     clippy::dbg_macro,
@@ -120,7 +125,12 @@
     unused_qualifications,
     variant_size_differences
 )]
-#![allow(clippy::redundant_pub_crate)]
+#![allow(
+    clippy::redundant_pub_crate, 
+    clippy::option_if_let_else, 
+    clippy::unused_peekable, 
+    clippy::std_instead_of_core, 
+)]
 #![doc(html_favicon_url = "https://avatars0.githubusercontent.com/u/55999857")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/55999857")]
 #![doc(test(attr(deny(warnings))))]
@@ -210,12 +220,12 @@ macro_rules! cascade {
         cascade!(@ordinal $ordinal);
         cascade!(@year $year);
         #[allow(unused_assignments)]
-        if $ordinal > crate::util::days_in_year($year) {
+        if $ordinal > crate::util::days_in_year($year) as i16 {
+            $ordinal -= crate::util::days_in_year($year) as i16;
             $year += 1;
-            $ordinal = 1;
-        } else if $ordinal == 0 {
+        } else if $ordinal < 1 {
             $year -= 1;
-            $ordinal = crate::util::days_in_year($year);
+            $ordinal += crate::util::days_in_year($year) as i16;
         }
     };
 }
@@ -279,6 +289,18 @@ macro_rules! const_try_opt {
 }
 
 
+
+
+macro_rules! expect_opt {
+    ($e:expr, $message:literal) => {
+        match $e {
+            Some(value) => value,
+            None => crate::expect_failed($message),
+        }
+    };
+}
+
+
 mod date;
 mod duration;
 pub mod error;
@@ -297,13 +319,10 @@ mod offset_date_time;
 pub mod parsing;
 mod primitive_date_time;
 #[cfg(feature = "quickcheck")]
-#[cfg_attr(__time_03_docs, doc(cfg(feature = "quickcheck")))]
 mod quickcheck;
 #[cfg(feature = "rand")]
-#[cfg_attr(__time_03_docs, doc(cfg(feature = "rand")))]
 mod rand;
 #[cfg(feature = "serde")]
-#[cfg_attr(__time_03_docs, doc(cfg(feature = "serde")))]
 #[allow(missing_copy_implementations, missing_debug_implementations)]
 pub mod serde;
 mod sys;
@@ -328,3 +347,11 @@ pub use crate::weekday::Weekday;
 
 
 pub type Result<T> = core::result::Result<T, Error>;
+
+
+#[inline(never)]
+#[cold]
+#[track_caller]
+const fn expect_failed(message: &str) -> ! {
+    panic!("{}", message)
+}

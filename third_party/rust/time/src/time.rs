@@ -42,18 +42,8 @@ pub struct Time {
     padding: Padding,
 }
 
-impl fmt::Debug for Time {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Time")
-            .field("hour", &self.hour)
-            .field("minute", &self.minute)
-            .field("second", &self.second)
-            .field("nanosecond", &self.nanosecond)
-            .finish()
-    }
-}
-
 impl Time {
+    
     
     
     
@@ -81,6 +71,11 @@ impl Time {
         second: u8,
         nanosecond: u32,
     ) -> Self {
+        debug_assert!(hour < 24);
+        debug_assert!(minute < 60);
+        debug_assert!(second < 60);
+        debug_assert!(nanosecond < 1_000_000_000);
+
         Self {
             hour,
             minute,
@@ -604,6 +599,7 @@ impl Time {
     
     
     
+    
     pub fn format(
         self,
         format: &(impl Formattable + ?Sized),
@@ -614,6 +610,7 @@ impl Time {
 
 #[cfg(feature = "parsing")]
 impl Time {
+    
     
     
     
@@ -646,13 +643,15 @@ impl fmt::Display for Time {
         };
         write!(
             f,
-            "{}:{:02}:{:02}.{:0width$}",
-            self.hour,
-            self.minute,
-            self.second,
-            value,
-            width = width
+            "{}:{:02}:{:02}.{value:0width$}",
+            self.hour, self.minute, self.second,
         )
+    }
+}
+
+impl fmt::Debug for Time {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 
@@ -668,6 +667,7 @@ impl Add<Duration> for Time {
     
     
     
+    
     fn add(self, duration: Duration) -> Self::Output {
         self.adjusting_add(duration).1
     }
@@ -676,6 +676,7 @@ impl Add<Duration> for Time {
 impl Add<StdDuration> for Time {
     type Output = Self;
 
+    
     
     
     
@@ -700,6 +701,7 @@ impl Sub<Duration> for Time {
     
     
     
+    
     fn sub(self, duration: Duration) -> Self::Output {
         self.adjusting_sub(duration).1
     }
@@ -708,6 +710,7 @@ impl Sub<Duration> for Time {
 impl Sub<StdDuration> for Time {
     type Output = Self;
 
+    
     
     
     
@@ -735,18 +738,24 @@ impl Sub for Time {
     
     
     
+    
     fn sub(self, rhs: Self) -> Self::Output {
         let hour_diff = (self.hour as i8) - (rhs.hour as i8);
         let minute_diff = (self.minute as i8) - (rhs.minute as i8);
-        let mut second_diff = (self.second as i8) - (rhs.second as i8);
-        let mut nanosecond_diff = (self.nanosecond as i32) - (rhs.nanosecond as i32);
+        let second_diff = (self.second as i8) - (rhs.second as i8);
+        let nanosecond_diff = (self.nanosecond as i32) - (rhs.nanosecond as i32);
 
-        cascade!(nanosecond_diff in 0..1_000_000_000 => second_diff);
+        let seconds = hour_diff as i64 * 3_600 + minute_diff as i64 * 60 + second_diff as i64;
 
-        Duration::new_unchecked(
-            hour_diff as i64 * 3_600 + minute_diff as i64 * 60 + second_diff as i64,
-            nanosecond_diff,
-        )
+        let (seconds, nanoseconds) = if seconds > 0 && nanosecond_diff < 0 {
+            (seconds - 1, nanosecond_diff + 1_000_000_000)
+        } else if seconds < 0 && nanosecond_diff > 0 {
+            (seconds + 1, nanosecond_diff - 1_000_000_000)
+        } else {
+            (seconds, nanosecond_diff)
+        };
+
+        Duration::new_unchecked(seconds, nanoseconds)
     }
 }
 
