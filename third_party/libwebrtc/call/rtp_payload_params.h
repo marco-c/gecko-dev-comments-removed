@@ -26,8 +26,6 @@
 
 namespace webrtc {
 
-class RtpRtcp;
-
 
 
 class RtpPayloadParams final {
@@ -44,14 +42,8 @@ class RtpPayloadParams final {
 
   
   
-  
-  
-  
-  
-  
-  static FrameDependencyStructure MinimalisticStructure(
-      int num_spatial_layers,
-      int num_temporal_layers);
+  absl::optional<FrameDependencyStructure> GenericStructure(
+      const CodecSpecificInfo* codec_specific_info);
 
   uint32_t ssrc() const;
 
@@ -136,6 +128,7 @@ class RtpPayloadParams final {
   RtpPayloadState state_;
 
   const bool generic_picture_id_experiment_;
+  const bool simulate_generic_structure_;
 };
 }  
 #endif  
