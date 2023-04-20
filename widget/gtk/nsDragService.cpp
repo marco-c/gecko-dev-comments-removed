@@ -1878,6 +1878,50 @@ bool nsDragService::SourceDataGetXDND(nsITransferable* aItem,
   return true;
 }
 
+bool nsDragService::SourceDataGetText(nsITransferable* aItem,
+                                      const nsACString& aMIMEType,
+                                      bool aNeedToDoConversionToPlainText,
+                                      GtkSelectionData* aSelectionData) {
+  LOGDRAGSERVICE("nsDragService::SourceDataGetPlain()");
+
+  nsresult rv;
+  nsCOMPtr<nsISupports> data;
+  rv = aItem->GetTransferData(PromiseFlatCString(aMIMEType).get(),
+                              getter_AddRefs(data));
+  NS_ENSURE_SUCCESS(rv, false);
+
+  void* tmpData = nullptr;
+  uint32_t tmpDataLen = 0;
+
+  nsPrimitiveHelpers::CreateDataFromPrimitive(aMIMEType, data, &tmpData,
+                                              &tmpDataLen);
+  
+  
+  if (aNeedToDoConversionToPlainText) {
+    char* plainTextData = nullptr;
+    char16_t* castedUnicode = reinterpret_cast<char16_t*>(tmpData);
+    uint32_t plainTextLen = 0;
+    UTF16ToNewUTF8(castedUnicode, tmpDataLen / 2, &plainTextData,
+                   &plainTextLen);
+    if (tmpData) {
+      
+      free(tmpData);
+      tmpData = plainTextData;
+      tmpDataLen = plainTextLen;
+    }
+  }
+  if (tmpData) {
+    
+    GdkAtom target = gtk_selection_data_get_target(aSelectionData);
+    gtk_selection_data_set(aSelectionData, target, 8, (guchar*)tmpData,
+                           tmpDataLen);
+    
+    free(tmpData);
+  }
+
+  return true;
+}
+
 
 
 
@@ -1913,32 +1957,16 @@ void nsDragService::SourceDataGet(GtkWidget* aWidget, GdkDragContext* aContext,
   LOGDRAGSERVICE("  source data items %d", dragItems);
 #endif
 
-  
-  
-  bool needToDoConversionToPlainText = false;
-
   nsDependentCString mimeFlavor(requestedTypeName.get());
-  const char* actualFlavor = nullptr;
+
   if (mimeFlavor.EqualsLiteral(kTextMime) ||
       mimeFlavor.EqualsLiteral(gTextPlainUTF8Type)) {
-    actualFlavor = kUnicodeMime;
-    needToDoConversionToPlainText = true;
-    LOGDRAGSERVICE("  convert %s => %s", actualFlavor, requestedTypeName.get());
-  }
-  
-  
-  else if (mimeFlavor.EqualsLiteral(gMozUrlType)) {
-    actualFlavor = kURLMime;
-    needToDoConversionToPlainText = true;
-    LOGDRAGSERVICE("  convert %s => %s", actualFlavor, requestedTypeName.get());
-  }
-  
-  
-  else if (mimeFlavor.EqualsLiteral(gTextUriListType)) {
-    actualFlavor = gTextUriListType;
-    needToDoConversionToPlainText = true;
-    LOGDRAGSERVICE("  convert %s => %s", actualFlavor, requestedTypeName.get());
-
+    if (SourceDataGetText(item, nsDependentCString(kUnicodeMime),
+                           true,
+                          aSelectionData)) {
+      return;
+    }
+  } else if (mimeFlavor.EqualsLiteral(gTextUriListType)) {
     
     
     
@@ -1966,6 +1994,15 @@ void nsDragService::SourceDataGet(GtkWidget* aWidget, GdkDragContext* aContext,
         return;
       }
     }
+
+    
+    LOGDRAGSERVICE("  fall back to plain text/uri-list");
+    nsAutoCString list;
+    CreateURIList(mSourceDataItems, list);
+    gtk_selection_data_set(aSelectionData, target, 8, (guchar*)list.get(),
+                           list.Length());
+    
+    return;
   }
   
   else if (mimeFlavor.EqualsLiteral(gXdndDirectSaveType)) {
@@ -1981,52 +2018,19 @@ void nsDragService::SourceDataGet(GtkWidget* aWidget, GdkDragContext* aContext,
     if (SourceDataGetImage(item, aSelectionData)) {
       return;
     }
-  } else {
-    actualFlavor = requestedTypeName.get();
-    LOGDRAGSERVICE("  use %s", requestedTypeName.get());
-  }
-  nsresult rv;
-  nsCOMPtr<nsISupports> data;
-  rv = item->GetTransferData(actualFlavor, getter_AddRefs(data));
-  if (NS_SUCCEEDED(rv)) {
-    void* tmpData = nullptr;
-    uint32_t tmpDataLen = 0;
-
-    nsPrimitiveHelpers::CreateDataFromPrimitive(
-        nsDependentCString(actualFlavor), data, &tmpData, &tmpDataLen);
+  } else if (mimeFlavor.EqualsLiteral(gMozUrlType)) {
     
     
-    if (needToDoConversionToPlainText) {
-      char* plainTextData = nullptr;
-      char16_t* castedUnicode = reinterpret_cast<char16_t*>(tmpData);
-      uint32_t plainTextLen = 0;
-      UTF16ToNewUTF8(castedUnicode, tmpDataLen / 2, &plainTextData,
-                     &plainTextLen);
-      if (tmpData) {
-        
-        free(tmpData);
-        tmpData = plainTextData;
-        tmpDataLen = plainTextLen;
-      }
-    }
-    if (tmpData) {
-      
-      gtk_selection_data_set(aSelectionData, target, 8, (guchar*)tmpData,
-                             tmpDataLen);
-      
-      free(tmpData);
-    }
-  } else {
-    if (mimeFlavor.EqualsLiteral(gTextUriListType)) {
-      
-      LOGDRAGSERVICE("  fall back to %s\n", requestedTypeName.get());
-      nsAutoCString list;
-      CreateURIList(mSourceDataItems, list);
-      gtk_selection_data_set(aSelectionData, target, 8, (guchar*)list.get(),
-                             list.Length());
+    
+    if (SourceDataGetText(item, nsDependentCString(kURLMime),
+                           true,
+                          aSelectionData)) {
       return;
     }
   }
+  
+  SourceDataGetText(item, mimeFlavor,
+                     false, aSelectionData);
 }
 
 void nsDragService::SourceBeginDrag(GdkDragContext* aContext) {
