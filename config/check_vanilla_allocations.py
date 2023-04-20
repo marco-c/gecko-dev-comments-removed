@@ -165,6 +165,10 @@ def main():
         if "intl_components" in filename:
             continue
 
+        
+        if filename == "regexp-ast.o":
+            continue
+
         fn = m.group(2)
         if filename == "Utility.o":
             util_Utility_cpp.add(fn)
