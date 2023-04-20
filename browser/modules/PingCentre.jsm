@@ -110,7 +110,9 @@ class PingCentre {
 
 
 
-  sendStructuredIngestionPing(data, endpoint) {
+
+
+  sendStructuredIngestionPing(data, endpoint, namespace = undefined) {
     if (!this.enabled) {
       return Promise.resolve();
     }
@@ -124,12 +126,31 @@ class PingCentre {
       );
     }
 
-    return PingCentre._sendStandalonePing(endpoint, payload).catch(event => {
-      Glean.pingCentre.sendFailures.add(1);
-      console.error(
-        `Structured Ingestion ping failure with error: ${event.type}`
-      );
-    });
+    let gleanNamespace = "other";
+    switch (namespace) {
+      case "activity-stream":
+        gleanNamespace = "activity_stream";
+        break;
+      case "messaging-system":
+        gleanNamespace = "messaging_system";
+        break;
+      case "contextual-services":
+        gleanNamespace = "contextual_services";
+        break;
+    }
+
+    return PingCentre._sendStandalonePing(endpoint, payload).then(
+      () => {
+        Glean.pingCentre.sendSuccessesByNamespace[gleanNamespace].add(1);
+      },
+      event => {
+        Glean.pingCentre.sendFailures.add(1);
+        Glean.pingCentre.sendFailuresByNamespace[gleanNamespace].add(1);
+        console.error(
+          `Structured Ingestion ping failure with error: ${event.type}`
+        );
+      }
+    );
   }
 
   uninit() {
