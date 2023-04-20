@@ -989,19 +989,23 @@ const Element::MappedAttributeEntry SVGElement::sTextContentElementsMap[] = {
     
     
     
-    {nsGkAtoms::direction},       {nsGkAtoms::dominant_baseline},
-    {nsGkAtoms::letter_spacing},  {nsGkAtoms::text_anchor},
-    {nsGkAtoms::text_decoration}, {nsGkAtoms::unicode_bidi},
-    {nsGkAtoms::white_space},     {nsGkAtoms::word_spacing},
-    {nsGkAtoms::writing_mode},    {nullptr}};
-
-
-
-const Element::MappedAttributeEntry SVGElement::sFontSpecificationMap[] = {
-    {nsGkAtoms::font_family},      {nsGkAtoms::font_size},
-    {nsGkAtoms::font_size_adjust}, {nsGkAtoms::font_stretch},
-    {nsGkAtoms::font_style},       {nsGkAtoms::font_variant},
-    {nsGkAtoms::fontWeight},       {nullptr}};
+    {nsGkAtoms::direction},
+    {nsGkAtoms::dominant_baseline},
+    {nsGkAtoms::font_family},
+    {nsGkAtoms::font_size},
+    {nsGkAtoms::font_size_adjust},
+    {nsGkAtoms::font_stretch},
+    {nsGkAtoms::font_style},
+    {nsGkAtoms::font_variant},
+    {nsGkAtoms::fontWeight},
+    {nsGkAtoms::letter_spacing},
+    {nsGkAtoms::text_anchor},
+    {nsGkAtoms::text_decoration},
+    {nsGkAtoms::unicode_bidi},
+    {nsGkAtoms::white_space},
+    {nsGkAtoms::word_spacing},
+    {nsGkAtoms::writing_mode},
+    {nullptr}};
 
 
 

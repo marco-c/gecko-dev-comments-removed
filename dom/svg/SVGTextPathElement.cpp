@@ -108,19 +108,6 @@ already_AddRefed<DOMSVGAnimatedEnumeration> SVGTextPathElement::Side() {
 
 
 
-NS_IMETHODIMP_(bool)
-SVGTextPathElement::IsAttributeMapped(const nsAtom* name) const {
-  static const MappedAttributeEntry* const map[] = {
-      sColorMap, sFillStrokeMap, sFontSpecificationMap, sGraphicsMap,
-      sTextContentElementsMap};
-
-  return FindAttributeDependence(name, map) ||
-         SVGTextPathElementBase::IsAttributeMapped(name);
-}
-
-
-
-
 SVGElement::LengthAttributesInfo SVGTextPathElement::GetLengthInfo() {
   return LengthAttributesInfo(mLengthAttributes, sLengthInfo,
                               ArrayLength(sLengthInfo));

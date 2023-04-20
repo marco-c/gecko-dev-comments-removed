@@ -37,16 +37,4 @@ SVGElement::LengthAttributesInfo SVGTextElement::GetLengthInfo() {
 
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGTextElement)
 
-
-
-
-NS_IMETHODIMP_(bool)
-SVGTextElement::IsAttributeMapped(const nsAtom* name) const {
-  static const MappedAttributeEntry* const map[] = {sTextContentElementsMap,
-                                                    sFontSpecificationMap};
-
-  return FindAttributeDependence(name, map) ||
-         SVGTextElementBase::IsAttributeMapped(name);
-}
-
 }  
