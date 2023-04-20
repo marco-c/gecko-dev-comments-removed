@@ -335,6 +335,26 @@ add_task(async function test_interaction_telemetry() {
     Services.prefs.getBoolPref(PASSWORDS_PREF),
     "Passwords pref should have been set."
   );
+
+  
+  
+  Services.prefs.clearUserPref(BOOKMARKS_PREF);
+  Services.prefs.clearUserPref(HISTORY_PREF);
+  Services.prefs.clearUserPref(PASSWORDS_PREF);
+
+  await testingMigrator.migrate(MigrationUtils.resourceTypes.ALL, false, {});
+  Assert.ok(
+    Services.prefs.getBoolPref(BOOKMARKS_PREF),
+    "Bookmarks pref should have been set."
+  );
+  Assert.ok(
+    Services.prefs.getBoolPref(HISTORY_PREF),
+    "History pref should have been set."
+  );
+  Assert.ok(
+    Services.prefs.getBoolPref(PASSWORDS_PREF),
+    "Passwords pref should have been set."
+  );
 });
 
 
