@@ -67,6 +67,7 @@ METHODDEF(boolean) fill_input_buffer(j_decompress_ptr jd);
 METHODDEF(void) skip_input_data(j_decompress_ptr jd, long num_bytes);
 METHODDEF(void) term_source(j_decompress_ptr jd);
 METHODDEF(void) my_error_exit(j_common_ptr cinfo);
+METHODDEF(void) progress_monitor(j_common_ptr info);
 
 
 #define MAX_JPEG_MARKER_LENGTH (((uint32_t)1 << 16) - 1)
@@ -101,6 +102,7 @@ nsJPEGDecoder::nsJPEGDecoder(RasterImage* aImage,
   mBytesToSkip = 0;
   memset(&mInfo, 0, sizeof(jpeg_decompress_struct));
   memset(&mSourceMgr, 0, sizeof(mSourceMgr));
+  memset(&mProgressMgr, 0, sizeof(mProgressMgr));
   mInfo.client_data = (void*)this;
 
   mSegment = nullptr;
@@ -159,6 +161,9 @@ nsresult nsJPEGDecoder::InitInternal() {
 
   mInfo.mem->max_memory_to_use = static_cast<long>(
       std::min<size_t>(SurfaceCache::MaximumCapacity(), LONG_MAX));
+
+  mProgressMgr.progress_monitor = &progress_monitor;
+  mInfo.progress = &mProgressMgr;
 
   
   for (uint32_t m = 0; m < 16; m++) {
@@ -732,6 +737,17 @@ my_error_exit(j_common_ptr cinfo) {
   
   
   longjmp(err->setjmp_buffer, static_cast<int>(error_code));
+}
+
+static void progress_monitor(j_common_ptr info) {
+  int scan = ((j_decompress_ptr)info)->input_scan_number;
+  
+  
+  
+  
+  if (scan >= 1000) {
+    my_error_exit(info);
+  }
 }
 
 
