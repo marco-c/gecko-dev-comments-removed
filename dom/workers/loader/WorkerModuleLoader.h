@@ -19,6 +19,16 @@ using ScriptLoadRequest = JS::loader::ScriptLoadRequest;
 using ScriptLoadRequestList = JS::loader::ScriptLoadRequestList;
 using ModuleLoadRequest = JS::loader::ModuleLoadRequest;
 
+
+
+
+
+
+
+
+
+
+
 class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
  public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -45,6 +55,8 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
 
   bool CanStartLoad(ModuleLoadRequest* aRequest, nsresult* aRvOut) override;
 
+  
+  
   nsresult StartFetch(ModuleLoadRequest* aRequest) override;
 
   nsresult CompileFetchedModule(

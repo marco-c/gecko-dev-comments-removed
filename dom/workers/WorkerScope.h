@@ -165,7 +165,8 @@ class WorkerGlobalScopeBase : public DOMEventTargetHelper,
 
   
   
-  JS::loader::ModuleLoaderBase* GetModuleLoader(JSContext* aCx) override {
+  JS::loader::ModuleLoaderBase* GetModuleLoader(
+      JSContext* aCx = nullptr) override {
     return mModuleLoader;
   };
 
