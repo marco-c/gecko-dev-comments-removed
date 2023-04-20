@@ -31,12 +31,6 @@ class RtpRtcp : public RtpRtcpInterface {
       const Configuration& configuration);
 
   
-  
-  void SendPictureLossIndication() { SendRTCP(kRtcpPli); }
-  
-  void SendFullIntraRequest() { SendRTCP(kRtcpFir); }
-
-  
   virtual void Process() = 0;
 };
 
