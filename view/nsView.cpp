@@ -942,11 +942,17 @@ bool nsView::WindowResized(nsIWidget* aWidget, int32_t aWidth,
     
     devContext->CheckDPIChange();
     int32_t p2a = devContext->AppUnitsPerDevPixel();
+    if (auto* frame = GetFrame()) {
+      
+      
+      
+      frame->InvalidateFrame();
+    }
+
     mViewManager->SetWindowDimensions(NSIntPixelsToAppUnits(aWidth, p2a),
                                       NSIntPixelsToAppUnits(aHeight, p2a));
 
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm) {
+    if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
       PresShell* presShell = mViewManager->GetPresShell();
       if (presShell && presShell->GetDocument()) {
         pm->AdjustPopupsOnWindowChange(presShell);
