@@ -1657,7 +1657,7 @@ struct BaseCompiler final {
   
   
   void branchGcObjectType(RegRef object, uint32_t typeIndex, Label* label,
-                          bool onSuccess);
+                          bool succeedOnNull, bool onSuccess);
   RegPtr emitGcArrayGetData(RegRef rp);
   template <typename NullCheckPolicy>
   RegI32 emitGcArrayGetNumElements(RegRef rp);

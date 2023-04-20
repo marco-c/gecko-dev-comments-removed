@@ -123,16 +123,14 @@ wasmEvalText(
 
 
 
-assertErrorMessage(() => wasmEvalText(
+wasmEvalText(
     `(module
       (type $node (struct (field i32)))
       (type $node2 (struct (field i32) (field f32)))
       (func $f (param $p (ref null $node)) (result (ref null $node2))
        (ref.cast $node2 (local.get $p)))
       (func (export "test") (result eqref)
-       (call $f (ref.null $node))))`).exports.test(),
-         WebAssembly.RuntimeError,
-         /bad cast/);
+       (call $f (ref.null $node))))`).exports.test();
 
 
 
