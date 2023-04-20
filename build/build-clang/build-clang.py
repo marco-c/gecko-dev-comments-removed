@@ -294,6 +294,7 @@ def build_one_stage(
                 "-DDARWIN_macosx_OVERRIDE_SDK_VERSION=%s"
                 % os.environ["MACOSX_DEPLOYMENT_TARGET"],
             ]
+
         if profile == "gen":
             
             cmake_args += [
@@ -304,6 +305,11 @@ def build_one_stage(
             cmake_args += [
                 "-DLLVM_PROFDATA_FILE=%s" % profile,
             ]
+
+        
+        
+        if profile and not is_windows():
+            cmake_args.append("-DLLVM_ENABLE_LTO=Thin")
         return cmake_args
 
     cmake_args = []
