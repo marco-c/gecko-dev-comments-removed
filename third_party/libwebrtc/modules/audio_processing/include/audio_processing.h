@@ -62,7 +62,6 @@ static constexpr int kAgcStartupMinVolume = 85;
 #else
 static constexpr int kAgcStartupMinVolume = 0;
 #endif  
-static constexpr int kClippedLevelMin = 70;
 
 
 
@@ -291,7 +290,7 @@ class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
         int startup_min_volume = kAgcStartupMinVolume;
         
         
-        int clipped_level_min = kClippedLevelMin;
+        int clipped_level_min = 70;
         
         bool enable_digital_adaptive = true;
         
