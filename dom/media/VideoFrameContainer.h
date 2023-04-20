@@ -44,7 +44,7 @@ class VideoFrameContainer {
                        const TimeStamp& aTargetTime);
   
   PrincipalHandle GetLastPrincipalHandle();
-  PrincipalHandle GetLastPrincipalHandleLocked();
+  PrincipalHandle GetLastPrincipalHandleLocked() MOZ_REQUIRES(mMutex);
   
   
   
@@ -53,7 +53,7 @@ class VideoFrameContainer {
                                        const ImageContainer::FrameID& aFrameID);
   void UpdatePrincipalHandleForFrameIDLocked(
       const PrincipalHandle& aPrincipalHandle,
-      const ImageContainer::FrameID& aFrameID);
+      const ImageContainer::FrameID& aFrameID) MOZ_REQUIRES(mMutex);
   void SetCurrentFrames(
       const gfx::IntSize& aIntrinsicSize,
       const nsTArray<ImageContainer::NonOwningImage>& aImages);
@@ -93,7 +93,8 @@ class VideoFrameContainer {
  protected:
   void SetCurrentFramesLocked(
       const gfx::IntSize& aIntrinsicSize,
-      const nsTArray<ImageContainer::NonOwningImage>& aImages);
+      const nsTArray<ImageContainer::NonOwningImage>& aImages)
+      MOZ_REQUIRES(mMutex);
 
   
   
@@ -116,24 +117,24 @@ class VideoFrameContainer {
     bool mIntrinsicSizeChanged = false;
   } mMainThreadState;
 
-  
-  Mutex mMutex MOZ_UNANNOTATED;
-  
+  Mutex mMutex;
   
   
   
   
-  gfx::IntSize mIntrinsicSize;
+  
+  gfx::IntSize mIntrinsicSize MOZ_GUARDED_BY(mMutex);
   
   
   ImageContainer::FrameID mFrameID;
   
-  PrincipalHandle mLastPrincipalHandle;
+  PrincipalHandle mLastPrincipalHandle MOZ_GUARDED_BY(mMutex);
   
   
-  PrincipalHandle mPendingPrincipalHandle;
+  PrincipalHandle mPendingPrincipalHandle MOZ_GUARDED_BY(mMutex);
   
-  ImageContainer::FrameID mFrameIDForPendingPrincipalHandle;
+  ImageContainer::FrameID mFrameIDForPendingPrincipalHandle
+      MOZ_GUARDED_BY(mMutex);
 
   const RefPtr<AbstractThread> mMainThread;
 };
