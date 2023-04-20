@@ -210,8 +210,8 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/anyhow/1.0.62")]
-#![cfg_attr(backtrace, feature(backtrace))]
+#![doc(html_root_url = "https://docs.rs/anyhow/1.0.68")]
+#![cfg_attr(backtrace, feature(error_generic_member_access, provide_any))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(dead_code, unused_imports, unused_mut)]
