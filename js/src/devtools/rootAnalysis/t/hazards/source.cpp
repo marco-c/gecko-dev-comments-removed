@@ -71,6 +71,8 @@ void GC() {
 
 extern void usecell(Cell*);
 
+extern bool flipcoin();
+
 void suppressedFunction() {
   GC();  
 }
@@ -412,10 +414,14 @@ void safevals() {
     use(safe18);
   }
   {
-    Cell* unsafe19 = &cell;
-    void (*f)() = GC;
-    f();
-    use(unsafe19);
+    
+    
+    
+    
+    Cell* safe19;
+    GC();
+    extern void initCellPtr(Cell**);
+    initCellPtr(&safe19);
   }
 }
 
