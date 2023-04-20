@@ -740,10 +740,10 @@ var PlacesOrganizer = {
       
       
       if (selectedNode) {
-        let concreteId = PlacesUtils.getConcreteItemId(selectedNode);
+        let concreteGuid = PlacesUtils.getConcreteItemGuid(selectedNode);
         var nodeIsSame =
           gEditItemOverlay.itemId == selectedNode.itemId ||
-          gEditItemOverlay.itemId == concreteId ||
+          gEditItemOverlay._paneInfo.itemGuid == concreteGuid ||
           (selectedNode.itemId == -1 &&
             gEditItemOverlay.uri &&
             gEditItemOverlay.uri == selectedNode.uri);
