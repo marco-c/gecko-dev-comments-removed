@@ -1076,6 +1076,8 @@ TEST_F(WebRtcVideoEngineTest, RegisterDecodersIfSupported) {
 
   EXPECT_TRUE(
       channel->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+  
+  time_controller_.AdvanceTime(webrtc::TimeDelta::Zero());
   ASSERT_EQ(1u, decoder_factory_->decoders().size());
 
   
@@ -1102,6 +1104,8 @@ TEST_F(WebRtcVideoEngineTest, RegisterH264DecoderIfSupported) {
 
   EXPECT_TRUE(
       channel->AddRecvStream(cricket::StreamParams::CreateLegacy(kSsrc)));
+  
+  time_controller_.AdvanceTime(webrtc::TimeDelta::Zero());
   ASSERT_EQ(1u, decoder_factory_->decoders().size());
 }
 
