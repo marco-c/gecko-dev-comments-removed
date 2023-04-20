@@ -506,7 +506,7 @@ void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
     
     
     
-    port()->thread()->PostDelayedTask(
+    network_thread()->PostDelayedTask(
         webrtc::ToQueuedTask(network_safety_,
                              [this]() {
                                if (pretending_to_be_writable_) {
@@ -585,7 +585,7 @@ void TCPConnection::CreateOutgoingTcpSocket() {
     
     
     
-    port()->thread()->PostTask(
+    network_thread()->PostTask(
         webrtc::ToQueuedTask(network_safety_, [this]() { FailAndPrune(); }));
   }
 }
@@ -596,8 +596,11 @@ void TCPConnection::ConnectSocketSignals(rtc::AsyncPacketSocket* socket) {
   }
   socket->SignalReadPacket.connect(this, &TCPConnection::OnReadPacket);
   socket->SignalReadyToSend.connect(this, &TCPConnection::OnReadyToSend);
-  socket->SubscribeClose(
-      this, [this](rtc::AsyncPacketSocket* s, int err) { OnClose(s, err); });
+  socket->SubscribeClose(this, [this, safety = network_safety_.flag()](
+                                   rtc::AsyncPacketSocket* s, int err) {
+    if (safety->alive())
+      OnClose(s, err);
+  });
 }
 
 }  
