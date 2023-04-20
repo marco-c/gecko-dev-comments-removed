@@ -2,7 +2,7 @@
 
 
 
-import { getSymbols } from "../../selectors";
+import { getSymbols, getSourceActorForSymbols } from "../../selectors";
 
 import { PROMISE } from "../utils/middleware/promise";
 import { loadSourceText } from "./loadSourceText";
@@ -12,33 +12,46 @@ import { fulfilled } from "../../utils/async-value";
 
 async function doSetSymbols(
   cx,
-  location,
+  source,
+  sourceActor,
   { dispatch, getState, parserWorker }
 ) {
-  await dispatch(loadSourceText(cx, location.source, location.sourceActor));
+  const sourceId = source.id;
+
+  await dispatch(loadSourceText(cx, source, sourceActor));
 
   await dispatch({
     type: "SET_SYMBOLS",
     cx,
-    location,
-    [PROMISE]: parserWorker.getSymbols(location.sourceId),
+    sourceId,
+    
+    sourceActorId: sourceActor ? sourceActor.actor : null,
+    [PROMISE]: parserWorker.getSymbols(sourceId),
   });
 }
 
 export const setSymbols = memoizeableAction("setSymbols", {
-  getValue: ({ location }, { getState }) => {
-    if (location.source.isWasm) {
+  getValue: ({ source, sourceActor }, { getState }) => {
+    if (source.isWasm) {
       return fulfilled(null);
     }
 
-    const symbols = getSymbols(getState(), location);
+    const symbols = getSymbols(getState(), source);
     if (!symbols) {
+      return null;
+    }
+
+    
+    if (
+      sourceActor &&
+      getSourceActorForSymbols(getState(), source) !== sourceActor.actor
+    ) {
       return null;
     }
 
     return fulfilled(symbols);
   },
-  createKey: ({ location }) => location.sourceId,
-  action: ({ cx, location }, thunkArgs) =>
-    doSetSymbols(cx, location, thunkArgs),
+  createKey: ({ source }) => source.id,
+  action: ({ cx, source, sourceActor }, thunkArgs) =>
+    doSetSymbols(cx, source, sourceActor, thunkArgs),
 });

@@ -13,74 +13,40 @@ export function initialASTState() {
   return {
     
     
-    
-    
-
-    
-    
-    mutableOriginalSourcesSymbols: {},
-
-    
-    
-    mutableSourceActorSymbols: {},
-
-    mutableInScopeLines: {},
+    actors: {},
+    symbols: {},
+    inScopeLines: {},
   };
 }
 
 function update(state = initialASTState(), action) {
   switch (action.type) {
     case "SET_SYMBOLS": {
-      const { location } = action;
+      const { sourceId, sourceActorId } = action;
       if (action.status === "start") {
         return state;
       }
 
-      const entry = {
-        value: action.value,
-        threadActorId: location.sourceActor?.thread,
-      };
-      if (location.source.isOriginal) {
-        state.mutableOriginalSourcesSymbols[location.source.id] = entry;
-      } else {
-        if (!location.sourceActor) {
-          throw new Error(
-            "Expects a location with a source actor when adding symbols for non-original sources"
-          );
-        }
-        state.mutableSourceActorSymbols[location.sourceActor.id] = entry;
-      }
+      const value = action.value;
       return {
         ...state,
+        actors: { ...state.actors, [sourceId]: sourceActorId },
+        symbols: { ...state.symbols, [sourceId]: value },
       };
     }
 
     case "IN_SCOPE_LINES": {
-      state.mutableInScopeLines[makeBreakpointId(action.location)] = {
-        lines: action.lines,
-        threadActorId: action.location.sourceActor?.thread,
-      };
       return {
         ...state,
+        inScopeLines: {
+          ...state.inScopeLines,
+          [makeBreakpointId(action.location)]: action.lines,
+        },
       };
     }
 
     case "RESUME": {
-      return { ...state, mutableInScopeLines: {} };
-    }
-
-    case "REMOVE_THREAD": {
-      function clearDict(dict, threadId) {
-        for (const key in dict) {
-          if (dict[key].threadActorId == threadId) {
-            delete dict[key];
-          }
-        }
-      }
-      clearDict(state.mutableSourceActorSymbols, action.threadActorID);
-      clearDict(state.mutableOriginalSourcesSymbols, action.threadActorID);
-      clearDict(state.mutableInScopeLines, action.threadActorID);
-      return { ...state };
+      return { ...state, inScopeLines: {} };
     }
 
     case "NAVIGATE": {
