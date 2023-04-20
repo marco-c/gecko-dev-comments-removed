@@ -25,13 +25,10 @@ NS_INTERFACE_MAP_END
 
 Grid::Grid(nsISupports* aParent, nsGridContainerFrame* aFrame)
     : mParent(do_QueryInterface(aParent)),
-      mFrame(aFrame),
       mRows(new GridDimension(this)),
       mCols(new GridDimension(this)) {
   MOZ_ASSERT(aFrame,
              "Should never be instantiated with a null nsGridContainerFrame");
-
-  aFrame->SetProperty(nsGridContainerFrame::GridFragmentInfo(), this);
 
   
   
@@ -83,14 +80,7 @@ Grid::Grid(nsISupports* aParent, nsGridContainerFrame* aFrame)
   mCols->SetLineInfo(columnTrackInfo, columnLineInfo, mAreas, false);
 }
 
-Grid::~Grid() {
-  
-  if (mFrame.IsAlive()) {
-    mFrame->RemoveProperty(nsGridContainerFrame::GridFragmentInfo());
-  }
-
-  
-}
+Grid::~Grid() = default;
 
 JSObject* Grid::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return Grid_Binding::Wrap(aCx, this, aGivenProto);

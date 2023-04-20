@@ -8921,11 +8921,6 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
 
     
     
-    
-    RemoveProperty(GridFragmentInfo());
-
-    
-    
 
     const auto* subgrid = GetProperty(Subgrid::Prop());
     const auto* subgridColRange = subgrid && IsSubgrid(eLogicalAxisInline)

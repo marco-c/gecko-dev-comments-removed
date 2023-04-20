@@ -18,9 +18,6 @@
 
 namespace mozilla {
 class PresShell;
-namespace dom {
-class Grid;
-}
 }  
 
 
@@ -215,18 +212,6 @@ class nsGridContainerFrame final : public nsContainerFrame,
     const ComputedGridLineInfo* info = GetProperty(GridRowLineInfo());
     MOZ_ASSERT(info, "Property generation wasn't requested.");
     return info;
-  }
-
-  
-
-
-
-
-
-
-  NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(GridFragmentInfo, mozilla::dom::Grid)
-  mozilla::dom::Grid* GetGridFragmentInfo() {
-    return GetProperty(GridFragmentInfo());
   }
 
   struct AtomKey {
