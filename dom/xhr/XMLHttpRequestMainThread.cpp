@@ -3339,11 +3339,20 @@ XMLHttpRequestMainThread::AsyncOnChannelRedirect(
     }
     return rv;
   }
-  OnRedirectVerifyCallback(NS_OK);
+
+  
+  
+  bool stripAuth =
+      StaticPrefs::network_fetch_redirect_stripAuthHeader() &&
+      NS_ShouldRemoveAuthHeaderOnRedirect(aOldChannel, aNewChannel, aFlags);
+
+  OnRedirectVerifyCallback(NS_OK, stripAuth);
+
   return NS_OK;
 }
 
-nsresult XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result) {
+nsresult XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result,
+                                                            bool aStripAuth) {
   NS_ASSERTION(mRedirectCallback, "mRedirectCallback not set in callback");
   NS_ASSERTION(mNewRedirectChannel, "mNewRedirectChannel not set in callback");
 
@@ -3360,28 +3369,8 @@ nsresult XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result) {
     if (newHttpChannel) {
       
       
-      bool skipAuthHeader = false;
-      if (StaticPrefs::network_fetch_redirect_stripAuthHeader()) {
-        nsCOMPtr<nsIURI> oldUri;
-        MOZ_ALWAYS_SUCCEEDS(
-            NS_GetFinalChannelURI(oldHttpChannel, getter_AddRefs(oldUri)));
-
-        nsCOMPtr<nsIURI> newUri;
-        MOZ_ALWAYS_SUCCEEDS(
-            NS_GetFinalChannelURI(newHttpChannel, getter_AddRefs(newUri)));
-
-        nsresult rv = nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
-            newUri, oldUri, false, false);
-
-        if (NS_FAILED(rv)) {
-          skipAuthHeader = true;
-        }
-      }
-
-      
-      
       mAuthorRequestHeaders.ApplyToChannel(newHttpChannel, rewriteToGET,
-                                           skipAuthHeader);
+                                           aStripAuth);
     }
   } else {
     mErrorLoad = ErrorType::eRedirect;
