@@ -28,7 +28,7 @@ child:
 
 parent:
   
-  async Update(nsIDOMGeoPosition aPosition);
+  async Update(nullable nsIDOMGeoPosition aPosition);
 
   
   async Failed(uint16_t aError);
