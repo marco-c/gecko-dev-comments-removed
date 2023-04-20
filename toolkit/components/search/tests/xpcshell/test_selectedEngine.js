@@ -17,7 +17,9 @@ add_task(async function setup() {
 
 add_task(async function test_defaultEngine() {
   await Services.search.init();
-  await SearchTestUtils.promiseNewSearchEngine(`${gDataUrl}engine.xml`);
+  await SearchTestUtils.promiseNewSearchEngine({
+    url: `${gDataUrl}engine.xml`,
+  });
 
   Assert.equal(Services.search.defaultEngine.name, kDefaultEngineName);
 });

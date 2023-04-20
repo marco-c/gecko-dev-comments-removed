@@ -13,12 +13,12 @@ add_task(async function setup() {
 });
 
 add_task(async function test_parseSubmissionURL() {
-  let engine1 = await SearchTestUtils.promiseNewSearchEngine(
-    `${gDataUrl}engine.xml`
-  );
-  let engine2 = await SearchTestUtils.promiseNewSearchEngine(
-    `${gDataUrl}engine-fr.xml`
-  );
+  let engine1 = await SearchTestUtils.promiseNewSearchEngine({
+    url: `${gDataUrl}engine.xml`,
+  });
+  let engine2 = await SearchTestUtils.promiseNewSearchEngine({
+    url: `${gDataUrl}engine-fr.xml`,
+  });
 
   await SearchTestUtils.installSearchExtension({
     name: "bacon_addParam",
@@ -36,9 +36,9 @@ add_task(async function test_parseSubmissionURL() {
 
   
   
-  let engine5 = await SearchTestUtils.promiseNewSearchEngine(
-    `${gDataUrl}engine2.xml`
-  );
+  let engine5 = await SearchTestUtils.promiseNewSearchEngine({
+    url: `${gDataUrl}engine2.xml`,
+  });
 
   
   await SearchTestUtils.installSearchExtension({

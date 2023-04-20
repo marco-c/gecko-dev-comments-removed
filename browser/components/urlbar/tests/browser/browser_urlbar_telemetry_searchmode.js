@@ -93,19 +93,13 @@ add_setup(async function() {
 
   
   
-  let suggestionEngine = await SearchTestUtils.promiseNewSearchEngine(
-    getRootDirectory(gTestPath) + "urlbarTelemetrySearchSuggestions.xml"
-  );
+  let suggestionEngine = await SearchTestUtils.promiseNewSearchEngine({
+    url: getRootDirectory(gTestPath) + "urlbarTelemetrySearchSuggestions.xml",
+    setAsDefault: true,
+  });
   suggestionEngine.alias = ENGINE_ALIAS;
   engineDomain = suggestionEngine.getResultDomain();
   engineName = suggestionEngine.name;
-
-  
-  let originalEngine = await Services.search.getDefault();
-  await Services.search.setDefault(
-    suggestionEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
 
   
   await Services.search.moveEngine(suggestionEngine, 0);
@@ -133,10 +127,6 @@ add_setup(async function() {
   
   registerCleanupFunction(async function() {
     Services.telemetry.canRecordExtended = oldCanRecord;
-    await Services.search.setDefault(
-      originalEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
     await PlacesUtils.history.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
     UrlbarTestUtils.uninit();

@@ -48,9 +48,9 @@ for (const test of tests) {
     };
     
     
-    SearchTestUtils.promiseNewSearchEngine(
-      `${gDataUrl}engineMaker.sjs?${JSON.stringify(engineData)}`
-    );
+    SearchTestUtils.promiseNewSearchEngine({
+      url: `${gDataUrl}engineMaker.sjs?${JSON.stringify(engineData)}`,
+    });
     let engine = await promiseEngineAdded;
     await promiseEngineChanged;
 

@@ -33,24 +33,16 @@ add_setup(async function() {
 
   
   
-  let oldDefaultEngine = await Services.search.getDefault();
-  let oldDefaultPrivateEngine = await Services.search.getDefaultPrivate();
-  let engine = await SearchTestUtils.promiseNewSearchEngine(
-    getRootDirectory(gTestPath) + "searchSuggestionEngine.xml"
-  );
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
-  await Services.search.setDefaultPrivate(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchTestUtils.promiseNewSearchEngine({
+    url: getRootDirectory(gTestPath) + "searchSuggestionEngine.xml",
+    setAsDefault: true,
+    setAsDefaultPrivate: true,
+  });
 
   
-  let engine2 = await SearchTestUtils.promiseNewSearchEngine(
-    getRootDirectory(gTestPath) + "POSTSearchEngine.xml"
-  );
+  let engine2 = await SearchTestUtils.promiseNewSearchEngine({
+    url: getRootDirectory(gTestPath) + "POSTSearchEngine.xml",
+  });
   await Services.search.moveEngine(engine2, 0);
 
   
@@ -60,14 +52,6 @@ add_setup(async function() {
   });
 
   registerCleanupFunction(async () => {
-    await Services.search.setDefault(
-      oldDefaultEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
-    await Services.search.setDefaultPrivate(
-      oldDefaultPrivateEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
     await PlacesUtils.history.clear();
   });
 });

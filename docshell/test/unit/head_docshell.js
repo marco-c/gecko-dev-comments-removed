@@ -94,7 +94,13 @@ async function addTestEngines() {
   
   
   
-  await SearchTestUtils.promiseNewSearchEngine(`${gDataUrl}/engine.xml`);
-  await SearchTestUtils.promiseNewSearchEngine(`${gDataUrl}/enginePrivate.xml`);
-  await SearchTestUtils.promiseNewSearchEngine(`${gDataUrl}/enginePost.xml`);
+  await SearchTestUtils.promiseNewSearchEngine({
+    url: `${gDataUrl}/engine.xml`,
+  });
+  await SearchTestUtils.promiseNewSearchEngine({
+    url: `${gDataUrl}/enginePrivate.xml`,
+  });
+  await SearchTestUtils.promiseNewSearchEngine({
+    url: `${gDataUrl}/enginePost.xml`,
+  });
 }

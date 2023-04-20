@@ -21,9 +21,9 @@ add_setup(async function() {
 
   
   
-  engine = await SearchTestUtils.promiseNewSearchEngine(
-    getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME
-  );
+  engine = await SearchTestUtils.promiseNewSearchEngine({
+    url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
+  });
   await Services.search.moveEngine(engine, 0);
 
   await SpecialPowers.pushPrefEnv({
