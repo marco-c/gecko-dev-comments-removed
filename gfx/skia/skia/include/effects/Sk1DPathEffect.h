@@ -8,34 +8,14 @@
 #ifndef Sk1DPathEffect_DEFINED
 #define Sk1DPathEffect_DEFINED
 
-#include "include/core/SkFlattenable.h"
-#include "include/core/SkPath.h"
-#include "include/core/SkPathEffect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
 
-class SkPathMeasure;
+class SkPath;
+class SkPathEffect;
 
-
-class SK_API Sk1DPathEffect : public SkPathEffect {
-public:
-protected:
-    bool onFilterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect*) const override;
-
-    
-
-
-    virtual SkScalar begin(SkScalar contourLength) const = 0;
-    
-
-
-
-
-    virtual SkScalar next(SkPath* dst, SkScalar dist, SkPathMeasure&) const = 0;
-
-private:
-    typedef SkPathEffect INHERITED;
-};
-
-class SK_API SkPath1DPathEffect : public Sk1DPathEffect {
+class SK_API SkPath1DPathEffect {
 public:
     enum Style {
         kTranslate_Style,   
@@ -54,24 +34,7 @@ public:
 
     static sk_sp<SkPathEffect> Make(const SkPath& path, SkScalar advance, SkScalar phase, Style);
 
-protected:
-    SkPath1DPathEffect(const SkPath& path, SkScalar advance, SkScalar phase, Style);
-    void flatten(SkWriteBuffer&) const override;
-    bool onFilterPath(SkPath*, const SkPath&, SkStrokeRec*, const SkRect*) const override;
-
-    
-    SkScalar begin(SkScalar contourLength) const override;
-    SkScalar next(SkPath*, SkScalar, SkPathMeasure&) const override;
-
-private:
-    SK_FLATTENABLE_HOOKS(SkPath1DPathEffect)
-
-    SkPath      fPath;          
-    SkScalar    fAdvance;       
-    SkScalar    fInitialOffset; 
-    Style       fStyle;         
-
-    typedef Sk1DPathEffect INHERITED;
+    static void RegisterFlattenables();
 };
 
 #endif

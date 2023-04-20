@@ -8,10 +8,17 @@
 #ifndef SkMatrixPriv_DEFINE
 #define SkMatrixPriv_DEFINE
 
-#include "include/core/SkFilterQuality.h"
+#include "include/core/SkM44.h"
 #include "include/core/SkMatrix.h"
-#include "include/private/SkNx.h"
-#include "src/core/SkPointPriv.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
+#include "src/base/SkVx.h"
+
+#include <cstdint>
+#include <cstring>
+struct SkPoint3;
 
 class SkMatrixPriv {
 public:
@@ -49,8 +56,8 @@ public:
         if (mx.getType() <= SkMatrix::kTranslate_Mask) {
             SkScalar tx = mx.getTranslateX();
             SkScalar ty = mx.getTranslateY();
-            Sk4f trans(tx, ty, tx, ty);
-            (Sk4f::Load(&src.fLeft) - trans).store(&dst->fLeft);
+            skvx::float4 trans(tx, ty, tx, ty);
+            (skvx::float4::Load(&src.fLeft) - trans).store(&dst->fLeft);
             return true;
         }
         
@@ -94,9 +101,9 @@ public:
         if (SkMatrix::kTranslate_Mask == tm) {
             const SkScalar tx = mx.getTranslateX();
             const SkScalar ty = mx.getTranslateY();
-            Sk2s trans(tx, ty);
+            skvx::float2 trans(tx, ty);
             for (int i = 0; i < count; ++i) {
-                (Sk2s::Load(&pts->fX) + trans).store(&pts->fX);
+                (skvx::float2::Load(&pts->fX) + trans).store(&pts->fX);
                 pts = (SkPoint*)((intptr_t)pts + stride);
             }
             return;
@@ -147,9 +154,48 @@ public:
     static void MapHomogeneousPointsWithStride(const SkMatrix& mx, SkPoint3 dst[], size_t dstStride,
                                                const SkPoint3 src[], size_t srcStride, int count);
 
+    static bool PostIDiv(SkMatrix* matrix, int divx, int divy) {
+        return matrix->postIDiv(divx, divy);
+    }
+
+    static bool CheapEqual(const SkMatrix& a, const SkMatrix& b) {
+        return &a == &b || 0 == memcmp(a.fMat, b.fMat, sizeof(a.fMat));
+    }
+
+    static const SkScalar* M44ColMajor(const SkM44& m) { return m.fMat; }
+
     
-    static SkFilterQuality AdjustHighQualityFilterLevel(const SkMatrix&,
-                                                        bool matrixIsInverse = false);
+    
+    
+    static bool IsScaleTranslateAsM33(const SkM44& m) {
+        return m.rc(1,0) == 0 && m.rc(3,0) == 0 &&
+               m.rc(0,1) == 0 && m.rc(3,1) == 0 &&
+               m.rc(3,3) == 1;
+
+    }
+
+    
+    
+    
+    static SkRect MapRect(const SkM44& m, const SkRect& r);
+
+    
+    
+    
+    
+    
+    
+    
+    static SkScalar DifferentialAreaScale(const SkMatrix& m, const SkPoint& p);
+
+    
+    
+    
+    static bool NearlyAffine(const SkMatrix& m,
+                             const SkRect& bounds,
+                             SkScalar tolerance = SK_ScalarNearlyZero);
+
+    static SkScalar ComputeResScaleForStroking(const SkMatrix& matrix);
 };
 
 #endif

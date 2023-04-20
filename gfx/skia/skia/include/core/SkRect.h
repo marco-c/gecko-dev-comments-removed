@@ -9,11 +9,15 @@
 #define SkRect_DEFINED
 
 #include "include/core/SkPoint.h"
+#include "include/core/SkScalar.h"
 #include "include/core/SkSize.h"
-#include "include/private/SkSafe32.h"
-#include "include/private/SkTFitsIn.h"
+#include "include/core/SkTypes.h"
+#include "include/private/base/SkSafe32.h"
+#include "include/private/base/SkTFitsIn.h"
 
-#include <utility>
+#include <string>
+#include <algorithm>
+#include <cstdint>
 
 struct SkRect;
 
@@ -70,6 +74,18 @@ struct SK_API SkIRect {
 
 
 
+    static constexpr SkIRect SK_WARN_UNUSED_RESULT MakePtSize(SkIPoint pt, SkISize size) {
+        return MakeXYWH(pt.x(), pt.y(), size.width(), size.height());
+    }
+
+    
+
+
+
+
+
+
+
 
     static constexpr SkIRect SK_WARN_UNUSED_RESULT MakeLTRB(int32_t l, int32_t t,
                                                             int32_t r, int32_t b) {
@@ -95,74 +111,66 @@ struct SK_API SkIRect {
 
 
 
-    int32_t left() const { return fLeft; }
+    constexpr int32_t left() const { return fLeft; }
 
     
 
 
 
 
-    int32_t top() const { return fTop; }
+    constexpr int32_t top() const { return fTop; }
 
     
 
 
 
 
-    int32_t right() const { return fRight; }
+    constexpr int32_t right() const { return fRight; }
 
     
 
 
 
 
-    int32_t bottom() const { return fBottom; }
+    constexpr int32_t bottom() const { return fBottom; }
 
     
 
 
 
 
-    int32_t x() const { return fLeft; }
+    constexpr int32_t x() const { return fLeft; }
 
     
 
 
 
 
-    int32_t y() const { return fTop; }
+    constexpr int32_t y() const { return fTop; }
 
     
-    SkIPoint topLeft() const { return {fLeft, fTop}; }
-
-    
-
-
-
-
-    int32_t width() const { return Sk32_can_overflow_sub(fRight, fLeft); }
+    constexpr SkIPoint topLeft() const { return {fLeft, fTop}; }
 
     
 
 
 
 
-    int32_t height() const { return Sk32_can_overflow_sub(fBottom, fTop); }
+    constexpr int32_t width() const { return Sk32_can_overflow_sub(fRight, fLeft); }
 
     
 
 
 
 
-    SkISize size() const { return SkISize::Make(this->width(), this->height()); }
+    constexpr int32_t height() const { return Sk32_can_overflow_sub(fBottom, fTop); }
 
     
 
 
 
 
-
-    int64_t width64() const { return (int64_t)fRight - (int64_t)fLeft; }
+    constexpr SkISize size() const { return SkISize::Make(this->width(), this->height()); }
 
     
 
@@ -170,7 +178,15 @@ struct SK_API SkIRect {
 
 
 
-    int64_t height64() const { return (int64_t)fBottom - (int64_t)fTop; }
+    constexpr int64_t width64() const { return (int64_t)fRight - (int64_t)fLeft; }
+
+    
+
+
+
+
+
+    constexpr int64_t height64() const { return (int64_t)fBottom - (int64_t)fTop; }
 
     
 
@@ -202,7 +218,8 @@ struct SK_API SkIRect {
 
 
     friend bool operator==(const SkIRect& a, const SkIRect& b) {
-        return !memcmp(&a, &b, sizeof(a));
+        return a.fLeft == b.fLeft && a.fTop == b.fTop &&
+               a.fRight == b.fRight && a.fBottom == b.fBottom;
     }
 
     
@@ -213,7 +230,8 @@ struct SK_API SkIRect {
 
 
     friend bool operator!=(const SkIRect& a, const SkIRect& b) {
-        return !(a == b);
+        return a.fLeft != b.fLeft || a.fTop != b.fTop ||
+               a.fRight != b.fRight || a.fBottom != b.fBottom;
     }
 
     
@@ -260,6 +278,13 @@ struct SK_API SkIRect {
         fTop    = 0;
         fRight  = width;
         fBottom = height;
+    }
+
+    void setSize(SkISize size) {
+        fLeft = 0;
+        fTop = 0;
+        fRight = size.width();
+        fBottom = size.height();
     }
 
     
@@ -509,11 +534,12 @@ struct SK_API SkIRect {
 
 
     static bool Intersects(const SkIRect& a, const SkIRect& b) {
-        SkIRect dummy;
-        return dummy.intersect(a, b);
+        return SkIRect{}.intersect(a, b);
     }
 
     
+
+
 
 
 
@@ -542,17 +568,8 @@ struct SK_API SkIRect {
 
 
     SkIRect makeSorted() const {
-        return MakeLTRB(SkMin32(fLeft, fRight), SkMin32(fTop, fBottom),
-                        SkMax32(fLeft, fRight), SkMax32(fTop, fBottom));
-    }
-
-    
-
-
-
-    static const SkIRect& SK_WARN_UNUSED_RESULT EmptyIRect() {
-        static const SkIRect gEmpty = { 0, 0, 0, 0 };
-        return gEmpty;
+        return MakeLTRB(std::min(fLeft, fRight), std::min(fTop, fBottom),
+                        std::max(fLeft, fRight), std::max(fTop, fBottom));
     }
 };
 
@@ -715,63 +732,63 @@ struct SK_API SkRect {
 
 
 
-    SkScalar    x() const { return fLeft; }
+    constexpr SkScalar x() const { return fLeft; }
 
     
 
 
 
 
-    SkScalar    y() const { return fTop; }
+    constexpr SkScalar y() const { return fTop; }
 
     
 
 
 
 
-    SkScalar    left() const { return fLeft; }
+    constexpr SkScalar left() const { return fLeft; }
 
     
 
 
 
 
-    SkScalar    top() const { return fTop; }
+    constexpr SkScalar top() const { return fTop; }
 
     
 
 
 
 
-    SkScalar    right() const { return fRight; }
+    constexpr SkScalar right() const { return fRight; }
 
     
 
 
 
 
-    SkScalar    bottom() const { return fBottom; }
+    constexpr SkScalar bottom() const { return fBottom; }
 
     
 
 
 
 
-    SkScalar    width() const { return fRight - fLeft; }
+    constexpr SkScalar width() const { return fRight - fLeft; }
 
     
 
 
 
 
-    SkScalar    height() const { return fBottom - fTop; }
+    constexpr SkScalar height() const { return fBottom - fTop; }
 
     
 
 
 
 
-    SkScalar centerX() const {
+    constexpr SkScalar centerX() const {
         
         return SkScalarHalf(fLeft) + SkScalarHalf(fRight);
     }
@@ -781,10 +798,15 @@ struct SK_API SkRect {
 
 
 
-    SkScalar centerY() const {
+    constexpr SkScalar centerY() const {
         
         return SkScalarHalf(fTop) + SkScalarHalf(fBottom);
     }
+
+    
+
+
+    constexpr SkPoint center() const { return {this->centerX(), this->centerY()}; }
 
     
 
@@ -815,6 +837,8 @@ struct SK_API SkRect {
     }
 
     
+
+
 
 
 
@@ -883,9 +907,13 @@ struct SK_API SkRect {
 
 
 
+
+
     bool setBoundsCheck(const SkPoint pts[], int count);
 
     
+
+
 
 
 
@@ -900,10 +928,10 @@ struct SK_API SkRect {
 
 
     void set(const SkPoint& p0, const SkPoint& p1) {
-        fLeft =   SkMinScalar(p0.fX, p1.fX);
-        fRight =  SkMaxScalar(p0.fX, p1.fX);
-        fTop =    SkMinScalar(p0.fY, p1.fY);
-        fBottom = SkMaxScalar(p0.fY, p1.fY);
+        fLeft =   std::min(p0.fX, p1.fX);
+        fRight =  std::max(p0.fX, p1.fX);
+        fTop =    std::min(p0.fY, p1.fY);
+        fBottom = std::max(p0.fY, p1.fY);
     }
 
     
@@ -948,9 +976,16 @@ struct SK_API SkRect {
 
 
 
-    SkRect makeOffset(SkScalar dx, SkScalar dy) const {
+    constexpr SkRect makeOffset(SkScalar dx, SkScalar dy) const {
         return MakeLTRB(fLeft + dx, fTop + dy, fRight + dx, fBottom + dy);
     }
+
+    
+
+
+
+
+    constexpr SkRect makeOffset(SkVector v) const { return this->makeOffset(v.x(), v.y()); }
 
     
 
@@ -1063,6 +1098,8 @@ struct SK_API SkRect {
 
 
 
+
+
     bool intersect(const SkRect& r);
 
     
@@ -1080,10 +1117,10 @@ struct SK_API SkRect {
 private:
     static bool Intersects(SkScalar al, SkScalar at, SkScalar ar, SkScalar ab,
                            SkScalar bl, SkScalar bt, SkScalar br, SkScalar bb) {
-        SkScalar L = SkMaxScalar(al, bl);
-        SkScalar R = SkMinScalar(ar, br);
-        SkScalar T = SkMaxScalar(at, bt);
-        SkScalar B = SkMinScalar(ab, bb);
+        SkScalar L = std::max(al, bl);
+        SkScalar R = std::min(ar, br);
+        SkScalar T = std::max(at, bt);
+        SkScalar B = std::min(ab, bb);
         return L < R && T < B;
     }
 
@@ -1119,6 +1156,8 @@ public:
 
 
 
+
+
     void join(const SkRect& r);
 
     
@@ -1147,10 +1186,10 @@ public:
 
 
     void joinPossiblyEmptyRect(const SkRect& r) {
-        fLeft   = SkMinScalar(fLeft, r.left());
-        fTop    = SkMinScalar(fTop, r.top());
-        fRight  = SkMaxScalar(fRight, r.right());
-        fBottom = SkMaxScalar(fBottom, r.bottom());
+        fLeft   = std::min(fLeft, r.left());
+        fTop    = std::min(fTop, r.top());
+        fRight  = std::max(fRight, r.right());
+        fBottom = std::max(fBottom, r.bottom());
     }
 
     
@@ -1268,6 +1307,18 @@ public:
         this->roundOut(&ir);
         return ir;
     }
+    
+
+
+
+
+
+
+    SkIRect roundIn() const {
+        SkIRect ir;
+        this->roundIn(&ir);
+        return ir;
+    }
 
     
 
@@ -1291,8 +1342,8 @@ public:
 
 
     SkRect makeSorted() const {
-        return MakeLTRB(SkMinScalar(fLeft, fRight), SkMinScalar(fTop, fBottom),
-                        SkMaxScalar(fLeft, fRight), SkMaxScalar(fTop, fBottom));
+        return MakeLTRB(std::min(fLeft, fRight), std::min(fTop, fBottom),
+                        std::max(fLeft, fRight), std::max(fTop, fBottom));
     }
 
     
@@ -1303,6 +1354,8 @@ public:
     const SkScalar* asScalars() const { return &fLeft; }
 
     
+
+
 
 
 

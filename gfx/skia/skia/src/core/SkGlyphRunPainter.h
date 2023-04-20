@@ -8,195 +8,45 @@
 #ifndef SkGlyphRunPainter_DEFINED
 #define SkGlyphRunPainter_DEFINED
 
+#include "include/core/SkColorType.h"
 #include "include/core/SkSurfaceProps.h"
-#include "src/core/SkDistanceFieldGen.h"
-#include "src/core/SkGlyphBuffer.h"
-#include "src/core/SkGlyphRun.h"
+#include "src/base/SkZip.h"
 #include "src/core/SkScalerContext.h"
-#include "src/core/SkTextBlobPriv.h"
 
-#if SK_SUPPORT_GPU
-#include "src/gpu/text/GrTextContext.h"
-class GrColorInfo;
-class GrRenderTargetContext;
-#endif
-
-class SkGlyphRunPainterInterface;
-class SkStrikeSpec;
+class SkColorSpace;
+class SkDrawableGlyphBuffer;
+namespace sktext { class GlyphRunList; }
 
 
-
-
-
-
-
-
-struct SkGlyphPositionRoundingSpec {
-    SkGlyphPositionRoundingSpec(bool isSubpixel, SkAxisAlignment axisAlignment);
-    const SkVector halfAxisSampleFreq;
-    const SkIPoint ignorePositionMask;
-
-private:
-    static SkVector HalfAxisSampleFreq(bool isSubpixel, SkAxisAlignment axisAlignment);
-    static SkIPoint IgnorePositionMask(bool isSubpixel, SkAxisAlignment axisAlignment);
-};
-
-class SkStrikeCommon {
+class SkGlyphRunListPainterCPU {
 public:
-    
-    
-    static constexpr uint16_t kSkSideTooBigForAtlas = 256;
-};
-
-class SkGlyphRunListPainter {
-public:
-    
-    SkGlyphRunListPainter(const SkSurfaceProps& props,
-                          SkColorType colorType,
-                          SkColorSpace* cs,
-                          SkStrikeForGPUCacheInterface* strikeCache);
-
-#if SK_SUPPORT_GPU
-    
-    
-    SkGlyphRunListPainter(const SkSurfaceProps&, const GrColorInfo&);
-    explicit SkGlyphRunListPainter(const GrRenderTargetContext& renderTargetContext);
-#endif  
-
     class BitmapDevicePainter {
     public:
+        BitmapDevicePainter() = default;
+        BitmapDevicePainter(const BitmapDevicePainter&) = default;
         virtual ~BitmapDevicePainter() = default;
 
-        virtual void paintPaths(
-                SkDrawableGlyphBuffer* drawables, SkScalar scale, const SkPaint& paint) const = 0;
-
-        virtual void paintMasks(SkDrawableGlyphBuffer* drawables, const SkPaint& paint) const = 0;
+        virtual void paintMasks(SkZip<const SkGlyph*, SkPoint> accepted,
+                                const SkPaint& paint) const = 0;
+        virtual void drawBitmap(const SkBitmap&, const SkMatrix&, const SkRect* dstOrNull,
+                                const SkSamplingOptions&, const SkPaint&) const = 0;
     };
+
+    SkGlyphRunListPainterCPU(const SkSurfaceProps& props,
+                             SkColorType colorType,
+                             SkColorSpace* cs);
 
     void drawForBitmapDevice(
-            const SkGlyphRunList& glyphRunList, const SkMatrix& deviceMatrix,
-            const BitmapDevicePainter* bitmapDevice);
-
-#if SK_SUPPORT_GPU
-    
-    
-    void processGlyphRunList(const SkGlyphRunList& glyphRunList,
-                             const SkMatrix& viewMatrix,
-                             const SkSurfaceProps& props,
-                             bool contextSupportsDistanceFieldText,
-                             const GrTextContext::Options& options,
-                             SkGlyphRunPainterInterface* process);
-#endif  
-
+            SkCanvas* canvas, const BitmapDevicePainter* bitmapDevice,
+            const sktext::GlyphRunList& glyphRunList, const SkPaint& paint,
+            const SkMatrix& drawMatrix);
 private:
-    SkGlyphRunListPainter(const SkSurfaceProps& props, SkColorType colorType,
-                          SkScalerContextFlags flags, SkStrikeForGPUCacheInterface* strikeCache);
-
-    struct ScopedBuffers {
-        ScopedBuffers(SkGlyphRunListPainter* painter, size_t size);
-        ~ScopedBuffers();
-        SkGlyphRunListPainter* fPainter;
-    };
-
-    ScopedBuffers SK_WARN_UNUSED_RESULT ensureBuffers(const SkGlyphRunList& glyphRunList);
-
-    
-    ScopedBuffers SK_WARN_UNUSED_RESULT ensureBuffers(const SkGlyphRun& glyphRun);
-
-    
-
-
-
-
-
-
-    void processARGBFallback(SkScalar maxSourceGlyphDimension,
-                             const SkPaint& runPaint,
-                             const SkFont& runFont,
-                             const SkMatrix& viewMatrix,
-                             SkGlyphRunPainterInterface* process);
-
-    static SkSpan<const SkPackedGlyphID> DeviceSpacePackedGlyphIDs(
-            const SkGlyphPositionRoundingSpec& roundingSpec,
-            const SkMatrix& viewMatrix,
-            const SkPoint& origin,
-            int n,
-            const SkGlyphID* glyphIDs,
-            const SkPoint* positions,
-            SkPoint* mappedPositions,
-            SkPackedGlyphID* results);
-
-    static SkSpan<const SkPackedGlyphID> SourceSpacePackedGlyphIDs(
-            const SkPoint& origin,
-            int n,
-            const SkGlyphID* glyphIDs,
-            const SkPoint* positions,
-            SkPoint* mappedPositions,
-            SkPackedGlyphID* results);
-
     
     const SkSurfaceProps fDeviceProps;
+
     
     const SkSurfaceProps fBitmapFallbackProps;
     const SkColorType fColorType;
     const SkScalerContextFlags fScalerContextFlags;
-
-    SkStrikeForGPUCacheInterface* const fStrikeCache;
-
-    SkDrawableGlyphBuffer fDrawable;
-
-    size_t fMaxRunSize{0};
-    SkAutoTMalloc<SkPoint> fPositions;
-    SkAutoTMalloc<SkPackedGlyphID> fPackedGlyphIDs;
-    SkAutoTMalloc<SkGlyphPos> fGlyphPos;
-
-    std::vector<SkGlyphPos> fPaths;
-
-    
-    std::vector<SkGlyphID> fARGBGlyphsIDs;
-    std::vector<SkPoint>   fARGBPositions;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SkGlyphRunPainterInterface {
-public:
-    virtual ~SkGlyphRunPainterInterface() = default;
-
-    virtual void startRun(const SkGlyphRun& glyphRun, bool useSDFT) = 0;
-
-    virtual void processDeviceMasks(SkSpan<const SkGlyphPos> masks,
-                                    const SkStrikeSpec& strikeSpec) = 0;
-
-    virtual void processSourcePaths(SkSpan<const SkGlyphPos> paths,
-                                    const SkStrikeSpec& strikeSpec) = 0;
-
-    virtual void processDevicePaths(SkSpan<const SkGlyphPos> paths) = 0;
-
-    virtual void processSourceSDFT(SkSpan<const SkGlyphPos> masks,
-                                   const SkStrikeSpec& strikeSpec,
-                                   const SkFont& runFont,
-                                   SkScalar minScale,
-                                   SkScalar maxScale,
-                                   bool hasWCoord) = 0;
-
-    virtual void processSourceFallback(SkSpan<const SkGlyphPos> masks,
-                                       const SkStrikeSpec& strikeSpec,
-                                       bool hasW) = 0;
-
-    virtual void processDeviceFallback(SkSpan<const SkGlyphPos> masks,
-                                       const SkStrikeSpec& strikeSpec) = 0;
-
-};
-
 #endif  

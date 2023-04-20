@@ -8,17 +8,24 @@
 #ifndef SkSpecialSurface_DEFINED
 #define SkSpecialSurface_DEFINED
 
+#include "include/core/SkCanvas.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSurfaceProps.h"
 
-#if SK_SUPPORT_GPU
-#include "include/private/GrTypesPriv.h"
+#if defined(SK_GANESH)
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#endif
+
+#if defined(SK_GRAPHITE)
+namespace skgpu::graphite {
+    class Recorder;
+}
 #endif
 
 class GrBackendFormat;
-class GrContext;
 class GrRecordingContext;
+class SkBaseDevice;
 class SkBitmap;
 class SkCanvas;
 class SkSpecialImage;
@@ -33,8 +40,13 @@ class SkSpecialImage;
 
 class SkSpecialSurface : public SkRefCnt {
 public:
-    const SkSurfaceProps& props() const { return fProps; }
+    SkSpecialSurface(sk_sp<SkBaseDevice>, const SkIRect& subset);
 
+#ifdef SK_DEBUG
+    SkSurfaceProps props() const { return fCanvas->getBaseProps(); }
+#endif
+
+    const SkIRect& subset() const { return fSubset; }
     int width() const { return fSubset.width(); }
     int height() const { return fSubset.height(); }
 
@@ -45,32 +57,31 @@ public:
 
 
 
-    SkCanvas* getCanvas();
+    SkCanvas* getCanvas() { return fCanvas.get(); }
 
     
-
-
 
 
 
 
     sk_sp<SkSpecialImage> makeImageSnapshot();
 
-#if SK_SUPPORT_GPU
+#if defined(SK_GANESH)
     
 
 
 
-    static sk_sp<SkSpecialSurface> MakeRenderTarget(GrRecordingContext*, int width, int height,
-                                                    GrColorType, sk_sp<SkColorSpace> colorSpace,
-                                                    const SkSurfaceProps* = nullptr);
+    static sk_sp<SkSpecialSurface> MakeRenderTarget(GrRecordingContext*,
+                                                    const SkImageInfo&,
+                                                    const SkSurfaceProps&,
+                                                    GrSurfaceOrigin);
 #endif
 
-    
-
-
-    static sk_sp<SkSpecialSurface> MakeFromBitmap(const SkIRect& subset, SkBitmap& bm,
-                                                  const SkSurfaceProps* = nullptr);
+#if defined(SK_GRAPHITE)
+    static sk_sp<SkSpecialSurface> MakeGraphite(skgpu::graphite::Recorder*,
+                                                const SkImageInfo&,
+                                                const SkSurfaceProps&);
+#endif
 
     
 
@@ -80,20 +91,11 @@ public:
 
 
     static sk_sp<SkSpecialSurface> MakeRaster(const SkImageInfo&,
-                                              const SkSurfaceProps* = nullptr);
-
-protected:
-    SkSpecialSurface(const SkIRect& subset, const SkSurfaceProps*);
-
-    
-    friend class TestingSpecialSurfaceAccess;
-    const SkIRect& subset() const { return fSubset; }
+                                              const SkSurfaceProps&);
 
 private:
-    const SkSurfaceProps fProps;
-    const SkIRect        fSubset;
-
-    typedef SkRefCnt INHERITED;
+    std::unique_ptr<SkCanvas> fCanvas;
+    const SkIRect             fSubset;
 };
 
 #endif

@@ -44,12 +44,6 @@ public:
     static sk_sp<SkShader> MakeTurbulence(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
                                           int numOctaves, SkScalar seed,
                                           const SkISize* tileSize = nullptr);
-    
-
-
-
-    static sk_sp<SkShader> MakeImprovedNoise(SkScalar baseFrequencyX, SkScalar baseFrequencyY,
-                                             int numOctaves, SkScalar z);
 
     static void RegisterFlattenables();
 

@@ -8,21 +8,19 @@
 #ifndef SkDeferredDisplayListRecorder_DEFINED
 #define SkDeferredDisplayListRecorder_DEFINED
 
+#include "include/core/SkDeferredDisplayList.h"
+#include "include/core/SkImage.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSurfaceCharacterization.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkDeferredDisplayList.h"
 
 class GrBackendFormat;
 class GrBackendTexture;
-class GrContext;
+class GrRecordingContext;
+class GrYUVABackendTextureInfo;
 class SkCanvas;
-class SkImage;
-class SkPromiseImageTexture;
 class SkSurface;
-struct SkYUVAIndex;
-struct SkYUVASizeInfo;
 
 
 
@@ -50,121 +48,47 @@ public:
     
     SkCanvas* getCanvas();
 
-    std::unique_ptr<SkDeferredDisplayList> detach();
+    sk_sp<SkDeferredDisplayList> detach();
 
-    using PromiseImageTextureContext = void*;
-    using PromiseImageTextureFulfillProc =
-            sk_sp<SkPromiseImageTexture> (*)(PromiseImageTextureContext);
-    using PromiseImageTextureReleaseProc = void (*)(PromiseImageTextureContext);
-    using PromiseImageTextureDoneProc = void (*)(PromiseImageTextureContext);
+#if defined(SK_GANESH)
+    using PromiseImageTextureContext     = SkImage::PromiseImageTextureContext;
+    using PromiseImageTextureFulfillProc = SkImage::PromiseImageTextureFulfillProc;
+    using PromiseImageTextureReleaseProc = SkImage::PromiseImageTextureReleaseProc;
 
-    enum class PromiseImageApiVersion { kLegacy, kNew };
+#ifndef SK_MAKE_PROMISE_TEXTURE_DISABLE_LEGACY_API
+    
+    sk_sp<SkImage> makePromiseTexture(const GrBackendFormat& backendFormat,
+                                      int width,
+                                      int height,
+                                      GrMipmapped mipmapped,
+                                      GrSurfaceOrigin origin,
+                                      SkColorType colorType,
+                                      SkAlphaType alphaType,
+                                      sk_sp<SkColorSpace> colorSpace,
+                                      PromiseImageTextureFulfillProc textureFulfillProc,
+                                      PromiseImageTextureReleaseProc textureReleaseProc,
+                                      PromiseImageTextureContext textureContext);
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    sk_sp<SkImage> makePromiseTexture(
-            const GrBackendFormat& backendFormat,
-            int width,
-            int height,
-            GrMipMapped mipMapped,
-            GrSurfaceOrigin origin,
-            SkColorType colorType,
-            SkAlphaType alphaType,
-            sk_sp<SkColorSpace> colorSpace,
-            PromiseImageTextureFulfillProc textureFulfillProc,
-            PromiseImageTextureReleaseProc textureReleaseProc,
-            PromiseImageTextureDoneProc textureDoneProc,
-            PromiseImageTextureContext textureContext,
-            PromiseImageApiVersion version = PromiseImageApiVersion::kLegacy);
-
-    
-
-
-
-
-
-
-
-
-
-
-    sk_sp<SkImage> makeYUVAPromiseTexture(
-            SkYUVColorSpace yuvColorSpace,
-            const GrBackendFormat yuvaFormats[],
-            const SkISize yuvaSizes[],
-            const SkYUVAIndex yuvaIndices[4],
-            int imageWidth,
-            int imageHeight,
-            GrSurfaceOrigin imageOrigin,
-            sk_sp<SkColorSpace> imageColorSpace,
-            PromiseImageTextureFulfillProc textureFulfillProc,
-            PromiseImageTextureReleaseProc textureReleaseProc,
-            PromiseImageTextureDoneProc textureDoneProc,
-            PromiseImageTextureContext textureContexts[],
-            PromiseImageApiVersion version = PromiseImageApiVersion::kLegacy);
+    sk_sp<SkImage> makeYUVAPromiseTexture(const GrYUVABackendTextureInfo& yuvaBackendTextureInfo,
+                                          sk_sp<SkColorSpace> imageColorSpace,
+                                          PromiseImageTextureFulfillProc textureFulfillProc,
+                                          PromiseImageTextureReleaseProc textureReleaseProc,
+                                          PromiseImageTextureContext textureContexts[]);
+#endif 
+#endif 
 
 private:
+    SkDeferredDisplayListRecorder(const SkDeferredDisplayListRecorder&) = delete;
+    SkDeferredDisplayListRecorder& operator=(const SkDeferredDisplayListRecorder&) = delete;
+
     bool init();
 
     const SkSurfaceCharacterization             fCharacterization;
 
-#if SK_SUPPORT_GPU
-    sk_sp<GrContext>                            fContext;
+#if defined(SK_GANESH)
+    sk_sp<GrRecordingContext>                   fContext;
+    sk_sp<GrRenderTargetProxy>                  fTargetProxy;
     sk_sp<SkDeferredDisplayList::LazyProxyData> fLazyProxyData;
     sk_sp<SkSurface>                            fSurface;
 #endif

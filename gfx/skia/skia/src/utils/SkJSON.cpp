@@ -7,13 +7,21 @@
 
 #include "src/utils/SkJSON.h"
 
+#include "include/core/SkData.h"
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkStream.h"
 #include "include/core/SkString.h"
-#include "include/private/SkMalloc.h"
+#include "include/private/base/SkDebug.h"
+#include "include/private/base/SkMalloc.h"
+#include "include/private/base/SkTo.h"
 #include "include/utils/SkParse.h"
-#include "src/utils/SkUTF.h"
+#include "src/base/SkUTF.h"
 
 #include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <limits>
+#include <new>
 #include <tuple>
 #include <vector>
 
@@ -28,23 +36,22 @@ static constexpr size_t kRecAlign = alignof(Value);
 
 void Value::init_tagged(Tag t) {
     memset(fData8, 0, sizeof(fData8));
-    fData8[Value::kTagOffset] = SkTo<uint8_t>(t);
+    fData8[0] = SkTo<uint8_t>(t);
     SkASSERT(this->getTag() == t);
 }
 
 
 void Value::init_tagged_pointer(Tag t, void* p) {
-    *this->cast<uintptr_t>() = reinterpret_cast<uintptr_t>(p);
-
     if (sizeof(Value) == sizeof(uintptr_t)) {
+        *this->cast<uintptr_t>() = reinterpret_cast<uintptr_t>(p);
         
-        SkASSERT(!(fData8[kTagOffset] & kTagMask));
-        fData8[kTagOffset] |= SkTo<uint8_t>(t);
+        SkASSERT(!(fData8[0] & kTagMask));
+        fData8[0] |= SkTo<uint8_t>(t);
     } else {
         
         SkASSERT(sizeof(Value) == sizeof(uintptr_t) * 2);
-        this->cast<uintptr_t>()[kTagOffset >> 2] = 0;
-        fData8[kTagOffset] = SkTo<uint8_t>(t);
+        this->init_tagged(t);
+        *this->cast<uintptr_t>() = reinterpret_cast<uintptr_t>(p);
     }
 
     SkASSERT(this->getTag()    == t);
@@ -126,11 +133,8 @@ public:
             return;
         }
 
-        static_assert(static_cast<uint8_t>(Tag::kShortString) == 0, "please don't break this");
-        static_assert(sizeof(Value) == 8, "");
-
         
-        if (src + 7 <= eos) {
+        if (src && src + 6 <= eos) {
             this->initFastShortString(src, size);
         } else {
             this->initShortString(src, size);
@@ -140,7 +144,8 @@ public:
     }
 
 private:
-    static constexpr size_t kMaxInlineStringSize = sizeof(Value) - 1;
+    
+    inline static constexpr size_t kMaxInlineStringSize = sizeof(Value) - 2;
 
     void initLongString(const char* src, size_t size, SkArenaAlloc& alloc) {
         SkASSERT(size > kMaxInlineStringSize);
@@ -162,12 +167,23 @@ private:
     void initFastShortString(const char* src, size_t size) {
         SkASSERT(size <= kMaxInlineStringSize);
 
-        
         uint64_t* s64 = this->cast<uint64_t>();
-        memcpy(s64, src, 8);
+
+        
+        
+        static_assert(SkToU8(Tag::kShortString) == 0, "please don't break this");
+
+        
+        
+        
+        memcpy(s64, src - 1, 8);
 
 #if defined(SK_CPU_LENDIAN)
-        *s64 &= 0x00ffffffffffffffULL >> ((kMaxInlineStringSize - size) * 8);
+        
+        
+        
+        *s64 &= (0x0000ffffffffffffULL >> ((kMaxInlineStringSize - size) * 8)) 
+                    << 8;                                                      
 #else
         static_assert(false, "Big-endian builds are not supported at this time.");
 #endif
@@ -274,7 +290,7 @@ static inline float pow10(int32_t exp) {
        1.e+025f, 1.e+026f, 1.e+027f, 1.e+028f, 1.e+029f, 1.e+030f, 1.e+031f
     };
 
-    static constexpr int32_t k_exp_offset = SK_ARRAY_COUNT(g_pow10_table) / 2;
+    static constexpr int32_t k_exp_offset = std::size(g_pow10_table) / 2;
 
     
     SkASSERT(exp <= 0);
@@ -291,7 +307,7 @@ public:
         fUnescapeBuffer.reserve(kUnescapeBufferReserve);
     }
 
-    const Value parse(const char* p, size_t size) {
+    Value parse(const char* p, size_t size) {
         if (!size) {
             return this->error(NullValue(), p, "invalid empty input");
         }
@@ -460,11 +476,11 @@ private:
     SkArenaAlloc&         fAlloc;
 
     
-    static constexpr size_t kValueStackReserve = 256;
+    inline static constexpr size_t kValueStackReserve = 256;
     std::vector<Value>    fValueStack;
 
     
-    static constexpr size_t kUnescapeBufferReserve = 512;
+    inline static constexpr size_t kUnescapeBufferReserve = 512;
     std::vector<char>     fUnescapeBuffer;
 
     
@@ -866,9 +882,9 @@ void Write(const Value& v, SkWStream* stream) {
         const auto& array = v.as<ArrayValue>();
         stream->writeText("[");
         bool first_value = true;
-        for (const auto& v : array) {
+        for (const auto& entry : array) {
             if (!first_value) stream->writeText(",");
-            Write(v, stream);
+            Write(entry, stream);
             first_value = false;
         }
         stream->writeText("]");

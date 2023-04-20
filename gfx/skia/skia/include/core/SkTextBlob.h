@@ -12,13 +12,17 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkString.h"
-#include "include/private/SkTemplates.h"
+#include "include/private/base/SkTemplates.h"
 
 #include <atomic>
 
 struct SkRSXform;
 struct SkSerialProcs;
 struct SkDeserialProcs;
+
+namespace sktext {
+class GlyphRunList;
+}
 
 
 
@@ -157,9 +161,13 @@ public:
 
 
 
+
+
     size_t serialize(const SkSerialProcs& procs, void* memory, size_t memory_size) const;
 
     
+
+
 
 
 
@@ -195,6 +203,11 @@ public:
             SkTypeface*     fTypeface;
             int             fGlyphCount;
             const uint16_t* fGlyphIndices;
+#ifdef SK_UNTIL_CRBUG_1187654_IS_FIXED
+            const uint32_t* fClusterIndex_forTest;
+            int             fUtf8Size_forTest;
+            const char*     fUtf8_forTest;
+#endif
         };
 
         Iter(const SkTextBlob&);
@@ -204,6 +217,15 @@ public:
 
 
         bool next(Run*);
+
+        
+        struct ExperimentalRun {
+            SkFont          font;
+            int             count;
+            const uint16_t* glyphs;
+            const SkPoint*  positions;
+        };
+        bool experimentalNext(ExperimentalRun*);
 
     private:
         const RunRecord* fRunRecord;
@@ -232,8 +254,7 @@ private:
         fCacheID.store(cacheID);
     }
 
-    friend class SkGlyphRunList;
-    friend class GrTextBlobCache;
+    friend class sktext::GlyphRunList;
     friend class SkTextBlobBuilder;
     friend class SkTextBlobPriv;
     friend class SkTextBlobRunIterator;
@@ -247,7 +268,7 @@ private:
     
     
 
-    typedef SkRefCnt INHERITED;
+    using INHERITED = SkRefCnt;
 };
 
 
@@ -260,6 +281,8 @@ public:
 
 
 
+
+
     SkTextBlobBuilder();
 
     
@@ -267,6 +290,8 @@ public:
     ~SkTextBlobBuilder();
 
     
+
+
 
 
 
@@ -372,24 +397,87 @@ public:
     
     const RunBuffer& allocRunRSXform(const SkFont& font, int count);
 
-private:
-    const RunBuffer& allocRunText(const SkFont& font,
-                                  int count,
-                                  SkScalar x,
-                                  SkScalar y,
-                                  int textByteCount,
-                                  SkString lang,
-                                  const SkRect* bounds = nullptr);
-    const RunBuffer& allocRunTextPosH(const SkFont& font, int count, SkScalar y,
-                                      int textByteCount, SkString lang,
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const RunBuffer& allocRunText(const SkFont& font, int count, SkScalar x, SkScalar y,
+                                  int textByteCount, const SkRect* bounds = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const RunBuffer& allocRunTextPosH(const SkFont& font, int count, SkScalar y, int textByteCount,
                                       const SkRect* bounds = nullptr);
-    const RunBuffer& allocRunTextPos(const SkFont& font, int count,
-                                     int textByteCount, SkString lang,
-                                     const SkRect* bounds = nullptr);
-    const RunBuffer& allocRunRSXform(const SkFont& font, int count,
-                                     int textByteCount, SkString lang,
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const RunBuffer& allocRunTextPos(const SkFont& font, int count, int textByteCount,
                                      const SkRect* bounds = nullptr);
 
+    
+    const RunBuffer& allocRunTextRSXform(const SkFont& font, int count, int textByteCount,
+                                         const SkRect* bounds = nullptr);
+
+private:
     void reserve(size_t size);
     void allocInternal(const SkFont& font, SkTextBlob::GlyphPositioning positioning,
                        int count, int textBytes, SkPoint offset, const SkRect* bounds);
@@ -403,7 +491,7 @@ private:
     friend class SkTextBlobPriv;
     friend class SkTextBlobBuilderPriv;
 
-    SkAutoTMalloc<uint8_t> fStorage;
+    skia_private::AutoTMalloc<uint8_t> fStorage;
     size_t                 fStorageSize;
     size_t                 fStorageUsed;
 

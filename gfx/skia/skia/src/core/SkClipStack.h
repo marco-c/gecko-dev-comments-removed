@@ -9,20 +9,14 @@
 #define SkClipStack_DEFINED
 
 #include "include/core/SkCanvas.h"
-#include "include/core/SkDeque.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkRRect.h"
 #include "include/core/SkRect.h"
 #include "include/core/SkRegion.h"
-#include "src/core/SkClipOpPriv.h"
+#include "include/core/SkShader.h"
+#include "include/private/base/SkDeque.h"
+#include "src/base/SkTLazy.h"
 #include "src/core/SkMessageBus.h"
-#include "src/core/SkTLazy.h"
-
-#if SK_SUPPORT_GPU
-class GrProxyProvider;
-
-#include "include/private/GrResourceKey.h"
-#endif
 
 
 
@@ -59,13 +53,15 @@ public:
             kRRect,
             
             kPath,
+            
+            kShader,
 
-            kLastType = kPath
+            kLastType = kShader
         };
         static const int kTypeCnt = (int)DeviceSpaceType::kLastType + 1;
 
         Element() {
-            this->initCommon(0, kReplace_SkClipOp, false);
+            this->initCommon(0, SkClipOp::kIntersect, false);
             this->setEmpty();
         }
 
@@ -83,6 +79,14 @@ public:
             this->initPath(0, path, m, op, doAA);
         }
 
+        Element(sk_sp<SkShader> shader) {
+            this->initShader(0, std::move(shader));
+        }
+
+        Element(const SkRect& rect, bool doAA) {
+            this->initReplaceRect(0, rect, doAA);
+        }
+
         ~Element();
 
         bool operator== (const Element& element) const;
@@ -97,7 +101,7 @@ public:
         
         const SkPath& getDeviceSpacePath() const {
             SkASSERT(DeviceSpaceType::kPath == fDeviceSpaceType);
-            return *fDeviceSpacePath.get();
+            return *fDeviceSpacePath;
         }
 
         
@@ -114,8 +118,18 @@ public:
         }
 
         
+        sk_sp<SkShader> refShader() const {
+            return fShader;
+        }
+        const SkShader* getShader() const {
+            return fShader.get();
+        }
+
+        
         
         SkClipOp getOp() const { return fOp; }
+        
+        bool isReplaceOp() const { return fIsReplace; }
 
         
         void asDeviceSpacePath(SkPath* path) const;
@@ -132,9 +146,6 @@ public:
 
         
         void invertShapeFillType();
-
-        
-        void setOp(SkClipOp op) { fOp = op; }
 
         
 
@@ -161,7 +172,7 @@ public:
 
         bool isInverseFilled() const {
             return DeviceSpaceType::kPath == fDeviceSpaceType &&
-                   fDeviceSpacePath.get()->isInverseFillType();
+                   fDeviceSpacePath->isInverseFillType();
         }
 
 #ifdef SK_DEBUG
@@ -172,33 +183,17 @@ public:
         void dump() const;
 #endif
 
-#if SK_SUPPORT_GPU
-        
-
-
-
-        void addResourceInvalidationMessage(GrProxyProvider* proxyProvider,
-                                            const GrUniqueKey& key) const {
-            SkASSERT(proxyProvider);
-
-            if (!fProxyProvider) {
-                fProxyProvider = proxyProvider;
-            }
-            SkASSERT(fProxyProvider == proxyProvider);
-
-            fKeysToInvalidate.push_back(key);
-        }
-#endif
-
     private:
         friend class SkClipStack;
 
         SkTLazy<SkPath> fDeviceSpacePath;
         SkRRect fDeviceSpaceRRect;
+        sk_sp<SkShader> fShader;
         int fSaveCount;  
         SkClipOp fOp;
         DeviceSpaceType fDeviceSpaceType;
         bool fDoAA;
+        bool fIsReplace;
 
         
 
@@ -218,12 +213,8 @@ public:
         bool fIsIntersectionOfRects;
 
         uint32_t fGenID;
-#if SK_SUPPORT_GPU
-        mutable GrProxyProvider*      fProxyProvider = nullptr;
-        mutable SkTArray<GrUniqueKey> fKeysToInvalidate;
-#endif
         Element(int saveCount) {
-            this->initCommon(saveCount, kReplace_SkClipOp, false);
+            this->initCommon(saveCount, SkClipOp::kIntersect, false);
             this->setEmpty();
         }
 
@@ -239,11 +230,21 @@ public:
             this->initPath(saveCount, path, m, op, doAA);
         }
 
+        Element(int saveCount, sk_sp<SkShader> shader) {
+            this->initShader(saveCount, std::move(shader));
+        }
+
+        Element(int saveCount, const SkRect& rect, bool doAA) {
+            this->initReplaceRect(saveCount, rect, doAA);
+        }
+
         void initCommon(int saveCount, SkClipOp op, bool doAA);
         void initRect(int saveCount, const SkRect&, const SkMatrix&, SkClipOp, bool doAA);
         void initRRect(int saveCount, const SkRRect&, const SkMatrix&, SkClipOp, bool doAA);
         void initPath(int saveCount, const SkPath&, const SkMatrix&, SkClipOp, bool doAA);
         void initAsPath(int saveCount, const SkPath&, const SkMatrix&, SkClipOp, bool doAA);
+        void initShader(int saveCount, sk_sp<SkShader>);
+        void initReplaceRect(int saveCount, const SkRect&, bool doAA);
 
         void setEmpty();
 
@@ -266,10 +267,7 @@ public:
         };
         
         inline void combineBoundsDiff(FillCombo combination, const SkRect& prevFinite);
-        inline void combineBoundsXOR(int combination, const SkRect& prevFinite);
-        inline void combineBoundsUnion(int combination, const SkRect& prevFinite);
         inline void combineBoundsIntersection(int combination, const SkRect& prevFinite);
-        inline void combineBoundsRevDiff(int combination, const SkRect& prevFinite);
     };
 
     SkClipStack();
@@ -337,12 +335,6 @@ public:
         return this->isWideOpen() || this->internalQuickContains(devRRect);
     }
 
-    
-
-
-
-    bool asPath(SkPath* path) const;
-
     void clipDevRect(const SkIRect& ir, SkClipOp op) {
         SkRect r;
         r.set(ir);
@@ -351,11 +343,11 @@ public:
     void clipRect(const SkRect&, const SkMatrix& matrix, SkClipOp, bool doAA);
     void clipRRect(const SkRRect&, const SkMatrix& matrix, SkClipOp, bool doAA);
     void clipPath(const SkPath&, const SkMatrix& matrix, SkClipOp, bool doAA);
+    void clipShader(sk_sp<SkShader>);
     
     void clipEmpty();
-    void setDeviceClipRestriction(const SkIRect& rect) {
-        fClipRestrictionRect = SkRect::Make(rect);
-    }
+
+    void replaceClip(const SkRect& devRect, bool doAA);
 
     
 
@@ -464,7 +456,7 @@ public:
 
     private:
 
-        typedef Iter INHERITED;
+        using INHERITED = Iter;
     };
 
     
@@ -493,8 +485,6 @@ private:
     SkDeque fDeque;
     int     fSaveCount;
 
-    SkRect fClipRestrictionRect = SkRect::MakeEmpty();
-
     bool internalQuickContains(const SkRect& devRect) const;
     bool internalQuickContains(const SkRRect& devRRect) const;
 
@@ -508,10 +498,6 @@ private:
 
     void restoreTo(int saveCount);
 
-    inline bool hasClipRestriction(SkClipOp op) {
-        return op >= kUnion_SkClipOp && !fClipRestrictionRect.isEmpty();
-    }
-
     
 
 
@@ -519,4 +505,3 @@ private:
 };
 
 #endif
-

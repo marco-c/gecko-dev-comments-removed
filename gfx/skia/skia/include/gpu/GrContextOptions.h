@@ -9,16 +9,18 @@
 #define GrContextOptions_DEFINED
 
 #include "include/core/SkData.h"
+#include "include/core/SkString.h"
 #include "include/core/SkTypes.h"
 #include "include/gpu/GrDriverBugWorkarounds.h"
 #include "include/gpu/GrTypes.h"
-#include "include/private/GrTypesPriv.h"
+#include "include/gpu/ShaderErrorHandler.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
 
 #include <vector>
 
 class SkExecutor;
 
-#if SK_SUPPORT_GPU
+#if defined(SK_GANESH)
 struct SK_API GrContextOptions {
     enum class Enable {
         
@@ -44,31 +46,45 @@ struct SK_API GrContextOptions {
 
     class SK_API PersistentCache {
     public:
-        virtual ~PersistentCache() {}
+        virtual ~PersistentCache() = default;
 
         
 
 
         virtual sk_sp<SkData> load(const SkData& key) = 0;
 
-        virtual void store(const SkData& key, const SkData& data) = 0;
+        
+        
+        virtual void store(const SkData& , const SkData& ) { SkASSERT(false); }
+
+        
+
+
+
+        virtual void store(const SkData& key, const SkData& data, const SkString& ) {
+            this->store(key, data);
+        }
+
+    protected:
+        PersistentCache() = default;
+        PersistentCache(const PersistentCache&) = delete;
+        PersistentCache& operator=(const PersistentCache&) = delete;
     };
 
-    
-
-
-
-
-    class SK_API ShaderErrorHandler {
-    public:
-        virtual ~ShaderErrorHandler() {}
-        virtual void compileError(const char* shader, const char* errors) = 0;
-    };
+    using ShaderErrorHandler = skgpu::ShaderErrorHandler;
 
     GrContextOptions() {}
 
     
     bool fSuppressPrints = false;
+
+    
+
+
+
+
+
+    Enable fSkipGLErrorChecks = Enable::kDefault;
 
     
 
@@ -129,14 +145,18 @@ struct SK_API GrContextOptions {
 
 
 
-
-    float fMinDistanceFieldFontSize = -1.f;
+    float fMinDistanceFieldFontSize = 18;
 
     
 
 
-
-    float fGlyphsAsPathsFontSize = -1.f;
+#if defined(SK_BUILD_FOR_ANDROID)
+    float fGlyphsAsPathsFontSize = 384;
+#elif defined(SK_BUILD_FOR_MAC)
+    float fGlyphsAsPathsFontSize = 256;
+#else
+    float fGlyphsAsPathsFontSize = 324;
+#endif
 
     
 
@@ -153,16 +173,11 @@ struct SK_API GrContextOptions {
     
 
 
-
-
-    bool fSharpenMipmappedTextures = false;
-
-    
-
-
     Enable fUseDrawInsteadOfClear = Enable::kDefault;
 
     
+
+
 
 
 
@@ -214,6 +229,69 @@ struct SK_API GrContextOptions {
 
     int  fInternalMultisampleCount = 4;
 
+    
+
+
+
+
+
+
+
+
+    int fMaxCachedVulkanSecondaryCommandBuffers = -1;
+
+    
+
+
+    bool fSuppressMipmapSupport = false;
+
+    
+
+
+
+    bool fDisableTessellationPathRenderer = false;
+
+    
+
+
+
+    bool fEnableExperimentalHardwareTessellation = false;
+
+    
+
+
+
+    bool fSupportBilerpFromGlyphAtlas = false;
+
+    
+
+
+
+    bool fReducedShaderVariations = false;
+
+    
+
+
+    bool fAllowMSAAOnNewIntel = false;
+
+    
+
+
+
+
+
+
+    bool fAlwaysUseTexStorageWhenAvailable = false;
+
+    
+
+
+
+
+
+    GrDirectContextDestroyedContext fContextDeleteContext = nullptr;
+    GrDirectContextDestroyedProc fContextDeleteProc = nullptr;
+
 #if GR_TEST_UTILS
     
 
@@ -223,7 +301,7 @@ struct SK_API GrContextOptions {
 
 
 
-    int  fMaxTileSizeOverride = 0;
+    bool fFailFlushTimeCallbacks = false;
 
     
 
@@ -233,7 +311,18 @@ struct SK_API GrContextOptions {
     
 
 
-    bool fSuppressGeometryShaders = false;
+
+    bool fSuppressAdvancedBlendEquations = false;
+
+    
+
+
+    bool fSuppressFramebufferFetch = false;
+
+    
+
+
+    bool fAllPathsVolatile = false;
 
     
 
@@ -248,15 +337,30 @@ struct SK_API GrContextOptions {
     
 
 
-    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kAll;
-#endif
+    bool fRandomGLOOM = false;
 
-#if SK_SUPPORT_ATLAS_TEXT
+    
+
+
+    bool fDisallowWriteAndTransferPixelRowBytes = false;
+
+    
+
+
+    GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kDefault;
+
     
 
 
 
-    Enable fDistanceFieldGlyphVerticesAlwaysHaveW = Enable::kDefault;
+
+
+    int fResourceCacheLimitOverride = -1;
+
+    
+
+
+    int  fMaxTextureAtlasSize = 2048;
 #endif
 
     GrDriverBugWorkarounds fDriverBugWorkarounds;

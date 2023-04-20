@@ -5,442 +5,811 @@
 
 
 
-#include "include/private/SkMacros.h"
-#include "src/core/SkArenaAlloc.h"
+#include "include/private/base/SkMacros.h"
+#include "src/base/SkArenaAlloc.h"
 #include "src/core/SkBlendModePriv.h"
+#include "src/core/SkBlenderBase.h"
+#include "src/core/SkColorFilterBase.h"
 #include "src/core/SkColorSpacePriv.h"
 #include "src/core/SkColorSpaceXformSteps.h"
 #include "src/core/SkCoreBlitters.h"
+#include "src/core/SkImageInfoPriv.h"
 #include "src/core/SkLRUCache.h"
+#include "src/core/SkMatrixProvider.h"
+#include "src/core/SkOpts.h"
+#include "src/core/SkPaintPriv.h"
 #include "src/core/SkVM.h"
+#include "src/core/SkVMBlitter.h"
+#include "src/shaders/SkColorFilterShader.h"
+
+#include <cinttypes>
+
+#define SK_BLITTER_TRACE_IS_SKVM
+#include "src/utils/SkBlitterTrace.h"
 
 namespace {
 
-    enum class Coverage { Full, UniformA8, MaskA8, MaskLCD16, Mask3D };
-
-    SK_BEGIN_REQUIRE_DENSE;
-    struct Key {
-        SkColorType    colorType;
-        SkAlphaType    alphaType;
-        Coverage       coverage;
-        SkBlendMode    blendMode;
-        SkShader*      shader;
-        SkColorFilter* colorFilter;
-
-        Key withCoverage(Coverage c) const {
-            Key k = *this;
-            k.coverage = c;
-            return k;
-        }
+    
+    
+    struct BlitterUniforms {
+        int       right;  
+        int       y;      
     };
-    SK_END_REQUIRE_DENSE;
+    static_assert(SkIsAlign4(sizeof(BlitterUniforms)), "");
+    inline static constexpr int kBlitterUniformsCount = sizeof(BlitterUniforms) / 4;
 
-    static bool operator==(const Key& x, const Key& y) {
-        return x.colorType   == y.colorType
-            && x.alphaType   == y.alphaType
-            && x.coverage    == y.coverage
-            && x.blendMode   == y.blendMode
-            && x.shader      == y.shader
-            && x.colorFilter == y.colorFilter;
+    static skvm::Coord device_coord(skvm::Builder* p, skvm::Uniforms* uniforms) {
+        skvm::I32 dx = p->uniform32(uniforms->base, offsetof(BlitterUniforms, right))
+                     - p->index(),
+                  dy = p->uniform32(uniforms->base, offsetof(BlitterUniforms, y));
+        return {
+            to_F32(dx) + 0.5f,
+            to_F32(dy) + 0.5f,
+        };
     }
 
-    static SkString debug_name(const Key& key) {
-        return SkStringPrintf("CT%d-AT%d-Cov%d-Blend%d-Shader%d-CF%d",
-                              key.colorType,
-                              key.alphaType,
-                              key.coverage,
-                              key.blendMode,
-                              SkToBool(key.shader),
-                              SkToBool(key.colorFilter));
-    }
+    struct NoopColorFilter final : public SkColorFilterBase {
+        skvm::Color onProgram(skvm::Builder*, skvm::Color c,
+                              const SkColorInfo&, skvm::Uniforms*, SkArenaAlloc*) const override {
+            return c;
+        }
 
-    static bool debug_dump(const Key& key) {
-    #if 0
-        SkDebugf("%s\n", debug_name(key).c_str());
-        return true;
-    #else
-        return false;
-    #endif
-    }
+        bool appendStages(const SkStageRec&, bool) const override { return true; }
 
-    static SkLRUCache<Key, skvm::Program>* try_acquire_program_cache() {
-    #if defined(SK_BUILD_FOR_IOS)
         
-        
-        
-        return nullptr;  
-    #else
-        thread_local static auto* cache = new SkLRUCache<Key, skvm::Program>{8};
-        return cache;
-    #endif
-    }
-
-    static void release_program_cache() { }
-
-
-    struct Uniforms {
-        uint32_t paint_color;
-        uint8_t  coverage;   
+        Factory getFactory() const override { return nullptr; }
+        const char* getTypeName() const override { return "NoopColorFilter"; }
     };
 
-    struct Builder : public skvm::Builder {
-        
+    struct SpriteShader : public SkShaderBase {
+        explicit SpriteShader(SkPixmap sprite) : fSprite(sprite) {}
 
-        struct Color { skvm::I32 r,g,b,a; };
-
-
-        skvm::I32 inv(skvm::I32 x) {
-            return sub(splat(255), x);
-        }
+        SkPixmap fSprite;
 
         
-        skvm::I32 div255(skvm::I32 v) {
-            
-            
-            skvm::I32 v128 = add(v, splat(128));
-            return shr(add(v128, shr(v128, 8)), 8);
-        }
+        Factory      getFactory() const override { return nullptr; }
+        const char* getTypeName() const override { return "SpriteShader"; }
 
-        skvm::I32 mix(skvm::I32 x, skvm::I32 y, skvm::I32 t) {
-            return div255(add(mul(x, inv(t)),
-                              mul(y,     t )));
-        }
+        bool isOpaque() const override { return fSprite.isOpaque(); }
 
-        Color unpack_8888(skvm::I32 rgba) {
-            return {
-                extract(rgba,  0, splat(0xff)),
-                extract(rgba,  8, splat(0xff)),
-                extract(rgba, 16, splat(0xff)),
-                extract(rgba, 24, splat(0xff)),
-            };
-        }
+        skvm::Color program(skvm::Builder* p,
+                            skvm::Coord ,
+                            skvm::Coord ,
+                            skvm::Color ,
+                            const MatrixRec&,
+                            const SkColorInfo& dst,
+                            skvm::Uniforms* uniforms,
+                            SkArenaAlloc*) const override {
+            const SkColorType ct = fSprite.colorType();
 
-        skvm::I32 pack_8888(Color c) {
-            return pack(pack(c.r, c.g, 8),
-                        pack(c.b, c.a, 8), 16);
-        }
+            skvm::PixelFormat fmt = skvm::SkColorType_to_PixelFormat(ct);
 
-        Color unpack_565(skvm::I32 bgr) {
-            
-            
-            skvm::I32 r = extract(bgr, 11, splat(0b011'111)),
-                      g = extract(bgr,  5, splat(0b111'111)),
-                      b = extract(bgr,  0, splat(0b011'111));
-            return {
-                
-                bit_or(shl(r, 3), shr(r, 2)),
-                bit_or(shl(g, 2), shr(g, 4)),
-                bit_or(shl(b, 3), shr(b, 2)),
-                splat(0xff),
-            };
-        }
+            skvm::Color c = p->load(fmt, p->varying(SkColorTypeBytesPerPixel(ct)));
 
-        skvm::I32 pack_565(Color c) {
-            skvm::I32 r = div255(mul(c.r, splat(31))),
-                      g = div255(mul(c.g, splat(63))),
-                      b = div255(mul(c.b, splat(31)));
-            return pack(pack(b, g,5), r,11);
-        }
-
-        
-        skvm::I32 min(skvm::I32 x, skvm::I32 y) { return select(lt(x,y), x,y); }
-        skvm::I32 max(skvm::I32 x, skvm::I32 y) { return select(gt(x,y), x,y); }
-
-        static bool CanBuild(const Key& key) {
-            
-            if (key.shader)      { return false; }
-            if (key.colorFilter) { return false; }
-
-            switch (key.colorType) {
-                default: return false;
-                case kRGB_565_SkColorType:   break;
-                case kRGBA_8888_SkColorType: break;
-                case kBGRA_8888_SkColorType: break;
-            }
-
-            if (key.alphaType == kUnpremul_SkAlphaType) { return false; }
-
-            switch (key.blendMode) {
-                default: return false;
-                case SkBlendMode::kSrc:     break;
-                case SkBlendMode::kSrcOver: break;
-            }
-
-            return true;
-        }
-
-        explicit Builder(const Key& key) {
-        #define TODO SkUNREACHABLE
-            SkASSERT(CanBuild(key));
-            skvm::Arg uniforms = uniform(),
-                      dst_ptr  = arg(SkColorTypeBytesPerPixel(key.colorType));
-            
-            
-
-
-            
-            if (key.shader)      { TODO; }
-            if (key.colorFilter) { TODO; }
-            Color src = unpack_8888(uniform32(uniforms, offsetof(Uniforms, paint_color)));
-
-            
-            
-            
-            Color dst;
-            SkDEBUGCODE(bool dst_loaded = false;)
-
-            
-            auto load_coverage = [&](Color* cov) {
-                switch (key.coverage) {
-                    case Coverage::Full: return false;
-
-                    case Coverage::UniformA8: cov->r = cov->g = cov->b = cov->a =
-                                              uniform8(uniforms, offsetof(Uniforms, coverage));
-                                              return true;
-
-                    case Coverage::MaskA8: cov->r = cov->g = cov->b = cov->a =
-                                           load8(varying<uint8_t>());
-                                           return true;
-
-                    case Coverage::MaskLCD16:
-                        SkASSERT(dst_loaded);
-                        *cov = unpack_565(load16(varying<uint16_t>()));
-                        cov->a = select(lt(src.a, dst.a), min(cov->r, min(cov->g,cov->b))
-                                                        , max(cov->r, max(cov->g,cov->b)));
-                        return true;
-
-                    case Coverage::Mask3D: TODO;
-                }
-                
-                return false;
-            };
-
-            
-            
-            
-            bool lerp_coverage_post_blend = true;
-            if (SkBlendMode_ShouldPreScaleCoverage(key.blendMode,
-                                                   key.coverage == Coverage::MaskLCD16)) {
-                Color cov;
-                if (load_coverage(&cov)) {
-                    src.r = div255(mul(src.r, cov.r));
-                    src.g = div255(mul(src.g, cov.g));
-                    src.b = div255(mul(src.b, cov.b));
-                    src.a = div255(mul(src.a, cov.a));
-                }
-                lerp_coverage_post_blend = false;
-            }
-
-            
-            SkDEBUGCODE(dst_loaded = true;)
-            switch (key.colorType) {
-                default: TODO;
-                case kRGB_565_SkColorType:   dst = unpack_565 (load16(dst_ptr)); break;
-                case kRGBA_8888_SkColorType: dst = unpack_8888(load32(dst_ptr)); break;
-                case kBGRA_8888_SkColorType: dst = unpack_8888(load32(dst_ptr));
-                                             std::swap(dst.r, dst.b);
-                                             break;
-            }
-
-            
-            
-            
-            const bool force_opaque = true && key.alphaType == kOpaque_SkAlphaType;
-            if (force_opaque) { dst.a = splat(0xff); }
-
-            
-            if (key.alphaType == kUnpremul_SkAlphaType) { TODO; }
-
-            
-            switch (key.blendMode) {
-                default: TODO;
-
-                case SkBlendMode::kSrc: break;
-
-                case SkBlendMode::kSrcOver: {
-                    src.r = add(src.r, div255(mul(dst.r, inv(src.a))));
-                    src.g = add(src.g, div255(mul(dst.g, inv(src.a))));
-                    src.b = add(src.b, div255(mul(dst.b, inv(src.a))));
-                    src.a = add(src.a, div255(mul(dst.a, inv(src.a))));
-                } break;
-            }
-
-            
-            Color cov;
-            if (lerp_coverage_post_blend && load_coverage(&cov)) {
-                src.r = mix(dst.r, src.r, cov.r);
-                src.g = mix(dst.g, src.g, cov.g);
-                src.b = mix(dst.b, src.b, cov.b);
-                src.a = mix(dst.a, src.a, cov.a);
-            }
-
-            if (force_opaque) { src.a = splat(0xff); }
-
-            
-            switch (key.colorType) {
-                default: SkUNREACHABLE;
-
-                case kRGB_565_SkColorType:   store16(dst_ptr, pack_565(src)); break;
-
-                case kBGRA_8888_SkColorType: std::swap(src.r, src.b);  
-                case kRGBA_8888_SkColorType: store32(dst_ptr, pack_8888(src)); break;
-            }
-        #undef TODO
+            return SkColorSpaceXformSteps{fSprite, dst}.program(p, uniforms, c);
         }
     };
 
-    class Blitter final : public SkBlitter {
-    public:
-        bool ok = false;
+    struct DitherShader : public SkShaderBase {
+        explicit DitherShader(sk_sp<SkShader> shader) : fShader(std::move(shader)) {}
 
-        Blitter(const SkPixmap& device, const SkPaint& paint)
-            : fDevice(device)
-            , fKey {
-                device.colorType(),
-                device.alphaType(),
-                Coverage::Full,
-                paint.getBlendMode(),
-                paint.getShader(),
-                paint.getColorFilter(),
-            }
-        {
-            SkColor4f color = paint.getColor4f();
-            SkColorSpaceXformSteps{sk_srgb_singleton(), kUnpremul_SkAlphaType,
-                                   device.colorSpace(), kUnpremul_SkAlphaType}.apply(color.vec());
+        sk_sp<SkShader> fShader;
 
-            if (color.fitsInBytes() && Builder::CanBuild(fKey)) {
-                fUniforms.paint_color = color.premul().toBytes_RGBA();
-                ok = true;
-            }
-        }
+        
+        Factory      getFactory() const override { return nullptr; }
+        const char* getTypeName() const override { return "DitherShader"; }
 
-        ~Blitter() override {
-            if (SkLRUCache<Key, skvm::Program>* cache = try_acquire_program_cache()) {
-                auto cache_program = [&](skvm::Program&& program, Coverage coverage) {
-                    if (!program.empty()) {
-                        Key key = fKey.withCoverage(coverage);
-                        if (skvm::Program* found = cache->find(key)) {
-                            *found = std::move(program);
-                        } else {
-                            cache->insert(key, std::move(program));
-                        }
-                    }
-                };
-                cache_program(std::move(fBlitH),         Coverage::Full);
-                cache_program(std::move(fBlitAntiH),     Coverage::UniformA8);
-                cache_program(std::move(fBlitMaskA8),    Coverage::MaskA8);
-                cache_program(std::move(fBlitMaskLCD16), Coverage::MaskLCD16);
+        bool isOpaque() const override { return fShader->isOpaque(); }
 
-                release_program_cache();
-            }
-        }
-
-    private:
-        SkPixmap      fDevice;  
-        const Key     fKey;
-        Uniforms      fUniforms;
-        skvm::Program fBlitH,
-                      fBlitAntiH,
-                      fBlitMaskA8,
-                      fBlitMaskLCD16;
-
-        skvm::Program buildProgram(Coverage coverage) {
-            Key key = fKey.withCoverage(coverage);
-            {
-                skvm::Program p;
-                if (SkLRUCache<Key, skvm::Program>* cache = try_acquire_program_cache()) {
-                    if (skvm::Program* found = cache->find(key)) {
-                        p = std::move(*found);
-                    }
-                    release_program_cache();
-                }
-                if (!p.empty()) {
-                    return p;
-                }
-            }
-        #if 0
-            static std::atomic<int> done{0};
-            if (0 == done++) {
-                atexit([]{ SkDebugf("%d calls to done\n", done.load()); });
-            }
-        #endif
-            Builder builder{key};
-            skvm::Program program = builder.done(debug_name(key).c_str());
-            if (!program.hasJIT() && debug_dump(key)) {
-                SkDebugf("\nfalling back to interpreter for blitter with this key.\n");
-                builder.dump();
-                program.dump();
-            }
-            return program;
-        }
-
-        void blitH(int x, int y, int w) override {
-            if (fBlitH.empty()) {
-                fBlitH = this->buildProgram(Coverage::Full);
-            }
-            fBlitH.eval(w, &fUniforms, fDevice.addr(x,y));
-        }
-
-        void blitAntiH(int x, int y, const SkAlpha cov[], const int16_t runs[]) override {
-            if (fBlitAntiH.empty()) {
-                fBlitAntiH = this->buildProgram(Coverage::UniformA8);
-            }
-            for (int16_t run = *runs; run > 0; run = *runs) {
-                fUniforms.coverage = *cov;
-                fBlitAntiH.eval(run, &fUniforms, fDevice.addr(x,y));
-
-                x    += run;
-                runs += run;
-                cov  += run;
-            }
-        }
-
-        void blitMask(const SkMask& mask, const SkIRect& clip) override {
-            if (mask.fFormat == SkMask::kBW_Format) {
-                
-                return SkBlitter::blitMask(mask, clip);
+        skvm::Color program(skvm::Builder* p,
+                            skvm::Coord device,
+                            skvm::Coord local,
+                            skvm::Color paint,
+                            const MatrixRec& mRec,
+                            const SkColorInfo& dst,
+                            skvm::Uniforms* uniforms,
+                            SkArenaAlloc* alloc) const override {
+            
+            skvm::Color c = as_SB(fShader)->program(p,
+                                                    device,
+                                                    local,
+                                                    paint,
+                                                    mRec,
+                                                    dst,
+                                                    uniforms,
+                                                    alloc);
+            if (!c) {
+                return {};
             }
 
-            const skvm::Program* program = nullptr;
-            switch (mask.fFormat) {
-                default: SkUNREACHABLE;     
-
-                case SkMask::k3D_Format:    
-                case SkMask::kA8_Format:
-                    if (fBlitMaskA8.empty()) {
-                        fBlitMaskA8 = this->buildProgram(Coverage::MaskA8);
-                    }
-                    program = &fBlitMaskA8;
+            float rate = 0.0f;
+            switch (dst.colorType()) {
+                case kARGB_4444_SkColorType:
+                    rate = 1 / 15.0f;
+                    break;
+                case kRGB_565_SkColorType:
+                    rate = 1 / 63.0f;
+                    break;
+                case kGray_8_SkColorType:
+                case kRGB_888x_SkColorType:
+                case kRGBA_8888_SkColorType:
+                case kBGRA_8888_SkColorType:
+                case kSRGBA_8888_SkColorType:
+                case kR8_unorm_SkColorType:
+                    rate = 1 / 255.0f;
+                    break;
+                case kRGB_101010x_SkColorType:
+                case kRGBA_1010102_SkColorType:
+                case kBGR_101010x_SkColorType:
+                case kBGRA_1010102_SkColorType:
+                    rate = 1 / 1023.0f;
                     break;
 
-                case SkMask::kLCD16_Format:
-                    if (fBlitMaskLCD16.empty()) {
-                        fBlitMaskLCD16 = this->buildProgram(Coverage::MaskLCD16);
-                    }
-                    program = &fBlitMaskLCD16;
-                    break;
+                case kUnknown_SkColorType:
+                case kAlpha_8_SkColorType:
+                case kBGR_101010x_XR_SkColorType:
+                case kRGBA_F16_SkColorType:
+                case kRGBA_F16Norm_SkColorType:
+                case kRGBA_F32_SkColorType:
+                case kR8G8_unorm_SkColorType:
+                case kA16_float_SkColorType:
+                case kA16_unorm_SkColorType:
+                case kR16G16_float_SkColorType:
+                case kR16G16_unorm_SkColorType:
+                case kR16G16B16A16_unorm_SkColorType:
+                    return c;
             }
 
-            SkASSERT(program);
-            if (program) {
-                for (int y = clip.top(); y < clip.bottom(); y++) {
-                    program->eval(clip.width(),
-                                  &fUniforms,
-                                  fDevice.addr(clip.left(), y),
-                                  mask.getAddr(clip.left(), y));
-                }
-            }
+            
+            
+            SkASSERT(local.x.id == device.x.id);
+            SkASSERT(local.y.id == device.y.id);
+            skvm::I32 X =     trunc(device.x - 0.5f),
+                      Y = X ^ trunc(device.y - 0.5f);
+
+            
+            
+            skvm::I32 M = shl(Y & 1, 5)
+                        | shl(X & 1, 4)
+                        | shl(Y & 2, 2)
+                        | shl(X & 2, 1)
+                        | shr(Y & 4, 1)
+                        | shr(X & 4, 2);
+
+            
+            
+            
+
+            
+            
+            float scale = rate * (  2/128.0f),
+                  bias  = rate * (-63/128.0f);
+            skvm::F32 dither = to_F32(M) * scale + bias;
+            c.r += dither;
+            c.g += dither;
+            c.b += dither;
+
+            c.r = clamp(c.r, 0.0f, c.a);
+            c.g = clamp(c.g, 0.0f, c.a);
+            c.b = clamp(c.b, 0.0f, c.a);
+            return c;
         }
     };
-
 }  
 
+bool SkVMBlitter::Key::operator==(const Key& that) const {
+    return this->shader      == that.shader
+        && this->clip        == that.clip
+        && this->blender     == that.blender
+        && this->colorSpace  == that.colorSpace
+        && this->colorType   == that.colorType
+        && this->alphaType   == that.alphaType
+        && this->coverage    == that.coverage;
+}
 
-SkBlitter* SkCreateSkVMBlitter(const SkPixmap& device,
+SkVMBlitter::Key SkVMBlitter::Key::withCoverage(Coverage c) const {
+    Key k = *this;
+    k.coverage = SkToU8(c);
+    return k;
+}
+
+SkVMBlitter::Params SkVMBlitter::Params::withCoverage(Coverage c) const {
+    Params p = *this;
+    p.coverage = c;
+    return p;
+}
+
+SkVMBlitter::Params SkVMBlitter::EffectiveParams(const SkPixmap& device,
+                                                 const SkPixmap* sprite,
+                                                 SkPaint paint,
+                                                 const SkMatrix& ctm,
+                                                 sk_sp<SkShader> clip) {
+    
+    if (sprite) {
+        paint.setShader(sk_make_sp<SpriteShader>(*sprite));
+    }
+
+    
+    
+    if (paint.getColorFilter()) {
+        SkPaintPriv::RemoveColorFilter(&paint, device.colorSpace());
+    }
+    SkASSERT(!paint.getColorFilter());
+
+    
+    
+    sk_sp<SkShader> shader = paint.refShader();
+    if (!shader) {
+        shader = SkShaders::Color(paint.getColor4f(), nullptr);
+        if (!shader) {
+            
+            
+            shader = SkShaders::Color(SK_ColorTRANSPARENT);
+        }
+    } else if (paint.getAlphaf() < 1.0f) {
+        shader = sk_make_sp<SkColorFilterShader>(std::move(shader),
+                                                 paint.getAlphaf(),
+                                                 sk_make_sp<NoopColorFilter>());
+        paint.setAlphaf(1.0f);
+    }
+
+    
+    if (paint.isDither() && !as_SB(shader)->isConstant()) {
+        shader = sk_make_sp<DitherShader>(std::move(shader));
+    }
+
+    
+    sk_sp<SkBlender> blender = paint.refBlender();
+    if (!blender) {
+        blender = SkBlender::Mode(SkBlendMode::kSrcOver);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (as_BB(blender)->asBlendMode() == SkBlendMode::kSrcOver && shader->isOpaque()) {
+        blender = SkBlender::Mode(SkBlendMode::kSrc);
+    }
+
+    SkColor4f paintColor = paint.getColor4f();
+    SkColorSpaceXformSteps{sk_srgb_singleton(), kUnpremul_SkAlphaType,
+                           device.colorSpace(), kUnpremul_SkAlphaType}
+            .apply(paintColor.vec());
+
+    return {
+        std::move(shader),
+        std::move(clip),
+        std::move(blender),
+        { device.colorType(), device.alphaType(), device.refColorSpace() },
+        Coverage::Full,  
+        paintColor,
+        ctm,
+    };
+}
+
+skvm::Color SkVMBlitter::DstColor(skvm::Builder* p, const Params& params) {
+    skvm::PixelFormat dstFormat = skvm::SkColorType_to_PixelFormat(params.dst.colorType());
+    skvm::Ptr dst_ptr = p->varying(SkColorTypeBytesPerPixel(params.dst.colorType()));
+    return p->load(dstFormat, dst_ptr);
+}
+
+void SkVMBlitter::BuildProgram(skvm::Builder* p, const Params& params,
+                               skvm::Uniforms* uniforms, SkArenaAlloc* alloc) {
+    
+    uniforms->base    = p->uniform();
+    skvm::Ptr dst_ptr = p->varying(SkColorTypeBytesPerPixel(params.dst.colorType()));
+    
+    
+    
+    
+    
+    
+    
+
+    skvm::Coord device = device_coord(p, uniforms);
+    skvm::Color paint = p->uniformColor(params.paint, uniforms);
+
+    
+    skvm::Color src = as_SB(params.shader)->rootProgram(p,
+                                                        device,
+                                                        paint,
+                                                        params.ctm,
+                                                        params.dst,
+                                                        uniforms,
+                                                        alloc);
+    SkASSERT(src);
+    if (params.coverage == Coverage::Mask3D) {
+        skvm::F32 M = from_unorm(8, p->load8(p->varying<uint8_t>())),
+                  A = from_unorm(8, p->load8(p->varying<uint8_t>()));
+
+        src.r = min(src.r * M + A, src.a);
+        src.g = min(src.g * M + A, src.a);
+        src.b = min(src.b * M + A, src.a);
+    }
+
+    
+    
+    
+    
+    if (SkColorTypeIsNormalized(params.dst.colorType())) {
+        src = clamp01(src);
+    }
+
+    
+    skvm::PixelFormat dstFormat = skvm::SkColorType_to_PixelFormat(params.dst.colorType());
+    skvm::Color dst = p->load(dstFormat, dst_ptr);
+    if (params.dst.isOpaque()) {
+        
+        
+        dst.a = p->splat(1.0f);
+    } else if (params.dst.alphaType() == kUnpremul_SkAlphaType) {
+        
+        dst = premul(dst);
+    }
+
+    
+    skvm::Color cov;
+    switch (params.coverage) {
+        case Coverage::Full:
+            cov.r = cov.g = cov.b = cov.a = p->splat(1.0f);
+            break;
+
+        case Coverage::UniformF:
+            cov.r = cov.g = cov.b = cov.a = p->uniformF(p->uniform(), 0);
+            break;
+
+        case Coverage::Mask3D:
+        case Coverage::MaskA8:
+            cov.r = cov.g = cov.b = cov.a = from_unorm(8, p->load8(p->varying<uint8_t>()));
+            break;
+
+        case Coverage::MaskLCD16: {
+            skvm::PixelFormat fmt = skvm::SkColorType_to_PixelFormat(kRGB_565_SkColorType);
+            cov = p->load(fmt, p->varying<uint16_t>());
+            cov.a = select(src.a < dst.a, min(cov.r, min(cov.g, cov.b)),
+                           max(cov.r, max(cov.g, cov.b)));
+        } break;
+
+        case Coverage::kCount:
+            SkUNREACHABLE;
+    }
+    if (params.clip) {
+        skvm::Color clip = as_SB(params.clip)->rootProgram(p,
+                                                           device,
+                                                           paint,
+                                                           params.ctm,
+                                                           params.dst,
+                                                           uniforms,
+                                                           alloc);
+        SkAssertResult(clip);
+        cov.r *= clip.a;  
+        cov.g *= clip.a;
+        cov.b *= clip.a;
+        cov.a *= clip.a;
+    }
+
+    const SkBlenderBase* blender = as_BB(params.blender);
+    const auto as_blendmode = blender->asBlendMode();
+
+    
+    
+    bool applyPostBlendCoverage = true;
+    if (as_blendmode &&
+        SkBlendMode_ShouldPreScaleCoverage(as_blendmode.value(),
+                                           params.coverage == Coverage::MaskLCD16)) {
+        applyPostBlendCoverage = false;
+        src.r *= cov.r;
+        src.g *= cov.g;
+        src.b *= cov.b;
+        src.a *= cov.a;
+    }
+
+    
+    src = blender->program(p, src, dst, params.dst, uniforms, alloc);
+
+    if (applyPostBlendCoverage) {
+        src.r = lerp(dst.r, src.r, cov.r);
+        src.g = lerp(dst.g, src.g, cov.g);
+        src.b = lerp(dst.b, src.b, cov.b);
+        src.a = lerp(dst.a, src.a, cov.a);
+    }
+
+    if (params.dst.isOpaque()) {
+        
+        src.a = p->splat(1.0f);
+    } else if (params.dst.alphaType() == kUnpremul_SkAlphaType) {
+        src = unpremul(src);
+    }
+
+    
+    if (SkColorTypeIsNormalized(params.dst.colorType())) {
+        src = clamp01(src);
+    }
+
+    
+    store(dstFormat, dst_ptr, src);
+}
+
+
+SkVMBlitter::Key SkVMBlitter::CacheKey(
+        const Params& params, skvm::Uniforms* uniforms, SkArenaAlloc* alloc, bool* ok) {
+    
+    skvm::Uniform r = uniforms->pushF(params.paint.fR),
+                  g = uniforms->pushF(params.paint.fG),
+                  b = uniforms->pushF(params.paint.fB),
+                  a = uniforms->pushF(params.paint.fA);
+
+    auto hash_shader = [&](skvm::Builder& p, const sk_sp<SkShader>& shader,
+                           skvm::Color* outColor) {
+        const SkShaderBase* sb = as_SB(shader);
+
+        skvm::Coord device = device_coord(&p, uniforms);
+        skvm::Color paint = {
+            p.uniformF(r),
+            p.uniformF(g),
+            p.uniformF(b),
+            p.uniformF(a),
+        };
+
+        uint64_t hash = 0;
+        *outColor = sb->rootProgram(&p,
+                                    device,
+                                    paint,
+                                    params.ctm,
+                                    params.dst,
+                                    uniforms,
+                                    alloc);
+        if (*outColor) {
+            hash = p.hash();
+            
+            
+            
+            
+            const skvm::Val outputs[] = {
+                outColor->r.id,
+                outColor->g.id,
+                outColor->b.id,
+                outColor->a.id
+            };
+            hash ^= SkOpts::hash(outputs, sizeof(outputs));
+        } else {
+            *ok = false;
+        }
+        return hash;
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    skvm::Builder p;
+
+    
+    SkASSERT(params.shader);
+    skvm::Color src;
+    uint64_t shaderHash = hash_shader(p, params.shader, &src);
+
+    
+    uint64_t clipHash = 0;
+    if (params.clip) {
+        skvm::Color cov;
+        clipHash = hash_shader(p, params.clip, &cov);
+        if (clipHash == 0) {
+            clipHash = 1;
+        }
+    }
+
+    
+    uint64_t blendHash = 0;
+    if (auto bm = as_BB(params.blender)->asBlendMode()) {
+        blendHash = static_cast<uint8_t>(bm.value());
+    } else if (*ok) {
+        const SkBlenderBase* blender = as_BB(params.blender);
+
+        skvm::Color dst = DstColor(&p, params);
+        skvm::Color outColor = blender->program(&p, src, dst, params.dst, uniforms, alloc);
+        if (outColor) {
+            blendHash = p.hash();
+            
+            const skvm::Val outputs[] = {
+                outColor.r.id,
+                outColor.g.id,
+                outColor.b.id,
+                outColor.a.id
+            };
+            blendHash ^= SkOpts::hash(outputs, sizeof(outputs));
+        } else {
+            *ok = false;
+        }
+        if (blendHash == 0) {
+            blendHash = 1;
+        }
+    }
+
+    return {
+        shaderHash,
+        clipHash,
+        blendHash,
+        params.dst.colorSpace() ? params.dst.colorSpace()->hash() : 0,
+        SkToU8(params.dst.colorType()),
+        SkToU8(params.dst.alphaType()),
+        SkToU8(params.coverage),
+    };
+}
+
+SkVMBlitter::SkVMBlitter(const SkPixmap& device,
+                         const SkPaint& paint,
+                         const SkPixmap* sprite,
+                         SkIPoint spriteOffset,
+                         const SkMatrix& ctm,
+                         sk_sp<SkShader> clip,
+                         bool* ok)
+        : fDevice(device)
+        , fSprite(sprite ? *sprite : SkPixmap{})
+        , fSpriteOffset(spriteOffset)
+        , fUniforms(skvm::UPtr{{0}}, kBlitterUniformsCount)
+        , fParams(EffectiveParams(device, sprite, paint, ctm, std::move(clip)))
+        , fKey(CacheKey(fParams, &fUniforms, &fAlloc, ok)) {}
+
+SkVMBlitter::~SkVMBlitter() {
+    if (fStoreToCache) {
+        if (SkLRUCache<Key, skvm::Program>* cache = TryAcquireProgramCache()) {
+            auto cache_program = [&](SkTLazy<skvm::Program>& program, Coverage coverage) {
+                if (program.isValid() && !program->hasTraceHooks()) {
+                    cache->insert_or_update(fKey.withCoverage(coverage), std::move(*program));
+                }
+            };
+            for (int c = 0; c < Coverage::kCount; c++) {
+                cache_program(fPrograms[c], static_cast<Coverage>(c));
+            }
+
+            ReleaseProgramCache();
+        }
+    }
+}
+
+SkLRUCache<SkVMBlitter::Key, skvm::Program>* SkVMBlitter::TryAcquireProgramCache() {
+#if defined(SKVM_JIT)
+    thread_local static SkLRUCache<Key, skvm::Program> cache{64};
+    return &cache;
+#else
+    
+    
+    
+    return nullptr;
+#endif
+}
+
+SkString SkVMBlitter::DebugName(const Key& key) {
+    return SkStringPrintf("Shader-%" PRIx64 "_Clip-%" PRIx64 "_Blender-%" PRIx64
+                          "_CS-%" PRIx64 "_CT-%d_AT-%d_Cov-%d",
+                          key.shader,
+                          key.clip,
+                          key.blender,
+                          key.colorSpace,
+                          key.colorType,
+                          key.alphaType,
+                          key.coverage);
+}
+
+void SkVMBlitter::ReleaseProgramCache() {}
+
+skvm::Program* SkVMBlitter::buildProgram(Coverage coverage) {
+    
+    if (fProgramPtrs[coverage]) {
+        return fProgramPtrs[coverage];
+    }
+
+    
+    Key key = fKey.withCoverage(coverage);
+    {
+        skvm::Program* p = nullptr;
+        if (SkLRUCache<Key, skvm::Program>* cache = TryAcquireProgramCache()) {
+            p = cache->find(key);
+            ReleaseProgramCache();
+        }
+        if (p) {
+            SkASSERT(!p->empty());
+            fProgramPtrs[coverage] = p;
+            return p;
+        }
+    }
+
+    
+    fStoreToCache = true;
+
+    
+    
+    
+    
+    SkDEBUGCODE(size_t prev = fUniforms.buf.size();)
+    fUniforms.buf.resize(kBlitterUniformsCount);
+    skvm::Builder builder;
+    BuildProgram(&builder, fParams.withCoverage(coverage), &fUniforms, &fAlloc);
+    SkASSERTF(fUniforms.buf.size() == prev,
+              "%zu, prev was %zu", fUniforms.buf.size(), prev);
+
+    skvm::Program program = builder.done(DebugName(key).c_str());
+    if ((false)) {
+        static std::atomic<int> missed{0},
+                                total{0};
+        if (!program.hasJIT()) {
+            SkDebugf("\ncouldn't JIT %s\n", DebugName(key).c_str());
+            builder.dump();
+            program.dump();
+
+            missed++;
+        }
+        if (0 == total++) {
+            atexit([]{ SkDebugf("SkVMBlitter compiled %d programs, %d without JIT.\n",
+                                total.load(), missed.load()); });
+        }
+    }
+    fProgramPtrs[coverage] = fPrograms[coverage].set(std::move(program));
+    return fProgramPtrs[coverage];
+}
+
+void SkVMBlitter::updateUniforms(int right, int y) {
+    BlitterUniforms uniforms{right, y};
+    memcpy(fUniforms.buf.data(), &uniforms, sizeof(BlitterUniforms));
+}
+
+const void* SkVMBlitter::isSprite(int x, int y) const {
+    if (fSprite.colorType() != kUnknown_SkColorType) {
+        return fSprite.addr(x - fSpriteOffset.x(),
+                            y - fSpriteOffset.y());
+    }
+    return nullptr;
+}
+
+void SkVMBlitter::blitH(int x, int y, int w) {
+    skvm::Program* blit_h = this->buildProgram(Coverage::Full);
+    this->updateUniforms(x+w, y);
+    if (const void* sprite = this->isSprite(x,y)) {
+        SK_BLITTER_TRACE_STEP(blitH1, true, 1, w);
+        blit_h->eval(w, fUniforms.buf.data(), fDevice.addr(x,y), sprite);
+    } else {
+        SK_BLITTER_TRACE_STEP(blitH2, true, 1, w);
+        blit_h->eval(w, fUniforms.buf.data(), fDevice.addr(x,y));
+    }
+}
+
+void SkVMBlitter::blitAntiH(int x, int y, const SkAlpha cov[], const int16_t runs[]) {
+    skvm::Program* blit_anti_h = this->buildProgram(Coverage::UniformF);
+    skvm::Program* blit_h = this->buildProgram(Coverage::Full);
+
+    SK_BLITTER_TRACE_STEP(blitAntiH, true, 1ul, 0ul);
+    for (int16_t run = *runs; run > 0; run = *runs) {
+        SK_BLITTER_TRACE_STEP_ACCUMULATE(blitAntiH, run);
+        const SkAlpha coverage = *cov;
+        if (coverage != 0x00) {
+            this->updateUniforms(x+run, y);
+            const void* sprite = this->isSprite(x,y);
+            if (coverage == 0xFF) {
+                if (sprite) {
+                    blit_h->eval(run, fUniforms.buf.data(), fDevice.addr(x,y), sprite);
+                } else {
+                    blit_h->eval(run, fUniforms.buf.data(), fDevice.addr(x,y));
+                }
+            } else {
+                const float covF = *cov * (1/255.0f);
+                if (sprite) {
+                    blit_anti_h->eval(run, fUniforms.buf.data(), fDevice.addr(x,y), sprite, &covF);
+                } else {
+                    blit_anti_h->eval(run, fUniforms.buf.data(), fDevice.addr(x,y), &covF);
+                }
+            }
+        }
+        x    += run;
+        runs += run;
+        cov  += run;
+    }
+}
+
+void SkVMBlitter::blitMask(const SkMask& mask, const SkIRect& clip) {
+    if (mask.fFormat == SkMask::kBW_Format) {
+        return SkBlitter::blitMask(mask, clip);
+    }
+
+    const skvm::Program* program = nullptr;
+    switch (mask.fFormat) {
+        default: SkUNREACHABLE;     
+
+        case SkMask::k3D_Format:
+            program = this->buildProgram(Coverage::Mask3D);
+            break;
+
+        case SkMask::kA8_Format:
+            program = this->buildProgram(Coverage::MaskA8);
+            break;
+
+        case SkMask::kLCD16_Format:
+            program = this->buildProgram(Coverage::MaskLCD16);
+            break;
+    }
+
+    SkASSERT(program);
+    if (program) {
+        SK_BLITTER_TRACE_STEP(blitMask,
+                           true,
+                           clip.height(),
+                           clip.width() * clip.height());
+
+        for (int y = clip.top(); y < clip.bottom(); y++) {
+             int x = clip.left(),
+                 w = clip.width();
+            void* dptr =        fDevice.writable_addr(x,y);
+            auto  mptr = (const uint8_t*)mask.getAddr(x,y);
+            this->updateUniforms(x+w,y);
+
+            if (mask.fFormat == SkMask::k3D_Format) {
+                size_t plane = mask.computeImageSize();
+                if (const void* sprite = this->isSprite(x,y)) {
+                    program->eval(w, fUniforms.buf.data(), dptr, sprite, mptr + 1*plane
+                                                                       , mptr + 2*plane
+                                                                       , mptr + 0*plane);
+                } else {
+                    program->eval(w, fUniforms.buf.data(), dptr, mptr + 1*plane
+                                                               , mptr + 2*plane
+                                                               , mptr + 0*plane);
+                }
+            } else {
+                if (const void* sprite = this->isSprite(x,y)) {
+                    program->eval(w, fUniforms.buf.data(), dptr, sprite, mptr);
+                } else {
+                    program->eval(w, fUniforms.buf.data(), dptr, mptr);
+                }
+            }
+        }
+    }
+}
+
+SkVMBlitter* SkVMBlitter::Make(const SkPixmap& device,
                                const SkPaint& paint,
                                const SkMatrix& ctm,
-                               SkArenaAlloc* alloc) {
-    auto blitter = alloc->make<Blitter>(device, paint);
-    return blitter->ok ? blitter
-                       : nullptr;
+                               SkArenaAlloc* alloc,
+                               sk_sp<SkShader> clip) {
+    bool ok = true;
+    SkVMBlitter* blitter = alloc->make<SkVMBlitter>(device,
+                                                    paint,
+                                                    nullptr,
+                                                    SkIPoint{0,0},
+                                                    ctm,
+                                                    std::move(clip),
+                                                    &ok);
+    return ok ? blitter : nullptr;
+}
+
+SkVMBlitter* SkVMBlitter::Make(const SkPixmap& device,
+                               const SkPaint& paint,
+                               const SkPixmap& sprite,
+                               int left, int top,
+                               SkArenaAlloc* alloc,
+                               sk_sp<SkShader> clip) {
+    if (paint.getMaskFilter()) {
+        
+        return nullptr;
+    }
+    bool ok = true;
+    auto blitter = alloc->make<SkVMBlitter>(device,
+                                            paint,
+                                            &sprite,
+                                            SkIPoint{left,top},
+                                            SkMatrix::I(),
+                                            std::move(clip),
+                                            &ok);
+    return ok ? blitter : nullptr;
 }

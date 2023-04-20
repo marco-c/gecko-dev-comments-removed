@@ -8,98 +8,26 @@
 #ifndef Sk2DPathEffect_DEFINED
 #define Sk2DPathEffect_DEFINED
 
-#include "include/core/SkFlattenable.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkPath.h"
-#include "include/core/SkPathEffect.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkScalar.h"
+#include "include/core/SkTypes.h"
 
-class SK_API Sk2DPathEffect : public SkPathEffect {
-protected:
-    
+class SkMatrix;
+class SkPath;
+class SkPathEffect;
 
+class SK_API SkLine2DPathEffect {
+public:
+    static sk_sp<SkPathEffect> Make(SkScalar width, const SkMatrix& matrix);
 
-
-
-
-    virtual void begin(const SkIRect& uvBounds, SkPath* dst) const;
-    virtual void next(const SkPoint& loc, int u, int v, SkPath* dst) const;
-    virtual void end(SkPath* dst) const;
-
-    
-
-
-
-    virtual void nextSpan(int u, int v, int ucount, SkPath* dst) const;
-
-    const SkMatrix& getMatrix() const { return fMatrix; }
-
-    
-    explicit Sk2DPathEffect(const SkMatrix& mat);
-    void flatten(SkWriteBuffer&) const override;
-    bool onFilterPath(SkPath*, const SkPath&, SkStrokeRec*, const SkRect*) const override;
-
-private:
-    SkMatrix    fMatrix, fInverse;
-    bool        fMatrixIsInvertible;
-
-    
-    Sk2DPathEffect(const Sk2DPathEffect&);
-    Sk2DPathEffect& operator=(const Sk2DPathEffect&);
-
-    friend class Sk2DPathEffectBlitter;
-    typedef SkPathEffect INHERITED;
+    static void RegisterFlattenables();
 };
 
-class SK_API SkLine2DPathEffect : public Sk2DPathEffect {
+class SK_API SkPath2DPathEffect {
 public:
-    static sk_sp<SkPathEffect> Make(SkScalar width, const SkMatrix& matrix) {
-        if (!(width >= 0)) {
-            return nullptr;
-        }
-        return sk_sp<SkPathEffect>(new SkLine2DPathEffect(width, matrix));
-    }
+    static sk_sp<SkPathEffect> Make(const SkMatrix& matrix, const SkPath& path);
 
-
-protected:
-    SkLine2DPathEffect(SkScalar width, const SkMatrix& matrix)
-        : Sk2DPathEffect(matrix), fWidth(width) {
-            SkASSERT(width >= 0);
-        }
-    void flatten(SkWriteBuffer&) const override;
-    bool onFilterPath(SkPath* dst, const SkPath& src, SkStrokeRec*, const SkRect*) const override;
-
-    void nextSpan(int u, int v, int ucount, SkPath*) const override;
-
-private:
-    SK_FLATTENABLE_HOOKS(SkLine2DPathEffect)
-
-    SkScalar fWidth;
-
-    typedef Sk2DPathEffect INHERITED;
-};
-
-class SK_API SkPath2DPathEffect : public Sk2DPathEffect {
-public:
-    
-
-
-
-    static sk_sp<SkPathEffect> Make(const SkMatrix& matrix, const SkPath& path) {
-        return sk_sp<SkPathEffect>(new SkPath2DPathEffect(matrix, path));
-    }
-
-protected:
-    SkPath2DPathEffect(const SkMatrix&, const SkPath&);
-    void flatten(SkWriteBuffer&) const override;
-
-    void next(const SkPoint&, int u, int v, SkPath*) const override;
-
-private:
-    SK_FLATTENABLE_HOOKS(SkPath2DPathEffect)
-
-    SkPath  fPath;
-
-    typedef Sk2DPathEffect INHERITED;
+    static void RegisterFlattenables();
 };
 
 #endif

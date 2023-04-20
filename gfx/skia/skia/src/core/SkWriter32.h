@@ -19,11 +19,13 @@
 #include "include/core/SkScalar.h"
 #include "include/core/SkStream.h"
 #include "include/core/SkTypes.h"
-#include "include/private/SkNoncopyable.h"
-#include "include/private/SkTemplates.h"
-#include "include/private/SkTo.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "include/private/base/SkTemplates.h"
+#include "include/private/base/SkTo.h"
 
-class SK_API SkWriter32 : SkNoncopyable {
+struct SkSamplingOptions;
+
+class SkWriter32 : SkNoncopyable {
 public:
     
 
@@ -110,12 +112,6 @@ public:
         *(int32_t*)this->reserve(sizeof(value)) = value;
     }
 
-    void writePtr(void* value) {
-        
-        
-        memcpy(this->reserve(sizeof(value)), &value, sizeof(value));
-    }
-
     void writeScalar(SkScalar value) {
         *(SkScalar*)this->reserve(sizeof(value)) = value;
     }
@@ -154,6 +150,8 @@ public:
         rgn.writeToMemory(this->reserve(size));
     }
 
+    void writeSampling(const SkSamplingOptions& sampling);
+
     
     void writeMul4(const void* values, size_t size) {
         this->write(values, size);
@@ -190,7 +188,6 @@ public:
     }
 
     
-
 
 
 
@@ -254,7 +251,7 @@ private:
     size_t fCapacity;                  
     size_t fUsed;                      
     void* fExternal;                   
-    SkAutoTMalloc<uint8_t> fInternal;  
+    skia_private::AutoTMalloc<uint8_t> fInternal;  
 };
 
 
@@ -276,7 +273,7 @@ private:
         char    fStorage[SIZE];
     } fData;
 
-    typedef SkWriter32 INHERITED;
+    using INHERITED = SkWriter32;
 };
 
 #endif

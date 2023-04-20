@@ -8,9 +8,9 @@
 #ifndef SkEdge_DEFINED
 #define SkEdge_DEFINED
 
-#include "include/core/SkMath.h"
 #include "include/core/SkRect.h"
-#include "include/private/SkTo.h"
+#include "include/private/base/SkMath.h"
+#include "include/private/base/SkTo.h"
 #include "src/core/SkFDot6.h"
 
 #include <utility>
@@ -32,7 +32,8 @@ struct SkEdge {
     SkFixed fDX;
     int32_t fFirstY;
     int32_t fLastY;
-    int8_t fCurveCount;    
+    Type    fEdgeType;      
+    int8_t  fCurveCount;    
     uint8_t fCurveShift;    
     uint8_t fCubicDShift;   
     int8_t  fWinding;       
@@ -49,10 +50,7 @@ struct SkEdge {
     }
 
 #ifdef SK_DEBUG
-    void dump() const {
-        SkDebugf("edge: firstY:%d lastY:%d x:%g dx:%g w:%d\n", fFirstY, fLastY, SkFixedToFloat(fX), SkFixedToFloat(fDX), fWinding);
-    }
-
+    void dump() const;
     void validate() const {
         SkASSERT(fPrev && fNext);
         SkASSERT(fPrev->fNext == this);
@@ -129,6 +127,7 @@ int SkEdge::setLine(const SkPoint& p0, const SkPoint& p1, int shift) {
     fDX         = slope;
     fFirstY     = top;
     fLastY      = bot - 1;
+    fEdgeType   = kLine_Type;
     fCurveCount = 0;
     fWinding    = SkToS8(winding);
     fCurveShift = 0;

@@ -9,17 +9,16 @@
 #ifndef SkJpegUtility_codec_DEFINED
 #define SkJpegUtility_codec_DEFINED
 
-#include "include/core/SkStream.h"
-#include "src/codec/SkJpegPriv.h"
-
-#include <setjmp.h>
-
-#include <stdio.h>
+#include <cstdint>
 
 extern "C" {
+    
+    
+    #include <stdio.h> 
     #include "jpeglib.h"
-    #include "jerror.h"
 }
+
+class SkStream;
 
 
 

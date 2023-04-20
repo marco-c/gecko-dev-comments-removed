@@ -6,7 +6,7 @@
 
 
 
-#include "include/private/SkMalloc.h"
+#include "include/private/base/SkMalloc.h"
 
 #include "include/core/SkTypes.h"
 #include "mozilla/mozalloc.h"

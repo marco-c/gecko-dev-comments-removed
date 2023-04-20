@@ -9,29 +9,63 @@
 #define SkSurface_DEFINED
 
 #include "include/core/SkImage.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkPixmap.h"
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSamplingOptions.h"
+#include "include/core/SkScalar.h"
 #include "include/core/SkSurfaceProps.h"
+#include "include/core/SkTypes.h"
 
+#if defined(SK_GANESH)
 #include "include/gpu/GrTypes.h"
+#else
+enum GrSurfaceOrigin: int;
+#endif
+
+#if defined(SK_GRAPHITE)
+#include "include/gpu/GpuTypes.h"
+namespace skgpu::graphite {
+class BackendTexture;
+}
+#endif
 
 #if defined(SK_BUILD_FOR_ANDROID) && __ANDROID_API__ >= 26
 #include <android/hardware_buffer.h>
+class GrDirectContext;
 #endif
 
-#ifdef SK_METAL
+#if defined(SK_GANESH) && defined(SK_METAL)
 #include "include/gpu/mtl/GrMtlTypes.h"
 #endif
 
-class SkCanvas;
-class SkDeferredDisplayList;
-class SkPaint;
-class SkSurfaceCharacterization;
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+
 class GrBackendRenderTarget;
 class GrBackendSemaphore;
 class GrBackendTexture;
-class GrContext;
 class GrRecordingContext;
-class GrRenderTarget;
+class SkBitmap;
+class SkCanvas;
+class SkCapabilities;
+class SkColorSpace;
+class SkDeferredDisplayList;
+class SkPaint;
+class SkSurfaceCharacterization;
+enum SkColorType : int;
+struct SkIRect;
+struct SkISize;
+
+namespace skgpu {
+class MutableTextureState;
+enum class Budgeted : bool;
+}
+
+namespace skgpu::graphite {
+class Recorder;
+}
 
 
 
@@ -69,6 +103,11 @@ public:
                                              size_t rowBytes,
                                              const SkSurfaceProps* surfaceProps = nullptr);
 
+    static sk_sp<SkSurface> MakeRasterDirect(const SkPixmap& pm,
+                                             const SkSurfaceProps* props = nullptr) {
+        return MakeRasterDirect(pm.info(), pm.writable_addr(), pm.rowBytes(), props);
+    }
+
     
 
 
@@ -99,7 +138,6 @@ public:
                                     void* context, const SkSurfaceProps* surfaceProps = nullptr);
 
     
-
 
 
 
@@ -200,10 +238,7 @@ public:
 
 
 
-
-
-
-    static sk_sp<SkSurface> MakeFromBackendTexture(GrContext* context,
+    static sk_sp<SkSurface> MakeFromBackendTexture(GrRecordingContext* context,
                                                    const GrBackendTexture& backendTexture,
                                                    GrSurfaceOrigin origin, int sampleCnt,
                                                    SkColorType colorType,
@@ -237,12 +272,7 @@ public:
 
 
 
-
-
-
-
-
-    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrContext* context,
+    static sk_sp<SkSurface> MakeFromBackendRenderTarget(GrRecordingContext* context,
                                                 const GrBackendRenderTarget& backendRenderTarget,
                                                 GrSurfaceOrigin origin,
                                                 SkColorType colorType,
@@ -277,116 +307,11 @@ public:
 
 
 
-
-
-
-
-    static sk_sp<SkSurface> MakeFromBackendTextureAsRenderTarget(GrContext* context,
-                                                            const GrBackendTexture& backendTexture,
-                                                            GrSurfaceOrigin origin,
-                                                            int sampleCnt,
-                                                            SkColorType colorType,
-                                                            sk_sp<SkColorSpace> colorSpace,
-                                                            const SkSurfaceProps* surfaceProps);
-
-#if defined(SK_BUILD_FOR_ANDROID) && __ANDROID_API__ >= 26
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkSurface> MakeFromAHardwareBuffer(GrContext* context,
-                                                    AHardwareBuffer* hardwareBuffer,
-                                                    GrSurfaceOrigin origin,
-                                                    sk_sp<SkColorSpace> colorSpace,
-                                                    const SkSurfaceProps* surfaceProps);
-#endif
-
-#ifdef SK_METAL
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkSurface> MakeFromCAMetalLayer(GrContext* context,
-                                                 GrMTLHandle layer,
-                                                 GrSurfaceOrigin origin,
-                                                 int sampleCnt,
-                                                 SkColorType colorType,
-                                                 sk_sp<SkColorSpace> colorSpace,
-                                                 const SkSurfaceProps* surfaceProps,
-                                                 GrMTLHandle* drawable);
-
-#endif
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static sk_sp<SkSurface> MakeRenderTarget(GrContext* context, SkBudgeted budgeted,
+    static sk_sp<SkSurface> MakeRenderTarget(GrRecordingContext* context,
+                                             skgpu::Budgeted budgeted,
                                              const SkImageInfo& imageInfo,
-                                             int sampleCount, GrSurfaceOrigin surfaceOrigin,
+                                             int sampleCount,
+                                             GrSurfaceOrigin surfaceOrigin,
                                              const SkSurfaceProps* surfaceProps,
                                              bool shouldCreateWithMips = false);
 
@@ -411,12 +336,18 @@ public:
 
 
 
-
-    static sk_sp<SkSurface> MakeRenderTarget(GrContext* context, SkBudgeted budgeted,
-                                             const SkImageInfo& imageInfo, int sampleCount,
+    static sk_sp<SkSurface> MakeRenderTarget(GrRecordingContext* context,
+                                             skgpu::Budgeted budgeted,
+                                             const SkImageInfo& imageInfo,
+                                             int sampleCount,
                                              const SkSurfaceProps* surfaceProps) {
+#if defined(SK_GANESH)
         return MakeRenderTarget(context, budgeted, imageInfo, sampleCount,
                                 kBottomLeft_GrSurfaceOrigin, surfaceProps);
+#else
+        
+        return nullptr;
+#endif
     }
 
     
@@ -425,24 +356,6 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-    static sk_sp<SkSurface> MakeRenderTarget(GrContext* context, SkBudgeted budgeted,
-                                             const SkImageInfo& imageInfo) {
-        if (!imageInfo.width() || !imageInfo.height()) {
-            return nullptr;
-        }
-        return MakeRenderTarget(context, budgeted, imageInfo, 0, kBottomLeft_GrSurfaceOrigin,
-                                nullptr);
-    }
-
-    
 
 
 
@@ -451,9 +364,32 @@ public:
 
 
     static sk_sp<SkSurface> MakeRenderTarget(GrRecordingContext* context,
-                                             const SkSurfaceCharacterization& characterization,
-                                             SkBudgeted budgeted);
+                                             skgpu::Budgeted budgeted,
+                                             const SkImageInfo& imageInfo) {
+#if defined(SK_GANESH)
+        if (!imageInfo.width() || !imageInfo.height()) {
+            return nullptr;
+        }
+        return MakeRenderTarget(context, budgeted, imageInfo, 0, kBottomLeft_GrSurfaceOrigin,
+                                nullptr);
+#else
+        
+        return nullptr;
+#endif
+    }
 
+    
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeRenderTarget(GrRecordingContext* context,
+                                             const SkSurfaceCharacterization& characterization,
+                                             skgpu::Budgeted budgeted);
+
+#if defined(SK_BUILD_FOR_ANDROID) && __ANDROID_API__ >= 26
     
 
 
@@ -473,11 +409,109 @@ public:
 
 
 
-    static sk_sp<SkSurface> MakeFromBackendTexture(GrContext* context,
-                                                   const SkSurfaceCharacterization& characterzation,
-                                                   const GrBackendTexture& backendTexture,
-                                                   TextureReleaseProc textureReleaseProc = nullptr,
-                                                   ReleaseContext releaseContext = nullptr);
+
+
+    static sk_sp<SkSurface> MakeFromAHardwareBuffer(GrDirectContext* context,
+                                                    AHardwareBuffer* hardwareBuffer,
+                                                    GrSurfaceOrigin origin,
+                                                    sk_sp<SkColorSpace> colorSpace,
+                                                    const SkSurfaceProps* surfaceProps
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
+                                                    , bool fromWindow = false
+#endif  
+                                                    );
+#endif
+
+#if defined(SK_GRAPHITE)
+    
+
+
+
+
+
+    static sk_sp<SkSurface> MakeGraphite(
+            skgpu::graphite::Recorder*,
+            const SkImageInfo& imageInfo,
+            skgpu::Mipmapped = skgpu::Mipmapped::kNo,
+            const SkSurfaceProps* surfaceProps = nullptr);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeGraphiteFromBackendTexture(skgpu::graphite::Recorder*,
+                                                           const skgpu::graphite::BackendTexture&,
+                                                           SkColorType colorType,
+                                                           sk_sp<SkColorSpace> colorSpace,
+                                                           const SkSurfaceProps* props);
+
+#endif 
+
+#if defined(SK_GANESH) && defined(SK_METAL)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromCAMetalLayer(GrRecordingContext* context,
+                                                 GrMTLHandle layer,
+                                                 GrSurfaceOrigin origin,
+                                                 int sampleCnt,
+                                                 SkColorType colorType,
+                                                 sk_sp<SkColorSpace> colorSpace,
+                                                 const SkSurfaceProps* surfaceProps,
+                                                 GrMTLHandle* drawable)
+                                                 SK_API_AVAILABLE_CA_METAL_LAYER;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromMTKView(GrRecordingContext* context,
+                                            GrMTLHandle mtkView,
+                                            GrSurfaceOrigin origin,
+                                            int sampleCnt,
+                                            SkColorType colorType,
+                                            sk_sp<SkColorSpace> colorSpace,
+                                            const SkSurfaceProps* surfaceProps)
+                                            SK_API_AVAILABLE(macos(10.11), ios(9.0));
+#endif
 
     
 
@@ -491,6 +525,8 @@ public:
     bool isCompatible(const SkSurfaceCharacterization& characterization) const;
 
     
+
+
 
 
 
@@ -513,9 +549,11 @@ public:
 
     
 
-    SkImageInfo imageInfo();
+    virtual SkImageInfo imageInfo() const { return SkImageInfo::MakeUnknown(fWidth, fHeight); }
 
     
+
+
 
 
 
@@ -540,6 +578,19 @@ public:
 
     void notifyContentWillChange(ContentChangeMode mode);
 
+    
+
+
+
+    GrRecordingContext* recordingContext();
+
+    
+
+
+
+    skgpu::graphite::Recorder* recorder();
+
+#if defined(SK_GANESH)
     enum BackendHandleAccess {
         kFlushRead_BackendHandleAccess,    
         kFlushWrite_BackendHandleAccess,   
@@ -569,15 +620,9 @@ public:
 
 
 
-
-
-
     GrBackendTexture getBackendTexture(BackendHandleAccess backendHandleAccess);
 
     
-
-
-
 
 
 
@@ -599,12 +644,20 @@ public:
 
 
 
+
+
+
+
     bool replaceBackendTexture(const GrBackendTexture& backendTexture,
                                GrSurfaceOrigin origin,
+                               ContentChangeMode mode = kRetain_ContentChangeMode,
                                TextureReleaseProc textureReleaseProc = nullptr,
                                ReleaseContext releaseContext = nullptr);
+#endif
 
     
+
+
 
 
 
@@ -613,6 +666,14 @@ public:
     SkCanvas* getCanvas();
 
     
+
+
+
+    sk_sp<const SkCapabilities> capabilities();
+
+    
+
+
 
 
 
@@ -636,6 +697,8 @@ public:
 
 
 
+
+
     sk_sp<SkImage> makeImageSnapshot();
 
     
@@ -647,8 +710,11 @@ public:
 
 
 
+
+
     sk_sp<SkImage> makeImageSnapshot(const SkIRect& bounds);
 
+#if defined(SK_GRAPHITE)
     
 
 
@@ -660,9 +726,45 @@ public:
 
 
 
-    void draw(SkCanvas* canvas, SkScalar x, SkScalar y, const SkPaint* paint);
+
+
+
+
+
+
+
+
+
+
+    sk_sp<SkImage> asImage();
+
+    sk_sp<SkImage> makeImageCopy(const SkIRect* subset = nullptr,
+                                 skgpu::Mipmapped mipmapped = skgpu::Mipmapped::kNo);
+#endif
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+    void draw(SkCanvas* canvas, SkScalar x, SkScalar y, const SkSamplingOptions& sampling,
+              const SkPaint* paint);
+
+    void draw(SkCanvas* canvas, SkScalar x, SkScalar y, const SkPaint* paint = nullptr) {
+        this->draw(canvas, x, y, SkSamplingOptions(), paint);
+    }
+
+    
+
+
 
 
 
@@ -674,6 +776,8 @@ public:
     bool peekPixels(SkPixmap* pixmap);
 
     
+
+
 
 
 
@@ -762,24 +866,11 @@ public:
 
 
 
+
+
     bool readPixels(const SkBitmap& dst, int srcX, int srcY);
 
-    
-    class AsyncReadResult {
-    public:
-        AsyncReadResult(const AsyncReadResult&) = delete;
-        AsyncReadResult(AsyncReadResult&&) = delete;
-        AsyncReadResult& operator=(const AsyncReadResult&) = delete;
-        AsyncReadResult& operator=(AsyncReadResult&&) = delete;
-
-        virtual ~AsyncReadResult() = default;
-        virtual int count() const = 0;
-        virtual const void* data(int i) const = 0;
-        virtual size_t rowBytes(int i) const = 0;
-
-    protected:
-        AsyncReadResult() = default;
-    };
+    using AsyncReadResult = SkImage::AsyncReadResult;
 
     
     using ReadPixelsContext = void*;
@@ -792,7 +883,8 @@ public:
     
 
 
-    enum RescaleGamma : bool { kSrc, kLinear };
+    using RescaleGamma = SkImage::RescaleGamma;
+    using RescaleMode  = SkImage::RescaleMode;
 
     
 
@@ -823,22 +915,17 @@ public:
 
 
 
-    void asyncRescaleAndReadPixels(const SkImageInfo& info, const SkIRect& srcRect,
-                                   RescaleGamma rescaleGamma, SkFilterQuality rescaleQuality,
-                                   ReadPixelsCallback callback, ReadPixelsContext context);
+
+    void asyncRescaleAndReadPixels(const SkImageInfo& info,
+                                   const SkIRect& srcRect,
+                                   RescaleGamma rescaleGamma,
+                                   RescaleMode rescaleMode,
+                                   ReadPixelsCallback callback,
+                                   ReadPixelsContext context);
 
     
 
 
-
-
-
-    using LegacyReadPixelsCallback = void(ReadPixelsContext, const void* data, size_t rowBytes);
-    void asyncRescaleAndReadPixels(const SkImageInfo& info, const SkIRect& srcRect,
-                                   RescaleGamma rescaleGamma, SkFilterQuality rescaleQuality,
-                                   LegacyReadPixelsCallback callback, ReadPixelsContext context);
-
-    
 
 
 
@@ -870,28 +957,13 @@ public:
                                          const SkIRect& srcRect,
                                          const SkISize& dstSize,
                                          RescaleGamma rescaleGamma,
-                                         SkFilterQuality rescaleQuality,
+                                         RescaleMode rescaleMode,
                                          ReadPixelsCallback callback,
-                                         ReadPixelsContext);
+                                         ReadPixelsContext context);
 
     
 
 
-
-
-
-    using LegacyReadPixelsCallbackYUV420 = void(ReadPixelsContext, const void* data[3],
-                                                size_t rowBytes[3]);
-    void asyncRescaleAndReadPixelsYUV420(SkYUVColorSpace yuvColorSpace,
-                                         sk_sp<SkColorSpace> dstColorSpace,
-                                         const SkIRect& srcRect,
-                                         int dstW, int dstH,
-                                         RescaleGamma rescaleGamma,
-                                         SkFilterQuality rescaleQuality,
-                                         LegacyReadPixelsCallbackYUV420 callback,
-                                         ReadPixelsContext);
-
-    
 
 
 
@@ -919,6 +991,8 @@ public:
 
 
 
+
+
     void writePixels(const SkBitmap& src, int dstX, int dstY);
 
     
@@ -933,14 +1007,48 @@ public:
 
 
 
-    void flush();
+
+
+    void flushAndSubmit(bool syncCpu = false);
 
     enum class BackendSurfaceAccess {
         kNoAccess,  
         kPresent,   
     };
 
+#if defined(SK_GANESH)
     
+
+
+
+
+
+
+
+
+
+
+    void resolveMSAA();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -970,39 +1078,75 @@ public:
 
     
 
-    GrSemaphoresSubmitted flush(BackendSurfaceAccess access, GrFlushFlags flags,
-                                int numSemaphores, GrBackendSemaphore signalSemaphores[],
-                                GrGpuFinishedProc finishedProc = nullptr,
-                                GrGpuFinishedContext finishedContext = nullptr);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flush(const GrFlushInfo& info,
+                                const skgpu::MutableTextureState* newState = nullptr);
+#endif 
+
+    void flush();
 
     
 
-    enum FlushFlags {
-        kNone_FlushFlags = 0,
-        
-        kSyncCpu_FlushFlag = 0x1,
-    };
-    GrSemaphoresSubmitted flush(BackendSurfaceAccess access, FlushFlags flags,
-                                int numSemaphores, GrBackendSemaphore signalSemaphores[]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool wait(int numSemaphores, const GrBackendSemaphore* waitSemaphores,
+              bool deleteSemaphoresAfterWait = true);
 
     
 
-    GrSemaphoresSubmitted flushAndSignalSemaphores(int numSemaphores,
-                                                   GrBackendSemaphore signalSemaphores[]);
 
-    
-
-
-
-
-
-
-
-
-
-    bool wait(int numSemaphores, const GrBackendSemaphore* waitSemaphores);
-
-    
 
 
 
@@ -1023,7 +1167,16 @@ public:
 
 
 
-    bool draw(SkDeferredDisplayList* deferredDisplayList);
+
+
+
+
+
+
+
+    bool draw(sk_sp<const SkDeferredDisplayList> deferredDisplayList,
+              int xOffset = 0,
+              int yOffset = 0);
 
 protected:
     SkSurface(int width, int height, const SkSurfaceProps* surfaceProps);
@@ -1040,7 +1193,7 @@ private:
     const int            fHeight;
     uint32_t             fGenerationID;
 
-    typedef SkRefCnt INHERITED;
+    using INHERITED = SkRefCnt;
 };
 
 #endif

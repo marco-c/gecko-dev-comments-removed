@@ -8,17 +8,30 @@
 #ifndef SkGpuBlurUtils_DEFINED
 #define SkGpuBlurUtils_DEFINED
 
-#if SK_SUPPORT_GPU
-#include "src/gpu/GrRenderTargetContext.h"
-#include "src/gpu/effects/GrTextureDomain.h"
+#include "include/core/SkTypes.h"
 
-class GrContext;
+#if defined(SK_GANESH)
+#include "include/core/SkRefCnt.h"
+#include "include/private/gpu/ganesh/GrTypesPriv.h"
+#include "src/gpu/SkBackingFit.h"
+
+class GrRecordingContext;
+namespace skgpu {
+namespace ganesh {
+class SurfaceDrawContext;
+}
+}  
+class GrSurfaceProxyView;
 class GrTexture;
 
+class SkBitmap;
+enum class SkTileMode;
 struct SkRect;
 
 namespace SkGpuBlurUtils {
-  
+
+
+static constexpr float kMaxSigma = 4.f;
 
 
 
@@ -41,22 +54,60 @@ namespace SkGpuBlurUtils {
 
 
 
+std::unique_ptr<skgpu::ganesh::SurfaceDrawContext> GaussianBlur(
+        GrRecordingContext*,
+        GrSurfaceProxyView srcView,
+        GrColorType srcColorType,
+        SkAlphaType srcAlphaType,
+        sk_sp<SkColorSpace> srcColorSpace,
+        SkIRect dstBounds,
+        SkIRect srcBounds,
+        float sigmaX,
+        float sigmaY,
+        SkTileMode mode,
+        SkBackingFit fit = SkBackingFit::kApprox);
+
+static const int kBlurRRectMaxDivisions = 6;
 
 
 
-std::unique_ptr<GrRenderTargetContext> GaussianBlur(GrRecordingContext* context,
-                                                    sk_sp<GrTextureProxy> srcProxy,
-                                                    GrColorType srcColorType,
-                                                    SkAlphaType srcAlphaType,
-                                                    const SkIPoint& proxyOffset,
-                                                    sk_sp<SkColorSpace> colorSpace,
-                                                    const SkIRect& dstBounds,
-                                                    const SkIRect& srcBounds,
-                                                    float sigmaX,
-                                                    float sigmaY,
-                                                    GrTextureDomain::Mode mode,
-                                                    SkBackingFit fit = SkBackingFit::kApprox);
-};
 
-#endif
+
+
+
+
+bool ComputeBlurredRRectParams(const SkRRect& srcRRect,
+                               const SkRRect& devRRect,
+                               SkScalar sigma,
+                               SkScalar xformedSigma,
+                               SkRRect* rrectToDraw,
+                               SkISize* widthHeight,
+                               SkScalar rectXs[kBlurRRectMaxDivisions],
+                               SkScalar rectYs[kBlurRRectMaxDivisions],
+                               SkScalar texXs[kBlurRRectMaxDivisions],
+                               SkScalar texYs[kBlurRRectMaxDivisions]);
+
+int CreateIntegralTable(float sixSigma, SkBitmap* table);
+
+void Compute1DGaussianKernel(float* kernel, float sigma, int radius);
+
+void Compute1DLinearGaussianKernel(float* kernel, float* offset, float sigma, int radius);
+
+
+
+
+inline bool IsEffectivelyZeroSigma(float sigma) { return sigma <= 0.03f; }
+
+inline int SigmaRadius(float sigma) {
+    return IsEffectivelyZeroSigma(sigma) ? 0 : static_cast<int>(ceilf(sigma * 3.0f));
+}
+
+inline int KernelWidth(int radius) { return 2 * radius + 1; }
+
+inline int LinearKernelWidth(int radius) { return radius + 1; }
+
+}  
+
+#endif 
+
 #endif

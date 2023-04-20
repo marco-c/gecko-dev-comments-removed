@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+#ifndef skgpu_graphite_Sampler_DEFINED
+#define skgpu_graphite_Sampler_DEFINED
+
+#include "src/gpu/graphite/Resource.h"
+
+namespace skgpu::graphite {
+
+class Sampler : public Resource {
+public:
+    ~Sampler() override;
+
+protected:
+    Sampler(const SharedContext*);
+
+private:
+};
+
+} 
+
+#endif 

@@ -8,32 +8,43 @@
 #ifndef SkCodec_DEFINED
 #define SkCodec_DEFINED
 
-#include "include/codec/SkCodecAnimation.h"
 #include "include/codec/SkEncodedOrigin.h"
-#include "include/core/SkColor.h"
-#include "include/core/SkEncodedImageFormat.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkPixmap.h"
+#include "include/core/SkRect.h"
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkSize.h"
-#include "include/core/SkStream.h"
 #include "include/core/SkTypes.h"
-#include "include/core/SkYUVASizeInfo.h"
+#include "include/core/SkYUVAPixmaps.h"
 #include "include/private/SkEncodedInfo.h"
-#include "include/private/SkNoncopyable.h"
-#include "include/private/SkTemplates.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "modules/skcms/skcms.h"
 
+#include <cstddef>
+#include <functional>
+#include <memory>
+#include <tuple>
 #include <vector>
 
-class SkColorSpace;
 class SkData;
 class SkFrameHolder;
+class SkImage;
 class SkPngChunkReader;
 class SkSampler;
+class SkStream;
+struct SkGainmapInfo;
+enum SkAlphaType : int;
+enum class SkEncodedImageFormat;
+
+namespace SkCodecAnimation {
+enum class Blend;
+enum class DisposalMethod;
+}
+
 
 namespace DM {
 class CodecSrc;
-class ColorCodecSrc;
-}
+} 
 
 
 
@@ -191,11 +202,21 @@ public:
     
 
 
+
+
+
     SkImageInfo getInfo() const { return fEncodedInfo.makeImageInfo(); }
 
     SkISize dimensions() const { return {fEncodedInfo.width(), fEncodedInfo.height()}; }
     SkIRect bounds() const {
         return SkIRect::MakeWH(fEncodedInfo.width(), fEncodedInfo.height());
+    }
+
+    
+
+
+    const skcms_ICCProfile* getICCProfile() const {
+        return this->getEncodedInfo().profile();
     }
 
     
@@ -353,6 +374,10 @@ public:
 
 
 
+
+
+
+
     Result getPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, const Options*);
 
     
@@ -369,31 +394,9 @@ public:
     
 
 
-
-
-
-
-
-
-
-
-    bool queryYUV8(SkYUVASizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const {
-        if (nullptr == sizeInfo) {
-            return false;
-        }
-
-        bool result = this->onQueryYUV8(sizeInfo, colorSpace);
-        if (result) {
-            for (int i = 0; i <= 2; ++i) {
-                SkASSERT(sizeInfo->fSizes[i].fWidth > 0 && sizeInfo->fSizes[i].fHeight > 0 &&
-                         sizeInfo->fWidthBytes[i] > 0);
-            }
-            SkASSERT(!sizeInfo->fSizes[3].fWidth &&
-                     !sizeInfo->fSizes[3].fHeight &&
-                     !sizeInfo->fWidthBytes[3]);
-        }
-        return result;
-    }
+    std::tuple<sk_sp<SkImage>, SkCodec::Result> getImage(const SkImageInfo& info,
+                                                         const Options* opts = nullptr);
+    std::tuple<sk_sp<SkImage>, SkCodec::Result> getImage();
 
     
 
@@ -405,18 +408,19 @@ public:
 
 
 
-    Result getYUV8Planes(const SkYUVASizeInfo& sizeInfo, void* planes[SkYUVASizeInfo::kMaxCount]) {
-        if (!planes || !planes[0] || !planes[1] || !planes[2]) {
-            return kInvalidInput;
-        }
-        SkASSERT(!planes[3]); 
 
-        if (!this->rewindIfNeeded()) {
-            return kCouldNotRewind;
-        }
+    bool queryYUVAInfo(const SkYUVAPixmapInfo::SupportedDataTypes& supportedDataTypes,
+                       SkYUVAPixmapInfo* yuvaPixmapInfo) const;
 
-        return this->onGetYUV8Planes(sizeInfo, planes);
-    }
+    
+
+
+
+
+
+
+
+    Result getYUVAPlanes(const SkYUVAPixmaps& yuvaPixmaps);
 
     
 
@@ -660,10 +664,45 @@ public:
         
 
 
+
+
+
+
+
+        bool fHasAlphaWithinBounds;
+
+        
+
+
         SkCodecAnimation::DisposalMethod fDisposalMethod;
+
+        
+
+
+        SkCodecAnimation::Blend fBlend;
+
+        
+
+
+
+
+
+        SkIRect fFrameRect;
     };
 
     
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -678,6 +717,7 @@ public:
     }
 
     
+
 
 
 
@@ -727,6 +767,14 @@ protected:
             std::unique_ptr<SkStream>,
             SkEncodedOrigin = kTopLeft_SkEncodedOrigin);
 
+    void setSrcXformFormat(XformFormat pixelFormat);
+
+    XformFormat getSrcXformFormat() const {
+        return fSrcXformFormat;
+    }
+
+    virtual bool onGetGainmapInfo(SkGainmapInfo*, std::unique_ptr<SkStream>*) { return false; }
+
     virtual SkISize onGetScaledDimensions(float ) const {
         
         return this->dimensions();
@@ -753,14 +801,10 @@ protected:
                                void* pixels, size_t rowBytes, const Options&,
                                int* rowsDecoded) = 0;
 
-    virtual bool onQueryYUV8(SkYUVASizeInfo*, SkYUVColorSpace*) const {
-        return false;
-    }
+    virtual bool onQueryYUVAInfo(const SkYUVAPixmapInfo::SupportedDataTypes&,
+                                 SkYUVAPixmapInfo*) const { return false; }
 
-    virtual Result onGetYUV8Planes(const SkYUVASizeInfo&,
-                                   void*[SkYUVASizeInfo::kMaxCount] ) {
-        return kUnimplemented;
-    }
+    virtual Result onGetYUVAPlanes(const SkYUVAPixmaps&) { return kUnimplemented; }
 
     virtual bool onGetValidSubset(SkIRect* ) const {
         
@@ -849,10 +893,10 @@ protected:
 
 private:
     const SkEncodedInfo                fEncodedInfo;
-    const XformFormat                  fSrcXformFormat;
+    XformFormat                        fSrcXformFormat;
     std::unique_ptr<SkStream>          fStream;
-    bool                               fNeedsRewind;
-    const SkEncodedOrigin              fOrigin;
+    bool fNeedsRewind = false;
+    const SkEncodedOrigin fOrigin;
 
     SkImageInfo                        fDstInfo;
     Options                            fOptions;
@@ -868,9 +912,13 @@ private:
     skcms_AlphaFormat                  fDstXformAlphaFormat;
 
     
-    int                                fCurrScanline;
+    int fCurrScanline = -1;
 
-    bool                               fStartedIncrementalDecode;
+    bool fStartedIncrementalDecode = false;
+
+    
+    
+    bool fUsingCallbackForHandleFrameIndex = false;
 
     bool initializeColorXform(const SkImageInfo& dstInfo, SkEncodedInfo::Alpha, bool srcIsOpaque);
 
@@ -895,9 +943,22 @@ private:
     }
 
     
+    
+    
+    
+    using GetPixelsCallback = std::function<Result(const SkImageInfo&, void* pixels,
+                                                   size_t rowBytes, const Options& opts,
+                                                   int frameIndex)>;
+
+    
 
 
-    Result handleFrameIndex(const SkImageInfo&, void* pixels, size_t rowBytes, const Options&);
+
+
+
+
+    Result handleFrameIndex(const SkImageInfo&, void* pixels, size_t rowBytes, const Options&,
+                            GetPixelsCallback = nullptr);
 
     
     virtual Result onStartScanlineDecode(const SkImageInfo& ,

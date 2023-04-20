@@ -10,6 +10,11 @@
 #define SkEdgeClipper_DEFINED
 
 #include "include/core/SkPath.h"
+#include "include/core/SkPoint.h"
+#include "include/core/SkScalar.h"
+#include "include/private/base/SkDebug.h"
+
+struct SkRect;
 
 
 
@@ -25,6 +30,13 @@ public:
     SkPath::Verb next(SkPoint pts[]);
 
     bool canCullToTheRight() const { return fCanCullToTheRight; }
+
+    
+
+
+
+    static void ClipPath(const SkPath& path, const SkRect& clip, bool canCullToTheRight,
+                         void (*consume)(SkEdgeClipper*, bool newCtr, void* ctx), void* ctx);
 
 private:
     SkPoint*        fCurrPoint;

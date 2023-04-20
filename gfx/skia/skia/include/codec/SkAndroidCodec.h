@@ -9,9 +9,28 @@
 #define SkAndroidCodec_DEFINED
 
 #include "include/codec/SkCodec.h"
-#include "include/core/SkEncodedImageFormat.h"
-#include "include/core/SkStream.h"
+#include "include/core/SkColorSpace.h"
+#include "include/core/SkImageInfo.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkSize.h"
 #include "include/core/SkTypes.h"
+#include "include/private/SkEncodedInfo.h"
+#include "include/private/base/SkNoncopyable.h"
+#include "modules/skcms/skcms.h"
+
+
+#include "include/codec/SkEncodedImageFormat.h" 
+#include "include/core/SkAlphaType.h" 
+#include "include/core/SkColorType.h" 
+
+#include <cstddef>
+#include <memory>
+
+class SkData;
+class SkPngChunkReader;
+class SkStream;
+struct SkGainmapInfo;
+struct SkIRect;
 
 
 
@@ -19,35 +38,25 @@
 
 class SK_API SkAndroidCodec : SkNoncopyable {
 public:
+    
+
+
+
+
+
+
+
     enum class ExifOrientationBehavior {
-        
-
-
-
-
-
         kIgnore,
-
-        
-
-
-
-
-
-
-
         kRespect,
     };
 
     
 
 
-    static std::unique_ptr<SkAndroidCodec> MakeFromCodec(std::unique_ptr<SkCodec>,
-            ExifOrientationBehavior = ExifOrientationBehavior::kIgnore);
+    static std::unique_ptr<SkAndroidCodec> MakeFromCodec(std::unique_ptr<SkCodec>);
 
     
-
-
 
 
 
@@ -67,13 +76,20 @@ public:
 
 
 
-
-
     static std::unique_ptr<SkAndroidCodec> MakeFromData(sk_sp<SkData>, SkPngChunkReader* = nullptr);
 
     virtual ~SkAndroidCodec();
 
+    
+    
     const SkImageInfo& getInfo() const { return fInfo; }
+
+    
+
+
+    const skcms_ICCProfile* getICCProfile() const {
+        return fCodec->getEncodedInfo().profile();
+    }
 
     
 
@@ -103,8 +119,6 @@ public:
     SkAlphaType computeOutputAlphaType(bool requestedUnpremul);
 
     
-
-
 
 
 
@@ -188,31 +202,11 @@ public:
     
     
     
-    struct AndroidOptions {
+    struct AndroidOptions : public SkCodec::Options {
         AndroidOptions()
-            : fZeroInitialized(SkCodec::kNo_ZeroInitialized)
-            , fSubset(nullptr)
+            : SkCodec::Options()
             , fSampleSize(1)
         {}
-
-        
-
-
-
-
-        SkCodec::ZeroInitialized fZeroInitialized;
-
-        
-
-
-
-
-
-
-
-
-
-        SkIRect* fSubset;
 
         
 
@@ -269,8 +263,25 @@ public:
 
     SkCodec* codec() const { return fCodec.get(); }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool getAndroidGainmap(SkGainmapInfo* outInfo,
+                           std::unique_ptr<SkStream>* outGainmapImageStream);
+
 protected:
-    SkAndroidCodec(SkCodec*, ExifOrientationBehavior = ExifOrientationBehavior::kIgnore);
+    SkAndroidCodec(SkCodec*);
 
     virtual SkISize onGetSampledDimensions(int sampleSize) const = 0;
 
@@ -281,7 +292,6 @@ protected:
 
 private:
     const SkImageInfo               fInfo;
-    const ExifOrientationBehavior   fOrientationBehavior;
     std::unique_ptr<SkCodec>        fCodec;
 };
 #endif

@@ -5,25 +5,6 @@
 
 #include "src/pdf/SkPDFTypes.h"
 
-template <class T>
-class SkStorageFor {
-public:
-    const T& get() const { return *reinterpret_cast<const T*>(&fStore); }
-    T& get() { return *reinterpret_cast<T*>(&fStore); }
-    
-    template<class... Args> void init(Args&&... args) {
-        new (&this->get()) T(std::forward<Args>(args)...);
-    }
-    void destroy() { this->get().~T(); }
-private:
-    typename std::aligned_storage<sizeof(T), alignof(T)>::type fStore;
-};
-
-
-void SkPDFWriteString(SkWStream* wStream, const char* cin, size_t len);
-
-
-
 
 
 
@@ -33,8 +14,8 @@ class SkPDFUnion {
 public:
     
     
-    SkPDFUnion(SkPDFUnion&& other);
-    SkPDFUnion& operator=(SkPDFUnion&& other);
+    SkPDFUnion(SkPDFUnion&&);
+    SkPDFUnion& operator=(SkPDFUnion&&);
 
     ~SkPDFUnion();
 
@@ -65,8 +46,8 @@ public:
     static SkPDFUnion Name(const char*);
 
     
-
-    static SkPDFUnion String(const char*);
+    static SkPDFUnion ByteString(const char*);
+    static SkPDFUnion TextString(const char*);
 
     
 
@@ -74,7 +55,8 @@ public:
     static SkPDFUnion Name(SkString);
 
     
-    static SkPDFUnion String(SkString);
+    static SkPDFUnion ByteString(SkString);
+    static SkPDFUnion TextString(SkString);
 
     static SkPDFUnion Object(std::unique_ptr<SkPDFObject>);
 
@@ -87,17 +69,17 @@ public:
     bool isName() const;
 
 private:
+    using PDFObject = std::unique_ptr<SkPDFObject>;
     union {
         int32_t fIntValue;
         bool fBoolValue;
         SkScalar fScalarValue;
         const char* fStaticString;
-        SkStorageFor<SkString> fSkString;
-        SkPDFObject* fObject;
+        SkString fSkString;
+        PDFObject fObject;
     };
     enum class Type : char {
         
-
         kDestroyed = 0,
         kInt,
         kColorComponent,
@@ -105,21 +87,23 @@ private:
         kBool,
         kScalar,
         kName,
-        kString,
+        kByteString,
+        kTextString,
         kNameSkS,
-        kStringSkS,
+        kByteStringSkS,
+        kTextStringSkS,
         kObject,
         kRef,
     };
     Type fType;
 
-    SkPDFUnion(Type);
     SkPDFUnion(Type, int32_t);
     SkPDFUnion(Type, bool);
     SkPDFUnion(Type, SkScalar);
+    SkPDFUnion(Type, const char*);
     SkPDFUnion(Type, SkString);
-    
-    
+    SkPDFUnion(Type, PDFObject);
+
     SkPDFUnion& operator=(const SkPDFUnion&) = delete;
     SkPDFUnion(const SkPDFUnion&) = delete;
 };

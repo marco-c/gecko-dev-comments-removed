@@ -5,8 +5,11 @@
 
 
 
-#include "include/core/SkColorFilter.h"
-#include "include/core/SkFlattenable.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkRefCnt.h"
+#include "include/core/SkTypes.h"
+
+class SkColorFilter;
 
 #ifndef SkOverdrawColorFilter_DEFINED
 #define SkOverdrawColorFilter_DEFINED
@@ -19,36 +22,11 @@
 
 
 
-class SK_API SkOverdrawColorFilter : public SkColorFilter {
+class SK_API SkOverdrawColorFilter {
 public:
     static constexpr int kNumColors = 6;
 
-    static sk_sp<SkOverdrawColorFilter> Make(const SkPMColor colors[kNumColors]) {
-        return sk_sp<SkOverdrawColorFilter>(new SkOverdrawColorFilter(colors));
-    }
-
-#if SK_SUPPORT_GPU
-    std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(GrRecordingContext*,
-                                                             const GrColorInfo&) const override;
-#endif
-
-    static void RegisterFlattenables();
-
-protected:
-    void flatten(SkWriteBuffer& buffer) const override;
-
-private:
-    SK_FLATTENABLE_HOOKS(SkOverdrawColorFilter)
-
-    SkOverdrawColorFilter(const SkPMColor colors[kNumColors]) {
-        memcpy(fColors, colors, kNumColors * sizeof(SkPMColor));
-    }
-
-    bool onAppendStages(const SkStageRec&, bool) const override;
-
-    SkPMColor fColors[kNumColors];
-
-    typedef SkColorFilter INHERITED;
+    static sk_sp<SkColorFilter> MakeWithSkColors(const SkColor[kNumColors]);
 };
 
 #endif 

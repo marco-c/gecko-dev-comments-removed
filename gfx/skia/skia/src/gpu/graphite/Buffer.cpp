@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+#include "src/gpu/graphite/Buffer.h"
+
+namespace skgpu::graphite {
+
+void* Buffer::map() {
+    if (!this->isMapped()) {
+        this->onMap();
+    }
+    return fMapPtr;
+}
+
+void Buffer::unmap() {
+    SkASSERT(this->isMapped());
+    this->onUnmap();
+    fMapPtr = nullptr;
+}
+
+} 
+

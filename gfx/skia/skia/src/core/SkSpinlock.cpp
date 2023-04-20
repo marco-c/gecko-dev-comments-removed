@@ -6,15 +6,16 @@
 
 
 #include "include/private/SkSpinlock.h"
+#include "include/private/base/SkThreadAnnotations.h"
 
 #if 0
-    #include "include/private/SkMutex.h"
+    #include "include/private/base/SkMutex.h"
     #include <execinfo.h>
     #include <stdio.h>
 
     static void debug_trace() {
         void* stack[64];
-        int len = backtrace(stack, SK_ARRAY_COUNT(stack));
+        int len = backtrace(stack, std::size(stack));
 
         
         static SkMutex lock;
@@ -41,7 +42,9 @@ void SkSpinlock::contendedAcquire() {
     debug_trace();
 
     
+    SK_POTENTIALLY_BLOCKING_REGION_BEGIN;
     while (fLocked.exchange(true, std::memory_order_acquire)) {
         do_pause();
     }
+    SK_POTENTIALLY_BLOCKING_REGION_END;
 }

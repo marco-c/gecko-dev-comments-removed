@@ -9,10 +9,9 @@
 #define SkStreamPriv_DEFINED
 
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkStream.h"
 
 class SkData;
-class SkStream;
-class SkWStream;
 
 
 
@@ -30,5 +29,22 @@ sk_sp<SkData> SkCopyStreamToData(SkStream* stream);
 
 
 bool SkStreamCopy(SkWStream* out, SkStream* input);
+
+
+class SkDebugfStream final : public SkWStream {
+public:
+    bool write(const void* buffer, size_t size) override;
+    size_t bytesWritten() const override;
+
+private:
+    size_t fBytesWritten = 0;
+};
+
+
+
+
+
+
+bool StreamRemainingLengthIsBelow(SkStream* stream, size_t len);
 
 #endif  

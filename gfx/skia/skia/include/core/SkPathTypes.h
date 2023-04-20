@@ -8,8 +8,6 @@
 #ifndef SkPathTypes_DEFINED
 #define SkPathTypes_DEFINED
 
-#include "include/core/SkTypes.h"
-
 enum class SkPathFillType {
     
     kWinding,
@@ -21,11 +19,17 @@ enum class SkPathFillType {
     kInverseEvenOdd
 };
 
-enum class SkPathConvexityType {
-    kUnknown,
-    kConvex,
-    kConcave
-};
+static inline bool SkPathFillType_IsEvenOdd(SkPathFillType ft) {
+    return (static_cast<int>(ft) & 1) != 0;
+}
+
+static inline bool SkPathFillType_IsInverse(SkPathFillType ft) {
+    return (static_cast<int>(ft) & 2) != 0;
+}
+
+static inline SkPathFillType SkPathFillType_ConvertToNonInverse(SkPathFillType ft) {
+    return static_cast<SkPathFillType>(static_cast<int>(ft) & 1);
+}
 
 enum class SkPathDirection {
     
@@ -47,8 +51,7 @@ enum class SkPathVerb {
     kQuad,   
     kConic,  
     kCubic,  
-    kClose,  
-    kDone,   
+    kClose   
 };
 
 #endif

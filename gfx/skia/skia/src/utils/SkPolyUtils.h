@@ -8,12 +8,15 @@
 #ifndef SkOffsetPolygon_DEFINED
 #define SkOffsetPolygon_DEFINED
 
-#include <functional>
-
 #include "include/core/SkPoint.h"
-#include "include/private/SkTDArray.h"
+#include "include/core/SkScalar.h"
 
+#include <cstdint>
+
+#if !defined(SK_ENABLE_OPTIMIZE_SIZE)
 struct SkRect;
+template <typename T> class SkTDArray;
+
 
 
 
@@ -27,6 +30,7 @@ struct SkRect;
 
 bool SkInsetConvexPolygon(const SkPoint* inputPolygonVerts, int inputPolygonSize,
                           SkScalar inset, SkTDArray<SkPoint>* insetPolygon);
+
 
 
 
@@ -90,6 +94,7 @@ bool SkIsConvexPolygon(const SkPoint* polygonVerts, int polygonSize);
 
 
 
+
  bool SkIsSimplePolygon(const SkPoint* polygonVerts, int polygonSize);
 
  
@@ -106,7 +111,6 @@ bool SkIsConvexPolygon(const SkPoint* polygonVerts, int polygonSize);
  bool SkTriangulateSimplePolygon(const SkPoint* polygonVerts, uint16_t* indexMap, int polygonSize,
                                  SkTDArray<uint16_t>* triangleIndices);
 
-
-bool SkIsPolyConvex_experimental(const SkPoint[], int count);
+#endif 
 
 #endif

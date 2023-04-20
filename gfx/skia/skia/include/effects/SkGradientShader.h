@@ -8,7 +8,10 @@
 #ifndef SkGradientShader_DEFINED
 #define SkGradientShader_DEFINED
 
+#include "include/core/SkColorSpace.h"
+#include "include/core/SkRefCnt.h"
 #include "include/core/SkShader.h"
+#include "include/core/SkTileMode.h"
 
 
 
@@ -52,7 +55,57 @@ public:
 
 
 
+
         kInterpolateColorsInPremul_Flag = 1 << 0,
+    };
+
+    struct Interpolation {
+        enum class InPremul : bool { kNo = false, kYes = true };
+
+        enum class ColorSpace : uint8_t {
+            
+            kDestination,
+
+            
+            kSRGBLinear,
+            kLab,
+            kOKLab,
+            kLCH,
+            kOKLCH,
+            kSRGB,
+            kHSL,
+            kHWB,
+
+            kLastColorSpace = kHWB,
+        };
+        static constexpr int kColorSpaceCount = static_cast<int>(ColorSpace::kLastColorSpace) + 1;
+
+        enum class HueMethod : uint8_t {
+            
+            kShorter,
+            kLonger,
+            kIncreasing,
+            kDecreasing,
+
+            kLastHueMethod = kDecreasing,
+        };
+        static constexpr int kHueMethodCount = static_cast<int>(HueMethod::kLastHueMethod) + 1;
+
+        InPremul fInPremul = InPremul::kNo;
+
+        
+
+
+
+
+        ColorSpace fColorSpace = ColorSpace::kDestination;
+        HueMethod  fHueMethod  = HueMethod::kShorter;  
+
+        static Interpolation FromFlags(uint32_t flags) {
+            return {flags & kInterpolateColorsInPremul_Flag ? InPremul::kYes : InPremul::kNo,
+                    ColorSpace::kDestination,
+                    HueMethod::kShorter};
+        }
     };
 
     
@@ -67,17 +120,22 @@ public:
 
 
 
+
+
+
+
+
     static sk_sp<SkShader> MakeLinear(const SkPoint pts[2],
                                       const SkColor colors[], const SkScalar pos[], int count,
                                       SkTileMode mode,
-                                      uint32_t flags, const SkMatrix* localMatrix);
-    static sk_sp<SkShader> MakeLinear(const SkPoint pts[2],
-                                      const SkColor colors[], const SkScalar pos[], int count,
-                                      SkTileMode mode) {
-        return MakeLinear(pts, colors, pos, count, mode, 0, nullptr);
-    }
+                                      uint32_t flags = 0, const SkMatrix* localMatrix = nullptr);
 
     
+
+
+
+
+
 
 
 
@@ -92,14 +150,20 @@ public:
     static sk_sp<SkShader> MakeLinear(const SkPoint pts[2],
                                       const SkColor4f colors[], sk_sp<SkColorSpace> colorSpace,
                                       const SkScalar pos[], int count, SkTileMode mode,
-                                      uint32_t flags, const SkMatrix* localMatrix);
+                                      const Interpolation& interpolation,
+                                      const SkMatrix* localMatrix);
     static sk_sp<SkShader> MakeLinear(const SkPoint pts[2],
                                       const SkColor4f colors[], sk_sp<SkColorSpace> colorSpace,
-                                      const SkScalar pos[], int count, SkTileMode mode) {
-        return MakeLinear(pts, colors, std::move(colorSpace), pos, count, mode, 0, nullptr);
+                                      const SkScalar pos[], int count, SkTileMode mode,
+                                      uint32_t flags = 0, const SkMatrix* localMatrix = nullptr) {
+        return MakeLinear(pts, colors, std::move(colorSpace), pos, count, mode,
+                          Interpolation::FromFlags(flags), localMatrix);
     }
 
     
+
+
+
 
 
 
@@ -115,14 +179,12 @@ public:
     static sk_sp<SkShader> MakeRadial(const SkPoint& center, SkScalar radius,
                                       const SkColor colors[], const SkScalar pos[], int count,
                                       SkTileMode mode,
-                                      uint32_t flags, const SkMatrix* localMatrix);
-    static sk_sp<SkShader> MakeRadial(const SkPoint& center, SkScalar radius,
-                                      const SkColor colors[], const SkScalar pos[], int count,
-                                      SkTileMode mode) {
-        return MakeRadial(center, radius, colors, pos, count, mode, 0, nullptr);
-    }
+                                      uint32_t flags = 0, const SkMatrix* localMatrix = nullptr);
 
     
+
+
+
 
 
 
@@ -138,12 +200,14 @@ public:
     static sk_sp<SkShader> MakeRadial(const SkPoint& center, SkScalar radius,
                                       const SkColor4f colors[], sk_sp<SkColorSpace> colorSpace,
                                       const SkScalar pos[], int count, SkTileMode mode,
-                                      uint32_t flags, const SkMatrix* localMatrix);
+                                      const Interpolation& interpolation,
+                                      const SkMatrix* localMatrix);
     static sk_sp<SkShader> MakeRadial(const SkPoint& center, SkScalar radius,
                                       const SkColor4f colors[], sk_sp<SkColorSpace> colorSpace,
-                                      const SkScalar pos[], int count, SkTileMode mode) {
+                                      const SkScalar pos[], int count, SkTileMode mode,
+                                      uint32_t flags = 0, const SkMatrix* localMatrix = nullptr) {
         return MakeRadial(center, radius, colors, std::move(colorSpace), pos, count, mode,
-                          0, nullptr);
+                          Interpolation::FromFlags(flags), localMatrix);
     }
 
     
@@ -156,14 +220,8 @@ public:
                                                const SkPoint& end, SkScalar endRadius,
                                                const SkColor colors[], const SkScalar pos[],
                                                int count, SkTileMode mode,
-                                               uint32_t flags, const SkMatrix* localMatrix);
-    static sk_sp<SkShader> MakeTwoPointConical(const SkPoint& start, SkScalar startRadius,
-                                               const SkPoint& end, SkScalar endRadius,
-                                               const SkColor colors[], const SkScalar pos[],
-                                               int count, SkTileMode mode) {
-        return MakeTwoPointConical(start, startRadius, end, endRadius, colors, pos, count, mode,
-                                   0, nullptr);
-    }
+                                               uint32_t flags = 0,
+                                               const SkMatrix* localMatrix = nullptr);
 
     
 
@@ -176,17 +234,32 @@ public:
                                                const SkColor4f colors[],
                                                sk_sp<SkColorSpace> colorSpace, const SkScalar pos[],
                                                int count, SkTileMode mode,
-                                               uint32_t flags, const SkMatrix* localMatrix);
+                                               const Interpolation& interpolation,
+                                               const SkMatrix* localMatrix);
     static sk_sp<SkShader> MakeTwoPointConical(const SkPoint& start, SkScalar startRadius,
                                                const SkPoint& end, SkScalar endRadius,
                                                const SkColor4f colors[],
                                                sk_sp<SkColorSpace> colorSpace, const SkScalar pos[],
-                                               int count, SkTileMode mode) {
+                                               int count, SkTileMode mode,
+                                               uint32_t flags = 0,
+                                               const SkMatrix* localMatrix = nullptr) {
         return MakeTwoPointConical(start, startRadius, end, endRadius, colors,
-                                   std::move(colorSpace), pos, count, mode, 0, nullptr);
+                                   std::move(colorSpace), pos, count, mode,
+                                   Interpolation::FromFlags(flags), localMatrix);
     }
 
     
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -209,16 +282,23 @@ public:
                                      uint32_t flags, const SkMatrix* localMatrix);
     static sk_sp<SkShader> MakeSweep(SkScalar cx, SkScalar cy,
                                      const SkColor colors[], const SkScalar pos[], int count,
-                                     uint32_t flags, const SkMatrix* localMatrix) {
+                                     uint32_t flags = 0, const SkMatrix* localMatrix = nullptr) {
         return MakeSweep(cx, cy, colors, pos, count, SkTileMode::kClamp, 0, 360, flags,
                          localMatrix);
     }
-    static sk_sp<SkShader> MakeSweep(SkScalar cx, SkScalar cy,
-                                     const SkColor colors[], const SkScalar pos[], int count) {
-        return MakeSweep(cx, cy, colors, pos, count, 0, nullptr);
-    }
 
     
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -239,21 +319,24 @@ public:
                                      const SkScalar pos[], int count,
                                      SkTileMode mode,
                                      SkScalar startAngle, SkScalar endAngle,
-                                     uint32_t flags, const SkMatrix* localMatrix);
+                                     const Interpolation& interpolation,
+                                     const SkMatrix* localMatrix);
     static sk_sp<SkShader> MakeSweep(SkScalar cx, SkScalar cy,
                                      const SkColor4f colors[], sk_sp<SkColorSpace> colorSpace,
                                      const SkScalar pos[], int count,
+                                     SkTileMode mode,
+                                     SkScalar startAngle, SkScalar endAngle,
                                      uint32_t flags, const SkMatrix* localMatrix) {
-        return MakeSweep(cx, cy, colors, std::move(colorSpace), pos, count,
-                         SkTileMode::kClamp, 0, 360, flags, localMatrix);
+        return MakeSweep(cx, cy, colors, std::move(colorSpace), pos, count, mode, startAngle,
+                         endAngle, Interpolation::FromFlags(flags), localMatrix);
     }
     static sk_sp<SkShader> MakeSweep(SkScalar cx, SkScalar cy,
                                      const SkColor4f colors[], sk_sp<SkColorSpace> colorSpace,
-                                     const SkScalar pos[], int count) {
-        return MakeSweep(cx, cy, colors, std::move(colorSpace), pos, count, 0, nullptr);
+                                     const SkScalar pos[], int count,
+                                     uint32_t flags = 0, const SkMatrix* localMatrix = nullptr) {
+        return MakeSweep(cx, cy, colors, std::move(colorSpace), pos, count, SkTileMode::kClamp,
+                         0, 360, flags, localMatrix);
     }
-
-    static void RegisterFlattenables();
 };
 
 #endif
