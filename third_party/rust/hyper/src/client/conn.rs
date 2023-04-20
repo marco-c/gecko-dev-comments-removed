@@ -671,6 +671,24 @@ impl Builder {
     
     
     
+    pub fn http1_ignore_invalid_headers_in_responses(
+        &mut self,
+        enabled: bool,
+    ) -> &mut Builder {
+        self.h1_parser_config
+            .ignore_invalid_headers_in_responses(enabled);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

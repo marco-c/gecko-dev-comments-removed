@@ -2,10 +2,12 @@ use std::error::Error as StdError;
 use std::fmt;
 #[cfg(feature = "tcp")]
 use std::net::{SocketAddr, TcpListener as StdTcpListener};
-#[cfg(any(feature = "tcp", feature = "http1"))]
+
+#[cfg(feature = "tcp")]
 use std::time::Duration;
 
 use pin_project_lite::pin_project;
+
 use tokio::io::{AsyncRead, AsyncWrite};
 use tracing::trace;
 
@@ -562,10 +564,21 @@ impl<E> Builder<AddrIncoming, E> {
     
     
     
-    
-    
     pub fn tcp_keepalive(mut self, keepalive: Option<Duration>) -> Self {
         self.incoming.set_keepalive(keepalive);
+        self
+    }
+
+    
+    
+    pub fn tcp_keepalive_interval(mut self, interval: Option<Duration>) -> Self {
+        self.incoming.set_keepalive_interval(interval);
+        self
+    }
+
+    
+    pub fn tcp_keepalive_retries(mut self, retries: Option<u32>) -> Self {
+        self.incoming.set_keepalive_retries(retries);
         self
     }
 

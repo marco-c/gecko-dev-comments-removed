@@ -1075,6 +1075,39 @@ impl Builder {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn http1_ignore_invalid_headers_in_responses(
+        &mut self,
+        val: bool,
+    ) -> &mut Builder {
+        self.conn_builder
+            .http1_ignore_invalid_headers_in_responses(val);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn http1_writev(&mut self, enabled: bool) -> &mut Builder {
         self.conn_builder.http1_writev(enabled);
         self
