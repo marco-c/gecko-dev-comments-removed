@@ -2,4 +2,6 @@
 
 
 
+"use strict";
+
 module.exports = "<svg></svg>";
