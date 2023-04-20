@@ -265,6 +265,7 @@ class GeckoProfile(object):
                 self.cleanup = False
 
         missing_symbols_zip = os.path.join(self.upload_dir, "missingsymbols.zip")
+        test_type = self.test_config.get("type", "pageload")
 
         try:
             mode = zipfile.ZIP_DEFLATED
@@ -288,18 +289,24 @@ class GeckoProfile(object):
                     
                     
                     
-                    folder_name = "%s-%s" % (
-                        self.test_config["name"],
-                        profile_info["type"],
+                    
+                    
+                    
+                    
+                    test_run_type = (
+                        "{0}-{1}".format(test_type, profile_info["type"])
+                        if test_type == "pageload"
+                        else test_type
                     )
-                    profile_name = "-".join(
-                        [
-                            str(
-                                len([f for f in arc.namelist() if folder_name in f]) + 1
-                            ),
-                            os.path.split(profile_path)[-1],
-                        ]
-                    )
+                    folder_name = "%s-%s" % (self.test_config["name"], test_run_type)
+                    iteration = str(os.path.split(profile_path)[-1].split("-")[-1])
+                    if test_type == "pageload" and profile_info["type"] == "cold":
+                        iteration_type = "browser-cycle"
+                    elif profile_info["type"] == "warm":
+                        iteration_type = "page-cycle"
+                    else:
+                        iteration_type = "iteration"
+                    profile_name = "-".join([iteration_type, iteration])
                     path_in_zip = os.path.join(folder_name, profile_name)
 
                     LOG.info(
