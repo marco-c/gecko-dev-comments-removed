@@ -699,9 +699,11 @@ function buildQuery(originalQuery, modifiers, {
 
   if (originalQuery === "") {
     return new RegExp(originalQuery);
-  }
+  } 
+  
 
-  let query = originalQuery; 
+
+  let query = originalQuery.replace(/\\$/, ""); 
   
 
   if (!regexMatch) {
@@ -746,16 +748,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-function findSourceMatches(sourceId, content, queryText) {
+function findSourceMatches(sourceId, content, queryText, modifiers) {
   if (queryText == "") {
     return [];
   }
 
-  const modifiers = {
-    caseSensitive: false,
-    regexMatch: false,
-    wholeWord: false
-  };
   const text = content.value;
   const lines = text.split("\n");
   return (0, _getMatches.default)(queryText, text, modifiers).map(({
