@@ -625,8 +625,7 @@ class GCRuntime {
   static TenuredCell* refillFreeListInGC(Zone* zone, AllocKind thingKind);
 
   
-  void delayMarkingChildren(gc::Cell* cell, MarkColor color,
-                            const AutoLockGC& lock);
+  void delayMarkingChildren(gc::Cell* cell, MarkColor color);
   bool hasDelayedMarking() const;
   void markAllDelayedChildren(ShouldReportMarkTime reportTime);
 
@@ -1342,9 +1341,15 @@ class GCRuntime {
   MainThreadData<bool> lowMemoryState;
 
   
+
+
+
   friend class js::AutoLockGC;
   friend class js::AutoLockGCBgAlloc;
   js::Mutex lock MOZ_UNANNOTATED;
+
+  
+  js::Mutex delayedMarkingLock MOZ_UNANNOTATED;
 
   friend class BackgroundSweepTask;
   friend class BackgroundFreeTask;
