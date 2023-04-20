@@ -4,6 +4,7 @@
 
 
 
+#include "ErrorList.h"
 #include "HTMLEditor.h"
 #include "HTMLEditorInlines.h"
 #include "HTMLEditorNestedClasses.h"
@@ -8791,6 +8792,10 @@ HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
     const Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
+  if (NS_WARN_IF(!aEditingHost.IsInComposedDoc())) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
+
   if (NS_WARN_IF(!aStartOfDeepestRightNode.IsSet())) {
     return Err(NS_ERROR_INVALID_ARG);
   }
@@ -8824,7 +8829,10 @@ HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
     }
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(pointToInsert.IsSet());
+  
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
 
   
   
