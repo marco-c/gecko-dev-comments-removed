@@ -1433,6 +1433,9 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   
   
   
+  std::unique_ptr<rtc::NetworkManager> network_manager;
+  
+  
   std::unique_ptr<rtc::NetworkMonitorFactory> network_monitor_factory;
   std::unique_ptr<NetEqFactory> neteq_factory;
   std::unique_ptr<SctpTransportFactoryInterface> sctp_factory;
