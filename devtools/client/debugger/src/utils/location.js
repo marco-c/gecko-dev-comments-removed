@@ -9,19 +9,27 @@ export function comparePosition(a, b) {
 }
 
 export function createLocation({
-  sourceId,
+  source,
+  sourceActor = null,
+
   
   line = 0,
   column,
+
   sourceUrl = "",
-  sourceActorId = null,
 }) {
   return {
-    sourceId,
+    source,
+    sourceActor,
+    
+    sourceId: source.id,
+    sourceActorId: sourceActor?.id,
+
     line,
     column,
+
+    
     sourceUrl,
-    sourceActorId,
   };
 }
 

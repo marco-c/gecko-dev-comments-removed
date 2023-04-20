@@ -264,7 +264,7 @@ class DebuggerPanel {
     }
 
     const generatedLocation = createLocation({
-      sourceId: generatedSource.id,
+      source: generatedSource,
       line: generatedLine,
       column: generatedColumn,
     });
@@ -273,7 +273,9 @@ class DebuggerPanel {
     
     
     const originalLocation = await getOriginalLocation(generatedLocation, {
+      
       sourceMapLoader: this.toolbox.sourceMapLoader,
+      getState: this._store.getState,
     });
 
     

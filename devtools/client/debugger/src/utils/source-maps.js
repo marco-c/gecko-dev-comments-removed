@@ -25,32 +25,54 @@ export async function getGeneratedLocation(location, thunkArgs) {
   }
 
   const { sourceMapLoader, getState } = thunkArgs;
-  const { sourceId, line, column } = await sourceMapLoader.getGeneratedLocation(
+  const generatedLocation = await sourceMapLoader.getGeneratedLocation(
     location
   );
+  
+  
+  if (generatedLocation.sourceId == location.sourceId) {
+    return location;
+  }
 
-  const generatedSource = getSource(getState(), sourceId);
+  const generatedSource = getSource(getState(), generatedLocation.sourceId);
   if (!generatedSource) {
-    throw new Error(`Could not find generated source ${sourceId}`);
+    throw new Error(
+      `Could not find generated source ${generatedLocation.sourceId}`
+    );
   }
 
   return createLocation({
-    sourceId,
+    source: generatedSource,
     sourceUrl: generatedSource.url,
-    line,
-    column: column === 0 ? undefined : column,
+    line: generatedLocation.line,
+    column:
+      generatedLocation.column === 0 ? undefined : generatedLocation.column,
   });
 }
 
-export async function getOriginalLocation(generatedLocation, thunkArgs) {
-  if (isOriginalId(generatedLocation.sourceId)) {
+export async function getOriginalLocation(location, thunkArgs) {
+  if (isOriginalId(location.sourceId)) {
     return location;
   }
-  const { sourceMapLoader } = thunkArgs;
-  const originalLocation = await sourceMapLoader.getOriginalLocation(
-    generatedLocation
-  );
-  return createLocation(originalLocation);
+  const { getState, sourceMapLoader } = thunkArgs;
+  const originalLocation = await sourceMapLoader.getOriginalLocation(location);
+  
+  
+  if (originalLocation.sourceId == location.sourceId) {
+    return location;
+  }
+  
+  
+  const originalSource = getSource(getState(), originalLocation.sourceId);
+  if (!originalSource) {
+    throw new Error(
+      `Could not find original source ${originalLocation.sourceId}`
+    );
+  }
+  return createLocation({
+    ...originalLocation,
+    source: originalSource,
+  });
 }
 
 export async function getMappedLocation(location, thunkArgs) {

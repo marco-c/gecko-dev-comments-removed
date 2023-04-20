@@ -10,6 +10,7 @@
 
 
 import { prefs } from "../utils/prefs";
+import { createLocation } from "../utils/location";
 
 export const statusType = {
   initial: "INITIAL",
@@ -39,14 +40,28 @@ function update(state = initialProjectTextSearchState(), action) {
       return { ...state, query: action.query };
 
     case "ADD_SEARCH_RESULT":
-      if (action.result.matches.length === 0) {
+      const { location, matches } = action;
+      if (matches.length === 0) {
         return state;
       }
 
       const result = {
         type: "RESULT",
-        ...action.result,
-        matches: action.result.matches.map(m => ({ type: "MATCH", ...m })),
+        location,
+        
+        matches: matches.map(m => ({
+          type: "MATCH",
+          location: createLocation({
+            ...location,
+            
+            
+            line: m.line,
+            column: m.column,
+          }),
+          matchIndex: m.matchIndex,
+          match: m.match,
+          value: m.value,
+        })),
       };
       return { ...state, results: [...state.results, result] };
 

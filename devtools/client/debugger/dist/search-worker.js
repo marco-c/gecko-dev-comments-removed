@@ -749,7 +749,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-function findSourceMatches(sourceId, content, queryText, modifiers) {
+function findSourceMatches(content, queryText, modifiers) {
   if (queryText == "") {
     return [];
   }
@@ -766,7 +766,6 @@ function findSourceMatches(sourceId, content, queryText, modifiers) {
       matchIndex
     } = truncateLine(lines[line], ch);
     return {
-      sourceId,
       line: line + 1,
       column: ch,
       matchIndex,
