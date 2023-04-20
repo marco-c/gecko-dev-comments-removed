@@ -579,37 +579,6 @@ TEST(ThreadManager, ProcessAllMessageQueuesWithClearedQueue) {
   ThreadManager::ProcessAllMessageQueuesForTesting();
 }
 
-class RefCountedHandler : public MessageHandler, public rtc::RefCountInterface {
- public:
-  ~RefCountedHandler() override { ThreadManager::Clear(this); }
-
-  void OnMessage(Message* msg) override {}
-};
-
-class EmptyHandler : public MessageHandler {
- public:
-  ~EmptyHandler() override { ThreadManager::Clear(this); }
-
-  void OnMessage(Message* msg) override {}
-};
-
-TEST(ThreadManager, ClearReentrant) {
-  std::unique_ptr<Thread> t(Thread::Create());
-  EmptyHandler handler;
-  RefCountedHandler* inner_handler(
-      new rtc::RefCountedObject<RefCountedHandler>());
-  
-  
-  
-  
-  
-  
-  
-  t->Post(RTC_FROM_HERE, inner_handler, 0);
-  t->Post(RTC_FROM_HERE, &handler, 0,
-          new ScopedRefMessageData<RefCountedHandler>(inner_handler));
-}
-
 void WaitAndSetEvent(Event* wait_event, Event* set_event) {
   wait_event->Wait(Event::kForever);
   set_event->Set();

@@ -89,7 +89,6 @@ class RTC_EXPORT ThreadManager {
 
   static void Add(Thread* message_queue);
   static void Remove(Thread* message_queue);
-  static void Clear(MessageHandler* handler);
 
   
   
@@ -135,7 +134,6 @@ class RTC_EXPORT ThreadManager {
   void SetCurrentThreadInternal(Thread* thread);
   void AddInternal(Thread* message_queue);
   void RemoveInternal(Thread* message_queue);
-  void ClearInternal(MessageHandler* handler);
   void ProcessAllMessageQueuesInternal();
 #if RTC_DCHECK_IS_ON
   void RemoveFromSendGraph(Thread* thread) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);

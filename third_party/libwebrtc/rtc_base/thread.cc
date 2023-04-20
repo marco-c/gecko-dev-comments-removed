@@ -196,20 +196,6 @@ void ThreadManager::RegisterSendAndCheckForCycles(Thread* source,
 #endif
 
 
-void ThreadManager::Clear(MessageHandler* handler) {
-  return Instance()->ClearInternal(handler);
-}
-void ThreadManager::ClearInternal(MessageHandler* handler) {
-  
-  
-  
-  MarkProcessingCritScope cs(&crit_, &processing_);
-  for (Thread* queue : message_queues_) {
-    queue->Clear(handler);
-  }
-}
-
-
 void ThreadManager::ProcessAllMessageQueuesForTesting() {
   return Instance()->ProcessAllMessageQueuesInternal();
 }

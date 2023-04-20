@@ -11,9 +11,6 @@
 #ifndef RTC_BASE_MESSAGE_HANDLER_H_
 #define RTC_BASE_MESSAGE_HANDLER_H_
 
-#include <utility>
-
-#include "api/function_view.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -25,23 +22,6 @@ class RTC_EXPORT MessageHandler {
  public:
   virtual ~MessageHandler() {}
   virtual void OnMessage(Message* msg) = 0;
-};
-
-
-
-
-
-
-class RTC_EXPORT MessageHandlerAutoCleanup : public MessageHandler {
- public:
-  ~MessageHandlerAutoCleanup() override;
-
-  MessageHandlerAutoCleanup(const MessageHandlerAutoCleanup&) = delete;
-  MessageHandlerAutoCleanup& operator=(const MessageHandlerAutoCleanup&) =
-      delete;
-
- protected:
-  MessageHandlerAutoCleanup();
 };
 
 }  
