@@ -157,52 +157,15 @@ async function openTabAndSetupStorage(url, options = {}) {
 
 
 
-
-
-var openStoragePanel = async function({ tab, commands, hostType } = {}) {
-  info("Opening the storage inspector");
-  if (!commands) {
-    commands = await LocalTabCommandsFactory.createCommandsForTab(
-      tab || gBrowser.selectedTab
-    );
-  }
-
-  let storage, toolbox;
-
-  
-  
-  
-  toolbox = gDevTools.getToolboxForCommands(commands);
-  if (toolbox) {
-    storage = toolbox.getPanel("storage");
-    if (storage) {
-      gPanelWindow = storage.panelWindow;
-      gUI = storage.UI;
-      gToolbox = toolbox;
-      info("Toolbox and storage already open");
-
-      return {
-        toolbox,
-        storage,
-      };
-    }
-  }
-
-  info("Opening the toolbox");
-  toolbox = await gDevTools.showToolbox(commands, {
+var openStoragePanelForAddon = async function(addonId) {
+  const toolbox = await gDevTools.showToolboxForWebExtension(addonId, {
     toolId: "storage",
-    hostType,
   });
-  storage = toolbox.getPanel("storage");
-  gPanelWindow = storage.panelWindow;
-  gUI = storage.UI;
-  gToolbox = toolbox;
 
-  
-  
-  gUI.animationsEnabled = false;
+  info("Making sure that the toolbox's frame is focused");
+  await SimpleTest.promiseFocus(toolbox.win);
 
-  await waitForToolboxFrameFocus(toolbox);
+  const storage = _setupStoragePanelForTest(toolbox);
 
   return {
     toolbox,
@@ -217,12 +180,40 @@ var openStoragePanel = async function({ tab, commands, hostType } = {}) {
 
 
 
-function waitForToolboxFrameFocus(toolbox) {
-  info("Making sure that the toolbox's frame is focused");
 
-  return new Promise(resolve => {
-    waitForFocus(resolve, toolbox.win);
-  });
+
+var openStoragePanel = async function({ tab, hostType } = {}) {
+  const toolbox = await openToolboxForTab(
+    tab || gBrowser.selectedTab,
+    "storage",
+    hostType
+  );
+
+  const storage = _setupStoragePanelForTest(toolbox);
+
+  return {
+    toolbox,
+    storage,
+  };
+};
+
+
+
+
+
+
+
+function _setupStoragePanelForTest(toolbox) {
+  const storage = toolbox.getPanel("storage");
+  gPanelWindow = storage.panelWindow;
+  gUI = storage.UI;
+  gToolbox = toolbox;
+
+  
+  
+  gUI.animationsEnabled = false;
+
+  return storage;
 }
 
 

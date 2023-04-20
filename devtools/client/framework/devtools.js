@@ -638,7 +638,10 @@ DevTools.prototype = {
 
 
 
-  async showToolboxForWebExtension(extensionId) {
+
+
+
+  async showToolboxForWebExtension(extensionId, { toolId } = {}) {
     
     
     
@@ -659,6 +662,7 @@ DevTools.prototype = {
         
         alwaysOnTop: Services.prefs.getBoolPref(DEVTOOLS_ALWAYS_ON_TOP, false),
       },
+      toolId,
     });
   },
 
