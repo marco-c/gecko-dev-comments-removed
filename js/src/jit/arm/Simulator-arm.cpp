@@ -49,7 +49,7 @@
 
 extern "C" {
 
-int64_t __aeabi_idivmod(int x, int y) {
+MOZ_EXPORT int64_t __aeabi_idivmod(int x, int y) {
   
   
   
@@ -67,7 +67,7 @@ int64_t __aeabi_idivmod(int x, int y) {
   return (int64_t(hi) << 32) | lo;
 }
 
-int64_t __aeabi_uidivmod(int x, int y) {
+MOZ_EXPORT int64_t __aeabi_uidivmod(int x, int y) {
   uint32_t lo = uint32_t(x) / uint32_t(y);
   uint32_t hi = uint32_t(x) % uint32_t(y);
   return (int64_t(hi) << 32) | lo;
