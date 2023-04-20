@@ -208,6 +208,156 @@ class MOZ_STACK_CLASS MessageReader final {
   mozilla::ipc::IProtocol* actor_;
 };
 
+namespace detail {
+
+
+
+template <typename T>
+inline constexpr auto HasDeprecatedReadParamPrivateConstructor(int)
+    -> decltype(T::kHasDeprecatedReadParamPrivateConstructor) {
+  return T::kHasDeprecatedReadParamPrivateConstructor;
+}
+
+template <typename T>
+inline constexpr bool HasDeprecatedReadParamPrivateConstructor(...) {
+  return false;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+template <typename T,
+          bool = std::is_default_constructible_v<T> ||
+                 detail::HasDeprecatedReadParamPrivateConstructor<T>(0)>
+class ReadResult {
+ public:
+  ReadResult() = default;
+
+  template <typename U, std::enable_if_t<std::is_convertible_v<U, T>, int> = 0>
+  MOZ_IMPLICIT ReadResult(U&& aData)
+      : mIsOk(true), mData(std::forward<U>(aData)) {}
+
+  template <typename... Args>
+  explicit ReadResult(std::in_place_t, Args&&... aArgs)
+      : mIsOk(true), mData(std::forward<Args>(aArgs)...) {}
+
+  ReadResult(const ReadResult&) = default;
+  ReadResult(ReadResult&&) = default;
+
+  template <typename U, std::enable_if_t<std::is_convertible_v<U, T>, int> = 0>
+  MOZ_IMPLICIT ReadResult& operator=(U&& aData) {
+    mIsOk = true;
+    mData = std::forward<U>(aData);
+    return *this;
+  }
+
+  ReadResult& operator=(const ReadResult&) = default;
+  ReadResult& operator=(ReadResult&&) noexcept = default;
+
+  
+  explicit operator bool() const { return isOk(); }
+  bool isOk() const { return mIsOk; }
+
+  
+  T& get() {
+    MOZ_ASSERT(mIsOk);
+    return mData;
+  }
+  const T& get() const {
+    MOZ_ASSERT(mIsOk);
+    return mData;
+  }
+
+  T& operator*() { return get(); }
+  const T& operator*() const { return get(); }
+
+  T* operator->() { return &get(); }
+  const T* operator->() const { return &get(); }
+
+  
+  mozilla::Maybe<T> TakeMaybe() {
+    if (mIsOk) {
+      mIsOk = false;
+      return mozilla::Some(std::move(mData));
+    }
+    return mozilla::Nothing();
+  }
+
+  
+  
+  
+  
+  T& GetStorage() { return mData; }
+
+  
+  
+  void SetOk(bool aIsOk) { mIsOk = aIsOk; }
+
+ private:
+  bool mIsOk = false;
+  T mData{};
+};
+
+template <typename T>
+class ReadResult<T, false> {
+ public:
+  ReadResult() = default;
+
+  template <typename U, std::enable_if_t<std::is_convertible_v<U, T>, int> = 0>
+  MOZ_IMPLICIT ReadResult(U&& aData)
+      : mData(std::in_place, std::forward<U>(aData)) {}
+
+  template <typename... Args>
+  explicit ReadResult(std::in_place_t, Args&&... aArgs)
+      : mData(std::in_place, std::forward<Args>(aArgs)...) {}
+
+  ReadResult(const ReadResult&) = default;
+  ReadResult(ReadResult&&) = default;
+
+  template <typename U, std::enable_if_t<std::is_convertible_v<U, T>, int> = 0>
+  MOZ_IMPLICIT ReadResult& operator=(U&& aData) {
+    mData.reset();
+    mData.emplace(std::forward<U>(aData));
+    return *this;
+  }
+
+  ReadResult& operator=(const ReadResult&) = default;
+  ReadResult& operator=(ReadResult&&) noexcept = default;
+
+  
+  explicit operator bool() const { return isOk(); }
+  bool isOk() const { return mData.isSome(); }
+
+  
+  T& get() { return mData.ref(); }
+  const T& get() const { return mData.ref(); }
+
+  T& operator*() { return get(); }
+  const T& operator*() const { return get(); }
+
+  T* operator->() { return &get(); }
+  const T* operator->() const { return &get(); }
+
+  
+  mozilla::Maybe<T> TakeMaybe() { return std::move(mData); }
+
+  
+  T& GetStorage() = delete;
+  void SetOk(bool aIsOk) = delete;
+
+ private:
+  mozilla::Maybe<T> mData;
+};
+
 
 
 
@@ -313,33 +463,24 @@ template <typename P>
 inline bool WARN_UNUSED_RESULT ReadParam(MessageReader* reader, P* p) {
   if constexpr (!detail::ParamTraitsReadUsesOutParam<P>()) {
     auto maybe = ParamTraits<P>::Read(reader);
-    if (maybe.isNothing()) {
-      return false;
+    if (maybe) {
+      *p = std::move(*maybe);
+      return true;
     }
-    *p = maybe.extract();
-    return true;
+    return false;
   } else {
     return ParamTraits<P>::Read(reader, p);
   }
 }
 
 template <typename P>
-inline mozilla::Maybe<P> WARN_UNUSED_RESULT ReadParam(MessageReader* reader) {
+inline ReadResult<P> WARN_UNUSED_RESULT ReadParam(MessageReader* reader) {
   if constexpr (!detail::ParamTraitsReadUsesOutParam<P>()) {
     return ParamTraits<P>::Read(reader);
-  } else if constexpr (std::is_default_constructible_v<P>) {
-    mozilla::Maybe<P> p{std::in_place};
-    if (!ParamTraits<P>::Read(reader, p.ptr())) {
-      p.reset();
-    }
-    return p;
   } else {
-    static_assert(P::kHasDeprecatedReadParamPrivateConstructor);
-    P p{};
-    if (!ParamTraits<P>::Read(reader, &p)) {
-      return mozilla::Nothing();
-    }
-    return mozilla::Some(std::move(p));
+    ReadResult<P> p;
+    p.SetOk(ParamTraits<P>::Read(reader, &p.GetStorage()));
+    return p;
   }
 }
 
@@ -507,7 +648,7 @@ bool ReadSequenceParamImpl(MessageReader* reader, mozilla::Maybe<I>&& data,
     if (!elt) {
       return false;
     }
-    *data.ref() = elt.extract();
+    *data.ref() = std::move(*elt);
     ++data.ref();
   }
   return true;
@@ -920,16 +1061,16 @@ struct ParamTraitsMozilla<mozilla::NotNull<T>> {
     ParamTraits<T>::Write(writer, p.get());
   }
 
-  static mozilla::Maybe<mozilla::NotNull<T>> Read(MessageReader* reader) {
+  static ReadResult<mozilla::NotNull<T>> Read(MessageReader* reader) {
     auto ptr = ReadParam<T>(reader);
     if (!ptr) {
-      return mozilla::Nothing();
+      return {};
     }
     if (!*ptr) {
       reader->FatalError("unexpected null value");
-      return mozilla::Nothing();
+      return {};
     }
-    return mozilla::Some(mozilla::WrapNotNull(std::move(*ptr)));
+    return mozilla::WrapNotNull(std::move(*ptr));
   }
 };
 
