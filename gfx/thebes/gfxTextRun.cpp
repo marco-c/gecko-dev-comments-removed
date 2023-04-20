@@ -1368,75 +1368,79 @@ void gfxTextRun::AddGlyphRun(gfxFont* aFont, FontMatchType aMatchType,
       GlyphRun{aFont, aUTF16Offset, aOrientation, aMatchType, aIsCJK});
 }
 
-void gfxTextRun::SortGlyphRuns() {
-  if (mGlyphRuns.Length() < 2) {
-    return;
-  }
-
-  auto& runs = mGlyphRuns.Array();
-  runs.Sort(GlyphRunOffsetComparator());
-
-  
-  GlyphRun* prevRun = nullptr;
-  runs.RemoveElementsBy([&prevRun](GlyphRun& aRun) -> bool {
-    
-    if (!prevRun) {
-      prevRun = &aRun;
-      return false;
-    }
-    
-    if (prevRun->Matches(aRun.mFont, aRun.mOrientation, aRun.mIsCJK,
-                         aRun.mMatchType)) {
-      return true;
-    }
-    MOZ_ASSERT(prevRun->mCharacterOffset < aRun.mCharacterOffset,
-               "Two fonts for the same run, glyph indices unreliable");
-    
-    
-    ++prevRun;
-    return false;
-  });
-  MOZ_ASSERT(prevRun == &runs.LastElement(), "lost track of prevRun!");
-
-  MOZ_ASSERT(!runs.IsEmpty());
-  if (runs.Length() == 1) {
-    mGlyphRuns.ConvertToElement();
-  }
-}
-
-
-
-
 void gfxTextRun::SanitizeGlyphRuns() {
   if (mGlyphRuns.Length() < 2) {
     return;
   }
 
+  auto& runs = mGlyphRuns.Array();
+
   
   
-  
-  
-  
-  auto& glyphRuns = mGlyphRuns.Array();
-  int32_t i, lastRunIndex = glyphRuns.Length() - 1;
-  const CompressedGlyph* charGlyphs = mCharacterGlyphs;
-  for (i = lastRunIndex; i >= 0; --i) {
-    GlyphRun& run = glyphRuns[i];
-    while (charGlyphs[run.mCharacterOffset].IsLigatureContinuation() &&
-           run.mCharacterOffset < GetLength()) {
-      run.mCharacterOffset++;
+  bool isSorted = true;
+  uint32_t prevOffset = 0;
+  for (const auto& r : runs) {
+    if (r.mCharacterOffset < prevOffset) {
+      isSorted = false;
+      break;
     }
-    
-    if ((i < lastRunIndex &&
-         run.mCharacterOffset >= glyphRuns[i + 1].mCharacterOffset) ||
-        (i == lastRunIndex && run.mCharacterOffset == GetLength())) {
-      glyphRuns.RemoveElementAt(i);
-      --lastRunIndex;
-    }
+    prevOffset = r.mCharacterOffset;
+  }
+  if (!isSorted) {
+    runs.Sort(GlyphRunOffsetComparator());
   }
 
-  MOZ_ASSERT(!glyphRuns.IsEmpty());
-  if (glyphRuns.Length() == 1) {
+  
+  
+  GlyphRun* prevRun = nullptr;
+  const CompressedGlyph* charGlyphs = mCharacterGlyphs;
+
+  runs.RemoveElementsBy([&](GlyphRun& aRun) -> bool {
+    
+    if (!prevRun) {
+      prevRun = &aRun;
+      return false;
+    }
+
+    
+    if (prevRun->Matches(aRun.mFont, aRun.mOrientation, aRun.mIsCJK,
+                         aRun.mMatchType)) {
+      return true;
+    }
+
+    if (prevRun->mCharacterOffset >= aRun.mCharacterOffset) {
+      
+      
+      
+      *prevRun = aRun;
+      return true;
+    }
+
+    
+    
+    
+    
+    
+    while (charGlyphs[aRun.mCharacterOffset].IsLigatureContinuation() &&
+           aRun.mCharacterOffset < GetLength()) {
+      aRun.mCharacterOffset++;
+    }
+
+    
+    
+    ++prevRun;
+    return false;
+  });
+
+  MOZ_ASSERT(prevRun == &runs.LastElement(), "lost track of prevRun!");
+
+  
+  if (runs.Length() > 1 && prevRun->mCharacterOffset == GetLength()) {
+    runs.RemoveLastElement();
+  }
+
+  MOZ_ASSERT(!runs.IsEmpty());
+  if (runs.Length() == 1) {
     mGlyphRuns.ConvertToElement();
   }
 }
@@ -2670,8 +2674,6 @@ void gfxFontGroup::InitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
   
   
   aTextRun->SanitizeGlyphRuns();
-
-  aTextRun->SortGlyphRuns();
 }
 
 static inline bool IsPUA(uint32_t aUSV) {
