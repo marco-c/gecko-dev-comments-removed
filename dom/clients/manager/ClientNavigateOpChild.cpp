@@ -162,7 +162,7 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
   
   {
     ClientSourceChild* targetActor =
-        static_cast<ClientSourceChild*>(aArgs.target().AsChild());
+        static_cast<ClientSourceChild*>(aArgs.target().AsChild().get());
     MOZ_DIAGNOSTIC_ASSERT(targetActor);
 
     ClientSource* target = targetActor->GetSource();

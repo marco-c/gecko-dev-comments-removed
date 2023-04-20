@@ -53,7 +53,7 @@ WebBrowserPersistResourcesChild::VisitDocument(
   
   
   
-  SendVisitDocument(subActor);
+  SendVisitDocument(WrapNotNull(subActor));
   subActor->Start(aSubDocument);
   return NS_OK;
 }
