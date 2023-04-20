@@ -165,12 +165,6 @@ JSObject* Performance::WrapObject(JSContext* aCx,
 }
 
 void Performance::GetEntries(nsTArray<RefPtr<PerformanceEntry>>& aRetval) {
-  
-  if (nsContentUtils::ShouldResistFingerprinting()) {
-    aRetval.Clear();
-    return;
-  }
-
   aRetval = mResourceEntries.Clone();
   aRetval.AppendElements(mUserEntries);
   aRetval.Sort(PerformanceEntryComparator());
@@ -178,12 +172,6 @@ void Performance::GetEntries(nsTArray<RefPtr<PerformanceEntry>>& aRetval) {
 
 void Performance::GetEntriesByType(
     const nsAString& aEntryType, nsTArray<RefPtr<PerformanceEntry>>& aRetval) {
-  
-  if (nsContentUtils::ShouldResistFingerprinting()) {
-    aRetval.Clear();
-    return;
-  }
-
   if (aEntryType.EqualsLiteral("resource")) {
     aRetval = mResourceEntries.Clone();
     return;
@@ -205,11 +193,6 @@ void Performance::GetEntriesByName(
     const nsAString& aName, const Optional<nsAString>& aEntryType,
     nsTArray<RefPtr<PerformanceEntry>>& aRetval) {
   aRetval.Clear();
-
-  
-  if (nsContentUtils::ShouldResistFingerprinting()) {
-    return;
-  }
 
   RefPtr<nsAtom> name = NS_Atomize(aName);
   RefPtr<nsAtom> entryType =
@@ -367,17 +350,7 @@ already_AddRefed<PerformanceMark> Performance::Mark(
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!nsContentUtils::ShouldResistFingerprinting()) {
-    InsertUserEntry(performanceMark);
-  }
+  InsertUserEntry(performanceMark);
 
   if (profiler_thread_is_being_profiled_for_markers()) {
     Maybe<uint64_t> innerWindowId;
@@ -595,19 +568,6 @@ already_AddRefed<PerformanceMeasure> Performance::Measure(
   if (!GetParentObject()) {
     aRv.ThrowInvalidStateError("Global object is unavailable");
     return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (nsContentUtils::ShouldResistFingerprinting()) {
-    return do_AddRef(new PerformanceMeasure(GetParentObject(), aName, 0, 0,
-                                            JS::NullHandleValue));
   }
 
   
@@ -851,10 +811,6 @@ MOZ_ALWAYS_INLINE bool Performance::CanAddResourceTimingEntry() {
 
 void Performance::InsertResourceEntry(PerformanceEntry* aEntry) {
   MOZ_ASSERT(aEntry);
-
-  if (nsContentUtils::ShouldResistFingerprinting()) {
-    return;
-  }
 
   QueueEntry(aEntry);
 
