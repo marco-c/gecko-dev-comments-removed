@@ -65,6 +65,8 @@ interface nsIInputStream : nsISupports
 
 
 
+
+
     void close();
 
     
