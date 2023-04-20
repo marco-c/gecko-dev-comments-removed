@@ -1860,6 +1860,20 @@ class ExtensionData {
 
 
 
+  static isAllSitesPermission(origin) {
+    try {
+      let info = ExtensionData.classifyOriginPermissions([origin], true);
+      return !!info.allUrls;
+    } catch (e) {
+      
+      return false;
+    }
+  }
+
+  
+
+
+
 
 
 
