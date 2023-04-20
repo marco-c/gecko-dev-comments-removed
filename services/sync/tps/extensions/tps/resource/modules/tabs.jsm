@@ -65,11 +65,12 @@ var BrowserTabs = {
 
 
 
-  Find(uri, title, profile) {
+  async Find(uri, title, profile) {
     
     let tabEngine = Weave.Service.engineManager.get("tabs");
     for (let client of Weave.Service.clientsEngine.remoteClients) {
-      let tabClient = tabEngine.getAllClients().find(x => x.id === client.id);
+      let tabClients = await tabEngine.getAllClients();
+      let tabClient = tabClients.find(x => x.id === client.id);
       if (!tabClient || !tabClient.tabs) {
         continue;
       }
