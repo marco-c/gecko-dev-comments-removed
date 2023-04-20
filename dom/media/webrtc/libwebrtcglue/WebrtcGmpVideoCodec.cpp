@@ -787,6 +787,15 @@ int32_t WebrtcGmpVideoDecoder::Decode(const webrtc::EncodedImage& aInputImage,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
+  MediaInfoFlag flag = MediaInfoFlag::None;
+  flag |= (aInputImage._frameType == webrtc::VideoFrameType::kVideoFrameKey
+               ? MediaInfoFlag::KeyFrame
+               : MediaInfoFlag::NonKeyFrame);
+  flag |= MediaInfoFlag::SoftwareDecoding;
+  flag |= MediaInfoFlag::VIDEO_H264;
+  mPerformanceRecorder.Start((aInputImage.Timestamp() * 1000ll) / 90,
+                             "WebrtcGmpVideoDecoder"_ns, flag);
+
   
   
   
@@ -996,6 +1005,14 @@ void WebrtcGmpVideoDecoder::Decoded(GMPVideoi420Frame* aDecodedFrame) {
                   
                   (aDecodedFrame->Timestamp() * 90ll + 999) / 1000)
               .build();
+      mPerformanceRecorder.Record(
+          static_cast<int64_t>(aDecodedFrame->Timestamp()),
+          [&](DecodeStage& aStage) {
+            aStage.SetImageFormat(DecodeStage::YUV420P);
+            aStage.SetResolution(aDecodedFrame->Width(),
+                                 aDecodedFrame->Height());
+            aStage.SetColorDepth(gfx::ColorDepth::COLOR_8);
+          });
       mCallback->Decoded(videoFrame);
     }
   }
