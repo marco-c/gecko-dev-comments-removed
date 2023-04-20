@@ -144,7 +144,6 @@ add_task(async function test_activeStatus_computeStatus() {
 
   
   Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
-  Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
   Assert.equal(FormAutofillStatus.computeStatus(), true);
 
   
