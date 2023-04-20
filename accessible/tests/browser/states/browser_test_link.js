@@ -11,29 +11,33 @@ async function runTests(browser, accDoc) {
   testStates(getAcc("link_traversed"), 0, 0, STATE_TRAVERSED);
 
   let onStateChanged = waitForEvent(EVENT_STATE_CHANGE, "link_traversed");
-  let newWinOpened = BrowserTestUtils.waitForNewWindow();
+  let newTabOpened = BrowserTestUtils.waitForNewTab(gBrowser);
 
   await BrowserTestUtils.synthesizeMouse(
     "#link_traversed",
     1,
     1,
-    { shiftKey: true },
+    { ctrlKey: !MAC, metaKey: MAC },
     browser
   );
 
   await onStateChanged;
   testStates(getAcc("link_traversed"), STATE_TRAVERSED);
 
-  let newWin = await newWinOpened;
-  await BrowserTestUtils.closeWindow(newWin);
+  let newTab = await newTabOpened;
+  gBrowser.removeTab(newTab);
 }
 
 
 
 
 addAccessibleTask(
+  
+  
+  
   `
-  <a id="link_traversed" href="http://www.example.com" target="_top">
+  <a id="link_traversed"
+      href="https://www.example.com/${Date.now()}" target="_top">
     example.com
   </a>`,
   runTests
