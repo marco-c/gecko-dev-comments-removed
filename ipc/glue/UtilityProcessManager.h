@@ -20,8 +20,7 @@ class MemoryReportingProcess;
 
 namespace dom {
 class JSOracleParent;
-class WindowsUtilsParent;
-}  
+}
 
 namespace ipc {
 
@@ -37,9 +36,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   using StartRemoteDecodingUtilityPromise =
       MozPromise<Endpoint<PRemoteDecoderManagerChild>, nsresult, true>;
   using JSOraclePromise = GenericNonExclusivePromise;
-
-  using WindowsUtilsPromise =
-      MozPromise<RefPtr<dom::WindowsUtilsParent>, nsresult, true>;
 
   static void Initialize();
   static void Shutdown();
@@ -59,15 +55,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
       base::ProcessId aOtherProcess, SandboxingKind aSandbox);
 
   RefPtr<JSOraclePromise> StartJSOracle(mozilla::dom::JSOracleParent* aParent);
-
-#ifdef XP_WIN
-  
-  
-  RefPtr<WindowsUtilsPromise> GetWindowsUtilsPromise();
-  
-  
-  void ReleaseWindowsUtils();
-#endif
 
   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
 
@@ -135,14 +122,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
       }
     }
     return {};
-  }
-
-  Span<const UtilityActorName> GetActors(SandboxingKind aSbKind) {
-    auto proc = GetProcess(aSbKind);
-    if (!proc) {
-      return {};
-    }
-    return proc->mActors;
   }
 
   
@@ -218,10 +197,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   RefPtr<ProcessFields> GetProcess(SandboxingKind);
   bool NoMoreProcesses();
   uint16_t AliveProcesses();
-
-#ifdef XP_WIN
-  RefPtr<dom::WindowsUtilsParent> mWindowsUtils;
-#endif  
 };
 
 }  

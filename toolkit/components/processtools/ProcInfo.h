@@ -68,7 +68,14 @@ enum class ProcType {
   Max = Unknown,
 };
 
-using UtilityActorName = mozilla::dom::WebIDLUtilityActorName;
+enum class UtilityActorName {
+  Unknown,
+  AudioDecoder_Generic,
+  AudioDecoder_AppleMedia,
+  AudioDecoder_WMF,
+  MfMediaEngineCDM,
+  JSOracle,
+};
 
 
 nsCString GetUtilityActorName(const UtilityActorName aActorName);

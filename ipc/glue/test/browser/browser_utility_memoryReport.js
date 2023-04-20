@@ -6,7 +6,7 @@
 
 
 add_setup(async function ensureNoExistingProcess() {
-  await killUtilityProcesses();
+  await utilityProcessTest().stopProcess();
 });
 
 add_task(async () => {
@@ -72,5 +72,5 @@ add_task(async () => {
     "Collected some explicit/ report"
   );
 
-  await cleanUtilityProcessShutdown();
+  await cleanUtilityProcessShutdown(utilityPid);
 });

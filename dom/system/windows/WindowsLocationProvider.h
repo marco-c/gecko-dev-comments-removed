@@ -9,16 +9,12 @@
 
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
-#include "mozilla/MozPromise.h"
+
+#include <locationapi.h>
 
 class MLSFallback;
 
 namespace mozilla::dom {
-
-class WindowsLocationParent;
-
-
-
 
 class WindowsLocationProvider final : public nsIGeolocationProvider {
  public:
@@ -27,49 +23,25 @@ class WindowsLocationProvider final : public nsIGeolocationProvider {
 
   WindowsLocationProvider();
 
- private:
-  friend WindowsLocationParent;
-
-  ~WindowsLocationProvider();
-
   nsresult CreateAndWatchMLSProvider(nsIGeolocationUpdate* aCallback);
   void CancelMLSProvider();
 
-  void MaybeCreateLocationActor();
-  void ReleaseUtilityProcess();
+  class MLSUpdate : public nsIGeolocationUpdate {
+   public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIGEOLOCATIONUPDATE
+    explicit MLSUpdate(nsIGeolocationUpdate* aCallback);
 
-  
-  
-  bool SendStartup();
-  bool SendRegisterForReport(nsIGeolocationUpdate* aCallback);
-  bool SendUnregisterForReport();
-  bool SendSetHighAccuracy(bool aEnable);
-  bool Send__delete__();
+   private:
+    nsCOMPtr<nsIGeolocationUpdate> mCallback;
+    virtual ~MLSUpdate() {}
+  };
 
-  void RecvUpdate(RefPtr<nsIDOMGeoPosition> aGeoPosition);
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void RecvFailed(uint16_t err);
+ private:
+  ~WindowsLocationProvider();
 
-  
-  
-  void ActorStopped();
-
-  
-  template <typename Fn>
-  bool WhenActorIsReady(Fn&& fn);
-
+  RefPtr<ILocation> mLocation;
   RefPtr<MLSFallback> mMLSProvider;
-
-  nsCOMPtr<nsIGeolocationUpdate> mCallback;
-
-  using WindowsLocationPromise =
-      MozPromise<RefPtr<WindowsLocationParent>, bool, false>;
-
-  
-  
-  RefPtr<WindowsLocationPromise> mActorPromise;
-  RefPtr<WindowsLocationParent> mActor;
-
   bool mWatching = false;
 };
 

@@ -13,7 +13,7 @@ Services.scriptloader.loadSubScript(
 
 
 add_setup(async function ensureNoExistingProcess() {
-  await killUtilityProcesses();
+  await killPendingUtilityProcess();
 });
 
 add_task(async () => {
@@ -72,5 +72,5 @@ add_task(async () => {
 
   Services.profiler.StopProfiler();
 
-  await cleanUtilityProcessShutdown();
+  await cleanUtilityProcessShutdown(utilityPid);
 });
