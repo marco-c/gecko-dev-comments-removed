@@ -960,7 +960,10 @@ impl ToAnimatedValue for FontStyle {
     #[inline]
     fn to_animated_value(self) -> Self::AnimatedValue {
         if self == Self::NORMAL {
-            return generics::FontStyle::Normal;
+            
+            
+            
+            return generics::FontStyle::Oblique(Angle::from_degrees(0.0))
         }
         if self == Self::ITALIC {
             return generics::FontStyle::Italic;
@@ -973,7 +976,13 @@ impl ToAnimatedValue for FontStyle {
         match animated {
             generics::FontStyle::Normal => Self::NORMAL,
             generics::FontStyle::Italic => Self::ITALIC,
-            generics::FontStyle::Oblique(ref angle) => Self::oblique(angle.degrees()),
+            generics::FontStyle::Oblique(ref angle) =>
+                if angle.degrees() == 0.0 {
+                    
+                    Self::NORMAL
+                } else {
+                    Self::oblique(angle.degrees())
+                },
         }
     }
 }
