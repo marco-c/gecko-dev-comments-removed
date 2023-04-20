@@ -1425,28 +1425,17 @@ tls13_ConstructInnerExtensionsFromOuter(sslSocket *ss, sslBuffer *chOuterXtnsBuf
                 if (rv != SECSuccess) {
                     goto loser;
                 }
-                
-                tmpLen = (ss->opt.enableGrease) ? 5 : 3;
-                rv = sslBuffer_AppendNumber(chInnerXtns, tmpLen, 2);
+                rv = sslBuffer_AppendNumber(chInnerXtns, 3, 2);
                 if (rv != SECSuccess) {
                     goto loser;
                 }
-                
-                rv = sslBuffer_AppendNumber(chInnerXtns, tmpLen - 1, 1);
+                rv = sslBuffer_AppendNumber(chInnerXtns, 2, 1);
                 if (rv != SECSuccess) {
                     goto loser;
                 }
-                
                 rv = sslBuffer_AppendNumber(chInnerXtns, SSL_LIBRARY_VERSION_TLS_1_3, 2);
                 if (rv != SECSuccess) {
                     goto loser;
-                }
-                
-                if (ss->opt.enableGrease) {
-                    rv = sslBuffer_AppendNumber(chInnerXtns, ss->ssl3.hs.grease->idx[grease_version], 2);
-                    if (rv != SECSuccess) {
-                        goto loser;
-                    }
                 }
                 
                 if (shouldCompress) {

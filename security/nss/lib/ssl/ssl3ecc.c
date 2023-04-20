@@ -906,20 +906,6 @@ ssl_SendSupportedGroupsXtn(const sslSocket *ss, TLSExtensionData *xtnData,
         }
     }
 
-    
-
-
-
-    if (!ss->sec.isServer &&
-        ss->opt.enableGrease &&
-        ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_3) {
-        rv = sslBuffer_AppendNumber(buf, ss->ssl3.hs.grease->idx[grease_group], 2);
-        if (rv != SECSuccess) {
-            return SECFailure;
-        }
-        found = PR_TRUE;
-    }
-
     if (!found) {
         
         return SECSuccess;

@@ -201,7 +201,7 @@ ssl3_FreeSniNameArray(TLSExtensionData *xtnData)
 
 
 
-SECStatus
+PRInt32
 ssl3_ClientSendSessionTicketXtn(const sslSocket *ss, TLSExtensionData *xtnData,
                                 sslBuffer *buf, PRBool *added)
 {
@@ -456,33 +456,20 @@ ssl3_ClientSendAppProtoXtn(const sslSocket *ss, TLSExtensionData *xtnData,
                            sslBuffer *buf, PRBool *added)
 {
     SECStatus rv;
+    const unsigned int len = ss->opt.nextProtoNego.len;
 
     
-    if (!ss->opt.enableALPN || !ss->opt.nextProtoNego.len || ss->firstHsDone) {
-        PR_ASSERT(!ss->opt.nextProtoNego.data);
+    if (!ss->opt.enableALPN || !ss->opt.nextProtoNego.data || ss->firstHsDone) {
         return SECSuccess;
     }
-    PRBool addGrease = ss->opt.enableGrease && ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_3;
 
-    
-    rv = sslBuffer_AppendNumber(buf, ss->opt.nextProtoNego.len + (addGrease ? 3 : 0), 2);
-    if (rv != SECSuccess) {
-        return SECFailure;
-    }
-    
-    rv = sslBuffer_Append(buf, ss->opt.nextProtoNego.data, ss->opt.nextProtoNego.len);
-    if (rv != SECSuccess) {
-        return SECFailure;
-    }
-    
-
-
-    if (addGrease) {
-        rv = sslBuffer_AppendNumber(buf, 2, 1);
+    if (len > 0) {
+        
+        rv = sslBuffer_AppendNumber(buf, len, 2);
         if (rv != SECSuccess) {
             return SECFailure;
         }
-        rv = sslBuffer_AppendNumber(buf, ss->ssl3.hs.grease->idx[grease_alpn], 2);
+        rv = sslBuffer_Append(buf, ss->opt.nextProtoNego.data, len);
         if (rv != SECSuccess) {
             return SECFailure;
         }
@@ -1661,8 +1648,7 @@ ssl3_SendSigAlgsXtn(const sslSocket *ss, TLSExtensionData *xtnData,
         minVersion = ss->vrange.min; 
     }
 
-    SECStatus rv = ssl3_EncodeSigAlgs(ss, minVersion, PR_TRUE ,
-                                      ss->opt.enableGrease, buf);
+    SECStatus rv = ssl3_EncodeSigAlgs(ss, minVersion, PR_TRUE , buf);
     if (rv != SECSuccess) {
         return SECFailure;
     }

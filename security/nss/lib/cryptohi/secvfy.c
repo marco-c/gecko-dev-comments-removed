@@ -16,7 +16,6 @@
 #include "secdig.h"
 #include "secerr.h"
 #include "keyi.h"
-#include "nss.h"
 
 
 
@@ -467,7 +466,6 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
     unsigned int sigLen;
     KeyType type;
     PRUint32 policyFlags;
-    PRInt32 optFlags;
 
     
     
@@ -477,16 +475,7 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
         PORT_SetError(SEC_ERROR_PKCS7_KEYALG_MISMATCH);
         return NULL;
     }
-    if (NSS_OptionGet(NSS_KEY_SIZE_POLICY_FLAGS, &optFlags) != SECFailure) {
-        if (optFlags & NSS_KEY_SIZE_POLICY_VERIFY_FLAG) {
-            rv = seckey_EnforceKeySize(key->keyType,
-                                       SECKEY_PublicKeyStrengthInBits(key),
-                                       SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
-            if (rv != SECSuccess) {
-                return NULL;
-            }
-        }
-    }
+
     
     if ((NSS_GetAlgorithmPolicy(encAlg, &policyFlags) == SECFailure) ||
         !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {

@@ -4,7 +4,6 @@
 
 #ifndef _KEYI_H_
 #define _KEYI_H_
-#include "secerr.h"
 
 SEC_BEGIN_PROTOS
 
@@ -37,9 +36,6 @@ SECStatus sec_DecodeRSAPSSParamsToMechanism(PLArenaPool *arena,
                                             const SECItem *params,
                                             CK_RSA_PKCS_PSS_PARAMS *mech);
 
-
-SECStatus seckey_EnforceKeySize(KeyType keyType, unsigned keyLength,
-                                SECErrorCodes error);
 SEC_END_PROTOS
 
 #endif 

@@ -1000,6 +1000,27 @@ TEST_P(TlsConnectClientAuth12, ClientAuthBigRsaCheckSigAlg) {
 }
 
 
+class TlsReplaceSignatureSchemeFilter : public TlsHandshakeFilter {
+ public:
+  TlsReplaceSignatureSchemeFilter(const std::shared_ptr<TlsAgent>& a,
+                                  SSLSignatureScheme scheme)
+      : TlsHandshakeFilter(a, {kTlsHandshakeCertificateVerify}),
+        scheme_(scheme) {}
+
+ protected:
+  virtual PacketFilter::Action FilterHandshake(const HandshakeHeader& header,
+                                               const DataBuffer& input,
+                                               DataBuffer* output) {
+    *output = input;
+    output->Write(0, scheme_, 2);
+    return CHANGE;
+  }
+
+ private:
+  SSLSignatureScheme scheme_;
+};
+
+
 
 
 
