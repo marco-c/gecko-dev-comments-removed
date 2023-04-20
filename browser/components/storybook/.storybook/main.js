@@ -11,8 +11,9 @@ const projectRoot = path.resolve(__dirname, "../../../../");
 
 module.exports = {
   stories: [
+    "../**/*.stories.md",
     "../stories/**/*.stories.mdx",
-    "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)",
+    "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     `${projectRoot}/toolkit/**/*.stories.@(js|jsx|mjs|ts|tsx)`,
   ],
   
@@ -48,6 +49,12 @@ module.exports = {
     config.resolve.alias[
       "lit.all.mjs"
     ] = `${projectRoot}/toolkit/content/widgets/vendor/lit.all.mjs`;
+    
+    
+    
+    
+    config.resolve.alias["@mdx-js/react"] =
+      "browser/components/storybook/node_modules/@storybook/addon-docs/node_modules/@mdx-js/react";
 
     
     
@@ -63,6 +70,41 @@ module.exports = {
       test: /\.mjs/,
       loader: path.resolve(__dirname, "./chrome-uri-loader.js"),
     });
+
+    
+    
+    const MD_STORY_REGEX = /(stories|story)\.md$/;
+
+    
+    let mdxStoryTest = /(stories|story)\.mdx$/.toString();
+    let mdxRule = config.module.rules.find(
+      rule => rule.test.toString() === mdxStoryTest
+    );
+
+    
+    
+    
+    config.module.rules.push({
+      test: MD_STORY_REGEX,
+      use: [
+        ...mdxRule.use,
+        { loader: path.resolve(__dirname, "./markdown-story-loader.js") },
+      ],
+    });
+
+    
+    let markdownTest = /\.md$/.toString();
+    let markdownRuleIndex = config.module.rules.findIndex(
+      rule => rule.test.toString() === markdownTest
+    );
+    let markdownRule = config.module.rules[markdownRuleIndex];
+
+    
+    
+    config.module.rules[markdownRuleIndex] = {
+      ...markdownRule,
+      exclude: MD_STORY_REGEX,
+    };
 
     config.optimization = {
       splitChunks: false,
