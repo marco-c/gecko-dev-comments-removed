@@ -126,6 +126,7 @@ void SVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
   SVGUtils::MaskUsage maskUsage;
   SVGUtils::DetermineMaskUsage(this, true, maskUsage);
 
+  gfxGroupForBlendAutoSaveRestore autoGroupForBlend(&aMaskContext);
   if (maskUsage.shouldApplyClipPath) {
     clipPathThatClipsClipPath->ApplyClipPath(aMaskContext, aClippedFrame,
                                              aMatrix);
@@ -136,10 +137,8 @@ void SVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
     
     Matrix maskTransform = aMaskContext.CurrentMatrix();
     maskTransform.Invert();
-    aMaskContext.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0, maskSurface,
-                                       maskTransform);
-    
-    
+    autoGroupForBlend.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0f,
+                                            maskSurface, maskTransform);
   }
 
   
@@ -147,9 +146,7 @@ void SVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
     PaintFrameIntoMask(kid, aClippedFrame, aMaskContext);
   }
 
-  if (maskUsage.shouldGenerateClipMaskLayer) {
-    aMaskContext.PopGroupAndBlend();
-  } else if (maskUsage.shouldApplyClipPath) {
+  if (maskUsage.shouldApplyClipPath) {
     aMaskContext.PopClip();
   }
 
@@ -180,6 +177,7 @@ void SVGClipPathFrame::PaintFrameIntoMask(nsIFrame* aFrame,
 
   SVGUtils::MaskUsage maskUsage;
   SVGUtils::DetermineMaskUsage(aFrame, true, maskUsage);
+  gfxGroupForBlendAutoSaveRestore autoGroupForBlend(&aTarget);
   if (maskUsage.shouldApplyClipPath) {
     clipPathThatClipsChild->ApplyClipPath(
         aTarget, aClippedFrame,
@@ -193,10 +191,8 @@ void SVGClipPathFrame::PaintFrameIntoMask(nsIFrame* aFrame,
     
     Matrix maskTransform = aTarget.CurrentMatrix();
     maskTransform.Invert();
-    aTarget.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0, maskSurface,
-                                  maskTransform);
-    
-    
+    autoGroupForBlend.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0f,
+                                            maskSurface, maskTransform);
   }
 
   gfxMatrix toChildsUserSpace = mMatrixForChildren;
@@ -216,9 +212,7 @@ void SVGClipPathFrame::PaintFrameIntoMask(nsIFrame* aFrame,
   
   frame->PaintSVG(aTarget, toChildsUserSpace, imgParams);
 
-  if (maskUsage.shouldGenerateClipMaskLayer) {
-    aTarget.PopGroupAndBlend();
-  } else if (maskUsage.shouldApplyClipPath) {
+  if (maskUsage.shouldApplyClipPath) {
     aTarget.PopClip();
   }
 }

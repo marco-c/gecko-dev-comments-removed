@@ -3213,9 +3213,6 @@ ImgDrawResult nsTreeBodyFrame::PaintImage(
       GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeImage());
 
   
-  float opacity = imageContext->StyleEffects()->mOpacity;
-
-  
   
   nsRect imageRect(aImageRect);
   nsMargin imageMargin;
@@ -3339,9 +3336,11 @@ ImgDrawResult nsTreeBodyFrame::PaintImage(
       }
     }
 
-    if (opacity != 1.0f) {
-      aRenderingContext.PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
-                                              opacity);
+    const auto* styleEffects = imageContext->StyleEffects();
+    gfxGroupForBlendAutoSaveRestore autoGroupForBlend(&aRenderingContext);
+    if (!styleEffects->IsOpaque()) {
+      autoGroupForBlend.PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
+                                              styleEffects->mOpacity);
     }
 
     uint32_t drawFlags = aBuilder && aBuilder->UseHighQualityScaling()
@@ -3351,10 +3350,6 @@ ImgDrawResult nsTreeBodyFrame::PaintImage(
         aRenderingContext, imageContext, aPresContext, image,
         nsLayoutUtils::GetSamplingFilterForFrame(this), wholeImageDest,
         destRect, destRect.TopLeft(), aDirtyRect, drawFlags);
-
-    if (opacity != 1.0f) {
-      aRenderingContext.PopGroupAndBlend();
-    }
   }
 
   
@@ -3399,9 +3394,6 @@ ImgDrawResult nsTreeBodyFrame::PaintText(
   
   ComputedStyle* textContext =
       GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeCellText());
-
-  
-  float opacity = textContext->StyleEffects()->mOpacity;
 
   
   
@@ -3475,9 +3467,11 @@ ImgDrawResult nsTreeBodyFrame::PaintText(
   ComputedStyle* cellContext =
       GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeCell());
 
-  if (opacity != 1.0f) {
-    aRenderingContext.PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
-                                            opacity);
+  const auto* styleEffects = textContext->StyleEffects();
+  gfxGroupForBlendAutoSaveRestore autoGroupForBlend(&aRenderingContext);
+  if (!styleEffects->IsOpaque()) {
+    autoGroupForBlend.PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
+                                            styleEffects->mOpacity);
   }
 
   aRenderingContext.SetColor(
@@ -3485,10 +3479,6 @@ ImgDrawResult nsTreeBodyFrame::PaintText(
   nsLayoutUtils::DrawString(
       this, *fontMet, &aRenderingContext, text.get(), text.Length(),
       textRect.TopLeft() + nsPoint(0, baseline), cellContext);
-
-  if (opacity != 1.0f) {
-    aRenderingContext.PopGroupAndBlend();
-  }
 
   return result;
 }
