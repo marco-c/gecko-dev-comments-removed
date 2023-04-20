@@ -35,19 +35,19 @@ impl Variant {
     
     
     pub const unsafe fn from_raw_unchecked(v: u64) -> Self {
-        Self(TinyStr8::new_unchecked(v))
+        Self(TinyStr8::from_bytes_unchecked(v.to_le_bytes()))
     }
 }
 
 impl From<Variant> for u64 {
     fn from(input: Variant) -> Self {
-        input.0.into()
+        u64::from_le_bytes(*input.0.all_bytes())
     }
 }
 
 impl From<&Variant> for u64 {
     fn from(input: &Variant) -> Self {
-        input.0.into()
+        u64::from_le_bytes(*input.0.all_bytes())
     }
 }
 

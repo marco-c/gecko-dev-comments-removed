@@ -52,54 +52,65 @@
 
 
 
+#![cfg_attr(not(test), no_std)]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::indexing_slicing,
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::exhaustive_structs,
+        clippy::exhaustive_enums,
+        missing_debug_implementations,
+    )
+)]
+
+mod macros;
+
+mod ascii;
+mod asciibyte;
+mod error;
+mod int_ops;
+
+#[cfg(feature = "serde")]
+mod serde;
+
+#[cfg(feature = "databake")]
+mod databake;
+
+#[cfg(feature = "zerovec")]
+mod ule;
+
+#[cfg(any(feature = "serde", feature = "alloc"))]
+extern crate alloc;
+
+pub use ascii::TinyAsciiStr;
+pub use error::TinyStrError;
 
 
 
+pub type TinyStr4 = TinyAsciiStr<4>;
 
 
+pub type TinyStr8 = TinyAsciiStr<8>;
 
 
+pub type TinyStr16 = TinyAsciiStr<16>;
 
-
-
-
-
-
-
-
-#![no_std]
-
-#[cfg(any(feature = "std", test))]
-extern crate std;
-
-#[cfg(all(not(feature = "std"), not(test)))]
-extern crate core as std;
-
-mod helpers;
-mod tinystr16;
-mod tinystr4;
-mod tinystr8;
-
-#[cfg(any(feature = "std", feature = "alloc"))]
-mod tinystrauto;
-
-pub use tinystr16::TinyStr16;
-pub use tinystr4::TinyStr4;
-pub use tinystr8::TinyStr8;
-
-#[cfg(any(feature = "std", feature = "alloc"))]
-pub use tinystrauto::TinyStrAuto;
-
-#[cfg(feature = "macros")]
-pub use tinystr_macros as macros;
-
-
-#[derive(PartialEq, Eq, Debug)]
-pub enum Error {
-    
-    InvalidSize,
-    
-    InvalidNull,
-    
-    NonAscii,
+#[test]
+fn test_size() {
+    assert_eq!(
+        core::mem::size_of::<TinyStr4>(),
+        core::mem::size_of::<Option<TinyStr4>>()
+    );
+    assert_eq!(
+        core::mem::size_of::<TinyStr8>(),
+        core::mem::size_of::<Option<TinyStr8>>()
+    );
 }
+
+
+
+
+

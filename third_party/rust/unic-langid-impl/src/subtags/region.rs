@@ -37,13 +37,13 @@ impl Region {
     
     
     pub const unsafe fn from_raw_unchecked(v: u32) -> Self {
-        Self(TinyStr4::new_unchecked(v))
+        Self(TinyStr4::from_bytes_unchecked(v.to_le_bytes()))
     }
 }
 
 impl From<Region> for u32 {
     fn from(input: Region) -> Self {
-        input.0.into()
+        u32::from_le_bytes(*input.0.all_bytes())
     }
 }
 
