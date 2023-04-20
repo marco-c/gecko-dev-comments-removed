@@ -76,6 +76,8 @@ class FetchDriverObserver {
   
   virtual void OnDataAvailable() = 0;
 
+  virtual void OnReportPerformanceTiming() {}
+
  protected:
   virtual ~FetchDriverObserver() = default;
 
