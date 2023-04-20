@@ -178,15 +178,16 @@ nscoord SVGOuterSVGFrame::GetPrefISize(gfxContext* aRenderingContext) {
           ContainSizeAxesIfApplicable(this).ContainIntrinsicISize(*this)) {
     result = *containISize;
   } else if (isize.IsPercentage()) {
-    if (isize.IsExplicitlySet() || StylePosition()->ISize(wm).HasPercent()) {
-      
-      
-      
+    
+    
+    
+    
+    
+    if (isize.IsExplicitlySet() || StylePosition()->ISize(wm).HasPercent() ||
+        !GetAspectRatio()) {
       result = wm.IsVertical() ? kFallbackIntrinsicSize.height
                                : kFallbackIntrinsicSize.width;
     } else {
-      
-      
       result = nscoord(0);
     }
   } else {
