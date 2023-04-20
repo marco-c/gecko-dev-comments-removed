@@ -54,7 +54,8 @@ class RtpSenderInternal : public RtpSenderInterface {
   
   
   
-  virtual void SetMediaChannel(cricket::MediaChannel* media_channel) = 0;
+  virtual void SetMediaChannel(
+      cricket::MediaSendChannelInterface* media_channel) = 0;
 
   
   
@@ -120,7 +121,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
-  void SetMediaChannel(cricket::MediaChannel* media_channel) override;
+  void SetMediaChannel(
+      cricket::MediaSendChannelInterface* media_channel) override;
 
   bool SetTrack(MediaStreamTrackInterface* track) override;
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
@@ -267,7 +269,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   
   
-  cricket::MediaChannel* media_channel_ = nullptr;
+  cricket::MediaSendChannelInterface* media_channel_ = nullptr;
   rtc::scoped_refptr<MediaStreamTrackInterface> track_;
 
   rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;

@@ -158,29 +158,15 @@ struct VideoOptions {
   }
 };
 
-class MediaChannel {
+class MediaBaseChannelInterface {
  public:
-  class NetworkInterface {
-   public:
-    enum SocketType { ST_RTP, ST_RTCP };
-    virtual bool SendPacket(rtc::CopyOnWriteBuffer* packet,
-                            const rtc::PacketOptions& options) = 0;
-    virtual bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
-                          const rtc::PacketOptions& options) = 0;
-    virtual int SetOption(SocketType type,
-                          rtc::Socket::Option opt,
-                          int option) = 0;
-    virtual ~NetworkInterface() {}
-  };
-
-  explicit MediaChannel(webrtc::TaskQueueBase* network_thread,
-                        bool enable_dscp = false);
-  virtual ~MediaChannel();
-
+  virtual ~MediaBaseChannelInterface() = default;
   virtual cricket::MediaType media_type() const = 0;
 
   
-  virtual void SetInterface(NetworkInterface* iface);
+  
+  
+
   
   virtual void OnPacketReceived(rtc::CopyOnWriteBuffer packet,
                                 int64_t packet_time_us) = 0;
@@ -193,6 +179,13 @@ class MediaChannel {
   virtual void OnNetworkRouteChanged(
       absl::string_view transport_name,
       const rtc::NetworkRoute& network_route) = 0;
+};
+
+class MediaSendChannelInterface : virtual public MediaBaseChannelInterface {
+ public:
+  virtual ~MediaSendChannelInterface() = default;
+
+  virtual cricket::MediaType media_type() const = 0;
   
   
   virtual bool AddSendStream(const StreamParams& sp) = 0;
@@ -201,6 +194,36 @@ class MediaChannel {
   
   
   virtual bool RemoveSendStream(uint32_t ssrc) = 0;
+  
+  
+  
+  virtual void SetFrameEncryptor(
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor) = 0;
+
+  virtual webrtc::RTCError SetRtpSendParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters,
+      webrtc::SetParametersCallback callback = nullptr) = 0;
+
+  virtual void SetEncoderToPacketizerFrameTransformer(
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface>
+          frame_transformer) = 0;
+
+  
+  
+  virtual void SetEncoderSelector(
+      uint32_t ssrc,
+      webrtc::VideoEncoderFactory::EncoderSelectorInterface* encoder_selector) {
+  }
+  virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
+};
+
+class MediaReceiveChannelInterface : virtual public MediaBaseChannelInterface {
+ public:
+  virtual ~MediaReceiveChannelInterface() = default;
+
   
   
   
@@ -227,31 +250,44 @@ class MediaChannel {
   virtual void OnDemuxerCriteriaUpdatePending() = 0;
   virtual void OnDemuxerCriteriaUpdateComplete() = 0;
   
-  virtual int GetRtpSendTimeExtnId() const;
-  
-  
-  
-  
-  virtual void SetFrameEncryptor(
-      uint32_t ssrc,
-      rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor);
-  
-  
   
   
   virtual void SetFrameDecryptor(
       uint32_t ssrc,
-      rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor);
+      rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor) = 0;
 
+  virtual void SetDepacketizerToDecoderFrameTransformer(
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface>
+          frame_transformer) = 0;
+};
+
+class MediaChannel : public MediaSendChannelInterface,
+                     public MediaReceiveChannelInterface {
+ public:
+  class NetworkInterface {
+   public:
+    enum SocketType { ST_RTP, ST_RTCP };
+    virtual bool SendPacket(rtc::CopyOnWriteBuffer* packet,
+                            const rtc::PacketOptions& options) = 0;
+    virtual bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
+                          const rtc::PacketOptions& options) = 0;
+    virtual int SetOption(SocketType type,
+                          rtc::Socket::Option opt,
+                          int option) = 0;
+    virtual ~NetworkInterface() {}
+  };
+
+  explicit MediaChannel(webrtc::TaskQueueBase* network_thread,
+                        bool enable_dscp = false);
+  virtual ~MediaChannel();
+
+  
+  virtual void SetInterface(NetworkInterface* iface);
+  
+  virtual int GetRtpSendTimeExtnId() const;
   
   virtual void SetVideoCodecSwitchingEnabled(bool enabled);
-
-  
-  
-  virtual void SetEncoderSelector(
-      uint32_t ssrc,
-      webrtc::VideoEncoderFactory::EncoderSelectorInterface* encoder_selector) {
-  }
 
   
   bool SendPacket(rtc::CopyOnWriteBuffer* packet,
@@ -275,18 +311,21 @@ class MediaChannel {
   
   bool HasNetworkInterface() const;
 
-  virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
-  virtual webrtc::RTCError SetRtpSendParameters(
-      uint32_t ssrc,
-      const webrtc::RtpParameters& parameters,
-      webrtc::SetParametersCallback callback = nullptr) = 0;
+  void SetFrameEncryptor(uint32_t ssrc,
+                         rtc::scoped_refptr<webrtc::FrameEncryptorInterface>
+                             frame_encryptor) override;
+  void SetFrameDecryptor(uint32_t ssrc,
+                         rtc::scoped_refptr<webrtc::FrameDecryptorInterface>
+                             frame_decryptor) override;
 
-  virtual void SetEncoderToPacketizerFrameTransformer(
+  void SetEncoderToPacketizerFrameTransformer(
       uint32_t ssrc,
-      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
-  virtual void SetDepacketizerToDecoderFrameTransformer(
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
+      override;
+  void SetDepacketizerToDecoderFrameTransformer(
       uint32_t ssrc,
-      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
+      override;
 
  protected:
   int SetOptionLocked(NetworkInterface::SocketType type,
