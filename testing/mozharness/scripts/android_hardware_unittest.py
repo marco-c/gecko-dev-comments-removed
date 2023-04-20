@@ -465,10 +465,10 @@ class AndroidHardwareTest(
                         return
                 else:
                     self.record_status(tbpl_status, level=log_level)
-                    self.log(
+                    
+                    self.info(
                         "The %s suite: %s ran with return status: %s"
                         % (suite_category, suite, tbpl_status),
-                        level=log_level,
                     )
 
 

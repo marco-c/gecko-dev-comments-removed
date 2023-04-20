@@ -229,7 +229,8 @@ class StructuredOutputParser(OutputParser):
                 if not allow:
                     self.update_levels(*fail_pair)
                     msg = "Got " + msg
-                    self.error(msg)
+                    
+                    self.warning(msg)
                 else:
                     msg = "Ignored " + msg
                     self.warning(msg)
