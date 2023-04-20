@@ -40,10 +40,18 @@ const AddonsActor = protocol.ActorClassWithSpec(addonsSpec, {
     
     
     if (openDevTools) {
+      
+      
+      
+      
+      const loader = ChromeUtils.importESModule(
+        "resource://devtools/shared/loader/Loader.sys.mjs",
+        { loadInDevToolsLoader: false }
+      );
       const {
         gDevTools,
         
-      } = require("resource://devtools/client/framework/devtools.js");
+      } = loader.require("resource://devtools/client/framework/devtools.js");
       gDevTools.showToolboxForWebExtension(addon.id);
     }
 
