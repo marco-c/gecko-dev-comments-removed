@@ -22,9 +22,9 @@ const lazy = createLazyLoaders({
     ChromeUtils.import("resource:///modules/CustomizableUI.jsm"),
   CustomizableWidgets: () =>
     ChromeUtils.import("resource:///modules/CustomizableWidgets.jsm"),
-  PopupPanel: () =>
+  PopupLogic: () =>
     ChromeUtils.import(
-      "resource://devtools/client/performance-new/popup/panel.jsm.js"
+      "resource://devtools/client/performance-new/popup/logic.jsm.js"
     ),
   Background: () =>
     ChromeUtils.import(
@@ -166,7 +166,7 @@ function initialize(toggleProfilerKeyShortcuts) {
           
           
           
-          const { initializePopup } = lazy.PopupPanel();
+          const { initializePopup } = lazy.PopupLogic();
 
           initializePopup(panelState, event.target);
         } catch (error) {
