@@ -2,7 +2,8 @@
 
 
 
-#include "mozilla/dom/StreamUtils.h"
+#include "StreamUtils.h"
+
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
 

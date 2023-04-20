@@ -5,6 +5,7 @@
 
 
 #include "ErrorList.h"
+#include "ReadableStreamPipeTo.h"
 #include "js/RootingAPI.h"
 #include "js/String.h"
 #include "js/TypeDecls.h"
@@ -23,7 +24,6 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ReadableStream.h"
-#include "mozilla/dom/ReadableStreamPipeTo.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/TransformStream.h"
 #include "nsISupportsImpl.h"

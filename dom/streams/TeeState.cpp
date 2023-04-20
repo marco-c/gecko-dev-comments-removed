@@ -4,12 +4,12 @@
 
 
 
-#include "mozilla/dom/TeeState.h"
+#include "TeeState.h"
 
+#include "ReadableStreamTee.h"
 #include "js/Value.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/ReadableStream.h"
-#include "mozilla/dom/ReadableStreamTee.h"
 #include "mozilla/dom/Promise.h"
 
 namespace mozilla::dom {

@@ -4,6 +4,9 @@
 
 
 
+#include "mozilla/dom/ReadableByteStreamController.h"
+
+#include "ReadIntoRequest.h"
 #include "js/ArrayBuffer.h"
 #include "js/ErrorReport.h"
 #include "js/Exception.h"
@@ -19,9 +22,7 @@
 #include "mozilla/dom/ByteStreamHelpers.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Promise-inl.h"
-#include "mozilla/dom/ReadableByteStreamController.h"
 #include "mozilla/dom/ReadableByteStreamControllerBinding.h"
-#include "mozilla/dom/ReadIntoRequest.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamBYOBReader.h"
 #include "mozilla/dom/ReadableStreamBYOBRequest.h"

@@ -4,11 +4,12 @@
 
 
 
+#include "ReadableStreamPipeTo.h"
+
 #include "mozilla/dom/AbortFollower.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamDefaultReader.h"
-#include "mozilla/dom/ReadableStreamPipeTo.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/WritableStreamDefaultWriter.h"
 #include "mozilla/dom/Promise.h"
