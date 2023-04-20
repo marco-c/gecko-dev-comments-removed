@@ -2827,7 +2827,7 @@ void SVGTextFrame::ScheduleReflowSVGNonDisplayText(IntrinsicDirty aReason) {
         
         return;
       }
-      if (!f->IsFrameOfType(eSVG) || f->IsSVGOuterSVGFrame()) {
+      if (!f->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
         break;
       }
       f->AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
