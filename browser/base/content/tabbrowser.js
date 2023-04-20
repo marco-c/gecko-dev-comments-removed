@@ -1719,25 +1719,7 @@
     },
 
     loadOneTab(uri, params) {
-      
-      if (!params.triggeringPrincipal) {
-        throw new Error(
-          "Required argument triggeringPrincipal missing within loadOneTab"
-        );
-      }
-
-      params.inBackground ??= Services.prefs.getBoolPref(
-        "browser.tabs.loadInBackground"
-      );
-      params.ownerTab = params.inBackground ? null : this.selectedTab;
-      
-      params.allowInheritPrincipal = !!params.allowInheritPrincipal;
-
-      let tab = this.addTab(uri, params);
-      if (!params.inBackground) {
-        this.selectedTab = tab;
-      }
-      return tab;
+      return this.addTab(uri, params);
     },
 
     loadTabs(
@@ -2560,6 +2542,7 @@
         forceNotRemote,
         forceAllowDataURI,
         fromExternal,
+        inBackground = true,
         index,
         lazyTabTitle,
         name,
@@ -2597,6 +2580,9 @@
       if (!UserInteraction.running("browser.tabs.opening", window)) {
         UserInteraction.start("browser.tabs.opening", "initting", window);
       }
+
+      
+      ownerTab ??= inBackground ? null : this.selectedTab;
 
       
       
@@ -2945,6 +2931,9 @@
 
       gSharedTabWarning.tabAdded(t);
 
+      if (!inBackground) {
+        this.selectedTab = t;
+      }
       return t;
     },
 
