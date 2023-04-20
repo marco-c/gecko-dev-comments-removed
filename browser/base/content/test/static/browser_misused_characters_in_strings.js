@@ -46,6 +46,17 @@ let gExceptionsList = [
     key: "PatternAttributeCompileFailure",
     type: "single-quote",
   },
+  {
+    file: "dom.properties",
+    key: "ImportMapExternalNotSupported",
+    type: "single-quote",
+  },
+  
+  {
+    file: "dom.properties",
+    key: "ImportMapExternalNotSupported",
+    type: "single-quote",
+  },
 ];
 
 
