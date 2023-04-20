@@ -107,8 +107,10 @@ async function makeExtension({
       });
 
       let action = browser.action || browser.browserAction;
-
-      action.onClicked.addListener(executeCountScript);
+      
+      if (action) {
+        action.onClicked.addListener(executeCountScript);
+      }
     },
 
     files: {
