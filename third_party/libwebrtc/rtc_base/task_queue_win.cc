@@ -8,6 +8,15 @@
 
 
 
+
+
+
+
+
+
+
+static_assert(false, "This file should not be built, see Bug 1797161.");
+
 #include "rtc_base/task_queue_win.h"
 
 
