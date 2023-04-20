@@ -58,7 +58,7 @@ nsresult txNumberExpr::evaluate(txIEvalContext* aContext,
       } else {
 #if defined(XP_WIN)
         
-        if (!mozilla::IsInfinite(leftDbl) && mozilla::IsInfinite(rightDbl))
+        if (!std::isinf(leftDbl) && std::isinf(rightDbl))
           result = leftDbl;
         else
 #endif

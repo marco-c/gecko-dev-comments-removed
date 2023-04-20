@@ -1048,7 +1048,7 @@ void MediaDecoder::DurationChanged() {
   
   
   if (mFiredMetadataLoaded &&
-      (!mozilla::IsInfinite<double>(mDuration) || mExplicitDuration.isSome())) {
+      (!std::isinf(mDuration) || mExplicitDuration.isSome())) {
     GetOwner()->DispatchAsyncEvent(u"durationchange"_ns);
   }
 
