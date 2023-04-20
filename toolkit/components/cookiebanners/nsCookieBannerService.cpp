@@ -9,6 +9,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/EventQueue.h"
+#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_cookiebanners.h"
 #include "nsCOMPtr.h"
@@ -36,6 +37,26 @@ static const char kCookieBannerServiceModePBMPref[] =
     "cookiebanners.service.mode.privateBrowsing";
 
 static StaticRefPtr<nsCookieBannerService> sCookieBannerServiceSingleton;
+
+namespace {
+
+
+nsCString ConvertModeToStringForTelemetry(uint32_t aModes) {
+  switch (aModes) {
+    case nsICookieBannerService::MODE_DISABLED:
+      return "disabled"_ns;
+    case nsICookieBannerService::MODE_REJECT:
+      return "reject"_ns;
+    case nsICookieBannerService::MODE_REJECT_OR_ACCEPT:
+      return "reject_or_accept"_ns;
+    default:
+      
+      
+      return "invalid"_ns;
+  }
+}
+
+}  
 
 
 already_AddRefed<nsCookieBannerService> nsCookieBannerService::GetSingleton() {
@@ -97,21 +118,27 @@ void nsCookieBannerService::OnPrefChange(const char* aPref, void* aData) {
                        "nsCookieBannerService::Shutdown failed");
 }
 
-
-
 NS_IMETHODIMP
 nsCookieBannerService::Observe(nsISupports* aSubject, const char* aTopic,
                                const char16_t* aData) {
-  if (nsCRT::strcmp(aTopic, "profile-after-change") != 0) {
+  
+  if (nsCRT::strcmp(aTopic, "idle-daily") == 0) {
+    DailyReportTelemetry();
     return NS_OK;
   }
 
-  nsresult rv = Preferences::RegisterCallback(
-      &nsCookieBannerService::OnPrefChange, kCookieBannerServiceModePBMPref);
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  if (nsCRT::strcmp(aTopic, "profile-after-change") == 0) {
+    nsresult rv = Preferences::RegisterCallback(
+        &nsCookieBannerService::OnPrefChange, kCookieBannerServiceModePBMPref);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-  return Preferences::RegisterCallbackAndCall(
-      &nsCookieBannerService::OnPrefChange, kCookieBannerServiceModePref);
+    return Preferences::RegisterCallbackAndCall(
+        &nsCookieBannerService::OnPrefChange, kCookieBannerServiceModePref);
+  }
+
+  return NS_OK;
 }
 
 nsresult nsCookieBannerService::Init() {
@@ -566,6 +593,32 @@ nsCookieBannerService::RemoveAllDomainPrefs(const bool aIsPrivate) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
+}
+
+void nsCookieBannerService::DailyReportTelemetry() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  uint32_t mode = StaticPrefs::cookiebanners_service_mode();
+  uint32_t modePBM = StaticPrefs::cookiebanners_service_mode_privateBrowsing();
+
+  nsCString modeStr = ConvertModeToStringForTelemetry(mode);
+  nsCString modePBMStr = ConvertModeToStringForTelemetry(modePBM);
+
+  nsTArray<nsCString> serviceModeLabels = {
+      "disabled"_ns,
+      "reject"_ns,
+      "reject_or_accept"_ns,
+      "invalid"_ns,
+  };
+
+  
+  for (const auto& label : serviceModeLabels) {
+    glean::cookie_banners::normal_window_service_mode.Get(label).Set(
+        modeStr.Equals(label));
+    glean::cookie_banners::private_window_service_mode.Get(label).Set(
+        modePBMStr.Equals(label));
+  }
 }
 
 }  
