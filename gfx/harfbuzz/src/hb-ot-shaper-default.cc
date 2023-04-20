@@ -49,6 +49,7 @@ const hb_ot_shaper_t _hb_ot_shaper_default =
   true, 
 };
 
+#ifndef HB_NO_AAT_SHAPE
 
 
 const hb_ot_shaper_t _hb_ot_shaper_dumber =
@@ -68,6 +69,7 @@ const hb_ot_shaper_t _hb_ot_shaper_dumber =
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_NONE,
   false, 
 };
+#endif
 
 
 #endif

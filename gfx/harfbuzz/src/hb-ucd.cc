@@ -129,12 +129,16 @@ hb_ucd_compose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
 		hb_codepoint_t a, hb_codepoint_t b, hb_codepoint_t *ab,
 		void *user_data HB_UNUSED)
 {
+  
   if (_hb_ucd_compose_hangul (a, b, ab)) return true;
 
   hb_codepoint_t u = 0;
 
   if ((a & 0xFFFFF800u) == 0x0000u && (b & 0xFFFFFF80) == 0x0300u)
   {
+    
+
+
     uint32_t k = HB_CODEPOINT_ENCODE3_11_7_14 (a, b, 0);
     const uint32_t *v = hb_bsearch (k,
 				    _hb_ucd_dm2_u32_map,
@@ -146,6 +150,8 @@ hb_ucd_compose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
   }
   else
   {
+    
+
     uint64_t k = HB_CODEPOINT_ENCODE3 (a, b, 0);
     const uint64_t *v = hb_bsearch (k,
 				    _hb_ucd_dm2_u64_map,
@@ -170,15 +176,22 @@ hb_ucd_decompose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
 
   unsigned i = _hb_ucd_dm (ab);
 
+  
   if (likely (!i)) return false;
   i--;
 
+  
   if (i < ARRAY_LENGTH (_hb_ucd_dm1_p0_map) + ARRAY_LENGTH (_hb_ucd_dm1_p2_map))
   {
+    
     if (i < ARRAY_LENGTH (_hb_ucd_dm1_p0_map))
+    {
+      
       *a = _hb_ucd_dm1_p0_map[i];
+    }
     else
     {
+      
       i -= ARRAY_LENGTH (_hb_ucd_dm1_p0_map);
       *a = 0x20000 | _hb_ucd_dm1_p2_map[i];
     }
@@ -187,8 +200,10 @@ hb_ucd_decompose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
   }
   i -= ARRAY_LENGTH (_hb_ucd_dm1_p0_map) + ARRAY_LENGTH (_hb_ucd_dm1_p2_map);
 
+  
   if (i < ARRAY_LENGTH (_hb_ucd_dm2_u32_map))
   {
+    
     uint32_t v = _hb_ucd_dm2_u32_map[i];
     *a = HB_CODEPOINT_DECODE3_11_7_14_1 (v);
     *b = HB_CODEPOINT_DECODE3_11_7_14_2 (v);
@@ -196,6 +211,7 @@ hb_ucd_decompose (hb_unicode_funcs_t *ufuncs HB_UNUSED,
   }
   i -= ARRAY_LENGTH (_hb_ucd_dm2_u32_map);
 
+  
   uint64_t v = _hb_ucd_dm2_u64_map[i];
   *a = HB_CODEPOINT_DECODE3_1 (v);
   *b = HB_CODEPOINT_DECODE3_2 (v);

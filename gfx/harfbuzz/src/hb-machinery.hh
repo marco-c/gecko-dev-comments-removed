@@ -138,6 +138,13 @@ static inline Type& StructAfter(TObject &X)
 
 
 
+
+
+
+
+
+
+
 template <typename Data, unsigned int WheresData>
 struct hb_data_wrapper_t
 {
@@ -229,6 +236,7 @@ struct hb_lazy_loader_t : hb_data_wrapper_t<Data, WheresData>
   bool cmpexch (Stored *current, Stored *value) const
   {
     
+
     return this->instance.cmpexch (current, value);
   }
 
@@ -261,7 +269,7 @@ struct hb_lazy_loader_t : hb_data_wrapper_t<Data, WheresData>
     hb_free (p);
   }
 
-
+  private:
   
   hb_atomic_ptr_t<Stored *> instance;
 };

@@ -262,11 +262,13 @@ hb_ot_shaper_categorize (const hb_ot_shape_planner_t *planner)
 	return &_hb_ot_shaper_myanmar;
 
 
+#ifndef HB_NO_OT_SHAPER_MYANMAR_ZAWGYI
 #define HB_SCRIPT_MYANMAR_ZAWGYI	((hb_script_t) HB_TAG ('Q','a','a','g'))
     case HB_SCRIPT_MYANMAR_ZAWGYI:
     
 
       return &_hb_ot_shaper_myanmar_zawgyi;
+#endif
 
 
     
