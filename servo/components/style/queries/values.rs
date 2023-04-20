@@ -4,6 +4,9 @@
 
 
 
+use app_units::Au;
+use euclid::default::Size2D;
+
 
 
 
@@ -17,10 +20,7 @@ pub enum Orientation {
 
 impl Orientation {
     
-    pub fn eval<T>(size: euclid::default::Size2D<T>, value: Option<Self>) -> bool
-    where
-        T: PartialOrd,
-    {
+    pub fn eval(size: Size2D<Au>, value: Option<Self>) -> bool {
         let query_orientation = match value {
             Some(v) => v,
             None => return true,
