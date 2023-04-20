@@ -356,6 +356,9 @@ class AppWindow final : public nsIBaseWindow,
   
   bool mDestroying;
   bool mRegistered;
+  
+  
+  bool mDominantClientSize;
   PersistentAttributes mPersistentAttributesDirty;
   PersistentAttributes mPersistentAttributesMask;
   uint32_t mChromeFlags;

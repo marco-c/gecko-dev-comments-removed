@@ -108,24 +108,7 @@ async function runTest(aWindow) {
   
   win = openWindow("width=400,height=400");
   await SimpleTest.promiseFocus(win);
-  
-  
-  
-  
-  
-  if (gTitlebar || isLinux) {
-    checkWindow("when reopen with size", win, win.STATE_NORMAL, 400, 400);
-  } else {
-    let w = win.innerWidth;
-    let h = win.innerHeight;
-    ok(w >= 400, `Should have enough width ${w}`);
-    ok(h >= 400, `Should have enough height ${h}`);
-    todo(
-      w == 400 && h == 400,
-      `Should have exactly the right size (${w}x${h} != 400x400)`
-    );
-    checkWindow("when reopen with size", win, win.STATE_NORMAL, w, h);
-  }
+  checkWindow("when reopen with size", win, win.STATE_NORMAL, 400, 400);
   await waitForSizeModePersisted();
   win.close();
 
