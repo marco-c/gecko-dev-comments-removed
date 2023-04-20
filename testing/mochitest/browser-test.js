@@ -338,6 +338,10 @@ Tester.prototype = {
       
       "MailMigrator",
       "SearchIntegration",
+      
+      "reactiveElementVersions",
+      "litHtmlVersions",
+      "litElementVersions",
     ];
 
     this.PerTestCoverageUtils.beforeTestSync();
