@@ -2688,22 +2688,9 @@ void gfxPlatform::InitWebRenderConfig() {
     gfxVars::SetAllowSoftwareWebRenderD3D11(true);
   }
 
-  auto IsOverlaySupportedWindowsVersion = [&]() -> bool {
-    const nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
-    nsString vendorID;
-    gfxInfo->GetAdapterVendorID(vendorID);
-    const bool isIntel = vendorID.EqualsLiteral("0x8086");
-    if (isIntel) {
-      return IsWin10AnniversaryUpdateOrLater();
-    }
-    
-    
-    return IsWin11OrLater();
-  };
-
   bool useVideoOverlay = false;
   if (StaticPrefs::gfx_webrender_dcomp_video_overlay_win_AtStartup()) {
-    if (IsOverlaySupportedWindowsVersion() &&
+    if (IsWin10AnniversaryUpdateOrLater() &&
         gfxConfig::IsEnabled(Feature::WEBRENDER_COMPOSITOR)) {
       MOZ_ASSERT(gfxConfig::IsEnabled(Feature::WEBRENDER_DCOMP_PRESENT));
       useVideoOverlay = true;
