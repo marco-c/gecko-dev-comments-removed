@@ -14,6 +14,9 @@
 #include "mozilla/ReentrantMonitor.h"
 #include "SQLiteMutex.h"
 
+
+#include "mozilla/gtest/MozHelpers.h"
+
 #include "gtest/gtest.h"
 
 using namespace mozilla;
@@ -39,11 +42,6 @@ class TestMutex : public mozilla::storage::SQLiteMutex {
  private:
   sqlite3_mutex* mInner;
 };
-
-
-
-
-extern unsigned int _gdb_sleep_duration;
 
 
 #define MUTEX TestMutex

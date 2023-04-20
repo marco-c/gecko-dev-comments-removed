@@ -5,10 +5,8 @@
 
 
 #include "PLDHashTable.h"
-#include "nsCOMPtr.h"
-#include "nsICrashReporter.h"
-#include "nsServiceManagerUtils.h"
 #include "gtest/gtest.h"
+#include "mozilla/gtest/MozHelpers.h"
 
 
 
@@ -17,9 +15,6 @@
 #  include <unistd.h>
 #  include <sys/types.h>
 #  include <sys/wait.h>
-
-
-extern unsigned int _gdb_sleep_duration;
 #endif
 
 
@@ -34,8 +29,7 @@ static void TestCrashyOperation(const char* label, void (*aCrashyOperation)()) {
 #if defined(XP_UNIX) && defined(DEBUG) && !defined(MOZ_ASAN)
   
   
-  unsigned int old_gdb_sleep_duration = _gdb_sleep_duration;
-  _gdb_sleep_duration = 0;
+  SAVE_GDB_SLEEP_LOCAL();
 
   int pid = fork();
   ASSERT_NE(pid, -1);
@@ -44,11 +38,7 @@ static void TestCrashyOperation(const char* label, void (*aCrashyOperation)()) {
     
     
     
-    nsCOMPtr<nsICrashReporter> crashreporter =
-        do_GetService("@mozilla.org/toolkit/crash-reporter;1");
-    if (crashreporter) {
-      crashreporter->SetEnabled(false);
-    }
+    mozilla::gtest::DisableCrashReporter();
 
     
     FILE* stderr_dup = fdopen(dup(fileno(stderr)), "w");
@@ -86,7 +76,7 @@ static void TestCrashyOperation(const char* label, void (*aCrashyOperation)()) {
     }
   }
 
-  _gdb_sleep_duration = old_gdb_sleep_duration;
+  RESTORE_GDB_SLEEP_LOCAL();
 #endif
 }
 

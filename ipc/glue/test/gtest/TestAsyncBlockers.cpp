@@ -7,11 +7,11 @@
 
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/ipc/AsyncBlockers.h"
+#include "mozilla/gtest/MozHelpers.h"
 
 #include "nsCOMPtr.h"
 #include "nsITimer.h"
 #include "nsINamed.h"
-#include "TestUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::ipc;
@@ -19,25 +19,17 @@ using namespace mozilla::ipc;
 #define PROCESS_EVENTS_UNTIL(_done) \
   SpinEventLoopUntil("TestAsyncBlockers"_ns, [&]() { return _done; });
 
-#if defined(XP_UNIX)
-
-extern unsigned int _gdb_sleep_duration;
-#endif  
-
 class TestAsyncBlockers : public ::testing::Test {
  protected:
   void SetUp() override {
-#if defined(XP_UNIX)
-    mOldSleepDuration = ::_gdb_sleep_duration;
-    ::_gdb_sleep_duration = 0;
-#endif  
+    SAVE_GDB_SLEEP(mOldSleepDuration);
     return;
   }
 
-#if defined(XP_UNIX)
-  void TearDown() final { ::_gdb_sleep_duration = mOldSleepDuration; }
+  void TearDown() final { RESTORE_GDB_SLEEP(mOldSleepDuration); }
 
  private:
+#if defined(HAS_GDB_SLEEP_DURATION)
   unsigned int mOldSleepDuration = 0;
 #endif  
 };
@@ -158,7 +150,7 @@ TEST_F(TestAsyncBlockers, Register_WaitUntilClear_0s) {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED) && !defined(ANDROID) && \
     !(defined(XP_DARWIN) && !defined(MOZ_DEBUG))
 static void DeregisterEmpty_Test() {
-  DisableCrashReporter();
+  mozilla::gtest::DisableCrashReporter();
 
   AsyncBlockers blockers;
   Blocker* blocker = new Blocker();
