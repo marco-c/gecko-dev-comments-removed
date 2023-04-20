@@ -7,9 +7,10 @@
 
 
 
-import buildconfig
 import os
 import subprocess
+
+import buildconfig
 
 
 def main(output, *inputs):
