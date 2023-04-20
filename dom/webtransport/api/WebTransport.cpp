@@ -7,6 +7,7 @@
 #include "WebTransport.h"
 
 #include "nsUTF8Utils.h"
+#include "nsIURL.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PWebTransport.h"
@@ -108,6 +109,10 @@ bool WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
        NS_ConvertUTF16toUTF8(aURL).get()));
 
   
+  if (!ParseURL(aURL)) {
+    aError.ThrowSyntaxError("Invalid WebTransport URL");
+    return false;
+  }
   
   
   
@@ -151,6 +156,28 @@ void WebTransport::RejectWaitingConnection(nsresult aRv) {
   LOG(("Rejected connection %x", (uint32_t)aRv));
 
   mReady->MaybeReject(aRv);
+}
+
+bool WebTransport::ParseURL(const nsAString& aURL) const {
+  NS_ENSURE_TRUE(!aURL.IsEmpty(), false);
+
+  
+  
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), aURL);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  
+  if (!uri->SchemeIs("https")) {
+    return false;
+  }
+
+  
+  bool hasRef;
+  rv = uri->GetHasRef(&hasRef);
+  NS_ENSURE_TRUE(NS_SUCCEEDED(rv) && !hasRef, false);
+
+  return true;
 }
 
 already_AddRefed<Promise> WebTransport::GetStats(ErrorResult& aError) {
