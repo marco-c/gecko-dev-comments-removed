@@ -1181,13 +1181,15 @@ class GenericReceiveListener : public MediaTrackListener {
         mTrackingId(mTrackSource->mTrackingId),
         mIsAudio(aTrack->AsAudioStreamTrack()),
         mEnabled(false),
-        mEnded(false),
         mMaybeTrackNeedsUnmute(true) {
     MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
     MOZ_DIAGNOSTIC_ASSERT(mSource, "Must be used with a SourceMediaTrack");
   }
 
   virtual ~GenericReceiveListener() = default;
+
+  void Init() { mSource->AddListener(this); }
+  void Shutdown() { mSource->RemoveListener(this); }
 
   void SetEnabled(bool aEnabled) {
     if (mEnabled == aEnabled) {
@@ -1217,21 +1219,6 @@ class GenericReceiveListener : public MediaTrackListener {
     }
   }
 
-  void EndTrack() {
-    if (mEnded) {
-      return;
-    }
-    mEnded = true;
-
-    MOZ_LOG(gMediaPipelineLog, LogLevel::Debug,
-            ("GenericReceiveListener ending track"));
-
-    
-    mSource->RemoveListener(this);
-    mSource->End();
-    mTrackSource->Destroy();
-  }
-
  protected:
   const nsMainThreadPtrHandle<RemoteTrackSource> mTrackSource;
   const RefPtr<SourceMediaTrack> mSource;
@@ -1239,7 +1226,6 @@ class GenericReceiveListener : public MediaTrackListener {
   const bool mIsAudio;
   
   bool mEnabled;
-  bool mEnded;
   
   Atomic<bool> mMaybeTrackNeedsUnmute;
 };
@@ -1281,8 +1267,8 @@ class MediaPipelineReceiveAudio::PipelineListener
         mForceSilence(false) {}
 
   void Init() {
+    GenericReceiveListener::Init();
     mSource->SetAppendDataSourceRate(mRate);
-    mSource->AddListener(this);
   }
 
   
@@ -1461,7 +1447,7 @@ void MediaPipelineReceiveAudio::Shutdown() {
   MediaPipeline::Shutdown();
   mWatchManager.Shutdown();
   if (mListener) {
-    mListener->EndTrack();
+    mListener->Shutdown();
   }
 }
 
@@ -1505,8 +1491,6 @@ class MediaPipelineReceiveVideo::PipelineListener
         mMutex("MediaPipelineReceiveVideo::PipelineListener::mMutex"),
         mPrincipalHandle(aPrincipalHandle),
         mPrivacy(aPrivacy) {}
-  void Init() { mSource->AddListener(this); }
-
   void OnPrivacyRequested_s() {
     MutexAutoLock lock(mMutex);
     if (mPrivacy == PrincipalPrivacy::Private) {
@@ -1642,15 +1626,15 @@ void MediaPipelineReceiveVideo::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   MediaPipeline::Shutdown();
   mWatchManager.Shutdown();
+  if (mListener) {
+    mListener->Shutdown();
+  }
 
   
   
   
   
   static_cast<VideoSessionConduit*>(mConduit.get())->DetachRenderer();
-  if (mListener) {
-    mListener->EndTrack();
-  }
 }
 
 void MediaPipelineReceiveVideo::OnPrivacyRequested_s() {
