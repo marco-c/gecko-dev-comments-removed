@@ -10,10 +10,6 @@
 
 loadTestSubscript("head_unified_extensions.js");
 
-const { ExtensionCommon } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionCommon.jsm"
-);
-
 const NUM_EXTENSIONS = 5;
 const OVERFLOW_WINDOW_WIDTH_PX = 450;
 const DEFAULT_WIDGET_IDS = [
@@ -95,7 +91,26 @@ function getVisibleMenuItems(popup) {
 
 
 
-async function withWindowOverflowed(win, taskFn, afterUnderflowFn) {
+
+
+
+
+
+
+
+
+
+
+
+
+async function withWindowOverflowed(
+  win,
+  {
+    beforeOverflowed = async () => {},
+    whenOverflowed = async () => {},
+    afterUnderflowed = async () => {},
+  } = {}
+) {
   const doc = win.document;
   doc.documentElement.removeAttribute("persist");
   const navbar = doc.getElementById(CustomizableUI.AREA_NAVBAR);
@@ -229,66 +244,82 @@ async function withWindowOverflowed(win, taskFn, afterUnderflowFn) {
   await listener.promise;
   CustomizableUI.removeListener(listener);
 
-  const originalWindowWidth = win.outerWidth;
-
-  let widgetOverflowListener = {
-    _remainingOverflowables: NUM_EXTENSIONS + DEFAULT_WIDGET_IDS.length,
-    _deferred: PromiseUtils.defer(),
-
-    get promise() {
-      return this._deferred.promise;
-    },
-
-    onWidgetOverflow(widgetNode, areaNode) {
-      this._remainingOverflowables--;
-      if (!this._remainingOverflowables) {
-        this._deferred.resolve();
-      }
-    },
-  };
-  CustomizableUI.addListener(widgetOverflowListener);
-
-  win.resizeTo(OVERFLOW_WINDOW_WIDTH_PX, win.outerHeight);
-  await widgetOverflowListener.promise;
-  CustomizableUI.removeListener(widgetOverflowListener);
-
-  Assert.ok(
-    navbar.hasAttribute("overflowing"),
-    "Should have an overflowing toolbar."
-  );
-
-  const defaultList = doc.getElementById(
-    navbar.getAttribute("default-overflowtarget")
-  );
-
-  const unifiedExtensionList = doc.getElementById(
-    navbar.getAttribute("addon-webext-overflowtarget")
-  );
-
   const extensionIDs = extensions.map(extension => extension.id);
 
   try {
-    await taskFn(defaultList, unifiedExtensionList, extensionIDs);
+    info("Running beforeOverflowed task");
+    await beforeOverflowed(extensionIDs);
   } finally {
-    win.resizeTo(originalWindowWidth, win.outerHeight);
-    await BrowserTestUtils.waitForEvent(win, "resize");
+    const originalWindowWidth = win.outerWidth;
 
     
     
-    
-    
-    await TestUtils.waitForCondition(() => {
-      return !doc
-        .getElementById(signpostWidgetID)
-        .hasAttribute("overflowedItem");
+    const browserActionIDs = extensionIDs.map(id =>
+      AppUiTestInternals.getBrowserActionWidgetId(id)
+    );
+    const browserActionsInNavBar = browserActionIDs.filter(widgetID => {
+      let placement = CustomizableUI.getPlacementOfWidget(widgetID);
+      return placement.area == CustomizableUI.AREA_NAVBAR;
     });
 
+    let widgetOverflowListener = {
+      _remainingOverflowables:
+        browserActionsInNavBar.length + DEFAULT_WIDGET_IDS.length,
+      _deferred: PromiseUtils.defer(),
+
+      get promise() {
+        return this._deferred.promise;
+      },
+
+      onWidgetOverflow(widgetNode, areaNode) {
+        this._remainingOverflowables--;
+        if (!this._remainingOverflowables) {
+          this._deferred.resolve();
+        }
+      },
+    };
+    CustomizableUI.addListener(widgetOverflowListener);
+
+    win.resizeTo(OVERFLOW_WINDOW_WIDTH_PX, win.outerHeight);
+    await widgetOverflowListener.promise;
+    CustomizableUI.removeListener(widgetOverflowListener);
+
+    Assert.ok(
+      navbar.hasAttribute("overflowing"),
+      "Should have an overflowing toolbar."
+    );
+
+    const defaultList = doc.getElementById(
+      navbar.getAttribute("default-overflowtarget")
+    );
+
+    const unifiedExtensionList = doc.getElementById(
+      navbar.getAttribute("addon-webext-overflowtarget")
+    );
+
     try {
-      if (afterUnderflowFn) {
-        await afterUnderflowFn();
-      }
+      info("Running whenOverflowed task");
+      await whenOverflowed(defaultList, unifiedExtensionList, extensionIDs);
     } finally {
-      await Promise.all(extensions.map(extension => extension.unload()));
+      win.resizeTo(originalWindowWidth, win.outerHeight);
+      await BrowserTestUtils.waitForEvent(win, "resize");
+
+      
+      
+      
+      
+      await TestUtils.waitForCondition(() => {
+        return !doc
+          .getElementById(signpostWidgetID)
+          .hasAttribute("overflowedItem");
+      });
+
+      try {
+        info("Running afterUnderflowed task");
+        await afterUnderflowed();
+      } finally {
+        await Promise.all(extensions.map(extension => extension.unload()));
+      }
     }
   }
 }
@@ -408,9 +439,8 @@ add_task(async function test_overflowable_toolbar() {
   let win = await promiseEnableUnifiedExtensions();
   let movedNode;
 
-  await withWindowOverflowed(
-    win,
-    async (defaultList, unifiedExtensionList, extensionIDs) => {
+  await withWindowOverflowed(win, {
+    whenOverflowed: async (defaultList, unifiedExtensionList, extensionIDs) => {
       
       
       
@@ -437,9 +467,9 @@ add_task(async function test_overflowable_toolbar() {
         await verifyExtensionWidget(win, child, true);
       }
 
-      let extensionWidgetID = `${ExtensionCommon.makeWidgetId(
+      let extensionWidgetID = AppUiTestInternals.getBrowserActionWidgetId(
         extensionIDs.at(-1)
-      )}-browser-action`;
+      );
       movedNode = CustomizableUI.getWidget(extensionWidgetID).forWindow(win)
         .node;
       Assert.equal(movedNode.getAttribute("cui-areatype"), "toolbar");
@@ -455,7 +485,7 @@ add_task(async function test_overflowable_toolbar() {
         "The moved browser action button should have the right cui-areatype set."
       );
     },
-    async () => {
+    afterUnderflowed: async () => {
       
       Assert.equal(
         movedNode.parentElement.id,
@@ -463,8 +493,8 @@ add_task(async function test_overflowable_toolbar() {
         "The browser action should still be in the addons panel"
       );
       CustomizableUI.addWidgetToArea(movedNode.id, CustomizableUI.AREA_NAVBAR);
-    }
-  );
+    },
+  });
 
   await BrowserTestUtils.closeWindow(win);
 });
@@ -476,9 +506,8 @@ add_task(async function test_overflowable_toolbar() {
 add_task(async function test_overflowable_toolbar_legacy() {
   let win = await promiseDisableUnifiedExtensions();
 
-  await withWindowOverflowed(
-    win,
-    async (defaultList, unifiedExtensionList, extensionIDs) => {
+  await withWindowOverflowed(win, {
+    whenOverflowed: async (defaultList, unifiedExtensionList, extensionIDs) => {
       
       
       
@@ -505,8 +534,8 @@ add_task(async function test_overflowable_toolbar_legacy() {
         0,
         "Unified Extension overflow list should be empty."
       );
-    }
-  );
+    },
+  });
 
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
@@ -515,9 +544,8 @@ add_task(async function test_overflowable_toolbar_legacy() {
 add_task(async function test_menu_button() {
   let win = await promiseEnableUnifiedExtensions();
 
-  await withWindowOverflowed(
-    win,
-    async (defaultList, unifiedExtensionList, extensionIDs) => {
+  await withWindowOverflowed(win, {
+    whenOverflowed: async (defaultList, unifiedExtensionList, extensionIDs) => {
       Assert.ok(
         unifiedExtensionList.children.length,
         "Should have items in the Unified Extension list."
@@ -671,8 +699,8 @@ add_task(async function test_menu_button() {
       );
 
       await closeExtensionsPanel(win);
-    }
-  );
+    },
+  });
 
   await BrowserTestUtils.closeWindow(win);
 });
@@ -680,9 +708,8 @@ add_task(async function test_menu_button() {
 add_task(async function test_context_menu() {
   let win = await promiseEnableUnifiedExtensions();
 
-  await withWindowOverflowed(
-    win,
-    async (defaultList, unifiedExtensionList, extensionIDs) => {
+  await withWindowOverflowed(win, {
+    whenOverflowed: async (defaultList, unifiedExtensionList, extensionIDs) => {
       Assert.ok(
         unifiedExtensionList.children.length,
         "Should have items in the Unified Extension list."
@@ -770,8 +797,8 @@ add_task(async function test_context_menu() {
 
       
       await closeExtensionsPanel(win);
-    }
-  );
+    },
+  });
 
   await BrowserTestUtils.closeWindow(win);
 });
@@ -779,9 +806,8 @@ add_task(async function test_context_menu() {
 add_task(async function test_action_button() {
   let win = await promiseEnableUnifiedExtensions();
 
-  await withWindowOverflowed(
-    win,
-    async (defaultList, unifiedExtensionList, extensionIDs) => {
+  await withWindowOverflowed(win, {
+    whenOverflowed: async (defaultList, unifiedExtensionList, extensionIDs) => {
       Assert.ok(
         unifiedExtensionList.children.length,
         "Should have items in the Unified Extension list."
@@ -916,8 +942,8 @@ add_task(async function test_action_button() {
           await closeExtensionsPanel(win);
         }
       );
-    }
-  );
+    },
+  });
 
   await BrowserTestUtils.closeWindow(win);
 });
