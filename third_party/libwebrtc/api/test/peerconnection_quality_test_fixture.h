@@ -381,6 +381,10 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     absl::optional<std::string> sync_group;
+    
+    
+    
+    absl::optional<DegradationPreference> degradation_preference;
   };
 
   
