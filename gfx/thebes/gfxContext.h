@@ -506,12 +506,17 @@ class gfxContext final {
   RefPtr<PathBuilder> mPathBuilder;
   RefPtr<Path> mPath;
   Matrix mTransform;
-  nsTArray<AzureState> mStateStack;
+  AzureState mAzureState;
+  nsTArray<AzureState> mSavedStates;
 
-  AzureState& CurrentState() { return mStateStack[mStateStack.Length() - 1]; }
-  const AzureState& CurrentState() const {
-    return mStateStack[mStateStack.Length() - 1];
-  }
+  
+  
+  
+  
+  template <typename F>
+  bool ForAllClips(F&& aLambda) const;
+
+  const AzureState& CurrentState() const { return mAzureState; }
 
   RefPtr<DrawTarget> const mDT;
   float mCrossProcessPaintScale = 1.0f;
