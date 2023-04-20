@@ -78,7 +78,6 @@ class IDBDatabase final : public DOMEventTargetHelper {
   
   nsTArray<NotNull<IDBMutableFile*>> mLiveMutableFiles;
 
-  const bool mFileHandleDisabled;
   bool mClosed;
   bool mInvalidated;
   bool mQuotaExceeded;
@@ -159,12 +158,6 @@ class IDBDatabase final : public DOMEventTargetHelper {
   void NoteActiveTransaction();
 
   void NoteInactiveTransaction();
-
-  
-  
-  nsresult GetQuotaInfo(nsACString& aOrigin, PersistenceType* aPersistenceType);
-
-  bool IsFileHandleDisabled() const { return mFileHandleDisabled; }
 
   void NoteLiveMutableFile(IDBMutableFile& aMutableFile);
 
