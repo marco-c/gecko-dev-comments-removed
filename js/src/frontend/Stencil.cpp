@@ -339,8 +339,8 @@ BindingMap<TaggedParserAtomIndex>* StencilScopeBindingCache::lookupScope(
   return &ptr->value();
 }
 
-bool ScopeContext::init(JSContext* cx, FrontendContext* fc,
-                        CompilationInput& input, ParserAtomsTable& parserAtoms,
+bool ScopeContext::init(FrontendContext* fc, CompilationInput& input,
+                        ParserAtomsTable& parserAtoms,
                         ScopeBindingCache* scopeCache, InheritThis inheritThis,
                         JSObject* enclosingEnv) {
   
@@ -359,8 +359,8 @@ bool ScopeContext::init(JSContext* cx, FrontendContext* fc,
   
   
   
-  JS::Rooted<InputScope> effectiveScope(
-      cx, determineEffectiveScope(maybeNonDefaultEnclosingScope, enclosingEnv));
+  auto effectiveScope =
+      determineEffectiveScope(maybeNonDefaultEnclosingScope, enclosingEnv);
 
   if (inheritThis == InheritThis::Yes) {
     computeThisBinding(effectiveScope);
@@ -371,6 +371,8 @@ bool ScopeContext::init(JSContext* cx, FrontendContext* fc,
   cacheEnclosingScope(input.enclosingScope);
 
   if (input.target == CompilationInput::CompilationTarget::Eval) {
+    JSContext* cx = fc->maybeCurrentJSContext();
+    MOZ_ASSERT(cx, "JSContext* should be provided for eval");
     if (!cacheEnclosingScopeBindingForEval(cx, fc, input, parserAtoms)) {
       return false;
     }
