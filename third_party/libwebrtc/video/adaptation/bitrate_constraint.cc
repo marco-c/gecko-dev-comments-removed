@@ -37,6 +37,10 @@ void BitrateConstraint::OnEncoderTargetBitrateUpdated(
   encoder_target_bitrate_bps_ = std::move(encoder_target_bitrate_bps);
 }
 
+
+
+
+
 bool BitrateConstraint::IsAdaptationUpAllowed(
     const VideoStreamInputState& input_state,
     const VideoSourceRestrictions& restrictions_before,
@@ -53,7 +57,7 @@ bool BitrateConstraint::IsAdaptationUpAllowed(
       return true;
     }
 
-    if (VideoStreamEncoderResourceManager::IsSimulcast(
+    if (VideoStreamEncoderResourceManager::IsSimulcastOrMultipleSpatialLayers(
             encoder_settings_->encoder_config())) {
       
       return true;

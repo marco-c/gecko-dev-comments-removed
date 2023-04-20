@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/adaptation/encoder_settings.h"
 #include "call/adaptation/test/fake_frame_rate_provider.h"
@@ -23,6 +24,9 @@
 namespace webrtc {
 
 namespace {
+const VideoSourceRestrictions k180p{320 * 180,
+                                    320 * 180,
+                                    30};
 const VideoSourceRestrictions k360p{640 * 360,
                                     640 * 360,
                                     30};
@@ -30,39 +34,50 @@ const VideoSourceRestrictions k720p{1280 * 720,
                                     1280 * 720,
                                     30};
 
+struct TestParams {
+  bool active;
+  absl::optional<ScalabilityMode> scalability_mode;
+};
+
 void FillCodecConfig(VideoCodec* video_codec,
                      VideoEncoderConfig* encoder_config,
                      int width_px,
                      int height_px,
-                     std::vector<bool> active_flags) {
-  size_t num_layers = active_flags.size();
+                     const std::vector<TestParams>& params,
+                     bool svc) {
+  size_t num_layers = params.size();
   video_codec->codecType = kVideoCodecVP8;
   video_codec->numberOfSimulcastStreams = num_layers;
 
-  encoder_config->number_of_streams = num_layers;
+  encoder_config->number_of_streams = svc ? 1 : num_layers;
   encoder_config->simulcast_layers.resize(num_layers);
 
   for (size_t layer_idx = 0; layer_idx < num_layers; ++layer_idx) {
     int layer_width_px = width_px >> (num_layers - 1 - layer_idx);
     int layer_height_px = height_px >> (num_layers - 1 - layer_idx);
 
-    video_codec->simulcastStream[layer_idx].active = active_flags[layer_idx];
+    if (params[layer_idx].scalability_mode)
+      video_codec->SetScalabilityMode(*params[layer_idx].scalability_mode);
+    video_codec->simulcastStream[layer_idx].active = params[layer_idx].active;
     video_codec->simulcastStream[layer_idx].width = layer_width_px;
     video_codec->simulcastStream[layer_idx].height = layer_height_px;
 
+    encoder_config->simulcast_layers[layer_idx].scalability_mode =
+        params[layer_idx].scalability_mode;
     encoder_config->simulcast_layers[layer_idx].active =
-        active_flags[layer_idx];
+        params[layer_idx].active;
     encoder_config->simulcast_layers[layer_idx].width = layer_width_px;
     encoder_config->simulcast_layers[layer_idx].height = layer_height_px;
   }
 }
 
+constexpr int kStartBitrateBps360p = 500000;
 constexpr int kStartBitrateBps720p = 1000000;
 
 VideoEncoder::EncoderInfo MakeEncoderInfo() {
   VideoEncoder::EncoderInfo encoder_info;
   encoder_info.resolution_bitrate_limits = {
-      {640 * 360, 500000, 0, 5000000},
+      {640 * 360, kStartBitrateBps360p, 0, 5000000},
       {1280 * 720, kStartBitrateBps720p, 0, 5000000},
       {1920 * 1080, 2000000, 0, 5000000}};
   return encoder_info;
@@ -78,11 +93,12 @@ class BitrateConstraintTest : public ::testing::Test {
  protected:
   void OnEncoderSettingsUpdated(int width_px,
                                 int height_px,
-                                std::vector<bool> active_flags) {
+                                const std::vector<TestParams>& params,
+                                bool svc = false) {
     VideoCodec video_codec;
     VideoEncoderConfig encoder_config;
-    FillCodecConfig(&video_codec, &encoder_config, width_px, height_px,
-                    active_flags);
+    FillCodecConfig(&video_codec, &encoder_config, width_px, height_px, params,
+                    svc);
 
     EncoderSettings encoder_settings(MakeEncoderInfo(),
                                      std::move(encoder_config), video_codec);
@@ -97,7 +113,7 @@ class BitrateConstraintTest : public ::testing::Test {
 
 TEST_F(BitrateConstraintTest, AdaptUpAllowedAtSinglecastIfBitrateIsEnough) {
   OnEncoderSettingsUpdated(640, 360,
-                           {true});
+                           {{.active = true}});
 
   bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps720p);
 
@@ -110,7 +126,7 @@ TEST_F(BitrateConstraintTest, AdaptUpAllowedAtSinglecastIfBitrateIsEnough) {
 TEST_F(BitrateConstraintTest,
        AdaptUpDisallowedAtSinglecastIfBitrateIsNotEnough) {
   OnEncoderSettingsUpdated(640, 360,
-                           {true});
+                           {{.active = true}});
 
   
   bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps720p - 1);
@@ -122,9 +138,55 @@ TEST_F(BitrateConstraintTest,
 }
 
 TEST_F(BitrateConstraintTest,
+       AdaptUpAllowedAtSinglecastIfBitrateIsEnoughForOneSpatialLayer) {
+  OnEncoderSettingsUpdated(
+      640, 360,
+      {{.active = true, .scalability_mode = ScalabilityMode::kL1T1}});
+
+  bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps720p);
+
+  EXPECT_TRUE(bitrate_constraint_.IsAdaptationUpAllowed(
+      input_state_provider_.InputState(),
+      k360p,
+      k720p));
+}
+
+TEST_F(BitrateConstraintTest,
+       AdaptUpDisallowedAtSinglecastIfBitrateIsNotEnoughForOneSpatialLayer) {
+  OnEncoderSettingsUpdated(
+      640, 360,
+      {{.active = true, .scalability_mode = ScalabilityMode::kL1T1}});
+
+  
+  bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps720p - 1);
+
+  EXPECT_FALSE(bitrate_constraint_.IsAdaptationUpAllowed(
+      input_state_provider_.InputState(),
+      k360p,
+      k720p));
+}
+
+TEST_F(BitrateConstraintTest,
+       AdaptUpAllowedAtSinglecastIfBitrateIsNotEnoughForMultipleSpatialLayers) {
+  OnEncoderSettingsUpdated(
+      640, 360,
+      {{.active = true, .scalability_mode = ScalabilityMode::kL2T1}});
+
+  
+  bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps720p - 1);
+
+  EXPECT_TRUE(bitrate_constraint_.IsAdaptationUpAllowed(
+      input_state_provider_.InputState(),
+      k360p,
+      k720p));
+}
+
+TEST_F(BitrateConstraintTest,
        AdaptUpAllowedAtSinglecastUpperLayerActiveIfBitrateIsEnough) {
-  OnEncoderSettingsUpdated(640, 360,
-                           {false, true});
+  OnEncoderSettingsUpdated(
+      640, 360,
+      {{.active = false, .scalability_mode = ScalabilityMode::kL2T1},
+       {.active = true}});
 
   bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps720p);
 
@@ -136,8 +198,10 @@ TEST_F(BitrateConstraintTest,
 
 TEST_F(BitrateConstraintTest,
        AdaptUpDisallowedAtSinglecastUpperLayerActiveIfBitrateIsNotEnough) {
-  OnEncoderSettingsUpdated(640, 360,
-                           {false, true});
+  OnEncoderSettingsUpdated(
+      640, 360,
+      {{.active = false, .scalability_mode = ScalabilityMode::kL2T1},
+       {.active = true}});
 
   
   bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps720p - 1);
@@ -148,23 +212,88 @@ TEST_F(BitrateConstraintTest,
       k720p));
 }
 
-TEST_F(BitrateConstraintTest,
-       AdaptUpAllowedAtSinglecastLowestLayerActiveIfBitrateIsNotEnough) {
+TEST_F(BitrateConstraintTest, AdaptUpAllowedLowestActiveIfBitrateIsNotEnough) {
   OnEncoderSettingsUpdated(640, 360,
-                           {true, false});
+                           {{.active = true}, {.active = false}});
 
   
-  bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps720p - 1);
+  bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps360p - 1);
 
   EXPECT_TRUE(bitrate_constraint_.IsAdaptationUpAllowed(
       input_state_provider_.InputState(),
-      k360p,
-      k720p));
+      k180p,
+      k360p));
+}
+
+TEST_F(BitrateConstraintTest,
+       AdaptUpAllowedLowestActiveIfBitrateIsNotEnoughForOneSpatialLayer) {
+  OnEncoderSettingsUpdated(
+      640, 360,
+      {{.active = true, .scalability_mode = ScalabilityMode::kL1T2},
+       {.active = false}});
+
+  
+  bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps360p - 1);
+
+  EXPECT_TRUE(bitrate_constraint_.IsAdaptationUpAllowed(
+      input_state_provider_.InputState(),
+      k180p,
+      k360p));
+}
+
+TEST_F(BitrateConstraintTest,
+       AdaptUpAllowedLowestActiveIfBitrateIsEnoughForOneSpatialLayerSvc) {
+  OnEncoderSettingsUpdated(
+      640, 360,
+      {{.active = true, .scalability_mode = ScalabilityMode::kL1T1},
+       {.active = false}},
+      true);
+
+  bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps360p);
+
+  EXPECT_TRUE(bitrate_constraint_.IsAdaptationUpAllowed(
+      input_state_provider_.InputState(),
+      k180p,
+      k360p));
+}
+
+TEST_F(BitrateConstraintTest,
+       AdaptUpDisallowedLowestActiveIfBitrateIsNotEnoughForOneSpatialLayerSvc) {
+  OnEncoderSettingsUpdated(
+      640, 360,
+      {{.active = true, .scalability_mode = ScalabilityMode::kL1T1},
+       {.active = false}},
+      true);
+
+  
+  bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps360p - 1);
+
+  EXPECT_FALSE(bitrate_constraint_.IsAdaptationUpAllowed(
+      input_state_provider_.InputState(),
+      k180p,
+      k360p));
+}
+
+TEST_F(BitrateConstraintTest,
+       AdaptUpAllowedLowestActiveIfBitrateIsNotEnoughForTwoSpatialLayersSvc) {
+  OnEncoderSettingsUpdated(
+      640, 360,
+      {{.active = true, .scalability_mode = ScalabilityMode::kL2T1},
+       {.active = false}},
+      true);
+
+  
+  bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps360p - 1);
+
+  EXPECT_TRUE(bitrate_constraint_.IsAdaptationUpAllowed(
+      input_state_provider_.InputState(),
+      k180p,
+      k360p));
 }
 
 TEST_F(BitrateConstraintTest, AdaptUpAllowedAtSimulcastIfBitrateIsNotEnough) {
   OnEncoderSettingsUpdated(640, 360,
-                           {true, true});
+                           {{.active = true}, {.active = true}});
 
   
   bitrate_constraint_.OnEncoderTargetBitrateUpdated(kStartBitrateBps720p - 1);
@@ -178,7 +307,7 @@ TEST_F(BitrateConstraintTest, AdaptUpAllowedAtSimulcastIfBitrateIsNotEnough) {
 TEST_F(BitrateConstraintTest,
        AdaptUpInFpsAllowedAtNoResolutionIncreaseIfBitrateIsNotEnough) {
   OnEncoderSettingsUpdated(640, 360,
-                           {true});
+                           {{.active = true}});
 
   bitrate_constraint_.OnEncoderTargetBitrateUpdated(1);
 
