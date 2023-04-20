@@ -27,7 +27,7 @@ mozilla::ipc::IPCResult MIDIManagerParent::RecvShutdown() {
   
   
   
-  Unused << Send__delete__(this);
+  Close();
   return IPC_OK();
 }
 

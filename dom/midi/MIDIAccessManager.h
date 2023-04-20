@@ -56,6 +56,7 @@ class MIDIAccessManager final {
  private:
   MIDIAccessManager();
   ~MIDIAccessManager();
+  void StartActor();
   
   bool mHasPortList;
   

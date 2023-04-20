@@ -13,6 +13,7 @@
 #include "mozilla/dom/Promise.h"
 #include "nsIGlobalObject.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/Preferences.h"
@@ -76,29 +77,38 @@ bool MIDIAccessManager::AddObserver(Observer<MIDIPortList>* aObserver) {
   
   
   mChangeObservers.AddObserver(aObserver);
-  
-  
-  if (!mChild) {
-    
-    
-    MOZ_ASSERT(NS_IsMainThread());
-    ::mozilla::ipc::PBackgroundChild* actor =
-        BackgroundChild::GetOrCreateForCurrentThread();
-    if (NS_WARN_IF(!actor)) {
-      return false;
-    }
-    RefPtr<MIDIManagerChild> mgr(new MIDIManagerChild());
-    PMIDIManagerChild* constructedMgr = actor->SendPMIDIManagerConstructor(mgr);
 
-    if (NS_WARN_IF(!constructedMgr)) {
-      return false;
-    }
-    MOZ_ASSERT(constructedMgr == mgr);
-    mChild = std::move(mgr);
+  if (!mChild) {
+    StartActor();
   } else {
     mChild->SendRefresh();
   }
+
   return true;
+}
+
+
+
+
+
+void MIDIAccessManager::StartActor() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!mChild);
+
+  
+  ::mozilla::ipc::PBackgroundChild* pBackground =
+      BackgroundChild::GetOrCreateForCurrentThread();
+
+  
+  Endpoint<PMIDIManagerParent> parentEndpoint;
+  Endpoint<PMIDIManagerChild> childEndpoint;
+  MOZ_ALWAYS_SUCCEEDS(
+      PMIDIManager::CreateEndpoints(&parentEndpoint, &childEndpoint));
+  mChild = new MIDIManagerChild();
+  MOZ_ALWAYS_TRUE(childEndpoint.Bind(mChild));
+
+  
+  pBackground->SendCreateMIDIManager(std::move(parentEndpoint));
 }
 
 void MIDIAccessManager::RemoveObserver(Observer<MIDIPortList>* aObserver) {
