@@ -14,6 +14,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Char16.h"
 #include "mozilla/gtest/MozAssertions.h"
+#include "mozilla/WindowsStackCookie.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsString.h"
@@ -113,8 +114,10 @@ TEST(TestDllBlocklist, UtilityProcessOnly_AllowInMainProcess)
   EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
 }
 
-
 #if defined(MOZ_LAUNCHER_PROCESS)
+
+
+
 TEST(TestDllBlocklist, NoOpEntryPoint)
 {
   
@@ -135,6 +138,8 @@ TEST(TestDllBlocklist, NoOpEntryPoint)
   EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
 #  endif
 }
+
+
 
 
 TEST(TestDllBlocklist, UserBlocked)

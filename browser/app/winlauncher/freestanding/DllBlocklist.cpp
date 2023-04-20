@@ -364,25 +364,15 @@ NTSTATUS NTAPI patched_LdrLoadDll(PWCHAR aDllPath, PULONG aFlags,
 
 CrossProcessDllInterceptor::FuncHookType<NtMapViewOfSectionPtr>
     stub_NtMapViewOfSection;
+constexpr DWORD kPageExecutable = PAGE_EXECUTE | PAGE_EXECUTE_READ |
+                                  PAGE_EXECUTE_READWRITE |
+                                  PAGE_EXECUTE_WRITECOPY;
 
-NTSTATUS NTAPI patched_NtMapViewOfSection(
-    HANDLE aSection, HANDLE aProcess, PVOID* aBaseAddress, ULONG_PTR aZeroBits,
-    SIZE_T aCommitSize, PLARGE_INTEGER aSectionOffset, PSIZE_T aViewSize,
-    SECTION_INHERIT aInheritDisposition, ULONG aAllocationType,
-    ULONG aProtectionFlags) {
-  
-  NTSTATUS stubStatus = stub_NtMapViewOfSection(
-      aSection, aProcess, aBaseAddress, aZeroBits, aCommitSize, aSectionOffset,
-      aViewSize, aInheritDisposition, aAllocationType, aProtectionFlags);
-  if (!NT_SUCCESS(stubStatus)) {
-    return stubStatus;
-  }
 
-  if (aProcess != nt::kCurrentProcess) {
-    
-    return stubStatus;
-  }
 
+
+MOZ_NEVER_INLINE NTSTATUS AfterMapExecutableViewOfSection(
+    HANDLE aProcess, PVOID* aBaseAddress, NTSTATUS aStubStatus) {
   
   MEMORY_BASIC_INFORMATION mbi;
   NTSTATUS ntStatus =
@@ -397,11 +387,8 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   
   
   
-  constexpr DWORD kPageExecutable = PAGE_EXECUTE | PAGE_EXECUTE_READ |
-                                    PAGE_EXECUTE_READWRITE |
-                                    PAGE_EXECUTE_WRITECOPY;
   if (!(mbi.Type & MEM_IMAGE) || !(mbi.AllocationProtect & kPageExecutable)) {
-    return stubStatus;
+    return aStubStatus;
   }
 
   
@@ -443,7 +430,7 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
       
       
       
-      Unused << gSharedSection.AddDependentModule(sectionFileName);
+      Unused << SharedSection::AddDependentModule(sectionFileName);
 
       bool attemptToBlockViaRedirect;
 #if defined(NIGHTLY_BUILD)
@@ -511,17 +498,49 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
 
   if (nt::RtlGetProcessHeap()) {
     ModuleLoadFrame::NotifySectionMap(
-        nt::AllocatedUnicodeString(sectionFileName), *aBaseAddress, stubStatus,
+        nt::AllocatedUnicodeString(sectionFileName), *aBaseAddress, aStubStatus,
         loadStatus, isInjectedDependent);
   }
 
   if (loadStatus == ModuleLoadInfo::Status::Loaded ||
       loadStatus == ModuleLoadInfo::Status::Redirected) {
-    return stubStatus;
+    return aStubStatus;
   }
 
   ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
   return STATUS_ACCESS_DENIED;
+}
+
+
+
+
+
+NTSTATUS NTAPI patched_NtMapViewOfSection(
+    HANDLE aSection, HANDLE aProcess, PVOID* aBaseAddress, ULONG_PTR aZeroBits,
+    SIZE_T aCommitSize, PLARGE_INTEGER aSectionOffset, PSIZE_T aViewSize,
+    SECTION_INHERIT aInheritDisposition, ULONG aAllocationType,
+    ULONG aProtectionFlags) {
+  
+  NTSTATUS stubStatus = stub_NtMapViewOfSection(
+      aSection, aProcess, aBaseAddress, aZeroBits, aCommitSize, aSectionOffset,
+      aViewSize, aInheritDisposition, aAllocationType, aProtectionFlags);
+  if (!NT_SUCCESS(stubStatus)) {
+    return stubStatus;
+  }
+
+  if (aProcess != nt::kCurrentProcess) {
+    
+    return stubStatus;
+  }
+
+  if (!(aProtectionFlags & kPageExecutable)) {
+    
+    
+    
+    return stubStatus;
+  }
+
+  return AfterMapExecutableViewOfSection(aProcess, aBaseAddress, stubStatus);
 }
 
 }  
