@@ -115,6 +115,7 @@ __declspec(dllexport) __attribute__((naked)) void MovImm64() {
       "nop;nop;nop");
 }
 
+#    if !defined(MOZ_CODE_COVERAGE)
 
 
 __attribute__((naked)) void DetouredCallCode(uintptr_t aCallee) {
@@ -157,6 +158,7 @@ __declspec(dllexport noinline guard(nocf)) void DetouredCallJumper(
     uintptr_t aCallee) {
   gDetouredCall(aCallee);
 }
+#    endif  
 
 #  elif defined(_M_IX86)
 constexpr uintptr_t JumpDestination = 0x7fff0000;

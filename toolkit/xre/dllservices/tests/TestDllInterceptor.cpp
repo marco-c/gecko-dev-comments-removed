@@ -915,7 +915,7 @@ bool TestAssemblyFunctions() {
   return true;
 }
 
-#ifdef _M_X64
+#if defined(_M_X64) && !defined(MOZ_CODE_COVERAGE)
 
 
 
@@ -1389,7 +1389,7 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
                        SEC_E_INVALID_HANDLE, &credHandle, 0, nullptr) &&
       TEST_HOOK_PARAMS("sspicli.dll", FreeCredentialsHandle, Equals,
                        SEC_E_INVALID_HANDLE, &credHandle) &&
-#ifdef _M_X64
+#if defined(_M_X64) && !defined(MOZ_CODE_COVERAGE)
       TestDetouredCallUnwindInfo() &&
 #endif  
       
