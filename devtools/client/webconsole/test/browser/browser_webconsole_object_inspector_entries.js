@@ -445,9 +445,9 @@ async function testUrlSearchParams(oi) {
 
   let oiNodes = oi.querySelectorAll(".node");
   
-  is(oiNodes.length, 3, "There is the expected number of nodes in the tree");
+  is(oiNodes.length, 4, "There is the expected number of nodes in the tree");
 
-  const entriesNode = oiNodes[1];
+  const entriesNode = oiNodes[2];
   is(
     entriesNode.textContent,
     "<entries>",
@@ -464,35 +464,35 @@ async function testUrlSearchParams(oi) {
 
   oiNodes = oi.querySelectorAll(".node");
   
-  is(oiNodes.length, 14, "There is the expected number of nodes in the tree");
+  is(oiNodes.length, 15, "There is the expected number of nodes in the tree");
 
   is(
-    oiNodes[2].textContent,
+    oiNodes[3].textContent,
     `0: a → "1"`,
     "First entry is displayed as expected"
   );
   is(
-    oiNodes[3].textContent,
+    oiNodes[4].textContent,
     `1: a → "2"`,
     `Second "a" entry is also display although it has the same name as the first entry`
   );
   is(
-    oiNodes[4].textContent,
+    oiNodes[5].textContent,
     `2: b → "3"`,
     `Third entry is the expected one...`
   );
   is(
-    oiNodes[5].textContent,
+    oiNodes[6].textContent,
     `3: b → "3"`,
     `As well as fourth, even though both name and value are similar`
   );
   is(
-    oiNodes[6].textContent,
+    oiNodes[7].textContent,
     `4: b → "5"`,
     `Fifth entry is displayed as expected`
   );
   is(
-    oiNodes[7].textContent,
+    oiNodes[8].textContent,
     `5: c → "this is 6"`,
     `Sixth entry is displayed as expected`
   );
