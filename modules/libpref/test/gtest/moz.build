@@ -19,8 +19,6 @@ UNIFIED_SOURCES = [
 
 if CONFIG["CC_TYPE"] == "clang":
     CXXFLAGS += ["-Wno-inconsistent-missing-override"]
-    
-    CXXFLAGS += ["-Wno-null-dereference"]
 
 FINAL_LIBRARY = "xul-gtest"
 
