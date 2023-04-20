@@ -796,39 +796,6 @@ function getHighlighterTestHelpers(inspector) {
 
 
 
-async function waitForMultipleChildrenUpdates(inspector) {
-  
-  
-  if (
-    inspector.markup._queuedChildUpdates &&
-    inspector.markup._queuedChildUpdates.size
-  ) {
-    await waitForChildrenUpdated(inspector);
-    return waitForMultipleChildrenUpdates(inspector);
-  }
-  return null;
-}
-
-
-
-
-
-
-
-
-
-function waitForChildrenUpdated({ markup }) {
-  info("Waiting for queued children updates to be handled");
-  return new Promise(resolve => {
-    markup._waitForChildren().then(() => {
-      executeSoon(resolve);
-    });
-  });
-}
-
-
-
-
 
 
 
@@ -1117,15 +1084,6 @@ async function toggleShapesHighlighter(
     );
     await onHighlighterHidden;
   }
-}
-
-
-
-
-
-async function expandContainer(inspector, container) {
-  await inspector.markup.expandNode(container.node);
-  await waitForMultipleChildrenUpdates(inspector);
 }
 
 

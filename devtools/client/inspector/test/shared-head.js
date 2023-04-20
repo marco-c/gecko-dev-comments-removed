@@ -268,6 +268,48 @@ var selectNode = async function(
 
 
 
+function waitForChildrenUpdated({ markup }) {
+  info("Waiting for queued children updates to be handled");
+  return new Promise(resolve => {
+    markup._waitForChildren().then(() => {
+      executeSoon(resolve);
+    });
+  });
+}
+
+
+
+
+async function waitForMultipleChildrenUpdates(inspector) {
+  
+  
+  if (
+    inspector.markup._queuedChildUpdates &&
+    inspector.markup._queuedChildUpdates.size
+  ) {
+    await waitForChildrenUpdated(inspector);
+    return waitForMultipleChildrenUpdates(inspector);
+  }
+  return null;
+}
+
+
+
+
+
+async function expandContainer(inspector, container) {
+  await inspector.markup.expandNode(container.node);
+  await waitForMultipleChildrenUpdates(inspector);
+}
+
+
+
+
+
+
+
+
+
 
 
 
