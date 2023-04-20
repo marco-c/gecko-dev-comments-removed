@@ -29,7 +29,17 @@ self.DirectSocketsServiceTest = (() => {
       });
     }
 
-    openUDPSocket(
+    openConnectedUDPSocket(
+      options,
+      receiver,
+      listener) {
+      return Promise.resolve({
+        
+        result: -11
+      });
+    }
+
+    openBoundUDPSocket(
       options,
       receiver,
       listener) {
