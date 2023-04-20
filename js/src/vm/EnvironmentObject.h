@@ -30,8 +30,8 @@ class ModuleObject;
 
 
 
-extern Shape* EnvironmentCoordinateToEnvironmentShape(JSScript* script,
-                                                      jsbytecode* pc);
+extern SharedShape* EnvironmentCoordinateToEnvironmentShape(JSScript* script,
+                                                            jsbytecode* pc);
 
 
 
