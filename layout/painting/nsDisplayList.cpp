@@ -7530,15 +7530,42 @@ bool nsDisplayText::CreateWebRenderCommands(
 
   
   
+  nsRect visible = mVisibleRect;
+
   
   
   
   
-  if (!(f->IsSelected() || f->StyleText()->HasTextShadow())) {
-    nsRect visible = mVisibleRect;
-    visible.Inflate(3 * appUnitsPerDevPixel);
-    bounds = bounds.Intersect(visible);
+  auto addShadowSourceToVisible = [&](Span<const StyleSimpleShadow> aShadows) {
+    for (const auto& shadow : aShadows) {
+      nsRect sourceRect = mVisibleRect;
+      
+      
+      
+      sourceRect.MoveBy(-shadow.horizontal.ToAppUnits(),
+                        -shadow.vertical.ToAppUnits());
+      
+      sourceRect.Inflate(nsContextBoxBlur::GetBlurRadiusMargin(
+          shadow.blur.ToAppUnits(), appUnitsPerDevPixel));
+      visible.OrWith(sourceRect);
+    }
+  };
+
+  
+  
+  
+  addShadowSourceToVisible(f->StyleText()->mTextShadow.AsSpan());
+
+  
+  if (f->IsSelected()) {
+    Span<const StyleSimpleShadow> shadows;
+    f->GetSelectionTextShadow(SelectionType::eNormal, &shadows);
+    addShadowSourceToVisible(shadows);
   }
+
+  
+  visible.Inflate(3 * appUnitsPerDevPixel);
+  bounds = bounds.Intersect(visible);
 
   gfxContext* textDrawer = aBuilder.GetTextContext(aResources, aSc, aManager,
                                                    this, bounds, deviceOffset);
