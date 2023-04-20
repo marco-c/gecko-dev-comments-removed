@@ -4,6 +4,7 @@
 
 use std::f32::consts::PI;
 use std::fmt;
+use std::str::FromStr;
 
 use super::{BasicParseError, ParseError, Parser, ToCss, Token};
 
@@ -353,6 +354,122 @@ impl_lch_like!(Oklch, "oklch");
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
+pub enum PredefinedColorSpace {
+    
+    Srgb,
+    
+    SrgbLinear,
+    
+    DisplayP3,
+    
+    A98Rgb,
+    
+    ProphotoRgb,
+    
+    Rec2020,
+    
+    XyzD50,
+    
+    XyzD65,
+}
+
+impl PredefinedColorSpace {
+    
+    pub fn as_str(&self) -> &str {
+        match self {
+            PredefinedColorSpace::Srgb => "srgb",
+            PredefinedColorSpace::SrgbLinear => "srgb-linear",
+            PredefinedColorSpace::DisplayP3 => "display-p3",
+            PredefinedColorSpace::A98Rgb => "a98-rgb",
+            PredefinedColorSpace::ProphotoRgb => "prophoto-rgb",
+            PredefinedColorSpace::Rec2020 => "rec2020",
+            PredefinedColorSpace::XyzD50 => "xyz-d50",
+            PredefinedColorSpace::XyzD65 => "xyz-d65",
+        }
+    }
+}
+
+impl FromStr for PredefinedColorSpace {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match_ignore_ascii_case! { s,
+            "srgb" => PredefinedColorSpace::Srgb,
+            "srgb-linear" => PredefinedColorSpace::SrgbLinear,
+            "display-p3" => PredefinedColorSpace::DisplayP3,
+            "a98-rgb" => PredefinedColorSpace::A98Rgb,
+            "prophoto-rgb" => PredefinedColorSpace::ProphotoRgb,
+            "rec2020" => PredefinedColorSpace::Rec2020,
+            "xyz-d50" => PredefinedColorSpace::XyzD50,
+            "xyz" | "xyz-d65" => PredefinedColorSpace::XyzD65,
+
+            _ => return Err(()),
+        })
+    }
+}
+
+impl ToCss for PredefinedColorSpace {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        dest.write_str(self.as_str())
+    }
+}
+
+
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct ColorFunction {
+    
+    pub color_space: PredefinedColorSpace,
+    
+    pub c1: f32,
+    
+    pub c2: f32,
+    
+    pub c3: f32,
+    
+    pub alpha: f32,
+}
+
+impl ColorFunction {
+    
+    
+    pub fn new(color_space: PredefinedColorSpace, c1: f32, c2: f32, c3: f32, alpha: f32) -> Self {
+        Self {
+            color_space,
+            c1,
+            c2,
+            c3,
+            alpha,
+        }
+    }
+}
+
+impl ToCss for ColorFunction {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        dest.write_str("color(")?;
+        self.color_space.to_css(dest)?;
+        dest.write_char(' ')?;
+        self.c1.to_css(dest)?;
+        dest.write_char(' ')?;
+        self.c2.to_css(dest)?;
+        dest.write_char(' ')?;
+        self.c3.to_css(dest)?;
+
+        serialize_alpha(dest, self.alpha, false)?;
+
+        dest.write_char(')')
+    }
+}
+
+
+
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum AbsoluteColor {
     
     Rgba(RGBA),
@@ -370,6 +487,8 @@ pub enum AbsoluteColor {
     
     
     Oklch(Oklch),
+    
+    ColorFunction(ColorFunction),
 }
 
 impl AbsoluteColor {
@@ -381,6 +500,7 @@ impl AbsoluteColor {
             Self::Lch(c) => c.alpha,
             Self::Oklab(c) => c.alpha,
             Self::Oklch(c) => c.alpha,
+            Self::ColorFunction(c) => c.alpha,
         }
     }
 }
@@ -396,6 +516,7 @@ impl ToCss for AbsoluteColor {
             Self::Lch(lch) => lch.to_css(dest),
             Self::Oklab(lab) => lab.to_css(dest),
             Self::Oklch(lch) => lch.to_css(dest),
+            Self::ColorFunction(color_function) => color_function.to_css(dest),
         }
     }
 }
@@ -571,7 +692,7 @@ impl Color {
             Token::Function(ref name) => {
                 let name = name.clone();
                 return input.parse_nested_block(|arguments| {
-                    parse_color_function(component_parser, &*name, arguments)
+                    parse_color(component_parser, &*name, arguments)
                 });
             }
             _ => Err(()),
@@ -785,7 +906,7 @@ fn clamp_floor_256_f32(val: f32) -> u8 {
 }
 
 #[inline]
-fn parse_color_function<'i, 't, ComponentParser>(
+fn parse_color<'i, 't, ComponentParser>(
     component_parser: &ComponentParser,
     name: &str,
     arguments: &mut Parser<'i, 't>,
@@ -826,6 +947,8 @@ where
         "oklch" => parse_lch_like(component_parser, arguments, 1.0, 0.4, |l, c, h, alpha| {
             Color::Absolute(AbsoluteColor::Oklch(Oklch::new(l.max(0.), c.max(0.), h, alpha)))
         }),
+
+        "color" => parse_color_function(component_parser, arguments),
 
         _ => return Err(arguments.new_unexpected_token_error(Token::Ident(name.to_owned().into()))),
     }?;
@@ -1068,4 +1191,45 @@ where
     let alpha = parse_alpha(component_parser, arguments, false)?;
 
     Ok(into_color(lightness, chroma, hue, alpha))
+}
+
+#[inline]
+fn parse_color_function<'i, 't, ComponentParser>(
+    component_parser: &ComponentParser,
+    arguments: &mut Parser<'i, 't>,
+) -> Result<Color, ParseError<'i, ComponentParser::Error>>
+where
+    ComponentParser: ColorComponentParser<'i>,
+{
+    let color_space = {
+        let location = arguments.current_source_location();
+
+        let ident = arguments.expect_ident()?;
+        PredefinedColorSpace::from_str(ident)
+            .map_err(|_| location.new_unexpected_token_error(Token::Ident(ident.clone())))?
+    };
+
+    macro_rules! parse_component {
+        () => {{
+            component_parser
+                .parse_number_or_percentage(arguments)?
+                .unit_value()
+        }};
+    }
+
+    let c1 = parse_component!();
+    let c2 = parse_component!();
+    let c3 = parse_component!();
+
+    let alpha = parse_alpha(component_parser, arguments, false)?;
+
+    Ok(Color::Absolute(AbsoluteColor::ColorFunction(
+        ColorFunction {
+            color_space,
+            c1,
+            c2,
+            c3,
+            alpha,
+        },
+    )))
 }
