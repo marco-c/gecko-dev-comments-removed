@@ -71,27 +71,27 @@ add_task(async function keyboardSelection_secondResult() {
   await assertIsTestResult(1);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown");
+  EventUtils.synthesizeKey("KEY_Tab");
   assertMainPartSelected(1);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown");
+  EventUtils.synthesizeKey("KEY_Tab");
   assertHelpButtonSelected(2);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown");
+  EventUtils.synthesizeKey("KEY_Tab");
   assertOtherResultSelected(3, "next result");
 
   
-  EventUtils.synthesizeKey("KEY_ArrowUp");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
   assertHelpButtonSelected(2);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowUp");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
   assertMainPartSelected(1);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowUp");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
   assertOtherResultSelected(0, "previous result");
 
   await UrlbarTestUtils.promisePopupClose(window);
@@ -121,11 +121,11 @@ add_task(async function keyboardSelection_lastResult() {
   await assertIsTestResult(MAX_RESULTS - 1);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: MAX_RESULTS - 1 });
+  EventUtils.synthesizeKey("KEY_Tab", { repeat: MAX_RESULTS - 1 });
   assertMainPartSelected(MAX_RESULTS - 1);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown");
+  EventUtils.synthesizeKey("KEY_Tab");
   assertHelpButtonSelected(MAX_RESULTS);
 
   
@@ -152,15 +152,15 @@ add_task(async function keyboardSelection_lastResult() {
   );
 
   
-  EventUtils.synthesizeKey("KEY_ArrowUp");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
   assertHelpButtonSelected(MAX_RESULTS);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowUp");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
   assertMainPartSelected(MAX_RESULTS - 1);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowUp");
+  EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
   assertOtherResultSelected(MAX_RESULTS - 2, "previous result");
 
   await UrlbarTestUtils.promisePopupClose(window);
@@ -210,10 +210,10 @@ async function doPickTest({ pickHelpButton, useKeyboard }) {
     if (useKeyboard) {
       
       if (pickHelpButton) {
-        EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index + 1 });
+        EventUtils.synthesizeKey("KEY_Tab", { repeat: index + 1 });
         assertHelpButtonSelected(index + 1);
       } else {
-        EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index });
+        EventUtils.synthesizeKey("KEY_Tab", { repeat: index });
         assertMainPartSelected(index);
       }
     } else {
