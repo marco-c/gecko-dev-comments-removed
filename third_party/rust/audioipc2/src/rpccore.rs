@@ -3,16 +3,108 @@
 
 
 
+use crossbeam_queue::ArrayQueue;
+use mio::Token;
+use std::cell::UnsafeCell;
 use std::collections::VecDeque;
 use std::io::{self, Error, ErrorKind, Result};
+use std::marker::PhantomPinned;
 use std::mem::ManuallyDrop;
-use std::sync::{Arc, Mutex};
-
-use crossbeam_channel::{self, Receiver, Sender};
-use mio::Token;
-use slab::Slab;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Weak};
 
 use crate::ipccore::EventLoopHandle;
+
+
+
+
+
+struct Completion<T> {
+    item: UnsafeCell<Option<T>>,
+    writer: AtomicBool,
+    _pin: PhantomPinned, 
+}
+
+impl<T> Completion<T> {
+    fn new() -> Self {
+        Completion {
+            item: UnsafeCell::new(None),
+            writer: AtomicBool::new(false),
+            _pin: PhantomPinned,
+        }
+    }
+
+    
+    
+    
+    fn wait(&self) -> Option<T> {
+        
+        while self.writer.load(Ordering::Acquire) {
+            std::thread::park();
+        }
+        unsafe { (*self.item.get()).take() }
+    }
+
+    
+    
+    fn writer(&self) -> CompletionWriter<T> {
+        assert!(!self.writer.load(Ordering::Relaxed));
+        self.writer.store(true, Ordering::Release);
+        CompletionWriter {
+            ptr: self as *const _ as *mut _,
+            waiter: std::thread::current(),
+        }
+    }
+}
+
+impl<T> Drop for Completion<T> {
+    fn drop(&mut self) {
+        
+        
+        
+        while self.writer.load(Ordering::Acquire) {
+            std::thread::park();
+        }
+    }
+}
+
+struct CompletionWriter<T> {
+    ptr: *mut Completion<T>, 
+    waiter: std::thread::Thread, 
+}
+
+impl<T> CompletionWriter<T> {
+    fn set(self, value: T) {
+        
+        
+        
+        
+        unsafe {
+            assert!((*self.ptr).writer.load(Ordering::Relaxed));
+            *(*self.ptr).item.get() = Some(value);
+        }
+    }
+}
+
+impl<T> Drop for CompletionWriter<T> {
+    fn drop(&mut self) {
+        
+        
+        unsafe {
+            (*self.ptr).writer.store(false, Ordering::Release);
+        }
+        
+        self.waiter.unpark();
+    }
+}
+
+
+
+
+
+
+
+unsafe impl<T> Send for CompletionWriter<T> {}
 
 
 
@@ -45,12 +137,7 @@ pub trait Server {
 }
 
 
-type ProxyKey = usize;
-type ProxyRequest<Request> = (ProxyKey, Request);
-
-
-
-
+type ProxyRequest<Request, Response> = (Request, CompletionWriter<Response>);
 
 
 
@@ -62,45 +149,34 @@ type ProxyRequest<Request> = (ProxyKey, Request);
 #[derive(Debug)]
 pub struct Proxy<Request, Response> {
     handle: Option<(EventLoopHandle, Token)>,
-    key: ProxyKey,
-    response_rx: Receiver<Response>,
-    handler_tx: ManuallyDrop<Sender<ProxyRequest<Request>>>,
-    proxy_mgr: Arc<ProxyManager<Response>>,
+    requests: ManuallyDrop<Weak<ArrayQueue<ProxyRequest<Request, Response>>>>,
 }
 
 impl<Request, Response> Proxy<Request, Response> {
-    fn new(
-        handler_tx: Sender<ProxyRequest<Request>>,
-        proxy_mgr: Arc<ProxyManager<Response>>,
-    ) -> Result<Self> {
-        let (tx, rx) = crossbeam_channel::bounded(1);
-        Ok(Self {
+    fn new(requests: Weak<ArrayQueue<ProxyRequest<Request, Response>>>) -> Self {
+        Self {
             handle: None,
-            key: proxy_mgr.register_proxy(tx)?,
-            response_rx: rx,
-            handler_tx: ManuallyDrop::new(handler_tx),
-            proxy_mgr,
-        })
-    }
-
-    pub fn try_clone(&self) -> Result<Self> {
-        let mut clone = Self::new((*self.handler_tx).clone(), self.proxy_mgr.clone())?;
-        let (handle, token) = self
-            .handle
-            .as_ref()
-            .expect("proxy not connected to event loop");
-        clone.connect_event_loop(handle.clone(), *token);
-        Ok(clone)
+            requests: ManuallyDrop::new(requests),
+        }
     }
 
     pub fn call(&self, request: Request) -> Result<Response> {
-        match self.handler_tx.send((self.key, request)) {
-            Ok(_) => self.wake_connection(),
-            Err(_) => return Err(Error::new(ErrorKind::Other, "proxy send error")),
+        let req = if let Some(req) = self.requests.upgrade() {
+            req
+        } else {
+            debug!("Proxy[{:p}]: call failed - CH::requests dropped", self);
+            return Err(Error::new(ErrorKind::Other, "proxy send error"));
+        };
+        let response = Completion::new();
+        let response_writer = response.writer();
+        if req.push((request, response_writer)).is_err() {
+            debug!("Proxy[{:p}]: call failed - CH::requests full", self);
+            return Err(Error::new(ErrorKind::Other, "proxy send error"));
         }
-        match self.response_rx.recv() {
-            Ok(resp) => Ok(resp),
-            Err(_) => Err(Error::new(ErrorKind::Other, "proxy recv error")),
+        self.wake_connection();
+        match response.wait() {
+            Some(resp) => Ok(resp),
+            None => Err(Error::new(ErrorKind::Other, "proxy recv error")),
         }
     }
 
@@ -117,16 +193,29 @@ impl<Request, Response> Proxy<Request, Response> {
     }
 }
 
+impl<Request, Response> Clone for Proxy<Request, Response> {
+    fn clone(&self) -> Self {
+        let mut clone = Self::new((*self.requests).clone());
+        let (handle, token) = self
+            .handle
+            .as_ref()
+            .expect("proxy not connected to event loop");
+        clone.connect_event_loop(handle.clone(), *token);
+        clone
+    }
+}
+
 impl<Request, Response> Drop for Proxy<Request, Response> {
     fn drop(&mut self) {
         trace!("Proxy drop, waking EventLoop");
-        let _ = self.proxy_mgr.unregister_proxy(self.key);
         
         
+        
+        let last_proxy = Weak::weak_count(&self.requests);
         unsafe {
-            ManuallyDrop::drop(&mut self.handler_tx);
+            ManuallyDrop::drop(&mut self.requests);
         }
-        if self.handle.is_some() {
+        if last_proxy == 1 && self.handle.is_some() {
             self.wake_connection()
         }
     }
@@ -136,104 +225,24 @@ const RPC_CLIENT_INITIAL_PROXIES: usize = 32;
 
 
 
-#[derive(Debug)]
-struct ProxyManager<Response> {
-    proxies: Mutex<Option<Slab<Sender<Response>>>>,
-}
-
-impl<Response> ProxyManager<Response> {
-    fn new() -> Self {
-        Self {
-            proxies: Mutex::new(Some(Slab::with_capacity(RPC_CLIENT_INITIAL_PROXIES))),
-        }
-    }
-
-    
-    
-    fn register_proxy(&self, tx: Sender<Response>) -> Result<ProxyKey> {
-        let mut proxies = self.proxies.lock().unwrap();
-        match &mut *proxies {
-            Some(proxies) => {
-                let entry = proxies.vacant_entry();
-                let key = entry.key();
-                entry.insert(tx);
-                Ok(key)
-            }
-            None => Err(Error::new(
-                ErrorKind::Other,
-                "register: proxy manager disconnected",
-            )),
-        }
-    }
-
-    fn unregister_proxy(&self, key: ProxyKey) -> Result<()> {
-        let mut proxies = self.proxies.lock().unwrap();
-        match &mut *proxies {
-            Some(proxies) => match proxies.try_remove(key) {
-                Some(_) => Ok(()),
-                None => Err(Error::new(
-                    ErrorKind::Other,
-                    "unregister: unknown proxy key",
-                )),
-            },
-            None => Err(Error::new(
-                ErrorKind::Other,
-                "unregister: proxy manager disconnected",
-            )),
-        }
-    }
-
-    
-    fn deliver(&self, key: ProxyKey, resp: Response) -> Result<()> {
-        let proxies = self.proxies.lock().unwrap();
-        match &*proxies {
-            Some(proxies) => match proxies.get(key) {
-                Some(proxy) => {
-                    drop(proxy.send(resp));
-                    Ok(())
-                }
-                None => Err(Error::new(ErrorKind::Other, "deliver: unknown proxy key")),
-            },
-            None => Err(Error::new(
-                ErrorKind::Other,
-                "unregister: proxy manager disconnected",
-            )),
-        }
-    }
-
-    
-    fn disconnect_handler(&self) {
-        *self.proxies.lock().unwrap() = None;
-    }
-}
-
-
-
 
 
 
 
 
 pub(crate) struct ClientHandler<C: Client> {
-    messages: Receiver<ProxyRequest<C::ServerMessage>>,
-    
-    
-    
-    proxies: Arc<ProxyManager<C::ClientMessage>>,
-    in_flight: VecDeque<ProxyKey>,
+    in_flight: VecDeque<CompletionWriter<C::ClientMessage>>,
+    requests: Arc<ArrayQueue<ProxyRequest<C::ServerMessage, C::ClientMessage>>>,
 }
 
 impl<C: Client> ClientHandler<C> {
-    fn new(rx: Receiver<ProxyRequest<C::ServerMessage>>) -> ClientHandler<C> {
+    fn new(
+        requests: Arc<ArrayQueue<ProxyRequest<C::ServerMessage, C::ClientMessage>>>,
+    ) -> ClientHandler<C> {
         ClientHandler::<C> {
-            messages: rx,
-            proxies: Arc::new(ProxyManager::new()),
             in_flight: VecDeque::with_capacity(RPC_CLIENT_INITIAL_PROXIES),
+            requests,
         }
-    }
-
-    fn proxy_manager(&self) -> &Arc<ProxyManager<<C as Client>::ClientMessage>> {
-        &self.proxies
     }
 }
 
@@ -243,9 +252,8 @@ impl<C: Client> Handler for ClientHandler<C> {
 
     fn consume(&mut self, response: Self::In) -> Result<()> {
         trace!("ClientHandler::consume");
-        
-        if let Some(proxy) = self.in_flight.pop_front() {
-            self.proxies.deliver(proxy, response)?;
+        if let Some(response_writer) = self.in_flight.pop_front() {
+            response_writer.set(response);
         } else {
             return Err(Error::new(ErrorKind::Other, "request/response mismatch"));
         }
@@ -257,39 +265,34 @@ impl<C: Client> Handler for ClientHandler<C> {
         trace!("ClientHandler::produce");
 
         
-        match self.messages.try_recv() {
-            Ok((proxy, request)) => {
+        
+        
+        if Arc::weak_count(&self.requests) == 0 {
+            return Err(io::ErrorKind::ConnectionAborted.into());
+        }
+        
+        match self.requests.pop() {
+            Some((request, response_writer)) => {
                 trace!("  --> received request");
-                self.in_flight.push_back(proxy);
+                self.in_flight.push_back(response_writer);
                 Ok(Some(request))
             }
-            Err(crossbeam_channel::TryRecvError::Empty) => {
+            None => {
                 trace!("  --> no request");
                 Ok(None)
             }
-            Err(e) => {
-                trace!("  --> client disconnected");
-                Err(io::Error::new(io::ErrorKind::ConnectionAborted, e))
-            }
         }
-    }
-}
-
-impl<C: Client> Drop for ClientHandler<C> {
-    fn drop(&mut self) {
-        self.proxies.disconnect_handler();
     }
 }
 
 #[allow(clippy::type_complexity)]
 pub(crate) fn make_client<C: Client>(
 ) -> Result<(ClientHandler<C>, Proxy<C::ServerMessage, C::ClientMessage>)> {
-    let (tx, rx) = crossbeam_channel::bounded(RPC_CLIENT_INITIAL_PROXIES);
+    let requests = Arc::new(ArrayQueue::new(RPC_CLIENT_INITIAL_PROXIES));
+    let proxy_req = Arc::downgrade(&requests);
+    let handler = ClientHandler::new(requests);
 
-    let handler = ClientHandler::new(rx);
-    let proxy_mgr = handler.proxy_manager().clone();
-
-    Ok((handler, Proxy::new(tx, proxy_mgr)?))
+    Ok((handler, Proxy::new(proxy_req)))
 }
 
 

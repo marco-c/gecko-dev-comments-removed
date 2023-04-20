@@ -105,6 +105,8 @@ TOLERATED_DUPES = {
     "bytes": 2,
     "crossbeam-deque": 2,
     "crossbeam-epoch": 2,
+    
+    "crossbeam-queue": 2,
     "crossbeam-utils": 3,
     "futures": 2,
     "memoffset": 2,
