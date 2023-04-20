@@ -3204,8 +3204,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
           continue;
         }
 
-        LocalAccessible* acc = doc->GetAccessibleOrContainer(content);
-        
+        LocalAccessible* acc = doc->GetAccessible(content);
         
         
         
