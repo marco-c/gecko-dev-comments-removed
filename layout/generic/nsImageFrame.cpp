@@ -1773,7 +1773,10 @@ class nsDisplayAltFeedback final : public nsPaintedDisplayItem {
       const StackingContextHelper& aSc,
       mozilla::layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder) final {
-    uint32_t flags = imgIContainer::FLAG_ASYNC_NOTIFY;
+    
+    
+    uint32_t flags =
+        imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY;
     nsImageFrame* f = static_cast<nsImageFrame*>(mFrame);
     ImgDrawResult result = f->DisplayAltFeedbackWithoutLayer(
         this, aBuilder, aResources, aSc, aManager, aDisplayListBuilder,
