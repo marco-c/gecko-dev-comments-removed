@@ -561,7 +561,6 @@ class gfxUserFontEntry : public gfxFontEntry {
   };
 
   gfxUserFontEntry(
-      gfxUserFontSet* aFontSet,
       const nsTArray<gfxFontFaceSrc>& aFontFaceSrcList, WeightRange aWeight,
       StretchRange aStretch, SlantStyleRange aStyle,
       const nsTArray<gfxFontFeature>& aFeatureSettings,
@@ -603,6 +602,8 @@ class gfxUserFontEntry : public gfxFontEntry {
   UserFontLoadState LoadState() const { return mUserFontLoadState; }
 
   void LoadCanceled() {
+    MOZ_ASSERT(NS_IsMainThread());
+
     mUserFontLoadState = STATUS_NOT_LOADED;
     mFontDataLoadingState = NOT_LOADING;
     mLoader = nullptr;
@@ -647,8 +648,16 @@ class gfxUserFontEntry : public gfxFontEntry {
 
   
   
-  void SetLoader(nsFontFaceLoader* aLoader) { mLoader = aLoader; }
-  nsFontFaceLoader* GetLoader() const { return mLoader; }
+  void SetLoader(nsFontFaceLoader* aLoader) {
+    MOZ_ASSERT(NS_IsMainThread());
+    mLoader = aLoader;
+  }
+
+  nsFontFaceLoader* GetLoader() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mLoader;
+  }
+
   gfxFontSrcPrincipal* GetPrincipal() const { return mPrincipal; }
   void GetFamilyNameAndURIForLogging(uint32_t aSrcIndex,
                                      nsACString& aFamilyName, nsACString& aURI);
@@ -658,9 +667,7 @@ class gfxUserFontEntry : public gfxFontEntry {
     return nullptr;
   }
 
-#ifdef DEBUG
-  gfxUserFontSet* GetUserFontSet() const { return mFontSet; }
-#endif
+  virtual already_AddRefed<gfxUserFontSet> GetUserFontSet() const = 0;
 
   const nsTArray<gfxFontFaceSrc>& SourceList() const { return mSrcList; }
 
@@ -789,8 +796,7 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   nsFontFaceLoader* MOZ_NON_OWNING_REF
       mLoader;  
-  gfxUserFontSet* MOZ_NON_OWNING_REF
-      mFontSet;  
+  RefPtr<gfxUserFontSet> mLoadingFontSet;
   RefPtr<gfxFontSrcPrincipal> mPrincipal;
 };
 
