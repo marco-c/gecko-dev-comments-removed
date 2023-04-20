@@ -4207,6 +4207,15 @@ mozilla::ipc::IPCResult ContentParent::RecvCloneDocumentTreeInto(
     return IPC_OK();
   }
 
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    
+    
+    
+    
+    
+    return IPC_OK();
+  }
+
   auto* source = aSource.get_canonical();
   auto* target = aTarget.get_canonical();
 
