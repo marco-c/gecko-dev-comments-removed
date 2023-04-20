@@ -68,42 +68,30 @@ async function runPopupPositionTest(parentDocumentFileName) {
 
   const selectPopup = await openSelectPopup();
 
-  const popupRect = selectPopup.getBoundingClientRect();
+  const popup_rect = selectPopup.getBoundingClientRect();
   const popupMarginTop = parseFloat(getComputedStyle(selectPopup).marginTop);
   const popupMarginLeft = parseFloat(getComputedStyle(selectPopup).marginLeft);
 
-  info(
-    `popup rect: (${popupRect.x}, ${popupRect.y}) ${popupRect.width}x${popupRect.height}`
-  );
-  info(`popup margins: ${popupMarginTop} / ${popupMarginLeft}`);
-  info(
-    `select rect: (${selectRect.x}, ${selectRect.y}) ${selectRect.width}x${selectRect.height}`
-  );
-
   is(
-    popupRect.left - popupMarginLeft,
+    popup_rect.left - popupMarginLeft,
     selectRect.x * 2.0,
-    "select popup position x should be scaled by the desktop zoom"
+    "select popup position should be scaled by the desktop zoom"
   );
 
   
   
   if (!navigator.platform.includes("Mac")) {
     is(
-      popupRect.top - popupMarginTop,
+      popup_rect.top - popupMarginTop,
       tab.linkedBrowser.getBoundingClientRect().top +
         (selectRect.y + selectRect.height) * 2.0,
-      "select popup position y should be scaled by the desktop zoom"
+      "select popup position should be scaled by the desktop zoom"
     );
   } else {
-    
-    
-    
-    const spaceToFirstLabel = 5;
     is(
-      popupRect.top - popupMarginTop + spaceToFirstLabel,
+      popup_rect.top - popupMarginTop,
       tab.linkedBrowser.getBoundingClientRect().top + selectRect.y * 2.0,
-      "select popup position y should be scaled by the desktop zoom"
+      "select popup position should be scaled by the desktop zoom"
     );
   }
 
