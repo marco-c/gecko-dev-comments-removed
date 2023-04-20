@@ -81,7 +81,8 @@ const getConv2dPrecisionTolerance = (resources, operationName) => {
   const options = resources.options;
   let groups = 1;
   let inputChannels = inputShape[1]; 
-  let filterWidth = filterShape[3]; 
+  
+  let filterWidth = filterShape[3];
   let filterHeight = filterShape[2];
   if (options) {
     if (options.groups) {
@@ -94,14 +95,20 @@ const getConv2dPrecisionTolerance = (resources, operationName) => {
       inputChannels = options.inputLayout === 'nchw' ? inputChannels : inputShape[3];
     }
     if (options.filterLayout) {
-      if (!['oihw', 'hwio', 'ohwi', 'ihwo'].includes(options.filterLayout)) {
+      let filterLayouts = ['oihw', 'hwio', 'ohwi', 'ihwo']; 
+      if (operationName === 'convTranspose2d') {
+        filterLayouts = ['iohw', 'hwoi', 'ohwi'];
+      }
+      if (!filterLayouts.includes(options.filterLayout)) {
         throw new Error(`Unsupported filterLayout ${options.filterLayout}`);
       }
       switch (options.filterLayout) {
         case 'oihw':
+        case 'iohw':
           
           break;
         case 'hwio':
+        case 'hwoi':
           filterWidth = filterShape[1];
           filterHeight = filterShape[0];
           break;
@@ -240,6 +247,7 @@ const PrecisionMetrics = {
   clamp: {ULP: {float32: 0, float16: 0}},
   concat: {ULP: {float32: 0, float16: 0}},
   conv2d: {ULP: {float32: getConv2dPrecisionTolerance, float16: getConv2dPrecisionTolerance}},
+  convTranspose2d: {ULP: {float32: getConv2dPrecisionTolerance, float16: getConv2dPrecisionTolerance}},
   
   add: {ULP: {float32: 1, float16: 1}},
   sub: {ULP: {float32: 1, float16: 1}},
