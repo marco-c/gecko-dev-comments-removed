@@ -19,7 +19,6 @@ RELEASE_PROJECTS = {
     "comm-central",
     "comm-beta",
     "comm-esr102",
-    "oak",
 }
 
 RELEASE_PROMOTION_PROJECTS = {
@@ -32,7 +31,7 @@ RELEASE_PROMOTION_PROJECTS = {
 TEMPORARY_PROJECTS = set(
     {
         
-        
+        "oak",
     }
 )
 
