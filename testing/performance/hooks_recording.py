@@ -8,8 +8,12 @@ from pathlib import Path
 
 from mozperftest.test.browsertime import add_option, add_options
 
+
+
+
 options = [
     ("pageCompleteWaitTime", "10000"),
+    
 ]
 
 next_site = None
@@ -128,11 +132,14 @@ def before_runs(env):
             recording_file,
         )
 
-        add_option(env, "browsertime.url", test_site.get("test_url"), overwrite=True)
+        add_options(env, options, overwrite=True)
+        add_option(env, "browsertime.url", test_site.get("test_url"))
         add_option(env, "browsertime.screenshot", "true")
         add_option(env, "browsertime.testName", test_site.get("name"))
         add_option(env, "browsertime.testType", test_site.get("type", "pageload"))
-        add_option(env, "browsertime.login", test_site.get("login", "false"))
+        add_option(
+            env, "browsertime.login", "true" if test_site.get("login") else "false"
+        )
 
         prefs = test_site.get("preferences", {})
         for pref, val in prefs.items():

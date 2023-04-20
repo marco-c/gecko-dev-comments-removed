@@ -362,10 +362,21 @@ async function pageload_test(context, commands) {
   context.log.info(context.options.browsertime);
 
   
+  await commands.wait.byTime(1000);
+
+  
   
   
   if (context.options.browsertime.login) {
-    if (
+    if (context.options.browsertime.manual_login) {
+      
+      
+      await commands.navigate(testUrl);
+      context.log.info(
+        `Waiting ${context.options.browsertime.manual_login}ms for login...`
+      );
+      await commands.wait.byTime(context.options.browsertime.manual_login);
+    } else if (
       process.env.RAPTOR_LOGINS ||
       process.env.MOZ_SCM_LEVEL == 3 ||
       SCM_1_LOGIN_SITES.includes(testName)
@@ -378,11 +389,13 @@ async function pageload_test(context, commands) {
         );
         context.log.info("Error:" + err);
       }
+    } else {
+      context.log.info(`
+        NOTE: This is a login test but a manual login was not requested, and
+        we cannot find any logins defined in RAPTOR_LOGINS.
+      `);
     }
   }
-
-  
-  await commands.wait.byTime(1000);
 
   await commands.measure.start(testUrl);
   await commands.wait.byTime(40000);
