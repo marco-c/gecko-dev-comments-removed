@@ -1005,35 +1005,6 @@ nsresult nsXULElement::PreHandleEvent(EventChainVisitor& aVisitor) {
 
 
 
-nsChangeHint nsXULElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                                  int32_t aModType) const {
-  if (IsAnyOfXULElements(nsGkAtoms::label, nsGkAtoms::description)) {
-    if (aAttribute == nsGkAtoms::value &&
-        (aModType == MutationEvent_Binding::REMOVAL ||
-         aModType == MutationEvent_Binding::ADDITION)) {
-      
-      
-      
-      
-      
-      return nsChangeHint_ReconstructFrame;
-    }
-    if ((aAttribute == nsGkAtoms::crop || aAttribute == nsGkAtoms::accesskey) &&
-        HasAttr(nsGkAtoms::value)) {
-      
-      return nsChangeHint_ReconstructFrame;
-    }
-  }
-
-  if (aAttribute == nsGkAtoms::type &&
-      IsAnyOfXULElements(nsGkAtoms::toolbarbutton, nsGkAtoms::button)) {
-    
-    return nsChangeHint_ReconstructFrame;
-  }
-
-  return nsChangeHint(0);
-}
-
 NS_IMETHODIMP_(bool)
 nsXULElement::IsAttributeMapped(const nsAtom* aAttribute) const {
   return false;
