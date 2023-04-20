@@ -2345,6 +2345,7 @@ void ScrollFrameHelper::AsyncScroll::InitSmoothScroll(
   mAnimationPhysics->Update(aTime, aDestination, aCurrentVelocity);
 }
 
+
 bool ScrollFrameHelper::IsSmoothScrollingEnabled() {
   return StaticPrefs::general_smoothScroll();
 }
@@ -8430,6 +8431,14 @@ bool ScrollFrameHelper::SmoothScrollVisual(
 }
 
 bool ScrollFrameHelper::IsSmoothScroll(dom::ScrollBehavior aBehavior) const {
+  
+  
+  
+  if (aBehavior == dom::ScrollBehavior::Instant ||
+      !ScrollFrameHelper::IsSmoothScrollingEnabled()) {
+    return false;
+  }
+
   if (aBehavior == dom::ScrollBehavior::Smooth) {
     return true;
   }
