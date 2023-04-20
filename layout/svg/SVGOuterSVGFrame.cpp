@@ -40,7 +40,12 @@ NS_IMPL_FRAMEARENA_HELPERS(SVGOuterSVGFrame)
 
 SVGOuterSVGFrame::SVGOuterSVGFrame(ComputedStyle* aStyle,
                                    nsPresContext* aPresContext)
-    : SVGDisplayContainerFrame(aStyle, aPresContext, kClassID) {
+    : SVGDisplayContainerFrame(aStyle, aPresContext, kClassID),
+      mFullZoom(PresContext()->GetFullZoom()),
+      mCallingReflowSVG(false),
+      mIsRootContent(false),
+      mIsInObjectOrEmbed(false),
+      mIsInIframe(false) {
   
   RemoveStateBits(NS_FRAME_SVG_LAYOUT);
   AddStateBits(NS_FRAME_REFLOW_ROOT | NS_FRAME_FONT_INFLATION_CONTAINER |
@@ -59,16 +64,6 @@ static inline ContainSizeAxes ContainSizeAxesIfApplicable(
     return ContainSizeAxes(false, false);
   }
   return aFrame->GetContainSizeAxes();
-}
-
-
-float SVGOuterSVGFrame::ComputeFullZoom() const {
-  MOZ_ASSERT(mIsRootContent);
-  MOZ_ASSERT(!mIsInIframe);
-  if (BrowsingContext* bc = PresContext()->Document()->GetBrowsingContext()) {
-    return bc->FullZoom();
-  }
-  return 1.0f;
 }
 
 void SVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -102,9 +97,6 @@ void SVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
             nsGkAtoms::object->Equals(*type) || nsGkAtoms::embed->Equals(*type);
         mIsInIframe = nsGkAtoms::iframe->Equals(*type);
       }
-    }
-    if (!mIsInIframe) {
-      mFullZoom = ComputeFullZoom();
     }
   }
 
@@ -263,7 +255,7 @@ nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
   LogicalSize cbSize = aCBSize;
   IntrinsicSize intrinsicSize = GetIntrinsicSize();
 
-  if (mIsRootContent) {
+  if (!mContent->GetParent()) {
     
     
 
@@ -272,8 +264,8 @@ nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
                  "root should not have auto-width/height containing block");
 
     if (!mIsInIframe) {
-      cbSize.ISize(aWritingMode) *= mFullZoom;
-      cbSize.BSize(aWritingMode) *= mFullZoom;
+      cbSize.ISize(aWritingMode) *= PresContext()->GetFullZoom();
+      cbSize.BSize(aWritingMode) *= PresContext()->GetFullZoom();
     }
 
     
@@ -282,7 +274,7 @@ nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
     
     
 
-    auto* content = static_cast<SVGSVGElement*>(GetContent());
+    SVGSVGElement* content = static_cast<SVGSVGElement*>(GetContent());
 
     const SVGAnimatedLength& width =
         content->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
@@ -391,12 +383,9 @@ void SVGOuterSVGFrame::Reflow(nsPresContext* aPresContext,
     changeBits |= COORD_CONTEXT_CHANGED;
     svgElem->SetViewportSize(newViewportSize);
   }
-  if (mIsRootContent && !mIsInIframe) {
-    const auto oldZoom = mFullZoom;
-    mFullZoom = ComputeFullZoom();
-    if (oldZoom != mFullZoom) {
-      changeBits |= FULL_ZOOM_CHANGED;
-    }
+  if (mFullZoom != PresContext()->GetFullZoom() && !mIsInIframe) {
+    changeBits |= FULL_ZOOM_CHANGED;
+    mFullZoom = PresContext()->GetFullZoom();
   }
   if (changeBits && !HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     NotifyViewportOrTransformChanged(changeBits);
