@@ -2117,10 +2117,6 @@ WorkerThreadPrimaryRunnable::Run() {
 
     nsWeakPtr globalScopeSentinel;
     nsWeakPtr debuggerScopeSentinel;
-    
-    
-    WorkerGlobalScopeBase* globalScopeRawPtr = nullptr;
-    WorkerGlobalScopeBase* debuggerScopeRawPtr = nullptr;
     {
       nsCycleCollector_startup();
 
@@ -2176,16 +2172,12 @@ WorkerThreadPrimaryRunnable::Run() {
 
       
       
-      globalScopeRawPtr = mWorkerPrivate->GlobalScope();
-      if (globalScopeRawPtr) {
-        globalScopeSentinel = do_GetWeakReference(globalScopeRawPtr);
-      }
-      MOZ_ASSERT(!globalScopeRawPtr || globalScopeSentinel);
-      debuggerScopeRawPtr = mWorkerPrivate->DebuggerGlobalScope();
-      if (debuggerScopeSentinel) {
-        debuggerScopeSentinel = do_GetWeakReference(debuggerScopeRawPtr);
-      }
-      MOZ_ASSERT(!debuggerScopeRawPtr || debuggerScopeSentinel);
+      globalScopeSentinel = do_GetWeakReference(mWorkerPrivate->GlobalScope());
+      debuggerScopeSentinel =
+          do_GetWeakReference(mWorkerPrivate->DebuggerGlobalScope());
+      MOZ_ASSERT(!mWorkerPrivate->GlobalScope() || globalScopeSentinel);
+      MOZ_ASSERT(!mWorkerPrivate->DebuggerGlobalScope() ||
+                 debuggerScopeSentinel);
 
       
       
@@ -2217,21 +2209,23 @@ WorkerThreadPrimaryRunnable::Run() {
     }
 
     
+    nsCOMPtr<DOMEventTargetHelper> globalScopeAlive =
+        do_QueryReferent(globalScopeSentinel);
+    MOZ_ASSERT(!globalScopeAlive);
+    nsCOMPtr<DOMEventTargetHelper> debuggerScopeAlive =
+        do_QueryReferent(debuggerScopeSentinel);
+    MOZ_ASSERT(!debuggerScopeAlive);
+
     
-    
-    if (globalScopeSentinel) {
-      MOZ_ASSERT(!globalScopeSentinel->IsAlive());
-      if (NS_WARN_IF(globalScopeSentinel->IsAlive())) {
-        globalScopeRawPtr->NoteWorkerTerminated();
-        globalScopeRawPtr = nullptr;
-      }
+    if (globalScopeAlive) {
+      static_cast<WorkerGlobalScopeBase*>(globalScopeAlive.get())
+          ->NoteWorkerTerminated();
+      globalScopeAlive = nullptr;
     }
-    if (debuggerScopeSentinel) {
-      MOZ_ASSERT(!debuggerScopeSentinel->IsAlive());
-      if (NS_WARN_IF(debuggerScopeSentinel->IsAlive())) {
-        debuggerScopeRawPtr->NoteWorkerTerminated();
-        debuggerScopeRawPtr = nullptr;
-      }
+    if (debuggerScopeAlive) {
+      static_cast<WorkerGlobalScopeBase*>(debuggerScopeAlive.get())
+          ->NoteWorkerTerminated();
+      debuggerScopeAlive = nullptr;
     }
   }
 
