@@ -574,7 +574,7 @@ nsPipe::nsPipe(uint32_t aSegmentSize, uint32_t aSegmentCount)
   
   
   
-  MOZ_ALWAYS_SUCCEEDS(mBuffer.Init(aSegmentSize, UINT32_MAX));
+  MOZ_ALWAYS_SUCCEEDS(mBuffer.Init(aSegmentSize));
 }
 
 nsPipe::~nsPipe() = default;

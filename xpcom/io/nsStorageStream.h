@@ -60,6 +60,8 @@ class nsStorageStream final : public nsIStorageStream, public nsIOutputStream {
   
   char* mSegmentEnd MOZ_GUARDED_BY(mMutex) = nullptr;
   
+  uint32_t mMaxLogicalLength MOZ_GUARDED_BY(mMutex) = 0;
+  
   uint32_t mLogicalLength MOZ_GUARDED_BY(mMutex) = 0;
   
   uint32_t mActiveSegmentBorrows MOZ_GUARDED_BY(mMutex) = 0;
