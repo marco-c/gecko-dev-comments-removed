@@ -182,9 +182,13 @@ class LoginManagerStorage_json {
       : this._encryptLogin(login);
 
     
+    if (preEncrypted) {
+      login.username = plaintextUsername;
+      login.password = plaintextPassword;
+    }
+
+    
     let loginClone = login.clone();
-    loginClone.username = preEncrypted ? plaintextUsername : login.username;
-    loginClone.password = preEncrypted ? plaintextPassword : login.password;
 
     
     loginClone.QueryInterface(Ci.nsILoginMetaInfo);
