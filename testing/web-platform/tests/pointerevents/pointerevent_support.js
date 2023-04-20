@@ -48,23 +48,20 @@ function check_PointerEvent(event, testNamePrefix) {
         testNamePrefix = "";
 
     
-    var pointerTestName = testNamePrefix + ' ' + (expectedPointerType == null ? event.pointerType : expectedPointerType) + ' ' + event.type;
+    var pointerTestName = (testNamePrefix ? testNamePrefix + ' ' : '')
+        + (expectedPointerType == null ? event.pointerType : expectedPointerType) + ' ' + event.type;
 
     if (expectedPointerType != null) {
         test(function () {
-            assert_equals(event.pointerType, expectedPointerType, "pointerType should be the one specified in the test page.");
-        }, pointerTestName + " event pointerType is correct.");
+            assert_equals(event.pointerType, expectedPointerType);
+        }, pointerTestName + ".pointerType is correct.");
     }
 
     test(function () {
-        assert_true(event instanceof event.target.ownerDocument.defaultView.PointerEvent, "event is a PointerEvent event");
+        assert_true(event instanceof event.target.ownerDocument.defaultView.PointerEvent);
     }, pointerTestName + " event is a PointerEvent event");
 
 
-    
-    
-    
-    
     
     var idl_type_check = {
         "long": function (v) { return typeof v === "number" && Math.round(v) === v; },
@@ -74,60 +71,60 @@ function check_PointerEvent(event, testNamePrefix) {
         "object": function (v) { return typeof v === "object" }
     };
     [
-        ["readonly", "long", "pointerId"],
-        ["readonly", "float", "width"],
-        ["readonly", "float", "height"],
-        ["readonly", "float", "pressure"],
-        ["readonly", "long", "tiltX"],
-        ["readonly", "long", "tiltY"],
-        ["readonly", "string", "pointerType"],
-        ["readonly", "boolean", "isPrimary"],
-        ["readonly", "long", "detail", 0],
-        ["readonly", "object", "fromElement", null],
-        ["readonly", "object", "toElement", null],
-        ["readonly", "boolean", "isTrusted", true]
+        ["long", "pointerId"],
+        ["float", "width"],
+        ["float", "height"],
+        ["float", "pressure"],
+        ["long", "tiltX"],
+        ["long", "tiltY"],
+        ["string", "pointerType"],
+        ["boolean", "isPrimary"],
+        ["long", "detail", 0],
+        ["object", "fromElement"],
+        ["object", "toElement"],
+        ["boolean", "isTrusted"],
+        ["boolean", "composed"],
+        ["boolean", "bubbles"]
     ].forEach(function (attr) {
-        var readonly = attr[0];
-        var type = attr[1];
-        var name = attr[2];
-        var value = attr[3];
+        var type = attr[0];
+        var name = attr[1];
 
-        
         test(function () {
-            assert_true(name in event, name + " attribute in " + event.type + " event");
-        }, pointerTestName + "." + name + " attribute exists");
+            
+            assert_true(name in event, "attribute exists");
 
-        
-        if (readonly === "readonly") {
-            test(function () {
-                assert_readonly(event.type, name, event.type + "." + name + " cannot be changed");
-            }, pointerTestName + "." + name + " is readonly");
-        }
+            
+            assert_readonly(event.type, name, "attribute is readonly");
 
-        
-        test(function () {
-            assert_true(idl_type_check[type](event[name]), name + " attribute of type " + type);
-        }, pointerTestName + "." + name + " IDL type " + type + " (JS type was " + typeof event[name] + ")");
-
-        
-        if (value !== undefined) {
-            test(function () {
-                assert_equals(event[name], value, name + " attribute value");
-            }, pointerTestName + "." + name + " value is " + value + ".");
-        }
+            
+            assert_true(idl_type_check[type](event[name]),
+                "attribute type " + type + " (JS type was " + typeof event[name] + ")");
+        }, pointerTestName + "." + name + " conforms to WebIDL");
     });
 
     
     
     test(function () {
+        assert_equals(event.fromElement, null);
+    }, pointerTestName + ".fromElement value is null");
+    test(function () {
+        assert_equals(event.toElement, null);
+    }, pointerTestName + ".toElement value is null");
+    test(function () {
+        assert_equals(event.isTrusted, true);
+    }, pointerTestName + ".isTrusted value is true");
+    test(function () {
         let expected = (event.type != 'pointerenter' && event.type != 'pointerleave');
-        assert_equals(event.composed, expected, "composed attribute value");
+        assert_equals(event.composed, expected);
     }, pointerTestName + ".composed value is valid");
+    test(function () {
+        let expected = (event.type != 'pointerenter' && event.type != 'pointerleave');
+        assert_equals(event.bubbles, expected);
+    }, pointerTestName + ".bubbles value is valid");
 
     
     
     test(function () {
-        
         assert_greater_than_equal(event.pressure, 0, "pressure is greater than or equal to 0");
         assert_less_than_equal(event.pressure, 1, "pressure is less than or equal to 1");
 
@@ -145,7 +142,6 @@ function check_PointerEvent(event, testNamePrefix) {
 
     
     if (event.pointerType === "mouse") {
-        
         test(function () {
             assert_equals(event.width, 1, "width of mouse should be 1");
             assert_equals(event.height, 1, "height of mouse should be 1");
