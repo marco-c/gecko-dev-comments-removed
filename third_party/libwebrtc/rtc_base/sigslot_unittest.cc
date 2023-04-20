@@ -10,7 +10,6 @@
 
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
-#include "rtc_base/sigslot_repeater.h"
 #include "test/gtest.h"
 
 
@@ -348,37 +347,4 @@ TEST(SigslotTest, CallDisconnectAllWhileSignalFiring) {
 
   EXPECT_EQ(1, receiver1.signal_count());
   EXPECT_EQ(0, receiver2.signal_count());
-}
-
-
-TEST(SigslotRepeaterTest, RepeatsSignalsAfterRepeatCalled) {
-  sigslot::signal<> signal;
-  sigslot::repeater<> repeater;
-  repeater.repeat(signal);
-  
-  
-  SigslotReceiver<> receiver;
-  receiver.Connect(&repeater);
-  
-  signal();
-  EXPECT_EQ(1, receiver.signal_count());
-  
-  signal();
-  EXPECT_EQ(2, receiver.signal_count());
-}
-
-
-TEST(SigslotRepeaterTest, StopsRepeatingSignalsAfterStopCalled) {
-  
-  sigslot::signal<> signal;
-  sigslot::repeater<> repeater;
-  repeater.repeat(signal);
-  SigslotReceiver<> receiver;
-  receiver.Connect(&repeater);
-  signal();
-  ASSERT_EQ(1, receiver.signal_count());
-  
-  repeater.stop(signal);
-  signal();
-  EXPECT_EQ(1, receiver.signal_count());
 }
