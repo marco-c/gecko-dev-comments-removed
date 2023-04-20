@@ -346,14 +346,14 @@ for (let entry of ignorableWhitelist) {
 if (!isDevtools) {
   
   for (let module of [
-    "addons.js",
-    "bookmarks.js",
-    "forms.js",
-    "history.js",
-    "passwords.js",
-    "prefs.js",
-    "tabs.js",
-    "extension-storage.js",
+    "addons.sys.mjs",
+    "bookmarks.sys.mjs",
+    "forms.sys.mjs",
+    "history.sys.mjs",
+    "passwords.sys.mjs",
+    "prefs.sys.mjs",
+    "tabs.sys.mjs",
+    "extension-storage.sys.mjs",
   ]) {
     whitelist.add("resource://services-sync/engines/" + module);
   }
