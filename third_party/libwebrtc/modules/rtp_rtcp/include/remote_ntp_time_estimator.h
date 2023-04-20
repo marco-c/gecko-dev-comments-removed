@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 
-#include "absl/base/attributes.h"
 #include "absl/types/optional.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -37,16 +36,6 @@ class RemoteNtpTimeEstimator {
 
   
   
-  ABSL_DEPRECATED(
-      "Use UpdateRtcpTimestamp with strict time types: TimeDelta and NtpTime.")
-  bool UpdateRtcpTimestamp(int64_t rtt,
-                           uint32_t ntp_secs,
-                           uint32_t ntp_frac,
-                           uint32_t rtp_timestamp) {
-    return UpdateRtcpTimestamp(TimeDelta::Millis(rtt),
-                               NtpTime(ntp_secs, ntp_frac), rtp_timestamp);
-  }
-
   bool UpdateRtcpTimestamp(TimeDelta rtt,
                            NtpTime sender_send_time,
                            uint32_t rtp_timestamp);
@@ -64,17 +53,6 @@ class RemoteNtpTimeEstimator {
   
   
   NtpTime EstimateNtp(uint32_t rtp_timestamp);
-
-  
-  
-  ABSL_DEPRECATED("Use EstimateRemoteToLocalClockOffset.")
-  absl::optional<int64_t> EstimateRemoteToLocalClockOffsetMs() {
-    if (absl::optional<int64_t> offset = EstimateRemoteToLocalClockOffset()) {
-      return std::round(static_cast<double>(*offset) * 1'000 /
-                        (int64_t{1} << 32));
-    }
-    return absl::nullopt;
-  }
 
   
   
