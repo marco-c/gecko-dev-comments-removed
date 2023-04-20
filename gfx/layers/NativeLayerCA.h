@@ -185,8 +185,6 @@ class NativeLayerRootCA : public NativeLayerRoot {
   
   
   unsigned int mTelemetryCommitCount = 0;
-  static const unsigned int TELEMETRY_COMMIT_PERIOD =
-      600;  
 };
 
 class RenderSourceNLRS;

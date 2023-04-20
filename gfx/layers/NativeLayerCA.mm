@@ -311,6 +311,8 @@ bool NativeLayerRootCA::CommitToScreen() {
   }
 
   
+  static const int32_t TELEMETRY_COMMIT_PERIOD =
+      StaticPrefs::gfx_core_animation_low_power_telemetry_frames_AtStartup();
   mTelemetryCommitCount = (mTelemetryCommitCount + 1) % TELEMETRY_COMMIT_PERIOD;
   if (mTelemetryCommitCount == 0) {
     
