@@ -3,17 +3,15 @@
 
 
 
-from vsdownload import (
-    downloadPackages,
-    extractPackages,
-)
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from zstandard import ZstdCompressor
 import argparse
 import os
 import tarfile
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
 import yaml
+from vsdownload import downloadPackages, extractPackages
+from zstandard import ZstdCompressor
 
 
 def tzstd_path(path):

@@ -2,9 +2,10 @@
 
 
 
-import buildconfig
-import textwrap
 import string
+import textwrap
+
+import buildconfig
 
 
 def generate_bool(name):

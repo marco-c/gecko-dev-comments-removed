@@ -3,10 +3,10 @@
 
 
 
-import os
-import glob
-import shutil
 import errno
+import glob
+import os
+import shutil
 
 import ThirdPartyPaths
 import ThreadAllows

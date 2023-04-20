@@ -4,19 +4,19 @@
 
 
 
+import glob
 import json
 import os
-import sys
-import glob
 import subprocess
+import sys
 
 import mozcrash
-from mozbuild.base import MozbuildObject, BinaryNotFoundException
+from mozbuild.base import BinaryNotFoundException, MozbuildObject
 from mozfile import TemporaryDirectory
 from mozhttpd import MozHttpd
 from mozprofile import FirefoxProfile, Preferences
 from mozprofile.permissions import ServerLocations
-from mozrunner import FirefoxRunner, CLI
+from mozrunner import CLI, FirefoxRunner
 from six import string_types
 
 PORT = 8888

@@ -2,11 +2,12 @@
 
 
 
-import buildconfig
+import os
 import shutil
 import subprocess
-import os
 import sys
+
+import buildconfig
 
 
 def relativize(path, base=None):

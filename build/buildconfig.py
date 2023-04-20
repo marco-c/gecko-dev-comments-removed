@@ -3,8 +3,9 @@
 
 
 import sys
-from mozbuild.base import MozbuildObject
+
 from mozbuild.backend.configenvironment import PartialConfigEnvironment
+from mozbuild.base import MozbuildObject
 
 config = MozbuildObject.from_environment()
 partial_config = PartialConfigEnvironment(config.topobjdir)

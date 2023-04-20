@@ -7,18 +7,18 @@
 
 
 
-import mozinfo
 import os
 import random
 import re
 import shutil
 import subprocess
 import sys
+from distutils.spawn import find_executable
 
-from mozbuild.base import MozbuildObject, BinaryNotFoundException
+import mozinfo
+from mozbuild.base import BinaryNotFoundException, MozbuildObject
 from mozfile import NamedTemporaryFile, TemporaryDirectory
 from mozprofile.permissions import ServerLocations
-from distutils.spawn import find_executable
 
 dbFiles = [
     re.compile("^cert[0-9]+\.db$"),

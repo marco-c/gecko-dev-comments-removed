@@ -4,7 +4,6 @@
 import json
 import os
 import posixpath
-
 from os import PathLike
 
 

@@ -3,17 +3,17 @@
 
 
 
+import sys
+
+import yaml
 from vsdownload import (
     getArgsParser,
     getManifest,
     getPackages,
     getSelectedPackages,
-    setPackageSelection,
     lowercaseIgnores,
+    setPackageSelection,
 )
-import sys
-import yaml
-
 
 if __name__ == "__main__":
     parser = getArgsParser()

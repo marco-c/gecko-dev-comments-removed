@@ -5,7 +5,6 @@
 
 
 import json
-
 from argparse import ArgumentParser
 
 ALL_HARNESSES = [

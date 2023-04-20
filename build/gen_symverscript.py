@@ -5,6 +5,7 @@
 
 
 import sys
+
 from mozbuild.preprocessor import Preprocessor
 
 

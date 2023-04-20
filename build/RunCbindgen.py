@@ -3,12 +3,14 @@
 
 
 from __future__ import print_function
+
+import os
+import subprocess
+
 import buildconfig
 import mozpack.path as mozpath
-import os
-import six
-import subprocess
 import pytoml
+import six
 
 
 

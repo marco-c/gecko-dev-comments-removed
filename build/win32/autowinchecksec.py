@@ -7,10 +7,11 @@
 
 
 
-import buildconfig
 import json
 import subprocess
 import sys
+
+import buildconfig
 
 
 if len(sys.argv) != 2:
