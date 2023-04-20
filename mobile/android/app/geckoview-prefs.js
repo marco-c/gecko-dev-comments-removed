@@ -43,9 +43,6 @@ pref("dom.capture.enabled", true);
 pref("dom.push.enabled", true);
 
 
-pref("dom.storageManager.enabled", true);
-
-
 pref("dom.storage_access.enabled", true);
 
 
