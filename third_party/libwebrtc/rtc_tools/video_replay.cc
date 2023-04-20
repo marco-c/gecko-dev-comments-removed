@@ -385,11 +385,9 @@ class RtpReplayer final {
     
     sync_event.Wait(TimeDelta::Seconds(10));
 
-    if (stream_state == nullptr || rtp_reader == nullptr) {
-      return;
+    if (stream_state != nullptr && rtp_reader != nullptr) {
+      ReplayPackets(call.get(), rtp_reader.get(), worker_thread.get());
     }
-
-    ReplayPackets(call.get(), rtp_reader.get(), worker_thread.get());
 
     
     
