@@ -137,7 +137,9 @@ def read_ini(
 
                 
                 if key:
-                    assert key not in current_section
+                    assert (
+                        key not in current_section
+                    ), f"Found duplicate key {key} in section {section}"
 
                 if strict:
                     
