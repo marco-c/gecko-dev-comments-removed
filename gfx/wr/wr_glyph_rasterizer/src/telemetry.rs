@@ -2,9 +2,13 @@
 
 
 
+#[cfg(feature = "gecko")]
 use glean::TimerId;
 #[cfg(feature = "gecko")]
 use fog::metrics::wr;
+
+#[cfg(not(feature = "gecko"))]
+pub struct TimerId;
 
 pub struct Telemetry;
 
@@ -12,7 +16,7 @@ pub struct Telemetry;
 #[cfg(not(feature = "gecko"))]
 impl Telemetry {
     
-    pub fn start_rasterize_glyphs_time() -> TimerId { return TimerId { id: 0 }; }
+    pub fn start_rasterize_glyphs_time() -> TimerId { return TimerId {}; }
     
     pub fn stop_and_accumulate_rasterize_glyphs_time(_id: TimerId) { }
 }
