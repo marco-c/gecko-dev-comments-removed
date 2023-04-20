@@ -10,6 +10,7 @@ import os
 import platform
 import re
 import shutil
+import stat
 import sys
 import subprocess
 import time
@@ -639,7 +640,17 @@ def update_git_tools(git: Optional[Path], root_state_dir: Path):
     
     
     if (cinnabar_dir / ".git").exists():
-        shutil.rmtree(str(cinnabar_dir))
+        
+        
+        
+        def onerror(func, path, exc):
+            if func == os.unlink:
+                os.chmod(path, stat.S_IRWXU)
+                func(path)
+            else:
+                raise
+
+        shutil.rmtree(str(cinnabar_dir), onerror=onerror)
 
     
     exists = cinnabar_exe.exists()
