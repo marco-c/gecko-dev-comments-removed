@@ -1355,11 +1355,14 @@ Tester.prototype = {
 };
 
 
-function isError(err) {
+function isErrorOrException(err) {
   
   
   if (!err) {
     return false;
+  }
+  if (err instanceof Ci.nsIException) {
+    return true;
   }
   try {
     let glob = Cu.getGlobalForObject(err);
@@ -1424,7 +1427,10 @@ function testResult({ name, pass, todo, ex, stack, allowFailure }) {
       this.msg += "at " + ex.fileName + ":" + ex.lineNumber + " - ";
     }
 
-    if (typeof ex == "string" || (typeof ex == "object" && isError(ex))) {
+    if (
+      typeof ex == "string" ||
+      (typeof ex == "object" && isErrorOrException(ex))
+    ) {
       this.msg += String(ex);
     } else {
       try {

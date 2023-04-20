@@ -27,11 +27,14 @@ let isSameOrigin = function(w) {
 let isXOrigin = !isSameOrigin(window);
 
 
-function isErrorObj(err) {
+function isErrorOrException(err) {
   
   
   if (!err) {
     return false;
+  }
+  if (err instanceof Ci.nsIException) {
+    return true;
   }
   try {
     let glob = SpecialPowers.Cu.getGlobalForObject(err);
@@ -2148,7 +2151,7 @@ var add_task = (function() {
               let serializedEx;
               if (
                 typeof ex == "string" ||
-                (typeof ex == "object" && isErrorObj(ex))
+                (typeof ex == "object" && isErrorOrException(ex))
               ) {
                 serializedEx = `${ex}`;
               } else {
