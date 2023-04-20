@@ -128,7 +128,7 @@ interface nsITransportSecurityInfo : nsISupports {
     
 
 
-    attribute boolean isBuiltCertChainRootBuiltInRoot;
+    readonly attribute boolean isBuiltCertChainRootBuiltInRoot;
 
     
 
