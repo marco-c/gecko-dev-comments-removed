@@ -2046,6 +2046,16 @@ toolbar#nav-bar {
             
             certdbPath = options.profilePath
 
+        
+        
+        
+        
+        if "WindowsApps" in options.app:
+            install_dir = os.path.dirname(options.app)
+            for f in os.listdir(install_dir):
+                if f.endswith(".dll"):
+                    shutil.copy(os.path.join(install_dir, f), options.utilityPath)
+
         status = call(
             [certutil, "-N", "-d", certdbPath, "-f", pwfilePath], env=toolsEnv
         )
