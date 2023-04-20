@@ -8,29 +8,29 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_MODE_LEVEL_ESTIMATOR_H_
-#define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_MODE_LEVEL_ESTIMATOR_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC2_SPEECH_LEVEL_ESTIMATOR_H_
+#define MODULES_AUDIO_PROCESSING_AGC2_SPEECH_LEVEL_ESTIMATOR_H_
 
 #include <stddef.h>
 
 #include <type_traits>
 
 #include "modules/audio_processing/agc2/agc2_common.h"
-#include "modules/audio_processing/agc2/vad_wrapper.h"
 #include "modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 class ApmDataDumper;
 
 
-class AdaptiveModeLevelEstimator {
+
+
+class SpeechLevelEstimator {
  public:
-  AdaptiveModeLevelEstimator(
+  SpeechLevelEstimator(
       ApmDataDumper* apm_data_dumper,
       const AudioProcessing::Config::GainController2::AdaptiveDigital& config);
-  AdaptiveModeLevelEstimator(const AdaptiveModeLevelEstimator&) = delete;
-  AdaptiveModeLevelEstimator& operator=(const AdaptiveModeLevelEstimator&) =
-      delete;
+  SpeechLevelEstimator(const SpeechLevelEstimator&) = delete;
+  SpeechLevelEstimator& operator=(const SpeechLevelEstimator&) = delete;
 
   
   void Update(float rms_dbfs, float peak_dbfs, float speech_probability);

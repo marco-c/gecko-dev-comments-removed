@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_processing/agc2/adaptive_mode_level_estimator.h"
+#include "modules/audio_processing/agc2/speech_level_estimator.h"
 
 #include <memory>
 
@@ -36,7 +36,7 @@ void RunOnConstantLevel(int num_iterations,
                         float rms_dbfs,
                         float peak_dbfs,
                         float speech_probability,
-                        AdaptiveModeLevelEstimator& level_estimator) {
+                        SpeechLevelEstimator& level_estimator) {
   for (int i = 0; i < num_iterations; ++i) {
     level_estimator.Update(rms_dbfs, peak_dbfs, speech_probability);
   }
@@ -57,7 +57,7 @@ constexpr float kMaxSpeechProbability = 1.0f;
 struct TestLevelEstimator {
   explicit TestLevelEstimator(int adjacent_speech_frames_threshold)
       : data_dumper(0),
-        estimator(std::make_unique<AdaptiveModeLevelEstimator>(
+        estimator(std::make_unique<SpeechLevelEstimator>(
             &data_dumper,
             GetAdaptiveDigitalConfig(adjacent_speech_frames_threshold))),
         initial_speech_level_dbfs(estimator->level_dbfs()),
@@ -70,14 +70,14 @@ struct TestLevelEstimator {
            "level is wide enough for the tests";
   }
   ApmDataDumper data_dumper;
-  std::unique_ptr<AdaptiveModeLevelEstimator> estimator;
+  std::unique_ptr<SpeechLevelEstimator> estimator;
   const float initial_speech_level_dbfs;
   const float level_rms_dbfs;
   const float level_peak_dbfs;
 };
 
 
-TEST(GainController2AdaptiveModeLevelEstimator, LevelStabilizes) {
+TEST(GainController2SpeechLevelEstimator, LevelStabilizes) {
   TestLevelEstimator level_estimator(1);
   RunOnConstantLevel(kNumFramesToConfidence,
                      level_estimator.level_rms_dbfs,
@@ -93,7 +93,7 @@ TEST(GainController2AdaptiveModeLevelEstimator, LevelStabilizes) {
 
 
 
-TEST(GainController2AdaptiveModeLevelEstimator, IsNotConfident) {
+TEST(GainController2SpeechLevelEstimator, IsNotConfident) {
   TestLevelEstimator level_estimator(1);
   RunOnConstantLevel(kNumFramesToConfidence / 2,
                      level_estimator.level_rms_dbfs,
@@ -104,7 +104,7 @@ TEST(GainController2AdaptiveModeLevelEstimator, IsNotConfident) {
 
 
 
-TEST(GainController2AdaptiveModeLevelEstimator, IsConfident) {
+TEST(GainController2SpeechLevelEstimator, IsConfident) {
   TestLevelEstimator level_estimator(1);
   RunOnConstantLevel(kNumFramesToConfidence,
                      level_estimator.level_rms_dbfs,
@@ -115,8 +115,7 @@ TEST(GainController2AdaptiveModeLevelEstimator, IsConfident) {
 
 
 
-TEST(GainController2AdaptiveModeLevelEstimator,
-     EstimatorIgnoresNonSpeechFrames) {
+TEST(GainController2SpeechLevelEstimator, EstimatorIgnoresNonSpeechFrames) {
   TestLevelEstimator level_estimator(1);
   
   RunOnConstantLevel(kNumFramesToConfidence,
@@ -134,8 +133,7 @@ TEST(GainController2AdaptiveModeLevelEstimator,
 }
 
 
-TEST(GainController2AdaptiveModeLevelEstimator,
-     ConvergenceSpeedBeforeConfidence) {
+TEST(GainController2SpeechLevelEstimator, ConvergenceSpeedBeforeConfidence) {
   TestLevelEstimator level_estimator(1);
   RunOnConstantLevel(kNumFramesToConfidence,
                      level_estimator.level_rms_dbfs,
@@ -147,8 +145,7 @@ TEST(GainController2AdaptiveModeLevelEstimator,
 }
 
 
-TEST(GainController2AdaptiveModeLevelEstimator,
-     ConvergenceSpeedAfterConfidence) {
+TEST(GainController2SpeechLevelEstimator, ConvergenceSpeedAfterConfidence) {
   TestLevelEstimator level_estimator(1);
   
   RunOnConstantLevel(
@@ -173,14 +170,13 @@ TEST(GainController2AdaptiveModeLevelEstimator,
               kConvergenceSpeedTestsLevelTolerance);
 }
 
-class AdaptiveModeLevelEstimatorParametrization
+class SpeechLevelEstimatorParametrization
     : public ::testing::TestWithParam<int> {
  protected:
   int adjacent_speech_frames_threshold() const { return GetParam(); }
 };
 
-TEST_P(AdaptiveModeLevelEstimatorParametrization,
-       DoNotAdaptToShortSpeechSegments) {
+TEST_P(SpeechLevelEstimatorParametrization, DoNotAdaptToShortSpeechSegments) {
   TestLevelEstimator level_estimator(adjacent_speech_frames_threshold());
   const float initial_level = level_estimator.estimator->level_dbfs();
   ASSERT_LT(initial_level, level_estimator.level_peak_dbfs);
@@ -197,7 +193,7 @@ TEST_P(AdaptiveModeLevelEstimatorParametrization,
   EXPECT_EQ(initial_level, level_estimator.estimator->level_dbfs());
 }
 
-TEST_P(AdaptiveModeLevelEstimatorParametrization, AdaptToEnoughSpeechSegments) {
+TEST_P(SpeechLevelEstimatorParametrization, AdaptToEnoughSpeechSegments) {
   TestLevelEstimator level_estimator(adjacent_speech_frames_threshold());
   const float initial_level = level_estimator.estimator->level_dbfs();
   ASSERT_LT(initial_level, level_estimator.level_peak_dbfs);
@@ -210,7 +206,7 @@ TEST_P(AdaptiveModeLevelEstimatorParametrization, AdaptToEnoughSpeechSegments) {
 }
 
 INSTANTIATE_TEST_SUITE_P(GainController2,
-                         AdaptiveModeLevelEstimatorParametrization,
+                         SpeechLevelEstimatorParametrization,
                          ::testing::Values(1, 9, 17));
 
 }  
