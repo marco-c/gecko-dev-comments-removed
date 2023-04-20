@@ -674,7 +674,7 @@ CpuOveruseOptions VideoStreamEncoderResourceManager::GetCpuOveruseOptions()
   
   
   RTC_DCHECK(encoder_settings_.has_value());
-  CpuOveruseOptions options;
+  CpuOveruseOptions options(field_trials_);
   
   
   if (encoder_settings_->encoder_info().is_hardware_accelerated) {
