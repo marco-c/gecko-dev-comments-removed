@@ -2,14 +2,13 @@
 
 
 
-from datetime import datetime
 import io
 import os
 import sys
+from datetime import datetime
 
-from mozbuild.preprocessor import Preprocessor
 import buildconfig
-
+from mozbuild.preprocessor import Preprocessor
 
 TEMPLATE = """
 // This Source Code Form is subject to the terms of the Mozilla Public

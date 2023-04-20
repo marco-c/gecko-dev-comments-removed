@@ -3,11 +3,12 @@
 
 
 from __future__ import absolute_import, print_function, unicode_literals
+
 import os
-import six
 import time
 import zipfile
 
+import six
 from mozbuild.util import lock_file
 
 

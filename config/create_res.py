@@ -2,14 +2,11 @@
 
 
 
-from argparse import (
-    Action,
-    ArgumentParser,
-)
 import os
 import subprocess
 import sys
 import tempfile
+from argparse import Action, ArgumentParser
 
 import buildconfig
 

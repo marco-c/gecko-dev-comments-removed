@@ -9,10 +9,10 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import print_function
-import sys
+from __future__ import absolute_import, print_function
+
 import re
+import sys
 
 search_string = sys.argv[1]
 expected_count = int(sys.argv[2])

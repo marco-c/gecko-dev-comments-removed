@@ -3,12 +3,7 @@
 
 
 import sys
-
-from configparser import (
-    ConfigParser,
-    NoOptionError,
-    NoSectionError,
-)
+from configparser import ConfigParser, NoOptionError, NoSectionError
 
 try:
     (filename, section, key) = sys.argv[1:]

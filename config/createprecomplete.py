@@ -6,11 +6,10 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
-import os
 import io
+import os
 
 
 def get_build_entries(root_path):

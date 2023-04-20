@@ -3,9 +3,11 @@
 
 
 from __future__ import absolute_import
-import buildconfig
+
 import subprocess
 import sys
+
+import buildconfig
 
 
 def main(output, lib_file, *scripts):

@@ -4,13 +4,14 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import print_function
-import buildconfig
-import mozpack.path as mozpath
+from __future__ import absolute_import, print_function
+
 import os
 import shlex
 import subprocess
+
+import buildconfig
+import mozpack.path as mozpath
 
 
 def main(output, input_asm, ffi_h, ffi_config_h, defines, includes):
