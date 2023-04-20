@@ -1099,7 +1099,11 @@ function getDefaultFileName(
 
 
 function validateFileName(aFileName) {
-  let processed = DownloadPaths.sanitize(aFileName) || "_";
+  let processed =
+    DownloadPaths.sanitize(aFileName, {
+      compressWhitespaces: false,
+      allowInvalidFilenames: true,
+    }) || "_";
   if (AppConstants.platform == "android") {
     
     

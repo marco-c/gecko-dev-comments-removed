@@ -380,7 +380,8 @@ nsUnknownContentTypeDialog.prototype = {
               
               if (
                 result.exists() &&
-                this.getFinalLeafName(result.leafName) == result.leafName
+                this.getFinalLeafName(result.leafName, "", true) ==
+                  result.leafName
               ) {
                 allowOverwrite = true;
               }
@@ -399,7 +400,8 @@ nsUnknownContentTypeDialog.prototype = {
                 newDir,
                 result.leafName,
                 null,
-                allowOverwrite
+                allowOverwrite,
+                true
               );
             } catch (ex) {
               
@@ -420,10 +422,12 @@ nsUnknownContentTypeDialog.prototype = {
     })().catch(console.error);
   },
 
-  getFinalLeafName(aLeafName, aFileExt) {
+  getFinalLeafName(aLeafName, aFileExt, aAfterFilePicker) {
     return (
-      DownloadPaths.sanitize(aLeafName) ||
-      "unnamed" + (aFileExt ? "." + aFileExt : "")
+      DownloadPaths.sanitize(aLeafName, {
+        compressWhitespaces: !aAfterFilePicker,
+        allowInvalidFilenames: aAfterFilePicker,
+      }) || "unnamed" + (aFileExt ? "." + aFileExt : "")
     );
   },
 
@@ -447,7 +451,15 @@ nsUnknownContentTypeDialog.prototype = {
 
 
 
-  validateLeafName(aLocalFolder, aLeafName, aFileExt, aAllowExisting = false) {
+
+
+  validateLeafName(
+    aLocalFolder,
+    aLeafName,
+    aFileExt,
+    aAllowExisting = false,
+    aAfterFilePicker = false
+  ) {
     if (!(aLocalFolder && isUsableDirectory(aLocalFolder))) {
       throw new Components.Exception(
         "Destination directory non-existing or permission error",
@@ -455,7 +467,7 @@ nsUnknownContentTypeDialog.prototype = {
       );
     }
 
-    aLeafName = this.getFinalLeafName(aLeafName, aFileExt);
+    aLeafName = this.getFinalLeafName(aLeafName, aFileExt, aAfterFilePicker);
     aLocalFolder.append(aLeafName);
 
     if (!aAllowExisting) {
