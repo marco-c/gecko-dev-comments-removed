@@ -1,0 +1,13 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation(
+  ['abs', 'ceil', 'cos', 'exp', 'floor', 'log', 'neg', 'sin', 'tan'],
+  buildOperationWithSingleInput
+);
