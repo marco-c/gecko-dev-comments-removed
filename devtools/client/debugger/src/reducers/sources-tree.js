@@ -46,6 +46,7 @@ export function initialSourcesTreeState() {
     
     
     projectDirectoryRoot: prefs.projectDirectoryRoot,
+
     
     projectDirectoryRootName: prefs.projectDirectoryRootName,
 
@@ -67,26 +68,23 @@ export function initialSourcesTreeState() {
 
 export default function update(state = initialSourcesTreeState(), action) {
   switch (action.type) {
-    case "ADD_SOURCES": {
-      
-      
-      const newSources = action.sources.filter(
-        source =>
-          source.isOriginal &&
-          isSourceVisibleInSourceTree(
-            source,
-            state.chromeAndExtensionsEnabled,
-            state.isWebExtension
-          )
+    case "ADD_ORIGINAL_SOURCES": {
+      const { generatedSourceActor } = action;
+      const validOriginalSources = action.originalSources.filter(source =>
+        isSourceVisibleInSourceTree(
+          source,
+          state.chromeAndExtensionsEnabled,
+          state.isWebExtension
+        )
       );
-      if (!newSources.length) {
+      if (!validOriginalSources.length) {
         return state;
       }
       let changed = false;
       
       const threadItems = [...state.threadItems];
-      for (const source of newSources) {
-        changed |= addSource(threadItems, source.thread, source);
+      for (const source of validOriginalSources) {
+        changed |= addSource(threadItems, source, generatedSourceActor);
       }
       if (changed) {
         return {
@@ -120,8 +118,8 @@ export default function update(state = initialSourcesTreeState(), action) {
         
         changed |= addSource(
           threadItems,
-          sourceActor.thread,
-          sourceActor.sourceObject
+          sourceActor.sourceObject,
+          sourceActor
         );
       }
       if (changed) {
@@ -153,6 +151,7 @@ export default function update(state = initialSourcesTreeState(), action) {
       const index = state.threadItems.findIndex(item => {
         return item.threadActorID == action.threadActorID;
       });
+
       if (index == -1) {
         return state;
       }
@@ -249,13 +248,13 @@ function isSourceVisibleInSourceTree(
   );
 }
 
-function addSource(threadItems, thread, source) {
+function addSource(threadItems, source, sourceActor) {
   
   let threadItem = threadItems.find(item => {
-    return item.threadActorID == thread;
+    return item.threadActorID == sourceActor.thread;
   });
   if (!threadItem) {
-    threadItem = createThreadTreeItem(thread);
+    threadItem = createThreadTreeItem(sourceActor.thread);
     
     
     threadItems.push(threadItem);
@@ -270,8 +269,9 @@ function addSource(threadItems, thread, source) {
   let groupItem = threadItem.children.find(item => {
     return item.groupName == group;
   });
+
   if (!groupItem) {
-    groupItem = createGroupTreeItem(group, thread, threadItem, source);
+    groupItem = createGroupTreeItem(group, threadItem, source);
     
     
     threadItem.children = [...threadItem.children, groupItem];
@@ -282,7 +282,7 @@ function addSource(threadItems, thread, source) {
   
   const { path } = displayURL;
   const parentPath = path.substring(0, path.lastIndexOf("/"));
-  const directoryItem = addOrGetParentDirectory(thread, groupItem, parentPath);
+  const directoryItem = addOrGetParentDirectory(groupItem, parentPath);
 
   
   
@@ -295,7 +295,7 @@ function addSource(threadItems, thread, source) {
   }
 
   
-  const sourceItem = createSourceTreeItem(source, thread, group, directoryItem);
+  const sourceItem = createSourceTreeItem(source, sourceActor, directoryItem);
   
   
   directoryItem.children = [...directoryItem.children, sourceItem];
@@ -390,7 +390,7 @@ function sortThreadItems(a, b) {
 
 
 
-function addOrGetParentDirectory(thread, groupItem, path) {
+function addOrGetParentDirectory(groupItem, path) {
   
   if (!path) {
     return groupItem;
@@ -405,19 +405,10 @@ function addOrGetParentDirectory(thread, groupItem, path) {
   
   
   const parentPath = path.substring(0, path.lastIndexOf("/"));
-  const parentDirectory = addOrGetParentDirectory(
-    thread,
-    groupItem,
-    parentPath
-  );
+  const parentDirectory = addOrGetParentDirectory(groupItem, parentPath);
 
   
-  const directory = createDirectoryTreeItem(
-    path,
-    thread,
-    groupItem.groupName,
-    parentDirectory
-  );
+  const directory = createDirectoryTreeItem(path, parentDirectory);
   
   
   parentDirectory.children = [...parentDirectory.children, directory];
@@ -471,7 +462,7 @@ function createThreadTreeItem(thread) {
     threadActorID: thread,
   };
 }
-function createGroupTreeItem(groupName, thread, parent, source) {
+function createGroupTreeItem(groupName, parent, source) {
   return {
     ...createBaseTreeItem({
       type: "group",
@@ -494,7 +485,7 @@ function createGroupTreeItem(groupName, thread, parent, source) {
     _allGroupDirectoryItems: [],
   };
 }
-function createDirectoryTreeItem(path, thread, groupName, parent) {
+function createDirectoryTreeItem(path, parent) {
   
   const pathSeparator = parent.type == "directory" ? "/" : "|";
 
@@ -523,7 +514,7 @@ function createDirectoryTreeItem(path, thread, groupName, parent) {
     path,
   };
 }
-function createSourceTreeItem(source, thread, groupName, parent) {
+function createSourceTreeItem(source, sourceActor, parent) {
   return {
     ...createBaseTreeItem({
       type: "source",
@@ -534,5 +525,6 @@ function createSourceTreeItem(source, thread, groupName, parent) {
     }),
 
     source,
+    sourceActor,
   };
 }

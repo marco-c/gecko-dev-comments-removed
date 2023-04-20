@@ -681,28 +681,6 @@ function findSource(
   return source;
 }
 
-
-
-
-
-
-
-
-
-function findSourceInThread(dbg, filenameOrUrl, threadName) {
-  const sources = dbg.selectors.getSourceList();
-  return sources.find(s => {
-    const sourceFileName = s.url
-      ? s.url.substring(s.url.lastIndexOf("/") + 1)
-      : "";
-    if (sourceFileName == filenameOrUrl || s.url == filenameOrUrl) {
-      const thread = dbg.selectors.getThread(s.thread);
-      return thread.name == threadName;
-    }
-    return false;
-  });
-}
-
 function findSourceContent(dbg, url, opts) {
   const source = findSource(dbg, url, opts);
 

@@ -7,6 +7,7 @@
 
 
 
+import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { prefs } from "../utils/prefs";
 
 export function initialSourcesState(state) {
@@ -27,6 +28,15 @@ export function initialSourcesState(state) {
     urls: {},
 
     
+
+
+
+
+
+    originalSources: {},
+
+    
+
 
 
 
@@ -67,6 +77,9 @@ function update(state = initialSourcesState(), action) {
   switch (action.type) {
     case "ADD_SOURCES":
       return addSources(state, action.sources);
+
+    case "ADD_ORIGINAL_SOURCES":
+      return addSources(state, action.originalSources);
 
     case "INSERT_SOURCE_ACTORS":
       return insertSourceActors(state, action);
@@ -165,6 +178,14 @@ function addSources(state, sources) {
     if (!existing.includes(source.id)) {
       state.urls[source.url] = [...existing, source.id];
     }
+
+    if (source.isOriginal) {
+      const generatedSourceId = originalToGeneratedId(source.id);
+      if (!state.originalSources[generatedSourceId]) {
+        state.originalSources[generatedSourceId] = [];
+      }
+      state.originalSources[generatedSourceId].push(source.id);
+    }
   }
   state.sources = newSourceMap;
 
@@ -174,11 +195,13 @@ function addSources(state, sources) {
 function removeSourcesAndActors(state, threadActorID) {
   state = {
     ...state,
-    actors: { ...state.actors },
     urls: { ...state.urls },
+    actors: { ...state.actors },
+    originalSources: { ...state.originalSources },
   };
 
   const newSourceMap = new Map(state.sources);
+
   for (const sourceId in state.actors) {
     let i = state.actors[sourceId].length;
     while (i--) {
@@ -207,6 +230,13 @@ function removeSourcesAndActors(state, threadActorID) {
       }
 
       newSourceMap.delete(sourceId);
+
+      
+      const originalSourceIds = state.originalSources[sourceId];
+      if (originalSourceIds && originalSourceIds.length) {
+        originalSourceIds.forEach(id => newSourceMap.delete(id));
+        delete state.originalSources[sourceId];
+      }
     }
   }
   state.sources = newSourceMap;

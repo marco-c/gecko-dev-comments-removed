@@ -10,7 +10,7 @@ import { connect } from "../../utils/connect";
 
 
 import {
-  getSelectedSource,
+  getSelectedLocation,
   getMainThreadHost,
   getExpandedState,
   getProjectDirectoryRoot,
@@ -19,6 +19,8 @@ import {
   getContext,
   getGeneratedSourceByURL,
   getBlackBoxRanges,
+  getSourceActor,
+  getSource,
 } from "../../selectors";
 
 
@@ -48,8 +50,10 @@ function shouldAutoExpand(item, mainThreadHost) {
 
 
 
-function getDirectoryForSource(source, rootItems) {
+function getDirectoryForSource(treeLocation, rootItems) {
   
+  const { source, sourceActor } = treeLocation;
+
   if (!source.url) {
     return null;
   }
@@ -62,7 +66,7 @@ function getDirectoryForSource(source, rootItems) {
       return null;
     }
     
-    if (item.type == "thread" && source.thread != item.thread.actor) {
+    if (item.type == "thread" && item.threadActorID != sourceActor?.thread) {
       return null;
     }
     if (item.type == "group" && displayURL.group != item.groupName) {
@@ -108,7 +112,7 @@ class SourcesTree extends Component {
       focused: PropTypes.object,
       projectRoot: PropTypes.string.isRequired,
       selectSource: PropTypes.func.isRequired,
-      selectedSource: PropTypes.object,
+      selectedTreeLocation: PropTypes.object,
       setExpandedState: PropTypes.func.isRequired,
       blackBoxRanges: PropTypes.object.isRequired,
       rootItems: PropTypes.object.isRequired,
@@ -117,17 +121,21 @@ class SourcesTree extends Component {
 
   
   UNSAFE_componentWillReceiveProps(nextProps) {
-    const { selectedSource } = this.props;
+    const { selectedTreeLocation } = this.props;
 
     
     
     if (
-      nextProps.selectedSource &&
-      (nextProps.selectedSource != selectedSource ||
+      nextProps.selectedTreeLocation.source &&
+      (nextProps.selectedTreeLocation.source != selectedTreeLocation.source ||
+        (nextProps.selectedTreeLocation.source ===
+          selectedTreeLocation.source &&
+          nextProps.selectedTreeLocation.sourceActor !=
+            selectedTreeLocation.sourceActor) ||
         !this.state.highlightItems?.length)
     ) {
       let parentDirectory = getDirectoryForSource(
-        nextProps.selectedSource,
+        nextProps.selectedTreeLocation,
         this.props.rootItems
       );
       
@@ -142,7 +150,11 @@ class SourcesTree extends Component {
   }
 
   selectSourceItem = item => {
-    this.props.selectSource(this.props.cx, item.source.id);
+    this.props.selectSource(
+      this.props.cx,
+      item.source.id,
+      item.sourceActor.actor
+    );
   };
 
   onFocus = item => {
@@ -366,25 +378,26 @@ class SourcesTree extends Component {
   }
 }
 
-function getSourceForTree(state, source) {
-  if (!source) {
-    return null;
+function getTreeLocation(state, location) {
+  let source = location ? getSource(state, location.sourceId) : null;
+  const sourceActor = location
+    ? getSourceActor(state, location.sourceActorId)
+    : null;
+
+  if (source && source.isPrettyPrinted) {
+    source =
+      getGeneratedSourceByURL(state, getRawSourceURL(source.url)) || null;
   }
 
-  if (!source.isPrettyPrinted) {
-    return source;
-  }
-
-  return getGeneratedSourceByURL(state, getRawSourceURL(source.url));
+  return { source, sourceActor };
 }
 
 const mapStateToProps = state => {
-  const selectedSource = getSelectedSource(state);
   const rootItems = getSourcesTreeSources(state);
 
   return {
     cx: getContext(state),
-    selectedSource: getSourceForTree(state, selectedSource),
+    selectedTreeLocation: getTreeLocation(state, getSelectedLocation(state)),
     mainThreadHost: getMainThreadHost(state),
     expanded: getExpandedState(state),
     focused: getFocusedSourceItem(state),

@@ -4,11 +4,7 @@
 
 
 
-
-
 "use strict";
-
-const IS_BREAKPOINTS_PER_URL_SUPPORTED = false;
 
 add_task(async function() {
   
@@ -19,20 +15,21 @@ add_task(async function() {
     return;
   }
 
-  const dbg = await initDebugger("doc_dbg-same-source-distinct-threads.html");
+  const dbg = await initDebugger(
+    "doc_dbg-same-source-distinct-threads.html",
+    "same-script.js"
+  );
 
   
   
-  await waitUntil(() => dbg.selectors.getSourceCount() == 4);
+  const source = findSource(dbg, "same-script.js");
+  await waitUntil(
+    () => dbg.selectors.getSourceActorsForSource(source.id).length == 3
+  );
 
   info("Add a breakpoint to the same-script.js from the iframe");
-  const frameSource = findSourceInThread(
-    dbg,
-    "same-script.js",
-    "Iframe test page"
-  );
-  await selectSource(dbg, frameSource);
-  await addBreakpoint(dbg, frameSource, 5);
+  await selectSource(dbg, source);
+  await addBreakpoint(dbg, source, 5);
 
   info("Click in the page of the top-level document");
   BrowserTestUtils.synthesizeMouseAtCenter(
@@ -43,26 +40,18 @@ add_task(async function() {
 
   await waitForPaused(dbg);
 
-  const mainThreadSource = findSourceInThread(
-    dbg,
-    "same-script.js",
-    "Main Thread"
-  );
-
   is(
     dbg.selectors.getSelectedSource().id,
-    mainThreadSource.id,
+    source.id,
     "The current selected source is the `same-script.js` from the main thread"
   );
 
   info("Assert that the breakpoint pauses on line 5");
-  assertPausedAtSourceAndLine(dbg, mainThreadSource.id, 5);
+  assertPausedAtSourceAndLine(dbg, source.id, 5);
 
-  if (IS_BREAKPOINTS_PER_URL_SUPPORTED) {
-    
-    info("Assert that there is a breakpoint displayed on line 5");
-    await assertBreakpoint(dbg, 5);
-  }
+  
+  info("Assert that there is a breakpoint displayed on line 5");
+  await assertBreakpoint(dbg, 5);
 
   info("Check that only one breakpoint currently exists");
   is(dbg.selectors.getBreakpointCount(), 1, "One breakpoint exists");
@@ -76,26 +65,17 @@ add_task(async function() {
   invokeInTab("postMessageToWorker");
   await waitForPaused(dbg);
 
-  const workerSource = findSourceInThread(
-    dbg,
-    "same-script.js",
-    EXAMPLE_URL + "same-script.js"
-  );
-
   is(
     dbg.selectors.getSelectedSource().id,
-    workerSource.id,
+    source.id,
     "The current selected source is the `same-script.js` from the worker thread"
   );
 
   info("Assert that the breakpoint pauses on line 5");
-  assertPausedAtSourceAndLine(dbg, workerSource.id, 5);
+  assertPausedAtSourceAndLine(dbg, source.id, 5);
 
-  if (IS_BREAKPOINTS_PER_URL_SUPPORTED) {
-    
-    info("Assert that there is a breakpoint dispalyed on line 5");
-    await assertBreakpoint(dbg, 5);
-  }
+  info("Assert that there is a breakpoint dispalyed on line 5");
+  await assertBreakpoint(dbg, 5);
 
   info("Check that only one breakpoint still currently exists");
   is(dbg.selectors.getBreakpointCount(), 1, "One breakpoint exists");
@@ -118,12 +98,12 @@ add_task(async function() {
 
   is(
     dbg.selectors.getSelectedSource().id,
-    frameSource.id,
+    source.id,
     "The current selected source is the `same-script.js` from the iframe"
   );
 
   info("Assert that the breakpoint pauses on line 5");
-  assertPausedAtSourceAndLine(dbg, frameSource.id, 5);
+  assertPausedAtSourceAndLine(dbg, source.id, 5);
 
   info("Assert that there is a breakpoint displayed on line 5");
   await assertBreakpoint(dbg, 5);
@@ -131,7 +111,7 @@ add_task(async function() {
   await resume(dbg);
   assertNotPaused(dbg);
 
-  await removeBreakpoint(dbg, frameSource.id, 5);
+  await removeBreakpoint(dbg, source.id, 5);
 
   await dbg.toolbox.closeToolbox();
 });

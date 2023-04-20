@@ -21,26 +21,20 @@ add_task(async function() {
   await waitForPaused(dbg, "simple-worker.js");
 
   
+  assertPausedAtSourceAndLine(dbg, workerSource.id, 1);
   
-  
-  const workerSource2 = dbg.selectors.getSelectedSource();
-  assertPausedAtSourceAndLine(dbg, workerSource2.id, 1);
   
   
   await removeBreakpoint(dbg, workerSource.id, 1, 12);
-  
-  
-  await removeBreakpoint(dbg, workerSource2.id, 1, 12);
   await resume(dbg);
 
   
   
-  await addBreakpoint(dbg, workerSource2, 10);
+  await addBreakpoint(dbg, workerSource, 10);
   invokeInTab("startWorkerWithMessage");
   await waitForPaused(dbg, "simple-worker.js");
 
   
-  const workerSource3 = dbg.selectors.getSelectedSource();
-  assertPausedAtSourceAndLine(dbg, workerSource3.id, 10);
-  await removeBreakpoint(dbg, workerSource2.id, 10, 2);
+  assertPausedAtSourceAndLine(dbg, workerSource.id, 10);
+  await removeBreakpoint(dbg, workerSource.id, 10, 2);
 });
