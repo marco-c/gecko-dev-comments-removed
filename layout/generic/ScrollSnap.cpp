@@ -124,18 +124,10 @@ CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
 
 SnapTarget CalcSnapPoints::GetBestEdge() const {
   return SnapTarget{
-      nsPoint(
-          mTrackerOnX.mEdgeFound ? mTrackerOnX.mBestEdge.mPosition
-          
-          
-          
-          : !(mSnapFlags & ScrollSnapFlags::IntendedDirection) ? mDestination.x
-                                                               : mStartPos.x,
-          mTrackerOnY.mEdgeFound ? mTrackerOnY.mBestEdge.mPosition
-          
-          
-          : !(mSnapFlags & ScrollSnapFlags::IntendedDirection) ? mDestination.y
-                                                               : mStartPos.y),
+      nsPoint(mTrackerOnX.mEdgeFound ? mTrackerOnX.mBestEdge.mPosition
+                                     : mStartPos.x,
+              mTrackerOnY.mEdgeFound ? mTrackerOnY.mBestEdge.mPosition
+                                     : mStartPos.y),
       ScrollSnapTargetIds{mTrackerOnX.mTargetIds, mTrackerOnY.mTargetIds}};
 }
 
