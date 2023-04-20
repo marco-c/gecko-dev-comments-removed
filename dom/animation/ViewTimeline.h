@@ -50,6 +50,13 @@ class ViewTimeline final : public ScrollTimeline {
         mSubjectPseudoType(aSubjectPseudoType),
         mInset(aInset) {}
 
+  Maybe<ScrollOffsets> ComputeOffsets(
+      const nsIScrollableFrame* aScrollFrame,
+      layers::ScrollDirection aOrientation) const override;
+
+  ScrollOffsets ComputeInsets(const nsIScrollableFrame* aScrollFrame,
+                              layers::ScrollDirection aOrientation) const;
+
   
   
   

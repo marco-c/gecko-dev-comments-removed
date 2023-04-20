@@ -196,6 +196,14 @@ class ScrollTimeline : public AnimationTimeline {
   ScrollTimeline(Document* aDocument, const Scroller& aScroller,
                  StyleScrollAxis aAxis);
 
+  struct ScrollOffsets {
+    nscoord mStart = 0;
+    nscoord mEnd = 0;
+  };
+  virtual Maybe<ScrollOffsets> ComputeOffsets(
+      const nsIScrollableFrame* aScrollFrame,
+      layers::ScrollDirection aOrientation) const;
+
   
   
   

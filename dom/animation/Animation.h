@@ -471,9 +471,15 @@ class Animation : public DOMEventTargetHelper,
       const Nullable<TimeDuration>& aCurrentTime,
       const TimeDuration& aEffectStartTime, const double aPlaybackRate);
   ProgressTimelinePosition AtProgressTimelineBoundary() const {
+    Nullable<TimeDuration> currentTime = GetUnconstrainedCurrentTime();
     return AtProgressTimelineBoundary(
         mTimeline ? mTimeline->TimelineDuration() : nullptr,
-        GetCurrentTimeAsDuration(),
+        
+        
+        
+        
+        
+        !currentTime.IsNull() ? currentTime : GetCurrentTimeAsDuration(),
         mStartTime.IsNull() ? TimeDuration() : mStartTime.Value(),
         mPlaybackRate);
   }

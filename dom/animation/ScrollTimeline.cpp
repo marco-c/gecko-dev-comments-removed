@@ -132,20 +132,21 @@ Nullable<TimeDuration> ScrollTimeline::GetCurrentTimeAsDuration() const {
     return nullptr;
   }
 
-  const nsPoint& scrollOffset = scrollFrame->GetScrollPosition();
-  const nsRect& scrollRange = scrollFrame->GetScrollRange();
   const bool isHorizontal = orientation == layers::ScrollDirection::eHorizontal;
+  const nsPoint& scrollPosition = scrollFrame->GetScrollPosition();
+  const Maybe<ScrollOffsets>& offsets =
+      ComputeOffsets(scrollFrame, orientation);
+  if (!offsets) {
+    return nullptr;
+  }
 
   
   
-  double position = std::abs(isHorizontal ? scrollOffset.x : scrollOffset.y);
-  double range = isHorizontal ? scrollRange.width : scrollRange.height;
-  MOZ_ASSERT(range > 0.0);
   
-  
-  
-  
-  double progress = position / range;
+  nscoord position =
+      std::abs(isHorizontal ? scrollPosition.x : scrollPosition.y);
+  double progress = static_cast<double>(position - offsets->mStart) /
+                    static_cast<double>(offsets->mEnd - offsets->mStart);
   return TimeDuration::FromMilliseconds(progress *
                                         PROGRESS_TIMELINE_DURATION_MILLISEC);
 }
@@ -200,6 +201,17 @@ void ScrollTimeline::ReplacePropertiesWith(const Element* aReferenceElement,
     
     anim->SetTimeline(this);
   }
+}
+
+Maybe<ScrollTimeline::ScrollOffsets> ScrollTimeline::ComputeOffsets(
+    const nsIScrollableFrame* aScrollFrame,
+    layers::ScrollDirection aOrientation) const {
+  const nsRect& scrollRange = aScrollFrame->GetScrollRange();
+  nscoord range = aOrientation == layers::ScrollDirection::eHorizontal
+                      ? scrollRange.width
+                      : scrollRange.height;
+  MOZ_ASSERT(range > 0);
+  return Some(ScrollOffsets{0, range});
 }
 
 void ScrollTimeline::RegisterWithScrollSource() {
