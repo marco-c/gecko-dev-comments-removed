@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+use std::ops::Deref;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::usize;
@@ -40,7 +42,12 @@ pub(super) trait Latch {
     
     
     
-    fn set(&self);
+    
+    
+    
+    
+    
+    unsafe fn set(this: *const Self);
 }
 
 pub(super) trait AsCoreLatch {
@@ -123,8 +130,8 @@ impl CoreLatch {
     
     
     #[inline]
-    fn set(&self) -> bool {
-        let old_state = self.state.swap(SET, Ordering::AcqRel);
+    unsafe fn set(this: *const Self) -> bool {
+        let old_state = (*this).state.swap(SET, Ordering::AcqRel);
         old_state == SLEEPING
     }
 
@@ -186,16 +193,16 @@ impl<'r> AsCoreLatch for SpinLatch<'r> {
 
 impl<'r> Latch for SpinLatch<'r> {
     #[inline]
-    fn set(&self) {
+    unsafe fn set(this: *const Self) {
         let cross_registry;
 
-        let registry: &Registry = if self.cross {
+        let registry: &Registry = if (*this).cross {
             
             
             
             
             
-            cross_registry = Arc::clone(self.registry);
+            cross_registry = Arc::clone((*this).registry);
             &cross_registry
         } else {
             
@@ -203,12 +210,12 @@ impl<'r> Latch for SpinLatch<'r> {
             
             
             
-            self.registry
+            (*this).registry
         };
-        let target_worker_index = self.target_worker_index;
+        let target_worker_index = (*this).target_worker_index;
 
         
-        if self.core_latch.set() {
+        if CoreLatch::set(&(*this).core_latch) {
             
             
             
@@ -255,10 +262,10 @@ impl LockLatch {
 
 impl Latch for LockLatch {
     #[inline]
-    fn set(&self) {
-        let mut guard = self.m.lock().unwrap();
+    unsafe fn set(this: *const Self) {
+        let mut guard = (*this).m.lock().unwrap();
         *guard = true;
-        self.v.notify_all();
+        (*this).v.notify_all();
     }
 }
 
@@ -307,9 +314,9 @@ impl CountLatch {
     
     
     #[inline]
-    pub(super) fn set(&self) -> bool {
-        if self.counter.fetch_sub(1, Ordering::SeqCst) == 1 {
-            self.core_latch.set();
+    pub(super) unsafe fn set(this: *const Self) -> bool {
+        if (*this).counter.fetch_sub(1, Ordering::SeqCst) == 1 {
+            CoreLatch::set(&(*this).core_latch);
             true
         } else {
             false
@@ -320,8 +327,12 @@ impl CountLatch {
     
     
     #[inline]
-    pub(super) fn set_and_tickle_one(&self, registry: &Registry, target_worker_index: usize) {
-        if self.set() {
+    pub(super) unsafe fn set_and_tickle_one(
+        this: *const Self,
+        registry: &Registry,
+        target_worker_index: usize,
+    ) {
+        if Self::set(this) {
             registry.notify_worker_latch_is_set(target_worker_index);
         }
     }
@@ -362,19 +373,42 @@ impl CountLockLatch {
 
 impl Latch for CountLockLatch {
     #[inline]
-    fn set(&self) {
-        if self.counter.fetch_sub(1, Ordering::SeqCst) == 1 {
-            self.lock_latch.set();
+    unsafe fn set(this: *const Self) {
+        if (*this).counter.fetch_sub(1, Ordering::SeqCst) == 1 {
+            LockLatch::set(&(*this).lock_latch);
         }
     }
 }
 
-impl<'a, L> Latch for &'a L
-where
-    L: Latch,
-{
+
+pub(super) struct LatchRef<'a, L> {
+    inner: *const L,
+    marker: PhantomData<&'a L>,
+}
+
+impl<L> LatchRef<'_, L> {
+    pub(super) fn new(inner: &L) -> LatchRef<'_, L> {
+        LatchRef {
+            inner,
+            marker: PhantomData,
+        }
+    }
+}
+
+unsafe impl<L: Sync> Sync for LatchRef<'_, L> {}
+
+impl<L> Deref for LatchRef<'_, L> {
+    type Target = L;
+
+    fn deref(&self) -> &L {
+        
+        unsafe { &*self.inner }
+    }
+}
+
+impl<L: Latch> Latch for LatchRef<'_, L> {
     #[inline]
-    fn set(&self) {
-        L::set(self);
+    unsafe fn set(this: *const Self) {
+        L::set((*this).inner);
     }
 }
