@@ -58,9 +58,7 @@ static LRESULT CALLBACK InputEventRejectingWindowProc(HWND window, UINT msg,
 }
 
 WinCompositorWindowThread::WinCompositorWindowThread(base::Thread* aThread)
-    : mThread(aThread) {}
-
-WinCompositorWindowThread::~WinCompositorWindowThread() { delete mThread; }
+    : mThread(aThread), mMonitor("WinCompositorWindowThread") {}
 
 
 WinCompositorWindowThread* WinCompositorWindowThread::Get() {
@@ -70,14 +68,25 @@ WinCompositorWindowThread* WinCompositorWindowThread::Get() {
 
 void WinCompositorWindowThread::Start() {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!sWinCompositorWindowThread);
-
-  base::Thread* thread = new base::Thread("WinCompositor");
 
   base::Thread::Options options;
   
   options.message_loop_type = MessageLoop::TYPE_UI;
 
+  if (sWinCompositorWindowThread) {
+    
+    sWinCompositorWindowThread->mThread->Stop();
+    if (sWinCompositorWindowThread->mThread->StartWithOptions(options)) {
+      
+      return;
+    }
+    
+    
+    
+    sWinCompositorWindowThread = nullptr;
+  }
+
+  base::Thread* thread = new base::Thread("WinCompositor");
   if (!thread->StartWithOptions(options)) {
     delete thread;
     return;
@@ -96,23 +105,32 @@ void WinCompositorWindowThread::ShutDown() {
   
   
   
-  static const PRIntervalTime TIMEOUT = PR_TicksPerSecond() * 2;
-  layers::SynchronousTask task("WinCompositorWindowThread");
-  RefPtr<Runnable> runnable = WrapRunnable(
-      RefPtr<WinCompositorWindowThread>(sWinCompositorWindowThread.get()),
-      &WinCompositorWindowThread::ShutDownTask, &task);
-  sWinCompositorWindowThread->Loop()->PostTask(runnable.forget());
-  nsresult rv = task.Wait(TIMEOUT);
-  if (rv == NS_OK) {
-    sWinCompositorWindowThread->mThread->Stop();
+  
+  
+  
+  static const TimeDuration TIMEOUT = TimeDuration::FromSeconds(2.0);
+  RefPtr<Runnable> runnable =
+      NewRunnableMethod("WinCompositorWindowThread::ShutDownTask",
+                        sWinCompositorWindowThread.get(),
+                        &WinCompositorWindowThread::ShutDownTask);
+  Loop()->PostTask(runnable.forget());
+
+  CVStatus status;
+  {
+    MonitorAutoLock lock(sWinCompositorWindowThread->mMonitor);
+    status = sWinCompositorWindowThread->mMonitor.Wait(TIMEOUT);
   }
 
-  sWinCompositorWindowThread = nullptr;
+  if (status == CVStatus::NoTimeout) {
+    sWinCompositorWindowThread = nullptr;
+  }
 }
 
-void WinCompositorWindowThread::ShutDownTask(layers::SynchronousTask* aTask) {
-  layers::AutoCompleteTask complete(aTask);
+void WinCompositorWindowThread::ShutDownTask() {
+  MonitorAutoLock lock(mMonitor);
+
   MOZ_ASSERT(IsInCompositorWindowThread());
+  mMonitor.NotifyAll();
 }
 
 
