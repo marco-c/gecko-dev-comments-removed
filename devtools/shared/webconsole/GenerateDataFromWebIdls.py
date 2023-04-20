@@ -81,12 +81,17 @@ results = parser.finish()
 
 pure_output = {
     "Document": {
+        "instance": {
+            "getters": [
+                "location",
+            ],
+        },
         "prototype": {
             "methods": [
                 "getSelection",
                 "hasStorageAccess",
             ],
-        }
+        },
     },
     "Range": {
         "prototype": {
@@ -106,6 +111,28 @@ pure_output = {
         "prototype": {
             "methods": ["getRangeAt", "containsNode"],
         }
+    },
+    "Window": {
+        "instance": {
+            "getters": [
+                "location",
+            ],
+        },
+    },
+    "Location": {
+        "instance": {
+            "getters": [
+                "href",
+                "origin",
+                "protocol",
+                "host",
+                "hostname",
+                "port",
+                "pathname",
+                "search",
+                "hash",
+            ],
+        },
     },
 }
 deprecated_output = {}
