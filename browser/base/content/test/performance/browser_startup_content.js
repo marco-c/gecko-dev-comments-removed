@@ -72,7 +72,7 @@ if (!gFissionBrowser) {
 
 const intermittently_loaded_scripts = {
   modules: new Set([
-    "resource://gre/modules/nsAsyncShutdown.jsm",
+    "resource://gre/modules/nsAsyncShutdown.sys.mjs",
     "resource://gre/modules/sessionstore/Utils.sys.mjs",
 
     
