@@ -8,14 +8,6 @@
 
 
 add_task(async function test_reset_with_unified_extensions_ui() {
-  if (!gUnifiedExtensions.isEnabled) {
-    ok(
-      true,
-      "This test isn't relevant if Unified Extensions UI isn't enabled."
-    );
-    return;
-  }
-
   const kWebExtensionWidgetIDs = [
     "ext0-browser-action",
     "ext1-browser-action",

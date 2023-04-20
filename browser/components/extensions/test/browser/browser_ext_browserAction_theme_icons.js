@@ -28,16 +28,6 @@ async function testBrowserAction(extension, expectedIcon) {
   );
 }
 
-function waitForElementShown(element) {
-  let win = element.ownerGlobal;
-  let dwu = win.windowUtils;
-  return BrowserTestUtils.waitForCondition(() => {
-    info("Waiting for overflow button to have non-0 size");
-    let bounds = dwu.getBoundsWithoutFlushing(element);
-    return bounds.width > 0 && bounds.height > 0;
-  });
-}
-
 async function testStaticTheme(options) {
   let {
     themeData,
@@ -65,22 +55,12 @@ async function testStaticTheme(options) {
   
   
   if (defaultArea == "menupanel") {
-    if (window.gUnifiedExtensions.isEnabled) {
-      let shown = BrowserTestUtils.waitForPopupEvent(
-        window.gUnifiedExtensions.panel,
-        "shown"
-      );
-      window.gUnifiedExtensions.togglePanel();
-      await shown;
-    } else {
-      let overflowButton = document.getElementById("nav-bar-overflow-button");
-      await waitForElementShown(overflowButton.icon);
-      info("Open overflow menu");
-      let menu = document.getElementById("widget-overflow");
-      let shown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-      overflowButton.click();
-      await shown;
-    }
+    let shown = BrowserTestUtils.waitForPopupEvent(
+      window.gUnifiedExtensions.panel,
+      "shown"
+    );
+    window.gUnifiedExtensions.togglePanel();
+    await shown;
   }
 
   

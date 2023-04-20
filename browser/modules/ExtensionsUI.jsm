@@ -431,6 +431,7 @@ var ExtensionsUI = {
         persistent: true,
         eventCallback,
         removeOnDismissal: true,
+        position: "bottomright topright",
       };
       
       
@@ -469,12 +470,6 @@ var ExtensionsUI = {
           },
         },
       ];
-
-      if (browser.ownerGlobal.gUnifiedExtensions.isEnabled) {
-        options.popupOptions = {
-          position: "bottomright topright",
-        };
-      }
 
       window.PopupNotifications.show(
         browser,

@@ -7467,29 +7467,22 @@ var ToolbarContextMenu = {
       element.hidden = !addon;
     }
 
-    
-    
-    
     if (pinToToolbar) {
-      pinToToolbar.hidden = !addon || !gUnifiedExtensions.isEnabled;
+      pinToToolbar.hidden = !addon;
     }
 
     reportExtension.hidden = !addon || !gAddonAbuseReportEnabled;
 
     if (addon) {
-      if (gUnifiedExtensions.isEnabled) {
-        popup.querySelector(".customize-context-moveToPanel").hidden = true;
-        popup.querySelector(
-          ".customize-context-removeFromToolbar"
-        ).hidden = true;
+      popup.querySelector(".customize-context-moveToPanel").hidden = true;
+      popup.querySelector(".customize-context-removeFromToolbar").hidden = true;
 
-        if (pinToToolbar) {
-          let widgetId = this._getWidgetId(popup);
-          if (widgetId) {
-            let area = CustomizableUI.getPlacementOfWidget(widgetId).area;
-            let inToolbar = area != CustomizableUI.AREA_ADDONS;
-            pinToToolbar.setAttribute("checked", inToolbar);
-          }
+      if (pinToToolbar) {
+        let widgetId = this._getWidgetId(popup);
+        if (widgetId) {
+          let area = CustomizableUI.getPlacementOfWidget(widgetId).area;
+          let inToolbar = area != CustomizableUI.AREA_ADDONS;
+          pinToToolbar.setAttribute("checked", inToolbar);
         }
       }
 
