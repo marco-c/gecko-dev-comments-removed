@@ -18,6 +18,8 @@
 
 namespace mozilla {
 
+class WMFCDMProxyCallback;
+
 
 
 
@@ -41,6 +43,7 @@ class WMFCDMImpl final {
     bool mPersistentStateRequired;
     bool mDistinctiveIdentifierRequired;
     bool mHWSecure;
+    WMFCDMProxyCallback* mProxyCallback;
   };
 
   RefPtr<InitPromise> Init(const InitParams& aParams);
