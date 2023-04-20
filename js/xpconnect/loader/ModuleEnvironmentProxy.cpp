@@ -23,6 +23,8 @@
 #include "js/TypeDecls.h"   
 #include "js/Value.h"       
 #include "js/friend/ErrorMessages.h"  
+#include "js/String.h"
+#include "js/Modules.h"
 
 namespace mozilla {
 namespace loader {
