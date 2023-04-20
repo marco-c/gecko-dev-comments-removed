@@ -54,22 +54,10 @@ const TOP_SITES_BLOCKED_SPONSORS_PREF = "browser.topsites.blockedSponsors";
 
 
 
-class Observer {
-  constructor(dispatch, observerInterface) {
-    this.dispatch = dispatch;
-    this.QueryInterface = ChromeUtils.generateQI([
-      observerInterface,
-      "nsISupportsWeakReference",
-    ]);
-  }
-}
-
-
-
-
-class PlacesObserver extends Observer {
+class PlacesObserver {
   constructor(dispatch) {
-    super(dispatch, Ci.nsINavBookmarkObserver);
+    this.dispatch = dispatch;
+    this.QueryInterface = ChromeUtils.generateQI(["nsISupportsWeakReference"]);
     this.handlePlacesEvent = this.handlePlacesEvent.bind(this);
   }
 
