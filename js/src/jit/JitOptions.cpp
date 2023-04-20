@@ -97,6 +97,9 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disablePruning, false);
 
   
+  SET_DEFAULT(disableIteratorIndices, false);
+
+  
   SET_DEFAULT(disableInstructionReordering, false);
 
   
