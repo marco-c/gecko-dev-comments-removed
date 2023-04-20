@@ -3,37 +3,95 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
+
+const USING_LEGACY_WIZARD = !Services.prefs.getBoolPref(
+  "browser.migrate.content-modal.enabled",
+  false
+);
+
+
+
+
+
+
+
+
+
+async function waitForWizard() {
+  if (USING_LEGACY_WIZARD) {
+    return BrowserTestUtils.waitForCondition(
+      () => Services.wm.getMostRecentWindow("Browser:MigrationWizard"),
+      "Wait for migration wizard to open"
+    );
+  }
+
+  let wizardReady = BrowserTestUtils.waitForEvent(
+    window,
+    "MigrationWizard:Ready"
+  );
+  let wizardTab = await BrowserTestUtils.waitForNewTab(gBrowser, url => {
+    return url.startsWith("about:preferences");
+  });
+  await wizardReady;
+
+  return wizardTab;
+}
+
+
+
+
+
+
+
+
+
+function closeWizard(wizardWindowOrTab) {
+  if (USING_LEGACY_WIZARD) {
+    return BrowserTestUtils.closeWindow(wizardWindowOrTab);
+  }
+
+  return BrowserTestUtils.removeTab(wizardWindowOrTab);
+}
+
+add_setup(async () => {
+  
+  
+  
+  
+  
+  let browser = gBrowser.selectedBrowser;
+  BrowserTestUtils.loadURIString(browser, "https://example.com");
+  await BrowserTestUtils.browserLoaded(browser);
+});
+
 add_task(async function test_SHOW_MIGRATION_WIZARD() {
-  let migratorOpen = TestUtils.waitForCondition(() => {
-    let win = Services.wm.getMostRecentWindow("Browser:MigrationWizard");
-    return win && win.document && win.document.readyState == "complete";
-  }, "Migrator window loaded");
+  let wizardOpened = waitForWizard();
 
   SMATestUtils.executeAndValidateAction({ type: "SHOW_MIGRATION_WIZARD" });
 
-  await migratorOpen;
-  let migratorWindow = Services.wm.getMostRecentWindow(
-    "Browser:MigrationWizard"
-  );
-  ok(migratorWindow, "Migrator window opened");
-  await BrowserTestUtils.closeWindow(migratorWindow);
+  let wizard = await wizardOpened;
+  ok(wizard, "Migration wizard opened");
+  closeWizard(wizard);
 });
 
 add_task(async function test_SHOW_MIGRATION_WIZARD_WITH_SOURCE() {
-  let migratorOpen = TestUtils.waitForCondition(() => {
-    let win = Services.wm.getMostRecentWindow("Browser:MigrationWizard");
-    return win && win.document && win.document.readyState == "complete";
-  }, "Migrator window loaded");
+  let wizardOpened = waitForWizard();
 
   SMATestUtils.executeAndValidateAction({
     type: "SHOW_MIGRATION_WIZARD",
     data: { source: "chrome" },
   });
 
-  await migratorOpen;
-  let migratorWindow = Services.wm.getMostRecentWindow(
-    "Browser:MigrationWizard"
-  );
-  ok(migratorWindow, "Migrator window opened when source param specified");
-  await BrowserTestUtils.closeWindow(migratorWindow);
+  let wizard = await wizardOpened;
+  ok(wizard, "Migrator window opened when source param specified");
+  closeWizard(wizard);
 });
