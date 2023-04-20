@@ -1626,6 +1626,17 @@ add_task(async function test_error_target() {
     Assert.ok(download.error !== null);
     Assert.ok(download.error.becauseTargetFailed);
     Assert.ok(!download.error.becauseSourceFailed);
+
+    
+    
+    let serializable = download.toSerializable();
+    Assert.ok(serializable.errorObj, "Ensure we have an errorObj initially");
+    let reserialized = JSON.parse(JSON.stringify(serializable));
+    download = await Downloads.createDownload(reserialized);
+    let promise = download.start().catch(() => {});
+    serializable = download.toSerializable();
+    Assert.ok(!serializable.errorObj, "Ensure we didn't persist the errorObj");
+    await promise;
   } finally {
     
     if (targetFile.exists()) {
