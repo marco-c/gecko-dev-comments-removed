@@ -3454,48 +3454,24 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         nsTArray<int32_t> charData;
 
         if (nsTextFrame* currTextFrame = do_QueryFrame(frame)) {
-          nsTextFrame* prevTextFrame = currTextFrame;
-          nsRect frameRect = currTextFrame->GetRect();
-          nsIFrame* nearestAccAncestorFrame =
-              LocalParent() ? LocalParent()->GetFrame() : nullptr;
           while (currTextFrame) {
-            nsRect contRect = currTextFrame->GetRect();
-            if (prevTextFrame->GetParent() != currTextFrame->GetParent() &&
-                nearestAccAncestorFrame) {
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              contRect = frameRect;
-              nsLayoutUtils::TransformRect(currTextFrame,
-                                           nearestAccAncestorFrame, contRect);
-            }
+            nsPoint contOffset = currTextFrame->GetOffsetTo(frame);
             nsTArray<nsRect> charBounds;
             currTextFrame->GetCharacterRectsInRange(
                 currTextFrame->GetContentOffset(),
                 currTextFrame->GetContentEnd(), charBounds);
-            for (const nsRect& charRect : charBounds) {
+            for (nsRect& charRect : charBounds) {
               
               
               
               
               
-              
-              
-              
-              int computedX = charRect.x + (contRect.x - frameRect.x);
-              int computedY = charRect.y + (contRect.y - frameRect.y);
-              charData.AppendElement(computedX);
-              charData.AppendElement(computedY);
+              charRect.MoveBy(contOffset);
+              charData.AppendElement(charRect.x);
+              charData.AppendElement(charRect.y);
               charData.AppendElement(charRect.width);
               charData.AppendElement(charRect.height);
             }
-            prevTextFrame = currTextFrame;
             currTextFrame = currTextFrame->GetNextContinuation();
           }
         }
