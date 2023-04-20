@@ -2,8 +2,8 @@
 
 
 
-const { actionTypes: at } = ChromeUtils.import(
-  "resource://activity-stream/common/Actions.jsm"
+const { actionTypes: at } = ChromeUtils.importESModule(
+  "resource://activity-stream/common/Actions.sys.mjs"
 );
 
 const lazy = {};
