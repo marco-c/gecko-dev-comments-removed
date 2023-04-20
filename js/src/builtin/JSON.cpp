@@ -706,11 +706,6 @@ static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
   
   MOZ_ASSERT(!IsFilteredValue(v));
 
-  AutoCheckRecursionLimit recursion(cx);
-  if (!recursion.check(cx)) {
-    return false;
-  }
-
   
 
 
@@ -757,6 +752,11 @@ static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
   if (v.isBigInt()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_BIGINT_NOT_SERIALIZABLE);
+    return false;
+  }
+
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
     return false;
   }
 
