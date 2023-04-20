@@ -62,6 +62,49 @@ function verifyLookUpTelemetry(probe, expected) {
 
 
 
+function verifyReloadTelemetry(length, idx, expected) {
+  let events = Glean.cookieBanners.reload.testGetValue();
+
+  is(events.length, length, "There is a expected number of reload events.");
+
+  let event = events[idx];
+
+  let { noRule, hasCookieRule, hasClickRule } = expected;
+  is(event.name, "reload", "The reload event has the correct name");
+  is(event.extra.no_rule, noRule, "The extra field 'no_rule' is expected");
+  is(
+    event.extra.has_cookie_rule,
+    hasCookieRule,
+    "The extra field 'has_cookie_rule' is expected"
+  );
+  is(
+    event.extra.has_click_rule,
+    hasClickRule,
+    "The extra field 'has_click_rule' is expected"
+  );
+}
+
+
+
+
+
+
+
+async function reloadBrowser(browser, url) {
+  let reloaded = BrowserTestUtils.browserLoaded(browser, false, url);
+
+  
+  window.BrowserReload();
+
+  await reloaded;
+}
+
+
+
+
+
+
+
 
 async function openLookUpTelemetryTestPage(browser, testInTop, page, domain) {
   let clickFinishPromise = promiseBannerClickingFinish(domain);
@@ -83,7 +126,7 @@ async function openLookUpTelemetryTestPage(browser, testInTop, page, domain) {
   await clickFinishPromise;
 }
 
-add_setup(function() {
+add_setup(async function() {
   
   Services.fog.testResetFOG();
 
@@ -103,6 +146,8 @@ add_setup(function() {
     
     await SiteDataTestUtils.clear();
   });
+
+  await clickTestSetup();
 });
 
 add_task(async function test_service_mode_telemetry() {
@@ -157,7 +202,6 @@ add_task(async function test_rule_lookup_telemetry_no_rule() {
       ],
     ],
   });
-  await clickTestSetup();
 
   
   Services.cookieBanners.resetRules(false);
@@ -237,7 +281,6 @@ add_task(async function test_rule_lookup_telemetry() {
       ],
     ],
   });
-  await clickTestSetup();
   insertTestClickRules();
 
   
@@ -262,7 +305,7 @@ add_task(async function test_rule_lookup_telemetry() {
         true,
         `cookieConsent_${TEST_DOMAIN_A}_1`,
         "optOut1",
-        "." + TEST_DOMAIN_A,
+        null,
         "/",
         3600,
         "",
@@ -276,7 +319,7 @@ add_task(async function test_rule_lookup_telemetry() {
         false,
         `cookieConsent_${TEST_DOMAIN_A}_2`,
         "optIn2",
-        TEST_DOMAIN_A,
+        null,
         "/",
         3600,
         "",
@@ -297,7 +340,7 @@ add_task(async function test_rule_lookup_telemetry() {
         false,
         `cookieConsent_${TEST_DOMAIN_B}_1`,
         "optIn1",
-        TEST_DOMAIN_B,
+        null,
         "/",
         3600,
         "UNSET",
@@ -437,4 +480,271 @@ add_task(async function test_rule_lookup_telemetry() {
   }
 
   BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_reload_telemetry_no_rule() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "cookiebanners.service.mode",
+        Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT,
+      ],
+    ],
+  });
+
+  
+  Services.cookieBanners.resetRules(false);
+
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_ORIGIN_A
+  );
+
+  
+  let events = Glean.cookieBanners.reload.testGetValue();
+  ok(!events, "No reload event at the beginning.");
+
+  
+  await reloadBrowser(tab.linkedBrowser, TEST_ORIGIN_A + "/");
+
+  
+  verifyReloadTelemetry(1, 0, {
+    noRule: "true",
+    hasCookieRule: "false",
+    hasClickRule: "false",
+  });
+
+  BrowserTestUtils.removeTab(tab);
+  Services.fog.testResetFOG();
+});
+
+add_task(async function test_reload_telemetry() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "cookiebanners.service.mode",
+        Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT,
+      ],
+    ],
+  });
+  insertTestClickRules();
+
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_ORIGIN_A
+  );
+
+  
+  let events = Glean.cookieBanners.reload.testGetValue();
+  ok(!events, "No reload event at the beginning.");
+
+  
+  await reloadBrowser(tab.linkedBrowser, TEST_ORIGIN_A + "/");
+
+  
+  verifyReloadTelemetry(1, 0, {
+    noRule: "false",
+    hasCookieRule: "false",
+    hasClickRule: "true",
+  });
+
+  
+  let cookieRule = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
+    Ci.nsICookieBannerRule
+  );
+  cookieRule.domains = [TEST_DOMAIN_B];
+
+  Services.cookieBanners.insertRule(cookieRule);
+  cookieRule.addCookie(
+    false,
+    `cookieConsent_${TEST_DOMAIN_B}_1`,
+    "optIn1",
+    null,
+    "/",
+    3600,
+    "UNSET",
+    false,
+    false,
+    true,
+    0,
+    0
+  );
+  cookieRule.addClickRule(
+    "div#banner",
+    false,
+    Ci.nsIClickRule.RUN_ALL,
+    null,
+    null,
+    "button#optIn"
+  );
+
+  
+  BrowserTestUtils.loadURI(tab.linkedBrowser, TEST_ORIGIN_B);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+
+  
+  await reloadBrowser(tab.linkedBrowser, TEST_ORIGIN_B + "/");
+
+  
+  verifyReloadTelemetry(2, 1, {
+    noRule: "false",
+    hasCookieRule: "true",
+    hasClickRule: "true",
+  });
+
+  BrowserTestUtils.removeTab(tab);
+  Services.fog.testResetFOG();
+});
+
+add_task(async function test_reload_telemetry_mode_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "cookiebanners.service.mode",
+        Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT,
+      ],
+    ],
+  });
+  insertTestClickRules();
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["cookiebanners.service.mode", Ci.nsICookieBannerService.MODE_DISABLED],
+    ],
+  });
+
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_ORIGIN_A
+  );
+
+  
+  await reloadBrowser(tab.linkedBrowser, TEST_ORIGIN_A + "/");
+
+  
+  
+  verifyReloadTelemetry(1, 0, {
+    noRule: "true",
+    hasCookieRule: "false",
+    hasClickRule: "false",
+  });
+
+  BrowserTestUtils.removeTab(tab);
+  Services.fog.testResetFOG();
+});
+
+add_task(async function test_reload_telemetry_mode_reject() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["cookiebanners.service.mode", Ci.nsICookieBannerService.MODE_REJECT],
+    ],
+  });
+  insertTestClickRules();
+
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_ORIGIN_A
+  );
+
+  
+  await reloadBrowser(tab.linkedBrowser, TEST_ORIGIN_A + "/");
+
+  
+  
+  verifyReloadTelemetry(1, 0, {
+    noRule: "false",
+    hasCookieRule: "false",
+    hasClickRule: "true",
+  });
+
+  
+  BrowserTestUtils.loadURI(tab.linkedBrowser, TEST_ORIGIN_B);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+
+  
+  await reloadBrowser(tab.linkedBrowser, TEST_ORIGIN_B + "/");
+
+  
+  
+  verifyReloadTelemetry(2, 1, {
+    noRule: "true",
+    hasCookieRule: "false",
+    hasClickRule: "false",
+  });
+
+  BrowserTestUtils.removeTab(tab);
+  Services.fog.testResetFOG();
+});
+
+add_task(async function test_reload_telemetry_iframe() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "cookiebanners.service.mode",
+        Ci.nsICookieBannerService.MODE_REJECT_OR_ACCEPT,
+      ],
+    ],
+  });
+
+  
+  Services.cookieBanners.resetRules(false);
+
+  
+  
+  
+  let cookieRule = Cc["@mozilla.org/cookie-banner-rule;1"].createInstance(
+    Ci.nsICookieBannerRule
+  );
+  cookieRule.domains = [TEST_DOMAIN_A];
+  Services.cookieBanners.insertRule(cookieRule);
+
+  cookieRule.addClickRule(
+    "div#banner",
+    false,
+    Ci.nsIClickRule.RUN_CHILD,
+    null,
+    null,
+    "button#optIn"
+  );
+  cookieRule.addCookie(
+    false,
+    `cookieConsent_${TEST_DOMAIN_A}_1`,
+    "optIn1",
+    null,
+    "/",
+    3600,
+    "UNSET",
+    false,
+    false,
+    true,
+    0,
+    0
+  );
+
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_ORIGIN_C + TEST_PATH + "file_iframe_banner.html"
+  );
+
+  
+  await reloadBrowser(
+    tab.linkedBrowser,
+    TEST_ORIGIN_C + TEST_PATH + "file_iframe_banner.html"
+  );
+
+  
+  verifyReloadTelemetry(1, 0, {
+    noRule: "false",
+    hasCookieRule: "false",
+    hasClickRule: "true",
+  });
+
+  BrowserTestUtils.removeTab(tab);
+  Services.fog.testResetFOG();
 });
