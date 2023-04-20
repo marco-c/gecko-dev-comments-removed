@@ -316,17 +316,10 @@ pub extern "C" fn wgpu_server_device_create_buffer(
     let utf8_label = label.map(|utf16| utf16.to_string());
     let label = utf8_label.as_ref().map(|s| Cow::from(&s[..]));
 
-    let usage = match wgt::BufferUsages::from_bits(usage) {
-        Some(usage) => usage,
-        None => {
-            error_buf.init_str(
-                "GPUBufferDescriptor's 'usage' includes invalid unimplemented bits \
-                                or unimplemented usages",
-            );
-            gfx_select!(self_id => global.create_buffer_error(buffer_id, label));
-            return;
-        }
-    };
+    
+    
+    
+    let usage = unsafe { wgt::BufferUsages::from_bits_unchecked(usage) };
 
     
     if size > MAX_BUFFER_SIZE {
