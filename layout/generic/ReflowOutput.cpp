@@ -11,6 +11,19 @@
 
 namespace mozilla {
 
+static bool IsValidOverflowRect(const nsRect& aRect) {
+  
+  
+  
+  if (MOZ_LIKELY(!aRect.IsEmpty())) {
+    return true;
+  }
+
+  
+  return !aRect.IsEqualEdges(nsRect()) && aRect.Width() >= 0 &&
+         aRect.Height() >= 0;
+}
+
 
 nsRect OverflowAreas::GetOverflowClipRect(const nsRect& aRectToClip,
                                           const nsRect& aBounds,
@@ -40,12 +53,20 @@ void OverflowAreas::ApplyOverflowClippingOnRect(nsRect& aOverflowRect,
 }
 
 void OverflowAreas::UnionWith(const OverflowAreas& aOther) {
-  InkOverflow().UnionRect(InkOverflow(), aOther.InkOverflow());
-  ScrollableOverflow().UnionRect(ScrollableOverflow(),
-                                 aOther.ScrollableOverflow());
+  if (IsValidOverflowRect(aOther.InkOverflow())) {
+    InkOverflow().UnionRect(InkOverflow(), aOther.InkOverflow());
+  }
+  if (IsValidOverflowRect(aOther.ScrollableOverflow())) {
+    ScrollableOverflow().UnionRect(ScrollableOverflow(),
+                                   aOther.ScrollableOverflow());
+  }
 }
 
 void OverflowAreas::UnionAllWith(const nsRect& aRect) {
+  if (!IsValidOverflowRect(aRect)) {
+    
+    return;
+  }
   InkOverflow().UnionRect(InkOverflow(), aRect);
   ScrollableOverflow().UnionRect(ScrollableOverflow(), aRect);
 }
