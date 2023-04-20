@@ -7,6 +7,7 @@
 
 
 
+
 add_task(async () => {
   let videoID = "with-controls";
 
@@ -71,6 +72,16 @@ add_task(async () => {
           let video = content.document.getElementById(videoID);
           let shadowRoot = video.openOrClosedShadowRoot;
 
+          info("Creating a new button in the content window");
+          let button = this.content.document.createElement("button");
+          let buttonSelected = false;
+          button.ontouchstart = () => {
+            buttonSelected = true;
+            return true;
+          };
+          button.id = "testbutton";
+          this.content.document.body.appendChild(button);
+
           await video.play();
 
           info("Hover over the video to show the Picture-in-Picture toggle");
@@ -94,7 +105,7 @@ add_task(async () => {
           info("Waiting for toggle to become fully visible");
           await waitForToggleOpacity(shadowRoot, toggleStylesForStage);
 
-          info("Simulating touch event");
+          info("Simulating touch event on PiP toggle");
           let utils = EventUtils._getDOMWindowUtils(this.content.window);
           let id = utils.DEFAULT_TOUCH_POINTER_ID;
           let rx = 1;
@@ -139,6 +150,50 @@ add_task(async () => {
             "Touchstart event's default actions should be prevented"
           );
           ok(!video.paused, "Video should still be playing");
+
+          let testButton = this.content.document.getElementById("testbutton");
+          let buttonRect = testButton.getBoundingClientRect();
+          let buttonCenterX = buttonRect.left + buttonRect.width / 2;
+          let buttonCenterY = buttonRect.top + buttonRect.height / 2;
+
+          info("Simulating touch event on new button");
+          defaultPrevented = utils.sendTouchEvent(
+            "touchstart",
+            [id],
+            [buttonCenterX],
+            [buttonCenterY],
+            [rx],
+            [ry],
+            [angle],
+            [force],
+            [tiltX],
+            [tiltY],
+            [twist],
+            false 
+          );
+          utils.sendTouchEvent(
+            "touchend",
+            [id],
+            [buttonCenterX],
+            [buttonCenterY],
+            [rx],
+            [ry],
+            [angle],
+            [force],
+            [tiltX],
+            [tiltY],
+            [twist],
+            false 
+          );
+
+          ok(
+            buttonSelected,
+            "Button in content window was selected via touchstart"
+          );
+          ok(
+            !defaultPrevented,
+            "Touchstart event's default actions should no longer be prevented"
+          );
         }
       );
 
