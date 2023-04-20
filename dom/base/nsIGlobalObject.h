@@ -9,7 +9,6 @@
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Result.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
@@ -35,6 +34,8 @@ class nsPIDOMWindowInner;
 
 namespace mozilla {
 class DOMEventTargetHelper;
+template <typename V, typename E>
+class Result;
 enum class StorageAccess;
 namespace dom {
 class VoidFunction;
@@ -47,6 +48,9 @@ class ReportingObserver;
 class ServiceWorker;
 class ServiceWorkerRegistration;
 class ServiceWorkerRegistrationDescriptor;
+}  
+namespace ipc {
+class PrincipalInfo;
 }  
 }  
 
@@ -258,7 +262,7 @@ class nsIGlobalObject : public nsISupports,
 
   virtual mozilla::Result<mozilla::ipc::PrincipalInfo, nsresult>
   GetStorageKey();
-  virtual bool IsEqualStorageKey(mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+  bool IsEqualStorageKey(const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
  protected:
   virtual ~nsIGlobalObject();
