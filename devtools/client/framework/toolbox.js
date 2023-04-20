@@ -1378,58 +1378,13 @@ Toolbox.prototype = {
     if (this._sourceMapService) {
       return this._sourceMapService;
     }
-    
     const service = require("devtools/client/shared/source-map-loader/index");
+    this._sourceMapService = service;
+    service.on("source-map-error", message =>
+      this.target.logWarningInPage(message, "source map")
+    );
+    service.startSourceMapWorker();
 
-    
-    this._sourceMapService = new Proxy(service, {
-      get: (target, name) => {
-        switch (name) {
-          case "getOriginalURLs":
-            return urlInfo => {
-              return target.getOriginalURLs(urlInfo).catch(text => {
-                const message = L10N.getFormatStr(
-                  "toolbox.sourceMapFailure",
-                  text,
-                  urlInfo.url,
-                  urlInfo.sourceMapURL
-                );
-                this.target.logWarningInPage(message, "source map");
-                
-                
-                return null;
-              });
-            };
-
-          case "getOriginalSourceText":
-            return originalSourceId => {
-              return target
-                .getOriginalSourceText(originalSourceId)
-                .catch(error => {
-                  const message = L10N.getFormatStr(
-                    "toolbox.sourceMapSourceFailure",
-                    error.message,
-                    error.metadata ? error.metadata.url : "<unknown>"
-                  );
-                  this.target.logWarningInPage(message, "source map");
-                  
-                  
-                  
-                  
-                  return {
-                    text: message,
-                    contentType: "text/plain",
-                  };
-                });
-            };
-
-          default:
-            return target[name];
-        }
-      },
-    });
-
-    this._sourceMapService.startSourceMapWorker();
     return this._sourceMapService;
   },
 
