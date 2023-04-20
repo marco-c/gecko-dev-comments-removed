@@ -9714,36 +9714,39 @@ function prettyPrint({
   indent,
   sourceText
 }) {
-  const prettified = (0, _prettyFast.prettyFast)(sourceText, {
+  const {
+    code,
+    map: sourceMapGenerator
+  } = (0, _prettyFast.prettyFast)(sourceText, {
     url,
     indent: " ".repeat(indent)
-  });
+  }); 
+  
+
+  const mappingLength = sourceMapGenerator._mappings._array.length;
+
+  for (let i = 0; i < mappingLength; i++) {
+    const mapping = sourceMapGenerator._mappings._array[i];
+    const {
+      originalLine,
+      originalColumn,
+      generatedLine,
+      generatedColumn
+    } = mapping;
+    mapping.originalLine = generatedLine;
+    mapping.originalColumn = generatedColumn;
+    mapping.generatedLine = originalLine;
+    mapping.generatedColumn = originalColumn;
+  } 
+  
+  
+
+
+  sourceMapGenerator._mappings._sorted = false;
   return {
-    code: prettified.code,
-    mappings: invertMappings(prettified.map._mappings)
+    code,
+    sourceMap: sourceMapGenerator.toJSON()
   };
-}
-
-function invertMappings(mappings) {
-  return mappings._array.map(m => {
-    const mapping = {
-      generated: {
-        line: m.originalLine,
-        column: m.originalColumn
-      }
-    };
-
-    if (m.source) {
-      mapping.source = m.source;
-      mapping.original = {
-        line: m.generatedLine,
-        column: m.generatedColumn
-      };
-      mapping.name = m.name;
-    }
-
-    return mapping;
-  });
 }
 
 self.onmessage = (0, _workerUtils.workerHandler)({

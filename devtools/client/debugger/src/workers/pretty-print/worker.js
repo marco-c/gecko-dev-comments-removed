@@ -6,35 +6,36 @@ import { workerHandler } from "devtools/client/shared/worker-utils";
 import { prettyFast } from "./pretty-fast";
 
 function prettyPrint({ url, indent, sourceText }) {
-  const prettified = prettyFast(sourceText, {
+  const { code, map: sourceMapGenerator } = prettyFast(sourceText, {
     url,
     indent: " ".repeat(indent),
   });
 
-  return {
-    code: prettified.code,
-    mappings: invertMappings(prettified.map._mappings),
-  };
-}
+  
+  
+  const mappingLength = sourceMapGenerator._mappings._array.length;
+  for (let i = 0; i < mappingLength; i++) {
+    const mapping = sourceMapGenerator._mappings._array[i];
+    const {
+      originalLine,
+      originalColumn,
+      generatedLine,
+      generatedColumn,
+    } = mapping;
+    mapping.originalLine = generatedLine;
+    mapping.originalColumn = generatedColumn;
+    mapping.generatedLine = originalLine;
+    mapping.generatedColumn = originalColumn;
+  }
+  
+  
+  
+  sourceMapGenerator._mappings._sorted = false;
 
-function invertMappings(mappings) {
-  return mappings._array.map(m => {
-    const mapping = {
-      generated: {
-        line: m.originalLine,
-        column: m.originalColumn,
-      },
-    };
-    if (m.source) {
-      mapping.source = m.source;
-      mapping.original = {
-        line: m.generatedLine,
-        column: m.generatedColumn,
-      };
-      mapping.name = m.name;
-    }
-    return mapping;
-  });
+  return {
+    code,
+    sourceMap: sourceMapGenerator.toJSON(),
+  };
 }
 
 self.onmessage = workerHandler({ prettyPrint });

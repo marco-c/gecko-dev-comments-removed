@@ -11,7 +11,6 @@
 
 const {
   SourceMapConsumer,
-  SourceMapGenerator,
 } = require("resource://devtools/client/shared/vendor/source-map/source-map.js");
 
 
@@ -484,13 +483,15 @@ async function getFileGeneratedRange(originalSourceId) {
   };
 }
 
-function applySourceMap(generatedId, url, code, mappings) {
-  const generator = new SourceMapGenerator({ file: url });
-  mappings.forEach(mapping => generator.addMapping(mapping));
-  generator.setSourceContent(url, code);
 
-  const map = new SourceMapConsumer(generator.toJSON());
-  setSourceMap(generatedId, Promise.resolve(map));
+
+
+
+
+
+function applySourceMap(generatedId, map) {
+  const sourceMapConsumer = new SourceMapConsumer(map);
+  setSourceMap(generatedId, Promise.resolve(sourceMapConsumer));
 }
 
 function clearSourceMaps() {
