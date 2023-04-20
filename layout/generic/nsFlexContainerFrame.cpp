@@ -3964,7 +3964,6 @@ void nsFlexContainerFrame::GenerateFlexLines(
   AddOrRemoveStateBits(NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER,
                        iter.ItemsAreAlreadyInOrder());
 
-  bool prevItemRequestedBreakAfter = false;
   const bool useMozBoxCollapseBehavior =
       StyleVisibility()->UseLegacyCollapseBehavior();
 
@@ -3974,15 +3973,6 @@ void nsFlexContainerFrame::GenerateFlexLines(
     if (childFrame->IsPlaceholderFrame()) {
       aPlaceholders.AppendElement(childFrame);
       continue;
-    }
-
-    
-    
-    if (!isSingleLine && !curLine->IsEmpty() &&
-        (prevItemRequestedBreakAfter ||
-         childFrame->StyleDisplay()->BreakBefore())) {
-      curLine = ConstructNewFlexLine();
-      prevItemRequestedBreakAfter = false;
     }
 
     const bool collapsed = childFrame->StyleVisibility()->IsCollapse();
@@ -4034,12 +4024,6 @@ void nsFlexContainerFrame::GenerateFlexLines(
 
     
     curLine->AddLastItemToMainSizeTotals();
-
-    
-    
-    if (!isSingleLine && childFrame->StyleDisplay()->BreakAfter()) {
-      prevItemRequestedBreakAfter = true;
-    }
     itemIdxInContainer++;
   }
 }
