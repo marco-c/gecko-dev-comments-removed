@@ -11,10 +11,7 @@ const { FileUtils } = ChromeUtils.importESModule(
 );
 
 
-var gEnv = Cc["@mozilla.org/process/environment;1"].getService(
-  Ci.nsIEnvironment
-);
-var gPythonName = gEnv.get("PYTHON");
+var gPythonName = Services.env.get("PYTHON");
 
 
 
@@ -137,7 +134,7 @@ function run_test() {
   
   
 
-  gEnv.set("DMD", "1");
+  Services.env.set("DMD", "1");
 
   runProcess(gDmdTestFile, []);
 
