@@ -2787,7 +2787,6 @@ StyleImageOrientation nsStyleVisibility::UsedImageOrientation(
 
   nsCOMPtr<nsIPrincipal> triggeringPrincipal =
       aRequest->GetTriggeringPrincipal();
-  nsCOMPtr<nsIURI> uri = aRequest->GetURI();
 
   
   
@@ -2795,10 +2794,16 @@ StyleImageOrientation nsStyleVisibility::UsedImageOrientation(
     return aOrientation;
   }
 
+  nsCOMPtr<nsIURI> uri = aRequest->GetURI();
+  
+  
+  bool isSameOrigin =
+      uri->SchemeIs("data") || triggeringPrincipal->IsSameOrigin(uri);
+
   
   
   
-  if (!triggeringPrincipal->IsSameOrigin(uri)) {
+  if (!isSameOrigin) {
     return StyleImageOrientation::FromImage;
   }
 
