@@ -242,23 +242,10 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
   void ActivateBundledFonts();
 #endif
 
-  static bool SkipNextChangeNotification(bool aNewValue = false) {
-    bool oldValue = sSkipNextChangeNotification;
-    sSkipNextChangeNotification = aNewValue;
-    return oldValue;
-  }
-
   enum { kATSGenerationInitial = -1 };
 
   
   CTFontRef mDefaultFont;
-
-  
-  
-  
-  
-  
-  static bool sSkipNextChangeNotification;
 
   
   

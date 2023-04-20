@@ -287,8 +287,6 @@ static const int gAppleWeightToCSSWeight[] = {
 
 static NSFontManager* sFontManager;
 
-bool gfxMacPlatformFontList::sSkipNextChangeNotification = false;
-
 static void GetStringForNSString(const NSString* aSrc, nsAString& aDest) {
   aDest.SetLength([aSrc length]);
   [aSrc getCharacters:reinterpret_cast<unichar*>(aDest.BeginWriting())
@@ -1073,25 +1071,18 @@ gfxMacPlatformFontList::gfxMacPlatformFontList()
   
   gfxFontUtils::GetPrefsFontList("font.single-face-list", mSingleFaceFonts);
   gfxFontUtils::GetPrefsFontList("font.preload-names-list", mPreloadFonts);
-
-  if (XRE_IsParentProcess()) {
-    CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), this,
-                                    RegisteredFontsChangedNotificationCallback,
-                                    kCTFontManagerRegisteredFontsChangedNotification, 0,
-                                    CFNotificationSuspensionBehaviorDeliverImmediately);
-  }
 }
 
 gfxMacPlatformFontList::~gfxMacPlatformFontList() {
   AutoLock lock(mLock);
 
   if (XRE_IsParentProcess()) {
-    CFNotificationCenterRemoveObserver(CFNotificationCenterGetLocalCenter(), this,
-                                       kCTFontManagerRegisteredFontsChangedNotification, 0);
+    ::CFNotificationCenterRemoveObserver(::CFNotificationCenterGetLocalCenter(), this,
+                                         kCTFontManagerRegisteredFontsChangedNotification, 0);
   }
 
   if (mDefaultFont) {
-    CFRelease(mDefaultFont);
+    ::CFRelease(mDefaultFont);
   }
 }
 
@@ -1192,12 +1183,7 @@ void gfxMacPlatformFontList::ActivateFontsFromDir(const nsACString& aDir,
     }
   } while (result != kCFURLEnumeratorEnd);
 
-  if (CFArrayGetCount(urls) > 0) {
-    
-    
-    SkipNextChangeNotification(true);
-    CTFontManagerRegisterFontsForURLs(urls, kCTFontManagerScopeProcess, nullptr);
-  }
+  CTFontManagerRegisterFontsForURLs(urls, kCTFontManagerScopeProcess, nullptr);
 }
 
 void gfxMacPlatformFontList::ReadSystemFontList(dom::SystemFontList* aList)
@@ -1257,6 +1243,15 @@ nsresult gfxMacPlatformFontList::InitFontListForPlatform() {
   InitSystemFontNames();
 
   if (XRE_IsParentProcess()) {
+    static bool firstTime = true;
+    if (firstTime) {
+      ::CFNotificationCenterAddObserver(::CFNotificationCenterGetLocalCenter(), this,
+                                        RegisteredFontsChangedNotificationCallback,
+                                        kCTFontManagerRegisteredFontsChangedNotification, 0,
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+      firstTime = false;
+    }
+
     
     
     AutoCFRelease<CFArrayRef> familyNames = CTFontManagerCopyAvailableFontFamilyNames();
@@ -1321,6 +1316,17 @@ void gfxMacPlatformFontList::InitSharedFontListForPlatform() {
   InitSystemFontNames();
 
   if (XRE_IsParentProcess()) {
+    
+    
+    static bool firstTime = true;
+    if (firstTime) {
+      ::CFNotificationCenterAddObserver(::CFNotificationCenterGetLocalCenter(), this,
+                                        RegisteredFontsChangedNotificationCallback,
+                                        kCTFontManagerRegisteredFontsChangedNotification, 0,
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+      firstTime = false;
+    }
+
     AutoCFRelease<CFArrayRef> familyNames = CTFontManagerCopyAvailableFontFamilyNames();
     nsTArray<fontlist::Family::InitData> families;
     families.SetCapacity(CFArrayGetCount(familyNames)
@@ -1601,14 +1607,8 @@ void gfxMacPlatformFontList::RegisteredFontsChangedNotificationCallback(
     return;
   }
 
-  if (gfxMacPlatformFontList::SkipNextChangeNotification()) {
-    return;
-  }
-
   gfxMacPlatformFontList* fl = static_cast<gfxMacPlatformFontList*>(observer);
   if (!fl->IsInitialized()) {
-    
-    gfxPlatformFontList::Initialize(fl);
     return;
   }
 
