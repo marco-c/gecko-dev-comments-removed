@@ -86,7 +86,7 @@ bool nsTransitionManager::DoUpdateTransitions(
   for (uint32_t i = aStyle.mTransitionPropertyCount; i--;) {
     
     
-    if (i == 0 && aStyle.GetTransitionCombinedDuration(i) <= 0.0f) {
+    if (i == 0 && aStyle.GetTransitionCombinedDuration(i).seconds <= 0.0f) {
       continue;
     }
 
@@ -310,10 +310,10 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
     return false;
   }
 
-  float delay = aStyle.GetTransitionDelay(transitionIdx);
+  float delay = aStyle.GetTransitionDelay(transitionIdx).ToMilliseconds();
 
   
-  float duration = std::max(aStyle.GetTransitionDuration(transitionIdx), 0.0f);
+  float duration = std::max(aStyle.GetTransitionDuration(transitionIdx).ToMilliseconds(), 0.0f);
 
   
   
