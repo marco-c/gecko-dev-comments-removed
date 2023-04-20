@@ -2421,7 +2421,7 @@ bool QuantizedPath::operator==(const QuantizedPath& aOther) const {
 
 
 static Maybe<QuantizedPath> GenerateQuantizedPath(const SkPath& aPath,
-                                                  const IntRect& aBounds,
+                                                  const Rect& aBounds,
                                                   const Matrix& aTransform) {
   WGR::PathBuilder* pb = WGR::wgr_new_builder();
   if (!pb) {
@@ -2709,11 +2709,21 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
     bounds.Inflate(blurRadius);
     viewport.Inflate(blurRadius);
   }
+  Point realOrigin = bounds.TopLeft();
+  if (aCacheable) {
+    
+    bounds.Scale(4.0f);
+    bounds.Round();
+    bounds.Scale(0.25f);
+  }
+  Point quantizedOrigin = bounds.TopLeft();
   
   IntRect intBounds = RoundedOut(bounds).Intersect(viewport);
   if (intBounds.IsEmpty()) {
     return true;
   }
+  
+  Rect quantBounds = Rect(intBounds) + (realOrigin - quantizedOrigin);
   
   
   
@@ -2739,14 +2749,14 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
     }
     
     
-    Maybe<QuantizedPath> qp =
-        GenerateQuantizedPath(pathSkia->GetPath(), intBounds, currentTransform);
+    Maybe<QuantizedPath> qp = GenerateQuantizedPath(
+        pathSkia->GetPath(), quantBounds, currentTransform);
     if (!qp) {
       return false;
     }
     entry = mPathCache->FindOrInsertEntry(
         std::move(*qp), color ? nullptr : &aPattern, aStrokeOptions,
-        currentTransform, intBounds, bounds.TopLeft(),
+        currentTransform, intBounds, quantizedOrigin,
         aShadow ? aShadow->mSigma : -1.0f);
     if (!entry) {
       return false;
@@ -2773,10 +2783,10 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
     
     
     Point offset =
-        (bounds.TopLeft() - entry->GetOrigin()) + entry->GetBounds().TopLeft();
+        (realOrigin - entry->GetOrigin()) + entry->GetBounds().TopLeft();
     SurfacePattern pathPattern(nullptr, ExtendMode::CLAMP,
                                Matrix::Translation(offset), filter);
-    return DrawRectAccel(Rect(intBounds), pathPattern, aOptions, shadowColor,
+    return DrawRectAccel(quantBounds, pathPattern, aOptions, shadowColor,
                          &handle, false, true, true);
   }
 
@@ -2785,6 +2795,8 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
       SupportsPattern(aPattern) &&
       entry->GetPath().mPath.num_types <= mPathMaxComplexity) {
     if (entry->GetVertexRange().IsValid()) {
+      
+      
       
       
       mCurrentTarget->mProfile.OnCacheHit();
@@ -2834,7 +2846,7 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
             
             
             if (Maybe<QuantizedPath> qp = GenerateQuantizedPath(
-                    fillPath, intBounds, currentTransform)) {
+                    fillPath, quantBounds, currentTransform)) {
               wgrVB = GeneratePathVertexBuffer(
                   *qp, IntRect(-intBounds.TopLeft(), mViewportSize));
             }
@@ -2905,7 +2917,7 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
   if (pathDT->Init(intBounds.Size(), color || aShadow
                                          ? SurfaceFormat::A8
                                          : SurfaceFormat::B8G8R8A8)) {
-    Point offset = -intBounds.TopLeft();
+    Point offset = -quantBounds.TopLeft();
     if (aShadow) {
       
       offset += aShadow->mOffset;
@@ -2943,13 +2955,13 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
         return false;
       }
       SurfacePattern pathPattern(pathSurface, ExtendMode::CLAMP,
-                                 Matrix::Translation(intBounds.TopLeft()),
+                                 Matrix::Translation(quantBounds.TopLeft()),
                                  filter);
       
       
       
       
-      if (DrawRectAccel(Rect(intBounds), pathPattern, aOptions, shadowColor,
+      if (DrawRectAccel(quantBounds, pathPattern, aOptions, shadowColor,
                         &handle, false, true) &&
           handle) {
         if (entry) {
