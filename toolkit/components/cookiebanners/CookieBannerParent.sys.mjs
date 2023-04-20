@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["CookieBannerParent"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -29,15 +23,15 @@ XPCOMUtils.defineLazyPreferenceGetter(
   Ci.nsICookieBannerService.MODE_DISABLED
 );
 
-class CookieBannerParent extends JSWindowActorParent {
-  
-
-
-
+export class CookieBannerParent extends JSWindowActorParent {
+  /**
+   * Get the browser associated with this window which is the top level embedder
+   * element. Returns null if the top embedder isn't a browser.
+   */
   get #browserElement() {
     let topBC = this.browsingContext.top;
 
-    
+    // Not all embedders are browsers.
     if (topBC.embedderElementType != "browser") {
       return null;
     }
