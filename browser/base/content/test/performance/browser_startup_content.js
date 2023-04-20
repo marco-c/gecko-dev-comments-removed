@@ -67,9 +67,6 @@ if (!gFissionBrowser) {
 if (AppConstants.NIGHTLY_BUILD) {
   
   known_scripts.modules.add("resource:///actors/InteractionsChild.sys.mjs");
-  known_scripts.modules.add(
-    "resource:///modules/InteractionsBlocklist.sys.mjs"
-  );
 }
 
 
