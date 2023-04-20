@@ -10709,17 +10709,17 @@ class MIonToWasmCall final : public MVariadicInstruction,
 
 
 
-class MWasmLoadObjectField : public MUnaryInstruction,
-                             public NoTypePolicy::Data {
+
+class MWasmLoadField : public MUnaryInstruction, public NoTypePolicy::Data {
   uint32_t offset_;
 
-  MWasmLoadObjectField(MDefinition* obj, uint32_t offset, MIRType type)
+  MWasmLoadField(MDefinition* obj, uint32_t offset, MIRType type)
       : MUnaryInstruction(classOpcode, obj), offset_(offset) {
     setResultType(type);
   }
 
  public:
-  INSTRUCTION_HEADER(WasmLoadObjectField)
+  INSTRUCTION_HEADER(WasmLoadField)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, obj))
 
@@ -10738,20 +10738,21 @@ class MWasmLoadObjectField : public MUnaryInstruction,
 
 
 
-class MWasmLoadObjectDataField : public MBinaryInstruction,
-                                 public NoTypePolicy::Data {
+
+
+class MWasmLoadFieldKA : public MBinaryInstruction, public NoTypePolicy::Data {
   uint32_t offset_;
 
-  MWasmLoadObjectDataField(MDefinition* obj, MDefinition* data, uint32_t offset,
-                           MIRType type)
-      : MBinaryInstruction(classOpcode, obj, data), offset_(offset) {
+  MWasmLoadFieldKA(MDefinition* ka, MDefinition* obj, uint32_t offset,
+                   MIRType type)
+      : MBinaryInstruction(classOpcode, ka, obj), offset_(offset) {
     setResultType(type);
   }
 
  public:
-  INSTRUCTION_HEADER(WasmLoadObjectDataField)
+  INSTRUCTION_HEADER(WasmLoadFieldKA)
   TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, obj), (1, data))
+  NAMED_OPERANDS((0, ka), (1, obj))
 
   uint32_t offset() const { return offset_; }
 
@@ -10766,22 +10767,20 @@ class MWasmLoadObjectDataField : public MBinaryInstruction,
 
 
 
-
-
-class MWasmStoreObjectDataField : public MTernaryInstruction,
-                                  public NoTypePolicy::Data {
+class MWasmStoreFieldKA : public MTernaryInstruction,
+                          public NoTypePolicy::Data {
   uint32_t offset_;
 
-  MWasmStoreObjectDataField(MDefinition* obj, MDefinition* data,
-                            uint32_t offset, MDefinition* value)
-      : MTernaryInstruction(classOpcode, obj, data, value), offset_(offset) {
+  MWasmStoreFieldKA(MDefinition* ka, MDefinition* obj, uint32_t offset,
+                    MDefinition* value)
+      : MTernaryInstruction(classOpcode, ka, obj, value), offset_(offset) {
     MOZ_ASSERT(value->type() != MIRType::RefOrNull);
   }
 
  public:
-  INSTRUCTION_HEADER(WasmStoreObjectDataField)
+  INSTRUCTION_HEADER(WasmStoreFieldKA)
   TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, obj), (1, data), (2, value))
+  NAMED_OPERANDS((0, ka), (1, obj), (2, value))
 
   uint32_t offset() const { return offset_; }
 
@@ -10796,25 +10795,23 @@ class MWasmStoreObjectDataField : public MTernaryInstruction,
 
 
 
-
-
-class MWasmStoreObjectDataRefField : public MAryInstruction<4>,
-                                     public NoTypePolicy::Data {
-  MWasmStoreObjectDataRefField(MDefinition* instance, MDefinition* obj,
-                               MDefinition* valueAddr, MDefinition* value)
+class MWasmStoreFieldRefKA : public MAryInstruction<4>,
+                             public NoTypePolicy::Data {
+  MWasmStoreFieldRefKA(MDefinition* instance, MDefinition* ka,
+                       MDefinition* valueAddr, MDefinition* value)
       : MAryInstruction<4>(classOpcode) {
     MOZ_ASSERT(valueAddr->type() == MIRType::Pointer);
     MOZ_ASSERT(value->type() == MIRType::RefOrNull);
     initOperand(0, instance);
-    initOperand(1, obj);
+    initOperand(1, ka);
     initOperand(2, valueAddr);
     initOperand(3, value);
   }
 
  public:
-  INSTRUCTION_HEADER(WasmStoreObjectDataRefField)
+  INSTRUCTION_HEADER(WasmStoreFieldRefKA)
   TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, instance), (1, obj), (2, valueAddr), (3, value))
+  NAMED_OPERANDS((0, instance), (1, ka), (2, valueAddr), (3, value))
 
   AliasSet getAliasSet() const override {
     return AliasSet::Store(AliasSet::Any);
