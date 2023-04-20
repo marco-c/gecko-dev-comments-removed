@@ -12,8 +12,9 @@
 #include "mozilla/Assertions.h"
 
 #include <cstring>
-#include <limits.h>
 #include <type_traits>
+#include <limits>
+#include <cmath>
 
 namespace mozilla {
 
@@ -65,135 +66,106 @@ inline To BitwiseCast(const From aFrom) {
 
 namespace detail {
 
-enum ToSignedness { ToIsSigned, ToIsUnsigned };
-enum FromSignedness { FromIsSigned, FromIsUnsigned };
+template <typename T>
+constexpr int64_t safe_integer() {
+  static_assert(std::is_floating_point_v<T>);
+  return std::pow(2, std::numeric_limits<T>::digits);
+}
 
-template <typename From, typename To,
-          FromSignedness =
-              std::is_signed_v<From> ? FromIsSigned : FromIsUnsigned,
-          ToSignedness = std::is_signed_v<To> ? ToIsSigned : ToIsUnsigned>
-struct BoundsCheckImpl;
-
-
-
-
-
-
-enum UUComparison { FromIsBigger, FromIsNotBigger };
+template <typename T>
+constexpr uint64_t safe_integer_unsigned() {
+  static_assert(std::is_floating_point_v<T>);
+  return std::pow(2, std::numeric_limits<T>::digits);
+}
 
 
 
-template <typename From, typename To,
-          UUComparison =
-              (sizeof(From) > sizeof(To)) ? FromIsBigger : FromIsNotBigger>
-struct UnsignedUnsignedCheck;
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+template <typename In, typename Out>
+bool IsInBounds(In aIn) {
+  constexpr bool inSigned = std::is_signed_v<In>;
+  constexpr bool outSigned = std::is_signed_v<Out>;
+  constexpr bool bothSigned = inSigned && outSigned;
+  constexpr bool bothUnsigned = !inSigned && !outSigned;
+  constexpr bool inFloat = std::is_floating_point_v<In>;
+  constexpr bool outFloat = std::is_floating_point_v<Out>;
+  constexpr bool bothFloat = inFloat && outFloat;
+  constexpr bool noneFloat = !inFloat && !outFloat;
+  constexpr Out outMax = std::numeric_limits<Out>::max();
+  constexpr Out outMin = std::numeric_limits<Out>::lowest();
 
-template <typename From, typename To>
-struct UnsignedUnsignedCheck<From, To, FromIsBigger> {
- public:
-  static bool checkBounds(const From aFrom) { return aFrom <= From(To(-1)); }
-};
+  
+  using select_widest = std::conditional_t<(sizeof(In) > sizeof(Out)), In, Out>;
 
-template <typename From, typename To>
-struct UnsignedUnsignedCheck<From, To, FromIsNotBigger> {
- public:
-  static bool checkBounds(const From aFrom) { return true; }
-};
-
-template <typename From, typename To>
-struct BoundsCheckImpl<From, To, FromIsUnsigned, ToIsUnsigned> {
- public:
-  static bool checkBounds(const From aFrom) {
-    return UnsignedUnsignedCheck<From, To>::checkBounds(aFrom);
-  }
-};
-
-
-
-template <typename From, typename To>
-struct BoundsCheckImpl<From, To, FromIsSigned, ToIsUnsigned> {
- public:
-  static bool checkBounds(const From aFrom) {
-    if (aFrom < 0) {
+  if constexpr (bothFloat) {
+    if (aIn > select_widest(outMax) || aIn < select_widest(outMin)) {
       return false;
     }
-    if (sizeof(To) >= sizeof(From)) {
-      return true;
+  }
+  
+  if constexpr (inFloat && !outFloat) {
+    static_assert(sizeof(aIn) <= sizeof(int64_t));
+    
+    
+    
+    if (aIn < static_cast<double>(outMin) ||
+        aIn > static_cast<double>(outMax)) {
+      return false;
     }
-    return aFrom <= From(To(-1));
-  }
-};
-
-
-
-enum USComparison { FromIsSmaller, FromIsNotSmaller };
-
-template <typename From, typename To,
-          USComparison =
-              (sizeof(From) < sizeof(To)) ? FromIsSmaller : FromIsNotSmaller>
-struct UnsignedSignedCheck;
-
-template <typename From, typename To>
-struct UnsignedSignedCheck<From, To, FromIsSmaller> {
- public:
-  static bool checkBounds(const From aFrom) { return true; }
-};
-
-template <typename From, typename To>
-struct UnsignedSignedCheck<From, To, FromIsNotSmaller> {
- public:
-  static bool checkBounds(const From aFrom) {
-    const To MaxValue = To((1ULL << (CHAR_BIT * sizeof(To) - 1)) - 1);
-    return aFrom <= From(MaxValue);
-  }
-};
-
-template <typename From, typename To>
-struct BoundsCheckImpl<From, To, FromIsUnsigned, ToIsSigned> {
- public:
-  static bool checkBounds(const From aFrom) {
-    return UnsignedSignedCheck<From, To>::checkBounds(aFrom);
-  }
-};
-
-
-
-template <typename From, typename To>
-struct BoundsCheckImpl<From, To, FromIsSigned, ToIsSigned> {
- public:
-  static bool checkBounds(const From aFrom) {
-    if (sizeof(From) <= sizeof(To)) {
-      return true;
+    
+    
+    if (outSigned) {
+      int64_t asInteger = static_cast<int64_t>(aIn);
+      if (asInteger < outMin || asInteger > outMax) {
+        return false;
+      }
+    } else {
+      uint64_t asInteger = static_cast<uint64_t>(aIn);
+      if (asInteger < 0 || asInteger > outMax) {
+        return false;
+      }
     }
-    const To MaxValue = To((1ULL << (CHAR_BIT * sizeof(To) - 1)) - 1);
-    const To MinValue = -MaxValue - To(1);
-    return From(MinValue) <= aFrom && From(aFrom) <= From(MaxValue);
   }
-};
 
-template <typename From, typename To,
-          bool TypesAreIntegral =
-              std::is_integral_v<From>&& std::is_integral_v<To>>
-class BoundsChecker;
-
-template <typename From>
-class BoundsChecker<From, From, true> {
- public:
-  static bool checkBounds(const From aFrom) { return true; }
-};
-
-template <typename From, typename To>
-class BoundsChecker<From, To, true> {
- public:
-  static bool checkBounds(const From aFrom) {
-    return BoundsCheckImpl<From, To>::checkBounds(aFrom);
+  
+  
+  if constexpr (!inFloat && outFloat) {
+    if constexpr (inSigned) {
+      if (aIn < -safe_integer<Out>() || aIn > safe_integer<Out>()) {
+        return false;
+      }
+    } else {
+      if (aIn >= safe_integer_unsigned<Out>()) {
+        return false;
+      }
+    }
   }
-};
 
-template <typename From, typename To>
-inline bool IsInBounds(const From aFrom) {
-  return BoundsChecker<From, To>::checkBounds(aFrom);
+  if constexpr (noneFloat) {
+    if constexpr (bothUnsigned) {
+      if (aIn > select_widest(outMax)) {
+        return false;
+      }
+    }
+    if constexpr (bothSigned) {
+      if (aIn > select_widest(outMax) || aIn < select_widest(outMin)) {
+        return false;
+      }
+    }
+    if constexpr (inSigned && !outSigned) {
+      if (aIn < 0 || std::make_unsigned_t<In>(aIn) > outMax) {
+        return false;
+      }
+    }
+    if constexpr (!inSigned && outSigned) {
+      if (aIn > select_widest(outMax)) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
+#pragma GCC diagnostic pop
 
 }  
 
@@ -202,8 +174,11 @@ inline bool IsInBounds(const From aFrom) {
 
 
 
+
+
 template <typename To, typename From>
 inline To AssertedCast(const From aFrom) {
+  static_assert(std::is_arithmetic_v<To> && std::is_arithmetic_v<From>);
   MOZ_ASSERT((detail::IsInBounds<From, To>(aFrom)));
   return static_cast<To>(aFrom);
 }
@@ -213,8 +188,11 @@ inline To AssertedCast(const From aFrom) {
 
 
 
+
+
 template <typename To, typename From>
 inline To ReleaseAssertedCast(const From aFrom) {
+  static_assert(std::is_arithmetic_v<To> && std::is_arithmetic_v<From>);
   MOZ_RELEASE_ASSERT((detail::IsInBounds<From, To>(aFrom)));
   return static_cast<To>(aFrom);
 }
