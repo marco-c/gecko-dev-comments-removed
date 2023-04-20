@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_APPLIER_H_
-#define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_APPLIER_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_CONTROLLER_H_
+#define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_CONTROLLER_H_
 
 #include <vector>
 
@@ -23,28 +23,27 @@ class ApmDataDumper;
 
 
 
-
-class AdaptiveDigitalGainApplier {
+class AdaptiveDigitalGainController {
  public:
   
   struct FrameInfo {
-    float speech_probability;     
-    float speech_level_dbfs;      
-    bool speech_level_reliable;   
-    float noise_rms_dbfs;         
-    float headroom_db;            
+    float speech_probability;    
+    float speech_level_dbfs;     
+    bool speech_level_reliable;  
+    float noise_rms_dbfs;        
+    float headroom_db;           
     
     float limiter_envelope_dbfs;  
   };
 
-  AdaptiveDigitalGainApplier(
+  AdaptiveDigitalGainController(
       ApmDataDumper* apm_data_dumper,
       const AudioProcessing::Config::GainController2::AdaptiveDigital& config,
       int sample_rate_hz,
       int num_channels);
-  AdaptiveDigitalGainApplier(const AdaptiveDigitalGainApplier&) = delete;
-  AdaptiveDigitalGainApplier& operator=(const AdaptiveDigitalGainApplier&) =
-      delete;
+  AdaptiveDigitalGainController(const AdaptiveDigitalGainController&) = delete;
+  AdaptiveDigitalGainController& operator=(
+      const AdaptiveDigitalGainController&) = delete;
 
   void Initialize(int sample_rate_hz, int num_channels);
 
