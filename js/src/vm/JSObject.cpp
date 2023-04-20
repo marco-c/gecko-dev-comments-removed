@@ -290,8 +290,12 @@ bool js::Throw(JSContext* cx, HandleId id, unsigned errorNumber,
 
 
 
+#ifndef ENABLE_DECORATORS
+
+
 static const char js_getter_str[] = "getter";
 static const char js_setter_str[] = "setter";
+#endif
 
 static Result<> CheckCallable(JSContext* cx, JSObject* obj,
                               const char* fieldName) {

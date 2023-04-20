@@ -5,6 +5,7 @@ load(libdir + "asserts.js");
 let dec1Called = false;
 let dec2Called = false;
 
+
 function dec1(value, context) {
   dec1Called = true;
   
@@ -23,11 +24,11 @@ function checkDecoratorContext(kind, isPrivate, isStatic, name) {
   return (value, context) => {
     assertEq(value, undefined);
     assertEq(context.kind, kind);
-    assertEq(typeof (context.access), "object");
+    assertEq(typeof context.access, "object");
     assertEq(context.private, isPrivate);
     assertEq(context.static, isStatic);
     assertEq(context.name, name);
-    assertEq(typeof (context.addInitializer), "object");
+    assertEq(typeof context.addInitializer, "object");
   }
 }
 

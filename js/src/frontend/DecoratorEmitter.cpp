@@ -586,7 +586,10 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
       
       return false;
     }
-  } else if (kind == Kind::Method) {
+  } else if (kind == Kind::Getter || kind == Kind::Method ||
+             kind == Kind::Setter) {
+    
+    
     
     
     
@@ -595,9 +598,6 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
       return false;
     }
   }
-  
-  
-  
   
   
   
@@ -697,6 +697,22 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
       
       return false;
     }
+  } else if (kind == Kind::Getter) {
+    
+    if (!bce_->emitStringOp(
+            JSOp::String,
+            frontend::TaggedParserAtomIndex::WellKnown::getter())) {
+      
+      return false;
+    }
+  } else if (kind == Kind::Setter) {
+    
+    if (!bce_->emitStringOp(
+            JSOp::String,
+            frontend::TaggedParserAtomIndex::WellKnown::setter())) {
+      
+      return false;
+    }
   } else if (kind == Kind::Field) {
     
     if (!bce_->emitStringOp(
@@ -707,8 +723,8 @@ bool DecoratorEmitter::emitCreateDecoratorContextObject(Kind kind,
     }
   } else {
     
-    
-    
+
+
     
     
     

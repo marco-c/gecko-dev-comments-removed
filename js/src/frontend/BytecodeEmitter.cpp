@@ -9017,12 +9017,24 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       if (prop->is<ClassMethod>()) {
         ClassMethod& method = prop->as<ClassMethod>();
         if (method.decorators() && !method.decorators()->empty()) {
+          DecoratorEmitter::Kind kind;
+          switch (method.accessorType()) {
+            case AccessorType::Getter:
+              kind = DecoratorEmitter::Getter;
+              break;
+            case AccessorType::Setter:
+              kind = DecoratorEmitter::Setter;
+              break;
+            case AccessorType::None:
+              kind = DecoratorEmitter::Method;
+              break;
+          }
+
+          
+          
           DecoratorEmitter de(this);
-          
-          
           if (!de.emitApplyDecoratorsToElementDefinition(
-                  DecoratorEmitter::Method, key, method.decorators(),
-                  method.isStatic())) {
+                  kind, key, method.decorators(), method.isStatic())) {
             
             return false;
           }
