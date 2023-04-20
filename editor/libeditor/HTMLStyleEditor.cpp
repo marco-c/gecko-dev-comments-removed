@@ -3165,106 +3165,107 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
           if (styleToRemove.IsInvertibleWithCSS()) {
             arrayOfContentsToInvertStyle.AppendElement(content);
           }
-
-          
-          
-          Result<bool, nsresult> isRemovableParentStyleOrError =
-              IsRemovableParentStyleWithNewSpanElement(MOZ_KnownLive(content),
-                                                       styleToRemove);
-          if (MOZ_UNLIKELY(isRemovableParentStyleOrError.isErr())) {
-            NS_WARNING(
-                "HTMLEditor::IsRemovableParentStyleWithNewSpanElement() "
-                "failed");
-            return isRemovableParentStyleOrError.unwrapErr();
-          }
-          if (!isRemovableParentStyleOrError.unwrap()) {
-            
-            
-            continue;
-          }
-
-          
-          
-          
-          if (!content->IsText()) {
-            
-            
-            
-            
-            Result<CaretPoint, nsresult> pointToPutCaretOrError =
-                styleInverter
-                    ->ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle(
-                        *this, MOZ_KnownLive(content));
-            if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
-              if (NS_WARN_IF(pointToPutCaretOrError.unwrapErr() ==
-                             NS_ERROR_EDITOR_DESTROYED)) {
-                NS_WARNING(
-                    "AutoInlineStyleSetter::"
-                    "ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle() "
-                    "failed");
-                return NS_ERROR_EDITOR_DESTROYED;
-              }
-              NS_WARNING(
-                  "AutoInlineStyleSetter::"
-                  "ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle() "
-                  "failed, but ignored");
-            } else {
-              
-              
-              pointToPutCaretOrError.unwrap().IgnoreCaretPointSuggestion();
-            }
-            continue;
-          }
-
-          
-          
-          
-          
-          
-          uint32_t startOffset = content == splitRange.StartRef().GetContainer()
-                                     ? splitRange.StartRef().Offset()
-                                     : 0;
-          uint32_t endOffset = content == splitRange.EndRef().GetContainer()
-                                   ? splitRange.EndRef().Offset()
-                                   : content->Length();
-          Result<SplitRangeOffFromNodeResult, nsresult>
-              wrapTextInStyledElementResult =
-                  styleInverter->SplitTextNodeAndApplyStyleToMiddleNode(
-                      *this, MOZ_KnownLive(*content->AsText()), startOffset,
-                      endOffset);
-          if (MOZ_UNLIKELY(wrapTextInStyledElementResult.isErr())) {
-            NS_WARNING(
-                "AutoInlineStyleSetter::SplitTextNodeAndApplyStyleToMiddleNode("
-                ") failed");
-            return wrapTextInStyledElementResult.unwrapErr();
-          }
-          SplitRangeOffFromNodeResult unwrappedWrapTextInStyledElementResult =
-              wrapTextInStyledElementResult.unwrap();
-          
-          
-          unwrappedWrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
-          
-          
-          
-          if (styleToRemove.IsInvertibleWithCSS()) {
-            MOZ_ASSERT(unwrappedWrapTextInStyledElementResult
-                           .GetMiddleContentAs<Text>());
-            if (Text* textNode = unwrappedWrapTextInStyledElementResult
-                                     .GetMiddleContentAs<Text>()) {
-              if (textNode != content) {
-                arrayOfContentsToInvertStyle.ReplaceElementAt(
-                    arrayOfContentsToInvertStyle.Length() - 1,
-                    OwningNonNull<nsIContent>(*textNode));
-              }
-            }
-          }
-        }
+        }  
       }
 
       if (arrayOfContentsToInvertStyle.IsEmpty()) {
         continue;
       }
       MOZ_ASSERT(styleToRemove.IsInvertibleWithCSS());
+
+      
+      
+      for (OwningNonNull<nsIContent>& content : arrayOfContentsToInvertStyle) {
+        Result<bool, nsresult> isRemovableParentStyleOrError =
+            IsRemovableParentStyleWithNewSpanElement(MOZ_KnownLive(content),
+                                                     styleToRemove);
+        if (MOZ_UNLIKELY(isRemovableParentStyleOrError.isErr())) {
+          NS_WARNING(
+              "HTMLEditor::IsRemovableParentStyleWithNewSpanElement() "
+              "failed");
+          return isRemovableParentStyleOrError.unwrapErr();
+        }
+        if (!isRemovableParentStyleOrError.unwrap()) {
+          
+          
+          continue;
+        }
+
+        
+        
+        
+        if (!content->IsText()) {
+          
+          
+          
+          
+          Result<CaretPoint, nsresult> pointToPutCaretOrError =
+              styleInverter->ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle(
+                  *this, MOZ_KnownLive(content));
+          if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
+            if (NS_WARN_IF(pointToPutCaretOrError.unwrapErr() ==
+                           NS_ERROR_EDITOR_DESTROYED)) {
+              NS_WARNING(
+                  "AutoInlineStyleSetter::"
+                  "ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle() "
+                  "failed");
+              return NS_ERROR_EDITOR_DESTROYED;
+            }
+            NS_WARNING(
+                "AutoInlineStyleSetter::"
+                "ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle() "
+                "failed, but ignored");
+          } else {
+            
+            
+            pointToPutCaretOrError.unwrap().IgnoreCaretPointSuggestion();
+          }
+          continue;
+        }
+
+        
+        
+        
+        
+        
+        uint32_t startOffset = content == splitRange.StartRef().GetContainer()
+                                   ? splitRange.StartRef().Offset()
+                                   : 0;
+        uint32_t endOffset = content == splitRange.EndRef().GetContainer()
+                                 ? splitRange.EndRef().Offset()
+                                 : content->Length();
+        Result<SplitRangeOffFromNodeResult, nsresult>
+            wrapTextInStyledElementResult =
+                styleInverter->SplitTextNodeAndApplyStyleToMiddleNode(
+                    *this, MOZ_KnownLive(*content->AsText()), startOffset,
+                    endOffset);
+        if (MOZ_UNLIKELY(wrapTextInStyledElementResult.isErr())) {
+          NS_WARNING(
+              "AutoInlineStyleSetter::SplitTextNodeAndApplyStyleToMiddleNode("
+              ") failed");
+          return wrapTextInStyledElementResult.unwrapErr();
+        }
+        SplitRangeOffFromNodeResult unwrappedWrapTextInStyledElementResult =
+            wrapTextInStyledElementResult.unwrap();
+        
+        
+        unwrappedWrapTextInStyledElementResult.IgnoreCaretPointSuggestion();
+        
+        
+        
+        if (styleToRemove.IsInvertibleWithCSS()) {
+          MOZ_ASSERT(unwrappedWrapTextInStyledElementResult
+                         .GetMiddleContentAs<Text>());
+          if (Text* textNode = unwrappedWrapTextInStyledElementResult
+                                   .GetMiddleContentAs<Text>()) {
+            if (textNode != content) {
+              arrayOfContentsToInvertStyle.ReplaceElementAt(
+                  arrayOfContentsToInvertStyle.Length() - 1,
+                  OwningNonNull<nsIContent>(*textNode));
+            }
+          }
+        }
+      }
 
       
       
