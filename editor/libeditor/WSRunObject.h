@@ -1329,7 +1329,7 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
   DeleteInvisibleASCIIWhiteSpaces(HTMLEditor& aHTMLEditor,
                                   const EditorDOMPoint& aPoint);
 
