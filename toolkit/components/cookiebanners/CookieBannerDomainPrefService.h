@@ -10,9 +10,11 @@
 #include "mozilla/Maybe.h"
 #include "nsStringFwd.h"
 #include "nsTHashMap.h"
+#include "nsTHashSet.h"
 
 #include "nsICookieBannerService.h"
 #include "nsIObserver.h"
+#include "nsIAsyncShutdown.h"
 
 namespace mozilla {
 
@@ -20,11 +22,11 @@ namespace mozilla {
 
 
 
-class CookieBannerDomainPrefService final : public nsIContentPrefCallback2,
+class CookieBannerDomainPrefService final : public nsIAsyncShutdownBlocker,
                                             public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSICONTENTPREFCALLBACK2
+  NS_DECL_NSIASYNCSHUTDOWNBLOCKER
   NS_DECL_NSIOBSERVER
 
   static already_AddRefed<CookieBannerDomainPrefService> GetOrCreate();
@@ -50,13 +52,18 @@ class CookieBannerDomainPrefService final : public nsIContentPrefCallback2,
   ~CookieBannerDomainPrefService() = default;
 
   CookieBannerDomainPrefService()
-      : mIsInitialized(false), mIsContentPrefLoaded(false) {}
+      : mIsInitialized(false),
+        mIsContentPrefLoaded(false),
+        mIsShuttingDown(false) {}
 
   
   bool mIsInitialized;
 
   
   bool mIsContentPrefLoaded;
+
+  
+  bool mIsShuttingDown;
 
   
   nsTHashMap<nsCStringHashKey, nsICookieBannerService::Modes> mPrefs;
@@ -67,6 +74,46 @@ class CookieBannerDomainPrefService final : public nsIContentPrefCallback2,
   
   
   void EnsureInitCompleted();
+
+  nsresult AddShutdownBlocker();
+  nsresult RemoveShutdownBlocker();
+
+  class BaseContentPrefCallback : public nsIContentPrefCallback2 {
+   public:
+    NS_DECL_ISUPPORTS
+
+    NS_IMETHOD HandleResult(nsIContentPref*) override = 0;
+    NS_IMETHOD HandleCompletion(uint16_t) override = 0;
+    NS_IMETHOD HandleError(nsresult) override = 0;
+
+    explicit BaseContentPrefCallback(CookieBannerDomainPrefService* aService)
+        : mService(aService) {}
+
+   protected:
+    virtual ~BaseContentPrefCallback() = default;
+    RefPtr<CookieBannerDomainPrefService> mService;
+  };
+
+  class InitialLoadContentPrefCallback final : public BaseContentPrefCallback {
+   public:
+    NS_DECL_NSICONTENTPREFCALLBACK2
+
+    explicit InitialLoadContentPrefCallback(
+        CookieBannerDomainPrefService* aService)
+        : BaseContentPrefCallback(aService) {}
+  };
+
+  class WriteContentPrefCallback final : public BaseContentPrefCallback {
+   public:
+    NS_DECL_NSICONTENTPREFCALLBACK2
+
+    explicit WriteContentPrefCallback(CookieBannerDomainPrefService* aService)
+        : BaseContentPrefCallback(aService) {}
+  };
+
+  
+  
+  uint32_t mWritingCount = 0;
 
   void Shutdown();
 };
