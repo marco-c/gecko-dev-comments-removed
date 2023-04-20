@@ -983,6 +983,14 @@ struct MOZ_STACK_CLASS EditorInlineStyle : public EditorElementStyle {
             mHTMLProperty == nsGkAtoms::s);
   }
 
+  
+
+
+
+  [[nodiscard]] bool IsStyleConflictingWithVerticalAlign() const {
+    return mHTMLProperty == nsGkAtoms::sup || mHTMLProperty == nsGkAtoms::sub;
+  }
+
   explicit EditorInlineStyle(nsStaticAtom& aHTMLProperty,
                              nsAtom* aAttribute = nullptr)
       : mHTMLProperty(&aHTMLProperty), mAttribute(aAttribute) {}
