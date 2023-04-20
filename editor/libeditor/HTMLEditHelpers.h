@@ -30,6 +30,7 @@
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsError.h"
+#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsRange.h"
 #include "nsString.h"
@@ -889,7 +890,16 @@ struct MOZ_STACK_CLASS EditorInlineStyle {
   
 
 
-  bool IsStyleToClearAllInlineStyles() const { return !mHTMLProperty; }
+  [[nodiscard]] bool IsStyleToClearAllInlineStyles() const {
+    return !mHTMLProperty;
+  }
+
+  
+
+
+  [[nodiscard]] bool IsInvertibleWithCSS() const {
+    return mHTMLProperty == nsGkAtoms::b;
+  }
 
   explicit EditorInlineStyle(nsStaticAtom& aHTMLProperty,
                              nsAtom* aAttribute = nullptr)

@@ -2277,10 +2277,6 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
     
     
     MOZ_ALWAYS_TRUE(selectionRanges.SaveAndTrackRanges(*this));
-    const bool isCSSInvertibleStyle =
-        styleToRemove.mHTMLProperty &&
-        CSSEditUtils::IsCSSInvertible(*styleToRemove.mHTMLProperty,
-                                      styleToRemove.mAttribute);
     for (const OwningNonNull<nsRange>& range : selectionRanges.Ranges()) {
       if (styleToRemove.mHTMLProperty == nsGkAtoms::name) {
         
@@ -2392,7 +2388,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
                 *splitRange.EndRef().ContainerAs<Text>());
           }
         }
-        if (isCSSInvertibleStyle) {
+        if (styleToRemove.IsInvertibleWithCSS()) {
           arrayOfContentsToInvertStyle.SetCapacity(
               arrayOfContentsAroundRange.Length());
         }
@@ -2419,7 +2415,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
             }
           }
 
-          if (isCSSInvertibleStyle) {
+          if (styleToRemove.IsInvertibleWithCSS()) {
             arrayOfContentsToInvertStyle.AppendElement(content);
           }
 
@@ -2499,7 +2495,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
           
           
           
-          if (isCSSInvertibleStyle) {
+          if (styleToRemove.IsInvertibleWithCSS()) {
             MOZ_ASSERT(unwrappedWrapTextInStyledElementResult
                            .GetMiddleContentAs<Text>());
             if (Text* textNode = unwrappedWrapTextInStyledElementResult
@@ -2517,7 +2513,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
       if (arrayOfContentsToInvertStyle.IsEmpty()) {
         continue;
       }
-      MOZ_ASSERT(isCSSInvertibleStyle);
+      MOZ_ASSERT(styleToRemove.IsInvertibleWithCSS());
 
       
       
@@ -2583,8 +2579,7 @@ Result<bool, nsresult> HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
 
   
   
-  if (!CSSEditUtils::IsCSSInvertible(*aStyle.mHTMLProperty,
-                                     aStyle.mAttribute)) {
+  if (!aStyle.IsInvertibleWithCSS()) {
     return false;
   }
 

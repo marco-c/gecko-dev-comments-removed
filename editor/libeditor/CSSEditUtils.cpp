@@ -597,14 +597,6 @@ CSSEditUtils::RemoveCSSInlineStyleWithTransaction(
 
 
 
-bool CSSEditUtils::IsCSSInvertible(nsAtom& aProperty, nsAtom* aAttribute) {
-  return nsGkAtoms::b == &aProperty;
-}
-
-
-
-
-
 void CSSEditUtils::GetDefaultBackgroundColor(nsAString& aColor) {
   if (MOZ_UNLIKELY(StaticPrefs::editor_use_custom_colors())) {
     nsresult rv = Preferences::GetString("editor.background_color", aColor);

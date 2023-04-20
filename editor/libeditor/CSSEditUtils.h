@@ -157,18 +157,6 @@ class CSSEditUtils final {
 
 
 
-
-
-
-
-  static bool IsCSSInvertible(nsAtom& aProperty, nsAtom* aAttribute);
-
-  
-
-
-
-
-
   static void GetDefaultBackgroundColor(nsAString& aColor);
 
   
