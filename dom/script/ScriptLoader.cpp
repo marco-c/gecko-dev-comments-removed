@@ -1384,6 +1384,67 @@ ReferrerPolicy ScriptLoader::GetReferrerPolicy(nsIScriptElement* aElement) {
   return mDocument->GetReferrerPolicy();
 }
 
+void ScriptLoader::CancelScriptLoadRequests() {
+  
+  if (mParserBlockingRequest) {
+    mParserBlockingRequest->Cancel();
+  }
+
+  for (ScriptLoadRequest* req = mXSLTRequests.getFirst(); req;
+       req = req->getNext()) {
+    req->Cancel();
+  }
+
+  for (ScriptLoadRequest* req = mDeferRequests.getFirst(); req;
+       req = req->getNext()) {
+    req->Cancel();
+  }
+
+  for (ScriptLoadRequest* req = mLoadingAsyncRequests.getFirst(); req;
+       req = req->getNext()) {
+    req->Cancel();
+  }
+
+  for (ScriptLoadRequest* req = mLoadedAsyncRequests.getFirst(); req;
+       req = req->getNext()) {
+    req->Cancel();
+  }
+
+  for (ScriptLoadRequest* req =
+           mNonAsyncExternalScriptInsertedRequests.getFirst();
+       req; req = req->getNext()) {
+    req->Cancel();
+  }
+
+  for (size_t i = 0; i < mPreloads.Length(); i++) {
+    mPreloads[i].mRequest->Cancel();
+  }
+
+  mOffThreadCompilingRequests.CancelRequestsAndClear();
+}
+
+nsresult ScriptLoader::CompileOffThreadOrProcessRequest(
+    ScriptLoadRequest* aRequest) {
+  NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
+               "Processing requests when running scripts is unsafe.");
+
+  if (!aRequest->GetScriptLoadContext()->mOffThreadToken &&
+      !aRequest->GetScriptLoadContext()->CompileStarted()) {
+    bool couldCompile = false;
+    nsresult rv = AttemptOffThreadScriptCompile(aRequest, &couldCompile);
+    if (NS_FAILED(rv)) {
+      HandleLoadError(aRequest, rv);
+      return rv;
+    }
+
+    if (couldCompile) {
+      return NS_OK;
+    }
+  }
+
+  return ProcessRequest(aRequest);
+}
+
 namespace {
 
 class OffThreadCompilationCompleteRunnable : public Runnable {
@@ -1427,159 +1488,6 @@ class OffThreadCompilationCompleteRunnable : public Runnable {
 };
 
 } 
-
-void ScriptLoader::CancelScriptLoadRequests() {
-  
-  if (mParserBlockingRequest) {
-    mParserBlockingRequest->Cancel();
-  }
-
-  for (ScriptLoadRequest* req = mXSLTRequests.getFirst(); req;
-       req = req->getNext()) {
-    req->Cancel();
-  }
-
-  for (ScriptLoadRequest* req = mDeferRequests.getFirst(); req;
-       req = req->getNext()) {
-    req->Cancel();
-  }
-
-  for (ScriptLoadRequest* req = mLoadingAsyncRequests.getFirst(); req;
-       req = req->getNext()) {
-    req->Cancel();
-  }
-
-  for (ScriptLoadRequest* req = mLoadedAsyncRequests.getFirst(); req;
-       req = req->getNext()) {
-    req->Cancel();
-  }
-
-  for (ScriptLoadRequest* req =
-           mNonAsyncExternalScriptInsertedRequests.getFirst();
-       req; req = req->getNext()) {
-    req->Cancel();
-  }
-
-  for (size_t i = 0; i < mPreloads.Length(); i++) {
-    mPreloads[i].mRequest->Cancel();
-  }
-
-  mOffThreadCompilingRequests.CancelRequestsAndClear();
-}
-
-nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
-  MOZ_ASSERT(aRequest->IsCompiling());
-  MOZ_ASSERT(!aRequest->GetScriptLoadContext()->mWasCompiledOMT);
-
-  if (aRequest->IsCanceled()) {
-    return NS_OK;
-  }
-
-  aRequest->GetScriptLoadContext()->mWasCompiledOMT = true;
-
-  if (aRequest->GetScriptLoadContext()->mInCompilingList) {
-    mOffThreadCompilingRequests.Remove(aRequest);
-    aRequest->GetScriptLoadContext()->mInCompilingList = false;
-  }
-
-  if (aRequest->IsModuleRequest()) {
-    MOZ_ASSERT(aRequest->GetScriptLoadContext()->mOffThreadToken);
-    ModuleLoadRequest* request = aRequest->AsModuleRequest();
-    return request->OnFetchComplete(NS_OK);
-  }
-
-  
-  
-  MOZ_ASSERT_IF(!SpeculativeOMTParsingEnabled(),
-                aRequest->GetScriptLoadContext()->GetScriptElement());
-  if (!aRequest->GetScriptLoadContext()->GetScriptElement()) {
-    
-    aRequest->GetScriptLoadContext()->MaybeUnblockOnload();
-    return NS_OK;
-  }
-
-  aRequest->SetReady();
-
-  if (aRequest == mParserBlockingRequest) {
-    if (!ReadyToExecuteParserBlockingScripts()) {
-      
-      
-      ProcessPendingRequestsAsync();
-      return NS_OK;
-    }
-
-    
-    mParserBlockingRequest = nullptr;
-    UnblockParser(aRequest);
-    ProcessRequest(aRequest);
-    ContinueParserAsync(aRequest);
-    return NS_OK;
-  }
-
-  
-  if ((aRequest->GetScriptLoadContext()->IsAsyncScript() ||
-       aRequest->GetScriptLoadContext()->IsBlockingScript()) &&
-      !aRequest->isInList()) {
-    return ProcessRequest(aRequest);
-  }
-
-  
-  ProcessPendingRequests();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-OffThreadCompilationCompleteRunnable::Run() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  RefPtr<ScriptLoadContext> context = mRequest->GetScriptLoadContext();
-  MOZ_ASSERT_IF(context->mRunnable, context->mRunnable == this);
-  MOZ_ASSERT_IF(context->mOffThreadToken, context->mOffThreadToken == mToken);
-
-  
-  
-  context->mRunnable = nullptr;
-
-  if (!context->mOffThreadToken) {
-    
-    return NS_OK;
-  }
-
-  if (profiler_is_active()) {
-    ProfilerString8View scriptSourceString;
-    if (mRequest->IsTextSource()) {
-      scriptSourceString = "ScriptCompileOffThread";
-    } else {
-      MOZ_ASSERT(mRequest->IsBytecode());
-      scriptSourceString = "BytecodeDecodeOffThread";
-    }
-
-    nsAutoCString profilerLabelString;
-    mRequest->GetScriptLoadContext()->GetProfilerLabel(profilerLabelString);
-    PROFILER_MARKER_TEXT(scriptSourceString, JS,
-                         MarkerTiming::Interval(mStartTime, mStopTime),
-                         profilerLabelString);
-  }
-
-  nsresult rv = mLoader->ProcessOffThreadRequest(mRequest);
-
-  mRequest = nullptr;
-  mLoader = nullptr;
-  return rv;
-}
-
-static void OffThreadCompilationCompleteCallback(JS::OffThreadToken* aToken,
-                                                 void* aCallbackData) {
-  RefPtr<OffThreadCompilationCompleteRunnable> aRunnable =
-      static_cast<OffThreadCompilationCompleteRunnable*>(aCallbackData);
-
-  LogRunnable::Run run(aRunnable);
-
-  aRunnable->RecordStopTime();
-  aRunnable->SetToken(aToken);
-
-  OffThreadCompilationCompleteRunnable::Dispatch(aRunnable.forget());
-}
 
 nsresult ScriptLoader::AttemptOffThreadScriptCompile(
     ScriptLoadRequest* aRequest, bool* aCouldCompileOut) {
@@ -1753,26 +1661,118 @@ nsresult ScriptLoader::StartOffThreadCompilation(
   return CompileResultForToken(*aTokenOut);
 }
 
-nsresult ScriptLoader::CompileOffThreadOrProcessRequest(
-    ScriptLoadRequest* aRequest) {
-  NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
-               "Processing requests when running scripts is unsafe.");
+void ScriptLoader::OffThreadCompilationCompleteCallback(
+    JS::OffThreadToken* aToken, void* aCallbackData) {
+  RefPtr<OffThreadCompilationCompleteRunnable> aRunnable =
+      static_cast<OffThreadCompilationCompleteRunnable*>(aCallbackData);
 
-  if (!aRequest->GetScriptLoadContext()->mOffThreadToken &&
-      !aRequest->GetScriptLoadContext()->CompileStarted()) {
-    bool couldCompile = false;
-    nsresult rv = AttemptOffThreadScriptCompile(aRequest, &couldCompile);
-    if (NS_FAILED(rv)) {
-      HandleLoadError(aRequest, rv);
-      return rv;
-    }
+  LogRunnable::Run run(aRunnable);
 
-    if (couldCompile) {
-      return NS_OK;
-    }
+  aRunnable->RecordStopTime();
+  aRunnable->SetToken(aToken);
+
+  OffThreadCompilationCompleteRunnable::Dispatch(aRunnable.forget());
+}
+
+NS_IMETHODIMP
+OffThreadCompilationCompleteRunnable::Run() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  RefPtr<ScriptLoadContext> context = mRequest->GetScriptLoadContext();
+  MOZ_ASSERT_IF(context->mRunnable, context->mRunnable == this);
+  MOZ_ASSERT_IF(context->mOffThreadToken, context->mOffThreadToken == mToken);
+
+  
+  
+  context->mRunnable = nullptr;
+
+  if (!context->mOffThreadToken) {
+    
+    return NS_OK;
   }
 
-  return ProcessRequest(aRequest);
+  if (profiler_is_active()) {
+    ProfilerString8View scriptSourceString;
+    if (mRequest->IsTextSource()) {
+      scriptSourceString = "ScriptCompileOffThread";
+    } else {
+      MOZ_ASSERT(mRequest->IsBytecode());
+      scriptSourceString = "BytecodeDecodeOffThread";
+    }
+
+    nsAutoCString profilerLabelString;
+    mRequest->GetScriptLoadContext()->GetProfilerLabel(profilerLabelString);
+    PROFILER_MARKER_TEXT(scriptSourceString, JS,
+                         MarkerTiming::Interval(mStartTime, mStopTime),
+                         profilerLabelString);
+  }
+
+  nsresult rv = mLoader->ProcessOffThreadRequest(mRequest);
+
+  mRequest = nullptr;
+  mLoader = nullptr;
+  return rv;
+}
+
+nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
+  MOZ_ASSERT(aRequest->IsCompiling());
+  MOZ_ASSERT(!aRequest->GetScriptLoadContext()->mWasCompiledOMT);
+
+  if (aRequest->IsCanceled()) {
+    return NS_OK;
+  }
+
+  aRequest->GetScriptLoadContext()->mWasCompiledOMT = true;
+
+  if (aRequest->GetScriptLoadContext()->mInCompilingList) {
+    mOffThreadCompilingRequests.Remove(aRequest);
+    aRequest->GetScriptLoadContext()->mInCompilingList = false;
+  }
+
+  if (aRequest->IsModuleRequest()) {
+    MOZ_ASSERT(aRequest->GetScriptLoadContext()->mOffThreadToken);
+    ModuleLoadRequest* request = aRequest->AsModuleRequest();
+    return request->OnFetchComplete(NS_OK);
+  }
+
+  
+  
+  MOZ_ASSERT_IF(!SpeculativeOMTParsingEnabled(),
+                aRequest->GetScriptLoadContext()->GetScriptElement());
+  if (!aRequest->GetScriptLoadContext()->GetScriptElement()) {
+    
+    aRequest->GetScriptLoadContext()->MaybeUnblockOnload();
+    return NS_OK;
+  }
+
+  aRequest->SetReady();
+
+  if (aRequest == mParserBlockingRequest) {
+    if (!ReadyToExecuteParserBlockingScripts()) {
+      
+      
+      ProcessPendingRequestsAsync();
+      return NS_OK;
+    }
+
+    
+    mParserBlockingRequest = nullptr;
+    UnblockParser(aRequest);
+    ProcessRequest(aRequest);
+    ContinueParserAsync(aRequest);
+    return NS_OK;
+  }
+
+  
+  if ((aRequest->GetScriptLoadContext()->IsAsyncScript() ||
+       aRequest->GetScriptLoadContext()->IsBlockingScript()) &&
+      !aRequest->isInList()) {
+    return ProcessRequest(aRequest);
+  }
+
+  
+  ProcessPendingRequests();
+  return NS_OK;
 }
 
 nsresult ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest) {
