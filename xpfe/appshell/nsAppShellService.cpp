@@ -579,7 +579,7 @@ nsresult nsAppShellService::JustCreateTopWindow(
   if (aChromeMask & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW)
     widgetInitData.mHasRemoteContent = true;
 
-#if defined(MOZ_WIDGET_GTK) || defined(XP_WIN)
+#ifdef MOZ_WIDGET_GTK
   
   
   uint32_t pipMask = nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP |
@@ -588,7 +588,19 @@ nsresult nsAppShellService::JustCreateTopWindow(
   uint32_t barMask = nsIWebBrowserChrome::CHROME_MENUBAR |
                      nsIWebBrowserChrome::CHROME_TOOLBAR |
                      nsIWebBrowserChrome::CHROME_LOCATIONBAR |
-                     nsIWebBrowserChrome::CHROME_TITLEBAR |
+                     nsIWebBrowserChrome::CHROME_STATUSBAR;
+  if (widgetInitData.mWindowType == widget::WindowType::TopLevel &&
+      ((aChromeMask & pipMask) == pipMask) && !(aChromeMask & barMask)) {
+    widgetInitData.mPIPWindow = true;
+  }
+#elif defined(XP_WIN)
+  
+  
+  uint32_t pipMask = nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP |
+                     nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
+  uint32_t barMask = nsIWebBrowserChrome::CHROME_MENUBAR |
+                     nsIWebBrowserChrome::CHROME_TOOLBAR |
+                     nsIWebBrowserChrome::CHROME_LOCATIONBAR |
                      nsIWebBrowserChrome::CHROME_STATUSBAR;
   if (widgetInitData.mWindowType == widget::WindowType::Dialog &&
       ((aChromeMask & pipMask) == pipMask) && !(aChromeMask & barMask)) {
