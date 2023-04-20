@@ -331,6 +331,23 @@ already_AddRefed<Promise> ScreenOrientation::LockInternal(
     return nullptr;
   }
 
+  
+  
+  
+  
+  
+
+  LockPermission perm = GetLockOrientationPermission(true);
+  if (perm == LOCK_DENIED) {
+    p->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+    return p.forget();
+  }
+
+  
+  
+  
+  
+
 #if !defined(MOZ_WIDGET_ANDROID) && !defined(XP_WIN)
   
   p->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
@@ -339,12 +356,6 @@ already_AddRefed<Promise> ScreenOrientation::LockInternal(
   
   if (!StaticPrefs::dom_screenorientation_allow_lock()) {
     p->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return p.forget();
-  }
-
-  LockPermission perm = GetLockOrientationPermission(true);
-  if (perm == LOCK_DENIED) {
-    p->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return p.forget();
   }
 
