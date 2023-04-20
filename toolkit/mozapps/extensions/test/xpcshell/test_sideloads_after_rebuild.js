@@ -91,7 +91,9 @@ add_task(async function test_sideloads_after_rebuild() {
   
   
   
-  await saveJSON({ not: "what we expect to find" }, gExtensionsJSON.path);
+  await IOUtils.writeJSON(gExtensionsJSON.path, {
+    not: "what we expect to find",
+  });
   info(`**** restart AOM and rebuild XPI database`);
   await promiseStartupManager();
 
@@ -115,7 +117,9 @@ add_task(async function test_sideloads_after_rebuild() {
   );
 
   
-  await saveJSON({ not: "what we expect to find" }, gExtensionsJSON.path);
+  await IOUtils.writeJSON(gExtensionsJSON.path, {
+    not: "what we expect to find",
+  });
   
   
   gAddonStartup.remove(true);

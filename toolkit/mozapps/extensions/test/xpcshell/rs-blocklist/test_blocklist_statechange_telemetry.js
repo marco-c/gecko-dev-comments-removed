@@ -215,13 +215,13 @@ add_task(async function database_modified() {
   await promiseShutdownManager();
 
   
-  let addonDB = await loadJSON(gExtensionsJSON.path);
+  let addonDB = await IOUtils.readJSON(gExtensionsJSON.path);
   let rawAddon = addonDB.addons[0];
   equal(rawAddon.id, EXT_ID, "Expected entry in addonDB");
   equal(rawAddon.blocklistState, 2, "Expected STATE_BLOCKED");
   rawAddon.blocklistState = 0; 
   rawAddon.installDate = Date.now() - 3600000 * EXT_HOURS_SINCE_INSTALL;
-  await saveJSON(addonDB, gExtensionsJSON.path);
+  await IOUtils.writeJSON(gExtensionsJSON.path, addonDB);
 
   
   await promiseStartupManager("91.0");

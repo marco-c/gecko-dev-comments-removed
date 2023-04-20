@@ -83,9 +83,9 @@ add_task(async function test_getNewSideload_on_invalid_extension() {
 
   
   
-  await OS.File.copy(
+  await IOUtils.copy(
     xpi.path,
-    OS.Path.join(destDir.path, "@wrong-extension-filename.xpi")
+    PathUtils.join(destDir.path, "@wrong-extension-filename.xpi")
   );
 
   

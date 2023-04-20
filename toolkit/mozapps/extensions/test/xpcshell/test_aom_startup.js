@@ -43,7 +43,7 @@ const TEST_ADDONS = {
 
 async function writeAOMStartupData(data) {
   let jsonFile = new JSONFile({
-    path: OS.Path.join(gProfDir.path, "addonStartup.json.lz4"),
+    path: PathUtils.join(gProfDir.path, "addonStartup.json.lz4"),
     compression: "lz4",
   });
   jsonFile.data = data;
