@@ -156,6 +156,14 @@ add_task(async function setup() {
   }
 
   
+  
+  
+  Services.prefs.setIntPref(
+    "app.update.lastUpdateTime.telemetry_untrustedmodules_ping",
+    Math.round(Date.now() / 1000)
+  );
+
+  
   Cc["@mozilla.org/updates/timer-manager;1"]
     .getService(Ci.nsIObserver)
     .observe(null, "utm-test-init", "");

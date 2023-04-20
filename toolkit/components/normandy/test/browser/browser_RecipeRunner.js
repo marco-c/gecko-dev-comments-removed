@@ -729,9 +729,22 @@ decorate_task(
 
     
     
-    Services.prefs.setIntPref("app.normandy.run_interval_seconds", 1);
+    
+    
+    
+    
+    const kTimerDuration = 2;
+    Services.prefs.setIntPref(
+      "app.normandy.run_interval_seconds",
+      kTimerDuration
+    );
     
     RecipeRunner.unregisterTimer();
+    
+    Services.prefs.setIntPref(
+      "app.update.lastUpdateTime.recipe-client-addon-run",
+      Math.round(Date.now() / 1000) - kTimerDuration
+    );
     RecipeRunner.registerTimer();
 
     is(runSpy.callCount, 0, "run() shouldn't have run yet");

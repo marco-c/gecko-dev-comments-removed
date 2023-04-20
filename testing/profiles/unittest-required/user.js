@@ -121,6 +121,7 @@ user_pref("extensions.installDistroAddons", false);
 
 user_pref("extensions.screenshots.disabled", true);
 user_pref("extensions.systemAddon.update.url", "http://{server}/dummy-system-addons.xml");
+user_pref("extensions.systemAddon.update.enabled", false);
 user_pref("extensions.update.background.url", "http://{server}/extensions-dummy/updateBackgroundURL");
 
 user_pref("extensions.update.url", "http://{server}/extensions-dummy/updateURL");
