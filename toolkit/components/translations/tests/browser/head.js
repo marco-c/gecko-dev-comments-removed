@@ -23,7 +23,15 @@
 
 
 
-async function openAboutTranslations({ dataForContent, disabled, runInPage }) {
+
+
+
+async function openAboutTranslations({
+  dataForContent,
+  disabled,
+  runInPage,
+  languagePairs,
+}) {
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -44,11 +52,24 @@ async function openAboutTranslations({ dataForContent, disabled, runInPage }) {
     translationResultBlank: "#translation-to-blank",
   };
 
+  
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "about:translations",
+    "about:blank",
     true 
   );
+
+  
+  if (languagePairs) {
+    const translations = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor(
+      "Translations"
+    );
+    translations.mock(languagePairs);
+  }
+
+  
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:translations");
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   await ContentTask.spawn(
     tab.linkedBrowser,
@@ -56,6 +77,13 @@ async function openAboutTranslations({ dataForContent, disabled, runInPage }) {
     runInPage
   );
 
+  if (languagePairs) {
+    
+    const translations = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor(
+      "Translations"
+    );
+    translations.mock(null);
+  }
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 }
