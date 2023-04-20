@@ -116,6 +116,8 @@ function isObject(value) {
 
 
 
+
+
 exports.evalWithDebugger = function(string, options = {}, webConsole) {
   if (isCommand(string.trim()) && options.eager) {
     return {
@@ -126,7 +128,11 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
   const evalString = getEvalInput(string);
   const { frame, dbg } = getFrameDbg(options, webConsole);
 
-  const { dbgGlobal, bindSelf } = getDbgGlobal(options, dbg, webConsole);
+  const { dbgGlobal, bindSelf, evalGlobal } = getDbgGlobal(
+    options,
+    dbg,
+    webConsole
+  );
   const helpers = getHelpers(dbgGlobal, options, webConsole);
   let { bindings, helperCache } = bindCommands(
     isCommand(string),
@@ -158,7 +164,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
 
   let noSideEffectDebugger = null;
   if (options.eager) {
-    noSideEffectDebugger = makeSideeffectFreeDebugger();
+    noSideEffectDebugger = makeSideeffectFreeDebugger(false, evalGlobal);
   }
 
   let result;
@@ -360,7 +366,12 @@ function forceLexicalInitForVariableDeclarationsInThrowingExpression(
 
 
 
-function makeSideeffectFreeDebugger(skipCheckingEffectfulOffsets) {
+
+
+function makeSideeffectFreeDebugger(
+  skipCheckingEffectfulOffsets,
+  maybeEvalGlobal
+) {
   
   
   
@@ -369,7 +380,7 @@ function makeSideeffectFreeDebugger(skipCheckingEffectfulOffsets) {
   
   
   
-  ensureSideEffectFreeNatives();
+  ensureSideEffectFreeNatives(maybeEvalGlobal);
 
   
   
@@ -452,9 +463,59 @@ exports.makeSideeffectFreeDebugger = makeSideeffectFreeDebugger;
 
 let gSideEffectFreeNatives; 
 
-function ensureSideEffectFreeNatives() {
+
+
+
+
+
+
+function ensureSideEffectFreeNatives(maybeEvalGlobal) {
   if (gSideEffectFreeNatives) {
     return;
+  }
+
+  const { natives: domNatives, idlPureAllowlist } = eagerFunctionAllowlist;
+
+  const instanceFunctionAllowlist = [];
+
+  function collectMethodsAndGetters(obj, methodsAndGetters) {
+    
+    
+    
+
+    if ("methods" in methodsAndGetters) {
+      for (const name of methodsAndGetters.methods) {
+        const func = obj[name];
+        if (func) {
+          instanceFunctionAllowlist.push([func.name, func]);
+        }
+      }
+    }
+    if ("getters" in methodsAndGetters) {
+      for (const name of methodsAndGetters.getters) {
+        const func = Object.getOwnPropertyDescriptor(obj, name)?.get;
+        if (func) {
+          
+          
+          let nameWithPrefix = func.name;
+          if (!nameWithPrefix.startsWith("get ")) {
+            nameWithPrefix = "get " + nameWithPrefix;
+          }
+          instanceFunctionAllowlist.push([nameWithPrefix, func]);
+        }
+      }
+    }
+  }
+
+  
+  if (
+    maybeEvalGlobal &&
+    typeof Window === "function" &&
+    Window.isInstance(maybeEvalGlobal) &&
+    "Window" in idlPureAllowlist &&
+    "instance" in idlPureAllowlist.Window
+  ) {
+    collectMethodsAndGetters(maybeEvalGlobal, idlPureAllowlist.Window.instance);
   }
 
   const natives = [
@@ -462,7 +523,7 @@ function ensureSideEffectFreeNatives() {
 
     
     
-    ...eagerFunctionAllowlist,
+    ...domNatives,
   ];
 
   const map = new Map();
@@ -471,6 +532,13 @@ function ensureSideEffectFreeNatives() {
       map.set(n.name, []);
     }
     map.get(n.name).push(n);
+  }
+
+  for (const [name, n] of instanceFunctionAllowlist) {
+    if (!map.has(name)) {
+      map.set(name, []);
+    }
+    map.get(name).push(n);
   }
 
   gSideEffectFreeNatives = map;
@@ -558,6 +626,22 @@ function getFrameDbg(options, webConsole) {
   );
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getDbgGlobal(options, dbg, webConsole) {
   let evalGlobal = webConsole.evalGlobal;
 
@@ -576,7 +660,7 @@ function getDbgGlobal(options, dbg, webConsole) {
   
   
   if (!options.selectedObjectActor) {
-    return { bindSelf: null, dbgGlobal };
+    return { bindSelf: null, dbgGlobal, evalGlobal };
   }
 
   
@@ -587,12 +671,12 @@ function getDbgGlobal(options, dbg, webConsole) {
     webConsole.parentActor.getActorByID(options.selectedObjectActor);
 
   if (!actor) {
-    return { bindSelf: null, dbgGlobal };
+    return { bindSelf: null, dbgGlobal, evalGlobal };
   }
 
   const jsVal = actor instanceof LongStringActor ? actor.str : actor.rawValue();
   if (!isObject(jsVal)) {
-    return { bindSelf: jsVal, dbgGlobal };
+    return { bindSelf: jsVal, dbgGlobal, evalGlobal };
   }
 
   
@@ -600,7 +684,7 @@ function getDbgGlobal(options, dbg, webConsole) {
   
   
   const bindSelf = dbgGlobal.makeDebuggeeValue(jsVal);
-  return { bindSelf, dbgGlobal };
+  return { bindSelf, dbgGlobal, evalGlobal };
 }
 
 function getHelpers(dbgGlobal, options, webConsole) {
