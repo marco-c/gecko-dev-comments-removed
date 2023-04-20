@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('transpose', '/webnn/resources/test_data/transpose.json', buildOperationWithSingleInput);
