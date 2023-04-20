@@ -1856,13 +1856,27 @@ nsresult nsLocalFile::CopySingleFile(nsIFile* aSourceFile, nsIFile* aDestParent,
     ::GetNamedSecurityInfoW((LPWSTR)destPath.get(), SE_FILE_OBJECT,
                             DACL_SECURITY_INFORMATION, nullptr, nullptr,
                             &pOldDACL, nullptr, &pSD);
-    if (pOldDACL)
-      ::SetNamedSecurityInfoW(
-          (LPWSTR)destPath.get(), SE_FILE_OBJECT,
-          DACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION,
-          nullptr, nullptr, pOldDACL, nullptr);
-    if (pSD) {
-      LocalFree((HLOCAL)pSD);
+    UniquePtr<VOID, LocalFreeDeleter> autoFreeSecDesc(pSD);
+    if (pOldDACL) {
+      
+      
+      
+      bool inherited = false;
+      for (DWORD i = 0; i < pOldDACL->AceCount; ++i) {
+        VOID* pAce = nullptr;
+        if (::GetAce(pOldDACL, i, &pAce) &&
+            static_cast<PACE_HEADER>(pAce)->AceFlags & INHERITED_ACE) {
+          inherited = true;
+          break;
+        }
+      }
+
+      if (!inherited) {
+        ::SetNamedSecurityInfoW(
+            (LPWSTR)destPath.get(), SE_FILE_OBJECT,
+            DACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION,
+            nullptr, nullptr, pOldDACL, nullptr);
+      }
     }
   }
 
