@@ -583,7 +583,8 @@ nsresult nsAppShellService::JustCreateTopWindow(
   
   
   uint32_t pipMask = nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP |
-                     nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
+                     nsIWebBrowserChrome::CHROME_OPENAS_CHROME |
+                     nsIWebBrowserChrome::CHROME_WINDOW_RESIZE;
   uint32_t barMask = nsIWebBrowserChrome::CHROME_MENUBAR |
                      nsIWebBrowserChrome::CHROME_TOOLBAR |
                      nsIWebBrowserChrome::CHROME_LOCATIONBAR |
