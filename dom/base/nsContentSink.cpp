@@ -273,47 +273,6 @@ void nsContentSink::DoProcessLinkHeader() {
   }
 }
 
-
-
-
-bool nsContentSink::LinkContextIsOurDocument(const nsAString& aAnchor) {
-  if (aAnchor.IsEmpty()) {
-    
-    return true;
-  }
-
-  nsIURI* docUri = mDocument->GetDocumentURI();
-
-  
-  
-  
-  nsCOMPtr<nsIURI> contextUri;
-  nsresult rv = NS_GetURIWithoutRef(docUri, getter_AddRefs(contextUri));
-
-  if (NS_FAILED(rv)) {
-    
-    return false;
-  }
-
-  
-  nsCOMPtr<nsIURI> resolvedUri;
-  rv = NS_NewURI(getter_AddRefs(resolvedUri), aAnchor, nullptr, contextUri);
-
-  if (NS_FAILED(rv)) {
-    
-    return false;
-  }
-
-  bool same;
-  rv = contextUri->Equals(resolvedUri, &same);
-  if (NS_FAILED(rv)) {
-    
-    return false;
-  }
-
-  return same;
-}
-
 nsresult nsContentSink::ProcessLinkFromHeader(const net::LinkHeader& aHeader,
                                               uint64_t aEarlyHintPreloaderId) {
   uint32_t linkTypes = LinkStyle::ParseLinkTypes(aHeader.mRel);
@@ -322,7 +281,8 @@ nsresult nsContentSink::ProcessLinkFromHeader(const net::LinkHeader& aHeader,
   
   
   
-  if (!LinkContextIsOurDocument(aHeader.mAnchor)) {
+  if (!nsContentUtils::LinkContextIsURI(aHeader.mAnchor,
+                                        mDocument->GetDocumentURI())) {
     return NS_OK;
   }
 
