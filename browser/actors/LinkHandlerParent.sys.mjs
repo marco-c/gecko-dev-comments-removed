@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["LinkHandlerParent"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -14,7 +10,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 let gTestListeners = new Set();
 
-class LinkHandlerParent extends JSWindowActorParent {
+export class LinkHandlerParent extends JSWindowActorParent {
   static addListenerForTests(listener) {
     gTestListeners.add(listener);
   }
@@ -50,7 +46,7 @@ class LinkHandlerParent extends JSWindowActorParent {
         break;
 
       case "Link:SetIcon":
-        
+        // Cache the most recent icon and rich icon locally.
         if (aMsg.data.canUseForTab) {
           this.icon = aMsg.data;
         } else {

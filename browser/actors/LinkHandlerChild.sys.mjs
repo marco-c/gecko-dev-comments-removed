@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["LinkHandlerChild"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -14,7 +10,7 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/FaviconLoader.jsm"
 );
 
-class LinkHandlerChild extends JSWindowActorChild {
+export class LinkHandlerChild extends JSWindowActorChild {
   constructor() {
     super();
 
@@ -35,8 +31,8 @@ class LinkHandlerChild extends JSWindowActorChild {
       Services.prefs.getBoolPref("browser.chrome.guess_favicon", true) &&
       Services.prefs.getBoolPref("browser.chrome.site_icons", true)
     ) {
-      
-      
+      // Inject the default icon. Use documentURIObject so that we do the right
+      // thing with about:-style error pages. See bug 453442
       let pageURI = this.document.documentURIObject;
       if (["http", "https"].includes(pageURI.scheme)) {
         this.seenTabIcon = true;
@@ -50,12 +46,12 @@ class LinkHandlerChild extends JSWindowActorChild {
       return;
     }
 
-    
-    
-    
+    // Per spec icons are meant to be in the <head> tag so we should have seen
+    // all the icons now so add the root icon if no other tab icons have been
+    // seen.
     this.addRootIcon();
 
-    
+    // We're likely done with icon parsing so load the pending icons now.
     if (this._iconLoader) {
       this._iconLoader.onPageShow();
     }
@@ -87,20 +83,20 @@ class LinkHandlerChild extends JSWindowActorChild {
 
   onLinkEvent(event) {
     let link = event.target;
-    
+    // Ignore sub-frames (bugs 305472, 479408).
     if (link.ownerGlobal != this.contentWindow) {
       return;
     }
 
     let rel = link.rel && link.rel.toLowerCase();
-    
-    
+    // We also check .getAttribute, since an empty href attribute will give us
+    // a link.href that is the same as the document.
     if (!rel || !link.href || !link.getAttribute("href")) {
       return;
     }
 
-    
-    
+    // Note: following booleans only work for the current link, not for the
+    // whole content
     let iconAdded = false;
     let searchAdded = false;
     let rels = {};
@@ -116,10 +112,10 @@ class LinkHandlerChild extends JSWindowActorChild {
         case "apple-touch-icon-precomposed":
         case "fluid-icon":
           isRichIcon = true;
-        
+        // fall through
         case "icon":
           if (iconAdded || link.hasAttribute("mask")) {
-            
+            // Masked icons are not supported yet.
             break;
           }
 
@@ -146,8 +142,8 @@ class LinkHandlerChild extends JSWindowActorChild {
             let type = link.type && link.type.toLowerCase();
             type = type.replace(/^\s+|\s*(?:;.*)?$/g, "");
 
-            
-            
+            // Note: This protocol list should be kept in sync with
+            // the one in OpenSearchEngine's install function.
             let re = /^https?:/i;
             if (
               type == "application/opensearchdescription+xml" &&
