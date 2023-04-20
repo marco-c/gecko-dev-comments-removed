@@ -193,6 +193,10 @@ class PeerConnectionImpl final
       
       override;
 
+  void NotifyDataChannelOpen(DataChannel*) override;
+
+  void NotifyDataChannelClosed(DataChannel*) override;
+
   const RefPtr<MediaTransportHandler> GetTransportHandler() const;
 
   
@@ -659,6 +663,8 @@ class PeerConnectionImpl final
 
   
   RefPtr<mozilla::DataChannelConnection> mDataConnection;
+  unsigned int mDataChannelsOpened = 0;
+  unsigned int mDataChannelsClosed = 0;
 
   bool mForceIceTcp;
   RefPtr<MediaTransportHandler> mTransportHandler;
