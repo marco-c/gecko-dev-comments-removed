@@ -1049,6 +1049,32 @@ impl<H, T> Arc<HeaderSliceWithLength<H, [T]>> {
     }
 }
 
+impl<H, T> UniqueArc<HeaderSliceWithLength<H, [T]>> {
+    #[inline]
+    pub fn from_header_and_iter<I>(header: HeaderWithLength<H>, items: I) -> Self
+    where
+        I: Iterator<Item = T> + ExactSizeIterator,
+    {
+        Self(Arc::from_header_and_iter(header, items))
+    }
+
+    
+    pub fn header_mut(&mut self) -> &mut H {
+        
+        unsafe { &mut (*self.0.ptr()).data.header.header }
+    }
+
+    
+    pub fn data_mut(&mut self) -> &mut [T] {
+        
+        unsafe { &mut (*self.0.ptr()).data.slice }
+    }
+
+    pub fn shareable_thin(self) -> ThinArc<H, T> {
+        Arc::into_thin(self.0)
+    }
+}
+
 impl<H: PartialEq, T: PartialEq> PartialEq for ThinArc<H, T> {
     #[inline]
     fn eq(&self, other: &ThinArc<H, T>) -> bool {
