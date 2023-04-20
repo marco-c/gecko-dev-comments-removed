@@ -11,6 +11,9 @@
 #ifndef AUDIO_CONVERSION_H_
 #define AUDIO_CONVERSION_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 namespace webrtc {
 
 
