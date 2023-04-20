@@ -327,7 +327,25 @@ public final class StorageController {
     final GeckoBundle data = new GeckoBundle(3);
     data.putString("uri", uri);
     data.putInt("mode", mode);
+    data.putBoolean("allowPermanentPrivateBrowsing", false);
     data.putBoolean("isPrivateBrowsing", isPrivateBrowsing);
+    return EventDispatcher.getInstance().queryVoid("GeckoView:SetCookieBannerModeForDomain", data);
+  }
+
+  
+
+
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<Void> setCookieBannerModeAndPersistInPrivateBrowsingForDomain(
+      final @NonNull String uri, final @ContentBlocking.CBCookieBannerMode int mode) {
+    final GeckoBundle data = new GeckoBundle(3);
+    data.putString("uri", uri);
+    data.putInt("mode", mode);
+    data.putBoolean("allowPermanentPrivateBrowsing", true);
     return EventDispatcher.getInstance().queryVoid("GeckoView:SetCookieBannerModeForDomain", data);
   }
 
