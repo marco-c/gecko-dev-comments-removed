@@ -23,6 +23,7 @@
 #include "api/media_types.h"
 #include "api/priority.h"
 #include "api/rtp_transceiver_direction.h"
+#include "api/video/resolution.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -508,6 +509,24 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  absl::optional<Resolution> requested_resolution;
+
+  
+  
+  
+  
+  
+  
   bool active = true;
 
   
@@ -527,7 +546,8 @@ struct RTC_EXPORT RtpEncodingParameters {
            num_temporal_layers == o.num_temporal_layers &&
            scale_resolution_down_by == o.scale_resolution_down_by &&
            active == o.active && rid == o.rid &&
-           adaptive_ptime == o.adaptive_ptime;
+           adaptive_ptime == o.adaptive_ptime &&
+           requested_resolution == o.requested_resolution;
   }
   bool operator!=(const RtpEncodingParameters& o) const {
     return !(*this == o);

@@ -13,6 +13,7 @@
 
 namespace webrtc {
 
+
 class RenderResolution {
  public:
   constexpr RenderResolution() = default;

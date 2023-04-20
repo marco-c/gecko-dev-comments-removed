@@ -80,11 +80,34 @@ struct RTC_EXPORT VideoSinkWants {
   
   
   std::vector<FrameSize> resolutions;
+
+  
+  absl::optional<FrameSize> requested_resolution;
+
+  
+  bool is_active = false;
+
+  
+  
+  
+  struct Aggregates {
+    
+    
+    
+    
+    bool any_active_without_requested_resolution = false;
+  };
+  absl::optional<Aggregates> aggregates;
 };
 
 inline bool operator==(const VideoSinkWants::FrameSize& a,
                        const VideoSinkWants::FrameSize& b) {
   return a.width == b.width && a.height == b.height;
+}
+
+inline bool operator!=(const VideoSinkWants::FrameSize& a,
+                       const VideoSinkWants::FrameSize& b) {
+  return !(a == b);
 }
 
 template <typename VideoFrameT>

@@ -24,6 +24,7 @@ namespace webrtc {
 class RecordableEncodedFrame {
  public:
   
+  
   struct EncodedResolution {
     bool empty() const { return width == 0 && height == 0; }
 

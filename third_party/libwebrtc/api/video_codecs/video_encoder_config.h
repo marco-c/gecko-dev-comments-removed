@@ -18,6 +18,7 @@
 
 #include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
+#include "api/video/resolution.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_codec.h"
@@ -33,9 +34,10 @@ struct VideoStream {
   std::string ToString() const;
 
   
-  size_t width;
-
   
+  
+  
+  size_t width;
   size_t height;
 
   
@@ -69,6 +71,17 @@ struct VideoStream {
 
   
   bool active;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  absl::optional<Resolution> requested_resolution;
 };
 
 class VideoEncoderConfig {
