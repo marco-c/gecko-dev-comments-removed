@@ -751,18 +751,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-  nsIContent* GetClosestNativeAnonymousSubtreeRoot() const {
-    return mContent ? mContent->GetClosestNativeAnonymousSubtreeRoot()
-                    : nullptr;
-  }
-
-  
-
-
-
   virtual nsContainerFrame* GetContentInsertionFrame() { return nullptr; }
 
   
