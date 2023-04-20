@@ -2144,11 +2144,12 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t* aText, size_t aLength,
   NS_ASSERTION((aPosResolve == nullptr) != (aPosResolveCount > 0),
                "Incorrect aPosResolve / aPosResolveCount arguments");
 
-  nsAutoString textBuffer(aText, aLength);
-  textBuffer.ReplaceChar(kSeparators, kSpace);
-  const char16_t* text = textBuffer.get();
+  
+  
+  MOZ_ASSERT(nsDependentString(aText, aLength).FindCharInSet(kSeparators) ==
+             kNotFound);
 
-  if (aBidiEngine->SetParagraph(Span(text, aLength), aBaseLevel).isErr()) {
+  if (aBidiEngine->SetParagraph(Span(aText, aLength), aBaseLevel).isErr()) {
     return NS_ERROR_FAILURE;
   }
 
@@ -2209,7 +2210,7 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t* aText, size_t aLength,
 
 
     if (dir == intl::BidiDirection::RTL) {
-      aprocessor.SetText(text + start, subRunLength, intl::BidiDirection::RTL);
+      aprocessor.SetText(aText + start, subRunLength, intl::BidiDirection::RTL);
       width = aprocessor.GetWidth();
       xOffset += width;
       xEndRun = xOffset;
@@ -2218,11 +2219,10 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t* aText, size_t aLength,
     while (subRunCount > 0) {
       
       
-      CalculateBidiClass(text, lineOffset, typeLimit, subRunLimit, subRunLength,
-                         subRunCount, bidiClass, prevClass);
+      CalculateBidiClass(aText, lineOffset, typeLimit, subRunLimit,
+                         subRunLength, subRunCount, bidiClass, prevClass);
 
-      nsAutoString runVisualText;
-      runVisualText.Assign(text + start, subRunLength);
+      nsAutoString runVisualText(aText + start, subRunLength);
       if (aPresContext) {
         FormatUnicodeText(aPresContext, runVisualText.BeginWriting(),
                           subRunLength, bidiClass);
@@ -2308,14 +2308,14 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t* aText, size_t aLength,
                   visualStart +
                   (subRunLength - (posResolve->logicalIndex + 1 - start));
               
-              visualLeftPart = text + posResolve->logicalIndex + 1;
+              visualLeftPart = aText + posResolve->logicalIndex + 1;
               
               visualRightSide = visualLeftPart - 1;
             } else {
               posResolve->visualIndex =
                   visualStart + (posResolve->logicalIndex - start);
               
-              visualLeftPart = text + start;
+              visualLeftPart = aText + start;
               
               visualRightSide = visualLeftPart;
             }
