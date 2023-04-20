@@ -150,6 +150,7 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
 
   
   void runFromMainThread();
+  void runFromMainThread(AutoLockHelperThreadState& lock);
 
   
   
@@ -192,6 +193,7 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
     
     MOZ_ASSERT(state_ == State::Idle);
   }
+
   bool isRunning(const AutoLockHelperThreadState& lock) const {
     return state_ == State::Running;
   }
