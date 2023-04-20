@@ -174,6 +174,7 @@ __webpack_require__.r(__webpack_exports__);
    "MultiStageAboutWelcome": () => ( MultiStageAboutWelcome),
    "SecondaryCTA": () => ( SecondaryCTA),
    "StepsIndicator": () => ( StepsIndicator),
+   "ProgressBar": () => ( ProgressBar),
    "WelcomeScreen": () => ( WelcomeScreen)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
@@ -199,6 +200,7 @@ const MultiStageAboutWelcome = props => {
     screens
   } = props;
   const [index, setScreenIndex] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(props.startScreen);
+  const [previousOrder, setPreviousOrder] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(-1);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     const screenInitials = screens.map(({
       id
@@ -216,26 +218,11 @@ const MultiStageAboutWelcome = props => {
 
     if (props.updateHistory && index > window.history.state) {
       window.history.pushState(index, "");
-    }
+    } 
+
+
+    setPreviousOrder(index);
   }, [index]);
-  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-    if (props.updateHistory) {
-      
-      
-      
-      const handler = ({
-        state
-      }) => setScreenIndex(Math.min(state, screens.length - 1)); 
-
-
-      handler(window.history); 
-
-      window.addEventListener("popstate", handler);
-      return () => window.removeEventListener("popstate", handler);
-    }
-
-    return false;
-  }, []);
   const [flowParams, setFlowParams] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const {
     metricsFlowUri
@@ -273,8 +260,43 @@ const MultiStageAboutWelcome = props => {
         window.AWFinish();
       }
     }, props.transitions ? TRANSITION_OUT_TIME : 0);
-  }; 
+  };
 
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (props.updateHistory) {
+      const handleIn = ({
+        state
+      }) => {
+        setTransition(props.transitions ? "in" : "");
+        setScreenIndex(Math.min(state, screens.length - 1));
+      }; 
+      
+      
+
+
+      const handler = history => {
+        if (transition === "out") {
+          return;
+        }
+
+        setTransition(props.transitions ? "out" : "");
+        setTimeout(() => handleIn(history), props.transitions ? TRANSITION_OUT_TIME : 0);
+      }; 
+
+
+      handleIn(window.history);
+
+      if (window.history.state) {
+        setPreviousOrder(Math.min(window.history.state, screens.length - 1));
+      } 
+
+
+      window.addEventListener("popstate", handler);
+      return () => window.removeEventListener("popstate", handler);
+    }
+
+    return false;
+  }, []); 
 
   const [region, setRegion] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
@@ -354,6 +376,7 @@ const MultiStageAboutWelcome = props => {
       isLastCenteredScreen: isLastCenteredScreen,
       stepOrder: stepOrder,
       order: order,
+      previousOrder: previousOrder,
       content: screen.content,
       navigate: handleTransition,
       topSites: topSites,
@@ -402,6 +425,21 @@ const StepsIndicator = props => {
   }
 
   return steps;
+};
+const ProgressBar = ({
+  step,
+  previousStep,
+  totalNumberOfScreens
+}) => {
+  const [progress, setProgress] = react__WEBPACK_IMPORTED_MODULE_0___default().useState(previousStep / totalNumberOfScreens);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => setProgress(step / totalNumberOfScreens), [step, totalNumberOfScreens]);
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "indicator",
+    role: "presentation",
+    style: {
+      width: `${progress * 100}%`
+    }
+  });
 };
 class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureComponent) {
   constructor(props) {
@@ -524,6 +562,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       id: this.props.id,
       order: this.props.order,
       stepOrder: this.props.stepOrder,
+      previousOrder: this.props.previousOrder,
       activeTheme: this.props.activeTheme,
       activeMultiSelect: this.props.activeMultiSelect,
       setActiveMultiSelect: this.props.setActiveMultiSelect,
@@ -707,6 +746,7 @@ const MultiStageProtonScreen = props => {
     isFirstCenteredScreen: props.isFirstCenteredScreen,
     isLastCenteredScreen: props.isLastCenteredScreen,
     stepOrder: props.stepOrder,
+    previousOrder: props.previousOrder,
     autoAdvance: props.autoAdvance,
     isRtamo: props.isRtamo,
     addonName: props.addonName,
@@ -862,6 +902,35 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     });
   }
 
+  renderStepsIndicator() {
+    const currentStep = (this.props.order ?? 0) + 1;
+    const previousStep = (this.props.previousOrder ?? -1) + 1;
+    const {
+      content,
+      totalNumberOfScreens: total
+    } = this.props;
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: `steps${content.progress_bar ? " progress-bar" : ""}`,
+      "data-l10n-id": "onboarding-welcome-steps-indicator2",
+      "data-l10n-args": JSON.stringify({
+        current: currentStep,
+        total: total ?? 0
+      }),
+      "data-l10n-attrs": "aria-valuetext",
+      role: "meter",
+      "aria-valuenow": currentStep,
+      "aria-valuemin": 1,
+      "aria-valuemax": total
+    }, content.progress_bar ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.ProgressBar, {
+      step: currentStep,
+      previousStep: previousStep,
+      totalNumberOfScreens: total
+    }) : react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.StepsIndicator, {
+      order: this.props.stepOrder,
+      totalNumberOfScreens: total
+    }));
+  }
+
   renderSecondarySection(content) {
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "section-secondary",
@@ -899,8 +968,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       isRtamo,
       isTheme,
       isFirstCenteredScreen,
-      isLastCenteredScreen,
-      totalNumberOfScreens: total
+      isLastCenteredScreen
     } = this.props;
     const includeNoodles = content.has_noodles; 
 
@@ -910,7 +978,6 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     
 
     const screenClassName = isCenterPosition ? this.getScreenClassName(isFirstCenteredScreen, isLastCenteredScreen, includeNoodles, content === null || content === void 0 ? void 0 : content.video_container) : "";
-    const currentStep = (this.props.order ?? 0) + 1;
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("main", {
       className: `screen ${this.props.id || ""} ${screenClassName} ${textColorClass}`,
       role: "alertdialog",
@@ -963,22 +1030,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       content: content,
       addonName: this.props.addonName,
       handleAction: this.props.handleAction
-    })), hideStepsIndicator ? null : react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: `steps ${content.progress_bar ? "progress-bar" : ""}`,
-      "data-l10n-id": "onboarding-welcome-steps-indicator2",
-      "data-l10n-args": JSON.stringify({
-        current: currentStep,
-        total: total ?? 0
-      }),
-      "data-l10n-attrs": "aria-valuetext",
-      role: "meter",
-      "aria-valuenow": currentStep,
-      "aria-valuemin": 1,
-      "aria-valuemax": total
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.StepsIndicator, {
-      order: this.props.stepOrder,
-      totalNumberOfScreens: total
-    })))));
+    })), hideStepsIndicator ? null : this.renderStepsIndicator())));
   }
 
 }
