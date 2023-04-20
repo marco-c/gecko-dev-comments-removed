@@ -53,10 +53,11 @@ void ChildProfilerController::Init(Endpoint<PProfilerChild>&& aEndpoint) {
   }
 }
 
-nsCString ChildProfilerController::GrabShutdownProfileAndShutdown() {
-  nsCString shutdownProfile;
-  ShutdownAndMaybeGrabShutdownProfileFirst(&shutdownProfile);
-  return shutdownProfile;
+ProfileAndAdditionalInformation
+ChildProfilerController::GrabShutdownProfileAndShutdown() {
+  ProfileAndAdditionalInformation profileAndAdditionalInformation;
+  ShutdownAndMaybeGrabShutdownProfileFirst(&profileAndAdditionalInformation);
+  return profileAndAdditionalInformation;
 }
 
 void ChildProfilerController::Shutdown() {
@@ -64,7 +65,7 @@ void ChildProfilerController::Shutdown() {
 }
 
 void ChildProfilerController::ShutdownAndMaybeGrabShutdownProfileFirst(
-    nsCString* aOutShutdownProfile) {
+    ProfileAndAdditionalInformation* aOutShutdownProfileInformation) {
   
   
   
@@ -80,10 +81,10 @@ void ChildProfilerController::ShutdownAndMaybeGrabShutdownProfileFirst(
           CrashReporter::Annotation::ProfilerChildShutdownPhase,
           "Profiling - Dispatching ShutdownProfilerChild"_ns);
       profilerChildThread->Dispatch(
-          NewRunnableMethod<nsCString*>(
+          NewRunnableMethod<ProfileAndAdditionalInformation*>(
               "ChildProfilerController::ShutdownProfilerChild", this,
               &ChildProfilerController::ShutdownProfilerChild,
-              aOutShutdownProfile),
+              aOutShutdownProfileInformation),
           NS_DISPATCH_NORMAL);
       
       
@@ -96,7 +97,7 @@ void ChildProfilerController::ShutdownAndMaybeGrabShutdownProfileFirst(
       
       
       profilerChildThread->Dispatch(
-          NewRunnableMethod<nsCString*>(
+          NewRunnableMethod<ProfileAndAdditionalInformation*>(
               "ChildProfilerController::ShutdownProfilerChild SYNC", this,
               &ChildProfilerController::ShutdownProfilerChild, nullptr),
           NS_DISPATCH_SYNC);
@@ -143,14 +144,14 @@ void ChildProfilerController::SetupProfilerChild(
 }
 
 void ChildProfilerController::ShutdownProfilerChild(
-    nsCString* aOutShutdownProfile) {
+    ProfileAndAdditionalInformation* aOutShutdownProfileInformation) {
   const bool isProfiling = profiler_is_active();
-  if (aOutShutdownProfile) {
+  if (aOutShutdownProfileInformation) {
     CrashReporter::AnnotateCrashReport(
         CrashReporter::Annotation::ProfilerChildShutdownPhase,
         isProfiling ? "Profiling - GrabShutdownProfile"_ns
                     : "Not profiling - GrabShutdownProfile"_ns);
-    *aOutShutdownProfile = mProfilerChild->GrabShutdownProfile();
+    *aOutShutdownProfileInformation = mProfilerChild->GrabShutdownProfile();
   }
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::ProfilerChildShutdownPhase,

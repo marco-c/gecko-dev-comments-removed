@@ -381,7 +381,7 @@ mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0,
 
 
 
-ProfilerResult<ProfileGenerationAdditionalInformation>
+ProfilerResult<mozilla::ProfileGenerationAdditionalInformation>
 profiler_stream_json_for_this_process(
     mozilla::baseprofiler::SpliceableJSONWriter& aWriter, double aSinceTime = 0,
     bool aIsShuttingDown = false,

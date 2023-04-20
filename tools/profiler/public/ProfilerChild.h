@@ -13,6 +13,7 @@
 #include "mozilla/ProfileBufferControlledChunkManager.h"
 #include "mozilla/ProgressLogger.h"
 #include "mozilla/RefPtr.h"
+#include "ProfileAdditionalInformation.h"
 
 class nsIThread;
 struct PRThread;
@@ -33,7 +34,7 @@ class ProfilerChild final : public PProfilerChild,
   
   
   
-  nsCString GrabShutdownProfile();
+  ProfileAndAdditionalInformation GrabShutdownProfile();
 
   void Destroy();
 

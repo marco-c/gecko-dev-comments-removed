@@ -16,10 +16,36 @@
 
 #include "shared-libraries.h"
 
+namespace mozilla {
 
 
 struct ProfileGenerationAdditionalInformation {
-  SharedLibraryInfo sharedLibraries;
+  size_t SizeOf() const { return mSharedLibraries.SizeOf(); }
+  SharedLibraryInfo mSharedLibraries;
 };
 
-#endif
+struct ProfileAndAdditionalInformation {
+  ProfileAndAdditionalInformation() = default;
+  explicit ProfileAndAdditionalInformation(const nsCString&& aProfile)
+      : mProfile(aProfile) {}
+
+  ProfileAndAdditionalInformation(
+      const nsCString&& aProfile,
+      const ProfileGenerationAdditionalInformation&& aAdditionalInformation)
+      : mProfile(aProfile),
+        mAdditionalInformation(Some(aAdditionalInformation)) {}
+
+  size_t SizeOf() const {
+    size_t size = mProfile.Length();
+    if (mAdditionalInformation.isSome()) {
+      size += mAdditionalInformation->SizeOf();
+    }
+    return size;
+  }
+
+  nsCString mProfile;
+  Maybe<ProfileGenerationAdditionalInformation> mAdditionalInformation;
+};
+}  
+
+#endif  

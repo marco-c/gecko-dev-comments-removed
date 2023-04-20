@@ -485,7 +485,7 @@ void ProfilerChild::Destroy() {
   }
 }
 
-nsCString ProfilerChild::GrabShutdownProfile() {
+ProfileAndAdditionalInformation ProfilerChild::GrabShutdownProfile() {
   LOG("GrabShutdownProfile");
 
   UniquePtr<ProfilerCodeAddressService> service =
@@ -498,11 +498,14 @@ nsCString ProfilerChild::GrabShutdownProfile() {
        true, service.get(), ProgressLogger{});
   if (rv.isErr()) {
     const char* failure = writer.GetFailure();
-    return nsPrintfCString("*Profile unavailable for pid %u%s%s",
-                           unsigned(profiler_current_process_id().ToNumber()),
-                           failure ? ", failure: " : "",
-                           failure ? failure : "");
+    return ProfileAndAdditionalInformation(
+        nsPrintfCString("*Profile unavailable for pid %u%s%s",
+                        unsigned(profiler_current_process_id().ToNumber()),
+                        failure ? ", failure: " : "", failure ? failure : ""));
   }
+
+  auto additionalInfo = rv.unwrap();
+
   writer.StartArrayProperty("processes");
   writer.EndArray();
   writer.End();
@@ -512,18 +515,19 @@ nsCString ProfilerChild::GrabShutdownProfile() {
   
   
   
-  if (len >= size_t(IPC::Channel::kMaximumMessageSize)) {
-    return nsPrintfCString(
-        "*Profile from pid %u bigger (%zu) than IPC max (%zu)",
-        unsigned(profiler_current_process_id().ToNumber()), len,
-        size_t(IPC::Channel::kMaximumMessageSize));
+  if (len + additionalInfo.SizeOf() >=
+      size_t(IPC::Channel::kMaximumMessageSize)) {
+    return ProfileAndAdditionalInformation(
+        nsPrintfCString("*Profile from pid %u bigger (%zu) than IPC max (%zu)",
+                        unsigned(profiler_current_process_id().ToNumber()), len,
+                        size_t(IPC::Channel::kMaximumMessageSize)));
   }
 
   nsCString profileCString;
   if (!profileCString.SetLength(len, fallible)) {
-    return nsPrintfCString(
+    return ProfileAndAdditionalInformation(nsPrintfCString(
         "*Could not allocate %zu bytes for profile from pid %u", len,
-        unsigned(profiler_current_process_id().ToNumber()));
+        unsigned(profiler_current_process_id().ToNumber())));
   }
   MOZ_ASSERT(*(profileCString.Data() + len) == '\0',
              "We expected a null at the end of the string buffer, to be "
@@ -531,8 +535,9 @@ nsCString ProfilerChild::GrabShutdownProfile() {
 
   char* const profileBeginWriting = profileCString.BeginWriting();
   if (!profileBeginWriting) {
-    return nsPrintfCString("*Could not write profile from pid %u",
-                           unsigned(profiler_current_process_id().ToNumber()));
+    return ProfileAndAdditionalInformation(
+        nsPrintfCString("*Could not write profile from pid %u",
+                        unsigned(profiler_current_process_id().ToNumber())));
   }
 
   
@@ -542,13 +547,15 @@ nsCString ProfilerChild::GrabShutdownProfile() {
             MOZ_RELEASE_ASSERT(aBufferLen == len + 1);
             return profileBeginWriting;
           })) {
-    return nsPrintfCString("*Could not copy profile from pid %u",
-                           unsigned(profiler_current_process_id().ToNumber()));
+    return ProfileAndAdditionalInformation(
+        nsPrintfCString("*Could not copy profile from pid %u",
+                        unsigned(profiler_current_process_id().ToNumber())));
   }
   MOZ_ASSERT(*(profileCString.Data() + len) == '\0',
              "We still expected a null at the end of the string buffer");
 
-  return profileCString;
+  return ProfileAndAdditionalInformation{std::move(profileCString),
+                                         std::move(additionalInfo)};
 }
 
 }  
