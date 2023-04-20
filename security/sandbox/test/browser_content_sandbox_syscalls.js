@@ -3,11 +3,6 @@
 
 "use strict";
 
-
-Cc["@mozilla.org/net/osfileconstantsservice;1"]
-  .getService(Ci.nsIOSFileConstantsService)
-  .init();
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/" +
     "security/sandbox/test/browser_content_sandbox_utils.js",
@@ -164,7 +159,10 @@ function getOSLib() {
 
 
 async function getKernelVersion() {
-  let header = await IOUtils.readUTF8("/usr/include/linux/version.h");
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  let header = await OS.File.read("/usr/include/linux/version.h", {
+    encoding: "utf-8",
+  });
   let hr = header.split("\n");
   for (let line in hr) {
     let hrs = hr[line].split(" ");
@@ -352,6 +350,8 @@ add_task(async function() {
   }
 
   if (isLinux()) {
+    const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
     
     let option = OS.Constants.libc.PR_CAPBSET_READ;
     let rv = await SpecialPowers.spawn(browser, [{ lib, option }], callPrctl);
