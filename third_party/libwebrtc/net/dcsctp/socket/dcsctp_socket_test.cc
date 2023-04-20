@@ -371,6 +371,18 @@ std::unique_ptr<SocketUnderTest> HandoverSocket(
   return handover_socket;
 }
 
+std::vector<uint32_t> GetReceivedMessagePpids(SocketUnderTest& z) {
+  std::vector<uint32_t> ppids;
+  for (;;) {
+    absl::optional<DcSctpMessage> msg = z.cb.ConsumeReceivedMessage();
+    if (!msg.has_value()) {
+      break;
+    }
+    ppids.push_back(*msg->ppid());
+  }
+  return ppids;
+}
+
 
 
 
@@ -2403,5 +2415,110 @@ TEST(DcSctpSocketTest, ReconnectSocketWithPendingStreamReset) {
   ExchangeMessages(a, z);
   a.socket.ResetStreams(std::vector<StreamID>({StreamID(2)}));
 }
+
+TEST(DcSctpSocketTest, SmallSentMessagesWithPrioWillArriveInSpecificOrder) {
+  DcSctpOptions options = {.enable_message_interleaving = true};
+  SocketUnderTest a("A", options);
+  SocketUnderTest z("A", options);
+
+  a.socket.SetStreamPriority(StreamID(1), StreamPriority(700));
+  a.socket.SetStreamPriority(StreamID(2), StreamPriority(200));
+  a.socket.SetStreamPriority(StreamID(3), StreamPriority(100));
+
+  
+  
+  a.socket.Send(DcSctpMessage(StreamID(3), PPID(301),
+                              std::vector<uint8_t>(kSmallMessageSize)),
+                kSendOptions);
+  a.socket.Send(DcSctpMessage(StreamID(1), PPID(101),
+                              std::vector<uint8_t>(kSmallMessageSize)),
+                kSendOptions);
+  a.socket.Send(DcSctpMessage(StreamID(2), PPID(201),
+                              std::vector<uint8_t>(kSmallMessageSize)),
+                kSendOptions);
+  a.socket.Send(DcSctpMessage(StreamID(1), PPID(102),
+                              std::vector<uint8_t>(kSmallMessageSize)),
+                kSendOptions);
+  a.socket.Send(DcSctpMessage(StreamID(1), PPID(103),
+                              std::vector<uint8_t>(kSmallMessageSize)),
+                kSendOptions);
+
+  ConnectSockets(a, z);
+  ExchangeMessages(a, z);
+
+  std::vector<uint32_t> received_ppids;
+  for (;;) {
+    absl::optional<DcSctpMessage> msg = z.cb.ConsumeReceivedMessage();
+    if (!msg.has_value()) {
+      break;
+    }
+    received_ppids.push_back(*msg->ppid());
+  }
+
+  EXPECT_THAT(received_ppids, ElementsAre(101, 102, 103, 201, 301));
+}
+
+TEST(DcSctpSocketTest, LargeSentMessagesWithPrioWillArriveInSpecificOrder) {
+  DcSctpOptions options = {.enable_message_interleaving = true};
+  SocketUnderTest a("A", options);
+  SocketUnderTest z("A", options);
+
+  a.socket.SetStreamPriority(StreamID(1), StreamPriority(700));
+  a.socket.SetStreamPriority(StreamID(2), StreamPriority(200));
+  a.socket.SetStreamPriority(StreamID(3), StreamPriority(100));
+
+  
+  
+  a.socket.Send(DcSctpMessage(StreamID(3), PPID(301),
+                              std::vector<uint8_t>(kLargeMessageSize)),
+                kSendOptions);
+  a.socket.Send(DcSctpMessage(StreamID(1), PPID(101),
+                              std::vector<uint8_t>(kLargeMessageSize)),
+                kSendOptions);
+  a.socket.Send(DcSctpMessage(StreamID(2), PPID(201),
+                              std::vector<uint8_t>(kLargeMessageSize)),
+                kSendOptions);
+  a.socket.Send(DcSctpMessage(StreamID(1), PPID(102),
+                              std::vector<uint8_t>(kLargeMessageSize)),
+                kSendOptions);
+
+  ConnectSockets(a, z);
+  ExchangeMessages(a, z);
+
+  EXPECT_THAT(GetReceivedMessagePpids(z), ElementsAre(101, 102, 201, 301));
+}
+
+TEST(DcSctpSocketTest, MessageWithHigherPrioWillInterruptLowerPrioMessage) {
+  DcSctpOptions options = {.enable_message_interleaving = true};
+  SocketUnderTest a("A", options);
+  SocketUnderTest z("Z", options);
+
+  ConnectSockets(a, z);
+
+  a.socket.SetStreamPriority(StreamID(2), StreamPriority(128));
+  a.socket.Send(DcSctpMessage(StreamID(2), PPID(201),
+                              std::vector<uint8_t>(kLargeMessageSize)),
+                kSendOptions);
+
+  
+  
+  
+  
+  
+
+  
+  a.socket.SetStreamPriority(StreamID(1), StreamPriority(512));
+  a.socket.Send(DcSctpMessage(StreamID(1), PPID(101),
+                              std::vector<uint8_t>(kSmallMessageSize)),
+                kSendOptions);
+  a.socket.Send(DcSctpMessage(StreamID(1), PPID(102),
+                              std::vector<uint8_t>(kLargeMessageSize)),
+                kSendOptions);
+
+  ExchangeMessages(a, z);
+
+  EXPECT_THAT(GetReceivedMessagePpids(z), ElementsAre(101, 102, 201));
+}
+
 }  
 }  

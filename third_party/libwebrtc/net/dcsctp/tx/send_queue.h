@@ -126,6 +126,12 @@ class SendQueue {
   
   virtual void SetBufferedAmountLowThreshold(StreamID stream_id,
                                              size_t bytes) = 0;
+
+  
+  
+  
+  
+  virtual void EnableMessageInterleaving(bool enabled) = 0;
 };
 }  
 
