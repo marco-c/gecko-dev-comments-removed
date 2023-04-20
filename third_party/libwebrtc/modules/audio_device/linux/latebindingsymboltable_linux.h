@@ -14,6 +14,7 @@
 #include <stddef.h>  
 #include <string.h>
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 
 
@@ -33,7 +34,7 @@ const DllHandle kInvalidDllHandle = NULL;
 #endif
 
 
-DllHandle InternalLoadDll(const char dll_name[]);
+DllHandle InternalLoadDll(absl::string_view);
 
 void InternalUnloadDll(DllHandle handle);
 

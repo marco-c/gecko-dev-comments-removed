@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
@@ -230,7 +231,7 @@ bool CoreAudioBase::IsDefaultCommunicationsDevice(int index) const {
   return index == kDefaultCommunications;
 }
 
-bool CoreAudioBase::IsDefaultDeviceId(const std::string& device_id) const {
+bool CoreAudioBase::IsDefaultDeviceId(absl::string_view device_id) const {
   
   
   
@@ -242,7 +243,7 @@ bool CoreAudioBase::IsDefaultDeviceId(const std::string& device_id) const {
 }
 
 bool CoreAudioBase::IsDefaultCommunicationsDeviceId(
-    const std::string& device_id) const {
+    absl::string_view device_id) const {
   
   
   

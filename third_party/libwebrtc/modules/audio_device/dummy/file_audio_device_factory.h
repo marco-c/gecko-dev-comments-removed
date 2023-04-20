@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+#include "absl/strings/string_view.h"
+
 namespace webrtc {
 
 class FileAudioDevice;
@@ -27,8 +29,8 @@ class FileAudioDeviceFactory {
 
   
   
-  static void SetFilenamesToUse(const char* inputAudioFilename,
-                                const char* outputAudioFilename);
+  static void SetFilenamesToUse(absl::string_view inputAudioFilename,
+                                absl::string_view outputAudioFilename);
 
  private:
   enum : uint32_t { MAX_FILENAME_LEN = 512 };

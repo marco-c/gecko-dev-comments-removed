@@ -22,6 +22,7 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/units/time_delta.h"
 #include "modules/audio_device/audio_device_name.h"
 #include "modules/audio_device/include/audio_device_defines.h"
@@ -329,7 +330,7 @@ std::string GetCommunicationsOutputDeviceID();
 
 
 
-Microsoft::WRL::ComPtr<IMMDevice> CreateDevice(const std::string& device_id,
+Microsoft::WRL::ComPtr<IMMDevice> CreateDevice(absl::string_view device_id,
                                                EDataFlow data_flow,
                                                ERole role);
 
@@ -341,7 +342,7 @@ webrtc::AudioDeviceName GetDeviceName(IMMDevice* device);
 
 
 
-std::string GetFriendlyName(const std::string& device_id,
+std::string GetFriendlyName(absl::string_view device_id,
                             EDataFlow data_flow,
                             ERole role);
 
@@ -378,13 +379,15 @@ int NumberOfActiveSessions(IMMDevice* device);
 
 
 
-Microsoft::WRL::ComPtr<IAudioClient> CreateClient(const std::string& device_id,
+Microsoft::WRL::ComPtr<IAudioClient> CreateClient(absl::string_view device_id,
                                                   EDataFlow data_flow,
                                                   ERole role);
-Microsoft::WRL::ComPtr<IAudioClient2>
-CreateClient2(const std::string& device_id, EDataFlow data_flow, ERole role);
-Microsoft::WRL::ComPtr<IAudioClient3>
-CreateClient3(const std::string& device_id, EDataFlow data_flow, ERole role);
+Microsoft::WRL::ComPtr<IAudioClient2> CreateClient2(absl::string_view device_id,
+                                                    EDataFlow data_flow,
+                                                    ERole role);
+Microsoft::WRL::ComPtr<IAudioClient3> CreateClient3(absl::string_view device_id,
+                                                    EDataFlow data_flow,
+                                                    ERole role);
 
 
 
