@@ -448,6 +448,9 @@ typedef struct SSLPreliminaryChannelInfoStr {
     const char* echPublicName;
 
     
+    PRBool ticketSupportsEarlyData;
+
+    
 
 } SSLPreliminaryChannelInfo;
 

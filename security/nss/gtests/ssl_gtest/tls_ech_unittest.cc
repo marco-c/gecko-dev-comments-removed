@@ -2343,6 +2343,8 @@ TEST_F(TlsConnectStreamTls13, EchBadCiphersuite) {
 }
 
 
+
+
 TEST_F(TlsConnectStreamTls13, EchToTls12Server) {
   EnsureTlsSetup();
   SetupEch(client_, server_);
@@ -2353,7 +2355,14 @@ TEST_F(TlsConnectStreamTls13, EchToTls12Server) {
 
   client_->ExpectEch(false);
   server_->ExpectEch(false);
-  Connect();
+
+  client_->ExpectSendAlert(kTlsAlertEchRequired, kTlsAlertFatal);
+  server_->ExpectReceiveAlert(kTlsAlertEchRequired, kTlsAlertFatal);
+  ConnectExpectFailOneSide(TlsAgent::CLIENT);
+  client_->CheckErrorCode(SSL_ERROR_ECH_RETRY_WITHOUT_ECH);
+
+  
+  server_->ExpectReceiveAlert(kTlsAlertCloseNotify, kTlsAlertWarning);
 }
 
 TEST_F(TlsConnectStreamTls13, NoEchFromTls12Client) {

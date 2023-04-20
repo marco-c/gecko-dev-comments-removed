@@ -425,6 +425,19 @@ tls13_ClientSendPreSharedKeyXtn(const sslSocket *ss, TLSExtensionData *xtnData,
 
     
 
+
+
+
+
+
+
+    if (ss->ssl3.hs.helloRetry &&
+        (psk->hash != ss->ssl3.hs.suite_def->prf_hash)) {
+        return SECSuccess;
+    }
+
+    
+
     PORT_Assert(buf->len >= 4);
     xtnData->lastXtnOffset = buf->len - 4;
     PORT_Assert(psk->type == ssl_psk_resume || psk->type == ssl_psk_external);

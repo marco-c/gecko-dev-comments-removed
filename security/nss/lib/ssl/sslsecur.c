@@ -15,6 +15,7 @@
 #include "pk11func.h" 
 #include "nss.h"      
 #include "prinit.h"   
+#include "tls13ech.h"
 #include "tls13psk.h"
 
 
@@ -49,11 +50,34 @@ ssl_Do1stHandshake(sslSocket *ss)
     return rv;
 }
 
-void
+SECStatus
 ssl_FinishHandshake(sslSocket *ss)
 {
     PORT_Assert(ss->opt.noLocks || ssl_Have1stHandshakeLock(ss));
     PORT_Assert(ss->opt.noLocks || ssl_HaveRecvBufLock(ss));
+    PORT_Assert(ss->ssl3.hs.echAccepted ||
+                (ss->opt.enableTls13BackendEch &&
+                 ss->xtnData.ech &&
+                 ss->xtnData.ech->receivedInnerXtn) ==
+                    ssl3_ExtensionNegotiated(ss, ssl_tls13_encrypted_client_hello_xtn));
+
+    
+
+
+
+    if (!ss->sec.isServer && ss->ssl3.hs.echHpkeCtx && !ss->ssl3.hs.echAccepted) {
+        SSL3_SendAlert(ss, alert_fatal, ech_required);
+        
+
+
+        if (ss->xtnData.ech && ss->xtnData.ech->retryConfigs.len) {
+            PORT_SetError(SSL_ERROR_ECH_RETRY_WITH_ECH);
+            ss->xtnData.ech->retryConfigsValid = PR_TRUE;
+        } else {
+            PORT_SetError(SSL_ERROR_ECH_RETRY_WITHOUT_ECH);
+        }
+        return SECFailure;
+    }
 
     SSL_TRC(3, ("%d: SSL[%d]: handshake is completed", SSL_GETPID(), ss->fd));
 
@@ -69,6 +93,8 @@ ssl_FinishHandshake(sslSocket *ss)
     }
 
     ssl_FreeEphemeralKeyPairs(ss);
+
+    return SECSuccess;
 }
 
 
