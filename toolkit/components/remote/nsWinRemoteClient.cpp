@@ -35,7 +35,7 @@ nsresult nsWinRemoteClient::SendCommandLine(
   
   
   ::SetForegroundWindow(handle);
-  ::SendMessageW(handle, WM_COPYDATA, 0,
+  ::PostMessageW(handle, WM_COPYDATA, 0,
                  reinterpret_cast<LPARAM>(sender.CopyData()));
 
   *aSucceeded = true;
