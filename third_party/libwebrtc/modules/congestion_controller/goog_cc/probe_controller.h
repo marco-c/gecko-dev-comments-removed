@@ -52,10 +52,10 @@ struct ProbeControllerConfig {
   FieldTrialParameter<TimeDelta> network_state_estimate_probing_interval;
   
   
-  FieldTrialParameter<double> network_state_estimate_fast_rampup_rate;
-  
-  
-  FieldTrialParameter<double> network_state_estimate_drop_down_rate;
+  FieldTrialParameter<double>
+      probe_if_estimate_lower_than_network_state_estimate_ratio;
+  FieldTrialParameter<TimeDelta>
+      estimate_lower_than_network_state_estimate_probing_interval;
   FieldTrialParameter<double> network_state_probe_scale;
   
   
@@ -155,7 +155,6 @@ class ProbeController {
   DataRate min_bitrate_to_probe_further_ = DataRate::PlusInfinity();
   Timestamp time_last_probing_initiated_ = Timestamp::MinusInfinity();
   DataRate estimated_bitrate_ = DataRate::Zero();
-  bool send_probe_on_next_process_interval_;
   absl::optional<webrtc::NetworkStateEstimate> network_estimate_;
   DataRate start_bitrate_ = DataRate::Zero();
   DataRate max_bitrate_ = DataRate::PlusInfinity();
