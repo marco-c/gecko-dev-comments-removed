@@ -587,4 +587,6 @@ pub trait Gcd<Rhs> {
 pub trait ToInt<T> {
     
     fn to_int() -> T;
+    
+    const INT: T;
 }
