@@ -91,7 +91,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
   
 
 
-  virtual void GetScriptText(nsAString& text) = 0;
+  virtual void GetScriptText(nsAString& text) const = 0;
 
   virtual void GetScriptCharset(nsAString& charset) = 0;
 

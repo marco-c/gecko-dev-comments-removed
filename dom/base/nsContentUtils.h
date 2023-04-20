@@ -1945,17 +1945,17 @@ class nsContentUtils {
 
 
 
-  [[nodiscard]] static bool GetNodeTextContent(nsINode* aNode, bool aDeep,
+  [[nodiscard]] static bool GetNodeTextContent(const nsINode* aNode, bool aDeep,
                                                nsAString& aResult,
                                                const mozilla::fallible_t&);
 
-  static void GetNodeTextContent(nsINode* aNode, bool aDeep,
+  static void GetNodeTextContent(const nsINode* aNode, bool aDeep,
                                  nsAString& aResult);
 
   
 
 
-  static bool AppendNodeTextContent(nsINode* aNode, bool aDeep,
+  static bool AppendNodeTextContent(const nsINode* aNode, bool aDeep,
                                     nsAString& aResult,
                                     const mozilla::fallible_t&);
 
