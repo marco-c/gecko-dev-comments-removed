@@ -601,6 +601,7 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
 }
 
 
+
 void SetOutboundRTPStreamStatsFromMediaSenderInfo(
     const cricket::MediaSenderInfo& media_sender_info,
     RTCOutboundRTPStreamStats* outbound_stats) {
@@ -617,6 +618,10 @@ void SetOutboundRTPStreamStatsFromMediaSenderInfo(
   outbound_stats->retransmitted_bytes_sent =
       media_sender_info.retransmitted_bytes_sent;
   outbound_stats->nack_count = media_sender_info.nacks_rcvd;
+
+  if (media_sender_info.active.has_value()) {
+    outbound_stats->active = *media_sender_info.active;
+  }
 }
 
 void SetOutboundRTPStreamStatsFromVoiceSenderInfo(

@@ -404,6 +404,7 @@ struct MediaSenderInfo {
   
   
   std::vector<webrtc::ReportBlockData> report_block_datas;
+  absl::optional<bool> active;
 };
 
 struct MediaReceiverInfo {
