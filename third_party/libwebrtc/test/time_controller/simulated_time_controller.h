@@ -20,8 +20,6 @@
 #include "api/sequence_checker.h"
 #include "api/test/time_controller.h"
 #include "api/units/timestamp.h"
-#include "modules/include/module.h"
-#include "modules/utility/include/process_thread.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -58,9 +56,7 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
   
   
   void YieldExecution() RTC_LOCKS_EXCLUDED(time_lock_, lock_) override;
-  
-  std::unique_ptr<ProcessThread> CreateProcessThread(const char* thread_name)
-      RTC_LOCKS_EXCLUDED(time_lock_, lock_);
+
   
   std::unique_ptr<rtc::Thread> CreateThread(
       const std::string& name,
@@ -131,8 +127,6 @@ class GlobalSimulatedTimeController : public TimeController {
 
   Clock* GetClock() override;
   TaskQueueFactory* GetTaskQueueFactory() override;
-  std::unique_ptr<ProcessThread> CreateProcessThread(
-      const char* thread_name) override;
   std::unique_ptr<rtc::Thread> CreateThread(
       const std::string& name,
       std::unique_ptr<rtc::SocketServer> socket_server) override;
