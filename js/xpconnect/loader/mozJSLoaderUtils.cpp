@@ -66,7 +66,7 @@ nsresult WriteCachedStencil(StartupCache* cache, nsACString& cachePath,
   }
 
   
-  UniquePtr<char[]> buf(
+  UniqueFreePtr<char[]> buf(
       reinterpret_cast<char*>(buffer.extractOrCopyRawBuffer()));
   nsresult rv = cache->PutBuffer(PromiseFlatCString(cachePath).get(),
                                  std::move(buf), size);
