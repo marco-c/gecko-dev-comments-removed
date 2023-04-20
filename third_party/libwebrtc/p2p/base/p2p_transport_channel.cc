@@ -284,7 +284,7 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
 
 bool P2PTransportChannel::MaybeSwitchSelectedConnection(
     Connection* new_connection,
-    IceSwitchReason reason) {
+    IceControllerEvent reason) {
   RTC_DCHECK_RUN_ON(network_thread_);
 
   return MaybeSwitchSelectedConnection(
@@ -292,12 +292,12 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
 }
 
 bool P2PTransportChannel::MaybeSwitchSelectedConnection(
-    IceSwitchReason reason,
+    IceControllerEvent reason,
     IceControllerInterface::SwitchResult result) {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (result.connection.has_value()) {
     RTC_LOG(LS_INFO) << "Switching selected connection due to: "
-                     << IceSwitchReasonToString(reason);
+                     << reason.ToString();
     SwitchSelectedConnection(FromIceController(*result.connection), reason);
   }
 
@@ -309,7 +309,7 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
     network_thread_->PostDelayedTask(
         ToQueuedTask(task_safety_,
                      [this, recheck = *result.recheck_event]() {
-                       SortConnectionsAndUpdateState(recheck.reason);
+                       SortConnectionsAndUpdateState(recheck);
                      }),
         result.recheck_event->recheck_delay_ms);
   }
@@ -521,7 +521,7 @@ void P2PTransportChannel::SetRemoteIceParameters(
   }
   
   RequestSortAndStateUpdate(
-      IceSwitchReason::REMOTE_CANDIDATE_GENERATION_CHANGE);
+      IceControllerEvent::REMOTE_CANDIDATE_GENERATION_CHANGE);
 }
 
 void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
@@ -675,7 +675,7 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
 
   if (config_.network_preference != config.network_preference) {
     config_.network_preference = config.network_preference;
-    RequestSortAndStateUpdate(IceSwitchReason::NETWORK_PREFERENCE_CHANGE);
+    RequestSortAndStateUpdate(IceControllerEvent::NETWORK_PREFERENCE_CHANGE);
     RTC_LOG(LS_INFO) << "Set network preference to "
                      << (config_.network_preference.has_value()
                              ? config_.network_preference.value()
@@ -979,7 +979,7 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession* session,
   }
 
   SortConnectionsAndUpdateState(
-      IceSwitchReason::NEW_CONNECTION_FROM_LOCAL_CANDIDATE);
+      IceControllerEvent::NEW_CONNECTION_FROM_LOCAL_CANDIDATE);
 }
 
 
@@ -1159,7 +1159,7 @@ void P2PTransportChannel::OnUnknownAddress(PortInterface* port,
   
   
   SortConnectionsAndUpdateState(
-      IceSwitchReason::NEW_CONNECTION_FROM_UNKNOWN_REMOTE_ADDRESS);
+      IceControllerEvent::NEW_CONNECTION_FROM_UNKNOWN_REMOTE_ADDRESS);
 }
 
 void P2PTransportChannel::OnCandidateFilterChanged(uint32_t prev_filter,
@@ -1211,10 +1211,11 @@ void P2PTransportChannel::OnNominated(Connection* conn) {
   
   
   if (MaybeSwitchSelectedConnection(
-          conn, IceSwitchReason::NOMINATION_ON_CONTROLLED_SIDE)) {
+          conn, IceControllerEvent::NOMINATION_ON_CONTROLLED_SIDE)) {
     
     
-    RequestSortAndStateUpdate(IceSwitchReason::NOMINATION_ON_CONTROLLED_SIDE);
+    RequestSortAndStateUpdate(
+        IceControllerEvent::NOMINATION_ON_CONTROLLED_SIDE);
   } else {
     RTC_LOG(LS_INFO)
         << "Not switching the selected connection on controlled side yet: "
@@ -1364,7 +1365,7 @@ void P2PTransportChannel::FinishAddingRemoteCandidate(
 
   
   SortConnectionsAndUpdateState(
-      IceSwitchReason::NEW_CONNECTION_FROM_REMOTE_CANDIDATE);
+      IceControllerEvent::NEW_CONNECTION_FROM_REMOTE_CANDIDATE);
 }
 
 void P2PTransportChannel::RemoveRemoteCandidate(
@@ -1717,7 +1718,7 @@ void P2PTransportChannel::UpdateConnectionStates() {
 
 
 void P2PTransportChannel::RequestSortAndStateUpdate(
-    IceSwitchReason reason_to_sort) {
+    IceControllerEvent reason_to_sort) {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (!sort_dirty_) {
     network_thread_->PostTask(
@@ -1767,7 +1768,7 @@ bool P2PTransportChannel::PresumedWritable(const Connection* conn) const {
 
 
 void P2PTransportChannel::SortConnectionsAndUpdateState(
-    IceSwitchReason reason_to_sort) {
+    IceControllerEvent reason_to_sort) {
   RTC_DCHECK_RUN_ON(network_thread_);
 
   
@@ -1849,7 +1850,7 @@ rtc::NetworkRoute P2PTransportChannel::ConfigureNetworkRoute(
 
 
 void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
-                                                   IceSwitchReason reason) {
+                                                   IceControllerEvent reason) {
   RTC_DCHECK_RUN_ON(network_thread_);
   
   
@@ -1898,7 +1899,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
   
   if (selected_connection_) {
     CandidatePairChangeEvent pair_change;
-    pair_change.reason = IceSwitchReasonToString(reason);
+    pair_change.reason = reason.ToString();
     pair_change.selected_candidate_pair = *GetSelectedCandidatePair();
     pair_change.last_data_received_ms =
         selected_connection_->last_data_received();
@@ -2028,7 +2029,7 @@ void P2PTransportChannel::MaybeStopPortAllocatorSessions() {
 
 void P2PTransportChannel::OnSelectedConnectionDestroyed() {
   RTC_LOG(LS_INFO) << "Selected connection destroyed. Will choose a new one.";
-  IceSwitchReason reason = IceSwitchReason::SELECTED_CONNECTION_DESTROYED;
+  IceControllerEvent reason = IceControllerEvent::SELECTED_CONNECTION_DESTROYED;
   SwitchSelectedConnection(nullptr, reason);
   RequestSortAndStateUpdate(reason);
 }
@@ -2158,8 +2159,8 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
   
   
   RequestSortAndStateUpdate(
-      IceSwitchReason::CONNECT_STATE_CHANGE);  
-                                               
+      IceControllerEvent::CONNECT_STATE_CHANGE);  
+                                                  
 }
 
 
@@ -2288,7 +2289,8 @@ void P2PTransportChannel::OnReadPacket(Connection* connection,
   
   
   if (ice_role_ == ICEROLE_CONTROLLED) {
-    MaybeSwitchSelectedConnection(connection, IceSwitchReason::DATA_RECEIVED);
+    MaybeSwitchSelectedConnection(connection,
+                                  IceControllerEvent::DATA_RECEIVED);
   }
 }
 
