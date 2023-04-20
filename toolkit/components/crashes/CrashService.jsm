@@ -1,22 +1,28 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { AsyncShutdown } from "resource://gre/modules/AsyncShutdown.sys.mjs";
 
-// Set to true if the application is quitting
+
+
+"use strict";
+
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+const { AsyncShutdown } = ChromeUtils.importESModule(
+  "resource://gre/modules/AsyncShutdown.sys.mjs"
+);
+
+
 var gQuitting = false;
 
-// Tracks all the running instances of the minidump-analyzer
+
 var gRunningProcesses = new Set();
 
-/**
- * Run the minidump-analyzer with the given options unless we're already
- * shutting down or the main process has been instructed to shut down in the
- * case a content process crashes. Minidump analysis can take a while so we
- * don't want to block shutdown waiting for it.
- */
+
+
+
+
+
+
 async function maybeRunMinidumpAnalyzer(minidumpPath, allThreads) {
   let shutdown = Services.env.exists("MOZ_CRASHREPORTER_SHUTDOWN");
 
@@ -39,17 +45,17 @@ function getMinidumpAnalyzerPath() {
   return exe;
 }
 
-/**
- * Run the minidump analyzer tool to gather stack traces from the minidump. The
- * stack traces will be stored in the .extra file under the StackTraces= entry.
- *
- * @param minidumpPath {string} The path to the minidump file
- * @param allThreads {bool} Gather stack traces for all threads, not just the
- *                   crashing thread.
- *
- * @returns {Promise} A promise that gets resolved once minidump analysis has
- *          finished.
- */
+
+
+
+
+
+
+
+
+
+
+
 function runMinidumpAnalyzer(minidumpPath, allThreads) {
   return new Promise((resolve, reject) => {
     try {
@@ -89,14 +95,14 @@ function runMinidumpAnalyzer(minidumpPath, allThreads) {
   });
 }
 
-/**
- * Computes the SHA256 hash of a minidump file
- *
- * @param minidumpPath {string} The path to the minidump file
- *
- * @returns {Promise} A promise that resolves to the hash value of the
- *          minidump.
- */
+
+
+
+
+
+
+
+
 function computeMinidumpHash(minidumpPath) {
   return (async function() {
     try {
@@ -111,7 +117,7 @@ function computeMinidumpHash(minidumpPath) {
       let hash = "";
 
       for (let i = 0; i < hashBin.length; i++) {
-        // Every character in the hash string contains a byte of the hash data
+        
         hash += ("0" + hashBin.charCodeAt(i).toString(16)).slice(-2);
       }
 
@@ -123,15 +129,15 @@ function computeMinidumpHash(minidumpPath) {
   })();
 }
 
-/**
- * Process the given .extra file and return the annotations it contains in an
- * object.
- *
- * @param extraPath {string} The path to the .extra file
- *
- * @return {Promise} A promise that resolves to an object holding the crash
- *         annotations.
- */
+
+
+
+
+
+
+
+
+
 function processExtraFile(extraPath) {
   return (async function() {
     try {
@@ -146,12 +152,12 @@ function processExtraFile(extraPath) {
   })();
 }
 
-/**
- * This component makes crash data available throughout the application.
- *
- * It is a service because some background activity will eventually occur.
- */
-export function CrashService() {
+
+
+
+
+
+function CrashService() {
   Services.obs.addObserver(this, "quit-application");
 }
 
@@ -214,7 +220,7 @@ CrashService.prototype = Object.freeze({
   observe(subject, topic, data) {
     switch (topic) {
       case "profile-after-change":
-        // Side-effect is the singleton is instantiated.
+        
         Services.crashmanager;
         break;
       case "quit-application":
@@ -223,8 +229,8 @@ CrashService.prototype = Object.freeze({
           try {
             process.kill();
           } catch (e) {
-            // If the process has already quit then kill() fails, but since
-            // this failure is benign it is safe to silently ignore it.
+            
+            
           }
           Services.obs.notifyObservers(null, "test-minidump-analyzer-killed");
         });
@@ -232,3 +238,5 @@ CrashService.prototype = Object.freeze({
     }
   },
 });
+
+var EXPORTED_SYMBOLS = ["CrashService"];
