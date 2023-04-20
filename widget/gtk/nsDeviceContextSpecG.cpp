@@ -338,11 +338,6 @@ nsDeviceContextSpecGTK::BeginDocument(const nsAString& aTitle,
 }
 
 RefPtr<PrintEndDocumentPromise> nsDeviceContextSpecGTK::EndDocument() {
-  return nsIDeviceContextSpec::EndDocumentPromiseFromResult(DoEndDocument(),
-                                                            __func__);
-}
-
-nsresult nsDeviceContextSpecGTK::DoEndDocument() {
   switch (mPrintSettings->GetOutputDestination()) {
     case nsIPrintSettings::kOutputDestinationPrinter: {
       
@@ -374,28 +369,35 @@ nsresult nsDeviceContextSpecGTK::DoEndDocument() {
 
       nsresult rv =
           NS_NewLocalFile(targetPath, false, getter_AddRefs(destFile));
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_FAILED(rv)) {
+        return PrintEndDocumentPromise::CreateAndReject(rv, __func__);
+      }
 
-      nsAutoString destLeafName;
-      rv = destFile->GetLeafName(destLeafName);
-      NS_ENSURE_SUCCESS(rv, rv);
+      return nsIDeviceContextSpec::EndDocumentAsync(
+          __func__,
+          [destFile = std::move(destFile),
+           spoolFile = std::move(mSpoolFile)]() -> nsresult {
+            nsAutoString destLeafName;
+            auto rv = destFile->GetLeafName(destLeafName);
+            NS_ENSURE_SUCCESS(rv, rv);
 
-      nsCOMPtr<nsIFile> destDir;
-      rv = destFile->GetParent(getter_AddRefs(destDir));
-      NS_ENSURE_SUCCESS(rv, rv);
+            nsCOMPtr<nsIFile> destDir;
+            rv = destFile->GetParent(getter_AddRefs(destDir));
+            NS_ENSURE_SUCCESS(rv, rv);
 
-      rv = mSpoolFile->MoveTo(destDir, destLeafName);
-      NS_ENSURE_SUCCESS(rv, rv);
+            rv = spoolFile->MoveTo(destDir, destLeafName);
+            NS_ENSURE_SUCCESS(rv, rv);
 
-      mSpoolFile = nullptr;
+            
+            mode_t mask = umask(0);
+            umask(mask);
+            
+            
+            
+            destFile->SetPermissions(0666 & ~(mask));
+            return NS_OK;
+          });
 
-      
-      mode_t mask = umask(0);
-      umask(mask);
-      
-      
-      
-      destFile->SetPermissions(0666 & ~(mask));
       break;
     }
     case nsIPrintSettings::kOutputDestinationStream:
@@ -403,5 +405,5 @@ nsresult nsDeviceContextSpecGTK::DoEndDocument() {
       MOZ_ASSERT(!mSpoolFile);
       break;
   }
-  return NS_OK;
+  return PrintEndDocumentPromise::CreateAndResolve(true, __func__);
 }
