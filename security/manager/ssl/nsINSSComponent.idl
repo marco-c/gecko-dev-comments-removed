@@ -104,12 +104,5 @@ interface nsINSSComponent : nsISupports {
   
 
 
-
   void clearSSLExternalAndInternalSessionCache();
-
-  
-
-
-  [implicit_jscontext]
-  Promise asyncClearSSLExternalAndInternalSessionCache();
 };
