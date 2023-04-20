@@ -2,11 +2,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "TestUtils",
-  "resource://testing-common/TestUtils.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+});
 
 function promiseExpiration() {
   let promise = TestUtils.topicObserved(

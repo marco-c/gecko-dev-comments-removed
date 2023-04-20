@@ -2,8 +2,8 @@
 
 
 
-const { FileTestUtils } = ChromeUtils.import(
-  "resource://testing-common/FileTestUtils.jsm"
+const { FileTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/FileTestUtils.sys.mjs"
 );
 
 let { TelemetryTestUtils } = ChromeUtils.import(
