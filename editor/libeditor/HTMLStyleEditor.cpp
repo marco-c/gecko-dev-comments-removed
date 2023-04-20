@@ -1605,15 +1605,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
   
   auto ShouldRemoveHTMLStyle = [&]() {
     if (!aStyleToRemove.IsStyleToClearAllInlineStyles()) {
-      return
-          
-          aElement.NodeInfo()->NameAtom() == aStyleToRemove.mHTMLProperty ||
-          
-          (aStyleToRemove.mHTMLProperty == nsGkAtoms::href &&
-           HTMLEditUtils::IsLink(&aElement)) ||
-          
-          (aStyleToRemove.mHTMLProperty == nsGkAtoms::name &&
-           HTMLEditUtils::IsNamedAnchor(&aElement));
+      return aStyleToRemove.IsRepresentedBy(aElement);
     }
     
     
