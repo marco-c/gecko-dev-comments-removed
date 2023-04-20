@@ -5818,9 +5818,12 @@ nsresult HTMLEditor::SetAttributeOrEquivalent(Element* aElement,
   if (aAttribute == nsGkAtoms::style) {
     
     
-    nsAutoString existingValue;
+    nsString existingValue;  
+                             
     aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::style, existingValue);
-    existingValue.Append(HTMLEditUtils::kSpace);
+    if (!existingValue.IsEmpty()) {
+      existingValue.Append(HTMLEditUtils::kSpace);
+    }
     existingValue.Append(aValue);
     if (aSuppressTransaction) {
       nsresult rv = aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
