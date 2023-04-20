@@ -177,6 +177,13 @@ class MOZ_STACK_CLASS AutoReportFrontendContext : public OffThreadErrorContext {
   }
 };
 
+
+
+
+
+
+
+
 class ManualReportFrontendContext : public OffThreadErrorContext {
   JSContext* cx_;
 #ifdef DEBUG
