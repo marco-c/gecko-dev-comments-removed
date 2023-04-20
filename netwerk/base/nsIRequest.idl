@@ -335,4 +335,7 @@ interface nsIRequest : nsISupports
 
 
     const unsigned long LOAD_FRESH_CONNECTION = 1 << 15;
+
+    
+    
 };
