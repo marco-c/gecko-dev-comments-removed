@@ -103,7 +103,10 @@ TEST(VideoStreamTest, ReceivesVp8SimulcastFrames) {
       c->encoder.implementation = CodecImpl::kSoftware;
       c->encoder.codec = Codec::kVideoCodecVP8;
       
-      c->encoder.layers.spatial = 3;
+      c->encoder.simulcast_streams = {webrtc::ScalabilityMode::kL1T1,
+                                      webrtc::ScalabilityMode::kL1T1,
+                                      webrtc::ScalabilityMode::kL1T1};
+
     });
     s.RunFor(kRunTime);
   }
@@ -213,7 +216,7 @@ TEST(VideoStreamTest, ResolutionAdaptsToAvailableBandwidth) {
     c->encoder.implementation = CodecImpl::kSoftware;
     c->encoder.codec = Codec::kVideoCodecVP9;
     
-    c->encoder.layers.spatial = 2;
+    c->encoder.simulcast_streams = {webrtc::ScalabilityMode::kL2T1};
   });
 
   
