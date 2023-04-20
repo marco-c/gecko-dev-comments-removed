@@ -147,6 +147,11 @@ class ConsoleAPIListener {
       return false;
     }
 
+    
+    if (workerType && this.window && message.chromeContext) {
+      return false;
+    }
+
     if (typeof message.innerID == "number") {
       if (
         this.excludeMessagesBoundToWindow &&
