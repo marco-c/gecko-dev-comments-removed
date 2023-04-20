@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/async_dns_resolver.h"
@@ -84,10 +85,10 @@ enum class IceRestartState { CONNECTING, CONNECTED, DISCONNECTED, MAX_VALUE };
 
 static const int MIN_PINGS_AT_WEAK_PING_INTERVAL = 3;
 
-bool IceCredentialsChanged(const std::string& old_ufrag,
-                           const std::string& old_pwd,
-                           const std::string& new_ufrag,
-                           const std::string& new_pwd);
+bool IceCredentialsChanged(absl::string_view old_ufrag,
+                           absl::string_view old_pwd,
+                           absl::string_view new_ufrag,
+                           absl::string_view new_pwd);
 
 
 class RemoteCandidate : public Candidate {
@@ -106,13 +107,13 @@ class RemoteCandidate : public Candidate {
 class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
  public:
   static std::unique_ptr<P2PTransportChannel> Create(
-      const std::string& transport_name,
+      absl::string_view transport_name,
       int component,
       webrtc::IceTransportInit init);
 
   
   
-  P2PTransportChannel(const std::string& transport_name,
+  P2PTransportChannel(absl::string_view transport_name,
                       int component,
                       PortAllocator* allocator,
                       const webrtc::FieldTrialsView* field_trials = nullptr);
@@ -237,7 +238,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
 
  private:
   P2PTransportChannel(
-      const std::string& transport_name,
+      absl::string_view transport_name,
       int component,
       PortAllocator* allocator,
       
@@ -357,7 +358,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   }
   
   
-  const IceParameters* FindRemoteIceFromUfrag(const std::string& ufrag,
+  const IceParameters* FindRemoteIceFromUfrag(absl::string_view ufrag,
                                               uint32_t* generation);
   
   

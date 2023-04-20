@@ -135,7 +135,7 @@ enum class TlsCertPolicy {
 
 struct RelayCredentials {
   RelayCredentials() {}
-  RelayCredentials(const std::string& username, const std::string& password)
+  RelayCredentials(absl::string_view username, absl::string_view password)
       : username(username), password(password) {}
 
   bool operator==(const RelayCredentials& o) const {
@@ -152,19 +152,19 @@ typedef std::vector<ProtocolAddress> PortList;
 struct RTC_EXPORT RelayServerConfig {
   RelayServerConfig();
   RelayServerConfig(const rtc::SocketAddress& address,
-                    const std::string& username,
-                    const std::string& password,
+                    absl::string_view username,
+                    absl::string_view password,
                     ProtocolType proto);
-  RelayServerConfig(const std::string& address,
+  RelayServerConfig(absl::string_view address,
                     int port,
-                    const std::string& username,
-                    const std::string& password,
+                    absl::string_view username,
+                    absl::string_view password,
                     ProtocolType proto);
   
-  RelayServerConfig(const std::string& address,
+  RelayServerConfig(absl::string_view address,
                     int port,
-                    const std::string& username,
-                    const std::string& password,
+                    absl::string_view username,
+                    absl::string_view password,
                     ProtocolType proto,
                     bool secure);
   RelayServerConfig(const RelayServerConfig&);
@@ -189,10 +189,10 @@ struct RTC_EXPORT RelayServerConfig {
 class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
  public:
   
-  PortAllocatorSession(const std::string& content_name,
+  PortAllocatorSession(absl::string_view content_name,
                        int component,
-                       const std::string& ice_ufrag,
-                       const std::string& ice_pwd,
+                       absl::string_view ice_ufrag,
+                       absl::string_view ice_pwd,
                        uint32_t flags);
 
   
@@ -300,14 +300,14 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
   const std::string& password() const { return ice_pwd_; }
 
  private:
-  void SetIceParameters(const std::string& content_name,
+  void SetIceParameters(absl::string_view content_name,
                         int component,
-                        const std::string& ice_ufrag,
-                        const std::string& ice_pwd) {
-    content_name_ = content_name;
+                        absl::string_view ice_ufrag,
+                        absl::string_view ice_pwd) {
+    content_name_ = std::string(content_name);
     component_ = component;
-    ice_ufrag_ = ice_ufrag;
-    ice_pwd_ = ice_pwd;
+    ice_ufrag_ = std::string(ice_ufrag);
+    ice_pwd_ = std::string(ice_pwd);
     UpdateIceParametersInternal();
   }
 
@@ -412,10 +412,10 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   virtual void SetVpnList(const std::vector<rtc::NetworkMask>& vpn_list) {}
 
   std::unique_ptr<PortAllocatorSession> CreateSession(
-      const std::string& content_name,
+      absl::string_view content_name,
       int component,
-      const std::string& ice_ufrag,
-      const std::string& ice_pwd);
+      absl::string_view ice_ufrag,
+      absl::string_view ice_pwd);
 
   
   
@@ -425,10 +425,10 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   
   
   std::unique_ptr<PortAllocatorSession> TakePooledSession(
-      const std::string& content_name,
+      absl::string_view content_name,
       int component,
-      const std::string& ice_ufrag,
-      const std::string& ice_pwd);
+      absl::string_view ice_ufrag,
+      absl::string_view ice_pwd);
 
   
   
@@ -477,9 +477,9 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
     return proxy_;
   }
 
-  void set_proxy(const std::string& agent, const rtc::ProxyInfo& proxy) {
+  void set_proxy(absl::string_view agent, const rtc::ProxyInfo& proxy) {
     CheckRunOnValidThreadIfInitialized();
-    agent_ = agent;
+    agent_ = std::string(agent);
     proxy_ = proxy;
   }
 

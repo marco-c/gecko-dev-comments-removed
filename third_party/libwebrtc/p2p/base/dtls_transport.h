@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/crypto/crypto_options.h"
 #include "api/dtls_transport_interface.h"
 #include "api/sequence_checker.h"
@@ -135,7 +136,7 @@ class DtlsTransport : public DtlsTransportInternal {
   
   
   
-  bool SetRemoteFingerprint(const std::string& digest_alg,
+  bool SetRemoteFingerprint(absl::string_view digest_alg,
                             const uint8_t* digest,
                             size_t digest_len) override;
 
@@ -167,7 +168,7 @@ class DtlsTransport : public DtlsTransportInternal {
   
   
   
-  bool ExportKeyingMaterial(const std::string& label,
+  bool ExportKeyingMaterial(absl::string_view label,
                             const uint8_t* context,
                             size_t context_len,
                             bool use_context,
