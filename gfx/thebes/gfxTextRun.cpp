@@ -3253,6 +3253,15 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
       return true;
     }
     
+    
+    
+    
+    
+    if (aNextCh == kVariationSelector16 && emojiPresentation == TextDefault &&
+        f->HasCharacter(aNextCh) && f->GetFontEntry()->TryGetColorGlyphs()) {
+      return true;
+    }
+    
     if (!candidateFont) {
       candidateFont = f;
       candidateMatchType = t;
