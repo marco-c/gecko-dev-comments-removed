@@ -919,7 +919,7 @@ pub trait MatchMethods: TElement {
                 if is_root {
                     let device = context.shared.stylist.device();
                     debug_assert!(self.owner_doc_matches_for_testing(device));
-                    device.set_root_font_size(new_font_size.size().into());
+                    device.set_root_font_size(new_font_size.computed_size().into());
                     if device.used_root_font_size() {
                         
                         

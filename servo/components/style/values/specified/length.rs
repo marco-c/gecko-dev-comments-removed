@@ -77,12 +77,10 @@ pub enum FontBaseSize {
 
 impl FontBaseSize {
     
-    pub fn resolve(&self, context: &Context) -> computed::Length {
+    pub fn resolve(&self, context: &Context) -> computed::FontSize {
         match *self {
-            FontBaseSize::CurrentStyle => context.style().get_font().clone_font_size().size(),
-            FontBaseSize::InheritedStyle => {
-                context.style().get_parent_font().clone_font_size().size()
-            },
+            FontBaseSize::CurrentStyle => context.style().get_font().clone_font_size(),
+            FontBaseSize::InheritedStyle => context.style().get_parent_font().clone_font_size(),
         }
     }
 }
@@ -167,11 +165,11 @@ impl FontRelativeLength {
                         context
                             .rule_cache_conditions
                             .borrow_mut()
-                            .set_font_size_dependency(reference_font_size.into());
+                            .set_font_size_dependency(reference_font_size.computed_size);
                     }
                 }
 
-                (reference_font_size, length)
+                (reference_font_size.computed_size(), length)
             },
             FontRelativeLength::Ex(length) => {
                 
@@ -184,7 +182,9 @@ impl FontRelativeLength {
                     
                     
                     
-                    reference_font_size * 0.5
+                    
+                    
+                    reference_font_size.used_size() * 0.5
                 });
                 (reference_size, length)
             },
@@ -212,11 +212,13 @@ impl FontRelativeLength {
                     
                     
                     
+                    
+                    
                     let wm = context.style().writing_mode;
                     if wm.is_vertical() && wm.is_upright() {
-                        reference_font_size
+                        reference_font_size.used_size()
                     } else {
-                        reference_font_size * 0.5
+                        reference_font_size.used_size() * 0.5
                     }
                 });
                 (reference_size, length)
@@ -225,6 +227,7 @@ impl FontRelativeLength {
                 let metrics =
                     query_font_metrics(context, base_size, FontMetricsOrientation::Horizontal);
                 let reference_size = metrics.cap_height.unwrap_or_else(|| {
+                    
                     
                     
                     
@@ -247,7 +250,9 @@ impl FontRelativeLength {
                     
                     
                     
-                    reference_font_size
+                    
+                    
+                    reference_font_size.used_size()
                 });
                 (reference_size, length)
             },
@@ -259,7 +264,7 @@ impl FontRelativeLength {
                 
                 
                 let reference_size = if context.builder.is_root_element || context.in_media_query {
-                    reference_font_size
+                    reference_font_size.computed_size()
                 } else {
                     context.device().root_font_size()
                 };
