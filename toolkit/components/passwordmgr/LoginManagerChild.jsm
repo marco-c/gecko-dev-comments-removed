@@ -53,6 +53,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   LoginRecipesContent: "resource://gre/modules/LoginRecipes.jsm",
   LoginHelper: "resource://gre/modules/LoginHelper.jsm",
   InsecurePasswordUtils: "resource://gre/modules/InsecurePasswordUtils.jsm",
+  SignUpFormRuleset: "resource://gre/modules/SignUpFormRuleset.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -487,6 +488,11 @@ class LoginFormState {
   
 
 
+  #cachedSignUpFormScore = new WeakMap();
+
+  
+
+
   mockUsernameOnlyField = null;
 
   
@@ -595,6 +601,30 @@ class LoginFormState {
     }
 
     return result;
+  }
+
+  
+
+
+
+
+
+
+
+  isProbablyASignUpForm(formElement) {
+    if (!HTMLFormElement.isInstance(formElement)) {
+      return 0;
+    }
+    const threshold = lazy.LoginHelper.signupDetectionConfidenceThreshold;
+    let score = this.#cachedSignUpFormScore.get(formElement);
+    if (score) {
+      return score >= threshold;
+    }
+    const { rules, type } = lazy.SignUpFormRuleset;
+    const results = rules.against(formElement);
+    score = results.get(formElement).scoreFor(type);
+    this.#cachedSignUpFormScore.set(formElement, score);
+    return score > threshold;
   }
 
   
@@ -2795,13 +2825,21 @@ class LoginManagerChild extends JSWindowActorChild {
 
     let scenario;
 
-    if (this.#relayIsAvailableOrEnabled()) {
+    
+    if (this.#relayIsAvailableOrEnabled() && usernameField) {
       
       
-      if (usernameField && passwordACFieldName == "new-password") {
+      
+      if (
+        HTMLFormElement.isInstance(form.rootElement) &&
+        lazy.LoginHelper.signupDetectionEnabled
+      ) {
+        if (docState.isProbablyASignUpForm(form.rootElement)) {
+          scenario = new SignUpFormScenario(usernameField, passwordField);
+        }
+      } else if (passwordACFieldName == "new-password") {
         scenario = new SignUpFormScenario(usernameField, passwordField);
       }
-
       if (scenario) {
         docState.setScenario(form.rootElement, scenario);
         lazy.gFormFillService.markAsLoginManagerField(usernameField);
@@ -3151,7 +3189,6 @@ class LoginManagerChild extends JSWindowActorChild {
       });
     }
   }
-
   #relayIsAvailableOrEnabled() {
     const value = Services.prefs.getStringPref("signon.firefoxRelay.feature");
     return value === "available" || value === "enabled";
