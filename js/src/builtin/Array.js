@@ -259,9 +259,7 @@ function ArrayFilter(callbackfn ) {
       
       var kValue = O[k];
       
-      var selected = callContentFunction(callbackfn, T, kValue, k, O);
-      
-      if (selected) {
+      if (callContentFunction(callbackfn, T, kValue, k, O)) {
         DefineDataProperty(A, to++, kValue);
       }
     }
@@ -1664,10 +1662,7 @@ function ArrayFindLastIndex(predicate ) {
   
   for (var k = len - 1; k >= 0; k--) {
     
-    var kValue = O[k];
-
-    
-    if (callContentFunction(predicate, thisArg, kValue, k, O)) {
+    if (callContentFunction(predicate, thisArg, O[k], k, O)) {
       return k;
     }
   }
