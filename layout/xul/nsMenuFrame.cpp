@@ -57,7 +57,7 @@ NS_DECLARE_FRAME_PROPERTY_FRAMELIST(PopupListProperty)
 
 
 
-static int32_t gMenuJustOpenedOrClosed = false;
+static TimeStamp gMenuJustOpenedOrClosedTime = TimeStamp();
 
 const int32_t kBlinkDelay = 67;  
 
@@ -344,9 +344,9 @@ nsresult nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
   
   
   
-  if (gMenuJustOpenedOrClosed) {
+  if (!gMenuJustOpenedOrClosedTime.IsNull()) {
     if (aEvent->mMessage == eMouseDown) {
-      gMenuJustOpenedOrClosed = false;
+      gMenuJustOpenedOrClosedTime = TimeStamp();
     } else if (aEvent->mMessage == eMouseUp) {
       return NS_OK;
     }
@@ -444,8 +444,12 @@ nsresult nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
     }
   } else if (aEvent->mMessage == eMouseMove &&
              (onmenu || (menuParent && menuParent->IsMenuBar()))) {
-    if (gMenuJustOpenedOrClosed) {
-      gMenuJustOpenedOrClosed = false;
+    
+    
+    TimeDuration tolerance = TimeDuration::FromMilliseconds(200);
+    if (!gMenuJustOpenedOrClosedTime.IsNull() &&
+        gMenuJustOpenedOrClosedTime + tolerance < TimeStamp::Now()) {
+      gMenuJustOpenedOrClosedTime = TimeStamp();
       return NS_OK;
     }
 
@@ -495,7 +499,7 @@ void nsMenuFrame::ToggleMenuState() {
 }
 
 void nsMenuFrame::PopupOpened() {
-  gMenuJustOpenedOrClosed = true;
+  gMenuJustOpenedOrClosedTime = TimeStamp::Now();
 
   AutoWeakFrame weakFrame(this);
   mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns,
@@ -638,7 +642,7 @@ void nsMenuFrame::OpenMenu(bool aSelectFirstItem) {
 }
 
 void nsMenuFrame::CloseMenu(bool aDeselectMenu) {
-  gMenuJustOpenedOrClosed = true;
+  gMenuJustOpenedOrClosedTime = TimeStamp::Now();
 
   
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
