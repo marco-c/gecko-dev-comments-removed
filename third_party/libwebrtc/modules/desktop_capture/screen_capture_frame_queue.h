@@ -13,11 +13,6 @@
 
 #include <memory>
 
-
-
-#include "modules/desktop_capture/desktop_frame.h"         
-#include "modules/desktop_capture/shared_desktop_frame.h"  
-
 namespace webrtc {
 
 
@@ -36,7 +31,7 @@ namespace webrtc {
 template <typename FrameType>
 class ScreenCaptureFrameQueue {
  public:
-  ScreenCaptureFrameQueue() : current_(0) {}
+  ScreenCaptureFrameQueue() = default;
   ~ScreenCaptureFrameQueue() = default;
 
   ScreenCaptureFrameQueue(const ScreenCaptureFrameQueue&) = delete;
@@ -69,7 +64,7 @@ class ScreenCaptureFrameQueue {
 
  private:
   
-  int current_;
+  int current_ = 0;
 
   static const int kQueueLength = 2;
   std::unique_ptr<FrameType> frames_[kQueueLength];
