@@ -558,7 +558,7 @@ if CONFIG["CC_TYPE"] == "clang":
 
 
 
-if CONFIG["NIGHTLY_BUILD"] and CONFIG["INTEL_ARCHITECTURE"]:
+if CONFIG["ENABLE_WASM_MOZ_INTGEMM"]:
     DIRS += ["intgemm"]
 
 if CONFIG["JS_JITSPEW"]:
