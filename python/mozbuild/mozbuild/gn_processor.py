@@ -243,7 +243,11 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
                     and "_FORTIFY_SOURCE" not in d
                 ]
             if spec_attr == "include_dirs":
-                spec[spec_attr] = [d for d in spec[spec_attr] if gen_path != Path(d)]
+                
+                
+                spec[spec_attr] = [
+                    d if gen_path != Path(d) else "!//gen" for d in spec[spec_attr]
+                ]
 
         gn_out["targets"][target_fullname] = spec
 
@@ -354,19 +358,22 @@ def process_gn_config(
 
         context_attrs["LOCAL_INCLUDES"] = []
         for include in spec.get("include_dirs", []):
-            include = resolve_path(include)
-            
-            resolved = mozpath.abspath(mozpath.join(topsrcdir, include[1:]))
-            if not os.path.exists(resolved):
+            if include.startswith("!"):
+                include = "!" + resolve_path(include[1:])
+            else:
+                include = resolve_path(include)
                 
-                
-                if not resolved.endswith("gn-output/gen"):
-                    print(
-                        "Included path: '%s' does not exist, dropping include from GN "
-                        "configuration." % resolved,
-                        file=sys.stderr,
-                    )
-                continue
+                resolved = mozpath.abspath(mozpath.join(topsrcdir, include[1:]))
+                if not os.path.exists(resolved):
+                    
+                    
+                    if not resolved.endswith("gn-output/gen"):
+                        print(
+                            "Included path: '%s' does not exist, dropping include from GN "
+                            "configuration." % resolved,
+                            file=sys.stderr,
+                        )
+                    continue
             context_attrs["LOCAL_INCLUDES"] += [include]
 
         context_attrs["ASFLAGS"] = spec.get("asflags_mozilla", [])
