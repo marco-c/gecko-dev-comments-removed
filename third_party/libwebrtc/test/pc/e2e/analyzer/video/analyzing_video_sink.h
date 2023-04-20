@@ -68,6 +68,12 @@ class AnalyzingVideoSink : public rtc::VideoSinkInterface<VideoFrame> {
 
   
   
+  VideoFrame ScaleVideoFrame(
+      const VideoFrame& frame,
+      const PeerConnectionE2EQualityTestFixture::VideoResolution&
+          required_resolution);
+  
+  
   
   void AnalyzeFrame(const VideoFrame& frame);
   
