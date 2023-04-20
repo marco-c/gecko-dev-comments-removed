@@ -309,28 +309,26 @@ void ParallelMarker::decActiveTasks(ParallelMarkTask* task,
 }
 
 void ParallelMarker::donateWorkFrom(GCMarker* src) {
-  AutoLockGC lock(gc);
+  ParallelMarkTask* waitingTask;
 
-  
-  if (waitingTaskCount == 0) {
-    return;
+  {
+    AutoLockGC lock(gc);
+
+    
+    if (waitingTaskCount == 0) {
+      return;
+    }
+
+    
+    waitingTask = waitingTasks.ref().popFront();
+    waitingTaskCount--;
+
+    
+    MOZ_ASSERT(waitingTask->isWaiting);
   }
 
   
-  ParallelMarkTask* waitingTask = waitingTasks.ref().popFront();
-  waitingTaskCount--;
-
-  
-  MOZ_ASSERT(waitingTask->isWaiting);
-
-  
-  
-
-  
   GCMarker::moveWork(waitingTask->marker, src);
-
-  
-  waitingTask->resume(lock);
 
   gc->stats().count(gcstats::COUNT_PARALLEL_MARK_INTERRUPTIONS);
 
@@ -338,4 +336,8 @@ void ParallelMarker::donateWorkFrom(GCMarker* src) {
   if (profiler.enabled()) {
     profiler.markEvent("Parallel marking donated work", "");
   }
+
+  
+  AutoLockGC lock(gc);
+  waitingTask->resume(lock);
 }
