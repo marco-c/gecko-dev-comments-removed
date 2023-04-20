@@ -14,34 +14,44 @@ var testPage =
   '"></frameset>';
 
 async function openTestPage() {
-  
-  await BrowserTestUtils.openNewForegroundTab(gBrowser, testPage, true, true);
-  await BrowserTestUtils.waitForCondition(() => {
-    return (
-      gBrowser.selectedBrowser.browsingContext.children[1].currentWindowGlobal
-        .documentURI.spec != "about:blank"
-    );
-  });
-
-  await SpecialPowers.spawn(
-    gBrowser.selectedBrowser.browsingContext.children[1],
-    [],
-    () => {
-      if (!content.document.body.classList.length) {
-        return new Promise(resolve => {
-          content.addEventListener(
-            "AboutNetErrorLoad",
-            () => {
-              resolve();
-            },
-            { once: true }
-          );
-        });
-      }
-
-      return undefined;
-    }
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank",
+    true,
+    true
   );
+  let browser = tab.linkedBrowser;
+
+  
+  
+  
+  
+  let expectedLoads = 3;
+  let pageAndIframesLoaded = BrowserTestUtils.browserLoaded(
+    browser,
+    true ,
+    url => {
+      expectedLoads--;
+      return !expectedLoads;
+    },
+    true 
+  );
+  BrowserTestUtils.loadURIString(browser, testPage);
+  await pageAndIframesLoaded;
+
+  
+  
+  
+  for (let bc of [
+    ...browser.browsingContext.children,
+    browser.browsingContext,
+  ]) {
+    await SpecialPowers.spawn(bc, [], async function() {
+      await new Promise(resolve => {
+        content.requestAnimationFrame(resolve);
+      });
+    });
+  }
 }
 
 async function selectFromFrameMenu(frameNumber, menuId) {
@@ -74,7 +84,17 @@ async function selectFromFrameMenu(frameNumber, menuId) {
   frameItem.openMenu(true);
   await subPopupShownPromise;
 
+  let subPopupHiddenPromise = BrowserTestUtils.waitForEvent(
+    framePopup,
+    "popuphidden"
+  );
+  let contextMenuHiddenPromise = BrowserTestUtils.waitForEvent(
+    contextMenu,
+    "popuphidden"
+  );
   contextMenu.activateItem(document.getElementById(menuId));
+  await subPopupHiddenPromise;
+  await contextMenuHiddenPromise;
 }
 
 add_task(async function testOpenFrame() {
@@ -113,7 +133,11 @@ add_task(async function testOpenFrameInTab() {
 
     info("open frame in tab for " + expectedResultURI);
 
-    let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null, false);
+    let newTabPromise = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      expectedResultURI,
+      false
+    );
     await selectFromFrameMenu(frameNumber, "context-openframeintab");
     let newTab = await newTabPromise;
 
