@@ -1250,8 +1250,8 @@ static gcstats::PhaseKind GrayMarkingPhaseForCurrentPhase(
   }
 }
 
-void GCMarker::stealWorkFrom(GCMarker* other) {
-  stack.stealWorkFrom(other->stack);
+void GCMarker::moveWork(GCMarker* dst, GCMarker* src) {
+  MarkStack::moveWork(dst->stack, src->stack);
 }
 
 bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
@@ -1328,8 +1328,8 @@ bool GCMarker::markOneColor(SliceBudget& budget) {
       
       
       
-      if (parallelMarker_->hasWaitingTasks() && stack.hasStealableWork()) {
-        parallelMarker_->stealWorkFrom(this);
+      if (parallelMarker_->hasWaitingTasks() && stack.canDonateWork()) {
+        parallelMarker_->donateWorkFrom(this);
         MOZ_ASSERT(hasEntries(color));
       }
     }
@@ -1728,16 +1728,16 @@ bool MarkStack::hasEntries(MarkColor color) const {
   return color == MarkColor::Black ? hasBlackEntries() : hasGrayEntries();
 }
 
-bool MarkStack::hasStealableWork() const {
+bool MarkStack::canDonateWork() const {
   
   
   
-  constexpr size_t MinStealableWordCount = 12;
+  constexpr size_t MinWordCount = 12;
 
-  static_assert(MinStealableWordCount >= ValueRangeWords,
+  static_assert(MinWordCount >= ValueRangeWords,
                 "We must always leave at least one stack entry.");
 
-  return wordCountForCurrentColor() > MinStealableWordCount;
+  return wordCountForCurrentColor() > MinWordCount;
 }
 
 MOZ_ALWAYS_INLINE bool MarkStack::indexIsEntryBase(size_t index) const {
@@ -1761,34 +1761,37 @@ MOZ_ALWAYS_INLINE bool MarkStack::indexIsEntryBase(size_t index) const {
   return stack()[index].tagUnchecked() != SlotsOrElementsRangeTag;
 }
 
-void MarkStack::stealWorkFrom(MarkStack& other) {
+
+void MarkStack::moveWork(MarkStack& dst, MarkStack& src) {
+  
+  
   
   
   
 
-  MOZ_ASSERT(markColor() == other.markColor());
-  MOZ_ASSERT(!hasEntries(markColor()));
-  MOZ_ASSERT(other.hasStealableWork());
+  MOZ_ASSERT(src.markColor() == dst.markColor());
+  MOZ_ASSERT(!dst.hasEntries(dst.markColor()));
+  MOZ_ASSERT(src.canDonateWork());
 
-  size_t base = other.basePositionForCurrentColor();
-  size_t totalWords = other.position() - base;
-  size_t wordsToSteal = totalWords / 2;
+  size_t base = src.basePositionForCurrentColor();
+  size_t totalWords = src.position() - base;
+  size_t wordsToMove = totalWords / 2;
 
-  size_t targetPos = other.position() - wordsToSteal;
-  MOZ_ASSERT(other.position() >= base);
+  size_t targetPos = src.position() - wordsToMove;
+  MOZ_ASSERT(src.position() >= base);
 
   
   
-  if (!other.indexIsEntryBase(targetPos)) {
+  if (!src.indexIsEntryBase(targetPos)) {
     targetPos--;
-    wordsToSteal++;
+    wordsToMove++;
   }
-  MOZ_ASSERT(other.indexIsEntryBase(targetPos));
-  MOZ_ASSERT(targetPos < other.position());
+  MOZ_ASSERT(src.indexIsEntryBase(targetPos));
+  MOZ_ASSERT(targetPos < src.position());
   MOZ_ASSERT(targetPos > base);
-  MOZ_ASSERT(wordsToSteal == other.position() - targetPos);
+  MOZ_ASSERT(wordsToMove == src.position() - targetPos);
 
-  if (!ensureSpace(wordsToSteal)) {
+  if (!dst.ensureSpace(wordsToMove)) {
     return;
   }
 
@@ -1797,15 +1800,15 @@ void MarkStack::stealWorkFrom(MarkStack& other) {
   
   
 
-  mozilla::PodCopy(topPtr(), other.stack().begin() + targetPos, wordsToSteal);
-  topIndex_ += wordsToSteal;
-  peekPtr().assertValid();
+  mozilla::PodCopy(dst.topPtr(), src.stack().begin() + targetPos, wordsToMove);
+  dst.topIndex_ += wordsToMove;
+  dst.peekPtr().assertValid();
 
-  other.topIndex_ = targetPos;
+  src.topIndex_ = targetPos;
 #ifdef DEBUG
-  other.poisonUnused();
+  src.poisonUnused();
 #endif
-  other.peekPtr().assertValid();
+  src.peekPtr().assertValid();
 }
 
 MOZ_ALWAYS_INLINE size_t MarkStack::basePositionForCurrentColor() const {

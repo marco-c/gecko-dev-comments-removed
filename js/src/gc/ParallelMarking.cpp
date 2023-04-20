@@ -61,8 +61,8 @@ bool ParallelMarker::markOneColor(MarkColor color, SliceBudget& sliceBudget) {
     
     
     
-    if (!marker->hasEntries(color) && gc->marker().hasStealableWork()) {
-      marker->stealWorkFrom(&gc->marker());
+    if (!marker->hasEntries(color) && gc->marker().canDonateWork()) {
+      GCMarker::moveWork(marker, &gc->marker());
     }
   }
 
@@ -137,7 +137,7 @@ void ParallelMarkTask::run(AutoLockHelperThreadState& lock) {
   {
     AutoLockGC gcLock(pm->gc);
 
-    markOrSteal(gcLock);
+    markOrRequestWork(gcLock);
 
     MOZ_ASSERT(!isWaiting);
     if (hasWork()) {
@@ -146,14 +146,14 @@ void ParallelMarkTask::run(AutoLockHelperThreadState& lock) {
   }
 }
 
-void ParallelMarkTask::markOrSteal(AutoLockGC& lock) {
+void ParallelMarkTask::markOrRequestWork(AutoLockGC& lock) {
   for (;;) {
     if (hasWork() && !tryMarking(lock)) {
       return;
     }
 
     while (!hasWork()) {
-      if (!tryStealing(lock)) {
+      if (!requestWork(lock)) {
         return;
       }
     }
@@ -177,7 +177,7 @@ bool ParallelMarkTask::tryMarking(AutoLockGC& lock) {
   return !budget.isOverBudget();
 }
 
-bool ParallelMarkTask::tryStealing(AutoLockGC& lock) {
+bool ParallelMarkTask::requestWork(AutoLockGC& lock) {
   MOZ_ASSERT(!hasWork());
 
   if (!pm->hasActiveTasks(lock)) {
@@ -268,7 +268,7 @@ void ParallelMarker::decActiveTasks(ParallelMarkTask* task,
   }
 }
 
-void ParallelMarker::stealWorkFrom(GCMarker* victim) {
+void ParallelMarker::donateWorkFrom(GCMarker* src) {
   AutoLockGC lock(gc);
 
   
@@ -277,18 +277,18 @@ void ParallelMarker::stealWorkFrom(GCMarker* victim) {
   }
 
   
-  ParallelMarkTask* task = waitingTasks.ref().popFront();
+  ParallelMarkTask* waitingTask = waitingTasks.ref().popFront();
   waitingTaskCount--;
 
   
-  MOZ_ASSERT(task->isWaiting);
+  MOZ_ASSERT(waitingTask->isWaiting);
 
   
   
 
   
-  task->marker->stealWorkFrom(victim);
+  GCMarker::moveWork(waitingTask->marker, src);
 
   
-  task->resume(lock);
+  waitingTask->resume(lock);
 }
