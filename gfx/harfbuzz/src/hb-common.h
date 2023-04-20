@@ -897,6 +897,32 @@ HB_EXTERN uint8_t
 hb_color_get_blue (hb_color_t color);
 #define hb_color_get_blue(color)	(((color) >> 24) & 0xFF)
 
+
+
+
+
+
+
+
+
+
+
+
+typedef struct hb_glyph_extents_t {
+  hb_position_t x_bearing;
+  hb_position_t y_bearing;
+  hb_position_t width;
+  hb_position_t height;
+} hb_glyph_extents_t;
+
+
+
+
+
+
+
+typedef struct hb_font_t hb_font_t;
+
 HB_END_DECLS
 
 #endif 

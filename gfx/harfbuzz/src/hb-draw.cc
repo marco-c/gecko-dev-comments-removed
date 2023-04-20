@@ -37,6 +37,8 @@
 
 
 
+
+
 static void
 hb_draw_move_to_nil (hb_draw_funcs_t *dfuncs HB_UNUSED, void *draw_data HB_UNUSED,
 		     hb_draw_state_t *st HB_UNUSED,
@@ -207,6 +209,22 @@ DEFINE_NULL_INSTANCE (hb_draw_funcs_t) =
 
 
 
+hb_draw_funcs_t *
+hb_draw_funcs_get_empty ()
+{
+  return const_cast<hb_draw_funcs_t *> (&Null (hb_draw_funcs_t));
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -244,6 +262,49 @@ hb_draw_funcs_destroy (hb_draw_funcs_t *dfuncs)
   hb_free (dfuncs->user_data);
 
   hb_free (dfuncs);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_draw_funcs_set_user_data (hb_draw_funcs_t *dfuncs,
+			     hb_user_data_key_t *key,
+			     void *              data,
+			     hb_destroy_func_t   destroy,
+			     hb_bool_t           replace)
+{
+  return hb_object_set_user_data (dfuncs, key, data, destroy, replace);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+void *
+hb_draw_funcs_get_user_data (const hb_draw_funcs_t *dfuncs,
+			     hb_user_data_key_t       *key)
+{
+  return hb_object_get_user_data (dfuncs, key);
 }
 
 

@@ -90,6 +90,25 @@ struct MarkBasePosFormat1_2
 
   const Coverage &get_coverage () const { return this+markCoverage; }
 
+  static inline bool accept (hb_buffer_t *buffer, unsigned idx)
+  {
+    
+
+
+
+
+    return !_hb_glyph_info_multiplied (&buffer->info[idx]) ||
+	   0 == _hb_glyph_info_get_lig_comp (&buffer->info[idx]) ||
+	   (idx == 0 ||
+	    _hb_glyph_info_is_mark (&buffer->info[idx - 1]) ||
+	    !_hb_glyph_info_multiplied (&buffer->info[idx - 1]) ||
+	    _hb_glyph_info_get_lig_id (&buffer->info[idx]) !=
+	    _hb_glyph_info_get_lig_id (&buffer->info[idx - 1]) ||
+	    _hb_glyph_info_get_lig_comp (&buffer->info[idx]) !=
+	    _hb_glyph_info_get_lig_comp (&buffer->info[idx - 1]) + 1
+	    );
+  }
+
   bool apply (hb_ot_apply_context_t *c) const
   {
     TRACE_APPLY (this);
@@ -98,47 +117,53 @@ struct MarkBasePosFormat1_2
     if (likely (mark_index == NOT_COVERED)) return_trace (false);
 
     
+
+
     hb_ot_apply_context_t::skipping_iterator_t &skippy_iter = c->iter_input;
-    skippy_iter.reset (buffer->idx, 1);
     skippy_iter.set_lookup_props (LookupFlag::IgnoreMarks);
-    do {
-      unsigned unsafe_from;
-      if (!skippy_iter.prev (&unsafe_from))
-      {
-        buffer->unsafe_to_concat_from_outbuffer (unsafe_from, buffer->idx + 1);
-        return_trace (false);
-      }
 
-      
-
-
-
-
-      if (!_hb_glyph_info_multiplied (&buffer->info[skippy_iter.idx]) ||
-          0 == _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]) ||
-          (skippy_iter.idx == 0 ||
-           _hb_glyph_info_is_mark (&buffer->info[skippy_iter.idx - 1]) ||
-           !_hb_glyph_info_multiplied (&buffer->info[skippy_iter.idx - 1]) ||
-           _hb_glyph_info_get_lig_id (&buffer->info[skippy_iter.idx]) !=
-           _hb_glyph_info_get_lig_id (&buffer->info[skippy_iter.idx - 1]) ||
-           _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]) !=
-           _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx - 1]) + 1
-           ))
-        break;
-      skippy_iter.reject ();
-    } while (true);
-
-    
-    
-
-    unsigned int base_index = (this+baseCoverage).get_coverage  (buffer->info[skippy_iter.idx].codepoint);
-    if (base_index == NOT_COVERED)
+    if (c->last_base_until > buffer->idx)
     {
-      buffer->unsafe_to_concat_from_outbuffer (skippy_iter.idx, buffer->idx + 1);
+      c->last_base_until = 0;
+      c->last_base = -1;
+    }
+    unsigned j;
+    for (j = buffer->idx; j > c->last_base_until; j--)
+    {
+      auto match = skippy_iter.match (buffer->info[j - 1]);
+      if (match == skippy_iter.MATCH)
+      {
+        
+	if (!accept (buffer, j - 1) &&
+	    NOT_COVERED == (this+baseCoverage).get_coverage  (buffer->info[j - 1].codepoint))
+	  match = skippy_iter.SKIP;
+      }
+      if (match == skippy_iter.MATCH)
+      {
+	c->last_base = (signed) j - 1;
+	break;
+      }
+    }
+    c->last_base_until = buffer->idx;
+    if (c->last_base == -1)
+    {
+      buffer->unsafe_to_concat_from_outbuffer (0, buffer->idx + 1);
       return_trace (false);
     }
 
-    return_trace ((this+markArray).apply (c, mark_index, base_index, this+baseArray, classCount, skippy_iter.idx));
+    unsigned idx = (unsigned) c->last_base;
+
+    
+    
+
+    unsigned int base_index = (this+baseCoverage).get_coverage  (buffer->info[idx].codepoint);
+    if (base_index == NOT_COVERED)
+    {
+      buffer->unsafe_to_concat_from_outbuffer (idx, buffer->idx + 1);
+      return_trace (false);
+    }
+
+    return_trace ((this+markArray).apply (c, mark_index, base_index, this+baseArray, classCount, idx));
   }
 
   bool subset (hb_subset_context_t *c) const

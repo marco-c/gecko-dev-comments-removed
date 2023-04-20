@@ -182,7 +182,9 @@ hb_set_t *
 hb_set_copy (const hb_set_t *set)
 {
   hb_set_t *copy = hb_set_create ();
-  if (unlikely (!copy)) return nullptr;
+  if (unlikely (copy->in_error ()))
+    return hb_set_get_empty ();
+
   copy->set (*set);
   return copy;
 }
@@ -489,6 +491,22 @@ hb_set_invert (hb_set_t *set)
 {
   
   set->invert ();
+}
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_set_is_inverted (const hb_set_t *set)
+{
+  return set->is_inverted ();
 }
 
 

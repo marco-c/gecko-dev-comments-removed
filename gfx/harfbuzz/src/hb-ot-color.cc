@@ -31,11 +31,11 @@
 
 #include "hb-ot.h"
 
-#include "hb-ot-color-cbdt-table.hh"
-#include "hb-ot-color-colr-table.hh"
-#include "hb-ot-color-cpal-table.hh"
-#include "hb-ot-color-sbix-table.hh"
-#include "hb-ot-color-svg-table.hh"
+#include "OT/Color/CBDT/CBDT.hh"
+#include "OT/Color/COLR/COLR.hh"
+#include "OT/Color/CPAL/CPAL.hh"
+#include "OT/Color/sbix/sbix.hh"
+#include "OT/Color/svg/svg.hh"
 
 
 
@@ -171,6 +171,10 @@ hb_ot_color_palette_get_flags (hb_face_t *face,
 
 
 
+
+
+
+
 unsigned int
 hb_ot_color_palette_get_colors (hb_face_t     *face,
 				unsigned int   palette_index,
@@ -196,10 +200,47 @@ hb_ot_color_palette_get_colors (hb_face_t     *face,
 
 
 
+
 hb_bool_t
 hb_ot_color_has_layers (hb_face_t *face)
 {
-  return face->table.COLR->has_data ();
+  return face->table.COLR->has_v0_data ();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_ot_color_has_paint (hb_face_t *face)
+{
+  return face->table.COLR->has_v1_data ();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_ot_color_glyph_has_paint (hb_face_t      *face,
+                             hb_codepoint_t  glyph)
+{
+  return face->table.COLR->has_paint_for_glyph (glyph);
 }
 
 

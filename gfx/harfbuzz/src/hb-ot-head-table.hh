@@ -97,6 +97,7 @@ struct head
 
 
   HBUINT32	magicNumber;		
+  public:
   HBUINT16	flags;			
 
 
@@ -141,6 +142,7 @@ struct head
 
 
 
+  protected:
   HBUINT16	unitsPerEm;		
 
 
@@ -148,10 +150,12 @@ struct head
 
   LONGDATETIME	modified;		
 
+  public:
   HBINT16	xMin;			
   HBINT16	yMin;			
   HBINT16	xMax;			
   HBINT16	yMax;			
+  protected:
   HBUINT16	macStyle;		
 
 

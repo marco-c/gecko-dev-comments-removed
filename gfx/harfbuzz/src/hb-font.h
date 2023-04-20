@@ -34,17 +34,9 @@
 #include "hb-common.h"
 #include "hb-face.h"
 #include "hb-draw.h"
+#include "hb-paint.h"
 
 HB_BEGIN_DECLS
-
-
-
-
-
-
-
-typedef struct hb_font_t hb_font_t;
-
 
 
 
@@ -125,24 +117,6 @@ typedef struct hb_font_extents_t {
   hb_position_t reserved2;
   hb_position_t reserved1;
 } hb_font_extents_t;
-
-
-
-
-
-
-
-
-
-
-
-
-typedef struct hb_glyph_extents_t {
-  hb_position_t x_bearing;
-  hb_position_t y_bearing;
-  hb_position_t width;
-  hb_position_t height;
-} hb_glyph_extents_t;
 
 
 
@@ -544,6 +518,46 @@ typedef void (*hb_font_get_glyph_shape_func_t) (hb_font_t *font, void *font_data
 
 
 
+typedef void (*hb_font_draw_glyph_func_t) (hb_font_t *font, void *font_data,
+                                           hb_codepoint_t glyph,
+                                           hb_draw_funcs_t *draw_funcs, void *draw_data,
+                                           void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*hb_font_paint_glyph_func_t) (hb_font_t *font, void *font_data,
+                                            hb_codepoint_t glyph,
+                                            hb_paint_funcs_t *paint_funcs, void *paint_data,
+                                            unsigned int palette_index,
+                                            hb_color_t foreground,
+                                            void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 HB_EXTERN void
 hb_font_funcs_set_font_h_extents_func (hb_font_funcs_t *ffuncs,
 				       hb_font_get_font_h_extents_func_t func,
@@ -800,10 +814,45 @@ hb_font_funcs_set_glyph_from_name_func (hb_font_funcs_t *ffuncs,
 
 
 
+
+
 HB_EXTERN void
 hb_font_funcs_set_glyph_shape_func (hb_font_funcs_t *ffuncs,
 				    hb_font_get_glyph_shape_func_t func,
 				    void *user_data, hb_destroy_func_t destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_font_funcs_set_draw_glyph_func (hb_font_funcs_t *ffuncs,
+                                   hb_font_draw_glyph_func_t func,
+                                   void *user_data, hb_destroy_func_t destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_font_funcs_set_paint_glyph_func (hb_font_funcs_t *ffuncs,
+                                    hb_font_paint_glyph_func_t func,
+                                    void *user_data, hb_destroy_func_t destroy);
 
 
 
@@ -890,6 +939,17 @@ hb_font_get_glyph_shape (hb_font_t *font,
 			 hb_codepoint_t glyph,
 			 hb_draw_funcs_t *dfuncs, void *draw_data);
 
+HB_EXTERN void
+hb_font_draw_glyph (hb_font_t *font,
+                    hb_codepoint_t glyph,
+                    hb_draw_funcs_t *dfuncs, void *draw_data);
+
+HB_EXTERN void
+hb_font_paint_glyph (hb_font_t *font,
+                     hb_codepoint_t glyph,
+                     hb_paint_funcs_t *pfuncs, void *paint_data,
+                     unsigned int palette_index,
+                     hb_color_t foreground);
 
 
 
@@ -1070,6 +1130,16 @@ HB_EXTERN float
 hb_font_get_ptem (hb_font_t *font);
 
 HB_EXTERN void
+hb_font_set_synthetic_bold (hb_font_t *font,
+			    float x_embolden, float y_embolden,
+			    hb_bool_t in_place);
+
+HB_EXTERN void
+hb_font_get_synthetic_bold (hb_font_t *font,
+			    float *x_embolden, float *y_embolden,
+			    hb_bool_t *in_place);
+
+HB_EXTERN void
 hb_font_set_synthetic_slant (hb_font_t *font, float slant);
 
 HB_EXTERN float
@@ -1098,10 +1168,23 @@ HB_EXTERN const int *
 hb_font_get_var_coords_normalized (hb_font_t *font,
 				   unsigned int *length);
 
+
+
+
+
+
+
+
+
+
+#define HB_FONT_NO_VAR_NAMED_INSTANCE 0xFFFFFFFF
+
 HB_EXTERN void
 hb_font_set_var_named_instance (hb_font_t *font,
-				unsigned instance_index);
+				unsigned int instance_index);
 
+HB_EXTERN unsigned int
+hb_font_get_var_named_instance (hb_font_t *font);
 
 HB_END_DECLS
 

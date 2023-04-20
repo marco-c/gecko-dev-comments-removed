@@ -76,14 +76,6 @@ typedef struct hb_subset_plan_t hb_subset_plan_t;
 
 
 
-
-
-
-
-
-
-
-
 typedef enum { 
   HB_SUBSET_FLAGS_DEFAULT =		     0x00000000u,
   HB_SUBSET_FLAGS_NO_HINTING =		     0x00000001u,
@@ -95,8 +87,6 @@ typedef enum {
   HB_SUBSET_FLAGS_NOTDEF_OUTLINE =	     0x00000040u,
   HB_SUBSET_FLAGS_GLYPH_NAMES =		     0x00000080u,
   HB_SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES =  0x00000100u,
-  
-  
 } hb_subset_flags_t;
 
 
@@ -148,6 +138,9 @@ hb_subset_input_set_user_data (hb_subset_input_t  *input,
 HB_EXTERN void *
 hb_subset_input_get_user_data (const hb_subset_input_t *input,
 			       hb_user_data_key_t      *key);
+
+HB_EXTERN void
+hb_subset_input_keep_everything (hb_subset_input_t *input);
 
 HB_EXTERN hb_set_t *
 hb_subset_input_unicode_set (hb_subset_input_t *input);
@@ -204,13 +197,13 @@ hb_subset_plan_create_or_fail (hb_face_t                 *face,
 HB_EXTERN void
 hb_subset_plan_destroy (hb_subset_plan_t *plan);
 
-HB_EXTERN const hb_map_t*
+HB_EXTERN hb_map_t *
 hb_subset_plan_old_to_new_glyph_mapping (const hb_subset_plan_t *plan);
 
-HB_EXTERN const hb_map_t*
+HB_EXTERN hb_map_t *
 hb_subset_plan_new_to_old_glyph_mapping (const hb_subset_plan_t *plan);
 
-HB_EXTERN const hb_map_t*
+HB_EXTERN hb_map_t *
 hb_subset_plan_unicode_to_old_glyph_mapping (const hb_subset_plan_t *plan);
 
 

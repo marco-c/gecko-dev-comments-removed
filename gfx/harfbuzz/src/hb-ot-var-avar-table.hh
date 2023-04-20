@@ -86,8 +86,8 @@ struct SegmentMaps : Array16Of<AxisValueMap>
 {
   int map (int value, unsigned int from_offset = 0, unsigned int to_offset = 1) const
   {
-#define fromCoord coords[from_offset]
-#define toCoord coords[to_offset]
+#define fromCoord coords[from_offset].to_int ()
+#define toCoord coords[to_offset].to_int ()
     
 
 

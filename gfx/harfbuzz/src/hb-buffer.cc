@@ -522,15 +522,17 @@ hb_buffer_t::merge_clusters_impl (unsigned int start,
     cluster = hb_min (cluster, info[i].cluster);
 
   
-  while (end < len && info[end - 1].cluster == info[end].cluster)
-    end++;
+  if (cluster != info[end - 1].cluster)
+    while (end < len && info[end - 1].cluster == info[end].cluster)
+      end++;
 
   
-  while (idx < start && info[start - 1].cluster == info[start].cluster)
-    start--;
+  if (cluster != info[start].cluster)
+    while (idx < start && info[start - 1].cluster == info[start].cluster)
+      start--;
 
   
-  if (idx == start)
+  if (idx == start && info[start].cluster != cluster)
     for (unsigned int i = out_len; i && out_info[i - 1].cluster == info[start].cluster; i--)
       set_cluster (out_info[i - 1], cluster);
 
@@ -883,6 +885,32 @@ hb_buffer_get_user_data (const hb_buffer_t  *buffer,
 {
   return hb_object_get_user_data (buffer, key);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

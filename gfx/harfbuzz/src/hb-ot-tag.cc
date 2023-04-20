@@ -119,6 +119,17 @@ hb_ot_new_tag_to_script (hb_tag_t tag)
 }
 
 #ifndef HB_DISABLE_DEPRECATED
+
+
+
+
+
+
+
+
+
+
+
 void
 hb_ot_tags_from_script (hb_script_t  script,
 			hb_tag_t    *script_tag_1,
@@ -249,6 +260,15 @@ struct LangTag
 	
 
 #ifndef HB_DISABLE_DEPRECATED
+
+
+
+
+
+
+
+
+
 hb_tag_t
 hb_ot_tag_from_language (hb_language_t language)
 {
@@ -606,7 +626,7 @@ test_langs_sorted ()
     int c = ot_languages2[i].cmp (&ot_languages2[i - 1]);
     if (c > 0)
     {
-      fprintf (stderr, "ot_languages2 not sorted at index %d: %08x %d %08x\n",
+      fprintf (stderr, "ot_languages2 not sorted at index %u: %08x %d %08x\n",
 	       i, ot_languages2[i-1].language, c, ot_languages2[i].language);
       abort();
     }
@@ -617,7 +637,7 @@ test_langs_sorted ()
     int c = ot_languages3[i].cmp (&ot_languages3[i - 1]);
     if (c > 0)
     {
-      fprintf (stderr, "ot_languages3 not sorted at index %d: %08x %d %08x\n",
+      fprintf (stderr, "ot_languages3 not sorted at index %u: %08x %d %08x\n",
 	       i, ot_languages3[i-1].language, c, ot_languages3[i].language);
       abort();
     }

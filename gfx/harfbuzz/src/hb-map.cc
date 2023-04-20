@@ -182,9 +182,10 @@ hb_map_t *
 hb_map_copy (const hb_map_t *map)
 {
   hb_map_t *copy = hb_map_create ();
-  if (unlikely (!copy)) return nullptr;
-  copy->resize (map->population);
-  hb_copy (*map, *copy);
+  if (unlikely (copy->in_error ()))
+    return hb_map_get_empty ();
+
+  *copy = *map;
   return copy;
 }
 
@@ -335,9 +336,84 @@ hb_map_is_equal (const hb_map_t *map,
 
 
 
-HB_EXTERN unsigned int
+unsigned int
 hb_map_hash (const hb_map_t *map)
 {
   return map->hash ();
 }
 
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_map_update (hb_map_t *map,
+	       const hb_map_t *other)
+{
+  map->update (*other);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_map_next (const hb_map_t *map,
+	     int *idx,
+	     hb_codepoint_t *key,
+	     hb_codepoint_t *value)
+{
+  return map->next (idx, key, value);
+}
+
+
+
+
+
+
+
+
+
+
+void
+hb_map_keys (const hb_map_t *map,
+	     hb_set_t *keys)
+{
+  map->keys (*keys);
+}
+
+
+
+
+
+
+
+
+
+
+void
+hb_map_values (const hb_map_t *map,
+	       hb_set_t *values)
+{
+  map->values (*values);
+}

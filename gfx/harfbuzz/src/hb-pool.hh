@@ -31,7 +31,7 @@
 
 
 
-template <typename T, unsigned ChunkLen = 16>
+template <typename T, unsigned ChunkLen = 32>
 struct hb_pool_t
 {
   hb_pool_t () : next (nullptr) {}

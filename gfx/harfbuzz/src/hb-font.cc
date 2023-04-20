@@ -30,6 +30,7 @@
 
 #include "hb-font.hh"
 #include "hb-draw.hh"
+#include "hb-paint.hh"
 #include "hb-machinery.hh"
 
 #include "hb-ot.h"
@@ -503,23 +504,34 @@ hb_font_get_glyph_from_name_default (hb_font_t      *font,
 }
 
 static void
-hb_font_get_glyph_shape_nil (hb_font_t       *font HB_UNUSED,
-			     void            *font_data HB_UNUSED,
-			     hb_codepoint_t   glyph,
-			     hb_draw_funcs_t *draw_funcs,
-			     void            *draw_data,
-			     void            *user_data HB_UNUSED)
+hb_font_draw_glyph_nil (hb_font_t       *font HB_UNUSED,
+			void            *font_data HB_UNUSED,
+			hb_codepoint_t   glyph,
+			hb_draw_funcs_t *draw_funcs,
+			void            *draw_data,
+			void            *user_data HB_UNUSED)
 {
 }
 
+static void
+hb_font_paint_glyph_nil (hb_font_t *font HB_UNUSED,
+                         void *font_data HB_UNUSED,
+                         hb_codepoint_t glyph HB_UNUSED,
+                         hb_paint_funcs_t *paint_funcs HB_UNUSED,
+                         void *paint_data HB_UNUSED,
+                         unsigned int palette HB_UNUSED,
+                         hb_color_t foreground HB_UNUSED,
+                         void *user_data HB_UNUSED)
+{
+}
 
-typedef struct hb_font_get_glyph_shape_default_adaptor_t {
+typedef struct hb_font_draw_glyph_default_adaptor_t {
   hb_draw_funcs_t *draw_funcs;
   void		  *draw_data;
   float		   x_scale;
   float		   y_scale;
   float		   slant;
-} hb_font_get_glyph_shape_default_adaptor_t;
+} hb_font_draw_glyph_default_adaptor_t;
 
 static void
 hb_draw_move_to_default (hb_draw_funcs_t *dfuncs HB_UNUSED,
@@ -528,7 +540,7 @@ hb_draw_move_to_default (hb_draw_funcs_t *dfuncs HB_UNUSED,
 			 float to_x, float to_y,
 			 void *user_data HB_UNUSED)
 {
-  hb_font_get_glyph_shape_default_adaptor_t *adaptor = (hb_font_get_glyph_shape_default_adaptor_t *) draw_data;
+  hb_font_draw_glyph_default_adaptor_t *adaptor = (hb_font_draw_glyph_default_adaptor_t *) draw_data;
   float x_scale = adaptor->x_scale;
   float y_scale = adaptor->y_scale;
   float slant   = adaptor->slant;
@@ -543,7 +555,7 @@ hb_draw_line_to_default (hb_draw_funcs_t *dfuncs HB_UNUSED, void *draw_data,
 			 float to_x, float to_y,
 			 void *user_data HB_UNUSED)
 {
-  hb_font_get_glyph_shape_default_adaptor_t *adaptor = (hb_font_get_glyph_shape_default_adaptor_t *) draw_data;
+  hb_font_draw_glyph_default_adaptor_t *adaptor = (hb_font_draw_glyph_default_adaptor_t *) draw_data;
   float x_scale = adaptor->x_scale;
   float y_scale = adaptor->y_scale;
   float slant   = adaptor->slant;
@@ -562,7 +574,7 @@ hb_draw_quadratic_to_default (hb_draw_funcs_t *dfuncs HB_UNUSED, void *draw_data
 			      float to_x, float to_y,
 			      void *user_data HB_UNUSED)
 {
-  hb_font_get_glyph_shape_default_adaptor_t *adaptor = (hb_font_get_glyph_shape_default_adaptor_t *) draw_data;
+  hb_font_draw_glyph_default_adaptor_t *adaptor = (hb_font_draw_glyph_default_adaptor_t *) draw_data;
   float x_scale = adaptor->x_scale;
   float y_scale = adaptor->y_scale;
   float slant   = adaptor->slant;
@@ -583,7 +595,7 @@ hb_draw_cubic_to_default (hb_draw_funcs_t *dfuncs HB_UNUSED, void *draw_data,
 			  float to_x, float to_y,
 			  void *user_data HB_UNUSED)
 {
-  hb_font_get_glyph_shape_default_adaptor_t *adaptor = (hb_font_get_glyph_shape_default_adaptor_t *) draw_data;
+  hb_font_draw_glyph_default_adaptor_t *adaptor = (hb_font_draw_glyph_default_adaptor_t *) draw_data;
   float x_scale = adaptor->x_scale;
   float y_scale = adaptor->y_scale;
   float slant   = adaptor->slant;
@@ -602,7 +614,7 @@ hb_draw_close_path_default (hb_draw_funcs_t *dfuncs HB_UNUSED, void *draw_data,
 			    hb_draw_state_t *st,
 			    void *user_data HB_UNUSED)
 {
-  hb_font_get_glyph_shape_default_adaptor_t *adaptor = (hb_font_get_glyph_shape_default_adaptor_t *) draw_data;
+  hb_font_draw_glyph_default_adaptor_t *adaptor = (hb_font_draw_glyph_default_adaptor_t *) draw_data;
 
   adaptor->draw_funcs->emit_close_path (adaptor->draw_data, *st);
 }
@@ -618,14 +630,14 @@ static const hb_draw_funcs_t _hb_draw_funcs_default = {
 };
 
 static void
-hb_font_get_glyph_shape_default (hb_font_t       *font,
+hb_font_draw_glyph_default (hb_font_t       *font,
 				 void            *font_data HB_UNUSED,
 				 hb_codepoint_t   glyph,
 				 hb_draw_funcs_t *draw_funcs,
 				 void            *draw_data,
 				 void            *user_data HB_UNUSED)
 {
-  hb_font_get_glyph_shape_default_adaptor_t adaptor = {
+  hb_font_draw_glyph_default_adaptor_t adaptor = {
     draw_funcs,
     draw_data,
     font->parent->x_scale ? (float) font->x_scale / (float) font->parent->x_scale : 0.f,
@@ -634,9 +646,32 @@ hb_font_get_glyph_shape_default (hb_font_t       *font,
 			    (float) font->x_scale / (float) font->parent->y_scale : 0.f
   };
 
-  font->parent->get_glyph_shape (glyph,
+  font->parent->draw_glyph (glyph,
 				 const_cast<hb_draw_funcs_t *> (&_hb_draw_funcs_default),
 				 &adaptor);
+}
+
+static void
+hb_font_paint_glyph_default (hb_font_t *font,
+                             void *font_data,
+                             hb_codepoint_t glyph,
+                             hb_paint_funcs_t *paint_funcs,
+                             void *paint_data,
+                             unsigned int palette,
+                             hb_color_t foreground,
+                             void *user_data)
+{
+  paint_funcs->push_transform (paint_data,
+    font->parent->x_scale ? (float) font->x_scale / (float) font->parent->x_scale : 0.f,
+    font->parent->y_scale ? (font->slant - font->parent->slant) *
+			    (float) font->x_scale / (float) font->parent->y_scale : 0.f,
+    0.f,
+    font->parent->y_scale ? (float) font->y_scale / (float) font->parent->y_scale : 0.f,
+    0.f, 0.f);
+
+  font->parent->paint_glyph (glyph, paint_funcs, paint_data, palette, foreground);
+
+  paint_funcs->pop_transform (paint_data);
 }
 
 DEFINE_NULL_INSTANCE (hb_font_funcs_t) =
@@ -647,7 +682,7 @@ DEFINE_NULL_INSTANCE (hb_font_funcs_t) =
   nullptr,
   {
     {
-#define HB_FONT_FUNC_IMPLEMENT(name) hb_font_get_##name##_nil,
+#define HB_FONT_FUNC_IMPLEMENT(get_,name) hb_font_##get_##name##_nil,
       HB_FONT_FUNCS_IMPLEMENT_CALLBACKS
 #undef HB_FONT_FUNC_IMPLEMENT
     }
@@ -661,7 +696,7 @@ static const hb_font_funcs_t _hb_font_funcs_default = {
   nullptr,
   {
     {
-#define HB_FONT_FUNC_IMPLEMENT(name) hb_font_get_##name##_default,
+#define HB_FONT_FUNC_IMPLEMENT(get_,name) hb_font_##get_##name##_default,
       HB_FONT_FUNCS_IMPLEMENT_CALLBACKS
 #undef HB_FONT_FUNC_IMPLEMENT
     }
@@ -739,7 +774,7 @@ hb_font_funcs_destroy (hb_font_funcs_t *ffuncs)
 
   if (ffuncs->destroy)
   {
-#define HB_FONT_FUNC_IMPLEMENT(name) if (ffuncs->destroy->name) \
+#define HB_FONT_FUNC_IMPLEMENT(get_,name) if (ffuncs->destroy->name) \
     ffuncs->destroy->name (!ffuncs->user_data ? nullptr : ffuncs->user_data->name);
     HB_FONT_FUNCS_IMPLEMENT_CALLBACKS
 #undef HB_FONT_FUNC_IMPLEMENT
@@ -879,11 +914,11 @@ fail:
   return false;
 }
 
-#define HB_FONT_FUNC_IMPLEMENT(name) \
+#define HB_FONT_FUNC_IMPLEMENT(get_,name) \
 									 \
 void                                                                     \
 hb_font_funcs_set_##name##_func (hb_font_funcs_t             *ffuncs,    \
-				 hb_font_get_##name##_func_t  func,      \
+				 hb_font_##get_##name##_func_t func,     \
 				 void                        *user_data, \
 				 hb_destroy_func_t            destroy)   \
 {                                                                        \
@@ -899,7 +934,7 @@ hb_font_funcs_set_##name##_func (hb_font_funcs_t             *ffuncs,    \
   if (func)                                                              \
     ffuncs->get.f.name = func;                                           \
   else                                                                   \
-    ffuncs->get.f.name = hb_font_get_##name##_default;                   \
+    ffuncs->get.f.name = hb_font_##get_##name##_default;                   \
 									 \
   if (ffuncs->user_data)                                                 \
     ffuncs->user_data->name = user_data;                                 \
@@ -1015,6 +1050,7 @@ hb_font_get_nominal_glyph (hb_font_t      *font,
 {
   return font->get_nominal_glyph (unicode, glyph);
 }
+
 
 
 
@@ -1312,6 +1348,9 @@ hb_font_get_glyph_contour_point (hb_font_t      *font,
 
 
 
+
+
+
 hb_bool_t
 hb_font_get_glyph_name (hb_font_t      *font,
 			hb_codepoint_t  glyph,
@@ -1358,12 +1397,66 @@ hb_font_get_glyph_from_name (hb_font_t      *font,
 
 
 
+
 void
 hb_font_get_glyph_shape (hb_font_t *font,
+		         hb_codepoint_t glyph,
+		         hb_draw_funcs_t *dfuncs, void *draw_data)
+{
+  hb_font_draw_glyph (font, glyph, dfuncs, draw_data);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+hb_font_draw_glyph (hb_font_t *font,
 			 hb_codepoint_t glyph,
 			 hb_draw_funcs_t *dfuncs, void *draw_data)
 {
-  font->get_glyph_shape (glyph, dfuncs, draw_data);
+  font->draw_glyph (glyph, dfuncs, draw_data);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+hb_font_paint_glyph (hb_font_t *font,
+                     hb_codepoint_t glyph,
+                     hb_paint_funcs_t *pfuncs, void *paint_data,
+                     unsigned int palette_index,
+                     hb_color_t foreground)
+{
+  font->paint_glyph (glyph, pfuncs, paint_data, palette_index, foreground);
 }
 
 
@@ -1626,6 +1719,9 @@ hb_font_get_glyph_contour_point_for_origin (hb_font_t      *font,
 
 
 
+
+
+
 void
 hb_font_glyph_to_string (hb_font_t      *font,
 			 hb_codepoint_t  glyph,
@@ -1677,8 +1773,13 @@ DEFINE_NULL_INSTANCE (hb_font_t) =
 
   1000, 
   1000, 
-  0., 
-  0., 
+  0.f, 
+  0.f, 
+  true, 
+  0, 
+  0, 
+  0.f, 
+  0.f, 
   1.f, 
   1.f, 
   1<<16, 
@@ -1688,6 +1789,7 @@ DEFINE_NULL_INSTANCE (hb_font_t) =
   0, 
   0, 
 
+  HB_FONT_NO_VAR_NAMED_INSTANCE, 
   0, 
   nullptr, 
   nullptr, 
@@ -1715,8 +1817,10 @@ _hb_font_create (hb_face_t *face)
   font->klass = hb_font_funcs_get_empty ();
   font->data.init0 (font);
   font->x_scale = font->y_scale = face->get_upem ();
+  font->embolden_in_place = true;
   font->x_multf = font->y_multf = 1.f;
   font->x_mult = font->y_mult = 1 << 16;
+  font->instance_index = HB_FONT_NO_VAR_NAMED_INSTANCE;
 
   return font;
 }
@@ -1798,6 +1902,9 @@ hb_font_create_sub_font (hb_font_t *parent)
 
   font->x_scale = parent->x_scale;
   font->y_scale = parent->y_scale;
+  font->x_embolden = parent->x_embolden;
+  font->y_embolden = parent->y_embolden;
+  font->embolden_in_place = parent->embolden_in_place;
   font->slant = parent->slant;
   font->x_ppem = parent->x_ppem;
   font->y_ppem = parent->y_ppem;
@@ -2189,6 +2296,31 @@ hb_font_set_funcs_data (hb_font_t         *font,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void
 hb_font_set_scale (hb_font_t *font,
 		   int        x_scale,
@@ -2225,6 +2357,10 @@ hb_font_get_scale (hb_font_t *font,
   if (x_scale) *x_scale = font->x_scale;
   if (y_scale) *y_scale = font->y_scale;
 }
+
+
+
+
 
 
 
@@ -2337,6 +2473,75 @@ hb_font_get_ptem (hb_font_t *font)
 
 
 
+
+
+
+
+
+void
+hb_font_set_synthetic_bold (hb_font_t *font,
+			    float x_embolden,
+			    float y_embolden,
+			    hb_bool_t in_place)
+{
+  if (hb_object_is_immutable (font))
+    return;
+
+  if (font->x_embolden == x_embolden &&
+      font->y_embolden == y_embolden &&
+      font->embolden_in_place == (bool) in_place)
+    return;
+
+  font->serial++;
+
+  font->x_embolden = x_embolden;
+  font->y_embolden = y_embolden;
+  font->embolden_in_place = in_place;
+  font->mults_changed ();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+void
+hb_font_get_synthetic_bold (hb_font_t *font,
+			    float *x_embolden,
+			    float *y_embolden,
+			    hb_bool_t *in_place)
+{
+  if (x_embolden) *x_embolden = font->x_embolden;
+  if (y_embolden) *y_embolden = font->y_embolden;
+  if (in_place) *in_place = font->embolden_in_place;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 HB_EXTERN void
 hb_font_set_synthetic_slant (hb_font_t *font, float slant)
 {
@@ -2397,7 +2602,7 @@ hb_font_set_variations (hb_font_t            *font,
 
   font->serial_coords = ++font->serial;
 
-  if (!variations_length)
+  if (!variations_length && font->instance_index == HB_FONT_NO_VAR_NAMED_INSTANCE)
   {
     hb_font_set_var_coords_normalized (font, nullptr, 0);
     return;
@@ -2420,6 +2625,15 @@ hb_font_set_variations (hb_font_t            *font,
   
   for (unsigned int i = 0; i < coords_length; i++)
     design_coords[i] = axes[i].get_default ();
+  if (font->instance_index != HB_FONT_NO_VAR_NAMED_INSTANCE)
+  {
+    unsigned count = coords_length;
+    
+
+
+    hb_ot_var_named_instance_get_design_coords (font->face, font->instance_index,
+						&count, design_coords);
+  }
 
   for (unsigned int i = 0; i < variations_length; i++)
   {
@@ -2427,13 +2641,11 @@ hb_font_set_variations (hb_font_t            *font,
     const auto v = variations[i].value;
     for (unsigned axis_index = 0; axis_index < coords_length; axis_index++)
       if (axes[axis_index].axisTag == tag)
-      {
 	design_coords[axis_index] = v;
-	normalized[axis_index] = fvar.normalize_axis_value (axis_index, v);
-      }
   }
   font->face->table.avar->map_coords (normalized, coords_length);
 
+  hb_ot_var_normalize_coords (font->face, coords_length, design_coords, normalized);
   _hb_font_adopt_var_coords (font, normalized, design_coords, coords_length);
 }
 
@@ -2490,22 +2702,34 @@ hb_font_set_var_coords_design (hb_font_t    *font,
 
 void
 hb_font_set_var_named_instance (hb_font_t *font,
-				unsigned instance_index)
+				unsigned int instance_index)
 {
   if (hb_object_is_immutable (font))
     return;
 
-  font->serial_coords = ++font->serial;
-
-  unsigned int coords_length = hb_ot_var_named_instance_get_design_coords (font->face, instance_index, nullptr, nullptr);
-
-  float *coords = coords_length ? (float *) hb_calloc (coords_length, sizeof (float)) : nullptr;
-  if (unlikely (coords_length && !coords))
+  if (font->instance_index == instance_index)
     return;
 
-  hb_ot_var_named_instance_get_design_coords (font->face, instance_index, &coords_length, coords);
-  hb_font_set_var_coords_design (font, coords, coords_length);
-  hb_free (coords);
+  font->serial_coords = ++font->serial;
+
+  font->instance_index = instance_index;
+  hb_font_set_variations (font, nullptr, 0);
+}
+
+
+
+
+
+
+
+
+
+
+
+unsigned int
+hb_font_get_var_named_instance (hb_font_t *font)
+{
+  return font->instance_index;
 }
 
 
@@ -2754,3 +2978,13 @@ hb_font_funcs_set_glyph_func (hb_font_funcs_t          *ffuncs,
 					  trampoline_destroy);
 }
 #endif
+
+
+void
+hb_font_funcs_set_glyph_shape_func (hb_font_funcs_t               *ffuncs,
+                                   hb_font_get_glyph_shape_func_t  func,
+                                   void                           *user_data,
+                                   hb_destroy_func_t               destroy )
+{
+  hb_font_funcs_set_draw_glyph_func (ffuncs, func, user_data, destroy);
+}
