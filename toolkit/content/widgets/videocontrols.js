@@ -2322,7 +2322,10 @@ this.VideoControlsImplWidget = class {
 
         
         
-        scrubberWidth: 0,
+        
+        
+        
+        scrubberWidth: Infinity,
       },
 
       updateReflowedDimensions() {
