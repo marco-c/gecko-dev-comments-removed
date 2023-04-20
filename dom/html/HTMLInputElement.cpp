@@ -6876,6 +6876,20 @@ void HTMLInputElement::SetRevealPassword(bool aValue) {
   if (NS_WARN_IF(mType != FormControlType::InputPassword)) {
     return;
   }
+  if (aValue == State().HasState(ElementState::REVEALED)) {
+    return;
+  }
+  RefPtr doc = OwnerDoc();
+  
+  
+  
+  bool defaultAction = true;
+  nsContentUtils::DispatchEventOnlyToChrome(
+      doc, ToSupports(this), u"MozWillToggleReveal"_ns, CanBubble::eYes,
+      Cancelable::eYes, &defaultAction);
+  if (NS_WARN_IF(!defaultAction)) {
+    return;
+  }
   if (aValue) {
     AddStates(ElementState::REVEALED);
   } else {
