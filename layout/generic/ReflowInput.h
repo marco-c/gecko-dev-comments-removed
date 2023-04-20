@@ -851,6 +851,19 @@ struct ReflowInput : public SizeComputationInput {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsInFragmentedContext() const;
+
+  
+  
+  
   static mozilla::LogicalMargin ComputeRelativeOffsets(
       mozilla::WritingMode aWM, nsIFrame* aFrame,
       const mozilla::LogicalSize& aCBSize);

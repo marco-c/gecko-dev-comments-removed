@@ -816,8 +816,7 @@ class nsFlexContainerFrame::FlexItem final {
   
   
   
-  
-  bool NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const;
+  bool NeedsFinalReflow(const ReflowInput& aParentReflowInput) const;
 
   
   
@@ -2374,12 +2373,7 @@ static bool FrameHasRelativeBSizeDependency(nsIFrame* aFrame) {
   return false;
 }
 
-bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
-  MOZ_ASSERT(
-      aAvailableBSizeForItem == NS_UNCONSTRAINEDSIZE ||
-          aAvailableBSizeForItem > 0,
-      "We can only handle unconstrained or positive available block-size.");
-
+bool FlexItem::NeedsFinalReflow(const ReflowInput& aParentReflowInput) const {
   if (!StaticPrefs::layout_flexbox_item_final_reflow_optimization_enabled()) {
     FLEX_LOG(
         "[perf] Flex item %p needed a final reflow due to optimization being "
@@ -2388,7 +2382,6 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
     return true;
   }
 
-  
   
   if (mFrame->GetPrevInFlow() || mFrame->GetNextInFlow()) {
     
@@ -2400,10 +2393,14 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
   
   
   
-  if (aAvailableBSizeForItem != NS_UNCONSTRAINEDSIZE) {
+  
+  
+  
+  
+  if (aParentReflowInput.IsInFragmentedContext()) {
     FLEX_LOG(
         "[frag] Flex item %p needed both a measuring reflow and a final "
-        "reflow due to constrained available block-size",
+        "reflow due to being in a fragmented context.",
         mFrame);
     return true;
   }
@@ -5233,7 +5230,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
             "next-in-flow due to position below available space's block-end",
             item.Frame());
         pushedItems.Insert(item.Frame());
-      } else if (item.NeedsFinalReflow(availableBSizeForItem)) {
+      } else if (item.NeedsFinalReflow(aReflowInput)) {
         
         const WritingMode itemWM = item.GetWritingMode();
         const auto availableSize =

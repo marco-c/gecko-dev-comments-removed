@@ -771,6 +771,13 @@ bool ReflowInput::ShouldApplyAutomaticMinimumOnBlockAxis() const {
          mStylePosition->MinBSize(GetWritingMode()).IsAuto();
 }
 
+bool ReflowInput::IsInFragmentedContext() const {
+  
+  
+  
+  return AvailableBSize() != NS_UNCONSTRAINEDSIZE || mFrame->GetPrevInFlow();
+}
+
 
 LogicalMargin ReflowInput::ComputeRelativeOffsets(WritingMode aWM,
                                                   nsIFrame* aFrame,
