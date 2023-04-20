@@ -360,7 +360,7 @@ static const size_t GCMinNurseryBytes = 256 * 1024;
 
 
 
-static const double SmallHeapIncrementalLimit = 1.40;
+static const double SmallHeapIncrementalLimit = 1.50;
 
 
 static const double LargeHeapIncrementalLimit = 1.10;
