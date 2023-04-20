@@ -1,6 +1,7 @@
 
 
 
+#[cfg(feature = "with-alloc")]
 use crate::alloc::boxed::Box;
 use core::{cmp, mem};
 
@@ -115,6 +116,7 @@ impl InflateState {
     
     
     
+    #[cfg(feature = "with-alloc")]
     pub fn new_boxed(data_format: DataFormat) -> Box<InflateState> {
         let mut b: Box<InflateState> = Box::default();
         b.data_format = data_format;
@@ -136,6 +138,7 @@ impl InflateState {
     
     
     
+    #[cfg(feature = "with-alloc")]
     pub fn new_boxed_with_window_bits(window_bits: i32) -> Box<InflateState> {
         let mut b: Box<InflateState> = Box::default();
         b.data_format = DataFormat::from_window_bits(window_bits);

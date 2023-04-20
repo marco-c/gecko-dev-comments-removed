@@ -1456,7 +1456,8 @@ pub fn decompress(
                 // Mask the top bits since they may contain length info.
                 l.counter &= 511;
 
-                if l.counter == 256 {
+                if l.counter
+                    == 256 {
                     // We hit the end of block symbol.
                     Action::Jump(BlockDone)
                 } else if l.counter > 285 {
