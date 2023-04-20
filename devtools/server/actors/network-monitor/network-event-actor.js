@@ -16,6 +16,30 @@ const {
   LongStringActor,
 } = require("resource://devtools/server/actors/string.js");
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  NetworkUtils:
+    "resource://devtools/shared/network-observer/NetworkUtils.sys.mjs",
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -35,7 +59,8 @@ class NetworkEventActor extends Actor {
     conn,
     sessionContext,
     { onNetworkEventUpdate, onNetworkEventDestroy },
-    networkEvent
+    networkEventOptions,
+    channel
   ) {
     super(conn, networkEventSpec);
 
@@ -43,17 +68,25 @@ class NetworkEventActor extends Actor {
     this._onNetworkEventUpdate = onNetworkEventUpdate;
     this._onNetworkEventDestroy = onNetworkEventDestroy;
 
-    this.asResource = this.asResource.bind(this);
+    
+    this._channelId = channel.channelId;
+
+    
+    
+    this._innerWindowId = lazy.NetworkUtils.getChannelInnerWindowId(channel);
+    this._isNavigationRequest = lazy.NetworkUtils.isNavigationRequest(channel);
+
+    
+    const {
+      cookies,
+      headers,
+    } = lazy.NetworkUtils.fetchRequestHeadersAndCookies(channel);
 
     this._request = {
-      cookies: networkEvent.cookies,
-      headers: networkEvent.headers,
-      headersSize: networkEvent.headersSize || null,
-      httpVersion: networkEvent.httpVersion || null,
-      method: networkEvent.method || null,
+      cookies,
+      headers,
       postData: {},
-      rawHeaders: networkEvent.rawHeaders,
-      url: networkEvent.url || null,
+      rawHeaders: networkEventOptions.rawHeaders,
     };
 
     this._response = {
@@ -64,55 +97,42 @@ class NetworkEventActor extends Actor {
 
     this._timings = {};
     this._serverTimings = [];
-    
-    
-    
-    
-    this._stackTrace = false;
 
-    this._discardRequestBody = !!networkEvent.discardRequestBody;
-    this._discardResponseBody = !!networkEvent.discardResponseBody;
+    this._discardRequestBody = !!networkEventOptions.discardRequestBody;
+    this._discardResponseBody = !!networkEventOptions.discardResponseBody;
 
-    this._startedDateTime = networkEvent.startedDateTime;
-    this._isXHR = networkEvent.isXHR;
-
-    this._cause = networkEvent.cause;
-    
-    
-    
-    if (this._cause.lastFrame) {
-      delete this._cause.lastFrame;
-    }
-
-    this._fromCache = networkEvent.fromCache;
-    this._fromServiceWorker = networkEvent.fromServiceWorker;
-    this._isThirdPartyTrackingResource =
-      networkEvent.isThirdPartyTrackingResource;
-    this._referrerPolicy = networkEvent.referrerPolicy;
-    this._priority = networkEvent.priority;
-    this._channelId = networkEvent.channelId;
-    this._isFromSystemPrincipal = networkEvent.isFromSystemPrincipal;
-    this._browsingContextID = networkEvent.browsingContextID;
-    this.innerWindowId = networkEvent.innerWindowId;
-    this._serial = networkEvent.serial;
-    this._blockedReason = networkEvent.blockedReason;
-    this._blockingExtension = networkEvent.blockingExtension;
-
-    this._truncated = false;
-    this._private = networkEvent.private;
-    this.isNavigationRequest = networkEvent.isNavigationRequest;
+    this._resource = this._createResource(networkEventOptions, channel);
   }
 
   
 
 
+
   asResource() {
+    return {
+      actor: this.actorID,
+      ...this._resource,
+    };
+  }
+
+  
+
+
+  _createResource(networkEventOptions, channel) {
+    channel = channel.QueryInterface(Ci.nsIHttpChannel);
+    const wsChannel = lazy.NetworkUtils.getWebSocketChannel(channel);
+
+    
+    const url = wsChannel ? wsChannel.URI.spec : channel.URI.spec;
+
+    let browsingContextID = lazy.NetworkUtils.getChannelBrowsingContextID(
+      channel
+    );
+
     
     
-    if (!this._browsingContextID && this._sessionContext.type != "all") {
-      throw new Error(
-        `Got a request ${this._request.url} without a browsingContextID set`
-      );
+    if (!browsingContextID && this._sessionContext.type != "all") {
+      throw new Error(`Got a request ${url} without a browsingContextID set`);
     }
 
     
@@ -121,40 +141,70 @@ class NetworkEventActor extends Actor {
     
     
     
-    const browsingContextID =
-      this._browsingContextID && this._sessionContext.type == "browser-element"
-        ? this._browsingContextID
-        : -1;
+    if (
+      this._sessionContext.type == "all" ||
+      this._sessionContext.type == "webextension"
+    ) {
+      browsingContextID = -1;
+    }
 
-    return {
+    const cause = lazy.NetworkUtils.getCauseDetails(channel);
+    
+    const isXHR = cause.type == "xhr" || cause.type == "fetch";
+
+    
+    const stacktraceResourceId =
+      cause.type == "websocket" ? wsChannel.serial : channel.channelId;
+
+    
+    
+    const timeStamp = networkEventOptions.timestamp
+      ? networkEventOptions.timestamp / 1000
+      : Date.now();
+
+    let blockedReason = networkEventOptions.blockedReason;
+
+    
+    
+    if (
+      blockedReason === 0 ||
+      blockedReason === false ||
+      blockedReason === null ||
+      blockedReason === ""
+    ) {
+      blockedReason = "unknown";
+    }
+
+    const resource = {
+      resourceId: channel.channelId,
       resourceType: NETWORK_EVENT,
+      blockedReason,
+      blockingExtension: networkEventOptions.blockingExtension,
       browsingContextID,
-      innerWindowId: this.innerWindowId,
-      resourceId: this._channelId,
-      actor: this.actorID,
-      startedDateTime: this._startedDateTime,
-      timeStamp: Date.parse(this._startedDateTime),
-      url: this._request.url,
-      method: this._request.method,
-      isXHR: this._isXHR,
-      cause: this._cause,
+      cause,
+      
+      
+      chromeContext: lazy.NetworkUtils.isChannelFromSystemPrincipal(channel),
+      fromCache: networkEventOptions.fromCache,
+      fromServiceWorker: networkEventOptions.fromServiceWorker,
+      innerWindowId: this._innerWindowId,
+      isNavigationRequest: this._isNavigationRequest,
+      isThirdPartyTrackingResource: lazy.NetworkUtils.isThirdPartyTrackingResource(
+        channel
+      ),
+      isXHR,
+      method: channel.requestMethod,
+      priority: lazy.NetworkUtils.getChannelPriority(channel),
+      private: lazy.NetworkUtils.isChannelPrivate(channel),
+      referrerPolicy: lazy.NetworkUtils.getReferrerPolicy(channel),
+      stacktraceResourceId,
+      startedDateTime: new Date(timeStamp).toISOString(),
+      timeStamp,
       timings: {},
-      fromCache: this._fromCache,
-      fromServiceWorker: this._fromServiceWorker,
-      private: this._private,
-      isThirdPartyTrackingResource: this._isThirdPartyTrackingResource,
-      referrerPolicy: this._referrerPolicy,
-      priority: this._priority,
-      blockedReason: this._blockedReason,
-      blockingExtension: this._blockingExtension,
-      
-      stacktraceResourceId:
-        this._cause.type == "websocket" ? this._serial : this._channelId,
-      isNavigationRequest: this.isNavigationRequest,
-      
-      
-      chromeContext: this._isFromSystemPrincipal,
+      url,
     };
+
+    return resource;
   }
 
   
@@ -177,6 +227,14 @@ class NetworkEventActor extends Actor {
     
   }
 
+  getInnerWindowId() {
+    return this._innerWindowId;
+  }
+
+  isNavigationRequest() {
+    return this._isNavigationRequest;
+  }
+
   
 
 
@@ -185,7 +243,9 @@ class NetworkEventActor extends Actor {
 
   getRequestHeaders() {
     let rawHeaders;
+    let headersSize = 0;
     if (this._request.rawHeaders) {
+      headersSize = this._request.rawHeaders.length;
       rawHeaders = this._createLongStringActor(this._request.rawHeaders);
     }
 
@@ -194,7 +254,7 @@ class NetworkEventActor extends Actor {
         name: header.name,
         value: this._createLongStringActor(header.value),
       })),
-      headersSize: this._request.headersSize,
+      headersSize,
       rawHeaders,
     };
   }
@@ -427,18 +487,15 @@ class NetworkEventActor extends Actor {
 
 
 
-
-
   addResponseContent(
     content,
-    { discardResponseBody, truncated, blockedReason, blockingExtension }
+    { discardResponseBody, blockedReason, blockingExtension }
   ) {
     
     if (this.isDestroyed()) {
       return;
     }
 
-    this._truncated = truncated;
     this._response.content = content;
     content.text = new LongStringActor(this.conn, content.text);
     
