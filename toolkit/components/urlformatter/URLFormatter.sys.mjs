@@ -1,24 +1,21 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * @class nsURLFormatterService
+ *
+ * nsURLFormatterService exposes methods to substitute variables in URL formats.
+ *
+ * Mozilla Applications linking to Mozilla websites are strongly encouraged to use
+ * URLs of the following format:
+ *
+ *   http[s]://%SERVICE%.mozilla.[com|org]/%LOCALE%/
+ */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-
-
-
-
-
-
-
-
-
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const PREF_APP_DISTRIBUTION = "distribution.id";
 const PREF_APP_DISTRIBUTION_VERSION = "distribution.version";
@@ -30,7 +27,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
 });
 
-function nsURLFormatterService() {
+export function nsURLFormatterService() {
   XPCOMUtils.defineLazyGetter(this, "ABI", function UFS_ABI() {
     let ABI = "default";
     try {
@@ -76,8 +73,8 @@ nsURLFormatterService.prototype = {
     LOCALE: () => Services.locale.appLocaleAsBCP47,
     REGION() {
       try {
-        
-        
+        // When the geoip lookup failed to identify the region, we fallback to
+        // the 'ZZ' region code to mean 'unknown'.
         return lazy.Region.home || "ZZ";
       } catch (e) {
         return "ZZ";
@@ -169,7 +166,7 @@ nsURLFormatterService.prototype = {
         format
       )
     ) {
-      
+      // This looks as if it might be a localised preference
       try {
         format = Services.prefs.getComplexValue(
           aPref,
@@ -182,7 +179,7 @@ nsURLFormatterService.prototype = {
   },
 
   trimSensitiveURLs: function uf_trimSensitiveURLs(aMsg) {
-    
+    // Only the google API keys is sensitive for now.
     aMsg = AppConstants.MOZ_GOOGLE_LOCATION_SERVICE_API_KEY
       ? aMsg.replace(
           RegExp(AppConstants.MOZ_GOOGLE_LOCATION_SERVICE_API_KEY, "g"),
@@ -197,5 +194,3 @@ nsURLFormatterService.prototype = {
       : aMsg;
   },
 };
-
-var EXPORTED_SYMBOLS = ["nsURLFormatterService"];
