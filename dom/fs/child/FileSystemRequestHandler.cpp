@@ -450,7 +450,8 @@ void FileSystemRequestHandler::GetWritable(RefPtr<FileSystemManager>& aManager,
        aKeepData));
 
   
-  if (!StaticPrefs::dom_fs_writable_file_stream_enabled()) {
+  if (NS_IsMainThread() &&
+      !StaticPrefs::dom_fs_main_thread_writable_file_stream()) {
     aError.Throw(NS_ERROR_NOT_IMPLEMENTED);
     return;
   }
