@@ -2794,7 +2794,8 @@ bool ScrollFrameHelper::IsAlwaysActive() const {
   
   
   
-  if (!(mIsRoot && mOuter->PresContext()->IsRootContentDocument())) {
+  if (!(mIsRoot &&
+        mOuter->PresContext()->IsRootContentDocumentCrossProcess())) {
     return false;
   }
 

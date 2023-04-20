@@ -1019,10 +1019,8 @@ nsRect Element::GetClientAreaRect() {
   
   
   
-  bool overlayScrollbars = presContext && presContext->UseOverlayScrollbars();
-  bool rootContentDocument =
-      presContext && presContext->IsRootContentDocument();
-  if (overlayScrollbars && rootContentDocument &&
+  if (presContext && presContext->UseOverlayScrollbars() &&
+      !doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout() &&
       doc->IsScrollingElement(this)) {
     if (PresShell* presShell = doc->GetPresShell()) {
       

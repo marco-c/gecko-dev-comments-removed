@@ -1038,12 +1038,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
 
-  bool IsRootContentDocument() const;
-
-  
-
-
-
 
   bool IsRootContentDocumentInProcess() const;
 
