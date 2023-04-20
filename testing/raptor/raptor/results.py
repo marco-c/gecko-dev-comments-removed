@@ -670,7 +670,8 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                     
                     if (
                         self.app
-                        and self.app.lower() in NON_FIREFOX_BROWSERS
+                        and self.app.lower()
+                        in NON_FIREFOX_BROWSERS + NON_FIREFOX_BROWSERS_MOBILE
                         and bt
                         in (
                             "fnbpaint",
