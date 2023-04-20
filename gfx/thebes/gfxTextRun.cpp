@@ -2245,13 +2245,17 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
       if (pfl->SharedFontList()->GetGeneration() != oldGeneration) {
         return GetDefaultFont();
       }
-    } else {
-      gfxFontEntry* fe = pfl->GetDefaultFontEntry();
-      if (fe) {
-        RefPtr<gfxFont> f = fe->FindOrMakeFont(&mStyle);
-        if (f) {
-          return f.forget();
-        }
+    }
+  }
+
+  if (!mDefaultFont) {
+    
+    
+    gfxFontEntry* fe = pfl->GetDefaultFontEntry();
+    if (fe) {
+      RefPtr<gfxFont> f = fe->FindOrMakeFont(&mStyle);
+      if (f) {
+        return f.forget();
       }
     }
   }
