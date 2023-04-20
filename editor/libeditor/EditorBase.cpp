@@ -1856,12 +1856,15 @@ NS_IMETHODIMP EditorBase::RemoveAttribute(Element* aElement,
 
 nsresult EditorBase::RemoveAttributeWithTransaction(Element& aElement,
                                                     nsAtom& aAttribute) {
-  
-  
-  
+  if (!aElement.HasAttr(&aAttribute)) {
+    return NS_OK;
+  }
   RefPtr<ChangeAttributeTransaction> transaction =
       ChangeAttributeTransaction::CreateToRemove(aElement, aAttribute);
   nsresult rv = DoTransactionInternal(transaction);
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::DoTransactionInternal() failed");
   return rv;

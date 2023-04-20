@@ -3574,9 +3574,6 @@ nsresult HTMLEditor::SetHTMLBackgroundColorWithTransaction(
           
           nsresult rv = RemoveAttributeWithTransaction(
               MOZ_KnownLive(cellElement), *nsGkAtoms::bgcolor);
-          if (NS_WARN_IF(Destroyed())) {
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
           if (NS_FAILED(rv)) {
             NS_WARNING(
                 "EditorBase::RemoveAttributeWithTransaction(nsGkAtoms::bgcolor)"
