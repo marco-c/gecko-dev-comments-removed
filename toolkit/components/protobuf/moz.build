@@ -64,7 +64,7 @@ EXPORTS.google.protobuf.stubs += [
     'src/google/protobuf/stubs/platform_macros.h',
     'src/google/protobuf/stubs/port.h',
     'src/google/protobuf/stubs/status.h',
-    'src/google/protobuf/stubs/statusor.h',
+    
     'src/google/protobuf/stubs/stl_util.h',
     'src/google/protobuf/stubs/stringpiece.h',
     'src/google/protobuf/stubs/stringprintf.h',
@@ -105,7 +105,7 @@ SOURCES += [
     'src/google/protobuf/stubs/common.cc', 
     'src/google/protobuf/stubs/int128.cc', 
     'src/google/protobuf/stubs/status.cc', 
-    'src/google/protobuf/stubs/statusor.cc', 
+    
     'src/google/protobuf/stubs/stringprintf.cc', 
     'src/google/protobuf/stubs/time.cc',  
     'src/google/protobuf/wire_format_lite.cc', 
