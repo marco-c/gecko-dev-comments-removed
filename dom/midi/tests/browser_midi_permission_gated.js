@@ -27,6 +27,12 @@ add_setup(async function() {
   AddonTestUtils.initMochitest(this);
   AddonTestUtils.hookAMTelemetryEvents();
 
+  
+  
+  
+  
+  alwaysAcceptAddonPostInstallDialogs();
+
   registerCleanupFunction(async () => {
     
     await SpecialPowers.removePermission("midi-sysex", {
@@ -689,6 +695,49 @@ function assertSitePermissionInstallTelemetryEvents(expectedSteps) {
 async function waitForInstallDialog(id = "addon-webext-permissions") {
   let panel = await waitForNotification(id);
   return panel.childNodes[0];
+}
+
+
+
+
+
+function alwaysAcceptAddonPostInstallDialogs() {
+  
+  
+  
+  
+  const abortController = new AbortController();
+
+  const { AppMenuNotifications } = ChromeUtils.importESModule(
+    "resource://gre/modules/AppMenuNotifications.sys.mjs"
+  );
+  info("Start listening and accept addon post-install notifications");
+  PanelUI.notificationPanel.addEventListener(
+    "popupshown",
+    async function popupshown() {
+      let notification = AppMenuNotifications.activeNotification;
+      if (!notification || notification.id !== "addon-installed") {
+        return;
+      }
+
+      let popupnotificationID = PanelUI._getPopupId(notification);
+      if (popupnotificationID) {
+        info("Accept post-install dialog");
+        let popupnotification = document.getElementById(popupnotificationID);
+        popupnotification?.button.click();
+      }
+    },
+    {
+      signal: abortController.signal,
+    }
+  );
+
+  registerCleanupFunction(async () => {
+    
+    
+    
+    abortController.abort();
+  });
 }
 
 const PROGRESS_NOTIFICATION = "addon-progress";
