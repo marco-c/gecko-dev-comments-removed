@@ -935,12 +935,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  ClearStyleAt(const EditorDOMPoint& aPoint, nsAtom* aProperty,
-               nsAtom* aAttribute, SpecifiedStyle aSpecifiedStyle);
+  ClearStyleAt(const EditorDOMPoint& aPoint,
+               const EditorInlineStyle& aStyleToRemove,
+               SpecifiedStyle aSpecifiedStyle);
 
   MOZ_CAN_RUN_SCRIPT nsresult SetPositionToAbsolute(Element& aElement);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult

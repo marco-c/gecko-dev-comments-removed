@@ -36,6 +36,15 @@ using namespace dom;
 
 
 
+EditorInlineStyle PendingStyle::ToInlineStyle() const {
+  return mTag ? EditorInlineStyle(*mTag, mAttribute)
+              : EditorInlineStyle::RemoveAllStyles();
+}
+
+
+
+
+
 EditorInlineStyle PendingStyleCache::ToInlineStyle() const {
   return EditorInlineStyle(mTag, mAttribute);
 }

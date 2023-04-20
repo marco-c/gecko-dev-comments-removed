@@ -1146,7 +1146,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
 }
 
 Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
-    const EditorDOMPoint& aPoint, nsAtom* aProperty, nsAtom* aAttribute,
+    const EditorDOMPoint& aPoint, const EditorInlineStyle& aStyleToRemove,
     SpecifiedStyle aSpecifiedStyle) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
@@ -1162,10 +1162,11 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
   
   
   
+  
   EditorDOMPoint pointToPutCaret(aPoint);
   Result<SplitNodeResult, nsresult> splitNodeResult =
       SplitAncestorStyledInlineElementsAt(
-          aPoint, aProperty, aAttribute,
+          aPoint, aStyleToRemove.mHTMLProperty, aStyleToRemove.mAttribute,
           SplitAtEdges::eAllowToCreateEmptyContainer);
   if (MOZ_UNLIKELY(splitNodeResult.isErr())) {
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
@@ -1245,7 +1246,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
   }
   Result<SplitNodeResult, nsresult> splitResultAtStartOfNextNode =
       SplitAncestorStyledInlineElementsAt(
-          atStartOfNextNode, aProperty, aAttribute,
+          atStartOfNextNode, aStyleToRemove.mHTMLProperty,
+          aStyleToRemove.mAttribute,
           SplitAtEdges::eAllowToCreateEmptyContainer);
   if (MOZ_UNLIKELY(splitResultAtStartOfNextNode.isErr())) {
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
@@ -1412,7 +1414,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
     
     Result<EditorDOMPoint, nsresult> removeStyleResult =
         RemoveStyleInside(MOZ_KnownLive(*previousElementOfSplitPoint),
-                          aProperty, aAttribute, aSpecifiedStyle);
+                          aStyleToRemove.mHTMLProperty,
+                          aStyleToRemove.mAttribute, aSpecifiedStyle);
     if (MOZ_UNLIKELY(removeStyleResult.isErr())) {
       NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
       return removeStyleResult;

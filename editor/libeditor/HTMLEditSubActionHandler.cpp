@@ -6075,8 +6075,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
       
       
       Result<EditorDOMPoint, nsresult> pointToPutCaretOrError =
-          ClearStyleAt(pointToPutCaret, MOZ_KnownLive(pendingStyle->GetTag()),
-                       MOZ_KnownLive(pendingStyle->GetAttribute()),
+          ClearStyleAt(pointToPutCaret, pendingStyle->ToInlineStyle(),
                        pendingStyle->GetSpecifiedStyle());
       if (MOZ_UNLIKELY(pointToPutCaretOrError.isErr())) {
         NS_WARNING("HTMLEditor::ClearStyleAt() failed");
