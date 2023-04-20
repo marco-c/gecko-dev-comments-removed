@@ -46,6 +46,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -2080,83 +2083,6 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
-
-  public void addMockLocationProvider(LocationManager locationManager, String mockproviderName) {
-    
-    removeMockLocationProvider(locationManager, mockproviderName);
-    locationManager.addTestProvider(
-        mockproviderName,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        Criteria.POWER_LOW,
-        Criteria.ACCURACY_FINE);
-    locationManager.setTestProviderEnabled(mockproviderName, true);
-  }
-
-  
-
-
-
-
-
-  public void removeMockLocationProvider(LocationManager locationManager, String mockproviderName) {
-    try {
-      locationManager.removeTestProvider(mockproviderName);
-    } catch (Exception e) {
-      
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-  public void setMockLocation(
-      LocationManager locationManager, String mockProviderName, double latitude, double longitude) {
-    
-    setMockLocation(locationManager, mockProviderName, latitude, longitude, .000001f);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  public void setMockLocation(
-      LocationManager locationManager,
-      String mockProviderName,
-      double latitude,
-      double longitude,
-      float accuracy) {
-    Location location = new Location(mockProviderName);
-    location.setAccuracy(accuracy);
-    location.setLatitude(latitude);
-    location.setLongitude(longitude);
-    location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
-    location.setTime(System.currentTimeMillis());
-    locationManager.setTestProviderLocation(mockProviderName, location);
-  }
-  
-
-
-
-
-
   public void simulatePressHome(Context context) {
     Intent intent = new Intent();
     intent.setAction(Intent.ACTION_MAIN);
@@ -2177,6 +2103,189 @@ public class GeckoSessionTestRule implements TestRule {
     notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
     notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     context.startActivity(notificationIntent);
+  }
+
+  
+
+
+
+
+  public class MockLocationProvider {
+
+    private final LocationManager locationManager;
+    private final String mockProviderName;
+    private boolean isActiveTestProvider = false;
+    private double mockLatitude;
+    private double mockLongitude;
+    private float mockAccuracy = .000001f;
+    private boolean doContinuallyPost;
+
+    @Nullable private ScheduledExecutorService executor;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    public MockLocationProvider(
+        LocationManager locationManager,
+        String mockProviderName,
+        double mockLatitude,
+        double mockLongitude,
+        boolean doContinuallyPost) {
+      this.locationManager = locationManager;
+      this.mockProviderName = mockProviderName;
+      this.mockLatitude = mockLatitude;
+      this.mockLongitude = mockLongitude;
+      this.doContinuallyPost = doContinuallyPost;
+      addMockLocationProvider();
+    }
+
+    
+    private void addMockLocationProvider() {
+      
+      removeMockLocationProvider();
+      locationManager.addTestProvider(
+          mockProviderName,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          Criteria.POWER_LOW,
+          Criteria.ACCURACY_FINE);
+      locationManager.setTestProviderEnabled(mockProviderName, true);
+      isActiveTestProvider = true;
+    }
+
+    
+
+
+
+    public void removeMockLocationProvider() {
+      stopPostingLocation();
+      try {
+        locationManager.removeTestProvider(mockProviderName);
+      } catch (Exception e) {
+        
+      }
+      isActiveTestProvider = false;
+    }
+
+    
+
+
+
+
+
+    public void setMockLocation(double latitude, double longitude) {
+      mockLatitude = latitude;
+      mockLongitude = longitude;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public void setMockLocation(double latitude, double longitude, float accuracy) {
+      mockLatitude = latitude;
+      mockLongitude = longitude;
+      mockAccuracy = accuracy;
+    }
+
+    
+
+
+
+
+
+
+
+    public void setDoContinuallyPost(boolean doContinuallyPost) {
+      this.doContinuallyPost = doContinuallyPost;
+    }
+
+    
+
+
+
+    public void stopPostingLocation() {
+      if (executor != null) {
+        executor.shutdown();
+        executor = null;
+      }
+    }
+
+    
+
+
+
+    public void postLocation() {
+      if (!isActiveTestProvider) {
+        throw new IllegalStateException("The mock test provider is not active.");
+      }
+
+      
+      stopPostingLocation();
+
+      
+      Location location = new Location(mockProviderName);
+      location.setAccuracy(mockAccuracy);
+      location.setLatitude(mockLatitude);
+      location.setLongitude(mockLongitude);
+      location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+      location.setTime(System.currentTimeMillis());
+      locationManager.setTestProviderLocation(mockProviderName, location);
+      Log.i(
+          LOGTAG,
+          mockProviderName
+              + " is posting location, lat: "
+              + mockLatitude
+              + " lon: "
+              + mockLongitude
+              + " acc: "
+              + mockAccuracy);
+      
+      if (doContinuallyPost) {
+        executor = Executors.newScheduledThreadPool(1);
+        executor.scheduleAtFixedRate(
+            new Runnable() {
+              @Override
+              public void run() {
+                location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+                location.setTime(System.currentTimeMillis());
+                locationManager.setTestProviderLocation(mockProviderName, location);
+                Log.i(
+                    LOGTAG,
+                    mockProviderName
+                        + " is posting location, lat: "
+                        + mockLatitude
+                        + " lon: "
+                        + mockLongitude
+                        + " acc: "
+                        + mockAccuracy);
+              }
+            },
+            0,
+            3,
+            TimeUnit.SECONDS);
+      }
+    }
   }
 
   Map<GeckoSession, WebExtension.Port> mPorts = new HashMap<>();
