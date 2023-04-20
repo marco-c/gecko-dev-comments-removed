@@ -44,7 +44,7 @@ $262.agent.start(`
 `);
 
 
-(async () => {
+asyncTest(async () => {
   const outcomes = [];
 
   for (let i = 0; i < 3; i++) {
@@ -67,4 +67,4 @@ $262.agent.start(`
     'C not-equal,not-equal,not-equal,not-equal,not-equal',
     'The value of outcomes[2] is "C not-equal,not-equal,not-equal,not-equal,not-equal"'
   );
-})().then($DONE, $DONE);
+});

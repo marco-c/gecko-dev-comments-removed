@@ -9,18 +9,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 var ab = new ArrayBuffer(0);
 
 assert.throws(RangeError, function() {

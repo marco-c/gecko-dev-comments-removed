@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  const items = new ArrayBuffer(7);
+  const result = await Array.fromAsync(items);
+  assert.compareArray(result, []);
+});

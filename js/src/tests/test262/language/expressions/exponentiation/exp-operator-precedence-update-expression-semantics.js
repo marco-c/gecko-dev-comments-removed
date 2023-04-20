@@ -17,6 +17,7 @@
 
 
 
+
 var base = 4;
 assert.sameValue(--base ** 2, 9, "(--base ** 2) === 9");
 assert.sameValue(++base ** 2, 16, "(++base ** 2) === 16");

@@ -20,6 +20,7 @@
 
 
 
+
 function tag(arg) {
     return arg[0];
 }
@@ -32,4 +33,4 @@ async function fn() {
     assert.sameValue(ns.default, 1612);
 }
 
-fn().then($DONE, $DONE).catch($DONE);
+asyncTest(fn);

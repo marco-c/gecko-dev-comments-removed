@@ -19,6 +19,7 @@
 
 
 
+
 async function fn() {
     const first = await import('./update-to-dynamic-import_FIXTURE.js');
     assert.sameValue(first.x, 'first', 'the other module has not been evaluated yet');
@@ -29,4 +30,4 @@ async function fn() {
     assert.sameValue(other.default, 42);
 }
 
-fn().then($DONE, $DONE);
+asyncTest(fn);

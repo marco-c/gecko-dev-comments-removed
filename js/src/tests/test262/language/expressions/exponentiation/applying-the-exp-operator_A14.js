@@ -7,6 +7,7 @@
 
 
 
+
 var base = -Infinity;
 var exponents = [];
 exponents[0] = 0.000000000000001;

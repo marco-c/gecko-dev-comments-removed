@@ -11,10 +11,17 @@
 
 
 
+
+
+
+
+
 const instant = new Temporal.Instant(1_000_000_000_000_000_005n);
 assert.throws(RangeError, () => instant.round({ smallestUnit: "nanoseconds", roundingIncrement: -Infinity }));
 assert.throws(RangeError, () => instant.round({ smallestUnit: "nanoseconds", roundingIncrement: -1 }));
 assert.throws(RangeError, () => instant.round({ smallestUnit: "nanoseconds", roundingIncrement: 0 }));
+assert.throws(RangeError, () => instant.round({ smallestUnit: "nanoseconds", roundingIncrement: 0.9 }));
+assert.throws(RangeError, () => instant.round({ smallestUnit: "nanoseconds", roundingIncrement: 1e9 + 1 }));
 assert.throws(RangeError, () => instant.round({ smallestUnit: "nanoseconds", roundingIncrement: Infinity }));
 
 reportCompare(0, 0);

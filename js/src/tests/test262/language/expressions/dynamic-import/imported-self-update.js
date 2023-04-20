@@ -30,4 +30,5 @@ async function fn() {
   assert.sameValue(imported.y, 1, 'updated value, indirect binding');
 }
 
+
 fn().then($DONE, $DONE);

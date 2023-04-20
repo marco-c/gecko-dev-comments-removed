@@ -14,6 +14,7 @@
 
 
 
+
 async function checkAssertions() {
   assert.sameValue(await {a: [11]}?.a[0], 11);
   const b = {c: [22, 33]};
@@ -26,4 +27,4 @@ async function checkAssertions() {
     await Promise.reject(new Error('unreachable'))
   ], undefined);
 }
-checkAssertions().then($DONE, $DONE);
+asyncTest(checkAssertions);

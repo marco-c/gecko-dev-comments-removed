@@ -11,10 +11,17 @@
 
 
 
+
+
+
+
+
 const datetime = new Temporal.ZonedDateTime(1_000_000_000_000_000_005n, "UTC");
 assert.throws(RangeError, () => datetime.round({ smallestUnit: "nanoseconds", roundingIncrement: -Infinity }));
 assert.throws(RangeError, () => datetime.round({ smallestUnit: "nanoseconds", roundingIncrement: -1 }));
 assert.throws(RangeError, () => datetime.round({ smallestUnit: "nanoseconds", roundingIncrement: 0 }));
+assert.throws(RangeError, () => datetime.round({ smallestUnit: "nanoseconds", roundingIncrement: 0.9 }));
+assert.throws(RangeError, () => datetime.round({ smallestUnit: "nanoseconds", roundingIncrement: 1e9 + 1 }));
 assert.throws(RangeError, () => datetime.round({ smallestUnit: "nanoseconds", roundingIncrement: Infinity }));
 
 reportCompare(0, 0);

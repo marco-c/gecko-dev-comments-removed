@@ -18,6 +18,7 @@
 
 
 
+
 (function() { assert.sameValue(delete (new.target), true); })();
 (function() { assert.sameValue(void new.target, undefined); })();
 new function() { assert.sameValue(typeof new.target, 'function'); };
@@ -27,6 +28,6 @@ new function() { assert.sameValue(~new.target, -1); };
 (function() { assert.sameValue(!new.target, true); })();
 new function() { assert.sameValue(delete void typeof +-~!(new.target), true); };
 
-(async function() {
+asyncTest(async function() {
   assert.sameValue(await new.target, undefined);
-})().then($DONE, $DONE);
+});

@@ -10,6 +10,7 @@
 
 
 
+
 async function foo() {
   var err = {};
   var caught = false;
@@ -23,4 +24,4 @@ async function foo() {
   assert(caught);
 }
 
-foo().then($DONE, $DONE);
+asyncTest(foo);

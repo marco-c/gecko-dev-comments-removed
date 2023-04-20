@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  length: Symbol("1")
+};
+
+assert.throws(TypeError, function() {
+  [].includes.call(obj, 7);
+});
+
+reportCompare(0, 0);

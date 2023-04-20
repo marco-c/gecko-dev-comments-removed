@@ -20,6 +20,7 @@
 
 
 
+
 let x = './module-code';
 let y = './module-code';
 
@@ -38,4 +39,4 @@ async function fn() {
     assert.sameValue(ns2.default, 1612);
 }
 
-fn().then($DONE, $DONE).catch($DONE);
+asyncTest(fn);

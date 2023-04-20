@@ -7,6 +7,7 @@
 
 
 
+
 var exponents = [];
 var bases = [];
 bases[0] = -1.7976931348623157E308; 

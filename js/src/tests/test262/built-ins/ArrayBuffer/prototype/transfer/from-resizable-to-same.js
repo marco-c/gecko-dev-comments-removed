@@ -45,9 +45,9 @@ assert.throws(TypeError, function() {
   source.slice();
 });
 
-assert.sameValue(dest.resizable, false, 'dest.resizable');
+assert.sameValue(dest.resizable, true, 'dest.resizable');
 assert.sameValue(dest.byteLength, 4, 'dest.byteLength');
-assert.sameValue(dest.maxByteLength, 4, 'dest.maxByteLength');
+assert.sameValue(dest.maxByteLength, 8, 'dest.maxByteLength');
 
 var destArray = new Uint8Array(dest);
 

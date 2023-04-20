@@ -21,6 +21,7 @@
 
 
 
+
 const y = {
     z: 0
 };
@@ -34,4 +35,4 @@ async function fn() {
     assert.sameValue(ns2.default, 1612);
 }
 
-fn().then($DONE, $DONE).catch($DONE);
+asyncTest(fn);

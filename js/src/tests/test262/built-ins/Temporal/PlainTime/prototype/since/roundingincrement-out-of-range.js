@@ -11,11 +11,18 @@
 
 
 
+
+
+
+
+
 const earlier = new Temporal.PlainTime(12, 34, 56, 0, 0, 0);
 const later = new Temporal.PlainTime(12, 34, 56, 0, 0, 5);
 assert.throws(RangeError, () => later.since(earlier, { roundingIncrement: -Infinity }));
 assert.throws(RangeError, () => later.since(earlier, { roundingIncrement: -1 }));
 assert.throws(RangeError, () => later.since(earlier, { roundingIncrement: 0 }));
+assert.throws(RangeError, () => later.since(earlier, { roundingIncrement: 0.9 }));
+assert.throws(RangeError, () => later.since(earlier, { roundingIncrement: 1e9 + 1 }));
 assert.throws(RangeError, () => later.since(earlier, { roundingIncrement: Infinity }));
 
 reportCompare(0, 0);

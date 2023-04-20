@@ -10,6 +10,7 @@
 
 
 
+
 testWithIntlConstructors(function (Constructor) {
     
     var info = getLocaleSupportInfo(Constructor, {localeMatcher: "lookup"});

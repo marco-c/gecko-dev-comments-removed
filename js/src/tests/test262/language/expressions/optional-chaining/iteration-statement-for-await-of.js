@@ -11,6 +11,7 @@
 
 
 
+
 const obj = {
   iterable: {
     [Symbol.asyncIterator]() {
@@ -33,4 +34,4 @@ async function checkAssertions() {
   }
   assert.sameValue(3, count);
 }
-checkAssertions().then($DONE, $DONE);
+asyncTest(checkAssertions);

@@ -19,6 +19,7 @@
 
 
 
+
 var nextArgumentsLength;
 var syncIterator = {
   [Symbol.iterator]() {
@@ -30,8 +31,8 @@ var syncIterator = {
   },
 };
 
-(async function () {
+asyncTest(async function () {
   for await (let _ of syncIterator);
 
   assert.sameValue(nextArgumentsLength, 0);
-})().then($DONE, $DONE);
+});

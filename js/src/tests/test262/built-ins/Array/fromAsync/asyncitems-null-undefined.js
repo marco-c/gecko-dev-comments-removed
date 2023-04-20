@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  await assert.throwsAsync(TypeError, () => Array.fromAsync(null), "null asyncItems");
+  await assert.throwsAsync(TypeError, () => Array.fromAsync(undefined), "undefined asyncItems");
+});

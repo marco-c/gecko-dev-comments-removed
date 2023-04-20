@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Array.prototype, "includes");
+verifyWritable(Array.prototype, "includes");
+verifyConfigurable(Array.prototype, "includes");
+
+reportCompare(0, 0);

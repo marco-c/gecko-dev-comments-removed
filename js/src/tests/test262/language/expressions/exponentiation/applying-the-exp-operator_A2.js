@@ -8,6 +8,7 @@
 
 
 
+
 var exponent = +0;
 var bases = [];
 bases[0] = -Infinity;

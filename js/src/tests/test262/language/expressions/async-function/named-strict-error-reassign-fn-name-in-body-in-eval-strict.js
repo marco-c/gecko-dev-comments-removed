@@ -17,6 +17,7 @@
 
 
 
+
 let callCount = 0;
 let ref = async function BindingIdentifier() {
   callCount++;
@@ -24,7 +25,7 @@ let ref = async function BindingIdentifier() {
   return BindingIdentifier;
 };
 
-(async () => {
+asyncTest(async () => {
   let catchCount = 0;
   try {
     await ref()
@@ -34,5 +35,5 @@ let ref = async function BindingIdentifier() {
   }
   assert.sameValue(catchCount, 1);
   assert.sameValue(callCount, 1);
-})().then($DONE, $DONE);
+});
 

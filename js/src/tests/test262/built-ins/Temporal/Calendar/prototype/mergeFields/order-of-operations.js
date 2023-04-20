@@ -10,6 +10,7 @@
 
 
 const expected = [
+  
   "ownKeys fields",
   "getOwnPropertyDescriptor fields.year",
   "get fields.year",
@@ -19,6 +20,7 @@ const expected = [
   "get fields.day",
   "getOwnPropertyDescriptor fields.extra",
   "get fields.extra",
+  
   "ownKeys additionalFields",
   "getOwnPropertyDescriptor additionalFields.3",
   "get additionalFields.3",

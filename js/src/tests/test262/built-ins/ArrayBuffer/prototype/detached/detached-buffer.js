@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ab = new ArrayBuffer(1);
+
+assert.sameValue(ab.detached, false);
+
+$DETACHBUFFER(ab);
+
+assert.sameValue(ab.detached, true);
+
+reportCompare(0, 0);

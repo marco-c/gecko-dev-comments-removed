@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(ArrayBuffer.prototype.transferToFixedLength, 'name', {
+  value: 'transferToFixedLength',
+  enumerable: false,
+  wrtiable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

@@ -10,6 +10,7 @@
 
 
 
+
 var error = {};
 var thenable = {
   then: function (resolve, reject) {
@@ -28,5 +29,5 @@ async function foo() {
   assert(caught);
 }
 
-foo().then($DONE, $DONE);
+asyncTest(foo);
 

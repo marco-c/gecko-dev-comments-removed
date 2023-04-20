@@ -11,11 +11,18 @@
 
 
 
+
+
+
+
+
 const earlier = new Temporal.PlainYearMonth(2000, 5);
 const later = new Temporal.PlainYearMonth(2000, 10);
 assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: -Infinity }));
 assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: -1 }));
 assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: 0 }));
+assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: 0.9 }));
+assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: 1e9 + 1 }));
 assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: Infinity }));
 
 reportCompare(0, 0);

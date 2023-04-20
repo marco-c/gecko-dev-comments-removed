@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  const result = await Array.fromAsync("test");
+  assert.compareArray(result, ["t", "e", "s", "t"]);
+});

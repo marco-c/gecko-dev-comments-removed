@@ -17,6 +17,11 @@ const expected = [
   "get this.calendar.fields",
   "call this.calendar.fields",
   
+  "get this.calendar.day",
+  "call this.calendar.day",
+  "get this.calendar.monthCode",
+  "call this.calendar.monthCode",
+  
   "get fields.day",
   "get fields.day.valueOf",
   "call fields.day.valueOf",
@@ -29,11 +34,6 @@ const expected = [
   "get fields.year",
   "get fields.year.valueOf",
   "call fields.year.valueOf",
-  
-  "get this.calendar.day",
-  "call this.calendar.day",
-  "get this.calendar.monthCode",
-  "call this.calendar.monthCode",
   
   "get this.calendar.mergeFields",
   "call this.calendar.mergeFields",

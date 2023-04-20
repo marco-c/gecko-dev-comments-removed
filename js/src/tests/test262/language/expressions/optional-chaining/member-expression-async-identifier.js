@@ -13,6 +13,7 @@
 
 
 
+
 const a = undefined;
 const c = {d: Promise.resolve(11)};
 async function checkAssertions() {
@@ -30,4 +31,4 @@ async function checkAssertions() {
   c.e = Promise.resolve(39);
   assert.sameValue(await c?.e, 39, 'await unwraps the promise given after the evaluation of the OCE');
 }
-checkAssertions().then($DONE, $DONE);
+asyncTest(checkAssertions);

@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fromIndex = Symbol("1");
+
+var sample = [7];
+
+assert.throws(TypeError, function() {
+  sample.includes(7, fromIndex);
+});
+
+reportCompare(0, 0);

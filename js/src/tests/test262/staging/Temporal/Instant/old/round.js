@@ -71,14 +71,6 @@ assert.sameValue(`${ inst.round({
   smallestUnit: "millisecond",
   roundingIncrement: 86400000
 }) }`, expected);
-assert.sameValue(`${ inst.round({
-  smallestUnit: "microsecond",
-  roundingIncrement: 86400000000
-}) }`, expected);
-assert.sameValue(`${ inst.round({
-  smallestUnit: "nanosecond",
-  roundingIncrement: 86400000000000
-}) }`, expected);
 
 
 assert(inst.round({

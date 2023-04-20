@@ -9,6 +9,7 @@
 
 
 
+
 const allowedValues = ["zero", "one", "two", "few", "many", "other"];
 
 const pluralrules = new Intl.PluralRules();

@@ -6,6 +6,7 @@
 
 
 
+
 assert.sameValue(Array.prototype.includes.call(true), false, 'Array.prototype.includes.call(true) must return false');
 assert.sameValue(
   Array.prototype.includes.call(false),

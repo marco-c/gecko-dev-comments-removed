@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  ArrayBuffer.prototype.detached;
+});
+
+reportCompare(0, 0);

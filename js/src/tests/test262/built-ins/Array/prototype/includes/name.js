@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.includes.name, "includes");
+
+verifyNotEnumerable(Array.prototype.includes, "name");
+verifyNotWritable(Array.prototype.includes, "name");
+verifyConfigurable(Array.prototype.includes, "name");
+
+reportCompare(0, 0);

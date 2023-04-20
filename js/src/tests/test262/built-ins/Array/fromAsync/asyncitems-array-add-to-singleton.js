@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  const items = [1];
+  const promise = Array.fromAsync(items);
+  
+  
+  items.push(7);
+  const result = await promise;
+  assert.compareArray(result, [1, 7]);
+});

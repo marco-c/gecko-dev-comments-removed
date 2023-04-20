@@ -19,6 +19,7 @@
 
 
 
+
 async function * agen1() {
     yield import('./for-await-resolution-and-error-a_FIXTURE.js');
     yield import('./for-await-resolution-and-error-b_FIXTURE.js');
@@ -67,4 +68,4 @@ async function fn() {
     assert.sameValue(error, 'foo', 'f');
 }
 
-fn().then($DONE, $DONE);
+asyncTest(fn);

@@ -11,10 +11,17 @@
 
 
 
+
+
+
+
+
 const time = new Temporal.PlainTime(12, 34, 56, 0, 0, 5);
 assert.throws(RangeError, () => time.round({ smallestUnit: "nanoseconds", roundingIncrement: -Infinity }));
 assert.throws(RangeError, () => time.round({ smallestUnit: "nanoseconds", roundingIncrement: -1 }));
 assert.throws(RangeError, () => time.round({ smallestUnit: "nanoseconds", roundingIncrement: 0 }));
+assert.throws(RangeError, () => time.round({ smallestUnit: "nanoseconds", roundingIncrement: 0.9 }));
+assert.throws(RangeError, () => time.round({ smallestUnit: "nanoseconds", roundingIncrement: 1e9 + 1 }));
 assert.throws(RangeError, () => time.round({ smallestUnit: "nanoseconds", roundingIncrement: Infinity }));
 
 reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue([0].includes(), false, "[0].includes()");
+assert.sameValue([undefined].includes(), true, "[undefined].includes()");
+
+reportCompare(0, 0);

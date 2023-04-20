@@ -11,11 +11,18 @@
 
 
 
+
+
+
+
+
 const earlier = new Temporal.ZonedDateTime(1_000_000_000_000_000_000n, "UTC");
 const later = new Temporal.ZonedDateTime(1_000_000_000_000_000_005n, "UTC");
 assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: -Infinity }));
 assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: -1 }));
 assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: 0 }));
+assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: 0.9 }));
+assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: 1e9 + 1 }));
 assert.throws(RangeError, () => earlier.until(later, { roundingIncrement: Infinity }));
 
 reportCompare(0, 0);

@@ -7,6 +7,7 @@
 
 
 
+
 var base = NaN;
 var exponents = [];
 exponents[0] = -Infinity;

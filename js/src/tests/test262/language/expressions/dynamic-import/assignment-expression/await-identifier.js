@@ -20,6 +20,7 @@
 
 
 
+
 const await = './module-code_FIXTURE.js';
 
 const getpromise = () => import(await); 
@@ -31,4 +32,4 @@ async function fn() {
     assert.sameValue(ns1.default, 42);
 }
 
-fn().then($DONE, $DONE).catch($DONE);
+asyncTest(fn);

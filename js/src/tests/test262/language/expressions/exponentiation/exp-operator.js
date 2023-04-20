@@ -8,6 +8,7 @@
 
 
 
+
 var exponent = 2;
 assert.sameValue(2 ** 3, 8, "(2 ** 3) === 8");
 assert.sameValue(3 * 2 ** 3, 24, "(3 * 2 ** 3) === 24");

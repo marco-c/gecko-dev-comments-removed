@@ -14,6 +14,7 @@
 
 
 
+
 let callCount = 0;
 let ref = async function * BindingIdentifier() {
   callCount++;
@@ -21,8 +22,8 @@ let ref = async function * BindingIdentifier() {
   return BindingIdentifier;
 };
 
-(async () => {
+asyncTest(async () => {
   assert.sameValue((await (await ref()).next()).value, ref);
   assert.sameValue(callCount, 1, 'function invoked exactly once');
-})().then($DONE, $DONE);
+});
 

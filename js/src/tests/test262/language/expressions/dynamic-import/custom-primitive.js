@@ -19,6 +19,7 @@
 
 
 
+
 async function fn() {
     const str = await import('./custom-tostring_FIXTURE.js');
     const value = await import('./custom-valueof_FIXTURE.js');
@@ -30,4 +31,4 @@ async function fn() {
     assert.sameValue(String(value), '42', 'namespace fallsback to valueOf as its prototype is null');
 }
 
-fn().then($DONE, $DONE);
+asyncTest(fn);

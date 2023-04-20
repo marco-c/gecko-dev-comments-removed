@@ -30,6 +30,7 @@
 
 
 
+
 var yieldorder = 0;
 var resolveLatePromise;
 
@@ -59,7 +60,7 @@ async function awaitnexts() {
   assert.sameValue((await item1).value, 1)
 }
 
-awaitnexts().then($DONE, $DONE);
+asyncTest(awaitnexts);
 
 
 

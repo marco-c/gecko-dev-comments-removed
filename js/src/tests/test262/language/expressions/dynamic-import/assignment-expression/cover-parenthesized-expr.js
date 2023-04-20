@@ -23,6 +23,7 @@
 
 
 
+
 async function fn() {
     const ns1 = await import((((((('./module-code_FIXTURE.js'))))))); 
 
@@ -35,4 +36,4 @@ async function fn() {
     assert.sameValue(ns2.default, 1612);
 }
 
-fn().then($DONE, $DONE).catch($DONE);
+asyncTest(fn);

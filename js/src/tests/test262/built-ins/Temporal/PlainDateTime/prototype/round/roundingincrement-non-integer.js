@@ -12,8 +12,13 @@
 
 
 
+
+
+
+
+
 const datetime = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 0, 0, 5);
-const result = datetime.round({ smallestUnit: "nanosecond", roundingIncrement: 2.5 });
-TemporalHelpers.assertPlainDateTime(result, 2000, 5, "M05", 2, 12, 34, 56, 0, 0, 6, "roundingIncrement 2.5 floors to 2");
+const result = datetime.round({ smallestUnit: "nanosecond", roundingIncrement: 2.5, roundingMode: "expand" });
+TemporalHelpers.assertPlainDateTime(result, 2000, 5, "M05", 2, 12, 34, 56, 0, 0, 6, "roundingIncrement 2.5 truncates to 2");
 
 reportCompare(0, 0);

@@ -12,9 +12,14 @@
 
 
 
+
+
+
+
+
 const earlier = new Temporal.PlainTime(12, 34, 56, 0, 0, 0);
 const later = new Temporal.PlainTime(12, 34, 56, 0, 0, 5);
-const result = earlier.until(later, { roundingIncrement: 2.5 });
-TemporalHelpers.assertDuration(result, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, "roundingIncrement 2.5 floors to 2");
+const result = earlier.until(later, { roundingIncrement: 2.5, roundingMode: "trunc" });
+TemporalHelpers.assertDuration(result, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, "roundingIncrement 2.5 truncates to 2");
 
 reportCompare(0, 0);

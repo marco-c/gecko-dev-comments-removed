@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fromIndex = {
+  valueOf: function() {
+    throw new Test262Error();
+  }
+};
+
+var sample = [7];
+
+assert.throws(Test262Error, function() {
+  sample.includes(7, fromIndex);
+});
+
+reportCompare(0, 0);

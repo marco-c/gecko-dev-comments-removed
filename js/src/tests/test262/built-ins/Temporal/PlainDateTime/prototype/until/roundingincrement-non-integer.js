@@ -12,9 +12,16 @@
 
 
 
+
+
+
+
+
 const earlier = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 0, 0, 0);
 const later = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 0, 0, 5);
-const result = earlier.until(later, { roundingIncrement: 2.5 });
-TemporalHelpers.assertDuration(result, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, "roundingIncrement 2.5 floors to 2");
+const result = earlier.until(later, { roundingIncrement: 2.5, roundingMode: "trunc" });
+TemporalHelpers.assertDuration(result, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, "roundingIncrement 2.5 truncates to 2");
+const result2 = earlier.until(later, { smallestUnit: "days", roundingIncrement: 1e9 + 0.5, roundingMode: "expand" });
+TemporalHelpers.assertDuration(result2, 0, 0, 0, 1e9, 0, 0, 0, 0, 0, 0, "roundingIncrement 1e9 + 0.5 truncates to 1e9");
 
 reportCompare(0, 0);

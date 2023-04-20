@@ -5,6 +5,7 @@
 
 
 
+
 function reduce(parts) {
   return parts.map(part => part.value).join('');
 }

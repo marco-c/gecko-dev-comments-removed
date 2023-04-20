@@ -20,6 +20,7 @@
 
 
 
+
 function ctor() {
     return import(new.target); 
 }
@@ -33,4 +34,4 @@ async function fn() {
     assert.sameValue(ns.default, 42);
 }
 
-fn().then($DONE, $DONE).catch($DONE);
+asyncTest(fn);

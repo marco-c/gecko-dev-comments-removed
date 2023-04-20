@@ -20,6 +20,7 @@
 
 
 
+
 const yield = './module-code_FIXTURE.js';
 
 async function fn() {
@@ -29,4 +30,4 @@ async function fn() {
     assert.sameValue(ns1.default, 42);
 }
 
-fn().then($DONE, $DONE).catch($DONE);
+asyncTest(fn);

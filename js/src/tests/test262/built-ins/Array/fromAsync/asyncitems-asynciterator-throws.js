@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+asyncTest(async function () {
+  await assert.throwsAsync(Test262Error,
+    () => Array.fromAsync({ get [Symbol.asyncIterator]() { throw new Test262Error() } }));
+});

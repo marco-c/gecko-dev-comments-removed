@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var getter = Object.getOwnPropertyDescriptor(
+  ArrayBuffer.prototype, 'detached'
+).get;
+
+assert.sameValue(typeof getter, 'function');
+
+assert.throws(TypeError, function() {
+  getter();
+});
+
+reportCompare(0, 0);
