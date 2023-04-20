@@ -649,7 +649,7 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   
 
-  bool IsStarted();
+  bool IsStarted() { return mAudioStreamState > AudioStreamState::Starting; };
 
   
   TimeDuration AudioOutputLatency();
@@ -720,20 +720,6 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
 
   uint32_t mIterationDurationMS;
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  Atomic<bool> mStarted;
 
   struct AutoInCallback {
     explicit AutoInCallback(AudioCallbackDriver* aDriver);
@@ -757,15 +743,20 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   
   enum class AudioStreamState {
     
+
+
     None,
     
     Pending,
+    
+
+    Starting,
     
     Running,
     
     Stopping
   };
-  Atomic<AudioStreamState> mAudioStreamState;
+  Atomic<AudioStreamState> mAudioStreamState{AudioStreamState::None};
   
   enum class FallbackDriverState {
     
