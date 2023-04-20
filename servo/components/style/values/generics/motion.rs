@@ -35,6 +35,14 @@ pub enum RaySize {
     Sides,
 }
 
+impl RaySize {
+    
+    #[inline]
+    pub fn is_default(&self) -> bool {
+        *self == RaySize::ClosestSide
+    }
+}
+
 
 
 
@@ -62,6 +70,7 @@ pub struct RayFunction<Angle> {
     
     
     #[animation(constant)]
+    #[css(skip_if = "RaySize::is_default")]
     pub size: RaySize,
     
     
