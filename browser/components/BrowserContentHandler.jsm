@@ -230,7 +230,6 @@ function openBrowserWindow(
   postData = null,
   forcePrivate = false
 ) {
-  let chromeURL = AppConstants.BROWSER_CHROME_URL;
   const isStartup =
     cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
 
@@ -317,10 +316,11 @@ function openBrowserWindow(
       }
 
       let openTime = win.openTime;
-      win.location = chromeURL;
+      win.location = AppConstants.BROWSER_CHROME_URL;
       win.arguments = args; 
 
       ChromeUtils.addProfilerMarker("earlyBlankWindowVisible", openTime);
+      lazy.BrowserWindowTracker.registerOpeningWindow(win, forcePrivate);
       return win;
     }
   }
@@ -350,13 +350,11 @@ function openBrowserWindow(
     args = array;
   }
 
-  let features =
-    "chrome,dialog=no,all" + gBrowserContentHandler.getFeatures(cmdLine);
-  if (forcePrivate) {
-    features += ",private";
-  }
-
-  return Services.ww.openWindow(null, chromeURL, "_blank", features, args);
+  return lazy.BrowserWindowTracker.openWindow({
+    args,
+    features: gBrowserContentHandler.getFeatures(cmdLine),
+    private: forcePrivate,
+  });
 }
 
 function openPreferences(cmdLine, extraArgs) {
@@ -942,33 +940,42 @@ function handURIToExistingBrowser(
     return;
   }
 
+  let openInWindow = ({ browserDOMWindow }) => {
+    browserDOMWindow.openURI(
+      uri,
+      null,
+      location,
+      Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL,
+      triggeringPrincipal
+    );
+  };
+
   
   
-  var allowPrivate =
+  let allowPrivate =
     forcePrivate || lazy.PrivateBrowsingUtils.permanentPrivateBrowsing;
-  var navWin = lazy.BrowserWindowTracker.getTopWindow({
+  let navWin = lazy.BrowserWindowTracker.getTopWindow({
     private: allowPrivate,
   });
-  if (!navWin) {
-    
-    openBrowserWindow(
-      cmdLine,
-      triggeringPrincipal,
-      uri.spec,
-      null,
-      forcePrivate
-    );
+
+  if (navWin) {
+    openInWindow(navWin);
     return;
   }
 
-  var bwin = navWin.browserDOMWindow;
-  bwin.openURI(
-    uri,
-    null,
-    location,
-    Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL,
-    triggeringPrincipal
-  );
+  let pending = lazy.BrowserWindowTracker.getPendingWindow({
+    private: allowPrivate,
+  });
+  if (pending) {
+    
+    
+    
+    pending.then(openInWindow);
+    return;
+  }
+
+  
+  openBrowserWindow(cmdLine, triggeringPrincipal, uri.spec, null, forcePrivate);
 }
 
 
