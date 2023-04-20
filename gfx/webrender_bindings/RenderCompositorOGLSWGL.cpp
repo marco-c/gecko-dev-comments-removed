@@ -19,6 +19,7 @@
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/java/GeckoSurfaceTextureWrappers.h"
+#  include "mozilla/webrender/RenderAndroidHardwareBufferTextureHost.h"
 #  include "mozilla/widget/AndroidCompositorWidget.h"
 #  include <android/native_window.h>
 #  include <android/native_window_jni.h>
@@ -195,25 +196,47 @@ void RenderCompositorOGLSWGL::HandleExternalImage(
       LOCAL_GL_TEXTURE_EXTERNAL;  
   GLenum wrapMode = LOCAL_GL_CLAMP_TO_EDGE;
 
-  auto* host = aExternalImage->AsRenderAndroidSurfaceTextureHost();
+  if (auto* host = aExternalImage->AsRenderAndroidSurfaceTextureHost()) {
+    host->UpdateTexImageIfNecessary();
 
-  host->UpdateTexImageIfNecessary();
+    
+    
+    RefPtr<SurfaceTextureSource> layer = new SurfaceTextureSource(
+        (TextureSourceProvider*)mCompositor, host->mSurfTex, host->mFormat,
+        target, wrapMode, host->mSize, host->mTransformOverride);
+    RefPtr<TexturedEffect> texturedEffect =
+        CreateTexturedEffect(host->mFormat, layer, aFrameSurface.mFilter,
+                              true);
 
-  
-  
-  RefPtr<SurfaceTextureSource> layer = new SurfaceTextureSource(
-      (TextureSourceProvider*)mCompositor, host->mSurfTex, host->mFormat,
-      target, wrapMode, host->mSize, host->mTransformOverride);
-  RefPtr<TexturedEffect> texturedEffect =
-      CreateTexturedEffect(host->mFormat, layer, aFrameSurface.mFilter,
-                            true);
+    gfx::Rect drawRect(0, 0, host->mSize.width, host->mSize.height);
 
-  gfx::Rect drawRect(0, 0, host->mSize.width, host->mSize.height);
+    EffectChain effect;
+    effect.mPrimaryEffect = texturedEffect;
+    mCompositor->DrawQuad(drawRect, aFrameSurface.mClipRect, effect, 1.0,
+                          aFrameSurface.mTransform, drawRect);
+  } else if (auto* host =
+                 aExternalImage->AsRenderAndroidHardwareBufferTextureHost()) {
+    
+    
+    RefPtr<AndroidHardwareBufferTextureSource> layer =
+        new AndroidHardwareBufferTextureSource(
+            (TextureSourceProvider*)mCompositor,
+            host->GetAndroidHardwareBuffer(),
+            host->GetAndroidHardwareBuffer()->mFormat, target, wrapMode,
+            host->GetSize());
+    RefPtr<TexturedEffect> texturedEffect = CreateTexturedEffect(
+        host->GetAndroidHardwareBuffer()->mFormat, layer, aFrameSurface.mFilter,
+         true);
 
-  EffectChain effect;
-  effect.mPrimaryEffect = texturedEffect;
-  mCompositor->DrawQuad(drawRect, aFrameSurface.mClipRect, effect, 1.0,
-                        aFrameSurface.mTransform, drawRect);
+    gfx::Rect drawRect(0, 0, host->GetSize().width, host->GetSize().height);
+
+    EffectChain effect;
+    effect.mPrimaryEffect = texturedEffect;
+    mCompositor->DrawQuad(drawRect, aFrameSurface.mClipRect, effect, 1.0,
+                          aFrameSurface.mTransform, drawRect);
+  } else {
+    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+  }
 #endif
 }
 
