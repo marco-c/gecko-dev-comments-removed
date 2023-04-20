@@ -830,7 +830,7 @@ add_task(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
-      ["browser.gesture.swipe.eight", "Browser:ForwardOrForwardDuplicate"],
+      ["browser.gesture.swipe.right", "Browser:ForwardOrForwardDuplicate"],
       ["widget.disable-swipe-tracker", false],
       ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
       ["widget.swipe.success-velocity-contribution", 0.5],
@@ -885,6 +885,90 @@ add_task(async () => {
   );
 
   ok(!isOverscrolled, "The root scroller should not have overscrolled");
+
+  await panLeftToRightEnd(tab.linkedBrowser, 100, 100, 0);
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
+      ["browser.gesture.swipe.right", "Browser:ForwardOrForwardDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-velocity-contribution", 0.5],
+    ],
+  });
+
+  
+  
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:about",
+    true 
+  );
+
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:mozilla");
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false ,
+    "about:mozilla"
+  );
+
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:home");
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false ,
+    "about:home"
+  );
+
+  gBrowser.goBack();
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false ,
+    "about:mozilla"
+  );
+
+  
+  ok(gBrowser.webNavigation.canGoBack);
+  ok(gBrowser.webNavigation.canGoForward);
+
+  
+  await panLeftToRightBegin(tab.linkedBrowser, 100, 100, 1);
+
+  ok(
+    !gHistorySwipeAnimation._prevBox.collapsed,
+    "The icon box for the previous navigation should NOT be collapsed"
+  );
+  ok(
+    gHistorySwipeAnimation._nextBox.collapsed,
+    "The icon box for the next navigation should be collapsed"
+  );
+
+  
+  
+  await NativePanHandler.promiseNativePanEvent(
+    tab.linkedBrowser,
+    100,
+    100,
+    
+    NativePanHandler.delta,
+    0,
+    
+    NativePanHandler.updatePhase
+  );
+
+  ok(
+    gHistorySwipeAnimation._prevBox.collapsed,
+    "The icon box for the previous navigation should be collapsed"
+  );
+  ok(
+    gHistorySwipeAnimation._nextBox.collapsed,
+    "The icon box for the next navigation should be collapsed"
+  );
 
   await panLeftToRightEnd(tab.linkedBrowser, 100, 100, 0);
 
