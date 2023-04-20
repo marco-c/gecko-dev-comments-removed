@@ -1044,3 +1044,17 @@ void NonBuiltinScriptFrameIter::settle() {
     }
   }
 }
+
+bool FrameIter::inPrologue() const {
+  if (pc() < script()->main()) {
+    return true;
+  }
+  
+  
+  if (pc() == script()->code() && isBaseline() &&
+      jsJitFrame().baselineFrameNumValueSlots() < script()->nfixed()) {
+    return true;
+  }
+
+  return false;
+}

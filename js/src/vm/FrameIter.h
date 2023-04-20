@@ -380,6 +380,8 @@ class FrameIter {
   
   void* rawFramePtr() const;
 
+  bool inPrologue() const;
+
  private:
   Data data_;
   jit::InlineFrameIterator ionInlineFrames_;
