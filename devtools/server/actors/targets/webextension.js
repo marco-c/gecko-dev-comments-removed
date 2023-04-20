@@ -282,7 +282,17 @@ webExtensionTargetPrototype._onDocShellDestroy = function(docShell) {
 
   
   
-  if (!this.isDestroyed() && docShell == this.docShell) {
+  
+  
+  
+  
+  if (
+    !this.isDestroyed() &&
+    docShell == this.docShell &&
+    !docShell.domWindow.location.href.includes(
+      "_generated_background_page.html"
+    )
+  ) {
     this._changeTopLevelDocument(this._searchForExtensionWindow());
   }
 };

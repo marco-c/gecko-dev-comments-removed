@@ -411,7 +411,9 @@ const windowGlobalTargetPrototype = {
 
 
   get window() {
-    return this.docShell && this.docShell.domWindow;
+    return this.docShell && !this.docShell.isBeingDestroyed()
+      ? this.docShell.domWindow
+      : null;
   },
 
   get outerWindowID() {
@@ -1362,18 +1364,23 @@ const windowGlobalTargetPrototype = {
   _changeTopLevelDocument(window) {
     
     
-    this._willNavigate({
-      window: this.window,
-      newURI: window.location.href,
-      request: null,
-      isFrameSwitching: true,
-      navigationStart: Date.now(),
-    });
+    
+    if (this.window) {
+      
+      
+      this._willNavigate({
+        window: this.window,
+        newURI: window.location.href,
+        request: null,
+        isFrameSwitching: true,
+        navigationStart: Date.now(),
+      });
 
-    this._windowDestroyed(this.window, {
-      isFrozen: true,
-      isFrameSwitching: true,
-    });
+      this._windowDestroyed(this.window, {
+        isFrozen: true,
+        isFrameSwitching: true,
+      });
+    }
 
     
     
