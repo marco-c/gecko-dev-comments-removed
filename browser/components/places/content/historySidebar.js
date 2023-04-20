@@ -30,8 +30,12 @@ XPCOMUtils.defineLazyScriptGetter(
 var gHistoryTree;
 var gSearchBox;
 var gHistoryGrouping = "";
+var gCumulativeSearches = 0;
+var gCumulativeFilterCount = 0;
 
 function HistorySidebarInit() {
+  Services.telemetry.keyedScalarAdd("sidebar.opened", "history", 1);
+
   let uidensity = window.top.document.documentElement.getAttribute("uidensity");
   if (uidensity) {
     document.documentElement.setAttribute("uidensity", uidensity);
@@ -45,7 +49,7 @@ function HistorySidebarInit() {
     .getAttribute("selectedsort");
 
   this.groupHistogram = Services.telemetry.getHistogramById(
-    "HISTORY_SIDEBAR_VIEW_TYPE"
+    "PLACES_SEARCHBAR_FILTER_TYPE"
   );
   this.groupHistogram.add(gHistoryGrouping);
 
@@ -69,7 +73,26 @@ function GroupBy(groupingType) {
     this.groupHistogram.add(groupingType);
   }
   gHistoryGrouping = groupingType;
+  gCumulativeFilterCount++;
   searchHistory(gSearchBox.value);
+}
+
+function selectLink(event) {
+  let searchesHistogram = Services.telemetry.getHistogramById(
+    "PLACES_SEARCHBAR_CUMULATIVE_SEARCHES"
+  );
+  searchesHistogram.add(gCumulativeSearches);
+  let filterCountHistogram = Services.telemetry.getHistogramById(
+    "PLACES_SEARCHBAR_CUMULATIVE_FILTER_COUNT"
+  );
+  filterCountHistogram.add(gCumulativeFilterCount);
+  clearCumulativeCounters();
+
+  if (event.type == "click") {
+    PlacesUIUtils.onSidebarTreeClick(event);
+  } else if (event.type == "keypress") {
+    PlacesUIUtils.onSidebarTreeKeyPress(event);
+  }
 }
 
 function searchHistory(aInput) {
@@ -121,12 +144,30 @@ function searchHistory(aInput) {
   
   
   
-  Services.telemetry.keyedScalarAdd("sidebar.search", "history", 1);
   gHistoryTree.load(query, options);
+
+  
+  
+  
+  
+  if (aInput) {
+    Services.telemetry.keyedScalarAdd("sidebar.search", "history", 1);
+    gCumulativeSearches++;
+  }
 
   if (gHistoryGrouping == "lastvisited") {
     TelemetryStopwatch.finish("HISTORY_LASTVISITED_TREE_QUERY_TIME_MS");
   }
+}
+
+function clearCumulativeCounters() {
+  gCumulativeSearches = 0;
+  gCumulativeFilterCount = 0;
+}
+
+function unloadHistorySidebar() {
+  clearCumulativeCounters();
+  PlacesUIUtils.setMouseoverURL("", window);
 }
 
 window.addEventListener("SidebarFocused", () => gSearchBox.focus());
