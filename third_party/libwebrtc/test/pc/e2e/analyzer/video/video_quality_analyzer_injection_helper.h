@@ -77,12 +77,15 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   
   
   
+  
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink(
       absl::string_view peer_name);
+  
   std::unique_ptr<AnalyzingVideoSink> CreateVideoSink(
       absl::string_view peer_name,
       const PeerConnectionE2EQualityTestFixture::VideoSubscription&
-          subscription);
+          subscription,
+      bool report_infra_metrics = false);
 
   void Start(std::string test_case_name,
              rtc::ArrayView<const std::string> peer_names,
