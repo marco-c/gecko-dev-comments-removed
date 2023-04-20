@@ -7,7 +7,6 @@ import PropTypes from "prop-types";
 import { Component } from "react";
 import { toEditorLine, fromEditorLine } from "../../utils/editor";
 import { getBlackBoxRanges, getSelectedSource } from "../../selectors";
-import { isWasm } from "../../utils/wasm";
 
 
 class BlackboxLines extends Component {
@@ -67,8 +66,6 @@ class BlackboxLines extends Component {
       return;
     }
 
-    const sourceIsWasm = isWasm(selectedSource.id);
-
     
     
     
@@ -76,8 +73,7 @@ class BlackboxLines extends Component {
       editor.codeMirror.eachLine(lineHandle => {
         const line = fromEditorLine(
           selectedSource.id,
-          editor.codeMirror.getLineNumber(lineHandle),
-          sourceIsWasm
+          editor.codeMirror.getLineNumber(lineHandle)
         );
 
         if (this.isLineBlackboxed(blackboxedRangesForSelectedSource, line)) {
