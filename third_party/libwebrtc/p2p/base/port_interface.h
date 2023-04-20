@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/candidate.h"
 #include "p2p/base/transport_description.h"
@@ -60,7 +61,10 @@ class PortInterface {
 
   virtual bool SharedSocket() const = 0;
 
+  
+  
   virtual bool SupportsProtocol(const std::string& protocol) const = 0;
+  virtual bool SupportsProtocol(absl::string_view protocol) const;
 
   
   
