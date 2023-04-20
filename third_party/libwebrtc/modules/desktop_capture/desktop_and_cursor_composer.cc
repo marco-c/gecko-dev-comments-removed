@@ -105,11 +105,12 @@ DesktopFrameWithCursor::DesktopFrameWithCursor(
 
   if (!previous_cursor_rect.equals(cursor_rect_)) {
     mutable_updated_region()->AddRect(cursor_rect_);
-
     
     
-    if (original_frame_->rect().ContainsRect(previous_cursor_rect))
-      mutable_updated_region()->AddRect(previous_cursor_rect);
+    
+    
+    
+    mutable_updated_region()->AddRect(previous_cursor_rect);
   } else if (cursor_changed) {
     mutable_updated_region()->AddRect(cursor_rect_);
   }
