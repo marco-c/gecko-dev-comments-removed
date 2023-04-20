@@ -2943,13 +2943,25 @@ void DrawTargetWebgl::StrokeRect(const Rect& aRect, const Pattern& aPattern,
   }
 }
 
+static inline bool IsThinLine(const Matrix& aTransform,
+                              const StrokeOptions& aStrokeOptions) {
+  auto scale = aTransform.ScaleFactors();
+  return std::max(scale.xScale, scale.yScale) * aStrokeOptions.mLineWidth <= 1;
+}
+
 bool DrawTargetWebgl::StrokeLineAccel(const Point& aStart, const Point& aEnd,
                                       const Pattern& aPattern,
                                       const StrokeOptions& aStrokeOptions,
                                       const DrawOptions& aOptions) {
+  
+  
+  
+  
   if (mWebglValid && SupportsPattern(aPattern) &&
       (aStrokeOptions.mLineCap == CapStyle::BUTT ||
-       aStrokeOptions.mLineCap == CapStyle::SQUARE) &&
+       aStrokeOptions.mLineCap == CapStyle::SQUARE ||
+       (aStrokeOptions.mLineCap == CapStyle::ROUND &&
+        IsThinLine(GetTransform(), aStrokeOptions))) &&
       aStrokeOptions.mDashPattern == nullptr && aStrokeOptions.mLineWidth > 0) {
     
     
