@@ -8,15 +8,14 @@
 #define LAYOUT_SVG_SVGIMAGEFRAME_H_
 
 
+#include "mozilla/gfx/2D.h"
+#include "mozilla/SVGGeometryFrame.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
-#include "mozilla/gfx/2D.h"
 #include "imgIContainer.h"
 #include "nsContainerFrame.h"
 #include "imgINotificationObserver.h"
-#include "mozilla/SVGGeometryFrame.h"
 #include "nsIReflowCallback.h"
-#include "mozilla/Unused.h"
 
 namespace mozilla {
 class PresShell;
@@ -67,9 +66,6 @@ class SVGImageFrame final : public SVGGeometryFrame, public nsIReflowCallback {
                         const nsDisplayListSet& aLists) override;
 
   
-  uint16_t GetHitTestFlags() override;
-
-  
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                             int32_t aModType) override;
 
@@ -100,6 +96,8 @@ class SVGImageFrame final : public SVGGeometryFrame, public nsIReflowCallback {
   void SetForceSyncDecoding(bool aForce) { mForceSyncDecoding = aForce; }
 
  private:
+  uint16_t GetHitTestFlags();
+
   gfx::Matrix GetRasterImageTransform(int32_t aNativeWidth,
                                       int32_t aNativeHeight);
   gfx::Matrix GetVectorImageTransform();

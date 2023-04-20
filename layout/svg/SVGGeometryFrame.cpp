@@ -201,7 +201,7 @@ nsIFrame* SVGGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint) {
     hitTestFlags = SVG_HIT_TEST_FILL;
     fillRule = SVGUtils::ToFillRule(StyleSVG()->mClipRule);
   } else {
-    hitTestFlags = GetHitTestFlags();
+    hitTestFlags = SVGUtils::GetGeometryHitTestFlags(this);
     if (!hitTestFlags) {
       return nullptr;
     }
@@ -274,7 +274,8 @@ void SVGGeometryFrame::ReflowSVG() {
   
   
   
-  uint16_t hitTestFlags = GetHitTestFlags();
+  
+  uint16_t hitTestFlags = SVGUtils::GetGeometryHitTestFlags(this);
   if ((hitTestFlags & SVG_HIT_TEST_FILL)) {
     flags |= SVGUtils::eBBoxIncludeFillGeometry;
   }
@@ -499,7 +500,7 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
   }
 
   
-  if ((aFlags & SVGUtils::eBBoxIncludeMarkers) != 0 && element->IsMarkable()) {
+  if ((aFlags & SVGUtils::eBBoxIncludeMarkers) && element->IsMarkable()) {
     SVGMarkerFrame* markerFrames[SVGMark::eTypeCount];
     if (SVGObserverUtils::GetAndObserveMarkers(this, &markerFrames)) {
       nsTArray<SVGMark> marks;
@@ -830,7 +831,4 @@ float SVGGeometryFrame::GetStrokeWidthForMarkers() {
   return strokeWidth;
 }
 
-uint16_t SVGGeometryFrame::GetHitTestFlags() {
-  return SVGUtils::GetGeometryHitTestFlags(this);
-}
 }  
