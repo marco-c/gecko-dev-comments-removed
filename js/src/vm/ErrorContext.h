@@ -32,12 +32,12 @@ struct FrontendErrors {
   }
 };
 
-class ErrorAllocator : public MallocProvider<ErrorAllocator> {
+class FrontendAllocator : public MallocProvider<FrontendAllocator> {
  private:
   ErrorContext* const context_;
 
  public:
-  explicit ErrorAllocator(ErrorContext* ec) : context_(ec) {}
+  explicit FrontendAllocator(ErrorContext* ec) : context_(ec) {}
 
   void* onOutOfMemory(js::AllocFunction allocFunc, arena_id_t arena,
                       size_t nbytes, void* reallocPtr = nullptr);
@@ -45,13 +45,13 @@ class ErrorAllocator : public MallocProvider<ErrorAllocator> {
 };
 
 class ErrorContext {
-  ErrorAllocator alloc_;
+  FrontendAllocator alloc_;
 
  public:
   explicit ErrorContext() : alloc_(this) {}
   virtual ~ErrorContext() = default;
 
-  ErrorAllocator* getAllocator() { return &alloc_; }
+  FrontendAllocator* getAllocator() { return &alloc_; }
 
   
   virtual void reportError(js::CompileError&& err) = 0;
