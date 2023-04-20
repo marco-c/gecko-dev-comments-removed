@@ -4,20 +4,18 @@
 
 package org.mozilla.geckoview.test
 
-import org.mozilla.geckoview.GeckoSession.ContentDelegate
-import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
-import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.IgnoreCrash
-
 import androidx.annotation.AnyThread
-import androidx.test.filters.MediumTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.hamcrest.Matchers.*
+import androidx.test.filters.MediumTest
+import org.hamcrest.Matchers.* 
 import org.junit.Assume.assumeThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.geckoview.*
-
+import org.mozilla.geckoview.* 
+import org.mozilla.geckoview.GeckoSession.ContentDelegate
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.IgnoreCrash
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
@@ -55,7 +53,7 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
 
         if (isExtensionProcessEnabled && numContentProcesses > 1) {
             
-            --numContentProcesses 
+            --numContentProcesses
         }
 
         return numContentProcesses
@@ -93,7 +91,8 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
     }
 
     @IgnoreCrash
-    @Test fun crashContentMultipleSessions() {
+    @Test
+    fun crashContentMultipleSessions() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
@@ -116,6 +115,7 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
                     newSessionCrash.complete(null)
                 }
             }
+
             
             
             override fun onCrash(session: GeckoSession) {
@@ -135,7 +135,8 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
     }
 
     @IgnoreCrash
-    @Test fun killContentMultipleSessions() {
+    @Test
+    fun killContentMultipleSessions() {
         val newSession = getSecondGeckoSession()
 
         val mainSessionKilled = GeckoResult<Void>()

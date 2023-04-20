@@ -12,7 +12,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
-import org.hamcrest.Matchers.*
+import org.hamcrest.Matchers.* 
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -20,13 +20,9 @@ import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.mozilla.gecko.GeckoAppShell
-import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.Autofill
-import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
-
-
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
@@ -62,7 +58,7 @@ class GeckoAppShellTest : BaseSessionTest() {
     }
 
     
-    private fun goHomeAndReturnWithPageLoad(){
+    private fun goHomeAndReturnWithPageLoad() {
         
         Handler(Looper.getMainLooper()).postDelayed({
             sessionRule.requestActivityToForeground(context)
@@ -79,7 +75,7 @@ class GeckoAppShellTest : BaseSessionTest() {
     @Test
     fun testChange24HourClockSettings() {
         activityRule.scenario.onActivity {
-            var onLoadRequestCount = 0;
+            var onLoadRequestCount = 0
 
             
             
@@ -91,24 +87,31 @@ class GeckoAppShellTest : BaseSessionTest() {
             mainSession.waitUntilCalled(object : GeckoSession.ContentDelegate, GeckoSession.NavigationDelegate {
                 @GeckoSessionTestRule.AssertCalled(count = 2)
                 override fun onLocationChange(
-                        session: GeckoSession,
-                        url: String?,
-                        perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>) {
+                    session: GeckoSession,
+                    url: String?,
+                    perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>
+                ) {
                     
-                    if(onLoadRequestCount == 0) {
-                        assertThat("Should use a 24 hour clock.",
-                                GeckoAppShell.getIs24HourFormat(), equalTo(true))
-                        onLoadRequestCount ++;
+                    if (onLoadRequestCount == 0) {
+                        assertThat(
+                            "Should use a 24 hour clock.",
+                            GeckoAppShell.getIs24HourFormat(),
+                            equalTo(true)
+                        )
+                        onLoadRequestCount++
 
                         
                         
                         setAndroid24HourTimeFormat(false)
                         goHomeAndReturnWithPageLoad()
 
-                    
+                        
                     } else {
-                        assertThat("Should use a 12 hour clock.",
-                                GeckoAppShell.getIs24HourFormat(), equalTo(false))
+                        assertThat(
+                            "Should use a 12 hour clock.",
+                            GeckoAppShell.getIs24HourFormat(),
+                            equalTo(false)
+                        )
                     }
                 }
             })
