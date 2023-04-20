@@ -176,8 +176,8 @@ void RemoteEstimatorProxy::OnBitrateChanged(int bitrate_bps) {
       kTwccReportSize / send_config_.max_interval.Get();
 
   
-  DataRate twcc_bitrate = DataRate::BitsPerSec(
-      static_cast<double>(send_config_.bandwidth_fraction) * bitrate_bps);
+  DataRate twcc_bitrate =
+      DataRate::BitsPerSec(send_config_.bandwidth_fraction * bitrate_bps);
 
   
   
