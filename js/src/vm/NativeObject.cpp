@@ -525,7 +525,7 @@ DenseElementResult NativeObject::maybeDensifySparseElements(
 
   obj->ensureDenseInitializedLength(newInitializedLength, 0);
 
-  if (ObjectRealm::get(obj).objectMaybeInIteration(obj)) {
+  if (cx->compartment()->objectMaybeInIteration(obj)) {
     
     
     obj->markDenseElementsMaybeInIteration();

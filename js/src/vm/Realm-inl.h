@@ -12,7 +12,6 @@
 #include "gc/Barrier.h"
 #include "gc/Marking.h"
 #include "vm/GlobalObject.h"
-#include "vm/Iteration.h"
 
 #include "vm/JSContext-inl.h"
 
@@ -102,22 +101,5 @@ js::AutoMaybeLeaveAtomsZone::~AutoMaybeLeaveAtomsZone() {
 
 js::AutoRealmUnchecked::AutoRealmUnchecked(JSContext* cx, JS::Realm* target)
     : AutoRealm(cx, target) {}
-
-MOZ_ALWAYS_INLINE bool js::ObjectRealm::objectMaybeInIteration(JSObject* obj) {
-  MOZ_ASSERT(&ObjectRealm::get(obj) == this);
-
-  
-  js::NativeIterator* next = enumerators->next();
-  if (enumerators == next) {
-    return false;
-  }
-
-  
-  if (next->next() == enumerators) {
-    return next->objectBeingIterated() == obj;
-  }
-
-  return true;
-}
 
 #endif 

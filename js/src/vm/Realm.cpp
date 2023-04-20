@@ -42,10 +42,6 @@ Realm::DebuggerVectorEntry::DebuggerVectorEntry(js::Debugger* dbg_,
 ObjectRealm::ObjectRealm(JS::Zone* zone)
     : innerViews(zone, zone), iteratorCache(zone) {}
 
-ObjectRealm::~ObjectRealm() {
-  MOZ_ASSERT(enumerators == iteratorSentinel_.get());
-}
-
 Realm::Realm(Compartment* comp, const JS::RealmOptions& options)
     : JS::shadow::Realm(comp),
       zone_(comp->zone()),
@@ -74,18 +70,7 @@ Realm::~Realm() {
   runtime_->numRealms--;
 }
 
-bool ObjectRealm::init(JSContext* cx) {
-  NativeIteratorSentinel sentinel(NativeIterator::allocateSentinel(cx));
-  if (!sentinel) {
-    return false;
-  }
-
-  iteratorSentinel_ = std::move(sentinel);
-  enumerators = iteratorSentinel_.get();
-  return true;
-}
-
-bool Realm::init(JSContext* cx, JSPrincipals* principals) {
+void Realm::init(JSContext* cx, JSPrincipals* principals) {
   
 
 
@@ -94,10 +79,6 @@ bool Realm::init(JSContext* cx, JSPrincipals* principals) {
 
   js::ResetTimeZoneInternal(ResetTimeZoneMode::DontResetIfOffsetUnchanged);
 
-  if (!objects_.init(cx)) {
-    return false;
-  }
-
   if (principals) {
     
     
@@ -105,8 +86,6 @@ bool Realm::init(JSContext* cx, JSPrincipals* principals) {
     JS_HoldPrincipals(principals);
     principals_ = principals;
   }
-
-  return true;
 }
 
 bool JSRuntime::createJitRuntime(JSContext* cx) {
@@ -359,25 +338,6 @@ void Realm::traceWeakDebugEnvironmentEdges(JSTracer* trc) {
   if (debugEnvs_) {
     debugEnvs_->traceWeak(trc);
   }
-}
-
-void ObjectRealm::traceWeakNativeIterators(JSTracer* trc) {
-  
-  NativeIterator* ni = enumerators->next();
-  while (ni != enumerators) {
-    JSObject* iterObj = ni->iterObj();
-    NativeIterator* next = ni->next();
-    if (!TraceManuallyBarrieredWeakEdge(trc, &iterObj,
-                                        "ObjectRealm::enumerators")) {
-      ni->unlink();
-    }
-    MOZ_ASSERT(&ObjectRealm::get(ni->objectBeingIterated()) == this);
-    ni = next;
-  }
-}
-
-void Realm::traceWeakObjectRealm(JSTracer* trc) {
-  objects_.traceWeakNativeIterators(trc);
 }
 
 void Realm::fixupAfterMovingGC(JSTracer* trc) {

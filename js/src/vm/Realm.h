@@ -240,10 +240,6 @@ class ObjectWeakMap;
 
 
 class ObjectRealm {
-  using NativeIteratorSentinel =
-      js::UniquePtr<js::NativeIterator, JS::FreePolicy>;
-  NativeIteratorSentinel iteratorSentinel_;
-
   
   
   
@@ -253,10 +249,6 @@ class ObjectRealm {
   void operator=(const ObjectRealm&) = delete;
 
  public:
-  
-  
-  js::NativeIterator* enumerators = nullptr;
-
   
   JS::WeakCache<js::InnerViewTable> innerViews;
 
@@ -272,21 +264,15 @@ class ObjectRealm {
   static inline ObjectRealm& get(const JSObject* obj);
 
   explicit ObjectRealm(JS::Zone* zone);
-  ~ObjectRealm();
-
-  [[nodiscard]] bool init(JSContext* cx);
 
   void finishRoots();
   void trace(JSTracer* trc);
   void sweepAfterMinorGC(JSTracer* trc);
-  void traceWeakNativeIterators(JSTracer* trc);
 
   void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               size_t* innerViewsArg,
                               size_t* objectMetadataTablesArg,
                               size_t* nonSyntacticLexicalEnvironmentsArg);
-
-  MOZ_ALWAYS_INLINE bool objectMaybeInIteration(JSObject* obj);
 
   js::NonSyntacticLexicalEnvironmentObject*
   getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
@@ -467,7 +453,7 @@ class JS::Realm : public JS::shadow::Realm {
   Realm(JS::Compartment* comp, const JS::RealmOptions& options);
   ~Realm();
 
-  [[nodiscard]] bool init(JSContext* cx, JSPrincipals* principals);
+  void init(JSContext* cx, JSPrincipals* principals);
   void destroy(JS::GCContext* gcx);
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
@@ -546,7 +532,6 @@ class JS::Realm : public JS::shadow::Realm {
 
   void sweepAfterMinorGC(JSTracer* trc);
   void traceWeakDebugEnvironmentEdges(JSTracer* trc);
-  void traceWeakObjectRealm(JSTracer* trc);
   void traceWeakRegExps(JSTracer* trc);
 
   void clearScriptCounts();

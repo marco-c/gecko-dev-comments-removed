@@ -375,8 +375,6 @@ struct NativeIterator {
     prev_ = nullptr;
   }
 
-  static NativeIterator* allocateSentinel(JSContext* cx);
-
   void trace(JSTracer* trc);
 
   static constexpr size_t offsetOfObjectBeingIterated() {

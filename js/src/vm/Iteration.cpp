@@ -699,13 +699,12 @@ JS_PUBLIC_API bool js::GetPropertyKeys(JSContext* cx, HandleObject obj,
                   props);
 }
 
-static inline void RegisterEnumerator(NativeIterator* ni) {
+static inline void RegisterEnumerator(JSContext* cx, NativeIterator* ni) {
   MOZ_ASSERT(ni->objectBeingIterated());
-  ObjectRealm& realm = ObjectRealm::get(ni->objectBeingIterated());
 
   
   
-  ni->link(realm.enumerators);
+  ni->link(cx->compartment()->enumeratorsAddr());
 
   MOZ_ASSERT(!ni->isActive());
   ni->markActive();
@@ -791,16 +790,6 @@ NativeIterator::NativeIterator() {
   
   
   prev_ = next_ = this;
-}
-
-NativeIterator* NativeIterator::allocateSentinel(JSContext* cx) {
-  NativeIterator* ni = js_new<NativeIterator>();
-  if (!ni) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-
-  return ni;
 }
 
 static HashNumber HashIteratorShape(Shape* shape) {
@@ -1062,7 +1051,7 @@ JSObject* js::GetIterator(JSContext* cx, HandleObject obj) {
           LookupInIteratorCache(cx, obj, &numShapes)) {
     NativeIterator* ni = iterobj->getNativeIterator();
     ni->initObjectBeingIterated(*obj);
-    RegisterEnumerator(ni);
+    RegisterEnumerator(cx, ni);
     return iterobj;
   }
 
@@ -1095,7 +1084,7 @@ JSObject* js::GetIterator(JSContext* cx, HandleObject obj) {
   if (!iterobj) {
     return nullptr;
   }
-  RegisterEnumerator(iterobj->getNativeIterator());
+  RegisterEnumerator(cx, iterobj->getNativeIterator());
 
   cx->check(iterobj);
 
@@ -1631,7 +1620,7 @@ static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
 
 static bool SuppressDeletedPropertyHelper(JSContext* cx, HandleObject obj,
                                           Handle<JSLinearString*> str) {
-  NativeIterator* enumeratorList = ObjectRealm::get(obj).enumerators;
+  NativeIterator* enumeratorList = cx->compartment()->enumeratorsAddr();
   NativeIterator* ni = enumeratorList->next();
 
   while (ni != enumeratorList) {
@@ -1645,7 +1634,7 @@ static bool SuppressDeletedPropertyHelper(JSContext* cx, HandleObject obj,
 }
 
 bool js::SuppressDeletedProperty(JSContext* cx, HandleObject obj, jsid id) {
-  if (MOZ_LIKELY(!ObjectRealm::get(obj).objectMaybeInIteration(obj))) {
+  if (MOZ_LIKELY(!cx->compartment()->objectMaybeInIteration(obj))) {
     return true;
   }
 
@@ -1662,7 +1651,7 @@ bool js::SuppressDeletedProperty(JSContext* cx, HandleObject obj, jsid id) {
 
 bool js::SuppressDeletedElement(JSContext* cx, HandleObject obj,
                                 uint32_t index) {
-  if (MOZ_LIKELY(!ObjectRealm::get(obj).objectMaybeInIteration(obj))) {
+  if (MOZ_LIKELY(!cx->compartment()->objectMaybeInIteration(obj))) {
     return true;
   }
 
@@ -1692,7 +1681,7 @@ void js::AssertDenseElementsNotIterated(NativeObject* obj) {
   static constexpr uint32_t MaxPropsToCheck = 10;
   uint32_t propsChecked = 0;
 
-  NativeIterator* enumeratorList = ObjectRealm::get(obj).enumerators;
+  NativeIterator* enumeratorList = obj->compartment()->enumeratorsAddr();
   NativeIterator* ni = enumeratorList->next();
 
   while (ni != enumeratorList) {
