@@ -14,6 +14,7 @@
 #include <cstdint>
 
 #include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "modules/audio_coding/acm2/acm_receiver.h"
 #include "modules/audio_coding/acm2/acm_remixing.h"
@@ -114,7 +115,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   
   class ChangeLogger {
    public:
-    explicit ChangeLogger(const std::string& histogram_name)
+    explicit ChangeLogger(absl::string_view histogram_name)
         : histogram_name_(histogram_name) {}
     
     
@@ -137,7 +138,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   int InitializeReceiverSafe() RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
 
-  bool HaveValidEncoder(const char* caller_name) const
+  bool HaveValidEncoder(absl::string_view caller_name) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(acm_mutex_);
 
   
@@ -595,7 +596,8 @@ int AudioCodingModuleImpl::GetNetworkStatistics(NetworkStatistics* statistics) {
   return 0;
 }
 
-bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
+bool AudioCodingModuleImpl::HaveValidEncoder(
+    absl::string_view caller_name) const {
   if (!encoder_stack_) {
     RTC_LOG(LS_ERROR) << caller_name << " failed: No send codec is registered.";
     return false;

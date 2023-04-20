@@ -159,7 +159,7 @@ namespace {
 
 
 
-bool ParseSsrc(const std::string& str, uint32_t* ssrc) {
+bool ParseSsrc(absl::string_view str, uint32_t* ssrc) {
   if (str.empty())
     return true;
   int base = 10;
@@ -168,12 +168,13 @@ bool ParseSsrc(const std::string& str, uint32_t* ssrc) {
     base = 16;
   errno = 0;
   char* end_ptr;
-  unsigned long value = strtoul(str.c_str(), &end_ptr, base);  
+  std::string str_str = std::string(str);
+  unsigned long value = strtoul(str_str.c_str(), &end_ptr, base);  
   if (value == ULONG_MAX && errno == ERANGE)
     return false;  
   if (sizeof(unsigned long) > sizeof(uint32_t) && value > 0xFFFFFFFF)  
     return false;  
-  if (end_ptr - str.c_str() < static_cast<ptrdiff_t>(str.length()))
+  if (end_ptr - str_str.c_str() < static_cast<ptrdiff_t>(str.length()))
     return false;  
   *ssrc = static_cast<uint32_t>(value);
   return true;
@@ -196,15 +197,15 @@ bool ValidatePayloadType(int value) {
   return false;
 }
 
-bool ValidateSsrcValue(const std::string& str) {
+bool ValidateSsrcValue(absl::string_view str) {
   uint32_t dummy_ssrc;
   if (ParseSsrc(str, &dummy_ssrc))  
     return true;
-  printf("Invalid SSRC: %s\n", str.c_str());
+  printf("Invalid SSRC: %.*s\n", static_cast<int>(str.size()), str.data());
   return false;
 }
 
-void PrintCodecMappingEntry(const char* codec, int flag) {
+void PrintCodecMappingEntry(absl::string_view codec, int flag) {
   std::cout << codec << ": " << flag << std::endl;
 }
 

@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/array_view.h"
 
 namespace webrtc {
@@ -36,7 +37,7 @@ class AudioLoop {
   
   
   
-  bool Init(std::string file_name,
+  bool Init(absl::string_view file_name,
             size_t max_loop_length_samples,
             size_t block_length_samples);
 

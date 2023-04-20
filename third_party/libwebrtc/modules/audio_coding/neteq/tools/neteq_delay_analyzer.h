@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "modules/audio_coding/neteq/tools/neteq_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
@@ -45,12 +46,12 @@ class NetEqDelayAnalyzer : public test::NetEqPostInsertPacket,
   
   
   
-  void CreateMatlabScript(const std::string& script_name) const;
+  void CreateMatlabScript(absl::string_view script_name) const;
 
   
   
   
-  void CreatePythonScript(const std::string& script_name) const;
+  void CreatePythonScript(absl::string_view script_name) const;
 
  private:
   struct TimingData {
