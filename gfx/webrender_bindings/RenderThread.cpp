@@ -376,25 +376,28 @@ Maybe<layers::CollectedFrames> RenderThread::GetCollectedFramesForWindow(
   return renderer->GetCollectedFrames();
 }
 
-void RenderThread::HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender) {
+void RenderThread::HandleFrameOneDoc(wr::WindowId aWindowId, bool aRender,
+                                     bool aTrackedFrame) {
   if (mHasShutdown) {
     return;
   }
 
   if (!IsInRenderThread()) {
-    PostRunnable(NewRunnableMethod<wr::WindowId, bool>(
+    PostRunnable(NewRunnableMethod<wr::WindowId, bool, bool>(
         "wr::RenderThread::HandleFrameOneDoc", this,
-        &RenderThread::HandleFrameOneDoc, aWindowId, aRender));
+        &RenderThread::HandleFrameOneDoc, aWindowId, aRender, aTrackedFrame));
     return;
   }
 
-  HandleFrameOneDocInner(aWindowId, aRender);
+  HandleFrameOneDocInner(aWindowId, aRender, aTrackedFrame);
 
-  DecPendingFrameCount(aWindowId);
+  if (aTrackedFrame) {
+    DecPendingFrameCount(aWindowId);
+  }
 }
 
-void RenderThread::HandleFrameOneDocInner(wr::WindowId aWindowId,
-                                          bool aRender) {
+void RenderThread::HandleFrameOneDocInner(wr::WindowId aWindowId, bool aRender,
+                                          bool aTrackedFrame) {
   if (IsDestroyed(aWindowId)) {
     return;
   }
@@ -403,9 +406,10 @@ void RenderThread::HandleFrameOneDocInner(wr::WindowId aWindowId,
     return;
   }
 
-  bool render = false;
+  bool render = aRender;
   PendingFrameInfo frame;
-  {  
+  if (aTrackedFrame) {
+    
     auto windows = mWindowInfos.Lock();
     auto it = windows->find(AsUint64(aWindowId));
     if (it == windows->end()) {
@@ -419,6 +423,9 @@ void RenderThread::HandleFrameOneDocInner(wr::WindowId aWindowId,
     render = frameInfo.mFrameNeedsRender;
 
     frame = frameInfo;
+  } else {
+    
+    frame = {TimeStamp::Now(), VsyncId(), aRender};
   }
 
   
@@ -1339,23 +1346,29 @@ extern "C" {
 
 void wr_notifier_wake_up(mozilla::wr::WrWindowId aWindowId,
                          bool aCompositeNeeded) {
-  mozilla::wr::RenderThread::Get()->IncPendingFrameCount(aWindowId, VsyncId(),
-                                                         TimeStamp::Now());
-  mozilla::wr::RenderThread::Get()->DecPendingFrameBuildCount(aWindowId);
-  mozilla::wr::RenderThread::Get()->HandleFrameOneDoc(aWindowId,
-                                                      aCompositeNeeded);
+  
+  
+  bool isTrackedFrame = false;
+  mozilla::wr::RenderThread::Get()->HandleFrameOneDoc(
+      aWindowId, aCompositeNeeded, isTrackedFrame);
 }
 
 void wr_notifier_new_frame_ready(mozilla::wr::WrWindowId aWindowId) {
-  mozilla::wr::RenderThread::Get()->DecPendingFrameBuildCount(aWindowId);
-  mozilla::wr::RenderThread::Get()->HandleFrameOneDoc(aWindowId,
-                                                       true);
+  auto* renderThread = mozilla::wr::RenderThread::Get();
+  renderThread->DecPendingFrameBuildCount(aWindowId);
+
+  bool render = true;
+  bool isTrackedFrame = true;
+  renderThread->HandleFrameOneDoc(aWindowId, render, isTrackedFrame);
 }
 
 void wr_notifier_nop_frame_done(mozilla::wr::WrWindowId aWindowId) {
-  mozilla::wr::RenderThread::Get()->DecPendingFrameBuildCount(aWindowId);
-  mozilla::wr::RenderThread::Get()->HandleFrameOneDoc(aWindowId,
-                                                       false);
+  auto* renderThread = mozilla::wr::RenderThread::Get();
+  renderThread->DecPendingFrameBuildCount(aWindowId);
+
+  bool render = false;
+  bool isTrackedFrame = true;
+  renderThread->HandleFrameOneDoc(aWindowId, render, isTrackedFrame);
 }
 
 void wr_notifier_external_event(mozilla::wr::WrWindowId aWindowId,
