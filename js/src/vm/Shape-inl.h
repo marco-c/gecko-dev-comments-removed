@@ -34,7 +34,7 @@ template <class ObjectSubclass>
   Rooted<Shape*> emptyShape(cx, obj->shape());
 
   
-  Rooted<Shape*> shape(cx, ObjectSubclass::assignInitialShape(cx, obj));
+  Rooted<SharedShape*> shape(cx, ObjectSubclass::assignInitialShape(cx, obj));
   if (!shape) {
     return false;
   }

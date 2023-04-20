@@ -38,7 +38,8 @@ class StringObject : public NativeObject {
 
 
 
-  static Shape* assignInitialShape(JSContext* cx, Handle<StringObject*> obj);
+  static SharedShape* assignInitialShape(JSContext* cx,
+                                         Handle<StringObject*> obj);
 
   JSString* unbox() const {
     return getFixedSlot(PRIMITIVE_VALUE_SLOT).toString();

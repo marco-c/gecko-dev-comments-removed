@@ -78,7 +78,8 @@ class RegExpObject : public NativeObject {
 
 
 
-  static Shape* assignInitialShape(JSContext* cx, Handle<RegExpObject*> obj);
+  static SharedShape* assignInitialShape(JSContext* cx,
+                                         Handle<RegExpObject*> obj);
 
   
 
