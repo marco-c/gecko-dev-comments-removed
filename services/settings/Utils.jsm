@@ -48,10 +48,7 @@ const log = (() => {
 })();
 
 XPCOMUtils.defineLazyGetter(lazy, "isRunningTests", () => {
-  const env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
-  if (env.get("MOZ_DISABLE_NONLOCAL_CONNECTIONS") === "1") {
+  if (Services.env.get("MOZ_DISABLE_NONLOCAL_CONNECTIONS") === "1") {
     
     
     return true;
@@ -71,11 +68,7 @@ XPCOMUtils.defineLazyGetter(lazy, "allowServerURLOverride", () => {
     return true;
   }
 
-  const env = Cc["@mozilla.org/process/environment;1"].getService(
-    Ci.nsIEnvironment
-  );
-
-  if (env.get("MOZ_REMOTE_SETTINGS_DEVTOOLS") === "1") {
+  if (Services.env.get("MOZ_REMOTE_SETTINGS_DEVTOOLS") === "1") {
     
     return true;
   }
@@ -125,10 +118,7 @@ var Utils = {
     if (this.SERVER_URL.includes("dev.")) {
       return Ci.nsIContentSignatureVerifier.ContentSignatureDevRoot;
     }
-    let env = Cc["@mozilla.org/process/environment;1"].getService(
-      Ci.nsIEnvironment
-    );
-    if (env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
+    if (Services.env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
       return Ci.nsIX509CertDB.AppXPCShellRoot;
     }
     return Ci.nsIContentSignatureVerifier.ContentSignatureLocalRoot;
