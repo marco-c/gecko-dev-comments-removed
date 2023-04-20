@@ -46,8 +46,7 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
 
   explicit ParentChannelListener(
       nsIStreamListener* aListener,
-      dom::CanonicalBrowsingContext* aBrowsingContext,
-      bool aUsePrivateBrowsing);
+      dom::CanonicalBrowsingContext* aBrowsingContext);
 
   
   void SetListenerAfterRedirect(nsIStreamListener* aListener);
