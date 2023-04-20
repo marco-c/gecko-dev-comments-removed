@@ -225,22 +225,13 @@ appUpdater.prototype = {
           "update.downloadAndInstallButton.accesskey"
         );
       }
-      if (this.options.buttonAutoFocus) {
-        let promise = Promise.resolve();
-        if (document.readyState != "complete") {
-          promise = new Promise(resolve =>
-            window.addEventListener("load", resolve, { once: true })
-          );
-        }
-        promise.then(() => {
-          if (
-            !document.commandDispatcher.focusedElement || 
-            
-            document.commandDispatcher.focusedElement.localName == "button"
-          ) {
-            button.focus();
-          }
-        });
+      if (
+        this.options.buttonAutoFocus &&
+        (!document.commandDispatcher.focusedElement || 
+          document.commandDispatcher.focusedElement.localName == "button")
+      ) {
+        
+        button.focus();
       }
     }
   },
