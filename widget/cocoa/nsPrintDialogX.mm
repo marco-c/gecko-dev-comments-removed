@@ -25,46 +25,6 @@ using mozilla::gfx::PrintTarget;
 
 NS_IMPL_ISUPPORTS(nsPrintDialogServiceX, nsIPrintDialogService)
 
-
-static void setPagesPerSheet(NSPrintInfo* aPrintInfo, int32_t aPPS) {
-  int32_t across, down;
-  
-  switch (aPPS) {
-    case 2:
-      across = 1;
-      down = 2;
-      break;
-    case 4:
-      across = 2;
-      down = 2;
-      break;
-    case 6:
-      across = 2;
-      down = 3;
-      break;
-    case 9:
-      across = 3;
-      down = 3;
-      break;
-    case 16:
-      across = 4;
-      down = 4;
-      break;
-    default:
-      across = 1;
-      down = 1;
-      break;
-  }
-  if ([aPrintInfo orientation] == NSPaperOrientationLandscape) {
-    std::swap(across, down);
-  }
-
-  NSDictionary* dict = [aPrintInfo dictionary];
-
-  [dict setObject:[NSNumber numberWithInt:across] forKey:@"NSPagesAcross"];
-  [dict setObject:[NSNumber numberWithInt:down] forKey:@"NSPagesDown"];
-}
-
 nsPrintDialogServiceX::nsPrintDialogServiceX() {}
 
 nsPrintDialogServiceX::~nsPrintDialogServiceX() {}
@@ -116,12 +76,6 @@ nsPrintDialogServiceX::ShowPrintDialog(mozIDOMWindowProxy* aParent, bool aHaveSe
 
   
   
-  int32_t pagesPerSheet;
-  aSettings->GetNumPagesPerSheet(&pagesPerSheet);
-  setPagesPerSheet(printInfo, pagesPerSheet);
-
-  
-  
   
   NSView* tmpView = [[NSView alloc] init];
   NSPrintOperation* printOperation = [NSPrintOperation printOperationWithView:tmpView
@@ -156,16 +110,6 @@ nsPrintDialogServiceX::ShowPrintDialog(mozIDOMWindowProxy* aParent, bool aHaveSe
   if (button != NSFileHandlingPanelOKButton) {
     return NS_ERROR_ABORT;
   }
-
-  
-  
-  
-  NSDictionary* dict = [result dictionary];
-  auto pagesAcross = [[dict objectForKey:@"NSPagesAcross"] intValue];
-  auto pagesDown = [[dict objectForKey:@"NSPagesDown"] intValue];
-  [dict setObject:[NSNumber numberWithUnsignedInt:1] forKey:@"NSPagesAcross"];
-  [dict setObject:[NSNumber numberWithUnsignedInt:1] forKey:@"NSPagesDown"];
-  aSettings->SetNumPagesPerSheet(pagesAcross * pagesDown);
 
   
   [viewController exportSettings];
