@@ -269,11 +269,6 @@ uint8_t GetIndexFromRoleMap(const nsRoleMapEntry* aRoleMap);
 
 
 
-bool IsRoleMapIndexValid(uint8_t aRoleMapIndex);
-
-
-
-
 
 uint64_t UniversalStatesFor(dom::Element* aElement);
 
