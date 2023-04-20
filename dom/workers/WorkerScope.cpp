@@ -1035,7 +1035,8 @@ void DedicatedWorkerGlobalScope::OnVsync(const VsyncEvent& aVsync) {
     
     
     
-    timeStamp = nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(timeStamp, 0);
+    timeStamp = nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(
+        timeStamp, 0, this->GetRTPCallerType());
   }
 
   for (auto& callback : callbacks) {
