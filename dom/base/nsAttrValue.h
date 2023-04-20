@@ -509,6 +509,9 @@ class nsAttrValue {
   inline ValueBaseType BaseType() const;
   inline bool IsSVGType(ValueType aType) const;
 
+  nsAtom* GetStoredAtom() const;
+  nsStringBuffer* GetStoredStringBuffer() const;
+
   
 
 
