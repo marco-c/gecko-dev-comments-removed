@@ -3123,7 +3123,72 @@ class Extension extends ExtensionData {
       }
 
       await this.clearCache(this.startupReason);
-      this._setupStartupPermissions();
+
+      
+      
+      let isAllowed = this.permissions.has(PRIVATE_ALLOWED_PERMISSION);
+      if (this.manifest.incognito === "not_allowed") {
+        
+        
+        
+        if (isAllowed) {
+          lazy.ExtensionPermissions.remove(this.id, {
+            permissions: [PRIVATE_ALLOWED_PERMISSION],
+            origins: [],
+          });
+          this.permissions.delete(PRIVATE_ALLOWED_PERMISSION);
+        }
+      } else if (
+        !isAllowed &&
+        this.isPrivileged &&
+        !this.temporarilyInstalled
+      ) {
+        
+        
+        lazy.ExtensionPermissions.add(this.id, {
+          permissions: [PRIVATE_ALLOWED_PERMISSION],
+          origins: [],
+        });
+        this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
+      }
+
+      
+      
+      if (this.type === "theme") {
+        this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
+      }
+
+      
+      
+      if (INSTALL_AND_UPDATE_STARTUP_REASONS.has(this.startupReason)) {
+        if (isMozillaExtension(this)) {
+          
+          
+          lazy.ExtensionPermissions.add(this.id, {
+            permissions: [SVG_CONTEXT_PROPERTIES_PERMISSION],
+            origins: [],
+          });
+          this.permissions.add(SVG_CONTEXT_PROPERTIES_PERMISSION);
+        } else {
+          lazy.ExtensionPermissions.remove(this.id, {
+            permissions: [SVG_CONTEXT_PROPERTIES_PERMISSION],
+            origins: [],
+          });
+          this.permissions.delete(SVG_CONTEXT_PROPERTIES_PERMISSION);
+        }
+      }
+
+      
+      if (
+        this.manifest.devtools_page &&
+        !this.manifest.optional_permissions.includes("devtools")
+      ) {
+        lazy.ExtensionPermissions.add(this.id, {
+          permissions: ["devtools"],
+          origins: [],
+        });
+        this.permissions.add("devtools");
+      }
 
       GlobalManager.init(this);
 
@@ -3225,70 +3290,6 @@ class Extension extends ExtensionData {
       
       
       resolveReadyPromise(null);
-    }
-  }
-
-  _setupStartupPermissions() {
-    
-    
-    let isAllowed = this.permissions.has(PRIVATE_ALLOWED_PERMISSION);
-    if (this.manifest.incognito === "not_allowed") {
-      
-      
-      
-      if (isAllowed) {
-        lazy.ExtensionPermissions.remove(this.id, {
-          permissions: [PRIVATE_ALLOWED_PERMISSION],
-          origins: [],
-        });
-        this.permissions.delete(PRIVATE_ALLOWED_PERMISSION);
-      }
-    } else if (!isAllowed && this.isPrivileged && !this.temporarilyInstalled) {
-      
-      
-      lazy.ExtensionPermissions.add(this.id, {
-        permissions: [PRIVATE_ALLOWED_PERMISSION],
-        origins: [],
-      });
-      this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
-    }
-
-    
-    
-    if (this.type === "theme") {
-      this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
-    }
-
-    
-    
-    if (INSTALL_AND_UPDATE_STARTUP_REASONS.has(this.startupReason)) {
-      if (isMozillaExtension(this)) {
-        
-        
-        lazy.ExtensionPermissions.add(this.id, {
-          permissions: [SVG_CONTEXT_PROPERTIES_PERMISSION],
-          origins: [],
-        });
-        this.permissions.add(SVG_CONTEXT_PROPERTIES_PERMISSION);
-      } else {
-        lazy.ExtensionPermissions.remove(this.id, {
-          permissions: [SVG_CONTEXT_PROPERTIES_PERMISSION],
-          origins: [],
-        });
-        this.permissions.delete(SVG_CONTEXT_PROPERTIES_PERMISSION);
-      }
-    }
-
-    
-    if (
-      this.manifest.devtools_page &&
-      !this.manifest.optional_permissions.includes("devtools")
-    ) {
-      lazy.ExtensionPermissions.add(this.id, {
-        permissions: ["devtools"],
-        origins: [],
-      });
-      this.permissions.add("devtools");
     }
   }
 
