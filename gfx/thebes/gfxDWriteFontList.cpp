@@ -1046,89 +1046,100 @@ gfxFontEntry* gfxDWriteFontList::CreateFontEntry(
   bool foundExpectedFamily = false;
   const nsCString& familyName =
       aFamily->DisplayName().AsString(SharedFontList());
-  if (aFamily->Index() < collection->GetFontFamilyCount()) {
-    HRESULT hr =
-        collection->GetFontFamily(aFamily->Index(), getter_AddRefs(family));
-    
-    
-    
-    
-    if (SUCCEEDED(hr) && family) {
-      RefPtr<IDWriteLocalizedStrings> names;
-      hr = family->GetFamilyNames(getter_AddRefs(names));
-      if (SUCCEEDED(hr) && names) {
-        nsAutoCString name;
-        if (GetEnglishOrFirstName(name, names)) {
-          foundExpectedFamily = name.Equals(familyName);
+
+  
+  
+  MOZ_SEH_TRY {
+    if (aFamily->Index() < collection->GetFontFamilyCount()) {
+      HRESULT hr =
+          collection->GetFontFamily(aFamily->Index(), getter_AddRefs(family));
+      
+      
+      
+      
+      if (SUCCEEDED(hr) && family) {
+        RefPtr<IDWriteLocalizedStrings> names;
+        hr = family->GetFamilyNames(getter_AddRefs(names));
+        if (SUCCEEDED(hr) && names) {
+          nsAutoCString name;
+          if (GetEnglishOrFirstName(name, names)) {
+            foundExpectedFamily = name.Equals(familyName);
+          }
         }
       }
     }
-  }
-  if (!foundExpectedFamily) {
+    if (!foundExpectedFamily) {
+      
+      
+      UINT32 index;
+      BOOL exists;
+      NS_ConvertUTF8toUTF16 name16(familyName);
+      HRESULT hr = collection->FindFamilyName(
+          reinterpret_cast<const WCHAR*>(name16.BeginReading()), &index,
+          &exists);
+      if (FAILED(hr) || !exists || index == UINT_MAX ||
+          FAILED(collection->GetFontFamily(index, getter_AddRefs(family))) ||
+          !family) {
+        return nullptr;
+      }
+    }
+
     
-    
-    UINT32 index;
-    BOOL exists;
-    NS_ConvertUTF8toUTF16 name16(familyName);
-    HRESULT hr = collection->FindFamilyName(
-        reinterpret_cast<const WCHAR*>(name16.BeginReading()), &index, &exists);
-    if (FAILED(hr) || !exists || index == UINT_MAX ||
-        FAILED(collection->GetFontFamily(index, getter_AddRefs(family))) ||
-        !family) {
+    RefPtr<IDWriteFont> font;
+    if (FAILED(family->GetFont(aFace->mIndex, getter_AddRefs(font))) || !font) {
       return nullptr;
     }
-  }
 
-  
-  RefPtr<IDWriteFont> font;
-  if (FAILED(family->GetFont(aFace->mIndex, getter_AddRefs(font))) || !font) {
-    return nullptr;
-  }
-
-  
-  
-  nsAutoCString psName;
-  if (FAILED(GetDirectWriteFaceName(font, PSNAME_ID, psName))) {
-    RefPtr<IDWriteFontFace> dwFontFace;
-    if (SUCCEEDED(font->CreateFontFace(getter_AddRefs(dwFontFace)))) {
-      GetPostScriptNameFromNameTable(dwFontFace, psName);
+    
+    
+    nsAutoCString psName;
+    if (FAILED(GetDirectWriteFaceName(font, PSNAME_ID, psName))) {
+      RefPtr<IDWriteFontFace> dwFontFace;
+      if (SUCCEEDED(font->CreateFontFace(getter_AddRefs(dwFontFace)))) {
+        GetPostScriptNameFromNameTable(dwFontFace, psName);
+      }
     }
-  }
 
-  
-  
-  nsCString faceName = aFace->mDescriptor.AsString(SharedFontList());
-  if (psName != faceName) {
-    gfxWarning() << "Face name mismatch for index " << aFace->mIndex
-                 << " in family " << familyName.get() << ": expected "
-                 << faceName.get() << ", found " << psName.get();
-    for (uint32_t i = 0; i < family->GetFontCount(); ++i) {
-      if (i == aFace->mIndex) {
-        continue;  
-      }
-      if (FAILED(family->GetFont(i, getter_AddRefs(font))) || !font) {
-        return nullptr;  
-      }
-      if (FAILED(GetDirectWriteFaceName(font, PSNAME_ID, psName))) {
-        RefPtr<IDWriteFontFace> dwFontFace;
-        if (SUCCEEDED(font->CreateFontFace(getter_AddRefs(dwFontFace)))) {
-          GetPostScriptNameFromNameTable(dwFontFace, psName);
+    
+    
+    nsCString faceName = aFace->mDescriptor.AsString(SharedFontList());
+    if (psName != faceName) {
+      gfxWarning() << "Face name mismatch for index " << aFace->mIndex
+                   << " in family " << familyName.get() << ": expected "
+                   << faceName.get() << ", found " << psName.get();
+      for (uint32_t i = 0; i < family->GetFontCount(); ++i) {
+        if (i == aFace->mIndex) {
+          continue;  
+        }
+        if (FAILED(family->GetFont(i, getter_AddRefs(font))) || !font) {
+          return nullptr;  
+        }
+        if (FAILED(GetDirectWriteFaceName(font, PSNAME_ID, psName))) {
+          RefPtr<IDWriteFontFace> dwFontFace;
+          if (SUCCEEDED(font->CreateFontFace(getter_AddRefs(dwFontFace)))) {
+            GetPostScriptNameFromNameTable(dwFontFace, psName);
+          }
+        }
+        if (psName == faceName) {
+          break;
         }
       }
-      if (psName == faceName) {
-        break;
-      }
     }
-  }
-  if (psName != faceName) {
-    return nullptr;
-  }
+    if (psName != faceName) {
+      return nullptr;
+    }
 
-  auto fe = new gfxDWriteFontEntry(faceName, font, !aFamily->IsBundled());
-  fe->InitializeFrom(aFace, aFamily);
-  fe->mForceGDIClassic = aFamily->IsForceClassic();
-  fe->mMayUseGDIAccess = aFamily->IsSimple();
-  return fe;
+    auto fe = new gfxDWriteFontEntry(faceName, font, !aFamily->IsBundled());
+    fe->InitializeFrom(aFace, aFamily);
+    fe->mForceGDIClassic = aFamily->IsForceClassic();
+    fe->mMayUseGDIAccess = aFamily->IsSimple();
+    return fe;
+  }
+  MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
+    gfxCriticalNote << "Exception occurred while creating font entry for "
+                    << familyName.get();
+  }
+  return nullptr;
 }
 
 FontVisibility gfxDWriteFontList::GetVisibilityForFamily(
