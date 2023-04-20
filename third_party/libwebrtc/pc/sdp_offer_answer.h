@@ -63,10 +63,6 @@
 #include "rtc_base/unique_id_generator.h"
 #include "rtc_base/weak_ptr.h"
 
-namespace cricket {
-class ChannelManager;
-}
-
 namespace webrtc {
 
 
@@ -569,7 +565,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  cricket::ChannelManager* channel_manager() const;
   cricket::MediaEngineInterface* media_engine() const;
   TransceiverList* transceivers();
   const TransceiverList* transceivers() const;
