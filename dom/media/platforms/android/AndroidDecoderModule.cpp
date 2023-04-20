@@ -2,6 +2,8 @@
 
 
 
+
+
 #include <jni.h>
 
 #include "MediaInfo.h"
@@ -29,6 +31,13 @@
           ("%s: " arg, __func__, ##__VA_ARGS__))
 
 using namespace mozilla;
+using media::DecodeSupport;
+using media::DecodeSupportSet;
+using media::MCSInfo;
+using media::MediaCodec;
+using media::MediaCodecsSupport;
+using media::MediaCodecsSupported;
+using media::TimeUnit;
 
 namespace mozilla {
 
@@ -50,77 +59,121 @@ AndroidDecoderModule::AndroidDecoderModule(CDMProxy* aProxy) {
   mProxy = static_cast<MediaDrmCDMProxy*>(aProxy);
 }
 
-StaticAutoPtr<nsTArray<nsCString>> AndroidDecoderModule::sSupportedMimeTypes;
+StaticAutoPtr<nsTArray<nsCString>> AndroidDecoderModule::sSupportedSwMimeTypes;
+StaticAutoPtr<nsTArray<nsCString>> AndroidDecoderModule::sSupportedHwMimeTypes;
+StaticAutoPtr<MediaCodecsSupported> AndroidDecoderModule::sSupportedCodecs;
 
-media::DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
+
+media::MediaCodecsSupported AndroidDecoderModule::GetSupportedCodecs() {
+  if (!sSupportedSwMimeTypes) {
+    SetSupportedMimeTypes(GetSupportedMimeTypes());
+  }
+  return *sSupportedCodecs;
+}
+
+DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
     const nsACString& aMimeType) {
   if (jni::GetAPIVersion() < 16) {
-    return media::DecodeSupport::Unsupported;
+    return DecodeSupport::Unsupported;
   }
 
-  if (aMimeType.EqualsLiteral("video/mp4") ||
-      aMimeType.EqualsLiteral("video/avc")) {
+  if (!sSupportedSwMimeTypes) {
+    SetSupportedMimeTypes(GetSupportedMimeTypes());
+  }
+
+  MOZ_ASSERT(sSupportedSwMimeTypes);
+  MOZ_ASSERT(sSupportedHwMimeTypes);
+  MOZ_ASSERT(sSupportedCodecs);
+
+  
+  
+  
+  MediaCodec codec = MCSInfo::GetMediaCodecFromMimeType(aMimeType);
+  switch (codec) {
+    
+    case MediaCodec::VP8:
+      if (!gfx::gfxVars::UseVP8HwDecode()) {
+        return DecodeSupport::Unsupported;
+      }
+      if (sSupportedCodecs &&
+          sSupportedCodecs->contains(MediaCodecsSupport::VP8HardwareDecode)) {
+        return DecodeSupport::HardwareDecode;
+      }
+      return DecodeSupport::Unsupported;
+
+    
+    case MediaCodec::VP9:
+      if (!gfx::gfxVars::UseVP9HwDecode()) {
+        return DecodeSupport::Unsupported;
+      }
+      if (sSupportedCodecs &&
+          sSupportedCodecs->contains(MediaCodecsSupport::VP9HardwareDecode)) {
+        return DecodeSupport::HardwareDecode;
+      }
+      return DecodeSupport::Unsupported;
+
+    
+    case MediaCodec::MP3:
+      if (StaticPrefs::media_ffvpx_mp3_enabled()) {
+        return DecodeSupport::Unsupported;
+      }
+      if (sSupportedCodecs &&
+          sSupportedCodecs->contains(MediaCodecsSupport::MP3SoftwareDecode)) {
+        return DecodeSupport::SoftwareDecode;
+      }
+      return DecodeSupport::Unsupported;
+
     
     
-    return media::DecodeSupport::SoftwareDecode;
-  }
-
-  
-  
-  
-  if (aMimeType.EqualsLiteral("audio/x-wav") ||
-      aMimeType.EqualsLiteral("audio/wave; codecs=1") ||
-      aMimeType.EqualsLiteral("audio/wave; codecs=3") ||
-      aMimeType.EqualsLiteral("audio/wave; codecs=6") ||
-      aMimeType.EqualsLiteral("audio/wave; codecs=7") ||
-      aMimeType.EqualsLiteral("audio/wave; codecs=65534")) {
-    return media::DecodeSupport::Unsupported;
-  }
-
-  if ((VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP8) &&
-       !gfx::gfxVars::UseVP8HwDecode()) ||
-      (VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP9) &&
-       !gfx::gfxVars::UseVP9HwDecode())) {
-    return media::DecodeSupport::Unsupported;
-  }
-
-  
-  
-  
-  if (OpusDataDecoder::IsOpus(aMimeType) ||
-      VorbisDataDecoder::IsVorbis(aMimeType) ||
-      aMimeType.EqualsLiteral("audio/flac")) {
-    SLOG("Rejecting audio of type %s", aMimeType.Data());
-    return media::DecodeSupport::Unsupported;
-  }
-
-  
-  
-  if (TheoraDecoder::IsTheora(aMimeType)) {
-    SLOG("Rejecting video of type %s", aMimeType.Data());
-    return media::DecodeSupport::Unsupported;
-  }
-
-  if (aMimeType.EqualsLiteral("audio/mpeg") &&
-      StaticPrefs::media_ffvpx_mp3_enabled()) {
     
-    return media::DecodeSupport::Unsupported;
+    case MediaCodec::Theora:
+      SLOG("Rejecting video of type %s", aMimeType.Data());
+      return DecodeSupport::Unsupported;
+    case MediaCodec::Opus:
+      [[fallthrough]];
+    case MediaCodec::Vorbis:
+      [[fallthrough]];
+    case MediaCodec::FLAC:
+      SLOG("Rejecting audio of type %s", aMimeType.Data());
+      return DecodeSupport::Unsupported;
+
+    
+    
+    
+    case MediaCodec::Wave:
+      return DecodeSupport::Unsupported;
+
+    
+    case MediaCodec::H264:
+      return DecodeSupport::SoftwareDecode;
+
+    
+    case MediaCodec::AV1:
+      break;
+
+    case MediaCodec::SENTINEL:
+      [[fallthrough]];
+    default:
+      SLOG("Support check using default logic for %s", aMimeType.Data());
+      break;
   }
 
-  if (sSupportedMimeTypes) {
-    if (sSupportedMimeTypes->Contains(TranslateMimeType(aMimeType))) {
-      
-      
-      return media::DecodeSupport::SoftwareDecode;
-    }
+  
+  
+  if (sSupportedHwMimeTypes &&
+      sSupportedHwMimeTypes->Contains(TranslateMimeType(aMimeType))) {
+    return DecodeSupport::HardwareDecode;
   }
-
-  return media::DecodeSupport::Unsupported;
+  if (sSupportedSwMimeTypes &&
+      sSupportedSwMimeTypes->Contains(TranslateMimeType(aMimeType))) {
+    return DecodeSupport::SoftwareDecode;
+  }
+  return DecodeSupport::Unsupported;
 }
 
 nsTArray<nsCString> AndroidDecoderModule::GetSupportedMimeTypes() {
   mozilla::jni::ObjectArray::LocalRef supportedTypes = mozilla::java::
-      HardwareCodecCapabilityUtils::GetDecoderSupportedMimeTypes();
+      HardwareCodecCapabilityUtils::GetDecoderSupportedMimeTypesWithAccelInfo();
 
   nsTArray<nsCString> st = nsTArray<nsCString>();
   for (size_t i = 0; i < supportedTypes->Length(); i++) {
@@ -131,15 +184,52 @@ nsTArray<nsCString> AndroidDecoderModule::GetSupportedMimeTypes() {
   return st;
 }
 
+
 void AndroidDecoderModule::SetSupportedMimeTypes(
     nsTArray<nsCString>&& aSupportedTypes) {
-  if (!sSupportedMimeTypes) {
-    sSupportedMimeTypes = new nsTArray<nsCString>(std::move(aSupportedTypes));
-    ClearOnShutdown(&sSupportedMimeTypes);
+  if (!sSupportedSwMimeTypes) {
+    
+    sSupportedSwMimeTypes = new nsTArray<nsCString>;
+    sSupportedHwMimeTypes = new nsTArray<nsCString>;
+    sSupportedCodecs = new MediaCodecsSupported();
+    ClearOnShutdown(&sSupportedSwMimeTypes);
+    ClearOnShutdown(&sSupportedHwMimeTypes);
+    ClearOnShutdown(&sSupportedCodecs);
+
+    DecodeSupport support;
+    
+    for (const auto& s : aSupportedTypes) {
+      
+      const auto mimeType = Substring(s, 3);
+      if (mimeType.Length() == 0) {
+        SLOG("No MIME type information found in codec string %s", s.Data());
+        continue;
+      }
+
+      
+      const auto caps = Substring(s, 0, 2);
+      if (caps == "SW"_ns) {
+        sSupportedSwMimeTypes->AppendElement(mimeType);
+        support = DecodeSupport::SoftwareDecode;
+      } else if (caps == "HW"_ns) {
+        sSupportedHwMimeTypes->AppendElement(mimeType);
+        support = DecodeSupport::HardwareDecode;
+      } else {
+        SLOG("Error parsing acceleration info from JNI codec string %s",
+             s.Data());
+        continue;
+      }
+      const MediaCodec codec = MCSInfo::GetMediaCodecFromMimeType(mimeType);
+      if (codec == MediaCodec::SENTINEL) {
+        SLOG("Did not parse string %s to specific codec", s.Data());
+        continue;
+      }
+      *sSupportedCodecs += MCSInfo::GetMediaCodecsSupportEnum(codec, support);
+    }
   }
 }
 
-media::DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
+DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
     const nsACString& aMimeType, DecoderDoctorDiagnostics* aDiagnostics) const {
   return AndroidDecoderModule::SupportsMimeType(aMimeType);
 }
