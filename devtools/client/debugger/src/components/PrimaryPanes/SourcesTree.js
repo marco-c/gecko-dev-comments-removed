@@ -19,8 +19,6 @@ import {
   getContext,
   getGeneratedSourceByURL,
   getBlackBoxRanges,
-  getSourceActor,
-  getSource,
 } from "../../selectors";
 
 
@@ -32,6 +30,7 @@ import ManagedTree from "../shared/ManagedTree";
 
 
 import { getRawSourceURL } from "../../utils/source";
+import { createLocation } from "../../utils/location";
 
 function shouldAutoExpand(item, mainThreadHost) {
   
@@ -126,12 +125,12 @@ class SourcesTree extends Component {
     
     
     if (
-      nextProps.selectedTreeLocation.source &&
-      (nextProps.selectedTreeLocation.source != selectedTreeLocation.source ||
+      nextProps.selectedTreeLocation?.source &&
+      (nextProps.selectedTreeLocation.source != selectedTreeLocation?.source ||
         (nextProps.selectedTreeLocation.source ===
-          selectedTreeLocation.source &&
+          selectedTreeLocation?.source &&
           nextProps.selectedTreeLocation.sourceActor !=
-            selectedTreeLocation.sourceActor) ||
+            selectedTreeLocation?.sourceActor) ||
         !this.state.highlightItems?.length)
     ) {
       let parentDirectory = getDirectoryForSource(
@@ -375,17 +374,24 @@ class SourcesTree extends Component {
 }
 
 function getTreeLocation(state, location) {
-  let source = location ? getSource(state, location.sourceId) : null;
-  const sourceActor = location
-    ? getSourceActor(state, location.sourceActorId)
-    : null;
-
-  if (source && source.isPrettyPrinted) {
-    source =
-      getGeneratedSourceByURL(state, getRawSourceURL(source.url)) || null;
+  
+  
+  
+  if (location?.source.isPrettyPrinted) {
+    const source = getGeneratedSourceByURL(
+      state,
+      getRawSourceURL(location.source.url)
+    );
+    if (source) {
+      return createLocation({
+        source,
+        
+        
+        sourceActor: location.sourceActor,
+      });
+    }
   }
-
-  return { source, sourceActor };
+  return location;
 }
 
 const mapStateToProps = state => {
