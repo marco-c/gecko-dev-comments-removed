@@ -57,6 +57,15 @@ inline void ArenaCellSet::check() const {
 }
 
 inline void StoreBuffer::WholeCellBuffer::put(const Cell* cell) {
+  if (cell != last_) {
+    putDontCheckLast(cell);
+  }
+}
+
+inline void StoreBuffer::WholeCellBuffer::putDontCheckLast(const Cell* cell) {
+  
+  
+
   MOZ_ASSERT(cell->isTenured());
 
   
@@ -73,9 +82,14 @@ inline void StoreBuffer::WholeCellBuffer::put(const Cell* cell) {
 
   cells->putCell(&cell->asTenured());
   cells->check();
+
+  last_ = cell;
 }
 
 inline void StoreBuffer::putWholeCell(Cell* cell) { bufferWholeCell.put(cell); }
+inline void StoreBuffer::putWholeCellDontCheckLast(Cell* cell) {
+  bufferWholeCell.putDontCheckLast(cell);
+}
 
 }  
 }  
