@@ -406,10 +406,19 @@ class AliasSet {
     
     WasmStructOutlineDataArea = 1 << 22,
 
-    Last = WasmStructOutlineDataArea,
+    
+    WasmArrayNumElements = 1 << 23,
+
+    
+    WasmArrayDataPointer = 1 << 24,
+
+    
+    WasmArrayDataArea = 1 << 25,
+
+    Last = WasmArrayDataArea,
 
     Any = Last | (Last - 1),
-    NumCategories = 23,
+    NumCategories = 26,
 
     
     Store_ = 1 << 31
@@ -9346,8 +9355,11 @@ class MWasmHeapBase : public MUnaryInstruction, public NoTypePolicy::Data {
 class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
  public:
   enum Target {
-    Memory,
-    Table,
+    
+    Memory0,
+    
+    
+    Unknown
   };
 
  private:
@@ -9376,7 +9388,7 @@ class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 
-  bool isMemory() const { return target_ == MWasmBoundsCheck::Memory; }
+  bool isMemory() const { return target_ == MWasmBoundsCheck::Memory0; }
 
   bool isRedundant() const { return !isGuard(); }
 
@@ -10929,6 +10941,10 @@ class MWasmLoadField : public MUnaryInstruction, public NoTypePolicy::Data {
     MOZ_ASSERT(
         aliases.flags() ==
             AliasSet::Load(AliasSet::WasmStructOutlineDataPointer).flags() ||
+        aliases.flags() ==
+            AliasSet::Load(AliasSet::WasmArrayNumElements).flags() ||
+        aliases.flags() ==
+            AliasSet::Load(AliasSet::WasmArrayDataPointer).flags() ||
         aliases.flags() == AliasSet::Load(AliasSet::Any).flags());
     setResultType(type);
   }
@@ -10986,6 +11002,8 @@ class MWasmLoadFieldKA : public MBinaryInstruction, public NoTypePolicy::Data {
             AliasSet::Load(AliasSet::WasmStructInlineDataArea).flags() ||
         aliases.flags() ==
             AliasSet::Load(AliasSet::WasmStructOutlineDataArea).flags() ||
+        aliases.flags() ==
+            AliasSet::Load(AliasSet::WasmArrayDataArea).flags() ||
         aliases.flags() == AliasSet::Load(AliasSet::Any).flags());
     setResultType(type);
   }
@@ -11030,6 +11048,8 @@ class MWasmStoreFieldKA : public MTernaryInstruction,
             AliasSet::Store(AliasSet::WasmStructInlineDataArea).flags() ||
         aliases.flags() ==
             AliasSet::Store(AliasSet::WasmStructOutlineDataArea).flags() ||
+        aliases.flags() ==
+            AliasSet::Store(AliasSet::WasmArrayDataArea).flags() ||
         aliases.flags() == AliasSet::Store(AliasSet::Any).flags());
   }
 
@@ -11058,13 +11078,16 @@ class MWasmStoreFieldRefKA : public MAryInstruction<4>,
                        MDefinition* valueAddr, MDefinition* value,
                        AliasSet aliases)
       : MAryInstruction<4>(classOpcode), aliases_(aliases) {
-    MOZ_ASSERT(valueAddr->type() == MIRType::Pointer);
+    MOZ_ASSERT(valueAddr->type() == MIRType::Pointer ||
+               valueAddr->type() == TargetWordMIRType());
     MOZ_ASSERT(value->type() == MIRType::RefOrNull);
     MOZ_ASSERT(
         aliases.flags() ==
             AliasSet::Store(AliasSet::WasmStructInlineDataArea).flags() ||
         aliases.flags() ==
             AliasSet::Store(AliasSet::WasmStructOutlineDataArea).flags() ||
+        aliases.flags() ==
+            AliasSet::Store(AliasSet::WasmArrayDataArea).flags() ||
         aliases.flags() == AliasSet::Store(AliasSet::Any).flags());
     initOperand(0, instance);
     initOperand(1, ka);

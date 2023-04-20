@@ -5660,7 +5660,7 @@ bool BaseCompiler::emitInstanceCall(const SymbolicAddressSignature& builtin) {
         
         
         
-        t = ValType::hostPtr();
+        t = ValType::fromMIRType(TargetWordMIRType());
         break;
       default:
         MOZ_CRASH("Unexpected type");
@@ -6848,7 +6848,8 @@ bool BaseCompiler::emitArrayNew() {
 
 bool BaseCompiler::emitArrayNewFixed() {
   uint32_t typeIndex, numElements;
-  if (!iter_.readArrayNewFixed(&typeIndex, &numElements)) {
+  BaseNothingVector nothings{};
+  if (!iter_.readArrayNewFixed(&typeIndex, &numElements, &nothings)) {
     return false;
   }
 
