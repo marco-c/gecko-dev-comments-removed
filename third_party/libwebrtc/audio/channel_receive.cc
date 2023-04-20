@@ -195,7 +195,6 @@ class ChannelReceive : public ChannelReceiveInterface,
       RTC_RUN_ON(worker_thread_checker_);
 
   int GetRtpTimestampRateHz() const;
-  int64_t GetRTT() const;
 
   void OnReceivedPayloadData(rtc::ArrayView<const uint8_t> payload,
                              const RTPHeader& rtpHeader)
@@ -340,7 +339,8 @@ void ChannelReceive::OnReceivedPayloadData(
   }
 
   int64_t round_trip_time = 0;
-  rtp_rtcp_->RTT(remote_ssrc_, &round_trip_time, NULL, NULL, NULL);
+  rtp_rtcp_->RTT(remote_ssrc_, &round_trip_time, nullptr,
+                 nullptr, nullptr);
 
   std::vector<uint16_t> nack_list = acm_receiver_.GetNackList(round_trip_time);
   if (!nack_list.empty()) {
@@ -728,7 +728,9 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   
   rtp_rtcp_->IncomingRtcpPacket(data, length);
 
-  int64_t rtt = GetRTT();
+  int64_t rtt = 0;
+  rtp_rtcp_->RTT(remote_ssrc_, &rtt, nullptr, nullptr,
+                 nullptr);
   if (rtt == 0) {
     
     return;
@@ -1082,27 +1084,6 @@ int ChannelReceive::GetRtpTimestampRateHz() const {
   return (decoder && decoder->second.clockrate_hz != 0)
              ? decoder->second.clockrate_hz
              : acm_receiver_.last_output_sample_rate_hz();
-}
-
-int64_t ChannelReceive::GetRTT() const {
-  RTC_DCHECK_RUN_ON(&network_thread_checker_);
-  std::vector<ReportBlockData> report_blocks =
-      rtp_rtcp_->GetLatestReportBlockData();
-
-  if (report_blocks.empty()) {
-    
-    if (!associated_send_channel_) {
-      return 0;
-    }
-    return associated_send_channel_->GetRTT();
-  }
-
-  for (const ReportBlockData& data : report_blocks) {
-    if (data.report_block().sender_ssrc == remote_ssrc_) {
-      return data.last_rtt_ms();
-    }
-  }
-  return 0;
 }
 
 }  
