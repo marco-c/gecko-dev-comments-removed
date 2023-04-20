@@ -57,18 +57,13 @@ var Visitor = class {
 
     
     
-    visit(body, ppoint, info) {
-        const visited = this.visited_bodies.get(body);
-        const existing = visited.get(ppoint);
-        const action = this.next_action(existing, info);
-        const merged = this.merge_info(existing, info);
-        visited.set(ppoint, merged);
-        return [action, merged];
-    }
+    
+    extend_path(edge, body, ppoint, successor_value) { return true; }
 
     
     
 
+    
     
     
     
@@ -83,7 +78,30 @@ var Visitor = class {
     
     
     
-    extend_path(edge, body, ppoint, successor_path) { return true; }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    visit(body, ppoint, info) {
+        const visited_value_table = this.visited_bodies.get(body);
+        const existing_value_if_visited = visited_value_table.get(ppoint);
+        const action = this.next_action(existing_value_if_visited, info);
+        const merged = this.merge_info(existing_value_if_visited, info);
+        visited_value_table.set(ppoint, merged);
+        return [action, merged];
+    }
 };
 
 function findMatchingBlock(bodies, blockId) {
@@ -119,26 +137,44 @@ function findMatchingBlock(bodies, blockId) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function BFS_upwards(start_body, start_ppoint, bodies, visitor,
-                     initial_successor_info={},
-                     result_if_reached_root=null)
+                     initial_successor_value = {},
+                     entrypoint_fallback_value=null)
 {
-    const work = [[start_body, start_ppoint, null, initial_successor_info]];
+    let entrypoint_value = entrypoint_fallback_value;
+
+    const work = [[start_body, start_ppoint, null, initial_successor_value]];
     if (TRACING) {
         printErr(`BFS start at ${blockIdentifier(start_body)}:${start_ppoint}`);
     }
 
-    let reached_root = false;
     while (work.length > 0) {
-        const [body, ppoint, edgeToAdd, successor_path] = work.shift();
+        const [body, ppoint, edgeToAdd, successor_value] = work.shift();
         if (TRACING) {
-            printErr(`prepending edge from ${ppoint} to state '${successor_path}'`);
+            const s = edgeToAdd ? " : " + str(edgeToAdd) : "";
+            printErr(`prepending edge from ${ppoint} to state '${successor_value}'${s}`);
         }
-        let path = visitor.extend_path(edgeToAdd, body, ppoint, successor_path);
+        let value = visitor.extend_path(edgeToAdd, body, ppoint, successor_value);
 
-        const [action,  merged_path] = visitor.visit(body, ppoint, path);
+        const [action,  merged_value] = visitor.visit(body, ppoint, value);
         if (action === "done") {
-            return merged_path;
+            return merged_value;
         }
         if (action === "prune") {
             
@@ -146,7 +182,7 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
             continue;
         }
         assert(action == "continue");
-        path = merged_path;
+        value = merged_value;
 
         const predecessors = getPredecessors(body);
         for (const edge of (predecessors[ppoint] || [])) {
@@ -154,12 +190,12 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
                 
                 const loopBody = findMatchingBlock(bodies, edge.BlockId);
                 const loopEnd = loopBody.Index[1];
-                work.push([loopBody, loopEnd, null, path]);
+                work.push([loopBody, loopEnd, null, value]);
                 
                 
                 
             } else {
-                work.push([body, edge.Index[0], edge, path]);
+                work.push([body, edge.Index[0], edge, value]);
             }
         }
 
@@ -168,17 +204,17 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
             
             for (const parent of (body.BlockPPoint || [])) {
                 const parentBody = findMatchingBlock(bodies, parent.BlockId);
-                work.push([parentBody, parent.Index, null, path]);
+                work.push([parentBody, parent.Index, null, value]);
             }
 
             
             
-            work.push([body, body.Index[1], null, path]);
+            work.push([body, body.Index[1], null, value]);
         }
 
         
         if (body === start_body && ppoint == body.Index[0]) {
-            reached_root = true;
+            entrypoint_value = value;
         }
     }
 
@@ -187,7 +223,7 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
     
     
     
-    return reached_root ? result_if_reached_root : null;
+    return entrypoint_value;
 }
 
 
@@ -1036,7 +1072,7 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
         merge_info(seen, current) { return current; }
 
         
-        extend_path(edge, body, ppoint, successor_path) {
+        extend_path(edge, body, ppoint, successor_value) {
             if (!edge) {
                 
                 return "continue";
@@ -1065,7 +1101,7 @@ function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
     
     const edgeIsNonReleasingDtor = !BFS_upwards(
         body, edge.Index[0], functionBodies, visitor, "start",
-        true 
+        false 
     );
     if (edgeIsNonReleasingDtor) {
         attrs |= ATTR_GC_SUPPRESSED | ATTR_NONRELEASING;
