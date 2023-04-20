@@ -1784,6 +1784,37 @@ void WebrtcVideoConduit::OnRtcpBye() { mRtcpByeEvent.Notify(); }
 
 void WebrtcVideoConduit::OnRtcpTimeout() { mRtcpTimeoutEvent.Notify(); }
 
+void WebrtcVideoConduit::SetTransportActive(bool aActive) {
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+  if (mTransportActive == aActive) {
+    return;
+  }
+
+  
+  mTransportActive = aActive;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aActive) {
+    MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
+        __func__,
+        [self = RefPtr<WebrtcVideoConduit>(this),
+         recvRtpListener = std::move(mReceiverRtpEventListener),
+         recvRtcpListener = std::move(mReceiverRtcpEventListener),
+         sendRtcpListener = std::move(mSenderRtcpEventListener)]() mutable {
+          recvRtpListener.DisconnectIfExists();
+          recvRtcpListener.DisconnectIfExists();
+          sendRtcpListener.DisconnectIfExists();
+        })));
+  }
+}
+
 std::vector<webrtc::RtpSource> WebrtcVideoConduit::GetUpstreamRtpSources()
     const {
   MOZ_ASSERT(NS_IsMainThread());

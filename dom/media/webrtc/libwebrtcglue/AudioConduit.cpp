@@ -422,6 +422,37 @@ void WebrtcAudioConduit::OnRtcpBye() { mRtcpByeEvent.Notify(); }
 
 void WebrtcAudioConduit::OnRtcpTimeout() { mRtcpTimeoutEvent.Notify(); }
 
+void WebrtcAudioConduit::SetTransportActive(bool aActive) {
+  MOZ_ASSERT(mStsThread->IsOnCurrentThread());
+  if (mTransportActive == aActive) {
+    return;
+  }
+
+  
+  mTransportActive = aActive;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!aActive) {
+    MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
+        __func__,
+        [self = RefPtr<WebrtcAudioConduit>(this),
+         recvRtpListener = std::move(mReceiverRtpEventListener),
+         recvRtcpListener = std::move(mReceiverRtcpEventListener),
+         sendRtcpListener = std::move(mSenderRtcpEventListener)]() mutable {
+          recvRtpListener.DisconnectIfExists();
+          recvRtcpListener.DisconnectIfExists();
+          sendRtcpListener.DisconnectIfExists();
+        })));
+  }
+}
+
 
 MediaConduitErrorCode WebrtcAudioConduit::SendAudioFrame(
     std::unique_ptr<webrtc::AudioFrame> frame) {
