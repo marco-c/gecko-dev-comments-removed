@@ -182,6 +182,25 @@ exports.shortSource = function(sheet) {
   return sheet.href;
 };
 
+
+
+
+
+
+exports.longSource = function(sheet) {
+  if (!sheet) {
+    return exports.l10n("rule.sourceInline");
+  }
+
+  if (!sheet.href) {
+    return exports.l10n(
+      sheet.constructed ? "rule.sourceConstructed" : "rule.sourceInline"
+    );
+  }
+
+  return sheet.href;
+};
+
 const TAB_CHARS = "\t";
 const SPACE_CHARS = " ";
 
