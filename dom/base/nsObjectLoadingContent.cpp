@@ -1831,6 +1831,9 @@ nsresult nsObjectLoadingContent::OpenChannel() {
   }
 
   nsContentPolicyType contentPolicyType = GetContentPolicyType();
+  
+  
+  
   nsLoadFlags loadFlags = nsIChannel::LOAD_CALL_CONTENT_SNIFFERS |
                           nsIChannel::LOAD_BYPASS_SERVICE_WORKER |
                           nsIRequest::LOAD_HTML_OBJECT_DATA;
