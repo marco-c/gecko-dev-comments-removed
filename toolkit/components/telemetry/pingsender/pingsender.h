@@ -3,6 +3,9 @@
 
 
 
+#ifndef mozilla_telemetry_pingsender_h
+#define mozilla_telemetry_pingsender_h
+
 #include <string>
 
 #ifdef DEBUG
@@ -15,6 +18,13 @@ namespace PingSender {
 
 
 
+constexpr uint32_t kConnectionTimeoutMs = 30 * 1000;
+constexpr char kUserAgent[] = "pingsender/1.0";
+constexpr char kCustomVersionHeader[] = "X-PingSender-Version: 1.0";
+constexpr char kContentEncodingHeader[] = "Content-Encoding: gzip";
+
+
+
 
 
 void ChangeCurrentWorkingDirectory(const std::string& pingPath);
@@ -24,5 +34,8 @@ bool Post(const std::string& url, const std::string& payload);
 
 bool IsValidDestination(char* aUriEndingInHost);
 bool IsValidDestination(std::string aUriEndingInHost);
+std::string GenerateDateHeader();
 
 }  
+
+#endif

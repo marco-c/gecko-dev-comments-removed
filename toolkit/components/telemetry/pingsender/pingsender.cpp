@@ -23,13 +23,6 @@ using std::vector;
 
 namespace PingSender {
 
-const char* kUserAgent = "pingsender/1.0";
-const char* kCustomVersionHeader = "X-PingSender-Version: 1.0";
-const char* kContentEncodingHeader = "Content-Encoding: gzip";
-
-
-const uint32_t kConnectionTimeoutMs = 30 * 1000;
-
 
 bool IsValidDestination(std::string aHost) {
   static const std::string kValidDestinations[] = {
