@@ -128,6 +128,7 @@ interface nsISHEntry : nsISupports
 
     
     [infallible] attribute nsIInputStream postData;
+    [infallible] readonly attribute boolean hasPostData;
 
     
     [infallible] attribute nsILayoutHistoryState layoutHistoryState;
