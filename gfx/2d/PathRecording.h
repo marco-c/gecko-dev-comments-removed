@@ -122,12 +122,14 @@ class PathBuilderRecording final : public PathBuilder {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PathBuilderRecording, override)
 
-  PathBuilderRecording(PathBuilder* aBuilder, FillRule aFillRule)
-      : mPathBuilder(aBuilder), mFillRule(aFillRule) {}
+  PathBuilderRecording(BackendType aBackend, FillRule aFillRule)
+      : mBackendType(aBackend), mFillRule(aFillRule) {}
 
-  PathBuilderRecording(PathBuilder* aBuilder, const PathOps& aPathOps,
+  PathBuilderRecording(BackendType aBackend, PathOps&& aPathOps,
                        FillRule aFillRule)
-      : mPathBuilder(aBuilder), mFillRule(aFillRule), mPathOps(aPathOps) {}
+      : mBackendType(aBackend),
+        mFillRule(aFillRule),
+        mPathOps(std::move(aPathOps)) {}
 
   
 
@@ -158,7 +160,7 @@ class PathBuilderRecording final : public PathBuilder {
   BackendType GetBackendType() const final { return BackendType::RECORDING; }
 
  private:
-  RefPtr<PathBuilder> mPathBuilder;
+  BackendType mBackendType;
   FillRule mFillRule;
   PathOps mPathOps;
 };
@@ -167,7 +169,7 @@ class PathRecording final : public Path {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PathRecording, override)
 
-  PathRecording(RefPtr<PathBuilder>&& aPath, PathOps&& aOps, FillRule aFillRule,
+  PathRecording(BackendType aBackend, PathOps&& aOps, FillRule aFillRule,
                 const Point& aCurrentPoint, const Point& aBeginPoint);
 
   ~PathRecording();
@@ -217,7 +219,7 @@ class PathRecording final : public Path {
 
   void EnsurePath() const;
 
-  mutable RefPtr<PathBuilder> mPathBuilder;
+  BackendType mBackendType;
   mutable RefPtr<Path> mPath;
   PathOps mPathOps;
   FillRule mFillRule;
