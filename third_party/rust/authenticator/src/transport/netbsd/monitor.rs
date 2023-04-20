@@ -66,7 +66,7 @@ where
         
         while alive() {
             for n in 0..100 {
-                let uhidpath = OsString::from(format!("/dev/uhid{}", n));
+                let uhidpath = OsString::from(format!("/dev/uhid{n}"));
                 match Fd::open(&uhidpath, libc::O_RDWR | libc::O_CLOEXEC) {
                     Ok(uhid) => {
                         
