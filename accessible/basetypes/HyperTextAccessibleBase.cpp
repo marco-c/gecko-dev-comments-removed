@@ -15,33 +15,50 @@
 
 namespace mozilla::a11y {
 
-void HyperTextAccessibleBase::BuildCachedHyperTextOffsets(
-    nsTArray<int32_t>& aOffsets) const {
+int32_t HyperTextAccessibleBase::GetChildIndexAtOffset(uint32_t aOffset) const {
+  auto& offsets =
+      const_cast<HyperTextAccessibleBase*>(this)->GetCachedHyperTextOffsets();
+  int32_t lastOffset = 0;
+  const uint32_t offsetCount = offsets.Length();
+
+  if (offsetCount > 0) {
+    lastOffset = offsets[offsetCount - 1];
+    if (static_cast<int32_t>(aOffset) < lastOffset) {
+      
+      size_t index;
+      if (BinarySearch(offsets, 0, offsetCount, static_cast<int32_t>(aOffset),
+                       &index)) {
+        
+        
+        return static_cast<int32_t>((index < offsetCount - 1) ? index + 1
+                                                              : index);
+      }
+      if (index == offsetCount) {
+        
+        return -1;
+      }
+      
+      return static_cast<int32_t>(index);
+    }
+  }
+
+  
   const Accessible* thisAcc = Acc();
   uint32_t childCount = thisAcc->ChildCount();
-  int32_t lastTextOffset = 0;
-  while (aOffsets.Length() < childCount) {
-    Accessible* child = thisAcc->ChildAt(aOffsets.Length());
-    lastTextOffset += static_cast<int32_t>(nsAccUtils::TextLength(child));
-    aOffsets.AppendElement(lastTextOffset);
+  while (offsets.Length() < childCount) {
+    Accessible* child = thisAcc->ChildAt(offsets.Length());
+    lastOffset += static_cast<int32_t>(nsAccUtils::TextLength(child));
+    offsets.AppendElement(lastOffset);
+    if (static_cast<int32_t>(aOffset) < lastOffset) {
+      return static_cast<int32_t>(offsets.Length() - 1);
+    }
   }
-}
 
-int32_t HyperTextAccessibleBase::GetChildIndexAtOffset(uint32_t aOffset) const {
-  const auto& offsets = GetCachedHyperTextOffsets();
-  auto childCount = offsets.Length();
-  size_t index;
-  if (BinarySearch(offsets, 0, childCount, static_cast<int32_t>(aOffset),
-                   &index)) {
-    
-    return static_cast<int32_t>(index < childCount - 1 ? index + 1 : index);
+  if (static_cast<int32_t>(aOffset) == lastOffset) {
+    return static_cast<int32_t>(offsets.Length() - 1);
   }
-  if (index == childCount) {
-    
-    return -1;
-  }
-  
-  return static_cast<int32_t>(index);
+
+  return -1;
 }
 
 Accessible* HyperTextAccessibleBase::GetChildAtOffset(uint32_t aOffset) const {
@@ -49,8 +66,8 @@ Accessible* HyperTextAccessibleBase::GetChildAtOffset(uint32_t aOffset) const {
   return thisAcc->ChildAt(GetChildIndexAtOffset(aOffset));
 }
 
-int32_t HyperTextAccessibleBase::GetChildOffset(
-    const Accessible* aChild) const {
+int32_t HyperTextAccessibleBase::GetChildOffset(const Accessible* aChild,
+                                                bool aInvalidateAfter) const {
   const Accessible* thisAcc = Acc();
   if (aChild->Parent() != thisAcc) {
     return -1;
@@ -59,15 +76,39 @@ int32_t HyperTextAccessibleBase::GetChildOffset(
   if (index == -1) {
     return -1;
   }
-  return GetChildOffset(index);
+  return GetChildOffset(index, aInvalidateAfter);
 }
 
-int32_t HyperTextAccessibleBase::GetChildOffset(uint32_t aChildIndex) const {
+int32_t HyperTextAccessibleBase::GetChildOffset(uint32_t aChildIndex,
+                                                bool aInvalidateAfter) const {
+  auto& offsets =
+      const_cast<HyperTextAccessibleBase*>(this)->GetCachedHyperTextOffsets();
   if (aChildIndex == 0) {
+    if (aInvalidateAfter) {
+      offsets.Clear();
+    }
     return 0;
   }
-  MOZ_ASSERT(aChildIndex <= Acc()->ChildCount());
-  const auto& offsets = GetCachedHyperTextOffsets();
+
+  int32_t countCachedAfterChild = static_cast<int32_t>(offsets.Length()) -
+                                  static_cast<int32_t>(aChildIndex);
+  if (countCachedAfterChild > 0) {
+    
+    if (aInvalidateAfter) {
+      offsets.RemoveElementsAt(aChildIndex, countCachedAfterChild);
+    }
+    return offsets[aChildIndex - 1];
+  }
+
+  
+  const Accessible* thisAcc = Acc();
+  uint32_t lastOffset = offsets.IsEmpty() ? 0 : offsets[offsets.Length() - 1];
+  while (offsets.Length() < aChildIndex) {
+    Accessible* child = thisAcc->ChildAt(offsets.Length());
+    lastOffset += nsAccUtils::TextLength(child);
+    offsets.AppendElement(lastOffset);
+  }
+
   return offsets[aChildIndex - 1];
 }
 

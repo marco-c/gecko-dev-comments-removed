@@ -369,7 +369,17 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   
   virtual already_AddRefed<AccAttributes> DefaultTextAttributes() override;
 
-  virtual void InvalidateCachedHyperTextOffsets() override {
+  
+
+
+
+
+
+
+
+
+
+  void InvalidateCachedHyperTextOffsets() {
     if (mCachedFields) {
       mCachedFields->Remove(nsGkAtoms::offset);
     }
@@ -423,7 +433,7 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   nsAtom* GetPrimaryAction() const;
 
-  virtual const nsTArray<int32_t>& GetCachedHyperTextOffsets() const override;
+  virtual nsTArray<int32_t>& GetCachedHyperTextOffsets() override;
 
  private:
   uintptr_t mParent;

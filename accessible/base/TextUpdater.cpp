@@ -47,7 +47,8 @@ void TextUpdater::DoUpdate(const nsAString& aNewText, const nsAString& aOldText,
     return;
   }
 
-  mTextOffset = mHyperText->GetChildOffset(mTextLeaf);
+  
+  mTextOffset = mHyperText->GetChildOffset(mTextLeaf, true);
   NS_ASSERTION(mTextOffset != -1, "Text leaf hasn't offset within hyper text!");
 
   
@@ -71,7 +72,6 @@ void TextUpdater::DoUpdate(const nsAString& aNewText, const nsAString& aOldText,
 
     
     mTextLeaf->SetText(aNewText);
-    mHyperText->InvalidateCachedHyperTextOffsets();
     return;
   }
 
@@ -117,7 +117,6 @@ void TextUpdater::DoUpdate(const nsAString& aNewText, const nsAString& aOldText,
 
     
     mTextLeaf->SetText(aNewText);
-    mHyperText->InvalidateCachedHyperTextOffsets();
     return;
   }
 
@@ -163,7 +162,6 @@ void TextUpdater::DoUpdate(const nsAString& aNewText, const nsAString& aOldText,
 
   
   mTextLeaf->SetText(aNewText);
-  mHyperText->InvalidateCachedHyperTextOffsets();
 }
 
 void TextUpdater::ComputeTextChangeEvents(
