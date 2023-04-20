@@ -244,6 +244,18 @@ public class ContentBlocking {
         getSettings().setCookieBannerModePrivateBrowsing(mode);
         return this;
       }
+
+      
+
+
+
+
+
+
+      public @NonNull Builder cookieBannerHandlingDetectOnlyMode(final boolean enabled) {
+        getSettings().setCookieBannerDetectOnlyMode(enabled);
+        return this;
+      }
     }
 
      final Pref<String> mAt =
@@ -294,6 +306,9 @@ public class ContentBlocking {
         new Pref<Integer>(
             "cookiebanners.service.mode.privateBrowsing",
             CookieBannerMode.COOKIE_BANNER_MODE_REJECT);
+
+     final Pref<Boolean> mChbDetectOnlyMode =
+        new Pref<Boolean>("cookiebanners.service.detectOnly", false);
 
      final Pref<String> mSafeBrowsingMalwareTable =
         new Pref<>(
@@ -616,8 +631,33 @@ public class ContentBlocking {
 
 
     public @NonNull Settings setCookieBannerMode(final @CBCookieBannerMode int mode) {
-      mCbhMode.commit(mode);
+      
+      if (mode != CookieBannerMode.COOKIE_BANNER_MODE_DETECT_ONLY) {
+        mCbhMode.commit(mode);
+      }
       return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull Settings setCookieBannerDetectOnlyMode(final boolean enabled) {
+      mChbDetectOnlyMode.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    public boolean getCookieBannerDetectOnlyMode() {
+      return mChbDetectOnlyMode.get();
     }
 
     
@@ -639,7 +679,10 @@ public class ContentBlocking {
 
     public @NonNull Settings setCookieBannerModePrivateBrowsing(
         final @CBCookieBannerMode int mode) {
-      mCbhModePrivateBrowsing.commit(mode);
+      
+      if (mode != CookieBannerMode.COOKIE_BANNER_MODE_DETECT_ONLY) {
+        mCbhModePrivateBrowsing.commit(mode);
+      }
       return this;
     }
 
@@ -1640,6 +1683,8 @@ public class ContentBlocking {
     public static final int COOKIE_BANNER_MODE_REJECT_OR_ACCEPT = 2;
 
     
+    @Deprecated
+    @DeprecationSchedule(id = "cookie-banner-detect-only-mode", version = 114)
     public static final int COOKIE_BANNER_MODE_DETECT_ONLY = 3;
 
     protected CookieBannerMode() {}
