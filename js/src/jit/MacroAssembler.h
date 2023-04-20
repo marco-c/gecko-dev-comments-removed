@@ -3843,9 +3843,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void branchWasmTypeDefIsSubtype(Register subTypeDef, Register superTypeDef,
-                                  Register scratch, uint32_t subTypeDepth,
-                                  Label* label, bool onSuccess);
+  
+  void branchWasmSuperTypeVectorIsSubtype(Register subSuperTypeVector,
+                                          Register superSuperTypeVector,
+                                          Register scratch,
+                                          uint32_t superTypeDepth, Label* label,
+                                          bool onSuccess);
 
   
   

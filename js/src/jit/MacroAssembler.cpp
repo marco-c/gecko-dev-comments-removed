@@ -4758,12 +4758,10 @@ void MacroAssembler::wasmCallRef(const wasm::CallSiteDesc& desc,
   bind(&done);
 }
 
-void MacroAssembler::branchWasmTypeDefIsSubtype(Register subTypeDef,
-                                                Register superTypeDef,
-                                                Register scratch,
-                                                uint32_t subTypingDepth,
-                                                Label* label, bool onSuccess) {
-  MOZ_ASSERT_IF(subTypingDepth >= wasm::MinSuperTypeVectorLength,
+void MacroAssembler::branchWasmSuperTypeVectorIsSubtype(
+    Register subSuperTypeVector, Register superSuperTypeVector,
+    Register scratch, uint32_t superTypeDepth, Label* label, bool onSuccess) {
+  MOZ_ASSERT_IF(superTypeDepth >= wasm::MinSuperTypeVectorLength,
                 scratch != Register::Invalid());
 
   
@@ -4772,29 +4770,33 @@ void MacroAssembler::branchWasmTypeDefIsSubtype(Register subTypeDef,
     Label failed;
 
     
-    branchPtr(Assembler::Equal, subTypeDef, superTypeDef, label);
+    
+    
+    
+    
+    
+    
+    
 
     
-    
-    
-    loadPtr(Address(subTypeDef, wasm::TypeDef::offsetOfSuperTypeVector()),
-            subTypeDef);
-
-    
-    if (subTypingDepth >= wasm::MinSuperTypeVectorLength) {
+    if (superTypeDepth >= wasm::MinSuperTypeVectorLength) {
       
-      load32(Address(subTypeDef, wasm::SuperTypeVector::offsetOfLength()),
-             scratch);
-      branch32(Assembler::LessThanOrEqual, scratch, Imm32(subTypingDepth),
+      load32(
+          Address(subSuperTypeVector, wasm::SuperTypeVector::offsetOfLength()),
+          scratch);
+      branch32(Assembler::LessThanOrEqual, scratch, Imm32(superTypeDepth),
                &failed);
     }
 
     
     
-    loadPtr(Address(subTypeDef, wasm::SuperTypeVector::offsetOfTypeDefInVector(
-                                    subTypingDepth)),
-            subTypeDef);
-    branchPtr(Assembler::Equal, subTypeDef, superTypeDef, label);
+    
+    loadPtr(
+        Address(subSuperTypeVector,
+                wasm::SuperTypeVector::offsetOfTypeDefInVector(superTypeDepth)),
+        subSuperTypeVector);
+    branchPtr(Assembler::Equal, subSuperTypeVector, superSuperTypeVector,
+              label);
 
     
     bind(&failed);
@@ -4802,22 +4804,20 @@ void MacroAssembler::branchWasmTypeDefIsSubtype(Register subTypeDef,
   }
 
   
-  loadPtr(Address(subTypeDef, wasm::TypeDef::offsetOfSuperTypeVector()),
-          subTypeDef);
-
-  
-  if (subTypingDepth >= wasm::MinSuperTypeVectorLength) {
-    load32(Address(subTypeDef, wasm::SuperTypeVector::offsetOfLength()),
+  if (superTypeDepth >= wasm::MinSuperTypeVectorLength) {
+    load32(Address(subSuperTypeVector, wasm::SuperTypeVector::offsetOfLength()),
            scratch);
-    branch32(Assembler::LessThanOrEqual, scratch, Imm32(subTypingDepth), label);
+    branch32(Assembler::LessThanOrEqual, scratch, Imm32(superTypeDepth), label);
   }
 
   
   
-  loadPtr(Address(subTypeDef, wasm::SuperTypeVector::offsetOfTypeDefInVector(
-                                  subTypingDepth)),
-          subTypeDef);
-  branchPtr(Assembler::NotEqual, subTypeDef, superTypeDef, label);
+  loadPtr(
+      Address(subSuperTypeVector,
+              wasm::SuperTypeVector::offsetOfTypeDefInVector(superTypeDepth)),
+      subSuperTypeVector);
+  branchPtr(Assembler::NotEqual, subSuperTypeVector, superSuperTypeVector,
+            label);
   
 }
 

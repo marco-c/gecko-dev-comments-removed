@@ -1669,7 +1669,7 @@ struct BaseCompiler final {
   
   RegPtr loadTypeDefInstanceData(uint32_t typeIndex);
   
-  RegPtr loadTypeDef(uint32_t typeIndex);
+  RegPtr loadSuperTypeVector(uint32_t typeIndex);
 
   
   

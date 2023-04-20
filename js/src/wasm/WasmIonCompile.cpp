@@ -3691,12 +3691,13 @@ class FunctionCompiler {
   
 
   
-  [[nodiscard]] MDefinition* loadTypeDef(uint32_t typeIndex) {
-    uint32_t typeDefOffset = moduleEnv().offsetOfTypeDef(typeIndex);
+  [[nodiscard]] MDefinition* loadSuperTypeVector(uint32_t typeIndex) {
+    uint32_t superTypeVectorOffset =
+        moduleEnv().offsetOfSuperTypeVector(typeIndex);
 
-    auto* load =
-        MWasmLoadGlobalVar::New(alloc(), MIRType::Pointer, typeDefOffset,
-                                true, instancePointer_);
+    auto* load = MWasmLoadGlobalVar::New(alloc(), MIRType::Pointer,
+                                         superTypeVectorOffset,
+                                         true, instancePointer_);
     if (!load) {
       return nullptr;
     }
@@ -4207,9 +4208,9 @@ class FunctionCompiler {
   [[nodiscard]] MDefinition* isGcObjectSubtypeOf(MDefinition* object,
                                                  uint32_t castTypeIndex,
                                                  bool succeedOnNull) {
-    auto* superTypeDef = loadTypeDef(castTypeIndex);
+    auto* superSuperTypeVector = loadSuperTypeVector(castTypeIndex);
     auto* isSubTypeOf = MWasmGcObjectIsSubtypeOf::New(
-        alloc(), object, superTypeDef,
+        alloc(), object, superSuperTypeVector,
         moduleEnv_.types->type(castTypeIndex).subTypingDepth(), succeedOnNull);
     curBlock_->add(isSubTypeOf);
     return isSubTypeOf;

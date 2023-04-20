@@ -56,7 +56,7 @@ static const uint32_t MaxInlineMemoryFillLength = 0;
 
 
 
-static const uint32_t MinSuperTypeVectorLength = 3;
+static const uint32_t MinSuperTypeVectorLength = 8;
 
 
 

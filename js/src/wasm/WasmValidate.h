@@ -157,6 +157,10 @@ struct ModuleEnvironment {
     return offsetOfTypeDefInstanceData(typeIndex) +
            offsetof(TypeDefInstanceData, typeDef);
   }
+  uint32_t offsetOfSuperTypeVector(uint32_t typeIndex) const {
+    return offsetOfTypeDefInstanceData(typeIndex) +
+           offsetof(TypeDefInstanceData, superTypeVector);
+  }
 };
 
 

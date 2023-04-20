@@ -354,7 +354,7 @@ size_t TypeDef::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
 
 
 size_t SuperTypeVector::offsetOfTypeDefInVector(uint32_t typeDefDepth) {
-  return offsetof(SuperTypeVector, types) + sizeof(void*) * typeDefDepth;
+  return offsetof(SuperTypeVector, types_) + sizeof(void*) * typeDefDepth;
 }
 
 
@@ -403,19 +403,20 @@ const SuperTypeVector* SuperTypeVector::createMultipleForRecGroup(
 
     
     typeDef.setSuperTypeVector(currentVector);
+    currentVector->setTypeDef(&typeDef);
 
     
-    currentVector->length = SuperTypeVector::lengthForTypeDef(typeDef);
+    currentVector->setLength(SuperTypeVector::lengthForTypeDef(typeDef));
 
     
     const TypeDef* currentTypeDef = &typeDef;
-    for (uint32_t index = 0; index < currentVector->length; index++) {
-      uint32_t reverseIndex = currentVector->length - index - 1;
+    for (uint32_t index = 0; index < currentVector->length(); index++) {
+      uint32_t reverseIndex = currentVector->length() - index - 1;
 
       
       
       if (reverseIndex > typeDef.subTypingDepth()) {
-        currentVector->types[reverseIndex] = nullptr;
+        currentVector->setType(reverseIndex, nullptr);
         continue;
       }
 
@@ -423,7 +424,7 @@ const SuperTypeVector* SuperTypeVector::createMultipleForRecGroup(
       
       MOZ_ASSERT(reverseIndex == currentTypeDef->subTypingDepth());
 
-      currentVector->types[reverseIndex] = currentTypeDef;
+      currentVector->setType(reverseIndex, currentTypeDef->superTypeVector());
       currentTypeDef = currentTypeDef->superTypeDef();
     }
 

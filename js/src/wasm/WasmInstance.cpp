@@ -1755,6 +1755,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 
     
     typeDefData->typeDef = &typeDef;
+    typeDefData->superTypeVector = typeDef.superTypeVector();
 
     if (typeDef.kind() == TypeDefKind::Struct ||
         typeDef.kind() == TypeDefKind::Array) {

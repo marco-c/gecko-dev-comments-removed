@@ -498,28 +498,59 @@ using ArrayTypeVector = Vector<ArrayType, 0, SystemAllocPolicy>;
 
 
 
-struct SuperTypeVector {
+
+
+
+
+
+class SuperTypeVector {
+  SuperTypeVector() : typeDef_(nullptr), length_(0) {}
+
+  
+  
+  const TypeDef* typeDef_;
+
+  
+  uint32_t length_;
+
+ public:
+  
+  
+  const SuperTypeVector* types_[0];
+
   
   
   
   [[nodiscard]] static const SuperTypeVector* createMultipleForRecGroup(
       RecGroup* recGroup);
 
+  const TypeDef* typeDef() const { return typeDef_; }
+  void setTypeDef(const TypeDef* typeDef) { typeDef_ = typeDef; }
+
+  uint32_t length() const { return length_; }
+  void setLength(uint32_t length) { length_ = length; }
+
+  const SuperTypeVector* type(size_t index) const {
+    MOZ_ASSERT(index < length_);
+    return types_[index];
+  }
+  void setType(size_t index, const SuperTypeVector* type) {
+    MOZ_ASSERT(index < length_);
+    types_[index] = type;
+  }
+
   
   static size_t lengthForTypeDef(const TypeDef& typeDef);
   
   static size_t byteSizeForTypeDef(const TypeDef& typeDef);
 
-  static size_t offsetOfLength() { return offsetof(SuperTypeVector, length); }
+  static size_t offsetOfLength() { return offsetof(SuperTypeVector, length_); }
   static size_t offsetOfTypeDefInVector(uint32_t typeDefDepth);
-
-  
-  uint32_t length;
-
-  
-  
-  const TypeDef* types[0];
 };
+
+
+
+static_assert(offsetof(SuperTypeVector, types_) == sizeof(SuperTypeVector));
 
 
 
@@ -533,7 +564,11 @@ enum class TypeDefKind : uint8_t {
 
 class TypeDef {
   uint32_t offsetToRecGroup_;
+
+  
+  
   const SuperTypeVector* superTypeVector_;
+
   const TypeDef* superTypeDef_;
   uint16_t subTypingDepth_;
   TypeDefKind kind_;
@@ -737,35 +772,45 @@ class TypeDef {
   }
 
   
-  static bool isSubTypeOf(const TypeDef* subType, const TypeDef* superType) {
+  static bool isSubTypeOf(const TypeDef* subTypeDef,
+                          const TypeDef* superTypeDef) {
     
-    if (MOZ_LIKELY(subType == superType)) {
+    if (MOZ_LIKELY(subTypeDef == superTypeDef)) {
       return true;
     }
-    const SuperTypeVector* subSuperTypes = subType->superTypeVector();
+    const SuperTypeVector* subSuperTypeVector = subTypeDef->superTypeVector();
 
     
     
     
-    if (!subSuperTypes) {
-      while (subType) {
-        if (subType == superType) {
+    if (!subSuperTypeVector) {
+      while (subTypeDef) {
+        if (subTypeDef == superTypeDef) {
           return true;
         }
-        subType = subType->superTypeDef();
+        subTypeDef = subTypeDef->superTypeDef();
       }
       return false;
     }
 
     
+    MOZ_ASSERT(subSuperTypeVector->typeDef() == subTypeDef);
+
     
     
     
-    uint32_t subTypingDepth = superType->subTypingDepth();
-    if (subTypingDepth >= subSuperTypes->length) {
+    
+    uint32_t subTypingDepth = superTypeDef->subTypingDepth();
+    if (subTypingDepth >= subSuperTypeVector->length()) {
       return false;
     }
-    return subSuperTypes->types[subTypingDepth] == superType;
+
+    const SuperTypeVector* superSuperTypeVector =
+        superTypeDef->superTypeVector();
+    MOZ_ASSERT(superSuperTypeVector);
+    MOZ_ASSERT(superSuperTypeVector->typeDef() == superTypeDef);
+
+    return subSuperTypeVector->type(subTypingDepth) == superSuperTypeVector;
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;

@@ -49,6 +49,7 @@ using ExportFuncPtr = int32_t (*)(ExportArg*, Instance*);
 struct TypeDefInstanceData {
   TypeDefInstanceData()
       : typeDef(nullptr),
+        superTypeVector(nullptr),
         shape(nullptr),
         clasp(nullptr),
         allocSite(nullptr),
@@ -57,6 +58,11 @@ struct TypeDefInstanceData {
   
   
   const wasm::TypeDef* typeDef;
+
+  
+  
+  
+  const wasm::SuperTypeVector* superTypeVector;
 
   
   
