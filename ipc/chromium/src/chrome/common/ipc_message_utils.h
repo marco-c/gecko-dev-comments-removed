@@ -8,6 +8,7 @@
 #define CHROME_COMMON_IPC_MESSAGE_UTILS_H_
 
 #include <cstdint>
+#include <iterator>
 #include <map>
 #include <unordered_map>
 #include <string>
@@ -454,29 +455,8 @@ void WriteSequenceParam(MessageWriter* writer, std::remove_reference_t<P>* data,
   }
 }
 
-
-
-
-
-
-
-
-
-template <typename F,
-          typename P = std::remove_reference_t<
-              decltype(*std::declval<F>()(std::declval<uint32_t>()))>>
-auto WARN_UNUSED_RESULT ReadSequenceParam(MessageReader* reader, F&& allocator)
-    -> std::enable_if_t<
-        std::is_same_v<P*, std::remove_reference_t<
-                               decltype(allocator(std::declval<uint32_t>()))>>,
-        bool> {
-  uint32_t length = 0;
-  if (!reader->ReadUInt32(&length)) {
-    reader->FatalError("failed to read byte length in ReadSequenceParam");
-    return false;
-  }
-
-  P* data = allocator(length);
+template <typename P>
+bool ReadSequenceParamImpl(MessageReader* reader, P* data, uint32_t length) {
   if (length == 0) {
     return true;
   }
@@ -503,6 +483,57 @@ auto WARN_UNUSED_RESULT ReadSequenceParam(MessageReader* reader, F&& allocator)
     }
     return true;
   }
+}
+
+template <typename P, typename I>
+bool ReadSequenceParamImpl(MessageReader* reader, mozilla::Maybe<I>&& data,
+                           uint32_t length) {
+  static_assert(!kUseWriteBytes<P>,
+                "Cannot return an output iterator if !kUseWriteBytes<P>");
+  static_assert(
+      std::is_base_of_v<std::output_iterator_tag,
+                        typename std::iterator_traits<I>::iterator_category>,
+      "must be Maybe<output iterator>");
+  if (length == 0) {
+    return true;
+  }
+  if (!data) {
+    reader->FatalError("allocation failed in ReadSequenceParam");
+    return false;
+  }
+
+  for (uint32_t i = 0; i < length; ++i) {
+    auto elt = ReadParam<P>(reader);
+    if (!elt) {
+      return false;
+    }
+    *data.ref() = elt.extract();
+    ++data.ref();
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename P, typename F>
+bool WARN_UNUSED_RESULT ReadSequenceParam(MessageReader* reader,
+                                          F&& allocator) {
+  uint32_t length = 0;
+  if (!reader->ReadUInt32(&length)) {
+    reader->FatalError("failed to read byte length in ReadSequenceParam");
+    return false;
+  }
+
+  return ReadSequenceParamImpl<P>(reader, allocator(length), length);
 }
 
 
@@ -683,7 +714,7 @@ struct ParamTraitsStd<std::basic_string<T>> {
     WriteSequenceParam<const T&>(writer, p.data(), p.size());
   }
   static bool Read(MessageReader* reader, param_type* r) {
-    return ReadSequenceParam(reader, [&](uint32_t length) -> T* {
+    return ReadSequenceParam<T>(reader, [&](uint32_t length) -> T* {
       r->resize(length);
       return r->data();
     });
