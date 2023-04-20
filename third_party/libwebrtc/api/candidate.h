@@ -27,6 +27,10 @@ namespace cricket {
 
 
 
+static constexpr size_t kMaxTurnServers = 32;
+
+
+
 
 class RTC_EXPORT Candidate {
  public:
