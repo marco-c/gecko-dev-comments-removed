@@ -5,9 +5,19 @@
 "use strict";
 
 const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  ContentDOMReference: "resource://gre/modules/ContentDOMReference.sys.mjs",
-});
+loader.lazyGetter(
+  lazy,
+  "ContentDOMReference",
+  () =>
+    ChromeUtils.importESModule(
+      "resource://gre/modules/ContentDOMReference.sys.mjs",
+      {
+        
+        
+        loadInDevToolsLoader: false,
+      }
+    ).ContentDOMReference
+);
 loader.lazyRequireGetter(
   this,
   ["isFrameWithChildTarget", "isWindowIncluded"],
