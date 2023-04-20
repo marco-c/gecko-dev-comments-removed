@@ -5218,37 +5218,27 @@ static void LoadDOMPrivate(MacroAssembler& masm, Register obj, Register priv,
   
   MOZ_ASSERT(obj != priv);
 
-  
-  Label isProxy, done;
-  if (kind == DOMObjectKind::Unknown) {
-    masm.branchTestObjectIsProxy(true, obj, priv, &isProxy);
-  }
-
-  if (kind != DOMObjectKind::Proxy) {
-    
-    masm.debugAssertObjHasFixedSlots(obj, priv);
-    masm.loadPrivate(Address(obj, NativeObject::getFixedSlotOffset(0)), priv);
-    if (kind == DOMObjectKind::Unknown) {
-      masm.jump(&done);
+  switch (kind) {
+    case DOMObjectKind::Native:
+      
+      masm.debugAssertObjHasFixedSlots(obj, priv);
+      masm.loadPrivate(Address(obj, NativeObject::getFixedSlotOffset(0)), priv);
+      break;
+    case DOMObjectKind::Proxy: {
+#ifdef DEBUG
+      
+      Label isDOMProxy;
+      masm.branchTestProxyHandlerFamily(
+          Assembler::Equal, obj, priv, GetDOMProxyHandlerFamily(), &isDOMProxy);
+      masm.assumeUnreachable("Expected a DOM proxy");
+      masm.bind(&isDOMProxy);
+#endif
+      masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), priv);
+      masm.loadPrivate(
+          Address(priv, js::detail::ProxyReservedSlots::offsetOfSlot(0)), priv);
+      break;
     }
   }
-
-  if (kind != DOMObjectKind::Native) {
-    masm.bind(&isProxy);
-#ifdef DEBUG
-    
-    Label isDOMProxy;
-    masm.branchTestProxyHandlerFamily(Assembler::Equal, obj, priv,
-                                      GetDOMProxyHandlerFamily(), &isDOMProxy);
-    masm.assumeUnreachable("Expected a DOM proxy");
-    masm.bind(&isDOMProxy);
-#endif
-    masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), priv);
-    masm.loadPrivate(
-        Address(priv, js::detail::ProxyReservedSlots::offsetOfSlot(0)), priv);
-  }
-
-  masm.bind(&done);
 }
 
 void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
