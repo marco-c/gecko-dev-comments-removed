@@ -44,11 +44,14 @@ class TargetCommand extends EventEmitter {
 
 
 
-  constructor({ descriptorFront, commands }) {
+
+
+  constructor({ descriptorFront, watcherFront, commands }) {
     super();
 
     this.commands = commands;
     this.descriptorFront = descriptorFront;
+    this.watcherFront = watcherFront;
     this.rootFront = descriptorFront.client.mainRoot;
 
     this.store = createStore(reducer);
@@ -99,6 +102,11 @@ class TargetCommand extends EventEmitter {
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
     this._onTargetSelected = this._onTargetSelected.bind(this);
+    
+    if (this.watcherFront) {
+      this.watcherFront.on("target-available", this._onTargetAvailable);
+      this.watcherFront.on("target-destroyed", this._onTargetDestroyed);
+    }
 
     this.legacyImplementation = {};
 
@@ -455,18 +463,6 @@ class TargetCommand extends EventEmitter {
       !this._gotFirstTopLevelTarget
     ) {
       await this._createFirstTarget();
-    }
-
-    
-    
-    if (!this.watcherFront) {
-      
-      const supportsWatcher = this.descriptorFront.traits?.watcher;
-      if (supportsWatcher) {
-        this.watcherFront = await this.descriptorFront.getWatcher();
-        this.watcherFront.on("target-available", this._onTargetAvailable);
-        this.watcherFront.on("target-destroyed", this._onTargetDestroyed);
-      }
     }
 
     

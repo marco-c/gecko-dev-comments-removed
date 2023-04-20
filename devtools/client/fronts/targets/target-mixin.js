@@ -186,36 +186,6 @@ function TargetMixin(parentClass) {
 
 
 
-
-
-
-
-
-    getWatcherFront() {
-      
-      if (this.parentFront.typeName == "watcher") {
-        return this.parentFront;
-      }
-
-      
-      
-      if (
-        this.parentFront.typeName.endsWith("Descriptor") &&
-        this.parentFront.traits &&
-        this.parentFront.traits.watcher
-      ) {
-        return this.parentFront.getWatcher();
-      }
-
-      
-      return null;
-    }
-
-    
-
-
-
-
     async getParentTarget() {
       return this.commands.targetCommand.getParentTarget(this);
     }
@@ -248,7 +218,12 @@ function TargetMixin(parentClass) {
     async getWindowGlobalTarget(browsingContextID) {
       
       
-      const watcherFront = await this.getWatcherFront();
+      if (!this.commands) {
+        return null;
+      }
+      
+      
+      const { watcherFront } = this.commands;
       if (watcherFront) {
         
         if (watcherFront.traits.frame) {
