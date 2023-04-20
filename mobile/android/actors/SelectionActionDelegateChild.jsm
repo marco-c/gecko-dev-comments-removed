@@ -239,16 +239,84 @@ class SelectionActionDelegateChild extends GeckoViewActorChild {
     return offset;
   }
 
+  _getDefaultMagnifierPoint(aEvent) {
+    const rect = lazy.LayoutUtils.rectToScreenRect(aEvent.target.ownerGlobal, {
+      left: aEvent.clientX,
+      top: aEvent.clientY - this._accessiblecaretHeight,
+      width: 0,
+      height: 0,
+    });
+    return { x: rect.left, y: rect.top };
+  }
+
+  _getBetterMagnifierPoint(aEvent) {
+    const win = aEvent.target.defaultView;
+    if (!win) {
+      return this._getDefaultMagnifierPoint(aEvent);
+    }
+
+    const focus = aEvent.target.activeElement;
+    if (
+      win.HTMLInputElement?.isInstance(focus) &&
+      focus.mozIsTextField(false)
+    ) {
+      
+      const bounds = focus.getBoundingClientRect();
+      const rect = lazy.LayoutUtils.rectToScreenRect(
+        aEvent.target.ownerGlobal,
+        {
+          left: aEvent.clientX,
+          top: bounds.top,
+          width: 0,
+          height: bounds.height,
+        }
+      );
+      return { x: rect.left, y: rect.top + rect.height / 2 };
+    }
+
+    if (win.HTMLTextAreaElement?.isInstance(focus)) {
+      
+      
+      return this._getDefaultMagnifierPoint(aEvent);
+    }
+
+    const selection = win.getSelection();
+    if (selection.rangeCount != 1) {
+      
+      
+      return this._getDefaultMagnifierPoint(aEvent);
+    }
+
+    
+    const bounds = (() => {
+      const range = selection.getRangeAt(0);
+      let distance = Number.MAX_SAFE_INTEGER;
+      let y = aEvent.clientY;
+      const rectList = range.getClientRects();
+      for (const rect of rectList) {
+        const newDistance = Math.abs(aEvent.clientY - rect.bottom);
+        if (distance > newDistance) {
+          y = rect.top + rect.height / 2;
+          distance = newDistance;
+        }
+      }
+      return { left: aEvent.clientX, top: y, width: 0, height: 0 };
+    })();
+
+    const rect = lazy.LayoutUtils.rectToScreenRect(
+      aEvent.target.ownerGlobal,
+      bounds
+    );
+    return { x: rect.left, y: rect.top };
+  }
+
   _handleMagnifier(aEvent) {
     if (["presscaret", "dragcaret"].includes(aEvent.reason)) {
       debug`_handleMagnifier: ${aEvent.reason}`;
-      const offset = this._getFrameOffset(aEvent);
+      const screenPoint = this._getBetterMagnifierPoint(aEvent);
       this.eventDispatcher.sendRequest({
         type: "GeckoView:ShowMagnifier",
-        clientPoint: {
-          x: aEvent.clientX + offset.left,
-          y: aEvent.clientY + offset.top - this._accessiblecaretHeight,
-        },
+        screenPoint,
       });
     } else if (aEvent.reason == "releasecaret") {
       debug`_handleMagnifier: ${aEvent.reason}`;

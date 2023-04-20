@@ -6,6 +6,7 @@
 package org.mozilla.gecko.util;
 
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Build;
 import android.os.Bundle;
@@ -412,6 +413,21 @@ public final class GeckoBundle implements Parcelable {
     }
 
     return new Point(ptBundle.getInt("x"), ptBundle.getInt("y"));
+  }
+
+  
+
+
+
+
+
+  public PointF getPointF(final String key) {
+    final GeckoBundle ptBundle = getBundle(key);
+    if (ptBundle == null) {
+      return null;
+    }
+
+    return new PointF((float) ptBundle.getDouble("x"), (float) ptBundle.getDouble("y"));
   }
 
   
