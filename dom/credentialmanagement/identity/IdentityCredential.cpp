@@ -390,20 +390,32 @@ IdentityCredential::FetchAccountList(
     const IdentityInternalManifest& aManifest) {
   MOZ_ASSERT(XRE_IsParentProcess());
   
-  nsCString configLocation =
-      NS_ConvertUTF16toUTF8(aManifest.mAccounts_endpoint);
+  nsCOMPtr<nsIURI> baseURI;
+  nsCString baseURIString = NS_ConvertUTF16toUTF8(aProvider.mConfigURL);
+  nsresult rv = NS_NewURI(getter_AddRefs(baseURI), baseURIString);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IdentityCredential::GetAccountListPromise::CreateAndReject(rv,
+                                                                      __func__);
+  }
+  nsCOMPtr<nsIURI> idpURI;
+  nsCString accountSpec = NS_ConvertUTF16toUTF8(aManifest.mAccounts_endpoint);
+  rv = NS_NewURI(getter_AddRefs(idpURI), accountSpec.get(), baseURI);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IdentityCredential::GetAccountListPromise::CreateAndReject(rv,
+                                                                      __func__);
+  }
+  nsCString configLocation;
+  rv = idpURI->GetSpec(configLocation);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IdentityCredential::GetAccountListPromise::CreateAndReject(rv,
+                                                                      __func__);
+  }
 
   
   
   
   
   
-  nsCOMPtr<nsIURI> idpURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(idpURI), configLocation);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return IdentityCredential::GetAccountListPromise::CreateAndReject(rv,
-                                                                      __func__);
-  }
   nsCOMPtr<nsIPrincipal> idpPrincipal = BasePrincipal::CreateContentPrincipal(
       idpURI, aPrincipal->OriginAttributesRef());
   nsCOMPtr<nsIPrincipal> nullPrincipal =
@@ -467,7 +479,23 @@ RefPtr<IdentityCredential::GetTokenPromise> IdentityCredential::FetchToken(
     const IdentityAccount& aAccount) {
   MOZ_ASSERT(XRE_IsParentProcess());
   
-  nsCString tokenLocation = NS_ConvertUTF16toUTF8(aManifest.mId_token_endpoint);
+  nsCOMPtr<nsIURI> baseURI;
+  nsCString baseURIString = NS_ConvertUTF16toUTF8(aProvider.mConfigURL);
+  nsresult rv = NS_NewURI(getter_AddRefs(baseURI), baseURIString);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IdentityCredential::GetTokenPromise::CreateAndReject(rv, __func__);
+  }
+  nsCOMPtr<nsIURI> idpURI;
+  nsCString tokenSpec = NS_ConvertUTF16toUTF8(aManifest.mId_token_endpoint);
+  rv = NS_NewURI(getter_AddRefs(idpURI), tokenSpec.get(), baseURI);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IdentityCredential::GetTokenPromise::CreateAndReject(rv, __func__);
+  }
+  nsCString tokenLocation;
+  rv = idpURI->GetSpec(tokenLocation);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IdentityCredential::GetTokenPromise::CreateAndReject(rv, __func__);
+  }
 
   
   nsIXPConnect* xpc = nsContentUtils::XPConnect();
@@ -477,7 +505,7 @@ RefPtr<IdentityCredential::GetTokenPromise> IdentityCredential::FetchToken(
   jsapi.Init();
   JSContext* cx = jsapi.cx();
   JS::Rooted<JSObject*> sandbox(cx);
-  nsresult rv = xpc->CreateSandbox(cx, aPrincipal, sandbox.address());
+  rv = xpc->CreateSandbox(cx, aPrincipal, sandbox.address());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return IdentityCredential::GetTokenPromise::CreateAndReject(rv, __func__);
   }
@@ -545,12 +573,32 @@ RefPtr<IdentityCredential::GetTokenPromise> IdentityCredential::FetchToken(
 
 RefPtr<IdentityCredential::GetMetadataPromise>
 IdentityCredential::FetchMetadata(nsIPrincipal* aPrincipal,
+                                  const IdentityProvider& aProvider,
                                   const IdentityInternalManifest& aManifest) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aPrincipal);
   
-  nsCString configLocation =
+  nsCOMPtr<nsIURI> baseURI;
+  nsCString baseURIString = NS_ConvertUTF16toUTF8(aProvider.mConfigURL);
+  nsresult rv = NS_NewURI(getter_AddRefs(baseURI), baseURIString);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IdentityCredential::GetMetadataPromise::CreateAndReject(rv,
+                                                                   __func__);
+  }
+  nsCOMPtr<nsIURI> idpURI;
+  nsCString metadataSpec =
       NS_ConvertUTF16toUTF8(aManifest.mClient_metadata_endpoint);
+  rv = NS_NewURI(getter_AddRefs(idpURI), metadataSpec.get(), baseURI);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IdentityCredential::GetMetadataPromise::CreateAndReject(rv,
+                                                                   __func__);
+  }
+  nsCString configLocation;
+  rv = idpURI->GetSpec(configLocation);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return IdentityCredential::GetMetadataPromise::CreateAndReject(rv,
+                                                                   __func__);
+  }
 
   
   nsIXPConnect* xpc = nsContentUtils::XPConnect();
@@ -560,7 +608,7 @@ IdentityCredential::FetchMetadata(nsIPrincipal* aPrincipal,
   jsapi.Init();
   JSContext* cx = jsapi.cx();
   JS::Rooted<JSObject*> sandbox(cx);
-  nsresult rv = xpc->CreateSandbox(cx, aPrincipal, sandbox.address());
+  rv = xpc->CreateSandbox(cx, aPrincipal, sandbox.address());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return IdentityCredential::GetMetadataPromise::CreateAndReject(rv,
                                                                    __func__);
@@ -720,8 +768,7 @@ IdentityCredential::PromptUserWithPolicy(
   }
 
   
-  nsCString configLocation =
-      NS_ConvertUTF16toUTF8(aManifest.mAccounts_endpoint);
+  nsCString configLocation = NS_ConvertUTF16toUTF8(aProvider.mConfigURL);
   nsCOMPtr<nsIURI> idpURI;
   error = NS_NewURI(getter_AddRefs(idpURI), configLocation);
   if (NS_WARN_IF(NS_FAILED(error))) {
@@ -751,7 +798,7 @@ IdentityCredential::PromptUserWithPolicy(
   
   RefPtr<BrowsingContext> browsingContext(aBrowsingContext);
   nsCOMPtr<nsIPrincipal> argumentPrincipal(aPrincipal);
-  return FetchMetadata(aPrincipal, aManifest)
+  return FetchMetadata(aPrincipal, aProvider, aManifest)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [aAccount, aProvider, argumentPrincipal, browsingContext,
