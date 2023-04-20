@@ -43,7 +43,6 @@ struct VideoCodecVP8 {
   bool operator!=(const VideoCodecVP8& other) const {
     return !(*this == other);
   }
-  VideoCodecComplexity complexity;
   unsigned char numberOfTemporalLayers;
   bool denoisingOn;
   bool automaticResizeOn;
@@ -63,7 +62,6 @@ struct VideoCodecVP9 {
   bool operator!=(const VideoCodecVP9& other) const {
     return !(*this == other);
   }
-  VideoCodecComplexity complexity;
   unsigned char numberOfTemporalLayers;
   bool denoisingOn;
   bool frameDroppingOn;
@@ -183,7 +181,7 @@ class RTC_EXPORT VideoCodec {
   absl::optional<ScalabilityMode> scalability_mode_;
   
   
-  absl::optional<VideoCodecComplexity> complexity_;
+  VideoCodecComplexity complexity_;
   
   
   absl::optional<bool> frame_drop_enabled_;
