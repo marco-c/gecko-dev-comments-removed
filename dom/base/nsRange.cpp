@@ -738,7 +738,9 @@ bool nsRange::IsPointComparableToRange(const nsINode& aContainer,
   }
 
   if (!aContainer.IsInclusiveDescendantOf(mRoot)) {
-    aRv.ThrowWrongDocumentError("Node is not in the same document as the range");
+    
+    
+    aRv.Throw(NS_ERROR_DOM_WRONG_DOCUMENT_ERR);
     return false;
   }
 
