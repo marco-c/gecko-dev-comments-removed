@@ -33,11 +33,6 @@ class RtcEventLogOutput {
   
   
   
-  virtual bool Write(const std::string& output) {
-    return Write(absl::string_view(output));
-  }
-  
-  
   virtual bool Write(absl::string_view output) = 0;
 
   
