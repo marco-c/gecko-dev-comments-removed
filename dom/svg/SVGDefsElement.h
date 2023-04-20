@@ -25,9 +25,6 @@ class SVGDefsElement final : public SVGGraphicsElement {
 
  public:
   
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
-
-  
   bool IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) override {
     return nsIContent::IsFocusableInternal(aTabIndex, aWithMouse);
   }
