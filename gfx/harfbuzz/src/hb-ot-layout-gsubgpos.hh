@@ -578,6 +578,13 @@ struct hb_ot_apply_context_t :
       unsigned stop = num_items - 1;
       if (c->buffer->flags & HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT)
         stop = 1 - 1;
+
+      
+
+
+
+      stop = (unsigned) hb_max ((int) stop, (int) idx - HB_MAX_CONTEXT_LENGTH);
+
       while (idx > stop)
       {
 	idx--;
