@@ -93,9 +93,10 @@ class MFMediaEngineStream
   virtual MFMediaEngineVideoStream* AsVideoStream() { return nullptr; }
 
   
-  virtual already_AddRefed<MediaData> OutputData(MediaRawData* aSample) {
-    return nullptr;
-  }
+  
+  
+  
+  virtual already_AddRefed<MediaData> OutputData() { return nullptr; }
 
   virtual MediaDataDecoder::ConversionRequired NeedsConversion() const {
     return MediaDataDecoder::ConversionRequired::kNeedNone;
@@ -150,7 +151,12 @@ class MFMediaEngineStream
   Atomic<bool> mIsSelected;
 
   
-  MediaQueue<MediaRawData> mRawDataQueue;
+  
+  MediaQueue<MediaRawData> mRawDataQueueForFeedingEngine;
+
+  
+  
+  MediaQueue<MediaRawData> mRawDataQueueForGeneratingOutput;
 
   
 

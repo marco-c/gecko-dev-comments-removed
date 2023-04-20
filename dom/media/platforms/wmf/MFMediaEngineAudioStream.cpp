@@ -71,7 +71,7 @@ bool MFMediaEngineAudioStream::HasEnoughRawData() const {
   
   
   static const int64_t AMPLE_AUDIO_USECS = 2000000;
-  return mRawDataQueue.Duration() >= AMPLE_AUDIO_USECS;
+  return mRawDataQueueForFeedingEngine.Duration() >= AMPLE_AUDIO_USECS;
 }
 
 #undef LOGV
