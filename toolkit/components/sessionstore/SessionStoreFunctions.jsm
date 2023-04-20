@@ -2,8 +2,8 @@
 
 
 
-const { SessionStore } = ChromeUtils.import(
-  "resource:///modules/sessionstore/SessionStore.jsm"
+const { SessionStore } = ChromeUtils.importESModule(
+  "resource:///modules/sessionstore/SessionStore.sys.mjs"
 );
 
 function UpdateSessionStore(

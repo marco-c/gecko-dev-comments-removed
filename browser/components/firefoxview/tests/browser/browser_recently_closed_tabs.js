@@ -14,8 +14,8 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(globalThis, {
-  SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
+ChromeUtils.defineESModuleGetters(globalThis, {
+  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
 });
 
 const { TabsSetupFlowManager } = ChromeUtils.importESModule(
