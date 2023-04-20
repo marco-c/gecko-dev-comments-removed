@@ -3916,7 +3916,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  RemoveStyleInside(Element& aElement, nsAtom* aProperty, nsAtom* aAttribute,
+  RemoveStyleInside(Element& aElement, const EditorInlineStyle& aStyleToRemove,
                     SpecifiedStyle aSpecifiedStyle);
 
   

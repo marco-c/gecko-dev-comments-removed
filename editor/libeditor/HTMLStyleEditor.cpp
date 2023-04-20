@@ -891,9 +891,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNode(
   EditorDOMPoint pointToPutCaret;
   if (aContent.IsElement()) {
     Result<EditorDOMPoint, nsresult> removeStyleResult =
-        RemoveStyleInside(MOZ_KnownLive(*aContent.AsElement()),
-                          MOZ_KnownLive(&aStyleToSet.HTMLPropertyRef()),
-                          aStyleToSet.mAttribute, SpecifiedStyle::Preserve);
+        RemoveStyleInside(MOZ_KnownLive(*aContent.AsElement()), aStyleToSet,
+                          SpecifiedStyle::Preserve);
     if (MOZ_UNLIKELY(removeStyleResult.isErr())) {
       NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
       return removeStyleResult.propagateErr();
@@ -1403,8 +1402,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
     
     Result<EditorDOMPoint, nsresult> removeStyleResult =
         RemoveStyleInside(MOZ_KnownLive(*previousElementOfSplitPoint),
-                          aStyleToRemove.mHTMLProperty,
-                          aStyleToRemove.mAttribute, aSpecifiedStyle);
+                          aStyleToRemove, aSpecifiedStyle);
     if (MOZ_UNLIKELY(removeStyleResult.isErr())) {
       NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
       return removeStyleResult;
@@ -1416,7 +1414,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
 }
 
 Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
-    Element& aElement, nsAtom* aProperty, nsAtom* aAttribute,
+    Element& aElement, const EditorInlineStyle& aStyleToRemove,
     SpecifiedStyle aSpecifiedStyle) {
   
   AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfChildContents;
@@ -1426,9 +1424,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
     if (!child->IsElement()) {
       continue;
     }
-    Result<EditorDOMPoint, nsresult> removeStyleResult =
-        RemoveStyleInside(MOZ_KnownLive(*child->AsElement()), aProperty,
-                          aAttribute, aSpecifiedStyle);
+    Result<EditorDOMPoint, nsresult> removeStyleResult = RemoveStyleInside(
+        MOZ_KnownLive(*child->AsElement()), aStyleToRemove, aSpecifiedStyle);
     if (MOZ_UNLIKELY(removeStyleResult.isErr())) {
       NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
       return removeStyleResult;
@@ -1440,14 +1437,15 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
 
   
   auto ShouldRemoveHTMLStyle = [&]() {
-    if (aProperty) {
+    if (!aStyleToRemove.IsStyleToClearAllInlineStyles()) {
       return
           
-          aElement.NodeInfo()->NameAtom() == aProperty ||
+          aElement.NodeInfo()->NameAtom() == aStyleToRemove.mHTMLProperty ||
           
-          (aProperty == nsGkAtoms::href && HTMLEditUtils::IsLink(&aElement)) ||
+          (aStyleToRemove.mHTMLProperty == nsGkAtoms::href &&
+           HTMLEditUtils::IsLink(&aElement)) ||
           
-          (aProperty == nsGkAtoms::name &&
+          (aStyleToRemove.mHTMLProperty == nsGkAtoms::name &&
            HTMLEditUtils::IsNamedAnchor(&aElement));
     }
     
@@ -1462,11 +1460,12 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
   if (ShouldRemoveHTMLStyle()) {
     
     
-    if (!aAttribute) {
+    if (!aStyleToRemove.mAttribute) {
       
       
       
-      if (aProperty && aSpecifiedStyle != SpecifiedStyle::Discard &&
+      if (!aStyleToRemove.IsStyleToClearAllInlineStyles() &&
+          aSpecifiedStyle != SpecifiedStyle::Discard &&
           (aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::style) ||
            aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::_class))) {
         
@@ -1522,8 +1521,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
     }
     
     
-    else if (aElement.HasAttr(kNameSpaceID_None, aAttribute)) {
-      if (IsOnlyAttribute(&aElement, aAttribute)) {
+    else if (aElement.HasAttr(kNameSpaceID_None, aStyleToRemove.mAttribute)) {
+      if (IsOnlyAttribute(&aElement, aStyleToRemove.mAttribute)) {
         Result<EditorDOMPoint, nsresult> unwrapElementResult =
             RemoveContainerWithTransaction(aElement);
         if (MOZ_UNLIKELY(unwrapElementResult.isErr())) {
@@ -1534,7 +1533,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
           pointToPutCaret = unwrapElementResult.unwrap();
         }
       } else {
-        nsresult rv = RemoveAttributeWithTransaction(aElement, *aAttribute);
+        nsresult rv = RemoveAttributeWithTransaction(
+            aElement, *aStyleToRemove.mAttribute);
         if (NS_WARN_IF(Destroyed())) {
           return Err(NS_ERROR_EDITOR_DESTROYED);
         }
@@ -1549,10 +1549,12 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
   
   
   
-  if (CSSEditUtils::IsCSSEditableProperty(&aElement, aProperty, aAttribute)) {
+  if (CSSEditUtils::IsCSSEditableProperty(
+          &aElement, aStyleToRemove.mHTMLProperty, aStyleToRemove.mAttribute)) {
     Result<bool, nsresult> elementHasSpecifiedCSSEquivalentStylesOrError =
-        CSSEditUtils::HaveSpecifiedCSSEquivalentStyles(*this, aElement,
-                                                       aProperty, aAttribute);
+        CSSEditUtils::HaveSpecifiedCSSEquivalentStyles(
+            *this, aElement, aStyleToRemove.mHTMLProperty,
+            aStyleToRemove.mAttribute);
     if (elementHasSpecifiedCSSEquivalentStylesOrError.isErr()) {
       NS_WARNING("CSSEditUtils::HaveSpecifiedCSSEquivalentStyles() failed");
       return elementHasSpecifiedCSSEquivalentStylesOrError.propagateErr();
@@ -1565,7 +1567,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
         
         nsresult rv =
             CSSEditUtils::RemoveCSSEquivalentToHTMLStyleWithTransaction(
-                *this, MOZ_KnownLive(*styledElement), aProperty, aAttribute,
+                *this, MOZ_KnownLive(*styledElement),
+                aStyleToRemove.mHTMLProperty, aStyleToRemove.mAttribute,
                 nullptr);
         if (rv == NS_ERROR_EDITOR_DESTROYED) {
           NS_WARNING(
@@ -1601,7 +1604,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveStyleInside(
     }
   }
 
-  if (aProperty != nsGkAtoms::font || aAttribute != nsGkAtoms::size ||
+  if (aStyleToRemove.mHTMLProperty != nsGkAtoms::font ||
+      aStyleToRemove.mAttribute != nsGkAtoms::size ||
       !aElement.IsAnyOfHTMLElements(nsGkAtoms::big, nsGkAtoms::small)) {
     return pointToPutCaret;
   }
@@ -2397,9 +2401,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
           if (content->IsElement()) {
             Result<EditorDOMPoint, nsresult> removeStyleResult =
                 RemoveStyleInside(MOZ_KnownLive(*content->AsElement()),
-                                  styleToRemove.mHTMLProperty,
-                                  styleToRemove.mAttribute,
-                                  SpecifiedStyle::Preserve);
+                                  styleToRemove, SpecifiedStyle::Preserve);
             if (MOZ_UNLIKELY(removeStyleResult.isErr())) {
               NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
               return removeStyleResult.unwrapErr();
