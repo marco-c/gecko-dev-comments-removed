@@ -113,7 +113,11 @@ async function cleanup(test, value, cleanup_func) {
 
 async function cleanup_writable(test, value) {
   return cleanup(test, value, async () => {
-    
-    return (await value).close();
+    try {
+      return (await value).close();
+    } catch (e) {
+      
+      
+    }
   });
 }
