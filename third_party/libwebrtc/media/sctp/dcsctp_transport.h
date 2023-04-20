@@ -117,7 +117,7 @@ class DcSctpTransport : public cricket::SctpTransportInternal,
   
   
   
-  struct StreamClosingState {
+  struct StreamState {
     
     
     
@@ -129,7 +129,9 @@ class DcSctpTransport : public cricket::SctpTransportInternal,
     bool outgoing_reset_done = false;
   };
 
-  flat_map<dcsctp::StreamID, StreamClosingState> closing_states_;
+  
+  flat_map<dcsctp::StreamID, StreamState> stream_states_
+      RTC_GUARDED_BY(network_thread_);
   bool ready_to_send_data_ = false;
   std::function<void()> on_connected_callback_ RTC_GUARDED_BY(network_thread_);
   DataChannelSink* data_channel_sink_ RTC_GUARDED_BY(network_thread_) = nullptr;
