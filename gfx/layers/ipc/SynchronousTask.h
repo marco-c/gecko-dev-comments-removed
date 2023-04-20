@@ -30,8 +30,15 @@ class MOZ_STACK_CLASS SynchronousTask {
     
     
     
+    
     if (!mDone) {
-      return mMonitor.Wait(aInterval);
+      
+      
+      mMonitor.Wait(aInterval);
+
+      if (!mDone) {
+        return NS_ERROR_ABORT;
+      }
     }
 
     return NS_OK;
