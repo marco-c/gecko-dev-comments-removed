@@ -1760,6 +1760,11 @@ class AsyncPanZoomController {
 
   bool IsOverscrolled() const;
 
+  bool IsOverscrollAnimationRunning() const {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    return mState == OVERSCROLL_ANIMATION;
+  }
+
   
   
   bool IsPhysicallyOverscrolled() const;
