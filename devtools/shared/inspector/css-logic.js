@@ -61,21 +61,34 @@ exports.STATUS = {
 
 
 
+exports.CSSAtRuleClassNameType = {
+  CSSCounterStyleRule: "counter-style",
+  CSSDocumentRule: "document",
+  CSSFontFaceRule: "font-face",
+  CSSFontFeatureValuesRule: "font-feature-values",
+  CSSImportRule: "import",
+  CSSKeyframeRule: "keyframe",
+  CSSKeyframesRule: "keyframes",
+  CSSMediaRule: "media",
+  CSSNamespaceRule: "namespace",
+  CSSPageRule: "page",
+  CSSSupportsRule: "supports",
+};
 
-exports.CSSRuleTypeName = {
-  1: "", 
-  3: "@import",
-  4: "@media",
-  5: "@font-face",
-  6: "@page",
-  7: "@keyframes",
-  8: "@keyframe",
-  10: "@namespace",
-  11: "@counter-style",
-  12: "@supports",
-  13: "@document",
-  14: "@font-feature-values",
-  15: "@viewport",
+
+
+
+
+
+
+exports.getCSSAtRuleTypeName = function(cssRule) {
+  const ruleClassName = ChromeUtils.getClassName(cssRule);
+  const atRuleTypeName = exports.CSSAtRuleClassNameType[ruleClassName];
+  if (atRuleTypeName) {
+    return "@" + atRuleTypeName;
+  }
+
+  return "";
 };
 
 
