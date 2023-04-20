@@ -145,7 +145,7 @@ inline bool SameExtendedPrimitiveType(const PreBarriered<Value>& a,
 }
 #endif
 
-bool HashableValue::operator==(const HashableValue& other) const {
+bool HashableValue::equals(const HashableValue& other) const {
   
   bool b = (value.asRawBits() == other.value.asRawBits());
 
@@ -172,12 +172,6 @@ bool HashableValue::operator==(const HashableValue& other) const {
   MOZ_ASSERT(same == b);
 #endif
   return b;
-}
-
-HashableValue HashableValue::trace(JSTracer* trc) const {
-  HashableValue hv(*this);
-  TraceEdge(trc, &hv.value, "key");
-  return hv;
 }
 
 
@@ -520,18 +514,19 @@ const JSPropertySpec MapObject::staticProperties[] = {
 }
 
 template <class MutableRange>
-static void TraceKey(MutableRange& r, const HashableValue& key, JSTracer* trc) {
-  HashableValue newKey = key.trace(trc);
+static void TraceKey(MutableRange& r, const PreBarriered<HashableValue>& key,
+                     JSTracer* trc) {
+  HashableValue newKey = key;
+  newKey.trace(trc);
 
-  if (newKey.get() != key.get()) {
+  
+  if (newKey != key.get()) {
+    
     
     
     
     r.rekeyFront(newKey);
   }
-
-  
-  newKey.unbarrieredClear();
 }
 
 void MapObject::trace(JSTracer* trc, JSObject* obj) {
@@ -683,14 +678,14 @@ inline bool MapObject::setWithHashableKey(JSContext* cx, MapObject* obj,
   bool needsPostBarriers = obj->isTenured();
   if (needsPostBarriers) {
     
-    if (!PostWriteBarrier(obj, key.value()) || !table->put(key, value)) {
+    if (!PostWriteBarrier(obj, key.get()) || !table->put(key.get(), value)) {
       ReportOutOfMemory(cx);
       return false;
     }
   } else {
     
     auto* preBarriedTable = reinterpret_cast<PreBarrieredTable*>(table);
-    if (!preBarriedTable->put(key, value)) {
+    if (!preBarriedTable->put(key.get(), value.get())) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -1389,7 +1384,8 @@ bool SetObject::add(JSContext* cx, HandleObject obj, HandleValue k) {
     return false;
   }
 
-  if (!PostWriteBarrier(&obj->as<SetObject>(), key.value()) || !set->put(key)) {
+  if (!PostWriteBarrier(&obj->as<SetObject>(), key.get()) ||
+      !set->put(key.get())) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -1515,7 +1511,7 @@ bool SetObject::construct(JSContext* cx, unsigned argc, Value* vp) {
         if (!key.setValue(cx, keyVal)) {
           return false;
         }
-        if (!PostWriteBarrier(obj, key.value()) || !set->put(key)) {
+        if (!PostWriteBarrier(obj, key.get()) || !set->put(key.get())) {
           ReportOutOfMemory(cx);
           return false;
         }
@@ -1616,9 +1612,8 @@ bool SetObject::add_impl(JSContext* cx, const CallArgs& args) {
 
   ValueSet& set = extract(args);
   ARG0_KEY(cx, args, key);
-  if (!PostWriteBarrier(&args.thisv().toObject().as<SetObject>(),
-                        key.value()) ||
-      !set.put(key)) {
+  if (!PostWriteBarrier(&args.thisv().toObject().as<SetObject>(), key.get()) ||
+      !set.put(key.get())) {
     ReportOutOfMemory(cx);
     return false;
   }
