@@ -468,9 +468,13 @@ pref("browser.urlbar.quicksuggest.impressionCaps.nonSponsoredEnabled", false);
 
 pref("browser.urlbar.quicksuggest.impressionCaps.sponsoredEnabled", false);
 
+#ifdef EARLY_BETA_OR_EARLIER
 
 
+pref("browser.urlbar.quicksuggest.blockingEnabled", true);
+#else
 pref("browser.urlbar.quicksuggest.blockingEnabled", false);
+#endif
 
 
 #ifdef NIGHTLY_BUILD
@@ -585,7 +589,11 @@ pref("browser.urlbar.bestMatch.enabled", false);
 
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.urlbar.bestMatch.blockingEnabled", true);
+#else
 pref("browser.urlbar.bestMatch.blockingEnabled", false);
+#endif
 
 
 pref("browser.urlbar.contextualSearch.enabled", false);
