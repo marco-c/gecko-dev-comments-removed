@@ -6260,6 +6260,13 @@ MDefinition::AliasType MGuardShape::mightAlias(const MDefinition* store) const {
   return MInstruction::mightAlias(store);
 }
 
+AliasSet MGuardMultipleShapes::getAliasSet() const {
+  
+  
+  
+  return AliasSet::Load(AliasSet::ObjectFields);
+}
+
 MDefinition* MGuardIsNotProxy::foldsTo(TempAllocator& alloc) {
   KnownClass known = GetObjectKnownClass(object());
   if (known == KnownClass::None) {
