@@ -160,21 +160,6 @@ static inline bool IsAutoOrEnumOnBSize(const StyleSize& aSize, bool aIsInline) {
 
 
 
-
-
-
-
-
-
-#define GET_MAIN_COMPONENT_LOGICAL(axisTracker_, wm_, isize_, bsize_) \
-  (axisTracker_).IsInlineAxisMainAxis((wm_)) ? (isize_) : (bsize_)
-
-#define GET_CROSS_COMPONENT_LOGICAL(axisTracker_, wm_, isize_, bsize_) \
-  (axisTracker_).IsInlineAxisMainAxis((wm_)) ? (bsize_) : (isize_)
-
-
-
-
 class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
  public:
   explicit FlexboxAxisTracker(const nsFlexContainerFrame* aFlexContainer);
@@ -300,7 +285,6 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
     return IsRowOriented() != mWM.IsVertical();
   }
 
-  
   
   
   
@@ -1385,14 +1369,16 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
 
   
   
-  nscoord flexBaseSize = GET_MAIN_COMPONENT_LOGICAL(
-      aAxisTracker, childWM, childRI.ComputedISize(), childRI.ComputedBSize());
-  nscoord mainMinSize = GET_MAIN_COMPONENT_LOGICAL(aAxisTracker, childWM,
-                                                   childRI.ComputedMinISize(),
-                                                   childRI.ComputedMinBSize());
-  nscoord mainMaxSize = GET_MAIN_COMPONENT_LOGICAL(aAxisTracker, childWM,
-                                                   childRI.ComputedMaxISize(),
-                                                   childRI.ComputedMaxBSize());
+  const LogicalSize computedSizeInFlexWM = childRI.ComputedSize(flexWM);
+  const LogicalSize computedMinSizeInFlexWM = childRI.ComputedMinSize(flexWM);
+  const LogicalSize computedMaxSizeInFlexWM = childRI.ComputedMaxSize(flexWM);
+
+  const nscoord flexBaseSize = aAxisTracker.MainComponent(computedSizeInFlexWM);
+  const nscoord mainMinSize =
+      aAxisTracker.MainComponent(computedMinSizeInFlexWM);
+  const nscoord mainMaxSize =
+      aAxisTracker.MainComponent(computedMaxSizeInFlexWM);
+
   
   MOZ_ASSERT(mainMinSize <= mainMaxSize, "min size is larger than max size");
 
@@ -1401,14 +1387,12 @@ void nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   
-  nscoord tentativeCrossSize = GET_CROSS_COMPONENT_LOGICAL(
-      aAxisTracker, childWM, childRI.ComputedISize(), childRI.ComputedBSize());
-  nscoord crossMinSize = GET_CROSS_COMPONENT_LOGICAL(
-      aAxisTracker, childWM, childRI.ComputedMinISize(),
-      childRI.ComputedMinBSize());
-  nscoord crossMaxSize = GET_CROSS_COMPONENT_LOGICAL(
-      aAxisTracker, childWM, childRI.ComputedMaxISize(),
-      childRI.ComputedMaxBSize());
+  const nscoord tentativeCrossSize =
+      aAxisTracker.CrossComponent(computedSizeInFlexWM);
+  const nscoord crossMinSize =
+      aAxisTracker.CrossComponent(computedMinSizeInFlexWM);
+  const nscoord crossMaxSize =
+      aAxisTracker.CrossComponent(computedMaxSizeInFlexWM);
 
   
   FlexItem& item = *aLine.Items().EmplaceBack(
