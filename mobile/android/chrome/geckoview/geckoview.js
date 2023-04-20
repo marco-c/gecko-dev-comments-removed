@@ -541,6 +541,7 @@ function createBrowser() {
   browser.setAttribute("remote", "true");
   browser.setAttribute("remoteType", E10SUtils.DEFAULT_REMOTE_TYPE);
   browser.setAttribute("messagemanagergroup", "browsers");
+  browser.setAttribute("initiallyactive", "false");
 
   
   
