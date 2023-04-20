@@ -31,9 +31,10 @@ const projectRoot = path.resolve(__dirname, "../../../../");
 
 
 
-function getStoryTitle(filePath) {
+function getDocsStoryTitle(filePath) {
   let fileName = path.basename(filePath, ".stories.md");
-  return separateWords(fileName);
+  let pascalCaseName = toPascalCase(fileName);
+  return pascalCaseName.match(/[A-Z][a-z]+/g)?.join(" ") || pascalCaseName;
 }
 
 
@@ -41,14 +42,11 @@ function getStoryTitle(filePath) {
 
 
 
-
-function separateWords(str) {
-  return (
-    str
-      .match(/[A-Z]?[a-z0-9]+/g)
-      ?.map(text => text[0].toUpperCase() + text.substring(1))
-      .join(" ") || str
-  );
+function toPascalCase(str) {
+  return str
+    .match(/[a-z0-9]+/gi)
+    .map(text => text[0].toUpperCase() + text.substring(1))
+    .join("");
 }
 
 
@@ -87,12 +85,11 @@ module.exports = function markdownStoryLoader(source) {
     let storyNameRegex = /(?<=\/widgets\/)(?<name>.*?)(?=\/)/g;
     let componentName = storyNameRegex.exec(relativePath)?.groups?.name;
     if (componentName) {
-      
-      storyPath = separateWords(componentName).replace(/^Moz/g, "");
+      storyPath = `Design System/Experiments/${toPascalCase(componentName)}`;
     }
   }
 
-  let storyTitle = getStoryTitle(relativePath);
+  let storyTitle = getDocsStoryTitle(relativePath);
 
   
   
