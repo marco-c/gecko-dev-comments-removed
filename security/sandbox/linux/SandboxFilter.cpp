@@ -1522,8 +1522,17 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 #endif
 
 #ifdef DESKTOP
-      case __NR_pipe2:
-        return Allow();
+      case __NR_pipe2: {
+        
+        
+        
+        
+        
+        static constexpr int allowed_flags = O_CLOEXEC | O_NONBLOCK | O_DIRECT;
+        Arg<int> flags(1);
+        return If((flags & ~allowed_flags) == 0, Allow())
+            .Else(InvalidSyscall());
+      }
 
       CASES_FOR_getrlimit:
       CASES_FOR_getresuid:
