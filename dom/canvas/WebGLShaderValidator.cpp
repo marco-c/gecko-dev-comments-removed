@@ -46,22 +46,23 @@ static ShCompileOptions ChooseValidatorCompileOptions(
 #endif
 
   if (gl->WorkAroundDriverBugs()) {
-#ifdef XP_MACOSX
-    
-    
-    options.unfoldShortCircuit = true;
-
-    
-    options.regenerateStructNames = true;
-    options.initOutputVariables = true;
-
-    if (gl->Vendor() == gl::GLVendor::Intel) {
+    if (kIsMacOS) {
       
-      options.addAndTrueToLoopCondition = true;
+      
+      options.unfoldShortCircuit = true;
 
-      options.rewriteTexelFetchOffsetToTexelFetch = true;
+      
+      options.regenerateStructNames = true;
+      options.initOutputVariables = true;
+      options.initGLPointSize = true;
+
+      if (gl->Vendor() == gl::GLVendor::Intel) {
+        
+        options.addAndTrueToLoopCondition = true;
+
+        options.rewriteTexelFetchOffsetToTexelFetch = true;
+      }
     }
-#endif
 
     if (!gl->IsANGLE() && gl->Vendor() == gl::GLVendor::Intel) {
       
