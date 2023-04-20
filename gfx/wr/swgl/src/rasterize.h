@@ -899,7 +899,9 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint32_t z,
   if (flipped) swap(left, right);
   
   P* fbuf = (P*)colortex.sample_ptr(0, int(y));
-  DepthRun* fdepth = (DepthRun*)depthtex.sample_ptr(0, int(y));
+  DepthRun* fdepth = depthtex.buf != nullptr
+                         ? (DepthRun*)depthtex.sample_ptr(0, int(y))
+                         : nullptr;
   
   float checkY = min(min(l1.y, r1.y), clipRect.y1);
   
@@ -1165,7 +1167,9 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
   if (flipped) swap(left, right);
   
   P* fbuf = (P*)colortex.sample_ptr(0, int(y));
-  DepthRun* fdepth = (DepthRun*)depthtex.sample_ptr(0, int(y));
+  DepthRun* fdepth = depthtex.buf != nullptr
+                         ? (DepthRun*)depthtex.sample_ptr(0, int(y))
+                         : nullptr;
   
   float checkY = min(min(l1.y, r1.y), clipRect.y1);
   
