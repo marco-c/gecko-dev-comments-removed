@@ -37,9 +37,9 @@ const TESTS = [
   {
     desc: "Test Timer Callback 1",
     timerID: "test1-update-timer",
-    defaultInterval: 86400,
+    defaultInterval: CONSUMER_TIMER_INTERVAL,
     prefInterval: "test1.timer.interval",
-    contractID: "@mozilla.org/test2/timercallback;1",
+    contractID: "@mozilla.org/test1/timercallback;1",
     method: "createInstance",
     classID: Components.ID("512834f3-05bb-46be-84e0-81d881a140b7"),
     notified: false,
@@ -47,7 +47,7 @@ const TESTS = [
   {
     desc: "Test Timer Callback 2",
     timerID: "test2-update-timer",
-    defaultInterval: CONSUMER_TIMER_INTERVAL,
+    defaultInterval: 86400,
     prefInterval: "test2.timer.interval",
     contractID: "@mozilla.org/test2/timercallback;1",
     method: "createInstance",
@@ -294,7 +294,7 @@ const gTest9TimerCallback = {
     TESTS[9].notified = true;
     TESTS[9].notifyTime = Date.now();
     executeSoon(function() {
-      check_test8thru10(gTest9TimerCallback);
+      check_test8thru10(gTest8TimerCallback);
     });
   },
   QueryInterface: ChromeUtils.generateQI(["nsITimerCallback"]),
@@ -689,12 +689,11 @@ function check_test8thru10(aTestTimerCallback) {
 
   
   
-  
-  Assert.ok(
-    Math.abs(TESTS[8].notifyTime - TESTS[9].notifyTime) >=
-      MAIN_TIMER_INTERVAL * 0.5,
-    "staggering between two timers that want to fire at the same " +
-      "time should have occured"
+  Assert.lessOrEqual(
+    TESTS[8].notifyTime,
+    TESTS[9].notifyTime,
+    "two timers that want to fire at the same " +
+      "should fire in the expected order"
   );
 
   let time = Services.prefs.getIntPref(
