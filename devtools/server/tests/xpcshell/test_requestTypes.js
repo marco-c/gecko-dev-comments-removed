@@ -17,9 +17,6 @@ add_task(async function() {
 
   const response = await client.mainRoot.requestTypes();
   const expectedRequestTypes = Object.keys(generateRequestTypes(rootSpec));
-  
-  
-  expectedRequestTypes.push("echo");
 
   Assert.ok(Array.isArray(response.requestTypes));
   Assert.equal(

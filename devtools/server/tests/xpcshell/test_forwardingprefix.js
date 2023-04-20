@@ -68,55 +68,57 @@ function createMainConnection() {
 
 
 
-function tryActors(reachables, completed) {
-  let count = 0;
-
-  let outerActor;
-  for (outerActor of [
+async function tryActors(reachables, completed) {
+  for (const actor of [
     "root",
     "prefix1/root",
     "prefix1/actor",
     "prefix2/root",
     "prefix2/actor",
   ]) {
-    
-
-
-
-    const actor = outerActor;
-
-    count++;
-
-    let promise;
-    
-    if (actor == "root") {
-      promise = gClient.mainRoot.echo({ value: "tango" });
-    } else {
-      promise = gClient.request({ to: actor, type: "echo", value: "tango" });
+    let response;
+    try {
+      if (actor.endsWith("root")) {
+        
+        
+        
+        if (actor == "root") {
+          response = await gClient.mainRoot.getRoot();
+        } else {
+          response = await gClient.request({ to: actor, type: "getRoot" });
+        }
+      } else {
+        response = await gClient.request({
+          to: actor,
+          type: "echo",
+          value: "tango",
+        });
+      }
+    } catch (e) {
+      response = e;
     }
-    const callback = response => {
-      if (reachables.has(actor)) {
+    if (reachables.has(actor)) {
+      if (actor.endsWith("root")) {
+        
+        Assert.deepEqual({ from: actor }, response);
+      } else {
         Assert.deepEqual(
           { from: actor, to: actor, type: "echo", value: "tango" },
           response
         );
-      } else {
-        Assert.deepEqual(
-          {
-            from: actor,
-            error: "noSuchActor",
-            message: "No such actor for ID: " + actor,
-          },
-          response
-        );
       }
-
-      if (--count == 0) {
-        executeSoon(completed, "tryActors callback " + completed.name);
-      }
-    };
-    promise.then(callback, callback);
+    } else {
+      Assert.deepEqual(
+        {
+          from: actor,
+          error: "noSuchActor",
+          message: "No such actor for ID: " + actor,
+        },
+        response
+      );
+    }
   }
+  executeSoon(completed, "tryActors callback " + completed.name);
 }
 
 

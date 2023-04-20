@@ -103,9 +103,6 @@ const rootSpecPrototype = {
       request: {},
       response: RetVal("json"),
     },
-
-    
-    
   },
 
   events: {

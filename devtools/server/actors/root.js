@@ -105,23 +105,6 @@ class RootActor extends Actor {
   constructor(conn, parameters) {
     super(conn, rootSpec);
 
-    
-
-
-
-
-
-
-
-
-    this.requestTypes.echo = function(request) {
-      
-
-
-
-      return Cu.cloneInto(request, {});
-    };
-
     this._parameters = parameters;
     this._onTabListChanged = this.onTabListChanged.bind(this);
     this._onAddonListChanged = this.onAddonListChanged.bind(this);
