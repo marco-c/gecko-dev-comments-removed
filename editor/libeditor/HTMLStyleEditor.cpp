@@ -115,6 +115,19 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsStaticAtom& aProperty,
   nsStaticAtom* property = &aProperty;
   nsStaticAtom* attribute = aAttribute;
   nsString value(aValue);
+  if (attribute == nsGkAtoms::color || attribute == nsGkAtoms::bgcolor) {
+    if (!IsCSSEnabled()) {
+      
+      
+      
+      if (!value.LowerCaseEqualsLiteral("transparent")) {
+        HTMLEditUtils::GetNormalizedHTMLColorValue(value, value);
+      }
+    } else {
+      HTMLEditUtils::GetNormalizedCSSColorValue(
+          value, HTMLEditUtils::ZeroAlphaColor::RGBAValue, value);
+    }
+  }
 
   AutoTArray<EditorInlineStyle, 1> stylesToRemove;
   if (&aProperty == nsGkAtoms::sup) {
@@ -626,13 +639,24 @@ HTMLEditor::AutoInlineStyleSetter::ElementIsGoodContainerForTheStyle(
       nsString attrValue;
       if (aElement.IsHTMLElement(&HTMLPropertyRef()) &&
           !HTMLEditUtils::ElementHasAttributeExcept(aElement, *mAttribute) &&
-          aElement.GetAttr(kNameSpaceID_None, mAttribute, attrValue) &&
-          attrValue.Equals(mAttributeValue,
-                           nsCaseInsensitiveStringComparator)) {
-        
-        
-        
-        return true;
+          aElement.GetAttr(kNameSpaceID_None, mAttribute, attrValue)) {
+        if (attrValue.Equals(mAttributeValue,
+                             nsCaseInsensitiveStringComparator)) {
+          return true;
+        }
+        if (mAttribute == nsGkAtoms::color ||
+            mAttribute == nsGkAtoms::bgcolor) {
+          if (aHTMLEditor.IsCSSEnabled()) {
+            if (HTMLEditUtils::IsSameCSSColorValue(mAttributeValue,
+                                                   attrValue)) {
+              return true;
+            }
+          } else if (HTMLEditUtils::IsSameHTMLColorValue(
+                         mAttributeValue, attrValue,
+                         HTMLEditUtils::TransparentKeyword::Allowed)) {
+            return true;
+          }
+        }
       }
     }
 
@@ -1123,6 +1147,11 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoInlineStyleSetter::ApplyStyle(
             IsCSSSettable(*aContent.GetAsElementOrParentElement())) ||
            
            mAttribute == nsGkAtoms::bgcolor ||
+           
+           
+           
+           (mAttribute == nsGkAtoms::color &&
+            mAttributeValue.LowerCaseEqualsLiteral("transparent")) ||
            
            
            IsStyleToInvert();

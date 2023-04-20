@@ -55,7 +55,6 @@
 #include "mozilla/PresShell.h"              
 #include "mozilla/RangeBoundary.h"       
 #include "mozilla/Services.h"            
-#include "mozilla/ServoCSSParser.h"      
 #include "mozilla/StaticPrefs_bidi.h"    
 #include "mozilla/StaticPrefs_dom.h"     
 #include "mozilla/StaticPrefs_editor.h"  
@@ -123,7 +122,6 @@
 #include "nsStyleConsts.h"             
 #include "nsStyleStruct.h"             
 #include "nsStyleStructFwd.h"          
-#include "nsStyleUtil.h"               
 #include "nsTextNode.h"                
 #include "nsThreadUtils.h"             
 #include "prtime.h"                    
@@ -6200,30 +6198,9 @@ void EditorBase::AutoEditActionDataSetter::SetColorData(
     return;
   }
 
-  bool wasCurrentColor = false;
-  nscolor color = NS_RGB(0, 0, 0);
-  if (!ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0),
-                                    NS_ConvertUTF16toUTF8(aData), &color,
-                                    &wasCurrentColor)) {
-    
-    
-    MOZ_ASSERT(!aData.IsVoid());
-    mData = aData;
-    return;
-  }
-
-  
-  
-  
-  if (wasCurrentColor) {
-    MOZ_ASSERT(!aData.IsVoid());
-    mData = aData;
-    return;
-  }
-
-  
-  nsStyleUtil::GetSerializedColorValue(color, mData);
-  MOZ_ASSERT(!mData.IsVoid());
+  DebugOnly<bool> validColorValue = HTMLEditUtils::GetNormalizedCSSColorValue(
+      aData, HTMLEditUtils::ZeroAlphaColor::RGBAValue, mData);
+  MOZ_ASSERT_IF(validColorValue, !mData.IsVoid());
 }
 
 void EditorBase::AutoEditActionDataSetter::InitializeDataTransfer(
