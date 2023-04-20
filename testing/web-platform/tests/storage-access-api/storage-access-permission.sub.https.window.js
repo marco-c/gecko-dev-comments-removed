@@ -79,7 +79,7 @@
     });
 
     await test_driver.set_permission({ name: 'storage-access' }, 'granted');
-    await RunCallbackWithGesture(() => document.requestStorageAccess());
+    await document.requestStorageAccess();
 
     const event = await p;
 
