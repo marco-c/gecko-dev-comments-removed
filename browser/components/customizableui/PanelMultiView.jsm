@@ -1374,20 +1374,27 @@ var PanelView = class extends AssociatedToNode {
     };
 
     
-    let header = this.node.firstElementChild;
-    if (header && header.classList.contains("panel-header")) {
-      if (value) {
-        
-        
-        header.querySelector(".panel-header > h1 > span").textContent = value;
-        ensureHeaderSeparator(header);
-      } else {
+    let header = this.node.querySelector(".panel-header");
+    if (header) {
+      if (!this.node.getAttribute("mainview")) {
+        if (value) {
+          
+          
+          header.querySelector(".panel-header > h1 > span").textContent = value;
+          ensureHeaderSeparator(header);
+        } else {
+          if (header.nextSibling.tagName == "toolbarseparator") {
+            header.nextSibling.remove();
+          }
+          header.remove();
+        }
+        return;
+      } else if (!this.node.getAttribute("showheader")) {
         if (header.nextSibling.tagName == "toolbarseparator") {
           header.nextSibling.remove();
         }
         header.remove();
       }
-      return;
     }
 
     
