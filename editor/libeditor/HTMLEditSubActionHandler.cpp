@@ -6172,6 +6172,9 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::CreateStyleForInsertText(
     insertNewTextNodeResult.inspect().IgnoreCaretPointSuggestion();
     pointToPutCaret.Set(newEmptyTextNode, 0u);
 
+    
+    
+    
     HTMLEditor::FontSize incrementOrDecrement =
         relFontSize > 0 ? HTMLEditor::FontSize::incr
                         : HTMLEditor::FontSize::decr;
