@@ -238,10 +238,13 @@ class PrintHelper {
     }
 
     
-    let showSystemDialogPromise = new Promise((resolve, reject) => {
-      this.resolveShowSystemDialog = resolve;
-      this.rejectShowSystemDialog = () => {
-        reject(Components.Exception("", Cr.NS_ERROR_ABORT));
+    let showSystemDialogPromise = new Promise(resolve => {
+      this.resolveShowSystemDialog = result => {
+        if (result !== undefined) {
+          resolve(result);
+        } else {
+          resolve(true);
+        }
       };
     });
     let printPromise = new Promise((resolve, reject) => {
@@ -251,7 +254,7 @@ class PrintHelper {
 
     
     this.win.PrintEventHandler._showPrintDialog = (
-      dialogSvc,
+      window,
       haveSelection,
       settings
     ) => {

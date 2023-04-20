@@ -330,33 +330,22 @@ var PrintUtils = {
 
         
         
+        let doPrint = false;
         try {
-          await Cc["@mozilla.org/widget/printdialog-service;1"]
-            .getService(Ci.nsIPrintDialogService)
-            .showPrintDialog(
-              browsingContext.topChromeWindow,
-              hasSelection,
-              settings
-            );
-        } catch (e) {
-          if (browser) {
-            browser.remove(); 
+          doPrint = await PrintUtils.handleSystemPrintDialog(
+            browsingContext.topChromeWindow,
+            hasSelection,
+            settings
+          );
+          if (!doPrint) {
+            return;
           }
-          if (e.result == Cr.NS_ERROR_ABORT) {
-            return; 
+        } finally {
+          
+          if (!doPrint && browser) {
+            browser.remove();
           }
-          throw e;
         }
-
-        
-        var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
-          Ci.nsIPrintSettingsService
-        );
-        PSSVC.maybeSaveLastUsedPrinterNameToPrefs(settings.printerName);
-        PSSVC.maybeSavePrintSettingsToPrefs(
-          settings,
-          Ci.nsIPrintSettings.kInitSaveAll
-        );
       }
 
       
@@ -565,6 +554,35 @@ var PrintUtils = {
       Cu.reportError("PrintUtils.getPrintSettings failed: " + e + "\n");
     }
     return printSettings;
+  },
+
+  
+  
+  async handleSystemPrintDialog(aWindow, aHasSelection, aSettings) {
+    
+    
+    try {
+      const svc = Cc["@mozilla.org/widget/printdialog-service;1"].getService(
+        Ci.nsIPrintDialogService
+      );
+      await svc.showPrintDialog(aWindow, aHasSelection, aSettings);
+    } catch (e) {
+      if (e.result == Cr.NS_ERROR_ABORT) {
+        return false;
+      }
+      throw e;
+    }
+
+    
+    var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
+      Ci.nsIPrintSettingsService
+    );
+    PSSVC.maybeSaveLastUsedPrinterNameToPrefs(aSettings.printerName);
+    PSSVC.maybeSavePrintSettingsToPrefs(
+      aSettings,
+      Ci.nsIPrintSettings.kPrintDialogPersistSettings
+    );
+    return true;
   },
 };
 
