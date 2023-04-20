@@ -997,6 +997,17 @@ struct MOZ_STACK_CLASS EditorInlineStyle : public EditorElementStyle {
   
 
 
+  [[nodiscard]] bool IsStyleOfFontElement() const {
+    MOZ_ASSERT_IF(
+        mHTMLProperty == nsGkAtoms::font,
+        mAttribute == nsGkAtoms::bgcolor || mAttribute == nsGkAtoms::color ||
+            mAttribute == nsGkAtoms::face || mAttribute == nsGkAtoms::size);
+    return mHTMLProperty == nsGkAtoms::font && mAttribute != nsGkAtoms::bgcolor;
+  }
+
+  
+
+
 
   [[nodiscard]] bool IsStyleConflictingWithVerticalAlign() const {
     return mHTMLProperty == nsGkAtoms::sup || mHTMLProperty == nsGkAtoms::sub;
