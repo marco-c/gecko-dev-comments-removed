@@ -36,10 +36,7 @@ add_task(async function test_migrateLegacyEngine() {
   );
 
   engine = Services.search.getEngineByName("simple");
-  Assert.equal(
-    engine.wrappedJSObject._loadPath,
-    "[other]addEngineWithDetails:" + kExtensionID
-  );
+  Assert.equal(engine.wrappedJSObject._loadPath, "[addon]" + kExtensionID);
   Assert.equal(engine.wrappedJSObject._extensionID, kExtensionID);
 
   Assert.equal(
@@ -79,10 +76,7 @@ add_task(async function test_migrateLegacyEngineDifferentName() {
 
   
   engine = Services.search.getEngineByName("simple search");
-  Assert.equal(
-    engine.wrappedJSObject._loadPath,
-    "[other]addEngineWithDetails:" + kExtensionID
-  );
+  Assert.equal(engine.wrappedJSObject._loadPath, "[addon]" + kExtensionID);
   Assert.equal(engine.wrappedJSObject._extensionID, kExtensionID);
 
   Assert.equal(
