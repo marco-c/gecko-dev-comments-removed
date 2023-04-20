@@ -15,7 +15,7 @@ add_task(async function() {
   
   
   
-  let expectedParents = [PlacesUtils.toolbarFolderId];
+  let expectedParentGuids = [PlacesUtils.bookmarks.toolbarGuid];
   let itemCount = 0;
 
   let gotFolder = false;
@@ -28,10 +28,10 @@ add_task(async function() {
       ) {
         gotFolder = true;
       }
-      if (expectedParents.length) {
-        let index = expectedParents.indexOf(event.parentId);
+      if (expectedParentGuids.length) {
+        let index = expectedParentGuids.indexOf(event.parentGuid);
         Assert.ok(index != -1, "Found expected parent");
-        expectedParents.splice(index, 1);
+        expectedParentGuids.splice(index, 1);
       }
     }
   };
@@ -56,7 +56,7 @@ add_task(async function() {
   PlacesUtils.observers.removeListener(["bookmark-added"], listener);
 
   
-  Assert.ok(!expectedParents.length, "No more expected parents");
+  Assert.ok(!expectedParentGuids.length, "No more expected parents");
   Assert.ok(gotFolder, "Should have seen the folder get imported");
   Assert.equal(itemCount, 13, "Should import all 13 items.");
   
