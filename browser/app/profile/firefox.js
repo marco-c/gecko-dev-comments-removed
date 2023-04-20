@@ -2162,7 +2162,6 @@ pref("browser.migrate.canary.enabled", true);
 pref("browser.migrate.chrome.enabled", true);
 
 pref("browser.migrate.chrome.history.limit", 2000);
-pref("browser.migrate.chrome.history.maxAgeInDays", 180);
 
 pref("browser.migrate.chrome-beta.enabled", true);
 pref("browser.migrate.chrome-dev.enabled", true);
@@ -2180,6 +2179,9 @@ pref("browser.migrate.vivaldi.enabled", true);
 
 pref("browser.migrate.content-modal.enabled", false);
 pref("browser.migrate.content-modal.import-all.enabled", false);
+
+
+pref("browser.migrate.history.maxAgeInDays", 180);
 
 pref("extensions.pocket.api", "api.getpocket.com");
 pref("extensions.pocket.bffApi", "firefox-api-proxy.readitlater.com");

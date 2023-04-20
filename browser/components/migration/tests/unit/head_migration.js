@@ -165,3 +165,27 @@ function getRootPath() {
   }
   return Services.dirsvc.get(dirKey, Ci.nsIFile).path;
 }
+
+
+
+
+
+
+
+
+
+function PRTimeDaysAgo(daysAgo) {
+  return PlacesUtils.toPRTime(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+}
+
+
+
+
+
+
+
+
+
+function dateDaysAgo(daysAgo) {
+  return new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+}
