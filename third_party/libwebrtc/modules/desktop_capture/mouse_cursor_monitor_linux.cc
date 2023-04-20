@@ -17,7 +17,7 @@
 #include "modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.h"
 #endif  
 
-#if defined(WEBRTC_USE_PIPEWIRE) && !defined(WEBRTC_MOZILLA_BUILD)
+#if defined(WEBRTC_USE_PIPEWIRE)
 #include "modules/desktop_capture/linux/wayland/mouse_cursor_monitor_pipewire.h"
 #endif  
 
@@ -48,7 +48,8 @@ MouseCursorMonitor* MouseCursorMonitor::CreateForScreen(
 
 std::unique_ptr<MouseCursorMonitor> MouseCursorMonitor::Create(
     const DesktopCaptureOptions& options) {
-#if defined(WEBRTC_USE_PIPEWIRE) && !defined(WEBRTC_MOZILLA_BUILD)
+
+#if defined(WEBRTC_USE_PIPEWIRE)
   if (options.allow_pipewire() && DesktopCapturer::IsRunningUnderWayland() &&
       options.screencast_stream()) {
     return std::make_unique<MouseCursorMonitorPipeWire>(options);
