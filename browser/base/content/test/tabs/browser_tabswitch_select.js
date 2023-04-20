@@ -30,6 +30,34 @@ add_task(async function() {
   is(gURLBar.selectionStart, 0, "url is selected");
   is(gURLBar.selectionEnd, 22, "url is selected");
 
+  
+
+  let fullScreenEntered = TestUtils.waitForCondition(
+    () => document.documentElement.getAttribute("sizemode") == "fullscreen"
+  );
+  BrowserFullScreen();
+  await fullScreenEntered;
+
+  tab2.linkedBrowser.focus();
+
+  
+  focusPromise = BrowserTestUtils.waitForEvent(
+    gURLBar.inputField,
+    "focus",
+    true
+  );
+  EventUtils.synthesizeKey("T", { accelKey: true });
+  await focusPromise;
+
+  is(document.activeElement, gURLBar.inputField, "urlbar is focused");
+
+  let fullScreenExited = TestUtils.waitForCondition(
+    () => document.documentElement.getAttribute("sizemode") != "fullscreen"
+  );
+  BrowserFullScreen();
+  await fullScreenExited;
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
 });

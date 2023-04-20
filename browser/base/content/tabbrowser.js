@@ -1412,18 +1412,20 @@
           }
         };
 
-        if (!window.fullScreen) {
-          selectURL();
-          return;
-        }
-
-        if (newTab.isEmpty) {
-          
-          
+        
+        
+        
+        
+        if (window.document.documentElement.hasAttribute("inDOMFullscreen")) {
           window.addEventListener("MozDOMFullscreen:Exited", selectURL, {
             once: true,
             wantsUntrusted: false,
           });
+          return;
+        }
+
+        if (!window.fullScreen || newTab.isEmpty) {
+          selectURL();
           return;
         }
       }
