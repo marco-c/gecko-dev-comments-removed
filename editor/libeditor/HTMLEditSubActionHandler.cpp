@@ -771,6 +771,19 @@ Result<EditActionResult, nsresult> HTMLEditor::CanHandleHTMLEditSubAction(
   
   
   
+  
+  
+  nsIContent* const selAnchorContent = SelectionRef().GetDirection() == eDirNext
+                                           ? nsIContent::FromNode(selStartNode)
+                                           : nsIContent::FromNode(selEndNode);
+  if (selAnchorContent &&
+      HTMLEditUtils::ContentIsInert(*selAnchorContent->AsContent())) {
+    return EditActionResult::CanceledResult();
+  }
+
+  
+  
+  
   nsINode* commonAncestor = range->GetClosestCommonInclusiveAncestor();
   if (MOZ_UNLIKELY(!commonAncestor)) {
     NS_WARNING(

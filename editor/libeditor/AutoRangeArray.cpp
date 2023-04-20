@@ -127,6 +127,27 @@ void AutoRangeArray::EnsureOnlyEditableRanges(const Element& aEditingHost) {
     const OwningNonNull<nsRange>& range = mRanges[i - 1];
     if (!AutoRangeArray::IsEditableRange(range, aEditingHost)) {
       mRanges.RemoveElementAt(i - 1);
+      continue;
+    }
+    
+    
+    nsIContent* anchorContent =
+        mDirection == eDirNext
+            ? nsIContent::FromNode(range->GetStartContainer())
+            : nsIContent::FromNode(range->GetEndContainer());
+    if (anchorContent && HTMLEditUtils::ContentIsInert(*anchorContent)) {
+      mRanges.RemoveElementAt(i - 1);
+      continue;
+    }
+    
+    
+    nsIContent* focusContent =
+        mDirection == eDirNext
+            ? nsIContent::FromNode(range->GetEndContainer())
+            : nsIContent::FromNode(range->GetStartContainer());
+    if (focusContent && focusContent != anchorContent &&
+        HTMLEditUtils::ContentIsInert(*focusContent)) {
+      range->Collapse(mDirection == eDirNext);
     }
   }
   mAnchorFocusRange = mRanges.IsEmpty() ? nullptr : mRanges.LastElement().get();
@@ -208,10 +229,15 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
 
   
   
-  MOZ_ASSERT(aEditorBase.SelectionRef().GetAnchorFocusRange()->StartRef() ==
-             mAnchorFocusRange->StartRef());
-  MOZ_ASSERT(aEditorBase.SelectionRef().GetAnchorFocusRange()->EndRef() ==
-             mAnchorFocusRange->EndRef());
+  
+  
+  if (MOZ_UNLIKELY(
+          aEditorBase.SelectionRef().GetAnchorFocusRange()->StartRef() !=
+              mAnchorFocusRange->StartRef() ||
+          aEditorBase.SelectionRef().GetAnchorFocusRange()->EndRef() !=
+              mAnchorFocusRange->EndRef())) {
+    return aDirectionAndAmount;
+  }
 
   RefPtr<nsFrameSelection> frameSelection =
       aEditorBase.SelectionRef().GetFrameSelection();
