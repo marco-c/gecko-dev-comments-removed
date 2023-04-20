@@ -2439,6 +2439,18 @@ void MediaFormatReader::Update(TrackType aTrack) {
          NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR)) {
       needsNewDecoder = true;
     }
+    
+    
+    
+    if (decoder.mError.ref() ==
+        NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_MF_CDM_ERR) {
+      LOG("Error: notify MF CDM crash and shutdown %s decoder",
+          TrackTypeToStr(aTrack));
+      ShutdownDecoder(aTrack);
+      decoder.RejectPromise(decoder.mError.ref(), __func__);
+      decoder.mError.reset();
+      return;
+    }
 #ifdef XP_LINUX
     
     
@@ -2472,6 +2484,7 @@ void MediaFormatReader::Update(TrackType aTrack) {
       NotifyError(aTrack, decoder.mError.ref());
       return;
     }
+
     if (firstFrameDecodingFailedWithHardware) {
       decoder.mHardwareDecodingDisabled = true;
     }
