@@ -623,6 +623,12 @@ nsGIOInputStream::Available(uint64_t* aResult) {
 
 
 
+NS_IMETHODIMP
+nsGIOInputStream::StreamStatus() { return mStatus; }
+
+
+
+
 
 
 

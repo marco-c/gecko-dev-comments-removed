@@ -37,7 +37,7 @@ class nsInputStreamTee final : public nsIInputStreamTee {
   void InvalidateSink();
 
  private:
-  ~nsInputStreamTee() {}
+  ~nsInputStreamTee() = default;
 
   nsresult TeeSegment(const char* aBuf, uint32_t aCount);
 
@@ -213,6 +213,14 @@ nsInputStreamTee::Available(uint64_t* aAvail) {
     return NS_ERROR_NOT_INITIALIZED;
   }
   return mSource->Available(aAvail);
+}
+
+NS_IMETHODIMP
+nsInputStreamTee::StreamStatus() {
+  if (NS_WARN_IF(!mSource)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+  return mSource->StreamStatus();
 }
 
 NS_IMETHODIMP

@@ -93,6 +93,21 @@ SnappyUncompressInputStream::Available(uint64_t* aLengthOut) {
 }
 
 NS_IMETHODIMP
+SnappyUncompressInputStream::StreamStatus() {
+  if (!mBaseStream) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+
+  
+  if (UncompressedLength() > 0) {
+    return NS_OK;
+  }
+
+  
+  return mBaseStream->StreamStatus();
+}
+
+NS_IMETHODIMP
 SnappyUncompressInputStream::Read(char* aBuf, uint32_t aCount,
                                   uint32_t* aBytesReadOut) {
   return ReadSegments(NS_CopySegmentToBuffer, aBuf, aCount, aBytesReadOut);

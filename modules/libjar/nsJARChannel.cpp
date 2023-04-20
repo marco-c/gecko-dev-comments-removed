@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set sw=2 ts=8 et tw=80 : */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsJAR.h"
 #include "nsJARChannel.h"
@@ -36,20 +36,20 @@ using namespace mozilla::net;
 
 static NS_DEFINE_CID(kZipReaderCID, NS_ZIPREADER_CID);
 
-// the entry for a directory will either be empty (in the case of the
-// top-level directory) or will end with a slash
+
+
 #define ENTRY_IS_DIRECTORY(_entry) \
   ((_entry).IsEmpty() || '/' == (_entry).Last())
 
-//-----------------------------------------------------------------------------
 
-//
-// set MOZ_LOG=nsJarProtocol:5
-//
+
+
+
+
 static LazyLogModule gJarProtocolLog("nsJarProtocol");
 
-// Ignore any LOG macro that we inherit from arbitrary headers. (We define our
-// own LOG macro below.)
+
+
 #ifdef LOG
 #  undef LOG
 #endif
@@ -60,11 +60,11 @@ static LazyLogModule gJarProtocolLog("nsJarProtocol");
 #define LOG(args) MOZ_LOG(gJarProtocolLog, mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(gJarProtocolLog, mozilla::LogLevel::Debug)
 
-//-----------------------------------------------------------------------------
-// nsJARInputThunk
-//
-// this class allows us to do some extra work on the stream transport thread.
-//-----------------------------------------------------------------------------
+
+
+
+
+
 
 class nsJARInputThunk : public nsIInputStream {
  public:
@@ -112,8 +112,8 @@ NS_IMPL_ISUPPORTS(nsJARInputThunk, nsIInputStream)
 nsresult nsJARInputThunk::Init() {
   nsresult rv;
   if (ENTRY_IS_DIRECTORY(mJarEntry)) {
-    // A directory stream also needs the Spec of the FullJarURI
-    // because is included in the stream data itself.
+    
+    
 
     NS_ENSURE_STATE(!mJarDirSpec.IsEmpty());
 
@@ -126,7 +126,7 @@ nsresult nsJARInputThunk::Init() {
     return rv;
   }
 
-  // ask the JarStream for the content length
+  
   uint64_t avail;
   rv = mJarStream->Available((uint64_t*)&avail);
   if (NS_FAILED(rv)) return rv;
@@ -155,6 +155,11 @@ nsJARInputThunk::Available(uint64_t* avail) {
 }
 
 NS_IMETHODIMP
+nsJARInputThunk::StreamStatus() {
+  return mJarStream->StreamStatus();
+}
+
+NS_IMETHODIMP
 nsJARInputThunk::Read(char* buf, uint32_t count, uint32_t* countRead) {
   return mJarStream->Read(buf, count, countRead);
 }
@@ -162,7 +167,7 @@ nsJARInputThunk::Read(char* buf, uint32_t count, uint32_t* countRead) {
 NS_IMETHODIMP
 nsJARInputThunk::ReadSegments(nsWriteSegmentFun writer, void* closure,
                               uint32_t count, uint32_t* countRead) {
-  // stream transport does only calls Read()
+  
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -172,9 +177,9 @@ nsJARInputThunk::IsNonBlocking(bool* nonBlocking) {
   return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsJARChannel
-//-----------------------------------------------------------------------------
+
+
+
 
 nsJARChannel::nsJARChannel()
     : mOpened(false),
@@ -186,7 +191,7 @@ nsJARChannel::nsJARChannel()
       mEnableOMT(true),
       mPendingEvent() {
   LOG(("nsJARChannel::nsJARChannel [this=%p]\n", this));
-  // hold an owning reference to the jar handler
+  
   mJarHandler = gJarHandler;
 }
 
@@ -196,7 +201,7 @@ nsJARChannel::~nsJARChannel() {
     return;
   }
 
-  // Proxy release the following members to main thread.
+  
   NS_ReleaseOnMainThread("nsJARChannel::mLoadInfo", mLoadInfo.forget());
   NS_ReleaseOnMainThread("nsJARChannel::mCallbacks", mCallbacks.forget());
   NS_ReleaseOnMainThread("nsJARChannel::mProgressSink", mProgressSink.forget());
@@ -223,7 +228,7 @@ nsresult nsJARChannel::Init(nsIURI* uri) {
 
   mOriginalURI = mJarURI;
 
-  // Prevent loading jar:javascript URIs (see bug 290982).
+  
   nsCOMPtr<nsIURI> innerURI;
   rv = mJarURI->GetJARFile(getter_AddRefs(innerURI));
   if (NS_FAILED(rv)) {
@@ -245,8 +250,8 @@ nsresult nsJARChannel::CreateJarInput(nsIZipReaderCache* jarCache,
   MOZ_ASSERT(resultInput);
   MOZ_ASSERT(mJarFile);
 
-  // important to pass a clone of the file since the nsIFile impl is not
-  // necessarily MT-safe
+  
+  
   nsCOMPtr<nsIFile> clonedFile;
   nsresult rv = NS_OK;
   if (mJarFile) {
@@ -264,7 +269,7 @@ nsresult nsJARChannel::CreateJarInput(nsIZipReaderCache* jarCache,
       rv = jarCache->GetInnerZip(clonedFile, mInnerJarEntry,
                                  getter_AddRefs(reader));
   } else {
-    // create an uncached jar reader
+    
     nsCOMPtr<nsIZipReader> outerReader = do_CreateInstance(kZipReaderCID, &rv);
     if (NS_FAILED(rv)) return rv;
 
@@ -289,7 +294,7 @@ nsresult nsJARChannel::CreateJarInput(nsIZipReaderCache* jarCache,
     return rv;
   }
 
-  // Make GetContentLength meaningful
+  
   mContentLength = input->GetContentLength();
 
   input.forget(resultInput);
@@ -309,10 +314,10 @@ nsresult nsJARChannel::LookupFile() {
   rv = mJarURI->GetJAREntry(mJarEntry);
   if (NS_FAILED(rv)) return rv;
 
-  // The name of the JAR entry must not contain URL-escaped characters:
-  // we're moving from URL domain to a filename domain here. nsStandardURL
-  // does basic escaping by default, which breaks reading zipped files which
-  // have e.g. spaces in their filenames.
+  
+  
+  
+  
   NS_UnescapeURL(mJarEntry);
 
   if (mJarFileOverride) {
@@ -321,13 +326,13 @@ nsresult nsJARChannel::LookupFile() {
     return NS_OK;
   }
 
-  // try to get a nsIFile directly from the url, which will often succeed.
+  
   {
     nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(mJarBaseURI);
     if (fileURL) fileURL->GetFile(getter_AddRefs(mJarFile));
   }
 
-  // try to handle a nested jar
+  
   if (!mJarFile) {
     nsCOMPtr<nsIJARURI> jarURI = do_QueryInterface(mJarBaseURI);
     if (jarURI) {
@@ -391,8 +396,8 @@ nsresult nsJARChannel::OpenLocalFile() {
 
   nsresult rv;
 
-  // Set mLoadGroup and mOpened before AsyncOpen return, and set back if
-  // if failed when callback.
+  
+  
   if (mLoadGroup) {
     mLoadGroup->AddRequest(this, nullptr);
   }
@@ -443,8 +448,8 @@ nsresult nsJARChannel::OpenLocalFile() {
               &nsJARChannel::OnOpenLocalFileComplete, rv, false);
         }
 
-        // nsJARChannel must be release on main thread, and sometimes
-        // this still hold nsJARChannel after dispatched.
+        
+        
         self = nullptr;
 
         NS_DispatchToMainThread(target.forget());
@@ -458,12 +463,12 @@ nsresult nsJARChannel::ContinueOpenLocalFile(nsJARInputThunk* aInput,
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mIsPending);
 
-  // Make GetContentLength meaningful
+  
   mContentLength = aInput->GetContentLength();
 
   nsresult rv;
   RefPtr<nsJARInputThunk> input = aInput;
-  // Create input stream pump and call AsyncRead as a block.
+  
   rv = NS_NewInputStreamPump(getter_AddRefs(mPump), input.forget());
   if (NS_SUCCEEDED(rv)) {
     rv = mPump->AsyncRead(this);
@@ -548,9 +553,9 @@ void nsJARChannel::FireOnProgress(uint64_t aProgress) {
   mProgressSink->OnProgress(this, aProgress, mContentLength);
 }
 
-//-----------------------------------------------------------------------------
-// nsIRequest
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 nsJARChannel::GetName(nsACString& result) { return mJarURI->GetSpec(result); }
@@ -668,9 +673,9 @@ nsJARChannel::SetLoadGroup(nsILoadGroup* aLoadGroup) {
   return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsIChannel
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 nsJARChannel::GetOriginalURI(nsIURI** aURI) {
@@ -695,8 +700,8 @@ nsJARChannel::GetURI(nsIURI** aURI) {
 
 NS_IMETHODIMP
 nsJARChannel::GetOwner(nsISupports** aOwner) {
-  // JAR signatures are not processed to avoid main-thread network I/O (bug
-  // 726125)
+  
+  
   *aOwner = mOwner;
   NS_IF_ADDREF(*aOwner);
   return NS_OK;
@@ -744,15 +749,15 @@ bool nsJARChannel::GetContentTypeGuess(nsACString& aResult) const {
   const char *ext = nullptr, *fileName = mJarEntry.get();
   int32_t len = mJarEntry.Length();
 
-  // check if we're displaying a directory
-  // mJarEntry will be empty if we're trying to display
-  // the topmost directory in a zip, e.g. jar:foo.zip!/
+  
+  
+  
   if (ENTRY_IS_DIRECTORY(mJarEntry)) {
     aResult.AssignLiteral(APPLICATION_HTTP_INDEX_FORMAT);
     return true;
   }
 
-  // Not a directory, take a guess by its extension
+  
   for (int32_t i = len - 1; i >= 0; i--) {
     if (fileName[i] == '.') {
       ext = &fileName[i + 1];
@@ -772,8 +777,8 @@ bool nsJARChannel::GetContentTypeGuess(nsACString& aResult) const {
 
 NS_IMETHODIMP
 nsJARChannel::GetContentType(nsACString& aResult) {
-  // If the Jar file has not been open yet,
-  // We return application/x-unknown-content-type
+  
+  
   if (!mOpened) {
     aResult.AssignLiteral(UNKNOWN_CONTENT_TYPE);
     return NS_OK;
@@ -785,17 +790,17 @@ nsJARChannel::GetContentType(nsACString& aResult) {
 
 NS_IMETHODIMP
 nsJARChannel::SetContentType(const nsACString& aContentType) {
-  // We behave like HTTP channels (treat this as a hint if called before open,
-  // and override the charset if called after open).
-  // mContentCharset is unchanged if not parsed
+  
+  
+  
   NS_ParseResponseContentType(aContentType, mContentType, mContentCharset);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsJARChannel::GetContentCharset(nsACString& aContentCharset) {
-  // If someone gives us a charset hint we should just use that charset.
-  // So we don't care when this is being called.
+  
+  
   aContentCharset = mContentCharset;
   return NS_OK;
 }
@@ -842,7 +847,7 @@ nsJARChannel::GetContentLength(int64_t* result) {
 
 NS_IMETHODIMP
 nsJARChannel::SetContentLength(int64_t aContentLength) {
-  // XXX does this really make any sense at all?
+  
   mContentLength = aContentLength;
   return NS_OK;
 }
@@ -863,8 +868,8 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     }
   }
 
-  // The event can only hold 80 characters.
-  // We only save the file name and path inside the jar.
+  
+  
   auto findFilenameStart = [](const nsCString& aSpec) -> uint32_t {
     int32_t pos = aSpec.Find("!/");
     if (pos == kNotFound) {
@@ -876,20 +881,20 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
       MOZ_ASSERT(false, "This should not happen");
       return 0;
     }
-    // Skip over the slash
+    
     from++;
     return from;
   };
 
-  // If for some reason we are unable to extract the filename we report the
-  // entire string, or 80 characters of it, to make sure we don't miss any
-  // events.
+  
+  
+  
   uint32_t from = findFilenameStart(aSpec);
   nsAutoCString fileName(Substring(aSpec, from));
 
-  // Bug 1702937: Filter aboutNetError.xhtml.
-  // Note that aboutNetError.xhtml is causing ~90% of the XHTML error events. We
-  // should investigate this in the future.
+  
+  
+  
   if (StringEndsWith(fileName, "aboutNetError.xhtml"_ns)) {
     return;
   }
@@ -897,8 +902,8 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   nsAutoCString errorCString;
   mozilla::GetErrorName(aStatus, errorCString);
 
-  // To test this telemetry we use a zip file and we want to make
-  // sure don't filter it out.
+  
+  
   bool isTest = fileName.Find("test_empty_file.zip!") != -1;
   bool isOmniJa = StringBeginsWith(fileName, "omni.ja!"_ns);
 
@@ -907,8 +912,8 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   if (StringEndsWith(fileName, ".ftl"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Ftl;
   } else if (StringEndsWith(fileName, ".dtd"_ns)) {
-    // We're going to skip reporting telemetry on res DTDs.
-    // See Bug 1693711 for investigation into those empty loads.
+    
+    
     if (!isTest && StringBeginsWith(fileName, "omni.ja!/res/dtd"_ns)) {
       return;
     }
@@ -918,9 +923,9 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     eventType = Telemetry::EventID::Zero_byte_load_Load_Properties;
   } else if (StringEndsWith(fileName, ".js"_ns) ||
              StringEndsWith(fileName, ".jsm"_ns)) {
-    // We're going to skip reporting telemetry on JS loads
-    // coming not from omni.ja.
-    // See Bug 1693711 for investigation into those empty loads.
+    
+    
+    
     if (!isTest && !isOmniJa) {
       return;
     }
@@ -928,26 +933,26 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   } else if (StringEndsWith(fileName, ".xml"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Xml;
   } else if (StringEndsWith(fileName, ".xhtml"_ns)) {
-    // This error seems to be very common and is not strongly
-    // correlated to YSOD.
+    
+    
     if (aStatus == NS_ERROR_PARSED_DATA_CACHED) {
       return;
     }
 
-    // We're not investigating YSODs from extensions for now.
+    
     if (!isOmniJa) {
       return;
     }
 
     eventType = Telemetry::EventID::Zero_byte_load_Load_Xhtml;
   } else if (StringEndsWith(fileName, ".css"_ns)) {
-    // Bug 1702937: Filter out svg+'css'+'png'/NS_BINDING_ABORTED combo.
+    
     if (aStatus == NS_BINDING_ABORTED) {
       return;
     }
 
-    // Bug 1702937: Filter css/NS_ERROR_CORRUPTED_CONTENT that is coming from
-    // outside of omni.ja.
+    
+    
     if (!isOmniJa && aStatus == NS_ERROR_CORRUPTED_CONTENT) {
       return;
     }
@@ -956,13 +961,13 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     eventType = Telemetry::EventID::Zero_byte_load_Load_Json;
   } else if (StringEndsWith(fileName, ".html"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Html;
-    // See bug 1695560. Filter out non-omni.ja HTML.
+    
     if (!isOmniJa) {
       return;
     }
 
-    // See bug 1695560. "activity-stream-noscripts.html" with NS_ERROR_FAILURE
-    // is filtered out.
+    
+    
     if (fileName.EqualsLiteral("omni.ja!/chrome/browser/res/activity-stream/"
                                "prerendered/activity-stream-noscripts.html") &&
         aStatus == NS_ERROR_FAILURE) {
@@ -970,34 +975,34 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     }
   } else if (StringEndsWith(fileName, ".png"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Png;
-    // See bug 1695560.
-    // Bug 1702937: Filter out svg+'css'+'png'/NS_BINDING_ABORTED combo.
+    
+    
     if (!isOmniJa || aStatus == NS_BINDING_ABORTED) {
       return;
     }
   } else if (StringEndsWith(fileName, ".svg"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Svg;
-    // See bug 1695560.
-    // Bug 1702937: Filter out svg+'css'+'png'/NS_BINDING_ABORTED combo.
+    
+    
     if (!isOmniJa || aStatus == NS_BINDING_ABORTED) {
       return;
     }
   }
 
-  // We're going to, for now, filter out `other` category.
-  // See Bug 1693711 for investigation into those empty loads.
-  // Bug 1702937: Filter other/*.ico/NS_BINDING_ABORTED.
+  
+  
+  
   if (!isTest && eventType == Telemetry::EventID::Zero_byte_load_Load_Others &&
       (!isOmniJa || (aStatus == NS_BINDING_ABORTED &&
                      StringEndsWith(fileName, ".ico"_ns)))) {
     return;
   }
 
-  // FTL uses I/O to test for file presence, so we get
-  // a high volume of events from it, but it is not erronous.
-  // Also, Fluent is resilient to empty loads, so even if any
-  // of the errors are real errors, they don't cause YSOD.
-  // We can investigate them separately.
+  
+  
+  
+  
+  
   if (!isTest &&
       (eventType == Telemetry::EventID::Zero_byte_load_Load_Ftl ||
        eventType == Telemetry::EventID::Zero_byte_load_Load_Json) &&
@@ -1005,16 +1010,16 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     return;
   }
 
-  // See bug 1695560. "search-extensions/google/favicon.ico" with
-  // NS_BINDING_ABORTED is filtered out.
+  
+  
   if (fileName.EqualsLiteral(
           "omni.ja!/chrome/browser/search-extensions/google/favicon.ico") &&
       aStatus == NS_BINDING_ABORTED) {
     return;
   }
 
-  // See bug 1695560. "update.locale" with
-  // NS_ERROR_FILE_NOT_FOUND is filtered out.
+  
+  
   if (fileName.EqualsLiteral("omni.ja!/update.locale") &&
       aStatus == NS_ERROR_FILE_NOT_FOUND) {
     return;
@@ -1055,7 +1060,7 @@ nsJARChannel::Open(nsIInputStream** aStream) {
   rv = LookupFile();
   if (NS_FAILED(rv)) return rv;
 
-  // If mJarFile was not set by LookupFile, we can't open a channel.
+  
   if (!mJarFile) {
     MOZ_ASSERT_UNREACHABLE("only file-backed jars are supported");
     return NS_ERROR_NOT_IMPLEMENTED;
@@ -1074,7 +1079,7 @@ nsJARChannel::Open(nsIInputStream** aStream) {
 void nsJARChannel::SetOpened() {
   MOZ_ASSERT(!mOpened, "Opening channel twice?");
   mOpened = true;
-  // Compute the content type now.
+  
   if (!GetContentTypeGuess(mContentType)) {
     mContentType.Assign(UNKNOWN_CONTENT_TYPE);
   }
@@ -1110,7 +1115,7 @@ nsJARChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   mJarFile = nullptr;
 
-  // Initialize mProgressSink
+  
   NS_QueryNotificationCallbacks(mCallbacks, mLoadGroup, mProgressSink);
 
   mListener = listener;
@@ -1118,7 +1123,7 @@ nsJARChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   rv = LookupFile();
   if (NS_FAILED(rv) || !mJarFile) {
-    // Not a local file...
+    
     mIsPending = false;
     mListener = nullptr;
     mCallbacks = nullptr;
@@ -1138,9 +1143,9 @@ nsJARChannel::AsyncOpen(nsIStreamListener* aListener) {
   return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
-// nsIJARChannel
-//-----------------------------------------------------------------------------
+
+
+
 NS_IMETHODIMP
 nsJARChannel::GetJarFile(nsIFile** aFile) {
   NS_IF_ADDREF(*aFile = mJarFile);
@@ -1166,7 +1171,7 @@ nsJARChannel::EnsureCached(bool* aIsCached) {
   }
 
   if (mPreCachedJarReader) {
-    // We've already been called and found the JAR is cached
+    
     *aIsCached = true;
     return NS_OK;
   }
@@ -1218,9 +1223,9 @@ nsJARChannel::GetZipEntry(nsIZipEntry** aZipEntry) {
   return reader->GetEntry(mJarEntry, aZipEntry);
 }
 
-//-----------------------------------------------------------------------------
-// nsIStreamListener
-//-----------------------------------------------------------------------------
+
+
+
 
 NS_IMETHODIMP
 nsJARChannel::OnStartRequest(nsIRequest* req) {
@@ -1232,7 +1237,7 @@ nsJARChannel::OnStartRequest(nsIRequest* req) {
     return rv;
   }
 
-  // Restrict loadable content types.
+  
   nsAutoCString contentType;
   GetContentType(contentType);
   auto contentPolicyType = mLoadInfo->GetExternalContentPolicyType();
@@ -1276,13 +1281,13 @@ nsJARChannel::OnStopRequest(nsIRequest* req, nsresult status) {
   mPump = nullptr;
   mIsPending = false;
 
-  // Drop notification callbacks to prevent cycles.
+  
   mCallbacks = nullptr;
   mProgressSink = nullptr;
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA)
 #else
-  // To deallocate file descriptor by RemoteOpenFileChild destructor.
+  
   mJarFile = nullptr;
 #endif
 
@@ -1296,7 +1301,7 @@ nsJARChannel::OnDataAvailable(nsIRequest* req, nsIInputStream* stream,
 
   nsresult rv;
 
-  // don't send out OnDataAvailable notifications if we've been canceled.
+  
   if (mCanceled) {
     return mStatus;
   }
@@ -1304,9 +1309,9 @@ nsJARChannel::OnDataAvailable(nsIRequest* req, nsIInputStream* stream,
   mOnDataCalled = true;
   rv = mListener->OnDataAvailable(this, stream, offset, count);
 
-  // simply report progress here instead of hooking ourselves up as a
-  // nsITransportEventSink implementation.
-  // XXX do the 64-bit stuff for real
+  
+  
+  
   if (mProgressSink && NS_SUCCEEDED(rv)) {
     if (NS_IsMainThread()) {
       FireOnProgress(offset + count);
@@ -1317,7 +1322,7 @@ nsJARChannel::OnDataAvailable(nsIRequest* req, nsIInputStream* stream,
     }
   }
 
-  return rv;  // let the pump cancel on failure
+  return rv;  
 }
 
 NS_IMETHODIMP

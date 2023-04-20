@@ -336,6 +336,12 @@ nsBMPEncoder::Available(uint64_t* _retval) {
 
 
 NS_IMETHODIMP
+nsBMPEncoder::StreamStatus() {
+  return mImageBufferStart && mImageBufferCurr ? NS_OK : NS_BASE_STREAM_CLOSED;
+}
+
+
+NS_IMETHODIMP
 nsBMPEncoder::Read(char* aBuf, uint32_t aCount, uint32_t* _retval) {
   return ReadSegments(NS_CopySegmentToBuffer, aBuf, aCount, _retval);
 }

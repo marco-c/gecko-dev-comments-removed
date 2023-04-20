@@ -64,6 +64,7 @@ interface nsIInputStream : nsISupports
 
 
 
+
     void close();
 
     
@@ -91,6 +92,24 @@ interface nsIInputStream : nsISupports
 
 
     unsigned long long available();
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void streamStatus();
 
     
 
