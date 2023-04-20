@@ -249,13 +249,11 @@ add_task(async function setup() {
   let dirSvcFile = do_get_file(dirSvcPath);
   registerFakePath(pathId, dirSvcFile);
 
-  
-  
-  
-  
-  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-  info(OS.Path.join(dirSvcFile.path, ...profilePathSegments));
-  let loginDataFilePath = OS.Path.join(dirSvcFile.path, ...profilePathSegments);
+  info(PathUtils.join(dirSvcFile.path, ...profilePathSegments));
+  let loginDataFilePath = PathUtils.join(
+    dirSvcFile.path,
+    ...profilePathSegments
+  );
   dbConn = await Sqlite.openConnection({ path: loginDataFilePath });
 
   if (AppConstants.platform == "macosx") {
