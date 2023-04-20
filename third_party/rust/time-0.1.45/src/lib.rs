@@ -36,7 +36,6 @@
 #![allow(unknown_lints)]
 #![allow(ellipsis_inclusive_range_patterns)] 
 #![allow(trivial_numeric_casts)]
-#![cfg_attr(test, deny(warnings))]
 
 #[cfg(unix)] extern crate libc;
 #[cfg(windows)] extern crate winapi;
