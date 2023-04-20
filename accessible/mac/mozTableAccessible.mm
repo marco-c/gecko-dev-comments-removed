@@ -8,7 +8,6 @@
 #import "mozTableAccessible.h"
 #import "nsCocoaUtils.h"
 #import "MacUtils.h"
-#import "RotorRules.h"
 
 #include "AccIterator.h"
 #include "LocalAccessible.h"
@@ -507,6 +506,36 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
 }
 
 @end
+
+
+
+
+
+
+class OutlineRule : public PivotRule {
+ public:
+  uint16_t Match(Accessible* aAcc) override {
+    uint16_t result = nsIAccessibleTraversalRule::FILTER_IGNORE;
+
+    if (nsAccUtils::MustPrune(aAcc)) {
+      result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+    }
+
+    if (![GetNativeFromGeckoAccessible(aAcc) isAccessibilityElement]) {
+      return result;
+    }
+
+    if (aAcc->Role() == roles::OUTLINE) {
+      
+      result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+    } else if (aAcc->Role() == roles::OUTLINEITEM) {
+      
+      result |= nsIAccessibleTraversalRule::FILTER_MATCH;
+    }
+
+    return result;
+  }
+};
 
 @implementation mozOutlineAccessible
 
