@@ -868,18 +868,24 @@ nsresult nsGIOProtocolHandler::Init() {
 }
 
 void nsGIOProtocolHandler::InitSupportedProtocolsPref(nsIPrefBranch* prefs) {
+  nsCOMPtr<nsIIOService> ioService = components::IO::Service();
+  if (NS_WARN_IF(!ioService)) {
+    LOG(("gio: ioservice not available\n"));
+    return;
+  }
+
   
   
   
   
   
-  nsresult rv =
-      prefs->GetCharPref(MOZ_GIO_SUPPORTED_PROTOCOLS, mSupportedProtocols);
+  nsAutoCString prefValue;
+  nsresult rv = prefs->GetCharPref(MOZ_GIO_SUPPORTED_PROTOCOLS, prefValue);
   if (NS_SUCCEEDED(rv)) {
-    mSupportedProtocols.StripWhitespace();
-    ToLowerCase(mSupportedProtocols);
+    prefValue.StripWhitespace();
+    ToLowerCase(prefValue);
   } else {
-    mSupportedProtocols.AssignLiteral(
+    prefValue.AssignLiteral(
 #ifdef MOZ_PROXY_BYPASS_PROTECTION
         ""  
 #else
@@ -887,13 +893,39 @@ void nsGIOProtocolHandler::InitSupportedProtocolsPref(nsIPrefBranch* prefs) {
 #endif
     );
   }
-  LOG(("gio: supported protocols \"%s\"\n", mSupportedProtocols.get()));
+  LOG(("gio: supported protocols \"%s\"\n", prefValue.get()));
+
+  
+  for (const nsCString& scheme : mSupportedProtocols) {
+    LOG(("gio: unregistering handler for \"%s\"", scheme.get()));
+    ioService->UnregisterProtocolHandler(scheme);
+  }
+  mSupportedProtocols.Clear();
+
+  
+  
+  for (const nsDependentCSubstring& protocol : prefValue.Split(',')) {
+    if (NS_WARN_IF(!StringEndsWith(protocol, ":"_ns))) {
+      continue;  
+    }
+
+    nsCString scheme(Substring(protocol, 0, protocol.Length() - 1));
+    if (NS_SUCCEEDED(ioService->RegisterProtocolHandler(
+            scheme, this,
+            nsIProtocolHandler::URI_STD |
+                nsIProtocolHandler::URI_DANGEROUS_TO_LOAD,
+             -1))) {
+      LOG(("gio: successfully registered handler for \"%s\"", scheme.get()));
+      mSupportedProtocols.AppendElement(scheme);
+    } else {
+      LOG(("gio: failed to register handler for \"%s\"", scheme.get()));
+    }
+  }
 }
 
 bool nsGIOProtocolHandler::IsSupportedProtocol(const nsCString& aScheme) {
-  nsAutoCString schemeWithColon = aScheme + ":"_ns;
-  for (const auto& protocol : mSupportedProtocols.Split(',')) {
-    if (schemeWithColon.Equals(protocol, nsCaseInsensitiveCStringComparator)) {
+  for (const auto& protocol : mSupportedProtocols) {
+    if (aScheme.EqualsIgnoreCase(protocol)) {
       return true;
     }
   }
