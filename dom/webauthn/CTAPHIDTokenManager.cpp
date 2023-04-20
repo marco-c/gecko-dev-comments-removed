@@ -414,6 +414,18 @@ void CTAPHIDTokenManager::HandleRegisterResultCtap2(
     return;
   }
 
+  nsTArray<uint8_t> credentialId;
+  if (!aResult->Ctap2CopyCredentialId(credentialId)) {
+    mRegisterPromise.Reject(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
+    return;
+  }
+
+  CryptoBuffer keyHandle;
+  if (!keyHandle.Assign(credentialId)) {
+    mRegisterPromise.Reject(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
+    return;
+  }
+
   
   
   
@@ -429,7 +441,7 @@ void CTAPHIDTokenManager::HandleRegisterResultCtap2(
 
   
   nsTArray<WebAuthnExtensionResult> extensions;
-  CryptoBuffer regData, keyHandle;
+  CryptoBuffer regData;
   WebAuthnMakeCredentialResult result(clientData, attObj, keyHandle, regData,
                                       extensions);
   mRegisterPromise.Resolve(std::move(result), __func__);
