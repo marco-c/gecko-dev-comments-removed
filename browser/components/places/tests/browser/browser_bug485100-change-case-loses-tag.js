@@ -1,10 +1,11 @@
 "use strict";
 
-add_task(async function() {
-  let testTag = "foo";
-  let testTagUpper = "Foo";
-  let testURI = Services.io.newURI("http://www.example.com/");
+const TEST_URL = "http://www.example.com/";
+const testTag = "foo";
+const testTagUpper = "Foo";
+const testURI = Services.io.newURI(TEST_URL);
 
+add_task(async function test_instant_apply() {
   
   let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
@@ -15,31 +16,109 @@ add_task(async function() {
   });
 
   
-  StarUI._createPanelIfNeeded();
-  ok(gEditItemOverlay, "gEditItemOverlay is in context");
-  let node = await PlacesUIUtils.promiseNodeLikeFromFetchInfo(bm);
-  gEditItemOverlay.initPanel({ node });
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.bookmarks.editDialog.delayedApply.enabled", false]],
+  });
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  await BrowserTestUtils.openNewForegroundTab({
+    gBrowser: win.gBrowser,
+    url: TEST_URL,
+  });
+  registerCleanupFunction(async () => {
+    await BrowserTestUtils.closeWindow(win);
+  });
 
   
-  document.getElementById("editBMPanel_tagsField").value = testTag;
+  win.StarUI._createPanelIfNeeded();
+  ok(win.gEditItemOverlay, "gEditItemOverlay is in context");
+  let node = await PlacesUIUtils.promiseNodeLikeFromFetchInfo(bm);
+  win.gEditItemOverlay.initPanel({ node });
+
+  
+  win.document.getElementById("editBMPanel_tagsField").value = testTag;
   let promiseNotification = PlacesTestUtils.waitForNotification(
     "bookmark-tags-changed"
   );
-  gEditItemOverlay.onTagsFieldChange();
+  win.gEditItemOverlay.onTagsFieldChange();
   await promiseNotification;
 
   
   is(PlacesUtils.tagging.getTagsForURI(testURI)[0], testTag, "tags match");
 
   
-  document.getElementById("editBMPanel_tagsField").value = testTagUpper;
+  win.document.getElementById("editBMPanel_tagsField").value = testTagUpper;
   
   
   
   promiseNotification = PlacesTestUtils.waitForNotification(
     "bookmark-title-changed"
   );
-  gEditItemOverlay.onTagsFieldChange();
+  win.gEditItemOverlay.onTagsFieldChange();
+  await promiseNotification;
+
+  
+  is(PlacesUtils.tagging.getTagsForURI(testURI)[0], testTagUpper, "tags match");
+
+  
+  PlacesUtils.tagging.untagURI(testURI, [testTag]);
+  await PlacesUtils.bookmarks.remove(bm.guid);
+});
+
+add_task(async function test_delayed_apply() {
+  
+  let bm = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    index: PlacesUtils.bookmarks.DEFAULT_INDEX,
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    title: "mozilla",
+    url: testURI,
+  });
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.bookmarks.editDialog.delayedApply.enabled", true]],
+  });
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  await BrowserTestUtils.openNewForegroundTab({
+    gBrowser: win.gBrowser,
+    url: TEST_URL,
+  });
+  registerCleanupFunction(async () => {
+    await BrowserTestUtils.closeWindow(win);
+  });
+
+  
+  win.StarUI._createPanelIfNeeded();
+  const panel = win.document.getElementById("editBookmarkPanel");
+  const star = win.BookmarkingUI.star;
+  let shownPromise = promisePopupShown(panel);
+  star.click();
+  await shownPromise;
+
+  
+  await fillBookmarkTextField("editBMPanel_tagsField", testTag, win);
+  const doneButton = win.document.getElementById("editBookmarkPanelDoneButton");
+  let promiseNotification = PlacesTestUtils.waitForNotification(
+    "bookmark-tags-changed"
+  );
+  doneButton.click();
+  await promiseNotification;
+
+  
+  is(PlacesUtils.tagging.getTagsForURI(testURI)[0], testTag, "tags match");
+
+  
+  shownPromise = promisePopupShown(panel);
+  star.click();
+  await shownPromise;
+  await fillBookmarkTextField("editBMPanel_tagsField", testTagUpper, win);
+  
+  
+  
+  promiseNotification = PlacesTestUtils.waitForNotification(
+    "bookmark-title-changed"
+  );
+  doneButton.click();
   await promiseNotification;
 
   

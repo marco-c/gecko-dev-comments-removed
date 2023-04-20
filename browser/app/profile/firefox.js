@@ -1271,7 +1271,11 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
 
 
 
-pref("browser.bookmarks.editDialog.delayedApply.enabled", false);
+#ifdef NIGHTLY_BUILD
+  pref("browser.bookmarks.editDialog.delayedApply.enabled", true);
+#else
+  pref("browser.bookmarks.editDialog.delayedApply.enabled", false);
+#endif
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
   
