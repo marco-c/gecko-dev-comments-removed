@@ -41,10 +41,16 @@ XPCOMUtils.defineLazyGetter(
   () => lazy.ExtensionParent.apiManager
 );
 
-var EXPORTED_SYMBOLS = ["ExtensionPermissions", "OriginControls"];
-
-
-const FILE_NAME = "extension-preferences.json";
+var EXPORTED_SYMBOLS = [
+  "ExtensionPermissions",
+  "OriginControls",
+  
+  "OLD_JSON_FILENAME",
+  "OLD_RKV_DIRNAME",
+  "RKV_DIRNAME",
+  "VERSION_KEY",
+  "VERSION_VALUE",
+];
 
 function emptyPermissions() {
   return { permissions: [], origins: [] };
@@ -52,10 +58,18 @@ function emptyPermissions() {
 
 const DEFAULT_VALUE = JSON.stringify(emptyPermissions());
 
-const VERSION_KEY = "_version";
-const VERSION_VALUE = 1;
-
 const KEY_PREFIX = "id-";
+
+
+const OLD_JSON_FILENAME = "extension-preferences.json";
+
+const OLD_RKV_DIRNAME = "extension-store";
+
+const RKV_DIRNAME = "extension-store-permissions";
+
+const VERSION_KEY = "_version";
+
+const VERSION_VALUE = 1;
 
 
 let prefs;
@@ -72,7 +86,7 @@ class LegacyPermissionStore {
   async _init() {
     let path = PathUtils.join(
       Services.dirsvc.get("ProfD", Ci.nsIFile).path,
-      FILE_NAME
+      OLD_JSON_FILENAME
     );
 
     prefs = new lazy.JSONFile({ path });
@@ -134,8 +148,10 @@ class LegacyPermissionStore {
 }
 
 class PermissionStore {
+  _shouldMigrateFromOldKVStorePath = AppConstants.NIGHTLY_BUILD;
+
   async _init() {
-    const storePath = lazy.FileUtils.getDir("ProfD", ["extension-store"]).path;
+    const storePath = lazy.FileUtils.getDir("ProfD", [RKV_DIRNAME]).path;
     
     await IOUtils.makeDirectory(storePath, { ignoreExisting: true });
     this._store = await lazy.KeyValueService.getOrCreate(
@@ -143,7 +159,27 @@ class PermissionStore {
       "permissions"
     );
     if (!(await this._store.has(VERSION_KEY))) {
-      await this.maybeMigrateData();
+      
+      
+      
+      
+      
+      
+      
+      if (this._shouldMigrateFromOldKVStorePath) {
+        
+        await this.maybeImportFromOldKVStorePath();
+        if (!(await this._store.has(VERSION_KEY))) {
+          
+          
+          await this.maybeMigrateDataFromOldJSONFile();
+        }
+      } else {
+        
+        
+        
+        await this.maybeMigrateDataFromOldJSONFile();
+      }
     }
   }
 
@@ -170,11 +206,11 @@ class PermissionStore {
     return data;
   }
 
-  async maybeMigrateData() {
+  async maybeMigrateDataFromOldJSONFile() {
     let migrationWasSuccessful = false;
     let oldStore = PathUtils.join(
       Services.dirsvc.get("ProfD", Ci.nsIFile).path,
-      FILE_NAME
+      OLD_JSON_FILENAME
     );
     try {
       await this.migrateFrom(oldStore);
@@ -189,6 +225,42 @@ class PermissionStore {
 
     if (migrationWasSuccessful) {
       IOUtils.remove(oldStore);
+    }
+  }
+
+  async maybeImportFromOldKVStorePath() {
+    try {
+      const oldStorePath = lazy.FileUtils.getDir("ProfD", [OLD_RKV_DIRNAME])
+        .path;
+      if (!(await IOUtils.exists(oldStorePath))) {
+        return;
+      }
+      const oldStore = await lazy.KeyValueService.getOrCreate(
+        oldStorePath,
+        "permissions"
+      );
+      const enumerator = await oldStore.enumerate();
+      const kvpairs = [];
+      while (enumerator.hasMoreElements()) {
+        const { key, value } = enumerator.getNext();
+        kvpairs.push([key, value]);
+      }
+
+      
+      
+      
+      
+      
+      if (kvpairs.length) {
+        await this._store.writeMany(kvpairs);
+      }
+
+      
+      
+      
+      
+    } catch (err) {
+      Cu.reportError(err);
     }
   }
 
@@ -410,9 +482,17 @@ var ExtensionPermissions = {
   _useLegacyStorageBackend: false,
 
   
-  async _uninit() {
-    await store.uninitForTest();
-    store = createStore(!this._useLegacyStorageBackend);
+  async _uninit({ recreateStore = true } = {}) {
+    await store?.uninitForTest();
+    store = null;
+    if (recreateStore) {
+      store = createStore(!this._useLegacyStorageBackend);
+    }
+  },
+
+  
+  _getStore() {
+    return store;
   },
 
   
