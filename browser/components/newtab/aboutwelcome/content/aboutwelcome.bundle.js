@@ -86,7 +86,7 @@ const AboutWelcomeUtils = {
           flowBeginTime
         };
       } else {
-        console.error("Non-200 response", response); 
+        console.error("Non-200 response", response);
       }
     } catch (e) {
       flowParams = null;

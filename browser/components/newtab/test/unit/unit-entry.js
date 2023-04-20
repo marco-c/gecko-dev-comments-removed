@@ -8,10 +8,8 @@ import FxMSCommonSchema from "../../content-src/asrouter/schemas/FxMSCommon.sche
 enzyme.configure({ adapter: new Adapter() });
 
 
-const origConsoleError = console.error; 
-
+const origConsoleError = console.error;
 console.error = function(msg, ...args) {
-  
   origConsoleError.apply(console, [msg, ...args]);
 
   if (
