@@ -10,6 +10,7 @@
 #include <shldisp.h>
 
 #include "mozilla/glue/WinUtils.h"
+#include "mozilla/LazyIdleThread.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsIFile.h"
@@ -34,7 +35,7 @@ class nsITransferable;
 
 
 class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
-  nsCOMPtr<nsIThread> mIOThread;
+  RefPtr<mozilla::LazyIdleThread> mIOThread;
 
  public:  
   explicit nsDataObj(nsIURI* uri = nullptr);
