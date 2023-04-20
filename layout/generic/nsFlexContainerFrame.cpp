@@ -1344,7 +1344,7 @@ StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
   return (alignment | alignmentFlags);
 }
 
-FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
+void nsFlexContainerFrame::GenerateFlexItemForChild(
     FlexLine& aLine, nsIFrame* aChildFrame,
     const ReflowInput& aParentReflowInput,
     const FlexboxAxisTracker& aAxisTracker,
@@ -1448,7 +1448,7 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
       childRI.ComputedMaxBSize());
 
   
-  FlexItem* item = aLine.Items().EmplaceBack(
+  FlexItem& item = *aLine.Items().EmplaceBack(
       childRI, flexGrow, flexShrink, flexBaseSize, mainMinSize, mainMaxSize,
       tentativeCrossSize, crossMinSize, crossMaxSize, aAxisTracker);
 
@@ -1473,7 +1473,7 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
         aTentativeContentBoxCrossSize != NS_UNCONSTRAINEDSIZE) {
       
       
-      item->ResolveStretchedCrossSize(aTentativeContentBoxCrossSize);
+      item.ResolveStretchedCrossSize(aTentativeContentBoxCrossSize);
     }
   }
 
@@ -1481,23 +1481,22 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   
-  item->ResolveFlexBaseSizeFromAspectRatio(childRI);
+  item.ResolveFlexBaseSizeFromAspectRatio(childRI);
 
   
   
   if (flexGrow == 0.0f && flexShrink == 0.0f) {
-    item->Freeze();
+    item.Freeze();
     if (flexBaseSize < mainMinSize) {
-      item->SetWasMinClamped();
+      item.SetWasMinClamped();
     } else if (flexBaseSize > mainMaxSize) {
-      item->SetWasMaxClamped();
+      item.SetWasMaxClamped();
     }
   }
 
   
   
-  ResolveAutoFlexBasisAndMinSize(*item, childRI, aAxisTracker);
-  return item;
+  ResolveAutoFlexBasisAndMinSize(item, childRI, aAxisTracker);
 }
 
 
