@@ -118,6 +118,8 @@ extern crate std as alloc;
 #[cfg(feature = "serde")]
 mod serde;
 
+mod builder;
+
 use alloc::vec::{self, Vec};
 use core::iter::{self, FromIterator, FusedIterator};
 use core::{fmt, mem, ops, slice};
@@ -440,17 +442,21 @@ impl<T> Slab<T> {
         self.next = self.entries.len();
         
         let mut remaining_vacant = self.entries.len() - self.len;
+        if remaining_vacant == 0 {
+            return;
+        }
+
         
         
         
         for (i, entry) in self.entries.iter_mut().enumerate().rev() {
-            if remaining_vacant == 0 {
-                break;
-            }
             if let Entry::Vacant(ref mut next) = *entry {
                 *next = self.next;
                 self.next = i;
                 remaining_vacant -= 1;
+                if remaining_vacant == 0 {
+                    break;
+                }
             }
         }
     }
@@ -686,7 +692,7 @@ impl<T> Slab<T> {
     
     pub fn get(&self, key: usize) -> Option<&T> {
         match self.entries.get(key) {
-            Some(&Entry::Occupied(ref val)) => Some(val),
+            Some(Entry::Occupied(val)) => Some(val),
             _ => None,
         }
     }
@@ -715,6 +721,10 @@ impl<T> Slab<T> {
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -1178,7 +1188,7 @@ impl<T> ops::Index<usize> for Slab<T> {
     #[cfg_attr(not(slab_no_track_caller), track_caller)]
     fn index(&self, key: usize) -> &T {
         match self.entries.get(key) {
-            Some(&Entry::Occupied(ref v)) => v,
+            Some(Entry::Occupied(v)) => v,
             _ => panic!("invalid key"),
         }
     }
@@ -1260,51 +1270,12 @@ impl<T> FromIterator<(usize, T)> for Slab<T> {
         I: IntoIterator<Item = (usize, T)>,
     {
         let iterator = iterable.into_iter();
-        let mut slab = Self::with_capacity(iterator.size_hint().0);
+        let mut builder = builder::Builder::with_capacity(iterator.size_hint().0);
 
-        let mut vacant_list_broken = false;
-        let mut first_vacant_index = None;
         for (key, value) in iterator {
-            if key < slab.entries.len() {
-                
-                if let Entry::Vacant(_) = slab.entries[key] {
-                    vacant_list_broken = true;
-                    slab.len += 1;
-                }
-                
-                
-                slab.entries[key] = Entry::Occupied(value);
-            } else {
-                if first_vacant_index.is_none() && slab.entries.len() < key {
-                    first_vacant_index = Some(slab.entries.len());
-                }
-                
-                while slab.entries.len() < key {
-                    
-                    let next = slab.next;
-                    slab.next = slab.entries.len();
-                    slab.entries.push(Entry::Vacant(next));
-                }
-                slab.entries.push(Entry::Occupied(value));
-                slab.len += 1;
-            }
+            builder.pair(key, value)
         }
-        if slab.len == slab.entries.len() {
-            
-            slab.next = slab.entries.len();
-        } else if vacant_list_broken {
-            slab.recreate_vacant_list();
-        } else if let Some(first_vacant_index) = first_vacant_index {
-            let next = slab.entries.len();
-            match &mut slab.entries[first_vacant_index] {
-                Entry::Vacant(n) => *n = next,
-                _ => unreachable!(),
-            }
-        } else {
-            unreachable!()
-        }
-
-        slab
+        builder.build()
     }
 }
 
