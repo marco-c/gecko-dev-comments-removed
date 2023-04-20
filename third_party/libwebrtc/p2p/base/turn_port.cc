@@ -1649,7 +1649,7 @@ TurnCreatePermissionRequest::TurnCreatePermissionRequest(
       this, &TurnCreatePermissionRequest::OnEntryDestroyed);
   StunMessage* message = mutable_msg();
   
-  message->SetType(TURN_CREATE_PERMISSION_REQUEST);
+  RTC_DCHECK_EQ(message->type(), TURN_CREATE_PERMISSION_REQUEST);
   message->AddAttribute(std::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
   if (port_->field_trials_ &&
