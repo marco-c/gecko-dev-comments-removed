@@ -401,12 +401,6 @@ let interfaceNamesInGlobalScope = [
   
   { name: "EventTarget", insecureContext: true },
   
-  {
-    name: "FeaturePolicyViolationReportBody",
-    insecureContext: true,
-    nightly: true,
-  },
-  
   { name: "File", insecureContext: true },
   
   { name: "FileList", insecureContext: true },
