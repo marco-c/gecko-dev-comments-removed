@@ -50,4 +50,8 @@ add_task(async () => {
     utilityPid,
     `Should match the crashed PID ${utilityPid} with ${data}`
   );
+
+  
+  
+  utilityProcessTest().noteIntentionalCrash(utilityPid);
 });

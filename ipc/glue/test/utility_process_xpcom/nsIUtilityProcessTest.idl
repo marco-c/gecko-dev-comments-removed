@@ -25,6 +25,13 @@ interface nsIUtilityProcessTest : nsISupports
 
 
 
+  void noteIntentionalCrash(in unsigned long pid);
+
+  
+
+
+
+
 
   void stopProcess([optional] in string utilityActorName);
 
