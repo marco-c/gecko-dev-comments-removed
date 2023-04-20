@@ -230,6 +230,11 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
       case LayoutFrameType::Canvas:         
       case LayoutFrameType::FlexContainer:  
       case LayoutFrameType::GridContainer:
+        if (mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+          
+          mFlags.mCanHaveClassABreakpoints = false;
+          break;
+        }
         
         
         
