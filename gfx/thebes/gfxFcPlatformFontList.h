@@ -138,8 +138,13 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   
   
   
-  bool mHasVariations;
-  bool mHasVariationsInitialized;
+  enum class HasVariationsState : int8_t {
+    Uninitialized = -1,
+    No = 0,
+    Yes = 1,
+  };
+  std::atomic<HasVariationsState> mHasVariations =
+      HasVariationsState::Uninitialized;
 
   class UnscaledFontCache {
    public:
