@@ -210,6 +210,7 @@ class ServoStyleSet;
 enum class StyleOrigin : uint8_t;
 class SMILAnimationController;
 enum class StyleCursorKind : uint8_t;
+class SVGContextPaint;
 enum class ColorScheme : uint8_t;
 enum class StyleRuleChangeKind : uint32_t;
 template <typename>
@@ -1230,6 +1231,14 @@ class Document : public nsINode,
         mIsDevToolsDocument = mParentDocument->IsDevToolsDocument();
       }
     }
+  }
+
+  void SetCurrentContextPaint(const SVGContextPaint* aContextPaint) {
+    mCurrentContextPaint = aContextPaint;
+  }
+
+  const SVGContextPaint* GetCurrentContextPaint() const {
+    return mCurrentContextPaint;
   }
 
   
@@ -4459,6 +4468,9 @@ class Document : public nsINode,
 
   
   Element* mCachedRootElement;
+
+  
+  const SVGContextPaint* mCurrentContextPaint = nullptr;
 
   
   

@@ -55,8 +55,8 @@ class MOZ_STACK_CLASS AutoRestoreSVGState final {
     
     if (aContextPaint) {
       MOZ_ASSERT(aSVGContext.GetContextPaint());
-      mContextPaint.emplace(*aSVGContext.GetContextPaint(),
-                            *aSVGDocumentWrapper->GetDocument());
+      mContextPaint.emplace(aSVGContext.GetContextPaint(),
+                            aSVGDocumentWrapper->GetDocument());
     }
   }
 
