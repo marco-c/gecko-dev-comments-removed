@@ -725,19 +725,27 @@ NS_IMETHODIMP AppWindow::GetPositionAndSize(int32_t* x, int32_t* y, int32_t* cx,
 
 NS_IMETHODIMP
 AppWindow::SetDimensions(DimensionRequest&& aRequest) {
-  
-  
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
+  if (aRequest.mDimensionKind == DimensionKind::Inner) {
+    
+    
+    
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  MOZ_TRY(aRequest.SupplementFrom(this));
+  return aRequest.ApplyOuterTo(this);
 }
 
 NS_IMETHODIMP
 AppWindow::GetDimensions(DimensionKind aDimensionKind, int32_t* aX, int32_t* aY,
                          int32_t* aCX, int32_t* aCY) {
-  
-  
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
+  if (aDimensionKind == DimensionKind::Inner) {
+    
+    
+    
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  return GetPositionAndSize(aX, aY, aCX, aCY);
 }
 
 nsresult AppWindow::MoveResize(const Maybe<LayoutDeviceIntPoint>& aPosition,
