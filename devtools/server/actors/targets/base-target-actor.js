@@ -1,0 +1,118 @@
+
+
+
+
+"use strict";
+
+const { Actor } = require("resource://devtools/shared/protocol.js");
+
+loader.lazyRequireGetter(
+  this,
+  "SessionDataProcessors",
+  "resource://devtools/server/actors/targets/session-data-processors/index.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "StyleSheetsManager",
+  "resource://devtools/server/actors/utils/stylesheets-manager.js",
+  true
+);
+
+class BaseTargetActor extends Actor {
+  constructor(conn, targetType, spec) {
+    super(conn, spec);
+
+    
+
+
+
+    this.targetType = targetType;
+  }
+
+  destroy() {
+    if (this._styleSheetsManager) {
+      this._styleSheetsManager.destroy();
+      this._styleSheetsManager = null;
+    }
+    super.destroy();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async addSessionDataEntry(type, entries, isDocumentCreation = false) {
+    const processor = SessionDataProcessors[type];
+    if (processor) {
+      await processor.addSessionDataEntry(this, entries, isDocumentCreation);
+    }
+  }
+
+  
+
+
+
+
+  removeSessionDataEntry(type, entries) {
+    const processor = SessionDataProcessors[type];
+    if (processor) {
+      processor.removeSessionDataEntry(this, entries);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  notifyResources(updateType, resources) {
+    if (resources.length === 0 || this.isDestroyed()) {
+      
+      
+      return;
+    }
+
+    if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
+      this.overrideResourceBrowsingContextForWebExtension(resources);
+    }
+
+    this.emit(`resource-${updateType}-form`, resources);
+  }
+
+  
+
+
+
+
+
+
+
+
+  overrideResourceBrowsingContextForWebExtension(resources) {
+    const browsingContextID = this.devtoolsSpawnedBrowsingContextForWebExtension
+      .id;
+    resources.forEach(
+      resource => (resource.browsingContextID = browsingContextID)
+    );
+  }
+
+  getStyleSheetsManager() {
+    if (!this._styleSheetsManager) {
+      this._styleSheetsManager = new StyleSheetsManager(this);
+    }
+    return this._styleSheetsManager;
+  }
+}
+exports.BaseTargetActor = BaseTargetActor;

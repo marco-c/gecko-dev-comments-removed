@@ -19,103 +19,106 @@ const {
 const {
   getChildDocShells,
   WindowGlobalTargetActor,
-  windowGlobalTargetPrototype,
 } = require("resource://devtools/server/actors/targets/window-global.js");
 const makeDebugger = require("resource://devtools/server/actors/utils/make-debugger.js");
 
-const { extend } = require("resource://devtools/shared/extend.js");
 const {
   parentProcessTargetSpec,
 } = require("resource://devtools/shared/specs/targets/parent-process.js");
-const Targets = require("resource://devtools/server/actors/targets/index.js");
-const TargetActorMixin = require("resource://devtools/server/actors/targets/target-actor-mixin.js");
 
-
-
-
-
-
-const parentProcessTargetPrototype = extend({}, windowGlobalTargetPrototype);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-parentProcessTargetPrototype.initialize = function(
-  connection,
-  { isTopLevelTarget, window, sessionContext }
-) {
+class ParentProcessTargetActor extends WindowGlobalTargetActor {
   
-  if (!window) {
-    window = Services.wm.getMostRecentWindow(DevToolsServer.chromeWindowType);
-  }
 
-  
-  
-  if (!window) {
-    window = Services.wm.getMostRecentWindow(null);
-  }
 
-  
-  
-  if (!window) {
-    window = Services.appShell.hiddenDOMWindow;
-  }
 
-  WindowGlobalTargetActor.prototype.initialize.call(this, connection, {
-    docShell: window.docShell,
-    isTopLevelTarget,
-    sessionContext,
-  });
 
-  
-  this.makeDebugger = makeDebugger.bind(null, {
-    findDebuggees: dbg => dbg.findAllGlobals(),
-    shouldAddNewGlobalAsDebuggee: () => true,
-  });
 
-  
-  this.watchNewDocShells = true;
 
-  
-  Services.obs.addObserver(this, "chrome-webnavigation-create");
-  Services.obs.addObserver(this, "chrome-webnavigation-destroy");
 
-  
-  for (const { docShell } of Services.ww.getWindowEnumerator()) {
-    if (docShell == this.docShell) {
-      continue;
+
+
+
+
+
+
+
+
+
+
+
+  constructor(
+    conn,
+    { isTopLevelTarget, sessionContext, customSpec = parentProcessTargetSpec }
+  ) {
+    super(conn, {
+      isTopLevelTarget,
+      sessionContext,
+      customSpec,
+    });
+
+    
+    this.makeDebugger = makeDebugger.bind(null, {
+      findDebuggees: dbg => dbg.findAllGlobals(),
+      shouldAddNewGlobalAsDebuggee: () => true,
+    });
+
+    
+    this.watchNewDocShells = true;
+
+    this.isRootActor = true;
+
+    
+    Services.obs.addObserver(this, "chrome-webnavigation-create");
+    Services.obs.addObserver(this, "chrome-webnavigation-destroy");
+
+    
+    
+    
+    if (customSpec == parentProcessTargetSpec) {
+      this.setDocShell(this._getInitialDocShell());
     }
-    this._progressListener.watch(docShell);
   }
-};
 
-parentProcessTargetPrototype.isRootActor = true;
+  
+  
+  
+  setDocShell(initialDocShell) {
+    super.setDocShell(initialDocShell);
+
+    
+    for (const { docShell } of Services.ww.getWindowEnumerator()) {
+      if (docShell == this.docShell) {
+        continue;
+      }
+      this._progressListener.watch(docShell);
+    }
+  }
+
+  _getInitialDocShell() {
+    
+    let window = Services.wm.getMostRecentWindow(
+      DevToolsServer.chromeWindowType
+    );
+
+    
+    
+    if (!window) {
+      window = Services.wm.getMostRecentWindow(null);
+    }
+
+    
+    
+    if (!window) {
+      window = Services.appShell.hiddenDOMWindow;
+    }
+    return window.docShell;
+  }
+
+  
 
 
 
-
-
-Object.defineProperty(parentProcessTargetPrototype, "docShells", {
-  get() {
+  get docShells() {
     
     let docShells = [];
     for (const { docShell } of Services.ww.getWindowEnumerator()) {
@@ -123,46 +126,41 @@ Object.defineProperty(parentProcessTargetPrototype, "docShells", {
     }
 
     return docShells;
-  },
-});
-
-parentProcessTargetPrototype.observe = function(subject, topic, data) {
-  WindowGlobalTargetActor.prototype.observe.call(this, subject, topic, data);
-  if (this.isDestroyed()) {
-    return;
   }
 
-  subject.QueryInterface(Ci.nsIDocShell);
-
-  if (topic == "chrome-webnavigation-create") {
-    this._onDocShellCreated(subject);
-  } else if (topic == "chrome-webnavigation-destroy") {
-    this._onDocShellDestroy(subject);
-  }
-};
-
-parentProcessTargetPrototype._detach = function() {
-  if (this.isDestroyed()) {
-    return false;
-  }
-
-  Services.obs.removeObserver(this, "chrome-webnavigation-create");
-  Services.obs.removeObserver(this, "chrome-webnavigation-destroy");
-
-  
-  for (const { docShell } of Services.ww.getWindowEnumerator()) {
-    if (docShell == this.docShell) {
-      continue;
+  observe(subject, topic, data) {
+    super.observe(subject, topic, data);
+    if (this.isDestroyed()) {
+      return;
     }
-    this._progressListener.unwatch(docShell);
+
+    subject.QueryInterface(Ci.nsIDocShell);
+
+    if (topic == "chrome-webnavigation-create") {
+      this._onDocShellCreated(subject);
+    } else if (topic == "chrome-webnavigation-destroy") {
+      this._onDocShellDestroy(subject);
+    }
   }
 
-  return WindowGlobalTargetActor.prototype._detach.call(this);
-};
+  _detach() {
+    if (this.isDestroyed()) {
+      return false;
+    }
 
-exports.parentProcessTargetPrototype = parentProcessTargetPrototype;
-exports.ParentProcessTargetActor = TargetActorMixin(
-  Targets.TYPES.FRAME,
-  parentProcessTargetSpec,
-  parentProcessTargetPrototype
-);
+    Services.obs.removeObserver(this, "chrome-webnavigation-create");
+    Services.obs.removeObserver(this, "chrome-webnavigation-destroy");
+
+    
+    for (const { docShell } of Services.ww.getWindowEnumerator()) {
+      if (docShell == this.docShell) {
+        continue;
+      }
+      this._progressListener.unwatch(docShell);
+    }
+
+    return super._detach();
+  }
+}
+
+exports.ParentProcessTargetActor = ParentProcessTargetActor;

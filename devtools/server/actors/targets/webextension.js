@@ -12,19 +12,14 @@
 
 
 
-const { extend } = require("resource://devtools/shared/extend.js");
-
 const {
   ParentProcessTargetActor,
-  parentProcessTargetPrototype,
 } = require("resource://devtools/server/actors/targets/parent-process.js");
 const makeDebugger = require("resource://devtools/server/actors/utils/make-debugger.js");
 const {
   webExtensionTargetSpec,
 } = require("resource://devtools/shared/specs/targets/webextension.js");
 
-const Targets = require("resource://devtools/server/actors/targets/index.js");
-const TargetActorMixin = require("resource://devtools/server/actors/targets/target-actor-mixin.js");
 const {
   getChildDocShells,
 } = require("resource://devtools/server/actors/targets/window-global.js");
@@ -45,14 +40,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const FALLBACK_DOC_URL =
   "chrome://devtools/content/shared/webextension-fallback.html";
 
-
-
-
-
-
-const webExtensionTargetPrototype = extend({}, parentProcessTargetPrototype);
-
-
+class WebExtensionTargetActor extends ParentProcessTargetActor {
+  
 
 
 
@@ -98,82 +87,84 @@ const webExtensionTargetPrototype = extend({}, parentProcessTargetPrototype);
 
 
 
-webExtensionTargetPrototype.initialize = function(
-  conn,
-  {
-    addonId,
-    addonBrowsingContextGroupId,
-    chromeGlobal,
-    isTopLevelTarget,
-    prefix,
-    sessionContext,
+  constructor(
+    conn,
+    {
+      addonId,
+      addonBrowsingContextGroupId,
+      chromeGlobal,
+      isTopLevelTarget,
+      prefix,
+      sessionContext,
+    }
+  ) {
+    super(conn, {
+      isTopLevelTarget,
+      sessionContext,
+      customSpec: webExtensionTargetSpec,
+    });
+
+    this.addonId = addonId;
+    this.addonBrowsingContextGroupId = addonBrowsingContextGroupId;
+    this._chromeGlobal = chromeGlobal;
+    this._prefix = prefix;
+
+    
+    
+    
+    
+    this.devtoolsSpawnedBrowsingContextForWebExtension =
+      chromeGlobal.browsingContext;
+
+    
+    
+    
+    
+    Object.defineProperty(this, "messageManager", {
+      enumerable: true,
+      configurable: true,
+      get: () => {
+        return this._chromeGlobal;
+      },
+    });
+
+    this._onParentExit = this._onParentExit.bind(this);
+
+    this._chromeGlobal.addMessageListener(
+      "debug:webext_parent_exit",
+      this._onParentExit
+    );
+
+    
+    
+    this.consoleAPIListenerOptions = {
+      addonId: this.addonId,
+    };
+
+    
+    this.makeDebugger = makeDebugger.bind(null, {
+      findDebuggees: dbg => {
+        return dbg.findAllGlobals().filter(this._shouldAddNewGlobalAsDebuggee);
+      },
+      shouldAddNewGlobalAsDebuggee: this._shouldAddNewGlobalAsDebuggee.bind(
+        this
+      ),
+    });
+
+    
+    
+    
+    this.isRootActor = true;
+
+    
+    
+    const extensionWindow = this._searchForExtensionWindow();
+    this.setDocShell(extensionWindow.docShell);
   }
-) {
-  this.addonId = addonId;
-  this.addonBrowsingContextGroupId = addonBrowsingContextGroupId;
-  this._chromeGlobal = chromeGlobal;
-  this._prefix = prefix;
 
   
   
-  
-  
-  this.devtoolsSpawnedBrowsingContextForWebExtension =
-    chromeGlobal.browsingContext;
-
-  
-  
-  const extensionWindow = this._searchForExtensionWindow();
-
-  parentProcessTargetPrototype.initialize.call(this, conn, {
-    isTopLevelTarget,
-    window: extensionWindow,
-    sessionContext,
-  });
-
-  
-  
-  
-  
-  Object.defineProperty(this, "messageManager", {
-    enumerable: true,
-    configurable: true,
-    get: () => {
-      return this._chromeGlobal;
-    },
-  });
-
-  this._onParentExit = this._onParentExit.bind(this);
-
-  this._chromeGlobal.addMessageListener(
-    "debug:webext_parent_exit",
-    this._onParentExit
-  );
-
-  
-  
-  this.consoleAPIListenerOptions = {
-    addonId: this.addonId,
-  };
-
-  
-  this.makeDebugger = makeDebugger.bind(null, {
-    findDebuggees: dbg => {
-      return dbg.findAllGlobals().filter(this._shouldAddNewGlobalAsDebuggee);
-    },
-    shouldAddNewGlobalAsDebuggee: this._shouldAddNewGlobalAsDebuggee.bind(this),
-  });
-};
-
-
-
-
-webExtensionTargetPrototype.isRootActor = true;
-
-
-
-Object.defineProperty(webExtensionTargetPrototype, "docShells", {
-  get() {
+  get docShells() {
     
     let docShells = [];
     for (const window of Services.ww.getWindowEnumerator(null)) {
@@ -183,42 +174,56 @@ Object.defineProperty(webExtensionTargetPrototype, "docShells", {
     return docShells.filter(docShell => {
       return this.isExtensionWindowDescendent(docShell.domWindow);
     });
-  },
-});
-
-
-
-
-webExtensionTargetPrototype.destroy = function() {
-  if (this._chromeGlobal) {
-    const chromeGlobal = this._chromeGlobal;
-    this._chromeGlobal = null;
-
-    chromeGlobal.removeMessageListener(
-      "debug:webext_parent_exit",
-      this._onParentExit
-    );
-
-    chromeGlobal.sendAsyncMessage("debug:webext_child_exit", {
-      actor: this.actorID,
-    });
   }
 
-  if (this.fallbackWindow) {
-    this.fallbackWindow = null;
+  
+
+
+  destroy() {
+    if (this._chromeGlobal) {
+      const chromeGlobal = this._chromeGlobal;
+      this._chromeGlobal = null;
+
+      chromeGlobal.removeMessageListener(
+        "debug:webext_parent_exit",
+        this._onParentExit
+      );
+
+      chromeGlobal.sendAsyncMessage("debug:webext_child_exit", {
+        actor: this.actorID,
+      });
+    }
+
+    if (this.fallbackWindow) {
+      this.fallbackWindow = null;
+    }
+
+    this.addon = null;
+    this.addonId = null;
+
+    return super.destroy();
   }
 
-  this.addon = null;
-  this.addonId = null;
+  
 
-  return ParentProcessTargetActor.prototype.destroy.apply(this);
-};
+  _searchFallbackWindow() {
+    if (this.fallbackWindow) {
+      
+      return this.fallbackWindow;
+    }
 
-
-
-webExtensionTargetPrototype._searchFallbackWindow = function() {
-  if (this.fallbackWindow) {
     
+    
+    
+    
+    this.fallbackWindow = this._chromeGlobal.content;
+
+    
+    
+    
+    
+    this.fallbackWindow.document.location.href = `${FALLBACK_DOC_URL}#${this.addonId}`;
+
     return this.fallbackWindow;
   }
 
@@ -226,161 +231,142 @@ webExtensionTargetPrototype._searchFallbackWindow = function() {
   
   
   
-  this.fallbackWindow = this._chromeGlobal.content;
-
-  
-  
-  
-  
-  this.fallbackWindow.document.location.href = `${FALLBACK_DOC_URL}#${this.addonId}`;
-
-  return this.fallbackWindow;
-};
-
-
-
-
-
-webExtensionTargetPrototype._searchForExtensionWindow = function() {
-  
-  
-  const docShell = this.docShells.find(d =>
-    this.isTopLevelExtensionWindow(d.domWindow)
-  );
-  if (docShell) {
-    return docShell.domWindow;
-  }
-
-  return this._searchFallbackWindow();
-};
-
-
-
-webExtensionTargetPrototype._onDocShellCreated = function(docShell) {
-  
-  
-  
-  if (docShell.browsingContext.group.id != this.addonBrowsingContextGroupId) {
-    return;
-  }
-  ParentProcessTargetActor.prototype._onDocShellCreated.call(this, docShell);
-};
-
-webExtensionTargetPrototype._onDocShellDestroy = function(docShell) {
-  if (docShell.browsingContext.group.id != this.addonBrowsingContextGroupId) {
-    return;
-  }
-  
-  
-  this._unwatchDocShell(docShell);
-
-  
-  const webProgress = docShell
-    .QueryInterface(Ci.nsIInterfaceRequestor)
-    .getInterface(Ci.nsIWebProgress);
-  this._notifyDocShellDestroy(webProgress);
-
-  
-  
-  
-  
-  
-  
-  if (
-    !this.isDestroyed() &&
-    docShell == this.docShell &&
-    !docShell.domWindow.location.href.includes(
-      "_generated_background_page.html"
-    )
-  ) {
-    this._changeTopLevelDocument(this._searchForExtensionWindow());
-  }
-};
-
-webExtensionTargetPrototype._onNewExtensionWindow = function(window) {
-  if (!this.window || this.window === this.fallbackWindow) {
-    this._changeTopLevelDocument(window);
+  _searchForExtensionWindow() {
     
     
-    this.addonBrowsingContextGroupId = window.docShell.browsingContext.group.id;
+    const docShell = this.docShells.find(d =>
+      this.isTopLevelExtensionWindow(d.domWindow)
+    );
+    if (docShell) {
+      return docShell.domWindow;
+    }
+
+    return this._searchFallbackWindow();
   }
-};
 
-webExtensionTargetPrototype.isTopLevelExtensionWindow = function(window) {
-  const { docShell } = window;
-  const isTopLevel = docShell.sameTypeRootTreeItem == docShell;
   
+
+  _onDocShellCreated(docShell) {
+    
+    
+    
+    if (docShell.browsingContext.group.id != this.addonBrowsingContextGroupId) {
+      return;
+    }
+    super._onDocShellCreated(docShell);
+  }
+
+  _onDocShellDestroy(docShell) {
+    if (docShell.browsingContext.group.id != this.addonBrowsingContextGroupId) {
+      return;
+    }
+    
+    
+    this._unwatchDocShell(docShell);
+
+    
+    const webProgress = docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebProgress);
+    this._notifyDocShellDestroy(webProgress);
+
+    
+    
+    
+    
+    
+    
+    if (
+      !this.isDestroyed() &&
+      docShell == this.docShell &&
+      !docShell.domWindow.location.href.includes(
+        "_generated_background_page.html"
+      )
+    ) {
+      this._changeTopLevelDocument(this._searchForExtensionWindow());
+    }
+  }
+
+  _onNewExtensionWindow(window) {
+    if (!this.window || this.window === this.fallbackWindow) {
+      this._changeTopLevelDocument(window);
+      
+      
+      this.addonBrowsingContextGroupId =
+        window.docShell.browsingContext.group.id;
+    }
+  }
+
+  isTopLevelExtensionWindow(window) {
+    const { docShell } = window;
+    const isTopLevel = docShell.sameTypeRootTreeItem == docShell;
+    
+    
+    return isTopLevel && window.document.nodePrincipal.addonId == this.addonId;
+  }
+
+  isExtensionWindowDescendent(window) {
+    
+    
+    const rootWin = window.docShell.sameTypeRootTreeItem.domWindow;
+    const addonId = lazy.getAddonIdForWindowGlobal(rootWin.windowGlobalChild);
+    return addonId == this.addonId;
+  }
+
   
-  return isTopLevel && window.document.nodePrincipal.addonId == this.addonId;
-};
-
-webExtensionTargetPrototype.isExtensionWindowDescendent = function(window) {
-  
-  
-  const rootWin = window.docShell.sameTypeRootTreeItem.domWindow;
-  const addonId = lazy.getAddonIdForWindowGlobal(rootWin.windowGlobalChild);
-  return addonId == this.addonId;
-};
 
 
 
+  _shouldAddNewGlobalAsDebuggee(newGlobal) {
+    const global = unwrapDebuggerObjectGlobal(newGlobal);
 
+    if (global instanceof Ci.nsIDOMWindow) {
+      try {
+        global.document;
+      } catch (e) {
+        
+        
+        
+        
+        return false;
+      }
+      
+      
+      const window = global.document.ownerGlobal;
+      if (!window) {
+        return false;
+      }
 
-webExtensionTargetPrototype._shouldAddNewGlobalAsDebuggee = function(
-  newGlobal
-) {
-  const global = unwrapDebuggerObjectGlobal(newGlobal);
+      
+      if (this.isTopLevelExtensionWindow(window)) {
+        this._onNewExtensionWindow(window);
+      }
 
-  if (global instanceof Ci.nsIDOMWindow) {
+      return this.isExtensionWindowDescendent(window);
+    }
+
     try {
-      global.document;
+      
+      const metadata = Cu.getSandboxMetadata(global);
+      if (metadata) {
+        return metadata.addonID === this.addonId;
+      }
     } catch (e) {
       
-      
-      
-      
-      return false;
-    }
-    
-    
-    const window = global.document.ownerGlobal;
-    if (!window) {
-      return false;
     }
 
-    
-    if (this.isTopLevelExtensionWindow(window)) {
-      this._onNewExtensionWindow(window);
-    }
-
-    return this.isExtensionWindowDescendent(window);
+    return false;
   }
 
-  try {
-    
-    const metadata = Cu.getSandboxMetadata(global);
-    if (metadata) {
-      return metadata.addonID === this.addonId;
+  
+
+  _onParentExit(msg) {
+    if (msg.json.actor !== this.actorID) {
+      return;
     }
-  } catch (e) {
-    
+
+    this.destroy();
   }
+}
 
-  return false;
-};
-
-
-
-webExtensionTargetPrototype._onParentExit = function(msg) {
-  if (msg.json.actor !== this.actorID) {
-    return;
-  }
-
-  this.destroy();
-};
-
-exports.WebExtensionTargetActor = TargetActorMixin(
-  Targets.TYPES.FRAME,
-  webExtensionTargetSpec,
-  webExtensionTargetPrototype
-);
+exports.WebExtensionTargetActor = WebExtensionTargetActor;

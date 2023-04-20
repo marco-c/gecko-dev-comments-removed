@@ -40,7 +40,7 @@ const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
 
 const EXTENSION_CONTENT_JSM = "resource://gre/modules/ExtensionContent.jsm";
 
-const { Actor, Pool } = require("resource://devtools/shared/protocol.js");
+const { Pool } = require("resource://devtools/shared/protocol.js");
 const {
   LazyPool,
   createExtraActors,
@@ -49,7 +49,9 @@ const {
   windowGlobalTargetSpec,
 } = require("resource://devtools/shared/specs/targets/window-global.js");
 const Resources = require("resource://devtools/server/actors/resources/index.js");
-const TargetActorMixin = require("resource://devtools/server/actors/targets/target-actor-mixin.js");
+const {
+  BaseTargetActor,
+} = require("resource://devtools/server/actors/targets/base-target-actor.js");
 
 loader.lazyRequireGetter(
   this,
@@ -121,7 +123,7 @@ function getInnerId(window) {
   return window.windowGlobalChild.innerWindowId;
 }
 
-const windowGlobalTargetPrototype = {
+class WindowGlobalTargetActor extends BaseTargetActor {
   
 
 
@@ -250,29 +252,18 @@ const windowGlobalTargetPrototype = {
 
 
 
-  initialize(
-    connection,
+  constructor(
+    conn,
     {
       docShell,
       followWindowGlobalLifeCycle,
       isTopLevelTarget,
       ignoreSubFrames,
       sessionContext,
+      customSpec = windowGlobalTargetSpec,
     }
   ) {
-    Actor.prototype.initialize.call(this, connection);
-
-    if (!docShell) {
-      throw new Error(
-        "A docShell should be provided as constructor argument of WindowGlobalTargetActor"
-      );
-    }
-    this.docShell = docShell;
-
-    
-    this._originalWindow = this.window;
-
-    this.isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(this.window);
+    super(conn, Targets.TYPES.FRAME, customSpec);
 
     this.followWindowGlobalLifeCycle = followWindowGlobalLifeCycle;
     this.isTopLevelTarget = !!isTopLevelTarget;
@@ -312,7 +303,39 @@ const windowGlobalTargetPrototype = {
       "console-api-profiler"
     );
 
+    
+    
+    this._progressListener = new DebuggerProgressListener(this);
+
     TargetActorRegistry.registerTargetActor(this);
+
+    if (docShell) {
+      this.setDocShell(docShell);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  setDocShell(docShell) {
+    Object.defineProperty(this, "docShell", {
+      value: docShell,
+      configurable: true,
+      writable: true,
+    });
+
+    
+    this._originalWindow = this.window;
+
+    
+    this.isPrivate = PrivateBrowsingUtils.isContentWindowPrivate(this.window);
 
     
     
@@ -322,20 +345,22 @@ const windowGlobalTargetPrototype = {
 
     
     
-    this._progressListener = new DebuggerProgressListener(this);
-
-    
-    
     
     
     
     this._docShellsObserved = false;
     DevToolsUtils.executeSoon(() => this._watchDocshells());
-  },
+  }
+
+  get docShell() {
+    throw new Error(
+      "A docShell should be provided as constructor argument of WindowGlobalTargetActor, or redefined by the subclass"
+    );
+  }
 
   
   
-  consoleAPIListenerOptions: {},
+  consoleAPIListenerOptions = {};
 
   
 
@@ -345,7 +370,7 @@ const windowGlobalTargetPrototype = {
       this._dbg = this.makeDebugger();
     }
     return this._dbg;
-  },
+  }
 
   
 
@@ -356,7 +381,7 @@ const windowGlobalTargetPrototype = {
     }
     const form = this.form();
     return this.conn._getOrCreateActor(form.consoleActor);
-  },
+  }
 
   get _memoryActor() {
     if (this.isDestroyed()) {
@@ -364,16 +389,16 @@ const windowGlobalTargetPrototype = {
     }
     const form = this.form();
     return this.conn._getOrCreateActor(form.memoryActor);
-  },
+  }
 
-  _targetScopedActorPool: null,
+  _targetScopedActorPool = null;
 
   
 
 
   get chromeEventHandler() {
     return getDocShellChromeEventHandler(this.docShell);
-  },
+  }
 
   
 
@@ -386,7 +411,7 @@ const windowGlobalTargetPrototype = {
       
       return null;
     }
-  },
+  }
 
   
 
@@ -398,7 +423,7 @@ const windowGlobalTargetPrototype = {
     }
 
     return getChildDocShells(this.docShell);
-  },
+  }
 
   
 
@@ -407,30 +432,30 @@ const windowGlobalTargetPrototype = {
     return this.docShell && !this.docShell.isBeingDestroyed()
       ? this.docShell.domWindow
       : null;
-  },
+  }
 
   get outerWindowID() {
     if (this.docShell) {
       return this.docShell.outerWindowID;
     }
     return null;
-  },
+  }
 
   get browsingContext() {
     return this.docShell?.browsingContext;
-  },
+  }
 
   get browsingContextID() {
     return this.browsingContext?.id;
-  },
+  }
 
   get browserId() {
     return this.browsingContext?.browserId;
-  },
+  }
 
   get openerBrowserId() {
     return this.browsingContext?.opener?.browserId;
-  },
+  }
 
   
 
@@ -445,7 +470,7 @@ const windowGlobalTargetPrototype = {
     }
 
     return [];
-  },
+  }
 
   
 
@@ -455,7 +480,7 @@ const windowGlobalTargetPrototype = {
     return this.docShells.map(docShell => {
       return docShell.domWindow;
     });
-  },
+  }
 
   
 
@@ -470,7 +495,7 @@ const windowGlobalTargetPrototype = {
     }
 
     return this._originalWindow.docShell;
-  },
+  }
 
   
 
@@ -481,7 +506,7 @@ const windowGlobalTargetPrototype = {
 
   get originalWindow() {
     return this._originalWindow || this.window;
-  },
+  }
 
   
 
@@ -490,28 +515,28 @@ const windowGlobalTargetPrototype = {
     return this.docShell
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIWebProgress);
-  },
+  }
 
   
 
 
   get webNavigation() {
     return this.docShell.QueryInterface(Ci.nsIWebNavigation);
-  },
+  }
 
   
 
 
   get contentDocument() {
     return this.webNavigation.document;
-  },
+  }
 
   
 
 
   get title() {
     return this.contentDocument.title;
-  },
+  }
 
   
 
@@ -523,14 +548,14 @@ const windowGlobalTargetPrototype = {
     
     
     return null;
-  },
+  }
 
   get sourcesManager() {
     if (!this._sourcesManager) {
       this._sourcesManager = new SourcesManager(this.threadActor);
     }
     return this._sourcesManager;
-  },
+  }
 
   _createExtraActors() {
     
@@ -546,7 +571,7 @@ const windowGlobalTargetPrototype = {
       this._targetScopedActorPool,
       this
     );
-  },
+  }
 
   form() {
     assert(
@@ -637,7 +662,7 @@ const windowGlobalTargetPrototype = {
     }
 
     return response;
-  },
+  }
 
   
 
@@ -705,6 +730,14 @@ const windowGlobalTargetPrototype = {
       this._dbg.disable();
       this._dbg = null;
     }
+
+    
+    
+    this.emit("destroyed", { isTargetSwitching, isModeSwitching });
+
+    
+    super.destroy();
+
     this.docShell = null;
     this._extraActors = null;
 
@@ -713,14 +746,9 @@ const windowGlobalTargetPrototype = {
       "console-api-profiler"
     );
 
-    
-    
-    this.emit("destroyed", { isTargetSwitching, isModeSwitching });
-
-    Actor.prototype.destroy.call(this);
     TargetActorRegistry.unregisterTargetActor(this);
     Resources.unwatchAllResources(this);
-  },
+  }
 
   
 
@@ -747,7 +775,7 @@ const windowGlobalTargetPrototype = {
     }
 
     return false;
-  },
+  }
 
   _watchDocshells() {
     
@@ -766,7 +794,7 @@ const windowGlobalTargetPrototype = {
 
     
     this._updateChildDocShells();
-  },
+  }
 
   _unwatchDocshells() {
     if (this._progressListener) {
@@ -784,13 +812,13 @@ const windowGlobalTargetPrototype = {
       Services.obs.removeObserver(this, "webnavigation-destroy");
       this._docShellsObserved = false;
     }
-  },
+  }
 
   _unwatchDocShell(docShell) {
     if (this._progressListener) {
       this._progressListener.unwatch(docShell);
     }
-  },
+  }
 
   switchToFrame(request) {
     const windowId = request.windowId;
@@ -814,12 +842,12 @@ const windowGlobalTargetPrototype = {
     DevToolsUtils.executeSoon(() => this._changeTopLevelDocument(win));
 
     return {};
-  },
+  }
 
   listFrames(request) {
     const windows = this._docShellsToWindows(this.docShells);
     return { frames: windows };
-  },
+  }
 
   ensureWorkerDescriptorActorList() {
     if (this._workerDescriptorActorList === null) {
@@ -832,13 +860,13 @@ const windowGlobalTargetPrototype = {
       );
     }
     return this._workerDescriptorActorList;
-  },
+  }
 
   pauseWorkersUntilAttach(shouldPause) {
     this.ensureWorkerDescriptorActorList().workerPauser.setPauseMatching(
       shouldPause
     );
-  },
+  }
 
   listWorkers(request) {
     return this.ensureWorkerDescriptorActorList()
@@ -862,7 +890,7 @@ const windowGlobalTargetPrototype = {
           workers: actors,
         };
       });
-  },
+  }
 
   logInPage(request) {
     const { text, category, flags } = request;
@@ -880,12 +908,12 @@ const windowGlobalTargetPrototype = {
     );
     Services.console.logMessage(scriptError);
     return {};
-  },
+  }
 
   _onWorkerDescriptorActorListChanged() {
     this._workerDescriptorActorList.onListChanged = null;
     this.emit("workerListChanged");
-  },
+  }
 
   _onConsoleApiProfilerEvent(subject, topic, data) {
     
@@ -902,7 +930,7 @@ const windowGlobalTargetPrototype = {
       category: "console.profile unavailable",
       flags: warningFlag,
     });
-  },
+  }
 
   observe(subject, topic, data) {
     
@@ -918,7 +946,7 @@ const windowGlobalTargetPrototype = {
     } else if (topic == "webnavigation-destroy") {
       this._onDocShellDestroy(subject);
     }
-  },
+  }
 
   _onDocShellCreated(docShell) {
     
@@ -943,7 +971,7 @@ const windowGlobalTargetPrototype = {
       }
       this._notifyDocShellsUpdate([docShell]);
     });
-  },
+  }
 
   _onDocShellDestroy(docShell) {
     
@@ -987,7 +1015,7 @@ const windowGlobalTargetPrototype = {
     ) {
       this._changeTopLevelDocument(this._originalWindow);
     }
-  },
+  }
 
   _isRootDocShell(docShell) {
     
@@ -997,7 +1025,7 @@ const windowGlobalTargetPrototype = {
     
     
     return !docShell.parent;
-  },
+  }
 
   _docShellToWindow(docShell) {
     const webProgress = docShell
@@ -1026,7 +1054,7 @@ const windowGlobalTargetPrototype = {
       url: window.location.href,
       title: window.document.title,
     };
-  },
+  }
 
   
   _docShellsToWindows(docshells) {
@@ -1043,7 +1071,7 @@ const windowGlobalTargetPrototype = {
         return true;
       })
       .map(docShell => this._docShellToWindow(docShell));
-  },
+  }
 
   _notifyDocShellsUpdate(docshells) {
     
@@ -1062,11 +1090,11 @@ const windowGlobalTargetPrototype = {
     this.emit("frameUpdate", {
       frames: windows,
     });
-  },
+  }
 
   _updateChildDocShells() {
     this._notifyDocShellsUpdate(this.docShells);
-  },
+  }
 
   _notifyDocShellDestroy(webProgress) {
     
@@ -1085,7 +1113,7 @@ const windowGlobalTargetPrototype = {
         },
       ],
     });
-  },
+  }
 
   
 
@@ -1094,7 +1122,7 @@ const windowGlobalTargetPrototype = {
   _createThreadActor() {
     this.threadActor = new ThreadActor(this, this.window);
     this.manage(this.threadActor);
-  },
+  }
 
   
 
@@ -1110,7 +1138,7 @@ const windowGlobalTargetPrototype = {
       this._sourcesManager.destroy();
       this._sourcesManager = null;
     }
-  },
+  }
 
   
 
@@ -1122,7 +1150,7 @@ const windowGlobalTargetPrototype = {
     });
 
     return {};
-  },
+  }
 
   
 
@@ -1132,7 +1160,7 @@ const windowGlobalTargetPrototype = {
       this.window.focus();
     }
     return {};
-  },
+  }
 
   goForward() {
     
@@ -1150,7 +1178,7 @@ const windowGlobalTargetPrototype = {
     );
 
     return {};
-  },
+  }
 
   goBack() {
     
@@ -1168,7 +1196,7 @@ const windowGlobalTargetPrototype = {
     );
 
     return {};
-  },
+  }
 
   
 
@@ -1197,7 +1225,7 @@ const windowGlobalTargetPrototype = {
       }, "WindowGlobalTargetActor.prototype.reload's delayed body")
     );
     return {};
-  },
+  }
 
   
 
@@ -1211,7 +1239,7 @@ const windowGlobalTargetPrototype = {
       }, "WindowGlobalTargetActor.prototype.navigateTo's delayed body:" + request.url)
     );
     return {};
-  },
+  }
 
   
 
@@ -1221,7 +1249,7 @@ const windowGlobalTargetPrototype = {
   reconfigure(request) {
     const options = request.options || {};
     return this.updateTargetConfiguration(options);
-  },
+  }
 
   
 
@@ -1287,7 +1315,7 @@ const windowGlobalTargetPrototype = {
     if (reload) {
       this.webNavigation.reload(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
     }
-  },
+  }
 
   get touchSimulator() {
     if (!this._touchSimulator) {
@@ -1295,7 +1323,7 @@ const windowGlobalTargetPrototype = {
     }
 
     return this._touchSimulator;
-  },
+  }
 
   
 
@@ -1305,7 +1333,7 @@ const windowGlobalTargetPrototype = {
     if (this._restoreFocus && this.browsingContext?.isActive) {
       this.window.focus();
     }
-  },
+  }
 
   _changeTopLevelDocument(window) {
     
@@ -1345,7 +1373,7 @@ const windowGlobalTargetPrototype = {
         this._navigate(window, true);
       });
     });
-  },
+  }
 
   _setWindow(window) {
     
@@ -1356,7 +1384,7 @@ const windowGlobalTargetPrototype = {
     this.emit("frameUpdate", {
       selected: this.outerWindowID,
     });
-  },
+  }
 
   
 
@@ -1391,7 +1419,7 @@ const windowGlobalTargetPrototype = {
       id: getWindowID(window),
       isFrameSwitching,
     });
-  },
+  }
 
   _windowDestroyed(
     window,
@@ -1417,7 +1445,7 @@ const windowGlobalTargetPrototype = {
       id: id || getWindowID(window),
       isFrozen,
     });
-  },
+  }
 
   
 
@@ -1481,7 +1509,7 @@ const windowGlobalTargetPrototype = {
     if (reset) {
       this._setWindow(this._originalWindow);
     }
-  },
+  }
 
   
 
@@ -1525,7 +1553,7 @@ const windowGlobalTargetPrototype = {
       state: "stop",
       isFrameSwitching,
     });
-  },
+  }
 
   removeActorByName(name) {
     if (name in this._extraActors) {
@@ -1535,52 +1563,47 @@ const windowGlobalTargetPrototype = {
       }
       delete this._extraActors[name];
     }
-  },
-};
-
-exports.windowGlobalTargetPrototype = windowGlobalTargetPrototype;
-exports.WindowGlobalTargetActor = TargetActorMixin(
-  Targets.TYPES.FRAME,
-  windowGlobalTargetSpec,
-  windowGlobalTargetPrototype
-);
-
-
-
-
-
-
-
-
-
-
-function DebuggerProgressListener(targetActor) {
-  this._targetActor = targetActor;
-  this._onWindowCreated = this.onWindowCreated.bind(this);
-  this._onWindowHidden = this.onWindowHidden.bind(this);
-
-  
-  Services.obs.addObserver(this, "inner-window-destroyed");
-
-  
-  
-  
-  this._knownWindowIDs = new Map();
-
-  this._watchedDocShells = new WeakSet();
+  }
 }
 
-DebuggerProgressListener.prototype = {
-  QueryInterface: ChromeUtils.generateQI([
+exports.WindowGlobalTargetActor = WindowGlobalTargetActor;
+
+class DebuggerProgressListener {
+  
+
+
+
+
+
+
+
+
+  constructor(targetActor) {
+    this._targetActor = targetActor;
+    this._onWindowCreated = this.onWindowCreated.bind(this);
+    this._onWindowHidden = this.onWindowHidden.bind(this);
+
+    
+    Services.obs.addObserver(this, "inner-window-destroyed");
+
+    
+    
+    
+    this._knownWindowIDs = new Map();
+
+    this._watchedDocShells = new WeakSet();
+  }
+
+  QueryInterface = ChromeUtils.generateQI([
     "nsIWebProgressListener",
     "nsISupportsWeakReference",
-  ]),
+  ]);
 
   destroy() {
     Services.obs.removeObserver(this, "inner-window-destroyed");
     this._knownWindowIDs.clear();
     this._knownWindowIDs = null;
-  },
+  }
 
   watch(docShell) {
     
@@ -1631,7 +1654,7 @@ DebuggerProgressListener.prototype = {
     ) {
       docShell.cssErrorReportingEnabled = true;
     }
-  },
+  }
 
   unwatch(docShell) {
     const docShellWindow = docShell.domWindow;
@@ -1671,15 +1694,15 @@ DebuggerProgressListener.prototype = {
     if (this._targetActor.typeName === "parentProcessTarget") {
       docShell.browsingContext.watchedByDevTools = false;
     }
-  },
+  }
 
   _getWindowsInDocShell(docShell) {
     return getChildDocShells(docShell).map(d => {
       return d.domWindow;
     });
-  },
+  }
 
-  onWindowCreated: DevToolsUtils.makeInfallible(function(evt) {
+  onWindowCreated = DevToolsUtils.makeInfallible(function(evt) {
     if (this._targetActor.isDestroyed()) {
       return;
     }
@@ -1715,9 +1738,9 @@ DebuggerProgressListener.prototype = {
     const isBFCache = evt.type == "pageshow";
 
     this._targetActor._windowReady(window, { isBFCache });
-  }, "DebuggerProgressListener.prototype.onWindowCreated"),
+  }, "DebuggerProgressListener.prototype.onWindowCreated");
 
-  onWindowHidden: DevToolsUtils.makeInfallible(function(evt) {
+  onWindowHidden = DevToolsUtils.makeInfallible(function(evt) {
     if (this._targetActor.isDestroyed()) {
       return;
     }
@@ -1745,9 +1768,9 @@ DebuggerProgressListener.prototype = {
 
     this._targetActor._windowDestroyed(window, { isFrozen: true });
     this._knownWindowIDs.delete(getWindowID(window));
-  }, "DebuggerProgressListener.prototype.onWindowHidden"),
+  }, "DebuggerProgressListener.prototype.onWindowHidden");
 
-  observe: DevToolsUtils.makeInfallible(function(subject, topic) {
+  observe = DevToolsUtils.makeInfallible(function(subject, topic) {
     if (this._targetActor.isDestroyed()) {
       return;
     }
@@ -1777,9 +1800,9 @@ DebuggerProgressListener.prototype = {
       
       this.watch(window.docShell);
     }
-  }, "DebuggerProgressListener.prototype.observe"),
+  }, "DebuggerProgressListener.prototype.observe");
 
-  onStateChange: DevToolsUtils.makeInfallible(function(
+  onStateChange = DevToolsUtils.makeInfallible(function(
     progress,
     request,
     flag,
@@ -1854,5 +1877,5 @@ DebuggerProgressListener.prototype = {
       }
     }
   },
-  "DebuggerProgressListener.prototype.onStateChange"),
-};
+  "DebuggerProgressListener.prototype.onStateChange");
+}

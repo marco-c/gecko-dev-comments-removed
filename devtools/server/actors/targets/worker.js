@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   workerTargetSpec,
 } = require("resource://devtools/shared/specs/targets/worker.js");
@@ -20,14 +19,12 @@ const {
   SourcesManager,
 } = require("resource://devtools/server/actors/utils/sources-manager.js");
 
-const TargetActorMixin = require("resource://devtools/server/actors/targets/target-actor-mixin.js");
+const {
+  BaseTargetActor,
+} = require("resource://devtools/server/actors/targets/base-target-actor.js");
 
-exports.WorkerTargetActor = TargetActorMixin(
-  Targets.TYPES.WORKER,
-  workerTargetSpec,
-  {
-    
-
+class WorkerTargetActor extends BaseTargetActor {
+  
 
 
 
@@ -40,89 +37,90 @@ exports.WorkerTargetActor = TargetActorMixin(
 
 
 
-    initialize(connection, workerGlobal, workerDebuggerData, sessionContext) {
-      Actor.prototype.initialize.call(this, connection);
 
-      
-      this.workerGlobal = workerGlobal;
-      this.sessionContext = sessionContext;
-
-      this._workerDebuggerData = workerDebuggerData;
-      this._sourcesManager = null;
-      this.workerConsoleApiMessagesDispatchedToMainThread =
-        workerDebuggerData.workerConsoleApiMessagesDispatchedToMainThread;
-
-      this.makeDebugger = makeDebuggerUtil.bind(null, {
-        findDebuggees: () => {
-          return [workerGlobal];
-        },
-        shouldAddNewGlobalAsDebuggee: () => true,
-      });
-
-      
-      this.threadActor = new ThreadActor(this, this.workerGlobal);
-
-      
-      this._consoleActor = new WebConsoleActor(this.conn, this);
-
-      this.manage(this.threadActor);
-      this.manage(this._consoleActor);
-    },
+  constructor(conn, workerGlobal, workerDebuggerData, sessionContext) {
+    super(conn, Targets.TYPES.WORKER, workerTargetSpec);
 
     
-    
-    get workerUrl() {
-      return this._workerDebuggerData.url;
-    },
+    this.workerGlobal = workerGlobal;
+    this.sessionContext = sessionContext;
 
-    form() {
-      return {
-        actor: this.actorID,
-        threadActor: this.threadActor?.actorID,
-        consoleActor: this._consoleActor?.actorID,
-        id: this._workerDebuggerData.id,
-        type: this._workerDebuggerData.type,
-        url: this._workerDebuggerData.url,
-        traits: {
-          
-          supportsTopLevelTargetFlag: false,
-        },
-      };
-    },
+    this._workerDebuggerData = workerDebuggerData;
+    this._sourcesManager = null;
+    this.workerConsoleApiMessagesDispatchedToMainThread =
+      workerDebuggerData.workerConsoleApiMessagesDispatchedToMainThread;
 
-    get dbg() {
-      if (!this._dbg) {
-        this._dbg = this.makeDebugger();
-      }
-      return this._dbg;
-    },
-
-    get sourcesManager() {
-      if (this._sourcesManager === null) {
-        this._sourcesManager = new SourcesManager(this.threadActor);
-      }
-
-      return this._sourcesManager;
-    },
+    this.makeDebugger = makeDebuggerUtil.bind(null, {
+      findDebuggees: () => {
+        return [workerGlobal];
+      },
+      shouldAddNewGlobalAsDebuggee: () => true,
+    });
 
     
-    onThreadAttached() {
-      
-      this.emit("worker-thread-attached");
-    },
+    this.threadActor = new ThreadActor(this, this.workerGlobal);
 
-    destroy() {
-      Actor.prototype.destroy.call(this);
+    
+    this._consoleActor = new WebConsoleActor(this.conn, this);
 
-      if (this._sourcesManager) {
-        this._sourcesManager.destroy();
-        this._sourcesManager = null;
-      }
-
-      this.workerGlobal = null;
-      this._dbg = null;
-      this._consoleActor = null;
-      this.threadActor = null;
-    },
+    this.manage(this.threadActor);
+    this.manage(this._consoleActor);
   }
-);
+
+  
+  
+  get workerUrl() {
+    return this._workerDebuggerData.url;
+  }
+
+  form() {
+    return {
+      actor: this.actorID,
+      threadActor: this.threadActor?.actorID,
+      consoleActor: this._consoleActor?.actorID,
+      id: this._workerDebuggerData.id,
+      type: this._workerDebuggerData.type,
+      url: this._workerDebuggerData.url,
+      traits: {
+        
+        supportsTopLevelTargetFlag: false,
+      },
+    };
+  }
+
+  get dbg() {
+    if (!this._dbg) {
+      this._dbg = this.makeDebugger();
+    }
+    return this._dbg;
+  }
+
+  get sourcesManager() {
+    if (this._sourcesManager === null) {
+      this._sourcesManager = new SourcesManager(this.threadActor);
+    }
+
+    return this._sourcesManager;
+  }
+
+  
+  onThreadAttached() {
+    
+    this.emit("worker-thread-attached");
+  }
+
+  destroy() {
+    super.destroy();
+
+    if (this._sourcesManager) {
+      this._sourcesManager.destroy();
+      this._sourcesManager = null;
+    }
+
+    this.workerGlobal = null;
+    this._dbg = null;
+    this._consoleActor = null;
+    this.threadActor = null;
+  }
+}
+exports.WorkerTargetActor = WorkerTargetActor;
