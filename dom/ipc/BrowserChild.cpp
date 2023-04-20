@@ -548,7 +548,6 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BrowserChild)
   NS_INTERFACE_MAP_ENTRY(nsIWebBrowserChrome)
-  NS_INTERFACE_MAP_ENTRY(nsIEmbeddingSiteWindow)
   NS_INTERFACE_MAP_ENTRY(nsIWebBrowserChromeFocus)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
   NS_INTERFACE_MAP_ENTRY(nsIWindowProvider)
@@ -585,20 +584,8 @@ BrowserChild::RemoteSizeShellTo(int32_t aWidth, int32_t aHeight,
   nsCOMPtr<nsIBaseWindow> docShellAsWin(do_QueryInterface(ourDocShell));
   NS_ENSURE_STATE(docShellAsWin);
 
-  int32_t width, height;
-  docShellAsWin->GetSize(&width, &height);
-
-  uint32_t flags = 0;
-  if (width == aWidth) {
-    flags |= nsIEmbeddingSiteWindow::DIM_FLAGS_IGNORE_CX;
-  }
-
-  if (height == aHeight) {
-    flags |= nsIEmbeddingSiteWindow::DIM_FLAGS_IGNORE_CY;
-  }
-
-  bool sent = SendSizeShellTo(flags, aWidth, aHeight, aShellItemWidth,
-                              aShellItemHeight);
+  bool sent =
+      SendSizeShellTo(0, aWidth, aHeight, aShellItemWidth, aShellItemHeight);
 
   return sent ? NS_OK : NS_ERROR_FAILURE;
 }
@@ -656,8 +643,7 @@ BrowserChild::SetLinkStatus(const nsAString& aStatusText) {
 }
 
 NS_IMETHODIMP
-BrowserChild::SetDimensions(uint32_t aFlags, int32_t aX, int32_t aY,
-                            int32_t aCx, int32_t aCy) {
+BrowserChild::SetDimensions(DimensionRequest&& aRequest) {
   
   
   
@@ -667,36 +653,22 @@ BrowserChild::SetDimensions(uint32_t aFlags, int32_t aX, int32_t aY,
   
   
   
-  int32_t x, y, cx, cy;
-  GetDimensions(aFlags, &x, &y, &cx, &cy);
-
-  if (x == aX) {
-    aFlags |= nsIEmbeddingSiteWindow::DIM_FLAGS_IGNORE_X;
-  }
-
-  if (y == aY) {
-    aFlags |= nsIEmbeddingSiteWindow::DIM_FLAGS_IGNORE_Y;
-  }
-
-  if (cx == aCx) {
-    aFlags |= nsIEmbeddingSiteWindow::DIM_FLAGS_IGNORE_CX;
-  }
-
-  if (cy == aCy) {
-    aFlags |= nsIEmbeddingSiteWindow::DIM_FLAGS_IGNORE_CY;
-  }
 
   double scale = mPuppetWidget ? mPuppetWidget->GetDefaultScale().scale : 1.0;
-
-  Unused << SendSetDimensions(aFlags, aX, aY, aCx, aCy, scale);
-
+  SendSetDimensions(aRequest, scale);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-BrowserChild::GetDimensions(uint32_t aFlags, int32_t* aX, int32_t* aY,
-                            int32_t* aCx, int32_t* aCy) {
+BrowserChild::GetDimensions(DimensionKind aDimensionKind, int32_t* aX,
+                            int32_t* aY, int32_t* aCx, int32_t* aCy) {
   ScreenIntRect rect = GetOuterRect();
+  if (aDimensionKind == DimensionKind::Inner) {
+    if (aX || aY) {
+      return NS_ERROR_NOT_IMPLEMENTED;
+    }
+    rect.SizeTo(GetInnerSize());
+  }
   if (aX) {
     *aX = rect.x;
   }
@@ -709,41 +681,7 @@ BrowserChild::GetDimensions(uint32_t aFlags, int32_t* aX, int32_t* aY,
   if (aCy) {
     *aCy = rect.height;
   }
-
   return NS_OK;
-}
-
-NS_IMETHODIMP
-BrowserChild::GetVisibility(bool* aVisibility) {
-  *aVisibility = true;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-BrowserChild::SetVisibility(bool aVisibility) {
-  
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-BrowserChild::GetTitle(nsAString& aTitle) {
-  NS_WARNING("BrowserChild::GetTitle not supported in BrowserChild");
-
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-BrowserChild::SetTitle(const nsAString& aTitle) {
-  
-  
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-BrowserChild::GetSiteWindow(void** aSiteWindow) {
-  NS_WARNING("BrowserChild::GetSiteWindow not supported in BrowserChild");
-
-  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
@@ -3273,7 +3211,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvSafeAreaInsetsChanged(
     
     
     int32_t x, y, cx, cy;
-    GetDimensions(0, &x, &y, &cx, &cy);
+    GetDimensions(DimensionKind::Outer, &x, &y, &cx, &cy);
     nsCOMPtr<nsIScreen> screen;
     screenMgr->ScreenForRect(x, y, cx, cy, getter_AddRefs(screen));
 
