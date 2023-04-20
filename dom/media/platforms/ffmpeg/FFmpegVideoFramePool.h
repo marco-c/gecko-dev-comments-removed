@@ -97,6 +97,9 @@ class VideoFrameSurface<LIBAV_VER> {
   bool IsUsed() const { return mSurface->IsGlobalRefSet(); }
   void MarkAsUsed() { mSurface->GlobalRefAdd(); }
 
+  
+  bool IsFFMPEGSurface() const { return !!mLib; }
+
  private:
   virtual ~VideoFrameSurface();
 
@@ -110,7 +113,7 @@ class VideoFrameSurface<LIBAV_VER> {
 template <>
 class VideoFramePool<LIBAV_VER> {
  public:
-  VideoFramePool();
+  explicit VideoFramePool(int aFFMPEGPoolSize);
   ~VideoFramePool();
 
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetVideoFrameSurface(
@@ -121,6 +124,7 @@ class VideoFramePool<LIBAV_VER> {
 
  private:
   RefPtr<VideoFrameSurface<LIBAV_VER>> GetFreeVideoFrameSurface();
+  bool ShouldCopySurface();
 
  private:
   
@@ -128,9 +132,10 @@ class VideoFramePool<LIBAV_VER> {
   nsTArray<RefPtr<VideoFrameSurface<LIBAV_VER>>> mDMABufSurfaces;
   
   
-  Maybe<bool> mTextureCreationWorks;
+  int mFFMPEGPoolSize;
   
-  const bool mSurfaceCopy;
+  
+  Maybe<bool> mTextureCreationWorks;
 };
 
 }  

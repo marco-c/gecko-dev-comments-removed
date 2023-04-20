@@ -910,11 +910,6 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
 
 #  ifdef MOZ_WAYLAND_USE_VAAPI
     
-    if (!mVideoFramePool && mEnableHardwareDecoding) {
-      mVideoFramePool = MakeUnique<VideoFramePool<LIBAV_VER>>();
-    }
-
-    
     
     if (mVideoFramePool) {
       mVideoFramePool->ReleaseUnusedVAAPIFrames();
@@ -1318,6 +1313,12 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVAAPI(
   }
 
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
+  if (!mVideoFramePool) {
+    AVHWFramesContext* context =
+        (AVHWFramesContext*)mCodecContext->hw_frames_ctx->data;
+    mVideoFramePool =
+        MakeUnique<VideoFramePool<LIBAV_VER>>(context->initial_pool_size);
+  }
   auto surface = mVideoFramePool->GetVideoFrameSurface(
       vaDesc, mFrame->width, mFrame->height, mCodecContext, mFrame, mLib);
   if (!surface) {
