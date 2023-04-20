@@ -136,7 +136,7 @@ class RRSendQueue : public SendQueue {
 
     
     
-    DataToSend Produce(TimeMs now, size_t max_size);
+    absl::optional<DataToSend> Produce(TimeMs now, size_t max_size);
 
     const ThresholdWatcher& buffered_amount() const { return buffered_amount_; }
     ThresholdWatcher& buffered_amount() { return buffered_amount_; }
@@ -169,7 +169,7 @@ class RRSendQueue : public SendQueue {
 
     
     
-    bool HasDataToSend(TimeMs now);
+    bool HasDataToSend() const;
 
     void set_priority(StreamPriority priority) { priority_ = priority; }
     StreamPriority priority() const { return priority_; }
@@ -252,7 +252,7 @@ class RRSendQueue : public SendQueue {
       size_t max_size);
 
   
-  std::map<StreamID, OutgoingStream>::iterator GetNextStream(TimeMs now);
+  std::map<StreamID, OutgoingStream>::iterator GetNextStream();
 
   const std::string log_prefix_;
   const size_t buffer_size_;
