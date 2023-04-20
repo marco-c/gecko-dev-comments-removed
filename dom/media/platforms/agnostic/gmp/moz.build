@@ -4,6 +4,10 @@
 
 
 
+LOCAL_INCLUDES += [
+    "/dom/media/gmp",  
+]
+
 EXPORTS += [
     "GMPDecoderModule.h",
     "GMPVideoDecoder.h",
