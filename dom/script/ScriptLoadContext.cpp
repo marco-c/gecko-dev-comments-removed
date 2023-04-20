@@ -37,8 +37,9 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ScriptLoadContext)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ScriptLoadContext,
                                                 JS::loader::LoadContextBase)
-  MOZ_ASSERT(!tmp->mOffThreadToken);
-  MOZ_ASSERT(!tmp->mRunnable);
+  if (Runnable* runnable = tmp->mRunnable.exchange(nullptr)) {
+    runnable->Release();
+  }
   tmp->MaybeUnblockOnload();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -69,12 +70,16 @@ ScriptLoadContext::ScriptLoadContext()
       mUnreportedPreloadError(NS_OK) {}
 
 ScriptLoadContext::~ScriptLoadContext() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   
-  MOZ_DIAGNOSTIC_ASSERT(!mOffThreadToken && !mRunnable);
-
+  
+  
   mRequest = nullptr;
+  MOZ_ASSERT_IF(
+      !StaticPrefs::
+          dom_script_loader_external_scripts_speculative_omt_parse_enabled(),
+      !mOffThreadToken);
+
+  MaybeCancelOffThreadScript();
 
   MaybeUnblockOnload();
 }
@@ -99,18 +104,17 @@ void ScriptLoadContext::MaybeCancelOffThreadScript() {
     return;
   }
 
-  
-  
   JSContext* cx = danger::GetJSContext();
   JS::CancelOffThreadToken(cx, mOffThreadToken);
-  mOffThreadToken = nullptr;
 
   
   
-  
-  mRunnable = nullptr;
+  if (Runnable* runnable = mRunnable.exchange(nullptr)) {
+    runnable->Release();
+  }
 
   MaybeUnblockOnload();
+  mOffThreadToken = nullptr;
 }
 
 void ScriptLoadContext::SetScriptMode(bool aDeferAttr, bool aAsyncAttr,
