@@ -331,7 +331,7 @@ nsresult ODoHService::UpdateODoHConfigFromHTTPSRR() {
   nsCOMPtr<nsIEventTarget> target = TRRService::Get()->MainThreadOrTRRThread();
   
   
-  uint32_t flags =
+  nsIDNSService::DNSFlags flags =
       nsIDNSService::RESOLVE_DISABLE_ODOH | nsIDNSService::RESOLVE_BYPASS_CACHE;
   nsCOMPtr<nsIDNSAdditionalInfo> info;
   if (port != -1) {
