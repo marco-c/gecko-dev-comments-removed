@@ -3174,7 +3174,7 @@ void HTMLMediaElement::Seek(double aTime, SeekTarget::Type aSeekType,
   
 
   
-  MOZ_ASSERT(!mozilla::IsNaN(aTime));
+  MOZ_ASSERT(!std::isnan(aTime));
 
   
   

@@ -435,7 +435,7 @@ void WebGLContext::ErrorInvalidEnumInfo(const char* const info,
 #ifdef DEBUG
 
 static bool IsCacheCorrect(float cached, float actual) {
-  if (IsNaN(cached)) {
+  if (std::isnan(cached)) {
     
     
     return true;

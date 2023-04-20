@@ -139,7 +139,7 @@ Result<Span<const char16_t>, ICUError> RelativeTimeFormat::formatToParts(
     return Err(ToICUError(status));
   }
 
-  bool isNegative = !IsNaN(aNumber) && IsNegative(aNumber);
+  bool isNegative = !std::isnan(aNumber) && IsNegative(aNumber);
 
   
   return FormatResultToParts(formattedValue, Nothing(), isNegative,

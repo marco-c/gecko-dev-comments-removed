@@ -1832,7 +1832,7 @@ void HTMLInputElement::SetValueAsDate(JSContext* aCx,
   
   
   
-  if (IsNaN(milliseconds)) {
+  if (std::isnan(milliseconds)) {
     SetValue(u""_ns, CallerType::NonSystem, aRv);
     return;
   }
@@ -1846,7 +1846,7 @@ void HTMLInputElement::SetValueAsDate(JSContext* aCx,
   double year = JS::YearFromTime(milliseconds);
   double month = JS::MonthFromTime(milliseconds);
 
-  if (IsNaN(year) || IsNaN(month)) {
+  if (std::isnan(year) || std::isnan(month)) {
     SetValue(u""_ns, CallerType::NonSystem, aRv);
     return;
   }
