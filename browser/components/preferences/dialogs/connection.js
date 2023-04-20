@@ -7,11 +7,9 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "DoHConfigController",
-  "resource:///modules/DoHConfig.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  DoHConfigController: "resource:///modules/DoHConfig.sys.mjs",
+});
 
 document
   .getElementById("ConnectionsDialog")

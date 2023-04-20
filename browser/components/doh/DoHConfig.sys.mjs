@@ -1,17 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["DoHConfigController"];
-
+/*
+ * This module provides an interface to access DoH configuration - e.g. whether
+ * DoH is enabled, whether capabilities are enabled, etc. The configuration is
+ * sourced from either Remote Settings or pref values, with Remote Settings
+ * being preferred.
+ */
 const { RemoteSettings } = ChromeUtils.import(
   "resource://services-settings/remote-settings.js"
 );
@@ -62,12 +58,12 @@ function getProviderListFromPref(prefName) {
   return undefined;
 }
 
-
-
-
-
-
-
+// Generate a base config object with getters that return pref values. When
+// Remote Settings values become available, a new config object will be
+// generated from this and specific fields will be replaced by the RS value.
+// If we use a class to store base config and instantiate new config objects
+// from it, we lose the ability to override getters because they are defined
+// as non-configureable properties on class instances. So just use a function.
 function makeBaseConfigObject() {
   function makeConfigProperty({
     obj,
@@ -84,8 +80,8 @@ function makeBaseConfigObject() {
 
     Object.defineProperty(obj, propName, {
       get() {
-        
-        
+        // If a pref value exists, it gets top priority. Otherwise, if it has an
+        // explicitly set value (from Remote Settings), we return that.
         let prefVal = prefFn(prefName);
         if (prefVal !== undefined) {
           return prefVal;
@@ -159,16 +155,16 @@ function makeBaseConfigObject() {
   return newConfig;
 }
 
-const DoHConfigController = {
+export const DoHConfigController = {
   initComplete: null,
   _resolveInitComplete: null,
 
-  
-  
+  // This field always contains the current config state, for
+  // consumer use.
   currentConfig: makeBaseConfigObject(),
 
-  
-  
+  // Loads the client's region via Region.sys.mjs. This might mean waiting
+  // until the region is available.
   async loadRegion() {
     await new Promise(resolve => {
       let homeRegion = lazy.Preferences.get(`${kGlobalPrefBranch}.home-region`);
@@ -198,7 +194,7 @@ const DoHConfigController = {
       }, lazy.Region.REGION_TOPIC);
     });
 
-    
+    // Finally, reload config.
     await this.updateFromRemoteSettings();
   },
 
@@ -213,7 +209,7 @@ const DoHConfigController = {
     this._resolveInitComplete();
   },
 
-  
+  // Useful for tests to set prior state before init()
   async _uninit() {
     await this.initComplete;
 
@@ -253,8 +249,8 @@ const DoHConfigController = {
     "nsISupportsWeakReference",
   ]),
 
-  
-  
+  // Creates new config object from currently available
+  // Remote Settings values.
   async updateFromRemoteSettings() {
     let providers = await gProvidersCollection.get();
     let config = await gConfigCollection.get();
@@ -273,8 +269,8 @@ const DoHConfigController = {
       configByRegion.get(homeRegion?.toLowerCase()) ||
       configByRegion.get("global");
 
-    
-    
+    // Make a new config object first, mutate it as needed, then synchronously
+    // replace the currentConfig object at the end to ensure atomicity.
     let newConfig = makeBaseConfigObject();
 
     if (!localConfig) {
@@ -329,7 +325,7 @@ const DoHConfigController = {
       }
     }
 
-    
+    // Finally, update the currentConfig object synchronously.
     DoHConfigController.currentConfig = newConfig;
 
     DoHConfigController.notifyNewConfig();

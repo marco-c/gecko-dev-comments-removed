@@ -1,19 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["Heuristics", "parentalControls"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+/*
+ * This module implements the heuristics used to determine whether to enable
+ * or disable DoH on different networks. DoHController is responsible for running
+ * these at startup and upon network changes.
+ */
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -31,13 +25,8 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIParentalControlsService"
 );
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "DoHConfigController",
-  "resource:///modules/DoHConfig.jsm"
-);
-
 ChromeUtils.defineESModuleGetters(lazy, {
+  DoHConfigController: "resource:///modules/DoHConfig.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
 });
 
@@ -45,13 +34,13 @@ const GLOBAL_CANARY = "use-application-dns.net.";
 
 const NXDOMAIN_ERR = "NS_ERROR_UNKNOWN_HOST";
 
-const Heuristics = {
-  
+export const Heuristics = {
+  // String constants used to indicate outcome of heuristics.
   ENABLE_DOH: "enable_doh",
   DISABLE_DOH: "disable_doh",
 
   async run() {
-    
+    // Run all the heuristics at the same time.
     let [safeSearchChecks, zscaler, canary] = await Promise.all([
       safeSearch(),
       zscalerCanary(),
@@ -74,12 +63,12 @@ const Heuristics = {
       steeredProvider: "",
     };
 
-    
+    // If any of those were triggered, return the results immediately.
     if (Object.values(results).includes("disable_doh")) {
       return results;
     }
 
-    
+    // Check for provider steering only after the other heuristics have passed.
     results.steeredProvider = (await providerSteering()) || "";
     return results;
   },
@@ -88,7 +77,7 @@ const Heuristics = {
     return enterprisePolicy();
   },
 
-  
+  // Test only
   async _setMockLinkService(mockLinkService) {
     this.mockLinkService = mockLinkService;
   },
@@ -136,12 +125,12 @@ async function dnsLookup(hostname, resolveCanonicalName = false) {
             try {
               response.canonicalName = inRecord.canonicalName;
             } catch (e) {
-              
+              // no canonicalName
             }
           }
           while (inRecord.hasMore()) {
             let addr = inRecord.getNextAddrAsString();
-            
+            // Sometimes there are duplicate records with the same ip.
             if (!response.addresses.includes(addr)) {
               response.addresses.push(addr);
             }
@@ -163,10 +152,10 @@ async function dnsLookup(hostname, resolveCanonicalName = false) {
         null,
         listener,
         null,
-        {} 
+        {} /* defaultOriginAttributes */
       );
     } catch (e) {
-      
+      // handle exceptions such as offline mode.
       reject({ message: e.name });
     }
   });
@@ -198,7 +187,7 @@ async function dnsListLookup(domainList) {
   return results;
 }
 
-
+// TODO: Confirm the expected behavior when filtering is on
 async function globalCanary() {
   let { addresses, err } = await dnsLookup(GLOBAL_CANARY);
 
@@ -216,7 +205,7 @@ async function globalCanary() {
 }
 
 async function modifiedRoots() {
-  
+  // Check for presence of enterprise_roots cert pref. If enabled, disable DoH
   let rootsEnabled = lazy.Preferences.get(
     "security.enterprise_roots.enabled",
     false
@@ -229,7 +218,7 @@ async function modifiedRoots() {
   return "enable_doh";
 }
 
-async function parentalControls() {
+export async function parentalControls() {
   if (lazy.gParentalControlsService.parentalControlsEnabled) {
     return "disable_doh";
   }
@@ -262,20 +251,20 @@ async function enterprisePolicy() {
     let policies = Services.policies.getActivePolicies();
 
     if (!policies.hasOwnProperty("DNSOverHTTPS")) {
-      
+      // If DoH isn't in the policy, return that there is a policy (but no DoH specifics)
       return "policy_without_doh";
     }
 
     if (policies.DNSOverHTTPS.Enabled === true) {
-      
+      // If DoH is enabled in the policy, enable it
       return "enable_doh";
     }
 
-    
+    // If DoH is disabled in the policy, disable it
     return "disable_doh";
   }
 
-  
+  // Default return, meaning no policy related to DNSOverHTTPS
   return "no_policy_set";
 }
 
@@ -305,8 +294,8 @@ async function safeSearch() {
       dnsListLookup(provider.safeSearch),
     ]);
 
-    
-    
+    // Given a provider, check if the answer for any safe search domain
+    // matches the answer for any default domain
     for (let answer of safeSearchAnswers) {
       if (answer && unfilteredAnswers.includes(answer)) {
         return { name: provider.name, result: "disable_doh" };
@@ -316,19 +305,19 @@ async function safeSearch() {
     return { name: provider.name, result: "enable_doh" };
   }
 
-  
-  
+  // Compare strict domain lookups to non-strict domain lookups.
+  // Resolutions has a type of [{ name, result }]
   let resolutions = await Promise.all(
     providerList.map(provider => checkProvider(provider))
   );
 
-  
+  // Reduce that array entries into a single map
   return resolutions.reduce(
     (accumulator, check) => {
       accumulator[check.name] = check.result;
       return accumulator;
     },
-    {} 
+    {} // accumulator
   );
 }
 
@@ -340,8 +329,8 @@ async function zscalerCanary() {
     if (
       ["213.152.228.242", "199.168.151.251", "8.25.203.30"].includes(address)
     ) {
-      
-      
+      // if sitereview.zscaler.com resolves to either one of the 3 IPs above,
+      // Zscaler Shift service is in use, don't enable DoH
       return "disable_doh";
     }
   }
@@ -381,18 +370,18 @@ async function platform() {
   return platformChecks;
 }
 
-
-
-
+// Check if the network provides a DoH endpoint to use. Returns the name of the
+// provider if the check is successful, else null. Currently we only support
+// this for Comcast networks.
 async function providerSteering() {
   if (!lazy.DoHConfigController.currentConfig.providerSteering.enabled) {
     return null;
   }
   const TEST_DOMAIN = "doh.test.";
 
-  
-  
-  
+  // Array of { name, canonicalName, uri } where name is an identifier for
+  // telemetry, canonicalName is the expected CNAME when looking up doh.test,
+  // and uri is the provider's DoH endpoint.
   let steeredProviders =
     lazy.DoHConfigController.currentConfig.providerSteering.providerList;
 

@@ -1,37 +1,28 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["DoHController"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+/*
+ * This module runs the automated heuristics to enable/disable DoH on different
+ * networks. Heuristics are run at startup and upon network changes.
+ * Heuristics are disabled if the user sets their DoH provider or mode manually.
+ */
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
+  DoHConfigController: "resource:///modules/DoHConfig.sys.mjs",
+  Heuristics: "resource:///modules/DoHHeuristics.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  DoHConfigController: "resource:///modules/DoHConfig.jsm",
-  Heuristics: "resource:///modules/DoHHeuristics.jsm",
-});
-
-
-
+// When this is set we suppress automatic TRR selection beyond dry-run as well
+// as sending observer notifications during heuristics throttling.
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "kIsInAutomation",
@@ -39,8 +30,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-
-
+// We wait until the network has been stably up for this many milliseconds
+// before triggering a heuristics run.
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "kNetworkDebounceTimeout",
@@ -48,12 +39,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   1000
 );
 
-
-
-
-
-
-
+// If consecutive heuristics runs are attempted within this period after a first,
+// we suppress them for this duration, at the end of which point we decide whether
+// to do one coalesced run or to extend the timer if the rate limit was exceeded.
+// Note that the very first run is allowed, after which we start the timer.
+// This throttling is necessary due to evidence of clients that experience
+// network volatility leading to thousands of runs per hour. See bug 1626083.
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "kHeuristicsThrottleTimeout",
@@ -61,10 +52,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
   15000
 );
 
-
-
-
-
+// After the throttle timeout described above, if there are more than this many
+// heuristics attempts during the timeout, we restart the timer without running
+// heuristics. Thus, heuristics are suppressed completely as long as the rate
+// exceeds this limit.
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "kHeuristicsRateLimit",
@@ -86,24 +77,24 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsINetworkLinkService"
 );
 
-
+// Stores whether we've done first-run.
 const FIRST_RUN_PREF = "doh-rollout.doneFirstRun";
 
-
-
+// Set when we detect that the user set their DoH provider or mode manually.
+// If set, we don't run heuristics.
 const DISABLED_PREF = "doh-rollout.disable-heuristics";
 
-
-
+// Set when we detect either a non-DoH enterprise policy, or a DoH policy that
+// tells us to disable it. This pref's effect is to suppress the opt-out CFR.
 const SKIP_HEURISTICS_PREF = "doh-rollout.skipHeuristicsCheck";
 
-
-
+// Whether to clear doh-rollout.mode on shutdown. When false, the mode value
+// that exists at shutdown will be used at startup until heuristics re-run.
 const CLEAR_ON_SHUTDOWN_PREF = "doh-rollout.clearModeOnShutdown";
 
 const BREADCRUMB_PREF = "doh-rollout.self-enabled";
 
-
+// Necko TRR prefs to watch for user-set values.
 const NETWORK_TRR_MODE_PREF = "network.trr.mode";
 const NETWORK_TRR_URI_PREF = "network.trr.uri";
 
@@ -124,8 +115,8 @@ const kLinkStatusChangedTopic = "network:link-status-changed";
 const kConnectivityTopic = "network:captive-portal-connectivity-changed";
 const kPrefChangedTopic = "nsPref:changed";
 
-
-
+// Helper function to hash the network ID concatenated with telemetry client ID.
+// This prevents us from being able to tell if 2 clients are on the same network.
 function getHashedNetworkID() {
   let currentNetworkID = lazy.gNetworkLinkService.networkID;
   if (!currentNetworkID) {
@@ -137,7 +128,7 @@ function getHashedNetworkID() {
   );
 
   hasher.init(Ci.nsICryptoHash.SHA256);
-  
+  // Concat the client ID with the network ID before hashing.
   let clientNetworkID = lazy.ClientID.getClientID() + currentNetworkID;
   hasher.update(
     clientNetworkID.split("").map(c => c.charCodeAt(0)),
@@ -146,7 +137,7 @@ function getHashedNetworkID() {
   return hasher.finish(true);
 }
 
-const DoHController = {
+export const DoHController = {
   _heuristicsAreEnabled: false,
 
   async init() {
@@ -185,8 +176,8 @@ const DoHController = {
     lazy.Preferences.set(FIRST_RUN_PREF, true);
   },
 
-  
-  
+  // Also used by tests to reset DoHController state (prefs are not cleared
+  // here - tests do that when needed between _uninit and init).
   async _uninit() {
     Services.obs.removeObserver(
       this,
@@ -200,7 +191,7 @@ const DoHController = {
     await this.disableHeuristics("shutdown");
   },
 
-  
+  // Called to reset state when a new config is available.
   resetPromise: Promise.resolve(),
   async reset() {
     this.resetPromise = this.resetPromise.then(async () => {
@@ -212,10 +203,10 @@ const DoHController = {
     return this.resetPromise;
   },
 
-  
-  
-  
-  
+  // The "maybe" is because there are two cases when we don't enable heuristics:
+  // 1. If we detect that TRR mode or URI have user values, or we previously
+  //    detected this (i.e. DISABLED_PREF is true)
+  // 2. If there are any non-DoH enterprise policies active
   async maybeEnableHeuristics() {
     if (lazy.Preferences.get(DISABLED_PREF)) {
       return;
@@ -241,8 +232,8 @@ const DoHController = {
     }
 
     await this.runTRRSelection();
-    
-    
+    // If we enter this branch it means that no automatic selection was possible.
+    // In this case, we try to set a fallback (as defined by DoHConfigController).
     if (!lazy.Preferences.isSet(ROLLOUT_URI_PREF)) {
       lazy.Preferences.set(
         ROLLOUT_URI_PREF,
@@ -260,12 +251,12 @@ const DoHController = {
   _wasThrottleExtended: false,
   _throttleHeuristics() {
     if (lazy.kHeuristicsThrottleTimeout < 0) {
-      
+      // Skip throttling in tests that set timeout to a negative value.
       return false;
     }
 
     if (this._throttleTimer) {
-      
+      // Already throttling - nothing to do.
       this._runsWhileThrottling++;
       return true;
     }
@@ -283,10 +274,10 @@ const DoHController = {
   _handleThrottleTimeout() {
     delete this._throttleTimer;
     if (this._runsWhileThrottling > lazy.kHeuristicsRateLimit) {
-      
-      
+      // During the throttle period, we saw that the rate limit was exceeded.
+      // We extend the throttle period, and don't bother running heuristics yet.
       this._wasThrottleExtended = true;
-      
+      // Restart the throttle timer.
       this._throttleHeuristics();
       if (lazy.kIsInAutomation) {
         Services.obs.notifyObservers(null, "doh:heuristics-throttle-extend");
@@ -294,9 +285,9 @@ const DoHController = {
       return;
     }
 
-    
-    
-    
+    // If this was an extended throttle and there were no runs during the
+    // extended period, we still want to run heuristics, since the extended
+    // throttle implies we had a non-zero number of attempts before extension.
     if (this._runsWhileThrottling > 0 || this._wasThrottleExtended) {
       this.runHeuristicsThrottled("throttled");
     }
@@ -309,15 +300,15 @@ const DoHController = {
   },
 
   runHeuristicsThrottled(evaluateReason) {
-    
-    
+    // _throttleHeuristics returns true if we've already witnessed a run and the
+    // timeout period hasn't lapsed yet. If it does so, we suppress this run.
     if (this._throttleHeuristics()) {
       return;
     }
 
-    
-    
-    
+    // _throttleHeuristics returned false - we're good to run heuristics.
+    // At this point the timer has been started and subsequent calls will be
+    // suppressed if it hasn't fired yet.
     this.runHeuristics(evaluateReason);
   },
 
@@ -332,11 +323,11 @@ const DoHController = {
       lazy.gCaptivePortalService.state ==
         lazy.gCaptivePortalService.LOCKED_PORTAL
     ) {
-      
-      
-      
-      
-      
+      // If the network is currently down or there was a debounce triggered
+      // while we were running heuristics, it means the network fluctuated
+      // during this heuristics run. We simply discard the results in this case.
+      // Same thing if there was another heuristics run triggered or if we have
+      // detected a locked captive portal while this one was ongoing.
       return;
     }
 
@@ -361,10 +352,10 @@ const DoHController = {
       evaluateReason,
       steeredProvider: "",
       captiveState: getCaptiveStateString(),
-      
-      
-      
-      
+      // NOTE: This might not yet be available after a network change. We mainly
+      // care about the startup case though - we want to look at whether the
+      // heuristics result is consistent for networkIDs often seen at startup.
+      // TODO: Use this data to implement cached results to use early at startup.
       networkID: getHashedNetworkID(),
     };
 
@@ -394,8 +385,8 @@ const DoHController = {
         }
       }
 
-      
-      
+      // With the native fallback warning preference set we won't disable
+      // DoH on select tripped heuristics so that we stay in trr mode 2
       if (fallbackHeuristicTripped != undefined) {
         await this.setState("enabled");
         try {
@@ -410,9 +401,9 @@ const DoHController = {
       await this.setState("enabled");
     }
 
-    
-    
-    
+    // For telemetry, we group the heuristics results into three categories.
+    // Only heuristics with a DISABLE_DOH result are included.
+    // Each category is finally included in the event as a comma-separated list.
     let canaries = [];
     let filtering = [];
     let enterprise = [];
@@ -468,7 +459,7 @@ const DoHController = {
       case "manuallyDisabled":
       case "UIDisabled":
         lazy.Preferences.reset(BREADCRUMB_PREF);
-      
+      // Fall through.
       case "rollback":
         lazy.Preferences.reset(ROLLOUT_MODE_PREF);
         break;
@@ -512,8 +503,8 @@ const DoHController = {
   },
 
   async runTRRSelection() {
-    
-    
+    // If persisting the selection is disabled, clear the existing
+    // selection.
     if (!lazy.DoHConfigController.currentConfig.trrSelection.commitResult) {
       lazy.Preferences.reset(ROLLOUT_URI_PREF);
     }
@@ -532,7 +523,7 @@ const DoHController = {
 
     await this.runTRRSelectionDryRun();
 
-    
+    // If persisting the selection is disabled, don't commit the value.
     if (!lazy.DoHConfigController.currentConfig.trrSelection.commitResult) {
       return;
     }
@@ -545,8 +536,8 @@ const DoHController = {
 
   async runTRRSelectionDryRun() {
     if (lazy.Preferences.isSet(TRR_SELECT_DRY_RUN_RESULT_PREF)) {
-      
-      
+      // Check whether the existing dry-run-result is in the default
+      // list of TRRs. If it is, all good. Else, run the dry run again.
       let dryRunResult = lazy.Preferences.get(TRR_SELECT_DRY_RUN_RESULT_PREF);
       let dryRunResultIsValid = lazy.DoHConfigController.currentConfig.providerList.some(
         trr => trr.uri == dryRunResult
@@ -562,21 +553,21 @@ const DoHController = {
         TRRSELECT_TELEMETRY_CATEGORY,
         "trrselect",
         "dryrunresult",
-        trrUri.substring(0, 40) 
+        trrUri.substring(0, 40) // Telemetry payload max length
       );
     };
 
     if (lazy.kIsInAutomation) {
-      
-      
+      // For mochitests, just record telemetry with a dummy result.
+      // TRRPerformance.sys.mjs is tested in xpcshell.
       setDryRunResultAndRecordTelemetry("https://example.com/dns-query");
       return;
     }
 
-    
-    
-    let { TRRRacer } = ChromeUtils.import(
-      "resource:///modules/TRRPerformance.jsm"
+    // Importing the module here saves us from having to do it at startup, and
+    // ensures tests have time to set prefs before the module initializes.
+    let { TRRRacer } = ChromeUtils.importESModule(
+      "resource:///modules/TRRPerformance.sys.mjs"
     );
     await new Promise(resolve => {
       let trrList = lazy.DoHConfigController.currentConfig.trrSelection.providerList.map(
@@ -624,10 +615,10 @@ const DoHController = {
     }
   },
 
-  
-  
-  
-  
+  // Connection change events are debounced to allow the network to settle.
+  // We wait for the network to be up for a period of kDebounceTimeout before
+  // handling the change. The timer is canceled when the network goes down and
+  // restarted the first time we learn that it went back up.
   _debounceTimer: null,
   _cancelDebounce() {
     if (!this._debounceTimer) {
@@ -641,18 +632,18 @@ const DoHController = {
   _lastDebounceTimestamp: 0,
   onConnectionChanged() {
     if (!lazy.gNetworkLinkService.isLinkUp) {
-      
+      // Network is down - reset debounce timer.
       this._cancelDebounce();
       return;
     }
 
     if (this._debounceTimer) {
-      
+      // Already debouncing - nothing to do.
       return;
     }
 
     if (lazy.kNetworkDebounceTimeout < 0) {
-      
+      // Skip debouncing in tests that set timeout to a negative value.
       this.onConnectionChangedDebounced();
       return;
     }
@@ -676,15 +667,15 @@ const DoHController = {
       return;
     }
 
-    
-    
-    
+    // The network is up and we don't know that we're in a locked portal.
+    // Run heuristics. If we detect a portal later, we'll run heuristics again
+    // when it's unlocked. In that case, this run will likely have failed.
     this.runHeuristicsThrottled("netchange");
   },
 
   onConnectivityAvailable() {
     if (this._debounceTimer) {
-      
+      // Already debouncing - nothing to do.
       return;
     }
 

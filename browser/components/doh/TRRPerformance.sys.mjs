@@ -1,32 +1,26 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["TRRRacer", "DNSLookup", "LookupAggregator"];
-
+/*
+ * This module tests TRR performance by issuing DNS requests to TRRs and
+ * recording telemetry for the network time for each request.
+ *
+ * We test each TRR with 5 random subdomains of a canonical domain and also
+ * a "popular" domain (which the TRR likely have cached).
+ *
+ * To ensure data integrity, we run the requests in an aggregator wrapper
+ * and collect all the results before sending telemetry. If we detect network
+ * loss, the results are discarded. A new run is triggered upon detection of
+ * usable network until a full set of results has been captured. We stop retrying
+ * after 5 attempts.
+ */
 Services.telemetry.setEventRecordingEnabled(
   "security.doh.trrPerformance",
   true
 );
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -44,7 +38,7 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsICaptivePortalService"
 );
 
-
+// The canonical domain whose subdomains we will be resolving.
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "kCanonicalDomain",
@@ -52,7 +46,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "firefox-dns-perf-test.net."
 );
 
-
+// The number of random subdomains to resolve per TRR.
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "kRepeats",
@@ -60,7 +54,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   5
 );
 
-
+// The "popular" domain that we expect the TRRs to have cached.
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "kPopularDomains",
@@ -83,15 +77,15 @@ function getRandomSubdomain() {
   let uuid = Services.uuid
     .generateUUID()
     .toString()
-    .slice(1, -1); 
+    .slice(1, -1); // Discard surrounding braces
   return `${uuid}.${lazy.kCanonicalDomain}`;
 }
 
-
-
-
-
-class DNSLookup {
+// A wrapper around async DNS lookups. The results are passed on to the supplied
+// callback. The wrapper attempts the lookup 3 times before passing on a failure.
+// If a false-y `domain` is supplied, a random subdomain will be used. Each retry
+// will use a different random subdomain to ensure we bypass chached responses.
+export class DNSLookup {
   constructor(domain, trrServer, callback) {
     this._domain = domain;
     this.trrServer = trrServer;
@@ -118,23 +112,23 @@ class DNSLookup {
   }
 
   onLookupComplete(request, record, status) {
-    
+    // Try again if we failed...
     if (!Components.isSuccessCode(status) && this.retryCount < 3) {
       this.doLookup();
       return;
     }
 
-    
+    // But after the third try, just pass the status on.
     this.callback(request, record, status, this.usedDomain, this.retryCount);
   }
 }
 
 DNSLookup.prototype.QueryInterface = ChromeUtils.generateQI(["nsIDNSListener"]);
 
-
-
-
-class LookupAggregator {
+// A wrapper around a single set of measurements. The required lookups are
+// triggered and the results aggregated before telemetry is sent. If aborted,
+// any aggregated results are discarded.
+export class LookupAggregator {
   constructor(onCompleteCallback, trrList) {
     this.onCompleteCallback = onCompleteCallback;
     this.trrList = trrList;
@@ -144,7 +138,7 @@ class LookupAggregator {
 
     this.domains = [];
     for (let i = 0; i < lazy.kRepeats; ++i) {
-      
+      // false-y domain will cause DNSLookup to generate a random one.
       this.domains.push(null);
     }
     this.domains.push(...lazy.kPopularDomains);
@@ -236,11 +230,11 @@ class LookupAggregator {
   }
 }
 
-
-
-
-
-class TRRRacer {
+// This class monitors the network and spawns a new LookupAggregator when ready.
+// When the network goes down, an ongoing aggregator is aborted and a new one
+// spawned next time we get a link, up to 5 times. On the fifth time, we just
+// let the aggegator complete and mark it as tainted.
+export class TRRRacer {
   constructor(onCompleteCallback, trrList) {
     this._aggregator = null;
     this._retryCount = 0;
@@ -290,17 +284,17 @@ class TRRRacer {
     );
   }
 
-  
-
-
-
-
-
-
-
-
+  /*
+   * Given an array of { trr, time }, returns the trr with smallest mean time.
+   * Separate from _getFastestTRR for easy unit-testing.
+   *
+   * @returns The TRR with the fastest average time.
+   *          If returnRandomDefault is false-y, returns undefined if no valid
+   *          times were present in the results. Otherwise, returns one of the
+   *          present TRRs at random.
+   */
   _getFastestTRRFromResults(results, returnRandomDefault = false) {
-    
+    // First, organize the results into a map of TRR -> array of times
     let TRRTimingMap = new Map();
     let TRRErrorCount = new Map();
     for (let { trr, time } of results) {
@@ -314,11 +308,11 @@ class TRRRacer {
       }
     }
 
-    
-    
-    
-    
-    
+    // Loop through each TRR's array of times, compute the geometric means,
+    // and remember the fastest TRR. Geometric mean is a bit more forgiving
+    // in the presence of noise (anomalously high values).
+    // We don't need the full geometric mean, we simply calculate the arithmetic
+    // means in log-space and then compare those values.
     let fastestTRR;
     let fastestAverageTime = -1;
     let trrs = [...TRRTimingMap.keys()];
@@ -328,15 +322,15 @@ class TRRRacer {
         continue;
       }
 
-      
+      // Skip TRRs that had an error rate of more than 30%.
       let errorCount = TRRErrorCount.get(trr) || 0;
       let totalResults = times.length + errorCount;
       if (errorCount / totalResults > 0.3) {
         continue;
       }
 
-      
-      
+      // Arithmetic mean in log space. Take log of (a + 1) to ensure we never
+      // take log(0) which would be -Infinity.
       let averageTime =
         times.map(a => Math.log(a + 1)).reduce((a, b) => a + b) / times.length;
       if (fastestAverageTime == -1 || averageTime < fastestAverageTime) {
@@ -361,9 +355,9 @@ class TRRRacer {
     this._retryCount++;
   }
 
-  
-  
-  
+  // When the link goes *down*, or when we detect a locked captive portal, we
+  // abort any ongoing LookupAggregator run. When the link goes *up*, or we
+  // detect a newly unlocked portal, we start a run if one isn't ongoing.
   observe(subject, topic, data) {
     switch (topic) {
       case "network:link-status-changed":

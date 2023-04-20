@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["DoHTestUtils"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -24,16 +20,16 @@ const kProviderCollectionKey = "doh-providers";
 const kConfigUpdateTopic = "doh-config-updated";
 const kControllerReloadedTopic = "doh:controller-reloaded";
 
-
-
-
-
-
-
-
-
-
-const DoHTestUtils = {
+/*
+ * Some helpers for loading and modifying DoH config in
+ * Remote Settings. Call resetRemoteSettingsConfig to set up
+ * basic default config that omits external URLs. Use
+ * waitForConfigFlush to wait for DoH actors to pick up changes.
+ *
+ * Some tests need to load/reset config while DoH actors are
+ * uninitialized. Pass waitForConfigFlushes = false in these cases.
+ */
+export const DoHTestUtils = {
   providers: [
     {
       uri: "https://example.com/1",
@@ -58,7 +54,7 @@ const DoHTestUtils = {
     let db = await providerRS.db;
     await db.importChanges({}, Date.now(), providers, { clear: true });
 
-    
+    // Trigger a sync.
     await this.triggerSync(providerRS);
 
     await configFlushedPromise;
@@ -71,13 +67,13 @@ const DoHTestUtils = {
     let db = await configRS.db;
     await db.importChanges({}, Date.now(), [config]);
 
-    
+    // Trigger a sync.
     await this.triggerSync(configRS);
 
     await configFlushedPromise;
   },
 
-  
+  // Loads default config for testing without clearing existing entries.
   async loadDefaultRemoteSettingsConfig(waitForConfigFlushes = true) {
     await this.loadRemoteSettingsProviders(
       this.providers,
@@ -98,14 +94,14 @@ const DoHTestUtils = {
     );
   },
 
-  
+  // Clears existing config AND loads defaults.
   async resetRemoteSettingsConfig(waitForConfigFlushes = true) {
     let providerRS = lazy.RemoteSettings(kProviderCollectionKey);
     let configRS = lazy.RemoteSettings(kConfigCollectionKey);
     for (let rs of [providerRS, configRS]) {
       let configFlushedPromise = this.waitForConfigFlush(waitForConfigFlushes);
       await rs.db.importChanges({}, Date.now(), [], { clear: true });
-      
+      // Trigger a sync to clear.
       await this.triggerSync(rs);
       await configFlushedPromise;
     }
