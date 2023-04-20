@@ -179,37 +179,28 @@ TEST(StatisticsCalculator, InterruptionCounterDoNotLogBeforeDecoding) {
   EXPECT_EQ(1, lts.interruption_count);
 }
 
-
-
-
 TEST(StatisticsCalculator, DiscardedPackets) {
   StatisticsCalculator statistics_calculator;
-  EXPECT_EQ(
-      0u,
-      statistics_calculator.GetOperationsAndState().discarded_primary_packets);
+  EXPECT_EQ(0u,
+            statistics_calculator.GetLifetimeStatistics().packets_discarded);
 
   statistics_calculator.PacketsDiscarded(1);
-  EXPECT_EQ(
-      1u,
-      statistics_calculator.GetOperationsAndState().discarded_primary_packets);
+  EXPECT_EQ(1u,
+            statistics_calculator.GetLifetimeStatistics().packets_discarded);
 
   statistics_calculator.PacketsDiscarded(10);
-  EXPECT_EQ(
-      11u,
-      statistics_calculator.GetOperationsAndState().discarded_primary_packets);
+  EXPECT_EQ(11u,
+            statistics_calculator.GetLifetimeStatistics().packets_discarded);
 
   
-  
   statistics_calculator.SecondaryPacketsDiscarded(1);
-  EXPECT_EQ(
-      11u,
-      statistics_calculator.GetOperationsAndState().discarded_primary_packets);
+  EXPECT_EQ(11u,
+            statistics_calculator.GetLifetimeStatistics().packets_discarded);
 
   
   statistics_calculator.FlushedPacketBuffer();
-  EXPECT_EQ(
-      11u,
-      statistics_calculator.GetOperationsAndState().discarded_primary_packets);
+  EXPECT_EQ(11u,
+            statistics_calculator.GetLifetimeStatistics().packets_discarded);
 }
 
 }  

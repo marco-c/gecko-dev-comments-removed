@@ -652,7 +652,7 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   EXPECT_TRUE(packet_buffer_->Empty());
 
   
-  EXPECT_EQ(1u, neteq_->GetOperationsAndState().discarded_primary_packets);
+  EXPECT_EQ(1u, neteq_->GetLifetimeStatistics().packets_discarded);
 
   
   ASSERT_THAT(output.packet_infos_, SizeIs(1));

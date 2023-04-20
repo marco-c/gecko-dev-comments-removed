@@ -72,6 +72,7 @@ struct NetEqLifetimeStatistics {
   uint64_t silent_concealed_samples = 0;
   uint64_t fec_packets_received = 0;
   uint64_t fec_packets_discarded = 0;
+  uint64_t packets_discarded = 0;
   
   uint64_t delayed_packet_outage_samples = 0;
   
@@ -102,8 +103,6 @@ struct NetEqOperationsAndState {
   uint64_t accelerate_samples = 0;
   
   uint64_t packet_buffer_flushes = 0;
-  
-  uint64_t discarded_primary_packets = 0;
   
   
   uint64_t last_waiting_time_ms = 0;
