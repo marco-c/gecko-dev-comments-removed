@@ -6,71 +6,24 @@
 
 
 var gPageStyleMenu = {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  _pageStyleSheets: new WeakMap(),
-
-  
-
-
-
-
-
-
-
-
-  addBrowserStyleSheets(styleSheets, permanentKey) {
-    let sheetData = this._pageStyleSheets.get(permanentKey);
-    if (!sheetData) {
-      this._pageStyleSheets.set(permanentKey, styleSheets);
-      return;
-    }
-    sheetData.filteredStyleSheets.push(...styleSheets.filteredStyleSheets);
-    sheetData.preferredStyleSheetSet =
-      sheetData.preferredStyleSheetSet || styleSheets.preferredStyleSheetSet;
-  },
-
-  clearBrowserStyleSheets(permanentKey) {
-    this._pageStyleSheets.delete(permanentKey);
-  },
-
   _getStyleSheetInfo(browser) {
-    let data = this._pageStyleSheets.get(browser.permanentKey);
-    if (!data) {
-      return {
+    let actor = browser.browsingContext.currentWindowGlobal?.getActor(
+      "PageStyle"
+    );
+    let styleSheetInfo;
+    if (actor) {
+      styleSheetInfo = actor.getSheetInfo();
+    } else {
+      
+      
+      
+      styleSheetInfo = {
         filteredStyleSheets: [],
         authorStyleDisabled: false,
         preferredStyleSheetSet: true,
       };
     }
-
-    return data;
+    return styleSheetInfo;
   },
 
   fillPopup(menuPopup) {
@@ -157,13 +110,10 @@ var gPageStyleMenu = {
 
 
   switchStyleSheet(title) {
-    let { permanentKey } = gBrowser.selectedBrowser;
-    let sheetData = this._pageStyleSheets.get(permanentKey);
-    if (sheetData && sheetData.filteredStyleSheets) {
-      sheetData.authorStyleDisabled = false;
-      for (let sheet of sheetData.filteredStyleSheets) {
-        sheet.disabled = sheet.title !== title;
-      }
+    let sheetData = this._getStyleSheetInfo(gBrowser.selectedBrowser);
+    sheetData.authorStyleDisabled = false;
+    for (let sheet of sheetData.filteredStyleSheets) {
+      sheet.disabled = sheet.title !== title;
     }
     this._sendMessageToAll("PageStyle:Switch", { title });
   },
@@ -172,11 +122,8 @@ var gPageStyleMenu = {
 
 
   disableStyle() {
-    let { permanentKey } = gBrowser.selectedBrowser;
-    let sheetData = this._pageStyleSheets.get(permanentKey);
-    if (sheetData) {
-      sheetData.authorStyleDisabled = true;
-    }
+    let sheetData = this._getStyleSheetInfo(gBrowser.selectedBrowser);
+    sheetData.authorStyleDisabled = true;
     this._sendMessageToAll("PageStyle:Disable", {});
   },
 };
