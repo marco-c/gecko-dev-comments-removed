@@ -307,7 +307,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                LOG(("isreject: %d nsresult 0x%x", aResult.IsReject(),
                     (uint32_t)rv));
                if (NS_FAILED(rv)) {
-                 self->RejectWaitingConnection(rv);
+                 self->RejectWaitingConnection(rv, child);
                } else {
                  
                  
@@ -330,8 +330,11 @@ void WebTransport::ResolveWaitingConnection(
   if (mState != WebTransportState::CONNECTING) {
     
     
+    aChild->Shutdown();
+    
     return;
   }
+
   mChild = aChild;
   
   mState = WebTransportState::CONNECTED;
@@ -343,7 +346,8 @@ void WebTransport::ResolveWaitingConnection(
   mReady->MaybeResolveWithUndefined();
 }
 
-void WebTransport::RejectWaitingConnection(nsresult aRv) {
+void WebTransport::RejectWaitingConnection(nsresult aRv,
+                                           WebTransportChild* aChild) {
   LOG(("Rejected connection %p %x", this, (uint32_t)aRv));
   
   
@@ -354,6 +358,7 @@ void WebTransport::RejectWaitingConnection(nsresult aRv) {
   
   if (mState == WebTransportState::CLOSED ||
       mState == WebTransportState::FAILED) {
+    aChild->Shutdown();
     return;
   }
 
@@ -366,7 +371,7 @@ void WebTransport::RejectWaitingConnection(nsresult aRv) {
   Cleanup(error, nullptr, errorresult);
 
   
-  
+  aChild->Shutdown();
 }
 
 bool WebTransport::ParseURL(const nsAString& aURL) const {
@@ -411,6 +416,41 @@ already_AddRefed<Promise> WebTransport::Closed() {
   }
   promise->MaybeResolve(mState == WebTransportState::CLOSED);
   return promise.forget();
+}
+
+void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
+                                const nsACString& aReason) {
+  LOG(("Server closed: cleanly: %d, code %u, reason %s", aCleanly, aCode,
+       PromiseFlatCString(aReason).get()));
+  
+  
+  
+  
+  if (mState == WebTransportState::CLOSED ||
+      mState == WebTransportState::FAILED) {
+    return;
+  }
+  
+  
+  RefPtr<WebTransportError> error = new WebTransportError(
+      "remote WebTransport close"_ns, WebTransportErrorSource::Session);
+  
+  
+  ErrorResult errorresult;
+  if (!aCleanly) {
+    Cleanup(error, nullptr, errorresult);
+    return;
+  }
+  
+  
+  
+  
+  WebTransportCloseInfo closeinfo;
+  closeinfo.mCloseCode = aCode;
+  closeinfo.mReason = aReason;
+
+  
+  Cleanup(error, &closeinfo, errorresult);
 }
 
 void WebTransport::Close(const WebTransportCloseInfo& aOptions,

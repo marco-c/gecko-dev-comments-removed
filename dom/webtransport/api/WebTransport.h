@@ -49,7 +49,7 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
                                         ErrorResult& aError);
   void ResolveWaitingConnection(WebTransportReliabilityMode aReliability,
                                 WebTransportChild* aChild);
-  void RejectWaitingConnection(nsresult aRv);
+  void RejectWaitingConnection(nsresult aRv, WebTransportChild* aChild);
   bool ParseURL(const nsAString& aURL) const;
   
   
@@ -65,6 +65,8 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   void NewUnidirectionalStream(
       const RefPtr<mozilla::ipc::DataPipeReceiver>& aStream);
 
+  void RemoteClosed(bool aCleanly, const uint32_t& aCode,
+                    const nsACString& aReason);
   
   nsIGlobalObject* GetParentObject() const;
 
