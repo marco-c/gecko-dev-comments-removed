@@ -38,7 +38,6 @@
 
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasksRunner.h"
-#  include "nsIBackgroundTasks.h"
 #endif
 
 
@@ -4089,18 +4088,6 @@ nsresult CacheFileIOManager::DispatchPurgeTask(
   
   return NS_ERROR_NOT_IMPLEMENTED;
 #else
-
-  if (nsCOMPtr<nsIBackgroundTasks> backgroundTaskService =
-          do_GetService("@mozilla.org/backgroundtasks;1")) {
-    bool isBackgroundTask = false;
-    backgroundTaskService->GetIsBackgroundTaskMode(&isBackgroundTask);
-    if (isBackgroundTask) {
-      
-      
-      return NS_OK;
-    }
-  }
-
   nsCOMPtr<nsIFile> cacheDir;
   nsresult rv = mCacheDirectory->Clone(getter_AddRefs(cacheDir));
   NS_ENSURE_SUCCESS(rv, rv);
