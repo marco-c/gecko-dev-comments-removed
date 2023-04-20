@@ -3,7 +3,7 @@
 
 
 use api::units::*;
-use crate::batch::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBuilder, CommandBufferIndex, PrimitiveCommand};
+use crate::command_buffer::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBuilder, CommandBufferIndex, PrimitiveCommand};
 use crate::internal_types::FastHashMap;
 use crate::picture::{SurfaceInfo, SurfaceIndex, TileKey, SubSliceIndex};
 use crate::prim_store::{PictureIndex};
