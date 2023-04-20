@@ -190,13 +190,6 @@ add_task(async function navigate_around() {
     },
   };
 
-  if (AppConstants.NIGHTLY_BUILD) {
-    knownProblematicPrefs["toolkit.telemetry.cachedClientID"] = {
-      
-      
-    };
-  }
-
   if (SpecialPowers.useRemoteSubframes) {
     
     
