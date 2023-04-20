@@ -6,9 +6,7 @@ import platform as platform_mod
 import sys
 
 
-
-
-RUSTUP_URL_BASE = "https://static-rust-lang-org.s3.amazonaws.com/rustup"
+RUSTUP_URL_BASE = "https://static.rust-lang.org/rustup"
 
 
 RUSTUP_MANIFEST = RUSTUP_URL_BASE + "/release-stable.toml"
