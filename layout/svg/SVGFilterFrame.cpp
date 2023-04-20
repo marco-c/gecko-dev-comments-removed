@@ -128,18 +128,11 @@ SVGFilterFrame* SVGFilterFrame::GetReferencedFilter() {
     this->mNoHRefURI = aHref.IsEmpty();
   };
 
-  nsIFrame* tframe = SVGObserverUtils::GetAndObserveTemplate(this, GetHref);
-  if (tframe) {
-    LayoutFrameType frameType = tframe->Type();
-    if (frameType == LayoutFrameType::SVGFilter) {
-      return static_cast<SVGFilterFrame*>(tframe);
-    }
-    
-    
-    
-  }
+  return do_QueryFrame(SVGObserverUtils::GetAndObserveTemplate(this, GetHref));
 
-  return nullptr;
+  
+  
+  
 }
 
 nsresult SVGFilterFrame::AttributeChanged(int32_t aNameSpaceID,
