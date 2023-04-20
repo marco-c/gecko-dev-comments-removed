@@ -240,6 +240,20 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
+  bool HasTransitionEventListeners() { return mMayHaveTransitionEventListener; }
+
+  
+
+
+
+  void SetHasTransitionEventListeners() {
+    mMayHaveTransitionEventListener = true;
+  }
+
+  
+
+
+
 
 
   bool HasBeforeInputEventListenersForTelemetry() const {
@@ -667,6 +681,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   bool mMayHaveFormSelectEventListener;
   bool mMayHaveMouseEnterLeaveEventListener;
   bool mMayHavePointerEnterLeaveEventListener;
+  bool mMayHaveTransitionEventListener;
   
   
   bool mMayHaveBeforeInputEventListenerForTelemetry;
