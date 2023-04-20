@@ -279,7 +279,9 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
     return;
   }
 
-  rv = mInputStream->AsyncWait(this, nsIAsyncOutputStream::WAIT_CLOSURE_ONLY, 0,
+  
+  
+  rv = mInputStream->AsyncWait(this, nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
                                mOwningEventTarget);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ErrorPropagation(aCx, aStream, rv);

@@ -149,6 +149,9 @@ class BodyStream final : public nsIInputStreamCallback,
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
   
   
+  
+  
+  
   RefPtr<Promise> mPullPromise;
 
   

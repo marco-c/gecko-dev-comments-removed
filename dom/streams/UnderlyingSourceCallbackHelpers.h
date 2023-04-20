@@ -252,19 +252,7 @@ class InputToReadableStreamAlgorithms final
     eInitializing,
 
     
-    
-    eWaiting,
-
-    
-    eReading,
-
-    
-    eWriting,
-
-    
-    
-    
-    eChecking,
+    eInitialized,
 
     
     eClosed,
@@ -273,6 +261,11 @@ class InputToReadableStreamAlgorithms final
   State mState;
 
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
+
+  
+  
+  
+  RefPtr<Promise> mPullPromise;
 
   RefPtr<InputStreamHolder> mInput;
   RefPtr<ReadableStream> mStream;

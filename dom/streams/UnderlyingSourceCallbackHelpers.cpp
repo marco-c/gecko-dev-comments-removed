@@ -211,7 +211,7 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(
     InputToReadableStreamAlgorithms, UnderlyingSourceAlgorithmsWrapper)
 NS_IMPL_CYCLE_COLLECTION_INHERITED(InputToReadableStreamAlgorithms,
                                    UnderlyingSourceAlgorithmsWrapper, mStream,
-                                   mOwningEventTarget)
+                                   mOwningEventTarget, mPullPromise)
 
 already_AddRefed<Promise> InputToReadableStreamAlgorithms::PullCallbackImpl(
     JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {
@@ -221,30 +221,11 @@ already_AddRefed<Promise> InputToReadableStreamAlgorithms::PullCallbackImpl(
 
   MOZ_DIAGNOSTIC_ASSERT(stream->Disturbed());
 
-  MOZ_DIAGNOSTIC_ASSERT(mState == eInitializing || mState == eWaiting ||
-                        mState == eChecking || mState == eReading);
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitializing || mState == eInitialized);
+  MOZ_ASSERT(!mPullPromise);
+  mPullPromise = Promise::CreateInfallible(aController.GetParentObject());
 
-  RefPtr<Promise> resolvedWithUndefinedPromise =
-      Promise::CreateResolvedWithUndefined(aController.GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  if (mState == eReading) {
-    
-    return resolvedWithUndefinedPromise.forget();
-  }
-
-  if (mState == eChecking) {
-    
-    
-    MOZ_ASSERT(mInput);
-    mState = eReading;
-
-    return resolvedWithUndefinedPromise.forget();
-  }
-
-  mState = eReading;
+  mState = eInitialized;
 
   MOZ_DIAGNOSTIC_ASSERT(mInput);
 
@@ -255,7 +236,7 @@ already_AddRefed<Promise> InputToReadableStreamAlgorithms::PullCallbackImpl(
   }
 
   
-  return resolvedWithUndefinedPromise.forget();
+  return do_AddRef(mPullPromise);
 }
 
 NS_IMETHODIMP
@@ -272,17 +253,13 @@ InputToReadableStreamAlgorithms::OnInputStreamReady(
                       "InputToReadableStream data available");
 
   MOZ_DIAGNOSTIC_ASSERT(mInput);
-  MOZ_DIAGNOSTIC_ASSERT(mState == eReading || mState == eChecking);
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitialized);
 
   JSContext* cx = aes.cx();
 
   uint64_t size = 0;
   nsresult rv = mInput->Available(&size);
-  if (NS_SUCCEEDED(rv) && size == 0) {
-    
-    
-    rv = NS_BASE_STREAM_CLOSED;
-  }
+  MOZ_ASSERT_IF(NS_SUCCEEDED(rv), size > 0);
 
   
   if (rv == NS_BASE_STREAM_CLOSED || NS_WARN_IF(NS_FAILED(rv))) {
@@ -291,12 +268,14 @@ InputToReadableStreamAlgorithms::OnInputStreamReady(
   }
 
   
-  if (mState == eChecking) {
-    mState = eWaiting;
+  
+  
+  if (!mPullPromise) {
     return NS_OK;
   }
 
-  mState = eWriting;
+  MOZ_DIAGNOSTIC_ASSERT(mPullPromise->State() ==
+                        Promise::PromiseState::Pending);
 
   ErrorResult errorResult;
   EnqueueChunkWithSizeIntoStream(cx, mStream, size, errorResult);
@@ -304,6 +283,20 @@ InputToReadableStreamAlgorithms::OnInputStreamReady(
   if (errorResult.Failed()) {
     ErrorPropagation(cx, mStream, errorResult.StealNSResult());
     return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mPullPromise);
+  if (mPullPromise) {
+    mPullPromise->MaybeResolveWithUndefined();
+    mPullPromise = nullptr;
   }
 
   
@@ -319,8 +312,9 @@ void InputToReadableStreamAlgorithms::WriteIntoReadRequestBuffer(
   MOZ_DIAGNOSTIC_ASSERT(aBuffer);
   MOZ_DIAGNOSTIC_ASSERT(aByteWritten);
   MOZ_DIAGNOSTIC_ASSERT(mInput);
-  MOZ_DIAGNOSTIC_ASSERT(mState == eWriting);
-  mState = eChecking;
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitialized);
+  MOZ_DIAGNOSTIC_ASSERT(mPullPromise->State() ==
+                        Promise::PromiseState::Pending);
 
   uint32_t written;
   nsresult rv;
@@ -353,7 +347,10 @@ void InputToReadableStreamAlgorithms::WriteIntoReadRequestBuffer(
     return;
   }
 
-  rv = mInput->AsyncWait(0, 0, mOwningEventTarget);
+  
+  
+  rv = mInput->AsyncWait(nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0,
+                         mOwningEventTarget);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     ErrorPropagation(aCx, aStream, rv);
     return;
@@ -425,6 +422,11 @@ void InputToReadableStreamAlgorithms::ReleaseObjects() {
     mInput->Shutdown();
     mInput = nullptr;
   }
+
+  
+  
+  
+  mPullPromise = nullptr;
 }
 
 void InputToReadableStreamAlgorithms::ErrorPropagation(JSContext* aCx,
