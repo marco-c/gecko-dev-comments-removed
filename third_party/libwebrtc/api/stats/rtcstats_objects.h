@@ -185,7 +185,6 @@ class RTC_EXPORT RTCDataChannelStats final : public RTCStats {
 };
 
 
-
 class RTC_EXPORT RTCIceCandidatePairStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -199,16 +198,15 @@ class RTC_EXPORT RTCIceCandidatePairStats final : public RTCStats {
   RTCStatsMember<std::string> local_candidate_id;
   RTCStatsMember<std::string> remote_candidate_id;
   
-  
   RTCStatsMember<std::string> state;
   
   RTCStatsMember<uint64_t> priority;
   RTCStatsMember<bool> nominated;
   
   
-  RTCStatsMember<bool> writable;
   
-  RTCStatsMember<bool> readable;
+  
+  RTCStatsMember<bool> writable;
   RTCStatsMember<uint64_t> packets_sent;
   RTCStatsMember<uint64_t> packets_received;
   RTCStatsMember<uint64_t> bytes_sent;
@@ -216,33 +214,15 @@ class RTC_EXPORT RTCIceCandidatePairStats final : public RTCStats {
   RTCStatsMember<double> total_round_trip_time;
   RTCStatsMember<double> current_round_trip_time;
   RTCStatsMember<double> available_outgoing_bitrate;
-  
-  
-  
   RTCStatsMember<double> available_incoming_bitrate;
   RTCStatsMember<uint64_t> requests_received;
   RTCStatsMember<uint64_t> requests_sent;
   RTCStatsMember<uint64_t> responses_received;
   RTCStatsMember<uint64_t> responses_sent;
-  
-  RTCStatsMember<uint64_t> retransmissions_received;
-  
-  RTCStatsMember<uint64_t> retransmissions_sent;
-  
-  RTCStatsMember<uint64_t> consent_requests_received;
   RTCStatsMember<uint64_t> consent_requests_sent;
-  
-  RTCStatsMember<uint64_t> consent_responses_received;
-  
-  RTCStatsMember<uint64_t> consent_responses_sent;
   RTCStatsMember<uint64_t> packets_discarded_on_send;
   RTCStatsMember<uint64_t> bytes_discarded_on_send;
 };
-
-
-
-
-
 
 
 class RTC_EXPORT RTCIceCandidateStats : public RTCStats {
@@ -335,7 +315,6 @@ class RTC_EXPORT RTCMediaStreamTrackStats final : public RTCStats {
   RTCStatsMember<bool> remote_source;
   RTCStatsMember<bool> ended;
   
-  
   RTCStatsMember<bool> detached;
   
   RTCStatsMember<std::string> kind;
@@ -344,19 +323,11 @@ class RTC_EXPORT RTCMediaStreamTrackStats final : public RTCStats {
   
   RTCStatsMember<uint32_t> frame_width;
   RTCStatsMember<uint32_t> frame_height;
-  
-  RTCStatsMember<double> frames_per_second;
   RTCStatsMember<uint32_t> frames_sent;
   RTCStatsMember<uint32_t> huge_frames_sent;
   RTCStatsMember<uint32_t> frames_received;
   RTCStatsMember<uint32_t> frames_decoded;
   RTCStatsMember<uint32_t> frames_dropped;
-  
-  RTCStatsMember<uint32_t> frames_corrupted;
-  
-  RTCStatsMember<uint32_t> partial_frames_lost;
-  
-  RTCStatsMember<uint32_t> full_frames_lost;
   
   RTCStatsMember<double> audio_level;         
   RTCStatsMember<double> total_audio_energy;  
@@ -374,6 +345,7 @@ class RTC_EXPORT RTCMediaStreamTrackStats final : public RTCStats {
   RTCNonStandardStatsMember<uint64_t> jitter_buffer_flushes;
   RTCNonStandardStatsMember<uint64_t> delayed_packet_outage_samples;
   RTCNonStandardStatsMember<double> relative_packet_arrival_delay;
+  
   
   
   
@@ -411,7 +383,6 @@ class RTC_EXPORT RTCPeerConnectionStats final : public RTCStats {
 };
 
 
-
 class RTC_EXPORT RTCRTPStreamStats : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -442,13 +413,6 @@ class RTC_EXPORT RTCReceivedRtpStreamStats : public RTCRTPStreamStats {
   RTCReceivedRtpStreamStats(const RTCReceivedRtpStreamStats& other);
   ~RTCReceivedRtpStreamStats() override;
 
-  
-  
-  
-  
-  
-  
-  
   RTCStatsMember<double> jitter;
   RTCStatsMember<int32_t> packets_lost;  
   RTCStatsMember<uint64_t> packets_discarded;
@@ -475,8 +439,6 @@ class RTC_EXPORT RTCSentRtpStreamStats : public RTCRTPStreamStats {
 };
 
 
-
-
 class RTC_EXPORT RTCInboundRTPStreamStats final
     : public RTCReceivedRtpStreamStats {
  public:
@@ -486,6 +448,8 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   RTCInboundRTPStreamStats(std::string&& id, int64_t timestamp_us);
   RTCInboundRTPStreamStats(const RTCInboundRTPStreamStats& other);
   ~RTCInboundRTPStreamStats() override;
+
+  
 
   RTCStatsMember<std::string> remote_id;
   RTCStatsMember<uint32_t> packets_received;
@@ -506,30 +470,9 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   RTCStatsMember<double> total_audio_energy;
   RTCStatsMember<double> total_samples_duration;
   
-  RTCStatsMember<double> round_trip_time;
-  
-  RTCStatsMember<uint32_t> packets_repaired;
-  
-  RTCStatsMember<uint32_t> burst_packets_lost;
-  
-  RTCStatsMember<uint32_t> burst_packets_discarded;
-  
-  RTCStatsMember<uint32_t> burst_loss_count;
-  
-  RTCStatsMember<uint32_t> burst_discard_count;
-  
-  RTCStatsMember<double> burst_loss_rate;
-  
-  RTCStatsMember<double> burst_discard_rate;
-  
-  RTCStatsMember<double> gap_loss_rate;
-  
-  RTCStatsMember<double> gap_discard_rate;
-  
   RTCStatsMember<int32_t> frames_received;
   RTCStatsMember<uint32_t> frame_width;
   RTCStatsMember<uint32_t> frame_height;
-  RTCStatsMember<uint32_t> frame_bit_depth;
   RTCStatsMember<double> frames_per_second;
   RTCStatsMember<uint32_t> frames_decoded;
   RTCStatsMember<uint32_t> key_frames_decoded;
@@ -544,6 +487,7 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   
   RTCStatsMember<std::string> content_type;
   
+  
   RTCStatsMember<double> estimated_playout_timestamp;
   
   
@@ -557,8 +501,6 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   
   RTCNonStandardStatsMember<double> min_playout_delay;
 };
-
-
 
 
 class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
@@ -621,11 +563,6 @@ class RTC_EXPORT RTCRemoteInboundRtpStreamStats final
   ~RTCRemoteInboundRtpStreamStats() override;
 
   RTCStatsMember<uint64_t> packets_discarded;
-  
-  
-  
-  
-  
   RTCStatsMember<std::string> local_id;
   RTCStatsMember<double> round_trip_time;
   RTCStatsMember<double> fraction_lost;
