@@ -12,6 +12,7 @@
 #include "unicode/uniset.h"
 #include "unicode/unistr.h"
 #include "unicode/usetiter.h"
+#include "unicode/utf16.h"  
 #endif  
 
 namespace v8 {
