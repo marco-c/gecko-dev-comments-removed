@@ -820,6 +820,7 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
 
   AddSharedMemoryPaths(policy.get(), aPid);
 
+  policy->AddPath(rdonly, "/dev/urandom");
   
   
   
