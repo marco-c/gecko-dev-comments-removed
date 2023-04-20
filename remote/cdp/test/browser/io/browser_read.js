@@ -73,9 +73,20 @@ add_task(async function readBySize({ client }) {
 add_task(async function readAfterClose({ client }) {
   const { IO } = client;
   const contents = "Lorem ipsum";
-  const { handle } = await registerFileStream(contents);
+
+  
+  
+  
+  
+  
+  
+  const { handle, stream } = await registerFileStream(contents, {
+    remove: false,
+  });
 
   await IO.close({ handle });
+
+  ok(!(await IOUtils.exists(stream.path)), "File should no longer exist");
 
   try {
     await IO.read({ handle });
