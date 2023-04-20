@@ -2,13 +2,16 @@
 
 
 
-from __future__ import absolute_import, print_function
+import argparse
+import platform
+import sys
+from pathlib import Path
 
+from mozbuild.bootstrap import bootstrap_toolchain
 from mozbuild.repackaging.application_ini import get_application_ini_value
 from mozpack import dmg
 
-import argparse
-import sys
+is_linux = platform.system() == "Linux"
 
 
 def main(args):
@@ -41,7 +44,20 @@ def main(args):
             options.inpath, "App", "CodeName", fallback="Name"
         )
 
-    dmg.create_dmg(options.inpath, options.dmgfile, volume_name, extra_files)
+    
+    dmg_tool = bootstrap_toolchain("dmg/dmg")
+    hfs_tool = bootstrap_toolchain("dmg/hfsplus")
+    mkfshfs_tool = bootstrap_toolchain("hfsplus/newfs_hfs")
+
+    dmg.create_dmg(
+        source_directory=Path(options.inpath),
+        output_dmg=Path(options.dmgfile),
+        volume_name=volume_name,
+        extra_files=extra_files,
+        dmg_tool=dmg_tool,
+        hfs_tool=hfs_tool,
+        mkfshfs_tool=mkfshfs_tool,
+    )
 
     return 0
 
