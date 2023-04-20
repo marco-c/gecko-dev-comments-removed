@@ -29,7 +29,6 @@
 #endif
 #include "absl/base/attributes.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/memory/memory.h"
 #include "api/function_view.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
@@ -298,14 +297,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
     return messages_.size() + delayed_messages_.size();
   }
 
-  
-  
-  template <class T>
-  void Dispose(T* doomed) {
-    RTC_DCHECK(doomed);
-    PostTask([dommed = absl::WrapUnique(doomed)] {});
-  }
-
   bool IsCurrent() const;
 
   
@@ -508,8 +499,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   static void AssertBlockingIsAllowedOnCurrentThread();
 
   friend class ScopedDisallowBlockingCalls;
-
-  RecursiveCriticalSection* CritForTest() { return &crit_; }
 
  private:
   static const int kSlowDispatchLoggingThreshold = 50;  
