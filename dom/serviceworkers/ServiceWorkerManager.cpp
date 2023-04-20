@@ -468,10 +468,6 @@ void ServiceWorkerManager::Init(ServiceWorkerRegistrar* aRegistrar) {
 
   MOZ_DIAGNOSTIC_ASSERT(aRegistrar);
 
-  nsTArray<ServiceWorkerRegistrationData> data;
-  aRegistrar->GetRegistrations(data);
-  LoadRegistrations(data);
-
   PBackgroundChild* actorChild = BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!actorChild)) {
     MaybeStartShutdown();
@@ -486,6 +482,12 @@ void ServiceWorkerManager::Init(ServiceWorkerRegistrar* aRegistrar) {
   }
 
   mActor = static_cast<ServiceWorkerManagerChild*>(actor);
+
+  
+  
+  nsTArray<ServiceWorkerRegistrationData> data;
+  aRegistrar->GetRegistrations(data);
+  LoadRegistrations(data);
 
   mTelemetryLastChange = TimeStamp::Now();
 }
@@ -1365,8 +1367,8 @@ ServiceWorkerManager::Unregister(nsIPrincipal* aPrincipal,
   NS_ConvertUTF16toUTF8 scope(aScope);
   RefPtr<ServiceWorkerJobQueue> queue = GetOrCreateJobQueue(scopeKey, scope);
 
-  RefPtr<ServiceWorkerUnregisterJob> job = new ServiceWorkerUnregisterJob(
-      aPrincipal, scope, true );
+  RefPtr<ServiceWorkerUnregisterJob> job =
+      new ServiceWorkerUnregisterJob(aPrincipal, scope);
 
   if (aCallback) {
     RefPtr<UnregisterJobCallback> cb = new UnregisterJobCallback(aCallback);
@@ -1498,6 +1500,14 @@ void ServiceWorkerManager::HandleError(
                      aColumnNumber, aFlags);
 }
 
+void ServiceWorkerManager::PurgeServiceWorker(
+    const ServiceWorkerRegistrationData& aRegistration,
+    nsIPrincipal* aPrincipal) {
+  MOZ_ASSERT(mActor);
+  serviceWorkerScriptCache::PurgeCache(aPrincipal, aRegistration.cacheName());
+  MaybeSendUnregister(aPrincipal, aRegistration.scope());
+}
+
 void ServiceWorkerManager::LoadRegistration(
     const ServiceWorkerRegistrationData& aRegistration) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1508,6 +1518,13 @@ void ServiceWorkerManager::LoadRegistration(
   }
   nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
 
+  if (!StaticPrefs::dom_serviceWorkers_enabled()) {
+    
+    
+    PurgeServiceWorker(aRegistration, principal);
+    return;
+  }
+
   
   if (!StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup()) {
     nsCOMPtr<nsIURI> uri = principal->GetURI();
@@ -1516,8 +1533,7 @@ void ServiceWorkerManager::LoadRegistration(
     
     
     if (uri->SchemeIs("moz-extension")) {
-      const auto& cacheName = aRegistration.cacheName();
-      serviceWorkerScriptCache::PurgeCache(principal, cacheName);
+      PurgeServiceWorker(aRegistration, principal);
       return;
     }
   }
