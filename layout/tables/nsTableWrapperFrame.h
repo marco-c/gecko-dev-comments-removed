@@ -200,16 +200,6 @@ class nsTableWrapperFrame : public nsContainerFrame {
   
   MaybeCaptionSide GetCaptionSide() const;
 
-  bool HasSideCaption() const {
-    auto captionSide = GetCaptionSide();
-    return captionSide && IsSideCaption(*captionSide);
-  }
-
-  static bool IsSideCaption(const mozilla::StyleCaptionSide aCaptionSide) {
-    return aCaptionSide == mozilla::StyleCaptionSide::Left ||
-           aCaptionSide == mozilla::StyleCaptionSide::Right;
-  }
-
   mozilla::StyleVerticalAlignKeyword GetCaptionVerticalAlign() const;
 
   nscoord ComputeFinalBSize(const MaybeCaptionSide&,
@@ -239,21 +229,10 @@ class nsTableWrapperFrame : public nsContainerFrame {
   
   
   
-  mozilla::LogicalSize GetAreaOccupiedByCaption(
-      mozilla::StyleCaptionSide,
-      const mozilla::LogicalSize& aCaptionMarginBoxSize) const;
-
-  
-  
-  
-  
-  
   void CreateReflowInputForInnerTable(
       nsPresContext* aPresContext, nsTableFrame* aTableFrame,
       const ReflowInput& aOuterRI, Maybe<ReflowInput>& aChildRI,
-      const nscoord aAvailISize,
-      const mozilla::Maybe<mozilla::LogicalSize>& aAreaOccupiedByCaption =
-          mozilla::Nothing()) const;
+      const nscoord aAvailISize, nscoord aBSizeOccupiedByCaption = 0) const;
   void CreateReflowInputForCaption(nsPresContext* aPresContext,
                                    nsIFrame* aCaptionFrame,
                                    const ReflowInput& aOuterRI,
@@ -310,7 +289,7 @@ class nsTableWrapperFrame : public nsContainerFrame {
       const nsTableFrame* aTableFrame,
       const mozilla::StyleSizeOverrides& aWrapperSizeOverrides,
       const mozilla::LogicalSize& aBorderPadding,
-      const mozilla::LogicalSize& aAreaOccupiedByCaption) const;
+      nscoord aBSizeOccupiedByCaption) const;
 
  private:
   nscoord GetFallbackLogicalBaseline(mozilla::WritingMode aWritingMode) const;

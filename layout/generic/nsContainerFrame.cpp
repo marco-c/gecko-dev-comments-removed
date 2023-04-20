@@ -954,45 +954,22 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
     AutoMaybeDisableFontInflation an(this);
 
     WritingMode tableWM = GetParent()->GetWritingMode();
-    StyleCaptionSide captionSide = StyleTableBorder()->mCaptionSide;
-
     if (aWM.IsOrthogonalTo(tableWM)) {
-      if (captionSide == StyleCaptionSide::Top ||
-          captionSide == StyleCaptionSide::TopOutside ||
-          captionSide == StyleCaptionSide::Bottom ||
-          captionSide == StyleCaptionSide::BottomOutside) {
-        
-        
-        result.ISize(aWM) = GetMinISize(aRenderingContext);
-      } else {
-        
-        
-        nscoord pref = GetPrefISize(aRenderingContext);
-        if (pref > aCBSize.ISize(aWM)) {
-          pref = aCBSize.ISize(aWM);
-        }
-        if (pref < result.ISize(aWM)) {
-          result.ISize(aWM) = pref;
-        }
-      }
+      
+      
+      result.ISize(aWM) = GetMinISize(aRenderingContext);
     } else {
-      if (captionSide == StyleCaptionSide::Left ||
-          captionSide == StyleCaptionSide::Right) {
-        result.ISize(aWM) = GetMinISize(aRenderingContext);
-      } else if (captionSide == StyleCaptionSide::Top ||
-                 captionSide == StyleCaptionSide::Bottom) {
-        
-        
-        
-        
-        
-        nscoord min = GetMinISize(aRenderingContext);
-        if (min > aCBSize.ISize(aWM)) {
-          min = aCBSize.ISize(aWM);
-        }
-        if (min > result.ISize(aWM)) {
-          result.ISize(aWM) = min;
-        }
+      
+      
+      
+      
+      
+      nscoord min = GetMinISize(aRenderingContext);
+      if (min > aCBSize.ISize(aWM)) {
+        min = aCBSize.ISize(aWM);
+      }
+      if (min > result.ISize(aWM)) {
+        result.ISize(aWM) = min;
       }
     }
   }
