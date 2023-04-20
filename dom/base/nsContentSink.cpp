@@ -328,7 +328,8 @@ nsresult nsContentSink::ProcessLinkFromHeader(const net::LinkHeader& aHeader) {
                   aHeader.mCrossOrigin, aHeader.mReferrerPolicy);
     }
 
-    if (linkTypes & LinkStyle::eMODULE_PRELOAD) {
+    if ((linkTypes & LinkStyle::eMODULE_PRELOAD) &&
+        mDocument->ScriptLoader()->GetModuleLoader()) {
       
       
       mDocument->ScriptLoader()->GetModuleLoader()->DisallowImportMaps();
