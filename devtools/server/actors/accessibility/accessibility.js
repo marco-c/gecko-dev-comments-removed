@@ -4,10 +4,7 @@
 
 "use strict";
 
-const {
-  Actor,
-  ActorClassWithSpec,
-} = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   accessibilitySpec,
 } = require("resource://devtools/shared/specs/accessibility.js");
@@ -30,16 +27,16 @@ loader.lazyRequireGetter(
 
 
 
-const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
-  initialize(conn, targetActor) {
-    Actor.prototype.initialize.call(this, conn);
+class AccessibilityActor extends Actor {
+  constructor(conn, targetActor) {
+    super(conn, accessibilitySpec);
     
     
     
     
     Services.obs.addObserver(this, "a11y-init-or-shutdown");
     this.targetActor = targetActor;
-  },
+  }
 
   getTraits() {
     
@@ -48,17 +45,17 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
       
       tabbingOrder: true,
     };
-  },
+  }
 
   bootstrap() {
     return {
       enabled: this.enabled,
     };
-  },
+  }
 
   get enabled() {
     return Services.appinfo.accessibilityEnabled;
-  },
+  }
 
   
 
@@ -83,7 +80,7 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
 
       this.emit("shutdown");
     }
-  },
+  }
 
   
 
@@ -97,7 +94,7 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
       this.manage(this.walker);
     }
     return this.walker;
-  },
+  }
 
   
 
@@ -116,18 +113,18 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
     }
 
     return this.simulator;
-  },
+  }
 
   
 
 
 
   async destroy() {
-    Actor.prototype.destroy.call(this);
+    super.destroy();
     Services.obs.removeObserver(this, "a11y-init-or-shutdown");
     this.walker = null;
     this.targetActor = null;
-  },
-});
+  }
+}
 
 exports.AccessibilityActor = AccessibilityActor;

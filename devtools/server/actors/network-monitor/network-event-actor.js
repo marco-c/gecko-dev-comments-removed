@@ -4,14 +4,14 @@
 
 "use strict";
 
-const {
-  TYPES: { NETWORK_EVENT },
-} = require("resource://devtools/server/actors/resources/index.js");
-
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   networkEventSpec,
 } = require("resource://devtools/shared/specs/network-event.js");
+
+const {
+  TYPES: { NETWORK_EVENT },
+} = require("resource://devtools/server/actors/resources/index.js");
 const {
   LongStringActor,
 } = require("resource://devtools/server/actors/string.js");
@@ -30,22 +30,21 @@ const {
 
 
 
-const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
-  initialize(
+class NetworkEventActor extends Actor {
+  constructor(
     conn,
     sessionContext,
     { onNetworkEventUpdate, onNetworkEventDestroy },
     networkEvent
   ) {
+    super(conn, networkEventSpec);
+
     this._sessionContext = sessionContext;
     this._conn = conn;
     this._onNetworkEventUpdate = onNetworkEventUpdate;
     this._onNetworkEventDestroy = onNetworkEventDestroy;
 
     this.asResource = this.asResource.bind(this);
-
-    
-    protocol.Actor.prototype.initialize.call(this, this._conn);
 
     this._request = {
       method: networkEvent.method || null,
@@ -102,7 +101,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._truncated = false;
     this._private = networkEvent.private;
     this.isNavigationRequest = networkEvent.isNavigationRequest;
-  },
+  }
 
   
 
@@ -156,7 +155,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       
       chromeContext: this._isFromSystemPrincipal,
     };
-  },
+  }
 
   
 
@@ -167,12 +166,12 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     }
     this._onNetworkEventDestroy(this._channelId);
     this._channelId = null;
-    protocol.Actor.prototype.destroy.call(this, conn);
-  },
+    super.destroy(conn);
+  }
 
   release() {
     
-  },
+  }
 
   
 
@@ -186,7 +185,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       headersSize: this._request.headersSize,
       rawHeaders: this._request.rawHeaders,
     };
-  },
+  }
 
   
 
@@ -198,7 +197,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     return {
       cookies: this._request.cookies,
     };
-  },
+  }
 
   
 
@@ -211,7 +210,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       postData: this._request.postData,
       postDataDiscarded: this._discardRequestBody,
     };
-  },
+  }
 
   
 
@@ -223,7 +222,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     return {
       securityInfo: this._securityInfo,
     };
-  },
+  }
 
   
 
@@ -237,7 +236,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       headersSize: this._response.headersSize,
       rawHeaders: this._response.rawHeaders,
     };
-  },
+  }
 
   
 
@@ -249,7 +248,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     return {
       cache: this._response.responseCache,
     };
-  },
+  }
 
   
 
@@ -261,7 +260,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     return {
       cookies: this._response.cookies,
     };
-  },
+  }
 
   
 
@@ -274,7 +273,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       content: this._response.content,
       contentDiscarded: this._discardResponseBody,
     };
-  },
+  }
 
   
 
@@ -289,7 +288,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       offsets: this._offsets,
       serverTimings: this._serverTimings,
     };
-  },
+  }
 
   
 
@@ -325,7 +324,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       headers: headers.length,
       headersSize: this._request.headersSize,
     });
-  },
+  }
 
   
 
@@ -343,7 +342,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._prepareHeaders(cookies);
 
     this._onEventUpdate("requestCookies", { cookies: cookies.length });
-  },
+  }
 
   
 
@@ -365,7 +364,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     postData.text = postData.text.form();
 
     this._onEventUpdate("requestPostData", {});
-  },
+  }
 
   
 
@@ -396,7 +395,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._discardResponseBody = !!info.discardResponseBody;
 
     this._onEventUpdate("responseStart", { ...info });
-  },
+  }
 
   
 
@@ -416,7 +415,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       state: info.state,
       isRacing,
     });
-  },
+  }
 
   
 
@@ -437,7 +436,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       headers: headers.length,
       headersSize: this._response.headersSize,
     });
-  },
+  }
 
   
 
@@ -455,7 +454,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._prepareHeaders(cookies);
 
     this._onEventUpdate("responseCookies", { cookies: cookies.length });
-  },
+  }
 
   
 
@@ -492,7 +491,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       blockedReason,
       blockingExtension,
     });
-  },
+  }
 
   addResponseCache(content) {
     
@@ -501,7 +500,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     }
     this._response.responseCache = content.responseCache;
     this._onEventUpdate("responseCache", {});
-  },
+  }
 
   
 
@@ -529,7 +528,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     }
 
     this._onEventUpdate("eventTimings", { totalTime: total });
-  },
+  }
 
   
 
@@ -544,7 +543,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     if (serverTimings) {
       this._serverTimings = serverTimings;
     }
-  },
+  }
 
   
 
@@ -561,7 +560,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       this.manage(header.value);
       header.value = header.value.form();
     }
-  },
+  }
   
 
 
@@ -576,7 +575,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       updateType,
       ...data,
     });
-  },
-});
+  }
+}
 
 exports.NetworkEventActor = NetworkEventActor;

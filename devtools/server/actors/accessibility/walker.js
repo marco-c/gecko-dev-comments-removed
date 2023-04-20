@@ -4,13 +4,11 @@
 
 "use strict";
 
-const {
-  Actor,
-  ActorClassWithSpec,
-} = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   accessibleWalkerSpec,
 } = require("resource://devtools/shared/specs/accessibility.js");
+
 const {
   simulation: { COLOR_TRANSFORMATION_MATRICES },
 } = require("resource://devtools/server/actors/accessibility/constants.js");
@@ -246,9 +244,9 @@ class AuditProgress {
 
 
 
-const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
-  initialize(conn, targetActor) {
-    Actor.prototype.initialize.call(this, conn);
+class AccessibleWalkerActor extends Actor {
+  constructor(conn, targetActor) {
+    super(conn, accessibleWalkerSpec);
     this.targetActor = targetActor;
     this.refMap = new Map();
     this._loadedSheets = new WeakMap();
@@ -260,7 +258,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     this.onFocusIn = this.onFocusIn.bind(this);
     this.onFocusOut = this.onFocusOut.bind(this);
     this.onHighlighterEvent = this.onHighlighterEvent.bind(this);
-  },
+  }
 
   get highlighter() {
     if (!this._highlighter) {
@@ -274,7 +272,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     return this._highlighter;
-  },
+  }
 
   get tabbingOrderHighlighter() {
     if (!this._tabbingOrderHighlighter) {
@@ -287,7 +285,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     return this._tabbingOrderHighlighter;
-  },
+  }
 
   setA11yServiceGetter() {
     DevToolsUtils.defineLazyGetter(this, "a11yService", () => {
@@ -296,19 +294,19 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
         Ci.nsIAccessibilityService
       );
     });
-  },
+  }
 
   get rootWin() {
     return this.targetActor && this.targetActor.window;
-  },
+  }
 
   get rootDoc() {
     return this.targetActor && this.targetActor.window.document;
-  },
+  }
 
   get isXUL() {
     return isXUL(this.rootWin);
-  },
+  }
 
   get colorMatrix() {
     if (!this.targetActor.docShell) {
@@ -324,7 +322,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     return colorMatrix;
-  },
+  }
 
   reset() {
     try {
@@ -342,7 +340,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     this._childrenPromise = null;
     delete this.a11yService;
     this.setA11yServiceGetter();
-  },
+  }
 
   
 
@@ -351,10 +349,10 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     for (const actor of this.refMap.values()) {
       actor.destroy();
     }
-  },
+  }
 
   destroy() {
-    Actor.prototype.destroy.call(this);
+    super.destroy();
 
     this.reset();
 
@@ -369,11 +367,11 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
     this.targetActor = null;
     this.refMap = null;
-  },
+  }
 
   getRef(rawAccessible) {
     return this.refMap.get(rawAccessible);
-  },
+  }
 
   addRef(rawAccessible) {
     let actor = this.refMap.get(rawAccessible);
@@ -388,7 +386,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     this.refMap.set(rawAccessible, actor);
 
     return actor;
-  },
+  }
 
   
 
@@ -416,14 +414,14 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     if (actor) {
       actor.destroy();
     }
-  },
+  }
 
   unmanage(actor) {
     if (actor instanceof AccessibleActor) {
       this.refMap.delete(actor.rawAccessible);
     }
     Actor.prototype.unmanage.call(this, actor);
-  },
+  }
 
   
 
@@ -438,7 +436,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     const children = await this._childrenPromise;
     this._childrenPromise = null;
     return children;
-  },
+  }
 
   
 
@@ -470,7 +468,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     return Promise.resolve(this.addRef(doc));
-  },
+  }
 
   
 
@@ -493,7 +491,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
       return this.addRef(rawAccessible);
     });
-  },
+  }
 
   
 
@@ -509,7 +507,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     return this.a11yService.getAccessibleFor(rawNode);
-  },
+  }
 
   async getAncestry(accessible) {
     if (!accessible || accessible.indexInParent === -1) {
@@ -539,7 +537,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       accessible: parent,
       children: parent.children(),
     }));
-  },
+  }
 
   
 
@@ -582,7 +580,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     return Promise.all(ancestries);
-  },
+  }
 
   
 
@@ -616,11 +614,11 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
           this._auditProgress = null;
         }
       });
-  },
+  }
 
   onHighlighterEvent(data) {
     this.emit("highlighter-event", data);
-  },
+  }
 
   
 
@@ -749,7 +747,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       default:
         break;
     }
-  },
+  }
 
   
 
@@ -773,7 +771,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     loadSheetForBackgroundCalculation(win);
     this._loadedSheets.set(win, 1);
     await this.hideHighlighter();
-  },
+  }
 
   
 
@@ -797,7 +795,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     await this.showHighlighter();
     removeSheetForBackgroundCalculation(win);
     this._loadedSheets.delete(win);
-  },
+  }
 
   async hideHighlighter() {
     
@@ -807,7 +805,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       await highlighter.isReady;
       highlighter.hideAccessibleBounds();
     }
-  },
+  }
 
   async showHighlighter() {
     
@@ -817,7 +815,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       await highlighter.isReady;
       highlighter.showAccessibleBounds();
     }
-  },
+  }
 
   
 
@@ -865,7 +863,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     this._highlightingAccessible = null;
 
     return shown;
-  },
+  }
 
   
 
@@ -878,14 +876,14 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
     this.highlighter.hide();
     this._highlightingAccessible = null;
-  },
+  }
 
   
 
 
 
-  _isPicking: false,
-  _currentAccessible: null,
+  _isPicking = false;
+  _currentAccessible = null;
 
   
 
@@ -895,7 +893,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       this.rootWin instanceof Ci.nsIDOMChromeWindow ||
       isWindowIncluded(this.rootWin, view)
     );
-  },
+  }
 
   
 
@@ -913,7 +911,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
         event.originalTarget || event.target
       )
     );
-  },
+  }
 
   _preventContentEvent(event) {
     if (this._ignoreEventWhenPicking(event)) {
@@ -940,7 +938,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
         InspectorUtils.getContentState(target) & kStateHover;
       InspectorUtils.removeContentState(target, kStateHover);
     }
-  },
+  }
 
   
 
@@ -974,7 +972,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       this._currentAccessible = this._findAndAttachAccessible(event);
     }
     events.emit(this, "picker-accessible-picked", this._currentAccessible);
-  },
+  }
 
   
 
@@ -1005,7 +1003,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     if (this._isPicking && shown && accessible === this._currentAccessible) {
       events.emit(this, "picker-accessible-hovered", accessible);
     }
-  },
+  }
 
   
 
@@ -1050,7 +1048,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       default:
         break;
     }
-  },
+  }
 
   
 
@@ -1060,7 +1058,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       this._isPicking = true;
       this._setPickerEnvironment();
     }
-  },
+  }
 
   
 
@@ -1068,7 +1066,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   pickAndFocus() {
     this.pick();
     this.rootWin.focus();
-  },
+  }
 
   attachAccessible(rawAccessible, accessibleDocument) {
     
@@ -1095,11 +1093,11 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     return accessible;
-  },
+  }
 
   get pixelRatio() {
     return this.rootWin.devicePixelRatio;
-  },
+  }
 
   
 
@@ -1121,7 +1119,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       event.screenY * scale
     );
     return this.attachAccessible(rawAccessible, docAcc);
-  },
+  }
 
   
 
@@ -1139,7 +1137,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     target.addEventListener("dblclick", this._preventContentEvent, true);
     target.addEventListener("keydown", this.onKey, true);
     target.addEventListener("keyup", this._preventContentEvent, true);
-  },
+  }
 
   
 
@@ -1165,7 +1163,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     target.removeEventListener("keyup", this._preventContentEvent, true);
 
     this._resetStateAndReleaseTarget();
-  },
+  }
 
   
 
@@ -1192,7 +1190,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
     this._currentTarget = null;
     this._currentTargetState = null;
-  },
+  }
 
   
 
@@ -1205,18 +1203,18 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       this._isPicking = false;
       this._currentAccessible = null;
     }
-  },
+  }
 
   
 
 
 
-  _isTrackingTabbingOrderFocus: false,
+  _isTrackingTabbingOrderFocus = false;
 
   
 
 
-  _currentFocusedTabbingOrder: null,
+  _currentFocusedTabbingOrder = null;
 
   
 
@@ -1239,7 +1237,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       node: target,
       focused: true,
     });
-  },
+  }
 
   
 
@@ -1268,7 +1266,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       focused: false,
     });
     this._currentFocusedTabbingOrder = null;
-  },
+  }
 
   
 
@@ -1299,7 +1297,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     return this.tabbingOrderHighlighter.show(elm, { index });
-  },
+  }
 
   
 
@@ -1321,7 +1319,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       target.removeEventListener("focusin", this.onFocusIn, true);
       target.removeEventListener("focusout", this.onFocusOut, true);
     }
-  },
-});
+  }
+}
 
 exports.AccessibleWalkerActor = AccessibleWalkerActor;

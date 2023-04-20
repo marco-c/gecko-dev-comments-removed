@@ -4,8 +4,9 @@
 
 "use strict";
 
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const { walkerSpec } = require("resource://devtools/shared/specs/walker.js");
+
 const {
   LongStringActor,
 } = require("resource://devtools/server/actors/string.js");
@@ -190,7 +191,7 @@ exports.setValueSummaryLength = function(val) {
 
 
 
-var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
+class WalkerActor extends Actor {
   
 
 
@@ -200,8 +201,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-  initialize(conn, targetActor, options) {
-    protocol.Actor.prototype.initialize.call(this, conn);
+  constructor(conn, targetActor, options) {
+    super(conn, walkerSpec);
     this.targetActor = targetActor;
     this.rootWin = targetActor.window;
     this.rootDoc = this.rootWin.document;
@@ -285,7 +286,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     this._onEventListenerChange = this._onEventListenerChange.bind(this);
     eventListenerService.addListenerChangeListener(this._onEventListenerChange);
-  },
+  }
 
   get nodePicker() {
     if (!this._nodePicker) {
@@ -293,13 +294,13 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this._nodePicker;
-  },
+  }
 
   watchRootNode() {
     if (this.rootNode) {
       this.emit("root-available", this.rootNode);
     }
-  },
+  }
 
   
 
@@ -320,7 +321,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         this.queueMutation(mutation);
       }
     }
-  },
+  }
 
   
   form() {
@@ -329,11 +330,11 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       root: this.rootNode.form(),
       traits: {},
     };
-  },
+  }
 
   toString() {
     return "[WalkerActor " + this.actorID + "]";
-  },
+  }
 
   getAnonymousDocumentWalker(node, whatToShow, skipTo) {
     
@@ -347,7 +348,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       skipTo,
       showAnonymousContent: true,
     });
-  },
+  }
 
   getNonAnonymousDocumentWalker(node, whatToShow, skipTo) {
     const nodeFilter = standardTreeWalkerFilter;
@@ -358,7 +359,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       skipTo,
       showAnonymousContent: false,
     });
-  },
+  }
 
   
 
@@ -370,14 +371,14 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     } catch (e) {
       return this.getNonAnonymousDocumentWalker(node, whatToShow, skipTo);
     }
-  },
+  }
 
   destroy() {
     if (this._destroyed) {
       return;
     }
     this._destroyed = true;
-    protocol.Actor.prototype.destroy.call(this);
+    super.destroy();
     try {
       this.clearPseudoClassLocks();
       this._activePseudoClassLocks = null;
@@ -443,9 +444,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     } catch (e) {
       console.error(e);
     }
-  },
+  }
 
-  release() {},
+  release() {}
 
   unmanage(actor) {
     if (actor instanceof NodeActor) {
@@ -460,8 +461,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
       this._nodeActorsMap.delete(actor.rawNode);
     }
-    protocol.Actor.prototype.unmanage.call(this, actor);
-  },
+    super.unmanage(actor);
+  }
 
   
 
@@ -470,7 +471,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   hasNode(rawNode) {
     return this._nodeActorsMap.has(rawNode);
-  },
+  }
 
   
 
@@ -480,7 +481,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   getNode(rawNode) {
     return this._nodeActorsMap.get(rawNode);
-  },
+  }
 
   
 
@@ -520,7 +521,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     this.customElementWatcher.manageNode(actor);
 
     return actor;
-  },
+  }
 
   
 
@@ -534,7 +535,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         customElementLocation: actor.getCustomElementLocation(),
       })
     );
-  },
+  }
 
   _onReflows(reflows) {
     
@@ -602,14 +603,14 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     if (scrollableStateChanges.length) {
       this.emit("scrollable-change", scrollableStateChanges);
     }
-  },
+  }
 
   
 
 
   _onResize() {
     this.emit("resize");
-  },
+  }
 
   
 
@@ -623,7 +624,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       node: nodes[0],
       newParents,
     };
-  },
+  }
 
   
 
@@ -656,7 +657,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       nodes: nodeActors,
       newParents: [...newParents],
     };
-  },
+  }
 
   
 
@@ -668,7 +669,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
   document(node) {
     const doc = isNodeDead(node) ? this.rootDoc : nodeDocument(node.rawNode);
     return this._getOrCreateNodeActor(doc);
-  },
+  }
 
   
 
@@ -682,7 +683,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       ? this.rootDoc.documentElement
       : nodeDocument(node.rawNode).documentElement;
     return this._getOrCreateNodeActor(elt);
-  },
+  }
 
   parentNode(node) {
     const parent = this.rawParentNode(node);
@@ -691,7 +692,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return null;
-  },
+  }
 
   rawParentNode(node) {
     let parent;
@@ -711,7 +712,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return parent;
-  },
+  }
 
   
 
@@ -764,7 +765,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this._getOrCreateNodeActor(firstChild);
-  },
+  }
 
   
 
@@ -785,7 +786,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   retainNode(node) {
     node.retained = true;
-  },
+  }
 
   
 
@@ -797,7 +798,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       this._retainedOrphans.delete(node);
       this.releaseNode(node);
     }
-  },
+  }
 
   
 
@@ -829,7 +830,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     node.destroy();
-  },
+  }
 
   
 
@@ -852,7 +853,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       parent = this.rawParentNode(parentActor);
     }
     return newParents;
-  },
+  }
 
   
 
@@ -865,7 +866,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   countChildren(node, options = {}) {
     return this._getChildren(node, options).nodes.length;
-  },
+  }
 
   
 
@@ -898,7 +899,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       hasLast,
       nodes: nodes.map(n => this._getOrCreateNodeActor(n)),
     };
-  },
+  }
 
   
 
@@ -1109,7 +1110,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return { hasFirst, hasLast, nodes };
-  },
+  }
 
   getNativeAnonymousChildren(rawNode) {
     
@@ -1125,7 +1126,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       node = walker.nextSibling();
     }
     return nodes;
-  },
+  }
 
   
 
@@ -1144,7 +1145,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     const walker = this.getDocumentWalker(node.rawNode, options.whatToShow);
     const sibling = walker.nextSibling();
     return sibling ? this._getOrCreateNodeActor(sibling) : null;
-  },
+  }
 
   
 
@@ -1163,7 +1164,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     const walker = this.getDocumentWalker(node.rawNode, options.whatToShow);
     const sibling = walker.previousSibling();
     return sibling ? this._getOrCreateNodeActor(sibling) : null;
-  },
+  }
 
   
 
@@ -1182,7 +1183,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       node = walker.nextSibling();
     } while (node && --count);
     return ret;
-  },
+  }
 
   
 
@@ -1202,7 +1203,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     } while (node && --count);
     ret.reverse();
     return ret;
-  },
+  }
 
   
 
@@ -1222,7 +1223,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.attachElement(node);
-  },
+  }
 
   
 
@@ -1241,7 +1242,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return new NodeListActor(this, nodeList);
-  },
+  }
 
   
 
@@ -1261,7 +1262,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return nodes;
-  },
+  }
 
   
 
@@ -1292,7 +1293,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return nodes;
-  },
+  }
 
   
 
@@ -1301,7 +1302,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   multiFrameXPath(xPath) {
     return new NodeListActor(this, this._multiFrameXPath(xPath));
-  },
+  }
 
   
 
@@ -1324,7 +1325,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       list: nodeList,
       metadata: [],
     };
-  },
+  }
 
   
 
@@ -1474,7 +1475,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       query,
       suggestions: result,
     };
-  },
+  }
 
   
 
@@ -1518,7 +1519,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       const curNode = this._getOrCreateNodeActor(cur);
       this._addPseudoClassLock(curNode, pseudo, enabled);
     }
-  },
+  }
 
   _queuePseudoClassMutation(node) {
     this.queueMutation({
@@ -1526,7 +1527,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       type: "pseudoClassLock",
       pseudoClassLocks: node.writePseudoClassLocks(),
     });
-  },
+  }
 
   _addPseudoClassLock(node, pseudo, enabled) {
     if (node.rawNode.nodeType !== Node.ELEMENT_NODE) {
@@ -1536,7 +1537,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     this._activePseudoClassLocks.add(node);
     this._queuePseudoClassMutation(node);
     return true;
-  },
+  }
 
   hideNode(node) {
     if (isNodeDead(node)) {
@@ -1545,7 +1546,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     loadSheet(node.rawNode.ownerGlobal, HELPER_SHEET);
     node.rawNode.classList.add(HIDDEN_CLASS);
-  },
+  }
 
   unhideNode(node) {
     if (isNodeDead(node)) {
@@ -1553,7 +1554,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     node.rawNode.classList.remove(HIDDEN_CLASS);
-  },
+  }
 
   
 
@@ -1597,7 +1598,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       const curNode = this._getOrCreateNodeActor(cur);
       this._removePseudoClassLock(curNode, pseudo);
     }
-  },
+  }
 
   _removePseudoClassLock(node, pseudo) {
     if (node.rawNode.nodeType != Node.ELEMENT_NODE) {
@@ -1610,7 +1611,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     this._queuePseudoClassMutation(node);
     return true;
-  },
+  }
 
   
 
@@ -1632,7 +1633,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         this._queuePseudoClassMutation(locked);
       }
     }
-  },
+  }
 
   
 
@@ -1643,7 +1644,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       html = node.rawNode.innerHTML;
     }
     return new LongStringActor(this.conn, html);
-  },
+  }
 
   
 
@@ -1665,7 +1666,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
     
     rawNode.innerHTML = value;
-  },
+  }
 
   
 
@@ -1678,7 +1679,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       outerHTML = node.rawNode.outerHTML;
     }
     return new LongStringActor(this.conn, outerHTML);
-  },
+  }
 
   
 
@@ -1751,7 +1752,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       rawNode.outerHTML = value;
     }
-  },
+  }
 
   
 
@@ -1815,7 +1816,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.attachElements(newRawNodes);
-  },
+  }
 
   
 
@@ -1825,7 +1826,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
   duplicateNode({ rawNode }) {
     const clonedNode = rawNode.cloneNode(true);
     rawNode.parentNode.insertBefore(clonedNode, rawNode.nextSibling);
-  },
+  }
 
   
 
@@ -1839,7 +1840,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         node.rawNode.ownerDocument.documentElement === this.rawNode) ||
       node.rawNode.nodeType === Node.DOCUMENT_NODE
     );
-  },
+  }
 
   
 
@@ -1856,7 +1857,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     node.rawNode.remove();
     
     return nextSibling;
-  },
+  }
 
   
 
@@ -1875,7 +1876,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       node.rawNode.remove();
       
     }
-  },
+  }
 
   
 
@@ -1907,7 +1908,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     rawParent.insertBefore(rawNode, rawSibling);
-  },
+  }
 
   
 
@@ -1948,7 +1949,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     oldNode.remove();
     return null;
-  },
+  }
 
   
 
@@ -1968,7 +1969,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         attribute: false,
       }
     );
-  },
+  }
 
   
 
@@ -2003,7 +2004,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       ...this.getMutationBreakpoints(node),
       ...bpsForNode,
     });
-  },
+  }
 
   
 
@@ -2061,7 +2062,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         mutationReason,
       });
     }
-  },
+  }
 
   
 
@@ -2124,7 +2125,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         true 
       );
     }
-  },
+  }
 
   _breakOnMutation(mutationType, targetNode, ancestorNode, action) {
     this.targetActor.threadActor.pauseForMutationBreakpoint(
@@ -2133,7 +2134,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       ancestorNode,
       action
     );
-  },
+  }
 
   _mutationBreakpointsForDoc(rawDoc, createIfNeeded = false) {
     let docMutationBreakpoints = this._mutationBreakpoints.get(rawDoc);
@@ -2149,7 +2150,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       this._mutationBreakpoints.set(rawDoc, docMutationBreakpoints);
     }
     return docMutationBreakpoints;
-  },
+  }
 
   _breakpointInfoForNode(target) {
     const docMutationBreakpoints = this._mutationBreakpointsForDoc(
@@ -2159,7 +2160,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       (docMutationBreakpoints && docMutationBreakpoints.nodes.get(target)) ||
       null
     );
-  },
+  }
 
   onNodeRemoved(evt) {
     const mutationBpInfo = this._breakpointInfoForNode(evt.target);
@@ -2171,14 +2172,14 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     } else {
       this.onSubtreeModified(evt);
     }
-  },
+  }
 
   onAttributeModified(evt) {
     const mutationBpInfo = this._breakpointInfoForNode(evt.target);
     if (mutationBpInfo?.attribute) {
       this._breakOnMutation("attributeModified", evt.target);
     }
-  },
+  }
 
   onSubtreeModified(evt) {
     const action = evt.type === "devtoolschildinserted" ? "add" : "remove";
@@ -2190,7 +2191,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         break;
       }
     }
-  },
+  }
 
   _clearMutationBreakpointsFromSubtree(targetNode) {
     const targetDoc = targetNode.ownerDocument || targetNode;
@@ -2213,7 +2214,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     do {
       this._updateMutationBreakpointState("detach", walker.currentNode, null);
     } while (walker.nextNode() && walker.currentNode !== nextWalkerSibling);
-  },
+  }
 
   _getNextTraversalSibling(targetNode) {
     const walker = new DocumentWalker(targetNode, this.rootWin, {
@@ -2228,7 +2229,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       }
     }
     return walker.currentNode;
-  },
+  }
 
   
 
@@ -2289,7 +2290,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return pending;
-  },
+  }
 
   queueMutation(mutation) {
     if (!this.actorID || this._destroyed) {
@@ -2316,7 +2317,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
       this._throttledEmitNewMutations();
     }
-  },
+  }
 
   _emitNewMutations() {
     if (!this.actorID || this._destroyed) {
@@ -2332,7 +2333,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     this._waitingForGetMutations = true;
     this.emit("new-mutations");
-  },
+  }
 
   
 
@@ -2409,7 +2410,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       }
       this.queueMutation(mutation);
     }
-  },
+  }
 
   
 
@@ -2445,7 +2446,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       target: parentActor.actorID,
       inlineTextChild: inlineTextChild ? inlineTextChild.form() : undefined,
     });
-  },
+  }
 
   onSlotchange(event) {
     const target = event.target;
@@ -2458,7 +2459,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       type: "slotchange",
       target: targetActor.actorID,
     });
-  },
+  }
 
   onShadowrootattached(event) {
     const actor = this.getNode(event.target);
@@ -2471,7 +2472,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       target: actor.actorID,
     };
     this.queueMutation(mutation);
-  },
+  }
 
   onFrameLoad({ window, isTopLevel }) {
     
@@ -2518,7 +2519,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         this.emit("root-available", documentActor);
       }
     }
-  },
+  }
 
   
   _childOfWindow(window, domNode) {
@@ -2530,7 +2531,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       domNode = getFrameElement(win);
     }
     return false;
-  },
+  }
 
   onFrameUnload({ window }) {
     
@@ -2582,7 +2583,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     
     this.releaseNode(documentActor, { force: true });
-  },
+  }
 
   
 
@@ -2610,7 +2611,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     
     return true;
-  },
+  }
 
   
 
@@ -2620,7 +2621,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       return false;
     }
     return this._isInDOMTree(node.rawNode);
-  },
+  }
 
   
 
@@ -2649,7 +2650,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.attachElement(win.frameElement);
-  },
+  }
 
   
 
@@ -2667,7 +2668,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.attachElement(rawNode);
-  },
+  }
 
   
 
@@ -2678,7 +2679,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     const manager = this.targetActor.getStyleSheetsManager();
     const ownerNode = manager.getOwnerNode(resourceId);
     return this.attachElement(ownerNode);
-  },
+  }
 
   
 
@@ -2724,7 +2725,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.attachElement(obj);
-  },
+  }
 
   
 
@@ -2738,7 +2739,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.layoutActor;
-  },
+  }
 
   
 
@@ -2751,7 +2752,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     const parentGridNode = findGridParentContainerForNode(node.rawNode);
     return parentGridNode ? this._getOrCreateNodeActor(parentGridNode) : null;
-  },
+  }
 
   
 
@@ -2769,7 +2770,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this._getOrCreateNodeActor(offsetParent);
-  },
+  }
 
   getEmbedderElement(browsingContextID) {
     const browsingContext = BrowsingContext.get(browsingContextID);
@@ -2785,19 +2786,19 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.attachElement(rawNode);
-  },
+  }
 
   pick(doFocus, isLocalTab) {
     this.nodePicker.pick(doFocus, isLocalTab);
-  },
+  }
 
   cancelPick() {
     this.nodePicker.cancelPick();
-  },
+  }
 
   clearPicker() {
     this.nodePicker.resetHoveredNodeReference();
-  },
+  }
 
   
 
@@ -2826,7 +2827,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       }
       map.set(overflowCausingChild, scrollableNode);
     }
-  },
+  }
 
   
 
@@ -2854,7 +2855,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     });
 
     return this.attachElements(overflowCausingElements);
-  },
+  }
 
   
 
@@ -2870,7 +2871,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     }
 
     return this.overflowCausingElementsMap.get(overflowCausingNode.rawNode);
-  },
-});
+  }
+}
 
 exports.WalkerActor = WalkerActor;

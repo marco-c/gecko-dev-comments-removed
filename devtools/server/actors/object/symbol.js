@@ -4,7 +4,7 @@
 
 "use strict";
 
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const { symbolSpec } = require("resource://devtools/shared/specs/symbol.js");
 loader.lazyRequireGetter(
   this,
@@ -19,28 +19,28 @@ loader.lazyRequireGetter(
 
 
 
-const SymbolActor = protocol.ActorClassWithSpec(symbolSpec, {
-  initialize(conn, symbol) {
-    protocol.Actor.prototype.initialize.call(this, conn);
+class SymbolActor extends Actor {
+  constructor(conn, symbol) {
+    super(conn, symbolSpec);
     this.symbol = symbol;
-  },
+  }
 
-  rawValue: function() {
+  rawValue() {
     return this.symbol;
-  },
+  }
 
-  destroy: function() {
+  destroy() {
     
     
     
     this._releaseActor();
-    protocol.Actor.prototype.destroy.call(this);
-  },
+    super.destroy();
+  }
 
   
 
 
-  form: function() {
+  form() {
     const form = {
       type: this.typeName,
       actor: this.actorID,
@@ -51,27 +51,27 @@ const SymbolActor = protocol.ActorClassWithSpec(symbolSpec, {
       form.name = createValueGrip(name, this.getParent());
     }
     return form;
-  },
+  }
 
   
 
 
-  release: function() {
+  release() {
     
     
     
     this._releaseActor();
     this.destroy();
     return {};
-  },
+  }
 
-  _releaseActor: function() {
+  _releaseActor() {
     const parent = this.getParent();
     if (parent && parent.symbolActors) {
       delete parent.symbolActors[this.symbol];
     }
-  },
-});
+  }
+}
 
 const symbolProtoToString = Symbol.prototype.toString;
 

@@ -50,17 +50,17 @@
 
 
 
-const { setTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
-const protocol = require("resource://devtools/shared/protocol.js");
-const {
-  LongStringActor,
-} = require("resource://devtools/server/actors/string.js");
-
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   inspectorSpec,
 } = require("resource://devtools/shared/specs/inspector.js");
+
+const { setTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
+);
+const {
+  LongStringActor,
+} = require("resource://devtools/server/actors/string.js");
 
 loader.lazyRequireGetter(
   this,
@@ -105,18 +105,18 @@ const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
-exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
-  initialize(conn, targetActor) {
-    protocol.Actor.prototype.initialize.call(this, conn);
+class InspectorActor extends Actor {
+  constructor(conn, targetActor) {
+    super(conn, inspectorSpec);
     this.targetActor = targetActor;
 
     this._onColorPicked = this._onColorPicked.bind(this);
     this._onColorPickCanceled = this._onColorPickCanceled.bind(this);
     this.destroyEyeDropper = this.destroyEyeDropper.bind(this);
-  },
+  }
 
   destroy() {
-    protocol.Actor.prototype.destroy.call(this);
+    super.destroy();
     this.destroyEyeDropper();
 
     this._compatibility = null;
@@ -124,11 +124,11 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     this._walkerPromise = null;
     this.walker = null;
     this.targetActor = null;
-  },
+  }
 
   get window() {
     return this.targetActor.window;
-  },
+  }
 
   getWalker(options = {}) {
     if (this._walkerPromise) {
@@ -174,7 +174,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     });
 
     return this._walkerPromise;
-  },
+  }
 
   getPageStyle() {
     if (this._pageStylePromise) {
@@ -187,7 +187,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
       return pageStyle;
     });
     return this._pageStylePromise;
-  },
+  }
 
   getCompatibility() {
     if (this._compatibility) {
@@ -197,7 +197,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     this._compatibility = new CompatibilityActor(this);
     this.manage(this._compatibility);
     return this._compatibility;
-  },
+  }
 
   
 
@@ -220,7 +220,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
       return highlighterActor;
     }
     return null;
-  },
+  }
 
   
 
@@ -244,7 +244,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
         size: imageData.size,
       };
     });
-  },
+  }
 
   
 
@@ -265,7 +265,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
 
     const baseURI = Services.io.newURI(document.location.href);
     return Services.io.newURI(url, null, baseURI).spec;
-  },
+  }
 
   
 
@@ -277,7 +277,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     this._highlighterEnv.initFromTargetActor(this.targetActor);
     this._eyeDropper = new EyeDropper(this._highlighterEnv);
     return this._eyeDropper.isReady;
-  },
+  }
 
   
 
@@ -290,7 +290,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
       this._highlighterEnv.destroy();
       this._highlighterEnv = null;
     }
-  },
+  }
 
   
 
@@ -304,7 +304,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     this._eyeDropper.once("selected", this._onColorPicked);
     this._eyeDropper.once("canceled", this._onColorPickCanceled);
     this.targetActor.once("will-navigate", this.destroyEyeDropper);
-  },
+  }
 
   
 
@@ -318,7 +318,7 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
       this._eyeDropper.off("canceled", this._onColorPickCanceled);
       this.targetActor.off("will-navigate", this.destroyEyeDropper);
     }
-  },
+  }
 
   
 
@@ -341,13 +341,15 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     }
 
     return true;
-  },
+  }
 
   _onColorPicked(color) {
     this.emit("color-picked", color);
-  },
+  }
 
   _onColorPickCanceled() {
     this.emit("color-pick-canceled");
-  },
-});
+  }
+}
+
+exports.InspectorActor = InspectorActor;

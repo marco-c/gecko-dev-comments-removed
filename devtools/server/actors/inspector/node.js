@@ -4,15 +4,16 @@
 
 "use strict";
 
-const InspectorUtils = require("InspectorUtils");
-const protocol = require("resource://devtools/shared/protocol.js");
-const {
-  PSEUDO_CLASSES,
-} = require("resource://devtools/shared/css/constants.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   nodeSpec,
   nodeListSpec,
 } = require("resource://devtools/shared/specs/node.js");
+
+const InspectorUtils = require("InspectorUtils");
+const {
+  PSEUDO_CLASSES,
+} = require("resource://devtools/shared/css/constants.js");
 
 loader.lazyRequireGetter(
   this,
@@ -89,9 +90,9 @@ const FONT_FAMILY_PREVIEW_TEXT_SIZE = 20;
 
 
 
-const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
-  initialize(walker, node) {
-    protocol.Actor.prototype.initialize.call(this, null);
+class NodeActor extends Actor {
+  constructor(walker, node) {
+    super(null, nodeSpec);
     this.walker = walker;
     this.rawNode = node;
     this._eventCollector = new EventCollector(this.walker.targetActor);
@@ -113,13 +114,13 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
         this.walker.overflowCausingElementsMap
       );
     }
-  },
+  }
 
   toString() {
     return (
       "[NodeActor " + this.actorID + " for " + this.rawNode.toString() + "]"
     );
-  },
+  }
 
   
 
@@ -127,17 +128,17 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
   get conn() {
     return this.walker.conn;
-  },
+  }
 
   isDocumentElement() {
     return (
       this.rawNode.ownerDocument &&
       this.rawNode.ownerDocument.documentElement === this.rawNode
     );
-  },
+  }
 
   destroy() {
-    protocol.Actor.prototype.destroy.call(this);
+    super.destroy();
 
     if (this.mutationObserver) {
       if (!Cu.isDeadWrapper(this.mutationObserver)) {
@@ -182,7 +183,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     this._eventCollector = null;
     this.rawNode = null;
     this.walker = null;
-  },
+  }
 
   
   form() {
@@ -256,7 +257,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     form.browsingContextID = this.rawNode.browsingContext?.id;
 
     return form;
-  },
+  }
 
   
 
@@ -281,7 +282,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       subtree: true,
     });
     this.mutationObserver = observer;
-  },
+  }
 
   
 
@@ -289,7 +290,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   watchSlotchange(callback) {
     this.slotchangeListener = callback;
     this.rawNode.addEventListener("slotchange", this.slotchangeListener);
-  },
+  }
 
   
 
@@ -299,11 +300,11 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
   get useChildTargetToFetchChildren() {
     return isFrameWithChildTarget(this.walker.targetActor, this.rawNode);
-  },
+  }
 
   get isTopLevelDocument() {
     return this.rawNode === this.walker.rootDoc;
-  },
+  }
 
   
   
@@ -341,14 +342,14 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     }
 
     return numChildren;
-  },
+  }
 
   get computedStyle() {
     if (!this._computedStyle) {
       this._computedStyle = CssLogic.getComputedStyle(this.rawNode);
     }
     return this._computedStyle;
-  },
+  }
 
   
 
@@ -380,7 +381,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     }
 
     return display;
-  },
+  }
 
   
 
@@ -390,7 +391,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       this.rawNode.nodeType === Node.ELEMENT_NODE &&
       this.rawNode.hasVisibleScrollbars
     );
-  },
+  }
 
   
 
@@ -406,7 +407,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     
     
     return type !== "none";
-  },
+  }
 
   
 
@@ -418,7 +419,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     
     const dbg = this.getParent().targetActor.makeDebugger();
     return this._eventCollector.hasEventListeners(this.rawNode, dbg);
-  },
+  }
 
   writeAttrs() {
     
@@ -433,7 +434,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     return [...this.rawNode.attributes].map(attr => {
       return { namespace: attr.namespace, name: attr.name, value: attr.value };
     });
-  },
+  }
 
   writePseudoClassLocks() {
     if (this.rawNode.nodeType !== Node.ELEMENT_NODE) {
@@ -447,7 +448,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       }
     }
     return ret;
-  },
+  }
 
   
 
@@ -501,21 +502,21 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       line: customElementDO.script.startLine,
       column: customElementDO.script.startColumn,
     };
-  },
+  }
 
   
 
 
   getNodeValue() {
     return new LongStringActor(this.conn, this.rawNode.nodeValue || "");
-  },
+  }
 
   
 
 
   setNodeValue(value) {
     this.rawNode.nodeValue = value;
-  },
+  }
 
   
 
@@ -525,7 +526,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       return "";
     }
     return findCssSelector(this.rawNode);
-  },
+  }
 
   
 
@@ -537,7 +538,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       return "";
     }
     return getCssPath(this.rawNode);
-  },
+  }
 
   
 
@@ -549,14 +550,14 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       return "";
     }
     return getXPath(this.rawNode);
-  },
+  }
 
   
 
 
   scrollIntoView() {
     this.rawNode.scrollIntoView(true);
-  },
+  }
 
   
 
@@ -576,7 +577,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
         size: imageData.size,
       };
     });
-  },
+  }
 
   
 
@@ -602,7 +603,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       }
     }
     return eventListenersData;
-  },
+  }
 
   
 
@@ -617,7 +618,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       throw new Error("Unkown nsEventListenerInfo");
     }
     nsEventListenerInfo.enabled = false;
-  },
+  }
 
   
 
@@ -632,7 +633,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       throw new Error("Unkown nsEventListenerInfo");
     }
     nsEventListenerInfo.enabled = true;
-  },
+  }
 
   
 
@@ -669,7 +670,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
         rawNode.setAttributeDevtools(change.attributeName, change.newValue);
       }
     }
-  },
+  }
 
   
 
@@ -688,7 +689,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     const { dataURL, size } = getFontPreviewData(font, doc, options);
 
     return { data: new LongStringActor(this.conn, dataURL), size };
-  },
+  }
 
   
 
@@ -700,7 +701,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
   getClosestBackgroundColor() {
     return getClosestBackgroundColor(this.rawNode);
-  },
+  }
 
   
 
@@ -713,7 +714,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
   getBackgroundColor() {
     return getBackgroundColor(this);
-  },
+  }
 
   
 
@@ -726,7 +727,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       innerWidth: win.innerWidth,
       innerHeight: win.innerHeight,
     };
-  },
+  }
 
   
 
@@ -796,22 +797,22 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
         DOMHelpers.onceDOMReady(this.rawNode.contentWindow, resolve);
       });
     }
-  },
-});
+  }
+}
 
 
 
 
-const NodeListActor = protocol.ActorClassWithSpec(nodeListSpec, {
-  initialize(walker, nodeList) {
-    protocol.Actor.prototype.initialize.call(this);
+class NodeListActor extends Actor {
+  constructor(walker, nodeList) {
+    super(null, nodeListSpec);
     this.walker = walker;
     this.nodeList = nodeList || [];
-  },
+  }
 
   destroy() {
-    protocol.Actor.prototype.destroy.call(this);
-  },
+    super.destroy();
+  }
 
   
 
@@ -819,14 +820,14 @@ const NodeListActor = protocol.ActorClassWithSpec(nodeListSpec, {
 
   get conn() {
     return this.walker.conn;
-  },
+  }
 
   
 
 
   marshallPool() {
     return this.walker;
-  },
+  }
 
   
   form() {
@@ -834,14 +835,14 @@ const NodeListActor = protocol.ActorClassWithSpec(nodeListSpec, {
       actor: this.actorID,
       length: this.nodeList ? this.nodeList.length : 0,
     };
-  },
+  }
 
   
 
 
   item(index) {
     return this.walker.attachElement(this.nodeList[index]);
-  },
+  }
 
   
 
@@ -851,10 +852,10 @@ const NodeListActor = protocol.ActorClassWithSpec(nodeListSpec, {
       .call(this.nodeList, start, end)
       .map(item => this.walker._getOrCreateNodeActor(item));
     return this.walker.attachElements(items);
-  },
+  }
 
-  release() {},
-});
+  release() {}
+}
 
 exports.NodeActor = NodeActor;
 exports.NodeListActor = NodeListActor;

@@ -4,7 +4,10 @@
 
 "use strict";
 
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
+const {
+  webExtensionInspectedWindowSpec,
+} = require("resource://devtools/shared/specs/addon/webextension-inspected-window.js");
 
 const {
   DevToolsServer,
@@ -17,10 +20,6 @@ loader.lazyGetter(
     require("resource://devtools/server/actors/inspector/node.js").NodeActor,
   true
 );
-
-const {
-  webExtensionInspectedWindowSpec,
-} = require("resource://devtools/shared/specs/addon/webextension-inspected-window.js");
 
 
 
@@ -266,415 +265,406 @@ CustomizedReload.prototype = {
   },
 };
 
-var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
-  webExtensionInspectedWindowSpec,
-  {
-    
+class WebExtensionInspectedWindowActor extends Actor {
+  
 
 
-    initialize(conn, targetActor) {
-      protocol.Actor.prototype.initialize.call(this, conn);
-      this.targetActor = targetActor;
-    },
+  constructor(conn, targetActor) {
+    super(conn, webExtensionInspectedWindowSpec);
+    this.targetActor = targetActor;
+  }
 
-    destroy(conn) {
-      protocol.Actor.prototype.destroy.call(this, conn);
+  destroy(conn) {
+    super.destroy();
 
-      if (this.customizedReload) {
-        this.customizedReload.stop(
-          new Error("WebExtensionInspectedWindowActor destroyed")
-        );
-        delete this.customizedReload;
-      }
+    if (this.customizedReload) {
+      this.customizedReload.stop(
+        new Error("WebExtensionInspectedWindowActor destroyed")
+      );
+      delete this.customizedReload;
+    }
 
-      if (this._dbg) {
-        this._dbg.disable();
-        delete this._dbg;
-      }
-    },
+    if (this._dbg) {
+      this._dbg.disable();
+      delete this._dbg;
+    }
+  }
 
-    get dbg() {
-      if (this._dbg) {
-        return this._dbg;
-      }
-
-      this._dbg = this.targetActor.makeDebugger();
+  get dbg() {
+    if (this._dbg) {
       return this._dbg;
-    },
+    }
 
-    get window() {
-      return this.targetActor.window;
-    },
+    this._dbg = this.targetActor.makeDebugger();
+    return this._dbg;
+  }
 
-    get webNavigation() {
-      return this.targetActor.webNavigation;
-    },
+  get window() {
+    return this.targetActor.window;
+  }
 
-    createEvalBindings(dbgWindow, options) {
-      const bindings = Object.create(null);
+  get webNavigation() {
+    return this.targetActor.webNavigation;
+  }
 
-      let selectedDOMNode;
+  createEvalBindings(dbgWindow, options) {
+    const bindings = Object.create(null);
 
-      if (options.toolboxSelectedNodeActorID) {
-        const actor = DevToolsServer.searchAllConnectionsForActor(
-          options.toolboxSelectedNodeActorID
-        );
-        if (actor && actor instanceof NodeActor) {
-          selectedDOMNode = actor.rawNode;
-        }
+    let selectedDOMNode;
+
+    if (options.toolboxSelectedNodeActorID) {
+      const actor = DevToolsServer.searchAllConnectionsForActor(
+        options.toolboxSelectedNodeActorID
+      );
+      if (actor && actor instanceof NodeActor) {
+        selectedDOMNode = actor.rawNode;
       }
+    }
 
-      Object.defineProperty(bindings, "$0", {
-        enumerable: true,
-        configurable: true,
-        get: () => {
-          if (selectedDOMNode && !Cu.isDeadWrapper(selectedDOMNode)) {
-            return dbgWindow.makeDebuggeeValue(selectedDOMNode);
-          }
+    Object.defineProperty(bindings, "$0", {
+      enumerable: true,
+      configurable: true,
+      get: () => {
+        if (selectedDOMNode && !Cu.isDeadWrapper(selectedDOMNode)) {
+          return dbgWindow.makeDebuggeeValue(selectedDOMNode);
+        }
 
-          return undefined;
-        },
-      });
-
-      
-      
-      
-      Object.defineProperty(bindings, "inspect", {
-        enumerable: true,
-        configurable: true,
-        value: dbgWindow.makeDebuggeeValue(object => {
-          const consoleActor = DevToolsServer.searchAllConnectionsForActor(
-            options.toolboxConsoleActorID
-          );
-          if (consoleActor) {
-            const dbgObj = consoleActor.makeDebuggeeValue(object);
-            consoleActor.inspectObject(
-              dbgObj,
-              "webextension-devtools-inspectedWindow-eval"
-            );
-          } else {
-            
-            
-            console.error("Toolbox Console RDP Actor not found");
-          }
-        }),
-      });
-
-      return bindings;
-    },
+        return undefined;
+      },
+    });
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    async reload(callerInfo, { ignoreCache, userAgent, injectedScript }) {
-      if (isSystemPrincipalWindow(this.window)) {
-        console.error(
-          "Ignored inspectedWindow.reload on system principal target for " +
-            `${callerInfo.url}:${callerInfo.lineNumber}`
+    
+    
+    Object.defineProperty(bindings, "inspect", {
+      enumerable: true,
+      configurable: true,
+      value: dbgWindow.makeDebuggeeValue(object => {
+        const consoleActor = DevToolsServer.searchAllConnectionsForActor(
+          options.toolboxConsoleActorID
         );
-        return {};
-      }
+        if (consoleActor) {
+          const dbgObj = consoleActor.makeDebuggeeValue(object);
+          consoleActor.inspectObject(
+            dbgObj,
+            "webextension-devtools-inspectedWindow-eval"
+          );
+        } else {
+          
+          
+          console.error("Toolbox Console RDP Actor not found");
+        }
+      }),
+    });
 
-      await new Promise(resolve => {
-        const delayedReload = () => {
-          
-          
-          if (Services.startup.shuttingDown) {
+    return bindings;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async reload(callerInfo, { ignoreCache, userAgent, injectedScript }) {
+    if (isSystemPrincipalWindow(this.window)) {
+      console.error(
+        "Ignored inspectedWindow.reload on system principal target for " +
+          `${callerInfo.url}:${callerInfo.lineNumber}`
+      );
+      return {};
+    }
+
+    await new Promise(resolve => {
+      const delayedReload = () => {
+        
+        
+        if (Services.startup.shuttingDown) {
+          return;
+        }
+
+        if (injectedScript || userAgent) {
+          if (this.customizedReload) {
+            
+            
+            console.error(
+              "Reload already in progress. Ignored inspectedWindow.reload for " +
+                `${callerInfo.url}:${callerInfo.lineNumber}`
+            );
             return;
           }
 
-          if (injectedScript || userAgent) {
-            if (this.customizedReload) {
-              
-              
-              console.error(
-                "Reload already in progress. Ignored inspectedWindow.reload for " +
-                  `${callerInfo.url}:${callerInfo.lineNumber}`
-              );
-              return;
-            }
+          try {
+            this.customizedReload = new CustomizedReload({
+              targetActor: this.targetActor,
+              inspectedWindowEval: this.eval.bind(this),
+              callerInfo,
+              injectedScript,
+              ignoreCache,
+            });
 
-            try {
-              this.customizedReload = new CustomizedReload({
-                targetActor: this.targetActor,
-                inspectedWindowEval: this.eval.bind(this),
-                callerInfo,
-                injectedScript,
-                ignoreCache,
+            this.customizedReload
+              .start()
+              .catch(err => {
+                console.error(err);
+              })
+              .then(() => {
+                delete this.customizedReload;
+                resolve();
               });
-
-              this.customizedReload
-                .start()
-                .catch(err => {
-                  console.error(err);
-                })
-                .then(() => {
-                  delete this.customizedReload;
-                  resolve();
-                });
-            } catch (err) {
-              
-              
-              if (this.customizedReload) {
-                this.customizedReload.stop(err);
-              }
-              throw err;
-            }
-          } else {
+          } catch (err) {
             
             
-            let reloadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
-            if (ignoreCache) {
-              reloadFlags |= Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
+            if (this.customizedReload) {
+              this.customizedReload.stop(err);
             }
-            this.webNavigation.reload(reloadFlags);
-            resolve();
+            throw err;
           }
-        };
-
-        
-        
-        
-        Services.tm.dispatchToMainThread(delayedReload);
-      });
-
-      return {};
-    },
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    eval(callerInfo, expression, options, customTargetWindow) {
-      const window = customTargetWindow || this.window;
-      options = options || {};
-
-      const extensionPolicy = WebExtensionPolicy.getByID(callerInfo.addonId);
-
-      if (!extensionPolicy) {
-        return createExceptionInfoResult({
-          description: "Inspector protocol error: %s %s",
-          details: ["Caller extension not found for", callerInfo.url],
-        });
-      }
-
-      if (!window) {
-        return createExceptionInfoResult({
-          description: "Inspector protocol error: %s",
-          details: [
-            "The target window is not defined. inspectedWindow.eval not executed.",
-          ],
-        });
-      }
-
-      
-      
-      const logEvalDenied = () => {
-        logAccessDeniedWarning(window, callerInfo, extensionPolicy);
+        } else {
+          
+          
+          let reloadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+          if (ignoreCache) {
+            reloadFlags |= Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
+          }
+          this.webNavigation.reload(reloadFlags);
+          resolve();
+        }
       };
 
-      if (isSystemPrincipalWindow(window)) {
-        logEvalDenied();
-
-        
-        
-        
-        return createExceptionInfoResult({
-          description: "Inspector protocol error: %s",
-          details: [
-            "This target has a system principal. inspectedWindow.eval denied.",
-          ],
-        });
-      }
-
-      const docPrincipalURI = window.document.nodePrincipal.URI;
-
       
       
       
-      
-      if (
-        WebExtensionPolicy.isRestrictedURI(docPrincipalURI) ||
-        docPrincipalURI.schemeIs("about")
-      ) {
-        logEvalDenied();
+      Services.tm.dispatchToMainThread(delayedReload);
+    });
 
-        return createExceptionInfoResult({
-          description: "Inspector protocol error: %s %s",
-          details: [
-            "This extension is not allowed on the current inspected window origin",
-            docPrincipalURI.spec,
-          ],
-        });
-      }
-
-      const windowAddonId = window.document.nodePrincipal.addonId;
-
-      if (windowAddonId && extensionPolicy.id !== windowAddonId) {
-        logEvalDenied();
-
-        return createExceptionInfoResult({
-          description: "Inspector protocol error: %s on %s",
-          details: [
-            "This extension is not allowed to access this extension page.",
-            window.document.location.origin,
-          ],
-        });
-      }
-
-      
-      if (
-        options.frameURL ||
-        options.contextSecurityOrigin ||
-        options.useContentScriptContext
-      ) {
-        return createExceptionInfoResult({
-          description: "Inspector protocol error: %s",
-          details: [
-            "The inspectedWindow.eval options are currently not supported",
-          ],
-        });
-      }
-
-      const dbgWindow = this.dbg.makeGlobalObjectReference(window);
-
-      let evalCalledFrom = callerInfo.url;
-      if (callerInfo.lineNumber) {
-        evalCalledFrom += `:${callerInfo.lineNumber}`;
-      }
-
-      const bindings = this.createEvalBindings(dbgWindow, options);
-
-      const result = dbgWindow.executeInGlobalWithBindings(
-        expression,
-        bindings,
-        {
-          url: `debugger eval called from ${evalCalledFrom} - eval code`,
-        }
-      );
-
-      let evalResult;
-
-      if (result) {
-        if ("return" in result) {
-          evalResult = result.return;
-        } else if ("yield" in result) {
-          evalResult = result.yield;
-        } else if ("throw" in result) {
-          const throwErr = result.throw;
-
-          
-          
-          const unsafeDereference =
-            throwErr &&
-            typeof throwErr === "object" &&
-            throwErr.unsafeDereference();
-          const message = unsafeDereference?.toString
-            ? unsafeDereference.toString()
-            : String(throwErr);
-          const stack = unsafeDereference?.stack
-            ? unsafeDereference.stack
-            : null;
-
-          return {
-            exceptionInfo: {
-              isException: true,
-              value: `${message}\n\t${stack}`,
-            },
-          };
-        }
-      } else {
-        
-        
-        console.error(
-          "Unexpected empty inspectedWindow.eval result for",
-          `${callerInfo.url}:${callerInfo.lineNumber}`
-        );
-      }
-
-      if (evalResult) {
-        try {
-          
-          
-          if (options.evalResultAsGrip) {
-            if (!options.toolboxConsoleActorID) {
-              return createExceptionInfoResult({
-                description: "Inspector protocol error: %s - %s",
-                details: [
-                  "Unexpected invalid sidebar panel expression request",
-                  "missing toolboxConsoleActorID",
-                ],
-              });
-            }
-
-            const consoleActor = DevToolsServer.searchAllConnectionsForActor(
-              options.toolboxConsoleActorID
-            );
-
-            return { valueGrip: consoleActor.createValueGrip(evalResult) };
-          }
-
-          if (evalResult && typeof evalResult === "object") {
-            evalResult = evalResult.unsafeDereference();
-          }
-          evalResult = JSON.parse(JSON.stringify(evalResult));
-        } catch (err) {
-          
-          
-          
-          return createExceptionInfoResult({
-            description: "Inspector protocol error: %s",
-            details: [String(err)],
-          });
-        }
-      }
-
-      return { value: evalResult };
-    },
+    return {};
   }
-);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  eval(callerInfo, expression, options, customTargetWindow) {
+    const window = customTargetWindow || this.window;
+    options = options || {};
+
+    const extensionPolicy = WebExtensionPolicy.getByID(callerInfo.addonId);
+
+    if (!extensionPolicy) {
+      return createExceptionInfoResult({
+        description: "Inspector protocol error: %s %s",
+        details: ["Caller extension not found for", callerInfo.url],
+      });
+    }
+
+    if (!window) {
+      return createExceptionInfoResult({
+        description: "Inspector protocol error: %s",
+        details: [
+          "The target window is not defined. inspectedWindow.eval not executed.",
+        ],
+      });
+    }
+
+    
+    
+    const logEvalDenied = () => {
+      logAccessDeniedWarning(window, callerInfo, extensionPolicy);
+    };
+
+    if (isSystemPrincipalWindow(window)) {
+      logEvalDenied();
+
+      
+      
+      
+      return createExceptionInfoResult({
+        description: "Inspector protocol error: %s",
+        details: [
+          "This target has a system principal. inspectedWindow.eval denied.",
+        ],
+      });
+    }
+
+    const docPrincipalURI = window.document.nodePrincipal.URI;
+
+    
+    
+    
+    
+    if (
+      WebExtensionPolicy.isRestrictedURI(docPrincipalURI) ||
+      docPrincipalURI.schemeIs("about")
+    ) {
+      logEvalDenied();
+
+      return createExceptionInfoResult({
+        description: "Inspector protocol error: %s %s",
+        details: [
+          "This extension is not allowed on the current inspected window origin",
+          docPrincipalURI.spec,
+        ],
+      });
+    }
+
+    const windowAddonId = window.document.nodePrincipal.addonId;
+
+    if (windowAddonId && extensionPolicy.id !== windowAddonId) {
+      logEvalDenied();
+
+      return createExceptionInfoResult({
+        description: "Inspector protocol error: %s on %s",
+        details: [
+          "This extension is not allowed to access this extension page.",
+          window.document.location.origin,
+        ],
+      });
+    }
+
+    
+    if (
+      options.frameURL ||
+      options.contextSecurityOrigin ||
+      options.useContentScriptContext
+    ) {
+      return createExceptionInfoResult({
+        description: "Inspector protocol error: %s",
+        details: [
+          "The inspectedWindow.eval options are currently not supported",
+        ],
+      });
+    }
+
+    const dbgWindow = this.dbg.makeGlobalObjectReference(window);
+
+    let evalCalledFrom = callerInfo.url;
+    if (callerInfo.lineNumber) {
+      evalCalledFrom += `:${callerInfo.lineNumber}`;
+    }
+
+    const bindings = this.createEvalBindings(dbgWindow, options);
+
+    const result = dbgWindow.executeInGlobalWithBindings(expression, bindings, {
+      url: `debugger eval called from ${evalCalledFrom} - eval code`,
+    });
+
+    let evalResult;
+
+    if (result) {
+      if ("return" in result) {
+        evalResult = result.return;
+      } else if ("yield" in result) {
+        evalResult = result.yield;
+      } else if ("throw" in result) {
+        const throwErr = result.throw;
+
+        
+        
+        const unsafeDereference =
+          throwErr &&
+          typeof throwErr === "object" &&
+          throwErr.unsafeDereference();
+        const message = unsafeDereference?.toString
+          ? unsafeDereference.toString()
+          : String(throwErr);
+        const stack = unsafeDereference?.stack ? unsafeDereference.stack : null;
+
+        return {
+          exceptionInfo: {
+            isException: true,
+            value: `${message}\n\t${stack}`,
+          },
+        };
+      }
+    } else {
+      
+      
+      console.error(
+        "Unexpected empty inspectedWindow.eval result for",
+        `${callerInfo.url}:${callerInfo.lineNumber}`
+      );
+    }
+
+    if (evalResult) {
+      try {
+        
+        
+        if (options.evalResultAsGrip) {
+          if (!options.toolboxConsoleActorID) {
+            return createExceptionInfoResult({
+              description: "Inspector protocol error: %s - %s",
+              details: [
+                "Unexpected invalid sidebar panel expression request",
+                "missing toolboxConsoleActorID",
+              ],
+            });
+          }
+
+          const consoleActor = DevToolsServer.searchAllConnectionsForActor(
+            options.toolboxConsoleActorID
+          );
+
+          return { valueGrip: consoleActor.createValueGrip(evalResult) };
+        }
+
+        if (evalResult && typeof evalResult === "object") {
+          evalResult = evalResult.unsafeDereference();
+        }
+        evalResult = JSON.parse(JSON.stringify(evalResult));
+      } catch (err) {
+        
+        
+        
+        return createExceptionInfoResult({
+          description: "Inspector protocol error: %s",
+          details: [String(err)],
+        });
+      }
+    }
+
+    return { value: evalResult };
+  }
+}
 
 exports.WebExtensionInspectedWindowActor = WebExtensionInspectedWindowActor;

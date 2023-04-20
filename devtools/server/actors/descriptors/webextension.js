@@ -12,10 +12,11 @@
 
 
 
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   webExtensionDescriptorSpec,
 } = require("resource://devtools/shared/specs/descriptors/webextension.js");
+
 const {
   connectToFrame,
 } = require("resource://devtools/server/connectors/frame-connector.js");
@@ -65,280 +66,271 @@ const BGSCRIPT_STATUSES = {
 
 
 
-const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
-  webExtensionDescriptorSpec,
-  {
-    initialize(conn, addon) {
-      protocol.Actor.prototype.initialize.call(this, conn);
-      this.addon = addon;
-      this.addonId = addon.id;
-      this._childFormPromise = null;
+class WebExtensionDescriptorActor extends Actor {
+  constructor(conn, addon) {
+    super(conn, webExtensionDescriptorSpec);
+    this.addon = addon;
+    this.addonId = addon.id;
+    this._childFormPromise = null;
 
-      this._onChildExit = this._onChildExit.bind(this);
-      this.destroy = this.destroy.bind(this);
-      lazy.AddonManager.addAddonListener(this);
-    },
-
-    form() {
-      const { addonId } = this;
-      const policy = lazy.ExtensionParent.WebExtensionPolicy.getByID(addonId);
-      const persistentBackgroundScript = lazy.ExtensionParent.DebugUtils.hasPersistentBackgroundScript(
-        addonId
-      );
-      const backgroundScriptStatus = this._getBackgroundScriptStatus();
-
-      return {
-        actor: this.actorID,
-        backgroundScriptStatus,
-        
-        
-        
-        debuggable: policy?.active && this.addon.isDebuggable,
-        hidden: this.addon.hidden,
-        
-        iconDataURL: this._iconDataURL,
-        iconURL: this.addon.iconURL,
-        id: addonId,
-        isSystem: this.addon.isSystem,
-        isWebExtension: this.addon.isWebExtension,
-        manifestURL: policy && policy.getURL("manifest.json"),
-        name: this.addon.name,
-        persistentBackgroundScript,
-        temporarilyInstalled: this.addon.temporarilyInstalled,
-        traits: {
-          supportsReloadDescriptor: true,
-          
-          watcher: true,
-        },
-        url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
-        warnings: lazy.ExtensionParent.DebugUtils.getExtensionManifestWarnings(
-          this.addonId
-        ),
-      };
-    },
-
-    
-
-
-
-
-    async getWatcher(config = {}) {
-      if (!this.watcher) {
-        
-        await this._extensionFrameConnect();
-        this.watcher = new WatcherActor(
-          this.conn,
-          createWebExtensionSessionContext(
-            {
-              addonId: this.addonId,
-              browsingContextID: this._form.browsingContextID,
-              innerWindowId: this._form.innerWindowId,
-            },
-            config
-          )
-        );
-        this.manage(this.watcher);
-      }
-      return this.watcher;
-    },
-
-    async getTarget() {
-      const form = await this._extensionFrameConnect();
-      
-      
-      return Object.assign(form, {
-        iconURL: this.addon.iconURL,
-        id: this.addon.id,
-        name: this.addon.name,
-      });
-    },
-
-    getChildren() {
-      return [];
-    },
-
-    async _extensionFrameConnect() {
-      if (this._form) {
-        return this._form;
-      }
-
-      this._browser = await lazy.ExtensionParent.DebugUtils.getExtensionProcessBrowser(
-        this
-      );
-
-      const policy = lazy.ExtensionParent.WebExtensionPolicy.getByID(
-        this.addonId
-      );
-      this._form = await connectToFrame(
-        this.conn,
-        this._browser,
-        this.destroy,
-        {
-          addonId: this.addonId,
-          addonBrowsingContextGroupId: policy.browsingContextGroupId,
-          
-          
-          
-          
-          
-          isServerTargetSwitchingEnabled: false,
-        }
-      );
-
-      
-      
-      if (!this._form) {
-        throw new Error(
-          "browser element destroyed while connecting to it: " + this.addon.name
-        );
-      }
-
-      this._childActorID = this._form.actor;
-
-      
-      this._mm.addMessageListener("debug:webext_child_exit", this._onChildExit);
-
-      return this._form;
-    },
-
-    
-
-
-
-
-
-
-    reloadDescriptor({ bypassCache }) {
-      return this.reload();
-    },
-
-    async reload() {
-      await this.addon.reload();
-      return {};
-    },
-
-    async terminateBackgroundScript() {
-      await lazy.ExtensionParent.DebugUtils.terminateBackgroundScript(
-        this.addonId
-      );
-    },
-
-    
-    
-    async loadIconDataURL() {
-      this._iconDataURL = await this.getIconDataURL();
-    },
-
-    async getIconDataURL() {
-      if (!this.addon.iconURL) {
-        return null;
-      }
-
-      const xhr = new XMLHttpRequest();
-      xhr.responseType = "blob";
-      xhr.open("GET", this.addon.iconURL, true);
-
-      if (this.addon.iconURL.toLowerCase().endsWith(".svg")) {
-        
-        xhr.overrideMimeType("image/svg+xml");
-      }
-
-      try {
-        const blob = await new Promise((resolve, reject) => {
-          xhr.onload = () => resolve(xhr.response);
-          xhr.onerror = reject;
-          xhr.send();
-        });
-
-        const reader = new FileReader();
-        return await new Promise((resolve, reject) => {
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      } catch (_) {
-        console.warn(`Failed to create data url from [${this.addon.iconURL}]`);
-        return null;
-      }
-    },
-
-    
-    _getBackgroundScriptStatus() {
-      const isRunning = lazy.ExtensionParent.DebugUtils.isBackgroundScriptRunning(
-        this.addonId
-      );
-      
-      
-      
-      if (isRunning === undefined) {
-        return undefined;
-      }
-
-      return isRunning ? BGSCRIPT_STATUSES.RUNNING : BGSCRIPT_STATUSES.STOPPED;
-    },
-
-    get _mm() {
-      return (
-        this._browser &&
-        (this._browser.messageManager ||
-          this._browser.frameLoader.messageManager)
-      );
-    },
-
-    
-
-
-    _onChildExit(msg) {
-      if (msg.json.actor !== this._childActorID) {
-        return;
-      }
-
-      this.destroy();
-    },
-
-    
-    onInstalled(addon) {
-      if (addon.id != this.addonId) {
-        return;
-      }
-
-      
-      this.addon = addon;
-    },
-
-    onUninstalled(addon) {
-      if (addon != this.addon) {
-        return;
-      }
-
-      this.destroy();
-    },
-
-    destroy() {
-      lazy.AddonManager.removeAddonListener(this);
-
-      this.addon = null;
-      if (this._mm) {
-        this._mm.removeMessageListener(
-          "debug:webext_child_exit",
-          this._onChildExit
-        );
-
-        this._mm.sendAsyncMessage("debug:webext_parent_exit", {
-          actor: this._childActorID,
-        });
-
-        lazy.ExtensionParent.DebugUtils.releaseExtensionProcessBrowser(this);
-      }
-
-      this._browser = null;
-      this._childActorID = null;
-
-      this.emit("descriptor-destroyed");
-
-      protocol.Actor.prototype.destroy.call(this);
-    },
+    this._onChildExit = this._onChildExit.bind(this);
+    this.destroy = this.destroy.bind(this);
+    lazy.AddonManager.addAddonListener(this);
   }
-);
+
+  form() {
+    const { addonId } = this;
+    const policy = lazy.ExtensionParent.WebExtensionPolicy.getByID(addonId);
+    const persistentBackgroundScript = lazy.ExtensionParent.DebugUtils.hasPersistentBackgroundScript(
+      addonId
+    );
+    const backgroundScriptStatus = this._getBackgroundScriptStatus();
+
+    return {
+      actor: this.actorID,
+      backgroundScriptStatus,
+      
+      
+      
+      debuggable: policy?.active && this.addon.isDebuggable,
+      hidden: this.addon.hidden,
+      
+      iconDataURL: this._iconDataURL,
+      iconURL: this.addon.iconURL,
+      id: addonId,
+      isSystem: this.addon.isSystem,
+      isWebExtension: this.addon.isWebExtension,
+      manifestURL: policy && policy.getURL("manifest.json"),
+      name: this.addon.name,
+      persistentBackgroundScript,
+      temporarilyInstalled: this.addon.temporarilyInstalled,
+      traits: {
+        supportsReloadDescriptor: true,
+        
+        watcher: true,
+      },
+      url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
+      warnings: lazy.ExtensionParent.DebugUtils.getExtensionManifestWarnings(
+        this.addonId
+      ),
+    };
+  }
+
+  
+
+
+
+
+  async getWatcher(config = {}) {
+    if (!this.watcher) {
+      
+      await this._extensionFrameConnect();
+      this.watcher = new WatcherActor(
+        this.conn,
+        createWebExtensionSessionContext(
+          {
+            addonId: this.addonId,
+            browsingContextID: this._form.browsingContextID,
+            innerWindowId: this._form.innerWindowId,
+          },
+          config
+        )
+      );
+      this.manage(this.watcher);
+    }
+    return this.watcher;
+  }
+
+  async getTarget() {
+    const form = await this._extensionFrameConnect();
+    
+    
+    return Object.assign(form, {
+      iconURL: this.addon.iconURL,
+      id: this.addon.id,
+      name: this.addon.name,
+    });
+  }
+
+  getChildren() {
+    return [];
+  }
+
+  async _extensionFrameConnect() {
+    if (this._form) {
+      return this._form;
+    }
+
+    this._browser = await lazy.ExtensionParent.DebugUtils.getExtensionProcessBrowser(
+      this
+    );
+
+    const policy = lazy.ExtensionParent.WebExtensionPolicy.getByID(
+      this.addonId
+    );
+    this._form = await connectToFrame(this.conn, this._browser, this.destroy, {
+      addonId: this.addonId,
+      addonBrowsingContextGroupId: policy.browsingContextGroupId,
+      
+      
+      
+      
+      
+      isServerTargetSwitchingEnabled: false,
+    });
+
+    
+    
+    if (!this._form) {
+      throw new Error(
+        "browser element destroyed while connecting to it: " + this.addon.name
+      );
+    }
+
+    this._childActorID = this._form.actor;
+
+    
+    this._mm.addMessageListener("debug:webext_child_exit", this._onChildExit);
+
+    return this._form;
+  }
+
+  
+
+
+
+
+
+
+  reloadDescriptor({ bypassCache }) {
+    return this.reload();
+  }
+
+  async reload() {
+    await this.addon.reload();
+    return {};
+  }
+
+  async terminateBackgroundScript() {
+    await lazy.ExtensionParent.DebugUtils.terminateBackgroundScript(
+      this.addonId
+    );
+  }
+
+  
+  
+  async loadIconDataURL() {
+    this._iconDataURL = await this.getIconDataURL();
+  }
+
+  async getIconDataURL() {
+    if (!this.addon.iconURL) {
+      return null;
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = "blob";
+    xhr.open("GET", this.addon.iconURL, true);
+
+    if (this.addon.iconURL.toLowerCase().endsWith(".svg")) {
+      
+      xhr.overrideMimeType("image/svg+xml");
+    }
+
+    try {
+      const blob = await new Promise((resolve, reject) => {
+        xhr.onload = () => resolve(xhr.response);
+        xhr.onerror = reject;
+        xhr.send();
+      });
+
+      const reader = new FileReader();
+      return await new Promise((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (_) {
+      console.warn(`Failed to create data url from [${this.addon.iconURL}]`);
+      return null;
+    }
+  }
+
+  
+  _getBackgroundScriptStatus() {
+    const isRunning = lazy.ExtensionParent.DebugUtils.isBackgroundScriptRunning(
+      this.addonId
+    );
+    
+    
+    
+    if (isRunning === undefined) {
+      return undefined;
+    }
+
+    return isRunning ? BGSCRIPT_STATUSES.RUNNING : BGSCRIPT_STATUSES.STOPPED;
+  }
+
+  get _mm() {
+    return (
+      this._browser &&
+      (this._browser.messageManager || this._browser.frameLoader.messageManager)
+    );
+  }
+
+  
+
+
+  _onChildExit(msg) {
+    if (msg.json.actor !== this._childActorID) {
+      return;
+    }
+
+    this.destroy();
+  }
+
+  
+  onInstalled(addon) {
+    if (addon.id != this.addonId) {
+      return;
+    }
+
+    
+    this.addon = addon;
+  }
+
+  onUninstalled(addon) {
+    if (addon != this.addon) {
+      return;
+    }
+
+    this.destroy();
+  }
+
+  destroy() {
+    lazy.AddonManager.removeAddonListener(this);
+
+    this.addon = null;
+    if (this._mm) {
+      this._mm.removeMessageListener(
+        "debug:webext_child_exit",
+        this._onChildExit
+      );
+
+      this._mm.sendAsyncMessage("debug:webext_parent_exit", {
+        actor: this._childActorID,
+      });
+
+      lazy.ExtensionParent.DebugUtils.releaseExtensionProcessBrowser(this);
+    }
+
+    this._browser = null;
+    this._childActorID = null;
+
+    this.emit("descriptor-destroyed");
+
+    super.destroy();
+  }
+}
 
 exports.WebExtensionDescriptorActor = WebExtensionDescriptorActor;

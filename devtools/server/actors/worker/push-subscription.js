@@ -4,38 +4,35 @@
 
 "use strict";
 
-const protocol = require("resource://devtools/shared/protocol.js");
+const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   pushSubscriptionSpec,
 } = require("resource://devtools/shared/specs/worker/push-subscription.js");
 
-const PushSubscriptionActor = protocol.ActorClassWithSpec(
-  pushSubscriptionSpec,
-  {
-    initialize(conn, subscription) {
-      protocol.Actor.prototype.initialize.call(this, conn);
-      this._subscription = subscription;
-    },
-
-    form() {
-      const subscription = this._subscription;
-
-      
-      
-      
-      
-      
-      return {
-        actor: this.actorID,
-        endpoint: subscription.endpoint,
-        quota: subscription.quota,
-      };
-    },
-
-    destroy() {
-      this._subscription = null;
-      protocol.Actor.prototype.destroy.call(this);
-    },
+class PushSubscriptionActor extends Actor {
+  constructor(conn, subscription) {
+    super(conn, pushSubscriptionSpec);
+    this._subscription = subscription;
   }
-);
+
+  form() {
+    const subscription = this._subscription;
+
+    
+    
+    
+    
+    
+    return {
+      actor: this.actorID,
+      endpoint: subscription.endpoint,
+      quota: subscription.quota,
+    };
+  }
+
+  destroy() {
+    this._subscription = null;
+    super.destroy();
+  }
+}
 exports.PushSubscriptionActor = PushSubscriptionActor;
