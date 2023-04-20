@@ -281,39 +281,26 @@ int LibvpxVp9Decoder::ReturnFrame(
   
   
   rtc::scoped_refptr<VideoFrameBuffer> img_wrapped_buffer;
-  switch (img->bit_depth) {
-    case 8:
-      if (img->fmt == VPX_IMG_FMT_I420) {
-        if (preferred_output_format_ == VideoFrameBuffer::Type::kNV12) {
-          rtc::scoped_refptr<NV12Buffer> nv12_buffer =
-              output_buffer_pool_.CreateNV12Buffer(img->d_w, img->d_h);
-          if (!nv12_buffer.get()) {
-            
-            return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
-          }
-          img_wrapped_buffer = nv12_buffer;
-          libyuv::I420ToNV12(img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
-                             img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
-                             img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
-                             nv12_buffer->MutableDataY(),
-                             nv12_buffer->StrideY(),
-                             nv12_buffer->MutableDataUV(),
-                             nv12_buffer->StrideUV(), img->d_w, img->d_h);
+  switch (img->fmt) {
+    case VPX_IMG_FMT_I420:
+      if (preferred_output_format_ == VideoFrameBuffer::Type::kNV12) {
+        rtc::scoped_refptr<NV12Buffer> nv12_buffer =
+            output_buffer_pool_.CreateNV12Buffer(img->d_w, img->d_h);
+        if (!nv12_buffer.get()) {
           
-          
-        } else {
-          img_wrapped_buffer = WrapI420Buffer(
-              img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
-              img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
-              img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
-              img->stride[VPX_PLANE_V],
-              
-              
-              
-              [img_buffer] {});
+          return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
         }
-      } else if (img->fmt == VPX_IMG_FMT_I444) {
-        img_wrapped_buffer = WrapI444Buffer(
+        img_wrapped_buffer = nv12_buffer;
+        libyuv::I420ToNV12(img->planes[VPX_PLANE_Y], img->stride[VPX_PLANE_Y],
+                           img->planes[VPX_PLANE_U], img->stride[VPX_PLANE_U],
+                           img->planes[VPX_PLANE_V], img->stride[VPX_PLANE_V],
+                           nv12_buffer->MutableDataY(), nv12_buffer->StrideY(),
+                           nv12_buffer->MutableDataUV(),
+                           nv12_buffer->StrideUV(), img->d_w, img->d_h);
+        
+        
+      } else {
+        img_wrapped_buffer = WrapI420Buffer(
             img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
             img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
             img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
@@ -322,14 +309,31 @@ int LibvpxVp9Decoder::ReturnFrame(
             
             
             [img_buffer] {});
-      } else {
-        RTC_LOG(LS_ERROR)
-            << "Unsupported pixel format produced by the decoder: "
-            << static_cast<int>(img->fmt);
-        return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
       }
       break;
-    case 10:
+    case VPX_IMG_FMT_I422:
+      img_wrapped_buffer = WrapI422Buffer(
+          img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
+          img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
+          img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
+          img->stride[VPX_PLANE_V],
+          
+          
+          
+          [img_buffer] {});
+      break;
+    case VPX_IMG_FMT_I444:
+      img_wrapped_buffer = WrapI444Buffer(
+          img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
+          img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
+          img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
+          img->stride[VPX_PLANE_V],
+          
+          
+          
+          [img_buffer] {});
+      break;
+    case VPX_IMG_FMT_I42016:
       img_wrapped_buffer = WrapI010Buffer(
           img->d_w, img->d_h,
           reinterpret_cast<const uint16_t*>(img->planes[VPX_PLANE_Y]),
@@ -339,9 +343,19 @@ int LibvpxVp9Decoder::ReturnFrame(
           reinterpret_cast<const uint16_t*>(img->planes[VPX_PLANE_V]),
           img->stride[VPX_PLANE_V] / 2, [img_buffer] {});
       break;
+    case VPX_IMG_FMT_I42216:
+      img_wrapped_buffer = WrapI210Buffer(
+          img->d_w, img->d_h,
+          reinterpret_cast<const uint16_t*>(img->planes[VPX_PLANE_Y]),
+          img->stride[VPX_PLANE_Y] / 2,
+          reinterpret_cast<const uint16_t*>(img->planes[VPX_PLANE_U]),
+          img->stride[VPX_PLANE_U] / 2,
+          reinterpret_cast<const uint16_t*>(img->planes[VPX_PLANE_V]),
+          img->stride[VPX_PLANE_V] / 2, [img_buffer] {});
+      break;
     default:
-      RTC_LOG(LS_ERROR) << "Unsupported bit depth produced by the decoder: "
-                        << img->bit_depth;
+      RTC_LOG(LS_ERROR) << "Unsupported pixel format produced by the decoder: "
+                        << static_cast<int>(img->fmt);
       return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
 
