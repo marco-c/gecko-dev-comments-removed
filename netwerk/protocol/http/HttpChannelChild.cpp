@@ -443,6 +443,8 @@ void HttpChannelChild::OnStartRequest(
 
   mCacheKey = aArgs.cacheKey();
 
+  StoreIsProxyUsed(aArgs.isProxyUsed());
+
   
   mRequestHead.SetHeaders(aRequestHeaders);
 

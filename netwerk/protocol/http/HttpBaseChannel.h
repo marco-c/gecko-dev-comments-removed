@@ -239,6 +239,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD SetTopLevelContentWindowId(uint64_t aContentWindowId) override;
   NS_IMETHOD GetTopBrowsingContextId(uint64_t* aId) override;
   NS_IMETHOD SetTopBrowsingContextId(uint64_t aId) override;
+  NS_IMETHOD GetIsProxyUsed(bool* aIsProxyUsed) override;
 
   using nsIClassifiedChannel::IsThirdPartyTrackingResource;
 
@@ -862,7 +863,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
     
     
-    (uint32_t, PreferCacheLoadOverBypass, 1)
+    (uint32_t, PreferCacheLoadOverBypass, 1),
+
+    (uint32_t, IsProxyUsed, 1)
   ))
 
   
