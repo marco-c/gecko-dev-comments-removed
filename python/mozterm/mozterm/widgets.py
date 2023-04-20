@@ -6,6 +6,8 @@ from __future__ import absolute_import, unicode_literals
 
 from .terminal import Terminal
 
+DEFAULT = "\x1b(B\x1b[m"
+
 
 class BaseWidget(object):
     def __init__(self, terminal=None):
@@ -39,7 +41,16 @@ class Footer(BaseWidget):
         for part in parts:
             try:
                 func, part = part
-                encoded = getattr(self.term, func)(part)
+                attribute = getattr(self.term, func)
+                
+                if callable(attribute):
+                    encoded = attribute(part)
+                else:
+                    
+                    
+                    
+                    
+                    encoded = attribute + part + DEFAULT
             except ValueError:
                 encoded = part
 
