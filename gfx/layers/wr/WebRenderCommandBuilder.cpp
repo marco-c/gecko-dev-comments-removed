@@ -1130,7 +1130,9 @@ static ItemActivity HasActiveChildren(
 }
 
 static ItemActivity AssessBounds(const StackingContextHelper& aSc,
-                                 const nsRect& aBounds) {
+                                 nsDisplayListBuilder* aDisplayListBuilder,
+                                 nsDisplayItem* aItem,
+                                 bool aHasActivePrecedingSibling) {
   
   
   
@@ -1139,14 +1141,28 @@ static ItemActivity AssessBounds(const StackingContextHelper& aSc,
   
   constexpr float largeish = 512;
 
-  float width = aBounds.width * aSc.GetInheritedScale().xScale;
-  float height = aBounds.height * aSc.GetInheritedScale().yScale;
+  bool snap = false;
+  nsRect bounds = aItem->GetBounds(aDisplayListBuilder, &snap);
 
-  if (width > largeish || height > largeish) {
-    return ItemActivity::Should;
+  float appUnitsPerDevPixel =
+      static_cast<float>(aItem->Frame()->PresContext()->AppUnitsPerDevPixel());
+
+  float width =
+      static_cast<float>(bounds.width) * aSc.GetInheritedScale().xScale;
+  float height =
+      static_cast<float>(bounds.height) * aSc.GetInheritedScale().yScale;
+
+  
+  
+  if (width >= appUnitsPerDevPixel && height >= appUnitsPerDevPixel) {
+    if (aHasActivePrecedingSibling || width > largeish || height > largeish) {
+      return ItemActivity::Should;
+    }
+
+    return ItemActivity::Could;
   }
 
-  return ItemActivity::Could;
+  return ItemActivity::No;
 }
 
 
@@ -1202,11 +1218,8 @@ static ItemActivity IsItemProbablyActive(
       if (StaticPrefs::gfx_webrender_svg_images() && aUniformlyScaled &&
           svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
                                   aDisplayListBuilder)) {
-        if (aHasActivePrecedingSibling) {
-          return ItemActivity::Should;
-        }
-        bool snap = false;
-        return AssessBounds(aSc, aItem->GetBounds(aDisplayListBuilder, &snap));
+        return AssessBounds(aSc, aDisplayListBuilder, aItem,
+                            aHasActivePrecedingSibling);
       }
 
       return ItemActivity::No;
