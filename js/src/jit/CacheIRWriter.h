@@ -377,7 +377,7 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
 
   
   
-  StubField readStubFieldForIon(uint32_t offset, StubField::Type type) const;
+  StubField readStubField(uint32_t offset, StubField::Type type) const;
 
   ObjOperandId guardToObject(ValOperandId input) {
     guardToObject_(input);
