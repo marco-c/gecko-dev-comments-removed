@@ -1406,6 +1406,16 @@ var gUnifiedExtensions = {
       
       this._button.hidden = false;
 
+      
+      
+      document
+        .getElementById("unified-extensions-context-menu")
+        .querySelectorAll("[data-lazy-l10n-id]")
+        .forEach(el => {
+          el.setAttribute("data-l10n-id", el.getAttribute("data-lazy-l10n-id"));
+          el.removeAttribute("data-lazy-l10n-id");
+        });
+
       document
         .getElementById("nav-bar")
         .setAttribute("unifiedextensionsbuttonshown", true);
@@ -1579,18 +1589,6 @@ var gUnifiedExtensions = {
         );
         this._listView.addEventListener("ViewShowing", this);
         this._listView.addEventListener("ViewHiding", this);
-
-        
-        document
-          .getElementById("unified-extensions-context-menu")
-          .querySelectorAll("[data-lazy-l10n-id]")
-          .forEach(el => {
-            el.setAttribute(
-              "data-l10n-id",
-              el.getAttribute("data-lazy-l10n-id")
-            );
-            el.removeAttribute("data-lazy-l10n-id");
-          });
       }
 
       if (this._button.open) {
