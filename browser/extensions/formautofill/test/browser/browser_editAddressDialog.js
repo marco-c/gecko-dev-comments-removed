@@ -74,7 +74,7 @@ add_task(async function test_saveAddress() {
       "US postal-code label should be 'ZIP Code'"
     );
     
-    const keypresses = [
+    let keypresses = [
       "VK_TAB",
       TEST_ADDRESS_1["given-name"],
       "VK_TAB",
@@ -98,9 +98,12 @@ add_task(async function test_saveAddress() {
       "VK_TAB",
       TEST_ADDRESS_1.email,
       "VK_TAB",
-      "VK_TAB",
-      "VK_RETURN",
     ];
+    if (AppConstants.platform != "win") {
+      keypresses.push("VK_TAB", "VK_RETURN");
+    } else {
+      keypresses.push("VK_RETURN");
+    }
     keypresses.forEach(keypress => {
       if (
         doc.activeElement.localName == "select" &&
@@ -259,7 +262,7 @@ add_task(async function test_saveAddressCA() {
 
     
     doc.querySelector("#given-name").focus();
-    const keyInputs = [
+    let keyInputs = [
       TEST_ADDRESS_CA_1["given-name"],
       "VK_TAB",
       TEST_ADDRESS_CA_1["additional-name"],
@@ -282,9 +285,12 @@ add_task(async function test_saveAddressCA() {
       "VK_TAB",
       TEST_ADDRESS_CA_1.email,
       "VK_TAB",
-      "VK_TAB",
-      "VK_RETURN",
     ];
+    if (AppConstants.platform != "win") {
+      keyInputs.push("VK_TAB", "VK_RETURN");
+    } else {
+      keyInputs.push("VK_RETURN");
+    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
   });
   let addresses = await getAddresses();
@@ -323,7 +329,7 @@ add_task(async function test_saveAddressDE() {
     );
     
     doc.querySelector("#given-name").focus();
-    const keyInputs = [
+    let keyInputs = [
       TEST_ADDRESS_DE_1["given-name"],
       "VK_TAB",
       TEST_ADDRESS_DE_1["additional-name"],
@@ -344,9 +350,12 @@ add_task(async function test_saveAddressDE() {
       "VK_TAB",
       TEST_ADDRESS_DE_1.email,
       "VK_TAB",
-      "VK_TAB",
-      "VK_RETURN",
     ];
+    if (AppConstants.platform != "win") {
+      keyInputs.push("VK_TAB", "VK_RETURN");
+    } else {
+      keyInputs.push("VK_RETURN");
+    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
   });
   let addresses = await getAddresses();
@@ -404,7 +413,7 @@ add_task(async function test_saveAddress_nolibaddressinput() {
     );
     
     doc.querySelector("#given-name").focus();
-    const keyInputs = [
+    let keyInputs = [
       TEST_ADDRESS["given-name"],
       "VK_TAB",
       TEST_ADDRESS["additional-name"],
@@ -427,9 +436,12 @@ add_task(async function test_saveAddress_nolibaddressinput() {
       "VK_TAB",
       TEST_ADDRESS.email,
       "VK_TAB",
-      "VK_TAB",
-      "VK_RETURN",
     ];
+    if (AppConstants.platform != "win") {
+      keyInputs.push("VK_TAB", "VK_RETURN");
+    } else {
+      keyInputs.push("VK_RETURN");
+    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
   });
   let addresses = await getAddresses();
@@ -469,7 +481,7 @@ add_task(async function test_saveAddressIE() {
 
     
     doc.querySelector("#given-name").focus();
-    const keyInputs = [
+    let keyInputs = [
       TEST_ADDRESS_IE_1["given-name"],
       "VK_TAB",
       TEST_ADDRESS_IE_1["additional-name"],
@@ -494,9 +506,12 @@ add_task(async function test_saveAddressIE() {
       "VK_TAB",
       TEST_ADDRESS_IE_1.email,
       "VK_TAB",
-      "VK_TAB",
-      "VK_RETURN",
     ];
+    if (AppConstants.platform != "win") {
+      keyInputs.push("VK_TAB", "VK_RETURN");
+    } else {
+      keyInputs.push("VK_RETURN");
+    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
   });
 
