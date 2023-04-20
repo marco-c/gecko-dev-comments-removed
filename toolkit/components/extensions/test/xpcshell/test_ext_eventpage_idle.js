@@ -516,16 +516,17 @@ add_task(
     
     
     await extension.unload();
-    equal(
-      runListenerPromises.size,
-      0,
-      "Expect no remaining pending runListener promises"
-    );
 
     await Assert.rejects(
       pendingPromise,
       /Actor 'Conduits' destroyed before query 'RunListener' was resolved/,
       "Previously pending runListener promise rejected with the expected error"
+    );
+
+    equal(
+      runListenerPromises.size,
+      0,
+      "Expect no remaining pending runListener promises"
     );
   }
 );
