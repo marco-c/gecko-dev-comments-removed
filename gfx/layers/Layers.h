@@ -68,9 +68,6 @@ class Compositor;
 class TransformData;
 struct PropertyAnimationGroup;
 
-
-gfx::IntRect ToOutsideIntRect(const gfxRect& aRect);
-
 void RecordCompositionPayloadsPresented(
     const TimeStamp& aCompositionEndTime,
     const nsTArray<CompositionPayload>& aPayloads);
