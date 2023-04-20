@@ -52,7 +52,8 @@ class CanonicalQuotaObject final : public QuotaObject {
  private:
   CanonicalQuotaObject(OriginInfo* aOriginInfo, Client::Type aClientType,
                        const nsAString& aPath, int64_t aSize)
-      : mOriginInfo(aOriginInfo),
+      : QuotaObject( false),
+        mOriginInfo(aOriginInfo),
         mPath(aPath),
         mSize(aSize),
         mClientType(aClientType),

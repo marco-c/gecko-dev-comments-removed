@@ -47,7 +47,15 @@ class FileQuotaStream : public FileStreamBase {
                   Client::Type aClientType)
       : mPersistenceType(aPersistenceType),
         mOriginMetadata(aOriginMetadata),
-        mClientType(aClientType) {}
+        mClientType(aClientType),
+        mDeserialized(false) {}
+
+  FileQuotaStream()
+      : mPersistenceType(PERSISTENCE_TYPE_INVALID),
+        mClientType(Client::TYPE_MAX),
+        mDeserialized(true) {}
+
+  ~FileQuotaStream() { Close(); }
 
   
   virtual nsresult DoOpen() override;
@@ -56,6 +64,7 @@ class FileQuotaStream : public FileStreamBase {
   OriginMetadata mOriginMetadata;
   Client::Type mClientType;
   RefPtr<QuotaObject> mQuotaObject;
+  const bool mDeserialized;
 };
 
 template <class FileStreamBase>
@@ -71,6 +80,8 @@ class FileQuotaStreamWithWrite : public FileQuotaStream<FileStreamBase> {
                            Client::Type aClientType)
       : FileQuotaStream<FileStreamBase>(aPersistenceType, aOriginMetadata,
                                         aClientType) {}
+
+  FileQuotaStreamWithWrite() = default;
 };
 
 class FileInputStream : public FileQuotaStream<nsFileInputStream> {
@@ -103,6 +114,13 @@ class FileOutputStream : public FileQuotaStreamWithWrite<nsFileOutputStream> {
   virtual ~FileOutputStream() { Close(); }
 };
 
+
+
+
+
+
+
+
 class FileRandomAccessStream
     : public FileQuotaStreamWithWrite<nsFileRandomAccessStream> {
  public:
@@ -115,6 +133,19 @@ class FileRandomAccessStream
                          Client::Type aClientType)
       : FileQuotaStreamWithWrite<nsFileRandomAccessStream>(
             aPersistenceType, aOriginMetadata, aClientType) {}
+
+  FileRandomAccessStream() = default;
+
+  
+
+  
+  
+  
+  mozilla::ipc::RandomAccessStreamParams Serialize() override;
+
+  
+  
+  bool Deserialize(mozilla::ipc::RandomAccessStreamParams& aParams) override;
 
  private:
   virtual ~FileRandomAccessStream() { Close(); }

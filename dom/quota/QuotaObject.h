@@ -7,15 +7,44 @@
 #ifndef DOM_QUOTA_QUOTAOBJECT_H_
 #define DOM_QUOTA_QUOTAOBJECT_H_
 
+#include "chrome/common/ipc_message_utils.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla::dom::quota {
 
+class CanonicalQuotaObject;
+class IPCQuotaObject;
+class RemoteQuotaObject;
+
+
+
+
+
+
+
+
+
+
+
+
 class QuotaObject {
  public:
-  virtual ~QuotaObject() = default;
-
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+  CanonicalQuotaObject* AsCanonicalQuotaObject();
+
+  RemoteQuotaObject* AsRemoteQuotaObject();
+
+  
+  
+  
+  
+  IPCQuotaObject Serialize();
+
+  
+  
+  
+  static RefPtr<QuotaObject> Deserialize(IPCQuotaObject& aQuotaObject);
 
   virtual const nsAString& Path() const = 0;
 
@@ -26,8 +55,23 @@ class QuotaObject {
   virtual void DisableQuotaCheck() = 0;
 
   virtual void EnableQuotaCheck() = 0;
+
+ protected:
+  QuotaObject(bool aIsRemote) : mIsRemote(aIsRemote) {}
+
+  virtual ~QuotaObject() = default;
+
+  const bool mIsRemote;
 };
 
 }  
+
+template <>
+struct IPC::ParamTraits<mozilla::dom::quota::QuotaObject*> {
+  static void Write(IPC::MessageWriter* aWriter,
+                    mozilla::dom::quota::QuotaObject* aParam);
+  static bool Read(IPC::MessageReader* aReader,
+                   RefPtr<mozilla::dom::quota::QuotaObject>* aResult);
+};
 
 #endif  
