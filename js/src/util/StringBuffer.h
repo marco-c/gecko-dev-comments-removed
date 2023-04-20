@@ -53,12 +53,14 @@ inline size_t GrowEltsAggressively(size_t aOldElts, size_t aIncr) {
 
 class StringBufferAllocPolicy {
   TempAllocPolicy impl_;
-
   const arena_id_t& arenaId_;
 
  public:
   StringBufferAllocPolicy(FrontendContext* fc, const arena_id_t& arenaId)
       : impl_(fc), arenaId_(arenaId) {}
+
+  StringBufferAllocPolicy(JSContext* cx, const arena_id_t& arenaId)
+      : impl_(cx), arenaId_(arenaId) {}
 
   template <typename T>
   T* maybe_pod_malloc(size_t numElems) {
@@ -121,9 +123,7 @@ class StringBuffer {
   using Latin1CharBuffer = BufferType<Latin1Char>;
   using TwoByteCharBuffer = BufferType<char16_t>;
 
-  JSContext* maybeCx_;
-  FrontendContext* fc_;
-  const arena_id_t& arenaId_;
+  JSContext* maybeCx_ = nullptr;
 
   
 
@@ -133,7 +133,7 @@ class StringBuffer {
   mozilla::MaybeOneOf<Latin1CharBuffer, TwoByteCharBuffer> cb;
 
   
-  size_t reserved_;
+  size_t reserved_ = 0;
 
   StringBuffer(const StringBuffer& other) = delete;
   void operator=(const StringBuffer& other) = delete;
@@ -181,20 +181,23 @@ class StringBuffer {
   JSLinearString* finishStringInternal(JSContext* cx);
 
  public:
-  
-  
-  
-  
-  
-  StringBuffer(JSContext* maybeCx, FrontendContext* fc,
-               const arena_id_t& arenaId = js::MallocArena)
-      : maybeCx_(maybeCx), fc_(fc), arenaId_(arenaId), reserved_(0) {
-    cb.construct<Latin1CharBuffer>(StringBufferAllocPolicy{fc_, arenaId_});
+  explicit StringBuffer(JSContext* cx,
+                        const arena_id_t& arenaId = js::MallocArena)
+      : maybeCx_(cx) {
+    MOZ_ASSERT(cx);
+    cb.construct<Latin1CharBuffer>(StringBufferAllocPolicy{cx, arenaId});
   }
 
+  
+  
+  
+  
+  
   explicit StringBuffer(FrontendContext* fc,
-                        const arena_id_t& arenaId = js::MallocArena)
-      : StringBuffer(nullptr, fc, arenaId) {}
+                        const arena_id_t& arenaId = js::MallocArena) {
+    MOZ_ASSERT(fc);
+    cb.construct<Latin1CharBuffer>(StringBufferAllocPolicy{fc, arenaId});
+  }
 
   void clear() {
     if (isLatin1()) {
@@ -390,16 +393,13 @@ class StringBuffer {
 
 
 class JSStringBuilder : public StringBuffer {
-  FrontendContext fc_;
 #ifdef DEBUG
   bool handled_ = false;
 #endif
 
  public:
   explicit JSStringBuilder(JSContext* cx)
-      : StringBuffer(cx, &fc_, js::StringBufferArena) {
-    fc_.setCurrentJSContext(cx);
-  }
+      : StringBuffer(cx, js::StringBufferArena) {}
 
   ~JSStringBuilder() { MOZ_ASSERT(handled_); }
 
@@ -407,7 +407,6 @@ class JSStringBuilder : public StringBuffer {
 #ifdef DEBUG
     handled_ = true;
 #endif 
-    fc_.convertToRuntimeError(maybeCx_);
   }
 
   void ok() {
