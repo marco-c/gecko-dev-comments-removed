@@ -135,23 +135,16 @@ class BodyStream final : public nsIInputStreamCallback,
   void ReleaseObjects();
 
   
+  
+  bool IsClosed() { return !mStreamHolder; }
 
-  enum State {
-    
-    eInitializing,
-
-    
-    eInitialized,
-
-    
-    eClosed,
-  };
-
-  State mState;
+  
 
   
   
   nsCOMPtr<nsIGlobalObject> mGlobal;
+  
+  
   RefPtr<BodyStreamHolder> mStreamHolder;
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
   
