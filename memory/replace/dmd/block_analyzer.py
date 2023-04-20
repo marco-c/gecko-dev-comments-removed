@@ -9,8 +9,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import argparse
 import gzip
 import json
@@ -160,7 +158,7 @@ def show_referrers(args, blocks, stacks, block):
     while True:
         referrers = {}
 
-        for b, data in blocks.iteritems():
+        for b, data in blocks.items():
             which_edge = 0
             for e in data.contents:
                 if e == block:
