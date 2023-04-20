@@ -1334,6 +1334,11 @@ inline ColorPattern DrawTargetWebgl::GetClearPattern() const {
 }
 
 void DrawTargetWebgl::ClearRect(const Rect& aRect) {
+  if (mIsClear) {
+    
+    return;
+  }
+
   
   
   PushClipRect(aRect);
