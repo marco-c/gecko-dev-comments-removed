@@ -50,29 +50,13 @@ class Event {
   bool Wait(webrtc::TimeDelta give_up_after, webrtc::TimeDelta warn_after);
 
   
-  
-  
-  template <class T>
-  bool Wait(T give_up_after) {
-    webrtc::TimeDelta duration = ToTimeDelta(give_up_after);
-    return Wait(duration, duration.IsPlusInfinity()
-                              ? webrtc::TimeDelta::Seconds(3)
-                              : kForever);
+  bool Wait(webrtc::TimeDelta give_up_after) {
+    return Wait(give_up_after, give_up_after.IsPlusInfinity()
+                                   ? webrtc::TimeDelta::Seconds(3)
+                                   : kForever);
   }
 
  private:
-  
-  static webrtc::TimeDelta ToTimeDelta(int duration) {
-    
-    
-    constexpr int kForeverMs = -1;
-    return duration == kForeverMs ? kForever
-                                  : webrtc::TimeDelta::Millis(duration);
-  }
-  static webrtc::TimeDelta ToTimeDelta(webrtc::TimeDelta duration) {
-    return duration;
-  }
-
 #if defined(WEBRTC_WIN)
   HANDLE event_handle_;
 #elif defined(WEBRTC_POSIX)

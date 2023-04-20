@@ -42,8 +42,8 @@ constexpr auto kPixelFormat = ABI::Windows::Graphics::DirectX::
 
 
 
-constexpr int kMaxWaitForFrameMs = 50;
-constexpr int kMaxWaitForFirstFrameMs = 500;
+constexpr TimeDelta kMaxWaitForFrame = TimeDelta::Millis(50);
+constexpr TimeDelta kMaxWaitForFirstFrame = TimeDelta::Millis(500);
 
 
 
@@ -213,8 +213,8 @@ HRESULT WgcCaptureSession::GetFrame(
   RTC_DCHECK(is_capture_started_);
 
   if (frames_in_pool_ < 1)
-    wait_for_frame_event_.Wait(first_frame_ ? kMaxWaitForFirstFrameMs
-                                            : kMaxWaitForFrameMs);
+    wait_for_frame_event_.Wait(first_frame_ ? kMaxWaitForFirstFrame
+                                            : kMaxWaitForFrame);
 
   ComPtr<WGC::IDirect3D11CaptureFrame> capture_frame;
   HRESULT hr = frame_pool_->TryGetNextFrame(&capture_frame);

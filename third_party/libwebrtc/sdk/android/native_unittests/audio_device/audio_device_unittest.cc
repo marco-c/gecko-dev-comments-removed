@@ -57,7 +57,7 @@ namespace jni {
 
 static const size_t kNumCallbacks = 10;
 
-static const int kTestTimeOutInMilliseconds = 10 * 1000;
+static constexpr TimeDelta kTestTimeOut = TimeDelta::Seconds(10);
 
 static const size_t kNumCallbacksPerSecond = 100;
 
@@ -66,7 +66,7 @@ static const size_t kBitsPerSample = 16;
 static const size_t kBytesPerSample = kBitsPerSample / 8;
 
 
-static const int kFullDuplexTimeInSec = 5;
+static constexpr TimeDelta kFullDuplexTime = TimeDelta::Seconds(5);
 
 
 
@@ -75,7 +75,7 @@ static const size_t kNumIgnoreFirstCallbacks = 50;
 static const int kImpulseFrequencyInHz = 1;
 
 
-static const int kMeasureLatencyTimeInSec = 11;
+static constexpr TimeDelta kMeasureLatencyTime = TimeDelta::Seconds(11);
 
 static const int kImpulseThreshold = 1000;
 static const char kTag[] = "[..........] ";
@@ -880,7 +880,7 @@ TEST_F(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
       .Times(AtLeast(kNumCallbacks));
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
-  test_is_done_.Wait(kTestTimeOutInMilliseconds);
+  test_is_done_.Wait(kTestTimeOut);
   StopPlayout();
 }
 
@@ -897,7 +897,7 @@ TEST_F(AudioDeviceTest, StartRecordingVerifyCallbacks) {
 
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartRecording();
-  test_is_done_.Wait(kTestTimeOutInMilliseconds);
+  test_is_done_.Wait(kTestTimeOut);
   StopRecording();
 }
 
@@ -918,7 +918,7 @@ TEST_F(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
   StartRecording();
-  test_is_done_.Wait(kTestTimeOutInMilliseconds);
+  test_is_done_.Wait(kTestTimeOut);
   StopRecording();
   StopPlayout();
 }
@@ -938,7 +938,7 @@ TEST_F(AudioDeviceTest, RunPlayoutWithFileAsSource) {
   
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
-  test_is_done_.Wait(kTestTimeOutInMilliseconds);
+  test_is_done_.Wait(kTestTimeOut);
   StopPlayout();
 }
 
@@ -1077,13 +1077,12 @@ TEST_F(AudioDeviceTest, DISABLED_RunPlayoutAndRecordingInFullDuplex) {
   std::unique_ptr<FifoAudioStream> fifo_audio_stream(
       new FifoAudioStream(playout_frames_per_10ms_buffer()));
   mock.HandleCallbacks(&test_is_done_, fifo_audio_stream.get(),
-                       kFullDuplexTimeInSec * kNumCallbacksPerSecond);
+                       kFullDuplexTime.seconds() * kNumCallbacksPerSecond);
   SetMaxPlayoutVolume();
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartRecording();
   StartPlayout();
-  test_is_done_.Wait(
-      std::max(kTestTimeOutInMilliseconds, 1000 * kFullDuplexTimeInSec));
+  test_is_done_.Wait(std::max(kTestTimeOut, kFullDuplexTime));
   StopPlayout();
   StopRecording();
 
@@ -1110,20 +1109,19 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   std::unique_ptr<LatencyMeasuringAudioStream> latency_audio_stream(
       new LatencyMeasuringAudioStream(playout_frames_per_10ms_buffer()));
   mock.HandleCallbacks(&test_is_done_, latency_audio_stream.get(),
-                       kMeasureLatencyTimeInSec * kNumCallbacksPerSecond);
+                       kMeasureLatencyTime.seconds() * kNumCallbacksPerSecond);
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   SetMaxPlayoutVolume();
   DisableBuiltInAECIfAvailable();
   StartRecording();
   StartPlayout();
-  test_is_done_.Wait(
-      std::max(kTestTimeOutInMilliseconds, 1000 * kMeasureLatencyTimeInSec));
+  test_is_done_.Wait(std::max(kTestTimeOut, kMeasureLatencyTime));
   StopPlayout();
   StopRecording();
   
   EXPECT_EQ(latency_audio_stream->num_latency_values(),
             static_cast<size_t>(
-                kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 1));
+                kImpulseFrequencyInHz * kMeasureLatencyTime.seconds() - 1));
   latency_audio_stream->PrintResults();
 }
 

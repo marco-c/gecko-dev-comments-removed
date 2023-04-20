@@ -263,7 +263,7 @@ TEST(Stacktrace, TestRtcEventDeadlockDetection) {
 
   
   
-  EXPECT_TRUE(sink.WhenFound().Wait(10000));
+  EXPECT_TRUE(sink.WhenFound().Wait(TimeDelta::Seconds(10)));
 
   
   ev.Set();
