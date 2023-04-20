@@ -13,9 +13,6 @@ var gBookmarksObserver = {
     return this.deferred.promise;
   },
 
-  
-  
-  
   validateEvents(events) {
     Assert.greaterOrEqual(this.expected.length, events.length);
     for (let event of events) {

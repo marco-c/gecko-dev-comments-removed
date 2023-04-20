@@ -728,18 +728,6 @@ function do_compare_arrays(a1, a2, sorted) {
 
 
 
-function NavBookmarkObserver() {}
-
-NavBookmarkObserver.prototype = {
-  onItemRemoved() {},
-  onItemChanged() {},
-  QueryInterface: ChromeUtils.generateQI(["nsINavBookmarkObserver"]),
-};
-
-
-
-
-
 
 function NavHistoryResultObserver() {}
 
