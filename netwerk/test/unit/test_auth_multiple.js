@@ -258,7 +258,7 @@ function basic_auth(metadata, response) {
 
 
 function bytesFromString(str) {
-  const encoder = new TextEncoder("utf-8");
+  const encoder = new TextEncoder();
   return encoder.encode(str);
 }
 

@@ -432,8 +432,7 @@ if (typeof Components != "undefined") {
 
     if (typeof buffer == "string") {
       
-      let encoding = options.encoding || "utf-8";
-      buffer = new TextEncoder(encoding).encode(buffer);
+      buffer = new TextEncoder().encode(buffer);
     }
 
     if ("compression" in options && options.compression == "lz4") {

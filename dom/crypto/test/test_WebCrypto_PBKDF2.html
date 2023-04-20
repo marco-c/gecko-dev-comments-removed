@@ -7,16 +7,16 @@
 <link rel="stylesheet" href="./test_WebCrypto.css"/>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
 
-
+<!-- Utilities for manipulating ABVs -->
 <script src="util.js"></script>
 
-
+<!-- A simple wrapper around IndexedDB -->
 <script src="simpledb.js"></script>
 
-
+<!-- Test vectors drawn from the literature -->
 <script src="./test-vectors.js"></script>
 
-
+<!-- General testing framework -->
 <script src="./test-array.js"></script>
 
 <script>/* <![CDATA[*/
@@ -28,7 +28,7 @@ TestArray.addTest(
   function() {
     var that = this;
     var alg = "PBKDF2";
-    var key = new TextEncoder("utf-8").encode("password");
+    var key = new TextEncoder().encode("password");
 
     crypto.subtle.importKey("raw", key, alg, false, ["deriveKey"]).then(
       complete(that, hasKeyFields),
@@ -42,7 +42,7 @@ TestArray.addTest(
   "Unwrapping a PBKDF2 key in PKCS8 format should fail",
   function() {
     var that = this;
-    var pbkdf2Key = new TextEncoder("utf-8").encode("password");
+    var pbkdf2Key = new TextEncoder().encode("password");
     var alg = {name: "AES-GCM", length: 256, iv: new Uint8Array(16)};
     var wrappingKey;
 

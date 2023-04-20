@@ -1678,7 +1678,7 @@ class RTCPeerConnection {
       
       
       
-      const byteCounter = new TextEncoder("utf-8");
+      const byteCounter = new TextEncoder();
 
       if (byteCounter.encode(protocol).length > 65535) {
         throw new this._win.TypeError(
@@ -1688,7 +1688,7 @@ class RTCPeerConnection {
     }
 
     if (label.length > 32767) {
-      const byteCounter = new TextEncoder("utf-8");
+      const byteCounter = new TextEncoder();
       if (byteCounter.encode(label).length > 65535) {
         throw new this._win.TypeError(
           "label cannot be longer than 65535 bytes"

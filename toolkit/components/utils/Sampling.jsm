@@ -73,7 +73,7 @@ var Sampling = {
 
   async truncatedHash(data) {
     const hasher = crypto.subtle;
-    const input = new TextEncoder("utf-8").encode(JSON.stringify(data));
+    const input = new TextEncoder().encode(JSON.stringify(data));
     const hash = await hasher.digest("SHA-256", input);
     
     
