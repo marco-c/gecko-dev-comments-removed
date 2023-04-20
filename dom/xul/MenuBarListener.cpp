@@ -247,7 +247,7 @@ nsresult MenuBarListener::KeyPress(Event* aKeyEvent) {
     
     
     
-    if (mMenuBar && mMenuBar->IsActiveByKeyboard()) {
+    if (mMenuBar && mMenuBar->IsActive() && mMenuBar->IsActiveByKeyboard()) {
       if (nsCOMPtr<nsISound> sound = do_GetService("@mozilla.org/sound;1")) {
         sound->Beep();
       }
