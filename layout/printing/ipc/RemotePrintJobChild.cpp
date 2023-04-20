@@ -102,10 +102,9 @@ NS_IMETHODIMP
 RemotePrintJobChild::OnStateChange(nsIWebProgress* aProgress,
                                    nsIRequest* aRequest, uint32_t aStateFlags,
                                    nsresult aStatus) {
-  if (!mDestroyed) {
-    Unused << SendStateChange(aStateFlags, aStatus);
-  }
-
+  
+  
+  
   return NS_OK;
 }
 

@@ -32,10 +32,6 @@ parent:
   async FinalizePrint();
 
   
-  async StateChange(long aStateFlags,
-                    nsresult aStatus);
-
-  
   async ProgressChange(long aCurSelfProgress,
                        long aMaxSelfProgress,
                        long aCurTotalProgress,
