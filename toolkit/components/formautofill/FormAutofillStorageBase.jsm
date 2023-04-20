@@ -1741,92 +1741,6 @@ class AddressesBase extends AutofillRecords {
   async mergeIfPossible(guid, address, strict) {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
-
-  compareAddressField(field, a, b, collator) {
-    switch (field) {
-      case "street-address":
-        let ret = lazy.FormAutofillUtils.compareStreetAddress(a, b, collator);
-        return ret;
-      
-      default:
-        return a == b;
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async *getMatchRecords(record) {
-    const collators = lazy.FormAutofillUtils.getSearchCollators(
-      FormAutofill.DEFAULT_REGION
-    );
-
-    for (const recordInStorage of this._data) {
-      if (
-        this.VALID_FIELDS.every(
-          field =>
-            !record[field] ||
-            this.compareAddressField(
-              field,
-              record[field],
-              recordInStorage[field],
-              collators
-            )
-        )
-      ) {
-        yield recordInStorage;
-      }
-    }
-    return null;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  async *getDuplicateRecords(record) {
-    const collators = lazy.FormAutofillUtils.getSearchCollators(
-      FormAutofill.DEFAULT_REGION
-    );
-
-    for (const recordInStorage of this._data) {
-      if (
-        this.VALID_FIELDS.every(
-          field =>
-            !record[field] ||
-            !recordInStorage[field] ||
-            this.compareAddressField(
-              field,
-              record[field],
-              recordInStorage[field],
-              collators
-            )
-        )
-      ) {
-        yield recordInStorage;
-      }
-    }
-    return null;
-  }
 }
 
 class CreditCardsBase extends AutofillRecords {
@@ -2080,8 +1994,8 @@ class CreditCardsBase extends AutofillRecords {
 
 
 
-  async *getMatchRecords(record) {
-    for await (const recordInStorage of this.getDuplicateRecords(record)) {
+  async *getMatchRecord(record) {
+    for await (const recordInStorage of this.getDuplicateRecord(record)) {
       const fields = this.VALID_FIELDS.filter(f => f != "cc-number");
       if (
         fields.every(
@@ -2111,7 +2025,7 @@ class CreditCardsBase extends AutofillRecords {
 
 
 
-  async *getDuplicateRecords(record) {
+  async *getDuplicateRecord(record) {
     if (!record["cc-number"]) {
       return null;
     }
