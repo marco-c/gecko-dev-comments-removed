@@ -220,10 +220,13 @@ static const char sColorPrefs[][41] = {
     "ui.buttonhighlight",
     "ui.buttonshadow",
     "ui.buttontext",
+    "ui.buttonborder",
     "ui.captiontext",
     "ui.-moz-field",
     "ui.-moz-disabledfield",
     "ui.-moz-fieldtext",
+    "ui.mark",
+    "ui.marktext",
     "ui.-moz-comboboxtext",
     "ui.-moz-combobox",
     "ui.graytext",
@@ -677,6 +680,9 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       COLOR(Threedhighlight, 0xFF, 0xFF, 0xFF)
       COLOR(Threedlightshadow, 0xE3, 0xE3, 0xE3)
       COLOR(Threedshadow, 0xA0, 0xA0, 0xA0)
+      COLOR(Buttonborder, 0xE3, 0xE3, 0xE3)
+      COLOR(Mark, 0xFF, 0xFF, 0x00)
+      COLOR(Marktext, 0x00, 0x00, 0x00)
       COLOR(Window, 0xFF, 0xFF, 0xFF)
       COLOR(Windowframe, 0x64, 0x64, 0x64)
       COLOR(Windowtext, 0x00, 0x00, 0x00)
@@ -779,10 +785,11 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       break;
     case ColorID::Buttonshadow:
     case ColorID::Threedshadow:
-    case ColorID::Threedlightshadow:  
-                                      
-                                      
-    case ColorID::Graytext:  
+    case ColorID::Threedlightshadow:
+    case ColorID::Buttonborder:  
+                                 
+                                 
+    case ColorID::Graytext:      
                              
                              
       color = NS_ComposeColors(kWindowBackground, NS_RGBA(251, 251, 254, 102));
@@ -1250,6 +1257,7 @@ static constexpr std::bitset<size_t(ColorID::End)> sNonNativeThemeStandinColors{
     BIT_FOR(Buttonface) | BIT_FOR(Buttontext) | BIT_FOR(MozButtonhoverface) |
     BIT_FOR(MozButtonhovertext) | BIT_FOR(MozButtonactiveface) |
     BIT_FOR(MozButtonactivetext) | BIT_FOR(MozButtondisabledface) |
+    BIT_FOR(Buttonborder) |
     
     BIT_FOR(MozCombobox) | BIT_FOR(MozComboboxtext) |
     BIT_FOR(Threedlightshadow) |
