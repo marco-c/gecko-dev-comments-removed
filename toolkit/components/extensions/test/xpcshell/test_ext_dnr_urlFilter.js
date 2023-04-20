@@ -26,7 +26,7 @@ function makeDnrTestUtils() {
   }
   async function testMatchesUrlFilter({
     urlFilter,
-    isUrlFilterCaseSensitive = false,
+    isUrlFilterCaseSensitive,
     urls = [],
     urlsNonMatching = [],
   }) {
@@ -345,6 +345,60 @@ add_task(async function extreme_urlFilter_patterns() {
         [1, 4],
         "urlFilter with 1M and 10M wildcards matches URL"
       );
+
+      browser.test.notifyPass();
+    },
+  });
+});
+
+add_task(async function test_isUrlFilterCaseSensitive() {
+  await runAsDNRExtension({
+    background: async dnrTestUtils => {
+      const { testMatchesUrlFilter } = dnrTestUtils;
+
+      await testMatchesUrlFilter({
+        urlFilter: "AbC",
+        isUrlFilterCaseSensitive: true,
+        urls: [
+          "http://true.example.com/AbC", 
+        ],
+        urlsNonMatching: [
+          "http://true.example.com/abc", 
+          "http://true.example.com/ABC", 
+          "http://true.example.com/???", 
+          "http://true.AbC/", 
+        ],
+      });
+      await testMatchesUrlFilter({
+        urlFilter: "AbC",
+        isUrlFilterCaseSensitive: false,
+        urls: [
+          "http://false.example.com/AbC", 
+          "http://false.example.com/abc", 
+          "http://false.example.com/ABC", 
+          "http://false.AbC/", 
+        ],
+        urlsNonMatching: [
+          "http://false.example.com/???", 
+        ],
+      });
+
+      
+      
+      
+      await testMatchesUrlFilter({
+        urlFilter: "AbC",
+        
+        urls: [
+          "http://default.example.com/AbC", 
+          "http://default.example.com/abc", 
+          "http://default.example.com/ABC", 
+          "http://default.AbC/", 
+        ],
+        urlsNonMatching: [
+          "http://default.example.com/???", 
+        ],
+      });
 
       browser.test.notifyPass();
     },
