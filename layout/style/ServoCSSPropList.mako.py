@@ -39,12 +39,16 @@ class Alias(object):
     def type():
         return "alias"
 
+
 <%!
+
+
 
 def is_internal(prop):
     
     
     return not prop.gecko_pref and not prop.enabled_in_content()
+
 
 def method(prop):
     if prop.name == "float":
@@ -54,12 +58,10 @@ def method(prop):
     return prop.camel_case
 
 
+
 LONGHANDS_NOT_SERIALIZED_WITH_SERVO = [
     
     "border-spacing",
-
-    
-    "column-rule-width",
 
     
     "max-height",
@@ -97,6 +99,7 @@ LONGHANDS_NOT_SERIALIZED_WITH_SERVO = [
     "padding-left",
 ]
 
+
 def serialized_by_servo(prop):
     if prop.type() == "shorthand" or prop.type() == "alias":
         return True
@@ -106,6 +109,7 @@ def serialized_by_servo(prop):
         return True
     return prop.name not in LONGHANDS_NOT_SERIALIZED_WITH_SERVO
 
+
 def exposed_on_getcs(prop):
     if "Style" not in prop.rule_types_allowed_names():
         return False
@@ -113,8 +117,10 @@ def exposed_on_getcs(prop):
         return False
     return True
 
+
 def rules(prop):
     return ", ".join('"{}"'.format(rule) for rule in prop.rule_types_allowed_names())
+
 
 def flags(prop):
     result = []
@@ -138,14 +144,18 @@ def flags(prop):
         result.append("IsLogical")
     return ", ".join('"{}"'.format(flag) for flag in result)
 
+
 def pref(prop):
     if prop.gecko_pref:
         return '"' + prop.gecko_pref + '"'
     return '""'
 
+
 def sub_properties(prop):
     return ", ".join('"{}"'.format(p.ident) for p in prop.sub_properties)
-%>
+
+
+% >
 
 data = [
     % for prop in data.longhands:
