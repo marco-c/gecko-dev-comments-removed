@@ -554,13 +554,13 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     }
     
     
-    bandwidth_estimation_->UpdateDelayBasedEstimate(
-        report.feedback_time, result.target_bitrate,
-        result.delay_detector_state);
+    bandwidth_estimation_->UpdateDelayBasedEstimate(report.feedback_time,
+                                                    result.target_bitrate);
     
     MaybeTriggerOnNetworkChanged(&update, report.feedback_time);
   }
-  bandwidth_estimation_->UpdateLossBasedEstimatorFromFeedbackVector(report);
+  bandwidth_estimation_->UpdateLossBasedEstimator(report,
+                                                  result.delay_detector_state);
   recovered_from_overuse = result.recovered_from_overuse;
   backoff_in_alr = result.backoff_in_alr;
 
