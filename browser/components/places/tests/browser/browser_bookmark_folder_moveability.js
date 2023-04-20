@@ -87,7 +87,7 @@ add_task(async function() {
     );
 
     info("Test a tag container");
-    PlacesUtils.tagging.tagURI(Services.io.newURI(bookmark.url.href), ["bar"]);
+    PlacesUtils.tagging.tagURI(bookmark.url.URI, ["bar"]);
     
     let tagsQuery = await PlacesUtils.bookmarks.insert({
       parentGuid: root.guid,
