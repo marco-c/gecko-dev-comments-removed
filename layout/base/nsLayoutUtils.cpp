@@ -9075,16 +9075,6 @@ void nsLayoutUtils::TransformToAncestorAndCombineRegions(
 }
 
 
-bool nsLayoutUtils::ShouldUseNoScriptSheet(Document* aDocument) {
-  
-  
-  if (aDocument->IsStaticDocument()) {
-    aDocument = aDocument->GetOriginalDocument();
-  }
-  return aDocument->IsScriptEnabled();
-}
-
-
 bool nsLayoutUtils::ShouldUseNoFramesSheet(Document* aDocument) {
   bool allowSubframes = true;
   nsIDocShell* docShell = aDocument->GetDocShell();

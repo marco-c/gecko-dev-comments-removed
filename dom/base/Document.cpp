@@ -3180,10 +3180,6 @@ void Document::FillStyleSetUserAndUASheets() {
     mStyleSet->AppendStyleSheet(*cache->NoFramesSheet());
   }
 
-  if (nsLayoutUtils::ShouldUseNoScriptSheet(this)) {
-    mStyleSet->AppendStyleSheet(*cache->NoScriptSheet());
-  }
-
   mStyleSet->AppendStyleSheet(*cache->CounterStylesSheet());
 
   
