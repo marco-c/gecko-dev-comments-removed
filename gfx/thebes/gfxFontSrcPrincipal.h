@@ -21,14 +21,15 @@ class nsSimpleURI;
 
 
 
+
+
+
 class gfxFontSrcPrincipal {
  public:
   explicit gfxFontSrcPrincipal(nsIPrincipal* aNodePrincipal,
                                nsIPrincipal* aStoragePrincipal);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontSrcPrincipal)
-
-  nsIPrincipal* get() const { return NodePrincipal(); }
 
   nsIPrincipal* NodePrincipal() const { return mNodePrincipal; }
 
