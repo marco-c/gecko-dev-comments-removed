@@ -107,7 +107,7 @@ mod primitive {
         
         impl<T> UnsafeCell<T> {
             #[inline]
-            pub(crate) fn new(data: T) -> UnsafeCell<T> {
+            pub(crate) const fn new(data: T) -> UnsafeCell<T> {
                 UnsafeCell(::core::cell::UnsafeCell::new(data))
             }
 
