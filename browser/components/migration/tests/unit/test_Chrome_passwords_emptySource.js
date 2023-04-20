@@ -1,28 +1,9 @@
 "use strict";
 
-
-
-
-
-
-const PROFILE = {
-  id: "Default",
-  name: "Person With No Data",
-};
-
-add_task(async function setup() {
+add_task(async function test_importEmptyDBWithoutAuthPrompts() {
   let dirSvcPath;
   let pathId;
 
-  
-  
-  
-  
-  let mockMacOSKeychain = {
-    passphrase: "bW96aWxsYWZpcmVmb3g=",
-    serviceName: "TESTING Chrome Safe Storage",
-    accountName: "TESTING Chrome",
-  };
   if (AppConstants.platform == "macosx") {
     dirSvcPath = "LibraryWithNoData/";
     pathId = "ULibDir";
@@ -35,45 +16,9 @@ add_task(async function setup() {
   let dirSvcFile = do_get_file(dirSvcPath);
   registerFakePath(pathId, dirSvcFile);
 
-  if (AppConstants.platform == "macosx") {
-    let migrator = await MigrationUtils.getMigrator("chrome");
-    Object.assign(migrator, {
-      _keychainServiceName: mockMacOSKeychain.serviceName,
-      _keychainAccountName: mockMacOSKeychain.accountName,
-      
-      
-    });
-  }
-
-  registerCleanupFunction(() => {
-    Services.logins.removeAllUserFacingLogins();
-  });
-});
-
-add_task(async function test_importEmptyDBWithoutAuthPrompts() {
   let migrator = await MigrationUtils.getMigrator("chrome");
   Assert.ok(
-    await migrator.isSourceAvailable(),
-    "Sanity check the source exists"
-  );
-
-  let logins = Services.logins.getAllLogins();
-  Assert.equal(logins.length, 0, "There are no logins initially");
-
-  
-  
-  await promiseMigration(
-    migrator,
-    MigrationUtils.resourceTypes.PASSWORDS,
-    PROFILE,
-    true
-  );
-
-  logins = Services.logins.getAllLogins();
-  Assert.equal(logins.length, 0, "Check login count after importing the data");
-  Assert.equal(
-    logins.length,
-    MigrationUtils._importQuantities.logins,
-    "Check telemetry matches the actual import."
+    !migrator,
+    "Migrator should not be available since there are no passwords"
   );
 });
