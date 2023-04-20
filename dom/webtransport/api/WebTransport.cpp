@@ -24,6 +24,8 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 
+using namespace mozilla::ipc;
+
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(WebTransport)
@@ -88,10 +90,27 @@ WebTransport::~WebTransport() {
 
 
 void WebTransport::NewBidirectionalStream(
-    const RefPtr<mozilla::ipc::DataPipeReceiver>& aIncoming,
-    const RefPtr<mozilla::ipc::DataPipeSender>& aOutgoing) {
-  LOG_VERBOSE(("NewUnidirectionalStream()"));
+    const RefPtr<DataPipeReceiver>& aIncoming,
+    const RefPtr<DataPipeSender>& aOutgoing) {
+  LOG_VERBOSE(("NewBidirectionalStream()"));
   
+  
+  
+
+  UniquePtr<BidirectionalPair> streams(
+      new BidirectionalPair(aIncoming, aOutgoing));
+  mBidirectionalStreams.AppendElement(std::move(streams));
+  
+
+  
+  
+  
+  if (mIncomingBidirectionalAlgorithm) {
+    RefPtr<WebTransportIncomingStreamsAlgorithms> callback =
+        mIncomingBidirectionalAlgorithm;
+    LOG(("NotifyIncomingStream"));
+    callback->NotifyIncomingStream();
+  }
 }
 
 void WebTransport::NewUnidirectionalStream(
@@ -101,7 +120,7 @@ void WebTransport::NewUnidirectionalStream(
   
   
 
-  mUnidirectionalStreams.Push(aStream);
+  mUnidirectionalStreams.AppendElement(aStream);
   
   
   
@@ -200,16 +219,10 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
   
-  mReady = Promise::Create(mGlobal, aError);
-  if (NS_WARN_IF(aError.Failed())) {
-    return;
-  }
+  mReady = Promise::CreateInfallible(mGlobal);
 
   
-  mClosed = Promise::Create(mGlobal, aError);
-  if (NS_WARN_IF(aError.Failed())) {
-    return;
-  }
+  mClosed = Promise::CreateInfallible(mGlobal);
 
   PBackgroundChild* backgroundChild =
       BackgroundChild::GetOrCreateForCurrentThread();
