@@ -1353,6 +1353,14 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
 
     
     
+    if (frame && frame->IsHiddenByContentVisibilityOnAnyAncestor(
+                     nsIFrame::IncludeContentVisibility::Hidden)) {
+      ContentRemoved(aRoot);
+      return false;
+    }
+
+    
+    
     
     if (acc->IsXULLabel()) {
       ContentRemoved(acc);
@@ -1380,24 +1388,6 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     if (aRoot->IsElement() && FocusMgr()->HasDOMFocus(aRoot)) {
       SelectionMgr()->SetControlSelectionListener(aRoot->AsElement());
-    }
-
-    
-    
-    if (frame && frame->IsHiddenByContentVisibilityOnAnyAncestor(
-                     nsIFrame::IncludeContentVisibility::Hidden)) {
-      ContentRemoved(aRoot);
-      return false;
-    }
-
-    if (!frame && nsCoreUtils::CanCreateAccessibleWithoutFrame(aRoot)) {
-      
-      
-      if (nsCoreUtils::IsHiddenNodeByContentVisibilityOnAnyAncestor(
-              aRoot, StyleContentVisibility::Hidden)) {
-        ContentRemoved(aRoot);
-        return false;
-      }
     }
 
     

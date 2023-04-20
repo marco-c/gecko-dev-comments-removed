@@ -36,6 +36,12 @@ const snippet1 = `
   </div>
   `;
 
+add_setup(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["layout.css.content-visibility.enabled", true]],
+  });
+});
+
 
 addAccessibleTask(
   snippet1,

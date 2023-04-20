@@ -972,14 +972,6 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     
     
     if (nsCoreUtils::CanCreateAccessibleWithoutFrame(content)) {
-      
-      
-      if (nsCoreUtils::IsHiddenNodeByContentVisibilityOnAnyAncestor(
-              aNode, StyleContentVisibility::Hidden)) {
-        if (aIsSubtreeHidden) *aIsSubtreeHidden = true;
-        return nullptr;
-      }
-
       const MarkupMapInfo* markupMap = GetMarkupMapInfoFor(content);
       if (markupMap && markupMap->new_func) {
         RefPtr<LocalAccessible> newAcc =

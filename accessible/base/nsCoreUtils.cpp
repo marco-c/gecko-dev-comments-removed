@@ -583,13 +583,32 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
     
     return false;
   }
-  if (element->IsDisplayContents()) {
-    return true;
+
+  
+  
+  if (!element->IsDisplayContents() &&
+      !element->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup)) {
+    return false;
   }
+
   
   
   
-  return element->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup);
+  
+  for (nsINode* ancestor = element->GetFlattenedTreeParentNode();
+       ancestor && ancestor->IsContent();
+       ancestor = ancestor->GetFlattenedTreeParentNode()) {
+    if (nsIFrame* f = ancestor->AsContent()->GetPrimaryFrame()) {
+      if (f->HidesContent(nsIFrame::IncludeContentVisibility::Hidden) ||
+          f->IsHiddenByContentVisibilityOnAnyAncestor(
+              nsIFrame::IncludeContentVisibility::Hidden)) {
+        return false;
+      }
+      break;
+    }
+  }
+
+  return true;
 }
 
 bool nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(
@@ -601,37 +620,4 @@ bool nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(
     }
   } while ((parent = parent->GetInProcessParentDocument()));
   return true;
-}
-
-bool nsCoreUtils::IsHiddenNodeByContentVisibilityOnAnyAncestor(
-    nsINode* aNode, const mozilla::StyleContentVisibility& aValue) {
-  nsIFrame* ancestorFrame = nullptr;
-  
-  for (nsINode* ancestor = aNode->GetFlattenedTreeParentNode();
-       ancestor && ancestor->IsContent();
-       ancestor = ancestor->GetFlattenedTreeParentNode()) {
-    ancestorFrame = ancestor->AsContent()->GetPrimaryFrame();
-    if (ancestorFrame) {
-      break;
-    }
-  }
-
-  
-  
-  
-  if (aValue == mozilla::StyleContentVisibility::Hidden) {
-    return ancestorFrame &&
-           (ancestorFrame->HidesContent(
-                nsIFrame::IncludeContentVisibility::Hidden) ||
-            ancestorFrame->IsHiddenByContentVisibilityOnAnyAncestor(
-                nsIFrame::IncludeContentVisibility::Hidden));
-  }
-  if (aValue == mozilla::StyleContentVisibility::Auto) {
-    return ancestorFrame &&
-           (ancestorFrame->HidesContent(
-                nsIFrame::IncludeContentVisibility::Auto) ||
-            ancestorFrame->IsHiddenByContentVisibilityOnAnyAncestor(
-                nsIFrame::IncludeContentVisibility::Auto));
-  }
-  return false;
 }
