@@ -128,7 +128,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
  protected:
   
   
-  rtc::TaskQueue* encoder_queue() { return &encoder_queue_; }
+  TaskQueueBase* encoder_queue() { return encoder_queue_.Get(); }
 
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions,
