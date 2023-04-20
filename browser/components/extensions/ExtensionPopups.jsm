@@ -319,7 +319,7 @@ class BasePopup {
     browser.setAttribute("tooltip", "aHTMLTooltip");
     browser.setAttribute("contextmenu", "contentAreaContextMenu");
     browser.setAttribute("autocompletepopup", "PopupAutoComplete");
-    browser.setAttribute("selectmenuconstrained", "false");
+    browser.setAttribute("constrainpopups", "false");
 
     
     
