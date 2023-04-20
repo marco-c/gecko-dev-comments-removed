@@ -380,6 +380,42 @@ let interfaceNamesInGlobalScope = [
   
   { name: "WebSocket", insecureContext: true },
   
+  {
+    name: "WebTransport",
+    insecureContext: false,
+    nightly: true,
+  },
+  
+  {
+    name: "WebTransportBidirectionalStream",
+    insecureContext: false,
+    nightly: true,
+  },
+  
+  {
+    name: "WebTransportDatagramDuplexStream",
+    insecureContext: false,
+    nightly: true,
+  },
+  
+  {
+    name: "WebTransportError",
+    insecureContext: false,
+    nightly: true,
+  },
+  
+  {
+    name: "WebTransportReceiveStream",
+    insecureContext: false,
+    nightly: true,
+  },
+  
+  {
+    name: "WebTransportSendStream",
+    insecureContext: false,
+    nightly: true,
+  },
+  
   { name: "Worker", insecureContext: true },
   
   { name: "WorkerGlobalScope", insecureContext: true },
