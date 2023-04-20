@@ -96,9 +96,9 @@ void ExternalEngineStateMachine::ChangeStateTo(State aNextState) {
                     aNextState == State::ShutdownEngine ||
                     aNextState == State::RecoverEngine);
   MOZ_ASSERT_IF(mState.IsShutdownEngine(), aNextState == State::ShutdownEngine);
-  MOZ_ASSERT_IF(mState.IsRecoverEngine(),
-                aNextState == State::RunningEngine ||
-                    aNextState == State::ShutdownEngine);
+  MOZ_ASSERT_IF(
+      mState.IsRecoverEngine(),
+      aNextState == State::SeekingData || aNextState == State::ShutdownEngine);
   if (aNextState == State::SeekingData) {
     mState = StateObject({StateObject::SeekingData()});
   } else if (aNextState == State::ReadingMetadata) {
@@ -157,7 +157,12 @@ void ExternalEngineStateMachine::OnEngineInitSuccess() {
   
   MOZ_ASSERT(mInfo);
   mEngine->SetMediaInfo(*mInfo);
-  StartRunningEngine();
+  SeekTarget target(mCurrentPosition.Ref(), SeekTarget::Type::Accurate);
+  Seek(target);
+  
+  if (mPlayState == MediaDecoder::PLAY_STATE_PLAYING) {
+    mEngine->Play();
+  }
 }
 
 void ExternalEngineStateMachine::OnEngineInitFailure() {
@@ -256,7 +261,8 @@ bool ExternalEngineStateMachine::IsFormatSupportedByExternalEngine(
 RefPtr<MediaDecoder::SeekPromise> ExternalEngineStateMachine::Seek(
     const SeekTarget& aTarget) {
   AssertOnTaskQueue();
-  if (!mState.IsRunningEngine() && !mState.IsSeekingData()) {
+  if (!mState.IsRunningEngine() && !mState.IsSeekingData() &&
+      !mState.IsRecoverEngine()) {
     MOZ_ASSERT(false, "Can't seek due to unsupported state.");
     return MediaDecoder::SeekPromise::CreateAndReject(true, __func__);
   }
@@ -988,10 +994,11 @@ void ExternalEngineStateMachine::NotifyErrorInternal(
 
 void ExternalEngineStateMachine::RecoverFromCDMProcessCrashIfNeeded() {
   AssertOnTaskQueue();
-  LOG("CDM process has crashed, recover the engine again");
   if (mState.IsRecoverEngine()) {
     return;
   }
+  LOG("CDM process crashed, recover the engine again (last time=%" PRId64 ")",
+      mCurrentPosition.Ref().ToMicroseconds());
   ChangeStateTo(State::RecoverEngine);
   if (HasVideo()) {
     mVideoDataRequest.DisconnectIfExists();
