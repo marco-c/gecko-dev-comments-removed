@@ -3424,56 +3424,12 @@ mozilla::ipc::IPCResult ContentParent::RecvSetClipboard(
   return IPC_OK();
 }
 
-namespace {
-
-static Result<nsCOMPtr<nsITransferable>, nsresult> CreateTransferable(
-    const nsTArray<nsCString>& aTypes) {
-  nsresult rv;
-  nsCOMPtr<nsITransferable> trans =
-      do_CreateInstance("@mozilla.org/widget/transferable;1", &rv);
-  if (NS_FAILED(rv)) {
-    return Err(rv);
-  }
-
-  MOZ_TRY(trans->Init(nullptr));
-  
-  
-  
-  
-  
-  trans->SetIsPrivateData(true);
-  
-  for (uint32_t t = 0; t < aTypes.Length(); t++) {
-    MOZ_TRY(trans->AddDataFlavor(aTypes[t].get()));
-  }
-
-  return std::move(trans);
-}
-
-}  
-
 mozilla::ipc::IPCResult ContentParent::RecvGetClipboard(
     nsTArray<nsCString>&& aTypes, const int32_t& aWhichClipboard,
     IPCDataTransfer* aDataTransfer) {
-  nsresult rv;
-  
-  nsCOMPtr<nsIClipboard> clipboard(do_GetService(kCClipboardCID, &rv));
-  if (NS_FAILED(rv)) {
-    return IPC_OK();
-  }
-
-  
-  auto result = CreateTransferable(aTypes);
-  if (result.isErr()) {
-    return IPC_OK();
-  }
-
-  
-  nsCOMPtr<nsITransferable> trans = result.unwrap();
-  clipboard->GetData(trans, aWhichClipboard);
-
-  nsContentUtils::TransferableToIPCTransferable(
-      trans, aDataTransfer, true , nullptr, this);
+  nsresult rv = GetDataFromClipboard(aTypes, aWhichClipboard,
+                                     true , aDataTransfer);
+  NS_ENSURE_SUCCESS(rv, IPC_OK());
   return IPC_OK();
 }
 
@@ -3529,39 +3485,58 @@ mozilla::ipc::IPCResult ContentParent::RecvGetExternalClipboardFormats(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentParent::RecvGetClipboardAsync(
-    nsTArray<nsCString>&& aTypes, const int32_t& aWhichClipboard,
-    GetClipboardAsyncResolver&& aResolver) {
+nsresult ContentParent::GetDataFromClipboard(const nsTArray<nsCString>& aTypes,
+                                             const int32_t aWhichClipboard,
+                                             const bool aInSyncMessage,
+                                             IPCDataTransfer* aDataTransfer) {
   nsresult rv;
   
   nsCOMPtr<nsIClipboard> clipboard(do_GetService(kCClipboardCID, &rv));
   if (NS_FAILED(rv)) {
-    aResolver(rv);
-    return IPC_OK();
+    return rv;
   }
 
   
-  auto result = CreateTransferable(aTypes);
-  if (result.isErr()) {
-    aResolver(result.unwrapErr());
-    return IPC_OK();
+  nsCOMPtr<nsITransferable> trans =
+      do_CreateInstance("@mozilla.org/widget/transferable;1", &rv);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  trans->Init(nullptr);
+
+  
+  
+  
+  
+  
+  trans->SetIsPrivateData(true);
+
+  
+  for (uint32_t t = 0; t < aTypes.Length(); t++) {
+    trans->AddDataFlavor(aTypes[t].get());
   }
 
   
-  nsCOMPtr<nsITransferable> trans = result.unwrap();
-  clipboard->AsyncGetData(trans, nsIClipboard::kGlobalClipboard)
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          
-          [trans, aResolver, self = RefPtr{this}]() {
-            IPCDataTransfer ipcDataTransfer;
-            nsContentUtils::TransferableToIPCTransferable(
-                trans, &ipcDataTransfer, false , nullptr,
-                self);
-            aResolver(std::move(ipcDataTransfer));
-          },
-          
-          [aResolver](nsresult rv) { aResolver(rv); });
+  clipboard->GetData(trans, aWhichClipboard);
+
+  nsContentUtils::TransferableToIPCTransferable(trans, aDataTransfer,
+                                                aInSyncMessage, nullptr, this);
+  return NS_OK;
+}
+
+mozilla::ipc::IPCResult ContentParent::RecvGetClipboardAsync(
+    nsTArray<nsCString>&& aTypes, const int32_t& aWhichClipboard,
+    GetClipboardAsyncResolver&& aResolver) {
+  IPCDataTransfer ipcDataTransfer;
+
+  nsresult rv = GetDataFromClipboard(
+      aTypes, aWhichClipboard, false , &ipcDataTransfer);
+  if (NS_FAILED(rv)) {
+    return IPC_FAIL(this, "RecvGetClipboardAsync failed.");
+  }
+
+  
+  aResolver(std::move(ipcDataTransfer));
   return IPC_OK();
 }
 
