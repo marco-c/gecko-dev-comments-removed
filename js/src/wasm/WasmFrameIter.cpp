@@ -450,11 +450,6 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   
   
 
-  
-  
-  
-  
-
 #if defined(JS_CODEGEN_MIPS64)
   {
     *entry = masm.currentOffset();
@@ -631,9 +626,12 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
   
   
   
+  
+
+  
+  
   static_assert(WasmCheckedCallEntryOffset % CodeAlignment == 0,
                 "code aligned");
-  static_assert(WasmCheckedTailEntryOffset > WasmCheckedCallEntryOffset);
 
   
   
@@ -642,85 +640,70 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
   masm.flushBuffer();
   masm.haltingAlign(CodeAlignment);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   Label functionBody;
 
-  
-  
   offsets->begin = masm.currentOffset();
-  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - offsets->begin ==
-                                 WasmCheckedCallEntryOffset);
-  uint32_t dummy;
-  GenerateCallablePrologue(masm, &dummy);
-
-  
-  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - offsets->begin <=
-                                 WasmCheckedTailEntryOffset);
 
   
   
   
-  while (masm.currentOffset() - offsets->begin < WasmCheckedTailEntryOffset) {
-    masm.nop();
+  
+  
+  
+  
+  
+  if (callIndirectId.kind() != CallIndirectIdKind::None) {
+    
+    
+    
+    MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - offsets->begin ==
+                                   WasmCheckedCallEntryOffset);
+    uint32_t dummy;
+    GenerateCallablePrologue(masm, &dummy);
+
+    switch (callIndirectId.kind()) {
+      case CallIndirectIdKind::Global: {
+        Register scratch = WasmTableCallScratchReg0;
+        masm.loadWasmGlobalPtr(callIndirectId.globalDataOffset(), scratch);
+        masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg,
+                       scratch, &functionBody);
+        masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
+        break;
+      }
+      case CallIndirectIdKind::Immediate: {
+        masm.branch32(Assembler::Condition::Equal, WasmTableCallSigReg,
+                      Imm32(callIndirectId.immediate()), &functionBody);
+        masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
+        break;
+      }
+      case CallIndirectIdKind::AsmJS:
+        masm.jump(&functionBody);
+        break;
+      case CallIndirectIdKind::None:
+        break;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    masm.nopAlign(CodeAlignment);
   }
 
   
-  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - offsets->begin ==
-                                 WasmCheckedTailEntryOffset);
-  switch (callIndirectId.kind()) {
-    case CallIndirectIdKind::Global: {
-      Register scratch = WasmTableCallScratchReg0;
-      masm.loadWasmGlobalPtr(callIndirectId.globalDataOffset(), scratch);
-      masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg, scratch,
-                     &functionBody);
-      masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
-      break;
-    }
-    case CallIndirectIdKind::Immediate: {
-      masm.branch32(Assembler::Condition::Equal, WasmTableCallSigReg,
-                    Imm32(callIndirectId.immediate()), &functionBody);
-      masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
-      break;
-    }
-    case CallIndirectIdKind::None:
-      masm.jump(&functionBody);
-      break;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  masm.nopAlign(CodeAlignment);
   DebugOnly<uint32_t> expectedEntry = masm.currentOffset();
   GenerateCallablePrologue(masm, &offsets->uncheckedCallEntry);
   MOZ_ASSERT(expectedEntry == offsets->uncheckedCallEntry);

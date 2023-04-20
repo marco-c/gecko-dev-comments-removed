@@ -220,6 +220,9 @@ struct FuncOffsets : CallableOffsets {
   
   
   
+  
+  
+  
   uint32_t uncheckedCallEntry;
 
   
@@ -355,6 +358,9 @@ class CodeRange {
 
   uint32_t funcCheckedCallEntry() const {
     MOZ_ASSERT(isFunction());
+    
+    
+    MOZ_ASSERT(u.func.beginToUncheckedCallEntry_ != 0);
     return begin_;
   }
   uint32_t funcUncheckedCallEntry() const {
@@ -618,7 +624,7 @@ WASM_DECLARE_POD_VECTOR(TryNote, TryNoteVector)
 
 
 
-enum class CallIndirectIdKind { None, Immediate, Global };
+enum class CallIndirectIdKind { AsmJS, Immediate, Global, None };
 
 class CallIndirectId {
   CallIndirectIdKind kind_;
@@ -629,6 +635,10 @@ class CallIndirectId {
 
  public:
   CallIndirectId() : kind_(CallIndirectIdKind::None), bits_(0) {}
+
+  
+  
+  static CallIndirectId forAsmJSFunc();
 
   
   static CallIndirectId forFunc(const ModuleEnvironment& moduleEnv,

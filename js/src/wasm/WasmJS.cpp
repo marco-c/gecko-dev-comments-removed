@@ -4187,7 +4187,7 @@ JSFunction* WasmFunctionCreate(JSContext* cx, HandleFunction func,
   moduleEnv.numFuncImports = 1;
 
   
-  moduleEnv.declareFuncExported(0, false, false);
+  moduleEnv.declareFuncExported(0,  true,  true);
 
   
   
