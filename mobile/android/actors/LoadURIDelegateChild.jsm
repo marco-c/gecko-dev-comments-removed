@@ -29,12 +29,11 @@ class LoadURIDelegateChild extends GeckoViewActorChild {
     
     if (
       WebExtensionPolicy.useRemoteWebExtensions &&
-      lazy.E10SUtils.getRemoteTypeForURIObject(
-        aUri,
-         true,
-         false,
-        Services.appinfo.remoteType
-      ) == lazy.E10SUtils.EXTENSION_REMOTE_TYPE
+      lazy.E10SUtils.getRemoteTypeForURIObject(aUri, {
+        multiProcess: true,
+        remoteSubFrames: false,
+        preferredRemoteType: Services.appinfo.remoteType,
+      }) == lazy.E10SUtils.EXTENSION_REMOTE_TYPE
     ) {
       debug`Bypassing load delegate in the Extension process.`;
       return false;
