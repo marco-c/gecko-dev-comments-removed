@@ -2262,29 +2262,23 @@ void MacroAssembler::emitExtractValueFromMegamorphicCacheEntry(
   bind(&protoLoopTail);
 
   
-  loadPtr(Address(outputScratch, JSObject::offsetOfShape()), scratch1);
-  load32(Address(scratch1, Shape::offsetOfImmutableFlags()), scratch1);
-  and32(Imm32(NativeShape::fixedSlotsMask()), scratch1);
-  rshift32(Imm32(NativeShape::fixedSlotsShift()), scratch1);
+  load32(Address(entry, MegamorphicCacheEntry::offsetOfSlotOffset()), scratch1);
 
   
-  load16ZeroExtend(Address(entry, MegamorphicCache::Entry::offsetOfSlot()),
-                   scratch2);
-  
-  branch32(Assembler::GreaterThanOrEqual, scratch2, scratch1, &dynamicSlot);
+  move32(scratch1, scratch2);
+  rshift32(Imm32(TaggedSlotOffset::OffsetShift), scratch2);
 
-  static_assert(sizeof(HeapSlot) == 8);
   
-  loadValue(BaseValueIndex(outputScratch, scratch2, sizeof(NativeObject)),
-            output);
+  branchTest32(Assembler::Zero, scratch1,
+               Imm32(TaggedSlotOffset::IsFixedSlotFlag), &dynamicSlot);
+  
+  loadValue(BaseIndex(outputScratch, scratch2, TimesOne), output);
   jump(cacheHit);
 
   bind(&dynamicSlot);
   
-  sub32(scratch1, scratch2);
-  
   loadPtr(Address(outputScratch, NativeObject::offsetOfSlots()), outputScratch);
-  loadValue(BaseValueIndex(outputScratch, scratch2, 0), output);
+  loadValue(BaseIndex(outputScratch, scratch2, TimesOne), output);
   jump(cacheHit);
 
   bind(&isMissing);
