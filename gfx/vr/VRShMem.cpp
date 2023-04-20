@@ -412,15 +412,17 @@ void VRShMem::PushBrowserState(VRBrowserState& aBrowserState,
   }
 #else
   bool status = true;
+
 #  if defined(XP_WIN)
   WaitForMutex lock(mMutex);
   status = lock.GetStatus();
 #  endif  
+
   if (status) {
-    mExternalShmem->geckoGenerationA++;
+    mExternalShmem->geckoGenerationA = mExternalShmem->geckoGenerationA + 1;
     memcpy((void*)&(mExternalShmem->geckoState), (void*)&aBrowserState,
            sizeof(VRBrowserState));
-    mExternalShmem->geckoGenerationB++;
+    mExternalShmem->geckoGenerationB = mExternalShmem->geckoGenerationB + 1;
   }
 #endif    
 }
@@ -503,6 +505,7 @@ void VRShMem::PushSystemState(const mozilla::gfx::VRSystemState& aState) {
 
 #else
   bool lockState = true;
+
 #  if defined(XP_WIN)
   if (mRequiresMutex) {
     
@@ -511,10 +514,11 @@ void VRShMem::PushSystemState(const mozilla::gfx::VRSystemState& aState) {
     lockState = lock.GetStatus();
   }
 #  endif  
+
   if (lockState) {
-    mExternalShmem->generationA++;
+    mExternalShmem->generationA = mExternalShmem->generationA + 1;
     memcpy((void*)&mExternalShmem->state, &aState, sizeof(VRSystemState));
-    mExternalShmem->generationB++;
+    mExternalShmem->generationB = mExternalShmem->generationB + 1;
   }
 #endif    
 }
