@@ -54,6 +54,9 @@ class VsyncSource {
                            const TimeStamp& aOutputTimestamp);
 
   
+  
+  
+  
   void AddVsyncDispatcher(VsyncDispatcher* aDispatcher);
   void RemoveVsyncDispatcher(VsyncDispatcher* aDispatcher);
 
@@ -75,12 +78,21 @@ class VsyncSource {
   
   void UpdateVsyncStatus();
 
+  struct DispatcherRefWithCount {
+    
+    RefPtr<VsyncDispatcher> mDispatcher;
+    
+    
+    
+    size_t mCount = 0;
+  };
+
   struct State {
     
     
     
     
-    nsTArray<RefPtr<VsyncDispatcher>> mDispatchers;
+    nsTArray<DispatcherRefWithCount> mDispatchers;
 
     
     VsyncId mVsyncId;
