@@ -431,7 +431,7 @@ static void AddCachedDirRule(sandbox::TargetPolicy* aPolicy,
 static const Maybe<Vector<const wchar_t*>>& GetPrespawnCigExceptionModules() {
   
   
-#if defined(NIGHTLY)
+#if defined(NIGHTLY_BUILD)
   
   
   
