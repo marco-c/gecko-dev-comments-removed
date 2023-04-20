@@ -2188,6 +2188,14 @@ pref("browser.migrate.content-modal.import-all.enabled", false);
 
 pref("browser.migrate.history.maxAgeInDays", 180);
 
+
+
+
+
+pref("browser.migrate.interactions.bookmarks", false);
+pref("browser.migrate.interactions.history", false);
+pref("browser.migrate.interactions.passwords", false);
+
 pref("extensions.pocket.api", "api.getpocket.com");
 pref("extensions.pocket.bffApi", "firefox-api-proxy.readitlater.com");
 pref("extensions.pocket.bffRecentSaves", true);
