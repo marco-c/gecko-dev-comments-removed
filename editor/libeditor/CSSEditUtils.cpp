@@ -284,12 +284,20 @@ const CSSEditUtils::CSSEquivTable hrAlignEquivTable[] = {
 
 bool CSSEditUtils::IsCSSEditableStyle(const Element& aElement,
                                       const EditorElementStyle& aStyle) {
+  return CSSEditUtils::IsCSSEditableStyle(*aElement.NodeInfo()->NameAtom(),
+                                          aStyle);
+}
+
+
+bool CSSEditUtils::IsCSSEditableStyle(const nsAtom& aTagName,
+                                      const EditorElementStyle& aStyle) {
   nsStaticAtom* const htmlProperty =
       aStyle.IsInlineStyle() ? aStyle.AsInlineStyle().mHTMLProperty : nullptr;
   nsAtom* const attributeOrStyle = aStyle.IsInlineStyle()
                                        ? aStyle.AsInlineStyle().mAttribute.get()
                                        : aStyle.Style();
 
+  
   
   if (nsGkAtoms::b == htmlProperty || nsGkAtoms::i == htmlProperty ||
       nsGkAtoms::tt == htmlProperty || nsGkAtoms::u == htmlProperty ||
@@ -302,28 +310,31 @@ bool CSSEditUtils::IsCSSEditableStyle(const Element& aElement,
 
   
   if (attributeOrStyle == nsGkAtoms::align &&
-      aElement.IsAnyOfHTMLElements(
-          nsGkAtoms::div, nsGkAtoms::p, nsGkAtoms::h1, nsGkAtoms::h2,
-          nsGkAtoms::h3, nsGkAtoms::h4, nsGkAtoms::h5, nsGkAtoms::h6,
-          nsGkAtoms::td, nsGkAtoms::th, nsGkAtoms::table, nsGkAtoms::hr,
-          
-          
-          
-          
-          
-          nsGkAtoms::legend, nsGkAtoms::caption)) {
+      (&aTagName == nsGkAtoms::div || &aTagName == nsGkAtoms::p ||
+       &aTagName == nsGkAtoms::h1 || &aTagName == nsGkAtoms::h2 ||
+       &aTagName == nsGkAtoms::h3 || &aTagName == nsGkAtoms::h4 ||
+       &aTagName == nsGkAtoms::h5 || &aTagName == nsGkAtoms::h6 ||
+       &aTagName == nsGkAtoms::td || &aTagName == nsGkAtoms::th ||
+       &aTagName == nsGkAtoms::table || &aTagName == nsGkAtoms::hr ||
+       
+       
+       
+       
+       
+       &aTagName == nsGkAtoms::legend || &aTagName == nsGkAtoms::caption)) {
     return true;
   }
 
   if (attributeOrStyle == nsGkAtoms::valign &&
-      aElement.IsAnyOfHTMLElements(
-          nsGkAtoms::col, nsGkAtoms::colgroup, nsGkAtoms::tbody, nsGkAtoms::td,
-          nsGkAtoms::th, nsGkAtoms::tfoot, nsGkAtoms::thead, nsGkAtoms::tr)) {
+      (&aTagName == nsGkAtoms::col || &aTagName == nsGkAtoms::colgroup ||
+       &aTagName == nsGkAtoms::tbody || &aTagName == nsGkAtoms::td ||
+       &aTagName == nsGkAtoms::th || &aTagName == nsGkAtoms::tfoot ||
+       &aTagName == nsGkAtoms::thead || &aTagName == nsGkAtoms::tr)) {
     return true;
   }
 
   
-  if (aElement.IsHTMLElement(nsGkAtoms::body) &&
+  if (&aTagName == nsGkAtoms::body &&
       (attributeOrStyle == nsGkAtoms::text ||
        attributeOrStyle == nsGkAtoms::background ||
        attributeOrStyle == nsGkAtoms::bgcolor)) {
@@ -336,7 +347,7 @@ bool CSSEditUtils::IsCSSEditableStyle(const Element& aElement,
   }
 
   
-  if (aElement.IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th) &&
+  if ((&aTagName == nsGkAtoms::td || &aTagName == nsGkAtoms::th) &&
       (attributeOrStyle == nsGkAtoms::height ||
        attributeOrStyle == nsGkAtoms::width ||
        attributeOrStyle == nsGkAtoms::nowrap)) {
@@ -344,39 +355,37 @@ bool CSSEditUtils::IsCSSEditableStyle(const Element& aElement,
   }
 
   
-  if (aElement.IsHTMLElement(nsGkAtoms::table) &&
-      (attributeOrStyle == nsGkAtoms::height ||
-       attributeOrStyle == nsGkAtoms::width)) {
+  if (&aTagName == nsGkAtoms::table && (attributeOrStyle == nsGkAtoms::height ||
+                                        attributeOrStyle == nsGkAtoms::width)) {
     return true;
   }
 
   
-  if (aElement.IsHTMLElement(nsGkAtoms::hr) &&
-      (attributeOrStyle == nsGkAtoms::size ||
-       attributeOrStyle == nsGkAtoms::width)) {
+  if (&aTagName == nsGkAtoms::hr && (attributeOrStyle == nsGkAtoms::size ||
+                                     attributeOrStyle == nsGkAtoms::width)) {
     return true;
   }
 
   
-  if (aElement.IsAnyOfHTMLElements(nsGkAtoms::ol, nsGkAtoms::ul,
-                                   nsGkAtoms::li) &&
-      attributeOrStyle == nsGkAtoms::type) {
+  if (attributeOrStyle == nsGkAtoms::type &&
+      (&aTagName == nsGkAtoms::ol || &aTagName == nsGkAtoms::ul ||
+       &aTagName == nsGkAtoms::li)) {
     return true;
   }
 
-  if (aElement.IsHTMLElement(nsGkAtoms::img) &&
-      (attributeOrStyle == nsGkAtoms::border ||
-       attributeOrStyle == nsGkAtoms::width ||
-       attributeOrStyle == nsGkAtoms::height)) {
+  if (&aTagName == nsGkAtoms::img && (attributeOrStyle == nsGkAtoms::border ||
+                                      attributeOrStyle == nsGkAtoms::width ||
+                                      attributeOrStyle == nsGkAtoms::height)) {
     return true;
   }
 
   
   
   if (attributeOrStyle == nsGkAtoms::align &&
-      aElement.IsAnyOfHTMLElements(nsGkAtoms::ul, nsGkAtoms::ol, nsGkAtoms::dl,
-                                   nsGkAtoms::li, nsGkAtoms::dd, nsGkAtoms::dt,
-                                   nsGkAtoms::address, nsGkAtoms::pre)) {
+      (&aTagName == nsGkAtoms::ul || &aTagName == nsGkAtoms::ol ||
+       &aTagName == nsGkAtoms::dl || &aTagName == nsGkAtoms::li ||
+       &aTagName == nsGkAtoms::dd || &aTagName == nsGkAtoms::dt ||
+       &aTagName == nsGkAtoms::address || &aTagName == nsGkAtoms::pre)) {
     return true;
   }
 

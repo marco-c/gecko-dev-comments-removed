@@ -48,6 +48,13 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
   ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle(
       HTMLEditor& aHTMLEditor, nsIContent& aContent) const;
 
+  
+
+
+
+  Result<EditorRawDOMRange, nsresult> ExtendOrShrinkRangeToApplyTheStyle(
+      const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange) const;
+
  private:
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult> ApplyStyle(
       HTMLEditor& aHTMLEditor, nsIContent& aContent) const;
@@ -70,6 +77,41 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<bool, nsresult>
   ElementIsGoodContainerForTheStyle(HTMLEditor& aHTMLEditor,
                                     Element& aElement) const;
+
+  
+
+
+
+
+  [[nodiscard]] bool ContentIsElementSettingTheStyle(
+      const HTMLEditor& aHTMLEditor, nsIContent& aContent) const;
+
+  
+
+
+  [[nodiscard]] EditorRawDOMPoint GetShrunkenRangeStart(
+      const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange,
+      const nsINode& aCommonAncestorOfRange,
+      const nsIContent* aFirstEntirelySelectedContentNodeInRange) const;
+  [[nodiscard]] EditorRawDOMPoint GetShrunkenRangeEnd(
+      const HTMLEditor& aHTMLEditor, const EditorDOMRange& aRange,
+      const nsINode& aCommonAncestorOfRange,
+      const nsIContent* aLastEntirelySelectedContentNodeInRange) const;
+
+  
+
+
+  [[nodiscard]] EditorRawDOMPoint
+  GetExtendedRangeStartToWrapAncestorApplyingSameStyle(
+      const HTMLEditor& aHTMLEditor,
+      const EditorRawDOMPoint& aStartPoint) const;
+  [[nodiscard]] EditorRawDOMPoint
+  GetExtendedRangeEndToWrapAncestorApplyingSameStyle(
+      const HTMLEditor& aHTMLEditor, const EditorRawDOMPoint& aEndPoint) const;
+  [[nodiscard]] EditorRawDOMRange
+  GetExtendedRangeToMinimizeTheNumberOfNewElements(
+      const HTMLEditor& aHTMLEditor, const nsINode& aCommonAncestor,
+      EditorRawDOMPoint&& aStartPoint, EditorRawDOMPoint&& aEndPoint) const;
 };
 
 }  

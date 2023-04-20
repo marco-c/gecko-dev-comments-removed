@@ -373,6 +373,9 @@ class CSSEditUtils final {
 
 
 
+
+  [[nodiscard]] static bool IsCSSEditableStyle(
+      const nsAtom& aTagName, const EditorElementStyle& aStyle);
   [[nodiscard]] static bool IsCSSEditableStyle(
       const dom::Element& aElement, const EditorElementStyle& aStyle);
 

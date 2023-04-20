@@ -395,6 +395,23 @@ bool EditorDOMPointBase<
 
 
 
+NS_INSTANTIATE_EDITOR_DOM_RANGE_CONST_METHOD(nsINode*,
+                                             GetClosestCommonInclusiveAncestor);
+
+template <typename EditorDOMPointType>
+nsINode* EditorDOMRangeBase<
+    EditorDOMPointType>::GetClosestCommonInclusiveAncestor() const {
+  if (NS_WARN_IF(!IsPositioned())) {
+    return nullptr;
+  }
+  return nsContentUtils::GetClosestCommonInclusiveAncestor(
+      mStart.GetContainer(), mEnd.GetContainer());
+}
+
+
+
+
+
 nsresult CaretPoint::SuggestCaretPointTo(
     const EditorBase& aEditorBase, const SuggestCaretOptions& aOptions) const {
   mHandledCaretPoint = true;

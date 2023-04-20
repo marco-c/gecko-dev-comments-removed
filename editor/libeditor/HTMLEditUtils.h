@@ -184,7 +184,13 @@ class HTMLEditUtils final {
 
 
 
-  static bool IsDisplayOutsideInline(const Element& aElement);
+  [[nodiscard]] static bool IsDisplayOutsideInline(const Element& aElement);
+
+  
+
+
+
+  [[nodiscard]] static bool IsDisplayInsideFlowRoot(const Element& aElement);
 
   
 
