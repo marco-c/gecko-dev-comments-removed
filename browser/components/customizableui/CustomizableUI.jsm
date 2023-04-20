@@ -3679,6 +3679,24 @@ var CustomizableUIInternal = {
     return true;
   },
 
+  getCollapsedToolbarIds(window) {
+    let collapsedToolbars = new Set();
+    for (let toolbarId of CustomizableUIInternal._builtinToolbars) {
+      let toolbar = window.document.getElementById(toolbarId);
+
+      
+      
+      let hidingAttribute =
+        toolbar.getAttribute("type") == "menubar" ? "autohide" : "collapsed";
+
+      if (toolbar.getAttribute(hidingAttribute) == "true") {
+        collapsedToolbars.add(toolbarId);
+      }
+    }
+
+    return collapsedToolbars;
+  },
+
   setToolbarVisibility(aToolbarId, aIsVisible) {
     
     let isFirstChangedToolbar = true;
@@ -4526,6 +4544,19 @@ var CustomizableUI = {
 
   setToolbarVisibility(aToolbarId, aIsVisible) {
     CustomizableUIInternal.setToolbarVisibility(aToolbarId, aIsVisible);
+  },
+
+  
+
+
+
+
+
+
+
+
+  getCollapsedToolbarIds(window) {
+    return CustomizableUIInternal.getCollapsedToolbarIds(window);
   },
 
   
