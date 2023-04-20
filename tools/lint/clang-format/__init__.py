@@ -3,8 +3,8 @@
 
 
 import os
-import signal
 import re
+import signal
 import sys
 import xml.etree.ElementTree as ET
 

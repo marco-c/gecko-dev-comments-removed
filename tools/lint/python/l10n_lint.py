@@ -2,19 +2,17 @@
 
 
 
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
 
-from mach import util as mach_util
-from mozlint import result, pathutils
-from mozpack import path as mozpath
 import mozversioncontrol.repoupdate
-
+from compare_locales import parser
 from compare_locales.lint.linter import L10nLinter
 from compare_locales.lint.util import l10n_base_reference_and_tests
-from compare_locales import parser
-from compare_locales.paths import TOMLParser, ProjectFiles
-
+from compare_locales.paths import ProjectFiles, TOMLParser
+from mach import util as mach_util
+from mozlint import pathutils, result
+from mozpack import path as mozpath
 
 LOCALE = "gecko-strings"
 

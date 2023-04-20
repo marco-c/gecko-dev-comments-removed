@@ -4,9 +4,11 @@
 
 
 
-from __future__ import absolute_import, print_function, division
+from __future__ import absolute_import, division, print_function
+
 import re
 import sys
+
 import yaml
 from mozlint import result
 from mozlint.pathutils import expand_exclusions

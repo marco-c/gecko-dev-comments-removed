@@ -2,14 +2,11 @@
 
 
 
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import, print_function
 
 from distutils.version import StrictVersion
 
-from mach.decorators import (
-    Command,
-    CommandArgument,
-)
+from mach.decorators import Command, CommandArgument
 
 
 def is_osx_10_10_or_greater(cls):

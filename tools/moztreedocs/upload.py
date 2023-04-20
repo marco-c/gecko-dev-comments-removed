@@ -2,19 +2,18 @@
 
 
 
-from __future__ import absolute_import, unicode_literals, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
+import concurrent.futures as futures
 import io
 import mimetypes
 import os
 import sys
-
-import botocore
-import boto3
-import concurrent.futures as futures
-import requests
 from pprint import pprint
 
+import boto3
+import botocore
+import requests
 from mozbuild.util import memoize
 
 

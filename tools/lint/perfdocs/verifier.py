@@ -3,14 +3,14 @@
 
 from __future__ import absolute_import
 
-import jsonschema
 import os
 import pathlib
 import re
 
+import jsonschema
+from perfdocs.gatherer import Gatherer
 from perfdocs.logger import PerfDocLogger
 from perfdocs.utils import read_file, read_yaml
-from perfdocs.gatherer import Gatherer
 
 logger = PerfDocLogger()
 

@@ -2,8 +2,8 @@
 
 
 
-import re
 import os
+import re
 import sys
 from collections import defaultdict
 
@@ -14,7 +14,6 @@ topsrcdir = MozbuildObject.from_environment().topsrcdir
 from mozlint import result
 from mozlint.pathutils import get_ancestors_by_name
 from mozlint.util.implementation import LintProcess
-
 
 YAMLLINT_FORMAT_REGEX = re.compile("(.*):(.*):(.*): \[(error|warning)\] (.*) \((.*)\)$")
 

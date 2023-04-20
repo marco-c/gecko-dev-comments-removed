@@ -2,14 +2,14 @@
 
 
 import bisect
+import re
+from html.parser import HTMLParser
+
+import mozpack.path as mozpath
+import yaml
 from fluent.syntax import parse, visitor
 from mozlint import result
 from mozlint.pathutils import expand_exclusions
-import mozpack.path as mozpath
-import re
-import yaml
-
-from html.parser import HTMLParser
 
 
 class TextElementHTMLParser(HTMLParser):

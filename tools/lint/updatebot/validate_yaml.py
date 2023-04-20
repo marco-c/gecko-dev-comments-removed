@@ -2,9 +2,9 @@
 
 
 
+from mozbuild.vendor.moz_yaml import load_moz_yaml
 from mozlint import result
 from mozlint.pathutils import expand_exclusions
-from mozbuild.vendor.moz_yaml import load_moz_yaml
 
 
 class UpdatebotValidator:

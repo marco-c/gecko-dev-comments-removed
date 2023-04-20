@@ -4,20 +4,19 @@
 
 
 
+import glob
 import itertools
 import json
-import glob
 import os
 import re
-import six
 import subprocess
 import sys
-
 import xml.etree.ElementTree as ET
 
-from mozpack.files import FileFinder
 import mozpack.path as mozpath
+import six
 from mozlint import result
+from mozpack.files import FileFinder
 
 
 

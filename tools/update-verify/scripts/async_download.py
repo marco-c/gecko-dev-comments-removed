@@ -3,14 +3,15 @@
 
 
 
-import aiohttp
 import asyncio
+import glob
 import logging
 import os
-from os import path
-import glob
 import sys
 import xml.etree.ElementTree as ET
+from os import path
+
+import aiohttp
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(message)s")
 log = logging.getLogger(__name__)
