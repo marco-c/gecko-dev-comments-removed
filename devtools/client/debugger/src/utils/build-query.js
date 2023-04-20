@@ -52,9 +52,7 @@ export default function buildQuery(
     return new RegExp(originalQuery);
   }
 
-  
-  
-  let query = originalQuery.replace(/\\$/, "");
+  let query = originalQuery;
 
   
   
