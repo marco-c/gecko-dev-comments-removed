@@ -4,7 +4,6 @@
 
 "use strict";
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/remote/shared/messagehandler/test/browser/head.js",
   this
