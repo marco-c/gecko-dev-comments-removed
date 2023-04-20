@@ -340,6 +340,12 @@ class RAPL {
 
     
     
+    if (MOZ_UNLIKELY(!mPkes)) {
+      return;
+    }
+
+    
+    
     mPkes->pkes_version = kSupportedVersion - 1;
 
     
