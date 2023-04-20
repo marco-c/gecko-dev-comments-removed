@@ -14,6 +14,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/array_view.h"
@@ -337,6 +338,11 @@ class NetworkEmulationManager {
   
   virtual EmulatedTURNServerInterface* CreateTURNServer(
       EmulatedTURNServerConfig config) = 0;
+
+  
+  std::pair<EmulatedNetworkManagerInterface*, EmulatedNetworkManagerInterface*>
+  CreateEndpointPairWithTwoWayRoutes(
+      const BuiltInNetworkBehaviorConfig& config);
 };
 
 }  
