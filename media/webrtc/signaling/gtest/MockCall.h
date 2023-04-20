@@ -316,9 +316,11 @@ class MockCall : public webrtc::Call {
   virtual ~MockCall(){};
 
   const RefPtr<MockCallWrapper> mCallWrapper;
-  mozilla::Maybe<webrtc::AudioReceiveStreamInterface::Config> mAudioReceiveConfig;
+  mozilla::Maybe<webrtc::AudioReceiveStreamInterface::Config>
+      mAudioReceiveConfig;
   mozilla::Maybe<webrtc::AudioSendStream::Config> mAudioSendConfig;
-  mozilla::Maybe<webrtc::VideoReceiveStreamInterface::Config> mVideoReceiveConfig;
+  mozilla::Maybe<webrtc::VideoReceiveStreamInterface::Config>
+      mVideoReceiveConfig;
   mozilla::Maybe<webrtc::VideoSendStream::Config> mVideoSendConfig;
   mozilla::Maybe<webrtc::VideoEncoderConfig> mVideoSendEncoderConfig;
   webrtc::Call::Stats mStats;

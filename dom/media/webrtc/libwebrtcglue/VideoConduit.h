@@ -171,7 +171,8 @@ class WebrtcVideoConduit
   
   void EnsureRemoteSSRC();
 
-  Maybe<webrtc::VideoReceiveStreamInterface::Stats> GetReceiverStats() const override;
+  Maybe<webrtc::VideoReceiveStreamInterface::Stats> GetReceiverStats()
+      const override;
   Maybe<webrtc::VideoSendStream::Stats> GetSenderStats() const override;
   Maybe<webrtc::CallBasicStats> GetCallStats() const override;
 

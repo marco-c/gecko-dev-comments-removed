@@ -373,8 +373,8 @@ Maybe<Ssrc> WebrtcAudioConduit::GetRemoteSSRC() const {
              : Some(mRecvStreamConfig.rtp.remote_ssrc);
 }
 
-Maybe<webrtc::AudioReceiveStreamInterface::Stats> WebrtcAudioConduit::GetReceiverStats()
-    const {
+Maybe<webrtc::AudioReceiveStreamInterface::Stats>
+WebrtcAudioConduit::GetReceiverStats() const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   if (!mRecvStream) {
     return Nothing();
