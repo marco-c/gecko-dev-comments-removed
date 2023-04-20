@@ -186,10 +186,21 @@ impl super::Adapter {
         let extensions = gl.supported_extensions();
 
         let (vendor_const, renderer_const) = if extensions.contains("WEBGL_debug_renderer_info") {
+            
+            
+            #[cfg(target_os = "emscripten")]
+            if unsafe { super::emscripten::enable_extension("WEBGL_debug_renderer_info\0") } {
+                (GL_UNMASKED_VENDOR_WEBGL, GL_UNMASKED_RENDERER_WEBGL)
+            } else {
+                (glow::VENDOR, glow::RENDERER)
+            }
+            
+            #[cfg(not(target_os = "emscripten"))]
             (GL_UNMASKED_VENDOR_WEBGL, GL_UNMASKED_RENDERER_WEBGL)
         } else {
             (glow::VENDOR, glow::RENDERER)
         };
+
         let (vendor, renderer) = {
             let vendor = unsafe { gl.get_parameter_string(vendor_const) };
             let renderer = unsafe { gl.get_parameter_string(renderer_const) };

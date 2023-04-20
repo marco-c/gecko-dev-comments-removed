@@ -59,6 +59,8 @@
 
 #[cfg(any(not(target_arch = "wasm32"), target_os = "emscripten"))]
 mod egl;
+#[cfg(target_os = "emscripten")]
+mod emscripten;
 #[cfg(all(target_arch = "wasm32", not(target_os = "emscripten")))]
 mod web;
 
