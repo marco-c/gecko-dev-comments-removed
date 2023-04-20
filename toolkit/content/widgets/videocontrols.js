@@ -292,6 +292,7 @@ this.VideoControlsImplWidget = class {
         "durationchange",
       ],
 
+      showHours: false,
       firstFrameShown: false,
       timeUpdateCount: 0,
       maxCurrentTimeSeen: 0,
@@ -401,6 +402,7 @@ this.VideoControlsImplWidget = class {
         );
         
         
+        this.initPositionDurationBox();
         this.maxCurrentTimeSeen = currentTime;
         this.showPosition(currentTime, duration);
 
@@ -1144,7 +1146,8 @@ this.VideoControlsImplWidget = class {
         this.statusOverlay.setAttribute("status", error);
       },
 
-      formatTime(aTime) {
+      formatTime(aTime, showHours = false) {
+        
         aTime = Math.round(aTime / 1000);
         let hours = Math.floor(aTime / 3600);
         let mins = Math.floor((aTime % 3600) / 60);
@@ -1153,7 +1156,7 @@ this.VideoControlsImplWidget = class {
         if (secs < 10) {
           secs = "0" + secs;
         }
-        if (hours) {
+        if (hours || showHours) {
           if (mins < 10) {
             mins = "0" + mins;
           }
@@ -1162,6 +1165,50 @@ this.VideoControlsImplWidget = class {
           timeString = mins + ":" + secs;
         }
         return timeString;
+      },
+
+      initPositionDurationBox() {
+        const durationSpan = this.durationSpan;
+
+        durationSpan.classList.add("duration");
+        durationSpan.setAttribute("role", "none");
+        durationSpan.id = "durationSpan";
+        this.l10n.setAttributes(
+          this.positionDurationBox,
+          "videocontrols-position-and-duration-labels",
+          { position: "", duration: "" }
+        );
+      },
+
+      showDuration(duration) {
+        let isInfinite = duration == Infinity;
+        this.log("Duration is " + duration + "ms.\n");
+
+        if (isNaN(duration) || isInfinite) {
+          duration = this.maxCurrentTimeSeen;
+        }
+
+        
+        this.showHours = duration >= 3600000;
+
+        
+        let timeString = isInfinite ? "" : this.formatTime(duration);
+        this.positionDurationBox.duration = timeString;
+        this.l10n.setAttributes(
+          this.positionDurationBox,
+          "videocontrols-position-and-duration-labels",
+          {
+            position: this.positionDurationBox.position,
+            duration: timeString,
+          }
+        );
+
+        if (this.showHours) {
+          this.positionDurationBox.modifier = "long";
+          this.durationSpan.modifier = "long";
+        }
+
+        this.scrubber.max = duration;
       },
 
       pauseVideoDuringDragging() {
@@ -1217,46 +1264,29 @@ this.VideoControlsImplWidget = class {
         this.video.muted = false;
       },
 
-      showPosition(currentTimeMs, durationMs) {
+      showPosition(currentTime, duration) {
         
         
         
-        if (currentTimeMs > this.maxCurrentTimeSeen) {
-          this.maxCurrentTimeSeen = currentTimeMs;
+        if (currentTime > this.maxCurrentTimeSeen) {
+          this.maxCurrentTimeSeen = currentTime;
         }
-        this.log(
-          "time update @ " + currentTimeMs + "ms of " + durationMs + "ms"
-        );
+        this.showDuration(duration);
 
-        let durationIsInfinite = durationMs == Infinity;
-        if (isNaN(durationMs) || durationIsInfinite) {
-          durationMs = this.maxCurrentTimeSeen;
-        }
-        this.log("durationMs is " + durationMs + "ms.\n");
+        this.log("time update @ " + currentTime + "ms of " + duration + "ms");
 
-        
-        this.scrubber.max = durationMs;
-        this.scrubber.value = currentTimeMs;
-        this.updateScrubberProgress();
+        let positionTime = this.formatTime(currentTime, this.showHours);
 
-        
-        
-        
-        
-        let modifier = durationMs >= 3600000 ? "long" : "";
-        this.positionDurationBox.modifier = this.durationSpan.modifier = modifier;
+        this.scrubber.value = currentTime;
+        this.positionDurationBox.position = positionTime;
 
-        
-        let position = this.formatTime(currentTimeMs);
-        let duration = durationIsInfinite ? "" : this.formatTime(durationMs);
-        this._updatePositionLabels(position, duration);
-      },
-
-      _updatePositionLabels(position, duration) {
         this.l10n.setAttributes(
           this.positionDurationBox,
           "videocontrols-position-and-duration-labels",
-          { position, duration }
+          {
+            position: positionTime,
+            duration: this.positionDurationBox.duration,
+          }
         );
 
         
@@ -1266,7 +1296,10 @@ this.VideoControlsImplWidget = class {
         
         let positionDurationMarkup = this.l10n.formatValueSync(
           "videocontrols-position-and-duration-labels",
-          { position, duration }
+          {
+            position: positionTime,
+            duration: this.positionDurationBox.duration,
+          }
         );
 
         
@@ -1278,6 +1311,7 @@ this.VideoControlsImplWidget = class {
         ).body.textContent;
 
         this.scrubber.setAttribute("aria-valuetext", positionDurationString);
+        this.updateScrubberProgress();
       },
 
       showBuffered() {
@@ -2867,11 +2901,8 @@ this.VideoControlsImplWidget = class {
               </div>
               <bdi id="positionLabel" class="positionLabel" role="presentation"></bdi>
               <bdi id="durationLabel" class="durationLabel" role="presentation"></bdi>
-              <bdi id="positionDurationBox" class="positionDurationBox" aria-hidden="true"
-                   data-l10n-id="videocontrols-position-and-duration-labels"
-                   data-l10n-args='{"position": "", "duration": ""}'>
-                <span id="durationSpan" class="duration" role="none"
-                      data-l10n-name="position-duration-format"></span>
+              <bdi id="positionDurationBox" class="positionDurationBox" aria-hidden="true">
+                <span data-l10n-name="position-duration-format"></span>
               </bdi>
               <div id="controlBarSpacer" class="controlBarSpacer" hidden="true" role="none"></div>
               <button id="muteButton"
