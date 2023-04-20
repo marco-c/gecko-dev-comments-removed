@@ -38,7 +38,7 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let consoleOptions = {
     
     
-    maxLogLevel: "debug",
+    maxLogLevel: "error",
     maxLogLevelPref: "browser.shell.loglevel",
     prefix: "ShellService",
   };
