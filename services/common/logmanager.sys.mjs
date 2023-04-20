@@ -1,11 +1,9 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict;";
 
-const { Log } = ChromeUtils.importESModule(
-  "resource://gre/modules/Log.sys.mjs"
-);
+import { Log } from "resource://gre/modules/Log.sys.mjs";
 
 const lazy = {};
 
@@ -18,69 +16,61 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/NetUtil.jsm"
 );
 
-const { Preferences } = ChromeUtils.importESModule(
-  "resource://gre/modules/Preferences.sys.mjs"
-);
+import { Preferences } from "resource://gre/modules/Preferences.sys.mjs";
 
-var EXPORTED_SYMBOLS = ["LogManager"];
+const DEFAULT_MAX_ERROR_AGE = 20 * 24 * 60 * 60; // 20 days
 
-const DEFAULT_MAX_ERROR_AGE = 20 * 24 * 60 * 60; 
+// "shared" logs (ie, where the same log name is used by multiple LogManager
+// instances) are a fact of life here - eg, FirefoxAccounts logs are used by
+// both Sync and Reading List.
+// However, different instances have different pref branches, so we need to
+// handle when one pref branch says "Debug" and the other says "Error"
+// So we (a) keep singleton console and dump appenders and (b) keep track
+// of the minimum (ie, most verbose) level and use that.
+// This avoids (a) the most recent setter winning (as that is indeterminate)
+// and (b) multiple dump/console appenders being added to the same log multiple
+// times, which would cause messages to appear twice.
 
-
-
-
-
-
-
-
-
-
-
-
-
+// Singletons used by each instance.
 var formatter;
 var dumpAppender;
 var consoleAppender;
 
-
+// A set of all preference roots used by all instances.
 var allBranches = new Set();
-
-const ONE_BYTE = 1;
-const ONE_KILOBYTE = 1024 * ONE_BYTE;
-const ONE_MEGABYTE = 1024 * ONE_KILOBYTE;
 
 const STREAM_SEGMENT_SIZE = 4096;
 const PR_UINT32_MAX = 0xffffffff;
 
-
-
-
-
-
-
-
-
+/**
+ * Append to an nsIStorageStream
+ *
+ * This writes logging output to an in-memory stream which can later be read
+ * back as an nsIInputStream. It can be used to avoid expensive I/O operations
+ * during logging. Instead, one can periodically consume the input stream and
+ * e.g. write it to disk asynchronously.
+ */
 class StorageStreamAppender extends Log.Appender {
   constructor(formatter) {
     super(formatter);
     this._name = "StorageStreamAppender";
 
-    this._converterStream = null; 
-    this._outputStream = null; 
+    this._converterStream = null; // holds the nsIConverterOutputStream
+    this._outputStream = null; // holds the underlying nsIOutputStream
 
     this._ss = null;
   }
 
   get outputStream() {
     if (!this._outputStream) {
-      
+      // First create a raw stream. We can bail out early if that fails.
       this._outputStream = this.newOutputStream();
       if (!this._outputStream) {
         return null;
       }
 
-      
-      
+      // Wrap the raw stream in an nsIConverterOutputStream. We can reuse
+      // the instance if we already have one.
       if (!this._converterStream) {
         this._converterStream = Cc[
           "@mozilla.org/intl/converter-output-stream;1"
@@ -123,23 +113,23 @@ class StorageStreamAppender extends Log.Appender {
       this.outputStream.writeString(formatted + "\n");
     } catch (ex) {
       if (ex.result == Cr.NS_BASE_STREAM_CLOSED) {
-        
-        
+        // The underlying output stream is closed, so let's open a new one
+        // and try again.
         this._outputStream = null;
       }
       try {
         this.outputStream.writeString(formatted + "\n");
       } catch (ex) {
-        
+        // Ah well, we tried, but something seems to be hosed permanently.
       }
     }
   }
 }
 
-
-
-
-
+// A storage appender that is flushable to a file on disk.  Policies for
+// when to flush, to what file, log rotation etc are up to the consumer
+// (although it does maintain a .sawError property to help the consumer decide
+// based on its policies)
 class FlushableStorageAppender extends StorageStreamAppender {
   constructor(formatter) {
     super(formatter);
@@ -158,8 +148,8 @@ class FlushableStorageAppender extends StorageStreamAppender {
     this.sawError = false;
   }
 
-  
-  
+  // Flush the current stream to a file. Somewhat counter-intuitively, you
+  // must pass a log which will be written to with details of the operation.
   async flushToFile(subdirArray, filename, log) {
     let inStream = this.getInputStream();
     this.reset();
@@ -177,14 +167,14 @@ class FlushableStorageAppender extends StorageStreamAppender {
     }
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Copy an input stream to the named file, doing everything off the main
+   * thread.
+   * subDirArray is an array of path components, relative to the profile
+   * directory, where the file will be created.
+   * outputFileName is the filename to create.
+   * Returns a promise that is resolved on completion or rejected with an error.
+   */
   async _copyStreamToFile(inputStream, subdirArray, outputFileName, log) {
     let outputDirectory = PathUtils.join(PathUtils.profileDir, ...subdirArray);
     await IOUtils.makeDirectory(outputDirectory);
@@ -210,8 +200,8 @@ class FlushableStorageAppender extends StorageStreamAppender {
   }
 }
 
-
-function LogManager(prefRoot, logNames, logFilePrefix) {
+// The public LogManager object.
+export function LogManager(prefRoot, logNames, logFilePrefix) {
   this._prefObservers = [];
   this.init(prefRoot, logNames, logFilePrefix);
 }
@@ -230,15 +220,15 @@ LogManager.prototype = {
 
     this.logFilePrefix = logFilePrefix;
     if (!formatter) {
-      
+      // Create a formatter and various appenders to attach to the logs.
       formatter = new Log.BasicFormatter();
       consoleAppender = new Log.ConsoleAppender(formatter);
       dumpAppender = new Log.DumpAppender(formatter);
     }
 
     allBranches.add(this._prefs._branchStr);
-    
-    
+    // We create a preference observer for all our prefs so they are magically
+    // reflected if the pref changes after creation.
     let setupAppender = (
       appender,
       prefName,
@@ -248,11 +238,11 @@ LogManager.prototype = {
       let observer = newVal => {
         let level = Log.Level[newVal] || defaultLevel;
         if (findSmallest) {
-          
-          
-          
-          
-          
+          // As some of our appenders have global impact (ie, there is only one
+          // place 'dump' goes to), we need to find the smallest value from all
+          // prefs controlling this appender.
+          // For example, if consumerA has dump=Debug then consumerB sets
+          // dump=Error, we need to keep dump=Debug so consumerA is respected.
           for (let branch of allBranches) {
             let lookPrefBranch = new Preferences(branch);
             let lookVal = Log.Level[lookPrefBranch.get(prefName)];
@@ -265,7 +255,7 @@ LogManager.prototype = {
       };
       this._prefs.observe(prefName, observer, this);
       this._prefObservers.push([prefName, observer]);
-      
+      // and call the observer now with the current pref value.
       observer(this._prefs.get(prefName));
       return observer;
     };
@@ -283,30 +273,30 @@ LogManager.prototype = {
       true
     );
 
-    
+    // The file appender doesn't get the special singleton behaviour.
     let fapp = (this._fileAppender = new FlushableStorageAppender(formatter));
-    
-    
+    // the stream gets a default of Debug as the user must go out of their way
+    // to see the stuff spewed to it.
     this._observeStreamPref = setupAppender(
       fapp,
       "log.appender.file.level",
       Log.Level.Debug
     );
 
-    
+    // now attach the appenders to all our logs.
     for (let logName of logNames) {
       let log = Log.repository.getLogger(logName);
       for (let appender of [fapp, dumpAppender, consoleAppender]) {
         log.addAppender(appender);
       }
     }
-    
+    // and use the first specified log as a "root" for our log.
     this._log = Log.repository.getLogger(logNames[0] + ".LogManager");
   },
 
-  
-
-
+  /**
+   * Cleanup this instance
+   */
   finalize() {
     for (let [name, pref] of this._prefObservers) {
       this._prefs.ignore(name, pref, this);
@@ -319,10 +309,10 @@ LogManager.prototype = {
   },
 
   get _logFileSubDirectoryEntries() {
-    
-    
-    
-    
+    // At this point we don't allow a custom directory for the logs, nor allow
+    // it to be outside the profile directory.
+    // This returns an array of the the relative directory entries below the
+    // profile dir, and is the directory about:sync-log uses.
     return ["weave", "logs"];
   },
 
@@ -330,19 +320,19 @@ LogManager.prototype = {
     return this._fileAppender.sawError;
   },
 
-  
+  // Result values for resetFileLog.
   SUCCESS_LOG_WRITTEN: "success-log-written",
   ERROR_LOG_WRITTEN: "error-log-written",
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Possibly generate a log file for all accumulated log messages and refresh
+   * the input & output streams.
+   * Whether a "success" or "error" log is written is determined based on
+   * whether an "Error" log entry was written to any of the logs.
+   * Returns a promise that resolves on completion with either null (for no
+   * file written or on error), SUCCESS_LOG_WRITTEN if a "success" log was
+   * written, or ERROR_LOG_WRITTEN if an "error" log was written.
+   */
   async resetFileLog() {
     try {
       let flushToFile;
@@ -358,14 +348,14 @@ LogManager.prototype = {
         reasonPrefix = "success";
       }
 
-      
+      // might as well avoid creating an input stream if we aren't going to use it.
       if (!flushToFile) {
         this._fileAppender.reset();
         return null;
       }
 
-      
-      
+      // We have reasonPrefix at the start of the filename so all "error"
+      // logs are grouped in about:sync-log.
       let filename =
         reasonPrefix + "-" + this.logFilePrefix + "-" + Date.now() + ".txt";
       await this._fileAppender.flushToFile(
@@ -373,11 +363,11 @@ LogManager.prototype = {
         filename,
         this._log
       );
-      
-      
-      
-      
-      
+      // It's not completely clear to markh why we only do log cleanups
+      // for errors, but for now the Sync semantics have been copied...
+      // (one theory is that only cleaning up on error makes it less
+      // likely old error logs would be removed, but that's not true if
+      // there are occasional errors - let's address this later!)
       if (reason == this.ERROR_LOG_WRITTEN && !this._cleaningUpFileLogs) {
         this._log.trace("Running cleanup.");
         try {
@@ -393,9 +383,9 @@ LogManager.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Finds all logs older than maxErrorAge and deletes them using async I/O.
+   */
   cleanupLogs() {
     let maxAge = this._prefs.get(
       "log.appender.file.maxErrorAge",
@@ -410,15 +400,15 @@ LogManager.prototype = {
     return this._deleteLogFiles(shouldDelete);
   },
 
-  
-
-
+  /**
+   * Finds all logs and removes them.
+   */
   removeAllLogs() {
     return this._deleteLogFiles(() => true);
   },
 
-  
-  
+  // Delete some log files. A callback is invoked for each found log file to
+  // determine if that file should be removed.
   async _deleteLogFiles(cbShouldDelete) {
     this._cleaningUpFileLogs = true;
     let logDir = lazy.FileUtils.getDir(
@@ -450,7 +440,7 @@ LogManager.prototype = {
     }
     this._cleaningUpFileLogs = false;
     this._log.debug("Done deleting files.");
-    
+    // This notification is used only for tests.
     Services.obs.notifyObservers(
       null,
       "services-tests:common:log-manager:cleanup-logs"

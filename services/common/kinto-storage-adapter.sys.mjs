@@ -1,56 +1,55 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import { Sqlite } from "resource://gre/modules/Sqlite.sys.mjs";
 
-
-
-
-
-
-
-
-
-
-
-
-
-const { Sqlite } = ChromeUtils.importESModule(
-  "resource://gre/modules/Sqlite.sys.mjs"
-);
 const { Kinto } = ChromeUtils.import(
   "resource://services-common/kinto-offline-client.js"
 );
 
-
-
-
-
-
-
-
-
+/**
+ * Filter and sort list against provided filters and order.
+ *
+ * @param  {Object} filters  The filters to apply.
+ * @param  {String} order    The order to apply.
+ * @param  {Array}  list     The list to reduce.
+ * @return {Array}
+ */
 function reduceRecords(filters, order, list) {
   const filtered = filters ? filterObjects(filters, list) : list;
   return order ? sortObjects(order, filtered) : filtered;
 }
 
-
-
-
-
-
-
-
+/**
+ * Checks if a value is undefined.
+ *
+ * This is a copy of `_isUndefined` from kinto.js/src/utils.js.
+ * @param  {Any}  value
+ * @return {Boolean}
+ */
 function _isUndefined(value) {
   return typeof value === "undefined";
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Sorts records in a list according to a given ordering.
+ *
+ * This is a copy of `sortObjects` from kinto.js/src/utils.js.
+ *
+ * @param  {String} order The ordering, eg. `-last_modified`.
+ * @param  {Array}  list  The collection to order.
+ * @return {Array}
+ */
 function sortObjects(order, list) {
   const hasDash = order[0] === "-";
   const field = hasDash ? order.slice(1) : order;
@@ -69,15 +68,15 @@ function sortObjects(order, list) {
   });
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Test if a single object matches all given filters.
+ *
+ * This is a copy of `filterObject` from kinto.js/src/utils.js.
+ *
+ * @param  {Object} filters  The filters object.
+ * @param  {Object} entry    The object to filter.
+ * @return {Function}
+ */
 function filterObject(filters, entry) {
   return Object.keys(filters).every(filter => {
     const value = filters[filter];
@@ -88,15 +87,15 @@ function filterObject(filters, entry) {
   });
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Filters records in a list matching all given filters.
+ *
+ * This is a copy of `filterObjects` from kinto.js/src/utils.js.
+ *
+ * @param  {Object} filters  The filters object.
+ * @param  {Array}  list     The collection to filter.
+ * @return {Array}
+ */
 function filterObjects(filters, list) {
   return list.filter(entry => {
     return filterObject(filters, entry);
@@ -170,8 +169,8 @@ const statements = {
       FROM collection_data
         WHERE collection_name = :collection_name;`,
 
-  
-  
+  // N.B. we have to have a dynamic number of placeholders, which you
+  // can't do without building your own statement. See `execute` for details
   listRecordsById: `
     SELECT record_id, record
       FROM collection_data
@@ -204,17 +203,17 @@ const createStatements = [
 
 const currentSchemaVersion = 2;
 
-
-
-
-
-
-
-
-
-
-
-class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
+/**
+ * Firefox adapter.
+ *
+ * Uses Sqlite as a backing store.
+ *
+ * Options:
+ *  - sqliteHandle: a handle to the Sqlite database this adapter will
+ *    use as its backing store. To open such a handle, use the
+ *    static openConnection() method.
+ */
+export class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
   constructor(collection, options = {}) {
     super();
     const { sqliteHandle = null } = options;
@@ -223,11 +222,11 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
     this._options = options;
   }
 
-  
-
-
-
-
+  /**
+   * Initialize a Sqlite connection to be suitable for use with Kinto.
+   *
+   * This will be called automatically by open().
+   */
   static async _init(connection) {
     await connection.executeTransaction(async function doSetup() {
       const schema = await connection.getSchemaVersion();
@@ -251,16 +250,16 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
     return this._connection.executeCached(statement, params);
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Open and initialize a Sqlite connection to a database that Kinto
+   * can use. When you are done with this connection, close it by
+   * calling close().
+   *
+   * Options:
+   *   - path: The path for the Sqlite database
+   *
+   * @returns SqliteConnection
+   */
   static async openConnection(options) {
     const opts = Object.assign({}, { sharedMemoryCache: false }, options);
     const conn = await Sqlite.openConnection(opts).then(this._init);
@@ -270,7 +269,7 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
         () => conn.close()
       );
     } catch (e) {
-      
+      // It's too late to block shutdown, just close the connection.
       await conn.close();
       throw e;
     }
@@ -289,10 +288,10 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
 
     return conn
       .executeTransaction(async function doExecuteTransaction() {
-        
+        // Preload specified records from DB, within transaction.
 
-        
-        
+        // if options.preload has more elements than the sqlite variable
+        // limit, split it up.
         const limit = 100;
         let preloaded = {};
         let preload;
@@ -351,8 +350,8 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
         return records;
       })
       .then(results => {
-        
-        
+        // The resulting list of records is filtered and sorted.
+        // XXX: with some efforts, this could be implemented using SQL.
         return reduceRecords(params.filters, params.order, results);
       });
   }
@@ -361,16 +360,16 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
     return this.importBulk(records);
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Load a list of records into the local database.
+   *
+   * Note: The adapter is not in charge of filtering the already imported
+   * records. This is done in `Collection#loadDump()`, as a common behaviour
+   * between every adapters.
+   *
+   * @param  {Array} records.
+   * @return {Array} imported records.
+   */
   async importBulk(records) {
     const connection = this._connection;
     const collection_name = this.collection;
@@ -464,13 +463,13 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
     );
   }
 
-  
-
-
-
+  /**
+   * Reset the sync status of every record and collection we have
+   * access to.
+   */
   resetSyncStatus() {
-    
-    
+    // We're going to use execute instead of executeCached, so build
+    // in our own sanity check
     if (!this._connection) {
       throw new Error("The storage adapter is not open");
     }
@@ -482,7 +481,7 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
         const record_id = row.getResultByName("record_id");
         const collection_name = row.getResultByName("collection_name");
         if (record._status === "deleted") {
-          
+          // Garbage collect deleted records.
           promises.push(
             conn.execute(statements.deleteData, { collection_name, record_id })
           );
@@ -547,10 +546,8 @@ function transactionProxy(collection, preloaded) {
     },
 
     get(id) {
-      
+      // Gecko JS engine outputs undesired warnings if id is not in preloaded.
       return id in preloaded ? preloaded[id] : undefined;
     },
   };
 }
-
-var EXPORTED_SYMBOLS = ["FirefoxAdapter"];
