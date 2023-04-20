@@ -3322,11 +3322,12 @@ var CustomizableUIInternal = {
       }
     }
 
+    
+    
+    
+    gPlacements.set(CustomizableUI.AREA_ADDONS, []);
+
     if (lazy.gUnifiedExtensionsEnabled) {
-      
-      
-      
-      gPlacements.set(CustomizableUI.AREA_ADDONS, []);
       for (let [widgetId] of gPalette) {
         if (
           CustomizableUI.isWebExtensionWidget(widgetId) &&
