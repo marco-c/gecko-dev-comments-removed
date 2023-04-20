@@ -3365,6 +3365,12 @@ class nsContentUtils {
 
   static nsresult EnsureAndLoadStringBundle(PropertiesFile aFile);
 
+  
+
+
+
+  static void RequestGeckoTaskBurst();
+
  private:
   static bool InitializeEventTable();
 
