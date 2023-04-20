@@ -1053,34 +1053,8 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
       mozilla::TaskCategory aCategory) override;
 
  protected:
-  nsresult ProcessWidgetFullscreenRequest(FullscreenReason aReason,
-                                          bool aFullscreen);
-
-  
-  
-  
-  
-  mozilla::Maybe<FullscreenReason> mFullscreen;
-
-  
-  
-  bool mFullscreenHasChangedDuringProcessing : 1;
-
-  using FullscreenRequest = struct FullscreenRequest {
-    FullscreenRequest(FullscreenReason aReason, bool aFullscreen)
-        : mReason(aReason), mFullscreen(aFullscreen) {
-      MOZ_ASSERT(
-          mReason != FullscreenReason::ForForceExitFullscreen || !mFullscreen,
-          "FullscreenReason::ForForceExitFullscreen can only be used with "
-          "exiting fullscreen");
-    }
-    FullscreenReason mReason;
-    bool mFullscreen : 1;
-  };
-  
-  
-  mozilla::Maybe<FullscreenRequest> mInProcessFullscreenRequest;
-
+  bool mFullscreen : 1;
+  bool mFullscreenMode : 1;
   bool mForceFullScreenInWidget : 1;
   bool mIsClosed : 1;
   bool mInClose : 1;
