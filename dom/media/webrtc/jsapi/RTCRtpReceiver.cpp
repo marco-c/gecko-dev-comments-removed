@@ -483,12 +483,9 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
 
 
 
-
-
-
-
-
-
+              
+              
+              local.mFramesDropped.Construct(videoStats->frames_dropped);
               if (!report->mInboundRtpStreamStats.AppendElement(
                       std::move(local), fallible)) {
                 mozalloc_handle_oom(0);
