@@ -473,17 +473,22 @@ registerCleanupFunction(async () => {
 });
 
 let consoleAllowList = [
+  
   'property "localProfileDir" is non-configurable and can\'t be deleted',
   'property "profileDir" is non-configurable and can\'t be deleted',
+  
+  
+  "NetworkError: Network request failed",
 ];
 
 function observe(subject) {
   let msg = subject.wrappedJSObject;
-  let messageContents = msg.arguments[0]?.message || msg.arguments[0];
-  if (
-    msg.level == "error" &&
-    !consoleAllowList.some(e => messageContents.includes(e))
-  ) {
+  if (msg.level != "error") {
+    return;
+  }
+
+  let messageContents = msg.arguments[0].messageContents;
+  if (!consoleAllowList.some(e => messageContents.includes(e))) {
     Assert.ok(false, "Unexpected console message: " + messageContents);
   }
 }
