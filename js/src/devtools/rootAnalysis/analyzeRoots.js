@@ -234,10 +234,8 @@ function edgeCanGC(edge)
 
 
 
-function findGCBeforeValueUse(start_body, start_point, suppressed_bits, variable)
+function findGCBeforeValueUse(start_body, start_point, funcAttrs, variable)
 {
-    const isGCSuppressed = Boolean(suppressed_bits & ATTR_GC_SUPPRESSED);
-
     
     
     
@@ -406,8 +404,10 @@ function findGCBeforeValueUse(start_body, start_point, suppressed_bits, variable
             }
 
             
+            
             const had_gcInfo = Boolean(path.gcInfo);
-            if (!path.gcInfo && !(body.attrs[ppoint] & ATTR_GC_SUPPRESSED) && !isGCSuppressed) {
+            const edgeAttrs = body.attrs[ppoint] | funcAttrs;
+            if (!path.gcInfo && !(edgeAttrs & (ATTR_GC_SUPPRESSED | ATTR_REPLACED))) {
                 var gcName = edgeCanGC(edge, body);
                 if (gcName) {
                     path.gcInfo = {name:gcName, body, ppoint, edge: edge.Index};
@@ -511,7 +511,7 @@ function findGCBeforeValueUse(start_body, start_point, suppressed_bits, variable
     return BFS_upwards(start_body, start_point, functionBodies, visitor, new Path()) || bestPathWithAnyUse;
 }
 
-function variableLiveAcrossGC(suppressed, variable, liveToEnd=false)
+function variableLiveAcrossGC(funcAttrs, variable, liveToEnd=false)
 {
     
     
@@ -554,7 +554,7 @@ function variableLiveAcrossGC(suppressed, variable, liveToEnd=false)
 
             var usePoint = edgeUsesVariable(edge, variable, body, liveToEnd);
             if (usePoint) {
-                var call = findGCBeforeValueUse(body, usePoint, suppressed, variable);
+                var call = findGCBeforeValueUse(body, usePoint, funcAttrs, variable);
                 if (!call)
                     continue;
 
@@ -572,15 +572,19 @@ function variableLiveAcrossGC(suppressed, variable, liveToEnd=false)
 
 
 
-function unsafeVariableAddressTaken(suppressed, variable)
+function unsafeVariableAddressTaken(funcAttrs, variable)
 {
     for (var body of functionBodies) {
         if (!("PEdge" in body))
             continue;
         for (var edge of body.PEdge) {
             if (edgeTakesVariableAddress(edge, variable, body)) {
-                if (edge.Kind == "Assign" || (!(suppressed & ATTR_GC_SUPPRESSED) && edgeCanGC(edge)))
+                if (funcAttrs & (ATTR_GC_SUPPRESSED | ATTR_REPLACED)) {
+                    continue;
+                }
+                if (edge.Kind == "Assign" || edgeCanGC(functionName, body, edge, funcAttrs, functionBodies)) {
                     return {body:body, ppoint:edge.Index[0]};
+                }
             }
         }
     }
@@ -719,16 +723,12 @@ function printRecord(record) {
     print(JSON.stringify(record));
 }
 
-function printRecord(record) {
-    print(JSON.stringify(record));
-}
-
 function processBodies(functionName, wholeBodyAttrs)
 {
     if (!("DefineVariable" in functionBodies[0]))
       return;
     const funcInfo = limitedFunctions[mangled(functionName)] || { attributes: 0 };
-    const suppressed = funcInfo.attributes | wholeBodyAttrs;
+    const funcAttrs = funcInfo.attributes | wholeBodyAttrs;
 
     
     
@@ -811,7 +811,7 @@ function processBodies(functionName, wholeBodyAttrs)
         }
 
         if (isRootedDeclType(decl)) {
-            if (!variableLiveAcrossGC(suppressed, decl.Variable)) {
+            if (!variableLiveAcrossGC(funcAttrs, decl.Variable)) {
                 
                 var lineText;
                 for (var body of functionBodies) {
@@ -834,7 +834,7 @@ function processBodies(functionName, wholeBodyAttrs)
                 printRecord(record);
             }
         } else if (isUnrootedPointerDeclType(decl)) {
-            var result = variableLiveAcrossGC(suppressed, decl.Variable, liveToEnd);
+            var result = variableLiveAcrossGC(funcAttrs, decl.Variable, liveToEnd);
             if (result) {
                 assert(result.gcInfo);
                 const edge = result.gcInfo.edge;
@@ -859,7 +859,7 @@ function processBodies(functionName, wholeBodyAttrs)
                 print(",");
                 printRecord(record);
             }
-            result = unsafeVariableAddressTaken(suppressed, decl.Variable);
+            result = unsafeVariableAddressTaken(funcAttrs, decl.Variable);
             if (result) {
                 var lineText = findLocation(result.body, result.ppoint);
                 const record = {
@@ -930,21 +930,20 @@ function process(name, json) {
             if (attrs)
                 pbody.attrs[id] = attrs;
         }
+
+        
+        
+        
+        
+        
+        
+        
         for (const edgeAttr of gcEdges[blockIdentifier(body)] || []) {
             body.attrs[edgeAttr.Index[0]] |= edgeAttr.attrs;
         }
     }
 
-    
-    
-    
-    
-    let wholeBodyAttrs = 0;
-    if (functionName.includes("std::swap") || functionName.includes("mozilla::Swap")) {
-        wholeBodyAttrs = ATTR_GC_SUPPRESSED;
-    }
-
-    processBodies(functionName, wholeBodyAttrs);
+    processBodies(functionName);
 }
 
 if (options.function) {

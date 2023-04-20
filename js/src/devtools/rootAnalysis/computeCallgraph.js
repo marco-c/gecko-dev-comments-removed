@@ -160,14 +160,17 @@ function processBody(functionName, body, functionBodies)
         
         const scopeAttrs = body.attrs[edge.Index[0]] | 0;
 
-        for (var callee of getCallees(edge)) {
+        for (const callee of getCallees(edge)) {
             let edgeAttrs = scopeAttrs;
 
             
             
             
             
-            const edgeInfo = callee.kind === "direct" && isSpecialEdge(body, edge, callee.name, functionBodies);
+            
+            
+            
+            const edgeInfo = callee.kind === "direct" && getCallEdgeProperties(body, edge, callee.name, functionBodies);
             if (edgeInfo) {
                 edgeAttrs = edgeAttrs | edgeInfo.attrs;
 
@@ -175,9 +178,17 @@ function processBody(functionName, body, functionBodies)
                 
                 
                 
-                if (edgeInfo.attrs & ATTR_NONRELEASING) {
+                
+                
+
+                
+                
+                
+                
+                
+                if (edgeInfo.attrs) {
                     const block = blockIdentifier(body);
-                    addToKeyedList(gcEdges, block, { Index: edge.Index, attrs: ATTR_GC_SUPPRESSED | ATTR_NONRELEASING });
+                    addToKeyedList(gcEdges, block, { Index: edge.Index, attrs: edgeInfo.attrs });
                 }
             }
 

@@ -908,12 +908,38 @@ function basicBlockEatsVariable(variable, body, startpoint)
     return false;
 }
 
-function isSpecialEdge(body, edge, calleeName, functionBodies) {
-    if (edge.Kind !== "Call") {
-        return false;
+var PROP_REFCNT = 1 << 0;
+
+function getCalleeProperties(calleeName) {
+    let props = 0;
+
+    if (isRefcountedDtor(calleeName)) {
+        props = props | PROP_REFCNT;
     }
-    if (!isRefcountedDtor(calleeName)) {
-        return false;
+    return props;
+}
+
+function getCallEdgeProperties(body, edge, calleeName, functionBodies) {
+    let attrs = 0;
+
+    if (edge.Kind !== "Call") {
+        return { attrs };
+    }
+
+    const props = getCalleeProperties(calleeName);
+    if (props & PROP_REFCNT) {
+        
+        
+        
+        const blockId = blockIdentifier(body);
+        if (blockId.includes("std::swap") || blockId.includes("mozilla::Swap")) {
+            
+            attrs |= ATTR_REPLACED;
+        }
+    }
+
+    if ((props & PROP_REFCNT) == 0) {
+        return { attrs };
     }
 
     let callee = edge.Exp[0];
@@ -924,7 +950,7 @@ function isSpecialEdge(body, edge, calleeName, functionBodies) {
     const instance = edge.PEdgeCallInstance.Exp;
     if (instance.Kind !== "Var") {
         
-        return false;
+        return { attrs };
     }
 
     
@@ -937,7 +963,7 @@ function isSpecialEdge(body, edge, calleeName, functionBodies) {
 
     const variable = instance.Variable;
 
-    const visitor = new class extends Visitor {
+    const visitor = new class DominatorVisitor extends Visitor {
         
         
         next_action(seen, current) { return seen ? "prune" : current; }
@@ -977,10 +1003,10 @@ function isSpecialEdge(body, edge, calleeName, functionBodies) {
         body, edge.Index[0], functionBodies, visitor, "start",
         true 
     );
-    if (!edgeIsNonReleasingDtor) {
-        return false;
+    if (edgeIsNonReleasingDtor) {
+        attrs |= ATTR_GC_SUPPRESSED | ATTR_NONRELEASING;
     }
-    return { attrs : ATTR_GC_SUPPRESSED | ATTR_NONRELEASING };
+    return { attrs };
 }
 
 
