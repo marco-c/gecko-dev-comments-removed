@@ -1,17 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* Elevation Dialog */
+/* Specify the size for the UI so it has a fixed size. 3rd
+   party themes should typically specify the same values. */
 #elevationBox, .update-content {
   height: 360px;
   width: 700px;
 }
 
-
-
+/* Remove margin and padding so the inner UI will extend to the edge of the
+   window. 3rd party themes should typically specify the same values. */
 #updates {
   margin: 0;
   padding: 0;
@@ -50,7 +50,7 @@
   font-size: larger;
 }
 
-
+/* Update History Window */
 update {
   border-bottom: 1px dotted #C0C0C0;
 }
@@ -60,7 +60,7 @@ update {
 }
 
 .update-label-column {
-  -moz-box-align: end;
+  align-items: flex-end;
 }
 
 .update-type {
@@ -80,10 +80,10 @@ update {
 
 #historyItems .update {
   padding: 5px;
-  display: -moz-box;
-  -moz-box-orient: vertical;
+  display: flex;
+  flex-direction: column;
 }
 
 .update-name {
-  -moz-box-flex: 1;
+  flex: 1;
 }

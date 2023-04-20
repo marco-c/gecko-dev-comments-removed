@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Notification overrides for Heartbeat UI */
 
 @keyframes pulse-onshow {
   0% {
@@ -43,7 +43,7 @@
 }
 
 .messageImage.heartbeat {
-  
+  /* Needed for the animation to not get clipped when pulsing. */
   margin-inline: 8px;
 }
 
@@ -61,7 +61,7 @@
   animation-timing-function: linear;
 }
 
-
+/* Learn More link styles */
 .heartbeat > hbox > .text-link {
   margin-inline-start: 0 !important;
 }
@@ -70,33 +70,33 @@
   text-decoration: none !important;
 }
 
-
+/* Heartbeat UI Rating Star Classes */
 #star-rating-container {
-  display: -moz-box;
+  display: flex;
   margin-bottom: 4px;
 }
 
 #star-rating-container > #star5 {
-  -moz-box-ordinal-group: 5;
+  order: 5;
 }
 
 #star-rating-container > #star4 {
-  -moz-box-ordinal-group: 4;
+  order: 4;
 }
 
 #star-rating-container > #star3 {
-  -moz-box-ordinal-group: 3;
+  order: 3;
 }
 
 #star-rating-container > #star2 {
-  -moz-box-ordinal-group: 2;
+  order: 2;
 }
 
 #star-rating-container > .star-x {
   background: url("resource://normandy/skin/shared/heartbeat-star-off.svg");
   cursor: pointer;
   height: 16px;
-  margin-inline-end: 4px !important; 
+  margin-inline-end: 4px !important; /* Overrides the margin-inline-end for all platforms defined in the .plain class */
   width: 16px;
 }
 

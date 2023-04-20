@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .devtools-toolbar {
   -moz-appearance: none;
@@ -11,7 +11,7 @@
 #devtools-menu.devtools-menulist,
 .devtools-toolbarbutton#devtools-menu {
   -moz-appearance: none;
-  -moz-box-align: center;
+  align-items: center;
   min-width: 78px;
   min-height: 22px;
   text-shadow: 0 -1px 0 hsla(210,8%,5%,.45);
@@ -24,7 +24,7 @@
 }
 
 .devtools-toolbarbutton > hbox.toolbarbutton-menubutton-button {
-  -moz-box-orient: horizontal;
+  flex-direction: row;
 }
 
 .devtools-menulist:active,
@@ -80,7 +80,7 @@
   display: none;
 }
 
-
+/* Maximize the size of the viewport when the window is small */
 @media (max-width: 800px) {
   .category-name {
     display: none;

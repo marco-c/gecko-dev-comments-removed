@@ -284,7 +284,7 @@ var SidebarUI = {
     
     let browser = document.getElementById("browser");
     [...browser.children].forEach((node, i) => {
-      node.style.MozBoxOrdinalGroup = i + 1;
+      node.style.order = i + 1;
     });
 
     if (!this._positionStart) {
@@ -292,9 +292,9 @@ var SidebarUI = {
       
       
       let appcontent = document.getElementById("appcontent");
-      let boxOrdinal = this._box.style.MozBoxOrdinalGroup;
-      this._box.style.MozBoxOrdinalGroup = appcontent.style.MozBoxOrdinalGroup;
-      appcontent.style.MozBoxOrdinalGroup = boxOrdinal;
+      let boxOrdinal = this._box.style.order;
+      this._box.style.order = appcontent.style.order;
+      appcontent.style.order = boxOrdinal;
       
       this._box.setAttribute("positionend", true);
     } else {

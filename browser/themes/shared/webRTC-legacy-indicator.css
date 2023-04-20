@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 window {
   border: 1px solid #ff9500;
@@ -44,7 +44,7 @@ window {
 }
 
 window[sharingscreen] > #screenShareButton {
-  display: -moz-box;
+  display: flex;
 }
 
 #audioVideoButton {
@@ -52,15 +52,15 @@ window[sharingscreen] > #screenShareButton {
   background-repeat: no-repeat;
 }
 
-
+/* When screen sharing, need to pull in the separator: */
 window[sharingscreen] > #audioVideoButton {
   margin-right: -1px;
 }
 
-
+/* Single icon button: */
 window[sharingvideo] > #audioVideoButton,
 window[sharingaudio] > #audioVideoButton {
-  display: -moz-box;
+  display: flex;
   background-position: center center;
   background-size: 16px;
   min-width: 26px;
@@ -74,7 +74,7 @@ window[sharingaudio] > #audioVideoButton {
   background-image: url("chrome://browser/skin/notification-icons/microphone.svg");
 }
 
-
+/* Multi-icon button: */
 window[sharingaudio][sharingvideo] > #audioVideoButton {
   background-image: url("chrome://browser/skin/notification-icons/camera.svg"),
                     url("chrome://browser/skin/notification-icons/microphone.svg");
@@ -83,7 +83,7 @@ window[sharingaudio][sharingvideo] > #audioVideoButton {
   min-width: 46px;
 }
 
-
+/* Hover styles */
 #audioVideoButton,
 #screenShareButton {
   background-color: #ffaa33;
@@ -94,18 +94,18 @@ window[sharingaudio][sharingvideo] > #audioVideoButton {
   background-color: #ff9500;
 }
 
-
+/* Don't show the dropmarker for the type="menu" case */
 #audioVideoButton > .box-inherit > .button-menu-dropmarker,
 #screenShareButton > .box-inherit > .button-menu-dropmarker {
   display: none;
 }
 
-
+/* Separator in case of screen sharing + video/audio sharing */
 #shareSeparator {
   width: 1px;
   margin: 4px -1px 4px 0;
   background-color: #FFCA80;
-  
+  /* Separator needs to show above either button when they're hovered: */
   position: relative;
   z-index: 1;
   display: none;
@@ -113,7 +113,7 @@ window[sharingaudio][sharingvideo] > #audioVideoButton {
 
 window[sharingscreen][sharingvideo] > #shareSeparator,
 window[sharingscreen][sharingaudio] > #shareSeparator {
-  display: -moz-box;
+  display: flex;
 }
 
 :is(#audioVideoButton, #screenShareButton, #firefoxButton):-moz-focusring {
