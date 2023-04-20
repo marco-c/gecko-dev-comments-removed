@@ -35,6 +35,8 @@
 
 namespace mozilla::dom {
 
+using namespace streams_abstract;
+
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WITH_JS_MEMBERS(
     WritableStream,
     (mGlobal, mCloseRequest, mController, mInFlightWriteRequest,
@@ -499,6 +501,7 @@ already_AddRefed<WritableStream> WritableStream::Constructor(
   return writableStream.forget();
 }
 
+namespace streams_abstract {
 
 already_AddRefed<Promise> WritableStreamAbort(JSContext* aCx,
                                               WritableStream* aStream,
@@ -576,6 +579,7 @@ already_AddRefed<Promise> WritableStreamAbort(JSContext* aCx,
   
   return promise.forget();
 }
+}  
 
 
 already_AddRefed<Promise> WritableStream::Abort(JSContext* aCx,
@@ -593,6 +597,7 @@ already_AddRefed<Promise> WritableStream::Abort(JSContext* aCx,
   return WritableStreamAbort(aCx, thisRefPtr, aReason, aRv);
 }
 
+namespace streams_abstract {
 
 already_AddRefed<Promise> WritableStreamClose(JSContext* aCx,
                                               WritableStream* aStream,
@@ -644,6 +649,7 @@ already_AddRefed<Promise> WritableStreamClose(JSContext* aCx,
   
   return promise.forget();
 }
+}  
 
 
 already_AddRefed<Promise> WritableStream::Close(JSContext* aCx,
@@ -666,6 +672,8 @@ already_AddRefed<Promise> WritableStream::Close(JSContext* aCx,
   RefPtr<WritableStream> thisRefPtr = this;
   return WritableStreamClose(aCx, thisRefPtr, aRv);
 }
+
+namespace streams_abstract {
 
 
 already_AddRefed<WritableStreamDefaultWriter>
@@ -714,11 +722,14 @@ already_AddRefed<WritableStream> CreateWritableStream(
   return stream.forget();
 }
 
+}  
+
 already_AddRefed<WritableStreamDefaultWriter> WritableStream::GetWriter(
     ErrorResult& aRv) {
   return AcquireWritableStreamDefaultWriter(this, aRv);
 }
 
+namespace streams_abstract {
 
 already_AddRefed<Promise> WritableStreamAddWriteRequest(
     WritableStream* aStream) {
@@ -738,6 +749,7 @@ already_AddRefed<Promise> WritableStreamAddWriteRequest(
   
   return promise.forget();
 }
+}  
 
 
 void WritableStream::SetUpNative(JSContext* aCx,

@@ -24,6 +24,8 @@
 
 namespace mozilla::dom {
 
+using namespace streams_abstract;
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(WritableStreamDefaultWriter)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WritableStreamDefaultWriter)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal, mStream, mReadyPromise,
@@ -97,6 +99,7 @@ already_AddRefed<Promise> WritableStreamDefaultWriter::Ready() {
   return readyPromise.forget();
 }
 
+namespace streams_abstract {
 
 Nullable<double> WritableStreamDefaultWriterGetDesiredSize(
     WritableStreamDefaultWriter* aWriter) {
@@ -121,6 +124,7 @@ Nullable<double> WritableStreamDefaultWriterGetDesiredSize(
   
   return stream->Controller()->GetDesiredSize();
 }
+}  
 
 
 Nullable<double> WritableStreamDefaultWriter::GetDesiredSize(ErrorResult& aRv) {
@@ -204,6 +208,7 @@ already_AddRefed<Promise> WritableStreamDefaultWriter::Close(JSContext* aCx,
   return WritableStreamDefaultWriterClose(aCx, thisRefPtr, aRv);
 }
 
+namespace streams_abstract {
 
 void WritableStreamDefaultWriterRelease(JSContext* aCx,
                                         WritableStreamDefaultWriter* aWriter) {
@@ -242,6 +247,7 @@ void WritableStreamDefaultWriterRelease(JSContext* aCx,
   
   aWriter->SetStream(nullptr);
 }
+}  
 
 
 void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx) {
@@ -261,6 +267,7 @@ void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx) {
   return WritableStreamDefaultWriterRelease(aCx, thisRefPtr);
 }
 
+namespace streams_abstract {
 
 already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
     JSContext* aCx, WritableStreamDefaultWriter* aWriter,
@@ -332,6 +339,7 @@ already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
   
   return promise.forget();
 }
+}  
 
 
 already_AddRefed<Promise> WritableStreamDefaultWriter::Write(
@@ -346,6 +354,8 @@ already_AddRefed<Promise> WritableStreamDefaultWriter::Write(
   
   return WritableStreamDefaultWriterWrite(aCx, this, aChunk, aRv);
 }
+
+namespace streams_abstract {
 
 
 void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
@@ -529,5 +539,7 @@ already_AddRefed<Promise> WritableStreamDefaultWriterCloseWithErrorPropagation(
   
   return WritableStreamDefaultWriterClose(aCx, aWriter, aRv);
 }
+
+}  
 
 }  
