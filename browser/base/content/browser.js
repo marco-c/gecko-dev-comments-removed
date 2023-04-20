@@ -2808,7 +2808,7 @@ function openLocation(event) {
   }
 
   
-  let win = URILoadingHelper.getTargetWindow(window);
+  let win = getTopWin();
   if (win) {
     win.focus();
     win.openLocation();
@@ -3947,7 +3947,7 @@ const BrowserSearch = {
       window.location.href != AppConstants.BROWSER_CHROME_URL ||
       gURLBar.readOnly
     ) {
-      let win = URILoadingHelper.getTopWin(window, { skipPopups: true });
+      let win = getTopWin({ skipPopups: true });
       if (win) {
         
         win.focus();
