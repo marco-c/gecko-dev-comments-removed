@@ -3422,7 +3422,16 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
+  Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
+
+  
+  
+  
   if (isConstructing) {
+    if (!isSameRealm) {
+      masm.unboxObject(boundTarget, scratch);
+      masm.switchToObjectRealm(scratch, scratch);
+    }
     createThis(argcReg, calleeReg, scratch, flags,
                 true);
   }
@@ -3432,10 +3441,9 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
                              numBoundArgs,  true);
 
   
-  Address boundTarget(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
   masm.unboxObject(boundTarget, calleeReg);
 
-  if (!isSameRealm) {
+  if (!isConstructing && !isSameRealm) {
     masm.switchToObjectRealm(calleeReg, scratch);
   }
 
