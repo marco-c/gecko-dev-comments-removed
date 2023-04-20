@@ -8,6 +8,7 @@
 interface nsIAccessible;
 interface nsIWeakReference;
 interface nsIAccessiblePivot;
+interface nsIAccessibleTextLeafPoint;
 
 webidl Node;
 
@@ -84,6 +85,16 @@ interface nsIAccessibilityService : nsISupports
 
 
   nsIAccessiblePivot createAccessiblePivot(in nsIAccessible aRoot);
+
+  
+
+
+
+
+
+
+  nsIAccessibleTextLeafPoint createTextLeafPoint(in nsIAccessible aAccessible,
+                                                 in long aOffset);
 
   
 
