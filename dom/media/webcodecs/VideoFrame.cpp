@@ -1650,9 +1650,12 @@ already_AddRefed<DOMRectReadOnly> VideoFrame::GetCodedRect() const {
   AssertIsOnOwningThread();
 
   
-  return MakeAndAddRef<DOMRectReadOnly>(
-      mParent, 0.0f, 0.0f, static_cast<double>(mCodedSize.Width()),
-      static_cast<double>(mCodedSize.Height()));
+  
+  return mResource
+             ? MakeAndAddRef<DOMRectReadOnly>(
+                   mParent, 0.0f, 0.0f, static_cast<double>(mCodedSize.Width()),
+                   static_cast<double>(mCodedSize.Height()))
+             : nullptr;
 }
 
 
