@@ -126,6 +126,8 @@ class UnderlyingSourceAlgorithms final : public UnderlyingSourceAlgorithmsBase {
 
 
 
+
+
 class UnderlyingSourceAlgorithmsWrapper
     : public UnderlyingSourceAlgorithmsBase {
   void StartCallback(JSContext*, ReadableStreamController&,
@@ -140,12 +142,17 @@ class UnderlyingSourceAlgorithmsWrapper
       ErrorResult& aRv) final;
 
   virtual already_AddRefed<Promise> PullCallbackImpl(
-      JSContext* aCx, ReadableStreamController& aController,
-      ErrorResult& aRv) = 0;
+      JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {
+    
+    return nullptr;
+  }
 
   virtual already_AddRefed<Promise> CancelCallbackImpl(
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
-      ErrorResult& aRv) = 0;
+      ErrorResult& aRv) {
+    
+    return nullptr;
+  }
 };
 
 }  

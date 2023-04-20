@@ -67,13 +67,4 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
   return returnResult.unwrap().forget();
 }
 
-
-already_AddRefed<Promise>
-WebTransportIncomingStreamsAlgorithms::CancelCallbackImpl(
-    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
-    ErrorResult& aRv) {
-  
-  return nullptr;  
-}
-
 }  
