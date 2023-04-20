@@ -932,6 +932,23 @@ public class PeerConnectionEndToEndTest {
     assertFalse(offeringPC.setBitrate(3, 2, 1));
 
     
+    offeringExpectations.expectNewStatsCallback();
+    offeringPC.getStats(videoSender, offeringExpectations);
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
+
+    
+    RtpReceiver videoReceiver = null;
+    for (RtpReceiver receiver : answeringPC.getReceivers()) {
+      if (receiver.track().kind().equals("video")) {
+        videoReceiver = receiver;
+      }
+    }
+    assertNotNull(videoReceiver);
+    answeringExpectations.expectNewStatsCallback();
+    answeringPC.getStats(videoReceiver, answeringExpectations);
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
+
+    
     shutdownPC(offeringPC, offeringExpectations);
     offeringPC = null;
     shutdownPC(answeringPC, answeringExpectations);
