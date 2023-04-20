@@ -3944,9 +3944,8 @@ class HTMLEditor final : public EditorBase,
 
 
   MOZ_CAN_RUN_SCRIPT Result<bool, nsresult>
-  IsRemovableParentStyleWithNewSpanElement(nsIContent& aContent,
-                                           nsAtom* aHTMLProperty,
-                                           nsAtom* aAttribute) const;
+  IsRemovableParentStyleWithNewSpanElement(
+      nsIContent& aContent, const EditorInlineStyle& aStyle) const;
 
   
 

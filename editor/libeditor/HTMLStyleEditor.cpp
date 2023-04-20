@@ -2426,9 +2426,8 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
           
           
           Result<bool, nsresult> isRemovableParentStyleOrError =
-              IsRemovableParentStyleWithNewSpanElement(
-                  MOZ_KnownLive(content), styleToRemove.mHTMLProperty,
-                  styleToRemove.mAttribute);
+              IsRemovableParentStyleWithNewSpanElement(MOZ_KnownLive(content),
+                                                       styleToRemove);
           if (MOZ_UNLIKELY(isRemovableParentStyleOrError.isErr())) {
             NS_WARNING(
                 "HTMLEditor::IsRemovableParentStyleWithNewSpanElement() "
@@ -2533,9 +2532,8 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
       }
       for (const OwningNonNull<Text>& textNode : leafTextNodes) {
         Result<bool, nsresult> isRemovableParentStyleOrError =
-            IsRemovableParentStyleWithNewSpanElement(
-                MOZ_KnownLive(textNode), styleToRemove.mHTMLProperty,
-                styleToRemove.mAttribute);
+            IsRemovableParentStyleWithNewSpanElement(MOZ_KnownLive(textNode),
+                                                     styleToRemove);
         if (isRemovableParentStyleOrError.isErr()) {
           NS_WARNING(
               "HTMLEditor::IsRemovableParentStyleWithNewSpanElement() "
@@ -2577,22 +2575,23 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
 }
 
 Result<bool, nsresult> HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
-    nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute) const {
+    nsIContent& aContent, const EditorInlineStyle& aStyle) const {
   
-  if (!aHTMLProperty) {
+  if (aStyle.IsStyleToClearAllInlineStyles()) {
     return false;
   }
 
   
   
-  if (!CSSEditUtils::IsCSSInvertible(*aHTMLProperty, aAttribute)) {
+  if (!CSSEditUtils::IsCSSInvertible(*aStyle.mHTMLProperty,
+                                     aStyle.mAttribute)) {
     return false;
   }
 
   
   
-  if (!CSSEditUtils::IsCSSEditableProperty(&aContent, aHTMLProperty,
-                                           aAttribute)) {
+  if (!CSSEditUtils::IsCSSEditableProperty(&aContent, aStyle.mHTMLProperty,
+                                           aStyle.mAttribute)) {
     return false;
   }
 
@@ -2604,7 +2603,8 @@ Result<bool, nsresult> HTMLEditor::IsRemovableParentStyleWithNewSpanElement(
   nsAutoString emptyString;
   Result<bool, nsresult> isComputedCSSEquivalentToHTMLInlineStyleOrError =
       CSSEditUtils::IsComputedCSSEquivalentToHTMLInlineStyleSet(
-          *this, aContent, aHTMLProperty, aAttribute, emptyString);
+          *this, aContent, aStyle.mHTMLProperty, aStyle.mAttribute,
+          emptyString);
   NS_WARNING_ASSERTION(
       isComputedCSSEquivalentToHTMLInlineStyleOrError.isOk(),
       "CSSEditUtils::IsComputedCSSEquivalentToHTMLInlineStyleSet() "
