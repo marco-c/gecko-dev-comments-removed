@@ -315,7 +315,6 @@ bool AppShutdown::IsRestarting() {
 
 #ifdef DEBUG
 static bool sNotifyingShutdownObservers = false;
-static bool sAdvancingShutdownPhase = false;
 
 bool AppShutdown::IsNoOrLegalShutdownTopic(const char* aTopic) {
   if (!XRE_IsParentProcess()) {
@@ -333,12 +332,6 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
     ShutdownPhase aPhase, bool doNotify, const char16_t* aNotificationData,
     const nsCOMPtr<nsISupports>& aNotificationSubject) {
   AssertIsOnMainThread();
-#ifdef DEBUG
-  
-  MOZ_ASSERT(!sAdvancingShutdownPhase);
-  sAdvancingShutdownPhase = true;
-  auto exit = MakeScopeExit([] { sAdvancingShutdownPhase = false; });
-#endif
 
   
   
@@ -347,24 +340,14 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   if (sCurrentShutdownPhase >= aPhase) {
     return;
   }
-
-  nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
-  if (sCurrentShutdownPhase >= ShutdownPhase::AppShutdownConfirmed) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (thread) {
-      NS_ProcessPendingEvents(thread);
-    }
-  }
+  sCurrentShutdownPhase = aPhase;
 
   
-  sCurrentShutdownPhase = aPhase;
+  
+  
+  
+  
+  
 
 #ifndef ANDROID
   if (sTerminator) {
@@ -372,18 +355,9 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   }
 #endif
 
-  AppShutdown::MaybeFastShutdown(aPhase);
-
-  
-  
-  
-  
   mozilla::KillClearOnShutdown(aPhase);
 
-  
-  if (thread) {
-    NS_ProcessPendingEvents(thread);
-  }
+  AppShutdown::MaybeFastShutdown(aPhase);
 
   if (doNotify) {
     const char* aTopic = AppShutdown::GetObserverKey(aPhase);
@@ -397,10 +371,6 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
 #endif
         obsService->NotifyObservers(aNotificationSubject, aTopic,
                                     aNotificationData);
-        
-        if (thread) {
-          NS_ProcessPendingEvents(thread);
-        }
       }
     }
   }

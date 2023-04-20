@@ -585,6 +585,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
     
     
+    NS_ProcessPendingEvents(thread);
     gfxPlatform::ShutdownLayersIPC();
 
     mozilla::AppShutdown::AdvanceShutdownPhase(
@@ -594,11 +595,11 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     
     ThreadEventTarget::XPCOMShutdownThreadsNotificationFinished();
 #endif
+    NS_ProcessPendingEvents(thread);
 
     
     nsTimerImpl::Shutdown();
 
-    
     NS_ProcessPendingEvents(thread);
 
     
@@ -618,6 +619,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     
     
     AppShutdown::AdvanceShutdownPhase(ShutdownPhase::XPCOMShutdownFinal);
+
+    NS_ProcessPendingEvents(thread);
 
     
     
