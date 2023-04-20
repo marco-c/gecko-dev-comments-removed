@@ -210,6 +210,10 @@ double CharsToNumber(const CharT* chars, size_t length);
 extern double LinearStringToNumber(JSLinearString* str);
 
 
+extern bool NumberParseInt(JSContext* cx, JS::HandleString str, int32_t radix,
+                           JS::MutableHandleValue result);
+
+
 [[nodiscard]] MOZ_ALWAYS_INLINE bool ToNumber(JSContext* cx,
                                               JS::MutableHandleValue vp) {
   if (vp.isNumber()) {
