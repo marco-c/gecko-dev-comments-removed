@@ -5,7 +5,6 @@
 
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/framework/test/allocations/reload-test.js",
   this

@@ -4,7 +4,6 @@
 "use strict";
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/inspector/rules/test/head.js",
   this

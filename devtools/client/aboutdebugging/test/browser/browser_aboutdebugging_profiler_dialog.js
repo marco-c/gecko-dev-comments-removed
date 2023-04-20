@@ -3,7 +3,6 @@
 
 "use strict";
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/performance-new/test/browser/helpers.js",
   this

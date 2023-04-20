@@ -10,7 +10,6 @@ const TEST_URI =
 const PARENT_MESSAGE = "Hello from parent";
 const CHILD_MESSAGE = "Hello from child";
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/webconsole/test/browser/shared-head.js",
   this

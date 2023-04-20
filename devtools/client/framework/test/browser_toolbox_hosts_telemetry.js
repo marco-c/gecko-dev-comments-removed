@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 const { Toolbox } = require("resource://devtools/client/framework/toolbox.js");

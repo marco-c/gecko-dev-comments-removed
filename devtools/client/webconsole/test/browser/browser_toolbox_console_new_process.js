@@ -18,7 +18,6 @@ const EXAMPLE_URI =
   "test/browser/test-console.html";
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/framework/browser-toolbox/test/helpers-browser-toolbox.js",
   this

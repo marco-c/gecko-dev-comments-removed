@@ -6,8 +6,6 @@
 
 
 
-
-
 const TEST_URI = "http://example.com/";
 
 add_task(async function testSelectAll() {
