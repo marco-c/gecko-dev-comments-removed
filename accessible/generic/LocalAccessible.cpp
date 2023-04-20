@@ -1755,13 +1755,6 @@ role LocalAccessible::ARIATransformRole(role aRole) const {
     
     if (mParent && mParent->IsCombobox()) {
       return roles::COMBOBOX_LIST;
-    } else {
-      
-      Relation rel = RelationByType(RelationType::NODE_CHILD_OF);
-      LocalAccessible* targetAcc = nullptr;
-      while ((targetAcc = rel.LocalNext())) {
-        if (targetAcc->IsCombobox()) return roles::COMBOBOX_LIST;
-      }
     }
 
   } else if (aRole == roles::OPTION) {
