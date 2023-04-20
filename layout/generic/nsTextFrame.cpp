@@ -197,6 +197,8 @@ NS_DECLARE_FRAME_PROPERTY_RELEASABLE(UninflatedTextRunProperty, gfxTextRun)
 
 NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(FontSizeInflationProperty, float)
 
+NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(HangableWhitespaceProperty, nscoord)
+
 struct nsTextFrame::PaintTextSelectionParams : nsTextFrame::PaintTextParams {
   Point textBaselinePt;
   PropertyProvider* provider = nullptr;
@@ -8148,6 +8150,25 @@ void nsTextFrame::SetFontSizeInflation(float aInflation) {
   SetProperty(FontSizeInflationProperty(), aInflation);
 }
 
+void nsTextFrame::SetHangableISize(nscoord aISize) {
+  MOZ_ASSERT(aISize >= 0, "unexpected negative hangable advance");
+  if (aISize <= 0) {
+    if (mHasHangableWS) {
+      RemoveProperty(HangableWhitespaceProperty());
+    }
+    mHasHangableWS = false;
+    return;
+  }
+  SetProperty(HangableWhitespaceProperty(), aISize);
+  mHasHangableWS = true;
+}
+
+nscoord nsTextFrame::GetHangableISize() const {
+  MOZ_ASSERT(mHasHangableWS == HasProperty(HangableWhitespaceProperty()),
+             "flag/property mismatch!");
+  return mHasHangableWS ? GetProperty(HangableWhitespaceProperty()) : 0;
+}
+
 
 void nsTextFrame::MarkIntrinsicISizesDirty() {
   ClearTextRuns();
@@ -9242,16 +9263,23 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
         textMetrics.mAdvanceWidth -= trimmableWidth;
         trimmableWidth = 0.0;
       }
+      SetHangableISize(0);
     } else if (whitespaceCanHang) {
-      
-      
       
       gfxFloat hang =
           std::min(std::max(0.0, textMetrics.mAdvanceWidth - availWidth),
                    trimmableWidth);
+      SetHangableISize(NSToCoordRound(trimmableWidth - hang));
       textMetrics.mAdvanceWidth -= hang;
       trimmableWidth = 0.0;
+    } else {
+      MOZ_ASSERT_UNREACHABLE("How did trimmableWidth get set?!");
+      SetHangableISize(0);
+      trimmableWidth = 0.0;
     }
+  } else {
+    
+    SetHangableISize(0);
   }
 
   if (!brokeText && lastBreak >= 0) {
