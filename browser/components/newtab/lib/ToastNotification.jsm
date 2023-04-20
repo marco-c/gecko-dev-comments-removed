@@ -10,6 +10,7 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.jsm",
   RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
 });
 
@@ -47,6 +48,27 @@ const ToastNotification = {
 
     
     
+    
+    
+    
+    let { tag } = content;
+
+    let experimentMetadata =
+      lazy.ExperimentAPI.getExperimentMetaData({
+        featureId: "backgroundTaskMessage",
+      }) || {};
+
+    if (
+      experimentMetadata?.active &&
+      experimentMetadata?.slug &&
+      experimentMetadata?.branch?.slug
+    ) {
+      
+      tag = `${experimentMetadata?.slug}:${experimentMetadata?.branch?.slug}`;
+    }
+
+    
+    
     this.sendUserEventTelemetry("IMPRESSION", message, dispatch);
     dispatch({ type: "IMPRESSION", data: message });
 
@@ -55,7 +77,7 @@ const ToastNotification = {
     );
     let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
     alert.init(
-      content.tag,
+      tag,
       content.image_url
         ? Services.urlFormatter.formatURL(content.image_url)
         : content.image_url,

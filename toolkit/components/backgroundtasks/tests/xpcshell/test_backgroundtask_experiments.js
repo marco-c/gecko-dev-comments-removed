@@ -18,6 +18,22 @@ const { ASRouterTargeting } = ChromeUtils.import(
   "resource://activity-stream/lib/ASRouterTargeting.jsm"
 );
 
+
+
+
+const BRANCH_MAP = {
+  "treatment-a": {
+    randomizationId: "d0e95fc3-fb15-4bc4-8151-a89582a56e29",
+    title: "Treatment A",
+    text: "Body A",
+  },
+  "treatment-b": {
+    randomizationId: "90a60347-66cc-4716-9fef-cf49dd992d51",
+    title: "Treatment B",
+    text: "Body B",
+  },
+};
+
 setupProfileService();
 
 let taskProfile;
@@ -123,6 +139,7 @@ add_task(async function test_backgroundtask_caps() {
   let alert = infoMap.showAlert.args[0];
   Assert.equal(alert.title, "Treatment A");
   Assert.equal(alert.text, "Body A");
+  Assert.equal(alert.name, "optin-test-experiment:treatment-a");
 
   
   ({ infoMap } = await doMessage({}));
@@ -136,6 +153,7 @@ add_task(async function test_backgroundtask_caps() {
   alert = infoMap.showAlert.args[0];
   Assert.equal(alert.title, "Treatment A");
   Assert.equal(alert.text, "Body A");
+  Assert.equal(alert.name, "optin-test-experiment:treatment-a");
 
   
   ({ infoMap } = await doMessage({}));
@@ -155,22 +173,6 @@ add_task(async function test_backgroundtask_caps() {
 
 add_task(async function test_backgroundtask_randomization() {
   let experimentFile = do_get_file("experiment.json");
-
-  
-  
-  
-  let BRANCH_MAP = {
-    "treatment-a": {
-      randomizationId: "d0e95fc3-fb15-4bc4-8151-a89582a56e29",
-      title: "Treatment A",
-      text: "Body A",
-    },
-    "treatment-b": {
-      randomizationId: "90a60347-66cc-4716-9fef-cf49dd992d51",
-      title: "Treatment B",
-      text: "Body B",
-    },
-  };
 
   for (let [branchSlug, branchDetails] of Object.entries(BRANCH_MAP)) {
     
@@ -200,6 +202,11 @@ add_task(async function test_backgroundtask_randomization() {
       let alert = infoMap.showAlert.args[0];
       Assert.equal(alert.title, branchDetails.title, "Title is correct");
       Assert.equal(alert.text, branchDetails.text, "Text is correct");
+      Assert.equal(
+        alert.name,
+        `test-experiment:${branchSlug}`,
+        "Name (tag) is correct"
+      );
     }
   }
 });
@@ -313,8 +320,7 @@ add_task(async function test_backgroundtask_Messaging_targeting() {
   
   
 
-  
-  let treatmentARandomizationId = "d0e95fc3-fb15-4bc4-8151-a89582a56e29";
+  let treatmentARandomizationId = BRANCH_MAP["treatment-a"].randomizationId;
 
   let experimentFile = do_get_file("experiment.json");
   let experimentData = await IOUtils.readJSON(experimentFile.path);
@@ -361,6 +367,26 @@ add_task(async function test_backgroundtask_Messaging_targeting() {
       expectedLength,
       `${expectedLength} impressions generated with targeting '${targeting}'`
     );
+
+    if (expectedLength > 0) {
+      
+      let alert = infoMap.showAlert.args[0];
+      Assert.equal(
+        alert.title,
+        BRANCH_MAP["treatment-a"].title,
+        "Title is correct"
+      );
+      Assert.equal(
+        alert.text,
+        BRANCH_MAP["treatment-a"].text,
+        "Text is correct"
+      );
+      Assert.equal(
+        alert.name,
+        `test-experiment:treatment-a`,
+        "Name (tag) is correct"
+      );
+    }
   }
 });
 
