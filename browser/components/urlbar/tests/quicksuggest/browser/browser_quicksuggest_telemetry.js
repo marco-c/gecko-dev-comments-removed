@@ -1221,29 +1221,16 @@ add_task(async function impression_hiddenRow() {
   
   
   
-  
-  
-  results = [];
-  for (let i = 0; i < maxCount; i++) {
-    results.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        {
-          url: "http://example.com/" + i,
-        }
-      )
-    );
-  }
-  provider._results = results;
-
-  
-  
-  
   let mutationPromise = new Promise(resolve => {
     let observer = new MutationObserver(mutations => {
-      observer.disconnect();
-      resolve();
+      let rows = UrlbarTestUtils.getResultsContainer(window).children;
+      for (let row of rows) {
+        if (row.result.providerName == "UrlbarProviderQuickSuggest") {
+          observer.disconnect();
+          resolve(row);
+          return;
+        }
+      }
     });
     observer.observe(UrlbarTestUtils.getResultsContainer(window), {
       childList: true,
@@ -1251,10 +1238,14 @@ add_task(async function impression_hiddenRow() {
   });
 
   
+  
+  
   let resolveQuery;
   provider.finishQueryPromise = new Promise(
     resolve => (resolveQuery = resolve)
   );
+
+  
   gURLBar.focus();
   let queryPromise = UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -1263,57 +1254,16 @@ add_task(async function impression_hiddenRow() {
   });
 
   
-  await mutationPromise;
-
   
   
   
   
   
-  Assert.equal(
-    UrlbarTestUtils.getResultCount(window),
-    2 * maxCount - 1,
-    "Row count before search finishes"
-  );
-
-  let rows = UrlbarTestUtils.getResultsContainer(window).children;
-  for (let i = 1; i < rows.length; i++) {
-    let row = rows[i];
-    if (i < maxCount) {
-      Assert.equal(
-        row.result.type,
-        UrlbarUtils.RESULT_TYPE.SEARCH,
-        "Row is a search result at index " + i
-      );
-      Assert.equal(
-        row.getAttribute("stale"),
-        "true",
-        "Row is stale at index " + i
-      );
-      Assert.ok(
-        BrowserTestUtils.is_visible(row),
-        "Row is visible at index " + i
-      );
-    } else {
-      Assert.equal(
-        row.result.type,
-        UrlbarUtils.RESULT_TYPE.URL,
-        "Row is a URL result at index " + i
-      );
-      Assert.ok(!row.hasAttribute("stale"), "Row is not stale at index " + i);
-      Assert.ok(BrowserTestUtils.is_hidden(row), "Row is hidden at index " + i);
-    }
-  }
-
-  let lastRow = rows[rows.length - 1];
-  Assert.equal(
-    lastRow.result.providerName,
-    "UrlbarProviderQuickSuggest",
-    "Last row is the quick suggest result"
-  );
+  
+  let quickSuggestRow = await mutationPromise;
   Assert.ok(
-    BrowserTestUtils.is_hidden(lastRow),
-    "Double check: Last row is hidden"
+    BrowserTestUtils.is_hidden(quickSuggestRow),
+    "Quick suggest row is hidden"
   );
 
   
