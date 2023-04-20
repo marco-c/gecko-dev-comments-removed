@@ -230,11 +230,6 @@ void ModuleRtpRtcpImpl2::SetMid(absl::string_view mid) {
   
 }
 
-void ModuleRtpRtcpImpl2::SetCsrcs(const std::vector<uint32_t>& csrcs) {
-  rtcp_sender_.SetCsrcs(csrcs);
-  rtp_sender_->packet_generator.SetCsrcs(csrcs);
-}
-
 
 
 RTCPSender::FeedbackState ModuleRtpRtcpImpl2::GetFeedbackState() {

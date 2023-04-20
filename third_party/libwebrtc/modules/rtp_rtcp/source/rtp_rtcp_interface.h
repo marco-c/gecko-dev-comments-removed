@@ -263,10 +263,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
 
   
   
-  virtual void SetCsrcs(const std::vector<uint32_t>& csrcs) = 0;
-
-  
-  
   virtual void SetRtxSendStatus(int modes) = 0;
 
   
