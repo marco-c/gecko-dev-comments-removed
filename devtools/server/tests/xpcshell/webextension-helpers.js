@@ -27,21 +27,6 @@ const {
 
 
 
-
-async function setupExtensionDebugging(id) {
-  const commands = await CommandsFactory.forAddon(id);
-  const target = await commands.descriptorFront.getTarget();
-  return { front: commands.descriptorFront, target };
-}
-exports.setupExtensionDebugging = setupExtensionDebugging;
-
-
-
-
-
-
-
-
 async function startupExtension(extConfig) {
   const extension = ExtensionTestUtils.loadExtension(extConfig);
 
@@ -60,13 +45,24 @@ exports.startupExtension = startupExtension;
 
 
 async function openAddonStoragePanel(id) {
-  const { target } = await setupExtensionDebugging(id);
+  const commands = await CommandsFactory.forAddon(id);
+  await commands.targetCommand.startListening();
 
-  const storageFront = await target.getFront("storage");
-  const stores = await storageFront.listStores();
-  const extensionStorage = stores.extensionStorage || null;
+  
+  
+  
+  const extensionStorage = await new Promise(resolve => {
+    commands.resourceCommand.watchResources(
+      [commands.resourceCommand.TYPES.EXTENSION_STORAGE],
+      {
+        onAvailable(resources) {
+          resolve(resources[0]);
+        },
+      }
+    );
+  });
 
-  return { target, extensionStorage, storageFront };
+  return { commands, extensionStorage };
 }
 exports.openAddonStoragePanel = openAddonStoragePanel;
 
@@ -172,9 +168,9 @@ exports.extensionScriptWithMessageListener = extensionScriptWithMessageListener;
 
 
 
-async function shutdown(extension, target) {
-  if (target) {
-    await target.destroy();
+async function shutdown(extension, commands) {
+  if (commands) {
+    await commands.destroy();
   }
   await extension.unload();
 }

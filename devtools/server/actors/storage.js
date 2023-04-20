@@ -1488,14 +1488,6 @@ StorageActors.createActor(
 );
 
 const extensionStorageHelpers = {
-  unresolvedPromises: new Map(),
-  
-  
-  onChangedParentListeners: new Map(),
-  
-  
-  
-  onChangedChildListeners: new Set(),
   
 
 
@@ -1610,172 +1602,6 @@ const extensionStorageHelpers = {
       },
     },
   },
-
-  
-  setPpmm(ppmm) {
-    this.ppmm = ppmm;
-  },
-
-  
-  
-  backToChild(...args) {
-    Services.mm.broadcastAsyncMessage(
-      "debug:storage-extensionStorage-request-child",
-      {
-        method: "backToChild",
-        args,
-      }
-    );
-  },
-
-  
-  
-  fireStorageOnChanged({ addonId, changes }) {
-    Services.mm.broadcastAsyncMessage(
-      "debug:storage-extensionStorage-request-child",
-      {
-        addonId,
-        changes,
-        method: "storageOnChanged",
-      }
-    );
-  },
-
-  
-  
-  
-  subscribeOnChangedListenerInParent(addonId) {
-    if (!this.onChangedParentListeners.has(addonId)) {
-      const onChangedListener = changes => {
-        this.fireStorageOnChanged({ addonId, changes });
-      };
-      ExtensionStorageIDB.addOnChangedListener(addonId, onChangedListener);
-      this.onChangedParentListeners.set(addonId, onChangedListener);
-    }
-  },
-
-  
-  
-  
-  async setupStorageInParent(addonId) {
-    const { extension } = WebExtensionPolicy.getByID(addonId);
-    try {
-      
-      
-      
-      
-      
-      await extension.apiManager.asyncGetAPI("storage", extension);
-    } catch (err) {
-      console.error(err);
-    }
-    const parentResult = await ExtensionStorageIDB.selectBackend({ extension });
-    const result = {
-      ...parentResult,
-      
-      storagePrincipal: parentResult.storagePrincipal.deserialize(this, true),
-    };
-
-    this.subscribeOnChangedListenerInParent(addonId);
-    return this.backToChild("setupStorageInParent", result);
-  },
-
-  onDisconnected() {
-    for (const [addonId, listener] of this.onChangedParentListeners) {
-      ExtensionStorageIDB.removeOnChangedListener(addonId, listener);
-    }
-    this.onChangedParentListeners.clear();
-  },
-
-  
-  
-  async handleChildRequest(msg) {
-    switch (msg.json.method) {
-      case "setupStorageInParent":
-        const addonId = msg.data.args[0];
-        const result = await extensionStorageHelpers.setupStorageInParent(
-          addonId
-        );
-        return result;
-      default:
-        console.error("ERR_DIRECTOR_PARENT_UNKNOWN_METHOD", msg.json.method);
-        throw new Error("ERR_DIRECTOR_PARENT_UNKNOWN_METHOD");
-    }
-  },
-
-  
-  
-  handleParentRequest(msg) {
-    switch (msg.json.method) {
-      case "backToChild": {
-        const [func, rv] = msg.json.args;
-        const resolve = this.unresolvedPromises.get(func);
-        if (resolve) {
-          this.unresolvedPromises.delete(func);
-          resolve(rv);
-        }
-        break;
-      }
-      case "storageOnChanged": {
-        const { addonId, changes } = msg.data;
-        for (const listener of this.onChangedChildListeners) {
-          try {
-            listener({ addonId, changes });
-          } catch (err) {
-            console.error(err);
-            
-          }
-        }
-        break;
-      }
-      default:
-        console.error("ERR_DIRECTOR_CLIENT_UNKNOWN_METHOD", msg.json.method);
-        throw new Error("ERR_DIRECTOR_CLIENT_UNKNOWN_METHOD");
-    }
-  },
-
-  callParentProcessAsync(methodName, ...args) {
-    const promise = new Promise(resolve => {
-      this.unresolvedPromises.set(methodName, resolve);
-    });
-
-    this.ppmm.sendAsyncMessage(
-      "debug:storage-extensionStorage-request-parent",
-      {
-        method: methodName,
-        args,
-      }
-    );
-
-    return promise;
-  },
-};
-
-
-
-
-
-
-exports.setupParentProcessForExtensionStorage = function({ mm, prefix }) {
-  
-  mm.addMessageListener(
-    "debug:storage-extensionStorage-request-parent",
-    extensionStorageHelpers.handleChildRequest
-  );
-
-  return {
-    onDisconnected: () => {
-      
-      
-      
-      
-      mm.removeMessageListener(
-        "debug:storage-extensionStorage-request-parent",
-        extensionStorageHelpers.handleChildRequest
-      );
-      extensionStorageHelpers.onDisconnected();
-    },
-  };
 };
 
 
@@ -1815,8 +1641,6 @@ StorageActors.createActor(
 
       this.onStorageChange = this.onStorageChange.bind(this);
 
-      this.setupChildProcess();
-
       this.onWindowReady = this.onWindowReady.bind(this);
       this.onWindowDestroyed = this.onWindowDestroyed.bind(this);
       this.storageActor.on("window-ready", this.onWindowReady);
@@ -1828,7 +1652,8 @@ StorageActors.createActor(
     },
 
     destroy() {
-      extensionStorageHelpers.onChangedChildListeners.delete(
+      ExtensionStorageIDB.removeOnChangedListener(
+        this.addonId,
         this.onStorageChange
       );
 
@@ -1841,42 +1666,12 @@ StorageActors.createActor(
       this.storageActor = null;
     },
 
-    setupChildProcess() {
-      const ppmm = this.conn.parentMessageManager;
-      extensionStorageHelpers.setPpmm(ppmm);
-
-      
-      this.conn.setupInParent({
-        module: "devtools/server/actors/storage",
-        setupParent: "setupParentProcessForExtensionStorage",
-      });
-
-      extensionStorageHelpers.onChangedChildListeners.add(this.onStorageChange);
-      this.setupStorageInParent = extensionStorageHelpers.callParentProcessAsync.bind(
-        extensionStorageHelpers,
-        "setupStorageInParent"
-      );
-
-      
-      
-      ppmm.addMessageListener(
-        "debug:storage-extensionStorage-request-child",
-        extensionStorageHelpers.handleParentRequest.bind(
-          extensionStorageHelpers
-        )
-      );
-    },
-
     
 
 
 
 
-    onStorageChange({ addonId, changes }) {
-      if (addonId !== this.addonId) {
-        return;
-      }
-
+    onStorageChange(changes) {
       const host = this.extensionHostURL;
       const storeMap = this.hostVsStores.get(host);
 
@@ -1922,8 +1717,30 @@ StorageActors.createActor(
 
     async preListStores() {
       
-      if (!this.addonId || !WebExtensionPolicy.getByID(this.addonId)) {
+      if (!this.addonId || !this.getExtensionPolicy()) {
         return;
+      }
+
+      
+      
+      
+      ExtensionStorageIDB.addOnChangedListener(
+        this.addonId,
+        this.onStorageChange
+      );
+      try {
+        
+        
+        
+        
+        
+        const { extension } = WebExtensionPolicy.getByID(this.addonId);
+        await extension.apiManager.asyncGetAPI("storage", extension);
+      } catch (e) {
+        console.error(
+          "Exception while trying to initialize webext storage API",
+          e
+        );
       }
 
       await this.populateStoresForHost(this.extensionHostURL);
@@ -1956,7 +1773,7 @@ StorageActors.createActor(
       const storeMap = new Map();
       this.hostVsStores.set(host, storeMap);
 
-      const storagePrincipal = await this.getStoragePrincipal(extension.id);
+      const storagePrincipal = await this.getStoragePrincipal();
 
       if (!storagePrincipal) {
         
@@ -1982,17 +1799,20 @@ StorageActors.createActor(
       }
     },
 
-    async getStoragePrincipal(addonId) {
+    async getStoragePrincipal() {
+      const { extension } = this.getExtensionPolicy();
       const {
         backendEnabled,
         storagePrincipal,
-      } = await this.setupStorageInParent(addonId);
+      } = await ExtensionStorageIDB.selectBackend({ extension });
 
       if (!backendEnabled) {
         
         return null;
       }
-      return storagePrincipal;
+
+      
+      return storagePrincipal.deserialize(this, true);
     },
 
     getValuesForHost(host, name) {
