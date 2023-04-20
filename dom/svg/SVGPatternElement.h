@@ -40,8 +40,6 @@ class SVGPatternElement final : public SVGPatternElementBase {
 
  public:
   
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* name) const override;
-
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   

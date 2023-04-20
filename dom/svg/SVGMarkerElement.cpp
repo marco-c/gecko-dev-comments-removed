@@ -121,20 +121,6 @@ void SVGMarkerElement::SetOrientToAngle(DOMSVGAngle& angle, ErrorResult& rv) {
 
 
 
-NS_IMETHODIMP_(bool)
-SVGMarkerElement::IsAttributeMapped(const nsAtom* name) const {
-  static const MappedAttributeEntry* const map[] = {
-      sColorMap,    sFEFloodMap,         sFiltersMap, sGradientStopMap,
-      sGraphicsMap, sLightingEffectsMap, sMarkersMap, sTextContentElementsMap,
-      sViewportsMap};
-
-  return FindAttributeDependence(name, map) ||
-         SVGMarkerElementBase::IsAttributeMapped(name);
-}
-
-
-
-
 void SVGMarkerElement::SetParentCoordCtxProvider(SVGViewportElement* aContext) {
   mCoordCtx = aContext;
   mViewBoxToViewportTransform = nullptr;

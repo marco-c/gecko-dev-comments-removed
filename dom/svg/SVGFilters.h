@@ -83,9 +83,6 @@ class SVGFE : public SVGFEBase {
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
-
-  
   nsresult Clone(mozilla::dom::NodeInfo*, nsINode** aResult) const override = 0;
 
   bool HasValidDimensions() const override;
@@ -190,7 +187,6 @@ class SVGFELightingElement : public SVGFELightingElementBase {
     return mStringAttributes[RESULT];
   }
   void GetSourceImageNames(nsTArray<SVGStringInfo>& aSources) override;
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
  protected:
   bool OperatesOnSRGB(int32_t aInputIndex, bool aInputIsAlreadySRGB) override {

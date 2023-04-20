@@ -13,14 +13,6 @@
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGTests.h"
 
-
-#define MOZILLA_SVGANIMATIONELEMENT_IID              \
-  {                                                  \
-    0xf80ef85f, 0xef48, 0x401a, {                    \
-      0x8a, 0xed, 0x16, 0x52, 0x31, 0x23, 0x26, 0xb0 \
-    }                                                \
-  }
-
 namespace mozilla::dom {
 
 using SVGAnimationElementBase = SVGElement;
@@ -36,10 +28,12 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
   
   NS_DECL_ISUPPORTS_INHERITED
 
-  NS_DECLARE_STATIC_IID_ACCESSOR(MOZILLA_SVGANIMATIONELEMENT_IID)
+  NS_IMPL_FROMNODE_HELPER(SVGAnimationElement, IsSVGAnimationElement())
+
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SVGAnimationElement,
                                            SVGAnimationElementBase)
 
+  bool IsSVGAnimationElement() const final { return true; }
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override = 0;
 
   
@@ -119,9 +113,6 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
   HrefTargetTracker mHrefTarget;
   mozilla::SMILTimedElement mTimedElement;
 };
-
-NS_DEFINE_STATIC_IID_ACCESSOR(SVGAnimationElement,
-                              MOZILLA_SVGANIMATIONELEMENT_IID)
 
 }  
 
