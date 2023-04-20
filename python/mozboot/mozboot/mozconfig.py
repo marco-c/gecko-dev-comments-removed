@@ -2,14 +2,10 @@
 
 
 
-from __future__ import absolute_import
-
 import filecmp
 import os
-
 from pathlib import Path
 from typing import Union
-
 
 MOZ_MYCONFIG_ERROR = """
 The MOZ_MYCONFIG environment variable to define the location of mozconfigs

@@ -2,26 +2,13 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import hashlib
 import os
-import sys
-
 from pathlib import Path
+from urllib.request import urlopen
 
 from mach.site import PythonVirtualenv
 from mach.util import get_state_dir
-
-
-
-
-if sys.version_info < (3,):
-    from urllib2 import urlopen
-
-    input = raw_input  
-else:
-    from urllib.request import urlopen
 
 MINIMUM_RUST_VERSION = "1.63.0"
 

@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import errno
 import json
 import os
@@ -11,15 +9,16 @@ import stat
 import subprocess
 import sys
 import time
-import requests
-from typing import Optional, Union
 from pathlib import Path
-from tqdm import tqdm
+from typing import Optional, Union
+
+import requests
 
 
 
 
 from mozboot.bootstrap import MOZCONFIG_SUGGESTION_TEMPLATE
+from tqdm import tqdm
 
 NDK_VERSION = "r21d"
 CMDLINE_TOOLS_VERSION_STRING = "7.0"

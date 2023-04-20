@@ -2,11 +2,8 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import platform as platform_mod
 import sys
-
 
 
 
@@ -123,6 +120,7 @@ def rustup_latest_version():
 
 def http_download_and_hash(url):
     import hashlib
+
     import requests
 
     h = hashlib.sha256()

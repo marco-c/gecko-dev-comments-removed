@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 from mozboot.base import MERCURIAL_INSTALL_PROMPT, BaseBootstrapper
 from mozboot.linux_common import LinuxBootstrapper
 

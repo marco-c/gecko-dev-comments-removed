@@ -2,18 +2,10 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import sys
 
 from mozboot.base import BaseBootstrapper
 from mozboot.linux_common import LinuxBootstrapper
-
-
-
-
-if sys.version_info < (3,):
-    input = raw_input  
 
 
 class ArchlinuxBootstrapper(LinuxBootstrapper, BaseBootstrapper):
