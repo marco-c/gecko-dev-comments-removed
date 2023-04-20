@@ -91,6 +91,7 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
       defaultEncoding.mScaleResolutionDownBy.Construct(1.0f);
     }
     Unused << mParameters.mEncodings.AppendElement(defaultEncoding, fallible);
+    UpdateRestorableEncodings(mParameters.mEncodings);
     MaybeGetJsepRids();
   }
 }
@@ -549,6 +550,7 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
         mLastReturnedParameters = Nothing();
         
         mParameters = paramsCopy;
+        UpdateRestorableEncodings(mParameters.mEncodings);
         
         
         
@@ -737,6 +739,23 @@ void RTCRtpSender::ApplyJsEncodingToConduitEncoding(
   }
 }
 
+void RTCRtpSender::UpdateRestorableEncodings(
+    const Sequence<RTCRtpEncodingParameters>& aEncodings) {
+  MOZ_ASSERT(aEncodings.Length());
+
+  if (GetJsepTransceiver().mSendTrack.GetNegotiatedDetails()) {
+    
+    
+    mUnicastEncoding.reset();
+  } else if (mParameters.mEncodings.Length() == 1 &&
+             !mParameters.mEncodings[0].mRid.WasPassed()) {
+    
+    
+    
+    mUnicastEncoding = Some(mParameters.mEncodings[0]);
+  }
+}
+
 Sequence<RTCRtpEncodingParameters> RTCRtpSender::ToSendEncodings(
     const std::vector<std::string>& aRids) const {
   MOZ_ASSERT(!aRids.empty());
@@ -772,6 +791,7 @@ void RTCRtpSender::MaybeGetJsepRids() {
 
   auto jsepRids = GetJsepTransceiver().mSendTrack.GetRids();
   if (!jsepRids.empty()) {
+    UpdateRestorableEncodings(mParameters.mEncodings);
     if (jsepRids.size() != 1 || !jsepRids[0].empty()) {
       
       mParameters.mEncodings = ToSendEncodings(jsepRids);
@@ -784,15 +804,15 @@ void RTCRtpSender::MaybeGetJsepRids() {
 Sequence<RTCRtpEncodingParameters> RTCRtpSender::GetMatchingEncodings(
     const std::vector<std::string>& aRids) const {
   Sequence<RTCRtpEncodingParameters> result;
-  if (!mParameters.mEncodings.Length()) {
-    MOZ_ASSERT(false);
-    return result;
-  }
 
   if (aRids.empty() || (aRids.size() == 1 && aRids[0].empty())) {
     
     
-    Unused << result.AppendElement(mParameters.mEncodings[0], fallible);
+    if (mUnicastEncoding.isSome()) {
+      Unused << result.AppendElement(*mUnicastEncoding, fallible);
+    } else {
+      Unused << result.AppendElement(mParameters.mEncodings[0], fallible);
+    }
     return result;
   }
 
