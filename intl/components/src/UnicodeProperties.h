@@ -5,6 +5,7 @@
 #define intl_components_UnicodeProperties_h_
 
 #include "mozilla/intl/BidiClass.h"
+#include "mozilla/intl/GeneralCategory.h"
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 #include "mozilla/Vector.h"
@@ -34,7 +35,9 @@ class UnicodeProperties final {
   
 
 
-  static inline uint32_t CharType(uint32_t aCh) { return u_charType(aCh); }
+  static inline GeneralCategory CharType(uint32_t aCh) {
+    return GeneralCategory(u_charType(aCh));
+  }
 
   
 
@@ -222,7 +225,8 @@ class UnicodeProperties final {
 
   static inline bool IsMathOrMusicSymbol(uint32_t aCh) {
     
-    return CharType(aCh) == U_MATH_SYMBOL || CharType(aCh) == U_OTHER_SYMBOL;
+    return CharType(aCh) == GeneralCategory::Math_Symbol ||
+           CharType(aCh) == GeneralCategory::Other_Symbol;
   }
 
   static inline Script GetScriptCode(uint32_t aCh) {

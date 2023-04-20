@@ -64,8 +64,11 @@ const uint32_t kEmojiSkinToneLast = 0x1f3ff;
 
 extern const hb_unicode_general_category_t sICUtoHBcategory[];
 
+
+
+
 inline uint8_t GetGeneralCategory(uint32_t aCh) {
-  return sICUtoHBcategory[intl::UnicodeProperties::CharType(aCh)];
+  return sICUtoHBcategory[unsigned(intl::UnicodeProperties::CharType(aCh))];
 }
 
 inline int8_t GetNumericValue(uint32_t aCh) {
