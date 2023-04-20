@@ -35,13 +35,6 @@ typedef uint64_t limb_t;
 #define fe_copy(d, s) memcpy(d, s, sizeof(fe_t))
 #define fe_set_zero(d) memset(d, 0, sizeof(fe_t))
 
-#define fiat_secp521r1_carry_add(c, a, b) \
-    fiat_secp521r1_add(c, a, b);          \
-    fiat_secp521r1_carry(c, c)
-#define fiat_secp521r1_carry_sub(c, a, b) \
-    fiat_secp521r1_sub(c, a, b);          \
-    fiat_secp521r1_carry(c, c)
-
 
 typedef struct {
     fe_t X;
@@ -98,8 +91,24 @@ typedef struct {
 #include <stdint.h>
 typedef unsigned char fiat_secp521r1_uint1;
 typedef signed char fiat_secp521r1_int1;
-typedef signed __int128 fiat_secp521r1_int128;
-typedef unsigned __int128 fiat_secp521r1_uint128;
+#ifdef __GNUC__
+#define FIAT_SECP521R1_FIAT_EXTENSION __extension__
+#define FIAT_SECP521R1_FIAT_INLINE __inline__
+#else
+#define FIAT_SECP521R1_FIAT_EXTENSION
+#define FIAT_SECP521R1_FIAT_INLINE
+#endif
+
+FIAT_SECP521R1_FIAT_EXTENSION typedef signed __int128 fiat_secp521r1_int128;
+FIAT_SECP521R1_FIAT_EXTENSION typedef unsigned __int128 fiat_secp521r1_uint128;
+
+
+
+typedef uint64_t fiat_secp521r1_loose_field_element[9];
+
+
+
+typedef uint64_t fiat_secp521r1_tight_field_element[9];
 
 #if (-1 & 3) != 3
 #error "This code only works on a two's complement system"
@@ -117,6 +126,7 @@ fiat_secp521r1_value_barrier_u64(uint64_t a)
 #else
 #define fiat_secp521r1_value_barrier_u64(x) (x)
 #endif
+
 
 
 
@@ -162,6 +172,7 @@ fiat_secp521r1_addcarryx_u58(uint64_t *out1,
 
 
 
+
 static void
 fiat_secp521r1_subborrowx_u58(uint64_t *out1,
                               fiat_secp521r1_uint1 *out2,
@@ -177,6 +188,7 @@ fiat_secp521r1_subborrowx_u58(uint64_t *out1,
     *out1 = x3;
     *out2 = (fiat_secp521r1_uint1)(0x0 - x2);
 }
+
 
 
 
@@ -222,6 +234,7 @@ fiat_secp521r1_addcarryx_u57(uint64_t *out1,
 
 
 
+
 static void
 fiat_secp521r1_subborrowx_u57(uint64_t *out1,
                               fiat_secp521r1_uint1 *out2,
@@ -237,6 +250,7 @@ fiat_secp521r1_subborrowx_u57(uint64_t *out1,
     *out1 = x3;
     *out2 = (fiat_secp521r1_uint1)(0x0 - x2);
 }
+
 
 
 
@@ -272,13 +286,11 @@ fiat_secp521r1_cmovznz_u64(uint64_t *out1,
 
 
 
-
-
-
-
 static void
-fiat_secp521r1_carry_mul(uint64_t out1[9], const uint64_t arg1[9],
-                         const uint64_t arg2[9])
+fiat_secp521r1_carry_mul(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_loose_field_element arg1,
+    const fiat_secp521r1_loose_field_element arg2)
 {
     fiat_secp521r1_uint128 x1;
     fiat_secp521r1_uint128 x2;
@@ -544,12 +556,10 @@ fiat_secp521r1_carry_mul(uint64_t out1[9], const uint64_t arg1[9],
 
 
 
-
-
-
 static void
-fiat_secp521r1_carry_square(uint64_t out1[9],
-                            const uint64_t arg1[9])
+fiat_secp521r1_carry_square(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_loose_field_element arg1)
 {
     uint64_t x1;
     uint64_t x2;
@@ -775,11 +785,11 @@ fiat_secp521r1_carry_square(uint64_t out1[9],
 
 
 
-
-
-
 static void
-fiat_secp521r1_carry(uint64_t out1[9], const uint64_t arg1[9])
+fiat_secp521r1_carry_add(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_tight_field_element arg1,
+    const fiat_secp521r1_tight_field_element arg2)
 {
     uint64_t x1;
     uint64_t x2;
@@ -801,15 +811,15 @@ fiat_secp521r1_carry(uint64_t out1[9], const uint64_t arg1[9])
     uint64_t x18;
     uint64_t x19;
     uint64_t x20;
-    x1 = (arg1[0]);
-    x2 = ((x1 >> 58) + (arg1[1]));
-    x3 = ((x2 >> 58) + (arg1[2]));
-    x4 = ((x3 >> 58) + (arg1[3]));
-    x5 = ((x4 >> 58) + (arg1[4]));
-    x6 = ((x5 >> 58) + (arg1[5]));
-    x7 = ((x6 >> 58) + (arg1[6]));
-    x8 = ((x7 >> 58) + (arg1[7]));
-    x9 = ((x8 >> 58) + (arg1[8]));
+    x1 = ((arg1[0]) + (arg2[0]));
+    x2 = ((x1 >> 58) + ((arg1[1]) + (arg2[1])));
+    x3 = ((x2 >> 58) + ((arg1[2]) + (arg2[2])));
+    x4 = ((x3 >> 58) + ((arg1[3]) + (arg2[3])));
+    x5 = ((x4 >> 58) + ((arg1[4]) + (arg2[4])));
+    x6 = ((x5 >> 58) + ((arg1[5]) + (arg2[5])));
+    x7 = ((x6 >> 58) + ((arg1[6]) + (arg2[6])));
+    x8 = ((x7 >> 58) + ((arg1[7]) + (arg2[7])));
+    x9 = ((x8 >> 58) + ((arg1[8]) + (arg2[8])));
     x10 = ((x1 & UINT64_C(0x3ffffffffffffff)) + (x9 >> 57));
     x11 = ((fiat_secp521r1_uint1)(x10 >> 58) +
            (x2 & UINT64_C(0x3ffffffffffffff)));
@@ -841,13 +851,11 @@ fiat_secp521r1_carry(uint64_t out1[9], const uint64_t arg1[9])
 
 
 
-
-
-
-
 static void
-fiat_secp521r1_add(uint64_t out1[9], const uint64_t arg1[9],
-                   const uint64_t arg2[9])
+fiat_secp521r1_carry_sub(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_tight_field_element arg1,
+    const fiat_secp521r1_tight_field_element arg2)
 {
     uint64_t x1;
     uint64_t x2;
@@ -858,68 +866,48 @@ fiat_secp521r1_add(uint64_t out1[9], const uint64_t arg1[9],
     uint64_t x7;
     uint64_t x8;
     uint64_t x9;
-    x1 = ((arg1[0]) + (arg2[0]));
-    x2 = ((arg1[1]) + (arg2[1]));
-    x3 = ((arg1[2]) + (arg2[2]));
-    x4 = ((arg1[3]) + (arg2[3]));
-    x5 = ((arg1[4]) + (arg2[4]));
-    x6 = ((arg1[5]) + (arg2[5]));
-    x7 = ((arg1[6]) + (arg2[6]));
-    x8 = ((arg1[7]) + (arg2[7]));
-    x9 = ((arg1[8]) + (arg2[8]));
-    out1[0] = x1;
-    out1[1] = x2;
-    out1[2] = x3;
-    out1[3] = x4;
-    out1[4] = x5;
-    out1[5] = x6;
-    out1[6] = x7;
-    out1[7] = x8;
-    out1[8] = x9;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-static void
-fiat_secp521r1_sub(uint64_t out1[9], const uint64_t arg1[9],
-                   const uint64_t arg2[9])
-{
-    uint64_t x1;
-    uint64_t x2;
-    uint64_t x3;
-    uint64_t x4;
-    uint64_t x5;
-    uint64_t x6;
-    uint64_t x7;
-    uint64_t x8;
-    uint64_t x9;
+    uint64_t x10;
+    uint64_t x11;
+    uint64_t x12;
+    uint64_t x13;
+    uint64_t x14;
+    uint64_t x15;
+    uint64_t x16;
+    uint64_t x17;
+    uint64_t x18;
+    uint64_t x19;
+    uint64_t x20;
     x1 = ((UINT64_C(0x7fffffffffffffe) + (arg1[0])) - (arg2[0]));
-    x2 = ((UINT64_C(0x7fffffffffffffe) + (arg1[1])) - (arg2[1]));
-    x3 = ((UINT64_C(0x7fffffffffffffe) + (arg1[2])) - (arg2[2]));
-    x4 = ((UINT64_C(0x7fffffffffffffe) + (arg1[3])) - (arg2[3]));
-    x5 = ((UINT64_C(0x7fffffffffffffe) + (arg1[4])) - (arg2[4]));
-    x6 = ((UINT64_C(0x7fffffffffffffe) + (arg1[5])) - (arg2[5]));
-    x7 = ((UINT64_C(0x7fffffffffffffe) + (arg1[6])) - (arg2[6]));
-    x8 = ((UINT64_C(0x7fffffffffffffe) + (arg1[7])) - (arg2[7]));
-    x9 = ((UINT64_C(0x3fffffffffffffe) + (arg1[8])) - (arg2[8]));
-    out1[0] = x1;
-    out1[1] = x2;
-    out1[2] = x3;
-    out1[3] = x4;
-    out1[4] = x5;
-    out1[5] = x6;
-    out1[6] = x7;
-    out1[7] = x8;
-    out1[8] = x9;
+    x2 = ((x1 >> 58) + ((UINT64_C(0x7fffffffffffffe) + (arg1[1])) - (arg2[1])));
+    x3 = ((x2 >> 58) + ((UINT64_C(0x7fffffffffffffe) + (arg1[2])) - (arg2[2])));
+    x4 = ((x3 >> 58) + ((UINT64_C(0x7fffffffffffffe) + (arg1[3])) - (arg2[3])));
+    x5 = ((x4 >> 58) + ((UINT64_C(0x7fffffffffffffe) + (arg1[4])) - (arg2[4])));
+    x6 = ((x5 >> 58) + ((UINT64_C(0x7fffffffffffffe) + (arg1[5])) - (arg2[5])));
+    x7 = ((x6 >> 58) + ((UINT64_C(0x7fffffffffffffe) + (arg1[6])) - (arg2[6])));
+    x8 = ((x7 >> 58) + ((UINT64_C(0x7fffffffffffffe) + (arg1[7])) - (arg2[7])));
+    x9 = ((x8 >> 58) + ((UINT64_C(0x3fffffffffffffe) + (arg1[8])) - (arg2[8])));
+    x10 = ((x1 & UINT64_C(0x3ffffffffffffff)) + (x9 >> 57));
+    x11 = ((fiat_secp521r1_uint1)(x10 >> 58) +
+           (x2 & UINT64_C(0x3ffffffffffffff)));
+    x12 = (x10 & UINT64_C(0x3ffffffffffffff));
+    x13 = (x11 & UINT64_C(0x3ffffffffffffff));
+    x14 = ((fiat_secp521r1_uint1)(x11 >> 58) +
+           (x3 & UINT64_C(0x3ffffffffffffff)));
+    x15 = (x4 & UINT64_C(0x3ffffffffffffff));
+    x16 = (x5 & UINT64_C(0x3ffffffffffffff));
+    x17 = (x6 & UINT64_C(0x3ffffffffffffff));
+    x18 = (x7 & UINT64_C(0x3ffffffffffffff));
+    x19 = (x8 & UINT64_C(0x3ffffffffffffff));
+    x20 = (x9 & UINT64_C(0x1ffffffffffffff));
+    out1[0] = x12;
+    out1[1] = x13;
+    out1[2] = x14;
+    out1[3] = x15;
+    out1[4] = x16;
+    out1[5] = x17;
+    out1[6] = x18;
+    out1[7] = x19;
+    out1[8] = x20;
 }
 
 
@@ -929,11 +917,10 @@ fiat_secp521r1_sub(uint64_t out1[9], const uint64_t arg1[9],
 
 
 
-
-
-
 static void
-fiat_secp521r1_opp(uint64_t out1[9], const uint64_t arg1[9])
+fiat_secp521r1_carry_opp(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_tight_field_element arg1)
 {
     uint64_t x1;
     uint64_t x2;
@@ -944,25 +931,59 @@ fiat_secp521r1_opp(uint64_t out1[9], const uint64_t arg1[9])
     uint64_t x7;
     uint64_t x8;
     uint64_t x9;
+    uint64_t x10;
+    uint64_t x11;
+    uint64_t x12;
+    uint64_t x13;
+    uint64_t x14;
+    uint64_t x15;
+    uint64_t x16;
+    uint64_t x17;
+    uint64_t x18;
+    uint64_t x19;
+    uint64_t x20;
     x1 = (UINT64_C(0x7fffffffffffffe) - (arg1[0]));
-    x2 = (UINT64_C(0x7fffffffffffffe) - (arg1[1]));
-    x3 = (UINT64_C(0x7fffffffffffffe) - (arg1[2]));
-    x4 = (UINT64_C(0x7fffffffffffffe) - (arg1[3]));
-    x5 = (UINT64_C(0x7fffffffffffffe) - (arg1[4]));
-    x6 = (UINT64_C(0x7fffffffffffffe) - (arg1[5]));
-    x7 = (UINT64_C(0x7fffffffffffffe) - (arg1[6]));
-    x8 = (UINT64_C(0x7fffffffffffffe) - (arg1[7]));
-    x9 = (UINT64_C(0x3fffffffffffffe) - (arg1[8]));
-    out1[0] = x1;
-    out1[1] = x2;
-    out1[2] = x3;
-    out1[3] = x4;
-    out1[4] = x5;
-    out1[5] = x6;
-    out1[6] = x7;
-    out1[7] = x8;
-    out1[8] = x9;
+    x2 = ((fiat_secp521r1_uint1)(x1 >> 58) +
+          (UINT64_C(0x7fffffffffffffe) - (arg1[1])));
+    x3 = ((fiat_secp521r1_uint1)(x2 >> 58) +
+          (UINT64_C(0x7fffffffffffffe) - (arg1[2])));
+    x4 = ((fiat_secp521r1_uint1)(x3 >> 58) +
+          (UINT64_C(0x7fffffffffffffe) - (arg1[3])));
+    x5 = ((fiat_secp521r1_uint1)(x4 >> 58) +
+          (UINT64_C(0x7fffffffffffffe) - (arg1[4])));
+    x6 = ((fiat_secp521r1_uint1)(x5 >> 58) +
+          (UINT64_C(0x7fffffffffffffe) - (arg1[5])));
+    x7 = ((fiat_secp521r1_uint1)(x6 >> 58) +
+          (UINT64_C(0x7fffffffffffffe) - (arg1[6])));
+    x8 = ((fiat_secp521r1_uint1)(x7 >> 58) +
+          (UINT64_C(0x7fffffffffffffe) - (arg1[7])));
+    x9 = ((fiat_secp521r1_uint1)(x8 >> 58) +
+          (UINT64_C(0x3fffffffffffffe) - (arg1[8])));
+    x10 = ((x1 & UINT64_C(0x3ffffffffffffff)) +
+           (uint64_t)(fiat_secp521r1_uint1)(x9 >> 57));
+    x11 = ((fiat_secp521r1_uint1)(x10 >> 58) +
+           (x2 & UINT64_C(0x3ffffffffffffff)));
+    x12 = (x10 & UINT64_C(0x3ffffffffffffff));
+    x13 = (x11 & UINT64_C(0x3ffffffffffffff));
+    x14 = ((fiat_secp521r1_uint1)(x11 >> 58) +
+           (x3 & UINT64_C(0x3ffffffffffffff)));
+    x15 = (x4 & UINT64_C(0x3ffffffffffffff));
+    x16 = (x5 & UINT64_C(0x3ffffffffffffff));
+    x17 = (x6 & UINT64_C(0x3ffffffffffffff));
+    x18 = (x7 & UINT64_C(0x3ffffffffffffff));
+    x19 = (x8 & UINT64_C(0x3ffffffffffffff));
+    x20 = (x9 & UINT64_C(0x1ffffffffffffff));
+    out1[0] = x12;
+    out1[1] = x13;
+    out1[2] = x14;
+    out1[3] = x15;
+    out1[4] = x16;
+    out1[5] = x17;
+    out1[6] = x18;
+    out1[7] = x19;
+    out1[8] = x20;
 }
+
 
 
 
@@ -1020,9 +1041,9 @@ fiat_secp521r1_selectznz(uint64_t out1[9],
 
 
 
-
 static void
-fiat_secp521r1_to_bytes(uint8_t out1[66], const uint64_t arg1[9])
+fiat_secp521r1_to_bytes(
+    uint8_t out1[66], const fiat_secp521r1_tight_field_element arg1)
 {
     uint64_t x1;
     fiat_secp521r1_uint1 x2;
@@ -1451,9 +1472,8 @@ fiat_secp521r1_to_bytes(uint8_t out1[66], const uint64_t arg1[9])
 
 
 
-
 static void
-fiat_secp521r1_from_bytes(uint64_t out1[9],
+fiat_secp521r1_from_bytes(fiat_secp521r1_tight_field_element out1,
                           const uint8_t arg1[66])
 {
     uint64_t x1;
@@ -1750,66 +1770,6 @@ fiat_secp521r1_from_bytes(uint64_t out1[9],
 }
 
 
-
-
-
-
-
-
-
-static void
-fiat_secp521r1_inv(fe_t output, const fe_t t1)
-{
-    int i;
-    
-    fe_t acc, t128, t16, t2, t256, t32, t4, t512, t516, t518, t519, t64, t8;
-
-    fiat_secp521r1_carry_square(acc, t1);
-    fiat_secp521r1_carry_mul(t2, acc, t1);
-    fiat_secp521r1_carry_square(acc, t2);
-    fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t4, acc, t2);
-    fiat_secp521r1_carry_square(acc, t4);
-    for (i = 0; i < 3; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t8, acc, t4);
-    fiat_secp521r1_carry_square(acc, t8);
-    for (i = 0; i < 7; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t16, acc, t8);
-    fiat_secp521r1_carry_square(acc, t16);
-    for (i = 0; i < 15; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t32, acc, t16);
-    fiat_secp521r1_carry_square(acc, t32);
-    for (i = 0; i < 31; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t64, acc, t32);
-    fiat_secp521r1_carry_square(acc, t64);
-    for (i = 0; i < 63; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t128, acc, t64);
-    fiat_secp521r1_carry_square(acc, t128);
-    for (i = 0; i < 127; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t256, acc, t128);
-    fiat_secp521r1_carry_square(acc, t256);
-    for (i = 0; i < 255; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t512, acc, t256);
-    fiat_secp521r1_carry_square(acc, t512);
-    for (i = 0; i < 3; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t516, acc, t4);
-    fiat_secp521r1_carry_square(acc, t516);
-    fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t518, acc, t2);
-    fiat_secp521r1_carry_square(acc, t518);
-    fiat_secp521r1_carry_mul(t519, acc, t1);
-    fiat_secp521r1_carry_square(acc, t519);
-    fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(output, acc, t1);
-}
 
 
 
@@ -3945,6 +3905,67 @@ static const pt_aff_t lut_cmb[13][16] = {
 
 
 
+
+static void
+fiat_secp521r1_inv(fe_t output, const fe_t t1)
+{
+    int i;
+    
+    fe_t acc, t128, t16, t2, t256, t32, t4, t512, t516, t518, t519, t64, t8;
+
+    fiat_secp521r1_carry_square(acc, t1);
+    fiat_secp521r1_carry_mul(t2, acc, t1);
+    fiat_secp521r1_carry_square(acc, t2);
+    fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t4, acc, t2);
+    fiat_secp521r1_carry_square(acc, t4);
+    for (i = 0; i < 3; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t8, acc, t4);
+    fiat_secp521r1_carry_square(acc, t8);
+    for (i = 0; i < 7; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t16, acc, t8);
+    fiat_secp521r1_carry_square(acc, t16);
+    for (i = 0; i < 15; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t32, acc, t16);
+    fiat_secp521r1_carry_square(acc, t32);
+    for (i = 0; i < 31; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t64, acc, t32);
+    fiat_secp521r1_carry_square(acc, t64);
+    for (i = 0; i < 63; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t128, acc, t64);
+    fiat_secp521r1_carry_square(acc, t128);
+    for (i = 0; i < 127; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t256, acc, t128);
+    fiat_secp521r1_carry_square(acc, t256);
+    for (i = 0; i < 255; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t512, acc, t256);
+    fiat_secp521r1_carry_square(acc, t512);
+    for (i = 0; i < 3; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t516, acc, t4);
+    fiat_secp521r1_carry_square(acc, t516);
+    fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t518, acc, t2);
+    fiat_secp521r1_carry_square(acc, t518);
+    fiat_secp521r1_carry_mul(t519, acc, t1);
+    fiat_secp521r1_carry_square(acc, t519);
+    fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(output, acc, t1);
+}
+
+
+
+
+
+
+
 static void
 point_double(pt_prj_t *Q, const pt_prj_t *P)
 {
@@ -4261,7 +4282,7 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
     int i, d, is_neg, is_inf = 1, flipped = 0;
     int8_t anaf[529] = { 0 };
     int8_t bnaf[529] = { 0 };
-    pt_prj_t Q = { { 0 } };
+    pt_prj_t Q = { { 0 }, { 0 }, { 0 } };
     pt_prj_t precomp[DRADIX / 2];
 
     precomp_wnaf(precomp, P);
@@ -4273,7 +4294,7 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
             point_double(&Q, &Q);
         if ((d = bnaf[i])) {
             if ((is_neg = d < 0) != flipped) {
-                fiat_secp521r1_opp(Q.Y, Q.Y);
+                fiat_secp521r1_carry_opp(Q.Y, Q.Y);
                 flipped ^= 1;
             }
             d = (is_neg) ? (-d - 1) >> 1 : (d - 1) >> 1;
@@ -4288,7 +4309,7 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
         }
         if ((d = anaf[i])) {
             if ((is_neg = d < 0) != flipped) {
-                fiat_secp521r1_opp(Q.Y, Q.Y);
+                fiat_secp521r1_carry_opp(Q.Y, Q.Y);
                 flipped ^= 1;
             }
             d = (is_neg) ? (-d - 1) >> 1 : (d - 1) >> 1;
@@ -4312,7 +4333,7 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
 
     if (flipped) {
         
-        fiat_secp521r1_opp(Q.Y, Q.Y);
+        fiat_secp521r1_carry_opp(Q.Y, Q.Y);
     }
 
     
@@ -4324,20 +4345,22 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
 
 
 
+
+
 static void
 var_smul_rwnaf(pt_aff_t *out, const unsigned char scalar[66],
                const pt_aff_t *P)
 {
     int i, j, d, diff, is_neg;
     int8_t rnaf[106] = { 0 };
-    pt_prj_t Q = { { 0 } }, lut = { { 0 } };
+    pt_prj_t Q = { { 0 }, { 0 }, { 0 } }, lut = { { 0 }, { 0 }, { 0 } };
     pt_prj_t precomp[DRADIX / 2];
 
     precomp_wnaf(precomp, P);
     scalar_rwnaf(rnaf, scalar);
 
 #if defined(_MSC_VER)
-
+    
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
@@ -4367,7 +4390,7 @@ var_smul_rwnaf(pt_aff_t *out, const unsigned char scalar[66],
             fiat_secp521r1_selectznz(lut.Z, diff, lut.Z, precomp[j].Z);
         }
         
-        fiat_secp521r1_opp(out->Y, lut.Y);
+        fiat_secp521r1_carry_opp(out->Y, lut.Y);
         fiat_secp521r1_selectznz(lut.Y, is_neg, lut.Y, out->Y);
         point_add_proj(&Q, &Q, &lut);
     }
@@ -4378,7 +4401,7 @@ var_smul_rwnaf(pt_aff_t *out, const unsigned char scalar[66],
 
     
     fe_copy(lut.X, precomp[0].X);
-    fiat_secp521r1_opp(lut.Y, precomp[0].Y);
+    fiat_secp521r1_carry_opp(lut.Y, precomp[0].Y);
     fe_copy(lut.Z, precomp[0].Z);
     point_add_proj(&lut, &lut, &Q);
     fiat_secp521r1_selectznz(Q.X, scalar[0] & 1, lut.X, Q.X);
@@ -4399,8 +4422,8 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
 {
     int i, j, k, d, diff, is_neg = 0;
     int8_t rnaf[106] = { 0 };
-    pt_prj_t Q = { { 0 } }, R = { { 0 } };
-    pt_aff_t lut = { { 0 } };
+    pt_prj_t Q = { { 0 }, { 0 }, { 0 } }, R = { { 0 }, { 0 }, { 0 } };
+    pt_aff_t lut = { { 0 }, { 0 } };
 
     scalar_rwnaf(rnaf, scalar);
 
@@ -4410,7 +4433,7 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
     fe_set_zero(Q.Z);
 
 #if defined(_MSC_VER)
-
+    
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
@@ -4433,7 +4456,7 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
                 fiat_secp521r1_selectznz(lut.Y, diff, lut.Y, lut_cmb[j][k].Y);
             }
             
-            fiat_secp521r1_opp(out->Y, lut.Y);
+            fiat_secp521r1_carry_opp(out->Y, lut.Y);
             fiat_secp521r1_selectznz(lut.Y, is_neg, lut.Y, out->Y);
             point_add_mixed(&Q, &Q, &lut);
         }
@@ -4445,7 +4468,7 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
 
     
     fe_copy(lut.X, lut_cmb[0][0].X);
-    fiat_secp521r1_opp(lut.Y, lut_cmb[0][0].Y);
+    fiat_secp521r1_carry_opp(lut.Y, lut_cmb[0][0].Y);
     point_add_mixed(&R, &Q, &lut);
     fiat_secp521r1_selectznz(Q.X, scalar[0] & 1, R.X, Q.X);
     fiat_secp521r1_selectznz(Q.Y, scalar[0] & 1, R.Y, Q.Y);
@@ -4464,10 +4487,11 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
 
 
 static void
-point_mul_two(unsigned char outx[66], unsigned char outy[66],
-              const unsigned char a[66], const unsigned char b[66],
-              const unsigned char inx[66],
-              const unsigned char iny[66])
+point_mul_two_secp521r1(unsigned char outx[66], unsigned char outy[66],
+                        const unsigned char a[66],
+                        const unsigned char b[66],
+                        const unsigned char inx[66],
+                        const unsigned char iny[66])
 {
     pt_aff_t P;
 
@@ -4486,8 +4510,8 @@ point_mul_two(unsigned char outx[66], unsigned char outy[66],
 
 
 static void
-point_mul_g(unsigned char outx[66], unsigned char outy[66],
-            const unsigned char scalar[66])
+point_mul_g_secp521r1(unsigned char outx[66], unsigned char outy[66],
+                      const unsigned char scalar[66])
 {
     pt_aff_t P;
 
@@ -4504,10 +4528,10 @@ point_mul_g(unsigned char outx[66], unsigned char outy[66],
 
 
 static void
-point_mul(unsigned char outx[66], unsigned char outy[66],
-          const unsigned char scalar[66],
-          const unsigned char inx[66],
-          const unsigned char iny[66])
+point_mul_secp521r1(unsigned char outx[66], unsigned char outy[66],
+                    const unsigned char scalar[66],
+                    const unsigned char inx[66],
+                    const unsigned char iny[66])
 {
     pt_aff_t P;
 
@@ -4632,8 +4656,8 @@ point_mul(unsigned char outx[66], unsigned char outy[66],
     } while (0)
 
 static mp_err
-point_mul_g_secp521r1(const mp_int *n, mp_int *out_x,
-                      mp_int *out_y, const ECGroup *group)
+point_mul_g_secp521r1_wrap(const mp_int *n, mp_int *out_x,
+                           mp_int *out_y, const ECGroup *group)
 {
     unsigned char b_x[66];
     unsigned char b_y[66];
@@ -4648,7 +4672,7 @@ point_mul_g_secp521r1(const mp_int *n, mp_int *out_x,
 
     MP_CHECKOK(mp_to_fixlen_octets(n, b_n, 66));
     MP_BE2LE(b_n);
-    point_mul_g(b_x, b_y, b_n);
+    point_mul_g_secp521r1(b_x, b_y, b_n);
     MP_BE2LE(b_x);
     MP_BE2LE(b_y);
     MP_CHECKOK(mp_read_unsigned_octets(out_x, b_x, 66));
@@ -4659,9 +4683,9 @@ CLEANUP:
 }
 
 static mp_err
-point_mul_secp521r1(const mp_int *n, const mp_int *in_x,
-                    const mp_int *in_y, mp_int *out_x,
-                    mp_int *out_y, const ECGroup *group)
+point_mul_secp521r1_wrap(const mp_int *n, const mp_int *in_x,
+                         const mp_int *in_y, mp_int *out_x,
+                         mp_int *out_y, const ECGroup *group)
 {
     unsigned char b_x[66];
     unsigned char b_y[66];
@@ -4682,7 +4706,7 @@ point_mul_secp521r1(const mp_int *n, const mp_int *in_x,
     MP_BE2LE(b_x);
     MP_BE2LE(b_y);
     MP_BE2LE(b_n);
-    point_mul(b_x, b_y, b_n, b_x, b_y);
+    point_mul_secp521r1(b_x, b_y, b_n, b_x, b_y);
     MP_BE2LE(b_x);
     MP_BE2LE(b_y);
     MP_CHECKOK(mp_read_unsigned_octets(out_x, b_x, 66));
@@ -4693,10 +4717,11 @@ CLEANUP:
 }
 
 static mp_err
-point_mul_two_secp521r1(const mp_int *n1, const mp_int *n2,
-                        const mp_int *in_x, const mp_int *in_y,
-                        mp_int *out_x, mp_int *out_y,
-                        const ECGroup *group)
+point_mul_two_secp521r1_wrap(const mp_int *n1, const mp_int *n2,
+                             const mp_int *in_x,
+                             const mp_int *in_y, mp_int *out_x,
+                             mp_int *out_y,
+                             const ECGroup *group)
 {
     unsigned char b_x[66];
     unsigned char b_y[66];
@@ -4706,11 +4731,11 @@ point_mul_two_secp521r1(const mp_int *n1, const mp_int *n2,
 
     
     if (n2 == NULL || mp_cmp_z(n2) == MP_EQ)
-        return point_mul_g_secp521r1(n1, out_x, out_y, group);
+        return point_mul_g_secp521r1_wrap(n1, out_x, out_y, group);
 
     
     if (n1 == NULL || mp_cmp_z(n1) == MP_EQ)
-        return point_mul_secp521r1(n2, in_x, in_y, out_x, out_y, group);
+        return point_mul_secp521r1_wrap(n2, in_x, in_y, out_x, out_y, group);
 
     ARGCHK(in_x != NULL && in_y != NULL && out_x != NULL && out_y != NULL,
            MP_BADARG);
@@ -4728,7 +4753,7 @@ point_mul_two_secp521r1(const mp_int *n1, const mp_int *n2,
     MP_BE2LE(b_y);
     MP_BE2LE(b_n1);
     MP_BE2LE(b_n2);
-    point_mul_two(b_x, b_y, b_n1, b_n2, b_x, b_y);
+    point_mul_two_secp521r1(b_x, b_y, b_n1, b_n2, b_x, b_y);
     MP_BE2LE(b_x);
     MP_BE2LE(b_y);
     MP_CHECKOK(mp_read_unsigned_octets(out_x, b_x, 66));
@@ -4742,9 +4767,9 @@ mp_err
 ec_group_set_secp521r1(ECGroup *group, ECCurveName name)
 {
     if (name == ECCurve_NIST_P521) {
-        group->base_point_mul = &point_mul_g_secp521r1;
-        group->point_mul = &point_mul_secp521r1;
-        group->points_mul = &point_mul_two_secp521r1;
+        group->base_point_mul = &point_mul_g_secp521r1_wrap;
+        group->point_mul = &point_mul_secp521r1_wrap;
+        group->points_mul = &point_mul_two_secp521r1_wrap;
     }
     return MP_OKAY;
 }
@@ -4761,13 +4786,6 @@ typedef uint32_t limb_t;
 
 #define fe_copy(d, s) memcpy(d, s, sizeof(fe_t))
 #define fe_set_zero(d) memset(d, 0, sizeof(fe_t))
-
-#define fiat_secp521r1_carry_add(c, a, b) \
-    fiat_secp521r1_add(c, a, b);          \
-    fiat_secp521r1_carry(c, c)
-#define fiat_secp521r1_carry_sub(c, a, b) \
-    fiat_secp521r1_sub(c, a, b);          \
-    fiat_secp521r1_carry(c, c)
 
 
 typedef struct {
@@ -4825,6 +4843,19 @@ typedef struct {
 #include <stdint.h>
 typedef unsigned char fiat_secp521r1_uint1;
 typedef signed char fiat_secp521r1_int1;
+#ifdef __GNUC__
+#define FIAT_SECP521R1_FIAT_INLINE __inline__
+#else
+#define FIAT_SECP521R1_FIAT_INLINE
+#endif
+
+
+
+typedef uint32_t fiat_secp521r1_loose_field_element[19];
+
+
+
+typedef uint32_t fiat_secp521r1_tight_field_element[19];
 
 #if (-1 & 3) != 3
 #error "This code only works on a two's complement system"
@@ -4842,6 +4873,7 @@ fiat_secp521r1_value_barrier_u32(uint32_t a)
 #else
 #define fiat_secp521r1_value_barrier_u32(x) (x)
 #endif
+
 
 
 
@@ -4887,6 +4919,7 @@ fiat_secp521r1_addcarryx_u28(uint32_t *out1,
 
 
 
+
 static void
 fiat_secp521r1_subborrowx_u28(uint32_t *out1,
                               fiat_secp521r1_uint1 *out2,
@@ -4902,6 +4935,7 @@ fiat_secp521r1_subborrowx_u28(uint32_t *out1,
     *out1 = x3;
     *out2 = (fiat_secp521r1_uint1)(0x0 - x2);
 }
+
 
 
 
@@ -4947,6 +4981,7 @@ fiat_secp521r1_addcarryx_u27(uint32_t *out1,
 
 
 
+
 static void
 fiat_secp521r1_subborrowx_u27(uint32_t *out1,
                               fiat_secp521r1_uint1 *out2,
@@ -4962,6 +4997,7 @@ fiat_secp521r1_subborrowx_u27(uint32_t *out1,
     *out1 = x3;
     *out2 = (fiat_secp521r1_uint1)(0x0 - x2);
 }
+
 
 
 
@@ -4997,13 +5033,11 @@ fiat_secp521r1_cmovznz_u32(uint32_t *out1,
 
 
 
-
-
-
-
 static void
-fiat_secp521r1_carry_mul(uint32_t out1[19], const uint32_t arg1[19],
-                         const uint32_t arg2[19])
+fiat_secp521r1_carry_mul(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_loose_field_element arg1,
+    const fiat_secp521r1_loose_field_element arg2)
 {
     uint64_t x1;
     uint64_t x2;
@@ -6181,12 +6215,10 @@ fiat_secp521r1_carry_mul(uint32_t out1[19], const uint32_t arg1[19],
 
 
 
-
-
-
 static void
-fiat_secp521r1_carry_square(uint32_t out1[19],
-                            const uint32_t arg1[19])
+fiat_secp521r1_carry_square(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_loose_field_element arg1)
 {
     uint32_t x1;
     uint32_t x2;
@@ -6876,11 +6908,11 @@ fiat_secp521r1_carry_square(uint32_t out1[19],
 
 
 
-
-
-
 static void
-fiat_secp521r1_carry(uint32_t out1[19], const uint32_t arg1[19])
+fiat_secp521r1_carry_add(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_tight_field_element arg1,
+    const fiat_secp521r1_tight_field_element arg2)
 {
     uint32_t x1;
     uint32_t x2;
@@ -6922,25 +6954,25 @@ fiat_secp521r1_carry(uint32_t out1[19], const uint32_t arg1[19])
     uint32_t x38;
     uint32_t x39;
     uint32_t x40;
-    x1 = (arg1[0]);
-    x2 = ((x1 >> 28) + (arg1[1]));
-    x3 = ((x2 >> 27) + (arg1[2]));
-    x4 = ((x3 >> 28) + (arg1[3]));
-    x5 = ((x4 >> 27) + (arg1[4]));
-    x6 = ((x5 >> 28) + (arg1[5]));
-    x7 = ((x6 >> 27) + (arg1[6]));
-    x8 = ((x7 >> 27) + (arg1[7]));
-    x9 = ((x8 >> 28) + (arg1[8]));
-    x10 = ((x9 >> 27) + (arg1[9]));
-    x11 = ((x10 >> 28) + (arg1[10]));
-    x12 = ((x11 >> 27) + (arg1[11]));
-    x13 = ((x12 >> 28) + (arg1[12]));
-    x14 = ((x13 >> 27) + (arg1[13]));
-    x15 = ((x14 >> 27) + (arg1[14]));
-    x16 = ((x15 >> 28) + (arg1[15]));
-    x17 = ((x16 >> 27) + (arg1[16]));
-    x18 = ((x17 >> 28) + (arg1[17]));
-    x19 = ((x18 >> 27) + (arg1[18]));
+    x1 = ((arg1[0]) + (arg2[0]));
+    x2 = ((x1 >> 28) + ((arg1[1]) + (arg2[1])));
+    x3 = ((x2 >> 27) + ((arg1[2]) + (arg2[2])));
+    x4 = ((x3 >> 28) + ((arg1[3]) + (arg2[3])));
+    x5 = ((x4 >> 27) + ((arg1[4]) + (arg2[4])));
+    x6 = ((x5 >> 28) + ((arg1[5]) + (arg2[5])));
+    x7 = ((x6 >> 27) + ((arg1[6]) + (arg2[6])));
+    x8 = ((x7 >> 27) + ((arg1[7]) + (arg2[7])));
+    x9 = ((x8 >> 28) + ((arg1[8]) + (arg2[8])));
+    x10 = ((x9 >> 27) + ((arg1[9]) + (arg2[9])));
+    x11 = ((x10 >> 28) + ((arg1[10]) + (arg2[10])));
+    x12 = ((x11 >> 27) + ((arg1[11]) + (arg2[11])));
+    x13 = ((x12 >> 28) + ((arg1[12]) + (arg2[12])));
+    x14 = ((x13 >> 27) + ((arg1[13]) + (arg2[13])));
+    x15 = ((x14 >> 27) + ((arg1[14]) + (arg2[14])));
+    x16 = ((x15 >> 28) + ((arg1[15]) + (arg2[15])));
+    x17 = ((x16 >> 27) + ((arg1[16]) + (arg2[16])));
+    x18 = ((x17 >> 28) + ((arg1[17]) + (arg2[17])));
+    x19 = ((x18 >> 27) + ((arg1[18]) + (arg2[18])));
     x20 = ((x1 & UINT32_C(0xfffffff)) + (x19 >> 27));
     x21 = ((fiat_secp521r1_uint1)(x20 >> 28) + (x2 & UINT32_C(0x7ffffff)));
     x22 = (x20 & UINT32_C(0xfffffff));
@@ -6990,13 +7022,11 @@ fiat_secp521r1_carry(uint32_t out1[19], const uint32_t arg1[19])
 
 
 
-
-
-
-
 static void
-fiat_secp521r1_add(uint32_t out1[19], const uint32_t arg1[19],
-                   const uint32_t arg2[19])
+fiat_secp521r1_carry_sub(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_tight_field_element arg1,
+    const fiat_secp521r1_tight_field_element arg2)
 {
     uint32_t x1;
     uint32_t x2;
@@ -7017,118 +7047,86 @@ fiat_secp521r1_add(uint32_t out1[19], const uint32_t arg1[19],
     uint32_t x17;
     uint32_t x18;
     uint32_t x19;
-    x1 = ((arg1[0]) + (arg2[0]));
-    x2 = ((arg1[1]) + (arg2[1]));
-    x3 = ((arg1[2]) + (arg2[2]));
-    x4 = ((arg1[3]) + (arg2[3]));
-    x5 = ((arg1[4]) + (arg2[4]));
-    x6 = ((arg1[5]) + (arg2[5]));
-    x7 = ((arg1[6]) + (arg2[6]));
-    x8 = ((arg1[7]) + (arg2[7]));
-    x9 = ((arg1[8]) + (arg2[8]));
-    x10 = ((arg1[9]) + (arg2[9]));
-    x11 = ((arg1[10]) + (arg2[10]));
-    x12 = ((arg1[11]) + (arg2[11]));
-    x13 = ((arg1[12]) + (arg2[12]));
-    x14 = ((arg1[13]) + (arg2[13]));
-    x15 = ((arg1[14]) + (arg2[14]));
-    x16 = ((arg1[15]) + (arg2[15]));
-    x17 = ((arg1[16]) + (arg2[16]));
-    x18 = ((arg1[17]) + (arg2[17]));
-    x19 = ((arg1[18]) + (arg2[18]));
-    out1[0] = x1;
-    out1[1] = x2;
-    out1[2] = x3;
-    out1[3] = x4;
-    out1[4] = x5;
-    out1[5] = x6;
-    out1[6] = x7;
-    out1[7] = x8;
-    out1[8] = x9;
-    out1[9] = x10;
-    out1[10] = x11;
-    out1[11] = x12;
-    out1[12] = x13;
-    out1[13] = x14;
-    out1[14] = x15;
-    out1[15] = x16;
-    out1[16] = x17;
-    out1[17] = x18;
-    out1[18] = x19;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-static void
-fiat_secp521r1_sub(uint32_t out1[19], const uint32_t arg1[19],
-                   const uint32_t arg2[19])
-{
-    uint32_t x1;
-    uint32_t x2;
-    uint32_t x3;
-    uint32_t x4;
-    uint32_t x5;
-    uint32_t x6;
-    uint32_t x7;
-    uint32_t x8;
-    uint32_t x9;
-    uint32_t x10;
-    uint32_t x11;
-    uint32_t x12;
-    uint32_t x13;
-    uint32_t x14;
-    uint32_t x15;
-    uint32_t x16;
-    uint32_t x17;
-    uint32_t x18;
-    uint32_t x19;
+    uint32_t x20;
+    uint32_t x21;
+    uint32_t x22;
+    uint32_t x23;
+    uint32_t x24;
+    uint32_t x25;
+    uint32_t x26;
+    uint32_t x27;
+    uint32_t x28;
+    uint32_t x29;
+    uint32_t x30;
+    uint32_t x31;
+    uint32_t x32;
+    uint32_t x33;
+    uint32_t x34;
+    uint32_t x35;
+    uint32_t x36;
+    uint32_t x37;
+    uint32_t x38;
+    uint32_t x39;
+    uint32_t x40;
     x1 = ((UINT32_C(0x1ffffffe) + (arg1[0])) - (arg2[0]));
-    x2 = ((UINT32_C(0xffffffe) + (arg1[1])) - (arg2[1]));
-    x3 = ((UINT32_C(0x1ffffffe) + (arg1[2])) - (arg2[2]));
-    x4 = ((UINT32_C(0xffffffe) + (arg1[3])) - (arg2[3]));
-    x5 = ((UINT32_C(0x1ffffffe) + (arg1[4])) - (arg2[4]));
-    x6 = ((UINT32_C(0xffffffe) + (arg1[5])) - (arg2[5]));
-    x7 = ((UINT32_C(0xffffffe) + (arg1[6])) - (arg2[6]));
-    x8 = ((UINT32_C(0x1ffffffe) + (arg1[7])) - (arg2[7]));
-    x9 = ((UINT32_C(0xffffffe) + (arg1[8])) - (arg2[8]));
-    x10 = ((UINT32_C(0x1ffffffe) + (arg1[9])) - (arg2[9]));
-    x11 = ((UINT32_C(0xffffffe) + (arg1[10])) - (arg2[10]));
-    x12 = ((UINT32_C(0x1ffffffe) + (arg1[11])) - (arg2[11]));
-    x13 = ((UINT32_C(0xffffffe) + (arg1[12])) - (arg2[12]));
-    x14 = ((UINT32_C(0xffffffe) + (arg1[13])) - (arg2[13]));
-    x15 = ((UINT32_C(0x1ffffffe) + (arg1[14])) - (arg2[14]));
-    x16 = ((UINT32_C(0xffffffe) + (arg1[15])) - (arg2[15]));
-    x17 = ((UINT32_C(0x1ffffffe) + (arg1[16])) - (arg2[16]));
-    x18 = ((UINT32_C(0xffffffe) + (arg1[17])) - (arg2[17]));
-    x19 = ((UINT32_C(0xffffffe) + (arg1[18])) - (arg2[18]));
-    out1[0] = x1;
-    out1[1] = x2;
-    out1[2] = x3;
-    out1[3] = x4;
-    out1[4] = x5;
-    out1[5] = x6;
-    out1[6] = x7;
-    out1[7] = x8;
-    out1[8] = x9;
-    out1[9] = x10;
-    out1[10] = x11;
-    out1[11] = x12;
-    out1[12] = x13;
-    out1[13] = x14;
-    out1[14] = x15;
-    out1[15] = x16;
-    out1[16] = x17;
-    out1[17] = x18;
-    out1[18] = x19;
+    x2 = ((x1 >> 28) + ((UINT32_C(0xffffffe) + (arg1[1])) - (arg2[1])));
+    x3 = ((x2 >> 27) + ((UINT32_C(0x1ffffffe) + (arg1[2])) - (arg2[2])));
+    x4 = ((x3 >> 28) + ((UINT32_C(0xffffffe) + (arg1[3])) - (arg2[3])));
+    x5 = ((x4 >> 27) + ((UINT32_C(0x1ffffffe) + (arg1[4])) - (arg2[4])));
+    x6 = ((x5 >> 28) + ((UINT32_C(0xffffffe) + (arg1[5])) - (arg2[5])));
+    x7 = ((x6 >> 27) + ((UINT32_C(0xffffffe) + (arg1[6])) - (arg2[6])));
+    x8 = ((x7 >> 27) + ((UINT32_C(0x1ffffffe) + (arg1[7])) - (arg2[7])));
+    x9 = ((x8 >> 28) + ((UINT32_C(0xffffffe) + (arg1[8])) - (arg2[8])));
+    x10 = ((x9 >> 27) + ((UINT32_C(0x1ffffffe) + (arg1[9])) - (arg2[9])));
+    x11 = ((x10 >> 28) + ((UINT32_C(0xffffffe) + (arg1[10])) - (arg2[10])));
+    x12 = ((x11 >> 27) + ((UINT32_C(0x1ffffffe) + (arg1[11])) - (arg2[11])));
+    x13 = ((x12 >> 28) + ((UINT32_C(0xffffffe) + (arg1[12])) - (arg2[12])));
+    x14 = ((x13 >> 27) + ((UINT32_C(0xffffffe) + (arg1[13])) - (arg2[13])));
+    x15 = ((x14 >> 27) + ((UINT32_C(0x1ffffffe) + (arg1[14])) - (arg2[14])));
+    x16 = ((x15 >> 28) + ((UINT32_C(0xffffffe) + (arg1[15])) - (arg2[15])));
+    x17 = ((x16 >> 27) + ((UINT32_C(0x1ffffffe) + (arg1[16])) - (arg2[16])));
+    x18 = ((x17 >> 28) + ((UINT32_C(0xffffffe) + (arg1[17])) - (arg2[17])));
+    x19 = ((x18 >> 27) + ((UINT32_C(0xffffffe) + (arg1[18])) - (arg2[18])));
+    x20 = ((x1 & UINT32_C(0xfffffff)) + (x19 >> 27));
+    x21 = ((fiat_secp521r1_uint1)(x20 >> 28) + (x2 & UINT32_C(0x7ffffff)));
+    x22 = (x20 & UINT32_C(0xfffffff));
+    x23 = (x21 & UINT32_C(0x7ffffff));
+    x24 = ((fiat_secp521r1_uint1)(x21 >> 27) + (x3 & UINT32_C(0xfffffff)));
+    x25 = (x4 & UINT32_C(0x7ffffff));
+    x26 = (x5 & UINT32_C(0xfffffff));
+    x27 = (x6 & UINT32_C(0x7ffffff));
+    x28 = (x7 & UINT32_C(0x7ffffff));
+    x29 = (x8 & UINT32_C(0xfffffff));
+    x30 = (x9 & UINT32_C(0x7ffffff));
+    x31 = (x10 & UINT32_C(0xfffffff));
+    x32 = (x11 & UINT32_C(0x7ffffff));
+    x33 = (x12 & UINT32_C(0xfffffff));
+    x34 = (x13 & UINT32_C(0x7ffffff));
+    x35 = (x14 & UINT32_C(0x7ffffff));
+    x36 = (x15 & UINT32_C(0xfffffff));
+    x37 = (x16 & UINT32_C(0x7ffffff));
+    x38 = (x17 & UINT32_C(0xfffffff));
+    x39 = (x18 & UINT32_C(0x7ffffff));
+    x40 = (x19 & UINT32_C(0x7ffffff));
+    out1[0] = x22;
+    out1[1] = x23;
+    out1[2] = x24;
+    out1[3] = x25;
+    out1[4] = x26;
+    out1[5] = x27;
+    out1[6] = x28;
+    out1[7] = x29;
+    out1[8] = x30;
+    out1[9] = x31;
+    out1[10] = x32;
+    out1[11] = x33;
+    out1[12] = x34;
+    out1[13] = x35;
+    out1[14] = x36;
+    out1[15] = x37;
+    out1[16] = x38;
+    out1[17] = x39;
+    out1[18] = x40;
 }
 
 
@@ -7138,11 +7136,10 @@ fiat_secp521r1_sub(uint32_t out1[19], const uint32_t arg1[19],
 
 
 
-
-
-
 static void
-fiat_secp521r1_opp(uint32_t out1[19], const uint32_t arg1[19])
+fiat_secp521r1_carry_opp(
+    fiat_secp521r1_tight_field_element out1,
+    const fiat_secp521r1_tight_field_element arg1)
 {
     uint32_t x1;
     uint32_t x2;
@@ -7163,45 +7160,102 @@ fiat_secp521r1_opp(uint32_t out1[19], const uint32_t arg1[19])
     uint32_t x17;
     uint32_t x18;
     uint32_t x19;
+    uint32_t x20;
+    uint32_t x21;
+    uint32_t x22;
+    uint32_t x23;
+    uint32_t x24;
+    uint32_t x25;
+    uint32_t x26;
+    uint32_t x27;
+    uint32_t x28;
+    uint32_t x29;
+    uint32_t x30;
+    uint32_t x31;
+    uint32_t x32;
+    uint32_t x33;
+    uint32_t x34;
+    uint32_t x35;
+    uint32_t x36;
+    uint32_t x37;
+    uint32_t x38;
+    uint32_t x39;
+    uint32_t x40;
     x1 = (UINT32_C(0x1ffffffe) - (arg1[0]));
-    x2 = (UINT32_C(0xffffffe) - (arg1[1]));
-    x3 = (UINT32_C(0x1ffffffe) - (arg1[2]));
-    x4 = (UINT32_C(0xffffffe) - (arg1[3]));
-    x5 = (UINT32_C(0x1ffffffe) - (arg1[4]));
-    x6 = (UINT32_C(0xffffffe) - (arg1[5]));
-    x7 = (UINT32_C(0xffffffe) - (arg1[6]));
-    x8 = (UINT32_C(0x1ffffffe) - (arg1[7]));
-    x9 = (UINT32_C(0xffffffe) - (arg1[8]));
-    x10 = (UINT32_C(0x1ffffffe) - (arg1[9]));
-    x11 = (UINT32_C(0xffffffe) - (arg1[10]));
-    x12 = (UINT32_C(0x1ffffffe) - (arg1[11]));
-    x13 = (UINT32_C(0xffffffe) - (arg1[12]));
-    x14 = (UINT32_C(0xffffffe) - (arg1[13]));
-    x15 = (UINT32_C(0x1ffffffe) - (arg1[14]));
-    x16 = (UINT32_C(0xffffffe) - (arg1[15]));
-    x17 = (UINT32_C(0x1ffffffe) - (arg1[16]));
-    x18 = (UINT32_C(0xffffffe) - (arg1[17]));
-    x19 = (UINT32_C(0xffffffe) - (arg1[18]));
-    out1[0] = x1;
-    out1[1] = x2;
-    out1[2] = x3;
-    out1[3] = x4;
-    out1[4] = x5;
-    out1[5] = x6;
-    out1[6] = x7;
-    out1[7] = x8;
-    out1[8] = x9;
-    out1[9] = x10;
-    out1[10] = x11;
-    out1[11] = x12;
-    out1[12] = x13;
-    out1[13] = x14;
-    out1[14] = x15;
-    out1[15] = x16;
-    out1[16] = x17;
-    out1[17] = x18;
-    out1[18] = x19;
+    x2 = ((fiat_secp521r1_uint1)(x1 >> 28) + (UINT32_C(0xffffffe) - (arg1[1])));
+    x3 =
+        ((fiat_secp521r1_uint1)(x2 >> 27) + (UINT32_C(0x1ffffffe) - (arg1[2])));
+    x4 = ((fiat_secp521r1_uint1)(x3 >> 28) + (UINT32_C(0xffffffe) - (arg1[3])));
+    x5 =
+        ((fiat_secp521r1_uint1)(x4 >> 27) + (UINT32_C(0x1ffffffe) - (arg1[4])));
+    x6 = ((fiat_secp521r1_uint1)(x5 >> 28) + (UINT32_C(0xffffffe) - (arg1[5])));
+    x7 = ((fiat_secp521r1_uint1)(x6 >> 27) + (UINT32_C(0xffffffe) - (arg1[6])));
+    x8 =
+        ((fiat_secp521r1_uint1)(x7 >> 27) + (UINT32_C(0x1ffffffe) - (arg1[7])));
+    x9 = ((fiat_secp521r1_uint1)(x8 >> 28) + (UINT32_C(0xffffffe) - (arg1[8])));
+    x10 =
+        ((fiat_secp521r1_uint1)(x9 >> 27) + (UINT32_C(0x1ffffffe) - (arg1[9])));
+    x11 = ((fiat_secp521r1_uint1)(x10 >> 28) +
+           (UINT32_C(0xffffffe) - (arg1[10])));
+    x12 = ((fiat_secp521r1_uint1)(x11 >> 27) +
+           (UINT32_C(0x1ffffffe) - (arg1[11])));
+    x13 = ((fiat_secp521r1_uint1)(x12 >> 28) +
+           (UINT32_C(0xffffffe) - (arg1[12])));
+    x14 = ((fiat_secp521r1_uint1)(x13 >> 27) +
+           (UINT32_C(0xffffffe) - (arg1[13])));
+    x15 = ((fiat_secp521r1_uint1)(x14 >> 27) +
+           (UINT32_C(0x1ffffffe) - (arg1[14])));
+    x16 = ((fiat_secp521r1_uint1)(x15 >> 28) +
+           (UINT32_C(0xffffffe) - (arg1[15])));
+    x17 = ((fiat_secp521r1_uint1)(x16 >> 27) +
+           (UINT32_C(0x1ffffffe) - (arg1[16])));
+    x18 = ((fiat_secp521r1_uint1)(x17 >> 28) +
+           (UINT32_C(0xffffffe) - (arg1[17])));
+    x19 = ((fiat_secp521r1_uint1)(x18 >> 27) +
+           (UINT32_C(0xffffffe) - (arg1[18])));
+    x20 = ((x1 & UINT32_C(0xfffffff)) +
+           (uint32_t)(fiat_secp521r1_uint1)(x19 >> 27));
+    x21 = ((fiat_secp521r1_uint1)(x20 >> 28) + (x2 & UINT32_C(0x7ffffff)));
+    x22 = (x20 & UINT32_C(0xfffffff));
+    x23 = (x21 & UINT32_C(0x7ffffff));
+    x24 = ((fiat_secp521r1_uint1)(x21 >> 27) + (x3 & UINT32_C(0xfffffff)));
+    x25 = (x4 & UINT32_C(0x7ffffff));
+    x26 = (x5 & UINT32_C(0xfffffff));
+    x27 = (x6 & UINT32_C(0x7ffffff));
+    x28 = (x7 & UINT32_C(0x7ffffff));
+    x29 = (x8 & UINT32_C(0xfffffff));
+    x30 = (x9 & UINT32_C(0x7ffffff));
+    x31 = (x10 & UINT32_C(0xfffffff));
+    x32 = (x11 & UINT32_C(0x7ffffff));
+    x33 = (x12 & UINT32_C(0xfffffff));
+    x34 = (x13 & UINT32_C(0x7ffffff));
+    x35 = (x14 & UINT32_C(0x7ffffff));
+    x36 = (x15 & UINT32_C(0xfffffff));
+    x37 = (x16 & UINT32_C(0x7ffffff));
+    x38 = (x17 & UINT32_C(0xfffffff));
+    x39 = (x18 & UINT32_C(0x7ffffff));
+    x40 = (x19 & UINT32_C(0x7ffffff));
+    out1[0] = x22;
+    out1[1] = x23;
+    out1[2] = x24;
+    out1[3] = x25;
+    out1[4] = x26;
+    out1[5] = x27;
+    out1[6] = x28;
+    out1[7] = x29;
+    out1[8] = x30;
+    out1[9] = x31;
+    out1[10] = x32;
+    out1[11] = x33;
+    out1[12] = x34;
+    out1[13] = x35;
+    out1[14] = x36;
+    out1[15] = x37;
+    out1[16] = x38;
+    out1[17] = x39;
+    out1[18] = x40;
 }
+
 
 
 
@@ -7289,9 +7343,9 @@ fiat_secp521r1_selectznz(uint32_t out1[19],
 
 
 
-
 static void
-fiat_secp521r1_to_bytes(uint8_t out1[66], const uint32_t arg1[19])
+fiat_secp521r1_to_bytes(
+    uint8_t out1[66], const fiat_secp521r1_tight_field_element arg1)
 {
     uint32_t x1;
     fiat_secp521r1_uint1 x2;
@@ -7837,9 +7891,8 @@ fiat_secp521r1_to_bytes(uint8_t out1[66], const uint32_t arg1[19])
 
 
 
-
 static void
-fiat_secp521r1_from_bytes(uint32_t out1[19],
+fiat_secp521r1_from_bytes(fiat_secp521r1_tight_field_element out1,
                           const uint8_t arg1[66])
 {
     uint32_t x1;
@@ -8186,66 +8239,6 @@ fiat_secp521r1_from_bytes(uint32_t out1[19],
 }
 
 
-
-
-
-
-
-
-
-static void
-fiat_secp521r1_inv(fe_t output, const fe_t t1)
-{
-    int i;
-    
-    fe_t acc, t128, t16, t2, t256, t32, t4, t512, t516, t518, t519, t64, t8;
-
-    fiat_secp521r1_carry_square(acc, t1);
-    fiat_secp521r1_carry_mul(t2, acc, t1);
-    fiat_secp521r1_carry_square(acc, t2);
-    fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t4, acc, t2);
-    fiat_secp521r1_carry_square(acc, t4);
-    for (i = 0; i < 3; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t8, acc, t4);
-    fiat_secp521r1_carry_square(acc, t8);
-    for (i = 0; i < 7; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t16, acc, t8);
-    fiat_secp521r1_carry_square(acc, t16);
-    for (i = 0; i < 15; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t32, acc, t16);
-    fiat_secp521r1_carry_square(acc, t32);
-    for (i = 0; i < 31; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t64, acc, t32);
-    fiat_secp521r1_carry_square(acc, t64);
-    for (i = 0; i < 63; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t128, acc, t64);
-    fiat_secp521r1_carry_square(acc, t128);
-    for (i = 0; i < 127; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t256, acc, t128);
-    fiat_secp521r1_carry_square(acc, t256);
-    for (i = 0; i < 255; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t512, acc, t256);
-    fiat_secp521r1_carry_square(acc, t512);
-    for (i = 0; i < 3; i++)
-        fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t516, acc, t4);
-    fiat_secp521r1_carry_square(acc, t516);
-    fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(t518, acc, t2);
-    fiat_secp521r1_carry_square(acc, t518);
-    fiat_secp521r1_carry_mul(t519, acc, t1);
-    fiat_secp521r1_carry_square(acc, t519);
-    fiat_secp521r1_carry_square(acc, acc);
-    fiat_secp521r1_carry_mul(output, acc, t1);
-}
 
 
 
@@ -11217,6 +11210,67 @@ static const pt_aff_t lut_cmb[13][16] = {
 
 
 
+
+static void
+fiat_secp521r1_inv(fe_t output, const fe_t t1)
+{
+    int i;
+    
+    fe_t acc, t128, t16, t2, t256, t32, t4, t512, t516, t518, t519, t64, t8;
+
+    fiat_secp521r1_carry_square(acc, t1);
+    fiat_secp521r1_carry_mul(t2, acc, t1);
+    fiat_secp521r1_carry_square(acc, t2);
+    fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t4, acc, t2);
+    fiat_secp521r1_carry_square(acc, t4);
+    for (i = 0; i < 3; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t8, acc, t4);
+    fiat_secp521r1_carry_square(acc, t8);
+    for (i = 0; i < 7; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t16, acc, t8);
+    fiat_secp521r1_carry_square(acc, t16);
+    for (i = 0; i < 15; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t32, acc, t16);
+    fiat_secp521r1_carry_square(acc, t32);
+    for (i = 0; i < 31; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t64, acc, t32);
+    fiat_secp521r1_carry_square(acc, t64);
+    for (i = 0; i < 63; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t128, acc, t64);
+    fiat_secp521r1_carry_square(acc, t128);
+    for (i = 0; i < 127; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t256, acc, t128);
+    fiat_secp521r1_carry_square(acc, t256);
+    for (i = 0; i < 255; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t512, acc, t256);
+    fiat_secp521r1_carry_square(acc, t512);
+    for (i = 0; i < 3; i++)
+        fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t516, acc, t4);
+    fiat_secp521r1_carry_square(acc, t516);
+    fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(t518, acc, t2);
+    fiat_secp521r1_carry_square(acc, t518);
+    fiat_secp521r1_carry_mul(t519, acc, t1);
+    fiat_secp521r1_carry_square(acc, t519);
+    fiat_secp521r1_carry_square(acc, acc);
+    fiat_secp521r1_carry_mul(output, acc, t1);
+}
+
+
+
+
+
+
+
 static void
 point_double(pt_prj_t *Q, const pt_prj_t *P)
 {
@@ -11533,7 +11587,7 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
     int i, d, is_neg, is_inf = 1, flipped = 0;
     int8_t anaf[529] = { 0 };
     int8_t bnaf[529] = { 0 };
-    pt_prj_t Q = { { 0 } };
+    pt_prj_t Q = { { 0 }, { 0 }, { 0 } };
     pt_prj_t precomp[DRADIX / 2];
 
     precomp_wnaf(precomp, P);
@@ -11545,7 +11599,7 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
             point_double(&Q, &Q);
         if ((d = bnaf[i])) {
             if ((is_neg = d < 0) != flipped) {
-                fiat_secp521r1_opp(Q.Y, Q.Y);
+                fiat_secp521r1_carry_opp(Q.Y, Q.Y);
                 flipped ^= 1;
             }
             d = (is_neg) ? (-d - 1) >> 1 : (d - 1) >> 1;
@@ -11560,7 +11614,7 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
         }
         if ((d = anaf[i])) {
             if ((is_neg = d < 0) != flipped) {
-                fiat_secp521r1_opp(Q.Y, Q.Y);
+                fiat_secp521r1_carry_opp(Q.Y, Q.Y);
                 flipped ^= 1;
             }
             d = (is_neg) ? (-d - 1) >> 1 : (d - 1) >> 1;
@@ -11584,7 +11638,7 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
 
     if (flipped) {
         
-        fiat_secp521r1_opp(Q.Y, Q.Y);
+        fiat_secp521r1_carry_opp(Q.Y, Q.Y);
     }
 
     
@@ -11596,20 +11650,22 @@ var_smul_wnaf_two(pt_aff_t *out, const unsigned char a[66],
 
 
 
+
+
 static void
 var_smul_rwnaf(pt_aff_t *out, const unsigned char scalar[66],
                const pt_aff_t *P)
 {
     int i, j, d, diff, is_neg;
     int8_t rnaf[106] = { 0 };
-    pt_prj_t Q = { { 0 } }, lut = { { 0 } };
+    pt_prj_t Q = { { 0 }, { 0 }, { 0 } }, lut = { { 0 }, { 0 }, { 0 } };
     pt_prj_t precomp[DRADIX / 2];
 
     precomp_wnaf(precomp, P);
     scalar_rwnaf(rnaf, scalar);
 
 #if defined(_MSC_VER)
-
+    
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
@@ -11639,7 +11695,7 @@ var_smul_rwnaf(pt_aff_t *out, const unsigned char scalar[66],
             fiat_secp521r1_selectznz(lut.Z, diff, lut.Z, precomp[j].Z);
         }
         
-        fiat_secp521r1_opp(out->Y, lut.Y);
+        fiat_secp521r1_carry_opp(out->Y, lut.Y);
         fiat_secp521r1_selectznz(lut.Y, is_neg, lut.Y, out->Y);
         point_add_proj(&Q, &Q, &lut);
     }
@@ -11650,7 +11706,7 @@ var_smul_rwnaf(pt_aff_t *out, const unsigned char scalar[66],
 
     
     fe_copy(lut.X, precomp[0].X);
-    fiat_secp521r1_opp(lut.Y, precomp[0].Y);
+    fiat_secp521r1_carry_opp(lut.Y, precomp[0].Y);
     fe_copy(lut.Z, precomp[0].Z);
     point_add_proj(&lut, &lut, &Q);
     fiat_secp521r1_selectznz(Q.X, scalar[0] & 1, lut.X, Q.X);
@@ -11671,8 +11727,8 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
 {
     int i, j, k, d, diff, is_neg = 0;
     int8_t rnaf[106] = { 0 };
-    pt_prj_t Q = { { 0 } }, R = { { 0 } };
-    pt_aff_t lut = { { 0 } };
+    pt_prj_t Q = { { 0 }, { 0 }, { 0 } }, R = { { 0 }, { 0 }, { 0 } };
+    pt_aff_t lut = { { 0 }, { 0 } };
 
     scalar_rwnaf(rnaf, scalar);
 
@@ -11682,7 +11738,7 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
     fe_set_zero(Q.Z);
 
 #if defined(_MSC_VER)
-
+    
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
@@ -11705,7 +11761,7 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
                 fiat_secp521r1_selectznz(lut.Y, diff, lut.Y, lut_cmb[j][k].Y);
             }
             
-            fiat_secp521r1_opp(out->Y, lut.Y);
+            fiat_secp521r1_carry_opp(out->Y, lut.Y);
             fiat_secp521r1_selectznz(lut.Y, is_neg, lut.Y, out->Y);
             point_add_mixed(&Q, &Q, &lut);
         }
@@ -11717,7 +11773,7 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
 
     
     fe_copy(lut.X, lut_cmb[0][0].X);
-    fiat_secp521r1_opp(lut.Y, lut_cmb[0][0].Y);
+    fiat_secp521r1_carry_opp(lut.Y, lut_cmb[0][0].Y);
     point_add_mixed(&R, &Q, &lut);
     fiat_secp521r1_selectznz(Q.X, scalar[0] & 1, R.X, Q.X);
     fiat_secp521r1_selectznz(Q.Y, scalar[0] & 1, R.Y, Q.Y);
@@ -11736,10 +11792,11 @@ fixed_smul_cmb(pt_aff_t *out, const unsigned char scalar[66])
 
 
 static void
-point_mul_two(unsigned char outx[66], unsigned char outy[66],
-              const unsigned char a[66], const unsigned char b[66],
-              const unsigned char inx[66],
-              const unsigned char iny[66])
+point_mul_two_secp521r1(unsigned char outx[66], unsigned char outy[66],
+                        const unsigned char a[66],
+                        const unsigned char b[66],
+                        const unsigned char inx[66],
+                        const unsigned char iny[66])
 {
     pt_aff_t P;
 
@@ -11758,8 +11815,8 @@ point_mul_two(unsigned char outx[66], unsigned char outy[66],
 
 
 static void
-point_mul_g(unsigned char outx[66], unsigned char outy[66],
-            const unsigned char scalar[66])
+point_mul_g_secp521r1(unsigned char outx[66], unsigned char outy[66],
+                      const unsigned char scalar[66])
 {
     pt_aff_t P;
 
@@ -11776,10 +11833,10 @@ point_mul_g(unsigned char outx[66], unsigned char outy[66],
 
 
 static void
-point_mul(unsigned char outx[66], unsigned char outy[66],
-          const unsigned char scalar[66],
-          const unsigned char inx[66],
-          const unsigned char iny[66])
+point_mul_secp521r1(unsigned char outx[66], unsigned char outy[66],
+                    const unsigned char scalar[66],
+                    const unsigned char inx[66],
+                    const unsigned char iny[66])
 {
     pt_aff_t P;
 
@@ -11904,8 +11961,8 @@ point_mul(unsigned char outx[66], unsigned char outy[66],
     } while (0)
 
 static mp_err
-point_mul_g_secp521r1(const mp_int *n, mp_int *out_x,
-                      mp_int *out_y, const ECGroup *group)
+point_mul_g_secp521r1_wrap(const mp_int *n, mp_int *out_x,
+                           mp_int *out_y, const ECGroup *group)
 {
     unsigned char b_x[66];
     unsigned char b_y[66];
@@ -11920,7 +11977,7 @@ point_mul_g_secp521r1(const mp_int *n, mp_int *out_x,
 
     MP_CHECKOK(mp_to_fixlen_octets(n, b_n, 66));
     MP_BE2LE(b_n);
-    point_mul_g(b_x, b_y, b_n);
+    point_mul_g_secp521r1(b_x, b_y, b_n);
     MP_BE2LE(b_x);
     MP_BE2LE(b_y);
     MP_CHECKOK(mp_read_unsigned_octets(out_x, b_x, 66));
@@ -11931,9 +11988,9 @@ CLEANUP:
 }
 
 static mp_err
-point_mul_secp521r1(const mp_int *n, const mp_int *in_x,
-                    const mp_int *in_y, mp_int *out_x,
-                    mp_int *out_y, const ECGroup *group)
+point_mul_secp521r1_wrap(const mp_int *n, const mp_int *in_x,
+                         const mp_int *in_y, mp_int *out_x,
+                         mp_int *out_y, const ECGroup *group)
 {
     unsigned char b_x[66];
     unsigned char b_y[66];
@@ -11954,7 +12011,7 @@ point_mul_secp521r1(const mp_int *n, const mp_int *in_x,
     MP_BE2LE(b_x);
     MP_BE2LE(b_y);
     MP_BE2LE(b_n);
-    point_mul(b_x, b_y, b_n, b_x, b_y);
+    point_mul_secp521r1(b_x, b_y, b_n, b_x, b_y);
     MP_BE2LE(b_x);
     MP_BE2LE(b_y);
     MP_CHECKOK(mp_read_unsigned_octets(out_x, b_x, 66));
@@ -11965,10 +12022,11 @@ CLEANUP:
 }
 
 static mp_err
-point_mul_two_secp521r1(const mp_int *n1, const mp_int *n2,
-                        const mp_int *in_x, const mp_int *in_y,
-                        mp_int *out_x, mp_int *out_y,
-                        const ECGroup *group)
+point_mul_two_secp521r1_wrap(const mp_int *n1, const mp_int *n2,
+                             const mp_int *in_x,
+                             const mp_int *in_y, mp_int *out_x,
+                             mp_int *out_y,
+                             const ECGroup *group)
 {
     unsigned char b_x[66];
     unsigned char b_y[66];
@@ -11978,11 +12036,11 @@ point_mul_two_secp521r1(const mp_int *n1, const mp_int *n2,
 
     
     if (n2 == NULL || mp_cmp_z(n2) == MP_EQ)
-        return point_mul_g_secp521r1(n1, out_x, out_y, group);
+        return point_mul_g_secp521r1_wrap(n1, out_x, out_y, group);
 
     
     if (n1 == NULL || mp_cmp_z(n1) == MP_EQ)
-        return point_mul_secp521r1(n2, in_x, in_y, out_x, out_y, group);
+        return point_mul_secp521r1_wrap(n2, in_x, in_y, out_x, out_y, group);
 
     ARGCHK(in_x != NULL && in_y != NULL && out_x != NULL && out_y != NULL,
            MP_BADARG);
@@ -12000,7 +12058,7 @@ point_mul_two_secp521r1(const mp_int *n1, const mp_int *n2,
     MP_BE2LE(b_y);
     MP_BE2LE(b_n1);
     MP_BE2LE(b_n2);
-    point_mul_two(b_x, b_y, b_n1, b_n2, b_x, b_y);
+    point_mul_two_secp521r1(b_x, b_y, b_n1, b_n2, b_x, b_y);
     MP_BE2LE(b_x);
     MP_BE2LE(b_y);
     MP_CHECKOK(mp_read_unsigned_octets(out_x, b_x, 66));
@@ -12014,9 +12072,9 @@ mp_err
 ec_group_set_secp521r1(ECGroup *group, ECCurveName name)
 {
     if (name == ECCurve_NIST_P521) {
-        group->base_point_mul = &point_mul_g_secp521r1;
-        group->point_mul = &point_mul_secp521r1;
-        group->points_mul = &point_mul_two_secp521r1;
+        group->base_point_mul = &point_mul_g_secp521r1_wrap;
+        group->point_mul = &point_mul_secp521r1_wrap;
+        group->points_mul = &point_mul_two_secp521r1_wrap;
     }
     return MP_OKAY;
 }
