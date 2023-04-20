@@ -976,6 +976,13 @@ pub trait MatchMethods: TElement {
             
             
             restyle_requirement = ChildRestyleRequirement::MustMatchDescendants;
+        } else if old_container_type.is_size_container_type() &&
+            !old_primary_style.is_display_contents() &&
+            new_primary_style.is_display_contents()
+        {
+            
+            
+            restyle_requirement = ChildRestyleRequirement::MustMatchDescendants;
         }
 
         restyle_requirement = cmp::max(

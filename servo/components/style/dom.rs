@@ -19,6 +19,7 @@ use crate::shared_lock::{Locked, SharedRwLock};
 use crate::stylist::CascadeData;
 use crate::traversal_flags::TraversalFlags;
 use crate::values::AtomIdent;
+use crate::values::computed::Display;
 use crate::{LocalName, Namespace, WeakAtom};
 use atomic_refcell::{AtomicRef, AtomicRefMut};
 use dom::ElementState;
@@ -946,7 +947,7 @@ pub trait TElement:
     
     
     
-    fn query_container_size(&self) -> euclid::default::Size2D<Option<app_units::Au>>;
+    fn query_container_size(&self, display: &Display) -> euclid::default::Size2D<Option<app_units::Au>>;
 }
 
 
