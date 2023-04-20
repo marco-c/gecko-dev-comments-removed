@@ -10,37 +10,6 @@ const { AppMenuNotifications } = ChromeUtils.importESModule(
   "resource://gre/modules/AppMenuNotifications.sys.mjs"
 );
 
-function waitForDocshellActivated() {
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
-    
-    
-    
-    
-    await ContentTaskUtils.waitForEvent(
-      content.document,
-      "visibilitychange",
-      true ,
-      aEvent => {
-        return content.browsingContext.isActive;
-      }
-    );
-  });
-}
-
-function waitForFullscreen() {
-  return Promise.all([
-    BrowserTestUtils.waitForEvent(window, "fullscreen"),
-    
-    
-    
-    
-    
-    Services.appinfo.OS === "Darwin"
-      ? waitForDocshellActivated()
-      : Promise.resolve(),
-  ]);
-}
-
 add_task(async function testFullscreen() {
   if (Services.appinfo.OS !== "Darwin") {
     await SpecialPowers.pushPrefEnv({
@@ -82,7 +51,7 @@ add_task(async function testFullscreen() {
     "PanelUI is displaying the update-manual notification."
   );
 
-  let fullscreenPromise = waitForFullscreen();
+  let fullscreenPromise = BrowserTestUtils.waitForEvent(window, "fullscreen");
   EventUtils.synthesizeKey("KEY_F11");
   await fullscreenPromise;
   isnot(
