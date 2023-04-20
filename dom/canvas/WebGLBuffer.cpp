@@ -215,7 +215,8 @@ void WebGLBuffer::BufferSubData(GLenum target, uint64_t rawDstByteOffset,
     
     
     
-    if (gl->Renderer() == gl::GLRenderer::MaliT) {
+    if (gl->Renderer() == gl::GLRenderer::MaliT ||
+        gl->Vendor() == gl::GLVendor::Qualcomm) {
       access &= ~LOCAL_GL_MAP_INVALIDATE_RANGE_BIT;
     }
     mapping = gl->fMapBufferRange(target, dstByteOffset.value(),
