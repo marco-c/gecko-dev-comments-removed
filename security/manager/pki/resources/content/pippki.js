@@ -70,9 +70,7 @@ function alertPromptService(title, message) {
   
   
   
-  var ps = Cc["@mozilla.org/embedcomp/prompt-service;1"].getService(
-    Ci.nsIPromptService
-  );
+  var ps = Cc["@mozilla.org/prompter;1"].getService(Ci.nsIPromptService);
   ps.alert(window, title, message);
 }
 

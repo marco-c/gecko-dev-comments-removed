@@ -39,6 +39,6 @@
 
 
 
-#define NS_PROMPTSERVICE_CONTRACTID "@mozilla.org/embedcomp/prompt-service;1"
+#define NS_PROMPTSERVICE_CONTRACTID "@mozilla.org/prompter;1"
 
 #endif  
