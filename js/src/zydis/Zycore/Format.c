@@ -83,7 +83,7 @@ static const ZyanStringView STR_SUB = ZYAN_DEFINE_STRING_VIEW("-");
 
 
 
-#if defined(ZYAN_X86) || defined(ZYAN_ARM) || defined(ZYAN_EMSCRIPTEN) || defined(ZYAN_WASM)
+#if defined(ZYAN_X86) || defined(ZYAN_ARM) || defined(ZYAN_EMSCRIPTEN) || defined(ZYAN_WASM) || defined(ZYAN_PPC)
 ZyanStatus ZyanStringAppendDecU32(ZyanString* string, ZyanU32 value, ZyanU8 padding_length)
 {
     if (!string)
@@ -179,7 +179,7 @@ ZyanStatus ZyanStringAppendDecU64(ZyanString* string, ZyanU64 value, ZyanU8 padd
 
 
 
-#if defined(ZYAN_X86) || defined(ZYAN_ARM) || defined(ZYAN_EMSCRIPTEN) || defined(ZYAN_WASM)
+#if defined(ZYAN_X86) || defined(ZYAN_ARM) || defined(ZYAN_EMSCRIPTEN) || defined(ZYAN_WASM) || defined(ZYAN_PPC)
 ZyanStatus ZyanStringAppendHexU32(ZyanString* string, ZyanU32 value, ZyanU8 padding_length,
     ZyanBool uppercase)
 {
@@ -423,7 +423,7 @@ ZyanStatus ZyanStringAppendFormat(ZyanString* string, const char* format, ...)
 
 ZyanStatus ZyanStringAppendDecU(ZyanString* string, ZyanU64 value, ZyanU8 padding_length)
 {
-#if defined(ZYAN_X64) || defined(ZYAN_AARCH64)
+#if defined(ZYAN_X64) || defined(ZYAN_AARCH64) || defined(ZYAN_PPC64) || defined(ZYAN_RISCV64)
     return ZyanStringAppendDecU64(string, value, padding_length);
 #else
     
@@ -464,7 +464,7 @@ ZyanStatus ZyanStringAppendDecS(ZyanString* string, ZyanI64 value, ZyanU8 paddin
 ZyanStatus ZyanStringAppendHexU(ZyanString* string, ZyanU64 value, ZyanU8 padding_length,
     ZyanBool uppercase)
 {
-#if defined(ZYAN_X64) || defined(ZYAN_AARCH64)
+#if defined(ZYAN_X64) || defined(ZYAN_AARCH64) || defined(ZYAN_PPC64) || defined(ZYAN_RISCV64)
     return ZyanStringAppendHexU64(string, value, padding_length, uppercase);
 #else
     

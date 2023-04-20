@@ -1,38 +1,38 @@
-/***************************************************************************************************
 
-  Zyan Disassembler Library (Zydis)
 
-  Original Author : Florian Bernd
 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
 
-***************************************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "zydis/Zydis/Internal/SharedData.h"
 
-/* ============================================================================================== */
-/* Data tables                                                                                    */
-/* ============================================================================================== */
 
-/* ---------------------------------------------------------------------------------------------- */
-/* Instruction definitions                                                                        */
-/* ---------------------------------------------------------------------------------------------- */
+
+
+
+
+
+
 
 #ifdef ZYDIS_MINIMAL_MODE
 #   define ZYDIS_NOTMIN(x)
@@ -44,9 +44,9 @@
 
 #undef ZYDIS_NOTMIN
 
-/* ---------------------------------------------------------------------------------------------- */
-/* Operand definitions                                                                            */
-/* ---------------------------------------------------------------------------------------------- */
+
+
+
 
 #define ZYDIS_OPERAND_DEFINITION(type, encoding, access) \
     { type, encoding, access }
@@ -55,21 +55,21 @@
 
 #undef ZYDIS_OPERAND_DEFINITION
 
-/* ---------------------------------------------------------------------------------------------- */
-/* Accessed CPU flags                                                                             */
-/* ---------------------------------------------------------------------------------------------- */
+
+
+
 
 #include "zydis/Zydis/Generated/AccessedFlags.inc"
 
-/* ---------------------------------------------------------------------------------------------- */
 
-/* ============================================================================================== */
-/* Functions                                                                                      */
-/* ============================================================================================== */
 
-/* ---------------------------------------------------------------------------------------------- */
-/* Instruction definition                                                                         */
-/* ---------------------------------------------------------------------------------------------- */
+
+
+
+
+
+
+
 
 void ZydisGetInstructionDefinition(ZydisInstructionEncoding encoding, ZyanU16 id,
     const ZydisInstructionDefinition** definition)
@@ -103,28 +103,26 @@ void ZydisGetInstructionDefinition(ZydisInstructionEncoding encoding, ZyanU16 id
     }
 }
 
-/* ---------------------------------------------------------------------------------------------- */
-/* Operand definition                                                                             */
-/* ---------------------------------------------------------------------------------------------- */
+
+
+
 
 #ifndef ZYDIS_MINIMAL_MODE
-ZyanU8 ZydisGetOperandDefinitions(const ZydisInstructionDefinition* definition,
-    const ZydisOperandDefinition** operand)
+const ZydisOperandDefinition* ZydisGetOperandDefinitions(
+    const ZydisInstructionDefinition* definition)
 {
     if (definition->operand_count == 0)
     {
-        *operand = ZYAN_NULL;
-        return 0;
+        return ZYAN_NULL;
     }
     ZYAN_ASSERT(definition->operand_reference != 0xFFFF);
-    *operand = &OPERAND_DEFINITIONS[definition->operand_reference];
-    return definition->operand_count;
+    return &OPERAND_DEFINITIONS[definition->operand_reference];
 }
 #endif
 
-/* ---------------------------------------------------------------------------------------------- */
-/* Element info                                                                                   */
-/* ---------------------------------------------------------------------------------------------- */
+
+
+
 
 #ifndef ZYDIS_MINIMAL_MODE
 void ZydisGetElementInfo(ZydisInternalElementType element, ZydisElementType* type,
@@ -153,7 +151,7 @@ void ZydisGetElementInfo(ZydisInternalElementType element, ZydisElementType* typ
         { ZYDIS_ELEMENT_TYPE_UINT     , 128 },
         { ZYDIS_ELEMENT_TYPE_UINT     , 256 },
         { ZYDIS_ELEMENT_TYPE_FLOAT16  ,  16 },
-        { ZYDIS_ELEMENT_TYPE_FLOAT16  ,  32 }, // TODO: Should indicate 2 float16 elements
+        { ZYDIS_ELEMENT_TYPE_FLOAT16  ,  32 }, 
         { ZYDIS_ELEMENT_TYPE_FLOAT32  ,  32 },
         { ZYDIS_ELEMENT_TYPE_FLOAT64  ,  64 },
         { ZYDIS_ELEMENT_TYPE_FLOAT80  ,  80 },
@@ -162,20 +160,20 @@ void ZydisGetElementInfo(ZydisInternalElementType element, ZydisElementType* typ
         { ZYDIS_ELEMENT_TYPE_CC       ,   5 }
     };
 
-    ZYAN_ASSERT(element < ZYAN_ARRAY_LENGTH(lookup));
+    ZYAN_ASSERT((ZyanUSize)element < ZYAN_ARRAY_LENGTH(lookup));
 
     *type = lookup[element].type;
     *size = lookup[element].size;
 }
 #endif
 
-/* ---------------------------------------------------------------------------------------------- */
-/* Accessed CPU flags                                                                             */
-/* ---------------------------------------------------------------------------------------------- */
+
+
+
 
 #ifndef ZYDIS_MINIMAL_MODE
 ZyanBool ZydisGetAccessedFlags(const ZydisInstructionDefinition* definition,
-    const ZydisAccessedFlags** flags)
+    const ZydisDefinitionAccessedFlags** flags)
 {
     ZYAN_ASSERT(definition->flags_reference < ZYAN_ARRAY_LENGTH(ACCESSED_FLAGS));
     *flags = &ACCESSED_FLAGS[definition->flags_reference];
@@ -183,6 +181,6 @@ ZyanBool ZydisGetAccessedFlags(const ZydisInstructionDefinition* definition,
 }
 #endif
 
-/* ---------------------------------------------------------------------------------------------- */
 
-/* ============================================================================================== */
+
+
