@@ -557,6 +557,31 @@ class IsFrecencyDecayingFunction final : public mozIStorageFunction {
 
 
 
+class SetShouldStartFrecencyRecalculationFunction final
+    : public mozIStorageFunction {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  
+
+
+
+
+
+  static nsresult create(mozIStorageConnection* aDBConn);
+
+ private:
+  ~SetShouldStartFrecencyRecalculationFunction() = default;
+};
+
+
+
+
+
+
+
+
 
 class NoteSyncChangeFunction final : public mozIStorageFunction {
  public:
