@@ -4,6 +4,8 @@
 
 
 
+#[cfg(not(crossbeam_loom))]
+mod once_lock;
 mod parker;
 #[cfg(not(crossbeam_loom))]
 mod sharded_lock;

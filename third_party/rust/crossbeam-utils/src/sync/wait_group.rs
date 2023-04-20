@@ -1,8 +1,6 @@
-
-#![allow(clippy::mutex_atomic)]
-
 use crate::primitive::sync::{Arc, Condvar, Mutex};
 use std::fmt;
+
 
 
 
@@ -80,6 +78,7 @@ impl WaitGroup {
         Self::default()
     }
 
+    
     
     
     
