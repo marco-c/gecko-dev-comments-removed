@@ -225,16 +225,19 @@ class MarkStack {
 
 namespace MarkingOptions {
 enum : uint32_t {
-  None = 0,
-
   
   MarkRootCompartments = 1,
 
   
   
-  ParallelMarking = 2
+  ParallelMarking = 2,
+
+  
+  MarkImplicitEdges = 4,
 };
 }  
+
+constexpr uint32_t NormalMarkingOptions = MarkingOptions::MarkImplicitEdges;
 
 template <uint32_t markingOptions>
 class MarkingTracerT
@@ -250,7 +253,7 @@ class MarkingTracerT
   GCMarker* getMarker();
 };
 
-using MarkingTracer = MarkingTracerT<MarkingOptions::None>;
+using MarkingTracer = MarkingTracerT<NormalMarkingOptions>;
 using RootMarkingTracer = MarkingTracerT<MarkingOptions::MarkRootCompartments>;
 
 enum ShouldReportMarkTime : bool {
