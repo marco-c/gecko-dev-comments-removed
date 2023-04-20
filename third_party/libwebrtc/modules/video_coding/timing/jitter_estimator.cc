@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/jitter_estimator.h"
+#include "modules/video_coding/timing/jitter_estimator.h"
 
 #include <math.h>
 #include <string.h>
@@ -49,8 +49,8 @@ constexpr double kNoiseStdDevOffset = 30.0;
 
 }  
 
-VCMJitterEstimator::VCMJitterEstimator(Clock* clock,
-                                       const FieldTrialsView& field_trials)
+JitterEstimator::JitterEstimator(Clock* clock,
+                                 const FieldTrialsView& field_trials)
     : fps_counter_(30),  
                          
       time_deviation_upper_bound_(
@@ -62,10 +62,10 @@ VCMJitterEstimator::VCMJitterEstimator(Clock* clock,
   Reset();
 }
 
-VCMJitterEstimator::~VCMJitterEstimator() = default;
+JitterEstimator::~JitterEstimator() = default;
 
 
-void VCMJitterEstimator::Reset() {
+void JitterEstimator::Reset() {
   theta_[0] = 1 / (512e3 / 8);
   theta_[1] = 0;
   var_noise_ = 4.0;
@@ -95,9 +95,9 @@ void VCMJitterEstimator::Reset() {
 }
 
 
-void VCMJitterEstimator::UpdateEstimate(TimeDelta frame_delay,
-                                        DataSize frame_size,
-                                        bool incomplete_frame ) {
+void JitterEstimator::UpdateEstimate(TimeDelta frame_delay,
+                                     DataSize frame_size,
+                                     bool incomplete_frame ) {
   if (frame_size.IsZero()) {
     return;
   }
@@ -178,7 +178,7 @@ void VCMJitterEstimator::UpdateEstimate(TimeDelta frame_delay,
 }
 
 
-void VCMJitterEstimator::FrameNacked() {
+void JitterEstimator::FrameNacked() {
   if (nack_count_ < kNackLimit) {
     nack_count_++;
   }
@@ -187,8 +187,8 @@ void VCMJitterEstimator::FrameNacked() {
 
 
 
-void VCMJitterEstimator::KalmanEstimateChannel(TimeDelta frame_delay,
-                                               double delta_frame_size_bytes) {
+void JitterEstimator::KalmanEstimateChannel(TimeDelta frame_delay,
+                                            double delta_frame_size_bytes) {
   double Mh[2];
   double hMh_sigma;
   double kalmanGain[2];
@@ -265,7 +265,7 @@ void VCMJitterEstimator::KalmanEstimateChannel(TimeDelta frame_delay,
 
 
 
-double VCMJitterEstimator::DeviationFromExpectedDelay(
+double JitterEstimator::DeviationFromExpectedDelay(
     TimeDelta frame_delay,
     double delta_frame_size_bytes) const {
   return frame_delay.ms() - (theta_[0] * delta_frame_size_bytes + theta_[1]);
@@ -273,8 +273,7 @@ double VCMJitterEstimator::DeviationFromExpectedDelay(
 
 
 
-void VCMJitterEstimator::EstimateRandomJitter(double d_dT,
-                                              bool incomplete_frame) {
+void JitterEstimator::EstimateRandomJitter(double d_dT, bool incomplete_frame) {
   Timestamp now = clock_->CurrentTime();
   if (last_update_time_.has_value()) {
     fps_counter_.AddSample((now - *last_update_time_).us());
@@ -322,7 +321,7 @@ void VCMJitterEstimator::EstimateRandomJitter(double d_dT,
   }
 }
 
-double VCMJitterEstimator::NoiseThreshold() const {
+double JitterEstimator::NoiseThreshold() const {
   double noiseThreshold = kNoiseStdDevs * sqrt(var_noise_) - kNoiseStdDevOffset;
   if (noiseThreshold < 1.0) {
     noiseThreshold = 1.0;
@@ -331,7 +330,7 @@ double VCMJitterEstimator::NoiseThreshold() const {
 }
 
 
-TimeDelta VCMJitterEstimator::CalculateEstimate() {
+TimeDelta JitterEstimator::CalculateEstimate() {
   double retMs =
       theta_[0] * (max_frame_size_.bytes() - avg_frame_size_.bytes()) +
       NoiseThreshold();
@@ -355,17 +354,17 @@ TimeDelta VCMJitterEstimator::CalculateEstimate() {
   return ret;
 }
 
-void VCMJitterEstimator::PostProcessEstimate() {
+void JitterEstimator::PostProcessEstimate() {
   filter_jitter_estimate_ = CalculateEstimate();
 }
 
-void VCMJitterEstimator::UpdateRtt(TimeDelta rtt) {
+void JitterEstimator::UpdateRtt(TimeDelta rtt) {
   rtt_filter_.Update(rtt);
 }
 
 
 
-TimeDelta VCMJitterEstimator::GetJitterEstimate(
+TimeDelta JitterEstimator::GetJitterEstimate(
     double rtt_multiplier,
     absl::optional<TimeDelta> rtt_mult_add_cap) {
   TimeDelta jitter = CalculateEstimate() + OPERATING_SYSTEM_JITTER;
@@ -408,7 +407,7 @@ TimeDelta VCMJitterEstimator::GetJitterEstimate(
   return std::max(TimeDelta::Zero(), jitter);
 }
 
-Frequency VCMJitterEstimator::GetFrameRate() const {
+Frequency JitterEstimator::GetFrameRate() const {
   TimeDelta mean_frame_period = TimeDelta::Micros(fps_counter_.ComputeMean());
   if (mean_frame_period <= TimeDelta::Zero())
     return Frequency::Zero();

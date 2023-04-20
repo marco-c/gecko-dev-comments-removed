@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_
-#define MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_
+#ifndef MODULES_VIDEO_CODING_TIMING_JITTER_ESTIMATOR_H_
+#define MODULES_VIDEO_CODING_TIMING_JITTER_ESTIMATOR_H_
 
 #include "absl/types/optional.h"
 #include "api/field_trials_view.h"
@@ -24,13 +24,12 @@ namespace webrtc {
 
 class Clock;
 
-class VCMJitterEstimator {
+class JitterEstimator {
  public:
-  explicit VCMJitterEstimator(Clock* clock,
-                              const FieldTrialsView& field_trials);
-  virtual ~VCMJitterEstimator();
-  VCMJitterEstimator(const VCMJitterEstimator&) = delete;
-  VCMJitterEstimator& operator=(const VCMJitterEstimator&) = delete;
+  explicit JitterEstimator(Clock* clock, const FieldTrialsView& field_trials);
+  virtual ~JitterEstimator();
+  JitterEstimator(const JitterEstimator&) = delete;
+  JitterEstimator& operator=(const JitterEstimator&) = delete;
 
   
   void Reset();
