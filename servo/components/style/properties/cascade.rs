@@ -426,6 +426,12 @@ fn tweak_when_ignoring_colors(
     }
 
     
+    let forced = context.builder.get_inherited_text().clone_forced_color_adjust();
+    if forced == computed::ForcedColorAdjust::None {
+        return;
+    }
+
+    
     
     
     if context.builder.pseudo.map_or(false, |p| p.is_color_swatch()) &&
