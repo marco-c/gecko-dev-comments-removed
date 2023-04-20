@@ -24,7 +24,8 @@ using gfx::DrawTarget;
 
 class WindowSurfaceWaylandMB : public WindowSurface {
  public:
-  explicit WindowSurfaceWaylandMB(RefPtr<nsWindow> aWindow);
+  WindowSurfaceWaylandMB(RefPtr<nsWindow> aWindow,
+                         GtkCompositorWidget* aCompositorWidget);
   ~WindowSurfaceWaylandMB() = default;
 
   
@@ -53,11 +54,16 @@ class WindowSurfaceWaylandMB : public WindowSurface {
   void HandlePartialUpdate(const MutexAutoLock& aProofOfLock,
                            const LayoutDeviceIntRegion& aInvalidRegion);
   void IncrementBufferAge(const MutexAutoLock& aProofOfLock);
+  
+  bool MaybeUpdateWindowSize();
 
   mozilla::Mutex mSurfaceLock MOZ_UNANNOTATED;
 
   RefPtr<nsWindow> mWindow;
-  LayoutDeviceIntSize mMozContainerSize;
+  
+  
+  GtkCompositorWidget* mCompositorWidget;
+  LayoutDeviceIntSize mWindowSize;
 
   RefPtr<WaylandBufferSHM> mInProgressBuffer;
   RefPtr<WaylandBufferSHM> mFrontBuffer;
