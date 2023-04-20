@@ -255,7 +255,7 @@ bool ContentPrincipal::SubsumesInternal(
   }
 
   
-  return aOther->IsSameOrigin(mURI);
+  return FastEquals(aOther) || aOther->IsSameOrigin(mURI);
 }
 
 NS_IMETHODIMP
