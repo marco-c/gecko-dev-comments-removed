@@ -76,6 +76,15 @@ ABSL_NAMESPACE_BEGIN
 
 
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcomma"
+#endif
+
+
+
+
+
 
 
 
@@ -704,6 +713,10 @@ inline string_view ClippedSubstr(string_view s, size_t pos,
 constexpr string_view NullSafeStringView(const char* p) {
   return p ? string_view(p) : string_view();
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 ABSL_NAMESPACE_END
 }  
