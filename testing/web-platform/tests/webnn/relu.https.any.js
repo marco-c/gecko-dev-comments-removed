@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('relu', '/webnn/resources/test_data/relu.json', buildOperationWithSingleInput);
