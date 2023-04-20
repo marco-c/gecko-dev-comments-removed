@@ -40,6 +40,9 @@ window.addEventListener("message", async (event) => {
     case "reload":
       window.location.reload();
       break;
+    case "navigate":
+      window.location.href = event.data.url;
+      break;
     case "httpCookies":
       
       

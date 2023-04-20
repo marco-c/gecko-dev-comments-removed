@@ -100,7 +100,7 @@ function ReplyPromise(timestamp) {
 }
 
 
-function ReloadPromise(frame) {
+function LoadPromise(frame) {
   return new Promise((resolve) => {
     frame.addEventListener("load", (event) => {
       resolve();
@@ -183,9 +183,17 @@ function ObservePermissionChange(frame, args = []) {
 
 
 function FrameInitiatedReload(frame) {
-  const reload = ReloadPromise(frame);
+  const reload = LoadPromise(frame);
   frame.contentWindow.postMessage({ command: "reload" }, "*");
   return reload;
+}
+
+
+
+function FrameInitiatedNavigation(frame, url) {
+  const load = LoadPromise(frame);
+  frame.contentWindow.postMessage({ command: "navigate", url }, "*");
+  return load;
 }
 
 
