@@ -486,7 +486,7 @@ Database._shutdownHandler = () => {
       
       if (ex.result != NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR) {
         
-        Cu.reportError(ex);
+        console.error(ex);
       }
     }
   }

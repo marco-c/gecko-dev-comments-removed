@@ -495,7 +495,7 @@ class RemoteSettingsClient extends EventEmitter {
           }
           
           
-          Cu.reportError(e);
+          console.error(e);
         } finally {
           
           delete this._importingPromise;
@@ -510,7 +510,7 @@ class RemoteSettingsClient extends EventEmitter {
       if (!dumpFallback) {
         throw e;
       }
-      Cu.reportError(e);
+      console.error(e);
       let { data } = await lazy.SharedUtils.loadJSONDump(
         this.bucketName,
         this.collectionName
@@ -675,7 +675,7 @@ class RemoteSettingsClient extends EventEmitter {
           collectionLastModified = await this.db.getLastModified();
         } catch (e) {
           
-          Cu.reportError(e);
+          console.error(e);
         }
       }
       let syncResult;

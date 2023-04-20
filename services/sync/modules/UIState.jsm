@@ -80,7 +80,7 @@ const UIStateInternal = {
     
     Services.tm.idleDispatchToMainThread(() => {
       this.refreshState().catch(e => {
-        Cu.reportError(e);
+        console.error(e);
       });
     }, 2000);
   },
@@ -103,7 +103,7 @@ const UIStateInternal = {
         break;
       default:
         this.refreshState().catch(e => {
-          Cu.reportError(e);
+          console.error(e);
         });
         break;
     }
@@ -190,7 +190,7 @@ const UIStateInternal = {
       
       
       
-      Cu.reportError("Error updating FxA account info: " + e);
+      console.error("Error updating FxA account info: " + e);
       return null;
     }
   },

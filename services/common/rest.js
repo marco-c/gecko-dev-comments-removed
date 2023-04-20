@@ -320,7 +320,7 @@ RESTRequest.prototype = {
           
           
           
-          Cu.reportError(
+          console.error(
             "rest.js found an object to JSON.stringify but also a " +
               "content-type header with a charset specification. " +
               "This probably isn't going to do what you expect"

@@ -22,7 +22,7 @@ RemoteSettingsTimer.prototype = {
   
   notify(timer) {
     lazy.RemoteSettings.pollChanges({ trigger: "timer" }).catch(e =>
-      Cu.reportError(e)
+      console.error(e)
     );
   },
 };

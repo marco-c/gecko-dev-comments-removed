@@ -96,7 +96,7 @@ async function jexlFilterFunc(entry, environment) {
     };
     result = await lazy.FilterExpressions.eval(filter_expression, context);
   } catch (e) {
-    Cu.reportError(e);
+    console.error(e);
   }
   return result ? entry : null;
 }
@@ -277,9 +277,9 @@ function remoteSettingsFunction() {
         
         lazy.gPrefs.clearUserPref(PREF_SETTINGS_LAST_ETAG);
         
-        await lazy.gSyncHistory.clear().catch(error => Cu.reportError(error));
+        await lazy.gSyncHistory.clear().catch(error => console.error(error));
         
-        await lazy.Database.destroy().catch(error => Cu.reportError(error));
+        await lazy.Database.destroy().catch(error => console.error(error));
       } else {
         console.warn(
           `Synchronization is broken, but last error is ${lastStatus}`
@@ -432,7 +432,7 @@ function remoteSettingsFunction() {
           expectedTimestamp,
           errorName: firstError.name,
         })
-        .catch(error => Cu.reportError(error));
+        .catch(error => console.error(error));
       
       Services.obs.notifyObservers(
         { wrappedJSObject: { error: firstError } },
@@ -472,7 +472,7 @@ function remoteSettingsFunction() {
     
     await lazy.gSyncHistory
       .store(currentEtag, status)
-      .catch(error => Cu.reportError(error));
+      .catch(error => console.error(error));
 
     lazy.console.info("Polling for changes done");
     Services.obs.notifyObservers(null, "remote-settings:changes-poll-end");
