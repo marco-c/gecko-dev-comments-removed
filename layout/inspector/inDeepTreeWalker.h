@@ -22,7 +22,8 @@ class inDeepTreeWalker final : public inIDeepTreeWalker {
 
   inDeepTreeWalker();
 
-  nsresult SetCurrentNode(nsINode* aCurrentNode, nsINodeList* aSiblings);
+  using ChildList = AutoTArray<RefPtr<nsINode>, 8>;
+  void GetChildren(nsINode& aParent, ChildList&);
 
  protected:
   virtual ~inDeepTreeWalker();
@@ -30,9 +31,9 @@ class inDeepTreeWalker final : public inIDeepTreeWalker {
   already_AddRefed<nsINode> GetParent();
   nsresult EdgeChild(nsINode** _retval, bool aReverse);
 
-  bool mShowAnonymousContent;
-  bool mShowSubDocuments;
-  bool mShowDocumentsAsNodes;
+  bool mShowAnonymousContent = false;
+  bool mShowSubDocuments = false;
+  bool mShowDocumentsAsNodes = false;
 
   
   
@@ -43,15 +44,10 @@ class inDeepTreeWalker final : public inIDeepTreeWalker {
   
   
   
-  
-  
-  
-  
-  
-  nsCOMPtr<nsINodeList> mSiblings;
+  ChildList mSiblings;
 
   
-  int32_t mCurrentIndex;
+  int32_t mCurrentIndex = -1;
 };
 
 

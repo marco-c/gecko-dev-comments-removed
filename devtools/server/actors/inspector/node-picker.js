@@ -67,14 +67,6 @@ class NodePicker {
       node = this._findNodeAtMouseEventPosition(event) || node;
     }
 
-    
-    
-    
-    const shadowRoot = node.containingShadowRoot;
-    if (shadowRoot?.isUAWidget() && !this._walker.showAllAnonymousContent) {
-      node = shadowRoot.host;
-    }
-
     return this._walker.attachElement(node);
   }
 

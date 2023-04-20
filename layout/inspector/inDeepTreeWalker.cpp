@@ -27,12 +27,7 @@ using mozilla::dom::InspectorUtils;
 
 
 
-inDeepTreeWalker::inDeepTreeWalker()
-    : mShowAnonymousContent(false),
-      mShowSubDocuments(false),
-      mShowDocumentsAsNodes(false),
-      mCurrentIndex(-1) {}
-
+inDeepTreeWalker::inDeepTreeWalker() = default;
 inDeepTreeWalker::~inDeepTreeWalker() = default;
 
 NS_IMPL_ISUPPORTS(inDeepTreeWalker, inIDeepTreeWalker)
@@ -113,14 +108,13 @@ already_AddRefed<nsINode> inDeepTreeWalker::GetParent() {
 
   nsINode* parentNode =
       InspectorUtils::GetParentForNode(*mCurrentNode, mShowAnonymousContent);
-
-  uint16_t nodeType = 0;
-  if (parentNode) {
-    nodeType = parentNode->NodeType();
+  if (!parentNode) {
+    return nullptr;
   }
+
   
   
-  if (!mShowDocumentsAsNodes && nodeType == nsINode::DOCUMENT_NODE &&
+  if (!mShowDocumentsAsNodes && parentNode->IsDocument() &&
       parentNode != mRoot) {
     parentNode =
         InspectorUtils::GetParentForNode(*parentNode, mShowAnonymousContent);
@@ -129,16 +123,19 @@ already_AddRefed<nsINode> inDeepTreeWalker::GetParent() {
   return do_AddRef(parentNode);
 }
 
-static already_AddRefed<nsINodeList> GetChildren(nsINode* aParent,
-                                                 bool aShowAnonymousContent,
-                                                 bool aShowSubDocuments) {
-  MOZ_ASSERT(aParent);
-  if (aShowSubDocuments) {
-    if (auto* doc = inLayoutUtils::GetSubDocumentFor(aParent)) {
-      aParent = doc;
-    }
+void inDeepTreeWalker::GetChildren(nsINode& aParent, ChildList& aChildList) {
+  aChildList.ClearAndRetainStorage();
+  InspectorUtils::GetChildrenForNode(aParent, mShowAnonymousContent,
+                                      false,
+                                     mShowSubDocuments, aChildList);
+  if (aChildList.Length() == 1 && aChildList.ElementAt(0)->IsDocument() &&
+      !mShowDocumentsAsNodes) {
+    RefPtr parent = aChildList.ElementAt(0);
+    aChildList.ClearAndRetainStorage();
+    InspectorUtils::GetChildrenForNode(*parent, mShowAnonymousContent,
+                                        false,
+                                       mShowSubDocuments, aChildList);
   }
-  return InspectorUtils::GetChildrenForNode(*aParent, aShowAnonymousContent);
 }
 
 NS_IMETHODIMP
@@ -157,49 +154,25 @@ inDeepTreeWalker::SetCurrentNode(nsINode* aCurrentNode) {
     }
   }
 
-  return SetCurrentNode(aCurrentNode, nullptr);
-}
-
-nsresult inDeepTreeWalker::SetCurrentNode(nsINode* aCurrentNode,
-                                          nsINodeList* aSiblings) {
-  MOZ_ASSERT(aCurrentNode);
-
   
   
-  nsCOMPtr<nsINodeList> tmpSiblings = mSiblings;
-  nsCOMPtr<nsINode> tmpCurrent = mCurrentNode;
-  mSiblings = aSiblings;
+  ChildList oldSiblings;
+  mSiblings.SwapElements(oldSiblings);
+  nsCOMPtr<nsINode> oldCurrent = std::move(mCurrentNode);
+
   mCurrentNode = aCurrentNode;
-
-  
-  
-  
-  
-  
-  
-  if (!mSiblings) {
-    if (!aCurrentNode->IsDocument()) {
-      if (nsCOMPtr<nsINode> parent = GetParent()) {
-        mSiblings =
-            GetChildren(parent, mShowAnonymousContent, mShowSubDocuments);
-      }
-    }
-  }
-
-  if (mSiblings && mSiblings->Length()) {
+  if (RefPtr<nsINode> parent = GetParent()) {
+    GetChildren(*parent, mSiblings);
     
     
-    nsCOMPtr<nsIContent> currentAsContent = do_QueryInterface(mCurrentNode);
-    MOZ_ASSERT(currentAsContent);
-    int32_t index = mSiblings->IndexOf(currentAsContent);
+    int32_t index = mSiblings.IndexOf(mCurrentNode);
     if (index < 0) {
       
       
       
-
       
-      mCurrentNode = tmpCurrent;
-      mSiblings = tmpSiblings;
+      mCurrentNode = std::move(oldCurrent);
+      oldSiblings.SwapElements(mSiblings);
       return NS_ERROR_INVALID_ARG;
     }
     mCurrentIndex = index;
@@ -217,13 +190,11 @@ inDeepTreeWalker::ParentNode(nsINode** _retval) {
   }
 
   nsCOMPtr<nsINode> parent = GetParent();
-
   if (!parent) {
     return NS_OK;
   }
 
-  nsresult rv = SetCurrentNode(parent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(SetCurrentNode(parent));
 
   parent.forget(_retval);
   return NS_OK;
@@ -238,29 +209,15 @@ nsresult inDeepTreeWalker::EdgeChild(nsINode** _retval, bool aFront) {
 
   *_retval = nullptr;
 
-  nsCOMPtr<nsINode> echild;
-  if (mShowSubDocuments && mShowDocumentsAsNodes) {
-    
-    
-    
-    echild = inLayoutUtils::GetSubDocumentFor(mCurrentNode);
+  ChildList children;
+  GetChildren(*mCurrentNode, children);
+  if (children.IsEmpty()) {
+    return NS_OK;
   }
-
-  nsCOMPtr<nsINodeList> children;
-  if (!echild) {
-    children =
-        GetChildren(mCurrentNode, mShowAnonymousContent, mShowSubDocuments);
-    if (children && children->Length() > 0) {
-      echild = children->Item(aFront ? 0 : children->Length() - 1);
-    }
-  }
-
-  if (echild) {
-    nsresult rv = SetCurrentNode(echild, children);
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_ADDREF(*_retval = mCurrentNode);
-  }
-
+  mSiblings = std::move(children);
+  mCurrentIndex = aFront ? 0 : mSiblings.Length() - 1;
+  mCurrentNode = mSiblings.ElementAt(mCurrentIndex);
+  NS_ADDREF(*_retval = mCurrentNode);
   return NS_OK;
 }
 
@@ -277,11 +234,11 @@ inDeepTreeWalker::LastChild(nsINode** _retval) {
 NS_IMETHODIMP
 inDeepTreeWalker::PreviousSibling(nsINode** _retval) {
   *_retval = nullptr;
-  if (!mCurrentNode || !mSiblings || mCurrentIndex < 1) {
+  if (!mCurrentNode || mCurrentIndex < 1) {
     return NS_OK;
   }
 
-  nsIContent* prev = mSiblings->Item(--mCurrentIndex);
+  nsINode* prev = mSiblings.ElementAt(--mCurrentIndex);
   mCurrentNode = prev;
   NS_ADDREF(*_retval = mCurrentNode);
   return NS_OK;
@@ -290,12 +247,11 @@ inDeepTreeWalker::PreviousSibling(nsINode** _retval) {
 NS_IMETHODIMP
 inDeepTreeWalker::NextSibling(nsINode** _retval) {
   *_retval = nullptr;
-  if (!mCurrentNode || !mSiblings ||
-      mCurrentIndex + 1 >= (int32_t)mSiblings->Length()) {
+  if (!mCurrentNode || mCurrentIndex + 1 >= (int32_t)mSiblings.Length()) {
     return NS_OK;
   }
 
-  nsIContent* next = mSiblings->Item(++mCurrentIndex);
+  nsINode* next = mSiblings.ElementAt(++mCurrentIndex);
   mCurrentNode = next;
   NS_ADDREF(*_retval = mCurrentNode);
   return NS_OK;

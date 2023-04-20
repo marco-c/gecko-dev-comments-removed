@@ -153,13 +153,7 @@ function standardTreeWalkerFilter(node) {
   
   
   
-  
-  
-  if (
-    isNativeAnonymous(node) &&
-    !isInXULDocument(node) &&
-    !isNativeAnonymous(node.getRootNode())
-  ) {
+  if (isNativeAnonymous(node) && !isInXULDocument(node)) {
     return nodeFilterConstants.FILTER_SKIP;
   }
 
