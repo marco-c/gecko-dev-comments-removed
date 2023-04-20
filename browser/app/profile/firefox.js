@@ -574,6 +574,9 @@ pref("browser.urlbar.bestMatch.enabled", false);
 
 pref("browser.urlbar.bestMatch.blockingEnabled", false);
 
+
+pref("browser.urlbar.contextualSearch.enabled", false);
+
 pref("browser.altClickSave", false);
 
 
