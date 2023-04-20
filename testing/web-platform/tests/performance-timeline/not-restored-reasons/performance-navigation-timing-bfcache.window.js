@@ -5,6 +5,7 @@
 
 
 
+
 'use strict';
 
 
@@ -14,16 +15,10 @@ promise_test(async t => {
   
   const rc1 = await rcHelper.addWindow(
        null,  {features: 'noopener'});
-  await prepareForBFCache(rc1);
 
   
-  const rc2 = await rc1.navigateToNew();
-
   
-  await rc2.historyBack();
-  await assert_implements_bfcache(rc1);
-
-  
+  await assertBFCache(rc1,  true);
   assert_true(await rc1.executeScript(() => {
     let reasons =
         performance.getEntriesByType('navigation')[0].notRestoredReasons;

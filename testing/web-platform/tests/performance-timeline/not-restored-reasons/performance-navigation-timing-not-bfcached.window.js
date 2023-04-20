@@ -6,6 +6,7 @@
 
 
 
+
 'use strict';
 
 
@@ -20,15 +21,9 @@ promise_test(async t => {
   const rc1_url = await rc1.executeScript(() => {
     return location.href;
   });
-  await prepareForBFCache(rc1);
 
   
-  const rc2 = await rc1.navigateToNew();
-
-  
-  await rc2.historyBack();
-  await assert_not_bfcached(rc1);
-  
+  await assertBFCache(rc1,  false);
   await assertNotRestoredReasonsEquals(
       rc1,
        true,
