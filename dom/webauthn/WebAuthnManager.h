@@ -9,6 +9,7 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/RandomNum.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
 #include "mozilla/dom/WebAuthnManagerBase.h"
@@ -70,7 +71,8 @@ class WebAuthnTransaction {
   
   static uint64_t NextId() {
     static uint64_t id = 0;
-    return ++id;
+    Maybe<uint64_t> rand = mozilla::RandomUint64();
+    return rand.valueOr(++id) & UINT64_C(0x1fffffffffffff);  
   }
 };
 
