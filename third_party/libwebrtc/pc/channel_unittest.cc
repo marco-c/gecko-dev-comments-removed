@@ -41,9 +41,9 @@
 #include "rtc_base/buffer.h"
 #include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/location.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/ssl_identity.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/scoped_key_value_config.h"
@@ -134,7 +134,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
 
   ~ChannelTest() {
     if (network_thread_) {
-      network_thread_->Invoke<void>(RTC_FROM_HERE, [this]() {
+      SendTask(network_thread_, [this]() {
         network_thread_safety_->SetNotAlive();
         DeinitChannels();
       });
@@ -285,7 +285,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
   void DeinitChannels() {
     if (!channel1_ && !channel2_)
       return;
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this]() {
+    SendTask(network_thread_, [this]() {
       if (channel1_) {
         RTC_DCHECK_RUN_ON(channel1_->network_thread());
         channel1_->SetRtpTransport(nullptr);
@@ -303,14 +303,13 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
     auto rtp_transport = std::make_unique<webrtc::RtpTransport>(
         rtcp_packet_transport == nullptr);
 
-    network_thread_->Invoke<void>(
-        RTC_FROM_HERE,
-        [&rtp_transport, rtp_packet_transport, rtcp_packet_transport] {
-          rtp_transport->SetRtpPacketTransport(rtp_packet_transport);
-          if (rtcp_packet_transport) {
-            rtp_transport->SetRtcpPacketTransport(rtcp_packet_transport);
-          }
-        });
+    SendTask(network_thread_,
+             [&rtp_transport, rtp_packet_transport, rtcp_packet_transport] {
+               rtp_transport->SetRtpPacketTransport(rtp_packet_transport);
+               if (rtcp_packet_transport) {
+                 rtp_transport->SetRtcpPacketTransport(rtcp_packet_transport);
+               }
+             });
     return rtp_transport;
   }
 
@@ -320,17 +319,16 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
     auto dtls_srtp_transport = std::make_unique<webrtc::DtlsSrtpTransport>(
         rtcp_dtls_transport == nullptr, field_trials_);
 
-    network_thread_->Invoke<void>(
-        RTC_FROM_HERE,
-        [&dtls_srtp_transport, rtp_dtls_transport, rtcp_dtls_transport] {
-          dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
-                                                 rtcp_dtls_transport);
-        });
+    SendTask(network_thread_,
+             [&dtls_srtp_transport, rtp_dtls_transport, rtcp_dtls_transport] {
+               dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
+                                                      rtcp_dtls_transport);
+             });
     return dtls_srtp_transport;
   }
 
   void ConnectFakeTransports() {
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+    SendTask(network_thread_, [this] {
       bool asymmetric = false;
       
       if (fake_rtp_dtls_transport1_ && fake_rtp_dtls_transport2_) {
@@ -536,18 +534,21 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
   
   bool IsSrtpActive(std::unique_ptr<typename T::Channel>& channel) {
     RTC_DCHECK(channel.get());
-    return network_thread_->Invoke<bool>(
-        RTC_FROM_HERE, [&] { return channel->srtp_active(); });
+    bool result;
+    SendTask(network_thread_, [&] { result = channel->srtp_active(); });
+    return result;
   }
 
   
   
   bool IsRtcpMuxEnabled(std::unique_ptr<typename T::Channel>& channel) {
     RTC_DCHECK(channel.get());
-    return network_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-      return channel->rtp_transport() &&
-             channel->rtp_transport()->rtcp_mux_enabled();
+    bool result;
+    SendTask(network_thread_, [&] {
+      result = channel->rtp_transport() &&
+               channel->rtp_transport()->rtcp_mux_enabled();
     });
+    return result;
   }
 
   
@@ -863,7 +864,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
     
     WaitForThreads();
     media_channel1->set_num_network_route_changes(0);
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+    SendTask(network_thread_, [this] {
       rtc::NetworkRoute network_route;
       
       fake_rtp_dtls_transport1_->ice_transport()->SignalNetworkRouteChanged(
@@ -874,7 +875,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
     EXPECT_FALSE(media_channel1->last_network_route().connected);
     media_channel1->set_num_network_route_changes(0);
 
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+    SendTask(network_thread_, [this] {
       rtc::NetworkRoute network_route;
       network_route.connected = true;
       network_route.local =
@@ -1034,9 +1035,8 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckNoRtp2());
 
     
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      fake_rtp_dtls_transport1_->SetWritable(false);
-    });
+    SendTask(network_thread_,
+             [this] { fake_rtp_dtls_transport1_->SetWritable(false); });
     SendRtp1();
     SendRtp2();
     WaitForThreads();
@@ -1044,9 +1044,8 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckNoRtp2());
 
     
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
-      fake_rtp_dtls_transport1_->SetWritable(true);
-    });
+    SendTask(network_thread_,
+             [this] { fake_rtp_dtls_transport1_->SetWritable(true); });
     EXPECT_TRUE(media_channel1()->sending());
     SendRtp1();
     SendRtp2();
@@ -1057,7 +1056,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckNoRtp2());
 
     
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+    SendTask(network_thread_, [this] {
       bool asymmetric = true;
       fake_rtp_dtls_transport1_->SetDestination(nullptr, asymmetric);
     });
@@ -1072,7 +1071,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckNoRtp1());
 
     
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [this] {
+    SendTask(network_thread_, [this] {
       bool asymmetric = true;
       fake_rtp_dtls_transport1_->SetDestination(fake_rtp_dtls_transport2_.get(),
                                                 asymmetric);
@@ -1303,7 +1302,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
 
     bool rcv_success, send_success;
     int rcv_buf, send_buf;
-    network_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+    SendTask(network_thread_, [&] {
       channel1_->SetOption(cricket::BaseChannel::ST_RTP,
                            rtc::Socket::Option::OPT_SNDBUF, kSndBufSize);
       channel2_->SetOption(cricket::BaseChannel::ST_RTP,
@@ -1386,14 +1385,13 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
   void WaitForThreads(rtc::ArrayView<rtc::Thread*> threads) {
     
     for (rtc::Thread* thread : threads) {
-      thread->Invoke<void>(RTC_FROM_HERE,
-                           [thread] { ProcessThreadQueue(thread); });
+      SendTask(thread, [thread] { ProcessThreadQueue(thread); });
     }
     ProcessThreadQueue(rtc::Thread::Current());
     
     if (!network_thread_->IsCurrent()) {
-      network_thread_->Invoke<void>(
-          RTC_FROM_HERE, [this] { ProcessThreadQueue(network_thread_); });
+      SendTask(network_thread_,
+               [this] { ProcessThreadQueue(network_thread_); });
     }
     
     ProcessThreadQueue(rtc::Thread::Current());
@@ -1457,7 +1455,7 @@ std::unique_ptr<cricket::VoiceChannel> ChannelTest<VoiceTraits>::CreateChannel(
       worker_thread, network_thread, signaling_thread, std::move(ch),
       cricket::CN_AUDIO, (flags & DTLS) != 0, webrtc::CryptoOptions(),
       &ssrc_generator_);
-  network_thread->Invoke<void>(RTC_FROM_HERE, [&]() {
+  SendTask(network_thread, [&]() {
     RTC_DCHECK_RUN_ON(channel->network_thread());
     channel->SetRtpTransport(rtp_transport);
   });
@@ -1543,7 +1541,7 @@ std::unique_ptr<cricket::VideoChannel> ChannelTest<VideoTraits>::CreateChannel(
       worker_thread, network_thread, signaling_thread, std::move(ch),
       cricket::CN_VIDEO, (flags & DTLS) != 0, webrtc::CryptoOptions(),
       &ssrc_generator_);
-  network_thread->Invoke<void>(RTC_FROM_HERE, [&]() {
+  SendTask(network_thread, [&]() {
     RTC_DCHECK_RUN_ON(channel->network_thread());
     channel->SetRtpTransport(rtp_transport);
   });

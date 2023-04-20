@@ -15,6 +15,7 @@
 
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -123,7 +124,7 @@ TEST(SimulatedTimeControllerTest, DelayTaskRunOnTime) {
   EXPECT_TRUE(delay_task_executed);
 }
 
-TEST(SimulatedTimeControllerTest, ThreadYeildsOnInvoke) {
+TEST(SimulatedTimeControllerTest, ThreadYeildsOnSynchronousCall) {
   GlobalSimulatedTimeController sim(kStartTime);
   auto main_thread = sim.GetMainThread();
   auto t2 = sim.CreateThread("thread", nullptr);
@@ -131,7 +132,7 @@ TEST(SimulatedTimeControllerTest, ThreadYeildsOnInvoke) {
   
   
   main_thread->PostTask([&] { task_has_run = true; });
-  t2->Invoke<void>(RTC_FROM_HERE, [] {
+  SendTask(t2.get(), [] {
     rtc::Event yield_event;
     
     
