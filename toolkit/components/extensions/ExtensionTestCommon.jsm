@@ -610,7 +610,14 @@ ExtensionTestCommon = class ExtensionTestCommon {
       
       
       if (AppConstants.platform === "android") {
-        data.useAddonManager = "permanent";
+        
+        
+        
+        if (data.temporarilyInstalled) {
+          data.useAddonManager = "temporary";
+        } else {
+          data.useAddonManager = "permanent";
+        }
         
         
         this.setExtensionID(data);
