@@ -324,6 +324,7 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
 
   nsAutoString referrer;
   ReferrerPolicy referrerPolicy = ReferrerPolicy::_empty;
+  ReferrerPolicy environmentReferrerPolicy = ReferrerPolicy::_empty;
 
   nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo();
   if (referrerInfo) {
@@ -393,14 +394,18 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
                                                 &isThirdPartyChannel));
   }
 
+  nsILoadInfo::CrossOriginEmbedderPolicy embedderPolicy =
+      loadInfo->GetLoadingEmbedderPolicy();
+
   
   
   return IPCInternalRequest(
       method, {spec}, ipcHeadersGuard, ipcHeaders, Nothing(), -1,
       alternativeDataType, contentPolicyType, referrer, referrerPolicy,
-      requestMode, requestCredentials, cacheMode, requestRedirect, integrity,
-      fragment, principalInfo, interceptionPrincipalInfo, contentPolicyType,
-      redirectChain, isThirdPartyChannel);
+      environmentReferrerPolicy, requestMode, requestCredentials, cacheMode,
+      requestRedirect, integrity, fragment, principalInfo,
+      interceptionPrincipalInfo, contentPolicyType, redirectChain,
+      isThirdPartyChannel, embedderPolicy);
 }
 
 nsresult MaybeStoreStreamForBackgroundThread(nsIInterceptedChannel* aChannel,
