@@ -1782,7 +1782,9 @@ LayoutDeviceIntRect TextLeafRange::Bounds() const {
         nsIAccessibleText::BOUNDARY_LINE_START, eDirNext);
     TextLeafPoint lastPointInLine = lineStartPoint.FindBoundary(
         nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
-    if (mEnd <= lastPointInLine) {
+    
+    
+    if (lineStartPoint == currPoint || mEnd <= lastPointInLine) {
       lastPointInLine = mEnd;
       locatedFinalLine = true;
     }
