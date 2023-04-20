@@ -2172,8 +2172,6 @@ bool SharedImmutableScriptData::shareScriptData(
 
   SharedImmutableScriptData* data = sisd.get();
 
-  
-  
   SharedImmutableScriptData::Hasher::Lookup lookup(data);
 
   Maybe<AutoLockGlobalScriptData> lock;
