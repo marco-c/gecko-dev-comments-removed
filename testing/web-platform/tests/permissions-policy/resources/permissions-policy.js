@@ -26,11 +26,9 @@ function assert_permissions_policy_supported() {
 
 
 
-
-
 function test_feature_availability(
     feature_description, test, src, expect_feature_available, feature_name,
-    allow_attribute, is_promise_test = false) {
+    allow_attribute) {
   let frame = document.createElement('iframe');
   frame.src = src;
 
@@ -42,26 +40,16 @@ function test_feature_availability(
     frame.setAttribute(allow_attribute, true);
   }
 
-  function expectFeatureAvailable(evt) {
+  window.addEventListener('message', test.step_func(evt => {
     if (evt.source === frame.contentWindow &&
         evt.data.type === 'availability-result') {
       expect_feature_available(evt.data, feature_description);
       document.body.removeChild(frame);
       test.done();
     }
-  }
+  }));
 
-  if (!is_promise_test) {
-    window.addEventListener('message', test.step_func(expectFeatureAvailable));
-    document.body.appendChild(frame);
-    return;
-  }
-
-  const promise = new Promise((resolve) => {
-                    window.addEventListener('message', resolve);
-                  }).then(expectFeatureAvailable);
   document.body.appendChild(frame);
-  return promise;
 }
 
 
@@ -88,8 +76,7 @@ function test_feature_availability_with_post_message_result(
   const test_result = ({ name, message }, feature_description) => {
     assert_equals(name, expected_result, message + '.');
   };
-  return test_feature_availability(
-      null, test, src, test_result, allow_attribute, undefined, true);
+  test_feature_availability(null, test, src, test_result, allow_attribute);
 }
 
 
@@ -176,9 +163,9 @@ function run_all_fp_tests_allow_self(
 
   
   const same_origin_frame_pathname = same_origin_url(feature_name);
-  promise_test(
+  async_test(
       t => {
-        return test_feature_availability_with_post_message_result(
+        test_feature_availability_with_post_message_result(
             t, same_origin_frame_pathname, '#OK');
       },
       'Default "' + feature_name +
@@ -186,29 +173,29 @@ function run_all_fp_tests_allow_self(
 
   
   const cross_origin_frame_url = cross_origin_url(cross_origin, feature_name);
-  promise_test(
+  async_test(
       t => {
-        return test_feature_availability_with_post_message_result(
+        test_feature_availability_with_post_message_result(
             t, cross_origin_frame_url, error_name);
       },
       'Default "' + feature_name +
           '" permissions policy ["self"] disallows cross-origin iframes.');
 
   
-  promise_test(
+  async_test(
       t => {
-        return test_feature_availability_with_post_message_result(
+        test_feature_availability_with_post_message_result(
             t, cross_origin_frame_url, '#OK', feature_name);
       },
       'permissions policy "' + feature_name +
           '" can be enabled in cross-origin iframes using "allow" attribute.');
 
   
-  promise_test(
+  async_test(
       t => {
-        return test_feature_availability_with_post_message_result(
+        test_feature_availability_with_post_message_result(
             t, same_origin_frame_pathname, error_name,
-            feature_name + ' \'none\'');
+            feature_name + " 'none'");
       },
       'permissions policy "' + feature_name +
           '" can be disabled in same-origin iframes using "allow" attribute.');
@@ -259,9 +246,9 @@ function run_all_fp_tests_allow_all(
 
   
   const same_origin_frame_pathname = same_origin_url(feature_name);
-  promise_test(
+  async_test(
       t => {
-        return test_feature_availability_with_post_message_result(
+        test_feature_availability_with_post_message_result(
             t, same_origin_frame_pathname, '#OK');
       },
       'Default "' + feature_name +
@@ -269,29 +256,30 @@ function run_all_fp_tests_allow_all(
 
   
   const cross_origin_frame_url = cross_origin_url(cross_origin, feature_name);
-  promise_test(
+  async_test(
       t => {
-        return test_feature_availability_with_post_message_result(
+        test_feature_availability_with_post_message_result(
             t, cross_origin_frame_url, '#OK');
       },
       'Default "' + feature_name +
           '" permissions policy ["*"] allows cross-origin iframes.');
 
   
-  promise_test(
+  async_test(
       t => {
-        return test_feature_availability_with_post_message_result(
-            t, cross_origin_frame_url, error_name, feature_name + ' \'none\'');
+        test_feature_availability_with_post_message_result(
+            t, cross_origin_frame_url, error_name,
+            feature_name + " 'none'");
       },
       'permissions policy "' + feature_name +
           '" can be disabled in cross-origin iframes using "allow" attribute.');
 
   
-  promise_test(
+  async_test(
       t => {
-        return test_feature_availability_with_post_message_result(
+        test_feature_availability_with_post_message_result(
             t, same_origin_frame_pathname, error_name,
-            feature_name + ' \'none\'');
+            feature_name + " 'none'");
       },
       'permissions policy "' + feature_name +
           '" can be disabled in same-origin iframes using "allow" attribute.');
