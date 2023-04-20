@@ -31,6 +31,11 @@ use std::{usize, f32};
 
 
 
+const MAX_SHARED_SURFACE_SIZE: i32 = 2048;
+
+
+
+
 const TEXTURE_DIMENSION_MASK: i32 = 0xFF;
 
 
@@ -279,7 +284,6 @@ impl RenderTaskGraphBuilder {
         resource_cache: &mut ResourceCache,
         gpu_cache: &mut GpuCache,
         deferred_resolves: &mut Vec<DeferredResolve>,
-        max_shared_surface_size: i32,
     ) -> RenderTaskGraph {
         
         let task_count = self.tasks.len();
@@ -429,13 +433,13 @@ impl RenderTaskGraphBuilder {
                             
 
                             let can_use_shared_surface = can_use_shared_surface &&
-                                size.width <= max_shared_surface_size &&
-                                size.height <= max_shared_surface_size;
+                                size.width <= MAX_SHARED_SURFACE_SIZE &&
+                                size.height <= MAX_SHARED_SURFACE_SIZE;
 
                             let surface_size = if can_use_shared_surface {
                                 DeviceIntSize::new(
-                                    max_shared_surface_size,
-                                    max_shared_surface_size,
+                                    MAX_SHARED_SURFACE_SIZE,
+                                    MAX_SHARED_SURFACE_SIZE,
                                 )
                             } else {
                                 

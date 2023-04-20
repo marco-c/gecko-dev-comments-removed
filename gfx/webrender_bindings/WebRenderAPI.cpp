@@ -147,8 +147,7 @@ class NewRenderer : public RendererEvent {
             StaticPrefs::gfx_webrender_enable_gpu_markers_AtStartup(),
             panic_on_gl_error, picTileWidth, picTileHeight,
             gfx::gfxVars::WebRenderRequiresHardwareDriver(),
-            StaticPrefs::gfx_webrender_low_quality_pinch_zoom_AtStartup(),
-            StaticPrefs::gfx_webrender_max_shared_surface_size_AtStartup())) {
+            StaticPrefs::gfx_webrender_low_quality_pinch_zoom_AtStartup())) {
       
       MOZ_ASSERT(errorMessage);
       mError->AssignASCII(errorMessage);
