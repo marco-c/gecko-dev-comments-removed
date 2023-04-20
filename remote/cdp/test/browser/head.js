@@ -6,8 +6,6 @@
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 const { RemoteAgent } = ChromeUtils.importESModule(
   "chrome://remote/content/components/RemoteAgent.sys.mjs"
 );
@@ -16,6 +14,9 @@ const { RemoteAgentError } = ChromeUtils.importESModule(
 );
 const { TabManager } = ChromeUtils.importESModule(
   "chrome://remote/content/shared/TabManager.sys.mjs"
+);
+const { Stream } = ChromeUtils.importESModule(
+  "chrome://remote/content/cdp/StreamRegistry.sys.mjs"
 );
 
 const TIMEOUT_MULTIPLIER = getTimeoutMultiplier();
@@ -415,40 +416,24 @@ function fail(message) {
 
 
 
-
-
-async function createFile(contents, options = {}) {
+async function createFileStream(contents, options = {}) {
   let { path = null, remove = true } = options;
 
   if (!path) {
-    const basePath = OS.Path.join(OS.Constants.Path.tmpDir, "remote-agent.txt");
-    const { file, path: tmpPath } = await OS.File.openUnique(basePath, {
-      humanReadable: true,
-    });
-    await file.close();
-    path = tmpPath;
+    path = await IOUtils.createUniqueFile(
+      PathUtils.tempDir,
+      "remote-agent.txt"
+    );
   }
 
-  let encoder = new TextEncoder();
-  let array = encoder.encode(contents);
+  await IOUtils.writeUTF8(path, contents);
 
-  const count = await OS.File.writeAtomic(path, array, {
-    encoding: "utf-8",
-    tmpPath: path + ".tmp",
-  });
-  is(count, contents.length, "All data has been written to file");
-
-  const file = await OS.File.open(path);
-
-  
+  const stream = new Stream(path);
   if (remove) {
-    registerCleanupFunction(async () => {
-      await file.close();
-      await OS.File.remove(path, { ignoreAbsent: true });
-    });
+    registerCleanupFunction(() => stream.destroy());
   }
 
-  return { file, path };
+  return stream;
 }
 
 async function throwScriptError(options = {}) {
