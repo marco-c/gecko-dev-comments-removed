@@ -479,7 +479,7 @@ RTCError UpdateSimulcastLayerStatusInSender(
     const std::vector<SimulcastLayer>& layers,
     rtc::scoped_refptr<RtpSenderInternal> sender) {
   RTC_DCHECK(sender);
-  RtpParameters parameters = sender->GetParametersInternal();
+  RtpParameters parameters = sender->GetParametersInternalWithAllLayers();
   std::vector<std::string> disabled_layers;
 
   
@@ -498,7 +498,7 @@ RTCError UpdateSimulcastLayerStatusInSender(
     encoding.active = !iter->is_paused;
   }
 
-  RTCError result = sender->SetParametersInternal(parameters);
+  RTCError result = sender->SetParametersInternalWithAllLayers(parameters);
   if (result.ok()) {
     result = sender->DisableEncodingLayers(disabled_layers);
   }
@@ -524,7 +524,7 @@ bool SimulcastIsRejected(const ContentInfo* local_content,
 RTCError DisableSimulcastInSender(
     rtc::scoped_refptr<RtpSenderInternal> sender) {
   RTC_DCHECK(sender);
-  RtpParameters parameters = sender->GetParametersInternal();
+  RtpParameters parameters = sender->GetParametersInternalWithAllLayers();
   if (parameters.encodings.size() <= 1) {
     return RTCError::OK();
   }
@@ -610,7 +610,7 @@ cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForTransceiver(
   
   
   RtpParameters send_parameters =
-      transceiver->sender_internal()->GetParametersInternal();
+      transceiver->sender_internal()->GetParametersInternalWithAllLayers();
   bool has_rids = std::any_of(send_parameters.encodings.begin(),
                               send_parameters.encodings.end(),
                               [](const RtpEncodingParameters& encoding) {

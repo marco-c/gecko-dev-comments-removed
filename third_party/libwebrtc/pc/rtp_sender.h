@@ -78,6 +78,13 @@ class RtpSenderInternal : public RtpSenderInterface {
   
   
   
+  virtual RtpParameters GetParametersInternalWithAllLayers() const = 0;
+  virtual RTCError SetParametersInternalWithAllLayers(
+      const RtpParameters& parameters) = 0;
+
+  
+  
+  
   virtual int AttachmentId() const = 0;
 
   
@@ -118,6 +125,9 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   RtpParameters GetParametersInternal() const override;
   RTCError SetParametersInternal(const RtpParameters& parameters) override;
+  RtpParameters GetParametersInternalWithAllLayers() const override;
+  RTCError SetParametersInternalWithAllLayers(
+      const RtpParameters& parameters) override;
 
   
   
