@@ -102,6 +102,32 @@ this.declarativeNetRequest = class extends ExtensionAPI {
           return ExtensionDNR.getRuleManager(extension).getSessionRules();
         },
 
+        isRegexSupported(regexOptions) {
+          const {
+            regex: regexFilter,
+            isCaseSensitive: isUrlFilterCaseSensitive,
+            
+          } = regexOptions;
+
+          let ruleValidator = new ExtensionDNR.RuleValidator([]);
+          ruleValidator.addRules([
+            {
+              id: 1,
+              condition: { regexFilter, isUrlFilterCaseSensitive },
+              action: { type: "allow" },
+            },
+          ]);
+          let failures = ruleValidator.getFailures();
+          if (failures.length) {
+            
+            
+            
+            
+            return { isSupported: false, reason: "syntaxError" };
+          }
+          return { isSupported: true };
+        },
+
         async testMatchOutcome(request, options) {
           ensureDNRFeedbackEnabled("declarativeNetRequest.testMatchOutcome");
           let { url, initiator, ...req } = request;
