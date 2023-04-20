@@ -73,17 +73,30 @@ def loadTest262Parser(test262Dir):
     """
     Loads the test262 test record parser.
     """
-    import imp
+    import importlib.machinery
+    import importlib.util
 
-    fileObj = None
-    try:
-        moduleName = "parseTestRecord"
-        packagingDir = os.path.join(test262Dir, "tools", "packaging")
-        (fileObj, pathName, description) = imp.find_module(moduleName, [packagingDir])
-        return imp.load_module(moduleName, fileObj, pathName, description)
-    finally:
-        if fileObj:
-            fileObj.close()
+    packagingDir = os.path.join(test262Dir, "tools", "packaging")
+    moduleName = "parseTestRecord"
+
+    
+    loader_details = (
+        importlib.machinery.SourceFileLoader,
+        importlib.machinery.SOURCE_SUFFIXES,
+    )
+    finder = importlib.machinery.FileFinder(packagingDir, loader_details)
+
+    
+    spec = finder.find_spec(moduleName)
+    if spec is None:
+        raise RuntimeError("Can't find parseTestRecord module")
+
+    
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    
+    return module
 
 
 def tryParseTestFile(test262parser, source, testName):
