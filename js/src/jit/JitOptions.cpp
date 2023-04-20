@@ -309,6 +309,8 @@ DefaultJitOptions::DefaultJitOptions() {
   
   SET_DEFAULT(enableWatchtowerMegamorphic, true);
 
+  SET_DEFAULT(onlyInlineSelfHosted, false);
+
   SET_DEFAULT(enableWasmJitExit, true);
   SET_DEFAULT(enableWasmJitEntry, true);
   SET_DEFAULT(enableWasmIonFastCalls, true);
