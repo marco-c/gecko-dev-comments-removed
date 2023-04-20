@@ -749,7 +749,6 @@ nsCORSListenerProxy::AsyncOnChannelRedirect(
       return rv;
     }
   } else {
-    mIsRedirect = true;
     
     rv = CheckRequestApproved(aOldChannel);
     if (NS_FAILED(rv)) {
@@ -995,16 +994,9 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   
   mHasBeenCrossSite = true;
 
-  if (mIsRedirect || StaticPrefs::network_cors_preflight_block_userpass_uri()) {
-    
-    
-    
-    
-
-    nsAutoCString userpass;
-    uri->GetUserPass(userpass);
-    NS_ENSURE_TRUE(userpass.IsEmpty(), NS_ERROR_DOM_BAD_URI);
-  }
+  nsCString userpass;
+  uri->GetUserPass(userpass);
+  NS_ENSURE_TRUE(userpass.IsEmpty(), NS_ERROR_DOM_BAD_URI);
 
   
   
