@@ -1212,13 +1212,13 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
       "With these static arguments AddRule should never fail, what happened?");
 
   
-  
-  
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
-                            sandbox::TargetPolicy::FILES_ALLOW_ANY, L"*");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
+  if (sProfileDir) {
+    AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_DIR_ANY,
+                     sProfileDir, u"\\shader-cache"_ns);
+
+    AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
+                     sProfileDir, u"\\shader-cache\\*"_ns);
+  }
 
   
   
