@@ -348,6 +348,17 @@ void ChromeUtils::GetClassName(GlobalObject& aGlobal,
 }
 
 
+bool ChromeUtils::IsDOMObject(GlobalObject& aGlobal, JS::Handle<JSObject*> aObj,
+                              bool aUnwrap) {
+  JS::Rooted<JSObject*> obj(aGlobal.Context(), aObj);
+  if (aUnwrap) {
+    obj = js::UncheckedUnwrap(obj,  false);
+  }
+
+  return mozilla::dom::IsDOMObject(obj);
+}
+
+
 void ChromeUtils::ShallowClone(GlobalObject& aGlobal,
                                JS::Handle<JSObject*> aObj,
                                JS::Handle<JSObject*> aTarget,
