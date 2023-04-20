@@ -133,7 +133,17 @@ class FileSystemFileManager {
 
 
 
-  Result<int64_t, QMResult> RemoveFile(const EntryId& aEntryId);
+
+  Result<Usage, QMResult> RemoveFile(const EntryId& aEntryId);
+
+  
+
+
+
+
+
+  Result<DebugOnly<Usage>, QMResult> RemoveFiles(
+      const nsTArray<EntryId>& aEntryIds, nsTArray<EntryId>& aRemoveFails);
 
  private:
   explicit FileSystemFileManager(nsCOMPtr<nsIFile>&& aTopDirectory);

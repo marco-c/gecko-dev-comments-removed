@@ -39,6 +39,14 @@ class FileSystemDatabaseManager {
 
 
 
+  static nsresult RescanUsages(const ResultConnection& aConnection,
+                               const Origin& aOrigin);
+
+  
+
+
+
+
 
 
 
@@ -140,6 +148,16 @@ class FileSystemDatabaseManager {
 
 
   virtual void Close() = 0;
+
+  
+
+
+  virtual nsresult BeginUsageTracking(const EntryId& aEntryId) = 0;
+
+  
+
+
+  virtual nsresult EndUsageTracking(const EntryId& aEntryId) = 0;
 
   virtual ~FileSystemDatabaseManager() = default;
 };

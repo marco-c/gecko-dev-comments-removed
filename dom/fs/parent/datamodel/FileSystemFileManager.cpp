@@ -16,10 +16,12 @@
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "nsCOMPtr.h"
+#include "nsHashKeys.h"
 #include "nsIFile.h"
 #include "nsIFileProtocolHandler.h"
 #include "nsIFileURL.h"
 #include "nsIURIMutator.h"
+#include "nsTHashMap.h"
 #include "nsXPCOM.h"
 
 namespace mozilla::dom::fs::data {
@@ -108,6 +110,46 @@ Result<nsCOMPtr<nsIFile>, QMResult> GetOrCreateFile(
 
   return result;
 }
+
+nsresult RemoveFileObject(const nsCOMPtr<nsIFile>& aFilePtr) {
+  
+  
+  
+  
+
+  bool isFile = false;
+  QM_TRY(MOZ_TO_RESULT(aFilePtr->IsFile(&isFile)));
+
+  QM_TRY(OkIf(isFile), NS_ERROR_FILE_IS_DIRECTORY);
+
+  QM_TRY(QM_TO_RESULT(aFilePtr->Remove( false)));
+
+  return NS_OK;
+}
+
+#ifdef DEBUG
+
+Result<Usage, QMResult> GetFileSize(const nsCOMPtr<nsIFile>& aFileObject) {
+  bool exists = false;
+  QM_TRY(QM_TO_RESULT(aFileObject->Exists(&exists)));
+
+  if (!exists) {
+    return 0;
+  }
+
+  bool isFile = false;
+  QM_TRY(QM_TO_RESULT(aFileObject->IsFile(&isFile)));
+
+  
+  
+  QM_TRY(OkIf(isFile), 0);
+
+  QM_TRY_UNWRAP(Usage fileSize,
+                QM_TO_RESULT_INVOKE_MEMBER(aFileObject, GetFileSize));
+
+  return fileSize;
+}
+#endif
 
 }  
 
@@ -236,7 +278,7 @@ Result<nsCOMPtr<nsIFile>, QMResult> FileSystemFileManager::GetOrCreateFile(
   return data::GetOrCreateFile(mTopDirectory, aEntryId);
 }
 
-Result<int64_t, QMResult> FileSystemFileManager::RemoveFile(
+Result<Usage, QMResult> FileSystemFileManager::RemoveFile(
     const EntryId& aEntryId) {
   MOZ_ASSERT(!aEntryId.IsEmpty());
   QM_TRY_UNWRAP(nsCOMPtr<nsIFile> pathObject,
@@ -252,16 +294,58 @@ Result<int64_t, QMResult> FileSystemFileManager::RemoveFile(
   bool isFile = false;
   QM_TRY(QM_TO_RESULT(pathObject->IsFile(&isFile)));
 
+  
   if (!isFile) {
     return Err(QMResult(NS_ERROR_FILE_IS_DIRECTORY));
   }
 
-  QM_TRY_UNWRAP(int64_t fileSize,
+  Usage totalUsage = 0;
+#ifdef DEBUG
+  QM_TRY_UNWRAP(totalUsage,
                 QM_TO_RESULT_INVOKE_MEMBER(pathObject, GetFileSize));
+#endif
 
   QM_TRY(QM_TO_RESULT(pathObject->Remove( false)));
 
-  return fileSize;
+  return totalUsage;
+}
+
+Result<DebugOnly<Usage>, QMResult> FileSystemFileManager::RemoveFiles(
+    const nsTArray<EntryId>& aEntryIds, nsTArray<EntryId>& aRemoveFails) {
+  if (aEntryIds.IsEmpty()) {
+    return DebugOnly<Usage>(0);
+  }
+
+  CheckedInt64 totalUsage = 0;
+  for (const auto& entryId : aEntryIds) {
+    QM_WARNONLY_TRY_UNWRAP(Maybe<nsCOMPtr<nsIFile>> maybeFile,
+                           GetFileDestination(mTopDirectory, entryId));
+    if (!maybeFile) {
+      aRemoveFails.AppendElement(entryId);
+      continue;
+    }
+    nsCOMPtr<nsIFile> fileObject = maybeFile.value();
+
+
+#ifdef DEBUG
+    QM_WARNONLY_TRY_UNWRAP(Maybe<Usage> fileSize, GetFileSize(fileObject));
+    if (!fileSize) {
+      aRemoveFails.AppendElement(entryId);
+      continue;
+    }
+    totalUsage += fileSize.value();
+#endif
+
+    QM_WARNONLY_TRY_UNWRAP(Maybe<Ok> ok,
+                           MOZ_TO_RESULT(RemoveFileObject(fileObject)));
+    if (!ok) {
+      aRemoveFails.AppendElement(entryId);
+    }
+  }
+
+  MOZ_ASSERT(totalUsage.isValid());
+
+  return DebugOnly<Usage>(totalUsage.value());
 }
 
 }  
