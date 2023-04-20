@@ -106,7 +106,8 @@ class nsICanvasRenderingContextInternal : public nsISupports,
       mozilla::NotNull<mozilla::gfx::DrawTarget*> aTarget) = 0;
 
   
-  virtual mozilla::UniquePtr<uint8_t[]> GetImageBuffer(int32_t* format) = 0;
+  virtual mozilla::UniquePtr<uint8_t[]> GetImageBuffer(
+      int32_t* out_format, mozilla::gfx::IntSize* out_imageSize) = 0;
 
   
   
