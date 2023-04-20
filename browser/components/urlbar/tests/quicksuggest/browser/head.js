@@ -48,6 +48,38 @@ registerCleanupFunction(async () => {
 
 
 
+async function updateTopSites(condition, searchShortcuts = false) {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.discoverystream.endpointSpocsClear",
+        "",
+      ],
+      ["browser.newtabpage.activity-stream.feeds.system.topsites", false],
+      ["browser.newtabpage.activity-stream.feeds.system.topsites", true],
+      [
+        "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
+        searchShortcuts,
+      ],
+    ],
+  });
+
+  
+  await TestUtils.waitForCondition(() => {
+    let sites = AboutNewTab.getTopSites();
+    return condition(sites);
+  }, "Waiting for top sites to be updated");
+}
+
+
+
+
+
+
+
+
+
 
 async function setUpTelemetryTest({ suggestions }) {
   await SpecialPowers.pushPrefEnv({
@@ -116,11 +148,18 @@ async function setUpTelemetryTest({ suggestions }) {
 
 
 
+
+
+
+
+
+
 async function doTelemetryTest({
   index,
   suggestion,
   impressionOnly,
   selectables,
+  teardown = null,
   showSuggestion = () =>
     UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -199,6 +238,12 @@ async function doTelemetryTest({
       className,
       expected: selectables[className],
     });
+
+    if (teardown) {
+      info("Calling teardown");
+      await teardown();
+      info("Finished teardown");
+    }
   }
 
   
@@ -212,6 +257,7 @@ async function doTelemetryTest({
     "There should be no expected classes that didn't match actual selectable elements"
   );
 }
+
 
 
 
@@ -265,6 +311,8 @@ async function doImpressionOnlyTest({
 
   
   
+  
+  
   let otherRow;
   let rowCount = UrlbarTestUtils.getResultCount(window);
   for (let i = 0; i < rowCount; i++) {
@@ -275,13 +323,22 @@ async function doImpressionOnlyTest({
         UrlbarProviderQuickSuggest.name,
         "No other row should be a quick suggest: index = " + i
       );
-      otherRow = otherRow || r;
+      if (
+        !otherRow &&
+        (r.result.payload.url ||
+          (r.result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+            (r.result.payload.query || r.result.payload.suggestion))) &&
+        (r.hasAttribute("selectable") ||
+          r.querySelector("urlbarView-row-inner[selectable]"))
+      ) {
+        otherRow = r;
+      }
     }
   }
   if (!otherRow) {
     Assert.ok(
       false,
-      "Couldn't get non-quick-suggest row, stopping impression-only test"
+      "Couldn't get a selectable non-quick-suggest row with a URL, stopping impression-only test"
     );
     await spyCleanup();
     return null;
@@ -307,17 +364,25 @@ async function doImpressionOnlyTest({
   await loadPromise;
 
   
+  info("Checking scalars");
   QuickSuggestTestUtils.assertScalars(expected.scalars);
+
+  info("Checking events");
   QuickSuggestTestUtils.assertEvents([expected.event]);
-  QuickSuggestTestUtils.assertPings(spy, [expected.ping]);
+
+  info("Checking pings");
+  QuickSuggestTestUtils.assertPings(spy, expected.ping ? [expected.ping] : []);
 
   
   await PlacesUtils.history.clear();
   await UrlbarTestUtils.formHistory.clear();
   await spyCleanup();
 
+  info("Finished impression-only test");
+
   return selectableClassLists;
 }
+
 
 
 
@@ -356,6 +421,7 @@ async function doSelectableTest({
   Services.telemetry.clearEvents();
   let { spy, spyCleanup } = QuickSuggestTestUtils.createTelemetryPingSpy();
 
+  info("Showing suggestion");
   await showSuggestion();
 
   let row = await validateSuggestionRow(index, suggestion);
@@ -371,29 +437,44 @@ async function doSelectableTest({
   let element = row.querySelector("." + className);
   Assert.ok(element, "Sanity check: Target selectable element should exist");
 
-  let helpLoadPromise;
-  if (className == "urlbarView-button-help") {
-    helpLoadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+  let loadPromise;
+  if (className == "urlbarView-row-inner") {
+    
+    
+    loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  } else if (className == "urlbarView-button-help") {
+    loadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
   }
 
+  info("Clicking element: " + className);
   EventUtils.synthesizeMouseAtCenter(element, {});
 
-  QuickSuggestTestUtils.assertScalars(expected.scalars);
-  QuickSuggestTestUtils.assertEvents([expected.event]);
-  QuickSuggestTestUtils.assertPings(spy, expected.pings);
-
-  if (helpLoadPromise) {
-    await helpLoadPromise;
+  if (loadPromise) {
+    info("Waiting for load");
+    await loadPromise;
     await TestUtils.waitForTick();
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+    if (className == "urlbarView-button-help") {
+      info("Closing help tab");
+      BrowserTestUtils.removeTab(gBrowser.selectedTab);
+    }
   }
+
+  info("Checking scalars");
+  QuickSuggestTestUtils.assertScalars(expected.scalars);
+
+  info("Checking events");
+  QuickSuggestTestUtils.assertEvents([expected.event]);
+
+  info("Checking pings");
+  QuickSuggestTestUtils.assertPings(spy, expected.pings);
 
   if (className == "urlbarView-button-block") {
     await QuickSuggest.blockedSuggestions.clear();
   }
-
   await PlacesUtils.history.clear();
   await spyCleanup();
+
+  info("Finished selectable test: " + JSON.stringify({ className }));
 }
 
 
