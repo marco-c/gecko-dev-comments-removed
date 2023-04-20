@@ -4536,15 +4536,22 @@ void nsGlobalWindowOuter::FullscreenWillChange(bool aIsFullscreen) {
     
     
     
-    MOZ_ASSERT(mFullscreen.isSome() != aIsFullscreen,
-               "FullscreenWillChange should not be notified if the fullscreen "
-               "state isn't changed");
     mInProcessFullscreenRequest.emplace(FullscreenReason::ForFullscreenMode,
                                         aIsFullscreen);
-    if (aIsFullscreen) {
-      mFullscreen.emplace(FullscreenReason::ForFullscreenMode);
+    if (mFullscreen.isSome() != aIsFullscreen) {
+      if (aIsFullscreen) {
+        mFullscreen.emplace(FullscreenReason::ForFullscreenMode);
+      } else {
+        mFullscreen.reset();
+      }
     } else {
-      mFullscreen.reset();
+      
+      
+      
+      
+      MOZ_ASSERT(StaticPrefs::full_screen_api_ignore_widgets() ||
+                     mForceFullScreenInWidget,
+                 "This should only happen when widget fullscreen is prevented");
     }
   }
   if (aIsFullscreen) {
