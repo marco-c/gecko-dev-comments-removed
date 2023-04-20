@@ -5165,6 +5165,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                         Register scratch1, Register scratch2,
                                         Register scratch3, Register output,
                                         Label* cacheHit, bool hasOwn);
+
+  
+  
+  void extractCurrentIndexAndKindFromIterator(Register iterator,
+                                              Register outIndex,
+                                              Register outKind);
+
 #ifdef JS_CODEGEN_X86
   
   void emitMegamorphicCachedSetSlot(
