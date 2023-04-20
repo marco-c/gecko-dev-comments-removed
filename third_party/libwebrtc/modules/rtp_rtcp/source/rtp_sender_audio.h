@@ -105,7 +105,7 @@ class RTPSenderAudio {
 
   
   
-  uint8_t audio_level_dbov_ RTC_GUARDED_BY(send_audio_mutex_) = 0;
+  uint8_t audio_level_dbov_ RTC_GUARDED_BY(send_audio_mutex_) = 127;
   OneTimeEvent first_packet_sent_;
 
   absl::optional<uint32_t> encoder_rtp_timestamp_frequency_
