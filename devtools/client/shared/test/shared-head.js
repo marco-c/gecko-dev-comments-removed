@@ -1435,8 +1435,12 @@ async function moveWindowTo(win, left, top) {
 
   
   
-  info("Wait for window screenLeft and screenTop to be updated");
-  return waitUntil(() => win.screenLeft === left && win.screenTop === top);
+  return waitUntil(() => {
+    info(
+      `Wait for window screenLeft and screenTop to be updated: (${win.screenLeft}, ${win.screenTop})`
+    );
+    return win.screenLeft === left && win.screenTop === top;
+  });
 }
 
 function getCurrentTestFilePath() {

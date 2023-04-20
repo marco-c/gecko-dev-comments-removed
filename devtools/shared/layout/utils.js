@@ -557,12 +557,6 @@ exports.isAfterPseudoElement = isAfterPseudoElement;
 
 
 
-
-
-
-
-
-
 function getCurrentZoom(node) {
   const win = getWindowFor(node);
 
@@ -570,7 +564,7 @@ function getCurrentZoom(node) {
     throw new Error("Unable to get the zoom from the given argument.");
   }
 
-  return utilsFor(win).fullZoom;
+  return win.browsingContext?.fullZoom || 1.0;
 }
 exports.getCurrentZoom = getCurrentZoom;
 
@@ -587,7 +581,7 @@ exports.getCurrentZoom = getCurrentZoom;
 
 function getDisplayPixelRatio(node) {
   const win = getWindowFor(node);
-  return win.devicePixelRatio / utilsFor(win).fullZoom;
+  return win.devicePixelRatio / getCurrentZoom(node);
 }
 exports.getDisplayPixelRatio = getDisplayPixelRatio;
 
