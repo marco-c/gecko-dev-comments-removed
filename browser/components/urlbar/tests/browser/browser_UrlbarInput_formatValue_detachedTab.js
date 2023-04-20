@@ -11,12 +11,7 @@ add_task(async function detach() {
   
   
   
-  if (
-    AppConstants.platform == "macosx" &&
-    Cc["@mozilla.org/process/environment;1"]
-      .getService(SpecialPowers.Ci.nsIEnvironment)
-      .get("MOZ_CHAOSMODE")
-  ) {
+  if (AppConstants.platform == "macosx" && Services.env.get("MOZ_CHAOSMODE")) {
     Assert.ok(true, "Skipping test in chaos mode on Mac");
     return;
   }

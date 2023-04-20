@@ -74,7 +74,7 @@ function adjustGeneralPaths() {
         
         
         
-        let tempPath = gEnv.get("MOZ_PROCESS_LOG");
+        let tempPath = Services.env.get("MOZ_PROCESS_LOG");
         let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
         file.initWithPath(tempPath);
         return file;
@@ -119,7 +119,7 @@ function adjustGeneralPaths() {
 
 
 async function initUpdate(params) {
-  gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
+  Services.env.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
   await SpecialPowers.pushPrefEnv({
     set: [
       [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
