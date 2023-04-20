@@ -15,57 +15,67 @@ function openContextMenu(aMessage, aBrowser, aActor) {
   let data = aMessage.data;
   let browser = aBrowser;
   let actor = aActor;
-  let spellInfo = data.spellInfo;
+  let wgp = actor.manager;
+
+  if (!wgp.isCurrentGlobal) {
+    
+    return;
+  }
+
+  
+  
+  let documentURIObject = wgp.browsingContext.currentURI;
+
   let frameReferrerInfo = data.frameReferrerInfo;
-  let linkReferrerInfo = data.linkReferrerInfo;
-  let principal = data.principal;
-  let storagePrincipal = data.storagePrincipal;
-
-  let documentURIObject = makeURI(
-    data.docLocation,
-    data.charSet,
-    makeURI(data.baseURI)
-  );
-
   if (frameReferrerInfo) {
     frameReferrerInfo = E10SUtils.deserializeReferrerInfo(frameReferrerInfo);
   }
 
+  let linkReferrerInfo = data.linkReferrerInfo;
   if (linkReferrerInfo) {
     linkReferrerInfo = E10SUtils.deserializeReferrerInfo(linkReferrerInfo);
   }
+
+  let frameID = nsContextMenu.WebNavigationFrames.getFrameId(
+    wgp.browsingContext
+  );
 
   nsContextMenu.contentData = {
     context: data.context,
     browser,
     actor,
     editFlags: data.editFlags,
-    spellInfo,
-    principal,
-    storagePrincipal,
+    spellInfo: data.spellInfo,
+    principal: wgp.documentPrincipal,
+    storagePrincipal: wgp.documentStoragePrincipal,
     documentURIObject,
-    docLocation: data.docLocation,
+    docLocation: documentURIObject.spec,
     charSet: data.charSet,
     referrerInfo: E10SUtils.deserializeReferrerInfo(data.referrerInfo),
     frameReferrerInfo,
     linkReferrerInfo,
     contentType: data.contentType,
     contentDisposition: data.contentDisposition,
-    frameID: data.frameID,
-    frameOuterWindowID: data.frameID,
-    frameBrowsingContext: BrowsingContext.get(data.frameBrowsingContextID),
+    frameID,
+    frameOuterWindowID: frameID,
+    frameBrowsingContext: wgp.browsingContext,
     selectionInfo: data.selectionInfo,
     disableSetDesktopBackground: data.disableSetDesktopBackground,
     loginFillInfo: data.loginFillInfo,
-    userContextId: data.userContextId,
+    userContextId: wgp.browsingContext.userContextId,
     webExtContextData: data.webExtContextData,
-    cookieJarSettings: E10SUtils.deserializeCookieJarSettings(
-      data.cookieJarSettings
-    ),
+    cookieJarSettings: wgp.cookieJarSettings,
   };
 
   let popup = browser.ownerDocument.getElementById("contentAreaContextMenu");
   let context = nsContextMenu.contentData.context;
+
+  
+  context.principal = wgp.documentPrincipal;
+  context.storagePrincipal = wgp.documentStoragePrincipal;
+  context.frameID = frameID;
+  context.frameOuterWindowID = wgp.outerWindowId;
+  context.frameBrowsingContextID = wgp.browsingContext.id;
 
   
   
@@ -2471,6 +2481,7 @@ ChromeUtils.defineESModuleGetters(nsContextMenu, {
 
 XPCOMUtils.defineLazyModuleGetters(nsContextMenu, {
   LoginManagerContextMenu: "resource://gre/modules/LoginManagerContextMenu.jsm",
+  WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
