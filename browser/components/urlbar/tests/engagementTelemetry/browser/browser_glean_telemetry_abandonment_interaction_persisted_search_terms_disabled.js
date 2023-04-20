@@ -10,12 +10,6 @@ if (AppConstants.platform == "macosx") {
   requestLongerTimeout(3);
 }
 
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser/head-glean.js",
-  this
-);
-
 add_setup(async function() {
   await setup();
 

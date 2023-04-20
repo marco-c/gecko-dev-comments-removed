@@ -6,92 +6,60 @@
 
 
 
-
-if (AppConstants.platform == "macosx") {
-  requestLongerTimeout(3);
-}
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser/head-glean.js",
-  this
-);
-
 add_setup(async function() {
   await setup();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.urlbar.searchEngagementTelemetry.pauseImpressionIntervalMs",
+        100,
+      ],
+    ],
+  });
 });
 
 add_task(async function interaction_topsites() {
   await doTest(async browser => {
     await addTopSites("https://example.com/");
     await showResultByArrowDown();
-    await selectRowByURL("https://example.com/");
-    await doEnter();
+    await waitForPauseImpression();
 
-    assertEngagementTelemetry([{ interaction: "topsites" }]);
+    assertImpressionTelemetry([{ reason: "pause", interaction: "topsites" }]);
   });
 });
 
 add_task(async function interaction_typed() {
   await doTest(async browser => {
     await openPopup("x");
-    await doEnter();
+    await waitForPauseImpression();
 
-    assertEngagementTelemetry([{ interaction: "typed" }]);
+    assertImpressionTelemetry([{ reason: "pause", interaction: "typed" }]);
   });
 
   await doTest(async browser => {
     await showResultByArrowDown();
     EventUtils.synthesizeKey("x");
     await UrlbarTestUtils.promiseSearchComplete(window);
-    await doEnter();
+    await waitForPauseImpression();
 
-    assertEngagementTelemetry([{ interaction: "typed" }]);
-  });
-});
-
-add_task(async function interaction_dropped() {
-  await doTest(async browser => {
-    await doDropAndGo("example.com");
-
-    assertEngagementTelemetry([{ interaction: "dropped" }]);
-  });
-
-  await doTest(async browser => {
-    await showResultByArrowDown();
-    await doDropAndGo("example.com");
-
-    assertEngagementTelemetry([{ interaction: "dropped" }]);
+    assertImpressionTelemetry([{ reason: "pause", interaction: "typed" }]);
   });
 });
 
 add_task(async function interaction_pasted() {
   await doTest(async browser => {
     await doPaste("www.example.com");
-    await doEnter();
+    await waitForPauseImpression();
 
-    assertEngagementTelemetry([{ interaction: "pasted" }]);
-  });
-
-  await doTest(async browser => {
-    await doPasteAndGo("www.example.com");
-
-    assertEngagementTelemetry([{ interaction: "pasted" }]);
+    assertImpressionTelemetry([{ reason: "pause", interaction: "pasted" }]);
   });
 
   await doTest(async browser => {
     await showResultByArrowDown();
     await doPaste("x");
-    await doEnter();
+    await waitForPauseImpression();
 
-    assertEngagementTelemetry([{ interaction: "pasted" }]);
-  });
-
-  await doTest(async browser => {
-    await showResultByArrowDown();
-    await doPasteAndGo("www.example.com");
-
-    assertEngagementTelemetry([{ interaction: "pasted" }]);
+    assertImpressionTelemetry([{ reason: "pause", interaction: "pasted" }]);
   });
 });
 
@@ -133,6 +101,7 @@ add_task(async function interaction_returned_restarted_refined() {
   for (const { firstInput, secondInput, expected } of testData) {
     await doTest(async browser => {
       await openPopup(firstInput);
+      await waitForPauseImpression();
       await doBlur();
 
       await UrlbarTestUtils.promisePopupOpen(window, () => {
@@ -144,9 +113,12 @@ add_task(async function interaction_returned_restarted_refined() {
         }
       }
       await UrlbarTestUtils.promiseSearchComplete(window);
-      await doEnter();
+      await waitForPauseImpression();
 
-      assertEngagementTelemetry([{ interaction: expected }]);
+      assertImpressionTelemetry([
+        { reason: "pause" },
+        { reason: "pause", interaction: expected },
+      ]);
     });
   }
 });

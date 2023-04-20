@@ -6,12 +6,6 @@
 
 
 
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser/head-glean.js",
-  this
-);
-
 add_setup(async function() {
   await setup();
 });
@@ -19,16 +13,12 @@ add_setup(async function() {
 add_task(async function sap_urlbar() {
   await doTest(async browser => {
     await openPopup("x");
-    await waitForPauseImpression();
     await doEnter();
 
     await openPopup("y");
-    await waitForPauseImpression();
+    await doEnter();
 
-    assertImpressionTelemetry([
-      { reason: "pause", sap: "urlbar_newtab" },
-      { reason: "pause", sap: "urlbar" },
-    ]);
+    assertEngagementTelemetry([{ sap: "urlbar_newtab" }, { sap: "urlbar" }]);
   });
 });
 
@@ -41,10 +31,9 @@ add_task(async function sap_handoff() {
       searchInput.click();
     });
     EventUtils.synthesizeKey("x");
-    await UrlbarTestUtils.promiseSearchComplete(window);
-    await waitForPauseImpression();
+    await doEnter();
 
-    assertImpressionTelemetry([{ reason: "pause", sap: "handoff" }]);
+    assertEngagementTelemetry([{ sap: "handoff" }]);
   });
 });
 
@@ -64,9 +53,9 @@ add_task(async function sap_urlbar_addonpage() {
     await onLoad;
 
     await openPopup("x");
-    await waitForPauseImpression();
+    await doEnter();
 
-    assertImpressionTelemetry([{ reason: "pause", sap: "urlbar_addonpage" }]);
+    assertEngagementTelemetry([{ sap: "urlbar_addonpage" }]);
   });
 
   await extension.unload();

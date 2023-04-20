@@ -10,31 +10,32 @@ if (AppConstants.platform == "macosx") {
   requestLongerTimeout(3);
 }
 
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser/head-glean.js",
-  this
-);
-
 add_setup(async function() {
   await setup();
 
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.showSearchTerms.featureGate", false]],
+    set: [
+      ["browser.urlbar.showSearchTerms.featureGate", false],
+      [
+        "browser.urlbar.searchEngagementTelemetry.pauseImpressionIntervalMs",
+        100,
+      ],
+    ],
   });
 });
 
 add_task(async function interaction_persisted_search_terms() {
   await doTest(async browser => {
     await openPopup("x");
+    await waitForPauseImpression();
     await doEnter();
 
     await openPopup("x");
-    await doEnter();
+    await waitForPauseImpression();
 
-    assertEngagementTelemetry([
-      { interaction: "typed" },
-      { interaction: "typed" },
+    assertImpressionTelemetry([
+      { reason: "pause" },
+      { reason: "pause", interaction: "typed" },
     ]);
   });
 });
@@ -72,6 +73,7 @@ add_task(async function interaction_persisted_search_terms_restarted_refined() {
   for (const { firstInput, secondInput, expected } of testData) {
     await doTest(async browser => {
       await openPopup(firstInput);
+      await waitForPauseImpression();
       await doEnter();
 
       await UrlbarTestUtils.promisePopupOpen(window, () => {
@@ -83,11 +85,11 @@ add_task(async function interaction_persisted_search_terms_restarted_refined() {
         }
       }
       await UrlbarTestUtils.promiseSearchComplete(window);
-      await doEnter();
+      await waitForPauseImpression();
 
-      assertEngagementTelemetry([
-        { interaction: "typed" },
-        { interaction: expected },
+      assertImpressionTelemetry([
+        { reason: "pause" },
+        { reason: "pause", interaction: expected },
       ]);
     });
   }
@@ -127,9 +129,11 @@ add_task(
     for (const { firstInput, secondInput, expected } of testData) {
       await doTest(async browser => {
         await openPopup("any search");
+        await waitForPauseImpression();
         await doEnter();
 
         await openPopup(firstInput);
+        await waitForPauseImpression();
         await doBlur();
 
         await UrlbarTestUtils.promisePopupOpen(window, () => {
@@ -141,11 +145,12 @@ add_task(
           }
         }
         await UrlbarTestUtils.promiseSearchComplete(window);
-        await doEnter();
+        await waitForPauseImpression();
 
-        assertEngagementTelemetry([
-          { interaction: "typed" },
-          { interaction: expected },
+        assertImpressionTelemetry([
+          { reason: "pause" },
+          { reason: "pause" },
+          { reason: "pause", interaction: expected },
         ]);
       });
     }

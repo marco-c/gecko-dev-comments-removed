@@ -6,66 +6,52 @@
 
 
 
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser/head-glean.js",
-  this
-);
-
 add_setup(async function() {
   await setup();
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.urlbar.searchEngagementTelemetry.pauseImpressionIntervalMs",
-        100,
-      ],
-    ],
-  });
 });
 
 add_task(async function interaction_topsites() {
   await doTest(async browser => {
     await addTopSites("https://example.com/");
     await showResultByArrowDown();
-    await waitForPauseImpression();
+    await doBlur();
 
-    assertImpressionTelemetry([{ reason: "pause", interaction: "topsites" }]);
+    assertAbandonmentTelemetry([{ interaction: "topsites" }]);
   });
 });
 
 add_task(async function interaction_typed() {
   await doTest(async browser => {
     await openPopup("x");
-    await waitForPauseImpression();
+    await doBlur();
 
-    assertImpressionTelemetry([{ reason: "pause", interaction: "typed" }]);
+    assertAbandonmentTelemetry([{ interaction: "typed" }]);
   });
 
   await doTest(async browser => {
     await showResultByArrowDown();
     EventUtils.synthesizeKey("x");
     await UrlbarTestUtils.promiseSearchComplete(window);
-    await waitForPauseImpression();
+    await doBlur();
 
-    assertImpressionTelemetry([{ reason: "pause", interaction: "typed" }]);
+    assertAbandonmentTelemetry([{ interaction: "typed" }]);
   });
 });
 
 add_task(async function interaction_pasted() {
   await doTest(async browser => {
     await doPaste("www.example.com");
-    await waitForPauseImpression();
+    await doBlur();
 
-    assertImpressionTelemetry([{ reason: "pause", interaction: "pasted" }]);
+    assertAbandonmentTelemetry([{ interaction: "pasted" }]);
   });
 
   await doTest(async browser => {
     await showResultByArrowDown();
     await doPaste("x");
-    await waitForPauseImpression();
+    await doBlur();
 
-    assertImpressionTelemetry([{ reason: "pause", interaction: "pasted" }]);
+    assertAbandonmentTelemetry([{ interaction: "pasted" }]);
   });
 });
 
@@ -107,7 +93,6 @@ add_task(async function interaction_returned_restarted_refined() {
   for (const { firstInput, secondInput, expected } of testData) {
     await doTest(async browser => {
       await openPopup(firstInput);
-      await waitForPauseImpression();
       await doBlur();
 
       await UrlbarTestUtils.promisePopupOpen(window, () => {
@@ -119,11 +104,11 @@ add_task(async function interaction_returned_restarted_refined() {
         }
       }
       await UrlbarTestUtils.promiseSearchComplete(window);
-      await waitForPauseImpression();
+      await doBlur();
 
-      assertImpressionTelemetry([
-        { reason: "pause" },
-        { reason: "pause", interaction: expected },
+      assertAbandonmentTelemetry([
+        { interaction: "typed" },
+        { interaction: expected },
       ]);
     });
   }
