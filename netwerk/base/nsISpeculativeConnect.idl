@@ -68,4 +68,12 @@ interface nsISpeculativeConnectionOverrider : nsISupports
 
 
     [infallible] readonly attribute boolean allow1918;
+
+    
+
+
+
+
+
+    [infallible] readonly attribute boolean ignoreUserCertCheck;
 };
