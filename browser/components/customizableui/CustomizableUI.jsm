@@ -67,7 +67,7 @@ const kSubviewEvents = ["ViewShowing", "ViewHiding"];
 
 
 
-var kVersion = 18;
+var kVersion = 19;
 
 
 
@@ -223,7 +223,6 @@ var CustomizableUIInternal = {
     this.loadSavedState();
     this._updateForNewVersion();
     this._updateForNewProtonVersion();
-    this._updateForUnifiedExtensions();
     this._markObsoleteBuiltinButtonsSeen();
 
     this.registerArea(
@@ -632,6 +631,46 @@ var CustomizableUIInternal = {
         tabstripPlacements.unshift("firefox-view-button");
       }
     }
+
+    
+    
+    if (currentVersion < 19) {
+      let overflowPlacements =
+        gSavedState.placements[CustomizableUI.AREA_FIXED_OVERFLOW_PANEL] || [];
+      
+      
+      let addonsPlacements =
+        gSavedState.placements[CustomizableUI.AREA_ADDONS] || [];
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let extWidgets = [];
+      let builtInWidgets = [];
+      for (let widgetId of overflowPlacements) {
+        if (CustomizableUI.isWebExtensionWidget(widgetId)) {
+          extWidgets.push(widgetId);
+        } else {
+          builtInWidgets.push(widgetId);
+        }
+      }
+      gSavedState.placements[
+        CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+      ] = builtInWidgets;
+      gSavedState.placements[CustomizableUI.AREA_ADDONS] = [
+        ...extWidgets,
+        ...addonsPlacements,
+      ];
+    }
   },
 
   _updateForNewProtonVersion() {
@@ -686,48 +725,6 @@ var CustomizableUIInternal = {
     }
 
     Services.prefs.setIntPref(kPrefProtonToolbarVersion, VERSION);
-  },
-
-  _updateForUnifiedExtensions() {
-    if (!gSavedState?.placements) {
-      return;
-    }
-
-    let overflowPlacements =
-      gSavedState.placements[CustomizableUI.AREA_FIXED_OVERFLOW_PANEL] || [];
-    
-    
-    let addonsPlacements =
-      gSavedState.placements[CustomizableUI.AREA_ADDONS] || [];
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let extWidgets = [];
-    let builtInWidgets = [];
-    for (let widgetId of overflowPlacements) {
-      if (CustomizableUI.isWebExtensionWidget(widgetId)) {
-        extWidgets.push(widgetId);
-      } else {
-        builtInWidgets.push(widgetId);
-      }
-    }
-    gSavedState.placements[
-      CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
-    ] = builtInWidgets;
-    gSavedState.placements[CustomizableUI.AREA_ADDONS] = [
-      ...extWidgets,
-      ...addonsPlacements,
-    ];
   },
 
   

@@ -23,33 +23,35 @@ const CustomizableUIInternal = CustomizableUI.getTestOnlyInternalProp(
 
 
 
+const PRIOR_MIGRATION_VERSION = 18;
 
 
 
-function saveState(stateObj) {
+
+
+
+
+
+
+
+
+
+function migrateForward(stateObj) {
   
   
-  CustomizableUI.setTestOnlyInternalProp(
-    "gSavedState",
-    structuredClone(stateObj)
-  );
-}
+  let stateToSave = structuredClone(stateObj);
+  if (stateToSave) {
+    stateToSave.currentVersion = PRIOR_MIGRATION_VERSION;
+  }
 
+  CustomizableUI.setTestOnlyInternalProp("gSavedState", stateToSave);
+  CustomizableUIInternal._updateForNewVersion();
 
-
-
-
-
-function loadState() {
-  return CustomizableUI.getTestOnlyInternalProp("gSavedState");
-}
-
-
-
-
-
-function migrateForward() {
-  CustomizableUIInternal._updateForUnifiedExtensions();
+  let migratedState = CustomizableUI.getTestOnlyInternalProp("gSavedState");
+  if (migratedState) {
+    delete migratedState.currentVersion;
+  }
+  return migratedState;
 }
 
 
@@ -57,9 +59,13 @@ function migrateForward() {
 
 
 add_task(async function test_no_saved_state() {
-  saveState(null);
-  migrateForward();
-  Assert.equal(loadState(), null, "gSavedState should not have been modified");
+  let migratedState = migrateForward(null);
+
+  Assert.deepEqual(
+    migratedState,
+    null,
+    "gSavedState should not have been modified"
+  );
 });
 
 
@@ -67,10 +73,10 @@ add_task(async function test_no_saved_state() {
 
 
 add_task(async function test_no_saved_placements() {
-  saveState({});
-  migrateForward();
+  let migratedState = migrateForward({});
+
   Assert.deepEqual(
-    loadState(),
+    migratedState,
     {},
     "gSavedState should not have been modified"
   );
@@ -112,11 +118,10 @@ add_task(async function test_no_extensions() {
   const EXPECTED_STATE = structuredClone(SAVED_STATE);
   EXPECTED_STATE.placements[CustomizableUI.AREA_ADDONS] = [];
 
-  saveState(SAVED_STATE);
-  migrateForward();
+  let migratedState = migrateForward(SAVED_STATE);
 
   Assert.deepEqual(
-    loadState(),
+    migratedState,
     EXPECTED_STATE,
     "Got the expected state after the migration."
   );
@@ -156,11 +161,10 @@ add_task(async function test_existing_browser_actions_no_movement() {
     },
   };
 
-  saveState(SAVED_STATE);
-  migrateForward();
+  let migratedState = migrateForward(SAVED_STATE);
 
   Assert.deepEqual(
-    loadState(),
+    migratedState,
     SAVED_STATE,
     "The saved state should not have changed after migration."
   );
@@ -214,11 +218,10 @@ add_task(async function test_migrate_extension_buttons() {
     "ext2-browser-action",
   ];
 
-  saveState(SAVED_STATE);
-  migrateForward();
+  let migratedState = migrateForward(SAVED_STATE);
 
   Assert.deepEqual(
-    loadState(),
+    migratedState,
     EXPECTED_STATE,
     "The saved state should not have changed after migration."
   );
@@ -276,11 +279,10 @@ add_task(async function test_migrate_extension_buttons_no_overwrite() {
     "ext4-browser-action",
   ];
 
-  saveState(SAVED_STATE);
-  migrateForward();
+  let migratedState = migrateForward(SAVED_STATE);
 
   Assert.deepEqual(
-    loadState(),
+    migratedState,
     EXPECTED_STATE,
     "The saved state should not have changed after migration."
   );
@@ -353,97 +355,11 @@ add_task(async function test_migrate_extension_buttons_elsewhere() {
     "ext18-browser-action",
   ];
 
-  saveState(SAVED_STATE);
-  migrateForward();
+  let migratedState = migrateForward(SAVED_STATE);
 
   Assert.deepEqual(
-    loadState(),
+    migratedState,
     EXPECTED_STATE,
     "The saved state should not have changed after migration."
   );
-});
-
-
-
-
-
-
-add_task(async function test_migrating_back_with_items() {
-  const SAVED_STATE = {
-    placements: {
-      "nav-bar": [
-        "back-button",
-        "forward-button",
-        "spring",
-        "urlbar-container",
-        "save-to-pocket-button",
-      ],
-      "toolbar-menubar": [
-        "home-button",
-        "menubar-items",
-        "spring",
-        "downloads-button",
-      ],
-      TabsToolbar: [
-        "firefox-view-button",
-        "tabbrowser-tabs",
-        "new-tab-button",
-        "alltabs-button",
-        "developer-button",
-      ],
-      PersonalToolbar: ["personal-bookmarks", "fxa-toolbar-menu-button"],
-      "widget-overflow-fixed-list": ["privatebrowsing-button", "panic-button"],
-      "unified-extensions-area": ["ext0-browser-action", "ext1-browser-action"],
-    },
-  };
-
-  const EXPECTED_STATE = structuredClone(SAVED_STATE);
-  EXPECTED_STATE.placements[CustomizableUI.AREA_FIXED_OVERFLOW_PANEL] = [
-    "privatebrowsing-button",
-    "panic-button",
-    "ext0-browser-action",
-    "ext1-browser-action",
-  ];
-  delete EXPECTED_STATE.placements[CustomizableUI.AREA_ADDONS];
-
-  saveState(SAVED_STATE);
-});
-
-
-
-
-
-add_task(async function test_migrating_back_with_no_items() {
-  const SAVED_STATE = {
-    placements: {
-      "nav-bar": [
-        "back-button",
-        "forward-button",
-        "spring",
-        "urlbar-container",
-        "save-to-pocket-button",
-      ],
-      "toolbar-menubar": [
-        "home-button",
-        "menubar-items",
-        "spring",
-        "downloads-button",
-      ],
-      TabsToolbar: [
-        "firefox-view-button",
-        "tabbrowser-tabs",
-        "new-tab-button",
-        "alltabs-button",
-        "developer-button",
-      ],
-      PersonalToolbar: ["personal-bookmarks", "fxa-toolbar-menu-button"],
-      "widget-overflow-fixed-list": ["privatebrowsing-button", "panic-button"],
-      "unified-extensions-area": [],
-    },
-  };
-
-  const EXPECTED_STATE = structuredClone(SAVED_STATE);
-  delete EXPECTED_STATE.placements[CustomizableUI.AREA_ADDONS];
-
-  saveState(SAVED_STATE);
 });
