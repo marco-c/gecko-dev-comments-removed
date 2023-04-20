@@ -278,12 +278,14 @@ nsXULPopupManager* nsXULPopupManager::GetInstance() {
 }
 
 bool nsXULPopupManager::RollupTooltips() {
-  return RollupInternal(RollupKind::Tooltip, {}, nullptr);
+  return RollupInternal(RollupKind::Tooltip, UINT32_MAX, false, nullptr,
+                        nullptr);
 }
 
-bool nsXULPopupManager::Rollup(const RollupOptions& aOptions,
+bool nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
+                               const LayoutDeviceIntPoint* aPos,
                                nsIContent** aLastRolledUp) {
-  return RollupInternal(RollupKind::Menu, aOptions, aLastRolledUp);
+  return RollupInternal(RollupKind::Menu, aCount, aFlush, aPos, aLastRolledUp);
 }
 
 bool nsXULPopupManager::RollupNativeMenu() {
@@ -294,8 +296,9 @@ bool nsXULPopupManager::RollupNativeMenu() {
   return false;
 }
 
-bool nsXULPopupManager::RollupInternal(RollupKind aKind,
-                                       const RollupOptions& aOptions,
+bool nsXULPopupManager::RollupInternal(RollupKind aKind, uint32_t aCount,
+                                       bool aFlush,
+                                       const LayoutDeviceIntPoint* pos,
                                        nsIContent** aLastRolledUp) {
   if (aLastRolledUp) {
     *aLastRolledUp = nullptr;
@@ -346,7 +349,7 @@ bool nsXULPopupManager::RollupInternal(RollupKind aKind,
   
   
   bool noRollupOnAnchor =
-      (!consume && aOptions.mPoint &&
+      (!consume && pos &&
        item->Frame()->GetContent()->AsElement()->AttrValueIs(
            kNameSpaceID_None, nsGkAtoms::norolluponanchor, nsGkAtoms::_true,
            eCaseMatters));
@@ -355,7 +358,7 @@ bool nsXULPopupManager::RollupInternal(RollupKind aKind,
   
   
   if ((consumeResult == ConsumeOutsideClicks_ParentOnly || noRollupOnAnchor) &&
-      aOptions.mPoint) {
+      pos) {
     nsMenuPopupFrame* popupFrame = item->Frame();
     CSSIntRect anchorRect = [&] {
       if (popupFrame->IsAnchored()) {
@@ -396,8 +399,7 @@ bool nsXULPopupManager::RollupInternal(RollupKind aKind,
     
     
     nsPresContext* presContext = item->Frame()->PresContext();
-    CSSIntPoint posCSSPixels =
-        presContext->DevPixelsToIntCSSPixels(*aOptions.mPoint);
+    CSSIntPoint posCSSPixels = presContext->DevPixelsToIntCSSPixels(*pos);
     if (anchorRect.Contains(posCSSPixels)) {
       if (consumeResult == ConsumeOutsideClicks_ParentOnly) {
         consume = true;
@@ -416,10 +418,9 @@ bool nsXULPopupManager::RollupInternal(RollupKind aKind,
   
   
   nsIContent* lastPopup = nullptr;
-  uint32_t count = aOptions.mCount;
-  if (count && count != UINT32_MAX) {
+  if (aCount != UINT32_MAX) {
     nsMenuChainItem* last = item;
-    while (--count && last->GetParent()) {
+    while (--aCount && last->GetParent()) {
       last = last->GetParent();
     }
     if (last) {
@@ -431,12 +432,9 @@ bool nsXULPopupManager::RollupInternal(RollupKind aKind,
   RefPtr<nsViewManager> viewManager =
       presContext->PresShell()->GetViewManager();
 
-  HidePopup(item->Content(),
-            {HidePopupOption::HideChain, HidePopupOption::DeselectMenu,
-             HidePopupOption::IsRollup},
-            lastPopup);
+  HidePopup(item->Content(), true, true, false, true, lastPopup);
 
-  if (aOptions.mFlush == FlushViews::Yes) {
+  if (aFlush) {
     
     
     viewManager->UpdateWidgetGeometry();
@@ -946,7 +944,7 @@ void nsXULPopupManager::OnNativeMenuClosed() {
     
     
     
-    HidePopup(mPopups->Content(), {HidePopupOption::HideChain});
+    HidePopup(mPopups->Content(), true, false, false, false);
   }
 }
 
@@ -1132,8 +1130,9 @@ nsMenuChainItem* nsXULPopupManager::FindPopup(nsIContent* aPopup) const {
   return nullptr;
 }
 
-void nsXULPopupManager::HidePopup(nsIContent* aPopup, HidePopupOptions aOptions,
-                                  nsIContent* aLastPopup) {
+void nsXULPopupManager::HidePopup(nsIContent* aPopup, bool aHideChain,
+                                  bool aDeselectMenu, bool aAsynchronous,
+                                  bool aIsCancel, nsIContent* aLastPopup) {
   if (mNativeMenu && mNativeMenu->Element() == aPopup) {
     RefPtr<NativeMenu> menu = mNativeMenu;
     (void)menu->Close();
@@ -1147,6 +1146,7 @@ void nsXULPopupManager::HidePopup(nsIContent* aPopup, HidePopupOptions aOptions,
 
   nsMenuChainItem* foundPopup = FindPopup(aPopup);
 
+  bool deselectMenu = false;
   nsCOMPtr<nsIContent> popupToHide, nextPopup, lastPopup;
 
   if (foundPopup) {
@@ -1154,8 +1154,6 @@ void nsXULPopupManager::HidePopup(nsIContent* aPopup, HidePopupOptions aOptions,
       
       
       popupToHide = aPopup;
-      
-      aOptions -= HidePopupOption::DeselectMenu;
     } else {
       
       
@@ -1185,15 +1183,14 @@ void nsXULPopupManager::HidePopup(nsIContent* aPopup, HidePopupOptions aOptions,
         }
       }
 
+      deselectMenu = aDeselectMenu;
       popupToHide = topMenu->Content();
       popupFrame = topMenu->Frame();
-
-      const bool hideChain = aOptions.contains(HidePopupOption::HideChain);
 
       
       
       nsMenuChainItem* parent = topMenu->GetParent();
-      if (parent && (hideChain || topMenu != foundPopup)) {
+      if (parent && (aHideChain || topMenu != foundPopup)) {
         while (parent && parent->IsNoAutoHide()) {
           parent = parent->GetParent();
         }
@@ -1203,41 +1200,41 @@ void nsXULPopupManager::HidePopup(nsIContent* aPopup, HidePopupOptions aOptions,
         }
       }
 
-      lastPopup = aLastPopup ? aLastPopup : (hideChain ? nullptr : aPopup);
+      lastPopup = aLastPopup ? aLastPopup : (aHideChain ? nullptr : aPopup);
     }
   } else if (popupFrame->PopupState() == ePopupPositioning) {
     
     
     
+    deselectMenu = aDeselectMenu;
     popupToHide = aPopup;
   }
 
-  if (!popupToHide) {
-    return;
-  }
+  if (popupToHide) {
+    nsPopupState state = popupFrame->PopupState();
+    
+    if (state == ePopupHiding) {
+      return;
+    }
 
-  nsPopupState state = popupFrame->PopupState();
-  
-  if (state == ePopupHiding) {
-    return;
-  }
+    
+    
+    
+    if (state != ePopupInvisible) {
+      popupFrame->SetPopupState(ePopupHiding);
+    }
 
-  
-  
-  
-  if (state != ePopupInvisible) {
-    popupFrame->SetPopupState(ePopupHiding);
-  }
-
-  
-  if (aOptions.contains(HidePopupOption::Async)) {
-    nsCOMPtr<nsIRunnable> event = new nsXULPopupHidingEvent(
-        popupToHide, nextPopup, lastPopup, popupFrame->PopupType(), aOptions);
-    aPopup->OwnerDoc()->Dispatch(TaskCategory::Other, event.forget());
-  } else {
-    RefPtr<nsPresContext> presContext = popupFrame->PresContext();
-    FirePopupHidingEvent(popupToHide, nextPopup, lastPopup, presContext,
-                         popupFrame->PopupType(), aOptions);
+    
+    if (aAsynchronous) {
+      nsCOMPtr<nsIRunnable> event = new nsXULPopupHidingEvent(
+          popupToHide, nextPopup, lastPopup, popupFrame->PopupType(),
+          deselectMenu, aIsCancel);
+      aPopup->OwnerDoc()->Dispatch(TaskCategory::Other, event.forget());
+    } else {
+      RefPtr<nsPresContext> presContext = popupFrame->PresContext();
+      FirePopupHidingEvent(popupToHide, nextPopup, lastPopup, presContext,
+                           popupFrame->PopupType(), deselectMenu, aIsCancel);
+    }
   }
 }
 
@@ -1256,7 +1253,7 @@ void nsXULPopupManager::HideMenu(nsIContent* aMenu) {
   if (!popup) {
     return;
   }
-  HidePopup(popup, {HidePopupOption::DeselectMenu});
+  HidePopup(popup, false, true, false, false);
 }
 
 
@@ -1269,13 +1266,13 @@ class TransitionEnder final : public nsIDOMEventListener {
   virtual ~TransitionEnder() = default;
 
  public:
-  HidePopupOptions mOptions;
+  bool mDeselectMenu;
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(TransitionEnder)
 
-  TransitionEnder(nsIContent* aContent, HidePopupOptions aOptions)
-      : mContent(aContent), mOptions(aOptions) {}
+  TransitionEnder(nsIContent* aContent, bool aDeselectMenu)
+      : mContent(aContent), mDeselectMenu(aDeselectMenu) {}
 
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD HandleEvent(Event* aEvent) override {
     mContent->RemoveSystemEventListener(u"transitionend"_ns, this, false);
@@ -1290,7 +1287,7 @@ class TransitionEnder final : public nsIDOMEventListener {
     
     if (RefPtr<nsXULPopupManager> pm = nsXULPopupManager::GetInstance()) {
       pm->HidePopupCallback(mContent, popupFrame, nullptr, nullptr,
-                            popupFrame->PopupType(), mOptions);
+                            popupFrame->PopupType(), mDeselectMenu);
     }
 
     return NS_OK;
@@ -1307,7 +1304,7 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION(TransitionEnder, mContent);
 void nsXULPopupManager::HidePopupCallback(
     nsIContent* aPopup, nsMenuPopupFrame* aPopupFrame, nsIContent* aNextPopup,
-    nsIContent* aLastPopup, nsPopupType aPopupType, HidePopupOptions aOptions) {
+    nsIContent* aLastPopup, nsPopupType aPopupType, bool aDeselectMenu) {
   if (mCloseTimer && mTimerMenu == aPopupFrame) {
     mCloseTimer->Cancel();
     mCloseTimer = nullptr;
@@ -1328,8 +1325,7 @@ void nsXULPopupManager::HidePopupCallback(
   }
 
   AutoWeakFrame weakFrame(aPopupFrame);
-  aPopupFrame->HidePopup(aOptions.contains(HidePopupOption::DeselectMenu),
-                         ePopupClosed);
+  aPopupFrame->HidePopup(aDeselectMenu, ePopupClosed);
   NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 
   
@@ -1367,7 +1363,7 @@ void nsXULPopupManager::HidePopupCallback(
 
       RefPtr<nsPresContext> presContext = popupFrame->PresContext();
       FirePopupHidingEvent(popupToHide, nextPopup, aLastPopup, presContext,
-                           foundMenu->PopupType(), aOptions);
+                           foundMenu->PopupType(), aDeselectMenu, false);
     }
   }
 }
@@ -1599,37 +1595,36 @@ void nsXULPopupManager::BeginShowingPopup(const PendingPopup& aPendingPopup,
 
   
   popupFrame = do_QueryFrame(popup->GetPrimaryFrame());
-  if (!popupFrame) {
-    return;
-  }
-  
-  
-  
-  if (popupFrame->PopupState() == ePopupClosed ||
-      status == nsEventStatus_eConsumeNoDefault) {
-    popupFrame->SetPopupState(ePopupClosed);
-    popupFrame->ClearTriggerContent();
-    return;
-  }
-  
-  
-  
-  if (popup->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                      nsGkAtoms::arrow, eCaseMatters)) {
-    popupFrame->ShowWithPositionedEvent();
-    presShell->FrameNeedsReflow(popupFrame, IntrinsicDirty::FrameAndAncestors,
-                                NS_FRAME_HAS_DIRTY_CHILDREN);
-  } else {
-    ShowPopupCallback(popup, popupFrame, aIsContextMenu, aSelectFirstItem);
+  if (popupFrame) {
+    
+    
+    
+    if (popupFrame->PopupState() == ePopupClosed ||
+        status == nsEventStatus_eConsumeNoDefault) {
+      popupFrame->SetPopupState(ePopupClosed);
+      popupFrame->ClearTriggerContent();
+    } else {
+      
+      
+
+      
+      if (popup->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                          nsGkAtoms::arrow, eCaseMatters)) {
+        popupFrame->ShowWithPositionedEvent();
+        presShell->FrameNeedsReflow(popupFrame,
+                                    IntrinsicDirty::FrameAndAncestors,
+                                    NS_FRAME_HAS_DIRTY_CHILDREN);
+      } else {
+        ShowPopupCallback(popup, popupFrame, aIsContextMenu, aSelectFirstItem);
+      }
+    }
   }
 }
 
-void nsXULPopupManager::FirePopupHidingEvent(nsIContent* aPopup,
-                                             nsIContent* aNextPopup,
-                                             nsIContent* aLastPopup,
-                                             nsPresContext* aPresContext,
-                                             nsPopupType aPopupType,
-                                             HidePopupOptions aOptions) {
+void nsXULPopupManager::FirePopupHidingEvent(
+    nsIContent* aPopup, nsIContent* aNextPopup, nsIContent* aLastPopup,
+    nsPresContext* aPresContext, nsPopupType aPopupType, bool aDeselectMenu,
+    bool aIsCancel) {
   nsCOMPtr<nsIContent> popup = aPopup;
   RefPtr<PresShell> presShell = aPresContext->PresShell();
   Unused << presShell;  
@@ -1662,63 +1657,57 @@ void nsXULPopupManager::FirePopupHidingEvent(nsIContent* aPopup,
 
   
   nsMenuPopupFrame* popupFrame = do_QueryFrame(aPopup->GetPrimaryFrame());
-  if (!popupFrame) {
-    return;
-  }
+  if (popupFrame) {
+    
+    
+    
+    if (status == nsEventStatus_eConsumeNoDefault &&
+        !popupFrame->IsInContentShell()) {
+      
+      
+      
+      
+      popupFrame->SetPopupState(ePopupShown);
+    } else {
+      
+      
+      
+      
+      
+      
+      if (LookAndFeel::GetInt(LookAndFeel::IntID::PanelAnimations) &&
+          !aNextPopup && aPopup->IsElement() &&
+          aPopup->AsElement()->HasAttr(nsGkAtoms::animate)) {
+        
+        
+        
+        nsAutoString animate;
+        aPopup->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::animate,
+                                     animate);
 
-  
-  
-  
-  if (status == nsEventStatus_eConsumeNoDefault &&
-      !popupFrame->IsInContentShell()) {
-    
-    
-    
-    
-    popupFrame->SetPopupState(ePopupShown);
-    return;
-  }
+        if (!animate.EqualsLiteral("false") &&
+            (!animate.EqualsLiteral("cancel") || aIsCancel)) {
+          presShell->FlushPendingNotifications(FlushType::Layout);
 
-  const bool shouldAnimate = [&] {
-    if (!LookAndFeel::GetInt(LookAndFeel::IntID::PanelAnimations)) {
-      return false;
-    }
-    
-    
-    
-    if (aNextPopup) {
-      return false;
-    }
-    nsAutoString animate;
-    if (!aPopup->IsElement() ||
-        !aPopup->AsElement()->GetAttr(nsGkAtoms::animate, animate)) {
-      return false;
-    }
-    
-    if (animate.EqualsLiteral("false")) {
-      return false;
-    }
-    
-    
-    if (animate.EqualsLiteral("cancel") &&
-        !aOptions.contains(HidePopupOption::IsRollup)) {
-      return false;
-    }
-    return true;
-  }();
-  
-  
-  
-  
-  if (shouldAnimate && AnimationUtils::HasCurrentTransitions(
-                           aPopup->AsElement(), PseudoStyleType::NotPseudo)) {
-    RefPtr<TransitionEnder> ender = new TransitionEnder(aPopup, aOptions);
-    aPopup->AddSystemEventListener(u"transitionend"_ns, ender, false, false);
-    return;
-  }
+          
+          popupFrame = do_QueryFrame(aPopup->GetPrimaryFrame());
+          if (!popupFrame) return;
 
-  HidePopupCallback(aPopup, popupFrame, aNextPopup, aLastPopup, aPopupType,
-                    aOptions);
+          if (AnimationUtils::HasCurrentTransitions(
+                  aPopup->AsElement(), PseudoStyleType::NotPseudo)) {
+            RefPtr<TransitionEnder> ender =
+                new TransitionEnder(aPopup, aDeselectMenu);
+            aPopup->AddSystemEventListener(u"transitionend"_ns, ender, false,
+                                           false);
+            return;
+          }
+        }
+      }
+
+      HidePopupCallback(aPopup, popupFrame, aNextPopup, aLastPopup, aPopupType,
+                        aDeselectMenu);
+    }
+  }
 }
 
 bool nsXULPopupManager::IsPopupOpen(nsIContent* aPopup) {
@@ -1940,7 +1929,7 @@ void nsXULPopupManager::PopupDestroyed(nsMenuPopupFrame* aPopup) {
       } else {
         
         
-        HidePopup(child->Content(), {HidePopupOption::Async});
+        HidePopup(child->Content(), false, false, true, false);
         break;
       }
     }
@@ -2142,7 +2131,7 @@ void nsXULPopupManager::KillMenuTimer() {
     mCloseTimer = nullptr;
 
     if (mTimerMenu->IsOpen()) {
-      HidePopup(mTimerMenu->GetContent(), {HidePopupOption::Async});
+      HidePopup(mTimerMenu->GetContent(), false, false, true, false);
     }
   }
 
@@ -2379,7 +2368,9 @@ bool nsXULPopupManager::HandleKeyboardNavigationInPopup(
     
     if (nsMenuPopupFrame* popupFrame =
             currentItem->GetMenuPopup(FlushType::None)) {
-      HidePopup(popupFrame->GetContent(), {});
+      HidePopup(popupFrame->GetContent(),  false,
+                 false,  false,
+                 false);
     }
     return true;
   }
@@ -2395,7 +2386,7 @@ bool nsXULPopupManager::HandleKeyboardEventWithKeyCode(
   if (aTopVisibleMenuItem &&
       aTopVisibleMenuItem->PopupType() != ePopupTypeMenu) {
     if (keyCode == KeyboardEvent_Binding::DOM_VK_ESCAPE) {
-      HidePopup(aTopVisibleMenuItem->Content(), {HidePopupOption::IsRollup});
+      HidePopup(aTopVisibleMenuItem->Content(), false, false, false, true);
       aKeyEvent->StopPropagation();
       aKeyEvent->StopCrossProcessForwarding();
       aKeyEvent->PreventDefault();
@@ -2411,7 +2402,7 @@ bool nsXULPopupManager::HandleKeyboardEventWithKeyCode(
       
       if (aKeyEvent->AltKey() && aTopVisibleMenuItem &&
           aTopVisibleMenuItem->Frame()->IsMenuList()) {
-        Rollup({});
+        Rollup(0, false, nullptr, nullptr);
         break;
       }
       [[fallthrough]];
@@ -2438,7 +2429,7 @@ bool nsXULPopupManager::HandleKeyboardEventWithKeyCode(
       
       
       if (aTopVisibleMenuItem) {
-        HidePopup(aTopVisibleMenuItem->Content(), {HidePopupOption::IsRollup});
+        HidePopup(aTopVisibleMenuItem->Content(), false, false, false, true);
       } else if (mActiveMenuBar) {
         mActiveMenuBar->MenuClosed();
       }
@@ -2453,7 +2444,7 @@ bool nsXULPopupManager::HandleKeyboardEventWithKeyCode(
               kNameSpaceID_None, nsGkAtoms::activateontab, nsGkAtoms::_true,
               eCaseMatters)) {
         
-        Rollup({});
+        Rollup(0, false, nullptr, nullptr);
         break;
       } else if (mActiveMenuBar) {
         mActiveMenuBar->MenuClosed();
@@ -2599,7 +2590,7 @@ nsresult nsXULPopupManager::KeyDown(KeyboardEvent* aKeyEvent) {
         
         nsMenuChainItem* item = GetTopVisibleMenu();
         if (item && !item->Frame()->IsMenuList()) {
-          Rollup({});
+          Rollup(0, false, nullptr, nullptr);
         } else if (mActiveMenuBar) {
           mActiveMenuBar->MenuClosed();
         }
@@ -2662,7 +2653,7 @@ nsXULPopupHidingEvent::Run() {
       nsCOMPtr<nsIContent> nextPopup = mNextPopup;
       nsCOMPtr<nsIContent> lastPopup = mLastPopup;
       pm->FirePopupHidingEvent(popup, nextPopup, lastPopup, presContext,
-                               mPopupType, mOptions);
+                               mPopupType, mDeselectMenu, mIsRollup);
     }
   }
   return NS_OK;
@@ -2815,11 +2806,8 @@ nsXULMenuCommandEvent::Run() {
 
   if (mCloseMenuMode != CloseMenuMode_None) {
     if (RefPtr popup = menu->GetContainingPopupElement()) {
-      HidePopupOptions options{HidePopupOption::DeselectMenu};
-      if (mCloseMenuMode == CloseMenuMode_Auto) {
-        options += HidePopupOption::HideChain;
-      }
-      pm->HidePopup(popup, options);
+      pm->HidePopup(popup, mCloseMenuMode == CloseMenuMode_Auto, true, false,
+                    false);
     }
   }
 
