@@ -59,6 +59,12 @@ MARKUPMAP(mmultiscripts_, New_HyperText, roles::MATHML_MULTISCRIPTS)
 MARKUPMAP(
     mtable_,
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
+      
+      if (!aElement->GetPrimaryFrame() ||
+          aElement->GetPrimaryFrame()->AccessibleType() != eHTMLTableType) {
+        return new ARIAGridAccessible(aElement, aContext->Document());
+      }
+
       return new HTMLTableAccessible(aElement, aContext->Document());
     },
     roles::MATHML_TABLE, AttrFromDOM(align, align),
@@ -74,21 +80,38 @@ MARKUPMAP(
 MARKUPMAP(
     mtr_,
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
-      return new HTMLTableRowAccessible(aElement, aContext->Document());
+      if (aContext->IsHTMLTable() && aElement->GetPrimaryFrame() &&
+          aElement->GetPrimaryFrame()->AccessibleType() == eHTMLTableRowType) {
+        return new HTMLTableRowAccessible(aElement, aContext->Document());
+      }
+
+      
+      
+      
+      if (aContext->IsTable()) {
+        return new ARIARowAccessible(aElement, aContext->Document());
+      }
+
+      return nullptr;
     },
     roles::MATHML_TABLE_ROW)
 
 MARKUPMAP(
     mtd_,
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
+      if (aContext->IsHTMLTableRow() && aElement->GetPrimaryFrame() &&
+          aElement->GetPrimaryFrame()->AccessibleType() == eHTMLTableCellType) {
+        return new HTMLTableCellAccessible(aElement, aContext->Document());
+      }
+
       
       
       
-      if (!aContext->IsHTMLTableRow() || !aElement->GetPrimaryFrame() ||
-          aElement->GetPrimaryFrame()->AccessibleType() != eHTMLTableCellType) {
+      if (aContext->IsTableRow()) {
         return new ARIAGridCellAccessible(aElement, aContext->Document());
       }
-      return new HTMLTableCellAccessible(aElement, aContext->Document());
+
+      return nullptr;
     },
     roles::MATHML_CELL)
 
