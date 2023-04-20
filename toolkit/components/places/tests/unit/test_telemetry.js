@@ -3,6 +3,13 @@
 
 
 
+
+
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
+
 const { PlacesDBUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesDBUtils.sys.mjs"
 );
