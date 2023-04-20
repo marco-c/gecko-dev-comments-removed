@@ -405,29 +405,26 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvNotifyMediaInfo(
 
 mozilla::ipc::IPCResult MFMediaEngineParent::RecvPlay() {
   AssertOnManagerThread();
-  if (mMediaEngine) {
-    LOG("Play, in playback rate %f", mPlaybackRate);
-    ENGINE_MARKER("MFMediaEngineParent,Play");
-    NS_ENSURE_TRUE(SUCCEEDED(mMediaEngine->Play()), IPC_OK());
-    
-    
-    
-    
-    if (mPlaybackRate != 1.0) {
-      NS_ENSURE_TRUE(SUCCEEDED(mMediaEngine->SetPlaybackRate(mPlaybackRate)),
-                     IPC_OK());
-    }
+  if (!mMediaEngine) {
+    LOG("Engine has been shutdowned!");
+    return IPC_OK();
   }
+  LOG("Play, expected playback rate %f, default playback rate=%f",
+      mPlaybackRate, mMediaEngine->GetDefaultPlaybackRate());
+  ENGINE_MARKER("MFMediaEngineParent,Play");
+  NS_ENSURE_TRUE(SUCCEEDED(mMediaEngine->Play()), IPC_OK());
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult MFMediaEngineParent::RecvPause() {
   AssertOnManagerThread();
-  if (mMediaEngine) {
-    LOG("Pause");
-    ENGINE_MARKER("MFMediaEngineParent,Pause");
-    NS_ENSURE_TRUE(SUCCEEDED(mMediaEngine->Pause()), IPC_OK());
+  if (!mMediaEngine) {
+    LOG("Engine has been shutdowned!");
+    return IPC_OK();
   }
+  LOG("Pause");
+  ENGINE_MARKER("MFMediaEngineParent,Pause");
+  NS_ENSURE_TRUE(SUCCEEDED(mMediaEngine->Pause()), IPC_OK());
   return IPC_OK();
 }
 
@@ -480,6 +477,12 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetPlaybackRate(
                      nsPrintfCString("%f", aPlaybackRate));
   mPlaybackRate = aPlaybackRate;
   NS_ENSURE_TRUE(SUCCEEDED(mMediaEngine->SetPlaybackRate(mPlaybackRate)),
+                 IPC_OK());
+  
+  
+  
+  
+  NS_ENSURE_TRUE(SUCCEEDED(mMediaEngine->SetDefaultPlaybackRate(mPlaybackRate)),
                  IPC_OK());
   return IPC_OK();
 }
