@@ -837,7 +837,12 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       
       color = NS_RGB(0xff, 0xad, 0xff);
       break;
-
+    case ColorID::SpellCheckerUnderline:
+      
+      
+      
+      color = NS_RGB(0xff, 0x66, 0x66);
+      break;
     default:
       return Nothing();
   }
