@@ -165,18 +165,9 @@ class nsFlexContainerFrame final : public nsContainerFrame,
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-  bool GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
-                                 BaselineSharingGroup aBaselineGroup,
-                                 nscoord* aBaseline) const override {
-    if (StyleDisplay()->IsContainLayout() ||
-        HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) {
-      return false;
-    }
-    *aBaseline = aBaselineGroup == BaselineSharingGroup::First
-                     ? mBaselineFromLastReflow
-                     : mLastBaselineFromLastReflow;
-    return true;
-  }
+  Maybe<nscoord> GetNaturalBaselineBOffset(
+      mozilla::WritingMode aWM,
+      BaselineSharingGroup aBaselineGroup) const override;
 
   
   void UnionInFlowChildOverflow(mozilla::OverflowAreas&);

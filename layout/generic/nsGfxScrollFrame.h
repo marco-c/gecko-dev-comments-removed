@@ -978,9 +978,9 @@ class nsHTMLScrollFrame : public nsContainerFrame,
     return mHelper.ComputeCustomOverflow(aOverflowAreas);
   }
 
-  bool GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
-                                 BaselineSharingGroup aBaselineGroup,
-                                 nscoord* aBaseline) const override;
+  Maybe<nscoord> GetNaturalBaselineBOffset(
+      mozilla::WritingMode aWM,
+      BaselineSharingGroup aBaselineGroup) const override;
 
   
   

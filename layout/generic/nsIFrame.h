@@ -1537,10 +1537,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual bool GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
-                                         BaselineSharingGroup aBaselineGroup,
-                                         nscoord* aBaseline) const {
-    return false;
+  virtual Maybe<nscoord> GetNaturalBaselineBOffset(
+      mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
+    return Nothing{};
   }
 
   

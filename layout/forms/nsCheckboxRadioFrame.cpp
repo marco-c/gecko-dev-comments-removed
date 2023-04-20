@@ -85,23 +85,22 @@ LogicalSize nsCheckboxRadioFrame::ComputeAutoSize(
   return size;
 }
 
-bool nsCheckboxRadioFrame::GetNaturalBaselineBOffset(
-    mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup,
-    nscoord* aBaseline) const {
+Maybe<nscoord> nsCheckboxRadioFrame::GetNaturalBaselineBOffset(
+    WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
   NS_ASSERTION(!IsSubtreeDirty(), "frame must not be dirty");
 
   if (aBaselineGroup == BaselineSharingGroup::Last) {
-    return false;
+    return Nothing{};
   }
 
   if (StyleDisplay()->IsBlockOutsideStyle()) {
-    return false;
+    return Nothing{};
   }
 
   
   
   if (!StyleDisplay()->HasAppearance()) {
-    return false;
+    return Nothing{};
   }
 
   
@@ -110,10 +109,9 @@ bool nsCheckboxRadioFrame::GetNaturalBaselineBOffset(
   
   
   
-  *aBaseline = aWM.IsLineInverted()
-                   ? GetLogicalUsedBorderAndPadding(aWM).BStart(aWM)
-                   : BSize(aWM) - GetLogicalUsedBorderAndPadding(aWM).BEnd(aWM);
-  return true;
+  return Some(aWM.IsLineInverted()
+                  ? GetLogicalUsedBorderAndPadding(aWM).BStart(aWM)
+                  : BSize(aWM) - GetLogicalUsedBorderAndPadding(aWM).BEnd(aWM));
 }
 
 void nsCheckboxRadioFrame::Reflow(nsPresContext* aPresContext,
