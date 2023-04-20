@@ -72,7 +72,13 @@ function getPromiseState(obj) {
 
 
 function isObjectOrFunction(value) {
-  return value && (typeof value == "object" || typeof value == "function");
+  
+  if (!value) {
+    return false;
+  }
+
+  const type = typeof value;
+  return type == "object" || type == "function";
 }
 
 
@@ -425,24 +431,45 @@ function getModifiersForEvent(rawObj) {
 
 
 function makeDebuggeeValue(targetActor, value) {
-  if (isObject(value)) {
-    try {
-      const global = Cu.getGlobalForObject(value);
-      const dbgGlobal = targetActor.dbg.makeGlobalObjectReference(global);
-      return dbgGlobal.makeDebuggeeValue(value);
-    } catch (ex) {
-      
-      
+  
+  
+  
+  
+  
+  if (!isObjectOrFunction(value)) {
+    return value;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  const valueGlobal = isWorker ? targetActor.workerGlobal : Cu.getGlobalForObject(value);
+  let dbgGlobal;
+  try {
+    dbgGlobal = targetActor.dbg.makeGlobalObjectReference(
+      valueGlobal
+    );
+  } catch(e) {
+    
+    
+    
+    
+    
+    if (e.message.includes("object in compartment marked as invisible to Debugger")) {
+      dbgGlobal = targetActor.dbg.makeGlobalObjectReference(
+        targetActor.window 
+      );
+
+    } else {
+      throw e;
     }
   }
-  const dbgGlobal = targetActor.dbg.makeGlobalObjectReference(
-    targetActor.window || targetActor.workerGlobal
-  );
-  return dbgGlobal.makeDebuggeeValue(value);
-}
 
-function isObject(value) {
-  return Object(value) === value;
+  return dbgGlobal.makeDebuggeeValue(value);
 }
 
 
