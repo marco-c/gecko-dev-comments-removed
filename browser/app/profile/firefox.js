@@ -1959,7 +1959,8 @@ pref("browser.contentblocking.reportBreakage.url", "https://tracking-protection-
 pref("browser.contentblocking.report.lockwise.enabled", true);
 
 
-pref("browser.contentblocking.report.monitor.enabled", true);
+
+pref("browser.contentblocking.report.monitor.enabled", false);
 
 
 pref("browser.contentblocking.report.proxy.enabled", false);
