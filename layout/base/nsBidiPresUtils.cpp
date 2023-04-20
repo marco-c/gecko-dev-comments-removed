@@ -649,8 +649,8 @@ static void SplitInlineAncestors(nsContainerFrame* aParent,
       
       MOZ_ASSERT(!newParent->IsBlockFrameOrSubclass(),
                  "blocks should not be IsBidiSplittable");
-      newParent->InsertFrames(kNoReflowPrincipalList, nullptr, nullptr,
-                              std::move(tail));
+      newParent->InsertFrames(FrameChildListID::NoReflowPrincipal, nullptr,
+                              nullptr, std::move(tail));
 
       
       
@@ -666,8 +666,8 @@ static void SplitInlineAncestors(nsContainerFrame* aParent,
 
       
       
-      grandparent->InsertFrames(kNoReflowPrincipalList, parent, parentLine,
-                                nsFrameList(newParent, newParent));
+      grandparent->InsertFrames(FrameChildListID::NoReflowPrincipal, parent,
+                                parentLine, nsFrameList(newParent, newParent));
     }
 
     frame = parent;
@@ -761,7 +761,8 @@ static void CreateContinuation(nsIFrame* aFrame,
 
   
   
-  parent->InsertFrames(kNoReflowPrincipalList, aFrame, parentLine,
+  
+  parent->InsertFrames(FrameChildListID::NoReflowPrincipal, aFrame, parentLine,
                        nsFrameList(*aNewFrame, *aNewFrame));
 
   if (!aIsFluid) {
@@ -1387,7 +1388,7 @@ void nsBidiPresUtils::TraverseFrames(nsIFrame* aCurrentFrame,
     } else {
       
       nsIFrame* kid = frame->PrincipalChildList().FirstChild();
-      MOZ_ASSERT(!frame->GetChildList(kOverflowList).FirstChild(),
+      MOZ_ASSERT(!frame->GetChildList(FrameChildListID::Overflow).FirstChild(),
                  "should have drained the overflow list above");
       if (kid) {
         TraverseFrames(kid, aBpd);

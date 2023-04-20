@@ -28,25 +28,25 @@ class nsPresContext;
 namespace mozilla {
 class PresShell;
 class FrameChildList;
-enum FrameChildListID {
+enum class FrameChildListID {
   
-  kPrincipalList,
-  kPopupList,
-  kCaptionList,
-  kColGroupList,
-  kAbsoluteList,
-  kFixedList,
-  kOverflowList,
-  kOverflowContainersList,
-  kExcessOverflowContainersList,
-  kOverflowOutOfFlowList,
-  kFloatList,
-  kBulletList,
-  kPushedFloatsList,
-  kBackdropList,
+  Principal,
+  Popup,
+  Caption,
+  ColGroup,
+  Absolute,
+  Fixed,
+  Overflow,
+  OverflowContainers,
+  ExcessOverflowContainers,
+  OverflowOutOfFlow,
+  Float,
+  Bullet,
+  PushedFloats,
+  Backdrop,
   
   
-  kNoReflowPrincipalList,
+  NoReflowPrincipal,
 };
 
 
