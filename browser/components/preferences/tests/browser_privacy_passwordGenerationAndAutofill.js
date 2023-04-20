@@ -1,6 +1,3 @@
-
-
-
 add_task(async function initialState() {
   
   const prefTests = [
