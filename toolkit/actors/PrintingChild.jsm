@@ -178,7 +178,7 @@ class PrintingChild extends JSWindowActorChild {
 
       
       let containerElement = document.createElement("div");
-      containerElement.setAttribute("id", "container");
+      containerElement.setAttribute("class", "container");
       document.body.appendChild(containerElement);
 
       
@@ -189,19 +189,18 @@ class PrintingChild extends JSWindowActorChild {
 
         
         let headerElement = document.createElement("div");
-        headerElement.setAttribute("id", "reader-header");
+        headerElement.setAttribute("class", "reader-header");
         headerElement.setAttribute("class", "header");
         containerElement.appendChild(headerElement);
 
         
         let titleElement = document.createElement("h1");
-        titleElement.setAttribute("id", "reader-title");
+        titleElement.setAttribute("class", "reader-title");
         titleElement.textContent = article.title;
         headerElement.appendChild(titleElement);
 
         let bylineElement = document.createElement("div");
-        bylineElement.setAttribute("id", "reader-credits");
-        bylineElement.setAttribute("class", "credits");
+        bylineElement.setAttribute("class", "reader-credits credits");
         bylineElement.textContent = article.byline;
         headerElement.appendChild(bylineElement);
 
@@ -215,7 +214,7 @@ class PrintingChild extends JSWindowActorChild {
 
         
         let readerContent = document.createElement("div");
-        readerContent.setAttribute("id", "moz-reader-content");
+        readerContent.setAttribute("class", "moz-reader-content");
         contentElement.appendChild(readerContent);
 
         let articleUri = Services.io.newURI(article.url);
