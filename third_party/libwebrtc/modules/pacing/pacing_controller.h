@@ -71,12 +71,6 @@ class PacingController {
   
   
   
-  
-  
-  static const float kDefaultPaceMultiplier;
-  
-  
-  
   static const TimeDelta kPausedProcessInterval;
 
   static const TimeDelta kMinSleepTime;
