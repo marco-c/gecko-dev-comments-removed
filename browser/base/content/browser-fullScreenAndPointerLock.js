@@ -94,8 +94,8 @@ var PointerlockFsWarning = {
     } else {
       textElem.removeAttribute("hidden");
       
-      let { DownloadUtils } = ChromeUtils.import(
-        "resource://gre/modules/DownloadUtils.jsm"
+      let { DownloadUtils } = ChromeUtils.importESModule(
+        "resource://gre/modules/DownloadUtils.sys.mjs"
       );
       let displayHost = DownloadUtils.getURIHost(uri.spec)[0];
       let l10nString = {
