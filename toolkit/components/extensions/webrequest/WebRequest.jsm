@@ -1309,6 +1309,14 @@ var WebRequest = {
   setDNRHandlingEnabled: dnrActive => {
     HttpObserverManager.setDNRHandlingEnabled(dnrActive);
   },
+  getTabIdForChannelWrapper: channel => {
+    
+    
+    
+    
+    
+    return HttpObserverManager.getBrowserData(channel).tabId;
+  },
 
   onBeforeRequest,
   onBeforeSendHeaders,
