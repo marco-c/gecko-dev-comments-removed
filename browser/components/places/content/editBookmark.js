@@ -17,7 +17,6 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.sys.mjs",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  PromiseUtils: "resource://gre/modules/PromiseUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -34,8 +33,7 @@ var gEditItemOverlay = {
   
   _bookmarkState: null,
   _allTags: null,
-  _initPanelDeferred: null,
-  _updateTagsDeferred: null,
+  _tagsUpdatePromise: null,
   _paneInfo: null,
   _setPaneInfo(aInitInfo) {
     if (!aInitInfo) {
@@ -258,189 +256,166 @@ var gEditItemOverlay = {
 
 
   async initPanel(aInfo) {
-    const deferred = (this._initPanelDeferred = PromiseUtils.defer());
-    try {
-      if (typeof aInfo != "object" || aInfo === null) {
-        throw new Error("aInfo must be an object.");
-      }
-      if ("node" in aInfo) {
-        try {
-          aInfo.node.type;
-        } catch (e) {
-          
-          
-          
-          
-          
-          return;
-        }
-      }
-
-      
-      
-      if (this.initialized) {
-        this.uninitPanel(false);
-      }
-
-      this._didChangeFolder = false;
-      this.transactionPromises = [];
-
-      let {
-        parentGuid,
-        isItem,
-        isURI,
-        isBookmark,
-        bulkTagging,
-        uris,
-        visibleRows,
-        focusedElement,
-        onPanelReady,
-      } = this._setPaneInfo(aInfo);
-
-      
-      
-      
-      
-      let instance = (this._instance = {});
-
-      
-      if (
-        aInfo.isNewBookmark &&
-        parentGuid == PlacesUtils.bookmarks.toolbarGuid
-      ) {
-        this._autoshowBookmarksToolbar();
-      }
-
-      let showOrCollapse = (
-        rowId,
-        isAppropriateForInput,
-        nameInHiddenRows = null
-      ) => {
-        let visible = isAppropriateForInput;
-        if (visible && "hiddenRows" in aInfo && nameInHiddenRows) {
-          visible &= !aInfo.hiddenRows.includes(nameInHiddenRows);
-        }
-        if (visible) {
-          visibleRows.add(rowId);
-        }
-        const cells = document.getElementsByClassName("editBMPanel_" + rowId);
-        for (const cell of cells) {
-          cell.hidden = !visible;
-        }
-        return visible;
-      };
-
-      if (showOrCollapse("nameRow", !bulkTagging, "name")) {
-        this._initNamePicker();
-        this._namePicker.readOnly = this.readOnly;
-      }
-
-      
-      
-      showOrCollapse("locationRow", isURI, "location");
-      if (isURI) {
-        this._initLocationField();
-        this._locationField.readOnly = this.readOnly;
-      }
-
-      if (showOrCollapse("keywordRow", isBookmark, "keyword")) {
-        await this._initKeywordField().catch(console.error);
+    if (typeof aInfo != "object" || aInfo === null) {
+      throw new Error("aInfo must be an object.");
+    }
+    if ("node" in aInfo) {
+      try {
+        aInfo.node.type;
+      } catch (e) {
         
         
-        if (instance != this._instance || this._paneInfo == null) {
-          return;
-        }
-        this._keywordField.readOnly = this.readOnly;
+        
+        
+        
+        return;
       }
+    }
 
-      
-      if (showOrCollapse("tagsRow", isURI || bulkTagging, "tags")) {
-        this._initTagsField();
-      } else if (!this._element("tagsSelectorRow").hidden) {
-        this.toggleTagsSelector().catch(console.error);
+    
+    
+    if (this.initialized) {
+      this.uninitPanel(false);
+    }
+
+    this._didChangeFolder = false;
+    this.transactionPromises = [];
+
+    let {
+      parentGuid,
+      isItem,
+      isURI,
+      isBookmark,
+      bulkTagging,
+      uris,
+      visibleRows,
+      focusedElement,
+      onPanelReady,
+    } = this._setPaneInfo(aInfo);
+
+    
+    
+    
+    
+    let instance = (this._instance = {});
+
+    
+    if (
+      aInfo.isNewBookmark &&
+      parentGuid == PlacesUtils.bookmarks.toolbarGuid
+    ) {
+      this._autoshowBookmarksToolbar();
+    }
+
+    let showOrCollapse = (
+      rowId,
+      isAppropriateForInput,
+      nameInHiddenRows = null
+    ) => {
+      let visible = isAppropriateForInput;
+      if (visible && "hiddenRows" in aInfo && nameInHiddenRows) {
+        visible &= !aInfo.hiddenRows.includes(nameInHiddenRows);
       }
-
-      
-      
-      
-      
-      if (showOrCollapse("folderRow", isItem, "folderPicker")) {
-        await this._initFolderMenuList(parentGuid).catch(console.error);
-        if (instance != this._instance || this._paneInfo == null) {
-          return;
-        }
+      if (visible) {
+        visibleRows.add(rowId);
       }
+      const cells = document.getElementsByClassName("editBMPanel_" + rowId);
+      for (const cell of cells) {
+        cell.hidden = !visible;
+      }
+      return visible;
+    };
 
+    if (showOrCollapse("nameRow", !bulkTagging, "name")) {
+      this._initNamePicker();
+      this._namePicker.readOnly = this.readOnly;
+    }
+
+    
+    
+    showOrCollapse("locationRow", isURI, "location");
+    if (isURI) {
+      this._initLocationField();
+      this._locationField.readOnly = this.readOnly;
+    }
+
+    if (showOrCollapse("keywordRow", isBookmark, "keyword")) {
+      await this._initKeywordField().catch(console.error);
       
-      if (showOrCollapse("selectionCount", bulkTagging)) {
-        this._element(
-          "itemsCountText"
-        ).value = PlacesUIUtils.getPluralString(
-          "detailsPane.itemsCountLabel",
-          uris.length,
-          [uris.length]
+      
+      if (instance != this._instance || this._paneInfo == null) {
+        return;
+      }
+      this._keywordField.readOnly = this.readOnly;
+    }
+
+    
+    if (showOrCollapse("tagsRow", isURI || bulkTagging, "tags")) {
+      this._initTagsField();
+    } else if (!this._element("tagsSelectorRow").hidden) {
+      this.toggleTagsSelector().catch(console.error);
+    }
+
+    
+    
+    
+    
+    if (showOrCollapse("folderRow", isItem, "folderPicker")) {
+      await this._initFolderMenuList(parentGuid).catch(console.error);
+      if (instance != this._instance || this._paneInfo == null) {
+        return;
+      }
+    }
+
+    
+    if (showOrCollapse("selectionCount", bulkTagging)) {
+      this._element(
+        "itemsCountText"
+      ).value = PlacesUIUtils.getPluralString(
+        "detailsPane.itemsCountLabel",
+        uris.length,
+        [uris.length]
+      );
+    }
+
+    let focusElement = () => {
+      
+      
+      
+      
+      
+      
+      
+      let elt;
+      if (focusedElement === "preferred") {
+        elt = this._element(
+          Services.prefs.getCharPref(
+            "browser.bookmarks.editDialog.firstEditField"
+          )
         );
+      } else if (focusedElement === "first") {
+        elt = document.querySelector('input:not([hidden="true"])');
       }
+      if (elt) {
+        elt.focus({ preventScroll: true });
+        elt.select();
+      }
+    };
 
-      
-      if (!this._observersAdded) {
-        this.handlePlacesEvents = this.handlePlacesEvents.bind(this);
-        PlacesUtils.observers.addListener(
-          ["bookmark-title-changed"],
-          this.handlePlacesEvents
-        );
-        window.addEventListener("unload", this);
-        this._observersAdded = true;
-      }
+    if (onPanelReady) {
+      onPanelReady(focusElement);
+    } else {
+      focusElement();
+    }
 
-      let focusElement = () => {
-        
-        
-        
-        
-        
-        
-        
-        let elt;
-        if (focusedElement === "preferred") {
-          elt = this._element(
-            Services.prefs.getCharPref(
-              "browser.bookmarks.editDialog.firstEditField"
-            )
-          );
-        } else if (focusedElement === "first") {
-          elt = document.querySelector('input:not([hidden="true"])');
-        }
-        if (elt) {
-          elt.focus({ preventScroll: true });
-          elt.select();
-        }
-      };
+    if (this._tagsUpdatePromise) {
+      await this._tagsUpdatePromise;
+    }
 
-      if (onPanelReady) {
-        onPanelReady(focusElement);
-      } else {
-        focusElement();
-      }
-
-      if (this._updateTagsDeferred) {
-        await this._updateTagsDeferred.promise;
-      }
-
-      this._bookmarkState = this.makeNewStateObject({
-        index: aInfo.node?.index,
-      });
-      if (isBookmark || bulkTagging) {
-        await this._initAllTags();
-        await this._rebuildTagsSelectorList();
-      }
-    } finally {
-      deferred.resolve();
-      if (this._initPanelDeferred === deferred) {
-        
-        
-        this._initPanelDeferred = null;
-      }
+    this._bookmarkState = this.makeNewStateObject();
+    if (isBookmark || bulkTagging) {
+      await this._initAllTags();
+      await this._rebuildTagsSelectorList();
     }
   },
 
@@ -609,15 +584,6 @@ var gEditItemOverlay = {
       }
     }
 
-    if (this._observersAdded) {
-      PlacesUtils.observers.removeListener(
-        ["bookmark-title-changed"],
-        this.handlePlacesEvents
-      );
-      window.removeEventListener("unload", this);
-      this._observersAdded = false;
-    }
-
     if (this._folderMenuListListenerAdded) {
       this._folderMenuList.removeEventListener("select", this);
       this._folderMenuListListenerAdded = false;
@@ -638,7 +604,7 @@ var gEditItemOverlay = {
     );
   },
 
-  makeNewStateObject(extraOptions) {
+  makeNewStateObject() {
     if (
       this._paneInfo.isItem ||
       this._paneInfo.isTag ||
@@ -647,15 +613,11 @@ var gEditItemOverlay = {
       const isLibraryWindow =
         document.documentElement.getAttribute("windowtype") ===
         "Places:Organizer";
-      const options = {
-        autosave: isLibraryWindow,
-        info: this._paneInfo,
-        ...extraOptions,
-      };
+      const options = { autosave: isLibraryWindow, info: this._paneInfo };
 
       if (this._paneInfo.isBookmark) {
         options.tags = this._element("tagsField").value;
-        options.keyword = this._keyword;
+        options.keyword = this._element("keywordField").value;
       }
 
       const dialogInfo = window.arguments[0];
@@ -673,16 +635,13 @@ var gEditItemOverlay = {
     return null;
   },
 
-  async onTagsFieldChange() {
+  onTagsFieldChange() {
     
     
     if (
       this._paneInfo &&
       (this._paneInfo.isURI || this._paneInfo.bulkTagging)
     ) {
-      if (this._initPanelDeferred) {
-        await this._initPanelDeferred.promise;
-      }
       this._updateTags().then(() => {
         
         if (this._paneInfo) {
@@ -696,36 +655,22 @@ var gEditItemOverlay = {
 
 
   async _updateTags() {
-    const deferred = (this._updateTagsDeferred = PromiseUtils.defer());
-    try {
+    this._tagsUpdatePromise = (async () => {
       const inputTags = this._getTagsArrayFromTagsInputField();
-      const isLibraryWindow =
-        document.documentElement.getAttribute("windowtype") ===
-        "Places:Organizer";
       await this._bookmarkState._tagsChanged(inputTags);
+      delete this._paneInfo._cachedCommonTags;
 
-      if (isLibraryWindow) {
-        
-        delete this._paneInfo._cachedCommonTags;
-        const currentTags = this._paneInfo.bulkTagging
-          ? this._getCommonTags()
-          : PlacesUtils.tagging.getTagsForURI(this._paneInfo.uri);
-        this._initTextField(this._tagsField, currentTags.join(", "), false);
-        await this._initAllTags();
-      } else {
-        
-        
-        inputTags.forEach(tag => this._allTags?.set(tag.toLowerCase(), tag));
-      }
+      
+      const currentTags = this._paneInfo.bulkTagging
+        ? this._getCommonTags()
+        : PlacesUtils.tagging.getTagsForURI(this._paneInfo.uri);
+      this._initTextField(this._tagsField, currentTags.join(", "), false);
+
+      await this._initAllTags();
       await this._rebuildTagsSelectorList();
-    } finally {
-      deferred.resolve();
-      if (this._updateTagsDeferred === deferred) {
-        
-        
-        this._updateTagsDeferred = null;
-      }
-    }
+    })().catch(console.error);
+    await this._tagsUpdatePromise;
+    this._tagsUpdatePromise = null;
   },
 
   
@@ -756,9 +701,6 @@ var gEditItemOverlay = {
     if (this.readOnly || !(this._paneInfo.isItem || this._paneInfo.isTag)) {
       return;
     }
-    if (this._initPanelDeferred) {
-      await this._initPanelDeferred.promise;
-    }
 
     
     if (this._paneInfo.isTag) {
@@ -776,12 +718,9 @@ var gEditItemOverlay = {
     this._bookmarkState._titleChanged(this._namePicker.value);
   },
 
-  async onLocationFieldChange() {
+  onLocationFieldChange() {
     if (this.readOnly || !this._paneInfo.isBookmark) {
       return;
-    }
-    if (this._initPanelDeferred) {
-      await this._initPanelDeferred.promise;
     }
 
     let newURI;
@@ -799,12 +738,9 @@ var gEditItemOverlay = {
     this._bookmarkState._locationChanged(newURI.spec);
   },
 
-  async onKeywordFieldChange() {
+  onKeywordFieldChange() {
     if (this.readOnly || !this._paneInfo.isBookmark) {
       return;
-    }
-    if (this._initPanelDeferred) {
-      await this._initPanelDeferred.promise;
     }
     this._bookmarkState._keywordChanged(this._keywordField.value);
   },
@@ -1136,19 +1072,6 @@ var gEditItemOverlay = {
     }
   },
 
-  async handlePlacesEvents(events) {
-    for (const event of events) {
-      switch (event.type) {
-        case "bookmark-title-changed":
-          if (this._paneInfo.isItem || this._paneInfo.isTag) {
-            
-            this._onItemTitleChange(event.id, event.title, event.guid);
-          }
-          break;
-      }
-    }
-  },
-
   toggleItemCheckbox(item) {
     
     let tags = this._getTagsArrayFromTagsInputField();
@@ -1183,30 +1106,6 @@ var gEditItemOverlay = {
     }
 
     this._initTextField(this._tagsField, tags.join(", "));
-  },
-
-  _onItemTitleChange(aItemId, aNewTitle, aGuid) {
-    if (this._paneInfo.visibleRows.has("folderRow")) {
-      
-      
-      
-      let menupopup = this._folderMenuList.menupopup;
-      for (let menuitem of menupopup.children) {
-        if ("folderGuid" in menuitem && menuitem.folderGuid == aGuid) {
-          menuitem.label = aNewTitle;
-          break;
-        }
-      }
-    }
-    
-    if (this._recentFolders) {
-      for (let folder of this._recentFolders) {
-        if (folder.folderGuid == aGuid) {
-          folder.title = aNewTitle;
-          break;
-        }
-      }
-    }
   },
 
   
