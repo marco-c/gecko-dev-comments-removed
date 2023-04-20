@@ -2,7 +2,7 @@
 
 
 
-import { FluentBundle } from "fluent";
+import { FluentBundle, FluentResource } from "@fluent/bundle";
 
 
 
@@ -38,7 +38,7 @@ export function generateBundles(content) {
       const attr = attrsToTry.pop();
       string = content[attr];
     }
-    bundle.addMessages(`${key} = ${string}`);
+    bundle.addResource(new FluentResource(`${key} = ${string}`));
   });
   return [bundle];
 }

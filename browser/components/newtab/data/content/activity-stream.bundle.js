@@ -70,14 +70,6 @@ __webpack_require__.d(__webpack_exports__, {
   "renderWithoutState": () => ( renderWithoutState)
 });
 
-
-var builtins_namespaceObject = {};
-__webpack_require__.r(builtins_namespaceObject);
-__webpack_require__.d(builtins_namespaceObject, {
-  "DATETIME": () => (DATETIME),
-  "NUMBER": () => (NUMBER)
-});
-
 ;
 
 
@@ -2202,23 +2194,16 @@ const ASRouterAdmin = (0,external_ReactRedux_namespaceObject.connect)(state => (
 
 
 
-
-
 class FluentType {
   
 
 
 
 
-
-
-  constructor(value, opts) {
+  constructor(value) {
     this.value = value;
-    this.opts = opts;
   }
   
-
-
 
 
 
@@ -2226,6 +2211,39 @@ class FluentType {
   valueOf() {
     return this.value;
   }
+
+}
+
+
+
+
+class FluentNone extends FluentType {
+  
+
+
+
+  constructor(value = "???") {
+    super(value);
+  }
+  
+
+
+
+
+  toString(scope) {
+    return `{${this.value}}`;
+  }
+
+}
+
+
+
+
+
+
+
+
+class FluentNumber extends FluentType {
   
 
 
@@ -2233,123 +2251,64 @@ class FluentType {
 
 
 
-
-
-
-
-
-  toString() {
-    throw new Error("Subclasses of FluentType must implement toString.");
+  constructor(value, opts = {}) {
+    super(value);
+    this.opts = opts;
   }
+  
 
-}
-class FluentNone extends FluentType {
-  valueOf() {
-    return null;
-  }
 
-  toString() {
-    return `{${this.value || "???"}}`;
-  }
 
-}
-class FluentNumber extends FluentType {
-  constructor(value, opts) {
-    super(parseFloat(value), opts);
-  }
 
-  toString(bundle) {
+  toString(scope) {
     try {
-      const nf = bundle._memoizeIntlObject(Intl.NumberFormat, this.opts);
-
+      const nf = scope.memoizeIntlObject(Intl.NumberFormat, this.opts);
       return nf.format(this.value);
-    } catch (e) {
-      
-      return this.value;
+    } catch (err) {
+      scope.reportError(err);
+      return this.value.toString(10);
     }
   }
 
 }
+
+
+
+
+
+
+
+
+
 class FluentDateTime extends FluentType {
-  constructor(value, opts) {
-    super(new Date(value), opts);
+  
+
+
+
+
+
+
+  constructor(value, opts = {}) {
+    super(value);
+    this.opts = opts;
   }
+  
 
-  toString(bundle) {
+
+
+
+  toString(scope) {
     try {
-      const dtf = bundle._memoizeIntlObject(Intl.DateTimeFormat, this.opts);
-
+      const dtf = scope.memoizeIntlObject(Intl.DateTimeFormat, this.opts);
       return dtf.format(this.value);
-    } catch (e) {
-      
-      return this.value;
+    } catch (err) {
+      scope.reportError(err);
+      return new Date(this.value).toISOString();
     }
   }
 
 }
 ;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function merge(argopts, opts) {
-  return Object.assign({}, argopts, values(opts));
-}
-
-function values(opts) {
-  const unwrapped = {};
-
-  for (const [name, opt] of Object.entries(opts)) {
-    unwrapped[name] = opt.valueOf();
-  }
-
-  return unwrapped;
-}
-
-function NUMBER([arg], opts) {
-  if (arg instanceof FluentNone) {
-    return arg;
-  }
-
-  if (arg instanceof FluentNumber) {
-    return new FluentNumber(arg.valueOf(), merge(arg.opts, opts));
-  }
-
-  return new FluentNone("NUMBER()");
-}
-function DATETIME([arg], opts) {
-  if (arg instanceof FluentNone) {
-    return arg;
-  }
-
-  if (arg instanceof FluentDateTime) {
-    return new FluentDateTime(arg.valueOf(), merge(arg.opts, opts));
-  }
-
-  return new FluentNone("DATETIME()");
-}
-;
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2377,12 +2336,14 @@ function DATETIME([arg], opts) {
 
  
 
-const MAX_PLACEABLE_LENGTH = 2500; 
+
+
+const MAX_PLACEABLES = 100; 
 
 const FSI = "\u2068";
 const PDI = "\u2069"; 
 
-function match(bundle, selector, key) {
+function match(scope, selector, key) {
   if (key === selector) {
     
     return true;
@@ -2394,7 +2355,7 @@ function match(bundle, selector, key) {
   }
 
   if (selector instanceof FluentNumber && typeof key === "string") {
-    let category = bundle._memoizeIntlObject(Intl.PluralRules, selector.opts).select(selector.value);
+    let category = scope.memoizeIntlObject(Intl.PluralRules, selector.opts).select(selector.value);
 
     if (key === category) {
       return true;
@@ -2407,49 +2368,34 @@ function match(bundle, selector, key) {
 
 function getDefault(scope, variants, star) {
   if (variants[star]) {
-    return Type(scope, variants[star]);
+    return resolvePattern(scope, variants[star].value);
   }
 
-  scope.errors.push(new RangeError("No default"));
+  scope.reportError(new RangeError("No default"));
   return new FluentNone();
 } 
 
 
 function getArguments(scope, args) {
   const positional = [];
-  const named = {};
+  const named = Object.create(null);
 
   for (const arg of args) {
     if (arg.type === "narg") {
-      named[arg.name] = Type(scope, arg.value);
+      named[arg.name] = resolveExpression(scope, arg.value);
     } else {
-      positional.push(Type(scope, arg));
+      positional.push(resolveExpression(scope, arg));
     }
   }
 
-  return [positional, named];
+  return {
+    positional,
+    named
+  };
 } 
 
 
-function Type(scope, expr) {
-  
-  
-  
-  if (typeof expr === "string") {
-    return scope.bundle._transform(expr);
-  } 
-
-
-  if (expr instanceof FluentNone) {
-    return expr;
-  } 
-  
-
-
-  if (Array.isArray(expr)) {
-    return Pattern(scope, expr);
-  }
-
+function resolveExpression(scope, expr) {
   switch (expr.type) {
     case "str":
       return expr.value;
@@ -2460,30 +2406,19 @@ function Type(scope, expr) {
       });
 
     case "var":
-      return VariableReference(scope, expr);
+      return resolveVariableReference(scope, expr);
 
     case "mesg":
-      return MessageReference(scope, expr);
+      return resolveMessageReference(scope, expr);
 
     case "term":
-      return TermReference(scope, expr);
+      return resolveTermReference(scope, expr);
 
     case "func":
-      return FunctionReference(scope, expr);
+      return resolveFunctionReference(scope, expr);
 
     case "select":
-      return SelectExpression(scope, expr);
-
-    case undefined:
-      {
-        
-        if (expr.value !== null && expr.value !== undefined) {
-          return Type(scope, expr.value);
-        }
-
-        scope.errors.push(new RangeError("No value"));
-        return new FluentNone();
-      }
+      return resolveSelectExpression(scope, expr);
 
     default:
       return new FluentNone();
@@ -2491,18 +2426,27 @@ function Type(scope, expr) {
 } 
 
 
-function VariableReference(scope, {
+function resolveVariableReference(scope, {
   name
 }) {
-  if (!scope.args || !scope.args.hasOwnProperty(name)) {
-    if (scope.insideTermReference === false) {
-      scope.errors.push(new ReferenceError(`Unknown variable: ${name}`));
+  let arg;
+
+  if (scope.params) {
+    
+    if (Object.prototype.hasOwnProperty.call(scope.params, name)) {
+      arg = scope.params[name];
+    } else {
+      return new FluentNone(`$${name}`);
     }
-
+  } else if (scope.args && Object.prototype.hasOwnProperty.call(scope.args, name)) {
+    
+    
+    arg = scope.args[name];
+  } else {
+    scope.reportError(new ReferenceError(`Unknown variable: $${name}`));
     return new FluentNone(`$${name}`);
-  }
+  } 
 
-  const arg = scope.args[name]; 
 
   if (arg instanceof FluentType) {
     return arg;
@@ -2518,44 +2462,50 @@ function VariableReference(scope, {
 
     case "object":
       if (arg instanceof Date) {
-        return new FluentDateTime(arg);
+        return new FluentDateTime(arg.getTime());
       }
 
+    
+
     default:
-      scope.errors.push(new TypeError(`Unsupported variable type: ${name}, ${typeof arg}`));
+      scope.reportError(new TypeError(`Variable type not supported: $${name}, ${typeof arg}`));
       return new FluentNone(`$${name}`);
   }
 } 
 
 
-function MessageReference(scope, {
+function resolveMessageReference(scope, {
   name,
   attr
 }) {
   const message = scope.bundle._messages.get(name);
 
   if (!message) {
-    const err = new ReferenceError(`Unknown message: ${name}`);
-    scope.errors.push(err);
+    scope.reportError(new ReferenceError(`Unknown message: ${name}`));
     return new FluentNone(name);
   }
 
   if (attr) {
-    const attribute = message.attrs && message.attrs[attr];
+    const attribute = message.attributes[attr];
 
     if (attribute) {
-      return Type(scope, attribute);
+      return resolvePattern(scope, attribute);
     }
 
-    scope.errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
+    scope.reportError(new ReferenceError(`Unknown attribute: ${attr}`));
     return new FluentNone(`${name}.${attr}`);
   }
 
-  return Type(scope, message);
+  if (message.value) {
+    return resolvePattern(scope, message.value);
+  }
+
+  scope.reportError(new ReferenceError(`No value: ${name}`));
+  return new FluentNone(name);
 } 
 
 
-function TermReference(scope, {
+function resolveTermReference(scope, {
   name,
   attr,
   args
@@ -2565,89 +2515,87 @@ function TermReference(scope, {
   const term = scope.bundle._terms.get(id);
 
   if (!term) {
-    const err = new ReferenceError(`Unknown term: ${id}`);
-    scope.errors.push(err);
+    scope.reportError(new ReferenceError(`Unknown term: ${id}`));
     return new FluentNone(id);
-  } 
-
-
-  const [, keyargs] = getArguments(scope, args);
-  const local = { ...scope,
-    args: keyargs,
-    insideTermReference: true
-  };
+  }
 
   if (attr) {
-    const attribute = term.attrs && term.attrs[attr];
+    const attribute = term.attributes[attr];
 
     if (attribute) {
-      return Type(local, attribute);
+      
+      scope.params = getArguments(scope, args).named;
+      const resolved = resolvePattern(scope, attribute);
+      scope.params = null;
+      return resolved;
     }
 
-    scope.errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
+    scope.reportError(new ReferenceError(`Unknown attribute: ${attr}`));
     return new FluentNone(`${id}.${attr}`);
   }
 
-  return Type(local, term);
+  scope.params = getArguments(scope, args).named;
+  const resolved = resolvePattern(scope, term.value);
+  scope.params = null;
+  return resolved;
 } 
 
 
-function FunctionReference(scope, {
+function resolveFunctionReference(scope, {
   name,
   args
 }) {
   
   
-  const func = scope.bundle._functions[name] || builtins_namespaceObject[name];
+  let func = scope.bundle._functions[name];
 
   if (!func) {
-    scope.errors.push(new ReferenceError(`Unknown function: ${name}()`));
+    scope.reportError(new ReferenceError(`Unknown function: ${name}()`));
     return new FluentNone(`${name}()`);
   }
 
   if (typeof func !== "function") {
-    scope.errors.push(new TypeError(`Function ${name}() is not callable`));
+    scope.reportError(new TypeError(`Function ${name}() is not callable`));
     return new FluentNone(`${name}()`);
   }
 
   try {
-    return func(...getArguments(scope, args));
-  } catch (e) {
-    
+    let resolved = getArguments(scope, args);
+    return func(resolved.positional, resolved.named);
+  } catch (err) {
+    scope.reportError(err);
     return new FluentNone(`${name}()`);
   }
 } 
 
 
-function SelectExpression(scope, {
+function resolveSelectExpression(scope, {
   selector,
   variants,
   star
 }) {
-  let sel = Type(scope, selector);
+  let sel = resolveExpression(scope, selector);
 
   if (sel instanceof FluentNone) {
-    const variant = getDefault(scope, variants, star);
-    return Type(scope, variant);
+    return getDefault(scope, variants, star);
   } 
 
 
   for (const variant of variants) {
-    const key = Type(scope, variant.key);
+    const key = resolveExpression(scope, variant.key);
 
-    if (match(scope.bundle, sel, key)) {
-      return Type(scope, variant);
+    if (match(scope, sel, key)) {
+      return resolvePattern(scope, variant.value);
     }
   }
 
-  const variant = getDefault(scope, variants, star);
-  return Type(scope, variant);
+  return getDefault(scope, variants, star);
 } 
 
 
-function Pattern(scope, ptn) {
+function resolveComplexPattern(scope, ptn) {
   if (scope.dirty.has(ptn)) {
-    scope.errors.push(new RangeError("Cyclic reference"));
+    scope.reportError(new RangeError("Cyclic reference"));
     return new FluentNone();
   } 
 
@@ -2664,18 +2612,22 @@ function Pattern(scope, ptn) {
       continue;
     }
 
-    const part = Type(scope, elem).toString(scope.bundle);
+    scope.placeables++;
+
+    if (scope.placeables > MAX_PLACEABLES) {
+      scope.dirty.delete(ptn); 
+      
+      
+      
+
+      throw new RangeError(`Too many placeables expanded: ${scope.placeables}, ` + `max allowed is ${MAX_PLACEABLES}`);
+    }
 
     if (useIsolating) {
       result.push(FSI);
     }
 
-    if (part.length > MAX_PLACEABLE_LENGTH) {
-      scope.errors.push(new RangeError("Too many characters in placeable " + `(${part.length}, max allowed is ${MAX_PLACEABLE_LENGTH})`));
-      result.push(part.slice(MAX_PLACEABLE_LENGTH));
-    } else {
-      result.push(part);
-    }
+    result.push(resolveExpression(scope, elem).toString(scope));
 
     if (useIsolating) {
       result.push(PDI);
@@ -2684,42 +2636,396 @@ function Pattern(scope, ptn) {
 
   scope.dirty.delete(ptn);
   return result.join("");
+} 
+
+
+function resolvePattern(scope, value) {
+  
+  if (typeof value === "string") {
+    return scope.bundle._transform(value);
+  }
+
+  return resolveComplexPattern(scope, value);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function resolve(bundle, args, message, errors = []) {
-  const scope = {
-    bundle,
-    args,
-    errors,
-    dirty: new WeakSet(),
+;
+class Scope {
+  constructor(bundle, errors, args) {
     
-    insideTermReference: false
-  };
-  return Type(scope, message).toString(bundle);
+
+    this.dirty = new WeakSet();
+    
+
+    this.params = null;
+    
+
+
+    this.placeables = 0;
+    this.bundle = bundle;
+    this.errors = errors;
+    this.args = args;
+  }
+
+  reportError(error) {
+    if (!this.errors || !(error instanceof Error)) {
+      throw error;
+    }
+
+    this.errors.push(error);
+  }
+
+  memoizeIntlObject(ctor, opts) {
+    let cache = this.bundle._intls.get(ctor);
+
+    if (!cache) {
+      cache = {};
+
+      this.bundle._intls.set(ctor, cache);
+    }
+
+    let id = JSON.stringify(opts);
+
+    if (!cache[id]) {
+      cache[id] = new ctor(this.bundle.locales, opts);
+    }
+
+    return cache[id];
+  }
+
 }
 ;
-class FluentError extends Error {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function values(opts, allowed) {
+  const unwrapped = Object.create(null);
+
+  for (const [name, opt] of Object.entries(opts)) {
+    if (allowed.includes(name)) {
+      unwrapped[name] = opt.valueOf();
+    }
+  }
+
+  return unwrapped;
+}
+
+const NUMBER_ALLOWED = ["unitDisplay", "currencyDisplay", "useGrouping", "minimumIntegerDigits", "minimumFractionDigits", "maximumFractionDigits", "minimumSignificantDigits", "maximumSignificantDigits"];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function NUMBER(args, opts) {
+  let arg = args[0];
+
+  if (arg instanceof FluentNone) {
+    return new FluentNone(`NUMBER(${arg.valueOf()})`);
+  }
+
+  if (arg instanceof FluentNumber) {
+    return new FluentNumber(arg.valueOf(), { ...arg.opts,
+      ...values(opts, NUMBER_ALLOWED)
+    });
+  }
+
+  if (arg instanceof FluentDateTime) {
+    return new FluentNumber(arg.valueOf(), { ...values(opts, NUMBER_ALLOWED)
+    });
+  }
+
+  throw new TypeError("Invalid argument to NUMBER");
+}
+const DATETIME_ALLOWED = ["dateStyle", "timeStyle", "fractionalSecondDigits", "dayPeriod", "hour12", "weekday", "era", "year", "month", "day", "hour", "minute", "second", "timeZoneName"];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function DATETIME(args, opts) {
+  let arg = args[0];
+
+  if (arg instanceof FluentNone) {
+    return new FluentNone(`DATETIME(${arg.valueOf()})`);
+  }
+
+  if (arg instanceof FluentDateTime) {
+    return new FluentDateTime(arg.valueOf(), { ...arg.opts,
+      ...values(opts, DATETIME_ALLOWED)
+    });
+  }
+
+  if (arg instanceof FluentNumber) {
+    return new FluentDateTime(arg.valueOf(), { ...values(opts, DATETIME_ALLOWED)
+    });
+  }
+
+  throw new TypeError("Invalid argument to DATETIME");
+}
 ;
- 
+const cache = new Map();
+function getMemoizerForLocale(locales) {
+  const stringLocale = Array.isArray(locales) ? locales.join(" ") : locales;
+  let memoizer = cache.get(stringLocale);
+
+  if (memoizer === undefined) {
+    memoizer = new Map();
+    cache.set(stringLocale, memoizer);
+  }
+
+  return memoizer;
+}
+;
 
 
-const RE_MESSAGE_START = /^(-?[a-zA-Z][\w-]*) *= */mg; 
+
+
+
+
+
+
+
+
+class FluentBundle {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(locales, {
+    functions,
+    useIsolating = true,
+    transform = v => v
+  } = {}) {
+    this._terms = new Map();
+    this._messages = new Map();
+    this.locales = Array.isArray(locales) ? locales : [locales];
+    this._functions = {
+      NUMBER: NUMBER,
+      DATETIME: DATETIME,
+      ...functions
+    };
+    this._useIsolating = useIsolating;
+    this._transform = transform;
+    this._intls = getMemoizerForLocale(locales);
+  }
+  
+
+
+
+
+
+
+  hasMessage(id) {
+    return this._messages.has(id);
+  }
+  
+
+
+
+
+
+
+
+
+
+
+  getMessage(id) {
+    return this._messages.get(id);
+  }
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addResource(res, {
+    allowOverrides = false
+  } = {}) {
+    const errors = [];
+
+    for (let i = 0; i < res.body.length; i++) {
+      let entry = res.body[i];
+
+      if (entry.id.startsWith("-")) {
+        
+        
+        if (allowOverrides === false && this._terms.has(entry.id)) {
+          errors.push(new Error(`Attempt to override an existing term: "${entry.id}"`));
+          continue;
+        }
+
+        this._terms.set(entry.id, entry);
+      } else {
+        if (allowOverrides === false && this._messages.has(entry.id)) {
+          errors.push(new Error(`Attempt to override an existing message: "${entry.id}"`));
+          continue;
+        }
+
+        this._messages.set(entry.id, entry);
+      }
+    }
+
+    return errors;
+  }
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  formatPattern(pattern, args = null, errors = null) {
+    
+    
+    if (typeof pattern === "string") {
+      return this._transform(pattern);
+    } 
+
+
+    let scope = new Scope(this, errors, args);
+
+    try {
+      let value = resolveComplexPattern(scope, pattern);
+      return value.toString(scope);
+    } catch (err) {
+      if (scope.errors && err instanceof Error) {
+        scope.errors.push(err);
+        return new FluentNone().toString(scope);
+      }
+
+      throw err;
+    }
+  }
+
+}
+;
+
+
+const RE_MESSAGE_START = /^(-?[a-zA-Z][\w-]*) *= */gm; 
 
 
 const RE_ATTRIBUTE_START = /\.([a-zA-Z][\w-]*) *= */y;
@@ -2757,21 +3063,15 @@ const TOKEN_COLON = /\s*:\s*/y;
 
 
 const TOKEN_COMMA = /\s*,?\s*/y;
-const TOKEN_BLANK = /\s+/y; 
-
-
-const MAX_PLACEABLES = 100;
+const TOKEN_BLANK = /\s+/y;
 
 
 
 
-class FluentResource extends Map {
-  
-
-
-  static fromString(source) {
+class FluentResource {
+  constructor(source) {
+    this.body = [];
     RE_MESSAGE_START.lastIndex = 0;
-    let resource = new this();
     let cursor = 0; 
     
 
@@ -2785,9 +3085,9 @@ class FluentResource extends Map {
       cursor = RE_MESSAGE_START.lastIndex;
 
       try {
-        resource.set(next[1], parseMessage());
+        this.body.push(parseMessage(next[1]));
       } catch (err) {
-        if (err instanceof FluentError) {
+        if (err instanceof SyntaxError) {
           
           
           continue;
@@ -2795,20 +3095,20 @@ class FluentResource extends Map {
 
         throw err;
       }
-    }
+    } 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    return resource; 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     function test(re) {
       re.lastIndex = cursor;
@@ -2851,7 +3151,7 @@ class FluentResource extends Map {
       let result = re.exec(source);
 
       if (result === null) {
-        throw new FluentError(`Expected ${re.toString()}`);
+        throw new SyntaxError(`Expected ${re.toString()}`);
       }
 
       cursor = re.lastIndex;
@@ -2863,45 +3163,43 @@ class FluentResource extends Map {
       return match(re)[1];
     }
 
-    function parseMessage() {
+    function parseMessage(id) {
       let value = parsePattern();
-      let attrs = parseAttributes();
+      let attributes = parseAttributes();
 
-      if (attrs === null) {
-        if (value === null) {
-          throw new FluentError("Expected message value or attributes");
-        }
-
-        return value;
+      if (value === null && Object.keys(attributes).length === 0) {
+        throw new SyntaxError("Expected message value or attributes");
       }
 
       return {
+        id,
         value,
-        attrs
+        attributes
       };
     }
 
     function parseAttributes() {
-      let attrs = {};
+      let attrs = Object.create(null);
 
       while (test(RE_ATTRIBUTE_START)) {
         let name = match1(RE_ATTRIBUTE_START);
         let value = parsePattern();
 
         if (value === null) {
-          throw new FluentError("Expected attribute value");
+          throw new SyntaxError("Expected attribute value");
         }
 
         attrs[name] = value;
       }
 
-      return Object.keys(attrs).length > 0 ? attrs : null;
+      return attrs;
     }
 
     function parsePattern() {
-      
+      let first; 
+
       if (test(RE_TEXT_RUN)) {
-        var first = match1(RE_TEXT_RUN);
+        first = match1(RE_TEXT_RUN);
       } 
 
 
@@ -2938,8 +3236,6 @@ class FluentResource extends Map {
 
 
     function parsePatternElements(elements = [], commonIndent) {
-      let placeableCount = 0;
-
       while (true) {
         if (test(RE_TEXT_RUN)) {
           elements.push(match1(RE_TEXT_RUN));
@@ -2947,16 +3243,12 @@ class FluentResource extends Map {
         }
 
         if (source[cursor] === "{") {
-          if (++placeableCount > MAX_PLACEABLES) {
-            throw new FluentError("Too many placeables");
-          }
-
           elements.push(parsePlaceable());
           continue;
         }
 
         if (source[cursor] === "}") {
-          throw new FluentError("Unbalanced closing brace");
+          throw new SyntaxError("Unbalanced closing brace");
         }
 
         let indent = parseIndent();
@@ -2970,21 +3262,19 @@ class FluentResource extends Map {
         break;
       }
 
-      let lastIndex = elements.length - 1; 
+      let lastIndex = elements.length - 1;
+      let lastElement = elements[lastIndex]; 
 
-      if (typeof elements[lastIndex] === "string") {
-        elements[lastIndex] = trim(elements[lastIndex], RE_TRAILING_SPACES);
+      if (typeof lastElement === "string") {
+        elements[lastIndex] = trim(lastElement, RE_TRAILING_SPACES);
       }
 
       let baked = [];
 
       for (let element of elements) {
-        if (element.type === "indent") {
+        if (element instanceof Indent) {
           
           element = element.value.slice(0, element.value.length - commonIndent);
-        } else if (element.type === "str") {
-          
-          element = element.value;
         }
 
         if (element) {
@@ -2996,7 +3286,7 @@ class FluentResource extends Map {
     }
 
     function parsePlaceable() {
-      consumeToken(TOKEN_BRACE_OPEN, FluentError);
+      consumeToken(TOKEN_BRACE_OPEN, SyntaxError);
       let selector = parseInlineExpression();
 
       if (consumeToken(TOKEN_BRACE_CLOSE)) {
@@ -3005,7 +3295,7 @@ class FluentResource extends Map {
 
       if (consumeToken(TOKEN_ARROW)) {
         let variants = parseVariants();
-        consumeToken(TOKEN_BRACE_CLOSE, FluentError);
+        consumeToken(TOKEN_BRACE_CLOSE, SyntaxError);
         return {
           type: "select",
           selector,
@@ -3013,7 +3303,7 @@ class FluentResource extends Map {
         };
       }
 
-      throw new FluentError("Unclosed placeable");
+      throw new SyntaxError("Unclosed placeable");
     }
 
     function parseInlineExpression() {
@@ -3053,7 +3343,7 @@ class FluentResource extends Map {
             };
           }
 
-          throw new FluentError("Function names must be all upper-case");
+          throw new SyntaxError("Function names must be all upper-case");
         }
 
         if (sigil === "-") {
@@ -3088,7 +3378,7 @@ class FluentResource extends Map {
 
           case undefined:
             
-            throw new FluentError("Unclosed argument list");
+            throw new SyntaxError("Unclosed argument list");
         }
 
         args.push(parseArgument()); 
@@ -3131,7 +3421,7 @@ class FluentResource extends Map {
         let value = parsePattern();
 
         if (value === null) {
-          throw new FluentError("Expected variant value");
+          throw new SyntaxError("Expected variant value");
         }
 
         variants[count++] = {
@@ -3145,7 +3435,7 @@ class FluentResource extends Map {
       }
 
       if (star === undefined) {
-        throw new FluentError("Expected default variant");
+        throw new SyntaxError("Expected default variant");
       }
 
       return {
@@ -3155,9 +3445,19 @@ class FluentResource extends Map {
     }
 
     function parseVariantKey() {
-      consumeToken(TOKEN_BRACKET_OPEN, FluentError);
-      let key = test(RE_NUMBER_LITERAL) ? parseNumberLiteral() : match1(RE_IDENTIFIER);
-      consumeToken(TOKEN_BRACKET_CLOSE, FluentError);
+      consumeToken(TOKEN_BRACKET_OPEN, SyntaxError);
+      let key;
+
+      if (test(RE_NUMBER_LITERAL)) {
+        key = parseNumberLiteral();
+      } else {
+        key = {
+          type: "str",
+          value: match1(RE_IDENTIFIER)
+        };
+      }
+
+      consumeToken(TOKEN_BRACKET_CLOSE, SyntaxError);
       return key;
     }
 
@@ -3166,11 +3466,11 @@ class FluentResource extends Map {
         return parseNumberLiteral();
       }
 
-      if (source[cursor] === "\"") {
+      if (source[cursor] === '"') {
         return parseStringLiteral();
       }
 
-      throw new FluentError("Invalid expression");
+      throw new SyntaxError("Invalid expression");
     }
 
     function parseNumberLiteral() {
@@ -3184,7 +3484,7 @@ class FluentResource extends Map {
     }
 
     function parseStringLiteral() {
-      consumeChar("\"", FluentError);
+      consumeChar('"', SyntaxError);
       let value = "";
 
       while (true) {
@@ -3195,7 +3495,7 @@ class FluentResource extends Map {
           continue;
         }
 
-        if (consumeChar("\"")) {
+        if (consumeChar('"')) {
           return {
             type: "str",
             value
@@ -3203,7 +3503,7 @@ class FluentResource extends Map {
         } 
 
 
-        throw new FluentError("Unclosed string literal");
+        throw new SyntaxError("Unclosed string literal");
       }
     } 
 
@@ -3216,13 +3516,13 @@ class FluentResource extends Map {
       if (test(RE_UNICODE_ESCAPE)) {
         let [, codepoint4, codepoint6] = match(RE_UNICODE_ESCAPE);
         let codepoint = parseInt(codepoint4 || codepoint6, 16);
-        return codepoint <= 0xD7FF || 0xE000 <= codepoint 
+        return codepoint <= 0xd7ff || 0xe000 <= codepoint 
         ? String.fromCodePoint(codepoint) 
         
         : "�";
       }
 
-      throw new FluentError("Unknown escape sequence");
+      throw new SyntaxError("Unknown escape sequence");
     } 
     
 
@@ -3268,283 +3568,23 @@ class FluentResource extends Map {
 
 
     function makeIndent(blank) {
-      let value = blank.replace(RE_BLANK_LINES, "\n");
+      let value = blank.replace(RE_BLANK_LINES, "\n"); 
+
       let length = RE_INDENT.exec(blank)[1].length;
-      return {
-        type: "indent",
-        value,
-        length
-      };
+      return new Indent(value, length);
     }
   }
 
 }
-;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class FluentBundle {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  constructor(locales, {
-    functions = {},
-    useIsolating = true,
-    transform = v => v
-  } = {}) {
-    this.locales = Array.isArray(locales) ? locales : [locales];
-    this._terms = new Map();
-    this._messages = new Map();
-    this._functions = functions;
-    this._useIsolating = useIsolating;
-    this._transform = transform;
-    this._intls = new WeakMap();
-  }
-  
-
-
-
-
-
-
-  get messages() {
-    return this._messages[Symbol.iterator]();
-  }
-  
-
-
-
-
-
-
-
-  hasMessage(id) {
-    return this._messages.has(id);
-  }
-  
-
-
-
-
-
-
-
-
-
-
-  getMessage(id) {
-    return this._messages.get(id);
-  }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  addMessages(source, options) {
-    const res = FluentResource.fromString(source);
-    return this.addResource(res, options);
-  }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  addResource(res, {
-    allowOverrides = false
-  } = {}) {
-    const errors = [];
-
-    for (const [id, value] of res) {
-      if (id.startsWith("-")) {
-        
-        
-        if (allowOverrides === false && this._terms.has(id)) {
-          errors.push(`Attempt to override an existing term: "${id}"`);
-          continue;
-        }
-
-        this._terms.set(id, value);
-      } else {
-        if (allowOverrides === false && this._messages.has(id)) {
-          errors.push(`Attempt to override an existing message: "${id}"`);
-          continue;
-        }
-
-        this._messages.set(id, value);
-      }
-    }
-
-    return errors;
-  }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  format(message, args, errors) {
-    
-    if (typeof message === "string") {
-      return this._transform(message);
-    } 
-
-
-    if (message === null || message.value === null) {
-      return null;
-    } 
-
-
-    if (typeof message.value === "string") {
-      return this._transform(message.value);
-    }
-
-    return resolve(this, args, message, errors);
-  }
-
-  _memoizeIntlObject(ctor, opts) {
-    const cache = this._intls.get(ctor) || {};
-    const id = JSON.stringify(opts);
-
-    if (!cache[id]) {
-      cache[id] = new ctor(this.locales, opts);
-
-      this._intls.set(ctor, cache);
-    }
-
-    return cache[id];
+class Indent {
+  constructor(value, length) {
+    this.value = value;
+    this.length = length;
   }
 
 }
 ;
-
 
 
 
@@ -3596,7 +3636,7 @@ function generateBundles(content) {
       string = content[attr];
     }
 
-    bundle.addMessages(`${key} = ${string}`);
+    bundle.addResource(new FluentResource(`${key} = ${string}`));
   });
   return [bundle];
 }
@@ -3669,9 +3709,6 @@ ImpressionsWrapper.defaultProps = {
   sendOnMount: true
 };
 ;
-const external_PropTypes_namespaceObject = PropTypes;
-var external_PropTypes_default = __webpack_require__.n(external_PropTypes_namespaceObject);
-;
 
 
 
@@ -3679,22 +3716,19 @@ var external_PropTypes_default = __webpack_require__.n(external_PropTypes_namesp
 
 
 
-
-function mapBundleSync(iterable, ids) {
+function mapBundleSync(bundles, ids) {
   if (!Array.isArray(ids)) {
-    return getBundleForId(iterable, ids);
+    return getBundleForId(bundles, ids);
   }
 
-  return ids.map(
-    id => getBundleForId(iterable, id)
-  );
+  return ids.map(id => getBundleForId(bundles, id));
 }
 
 
 
 
-function getBundleForId(iterable, id) {
-  for (const bundle of iterable) {
+function getBundleForId(bundles, id) {
+  for (const bundle of bundles) {
     if (bundle.hasMessage(id)) {
       return bundle;
     }
@@ -3702,7 +3736,6 @@ function getBundleForId(iterable, id) {
 
   return null;
 }
-
 ;
 
 
@@ -3711,27 +3744,28 @@ function getBundleForId(iterable, id) {
 
 
 
-
-async function mapBundleAsync(iterable, ids) {
+async function mapBundleAsync(bundles, ids) {
   if (!Array.isArray(ids)) {
-    for await (const bundle of iterable) {
+    for await (const bundle of bundles) {
       if (bundle.hasMessage(ids)) {
         return bundle;
       }
     }
+
+    return null;
   }
 
+  const foundBundles = new Array(ids.length).fill(null);
   let remainingCount = ids.length;
-  const foundBundles = new Array(remainingCount).fill(null);
 
-  for await (const bundle of iterable) {
+  for await (const bundle of bundles) {
     for (const [index, id] of ids.entries()) {
       if (!foundBundles[index] && bundle.hasMessage(id)) {
         foundBundles[index] = bundle;
         remainingCount--;
-      }
+      } 
 
-      
+
       if (remainingCount === 0) {
         return foundBundles;
       }
@@ -3740,10 +3774,7 @@ async function mapBundleAsync(iterable, ids) {
 
   return foundBundles;
 }
-
 ;
-
-
 
 
 
@@ -3867,26 +3898,6 @@ class CachedAsyncIterable extends CachedIterable {
 
 
 
-    [Symbol.iterator]() {
-        const cached = this;
-        let cur = 0;
-
-        return {
-            next() {
-                if (cached.length === cur) {
-                    return {value: undefined, done: true};
-                }
-                return cached[cur++];
-            }
-        };
-    }
-
-    
-
-
-
-
-
 
 
     [Symbol.asyncIterator]() {
@@ -3896,7 +3907,7 @@ class CachedAsyncIterable extends CachedIterable {
         return {
             async next() {
                 if (cached.length <= cur) {
-                    cached.push(await cached.iterator.next());
+                    cached.push(cached.iterator.next());
                 }
                 return cached[cur++];
             }
@@ -3913,10 +3924,10 @@ class CachedAsyncIterable extends CachedIterable {
         let idx = 0;
         while (idx++ < count) {
             const last = this[this.length - 1];
-            if (last && last.done) {
+            if (last && (await last).done) {
                 break;
             }
-            this.push(await this.iterator.next());
+            this.push(this.iterator.next());
         }
         
         
@@ -3929,88 +3940,10 @@ class CachedAsyncIterable extends CachedIterable {
 
 
 ;
+let cachedParseMarkup;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ReactLocalization {
-  constructor(bundles) {
-    this.bundles = CachedSyncIterable.from(bundles);
-    this.subs = new Set();
-  }
-  
-
-
-
-
-  subscribe(comp) {
-    this.subs.add(comp);
-  }
-  
-
-
-
-
-  unsubscribe(comp) {
-    this.subs.delete(comp);
-  }
-  
-
-
-
-
-  setBundles(bundles) {
-    this.bundles = CachedSyncIterable.from(bundles); 
-
-    this.subs.forEach(comp => comp.relocalize());
-  }
-
-  getBundle(id) {
-    return mapBundleSync(this.bundles, id);
-  }
-  
-
-
-
-
-  getString(id, args, fallback) {
-    const bundle = this.getBundle(id);
-
-    if (bundle === null) {
-      return fallback || id;
-    }
-
-    const msg = bundle.getMessage(id);
-    return bundle.format(msg, args);
-  }
-
-}
-function isReactLocalization(props, propName) {
-  const prop = props[propName];
-
-  if (prop instanceof ReactLocalization) {
-    return null;
-  }
-
-  return new Error(`The ${propName} context field must be an instance of ReactLocalization.`);
-}
-;
-
-let cachedParseMarkup; 
 
 
 
@@ -4031,161 +3964,6 @@ function createParseMarkup() {
   }
 
   return cachedParseMarkup;
-}
-;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class LocalizationProvider extends external_React_namespaceObject.Component {
-  constructor(props) {
-    super(props);
-    const {
-      bundles,
-      parseMarkup
-    } = props;
-
-    if (bundles === undefined) {
-      throw new Error("LocalizationProvider must receive the bundles prop.");
-    }
-
-    if (!bundles[Symbol.iterator]) {
-      throw new Error("The bundles prop must be an iterable.");
-    }
-
-    this.l10n = new ReactLocalization(bundles);
-    this.parseMarkup = parseMarkup || createParseMarkup();
-  }
-
-  getChildContext() {
-    return {
-      l10n: this.l10n,
-      parseMarkup: this.parseMarkup
-    };
-  }
-
-  componentWillReceiveProps(next) {
-    const {
-      bundles
-    } = next;
-
-    if (bundles !== this.props.bundles) {
-      this.l10n.setBundles(bundles);
-    }
-  }
-
-  render() {
-    return external_React_namespaceObject.Children.only(this.props.children);
-  }
-
-}
-LocalizationProvider.childContextTypes = {
-  l10n: isReactLocalization,
-  parseMarkup: (external_PropTypes_default()).func
-};
-LocalizationProvider.propTypes = {
-  children: (external_PropTypes_default()).element.isRequired,
-  bundles: isIterable,
-  parseMarkup: (external_PropTypes_default()).func
-};
-
-function isIterable(props, propName, componentName) {
-  const prop = props[propName];
-
-  if (Symbol.iterator in Object(prop)) {
-    return null;
-  }
-
-  return new Error(`The ${propName} prop supplied to ${componentName} must be an iterable.`);
-}
-;
-
-
-function withLocalization(Inner) {
-  class WithLocalization extends external_React_namespaceObject.Component {
-    componentDidMount() {
-      const {
-        l10n
-      } = this.context;
-
-      if (l10n) {
-        l10n.subscribe(this);
-      }
-    }
-
-    componentWillUnmount() {
-      const {
-        l10n
-      } = this.context;
-
-      if (l10n) {
-        l10n.unsubscribe(this);
-      }
-    }
-    
-
-
-
-
-    relocalize() {
-      
-      
-      this.forceUpdate();
-    }
-    
-
-
-
-
-    getString(id, args, fallback) {
-      const {
-        l10n
-      } = this.context;
-
-      if (!l10n) {
-        return fallback || id;
-      }
-
-      return l10n.getString(id, args, fallback);
-    }
-
-    render() {
-      return (0,external_React_namespaceObject.createElement)(Inner, Object.assign( 
-      {
-        getString: (...args) => this.getString(...args)
-      }, this.props));
-    }
-
-  }
-
-  WithLocalization.displayName = `WithLocalization(${displayName(Inner)})`;
-  WithLocalization.contextTypes = {
-    l10n: isReactLocalization
-  };
-  return WithLocalization;
-}
-
-function displayName(component) {
-  return component.displayName || component.name || "Component";
 }
 ;
 
@@ -4234,6 +4012,7 @@ var voidElementTags = {
 
 
 
+
  
 
 
@@ -4242,169 +4021,162 @@ const reMarkup = /<|&#?\w+;/;
 
 
 
-function toArguments(props) {
-  const args = {};
-  const elems = {};
 
-  for (const [propname, propval] of Object.entries(props)) {
-    if (propname.startsWith("$")) {
-      const name = propname.substr(1);
-      args[name] = propval;
-    } else if ( (0,external_React_namespaceObject.isValidElement)(propval)) {
-      
-      
-      const name = propname.toLowerCase();
-      elems[name] = propval;
-    }
+
+
+
+
+
+
+
+class ReactLocalization {
+  constructor(bundles, parseMarkup = createParseMarkup()) {
+    this.bundles = CachedSyncIterable.from(bundles);
+    this.parseMarkup = parseMarkup;
   }
 
-  return [args, elems];
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Localized extends external_React_namespaceObject.Component {
-  componentDidMount() {
-    const {
-      l10n
-    } = this.context;
-
-    if (l10n) {
-      l10n.subscribe(this);
-    }
+  getBundle(id) {
+    return mapBundleSync(this.bundles, id);
   }
 
-  componentWillUnmount() {
-    const {
-      l10n
-    } = this.context;
-
-    if (l10n) {
-      l10n.unsubscribe(this);
-    }
-  }
-  
-
-
-
-
-  relocalize() {
+  areBundlesEmpty() {
     
     
-    this.forceUpdate();
+    return Boolean(this.bundles[Symbol.iterator]().next().done);
   }
 
-  render() {
-    const {
-      l10n,
-      parseMarkup
-    } = this.context;
-    const {
-      id,
-      attrs,
-      children: elem = null
-    } = this.props; 
+  getString(id, vars, fallback) {
+    const bundle = this.getBundle(id);
 
-    if (Array.isArray(elem)) {
-      throw new Error("<Localized/> expected to receive a single " + "React node child");
+    if (bundle) {
+      const msg = bundle.getMessage(id);
+
+      if (msg && msg.value) {
+        let errors = [];
+        let value = bundle.formatPattern(msg.value, vars, errors);
+
+        for (let error of errors) {
+          this.reportError(error);
+        }
+
+        return value;
+      }
+    } else {
+      if (this.areBundlesEmpty()) {
+        this.reportError(new Error("Attempting to get a string when no localization bundles are " + "present."));
+      } else {
+        this.reportError(new Error(`The id "${id}" did not match any messages in the localization ` + "bundles."));
+      }
     }
 
-    if (!l10n) {
-      
-      return elem;
-    }
+    return fallback || id;
+  }
 
-    const bundle = l10n.getBundle(id);
+  getElement(sourceElement, id, args = {}) {
+    const bundle = this.getBundle(id);
 
     if (bundle === null) {
-      
-      return elem;
-    }
+      if (!id) {
+        this.reportError(new Error("No string id was provided when localizing a component."));
+      } else if (this.areBundlesEmpty()) {
+        this.reportError(new Error("Attempting to get a localized element when no localization bundles are " + "present."));
+      } else {
+        this.reportError(new Error(`The id "${id}" did not match any messages in the localization ` + "bundles."));
+      }
+
+      return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, sourceElement);
+    } 
+    
+    
+
 
     const msg = bundle.getMessage(id);
-    const [args, elems] = toArguments(this.props);
-    const messageValue = bundle.format(msg, args); 
+    let errors = [];
+    let localizedProps; 
     
     
 
-    if (! (0,external_React_namespaceObject.isValidElement)(elem)) {
-      return messageValue;
-    } 
-    
-    
+    if (args.attrs && msg.attributes) {
+      localizedProps = {};
+      errors = [];
 
-
-    if (attrs && msg.attrs) {
-      var localizedProps = {};
-
-      for (const [name, allowed] of Object.entries(attrs)) {
-        if (allowed && msg.attrs.hasOwnProperty(name)) {
-          localizedProps[name] = bundle.format(msg.attrs[name], args);
+      for (const [name, allowed] of Object.entries(args.attrs)) {
+        if (allowed && name in msg.attributes) {
+          localizedProps[name] = bundle.formatPattern(msg.attributes[name], args.vars, errors);
         }
       }
+
+      for (let error of errors) {
+        this.reportError(error);
+      }
     } 
     
     
     
 
 
-    if (elem.type in vendor_voidElementTags) {
-      return (0,external_React_namespaceObject.cloneElement)(elem, localizedProps);
+    if (typeof sourceElement.type === "string" && sourceElement.type in vendor_voidElementTags) {
+      return (0,external_React_namespaceObject.cloneElement)(sourceElement, localizedProps);
     } 
     
     
 
 
-    if (messageValue === null) {
-      return (0,external_React_namespaceObject.cloneElement)(elem, localizedProps);
+    if (msg.value === null) {
+      return (0,external_React_namespaceObject.cloneElement)(sourceElement, localizedProps);
+    }
+
+    errors = [];
+    const messageValue = bundle.formatPattern(msg.value, args.vars, errors);
+
+    for (let error of errors) {
+      this.reportError(error);
     } 
     
 
 
-    if (!reMarkup.test(messageValue)) {
-      return (0,external_React_namespaceObject.cloneElement)(elem, localizedProps, messageValue);
+    if (!reMarkup.test(messageValue) || this.parseMarkup === null) {
+      return (0,external_React_namespaceObject.cloneElement)(sourceElement, localizedProps, messageValue);
+    }
+
+    let elemsLower;
+
+    if (args.elems) {
+      elemsLower = new Map();
+
+      for (let [name, elem] of Object.entries(args.elems)) {
+        
+        if (! (0,external_React_namespaceObject.isValidElement)(elem)) {
+          continue;
+        }
+
+        elemsLower.set(name.toLowerCase(), elem);
+      }
     } 
     
 
 
-    const translationNodes = parseMarkup(messageValue);
-    const translatedChildren = translationNodes.map(childNode => {
-      if (childNode.nodeType === childNode.TEXT_NODE) {
-        return childNode.textContent;
-      } 
-
-
-      if (!elems.hasOwnProperty(childNode.localName)) {
-        return childNode.textContent;
+    const translationNodes = this.parseMarkup(messageValue);
+    const translatedChildren = translationNodes.map(({
+      nodeName,
+      textContent
+    }) => {
+      if (nodeName === "#text") {
+        return textContent;
       }
 
-      const sourceChild = elems[childNode.localName]; 
+      const childName = nodeName.toLowerCase();
+      const sourceChild = elemsLower === null || elemsLower === void 0 ? void 0 : elemsLower.get(childName); 
+
+      if (!sourceChild) {
+        return textContent;
+      } 
       
       
       
 
-      if (sourceChild.type in vendor_voidElementTags) {
+
+      if (typeof sourceChild.type === "string" && sourceChild.type in vendor_voidElementTags) {
         return sourceChild;
       } 
       
@@ -4412,20 +4184,169 @@ class Localized extends external_React_namespaceObject.Component {
       
 
 
-      return (0,external_React_namespaceObject.cloneElement)(sourceChild, null, childNode.textContent);
+      return (0,external_React_namespaceObject.cloneElement)(sourceChild, undefined, textContent);
     });
-    return (0,external_React_namespaceObject.cloneElement)(elem, localizedProps, ...translatedChildren);
+    return (0,external_React_namespaceObject.cloneElement)(sourceElement, localizedProps, ...translatedChildren);
+  } 
+  
+
+
+  reportError(error) {
+    
+    
+    console.warn(`[@fluent/react] ${error.name}: ${error.message}`);
   }
 
 }
-Localized.contextTypes = {
-  l10n: isReactLocalization,
-  parseMarkup: (external_PropTypes_default()).func
-};
-Localized.propTypes = {
-  children: (external_PropTypes_default()).node
+;
+
+let FluentContext = (0,external_React_namespaceObject.createContext)(null);
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function LocalizationProvider(props) {
+  return (0,external_React_namespaceObject.createElement)(FluentContext.Provider, {
+    value: props.l10n
+  }, props.children);
+}
+;
+
+
+function withLocalization(Inner) {
+  function WithLocalization(props) {
+    const l10n = (0,external_React_namespaceObject.useContext)(FluentContext);
+
+    if (!l10n) {
+      throw new Error("withLocalization was used without wrapping it in a " + "<LocalizationProvider />.");
+    } 
+
+
+    const getString = l10n.getString.bind(l10n);
+    return (0,external_React_namespaceObject.createElement)(Inner, {
+      getString,
+      ...props
+    });
+  }
+
+  WithLocalization.displayName = `WithLocalization(${displayName(Inner)})`;
+  return WithLocalization;
+}
+
+function displayName(component) {
+  return component.displayName || component.name || "Component";
+}
+;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Localized(props) {
+  const {
+    id,
+    attrs,
+    vars,
+    elems,
+    children
+  } = props;
+  const l10n = (0,external_React_namespaceObject.useContext)(FluentContext);
+
+  if (!l10n) {
+    throw new Error("The <Localized /> component was not properly wrapped in a <LocalizationProvider />.");
+  }
+
+  let source;
+
+  if (Array.isArray(children)) {
+    if (children.length > 1) {
+      throw new Error("Expected to receive a single React element to localize.");
+    } 
+    
+
+
+    source = children[0];
+  } else {
+    source = children !== null && children !== void 0 ? children : null;
+  } 
+  
+  
+
+
+  if (! (0,external_React_namespaceObject.isValidElement)(source)) {
+    const fallback = typeof source === "string" ? source : undefined;
+    const string = l10n.getString(id, vars, fallback);
+    return external_React_namespaceObject.createElement(external_React_namespaceObject.Fragment, null, string);
+  }
+
+  return l10n.getElement(source, id, {
+    attrs,
+    vars,
+    elems
+  });
+}
+ const localized = (Localized);
+;
+
+
+const useLocalization = () => {
+  const l10n = (0,external_React_namespaceObject.useContext)(FluentContext);
+
+  if (!l10n) {
+    throw new Error("useLocalization was used without wrapping it in a " + "<LocalizationProvider />.");
+  }
+
+  return {
+    l10n
+  };
 };
 ;
+
+
+
+
 
 
 
@@ -4548,8 +4469,6 @@ function safeURI(url) {
   return isAllowed ? url : "";
 }
 ;
-function RichText_extends() { RichText_extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return RichText_extends.apply(this, arguments); }
-
 
 
 
@@ -4611,9 +4530,13 @@ function RichText(props) {
     throw new Error(`ASRouter: ${props.localization_id} is not a valid rich text property. If you want it to be processed, you need to add it to asrouter/rich-text-strings.js`);
   }
 
-  return external_React_default().createElement(Localized, RichText_extends({
-    id: props.localization_id
-  }, ALLOWED_TAGS, props.customElements, convertLinks(props.links, props.sendClick, props.doNotAutoBlock, props.openNewWindow)), external_React_default().createElement("span", null, props.text));
+  return external_React_default().createElement(Localized, {
+    id: props.localization_id,
+    elems: { ...ALLOWED_TAGS,
+      ...props.customElements,
+      ...convertLinks(props.links, props.sendClick, props.doNotAutoBlock, props.openNewWindow)
+    }
+  }, external_React_default().createElement("span", null, props.text));
 }
 ;
 
@@ -6140,7 +6063,7 @@ class ASRouterUISurface extends (external_React_default()).PureComponent {
       ,
       document: this.props.document
     }, external_React_default().createElement(LocalizationProvider, {
-      bundles: generateBundles(content)
+      l10n: new ReactLocalization(generateBundles(content))
     }, external_React_default().createElement(SnippetComponent, asrouter_content_extends({}, this.state.message, {
       UISurface: "NEWTAB_FOOTER_BAR",
       onBlock: this.onBlockSelected,

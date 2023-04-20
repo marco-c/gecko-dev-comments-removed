@@ -285,7 +285,7 @@ module.exports = function(config) {
           },
           {
             test: /\.js$/,
-            exclude: [/node_modules\/(?!(fluent|fluent-react)\/).*/, /test/],
+            exclude: [/node_modules\/(?!@fluent\/).*/, /test/],
             loader: "babel-loader",
             options: {
               

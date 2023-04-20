@@ -1,5 +1,7 @@
 import { mount } from "enzyme";
 import React from "react";
+import { FluentBundle, FluentResource } from "@fluent/bundle";
+import { LocalizationProvider, ReactLocalization } from "@fluent/react";
 import schema from "content-src/asrouter/templates/SimpleSnippet/SimpleSnippet.schema.json";
 import { SimpleSnippet } from "content-src/asrouter/templates/SimpleSnippet/SimpleSnippet.jsx";
 
@@ -9,6 +11,20 @@ describe("SimpleSnippet", () => {
   let sandbox;
   let onBlockStub;
   let sendUserActionTelemetryStub;
+
+  function mockL10nWrapper(content) {
+    const bundle = new FluentBundle("en-US");
+    for (const [id, value] of Object.entries(content)) {
+      if (typeof value === "string") {
+        bundle.addResource(new FluentResource(`${id} = ${value}`));
+      }
+    }
+    const l10n = new ReactLocalization([bundle]);
+    return {
+      wrappingComponent: LocalizationProvider,
+      wrappingComponentProps: { l10n },
+    };
+  }
 
   /**
    * mountAndCheckProps - Mounts a SimpleSnippet with DEFAULT_CONTENT extended with any props
@@ -25,7 +41,7 @@ describe("SimpleSnippet", () => {
       onAction: sandbox.stub(),
     };
     assert.jsonSchema(props.content, schema);
-    return mount(<SimpleSnippet {...props} />);
+    return mount(<SimpleSnippet {...props} />, mockL10nWrapper(props.content));
   }
 
   beforeEach(() => {
@@ -190,6 +206,41 @@ describe("SimpleSnippet", () => {
     assert.calledWithExactly(wrapper.props().onAction, {
       type: "OPEN_URL",
       data: { args: "https://mozilla.org" },
+    });
+  });
+  it("should send an OPEN_ABOUT_PAGE action with entrypoint when the button is clicked", () => {
+    const wrapper = mountAndCheckProps({
+      button_label: "Button",
+      button_action: "OPEN_ABOUT_PAGE",
+      button_entrypoint_value: "snippet",
+      button_entrypoint_name: "entryPoint",
+      button_action_args: "logins",
+    });
+
+    const button = wrapper.find("button.ASRouterButton");
+    button.simulate("click");
+
+    assert.calledOnce(wrapper.props().onAction);
+    assert.calledWithExactly(wrapper.props().onAction, {
+      type: "OPEN_ABOUT_PAGE",
+      data: { args: "logins", entrypoint: "entryPoint=snippet" },
+    });
+  });
+  it("should send an OPEN_PREFERENCE_PAGE action with entrypoint when the button is clicked", () => {
+    const wrapper = mountAndCheckProps({
+      button_label: "Button",
+      button_action: "OPEN_PREFERENCE_PAGE",
+      button_entrypoint_value: "entry=snippet",
+      button_action_args: "home",
+    });
+
+    const button = wrapper.find("button.ASRouterButton");
+    button.simulate("click");
+
+    assert.calledOnce(wrapper.props().onAction);
+    assert.calledWithExactly(wrapper.props().onAction, {
+      type: "OPEN_PREFERENCE_PAGE",
+      data: { args: "home", entrypoint: "entry=snippet" },
     });
   });
   it("should call props.onBlock and sendUserActionTelemetry when CTA button is clicked", () => {
