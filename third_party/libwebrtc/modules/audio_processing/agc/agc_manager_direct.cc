@@ -215,7 +215,12 @@ void MonoAgc::Process(rtc::ArrayView<const int16_t> audio) {
 
   agc_->Process(audio);
 
-  UpdateGain();
+  
+  int rms_error = 0;
+  if (agc_->GetRmsErrorDb(&rms_error)) {
+    UpdateGain(rms_error);
+  }
+
   if (!disable_digital_adaptive_) {
     UpdateCompressor();
   }
@@ -348,13 +353,9 @@ int MonoAgc::CheckVolumeAndReset() {
 
 
 
+void MonoAgc::UpdateGain(int rms_error_db) {
+  int rms_error = rms_error_db;
 
-void MonoAgc::UpdateGain() {
-  int rms_error = 0;
-  if (!agc_->GetRmsErrorDb(&rms_error)) {
-    
-    return;
-  }
   
   
   
