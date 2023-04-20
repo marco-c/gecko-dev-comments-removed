@@ -1971,7 +1971,7 @@ void gfxFontGroup::BuildFontList() {
 
   
   for (const auto& f : fonts) {
-    if (f.mFamily.mShared) {
+    if (f.mFamily.mIsShared) {
       AddFamilyToFontList(f.mFamily.mShared, f.mGeneric);
     } else {
       AddFamilyToFontList(f.mFamily.mUnshared, f.mGeneric);
@@ -1988,9 +1988,9 @@ void gfxFontGroup::AddPlatformFont(const nsACString& aName, bool aQuotedName,
   if (mUserFontSet) {
     
     
-    RefPtr<gfxFontFamily> family = mUserFontSet->LookupFamily(aName);
+    gfxFontFamily* family = mUserFontSet->LookupFamily(aName);
     if (family) {
-      aFamilyList.AppendElement(std::move(family));
+      aFamilyList.AppendElement(family);
       return;
     }
   }
@@ -2166,7 +2166,7 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
              "invalid default font returned by GetDefaultFont");
 
   gfxFontEntry* fe = nullptr;
-  if (family.mShared) {
+  if (family.mIsShared) {
     fontlist::Family* fam = family.mShared;
     if (!fam->IsInitialized()) {
       
@@ -3753,7 +3753,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
       }
 
       gfxFontEntry* fe = nullptr;
-      if (family.mShared) {
+      if (family.mIsShared) {
         fontlist::Family* fam = family.mShared;
         if (!fam->IsInitialized()) {
           Unused << pfl->InitializeFamily(fam);
@@ -3786,7 +3786,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
       
       
       if (!prefFont) {
-        prefFont = family.mShared
+        prefFont = family.mIsShared
                        ? FindFallbackFaceForChar(family.mShared, aCh, aNextCh,
                                                  aPresentation)
                        : FindFallbackFaceForChar(family.mUnshared, aCh, aNextCh,

@@ -1110,24 +1110,29 @@ class gfxFontFamily {
 
 
 struct FontFamily {
-  FontFamily() = default;
+  FontFamily() : mUnshared(nullptr), mIsShared(false) {}
+
   FontFamily(const FontFamily& aOther) = default;
 
-  explicit FontFamily(RefPtr<gfxFontFamily>&& aFamily)
-      : mUnshared(std::move(aFamily)) {}
+  explicit FontFamily(gfxFontFamily* aFamily)
+      : mUnshared(aFamily), mIsShared(false) {}
 
-  explicit FontFamily(gfxFontFamily* aFamily) : mUnshared(aFamily) {}
-
-  explicit FontFamily(mozilla::fontlist::Family* aFamily) : mShared(aFamily) {}
+  explicit FontFamily(mozilla::fontlist::Family* aFamily)
+      : mShared(aFamily), mIsShared(true) {}
 
   bool operator==(const FontFamily& aOther) const {
-    return mShared == aOther.mShared && mUnshared == aOther.mUnshared;
+    return mIsShared == aOther.mIsShared &&
+           (mIsShared ? mShared == aOther.mShared
+                      : mUnshared == aOther.mUnshared);
   }
 
-  bool IsNull() const { return !mShared && !mUnshared; }
+  bool IsNull() const { return mIsShared ? !mShared : !mUnshared; }
 
-  RefPtr<gfxFontFamily> mUnshared;
-  mozilla::fontlist::Family* mShared = nullptr;
+  union {
+    gfxFontFamily* mUnshared;
+    mozilla::fontlist::Family* mShared;
+  };
+  bool mIsShared;
 };
 
 
@@ -1141,10 +1146,6 @@ struct FamilyAndGeneric final {
                             mozilla::StyleGenericFontFamily aGeneric =
                                 mozilla::StyleGenericFontFamily(0))
       : mFamily(aFamily), mGeneric(aGeneric) {}
-  explicit FamilyAndGeneric(RefPtr<gfxFontFamily>&& aFamily,
-                            mozilla::StyleGenericFontFamily aGeneric =
-                                mozilla::StyleGenericFontFamily(0))
-      : mFamily(std::move(aFamily)), mGeneric(aGeneric) {}
   explicit FamilyAndGeneric(mozilla::fontlist::Family* aFamily,
                             mozilla::StyleGenericFontFamily aGeneric =
                                 mozilla::StyleGenericFontFamily(0))

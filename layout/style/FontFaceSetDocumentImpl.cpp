@@ -520,8 +520,8 @@ void FontFaceSetDocumentImpl::InsertRuleFontFace(
     nsTArray<FontFaceRecord>& aOldRecords, bool& aFontSetModified) {
   RecursiveMutexAutoLock lock(mMutex);
 
-  gfxUserFontAttributes attr;
-  if (!aFontFace->GetAttributes(attr)) {
+  nsAtom* fontFamily = aFontFace->GetFamilyName();
+  if (!fontFamily) {
     
     
     return;
@@ -529,6 +529,8 @@ void FontFaceSetDocumentImpl::InsertRuleFontFace(
 
   bool remove = false;
   size_t removeIndex;
+
+  nsAtomCString family(fontFamily);
 
   
   
@@ -552,7 +554,7 @@ void FontFaceSetDocumentImpl::InsertRuleFontFace(
       gfxUserFontEntry* entry = rec.mFontFace->GetUserFontEntry();
       MOZ_ASSERT(entry, "FontFace should have a gfxUserFontEntry by now");
 
-      AddUserFontEntry(attr.mFamilyName, entry);
+      AddUserFontEntry(family, entry);
 
       MOZ_ASSERT(!HasRuleFontFace(rec.mFontFace),
                  "FontFace should not occur in mRuleFaces twice");
@@ -574,9 +576,8 @@ void FontFaceSetDocumentImpl::InsertRuleFontFace(
   }
 
   
-  nsAutoCString family(attr.mFamilyName);
-  RefPtr<gfxUserFontEntry> entry = FindOrCreateUserFontEntryFromFontFace(
-      aFontFace, std::move(attr), aSheetType);
+  RefPtr<gfxUserFontEntry> entry =
+      FindOrCreateUserFontEntryFromFontFace(family, aFontFace, aSheetType);
 
   if (!entry) {
     return;
