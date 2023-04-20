@@ -58,11 +58,15 @@ XPCOMUtils.defineLazyGetter(this, "newTabPopup", () => {
       
       let gBrowser = win.gBrowser;
       let tab = gBrowser.selectedTab;
-      await replaceUrlInTab(gBrowser, tab, "about:blank");
+      await replaceUrlInTab(gBrowser, tab, Services.io.newURI("about:blank"));
       Services.obs.addObserver(
         {
           async observe() {
-            await replaceUrlInTab(gBrowser, tab, AboutNewTab.newTabURL);
+            await replaceUrlInTab(
+              gBrowser,
+              tab,
+              Services.io.newURI(AboutNewTab.newTabURL)
+            );
             
             
             popup.open();
