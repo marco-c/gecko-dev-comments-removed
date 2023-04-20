@@ -80,25 +80,40 @@ this.webRequest = class extends ExtensionAPI {
       onSuspendCanceled: () => (isSuspending = false),
     });
 
-    return {
-      webRequest: {
-        filterResponseData(requestId) {
-          if (isSuspending) {
-            throw new ExtensionError(
-              "filterResponseData method calls forbidden while background extension global is suspending"
-            );
-          }
-          requestId = parseInt(requestId, 10);
+    function filterResponseData(requestId) {
+      if (isSuspending) {
+        throw new ExtensionError(
+          "filterResponseData method calls forbidden while background extension global is suspending"
+        );
+      }
+      requestId = parseInt(requestId, 10);
 
-          let streamFilter = context.cloneScope.StreamFilter.create(
-            requestId,
-            context.extension.id
-          );
+      let streamFilter = context.cloneScope.StreamFilter.create(
+        requestId,
+        context.extension.id
+      );
 
-          filters.add(streamFilter);
-          return streamFilter;
-        },
-      },
-    };
+      filters.add(streamFilter);
+      return streamFilter;
+    }
+
+    const webRequest = {};
+
+    
+    
+    if (
+      context.extension.manifestVersion < 3 ||
+      context.extension.hasPermission("webRequestFilterResponse")
+    ) {
+      webRequest.filterResponseData = filterResponseData;
+    } else {
+      webRequest.filterResponseData = () => {
+        throw new ExtensionError(
+          'Missing required "webRequestFilterResponse" permission'
+        );
+      };
+    }
+
+    return { webRequest };
   }
 };
