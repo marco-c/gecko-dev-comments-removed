@@ -89,7 +89,7 @@ add_task(async function() {
       
       
       
-      BrowserTestUtils.loadURI(tab.linkedBrowser, TEST_ANOTHER_PAGE);
+      BrowserTestUtils.loadURIString(tab.linkedBrowser, TEST_ANOTHER_PAGE);
       await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
       await SpecialPowers.spawn(

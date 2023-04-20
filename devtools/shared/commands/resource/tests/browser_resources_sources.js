@@ -255,7 +255,7 @@ add_task(async function testSourcesOnload() {
     onAvailable: resources => availableResources.push(...resources),
   });
 
-  await BrowserTestUtils.loadURI(tab.linkedBrowser, TEST_URL);
+  await BrowserTestUtils.loadURIString(tab.linkedBrowser, TEST_URL);
 
   
   
