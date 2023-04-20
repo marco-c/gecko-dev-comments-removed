@@ -37,6 +37,7 @@
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeItem.h"
 #include "nsINestedURI.h"
+#include "nsIHttpChannel.h"
 #include "nsIScriptContext.h"
 #include "nsIScriptError.h"
 #include "nsIScriptGlobalObject.h"
@@ -221,7 +222,7 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
     
     
     bool topLevel = false;
-    if (BrowsingContext* bc = mDocument->GetBrowsingContext()) {
+    if (mozilla::dom::BrowsingContext* bc = mDocument->GetBrowsingContext()) {
       topLevel = bc->IsTopContent();
     }
 
