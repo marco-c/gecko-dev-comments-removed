@@ -1,13 +1,11 @@
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
+/**
+ * test helper JSWindowActors used by the browser_fullscreen_api_fission.js test.
+ */
 
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["FullscreenFrameChild"];
-
-class FullscreenFrameChild extends JSWindowActorChild {
+export class FullscreenFrameChild extends JSWindowActorChild {
   actorCreated() {
     this.fullscreen_events = [];
   }

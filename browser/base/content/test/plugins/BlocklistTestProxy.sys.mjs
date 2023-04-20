@@ -1,5 +1,3 @@
-var EXPORTED_SYMBOLS = ["BlocklistTestProxyChild"];
-
 var Cm = Components.manager;
 
 const kBlocklistServiceUUID = "{66354bc9-7ed1-4692-ae1d-8da97d6b205e}";
@@ -13,9 +11,9 @@ try {
   );
 } catch (ex) {}
 
-
-
-
+/*
+ * A lightweight blocklist proxy for testing purposes.
+ */
 var BlocklistProxy = {
   _uuid: null,
 
@@ -56,11 +54,11 @@ var BlocklistProxy = {
 
   async getAddonBlocklistState(aAddon, aAppVersion, aToolkitVersion) {
     await new Promise(r => setTimeout(r, 150));
-    return 0; 
+    return 0; // STATE_NOT_BLOCKED
   },
 };
 
-class BlocklistTestProxyChild extends JSProcessActorChild {
+export class BlocklistTestProxyChild extends JSProcessActorChild {
   constructor() {
     super();
     BlocklistProxy.init();
