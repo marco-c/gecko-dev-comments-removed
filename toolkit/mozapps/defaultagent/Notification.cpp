@@ -77,14 +77,6 @@ static bool GetFollowupNotificationSuppressed() {
 }
 
 
-
-static bool SetFollowupNotificationRequestTime(ULONGLONG time) {
-  return !RegistrySetValueQword(IsPrefixed::Unprefixed, L"FollowupRequestTime",
-                                time)
-              .isErr();
-}
-
-
 static ULONGLONG GetFollowupNotificationRequestTime() {
   return RegistryGetValueQword(IsPrefixed::Unprefixed, L"FollowupRequestTime")
       .unwrapOr(mozilla::Some(0))
@@ -180,13 +172,13 @@ static bool GetStrings(Strings& strings) {
                        &strings.initialToast.text2);
   stringsReader.AddKey("DefaultBrowserNotificationText",
                        &strings.followupToast.text2);
-  stringsReader.AddKey("DefaultBrowserNotificationRemindMeLater",
+  stringsReader.AddKey("DefaultBrowserNotificationMakeFirefoxDefault",
                        &strings.initialToast.action1);
-  stringsReader.AddKey("DefaultBrowserNotificationDontShowAgain",
+  stringsReader.AddKey("DefaultBrowserNotificationMakeFirefoxDefault",
                        &strings.followupToast.action1);
-  stringsReader.AddKey("DefaultBrowserNotificationMakeFirefoxDefault",
+  stringsReader.AddKey("DefaultBrowserNotificationDontShowAgain",
                        &strings.initialToast.action2);
-  stringsReader.AddKey("DefaultBrowserNotificationMakeFirefoxDefault",
+  stringsReader.AddKey("DefaultBrowserNotificationDontShowAgain",
                        &strings.followupToast.action2);
   int result = stringsReader.Read();
   if (result != OK) {
@@ -290,17 +282,13 @@ static HANDLE gHandlerMutex = INVALID_HANDLE_VALUE;
 class ToastHandler : public WinToastLib::IWinToastHandler {
  private:
   NotificationType mWhichNotification;
-  bool mIsLocalizedNotification;
   HANDLE mEvent;
   const std::wstring mAumiStr;
 
  public:
-  ToastHandler(NotificationType whichNotification, bool isEnglishInstall,
-               HANDLE event, const wchar_t* aumi)
-      : mWhichNotification(whichNotification),
-        mIsLocalizedNotification(!isEnglishInstall),
-        mEvent(event),
-        mAumiStr(aumi) {}
+  ToastHandler(NotificationType whichNotification, HANDLE event,
+               const wchar_t* aumi)
+      : mWhichNotification(whichNotification), mEvent(event), mAumiStr(aumi) {}
 
   void FinishHandler(NotificationActivities& returnData) const {
     SetReturnData(returnData);
@@ -359,34 +347,17 @@ class ToastHandler : public WinToastLib::IWinToastHandler {
     
     activitiesPerformed.action = NotificationAction::NoAction;
 
-    
-    
-    
-    
-    if ((actionIndex == 0 && !mIsLocalizedNotification) ||
-        (actionIndex == 1 && mIsLocalizedNotification)) {
-      if (mWhichNotification == NotificationType::Initial &&
-          !mIsLocalizedNotification) {
-        
-        activitiesPerformed.action = NotificationAction::RemindMeLater;
-        if (!SetFollowupNotificationRequestTime(GetCurrentTimestamp())) {
-          LOG_ERROR_MESSAGE(L"Unable to schedule followup notification");
-        }
-      } else {
-        
-        
-        
-        
-        
-        activitiesPerformed.action = NotificationAction::DismissedByButton;
-      }
-    } else if ((actionIndex == 1 && !mIsLocalizedNotification) ||
-               (actionIndex == 0 && mIsLocalizedNotification)) {
+    if (actionIndex == 0) {
       
       
       activitiesPerformed.action = NotificationAction::MakeFirefoxDefaultButton;
 
       SetDefaultBrowserFromNotification(mAumiStr.c_str());
+    } else if (actionIndex == 1) {
+      
+      
+      
+      activitiesPerformed.action = NotificationAction::DismissedByButton;
     }
 
     FinishHandler(activitiesPerformed);
@@ -525,7 +496,7 @@ static NotificationActivities ShowNotification(
   toastTemplate.setImagePath(absImagePath.get());
   toastTemplate.setScenario(WinToastTemplate::Scenario::Reminder);
   ToastHandler* handler =
-      new ToastHandler(whichNotification, isEnglishInstall, event.get(), aumi);
+      new ToastHandler(whichNotification, event.get(), aumi);
   INT64 id = WinToast::instance()->showToast(toastTemplate, handler, &error);
   if (id < 0) {
     LOG_ERROR_MESSAGE(WinToast::strerror(error).c_str());
