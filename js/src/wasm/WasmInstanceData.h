@@ -23,6 +23,7 @@
 
 #include "NamespaceImports.h"
 
+#include "gc/Allocator.h"
 #include "js/Utility.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmTypeDecls.h"
@@ -39,6 +40,23 @@ struct ExportArg {
 };
 
 using ExportFuncPtr = int32_t (*)(ExportArg*, Instance*);
+
+
+
+
+
+struct TypeDefInstanceData {
+  
+  
+  const wasm::TypeDef* typeDef;
+
+  
+  
+  GCPtr<Shape*> shape;
+  const JSClass* clasp;
+  gc::AllocKind allocKind;
+  gc::InitialHeap initialHeap;
+};
 
 
 

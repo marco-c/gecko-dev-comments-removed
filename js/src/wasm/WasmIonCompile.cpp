@@ -3704,16 +3704,27 @@ class FunctionCompiler {
 
   
   [[nodiscard]] MDefinition* loadTypeDef(uint32_t typeIndex) {
-    uint32_t typeIdOffset = moduleEnv().offsetOfTypeId(typeIndex);
+    uint32_t typeDefOffset = moduleEnv().offsetOfTypeDef(typeIndex);
 
     auto* load =
-        MWasmLoadGlobalVar::New(alloc(), MIRType::Pointer, typeIdOffset,
+        MWasmLoadGlobalVar::New(alloc(), MIRType::Pointer, typeDefOffset,
                                 true, instancePointer_);
     if (!load) {
       return nullptr;
     }
     curBlock_->add(load);
     return load;
+  }
+
+  [[nodiscard]] MDefinition* loadTypeDefInstanceData(uint32_t typeIndex) {
+    size_t offset = Instance::offsetOfGlobalArea() +
+                    moduleEnv_.offsetOfTypeDefInstanceData(typeIndex);
+    auto* result = MWasmDerivedPointer::New(alloc(), instancePointer_, offset);
+    if (!result) {
+      return nullptr;
+    }
+    curBlock_->add(result);
+    return result;
   }
 
   
@@ -3949,8 +3960,8 @@ class FunctionCompiler {
   [[nodiscard]] MDefinition* createDefaultInitializedArrayObject(
       uint32_t lineOrBytecode, uint32_t typeIndex, MDefinition* numElements) {
     
-    MDefinition* arrayTypeDef = loadTypeDef(typeIndex);
-    if (!arrayTypeDef) {
+    MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
+    if (!typeDefData) {
       return nullptr;
     }
 
@@ -3959,7 +3970,7 @@ class FunctionCompiler {
     
     MDefinition* arrayObject;
     if (!emitInstanceCall2(lineOrBytecode, SASigArrayNew, numElements,
-                           arrayTypeDef, &arrayObject)) {
+                           typeDefData, &arrayObject)) {
       return nullptr;
     }
 
@@ -6523,14 +6534,14 @@ static bool EmitStructNew(FunctionCompiler& f) {
 
   
   
-  MDefinition* structTypeDef = f.loadTypeDef(typeIndex);
-  if (!structTypeDef) {
+  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
+  if (!typeDefData) {
     return false;
   }
 
   
   MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, structTypeDef,
+  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, typeDefData,
                            &structObject)) {
     return false;
   }
@@ -6566,14 +6577,14 @@ static bool EmitStructNewDefault(FunctionCompiler& f) {
 
   
   
-  MDefinition* structTypeDef = f.loadTypeDef(typeIndex);
-  if (!structTypeDef) {
+  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
+  if (!typeDefData) {
     return false;
   }
 
   
   MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, structTypeDef,
+  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, typeDefData,
                            &structObject)) {
     return false;
   }
@@ -6766,8 +6777,8 @@ static bool EmitArrayNewData(FunctionCompiler& f) {
   }
 
   
-  MDefinition* arrayTypeDef = f.loadTypeDef(typeIndex);
-  if (!arrayTypeDef) {
+  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
+  if (!typeDefData) {
     return false;
   }
 
@@ -6784,8 +6795,7 @@ static bool EmitArrayNewData(FunctionCompiler& f) {
   
   MDefinition* arrayObject;
   if (!f.emitInstanceCall4(lineOrBytecode, SASigArrayNewData, segByteOffset,
-                           numElements, arrayTypeDef, segIndexM,
-                           &arrayObject)) {
+                           numElements, typeDefData, segIndexM, &arrayObject)) {
     return false;
   }
 
@@ -6809,8 +6819,9 @@ static bool EmitArrayNewElem(FunctionCompiler& f) {
   }
 
   
-  MDefinition* arrayTypeDef = f.loadTypeDef(typeIndex);
-  if (!arrayTypeDef) {
+  
+  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
+  if (!typeDefData) {
     return false;
   }
 
@@ -6827,8 +6838,7 @@ static bool EmitArrayNewElem(FunctionCompiler& f) {
   
   MDefinition* arrayObject;
   if (!f.emitInstanceCall4(lineOrBytecode, SASigArrayNewElem, segElemIndex,
-                           numElements, arrayTypeDef, segIndexM,
-                           &arrayObject)) {
+                           numElements, typeDefData, segIndexM, &arrayObject)) {
     return false;
   }
 
