@@ -137,6 +137,7 @@ public class GeckoSession {
   private final SessionTextInput mTextInput = new SessionTextInput(this, mNativeQueue);
   private SessionAccessibility mAccessibility;
   private SessionFinder mFinder;
+  private SessionPdfFileSaver mPdfFileSaver;
 
   
    interface SessionMagnifier {
@@ -2325,6 +2326,54 @@ public class GeckoSession {
       mFinder = new SessionFinder(getEventDispatcher());
     }
     return mFinder;
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @NonNull SessionPdfFileSaver getPdfFileSaver() {
+    if (mPdfFileSaver == null) {
+      mPdfFileSaver = new SessionPdfFileSaver(getEventDispatcher());
+    }
+    return mPdfFileSaver;
+  }
+
+  
+  @AnyThread
+  public static class PdfSaveResult {
+    
+    @NonNull public final byte[] bytes;
+
+    
+    @NonNull public final String filename;
+
+    public final boolean isPrivate;
+
+     PdfSaveResult(@NonNull final GeckoBundle bundle) {
+      filename = bundle.getString("filename");
+      isPrivate = bundle.getBoolean("isPrivate");
+      bytes = bundle.getByteArray("bytes");
+    }
+
+    
+    protected PdfSaveResult() {
+      filename = "";
+      isPrivate = false;
+      bytes = new byte[0];
+    }
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<Boolean> isPdfJs() {
+    return mEventDispatcher.queryBoolean("GeckoView:IsPdfJs");
   }
 
   
