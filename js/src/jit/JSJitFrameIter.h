@@ -75,9 +75,13 @@ enum class FrameType {
   JSJitToWasm,
 };
 
-enum ReadFrameArgsBehavior {
+enum class ReadFrameArgsBehavior {
   
-  ReadFrame_Actuals
+  Actuals,
+
+  
+  
+  ActualsAndFormals,
 };
 
 class CommonFrameLayout;
@@ -663,9 +667,20 @@ class InlineFrameIterator {
 
       
       
+      unsigned numFormalsToRead;
+      if (behavior == ReadFrameArgsBehavior::Actuals) {
+        numFormalsToRead = std::min(nactual, nformal);
+      } else {
+        MOZ_ASSERT(behavior == ReadFrameArgsBehavior::ActualsAndFormals);
+        numFormalsToRead = nformal;
+      }
+      s.readFunctionFrameArgs(argOp, argsObj, thisv, 0, numFormalsToRead,
+                              script(), fallback);
+
       
-      s.readFunctionFrameArgs(argOp, argsObj, thisv, 0, nformal, script(),
-                              fallback);
+      for (unsigned i = numFormalsToRead; i < nformal; i++) {
+        s.skip();
+      }
 
       if (nactual > nformal) {
         if (more()) {
@@ -722,7 +737,7 @@ class InlineFrameIterator {
                               MaybeReadFallback& fallback) const {
     Nop nop;
     readFrameArgsAndLocals(cx, op, nop, nullptr, nullptr, nullptr, nullptr,
-                           nullptr, ReadFrame_Actuals, fallback);
+                           nullptr, ReadFrameArgsBehavior::Actuals, fallback);
   }
 
   JSScript* script() const { return script_; }
