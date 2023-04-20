@@ -270,7 +270,9 @@ class GeckoViewStartup {
         
         
         
-        lazy.PdfJs.init(this._isNewProfile);
+        try {
+          lazy.PdfJs.init(this._isNewProfile);
+        } catch {}
         break;
       }
     }
