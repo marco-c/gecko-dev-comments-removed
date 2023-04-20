@@ -74,10 +74,27 @@ void APZEventResult::SetStatusForTouchEvent(
     const InputBlockState& aBlock, TargetConfirmationFlags aFlags,
     PointerEventsConsumableFlags aConsumableFlags,
     const AsyncPanZoomController* aTarget) {
+  
+  
+  
+  
+  
   bool consumable = aConsumableFlags.IsConsumable();
   mStatus =
       consumable ? nsEventStatus_eConsumeDoDefault : nsEventStatus_eIgnore;
-  if (mHandledResult && !aFlags.mDispatchToContent && !consumable) {
+
+  
+  
+  
+  
+  if (!aConsumableFlags.mAllowedByTouchAction) {
+    mHandledResult =
+        Some(APZHandledResult{APZHandledPlace::HandledByContent, aTarget});
+    return;
+  }
+
+  if (mHandledResult && !aFlags.mDispatchToContent &&
+      !aConsumableFlags.mHasRoom) {
     
     
     
