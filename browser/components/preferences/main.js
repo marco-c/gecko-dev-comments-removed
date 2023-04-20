@@ -10,6 +10,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
+  MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
 });
 
 
@@ -471,6 +472,11 @@ var gMainPane = {
       "browserContainersSettings",
       "command",
       gMainPane.showContainerSettings
+    );
+    setEventListener(
+      "data-migration",
+      "command",
+      gMainPane.onMigrationButtonCommand
     );
 
     
@@ -1711,6 +1717,26 @@ var gMainPane = {
         }
       }
     })().catch(console.error);
+  },
+
+  onMigrationButtonCommand(command) {
+    
+    
+    
+    
+    
+    
+    const browser = window.docShell.chromeEventHandler;
+    const browserWindow = browser.ownerGlobal;
+
+    
+    
+    
+    Services.tm.dispatchToMainThread(() => {
+      MigrationUtils.showMigrationWizard(browserWindow, {
+        entrypoint: MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES,
+      });
+    });
   },
 
   
