@@ -7,7 +7,7 @@
 
 
 
-#include "modules/video_coding/unique_timestamp_counter.h"
+#include "video/unique_timestamp_counter.h"
 
 #include "test/gtest.h"
 
