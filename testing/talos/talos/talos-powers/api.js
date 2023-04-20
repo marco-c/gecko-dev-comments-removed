@@ -157,7 +157,7 @@ TalosPowersService.prototype = {
             Services.obs.notifyObservers(null, "talos-profile-gathered");
           }),
         error => {
-          Cu.reportError("Failed to gather profile: " + error);
+          console.error("Failed to gather profile: " + error);
           
           
           reject();
