@@ -10,6 +10,7 @@ const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   ASRouter: "resource://activity-stream/lib/ASRouter.jsm",
+  ASRouterTargeting: "resource://activity-stream/lib/ASRouterTargeting.jsm",
 });
 
 const AWScreenUtils = {
@@ -35,6 +36,7 @@ const AWScreenUtils = {
   async evaluateScreenTargeting(targeting) {
     const result = await lazy.ASRouter.evaluateExpression({
       expression: targeting,
+      context: lazy.ASRouterTargeting.Environment,
     });
     if (result?.evaluationStatus?.success) {
       return result.evaluationStatus.result;
@@ -51,8 +53,10 @@ const AWScreenUtils = {
 
 
 
+
   async evaluateTargetingAndRemoveScreens(screens) {
-    await this.removeScreens(screens, async screen => {
+    const filteredScreens = [...screens];
+    await this.removeScreens(filteredScreens, async screen => {
       if (screen.targeting === undefined) {
         
         return false;
@@ -63,6 +67,8 @@ const AWScreenUtils = {
       
       return !result;
     });
+
+    return filteredScreens;
   },
 };
 
