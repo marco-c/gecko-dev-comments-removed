@@ -1,18 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { RemoteSettings } from "resource://services-settings/remote-settings.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["RemoteSecuritySettings"];
-
-const { RemoteSettings } = ChromeUtils.importESModule(
-  "resource://services-settings/remote-settings.sys.mjs"
-);
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { X509 } = ChromeUtils.import("resource://gre/modules/psm/X509.jsm");
+import { X509 } from "resource://gre/modules/psm/X509.sys.mjs";
 
 const SECURITY_STATE_BUCKET = "security-state";
 const SECURITY_STATE_SIGNER = "onecrl.content-signature.mozilla.org";
@@ -38,15 +31,15 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   );
   return new ConsoleAPI({
     prefix: "RemoteSecuritySettings.jsm",
-    
-    
+    // tip: set maxLogLevel to "debug" and use log.debug() to create detailed
+    // messages during development. See LOG_LEVELS in Console.sys.mjs for details.
     maxLogLevel: "error",
     maxLogLevelPref: LOGLEVEL_PREF,
   });
 });
 
-
-
+// Converts a JS string to an array of bytes consisting of the char code at each
+// index in the string.
 function stringToBytes(s) {
   let b = [];
   for (let i = 0; i < s.length; i++) {
@@ -55,7 +48,7 @@ function stringToBytes(s) {
   return b;
 }
 
-
+// Converts an array of bytes to a JS string using fromCharCode on each byte.
 function bytesToString(bytes) {
   if (bytes.length > 65535) {
     throw new Error("input too long for bytesToString");
@@ -117,16 +110,16 @@ function setRevocations(certStorage, revocations) {
   );
 }
 
+/**
+ * Helper function that returns a promise that will resolve with whether or not
+ * the nsICertStorage implementation has prior data of the given type.
+ *
+ * @param {Integer} dataType a Ci.nsICertStorage.DATA_TYPE_* constant
+ *                           indicating the type of data
 
-
-
-
-
-
-
-
-
-
+ * @returns {Promise} a promise that will resolve with true if the data type is
+ *                   present
+ */
 function hasPriorData(dataType) {
   let certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
     Ci.nsICertStorage
@@ -136,36 +129,36 @@ function hasPriorData(dataType) {
       if (rv == Cr.NS_OK) {
         resolve(hasPriorData);
       } else {
-        
-        
+        // If calling hasPriorData failed, assume we need to reload everything
+        // (even though it's unlikely doing so will succeed).
         resolve(false);
       }
     });
   });
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * Revoke the appropriate certificates based on the records from the blocklist.
+ *
+ * @param {object} options
+ * @param {object} options.data Current records in the local db.
+ * @param {Array} options.data.current
+ * @param {Array} options.data.created
+ * @param {Array} options.data.updated
+ * @param {Array} options.data.deleted
+ */
 const updateCertBlocklist = async function({
   data: { current, created, updated, deleted },
 }) {
   let items = [];
 
-  
-  
+  // See if we have prior revocation data (this can happen when we can't open
+  // the database and we have to re-create it (see bug 1546361)).
   let hasPriorRevocationData = await hasPriorData(
     Ci.nsICertStorage.DATA_TYPE_REVOCATION
   );
 
-  
+  // If we don't have prior data, make it so we re-load everything.
   if (!hasPriorRevocationData) {
     deleted = [];
     updated = [];
@@ -225,20 +218,20 @@ const updateCertBlocklist = async function({
   }
 };
 
-var RemoteSecuritySettings = {
+export var RemoteSecuritySettings = {
   _initialized: false,
   OneCRLBlocklistClient: null,
   IntermediatePreloadsClient: null,
   CRLiteFiltersClient: null,
 
-  
-
-
-
-
-
+  /**
+   * Initialize the clients (cheap instantiation) and setup their sync event.
+   * This static method is called from BrowserGlue.sys.mjs soon after startup.
+   *
+   * @returns {object} instantiated clients for security remote settings.
+   */
   init() {
-    
+    // Avoid repeated initialization (work-around for bug 1730026).
     if (this._initialized) {
       return this;
     }
@@ -287,7 +280,7 @@ class IntermediatePreloads {
       return;
     }
 
-    
+    // Download attachments that are awaiting download, up to a max.
     const maxDownloadsPerRun = Services.prefs.getIntPref(
       INTERMEDIATES_DL_PER_POLL_PREF,
       100
@@ -297,16 +290,16 @@ class IntermediatePreloads {
       8
     );
 
-    
-    
-    
+    // Bug 1519256: Move this to a separate method that's on a separate timer
+    // with a higher frequency (so we can attempt to download outstanding
+    // certs more than once daily)
 
-    
-    
+    // See if we have prior cert data (this can happen when we can't open the database and we
+    // have to re-create it (see bug 1546361)).
     let hasPriorCertData = await hasPriorData(
       Ci.nsICertStorage.DATA_TYPE_CERTIFICATE
     );
-    
+    // If we don't have prior data, make it so we re-load everything.
     if (!hasPriorCertData) {
       let current;
       try {
@@ -320,8 +313,8 @@ class IntermediatePreloads {
       const toReset = current.filter(record => record.cert_import_complete);
       try {
         await this.client.db.importChanges(
-          undefined, 
-          undefined, 
+          undefined, // do not touch metadata.
+          undefined, // do not touch collection timestamp.
           toReset.map(r => ({ ...r, cert_import_complete: false }))
         );
       } catch (err) {
@@ -346,7 +339,7 @@ class IntermediatePreloads {
       `There are ${waiting.length} intermediates awaiting download.`
     );
     if (!waiting.length) {
-      
+      // Nothing to do.
       Services.obs.notifyObservers(
         null,
         "remote-security-settings:intermediates-updated",
@@ -385,8 +378,8 @@ class IntermediatePreloads {
     }
     try {
       await this.client.db.importChanges(
-        undefined, 
-        undefined, 
+        undefined, // do not touch metadata.
+        undefined, // do not touch collection timestamp.
         recordsToUpdate.map(r => ({ ...r, cert_import_complete: true }))
       );
     } catch (err) {
@@ -413,7 +406,7 @@ class IntermediatePreloads {
     }
   }
 
-  
+  // This method returns a promise to RemoteSettingsClient.maybeSync method.
   async onSync({ data: { current, created, updated, deleted } }) {
     if (!Services.prefs.getBoolPref(INTERMEDIATES_ENABLED_PREF, true)) {
       lazy.log.debug("Intermediate Preloading is disabled");
@@ -424,19 +417,19 @@ class IntermediatePreloads {
     await this.removeCerts(deleted);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Attempts to download the attachment, assuming it's not been processed
+   * already. Does not retry, and always resolves (e.g., does not reject upon
+   * failure.) Errors are reported via console.error.
+   *
+   * @param  {AttachmentRecord} record defines which data to obtain
+   * @returns {Promise}          a Promise that will resolve to an object with the properties
+   *                            record, cert, and subject. record is the original record.
+   *                            cert is the base64-encoded bytes of the downloaded certificate (if
+   *                            downloading was successful), and null otherwise.
+   *                            subject is the base64-encoded bytes of the subject distinguished
+   *                            name of the same.
+   */
   async maybeDownloadAttachment(record) {
     let result = { record, cert: null, subject: null };
 
@@ -458,14 +451,14 @@ class IntermediatePreloads {
     let certBase64;
     let subjectBase64;
     try {
-      
+      // split off the header and footer
       certBase64 = dataAsString.split("-----")[2].replace(/\s/g, "");
-      
+      // get an array of bytes so we can use X509.jsm
       let certBytes = stringToBytes(atob(certBase64));
       let cert = new X509.Certificate();
       cert.parse(certBytes);
-      
-      
+      // get the DER-encoded subject and get a base64-encoded string from it
+      // TODO(bug 1542028): add getters for _der and _bytes
       subjectBase64 = btoa(
         bytesToString(cert.tbsCertificate.subject._der._bytes)
       );
@@ -496,8 +489,8 @@ class IntermediatePreloads {
   }
 }
 
-
-
+// Helper function to compare filters. One filter is "less than" another filter (i.e. it sorts
+// earlier) if its timestamp is farther in the past than the other.
 function compareFilters(filterA, filterB) {
   return filterA.effectiveTimestamp - filterB.effectiveTimestamp;
 }
@@ -517,10 +510,10 @@ class CRLiteFilters {
   }
 
   async cleanAttachmentCache() {
-    
-    
-    
-    
+    // Bug 1795710 - misuse of Remote Settings `downloadToDisk` caused us to
+    // keep filters and stashes on disk indefinitely. We're no longer caching
+    // these downloads, so if there are any filters still in the cache they can
+    // be removed.
     let cachePath = PathUtils.join(
       PathUtils.localProfileDir,
       ...this.client.attachments.folders
@@ -534,8 +527,8 @@ class CRLiteFilters {
           path => path.endsWith("filter") || path.endsWith("filter.stash")
         );
         if (cacheFiles.length == staleFilters.length) {
-          
-          
+          // Expected case. No files other than filters, we can remove the
+          // entire directory
           await IOUtils.remove(cachePath, { recursive: true });
         } else {
           for (let filter of staleFilters) {
@@ -568,8 +561,8 @@ class CRLiteFilters {
         record => !record.incremental && record.loaded_into_cert_storage
       );
       await this.client.db.importChanges(
-        undefined, 
-        undefined, 
+        undefined, // do not touch metadata.
+        undefined, // do not touch collection timestamp.
         toReset.map(r => ({ ...r, loaded_into_cert_storage: false }))
       );
     }
@@ -582,8 +575,8 @@ class CRLiteFilters {
         record => record.incremental && record.loaded_into_cert_storage
       );
       await this.client.db.importChanges(
-        undefined, 
-        undefined, 
+        undefined, // do not touch metadata.
+        undefined, // do not touch collection timestamp.
         toReset.map(r => ({ ...r, loaded_into_cert_storage: false }))
       );
     }
@@ -601,15 +594,15 @@ class CRLiteFilters {
     }
     fullFilters.sort(compareFilters);
     lazy.log.debug("fullFilters:", fullFilters);
-    let fullFilter = fullFilters.pop(); 
+    let fullFilter = fullFilters.pop(); // the most recent filter sorts last
     let incrementalFilters = current.filter(
       filter =>
-        
-        
+        // Return incremental filters that are more recent than (i.e. sort later than) the full
+        // filter.
         filter.incremental && compareFilters(filter, fullFilter) > 0
     );
     incrementalFilters.sort(compareFilters);
-    
+    // Map of id to filter where that filter's parent has the given id.
     let parentIdMap = {};
     for (let filter of incrementalFilters) {
       if (filter.parent in parentIdMap) {
@@ -703,8 +696,8 @@ class CRLiteFilters {
     }
 
     await this.client.db.importChanges(
-      undefined, 
-      undefined, 
+      undefined, // do not touch metadata.
+      undefined, // do not touch collection timestamp.
       filtersDownloaded.map(r => ({ ...r, loaded_into_cert_storage: true }))
     );
 

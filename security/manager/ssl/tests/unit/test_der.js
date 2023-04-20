@@ -7,7 +7,9 @@
 
 
 
-var { DER } = ChromeUtils.import("resource://gre/modules/psm/DER.jsm");
+var { DER } = ChromeUtils.importESModule(
+  "resource://gre/modules/psm/DER.sys.mjs"
+);
 
 function run_simple_tests() {
   throws(
