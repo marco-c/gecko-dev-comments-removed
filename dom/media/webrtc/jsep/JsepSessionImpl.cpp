@@ -519,28 +519,6 @@ void JsepSessionImpl::AddCommonExtmaps(const SdpMediaSection& remoteMsection,
   auto negotiatedRtpExtensions = GetRtpExtensions(*msection);
   mSdpHelper.NegotiateAndAddExtmaps(remoteMsection, negotiatedRtpExtensions,
                                     msection);
-  for (const auto& negotiatedExtension : negotiatedRtpExtensions) {
-    if (negotiatedExtension.entry == 0) {
-      MOZ_ASSERT(false, "This should have been caught sooner");
-      continue;
-    }
-
-    mExtmapEntriesEverNegotiated[negotiatedExtension.entry] =
-        negotiatedExtension.extensionname;
-
-    for (auto& originalExtension : mRtpExtensions) {
-      if (negotiatedExtension.extensionname ==
-          originalExtension.mExtmap.extensionname) {
-        
-        originalExtension.mExtmap.entry = negotiatedExtension.entry;
-        mExtmapEntriesEverUsed.insert(negotiatedExtension.entry);
-      } else if (originalExtension.mExtmap.entry == negotiatedExtension.entry) {
-        
-        
-        originalExtension.mExtmap.entry = GetNeverUsedExtmapEntry();
-      }
-    }
-  }
 }
 
 uint16_t JsepSessionImpl::GetNeverUsedExtmapEntry() {
@@ -1215,6 +1193,33 @@ nsresult JsepSessionImpl::MakeNegotiatedTransceiver(
     
     
     MOZ_MTLOG(ML_DEBUG, "[" << mName << "]: RTCP-MUX is off");
+  }
+
+  if (answer.GetAttributeList().HasAttribute(SdpAttribute::kExtmapAttribute)) {
+    const auto extmaps = answer.GetAttributeList().GetExtmap().mExtmaps;
+    for (const auto& negotiatedExtension : extmaps) {
+      if (negotiatedExtension.entry == 0) {
+        MOZ_ASSERT(false, "This should have been caught sooner");
+        continue;
+      }
+
+      mExtmapEntriesEverNegotiated[negotiatedExtension.entry] =
+          negotiatedExtension.extensionname;
+
+      for (auto& originalExtension : mRtpExtensions) {
+        if (negotiatedExtension.extensionname ==
+            originalExtension.mExtmap.extensionname) {
+          
+          originalExtension.mExtmap.entry = negotiatedExtension.entry;
+          mExtmapEntriesEverUsed.insert(negotiatedExtension.entry);
+        } else if (originalExtension.mExtmap.entry ==
+                   negotiatedExtension.entry) {
+          
+          
+          originalExtension.mExtmap.entry = GetNeverUsedExtmapEntry();
+        }
+      }
+    }
   }
 
   return NS_OK;
