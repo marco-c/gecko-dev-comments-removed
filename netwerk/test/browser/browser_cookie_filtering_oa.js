@@ -17,7 +17,9 @@ const {
   triggerSetCookieFromHttpPrivate,
   preclean_test,
   cleanup_test,
-} = ChromeUtils.import("resource://testing-common/cookie_filtering_helper.jsm");
+} = ChromeUtils.importESModule(
+  "resource://testing-common/cookie_filtering_helper.sys.mjs"
+);
 
 
 
