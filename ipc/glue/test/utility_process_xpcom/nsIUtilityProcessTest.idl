@@ -13,15 +13,20 @@ interface nsIUtilityProcessTest : nsISupports
 
 
 
+
+
+
+
   [implicit_jscontext]
-  Promise startProcess([optional] in int32_t unknownActors);
+  Promise startProcess([optional] in Array<ACString> actorsToAdd);
 
   
 
 
 
 
-  void stopProcess();
+
+  void stopProcess([optional] in string utilityActorName);
 
   
 
