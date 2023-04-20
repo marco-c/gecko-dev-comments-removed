@@ -6,6 +6,10 @@
 
 
 
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
+
 function makeChan(uri) {
   let chan = NetUtil.newChannel({
     uri,
@@ -199,7 +203,6 @@ add_task(async function test_cancel_after_sending_request() {
           global.session_counter++;
         });
       `);
-
         info(`Testing ${p.name} with ${server.constructor.name}`);
         await server.execute(
           `global.server_name = "${server.constructor.name}";`
@@ -208,6 +211,7 @@ add_task(async function test_cancel_after_sending_request() {
         await server.registerPathHandler("/test", (req, resp) => {
           
           
+          global.request_count = (global.request_count || 0) + 1;
           
           setTimeout(() => {
             resp.writeHead(200);
@@ -219,7 +223,17 @@ add_task(async function test_cancel_after_sending_request() {
           resp.end(global.server_name);
         });
 
-        let chan = makeChan(`${server.origin()}/test`);
+        
+        
+        
+        let chan = makeChan(`${server.origin()}/instant`);
+        await new Promise(resolve => {
+          chan.asyncOpen(
+            new ChannelListener(resolve, null, CL_ALLOW_UNKNOWN_CL)
+          );
+        });
+
+        chan = makeChan(`${server.origin()}/test`);
         let openPromise = new Promise(resolve => {
           chan.asyncOpen(
             new ChannelListener(
@@ -230,7 +244,10 @@ add_task(async function test_cancel_after_sending_request() {
           );
         });
         
-        await new Promise(resolve => do_timeout(100, resolve));
+        await TestUtils.waitForCondition(async () => {
+          return (await server.execute("global.request_count")) > 0;
+        });
+
         chan.cancel(Cr.NS_ERROR_ABORT);
 
         let { req } = await openPromise;
