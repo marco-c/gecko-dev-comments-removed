@@ -2338,28 +2338,41 @@ static bool ParseMsidAttribute(absl::string_view line,
   
   
   
-  std::string field1;
-  std::string new_stream_id;
-  std::string new_track_id;
-  if (!rtc::tokenize_first(line.substr(kLinePrefixLength),
-                           kSdpDelimiterSpaceChar, &field1, &new_track_id)) {
-    const size_t expected_fields = 2;
-    return ParseFailedExpectFieldNum(line, expected_fields, error);
-  }
-
-  if (new_track_id.empty()) {
-    return ParseFailed(line, "Missing track ID in msid attribute.", error);
-  }
   
-  if (!track_id->empty() && new_track_id.compare(*track_id) != 0) {
+  
+  
+  std::vector<std::string> fields;
+  size_t num_fields = rtc::tokenize(line.substr(kLinePrefixLength),
+                                    kSdpDelimiterSpaceChar, &fields);
+  if (num_fields < 1 || num_fields > 2) {
+    return ParseFailed(line, "Expected a stream ID and optionally a track ID",
+                       error);
+  }
+  if (num_fields == 1) {
+    if (line.back() == kSdpDelimiterSpaceChar) {
+      return ParseFailed(line, "Missing track ID in msid attribute.", error);
+    }
+    if (!track_id->empty()) {
+      fields.push_back(*track_id);
+    } else {
+      
+      
+      fields.push_back("");
+    }
+  }
+  RTC_DCHECK_EQ(fields.size(), 2);
+
+  
+  if (!track_id->empty() && track_id->compare(fields[1]) != 0) {
     return ParseFailed(
         line, "Two different track IDs in msid attribute in one m= section",
         error);
   }
-  *track_id = new_track_id;
+  *track_id = fields[1];
 
   
-  if (!GetValue(field1, kAttributeMsid, &new_stream_id, error)) {
+  std::string new_stream_id;
+  if (!GetValue(fields[0], kAttributeMsid, &new_stream_id, error)) {
     return false;
   }
   if (new_stream_id.empty()) {
@@ -3330,6 +3343,10 @@ bool ParseContent(absl::string_view message,
     
     
     
+    
+    if (track_id.empty()) {
+      track_id = rtc::CreateRandomString(8);
+    }
     CreateTrackWithNoSsrcs(stream_ids, track_id, send_rids, &tracks);
   }
 
