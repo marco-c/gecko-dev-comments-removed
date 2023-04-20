@@ -220,6 +220,14 @@ class GlobalObjectData {
   UniquePtr<gc::FinalizationRegistryGlobalData> finalizationRegistryData;
 
   
+  
+  
+  
+  
+  
+  uint32_t generationCount = 0;
+
+  
   bool globalThisResolved = false;
 
   void trace(JSTracer* trc, GlobalObject* global);
@@ -1082,6 +1090,15 @@ class GlobalObject : public NativeObject {
 
   static size_t offsetOfGlobalDataSlot() {
     return getFixedSlotOffset(GLOBAL_DATA_SLOT);
+  }
+
+  uint32_t generationCount() const { return data().generationCount; }
+  const void* addressOfGenerationCount() const {
+    return &data().generationCount;
+  }
+  void bumpGenerationCount() {
+    MOZ_RELEASE_ASSERT(data().generationCount < UINT32_MAX);
+    data().generationCount++;
   }
 };
 
