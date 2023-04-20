@@ -91,8 +91,7 @@ TabEngine.prototype = {
       recent_clients: {},
     };
 
-    
-    let tabs = await this.getTabsWithinPayloadSize();
+    let tabs = await TabProvider.getAllTabs(true);
     await this._rustStore.setLocalTabs(
       tabs.map(tab => {
         
@@ -110,8 +109,8 @@ TabEngine.prototype = {
         fxa_device_id: remoteClient.fxaDeviceId,
         
         
+        device_name: clientsEngine.getClientName(id) ?? "",
         device_type: clientsEngine.getClientType(id),
-        device_name: clientsEngine.getClientName(id),
       };
       clientData.recent_clients[id] = client;
     }
@@ -205,20 +204,6 @@ TabEngine.prototype = {
     if (this._modified.count() > 0) {
       this._tracker.modified = true;
     }
-  },
-
-  async getTabsWithinPayloadSize() {
-    let tabs = await TabProvider.getAllTabs(true);
-    const maxPayloadSize = this.service.getMaxRecordPayloadSize();
-    let records = Utils.tryFitItems(tabs, maxPayloadSize);
-
-    if (records.length != tabs.length) {
-      this._log.warn(
-        `Can't fit all tabs in sync payload: have ${tabs.length}, but can only fit ${records.length}.`
-      );
-    }
-
-    return records;
   },
 
   
@@ -331,6 +316,7 @@ TabEngine.prototype = {
 
       Async.checkAppReady();
       await this._uploadOutgoing();
+      telemetryRecord.onEngineApplied(name, 1);
       telemetryRecord.onEngineStop(name, null);
       return true;
     } catch (ex) {

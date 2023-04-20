@@ -192,29 +192,16 @@ add_task(async function test_tab_engine_skips_incoming_local_record() {
 });
 
 
-add_task(async function test_too_many_tabs() {
-  let a_lot_of_tabs = [];
+add_task(async function test_set_local_tabs() {
+  TabProvider.getWindowEnumerator = mockGetWindowEnumerator.bind(this, [
+    "http://example1.com",
+    "http://example2.com",
+  ]);
 
-  for (let i = 0; i < 4000; ++i) {
-    a_lot_of_tabs.push(
-      `http://example${i}.com/some-super-long-url-chain-to-help-with-bytes`
-    );
-  }
-
-  TabProvider.getWindowEnumerator = mockGetWindowEnumerator.bind(
-    this,
-    a_lot_of_tabs
-  );
-
-  let encoder = Utils.utf8Encoder;
+  _("Testing sending tabs to rust works");
   
-  const computeSerializedSize = records =>
-    encoder.encode(JSON.stringify(records)).byteLength;
-
-  const maxPayloadSize = Service.getMaxRecordPayloadSize();
+  let tabs = await TabProvider.getAllTabs();
   
-  Assert.ok(computeSerializedSize(a_lot_of_tabs) > maxPayloadSize);
-  let tabs = await engine.getTabsWithinPayloadSize();
-  
-  Assert.ok(computeSerializedSize(tabs) < maxPayloadSize);
+  await engine._rustStore.setLocalTabs(tabs);
+  Assert.ok("Rust accepted our tab schema");
 });
