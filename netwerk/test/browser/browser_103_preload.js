@@ -117,6 +117,16 @@ add_task(async function test_103_preload_mixed_content() {
 });
 
 
+add_task(async function test_103_preload_localhost_to_localhost() {
+  await test_hint_preload(
+    "test_103_preload_localhost_to_localhost",
+    "http://127.0.0.1:8888",
+    "http://127.0.0.1:8888/browser/netwerk/test/browser/early_hint_pixel.sjs",
+    { hinted: 1, normal: 0 }
+  );
+});
+
+
 add_task(async function test_103_preload_only_file() {
   await test_hint_preload(
     "test_103_preload_only_file",
