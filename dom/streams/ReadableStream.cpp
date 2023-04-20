@@ -144,13 +144,7 @@ void ReadableStream::SetNativeUnderlyingSource(
 void ReadableStream::ReleaseObjects() {
   SetNativeUnderlyingSource(nullptr);
 
-  if (mController->IsByte()) {
-    ReadableByteStreamControllerClearAlgorithms(mController->AsByte());
-    return;
-  }
-
-  MOZ_ASSERT(mController->IsDefault());
-  ReadableStreamDefaultControllerClearAlgorithms(mController->AsDefault());
+  mController->ClearAlgorithms();
 }
 
 

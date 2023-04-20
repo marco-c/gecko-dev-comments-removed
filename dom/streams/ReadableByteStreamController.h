@@ -112,11 +112,6 @@ class ReadableByteStreamController final : public ReadableStreamController,
     mCloseRequested = aCloseRequested;
   }
 
-  UnderlyingSourceAlgorithmsBase* GetAlgorithms() { return mAlgorithms; }
-  void SetAlgorithms(UnderlyingSourceAlgorithmsBase* aAlgorithms) {
-    mAlgorithms = aAlgorithms;
-  }
-
   LinkedList<RefPtr<ReadableByteStreamQueueEntry>>& Queue() { return mQueue; }
   void ClearQueue();
 
@@ -157,9 +152,6 @@ class ReadableByteStreamController final : public ReadableStreamController,
   
   
   RefPtr<ReadableStreamBYOBRequest> mByobRequest;
-
-  
-  RefPtr<UnderlyingSourceAlgorithmsBase> mAlgorithms;
 
   
   LinkedList<RefPtr<PullIntoDescriptor>> mPendingPullIntos;
@@ -371,9 +363,6 @@ MOZ_CAN_RUN_SCRIPT void SetUpReadableByteStreamControllerFromUnderlyingSource(
     JS::Handle<JSObject*> aUnderlyingSource,
     UnderlyingSource& aUnderlyingSourceDict, double aHighWaterMark,
     ErrorResult& aRv);
-
-void ReadableByteStreamControllerClearAlgorithms(
-    ReadableByteStreamController* aController);
 
 }  
 

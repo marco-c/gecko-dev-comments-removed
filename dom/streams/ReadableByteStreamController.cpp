@@ -43,7 +43,7 @@ namespace mozilla::dom {
 NS_IMPL_CYCLE_COLLECTION_CLASS(ReadableByteStreamController)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ReadableByteStreamController,
                                                 ReadableStreamController)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mByobRequest, mAlgorithms, mStream)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mByobRequest, mStream)
   tmp->ClearPendingPullIntos();
   tmp->ClearQueue();
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
@@ -51,7 +51,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ReadableByteStreamController,
                                                   ReadableStreamController)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mByobRequest, mAlgorithms, mStream)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mByobRequest, mStream)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(ReadableByteStreamController,
@@ -228,7 +228,7 @@ void ReadableByteStreamControllerClearAlgorithms(
     ReadableByteStreamController* aController) {
   
   
-  aController->SetAlgorithms(nullptr);
+  aController->ClearAlgorithms();
 }
 
 
@@ -1874,7 +1874,7 @@ void SetUpReadableByteStreamController(
 
   
   
-  aController->SetAlgorithms(aAlgorithms);
+  aController->SetAlgorithms(*aAlgorithms);
 
   
   aController->SetAutoAllocateChunkSize(aAutoAllocateChunkSize);
