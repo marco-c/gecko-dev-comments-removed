@@ -45,6 +45,7 @@
 
 
 
+
 use crate::fft::{discrete_fourier_transform, discrete_fourier_transform_inv_finish, FftError};
 use crate::field::{FieldElement, FieldError};
 use crate::fp::log2;
@@ -109,6 +110,9 @@ pub enum FlpError {
 
 
 pub trait Type: Sized + Eq + Clone + Debug {
+    
+    const ID: u32;
+
     
     type Measurement: Clone + Debug;
 
@@ -797,6 +801,7 @@ mod tests {
     }
 
     impl<F: FieldElement> Type for TestType<F> {
+        const ID: u32 = 0xFFFF0000;
         type Measurement = F::Integer;
         type AggregateResult = F::Integer;
         type Field = F;
@@ -931,6 +936,7 @@ mod tests {
     }
 
     impl<F: FieldElement> Type for Issue254Type<F> {
+        const ID: u32 = 0xFFFF0000;
         type Measurement = F::Integer;
         type AggregateResult = F::Integer;
         type Field = F;
