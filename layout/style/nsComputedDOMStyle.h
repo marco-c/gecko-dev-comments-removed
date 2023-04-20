@@ -271,6 +271,9 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetPerspectiveOrigin();
 
   
+  already_AddRefed<CSSValue> DoGetColumnRuleWidth();
+
+  
   
   already_AddRefed<CSSValue> DummyGetter();
 
