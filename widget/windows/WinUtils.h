@@ -47,7 +47,9 @@
 
 
 
-#if (WDK_NTDDI_VERSION >= 0x0A00000C) && (WINVER < 0x0602)
+
+#if (WDK_NTDDI_VERSION >= 0x0A00000C) && (WINVER < 0x0602) && \
+    (!defined(__MINGW32__))
 
 enum tagAR_STATE {
   AR_ENABLED = 0x0,
