@@ -97,9 +97,6 @@ enum class ContentRelevancyReason {
   Visible,
 
   
-  DescendantOfTopLayerElement,
-
-  
   FocusInSubtree,
 
   
