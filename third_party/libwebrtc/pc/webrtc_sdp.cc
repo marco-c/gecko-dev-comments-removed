@@ -3282,7 +3282,6 @@ bool ParseContent(absl::string_view message,
 
   
   
-  
   std::vector<RidDescription> send_rids;
   std::vector<RidDescription> receive_rids;
   if (!simulcast.empty()) {
@@ -3309,7 +3308,11 @@ bool ParseContent(absl::string_view message,
 
     media_desc->set_simulcast_description(simulcast);
   } else {
-    send_rids = rids;
+    
+    
+    
+    
+    RTC_LOG(LS_VERBOSE) << "Ignoring send_rids without simulcast";
   }
 
   media_desc->set_receive_rids(receive_rids);
