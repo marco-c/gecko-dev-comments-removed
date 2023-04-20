@@ -121,7 +121,6 @@ function setResultGroups(groups) {
         
         {
           group: UrlbarUtils.RESULT_GROUP.OMNIBOX,
-          maxResultCount: UrlbarUtils.MAX_OMNIBOX_RESULT_COUNT - 1,
         },
         ...groups,
       ],
