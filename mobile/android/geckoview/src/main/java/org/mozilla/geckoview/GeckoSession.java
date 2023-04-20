@@ -3590,16 +3590,6 @@ public class GeckoSession {
       public final @NonNull String text;
 
       
-
-
-
-
-
-      @Deprecated
-      @DeprecationSchedule(id = "selection-fission", version = 112)
-      public final @Nullable RectF clientRect;
-
-      
       public final @Nullable RectF screenRect;
 
       
@@ -3618,7 +3608,6 @@ public class GeckoSession {
                 | (bundle.getBoolean("editable") ? SelectionActionDelegate.FLAG_IS_EDITABLE : 0)
                 | (bundle.getBoolean("password") ? SelectionActionDelegate.FLAG_IS_PASSWORD : 0);
         text = bundle.getString("selection");
-        clientRect = bundle.getRectF("clientRect");
         screenRect = bundle.getRectF("screenRect");
         availableActions = actions;
         mActionId = bundle.getString("actionId");
@@ -3629,7 +3618,6 @@ public class GeckoSession {
       protected Selection() {
         flags = 0;
         text = "";
-        clientRect = null;
         screenRect = null;
         availableActions = new HashSet<>();
         mActionId = null;
