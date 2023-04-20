@@ -9,8 +9,11 @@ package org.mozilla.geckoview;
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.Collection;
 import org.mozilla.gecko.util.GeckoBundle;
@@ -112,7 +115,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-    public @NonNull Builder userAgentMode(final int mode) {
+    public @NonNull Builder userAgentMode(@UserAgentMode final int mode) {
       mSettings.setUserAgentMode(mode);
       return this;
     }
@@ -135,7 +138,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-    public @NonNull Builder displayMode(final int mode) {
+    public @NonNull Builder displayMode(@DisplayMode final int mode) {
       mSettings.setDisplayMode(mode);
       return this;
     }
@@ -181,7 +184,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-    public @NonNull Builder viewportMode(final int mode) {
+    public @NonNull Builder viewportMode(@ViewportMode final int mode) {
       mSettings.setViewportMode(mode);
       return this;
     }
@@ -191,15 +194,46 @@ public final class GeckoSessionSettings implements Parcelable {
   private static final boolean DEBUG = false;
 
   
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    DISPLAY_MODE_BROWSER,
+    DISPLAY_MODE_MINIMAL_UI,
+    DISPLAY_MODE_STANDALONE,
+    DISPLAY_MODE_FULLSCREEN
+  })
+  public @interface DisplayMode {}
+
+  
+  
   public static final int DISPLAY_MODE_BROWSER = 0;
+  
   public static final int DISPLAY_MODE_MINIMAL_UI = 1;
+  
   public static final int DISPLAY_MODE_STANDALONE = 2;
+  
   public static final int DISPLAY_MODE_FULLSCREEN = 3;
 
   
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    USER_AGENT_MODE_MOBILE,
+    USER_AGENT_MODE_DESKTOP,
+    USER_AGENT_MODE_VR,
+  })
+  public @interface UserAgentMode {}
+
+  
+  
   public static final int USER_AGENT_MODE_MOBILE = 0;
+  
   public static final int USER_AGENT_MODE_DESKTOP = 1;
+  
   public static final int USER_AGENT_MODE_VR = 2;
+
+  
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({VIEWPORT_MODE_MOBILE, VIEWPORT_MODE_DESKTOP})
+  public @interface ViewportMode {}
 
   
   
@@ -481,7 +515,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-  public void setUserAgentMode(final int value) {
+  public void setUserAgentMode(@UserAgentMode final int value) {
     setInt(USER_AGENT_MODE, value);
   }
 
@@ -491,7 +525,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-  public void setDisplayMode(final int value) {
+  public void setDisplayMode(@DisplayMode final int value) {
     setInt(DISPLAY_MODE, value);
   }
 
@@ -501,7 +535,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-  public void setViewportMode(final int value) {
+  public void setViewportMode(@ViewportMode final int value) {
     setInt(VIEWPORT_MODE, value);
   }
 
@@ -530,7 +564,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-  public int getUserAgentMode() {
+  public @UserAgentMode int getUserAgentMode() {
     return getInt(USER_AGENT_MODE);
   }
 
@@ -540,7 +574,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-  public int getDisplayMode() {
+  public @DisplayMode int getDisplayMode() {
     return getInt(DISPLAY_MODE);
   }
 
@@ -550,7 +584,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-  public int getViewportMode() {
+  public @ViewportMode int getViewportMode() {
     return getInt(VIEWPORT_MODE);
   }
 
