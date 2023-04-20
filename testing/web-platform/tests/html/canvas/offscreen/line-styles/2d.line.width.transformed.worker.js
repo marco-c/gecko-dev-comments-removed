@@ -18,6 +18,7 @@ var ctx = canvas.getContext('2d');
 
 ctx.fillStyle = '#0f0';
 ctx.fillRect(0, 0, 100, 50);
+
 ctx.lineWidth = 4;
 
 ctx.fillStyle = '#f00';
@@ -31,6 +32,7 @@ ctx.save();
  ctx.stroke();
 ctx.restore();
 
+
 ctx.fillStyle = '#0f0';
 ctx.strokeStyle = '#f00';
 ctx.save();
@@ -41,6 +43,7 @@ ctx.save();
  ctx.stroke();
 ctx.restore();
 ctx.fillRect(65, 15, 20, 20);
+
 _assertPixel(canvas, 14,25, 0,255,0,255);
 _assertPixel(canvas, 15,25, 0,255,0,255);
 _assertPixel(canvas, 16,25, 0,255,0,255);
@@ -48,6 +51,7 @@ _assertPixel(canvas, 25,25, 0,255,0,255);
 _assertPixel(canvas, 34,25, 0,255,0,255);
 _assertPixel(canvas, 35,25, 0,255,0,255);
 _assertPixel(canvas, 36,25, 0,255,0,255);
+
 _assertPixel(canvas, 64,25, 0,255,0,255);
 _assertPixel(canvas, 65,25, 0,255,0,255);
 _assertPixel(canvas, 66,25, 0,255,0,255);
