@@ -148,6 +148,28 @@ class SharedLibraryInfo {
     std::sort(mEntries.begin(), mEntries.end(), CompareAddresses);
   }
 
+  
+  
+  
+  
+  
+  void DeduplicateEntries() {
+    static auto cmpSort = [](const SharedLibrary& a, const SharedLibrary& b) {
+      return std::tie(a.GetModuleName(), a.GetBreakpadId()) <
+             std::tie(b.GetModuleName(), b.GetBreakpadId());
+    };
+    static auto cmpEqual = [](const SharedLibrary& a, const SharedLibrary& b) {
+      return std::tie(a.GetModuleName(), a.GetBreakpadId()) ==
+             std::tie(b.GetModuleName(), b.GetBreakpadId());
+    };
+    
+    
+    std::sort(mEntries.begin(), mEntries.end(), cmpSort);
+    
+    mEntries.erase(std::unique(mEntries.begin(), mEntries.end(), cmpEqual),
+                   mEntries.end());
+  }
+
   void Clear() { mEntries.clear(); }
 
   size_t SizeOf() const {
