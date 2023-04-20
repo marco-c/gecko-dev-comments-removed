@@ -50,8 +50,6 @@ function TargetMixin(parentClass) {
       
       this.commands = null;
 
-      this._forceChrome = false;
-
       this.destroy = this.destroy.bind(this);
 
       this.threadFront = null;
@@ -237,11 +235,6 @@ function TargetMixin(parentClass) {
     }
 
     
-    get root() {
-      return this.client.mainRoot.rootForm;
-    }
-
-    
     
     async getFront(typeName) {
       if (this.isDestroyed()) {
@@ -288,16 +281,7 @@ function TargetMixin(parentClass) {
     
     
     get chrome() {
-      return (
-        this.isAddon ||
-        this.isContentProcess ||
-        this.isParentProcess ||
-        this._forceChrome
-      );
-    }
-
-    forceChrome() {
-      this._forceChrome = true;
+      return this.isAddon || this.isContentProcess || this.isParentProcess;
     }
 
     
@@ -323,21 +307,13 @@ function TargetMixin(parentClass) {
     }
 
     get isAddon() {
-      return this.isLegacyAddon || this.isWebExtension;
+      return this.isWebExtension;
     }
 
     get isWorkerTarget() {
       
       return (
         this.typeName === "workerTarget" || this.typeName === "workerDescriptor"
-      );
-    }
-
-    get isLegacyAddon() {
-      return !!(
-        this.targetForm &&
-        this.targetForm.actor &&
-        this.targetForm.actor.match(/conn\d+\.addon(Target)?\d+/)
       );
     }
 
@@ -370,10 +346,6 @@ function TargetMixin(parentClass) {
         this.targetForm.actor &&
         this.targetForm.actor.match(/conn\d+\.parentProcessTarget\d+/)
       );
-    }
-
-    get isMultiProcess() {
-      return !this.window;
     }
 
     getExtensionPathName(url) {
