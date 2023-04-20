@@ -31,7 +31,7 @@
 namespace cricket {
 
 
-class FakeNetworkInterface : public MediaChannel::NetworkInterface {
+class FakeNetworkInterface : public MediaChannelNetworkInterface {
  public:
   FakeNetworkInterface()
       : thread_(rtc::Thread::Current()),

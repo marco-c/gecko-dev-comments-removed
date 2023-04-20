@@ -71,6 +71,10 @@ class AudioSource;
 class VideoCapturer;
 struct RtpHeader;
 struct VideoFormat;
+class VideoMediaSendChannelInterface;
+class VideoMediaReceiveChannelInterface;
+class VoiceMediaSendChannelInterface;
+class VoiceMediaReceiveChannelInterface;
 
 const int kScreencastDefaultFps = 5;
 
@@ -159,6 +163,23 @@ struct VideoOptions {
   }
 };
 
+class MediaChannelNetworkInterface {
+ public:
+  enum SocketType { ST_RTP, ST_RTCP };
+  virtual bool SendPacket(rtc::CopyOnWriteBuffer* packet,
+                          const rtc::PacketOptions& options) = 0;
+  virtual bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
+                        const rtc::PacketOptions& options) = 0;
+  virtual int SetOption(SocketType type,
+                        rtc::Socket::Option opt,
+                        int option) = 0;
+  virtual ~MediaChannelNetworkInterface() {}
+};
+
+
+
+
+template <class T>
 class MediaBaseChannelInterface {
  public:
   virtual ~MediaBaseChannelInterface() = default;
@@ -180,13 +201,29 @@ class MediaBaseChannelInterface {
   virtual void OnNetworkRouteChanged(
       absl::string_view transport_name,
       const rtc::NetworkRoute& network_route) = 0;
+
+  
+  
+  
+  
+  virtual void SetExtmapAllowMixed(bool extmap_allow_mixed) = 0;
+  virtual bool ExtmapAllowMixed() const = 0;
 };
 
-class MediaSendChannelInterface : virtual public MediaBaseChannelInterface {
+class MediaSendChannelInterface
+    : public MediaBaseChannelInterface<MediaSendChannelInterface> {
  public:
   virtual ~MediaSendChannelInterface() = default;
 
-  virtual cricket::MediaType media_type() const = 0;
+  virtual VideoMediaSendChannelInterface* AsVideoSendChannel() {
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+  virtual VoiceMediaSendChannelInterface* AsVoiceSendChannel() {
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+
   
   
   virtual bool AddSendStream(const StreamParams& sp) = 0;
@@ -221,10 +258,20 @@ class MediaSendChannelInterface : virtual public MediaBaseChannelInterface {
   virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
 };
 
-class MediaReceiveChannelInterface : virtual public MediaBaseChannelInterface {
+class MediaReceiveChannelInterface
+    : public MediaBaseChannelInterface<MediaReceiveChannelInterface>,
+      public Delayable {
  public:
   virtual ~MediaReceiveChannelInterface() = default;
 
+  virtual VideoMediaReceiveChannelInterface* AsVideoReceiveChannel() {
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+  virtual VoiceMediaReceiveChannelInterface* AsVoiceReceiveChannel() {
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
   
   
   
@@ -261,113 +308,6 @@ class MediaReceiveChannelInterface : virtual public MediaBaseChannelInterface {
       uint32_t ssrc,
       rtc::scoped_refptr<webrtc::FrameTransformerInterface>
           frame_transformer) = 0;
-};
-
-class MediaChannel : public MediaSendChannelInterface,
-                     public MediaReceiveChannelInterface {
- public:
-  class NetworkInterface {
-   public:
-    enum SocketType { ST_RTP, ST_RTCP };
-    virtual bool SendPacket(rtc::CopyOnWriteBuffer* packet,
-                            const rtc::PacketOptions& options) = 0;
-    virtual bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
-                          const rtc::PacketOptions& options) = 0;
-    virtual int SetOption(SocketType type,
-                          rtc::Socket::Option opt,
-                          int option) = 0;
-    virtual ~NetworkInterface() {}
-  };
-
-  explicit MediaChannel(webrtc::TaskQueueBase* network_thread,
-                        bool enable_dscp = false);
-  virtual ~MediaChannel();
-
-  
-  virtual void SetInterface(NetworkInterface* iface);
-  
-  virtual int GetRtpSendTimeExtnId() const;
-  
-  virtual void SetVideoCodecSwitchingEnabled(bool enabled);
-
-  
-  bool SendPacket(rtc::CopyOnWriteBuffer* packet,
-                  const rtc::PacketOptions& options);
-
-  bool SendRtcp(rtc::CopyOnWriteBuffer* packet,
-                const rtc::PacketOptions& options);
-
-  int SetOption(NetworkInterface::SocketType type,
-                rtc::Socket::Option opt,
-                int option);
-
-  
-  
-  
-  
-  void SetExtmapAllowMixed(bool extmap_allow_mixed);
-  bool ExtmapAllowMixed() const;
-
-  
-  
-  bool HasNetworkInterface() const;
-
-  void SetFrameEncryptor(uint32_t ssrc,
-                         rtc::scoped_refptr<webrtc::FrameEncryptorInterface>
-                             frame_encryptor) override;
-  void SetFrameDecryptor(uint32_t ssrc,
-                         rtc::scoped_refptr<webrtc::FrameDecryptorInterface>
-                             frame_decryptor) override;
-
-  void SetEncoderToPacketizerFrameTransformer(
-      uint32_t ssrc,
-      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
-      override;
-  void SetDepacketizerToDecoderFrameTransformer(
-      uint32_t ssrc,
-      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
-      override;
-
- protected:
-  int SetOptionLocked(NetworkInterface::SocketType type,
-                      rtc::Socket::Option opt,
-                      int option) RTC_RUN_ON(network_thread_);
-
-  bool DscpEnabled() const;
-
-  
-  
-  rtc::DiffServCodePoint PreferredDscp() const;
-  void SetPreferredDscp(rtc::DiffServCodePoint new_dscp);
-
-  rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> network_safety();
-
-  
-  
-  void SendRtp(const uint8_t* data,
-               size_t len,
-               const webrtc::PacketOptions& options);
-
-  void SendRtcp(const uint8_t* data, size_t len);
-
- private:
-  
-  
-  void UpdateDscp() RTC_RUN_ON(network_thread_);
-
-  bool DoSendPacket(rtc::CopyOnWriteBuffer* packet,
-                    bool rtcp,
-                    const rtc::PacketOptions& options);
-
-  const bool enable_dscp_;
-  const rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> network_safety_
-      RTC_PT_GUARDED_BY(network_thread_);
-  webrtc::TaskQueueBase* const network_thread_;
-  NetworkInterface* network_interface_ RTC_GUARDED_BY(network_thread_) =
-      nullptr;
-  rtc::DiffServCodePoint preferred_dscp_ RTC_GUARDED_BY(network_thread_) =
-      rtc::DSCP_DEFAULT;
-  bool extmap_allow_mixed_ = false;
 };
 
 
@@ -454,6 +394,7 @@ struct MediaSenderInfo {
 struct MediaReceiverInfo {
   MediaReceiverInfo();
   ~MediaReceiverInfo();
+
   void add_ssrc(const SsrcReceiverInfo& stat) { local_stats.push_back(stat); }
   
   
@@ -846,24 +787,9 @@ struct AudioSendParameters : RtpSendParameters<AudioCodec> {
 
 struct AudioRecvParameters : RtpParameters<AudioCodec> {};
 
-class VoiceMediaChannel : public MediaChannel, public Delayable {
+class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
  public:
-  VoiceMediaChannel(webrtc::TaskQueueBase* network_thread,
-                    bool enable_dscp = false)
-      : MediaChannel(network_thread, enable_dscp) {}
-  ~VoiceMediaChannel() override {}
-
-  cricket::MediaType media_type() const override;
   virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
-  virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
-  
-  virtual webrtc::RtpParameters GetRtpReceiveParameters(
-      uint32_t ssrc) const = 0;
-  
-  
-  virtual webrtc::RtpParameters GetDefaultRtpReceiveParameters() const = 0;
-  
-  virtual void SetPlayout(bool playout) = 0;
   
   virtual void SetSend(bool send) = 0;
   
@@ -872,27 +798,35 @@ class VoiceMediaChannel : public MediaChannel, public Delayable {
                             const AudioOptions* options,
                             AudioSource* source) = 0;
   
-  virtual bool SetOutputVolume(uint32_t ssrc, double volume) = 0;
-  
-  virtual bool SetDefaultOutputVolume(double volume) = 0;
-  
   virtual bool CanInsertDtmf() = 0;
   
   
   
   
   virtual bool InsertDtmf(uint32_t ssrc, int event, int duration) = 0;
-  
-  virtual bool GetStats(VoiceMediaInfo* info,
-                        bool get_and_clear_legacy_stats) = 0;
+};
 
+class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
+ public:
+  virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
+  
+  virtual webrtc::RtpParameters GetRtpReceiveParameters(
+      uint32_t ssrc) const = 0;
+  virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
+  
+  
+  virtual webrtc::RtpParameters GetDefaultRtpReceiveParameters() const = 0;
+  
+  virtual void SetPlayout(bool playout) = 0;
+  
+  virtual bool SetOutputVolume(uint32_t ssrc, double volume) = 0;
+  
+  virtual bool SetDefaultOutputVolume(double volume) = 0;
   virtual void SetRawAudioSink(
       uint32_t ssrc,
       std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
   virtual void SetDefaultRawAudioSink(
       std::unique_ptr<webrtc::AudioSinkInterface> sink) = 0;
-
-  virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
 };
 
 
@@ -916,22 +850,9 @@ struct VideoSendParameters : RtpSendParameters<VideoCodec> {
 
 struct VideoRecvParameters : RtpParameters<VideoCodec> {};
 
-class VideoMediaChannel : public MediaChannel, public Delayable {
+class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
  public:
-  explicit VideoMediaChannel(webrtc::TaskQueueBase* network_thread,
-                             bool enable_dscp = false)
-      : MediaChannel(network_thread, enable_dscp) {}
-  ~VideoMediaChannel() override {}
-
-  cricket::MediaType media_type() const override;
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
-  virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
-  
-  virtual webrtc::RtpParameters GetRtpReceiveParameters(
-      uint32_t ssrc) const = 0;
-  
-  
-  virtual webrtc::RtpParameters GetDefaultRtpReceiveParameters() const = 0;
   
   virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
   
@@ -943,6 +864,22 @@ class VideoMediaChannel : public MediaChannel, public Delayable {
       const VideoOptions* options,
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source) = 0;
   
+  virtual void GenerateSendKeyFrame(uint32_t ssrc,
+                                    const std::vector<std::string>& rids) = 0;
+  
+  virtual void SetVideoCodecSwitchingEnabled(bool enabled) = 0;
+};
+
+class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
+ public:
+  virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
+  
+  virtual webrtc::RtpParameters GetRtpReceiveParameters(
+      uint32_t ssrc) const = 0;
+  
+  
+  virtual webrtc::RtpParameters GetDefaultRtpReceiveParameters() const = 0;
+  
   virtual bool SetSink(uint32_t ssrc,
                        rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) = 0;
   
@@ -950,29 +887,15 @@ class VideoMediaChannel : public MediaChannel, public Delayable {
       rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) = 0;
   
   
-  
-  
-  
-  
-  
-  
-  virtual void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) = 0;
-  
-  virtual bool GetStats(VideoMediaInfo* info) = 0;
+  virtual void RequestRecvKeyFrame(uint32_t ssrc) = 0;
+
+  virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
   
   virtual void SetRecordableEncodedFrameCallback(
       uint32_t ssrc,
       std::function<void(const webrtc::RecordableEncodedFrame&)> callback) = 0;
   
   virtual void ClearRecordableEncodedFrameCallback(uint32_t ssrc) = 0;
-  
-  
-  virtual void RequestRecvKeyFrame(uint32_t ssrc) = 0;
-  
-  virtual void GenerateSendKeyFrame(uint32_t ssrc,
-                                    const std::vector<std::string>& rids) = 0;
-
-  virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
 };
 
 

@@ -1887,12 +1887,12 @@ void WebRtcVideoChannel::OnNetworkRouteChanged(
       }));
 }
 
-void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
+void WebRtcVideoChannel::SetInterface(MediaChannelNetworkInterface* iface) {
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
   MediaChannel::SetInterface(iface);
   
-  MediaChannel::SetOption(NetworkInterface::ST_RTP, rtc::Socket::OPT_RCVBUF,
-                          kVideoRtpRecvBufferSize);
+  MediaChannel::SetOption(MediaChannelNetworkInterface::ST_RTP,
+                          rtc::Socket::OPT_RCVBUF, kVideoRtpRecvBufferSize);
 
   
   
@@ -1909,8 +1909,8 @@ void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
     send_buffer_size = kVideoRtpSendBufferSize;
   }
 
-  MediaChannel::SetOption(NetworkInterface::ST_RTP, rtc::Socket::OPT_SNDBUF,
-                          send_buffer_size);
+  MediaChannel::SetOption(MediaChannelNetworkInterface::ST_RTP,
+                          rtc::Socket::OPT_SNDBUF, send_buffer_size);
 }
 
 void WebRtcVideoChannel::SetFrameDecryptor(
