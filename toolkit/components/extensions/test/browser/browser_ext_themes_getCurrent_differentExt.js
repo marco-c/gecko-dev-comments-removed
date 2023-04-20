@@ -92,6 +92,8 @@ add_task(async function test_getcurrent_privateBrowsing() {
         default_panel: "sidebar.html",
       },
     },
+    
+    startupReason: "APP_STARTUP",
     files: {
       "sidebar.html": `<!DOCTYPE html>
         <html>
