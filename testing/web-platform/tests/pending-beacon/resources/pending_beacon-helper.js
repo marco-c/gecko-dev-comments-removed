@@ -148,6 +148,12 @@ async function expectBeacon(uuid, options) {
         return await res.json();
       },
       (res) => {
+        if (expectedCount == 0) {
+          
+          
+          
+          return false;
+        }
         return res.data.length == expectedCount;
       });
   if (!options || !options.data) {
