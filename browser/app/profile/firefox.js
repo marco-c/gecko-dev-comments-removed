@@ -1284,6 +1284,9 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   
   
   pref("security.sandbox.content.level", 6);
+
+  
+  pref("security.sandbox.logging.enabled", false);
 #endif
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
@@ -1310,6 +1313,9 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   
   
   pref("security.sandbox.content.mac.disconnect-windowserver", true);
+
+  
+  pref("security.sandbox.logging.enabled", false);
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
@@ -1341,18 +1347,11 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   pref("security.sandbox.content.level", 1);
 #endif
 
-#if defined(MOZ_SANDBOX)
+#if defined(MOZ_CONTENT_TEMP_DIR)
   
   
   
   pref("security.sandbox.content.tempDirSuffix", "");
-  pref("security.sandbox.plugin.tempDirSuffix", "");
-
-  
-  
-  #if defined(XP_WIN) || defined(XP_MACOSX)
-    pref("security.sandbox.logging.enabled", false);
-  #endif
 #endif
 
 
