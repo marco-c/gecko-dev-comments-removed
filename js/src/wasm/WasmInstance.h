@@ -41,6 +41,10 @@ class WasmBreakpointSite;
 class WasmStructObject;
 class WasmArrayObject;
 
+namespace gc {
+class StoreBuffer;
+}  
+
 namespace wasm {
 
 using mozilla::Atomic;
@@ -146,6 +150,9 @@ class alignas(16) Instance {
 
   
   void* preBarrierCode_;
+
+  
+  gc::StoreBuffer* storeBuffer_;
 
   
   WeakHeapPtr<WasmInstanceObject*> object_;
