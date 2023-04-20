@@ -1,0 +1,18 @@
+
+
+
+
+
+
+"use strict";
+
+module.exports = [
+  "InstallTrigger",
+  "farthestViewportElement",
+  "mozImageSmoothingEnabled",
+  "mozPreservesPitch",
+  "mozPressure",
+  "nearestViewportElement",
+  "onmozfullscreenchange",
+  "onmozfullscreenerror",
+];
