@@ -193,12 +193,17 @@ const gTestSyntaxExamples = {
         description: "one fraction",
         input: new CSSUnitValue(1, 'fr')
       },
+      
+      
+    ],
+  },
+  '<negative-flex>': {
+    description: 'a flexible length',
+    examples: [
       {
         description: "negative fraction",
         input: new CSSUnitValue(-3.14, 'fr')
       },
-      
-      
     ],
   },
   '<number>': {
