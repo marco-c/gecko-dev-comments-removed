@@ -7,15 +7,17 @@
 
 
 
-const { SessionWriter } = ChromeUtils.import(
-  "resource:///modules/sessionstore/SessionWriter.jsm"
+const { SessionWriter } = ChromeUtils.importESModule(
+  "resource:///modules/sessionstore/SessionWriter.sys.mjs"
 );
 
 
 do_get_profile();
 const {
   SessionFile: { Paths },
-} = ChromeUtils.import("resource:///modules/sessionstore/SessionFile.jsm");
+} = ChromeUtils.importESModule(
+  "resource:///modules/sessionstore/SessionFile.sys.mjs"
+);
 
 const MAX_ENTRIES = 9;
 const URL = "http://example.com/#";

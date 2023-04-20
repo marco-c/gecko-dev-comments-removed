@@ -121,10 +121,6 @@ function waitForNewCookie() {
 add_task(async function test() {
   const USER_CONTEXTS = ["default", "personal", "work"];
 
-  const { TabStateFlusher } = ChromeUtils.import(
-    "resource:///modules/sessionstore/TabStateFlusher.jsm"
-  );
-
   
   await SpecialPowers.pushPrefEnv({
     set: [["privacy.userContext.enabled", true]],

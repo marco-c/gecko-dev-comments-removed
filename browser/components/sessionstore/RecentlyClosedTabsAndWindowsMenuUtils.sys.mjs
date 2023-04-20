@@ -1,44 +1,33 @@
-
-
-
-
-var EXPORTED_SYMBOLS = ["RecentlyClosedTabsAndWindowsMenuUtils"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "PluralForm",
-  "resource://gre/modules/PluralForm.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "SessionStore",
-  "resource:///modules/sessionstore/SessionStore.jsm"
-);
-
 ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.sys.mjs",
+  PluralForm: "resource://gre/modules/PluralForm.sys.mjs",
+  SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
 });
 
 var navigatorBundle = Services.strings.createBundle(
   "chrome://browser/locale/browser.properties"
 );
 
-var RecentlyClosedTabsAndWindowsMenuUtils = {
-  
-
-
-
-
-
-
-
-
-
-
-
-
+export var RecentlyClosedTabsAndWindowsMenuUtils = {
+  /**
+   * Builds up a document fragment of UI items for the recently closed tabs.
+   * @param   aWindow
+   *          The window that the tabs were closed in.
+   * @param   aTagName
+   *          The tag name that will be used when creating the UI items.
+   * @param   aPrefixRestoreAll (defaults to false)
+   *          Whether the 'restore all tabs' item is suffixed or prefixed to the list.
+   *          If suffixed (the default) a separator will be inserted before it.
+   * @param   aRestoreAllLabel (defaults to "appmenu-reopen-all-tabs")
+   *          Which localizable string to use for the 'restore all tabs' item.
+   * @returns A document fragment with UI items for each recently closed tab.
+   */
   getTabsFragment(
     aWindow,
     aTagName,
@@ -74,19 +63,19 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
     return fragment;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Builds up a document fragment of UI items for the recently closed windows.
+   * @param   aWindow
+   *          A window that can be used to create the elements and document fragment.
+   * @param   aTagName
+   *          The tag name that will be used when creating the UI items.
+   * @param   aPrefixRestoreAll (defaults to false)
+   *          Whether the 'restore all windows' item is suffixed or prefixed to the list.
+   *          If suffixed (the default) a separator will be inserted before it.
+   * @param   aRestoreAllLabel (defaults to "appmenu-reopen-all-windows")
+   *          Which localizable string to use for the 'restore all windows' item.
+   * @returns A document fragment with UI items for each recently closed window.
+   */
   getWindowsFragment(
     aWindow,
     aTagName,
@@ -132,12 +121,12 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
     return fragment;
   },
 
-  
-
-
-
-
-
+  /**
+   * Re-open a closed tab and put it to the end of the tab strip.
+   * Used for a middle click.
+   * @param aEvent
+   *        The event when the user clicks the menu item
+   */
   _undoCloseMiddleClick(aEvent) {
     if (aEvent.button != 1) {
       return;
@@ -160,23 +149,23 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Create a UI entry for a recently closed tab or window.
+ * @param aTagName
+ *        the tag name that will be used when creating the UI entry
+ * @param aIsWindowsFragment
+ *        whether or not this entry will represent a closed window
+ * @param aIndex
+ *        the index of the closed tab
+ * @param aClosedTab
+ *        the closed tab
+ * @param aDocument
+ *        a document that can be used to create the entry
+ * @param aMenuLabel
+ *        the label the created entry will have
+ * @param aFragment
+ *        the fragment the created entry will be in
+ */
 function createEntry(
   aTagName,
   aIsWindowsFragment,
@@ -209,8 +198,8 @@ function createEntry(
     "undoClose" + (aIsWindowsFragment ? "Window" : "Tab") + "(" + aIndex + ");"
   );
 
-  
-  
+  // Set the targetURI attribute so it will be shown in tooltip.
+  // SessionStore uses one-based indexes, so we need to normalize them.
   let tabData;
   tabData = aIsWindowsFragment ? aClosedTab : aClosedTab.state;
   let activeIndex = (tabData.index || tabData.entries.length) - 1;
@@ -218,9 +207,9 @@ function createEntry(
     element.setAttribute("targetURI", tabData.entries[activeIndex].url);
   }
 
-  
-  
-  
+  // Windows don't open in new tabs and menuitems dispatch command events on
+  // middle click, so we only need to manually handle middle clicks for
+  // toolbarbuttons.
   if (!aIsWindowsFragment && aTagName != "menuitem") {
     element.addEventListener(
       "click",
@@ -238,24 +227,24 @@ function createEntry(
   aFragment.appendChild(element);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Create an entry to restore all closed windows or tabs.
+ * @param aDocument
+ *        a document that can be used to create the entry
+ * @param aFragment
+ *        the fragment the created entry will be in
+ * @param aPrefixRestoreAll
+ *        whether the 'restore all windows' item is suffixed or prefixed to the list
+ *        If suffixed a separator will be inserted before it.
+ * @param aIsWindowsFragment
+ *        whether or not this entry will represent a closed window
+ * @param aRestoreAllLabel
+ *        which localizable string to use for the entry
+ * @param aEntryCount
+ *        the number of elements to be restored by this entry
+ * @param aTagName
+ *        the tag name that will be used when creating the UI entry
+ */
 function createRestoreAllEntry(
   aDocument,
   aFragment,
@@ -268,8 +257,8 @@ function createRestoreAllEntry(
   let restoreAllElements = aDocument.createXULElement(aTagName);
   restoreAllElements.classList.add("restoreallitem");
 
-  
-  
+  // We cannot use aDocument.l10n.setAttributes because the menubar label is not
+  // updated in time and displays a blank string (see Bug 1691553).
   restoreAllElements.setAttribute(
     "label",
     RecentlyClosedTabsAndWindowsMenuUtils.strings.formatValueSync(

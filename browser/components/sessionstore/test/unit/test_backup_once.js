@@ -3,14 +3,14 @@
 
 "use strict";
 
-const { SessionWriter } = ChromeUtils.import(
-  "resource:///modules/sessionstore/SessionWriter.jsm"
+const { SessionWriter } = ChromeUtils.importESModule(
+  "resource:///modules/sessionstore/SessionWriter.sys.mjs"
 );
 
 
 const profd = do_get_profile();
-const { SessionFile } = ChromeUtils.import(
-  "resource:///modules/sessionstore/SessionFile.jsm"
+const { SessionFile } = ChromeUtils.importESModule(
+  "resource:///modules/sessionstore/SessionFile.sys.mjs"
 );
 const Paths = SessionFile.Paths;
 

@@ -1,10 +1,6 @@
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["SessionCookies"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const lazy = {};
 
@@ -14,10 +10,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const MAX_EXPIRY = Number.MAX_SAFE_INTEGER;
 
-
-
-
-var SessionCookies = Object.freeze({
+/**
+ * The external API implemented by the SessionCookies module.
+ */
+export var SessionCookies = Object.freeze({
   collect() {
     return SessionCookiesInternal.collect();
   },
@@ -27,26 +23,26 @@ var SessionCookies = Object.freeze({
   },
 });
 
-
-
-
+/**
+ * The internal API.
+ */
 var SessionCookiesInternal = {
-  
-
-
+  /**
+   * Stores whether we're initialized, yet.
+   */
   _initialized: false,
 
-  
-
-
+  /**
+   * Retrieve an array of all stored session cookies.
+   */
   collect() {
     this._ensureInitialized();
     return CookieStore.toArray();
   },
 
-  
-
-
+  /**
+   * Restores a given list of session cookies.
+   */
   restore(cookies) {
     for (let cookie of cookies) {
       let expiry = "expiry" in cookie ? cookie.expiry : MAX_EXPIRY;
@@ -74,7 +70,7 @@ var SessionCookiesInternal = {
             cookie.value,
             !!cookie.secure,
             !!cookie.httponly,
-             true,
+            /* isSession = */ true,
             expiry,
             cookie.originAttributes || {},
             cookie.sameSite || Ci.nsICookie.SAMESITE_NONE,
@@ -91,10 +87,10 @@ var SessionCookiesInternal = {
     }
   },
 
-  
-
-
-
+  /**
+   * Handles observers notifications that are sent whenever cookies are added,
+   * changed, or removed. Ensures that the storage is updated accordingly.
+   */
   observe(subject, topic, data) {
     switch (data) {
       case "added":
@@ -117,10 +113,10 @@ var SessionCookiesInternal = {
     }
   },
 
-  
-
-
-
+  /**
+   * If called for the first time in a session, iterates all cookies in the
+   * cookies service and puts them into the store if they're session cookies.
+   */
   _ensureInitialized() {
     if (this._initialized) {
       return;
@@ -129,31 +125,31 @@ var SessionCookiesInternal = {
     this._initialized = true;
     Services.obs.addObserver(this, "session-cookie-changed");
 
-    
+    // Listen for privacy level changes to reload cookies when needed.
     Services.prefs.addObserver("browser.sessionstore.privacy_level", () => {
       this._reloadCookies();
     });
   },
 
-  
-
-
+  /**
+   * Adds a given cookie to the store.
+   */
   _addCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie);
 
-    
+    // Store only session cookies, obey the privacy level.
     if (cookie.isSession && lazy.PrivacyLevel.canSave(cookie.isSecure)) {
       CookieStore.add(cookie);
     }
   },
 
-  
-
-
+  /**
+   * Updates a given cookie.
+   */
   _updateCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie);
 
-    
+    // Store only session cookies, obey the privacy level.
     if (cookie.isSession && lazy.PrivacyLevel.canSave(cookie.isSecure)) {
       CookieStore.add(cookie);
     } else {
@@ -161,9 +157,9 @@ var SessionCookiesInternal = {
     }
   },
 
-  
-
-
+  /**
+   * Removes a given cookie from the store.
+   */
   _removeCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie);
 
@@ -172,23 +168,23 @@ var SessionCookiesInternal = {
     }
   },
 
-  
-
-
+  /**
+   * Removes a given list of cookies from the store.
+   */
   _removeCookies(cookies) {
     for (let i = 0; i < cookies.length; i++) {
       this._removeCookie(cookies.queryElementAt(i, Ci.nsICookie));
     }
   },
 
-  
-
-
-
+  /**
+   * Iterates all cookies in the cookies service and puts them into the store
+   * if they're session cookies. Obeys the user's chosen privacy level.
+   */
   _reloadCookies() {
     CookieStore.clear();
 
-    
+    // Bail out if we're not supposed to store cookies at all.
     if (!lazy.PrivacyLevel.canSave(false)) {
       return;
     }
@@ -199,25 +195,25 @@ var SessionCookiesInternal = {
   },
 };
 
-
-
-
+/**
+ * The internal storage that keeps track of session cookies.
+ */
 var CookieStore = {
-  
-
-
+  /**
+   * The internal map holding all known session cookies.
+   */
   _entries: new Map(),
 
-  
-
-
-
-
-
+  /**
+   * Stores a given cookie.
+   *
+   * @param cookie
+   *        The nsICookie object to add to the storage.
+   */
   add(cookie) {
     let jscookie = { host: cookie.host, value: cookie.value };
 
-    
+    // Only add properties with non-default values to save a few bytes.
     if (cookie.path) {
       jscookie.path = cookie.path;
     }
@@ -253,39 +249,39 @@ var CookieStore = {
     this._entries.set(this._getKeyForCookie(cookie), jscookie);
   },
 
-  
-
-
-
-
-
+  /**
+   * Removes a given cookie.
+   *
+   * @param cookie
+   *        The nsICookie object to be removed from storage.
+   */
   delete(cookie) {
     this._entries.delete(this._getKeyForCookie(cookie));
   },
 
-  
-
-
+  /**
+   * Removes all cookies.
+   */
   clear() {
     this._entries.clear();
   },
 
-  
-
-
+  /**
+   * Return all cookies as an array.
+   */
   toArray() {
     return [...this._entries.values()];
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Returns the key needed to properly store and identify a given cookie.
+   * A cookie is uniquely identified by the combination of its host, name,
+   * path, and originAttributes properties.
+   *
+   * @param cookie
+   *        The nsICookie object to compute a key for.
+   * @return string
+   */
   _getKeyForCookie(cookie) {
     return JSON.stringify({
       host: cookie.host,

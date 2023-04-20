@@ -1,8 +1,6 @@
-ChromeUtils.defineModuleGetter(
-  this,
-  "SessionStartup",
-  "resource:///modules/sessionstore/SessionStartup.jsm"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
+});
 
 
 function afterSessionStartupInitialization(cb) {
