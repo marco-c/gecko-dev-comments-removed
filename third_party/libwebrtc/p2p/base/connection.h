@@ -115,6 +115,11 @@ class Connection : public CandidatePairInterface {
   bool writable() const;
   bool receiving() const;
 
+  const Port* port() const {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    return port_.get();
+  }
+
   
   
   bool connected() const;
@@ -355,7 +360,6 @@ class Connection : public CandidatePairInterface {
 
   
   Port* port() { return port_.get(); }
-  const Port* port() const { return port_.get(); }
 
   
   
@@ -464,9 +468,7 @@ class Connection : public CandidatePairInterface {
   rtc::EventBasedExponentialMovingAverage rtt_estimate_
       RTC_GUARDED_BY(network_thread_);
 
-  friend class Port;
   friend class ConnectionRequest;
-  friend class P2PTransportChannel;
 };
 
 
