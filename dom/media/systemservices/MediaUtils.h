@@ -194,8 +194,8 @@ class ShutdownBlockingTicket {
 
 
 
-  static UniquePtr<ShutdownBlockingTicket> Create(nsString aName,
-                                                  nsString aFileName,
+  static UniquePtr<ShutdownBlockingTicket> Create(const nsAString& aName,
+                                                  const nsAString& aFileName,
                                                   int32_t aLineNr);
 
   virtual ~ShutdownBlockingTicket() = default;
