@@ -364,7 +364,13 @@ class WebConsoleWrapper {
     if (!this.throttledDispatchPromise) {
       return Promise.resolve();
     }
-    return this.throttledDispatchPromise;
+    
+    
+    
+    const onUnload = new Promise(r =>
+      window.addEventListener("unload", r, { once: true })
+    );
+    return Promise.race([this.throttledDispatchPromise, onUnload]);
   }
 
   setTimeoutIfNeeded() {
@@ -379,6 +385,7 @@ class WebConsoleWrapper {
           
           
           this.setTimeoutIfNeeded();
+          done();
           return;
         }
 

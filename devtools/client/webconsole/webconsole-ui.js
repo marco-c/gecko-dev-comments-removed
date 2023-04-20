@@ -103,9 +103,15 @@ class WebConsoleUI {
         
         
         await this.hud.commands.targetCommand.startListening();
+        if (this._destroyed) {
+          return;
+        }
       }
 
       await this.wrapper.init();
+      if (this._destroyed) {
+        return;
+      }
 
       
       
@@ -113,6 +119,9 @@ class WebConsoleUI {
       
       
       await this._attachTargets();
+      if (this._destroyed) {
+        return;
+      }
 
       
       
@@ -134,7 +143,7 @@ class WebConsoleUI {
     this.React = this.ReactDOM = this.FrameView = null;
 
     if (this.wrapper) {
-      this.wrapper.getStore().dispatch(START_IGNORE_ACTION);
+      this.wrapper.getStore()?.dispatch(START_IGNORE_ACTION);
       this.wrapper.destroy();
     }
 
@@ -181,8 +190,10 @@ class WebConsoleUI {
 
     this.stopWatchingNetworkResources();
 
-    this.networkDataProvider.destroy();
-    this.networkDataProvider = null;
+    if (this.networkDataProvider) {
+      this.networkDataProvider.destroy();
+      this.networkDataProvider = null;
+    }
 
     
     this.window = this.hud = this.wrapper = null;
