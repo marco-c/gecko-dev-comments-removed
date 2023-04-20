@@ -550,12 +550,35 @@ bool DrawTargetWebgl::SharedContext::SetNoClipMask() {
   return true;
 }
 
+inline bool DrawTargetWebgl::ClipStack::operator==(
+    const DrawTargetWebgl::ClipStack& aOther) const {
+  
+  if (!mTransform.FuzzyEquals(aOther.mTransform) ||
+      !mRect.IsEqualInterior(aOther.mRect)) {
+    return false;
+  }
+  
+  if (!mPath) {
+    return !aOther.mPath;
+  }
+  if (!aOther.mPath ||
+      mPath->GetBackendType() != aOther.mPath->GetBackendType()) {
+    return false;
+  }
+  if (mPath->GetBackendType() != BackendType::SKIA) {
+    return mPath == aOther.mPath;
+  }
+  return static_cast<const PathSkia*>(mPath.get())->GetPath() ==
+         static_cast<const PathSkia*>(aOther.mPath.get())->GetPath();
+}
+
 
 
 
 
 bool DrawTargetWebgl::GenerateComplexClipMask() {
-  if (!mClipChanged) {
+  if (!mClipChanged || (mClipMask && mCachedClipStack == mClipStack)) {
+    mClipChanged = false;
     
     mSharedContext->SetClipMask(mClipMask);
     mSharedContext->SetClipRect(mClipBounds);
@@ -594,7 +617,10 @@ bool DrawTargetWebgl::GenerateComplexClipMask() {
   }
   
   
+  mCachedClipStack.clear();
   for (auto& clipStack : mClipStack) {
+    
+    mCachedClipStack.push_back(clipStack);
     dt->SetTransform(
         Matrix(clipStack.mTransform).PostTranslate(-mClipBounds.TopLeft()));
     if (clipStack.mPath) {
@@ -1300,6 +1326,17 @@ void DrawTargetWebgl::CopySurface(SourceSurface* aSurface,
 }
 
 void DrawTargetWebgl::PushClip(const Path* aPath) {
+  if (aPath && aPath->GetBackendType() == BackendType::SKIA) {
+    
+    const PathSkia* pathSkia = static_cast<const PathSkia*>(aPath);
+    const SkPath& skPath = pathSkia->GetPath();
+    SkRect rect;
+    if (skPath.isRect(&rect)) {
+      PushClipRect(SkRectToRect(rect));
+      return;
+    }
+  }
+
   mClipChanged = true;
   mRefreshClipState = true;
   mSkia->PushClip(aPath);

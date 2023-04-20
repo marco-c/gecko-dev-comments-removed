@@ -102,9 +102,14 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     Matrix mTransform;
     Rect mRect;
     RefPtr<const Path> mPath;
+
+    bool operator==(const ClipStack& aOther) const;
   };
 
   std::vector<ClipStack> mClipStack;
+
+  
+  std::vector<ClipStack> mCachedClipStack;
 
   
   
