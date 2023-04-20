@@ -15,10 +15,12 @@
 
 
 const { execFileSync } = require("child_process");
+const { writeFileSync } = require("fs");
 const { chdir } = require("process");
 const path = require("path");
-
 const os = require("os");
+
+const REPOSITORY_ROOT = __dirname.replace("devtools/client/bin", "");
 
 
 const isWin = os.platform() === "win32";
@@ -89,16 +91,18 @@ function execOut(...args) {
   return { out: out.toString(), err: err && err.toString() };
 }
 
-function getErrors(suite, out, err) {
+function getErrors(suite, out, err, testPath) {
   switch (SUITES[suite].type) {
     case TEST_TYPES.JEST:
       return getJestErrors(out, err);
     case TEST_TYPES.TYPESCRIPT:
-      return getTypescriptErrors(out, err);
+      return getTypescriptErrors(out, err, testPath);
     default:
       throw new Error("Unsupported suite type: " + SUITES[suite].type);
   }
 }
+
+const JEST_ERROR_SUMMARY_REGEX = /\s●\s/;
 
 function getJestErrors(out, err) {
   
@@ -106,21 +110,100 @@ function getJestErrors(out, err) {
   const results = JSON.parse(jestJsonOut);
 
   
-  return results.testResults.reduce((p, testResult) => {
-    const failures = testResult.message
-      .split("\n")
-      .filter(l => l.includes("●"));
-    return p.concat(failures);
-  }, []);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const errors = [];
+  for (const testResult of results.testResults) {
+    if (testResult.status != "failed") {
+      continue;
+    }
+    let currentError;
+    let errorLine;
+
+    const lines = testResult.message.split("\n");
+    lines.forEach((line, i) => {
+      if (line.match(JEST_ERROR_SUMMARY_REGEX) || i == lines.length - 1) {
+        
+        
+        if (currentError) {
+          errors.push({
+            
+            file: testResult.name.replace(REPOSITORY_ROOT, ""),
+            line: errorLine,
+            
+            column: 0,
+            message: currentError.trim(),
+          });
+        }
+
+        
+        currentError = line;
+      } else {
+        
+        
+        currentError += "\n" + line;
+
+        
+        const res = line.match(/> (?<line>\d+) \|/);
+        if (res) {
+          errorLine = parseInt(res.groups.line, 10);
+        }
+      }
+    });
+  }
+
+  return errors;
 }
 
-function getTypescriptErrors(out, err) {
+function getTypescriptErrors(out, err, testPath) {
+  console.log(out);
   
   
   
   
-  const tsErrorRegex = /error TS\d+\:/;
-  return out.split("\n").filter(l => tsErrorRegex.test(l));
+  const tsErrorRegex = /(?<file>(\w|\/|\.)+)\((?<line>\d+),(?<column>\d+)\): (?<message>error TS\d+\:.*)/;
+  const errors = [];
+  for (const line of out.split("\n")) {
+    const res = line.match(tsErrorRegex);
+    if (!res) {
+      continue;
+    }
+    
+    
+    const fileAbsPath = testPath + res.groups.file;
+    errors.push({
+      
+      file: fileAbsPath.replace(REPOSITORY_ROOT, ""),
+      line: parseInt(res.groups.line, 10),
+      column: parseInt(res.groups.column, 10),
+      message: res.groups.message.trim(),
+    });
+  }
+  return errors;
 }
 
 function runTests() {
@@ -144,6 +227,10 @@ function runTests() {
     );
     return false;
   }
+
+  const artifactArg = process.argv.find(arg => arg.includes("artifact="));
+  const artifactFilePath = artifactArg && artifactArg.split("=")[1];
+  const artifactErrors = {};
 
   const failedSuites = [];
   const suites = suite == "all" ? SUITES : { [suite]: SUITES[suite] };
@@ -180,15 +267,34 @@ function runTests() {
     }
 
     console.log("[devtools-node-test-runner] Parse errors from the test logs");
-    const errors = getErrors(suiteName, out, err) || [];
+    const errors = getErrors(suiteName, out, err, testPath) || [];
     if (errors.length) {
       failedSuites.push(suiteName);
     }
     for (const error of errors) {
+      if (!artifactErrors[error.file]) {
+        artifactErrors[error.file] = [];
+      }
+      artifactErrors[error.file].push({
+        path: error.file,
+        line: error.line,
+        column: error.column,
+        level: "error",
+        message: error.message,
+        analyzer: suiteName,
+      });
+
       console.log(
-        `TEST-UNEXPECTED-FAIL | ${suiteData.type} | ${suiteName} | ${error}`
+        `TEST-UNEXPECTED-FAIL | ${suiteData.type} | ${suiteName} | ${error.file}:${error.line}: ${error.message}`
       );
     }
+  }
+
+  if (artifactFilePath) {
+    console.log(
+      `[devtools-node-test-runner] Writing artifact to ${artifactFilePath}`
+    );
+    writeFileSync(artifactFilePath, JSON.stringify(artifactErrors, null, 2));
   }
 
   const success = failedSuites.length === 0;
