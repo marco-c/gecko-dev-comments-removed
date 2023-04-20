@@ -47,17 +47,12 @@ typedef unsigned long   ulong;
 #define SOUNDTOUCH_ALIGN_POINTER_16(x)      ( ( (ulongptr)(x) + 15 ) & ~(ulongptr)15 )
 
 
-#include "soundtouch_config.h"
+#if (defined(__GNUC__) && !defined(ANDROID))
+    
+    
+    #include "soundtouch_config.h"
+#endif
 
-#if defined(WIN32)
-#if defined(BUILDING_SOUNDTOUCH)
-#define SOUNDTOUCH_API __declspec(dllexport)
-#else
-#define SOUNDTOUCH_API __declspec(dllimport)
-#endif
-#else
-#define SOUNDTOUCH_API
-#endif
 
 namespace soundtouch
 {
