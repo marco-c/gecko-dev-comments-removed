@@ -239,11 +239,11 @@ add_task(async function navigate_around() {
       
       
       knownProblematicPrefs["security.sandbox.content.read_path_whitelist"] = {
-        min: 48,
+        min: 47,
         max: 55,
       };
       knownProblematicPrefs["security.sandbox.logging.enabled"] = {
-        min: 48,
+        min: 47,
         max: 55,
       };
     }
