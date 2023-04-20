@@ -46,6 +46,10 @@ constexpr size_t kRtpHeaderLength = 12;
 
 constexpr int kMinPayloadPaddingBytes = 50;
 
+
+
+constexpr double kMaxPaddingSizeFactor = 3.0;
+
 template <typename Extension>
 constexpr RtpExtensionSize CreateExtensionSize() {
   return {Extension::kId, Extension::kValueSizeBytes};
@@ -147,21 +151,6 @@ bool HasBweExtension(const RtpHeaderExtensionMap& extensions_map) {
          extensions_map.IsRegistered(kRtpExtensionTransmissionTimeOffset);
 }
 
-double GetMaxPaddingSizeFactor(const FieldTrialsView* field_trials) {
-  
-  
-  
-  constexpr double kDefaultFactor = 3.0;
-  if (!field_trials) {
-    return kDefaultFactor;
-  }
-
-  FieldTrialOptional<double> factor("factor", kDefaultFactor);
-  ParseFieldTrial({&factor}, field_trials->Lookup("WebRTC-LimitPaddingSize"));
-  RTC_CHECK_GE(factor.Value(), 0.0);
-  return factor.Value();
-}
-
 }  
 
 RTPSender::RTPSender(const RtpRtcpInterface::Configuration& config,
@@ -174,7 +163,6 @@ RTPSender::RTPSender(const RtpRtcpInterface::Configuration& config,
       rtx_ssrc_(config.rtx_send_ssrc),
       flexfec_ssrc_(config.fec_generator ? config.fec_generator->FecSsrc()
                                          : absl::nullopt),
-      max_padding_size_factor_(GetMaxPaddingSizeFactor(config.field_trials)),
       packet_history_(packet_history),
       paced_sender_(packet_sender),
       sending_media_(true),                   
@@ -403,8 +391,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
                 
                 
                 const size_t max_overshoot_bytes = static_cast<size_t>(
-                    ((max_padding_size_factor_ - 1.0) * target_size_bytes) +
-                    0.5);
+                    ((kMaxPaddingSizeFactor - 1.0) * target_size_bytes) + 0.5);
                 if (packet.payload_size() + kRtxHeaderSize >
                     max_overshoot_bytes + bytes_left) {
                   return nullptr;

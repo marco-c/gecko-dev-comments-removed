@@ -40,6 +40,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
+#include "test/scoped_key_value_config.h"
 #include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
@@ -73,6 +74,7 @@ const size_t kMaxPaddingLength = 224;
 const uint32_t kTimestampTicksPerMs = 90;  
 constexpr absl::string_view kMid = "mid";
 constexpr absl::string_view kRid = "f";
+constexpr bool kMarkerBit = true;
 
 using ::testing::_;
 using ::testing::AllOf;
@@ -102,27 +104,6 @@ class MockRtpPacketPacer : public RtpPacketSender {
               (override));
 };
 
-class FieldTrialConfig : public FieldTrialsView {
- public:
-  FieldTrialConfig() : max_padding_factor_(1200) {}
-  ~FieldTrialConfig() override {}
-
-  void SetMaxPaddingFactor(double factor) { max_padding_factor_ = factor; }
-
-  std::string Lookup(absl::string_view key) const override {
-    if (key == "WebRTC-LimitPaddingSize") {
-      char string_buf[32];
-      rtc::SimpleStringBuilder ssb(string_buf);
-      ssb << "factor:" << max_padding_factor_;
-      return ssb.str();
-    }
-    return "";
-  }
-
- private:
-  double max_padding_factor_;
-};
-
 }  
 
 class RtpSenderTest : public ::testing::Test {
@@ -138,8 +119,7 @@ class RtpSenderTest : public ::testing::Test {
                         std::vector<RtpExtension>(),
                         std::vector<RtpExtensionSize>(),
                         nullptr,
-                        clock_),
-        kMarkerBit(true) {}
+                        clock_) {}
 
   void SetUp() override { SetUpRtpSender(true, false, nullptr); }
 
@@ -191,8 +171,7 @@ class RtpSenderTest : public ::testing::Test {
   std::unique_ptr<RtpPacketHistory> packet_history_;
   std::unique_ptr<RTPSender> rtp_sender_;
 
-  const bool kMarkerBit;
-  FieldTrialConfig field_trials_;
+  const test::ScopedKeyValueConfig field_trials_;
 
   std::unique_ptr<RtpPacketToSend> BuildRtpPacket(int payload_type,
                                                   bool marker_bit,
@@ -562,7 +541,7 @@ TEST_F(RtpSenderTest, KeepsTimestampsOnPayloadPadding) {
   
   const int64_t start_time = clock_->TimeInMilliseconds();
   const uint32_t start_timestamp = start_time * kTimestampTicksPerMs;
-  const size_t kPayloadSize = 600;
+  const size_t kPayloadSize = 200;
   const size_t kRtxHeaderSize = 2;
 
   
@@ -1109,8 +1088,7 @@ TEST_F(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
 
 TEST_F(RtpSenderTest, LimitsPayloadPaddingSize) {
   
-  const double kFactor = 2.0;
-  field_trials_.SetMaxPaddingFactor(kFactor);
+  const double kFactor = 3.0;
   SetUpRtpSender(false, false, nullptr);
   rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
   rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
@@ -1313,11 +1291,10 @@ TEST_F(RtpSenderTest, DoesntFecProtectRetransmissions) {
 }
 
 TEST_F(RtpSenderTest, MarksPacketsWithKeyframeStatus) {
-  FieldTrialBasedConfig field_trials;
   RTPSenderVideo::Config video_config;
   video_config.clock = clock_;
   video_config.rtp_sender = rtp_sender_.get();
-  video_config.field_trials = &field_trials;
+  video_config.field_trials = &field_trials_;
   RTPSenderVideo rtp_sender_video(video_config);
 
   const uint8_t kPayloadType = 127;
