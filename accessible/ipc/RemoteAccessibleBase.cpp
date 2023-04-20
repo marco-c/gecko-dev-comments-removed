@@ -557,6 +557,7 @@ nsRect RemoteAccessibleBase<Derived>::BoundsInAppUnits() const {
 
 template <class Derived>
 bool RemoteAccessibleBase<Derived>::IsFixedPos() const {
+  MOZ_ASSERT(mCachedFields);
   if (auto maybePosition =
           mCachedFields->GetAttribute<RefPtr<nsAtom>>(nsGkAtoms::position)) {
     return *maybePosition == nsGkAtoms::fixed;
@@ -640,12 +641,13 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
           bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
           Unused << remoteAcc->ApplyTransform(bounds, remoteBounds);
         }
+
+        if (remoteAcc->IsFixedPos()) {
+          encounteredFixedContainer = true;
+        }
+        
+        
       }
-      if (remoteAcc->IsFixedPos()) {
-        encounteredFixedContainer = true;
-      }
-      
-      
       acc = acc->Parent();
     }
 
