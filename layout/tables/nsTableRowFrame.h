@@ -132,7 +132,7 @@ class nsTableRowFrame : public nsContainerFrame {
 
   
 
-  nscoord GetRowBaseline(mozilla::WritingMode aWritingMode);
+  Maybe<nscoord> GetRowBaseline(mozilla::WritingMode aWM);
 
   
   virtual int32_t GetRowIndex() const;

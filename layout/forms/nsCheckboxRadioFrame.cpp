@@ -103,6 +103,10 @@ Maybe<nscoord> nsCheckboxRadioFrame::GetNaturalBaselineBOffset(
     return Nothing{};
   }
 
+  if (aWM.IsCentralBaseline()) {
+    return Some(GetLogicalUsedBorderAndPadding(aWM).BStart(aWM) +
+                ContentSize(aWM).BSize(aWM) / 2);
+  }
   
   
   
