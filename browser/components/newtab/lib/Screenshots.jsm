@@ -69,7 +69,7 @@ const Screenshots = {
 
       return { path: imgPath, data: fileContents };
     } catch (err) {
-      Cu.reportError(`getScreenshot(${url}) failed: ${err}`);
+      console.error(`getScreenshot(${url}) failed: ${err}`);
     }
 
     
