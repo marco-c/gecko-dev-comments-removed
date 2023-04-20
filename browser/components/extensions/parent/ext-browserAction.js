@@ -270,6 +270,9 @@ this.browserAction = class extends ExtensionAPIPersistent {
         );
 
         if (gUnifiedExtensionsEnabled) {
+          
+          menuButton.setAttribute("context", "unified-extensions-context-menu");
+          menuButton.setAttribute("data-extension-id", extension.id);
           menuButton.setAttribute(
             "data-l10n-id",
             "unified-extensions-item-open-menu"

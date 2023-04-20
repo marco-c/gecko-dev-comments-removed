@@ -66,7 +66,7 @@ const getUnifiedExtensionsItem = (win, extensionId) => {
   
   
   return (
-    view.querySelector(`toolbaritem[data-extensionid="${extensionId}"]`) ||
+    view.querySelector(`[data-extensionid="${extensionId}"]`) ||
     view.querySelector(`unified-extensions-item[extension-id="${extensionId}"]`)
   );
 };
