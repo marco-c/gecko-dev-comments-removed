@@ -621,15 +621,21 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   
   
   if (!paramsCopy.mEncodings.Length()) {
-    if (!mHaveFailedBecauseNoEncodings) {
-      mHaveFailedBecauseNoEncodings = true;
-      mozilla::glean::rtcrtpsender_setparameters::fail_no_encodings
-          .AddToNumerator(1);
-    }
+    nsCString error("Cannot set an empty encodings array");
+    if (!mAllowOldSetParameters) {
+      if (!mHaveFailedBecauseNoEncodings) {
+        mHaveFailedBecauseNoEncodings = true;
+        mozilla::glean::rtcrtpsender_setparameters::fail_no_encodings
+            .AddToNumerator(1);
+      }
 
-    p->MaybeRejectWithInvalidModificationError(
-        "Cannot set an empty encodings array");
-    return p.forget();
+      p->MaybeRejectWithInvalidModificationError(error);
+      return p.forget();
+    }
+    
+    WarnAboutBadSetParameters(error);
+    
+    paramsCopy.mEncodings = oldParams->mEncodings;
   }
 
   
