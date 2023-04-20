@@ -1903,12 +1903,6 @@
 
 
 
-
-
-
-
-
-
  \
     MACRO(CallSiteObj, call_site_obj, NULL, 5, 0, 1, JOF_OBJECT) \
     

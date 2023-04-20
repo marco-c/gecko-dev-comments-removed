@@ -139,6 +139,11 @@ enum class ObjLiteralKind : uint8_t {
   Array,
 
   
+  
+  
+  CallSiteObj,
+
+  
   Object,
 
   
@@ -165,7 +170,7 @@ using ObjLiteralFlags = EnumFlags<ObjLiteralFlag>;
 class ObjLiteralKindAndFlags {
   uint8_t bits_ = 0;
 
-  static constexpr size_t KindBits = 2;
+  static constexpr size_t KindBits = 3;
   static constexpr size_t KindMask = BitMask(KindBits);
 
   static_assert(size_t(ObjLiteralKind::Invalid) <= KindMask,
@@ -339,8 +344,13 @@ struct ObjLiteralWriter : private ObjLiteralWriterBase {
 
   void beginArray(JSOp op) {
     MOZ_ASSERT(JOF_OPTYPE(op) == JOF_OBJECT);
-    MOZ_ASSERT(op == JSOp::Object || op == JSOp::CallSiteObj);
+    MOZ_ASSERT(op == JSOp::Object);
     kind_ = ObjLiteralKind::Array;
+  }
+  void beginCallSiteObj(JSOp op) {
+    MOZ_ASSERT(JOF_OPTYPE(op) == JOF_OBJECT);
+    MOZ_ASSERT(op == JSOp::CallSiteObj);
+    kind_ = ObjLiteralKind::CallSiteObj;
   }
   void beginObject(JSOp op) {
     MOZ_ASSERT(JOF_OPTYPE(op) == JOF_OBJECT);
@@ -390,7 +400,8 @@ struct ObjLiteralWriter : private ObjLiteralWriterBase {
     flags_.setFlag(ObjLiteralFlag::HasIndexOrDuplicatePropName);
   }
   void beginDenseArrayElements() {
-    MOZ_ASSERT(kind_ == ObjLiteralKind::Array);
+    MOZ_ASSERT(kind_ == ObjLiteralKind::Array ||
+               kind_ == ObjLiteralKind::CallSiteObj);
     
     
     nextKey_ = ObjLiteralKey::none();
