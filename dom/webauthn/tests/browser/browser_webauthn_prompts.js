@@ -15,7 +15,9 @@ add_task(async function test_setup_usbtoken() {
   });
 });
 add_task(test_register);
+add_task(test_register_escape);
 add_task(test_sign);
+add_task(test_sign_escape);
 add_task(test_register_direct_cancel);
 add_task(test_tab_switching);
 add_task(test_window_switching);
@@ -95,6 +97,27 @@ async function test_register() {
   await BrowserTestUtils.removeTab(tab);
 }
 
+async function test_register_escape() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+
+  
+  let active = true;
+  let request = promiseWebAuthnMakeCredential(tab, "none", {})
+    .then(arrivingHereIsBad)
+    .catch(expectNotAllowedError)
+    .then(() => (active = false));
+  await promiseNotification("webauthn-prompt-register");
+
+  
+  ok(active, "request should still be active");
+  EventUtils.synthesizeKey("KEY_Escape");
+  await request;
+
+  
+  await BrowserTestUtils.removeTab(tab);
+}
+
 async function test_sign() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
@@ -110,6 +133,27 @@ async function test_sign() {
   
   ok(active, "request should still be active");
   PopupNotifications.panel.firstElementChild.button.click();
+  await request;
+
+  
+  await BrowserTestUtils.removeTab(tab);
+}
+
+async function test_sign_escape() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+
+  
+  let active = true;
+  let request = promiseWebAuthnGetAssertion(tab)
+    .then(arrivingHereIsBad)
+    .catch(expectNotAllowedError)
+    .then(() => (active = false));
+  await promiseNotification("webauthn-prompt-sign");
+
+  
+  ok(active, "request should still be active");
+  EventUtils.synthesizeKey("KEY_Escape");
   await request;
 
   
