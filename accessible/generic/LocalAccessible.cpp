@@ -1641,7 +1641,9 @@ void LocalAccessible::Value(nsString& aValue) const {
       }
     }
 
-    if (option) nsTextEquivUtils::GetTextEquivFromSubtree(option, aValue);
+    
+    
+    nsTextEquivUtils::GetTextEquivFromSubtree(option ? option : this, aValue);
   }
 }
 

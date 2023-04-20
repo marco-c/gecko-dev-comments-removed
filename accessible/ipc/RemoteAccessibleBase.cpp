@@ -267,6 +267,9 @@ void RemoteAccessibleBase<Derived>::Value(nsString& aValue) const {
           const_cast<RemoteAccessibleBase<Derived>*>(this)->GetSelectedItem(0);
       if (option) {
         option->Name(aValue);
+      } else {
+        
+        nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
       }
       return;
     }
