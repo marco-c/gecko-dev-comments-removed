@@ -1,0 +1,18 @@
+
+
+
+"use strict";
+
+module.exports = {
+  globals: {
+    __dirname: true,
+  },
+  overrides: [
+    {
+      files: ["**/*.js"],
+      rules: {
+        "no-unused-vars": "off",
+      },
+    },
+  ],
+};

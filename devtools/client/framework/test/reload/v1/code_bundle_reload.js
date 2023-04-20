@@ -1,0 +1,19 @@
+ (() => {
+  
+   "use strict";
+  var __webpack_exports__ = {};
+  
+
+
+  
+
+
+  function f() {
+    console.log("The first version of the script");
+  }
+
+  f();
+
+  
+})();
+
