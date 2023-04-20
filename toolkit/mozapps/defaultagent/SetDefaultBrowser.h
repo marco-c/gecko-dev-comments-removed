@@ -39,23 +39,6 @@ HRESULT SetDefaultBrowserUserChoice(
 
 
 
-
-
-
-
-
-
-
-
-
-HRESULT SetDefaultExtensionHandlersUserChoice(
-    const wchar_t* aAumi, const wchar_t* const* aFileExtensions = nullptr);
-
-
-
-
-
-
 const HRESULT MOZ_E_NO_PROGID = 0xa0000001L;
 const HRESULT MOZ_E_HASH_CHECK = 0xa0000002L;
 const HRESULT MOZ_E_REJECTED = 0xa0000003L;

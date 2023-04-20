@@ -290,26 +290,6 @@ const QueryCache = {
       FRECENT_SITES_UPDATE_INTERVAL,
       lazy.AddonManager 
     ),
-    isDefaultHandler: {
-      pdf: new CachedTargetingGetter(
-        "isDefaultHandlerFor",
-        [".pdf"],
-        FRECENT_SITES_UPDATE_INTERVAL,
-        ShellService
-      ),
-      html: new CachedTargetingGetter(
-        "isDefaultHandlerFor",
-        [".html"],
-        FRECENT_SITES_UPDATE_INTERVAL,
-        ShellService
-      ),
-    },
-    defaultPDFHandler: new CachedTargetingGetter(
-      "getDefaultPDFHandler",
-      null,
-      FRECENT_SITES_UPDATE_INTERVAL,
-      ShellService
-    ),
   },
 };
 
@@ -837,19 +817,6 @@ const TargetingGetters = {
     let button = lazy.CustomizableUI.getWidget("firefox-view-button");
     return button.areaType;
   },
-
-  isDefaultHandler: {
-    get html() {
-      return QueryCache.getters.isDefaultHandler.html.get();
-    },
-    get pdf() {
-      return QueryCache.getters.isDefaultHandler.pdf.get();
-    },
-  },
-
-  get defaultPDFHandler() {
-    return QueryCache.getters.defaultPDFHandler.get();
-  },
 };
 
 const ASRouterTargeting = {
@@ -866,38 +833,25 @@ const ASRouterTargeting = {
 
 
   async getEnvironmentSnapshot(target = ASRouterTargeting.Environment) {
-    async function resolveRecursive(object) {
+    
+    let promises = Object.keys(target).map(async name => {
       
-      const promises = Object.keys(object).map(async key => {
-        
-        if (Services.startup.shuttingDown) {
-          throw new Error(
-            "shutting down, so not querying targeting environment"
-          );
-        }
-
-        let value = await object[key];
-
-        if (typeof value === "object" && object !== null) {
-          value = await resolveRecursive(value);
-        }
-
-        return [key, value];
-      });
-
-      const resolved = {};
-      for (const result of await Promise.allSettled(promises)) {
-        
-        if (result.status === "fulfilled") {
-          const [key, value] = result.value;
-          resolved[key] = value;
-        }
+      if (Services.startup.shuttingDown) {
+        throw new Error("shutting down, so not querying targeting environment");
       }
+      return [name, await target[name]];
+    });
 
-      return resolved;
+    
+    let results = await Promise.allSettled(promises);
+
+    let environment = {};
+    for (let result of results) {
+      if (result.status === "fulfilled") {
+        let [name, value] = result.value;
+        environment[name] = value;
+      }
     }
-
-    const environment = await resolveRecursive(target);
 
     
     const snapshot = { environment, version: 1 };
