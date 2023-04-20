@@ -3852,7 +3852,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   if (!dt || !dt->IsValid()) {
     return FALSE;
   }
-  UniquePtr<gfxContext> ctx;
+  Maybe<gfxContext> ctx;
   IntRect boundsRect = region.GetBounds().ToUnknownRect();
   IntPoint offset(0, 0);
   if (dt->GetSize() == boundsRect.Size()) {
@@ -3878,12 +3878,11 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
       return FALSE;
     }
     destDT->SetTransform(Matrix::Translation(-boundsRect.TopLeft()));
-    ctx = gfxContext::CreatePreservingTransformOrNull(destDT);
+    ctx.emplace(destDT,  true);
   } else {
     gfxUtils::ClipToRegion(dt, region.ToUnknownRegion());
-    ctx = gfxContext::CreatePreservingTransformOrNull(dt);
+    ctx.emplace(dt,  true);
   }
-  MOZ_ASSERT(ctx);  
 
 #  if 0
     
@@ -3908,7 +3907,8 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
         
         dt->ClearRect(Rect(boundsRect));
       }
-      AutoLayerManagerSetup setupLayerManager(this, ctx.get(), layerBuffering);
+      AutoLayerManagerSetup setupLayerManager(
+          this, ctx.isNothing() ? nullptr : &ctx.ref(), layerBuffering);
       painted = listener->PaintWindow(this, region);
 
       
@@ -3936,7 +3936,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     }
   }
 
-  ctx = nullptr;
+  ctx.reset();
   dt->PopClip();
 
 #endif  

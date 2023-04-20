@@ -63,11 +63,13 @@ class gfxContext final {
 
 
 
-
-
+  MOZ_NONNULL(2)
   explicit gfxContext(
       mozilla::gfx::DrawTarget* aTarget,
       const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
+
+  MOZ_NONNULL(2)
+  gfxContext(mozilla::gfx::DrawTarget* aTarget, bool aPreserveTransform);
 
   ~gfxContext();
 
@@ -81,16 +83,6 @@ class gfxContext final {
   static mozilla::UniquePtr<gfxContext> CreateOrNull(
       mozilla::gfx::DrawTarget* aTarget,
       const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
-
-  
-
-
-
-
-
-
-  static mozilla::UniquePtr<gfxContext> CreatePreservingTransformOrNull(
-      mozilla::gfx::DrawTarget* aTarget);
 
   mozilla::gfx::DrawTarget* GetDrawTarget() { return mDT; }
 

@@ -78,9 +78,7 @@ already_AddRefed<SourceSurface> SVGMaskFrame::GetMaskForMaskedFrame(
     return nullptr;
   }
 
-  UniquePtr<gfxContext> tmpCtx =
-      gfxContext::CreatePreservingTransformOrNull(maskDT);
-  MOZ_ASSERT(tmpCtx);  
+  gfxContext tmpCtx(maskDT,  true);
 
   mMatrixForChildren =
       GetMaskTransform(aParams.maskedFrame) * aParams.toUserSpace;
@@ -95,7 +93,7 @@ already_AddRefed<SourceSurface> SVGMaskFrame::GetMaskForMaskedFrame(
       m = SVGUtils::GetTransformMatrixInUserSpace(kid) * m;
     }
 
-    SVGUtils::PaintFrameWithEffects(kid, *tmpCtx, m, aParams.imgParams);
+    SVGUtils::PaintFrameWithEffects(kid, tmpCtx, m, aParams.imgParams);
   }
 
   RefPtr<SourceSurface> surface;
