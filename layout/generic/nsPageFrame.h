@@ -81,6 +81,13 @@ class nsPageFrame final : public nsContainerFrame {
     return ComputePageSizeScale(ComputePageSize());
   }
 
+  
+  
+  
+  
+  
+  nsIFrame* FirstContinuation() const final;
+
  protected:
   explicit nsPageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
   virtual ~nsPageFrame();
