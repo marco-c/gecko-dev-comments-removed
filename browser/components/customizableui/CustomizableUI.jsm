@@ -2429,6 +2429,12 @@ var CustomizableUIInternal = {
   },
 
   addWidgetToArea(aWidgetId, aArea, aPosition, aInitialAdd) {
+    if (aArea == CustomizableUI.AREA_NO_AREA) {
+      throw new Error(
+        "AREA_NO_AREA is only used as an argument for " +
+          "canWidgetMoveToArea. Use removeWidgetFromArea instead."
+      );
+    }
     if (!gAreas.has(aArea)) {
       throw new Error("Unknown customization area: " + aArea);
     }
@@ -2909,6 +2915,17 @@ var CustomizableUIInternal = {
             }
           }
         }
+
+        
+        
+        
+        if (
+          lazy.gUnifiedExtensionsEnabled &&
+          !widget.currentArea &&
+          CustomizableUI.isWebExtensionWidget(widget.id)
+        ) {
+          this.addWidgetToArea(widget.id, CustomizableUI.AREA_ADDONS);
+        }
       }
     } finally {
       
@@ -3284,6 +3301,12 @@ var CustomizableUIInternal = {
     lazy.log.debug("State reset");
 
     
+    
+    
+    
+    let oldAddonPlacements = gPlacements[CustomizableUI.AREA_ADDONS] || [];
+
+    
     gPlacements = new Map();
     gDirtyAreaCache = new Set();
     gSeenWidgets = new Set();
@@ -3291,7 +3314,27 @@ var CustomizableUIInternal = {
     gSavedState = null;
     
     for (let [areaId] of gAreas) {
-      this.restoreStateForArea(areaId);
+      
+      
+      
+      if (areaId != CustomizableUI.AREA_ADDONS) {
+        this.restoreStateForArea(areaId);
+      }
+    }
+
+    if (lazy.gUnifiedExtensionsEnabled) {
+      
+      
+      
+      gPlacements.set(CustomizableUI.AREA_ADDONS, []);
+      for (let [widgetId] of gPalette) {
+        if (
+          CustomizableUI.isWebExtensionWidget(widgetId) &&
+          !oldAddonPlacements.includes(widgetId)
+        ) {
+          this.addWidgetToArea(widgetId, CustomizableUI.AREA_ADDONS);
+        }
+      }
     }
   },
 
@@ -3454,6 +3497,25 @@ var CustomizableUIInternal = {
       !CustomizableUI.isWebExtensionWidget(aWidgetId)
     ) {
       return false;
+    }
+
+    if (
+      lazy.gUnifiedExtensionsEnabled &&
+      CustomizableUI.isWebExtensionWidget(aWidgetId)
+    ) {
+      
+      if (aArea == CustomizableUI.AREA_NO_AREA) {
+        return false;
+      }
+
+      
+      
+      if (
+        gAreas.get(aArea).get("type") == CustomizableUI.TYPE_PANEL &&
+        aArea != CustomizableUI.AREA_ADDONS
+      ) {
+        return false;
+      }
     }
 
     let placement = this.getPlacementOfWidget(aWidgetId);
@@ -3692,6 +3754,15 @@ var CustomizableUI = {
 
 
   AREA_ADDONS: "unified-extensions-area",
+  
+
+
+
+
+
+
+
+  AREA_NO_AREA: "customization-palette",
   
 
 
@@ -4450,6 +4521,8 @@ var CustomizableUI = {
     return CustomizableUIInternal.isWidgetRemovable(aWidgetId);
   },
   
+
+
 
 
 

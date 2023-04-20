@@ -1864,10 +1864,7 @@ CustomizeMode.prototype = {
     }
 
     
-    if (
-      targetArea.id != kPaletteId &&
-      !CustomizableUI.canWidgetMoveToArea(draggedItemId, targetArea.id)
-    ) {
+    if (!CustomizableUI.canWidgetMoveToArea(draggedItemId, targetArea.id)) {
       return;
     }
 
@@ -2044,6 +2041,10 @@ CustomizeMode.prototype = {
       return;
     }
 
+    if (!CustomizableUI.canWidgetMoveToArea(aDraggedItemId, aTargetArea.id)) {
+      return;
+    }
+
     
     if (aTargetArea.id == kPaletteId) {
       
@@ -2073,10 +2074,6 @@ CustomizeMode.prototype = {
         this.visiblePalette.insertBefore(draggedItem, aTargetNode.parentNode);
       }
       this._onDragEnd(aEvent);
-      return;
-    }
-
-    if (!CustomizableUI.canWidgetMoveToArea(aDraggedItemId, aTargetArea.id)) {
       return;
     }
 
