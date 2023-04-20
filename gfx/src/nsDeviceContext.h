@@ -34,6 +34,10 @@ class nsIScreenManager;
 class nsIWidget;
 struct nsRect;
 
+namespace mozilla::dom {
+enum class ScreenColorGamut : uint8_t;
+}  
+
 class nsDeviceContext final {
  public:
   typedef mozilla::gfx::PrintTarget PrintTarget;
@@ -118,6 +122,11 @@ class nsDeviceContext final {
 
 
   uint32_t GetDepth();
+
+  
+
+
+  mozilla::dom::ScreenColorGamut GetColorGamut();
 
   
 

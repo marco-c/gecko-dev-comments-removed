@@ -112,6 +112,14 @@ Screen::GetAvailRectDisplayPix(int32_t* aOutLeft, int32_t* aOutTop,
 }
 
 NS_IMETHODIMP
+Screen::GetColorGamut(dom::ScreenColorGamut* aScreenColorGamut) {
+  
+  
+  *aScreenColorGamut = dom::ScreenColorGamut::Srgb;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 Screen::GetPixelDepth(int32_t* aPixelDepth) {
   *aPixelDepth = mPixelDepth;
   return NS_OK;
