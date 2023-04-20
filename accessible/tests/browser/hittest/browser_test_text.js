@@ -13,6 +13,13 @@ a
   a
   <iframe width="1" height="1"></iframe>
 </div>
+<button id="pointBeforeText">
+  <div style="display: flex;">
+    <div style="width: 100px; background-color: red;" role="none"></div>
+    test
+    <div style="width: 100px; background-color: blue;" role="none"></div>
+  </div>
+</button>
   `,
   async function(browser, docAcc) {
     const dpr = await getContentDPR(browser);
@@ -43,6 +50,32 @@ a
     x += width - 1;
     y += height - 1;
     await testOffsetAtPoint(iframeAtEnd, x, y, COORDTYPE_SCREEN_RELATIVE, -1);
+
+    
+    
+    
+    const pointBeforeText = findAccessibleChildByID(docAcc, "pointBeforeText", [
+      Ci.nsIAccessibleText,
+    ]);
+    [x, y, width, height] = Layout.getBounds(pointBeforeText, dpr);
+    await testOffsetAtPoint(
+      pointBeforeText,
+      x,
+      y,
+      COORDTYPE_SCREEN_RELATIVE,
+      0
+    );
+    
+    
+    x += width - 1;
+    y += height - 1;
+    await testOffsetAtPoint(
+      pointBeforeText,
+      x,
+      y,
+      COORDTYPE_SCREEN_RELATIVE,
+      -1
+    );
   },
   {
     topLevel: true,

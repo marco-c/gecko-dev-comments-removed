@@ -279,7 +279,7 @@ int32_t HyperTextAccessibleBase::OffsetAtPoint(int32_t aX, int32_t aY,
     return -1;
   }
 
-  TextLeafPoint point = ToTextLeafPoint(0, false);
+  TextLeafPoint startPoint = ToTextLeafPoint(0, false);
   
   
   TextLeafPoint endPoint =
@@ -287,18 +287,27 @@ int32_t HyperTextAccessibleBase::OffsetAtPoint(int32_t aX, int32_t aY,
   endPoint =
       endPoint.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
                              false);
+  TextLeafPoint point = startPoint;
   
   
   
   
   
-  if (point <= endPoint) {
+  if (startPoint <= endPoint) {
     for (; !point.ContainsPoint(coords.x, coords.y) && point != endPoint;
          point = point.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirNext,
                                      false)) {
     }
   }
   if (!point.ContainsPoint(coords.x, coords.y)) {
+    LayoutDeviceIntRect startRect = startPoint.CharBounds();
+    if (coords.x < startRect.x || coords.y < startRect.y) {
+      
+      
+      
+      
+      return 0;
+    }
     return -1;
   }
   DebugOnly<bool> ok = false;
