@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+#include "api/metronome/metronome.h"
+
+namespace webrtc {
+
+
+void Metronome::AddListener(TickListener* listener) {}
+void Metronome::RemoveListener(TickListener* listener) {}
+
+}  

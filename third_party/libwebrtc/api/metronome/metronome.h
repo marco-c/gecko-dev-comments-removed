@@ -28,19 +28,14 @@ namespace webrtc {
 
 
 
-
-
 class RTC_EXPORT Metronome {
  public:
+  
+  
   class RTC_EXPORT TickListener {
    public:
     virtual ~TickListener() = default;
-
-    
-    
     virtual void OnTick() = 0;
-
-    
     virtual TaskQueueBase* OnTickTaskQueue() = 0;
   };
 
@@ -48,13 +43,14 @@ class RTC_EXPORT Metronome {
 
   
   
-  
-  virtual void AddListener(TickListener* listener) = 0;
+  virtual void AddListener(TickListener* listener);
+  virtual void RemoveListener(TickListener* listener);
 
   
   
   
-  virtual void RemoveListener(TickListener* listener) = 0;
+  
+  virtual void RequestCallOnNextTick(absl::AnyInvocable<void() &&> callback) {}
 
   
   virtual TimeDelta TickPeriod() const = 0;
