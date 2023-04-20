@@ -454,17 +454,21 @@ APZEventResult InputQueue::ReceivePanGestureInput(
     CancelAnimationsForNewBlock(block);
     MaybeRequestContentResponse(aTarget, block);
 
-    if (aFlags.mTargetConfirmed && event.AllowsSwipe() &&
-        !CanScrollTargetHorizontally(event, block)) {
+    if (event.AllowsSwipe() && !CanScrollTargetHorizontally(event, block)) {
       
       
-      
-      
-      block->SetNeedsToWaitForContentResponse(true);
+      block->SetNeedsToWaitForBrowserGestureResponse(true);
+      if (aFlags.mTargetConfirmed) {
+        
+        
+        
+        
+        block->SetNeedsToWaitForContentResponse(true);
 
-      
-      
-      result.SetStatusAsIgnore();
+        
+        
+        result.SetStatusAsIgnore();
+      }
     }
   } else {
     INPQ_LOG("received new pan event (type=%d) in block %p\n", aEvent.mType,
@@ -891,6 +895,19 @@ void InputQueue::SetAllowedTouchBehavior(
   if (success) {
     ProcessQueue();
   }
+}
+
+void InputQueue::SetBrowserGestureResponse(uint64_t aInputBlockId,
+                                           BrowserGestureResponse aResponse) {
+  InputBlockState* inputBlock = FindBlockForId(aInputBlockId, nullptr);
+
+  if (inputBlock && inputBlock->AsPanGestureBlock()) {
+    PanGestureBlockState* block = inputBlock->AsPanGestureBlock();
+    block->SetBrowserGestureResponse(aResponse);
+  } else if (inputBlock) {
+    NS_WARNING("input block is not a pan gesture block");
+  }
+  ProcessQueue();
 }
 
 static APZHandledResult GetHandledResultFor(
