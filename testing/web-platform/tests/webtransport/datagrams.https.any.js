@@ -24,6 +24,20 @@ async function write_datagrams(writer, signal) {
 }
 
 
+async function write_N_datagrams(writer, n) {
+  const encoder = new TextEncoder();
+  const sentTokens = [];
+  const promises = [];
+  while (sentTokens.length < n) {
+    const token = sentTokens.length.toString();
+    sentTokens.push(token);
+    promises.push(writer.write(encoder.encode(token)));
+  }
+  await Promise.all(promises);
+  return sentTokens;
+}
+
+
 
 async function read_datagrams(reader, controller, N) {
   const decoder = new TextDecoder();
@@ -158,6 +172,37 @@ promise_test(async t => {
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'));
+  await wt.ready;
+
+  const writer = wt.datagrams.writable.getWriter();
+  const reader = wt.datagrams.readable.getReader();
+
+  
+  await writer.write(new Uint8Array(wt.datagrams.maxDatagramSize));
+  const { value: token, done } = await reader.read();
+  assert_false(done);
+  assert_equals(token.length, wt.datagrams.maxDatagramSize);
+}, 'Transfer max-size datagram');
+
+promise_test(async t => {
+  
+  const wt = new WebTransport(webtransport_url('echo.py'));
+  await wt.ready;
+
+  const writer = wt.datagrams.writable.getWriter();
+  const reader = wt.datagrams.readable.getReader();
+
+  
+  await writer.write(new Uint8Array(wt.datagrams.maxDatagramSize+1));
+  
+  
+  const result = await Promise.race([reader.read(), wait(500)]);
+  assert_equals(result, undefined);
+}, 'Fail to transfer max-size+1 datagram');
+
+promise_test(async t => {
+  
+  const wt = new WebTransport(webtransport_url('echo.py'));
 
   const writer = wt.datagrams.writable.getWriter();
   const reader = wt.datagrams.readable.getReader();
@@ -166,9 +211,10 @@ promise_test(async t => {
   const signal = controller.signal;
 
   
-  const N = 1;
+  const N = 5;
+  wt.datagrams.outgoingHighWaterMark = N;
   const [sentTokens, receivedTokens] = await Promise.all([
-      write_datagrams(writer, signal),
+      write_N_datagrams(writer, N),
       read_datagrams(reader, controller, N)
   ]);
 
@@ -269,3 +315,56 @@ promise_test(async t => {
   
   assert_less_than_equal(receivedDatagrams, N);
 }, 'Datagrams read is less than or equal to the incomingHighWaterMark');
+
+promise_test(async t => {
+  
+  const wt = new WebTransport(webtransport_url('echo.py'));
+  await wt.ready;
+
+  assert_equals(wt.datagrams.incomingMaxAge, Infinity);
+  assert_equals(wt.datagrams.outgoingMaxAge, Infinity);
+
+  wt.datagrams.incomingMaxAge = 5;
+  assert_equals(wt.datagrams.incomingMaxAge, 5);
+  wt.datagrams.outgoingMaxAge = 5;
+  assert_equals(wt.datagrams.outgoingMaxAge, 5);
+
+  assert_throws_js(RangeError, () => { wt.datagrams.incomingMaxAge = -1; });
+  assert_throws_js(RangeError, () => { wt.datagrams.outgoingMaxAge = -1; });
+  assert_throws_js(RangeError, () => { wt.datagrams.incomingMaxAge = NaN; });
+  assert_throws_js(RangeError, () => { wt.datagrams.outgoingMaxAge = NaN; });
+
+  wt.datagrams.incomingMaxAge = 0;
+  assert_equals(wt.datagrams.incomingMaxAge, Infinity);
+  wt.datagrams.outgoingMaxAge = 0;
+  assert_equals(wt.datagrams.outgoingMaxAge, Infinity);
+}, 'Datagram MaxAge getters/setters work correctly');
+
+promise_test(async t => {
+  
+  const wt = new WebTransport(webtransport_url('echo.py'));
+  await wt.ready;
+
+  
+  assert_greater_than_equal(wt.datagrams.incomingHighWaterMark, 1);
+  assert_greater_than_equal(wt.datagrams.outgoingHighWaterMark, 1);
+
+  wt.datagrams.incomingHighWaterMark = 5;
+  assert_equals(wt.datagrams.incomingHighWaterMark, 5);
+  wt.datagrams.outgoingHighWaterMark = 5;
+  assert_equals(wt.datagrams.outgoingHighWaterMark, 5);
+
+  assert_throws_js(RangeError, () => { wt.datagrams.incomingHighWaterMark = -1; });
+  assert_throws_js(RangeError, () => { wt.datagrams.outgoingHighWaterMark = -1; });
+  assert_throws_js(RangeError, () => { wt.datagrams.incomingHighWaterMark = NaN; });
+  assert_throws_js(RangeError, () => { wt.datagrams.outgoingHighWaterMark = NaN; });
+
+  wt.datagrams.incomingHighWaterMark = 0.5;
+  assert_equals(wt.datagrams.incomingHighWaterMark, 1);
+  wt.datagrams.outgoingHighWaterMark = 0.5;
+  assert_equals(wt.datagrams.outgoingHighWaterMark, 1);
+  wt.datagrams.incomingHighWaterMark = 0;
+  assert_equals(wt.datagrams.incomingHighWaterMark, 1);
+  wt.datagrams.outgoingHighWaterMark = 0;
+  assert_equals(wt.datagrams.outgoingHighWaterMark, 1);
+}, 'Datagram HighWaterMark getters/setters work correctly');

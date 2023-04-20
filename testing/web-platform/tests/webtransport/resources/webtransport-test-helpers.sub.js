@@ -21,6 +21,23 @@ function webtransport_code_to_http_code(n) {
 }
 
 
+async function read_stream(readable_stream) {
+  const reader = readable_stream.getReader();
+
+  let chunks = [];
+  while (true) {
+    const {value: chunk, done} = await reader.read();
+    if (done) {
+      break;
+    }
+    chunks.push(chunk);
+  }
+  reader.releaseLock();
+
+  return chunks;
+}
+
+
 
 async function read_stream_as_string(readable_stream) {
   const decoder = new TextDecoderStream();
