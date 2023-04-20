@@ -377,7 +377,6 @@ class GCMarker {
     markAndTraverseEdge(source, target);
   }
 
-  
   template <typename S, typename T>
   void markAndTraverseEdge(S source, T* target);
   template <typename S, typename T>
@@ -394,8 +393,9 @@ class GCMarker {
   
   
   
-  template <typename T>
-  void traverse(T* thing);
+#define DEFINE_TRAVERSE_METHOD(_1, Type, _2, _3) void traverse(Type* thing);
+  JS_FOR_EACH_TRACEKIND(DEFINE_TRAVERSE_METHOD)
+#undef DEFINE_TRAVERSE_METHOD
 
   
   template <typename T>

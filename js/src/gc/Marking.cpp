@@ -1064,6 +1064,40 @@ void js::GCMarker::markAndTraverse(T* thing) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void GCMarker::traverse(BaseShape* thing) { traceChildren(thing); }
+void GCMarker::traverse(GetterSetter* thing) { traceChildren(thing); }
+void GCMarker::traverse(JS::Symbol* thing) { traceChildren(thing); }
+void GCMarker::traverse(JS::BigInt* thing) { traceChildren(thing); }
+void GCMarker::traverse(RegExpShared* thing) { traceChildren(thing); }
+void GCMarker::traverse(JSString* thing) { scanChildren(thing); }
+void GCMarker::traverse(Shape* thing) { scanChildren(thing); }
+void GCMarker::traverse(PropMap* thing) { scanChildren(thing); }
+void GCMarker::traverse(js::Scope* thing) { scanChildren(thing); }
+void GCMarker::traverse(JSObject* thing) { pushThing(thing); }
+void GCMarker::traverse(jit::JitCode* thing) { pushThing(thing); }
+void GCMarker::traverse(BaseScript* thing) { pushThing(thing); }
+
 template <typename T>
 void js::GCMarker::traceChildren(T* thing) {
   MOZ_ASSERT(!thing->isPermanentAndMayBeShared());
@@ -1071,31 +1105,6 @@ void js::GCMarker::traceChildren(T* thing) {
   AutoSetTracingSource asts(tracer(), thing);
   thing->traceChildren(tracer());
 }
-namespace js {
-template <>
-void GCMarker::traverse(BaseShape* thing) {
-  traceChildren(thing);
-}
-template <>
-void GCMarker::traverse(GetterSetter* thing) {
-  traceChildren(thing);
-}
-template <>
-void GCMarker::traverse(JS::Symbol* thing) {
-  traceChildren(thing);
-}
-template <>
-void GCMarker::traverse(JS::BigInt* thing) {
-  traceChildren(thing);
-}
-template <>
-void GCMarker::traverse(RegExpShared* thing) {
-  traceChildren(thing);
-}
-}  
-
-
-
 
 template <typename T>
 void js::GCMarker::scanChildren(T* thing) {
@@ -1103,29 +1112,6 @@ void js::GCMarker::scanChildren(T* thing) {
   MOZ_ASSERT(thing->isMarkedAny());
   eagerlyMarkChildren(thing);
 }
-namespace js {
-template <>
-void GCMarker::traverse(JSString* thing) {
-  scanChildren(thing);
-}
-template <>
-void GCMarker::traverse(Shape* thing) {
-  scanChildren(thing);
-}
-template <>
-void GCMarker::traverse(PropMap* thing) {
-  scanChildren(thing);
-}
-template <>
-void GCMarker::traverse(js::Scope* thing) {
-  scanChildren(thing);
-}
-}  
-
-
-
-
-
 
 template <typename T>
 void js::GCMarker::pushThing(T* thing) {
@@ -1133,20 +1119,6 @@ void js::GCMarker::pushThing(T* thing) {
   MOZ_ASSERT(thing->isMarkedAny());
   pushTaggedPtr(thing);
 }
-namespace js {
-template <>
-void GCMarker::traverse(JSObject* thing) {
-  pushThing(thing);
-}
-template <>
-void GCMarker::traverse(jit::JitCode* thing) {
-  pushThing(thing);
-}
-template <>
-void GCMarker::traverse(BaseScript* thing) {
-  pushThing(thing);
-}
-}  
 
 template void js::GCMarker::markAndTraverse<MarkingOptions::None, JSObject>(
     JSObject* thing);
