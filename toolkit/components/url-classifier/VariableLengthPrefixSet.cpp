@@ -247,13 +247,6 @@ nsresult VariableLengthPrefixSet::GetFixedLengthPrefixes(
   return NS_OK;
 }
 
-nsresult VariableLengthPrefixSet::GetFixedLengthPrefixByIndex(
-    uint32_t aIndex, uint32_t* aOutPrefix) const {
-  NS_ENSURE_ARG_POINTER(aOutPrefix);
-
-  return mFixedPrefixSet->GetPrefixByIndex(aIndex, aOutPrefix);
-}
-
 
 
 
@@ -386,10 +379,6 @@ uint32_t VariableLengthPrefixSet::CalculatePreallocateSize() const {
     fileSize += data->Length();
   }
   return fileSize;
-}
-
-uint32_t VariableLengthPrefixSet::Length() const {
-  return mFixedPrefixSet->Length();
 }
 
 nsresult VariableLengthPrefixSet::WritePrefixes(

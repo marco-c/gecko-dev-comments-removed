@@ -1610,14 +1610,28 @@ nsresult Classifier::ReadNoiseEntries(const Prefix& aPrefix,
                                       const nsACString& aTableName,
                                       uint32_t aCount,
                                       PrefixArray& aNoiseEntries) {
+  FallibleTArray<uint32_t> prefixes;
+  nsresult rv;
+
   RefPtr<LookupCache> cache = GetLookupCache(aTableName);
   if (!cache) {
     return NS_ERROR_FAILURE;
   }
 
   RefPtr<LookupCacheV2> cacheV2 = LookupCache::Cast<LookupCacheV2>(cache);
-  RefPtr<LookupCacheV4> cacheV4 = LookupCache::Cast<LookupCacheV4>(cache);
-  MOZ_ASSERT_IF(cacheV2, !cacheV4);
+  if (cacheV2) {
+    rv = cacheV2->GetPrefixes(prefixes);
+  } else {
+    rv = LookupCache::Cast<LookupCacheV4>(cache)->GetFixedLengthPrefixes(
+        prefixes);
+  }
+
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (prefixes.Length() == 0) {
+    NS_WARNING("Could not find prefix in PrefixSet during noise lookup");
+    return NS_ERROR_FAILURE;
+  }
 
   
   
@@ -1630,36 +1644,20 @@ nsresult Classifier::ReadNoiseEntries(const Prefix& aPrefix,
   
   
 
-  uint32_t m = cache->PrefixLength();
+  uint32_t m = prefixes.Length();
   uint32_t a = aCount % m;
   uint32_t idx = aPrefix.ToUint32() % m;
 
   for (size_t i = 0; i < aCount; i++) {
     idx = (a * idx + a) % m;
 
-    uint32_t hash;
-
-    nsresult rv;
-    if (cacheV2) {
-      rv = cacheV2->GetPrefixByIndex(idx, &hash);
-    } else {
-      
-      
-      rv = cacheV4->GetFixedLengthPrefixByIndex(idx, &hash);
-    }
-
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "Could not find the target prefix in PrefixSet during noise lookup");
-      return NS_ERROR_FAILURE;
-    }
-
     Prefix newPrefix;
+    uint32_t hash = prefixes[idx];
     
     
     
     if (!cacheV2 && !bool(MOZ_BIG_ENDIAN())) {
-      hash = NativeEndian::swapFromBigEndian(hash);
+      hash = NativeEndian::swapFromBigEndian(prefixes[idx]);
     }
 
     newPrefix.FromUint32(hash);
