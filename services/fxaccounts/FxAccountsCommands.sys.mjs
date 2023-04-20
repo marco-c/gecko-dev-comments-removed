@@ -1,8 +1,6 @@
-
-
-
-
-const EXPORTED_SYMBOLS = ["SendTab", "FxAccountsCommands"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const {
   COMMAND_SENDTAB,
@@ -16,9 +14,8 @@ ChromeUtils.defineModuleGetter(
   "PushCrypto",
   "resource://gre/modules/PushCrypto.jsm"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const { Observers } = ChromeUtils.import(
   "resource://services-common/observers.js"
 );
@@ -39,7 +36,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   }
 );
 
-class FxAccountsCommands {
+export class FxAccountsCommands {
   constructor(fxAccountsInternal) {
     this._fxai = fxAccountsInternal;
     this.sendTab = new SendTab(this, fxAccountsInternal);
@@ -54,7 +51,7 @@ class FxAccountsCommands {
     }
     const encryptedSendTabKeys = await this.sendTab.getEncryptedSendTabKeys();
     if (!encryptedSendTabKeys) {
-      
+      // This will happen if the account is not verified yet.
       return {};
     }
     return {
@@ -82,7 +79,7 @@ class FxAccountsCommands {
         payload
       );
       if (!info.enqueued || !info.notified) {
-        
+        // We want an error log here to help diagnose users who report failure.
         log.error("Sending was only partially successful", info);
       } else {
         log.info("Successfully sent", info);
@@ -96,19 +93,19 @@ class FxAccountsCommands {
     log.info(`Payload sent to device ${device.id}.`);
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Poll and handle device commands for the current device.
+   * This method can be called either in response to a Push message,
+   * or by itself as a "commands recovery" mechanism.
+   *
+   * @param {Number} notifiedIndex "Command received" push messages include
+   * the index of the command that triggered the message. We use it as a
+   * hint when we have no "last command index" stored.
+   */
   async pollDeviceCommands(notifiedIndex = 0) {
-    
-    
-    
+    // Whether the call to `pollDeviceCommands` was initiated by a Push message from the FxA
+    // servers in response to a message being received or simply scheduled in order
+    // to fetch missed messages.
     if (
       !Services.prefs.getBoolPref("identity.fxaccounts.commands.enabled", true)
     ) {
@@ -120,10 +117,10 @@ class FxAccountsCommands {
       if (!device) {
         throw new Error("No device registration.");
       }
-      
-      
+      // We increment lastCommandIndex by 1 because the server response includes the current index.
+      // If we don't have a `lastCommandIndex` stored, we fall back on the index from the push message we just got.
       const lastCommandIndex = device.lastCommandIndex + 1 || notifiedIndex;
-      
+      // We have already received this message before.
       if (notifiedIndex > 0 && notifiedIndex < lastCommandIndex) {
         return;
       }
@@ -159,19 +156,19 @@ class FxAccountsCommands {
   }
 
   _getReason(notifiedIndex, messageIndex) {
-    
-    
-    
-    
-    
+    // The returned reason value represents an explanation for why the command associated with the
+    // message of the given `messageIndex` is being handled. If `notifiedIndex` is zero the command
+    // is a part of a fallback polling process initiated by "Sync Now" ["poll"]. If `notifiedIndex` is
+    // greater than `messageIndex` this is a push command that was previously missed ["push-missed"],
+    // otherwise we assume this is a push command with no missed messages ["push"].
     if (notifiedIndex == 0) {
       return "poll";
     } else if (notifiedIndex > messageIndex) {
       return "push-missed";
     }
-    
-    
-    
+    // Note: The returned reason might be "push" in the case where a user sends multiple tabs
+    // in quick succession. We are not attempting to distinguish this from other push cases at
+    // present.
     return "push";
   }
 
@@ -181,7 +178,7 @@ class FxAccountsCommands {
     } catch (e) {
       log.warn("Error refreshing device list", e);
     }
-    
+    // We debounce multiple incoming tabs so we show a single notification.
     const tabsReceived = [];
     for (const { index, data } of messages) {
       const { command, payload, sender: senderId } = data;
@@ -208,9 +205,9 @@ class FxAccountsCommands {
                 sender ? sender.name : "Unknown device"
               }.`
             );
-            
-            
-            
+            // This should eventually be rare to hit as all platforms will be using the same
+            // scheme filter list, but we have this here in the case other platforms
+            // haven't caught up and/or trying to send invalid uris using older versions
             const scheme = Services.io.newURI(uri).scheme;
             if (lazy.INVALID_SHAREABLE_SCHEMES.has(scheme)) {
               throw new Error("Invalid scheme found for received URI.");
@@ -234,33 +231,33 @@ class FxAccountsCommands {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SendTab {
+/**
+ * Send Tab is built on top of FxA commands.
+ *
+ * Devices exchange keys wrapped in the oldsync key between themselves (getEncryptedSendTabKeys)
+ * during the device registration flow. The FxA server can theoretically never
+ * retrieve the send tab keys since it doesn't know the oldsync key.
+ *
+ * Note about the keys:
+ * The server has the `pushPublicKey`. The FxA server encrypt the send-tab payload again using the
+ * push keys - after the client has encrypted the payload using the send-tab keys.
+ * The push keys are different from the send-tab keys. The FxA server uses
+ * the push keys to deliver the tabs using same mechanism we use for web-push.
+ * However, clients use the send-tab keys for end-to-end encryption.
+ */
+export class SendTab {
   constructor(commands, fxAccountsInternal) {
     this._commands = commands;
     this._fxai = fxAccountsInternal;
   }
-  
-
-
-
-
-
-
-
+  /**
+   * @param {Device[]} to - Device objects (typically returned by fxAccounts.getDevicesList()).
+   * @param {Object} tab
+   * @param {string} tab.url
+   * @param {string} tab.title
+   * @returns A report object, in the shape of
+   *          {succeded: [Device], error: [{device: Device, error: Exception}]}
+   */
   async send(to, tab) {
     log.info(`Sending a tab to ${to.length} devices.`);
     const flowID = this._fxai.telemetry.generateFlowID();
@@ -276,9 +273,9 @@ class SendTab {
         const targetData = Object.assign({ flowID, streamID }, data);
         const bytes = encoder.encode(JSON.stringify(targetData));
         const encrypted = await this._encrypt(bytes, device);
-        
-        
-        
+        // FxA expects an object as the payload, but we only have a single encrypted string; wrap it.
+        // If you add any plaintext items to this payload, please carefully consider the privacy implications
+        // of revealing that data to the FxA server.
         const payload = { encrypted };
         await this._commands.invoke(COMMAND_SENDTAB, device, payload);
         this._fxai.telemetry.recordEvent(
@@ -296,7 +293,7 @@ class SendTab {
     return report;
   }
 
-  
+  // Returns true if the target device is compatible with FxA Commands Send tab.
   isDeviceCompatible(device) {
     return (
       Services.prefs.getBoolPref(
@@ -308,7 +305,7 @@ class SendTab {
     );
   }
 
-  
+  // Handle incoming send tab payload, called by FxAccountsCommands.
   async handle(senderID, { encrypted }, reason) {
     const bytes = await this._decrypt(encrypted);
     const decoder = new TextDecoder("utf8");
@@ -318,9 +315,9 @@ class SendTab {
       ? data.current
       : entries.length - 1;
     const { title, url: uri } = entries[current];
-    
-    
-    
+    // `flowID` and `streamID` are in the top-level of the JSON, `entries` is
+    // an array of "tabs" with `current` being what index is the one we care
+    // about, or the last one if not specified.
     this._fxai.telemetry.recordEvent(
       "command-received",
       COMMAND_SENDTAB_TAIL,
@@ -340,7 +337,7 @@ class SendTab {
       throw new Error(`Device ${device.id} does not have send tab keys.`);
     }
     const oldsyncKey = await this._fxai.keys.getKeyForScope(SCOPE_OLD_SYNC);
-    
+    // Older clients expect this to be hex, due to pre-JWK sync key ids :-(
     const ourKid = this._fxai.keys.kidAsHex(oldsyncKey);
     const { kid: theirKid } = JSON.parse(
       device.availableCommands[COMMAND_SENDTAB]
@@ -382,7 +379,7 @@ class SendTab {
       privateKey,
       publicKey,
       authSecret,
-      
+      // The only Push encoding we support.
       { encoding: "aes128gcm" },
       ciphertext
     );
@@ -423,7 +420,7 @@ class SendTab {
       log.info("Could not find sendtab keys, generating them");
       sendTabKeys = await this._generateAndPersistSendTabKeys();
     }
-    
+    // Strip the private key from the bundle to encrypt.
     const keyToEncrypt = {
       publicKey: sendTabKeys.publicKey,
       authSecret: sendTabKeys.authSecret,
@@ -444,7 +441,7 @@ class SendTab {
     const keyBundle = lazy.BulkKeyBundle.fromJWK(oldsyncKey);
     await wrapper.encrypt(keyBundle);
     const encryptedSendTabKeys = JSON.stringify({
-      
+      // Older clients expect this to be hex, due to pre-JWK sync key ids :-(
       kid: this._fxai.keys.kidAsHex(oldsyncKey),
       IV: wrapper.IV,
       hmac: wrapper.hmac,
@@ -463,17 +460,17 @@ class SendTab {
     const sendTabKeys = await this._getPersistedSendTabKeys();
     if (!encryptedSendTabKeys || !sendTabKeys) {
       log.info("Generating and persisting encrypted sendtab keys");
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // `_generateAndPersistEncryptedKeys` requires the sync key
+      // which cannot be accessed if the login manager is locked
+      // (i.e when the primary password is locked) or if the sync keys
+      // aren't accessible (account isn't verified)
+      // so this function could fail to retrieve the keys
+      // however, device registration will trigger when the account
+      // is verified, so it's OK
+      // Note that it's okay to persist those keys, because they are
+      // already persisted in plaintext and the encrypted bundle
+      // does not include the sync-key (the sync key is used to encrypt
+      // it though)
       encryptedSendTabKeys = await this._generateAndPersistEncryptedSendTabKey();
     }
     return encryptedSendTabKeys;

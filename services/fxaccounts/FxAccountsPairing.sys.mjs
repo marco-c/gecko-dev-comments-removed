@@ -1,8 +1,6 @@
-
-
-
-
-"use strict";
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 const {
   log,
@@ -17,9 +15,8 @@ const { getFxAccountsSingleton, FxAccounts } = ChromeUtils.import(
   "resource://gre/modules/FxAccounts.jsm"
 );
 const fxAccounts = getFxAccountsSingleton();
-const { setTimeout, clearTimeout } = ChromeUtils.importESModule(
-  "resource://gre/modules/Timer.sys.mjs"
-);
+import { setTimeout, clearTimeout } from "resource://gre/modules/Timer.sys.mjs";
+
 ChromeUtils.import("resource://services-common/utils.js");
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -37,10 +34,10 @@ ChromeUtils.defineModuleGetter(
 );
 
 const PAIRING_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob:pair-auth-webchannel";
-
-
-
-const FLOW_TIMEOUT_MS = 15 * 60 * 1000; 
+// A pairing flow is not tied to a specific browser window, can also finish in
+// various ways and subsequently might leak a Web Socket, so just in case we
+// time out and free-up the resources after a specified amount of time.
+const FLOW_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes.
 
 class PairingStateMachine {
   constructor(emitter) {
@@ -76,16 +73,16 @@ class PairingStateMachine {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * The pairing flow can be modeled by a finite state machine:
+ * We start by connecting to a WebSocket channel (SuppConnectionPending).
+ * Then the other party connects and requests some metadata from us (PendingConfirmations).
+ * A confirmation happens locally first (PendingRemoteConfirmation)
+ * or the oppposite (PendingLocalConfirmation).
+ * Any side can decline this confirmation (Aborted).
+ * Once both sides have confirmed, the pairing flow is finished (Completed).
+ * During this flow errors can happen and should be handled (Errored).
+ */
 class State {
   constructor(stateMachine, ...args) {
     this._transition = (...args) => stateMachine._transition(...args);
@@ -94,7 +91,7 @@ class State {
   }
 
   init() {
-    
+    /* Does nothing by default but can be re-implemented. */
   }
 
   get label() {
@@ -173,7 +170,8 @@ class Errored extends State {
 }
 
 const flows = new Map();
-class FxAccountsPairingFlow {
+
+export class FxAccountsPairingFlow {
   static get(channelId) {
     return flows.get(channelId);
   }
@@ -246,7 +244,7 @@ class FxAccountsPairingFlow {
   finalize() {
     this._closeChannel();
     clearTimeout(this._flowTimeoutId);
-    
+    // Free up resources and let the GC do its thing.
     flows.delete(this._channelId);
   }
 
@@ -277,7 +275,7 @@ class FxAccountsPairingFlow {
     this._onError(error);
   }
 
-  
+  // Any non-falsy returned value is sent back through WebChannel.
   async onWebChannelMessage(command) {
     const stateMachine = this._stateMachine;
     const curState = stateMachine.currentState;
@@ -428,7 +426,7 @@ class FxAccountsPairingFlow {
 
   onPrefViewClosed() {
     const curState = this._stateMachine.currentState;
-    
+    // We don't want to stop the pairing process in the later stages.
     if (
       curState instanceof SuppConnectionPending ||
       curState instanceof Aborted ||
@@ -438,19 +436,19 @@ class FxAccountsPairingFlow {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Grant an OAuth authorization code for the connecting client.
+   *
+   * @param {Object} options
+   * @param options.client_id
+   * @param options.state
+   * @param options.scope
+   * @param options.access_type
+   * @param options.code_challenge_method
+   * @param options.code_challenge
+   * @param [options.keys_jwe]
+   * @returns {Promise<Object>} Object containing "code" and "state" properties.
+   */
   _authorizeOAuthCode(options) {
     return this._fxa._withVerifiedAccountState(async state => {
       const { sessionToken } = await state.getUserAccountData(["sessionToken"]);
@@ -480,25 +478,25 @@ class FxAccountsPairingFlow {
     });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Create a JWE to deliver keys to another client via the OAuth scoped-keys flow.
+   *
+   * This method is used to transfer key material to another client, by providing
+   * an appropriately-encrypted value for the `keys_jwe` OAuth response parameter.
+   * Since we're transferring keys from one client to another, two things must be
+   * true:
+   *
+   *   * This client must actually have the key.
+   *   * The other client must be allowed to request that key.
+   *
+   * @param {String} sessionToken the sessionToken to use when fetching key metadata
+   * @param {String} clientId the client requesting access to our keys
+   * @param {String} scopes Space separated requested scopes being requested
+   * @param {Object} jwk Ephemeral JWK provided by the client for secure key transfer
+   */
   async _createKeysJWE(sessionToken, clientId, scopes, jwk) {
-    
-    
+    // This checks with the FxA server about what scopes the client is allowed.
+    // Note that we pass the requesting client_id here, not our own client_id.
     const clientKeyData = await this._fxai.fxAccountsClient.getScopedKeyData(
       sessionToken,
       clientId,
@@ -518,5 +516,3 @@ class FxAccountsPairingFlow {
     );
   }
 }
-
-const EXPORTED_SYMBOLS = ["FxAccountsPairingFlow"];
