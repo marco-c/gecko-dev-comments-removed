@@ -9036,6 +9036,9 @@ TEST_F(WebRtcVideoChannelBaseTest, EncoderSelectorSwitchCodec) {
 
   ASSERT_TRUE(channel_->GetSendCodec(&codec));
   EXPECT_EQ("VP9", codec.name);
+
+  
+  channel_->SetEncoderSelector(kSsrc, nullptr);
 }
 
 }  
