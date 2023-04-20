@@ -151,16 +151,25 @@ check_and_add_flag(
 )
 
 
+
 @depends(
     arch_option,
     thumb_option,
-    thumb_interwork_option,
     fpu_option,
     float_abi_option,
     soft_float_option,
 )
-def all_arm_flags(arch, thumb, interwork, fpu, float_abi, soft_float):
-    return arch + thumb + interwork + fpu + float_abi + soft_float
+def all_clang_arm_flags(arch, thumb, fpu, float_abi, soft_float):
+    return arch + thumb + fpu + float_abi + soft_float
+
+
+
+
+
+
+@depends(all_clang_arm_flags, thumb_interwork_option)
+def all_arm_flags(flags, interwork):
+    return flags + interwork
 
 
 add_old_configure_assignment("_ARM_FLAGS", all_arm_flags)
