@@ -469,6 +469,12 @@ interface nsIHttpChannelInternal : nsISupports
 
     [must_use] void setEarlyHintObserver(in nsIEarlyHintObserver aObserver);
 
+    
+
+
+
+    [must_use] attribute unsigned long long earlyHintPreloaderId;
+
     [notxpcom, nostdcall] void setConnectionInfo(in nsHttpConnectionInfo aInfo);
 
 };

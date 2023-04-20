@@ -2256,6 +2256,7 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   openArgs.forceMainDocumentChannel() = LoadForceMainDocumentChannel();
 
   openArgs.navigationStartTimeStamp() = navigationStartTimeStamp;
+  openArgs.earlyHintPreloaderId() = mEarlyHintPreloaderId;
 
   
   

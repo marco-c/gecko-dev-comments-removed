@@ -8,6 +8,7 @@
 #ifndef mozilla_net_HttpChannelParent_h
 #define mozilla_net_HttpChannelParent_h
 
+#include "HttpBaseChannel.h"
 #include "nsHttp.h"
 #include "mozilla/net/PHttpChannelParent.h"
 #include "mozilla/net/NeckoCommon.h"
@@ -94,6 +95,9 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   void InvokeAsyncOpen(nsresult rv);
 
+  void InvokeEarlyHintPreloader(nsresult rv, uint64_t aEarlyHintPreloaderId,
+                                uint64_t aChannelId);
+
   
   void DoSendSetPriority(int16_t aValue);
 
@@ -123,6 +127,12 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
       Endpoint<extensions::PStreamFilterParent>&& aParentEndpoint,
       Endpoint<extensions::PStreamFilterChild>&& aChildEndpoint);
   [[nodiscard]] RefPtr<GenericPromise> DetachStreamFilters();
+
+  
+  
+  
+  
+  void SetHttpChannelFromEarlyHintPreloader(HttpBaseChannel* aChannel);
 
  protected:
   
@@ -160,7 +170,8 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
       const TimeStamp& aHandleFetchEventStart,
       const TimeStamp& aHandleFetchEventEnd,
       const bool& aForceMainDocumentChannel,
-      const TimeStamp& aNavigationStartTimeStamp);
+      const TimeStamp& aNavigationStartTimeStamp,
+      const uint64_t& aEarlyHintPreloaderId);
 
   virtual mozilla::ipc::IPCResult RecvSetPriority(
       const int16_t& priority) override;
@@ -220,7 +231,8 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   
-  [[nodiscard]] RefPtr<GenericNonExclusivePromise> WaitForBgParent();
+  [[nodiscard]] RefPtr<GenericNonExclusivePromise> WaitForBgParent(
+      uint64_t aChannelId);
 
   
   
@@ -234,6 +246,8 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   int32_t mSendWindowSize;
 
   friend class HttpBackgroundChannelParent;
+
+  uint64_t mEarlyHintPreloaderId;
 
   RefPtr<HttpBaseChannel> mChannel;
   nsCOMPtr<nsICacheEntry> mCacheEntry;
