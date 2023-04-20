@@ -25,6 +25,8 @@ inline constexpr char kWidevineKeySystemName[] = "com.widevine.alpha";
 
 inline constexpr char kPlayReadyKeySystemName[] =
     "com.microsoft.playready.recommendation";
+inline constexpr char kPlayReadyKeySystemNameDeprecated[] =
+    "com.microsoft.playready";
 #endif
 }  
 

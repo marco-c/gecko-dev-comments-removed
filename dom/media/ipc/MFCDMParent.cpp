@@ -69,7 +69,7 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
       mKeyChangeEvents(aManagerThread),
       mExpirationEvents(aManagerThread) {
   
-  MOZ_ASSERT(aKeySystem.EqualsLiteral(kPlayReadyKeySystemName));
+  MOZ_ASSERT(IsPlayReadyKeySystem(aKeySystem));
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(aManagerThread);
   MOZ_ASSERT(XRE_IsUtilityProcess());
