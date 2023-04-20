@@ -8,26 +8,31 @@ requestLongerTimeout(2);
 
 const testURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
   "http://example.org"
 );
 
 const examplecomURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
   "http://example.com"
 );
 
 const w3cURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
   "http://w3c-test.org"
 );
 
 const examplenetURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
   "http://example.net"
 );
 
 const prefixexamplecomURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
   "http://prefixexample.com"
 );
 

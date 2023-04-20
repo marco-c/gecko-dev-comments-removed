@@ -57,6 +57,7 @@ var tests = [
       this.oldSelectedTab = gBrowser.selectedTab;
       await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
+        
         "http://example.com/"
       );
 
@@ -113,6 +114,7 @@ var tests = [
         "geo anchor shouldn't be visible"
       );
 
+      
       await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.com/");
 
       isnot(
@@ -259,6 +261,7 @@ var tests = [
       this.oldSelectedTab = gBrowser.selectedTab;
       await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
+        
         "http://example.com/"
       );
       await hidden;

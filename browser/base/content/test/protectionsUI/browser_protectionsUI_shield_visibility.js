@@ -8,6 +8,7 @@
 const TEST_CASES = [
   {
     type: "http",
+    
     testURL: "http://example.com",
     hidden: false,
   },

@@ -4,6 +4,7 @@
 "use strict";
 
 const TRACKING_PAGE =
+  
   "http://example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 const FP_PROTECTION_PREF = "privacy.trackingprotection.fingerprinting.enabled";
 let fpHistogram;

@@ -4,8 +4,10 @@
 "use strict";
 
 const TRACKING_PAGE =
+  
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 const BENIGN_PAGE =
+  
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/benignPage.html";
 
 const TP_PREF = "privacy.trackingprotection.enabled";
