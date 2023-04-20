@@ -138,6 +138,18 @@ class AudioProcessingImpl : public AudioProcessing {
 
   AudioProcessing::Config GetConfig() const override;
 
+  
+  
+  struct GainController2ConfigOverride {
+    InputVolumeController::Config input_volume_controller_config;
+    struct AdaptiveDigitalConfig {
+      float headroom_db;
+      float max_gain_db;
+      float max_gain_change_db_per_second;
+      float max_output_noise_level_dbfs;
+    } adaptive_digital_config;
+  };
+
  protected:
   
   virtual void InitializeLocked()
@@ -161,7 +173,7 @@ class AudioProcessingImpl : public AudioProcessing {
   FRIEND_TEST_ALL_PREFIXES(ApmWithSubmodulesExcludedTest,
                            BitexactWithDisabledModules);
   FRIEND_TEST_ALL_PREFIXES(
-      AudioProcessingImplInputVolumeControllerExperimentParametrizedTest,
+      AudioProcessingImplGainController2FieldTrialParametrizedTest,
       ConfigAdjustedWhenExperimentEnabled);
 
   void set_stream_analog_level_locked(int level)
@@ -194,8 +206,8 @@ class AudioProcessingImpl : public AudioProcessing {
   
   
   
-  const absl::optional<InputVolumeController::Config>
-      input_volume_controller_config_override_;
+  const absl::optional<GainController2ConfigOverride>
+      gain_controller2_config_override_;
 
   const bool use_denormal_disabler_;
 
