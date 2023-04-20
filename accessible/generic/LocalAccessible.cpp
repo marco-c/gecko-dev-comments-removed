@@ -3399,9 +3399,26 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         nsTArray<int32_t> charData;
 
         if (nsTextFrame* currTextFrame = do_QueryFrame(frame)) {
+          nsTextFrame* prevTextFrame = currTextFrame;
           nsRect frameRect = currTextFrame->GetRect();
+          nsIFrame* nearestAccAncestorFrame =
+              LocalParent() ? LocalParent()->GetFrame() : nullptr;
           while (currTextFrame) {
             nsRect contRect = currTextFrame->GetRect();
+            if (prevTextFrame->GetParent() != currTextFrame->GetParent() &&
+                nearestAccAncestorFrame) {
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              contRect = nsLayoutUtils::TransformFrameRectToAncestor(
+                  currTextFrame, frameRect, nearestAccAncestorFrame);
+            }
             nsTArray<nsRect> charBounds;
             currTextFrame->GetCharacterRectsInRange(
                 currTextFrame->GetContentOffset(),
@@ -3422,6 +3439,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
               charData.AppendElement(charRect.width);
               charData.AppendElement(charRect.height);
             }
+            prevTextFrame = currTextFrame;
             currTextFrame = currTextFrame->GetNextContinuation();
           }
         }
