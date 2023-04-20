@@ -62,7 +62,8 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
   
   mozilla::Maybe<mozilla::TrackingId> mTrackingId MOZ_GUARDED_BY(api_lock_);
   
-  mozilla::PerformanceRecorderMulti<mozilla::CaptureStage> mPerformanceRecorder;
+  mozilla::PerformanceRecorderMulti<mozilla::CaptureStage> mCaptureRecorder;
+  mozilla::PerformanceRecorderMulti<mozilla::CopyVideoStage> mConversionRecorder;
   std::atomic<ProfilerThreadId> mCallbackThreadId;
 };
 
