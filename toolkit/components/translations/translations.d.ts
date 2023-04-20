@@ -225,3 +225,8 @@ interface TranslationsEnginePayload {
   bergamotWasmArrayBuffer: ArrayBuffer,
   languageModelFiles: LanguageModelFiles[]
 }
+
+
+
+
+export type NodeVisibility = "in-viewport" | "out-of-viewport" | "hidden";

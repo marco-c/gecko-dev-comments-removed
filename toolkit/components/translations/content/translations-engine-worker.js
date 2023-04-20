@@ -47,6 +47,7 @@ const MODEL_FILE_ALIGNMENTS = {
 addEventListener("message", handleInitializationMessage);
 
 async function handleInitializationMessage({ data }) {
+  const startTime = performance.now();
   if (data.type !== "initialize") {
     console.error(
       "The TranslationEngine worker received a message before it was initialized."
@@ -55,7 +56,13 @@ async function handleInitializationMessage({ data }) {
   }
 
   try {
-    const { fromLanguage, toLanguage, enginePayload, isLoggingEnabled } = data;
+    const {
+      fromLanguage,
+      toLanguage,
+      enginePayload,
+      isLoggingEnabled,
+      innerWindowId,
+    } = data;
 
     if (!fromLanguage) {
       throw new Error('Worker initialization missing "fromLanguage"');
@@ -86,6 +93,12 @@ async function handleInitializationMessage({ data }) {
       engine = new MockedEngine(fromLanguage, toLanguage);
     }
 
+    ChromeUtils.addProfilerMarker(
+      "TranslationsWorker",
+      { startTime, innerWindowId },
+      "Translations engine loaded."
+    );
+
     handleMessages(engine);
     postMessage({ type: "initialization-success" });
   } catch (error) {
@@ -103,18 +116,31 @@ async function handleInitializationMessage({ data }) {
 
 
 function handleMessages(engine) {
-  addEventListener("message", ({ data }) => {
+  let discardPromise;
+  addEventListener("message", async ({ data }) => {
     try {
       if (data.type === "initialize") {
         throw new Error("The Translations engine must not be re-initialized.");
       }
-      log("Received message", data);
 
       switch (data.type) {
         case "translation-request": {
-          const { messageBatch, messageId, isHTML } = data;
+          const { messageBatch, messageId, isHTML, innerWindowId } = data;
+          if (discardPromise) {
+            
+            await discardPromise;
+          }
           try {
-            const translations = engine.translate(messageBatch, isHTML);
+            
+            
+            
+            
+            const translations = await engine.translate(
+              messageBatch,
+              isHTML,
+              innerWindowId
+            );
+
             postMessage({
               type: "translation-response",
               translations,
@@ -134,8 +160,26 @@ function handleMessages(engine) {
               type: "translation-error",
               error: { message, stack },
               messageId,
+              innerWindowId,
             });
           }
+          break;
+        }
+        case "discard-translation-queue": {
+          ChromeUtils.addProfilerMarker(
+            "TranslationsWorker",
+            { innerWindowId: data.innerWindowId },
+            "Translations discard requested"
+          );
+
+          discardPromise = engine.discardTranslations();
+          await discardPromise;
+          discardPromise = null;
+
+          
+          postMessage({
+            type: "translations-discarded",
+          });
           break;
         }
         default:
@@ -202,7 +246,82 @@ class Engine {
 
 
 
-  translate(messageBatch, isHTML, withQualityEstimation = false) {
+
+
+
+
+
+
+  translate(
+    messageBatch,
+    isHTML,
+    innerWindowId,
+    withQualityEstimation = false
+  ) {
+    return this.#getWorkQueue(innerWindowId).runTask(() =>
+      this.#syncTranslate(
+        messageBatch,
+        isHTML,
+        innerWindowId,
+        withQualityEstimation
+      )
+    );
+  }
+
+  
+
+
+
+
+
+  #workQueues = new Map();
+
+  
+
+
+
+
+
+  #getWorkQueue(innerWindowId) {
+    let workQueue = this.#workQueues.get(innerWindowId);
+    if (workQueue) {
+      return workQueue;
+    }
+    workQueue = new WorkQueue(innerWindowId);
+    this.#workQueues.set(innerWindowId, workQueue);
+    return workQueue;
+  }
+
+  
+
+
+
+
+  discardTranslations(innerWindowId) {
+    let workQueue = this.#workQueues.get(innerWindowId);
+    if (workQueue) {
+      workQueue.cancelWork();
+      this.#workQueues.delete(innerWindowId);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  #syncTranslate(
+    messageBatch,
+    isHTML,
+    innerWindowId,
+    withQualityEstimation = false
+  ) {
+    const startTime = performance.now();
     let response;
     const { messages, options } = BergamotUtils.getTranslationArgs(
       this.bergamot,
@@ -238,9 +357,22 @@ class Engine {
       }
 
       
-      return BergamotUtils.mapVector(responses, response =>
+      const translations = BergamotUtils.mapVector(responses, response =>
         response.getTranslatedText()
       );
+
+      
+      let length = 0;
+      for (const message of messageBatch) {
+        length += message.length;
+      }
+      ChromeUtils.addProfilerMarker(
+        "TranslationsWorker",
+        { startTime, innerWindowId },
+        `Translated ${length} code units.`
+      );
+
+      return translations;
     } finally {
       
       messages?.delete();
@@ -456,9 +588,10 @@ class BergamotUtils {
   ) {
     const messages = new bergamot.VectorString();
     const options = new bergamot.VectorResponseOptions();
-    for (const message of messageBatch) {
+    for (let message of messageBatch) {
+      message = message.trim();
       
-      if (message.trim() === "") {
+      if (message === "") {
         continue;
       }
 
@@ -514,5 +647,121 @@ class MockedEngine {
 
       return `${message} [${this.fromLanguage} to ${this.toLanguage}${html}]`;
     });
+  }
+}
+
+
+
+
+
+class WorkQueue {
+  #TIME_BUDGET = 100; // ms
+  #RUN_IMMEDIATELY_COUNT = 20;
+
+  
+  #tasks = [];
+  #isRunning = false;
+  #isWorkCancelled = false;
+  #runImmediately = this.#RUN_IMMEDIATELY_COUNT;
+
+  
+
+
+  constructor(innerWindowId) {
+    this.innerWindowId = innerWindowId;
+  }
+
+  
+
+
+
+
+
+
+  runTask(task) {
+    if (this.#runImmediately > 0) {
+      
+      
+      
+      this.#runImmediately--;
+      return Promise.resolve(task());
+    }
+    return new Promise((resolve, reject) => {
+      this.#tasks.push({ task, resolve, reject });
+      this.#run().catch(error => console.error(error));
+    });
+  }
+
+  
+
+
+  async #run() {
+    if (this.#isRunning) {
+      
+      return;
+    }
+
+    this.#isRunning = true;
+
+    
+    let lastTimeout = null;
+
+    let tasksInBatch = 0;
+    const addProfilerMarker = () => {
+      ChromeUtils.addProfilerMarker(
+        "TranslationsWorker WorkQueue",
+        { startTime: lastTimeout, innerWindowId: this.innerWindowId },
+        `WorkQueue processed ${tasksInBatch} tasks`
+      );
+    };
+
+    while (this.#tasks.length !== 0) {
+      if (this.#isWorkCancelled) {
+        
+        break;
+      }
+      const now = performance.now();
+
+      if (lastTimeout === null) {
+        lastTimeout = now;
+        
+        await new Promise(resolve => setTimeout(resolve, 0));
+      } else if (now - lastTimeout > this.#TIME_BUDGET) {
+        
+        
+        await new Promise(resolve => setTimeout(resolve, 0));
+        addProfilerMarker();
+        lastTimeout = performance.now();
+      }
+
+      
+      if (this.#isWorkCancelled) {
+        break;
+      }
+
+      tasksInBatch++;
+      const { task, resolve, reject } = this.#tasks.shift();
+      try {
+        const result = await task();
+
+        
+        if (this.#isWorkCancelled) {
+          break;
+        }
+        
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
+    }
+    addProfilerMarker();
+    this.isRunning = false;
+  }
+
+  async cancelWork() {
+    this.#isWorkCancelled = true;
+    this.#tasks = [];
+    await new Promise(resolve => setTimeout(resolve, 0));
+    this.#isWorkCancelled = false;
   }
 }
