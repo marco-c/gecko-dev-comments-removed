@@ -22,6 +22,10 @@
 namespace mozilla {
 
 struct URLExtraData {
+  static bool ChromeRulesEnabled(nsIURI* aURI) {
+    return aURI && (aURI->SchemeIs("chrome") || aURI->SchemeIs("resource"));
+  }
+
   URLExtraData(already_AddRefed<nsIURI> aBaseURI,
                already_AddRefed<nsIReferrerInfo> aReferrerInfo,
                already_AddRefed<nsIPrincipal> aPrincipal)
@@ -34,8 +38,7 @@ struct URLExtraData {
     
     
     nsCOMPtr<nsIURI> referrer = mReferrerInfo->GetOriginalReferrer();
-    mChromeRulesEnabled = referrer && (referrer->SchemeIs("chrome") ||
-                                       referrer->SchemeIs("resource"));
+    mChromeRulesEnabled = ChromeRulesEnabled(referrer);
   }
 
   URLExtraData(nsIURI* aBaseURI, nsIReferrerInfo* aReferrerInfo,

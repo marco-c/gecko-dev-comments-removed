@@ -2981,8 +2981,7 @@ const RawServoSelectorList* nsINode::ParseSelectorList(
     
     
     
-    return Servo_SelectorList_Parse(&aSelectorString,
-                                    doc->IsDocumentURISchemeChrome())
+    return Servo_SelectorList_Parse(&aSelectorString, doc->ChromeRulesEnabled())
         .Consume();
   });
 

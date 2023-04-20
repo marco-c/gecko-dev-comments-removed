@@ -2614,7 +2614,7 @@ class Document : public nsINode,
     return !mParentDocument && !mDisplayDocument;
   }
 
-  bool IsDocumentURISchemeChrome() const { return mDocURISchemeIsChrome; }
+  bool ChromeRulesEnabled() const { return mChromeRulesEnabled; }
 
   bool IsInChromeDocShell() const {
     const Document* root = this;
@@ -4651,7 +4651,7 @@ class Document : public nsINode,
   bool mIsBeingUsedAsImage : 1;
 
   
-  bool mDocURISchemeIsChrome : 1;
+  bool mChromeRulesEnabled : 1;
 
   
   bool mInChromeDocShell : 1;

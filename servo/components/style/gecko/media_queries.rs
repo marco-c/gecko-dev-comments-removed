@@ -559,7 +559,7 @@ impl Device {
     
     
     #[inline]
-    pub fn is_chrome_document(&self) -> bool {
-        self.document().mDocURISchemeIsChrome()
+    pub fn chrome_rules_enabled_for_document(&self) -> bool {
+        self.document().mChromeRulesEnabled()
     }
 }
