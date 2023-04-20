@@ -128,8 +128,6 @@ where
         match map.get("id") {
             Some(serde_json::Value::String(content_id)) => {
                 
-                
-                
                 if content_id != id {
                     log::trace!(
                         "malformed incoming record: envelope id: {} payload id: {}",
@@ -150,8 +148,6 @@ where
                     );
                     return IncomingKind::Malformed;
                 }
-                
-                log::info!("incoming record has 'id' in the payload - it does match, but is still unexpected");
             }
             Some(v) => {
                 
@@ -161,6 +157,7 @@ where
                 return IncomingKind::Malformed;
             }
             None => {
+                
                 if !id.is_valid_for_sync_server() {
                     log::trace!("malformed incoming record: id is not valid: {}", id);
                     report_error!(
@@ -183,6 +180,7 @@ where
 }
 
 
+
 fn content_with_id_to_json<T>(record: T) -> Result<(serde_json::Value, Guid)>
 where
     T: Serialize,
@@ -190,7 +188,7 @@ where
     let mut json = serde_json::to_value(record)?;
     let id = match json.as_object_mut() {
         Some(ref mut map) => {
-            match map.remove("id").as_ref().and_then(|v| v.as_str()) {
+            match map.get("id").as_ref().and_then(|v| v.as_str()) {
                 Some(id) => {
                     let id: Guid = id.into();
                     assert!(id.is_valid_for_sync_server(), "record's ID is invalid");
@@ -205,15 +203,21 @@ where
     Ok((json, id))
 }
 
+
+
+
+
 fn content_to_json<T>(record: T, id: &Guid) -> Result<serde_json::Value>
 where
     T: Serialize,
 {
     let mut payload = serde_json::to_value(record)?;
     if let Some(ref mut map) = payload.as_object_mut() {
-        if let Some(content_id) = map.remove("id").as_ref().and_then(|v| v.as_str()) {
+        if let Some(content_id) = map.get("id").as_ref().and_then(|v| v.as_str()) {
             assert_eq!(content_id, id);
             assert!(id.is_valid_for_sync_server(), "record's ID is invalid");
+        } else {
+            map.insert("id".to_string(), serde_json::Value::String(id.to_string()));
         }
     };
     Ok(payload)
@@ -306,7 +310,7 @@ mod tests {
 
         
         let ct_value = serde_json::from_str::<serde_json::Value>(&outgoing.payload).unwrap();
-        assert_eq!(ct_value, json!({"data": 1}));
+        assert_eq!(ct_value, json!({"data": 1, "id": "test"}));
     }
 
     #[test]
@@ -326,7 +330,7 @@ mod tests {
 
         
         let ct_value = serde_json::from_str::<serde_json::Value>(&outgoing.payload).unwrap();
-        assert_eq!(ct_value, json!({"data": 1}));
+        assert_eq!(ct_value, json!({"data": 1, "id": "test"}));
     }
 
     #[test]

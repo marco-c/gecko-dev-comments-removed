@@ -3,9 +3,6 @@
 
 
 
-
-
-
 use super::{IncomingBso, IncomingEnvelope, OutgoingBso};
 use crate::{Guid, ServerTimestamp};
 
