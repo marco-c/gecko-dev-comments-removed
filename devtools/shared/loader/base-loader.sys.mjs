@@ -1,21 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-"use strict";
-
-this.EXPORTED_SYMBOLS = ["Loader", "resolveURI", "Module", "Require", "unload"];
+/* exported Loader, resolveURI, Module, Require, unload */
 
 const systemPrincipal = Components.Constructor(
   "@mozilla.org/systemprincipal;1",
   "nsIPrincipal"
 )();
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const { normalize, dirname } = ChromeUtils.import(
   "resource://gre/modules/osfile/ospath_unix.jsm"
 );
@@ -35,7 +30,7 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/NetUtil.jsm"
 );
 
-
+// Define some shortcuts.
 function* getOwnIdentifiers(x) {
   yield* Object.getOwnPropertyNames(x);
   yield* Object.getOwnPropertySymbols(x);
@@ -64,8 +59,8 @@ function isRelative(id) {
 function readURI(uri) {
   const nsURI = lazy.NetUtil.newURI(uri);
   if (nsURI.scheme == "resource") {
-    
-    
+    // Resolve to a real URI, this will catch any obvious bad paths without
+    // logging assertions in debug builds, see bug 1135219
     uri = lazy.resProto.resolveURI(nsURI);
   }
 
@@ -83,10 +78,10 @@ function readURI(uri) {
   return data;
 }
 
-
+// Combines all arguments into a resolved, normalized path
 function join(base, ...paths) {
-  
-  
+  // If this is an absolute URL, we need to normalize only the path portion,
+  // or we wind up stripping too many slashes and producing invalid URLs.
   const match = /^((?:resource|file|chrome)\:\/\/[^\/]*|jar:[^!]+!)(.*)/.exec(
     base
   );
@@ -97,26 +92,26 @@ function join(base, ...paths) {
   return normalize([base, ...paths].join("/"));
 }
 
-
-
-
-
-
-
-
-
-
-
+// Function takes set of options and returns a JS sandbox. Function may be
+// passed set of options:
+//  - `name`: A string value which identifies the sandbox in about:memory. Will
+//    throw exception if omitted.
+// - `prototype`: Ancestor for the sandbox that will be created. Defaults to
+//    `{}`.
+// - `invisibleToDebugger`: True, if the sandbox is part of the debugger
+//    implementation and should not be tracked by debugger API.
+// For more details see:
+// @see https://searchfox.org/mozilla-central/rev/0948667bc62415d48abff27e1405fb4ab4d65d75/js/xpconnect/idl/xpccomponents.idl#127-245
 function Sandbox(options) {
-  
+  // Normalize options and rename to match `Cu.Sandbox` expectations.
   const sandboxOptions = {
-    
+    // This will allow exposing Components as well as Cu, Ci and Cr.
     wantComponents: true,
 
-    
-    
-    
-    
+    // By default, Sandbox come with a very limited set of global.
+    // The list of all available symbol names is available over there:
+    // https://searchfox.org/mozilla-central/rev/31368c7795f44b7a15531d6c5e52dc97f82cf2d5/js/xpconnect/src/Sandbox.cpp#905-997
+    // Request to expose all meaningful global here:
     wantGlobalProperties: [
       "AbortController",
       "atob",
@@ -154,25 +149,25 @@ function Sandbox(options) {
   return Cu.Sandbox(systemPrincipal, sandboxOptions);
 }
 
-
-
-
-
-
-
-
+// This allows defining some modules in AMD format while retaining CommonJS
+// compatibility with this loader by allowing the factory function to have
+// access to general CommonJS functions, e.g.
+//
+//   define(function(require, exports, module) {
+//     ... code ...
+//   });
 function define(factory) {
   factory(this.require, this.exports, this.module);
 }
 
-
-
+// Populates `exports` of the given CommonJS `module` object, in the context
+// of the given `loader` by evaluating code associated with it.
 function load(loader, module) {
   const require = Require(loader, module);
 
-  
-  
-  
+  // We expose set of properties defined by `CommonJS` specification via
+  // prototype of the sandbox. Also globals are deeper in the prototype
+  // chain so that each module has access to them as well.
   const properties = {
     require,
     module,
@@ -182,8 +177,8 @@ function load(loader, module) {
     properties.define = define;
   }
 
-  
-  
+  // Create a new object in the shared global of the loader, that will be used
+  // as the scope object for this particular module.
   const scopeFromSharedGlobal = new loader.sharedGlobal.Object();
   Object.assign(scopeFromSharedGlobal, properties);
 
@@ -191,8 +186,8 @@ function load(loader, module) {
   try {
     Services.scriptloader.loadSubScript(module.uri, scopeFromSharedGlobal);
   } catch (error) {
-    
-    
+    // loadSubScript sometime throws string errors, which includes no stack.
+    // At least provide the current stack by re-throwing a real Error object.
     if (typeof error == "string") {
       if (
         error.startsWith("Error creating URI") ||
@@ -208,13 +203,13 @@ function load(loader, module) {
           error
       );
     }
-    
+    // Otherwise just re-throw everything else which should have a stack
     throw error;
   }
 
-  
-  
-  
+  // Only freeze the exports object if we created it ourselves. Modules
+  // which completely replace the exports object and still want it
+  // frozen need to freeze it themselves.
   if (module.exports === originalExports) {
     Object.freeze(module.exports);
   }
@@ -222,7 +217,7 @@ function load(loader, module) {
   return module;
 }
 
-
+// Utility function to normalize module `uri`s so they have `.js` extension.
 function normalizeExt(uri) {
   if (isJSURI(uri) || isJSONURI(uri) || isJSMURI(uri) || isSYSMJSURI(uri)) {
     return uri;
@@ -230,9 +225,9 @@ function normalizeExt(uri) {
   return uri + ".js";
 }
 
-
-
-
+// Utility function to join paths. In common case `base` is a
+// `requirer.uri` but in some cases it may be `baseURI`. In order to
+// avoid complexity we require `baseURI` with a trailing `/`.
 function resolve(id, base) {
   if (!isRelative(id)) {
     return id;
@@ -247,8 +242,8 @@ function resolve(id, base) {
     resolved = normalize(`${baseDir}/${id}`);
   }
 
-  
-  
+  // Joining and normalizing removes the "./" from relative files.
+  // We need to ensure the resolution still has the root
   if (base.startsWith("./")) {
     resolved = "./" + resolved;
   }
@@ -257,7 +252,7 @@ function resolve(id, base) {
 }
 
 function compileMapping(paths) {
-  
+  // Make mapping array that is sorted from longest path to shortest path.
   const mapping = Object.keys(paths)
     .sort((a, b) => b.length - a.length)
     .map(path => [path, paths[path]]);
@@ -269,7 +264,7 @@ function compileMapping(paths) {
   paths = {};
 
   for (let [path, uri] of mapping) {
-    
+    // Strip off any trailing slashes to make comparisons simpler
     if (path.endsWith("/")) {
       path = path.slice(0, -1);
       uri = uri.replace(/\/+$/, "");
@@ -277,15 +272,15 @@ function compileMapping(paths) {
 
     paths[path] = uri;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // We only want to match path segments explicitly. Examples:
+    // * "foo/bar" matches for "foo/bar"
+    // * "foo/bar" matches for "foo/bar/baz"
+    // * "foo/bar" does not match for "foo/bar-1"
+    // * "foo/bar/" does not match for "foo/bar"
+    // * "foo/bar/" matches for "foo/bar/baz"
+    //
+    // Check for an empty path, an exact match, or a substring match
+    // with the next character being a forward slash.
     if (path == "") {
       patterns.push("");
     } else {
@@ -295,15 +290,15 @@ function compileMapping(paths) {
 
   const pattern = new RegExp(`^(${patterns.join("|")})`);
 
-  
-  
+  // This will replace the longest matching path mapping at the start of
+  // the ID string with its mapped value.
   return id => {
     return id.replace(pattern, (m0, m1) => paths[m1]);
   };
 }
 
-function resolveURI(id, mapping) {
-  
+export function resolveURI(id, mapping) {
+  // Do not resolve if already a resource URI
   if (isAbsoluteURI(id)) {
     return normalizeExt(id);
   }
@@ -311,16 +306,16 @@ function resolveURI(id, mapping) {
   return normalizeExt(mapping(id));
 }
 
-
-
-
-
-function Require(loader, requirer) {
+// Creates version of `require` that will be exposed to the given `module`
+// in the context of the given `loader`. Each module gets own limited copy
+// of `require` that is allowed to load only a modules that are associated
+// with it during link time.
+export function Require(loader, requirer) {
   const { modules, mapping, mappingCache, requireHook } = loader;
 
   function require(id) {
     if (!id) {
-      
+      // Throw if `id` is not passed.
       throw Error(
         "You must provide a module name when calling require() from " +
           requirer.id,
@@ -339,7 +334,7 @@ function Require(loader, requirer) {
     let { uri, requirement } = getRequirements(id);
 
     let module = null;
-    
+    // If module is already cached by loader then just use it.
     if (uri in modules) {
       module = modules[uri];
     } else if (isJSMURI(uri)) {
@@ -351,17 +346,17 @@ function Require(loader, requirer) {
     } else if (isJSONURI(uri)) {
       let data;
 
-      
-      
-      
-      
+      // First attempt to load and parse json uri
+      // ex: `test.json`
+      // If that doesn"t exist, check for `test.json.js`
+      // for node parity
       try {
         data = JSON.parse(readURI(uri));
         module = modules[uri] = Module(requirement, uri);
         module.exports = data;
       } catch (err) {
-        
-        
+        // If error thrown from JSON parsing, throw that, do not
+        // attempt to find .json.js file
         if (err && /JSON\.parse/.test(err.message)) {
           throw err;
         }
@@ -369,18 +364,18 @@ function Require(loader, requirer) {
       }
     }
 
-    
-    
-    
+    // If not yet cached, load and cache it.
+    // We also freeze module to prevent it from further changes
+    // at runtime.
     if (!(uri in modules)) {
-      
-      
-      
+      // Many of the loader's functionalities are dependent
+      // on modules[uri] being set before loading, so we set it and
+      // remove it if we have any errors.
       module = modules[uri] = Module(requirement, uri);
       try {
         Object.freeze(load(loader, module));
       } catch (e) {
-        
+        // Clear out modules cache so we can throw on a second invalid require
         delete modules[uri];
         throw e;
       }
@@ -389,12 +384,12 @@ function Require(loader, requirer) {
     return module.exports;
   }
 
-  
-  
-  
+  // Resolution function taking a module name/path and
+  // returning a resourceURI and a `requirement` used by the loader.
+  // Used by both `require` and `require.resolve`.
   function getRequirements(id) {
     if (!id) {
-      
+      // Throw if `id` is not passed.
       throw Error(
         "you must provide a module name when calling require() from " +
           requirer.id,
@@ -407,13 +402,13 @@ function Require(loader, requirer) {
     if (modules[id]) {
       uri = requirement = id;
     } else if (requirer) {
-      
+      // Resolve `id` to its requirer if it's relative.
       requirement = resolve(id, requirer.id);
     } else {
       requirement = id;
     }
 
-    
+    // Resolves `uri` of module using loaders resolve function.
     if (!uri) {
       if (mappingCache.has(requirement)) {
         uri = mappingCache.get(requirement);
@@ -423,7 +418,7 @@ function Require(loader, requirer) {
       }
     }
 
-    
+    // Throw if `uri` can not be resolved.
     if (!uri) {
       throw Error(
         "Module: Can not resolve '" +
@@ -439,14 +434,14 @@ function Require(loader, requirer) {
     return { uri, requirement };
   }
 
-  
+  // Expose the `resolve` function for this `Require` instance
   require.resolve = _require.resolve = function(id) {
     const { uri } = getRequirements(id);
     return uri;
   };
 
-  
-  
+  // This is like webpack's require.context.  It returns a new require
+  // function that prepends the prefix to any requests.
   require.context = prefix => {
     return id => {
       return require(prefix + id);
@@ -456,9 +451,9 @@ function Require(loader, requirer) {
   return require;
 }
 
-
-
-function Module(id, uri) {
+// Makes module object that is made available to CommonJS modules when they
+// are evaluated, along with `exports` and `require`.
+export function Module(id, uri) {
   return Object.create(null, {
     id: { enumerable: true, value: id },
     exports: {
@@ -471,52 +466,52 @@ function Module(id, uri) {
   });
 }
 
-
-
-function unload(loader, reason) {
-  
-  
-  
-  
-  
-  
-  
+// Takes `loader`, and unload `reason` string and notifies all observers that
+// they should cleanup after them-self.
+export function unload(loader, reason) {
+  // subject is a unique object created per loader instance.
+  // This allows any code to cleanup on loader unload regardless of how
+  // it was loaded. To handle unload for specific loader subject may be
+  // asserted against loader.destructor or require("@loader/unload")
+  // Note: We don not destroy loader's module cache or sandboxes map as
+  // some modules may do cleanup in subsequent turns of event loop. Destroying
+  // cache may cause module identity problems in such cases.
   const subject = { wrappedJSObject: loader.destructor };
   Services.obs.notifyObservers(subject, "devtools:loader:destroy", reason);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function Loader(options) {
+// Function makes new loader that can be used to load CommonJS modules.
+// Loader takes following options:
+// - `paths`: Mandatory dictionary of require path mapped to absolute URIs.
+//   Object keys are path prefix used in require(), values are URIs where each
+//   prefix should be mapped to.
+// - `globals`: Optional map of globals, that all module scopes will inherit
+//   from. Map is also exposed under `globals` property of the returned loader
+//   so it can be extended further later. Defaults to `{}`.
+// - `sandboxName`: String, name of the sandbox displayed in about:memory.
+// - `invisibleToDebugger`: Boolean. Should be true when loading debugger
+//   modules, in order to ignore them from the Debugger API.
+// - `sandboxPrototype`: Object used to define globals on all module's
+//   sandboxes.
+// - `requireHook`: Optional function used to replace native require function
+//   from loader. This function receive the module path as first argument,
+//   and native require method as second argument.
+export function Loader(options) {
   let { paths, globals } = options;
   if (!globals) {
     globals = {};
   }
 
-  
-  
-  
-  
-  
+  // We create an identity object that will be dispatched on an unload
+  // event as subject. This way unload listeners will be able to assert
+  // which loader is unloaded. Please note that we intentionally don"t
+  // use `loader` as subject to prevent a loader access leakage through
+  // observer notifications.
   const destructor = Object.create(null);
 
   const mapping = compileMapping(paths);
 
-  
+  // Define pseudo modules.
   const builtinModuleExports = {
     "@loader/unload": destructor,
     "@loader/options": options,
@@ -524,12 +519,12 @@ function Loader(options) {
 
   const modules = {};
   for (const id of Object.keys(builtinModuleExports)) {
-    
+    // We resolve `uri` from `id` since modules are cached by `uri`.
     const uri = resolveURI(id, mapping);
     const module = Module(id, uri);
 
-    
-    
+    // Lazily expose built-in modules in order to
+    // allow them to be loaded lazily.
     Object.defineProperty(module, "exports", {
       enumerable: true,
       get() {
@@ -544,10 +539,10 @@ function Loader(options) {
   if (options.sharedGlobal) {
     sharedGlobal = options.sharedGlobal;
   } else {
-    
-    
-    
-    
+    // Create the unique sandbox we will be using for all modules,
+    // so that we prevent creating a new compartment per module.
+    // The side effect is that all modules will share the same
+    // global objects.
     sharedGlobal = Sandbox({
       name: options.sandboxName || "DevTools",
       invisibleToDebugger: options.invisibleToDebugger || false,
@@ -557,10 +552,10 @@ function Loader(options) {
   }
 
   if (options.sharedGlobal || options.sandboxPrototype) {
-    
-    
-    
-    
+    // If we were given a sharedGlobal or a sandboxPrototype, we have to define
+    // the globals on the shared global directly. Note that this will not work
+    // for callers who depend on being able to add globals after the loader was
+    // created.
     for (const name of getOwnIdentifiers(globals)) {
       Object.defineProperty(
         sharedGlobal,
@@ -570,22 +565,22 @@ function Loader(options) {
     }
   }
 
-  
-  
-  
+  // Loader object is just a representation of a environment
+  // state. We mark its properties non-enumerable
+  // as they are pure implementation detail that no one should rely upon.
   const returnObj = {
     destructor: { enumerable: false, value: destructor },
     globals: { enumerable: false, value: globals },
     mapping: { enumerable: false, value: mapping },
     mappingCache: { enumerable: false, value: new Map() },
-    
+    // Map of module objects indexed by module URIs.
     modules: { enumerable: false, value: modules },
     sharedGlobal: { enumerable: false, value: sharedGlobal },
     supportAMDModules: {
       enumerable: false,
       value: options.supportAMDModules || false,
     },
-    
+    // Whether the modules loaded should be ignored by the debugger
     invisibleToDebugger: {
       enumerable: false,
       value: options.invisibleToDebugger || false,

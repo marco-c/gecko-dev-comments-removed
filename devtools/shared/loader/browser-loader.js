@@ -3,8 +3,8 @@
 
 "use strict";
 
-const BaseLoader = ChromeUtils.import(
-  "resource://devtools/shared/loader/base-loader.js"
+const BaseLoader = ChromeUtils.importESModule(
+  "resource://devtools/shared/loader/base-loader.sys.mjs"
 );
 const { require: devtoolsRequire, loader } = ChromeUtils.importESModule(
   "resource://devtools/shared/loader/Loader.sys.mjs"
