@@ -1538,10 +1538,11 @@ nsresult nsHttpConnection::OnSocketWritable() {
     rv = mSocketOutCondition = NS_OK;
     transactionBytes = 0;
 
+    bool npnComplete = mTlsHandshaker->EnsureNPNComplete();
+
     switch (mState) {
       case HttpConnectionState::SETTING_UP_TUNNEL:
-        if (mConnInfo->UsingHttpsProxy() &&
-            !mTlsHandshaker->EnsureNPNComplete()) {
+        if (mConnInfo->UsingHttpsProxy() && !npnComplete) {
           MOZ_DIAGNOSTIC_ASSERT(!mTlsHandshaker->EarlyDataAvailable());
           mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
         } else {
@@ -1553,9 +1554,8 @@ nsresult nsHttpConnection::OnSocketWritable() {
         
         
         
-        if (!mTlsHandshaker->EnsureNPNComplete() &&
-            (!mTlsHandshaker->EarlyDataUsed() ||
-             mTlsHandshaker->TlsHandshakeComplitionPending())) {
+        if (!npnComplete && (!mTlsHandshaker->EarlyDataUsed() ||
+                             mTlsHandshaker->TlsHandshakeComplitionPending())) {
           
           
           mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
