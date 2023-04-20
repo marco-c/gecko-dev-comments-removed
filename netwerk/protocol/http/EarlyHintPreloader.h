@@ -81,7 +81,7 @@ class EarlyHintPreloader final : public nsIStreamListener,
       OngoingEarlyHints* aOngoingEarlyHints, const LinkHeader& aHeader,
       nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
       nsICookieJarSettings* aCookieJarSettings,
-      const nsACString& aReferrerPolicy);
+      const nsACString& aReferrerPolicy, const nsACString& aCSPHeader);
 
   
   EarlyHintConnectArgs Register();

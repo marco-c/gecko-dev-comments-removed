@@ -12,8 +12,11 @@
 #include "NeckoCommon.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/ipc/BackgroundUtils.h"
+#include "mozilla/LoadInfo.h"
 #include "mozilla/Logging.h"
 #include "mozilla/net/EarlyHintRegistrar.h"
 #include "mozilla/net/NeckoChannelParams.h"
@@ -22,12 +25,14 @@
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
 #include "nsCOMPtr.h"
+#include "nsContentPolicyUtils.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsHttpChannel.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"
+#include "nsIContentSecurityPolicy.h"
 #include "nsIHttpChannel.h"
 #include "nsIInputStream.h"
 #include "nsILoadInfo.h"
@@ -188,7 +193,7 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
     OngoingEarlyHints* aOngoingEarlyHints, const LinkHeader& aLinkHeader,
     nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
     nsICookieJarSettings* aCookieJarSettings,
-    const nsACString& aResponseReferrerPolicy) {
+    const nsACString& aResponseReferrerPolicy, const nsACString& aCSPHeader) {
   nsAttrValue as;
   ParseAsValue(aLinkHeader.mAs, as);
 
@@ -270,6 +275,73 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
       corsMode, static_cast<ASDestination>(as.GetEnumValue()),
       aLinkHeader.mType.LowerCaseEqualsASCII("module"));
 
+  
+  
+  
+  
+  
+
+  
+  
+  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new LoadInfo(
+      aPrincipal,  
+      aPrincipal,  
+      nullptr ,
+      nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK, contentPolicyType);
+
+  if (aCSPHeader.Length() != 0) {
+    
+    
+    nsCOMPtr<nsIContentSecurityPolicy> csp = new nsCSPContext();
+    nsresult rv = csp->SetRequestContextWithPrincipal(
+        aPrincipal, aBaseURI, u""_ns, 0 );
+    NS_ENSURE_SUCCESS_VOID(rv);
+    rv = CSP_AppendCSPFromHeader(csp, NS_ConvertUTF8toUTF16(aCSPHeader),
+                                 false );
+    NS_ENSURE_SUCCESS_VOID(rv);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    mozilla::ipc::PrincipalInfo principalInfo;
+    rv = PrincipalToPrincipalInfo(aPrincipal, &principalInfo);
+    NS_ENSURE_SUCCESS_VOID(rv);
+    dom::ClientInfo clientInfo(nsID::GenerateUUID(), dom::ClientType::Window,
+                               principalInfo, TimeStamp::Now());
+
+    
+    
+    ipc::CSPInfo cspInfo;
+    rv = CSPToCSPInfo(csp, &cspInfo);
+    NS_ENSURE_SUCCESS_VOID(rv);
+    clientInfo.SetCspInfo(cspInfo);
+
+    
+    
+    secCheckLoadInfo->SetClientInfo(clientInfo);
+  }
+
+  int16_t shouldLoad = nsIContentPolicy::ACCEPT;
+  nsresult rv =
+      NS_CheckContentLoadPolicy(uri, secCheckLoadInfo, ""_ns, &shouldLoad,
+                                nsContentUtils::GetContentPolicy());
+
+  if (NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad)) {
+    return;
+  }
+
   NS_ENSURE_SUCCESS_VOID(earlyHintPreloader->OpenChannel(
       uri, aPrincipal, securityFlags, contentPolicyType, referrerInfo,
       aCookieJarSettings));
@@ -291,6 +363,7 @@ nsresult EarlyHintPreloader::OpenChannel(
              aContentPolicyType == nsContentPolicyType::TYPE_SCRIPT ||
              aContentPolicyType == nsContentPolicyType::TYPE_STYLESHEET ||
              aContentPolicyType == nsContentPolicyType::TYPE_FONT);
+
   nsresult rv =
       NS_NewChannel(getter_AddRefs(mChannel), aURI, aPrincipal, aSecurityFlags,
                     aContentPolicyType, aCookieJarSettings,

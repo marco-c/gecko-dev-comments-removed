@@ -8,6 +8,7 @@ const EXPORTED_SYMBOLS = [
   "request_count_checking",
   "test_hint_preload",
   "test_hint_preload_internal",
+  "test_preload_hint_and_request",
 ];
 
 const { Assert } = ChromeUtils.importESModule(
@@ -95,4 +96,48 @@ async function test_hint_preload_internal(
   ).then(response => response.json());
 
   await request_count_checking(testName, gotRequestCount, expectedRequestCount);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function test_preload_hint_and_request(input, expected_results) {
+  
+  let headers = new Headers();
+  headers.append("X-Early-Hint-Count-Start", "");
+  await fetch(
+    "https://example.com/browser/netwerk/test/browser/early_hint_pixel_count.sjs",
+    { headers }
+  );
+
+  let requestUrl = `https://example.com/browser/netwerk/test/browser/early_hint_csp_options_html.sjs?as=${
+    input.resource_type
+  }&hinted=${input.hinted ? "1" : "0"}${input.csp ? "&csp=" + input.csp : ""}${
+    input.csp_in_early_hint
+      ? "&csp_in_early_hint=" + input.csp_in_early_hint
+      : ""
+  }${input.host ? "&host=" + input.host : ""}`;
+
+  await BrowserTestUtils.openNewForegroundTab(gBrowser, requestUrl, true);
+
+  let gotRequestCount = await fetch(
+    "https://example.com/browser/netwerk/test/browser/early_hint_pixel_count.sjs"
+  ).then(response => response.json());
+
+  await Assert.deepEqual(gotRequestCount, expected_results, input.test_name);
+
+  gBrowser.removeCurrentTab();
+  Services.cache2.clear();
 }
