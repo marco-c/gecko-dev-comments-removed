@@ -304,8 +304,14 @@ void SVGRenderingObserver::ContentRemoved(nsIContent* aChild,
 
 class SVGIDRenderingObserver : public SVGRenderingObserver {
  public:
-  SVGIDRenderingObserver(URLAndReferrerInfo* aURI,
-                         nsIContent* aObservingContent, bool aReferenceImage);
+  
+  
+  
+  using TargetIsValidCallback = bool (*)(const Element&);
+  SVGIDRenderingObserver(
+      URLAndReferrerInfo* aURI, nsIContent* aObservingContent,
+      bool aReferenceImage,
+      TargetIsValidCallback aTargetIsValidCallback = nullptr);
 
  protected:
   virtual ~SVGIDRenderingObserver() {
@@ -329,6 +335,9 @@ class SVGIDRenderingObserver : public SVGRenderingObserver {
           nsContentUtils::ContentIsHostIncludingDescendantOf(mObservingContent,
                                                              observed)) {
         return false;
+      }
+      if (mTargetIsValidCallback) {
+        return mTargetIsValidCallback(*observed);
       }
       return true;
     }());
@@ -375,6 +384,7 @@ class SVGIDRenderingObserver : public SVGRenderingObserver {
   ElementTracker mObservedElementTracker;
   RefPtr<Element> mObservingContent;
   bool mTargetIsValid = false;
+  TargetIsValidCallback mTargetIsValidCallback;
 };
 
 
@@ -393,11 +403,12 @@ class SVGIDRenderingObserver : public SVGRenderingObserver {
 
 
 
-SVGIDRenderingObserver::SVGIDRenderingObserver(URLAndReferrerInfo* aURI,
-                                               nsIContent* aObservingContent,
-                                               bool aReferenceImage)
+SVGIDRenderingObserver::SVGIDRenderingObserver(
+    URLAndReferrerInfo* aURI, nsIContent* aObservingContent,
+    bool aReferenceImage, TargetIsValidCallback aTargetIsValidCallback)
     : mObservedElementTracker(this),
-      mObservingContent(aObservingContent->AsElement()) {
+      mObservingContent(aObservingContent->AsElement()),
+      mTargetIsValidCallback(aTargetIsValidCallback) {
   
   nsIURI* uri = nullptr;
   nsIReferrerInfo* referrerInfo = nullptr;
@@ -572,6 +583,8 @@ void SVGPaintingProperty::OnRenderingChange() {
   }
 }
 
+
+
 class SVGMozElementObserver final : public SVGPaintingProperty {
  public:
   SVGMozElementObserver(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
@@ -637,6 +650,10 @@ void BackgroundClipRenderingObserver::OnRenderingChange() {
   }
 }
 
+static bool IsSVGFilterElement(const Element& aObserved) {
+  return aObserved.IsSVGElement(nsGkAtoms::filter);
+}
+
 
 
 
@@ -653,7 +670,8 @@ class SVGFilterObserver final : public SVGIDRenderingObserver {
  public:
   SVGFilterObserver(URLAndReferrerInfo* aURI, nsIContent* aObservingContent,
                     SVGFilterObserverList* aFilterChainObserver)
-      : SVGIDRenderingObserver(aURI, aObservingContent, false),
+      : SVGIDRenderingObserver(aURI, aObservingContent, false,
+                               IsSVGFilterElement),
         mFilterObserverList(aFilterChainObserver) {}
 
   void DetachFromChainObserver() { mFilterObserverList = nullptr; }
