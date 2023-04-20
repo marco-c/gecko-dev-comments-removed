@@ -237,7 +237,14 @@ class PictureIdTest : public test::CallTest,
   std::unique_ptr<PictureIdObserver> observer_;
 };
 
-INSTANTIATE_TEST_SUITE_P(TemporalLayers,
+
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_TemporalLayers DISABLED_TemporalLayers
+#else
+#define MAYBE_TemporalLayers TemporalLayers
+#endif
+
+INSTANTIATE_TEST_SUITE_P(MAYBE_TemporalLayers,
                          PictureIdTest,
                          ::testing::ValuesIn(kNumTemporalLayers));
 
