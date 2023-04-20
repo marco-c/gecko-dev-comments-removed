@@ -2073,10 +2073,6 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
       wgc->SendLoadURI(this, aLoadState, aSetNavigating);
     }
   } else if (XRE_IsParentProcess()) {
-    
-    
-    aLoadState->MaybeStripTrackerQueryStrings(this);
-
     if (Canonical()->LoadInParent(aLoadState, aSetNavigating)) {
       return NS_OK;
     }
