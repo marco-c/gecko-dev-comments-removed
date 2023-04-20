@@ -103,7 +103,7 @@ class CacheIOThread final : public nsIThreadObserver {
  private:
   static void ThreadFunc(void* aClosure);
   void ThreadFunc();
-  void LoopOneLevel(uint32_t aLevel);
+  void LoopOneLevel(uint32_t aLevel) MOZ_REQUIRES(mMonitor);
   bool EventsPending(uint32_t aLastLevel = LAST_LEVEL);
   nsresult DispatchInternal(already_AddRefed<nsIRunnable> aRunnable,
                             uint32_t aLevel);
@@ -111,27 +111,27 @@ class CacheIOThread final : public nsIThreadObserver {
 
   static CacheIOThread* sSelf;
 
-  mozilla::Monitor mMonitor MOZ_UNANNOTATED{"CacheIOThread"};
+  mozilla::Monitor mMonitor{"CacheIOThread"};
   PRThread* mThread{nullptr};
   
   
   UniquePtr<detail::NativeThreadHandle> mNativeThreadHandle;
   Atomic<nsIThread*> mXPCOMThread{nullptr};
   Atomic<uint32_t, Relaxed> mLowestLevelWaiting{LAST_LEVEL};
-  uint32_t mCurrentlyExecutingLevel{0};
+  uint32_t mCurrentlyExecutingLevel{0};  
 
   
   
   Atomic<int32_t> mQueueLength[LAST_LEVEL];
 
-  EventQueue mEventQueue[LAST_LEVEL];
+  EventQueue mEventQueue[LAST_LEVEL] MOZ_GUARDED_BY(mMonitor);
   
   Atomic<bool, Relaxed> mHasXPCOMEvents{false};
   
   bool mRerunCurrentEvent{false};  
   
   
-  bool mShutdown{false};
+  bool mShutdown MOZ_GUARDED_BY(mMonitor){false};
   
   
   
@@ -139,7 +139,7 @@ class CacheIOThread final : public nsIThreadObserver {
   
   Atomic<uint32_t, Relaxed> mEventCounter{0};
 #ifdef DEBUG
-  bool mInsideLoop{true};
+  bool mInsideLoop MOZ_GUARDED_BY(mMonitor){true};
 #endif
 };
 
