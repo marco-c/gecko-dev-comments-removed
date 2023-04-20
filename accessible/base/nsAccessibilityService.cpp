@@ -116,7 +116,14 @@ static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
   
   
   
-  if (frame->IsTransformed() && aContent->HasChildren()) {
+  
+  
+  
+  
+  if (aContent->HasChildren() && !aContent->IsXULElement() &&
+      (frame->IsTransformed() || frame->IsStickyPositioned() ||
+       (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+        nsLayoutUtils::IsReallyFixedPos(frame)))) {
     return true;
   }
 
@@ -447,9 +454,14 @@ void nsAccessibilityService::NotifyOfComputedStyleChange(
     
     
     
+    
     const nsIFrame* frame = aContent->GetPrimaryFrame();
     const ComputedStyle* newStyle = frame ? frame->Style() : nullptr;
-    if (newStyle && newStyle->StyleDisplay()->HasTransform(frame)) {
+    if (newStyle &&
+        (newStyle->StyleDisplay()->HasTransform(frame) ||
+         newStyle->StyleDisplay()->mPosition == StylePositionProperty::Fixed ||
+         newStyle->StyleDisplay()->mPosition ==
+             StylePositionProperty::Sticky)) {
       document->ContentInserted(aContent, aContent->GetNextSibling());
     }
   } else if (accessible && IPCAccessibilityActive() &&
