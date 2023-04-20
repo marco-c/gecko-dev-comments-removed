@@ -50,6 +50,12 @@ static bool GetInitialNotificationShown() {
       .valueOr(false);
 }
 
+static bool ResetInitialNotificationShown() {
+  return RegistryDeleteValue(IsPrefixed::Unprefixed,
+                             L"InitialNotificationShown")
+      .isOk();
+}
+
 static bool SetFollowupNotificationShown(bool wasShown) {
   return !RegistrySetValueBool(IsPrefixed::Unprefixed,
                                L"FollowupNotificationShown", wasShown)
@@ -549,6 +555,12 @@ NotificationActivities MaybeShowNotification(
     
     
     return activitiesPerformed;
+  }
+
+  
+  
+  if (browserInfo.currentDefaultBrowser == Browser::Firefox) {
+    ResetInitialNotificationShown();
   }
 
   bool initialNotificationShown = GetInitialNotificationShown();
