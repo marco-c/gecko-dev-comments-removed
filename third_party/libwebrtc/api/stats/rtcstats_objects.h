@@ -483,7 +483,9 @@ class RTC_EXPORT RTCInboundRTPStreamStats final
   RTCStatsMember<double> estimated_playout_timestamp;
   
   
-  RTCStatsMember<std::string> decoder_implementation;
+  RTCRestrictedStatsMember<std::string,
+                           StatExposureCriteria::kHardwareCapability>
+      decoder_implementation;
   
   RTCStatsMember<uint32_t> fir_count;
   RTCStatsMember<uint32_t> pli_count;
@@ -548,7 +550,9 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<std::string> content_type;
   
   
-  RTCStatsMember<std::string> encoder_implementation;
+  RTCRestrictedStatsMember<std::string,
+                           StatExposureCriteria::kHardwareCapability>
+      encoder_implementation;
   
   RTCStatsMember<uint32_t> fir_count;
   RTCStatsMember<uint32_t> pli_count;
