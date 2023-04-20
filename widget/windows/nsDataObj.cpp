@@ -126,24 +126,48 @@ nsDataObj::CStream::OnDataAvailable(
     uint32_t aCount)   
 {
   
-  uint8_t* buffer = mChannelData.AppendElements(aCount, fallible);
+  
+  if (aCount == 0) {
+    char buffer[1] = {0};
+    uint32_t bytesReadByCall = 0;
+    nsresult rv = aInputStream->Read(buffer, 0, &bytesReadByCall);
+    MOZ_ASSERT(bytesReadByCall == 0);
+    return rv;
+  }
+
+  
+  size_t oldLength = mChannelData.Length();
+  char* buffer =
+      reinterpret_cast<char*>(mChannelData.AppendElements(aCount, fallible));
   if (!buffer) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
-  NS_ASSERTION((mChannelData.Length() == (aOffset + aCount)),
-               "stream length mismatch w/write buffer");
+  MOZ_ASSERT(mChannelData.Length() == (aOffset + aCount),
+             "stream length mismatch w/write buffer");
 
   
   
-  nsresult rv;
-  uint32_t odaBytesReadTotal = 0;
-  do {
+  uint32_t bytesRead = 0;
+  while (bytesRead < aCount) {
     uint32_t bytesReadByCall = 0;
-    rv = aInputStream->Read((char*)(buffer + odaBytesReadTotal), aCount,
-                            &bytesReadByCall);
-    odaBytesReadTotal += bytesReadByCall;
-  } while (aCount < odaBytesReadTotal && NS_SUCCEEDED(rv));
-  return rv;
+    nsresult rv = aInputStream->Read(buffer + bytesRead, aCount - bytesRead,
+                                     &bytesReadByCall);
+    bytesRead += bytesReadByCall;
+
+    if (bytesReadByCall == 0) {
+      
+      
+      
+      rv = NS_ERROR_FAILURE;
+    }
+
+    if (NS_FAILED(rv)) {
+      
+      mChannelData.RemoveElementsAt(oldLength + bytesRead, aCount - bytesRead);
+      return rv;
+    }
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP nsDataObj::CStream::OnStartRequest(nsIRequest* aRequest) {
