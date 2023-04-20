@@ -1,40 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const createdFunctions = new Map<string, (...args: unknown[]) => unknown>();
-
-
-
-
-
-
-export const createFunction = (
-  functionValue: string
-): ((...args: unknown[]) => unknown) => {
-  let fn = createdFunctions.get(functionValue);
-  if (fn) {
-    return fn;
-  }
-  fn = new Function(`return ${functionValue}`)() as (
-    ...args: unknown[]
-  ) => unknown;
-  createdFunctions.set(functionValue, fn);
-  return fn;
-};
-
 const HIDDEN_VISIBILITY_VALUES = ['hidden', 'collapse'];
 
 
@@ -65,4 +28,43 @@ export const checkVisibility = (
 function isBoundingBoxEmpty(element: Element): boolean {
   const rect = element.getBoundingClientRect();
   return rect.width === 0 || rect.height === 0;
+}
+
+
+
+
+export function* deepChildren(
+  root: Node
+): IterableIterator<Element | ShadowRoot> {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+  let node = walker.nextNode() as Element | null;
+  for (; node; node = walker.nextNode() as Element | null) {
+    yield node.shadowRoot ?? node;
+  }
+}
+
+
+
+
+export function* deepDescendents(
+  root: Node
+): IterableIterator<Element | ShadowRoot> {
+  const walkers = [document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT)];
+  let walker: TreeWalker | undefined;
+  while ((walker = walkers.shift())) {
+    for (
+      let node = walker.nextNode() as Element | null;
+      node;
+      node = walker.nextNode() as Element | null
+    ) {
+      if (!node.shadowRoot) {
+        yield node;
+        continue;
+      }
+      walkers.push(
+        document.createTreeWalker(node.shadowRoot, NodeFilter.SHOW_ELEMENT)
+      );
+      yield node.shadowRoot;
+    }
+  }
 }

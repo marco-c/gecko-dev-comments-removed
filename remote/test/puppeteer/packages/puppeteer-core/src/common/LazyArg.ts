@@ -14,16 +14,26 @@
 
 
 
+import {ExecutionContext} from './ExecutionContext.js';
+
 
 
 
 export class LazyArg<T> {
-  #get: () => Promise<T>;
-  constructor(get: () => Promise<T>) {
+  static create = <T>(
+    get: (context: ExecutionContext) => Promise<T> | T
+  ): T => {
+    
+    
+    return new LazyArg(get) as unknown as T;
+  };
+
+  #get: (context: ExecutionContext) => Promise<T> | T;
+  private constructor(get: (context: ExecutionContext) => Promise<T> | T) {
     this.#get = get;
   }
 
-  get(): Promise<T> {
-    return this.#get();
+  async get(context: ExecutionContext): Promise<T> {
+    return this.#get(context);
   }
 }

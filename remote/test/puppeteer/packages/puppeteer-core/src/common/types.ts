@@ -14,9 +14,34 @@
 
 
 
-import {JSHandle} from './JSHandle.js';
-import {ElementHandle} from './ElementHandle.js';
-import {LazyArg} from './LazyArg.js';
+import type {ElementHandle} from '../api/ElementHandle.js';
+import type {JSHandle} from '../api/JSHandle.js';
+
+import type {LazyArg} from './LazyArg.js';
+
+
+
+
+export type BindingPayload = {
+  type: string;
+  name: string;
+  seq: number;
+  args: unknown[];
+  
+
+
+  isTrivial: boolean;
+};
+
+
+
+
+export type AwaitableIterator<T> = Iterator<T> | AsyncIterator<T>;
+
+
+
+
+export type AwaitableIterable<T> = Iterable<T> | AsyncIterable<T>;
 
 
 
@@ -73,6 +98,13 @@ export type ElementFor<
 
 export type EvaluateFunc<T extends unknown[]> = (
   ...params: InnerParams<T>
+) => Awaitable<unknown>;
+
+
+
+
+export type EvaluateFuncWith<V, T extends unknown[]> = (
+  ...params: [V, ...InnerParams<T>]
 ) => Awaitable<unknown>;
 
 

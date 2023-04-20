@@ -17,11 +17,14 @@
 
 
 import {ChildProcess} from 'child_process';
+
 import {Protocol} from 'devtools-protocol';
+
 import {EventEmitter} from '../common/EventEmitter.js';
-import type {Page} from './Page.js'; 
 import type {Target} from '../common/Target.js'; 
+
 import type {BrowserContext} from './BrowserContext.js';
+import type {Page} from './Page.js'; 
 
 
 

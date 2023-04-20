@@ -15,12 +15,14 @@
 
 
 import {Protocol} from 'devtools-protocol';
+
+import {JSHandle} from '../api/JSHandle.js';
 import {assert} from '../util/assert.js';
+
 import {CDPSession} from './Connection.js';
-import type {ElementHandle} from './ElementHandle.js';
+import type {CDPElementHandle} from './ElementHandle.js';
 import {ExecutionContext} from './ExecutionContext.js';
-import {MouseButton} from './Input.js';
-import {EvaluateFunc, HandleFor, HandleOr} from './types.js';
+import {EvaluateFuncWith, HandleFor, HandleOr} from './types.js';
 import {createJSHandle, releaseObject, valueFromRemoteObject} from './util.js';
 
 declare const __JSHandleSymbol: unique symbol;
@@ -28,51 +30,7 @@ declare const __JSHandleSymbol: unique symbol;
 
 
 
-export interface BoxModel {
-  content: Point[];
-  padding: Point[];
-  border: Point[];
-  margin: Point[];
-  width: number;
-  height: number;
-}
-
-
-
-
-export interface BoundingBox extends Point {
-  
-
-
-  width: number;
-  
-
-
-  height: number;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export class JSHandle<T = unknown> {
+export class CDPJSHandle<T = unknown> extends JSHandle<T> {
   
 
 
@@ -82,73 +40,50 @@ export class JSHandle<T = unknown> {
   #context: ExecutionContext;
   #remoteObject: Protocol.Runtime.RemoteObject;
 
-  
+  override get disposed(): boolean {
+    return this.#disposed;
+  }
 
+  constructor(
+    context: ExecutionContext,
+    remoteObject: Protocol.Runtime.RemoteObject
+  ) {
+    super();
+    this.#context = context;
+    this.#remoteObject = remoteObject;
+  }
 
-  get client(): CDPSession {
+  override executionContext(): ExecutionContext {
+    return this.#context;
+  }
+
+  override get client(): CDPSession {
     return this.#context._client;
   }
 
   
 
 
-  get disposed(): boolean {
-    return this.#disposed;
-  }
-
-  
-
-
-  constructor(
-    context: ExecutionContext,
-    remoteObject: Protocol.Runtime.RemoteObject
-  ) {
-    this.#context = context;
-    this.#remoteObject = remoteObject;
-  }
-
-  
-
-
-  executionContext(): ExecutionContext {
-    return this.#context;
-  }
-
-  
-
-
-
-
-  async evaluate<
+  override async evaluate<
     Params extends unknown[],
-    Func extends EvaluateFunc<[this, ...Params]> = EvaluateFunc<
-      [this, ...Params]
-    >
+    Func extends EvaluateFuncWith<T, Params> = EvaluateFuncWith<T, Params>
   >(
     pageFunction: Func | string,
     ...args: Params
-  ): 
-  
-  Promise<Awaited<ReturnType<Func>>> {
+  ): Promise<Awaited<ReturnType<Func>>> {
     return await this.executionContext().evaluate(pageFunction, this, ...args);
   }
 
   
 
 
-
-
-  async evaluateHandle<
+  override async evaluateHandle<
     Params extends unknown[],
-    Func extends EvaluateFunc<[this, ...Params]> = EvaluateFunc<
-      [this, ...Params]
-    >
+    Func extends EvaluateFuncWith<T, Params> = EvaluateFuncWith<T, Params>
   >(
     pageFunction: Func | string,
     ...args: Params
-  ): 
-  
-  Promise<HandleFor<Awaited<ReturnType<Func>>>> {
+  ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
     return await this.executionContext().evaluateHandle(
       pageFunction,
       this,
@@ -156,14 +91,11 @@ export class JSHandle<T = unknown> {
     );
   }
 
-  
-
-
-  async getProperty<K extends keyof T>(
+  override async getProperty<K extends keyof T>(
     propertyName: HandleOr<K>
   ): Promise<HandleFor<T[K]>>;
-  async getProperty(propertyName: string): Promise<JSHandle<unknown>>;
-  async getProperty<K extends keyof T>(
+  override async getProperty(propertyName: string): Promise<JSHandle<unknown>>;
+  override async getProperty<K extends keyof T>(
     propertyName: HandleOr<K>
   ): Promise<HandleFor<T[K]>> {
     return this.evaluateHandle((object, propertyName) => {
@@ -171,25 +103,7 @@ export class JSHandle<T = unknown> {
     }, propertyName);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async getProperties(): Promise<Map<string, JSHandle>> {
+  override async getProperties(): Promise<Map<string, JSHandle>> {
     assert(this.#remoteObject.objectId);
     
     
@@ -207,15 +121,7 @@ export class JSHandle<T = unknown> {
     return result;
   }
 
-  
-
-
-
-
-
-
-
-  async jsonValue(): Promise<T> {
+  override async jsonValue(): Promise<T> {
     if (!this.#remoteObject.objectId) {
       return valueFromRemoteObject(this.#remoteObject);
     }
@@ -232,14 +138,11 @@ export class JSHandle<T = unknown> {
 
 
 
-  asElement(): ElementHandle<Node> | null {
+  override asElement(): CDPElementHandle<Node> | null {
     return null;
   }
 
-  
-
-
-  async dispose(): Promise<void> {
+  override async dispose(): Promise<void> {
     if (this.#disposed) {
       return;
     }
@@ -247,13 +150,7 @@ export class JSHandle<T = unknown> {
     await releaseObject(this.client, this.#remoteObject);
   }
 
-  
-
-
-
-
-
-  toString(): string {
+  override toString(): string {
     if (!this.#remoteObject.objectId) {
       return 'JSHandle:' + valueFromRemoteObject(this.#remoteObject);
     }
@@ -261,72 +158,11 @@ export class JSHandle<T = unknown> {
     return 'JSHandle@' + type;
   }
 
-  
+  override get id(): string | undefined {
+    return this.#remoteObject.objectId;
+  }
 
-
-
-
-  remoteObject(): Protocol.Runtime.RemoteObject {
+  override remoteObject(): Protocol.Runtime.RemoteObject {
     return this.#remoteObject;
   }
-}
-
-
-
-
-export interface Offset {
-  
-
-
-  x: number;
-  
-
-
-  y: number;
-}
-
-
-
-
-export interface ClickOptions {
-  
-
-
-
-
-  delay?: number;
-  
-
-
-  button?: MouseButton;
-  
-
-
-  clickCount?: number;
-  
-
-
-  offset?: Offset;
-}
-
-
-
-
-export interface PressOptions {
-  
-
-
-  delay?: number;
-  
-
-
-  text?: string;
-}
-
-
-
-
-export interface Point {
-  x: number;
-  y: number;
 }

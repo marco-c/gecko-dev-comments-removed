@@ -16,10 +16,11 @@
 
 
 
-import expect from 'expect';
-import {getTestState} from './mocha-utils.js';
-
 import path from 'path';
+
+import expect from 'expect';
+
+import {getTestState} from './mocha-utils.js';
 
 describe('Fixtures', function () {
   it('dumpio option should work with pipe option', async () => {

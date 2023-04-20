@@ -14,15 +14,14 @@
 
 
 
-import {getTestState} from './mocha-utils'; 
-import utils from './utils.js';
-
 import expect from 'expect';
-
 import {
   CDPBrowser,
   CDPBrowserContext,
 } from 'puppeteer-core/internal/common/Browser.js';
+
+import {getTestState} from './mocha-utils'; 
+import utils from './utils.js';
 
 describe('TargetManager', () => {
   

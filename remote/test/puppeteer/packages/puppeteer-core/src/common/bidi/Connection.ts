@@ -14,36 +14,60 @@
 
 
 
+
 import {debug} from '../Debug.js';
 const debugProtocolSend = debug('puppeteer:webDriverBiDi:SEND ►');
 const debugProtocolReceive = debug('puppeteer:webDriverBiDi:RECV ◀');
 
 import {ConnectionTransport} from '../ConnectionTransport.js';
-import {EventEmitter} from '../EventEmitter.js';
 import {ProtocolError} from '../Errors.js';
+import {EventEmitter} from '../EventEmitter.js';
 import {ConnectionCallback} from '../Connection.js';
 
-interface Command {
-  id: number;
-  method: string;
-  params: object;
-}
+import * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 
-interface CommandResponse {
-  id: number;
-  result: object;
-}
 
-interface ErrorResponse {
-  id: number;
-  error: string;
-  message: string;
-  stacktrace?: string;
-}
 
-interface Event {
-  method: string;
-  params: object;
+
+interface Commands {
+  'script.evaluate': {
+    params: Bidi.Script.EvaluateParameters;
+    returnType: Bidi.Script.EvaluateResult;
+  };
+  'script.callFunction': {
+    params: Bidi.Script.CallFunctionParameters;
+    returnType: Bidi.Script.CallFunctionResult;
+  };
+  'script.disown': {
+    params: Bidi.Script.DisownParameters;
+    returnType: Bidi.Script.DisownResult;
+  };
+
+  'browsingContext.create': {
+    params: Bidi.BrowsingContext.CreateParameters;
+    returnType: Bidi.BrowsingContext.CreateResult;
+  };
+  'browsingContext.close': {
+    params: Bidi.BrowsingContext.CloseParameters;
+    returnType: Bidi.BrowsingContext.CloseResult;
+  };
+
+  'session.new': {
+    params: {capabilities?: Record<any, unknown>}; 
+    returnType: {sessionId: string};
+  };
+  'session.status': {
+    params: {context: string}; 
+    returnType: Bidi.Session.StatusResult;
+  };
+  'session.subscribe': {
+    params: Bidi.Session.SubscribeParameters;
+    returnType: Bidi.Session.SubscribeResult;
+  };
+  'session.unsubscribe': {
+    params: Bidi.Session.SubscribeParameters;
+    returnType: Bidi.Session.UnsubscribeResult;
+  };
 }
 
 
@@ -69,13 +93,16 @@ export class Connection extends EventEmitter {
     return this.#closed;
   }
 
-  send(method: string, params: object): Promise<CommandResponse['result']> {
+  send<T extends keyof Commands>(
+    method: T,
+    params: Commands[T]['params']
+  ): Promise<Commands[T]['returnType']> {
     const id = ++this.#lastId;
     const stringifiedMessage = JSON.stringify({
       id,
       method,
       params,
-    } as Command);
+    } as Bidi.Message.CommandRequest);
     debugProtocolSend(stringifiedMessage);
     this.#transport.send(stringifiedMessage);
     return new Promise((resolve, reject) => {
@@ -99,9 +126,8 @@ export class Connection extends EventEmitter {
     }
     debugProtocolReceive(message);
     const object = JSON.parse(message) as
-      | Event
-      | ErrorResponse
-      | CommandResponse;
+      | Bidi.Message.CommandResponse
+      | Bidi.EventResponse<string, unknown>;
     if ('id' in object) {
       const callback = this.#callbacks.get(object.id);
       
@@ -112,7 +138,7 @@ export class Connection extends EventEmitter {
             createProtocolError(callback.error, callback.method, object)
           );
         } else {
-          callback.resolve(object.result);
+          callback.resolve(object);
         }
       }
     } else {
@@ -154,10 +180,13 @@ function rewriteError(
   return error;
 }
 
+
+
+
 function createProtocolError(
   error: ProtocolError,
   method: string,
-  object: ErrorResponse
+  object: Bidi.Message.ErrorResult
 ): Error {
   let message = `Protocol error (${method}): ${object.error} ${object.message}`;
   if (object.stacktrace) {

@@ -24,63 +24,33 @@ import {
 
 
 
-export const textQuerySelector = (
+export const textQuerySelectorAll = function* (
   root: Node,
   selector: string
-): Element | null => {
+): Generator<Element> {
+  let yielded = false;
   for (const node of root.childNodes) {
     if (node instanceof Element && isSuitableNodeForTextMatching(node)) {
-      let matchedNode: Element | null;
-      if (node.shadowRoot) {
-        matchedNode = textQuerySelector(node.shadowRoot, selector);
+      let matches: Generator<Element, boolean>;
+      if (!node.shadowRoot) {
+        matches = textQuerySelectorAll(node, selector);
       } else {
-        matchedNode = textQuerySelector(node, selector);
+        matches = textQuerySelectorAll(node.shadowRoot, selector);
       }
-      if (matchedNode) {
-        return matchedNode;
+      for (const match of matches) {
+        yield match;
+        yielded = true;
       }
     }
   }
+  if (yielded) {
+    return;
+  }
 
-  if (root instanceof Element) {
+  if (root instanceof Element && isSuitableNodeForTextMatching(root)) {
     const textContent = createTextContent(root);
     if (textContent.full.includes(selector)) {
-      return root;
+      yield root;
     }
   }
-  return null;
-};
-
-
-
-
-
-
-export const textQuerySelectorAll = (
-  root: Node,
-  selector: string
-): Element[] => {
-  let results: Element[] = [];
-  for (const node of root.childNodes) {
-    if (node instanceof Element) {
-      let matchedNodes: Element[];
-      if (node.shadowRoot) {
-        matchedNodes = textQuerySelectorAll(node.shadowRoot, selector);
-      } else {
-        matchedNodes = textQuerySelectorAll(node, selector);
-      }
-      results = results.concat(matchedNodes);
-    }
-  }
-  if (results.length > 0) {
-    return results;
-  }
-
-  if (root instanceof Element) {
-    const textContent = createTextContent(root);
-    if (textContent.full.includes(selector)) {
-      return [root];
-    }
-  }
-  return [];
 };

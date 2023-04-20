@@ -13,19 +13,15 @@
 
 
 
+
 import {Browser} from '../api/Browser.js';
+
 import {
   BrowserConnectOptions,
   _connectToCDPBrowser,
 } from './BrowserConnector.js';
 import {ConnectionTransport} from './ConnectionTransport.js';
-import {
-  clearCustomQueryHandlers,
-  CustomQueryHandler,
-  customQueryHandlerNames,
-  registerCustomQueryHandler,
-  unregisterCustomQueryHandler,
-} from './QueryHandler.js';
+import {CustomQueryHandler, customQueryHandlers} from './CustomQueryHandler.js';
 
 
 
@@ -59,7 +55,16 @@ export interface ConnectOptions extends BrowserConnectOptions {
 
 
 
+
 export class Puppeteer {
+  
+
+
+
+
+
+  static customQueryHandlers = customQueryHandlers;
+
   
 
 
@@ -86,28 +91,28 @@ export class Puppeteer {
     name: string,
     queryHandler: CustomQueryHandler
   ): void {
-    return registerCustomQueryHandler(name, queryHandler);
+    return this.customQueryHandlers.register(name, queryHandler);
   }
 
   
 
 
   static unregisterCustomQueryHandler(name: string): void {
-    return unregisterCustomQueryHandler(name);
+    return this.customQueryHandlers.unregister(name);
   }
 
   
 
 
   static customQueryHandlerNames(): string[] {
-    return customQueryHandlerNames();
+    return this.customQueryHandlers.names();
   }
 
   
 
 
   static clearCustomQueryHandlers(): void {
-    return clearCustomQueryHandlers();
+    return this.customQueryHandlers.clear();
   }
 
   

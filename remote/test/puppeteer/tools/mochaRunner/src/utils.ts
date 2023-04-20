@@ -14,14 +14,15 @@
 
 
 
+import fs from 'fs';
+import path from 'path';
+
 import {
   MochaTestResult,
   TestExpectation,
   MochaResults,
   TestResult,
 } from './types.js';
-import path from 'path';
-import fs from 'fs';
 
 export function extendProcessEnv(envs: object[]): NodeJS.ProcessEnv {
   return envs.reduce(

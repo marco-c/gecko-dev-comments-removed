@@ -14,6 +14,7 @@
 
 
 import expect from 'expect';
+
 import {
   expectCookieEquals,
   getTestState,

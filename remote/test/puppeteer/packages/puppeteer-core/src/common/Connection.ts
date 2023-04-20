@@ -13,16 +13,20 @@
 
 
 
+
+
 import {assert} from '../util/assert.js';
+
 import {debug} from './Debug.js';
 const debugProtocolSend = debug('puppeteer:protocol:SEND ►');
 const debugProtocolReceive = debug('puppeteer:protocol:RECV ◀');
 
 import {Protocol} from 'devtools-protocol';
 import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping.js';
+
 import {ConnectionTransport} from './ConnectionTransport.js';
-import {EventEmitter} from './EventEmitter.js';
 import {ProtocolError} from './Errors.js';
+import {EventEmitter} from './EventEmitter.js';
 
 
 

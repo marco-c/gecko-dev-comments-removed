@@ -25,7 +25,7 @@ export * from './util/util.js';
 
 
 
-export * from './common/QueryHandler.js';
+export * from './common/CustomQueryHandler.js';
 
 import {PuppeteerNode} from './node/PuppeteerNode.js';
 

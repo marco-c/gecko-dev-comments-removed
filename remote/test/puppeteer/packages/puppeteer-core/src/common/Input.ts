@@ -14,11 +14,13 @@
 
 
 
+import {Protocol} from 'devtools-protocol';
+
+import {Point} from '../api/ElementHandle.js';
 import {assert} from '../util/assert.js';
+
 import {CDPSession} from './Connection.js';
 import {_keyDefinitions, KeyDefinition, KeyInput} from './USKeyboardLayout.js';
-import {Protocol} from 'devtools-protocol';
-import {Point} from './JSHandle.js';
 
 type KeyDescription = Required<
   Pick<KeyDefinition, 'keyCode' | 'key' | 'text' | 'code' | 'location'>
@@ -670,12 +672,40 @@ export class Touchscreen {
 
 
   async tap(x: number, y: number): Promise<void> {
+    await this.touchStart(x, y);
+    await this.touchEnd();
+  }
+
+  
+
+
+
+
+  async touchStart(x: number, y: number): Promise<void> {
     const touchPoints = [{x: Math.round(x), y: Math.round(y)}];
     await this.#client.send('Input.dispatchTouchEvent', {
       type: 'touchStart',
       touchPoints,
       modifiers: this.#keyboard._modifiers,
     });
+  }
+  
+
+
+
+
+  async touchMove(x: number, y: number): Promise<void> {
+    const movePoints = [{x: Math.round(x), y: Math.round(y)}];
+    await this.#client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: movePoints,
+      modifiers: this.#keyboard._modifiers,
+    });
+  }
+  
+
+
+  async touchEnd(): Promise<void> {
     await this.#client.send('Input.dispatchTouchEvent', {
       type: 'touchEnd',
       touchPoints: [],

@@ -110,6 +110,14 @@ module.exports = {
     ],
     'import/extensions': ['error', 'ignorePackages'],
 
+    'import/order': [
+      'error',
+      {
+        'newlines-between': 'always',
+        alphabetize: {order: 'asc', caseInsensitive: true},
+      },
+    ],
+
     'no-restricted-syntax': [
       'error',
       

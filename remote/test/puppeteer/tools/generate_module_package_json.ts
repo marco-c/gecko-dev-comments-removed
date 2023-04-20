@@ -14,11 +14,13 @@
 
 
 
-import fs from 'fs';
+import {mkdirSync, writeFileSync} from 'fs';
+import {dirname} from 'path';
 
 
 
 
 
 
-fs.writeFileSync(process.argv[2], `{"type": "module"}`);
+mkdirSync(dirname(process.argv[2]), {recursive: true});
+writeFileSync(process.argv[2], `{"type": "module"}`);

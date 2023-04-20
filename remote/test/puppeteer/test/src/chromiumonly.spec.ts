@@ -13,8 +13,10 @@
 
 
 
-import expect from 'expect';
 import {IncomingMessage} from 'http';
+
+import expect from 'expect';
+
 import {
   getTestState,
   setupTestBrowserHooks,

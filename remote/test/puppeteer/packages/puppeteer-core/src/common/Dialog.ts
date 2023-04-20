@@ -14,9 +14,11 @@
 
 
 
-import {assert} from '../util/assert.js';
-import {CDPSession} from './Connection.js';
 import {Protocol} from 'devtools-protocol';
+
+import {assert} from '../util/assert.js';
+
+import {CDPSession} from './Connection.js';
 
 
 
