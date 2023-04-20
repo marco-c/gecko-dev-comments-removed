@@ -401,6 +401,17 @@ RetransmissionQueue::GetChunksForFastRetransmit(size_t bytes_in_packet) {
   
   
   
+  if (to_be_sent[0].first ==
+      outstanding_data_.last_cumulative_tsn_ack().next_value().Wrap()) {
+    RTC_DLOG(LS_VERBOSE)
+        << log_prefix_
+        << "First outstanding DATA to be retransmitted - restarting T3-RTX";
+    t3_rtx_.Stop();
+  }
+
+  
+  
+  
   
   if (!t3_rtx_.is_running()) {
     t3_rtx_.Start();
