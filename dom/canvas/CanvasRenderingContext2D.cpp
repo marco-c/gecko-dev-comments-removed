@@ -2403,18 +2403,13 @@ static already_AddRefed<const ComputedStyle> GetFontStyleForServo(
 
   ServoStyleSet* styleSet = aPresShell->StyleSet();
 
+  
+  
   RefPtr<const ComputedStyle> parentStyle;
-  
-  
-  if (aElement && aElement->IsInComposedDoc()) {
+  if (aElement) {
     parentStyle = nsComputedDOMStyle::GetComputedStyle(aElement);
-    if (!parentStyle) {
-      
-      
-      aError.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
-  } else {
+  }
+  if (!parentStyle) {
     RefPtr<RawServoDeclarationBlock> declarations =
         CreateFontDeclarationForServo("10px sans-serif"_ns,
                                       aPresShell->GetDocument());
@@ -4201,13 +4196,8 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
   }
 
   RefPtr<const ComputedStyle> canvasStyle;
-  if (mCanvasElement && mCanvasElement->IsInComposedDoc()) {
-    
+  if (mCanvasElement) {
     canvasStyle = nsComputedDOMStyle::GetComputedStyle(mCanvasElement);
-    if (!canvasStyle) {
-      aError = NS_ERROR_FAILURE;
-      return nullptr;
-    }
   }
 
   
