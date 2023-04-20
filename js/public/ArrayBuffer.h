@@ -269,12 +269,6 @@ extern JS_PUBLIC_API void* StealArrayBufferContents(JSContext* cx,
 
 
 
-extern JS_PUBLIC_API void SetLargeArrayBuffersEnabled(bool enable);
-
-
-
-
-
 
 
 
