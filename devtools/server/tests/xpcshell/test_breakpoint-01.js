@@ -49,6 +49,5 @@ function evaluateTestCode(debuggee) {
       "var b = 2;\n", 
       debuggee
     );
-    
   });
 }

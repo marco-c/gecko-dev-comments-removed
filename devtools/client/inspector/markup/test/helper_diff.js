@@ -39,8 +39,6 @@
 
 
 
-
-
 var LCS = function (A, B,  equals) {
   
   if (equals === undefined)

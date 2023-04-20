@@ -29,6 +29,7 @@ add_task(
 
 function evaluateTestCode(debuggee) {
   
+  
   debuggee.eval("(" + function () {
     function stopMe() {
       debugger;

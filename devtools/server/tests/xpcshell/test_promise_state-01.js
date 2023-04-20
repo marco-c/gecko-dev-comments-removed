@@ -31,6 +31,7 @@ add_task(
 
 function evalCode(debuggee) {
   
+  
   Cu.evalInSandbox(
     "doTest();\n" +
     function doTest() {

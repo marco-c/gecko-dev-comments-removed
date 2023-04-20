@@ -1,8 +1,6 @@
 
 
 
-
-
 function f() {
   bogus.g();
 }

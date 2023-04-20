@@ -47,7 +47,11 @@ add_task(async function() {
                          </html>`,
       "extension.js": async () => {
         
-        await browser.devtools.panels.create("extension", "fake-icon.png", "empty.html");
+        await browser.devtools.panels.create(
+          "extension",
+          "fake-icon.png",
+          "empty.html"
+        );
         
         browser.test.sendMessage("devtools-page-ready");
       },

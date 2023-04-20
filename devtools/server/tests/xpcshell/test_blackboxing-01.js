@@ -98,6 +98,7 @@ const testBlackBox = async function() {
 
 function evalCode() {
   
+  
   Cu.evalInSandbox(
     "" + function doStuff(k) { 
       var arg = 15;            
@@ -109,6 +110,7 @@ function evalCode() {
     1
   );
 
+  
   Cu.evalInSandbox(
     "" + function runTest() { 
       doStuff(                
@@ -124,7 +126,6 @@ function evalCode() {
     SOURCE_URL,
     1
   );
-  
 }
 
 const runTest = async function(onSteppedLocation, onDebuggerStatementFrames) {

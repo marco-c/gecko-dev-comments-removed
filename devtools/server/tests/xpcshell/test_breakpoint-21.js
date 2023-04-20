@@ -36,8 +36,9 @@ add_task(
   })
 );
 
-
 function evalCode(debuggee) {
+  
+  
   
   Cu.evalInSandbox(
     "var line0 = Error().lineNumber;\n(" + function () {
@@ -57,4 +58,5 @@ function evalCode(debuggee) {
     } + ")()",
     debuggee
   );
+  
 }

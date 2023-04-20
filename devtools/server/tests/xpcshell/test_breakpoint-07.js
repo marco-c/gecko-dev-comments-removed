@@ -60,7 +60,6 @@ add_task(
         "foo();\n",           
         debuggee
       );
-      
     });
   })
 );

@@ -89,6 +89,5 @@ async function evaluateTestCode(debuggee, throwValue) {
       "test_pause_exceptions-04.js",
       1
     );
-    
   } catch (e) {}
 }

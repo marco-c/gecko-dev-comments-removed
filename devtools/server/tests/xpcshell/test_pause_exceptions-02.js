@@ -28,6 +28,7 @@ add_task(
 
 function evaluateTestCode(debuggee) {
   
+  
   debuggee.eval("(" + function () {    
     function stopMe() {                
       throw 42;                        
@@ -36,5 +37,4 @@ function evaluateTestCode(debuggee) {
       stopMe();                        
     } catch (e) {}                     
   } + ")()");
-  
 }

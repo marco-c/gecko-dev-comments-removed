@@ -47,5 +47,4 @@ function evaluateTestCode(debuggee) {
     "test_ignore_no_interface_exceptions.js",
     1
   );
-  
 }

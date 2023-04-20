@@ -61,15 +61,14 @@ add_task(
       
       
       
-    Cu.evalInSandbox(
-      "var line0 = Error().lineNumber;\n" +
-      "debugger;\n" +      
-      "var a = 1;\n" +     
-      "// A comment.\n" +  
-      "var b = 2;",        
-      debuggee
-    );
-      
+      Cu.evalInSandbox(
+        "var line0 = Error().lineNumber;\n" +
+        "debugger;\n" +      
+        "var a = 1;\n" +     
+        "// A comment.\n" +  
+        "var b = 2;",        
+        debuggee
+      );
     });
   })
 );

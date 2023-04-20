@@ -53,5 +53,4 @@ function evaluateTestCode(debuggee) {
     "foo();\n",            
     debuggee
   );
-  
 }

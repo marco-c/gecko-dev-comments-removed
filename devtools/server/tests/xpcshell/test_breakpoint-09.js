@@ -56,17 +56,16 @@ add_task(
 
 function evaluateTestCode(debuggee) {
   
-      Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
-                       "function foo(stop) {\n" + 
-                       "  this.a = 1;\n" +        
-                       "  if (stop) return;\n" +  
-                       "  delete this.a;\n" +     
-                       "  foo(true);\n" +         
-                       "}\n" +                    
-                       "debugger;\n" +            
-                       "foo();\n",                
-                       debuggee);
-      
+  Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
+                    "function foo(stop) {\n" + 
+                    "  this.a = 1;\n" +        
+                    "  if (stop) return;\n" +  
+                    "  delete this.a;\n" +     
+                    "  foo(true);\n" +         
+                    "}\n" +                    
+                    "debugger;\n" +            
+                    "foo();\n",                
+                    debuggee);
   if (!done) {
     Assert.ok(false);
   }

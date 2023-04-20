@@ -12,6 +12,7 @@ const URL = "test.js";
 
 function setUpCode(debuggee) {
   
+  
   Cu.evalInSandbox(
     "" + function test() { 
       var a = 1;           

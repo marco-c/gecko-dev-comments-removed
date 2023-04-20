@@ -18,6 +18,7 @@ add_task(
 async function testSymbols(threadFront, debuggee) {
   const evalCode = () => {
     
+    
     Cu.evalInSandbox(
       "(" + function () {
         var symbolWithName = Symbol("Chris");

@@ -40,5 +40,4 @@ function evaluateTestCode(debuggee) {
     "test_stepping-01-test-code.js",
     1
   );
-  
 }

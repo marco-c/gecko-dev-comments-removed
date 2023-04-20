@@ -63,13 +63,13 @@ add_task(
                        "1.7",
                        "script1.js");
 
+      
       Cu.evalInSandbox("var line1 = Error().lineNumber;\n" +
                        "debugger;\n" +        
                        "foo();\n",           
                        debuggee,
                        "1.7",
                        "script2.js");
-      
     });
   })
 );

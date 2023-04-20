@@ -87,7 +87,6 @@ function makeColorTest(name, value, segments) {
           `<span ${buttonAttrString}></span>`+
           `<span>${segment.name}</span>` +
         `</span>`;
-      
     }
   }
 
@@ -147,9 +146,7 @@ function testParseCssProperty(doc, parser) {
     
     makeColorTest(
       "background-image",
-      
       "linear-gradient(to left, transparent 0, transparent 5%,#F00 0, #F00 10%,#FF0 0, #FF0 15%,#0F0 0, #0F0 20%,#0FF 0, #0FF 25%,#00F 0, #00F 30%,#800 0, #800 35%,#880 0, #880 40%,#080 0, #080 45%,#088 0, #088 50%,#008 0, #008 55%,#FFF 0, #FFF 60%,#EEE 0, #EEE 65%,#CCC 0, #CCC 70%,#999 0, #999 75%,#666 0, #666 80%,#333 0, #333 85%,#111 0, #111 90%,#000 0, #000 95%,transparent 0, transparent 100%)",
-      
       [
         "linear-gradient(to left, ",
         { name: "transparent", colorFunction: "linear-gradient" },
@@ -554,7 +551,6 @@ function testParseVariable(doc, parser) {
             '<span data-variable="--seen = chartreuse">--seen</span>)' +
           "</span>" +
         "</span>",
-        
     },
     {
       text: "var(--not-seen)",
@@ -564,7 +560,6 @@ function testParseVariable(doc, parser) {
         "<span>var(" +
           '<span class="unmatched-class" data-variable="--not-seen is not set">--not-seen</span>' +
         ")</span>",
-        
     },
     {
       text: "var(--seen, seagreen)",
@@ -581,7 +576,6 @@ function testParseVariable(doc, parser) {
             "</span>)" +
           "</span>" +
         "</span>",
-        
     },
     {
       text: "var(--not-seen, var(--seen))",
@@ -598,7 +592,6 @@ function testParseVariable(doc, parser) {
             "</span>" +
           "</span>)" +
         "</span>",
-        
     },
     {
       text: "color-mix(in sgrb, var(--x), purple)",
@@ -618,7 +611,6 @@ function testParseVariable(doc, parser) {
           `<span>purple</span>` +
         `</span>` +
         `)`,
-        
       parserExtraOptions: {
         colorSwatchClass: COLOR_TEST_CLASS,
       },

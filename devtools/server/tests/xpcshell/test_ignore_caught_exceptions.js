@@ -50,5 +50,4 @@ function evaluateTestCode(debuggee) {
     1
   );
   } catch (e) {}
-  
 }

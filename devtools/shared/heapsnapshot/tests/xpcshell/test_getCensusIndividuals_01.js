@@ -45,7 +45,6 @@ function run_test() {
           JSString: [411, 412, 413], 
         }],
       ]);
-      
     },
   };
 

@@ -50,5 +50,4 @@ function evaluateTestCode(debuggee) {
     "test_pause_exceptions-03.js",
     1
   );
-  
 }

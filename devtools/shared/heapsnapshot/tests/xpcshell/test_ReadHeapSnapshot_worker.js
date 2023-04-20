@@ -1,9 +1,10 @@
 
 
 
+"use strict";
 
 
-add_task(async function () {
+add_task(async function() {
   const worker = new ChromeWorker("resource://test/heap-snapshot-worker.js");
   worker.postMessage({});
 
