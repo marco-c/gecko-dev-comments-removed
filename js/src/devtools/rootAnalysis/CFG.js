@@ -704,6 +704,45 @@ function edgeStartsValueLiveRange(edge, variable)
 
 
 
+
+
+
+
+function matchEdgeCall(edge, matcher) {
+    if (edge.Kind != "Call") {
+        return false;
+    }
+
+    const callee = edge.Exp[0];
+
+    if (edge.Type.Kind == 'Function' &&
+        edge.Exp[0].Kind == 'Var' &&
+        edge.Exp[0].Variable.Kind == 'Func') {
+        const calleeName = edge.Exp[0].Variable.Name;
+        const args = edge.PEdgeCallArguments;
+        const argExprs = args ? args.Exp : [];
+        const lhs = edge.Exp[1]; 
+        return matcher(calleeName, argExprs, lhs);
+    }
+
+    return false;
+}
+
+function edgeMarksVariableGCSafe(edge, variable) {
+    return matchEdgeCall(edge, (calleeName, argExprs, _lhs) => {
+        
+        return (calleeName[1] == 'MarkVariableAsGCSafe' &&
+            calleeName[0].includes("JS::detail::MarkVariableAsGCSafe") &&
+            argExprs.length == 1 &&
+            expressionIsVariable(argExprs[0], variable));
+    });
+}
+
+
+
+
+
+
 function parseTypeName(typeName) {
     const m = typeName.match(/^(((?:\w|::)+::)?(\w+))\b(\<)?/);
     if (!m) {
@@ -748,30 +787,20 @@ function edgeEndsValueLiveRange(edge, variable, body)
     if (edge.Kind != "Call")
         return false;
 
-    var callee = edge.Exp[0];
-
-    if (edge.Type.Kind == 'Function' &&
-        edge.Exp[0].Kind == 'Var' &&
-        edge.Exp[0].Variable.Kind == 'Func' &&
-        edge.Exp[0].Variable.Name[1] == 'MarkVariableAsGCSafe' &&
-        edge.Exp[0].Variable.Name[0].includes("JS::detail::MarkVariableAsGCSafe") &&
-        expressionIsVariable(edge.PEdgeCallArguments.Exp[0], variable))
-    {
+    if (edgeMarksVariableGCSafe(edge, variable)) {
         
         return true;
     }
 
     const decl = lookupVariable(body, variable);
 
-    if (edge.Type.Kind == 'Function' &&
-        edge.Exp[0].Kind == 'Var' &&
-        edge.Exp[0].Variable.Kind == 'Func' &&
-        edge.Exp[0].Variable.Name[1] == 'move' &&
-        edge.Exp[0].Variable.Name[0].includes('std::move(') &&
-        expressionIsDeclaredVariable(edge.PEdgeCallArguments.Exp[0], decl) &&
-        edge.Exp[1].Kind == 'Var' &&
-        edge.Exp[1].Variable.Kind == 'Temp')
-    {
+    if (matchEdgeCall(edge, (calleeName, argExprs, lhs) => {
+        return calleeName[1] == 'move' && calleeName[0].includes('std::move(') &&
+            expressionIsDeclaredVariable(argExprs[0], decl) &&
+            lhs &&
+            lhs.Kind == 'Var' &&
+            lhs.Variable.Kind == 'Temp';
+    })) {
         
         
         
@@ -807,6 +836,8 @@ function edgeEndsValueLiveRange(edge, variable, body)
         if (basicBlockEatsVariable(lhs, body, edge.Index[1]))
           return true;
     }
+
+    const callee = edge.Exp[0];
 
     if (edge.Type.Kind == 'Function' &&
         edge.Type.TypeFunctionCSU &&
