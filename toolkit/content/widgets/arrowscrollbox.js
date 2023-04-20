@@ -607,15 +607,15 @@
             if (this.isRTLScrollbox) {
               [startElement, endElement] = [endElement, startElement];
             }
-            if (startElement && isAtEdge(startElement,  true)) {
-              scrolledToStart = !this.isRTLScrollbox;
-              scrolledToEnd = this.isRTLScrollbox;
-            } else if (
-              endElement &&
-              isAtEdge(endElement,  false)
-            ) {
-              scrolledToStart = this.isRTLScrollbox;
-              scrolledToEnd = !this.isRTLScrollbox;
+            scrolledToStart =
+              startElement && isAtEdge(startElement,  true);
+            scrolledToEnd =
+              endElement && isAtEdge(endElement,  false);
+            if (this.isRTLScrollbox) {
+              [scrolledToStart, scrolledToEnd] = [
+                scrolledToEnd,
+                scrolledToStart,
+              ];
             }
           }
 
