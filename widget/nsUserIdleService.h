@@ -140,13 +140,6 @@ class nsUserIdleService : public nsIUserIdleServiceInternal {
 
   virtual bool PollIdleTime(uint32_t* aIdleTime);
 
-  
-
-
-
-
-  virtual bool UsePollMode();
-
  private:
   
 

@@ -27,9 +27,6 @@
 using namespace mozilla;
 
 
-#define MIN_IDLE_POLL_INTERVAL_MSEC (5 * PR_MSEC_PER_SEC) /* 5 sec */
-
-
 
 
 #define DAILY_SIGNIFICANT_IDLE_SERVICE_SEC (3 * 60)
@@ -459,10 +456,8 @@ nsUserIdleService::AddIdleObserver(nsIObserver* aObserver,
 #endif
 
     mDeltaToNextIdleSwitchInS = aIdleTimeInS;
+    ReconfigureTimer();
   }
-
-  
-  ReconfigureTimer();
 
   return NS_OK;
 }
@@ -638,11 +633,6 @@ nsUserIdleService::GetIdleTime(uint32_t* idleTime) {
 bool nsUserIdleService::PollIdleTime(uint32_t* ) {
   
   return false;
-}
-
-bool nsUserIdleService::UsePollMode() {
-  uint32_t dummy;
-  return PollIdleTime(&dummy);
 }
 
 nsresult nsUserIdleService::GetDisabled(bool* aResult) {
@@ -875,26 +865,6 @@ void nsUserIdleService::ReconfigureTimer(void) {
   __android_log_print(LOG_LEVEL, LOG_TAG, "next timeout %0.f msec from now",
                       nextTimeoutDuration.ToMilliseconds());
 #endif
-
-  
-  if ((mIdleObserverCount > 0) && UsePollMode()) {
-    TimeStamp pollTimeout =
-        curTime + TimeDuration::FromMilliseconds(MIN_IDLE_POLL_INTERVAL_MSEC);
-
-    if (nextTimeoutAt > pollTimeout) {
-      MOZ_LOG(
-          sLog, LogLevel::Debug,
-          ("idleService: idle observers, reducing timeout to %lu msec from now",
-           MIN_IDLE_POLL_INTERVAL_MSEC));
-#ifdef MOZ_WIDGET_ANDROID
-      __android_log_print(
-          LOG_LEVEL, LOG_TAG,
-          "idle observers, reducing timeout to %lu msec from now",
-          MIN_IDLE_POLL_INTERVAL_MSEC);
-#endif
-      nextTimeoutAt = pollTimeout;
-    }
-  }
 
   SetTimerExpiryIfBefore(nextTimeoutAt);
 }
