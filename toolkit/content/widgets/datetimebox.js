@@ -58,7 +58,11 @@ this.DateTimeBoxWidget = class {
   }
 
   teardown() {
-    this.mInputElement.removeEventListener("keydown", this, {
+    this.mResetButton.removeEventListener("mousedown", this, {
+      mozSystemGroup: true,
+    });
+
+    this.mInputElement.removeEventListener("keypress", this, {
       capture: true,
       mozSystemGroup: true,
     });
@@ -73,7 +77,6 @@ this.DateTimeBoxWidget = class {
     this.l10n.disconnectRoot(this.shadowRoot);
 
     this.removeEditFields();
-    this.removeEventListenersToField(this.mCalendarButton);
 
     this.mInputElement = null;
 
@@ -131,7 +134,6 @@ this.DateTimeBoxWidget = class {
     this.generateContent();
 
     this.mDateTimeBoxElement = this.shadowRoot.firstChild;
-    this.mCalendarButton = this.shadowRoot.getElementById("calendar-button");
     this.mInputElement = this.element;
     this.mLocales = this.window.getWebExposedLocales();
 
@@ -187,8 +189,14 @@ this.DateTimeBoxWidget = class {
     this.mHourPageUpDownInterval = 3;
     this.mMinSecPageUpDownInterval = 10;
 
+    this.mResetButton = this.shadowRoot.getElementById("reset-button");
+    this.mResetButton.style.visibility = "hidden";
+    this.mResetButton.addEventListener("mousedown", this, {
+      mozSystemGroup: true,
+    });
+
     this.mInputElement.addEventListener(
-      "keydown",
+      "keypress",
       this,
       {
         capture: true,
@@ -198,15 +206,12 @@ this.DateTimeBoxWidget = class {
     );
     
     
-    this.isAndroid = this.window.navigator.appVersion.includes("Android");
-    if (this.isAndroid) {
-      this.mInputElement.addEventListener(
-        "click",
-        this,
-        { mozSystemGroup: true },
-        false
-      );
-    }
+    this.mInputElement.addEventListener(
+      "click",
+      this,
+      { mozSystemGroup: true },
+      false
+    );
 
     
     
@@ -216,7 +221,6 @@ this.DateTimeBoxWidget = class {
     });
 
     this.buildEditFields();
-    this.buildCalendarBtn();
     this.updateEditAttributes();
 
     if (this.mInputElement.value) {
@@ -239,9 +243,10 @@ this.DateTimeBoxWidget = class {
             <!-- Each of the date/time input types will append their input child
                - elements here -->
           </span>
-          <button data-l10n-id="datetime-calendar" class="datetime-calendar-button" id="calendar-button" aria-expanded="false">
-            <svg role="none" class="datetime-calendar-button-svg" xmlns="http://www.w3.org/2000/svg" id="calendar-16" viewBox="0 0 16 16" width="16" height="16" fill="context-fill">
-              <path d="M13.5 2H13V1c0-.6-.4-1-1-1s-1 .4-1 1v1H5V1c0-.6-.4-1-1-1S3 .4 3 1v1h-.5C1.1 2 0 3.1 0 4.5v9C0 14.9 1.1 16 2.5 16h11c1.4 0 2.5-1.1 2.5-2.5v-9C16 3.1 14.9 2 13.5 2zm0 12.5h-11c-.6 0-1-.4-1-1V6h13v7.5c0 .6-.4 1-1 1z"/>
+
+          <button class="datetime-reset-button" id="reset-button" tabindex="-1" data-l10n-id="datetime-reset">
+            <svg xmlns="http://www.w3.org/2000/svg" class="datetime-reset-button-svg" width="12" height="12" viewBox="0 0 12 12">
+              <path d="M 3.9,3 3,3.9 5.1,6 3,8.1 3.9,9 6,6.9 8.1,9 9,8.1 6.9,6 9,3.9 8.1,3 6,5.1 Z M 12,6 A 6,6 0 0 1 6,12 6,6 0 0 1 0,6 6,6 0 0 1 6,0 6,6 0 0 1 12,6 Z"/>
             </svg>
           </button>
         </div>
@@ -369,8 +374,12 @@ this.DateTimeBoxWidget = class {
     return field;
   }
 
-  updateCalendarButtonState(isExpanded) {
-    this.mCalendarButton.setAttribute("aria-expanded", isExpanded);
+  updateResetButtonVisibility() {
+    if (this.isAnyFieldAvailable(false) && !this.isRequired()) {
+      this.mResetButton.style.visibility = "";
+    } else {
+      this.mResetButton.style.visibility = "hidden";
+    }
   }
 
   notifyInputElementValueChanged() {
@@ -414,8 +423,6 @@ this.DateTimeBoxWidget = class {
   setPickerState(aIsOpen) {
     this.log("picker is now " + (aIsOpen ? "opened" : "closed"));
     this.mIsPickerOpen = aIsOpen;
-    
-    this.updateCalendarButtonState(this.mIsPickerOpen);
   }
 
   setFieldTabIndexAttribute(field) {
@@ -447,10 +454,9 @@ this.DateTimeBoxWidget = class {
       this.setFieldTabIndexAttribute(child);
     }
 
-    this.mCalendarButton.hidden =
-      this.mInputElement.disabled ||
-      this.mInputElement.readOnly ||
-      this.mInputElement.type === "time";
+    this.mResetButton.disabled =
+      this.mInputElement.disabled || this.mInputElement.readOnly;
+    this.updateResetButtonVisibility();
   }
 
   isEmpty(aValue) {
@@ -474,6 +480,7 @@ this.DateTimeBoxWidget = class {
     if (aField.classList.contains("numeric")) {
       aField.setAttribute("typeBuffer", "");
     }
+    this.updateResetButtonVisibility();
   }
 
   openDateTimePicker() {
@@ -537,13 +544,11 @@ this.DateTimeBoxWidget = class {
         break;
       }
       case "MozSetDateTimePickerState": {
-        
-        this.oldFocus = this.window.document.activeElement;
         this.setPickerState(aEvent.detail);
         break;
       }
-      case "keydown": {
-        this.onKeyDown(aEvent);
+      case "keypress": {
+        this.onKeyPress(aEvent);
         break;
       }
       case "click": {
@@ -599,13 +604,6 @@ this.DateTimeBoxWidget = class {
         aEvent.relatedTarget
     );
 
-    
-    
-    if (this.document.activeElement === this.oldFocus) {
-      return;
-    }
-    this.oldFocus = null;
-
     let target = aEvent.originalTarget;
     target.setAttribute("typeBuffer", "");
     this.setInputValueFromFields();
@@ -628,7 +626,7 @@ this.DateTimeBoxWidget = class {
     );
   }
 
-  shouldOpenDateTimePickerOnKeyDown() {
+  shouldOpenDateTimePickerOnKeyPress() {
     if (!this.mLastFocusedField) {
       return true;
     }
@@ -649,34 +647,20 @@ this.DateTimeBoxWidget = class {
     return this.isTimeField(field);
   }
 
-  onKeyDown(aEvent) {
-    this.log("onKeyDown key: " + aEvent.key);
+  onKeyPress(aEvent) {
+    this.log("onKeyPress key: " + aEvent.key);
 
     switch (aEvent.key) {
       
-      
-      case "Escape": {
-        if (this.mIsPickerOpen) {
-          this.closeDateTimePicker();
-          aEvent.preventDefault();
-        }
-        break;
-      }
       case "Enter":
+      case "Escape":
       case " ": {
-        
         if (this.mIsPickerOpen) {
           this.closeDateTimePicker();
         } else if (
-          
-          aEvent.key == " " &&
-          this.shouldOpenDateTimePickerOnKeyDown()
-        ) {
-          this.openDateTimePicker();
-        } else if (
-          
-          aEvent.originalTarget == this.mCalendarButton &&
-          this.shouldOpenDateTimePickerOnKeyDown()
+          aEvent.key != "Escape" &&
+          aEvent.key != "Enter" &&
+          this.shouldOpenDateTimePickerOnKeyPress()
         ) {
           this.openDateTimePicker();
         } else {
@@ -715,15 +699,11 @@ this.DateTimeBoxWidget = class {
       }
       default: {
         
-        const regex = new RegExp("Digit\\d");
-        const isDigit = regex.test(aEvent.code);
-
         if (
-          isDigit ||
-          (aEvent.key == 0 &&
-            !(aEvent.ctrlKey || aEvent.altKey || aEvent.metaKey))
+          aEvent.keyCode == 0 &&
+          !(aEvent.ctrlKey || aEvent.altKey || aEvent.metaKey)
         ) {
-          this.handleKeydown(aEvent);
+          this.handleKeypress(aEvent);
           aEvent.preventDefault();
         }
         break;
@@ -743,20 +723,13 @@ this.DateTimeBoxWidget = class {
       return;
     }
 
-    
-    
-    if (
-      aEvent.originalTarget == this.mCalendarButton ||
-      (this.isAndroid && aEvent.originalTarget == this.mInputElement)
+    if (aEvent.originalTarget == this.mResetButton) {
+      this.clearInputFields(false);
+    } else if (
+      !this.mIsPickerOpen &&
+      this.shouldOpenDateTimePickerOnClick(aEvent.originalTarget)
     ) {
-      if (
-        !this.mIsPickerOpen &&
-        this.shouldOpenDateTimePickerOnClick(aEvent.originalTarget)
-      ) {
-        this.openDateTimePicker();
-      } else {
-        this.closeDateTimePicker();
-      }
+      this.openDateTimePicker();
     }
   }
 
@@ -898,18 +871,6 @@ this.DateTimeBoxWidget = class {
           break;
       }
     });
-  }
-
-  buildCalendarBtn() {
-    this.addEventListenersToField(this.mCalendarButton);
-    
-    
-    this.mCalendarButton.addEventListener(
-      "click",
-      this,
-      { mozSystemGroup: true },
-      false
-    );
   }
 
   clearInputFields(aFromInputElement) {
@@ -1124,7 +1085,7 @@ this.DateTimeBoxWidget = class {
     this.setInputValueFromFields();
   }
 
-  handleKeydown(aEvent) {
+  handleKeypress(aEvent) {
     if (!this.isEditable()) {
       return;
     }
@@ -1267,6 +1228,7 @@ this.DateTimeBoxWidget = class {
 
     aField.textContent = formatted;
     aField.setAttribute("aria-valuetext", formatted);
+    this.updateResetButtonVisibility();
   }
 
   isAnyFieldAvailable(aForPicker = false) {
@@ -1560,5 +1522,6 @@ this.DateTimeBoxWidget = class {
 
     this.mDayPeriodField.textContent = aValue;
     this.mDayPeriodField.setAttribute("value", aValue);
+    this.updateResetButtonVisibility();
   }
 };
