@@ -48,13 +48,10 @@ class DocumentWalker {
 
 
 
-
-
   constructor(
     node,
     rootWin,
     {
-      whatToShow = nodeFilterConstants.SHOW_ALL,
       filter = standardTreeWalkerFilter,
       skipTo = SKIP_TO_PARENT,
       showAnonymousContent = true,
@@ -70,7 +67,7 @@ class DocumentWalker {
     this.walker.showAnonymousContent = showAnonymousContent;
     this.walker.showSubDocuments = true;
     this.walker.showDocumentsAsNodes = true;
-    this.walker.init(rootWin.document, whatToShow);
+    this.walker.init(rootWin.document);
     this.filter = filter;
 
     
@@ -78,9 +75,6 @@ class DocumentWalker {
     this.walker.currentNode = this.getStartingNode(node, skipTo);
   }
 
-  get whatToShow() {
-    return this.walker.whatToShow;
-  }
   get currentNode() {
     return this.walker.currentNode;
   }

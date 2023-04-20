@@ -335,25 +335,23 @@ class WalkerActor extends Actor {
     return "[WalkerActor " + this.actorID + "]";
   }
 
-  getAnonymousDocumentWalker(node, whatToShow, skipTo) {
+  getAnonymousDocumentWalker(node, skipTo) {
     
     const filter = this.showAllAnonymousContent
       ? allAnonymousContentTreeWalkerFilter
       : standardTreeWalkerFilter;
 
     return new DocumentWalker(node, this.rootWin, {
-      whatToShow,
       filter,
       skipTo,
       showAnonymousContent: true,
     });
   }
 
-  getNonAnonymousDocumentWalker(node, whatToShow, skipTo) {
+  getNonAnonymousDocumentWalker(node, skipTo) {
     const nodeFilter = standardTreeWalkerFilter;
 
     return new DocumentWalker(node, this.rootWin, {
-      whatToShow,
       nodeFilter,
       skipTo,
       showAnonymousContent: false,
@@ -364,11 +362,11 @@ class WalkerActor extends Actor {
 
 
 
-  getDocumentWalker(node, whatToShow, skipTo) {
+  getDocumentWalker(node, skipTo) {
     try {
-      return this.getAnonymousDocumentWalker(node, whatToShow, skipTo);
+      return this.getAnonymousDocumentWalker(node, skipTo);
     } catch (e) {
-      return this.getNonAnonymousDocumentWalker(node, whatToShow, skipTo);
+      return this.getNonAnonymousDocumentWalker(node, skipTo);
     }
   }
 
@@ -889,8 +887,6 @@ class WalkerActor extends Actor {
 
 
 
-
-
   children(node, options = {}) {
     const { hasFirst, hasLast, nodes } = this._getChildren(node, options);
     return {
@@ -961,11 +957,7 @@ class WalkerActor extends Actor {
     let isUnslottedHostChild = false;
     if (directShadowHostChild) {
       try {
-        this.getDocumentWalker(
-          node.rawNode,
-          options.whatToShow,
-          SKIP_TO_SIBLING
-        );
+        this.getDocumentWalker(node.rawNode, SKIP_TO_SIBLING);
       } catch (e) {
         isUnslottedHostChild = true;
       }
@@ -977,8 +969,6 @@ class WalkerActor extends Actor {
     
     
     const getFilteredWalker = documentWalkerNode => {
-      const { whatToShow } = options;
-
       
       
       const skipTo = SKIP_TO_SIBLING;
@@ -994,13 +984,9 @@ class WalkerActor extends Actor {
         
         
         
-        return this.getNonAnonymousDocumentWalker(
-          documentWalkerNode,
-          whatToShow,
-          skipTo
-        );
+        return this.getNonAnonymousDocumentWalker(documentWalkerNode, skipTo);
       }
-      return this.getDocumentWalker(documentWalkerNode, whatToShow, skipTo);
+      return this.getDocumentWalker(documentWalkerNode, skipTo);
     };
 
     
@@ -1131,17 +1117,12 @@ class WalkerActor extends Actor {
 
 
 
-
-
-
-
-
-  nextSibling(node, options = {}) {
+  nextSibling(node) {
     if (isNodeDead(node)) {
       return null;
     }
 
-    const walker = this.getDocumentWalker(node.rawNode, options.whatToShow);
+    const walker = this.getDocumentWalker(node.rawNode);
     const sibling = walker.nextSibling();
     return sibling ? this._getOrCreateNodeActor(sibling) : null;
   }
@@ -1150,17 +1131,12 @@ class WalkerActor extends Actor {
 
 
 
-
-
-
-
-
-  previousSibling(node, options = {}) {
+  previousSibling(node) {
     if (isNodeDead(node)) {
       return null;
     }
 
-    const walker = this.getDocumentWalker(node.rawNode, options.whatToShow);
+    const walker = this.getDocumentWalker(node.rawNode);
     const sibling = walker.previousSibling();
     return sibling ? this._getOrCreateNodeActor(sibling) : null;
   }
