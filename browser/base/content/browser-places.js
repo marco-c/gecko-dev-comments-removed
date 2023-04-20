@@ -1594,43 +1594,40 @@ var BookmarkingUI = {
 
 
   updateEmptyToolbarMessage() {
-    let emptyMsg = document.getElementById("personal-toolbar-empty");
-
-    
-    
-    
-    
-    
-    
-    if (!this._isCustomizing && !this.toolbar.hasAttribute("initialized")) {
-      emptyMsg.hidden = false;
-      emptyMsg.setAttribute("nowidth", "");
-      return;
-    }
-
-    
-    let hasVisibleChildren = !!this.toolbar.querySelector(
-      `:scope > toolbarpaletteitem > toolbarbutton:not([hidden]),
-       :scope > toolbarpaletteitem > toolbaritem:not([hidden], #personal-bookmarks),
-       :scope > toolbarbutton:not([hidden]),
-       :scope > toolbaritem:not([hidden], #personal-bookmarks)`
-    );
-
-    if (!hasVisibleChildren) {
+    let hasVisibleChildren = (() => {
+      
+      if (
+        this.toolbar.querySelector(
+          `:scope > toolbarpaletteitem > toolbarbutton:not([hidden]),
+           :scope > toolbarpaletteitem > toolbaritem:not([hidden], #personal-bookmarks),
+           :scope > toolbarbutton:not([hidden]),
+           :scope > toolbaritem:not([hidden], #personal-bookmarks)`
+        )
+      ) {
+        return true;
+      }
+      if (!this.toolbar.hasAttribute("initialized")) {
+        
+        
+        
+        return false;
+      }
       
       let bookmarksToolbarItemsPlacement = CustomizableUI.getPlacementOfWidget(
         "personal-bookmarks"
       );
       let bookmarksItemInToolbar =
         bookmarksToolbarItemsPlacement?.area == CustomizableUI.AREA_BOOKMARKS;
+      if (!bookmarksItemInToolbar) {
+        return false;
+      }
+      return (
+        this._isCustomizing ||
+        !!PlacesUtils.getChildCountForFolder(PlacesUtils.bookmarks.toolbarGuid)
+      );
+    })();
 
-      hasVisibleChildren =
-        bookmarksItemInToolbar &&
-        (this._isCustomizing ||
-          !!PlacesUtils.getChildCountForFolder(
-            PlacesUtils.bookmarks.toolbarGuid
-          ));
-    }
+    let emptyMsg = document.getElementById("personal-toolbar-empty");
     emptyMsg.hidden = hasVisibleChildren;
     emptyMsg.toggleAttribute("nowidth", !hasVisibleChildren);
   },
