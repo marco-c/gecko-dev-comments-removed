@@ -36,12 +36,10 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/deprecated/recursive_critical_section.h"
 #include "rtc_base/location.h"
-#include "rtc_base/message_handler.h"
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/thread_message.h"
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
@@ -268,26 +266,6 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   virtual bool IsProcessingMessagesForTesting();
 
   
-  virtual void Post(const Location& posted_from,
-                    MessageHandler* phandler,
-                    uint32_t id = 0,
-                    MessageData* pdata = nullptr,
-                    bool time_sensitive = false);
-  virtual void PostDelayed(const Location& posted_from,
-                           int delay_ms,
-                           MessageHandler* phandler,
-                           uint32_t id = 0,
-                           MessageData* pdata = nullptr);
-  virtual void PostAt(const Location& posted_from,
-                      int64_t run_at_ms,
-                      MessageHandler* phandler,
-                      uint32_t id = 0,
-                      MessageData* pdata = nullptr);
-  virtual void Clear(MessageHandler* phandler,
-                     uint32_t id = MQID_ANY,
-                     MessageList* removed = nullptr);
-
-  
   virtual int GetDelay();
 
   bool empty() const { return size() == 0u; }
@@ -427,53 +405,27 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
 
   
   
-  class DelayedMessage {
-   public:
-    DelayedMessage(int64_t delay,
-                   int64_t run_time_ms,
-                   uint32_t num,
-                   const Message& msg)
-        : delay_ms_(delay),
-          run_time_ms_(run_time_ms),
-          message_number_(num),
-          msg_(msg) {}
-
+  struct DelayedMessage {
     bool operator<(const DelayedMessage& dmsg) const {
-      return (dmsg.run_time_ms_ < run_time_ms_) ||
-             ((dmsg.run_time_ms_ == run_time_ms_) &&
-              (dmsg.message_number_ < message_number_));
+      return (dmsg.run_time_ms < run_time_ms) ||
+             ((dmsg.run_time_ms == run_time_ms) &&
+              (dmsg.message_number < message_number));
     }
 
-    int64_t delay_ms_;  
-    int64_t run_time_ms_;
+    int64_t delay_ms;  
+    int64_t run_time_ms;
     
     
-    uint32_t message_number_;
-    Message msg_;
+    uint32_t message_number;
+    
+    
+    
+    mutable absl::AnyInvocable<void() &&> functor;
   };
-
-  class PriorityQueue : public std::priority_queue<DelayedMessage> {
-   public:
-    container_type& container() { return c; }
-    void reheap() { make_heap(c.begin(), c.end(), comp); }
-  };
-
-  void DoDelayPost(const Location& posted_from,
-                   int64_t cmsDelay,
-                   int64_t tstamp,
-                   MessageHandler* phandler,
-                   uint32_t id,
-                   MessageData* pdata);
 
   
   
   void DoInit();
-
-  
-  
-  void ClearInternal(MessageHandler* phandler,
-                     uint32_t id,
-                     MessageList* removed) RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_);
 
   
   
@@ -500,10 +452,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   
   
-  virtual bool Get(Message* pmsg,
-                   int cmsWait = kForever,
-                   bool process_io = true);
-  virtual void Dispatch(Message* pmsg);
+  absl::AnyInvocable<void() &&> Get(int cmsWait);
+  void Dispatch(absl::AnyInvocable<void() &&> task);
 
   
   
@@ -532,8 +482,8 @@ class RTC_LOCKABLE RTC_EXPORT Thread : public webrtc::TaskQueueBase {
   
   void ClearCurrentTaskQueue();
 
-  MessageList messages_ RTC_GUARDED_BY(crit_);
-  PriorityQueue delayed_messages_ RTC_GUARDED_BY(crit_);
+  std::queue<absl::AnyInvocable<void() &&>> messages_ RTC_GUARDED_BY(crit_);
+  std::priority_queue<DelayedMessage> delayed_messages_ RTC_GUARDED_BY(crit_);
   uint32_t delayed_next_num_ RTC_GUARDED_BY(crit_);
 #if RTC_DCHECK_IS_ON
   uint32_t blocking_call_count_ RTC_GUARDED_BY(this) = 0;
