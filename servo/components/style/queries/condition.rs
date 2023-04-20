@@ -8,12 +8,11 @@
 
 
 use super::{FeatureFlags, FeatureType, QueryFeatureExpression};
-use crate::parser::ParserContext;
 use crate::values::computed;
+use crate::{error_reporting::ContextualParseError, parser::ParserContext};
 use cssparser::{Parser, Token};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-use core::ops::Not;
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
@@ -34,14 +33,36 @@ enum AllowOr {
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss)]
 pub enum KleeneValue {
     
-    True,
+    False = 0,
     
-    False,
+    True = 1,
     
     Unknown,
 }
 
-impl Not for KleeneValue {
+impl From<bool> for KleeneValue {
+    fn from(b: bool) -> Self {
+        if b {
+            Self::True
+        } else {
+            Self::False
+        }
+    }
+}
+
+impl KleeneValue {
+    
+    
+    pub fn to_bool(self, unknown: bool) -> bool {
+        match self {
+            Self::True => true,
+            Self::False => false,
+            Self::Unknown => unknown,
+        }
+    }
+}
+
+impl std::ops::Not for KleeneValue {
     type Output = Self;
 
     fn not(self) -> Self {
@@ -50,6 +71,48 @@ impl Not for KleeneValue {
             Self::False => Self::True,
             Self::Unknown => Self::Unknown,
         }
+    }
+}
+
+
+impl std::ops::BitAnd for KleeneValue {
+    type Output = Self;
+
+    fn bitand(self, other: Self) -> Self {
+        if self == Self::False || other == Self::False {
+            return Self::False;
+        }
+        if self == Self::Unknown || other == Self::Unknown {
+            return Self::Unknown;
+        }
+        Self::True
+    }
+}
+
+
+impl std::ops::BitOr for KleeneValue {
+    type Output = Self;
+
+    fn bitor(self, other: Self) -> Self {
+        if self == Self::True || other == Self::True {
+            return Self::True;
+        }
+        if self == Self::Unknown || other == Self::Unknown {
+            return Self::Unknown;
+        }
+        Self::False
+    }
+}
+
+impl std::ops::BitOrAssign for KleeneValue {
+    fn bitor_assign(&mut self, other: Self) {
+        *self = *self | other;
+    }
+}
+
+impl std::ops::BitAndAssign for KleeneValue {
+    fn bitand_assign(&mut self, other: Self) {
+        *self = *self & other;
     }
 }
 
@@ -104,9 +167,8 @@ impl ToCss for QueryCondition {
 
 
 fn consume_any_value<'i, 't>(input: &mut Parser<'i, 't>) -> Result<(), ParseError<'i>> {
-    input.expect_no_error_token().map_err(|err| err.into())
+    input.expect_no_error_token().map_err(Into::into)
 }
-
 
 impl QueryCondition {
     
@@ -115,19 +177,7 @@ impl QueryCondition {
         input: &mut Parser<'i, 't>,
         feature_type: FeatureType,
     ) -> Result<Self, ParseError<'i>> {
-        input.skip_whitespace();
-        let state = input.state();
-        let start = input.position();
-        match *input.next()? {
-            Token::Function(_) => {
-                input.parse_nested_block(consume_any_value)?;
-                return Ok(QueryCondition::GeneralEnclosed(input.slice_from(start).to_owned()));
-            },
-            _ => {
-                input.reset(&state);
-                Self::parse_internal(context, input, feature_type, AllowOr::Yes)
-            },
-        }
+        Self::parse_internal(context, input, feature_type, AllowOr::Yes)
     }
 
     fn visit<F>(&self, visitor: &mut F)
@@ -171,6 +221,9 @@ impl QueryCondition {
         Self::parse_internal(context, input, feature_type, AllowOr::No)
     }
 
+    
+    
+    
     fn parse_internal<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -214,102 +267,97 @@ impl QueryCondition {
         }
     }
 
+    fn parse_in_parenthesis_block<'i>(
+        context: &ParserContext,
+        input: &mut Parser<'i, '_>,
+        feature_type: FeatureType,
+    ) -> Result<Self, ParseError<'i>> {
+        
+        
+        let feature_error = match input.try_parse(|input| {
+            QueryFeatureExpression::parse_in_parenthesis_block(context, input, feature_type)
+        }) {
+            Ok(expr) => return Ok(Self::Feature(expr)),
+            Err(e) => e,
+        };
+        if let Ok(inner) = Self::parse(context, input, feature_type) {
+            return Ok(Self::InParens(Box::new(inner)));
+        }
+        Err(feature_error)
+    }
+
+    
+    
     
     pub fn parse_in_parens<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         feature_type: FeatureType,
     ) -> Result<Self, ParseError<'i>> {
-        input.expect_parenthesis_block()?;
-        Self::parse_paren_block(context, input, feature_type)
-    }
-
-    fn parse_paren_block<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-        feature_type: FeatureType,
-    ) -> Result<Self, ParseError<'i>> {
+        input.skip_whitespace();
         let start = input.position();
-        input.parse_nested_block(|input| {
-            
-            if let Ok(inner) = input.try_parse(|i| Self::parse_internal(context, i, feature_type, AllowOr::Yes)) {
-                return Ok(QueryCondition::InParens(Box::new(inner)));
-            }
-            if let Ok(expr) = QueryFeatureExpression::parse_in_parenthesis_block(context, input, feature_type) {
-                return  Ok(QueryCondition::Feature(expr));
-            }
-
-            consume_any_value(input)?;
-            Ok(QueryCondition::GeneralEnclosed(input.slice_from(start).to_owned()))
-        })
-    }
-
-    
-    
-    
-    
-    
-    pub fn matches(&self, context: &computed::Context) ->  KleeneValue {
-        match *self {
-            QueryCondition::Feature(ref f) => {
-                match f.matches(context) {
-                    true => KleeneValue::True,
-                    false => KleeneValue::False,
+        let start_location = input.current_source_location();
+        match *input.next()? {
+            Token::ParenthesisBlock => {
+                let nested = input.try_parse(|input| {
+                    input.parse_nested_block(|input| {
+                        Self::parse_in_parenthesis_block(context, input, feature_type)
+                    })
+                });
+                match nested {
+                    Ok(nested) => return Ok(nested),
+                    Err(e) => {
+                        
+                        
+                        let loc = e.location;
+                        let error = ContextualParseError::InvalidMediaRule(input.slice_from(start), e);
+                        context.log_css_error(loc, error);
+                    }
                 }
             },
+            Token::Function(..) => {
+                
+            },
+            ref t => return Err(start_location.new_unexpected_token_error(t.clone())),
+        }
+        input.parse_nested_block(consume_any_value)?;
+        Ok(Self::GeneralEnclosed(input.slice_from(start).to_owned()))
+    }
+
+    
+    
+    
+    
+    
+    pub fn matches(&self, context: &computed::Context) -> KleeneValue {
+        match *self {
+            QueryCondition::Feature(ref f) => KleeneValue::from(f.matches(context)),
             QueryCondition::GeneralEnclosed(_) => KleeneValue::Unknown,
             QueryCondition::InParens(ref c) => c.matches(context),
-            QueryCondition::Not(ref c) => {
-                !c.matches(context)
-            },
+            QueryCondition::Not(ref c) => !c.matches(context),
             QueryCondition::Operation(ref conditions, op) => {
-                let mut iter = conditions.iter();
+                debug_assert!(!conditions.is_empty(), "We never create an empty op");
                 match op {
                     Operator::And => {
-                        if conditions.is_empty() {
-                            return KleeneValue::True;
-                        }
-
-                        let mut result = iter.next().as_ref().map_or( KleeneValue::True, |c| -> KleeneValue {c.matches(context)});
-                        if result == KleeneValue::False {
-                            return result;
-                        }
-                        while let Some(c) = iter.next() {
-                            match c.matches(context) {
-                                KleeneValue::False => {
-                                    return KleeneValue::False;
-                                },
-                                KleeneValue::Unknown => {
-                                    result = KleeneValue::Unknown;
-                                },
-                                KleeneValue::True => {},
+                        let mut result = KleeneValue::True;
+                        for c in conditions.iter() {
+                            result &= c.matches(context);
+                            if result == KleeneValue::False {
+                                break;
                             }
                         }
-                        return result;
-                    }
+                        result
+                    },
                     Operator::Or => {
-                        if conditions.is_empty() {
-                            return KleeneValue::False;
-                        }
-
-                        let mut result = iter.next().as_ref().map_or( KleeneValue::False, |c| -> KleeneValue {c.matches(context)});
-                        if result == KleeneValue::True {
-                            return KleeneValue::True;
-                        }
-                        while let Some(c) = iter.next() {
-                            match c.matches(context) {
-                                KleeneValue::True => {
-                                    return KleeneValue::True;
-                                },
-                                KleeneValue::Unknown => {
-                                    result = KleeneValue::Unknown;
-                                },
-                                KleeneValue::False => {},
-
+                        let mut result = KleeneValue::False;
+                        for c in conditions.iter() {
+                            result |= c.matches(context);
+                            if result == KleeneValue::True {
+                                break;
                             }
                         }
-                        return result;
-                    }
+                        result
+                    },
                 }
             },
         }
