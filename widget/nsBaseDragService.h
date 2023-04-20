@@ -191,7 +191,7 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
 
   
   
-  nsCOMPtr<nsIContent> mDragPopup;
+  nsCOMPtr<mozilla::dom::Element> mDragPopup;
 
   
   
