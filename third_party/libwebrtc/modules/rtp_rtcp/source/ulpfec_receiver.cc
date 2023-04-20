@@ -8,7 +8,7 @@
 
 
 
-#include "modules/rtp_rtcp/source/ulpfec_receiver_impl.h"
+#include "modules/rtp_rtcp/source/ulpfec_receiver.h"
 
 #include <memory>
 #include <utility>
@@ -20,34 +20,26 @@
 
 namespace webrtc {
 
-std::unique_ptr<UlpfecReceiver> UlpfecReceiver::Create(
-    uint32_t ssrc,
-    RecoveredPacketReceiver* callback,
-    rtc::ArrayView<const RtpExtension> extensions) {
-  return std::make_unique<UlpfecReceiverImpl>(ssrc, callback, extensions);
-}
-
-UlpfecReceiverImpl::UlpfecReceiverImpl(
-    uint32_t ssrc,
-    RecoveredPacketReceiver* callback,
-    rtc::ArrayView<const RtpExtension> extensions)
+UlpfecReceiver::UlpfecReceiver(uint32_t ssrc,
+                               RecoveredPacketReceiver* callback,
+                               rtc::ArrayView<const RtpExtension> extensions)
     : ssrc_(ssrc),
       extensions_(extensions),
       recovered_packet_callback_(callback),
       fec_(ForwardErrorCorrection::CreateUlpfec(ssrc_)) {}
 
-UlpfecReceiverImpl::~UlpfecReceiverImpl() {
+UlpfecReceiver::~UlpfecReceiver() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   received_packets_.clear();
   fec_->ResetState(&recovered_packets_);
 }
 
-FecPacketCounter UlpfecReceiverImpl::GetPacketCounter() const {
+FecPacketCounter UlpfecReceiver::GetPacketCounter() const {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   return packet_counter_;
 }
 
-void UlpfecReceiverImpl::SetRtpExtensions(
+void UlpfecReceiver::SetRtpExtensions(
     rtc::ArrayView<const RtpExtension> extensions) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   extensions_.Reset(extensions);
@@ -81,9 +73,8 @@ void UlpfecReceiverImpl::SetRtpExtensions(
 
 
 
-bool UlpfecReceiverImpl::AddReceivedRedPacket(
-    const RtpPacketReceived& rtp_packet,
-    uint8_t ulpfec_payload_type) {
+bool UlpfecReceiver::AddReceivedRedPacket(const RtpPacketReceived& rtp_packet,
+                                          uint8_t ulpfec_payload_type) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   
   
@@ -159,7 +150,7 @@ bool UlpfecReceiverImpl::AddReceivedRedPacket(
   return true;
 }
 
-void UlpfecReceiverImpl::ProcessReceivedFec() {
+void UlpfecReceiver::ProcessReceivedFec() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   
