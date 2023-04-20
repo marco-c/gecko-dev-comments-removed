@@ -25,3 +25,20 @@ function assert_fallback_position(anchored, anchor, direction) {
 async function waitUntilNextAnimationFrame() {
   return new Promise(resolve => requestAnimationFrame(resolve));
 }
+
+
+
+
+
+
+
+
+window.checkLayoutForAnchorPos = async function(selectorList, callDone = true) {
+  if (window.CHECK_LAYOUT_DELAY) {
+    assert_equals(window.INJECTED_SCRIPT,undefined,'CHECK_LAYOUT_DELAY is only allowed when serving WPT with --injected-script.');
+    await waitUntilNextAnimationFrame();
+    await waitUntilNextAnimationFrame();
+    await waitUntilNextAnimationFrame();
+  }
+  return window.checkLayout(selectorList, callDone);
+}
