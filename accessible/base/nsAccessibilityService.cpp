@@ -1009,33 +1009,41 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
   }
 
   
-  
   nsIFrame* frame = content->GetPrimaryFrame();
-  if (!frame || !frame->StyleVisibility()->IsVisible()) {
+  if (frame) {
     
     
-    if (nsCoreUtils::CanCreateAccessibleWithoutFrame(content)) {
-      const MarkupMapInfo* markupMap = GetMarkupMapInfoFor(content);
-      if (markupMap && markupMap->new_func) {
-        RefPtr<LocalAccessible> newAcc =
-            markupMap->new_func(content->AsElement(), aContext);
-        if (newAcc) {
-          document->BindToDocument(newAcc,
-                                   aria::GetRoleMap(content->AsElement()));
-        }
-        return newAcc;
-      }
+    
+    
+    if (!frame->StyleVisibility()->IsVisible() || frame->StyleUI()->IsInert()) {
       return nullptr;
     }
-
-    if (aIsSubtreeHidden && !frame) *aIsSubtreeHidden = true;
-
+  } else if (nsCoreUtils::CanCreateAccessibleWithoutFrame(content)) {
+    
+    
+    const MarkupMapInfo* markupMap = GetMarkupMapInfoFor(content);
+    if (markupMap && markupMap->new_func) {
+      RefPtr<LocalAccessible> newAcc =
+          markupMap->new_func(content->AsElement(), aContext);
+      if (newAcc) {
+        document->BindToDocument(newAcc,
+                                 aria::GetRoleMap(content->AsElement()));
+      }
+      return newAcc;
+    }
+    return nullptr;
+  } else {
+    if (aIsSubtreeHidden) {
+      *aIsSubtreeHidden = true;
+    }
     return nullptr;
   }
 
   if (frame->IsHiddenByContentVisibilityOnAnyAncestor(
           nsIFrame::IncludeContentVisibility::Hidden)) {
-    if (aIsSubtreeHidden) *aIsSubtreeHidden = true;
+    if (aIsSubtreeHidden) {
+      *aIsSubtreeHidden = true;
+    }
     return nullptr;
   }
 
