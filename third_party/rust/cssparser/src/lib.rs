@@ -68,8 +68,8 @@
 #![recursion_limit = "200"] 
 
 pub use crate::color::{
-    hsl_to_rgb, hwb_to_rgb, parse_color_keyword, parse_color_with, AngleOrNumber, Color,
-    ColorFunction, ColorParser, FromParsedColor, Lab, Lch, NumberOrPercentage, Oklab, Oklch,
+    hsl_to_rgb, hwb_to_rgb, parse_color_keyword, parse_color_with, parse_hash_color, AngleOrNumber,
+    Color, ColorFunction, ColorParser, FromParsedColor, Lab, Lch, NumberOrPercentage, Oklab, Oklch,
     PredefinedColorSpace, RGBA,
 };
 pub use crate::cow_rc_str::CowRcStr;
