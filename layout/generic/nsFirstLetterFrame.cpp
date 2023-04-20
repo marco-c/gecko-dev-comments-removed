@@ -14,12 +14,14 @@
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"
 #include "nsLineLayout.h"
 #include "nsGkAtoms.h"
 #include "nsFrameManager.h"
 #include "nsPlaceholderFrame.h"
+#include "nsTextFrame.h"
 #include "nsCSSFrameConstructor.h"
 
 using namespace mozilla;
@@ -138,6 +140,46 @@ nsIFrame::SizeComputationResult nsFirstLetterFrame::ComputeSize(
                                        aSizeOverrides, aFlags);
 }
 
+bool nsFirstLetterFrame::UseTightBounds() const {
+  int v = StaticPrefs::layout_css_floating_first_letter_tight_glyph_bounds();
+
+  
+  
+  
+  if (v > 0) {
+    return true;
+  }
+  if (v == 0) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (nsTextFrame* textFrame = do_QueryFrame(mFrames.FirstChild())) {
+    RefPtr<nsFontMetrics> fm = textFrame->InflatedFontMetrics();
+    if (textFrame->ComputeLineHeight() < fm->EmHeight()) {
+      return false;
+    }
+  }
+
+  const auto wm = GetWritingMode();
+  const auto& margin = StyleMargin()->mMargin;
+  const auto& bStart = margin.GetBStart(wm);
+  
+  
+  if (bStart.ConvertsToLength() && bStart.ToLength() < 0) {
+    return false;
+  }
+  const auto& bEnd = margin.GetBEnd(wm);
+  if (bEnd.ConvertsToLength() && bEnd.ToLength() < 0) {
+    return false;
+  }
+
+  return true;
+}
+
 void nsFirstLetterFrame::Reflow(nsPresContext* aPresContext,
                                 ReflowOutput& aMetrics,
                                 const ReflowInput& aReflowInput,
@@ -196,10 +238,23 @@ void nsFirstLetterFrame::Reflow(nsPresContext* aPresContext,
 
     
     LogicalSize convertedSize = kidMetrics.Size(wm);
-    kid->SetRect(nsRect(bp.IStart(wm), bp.BStart(wm), convertedSize.ISize(wm),
-                        convertedSize.BSize(wm)));
+
+    const bool tightBounds = UseTightBounds();
+    const nscoord shift =
+        tightBounds ? 0
+                    
+                    
+                    : (rs.GetLineHeight() - convertedSize.BSize(wm)) / 2;
+
+    kid->SetRect(nsRect(bp.IStart(wm), bp.BStart(wm) + shift,
+                        convertedSize.ISize(wm), convertedSize.BSize(wm)));
     kid->FinishAndStoreOverflow(&kidMetrics, rs.mStyleDisplay);
     kid->DidReflow(aPresContext, nullptr);
+
+    if (!tightBounds) {
+      
+      convertedSize.BSize(wm) = rs.GetLineHeight();
+    }
 
     convertedSize.ISize(wm) += bp.IStartEnd(wm);
     convertedSize.BSize(wm) += bp.BStartEnd(wm);
