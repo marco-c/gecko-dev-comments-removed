@@ -1081,12 +1081,6 @@ let cookieBannerSection = new (class {
     );
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
-      "_serviceDetectOnly",
-      "cookiebanners.service.detectOnly",
-      Ci.nsICookieBannerService.MODE_DISABLED
-    );
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
       "_uiDisabled",
       "cookiebanners.ui.desktop.enabled",
       false
@@ -1186,10 +1180,6 @@ let cookieBannerSection = new (class {
     if (!this._uiDisabled) {
       return false;
     }
-    
-    if (this._serviceDetectOnly) {
-      return false;
-    }
 
     let mode;
 
@@ -1201,7 +1191,10 @@ let cookieBannerSection = new (class {
 
     
     
-    return mode != Ci.nsICookieBannerService.MODE_DISABLED;
+    return (
+      mode != Ci.nsICookieBannerService.MODE_DISABLED &&
+      mode != Ci.nsICookieBannerService.MODE_DETECT_ONLY
+    );
   }
 
   

@@ -33,12 +33,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
-  "prefDetectOnly",
-  "cookiebanners.service.detectOnly",
-  false
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
   "bannerClickingEnabled",
   "cookiebanners.bannerClicking.enabled",
   false
@@ -49,6 +43,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "cookiebanners.bannerClicking.timeout",
   3000
 );
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "testing",
@@ -129,7 +124,10 @@ class CookieBannerChild extends JSWindowActorChild {
     if (!this.#isEnabled) {
       return false;
     }
-    return lazy.prefDetectOnly;
+    if (this.#isPrivateBrowsing) {
+      return lazy.serviceModePBM == Ci.nsICookieBannerService.MODE_DETECT_ONLY;
+    }
+    return lazy.serviceMode == Ci.nsICookieBannerService.MODE_DETECT_ONLY;
   }
 
   
@@ -389,8 +387,6 @@ class CookieBannerChild extends JSWindowActorChild {
       return { bannerHandled: false, bannerDetected: false };
     }
 
-    
-    
     
     
     if (rules.every(rule => rule.target == null)) {
