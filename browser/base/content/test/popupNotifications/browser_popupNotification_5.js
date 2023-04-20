@@ -93,6 +93,7 @@ var tests = [
       this.oldSelectedTab = gBrowser.selectedTab;
       await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
+        
         "http://example.com/"
       );
       this.notifyObj = new BasicNotification(this.id);
@@ -104,7 +105,9 @@ var tests = [
     async onShown(popup) {
       this.complete = false;
 
+      
       await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.org/");
+      
       await promiseTabLoadEvent(gBrowser.selectedTab, "http://example.com/");
 
       
@@ -131,6 +134,7 @@ var tests = [
       this.oldSelectedTab = gBrowser.selectedTab;
       await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
+        
         "http://example.com/"
       );
       this.notifyObj = new BasicNotification(this.id);
@@ -174,6 +178,7 @@ var tests = [
       this.oldSelectedTab = gBrowser.selectedTab;
       await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
+        
         "http://example.com/"
       );
     },
@@ -212,12 +217,14 @@ var tests = [
       this.oldSelectedTab = gBrowser.selectedTab;
       await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
+        
         "http://example.com/"
       );
       let firstTab = gBrowser.selectedTab;
 
       await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
+        
         "http://example.com/"
       );
 

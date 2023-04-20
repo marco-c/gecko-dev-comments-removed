@@ -23,6 +23,7 @@ registerCleanupFunction(function() {
 });
 
 add_task(async function testCookieCategoryLabel() {
+  
   await BrowserTestUtils.withNewTab("http://www.example.com", async function() {
     
     await openProtectionsPanel();
@@ -176,6 +177,7 @@ add_task(async function testCategorySections() {
     }
   }
 
+  
   await BrowserTestUtils.withNewTab("http://www.example.com", async function() {
     
     await openProtectionsPanel();
