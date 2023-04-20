@@ -7,63 +7,64 @@
 const idlPureAllowlist = require("resource://devtools/server/actors/webconsole/webidl-pure-allowlist.js");
 
 
+const customEagerFunctions = {
+  Document: [
+    ["prototype", "getSelection"],
+    ["prototype", "hasStorageAccess"],
+  ],
+  Range: [
+    ["prototype", "isPointInRange"],
+    ["prototype", "comparePoint"],
+    ["prototype", "intersectsNode"],
 
-const props = [];
-for (const [iface, ifaceData] of Object.entries(idlPureAllowlist)) {
-  if ("static" in ifaceData || "prototype" in ifaceData) {
-    props.push(iface);
+    
+    
+    
+    ["prototype", "getClientRects"],
+    ["prototype", "getBoundingClientRect"],
+  ],
+  Selection: [
+    ["prototype", "getRangeAt"],
+    ["prototype", "containsNode"],
+  ],
+};
+
+const mergedFunctions = {};
+for (const [key, values] of Object.entries(idlPureAllowlist)) {
+  mergedFunctions[key] = [...values];
+}
+for (const [key, values] of Object.entries(customEagerFunctions)) {
+  if (!mergedFunctions[key]) {
+    mergedFunctions[key] = [];
   }
+  mergedFunctions[key].push(...values);
 }
 
 const natives = [];
-
 if (Components.Constructor && Cu) {
   const sandbox = Cu.Sandbox(
     Components.Constructor("@mozilla.org/systemprincipal;1", "nsIPrincipal")(),
     {
       invisibleToDebugger: true,
-      wantGlobalProperties: props,
+      wantGlobalProperties: Object.keys(mergedFunctions),
     }
   );
 
-  function maybePush(maybeFunc) {
-    if (maybeFunc) {
-      natives.push(maybeFunc);
-    }
-  }
-
-  function collectMethodsAndGetters(obj, methodsAndGetters) {
-    if ("methods" in methodsAndGetters) {
-      for (const name of methodsAndGetters.methods) {
-        maybePush(obj[name]);
-      }
-    }
-    if ("getters" in methodsAndGetters) {
-      for (const name of methodsAndGetters.getters) {
-        maybePush(Object.getOwnPropertyDescriptor(obj, name)?.get);
-      }
-    }
-  }
-
-  for (const [iface, ifaceData] of Object.entries(idlPureAllowlist)) {
-    const ctor = sandbox[iface];
-    if (!ctor) {
-      continue;
-    }
-
-    if ("static" in ifaceData) {
-      collectMethodsAndGetters(ctor, ifaceData.static);
-    }
-
-    if ("prototype" in ifaceData) {
-      const proto = ctor.prototype;
-      if (!proto) {
-        continue;
+  for (const iface of Object.keys(mergedFunctions)) {
+    for (const path of mergedFunctions[iface]) {
+      let value = sandbox;
+      for (const part of [iface, ...path]) {
+        value = value[part];
+        if (!value) {
+          break;
+        }
       }
 
-      collectMethodsAndGetters(proto, ifaceData.prototype);
+      if (value) {
+        natives.push(value);
+      }
     }
   }
 }
 
-module.exports = { natives, idlPureAllowlist };
+module.exports = natives;

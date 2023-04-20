@@ -116,8 +116,6 @@ function isObject(value) {
 
 
 
-
-
 exports.evalWithDebugger = function(string, options = {}, webConsole) {
   if (isCommand(string.trim()) && options.eager) {
     return {
@@ -128,11 +126,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
   const evalString = getEvalInput(string);
   const { frame, dbg } = getFrameDbg(options, webConsole);
 
-  const { dbgGlobal, bindSelf, evalGlobal } = getDbgGlobal(
-    options,
-    dbg,
-    webConsole
-  );
+  const { dbgGlobal, bindSelf } = getDbgGlobal(options, dbg, webConsole);
   const helpers = getHelpers(dbgGlobal, options, webConsole);
   let { bindings, helperCache } = bindCommands(
     isCommand(string),
@@ -164,7 +158,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
 
   let noSideEffectDebugger = null;
   if (options.eager) {
-    noSideEffectDebugger = makeSideeffectFreeDebugger(false, evalGlobal);
+    noSideEffectDebugger = makeSideeffectFreeDebugger();
   }
 
   let result;
@@ -366,12 +360,7 @@ function forceLexicalInitForVariableDeclarationsInThrowingExpression(
 
 
 
-
-
-function makeSideeffectFreeDebugger(
-  skipCheckingEffectfulOffsets,
-  maybeEvalGlobal
-) {
+function makeSideeffectFreeDebugger(skipCheckingEffectfulOffsets) {
   
   
   
@@ -380,7 +369,7 @@ function makeSideeffectFreeDebugger(
   
   
   
-  ensureSideEffectFreeNatives(maybeEvalGlobal);
+  ensureSideEffectFreeNatives();
 
   
   
@@ -439,8 +428,8 @@ function makeSideeffectFreeDebugger(
       
       
       if (
-        (reason == "get" || reason == "call") &&
-        nativeHasNoSideEffects(callee)
+        reason == "get" ||
+        (reason == "call" && nativeHasNoSideEffects(callee))
       ) {
         
         return undefined;
@@ -463,67 +452,9 @@ exports.makeSideeffectFreeDebugger = makeSideeffectFreeDebugger;
 
 let gSideEffectFreeNatives; 
 
-
-
-
-
-
-
-function ensureSideEffectFreeNatives(maybeEvalGlobal) {
+function ensureSideEffectFreeNatives() {
   if (gSideEffectFreeNatives) {
     return;
-  }
-
-  const { natives: domNatives, idlPureAllowlist } = eagerFunctionAllowlist;
-
-  const instanceFunctionAllowlist = [];
-
-  function collectMethodsAndGetters(obj, methodsAndGetters) {
-    
-    
-    
-
-    if ("methods" in methodsAndGetters) {
-      for (const name of methodsAndGetters.methods) {
-        const func = obj[name];
-        if (func) {
-          instanceFunctionAllowlist.push(func);
-        }
-      }
-    }
-    if ("getters" in methodsAndGetters) {
-      for (const name of methodsAndGetters.getters) {
-        const func = Object.getOwnPropertyDescriptor(obj, name)?.get;
-        if (func) {
-          instanceFunctionAllowlist.push(func);
-        }
-      }
-    }
-  }
-
-  
-  if (
-    maybeEvalGlobal &&
-    typeof Window === "function" &&
-    Window.isInstance(maybeEvalGlobal) &&
-    "Window" in idlPureAllowlist &&
-    "instance" in idlPureAllowlist.Window
-  ) {
-    collectMethodsAndGetters(maybeEvalGlobal, idlPureAllowlist.Window.instance);
-    const maybeLocation = maybeEvalGlobal.location;
-    if (maybeLocation) {
-      collectMethodsAndGetters(
-        maybeLocation,
-        idlPureAllowlist.Location.instance
-      );
-    }
-    const maybeDocument = maybeEvalGlobal.document;
-    if (maybeDocument) {
-      collectMethodsAndGetters(
-        maybeDocument,
-        idlPureAllowlist.Document.instance
-      );
-    }
   }
 
   const natives = [
@@ -531,9 +462,7 @@ function ensureSideEffectFreeNatives(maybeEvalGlobal) {
 
     
     
-    ...domNatives,
-
-    ...instanceFunctionAllowlist,
+    ...eagerFunctionAllowlist,
   ];
 
   const map = new Map();
@@ -560,14 +489,8 @@ function nativeHasNoSideEffects(fn) {
       return true;
   }
 
-  
-  
-  
-  
-  
-  
   const natives = gSideEffectFreeNatives.get(fn.name);
-  return natives && natives.some(n => fn.isSameNativeWithJitInfo(n));
+  return natives && natives.some(n => fn.isSameNative(n));
 }
 
 function updateConsoleInputEvaluation(dbg, webConsole) {
@@ -629,22 +552,6 @@ function getFrameDbg(options, webConsole) {
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function getDbgGlobal(options, dbg, webConsole) {
   let evalGlobal = webConsole.evalGlobal;
 
@@ -663,7 +570,7 @@ function getDbgGlobal(options, dbg, webConsole) {
   
   
   if (!options.selectedObjectActor) {
-    return { bindSelf: null, dbgGlobal, evalGlobal };
+    return { bindSelf: null, dbgGlobal };
   }
 
   
@@ -674,12 +581,12 @@ function getDbgGlobal(options, dbg, webConsole) {
     webConsole.parentActor.getActorByID(options.selectedObjectActor);
 
   if (!actor) {
-    return { bindSelf: null, dbgGlobal, evalGlobal };
+    return { bindSelf: null, dbgGlobal };
   }
 
   const jsVal = actor instanceof LongStringActor ? actor.str : actor.rawValue();
   if (!isObject(jsVal)) {
-    return { bindSelf: jsVal, dbgGlobal, evalGlobal };
+    return { bindSelf: jsVal, dbgGlobal };
   }
 
   
@@ -687,7 +594,7 @@ function getDbgGlobal(options, dbg, webConsole) {
   
   
   const bindSelf = dbgGlobal.makeDebuggeeValue(jsVal);
-  return { bindSelf, dbgGlobal, evalGlobal };
+  return { bindSelf, dbgGlobal };
 }
 
 function getHelpers(dbgGlobal, options, webConsole) {
