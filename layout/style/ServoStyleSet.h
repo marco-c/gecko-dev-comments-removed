@@ -7,7 +7,6 @@
 #ifndef mozilla_ServoStyleSet_h
 #define mozilla_ServoStyleSet_h
 
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/AnonymousContentKey.h"
 #include "mozilla/AtomArray.h"
 #include "mozilla/EnumeratedArray.h"
@@ -220,18 +219,6 @@ class ServoStyleSet {
     return ResolvePseudoElementStyle(aOriginatingElement, aType, aParentStyle,
                                      IsProbe::Yes);
   }
-
-  
-
-
-
-
-
-
-
-  already_AddRefed<ComputedStyle> ProbeHighlightPseudoElementStyle(
-      const dom::Element& aOriginatingElement, const nsAtom* aHighlightName,
-      ComputedStyle* aParentStyle);
 
   
   

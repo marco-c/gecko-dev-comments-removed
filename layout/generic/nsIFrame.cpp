@@ -2409,16 +2409,6 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeSelectionStyle(
       *element, PseudoStyleType::selection, Style());
 }
 
-already_AddRefed<ComputedStyle> nsIFrame::ComputeHighlightSelectionStyle(
-    const nsAtom* aHighlightName) {
-  Element* element = FindElementAncestorForMozSelection(GetContent());
-  if (!element) {
-    return nullptr;
-  }
-  return PresContext()->StyleSet()->ProbeHighlightPseudoElementStyle(
-      *element, aHighlightName, Style());
-}
-
 template <typename SizeOrMaxSize>
 static inline bool IsIntrinsicKeyword(const SizeOrMaxSize& aSize) {
   
@@ -4824,7 +4814,6 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
             curDetail->mSelectionType != SelectionType::eFind &&
             curDetail->mSelectionType != SelectionType::eURLSecondary &&
             curDetail->mSelectionType != SelectionType::eURLStrikeout &&
-            curDetail->mSelectionType != SelectionType::eHighlight &&
             curDetail->mStart <= offsets.StartOffset() &&
             offsets.EndOffset() <= curDetail->mEnd) {
           inSelection = true;
