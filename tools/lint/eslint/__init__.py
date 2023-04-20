@@ -32,6 +32,14 @@ mach eslint --setup
 and try again.
 """.strip()
 
+PRETTIER_ERROR_MESSAGE = """
+An error occurred running prettier. Please check the following error messages:
+
+{}
+""".strip()
+
+PRETTIER_FORMATTING_MESSAGE = "This file needs formatting with prettier."
+
 
 def setup(root, **lintargs):
     setup_helper.set_project_root(root)
@@ -70,6 +78,7 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
     for rule in rules:
         extra_args.extend(["--rule", rule])
 
+    
     cmd_args = (
         [
             binary,
@@ -86,13 +95,56 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
         + exclude_args
         + paths
     )
-    log.debug("Command: {}".format(" ".join(cmd_args)))
 
     if fix:
         
         cmd_args.insert(2, "--fix")
 
-    return run(cmd_args, config)
+    log.debug("ESLint command: {}".format(" ".join(cmd_args)))
+
+    result = run(cmd_args, config)
+    if result == 1:
+        return result
+
+    
+    if "MOZ_SEPARATE_PRETTIER" in os.environ:
+        patterns = []
+        for p in paths:
+            filename, file_extension = os.path.splitext(p)
+            if file_extension:
+                patterns.append(p)
+            else:
+                patterns.append(
+                    p + "/**/*.+({})".format("|".join(config["extensions"]))
+                )
+
+        cmd_args = (
+            [
+                binary,
+                os.path.join(
+                    module_path, "node_modules", "prettier", "bin-prettier.js"
+                ),
+                "--list-different",
+            ]
+            + extra_args
+            
+            
+            
+            
+            + patterns
+        )
+        log.debug("Prettier command: {}".format(" ".join(cmd_args)))
+
+        if fix:
+            cmd_args.append("--write")
+
+        prettier_result = run_prettier(cmd_args, config, fix)
+        if prettier_result == 1:
+            return prettier_result
+
+        result["results"].extend(prettier_result["results"])
+        result["fixed"] = result["fixed"] + prettier_result["fixed"]
+    return result
 
 
 def run(cmd_args, config):
@@ -154,5 +206,79 @@ def run(cmd_args, config):
                 }
             )
             results.append(result.from_config(config, **err))
+
+    return {"results": results, "fixed": fixed}
+
+
+def run_prettier(cmd_args, config, fix):
+
+    shell = False
+    if (
+        os.environ.get("MSYSTEM") in ("MINGW32", "MINGW64")
+        or "MOZILLABUILD" in os.environ
+    ):
+        
+        shell = True
+    encoding = "utf-8"
+
+    orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    proc = subprocess.Popen(
+        cmd_args, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    signal.signal(signal.SIGINT, orig)
+
+    try:
+        output, errors = proc.communicate()
+    except KeyboardInterrupt:
+        proc.kill()
+        return {"results": [], "fixed": 0}
+
+    if errors:
+        errors = errors.decode(encoding, "replace")
+        
+        
+        
+        if "No matching files." in errors:
+            return {"results": [], "fixed": 0}
+        print(PRETTIER_ERROR_MESSAGE.format(errors))
+
+    if proc.returncode >= 2:
+        return 1
+
+    if not output:
+        return {"results": [], "fixed": 0}  
+
+    output = output.decode(encoding, "replace").splitlines()
+
+    results = []
+    fixed = 0
+
+    if fix:
+        
+        
+        
+        
+        fixed = len(output)
+    else:
+        
+        
+        for file in output:
+            if not file:
+                continue
+
+            results.append(
+                result.from_config(
+                    config,
+                    **{
+                        "name": "eslint",
+                        "path": file,
+                        "message": PRETTIER_FORMATTING_MESSAGE,
+                        "level": "error",
+                        "rule": "prettier",
+                        "lineno": 0,
+                        "column": 0,
+                    }
+                )
+            )
 
     return {"results": results, "fixed": fixed}

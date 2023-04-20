@@ -4,6 +4,12 @@
 
 "use strict";
 
+let prettierRules = { "prettier/prettier": "error" };
+
+if (process.env.MOZ_SEPARATE_PRETTIER) {
+  prettierRules = { "prettier/prettier": "off" };
+}
+
 
 
 
@@ -19,7 +25,9 @@ module.exports = {
     "mozilla/specific": true,
   },
 
-  extends: ["eslint:recommended", "plugin:prettier/recommended"],
+  
+  
+  extends: ["eslint:recommended", "prettier"],
 
   overrides: [
     {
@@ -111,11 +119,16 @@ module.exports = {
   },
 
   
-  plugins: ["html", "fetch-options", "no-unsanitized"],
+  plugins: ["html", "fetch-options", "prettier", "no-unsanitized"],
 
   
   
   rules: {
+    ...prettierRules,
+
+    
+    "arrow-body-style": "off",
+
     
     
     complexity: ["error", 34],
@@ -330,6 +343,9 @@ module.exports = {
 
     
     "object-shorthand": ["error", "always", { avoidQuotes: true }],
+
+    
+    "prefer-arrow-callback": "off",
 
     
     

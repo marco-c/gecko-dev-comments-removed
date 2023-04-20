@@ -2,6 +2,12 @@
 
 
 
+let prettierRules = { "prettier/prettier": "error" };
+
+if (process.env.MOZ_SEPARATE_PRETTIER) {
+  prettierRules = { "prettier/prettier": "off" };
+}
+
 module.exports = {
   
   parserOptions: {
@@ -25,7 +31,6 @@ module.exports = {
     "eslint:recommended",
     "plugin:jsx-a11y/recommended", 
     "plugin:mozilla/recommended", 
-    "plugin:prettier/recommended", 
     "prettier", 
   ],
   overrides: [
@@ -113,6 +118,8 @@ module.exports = {
     },
   ],
   rules: {
+    ...prettierRules,
+
     "fetch-options/no-fetch-credentials": "error",
 
     "react/jsx-boolean-value": ["error", "always"],
