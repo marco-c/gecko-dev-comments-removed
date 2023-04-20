@@ -110,7 +110,6 @@ class MruCache {
   
   
   
-  
   class Entry {
    public:
     Entry(ValueType* aEntry, bool aMatch) : mEntry(aEntry), mMatch(aMatch) {
