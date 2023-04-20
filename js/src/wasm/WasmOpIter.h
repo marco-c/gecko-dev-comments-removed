@@ -3489,7 +3489,7 @@ inline bool OpIter<Policy>::readBrOnCast(uint32_t* labelRelativeDepth,
   }
 
   
-  ValType eqrefType(RefType::eq());
+  ValType anyrefType(RefType::any());
 
   
   
@@ -3531,7 +3531,7 @@ inline bool OpIter<Policy>::readBrOnCast(uint32_t* labelRelativeDepth,
   if (!labelType->cloneToVector(&fallthroughType)) {
     return false;
   }
-  fallthroughType[labelTypeNumValues - 1] = eqrefType;
+  fallthroughType[labelTypeNumValues - 1] = anyrefType;
 
   
   
@@ -3573,7 +3573,7 @@ inline bool OpIter<Policy>::readBrOnCastFail(uint32_t* labelRelativeDepth,
   }
 
   
-  ValType eqrefType(RefType::eq());
+  ValType anyrefType(RefType::any());
 
   
   
@@ -3605,7 +3605,7 @@ inline bool OpIter<Policy>::readBrOnCastFail(uint32_t* labelRelativeDepth,
   
   
   Value ignored;
-  if (!popWithType(eqrefType, &ignored)) {
+  if (!popWithType(anyrefType, &ignored)) {
     return false;
   }
 

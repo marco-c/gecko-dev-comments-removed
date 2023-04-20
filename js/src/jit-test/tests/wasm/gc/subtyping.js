@@ -34,14 +34,22 @@ assertSubtype('eqref', 'eqref');
 assertSubtype('funcref', 'funcref');
 
 
-assertNotSubtype('funcref', 'eqref');
-assertNotSubtype('eqref', 'funcref');
+
+assertNotSubtype('funcref', 'anyref');
+assertNotSubtype('anyref', 'funcref');
 assertNotSubtype('funcref', 'externref');
 assertNotSubtype('externref', 'funcref');
-assertNotSubtype('externref', 'eqref');
-assertNotSubtype('eqref', 'externref');
+assertNotSubtype('externref', 'anyref');
+assertNotSubtype('anyref', 'externref');
 
 
+assertSubtype('anyref', 'eqref');
+
+
+assertSubtype(
+ 'anyref',
+ '(ref 0)',
+ simpleTypeSection(['(struct)']));
 assertSubtype(
  'eqref',
  '(ref 0)',
@@ -150,6 +158,10 @@ assertSubtype(
    (sub 2 (type (struct (field (ref 1)))))`);
 
 
+assertSubtype(
+ 'anyref',
+ '(ref 0)',
+ simpleTypeSection(['(array i32)']));
 assertSubtype(
  'eqref',
  '(ref 0)',

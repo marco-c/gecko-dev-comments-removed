@@ -1,7 +1,7 @@
 
 
 
-const EqrefCheckError = /can only pass a TypedObject to an eqref/;
+const EqrefCheckError = /can only pass a WebAssembly GC object to an eqref/;
 
 
 
