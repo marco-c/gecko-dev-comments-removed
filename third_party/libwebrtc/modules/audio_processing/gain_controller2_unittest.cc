@@ -47,7 +47,7 @@ float RunAgc2WithConstantInput(GainController2& agc2,
   
   for (int i = 0; i < num_frames + 1; ++i) {
     SetAudioBufferSamples(input_level, ab);
-    agc2.Process(&ab);
+    agc2.Process(absl::nullopt, &ab);
   }
 
   
@@ -62,7 +62,8 @@ std::unique_ptr<GainController2> CreateAgc2FixedDigitalMode(
   config.fixed_digital.gain_db = fixed_gain_db;
   EXPECT_TRUE(GainController2::Validate(config));
   return std::make_unique<GainController2>(config, sample_rate_hz,
-                                           1);
+                                           1,
+                                           true);
 }
 
 }  
@@ -138,7 +139,8 @@ TEST(GainController2, CheckAdaptiveDigitalMaxOutputNoiseLevelConfig) {
 
 TEST(GainController2, ApplyDefaultConfig) {
   auto gain_controller2 = std::make_unique<GainController2>(
-      Agc2Config{}, 16000, 2);
+      Agc2Config{}, 16000, 2,
+      true);
   EXPECT_TRUE(gain_controller2.get());
 }
 
@@ -253,7 +255,8 @@ TEST(GainController2, CheckFinalGainWithAdaptiveDigitalController) {
   Agc2Config config;
   config.fixed_digital.gain_db = 0.0f;
   config.adaptive_digital.enabled = true;
-  GainController2 agc2(config, kSampleRateHz, kStereo);
+  GainController2 agc2(config, kSampleRateHz, kStereo,
+                       true);
 
   test::InputAudioFile input_file(
       test::GetApmCaptureTestVectorFileName(kSampleRateHz),
@@ -276,22 +279,213 @@ TEST(GainController2, CheckFinalGainWithAdaptiveDigitalController) {
                                    stream_config.num_channels(), &input_file,
                                    frame);
     
-    for (float& x : frame)
+    for (float& x : frame) {
       x *= gain;
+    }
     test::CopyVectorToAudioBuffer(stream_config, frame, &audio_buffer);
-    
-    agc2.Process(&audio_buffer);
+    agc2.Process(absl::nullopt, &audio_buffer);
   }
 
   
   SetAudioBufferSamples(1.0f, audio_buffer);
-  agc2.Process(&audio_buffer);
+  agc2.Process(absl::nullopt, &audio_buffer);
   const float applied_gain_db =
       20.0f * std::log10(audio_buffer.channels_const()[0][0]);
 
   constexpr float kExpectedGainDb = 5.6f;
   constexpr float kToleranceDb = 0.3f;
   EXPECT_NEAR(applied_gain_db, kExpectedGainDb, kToleranceDb);
+}
+
+
+
+TEST(GainController2,
+     CheckInjectedVadProbabilityNotUsedWithAdaptiveDigitalController) {
+  constexpr int kSampleRateHz = AudioProcessing::kSampleRate48kHz;
+  constexpr int kStereo = 2;
+
+  
+  Agc2Config config;
+  config.fixed_digital.gain_db = 0.0f;
+  config.adaptive_digital.enabled = true;
+  GainController2 agc2(config, kSampleRateHz, kStereo,
+                       true);
+  GainController2 agc2_reference(config, kSampleRateHz, kStereo,
+                                 true);
+
+  test::InputAudioFile input_file(
+      test::GetApmCaptureTestVectorFileName(kSampleRateHz),
+      true);
+  const StreamConfig stream_config(kSampleRateHz, kStereo);
+
+  
+  constexpr int kFrameDurationMs = 10;
+  std::vector<float> frame(kStereo * stream_config.num_frames());
+  AudioBuffer audio_buffer(kSampleRateHz, kStereo, kSampleRateHz, kStereo,
+                           kSampleRateHz, kStereo);
+  AudioBuffer audio_buffer_reference(kSampleRateHz, kStereo, kSampleRateHz,
+                                     kStereo, kSampleRateHz, kStereo);
+
+  
+  constexpr float kGainDb = -6.0f;
+  const float gain = std::pow(10.0f, kGainDb / 20.0f);
+  constexpr int kDurationMs = 10000;
+  constexpr int kNumFramesToProcess = kDurationMs / kFrameDurationMs;
+  constexpr float kSpeechProbabilities[] = {1.0f, 0.3f};
+  constexpr float kEpsilon = 0.0001f;
+  bool all_samples_zero = true;
+  for (int i = 0, j = 0; i < kNumFramesToProcess; ++i, j = 1 - j) {
+    ReadFloatSamplesFromStereoFile(stream_config.num_frames(),
+                                   stream_config.num_channels(), &input_file,
+                                   frame);
+    
+    for (float& x : frame) {
+      x *= gain;
+    }
+    test::CopyVectorToAudioBuffer(stream_config, frame, &audio_buffer);
+    agc2.Process(kSpeechProbabilities[j], &audio_buffer);
+    test::CopyVectorToAudioBuffer(stream_config, frame,
+                                  &audio_buffer_reference);
+    agc2_reference.Process(absl::nullopt, &audio_buffer_reference);
+
+    
+    for (int i = 0; i < kStereo; ++i) {
+      for (int j = 0; j < static_cast<int>(audio_buffer.num_frames()); ++j) {
+        all_samples_zero &=
+            fabs(audio_buffer.channels_const()[i][j]) < kEpsilon;
+        EXPECT_FLOAT_EQ(audio_buffer.channels_const()[i][j],
+                        audio_buffer_reference.channels_const()[i][j]);
+      }
+    }
+  }
+  EXPECT_FALSE(all_samples_zero);
+}
+
+
+
+TEST(GainController2,
+     CheckInjectedVadProbabilityUsedWithAdaptiveDigitalController) {
+  constexpr int kSampleRateHz = AudioProcessing::kSampleRate48kHz;
+  constexpr int kStereo = 2;
+
+  
+  Agc2Config config;
+  config.fixed_digital.gain_db = 0.0f;
+  config.adaptive_digital.enabled = true;
+  GainController2 agc2(config, kSampleRateHz, kStereo,
+                       false);
+  GainController2 agc2_reference(config, kSampleRateHz, kStereo,
+                                 true);
+
+  test::InputAudioFile input_file(
+      test::GetApmCaptureTestVectorFileName(kSampleRateHz),
+      true);
+  const StreamConfig stream_config(kSampleRateHz, kStereo);
+
+  
+  constexpr int kFrameDurationMs = 10;
+  std::vector<float> frame(kStereo * stream_config.num_frames());
+  AudioBuffer audio_buffer(kSampleRateHz, kStereo, kSampleRateHz, kStereo,
+                           kSampleRateHz, kStereo);
+  AudioBuffer audio_buffer_reference(kSampleRateHz, kStereo, kSampleRateHz,
+                                     kStereo, kSampleRateHz, kStereo);
+  
+  constexpr float kGainDb = -6.0f;
+  const float gain = std::pow(10.0f, kGainDb / 20.0f);
+  constexpr int kDurationMs = 10000;
+  constexpr int kNumFramesToProcess = kDurationMs / kFrameDurationMs;
+  constexpr float kSpeechProbabilities[] = {1.0f, 0.3f};
+  constexpr float kEpsilon = 0.0001f;
+  bool all_samples_zero = true;
+  bool all_samples_equal = true;
+  for (int i = 0, j = 0; i < kNumFramesToProcess; ++i, j = 1 - j) {
+    ReadFloatSamplesFromStereoFile(stream_config.num_frames(),
+                                   stream_config.num_channels(), &input_file,
+                                   frame);
+    
+    for (float& x : frame) {
+      x *= gain;
+    }
+    test::CopyVectorToAudioBuffer(stream_config, frame, &audio_buffer);
+    agc2.Process(kSpeechProbabilities[j], &audio_buffer);
+    test::CopyVectorToAudioBuffer(stream_config, frame,
+                                  &audio_buffer_reference);
+    agc2_reference.Process(absl::nullopt, &audio_buffer_reference);
+    
+    for (int i = 0; i < kStereo; ++i) {
+      for (int j = 0; j < static_cast<int>(audio_buffer.num_frames()); ++j) {
+        all_samples_zero &=
+            fabs(audio_buffer.channels_const()[i][j]) < kEpsilon;
+        all_samples_equal &=
+            fabs(audio_buffer.channels_const()[i][j] -
+                 audio_buffer_reference.channels_const()[i][j]) < kEpsilon;
+      }
+    }
+  }
+  EXPECT_FALSE(all_samples_zero);
+  EXPECT_FALSE(all_samples_equal);
+}
+
+
+
+
+TEST(GainController2,
+     CheckEqualResultFromInjectedVadProbabilityWithAdaptiveDigitalController) {
+  constexpr int kSampleRateHz = AudioProcessing::kSampleRate48kHz;
+  constexpr int kStereo = 2;
+
+  
+  Agc2Config config;
+  config.fixed_digital.gain_db = 0.0f;
+  config.adaptive_digital.enabled = true;
+  GainController2 agc2(config, kSampleRateHz, kStereo,
+                       false);
+  GainController2 agc2_reference(config, kSampleRateHz, kStereo,
+                                 true);
+  VoiceActivityDetectorWrapper vad(config.adaptive_digital.vad_reset_period_ms,
+                                   GetAvailableCpuFeatures(), kSampleRateHz);
+  test::InputAudioFile input_file(
+      test::GetApmCaptureTestVectorFileName(kSampleRateHz),
+      true);
+  const StreamConfig stream_config(kSampleRateHz, kStereo);
+
+  
+  constexpr int kFrameDurationMs = 10;
+  std::vector<float> frame(kStereo * stream_config.num_frames());
+  AudioBuffer audio_buffer(kSampleRateHz, kStereo, kSampleRateHz, kStereo,
+                           kSampleRateHz, kStereo);
+  AudioBuffer audio_buffer_reference(kSampleRateHz, kStereo, kSampleRateHz,
+                                     kStereo, kSampleRateHz, kStereo);
+
+  
+  constexpr float kGainDb = -6.0f;
+  const float gain = std::pow(10.0f, kGainDb / 20.0f);
+  constexpr int kDurationMs = 10000;
+  constexpr int kNumFramesToProcess = kDurationMs / kFrameDurationMs;
+  for (int i = 0; i < kNumFramesToProcess; ++i) {
+    ReadFloatSamplesFromStereoFile(stream_config.num_frames(),
+                                   stream_config.num_channels(), &input_file,
+                                   frame);
+    
+    for (float& x : frame) {
+      x *= gain;
+    }
+    test::CopyVectorToAudioBuffer(stream_config, frame,
+                                  &audio_buffer_reference);
+    agc2_reference.Process(absl::nullopt, &audio_buffer_reference);
+    test::CopyVectorToAudioBuffer(stream_config, frame, &audio_buffer);
+    agc2.Process(vad.Analyze(AudioFrameView<const float>(
+                     audio_buffer.channels(), audio_buffer.num_channels(),
+                     audio_buffer.num_frames())),
+                 &audio_buffer);
+    
+    for (int i = 0; i < kStereo; ++i) {
+      for (int j = 0; j < static_cast<int>(audio_buffer.num_frames()); ++j) {
+        EXPECT_FLOAT_EQ(audio_buffer.channels_const()[i][j],
+                        audio_buffer_reference.channels_const()[i][j]);
+      }
+    }
+  }
 }
 
 }  

@@ -30,9 +30,12 @@ class AudioBuffer;
 
 class GainController2 {
  public:
+  
+  
   GainController2(const AudioProcessing::Config::GainController2& config,
                   int sample_rate_hz,
-                  int num_channels);
+                  int num_channels,
+                  bool use_internal_vad);
   GainController2(const GainController2&) = delete;
   GainController2& operator=(const GainController2&) = delete;
   ~GainController2();
@@ -44,12 +47,17 @@ class GainController2 {
   void SetFixedGainDb(float gain_db);
 
   
-  void Process(AudioBuffer* audio);
+  
+  
+  
+  void Process(absl::optional<float> speech_probability, AudioBuffer* audio);
 
   
   void NotifyAnalogLevel(int level);
 
   static bool Validate(const AudioProcessing::Config::GainController2& config);
+
+  AvailableCpuFeatures GetCpuFeatures() const { return cpu_features_; }
 
  private:
   static int instance_count_;
