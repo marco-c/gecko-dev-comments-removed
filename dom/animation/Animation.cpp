@@ -93,20 +93,44 @@ Animation::~Animation() = default;
 already_AddRefed<Animation> Animation::ClonePausedAnimation(
     nsIGlobalObject* aGlobal, const Animation& aOther, AnimationEffect& aEffect,
     AnimationTimeline& aTimeline) {
-  RefPtr<Animation> animation = new Animation(aGlobal);
   
-  animation->mTimeline = &aTimeline;
-  const Nullable<TimeDuration> timelineTime =
-      aTimeline.GetCurrentTimeAsDuration();
-  MOZ_ASSERT(!timelineTime.IsNull(), "Timeline not yet set");
-
-  const Nullable<TimeDuration> currentTime = aOther.GetCurrentTimeAsDuration();
-  animation->mHoldTime = currentTime;
-  if (!currentTime.IsNull()) {
-    animation->mPreviousCurrentTime = timelineTime;
+  
+  if (aOther.UsingScrollTimeline()) {
+    return nullptr;
   }
 
+  RefPtr<Animation> animation = new Animation(aGlobal);
+
+  
+  
+  animation->mTimeline = &aTimeline;
+
+  
   animation->mPlaybackRate = aOther.mPlaybackRate;
+
+  
+  const Nullable<TimeDuration> currentTime = aOther.GetCurrentTimeAsDuration();
+  if (!aOther.GetTimeline()) {
+    
+    
+    
+    
+    if (!currentTime.IsNull()) {
+      animation->SilentlySetCurrentTime(currentTime.Value());
+    }
+    animation->mPreviousCurrentTime = animation->GetCurrentTimeAsDuration();
+  } else {
+    animation->mHoldTime = currentTime;
+    if (!currentTime.IsNull()) {
+      
+      
+      
+      const Nullable<TimeDuration> timelineTime =
+          aTimeline.GetCurrentTimeAsDuration();
+      MOZ_ASSERT(!timelineTime.IsNull(), "Timeline not yet set");
+      animation->mPreviousCurrentTime = timelineTime;
+    }
+  }
 
   
   animation->mEffect = &aEffect;
