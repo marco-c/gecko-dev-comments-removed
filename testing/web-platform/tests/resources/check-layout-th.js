@@ -26,7 +26,11 @@ function assert_tolerance(actual, expected, message)
 }
 
 function checkDataKeys(node) {
+  
+  
+  
     var validData = new Set([
+        "data-anchor-polyfill",
         "data-expected-width",
         "data-expected-height",
         "data-offset-x",
