@@ -11,7 +11,7 @@ use crate::gpu_cache::{GpuCacheAddress, GpuDataRequest};
 use crate::internal_types::FastHashMap;
 use crate::prim_store::ClipData;
 use crate::render_task::RenderTaskAddress;
-use crate::renderer::ShaderColorMode;
+use crate::renderer::{ShaderColorMode, GpuBufferAddress};
 use std::i32;
 use crate::util::{TransformedRectKind, MatrixHelpers};
 use glyph_rasterizer::SubpixelDirection;
@@ -541,6 +541,41 @@ impl From<SplitCompositeInstance> for PrimitiveInstanceData {
     }
 }
 
+#[derive(Copy, Clone)]
+pub struct QuadInstance {
+    pub render_task_address: RenderTaskAddress,
+    pub prim_address: GpuBufferAddress,
+    pub z_id: ZBufferId,
+    pub transform_id: TransformPaletteId,
+    pub edge_flags: i32,
+    
+    pub tile_count_x: u8,
+    pub tile_count_y: u8,
+    pub tile_index_x: u8,
+    pub tile_index_y: u8,
+}
+
+impl From<QuadInstance> for PrimitiveInstanceData {
+    fn from(instance: QuadInstance) -> Self {
+        
+
+
+
+
+
+        PrimitiveInstanceData {
+            data: [
+                instance.prim_address.as_int(),
+                ((instance.tile_count_x as i32) << 24) |
+                ((instance.tile_count_y as i32) << 16) |
+                instance.render_task_address.0 as i32,
+                (instance.edge_flags << 24) | instance.z_id.0,
+                ((instance.tile_index_x as i32) << 28) | ((instance.tile_index_y as i32) << 24) | instance.transform_id.0 as i32,
+            ],
+        }
+    }
+}
+
 bitflags! {
     // Note: This can use up to 12 bits due to how it will
     // be packed in the instance data.
@@ -640,7 +675,7 @@ impl TransformPaletteId {
 
     
     pub fn transform_kind(&self) -> TransformedRectKind {
-        if (self.0 >> 24) == 0 {
+        if (self.0 >> 23) == 0 {
             TransformedRectKind::AxisAligned
         } else {
             TransformedRectKind::Complex
@@ -652,7 +687,7 @@ impl TransformPaletteId {
     
     
     pub fn override_transform_kind(&self, kind: TransformedRectKind) -> Self {
-        TransformPaletteId((self.0 & 0xFFFFFFu32) | ((kind as u32) << 24))
+        TransformPaletteId((self.0 & 0x7FFFFFu32) | ((kind as u32) << 23))
     }
 }
 
@@ -785,7 +820,7 @@ impl TransformPalette {
         let transform_kind = self.metadata[index].transform_kind as u32;
         TransformPaletteId(
             (index as u32) |
-            (transform_kind << 24)
+            (transform_kind << 23)
         )
     }
 
@@ -802,7 +837,7 @@ impl TransformPalette {
         let transform_kind = self.metadata[index].transform_kind as u32;
         TransformPaletteId(
             (index as u32) |
-            (transform_kind << 24)
+            (transform_kind << 23)
         )
     }
 }
