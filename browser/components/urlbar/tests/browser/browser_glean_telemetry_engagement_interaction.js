@@ -127,6 +127,14 @@ add_task(async function interaction_restarted() {
 });
 
 add_task(async function interaction_refined() {
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.showSearchTerms.featureGate", false]],
+  });
+
   await doTest(async browser => {
     await openPopup("x");
     await doEnter();
@@ -178,6 +186,8 @@ add_task(async function interaction_refined() {
       { interaction: "typed" },
     ]);
   });
+
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function interaction_persisted_search_terms() {

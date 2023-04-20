@@ -881,6 +881,12 @@ const tests = [
 
   async function(win) {
     info("Open search mode with a keyboard shortcut.");
+    
+    
+    
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.urlbar.showSearchTerms.featureGate", false]],
+    });
     let defaultEngine = await Services.search.getDefault();
     win.gURLBar.select();
     EventUtils.synthesizeKey("k", { accelKey: true }, win);
@@ -899,6 +905,8 @@ const tests = [
     });
     EventUtils.synthesizeKey("VK_RETURN", {}, win);
     await promise;
+
+    await SpecialPowers.popPrefEnv();
 
     return {
       category: "urlbar",

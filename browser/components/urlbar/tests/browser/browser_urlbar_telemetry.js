@@ -1024,6 +1024,13 @@ add_task(async function test_formHistory_enterSelection() {
 add_task(async function test_privateWindow() {
   
   
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.showSearchTerms.featureGate", false]],
+  });
+
+  
+  
   SearchSERPTelemetry.overrideSearchTelemetryForTests([
     {
       telemetryId: "example",
@@ -1217,4 +1224,5 @@ add_task(async function test_privateWindow() {
   
   SearchSERPTelemetry.overrideSearchTelemetryForTests();
   await UrlbarTestUtils.formHistory.clear();
+  await SpecialPowers.popPrefEnv();
 });
