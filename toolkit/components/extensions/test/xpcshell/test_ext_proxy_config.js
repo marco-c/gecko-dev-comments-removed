@@ -20,6 +20,11 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
+
+
+
+AddonTestUtils.createHttpServer({ hosts: ["pac.example.com"] });
+
 add_task(async function setup() {
   
   
@@ -188,11 +193,11 @@ add_task(async function test_browser_settings() {
   await testProxy(
     {
       proxyType: "autoConfig",
-      autoConfigUrl: "http://mozilla.org",
+      autoConfigUrl: "http://pac.example.com",
     },
     {
       "network.proxy.type": proxySvc.PROXYCONFIG_PAC,
-      "network.proxy.autoconfig_url": "http://mozilla.org",
+      "network.proxy.autoconfig_url": "http://pac.example.com",
       "network.http.proxy.respect-be-conservative": true,
     }
   );
