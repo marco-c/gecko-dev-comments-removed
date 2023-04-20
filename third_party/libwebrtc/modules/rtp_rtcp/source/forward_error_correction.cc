@@ -218,13 +218,11 @@ void ForwardErrorCorrection::GenerateFecPayloads(
         ParseSequenceNumber((*media_packets_it)->data.data());
     while (media_packets_it != media_packets.end()) {
       Packet* const media_packet = media_packets_it->get();
-      const uint8_t* media_packet_data = media_packet->data.cdata();
       
       if (packet_masks_[pkt_mask_idx] & (1 << (7 - media_pkt_idx))) {
         size_t media_payload_length =
             media_packet->data.size() - kRtpHeaderSize;
 
-        bool first_protected_packet = (fec_packet->data.size() == 0);
         size_t fec_packet_length = fec_header_size + media_payload_length;
         if (fec_packet_length > fec_packet->data.size()) {
           
@@ -232,26 +230,9 @@ void ForwardErrorCorrection::GenerateFecPayloads(
           
           fec_packet->data.SetSize(fec_packet_length);
         }
-        if (first_protected_packet) {
-          uint8_t* data = fec_packet->data.MutableData();
-          
-          
-          memcpy(&data[0], &media_packet_data[0], 2);
-          
-          
-          ByteWriter<uint16_t>::WriteBigEndian(&data[2], media_payload_length);
-          
-          memcpy(&data[4], &media_packet_data[4], 4);
-          
-          if (media_payload_length > 0) {
-            memcpy(&data[fec_header_size], &media_packet_data[kRtpHeaderSize],
-                   media_payload_length);
-          }
-        } else {
-          XorHeaders(*media_packet, fec_packet);
-          XorPayloads(*media_packet, media_payload_length, fec_header_size,
-                      fec_packet);
-        }
+        XorHeaders(*media_packet, fec_packet);
+        XorPayloads(*media_packet, media_payload_length, fec_header_size,
+                    fec_packet);
       }
       media_packets_it++;
       if (media_packets_it != media_packets.end()) {
