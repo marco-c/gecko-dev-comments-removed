@@ -21,7 +21,14 @@ export function initialSourcesContentState() {
 
 
 
-    mutableTextContentMap: new Map(),
+    mutableOriginalSourceTextContentMap: new Map(),
+
+    
+
+
+
+
+    mutableGeneratedSourceTextContentMap: new Map(),
 
     
 
@@ -35,7 +42,16 @@ export function initialSourcesContentState() {
 
 function update(state = initialSourcesContentState(), action) {
   switch (action.type) {
-    case "LOAD_SOURCE_TEXT":
+    case "LOAD_ORIGINAL_SOURCE_TEXT":
+      if (!action.sourceId) {
+        throw new Error("No source id found.");
+      }
+      return updateSourceTextContent(state, action);
+
+    case "LOAD_GENERATED_SOURCE_TEXT":
+      if (!action.sourceActorId) {
+        throw new Error("No source actor id found.");
+      }
       return updateSourceTextContent(state, action);
 
     case "NAVIGATE":
@@ -65,20 +81,34 @@ function updateSourceTextContent(state, action) {
     content = rejected(action.error);
   } else if (typeof action.value.text === "string") {
     content = fulfilled({
-      actorId: action.value.actorId,
       type: "text",
       value: action.value.text,
       contentType: action.value.contentType,
     });
   } else {
     content = fulfilled({
-      actorId: action.value.actorId,
       type: "wasm",
       value: action.value.text,
     });
   }
 
-  state.mutableTextContentMap.set(action.sourceId, content);
+  if (action.sourceId && action.sourceActorId) {
+    throw new Error(
+      "Both the source id and the source actor should not exist at the same time"
+    );
+  }
+
+  if (action.sourceId) {
+    state.mutableOriginalSourceTextContentMap.set(action.sourceId, content);
+  }
+
+  if (action.sourceActorId) {
+    state.mutableGeneratedSourceTextContentMap.set(
+      action.sourceActorId,
+      content
+    );
+  }
+
   return {
     ...state,
   };

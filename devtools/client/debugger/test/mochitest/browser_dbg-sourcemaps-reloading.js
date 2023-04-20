@@ -31,7 +31,7 @@ add_task(async function() {
 
   
   await reload(dbg, "opts.js");
-  await waitForDispatch(dbg.store, "LOAD_SOURCE_TEXT");
+  await waitForDispatch(dbg.store, "LOAD_ORIGINAL_SOURCE_TEXT");
 
   await waitForPaused(dbg);
   await waitForDispatch(dbg.store, "ADD_INLINE_PREVIEW");

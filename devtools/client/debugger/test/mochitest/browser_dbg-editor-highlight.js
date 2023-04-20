@@ -11,7 +11,7 @@
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "long.js");
   const {
-    selectors: { getSourceContent },
+    selectors: { getSettledSourceTextContent },
   } = dbg;
 
   
@@ -41,9 +41,9 @@ add_task(async function() {
   
   
   const simple1 = findSource(dbg, "simple1.js");
-  is(getSourceContent(simple1.id), null);
+  is(getSettledSourceTextContent({ sourceId: simple1.id }), null);
 
   await waitForSelectedSource(dbg, "simple1.js");
-  ok(getSourceContent(simple1.id).value.value);
+  ok(getSettledSourceTextContent({ sourceId: simple1.id }).value.value);
   assertHighlightLocation(dbg, "simple1.js", 6);
 });
