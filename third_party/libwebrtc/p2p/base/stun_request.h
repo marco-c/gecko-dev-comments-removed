@@ -28,7 +28,7 @@ namespace cricket {
 
 class StunRequest;
 
-const int kAllRequests = 0;
+const int kAllRequestsForTest = 0;
 
 
 
