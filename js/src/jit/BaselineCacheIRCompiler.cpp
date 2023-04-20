@@ -2414,8 +2414,11 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
     
     
     stub->resetEnteredCount();
-    if (stub->usedByTranspiler() && outerScript->hasIonScript()) {
-      outerScript->ionScript()->resetNumFixableBailouts();
+    JSScript* owningScript = icScript->isInlined()
+                                 ? icScript->inliningRoot()->owningScript()
+                                 : outerScript;
+    if (stub->usedByTranspiler() && owningScript->hasIonScript()) {
+      owningScript->ionScript()->resetNumFixableBailouts();
     }
     return ICAttachResult::Attached;
   }
