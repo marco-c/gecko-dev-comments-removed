@@ -60,6 +60,8 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     boolean equals(in nsIPrincipal other);
 
     
@@ -68,9 +70,14 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     boolean equalsForPermission(in nsIPrincipal other, in bool aExactHost);
 
     
+
+
+
 
 
     boolean equalsConsideringDomain(in nsIPrincipal other);
@@ -83,9 +90,13 @@ interface nsIPrincipal : nsISupports
     
 
 
+
+
     boolean equalsURI(in nsIURI aOtherURI);
 
     
+
+
 
 
     [notxpcom, nostdcall] readonly attribute unsigned long hashValue;
@@ -94,9 +105,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     [infallible] readonly attribute nsIURI URI;
 
     
+
+
 
 
 
@@ -119,15 +134,23 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     boolean subsumes(in nsIPrincipal other);
 
     
 
 
 
+
+
+
     boolean subsumesConsideringDomain(in nsIPrincipal other);
 
     
+
+
+
 
 
 
@@ -164,10 +187,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
     void checkMayLoad(in nsIURI uri,
                       in boolean allowIfInheritsPrincipal);
 
     
+
+
 
 
 
@@ -183,6 +209,8 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     boolean isThirdPartyURI(in nsIURI uri);
 
     
@@ -192,9 +220,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     boolean isThirdPartyPrincipal(in nsIPrincipal principal);
 
     
+
+
 
 
 
@@ -221,10 +253,13 @@ interface nsIPrincipal : nsISupports
     [implicit_jscontext]
     readonly attribute jsval originAttributes;
 
+    
     [noscript, notxpcom, nostdcall, binaryname(OriginAttributesRef)]
     const_OriginAttributes OriginAttributesRef();
 
     
+
+
 
 
 
@@ -239,9 +274,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     [noscript] readonly attribute ACString asciiOrigin;
 
     
+
+
 
 
 
@@ -251,9 +290,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     readonly attribute ACString asciiHost;
 
     
+
+
 
 
 
@@ -264,14 +307,20 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     readonly attribute ACString prePath;
 
     
 
 
+
+
     readonly attribute ACString filePath;
 
     
+
+
 
 
 
@@ -288,9 +337,14 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     readonly attribute ACString spec;
 
     
+
+
+
 
 
     readonly attribute ACString exposablePrePath;
@@ -298,14 +352,21 @@ interface nsIPrincipal : nsISupports
     
 
 
+
+
+
     readonly attribute ACString exposableSpec;
 
     
 
 
+
+
     readonly attribute ACString scheme;
 
     
+
+
 
 
 
@@ -317,10 +378,16 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
+
     [infallible]
     boolean isURIInPrefList(in string pref);
 
     
+
+
+
 
 
 
@@ -331,6 +398,8 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     [infallible]
     boolean isSameOrigin(in nsIURI otherURI);
 
@@ -338,10 +407,14 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     bool allowsRelaxStrictFileOriginPolicy(in nsIURI aURI);
 
 
     
+
+
 
 
     [noscript]
@@ -354,10 +427,14 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     bool hasFirstpartyStorageAccess(in mozIDOMWindow aWindow, out uint32_t rejectedReason);
 
 
     
+
+
 
 
 
@@ -372,14 +449,21 @@ interface nsIPrincipal : nsISupports
 
 
 
- 
+
+
+
     [infallible]
     readonly attribute boolean isOriginPotentiallyTrustworthy;
+
+    
+
 
     [infallible]
     readonly attribute boolean isLoopbackHost;
 
     
+
+
 
 
 
@@ -389,9 +473,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     readonly attribute ACString storageOriginKey;
 
     
+
+
 
 
 
@@ -402,9 +490,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     readonly attribute ACString originNoSuffix;
 
     
+
+
 
 
 
@@ -425,9 +517,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     readonly attribute ACString siteOrigin;
 
     
+
+
 
 
 
@@ -438,12 +534,21 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     readonly attribute ACString baseDomain;
 
     
 
 
+
+
     readonly attribute AString addonId;
+
+    
+
+
+
 
     readonly attribute WebExtensionPolicy addonPolicy;
 
@@ -452,9 +557,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     [infallible] readonly attribute unsigned long userContextId;
 
     
+
+
 
 
 
@@ -468,9 +577,13 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     [infallible] readonly attribute boolean isInIsolatedMozBrowserElement;
 
     
+
+
 
 
 
@@ -479,14 +592,20 @@ interface nsIPrincipal : nsISupports
     
 
 
+
+
     [infallible] readonly attribute boolean isContentPrincipal;
 
     
 
 
+
+
     [infallible] readonly attribute boolean isExpandedPrincipal;
 
     
+
+
 
 
 
@@ -496,11 +615,15 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     %{C++
       inline bool IsSystemPrincipal() const;
     %}
 
     
+
+
 
 
 
@@ -516,7 +639,10 @@ interface nsIPrincipal : nsISupports
       return aOut << "nsIPrincipal { " << origin << " }";
     }
     %}
+
     
+
+
 
 
     [infallible] readonly attribute boolean isOnion;
@@ -525,16 +651,21 @@ interface nsIPrincipal : nsISupports
 
 
 
+
+
     readonly attribute boolean isScriptAllowedByPolicy;
 
 
-     
+    
+
+
 
 
 
     boolean isL10nAllowed(in nsIURI aDocumentURI);
+
     
-    
+
 
 
 
@@ -544,14 +675,20 @@ interface nsIPrincipal : nsISupports
     
 
 
+
+
     [infallible] readonly attribute boolean isIpAddress;
 
     
 
 
+
+
     [infallible] readonly attribute boolean isLocalIpAddress;
 
     
+
+
 
 
 
@@ -592,11 +729,15 @@ interface nsIExpandedPrincipal : nsISupports
 
 
 
+
+
   [noscript, notxpcom, nostdcall]
   PrincipalArray AllowList();
 
 
   
+
+
 
 
 

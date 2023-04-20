@@ -301,6 +301,8 @@ class BasePrincipal : public nsJSPrincipals {
   
   
   
+  
+  
   virtual bool MayLoadInternal(nsIURI* aURI) = 0;
   friend class ::ExpandedPrincipal;
 
