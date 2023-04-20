@@ -173,6 +173,7 @@ customElements.define(
       }
 
       this.setAttribute("extension-id", this.addon.id);
+      this.classList.add("unified-extensions-item");
 
       
       
