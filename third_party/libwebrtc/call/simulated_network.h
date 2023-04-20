@@ -31,29 +31,6 @@ namespace webrtc {
 
 
 
-class CoDelSimulation {
- public:
-  CoDelSimulation();
-  ~CoDelSimulation();
-
-  
-  bool DropDequeuedPacket(Timestamp now,
-                          Timestamp enqueing_time,
-                          DataSize packet_size,
-                          DataSize queue_size);
-
- private:
-  enum State { kNormal, kPending, kDropping };
-  Timestamp enter_drop_state_at_ = Timestamp::PlusInfinity();
-  Timestamp last_drop_at_ = Timestamp::MinusInfinity();
-  int drop_count_ = 0;
-  int previous_drop_count_ = 0;
-  State state_ = State::kNormal;
-};
-
-
-
-
 class SimulatedNetwork : public SimulatedNetworkInterface {
  public:
   using Config = BuiltInNetworkBehaviorConfig;
@@ -101,7 +78,6 @@ class SimulatedNetwork : public SimulatedNetworkInterface {
   
   
   rtc::RaceChecker process_checker_;
-  CoDelSimulation codel_controller_ RTC_GUARDED_BY(process_checker_);
   std::queue<PacketInfo> capacity_link_ RTC_GUARDED_BY(process_checker_);
   Random random_;
 

@@ -62,8 +62,6 @@ struct BuiltInNetworkBehaviorConfig {
   int avg_burst_loss_length = -1;
   
   int packet_overhead = 0;
-  
-  bool codel_active_queue_management = false;
 };
 
 class NetworkBehaviorInterface {
