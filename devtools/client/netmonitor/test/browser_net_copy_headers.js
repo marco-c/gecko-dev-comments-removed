@@ -52,11 +52,11 @@ add_task(async function() {
   ].join("\n");
 
   await waitForClipboardPromise(
-    async function setup() {
-      await selectContextMenuItem(
+    function setup() {
+      getContextMenuItem(
         monitor,
         "request-list-context-copy-request-headers"
-      );
+      ).click();
     },
     function validate(result) {
       
@@ -82,11 +82,11 @@ add_task(async function() {
   );
 
   await waitForClipboardPromise(
-    async function setup() {
-      await selectContextMenuItem(
+    function setup() {
+      getContextMenuItem(
         monitor,
         "response-list-context-copy-response-headers"
-      );
+      ).click();
     },
     function validate(result) {
       

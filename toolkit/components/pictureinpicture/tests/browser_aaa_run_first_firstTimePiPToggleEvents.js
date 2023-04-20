@@ -192,7 +192,7 @@ async function openAndClosePipWithContextMenu(browser, videoID) {
   
   await clearAllContentEvents();
 
-  menu.activateItem(menu.querySelector("#context-video-pictureinpicture"));
+  menu.querySelector("#context-video-pictureinpicture").click();
 
   let win = await domWindowOpened;
   ok(win, "A Picture-in-Picture window opened.");
