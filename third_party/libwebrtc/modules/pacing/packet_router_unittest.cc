@@ -399,6 +399,43 @@ TEST_F(PacketRouterTest, SendPacketAssignsTransportSequenceNumbers) {
   packet_router_.RemoveSendRtpModule(&rtp_2);
 }
 
+TEST_F(PacketRouterTest, DoesNotIncrementTransportSequenceNumberOnSendFailure) {
+  NiceMock<MockRtpRtcpInterface> rtp;
+  constexpr uint32_t kSsrc = 1234;
+  ON_CALL(rtp, SSRC).WillByDefault(Return(kSsrc));
+  packet_router_.AddSendRtpModule(&rtp, false);
+
+  
+  const uint16_t kStartTransportSequenceNumber = 1;
+
+  
+  
+  auto packet = BuildRtpPacket(kSsrc);
+  EXPECT_TRUE(packet->ReserveExtension<TransportSequenceNumber>());
+  EXPECT_CALL(
+      rtp, TrySendPacket(
+               Property(&RtpPacketToSend::GetExtension<TransportSequenceNumber>,
+                        kStartTransportSequenceNumber),
+               _))
+      .WillOnce(Return(false));
+  packet_router_.SendPacket(std::move(packet), PacedPacketInfo());
+
+  
+  
+  packet = BuildRtpPacket(kSsrc);
+  EXPECT_TRUE(packet->ReserveExtension<TransportSequenceNumber>());
+
+  EXPECT_CALL(
+      rtp, TrySendPacket(
+               Property(&RtpPacketToSend::GetExtension<TransportSequenceNumber>,
+                        kStartTransportSequenceNumber),
+               _))
+      .WillOnce(Return(true));
+  packet_router_.SendPacket(std::move(packet), PacedPacketInfo());
+
+  packet_router_.RemoveSendRtpModule(&rtp);
+}
+
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 using PacketRouterDeathTest = PacketRouterTest;
 TEST_F(PacketRouterDeathTest, DoubleRegistrationOfSendModuleDisallowed) {
