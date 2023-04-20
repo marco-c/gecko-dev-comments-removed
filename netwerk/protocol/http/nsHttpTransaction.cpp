@@ -2128,6 +2128,32 @@ nsresult nsHttpTransaction::ParseHead(char* buf, uint32_t count,
   return NS_OK;
 }
 
+bool nsHttpTransaction::HandleWebTransportResponse(uint16_t aStatus) {
+  MOZ_ASSERT(mIsForWebTransport);
+  if (!(aStatus >= 200 && aStatus < 300)) {
+    return false;
+  }
+
+  RefPtr<Http3WebTransportSession> wtSession =
+      mConnection->GetWebTransportSession(this);
+  if (!wtSession) {
+    return false;
+  }
+
+  nsCOMPtr<WebTransportSessionEventListener> webTransportListener;
+  {
+    MutexAutoLock lock(mLock);
+    webTransportListener = mWebTransportSessionEventListener;
+    mWebTransportSessionEventListener = nullptr;
+  }
+  if (webTransportListener) {
+    webTransportListener->OnSessionReadyInternal(wtSession);
+    wtSession->SetWebTransportSessionEventListener(webTransportListener);
+  }
+
+  return true;
+}
+
 nsresult nsHttpTransaction::HandleContentStart() {
   LOG(("nsHttpTransaction::HandleContentStart [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -2187,90 +2213,79 @@ nsresult nsHttpTransaction::HandleContentStart() {
       return NS_OK;
     }
 
-    
-    switch (mResponseHead->Status()) {
-      case 200: {
-        if (!mIsForWebTransport) {
-          break;
-        }
-        RefPtr<Http3WebTransportSession> wtSession =
-            mConnection->GetWebTransportSession(this);
-        if (wtSession) {
-          nsCOMPtr<WebTransportSessionEventListener> webTransportListener;
-          {
-            MutexAutoLock lock(mLock);
-            webTransportListener = mWebTransportSessionEventListener;
-          }
-          if (webTransportListener) {
-            webTransportListener->OnSessionReadyInternal(wtSession);
-            wtSession->SetWebTransportSessionEventListener(
-                webTransportListener);
-          }
-        }
-        mWebTransportSessionEventListener = nullptr;
-      }
-        
-        
-        [[fallthrough]];
-      case 101:
-        mPreserveStream = true;
-        [[fallthrough]];  
-      case 204:
-      case 205:
-      case 304:
+    bool responseChecked = false;
+    if (mIsForWebTransport) {
+      responseChecked = HandleWebTransportResponse(mResponseHead->Status());
+      LOG(("HandleWebTransportResponse res=%d", responseChecked));
+      if (responseChecked) {
         mNoContent = true;
-        LOG(("this response should not contain a body.\n"));
-        break;
-      case 408:
-        LOG(("408 Server Timeouts"));
+        mPreserveStream = true;
+      }
+    }
 
-        if (mConnection->Version() >= HttpVersion::v2_0) {
-          mForceRestart = true;
-          return NS_ERROR_NET_RESET;
-        }
+    if (!responseChecked) {
+      
+      switch (mResponseHead->Status()) {
+        case 101:
+          mPreserveStream = true;
+          [[fallthrough]];  
+        case 204:
+        case 205:
+        case 304:
+          mNoContent = true;
+          LOG(("this response should not contain a body.\n"));
+          break;
+        case 408:
+          LOG(("408 Server Timeouts"));
 
-        
-        
-        
-        
-        
-        LOG(("408 Server Timeouts now=%d lastWrite=%d", PR_IntervalNow(),
-             mConnection->LastWriteTime()));
-        if ((PR_IntervalNow() - mConnection->LastWriteTime()) >=
-            PR_MillisecondsToInterval(1000)) {
-          mForceRestart = true;
-          return NS_ERROR_NET_RESET;
-        }
-        break;
-      case 421:
-        LOG(("Misdirected Request.\n"));
-        gHttpHandler->ClearHostMapping(mConnInfo);
-
-        m421Received = true;
-        mCaps |= NS_HTTP_REFRESH_DNS;
-
-        
-        
-        
-        
-        
-        if (!mRestartCount && !(mCaps & NS_HTTP_STICKY_CONNECTION)) {
-          mCaps &= ~NS_HTTP_ALLOW_KEEPALIVE;
-          mForceRestart = true;  
-          return NS_ERROR_NET_RESET;
-        }
-        break;
-      case 425:
-        LOG(("Too Early."));
-        if ((mEarlyDataDisposition == EARLY_425) && !mDoNotTryEarlyData) {
-          mDoNotTryEarlyData = true;
-          mForceRestart = true;  
           if (mConnection->Version() >= HttpVersion::v2_0) {
-            mReuseOnRestart = true;
+            mForceRestart = true;
+            return NS_ERROR_NET_RESET;
           }
-          return NS_ERROR_NET_RESET;
-        }
-        break;
+
+          
+          
+          
+          
+          
+          LOG(("408 Server Timeouts now=%d lastWrite=%d", PR_IntervalNow(),
+               mConnection->LastWriteTime()));
+          if ((PR_IntervalNow() - mConnection->LastWriteTime()) >=
+              PR_MillisecondsToInterval(1000)) {
+            mForceRestart = true;
+            return NS_ERROR_NET_RESET;
+          }
+          break;
+        case 421:
+          LOG(("Misdirected Request.\n"));
+          gHttpHandler->ClearHostMapping(mConnInfo);
+
+          m421Received = true;
+          mCaps |= NS_HTTP_REFRESH_DNS;
+
+          
+          
+          
+          
+          
+          if (!mRestartCount && !(mCaps & NS_HTTP_STICKY_CONNECTION)) {
+            mCaps &= ~NS_HTTP_ALLOW_KEEPALIVE;
+            mForceRestart = true;  
+            return NS_ERROR_NET_RESET;
+          }
+          break;
+        case 425:
+          LOG(("Too Early."));
+          if ((mEarlyDataDisposition == EARLY_425) && !mDoNotTryEarlyData) {
+            mDoNotTryEarlyData = true;
+            mForceRestart = true;  
+            if (mConnection->Version() >= HttpVersion::v2_0) {
+              mReuseOnRestart = true;
+            }
+            return NS_ERROR_NET_RESET;
+          }
+          break;
+      }
     }
 
     
