@@ -57,7 +57,7 @@ class nsCookieBannerService final : public nsIObserver,
   
   
   
-  nsTHashMap<uint64_t, Tuple<bool, bool>> mReloadTelemetryData;
+  nsTHashMap<uint64_t, std::tuple<bool, bool>> mReloadTelemetryData;
 
   
   

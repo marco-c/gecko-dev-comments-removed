@@ -594,7 +594,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocks)
               ++count;
               EXPECT_EQ(int32_t(100), aLength);
               memcpy(aBlockStart, buffer, 100 * sizeof(uint32_t));
-              return MakeTuple(int32_t(100), Maybe<WriteState>());
+              return std::make_tuple(int32_t(100), Maybe<WriteState>());
             });
 
         EXPECT_EQ(WriteState::FINISHED, result);
@@ -614,7 +614,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocks)
               for (int32_t i = 0; i < aLength; ++i) {
                 aBlockStart[i] = BGRAColor::Red().AsPixel();
               }
-              return MakeTuple(aLength, Maybe<WriteState>());
+              return std::make_tuple(aLength, Maybe<WriteState>());
             });
 
         EXPECT_EQ(WriteState::FINISHED, result);
@@ -646,7 +646,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocksPartialRow)
               
               
               if (aLength == int32_t(100) && written == int32_t(100)) {
-                return MakeTuple(int32_t(0), Some(WriteState::NEED_MORE_DATA));
+                return std::make_tuple(int32_t(0),
+                                       Some(WriteState::NEED_MORE_DATA));
               }
 
               
@@ -659,11 +660,12 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocksPartialRow)
 
               
               if (written == int32_t(100)) {
-                return MakeTuple(int32_t(25), Maybe<WriteState>());
+                return std::make_tuple(int32_t(25), Maybe<WriteState>());
               }
 
               
-              return MakeTuple(int32_t(25), Some(WriteState::NEED_MORE_DATA));
+              return std::make_tuple(int32_t(25),
+                                     Some(WriteState::NEED_MORE_DATA));
             });
 
         EXPECT_EQ(WriteState::NEED_MORE_DATA, result);
@@ -686,7 +688,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocksPartialRow)
           ++count;
           EXPECT_EQ(int32_t(100), aLength);
           memcpy(aBlockStart, buffer, 100 * sizeof(uint32_t));
-          return MakeTuple(int32_t(100), Maybe<WriteState>());
+          return std::make_tuple(int32_t(100), Maybe<WriteState>());
         });
 
     EXPECT_EQ(WriteState::FINISHED, result);
@@ -708,7 +710,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocksPartialRow)
           for (int32_t i = 0; i < aLength; ++i) {
             aBlockStart[i] = BGRAColor::Red().AsPixel();
           }
-          return MakeTuple(aLength, Maybe<WriteState>());
+          return std::make_tuple(aLength, Maybe<WriteState>());
         });
 
     EXPECT_EQ(WriteState::FINISHED, result);

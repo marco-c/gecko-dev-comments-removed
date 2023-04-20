@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SessionHistoryEntry.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
@@ -20,7 +20,7 @@
 #include "nsXULAppAPI.h"
 #include "mozilla/PresState.h"
 #include "mozilla/StaticPrefs_fission.h"
-#include "mozilla/Tuple.h"
+
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
@@ -57,10 +57,10 @@ SessionHistoryInfo::SessionHistoryInfo(nsDocShellLoadState* aLoadState,
       mSharedState(SharedState::Create(
           aLoadState->TriggeringPrincipal(), aLoadState->PrincipalToInherit(),
           aLoadState->PartitionedPrincipalToInherit(), aLoadState->Csp(),
-          
+          /* FIXME Is this correct? */
           aLoadState->TypeHint())) {
-  
-  
+  // Pull the upload stream off of the channel instead of the load state, as
+  // ownership has already been transferred from the load state to the channel.
   if (nsCOMPtr<nsIUploadChannel2> postChannel = do_QueryInterface(aChannel)) {
     int64_t contentLength;
     MOZ_ALWAYS_SUCCEEDS(postChannel->CloneUploadStream(
@@ -139,7 +139,7 @@ void SessionHistoryInfo::Reset(nsIURI* aURI, const nsID& aDocShellID,
   mResultPrincipalURI = nullptr;
   mUnstrippedURI = nullptr;
   mReferrerInfo = nullptr;
-  
+  // Default title is the URL.
   nsAutoCString spec;
   if (NS_SUCCEEDED(mURI->GetSpec(spec))) {
     CopyUTF8toUTF16(spec, mTitle);
@@ -169,7 +169,7 @@ void SessionHistoryInfo::Reset(nsIURI* aURI, const nsID& aDocShellID,
 
 void SessionHistoryInfo::MaybeUpdateTitleFromURI() {
   if (mTitle.IsEmpty() && mURI) {
-    
+    // Default title is the URL.
     nsAutoCString spec;
     if (NS_SUCCEEDED(mURI->GetSpec(spec))) {
       AppendUTF8toUTF16(spec, mTitle);
@@ -178,10 +178,10 @@ void SessionHistoryInfo::MaybeUpdateTitleFromURI() {
 }
 
 already_AddRefed<nsIInputStream> SessionHistoryInfo::GetPostData() const {
-  
-  
-  
-  
+  // Return a clone of our post data stream. Our caller will either be
+  // transferring this stream to a different SessionHistoryInfo, or passing it
+  // off to necko/another process which will consume it, and we want to preserve
+  // our local instance.
   nsCOMPtr<nsIInputStream> postData;
   if (mPostData) {
     MOZ_ALWAYS_SUCCEEDS(
@@ -261,13 +261,13 @@ void SessionHistoryInfo::FillLoadInfo(nsDocShellLoadState& aLoadState) const {
       mSharedState.Get()->mPartitionedPrincipalToInherit);
   aLoadState.SetCsp(mSharedState.Get()->mCsp);
 
-  
+  // Do not inherit principal from document (security-critical!);
   uint32_t flags = nsDocShell::InternalLoad::INTERNAL_LOAD_FLAGS_NONE;
 
-  
-  
-  
-  
+  // Passing nullptr as aSourceDocShell gives the same behaviour as before
+  // aSourceDocShell was introduced. According to spec we should be passing
+  // the source browsing context that was used when the history entry was
+  // first created. bug 947716 has been created to address this issue.
   nsAutoString srcdoc;
   nsCOMPtr<nsIURI> baseURI;
   if (mSrcdocData) {
@@ -283,12 +283,12 @@ void SessionHistoryInfo::FillLoadInfo(nsDocShellLoadState& aLoadState) const {
 
   aLoadState.SetFirstParty(true);
 
-  
-  
-  
+  // When we create a load state from the history info we already know if
+  // https-first was able to upgrade the request from http to https. There is no
+  // point in re-retrying to upgrade.
   aLoadState.SetIsExemptFromHTTPSOnlyMode(true);
 }
-
+/* static */
 SessionHistoryInfo::SharedState SessionHistoryInfo::SharedState::Create(
     nsIPrincipal* aTriggeringPrincipal, nsIPrincipal* aPrincipalToInherit,
     nsIPrincipal* aPartitionedPrincipalToInherit,
@@ -479,7 +479,7 @@ SessionHistoryEntry::SessionHistoryEntry(const SessionHistoryEntry& aEntry)
 }
 
 SessionHistoryEntry::~SessionHistoryEntry() {
-  
+  // Null out the mParent pointers on all our kids.
   for (nsISHEntry* entry : mChildren) {
     if (entry) {
       entry->SetParent(nullptr);
@@ -600,8 +600,8 @@ SessionHistoryEntry::SetIsSubFrame(bool aIsSubFrame) {
 
 NS_IMETHODIMP
 SessionHistoryEntry::GetHasUserInteraction(bool* aFlag) {
-  
-  
+  // The back button and menulist deal with root/top-level
+  // session history entries, thus we annotate only the root entry.
   if (!mParent) {
     *aFlag = mInfo->mHasUserInteraction;
   } else {
@@ -613,8 +613,8 @@ SessionHistoryEntry::GetHasUserInteraction(bool* aFlag) {
 
 NS_IMETHODIMP
 SessionHistoryEntry::SetHasUserInteraction(bool aFlag) {
-  
-  
+  // The back button and menulist deal with root/top-level
+  // session history entries, thus we annotate only the root entry.
   if (!mParent) {
     mInfo->mHasUserInteraction = aFlag;
   } else {
@@ -954,8 +954,8 @@ SessionHistoryEntry::SetScrollRestorationIsManual(
 
 NS_IMETHODIMP
 SessionHistoryEntry::GetLoadedInThisProcess(bool* aLoadedInThisProcess) {
-  
-  
+  // FIXME
+  //*aLoadedInThisProcess = mInfo->mLoadedInThisProcess;
   return NS_OK;
 }
 
@@ -969,7 +969,7 @@ SessionHistoryEntry::GetShistory(nsISHistory** aShistory) {
 NS_IMETHODIMP
 SessionHistoryEntry::SetShistory(nsISHistory* aShistory) {
   nsWeakPtr shistory = do_GetWeakReference(aShistory);
-  
+  // mSHistory can not be changed once it's set
   MOZ_ASSERT(!SharedInfo()->mSHistory || (SharedInfo()->mSHistory == shistory));
   SharedInfo()->mSHistory = shistory;
   return NS_OK;
@@ -1082,7 +1082,7 @@ NS_IMETHODIMP
 SessionHistoryEntry::Clone(nsISHEntry** aEntry) {
   RefPtr<SessionHistoryEntry> entry = new SessionHistoryEntry(*this);
 
-  
+  // These are not copied for some reason, we're not sure why.
   entry->mInfo->mLoadType = 0;
   entry->mInfo->mScrollPositionX = 0;
   entry->mInfo->mScrollPositionY = 0;
@@ -1199,20 +1199,20 @@ void SessionHistoryEntry::AddChild(SessionHistoryEntry* aChild, int32_t aOffset,
     return;
   }
 
-  
-  
-  
-  
-  
-  
+  //
+  // Bug 52670: Ensure children are added in order.
+  //
+  //  Later frames in the child list may load faster and get appended
+  //  before earlier frames, causing session history to be scrambled.
+  //  By growing the list here, they are added to the right position.
 
   int32_t length = mChildren.Length();
 
-  
+  //  Assert that aOffset will not be so high as to grow us a lot.
   NS_ASSERTION(aOffset < length + 1023, "Large frames array!\n");
 
-  
-  
+  // If the new child is dynamically added, try to add it to aOffset, but if
+  // there are non-dynamically added children, the child must be after those.
   if (aChild && aChild->IsDynamicallyAdded()) {
     int32_t lastNonDyn = aOffset - 1;
     for (int32_t i = aOffset; i < length; ++i) {
@@ -1226,7 +1226,7 @@ void SessionHistoryEntry::AddChild(SessionHistoryEntry* aChild, int32_t aOffset,
       }
     }
 
-    
+    // If aOffset is larger than Length(), we must first truncate the array.
     if (aOffset > length) {
       mChildren.SetLength(aOffset);
     }
@@ -1236,9 +1236,9 @@ void SessionHistoryEntry::AddChild(SessionHistoryEntry* aChild, int32_t aOffset,
     return;
   }
 
-  
-  
-  
+  // If the new child isn't dynamically added, it should be set to aOffset.
+  // If there are dynamically added children before that, those must be moved
+  // to be after aOffset.
   if (length > 0) {
     int32_t start = std::min(length - 1, aOffset);
     int32_t dynEntryIndex = -1;
@@ -1261,18 +1261,18 @@ void SessionHistoryEntry::AddChild(SessionHistoryEntry* aChild, int32_t aOffset,
     }
   }
 
-  
+  // Make sure there isn't anything at aOffset.
   if ((uint32_t)aOffset < mChildren.Length()) {
     SessionHistoryEntry* oldChild = mChildren[aOffset];
     if (oldChild && oldChild != aChild) {
-      
-      
-      
-      
-      
-      
-      
-      
+      // Under Fission, this can happen when a network-created iframe starts
+      // out in-process, moves out-of-process, and then switches back. At that
+      // point, we'll create a new network-created DocShell at the same index
+      // where we already have an entry for the original network-created
+      // DocShell.
+      //
+      // This should ideally stop being an issue once the Fission-aware
+      // session history rewrite is complete.
       NS_ASSERTION(
           aUseRemoteSubframes || NS_IsAboutBlank(oldChild->Info().GetURI()),
           "Adding a child where we already have a child? This may misbehave");
@@ -1303,8 +1303,8 @@ void SessionHistoryEntry::RemoveChild(SessionHistoryEntry* aChild) {
   } else {
     int32_t index = mChildren.IndexOf(aChild);
     if (index >= 0) {
-      
-      
+      // Other alive non-dynamic child docshells still keep mChildOffset,
+      // so we don't want to change the indices here.
       mChildren.ReplaceElementAt(index, nullptr);
       childRemoved = true;
     }
@@ -1313,7 +1313,7 @@ void SessionHistoryEntry::RemoveChild(SessionHistoryEntry* aChild) {
   if (childRemoved) {
     aChild->SetParent(nullptr);
 
-    
+    // reduce the child count, i.e. remove empty children at the end
     for (int32_t i = mChildren.Length() - 1; i >= 0 && !mChildren[i]; --i) {
       mChildren.RemoveElementAt(i);
     }
@@ -1338,28 +1338,28 @@ SessionHistoryEntry::GetChildSHEntryIfHasNoDynamicallyAddedChild(
     return;
   }
 
-  
-  
+  // If the user did a shift-reload on this frameset page,
+  // we don't want to load the subframes from history.
   if (IsForceReloadType(mInfo->mLoadType) || mInfo->mLoadType == LOAD_REFRESH) {
     return;
   }
 
-  
-
-
-
-
-
-
+  /* Before looking for the subframe's url, check
+   * the expiration status of the parent. If the parent
+   * has expired from cache, then subframes will not be
+   * loaded from history in certain situations.
+   * If the user pressed reload and the parent frame has expired
+   *  from cache, we do not want to load the child frame from history.
+   */
   if (SharedInfo()->mExpired && (mInfo->mLoadType == LOAD_RELOAD_NORMAL)) {
-    
+    // The parent has expired. Return null.
     *aChild = nullptr;
     return;
   }
-  
+  // Get the child subframe from session history.
   GetChildAt(aChildOffset, aChild);
   if (*aChild) {
-    
+    // Set the parent's Load Type on the child
     (*aChild)->SetLoadType(mInfo->mLoadType);
   }
 }
@@ -1392,7 +1392,7 @@ bool SessionHistoryEntry::ReplaceChild(SessionHistoryEntry* aNewChild) {
 NS_IMETHODIMP_(void)
 SessionHistoryEntry::ClearEntry() {
   int32_t childCount = GetChildCount();
-  
+  // Remove all children of this entry
   for (int32_t i = childCount; i > 0; --i) {
     nsCOMPtr<nsISHEntry> child;
     GetChildAt(i - 1, getter_AddRefs(child));
@@ -1443,21 +1443,21 @@ NS_IMETHODIMP_(void)
 SessionHistoryEntry::SyncTreesForSubframeNavigation(
     nsISHEntry* aEntry, mozilla::dom::BrowsingContext* aTopBC,
     mozilla::dom::BrowsingContext* aIgnoreBC) {
-  
-  
-  
-  
-  
-  
-  
-  
+  // XXX Keep this in sync with nsSHEntry::SyncTreesForSubframeNavigation.
+  //
+  // We need to sync up the browsing context and session history trees for
+  // subframe navigation.  If the load was in a subframe, we forward up to
+  // the top browsing context, which will then recursively sync up all browsing
+  // contexts to their corresponding entries in the new session history tree. If
+  // we don't do this, then we can cache a content viewer on the wrong cloned
+  // entry, and subsequently restore it at the wrong time.
   nsCOMPtr<nsISHEntry> newRootEntry = nsSHistory::GetRootSHEntry(aEntry);
   if (newRootEntry) {
-    
-    
+    // newRootEntry is now the new root entry.
+    // Find the old root entry as well.
 
-    
-    
+    // Need a strong ref. on |oldRootEntry| so it isn't destroyed when
+    // SetChildHistoryEntry() does SwapHistoryEntries() (bug 304639).
     nsCOMPtr<nsISHEntry> oldRootEntry = nsSHistory::GetRootSHEntry(this);
 
     if (oldRootEntry) {
@@ -1478,7 +1478,7 @@ SHEntrySharedParentState* SessionHistoryEntry::SharedInfo() const {
 
 void SessionHistoryEntry::SetFrameLoader(nsFrameLoader* aFrameLoader) {
   MOZ_DIAGNOSTIC_ASSERT(!aFrameLoader || !SharedInfo()->mFrameLoader);
-  
+  // If the pref is disabled, we still allow evicting the existing entries.
   MOZ_RELEASE_ASSERT(!aFrameLoader || mozilla::BFCacheInParent());
   SharedInfo()->SetFrameLoader(aFrameLoader);
   if (aFrameLoader) {
@@ -1490,9 +1490,9 @@ void SessionHistoryEntry::SetFrameLoader(nsFrameLoader* aFrameLoader) {
       });
     }
 
-    
-    
-    
+    // When a new frameloader is stored, try to evict some older
+    // frameloaders. Non-SHIP session history has a similar call in
+    // nsDocumentViewer::Show.
     nsCOMPtr<nsISHistory> shistory;
     GetShistory(getter_AddRefs(shistory));
     if (shistory) {
@@ -1508,11 +1508,11 @@ nsFrameLoader* SessionHistoryEntry::GetFrameLoader() {
 }
 
 void SessionHistoryEntry::SetInfo(SessionHistoryInfo* aInfo) {
-  
+  // FIXME Assert that we're not changing shared state!
   mInfo = MakeUnique<SessionHistoryInfo>(*aInfo);
 }
 
-}  
+}  // namespace dom
 
 namespace ipc {
 
@@ -1521,15 +1521,15 @@ void IPDLParamTraits<dom::SessionHistoryInfo>::Write(
     const dom::SessionHistoryInfo& aParam) {
   nsCOMPtr<nsIInputStream> postData = aParam.GetPostData();
 
-  Maybe<Tuple<uint32_t, dom::ClonedMessageData>> stateData;
+  Maybe<std::tuple<uint32_t, dom::ClonedMessageData>> stateData;
   if (aParam.mStateData) {
     stateData.emplace();
-    
-    
+    // FIXME: We should fail more aggressively if this fails, as currently we'll
+    // just early return and the deserialization will break.
     NS_ENSURE_SUCCESS_VOID(
-        aParam.mStateData->GetFormatVersion(&Get<0>(*stateData)));
+        aParam.mStateData->GetFormatVersion(&std::get<0>(*stateData)));
     NS_ENSURE_TRUE_VOID(
-        aParam.mStateData->BuildClonedMessageData(Get<1>(*stateData)));
+        aParam.mStateData->BuildClonedMessageData(std::get<1>(*stateData)));
   }
 
   WriteIPDLParam(aWriter, aActor, aParam.mURI);
@@ -1572,7 +1572,7 @@ void IPDLParamTraits<dom::SessionHistoryInfo>::Write(
 bool IPDLParamTraits<dom::SessionHistoryInfo>::Read(
     IPC::MessageReader* aReader, IProtocol* aActor,
     dom::SessionHistoryInfo* aResult) {
-  Maybe<Tuple<uint32_t, dom::ClonedMessageData>> stateData;
+  Maybe<std::tuple<uint32_t, dom::ClonedMessageData>> stateData;
   uint64_t sharedId;
   if (!ReadIPDLParam(aReader, aActor, &aResult->mURI) ||
       !ReadIPDLParam(aReader, aActor, &aResult->mOriginalURI) ||
@@ -1613,11 +1613,11 @@ bool IPDLParamTraits<dom::SessionHistoryInfo>::Read(
     return false;
   }
 
-  
-  
-  
-  
-  
+  // We should always see a cloneable input stream passed to SessionHistoryInfo.
+  // This is because it will be cloneable when first read in the parent process
+  // from the nsHttpChannel (which forces streams to be cloneable), and future
+  // streams in content will be wrapped in
+  // nsMIMEInputStream(RemoteLazyInputStream) which is also cloneable.
   if (aResult->mPostData && !NS_InputStreamIsCloneable(aResult->mPostData)) {
     aActor->FatalError(
         "Unexpected non-cloneable postData for SessionHistoryInfo");
@@ -1679,9 +1679,9 @@ bool IPDLParamTraits<dom::SessionHistoryInfo>::Read(
   }
 
   if (stateData.isSome()) {
-    uint32_t version = Get<0>(*stateData);
+    uint32_t version = std::get<0>(*stateData);
     aResult->mStateData = new nsStructuredCloneContainer(version);
-    aResult->mStateData->StealFromClonedMessageData(Get<1>(*stateData));
+    aResult->mStateData->StealFromClonedMessageData(std::get<1>(*stateData));
   }
   MOZ_ASSERT_IF(stateData.isNothing(), !aResult->mStateData);
   return true;
@@ -1780,11 +1780,11 @@ bool IPDLParamTraits<mozilla::dom::Wireframe>::Read(
          ReadParam(aReader, &aResult->mRects);
 }
 
-}  
-}  
+}  // namespace ipc
+}  // namespace mozilla
 
 namespace IPC {
-
+// Allow sending mozilla::dom::WireframeRectType enums over IPC.
 template <>
 struct ParamTraits<mozilla::dom::WireframeRectType>
     : public ContiguousEnumSerializer<
@@ -1818,4 +1818,4 @@ bool ParamTraits<mozilla::dom::WireframeTaggedRect>::Read(
          ReadParam(aReader, &aResult->mWidth) &&
          ReadParam(aReader, &aResult->mHeight);
 }
-}  
+}  // namespace IPC

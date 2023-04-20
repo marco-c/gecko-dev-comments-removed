@@ -336,7 +336,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                
                nsresult rv = aResult.IsReject()
                                  ? NS_ERROR_FAILURE
-                                 : Get<0>(aResult.ResolveValue());
+                                 : std::get<0>(aResult.ResolveValue());
                LOG(("isreject: %d nsresult 0x%x", aResult.IsReject(),
                     (uint32_t)rv));
                if (NS_FAILED(rv)) {
@@ -347,7 +347,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
 
                  self->ResolveWaitingConnection(
                      static_cast<WebTransportReliabilityMode>(
-                         Get<1>(aResult.ResolveValue())),
+                         std::get<1>(aResult.ResolveValue())),
                      child);
                }
              });

@@ -13,7 +13,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Tuple.h"
+
 #include "mozilla/UniquePtr.h"
 #include "mozilla/net/DashboardTypes.h"
 #include "nsCOMPtr.h"
@@ -314,7 +314,8 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
   
-  using TPortRemapping = CopyableTArray<Tuple<uint16_t, uint16_t, uint16_t>>;
+  using TPortRemapping =
+      CopyableTArray<std::tuple<uint16_t, uint16_t, uint16_t>>;
   Maybe<TPortRemapping> mPortRemapping;
 
   

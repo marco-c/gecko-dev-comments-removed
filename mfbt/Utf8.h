@@ -18,10 +18,10 @@
 #include "mozilla/Span.h"       
 #include "mozilla/TextUtils.h"  
                                 
-#include "mozilla/Tuple.h"      
 #include "mozilla/Types.h"      
 
 #include <limits>    
+#include <limits.h>  
 #include <stddef.h>  
 #include <stdint.h>  
 
@@ -320,13 +320,13 @@ inline size_t ConvertUtf16toUtf8(mozilla::Span<const char16_t> aSource,
 
 
 
-inline mozilla::Tuple<size_t, size_t> ConvertUtf16toUtf8Partial(
+inline std::tuple<size_t, size_t> ConvertUtf16toUtf8Partial(
     mozilla::Span<const char16_t> aSource, mozilla::Span<char> aDest) {
   size_t srcLen = aSource.Length();
   size_t dstLen = aDest.Length();
   encoding_mem_convert_utf16_to_utf8_partial(aSource.Elements(), &srcLen,
                                              aDest.Elements(), &dstLen);
-  return mozilla::MakeTuple(srcLen, dstLen);
+  return std::make_tuple(srcLen, dstLen);
 }
 
 
