@@ -1408,10 +1408,8 @@ PlacesController.prototype = {
 
   showInFolder(aBookmarkGuid) {
     
-    if (
-      this._view._rootElt &&
-      this._view._rootElt.id.includes("bookmarksMenu")
-    ) {
+    let documentUrl = document.documentURI.toLowerCase();
+    if (documentUrl.endsWith("browser.xhtml")) {
       
       window.SidebarUI._show("viewBookmarksSidebar").then(() => {
         let theSidebar = document.getElementById("sidebar");
@@ -1419,10 +1417,7 @@ PlacesController.prototype = {
           .getElementById("bookmarks-view")
           .selectItems([aBookmarkGuid]);
       });
-    } else if (
-      this._view.parentElement &&
-      this._view.parentElement.id.includes("Panel")
-    ) {
+    } else if (documentUrl.includes("sidebar")) {
       
       let searchBox = document.getElementById("search-box");
       searchBox.value = "";

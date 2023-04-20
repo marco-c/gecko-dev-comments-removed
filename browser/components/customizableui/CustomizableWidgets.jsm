@@ -154,9 +154,9 @@ const CustomizableWidgets = [
         "&maxResults=42&excludeQueries=1";
 
       this._panelMenuView = new window.PlacesPanelview(
+        query,
         document.getElementById("appMenu_historyMenu"),
-        panelview,
-        query
+        panelview
       );
       
       
