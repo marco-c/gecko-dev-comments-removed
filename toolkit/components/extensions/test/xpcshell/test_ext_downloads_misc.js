@@ -6,8 +6,6 @@ const { Downloads } = ChromeUtils.importESModule(
   "resource://gre/modules/Downloads.sys.mjs"
 );
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
@@ -232,19 +230,16 @@ let downloadDir;
 let extension;
 
 async function waitForCreatedPartFile(baseFilename = "interruptible.html") {
-  const partFilePath = `${downloadDir.path}/${baseFilename}.part`;
+  const partFilePath = PathUtils.join(downloadDir.path, `${baseFilename}.part`);
 
   info(`Wait for ${partFilePath} to be created`);
   let lastError;
   await TestUtils.waitForCondition(
-    async () =>
-      OS.File.stat(partFilePath).then(
-        () => true,
-        err => {
-          lastError = err;
-          return false;
-        }
-      ),
+    () =>
+      IOUtils.exists(partFilePath).catch(err => {
+        lastError = err;
+        return false;
+      }),
     `Wait for the ${partFilePath} to exists before pausing the download`
   ).catch(err => {
     if (lastError) {
@@ -859,17 +854,8 @@ add_task(async function test_file_removeFile_permission_failure() {
   
   equal(msg.errmsg, "An unexpected error occurred", "Error message redacted");
 
-  
-  
-  
-  const expectedErrorMessagePattern =
-    AppConstants.platform === "win"
-      ? 
-        /Win error 32 during operation remove on file .*subdir.*downloaded_filename/
-      : 
-        /Unix error 13 during operation remove on file .*subdir.*downloaded_filename/;
   AddonTestUtils.checkMessages(consoleOutput.messages, {
-    expected: [{ message: expectedErrorMessagePattern }],
+    expected: [{ message: /NotAllowedError/ }],
   });
 
   ok(await IOUtils.exists(expectedPath), "File exists before removeFile()");
