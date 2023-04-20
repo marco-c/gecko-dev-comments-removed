@@ -229,9 +229,7 @@ void JsepTrack::SendTrackSetRemote(SsrcGenerator& aSsrcGenerator,
     mRids = std::move(newRids);
   }
 
-  
-  if (mRids.size() <= 1) {
-    mRids.clear();
+  if (mRids.empty()) {
     mRids.push_back("");
   }
 
