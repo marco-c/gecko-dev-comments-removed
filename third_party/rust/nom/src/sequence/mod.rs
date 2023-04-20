@@ -255,6 +255,15 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 
 
 
+impl<I, E: ParseError<I>> Tuple<I, (), E> for () {
+  fn parse(&mut self, input: I) -> IResult<I, (), E> {
+    Ok((input, ()))
+  }
+}
+
+
+
+
 
 
 

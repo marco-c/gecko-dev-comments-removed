@@ -20,6 +20,19 @@ use core::num::NonZeroUsize;
 
 
 
+#[cfg(feature = "alloc")]
+const MAX_INITIAL_CAPACITY_BYTES: usize = 65536;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -144,6 +157,9 @@ where
 
 
 
+
+
+
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn many_till<I, O, P, E, F, G>(
@@ -182,6 +198,9 @@ where
     }
   }
 }
+
+
+
 
 
 
@@ -252,6 +271,10 @@ where
     }
   }
 }
+
+
+
+
 
 
 
@@ -345,6 +368,13 @@ where
 
 
 
+
+
+
+
+
+
+
 #[cfg(feature = "alloc")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 pub fn many_m_n<I, O, E, F>(
@@ -362,7 +392,9 @@ where
       return Err(Err::Failure(E::from_error_kind(input, ErrorKind::ManyMN)));
     }
 
-    let mut res = crate::lib::std::vec::Vec::with_capacity(min);
+    let max_initial_capacity =
+      MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>().max(1);
+    let mut res = crate::lib::std::vec::Vec::with_capacity(min.min(max_initial_capacity));
     for count in 0..max {
       let len = input.input_len();
       match parse.parse(input.clone()) {
@@ -391,6 +423,13 @@ where
     Ok((input, res))
   }
 }
+
+
+
+
+
+
+
 
 
 
@@ -441,6 +480,12 @@ where
     }
   }
 }
+
+
+
+
+
+
 
 
 
@@ -529,7 +574,9 @@ where
 {
   move |i: I| {
     let mut input = i.clone();
-    let mut res = crate::lib::std::vec::Vec::with_capacity(count);
+    let max_initial_capacity =
+      MAX_INITIAL_CAPACITY_BYTES / crate::lib::std::mem::size_of::<O>().max(1);
+    let mut res = crate::lib::std::vec::Vec::with_capacity(count.min(max_initial_capacity));
 
     for _ in 0..count {
       let input_ = input.clone();
@@ -550,6 +597,8 @@ where
     Ok((input, res))
   }
 }
+
+
 
 
 
@@ -601,6 +650,13 @@ where
     Ok((input, ()))
   }
 }
+
+
+
+
+
+
+
 
 
 
@@ -700,6 +756,12 @@ where
 
 
 
+
+
+
+
+
+
 pub fn fold_many1<I, O, E, F, G, H, R>(
   mut f: F,
   mut init: H,
@@ -747,6 +809,12 @@ where
     }
   }
 }
+
+
+
+
+
+
 
 
 

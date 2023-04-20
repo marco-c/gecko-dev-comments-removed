@@ -234,6 +234,8 @@ where
 
 
 
+
+
 pub fn opt<I: Clone, O, E: ParseError<I>, F>(mut f: F) -> impl FnMut(I) -> IResult<I, Option<O>, E>
 where
   F: Parser<I, O, E>,
@@ -589,6 +591,43 @@ where
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn cut<I, O, E: ParseError<I>, F>(mut parser: F) -> impl FnMut(I) -> IResult<I, O, E>
 where
   F: Parser<I, O, E>,
@@ -637,6 +676,8 @@ where
     Err(Err::Incomplete(e)) => Err(Err::Incomplete(e)),
   }
 }
+
+
 
 
 
