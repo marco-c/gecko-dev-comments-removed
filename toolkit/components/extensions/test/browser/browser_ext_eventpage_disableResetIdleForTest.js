@@ -8,10 +8,12 @@ const { AppUiTestDelegate } = ChromeUtils.import(
   "resource://testing-common/AppUiTestDelegate.jsm"
 );
 
-async function run_test_disableResetIdleForTest(options) {
-  
-  PromiseTestUtils.expectUncaughtRejection(/Actor/);
 
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Actor 'Conduits' destroyed before query 'RunListener'/
+);
+
+async function run_test_disableResetIdleForTest(options) {
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {
       manifest_version: 3,
@@ -22,9 +24,7 @@ async function run_test_disableResetIdleForTest(options) {
         browser.test.notifyPass("action-clicked");
         
         
-
-        
-        await new Promise(resolve => window.setTimeout(resolve, 1000));
+        await new Promise(() => {});
       });
 
       browser.test.sendMessage("background-ready");
