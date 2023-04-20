@@ -2373,10 +2373,13 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
     }
   }
 
+  if (!unwrappedSplitResultAtStartOfNextNode.Handled()) {
+    return std::move(pointToPutCaret);
+  }
+
   
   
-  if (NS_WARN_IF(!unwrappedSplitResultAtStartOfNextNode.Handled()) ||
-      !unwrappedSplitResultAtStartOfNextNode.GetPreviousContent()) {
+  if (!unwrappedSplitResultAtStartOfNextNode.GetPreviousContent()) {
     
     const auto splitPoint =
         unwrappedSplitNodeResult.AtSplitPoint<EditorRawDOMPoint>();
