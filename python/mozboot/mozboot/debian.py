@@ -20,7 +20,6 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         "m4",
         "unzip",
         "uuid",
-        "zip",
     ]
 
     
