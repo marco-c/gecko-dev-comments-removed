@@ -49,18 +49,26 @@ bool EventQueue::PushEvent(AccEvent* aEvent) {
       (aEvent->mEventType == nsIAccessibleEvent::EVENT_NAME_CHANGE ||
        aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED ||
        aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED)) {
-    PushNameOrDescriptionChange(aEvent->mAccessible);
+    PushNameOrDescriptionChange(aEvent);
   }
   return true;
 }
 
-bool EventQueue::PushNameOrDescriptionChange(LocalAccessible* aTarget) {
+bool EventQueue::PushNameOrDescriptionChange(AccEvent* aOrigEvent) {
   
   
   
   
-  const bool doName = aTarget->HasNameDependent();
-  const bool doDesc = aTarget->HasDescriptionDependent();
+  LocalAccessible* target = aOrigEvent->mAccessible;
+  
+  
+  
+  const bool maybeTargetNameChanged =
+      (aOrigEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED ||
+       aOrigEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED) &&
+      nsTextEquivUtils::HasNameRule(target, eNameFromSubtreeRule);
+  const bool doName = target->HasNameDependent() || maybeTargetNameChanged;
+  const bool doDesc = target->HasDescriptionDependent();
   if (!doName && !doDesc) {
     return false;
   }
@@ -69,11 +77,11 @@ bool EventQueue::PushNameOrDescriptionChange(LocalAccessible* aTarget) {
   
   
   
-  LocalAccessible* parent = aTarget;
+  LocalAccessible* parent = target;
   do {
     
     if (doName) {
-      if (nameCheckAncestor && parent != aTarget &&
+      if (nameCheckAncestor && (maybeTargetNameChanged || parent != target) &&
           nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeRule)) {
         nsAutoString name;
         ENameValueFlag nameFlag = parent->Name(name);

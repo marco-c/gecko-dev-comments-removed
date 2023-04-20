@@ -185,7 +185,6 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
   
   
   
-  LocalAccessible* target = aEvent->GetAccessible();
   LocalAccessible* container = aEvent->GetAccessible()->LocalParent();
   RefPtr<AccReorderEvent> reorder;
   if (!container->ReorderEventTarget()) {
@@ -195,7 +194,7 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
 
     
     
-    if (PushNameOrDescriptionChange(target)) {
+    if (PushNameOrDescriptionChange(aEvent)) {
       ScheduleProcessing();
     }
   } else {
@@ -231,6 +230,7 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
     return true;
   }
 
+  LocalAccessible* target = aEvent->GetAccessible();
   int32_t offset = container->AsHyperText()->GetChildOffset(target);
   AccTreeMutationEvent* prevEvent = aEvent->PrevEvent();
   while (prevEvent &&
