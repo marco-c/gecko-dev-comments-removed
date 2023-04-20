@@ -46,23 +46,8 @@ using ImportAssertionVector =
 
 
 
-
-
-using SupportedAssertionsHook = bool (*)(JSContext* cx,
-                                         ImportAssertionVector& values);
-
-
-
-
-extern JS_PUBLIC_API SupportedAssertionsHook
-GetSupportedAssertionsHook(JSRuntime* rt);
-
-
-
-
-
-extern JS_PUBLIC_API void SetSupportedAssertionsHook(
-    JSRuntime* rt, SupportedAssertionsHook func);
+extern JS_PUBLIC_API void SetSupportedImportAssertions(
+    JSRuntime* rt, const ImportAssertionVector& assertions);
 
 
 

@@ -52,6 +52,8 @@ mozilla::LazyLogModule ModuleLoaderBase::gModuleLoaderBaseLog(
 
 
 
+
+
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ModuleLoaderBase)
 NS_INTERFACE_MAP_END
 
@@ -75,8 +77,14 @@ void ModuleLoaderBase::EnsureModuleHooksInitialized() {
   JS::SetModuleMetadataHook(rt, HostPopulateImportMeta);
   JS::SetScriptPrivateReferenceHooks(rt, HostAddRefTopLevelScript,
                                      HostReleaseTopLevelScript);
-  JS::SetSupportedAssertionsHook(rt, HostGetSupportedImportAssertions);
   JS::SetModuleDynamicImportHook(rt, HostImportModuleDynamically);
+
+  JS::ImportAssertionVector assertions;
+  
+  
+  MOZ_ALWAYS_TRUE(assertions.reserve(1));
+  assertions.infallibleAppend(JS::ImportAssertion::Type);
+  JS::SetSupportedImportAssertions(rt, assertions);
 }
 
 
@@ -314,20 +322,6 @@ bool ModuleLoaderBase::HostImportModuleDynamically(
   }
 
   loader->StartDynamicImport(request);
-  return true;
-}
-
-bool ModuleLoaderBase::HostGetSupportedImportAssertions(
-    JSContext* aCx, JS::ImportAssertionVector& aValues) {
-  MOZ_ASSERT(aValues.empty());
-
-  if (!aValues.reserve(1)) {
-    JS_ReportOutOfMemory(aCx);
-    return false;
-  }
-
-  aValues.infallibleAppend(JS::ImportAssertion::Type);
-
   return true;
 }
 

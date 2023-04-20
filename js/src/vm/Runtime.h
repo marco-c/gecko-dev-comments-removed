@@ -1052,8 +1052,8 @@ struct JSRuntime {
 
   
   
-  
-  mozilla::Atomic<JS::SupportedAssertionsHook> supportedAssertionsHook;
+  js::MainThreadOrParseData<JS::ImportAssertionVector>
+      supportedImportAssertions;
 
   
   js::MainThreadData<JS::ScriptPrivateReferenceHook> scriptPrivateAddRefHook;
