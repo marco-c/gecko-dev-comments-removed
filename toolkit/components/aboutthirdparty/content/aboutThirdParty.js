@@ -329,6 +329,9 @@ function setUpBlockButton(aCard, isBlocklistDisabled, aModule) {
     
     blockButton.hidden = false;
     blockButton.classList.add("module-blocked");
+    
+    
+    blockButton.disabled = !gBackgroundTasksDone;
   }
   if (isBlocklistDisabled) {
     blockButton.classList.add("blocklist-disabled");
