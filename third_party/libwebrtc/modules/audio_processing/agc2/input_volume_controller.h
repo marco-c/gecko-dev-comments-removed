@@ -71,6 +71,8 @@ class InputVolumeController final {
   InputVolumeController(const InputVolumeController&) = delete;
   InputVolumeController& operator=(const InputVolumeController&) = delete;
 
+  
+  
   void Initialize();
 
   

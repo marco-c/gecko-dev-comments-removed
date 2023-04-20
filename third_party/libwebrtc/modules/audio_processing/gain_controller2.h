@@ -18,6 +18,7 @@
 #include "modules/audio_processing/agc2/adaptive_digital_gain_controller.h"
 #include "modules/audio_processing/agc2/cpu_features.h"
 #include "modules/audio_processing/agc2/gain_applier.h"
+#include "modules/audio_processing/agc2/input_volume_controller.h"
 #include "modules/audio_processing/agc2/limiter.h"
 #include "modules/audio_processing/agc2/vad_wrapper.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -46,6 +47,17 @@ class GainController2 {
 
   
   
+  void SetCaptureOutputUsed(bool capture_output_used);
+
+  
+  
+  
+  
+  
+  void Analyze(int applied_input_volume, const AudioBuffer& audio_buffer);
+
+  
+  
   
   
   
@@ -58,6 +70,10 @@ class GainController2 {
 
   AvailableCpuFeatures GetCpuFeatures() const { return cpu_features_; }
 
+  
+  
+  absl::optional<int> GetRecommendedInputVolume() const;
+
  private:
   static std::atomic<int> instance_count_;
   const AvailableCpuFeatures cpu_features_;
@@ -65,6 +81,7 @@ class GainController2 {
   GainApplier fixed_gain_applier_;
   std::unique_ptr<VoiceActivityDetectorWrapper> vad_;
   std::unique_ptr<AdaptiveDigitalGainController> adaptive_digital_controller_;
+  std::unique_ptr<InputVolumeController> input_volume_controller_;
   Limiter limiter_;
   int calls_since_last_limiter_log_;
 };
