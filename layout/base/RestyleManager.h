@@ -360,12 +360,35 @@ class RestyleManager {
   void ProcessAllPendingAttributeAndStateInvalidations();
 
   void ElementStateChanged(Element*, dom::ElementState);
+
+  
+
+
+
+
+  void MaybeRestyleForNthOfState(ServoStyleSet& aStyleSet, dom::Element* aChild,
+                                 dom::ElementState aChangedBits);
+
   void AttributeWillChange(Element* aElement, int32_t aNameSpaceID,
                            nsAtom* aAttribute, int32_t aModType);
   void ClassAttributeWillBeChangedBySMIL(dom::Element* aElement);
   void AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
                         nsAtom* aAttribute, int32_t aModType,
                         const nsAttrValue* aOldValue);
+
+  
+
+
+  void RestyleSiblings(dom::Element* aChild,
+                       nsBaseContentList::FlagsType aParentFlags);
+
+  
+
+
+
+
+  void MaybeRestyleForNthOfAttribute(dom::Element* aChild, nsAtom* aAttribute,
+                                     const nsAttrValue* aOldValue);
 
   
   

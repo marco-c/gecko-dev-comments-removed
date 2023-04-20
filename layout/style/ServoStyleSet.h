@@ -465,11 +465,37 @@ class ServoStyleSet {
 
 
 
+  bool MightHaveNthOfAttributeDependency(const dom::Element&,
+                                         nsAtom* aAttribute) const;
+
+  
+
+
+
+  bool MightHaveNthOfClassDependency(const dom::Element&);
+
+  
+
+
+
+  bool MightHaveNthOfIDDependency(const dom::Element&, nsAtom* aOldID,
+                                  nsAtom* aNewID) const;
+
+  
+
+
+
 
 
 
 
   bool HasStateDependency(const dom::Element&, dom::ElementState) const;
+
+  
+
+
+
+  bool HasNthOfStateDependency(const dom::Element&, dom::ElementState) const;
 
   
 

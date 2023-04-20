@@ -51,7 +51,7 @@ use selectors::bloom::BloomFilter;
 use selectors::matching::VisitedHandlingMode;
 use selectors::matching::{matches_selector, MatchingContext, MatchingMode, NeedsSelectorFlags};
 use selectors::parser::{AncestorHashes, Combinator, Component, Selector, SelectorIter};
-use selectors::visitor::SelectorVisitor;
+use selectors::visitor::{SelectorListKind, SelectorVisitor};
 use selectors::NthIndexCache;
 use servo_arc::{Arc, ArcBorrow};
 use smallbitvec::SmallBitVec;
@@ -1886,15 +1886,41 @@ struct StylistSelectorVisitor<'a> {
     
     
     passed_rightmost_selector: bool,
+
     
     needs_revalidation: &'a mut bool,
+
+    
+    
+    in_selector_list_of: SelectorListKind,
+
     
     
     mapped_ids: &'a mut PrecomputedHashSet<Atom>,
+
+    
+    
+    nth_of_mapped_ids: &'a mut PrecomputedHashSet<Atom>,
+
     
     attribute_dependencies: &'a mut PrecomputedHashSet<LocalName>,
+
+    
+    
+    nth_of_class_dependencies: &'a mut PrecomputedHashSet<Atom>,
+
+    
+    
+    
+    nth_of_attribute_dependencies: &'a mut PrecomputedHashSet<LocalName>,
+
     
     state_dependencies: &'a mut ElementState,
+
+    
+    
+    nth_of_state_dependencies: &'a mut ElementState,
+
     
     document_state_dependencies: &'a mut DocumentState,
 }
@@ -1939,15 +1965,25 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
         true
     }
 
-    fn visit_selector_list(&mut self, list: &[Selector<Self::Impl>]) -> bool {
+    fn visit_selector_list(
+        &mut self,
+        list_kind: SelectorListKind,
+        list: &[Selector<Self::Impl>],
+    ) -> bool {
+        let in_selector_list_of = self.in_selector_list_of | list_kind;
         for selector in list {
             let mut nested = StylistSelectorVisitor {
                 passed_rightmost_selector: false,
                 needs_revalidation: &mut *self.needs_revalidation,
-                attribute_dependencies: &mut *self.attribute_dependencies,
-                state_dependencies: &mut *self.state_dependencies,
-                document_state_dependencies: &mut *self.document_state_dependencies,
+                in_selector_list_of,
                 mapped_ids: &mut *self.mapped_ids,
+                nth_of_mapped_ids: &mut *self.nth_of_mapped_ids,
+                attribute_dependencies: &mut *self.attribute_dependencies,
+                nth_of_class_dependencies: &mut *self.nth_of_class_dependencies,
+                nth_of_attribute_dependencies: &mut *self.nth_of_attribute_dependencies,
+                state_dependencies: &mut *self.state_dependencies,
+                nth_of_state_dependencies: &mut *self.nth_of_state_dependencies,
+                document_state_dependencies: &mut *self.document_state_dependencies,
             };
             let _ret = selector.visit(&mut nested);
             debug_assert!(_ret, "We never return false");
@@ -1961,8 +1997,15 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
         name: &LocalName,
         lower_name: &LocalName,
     ) -> bool {
+        if self.in_selector_list_of.in_nth_of() {
+            self.nth_of_attribute_dependencies.insert(name.clone());
+            self.nth_of_attribute_dependencies
+                .insert(lower_name.clone());
+        }
+
         self.attribute_dependencies.insert(name.clone());
         self.attribute_dependencies.insert(lower_name.clone());
+
         true
     }
 
@@ -1975,8 +2018,12 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
                 self.state_dependencies.insert(p.state_flag());
                 self.document_state_dependencies
                     .insert(p.document_state_flag());
+
+                if self.in_selector_list_of.in_nth_of() {
+                    self.nth_of_state_dependencies.insert(p.state_flag());
+                }
             },
-            Component::ID(ref id) if !self.passed_rightmost_selector => {
+            Component::ID(ref id) => {
                 
                 
                 
@@ -1988,7 +2035,16 @@ impl<'a> SelectorVisitor for StylistSelectorVisitor<'a> {
                 
                 
                 
-                self.mapped_ids.insert(id.0.clone());
+                if !self.passed_rightmost_selector {
+                    self.mapped_ids.insert(id.0.clone());
+                }
+
+                if self.in_selector_list_of.in_nth_of() {
+                    self.nth_of_mapped_ids.insert(id.0.clone());
+                }
+            },
+            Component::Class(ref class) if self.in_selector_list_of.in_nth_of() => {
+                self.nth_of_class_dependencies.insert(class.0.clone());
             },
             _ => {},
         }
@@ -2179,7 +2235,21 @@ pub struct CascadeData {
     
     
     
+    nth_of_class_dependencies: PrecomputedHashSet<Atom>,
+
+    
+    
+    
+    nth_of_attribute_dependencies: PrecomputedHashSet<LocalName>,
+
+    
+    
+    
     state_dependencies: ElementState,
+
+    
+    
+    nth_of_state_dependencies: ElementState,
 
     
     
@@ -2191,6 +2261,11 @@ pub struct CascadeData {
     
     
     mapped_ids: PrecomputedHashSet<Atom>,
+
+    
+    
+    
+    nth_of_mapped_ids: PrecomputedHashSet<Atom>,
 
     
     
@@ -2237,6 +2312,10 @@ impl CascadeData {
             slotted_rules: None,
             part_rules: None,
             invalidation_map: InvalidationMap::new(),
+            nth_of_mapped_ids: PrecomputedHashSet::default(),
+            nth_of_class_dependencies: PrecomputedHashSet::default(),
+            nth_of_attribute_dependencies: PrecomputedHashSet::default(),
+            nth_of_state_dependencies: ElementState::empty(),
             attribute_dependencies: PrecomputedHashSet::default(),
             state_dependencies: ElementState::empty(),
             document_state_dependencies: DocumentState::empty(),
@@ -2320,8 +2399,36 @@ impl CascadeData {
     
     
     #[inline]
+    pub fn has_nth_of_state_dependency(&self, state: ElementState) -> bool {
+        self.nth_of_state_dependencies.intersects(state)
+    }
+
+    
+    
+    #[inline]
     pub fn might_have_attribute_dependency(&self, local_name: &LocalName) -> bool {
         self.attribute_dependencies.contains(local_name)
+    }
+
+    
+    
+    #[inline]
+    pub fn might_have_nth_of_id_dependency(&self, id: &Atom) -> bool {
+        self.nth_of_mapped_ids.contains(id)
+    }
+
+    
+    
+    #[inline]
+    pub fn might_have_nth_of_class_dependency(&self, class: &Atom) -> bool {
+        self.nth_of_class_dependencies.contains(class)
+    }
+
+    
+    
+    #[inline]
+    pub fn might_have_nth_of_attribute_dependency(&self, local_name: &LocalName) -> bool {
+        self.nth_of_attribute_dependencies.contains(local_name)
     }
 
     
@@ -2414,6 +2521,9 @@ impl CascadeData {
         }
         self.invalidation_map.shrink_if_needed();
         self.attribute_dependencies.shrink_if_needed();
+        self.nth_of_attribute_dependencies.shrink_if_needed();
+        self.nth_of_class_dependencies.shrink_if_needed();
+        self.nth_of_mapped_ids.shrink_if_needed();
         self.mapped_ids.shrink_if_needed();
         self.layer_id.shrink_if_needed();
         self.selectors_for_cache_revalidation.shrink_if_needed();
@@ -2576,12 +2686,17 @@ impl CascadeData {
                             let mut visitor = StylistSelectorVisitor {
                                 needs_revalidation: &mut needs_revalidation,
                                 passed_rightmost_selector: false,
-                                attribute_dependencies: &mut self.attribute_dependencies,
-                                state_dependencies: &mut self.state_dependencies,
-                                document_state_dependencies: &mut self.document_state_dependencies,
+                                in_selector_list_of: SelectorListKind::default(),
                                 mapped_ids: &mut self.mapped_ids,
+                                nth_of_mapped_ids: &mut self.nth_of_mapped_ids,
+                                attribute_dependencies: &mut self.attribute_dependencies,
+                                nth_of_class_dependencies: &mut self.nth_of_class_dependencies,
+                                nth_of_attribute_dependencies: &mut self
+                                    .nth_of_attribute_dependencies,
+                                state_dependencies: &mut self.state_dependencies,
+                                nth_of_state_dependencies: &mut self.nth_of_state_dependencies,
+                                document_state_dependencies: &mut self.document_state_dependencies,
                             };
-
                             rule.selector.visit(&mut visitor);
 
                             if needs_revalidation {
@@ -3007,9 +3122,13 @@ impl CascadeData {
         self.clear_cascade_data();
         self.invalidation_map.clear();
         self.attribute_dependencies.clear();
+        self.nth_of_attribute_dependencies.clear();
+        self.nth_of_class_dependencies.clear();
         self.state_dependencies = ElementState::empty();
+        self.nth_of_state_dependencies = ElementState::empty();
         self.document_state_dependencies = DocumentState::empty();
         self.mapped_ids.clear();
+        self.nth_of_mapped_ids.clear();
         self.selectors_for_cache_revalidation.clear();
         self.effective_media_query_results.clear();
     }
@@ -3157,18 +3276,27 @@ size_of_test!(Rule, 40);
 
 
 pub fn needs_revalidation_for_testing(s: &Selector<SelectorImpl>) -> bool {
-    let mut attribute_dependencies = Default::default();
-    let mut mapped_ids = Default::default();
-    let mut state_dependencies = ElementState::empty();
-    let mut document_state_dependencies = DocumentState::empty();
     let mut needs_revalidation = false;
+    let mut mapped_ids = Default::default();
+    let mut nth_of_mapped_ids = Default::default();
+    let mut attribute_dependencies = Default::default();
+    let mut nth_of_class_dependencies = Default::default();
+    let mut nth_of_attribute_dependencies = Default::default();
+    let mut state_dependencies = ElementState::empty();
+    let mut nth_of_state_dependencies = ElementState::empty();
+    let mut document_state_dependencies = DocumentState::empty();
     let mut visitor = StylistSelectorVisitor {
         passed_rightmost_selector: false,
         needs_revalidation: &mut needs_revalidation,
-        attribute_dependencies: &mut attribute_dependencies,
-        state_dependencies: &mut state_dependencies,
-        document_state_dependencies: &mut document_state_dependencies,
+        in_selector_list_of: SelectorListKind::default(),
         mapped_ids: &mut mapped_ids,
+        nth_of_mapped_ids: &mut nth_of_mapped_ids,
+        attribute_dependencies: &mut attribute_dependencies,
+        nth_of_class_dependencies: &mut nth_of_class_dependencies,
+        nth_of_attribute_dependencies: &mut nth_of_attribute_dependencies,
+        state_dependencies: &mut state_dependencies,
+        nth_of_state_dependencies: &mut nth_of_state_dependencies,
+        document_state_dependencies: &mut document_state_dependencies,
     };
     s.visit(&mut visitor);
     needs_revalidation
