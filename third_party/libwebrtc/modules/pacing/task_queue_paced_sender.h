@@ -145,6 +145,10 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
     
     
     FieldTrialOptional<TimeDelta> max_low_precision_expected_queue_time;
+    
+    
+    
+    FieldTrialOptional<TimeDelta> send_burst_interval;
   };
   const SlackedPacerFlags slacked_pacer_flags_;
   
