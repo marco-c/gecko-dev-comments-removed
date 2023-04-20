@@ -21,6 +21,7 @@ class nsINode;
 
 namespace mozilla {
 class DeclarationBlock;
+class ErrorResult;
 enum class StyleSanitizationKind : uint8_t;
 }  
 
@@ -65,7 +66,8 @@ class nsTreeSanitizer {
 
 
   void WithWebSanitizerOptions(nsIGlobalObject* aGlobal,
-                               const mozilla::dom::SanitizerConfig& aOptions);
+                               const mozilla::dom::SanitizerConfig& aOptions,
+                               mozilla::ErrorResult& aRv);
 
   
 
