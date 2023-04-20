@@ -83,7 +83,8 @@ class ScreenEnumerator final : public SourceEnumerator {
 
 class WgcCapturerWin : public DesktopCapturer {
  public:
-  WgcCapturerWin(std::unique_ptr<WgcCaptureSourceFactory> source_factory,
+  WgcCapturerWin(const DesktopCaptureOptions& options,
+                 std::unique_ptr<WgcCaptureSourceFactory> source_factory,
                  std::unique_ptr<SourceEnumerator> source_enumerator,
                  bool allow_delayed_capturable_check);
 
@@ -113,6 +114,8 @@ class WgcCapturerWin : public DesktopCapturer {
   typedef HRESULT(WINAPI* CreateDispatcherQueueControllerFunc)(
       DispatcherQueueOptions,
       ABI::Windows::System::IDispatcherQueueController**);
+
+  DesktopCaptureOptions options_;
 
   
   
