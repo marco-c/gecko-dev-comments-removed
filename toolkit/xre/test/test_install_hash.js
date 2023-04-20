@@ -19,9 +19,17 @@ const SCRIPT = do_get_file("show_hash.js", false);
 
 async function getHash(bin) {
   try {
+    
+    
+    let args = [];
+    if (!bin.leafName.startsWith("xpcshell")) {
+      args.push("-xpcshell");
+    }
+    args.push(SCRIPT.path);
+
     let proc = await Subprocess.call({
       command: bin.path,
-      arguments: [SCRIPT.path],
+      arguments: args,
     });
 
     let result = "";
