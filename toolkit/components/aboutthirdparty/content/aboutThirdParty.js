@@ -15,6 +15,40 @@ let AboutThirdParty = null;
 let CrashModuleSet = null;
 let gBackgroundTasksDone = false;
 
+function moduleCompareForDisplay(a, b) {
+  
+  
+  const bBlocked =
+    b.typeFlags & Ci.nsIAboutThirdParty.ModuleType_BlockedByUserAtLaunch
+      ? 1
+      : 0;
+  const aBlocked =
+    a.typeFlags & Ci.nsIAboutThirdParty.ModuleType_BlockedByUserAtLaunch
+      ? 1
+      : 0;
+
+  let diff = bBlocked - aBlocked;
+  if (diff) {
+    return diff;
+  }
+
+  
+  diff = b.isCrasher - a.isCrasher;
+  if (diff) {
+    return diff;
+  }
+
+  
+  diff = a.typeFlags - b.typeFlags;
+  if (diff) {
+    return diff;
+  }
+
+  
+  
+  return b.loadingOnMain - a.loadingOnMain;
+}
+
 async function fetchData() {
   let data = null;
   try {
@@ -115,23 +149,7 @@ async function fetchData() {
     }
   }
 
-  data.modules.sort((a, b) => {
-    
-    let diff = b.isCrasher - a.isCrasher;
-    if (diff) {
-      return diff;
-    }
-
-    
-    diff = a.typeFlags - b.typeFlags;
-    if (diff) {
-      return diff;
-    }
-
-    
-    
-    return b.loadingOnMain - a.loadingOnMain;
-  });
+  data.modules.sort(moduleCompareForDisplay);
 
   return { modules: data.modules, blocked: blockedModules };
 }
