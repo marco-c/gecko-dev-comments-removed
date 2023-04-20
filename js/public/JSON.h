@@ -24,6 +24,9 @@ using JSONWriteCallback = bool (*)(const char16_t* buf, uint32_t len,
 
 
 
+
+
+
 extern JS_PUBLIC_API bool JS_Stringify(JSContext* cx,
                                        JS::MutableHandle<JS::Value> value,
                                        JS::Handle<JSObject*> replacer,
@@ -53,6 +56,19 @@ extern JS_PUBLIC_API bool ToJSONMaybeSafely(JSContext* cx,
                                             JS::Handle<JSObject*> input,
                                             JSONWriteCallback callback,
                                             void* data);
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool ToJSON(JSContext* cx, Handle<Value> value,
+                                 Handle<JSObject*> replacer,
+                                 Handle<Value> space,
+                                 JSONWriteCallback callback, void* data);
 
 } 
 
