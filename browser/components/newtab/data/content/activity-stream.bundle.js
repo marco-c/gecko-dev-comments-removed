@@ -13677,8 +13677,15 @@ class TopSites_TopSites_TopSites extends (external_React_default()).PureComponen
       
       
       pos: promoPosition
-    };
-    topSites.splice(promoPosition, 1, link);
+    }; 
+
+    const replaceIndex = topSites.findIndex((topSite, index) => index >= promoPosition && (!topSite || topSite.show_sponsored_label || !(topSite.isPinned || topSite.searchTopSite))); 
+
+    if (replaceIndex !== -1) {
+      topSites.splice(replaceIndex, 1);
+    }
+
+    topSites.splice(promoPosition, 0, link);
     return { ...TopSites,
       rows: topSites
     };
