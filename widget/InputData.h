@@ -426,10 +426,8 @@ class PanGestureInput : public InputData {
   void SetIsNoLineOrPageDelta(bool aIsNoLineOrPageDelta) {
     mIsNoLineOrPageDelta = aIsNoLineOrPageDelta;
   }
-  bool RequiresContentResponseIfCannotScrollHorizontallyInStartDirection()
-      const {
-    return mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection;
-  }
+  bool MayTriggerSwipe() const { return mMayTriggerSwipe; }
+  bool RequiresContentResponseIfCannotScrollHorizontallyInStartDirection();
 
   static gfx::IntPoint GetIntegerDeltaForEvent(bool aIsStart, float x, float y);
 
@@ -483,12 +481,8 @@ class PanGestureInput : public InputData {
   
   
   
-  bool mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection : 1;
-  void SetRequiresContentResponseIfCannotScrollHorizontallyInStartDirection(
-      bool aRequires) {
-    mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection =
-        aRequires;
-  }
+  bool mMayTriggerSwipe : 1;
+  void SetMayTriggerSwipe(bool aValue) { mMayTriggerSwipe = aValue; }
 };
 
 
