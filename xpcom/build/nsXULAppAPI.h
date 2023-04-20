@@ -237,29 +237,6 @@ nsresult XRE_GetBinaryPath(nsIFile** aResult);
 
 
 
-
-
-nsresult XRE_InitEmbedding2(nsIFile* aLibXULDirectory, nsIFile* aAppDirectory,
-                            nsIDirectoryServiceProvider* aAppDirProvider);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 enum NSLocationType {
   NS_APP_LOCATION,
   NS_EXTENSION_LOCATION,
@@ -287,11 +264,6 @@ nsresult XRE_AddManifestLocation(NSLocationType aType, nsIFile* aLocation);
 
 
 nsresult XRE_AddJarManifestLocation(NSLocationType aType, nsIFile* aLocation);
-
-
-
-
-void XRE_TermEmbedding();
 
 
 

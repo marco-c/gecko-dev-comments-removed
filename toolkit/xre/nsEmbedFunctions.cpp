@@ -141,7 +141,6 @@ using mozilla::ipc::BrowserProcessSubThread;
 using mozilla::ipc::GeckoChildProcessHost;
 using mozilla::ipc::IOThreadChild;
 using mozilla::ipc::ProcessChild;
-using mozilla::ipc::ScopedXREEmbed;
 
 using mozilla::dom::ContentParent;
 using mozilla::dom::ContentProcess;
@@ -158,56 +157,6 @@ UniquePtr<mozilla::ipc::ProcessChild> (*gMakeIPDLUnitTestProcessChild)(
 }  
 
 static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
-
-static int32_t sInitCounter;
-
-nsresult XRE_InitEmbedding2(nsIFile* aLibXULDirectory, nsIFile* aAppDirectory,
-                            nsIDirectoryServiceProvider* aAppDirProvider) {
-  
-  static char* kNullCommandLine[] = {nullptr};
-  gArgv = kNullCommandLine;
-  gArgc = 0;
-
-  NS_ENSURE_ARG(aLibXULDirectory);
-
-  if (++sInitCounter > 1)  
-    return NS_OK;
-
-  if (!aAppDirectory) aAppDirectory = aLibXULDirectory;
-
-  nsresult rv;
-
-  new nsXREDirProvider;  
-  if (!gDirServiceProvider) return NS_ERROR_OUT_OF_MEMORY;
-
-  rv = gDirServiceProvider->Initialize(aAppDirectory, aLibXULDirectory,
-                                       aAppDirProvider);
-  if (NS_FAILED(rv)) return rv;
-
-  rv = NS_InitXPCOM(nullptr, aAppDirectory, gDirServiceProvider);
-  if (NS_FAILED(rv)) return rv;
-
-  
-  
-  
-  
-  
-
-  nsAppStartupNotifier::NotifyObservers(APPSTARTUP_CATEGORY);
-
-  return NS_OK;
-}
-
-void XRE_TermEmbedding() {
-  if (--sInitCounter != 0) return;
-
-  NS_ASSERTION(gDirServiceProvider,
-               "XRE_TermEmbedding without XRE_InitEmbedding");
-
-  gDirServiceProvider->DoShutdown();
-  NS_ShutdownXPCOM(nullptr);
-  delete gDirServiceProvider;
-}
 
 const char* XRE_GeckoProcessTypeToString(GeckoProcessType aProcessType) {
   switch (aProcessType) {
