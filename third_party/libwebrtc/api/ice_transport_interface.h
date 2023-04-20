@@ -90,6 +90,17 @@ struct IceTransportInit final {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   void set_active_ice_controller_factory(
       cricket::ActiveIceControllerFactoryInterface*
           active_ice_controller_factory) {
