@@ -149,6 +149,8 @@ class GeckoInstance(object):
         "toolkit.startup.max_resumed_crashes": -1,
         
         "toolkit.telemetry.server": "https://%(server)s/telemetry-dummy/",
+        
+        "widget.windows.window_occlusion_tracking.enabled": False,
     }
 
     def __init__(
