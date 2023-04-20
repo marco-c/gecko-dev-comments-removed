@@ -314,10 +314,11 @@ else:
 
 
 def IsInDir(file, dir):
-    
-    
-    
-    return os.path.abspath(file).lower().startswith(os.path.abspath(dir).lower())
+    try:
+        Path(file).relative_to(dir)
+        return True
+    except ValueError:
+        return False
 
 
 def GetVCSFilenameFromSrcdir(file, srcdir):
