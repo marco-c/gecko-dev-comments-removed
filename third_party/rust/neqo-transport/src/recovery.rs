@@ -342,9 +342,7 @@ impl LossRecoverySpace {
     
     fn remove_ignored(&mut self) -> impl Iterator<Item = SentPacket> {
         self.in_flight_outstanding = 0;
-        mem::take(&mut self.sent_packets)
-            .into_iter()
-            .map(|(_, v)| v)
+        mem::take(&mut self.sent_packets).into_values()
     }
 
     
