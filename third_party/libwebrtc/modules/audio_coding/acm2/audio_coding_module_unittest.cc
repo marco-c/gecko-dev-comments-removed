@@ -1030,7 +1030,7 @@ class AcmSenderBitExactnessNewApi : public AcmSenderBitExactnessOldApi {};
     defined(NDEBUG) && defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64)
 TEST_F(AcmSenderBitExactnessOldApi, IsacWb30ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 16000, 1, 103, 480, 480));
-  Run("a3077ac01b0137e8bbc237fb1f9816a5",
+  Run("37ecdabad1698a857cf811e6d1fa91df",
       "3c79f16f34218271f3dca4e2b1dfe1bb",
       33,
       test::AcmReceiveTestOldApi::kMonoOutput);
@@ -1038,7 +1038,7 @@ TEST_F(AcmSenderBitExactnessOldApi, IsacWb30ms) {
 
 TEST_F(AcmSenderBitExactnessOldApi, IsacWb60ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("ISAC", 16000, 1, 103, 960, 960));
-  Run("76da9b7514f986fc2bb32b1c3170e8d4",
+  Run("0e9078d23454901496a88362ba0740c3",
       "9e0a0ab743ad987b55b8e14802769c56",
       16,
       test::AcmReceiveTestOldApi::kMonoOutput);
@@ -1067,7 +1067,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Pcm16_8000khz_10ms) {
 
 TEST_F(AcmSenderBitExactnessOldApi, Pcm16_16000khz_10ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 16000, 1, 108, 160, 160));
-  Run("bc6ab94d12a464921763d7544fdbd07e",
+  Run("f95c87bdd33f631bcf80f4b19445bbd2",
       "ad786526383178b08d80d6eee06e9bad",
       100,
       test::AcmReceiveTestOldApi::kMonoOutput);
@@ -1151,7 +1151,7 @@ TEST_F(AcmSenderBitExactnessOldApi, Ilbc_30ms) {
 #if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64)
 TEST_F(AcmSenderBitExactnessOldApi, G722_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("G722", 16000, 1, 9, 320, 160));
-  Run("a87a91ec0124510a64967f5d768554ff",
+  Run("f5264affff25cf2cbd2e1e8a5217f9a3",
       "fc68a87e1380614e658087cb35d5ca10",
       50,
       test::AcmReceiveTestOldApi::kMonoOutput);
