@@ -19,13 +19,13 @@
 #include <vector>
 
 #include "api/transport/data_channel_transport_interface.h"
-#include "rtc_base/copy_on_write_buffer.h"
-#include "rtc_base/thread.h"
 
 
 
 #include "media/base/media_channel.h"
 #include "p2p/base/packet_transport_internal.h"
+#include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 
@@ -76,6 +76,9 @@ enum class SctpErrorCauseCode : uint16_t {
 class SctpTransportInternal {
  public:
   virtual ~SctpTransportInternal() {}
+
+  virtual void SetOnConnectedCallback(std::function<void()> callback) = 0;
+  virtual void SetDataChannelSink(webrtc::DataChannelSink* sink) = 0;
 
   
   
@@ -139,24 +142,6 @@ class SctpTransportInternal {
   virtual absl::optional<int> max_outbound_streams() const = 0;
   
   virtual absl::optional<int> max_inbound_streams() const = 0;
-
-  sigslot::signal0<> SignalReadyToSendData;
-  sigslot::signal0<> SignalAssociationChangeCommunicationUp;
-  
-  
-  sigslot::signal2<const ReceiveDataParams&, const rtc::CopyOnWriteBuffer&>
-      SignalDataReceived;
-  
-  
-  
-  
-  sigslot::signal1<int> SignalClosingProcedureStartedRemotely;
-  
-  
-  sigslot::signal1<int> SignalClosingProcedureComplete;
-  
-  
-  sigslot::signal1<webrtc::RTCError> SignalClosedAbruptly;
 
   
   virtual void set_debug_name_for_testing(const char* debug_name) = 0;
