@@ -40,16 +40,16 @@ struct PadType;
 
 class CounterStyle {
  protected:
-  explicit constexpr CounterStyle(int32_t aStyle) : mStyle(aStyle) {}
+  explicit constexpr CounterStyle(ListStyle aStyle) : mStyle(aStyle) {}
 
  private:
   CounterStyle(const CounterStyle& aOther) = delete;
   void operator=(const CounterStyle& other) = delete;
 
  public:
-  constexpr int32_t GetStyle() const { return mStyle; }
-  bool IsNone() const { return mStyle == NS_STYLE_LIST_STYLE_NONE; }
-  bool IsCustomStyle() const { return mStyle == NS_STYLE_LIST_STYLE_CUSTOM; }
+  constexpr ListStyle GetStyle() const { return mStyle; }
+  bool IsNone() const { return mStyle == ListStyle::None; }
+  bool IsCustomStyle() const { return mStyle == ListStyle::Custom; }
   
   
   
@@ -95,7 +95,7 @@ class CounterStyle {
   virtual AnonymousCounterStyle* AsAnonymous() { return nullptr; }
 
  protected:
-  const int32_t mStyle;
+  const ListStyle mStyle;
 };
 
 class AnonymousCounterStyle final : public CounterStyle {
@@ -318,15 +318,15 @@ class CounterStyleManager final {
     return aPtr.AsAnonymous();
   }
 
-  static CounterStyle* GetBuiltinStyle(int32_t aStyle);
+  static CounterStyle* GetBuiltinStyle(ListStyle aStyle);
   static CounterStyle* GetNoneStyle() {
-    return GetBuiltinStyle(NS_STYLE_LIST_STYLE_NONE);
+    return GetBuiltinStyle(ListStyle::None);
   }
   static CounterStyle* GetDecimalStyle() {
-    return GetBuiltinStyle(NS_STYLE_LIST_STYLE_DECIMAL);
+    return GetBuiltinStyle(ListStyle::Decimal);
   }
   static CounterStyle* GetDiscStyle() {
-    return GetBuiltinStyle(NS_STYLE_LIST_STYLE_DISC);
+    return GetBuiltinStyle(ListStyle::Disc);
   }
 
   
