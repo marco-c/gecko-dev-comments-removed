@@ -40,28 +40,20 @@ class WritableFileStreamUnderlyingSinkAlgorithms final
   void StartCallback(JSContext* aCx,
                      WritableStreamDefaultController& aController,
                      JS::MutableHandle<JS::Value> aRetVal,
-                     ErrorResult& aRv) override {
-    
-    
-    aRetVal.setUndefined();
-  }
+                     ErrorResult& aRv) override;
 
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> WriteCallback(
       JSContext* aCx, JS::Handle<JS::Value> aChunk,
       WritableStreamDefaultController& aController, ErrorResult& aRv) override;
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> AbortCallback(
-      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
-      ErrorResult& aRv) override {
-    
-    
-    
-    return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
-                                                aRv);
-  }
-
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CloseCallback(
       JSContext* aCx, ErrorResult& aRv) override;
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> AbortCallback(
+      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
+      ErrorResult& aRv) override;
+
+  void ReleaseObjects() override;
 
  private:
   ~WritableFileStreamUnderlyingSinkAlgorithms() = default;
@@ -179,6 +171,7 @@ FileSystemWritableFileStream::Create(
   SetUpWritableStreamDefaultController(
       cx, stream, controller, algorithms,
       
+      
       1,
       
       
@@ -219,6 +212,9 @@ void FileSystemWritableFileStream::ClearActor() {
 }
 
 void FileSystemWritableFileStream::Close() {
+  
+  
+
   if (mClosed) {
     return;
   }
@@ -235,37 +231,46 @@ void FileSystemWritableFileStream::Close() {
   }
 }
 
-
-
-JSObject* FileSystemWritableFileStream::WrapObject(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
-  return FileSystemWritableFileStream_Binding::Wrap(aCx, this, aGivenProto);
-}
-
-
-
 already_AddRefed<Promise> FileSystemWritableFileStream::Write(
-    const ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams& aData,
-    ErrorResult& aError) {
+    JSContext* aCx, JS::Handle<JS::Value> aChunk, ErrorResult& aError) {
+  MOZ_ASSERT(!mClosed);
+
+  
+  
+  
+  
+
+  
+  
+  
+
+  aError.MightThrowJSException();
+
+  ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams data;
+  if (!data.Init(aCx, aChunk)) {
+    aError.StealExceptionFromJSContext(aCx);
+    return nullptr;
+  }
+
+  
   RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
   if (aError.Failed()) {
     return nullptr;
   }
 
-  if (mClosed) {
-    promise->MaybeRejectWithTypeError("WritableFileStream closed");
-    return promise.forget();
-  }
-
-  if (aData.IsWriteParams()) {
-    const WriteParams& params = aData.GetAsWriteParams();
+  
+  if (data.IsWriteParams()) {
+    const WriteParams& params = data.GetAsWriteParams();
     switch (params.mType) {
+      
       case WriteCommandType::Write: {
         if (!params.mData.WasPassed()) {
-          aError.ThrowSyntaxError("write() requires data");
-          return nullptr;
+          promise->MaybeRejectWithSyntaxError("write() requires data");
+          return promise.forget();
         }
 
+        
+        
         if (params.mData.Value().IsNull()) {
           promise->MaybeRejectWithTypeError("write() of null data");
           return promise.forget();
@@ -286,12 +291,15 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
         return promise.forget();
       }
 
+      
       case WriteCommandType::Seek:
         if (!params.mPosition.WasPassed()) {
-          aError.ThrowSyntaxError("seek() requires a position");
-          return nullptr;
+          promise->MaybeRejectWithSyntaxError("seek() requires a position");
+          return promise.forget();
         }
 
+        
+        
         if (params.mPosition.Value().IsNull()) {
           promise->MaybeRejectWithTypeError("seek() with null position");
           return promise.forget();
@@ -300,12 +308,15 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
         Seek(params.mPosition.Value().Value(), promise);
         return promise.forget();
 
+      
       case WriteCommandType::Truncate:
         if (!params.mSize.WasPassed()) {
-          aError.ThrowSyntaxError("truncate() requires a size");
-          return nullptr;
+          promise->MaybeRejectWithSyntaxError("truncate() requires a size");
+          return promise.forget();
         }
 
+        
+        
         if (params.mSize.Value().IsNull()) {
           promise->MaybeRejectWithTypeError("truncate() with null size");
           return promise.forget();
@@ -319,39 +330,139 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
     }
   }
 
-  Write(aData, Nothing(), promise);
+  
+  
+  Write(data, Nothing(), promise);
+  return promise.forget();
+}
+
+
+
+JSObject* FileSystemWritableFileStream::WrapObject(
+    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+  return FileSystemWritableFileStream_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+
+
+already_AddRefed<Promise> FileSystemWritableFileStream::Write(
+    const ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams& aData,
+    ErrorResult& aError) {
+  
+  
+  RefPtr<WritableStreamDefaultWriter> writer = GetWriter(aError);
+  if (aError.Failed()) {
+    return nullptr;
+  }
+
+  
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(GetParentObject())) {
+    aError.ThrowUnknownError("Internal error");
+    return nullptr;
+  }
+
+  JSContext* cx = jsapi.cx();
+
+  JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
+
+  JS::Rooted<JS::Value> val(cx);
+  if (!aData.ToJSVal(cx, global, &val)) {
+    aError.ThrowUnknownError("Internal error");
+    return nullptr;
+  }
+
+  RefPtr<Promise> promise = writer->Write(cx, val, aError);
+
+  
+  {
+    IgnoredErrorResult error;
+    writer->ReleaseLock(cx, error);
+  }
+
+  
   return promise.forget();
 }
 
 already_AddRefed<Promise> FileSystemWritableFileStream::Seek(
     uint64_t aPosition, ErrorResult& aError) {
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
+  
+  
+  RefPtr<WritableStreamDefaultWriter> writer = GetWriter(aError);
   if (aError.Failed()) {
     return nullptr;
   }
 
-  if (mClosed) {
-    promise->MaybeRejectWithTypeError("WritableFileStream closed");
-    return promise.forget();
+  
+  
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(GetParentObject())) {
+    aError.ThrowUnknownError("Internal error");
+    return nullptr;
   }
 
-  Seek(aPosition, promise);
+  JSContext* cx = jsapi.cx();
+
+  WriteParams writeParams;
+  writeParams.mType = WriteCommandType::Seek;
+  writeParams.mPosition.Construct(aPosition);
+
+  JS::Rooted<JS::Value> val(cx);
+  if (!ToJSValue(cx, writeParams, &val)) {
+    aError.ThrowUnknownError("Internal error");
+    return nullptr;
+  }
+
+  RefPtr<Promise> promise = writer->Write(cx, val, aError);
+
+  
+  {
+    IgnoredErrorResult error;
+    writer->ReleaseLock(cx, error);
+  }
+
+  
   return promise.forget();
 }
 
 already_AddRefed<Promise> FileSystemWritableFileStream::Truncate(
     uint64_t aSize, ErrorResult& aError) {
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aError);
+  
+  
+  RefPtr<WritableStreamDefaultWriter> writer = GetWriter(aError);
   if (aError.Failed()) {
     return nullptr;
   }
 
-  if (mClosed) {
-    promise->MaybeRejectWithTypeError("WritableFileStream closed");
-    return promise.forget();
+  
+  
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(GetParentObject())) {
+    aError.ThrowUnknownError("Internal error");
+    return nullptr;
   }
 
-  Truncate(aSize, promise);
+  JSContext* cx = jsapi.cx();
+
+  WriteParams writeParams;
+  writeParams.mType = WriteCommandType::Truncate;
+  writeParams.mSize.Construct(aSize);
+
+  JS::Rooted<JS::Value> val(cx);
+  if (!ToJSValue(cx, writeParams, &val)) {
+    aError.ThrowUnknownError("Internal error");
+    return nullptr;
+  }
+
+  RefPtr<Promise> promise = writer->Write(cx, val, aError);
+
+  
+  {
+    IgnoredErrorResult error;
+    writer->ReleaseLock(cx, error);
+  }
+
+  
   return promise.forget();
 }
 
@@ -359,6 +470,8 @@ template <typename T>
 void FileSystemWritableFileStream::Write(const T& aData,
                                          const Maybe<uint64_t> aPosition,
                                          RefPtr<Promise> aPromise) {
+  MOZ_ASSERT(!mClosed);
+
   auto rejectAndReturn = [&aPromise](const nsresult rv) {
     if (rv == NS_ERROR_FILE_NOT_FOUND) {
       aPromise->MaybeRejectWithNotFoundError("File not found");
@@ -438,10 +551,6 @@ void FileSystemWritableFileStream::Seek(uint64_t aPosition,
                                         RefPtr<Promise> aPromise) {
   MOZ_ASSERT(!mClosed);
 
-  
-  
-  
-  
   LOG_VERBOSE(("%p: Seeking to %" PRIu64, mFileDesc, aPosition));
 
   QM_TRY(SeekPosition(aPosition), [&aPromise](const nsresult rv) {
@@ -455,12 +564,6 @@ void FileSystemWritableFileStream::Seek(uint64_t aPosition,
 void FileSystemWritableFileStream::Truncate(uint64_t aSize,
                                             RefPtr<Promise> aPromise) {
   MOZ_ASSERT(!mClosed);
-
-  
-  
-  
-  
-  
 
   
   LOG_VERBOSE(("%p: Truncate to %" PRIu64, mFileDesc, aSize));
@@ -490,6 +593,8 @@ void FileSystemWritableFileStream::Truncate(uint64_t aSize,
 
 Result<uint64_t, nsresult> FileSystemWritableFileStream::WriteBuffer(
     Buffer<char>&& aBuffer, const Maybe<uint64_t> aPosition) {
+  MOZ_ASSERT(!mClosed);
+
   Buffer<char> buffer = std::move(aBuffer);
 
   const auto checkedLength = CheckedInt<PRInt32>(buffer.Length());
@@ -505,6 +610,7 @@ Result<uint64_t, nsresult> FileSystemWritableFileStream::WriteBuffer(
 Result<uint64_t, nsresult> FileSystemWritableFileStream::WriteStream(
     nsCOMPtr<nsIInputStream> aStream, const Maybe<uint64_t> aPosition) {
   MOZ_ASSERT(aStream);
+  MOZ_ASSERT(!mClosed);
 
   void* rawBuffer = nullptr;
   uint64_t length;
@@ -519,6 +625,8 @@ Result<uint64_t, nsresult> FileSystemWritableFileStream::WriteStream(
 
 Result<Ok, nsresult> FileSystemWritableFileStream::SeekPosition(
     uint64_t aPosition) {
+  MOZ_ASSERT(!mClosed);
+
   const auto checkedPosition = CheckedInt<int64_t>(aPosition);
   QM_TRY(MOZ_TO_RESULT(checkedPosition.isValid()));
 
@@ -542,26 +650,27 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(
 NS_IMPL_CYCLE_COLLECTION_INHERITED(WritableFileStreamUnderlyingSinkAlgorithms,
                                    UnderlyingSinkAlgorithmsBase, mStream)
 
+void WritableFileStreamUnderlyingSinkAlgorithms::StartCallback(
+    JSContext* aCx, WritableStreamDefaultController& aController,
+    JS::MutableHandle<JS::Value> aRetVal, ErrorResult& aRv) {
+  
+  
+  aRetVal.setUndefined();
+}
+
 already_AddRefed<Promise>
 WritableFileStreamUnderlyingSinkAlgorithms::WriteCallback(
     JSContext* aCx, JS::Handle<JS::Value> aChunk,
     WritableStreamDefaultController& aController, ErrorResult& aRv) {
-  
-  
-  ArrayBufferViewOrArrayBufferOrBlobOrUSVStringOrWriteParams chunkUnion;
-  if (!chunkUnion.Init(aCx, aChunk)) {
-    aRv.MightThrowJSException();
-    aRv.StealExceptionFromJSContext(aCx);
-    return nullptr;
-  }
-  
-  
-  return mStream->Write(chunkUnion, aRv);
+  return mStream->Write(aCx, aChunk, aRv);
 }
 
 already_AddRefed<Promise>
 WritableFileStreamUnderlyingSinkAlgorithms::CloseCallback(JSContext* aCx,
                                                           ErrorResult& aRv) {
+  
+  
+
   RefPtr<Promise> promise = Promise::Create(mStream->GetParentObject(), aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -572,10 +681,36 @@ WritableFileStreamUnderlyingSinkAlgorithms::CloseCallback(JSContext* aCx,
     return promise.forget();
   }
 
+  
+  
   mStream->Close();
 
+  
   promise->MaybeResolveWithUndefined();
   return promise.forget();
+}
+
+already_AddRefed<Promise>
+WritableFileStreamUnderlyingSinkAlgorithms::AbortCallback(
+    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
+    ErrorResult& aRv) {
+  
+  
+
+  
+  
+  mStream->Close();
+
+  
+  return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(), aRv);
+}
+
+void WritableFileStreamUnderlyingSinkAlgorithms::ReleaseObjects() {
+  
+  
+  
+  
+  mStream->Close();
 }
 
 }  
