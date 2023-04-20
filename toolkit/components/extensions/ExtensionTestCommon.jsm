@@ -701,7 +701,7 @@ ExtensionTestCommon = class ExtensionTestCommon {
         
         TEST_NO_DELAYED_STARTUP: !data.delayedStartup,
       },
-      data.startupReason
+      data.startupReason ?? "ADDON_INSTALL"
     );
   }
 };
