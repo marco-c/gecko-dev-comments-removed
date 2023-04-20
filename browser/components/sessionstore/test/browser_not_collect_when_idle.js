@@ -42,14 +42,6 @@ var idleService = {
 };
 
 add_task(async function testIntervalChanges() {
-  
-  
-  
-  
-  Cc["@mozilla.org/widget/useridleservice;1"]
-    .getService(Ci.nsIUserIdleServiceInternal)
-    .resetIdleTimeOut(0);
-
   const PREF_SS_INTERVAL = 2000;
 
   
@@ -59,7 +51,7 @@ add_task(async function testIntervalChanges() {
   
   
   
-  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 86400);
+  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 86400000);
 
   
   let fakeIdleService = MockRegistrar.register(
@@ -75,7 +67,7 @@ add_task(async function testIntervalChanges() {
 
   
   
-  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 5000);
+  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 5000000);
 
   
   
