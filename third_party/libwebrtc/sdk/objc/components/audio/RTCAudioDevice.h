@@ -171,7 +171,7 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
-    @property(readonly) double inputSampleRate;
+    @property(readonly) double deviceInputSampleRate;
 
 
 
@@ -194,7 +194,7 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
-@property(readonly) double outputSampleRate;
+@property(readonly) double deviceOutputSampleRate;
 
 
 
@@ -230,7 +230,7 @@ RTC_OBJC_EXPORT @protocol RTC_OBJC_TYPE
 
 
 
-- (BOOL)terminate;
+- (BOOL)terminateDevice;
 
 
 
