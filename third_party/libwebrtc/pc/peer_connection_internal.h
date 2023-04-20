@@ -54,10 +54,6 @@ class PeerConnectionSdpMethods {
       const = 0;
 
   
-  virtual void ReportSdpFormatReceived(
-      const SessionDescriptionInterface& remote_description) = 0;
-
-  
   virtual void ReportSdpBundleUsage(
       const SessionDescriptionInterface& remote_description) = 0;
 

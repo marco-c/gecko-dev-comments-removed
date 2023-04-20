@@ -372,10 +372,6 @@ class PeerConnection : public PeerConnectionInternal,
                           const cricket::Candidate& candidate) override;
 
   
-  void ReportSdpFormatReceived(
-      const SessionDescriptionInterface& remote_description) override;
-
-  
   void ReportSdpBundleUsage(
       const SessionDescriptionInterface& remote_description) override;
 

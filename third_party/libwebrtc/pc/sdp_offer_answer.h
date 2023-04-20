@@ -493,10 +493,6 @@ class SdpOfferAnswerHandler : public SdpStateProvider {
 
   
   
-  void ReportNegotiatedSdpSemantics(const SessionDescriptionInterface& answer);
-
-  
-  
   
   void UpdateEndedRemoteMediaStreams();
 
