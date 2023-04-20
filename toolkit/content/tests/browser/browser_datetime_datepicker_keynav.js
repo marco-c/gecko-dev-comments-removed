@@ -291,6 +291,23 @@ add_task(async function test_datepicker_keyboard_nav() {
   await testCalendarBtnAttribute("aria-expanded", "false");
 
   
+  await EventUtils.synthesizeKey("KEY_Backspace", {});
+
+  
+  
+  await SpecialPowers.spawn(browser, [], () => {
+    const input = content.document.querySelector("input");
+    const shadowRoot = SpecialPowers.wrap(input).openOrClosedShadowRoot;
+    const calendarBtn = shadowRoot.getElementById("calendar-button");
+    Assert.equal(
+      calendarBtn.children[0].tagName,
+      "svg",
+      `Calendar button has an <svg> child`
+    );
+    Assert.equal(input.value, "2016-11-17", `Input's value is not removed`);
+  });
+
+  
   await EventUtils.synthesizeKey(" ", {});
 
   await helper.waitForPickerReady();
