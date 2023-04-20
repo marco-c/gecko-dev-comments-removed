@@ -26,17 +26,6 @@ enum class SessionType {
 
 
 
-struct ExpirationInfo {
-  ExpirationInfo(const nsString& aSessionId, double aExpiredTime)
-      : mSessionId(aSessionId),
-        mExpiredTimeMilliSecondsSinceEpoch(aExpiredTime) {}
-  const nsString mSessionId;
-  const double mExpiredTimeMilliSecondsSinceEpoch;
-};
-
-
-
-
 
 class MFCDMSession final {
  public:
@@ -61,7 +50,7 @@ class MFCDMSession final {
   MediaEventSource<MFCDMKeyStatusChange>& KeyChangeEvent() {
     return mKeyChangeEvent;
   }
-  MediaEventSource<ExpirationInfo>& ExpirationEvent() {
+  MediaEventSource<MFCDMKeyExpiration>& ExpirationEvent() {
     return mExpirationEvent;
   }
 
@@ -92,7 +81,7 @@ class MFCDMSession final {
 
   MediaEventProducer<MFCDMKeyMessage> mKeyMessageEvent;
   MediaEventProducer<MFCDMKeyStatusChange> mKeyChangeEvent;
-  MediaEventProducer<ExpirationInfo> mExpirationEvent;
+  MediaEventProducer<MFCDMKeyExpiration> mExpirationEvent;
   MediaEventListener mKeyMessageListener;
   MediaEventListener mKeyChangeListener;
 
