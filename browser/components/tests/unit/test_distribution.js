@@ -5,19 +5,6 @@
 
 
 
-const { PromiseTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/PromiseTestUtils.sys.mjs"
-);
-
-
-
-
-
-PromiseTestUtils.allowMatchingRejectionsGlobally(/A request was aborted/);
-PromiseTestUtils.allowMatchingRejectionsGlobally(
-  /The operation failed for reasons unrelated/
-);
-
 const TOPICDATA_DISTRIBUTION_CUSTOMIZATION = "force-distribution-customization";
 const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
 
