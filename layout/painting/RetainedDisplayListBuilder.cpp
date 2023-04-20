@@ -1186,6 +1186,23 @@ static void FindContainingBlocks(nsIFrame* aFrame,
                                 aExtraFrames);
     AddFramesForContainingBlock(f, f->GetChildList(f->GetAbsoluteListID()),
                                 aExtraFrames);
+
+    
+    
+    
+    if (f->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) && !f->GetPrevInFlow()) {
+      nsIFrame* parent = f->GetParent();
+      if (parent && !parent->ForceDescendIntoIfVisible()) {
+        
+        
+        
+        
+        
+        
+        
+        FindContainingBlocks(parent, aExtraFrames);
+      }
+    }
   }
 }
 

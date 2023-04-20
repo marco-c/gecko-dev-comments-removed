@@ -818,19 +818,43 @@ void nsDisplayListBuilder::AddFrameMarkedForDisplayIfVisible(nsIFrame* aFrame) {
   mFramesMarkedForDisplayIfVisible.AppendElement(aFrame);
 }
 
-void nsDisplayListBuilder::MarkFrameForDisplayIfVisible(
-    nsIFrame* aFrame, const nsIFrame* aStopAtFrame) {
-  AddFrameMarkedForDisplayIfVisible(aFrame);
+static void MarkFrameForDisplayIfVisibleInternal(nsIFrame* aFrame,
+                                                 const nsIFrame* aStopAtFrame) {
   for (nsIFrame* f = aFrame; f; f = nsLayoutUtils::GetDisplayListParent(f)) {
     if (f->ForceDescendIntoIfVisible()) {
       return;
     }
     f->SetForceDescendIntoIfVisible(true);
+
+    
+    
+    
+    if (f->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) && !f->GetPrevInFlow()) {
+      nsIFrame* parent = f->GetParent();
+      if (parent && !parent->ForceDescendIntoIfVisible()) {
+        
+        
+        
+        
+        
+        
+        
+        MarkFrameForDisplayIfVisibleInternal(parent, aStopAtFrame);
+      }
+    }
+
     if (f == aStopAtFrame) {
       
       break;
     }
   }
+}
+
+void nsDisplayListBuilder::MarkFrameForDisplayIfVisible(
+    nsIFrame* aFrame, const nsIFrame* aStopAtFrame) {
+  AddFrameMarkedForDisplayIfVisible(aFrame);
+
+  MarkFrameForDisplayIfVisibleInternal(aFrame, aStopAtFrame);
 }
 
 void nsDisplayListBuilder::SetGlassDisplayItem(nsDisplayItem* aItem) {
@@ -973,6 +997,23 @@ static void UnmarkFrameForDisplayIfVisible(nsIFrame* aFrame) {
       return;
     }
     f->SetForceDescendIntoIfVisible(false);
+
+    
+    
+    
+    if (f->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) && !f->GetPrevInFlow()) {
+      nsIFrame* parent = f->GetParent();
+      if (parent && parent->ForceDescendIntoIfVisible()) {
+        
+        
+        
+        
+        
+        
+        
+        UnmarkFrameForDisplayIfVisible(f);
+      }
+    }
   }
 }
 

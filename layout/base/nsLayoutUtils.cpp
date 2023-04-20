@@ -4115,6 +4115,9 @@ nsIFrame* nsLayoutUtils::GetNonGeneratedAncestor(nsIFrame* aFrame) {
 }
 
 nsIFrame* nsLayoutUtils::GetParentOrPlaceholderFor(const nsIFrame* aFrame) {
+  
+  
+  
   if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
       !aFrame->GetPrevInFlow()) {
     return aFrame->GetProperty(nsIFrame::PlaceholderFrameProperty());
