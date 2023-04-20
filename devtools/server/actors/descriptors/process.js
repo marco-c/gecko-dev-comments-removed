@@ -96,7 +96,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
     return bts && bts.isBackgroundTaskMode;
   },
 
-  _parentProcessConnect({ isBrowserToolboxFission }) {
+  _parentProcessConnect() {
     let targetActor;
     if (this.isWindowlessParent) {
       
@@ -118,9 +118,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
         
         
         isTopLevelTarget: true,
-        sessionContext: createBrowserSessionContext({
-          isBrowserToolboxFission,
-        }),
+        sessionContext: createBrowserSessionContext(),
       });
       
       
@@ -168,7 +166,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
   
 
 
-  async getTarget({ isBrowserToolboxFission }) {
+  async getTarget() {
     if (!DevToolsServer.allowChromeProcess) {
       return {
         error: "forbidden",
@@ -176,7 +174,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
       };
     }
     if (this.isParent) {
-      return this._parentProcessConnect({ isBrowserToolboxFission });
+      return this._parentProcessConnect();
     }
     
     return this._childProcessConnect();
@@ -187,12 +185,9 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
 
 
 
-  getWatcher({ isBrowserToolboxFission }) {
+  getWatcher() {
     if (!this.watcher) {
-      this.watcher = new WatcherActor(
-        this.conn,
-        createBrowserSessionContext({ isBrowserToolboxFission })
-      );
+      this.watcher = new WatcherActor(this.conn, createBrowserSessionContext());
       this.manage(this.watcher);
     }
     return this.watcher;
