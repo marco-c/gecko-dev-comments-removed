@@ -14,6 +14,8 @@
 #include "mozilla/dom/FetchTypes.h"
 #include "mozilla/dom/PerformanceTimingTypes.h"
 #include "mozilla/dom/SafeRefPtr.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "mozilla/net/NeckoChannelParams.h"
 
 class nsILoadGroup;
 class nsIPrincipal;
@@ -24,6 +26,8 @@ namespace mozilla::dom {
 
 class InternalRequest;
 class InternalResponse;
+class ClientInfo;
+class ServiceWorkerDescriptor;
 
 using FetchServiceResponse = SafeRefPtr<InternalResponse>;
 using FetchServiceResponseAvailablePromise =
@@ -72,6 +76,29 @@ class FetchService final : public nsIObserver {
   NS_DECL_ISUPPORTS;
   NS_DECL_NSIOBSERVER;
 
+  struct NavigationPreloadArgs {
+    SafeRefPtr<InternalRequest> mRequest;
+    nsCOMPtr<nsIChannel> mChannel;
+  };
+
+  struct WorkerFetchArgs {
+    SafeRefPtr<InternalRequest> mRequest;
+    mozilla::ipc::PrincipalInfo mPrincipalInfo;
+    nsCString mWorkerScript;
+    Maybe<ClientInfo> mClientInfo;
+    Maybe<ServiceWorkerDescriptor> mController;
+    Maybe<net::CookieJarSettingsArgs> mCookieJarSettings;
+    bool mNeedOnDataAvailable;
+    nsCOMPtr<nsICSPEventListener> mCSPEventListener;
+    nsCOMPtr<nsISerialEventTarget> mEventTarget;
+    nsID mActorID;
+  };
+
+  struct UnknownArgs {};
+
+  using FetchArgs =
+      Variant<NavigationPreloadArgs, WorkerFetchArgs, UnknownArgs>;
+
   static already_AddRefed<FetchService> GetInstance();
 
   static RefPtr<FetchServicePromises> NetworkErrorResponse(nsresult aRv);
@@ -80,10 +107,9 @@ class FetchService final : public nsIObserver {
 
   
   
-  RefPtr<FetchServicePromises> Fetch(SafeRefPtr<InternalRequest> aRequest,
-                                     nsIChannel* aChannel = nullptr);
+  RefPtr<FetchServicePromises> Fetch(FetchArgs&& aArgs);
 
-  void CancelFetch(RefPtr<FetchServicePromises>&& aPromises);
+  void CancelFetch(const RefPtr<FetchServicePromises>&& aPromises);
 
  private:
   
@@ -100,16 +126,9 @@ class FetchService final : public nsIObserver {
 
   class FetchInstance final : public FetchDriverObserver {
    public:
-    explicit FetchInstance(SafeRefPtr<InternalRequest> aRequest);
+    FetchInstance() = default;
 
-    
-    
-    
-    
-    
-    
-    
-    nsresult Initialize(nsIChannel* aChannel = nullptr);
+    nsresult Initialize(FetchArgs&& aArgs);
 
     RefPtr<FetchServicePromises> Fetch();
 
@@ -125,17 +144,18 @@ class FetchService final : public nsIObserver {
     void FlushConsoleReport() override;
 
    private:
-    ~FetchInstance();
+    ~FetchInstance() = default;
 
     SafeRefPtr<InternalRequest> mRequest;
     nsCOMPtr<nsIPrincipal> mPrincipal;
     nsCOMPtr<nsILoadGroup> mLoadGroup;
     nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
     RefPtr<PerformanceStorage> mPerformanceStorage;
+    FetchArgs mArgs{AsVariant(FetchService::UnknownArgs())};
     RefPtr<FetchDriver> mFetchDriver;
     SafeRefPtr<InternalResponse> mResponse;
-
     RefPtr<FetchServicePromises> mPromises;
+    bool mIsWorkerFetch{false};
   };
 
   ~FetchService();
