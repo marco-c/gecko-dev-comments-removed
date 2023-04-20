@@ -24,8 +24,8 @@
 #include "js/friend/StackLimits.h"    
 #include "js/friend/WindowProxy.h"    
 #include "js/HashTable.h"
-#include "js/Object.h"                
-#include "js/PropertyAndElement.h"    
+#include "js/Object.h"              
+#include "js/PropertyAndElement.h"  
 #include "js/Proxy.h"
 #include "js/Stack.h"   
 #include "js/String.h"  
@@ -454,7 +454,8 @@ JS_PUBLIC_API JSObject* js::GetStaticPrototype(JSObject* obj) {
 
 JS_PUBLIC_API bool js::GetRealmOriginalEval(JSContext* cx,
                                             MutableHandleObject eval) {
-  return GlobalObject::getOrCreateEval(cx, cx->global(), eval);
+  eval.set(&cx->global()->getEvalFunction());
+  return true;
 }
 
 void JS::detail::SetReservedSlotWithBarrier(JSObject* obj, size_t slot,

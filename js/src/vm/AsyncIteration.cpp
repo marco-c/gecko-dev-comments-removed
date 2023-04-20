@@ -1097,11 +1097,7 @@ static const JSFunctionSpec async_generator_methods[] = {
     JS_FN("return", js::AsyncGeneratorReturn, 1, 0), JS_FS_END};
 
 static JSObject* CreateAsyncGeneratorFunction(JSContext* cx, JSProtoKey key) {
-  RootedObject proto(
-      cx, GlobalObject::getOrCreateFunctionConstructor(cx, cx->global()));
-  if (!proto) {
-    return nullptr;
-  }
+  RootedObject proto(cx, &cx->global()->getFunctionConstructor());
   Handle<PropertyName*> name = cx->names().AsyncGeneratorFunction;
 
   
