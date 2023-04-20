@@ -57,7 +57,8 @@ nsClipboardProxy::GetData(nsITransferable* aTransferable,
   ContentChild::GetSingleton()->SendGetClipboard(types, aWhichClipboard,
                                                  &dataTransfer);
   return nsContentUtils::IPCTransferableToTransferable(
-      dataTransfer, false , aTransferable);
+      dataTransfer, false , aTransferable,
+      false );
 }
 
 NS_IMETHODIMP
@@ -136,7 +137,8 @@ RefPtr<GenericPromise> nsClipboardProxy::AsyncGetData(
           
           [promise, transferable](const IPCDataTransfer& ipcDataTransfer) {
             nsresult rv = nsContentUtils::IPCTransferableToTransferable(
-                ipcDataTransfer, false , transferable);
+                ipcDataTransfer, false , transferable,
+                false );
             if (NS_FAILED(rv)) {
               promise->Reject(rv, __func__);
               return;
