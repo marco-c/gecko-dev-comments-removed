@@ -9323,9 +9323,8 @@ nsWindow::GtkWindowDecoration nsWindow::GetSystemGtkWindowDecoration() {
     
     
     
-    const char* csdOverride = getenv("GTK_CSD");
-    if (csdOverride && *csdOverride == '1') {
-      return GTK_DECORATION_CLIENT;
+    if (const char* csdOverride = getenv("GTK_CSD")) {
+      return *csdOverride == '0' ? GTK_DECORATION_NONE : GTK_DECORATION_CLIENT;
     }
 
     
