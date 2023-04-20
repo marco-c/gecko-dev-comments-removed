@@ -69,7 +69,7 @@ impl ComputedTimingFunction {
 
     
     pub fn calculate_output(&self, progress: f64, before_flag: BeforeFlag, epsilon: f64) -> f64 {
-        match self {
+        let progress = match self {
             TimingFunction::CubicBezier { x1, y1, x2, y2 } => {
                 Bezier::calculate_bezier_output(progress, epsilon, *x1, *y1, *x2, *y2)
             },
@@ -78,7 +78,7 @@ impl ComputedTimingFunction {
             },
             TimingFunction::LinearFunction(function) => function.at(progress as f32).into(),
             TimingFunction::Keyword(keyword) => match keyword {
-                TimingKeyword::Linear => return progress,
+                TimingKeyword::Linear => progress,
                 TimingKeyword::Ease => {
                     Bezier::calculate_bezier_output(progress, epsilon, 0.25, 0.1, 0.25, 1.)
                 },
@@ -92,6 +92,18 @@ impl ComputedTimingFunction {
                     Bezier::calculate_bezier_output(progress, epsilon, 0.42, 0., 0.58, 1.)
                 },
             },
-        }
+        };
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        progress.min(f64::MAX).max(f64::MIN)
     }
 }
