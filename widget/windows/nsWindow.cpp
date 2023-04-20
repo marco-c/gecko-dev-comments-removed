@@ -3659,7 +3659,7 @@ void nsWindow::OnFullscreenWillChange(bool aFullScreen) {
   }
 }
 
-void nsWindow::OnFullscreenChanged(bool aFullScreen) {
+void nsWindow::OnFullscreenChanged(nsSizeMode aOldSizeMode, bool aFullScreen) {
   
   
   UpdateNonClientMargins( !aFullScreen);
@@ -3667,7 +3667,14 @@ void nsWindow::OnFullscreenChanged(bool aFullScreen) {
   
   
   
-  nsBaseWidget::InfallibleMakeFullScreen(aFullScreen);
+  
+  
+  const bool toOrFromMinimized =
+      mFrameState->GetSizeMode() == nsSizeMode_Minimized ||
+      aOldSizeMode == nsSizeMode_Minimized;
+  if (!toOrFromMinimized) {
+    InfallibleMakeFullScreen(aFullScreen);
+  }
 
   if (mIsVisible && !aFullScreen &&
       mFrameState->GetSizeMode() == nsSizeMode_Normal) {
@@ -9375,7 +9382,8 @@ void nsWindow::FrameState::SetSizeModeInternal(nsSizeMode aMode) {
     mWindow->OnFullscreenWillChange(fullscreen);
   }
 
-  mLastSizeMode = mSizeMode;
+  const auto oldSizeMode = mSizeMode;
+  mLastSizeMode = oldSizeMode;
   mSizeMode = aMode;
 
   if (mWindow->mIsVisible) {
@@ -9389,7 +9397,7 @@ void nsWindow::FrameState::SetSizeModeInternal(nsSizeMode aMode) {
   }
 
   if (fullscreenChange) {
-    mWindow->OnFullscreenChanged(fullscreen);
+    mWindow->OnFullscreenChanged(oldSizeMode, fullscreen);
   }
 }
 
