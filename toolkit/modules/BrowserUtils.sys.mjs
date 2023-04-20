@@ -12,10 +12,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Region: "resource://gre/modules/Region.sys.mjs",
 });
 
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  ReaderMode: "resource://gre/modules/ReaderMode.jsm",
-});
-
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "INVALID_SHAREABLE_SCHEMES",
@@ -226,24 +222,18 @@ export var BrowserUtils = {
     return uri.asciiHost || uri.spec;
   },
 
-  
-  
-  getShareableURL(url) {
+  isShareableURL(url) {
     if (!url) {
-      return null;
+      return false;
     }
 
     
-    if (url.spec.startsWith("about:reader?")) {
-      url = Services.io.newURI(lazy.ReaderMode.getOriginalUrl(url.spec));
-    }
-    
     if (url.spec.length > 65535) {
-      return null;
+      return false;
     }
     
     
-    return lazy.INVALID_SHAREABLE_SCHEMES.has(url.scheme) ? null : url;
+    return !lazy.INVALID_SHAREABLE_SCHEMES.has(url.scheme);
   },
 
   
