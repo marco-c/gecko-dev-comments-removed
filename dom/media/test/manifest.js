@@ -994,6 +994,7 @@ function getAndroidVersion() {
 
 
 var gAudioTests = [
+  { name: "adts.aac", type: "audio/mp4", duration: 1.37 },
   { name: "r11025_s16_c1.wav", type: "audio/x-wav", duration: 1.0 },
   { name: "sound.ogg", type: "audio/ogg" },
   { name: "owl.mp3", type: "audio/mpeg", duration: 3.343 },
