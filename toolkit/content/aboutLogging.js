@@ -22,7 +22,7 @@ const { CustomizableUI } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function() {
   return ChromeUtils.import(
-    "resource://devtools/client/performance-new/popup/background.jsm.js"
+    "resource://devtools/client/performance-new/shared/background.jsm.js"
   );
 });
 
@@ -36,6 +36,7 @@ function fileEnvVarPresent() {
 function moduleEnvVarPresent() {
   return Services.env.get("MOZ_LOG") || Services.env.get("NSPR_LOG");
 }
+
 
 
 

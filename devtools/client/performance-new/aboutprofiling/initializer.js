@@ -43,7 +43,7 @@
 
 
 const { presets } = ChromeUtils.import(
-  "resource://devtools/client/performance-new/popup/background.jsm.js"
+  "resource://devtools/client/performance-new/shared/background.jsm.js"
 );
 
 const ReactDOM = require("resource://devtools/client/shared/vendor/react-dom.js");
