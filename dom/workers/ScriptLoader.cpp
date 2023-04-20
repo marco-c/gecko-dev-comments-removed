@@ -411,8 +411,20 @@ WorkerScriptLoader::WorkerScriptLoader(
   }
 
   nsIGlobalObject* global = GetGlobal();
-
   mController = global->GetController();
+  
+  
+  if (aWorkerPrivate->WorkerType() == WorkerType::Module) {
+    InitModuleLoader();
+  }
+}
+
+void WorkerScriptLoader::InitModuleLoader() {
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
+  RefPtr<WorkerModuleLoader> moduleLoader =
+      new WorkerModuleLoader(this, GetGlobal(), mSyncLoopTarget.get());
+  static_cast<WorkerGlobalScopeBase*>(GetGlobal())
+      ->InitModuleLoader(moduleLoader);
 }
 
 void WorkerScriptLoader::CreateScriptRequests(
