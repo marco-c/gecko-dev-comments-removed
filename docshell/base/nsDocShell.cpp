@@ -8746,6 +8746,15 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
           if (!docLoadInfo->GetLoadErrorPage()) {
             if (nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
                     currentExposableURI, aLoadState->URI(), docLoadInfo)) {
+              
+              
+              
+              
+              
+              nsCOMPtr<nsIURI> upgradedURI;
+              NS_GetSecureUpgradedURI(aLoadState->URI(),
+                                      getter_AddRefs(upgradedURI));
+              aLoadState->SetURI(upgradedURI);
               aState.mSameExceptHashes = true;
             }
           }
