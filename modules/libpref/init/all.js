@@ -353,6 +353,7 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   pref("media.navigator.permission.disabled", false);
   pref("media.navigator.streams.fake", false);
   pref("media.peerconnection.default_iceservers", "[]");
+  pref("media.peerconnection.allow_old_setParameters", true);
   pref("media.peerconnection.ice.loopback", false); 
   pref("media.peerconnection.ice.tcp", true);
   pref("media.peerconnection.ice.tcp_so_sock_count", 0); 
