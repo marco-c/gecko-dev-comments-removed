@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1089880
+-->
 <head>
   <title>Test for Bug 1089880</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -43,7 +43,7 @@ function* testFiles() {
   // PNGs and GIFs may be transparent or not.
   yield ["red.png", false];
   yield ["transparent.png", true];
-  yield ["red.gif", false];
+  yield ["animated-gif-finalframe.gif", false];
   yield ["transparent.gif", true];
 
   // GIFs with padding on the first frame are always transparent.
