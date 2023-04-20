@@ -38,6 +38,12 @@ LocalAccessible* FocusManager::FocusedLocalAccessible() const {
     return mActiveItem;
   }
 
+  if (nsAccessibilityService::IsShutdown()) {
+    
+    
+    return nullptr;
+  }
+
   nsINode* focusedNode = FocusedDOMNode();
   if (focusedNode) {
     DocAccessible* doc =
@@ -90,28 +96,6 @@ Accessible* FocusManager::FocusedAccessible() const {
   DocAccessibleParent* focusedDoc =
       DocAccessibleParent::GetFrom(focusedContext);
   return focusedDoc ? focusedDoc->GetFocusedAcc() : nullptr;
-}
-
-bool FocusManager::IsFocused(const LocalAccessible* aAccessible) const {
-  if (mActiveItem) return mActiveItem == aAccessible;
-
-  nsINode* focusedNode = FocusedDOMNode();
-  if (focusedNode) {
-    
-    
-    
-    
-    
-    
-    if (focusedNode->OwnerDoc() == aAccessible->GetNode()->OwnerDoc()) {
-      DocAccessible* doc =
-          GetAccService()->GetDocAccessible(focusedNode->OwnerDoc());
-      return aAccessible ==
-             (doc ? doc->GetAccessibleEvenIfNotInMapOrContainer(focusedNode)
-                  : nullptr);
-    }
-  }
-  return false;
 }
 
 bool FocusManager::IsFocusWithin(const Accessible* aContainer) const {
