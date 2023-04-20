@@ -17,7 +17,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/net/DashboardTypes.h"
 #include "nsCOMPtr.h"
-#include "nsASocketHandler.h"
 #include "nsIDirectTaskDispatcher.h"
 #include "nsIObserver.h"
 #include "nsIRunnable.h"
@@ -27,6 +26,7 @@
 #include "prinit.h"
 #include "prinrval.h"
 
+class nsASocketHandler;
 struct PRPollDesc;
 class nsIPrefBranch;
 
@@ -191,17 +191,12 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
 
-  class SocketContext {
-   public:
-    SocketContext(PRFileDesc* aFD,
-                  already_AddRefed<nsASocketHandler>&& aHandler,
-                  PRIntervalTime aPollStartEpoch)
-        : mFD(aFD), mHandler(aHandler), mPollStartEpoch(aPollStartEpoch) {}
-    SocketContext(PRFileDesc* aFD, nsASocketHandler* aHandler,
-                  PRIntervalTime aPollStartEpoch)
-        : mFD(aFD), mHandler(aHandler), mPollStartEpoch(aPollStartEpoch) {}
-    ~SocketContext() = default;
+  struct SocketContext {
+    PRFileDesc* mFD;
+    nsASocketHandler* mHandler;
+    PRIntervalTime mPollStartEpoch;  
 
+   public:
     
     
     bool IsTimedOut(PRIntervalTime now) const;
@@ -220,26 +215,26 @@ class nsSocketTransportService final : public nsPISocketTransportService,
     
     
     void MaybeResetEpoch();
-
-    PRFileDesc* mFD;
-    RefPtr<nsASocketHandler> mHandler;
-    PRIntervalTime mPollStartEpoch;  
   };
 
-  using SocketContextList = AutoTArray<SocketContext, SOCKET_LIMIT_MIN>;
-  int64_t SockIndex(SocketContextList& aList, SocketContext* aSock);
+  SocketContext* mActiveList; 
+  SocketContext* mIdleList;   
 
-  SocketContextList mActiveList;
-  SocketContextList mIdleList;
+  uint32_t mActiveListSize{SOCKET_LIMIT_MIN};
+  uint32_t mIdleListSize{SOCKET_LIMIT_MIN};
+  uint32_t mActiveCount{0};
+  uint32_t mIdleCount{0};
 
-  nsresult DetachSocket(SocketContextList& listHead, SocketContext*);
-  void AddToIdleList(SocketContext* sock);
-  void AddToPollList(SocketContext* sock);
-  void RemoveFromIdleList(SocketContext* sock);
-  void RemoveFromPollList(SocketContext* sock);
+  nsresult DetachSocket(SocketContext*, SocketContext*);
+  nsresult AddToIdleList(SocketContext*);
+  nsresult AddToPollList(SocketContext*);
+  void RemoveFromIdleList(SocketContext*);
+  void RemoveFromPollList(SocketContext*);
   void MoveToIdleList(SocketContext* sock);
   void MoveToPollList(SocketContext* sock);
 
+  bool GrowActiveList();
+  bool GrowIdleList();
   void InitMaxCount();
 
   
@@ -252,7 +247,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
 
-  nsTArray<PRPollDesc> mPollList;
+  PRPollDesc* mPollList; 
 
   PRIntervalTime PollTimeout(
       PRIntervalTime now);  
@@ -331,7 +326,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
                          bool aActive);
 
   void ClosePrivateConnections();
-  void DetachSocketWithGuard(bool aGuardLocals, SocketContextList& socketList,
+  void DetachSocketWithGuard(bool aGuardLocals, SocketContext* socketList,
                              int32_t index);
 
   void MarkTheLastElementOfPendingQueue();
