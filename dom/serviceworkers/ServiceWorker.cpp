@@ -236,8 +236,14 @@ void ServiceWorker::GetScriptURL(nsString& aURL) const {
 void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
                                 const Sequence<JSObject*>& aTransferable,
                                 ErrorResult& aRv) {
+  
+  
+  
+  
+  
+  
+  
   if (State() == ServiceWorkerState::Redundant) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
