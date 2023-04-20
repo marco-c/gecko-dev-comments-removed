@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/numerics/samples_stats_counter.h"
 #include "api/units/data_size.h"
 #include "api/units/timestamp.h"
 #include "api/video/video_frame.h"
@@ -66,7 +67,7 @@ struct FrameStats {
   
   
   
-  std::vector<int> qp_values;
+  SamplesStatsCounter qp_values;
 
   absl::optional<int> decoded_frame_width = absl::nullopt;
   absl::optional<int> decoded_frame_height = absl::nullopt;
