@@ -1110,7 +1110,7 @@ pref("browser.sessionstore.interval.idle", 3600000);
 
 
 
-pref("browser.sessionstore.idleDelay", 180); 
+pref("browser.sessionstore.idleDelay", 180000); 
 
 
 

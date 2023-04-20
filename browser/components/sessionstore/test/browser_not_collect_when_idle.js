@@ -51,7 +51,7 @@ add_task(async function testIntervalChanges() {
   
   
   
-  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 86400);
+  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 86400000);
 
   
   let fakeIdleService = MockRegistrar.register(
@@ -67,7 +67,7 @@ add_task(async function testIntervalChanges() {
 
   
   
-  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 5000);
+  Services.prefs.setIntPref("browser.sessionstore.idleDelay", 5000000);
 
   
   
