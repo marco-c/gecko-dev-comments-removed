@@ -24,7 +24,7 @@ namespace webrtc {
 
 
 
-class ReceiveStream {
+class ReceiveStreamInterface {
  public:
   
   
@@ -68,11 +68,11 @@ class ReceiveStream {
   virtual bool transport_cc() const = 0;
 
  protected:
-  virtual ~ReceiveStream() {}
+  virtual ~ReceiveStreamInterface() {}
 };
 
 
-class MediaReceiveStream : public ReceiveStream {
+class MediaReceiveStream : public ReceiveStreamInterface {
  public:
   
   
@@ -93,6 +93,10 @@ class MediaReceiveStream : public ReceiveStream {
 
   virtual std::vector<RtpSource> GetSources() const = 0;
 };
+
+
+
+using ReceiveStream [[deprecated]] = ReceiveStreamInterface;
 
 }  
 
