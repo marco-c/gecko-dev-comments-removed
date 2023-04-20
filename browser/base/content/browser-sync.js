@@ -1841,10 +1841,8 @@ var gSync = {
 
   openSyncedTabsPanel() {
     let placement = CustomizableUI.getPlacementOfWidget("sync-button");
-    let area = placement && placement.area;
-    let anchor =
-      document.getElementById("sync-button") ||
-      document.getElementById("PanelUI-menu-button");
+    let area = placement?.area;
+    let anchor = document.getElementById("sync-button");
     if (area == CustomizableUI.AREA_FIXED_OVERFLOW_PANEL) {
       
       
@@ -1853,6 +1851,11 @@ var gSync = {
         PanelUI.showSubView("PanelUI-remotetabs", anchor);
       }, console.error);
     } else {
+      if (
+        !anchor?.checkVisibility({ checkVisibilityCSS: true, flush: false })
+      ) {
+        anchor = document.getElementById("PanelUI-menu-button");
+      }
       
       PanelUI.showSubView("PanelUI-remotetabs", anchor);
     }
