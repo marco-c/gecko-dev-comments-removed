@@ -65,9 +65,7 @@ class BrowserConsole extends WebConsole {
       
       ShutdownObserver.init();
 
-      
-      
-      this.#telemetry.toolOpened("browserconsole", -1, this);
+      this.#telemetry.toolOpened("browserconsole", this);
 
       await super.init(false);
 
@@ -91,9 +89,7 @@ class BrowserConsole extends WebConsole {
     }
 
     this.#bcDestroyer = (async () => {
-      
-      
-      this.#telemetry.toolClosed("browserconsole", -1, this);
+      this.#telemetry.toolClosed("browserconsole", this);
 
       this.commands.targetCommand.destroy();
       await super.destroy();

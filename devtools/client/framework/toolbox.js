@@ -238,7 +238,9 @@ function Toolbox(
   this._win = contentWindow;
   this.frameId = frameId;
   this.selection = new Selection();
-  this.telemetry = new Telemetry();
+  this.telemetry = new Telemetry({ useSessionId: true });
+  
+  this.sessionId = this.telemetry.sessionId;
 
   
   
@@ -246,11 +248,6 @@ function Toolbox(
   
   this.commands = commands;
   this._descriptorFront = commands.descriptorFront;
-
-  
-  
-  
-  this.sessionId = msSinceProcessStart;
 
   
   if (Services.prefs.getBoolPref(DEVTOOLS_F12_DISABLED_PREF, false)) {
@@ -1468,7 +1465,7 @@ Toolbox.prototype = {
 
   _pingTelemetry() {
     Services.prefs.setBoolPref("devtools.everOpened", true);
-    this.telemetry.toolOpened("toolbox", this.sessionId, this);
+    this.telemetry.toolOpened("toolbox", this);
 
     this.telemetry
       .getHistogramById(HOST_HISTOGRAM)
@@ -1487,7 +1484,6 @@ Toolbox.prototype = {
       "shortcut",
       "splitconsole",
       "width",
-      "session_id",
     ]);
     this.telemetry.addEventProperty(
       browserWin,
@@ -2791,7 +2787,7 @@ Toolbox.prototype = {
       this.additionalToolDefinitions.get(id)
     ) {
       if (this.currentToolId) {
-        this.telemetry.toolClosed(this.currentToolId, this.sessionId, this);
+        this.telemetry.toolClosed(this.currentToolId, this);
       }
 
       this._pingTelemetrySelectTool(id, reason);
@@ -2825,14 +2821,7 @@ Toolbox.prototype = {
     const panelName = this.getTelemetryPanelNameOrOther(id);
     const prevPanelName = this.getTelemetryPanelNameOrOther(this.currentToolId);
     const cold = !this.getPanel(id);
-    const pending = [
-      "host",
-      "width",
-      "start_state",
-      "panel_name",
-      "cold",
-      "session_id",
-    ];
+    const pending = ["host", "width", "start_state", "panel_name", "cold"];
 
     
     
@@ -2891,7 +2880,7 @@ Toolbox.prototype = {
       );
     }
 
-    this.telemetry.toolOpened(id, this.sessionId, this);
+    this.telemetry.toolOpened(id, this);
   },
 
   
@@ -4023,7 +4012,7 @@ Toolbox.prototype = {
 
     
     
-    this.telemetry.toolClosed(this.currentToolId, this.sessionId, this);
+    this.telemetry.toolClosed(this.currentToolId, this);
 
     this._lastFocusedElement = null;
     this._pausedTargets = null;
@@ -4121,7 +4110,7 @@ Toolbox.prototype = {
     const width = Math.ceil(win.outerWidth / 50) * 50;
     const prevPanelName = this.getTelemetryPanelNameOrOther(this.currentToolId);
 
-    this.telemetry.toolClosed("toolbox", this.sessionId, this);
+    this.telemetry.toolClosed("toolbox", this);
     this.telemetry.recordEvent("exit", prevPanelName, null, {
       host,
       width,

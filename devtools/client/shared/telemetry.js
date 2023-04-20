@@ -25,8 +25,22 @@ const CATEGORY = "devtools.main";
 const PENDING_EVENT_PROPERTIES = new WeakMapMap();
 const PENDING_EVENTS = new WeakMapMap();
 
+
+
+
+
+
+
+
+
+
 class Telemetry {
-  constructor() {
+  constructor({ useSessionId = false } = {}) {
+    
+    this.sessionId = String(
+      useSessionId ? parseInt(this.msSinceProcessStart(), 10) : -1
+    );
+
     
     this.msSystemNow = this.msSystemNow.bind(this);
     this.getHistogramById = this.getHistogramById.bind(this);
@@ -611,6 +625,15 @@ class Telemetry {
         extra[name] = val;
       }
     }
+    
+    
+    
+    
+    if (!extra) {
+      extra = {};
+    }
+    extra.session_id = this.sessionId;
+
     Services.telemetry.recordEvent(CATEGORY, method, object, value, extra);
   }
 
@@ -628,14 +651,7 @@ class Telemetry {
 
 
 
-
-
-
-  toolOpened(id, sessionId, obj) {
-    if (typeof sessionId === "undefined") {
-      throw new Error(`toolOpened called without a sessionId parameter.`);
-    }
-
+  toolOpened(id, obj) {
     const charts = getChartsFromToolId(id);
 
     if (!charts) {
@@ -646,7 +662,6 @@ class Telemetry {
       this.preparePendingEvent(obj, "tool_timer", id, null, [
         "os",
         "time_open",
-        "session_id",
       ]);
       this.addEventProperty(
         obj,
@@ -682,13 +697,7 @@ class Telemetry {
 
 
 
-
-
-  toolClosed(id, sessionId, obj) {
-    if (typeof sessionId === "undefined") {
-      throw new Error(`toolClosed called without a sessionId parameter.`);
-    }
-
+  toolClosed(id, obj) {
     const charts = getChartsFromToolId(id);
 
     if (!charts) {
@@ -703,7 +712,6 @@ class Telemetry {
       this.addEventProperties(obj, "tool_timer", id, null, {
         time_open: time,
         os: this.osNameAndVersion,
-        session_id: sessionId,
       });
     }
 

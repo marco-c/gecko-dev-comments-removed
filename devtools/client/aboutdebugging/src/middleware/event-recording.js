@@ -5,10 +5,10 @@
 "use strict";
 
 const Telemetry = require("resource://devtools/client/shared/telemetry.js");
-loader.lazyGetter(this, "telemetry", () => new Telemetry());
-
-loader.lazyGetter(this, "sessionId", () =>
-  parseInt(telemetry.msSinceProcessStart(), 10)
+loader.lazyGetter(
+  this,
+  "telemetry",
+  () => new Telemetry({ useSessionId: true })
 );
 
 const {
@@ -33,19 +33,17 @@ const {
 } = require("resource://devtools/client/aboutdebugging/src/modules/runtimes-state-helper.js");
 
 function recordEvent(method, details) {
-  
-  const eventDetails = Object.assign({}, details, { session_id: sessionId });
-  telemetry.recordEvent(method, "aboutdebugging", null, eventDetails);
+  telemetry.recordEvent(method, "aboutdebugging", null, details);
 
   
   
   if (method === "open_adbg") {
-    telemetry.toolOpened("aboutdebugging", sessionId, window.AboutDebugging);
+    telemetry.toolOpened("aboutdebugging", window.AboutDebugging);
   } else if (method === "close_adbg") {
     
     
     
-    telemetry.toolClosed("aboutdebugging", sessionId, window.AboutDebugging);
+    telemetry.toolClosed("aboutdebugging", window.AboutDebugging);
   }
 }
 
