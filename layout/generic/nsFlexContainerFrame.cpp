@@ -4594,14 +4594,17 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
       ReflowChildren(aReflowInput, containerSize, availableSizeForItems,
                      borderPadding, sumOfChildrenBlockSize, axisTracker, flr);
 
-  
-  
-  
-  
-  
-  sumOfChildrenBlockSize +=
-      std::max(maxBlockEndEdgeOfChildren - borderPadding.BStart(wm),
-               availableSizeForItems.BSize(wm));
+  if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
+    
+    
+    
+    
+    
+    
+    sumOfChildrenBlockSize +=
+        std::max(maxBlockEndEdgeOfChildren - borderPadding.BStart(wm),
+                 availableSizeForItems.BSize(wm));
+  }
 
   PopulateReflowOutput(aReflowOutput, aReflowInput, aStatus, contentBoxSize,
                        borderPadding, consumedBSize, mayNeedNextInFlow,
@@ -4639,31 +4642,33 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     UpdateFlexLineAndItemInfo(*containerInfo, flr.mLines);
   }
 
-  
-  
-  if (!GetPrevInFlow()) {
-    SharedFlexData* data = GetProperty(SharedFlexData::Prop());
-    if (!aStatus.IsFullyComplete()) {
-      if (!data) {
-        data = new SharedFlexData;
-        SetProperty(SharedFlexData::Prop(), data);
-      }
-      data->mLines = std::move(flr.mLines);
-      data->mContentBoxMainSize = flr.mContentBoxMainSize;
-      data->mContentBoxCrossSize = flr.mContentBoxCrossSize;
+  if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
+    
+    
+    if (!GetPrevInFlow()) {
+      SharedFlexData* data = GetProperty(SharedFlexData::Prop());
+      if (!aStatus.IsFullyComplete()) {
+        if (!data) {
+          data = new SharedFlexData;
+          SetProperty(SharedFlexData::Prop(), data);
+        }
+        data->mLines = std::move(flr.mLines);
+        data->mContentBoxMainSize = flr.mContentBoxMainSize;
+        data->mContentBoxCrossSize = flr.mContentBoxCrossSize;
 
+        SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
+      } else if (data && !GetNextInFlow()) {
+        
+        
+        
+        
+        
+        RemoveProperty(SharedFlexData::Prop());
+        RemoveProperty(SumOfChildrenBlockSizeProperty());
+      }
+    } else {
       SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
-    } else if (data && !GetNextInFlow()) {
-      
-      
-      
-      
-      
-      RemoveProperty(SharedFlexData::Prop());
-      RemoveProperty(SumOfChildrenBlockSizeProperty());
     }
-  } else {
-    SetProperty(SumOfChildrenBlockSizeProperty(), sumOfChildrenBlockSize);
   }
 }
 
@@ -5220,7 +5225,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
         
         
         framePos.B(flexWM) = 0;
-      } else {
+      } else if (GetPrevInFlow()) {
         
         
         framePos.B(flexWM) -= aSumOfPrevInFlowsChildrenBlockSize;
