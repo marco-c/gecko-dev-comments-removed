@@ -44,7 +44,8 @@ class HeadlessCompositorWidget final : public CompositorWidget,
  private:
   HeadlessWidget* mWidget;
 
-  LayoutDeviceIntSize mClientSize;
+  
+  DataMutex<LayoutDeviceIntSize> mClientSize;
 };
 
 }  
