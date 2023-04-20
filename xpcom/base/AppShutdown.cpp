@@ -340,6 +340,23 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
   if (sCurrentShutdownPhase >= aPhase) {
     return;
   }
+
+  nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
+  if (sCurrentShutdownPhase >= ShutdownPhase::AppShutdownConfirmed) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (thread) {
+      NS_ProcessPendingEvents(thread);
+    }
+  }
+
+  
   sCurrentShutdownPhase = aPhase;
 
   
@@ -371,6 +388,10 @@ void AppShutdown::AdvanceShutdownPhaseInternal(
 #endif
         obsService->NotifyObservers(aNotificationSubject, aTopic,
                                     aNotificationData);
+        
+        if (thread) {
+          NS_ProcessPendingEvents(thread);
+        }
       }
     }
   }
