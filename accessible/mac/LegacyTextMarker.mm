@@ -365,23 +365,24 @@ void LegacyTextMarkerRange::Select() const {
 }
 
 bool LegacyTextMarkerRange::Crop(Accessible* aContainer) {
-  LegacyTextMarkerRange containerRange(aContainer);
+  LegacyTextMarker containerStart(aContainer, 0);
+  LegacyTextMarker containerEnd(aContainer, CharacterCount(aContainer));
 
-  if (mEnd < containerRange.mStart || containerRange.mEnd < mStart) {
+  if (mEnd < containerStart || containerEnd < mStart) {
     
     return false;
   }
 
-  if (mStart < containerRange.mStart) {
+  if (mStart < containerStart) {
     
     
-    mStart = containerRange.mStart;
+    mStart = containerStart;
   }
 
-  if (containerRange.mEnd < mEnd) {
+  if (containerEnd < mEnd) {
     
     
-    mEnd = containerRange.mEnd;
+    mEnd = containerEnd;
   }
 
   return true;
