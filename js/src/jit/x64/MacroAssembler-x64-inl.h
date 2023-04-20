@@ -234,6 +234,29 @@ void MacroAssembler::sub64(Imm64 imm, Register64 dest) {
   subPtr(ImmWord(imm.value), dest.reg);
 }
 
+void MacroAssembler::mulHighUnsigned32(Imm32 imm, Register src, Register dest) {
+  
+  
+
+  if (imm.value >= 0) {
+    
+    movl(src, src);
+
+    
+    imulq(imm, src, dest);
+  } else {
+    
+    movl(src, dest);
+
+    
+    movl(imm, ScratchReg);
+    imulq(ScratchReg, dest);
+  }
+
+  
+  shrq(Imm32(32), dest);
+}
+
 void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   imulq(rhs, srcDest);
 }
