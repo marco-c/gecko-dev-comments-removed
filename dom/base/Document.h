@@ -1942,6 +1942,9 @@ class Document : public nsINode,
   void SetFullscreenElement(Element&);
 
   
+  bool HasPendingFullscreenRequests();
+
+  
   void TryCancelDialog();
 
   void AddModalDialog(HTMLDialogElement&);
