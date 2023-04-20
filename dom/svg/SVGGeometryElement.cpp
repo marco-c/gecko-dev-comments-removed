@@ -140,8 +140,7 @@ bool SVGGeometryElement::IsGeometryChangedViaCSS(
     return SVGEllipseElement::IsLengthChangedViaCSS(aNewStyle, aOldStyle);
   }
   if (name == nsGkAtoms::path) {
-    return StaticPrefs::layout_css_d_property_enabled() &&
-           SVGPathElement::IsDPropertyChangedViaCSS(aNewStyle, aOldStyle);
+    return SVGPathElement::IsDPropertyChangedViaCSS(aNewStyle, aOldStyle);
   }
   return false;
 }
@@ -286,8 +285,7 @@ void SVGGeometryElement::FlushStyleIfNeeded() {
   
   
   
-  if (GetPathDataAttrName() != nsGkAtoms::d ||
-      !StaticPrefs::layout_css_d_property_enabled()) {
+  if (GetPathDataAttrName() != nsGkAtoms::d) {
     return;
   }
 
