@@ -153,7 +153,11 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
 
     
     
-    if (this._browsingContext?.browserId === browsingContext.browserId) {
+    if (
+      this._browsingContext &&
+      this._browsingContext.browserId === browsingContext.browserId &&
+      !this._browsingContext.isDiscarded
+    ) {
       
       
       
