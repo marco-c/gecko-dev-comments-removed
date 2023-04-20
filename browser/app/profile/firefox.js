@@ -513,6 +513,8 @@ pref("browser.urlbar.resultMenu", true);
 pref("browser.urlbar.resultMenu", false);
 #endif
 
+pref("browser.urlbar.resultMenu.keyboardAccessible", true);
+
 
 pref("browser.urlbar.richSuggestions.tail", true);
 
