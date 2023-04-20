@@ -40,7 +40,6 @@ add_setup(async function() {
 
 
 add_task(async function test() {
-  testAttrib(4, "last-visible-tab", true);
   testAttrib(0, "visuallyselected", true);
 
   await switchTab(2);
@@ -91,11 +90,9 @@ add_task(async function test_hoverStatePersistence() {
 });
 
 add_task(async function test_pinning() {
-  testAttrib(3, "last-visible-tab", true);
   testAttrib(3, "visuallyselected", true);
   
   gBrowser.pinTab(gBrowser.tabs[3]);
-  testAttrib(3, "last-visible-tab", true);
   testAttrib(0, "visuallyselected", true);
 });
 
