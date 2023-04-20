@@ -148,7 +148,6 @@ class JitterEstimator {
 
   
   rtc::RollingAccumulator<uint64_t> fps_counter_;
-  const double time_deviation_upper_bound_;
   const bool enable_reduced_delay_;
   Clock* clock_;
 };
