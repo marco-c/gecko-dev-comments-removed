@@ -3135,6 +3135,11 @@ static void AcceleratedCanvas2DPrefChangeCallback(const char*, void*) {
   if (kIsAndroid && !gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
     feature.Disable(FeatureStatus::Blocked, "Disabled by GPU Process disabled",
                     "FEATURE_FAILURE_DISABLED_BY_GPU_PROCESS_DISABLED"_ns);
+  } else if (!gfxConfig::IsEnabled(Feature::WEBRENDER)) {
+    
+    
+    feature.Disable(FeatureStatus::Blocked, "Disabled by Software WebRender",
+                    "FEATURE_FAILURE_DISABLED_BY_SOFTWARE_WEBRENDER"_ns);
   }
 
   
