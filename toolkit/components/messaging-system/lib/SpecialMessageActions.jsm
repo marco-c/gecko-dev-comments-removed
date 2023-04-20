@@ -109,6 +109,15 @@ const SpecialMessageActions = {
 
 
 
+  setDefaultPDFHandler(window, onlyIfKnownBrowser = false) {
+    window.getShellService().setAsDefaultPDFHandler(onlyIfKnownBrowser);
+  },
+
+  
+
+
+
+
 
 
 
@@ -304,6 +313,12 @@ const SpecialMessageActions = {
         break;
       case "SET_DEFAULT_BROWSER":
         this.setDefaultBrowser(window);
+        break;
+      case "SET_DEFAULT_PDF_HANDLER":
+        this.setDefaultPDFHandler(
+          window,
+          action.data?.onlyIfKnownBrowser ?? false
+        );
         break;
       case "PIN_CURRENT_TAB":
         let tab = window.gBrowser.selectedTab;
