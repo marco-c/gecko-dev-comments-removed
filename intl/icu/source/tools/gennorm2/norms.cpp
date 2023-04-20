@@ -42,7 +42,7 @@ void BuilderReorderingBuffer::append(UChar32 c, uint8_t cc) {
     }
     fArray[i]=(c<<8)|cc;
     ++fLength;
-    fDidReorder=TRUE;
+    fDidReorder=true;
 }
 
 void BuilderReorderingBuffer::toString(UnicodeString &dest) const {
@@ -146,11 +146,11 @@ UBool Norms::combinesWithCCBetween(const Norm &norm, uint8_t lowCC, int32_t high
         for(int32_t i=0; i<length; ++i) {
             uint8_t trailCC=getCC(pairs[i].trail);
             if(lowCC<trailCC && trailCC<highCC) {
-                return TRUE;
+                return true;
             }
         }
     }
-    return FALSE;
+    return false;
 }
 
 void Norms::enumRanges(Enumerator &e) {
@@ -197,7 +197,7 @@ void CompositionBuilder::rangeHandler(UChar32 start, UChar32 end, Norm &norm) {
         exit(U_INVALID_FORMAT_ERROR);
     }
     
-    norms.createNorm(trail)->combinesBack=TRUE;
+    norms.createNorm(trail)->combinesBack=true;
     
     IcuToolErrorCode errorCode("gennorm2/addComposition()");
     Norm *leadNorm=norms.createNorm(lead);
@@ -315,7 +315,7 @@ void Decomposer::rangeHandler(UChar32 start, UChar32 end, Norm &norm) {
         norm.mapping=decomposed;
         
         
-        didDecompose|=TRUE;
+        didDecompose|=true;
     }
 }
 

@@ -167,7 +167,7 @@ public:
 
     virtual double calcUpperBound(double ) const override { return static_cast<double>(divisor); }
 
-    virtual UBool isModulusSubstitution() const override { return TRUE; }
+    virtual UBool isModulusSubstitution() const override { return true; }
 
     virtual UChar tokenChar() const override { return (UChar)0x003e; } 
 
@@ -763,11 +763,11 @@ NFSubstitution::doParse(const UnicodeString& text,
         
         tempResult = composeRuleValue(tempResult, baseValue);
         result.setDouble(tempResult);
-        return TRUE;
+        return true;
         
     } else {
         result.setLong(0);
-        return FALSE;
+        return false;
     }
 }
 
@@ -779,7 +779,7 @@ NFSubstitution::doParse(const UnicodeString& text,
 
 UBool
 NFSubstitution::isModulusSubstitution() const {
-    return FALSE;
+    return false;
 }
 
 
@@ -950,7 +950,7 @@ ModulusSubstitution::doParse(const UnicodeString& text,
         
         
     } else {
-        ruleToUse->doParse(text, parsePosition, FALSE, upperBound, nonNumericalExecutedRuleMask, result);
+        ruleToUse->doParse(text, parsePosition, false, upperBound, nonNumericalExecutedRuleMask, result);
 
         if (parsePosition.getIndex() != 0) {
             UErrorCode status = U_ZERO_ERROR;
@@ -959,7 +959,7 @@ ModulusSubstitution::doParse(const UnicodeString& text,
             result.setDouble(tempResult);
         }
 
-        return TRUE;
+        return true;
     }
 }
 
@@ -1007,17 +1007,17 @@ FractionalPartSubstitution::FractionalPartSubstitution(int32_t _pos,
                              const UnicodeString& description,
                              UErrorCode& status)
  : NFSubstitution(_pos, _ruleSet, description, status)
- , byDigits(FALSE)
- , useSpaces(TRUE)
+ , byDigits(false)
+ , useSpaces(true)
 
 {
     
     if (0 == description.compare(gGreaterGreaterThan, 2) ||
         0 == description.compare(gGreaterGreaterGreaterThan, 3) ||
         _ruleSet == getRuleSet()) {
-        byDigits = TRUE;
+        byDigits = true;
         if (0 == description.compare(gGreaterGreaterGreaterThan, 3)) {
-            useSpaces = FALSE;
+            useSpaces = false;
         }
     } else {
         
@@ -1076,7 +1076,7 @@ FractionalPartSubstitution::doSubstitution(double number, UnicodeString& toInser
     dl.setToDouble(number);
     dl.roundToMagnitude(-20, UNUM_ROUND_HALFEVEN, status);     
     
-    UBool pad = FALSE;
+    UBool pad = false;
     for (int32_t didx = dl.getLowerDisplayMagnitude(); didx<0; didx++) {
       
       
@@ -1084,7 +1084,7 @@ FractionalPartSubstitution::doSubstitution(double number, UnicodeString& toInser
       if (pad && useSpaces) {
         toInsertInto.insert(_pos + getPos(), gSpace);
       } else {
-        pad = TRUE;
+        pad = true;
       }
       int64_t digit = dl.getDigit(didx);
       getRuleSet()->format(digit, toInsertInto, _pos + getPos(), recursionCount, status);
@@ -1191,7 +1191,7 @@ FractionalPartSubstitution::doParse(const UnicodeString& text,
         result = dl.toDouble();
         result = composeRuleValue(result, baseValue);
         resVal.setDouble(result);
-        return TRUE;
+        return true;
     }
 }
 
@@ -1301,7 +1301,7 @@ NumeratorSubstitution::doParse(const UnicodeString& text,
     }
 
     
-    NFSubstitution::doParse(workText, parsePosition, withZeros ? 1 : baseValue, upperBound, FALSE, nonNumericalExecutedRuleMask, result);
+    NFSubstitution::doParse(workText, parsePosition, withZeros ? 1 : baseValue, upperBound, false, nonNumericalExecutedRuleMask, result);
 
     if (withZeros) {
         
@@ -1310,10 +1310,8 @@ NumeratorSubstitution::doParse(const UnicodeString& text,
         
         int64_t n = result.getLong(status); 
         int64_t d = 1;
-        int32_t pow = 0;
         while (d <= n) {
             d *= 10;
-            ++pow;
         }
         
         while (zeroCount > 0) {
@@ -1324,7 +1322,7 @@ NumeratorSubstitution::doParse(const UnicodeString& text,
         result.setDouble((double)n/(double)d);
     }
 
-    return TRUE;
+    return true;
 }
 
 bool

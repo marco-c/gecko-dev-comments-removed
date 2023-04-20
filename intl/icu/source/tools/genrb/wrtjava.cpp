@@ -324,7 +324,7 @@ static void
 string_write_java(const StringResource *res,UErrorCode *status) {
     (void)res->getKeyString(srBundle);
 
-    str_write_java(res->getBuffer(), res->length(), TRUE, status);
+    str_write_java(res->getBuffer(), res->length(), true, status);
 }
 
 static void
@@ -333,7 +333,7 @@ array_write_java(const ArrayResource *res, UErrorCode *status) {
     uint32_t  i         = 0;
     const char* arr ="new String[] { \n";
     struct SResource *current = NULL;
-    UBool allStrings    = TRUE;
+    UBool allStrings    = true;
 
     if (U_FAILURE(*status)) {
         return;
@@ -345,14 +345,14 @@ array_write_java(const ArrayResource *res, UErrorCode *status) {
         i = 0;
         while(current != NULL){
             if(!current->isString()){
-                allStrings = FALSE;
+                allStrings = false;
                 break;
             }
             current= current->fNext;
         }
 
         current = res->fFirst;
-        if(allStrings==FALSE){
+        if(allStrings==false){
             const char* object = "new Object[]{\n";
             write_tabs(out);
             T_FileStream_write(out, object, (int32_t)uprv_strlen(object));
@@ -506,7 +506,7 @@ bytes_write_java(const BinaryResource *res, UErrorCode * ) {
 
 }
 
-static UBool start = TRUE;
+static UBool start = true;
 
 static void
 table_write_java(const TableResource *res, UErrorCode *status) {
@@ -519,12 +519,12 @@ table_write_java(const TableResource *res, UErrorCode *status) {
     }
 
     if (res->fCount > 0) {
-        if(start==FALSE){
+        if(start==false){
             write_tabs(out);
             T_FileStream_write(out, obj, (int32_t)uprv_strlen(obj));
             tabCount++;
         }
-        start = FALSE;
+        start = false;
         current = res->fFirst;
         i       = 0;
 
@@ -627,7 +627,7 @@ bundle_write_java(struct SRBRoot *bundle, const char *outputDir,const char* outp
     
     
 
-    start = TRUE;                        
+    start = true;                        
 
     bName = (bundleName==NULL) ? "LocaleElements" : bundleName;
     pName = (packageName==NULL)? "com.ibm.icu.impl.data" : packageName;

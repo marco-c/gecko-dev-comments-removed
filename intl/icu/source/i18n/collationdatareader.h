@@ -106,7 +106,7 @@ struct U_I18N_API CollationDataReader  {
     isAcceptable(void *context, const char *type, const char *name, const UDataInfo *pInfo);
 
 private:
-    CollationDataReader();  
+    CollationDataReader() = delete;  
 };
 
 

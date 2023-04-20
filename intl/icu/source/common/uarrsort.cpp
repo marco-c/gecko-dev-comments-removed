@@ -75,7 +75,7 @@ U_CAPI int32_t U_EXPORT2
 uprv_stableBinarySearch(char *array, int32_t limit, void *item, int32_t itemSize,
                         UComparator *cmp, const void *context) {
     int32_t start=0;
-    UBool found=FALSE;
+    UBool found=false;
 
     
     while((limit-start)>=MIN_QSORT) {
@@ -93,7 +93,7 @@ uprv_stableBinarySearch(char *array, int32_t limit, void *item, int32_t itemSize
 
 
 
-            found=TRUE;
+            found=true;
             start=i+1;
         } else if(diff<0) {
             limit=i;
@@ -106,7 +106,7 @@ uprv_stableBinarySearch(char *array, int32_t limit, void *item, int32_t itemSize
     while(start<limit) {
         int32_t diff=cmp(context, item, array+start*itemSize);
         if(diff==0) {
-            found=TRUE;
+            found=true;
         } else if(diff<0) {
             break;
         }

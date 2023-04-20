@@ -245,8 +245,8 @@ public:
     virtual UBool isModulusSubstitution() const;
     
 private:
-    NFSubstitution(const NFSubstitution &other); 
-    NFSubstitution &operator=(const NFSubstitution &other); 
+    NFSubstitution(const NFSubstitution &other) = delete; 
+    NFSubstitution &operator=(const NFSubstitution &other) = delete; 
 
 public:
     static UClassID getStaticClassID(void);

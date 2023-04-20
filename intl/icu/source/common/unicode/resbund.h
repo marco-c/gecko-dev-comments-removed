@@ -484,7 +484,7 @@ public:
     static UClassID U_EXPORT2 getStaticClassID();
 
 private:
-    ResourceBundle(); 
+    ResourceBundle() = delete; 
 
     UResourceBundle *fResource;
     void constructForLocale(const UnicodeString& path, const Locale& locale, UErrorCode& error);

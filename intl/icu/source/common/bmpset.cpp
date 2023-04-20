@@ -311,7 +311,7 @@ BMPSet::contains(UChar32 c) const {
     } else {
         
         
-        return FALSE;
+        return false;
     }
 }
 

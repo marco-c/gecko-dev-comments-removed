@@ -174,9 +174,13 @@ void CompactData::CompactDataSink::put(const char *key, ResourceValue &value, UB
 
         
         
+        
         auto magnitude = static_cast<int8_t> (strlen(key) - 1);
+        U_ASSERT(magnitude < COMPACT_MAX_DIGITS); 
+        if (magnitude >= COMPACT_MAX_DIGITS) { 
+            continue;
+        }
         int8_t multiplier = data.multipliers[magnitude];
-        U_ASSERT(magnitude < COMPACT_MAX_DIGITS);
 
         
         ResourceTable pluralVariantsTable = value.getTable(status);

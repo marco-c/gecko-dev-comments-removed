@@ -78,7 +78,7 @@ class ClockMath {
 
 
     static int32_t floorDivide(double numerator, int32_t denominator,
-                               int32_t& remainder);
+                               int32_t* remainder);
 
     
 
@@ -91,7 +91,7 @@ class ClockMath {
 
 
     static double floorDivide(double dividend, double divisor,
-                              double& remainder);
+                              double* remainder);
 };
 
 

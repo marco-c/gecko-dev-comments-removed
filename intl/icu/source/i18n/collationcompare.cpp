@@ -39,7 +39,7 @@ CollationCompare::compareUpToQuaternary(CollationIterator &left, CollationIterat
         
         variableTop = settings.variableTop + 1;
     }
-    UBool anyVariable = FALSE;
+    UBool anyVariable = false;
 
     
     for(;;) {
@@ -51,7 +51,7 @@ CollationCompare::compareUpToQuaternary(CollationIterator &left, CollationIterat
             if(leftPrimary < variableTop && leftPrimary > Collation::MERGE_SEPARATOR_PRIMARY) {
                 
                 
-                anyVariable = TRUE;
+                anyVariable = true;
                 do {
                     
                     left.setCurrentCE(ce & INT64_C(0xffffffff00000000));
@@ -76,7 +76,7 @@ CollationCompare::compareUpToQuaternary(CollationIterator &left, CollationIterat
             if(rightPrimary < variableTop && rightPrimary > Collation::MERGE_SEPARATOR_PRIMARY) {
                 
                 
-                anyVariable = TRUE;
+                anyVariable = true;
                 do {
                     
                     right.setCurrentCE(ce & INT64_C(0xffffffff00000000));

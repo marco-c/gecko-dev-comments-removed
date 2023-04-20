@@ -354,8 +354,8 @@ class U_COMMON_API UnifiedCache : public UnifiedCacheBase {
    mutable int64_t fAutoEvictedCount;
    SharedObject *fNoValue;
    
-   UnifiedCache(const UnifiedCache &other);
-   UnifiedCache &operator=(const UnifiedCache &other);
+   UnifiedCache(const UnifiedCache &other) = delete;
+   UnifiedCache &operator=(const UnifiedCache &other) = delete;
    
    
 

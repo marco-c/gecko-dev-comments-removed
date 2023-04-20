@@ -201,7 +201,7 @@ createTagStringWithAlternates(
 
         char tagBuffer[ULOC_FULLNAME_CAPACITY];
         int32_t tagLength = 0;
-        UBool regionAppended = FALSE;
+        UBool regionAppended = false;
 
         if (langLength > 0) {
             appendTag(
@@ -209,7 +209,7 @@ createTagStringWithAlternates(
                 langLength,
                 tagBuffer,
                 &tagLength,
-                FALSE);
+                false);
         }
         else if (alternateTags == NULL) {
             
@@ -246,7 +246,7 @@ createTagStringWithAlternates(
                     alternateLangLength,
                     tagBuffer,
                     &tagLength,
-                    FALSE);
+                    false);
             }
         }
 
@@ -256,7 +256,7 @@ createTagStringWithAlternates(
                 scriptLength,
                 tagBuffer,
                 &tagLength,
-                TRUE);
+                true);
         }
         else if (alternateTags != NULL) {
             
@@ -281,7 +281,7 @@ createTagStringWithAlternates(
                     alternateScriptLength,
                     tagBuffer,
                     &tagLength,
-                    TRUE);
+                    true);
             }
         }
 
@@ -291,9 +291,9 @@ createTagStringWithAlternates(
                 regionLength,
                 tagBuffer,
                 &tagLength,
-                TRUE);
+                true);
 
-            regionAppended = TRUE;
+            regionAppended = true;
         }
         else if (alternateTags != NULL) {
             
@@ -317,9 +317,9 @@ createTagStringWithAlternates(
                     alternateRegionLength,
                     tagBuffer,
                     &tagLength,
-                    TRUE);
+                    true);
 
-                regionAppended = TRUE;
+                regionAppended = true;
             }
         }
 
@@ -622,7 +622,7 @@ createLikelySubtagsString(
                         likelySubtags,
                         sink,
                         err);
-            return TRUE;
+            return true;
         }
     }
 
@@ -678,7 +678,7 @@ createLikelySubtagsString(
                         likelySubtags,
                         sink,
                         err);
-            return TRUE;
+            return true;
         }
     }
 
@@ -734,7 +734,7 @@ createLikelySubtagsString(
                         likelySubtags,
                         sink,
                         err);
-            return TRUE;
+            return true;
         }
     }
 
@@ -789,11 +789,11 @@ createLikelySubtagsString(
                         likelySubtags,
                         sink,
                         err);
-            return TRUE;
+            return true;
         }
     }
 
-    return FALSE;
+    return false;
 
 error:
 
@@ -801,7 +801,7 @@ error:
         *err = U_ILLEGAL_ARGUMENT_ERROR;
     }
 
-    return FALSE;
+    return false;
 }
 
 #define CHECK_TRAILING_VARIANT_SIZE(trailing, trailingLength) UPRV_BLOCK_MACRO_BEGIN { \
@@ -836,7 +836,7 @@ _uloc_addLikelySubtags(const char* localeID,
     const char* trailing = "";
     int32_t trailingLength = 0;
     int32_t trailingIndex = 0;
-    UBool success = FALSE;
+    UBool success = false;
 
     if(U_FAILURE(*err)) {
         goto error;
@@ -901,7 +901,7 @@ error:
     if (!U_FAILURE(*err)) {
         *err = U_ILLEGAL_ARGUMENT_ERROR;
     }
-    return FALSE;
+    return false;
 }
 
 
@@ -925,7 +925,7 @@ _uloc_minimizeSubtags(const char* localeID,
     const char* trailing = "";
     int32_t trailingLength = 0;
     int32_t trailingIndex = 0;
-    UBool successGetMax = FALSE;
+    UBool successGetMax = false;
 
     if(U_FAILURE(*err)) {
         goto error;
@@ -1248,7 +1248,7 @@ _ulocimp_addLikelySubtags(const char* localeID,
     if (U_SUCCESS(*status)) {
         return _uloc_addLikelySubtags(localeBuffer.getBuffer(), sink, status);
     } else {
-        return FALSE;
+        return false;
     }
 }
 
@@ -1320,14 +1320,14 @@ uloc_isRightToLeft(const char *locale) {
         char lang[8];
         int32_t langLength = uloc_getLanguage(locale, lang, UPRV_LENGTHOF(lang), &errorCode);
         if (U_FAILURE(errorCode) || errorCode == U_STRING_NOT_TERMINATED_WARNING) {
-            return FALSE;
+            return false;
         }
         if (langLength > 0) {
             const char* langPtr = uprv_strstr(LANG_DIR_STRING, lang);
             if (langPtr != NULL) {
                 switch (langPtr[langLength]) {
-                case '-': return FALSE;
-                case '+': return TRUE;
+                case '-': return false;
+                case '+': return true;
                 default: break;  
                 }
             }
@@ -1340,12 +1340,12 @@ uloc_isRightToLeft(const char *locale) {
             ulocimp_addLikelySubtags(locale, sink, &errorCode);
         }
         if (U_FAILURE(errorCode) || errorCode == U_STRING_NOT_TERMINATED_WARNING) {
-            return FALSE;
+            return false;
         }
         scriptLength = uloc_getScript(likely.data(), script, UPRV_LENGTHOF(script), &errorCode);
         if (U_FAILURE(errorCode) || errorCode == U_STRING_NOT_TERMINATED_WARNING ||
                 scriptLength == 0) {
-            return FALSE;
+            return false;
         }
     }
     UScriptCode scriptCode = (UScriptCode)u_getPropertyValueEnum(UCHAR_SCRIPT, script);

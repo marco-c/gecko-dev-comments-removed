@@ -49,7 +49,7 @@ U_NAMESPACE_USE
 
 namespace {
 
-icu::UInitOnce gLayoutInitOnce = U_INITONCE_INITIALIZER;
+icu::UInitOnce gLayoutInitOnce {};
 UDataMemory *gLayoutMemory = nullptr;
 
 UCPTrie *gInpcTrie = nullptr;  
@@ -76,7 +76,7 @@ UBool U_CALLCONV uprops_cleanup() {
     gMaxVoValue = 0;
 
     gLayoutInitOnce.reset();
-    return TRUE;
+    return true;
 }
 
 UBool U_CALLCONV
@@ -141,7 +141,7 @@ void U_CALLCONV ulayout_load(UErrorCode &errorCode) {
 }
 
 UBool ulayout_ensureData(UErrorCode &errorCode) {
-    if (U_FAILURE(errorCode)) { return FALSE; }
+    if (U_FAILURE(errorCode)) { return false; }
     umtx_initOnce(gLayoutInitOnce, &ulayout_load, errorCode);
     return U_SUCCESS(errorCode);
 }
@@ -188,7 +188,7 @@ static UBool isJoinControl(const BinaryProperty &, UChar32 c, UProperty ) {
 
 #if UCONFIG_NO_NORMALIZATION
 static UBool hasFullCompositionExclusion(const BinaryProperty &, UChar32, UProperty) {
-    return FALSE;
+    return false;
 }
 #else
 static UBool hasFullCompositionExclusion(const BinaryProperty &, UChar32 c, UProperty ) {
@@ -202,7 +202,7 @@ static UBool hasFullCompositionExclusion(const BinaryProperty &, UChar32 c, UPro
 
 #if UCONFIG_NO_NORMALIZATION
 static UBool isNormInert(const BinaryProperty &, UChar32, UProperty) {
-    return FALSE;
+    return false;
 }
 #else
 static UBool isNormInert(const BinaryProperty &, UChar32 c, UProperty which) {
@@ -215,7 +215,7 @@ static UBool isNormInert(const BinaryProperty &, UChar32 c, UProperty which) {
 
 #if UCONFIG_NO_NORMALIZATION
 static UBool changesWhenCasefolded(const BinaryProperty &, UChar32, UProperty) {
-    return FALSE;
+    return false;
 }
 #else
 static UBool changesWhenCasefolded(const BinaryProperty &, UChar32 c, UProperty ) {
@@ -223,7 +223,7 @@ static UBool changesWhenCasefolded(const BinaryProperty &, UChar32 c, UProperty 
     UErrorCode errorCode=U_ZERO_ERROR;
     const Normalizer2 *nfcNorm2=Normalizer2::getNFCInstance(errorCode);
     if(U_FAILURE(errorCode)) {
-        return FALSE;
+        return false;
     }
     if(nfcNorm2->getDecomposition(c, nfd)) {
         
@@ -237,7 +237,7 @@ static UBool changesWhenCasefolded(const BinaryProperty &, UChar32 c, UProperty 
             c=U_SENTINEL;
         }
     } else if(c<0) {
-        return FALSE;  
+        return false;  
     }
     if(c>=0) {
         
@@ -252,21 +252,21 @@ static UBool changesWhenCasefolded(const BinaryProperty &, UChar32 c, UProperty 
                                   U_FOLD_CASE_DEFAULT, &errorCode);
         return (UBool)(U_SUCCESS(errorCode) &&
                        0!=u_strCompare(nfd.getBuffer(), nfd.length(),
-                                       dest, destLength, FALSE));
+                                       dest, destLength, false));
     }
 }
 #endif
 
 #if UCONFIG_NO_NORMALIZATION
 static UBool changesWhenNFKC_Casefolded(const BinaryProperty &, UChar32, UProperty) {
-    return FALSE;
+    return false;
 }
 #else
 static UBool changesWhenNFKC_Casefolded(const BinaryProperty &, UChar32 c, UProperty ) {
     UErrorCode errorCode=U_ZERO_ERROR;
     const Normalizer2Impl *kcf=Normalizer2Factory::getNFKC_CFImpl(errorCode);
     if(U_FAILURE(errorCode)) {
-        return FALSE;
+        return false;
     }
     UnicodeString src(c);
     UnicodeString dest;
@@ -277,8 +277,8 @@ static UBool changesWhenNFKC_Casefolded(const BinaryProperty &, UChar32 c, UProp
         
         if(buffer.init(5, errorCode)) {
             const UChar *srcArray=src.getBuffer();
-            kcf->compose(srcArray, srcArray+src.length(), FALSE,
-                          TRUE, buffer, errorCode);
+            kcf->compose(srcArray, srcArray+src.length(), false,
+                          true, buffer, errorCode);
         }
     }
     return U_SUCCESS(errorCode) && dest!=src;
@@ -287,7 +287,7 @@ static UBool changesWhenNFKC_Casefolded(const BinaryProperty &, UChar32 c, UProp
 
 #if UCONFIG_NO_NORMALIZATION
 static UBool isCanonSegmentStarter(const BinaryProperty &, UChar32, UProperty) {
-    return FALSE;
+    return false;
 }
 #else
 static UBool isCanonSegmentStarter(const BinaryProperty &, UChar32 c, UProperty ) {
@@ -416,7 +416,7 @@ u_hasBinaryProperty(UChar32 c, UProperty which) {
     
     if(which<UCHAR_BINARY_START || UCHAR_BINARY_LIMIT<=which) {
         
-        return FALSE;
+        return false;
     } else {
         const BinaryProperty &prop=binProps[which];
         return prop.contains(prop, c, which);
@@ -812,7 +812,7 @@ u_getFC_NFKC_Closure(UChar32 c, UChar *dest, int32_t destCapacity, UErrorCode *p
         if(folded1Length>UCASE_MAX_STRING_LENGTH) {
             folded1String.setTo(folded1Length);
         } else {
-            folded1String.setTo(FALSE, folded1, folded1Length);
+            folded1String.setTo(false, folded1, folded1Length);
         }
     }
     UnicodeString kc1=nfkc->normalize(folded1String, *pErrorCode);

@@ -59,8 +59,14 @@ class FormattedNumber;
 class FormattedNumberRange;
 namespace impl {
 class UFormattedNumberRangeData;
+class DecimalQuantity;
+class DecNum;
 }
 }
+
+#ifndef U_HIDE_INTERNAL_API
+using icu::number::impl::DecimalQuantity;
+#endif  
 
 
 
@@ -311,14 +317,6 @@ public:
 
 
 
-
-    static UBool hasOverride(const Locale &locale);
-
-    
-
-
-
-
     static PluralRules* U_EXPORT2 internalForLocale(const Locale& locale, UPluralType type, UErrorCode& status);
 
     
@@ -496,7 +494,7 @@ public:
 
 
     int32_t getSamples(const UnicodeString &keyword,
-                       FixedDecimal *dest, int32_t destCapacity,
+                       DecimalQuantity *dest, int32_t destCapacity,
                        UErrorCode& status);
 #endif  
 
@@ -569,9 +567,7 @@ private:
     RuleChain  *mRules;
     StandardPluralRanges *mStandardPluralRanges;
 
-    PluralRules();   
-    void            parseDescription(const UnicodeString& ruleData, UErrorCode &status);
-    int32_t         getNumberValue(const UnicodeString& token) const;
+    PluralRules() = delete;   
     UnicodeString   getRuleFromResource(const Locale& locale, UPluralType type, UErrorCode& status);
     RuleChain      *rulesForKeyword(const UnicodeString &keyword) const;
     PluralRules    *clone(UErrorCode& status) const;

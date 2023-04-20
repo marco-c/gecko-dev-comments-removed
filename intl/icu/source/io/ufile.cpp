@@ -21,11 +21,18 @@
 
 
 #include "unicode/platform.h"
-#if defined(__GNUC__) && !defined(__clang__) && defined(__STRICT_ANSI__)
+#if U_PLATFORM == U_PF_CYGWIN && defined(__STRICT_ANSI__)
 
 
 
-#undef __STRICT_ANSI__
+
+
+
+
+
+
+#define _fileno(__F) ((__F)->_file)
+#define fileno(__F) _fileno(__F)
 #endif
 
 #include "locmap.h"
@@ -45,6 +52,9 @@
 #include "cmemory.h"
 
 #if U_PLATFORM_USES_ONLY_WIN32_API && !defined(fileno)
+
+
+
 
 #define fileno _fileno
 #endif
@@ -109,7 +119,7 @@ u_finit(FILE          *f,
         const char    *locale,
         const char    *codepage)
 {
-    return finit_owner(f, locale, codepage, FALSE);
+    return finit_owner(f, locale, codepage, false);
 }
 
 U_CAPI UFILE* U_EXPORT2
@@ -117,7 +127,7 @@ u_fadopt(FILE         *f,
         const char    *locale,
         const char    *codepage)
 {
-    return finit_owner(f, locale, codepage, TRUE);
+    return finit_owner(f, locale, codepage, true);
 }
 
 U_CAPI UFILE* U_EXPORT2 
@@ -132,7 +142,7 @@ u_fopen(const char    *filename,
         return 0;
     }
 
-    result = finit_owner(systemFile, locale, codepage, TRUE);
+    result = finit_owner(systemFile, locale, codepage, true);
 
     if (!result) {
         
@@ -188,7 +198,7 @@ u_fopen_u(const UChar   *filename,
         mbstowcs_s(&retVal, wperm, UPRV_LENGTHOF(wperm), perm, _TRUNCATE);
         FILE *systemFile = _wfopen(reinterpret_cast<const wchar_t *>(filename), wperm); 
         if (systemFile) {
-            result = finit_owner(systemFile, locale, codepage, TRUE);
+            result = finit_owner(systemFile, locale, codepage, true);
         }
         if (!result && systemFile) {
             
@@ -243,7 +253,7 @@ u_feof(UFILE  *f)
 {
     UBool endOfBuffer;
     if (f == NULL) {
-        return TRUE;
+        return true;
     }
     endOfBuffer = (UBool)(f->str.fPos >= f->str.fLimit);
     if (f->fFile != NULL) {

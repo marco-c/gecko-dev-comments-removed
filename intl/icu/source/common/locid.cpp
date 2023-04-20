@@ -64,7 +64,7 @@ U_CDECL_END
 U_NAMESPACE_BEGIN
 
 static Locale   *gLocaleCache = NULL;
-static UInitOnce gLocaleCacheInitOnce = U_INITONCE_INITIALIZER;
+static UInitOnce gLocaleCacheInitOnce {};
 
 
 static UMutex gDefaultLocaleMutex;
@@ -128,7 +128,7 @@ static UBool U_CALLCONV locale_cleanup(void)
         gDefaultLocalesHashT = NULL;
     }
     gDefaultLocale = NULL;
-    return TRUE;
+    return true;
 }
 
 
@@ -171,7 +171,7 @@ Locale *locale_set_default_internal(const char *id, UErrorCode& status) {
     
     Mutex lock(&gDefaultLocaleMutex);
 
-    UBool canonicalize = FALSE;
+    UBool canonicalize = false;
 
     
     
@@ -179,7 +179,7 @@ Locale *locale_set_default_internal(const char *id, UErrorCode& status) {
     
     if (id == NULL) {
         id = uprv_getDefaultLocaleID();   
-        canonicalize = TRUE; 
+        canonicalize = true; 
     }
 
     CharString localeNameBuf;
@@ -212,7 +212,7 @@ Locale *locale_set_default_internal(const char *id, UErrorCode& status) {
             status = U_MEMORY_ALLOCATION_ERROR;
             return gDefaultLocale;
         }
-        newDefault->init(localeNameBuf.data(), FALSE);
+        newDefault->init(localeNameBuf.data(), false);
         uhash_put(gDefaultLocalesHashT, (char*) newDefault->getName(), newDefault, &status);
         if (U_FAILURE(status)) {
             return gDefaultLocale;
@@ -269,7 +269,7 @@ Locale::~Locale()
 Locale::Locale()
     : UObject(), fullName(fullNameBuffer), baseName(NULL)
 {
-    init(NULL, FALSE);
+    init(NULL, false);
 }
 
 
@@ -292,7 +292,7 @@ Locale::Locale( const   char * newLanguage,
 {
     if( (newLanguage==NULL) && (newCountry == NULL) && (newVariant == NULL) )
     {
-        init(NULL, FALSE); 
+        init(NULL, false); 
     }
     else
     {
@@ -397,7 +397,7 @@ Locale::Locale( const   char * newLanguage,
         }
         
         
-        init(togo.data(), FALSE);
+        init(togo.data(), false);
     }
 }
 
@@ -491,7 +491,7 @@ Locale::operator==( const   Locale& other) const
 
 namespace {
 
-UInitOnce gKnownCanonicalizedInitOnce = U_INITONCE_INITIALIZER;
+UInitOnce gKnownCanonicalizedInitOnce {};
 UHashtable *gKnownCanonicalized = nullptr;
 
 static const char* const KNOWN_CANONICALIZED[] = {
@@ -521,7 +521,7 @@ static const char* const KNOWN_CANONICALIZED[] = {
 static UBool U_CALLCONV cleanupKnownCanonicalized() {
     gKnownCanonicalizedInitOnce.reset();
     if (gKnownCanonicalized) { uhash_close(gKnownCanonicalized); }
-    return TRUE;
+    return true;
 }
 
 static void U_CALLCONV loadKnownCanonicalized(UErrorCode &status) {
@@ -682,14 +682,14 @@ private:
 
 
 const AliasData* AliasData::gSingleton = nullptr;
-UInitOnce AliasData::gInitOnce = U_INITONCE_INITIALIZER;
+UInitOnce AliasData::gInitOnce {};
 
 UBool U_CALLCONV
 AliasData::cleanup()
 {
     gInitOnce.reset();
     delete gSingleton;
-    return TRUE;
+    return true;
 }
 
 void
@@ -1817,7 +1817,7 @@ ulocimp_isCanonicalizedLocaleForTest(const char* localeName)
 
 Locale& Locale::init(const char* localeID, UBool canonicalize)
 {
-    fIsBogus = FALSE;
+    fIsBogus = false;
     
     if ((baseName != fullName) && (baseName != fullNameBuffer)) {
         uprv_free(baseName);
@@ -2021,7 +2021,7 @@ Locale::setToBogus() {
     *language = 0;
     *script = 0;
     *country = 0;
-    fIsBogus = TRUE;
+    fIsBogus = true;
     variantBegin = 0;
 }
 
@@ -2071,7 +2071,7 @@ Locale::addLikelySubtags(UErrorCode& status) {
         return;
     }
 
-    init(maximizedLocaleID.data(), FALSE);
+    init(maximizedLocaleID.data(), false);
     if (isBogus()) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
     }
@@ -2093,7 +2093,7 @@ Locale::minimizeSubtags(UErrorCode& status) {
         return;
     }
 
-    init(minimizedLocaleID.data(), FALSE);
+    init(minimizedLocaleID.data(), false);
     if (isBogus()) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
     }
@@ -2112,7 +2112,7 @@ Locale::canonicalize(UErrorCode& status) {
     if (U_FAILURE(status)) {
         return;
     }
-    init(uncanonicalized.data(), TRUE);
+    init(uncanonicalized.data(), true);
     if (isBogus()) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
     }
@@ -2159,7 +2159,7 @@ Locale::forLanguageTag(StringPiece tag, UErrorCode& status)
         return result;
     }
 
-    result.init(localeID.data(), FALSE);
+    result.init(localeID.data(), false);
     if (result.isBogus()) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
     }
@@ -2178,7 +2178,7 @@ Locale::toLanguageTag(ByteSink& sink, UErrorCode& status) const
         return;
     }
 
-    ulocimp_toLanguageTag(fullName, sink, FALSE, &status);
+    ulocimp_toLanguageTag(fullName, sink, false, &status);
 }
 
 Locale U_EXPORT2
@@ -2186,7 +2186,7 @@ Locale::createFromName (const char *name)
 {
     if (name) {
         Locale l("");
-        l.init(name, FALSE);
+        l.init(name, false);
         return l;
     }
     else {
@@ -2197,7 +2197,7 @@ Locale::createFromName (const char *name)
 Locale U_EXPORT2
 Locale::createCanonical(const char* name) {
     Locale loc("");
-    loc.init(name, TRUE);
+    loc.init(name, true);
     return loc;
 }
 
@@ -2240,7 +2240,7 @@ const char* const* U_EXPORT2 Locale::getISOLanguages()
 
 void Locale::setFromPOSIXID(const char *posixID)
 {
-    init(posixID, TRUE);
+    init(posixID, true);
 }
 
 const Locale & U_EXPORT2
@@ -2530,7 +2530,7 @@ Locale::createKeywords(UErrorCode &status) const
         if(assignment > variantStart) {
             CharString keywords;
             CharStringByteSink sink(&keywords);
-            ulocimp_getKeywords(variantStart+1, '@', sink, FALSE, &status);
+            ulocimp_getKeywords(variantStart+1, '@', sink, false, &status);
             if (U_SUCCESS(status) && !keywords.isEmpty()) {
                 result = new KeywordEnumeration(keywords.data(), keywords.length(), 0, status);
                 if (!result) {
@@ -2559,7 +2559,7 @@ Locale::createUnicodeKeywords(UErrorCode &status) const
         if(assignment > variantStart) {
             CharString keywords;
             CharStringByteSink sink(&keywords);
-            ulocimp_getKeywords(variantStart+1, '@', sink, FALSE, &status);
+            ulocimp_getKeywords(variantStart+1, '@', sink, false, &status);
             if (U_SUCCESS(status) && !keywords.isEmpty()) {
                 result = new UnicodeKeywordEnumeration(keywords.data(), keywords.length(), 0, status);
                 if (!result) {

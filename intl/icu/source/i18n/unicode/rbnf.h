@@ -54,9 +54,27 @@ class RuleBasedCollator;
 
 
 enum URBNFRuleSetTag {
+    
+
+
+
     URBNF_SPELLOUT,
+    
+
+
+
     URBNF_ORDINAL,
+    
+
+
+
     URBNF_DURATION,
+    
+
+
+
+
+
     URBNF_NUMBERING_SYSTEM,
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -666,6 +684,9 @@ public:
 
 
 
+
+
+
   RuleBasedNumberFormat(URBNFRuleSetTag tag, const Locale& locale, UErrorCode& status);
 
   
@@ -1040,7 +1061,7 @@ public:
     virtual void setDecimalFormatSymbols(const DecimalFormatSymbols& symbols);
 
 private:
-    RuleBasedNumberFormat(); 
+    RuleBasedNumberFormat() = delete; 
 
     
     

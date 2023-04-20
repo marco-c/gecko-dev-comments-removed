@@ -53,7 +53,7 @@ _enumPropertyStartsRange(const void *context, UChar32 start, UChar32 end, uint32
     
     const USetAdder *sa=(const USetAdder *)context;
     sa->add(sa->set, start);
-    return TRUE;
+    return true;
 }
 
 U_CFUNC void

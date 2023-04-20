@@ -473,7 +473,7 @@ u_printf_octal_handler(const u_printf_stream_handler  *handler,
 
     
     ufmt_64tou(result, &len, num, 8,
-        FALSE, 
+        false, 
         info->fPrecision == -1 && info->fZero ? info->fWidth : info->fPrecision);
 
     
@@ -552,7 +552,7 @@ u_printf_pointer_handler(const u_printf_stream_handler  *handler,
     int32_t         len  = UPRINTF_BUFFER_SIZE;
 
     
-    ufmt_ptou(result, &len, args[0].ptrValue, TRUE);
+    ufmt_ptou(result, &len, args[0].ptrValue, true);
 
     return handler->pad_and_justify(context, info, result, len);
 }
@@ -851,12 +851,12 @@ u_printf_scidbl_handler(const u_printf_stream_handler  *handler,
         if (significantDigits == -1) {
             significantDigits = 6;
         }
-        unum_setAttribute(format, UNUM_SIGNIFICANT_DIGITS_USED, TRUE);
+        unum_setAttribute(format, UNUM_SIGNIFICANT_DIGITS_USED, true);
         unum_setAttribute(format, UNUM_MAX_SIGNIFICANT_DIGITS, significantDigits);
         
         retVal = u_printf_double_handler(handler, context, formatBundle, &scidbl_info, args);
         unum_setAttribute(format, UNUM_MAX_SIGNIFICANT_DIGITS, maxSigDecimalDigits);
-        unum_setAttribute(format, UNUM_SIGNIFICANT_DIGITS_USED, FALSE);
+        unum_setAttribute(format, UNUM_SIGNIFICANT_DIGITS_USED, false);
     }
     return retVal;
 }
@@ -1160,11 +1160,11 @@ static ufmt_args* parseArguments(const UChar *alias, va_list ap, UErrorCode *sta
         
         while (ISMOD(*alias) || ISFLAG(*alias) || ISDIGIT(*alias) || 
             *alias == SPEC_ASTERISK || *alias == SPEC_PERIOD || *alias == SPEC_DOLLARSIGN) {
-                islonglong[pos] = FALSE;
+                islonglong[pos] = false;
                 if (ISMOD(*alias)) {
                     alias++;
                     if (*alias == MOD_LOWERL) {
-                        islonglong[pos] = TRUE;
+                        islonglong[pos] = true;
                     } 
                 } 
                 alias++;
@@ -1315,28 +1315,28 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
 
                 
             case FLAG_MINUS:
-                info->fLeft = TRUE;
+                info->fLeft = true;
                 break;
 
                 
             case FLAG_PLUS:
-                info->fShowSign = TRUE;
+                info->fShowSign = true;
                 break;
 
                 
             case FLAG_SPACE:
-                info->fShowSign = TRUE;
-                info->fSpace = TRUE;
+                info->fShowSign = true;
+                info->fSpace = true;
                 break;
 
                 
             case FLAG_POUND:
-                info->fAlt = TRUE;
+                info->fAlt = true;
                 break;
 
                 
             case FLAG_ZERO:
-                info->fZero = TRUE;
+                info->fZero = true;
                 info->fPadChar = 0x0030;
                 break;
 
@@ -1454,23 +1454,23 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
 
                 
             case MOD_H:
-                info->fIsShort = TRUE;
+                info->fIsShort = true;
                 break;
 
                 
             case MOD_LOWERL:
                 if(*alias == MOD_LOWERL) {
-                    info->fIsLongLong = TRUE;
+                    info->fIsLongLong = true;
                     
                     alias++;
                 }
                 else
-                    info->fIsLong = TRUE;
+                    info->fIsLong = true;
                 break;
 
                 
             case MOD_L:
-                info->fIsLongDouble = TRUE;
+                info->fIsLongDouble = true;
                 break;
             }
         }
@@ -1492,7 +1492,7 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
             
             if(info->fWidth < 0) {
                 info->fWidth *= -1; 
-                info->fLeft = TRUE;
+                info->fLeft = true;
             }
         }
 

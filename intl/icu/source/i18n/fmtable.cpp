@@ -382,9 +382,9 @@ Formattable::isNumeric() const {
     case kDouble:
     case kLong:
     case kInt64:
-        return TRUE;
+        return true;
     default:
-        return FALSE;
+        return false;
     }
 }
 

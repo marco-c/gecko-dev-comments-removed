@@ -1161,6 +1161,26 @@ typedef enum UNumberFormatAttribute {
 
 } UNumberFormatAttribute;
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI bool U_EXPORT2
+unum_hasAttribute(const UNumberFormat*          fmt,
+          UNumberFormatAttribute  attr);
+#endif 
+
 
 
 
@@ -1201,6 +1221,7 @@ unum_getAttribute(const UNumberFormat*          fmt,
 
 
 
+
 U_CAPI void U_EXPORT2 
 unum_setAttribute(    UNumberFormat*          fmt,
             UNumberFormatAttribute  attr,
@@ -1221,9 +1242,13 @@ unum_setAttribute(    UNumberFormat*          fmt,
 
 
 
+
+
 U_CAPI double U_EXPORT2 
 unum_getDoubleAttribute(const UNumberFormat*          fmt,
           UNumberFormatAttribute  attr);
+
+
 
 
 
