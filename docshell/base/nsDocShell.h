@@ -1062,6 +1062,9 @@ class nsDocShell final : public nsDocLoader,
 
   
   
+  
+  
+  
   bool IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
                                 SameDocumentNavigationState& aState);
 

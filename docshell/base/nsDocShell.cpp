@@ -8713,14 +8713,35 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
       
       
       if (!aState.mSameExceptHashes) {
-        nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel();
-        if (docChannel) {
+        if (nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel()) {
           nsCOMPtr<nsILoadInfo> docLoadInfo = docChannel->LoadInfo();
-          if (!docLoadInfo->GetLoadErrorPage()) {
-            if (nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
-                    currentExposableURI, aLoadState->URI(), docLoadInfo)) {
-              aState.mSameExceptHashes = true;
+          if (!docLoadInfo->GetLoadErrorPage() &&
+              nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
+                  currentExposableURI, aLoadState->URI(), docLoadInfo)) {
+            uint32_t status = docLoadInfo->GetHttpsOnlyStatus();
+            if (status & (nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED |
+                          nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST)) {
+              
+              
+              
+              
+              
+              
+              
+              nsCOMPtr<nsIURI> upgradedURI;
+              NS_GetSecureUpgradedURI(aLoadState->URI(),
+                                      getter_AddRefs(upgradedURI));
+              aLoadState->SetURI(upgradedURI);
+
+#ifdef DEBUG
+              bool sameExceptHashes = false;
+              currentExposableURI->EqualsExceptRef(aLoadState->URI(),
+                                                   &sameExceptHashes);
+              MOZ_ASSERT(sameExceptHashes);
+#endif
             }
+
+            aState.mSameExceptHashes = true;
           }
         }
       }
