@@ -1,52 +1,37 @@
+/*
+ * Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
-
-
-
-"use strict";
-
-
-
-
-
+// The functions in this file will run in the content process in a test
+// scope.
+/* eslint-env mozilla/simpletest */
+/* global ContentTaskUtils, content */
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 const info = console.log;
 
-var EXPORTED_SYMBOLS = [
-  "HTTPS_EXAMPLE_ORG",
-  "HTTPS_EXAMPLE_COM",
-  "HTTP_EXAMPLE_COM",
-  "browserTestPath",
-  "waitForAllExpectedTests",
-  "cleanupObservers",
-  "triggerSetCookieFromHttp",
-  "triggerSetCookieFromHttpPrivate",
-  "checkExpectedCookies",
-  "fetchHelper",
-  "preclean_test",
-  "cleanup_test",
-];
-var HTTPS_EXAMPLE_ORG = "https://example.org";
-var HTTPS_EXAMPLE_COM = "https://example.com";
-var HTTP_EXAMPLE_COM = "http://example.com";
+export var HTTPS_EXAMPLE_ORG = "https://example.org";
+export var HTTPS_EXAMPLE_COM = "https://example.com";
+export var HTTP_EXAMPLE_COM = "http://example.com";
 
-function browserTestPath(uri) {
+export function browserTestPath(uri) {
   return uri + "/browser/netwerk/test/browser/";
 }
 
-function waitForAllExpectedTests() {
+export function waitForAllExpectedTests() {
   return ContentTaskUtils.waitForCondition(() => {
     return content.testDone === true;
   });
 }
 
-function cleanupObservers() {
+export function cleanupObservers() {
   Services.obs.notifyObservers(null, "cookie-content-filter-cleanup");
 }
 
-async function preclean_test() {
-  
+export async function preclean_test() {
+  // enable all cookies for the set-cookie trigger via setCookieStringFromHttp
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
   Services.prefs.setBoolPref(
     "network.cookieJarSettings.unblocked_for_testing",
@@ -63,7 +48,7 @@ async function preclean_test() {
   Services.cookies.removeAll();
 }
 
-async function cleanup_test() {
+export async function cleanup_test() {
   Services.prefs.clearUserPref("network.cookie.cookieBehavior");
   Services.prefs.clearUserPref(
     "network.cookieJarSettings.unblocked_for_testing"
@@ -76,7 +61,7 @@ async function cleanup_test() {
   Services.cookies.removeAll();
 }
 
-async function fetchHelper(url, cookie, secure, domain = "") {
+export async function fetchHelper(url, cookie, secure, domain = "") {
   let headers = new Headers();
 
   headers.append("return-set-cookie", cookie);
@@ -93,9 +78,9 @@ async function fetchHelper(url, cookie, secure, domain = "") {
   await fetch(url, { headers });
 }
 
-
-
-function triggerSetCookieFromHttp(uri, cookie, fpd = "", ucd = 0) {
+// cookie header strings with multiple name=value pairs delimited by \n
+// will trigger multiple "cookie-changed" signals
+export function triggerSetCookieFromHttp(uri, cookie, fpd = "", ucd = 0) {
   info("about to trigger set-cookie: " + uri + " " + cookie);
   let channel = NetUtil.newChannel({
     uri,
@@ -113,7 +98,7 @@ function triggerSetCookieFromHttp(uri, cookie, fpd = "", ucd = 0) {
   Services.cookies.setCookieStringFromHttp(uri, cookie, channel);
 }
 
-async function triggerSetCookieFromHttpPrivate(uri, cookie) {
+export async function triggerSetCookieFromHttpPrivate(uri, cookie) {
   info("about to trigger set-cookie: " + uri + " " + cookie);
   let channel = NetUtil.newChannel({
     uri,
@@ -125,26 +110,26 @@ async function triggerSetCookieFromHttpPrivate(uri, cookie) {
   Services.cookies.setCookieStringFromHttp(uri, cookie, channel);
 }
 
-
-
-function checkExpectedCookies(expected, browserName) {
+// observer/listener function that will be run on the content processes
+// listens and checks for the expected cookies
+export function checkExpectedCookies(expected, browserName) {
   const COOKIE_FILTER_TEST_MESSAGE = "cookie-content-filter-test";
   const COOKIE_FILTER_TEST_CLEANUP = "cookie-content-filter-cleanup";
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Counting the expected number of tests is vital to the integrity of these
+  // tests due to the fact that this test suite relies on triggering tests
+  // to occur on multiple content processes.
+  // As such, test modifications/bugs often lead to silent failures.
+  // Hence, we count to ensure we didn't break anything
+  // To reduce risk here, we modularize each test as much as possible to
+  // increase liklihood that a silent failure will trigger a no-test
+  // error/warning
   content.testDone = false;
   let testNumber = 0;
 
-  
+  // setup observer that continues listening/testing
   function obs(subject, topic) {
-    
+    // cleanup trigger recieved -> tear down the observer
     if (topic == COOKIE_FILTER_TEST_CLEANUP) {
       info("cleaning up: " + browserName);
       Services.obs.removeObserver(obs, COOKIE_FILTER_TEST_MESSAGE);
@@ -152,7 +137,7 @@ function checkExpectedCookies(expected, browserName) {
       return;
     }
 
-    
+    // test trigger recv'd -> perform test on cookie contents
     if (topic == COOKIE_FILTER_TEST_MESSAGE) {
       info("Checking if cookie visible: " + browserName);
       let result = content.document.cookie;
@@ -172,7 +157,7 @@ function checkExpectedCookies(expected, browserName) {
       return;
     }
 
-    ok(false, "Didn't handle cookie message properly"); 
+    ok(false, "Didn't handle cookie message properly"); //
   }
 
   info("setting up observers: " + browserName);

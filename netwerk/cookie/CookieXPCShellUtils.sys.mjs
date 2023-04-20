@@ -1,11 +1,8 @@
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["CookieXPCShellUtils"];
+/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set sts=2 sw=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { ExtensionTestUtils } = ChromeUtils.import(
   "resource://testing-common/ExtensionXPCShellUtils.jsm"
@@ -15,7 +12,7 @@ const { AddonTestUtils } = ChromeUtils.import(
   "resource://testing-common/AddonTestUtils.jsm"
 );
 
-const CookieXPCShellUtils = {
+export const CookieXPCShellUtils = {
   init(scope) {
     AddonTestUtils.maybeInit(scope);
     ExtensionTestUtils.init(scope);
@@ -41,7 +38,7 @@ const CookieXPCShellUtils = {
     const contentPage = await this.loadContentPage(uri, options);
     const cookies = await contentPage.spawn(
       null,
-      
+      // eslint-disable-next-line no-undef
       () => content.document.cookie
     );
     await contentPage.close();
@@ -52,7 +49,7 @@ const CookieXPCShellUtils = {
     const contentPage = await this.loadContentPage(uri, options);
     await contentPage.spawn(
       set,
-      
+      // eslint-disable-next-line no-undef
       cookies => (content.document.cookie = cookies)
     );
     await contentPage.close();

@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-function UrlClassifierExceptionListService() {}
+export function UrlClassifierExceptionListService() {}
 
 const lazy = {};
 
@@ -103,19 +103,19 @@ UrlClassifierExceptionListService.prototype = {
 
     this._initialized = true;
 
-    
-    
-    
-    
-    
+    // If the remote settings list hasn't been populated yet we have to make sure
+    // to do it before firing the first notification.
+    // This has to be run after _initialized is set because we'll be
+    // blocked while getting entries from RemoteSetting, and we don't want
+    // LazyInit is executed again.
     try {
-      
-      
+      // The data will be initially available from the local DB (via a
+      // resource:// URI).
       this.entries = await rs.get();
     } catch (e) {}
 
-    
-    
+    // RemoteSettings.get() could return null, ensure passing a list to
+    // onUpdateEntries.
     if (!this.entries) {
       this.entries = [];
     }
@@ -132,20 +132,20 @@ UrlClassifierExceptionListService.prototype = {
   },
 
   registerAndRunExceptionListObserver(feature, prefName, observer) {
-    
-    
-    
-    
-    
-    
-    
+    // We don't await this; the caller is C++ and won't await this function,
+    // and because we prevent re-entering into this method, once it's been
+    // called once any subsequent calls will early-return anyway - so
+    // awaiting that would be meaningless. Instead, `Feature` implementations
+    // make sure not to call into observers until they have data, and we
+    // make sure to let feature instances know whether we have data
+    // immediately.
     this.lazyInit();
 
     if (!this.features[feature]) {
       let featureObj = new Feature(feature, prefName);
       this.features[feature] = featureObj;
-      
-      
+      // If we've previously initialized, we need to pass the entries
+      // we already have to the new feature.
       if (this.entries) {
         featureObj.onRemoteSettingsUpdate(this.entries);
       }
@@ -166,5 +166,3 @@ UrlClassifierExceptionListService.prototype = {
     this.entries = null;
   },
 };
-
-var EXPORTED_SYMBOLS = ["UrlClassifierExceptionListService"];
