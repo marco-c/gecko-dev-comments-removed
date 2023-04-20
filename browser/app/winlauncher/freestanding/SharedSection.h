@@ -7,6 +7,7 @@
 #ifndef mozilla_freestanding_SharedSection_h
 #define mozilla_freestanding_SharedSection_h
 
+#include "mozilla/DynamicBlocklist.h"
 #include "mozilla/glue/SharedSection.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/interceptor/MMPolicies.h"
@@ -26,6 +27,18 @@
 namespace mozilla {
 namespace freestanding {
 class SharedSectionTestHelper;
+
+struct DllBlockInfoComparator {
+  explicit DllBlockInfoComparator(const UNICODE_STRING& aTarget)
+      : mTarget(&aTarget) {}
+
+  int operator()(const DllBlockInfo& aVal) const {
+    return static_cast<int>(
+        ::RtlCompareUnicodeString(mTarget, &aVal.mName, TRUE));
+  }
+
+  PCUNICODE_STRING mTarget;
+};
 
 
 
@@ -60,6 +73,27 @@ struct MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
   struct Layout final {
     enum class State {
@@ -69,17 +103,42 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
     } mState;
 
     Kernel32ExportsSolver mK32Exports;
-    wchar_t mModulePathArray[1];
+    
+    
+    
+    
+    
+    uint32_t mBlocklistIsDisabled;
+    
+    
+    
+    
+    
+    
+    
+    uint32_t mDependentModulePathArrayStart;
+    
+    uint32_t mNumBlockEntries;
+    DllBlockInfo mFirstBlockEntry[1];
 
-    Span<wchar_t> GetModulePathArray() {
-      return Span<wchar_t>(
-          mModulePathArray,
-          (kSharedViewSize - (reinterpret_cast<uintptr_t>(mModulePathArray) -
+    Span<DllBlockInfo> GetModulePathArray() {
+      return Span<DllBlockInfo>(
+          mFirstBlockEntry,
+          (kSharedViewSize - (reinterpret_cast<uintptr_t>(mFirstBlockEntry) -
                               reinterpret_cast<uintptr_t>(this))) /
-              sizeof(wchar_t));
+              sizeof(DllBlockInfo));
+    }
+    
+    
+    static constexpr uint32_t GetMaxNumBlockEntries() {
+      return (kSharedViewSize - (offsetof(Layout, mFirstBlockEntry))) /
+             sizeof(DllBlockInfo);
     }
     Layout() = delete;  
     bool Resolve();
+    bool IsDisabled() const;
+    const DllBlockInfo* SearchBlocklist(const UNICODE_STRING& aLeafName) const;
+    Span<wchar_t> GetDependentModules();
   };
 
   
@@ -113,11 +172,17 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
 
   
   static LauncherVoidResult AddDependentModule(PCUNICODE_STRING aNtPath);
+  static LauncherVoidResult SetBlocklist(const DynamicBlockList& aBlocklist,
+                                         bool isDisabled);
 
   
   
   Kernel32ExportsSolver* GetKernel32Exports();
   Span<const wchar_t> GetDependentModules() final override;
+  Span<const DllBlockInfo> GetDynamicBlocklist() final override;
+
+  static bool IsDisabled();
+  static const DllBlockInfo* SearchBlocklist(const UNICODE_STRING& aLeafName);
 
   
   static LauncherVoidResult TransferHandle(
