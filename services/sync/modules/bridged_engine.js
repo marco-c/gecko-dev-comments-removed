@@ -60,7 +60,7 @@ class BridgedStore {
       this._batchChunkSize
     )) {
       let incomingEnvelopesAsJSON = chunk.map(record =>
-        JSON.stringify(record.toIncomingEnvelope())
+        JSON.stringify(record.toIncomingBso())
       );
       this._log.trace("incoming envelopes", incomingEnvelopesAsJSON);
       await this.engine._bridge.storeIncoming(incomingEnvelopesAsJSON);
@@ -91,16 +91,17 @@ class BridgedRecord extends RawCryptoWrapper {
 
 
 
-
-  static fromOutgoingEnvelope(collection, envelope) {
-    if (typeof envelope.id != "string") {
-      throw new TypeError("Outgoing envelope missing ID");
+  static fromOutgoingBso(collection, bso) {
+    
+    
+    if (typeof bso.id != "string") {
+      throw new TypeError("Outgoing BSO missing ID");
     }
-    if (typeof envelope.payload != "string") {
-      throw new TypeError("Outgoing envelope missing payload");
+    if (typeof bso.payload != "string") {
+      throw new TypeError("Outgoing BSO missing payload");
     }
-    let record = new BridgedRecord(collection, envelope.id);
-    record.cleartext = envelope.payload;
+    let record = new BridgedRecord(collection, bso.id);
+    record.cleartext = bso.payload;
     return record;
   }
 
@@ -125,7 +126,7 @@ class BridgedRecord extends RawCryptoWrapper {
 
 
 
-  toIncomingEnvelope() {
+  toIncomingBso() {
     return {
       id: this.data.id,
       modified: this.data.modified,
@@ -453,13 +454,13 @@ BridgedEngine.prototype = {
   async _processIncoming(newitems) {
     await super._processIncoming(newitems);
 
-    let outgoingEnvelopesAsJSON = await this._bridge.apply();
+    let outgoingBsosAsJSON = await this._bridge.apply();
     let changeset = {};
-    for (let envelopeAsJSON of outgoingEnvelopesAsJSON) {
-      this._log.trace("outgoing envelope", envelopeAsJSON);
-      let record = BridgedRecord.fromOutgoingEnvelope(
+    for (let bsoAsJSON of outgoingBsosAsJSON) {
+      this._log.trace("outgoing bso", bsoAsJSON);
+      let record = BridgedRecord.fromOutgoingBso(
         this.name,
-        JSON.parse(envelopeAsJSON)
+        JSON.parse(bsoAsJSON)
       );
       changeset[record.id] = {
         synced: false,
