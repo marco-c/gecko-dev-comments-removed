@@ -4020,6 +4020,13 @@ void DrawTargetWebgl::BeginFrame(const IntRect& aPersistedRect) {
 
 
 void DrawTargetWebgl::EndFrame() {
+  if (StaticPrefs::gfx_canvas_accelerated_debug()) {
+    
+    
+    IntRect corner = IntRect(mSize.width - 16, 0, 16, 16).Intersect(GetRect());
+    DrawRect(Rect(corner), ColorPattern(DeviceColor(0.0f, 1.0f, 0.0f, 1.0f)),
+             DrawOptions(), Nothing(), nullptr, false, false);
+  }
   mProfile.EndFrame();
   
   mSharedContext->PruneTextureMemory();
