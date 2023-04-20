@@ -1953,11 +1953,7 @@ pref("extensions.eventPages.enabled", true);
 
 pref("extensions.manifestV2.actionsPopupURLRestricted", false);
 
-#ifdef EARLY_BETA_OR_EARLIER
-  pref("extensions.manifestV3.enabled", true);
-#else
-  pref("extensions.manifestV3.enabled", false);
-#endif
+pref("extensions.manifestV3.enabled", true);
 
 #ifdef NIGHTLY_BUILD
   pref("extensions.unifiedExtensions.enabled", true);
