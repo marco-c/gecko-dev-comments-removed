@@ -232,12 +232,15 @@ TabEngine.prototype = {
   
   
   
+  
+  
+  
   async quickWrite() {
     if (!this.enabled) {
       
       
       this._log.info("Can't do a quick-sync as tabs is disabled");
-      return;
+      return false;
     }
     
     
@@ -246,14 +249,14 @@ TabEngine.prototype = {
         "Can't do a quick-sync due to the service status",
         this.service.status.toString()
       );
-      return;
+      return false;
     }
     if (!this.service.serverConfiguration) {
       this._log.info("Can't do a quick sync before the first full sync");
-      return;
+      return false;
     }
     try {
-      await this._engineLock("tabs.js: quickWrite", async () => {
+      return await this._engineLock("tabs.js: quickWrite", async () => {
         
         
         
@@ -261,7 +264,7 @@ TabEngine.prototype = {
         
         const origLastSync = await this.getLastSync();
         try {
-          await this._doQuickWrite();
+          return this._doQuickWrite();
         } finally {
           
           await this.setLastSync(origLastSync);
@@ -274,6 +277,7 @@ TabEngine.prototype = {
       this._log.info(
         "Can't do a quick-write as another tab sync is in progress"
       );
+      return false;
     }
   },
 
@@ -316,9 +320,11 @@ TabEngine.prototype = {
       await this._uploadOutgoing();
       telemetryRecord.onEngineApplied(name, 1);
       telemetryRecord.onEngineStop(name, null);
+      return true;
     } catch (ex) {
       this._log.warn("quicksync sync failed", ex);
       telemetryRecord.onEngineStop(name, ex);
+      return false;
     } finally {
       
       telemetryRecord.finished(null);
