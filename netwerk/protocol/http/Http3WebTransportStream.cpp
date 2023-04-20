@@ -398,6 +398,8 @@ nsresult Http3WebTransportStream::ReadSegments() {
           task();
         }
       }
+      
+      SendFin();
     }
 
     
