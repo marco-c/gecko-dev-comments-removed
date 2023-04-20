@@ -119,6 +119,24 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.newtabpage.activity-stream.feeds.snippets",
   false
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "hasMigratedBookmarks",
+  "browser.migrate.interactions.bookmarks",
+  false
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "hasMigratedHistory",
+  "browser.migrate.interactions.history",
+  false
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "hasMigratedPasswords",
+  "browser.migrate.interactions.passwords",
+  false
+);
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   AUS: ["@mozilla.org/updates/update-service;1", "nsIApplicationUpdateService"],
@@ -877,6 +895,30 @@ const TargetingGetters = {
         })
         .then(addresses => addresses?.length ?? 0) ?? 0
     );
+  },
+
+  
+
+
+
+  get hasMigratedBookmarks() {
+    return lazy.hasMigratedBookmarks;
+  },
+
+  
+
+
+
+  get hasMigratedHistory() {
+    return lazy.hasMigratedHistory;
+  },
+
+  
+
+
+
+  get hasMigratedPasswords() {
+    return lazy.hasMigratedPasswords;
   },
 };
 
