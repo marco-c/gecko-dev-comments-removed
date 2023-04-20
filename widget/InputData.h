@@ -189,8 +189,8 @@ class SingleTouchData {
   
   float mForce;
 
-  uint32_t mTiltX = 0;
-  uint32_t mTiltY = 0;
+  int32_t mTiltX = 0;
+  int32_t mTiltY = 0;
   uint32_t mTwist = 0;
 };
 
