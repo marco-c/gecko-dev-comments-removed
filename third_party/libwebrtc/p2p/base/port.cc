@@ -928,8 +928,7 @@ void Port::DestroyConnectionInternal(Connection* conn, bool async) {
     
     
     
-    thread_->PostTask(
-        webrtc::ToQueuedTask([conn = absl::WrapUnique(conn)]() {}));
+    thread_->PostTask([conn = absl::WrapUnique(conn)]() {});
   } else {
     delete conn;
   }

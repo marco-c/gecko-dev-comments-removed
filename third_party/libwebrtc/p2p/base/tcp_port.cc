@@ -74,7 +74,8 @@
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
-#include "api/task_queue/to_queued_task.h"
+#include "api/task_queue/pending_task_safety_flag.h"
+#include "api/units/time_delta.h"
 #include "p2p/base/p2p_constants.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ip_address.h"
@@ -85,6 +86,8 @@
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {
+using ::webrtc::SafeTask;
+using ::webrtc::TimeDelta;
 
 TCPPort::TCPPort(rtc::Thread* thread,
                  rtc::PacketSocketFactory* factory,
@@ -510,13 +513,13 @@ void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
     
     
     network_thread()->PostDelayedTask(
-        webrtc::ToQueuedTask(network_safety_,
-                             [this]() {
-                               if (pretending_to_be_writable_) {
-                                 Destroy();
-                               }
-                             }),
-        reconnection_timeout());
+        SafeTask(network_safety_.flag(),
+                 [this]() {
+                   if (pretending_to_be_writable_) {
+                     Destroy();
+                   }
+                 }),
+        TimeDelta::Millis(reconnection_timeout()));
   } else if (!pretending_to_be_writable_) {
     
     
@@ -589,7 +592,7 @@ void TCPConnection::CreateOutgoingTcpSocket() {
     
     
     network_thread()->PostTask(
-        webrtc::ToQueuedTask(network_safety_, [this]() { FailAndPrune(); }));
+        SafeTask(network_safety_.flag(), [this]() { FailAndPrune(); }));
   }
 }
 

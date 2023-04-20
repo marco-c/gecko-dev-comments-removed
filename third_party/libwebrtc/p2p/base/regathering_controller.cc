@@ -10,7 +10,8 @@
 
 #include "p2p/base/regathering_controller.h"
 
-#include "api/task_queue/to_queued_task.h"
+#include "api/task_queue/pending_task_safety_flag.h"
+#include "api/units/time_delta.h"
 
 namespace webrtc {
 
@@ -60,21 +61,20 @@ void BasicRegatheringController::
   pending_regathering_.reset(new ScopedTaskSafety());
 
   thread_->PostDelayedTask(
-      ToQueuedTask(*pending_regathering_.get(),
-                   [this]() {
-                     RTC_DCHECK_RUN_ON(thread_);
-                     
-                     
-                     
-                     
-                     
-                     if (allocator_session_ &&
-                         allocator_session_->IsCleared()) {
-                       allocator_session_->RegatherOnFailedNetworks();
-                     }
-                     ScheduleRecurringRegatheringOnFailedNetworks();
-                   }),
-      config_.regather_on_failed_networks_interval);
+      SafeTask(pending_regathering_->flag(),
+               [this]() {
+                 RTC_DCHECK_RUN_ON(thread_);
+                 
+                 
+                 
+                 
+                 
+                 if (allocator_session_ && allocator_session_->IsCleared()) {
+                   allocator_session_->RegatherOnFailedNetworks();
+                 }
+                 ScheduleRecurringRegatheringOnFailedNetworks();
+               }),
+      TimeDelta::Millis(config_.regather_on_failed_networks_interval));
 }
 
 }  
