@@ -17,6 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_headers.h"
+#include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -92,11 +93,11 @@ class RTC_EXPORT RtpPacketInfo {
     return *this;
   }
 
-  const absl::optional<int64_t>& local_capture_clock_offset() const {
+  const absl::optional<TimeDelta>& local_capture_clock_offset() const {
     return local_capture_clock_offset_;
   }
   RtpPacketInfo& set_local_capture_clock_offset(
-      const absl::optional<int64_t>& value) {
+      absl::optional<TimeDelta> value) {
     local_capture_clock_offset_ = value;
     return *this;
   }
@@ -117,16 +118,14 @@ class RTC_EXPORT RtpPacketInfo {
 
   
   
-  
-  
-  
-  
-  
   absl::optional<AbsoluteCaptureTime> absolute_capture_time_;
 
   
   
-  absl::optional<int64_t> local_capture_clock_offset_;
+  
+  
+  
+  absl::optional<TimeDelta> local_capture_clock_offset_;
 };
 
 bool operator==(const RtpPacketInfo& lhs, const RtpPacketInfo& rhs);

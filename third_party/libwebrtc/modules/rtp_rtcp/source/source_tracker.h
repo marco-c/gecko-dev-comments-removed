@@ -20,6 +20,7 @@
 #include "absl/types/optional.h"
 #include "api/rtp_packet_infos.h"
 #include "api/transport/rtp/rtp_source.h"
+#include "api/units/time_delta.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
@@ -94,6 +95,13 @@ class SourceTracker {
     
     
     absl::optional<AbsoluteCaptureTime> absolute_capture_time;
+
+    
+    
+    
+    
+    
+    absl::optional<TimeDelta> local_capture_clock_offset;
 
     
     

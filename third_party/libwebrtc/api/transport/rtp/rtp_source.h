@@ -15,6 +15,7 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_headers.h"
+#include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -28,7 +29,17 @@ class RtpSource {
  public:
   struct Extensions {
     absl::optional<uint8_t> audio_level;
+
+    
+    
     absl::optional<AbsoluteCaptureTime> absolute_capture_time;
+
+    
+    
+    
+    
+    
+    absl::optional<TimeDelta> local_capture_clock_offset;
   };
 
   RtpSource() = delete;
@@ -72,6 +83,10 @@ class RtpSource {
 
   absl::optional<AbsoluteCaptureTime> absolute_capture_time() const {
     return extensions_.absolute_capture_time;
+  }
+
+  absl::optional<TimeDelta> local_capture_clock_offset() const {
+    return extensions_.local_capture_clock_offset;
   }
 
   bool operator==(const RtpSource& o) const {
