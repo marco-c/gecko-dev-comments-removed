@@ -2421,14 +2421,38 @@ void ReflowInput::InitConstraints(
       mFlags.mIsBSizeSetByAspectRatio =
           size.mAspectRatioUsage == nsIFrame::AspectRatioUsage::ToComputeBSize;
 
-      
-      
-      if (isBlockLevel && !IsSideCaption(mFrame, mStyleDisplay, cbwm) &&
-          mStyleDisplay->mDisplay != StyleDisplay::InlineTable &&
-          !mFrame->IsTableFrame() && !alignCB->IsFlexOrGridContainer() &&
-          !(mFrame->Style()->GetPseudoType() == PseudoStyleType::marker &&
+      const bool shouldCalculateBlockSideMargins = [&]() {
+        if (!isBlockLevel) {
+          return false;
+        }
+        if (IsSideCaption(mFrame, mStyleDisplay, cbwm)) {
+          return false;
+        }
+        if (mStyleDisplay->mDisplay == StyleDisplay::InlineTable) {
+          return false;
+        }
+        if (mFrame->IsTableFrame()) {
+          return false;
+        }
+        if (alignCB->IsFlexOrGridContainer()) {
+          
+          return false;
+        }
+        const auto pseudoType = mFrame->Style()->GetPseudoType();
+        if (pseudoType == PseudoStyleType::marker &&
             mFrame->GetParent()->StyleList()->mListStylePosition ==
-                NS_STYLE_LIST_STYLE_POSITION_OUTSIDE)) {
+                NS_STYLE_LIST_STYLE_POSITION_OUTSIDE) {
+          
+          return false;
+        }
+        if (pseudoType == PseudoStyleType::columnContent) {
+          
+          return false;
+        }
+        return true;
+      }();
+
+      if (shouldCalculateBlockSideMargins) {
         CalculateBlockSideMargins();
       }
     }
