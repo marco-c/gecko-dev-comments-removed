@@ -883,11 +883,22 @@ static JSObject* NextIncomingCrossCompartmentPointer(JSObject* prev,
   return next;
 }
 
-void js::gc::DelayCrossCompartmentGrayMarking(JSObject* src) {
+void js::gc::DelayCrossCompartmentGrayMarking(GCMarker* maybeMarker,
+                                              JSObject* src) {
+  MOZ_ASSERT_IF(!maybeMarker, !JS::RuntimeHeapIsBusy());
   MOZ_ASSERT(IsGrayListObject(src));
   MOZ_ASSERT(src->isMarkedGray());
 
   AutoTouchingGrayThings tgt;
+
+  mozilla::Maybe<AutoLockGC> lock;
+  if (maybeMarker && maybeMarker->isParallelMarking()) {
+    
+    
+    
+    
+    lock.emplace(maybeMarker->runtime());
+  }
 
   
   unsigned slot = ProxyObject::grayLinkReservedSlot(src);
@@ -1051,10 +1062,10 @@ void js::NotifyGCPostSwap(JSObject* a, JSObject* b, unsigned removedFlags) {
 
 
   if (removedFlags & JS_GC_SWAP_OBJECT_A_REMOVED) {
-    DelayCrossCompartmentGrayMarking(b);
+    DelayCrossCompartmentGrayMarking(nullptr, b);
   }
   if (removedFlags & JS_GC_SWAP_OBJECT_B_REMOVED) {
-    DelayCrossCompartmentGrayMarking(a);
+    DelayCrossCompartmentGrayMarking(nullptr, a);
   }
 }
 
