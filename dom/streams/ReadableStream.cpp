@@ -141,10 +141,13 @@ void ReadableStream::SetNativeUnderlyingSource(
   mNativeUnderlyingSource = aUnderlyingSource;
 }
 
-void ReadableStream::ReleaseObjects() {
+void ReadableStream::ReleaseObjectsFromBodyStream() {
   SetNativeUnderlyingSource(nullptr);
 
-  mController->ClearAlgorithms();
+  
+  
+  
+  mController->ClearAlgorithmsWithoutRelease();
 }
 
 

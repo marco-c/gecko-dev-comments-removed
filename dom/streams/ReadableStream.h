@@ -90,7 +90,9 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   }
   bool HasNativeUnderlyingSource() { return mNativeUnderlyingSource; }
 
-  void ReleaseObjects();
+  
+  
+  void ReleaseObjectsFromBodyStream();
 
   
   
@@ -146,6 +148,8 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   ReaderState mState = ReaderState::Readable;
   JS::Heap<JS::Value> mStoredError;
 
+  
+  
   
   
   

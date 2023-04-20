@@ -47,7 +47,16 @@ class ReadableStreamController : public nsISupports {
   void SetAlgorithms(UnderlyingSourceAlgorithmsBase& aAlgorithms) {
     mAlgorithms = &aAlgorithms;
   }
-  void ClearAlgorithms() { mAlgorithms = nullptr; }
+  void ClearAlgorithms() {
+    MOZ_ASSERT(mAlgorithms);
+    mAlgorithms->ReleaseObjects();
+    mAlgorithms = nullptr;
+  }
+
+  
+  
+  
+  void ClearAlgorithmsWithoutRelease() { mAlgorithms = nullptr; }
 
  protected:
   nsCOMPtr<nsIGlobalObject> mGlobal;

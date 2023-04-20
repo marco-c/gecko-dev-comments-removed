@@ -49,7 +49,8 @@ class UnderlyingSourceAlgorithmsBase : public nsISupports {
       ErrorResult& aRv) = 0;
 
   
-  virtual void ErrorCallback() = 0;
+  
+  virtual void ReleaseObjects() {}
 
  protected:
   virtual ~UnderlyingSourceAlgorithmsBase() = default;
@@ -95,8 +96,6 @@ class UnderlyingSourceAlgorithms final : public UnderlyingSourceAlgorithmsBase {
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CancelCallback(
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) override;
-
-  void ErrorCallback() override {}
 
  protected:
   ~UnderlyingSourceAlgorithms() override { mozilla::DropJSObjects(this); };

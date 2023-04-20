@@ -282,6 +282,10 @@ void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
 already_AddRefed<Promise> BodyStream::CancelCallback(
     JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
     ErrorResult& aRv) {
+  return Promise::CreateResolvedWithUndefined(mGlobal, aRv);
+}
+
+void BodyStream::CloseInputAndReleaseObjects() {
   mMutex.AssertOnWritingThread();
 
   if (mState == eInitializing) {
@@ -298,30 +302,6 @@ already_AddRefed<Promise> BodyStream::CancelCallback(
   if (mOriginalInputStream) {
     MOZ_ASSERT(!mInputStream);
     mOriginalInputStream->Close();
-  }
-
-  RefPtr<Promise> promise = Promise::CreateResolvedWithUndefined(mGlobal, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  
-  ReleaseObjects();
-
-  return promise.forget();
-}
-
-
-void BodyStream::ErrorCallback() {
-  mMutex.AssertOnWritingThread();
-
-  if (mState == eInitializing) {
-    
-    mStreamHolder->MarkAsRead();
-  }
-
-  if (mInputStream) {
-    mInputStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
   }
 
   ReleaseObjects();
@@ -375,6 +355,15 @@ void BodyStream::ErrorPropagation(JSContext* aCx,
       ReadableStreamError(aCx, aStream, errorValue, rv);
       NS_WARNING_ASSERTION(!rv.Failed(), "Failed to error BodyStream");
     }
+  }
+
+  if (mState == eInitializing) {
+    
+    mStreamHolder->MarkAsRead();
+  }
+
+  if (mInputStream) {
+    mInputStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
   }
 
   ReleaseObjects(aProofOfLock);
@@ -610,7 +599,7 @@ void BodyStream::ReleaseObjects(const MutexSingleWriterAutoLock& aProofOfLock) {
 
   ReadableStream* stream = mStreamHolder->GetReadableStreamBody();
   if (stream) {
-    stream->ReleaseObjects();
+    stream->ReleaseObjectsFromBodyStream();
   }
 
   mWorkerRef = nullptr;
