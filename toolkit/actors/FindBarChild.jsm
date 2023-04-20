@@ -135,7 +135,11 @@ class FindBarChild extends JSWindowActorChild {
         return false;
       }
 
-      if (win.HTMLIFrameElement.isInstance(elt) && elt.mozbrowser) {
+      if (
+        (win.HTMLIFrameElement.isInstance(elt) && elt.mozbrowser) ||
+        win.XULFrameElement.isInstance(elt)
+      ) {
+        
         
         
         return false;
