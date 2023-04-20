@@ -66,5 +66,14 @@ add_task(
       "closed",
       "Check that panel state is 'closed'"
     );
+
+    
+    
+    
+    EventUtils.synthesizeNativeMouseEvent({
+      type: "mousemove",
+      target: document.documentElement,
+      atCenter: true,
+    });
   }
 );
