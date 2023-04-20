@@ -835,7 +835,7 @@ class nsTextFrame : public nsIFrame {
     
     const mozilla::StyleTextDecorationLength mTextDecorationThickness;
     nscolor mColor;
-    uint8_t mStyle;
+    mozilla::StyleTextDecorationStyle mStyle;
 
     
     
@@ -845,7 +845,8 @@ class nsTextFrame : public nsIFrame {
                    mozilla::StyleTextUnderlinePosition aUnderlinePosition,
                    const mozilla::LengthPercentageOrAuto& aUnderlineOffset,
                    const mozilla::StyleTextDecorationLength& aDecThickness,
-                   const nscolor aColor, const uint8_t aStyle)
+                   const nscolor aColor,
+                   const mozilla::StyleTextDecorationStyle aStyle)
         : mFrame(aFrame),
           mBaselineOffset(aOff),
           mTextUnderlineOffset(aUnderlineOffset),

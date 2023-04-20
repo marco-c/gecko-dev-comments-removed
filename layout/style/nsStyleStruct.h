@@ -919,7 +919,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTextReset {
   mozilla::StyleTextOverflow mTextOverflow;
 
   mozilla::StyleTextDecorationLine mTextDecorationLine;
-  uint8_t mTextDecorationStyle;  
+  mozilla::StyleTextDecorationStyle mTextDecorationStyle;
   mozilla::StyleUnicodeBidi mUnicodeBidi;
   nscoord mInitialLetterSink;  
   float mInitialLetterSize;    

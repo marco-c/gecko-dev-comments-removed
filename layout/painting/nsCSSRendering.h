@@ -619,8 +619,8 @@ struct nsCSSRendering {
     mozilla::StyleTextDecorationLine decoration =
         mozilla::StyleTextDecorationLine::UNDERLINE;
     
-    
-    uint8_t style = NS_STYLE_TEXT_DECORATION_STYLE_NONE;
+    mozilla::StyleTextDecorationStyle style =
+        mozilla::StyleTextDecorationStyle::None;
     bool vertical = false;
     bool sidewaysLeft = false;
     gfxTextRun::Range glyphRange;
@@ -770,12 +770,10 @@ struct nsCSSRendering {
 
 
 
-
-
-
   static Rect ExpandPaintingRectForDecorationLine(
-      nsIFrame* aFrame, const uint8_t aStyle, const Rect& aClippedRect,
-      const Float aICoordInFrame, const Float aCycleLength, bool aVertical);
+      nsIFrame* aFrame, const mozilla::StyleTextDecorationStyle aStyle,
+      const Rect& aClippedRect, const Float aICoordInFrame,
+      const Float aCycleLength, bool aVertical);
 };
 
 

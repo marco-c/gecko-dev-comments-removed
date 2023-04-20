@@ -441,12 +441,13 @@ class nsTextPaintStyle {
                              nscolor* aBackColor);
   
   bool GetSelectionUnderlineForPaint(int32_t aIndex, nscolor* aLineColor,
-                                     float* aRelativeSize, uint8_t* aStyle);
+                                     float* aRelativeSize,
+                                     StyleTextDecorationStyle* aStyle);
 
   
   static bool GetSelectionUnderline(nsIFrame*, int32_t aIndex,
                                     nscolor* aLineColor, float* aRelativeSize,
-                                    uint8_t* aStyle);
+                                    StyleTextDecorationStyle* aStyle);
 
   
   
@@ -513,7 +514,7 @@ class nsTextPaintStyle {
     nscolor mTextColor;
     nscolor mBGColor;
     nscolor mUnderlineColor;
-    uint8_t mUnderlineStyle;
+    StyleTextDecorationStyle mUnderlineStyle;
     float mUnderlineRelativeSize;
   };
   nsSelectionStyle mSelectionStyle[5];
@@ -4170,16 +4171,15 @@ void nsTextPaintStyle::GetIMESelectionColors(int32_t aIndex,
   *aBackColor = selectionStyle->mBGColor;
 }
 
-bool nsTextPaintStyle::GetSelectionUnderlineForPaint(int32_t aIndex,
-                                                     nscolor* aLineColor,
-                                                     float* aRelativeSize,
-                                                     uint8_t* aStyle) {
+bool nsTextPaintStyle::GetSelectionUnderlineForPaint(
+    int32_t aIndex, nscolor* aLineColor, float* aRelativeSize,
+    StyleTextDecorationStyle* aStyle) {
   NS_ASSERTION(aLineColor, "aLineColor is null");
   NS_ASSERTION(aRelativeSize, "aRelativeSize is null");
   NS_ASSERTION(aIndex >= 0 && aIndex < 5, "Index out of range");
 
   nsSelectionStyle* selectionStyle = GetSelectionStyle(aIndex);
-  if (selectionStyle->mUnderlineStyle == NS_STYLE_TEXT_DECORATION_STYLE_NONE ||
+  if (selectionStyle->mUnderlineStyle == StyleTextDecorationStyle::None ||
       selectionStyle->mUnderlineColor == NS_TRANSPARENT ||
       selectionStyle->mUnderlineRelativeSize <= 0.0f)
     return false;
@@ -4375,7 +4375,7 @@ void nsTextPaintStyle::InitSelectionStyle(int32_t aIndex) {
 
   nscolor lineColor;
   float relativeSize;
-  uint8_t lineStyle;
+  StyleTextDecorationStyle lineStyle;
   GetSelectionUnderline(mFrame, aIndex, &lineColor, &relativeSize, &lineStyle);
 
   if (mResolveColors) {
@@ -4394,7 +4394,7 @@ void nsTextPaintStyle::InitSelectionStyle(int32_t aIndex) {
 bool nsTextPaintStyle::GetSelectionUnderline(nsIFrame* aFrame, int32_t aIndex,
                                              nscolor* aLineColor,
                                              float* aRelativeSize,
-                                             uint8_t* aStyle) {
+                                             StyleTextDecorationStyle* aStyle) {
   NS_ASSERTION(aFrame, "aFrame is null");
   NS_ASSERTION(aRelativeSize, "aRelativeSize is null");
   NS_ASSERTION(aStyle, "aStyle is null");
@@ -4403,10 +4403,11 @@ bool nsTextPaintStyle::GetSelectionUnderline(nsIFrame* aFrame, int32_t aIndex,
   StyleIDs& styleID = SelectionStyleIDs[aIndex];
 
   nscolor color = LookAndFeel::Color(styleID.mLine, aFrame);
-  int32_t style = LookAndFeel::GetInt(styleID.mLineStyle);
-  if (style > NS_STYLE_TEXT_DECORATION_STYLE_MAX) {
+  const int32_t lineStyle = LookAndFeel::GetInt(styleID.mLineStyle);
+  auto style = static_cast<StyleTextDecorationStyle>(lineStyle);
+  if (lineStyle > static_cast<int32_t>(StyleTextDecorationStyle::Sentinel)) {
     NS_ERROR("Invalid underline style value is specified");
-    style = NS_STYLE_TEXT_DECORATION_STYLE_SOLID;
+    style = StyleTextDecorationStyle::Solid;
   }
   float size = LookAndFeel::GetFloat(styleID.mLineRelativeSize);
 
@@ -4418,8 +4419,8 @@ bool nsTextPaintStyle::GetSelectionUnderline(nsIFrame* aFrame, int32_t aIndex,
   *aRelativeSize = size;
   *aStyle = style;
 
-  return style != NS_STYLE_TEXT_DECORATION_STYLE_NONE &&
-         color != NS_TRANSPARENT && size > 0.0f;
+  return style != StyleTextDecorationStyle::None && color != NS_TRANSPARENT &&
+         size > 0.0f;
 }
 
 bool nsTextPaintStyle::GetSelectionShadow(
@@ -5336,7 +5337,7 @@ void nsTextFrame::GetTextDecorations(
     physicalBlockStartOffset +=
         vertical ? f->GetNormalPosition().x : f->GetNormalPosition().y;
 
-    const uint8_t style = styleTextReset->mTextDecorationStyle;
+    const auto style = styleTextReset->mTextDecorationStyle;
     if (textDecorations) {
       nscolor color;
       if (useOverride) {
@@ -5675,13 +5676,13 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
     
     
     
-    uint8_t decorationStyle =
+    auto decorationStyle =
         aBlock->Style()->StyleTextReset()->mTextDecorationStyle;
     
     
     
-    if (decorationStyle == NS_STYLE_TEXT_DECORATION_STYLE_NONE) {
-      decorationStyle = NS_STYLE_TEXT_DECORATION_STYLE_SOLID;
+    if (decorationStyle == StyleTextDecorationStyle::None) {
+      decorationStyle = StyleTextDecorationStyle::Solid;
     }
     nsCSSRendering::DecorationRectParams params;
 
@@ -5780,8 +5781,8 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
             
             
             
-            if (params.style == NS_STYLE_TEXT_DECORATION_STYLE_NONE) {
-              params.style = NS_STYLE_TEXT_DECORATION_STYLE_SOLID;
+            if (params.style == StyleTextDecorationStyle::None) {
+              params.style = StyleTextDecorationStyle::Solid;
             }
 
             float inflation = GetInflationForTextDecorations(
@@ -5964,23 +5965,23 @@ void nsTextFrame::PaintDecorationLine(
   }
 }
 
-static uint8_t ToStyleLineStyle(const TextRangeStyle& aStyle) {
+static StyleTextDecorationStyle ToStyleLineStyle(const TextRangeStyle& aStyle) {
   switch (aStyle.mLineStyle) {
     case TextRangeStyle::LineStyle::None:
-      return NS_STYLE_TEXT_DECORATION_STYLE_NONE;
+      return StyleTextDecorationStyle::None;
     case TextRangeStyle::LineStyle::Solid:
-      return NS_STYLE_TEXT_DECORATION_STYLE_SOLID;
+      return StyleTextDecorationStyle::Solid;
     case TextRangeStyle::LineStyle::Dotted:
-      return NS_STYLE_TEXT_DECORATION_STYLE_DOTTED;
+      return StyleTextDecorationStyle::Dotted;
     case TextRangeStyle::LineStyle::Dashed:
-      return NS_STYLE_TEXT_DECORATION_STYLE_DASHED;
+      return StyleTextDecorationStyle::Dashed;
     case TextRangeStyle::LineStyle::Double:
-      return NS_STYLE_TEXT_DECORATION_STYLE_DOUBLE;
+      return StyleTextDecorationStyle::Double;
     case TextRangeStyle::LineStyle::Wavy:
-      return NS_STYLE_TEXT_DECORATION_STYLE_WAVY;
+      return StyleTextDecorationStyle::Wavy;
   }
   MOZ_ASSERT_UNREACHABLE("Invalid line style");
-  return NS_STYLE_TEXT_DECORATION_STYLE_NONE;
+  return StyleTextDecorationStyle::None;
 }
 
 
@@ -6107,7 +6108,7 @@ void nsTextFrame::DrawSelectionDecorations(
 
       relativeSize = 2.0f;
       aTextPaintStyle.GetURLSecondaryColor(&params.color);
-      params.style = NS_STYLE_TEXT_DECORATION_STYLE_SOLID;
+      params.style = StyleTextDecorationStyle::Solid;
       params.defaultLineThickness = metrics.strikeoutSize;
       params.lineSize.height = ComputeDecorationLineThickness(
           decThickness, params.defaultLineThickness, metrics,
@@ -7306,7 +7307,7 @@ void nsTextFrame::DrawTextRunAndDecorations(
   auto paintDecorationLine = [&](const LineDecoration& dec,
                                  gfxFloat Metrics::*lineSize,
                                  StyleTextDecorationLine lineType) {
-    if (dec.mStyle == NS_STYLE_TEXT_DECORATION_STYLE_NONE) {
+    if (dec.mStyle == StyleTextDecorationStyle::None) {
       return;
     }
 
