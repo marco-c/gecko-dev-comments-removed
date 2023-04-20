@@ -39,7 +39,6 @@ enum class MediaCodec : int {
 #undef X
       SENTINEL
 };
-using MediaCodecSet = EnumSet<MediaCodec, uint64_t>;
 
 
 #define SW_DECODE(codec) codec##SoftwareDecode
@@ -159,31 +158,7 @@ class MCSInfo final {
 
   
   
-  
-  
-  
-  
-  
-  
-  static MediaCodec GetMediaCodecFromMimeType(const nsACString& aMimeType);
-
-  
   static std::array<CodecDefinition, 12> GetAllCodecDefinitions();
-
-  
-  static MediaCodecSet GetMediaCodecSetFromMimeTypes(
-      const nsTArray<nsCString>& aCodecStrings);
-
-  
-  
-  static MediaCodecsSupport GetMediaCodecsSupportEnum(
-      const MediaCodec& aCodec, const DecodeSupport& aSupport);
-
-  
-  static bool SupportsSoftwareDecode(
-      const MediaCodecsSupported& aSupportedCodecs, const MediaCodec& aCodec);
-  static bool SupportsHardwareDecode(
-      const MediaCodecsSupported& aSupportedCodecs, const MediaCodec& aCodec);
 
   MCSInfo(MCSInfo const&) = delete;
   void operator=(MCSInfo const&) = delete;
