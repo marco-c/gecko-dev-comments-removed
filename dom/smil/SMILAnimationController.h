@@ -123,7 +123,9 @@ class SMILAnimationController final : public SMILTimeContainer,
   nsRefreshDriver* GetRefreshDriver();
 
   
-  void StartSampling(nsRefreshDriver* aRefreshDriver);
+  void UpdateSampling();
+  bool ShouldSample() const;
+
   void StopSampling(nsRefreshDriver* aRefreshDriver);
 
   
@@ -179,20 +181,16 @@ class SMILAnimationController final : public SMILTimeContainer,
   
   
   
-  SMILTime mAvgTimeBetweenSamples;
+  SMILTime mAvgTimeBetweenSamples = 0;
 
-  bool mResampleNeeded;
-  
-  
-  
-  bool mDeferredStartSampling;
-  bool mRunningSample;
+  bool mResampleNeeded = false;
+  bool mRunningSample = false;
 
   
-  bool mRegisteredWithRefreshDriver;
+  bool mRegisteredWithRefreshDriver = false;
 
   
-  bool mMightHavePendingStyleUpdates;
+  bool mMightHavePendingStyleUpdates = false;
 
   
   
