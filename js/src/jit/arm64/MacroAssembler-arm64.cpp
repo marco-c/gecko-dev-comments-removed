@@ -2881,11 +2881,6 @@ void MacroAssembler::ceilFloat32ToInt32(FloatRegister src, Register dest,
   Label handleZero;
   Label fin;
 
-  Fcmp(iFlt, 0.0);
-
-  
-  B(Assembler::Overflow, fail);
-
   
   Fcvtps(o64, iFlt);
 
@@ -2917,9 +2912,6 @@ void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
 
   Label handleZero;
   Label fin;
-
-  Fcmp(iDbl, 0.0);
-  B(Assembler::Overflow, fail);
 
   
   Fcvtps(o64, iDbl);
