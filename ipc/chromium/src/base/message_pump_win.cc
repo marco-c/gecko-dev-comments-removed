@@ -293,11 +293,11 @@ bool MessagePumpForUI::ProcessNextWindowsMessage() {
   
   
   bool sent_messages_in_queue = false;
-  DWORD queue_status = GetQueueStatus(QS_SENDMESSAGE);
+  DWORD queue_status = ::GetQueueStatus(QS_SENDMESSAGE);
   if (HIWORD(queue_status) & QS_SENDMESSAGE) sent_messages_in_queue = true;
 
   MSG msg;
-  if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+  if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
     return ProcessMessageHelper(msg);
 
   return sent_messages_in_queue;
@@ -320,8 +320,8 @@ bool MessagePumpForUI::ProcessMessageHelper(const MSG& msg) {
   if (state_->dispatcher) {
     if (!state_->dispatcher->Dispatch(msg)) state_->should_quit = true;
   } else {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
+    ::TranslateMessage(&msg);
+    ::DispatchMessage(&msg);
   }
 
   DidProcessMessage(msg);
@@ -342,13 +342,13 @@ bool MessagePumpForUI::ProcessPumpReplacementMessage() {
   bool have_message = false;
   if (MessageLoop::current()->os_modal_loop()) {
     
-    have_message = PeekMessage(&msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE) ||
-                   PeekMessage(&msg, NULL, WM_TIMER, WM_TIMER, PM_REMOVE);
+    have_message = ::PeekMessage(&msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE) ||
+                   ::PeekMessage(&msg, NULL, WM_TIMER, WM_TIMER, PM_REMOVE);
   } else {
-    have_message = (0 != PeekMessage(&msg, NULL, 0, 0, PM_REMOVE));
+    have_message = (0 != ::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE));
 
     if (have_message && msg.message == WM_NULL)
-      have_message = (0 != PeekMessage(&msg, NULL, 0, 0, PM_REMOVE));
+      have_message = (0 != ::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE));
   }
 
   DCHECK(!have_message || kMsgHaveWork != msg.message ||
@@ -360,6 +360,27 @@ bool MessagePumpForUI::ProcessPumpReplacementMessage() {
 
   
   if (!have_message) return false;
+
+  if (WM_QUIT == msg.message) {
+    
+    
+    
+    
+    ::PostQuitMessage(static_cast<int>(msg.wParam));
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    return true;
+  }
 
   
   
