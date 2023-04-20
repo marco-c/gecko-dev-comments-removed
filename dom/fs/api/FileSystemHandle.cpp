@@ -280,12 +280,20 @@ already_AddRefed<FileSystemFileHandle> FileSystemHandle::ConstructFileHandle(
 
   
   
+  
+  
+#if 0
+  
+  
   auto fileSystemManager = MakeRefPtr<FileSystemManager>(aGlobal, nullptr);
 
   RefPtr<FileSystemFileHandle> fsHandle =
       new FileSystemFileHandle(aGlobal, fileSystemManager, metadata);
 
   return fsHandle.forget();
+#else
+  return nullptr;
+#endif
 }
 
 
@@ -303,12 +311,20 @@ FileSystemHandle::ConstructDirectoryHandle(JSContext* aCx,
 
   
   
+  
+  
+#if 0
+  
+  
   auto fileSystemManager = MakeRefPtr<FileSystemManager>(aGlobal, nullptr);
 
   RefPtr<FileSystemDirectoryHandle> fsHandle =
       new FileSystemDirectoryHandle(aGlobal, fileSystemManager, metadata);
 
   return fsHandle.forget();
+#else
+  return nullptr;
+#endif
 }
 
 }  

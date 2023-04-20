@@ -49,6 +49,11 @@ void FileSystemBackgroundRequestHandler::Shutdown() {
     mCreateFileSystemManagerParentPromiseRequestHolder.Disconnect();
 
     mCreatingFileSystemManagerChild = false;
+
+    
+    
+    
+    Unused << mCreateFileSystemManagerChildPromiseHolder.Steal();
   }
 }
 
