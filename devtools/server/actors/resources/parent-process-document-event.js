@@ -121,11 +121,17 @@ class ParentProcessDocumentEventWatcher {
       }
 
       
-      
-      
-      const isTopLevel = browsingContext.top == browsingContext;
-      const isRestoring = flag & Ci.nsIWebProgressListener.STATE_RESTORING;
-      if (!isTopLevel && isRestoring) {
+      if (
+        this.watcherActor.sessionContext.type == "all" &&
+        browsingContext.isContent
+      ) {
+        
+        
+        
+        return;
+      }
+      const isTopLevel = top == browsingContext;
+      if (!isTopLevel) {
         return;
       }
 
