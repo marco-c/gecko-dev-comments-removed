@@ -747,9 +747,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ReplaceTextWithTransaction(
-      dom::Text& aTextNode, uint32_t aOffset, uint32_t aLength,
-      const nsAString& aStringToInsert);
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertTextResult, nsresult>
+  ReplaceTextWithTransaction(dom::Text& aTextNode, uint32_t aOffset,
+                             uint32_t aLength,
+                             const nsAString& aStringToInsert);
 
   
 
@@ -2002,7 +2006,7 @@ class HTMLEditor final : public EditorBase,
     Forward,
     Backward,
   };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
   DeleteTextAndNormalizeSurroundingWhiteSpaces(
       const EditorDOMPointInText& aStartToDelete,
       const EditorDOMPointInText& aEndToDelete,

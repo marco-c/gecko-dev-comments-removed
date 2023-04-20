@@ -525,6 +525,13 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
         
         
         
+        AutoSelectionRestorer restoreSelection(*this);
+        
+        
+        
+        
+        
+        
         
         auto pointToAdjust = GetLastIMESelectionEndPoint<EditorDOMPoint>();
         if (!pointToAdjust.IsInContentNode()) {
@@ -2906,7 +2913,7 @@ void HTMLEditor::ExtendRangeToDeleteWithNormalizingWhiteSpaces(
   }
 }
 
-Result<EditorDOMPoint, nsresult>
+Result<CaretPoint, nsresult>
 HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
     const EditorDOMPointInText& aStartToDelete,
     const EditorDOMPointInText& aEndToDelete,
@@ -2932,7 +2939,7 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
   
   
   if (startToDelete == endToDelete) {
-    return aStartToDelete.To<EditorDOMPoint>();
+    return CaretPoint(aStartToDelete.To<EditorDOMPoint>());
   }
 
   
@@ -2964,14 +2971,17 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
                 ? trackingEndToDelete.Offset() - startToDelete.Offset()
                 : startToDelete.ContainerAs<Text>()->TextLength() -
                       startToDelete.Offset();
-        nsresult rv = ReplaceTextWithTransaction(
-            MOZ_KnownLive(*startToDelete.ContainerAs<Text>()),
-            startToDelete.Offset(), lengthToReplaceInFirstTextNode,
-            normalizedWhiteSpacesInFirstNode);
-        if (NS_FAILED(rv)) {
+        Result<InsertTextResult, nsresult> replaceTextResult =
+            ReplaceTextWithTransaction(
+                MOZ_KnownLive(*startToDelete.ContainerAs<Text>()),
+                startToDelete.Offset(), lengthToReplaceInFirstTextNode,
+                normalizedWhiteSpacesInFirstNode);
+        if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
           NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-          return Err(rv);
+          return replaceTextResult.propagateErr();
         }
+        
+        replaceTextResult.unwrap().IgnoreCaretPointSuggestion();
         if (startToDelete.ContainerAs<Text>() ==
             trackingEndToDelete.ContainerAs<Text>()) {
           MOZ_ASSERT(normalizedWhiteSpacesInLastNode.IsEmpty());
@@ -3038,22 +3048,23 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
     MOZ_ASSERT(!normalizedWhiteSpacesInLastNode.IsEmpty());
     MOZ_ASSERT(startToDelete.ContainerAs<Text>() ==
                endToDelete.ContainerAs<Text>());
-    nsresult rv = ReplaceTextWithTransaction(
-        MOZ_KnownLive(*startToDelete.ContainerAs<Text>()),
-        startToDelete.Offset(), endToDelete.Offset() - startToDelete.Offset(),
-        normalizedWhiteSpacesInLastNode);
-    if (NS_FAILED(rv)) {
+    Result<InsertTextResult, nsresult> replaceTextResult =
+        ReplaceTextWithTransaction(
+            MOZ_KnownLive(*startToDelete.ContainerAs<Text>()),
+            startToDelete.Offset(),
+            endToDelete.Offset() - startToDelete.Offset(),
+            normalizedWhiteSpacesInLastNode);
+    if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
       NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-      return Err(rv);
+      return replaceTextResult.propagateErr();
     }
+    
+    replaceTextResult.unwrap().IgnoreCaretPointSuggestion();
     break;
   }
 
-  if (!newCaretPosition.IsSetAndValid() ||
-      !newCaretPosition.GetContainer()->IsInComposedDoc()) {
-    NS_WARNING(
-        "HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces() got lost "
-        "the modifying line");
+  if (NS_WARN_IF(!newCaretPosition.IsSetAndValid()) ||
+      NS_WARN_IF(!newCaretPosition.GetContainer()->IsInComposedDoc())) {
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
@@ -3121,7 +3132,7 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
     NS_WARNING("Inserting <br> element caused unexpected DOM tree");
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
-  return newCaretPosition;
+  return CaretPoint(std::move(newCaretPosition));
 }
 
 nsresult HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(

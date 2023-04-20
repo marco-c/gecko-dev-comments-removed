@@ -1536,6 +1536,8 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+
+
   template <typename EditorDOMPointType>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
   NormalizeVisibleWhiteSpacesAt(HTMLEditor& aHTMLEditor,
