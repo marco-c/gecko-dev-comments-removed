@@ -280,14 +280,14 @@ class MediaPipelineTransmit
   void TransportReady_s() override;
 
   
-  nsresult SetTrack(RefPtr<dom::MediaStreamTrack> aDomTrack);
+  nsresult SetTrack(const RefPtr<dom::MediaStreamTrack>& aDomTrack);
 
   
   RefPtr<dom::MediaStreamTrack> GetTrack() const;
 
   
   
-  void SetSendTrackOverride(RefPtr<ProcessedMediaTrack> aSendTrack);
+  void SetSendTrackOverride(const RefPtr<ProcessedMediaTrack>& aSendTrack);
 
   
   class PipelineListener;
