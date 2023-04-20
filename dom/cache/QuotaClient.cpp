@@ -129,7 +129,6 @@ Result<int64_t, nsresult> GetPaddingSizeFromDB(
   
   
   
-  
   MOZ_DIAGNOSTIC_ASSERT(directoryMetadata.mDirectoryLockId == -1);
 
 #ifdef DEBUG
