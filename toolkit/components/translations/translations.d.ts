@@ -215,3 +215,13 @@ interface LanguageTranslationModelFiles {
 type LanguageTranslationModelFilesAligned = {
   [K in keyof LanguageTranslationModelFiles]: AlignedMemory
 };
+
+
+
+
+
+
+interface EnginePayload {
+  bergamotWasmArrayBuffer: ArrayBuffer,
+  languageModelFiles: LanguageModelFiles[]
+}

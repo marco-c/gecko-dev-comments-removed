@@ -34,28 +34,22 @@ const MODEL_FILE_ALIGNMENTS = {
 };
 
 
-addEventListener("message", initialize);
 
 
 
 
+addEventListener("message", handleInitializationMessage);
 
-
-async function initialize({ data }) {
+async function handleInitializationMessage({ data }) {
   if (data.type !== "initialize") {
-    throw new Error(
+    console.error(
       "The TranslationEngine worker received a message before it was initialized."
     );
+    return;
   }
 
   try {
-    const {
-      fromLanguage,
-      toLanguage,
-      bergamotWasmArrayBuffer,
-      languageTranslationModelFiles,
-      isLoggingEnabled,
-    } = data;
+    const { fromLanguage, toLanguage, enginePayload, isLoggingEnabled } = data;
 
     if (!fromLanguage) {
       throw new Error('Worker initialization missing "fromLanguage"');
@@ -63,31 +57,30 @@ async function initialize({ data }) {
     if (!toLanguage) {
       throw new Error('Worker initialization missing "toLanguage"');
     }
-    if (!bergamotWasmArrayBuffer) {
-      throw new Error(
-        '"Worker initialization missing "bergamotWasmArrayBuffer"'
-      );
-    }
-    if (!languageTranslationModelFiles) {
-      throw new Error(
-        '"Worker initialization missing "languageTranslationModelFiles"'
-      );
-    }
 
     if (isLoggingEnabled) {
       
       _isLoggingEnabled = true;
     }
 
-    const bergamot = await BergamotUtils.initializeWasm(
-      bergamotWasmArrayBuffer
-    );
-    new TranslationsEngineWorker(
-      fromLanguage,
-      toLanguage,
-      bergamot,
-      languageTranslationModelFiles
-    );
+    let engine;
+    if (enginePayload) {
+      const { bergamotWasmArrayBuffer, languageModelFiles } = enginePayload;
+      const bergamot = await BergamotUtils.initializeWasm(
+        bergamotWasmArrayBuffer
+      );
+      engine = new Engine(
+        fromLanguage,
+        toLanguage,
+        bergamot,
+        languageModelFiles
+      );
+    } else {
+      
+      engine = new MockedEngine(fromLanguage, toLanguage);
+    }
+
+    handleMessages(engine);
     postMessage({ type: "initialization-success" });
   } catch (error) {
     
@@ -95,7 +88,49 @@ async function initialize({ data }) {
     postMessage({ type: "initialization-error", error: error?.message });
   }
 
-  removeEventListener("message", initialize);
+  removeEventListener("message", handleInitializationMessage);
+}
+
+
+
+
+
+
+function handleMessages(engine) {
+  addEventListener("message", ({ data }) => {
+    try {
+      if (data.type === "initialize") {
+        throw new Error("The Translations engine must not be re-initialized.");
+      }
+      log("Received message", data);
+
+      switch (data.type) {
+        case "translation-request": {
+          const { messageBatch, messageId } = data;
+          try {
+            const translations = engine.translate(messageBatch);
+            postMessage({
+              type: "translation-response",
+              translations,
+              messageId,
+            });
+          } catch (error) {
+            console.error(error);
+            postMessage({
+              type: "translation-error",
+              messageId,
+            });
+          }
+          break;
+        }
+        default:
+          console.warn("Unknown message type:", data.type);
+      }
+    } catch (error) {
+      
+      console.error(error);
+    }
+  });
 }
 
 
@@ -109,7 +144,7 @@ async function initialize({ data }) {
 
 
 
-class TranslationsEngineWorker {
+class Engine {
   
 
 
@@ -142,41 +177,6 @@ class TranslationsEngineWorker {
       
       cacheSize: 0,
     });
-
-    addEventListener("message", this.onMessage.bind(this));
-  }
-
-  
-
-
-  onMessage({ data }) {
-    if (data.type === "initialize") {
-      throw new Error("The Translations engine must not be re-initialized.");
-    }
-    log("Received message", data);
-
-    switch (data.type) {
-      case "translation-request": {
-        const { messageBatch, messageId } = data;
-        try {
-          const translations = this.translate(messageBatch);
-          postMessage({
-            type: "translation-response",
-            translations,
-            messageId,
-          });
-        } catch (error) {
-          console.error(error);
-          postMessage({
-            type: "translation-error",
-            messageId,
-          });
-        }
-        break;
-      }
-      default:
-        console.warn("Unknown message type:", data.type);
-    }
   }
 
   
@@ -451,5 +451,36 @@ class BergamotUtils {
       });
     }
     return { messages, options };
+  }
+}
+
+
+
+
+
+
+class MockedEngine {
+  
+
+
+
+  constructor(fromLanguage, toLanguage) {
+    
+    this.fromLanguage = fromLanguage;
+    
+    this.toLanguage = toLanguage;
+  }
+
+  
+
+
+
+
+
+  translate(messageBatch) {
+    return messageBatch.map(
+      message =>
+        `${message.toUpperCase()} [${this.fromLanguage} to ${this.toLanguage}]`
+    );
   }
 }

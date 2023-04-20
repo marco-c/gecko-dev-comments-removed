@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { TranslationsParent } = ChromeUtils.importESModule(
+  "resource://gre/actors/TranslationsParent.sys.mjs"
+);
+
 
 
 
@@ -61,10 +65,7 @@ async function openAboutTranslations({
 
   
   if (languagePairs) {
-    const translations = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor(
-      "Translations"
-    );
-    translations.mock(languagePairs);
+    TranslationsParent.mock(languagePairs);
   }
 
   
@@ -78,11 +79,7 @@ async function openAboutTranslations({
   );
 
   if (languagePairs) {
-    
-    const translations = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor(
-      "Translations"
-    );
-    translations.mock(null);
+    TranslationsParent.mock(null);
   }
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
