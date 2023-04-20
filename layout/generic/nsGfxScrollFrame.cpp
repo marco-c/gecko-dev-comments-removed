@@ -4207,7 +4207,21 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   nscoord radii[8];
   const bool haveRadii = mOuter->GetPaddingBoxBorderRadii(radii);
   if (mIsRoot) {
-    clipRect.SizeTo(nsLayoutUtils::CalculateCompositionSizeForFrame(mOuter));
+    clipRect.SizeTo(nsLayoutUtils::CalculateCompositionSizeForFrame(
+        mOuter, true ,
+        nullptr ,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        nsLayoutUtils::IncludeDynamicToolbar::Force));
+
     
     
     

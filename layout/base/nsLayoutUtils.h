@@ -2628,9 +2628,19 @@ class nsLayoutUtils {
       const nsPresContext* aPresContext, LayoutDeviceIntSize& aOutSize,
       SubtractDynamicToolbar = SubtractDynamicToolbar::Yes);
 
+  
+
+
+
+
+
+  enum class IncludeDynamicToolbar { Auto, Force };
+
  private:
   static bool UpdateCompositionBoundsForRCDRSF(
-      mozilla::ParentLayerRect& aCompBounds, const nsPresContext* aPresContext);
+      mozilla::ParentLayerRect& aCompBounds, const nsPresContext* aPresContext,
+      IncludeDynamicToolbar aIncludeDynamicToolbar =
+          IncludeDynamicToolbar::Auto);
 
  public:
   
@@ -2644,7 +2654,9 @@ class nsLayoutUtils {
 
   static nsSize CalculateCompositionSizeForFrame(
       nsIFrame* aFrame, bool aSubtractScrollbars = true,
-      const nsSize* aOverrideScrollPortSize = nullptr);
+      const nsSize* aOverrideScrollPortSize = nullptr,
+      IncludeDynamicToolbar aIncludeDynamicToolbar =
+          IncludeDynamicToolbar::Auto);
 
   
 
