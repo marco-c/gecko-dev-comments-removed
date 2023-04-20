@@ -601,13 +601,6 @@ impl TimelineOrKeyframesName {
 impl Eq for TimelineOrKeyframesName {}
 
 
-
-pub trait IsAuto {
-    
-    fn is_auto(&self) -> bool;
-}
-
-
 #[repr(transparent)]
 #[derive(
     Clone,
@@ -659,6 +652,7 @@ impl ToCss for TimelineName {
 }
 
 
+#[repr(transparent)]
 #[derive(
     Clone,
     Debug,
