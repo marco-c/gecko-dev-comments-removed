@@ -3945,12 +3945,11 @@
       }
 
       let isLastTab = !aTab.hidden && this.visibleTabs.length == 1;
-      let windowUtils = window.windowUtils;
       
       
       
       
-      let tabWidth = windowUtils.getBoundsWithoutFlushing(aTab).width;
+      let tabWidth = window.windowUtils.getBoundsWithoutFlushing(aTab).width;
 
       if (
         !this._beginRemoveTab(aTab, {
@@ -3987,8 +3986,7 @@
           3  ||
         aTab.getAttribute("fadein") !=
           "true"  ||
-        window.getComputedStyle(aTab).maxWidth ==
-          "0.1px" 
+        tabWidth == 0 
       ) {
         
         TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_ANIM_MS", aTab);
