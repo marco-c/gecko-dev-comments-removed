@@ -1606,7 +1606,7 @@ var BookmarkingUI = {
       ) {
         return true;
       }
-      if (!this.toolbar.hasAttribute("initialized")) {
+      if (!this.toolbar.hasAttribute("initialized") && !this._isCustomizing) {
         
         
         
