@@ -2607,7 +2607,8 @@ bool DrawTargetWebgl::SharedContext::DrawPathAccel(
   }
 
   if (mPathVertexCapacity > 0 && !handle && entry && !aShadow &&
-      SupportsPattern(aPattern)) {
+      SupportsPattern(aPattern) &&
+      entry->GetPath().mPath.num_types <= mPathMaxComplexity) {
     if (entry->GetVertexRange().IsValid()) {
       
       
@@ -3715,6 +3716,9 @@ void DrawTargetWebgl::SharedContext::CachePrefs() {
       ResetPathVertexBuffer();
     }
   }
+
+  mPathMaxComplexity =
+      StaticPrefs::gfx_canvas_accelerated_gpu_path_complexity();
 }
 
 

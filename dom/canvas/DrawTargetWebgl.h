@@ -169,6 +169,8 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     uint32_t mPathVertexOffset = 0;
     
     uint32_t mPathVertexCapacity = 0;
+    
+    uint32_t mPathMaxComplexity = 0;
     RefPtr<WebGLProgramJS> mSolidProgram;
     RefPtr<WebGLUniformLocationJS> mSolidProgramViewport;
     RefPtr<WebGLUniformLocationJS> mSolidProgramAA;
