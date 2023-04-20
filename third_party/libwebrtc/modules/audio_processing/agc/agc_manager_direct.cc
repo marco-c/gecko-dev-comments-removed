@@ -722,6 +722,8 @@ void AgcManagerDirect::AggregateChannelLevels() {
       }
     }
   }
+  
+  
   if (min_mic_level_override_.has_value()) {
     stream_analog_level_ =
         std::max(stream_analog_level_, *min_mic_level_override_);
