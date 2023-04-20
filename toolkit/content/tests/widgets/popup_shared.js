@@ -52,6 +52,9 @@ function startPopupTests(tests) {
   document.addEventListener("DOMMenuBarActive", eventOccurred);
   document.addEventListener("DOMMenuBarInactive", eventOccurred);
 
+  
+  document.addEventListener("TestDone", eventOccurred);
+
   gPopupTests = tests;
   gWindowUtils = SpecialPowers.getDOMWindowUtils(window);
 
