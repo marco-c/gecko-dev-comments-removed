@@ -10,10 +10,6 @@ ChromeUtils.defineESModuleGetters(this, {
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
 });
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  BrowserTestUtils: "resource://testing-common/BrowserTestUtils.jsm",
-});
-
 
 
 async function runTests() {
