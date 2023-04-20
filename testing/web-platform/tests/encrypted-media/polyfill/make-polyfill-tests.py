@@ -1,7 +1,5 @@
 
 
-from __future__ import print_function
-
 import os, re, os.path, glob
 
 head = re.compile( r"^(\s*</head>)", re.MULTILINE )

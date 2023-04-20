@@ -3,8 +3,6 @@
 
 
 
-from __future__ import print_function
-
 import json
 from rdflib import ConjunctiveGraph, URIRef
 from pyld import jsonld
