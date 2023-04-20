@@ -477,9 +477,7 @@ void AudioDeviceBuffer::LogStats(LogState state) {
 
   
   task_queue_.PostDelayedTask(
-      ToQueuedTask([this] {
-        AudioDeviceBuffer::LogStats(AudioDeviceBuffer::LOG_ACTIVE);
-      }),
+      [this] { AudioDeviceBuffer::LogStats(AudioDeviceBuffer::LOG_ACTIVE); },
       time_to_wait_ms);
 }
 
