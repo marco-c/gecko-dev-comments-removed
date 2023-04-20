@@ -14,6 +14,15 @@
 namespace mozilla::dom {
 
 const nsLiteralCString& PermissionNameToType(PermissionName aName);
+
+
+
+
+
+
+
+
+
 Maybe<PermissionName> TypeToPermissionName(const nsACString& aType);
 
 PermissionState ActionToPermissionState(uint32_t aAction);
