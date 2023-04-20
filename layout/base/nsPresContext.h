@@ -238,13 +238,13 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
 
 
-  already_AddRefed<nsIWidget> GetRootWidget() const;
+  nsIWidget* GetRootWidget() const;
 
   
 
 
 
-  already_AddRefed<nsIWidget> GetTextInputHandlingWidget() const {
+  nsIWidget* GetTextInputHandlingWidget() const {
     
     return GetRootWidget();
   }

@@ -282,7 +282,7 @@ class nsViewManager final {
 
 
 
-  already_AddRefed<nsIWidget> GetRootWidget();
+  nsIWidget* GetRootWidget() const;
 
   
 

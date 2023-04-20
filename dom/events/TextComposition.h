@@ -81,7 +81,10 @@ class TextComposition final {
   TextRangeArray* GetRanges() const { return mRanges; }
   
   already_AddRefed<nsIWidget> GetWidget() const {
-    return mPresContext ? mPresContext->GetRootWidget() : nullptr;
+    if (!mPresContext) {
+      return nullptr;
+    }
+    return do_AddRef(mPresContext->GetRootWidget());
   }
   
   BrowserParent* GetBrowserParent() const { return mBrowserParent; }
