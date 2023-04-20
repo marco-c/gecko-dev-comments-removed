@@ -454,12 +454,10 @@ struct Texture {
   }
 
   int bpp() const { return buf_bpp; }
-  int compute_bpp() const { return bytes_for_internal_format(internal_format); }
+  void set_bpp() { buf_bpp = bytes_for_internal_format(internal_format); }
 
   size_t stride() const { return buf_stride; }
-  size_t compute_stride(int bpp, int width) const {
-    return aligned_stride(bpp * width);
-  }
+  void set_stride() { buf_stride = aligned_stride(buf_bpp * width); }
 
   
   void set_buffer(void* new_buf, size_t new_stride) {
@@ -468,13 +466,13 @@ struct Texture {
     
     
     
-    int new_bpp = compute_bpp();
-    assert(new_stride >= size_t(new_bpp * width) &&
-           new_stride % min(new_bpp, sizeof(uint32_t)) == 0);
+    set_bpp();
+    set_stride();
+    assert(new_stride >= size_t(bpp() * width) &&
+           new_stride % min(bpp(), sizeof(uint32_t)) == 0);
 
     buf = (char*)new_buf;
     buf_size = 0;
-    buf_bpp = new_bpp;
     buf_stride = new_stride;
   }
 
@@ -488,12 +486,12 @@ struct Texture {
     
     if ((!buf || force) && should_free()) {
       
-      int new_bpp = compute_bpp();
-      size_t new_stride = compute_stride(new_bpp, width);
+      set_bpp();
+      set_stride();
       
       
       
-      size_t max_stride = compute_stride(new_bpp, max(width, min_width));
+      size_t max_stride = max(buf_stride, aligned_stride(buf_bpp * min_width));
       size_t size = max_stride * max(height, min_height);
       if ((!buf && size > 0) || size > buf_size) {
         
@@ -514,8 +512,6 @@ struct Texture {
           
           buf = new_buf;
           buf_size = size;
-          buf_bpp = new_bpp;
-          buf_stride = new_stride;
           return true;
         }
         
