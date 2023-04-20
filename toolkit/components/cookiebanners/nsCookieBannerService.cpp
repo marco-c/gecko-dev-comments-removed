@@ -254,10 +254,22 @@ nsCookieBannerService::GetRules(nsTArray<RefPtr<nsICookieBannerRule>>& aRules) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  
+  
   if (StaticPrefs::cookiebanners_service_enableGlobalRules()) {
     AppendToArray(aRules, mGlobalRules.Values());
   }
-  AppendToArray(aRules, mRules.Values());
+
+  
+  
+  
+  nsTHashSet<nsRefPtrHashKey<nsICookieBannerRule>> rulesSet;
+
+  for (const nsCOMPtr<nsICookieBannerRule>& rule : mRules.Values()) {
+    rulesSet.Insert(rule);
+  }
+
+  AppendToArray(aRules, rulesSet);
 
   return NS_OK;
 }
