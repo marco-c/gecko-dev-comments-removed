@@ -33,6 +33,7 @@ enum IncrementalProgress { NotFinished = 0, Finished };
 
 class AutoSetMarkColor;
 struct Cell;
+class ParallelMarker;
 
 struct EphemeronEdgeTableHashPolicy {
   using Lookup = Cell*;
@@ -163,7 +164,10 @@ class MarkStack {
 
   [[nodiscard]] bool push(JSObject* obj, SlotsOrElementsKind kind,
                           size_t start);
+  [[nodiscard]] bool push(const TaggedPtr& ptr);
   [[nodiscard]] bool push(const SlotsOrElementsRange& array);
+  void infalliblePush(const TaggedPtr& ptr);
+  void infalliblePush(const SlotsOrElementsRange& array);
 
   
   
@@ -179,14 +183,17 @@ class MarkStack {
 
   void poisonUnused();
 
+  [[nodiscard]] bool ensureSpace(size_t count);
+
+  bool hasStealableWork() const;
+  void stealWorkFrom(MarkStack& other);
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
  private:
   using StackVector = Vector<TaggedPtr, 0, SystemAllocPolicy>;
   const StackVector& stack() const { return stack_.ref(); }
   StackVector& stack() { return stack_.ref(); }
-
-  [[nodiscard]] bool ensureSpace(size_t count);
 
   
   [[nodiscard]] bool enlarge(size_t count);
@@ -197,6 +204,9 @@ class MarkStack {
 
   const TaggedPtr& peekPtr() const;
   [[nodiscard]] bool pushTaggedPtr(Tag tag, Cell* ptr);
+
+  size_t basePositionForCurrentColor() const;
+  size_t wordCountForCurrentColor() const;
 
   void assertGrayPositionValid() const;
 
@@ -255,6 +265,7 @@ class MarkingTracerT
 
 using MarkingTracer = MarkingTracerT<NormalMarkingOptions>;
 using RootMarkingTracer = MarkingTracerT<MarkingOptions::MarkRootCompartments>;
+using ParallelMarkingTracer = MarkingTracerT<MarkingOptions::ParallelMarking>;
 
 enum ShouldReportMarkTime : bool {
   ReportMarkTime = true,
@@ -279,6 +290,9 @@ class GCMarker {
     RegularMarking,
 
     
+    ParallelMarking,
+
+    
     
     
     
@@ -300,11 +314,14 @@ class GCMarker {
 
   bool isActive() const { return state != NotActive; }
   bool isRegularMarking() const { return state == RegularMarking; }
+  bool isParallelMarking() const { return state == ParallelMarking; }
   bool isWeakMarking() const { return state == WeakMarking; }
 
   gc::MarkColor markColor() const { return stack.markColor(); }
 
   bool isDrained() const { return stack.isEmpty(); }
+
+  bool hasEntries(gc::MarkColor color) const { return stack.hasEntries(color); }
 
   void start();
   void stop();
@@ -318,6 +335,9 @@ class GCMarker {
 
   bool enterWeakMarkingMode();
   void leaveWeakMarkingMode();
+
+  void enterParallelMarkingMode(gc::ParallelMarker* pm);
+  void leaveParallelMarkingMode();
 
   
   
@@ -337,6 +357,13 @@ class GCMarker {
 
   bool shouldCheckCompartments() { return strictCompartmentChecking; }
 #endif
+
+  void markCurrentColorInParallel(SliceBudget& budget);
+
+  template <uint32_t markingOptions, gc::MarkColor>
+  bool markOneColor(SliceBudget& budget);
+
+  void stealWorkFrom(GCMarker* other);
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
@@ -370,7 +397,9 @@ class GCMarker {
 
   bool hasBlackEntries() const { return stack.hasBlackEntries(); }
   bool hasGrayEntries() const { return stack.hasGrayEntries(); }
-  bool hasEntries(gc::MarkColor color) const { return stack.hasEntries(color); }
+
+  template <typename Tracer>
+  void setMarkingStateAndTracer(MarkingState prev, MarkingState next);
 
   template <uint32_t markingOptions>
   void processMarkStackTop(SliceBudget& budget);
@@ -470,7 +499,9 @@ class GCMarker {
 
 
 
-  mozilla::Variant<gc::MarkingTracer, gc::RootMarkingTracer> tracer_;
+  mozilla::Variant<gc::MarkingTracer, gc::RootMarkingTracer,
+                   gc::ParallelMarkingTracer>
+      tracer_;
 
   JSRuntime* const runtime_;
 
@@ -482,6 +513,8 @@ class GCMarker {
 
   
   MainThreadOrGCTaskData<MarkingState> state;
+
+  MainThreadOrGCTaskData<gc::ParallelMarker*> parallelMarker_;
 
  public:
   
