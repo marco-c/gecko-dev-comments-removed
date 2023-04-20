@@ -36,6 +36,7 @@
 #include "vm/BytecodeIterator.h"
 #include "vm/BytecodeLocation.h"
 #include "vm/BytecodeUtil.h"
+#include "vm/MutexIDs.h"  
 #include "vm/NativeObject.h"
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/SharedStencil.h"  
