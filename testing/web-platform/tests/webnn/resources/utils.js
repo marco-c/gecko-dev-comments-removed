@@ -3,9 +3,6 @@
 const ExecutionArray = ['sync', 'async'];
 
 
-const DeviceTypeArray = ['cpu', 'gpu'];
-
-
 const TypedArrayDict = {
   float32: Float32Array,
   int32: Int32Array,
@@ -604,33 +601,29 @@ const testWebNNOperation = (operationName, buildFunc) => {
       
       operationNameArray.forEach((subOperationName) => {
         const tests = loadTests(subOperationName);
-        DeviceTypeArray.forEach(deviceType => {
-          setup(() => {
-            context = navigator.ml.createContextSync({deviceType});
-            builder = new MLGraphBuilder(context);
-          });
-          for (const subTest of tests) {
-            test(() => {
-              runSync(subOperationName, context, builder, subTest, buildFunc);
-            }, `${subTest.name} / ${deviceType} / ${executionType}`);
-          }
+        setup(() => {
+          context = navigator.ml.createContextSync();
+          builder = new MLGraphBuilder(context);
         });
+        for (const subTest of tests) {
+          test(() => {
+            runSync(subOperationName, context, builder, subTest, buildFunc);
+          }, `${subTest.name} / ${executionType}`);
+        }
       });
     } else {
       
       operationNameArray.forEach((subOperationName) => {
         const tests = loadTests(subOperationName);
-        DeviceTypeArray.forEach(deviceType => {
-          promise_setup(async () => {
-            context = await navigator.ml.createContext({deviceType});
-            builder = new MLGraphBuilder(context);
-          });
-          for (const subTest of tests) {
-            promise_test(async () => {
-              await run(subOperationName, context, builder, subTest, buildFunc);
-            }, `${subTest.name} / ${deviceType} / ${executionType}`);
-          }
+        promise_setup(async () => {
+          context = await navigator.ml.createContext();
+          builder = new MLGraphBuilder(context);
         });
+        for (const subTest of tests) {
+          promise_test(async () => {
+            await run(subOperationName, context, builder, subTest, buildFunc);
+          }, `${subTest.name} / ${executionType}`);
+        }
       });
     }
   });
