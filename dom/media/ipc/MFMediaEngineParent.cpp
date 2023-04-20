@@ -8,6 +8,7 @@
 #include <intsafe.h>
 #include <mfapi.h>
 
+#include "MFContentProtectionManager.h"
 #include "MFMediaEngineExtension.h"
 #include "MFMediaEngineVideoStream.h"
 #include "MFMediaEngineUtils.h"
@@ -167,7 +168,8 @@ void MFMediaEngineParent::CreateMediaEngine() {
       creationAttributes.Get(), &mMediaEngine));
 
   
-  
+  RETURN_VOID_IF_FAILED(MakeAndInitialize<MFContentProtectionManager>(
+      &mContentProtectionManager));
 
   LOG("Created media engine successfully");
   mIsCreatedMediaEngine = true;
