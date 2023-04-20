@@ -5684,6 +5684,13 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
   } else if (channelClassifierCancellationPending) {
     
     
+    
+    
+    if (mCallOnResume) {
+      mCallOnResume = nullptr;
+    }
+    
+    
     needAsyncAbort = false;
     Unused << AsyncAbort(status);
   }
