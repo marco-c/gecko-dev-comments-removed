@@ -50,7 +50,7 @@ class MOZ_STACK_CLASS ModuleBuilder {
 
   
   
-  bool noteFunctionDeclaration(JSContext* cx, uint32_t funIndex);
+  bool noteFunctionDeclaration(ErrorContext* ec, uint32_t funIndex);
   void finishFunctionDecls(frontend::StencilModuleMetadata& metadata);
 
   void noteAsync(frontend::StencilModuleMetadata& metadata);
@@ -67,6 +67,7 @@ class MOZ_STACK_CLASS ModuleBuilder {
               frontend::TaggedParserAtomIndexHasher>;
 
   JSContext* cx_;
+  ErrorContext* ec_;
   frontend::EitherParser eitherParser_;
 
   
