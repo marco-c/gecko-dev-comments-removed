@@ -16,12 +16,6 @@ namespace webrtc {
 namespace webrtc_pc_e2e {
 
 
-
-
-
-std::string GetCurrentTestName();
-
-
 class MetricMetadataKey {
  public:
   
