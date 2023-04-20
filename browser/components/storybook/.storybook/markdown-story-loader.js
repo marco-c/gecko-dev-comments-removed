@@ -55,6 +55,22 @@ function toPascalCase(str) {
 
 
 
+function parseStoriesFromMarkdown(source) {
+  let storiesRegex = /```(?:js|html) story\n(?<code>[\s\S]*?)```/g;
+  
+  
+  return source.replace(
+    storiesRegex,
+    "<Canvas withSource='none'><with-common-styles>$<code></with-common-styles></Canvas>"
+  );
+}
+
+
+
+
+
+
+
 
 module.exports = function markdownStoryLoader(source) {
   
@@ -78,7 +94,7 @@ module.exports = function markdownStoryLoader(source) {
   
   
   let mdxSource = `
-import { Meta, Description } from "@storybook/addon-docs";
+import { Meta, Description, Canvas } from "@storybook/addon-docs";
 
 <Meta 
   title="${storyPath}/${storyTitle}" 
@@ -90,7 +106,7 @@ import { Meta, Description } from "@storybook/addon-docs";
   }}
 />
 
-${source}`;
+${parseStoriesFromMarkdown(source)}`;
 
   return mdxSource;
 };
