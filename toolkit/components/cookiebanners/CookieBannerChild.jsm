@@ -16,6 +16,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -84,16 +85,38 @@ class CookieBannerChild extends JSWindowActorChild {
     }
   }
 
+  get #isPrivateBrowsing() {
+    return lazy.PrivateBrowsingUtils.isContentWindowPrivate(this.contentWindow);
+  }
+
   
 
 
 
   get #isEnabled() {
-    return (
-      lazy.bannerClickingEnabled &&
-      (lazy.serviceMode != Ci.nsICookieBannerService.MODE_DISABLED ||
-        lazy.serviceModePBM != Ci.nsICookieBannerService.MODE_DISABLED)
-    );
+    if (!lazy.bannerClickingEnabled) {
+      return false;
+    }
+    if (this.#isPrivateBrowsing) {
+      return lazy.serviceModePBM != Ci.nsICookieBannerService.MODE_DISABLED;
+    }
+    return lazy.serviceMode != Ci.nsICookieBannerService.MODE_DISABLED;
+  }
+
+  
+
+
+
+
+  get #isDetectOnly() {
+    
+    if (!this.#isEnabled) {
+      return false;
+    }
+    if (this.#isPrivateBrowsing) {
+      return lazy.serviceModePBM == Ci.nsICookieBannerService.MODE_DETECT_ONLY;
+    }
+    return lazy.serviceMode == Ci.nsICookieBannerService.MODE_DETECT_ONLY;
   }
 
   
@@ -138,7 +161,19 @@ class CookieBannerChild extends JSWindowActorChild {
 
     this.#clickRules = rules;
 
-    let { bannerHandled, matchedRule } = await this.handleCookieBanner();
+    let {
+      bannerHandled,
+      bannerDetected,
+      matchedRule,
+    } = await this.handleCookieBanner();
+
+    if (bannerDetected) {
+      lazy.logConsole.info("Detected cookie banner.", {
+        url: this.document?.location.href,
+      });
+      this.sendAsyncMessage("CookieBanner::DetectedBanner");
+    }
+
     if (bannerHandled) {
       lazy.logConsole.info("Handled cookie banner.", {
         url: this.document?.location.href,
@@ -202,6 +237,8 @@ class CookieBannerChild extends JSWindowActorChild {
 
 
 
+
+
   async handleCookieBanner() {
     lazy.logConsole.debug("handleCookieBanner", this.document?.location.href);
 
@@ -210,7 +247,12 @@ class CookieBannerChild extends JSWindowActorChild {
 
     if (!rules.length) {
       
-      return { bannerHandled: false };
+      return { bannerHandled: false, bannerDetected: false };
+    }
+
+    
+    if (this.#isDetectOnly) {
+      return { bannerHandled: false, bannerDetected: true };
     }
 
     
@@ -227,7 +269,7 @@ class CookieBannerChild extends JSWindowActorChild {
       }
     }
 
-    return { bannerHandled: successClick, matchedRule };
+    return { bannerHandled: successClick, bannerDetected: true, matchedRule };
   }
 
   
