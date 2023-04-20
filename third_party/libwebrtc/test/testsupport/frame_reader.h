@@ -110,7 +110,7 @@ class Y4mFrameReaderImpl : public YuvFrameReaderImpl {
 
  private:
   
-  uint8_t* buffer_;
+  char* buffer_;
 };
 
 }  
