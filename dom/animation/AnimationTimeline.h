@@ -128,6 +128,7 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   
   
   
+  
   typedef nsTHashSet<nsRefPtrHashKey<dom::Animation>> AnimationSet;
   AnimationSet mAnimations;
   LinkedList<dom::Animation> mAnimationOrder;
