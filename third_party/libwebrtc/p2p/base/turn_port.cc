@@ -26,12 +26,33 @@
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/net_helpers.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace cricket {
+
+namespace {
+
+bool ResolveTurnHostnameForFamily(const webrtc::FieldTrialsView& field_trials) {
+  
+  
+  static constexpr char field_trial_name[] =
+      "WebRTC-IPv6NetworkResolutionFixes";
+  if (!field_trials.IsEnabled(field_trial_name)) {
+    return false;
+  }
+
+  webrtc::FieldTrialParameter<bool> resolve_turn_hostname_for_family(
+      "ResolveTurnHostnameForFamily", false);
+  webrtc::ParseFieldTrial({&resolve_turn_hostname_for_family},
+                          field_trials.Lookup(field_trial_name));
+  return resolve_turn_hostname_for_family;
+}
+
+}  
 
 using ::webrtc::SafeTask;
 using ::webrtc::TaskQueueBase;
@@ -798,7 +819,7 @@ void TurnPort::ResolveTurnAddress(const rtc::SocketAddress& address) {
   RTC_LOG(LS_INFO) << ToString() << ": Starting TURN host lookup for "
                    << address.ToSensitiveString();
   resolver_ = socket_factory()->CreateAsyncDnsResolver();
-  resolver_->Start(address, [this] {
+  auto callback = [this] {
     
     
     
@@ -829,7 +850,13 @@ void TurnPort::ResolveTurnAddress(const rtc::SocketAddress& address) {
     }
     server_address_.address = resolved_address;
     PrepareAddress();
-  });
+  };
+  
+  if (ResolveTurnHostnameForFamily(field_trials())) {
+    resolver_->Start(address, Network()->family(), std::move(callback));
+  } else {
+    resolver_->Start(address, std::move(callback));
+  }
 }
 
 void TurnPort::OnSendStunPacket(const void* data,
