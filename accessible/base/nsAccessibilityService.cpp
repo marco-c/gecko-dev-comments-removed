@@ -112,6 +112,20 @@ static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
     return true;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  if (aContent->HasChildren() && !aContent->IsXULElement() &&
+      (frame->IsTransformed() || frame->IsStickyPositioned() ||
+       (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+        nsLayoutUtils::IsReallyFixedPos(frame)))) {
+    return true;
+  }
+
   if (aContent->IsElement()) {
     uint32_t attrCount = aContent->AsElement()->GetAttrCount();
     for (uint32_t attrIdx = 0; attrIdx < attrCount; attrIdx++) {
@@ -146,34 +160,6 @@ static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
   }
 
   return false;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-static bool MustBeGenericAccessible(nsIContent* aContent,
-                                    DocAccessible* aDocument) {
-  nsIFrame* frame = aContent->GetPrimaryFrame();
-  MOZ_ASSERT(frame);
-  
-  
-  
-  
-  
-  
-  
-  return aContent->HasChildren() && !aContent->IsXULElement() &&
-         (frame->IsTransformed() || frame->IsStickyPositioned() ||
-          (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
-           nsLayoutUtils::IsReallyFixedPos(frame)));
 }
 
 bool nsAccessibilityService::ShouldCreateImgAccessible(
@@ -1124,23 +1110,14 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
   const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
 
+  
+  
+  
   if (roleMapEntry && (roleMapEntry->Is(nsGkAtoms::presentation) ||
                        roleMapEntry->Is(nsGkAtoms::none))) {
-    if (MustBeAccessible(content, document)) {
-      
-      
-      
-      roleMapEntry = nullptr;
-    } else if (MustBeGenericAccessible(content, document)) {
-      
-      
-      
-      roleMapEntry = nullptr;
-      newAcc = new EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>(content,
-                                                                      document);
-    } else {
-      return nullptr;
-    }
+    if (!MustBeAccessible(content, document)) return nullptr;
+
+    roleMapEntry = nullptr;
   }
 
   if (!newAcc && content->IsHTMLElement()) {  
@@ -1327,9 +1304,6 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       
       newAcc = new AccessibleWrap(content, document);
     }
-  } else if (MustBeGenericAccessible(content, document)) {
-    newAcc = new EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>(content,
-                                                                    document);
   }
 
   if (newAcc) {
