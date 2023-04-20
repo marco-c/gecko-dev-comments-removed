@@ -15,7 +15,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "p2p/base/connection.h"
+#include "p2p/base/ice_switch_reason.h"
 #include "p2p/base/ice_transport_internal.h"
 
 namespace cricket {
@@ -23,6 +25,7 @@ namespace cricket {
 struct IceFieldTrials;  
 
 struct IceControllerEvent {
+  
   enum Type {
     REMOTE_CANDIDATE_GENERATION_CHANGE,
     NETWORK_PREFERENCE_CHANGE,
@@ -39,11 +42,23 @@ struct IceControllerEvent {
     ICE_CONTROLLER_RECHECK,
   };
 
+  
   IceControllerEvent(const Type& _type)  
-      : type(_type) {}
+      : type(_type), reason(FromType(_type)) {}
+
+  IceControllerEvent(IceSwitchReason _reason, int _recheck_delay_ms)
+      : type(FromIceSwitchReason(_reason)),
+        reason(_reason),
+        recheck_delay_ms(_recheck_delay_ms) {}
+
+  static Type FromIceSwitchReason(IceSwitchReason reason);
+  static IceSwitchReason FromType(Type type);
+
   std::string ToString() const;
 
+  
   Type type;
+  IceSwitchReason reason;
   int recheck_delay_ms = 0;
 };
 
@@ -138,9 +153,18 @@ class IceControllerInterface {
   
   virtual SwitchResult ShouldSwitchConnection(IceControllerEvent reason,
                                               const Connection* connection) = 0;
+  virtual SwitchResult ShouldSwitchConnection(IceSwitchReason reason,
+                                              const Connection* connection) {
+    return ShouldSwitchConnection(
+        IceControllerEvent::FromIceSwitchReason(reason), connection);
+  }
 
   
   virtual SwitchResult SortAndSwitchConnection(IceControllerEvent reason) = 0;
+  virtual SwitchResult SortAndSwitchConnection(IceSwitchReason reason) {
+    return SortAndSwitchConnection(
+        IceControllerEvent::FromIceSwitchReason(reason));
+  }
 
   
   virtual std::vector<const Connection*> PruneConnections() = 0;
