@@ -260,7 +260,9 @@ void HTMLSelectElement::InsertOptionsIntoList(nsIContent* aOptions,
       if (option && option->Selected()) {
         
         if (!HasAttr(kNameSpaceID_None, nsGkAtoms::multiple)) {
-          uint32_t mask = IS_SELECTED | CLEAR_ALL | SET_DISABLED | NOTIFY;
+          OptionFlags mask{OptionFlag::IsSelected, OptionFlag::ClearAll,
+                           OptionFlag::SetDisabled, OptionFlag::Notify,
+                           OptionFlag::InsertingOptions};
           SetOptionsSelectedByIndex(i, i, mask);
         }
 
@@ -632,9 +634,10 @@ nsIHTMLCollection* HTMLSelectElement::SelectedOptions() {
 
 void HTMLSelectElement::SetSelectedIndexInternal(int32_t aIndex, bool aNotify) {
   int32_t oldSelectedIndex = mSelectedIndex;
-  uint32_t mask = IS_SELECTED | CLEAR_ALL | SET_DISABLED;
+  OptionFlags mask{OptionFlag::IsSelected, OptionFlag::ClearAll,
+                   OptionFlag::SetDisabled};
   if (aNotify) {
-    mask |= NOTIFY;
+    mask += OptionFlag::Notify;
   }
 
   SetOptionsSelectedByIndex(aIndex, aIndex, mask);
@@ -721,14 +724,14 @@ void HTMLSelectElement::FindSelectedIndex(int32_t aStartIndex, bool aNotify) {
 
 bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
                                                   int32_t aEndIndex,
-                                                  uint32_t aOptionsMask) {
+                                                  OptionFlags aOptionsMask) {
 #if 0
   printf("SetOption(%d-%d, %c, ClearAll=%c)\n", aStartIndex, aEndIndex,
-                                      (aOptionsMask & IS_SELECTED ? 'Y' : 'N'),
-                                      (aOptionsMask & CLEAR_ALL ? 'Y' : 'N'));
+                                      (aOptionsMask.contains(OptionFlag::IsSelected) ? 'Y' : 'N'),
+                                      (aOptionsMask.contains(OptionFlag::ClearAll) ? 'Y' : 'N'));
 #endif
   
-  if (!(aOptionsMask & SET_DISABLED) && IsDisabled()) {
+  if (!aOptionsMask.contains(OptionFlag::SetDisabled) && IsDisabled()) {
     return false;
   }
 
@@ -750,7 +753,7 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
   bool didGetFrame = false;
   AutoWeakFrame weakSelectFrame;
 
-  if (aOptionsMask & IS_SELECTED) {
+  if (aOptionsMask.contains(OptionFlag::IsSelected)) {
     
     if (aStartIndex < 0 || AssertedCast<uint32_t>(aStartIndex) >= numItems ||
         aEndIndex < 0 || AssertedCast<uint32_t>(aEndIndex) >= numItems) {
@@ -767,7 +770,7 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
     
     
     
-    bool allDisabled = !(aOptionsMask & SET_DISABLED);
+    bool allDisabled = !aOptionsMask.contains(OptionFlag::SetDisabled);
 
     
     
@@ -788,7 +791,7 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
         RefPtr<HTMLOptionElement> option = Item(optIndex);
 
         
-        if (!(aOptionsMask & SET_DISABLED)) {
+        if (!aOptionsMask.contains(OptionFlag::SetDisabled)) {
           if (option && IsOptionDisabled(option)) {
             continue;
           }
@@ -796,7 +799,9 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
         }
 
         
-        if (option && !option->Selected()) {
+        
+        if (option && (aOptionsMask.contains(OptionFlag::InsertingOptions) ||
+                       !option->Selected())) {
           
           
           
@@ -805,8 +810,8 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
           weakSelectFrame = do_QueryFrame(selectFrame);
           didGetFrame = true;
 
-          OnOptionSelected(selectFrame, optIndex, true, true,
-                           aOptionsMask & NOTIFY);
+          OnOptionSelected(selectFrame, optIndex, true, !option->Selected(),
+                           aOptionsMask.contains(OptionFlag::Notify));
           optionsSelected = true;
         }
       }
@@ -815,7 +820,8 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
     
     
     if (((!isMultiple && optionsSelected) ||
-         ((aOptionsMask & CLEAR_ALL) && !allDisabled) || aStartIndex == -1) &&
+         (aOptionsMask.contains(OptionFlag::ClearAll) && !allDisabled) ||
+         aStartIndex == -1) &&
         previousSelectedIndex != -1) {
       for (uint32_t optIndex = AssertedCast<uint32_t>(previousSelectedIndex);
            optIndex < numItems; optIndex++) {
@@ -835,7 +841,7 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
             }
 
             OnOptionSelected(selectFrame, optIndex, false, true,
-                             aOptionsMask & NOTIFY);
+                             aOptionsMask.contains(OptionFlag::Notify));
             optionsDeselected = true;
 
             
@@ -851,7 +857,8 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
     
     for (int32_t optIndex = aStartIndex; optIndex <= aEndIndex; optIndex++) {
       HTMLOptionElement* option = Item(optIndex);
-      if (!(aOptionsMask & SET_DISABLED) && IsOptionDisabled(option)) {
+      if (!aOptionsMask.contains(OptionFlag::SetDisabled) &&
+          IsOptionDisabled(option)) {
         continue;
       }
 
@@ -868,16 +875,18 @@ bool HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
         }
 
         OnOptionSelected(selectFrame, optIndex, false, true,
-                         aOptionsMask & NOTIFY);
+                         aOptionsMask.contains(OptionFlag::Notify));
         optionsDeselected = true;
       }
     }
   }
 
   
-  if (optionsDeselected && aStartIndex != -1 && !(aOptionsMask & NO_RESELECT)) {
+  if (optionsDeselected && aStartIndex != -1 &&
+      !aOptionsMask.contains(OptionFlag::NoReselect)) {
     optionsSelected =
-        CheckSelectSomething(aOptionsMask & NOTIFY) || optionsSelected;
+        CheckSelectSomething(aOptionsMask.contains(OptionFlag::Notify)) ||
+        optionsSelected;
   }
 
   
@@ -1321,7 +1330,8 @@ void HTMLSelectElement::RestoreStateTo(const SelectContentData& aNewSelected) {
   }
 
   uint32_t len = Length();
-  uint32_t mask = IS_SELECTED | CLEAR_ALL | SET_DISABLED | NOTIFY;
+  OptionFlags mask{OptionFlag::IsSelected, OptionFlag::ClearAll,
+                   OptionFlag::SetDisabled, OptionFlag::Notify};
 
   
   SetOptionsSelectedByIndex(-1, -1, mask);
@@ -1329,7 +1339,9 @@ void HTMLSelectElement::RestoreStateTo(const SelectContentData& aNewSelected) {
   
   for (uint32_t idx : aNewSelected.indices()) {
     if (idx < len) {
-      SetOptionsSelectedByIndex(idx, idx, IS_SELECTED | SET_DISABLED | NOTIFY);
+      SetOptionsSelectedByIndex(idx, idx,
+                                {OptionFlag::IsSelected,
+                                 OptionFlag::SetDisabled, OptionFlag::Notify});
     }
   }
 
@@ -1340,7 +1352,10 @@ void HTMLSelectElement::RestoreStateTo(const SelectContentData& aNewSelected) {
       nsAutoString value;
       option->GetValue(value);
       if (aNewSelected.values().Contains(value)) {
-        SetOptionsSelectedByIndex(i, i, IS_SELECTED | SET_DISABLED | NOTIFY);
+        SetOptionsSelectedByIndex(
+            i, i,
+            {OptionFlag::IsSelected, OptionFlag::SetDisabled,
+             OptionFlag::Notify});
       }
     }
   }
@@ -1364,9 +1379,10 @@ HTMLSelectElement::Reset() {
       
       
 
-      uint32_t mask = SET_DISABLED | NOTIFY | NO_RESELECT;
+      OptionFlags mask = {OptionFlag::SetDisabled, OptionFlag::Notify,
+                          OptionFlag::NoReselect};
       if (option->DefaultSelected()) {
-        mask |= IS_SELECTED;
+        mask += OptionFlag::IsSelected;
         numSelected++;
       }
 
