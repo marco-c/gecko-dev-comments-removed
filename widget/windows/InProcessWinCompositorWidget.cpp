@@ -360,4 +360,15 @@ void InProcessWinCompositorWidget::ObserveVsync(VsyncObserver* aObserver) {
   }
 }
 
+void InProcessWinCompositorWidget::UpdateCompositorWnd(
+    const HWND aCompositorWnd, const HWND aParentWnd) {
+  MOZ_ASSERT(layers::CompositorThreadHolder::IsInCompositorThread());
+  MOZ_ASSERT(aCompositorWnd && aParentWnd);
+  MOZ_ASSERT(aParentWnd == mWnd);
+
+  
+  
+  ::SetParent(aCompositorWnd, aParentWnd);
+  mSetParentCompleted = true;
+}
 }  
