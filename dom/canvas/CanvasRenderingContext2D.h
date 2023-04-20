@@ -106,6 +106,13 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   void Save() override;
   void Restore() override;
+
+  void Reset() {
+    
+    
+    SetDimensions(GetWidth(), GetHeight());
+  }
+
   void Scale(double aX, double aY, mozilla::ErrorResult& aError) override;
   void Rotate(double aAngle, mozilla::ErrorResult& aError) override;
   void Translate(double aX, double aY, mozilla::ErrorResult& aError) override;
