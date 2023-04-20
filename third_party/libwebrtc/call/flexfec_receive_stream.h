@@ -59,6 +59,12 @@ class FlexfecReceiveStream : public RtpPacketSinkInterface,
     
     Transport* rtcp_send_transport = nullptr;
   };
+
+  
+  
+  
+  
+  virtual void SetRtcpMode(RtcpMode mode) = 0;
 };
 
 }  
