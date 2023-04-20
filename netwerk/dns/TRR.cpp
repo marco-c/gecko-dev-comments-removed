@@ -950,7 +950,7 @@ void TRR::ReportStatus(nsresult aStatusCode) {
   
   if (UseDefaultServer() && aStatusCode != NS_ERROR_ABORT) {
     
-    TRRService::Get()->RecordTRRStatus(this);
+    TRRService::Get()->RecordTRRStatus(aStatusCode);
   }
 }
 
@@ -999,7 +999,7 @@ TRR::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
     }
   }
 
-  auto scopeExit = MakeScopeExit([&] { ReportStatus(aStatusCode); });
+  ReportStatus(aStatusCode);
 
   nsresult rv = NS_OK;
   
