@@ -3032,14 +3032,15 @@ nscoord nsLineLayout::GetHangFrom(const PerSpanData* aSpan, bool aLineIsRTL) {
       return GetHangFrom(childSpan, aLineIsRTL);
     }
     if (pfd->mIsTextFrame) {
-      const auto* lastText = static_cast<const nsTextFrame*>(pfd->mFrame);
+      auto* lastText = static_cast<nsTextFrame*>(pfd->mFrame);
       result = lastText->GetHangableISize();
       if (result) {
         
         
         
-        if (lastText->GetTextRun(nsTextFrame::eInflated)->IsRightToLeft() !=
-            aLineIsRTL) {
+        lastText->EnsureTextRun(nsTextFrame::eInflated);
+        auto* textRun = lastText->GetTextRun(nsTextFrame::eInflated);
+        if (textRun && textRun->IsRightToLeft() != aLineIsRTL) {
           result = -result;
         }
       }
