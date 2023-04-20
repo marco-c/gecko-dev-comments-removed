@@ -135,8 +135,8 @@ class VideoEncoderConfig {
     
     
     virtual std::vector<VideoStream> CreateEncoderStreams(
-        int width,
-        int height,
+        int frame_width,
+        int frame_height,
         const VideoEncoderConfig& encoder_config) = 0;
 
    protected:

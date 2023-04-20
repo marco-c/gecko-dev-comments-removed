@@ -11,12 +11,18 @@
 #ifndef API_VIDEO_RESOLUTION_H_
 #define API_VIDEO_RESOLUTION_H_
 
+#include <utility>
+
 namespace webrtc {
 
 
 struct Resolution {
   int width = 0;
   int height = 0;
+
+  
+  int PixelCount() const { return width * height; }
+  std::pair<int, int> ToPair() const { return std::make_pair(width, height); }
 };
 
 inline bool operator==(const Resolution& lhs, const Resolution& rhs) {
