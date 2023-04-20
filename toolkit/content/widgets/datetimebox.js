@@ -203,7 +203,7 @@ this.DateTimeBoxWidget = class {
     
     
     this.isAndroid = this.window.navigator.appVersion.includes("Android");
-    if (this.isAndroid) {
+    if (this.isAndroid || this.type == "time") {
       this.mInputElement.addEventListener(
         "click",
         this,
@@ -273,6 +273,10 @@ this.DateTimeBoxWidget = class {
       "MozPickerValueChanged",
       "MozSetDateTimePickerState",
     ];
+  }
+
+  get showPickerOnClick() {
+    return this.isAndroid || this.type == "time";
   }
 
   addEventListenersToField(aElement) {
@@ -751,9 +755,12 @@ this.DateTimeBoxWidget = class {
     
     
     
+    
+    
+    
     if (
       aEvent.originalTarget == this.mCalendarButton ||
-      (this.isAndroid && aEvent.target != this.mCalendarButton)
+      this.showPickerOnClick
     ) {
       if (
         !this.mIsPickerOpen &&
