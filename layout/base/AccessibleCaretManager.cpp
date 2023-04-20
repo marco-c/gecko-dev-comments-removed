@@ -1160,9 +1160,8 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
 
   
   
-  PeekOffsetStruct limit(
-      eSelectCluster, dir, offset, nsPoint(0, 0),
-      {PeekOffsetOption::JumpLines, PeekOffsetOption::ScrollViewStop});
+  nsPeekOffsetStruct limit(eSelectCluster, dir, offset, nsPoint(0, 0), true,
+                           true, false, false, false);
   nsresult rv = frame->PeekOffset(&limit);
   if (NS_FAILED(rv)) {
     limit.mResultContent = content;

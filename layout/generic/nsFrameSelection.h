@@ -7,11 +7,9 @@
 #ifndef nsFrameSelection_h___
 #define nsFrameSelection_h___
 
-#include <stdint.h>
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/Result.h"
@@ -68,54 +66,19 @@ class PresShell;
 
 
 
+struct MOZ_STACK_CLASS nsPeekOffsetStruct {
+  enum class ForceEditableRegion {
+    No,
+    Yes,
+  };
 
-namespace mozilla {
-
-enum class PeekOffsetOption : uint8_t {
-  
-  
-  
-  JumpLines,
-
-  
-  PreserveSpaces,
-
-  
-  
-  
-  ScrollViewStop,
-
-  
-  
-  
-  IsKeyboardSelect,
-
-  
-  
-  
-  Visual,
-
-  
-  Extend,
-
-  
-  
-  ForceEditableRegion,
-
-  
-  
-  AllowContentInDifferentNativeAnonymousSubtreeRoot,
-};
-
-using PeekOffsetOptions = EnumSet<PeekOffsetOption>;
-
-struct MOZ_STACK_CLASS PeekOffsetStruct {
-  PeekOffsetStruct(nsSelectionAmount aAmount, nsDirection aDirection,
-                   int32_t aStartOffset, nsPoint aDesiredCaretPos,
-                   
-                   
-                   const PeekOffsetOptions aOptions,
-                   EWordMovementType aWordMovementType = eDefaultBehavior);
+  nsPeekOffsetStruct(
+      nsSelectionAmount aAmount, nsDirection aDirection, int32_t aStartOffset,
+      nsPoint aDesiredCaretPos, bool aJumpLines, bool aScrollViewStop,
+      bool aIsKeyboardSelect, bool aVisual, bool aExtend,
+      ForceEditableRegion = ForceEditableRegion::No,
+      mozilla::EWordMovementType aWordMovementType = mozilla::eDefaultBehavior,
+      bool aTrimSpaces = true);
 
   
   
@@ -155,9 +118,37 @@ struct MOZ_STACK_CLASS PeekOffsetStruct {
   
   
   
-  EWordMovementType mWordMovementType;
+  mozilla::EWordMovementType mWordMovementType;
 
-  PeekOffsetOptions mOptions;
+  
+  
+  
+  const bool mJumpLines;
+
+  
+  const bool mTrimSpaces;
+
+  
+  
+  
+  const bool mScrollViewStop;
+
+  
+  
+  
+  const bool mIsKeyboardSelect;
+
+  
+  
+  
+  const bool mVisual;
+
+  
+  const bool mExtend;
+
+  
+  
+  const bool mForceEditableRegion;
 
   
 
@@ -178,10 +169,8 @@ struct MOZ_STACK_CLASS PeekOffsetStruct {
   
   
   
-  CaretAssociationHint mAttach;
+  mozilla::CaretAssociationHint mAttach;
 };
-
-}  
 
 struct nsPrevNextBidiLevels {
   void SetData(nsIFrame* aFrameBefore, nsIFrame* aFrameAfter,
@@ -917,7 +906,7 @@ class nsFrameSelection final {
 
 
 
-  mozilla::Result<mozilla::PeekOffsetStruct, nsresult> PeekOffsetForCaretMove(
+  mozilla::Result<nsPeekOffsetStruct, nsresult> PeekOffsetForCaretMove(
       nsDirection aDirection, bool aContinueSelection,
       const nsSelectionAmount aAmount, CaretMovementStyle aMovementStyle,
       const nsPoint& aDesiredCaretPos) const;

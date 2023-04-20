@@ -55,7 +55,6 @@
 #include "mozilla/AspectRatio.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Baseline.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RelativeTo.h"
@@ -126,11 +125,11 @@ class nsViewManager;
 class nsWindowSizes;
 
 struct nsBoxLayoutMetrics;
+struct nsPeekOffsetStruct;
 struct CharacterDataChangeInfo;
 
 namespace mozilla {
 
-enum class PeekOffsetOption;
 enum class PseudoStyleType : uint8_t;
 enum class TableSelectionMode : uint32_t;
 
@@ -145,8 +144,6 @@ class LazyLogModule;
 class PresShell;
 class WidgetGUIEvent;
 class WidgetMouseEvent;
-
-struct PeekOffsetStruct;
 
 namespace layers {
 class Layer;
@@ -749,18 +746,6 @@ class nsIFrame : public nsQueryFrame {
 
 
   nsIContent* GetContent() const { return mContent; }
-
-  
-
-
-
-
-
-
-  nsIContent* GetClosestNativeAnonymousSubtreeRoot() const {
-    return mContent ? mContent->GetClosestNativeAnonymousSubtreeRoot()
-                    : nullptr;
-  }
 
   
 
@@ -3812,14 +3797,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nsresult PeekOffset(mozilla::PeekOffsetStruct* aPos);
+  virtual nsresult PeekOffset(nsPeekOffsetStruct* aPos);
 
  private:
-  nsresult PeekOffsetForCharacter(mozilla::PeekOffsetStruct* aPos,
-                                  int32_t aOffset);
-  nsresult PeekOffsetForWord(mozilla::PeekOffsetStruct* aPos, int32_t aOffset);
-  nsresult PeekOffsetForLine(mozilla::PeekOffsetStruct* aPos);
-  nsresult PeekOffsetForLineEdge(mozilla::PeekOffsetStruct* aPos);
+  nsresult PeekOffsetForCharacter(nsPeekOffsetStruct* aPos, int32_t aOffset);
+  nsresult PeekOffsetForWord(nsPeekOffsetStruct* aPos, int32_t aOffset);
+  nsresult PeekOffsetForLine(nsPeekOffsetStruct* aPos);
+  nsresult PeekOffsetForLineEdge(nsPeekOffsetStruct* aPos);
 
   
 
@@ -3828,7 +3812,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsresult PeekOffsetForParagraph(mozilla::PeekOffsetStruct* aPos);
+  nsresult PeekOffsetForParagraph(nsPeekOffsetStruct* aPos);
 
  public:
   
@@ -3865,7 +3849,7 @@ class nsIFrame : public nsQueryFrame {
     };
 
     
-    void TransferTo(mozilla::PeekOffsetStruct& aPos) const;
+    void TransferTo(nsPeekOffsetStruct& aPos) const;
     bool Failed() { return !mFrame; }
 
     explicit SelectablePeekReport(nsIFrame* aFrame = nullptr,
@@ -3884,11 +3868,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  SelectablePeekReport GetFrameFromDirection(
-      nsDirection aDirection,
-      const mozilla::EnumSet<mozilla::PeekOffsetOption>& aOptions);
-  SelectablePeekReport GetFrameFromDirection(
-      const mozilla::PeekOffsetStruct& aPos);
+
+  SelectablePeekReport GetFrameFromDirection(nsDirection aDirection,
+                                             bool aVisual, bool aJumpLines,
+                                             bool aScrollViewStop,
+                                             bool aForceEditableRegion);
+
+  SelectablePeekReport GetFrameFromDirection(const nsPeekOffsetStruct& aPos);
 
   
 
