@@ -185,10 +185,17 @@ impl SupportsCondition {
     }
 
     
+    
+    pub fn parse_for_import<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
+        input.expect_function_matching("supports")?;
+        input.parse_nested_block(parse_condition_or_declaration)
+    }
+
+    
     fn parse_in_parens<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         
         
-        while input.try_parse(Parser::expect_whitespace).is_ok() {}
+        input.skip_whitespace();
         let pos = input.position();
         let location = input.current_source_location();
         match *input.next()? {
