@@ -88,6 +88,7 @@ PacingController::PacingController(Clock* clock,
       padding_target_duration_(GetDynamicPaddingTarget(field_trials_)),
       min_packet_limit_(kDefaultMinPacketLimit),
       transport_overhead_per_packet_(DataSize::Zero()),
+      send_burst_interval_(TimeDelta::Zero()),
       last_timestamp_(clock_->CurrentTime()),
       paused_(false),
       media_debt_(DataSize::Zero()),
@@ -243,6 +244,10 @@ void PacingController::SetTransportOverhead(DataSize overhead_per_packet) {
   transport_overhead_per_packet_ = overhead_per_packet;
 }
 
+void PacingController::SetSendBurstInterval(TimeDelta burst_interval) {
+  send_burst_interval_ = burst_interval;
+}
+
 TimeDelta PacingController::ExpectedQueueTime() const {
   RTC_DCHECK_GT(media_rate_, DataRate::Zero());
   return TimeDelta::Millis(
@@ -335,7 +340,12 @@ Timestamp PacingController::NextSendTime() const {
 
   if (media_rate_ > DataRate::Zero() && !packet_queue_->Empty()) {
     
-    next_send_time = last_process_time_ + media_debt_ / media_rate_;
+    
+    
+    TimeDelta drain_time = media_debt_ / media_rate_;
+    next_send_time =
+        last_process_time_ +
+        ((send_burst_interval_ > drain_time) ? TimeDelta::Zero() : drain_time);
   } else if (padding_rate_ > DataRate::Zero() && packet_queue_->Empty()) {
     
     
@@ -391,16 +401,16 @@ void PacingController::ProcessPackets() {
     return;
   }
 
-    TimeDelta early_execute_margin =
-        prober_.is_probing() ? kMaxEarlyProbeProcessing : TimeDelta::Zero();
+  TimeDelta early_execute_margin =
+      prober_.is_probing() ? kMaxEarlyProbeProcessing : TimeDelta::Zero();
 
-    target_send_time = NextSendTime();
-    if (now + early_execute_margin < target_send_time) {
-      
-      
-      UpdateBudgetWithElapsedTime(UpdateTimeAndGetElapsed(now));
-      return;
-    }
+  target_send_time = NextSendTime();
+  if (now + early_execute_margin < target_send_time) {
+    
+    
+    UpdateBudgetWithElapsedTime(UpdateTimeAndGetElapsed(now));
+    return;
+  }
 
   TimeDelta elapsed_time = UpdateTimeAndGetElapsed(target_send_time);
 
@@ -609,15 +619,17 @@ std::unique_ptr<RtpPacketToSend> PacingController::GetPendingPacket(
       return nullptr;
     }
 
-      if (now <= target_send_time) {
-        
-        
-        
-        TimeDelta flush_time = media_debt_ / media_rate_;
-        if (now + flush_time > target_send_time) {
-          return nullptr;
-        }
+    if (now <= target_send_time && send_burst_interval_.IsZero()) {
+      
+      
+      
+      
+      
+      TimeDelta flush_time = media_debt_ / media_rate_;
+      if (now + flush_time > target_send_time) {
+        return nullptr;
       }
+    }
   }
 
   return packet_queue_->Pop();

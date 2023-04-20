@@ -149,6 +149,10 @@ class PacingController {
   void SetIncludeOverhead();
 
   void SetTransportOverhead(DataSize overhead_per_packet);
+  
+  
+  
+  void SetSendBurstInterval(TimeDelta burst_interval);
 
   
   Timestamp OldestPacketEnqueueTime() const;
@@ -219,8 +223,8 @@ class PacingController {
   const TimeDelta padding_target_duration_;
 
   TimeDelta min_packet_limit_;
-
   DataSize transport_overhead_per_packet_;
+  TimeDelta send_burst_interval_;
 
   
   
