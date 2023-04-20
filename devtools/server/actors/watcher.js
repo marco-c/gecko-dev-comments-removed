@@ -8,7 +8,10 @@ const { watcherSpec } = require("resource://devtools/shared/specs/watcher.js");
 
 const Resources = require("resource://devtools/server/actors/resources/index.js");
 const { TargetActorRegistry } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/targets/target-actor-registry.sys.mjs"
+  "resource://devtools/server/actors/targets/target-actor-registry.sys.mjs",
+  {
+    loadInDevToolsLoader: false,
+  }
 );
 const { WatcherRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/WatcherRegistry.sys.mjs",
@@ -439,6 +442,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
 
+
+
   getTargetActorInParentProcess() {
     if (TargetActorRegistry.xpcShellTargetActor) {
       return TargetActorRegistry.xpcShellTargetActor;
@@ -451,17 +456,19 @@ exports.WatcherActor = class WatcherActor extends Actor {
       this.conn.prefix
     );
 
-    if (this.sessionContext.type == "all") {
-      return actors.find(actor => actor.typeName === "parentProcessTarget");
-    } else if (this.sessionContext.type == "browser-element") {
-      return actors.find(actor => actor.isTopLevelTarget);
-    } else if (this.sessionContext.type == "webextension") {
-      return actors.find(actor => actor.typeName === "webExtensionTarget");
+    switch (this.sessionContext.type) {
+      case "all":
+        return actors.find(actor => actor.typeName === "parentProcessTarget");
+      case "browser-element":
+      case "webextension":
+        
+        
+        return null;
+      default:
+        throw new Error(
+          "Unsupported session context type: " + this.sessionContext.type
+        );
     }
-
-    throw new Error(
-      "Unsupported session context type: " + this.sessionContext.type
-    );
   }
 
   
