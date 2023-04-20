@@ -453,8 +453,8 @@ APZEventResult InputQueue::ReceivePanGestureInput(
     CancelAnimationsForNewBlock(block);
     MaybeRequestContentResponse(aTarget, block);
 
-    if (aFlags.mTargetConfirmed && event.mOverscrollBehaviorAllowsSwipe &&
-        event.MayTriggerSwipe() && !CanScrollTargetHorizontally(event, block)) {
+    if (aFlags.mTargetConfirmed && event.AllowsSwipe() &&
+        !CanScrollTargetHorizontally(event, block)) {
       
       
       
