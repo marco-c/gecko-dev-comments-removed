@@ -115,6 +115,7 @@ FRAME_CLASSES = [
     
     
     Frame("SVGUseFrame", "SVGUse", NOT_LEAF),
+    Frame("MiddleCroppingLabelFrame", "MiddleCroppingLabel", LEAF),
     Frame("SVGViewFrame", "SVGView", LEAF),
     Frame("nsTableCellFrame", "TableCell", NOT_LEAF),
     Frame("nsTableColFrame", "TableCol", LEAF),
@@ -123,7 +124,6 @@ FRAME_CLASSES = [
     Frame("nsTableWrapperFrame", "TableWrapper", NOT_LEAF),
     Frame("nsTableRowFrame", "TableRow", NOT_LEAF),
     Frame("nsTableRowGroupFrame", "TableRowGroup", NOT_LEAF),
-    Frame("nsTextBoxFrame", "LeafBox", LEAF),
     Frame("nsTextControlFrame", "TextInput", LEAF),
     Frame("nsTextFrame", "Text", LEAF),
     Frame("nsTreeBodyFrame", "LeafBox", LEAF),

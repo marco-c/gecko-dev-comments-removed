@@ -23,7 +23,6 @@
 #include "nsNameSpaceManager.h"
 #include "nsNetUtil.h"
 #include "nsString.h"
-#include "nsTextBoxFrame.h"
 #include "nsXULElement.h"
 
 using namespace mozilla::a11y;
@@ -36,21 +35,6 @@ XULLabelAccessible::XULLabelAccessible(nsIContent* aContent,
                                        DocAccessible* aDoc)
     : HyperTextAccessibleWrap(aContent, aDoc) {
   mType = eXULLabelType;
-
-  
-  
-  
-  
-  nsTextBoxFrame* textBoxFrame = do_QueryFrame(mContent->GetPrimaryFrame());
-  if (textBoxFrame) {
-    mValueTextLeaf = new XULLabelTextLeafAccessible(mContent, mDoc);
-    mDoc->BindToDocument(mValueTextLeaf, nullptr);
-
-    nsAutoString text;
-    textBoxFrame->GetCroppedTitle(text);
-    mValueTextLeaf->SetText(text);
-    AppendChild(mValueTextLeaf);
-  }
 }
 
 void XULLabelAccessible::Shutdown() {
