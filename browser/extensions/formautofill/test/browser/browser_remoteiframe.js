@@ -55,7 +55,7 @@ add_task(async function test_iframe_autocomplete() {
   await focusUpdateSubmitForm(iframeBC, {
     focusSelector: "#organization",
     newValues: {
-      "#organization": "Example Inc.",
+      "#tel": "+16172535702",
     },
   });
   await onPopupShown;
@@ -68,18 +68,14 @@ add_task(async function test_iframe_autocomplete() {
   
   let addresses = await getAddresses();
   is(addresses.length, 3, "Still 1 address in storage");
-  is(
-    addresses[1].organization,
-    "Example Inc.",
-    "Verify the organization field"
-  );
+  is(addresses[1].tel, "+16172535702", "Verify the tel field");
 
   
   await openPopupOnSubframe(browser, iframeBC, "#street-address");
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, iframeBC);
   EventUtils.synthesizeKey("VK_RETURN", {});
 
-  await waitForAutofill(iframeBC, "#organization", "Example Inc.");
+  await waitForAutofill(iframeBC, "#tel", "+16172535702");
 
   
   await openPopupOnSubframe(browser, iframeBC, "#street-address");
@@ -110,7 +106,7 @@ add_task(async function test_iframe_autocomplete_preferences() {
   let iframeBC = browser.browsingContext.children[1];
   await openPopupOnSubframe(browser, iframeBC, "#organization");
 
-  await expectWarningText(browser, "Also autofills address, email");
+  await expectWarningText(browser, "Also autofills address, phone, email");
 
   const prefTabPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
