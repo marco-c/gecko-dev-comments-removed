@@ -908,7 +908,6 @@ class PropertyRestrictions:
                 "text-combine-upright",
                 "ruby-position",
                 
-                "font-synthesis",
                 "-moz-osx-font-smoothing",
                 
                 
@@ -919,6 +918,7 @@ class PropertyRestrictions:
             + PropertyRestrictions.shorthand(data, "background")
             + PropertyRestrictions.shorthand(data, "outline")
             + PropertyRestrictions.shorthand(data, "font")
+            + PropertyRestrictions.shorthand(data, "font-synthesis")
         )
 
 
