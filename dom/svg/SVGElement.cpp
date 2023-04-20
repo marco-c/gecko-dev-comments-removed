@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/SVGElement.h"
 
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/CSSRuleBinding.h"
@@ -331,7 +332,6 @@ nsresult SVGElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
   
   
   if (aNamespaceID == kNameSpaceID_None && IsAttributeMapped(aName)) {
-    mContentDeclarationBlock = nullptr;
     OwnerDoc()->ScheduleSVGForPresAttrEvaluation(this);
   }
 
@@ -699,12 +699,6 @@ void SVGElement::UnsetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
   
 
   if (aNamespaceID == kNameSpaceID_None) {
-    
-    
-    if (IsAttributeMapped(aName)) {
-      mContentDeclarationBlock = nullptr;
-    }
-
     if (IsEventAttributeName(aName)) {
       EventListenerManager* manager = GetExistingListenerManager();
       if (manager) {
@@ -1115,7 +1109,14 @@ namespace {
 
 class MOZ_STACK_CLASS MappedAttrParser {
  public:
-  explicit MappedAttrParser(SVGElement& aElement) : mElement(aElement) {}
+  explicit MappedAttrParser(SVGElement& aElement,
+                            already_AddRefed<DeclarationBlock> aDecl)
+      : mElement(aElement), mDecl(aDecl) {
+    if (mDecl) {
+      mDecl->AssertMutable();
+      Servo_DeclarationBlock_Clear(mDecl->Raw());
+    }
+  }
   ~MappedAttrParser() {
     MOZ_ASSERT(!mDecl,
                "If mDecl was initialized, it should have been returned via "
@@ -1153,13 +1154,13 @@ class MOZ_STACK_CLASS MappedAttrParser {
 
  private:
   
+  SVGElement& mElement;
+
+  
   RefPtr<DeclarationBlock> mDecl;
 
   
   RefPtr<URLExtraData> mExtraData;
-
-  
-  SVGElement& mElement;
 };
 
 void MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
@@ -1220,10 +1221,7 @@ void MappedAttrParser::TellStyleAlreadyParsedResult(
 
 
 void SVGElement::UpdateContentDeclarationBlock() {
-  MOZ_ASSERT(!mContentDeclarationBlock,
-             "we already have a content declaration block");
-
-  MappedAttrParser mappedAttrParser(*this);
+  MappedAttrParser mappedAttrParser(*this, mContentDeclarationBlock.forget());
 
   bool lengthAffectsStyle =
       SVGGeometryProperty::ElementMapsLengthsToStyle(this);
@@ -1235,14 +1233,7 @@ void SVGElement::UpdateContentDeclarationBlock() {
       continue;
     }
 
-    
-    
-    if (attrName->NamespaceID() != kNameSpaceID_None &&
-        !attrName->Equals(nsGkAtoms::lang, kNameSpaceID_XML)) {
-      continue;
-    }
-
-    if (attrName->Equals(nsGkAtoms::lang, kNameSpaceID_None) &&
+    if (attrName->Atom() == nsGkAtoms::lang &&
         HasAttr(kNameSpaceID_XML, nsGkAtoms::lang)) {
       
       continue;

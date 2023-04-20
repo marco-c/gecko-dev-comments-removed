@@ -756,6 +756,14 @@ impl PropertyDeclarationBlock {
     }
 
     
+    #[inline]
+    pub fn clear(&mut self) {
+        self.declarations_importance.clear();
+        self.declarations.clear();
+        self.longhands.clear();
+    }
+
+    
     
     
     
