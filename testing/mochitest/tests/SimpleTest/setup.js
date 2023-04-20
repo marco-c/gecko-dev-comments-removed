@@ -69,6 +69,41 @@ function parseQueryString(encodedString, useArrays) {
 }
 
 
+function loadFile(url, callback) {
+  let req = new XMLHttpRequest();
+  req.open("GET", url);
+  req.onload = function() {
+    if (req.readyState == 4) {
+      if (req.status == 200) {
+        try {
+          let prefs = JSON.parse(req.responseText);
+          callback(prefs);
+        } catch (e) {
+          dump(
+            "TEST-UNEXPECTED-FAIL: setup.js | error parsing " +
+              url +
+              " (" +
+              e +
+              ")\n"
+          );
+          throw e;
+        }
+      } else {
+        dump(
+          "TEST-UNEXPECTED-FAIL: setup.js | error loading " +
+            url +
+            " (HTTP " +
+            req.status +
+            ")\n"
+        );
+        callback({});
+      }
+    }
+  };
+  req.send();
+}
+
+
 var params = parseQueryString(location.search.substring(1), true);
 
 var config = {};
@@ -193,6 +228,10 @@ if (params.conditionedProfile) {
   TestRunner.conditionedProfile = true;
 }
 
+if (params.comparePrefs) {
+  TestRunner.comparePrefs = true;
+}
+
 
 TestRunner.logger.addListener("dumpListener", consoleLevel + "", function(msg) {
   dump(msg.info.join(" ") + "\n");
@@ -200,6 +239,7 @@ TestRunner.logger.addListener("dumpListener", consoleLevel + "", function(msg) {
 
 var gTestList = [];
 var RunSet = {};
+
 RunSet.runall = function(e) {
   
   
@@ -295,6 +335,17 @@ function hookup() {
   }
 }
 
+function getPrefList() {
+  if (params.ignorePrefsFile) {
+    loadFile(getTestManifestURL(params.ignorePrefsFile), function(prefs) {
+      TestRunner.ignorePrefs = prefs;
+      RunSet.runall();
+    });
+  } else {
+    RunSet.runall();
+  }
+}
+
 function hookupTests(testList) {
   if (testList.length) {
     gTestList = testList;
@@ -309,7 +360,7 @@ function hookupTests(testList) {
   document.getElementById("toggleNonTests").onclick = toggleNonTests;
   
   if (params.autorun) {
-    RunSet.runall();
+    getPrefList();
   }
 }
 
