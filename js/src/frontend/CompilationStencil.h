@@ -361,7 +361,7 @@ struct InputName {
   
   
   
-  TaggedParserAtomIndex internInto(JSContext* cx, FrontendContext* fc,
+  TaggedParserAtomIndex internInto(FrontendContext* fc,
                                    ParserAtomsTable& parserAtoms,
                                    CompilationAtomCache& atomCache);
 
