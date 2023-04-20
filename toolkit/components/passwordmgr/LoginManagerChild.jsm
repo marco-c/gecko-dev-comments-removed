@@ -3190,8 +3190,10 @@ class LoginManagerChild extends JSWindowActorChild {
     }
   }
   #relayIsAvailableOrEnabled() {
+    
+    
     const value = Services.prefs.getStringPref("signon.firefoxRelay.feature");
-    return value === "available" || value === "enabled";
+    return ["available", "offered", "enabled"].includes(value);
   }
 
   getScenario(inputElement) {
