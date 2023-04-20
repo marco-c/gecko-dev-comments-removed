@@ -1888,6 +1888,18 @@ void CacheOutputCloseListener::OnOutputClosed() {
   
   
   
+
+  if (NS_IsMainThread()) {
+    
+    
+    
+    
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(do_AddRef(this)));
+    return;
+  }
+
   nsCOMPtr<nsIEventTarget> sts =
       do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
   MOZ_DIAGNOSTIC_ASSERT(sts);
