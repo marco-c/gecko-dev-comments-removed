@@ -17,6 +17,7 @@
 #include "api/units/frequency.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "modules/video_coding/timing/frame_delay_delta_kalman_filter.h"
 #include "modules/video_coding/timing/rtt_filter.h"
 #include "rtc_base/rolling_accumulator.h"
 
@@ -66,23 +67,8 @@ class JitterEstimator {
   
   static constexpr TimeDelta OPERATING_SYSTEM_JITTER = TimeDelta::Millis(10);
 
- protected:
-  
-  double theta_[2];   
-  double var_noise_;  
-
  private:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void KalmanEstimateChannel(TimeDelta frame_delay,
-                             double delta_frame_size_bytes);
+  double var_noise_;  
 
   
   
@@ -101,23 +87,11 @@ class JitterEstimator {
   
   void PostProcessEstimate();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  double DeviationFromExpectedDelay(TimeDelta frame_delay,
-                                    double delta_frame_size_bytes) const;
-
   Frequency GetFrameRate() const;
 
-  double theta_cov_[2][2];  
-  double q_cov_[2][2];      
+  
+  
+  FrameDelayDeltaKalmanFilter kalman_filter_;
 
   static constexpr DataSize kDefaultAvgAndMaxFrameSize = DataSize::Bytes(500);
   DataSize avg_frame_size_ = kDefaultAvgAndMaxFrameSize;  
