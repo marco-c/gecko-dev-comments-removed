@@ -21,12 +21,6 @@
 #include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/weak_ptr.h"
 
-
-
-#if defined(WEBRTC_ANDROID)
-#define log2(x) (log(x) / log(2))
-#endif
-
 namespace webrtc {
 
 namespace {
