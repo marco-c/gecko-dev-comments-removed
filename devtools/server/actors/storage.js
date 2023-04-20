@@ -2028,7 +2028,7 @@ if (Services.prefs.getBoolPref(EXTENSION_STORAGE_ENABLED_PREF, false)) {
         }
 
         let { name, value } = item;
-        let isValueEditable = extensionStorageHelpers.isEditable(value);
+        const isValueEditable = extensionStorageHelpers.isEditable(value);
 
         
         
@@ -2049,16 +2049,6 @@ if (Services.prefs.getBoolPref(EXTENSION_STORAGE_ENABLED_PREF, false)) {
             ) {
               value = JSON.parse(value);
             }
-        }
-
-        
-        
-        
-        
-        const maxLength = DevToolsServer.LONG_STRING_LENGTH - 1;
-        if (value.length > maxLength) {
-          value = value.substr(0, maxLength);
-          isValueEditable = false;
         }
 
         return {
@@ -2703,16 +2693,7 @@ StorageActors.createActor(
         };
       }
 
-      let value = JSON.stringify(item.value);
-
-      
-      
-      
-      
-      const maxLength = DevToolsServer.LONG_STRING_LENGTH - 1;
-      if (value.length > maxLength) {
-        value = value.substr(0, maxLength);
-      }
+      const value = JSON.stringify(item.value);
 
       
       return {
