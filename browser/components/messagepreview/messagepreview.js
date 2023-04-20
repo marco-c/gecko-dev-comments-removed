@@ -17,8 +17,23 @@ function decodeMessageFromUrl() {
   return null;
 }
 
+function showHint() {
+  document.body.classList.add("hint-box");
+  document.body.innerHTML = `<div class="hint">Message preview is not enabled. Enable it in about:config by setting <code>browser.newtabpage.activity-stream.asrouter.devtoolsEnabled</code> to true.</div>`;
+}
+
 const message = decodeMessageFromUrl();
 
 if (message) {
-  MPShowMessage(message);
+  
+  if (MPIsEnabled()) {
+    MPShowMessage(message);
+  } else if (MPShouldShowHint()) {
+    
+    if (document.body) {
+      showHint();
+    } else {
+      document.addEventListener("DOMContentLoaded", showHint, { once: true });
+    }
+  }
 }
