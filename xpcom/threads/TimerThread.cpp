@@ -633,6 +633,11 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
   return mTimers[0].Timeout();
 }
 
+constexpr TimeDuration TimerThread::ComputeAcceptableFiringDelay(
+    TimeDuration minDelay, TimeDuration maxDelay) const {
+  return std::min(minDelay, maxDelay);
+}
+
 NS_IMETHODIMP
 TimerThread::Run() {
   MonitorAutoLock lock(mMonitor);
@@ -879,13 +884,17 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   
   
   
-  
-  
-  
+  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
+  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
+  const TimeDuration firingDelay =
+      ComputeAcceptableFiringDelay(minTimerDelay, maxTimerDelay);
+  const bool firingBeforeNextWakeup =
+      mIntendedWakeupTime.IsNull() ||
+      (aTimer->mTimeout + firingDelay < mIntendedWakeupTime);
   const bool wakeUpTimerThread =
-      mWaiting &&
-      (mTimers.Length() == 0 || aTimer->mTimeout < mTimers[0].Timeout() ||
-       aTimer->mDelay.IsZero());
+      mWaiting && (firingBeforeNextWakeup || aTimer->mDelay.IsZero());
 
 #if TIMER_THREAD_STATISTICS
   if (mTotalTimersAdded == 0) {
