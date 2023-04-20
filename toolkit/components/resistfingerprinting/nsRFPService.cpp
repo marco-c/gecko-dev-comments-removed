@@ -84,10 +84,14 @@ static mozilla::LazyLogModule gResistFingerprintingLog(
     "nsResistFingerprinting");
 
 #define RESIST_FINGERPRINTING_PREF "privacy.resistFingerprinting"
-#define RESIST_FINGERPRINTINGLITE_PREF "privacy.resistFingerprintingLite"
-#define RESIST_FINGERPRINTINGLITE_OVERRIDE_PREF \
-  "privacy.resistFingerprintingLite.overrides"
+#define RFP_TIMER_PREF "privacy.reduceTimerPrecision"
+#define RFP_TIMER_UNCONDITIONAL_PREF \
+  "privacy.reduceTimerPrecision.unconditional"
 #define RFP_TIMER_UNCONDITIONAL_VALUE 20
+#define RFP_TIMER_VALUE_PREF \
+  "privacy.resistFingerprinting.reduceTimerPrecision.microseconds"
+#define RFP_JITTER_VALUE_PREF \
+  "privacy.resistFingerprinting.reduceTimerPrecision.jitter"
 #define PROFILE_INITIALIZED_TOPIC "profile-initial-state"
 #define LAST_PB_SESSION_EXITED_TOPIC "last-pb-context-exited"
 
@@ -97,20 +101,47 @@ static constexpr uint32_t kVideoDroppedRatio = 5;
 #define RFP_DEFAULT_SPOOFING_KEYBOARD_LANG KeyboardLang::EN
 #define RFP_DEFAULT_SPOOFING_KEYBOARD_REGION KeyboardRegion::US
 
-static nsTArray<mozilla::RFPTarget> sRFPLiteTargets = {
-    RFPTarget::PrecomputeIsEnabled, RFPTarget::Unknown};
-
-
-
-
-
-
 NS_IMPL_ISUPPORTS(nsRFPService, nsIObserver)
 
 static StaticRefPtr<nsRFPService> sRFPService;
 static bool sInitialized = false;
-static nsTArray<mozilla::RFPTarget> sTargetOverrideAdditions;
-static nsTArray<mozilla::RFPTarget> sTargetOverrideSubtractions;
+nsTHashMap<KeyboardHashKey, const SpoofingKeyboardCode*>*
+    nsRFPService::sSpoofingKeyboardCodes = nullptr;
+
+KeyboardHashKey::KeyboardHashKey(const KeyboardLangs aLang,
+                                 const KeyboardRegions aRegion,
+                                 const KeyNameIndexType aKeyIdx,
+                                 const nsAString& aKey)
+    : mLang(aLang), mRegion(aRegion), mKeyIdx(aKeyIdx), mKey(aKey) {}
+
+KeyboardHashKey::KeyboardHashKey(KeyTypePointer aOther)
+    : mLang(aOther->mLang),
+      mRegion(aOther->mRegion),
+      mKeyIdx(aOther->mKeyIdx),
+      mKey(aOther->mKey) {}
+
+KeyboardHashKey::KeyboardHashKey(KeyboardHashKey&& aOther)
+    : PLDHashEntryHdr(std::move(aOther)),
+      mLang(std::move(aOther.mLang)),
+      mRegion(std::move(aOther.mRegion)),
+      mKeyIdx(std::move(aOther.mKeyIdx)),
+      mKey(std::move(aOther.mKey)) {}
+
+KeyboardHashKey::~KeyboardHashKey() = default;
+
+bool KeyboardHashKey::KeyEquals(KeyTypePointer aOther) const {
+  return mLang == aOther->mLang && mRegion == aOther->mRegion &&
+         mKeyIdx == aOther->mKeyIdx && mKey == aOther->mKey;
+}
+
+KeyboardHashKey::KeyTypePointer KeyboardHashKey::KeyToPointer(KeyType aKey) {
+  return &aKey;
+}
+
+PLDHashNumber KeyboardHashKey::HashKey(KeyTypePointer aKey) {
+  PLDHashNumber hash = mozilla::HashString(aKey->mKey);
+  return mozilla::AddToHash(hash, aKey->mRegion, aKey->mKeyIdx, aKey->mLang);
+}
 
 
 nsRFPService* nsRFPService::GetOrCreate() {
@@ -129,306 +160,6 @@ nsRFPService* nsRFPService::GetOrCreate() {
 
   return sRFPService;
 }
-
-static const char* gCallbackPrefs[] = {
-    RESIST_FINGERPRINTING_PREF,
-    RESIST_FINGERPRINTINGLITE_PREF,
-    RESIST_FINGERPRINTINGLITE_OVERRIDE_PREF,
-    nullptr,
-};
-
-nsresult nsRFPService::Init() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsresult rv;
-
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  NS_ENSURE_TRUE(obs, NS_ERROR_NOT_AVAILABLE);
-
-  rv = obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (XRE_IsParentProcess()) {
-    rv = obs->AddObserver(this, LAST_PB_SESSION_EXITED_TOPIC, false);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = obs->AddObserver(this, OBSERVER_TOPIC_IDLE_DAILY, false);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-#if defined(XP_WIN)
-  rv = obs->AddObserver(this, PROFILE_INITIALIZED_TOPIC, false);
-  NS_ENSURE_SUCCESS(rv, rv);
-#endif
-
-  Preferences::RegisterCallbacks(nsRFPService::PrefChanged, gCallbackPrefs,
-                                 this);
-  
-  const char* tzValue = PR_GetEnv("TZ");
-  if (tzValue != nullptr) {
-    mInitialTZValue = nsCString(tzValue);
-  }
-
-  
-  UpdateRFPPref();
-  UpdateRFPLiteOverrideList();
-
-  return rv;
-}
-
-
-bool nsRFPService::IsRFPEnabledFor(RFPTarget aTarget) {
-  if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly()) {
-    return true;
-  }
-
-  if (StaticPrefs::privacy_resistFingerprintingLite_DoNotUseDirectly()) {
-    if (sTargetOverrideAdditions.Contains(aTarget)) {
-      return true;
-    }
-    if (sTargetOverrideSubtractions.Contains(aTarget)) {
-      return false;
-    }
-    if (sRFPLiteTargets.Contains(aTarget)) {
-      return true;
-    }
-    return false;
-  }
-
-  return false;
-}
-
-
-
-void nsRFPService::UpdateRFPPref() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  bool resistFingerprinting = nsContentUtils::ShouldResistFingerprinting();
-
-  JS::SetReduceMicrosecondTimePrecisionCallback(
-      nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
-
-  
-  JS::SetUseFdlibmForSinCosTan(
-      StaticPrefs::javascript_options_use_fdlibm_for_sin_cos_tan() ||
-      resistFingerprinting);
-
-  
-  
-  
-  if (!StaticPrefs::privacy_resistFingerprinting_testing_setTZtoUTC()) {
-    return;
-  }
-
-  if (resistFingerprinting) {
-    PR_SetEnv("TZ=UTC");
-  } else if (sInitialized) {
-    
-    
-    if (!mInitialTZValue.IsEmpty()) {
-      nsAutoCString tzValue = "TZ="_ns + mInitialTZValue;
-      static char* tz = nullptr;
-
-      
-      
-      if (tz != nullptr) {
-        free(tz);
-      }
-      
-      
-      tz = ToNewCString(tzValue, mozilla::fallible);
-      if (tz != nullptr) {
-        PR_SetEnv(tz);
-      }
-    } else {
-#if defined(XP_WIN)
-      
-      
-      PR_SetEnv("TZ=");
-#else
-      
-      
-      PR_SetEnv("TZ=:/etc/localtime");
-#endif
-    }
-  }
-
-  
-  
-  if (resistFingerprinting || sInitialized) {
-    
-    
-#if defined(XP_WIN)
-    _tzset();
-#else
-    tzset();
-#endif
-
-    nsJSUtils::ResetTimeZone();
-  }
-
-  
-  
-  if (resistFingerprinting || sInitialized) {
-    
-    
-#if defined(XP_WIN)
-    _tzset();
-#else
-    tzset();
-#endif
-
-    nsJSUtils::ResetTimeZone();
-  }
-}
-
-void nsRFPService::UpdateRFPLiteOverrideList() {
-  nsAutoString targetOverrides;
-  nsresult rv = Preferences::GetString(RESIST_FINGERPRINTINGLITE_OVERRIDE_PREF,
-                                       targetOverrides);
-  if (!NS_SUCCEEDED(rv) || targetOverrides.IsEmpty()) {
-    MOZ_LOG(gResistFingerprintingLog, LogLevel::Warning,
-            ("Could not map any values"));
-    return;
-  }
-
-  sTargetOverrideAdditions.Clear();
-  sTargetOverrideSubtractions.Clear();
-  for (const nsAString& each : targetOverrides.Split(',')) {
-    Maybe<RFPTarget> mappedValue =
-        nsRFPService::TextToRFPTarget(Substring(each, 1, each.Length() - 1));
-    if (mappedValue.isSome()) {
-      if (each[0] == '+') {
-        sTargetOverrideAdditions.AppendElement(mappedValue.value());
-        MOZ_LOG(gResistFingerprintingLog, LogLevel::Warning,
-                ("Mapped value %s (%X), to an addition, now we have %zu",
-                 NS_ConvertUTF16toUTF8(each).get(), mappedValue.value(),
-                 sTargetOverrideAdditions.Length()));
-      } else if (each[0] == '-') {
-        sTargetOverrideSubtractions.AppendElement(mappedValue.value());
-        MOZ_LOG(gResistFingerprintingLog, LogLevel::Warning,
-                ("Mapped value %s (%X) to a subtraction, now we have %zu",
-                 NS_ConvertUTF16toUTF8(each).get(), mappedValue.value(),
-                 sTargetOverrideSubtractions.Length()));
-      } else {
-        MOZ_LOG(gResistFingerprintingLog, LogLevel::Warning,
-                ("Mapped value %s (%X) to an RFPTarget Enum, but the first "
-                 "character wasn't + or -",
-                 NS_ConvertUTF16toUTF8(each).get(), mappedValue.value()));
-      }
-    } else {
-      MOZ_LOG(gResistFingerprintingLog, LogLevel::Warning,
-              ("Could not map the value %s to an RFPTarget Enum",
-               NS_ConvertUTF16toUTF8(each).get()));
-    }
-  }
-}
-
-
-Maybe<RFPTarget> nsRFPService::TextToRFPTarget(const nsAString& aText) {
-#define ITEM_VALUE(name, value)     \
-  if (aText.EqualsLiteral(#name)) { \
-    return Some(RFPTarget::name);   \
-  }
-
-#include "RFPTargets.inc"
-#undef ITEM_VALUE
-
-  return Nothing();
-}
-
-void nsRFPService::StartShutdown() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-
-  if (obs) {
-    obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
-    if (XRE_IsParentProcess()) {
-      obs->RemoveObserver(this, LAST_PB_SESSION_EXITED_TOPIC);
-      obs->RemoveObserver(this, OBSERVER_TOPIC_IDLE_DAILY);
-    }
-  }
-
-  Preferences::UnregisterCallbacks(nsRFPService::PrefChanged, gCallbackPrefs,
-                                   this);
-}
-
-
-void nsRFPService::PrefChanged(const char* aPref, void* aSelf) {
-  static_cast<nsRFPService*>(aSelf)->PrefChanged(aPref);
-}
-
-void nsRFPService::PrefChanged(const char* aPref) {
-  nsDependentCString pref(aPref);
-
-  if (pref.EqualsLiteral(RESIST_FINGERPRINTING_PREF)) {
-    UpdateRFPPref();
-
-#if defined(XP_WIN)
-    if (!XRE_IsE10sParentProcess()) {
-      
-      
-      
-      _tzset();
-    }
-#endif
-  } else if (pref.EqualsLiteral(RESIST_FINGERPRINTINGLITE_OVERRIDE_PREF)) {
-    UpdateRFPLiteOverrideList();
-  }
-}
-
-NS_IMETHODIMP
-nsRFPService::Observe(nsISupports* aObject, const char* aTopic,
-                      const char16_t* aMessage) {
-  if (strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, aTopic) == 0) {
-    StartShutdown();
-  }
-#if defined(XP_WIN)
-  else if (!strcmp(PROFILE_INITIALIZED_TOPIC, aTopic)) {
-    
-    
-    
-    if (XRE_IsParentProcess() && !XRE_IsE10sParentProcess()) {
-      
-      
-      
-      _tzset();
-    }
-
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    NS_ENSURE_TRUE(obs, NS_ERROR_NOT_AVAILABLE);
-
-    nsresult rv = obs->RemoveObserver(this, PROFILE_INITIALIZED_TOPIC);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-#endif
-
-  if (strcmp(LAST_PB_SESSION_EXITED_TOPIC, aTopic) == 0) {
-    
-    
-    ClearSessionKey(true);
-  }
-
-  if (!strcmp(OBSERVER_TOPIC_IDLE_DAILY, aTopic)) {
-    if (StaticPrefs::
-            privacy_resistFingerprinting_randomization_daily_reset_enabled()) {
-      ClearSessionKey(false);
-    }
-
-    if (StaticPrefs::
-            privacy_resistFingerprinting_randomization_daily_reset_private_enabled()) {
-      ClearSessionKey(true);
-    }
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
 
 constexpr double RFP_TIME_ATOM_MS = 16.667;  
 
@@ -787,75 +518,6 @@ double nsRFPService::ReduceTimePrecisionAsUSecsWrapper(
 }
 
 
-TimerPrecisionType nsRFPService::GetTimerPrecisionType(
-    RTPCallerType aRTPCallerType) {
-  if (aRTPCallerType == RTPCallerType::SystemPrincipal) {
-    return DangerouslyNone;
-  }
-
-  if (aRTPCallerType == RTPCallerType::ResistFingerprinting) {
-    return RFP;
-  }
-
-  if (StaticPrefs::privacy_reduceTimerPrecision() &&
-      aRTPCallerType == RTPCallerType::CrossOriginIsolated) {
-    return UnconditionalAKAHighRes;
-  }
-
-  if (StaticPrefs::privacy_reduceTimerPrecision()) {
-    return Normal;
-  }
-
-  if (StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {
-    return UnconditionalAKAHighRes;
-  }
-
-  return DangerouslyNone;
-}
-
-
-TimerPrecisionType nsRFPService::GetTimerPrecisionTypeRFPOnly(
-    RTPCallerType aRTPCallerType) {
-  if (aRTPCallerType == RTPCallerType::ResistFingerprinting) {
-    return RFP;
-  }
-
-  if (StaticPrefs::privacy_reduceTimerPrecision_unconditional() &&
-      aRTPCallerType != RTPCallerType::SystemPrincipal) {
-    return UnconditionalAKAHighRes;
-  }
-
-  return DangerouslyNone;
-}
-
-
-void nsRFPService::TypeToText(TimerPrecisionType aType, nsACString& aText) {
-  switch (aType) {
-    case TimerPrecisionType::DangerouslyNone:
-      aText.AssignLiteral("DangerouslyNone");
-      return;
-    case TimerPrecisionType::Normal:
-      aText.AssignLiteral("Normal");
-      return;
-    case TimerPrecisionType::RFP:
-      aText.AssignLiteral("RFP");
-      return;
-    case TimerPrecisionType::UnconditionalAKAHighRes:
-      aText.AssignLiteral("UnconditionalAKAHighRes");
-      return;
-    default:
-      MOZ_ASSERT(false, "Shouldn't go here");
-      aText.AssignLiteral("Unknown Enum Value");
-      return;
-  }
-}
-
-
-
-
-
-
-
 uint32_t nsRFPService::CalculateTargetVideoResolution(uint32_t aVideoQuality) {
   return aVideoQuality * NSToIntCeil(aVideoQuality * 16 / 9.0);
 }
@@ -913,11 +575,6 @@ uint32_t nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth,
                       ((100 - boundedDroppedRatio) / 100.0));
 }
 
-
-
-
-
-
 static const char* GetSpoofedVersion() {
 #ifdef ANDROID
   
@@ -974,47 +631,136 @@ void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
   MOZ_ASSERT(userAgent.Length() <= preallocatedLength);
 }
 
+static const char* gCallbackPrefs[] = {
+    RESIST_FINGERPRINTING_PREF,   RFP_TIMER_PREF,
+    RFP_TIMER_UNCONDITIONAL_PREF, RFP_TIMER_VALUE_PREF,
+    RFP_JITTER_VALUE_PREF,        nullptr,
+};
 
+nsresult nsRFPService::Init() {
+  MOZ_ASSERT(NS_IsMainThread());
 
+  nsresult rv;
 
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  NS_ENSURE_TRUE(obs, NS_ERROR_NOT_AVAILABLE);
 
+  rv = obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-nsTHashMap<KeyboardHashKey, const SpoofingKeyboardCode*>*
-    nsRFPService::sSpoofingKeyboardCodes = nullptr;
+  if (XRE_IsParentProcess()) {
+    rv = obs->AddObserver(this, LAST_PB_SESSION_EXITED_TOPIC, false);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-KeyboardHashKey::KeyboardHashKey(const KeyboardLangs aLang,
-                                 const KeyboardRegions aRegion,
-                                 const KeyNameIndexType aKeyIdx,
-                                 const nsAString& aKey)
-    : mLang(aLang), mRegion(aRegion), mKeyIdx(aKeyIdx), mKey(aKey) {}
+    rv = obs->AddObserver(this, OBSERVER_TOPIC_IDLE_DAILY, false);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
-KeyboardHashKey::KeyboardHashKey(KeyTypePointer aOther)
-    : mLang(aOther->mLang),
-      mRegion(aOther->mRegion),
-      mKeyIdx(aOther->mKeyIdx),
-      mKey(aOther->mKey) {}
+#if defined(XP_WIN)
+  rv = obs->AddObserver(this, PROFILE_INITIALIZED_TOPIC, false);
+  NS_ENSURE_SUCCESS(rv, rv);
+#endif
 
-KeyboardHashKey::KeyboardHashKey(KeyboardHashKey&& aOther) noexcept
-    : PLDHashEntryHdr(std::move(aOther)),
-      mLang(std::move(aOther.mLang)),
-      mRegion(std::move(aOther.mRegion)),
-      mKeyIdx(std::move(aOther.mKeyIdx)),
-      mKey(std::move(aOther.mKey)) {}
+  Preferences::RegisterCallbacks(nsRFPService::PrefChanged, gCallbackPrefs,
+                                 this);
 
-KeyboardHashKey::~KeyboardHashKey() = default;
+  
+  const char* tzValue = PR_GetEnv("TZ");
+  if (tzValue != nullptr) {
+    mInitialTZValue = nsCString(tzValue);
+  }
 
-bool KeyboardHashKey::KeyEquals(KeyTypePointer aOther) const {
-  return mLang == aOther->mLang && mRegion == aOther->mRegion &&
-         mKeyIdx == aOther->mKeyIdx && mKey == aOther->mKey;
+  
+  UpdateRFPPref();
+
+  return rv;
 }
 
-KeyboardHashKey::KeyTypePointer KeyboardHashKey::KeyToPointer(KeyType aKey) {
-  return &aKey;
+
+
+void nsRFPService::UpdateRFPPref() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  bool resistFingerprinting = nsContentUtils::ShouldResistFingerprinting();
+
+  JS::SetReduceMicrosecondTimePrecisionCallback(
+      nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
+
+  
+  JS::SetUseFdlibmForSinCosTan(
+      StaticPrefs::javascript_options_use_fdlibm_for_sin_cos_tan() ||
+      resistFingerprinting);
+
+  
+  
+  
+  if (!StaticPrefs::privacy_resistFingerprinting_testing_setTZtoUTC()) {
+    return;
+  }
+
+  if (resistFingerprinting) {
+    PR_SetEnv("TZ=UTC");
+  } else if (sInitialized) {
+    
+    
+    if (!mInitialTZValue.IsEmpty()) {
+      nsAutoCString tzValue = "TZ="_ns + mInitialTZValue;
+      static char* tz = nullptr;
+
+      
+      
+      if (tz != nullptr) {
+        free(tz);
+      }
+      
+      
+      tz = ToNewCString(tzValue, mozilla::fallible);
+      if (tz != nullptr) {
+        PR_SetEnv(tz);
+      }
+    } else {
+#if defined(XP_WIN)
+      
+      
+      PR_SetEnv("TZ=");
+#else
+      
+      
+      PR_SetEnv("TZ=:/etc/localtime");
+#endif
+    }
+  }
+
+  
+  
+  if (resistFingerprinting || sInitialized) {
+    
+    
+#if defined(XP_WIN)
+    _tzset();
+#else
+    tzset();
+#endif
+
+    nsJSUtils::ResetTimeZone();
+  }
 }
 
-PLDHashNumber KeyboardHashKey::HashKey(KeyTypePointer aKey) {
-  PLDHashNumber hash = mozilla::HashString(aKey->mKey);
-  return mozilla::AddToHash(hash, aKey->mRegion, aKey->mKeyIdx, aKey->mLang);
+void nsRFPService::StartShutdown() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+
+  if (obs) {
+    obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
+    if (XRE_IsParentProcess()) {
+      obs->RemoveObserver(this, LAST_PB_SESSION_EXITED_TOPIC);
+      obs->RemoveObserver(this, OBSERVER_TOPIC_IDLE_DAILY);
+    }
+  }
+
+  Preferences::UnregisterCallbacks(nsRFPService::PrefChanged, gCallbackPrefs,
+                                   this);
 }
 
 
@@ -1228,8 +974,137 @@ bool nsRFPService::GetSpoofedKeyCode(const dom::Document* aDoc,
 }
 
 
+TimerPrecisionType nsRFPService::GetTimerPrecisionType(
+    RTPCallerType aRTPCallerType) {
+  if (aRTPCallerType == RTPCallerType::SystemPrincipal) {
+    return DangerouslyNone;
+  }
+
+  if (aRTPCallerType == RTPCallerType::ResistFingerprinting) {
+    return RFP;
+  }
+
+  if (StaticPrefs::privacy_reduceTimerPrecision() &&
+      aRTPCallerType == RTPCallerType::CrossOriginIsolated) {
+    return UnconditionalAKAHighRes;
+  }
+
+  if (StaticPrefs::privacy_reduceTimerPrecision()) {
+    return Normal;
+  }
+
+  if (StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {
+    return UnconditionalAKAHighRes;
+  }
+
+  return DangerouslyNone;
+}
 
 
+TimerPrecisionType nsRFPService::GetTimerPrecisionTypeRFPOnly(
+    RTPCallerType aRTPCallerType) {
+  if (aRTPCallerType == RTPCallerType::ResistFingerprinting) {
+    return RFP;
+  }
+
+  if (StaticPrefs::privacy_reduceTimerPrecision_unconditional() &&
+      aRTPCallerType != RTPCallerType::SystemPrincipal) {
+    return UnconditionalAKAHighRes;
+  }
+
+  return DangerouslyNone;
+}
+
+
+void nsRFPService::TypeToText(TimerPrecisionType aType, nsACString& aText) {
+  switch (aType) {
+    case TimerPrecisionType::DangerouslyNone:
+      aText.AssignLiteral("DangerouslyNone");
+      return;
+    case TimerPrecisionType::Normal:
+      aText.AssignLiteral("Normal");
+      return;
+    case TimerPrecisionType::RFP:
+      aText.AssignLiteral("RFP");
+      return;
+    case TimerPrecisionType::UnconditionalAKAHighRes:
+      aText.AssignLiteral("UnconditionalAKAHighRes");
+      return;
+    default:
+      MOZ_ASSERT(false, "Shouldn't go here");
+      aText.AssignLiteral("Unknown Enum Value");
+      return;
+  }
+}
+
+
+void nsRFPService::PrefChanged(const char* aPref, void* aSelf) {
+  static_cast<nsRFPService*>(aSelf)->PrefChanged(aPref);
+}
+
+void nsRFPService::PrefChanged(const char* aPref) {
+  nsDependentCString pref(aPref);
+
+  if (pref.EqualsLiteral(RESIST_FINGERPRINTING_PREF)) {
+    UpdateRFPPref();
+
+#if defined(XP_WIN)
+    if (!XRE_IsE10sParentProcess()) {
+      
+      
+      
+      _tzset();
+    }
+#endif
+  }
+}
+
+NS_IMETHODIMP
+nsRFPService::Observe(nsISupports* aObject, const char* aTopic,
+                      const char16_t* aMessage) {
+  if (strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, aTopic) == 0) {
+    StartShutdown();
+  }
+#if defined(XP_WIN)
+  else if (!strcmp(PROFILE_INITIALIZED_TOPIC, aTopic)) {
+    
+    
+    
+    if (XRE_IsParentProcess() && !XRE_IsE10sParentProcess()) {
+      
+      
+      
+      _tzset();
+    }
+
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    NS_ENSURE_TRUE(obs, NS_ERROR_NOT_AVAILABLE);
+
+    nsresult rv = obs->RemoveObserver(this, PROFILE_INITIALIZED_TOPIC);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+#endif
+
+  if (strcmp(LAST_PB_SESSION_EXITED_TOPIC, aTopic) == 0) {
+    
+    
+    ClearSessionKey(true);
+  }
+
+  if (!strcmp(OBSERVER_TOPIC_IDLE_DAILY, aTopic)) {
+    if (StaticPrefs::
+            privacy_resistFingerprinting_randomization_daily_reset_enabled()) {
+      ClearSessionKey(false);
+    }
+
+    if (StaticPrefs::
+            privacy_resistFingerprinting_randomization_daily_reset_private_enabled()) {
+      ClearSessionKey(true);
+    }
+  }
+
+  return NS_OK;
+}
 
 nsresult nsRFPService::EnsureSessionKey(bool aIsPrivate) {
   MOZ_ASSERT(XRE_IsParentProcess());
