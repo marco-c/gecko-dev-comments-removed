@@ -3233,17 +3233,6 @@ void MMul::analyzeEdgeCasesBackward() {
   }
 }
 
-bool MMul::updateForReplacement(MDefinition* ins_) {
-  MMul* ins = ins_->toMul();
-  bool negativeZero = canBeNegativeZero() || ins->canBeNegativeZero();
-  setCanBeNegativeZero(negativeZero);
-  
-  if (mode_ == Integer && ins->mode() != Integer) {
-    mode_ = Normal;
-  }
-  return true;
-}
-
 bool MMul::canOverflow() const {
   if (isTruncated()) {
     return false;
