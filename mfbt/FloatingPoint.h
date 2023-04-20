@@ -157,16 +157,6 @@ struct FloatingPoint final : private detail::FloatingPointTrait<T> {
 
 
 template <typename T>
-static MOZ_ALWAYS_INLINE bool IsInfinite(T aValue) {
-  
-  typedef FloatingPoint<T> Traits;
-  typedef typename Traits::Bits Bits;
-  Bits bits = BitwiseCast<Bits>(aValue);
-  return (bits & ~Traits::kSignBit) == Traits::kExponentBits;
-}
-
-
-template <typename T>
 static MOZ_ALWAYS_INLINE bool IsFinite(T aValue) {
   
 
