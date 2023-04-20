@@ -183,7 +183,7 @@ __webpack_require__.r(__webpack_exports__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(11);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(15);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(16);
 
 
 
@@ -705,6 +705,8 @@ __webpack_require__.r(__webpack_exports__);
  var _CTAParagraph__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(12);
  var _HeroImage__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(13);
  var _OnboardingVideo__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(14);
+ var _AdditionalCTA__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(15);
+
 
 
 
@@ -773,12 +775,12 @@ const ProtonScreenActionButtons = props => {
   const defaultValue = (_content$checkbox = content.checkbox) === null || _content$checkbox === void 0 ? void 0 : _content$checkbox.defaultValue;
   const [isChecked, setIsChecked] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(defaultValue || false);
 
-  if (!content.primary_button && !content.secondary_button) {
+  if (!content.primary_button && !content.secondary_button && !content.additional_button) {
     return null;
   }
 
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: `action-buttons ${content.dual_action_buttons ? "dual-action-buttons" : ""}`
+    className: `action-buttons ${content.additional_button ? "additional-cta-container" : ""}`
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
     text: (_content$primary_butt = content.primary_button) === null || _content$primary_butt === void 0 ? void 0 : _content$primary_butt.label
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
@@ -793,7 +795,10 @@ const ProtonScreenActionButtons = props => {
     "data-l10n-args": addonName ? JSON.stringify({
       "addon-name": addonName
     }) : ""
-  })), content.checkbox ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+  })), content.additional_button ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_AdditionalCTA__WEBPACK_IMPORTED_MODULE_11__.AdditionalCTA, {
+    content: content,
+    handleAction: props.handleAction
+  }) : null, content.checkbox ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "checkbox-container"
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
     type: "checkbox",
@@ -1779,6 +1784,48 @@ const OnboardingVideo = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   "AdditionalCTA": () => ( AdditionalCTA)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+
+
+const AdditionalCTA = ({
+  content,
+  handleAction
+}) => {
+  var _content$additional_b, _content$additional_b4, _content$additional_b5;
+
+  let buttonStyle = "";
+
+  if (!((_content$additional_b = content.additional_button) !== null && _content$additional_b !== void 0 && _content$additional_b.style)) {
+    buttonStyle = "primary";
+  } else {
+    var _content$additional_b2, _content$additional_b3;
+
+    buttonStyle = ((_content$additional_b2 = content.additional_button) === null || _content$additional_b2 === void 0 ? void 0 : _content$additional_b2.style) === "link" ? "cta-link" : (_content$additional_b3 = content.additional_button) === null || _content$additional_b3 === void 0 ? void 0 : _content$additional_b3.style;
+  }
+
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: (_content$additional_b4 = content.additional_button) === null || _content$additional_b4 === void 0 ? void 0 : _content$additional_b4.label
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+    className: `${buttonStyle} additional-cta`,
+    onClick: handleAction,
+    value: "additional_button",
+    disabled: ((_content$additional_b5 = content.additional_button) === null || _content$additional_b5 === void 0 ? void 0 : _content$additional_b5.disabled) === true
+  }));
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
    "BASE_PARAMS": () => ( BASE_PARAMS),
    "addUtmParams": () => ( addUtmParams)
  });
@@ -1827,7 +1874,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(15);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(16);
 
 
 
@@ -2022,7 +2069,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
- var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(16);
+ var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(17);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
