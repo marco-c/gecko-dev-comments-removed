@@ -3579,6 +3579,12 @@ class NormalTransactionOp : public TransactionDatabaseOperationBase,
       const PreprocessResponse& aResponse) final;
 };
 
+
+
+StaticAutoPtr<IndexedDBCipherKeyManager> gIndexedDBCipherKeyManager;
+
+}  
+
 Maybe<CipherKey> IndexedDBCipherKeyManager::Get(const nsCString& aDatabaseID,
                                                 const nsCString& keyStoreID) {
   auto lockedPrivateBrowsingInfoHashTable =
@@ -3617,9 +3623,11 @@ bool IndexedDBCipherKeyManager::Remove(const nsCString& aDatabaseID) {
   return lockedPrivateBrowsingInfoHashTable->Remove(aDatabaseID);
 }
 
+IndexedDBCipherKeyManager* GetIndexedDBCipherKeyManager() {
+  return gIndexedDBCipherKeyManager;
+}
 
-
-StaticAutoPtr<IndexedDBCipherKeyManager> gIndexedDBCipherKeyManager;
+namespace {
 
 class ObjectStoreAddOrPutRequestOp final : public NormalTransactionOp {
   friend class TransactionBase;
@@ -6301,8 +6309,7 @@ struct ValuePopulateResponseHelper {
 
     QM_TRY_UNWRAP(auto cloneInfo,
                   GetStructuredCloneReadInfoFromStatement(
-                      aStmt, 2 + offset, 1 + offset, *aCursor.mFileManager,
-                      aCursor.mDatabase->MaybeKeyRef()));
+                      aStmt, 2 + offset, 1 + offset, *aCursor.mFileManager));
 
     mCloneInfo.init(std::move(cloneInfo));
 
@@ -17712,8 +17719,7 @@ CreateIndexOp::UpdateIndexDataValuesFunction::OnFunctionCall(
   QM_TRY_UNWRAP(auto cloneInfo, GetStructuredCloneReadInfoFromValueArray(
                                     aValues,
                                      3,
-                                     2, *mOp->mFileManager,
-                                    mDatabase->MaybeKeyRef()));
+                                     2, *mOp->mFileManager));
 
   const IndexMetadata& metadata = mOp->mMetadata;
   const IndexOrObjectStoreId& objectStoreId = mOp->mObjectStoreId;
@@ -18954,8 +18960,7 @@ nsresult ObjectStoreGetRequestOp::DoDatabaseWork(
       *stmt, [this](auto& stmt) mutable -> mozilla::Result<Ok, nsresult> {
         QM_TRY_UNWRAP(auto cloneInfo,
                       GetStructuredCloneReadInfoFromStatement(
-                          &stmt, 1, 0, mDatabase->GetFileManager(),
-                          mDatabase->MaybeKeyRef()));
+                          &stmt, 1, 0, mDatabase->GetFileManager()));
 
         if (cloneInfo.HasPreprocessInfo()) {
           mPreprocessInfoCount++;
@@ -19433,8 +19438,7 @@ nsresult IndexGetRequestOp::DoDatabaseWork(DatabaseConnection* aConnection) {
       *stmt, [this](auto& stmt) mutable -> mozilla::Result<Ok, nsresult> {
         QM_TRY_UNWRAP(auto cloneInfo,
                       GetStructuredCloneReadInfoFromStatement(
-                          &stmt, 1, 0, mDatabase->GetFileManager(),
-                          mDatabase->MaybeKeyRef()));
+                          &stmt, 1, 0, mDatabase->GetFileManager()));
 
         if (cloneInfo.HasPreprocessInfo()) {
           IDB_WARNING("Preprocessing for indexes not yet implemented!");
