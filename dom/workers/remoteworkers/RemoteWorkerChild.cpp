@@ -374,6 +374,7 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(RemoteWorkerData&& aData) {
   info.mShouldResistFingerprinting = aData.shouldResistFingerprinting();
   net::CookieJarSettings::Deserialize(aData.cookieJarSettings(),
                                       getter_AddRefs(info.mCookieJarSettings));
+  info.mCookieJarSettingsArgs = aData.cookieJarSettings();
 
   
   

@@ -178,10 +178,6 @@ add_task(async function test_network_markers_service_worker_use() {
     const contentStopMarkers = contentPairs.map(
       ([_, stopMarker]) => stopMarker
     );
-    const serviceWorkerStopMarkers = serviceWorkerPairs.map(
-      ([_, stopMarker]) => stopMarker
-    );
-
     
     
     
@@ -394,11 +390,7 @@ add_task(async function test_network_markers_service_worker_use() {
     
     
     
-    let htmlFetch1,
-      htmlFetch2,
-      generatedSvgFetch1,
-      firefoxSvgFetch1,
-      firefoxSvgFetch2;
+    let htmlFetch1, generatedSvgFetch1, firefoxSvgFetch1;
 
     
     if (serviceWorkerParentThread !== contentThread) {
@@ -418,18 +410,6 @@ add_task(async function test_network_markers_service_worker_use() {
       );
 
       [htmlFetch1, generatedSvgFetch1, firefoxSvgFetch1] = contentStopMarkers;
-
-      
-      
-      
-      
-      Assert.equal(
-        serviceWorkerStopMarkers.length,
-        2,
-        "There should be 2 stop markers in the service worker thread."
-      );
-
-      [htmlFetch2, firefoxSvgFetch2] = serviceWorkerStopMarkers;
     } else {
       
       
@@ -448,11 +428,9 @@ add_task(async function test_network_markers_service_worker_use() {
         
         
         
-        htmlFetch2,
         htmlFetch1,
         generatedSvgFetch1,
         firefoxSvgFetch1,
-        firefoxSvgFetch2,
       ] = contentStopMarkers;
     }
 
@@ -499,59 +477,6 @@ add_task(async function test_network_markers_service_worker_use() {
         id: Expect.number(),
         pri: Expect.number(),
         innerWindowID: Expect.number(),
-      }),
-    });
-
-    
-    Assert.objectContains(htmlFetch2, {
-      name: Expect.stringMatches(/Load \d+:.*serviceworker_simple.html/),
-      data: Expect.objectContainsOnly({
-        type: "Network",
-        status: "STATUS_STOP",
-        URI: fullUrl("serviceworker_simple.html"),
-        requestMethod: "GET",
-        contentType: "text/html",
-        startTime: Expect.number(),
-        endTime: Expect.number(),
-        domainLookupStart: Expect.number(),
-        domainLookupEnd: Expect.number(),
-        connectStart: Expect.number(),
-        tcpConnectEnd: Expect.number(),
-        connectEnd: Expect.number(),
-        requestStart: Expect.number(),
-        responseStart: Expect.number(),
-        responseEnd: Expect.number(),
-        id: Expect.number(),
-        count: Expect.number(),
-        pri: Expect.number(),
-        
-        
-      }),
-    });
-
-    Assert.objectContains(firefoxSvgFetch2, {
-      name: Expect.stringMatches(/Load \d+:.*firefox-logo-nightly.svg/),
-      data: Expect.objectContainsOnly({
-        type: "Network",
-        status: "STATUS_STOP",
-        URI: fullUrl("firefox-logo-nightly.svg"),
-        requestMethod: "GET",
-        contentType: "image/svg+xml",
-        startTime: Expect.number(),
-        endTime: Expect.number(),
-        domainLookupStart: Expect.number(),
-        domainLookupEnd: Expect.number(),
-        connectStart: Expect.number(),
-        tcpConnectEnd: Expect.number(),
-        connectEnd: Expect.number(),
-        requestStart: Expect.number(),
-        responseStart: Expect.number(),
-        responseEnd: Expect.number(),
-        id: Expect.number(),
-        count: Expect.number(),
-        pri: Expect.number(),
-        
-        
       }),
     });
   });
