@@ -1135,6 +1135,7 @@ impl Socket {
         target_os = "haiku",
         target_os = "illumos",
         target_os = "netbsd",
+        target_os = "openbsd",
         target_os = "redox",
         target_os = "solaris",
     )))]
@@ -1163,6 +1164,7 @@ impl Socket {
         target_os = "haiku",
         target_os = "illumos",
         target_os = "netbsd",
+        target_os = "openbsd",
         target_os = "redox",
         target_os = "solaris",
     )))]
@@ -1178,6 +1180,76 @@ impl Socket {
                 sys::IPPROTO_IP,
                 sys::IP_DROP_MEMBERSHIP,
                 mreqn,
+            )
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(any(
+        target_os = "dragonfly",
+        target_os = "haiku",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "fuchsia",
+    )))]
+    pub fn join_ssm_v4(
+        &self,
+        source: &Ipv4Addr,
+        group: &Ipv4Addr,
+        interface: &Ipv4Addr,
+    ) -> io::Result<()> {
+        let mreqs = sys::IpMreqSource {
+            imr_multiaddr: sys::to_in_addr(group),
+            imr_interface: sys::to_in_addr(interface),
+            imr_sourceaddr: sys::to_in_addr(source),
+        };
+        unsafe {
+            setsockopt(
+                self.as_raw(),
+                sys::IPPROTO_IP,
+                sys::IP_ADD_SOURCE_MEMBERSHIP,
+                mreqs,
+            )
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(not(any(
+        target_os = "dragonfly",
+        target_os = "haiku",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "fuchsia",
+    )))]
+    pub fn leave_ssm_v4(
+        &self,
+        source: &Ipv4Addr,
+        group: &Ipv4Addr,
+        interface: &Ipv4Addr,
+    ) -> io::Result<()> {
+        let mreqs = sys::IpMreqSource {
+            imr_multiaddr: sys::to_in_addr(group),
+            imr_interface: sys::to_in_addr(interface),
+            imr_sourceaddr: sys::to_in_addr(source),
+        };
+        unsafe {
+            setsockopt(
+                self.as_raw(),
+                sys::IPPROTO_IP,
+                sys::IP_DROP_SOURCE_MEMBERSHIP,
+                mreqs,
             )
         }
     }
@@ -1292,7 +1364,7 @@ impl Socket {
     
     
     #[cfg(not(any(
-        target_os = "fuschia",
+        target_os = "fuchsia",
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
@@ -1310,7 +1382,7 @@ impl Socket {
     
     
     #[cfg(not(any(
-        target_os = "fuschia",
+        target_os = "fuchsia",
         target_os = "redox",
         target_os = "solaris",
         target_os = "illumos",
@@ -1318,6 +1390,56 @@ impl Socket {
     pub fn tos(&self) -> io::Result<u32> {
         unsafe {
             getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, sys::IP_TOS).map(|tos| tos as u32)
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(not(any(
+        target_os = "dragonfly",
+        target_os = "fuchsia",
+        target_os = "illumos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "solaris",
+        target_os = "windows",
+    )))]
+    pub fn set_recv_tos(&self, recv_tos: bool) -> io::Result<()> {
+        let recv_tos = if recv_tos { 1 } else { 0 };
+
+        unsafe {
+            setsockopt(
+                self.as_raw(),
+                sys::IPPROTO_IP,
+                sys::IP_RECVTOS,
+                recv_tos as c_int,
+            )
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(not(any(
+        target_os = "dragonfly",
+        target_os = "fuchsia",
+        target_os = "illumos",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "redox",
+        target_os = "solaris",
+        target_os = "windows",
+    )))]
+    pub fn recv_tos(&self) -> io::Result<bool> {
+        unsafe {
+            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, sys::IP_RECVTOS)
+                .map(|recv_tos| recv_tos > 0)
         }
     }
 }

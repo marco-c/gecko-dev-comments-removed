@@ -13,6 +13,7 @@ use winapi::shared::ws2ipdef::SOCKADDR_IN6_LH_u;
 
 
 
+#[derive(Clone)]
 pub struct SockAddr {
     storage: sockaddr_storage,
     len: socklen_t,
