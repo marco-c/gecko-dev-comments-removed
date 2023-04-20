@@ -23,6 +23,8 @@ enum class ThrowMsgKind : uint8_t {
   MissingPrivateOnGet,
   MissingPrivateOnSet,
   AssignToPrivateMethod,
+  
+  DecoratorInvalidReturnType,
 };
 
 JSErrNum ThrowMsgKindToErrNum(ThrowMsgKind kind);

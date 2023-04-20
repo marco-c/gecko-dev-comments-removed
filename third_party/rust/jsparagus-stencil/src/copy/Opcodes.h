@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "js/TypeDecls.h"
+
 
 
 
@@ -1527,6 +1529,7 @@
 
 
 
+
  \
     MACRO(InitElemInc, init_elem_inc, NULL, 1, 3, 2, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
     
@@ -1890,12 +1893,6 @@
  \
     MACRO(ImplicitThis, implicit_this, "", 5, 0, 1, JOF_ATOM) \
     
-
-
-
-
-
-
 
 
 
@@ -3167,7 +3164,7 @@
 
 
  \
-    MACRO(RecreateLexicalEnv, recreate_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(RecreateLexicalEnv, recreate_lexical_env, NULL, 5, 0, 0, JOF_SCOPE) \
     
 
 
@@ -3178,7 +3175,7 @@
 
 
  \
-    MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 5, 0, 0, JOF_SCOPE) \
     
 
 
