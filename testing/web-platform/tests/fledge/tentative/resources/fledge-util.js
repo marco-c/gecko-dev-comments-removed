@@ -11,7 +11,7 @@ const DEFAULT_INTEREST_GROUP_NAME = 'default name';
 
 
 const TRUSTED_BIDDING_SIGNALS_URL =
-    `${BASE_URL}resources/trusted_bidding_signals.py`;
+    `${BASE_URL}resources/trusted-bidding-signals.py`;
 
 
 
@@ -19,7 +19,7 @@ const TRUSTED_BIDDING_SIGNALS_URL =
 
 
 function createTrackerUrl(origin, uuid, dispatch, id = null) {
-  let url = new URL(`${origin}${BASE_PATH}resources/request_tracker.py`);
+  let url = new URL(`${origin}${BASE_PATH}resources/request-tracker.py`);
   url.searchParams.append('uuid', uuid);
   url.searchParams.append('dispatch', dispatch);
   if (id)
@@ -91,7 +91,7 @@ async function waitForObservedRequests(uuid, expectedRequests) {
 
     
     if (trackerData.errors.length > 0) {
-      throw 'Errors reported by request_tracker.py:' +
+      throw 'Errors reported by request-tracker.py:' +
           JSON.stringify(trackerData.errors);
     }
 
