@@ -8,6 +8,7 @@
 #define gc_GCMarker_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/Variant.h"
 
 #include "ds/OrderedHashTable.h"
 #include "gc/Barrier.h"
@@ -201,16 +202,32 @@ class MarkStack {
 #endif
 };
 
-class MarkingTracer final : public GenericTracerImpl<MarkingTracer> {
+
+namespace MarkingOptions {
+enum : uint32_t {
+  None = 0,
+
+  
+  MarkRootCompartments = 1
+};
+}  
+
+template <uint32_t markingOptions>
+class MarkingTracerT
+    : public GenericTracerImpl<MarkingTracerT<markingOptions>> {
  public:
-  explicit MarkingTracer(JSRuntime* runtime);
+  explicit MarkingTracerT(JSRuntime* runtime);
+  virtual ~MarkingTracerT() = default;
 
   template <typename T>
   void onEdge(T** thingp, const char* name);
-  friend class js::GenericTracerImpl<MarkingTracer>;
+  friend class GenericTracerImpl<MarkingTracerT<markingOptions>>;
 
   GCMarker* getMarker();
 };
+
+using MarkingTracer = MarkingTracerT<MarkingOptions::None>;
+using RootMarkingTracer = MarkingTracerT<MarkingOptions::MarkRootCompartments>;
 
 } 
 
@@ -218,6 +235,11 @@ class GCMarker {
   enum MarkingState : uint8_t {
     
     NotActive,
+
+    
+    
+    
+    RootMarking,
 
     
     
@@ -242,7 +264,9 @@ class GCMarker {
   [[nodiscard]] bool init();
 
   JSRuntime* runtime() { return runtime_; }
-  JSTracer* tracer() { return &tracer_; }
+  JSTracer* tracer() {
+    return tracer_.match([](auto& t) -> JSTracer* { return &t; });
+  }
 
 #ifdef JS_GC_ZEAL
   void setMaxCapacity(size_t maxCap) { stack.setMaxCapacity(maxCap); }
@@ -299,6 +323,8 @@ class GCMarker {
 
   void setMarkColor(gc::MarkColor newColor);
   gc::MarkColor markColor() const { return markColor_; }
+
+  void setRootMarkingMode(bool newState);
 
   bool enterWeakMarkingMode();
   void leaveWeakMarkingMode();
@@ -425,7 +451,10 @@ class GCMarker {
   void forEachDelayedMarkingArena(F&& f);
 
   
-  gc::MarkingTracer tracer_;
+
+
+
+  mozilla::Variant<gc::MarkingTracer, gc::RootMarkingTracer> tracer_;
 
   JSRuntime* const runtime_;
 
