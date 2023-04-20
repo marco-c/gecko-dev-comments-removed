@@ -24,7 +24,7 @@ import path from 'path';
 describe('Fixtures', function () {
   it('dumpio option should work with pipe option', async () => {
     const {defaultBrowserOptions, puppeteerPath, headless} = getTestState();
-    if (headless === 'chrome') {
+    if (headless === 'new') {
       
       return;
     }

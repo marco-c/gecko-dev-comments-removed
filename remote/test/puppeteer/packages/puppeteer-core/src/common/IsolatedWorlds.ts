@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const MAIN_WORLD = Symbol('mainWorld');
+
+
+
+
+
+
+export const PUPPETEER_WORLD = Symbol('puppeteerWorld');

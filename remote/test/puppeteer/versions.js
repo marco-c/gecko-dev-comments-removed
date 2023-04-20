@@ -17,6 +17,10 @@
 const versionsPerRelease = new Map([
   
   
+  ['110.0.5479.0', 'v19.6.0'],
+  ['109.0.5412.0', 'v19.4.0'],
+  ['108.0.5351.0', 'v19.2.0'],
+  ['107.0.5296.0', 'v18.1.0'],
   ['106.0.5249.0', 'v17.1.0'],
   ['105.0.5173.0', 'v15.5.0'],
   ['104.0.5109.0', 'v15.1.0'],
@@ -51,7 +55,7 @@ const versionsPerRelease = new Map([
 ]);
 
 
-const lastMaintainedChromiumVersion = '103.0.5059.0';
+const lastMaintainedChromiumVersion = '107.0.5296.0';
 
 if (!versionsPerRelease.has(lastMaintainedChromiumVersion)) {
   throw new Error(

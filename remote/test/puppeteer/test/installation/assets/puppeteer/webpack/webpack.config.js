@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export default {
+  mode: 'production',
+  entry: './index.js',
+  target: 'node',
+  output: {
+    path: process.cwd(),
+    filename: 'bundle.js',
+  },
+};
