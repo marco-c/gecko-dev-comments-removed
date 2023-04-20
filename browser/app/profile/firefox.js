@@ -499,6 +499,9 @@ pref("browser.urlbar.switchTabs.adoptIntoActiveWindow", false);
 pref("browser.urlbar.openintab", false);
 
 
+pref("browser.urlbar.resultMenu", false);
+
+
 pref("browser.urlbar.richSuggestions.tail", true);
 
 
