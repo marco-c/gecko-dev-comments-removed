@@ -331,9 +331,12 @@ nsThreadPool::Run() {
       
       DelayForChaosMode(ChaosFeature::TaskRunning, 1000);
 
-      
-      
-      current->SetRunningEventDelay(delay, TimeStamp::Now());
+      if (profiler_thread_is_being_profiled(
+              ThreadProfilingFeatures::Sampling)) {
+        
+        
+        current->SetRunningEventDelay(delay, TimeStamp::Now());
+      }
 
       LogRunnable::Run log(event);
       AUTO_PROFILE_FOLLOWING_RUNNABLE(event);
