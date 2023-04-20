@@ -12,7 +12,8 @@ const { request_count_checking } = ChromeUtils.import(
 
 
 
-async function test_hint_asset(testName, asset, hinted) {
+
+async function test_hint_asset(testName, asset, hinted, reload) {
   
   let headers = new Headers();
   headers.append("X-Early-Hint-Count-Start", "");
@@ -31,17 +32,25 @@ async function test_hint_asset(testName, asset, hinted) {
       url: requestUrl,
       waitForLoad: true,
     },
-    async function() {}
+    async function() {
+      if (reload) {
+        await BrowserTestUtils.reloadTab(gBrowser.selectedTab);
+      }
+    }
   );
 
   let gotRequestCount = await fetch(
     "http://example.com/browser/netwerk/test/browser/early_hint_pixel_count.sjs"
   ).then(response => response.json());
 
+  let numRequests = reload ? 2 : 1;
+
   await request_count_checking(
     `${testName} (${asset})`,
     gotRequestCount,
-    hinted ? { hinted: 1, normal: 0 } : { hinted: 0, normal: 1 }
+    hinted
+      ? { hinted: numRequests, normal: 0 }
+      : { hinted: 0, normal: numRequests }
   );
 }
 
@@ -49,18 +58,21 @@ async function test_hint_asset(testName, asset, hinted) {
 add_task(async function test_103_asset_image() {
   await test_hint_asset("test_103_asset_normal", "image", false);
   await test_hint_asset("test_103_asset_hinted", "image", true);
+  await test_hint_asset("test_103_asset_hinted", "image", true, true);
 });
 
 
 add_task(async function test_103_asset_style() {
   await test_hint_asset("test_103_asset_normal", "style", false);
   await test_hint_asset("test_103_asset_hinted", "style", true);
+  await test_hint_asset("test_103_asset_hinted", "style", true, true);
 });
 
 
 add_task(async function test_103_asset_javascript() {
   await test_hint_asset("test_103_asset_normal", "script", false);
   await test_hint_asset("test_103_asset_hinted", "script", true);
+  await test_hint_asset("test_103_asset_hinted", "script", true, true);
 });
 
 
@@ -75,6 +87,7 @@ add_task(async function test_103_asset_javascript() {
 add_task(async function test_103_asset_font() {
   await test_hint_asset("test_103_asset_normal", "font", false);
   await test_hint_asset("test_103_asset_hinted", "font", true);
+  await test_hint_asset("test_103_asset_hinted", "font", true, true);
 });
 
 
