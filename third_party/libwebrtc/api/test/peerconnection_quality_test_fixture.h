@@ -217,6 +217,36 @@ class PeerConnectionE2EQualityTestFixture {
     Spec spec_ = Spec::kNone;
   };
 
+  class VideoDumpOptions {
+   public:
+    
+    
+    
+    
+    
+    
+    
+    
+    explicit VideoDumpOptions(absl::string_view output_directory,
+                              int sampling_modulo = 1);
+
+    VideoDumpOptions(const VideoDumpOptions&) = default;
+    VideoDumpOptions& operator=(const VideoDumpOptions&) = default;
+    VideoDumpOptions(VideoDumpOptions&&) = default;
+    VideoDumpOptions& operator=(VideoDumpOptions&&) = default;
+
+    std::string output_directory() const { return output_directory_; }
+    int sampling_modulo() const { return sampling_modulo_; }
+
+    std::string GetInputDumpFileName(absl::string_view stream_label) const;
+    std::string GetOutputDumpFileName(absl::string_view stream_label,
+                                      absl::string_view receiver) const;
+
+   private:
+    std::string output_directory_;
+    int sampling_modulo_ = 1;
+  };
+
   
   struct VideoConfig {
     explicit VideoConfig(const VideoResolution& resolution);
@@ -271,11 +301,18 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     
+    
     absl::optional<std::string> input_dump_file_name;
     
     
     
+    
     int input_dump_sampling_modulo = 1;
+    
+    
+    
+    
+    absl::optional<VideoDumpOptions> input_dump_options;
     
     
     
@@ -306,7 +343,12 @@ class PeerConnectionE2EQualityTestFixture {
     
     
     
+    
     int output_dump_sampling_modulo = 1;
+    
+    
+    
+    absl::optional<VideoDumpOptions> output_dump_options;
     
     
     bool output_dump_use_fixed_framerate = false;
