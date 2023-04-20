@@ -55,7 +55,8 @@ typedef struct SeenIndex_ {
 
 
 struct MarFile_ {
-  FILE* fp;                       
+  unsigned char* buffer;          
+  size_t data_len;                
   MarItem* item_table[TABLESIZE]; 
   SeenIndex* index_list;          
   int item_table_is_valid;        
@@ -72,16 +73,29 @@ typedef struct MarFile_ MarFile;
 
 typedef int (*MarItemCallback)(MarFile* mar, const MarItem* item, void* data);
 
+enum MarReadResult_ {
+  MAR_READ_SUCCESS,
+  MAR_IO_ERROR,
+  MAR_MEM_ERROR,
+  MAR_FILE_TOO_BIG_ERROR,
+};
+
+typedef enum MarReadResult_ MarReadResult;
 
 
 
 
 
 
-MarFile* mar_open(const char* path);
+
+
+
+
+
+MarReadResult mar_open(const char* path, MarFile** out_mar);
 
 #ifdef XP_WIN
-MarFile* mar_wopen(const wchar_t* path);
+MarReadResult mar_wopen(const wchar_t* path, MarFile** out_mar);
 #endif
 
 
@@ -89,6 +103,49 @@ MarFile* mar_wopen(const wchar_t* path);
 
 
 void mar_close(MarFile* mar);
+
+
+
+
+
+
+
+
+
+
+
+
+
+int mar_read_buffer(MarFile* mar, void* dest, size_t* position, size_t size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+int mar_read_buffer_max(MarFile* mar, void* dest, size_t* position,
+                        size_t size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+int mar_buffer_seek(MarFile* mar, size_t* position, size_t distance);
 
 
 
