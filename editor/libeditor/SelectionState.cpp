@@ -5,8 +5,9 @@
 
 #include "SelectionState.h"
 
-#include "AutoRangeArray.h"          
-#include "EditorUtils.h"             
+#include "AutoRangeArray.h"  
+#include "EditorUtils.h"     
+#include "ErrorList.h"
 #include "JoinSplitNodeDirection.h"  
 
 #include "mozilla/Assertions.h"    
@@ -311,18 +312,41 @@ nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aOriginalContent,
   }
 
   EditorRawDOMPoint atNewNode(&aNewContent);
-  nsresult rv = SelAdjInsertNode(atNewNode);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("RangeUpdater::SelAdjInsertNode() failed");
-    return rv;
+  if (NS_WARN_IF(!atNewNode.IsSetAndValid())) {
+    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
   }
 
-  
-  
-  
-  
   auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aContainer,
                             uint32_t& aOffset) -> void {
+    if (aContainer == atNewNode.GetContainer()) {
+      if (aSplitNodeDirection == SplitNodeDirection::LeftNodeIsNewOne) {
+        
+        
+        
+        
+        
+        
+        
+        if (aOffset > atNewNode.Offset()) {
+          aOffset++;
+        }
+      } else {
+        
+        
+        
+        
+        
+        
+        
+        if (aOffset >= atNewNode.Offset()) {
+          aOffset++;
+        }
+      }
+    }
+    
+    
+    
+    
     if (aContainer != &aOriginalContent) {
       return;
     }
