@@ -290,6 +290,24 @@ const QueryCache = {
       FRECENT_SITES_UPDATE_INTERVAL,
       lazy.AddonManager 
     ),
+    isDefaultHTMLHandler: new CachedTargetingGetter(
+      "isDefaultHandlerFor",
+      [".html"],
+      FRECENT_SITES_UPDATE_INTERVAL,
+      ShellService
+    ),
+    isDefaultPDFHandler: new CachedTargetingGetter(
+      "isDefaultHandlerFor",
+      [".pdf"],
+      FRECENT_SITES_UPDATE_INTERVAL,
+      ShellService
+    ),
+    defaultPDFHandler: new CachedTargetingGetter(
+      "getDefaultPDFHandler",
+      null,
+      FRECENT_SITES_UPDATE_INTERVAL,
+      ShellService
+    ),
   },
 };
 
@@ -817,6 +835,19 @@ const TargetingGetters = {
     let button = lazy.CustomizableUI.getWidget("firefox-view-button");
     return button.areaType;
   },
+
+  isDefaultHandler: {
+    get html() {
+      return QueryCache.getters.isDefaultHTMLHandler.get();
+    },
+    get pdf() {
+      return QueryCache.getters.isDefaultPDFHandler.get();
+    },
+  },
+
+  get defaultPDFHandler() {
+    return QueryCache.getters.defaultPDFHandler.get();
+  },
 };
 
 const ASRouterTargeting = {
@@ -833,25 +864,42 @@ const ASRouterTargeting = {
 
 
   async getEnvironmentSnapshot(target = ASRouterTargeting.Environment) {
-    
-    let promises = Object.keys(target).map(async name => {
+    async function resolveRecursive(object) {
       
-      if (Services.startup.shuttingDown) {
-        throw new Error("shutting down, so not querying targeting environment");
-      }
-      return [name, await target[name]];
-    });
+      const promises = Object.keys(object).map(async key => {
+        
+        if (Services.startup.shuttingDown) {
+          throw new Error(
+            "shutting down, so not querying targeting environment"
+          );
+        }
 
-    
-    let results = await Promise.allSettled(promises);
+        let value = await object[key];
 
-    let environment = {};
-    for (let result of results) {
-      if (result.status === "fulfilled") {
-        let [name, value] = result.value;
-        environment[name] = value;
+        if (
+          typeof value === "object" &&
+          value !== null &&
+          !(value instanceof Date)
+        ) {
+          value = await resolveRecursive(value);
+        }
+
+        return [key, value];
+      });
+
+      const resolved = {};
+      for (const result of await Promise.allSettled(promises)) {
+        
+        if (result.status === "fulfilled") {
+          const [key, value] = result.value;
+          resolved[key] = value;
+        }
       }
+
+      return resolved;
     }
+
+    const environment = await resolveRecursive(target);
 
     
     const snapshot = { environment, version: 1 };
