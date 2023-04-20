@@ -1221,7 +1221,22 @@ void MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src,
 
 void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
                                                  Register dest, Label* fail) {
-  convertDoubleToInt32(src, dest, fail, false);
+  ScratchRegisterScope scratch(asMasm());
+  ScratchDoubleScope fpscratch(asMasm());
+
+  
+  
+  
+  as_ftintrz_l_d(fpscratch, src);
+
+  
+  as_movfcsr2gr(scratch);
+  as_bstrpick_w(scratch, scratch, Assembler::CauseO, Assembler::CauseO);
+  ma_b(scratch, Imm32(0), fail, Assembler::NotEqual);
+
+  moveFromDouble(fpscratch, dest);
+  
+  as_slli_w(dest, dest, 0);
 }
 
 template <typename T>
