@@ -245,12 +245,6 @@ def main(argv):
         help="Run all tests with valgrind, if valgrind is in $PATH.",
     )
     op.add_argument(
-        "--avoid-stdio",
-        dest="avoid_stdio",
-        action="store_true",
-        help="Use js-shell file indirection instead of piping stdio.",
-    )
-    op.add_argument(
         "--write-failure-output",
         dest="write_failure_output",
         action="store_true",
@@ -387,16 +381,6 @@ def main(argv):
             or not os.access(js_shell + ".exe", os.X_OK)
         ):
             op.error("shell is not executable: " + js_shell)
-
-    if jittests.stdio_might_be_broken():
-        
-        
-        
-        
-        
-        
-        
-        options.avoid_stdio = True
 
     if options.retest:
         options.read_tests = options.retest
