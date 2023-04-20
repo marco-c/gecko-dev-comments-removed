@@ -347,11 +347,22 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal(
               streamStats = Some(kv->second);
             }
 
-            if (!streamStats ||
-                streamStats->rtp_stats.first_packet_time_ms == -1) {
+            if (!streamStats) {
               
               
               
+              return;
+            }
+
+            aConduit->GetAssociatedLocalRtxSSRC(ssrc).apply(
+                [&](const auto rtxSsrc) {
+                  auto kv = videoStats->substreams.find(rtxSsrc);
+                  if (kv != videoStats->substreams.end()) {
+                    streamStats->rtp_stats.Add(kv->second.rtp_stats);
+                  }
+                });
+
+            if (streamStats->rtp_stats.first_packet_time_ms == -1) {
               return;
             }
 

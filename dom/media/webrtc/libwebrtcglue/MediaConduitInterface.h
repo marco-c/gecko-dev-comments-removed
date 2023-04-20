@@ -404,6 +404,8 @@ class VideoSessionConduit : public MediaSessionConduit {
   virtual bool AddFrameHistory(
       dom::Sequence<dom::RTCVideoFrameHistoryInternal>* outHistories) const = 0;
 
+  virtual Maybe<Ssrc> GetAssociatedLocalRtxSSRC(Ssrc aSsrc) const = 0;
+
  protected:
   
   FrameRequestType mFrameRequestMethod;
