@@ -6,28 +6,38 @@
 var EXPORTED_SYMBOLS = ["PageStyleChild"];
 
 class PageStyleChild extends JSWindowActorChild {
-  handleEvent(event) {
+  actorCreated() {
     
-    if (event.type == "pageshow") {
-      
-      
-      if (this.browsingContext.top === this.browsingContext) {
-        this.sendAsyncMessage("PageStyle:Clear");
-      }
-
-      let window = event.target.ownerGlobal;
-      window.requestIdleCallback(() => {
-        if (!window || window.closed) {
-          return;
-        }
-        let filteredStyleSheets = this._collectStyleSheets(window);
-        this.sendAsyncMessage("PageStyle:Add", {
-          filteredStyleSheets,
-          authorStyleDisabled: this.docShell.contentViewer.authorStyleDisabled,
-          preferredStyleSheetSet: this.document.preferredStyleSheetSet,
-        });
-      });
+    
+    
+    
+    
+    
+    
+    if (!this.browsingContext || !this.browsingContext.associatedWindow) {
+      return;
     }
+    let { document } = this.browsingContext.associatedWindow;
+    if (document.readyState != "complete") {
+      return;
+    }
+    
+    this.#collectAndSendSheets();
+  }
+
+  handleEvent(event) {
+    if (event?.type != "pageshow") {
+      throw new Error("Unexpected event!");
+    }
+
+    
+    
+    
+    if (this.browsingContext.top === this.browsingContext) {
+      this.sendAsyncMessage("PageStyle:Clear");
+    }
+
+    this.#collectAndSendSheets();
   }
 
   receiveMessage(msg) {
@@ -117,13 +127,28 @@ class PageStyleChild extends JSWindowActorChild {
     }
   }
 
+  #collectAndSendSheets() {
+    let window = this.browsingContext.associatedWindow;
+    window.requestIdleCallback(() => {
+      if (!window || window.closed) {
+        return;
+      }
+      let filteredStyleSheets = this.#collectStyleSheets(window);
+      this.sendAsyncMessage("PageStyle:Add", {
+        filteredStyleSheets,
+        authorStyleDisabled: this.docShell.contentViewer.authorStyleDisabled,
+        preferredStyleSheetSet: this.document.preferredStyleSheetSet,
+      });
+    });
+  }
+
   
 
 
 
 
 
-  _collectStyleSheets(content) {
+  #collectStyleSheets(content) {
     let result = [];
     let document = content.document;
 
