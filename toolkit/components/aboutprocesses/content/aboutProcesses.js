@@ -861,19 +861,9 @@ var View = {
     }
   },
 
-  displayUtilityActorRow(data, parent) {
-    const cellCount = 2;
-    
-    let rowId = "u:" + parent.pid + data.actorName;
-    let row = this._getOrCreateRow(rowId, cellCount);
-    row.actor = data;
-    row.className = "actor";
-
-    
-    let nameCell = row.firstChild;
+  utilityActorNameToFluentName(actorName) {
     let fluentName;
-    let fluentArgs = {};
-    switch (data.actorName) {
+    switch (actorName) {
       case "audioDecoder_Generic":
         fluentName = "about-processes-utility-actor-audio-decoder-generic";
         break;
@@ -894,6 +884,21 @@ var View = {
         fluentName = "about-processes-utility-actor-unknown";
         break;
     }
+    return fluentName;
+  },
+
+  displayUtilityActorRow(data, parent) {
+    const cellCount = 2;
+    
+    let rowId = "u:" + parent.pid + data.actorName;
+    let row = this._getOrCreateRow(rowId, cellCount);
+    row.actor = data;
+    row.className = "actor";
+
+    
+    let nameCell = row.firstChild;
+    let fluentName = this.utilityActorNameToFluentName(data.actorName);
+    let fluentArgs = {};
     this._fillCell(nameCell, {
       fluentName,
       fluentArgs,
