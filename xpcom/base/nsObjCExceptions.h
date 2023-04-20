@@ -24,7 +24,7 @@ namespace mozilla {
 
 bool ShouldIgnoreObjCException(NSException* aException);
 
-}
+}  
 
 
 

@@ -55,10 +55,17 @@ namespace image {
 
 
 
-enum class [[nodiscard]] ImgDrawResult : uint8_t{
-    SUCCESS,      SUCCESS_NOT_COMPLETE, INCOMPLETE, WRONG_SIZE,
-    NOT_READY,    TEMPORARY_ERROR,      BAD_IMAGE,  BAD_ARGS,
-    NOT_SUPPORTED};
+enum class [[nodiscard]] ImgDrawResult : uint8_t {
+  SUCCESS,
+  SUCCESS_NOT_COMPLETE,
+  INCOMPLETE,
+  WRONG_SIZE,
+  NOT_READY,
+  TEMPORARY_ERROR,
+  BAD_IMAGE,
+  BAD_ARGS,
+  NOT_SUPPORTED
+};
 
 
 

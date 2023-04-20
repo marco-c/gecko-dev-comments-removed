@@ -44,6 +44,6 @@ NSString* GetAccAttr(mozAccessible* aNativeAccessible, nsAtom* aAttrName) {
 
   return nil;
 }
-}
-}
-}
+}  
+}  
+}  

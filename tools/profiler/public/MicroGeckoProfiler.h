@@ -68,7 +68,8 @@ struct UprofilerFuncPtrs {
 static void register_thread_noop(const char* aName, void* aGuessStackTop) {
   
 }
-static void unregister_thread_noop() {  }
+static void unregister_thread_noop() { 
+}
 static void simple_event_marker_noop(const char* name, char phase, int num_args,
                                      const char** arg_names,
                                      const unsigned char* arg_types,

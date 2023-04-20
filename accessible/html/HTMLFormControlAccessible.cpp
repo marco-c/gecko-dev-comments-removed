@@ -101,7 +101,8 @@ void HTMLRadioButtonAccessible::DOMAttributeChanged(
   } else {
     
     
-    RadioButtonAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType, aOldValue, aOldState);
+    RadioButtonAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute,
+                                               aModType, aOldValue, aOldState);
   }
 }
 

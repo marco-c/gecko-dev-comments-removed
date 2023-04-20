@@ -165,5 +165,5 @@ enum AXTextSelectionGranularity {
   AXTextSelectionGranularityDocument,
   AXTextSelectionGranularityAll
 };
-}
-}
+}  
+}  

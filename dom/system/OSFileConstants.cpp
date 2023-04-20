@@ -248,8 +248,10 @@ nsresult OSFileConstantsService::InitOSFileConstants() {
 
 
 
-#define INT_CONSTANT(name) \
-  { #name, JS::Int32Value(name) }
+#define INT_CONSTANT(name)      \
+  {                             \
+#    name, JS::Int32Value(name) \
+  }
 
 
 
@@ -259,8 +261,10 @@ nsresult OSFileConstantsService::InitOSFileConstants() {
 
 
 
-#define UINT_CONSTANT(name) \
-  { #name, JS::NumberValue(name) }
+#define UINT_CONSTANT(name)      \
+  {                              \
+#    name, JS::NumberValue(name) \
+  }
 
 
 
