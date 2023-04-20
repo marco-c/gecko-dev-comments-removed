@@ -88,8 +88,9 @@ class StreamResetHandler {
         last_processed_req_seq_nbr_(
             handover_state ? ReconfigRequestSN(
                                  handover_state->rx.last_completed_reset_req_sn)
-                           : ReconfigRequestSN(*ctx_->peer_initial_tsn() - 1)) {
-  }
+                           : ReconfigRequestSN(*ctx_->peer_initial_tsn() - 1)),
+        last_processed_req_result_(
+            ReconfigurationResponseParameter::Result::kSuccessNothingToDo) {}
 
   
   
@@ -224,6 +225,8 @@ class StreamResetHandler {
 
   
   ReconfigRequestSN last_processed_req_seq_nbr_;
+  
+  ReconfigurationResponseParameter::Result last_processed_req_result_;
 };
 }  
 
