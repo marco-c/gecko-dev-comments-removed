@@ -112,7 +112,8 @@ class CachePanel extends Component {
       cache.lastFetched ||
       cache.fetchCount ||
       cache.storageDataSize ||
-      cache.lastModified | cache.expirationTime ||
+      cache.lastModified ||
+      cache.expirationTime ||
       cache.deviceID ||
       
       
