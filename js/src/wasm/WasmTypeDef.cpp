@@ -348,11 +348,6 @@ class TypeIdSet {
   Set set_;
 
  public:
-  ~TypeIdSet() {
-    
-    MOZ_ASSERT_IF(!JSRuntime::hasLiveRuntimes(), set_.empty());
-  }
-
   
   
   SharedRecGroup insert(SharedRecGroup recGroup) {
@@ -368,6 +363,20 @@ class TypeIdSet {
       return nullptr;
     }
     return recGroup;
+  }
+
+  void purge() {
+    
+    
+    
+    
+    
+    
+    for (auto iter = set_.modIter(); !iter.done(); iter.next()) {
+      if (iter.get()->hasOneRef()) {
+        iter.remove();
+      }
+    }
   }
 
   
@@ -388,6 +397,11 @@ class TypeIdSet {
 };
 
 ExclusiveData<TypeIdSet> typeIdSet(mutexid::WasmTypeIdSet);
+
+void wasm::PurgeCanonicalTypes() {
+  ExclusiveData<TypeIdSet>::Guard locked = typeIdSet.lock();
+  locked->purge();
+}
 
 SharedRecGroup TypeContext::canonicalizeGroup(SharedRecGroup recGroup) {
   ExclusiveData<TypeIdSet>::Guard locked = typeIdSet.lock();

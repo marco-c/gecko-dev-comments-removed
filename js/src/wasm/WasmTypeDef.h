@@ -847,6 +847,10 @@ class RecGroup : public AtomicRefCounted<RecGroup> {
   }
 };
 
+
+
+extern void PurgeCanonicalTypes();
+
 using SharedRecGroup = RefPtr<const RecGroup>;
 using MutableRecGroup = RefPtr<RecGroup>;
 using SharedRecGroupVector = Vector<SharedRecGroup, 0, SystemAllocPolicy>;

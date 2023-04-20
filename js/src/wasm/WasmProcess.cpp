@@ -423,6 +423,8 @@ void wasm::ShutDown() {
     return;
   }
 
+  PurgeCanonicalTypes();
+
   
   
   ProcessCodeSegmentMap* map = sProcessCodeSegmentMap;
