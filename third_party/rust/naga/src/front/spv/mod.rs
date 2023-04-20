@@ -106,7 +106,7 @@ impl Instruction {
 }
 
 impl crate::TypeInner {
-    const fn can_comparison_sample(&self) -> bool {
+    fn can_comparison_sample(&self, module: &crate::Module) -> bool {
         match *self {
             crate::TypeInner::Image {
                 class:
@@ -117,6 +117,9 @@ impl crate::TypeInner {
                 ..
             } => true,
             crate::TypeInner::Sampler { .. } => true,
+            crate::TypeInner::BindingArray { base, .. } => {
+                module.types[base].inner.can_comparison_sample(module)
+            }
             _ => false,
         }
     }
@@ -1428,17 +1431,38 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                     let result_id = self.next()?;
                     let base_id = self.next()?;
                     log::trace!("\t\t\tlooking up expr {:?}", base_id);
+
                     let mut acex = {
-                        
-                        
                         let lexp = self.lookup_expression.lookup(base_id)?;
                         let lty = self.lookup_type.lookup(lexp.type_id)?;
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        let dereference = match ctx.type_arena[lty.handle].inner {
+                            crate::TypeInner::BindingArray { .. } => false,
+                            _ => true,
+                        };
+
+                        let type_id = if dereference {
+                            lty.base_id.ok_or(Error::InvalidAccessType(lexp.type_id))?
+                        } else {
+                            lexp.type_id
+                        };
+
                         AccessExpression {
                             base_handle: get_expr_handle!(base_id, lexp),
-                            type_id: lty.base_id.ok_or(Error::InvalidAccessType(lexp.type_id))?,
+                            type_id,
                             load_override: self.lookup_load_override.get(&base_id).cloned(),
                         }
                     };
+
                     for _ in 4..inst.wc {
                         let access_id = self.next()?;
                         log::trace!("\t\t\tlooking up index expr {:?}", access_id);
@@ -4220,6 +4244,7 @@ impl<I: Iterator<Item = u32>> Parser<I> {
         let decor = self.future_decor.remove(&id);
         let base_lookup_ty = self.lookup_type.lookup(type_id)?;
         let base_inner = &module.types[base_lookup_ty.handle].inner;
+
         let space = if let Some(space) = base_inner.pointer_space() {
             space
         } else if self
@@ -4289,17 +4314,60 @@ impl<I: Iterator<Item = u32>> Parser<I> {
 
         let decor = self.future_decor.remove(&id).unwrap_or_default();
         let base = self.lookup_type.lookup(type_id)?.handle;
+
         self.layouter
             .update(&module.types, &module.constants)
             .unwrap();
-        let inner = crate::TypeInner::Array {
-            base,
-            size: crate::ArraySize::Constant(length_const.handle),
-            stride: match decor.array_stride {
-                Some(stride) => stride.get(),
-                None => self.layouter[base].to_stride(),
-            },
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let inner = if let crate::TypeInner::Image { .. } | crate::TypeInner::Sampler { .. } =
+            module.types[base].inner
+        {
+            crate::TypeInner::BindingArray {
+                base,
+                size: crate::ArraySize::Constant(length_const.handle),
+            }
+        } else {
+            crate::TypeInner::Array {
+                base,
+                size: crate::ArraySize::Constant(length_const.handle),
+                stride: match decor.array_stride {
+                    Some(stride) => stride.get(),
+                    None => self.layouter[base].to_stride(),
+                },
+            }
         };
+
         self.lookup_type.insert(
             id,
             LookupType {
@@ -4329,17 +4397,30 @@ impl<I: Iterator<Item = u32>> Parser<I> {
 
         let decor = self.future_decor.remove(&id).unwrap_or_default();
         let base = self.lookup_type.lookup(type_id)?.handle;
+
         self.layouter
             .update(&module.types, &module.constants)
             .unwrap();
-        let inner = crate::TypeInner::Array {
-            base: self.lookup_type.lookup(type_id)?.handle,
-            size: crate::ArraySize::Dynamic,
-            stride: match decor.array_stride {
-                Some(stride) => stride.get(),
-                None => self.layouter[base].to_stride(),
-            },
+
+        
+        let inner = if let crate::TypeInner::Image { .. } | crate::TypeInner::Sampler { .. } =
+            module.types[base].inner
+        {
+            crate::TypeInner::BindingArray {
+                base: self.lookup_type.lookup(type_id)?.handle,
+                size: crate::ArraySize::Dynamic,
+            }
+        } else {
+            crate::TypeInner::Array {
+                base: self.lookup_type.lookup(type_id)?.handle,
+                size: crate::ArraySize::Dynamic,
+                stride: match decor.array_stride {
+                    Some(stride) => stride.get(),
+                    None => self.layouter[base].to_stride(),
+                },
+            }
         };
+
         self.lookup_type.insert(
             id,
             LookupType {
@@ -4793,32 +4874,45 @@ impl<I: Iterator<Item = u32>> Parser<I> {
         let mut dec = self.future_decor.remove(&id).unwrap_or_default();
 
         let original_ty = self.lookup_type.lookup(type_id)?.handle;
-        let mut effective_ty = original_ty;
+        let mut ty = original_ty;
+
         if let crate::TypeInner::Pointer { base, space: _ } = module.types[original_ty].inner {
-            effective_ty = base;
-        };
+            ty = base;
+        }
+
+        if let crate::TypeInner::BindingArray { .. } = module.types[original_ty].inner {
+            
+            
+            if dec.desc_set.is_none() || dec.desc_index.is_none() {
+                return Err(Error::NonBindingArrayOfImageOrSamplers);
+            }
+        }
+
         if let crate::TypeInner::Image {
             dim,
             arrayed,
             class: crate::ImageClass::Storage { format, access: _ },
-        } = module.types[effective_ty].inner
+        } = module.types[ty].inner
         {
             
             
             
             let access = dec.flags.to_storage_access();
-            let ty = crate::Type {
-                name: None,
-                inner: crate::TypeInner::Image {
-                    dim,
-                    arrayed,
-                    class: crate::ImageClass::Storage { format, access },
+
+            ty = module.types.insert(
+                crate::Type {
+                    name: None,
+                    inner: crate::TypeInner::Image {
+                        dim,
+                        arrayed,
+                        class: crate::ImageClass::Storage { format, access },
+                    },
                 },
-            };
-            effective_ty = module.types.insert(ty, Default::default());
+                Default::default(),
+            );
         }
 
-        let ext_class = match self.lookup_storage_buffer_types.get(&effective_ty) {
+        let ext_class = match self.lookup_storage_buffer_types.get(&ty) {
             Some(&access) => ExtendedClass::Global(crate::AddressSpace::Storage { access }),
             None => map_storage_class(storage_class)?,
         };
@@ -4843,14 +4937,14 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                     binding: dec.resource_binding(),
                     name: dec.name,
                     space,
-                    ty: effective_ty,
+                    ty,
                     init,
                 };
                 (Variable::Global, var)
             }
             ExtendedClass::Input => {
                 let mut binding = dec.io_binding()?;
-                let mut unsigned_ty = effective_ty;
+                let mut unsigned_ty = ty;
                 if let crate::Binding::BuiltIn(built_in) = binding {
                     let needs_inner_uint = match built_in {
                         crate::BuiltIn::BaseInstance
@@ -4873,10 +4967,9 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                         }),
                         _ => None,
                     };
-                    if let (Some(inner), Some(crate::ScalarKind::Sint)) = (
-                        needs_inner_uint,
-                        module.types[effective_ty].inner.scalar_kind(),
-                    ) {
+                    if let (Some(inner), Some(crate::ScalarKind::Sint)) =
+                        (needs_inner_uint, module.types[ty].inner.scalar_kind())
+                    {
                         unsigned_ty = module
                             .types
                             .insert(crate::Type { name: None, inner }, Default::default());
@@ -4887,7 +4980,7 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                     name: dec.name.clone(),
                     space: crate::AddressSpace::Private,
                     binding: None,
-                    ty: effective_ty,
+                    ty,
                     init: None,
                 };
 
@@ -4907,7 +5000,7 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                     Some(crate::Binding::BuiltIn(built_in)) => {
                         match null::generate_default_built_in(
                             Some(built_in),
-                            effective_ty,
+                            ty,
                             &module.types,
                             &mut module.constants,
                             span,
@@ -4920,7 +5013,7 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                         }
                     }
                     Some(crate::Binding::Location { .. }) => None,
-                    None => match module.types[effective_ty].inner {
+                    None => match module.types[ty].inner {
                         crate::TypeInner::Struct { ref members, .. } => {
                             
                             let pairs = members
@@ -4949,10 +5042,7 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                                 crate::Constant {
                                     name: None,
                                     specialization: None,
-                                    inner: crate::ConstantInner::Composite {
-                                        ty: effective_ty,
-                                        components,
-                                    },
+                                    inner: crate::ConstantInner::Composite { ty, components },
                                 },
                                 span,
                             ))
@@ -4965,23 +5055,22 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                     name: dec.name,
                     space: crate::AddressSpace::Private,
                     binding: None,
-                    ty: effective_ty,
+                    ty,
                     init,
                 };
                 if let Some(ref mut binding) = binding {
-                    binding.apply_default_interpolation(&module.types[effective_ty].inner);
+                    binding.apply_default_interpolation(&module.types[ty].inner);
                 }
-                let inner = Variable::Output(crate::FunctionResult {
-                    ty: effective_ty,
-                    binding,
-                });
+                let inner = Variable::Output(crate::FunctionResult { ty, binding });
                 (inner, var)
             }
         };
 
         let handle = module.global_variables.append(var, span);
-        if module.types[effective_ty].inner.can_comparison_sample() {
+
+        if module.types[ty].inner.can_comparison_sample(module) {
             log::debug!("\t\ttracking {:?} for sampling properties", handle);
+
             self.handle_sampling
                 .insert(handle, image::SamplingFlags::empty());
         }

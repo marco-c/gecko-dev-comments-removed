@@ -582,6 +582,7 @@ pub struct Writer {
     annotations: Vec<Instruction>,
     flags: WriterFlags,
     bounds_check_policies: BoundsCheckPolicies,
+    zero_initialize_workgroup_memory: ZeroInitializeWorkgroupMemoryMode,
     void_type: Word,
     
     lookup_type: crate::FastHashMap<LookupType, Word>,
@@ -630,6 +631,15 @@ pub struct BindingInfo {
 
 pub type BindingMap = std::collections::BTreeMap<crate::ResourceBinding, BindingInfo>;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ZeroInitializeWorkgroupMemoryMode {
+    
+    Native,
+    
+    Polyfill,
+    None,
+}
+
 #[derive(Debug, Clone)]
 pub struct Options {
     
@@ -650,6 +660,9 @@ pub struct Options {
     
     
     pub bounds_check_policies: BoundsCheckPolicies,
+
+    
+    pub zero_initialize_workgroup_memory: ZeroInitializeWorkgroupMemoryMode,
 }
 
 impl Default for Options {
@@ -666,6 +679,7 @@ impl Default for Options {
             binding_map: BindingMap::default(),
             capabilities: None,
             bounds_check_policies: crate::proc::BoundsCheckPolicies::default(),
+            zero_initialize_workgroup_memory: ZeroInitializeWorkgroupMemoryMode::Polyfill,
         }
     }
 }

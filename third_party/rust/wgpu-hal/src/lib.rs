@@ -63,17 +63,23 @@ compile_error!("Metal API enabled on non-Apple OS. If your project is not using 
 #[cfg(all(feature = "dx12", not(windows)))]
 compile_error!("DX12 API enabled on non-Windows OS. If your project is not using resolver=\"2\" in Cargo.toml, it should.");
 
+
 #[cfg(all(feature = "dx11", windows))]
-mod dx11;
+pub mod dx11;
+
 #[cfg(all(feature = "dx12", windows))]
-mod dx12;
-mod empty;
+pub mod dx12;
+
+pub mod empty;
+
 #[cfg(all(feature = "gles"))]
-mod gles;
+pub mod gles;
+
 #[cfg(all(feature = "metal"))]
-mod metal;
+pub mod metal;
+
 #[cfg(feature = "vulkan")]
-mod vulkan;
+pub mod vulkan;
 
 pub mod auxil;
 pub mod api {
@@ -394,6 +400,20 @@ pub trait CommandEncoder<A: Api>: Send + Sync + fmt::Debug {
     unsafe fn copy_buffer_to_buffer<T>(&mut self, src: &A::Buffer, dst: &A::Buffer, regions: T)
     where
         T: Iterator<Item = BufferCopy>;
+
+    
+    
+    
+    
+    #[cfg(all(target_arch = "wasm32", not(feature = "emscripten")))]
+    unsafe fn copy_external_image_to_texture<T>(
+        &mut self,
+        src: &wgt::ImageCopyExternalImage,
+        dst: &A::Texture,
+        dst_premultiplication: bool,
+        regions: T,
+    ) where
+        T: Iterator<Item = TextureCopy>;
 
     
     
@@ -847,7 +867,7 @@ pub struct TextureDescriptor<'a> {
     pub memory_flags: MemoryFlags,
     
     
-    pub allow_different_view_format: bool,
+    pub view_formats: Vec<wgt::TextureFormat>,
 }
 
 
@@ -1093,6 +1113,9 @@ pub struct SurfaceConfiguration {
     pub extent: wgt::Extent3d,
     
     pub usage: TextureUses,
+    
+    
+    pub view_formats: Vec<wgt::TextureFormat>,
 }
 
 #[derive(Debug, Clone)]
