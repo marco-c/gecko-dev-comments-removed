@@ -2,9 +2,10 @@
 
 
 
-from sphinx.transforms import SphinxTransform
-from docutils.nodes import reference, Text, paragraph
 import re
+
+from docutils.nodes import Text, paragraph, reference
+from sphinx.transforms import SphinxTransform
 
 
 class ConvertBugsToLinks(SphinxTransform):
