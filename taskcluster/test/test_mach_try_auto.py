@@ -1,8 +1,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import pytest
 from gecko_taskgraph.util.bugbug import push_schedules
 from gecko_taskgraph.util.chunking import BugbugLoader

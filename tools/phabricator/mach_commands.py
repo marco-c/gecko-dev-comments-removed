@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
-
 import mozfile
 from mach.decorators import Command, CommandArgument
 from mach.site import MozSiteMetadata

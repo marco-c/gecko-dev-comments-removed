@@ -6,8 +6,6 @@
 
 
 
-from __future__ import unicode_literals
-
 from argparse import ArgumentParser
 import datetime
 import buildconfig

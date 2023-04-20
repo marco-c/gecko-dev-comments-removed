@@ -3,8 +3,6 @@
 
 
 
-from __future__ import absolute_import, print_function
-
 import sys
 
 sys.path.append("/builds/worker/checkouts/gecko/third_party/python")

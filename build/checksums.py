@@ -3,8 +3,6 @@
 
 
 
-from __future__ import with_statement
-
 import hashlib
 import logging
 import os

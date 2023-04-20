@@ -4,8 +4,6 @@
 
 
 
-from __future__ import print_function
-
 import os
 from copy import deepcopy
 from struct import unpack

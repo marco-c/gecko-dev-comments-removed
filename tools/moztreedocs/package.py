@@ -2,8 +2,6 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
-
 import os
 
 from mozpack.archive import create_tar_gz_from_files
