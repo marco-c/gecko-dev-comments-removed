@@ -25,7 +25,6 @@ use std::{collections::hash_map::Entry, collections::BTreeSet, collections::Hash
 
 use anyhow::{bail, Result};
 use heck::ToUpperCamelCase;
-use uniffi_meta::Checksum;
 
 use super::ffi::FFIType;
 
@@ -37,7 +36,7 @@ pub(super) use resolver::{resolve_builtin_type, TypeResolver};
 
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Checksum, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub enum Type {
     
     UInt8,

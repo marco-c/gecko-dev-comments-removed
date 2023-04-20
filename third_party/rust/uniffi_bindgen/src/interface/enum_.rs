@@ -77,7 +77,6 @@
 
 
 use anyhow::{bail, Result};
-use uniffi_meta::Checksum;
 
 use super::record::Field;
 use super::types::{Type, TypeIterator};
@@ -88,7 +87,7 @@ use super::{APIConverter, ComponentInterface};
 
 
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone, Hash)]
 pub struct Enum {
     pub(super) name: String,
     pub(super) variants: Vec<Variant>,
@@ -175,7 +174,7 @@ impl APIConverter<Enum> for weedle::InterfaceDefinition<'_> {
 
 
 
-#[derive(Debug, Clone, Default, Checksum)]
+#[derive(Debug, Clone, Default, Hash)]
 pub struct Variant {
     pub(super) name: String,
     pub(super) fields: Vec<Field>,

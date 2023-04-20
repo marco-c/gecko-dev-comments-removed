@@ -2,84 +2,14 @@
 
 
 
-use std::hash::Hasher;
-pub use uniffi_checksum_derive::Checksum;
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
 
 use serde::{Deserialize, Serialize};
 
-
-
-
-
-pub trait Checksum {
-    fn checksum<H: Hasher>(&self, state: &mut H);
-}
-
-impl Checksum for bool {
-    fn checksum<H: Hasher>(&self, state: &mut H) {
-        state.write_u8(*self as u8);
-    }
-}
-
-impl Checksum for u64 {
-    fn checksum<H: Hasher>(&self, state: &mut H) {
-        state.write(&self.to_le_bytes());
-    }
-}
-
-impl Checksum for i64 {
-    fn checksum<H: Hasher>(&self, state: &mut H) {
-        state.write(&self.to_le_bytes());
-    }
-}
-
-impl<T: Checksum> Checksum for Box<T> {
-    fn checksum<H: Hasher>(&self, state: &mut H) {
-        (**self).checksum(state)
-    }
-}
-
-impl<T: Checksum> Checksum for [T] {
-    fn checksum<H: Hasher>(&self, state: &mut H) {
-        state.write(&(self.len() as u64).to_le_bytes());
-        for item in self {
-            Checksum::checksum(item, state);
-        }
-    }
-}
-
-impl<T: Checksum> Checksum for Vec<T> {
-    fn checksum<H: Hasher>(&self, state: &mut H) {
-        Checksum::checksum(&**self, state);
-    }
-}
-
-impl<T: Checksum> Checksum for Option<T> {
-    fn checksum<H: Hasher>(&self, state: &mut H) {
-        match self {
-            None => state.write(&0u64.to_le_bytes()),
-            Some(value) => {
-                state.write(&1u64.to_le_bytes());
-                Checksum::checksum(value, state)
-            }
-        }
-    }
-}
-
-impl Checksum for str {
-    fn checksum<H: Hasher>(&self, state: &mut H) {
-        state.write(self.as_bytes());
-        state.write_u8(0xff);
-    }
-}
-
-impl Checksum for String {
-    fn checksum<H: Hasher>(&self, state: &mut H) {
-        (**self).checksum(state)
-    }
-}
-
-#[derive(Clone, Debug, Checksum, Deserialize, Serialize)]
+#[derive(Clone, Debug, Hash, Deserialize, Serialize)]
 pub struct FnMetadata {
     pub module_path: Vec<String>,
     pub name: String,
@@ -93,7 +23,7 @@ impl FnMetadata {
     }
 }
 
-#[derive(Clone, Debug, Checksum, Deserialize, Serialize)]
+#[derive(Clone, Debug, Hash, Deserialize, Serialize)]
 pub struct MethodMetadata {
     pub module_path: Vec<String>,
     pub self_name: String,
@@ -109,14 +39,14 @@ impl MethodMetadata {
     }
 }
 
-#[derive(Clone, Debug, Checksum, Deserialize, Serialize)]
+#[derive(Clone, Debug, Hash, Deserialize, Serialize)]
 pub struct FnParamMetadata {
     pub name: String,
     #[serde(rename = "type")]
     pub ty: Type,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Checksum, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 pub enum Type {
     U8,
     U16,
@@ -148,21 +78,21 @@ pub enum Type {
     },
 }
 
-#[derive(Clone, Debug, Checksum, Deserialize, Serialize)]
+#[derive(Clone, Debug, Hash, Deserialize, Serialize)]
 pub struct RecordMetadata {
     pub module_path: Vec<String>,
     pub name: String,
     pub fields: Vec<FieldMetadata>,
 }
 
-#[derive(Clone, Debug, Checksum, Deserialize, Serialize)]
+#[derive(Clone, Debug, Hash, Deserialize, Serialize)]
 pub struct FieldMetadata {
     pub name: String,
     #[serde(rename = "type")]
     pub ty: Type,
 }
 
-#[derive(Clone, Debug, Checksum, Deserialize, Serialize)]
+#[derive(Clone, Debug, Hash, Deserialize, Serialize)]
 pub struct ObjectMetadata {
     pub module_path: Vec<String>,
     pub name: String,
@@ -182,9 +112,9 @@ impl ObjectMetadata {
 
 
 
-pub fn checksum<T: Checksum>(val: &T) -> u16 {
-    let mut hasher = siphasher::sip::SipHasher13::new();
-    val.checksum(&mut hasher);
+pub fn checksum<T: Hash>(val: &T) -> u16 {
+    let mut hasher = DefaultHasher::new();
+    val.hash(&mut hasher);
     (hasher.finish() & 0x000000000000FFFF) as u16
 }
 
@@ -194,7 +124,7 @@ pub fn fn_ffi_symbol_name(mod_path: &[String], name: &str, checksum: u16) -> Str
 }
 
 
-#[derive(Clone, Debug, Checksum, Deserialize, Serialize)]
+#[derive(Clone, Debug, Hash, Deserialize, Serialize)]
 pub enum Metadata {
     Func(FnMetadata),
     Method(MethodMetadata),

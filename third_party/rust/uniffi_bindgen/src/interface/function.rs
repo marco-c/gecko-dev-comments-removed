@@ -32,9 +32,9 @@
 
 
 use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
 
 use anyhow::{bail, Result};
-use uniffi_meta::Checksum;
 
 use super::ffi::{FFIArgument, FFIFunction};
 use super::literal::{convert_default_value, Literal};
@@ -51,18 +51,11 @@ use super::{APIConverter, ComponentInterface};
 
 
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone)]
 pub struct Function {
     pub(super) name: String,
     pub(super) arguments: Vec<Argument>,
     pub(super) return_type: Option<Type>,
-    
-    
-    
-    
-    
-    
-    #[checksum_ignore]
     pub(super) ffi_func: FFIFunction,
     pub(super) attributes: FunctionAttributes,
 }
@@ -149,6 +142,21 @@ impl From<uniffi_meta::FnMetadata> for Function {
     }
 }
 
+impl Hash for Function {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        
+        
+        
+        
+        
+        
+        self.name.hash(state);
+        self.arguments.hash(state);
+        self.return_type.hash(state);
+        self.attributes.hash(state);
+    }
+}
+
 impl APIConverter<Function> for weedle::namespace::NamespaceMember<'_> {
     fn convert(&self, ci: &mut ComponentInterface) -> Result<Function> {
         match self {
@@ -177,7 +185,7 @@ impl APIConverter<Function> for weedle::namespace::OperationNamespaceMember<'_> 
 
 
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone, Hash)]
 pub struct Argument {
     pub(super) name: String,
     pub(super) type_: Type,

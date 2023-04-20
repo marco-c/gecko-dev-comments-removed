@@ -58,10 +58,10 @@
 
 
 use std::convert::TryFrom;
+use std::hash::{Hash, Hasher};
 use std::{collections::HashSet, iter};
 
 use anyhow::{bail, Result};
-use uniffi_meta::Checksum;
 
 use super::ffi::{FFIArgument, FFIFunction, FFIType};
 use super::function::Argument;
@@ -86,20 +86,12 @@ use super::{APIConverter, ComponentInterface};
 
 
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone)]
 pub struct Object {
     pub(super) name: String,
     pub(super) constructors: Vec<Constructor>,
     pub(super) methods: Vec<Method>,
-    
-    
-    
-    
-    
-    
-    #[checksum_ignore]
     pub(super) ffi_func_free: FFIFunction,
-    #[checksum_ignore]
     pub(super) uses_deprecated_threadsafe_attribute: bool,
 }
 
@@ -198,6 +190,20 @@ impl Object {
     }
 }
 
+impl Hash for Object {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        
+        
+        
+        
+        
+        
+        self.name.hash(state);
+        self.constructors.hash(state);
+        self.methods.hash(state);
+    }
+}
+
 impl APIConverter<Object> for weedle::InterfaceDefinition<'_> {
     fn convert(&self, ci: &mut ComponentInterface) -> Result<Object> {
         if self.inheritance.is_some() {
@@ -239,17 +245,10 @@ impl APIConverter<Object> for weedle::InterfaceDefinition<'_> {
 
 
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone)]
 pub struct Constructor {
     pub(super) name: String,
     pub(super) arguments: Vec<Argument>,
-    
-    
-    
-    
-    
-    
-    #[checksum_ignore]
     pub(super) ffi_func: FFIFunction,
     pub(super) attributes: ConstructorAttributes,
 }
@@ -300,6 +299,20 @@ impl Constructor {
     }
 }
 
+impl Hash for Constructor {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        
+        
+        
+        
+        
+        
+        self.name.hash(state);
+        self.arguments.hash(state);
+        self.attributes.hash(state);
+    }
+}
+
 impl Default for Constructor {
     fn default() -> Self {
         Constructor {
@@ -330,19 +343,12 @@ impl APIConverter<Constructor> for weedle::interface::ConstructorInterfaceMember
 
 
 
-#[derive(Debug, Clone, Checksum)]
+#[derive(Debug, Clone)]
 pub struct Method {
     pub(super) name: String,
     pub(super) object_name: String,
-    pub(super) arguments: Vec<Argument>,
     pub(super) return_type: Option<Type>,
-    
-    
-    
-    
-    
-    
-    #[checksum_ignore]
+    pub(super) arguments: Vec<Argument>,
     pub(super) ffi_func: FFIFunction,
     pub(super) attributes: MethodAttributes,
 }
@@ -441,6 +447,22 @@ impl From<uniffi_meta::MethodMetadata> for Method {
             ffi_func,
             attributes: Default::default(),
         }
+    }
+}
+
+impl Hash for Method {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        
+        
+        
+        
+        
+        
+        self.name.hash(state);
+        self.object_name.hash(state);
+        self.arguments.hash(state);
+        self.return_type.hash(state);
+        self.attributes.hash(state);
     }
 }
 
