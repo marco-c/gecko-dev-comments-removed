@@ -63,14 +63,8 @@ static int gLastGdkError;
 
 
 
-
 static inline CSSToLayoutDeviceScale GetWidgetScaleFactor(nsIFrame* aFrame) {
-  nsPresContext* pc = aFrame->PresContext();
-  nsIWidget* rootWidget = pc->GetRootWidget();
-  auto scale =
-      rootWidget ? rootWidget->GetDefaultScale() : pc->CSSToDevPixelScale();
-  scale.scale = std::max(1.0f, std::round(scale.scale));
-  return scale;
+  return aFrame->PresContext()->CSSToDevPixelScale();
 }
 
 nsNativeThemeGTK::nsNativeThemeGTK() : Theme(ScrollbarStyle()) {
