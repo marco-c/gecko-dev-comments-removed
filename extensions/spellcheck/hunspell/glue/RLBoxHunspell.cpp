@@ -160,14 +160,26 @@ RLBoxHunspell::~RLBoxHunspell() {
   mozHunspellCallbacks::Clear();
 }
 
+
+
+
+static const size_t gWordSizeLimit = 200000;
+
 int RLBoxHunspell::spell(const std::string& stdWord) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+
+  const int ok = 1;
+
+  if (stdWord.length() >= gWordSizeLimit) {
+    
+    return ok;
+  }
+
   
   tainted_hunspell<char*> t_word = allocStrInSandbox(*mSandbox, stdWord);
   if (!t_word) {
     
     
-    const int ok = 1;
     return ok;
   }
 
@@ -189,6 +201,11 @@ const std::string& RLBoxHunspell::get_dict_encoding() const {
 
 std::vector<std::string> RLBoxHunspell::suggest(const std::string& stdWord) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+
+  if (stdWord.length() >= gWordSizeLimit) {
+    return {};
+  }
+
   
   tainted_hunspell<char*> t_word = allocStrInSandbox(*mSandbox, stdWord);
   if (!t_word) {
