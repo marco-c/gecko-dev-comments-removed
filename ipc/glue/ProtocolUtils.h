@@ -100,10 +100,6 @@ class NeckoParent;
 
 namespace ipc {
 
-#ifdef FUZZING
-class ProtocolFuzzerHelper;
-#endif
-
 
 struct ScopedProcessHandleTraits {
   typedef base::ProcessHandle type;
@@ -380,10 +376,6 @@ class ManagedEndpoint;
 
 
 class IToplevelProtocol : public IProtocol {
-#ifdef FUZZING
-  friend class mozilla::ipc::ProtocolFuzzerHelper;
-#endif
-
   template <class PFooSide>
   friend class Endpoint;
 
