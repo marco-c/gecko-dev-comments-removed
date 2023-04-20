@@ -526,14 +526,9 @@ var tests = [
         typeof result.distribution !== "undefined",
         "Check distribution isn't undefined."
       );
-      
-      
       is(
         result.distribution,
-        AppConstants.platform === "win" &&
-          Services.sysinfo.getProperty("hasWinPackageId")
-          ? "mozilla-MSIX"
-          : "default",
+        "default",
         'Should be "default" without preference set.'
       );
 

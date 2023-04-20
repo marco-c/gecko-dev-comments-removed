@@ -116,18 +116,6 @@ var AttributionCode = {
 
 
   async writeAttributionFile(code) {
-    
-    
-    
-    if (
-      AppConstants.platform === "win" &&
-      Services.sysinfo.getProperty("hasWinPackageId")
-    ) {
-      Services.console.logStringMessage(
-        "Attribution code cannot be written for MSIX builds, aborting."
-      );
-      return;
-    }
     let file = AttributionCode.attributionFile;
     await IOUtils.makeDirectory(file.parent.path);
     let bytes = new TextEncoder().encode(code);

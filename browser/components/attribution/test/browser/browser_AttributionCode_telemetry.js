@@ -40,27 +40,20 @@ add_task(async function test_parse_error() {
   );
 
   
+  await AttributionCode.deleteFileAsync();
+  AttributionCode._clearCache();
   
-  
-  if (
-    AppConstants.platform === "win" &&
-    !Services.sysinfo.getProperty("hasWinPackageId")
-  ) {
-    await AttributionCode.deleteFileAsync();
-    AttributionCode._clearCache();
-    
-    await AttributionCode.writeAttributionFile(
-      AppConstants.platform == "macosx" ? "invalid" : ""
-    );
-    result = await AttributionCode.getAttrDataAsync();
-    Assert.deepEqual(result, {}, "Should have failed to parse");
+  await AttributionCode.writeAttributionFile(
+    AppConstants.platform == "macosx" ? "invalid" : ""
+  );
+  result = await AttributionCode.getAttrDataAsync();
+  Assert.deepEqual(result, {}, "Should have failed to parse");
 
-    
-    
-    TelemetryTestUtils.assertHistogram(histogram, INDEX_DECODE_ERROR, 1);
-    
-    histogram.clear();
-  }
+  
+  
+  TelemetryTestUtils.assertHistogram(histogram, INDEX_DECODE_ERROR, 1);
+  
+  histogram.clear();
 });
 
 add_task(async function test_read_error() {
