@@ -140,6 +140,8 @@ class WebSocket final : public DOMEventTargetHelper {
   nsresult CreateAndDispatchCloseEvent(bool aWasClean, uint16_t aCode,
                                        const nsAString& aReason);
 
+  static bool IsValidProtocolString(const nsString& aValue);
+
   
   
   
