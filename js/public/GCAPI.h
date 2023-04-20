@@ -283,6 +283,14 @@ typedef enum JSGCParamKey {
 
 
 
+  JSGC_PARALLEL_MARKING_ENABLED = 24,
+
+  
+
+
+
+
+
 
 
 

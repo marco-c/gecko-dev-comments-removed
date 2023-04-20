@@ -1030,6 +1030,9 @@ pref("javascript.options.mem.gc_incremental_slice_ms", 5);
 pref("javascript.options.mem.gc_compacting", true);
 
 
+pref("javascript.options.mem.gc_parallel_marking", false);
+
+
 pref("javascript.options.mem.gc_high_frequency_time_limit_ms", 1000);
 
 
