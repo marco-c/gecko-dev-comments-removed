@@ -48,7 +48,7 @@ class ErrorReportMixin : public StrictModeGetter {
   virtual const JS::ReadOnlyCompileOptions& options() const = 0;
 
   
-  virtual ErrorContext* getContext() const = 0;
+  virtual FrontendContext* getContext() const = 0;
 
   
   struct Current {};

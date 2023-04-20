@@ -174,9 +174,6 @@ class ManualReportFrontendContext : public FrontendContext {
   }
 };
 
-
-using ErrorContext = FrontendContext;
-
 }  
 
 #endif 

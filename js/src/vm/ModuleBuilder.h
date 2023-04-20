@@ -32,12 +32,12 @@ class ParseNode;
 
 
 class MOZ_STACK_CLASS ModuleBuilder {
-  explicit ModuleBuilder(JSContext* cx, ErrorContext* ec,
+  explicit ModuleBuilder(JSContext* cx, FrontendContext* ec,
                          const frontend::EitherParser& eitherParser);
 
  public:
   template <class Parser>
-  explicit ModuleBuilder(JSContext* cx, ErrorContext* ec, Parser* parser)
+  explicit ModuleBuilder(JSContext* cx, FrontendContext* ec, Parser* parser)
       : ModuleBuilder(cx, ec, frontend::EitherParser(parser)) {}
 
   bool processImport(frontend::BinaryNode* importNode);
@@ -50,7 +50,7 @@ class MOZ_STACK_CLASS ModuleBuilder {
 
   
   
-  bool noteFunctionDeclaration(ErrorContext* ec, uint32_t funIndex);
+  bool noteFunctionDeclaration(FrontendContext* ec, uint32_t funIndex);
   void finishFunctionDecls(frontend::StencilModuleMetadata& metadata);
 
   void noteAsync(frontend::StencilModuleMetadata& metadata);
@@ -67,7 +67,7 @@ class MOZ_STACK_CLASS ModuleBuilder {
               frontend::TaggedParserAtomIndexHasher>;
 
   JSContext* cx_;
-  ErrorContext* ec_;
+  FrontendContext* ec_;
   frontend::EitherParser eitherParser_;
 
   

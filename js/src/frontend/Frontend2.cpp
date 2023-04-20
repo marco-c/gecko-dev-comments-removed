@@ -55,7 +55,8 @@ namespace frontend {
 
 
 
-bool ConvertAtoms(JSContext* cx, ErrorContext* ec, const SmooshResult& result,
+bool ConvertAtoms(JSContext* cx, FrontendContext* ec,
+                  const SmooshResult& result,
                   CompilationState& compilationState,
                   Vector<TaggedParserAtomIndex>& allAtoms) {
   size_t numAtoms = result.all_atoms_len;
@@ -118,7 +119,7 @@ void CopyBindingNames(JSContext* cx, CVec<COption<SmooshBindingName>>& from,
 
 
 
-bool ConvertScopeStencil(JSContext* cx, ErrorContext* ec,
+bool ConvertScopeStencil(JSContext* cx, FrontendContext* ec,
                          const SmooshResult& result,
                          Vector<TaggedParserAtomIndex>& allAtoms,
                          CompilationState& compilationState) {
@@ -263,7 +264,7 @@ bool ConvertScopeStencil(JSContext* cx, ErrorContext* ec,
 
 
 
-bool ConvertRegExpData(JSContext* cx, ErrorContext* ec,
+bool ConvertRegExpData(JSContext* cx, FrontendContext* ec,
                        JS::NativeStackLimit stackLimit,
                        const SmooshResult& result,
                        CompilationState& compilationState) {
@@ -375,7 +376,7 @@ UniquePtr<ImmutableScriptData> ConvertImmutableScriptData(
 
 
 
-bool ConvertGCThings(JSContext* cx, ErrorContext* ec,
+bool ConvertGCThings(JSContext* cx, FrontendContext* ec,
                      const SmooshResult& result,
                      const SmooshScriptStencil& smooshScript,
                      CompilationState& compilationState,
@@ -432,7 +433,7 @@ bool ConvertGCThings(JSContext* cx, ErrorContext* ec,
 
 
 
-bool ConvertScriptStencil(JSContext* cx, ErrorContext* ec,
+bool ConvertScriptStencil(JSContext* cx, FrontendContext* ec,
                           const SmooshResult& result,
                           const SmooshScriptStencil& smooshScript,
                           Vector<TaggedParserAtomIndex>& allAtoms,
@@ -551,7 +552,7 @@ class AutoFreeSmooshParseResult {
 
 void InitSmoosh() { smoosh_init(); }
 
-void ReportSmooshCompileError(JSContext* cx, ErrorContext* ec,
+void ReportSmooshCompileError(JSContext* cx, FrontendContext* ec,
                               ErrorMetadata&& metadata, int errorNumber, ...) {
   va_list args;
   va_start(args, errorNumber);
@@ -562,7 +563,7 @@ void ReportSmooshCompileError(JSContext* cx, ErrorContext* ec,
 
 
 bool Smoosh::tryCompileGlobalScriptToExtensibleStencil(
-    JSContext* cx, ErrorContext* ec, JS::NativeStackLimit stackLimit,
+    JSContext* cx, FrontendContext* ec, JS::NativeStackLimit stackLimit,
     CompilationInput& input, JS::SourceText<mozilla::Utf8Unit>& srcBuf,
     UniquePtr<ExtensibleCompilationStencil>& stencilOut) {
   
