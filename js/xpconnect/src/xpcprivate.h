@@ -2424,7 +2424,8 @@ JSObject* CreateGlobalObject(JSContext* cx, const JSClass* clasp,
 
 
 void InitGlobalObjectOptions(JS::RealmOptions& aOptions,
-                             nsIPrincipal* aPrincipal);
+                             bool aIsSystemPrincipal,
+                             bool aShouldResistFingerprinting);
 
 
 

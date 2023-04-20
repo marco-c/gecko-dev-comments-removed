@@ -477,23 +477,22 @@ JSObject* CreateGlobalObject(JSContext* cx, const JSClass* clasp,
 }
 
 void InitGlobalObjectOptions(JS::RealmOptions& aOptions,
-                             nsIPrincipal* aPrincipal) {
+                             bool aIsSystemPrincipal,
+                             bool aShouldResistFingerprinting) {
   bool shouldDiscardSystemSource = ShouldDiscardSystemSource();
 
-  bool isSystem = aPrincipal->IsSystemPrincipal();
-
-  if (isSystem) {
+  if (aIsSystemPrincipal) {
     
     aOptions.creationOptions().setToSourceEnabled(true);
     
     aOptions.creationOptions().setSecureContext(true);
     aOptions.behaviors().setClampAndJitterTime(false);
   }
+  aOptions.behaviors().setShouldResistFingerprinting(
+      aShouldResistFingerprinting);
 
   if (shouldDiscardSystemSource) {
-    bool discardSource = isSystem;
-
-    aOptions.behaviors().setDiscardSource(discardSource);
+    aOptions.behaviors().setDiscardSource(aIsSystemPrincipal);
   }
 }
 
@@ -537,8 +536,13 @@ nsresult InitClassesWithNewWrappedGlobal(JSContext* aJSContext,
   
   
   MOZ_ASSERT(aPrincipal);
+  
+  
+  
+  MOZ_RELEASE_ASSERT(aPrincipal->IsSystemPrincipal());
 
-  InitGlobalObjectOptions(aOptions, aPrincipal);
+  InitGlobalObjectOptions(aOptions,  true,
+                           false);
 
   
   
