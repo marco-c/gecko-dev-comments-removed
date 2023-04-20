@@ -388,7 +388,7 @@ class RtpReplayer final {
   struct StreamState {
     test::NullTransport transport;
     std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
-    std::vector<VideoReceiveStream*> receive_streams;
+    std::vector<VideoReceiveStreamInterface*> receive_streams;
     std::unique_ptr<VideoDecoderFactory> decoder_factory;
   };
 
@@ -455,7 +455,8 @@ class RtpReplayer final {
     stream_state->sinks.push_back(std::move(playback_video));
     stream_state->sinks.push_back(std::move(file_passthrough));
     
-    VideoReceiveStream::Config receive_config(&(stream_state->transport));
+    VideoReceiveStreamInterface::Config receive_config(
+        &(stream_state->transport));
     receive_config.rtp.remote_ssrc = Ssrc();
     receive_config.rtp.local_ssrc = kReceiverLocalSsrc;
     receive_config.rtp.rtx_ssrc = SsrcRtx();
@@ -477,7 +478,7 @@ class RtpReplayer final {
     receive_config.renderer = stream_state->sinks.back().get();
 
     
-    VideoReceiveStream::Decoder decoder;
+    VideoReceiveStreamInterface::Decoder decoder;
     decoder = test::CreateMatchingDecoder(MediaPayloadType(), Codec());
     if (!DecoderBitstreamFilename().empty()) {
       

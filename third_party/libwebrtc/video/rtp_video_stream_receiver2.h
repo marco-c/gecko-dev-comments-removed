@@ -85,7 +85,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       
       
       PacketRouter* packet_router,
-      const VideoReceiveStream::Config* config,
+      const VideoReceiveStreamInterface::Config* config,
       ReceiveStatistics* rtp_receive_statistics,
       RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
       RtcpCnameCallback* rtcp_cname_callback,
@@ -302,7 +302,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   const FieldTrialsView& field_trials_;
   Clock* const clock_;
   
-  const VideoReceiveStream::Config& config_;
+  
+  const VideoReceiveStreamInterface::Config& config_;
   PacketRouter* const packet_router_;
 
   RemoteNtpTimeEstimator ntp_estimator_;

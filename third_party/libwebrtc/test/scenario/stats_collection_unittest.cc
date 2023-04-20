@@ -45,7 +45,7 @@ void CreateAnalyzedStream(Scenario* s,
     
     
     
-    VideoReceiveStream::Stats video_receive_stats;
+    VideoReceiveStreamInterface::Stats video_receive_stats;
     auto* video_stream = video->receive();
     callee->SendTask([&video_stream, &video_receive_stats]() {
       video_receive_stats = video_stream->GetStats();

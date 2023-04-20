@@ -19,13 +19,14 @@ namespace test {
 
 
 
-VideoReceiveStream::Config ParseVideoReceiveStreamJsonConfig(
+
+VideoReceiveStreamInterface::Config ParseVideoReceiveStreamJsonConfig(
     webrtc::Transport* transport,
     const Json::Value& json);
 
 
 Json::Value GenerateVideoReceiveStreamJsonConfig(
-    const VideoReceiveStream::Config& config);
+    const VideoReceiveStreamInterface::Config& config);
 
 }  
 }  

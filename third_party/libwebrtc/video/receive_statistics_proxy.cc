@@ -627,7 +627,7 @@ ReceiveStatisticsProxy::GetCurrentEstimatedPlayoutNtpTimestampMs(
   return *last_estimated_playout_ntp_timestamp_ms_ + elapsed_ms;
 }
 
-VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
+VideoReceiveStreamInterface::Stats ReceiveStatisticsProxy::GetStats() const {
   MutexLock lock(&mutex_);
   
   

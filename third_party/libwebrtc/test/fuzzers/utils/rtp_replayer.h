@@ -44,7 +44,7 @@ class RtpReplayer final {
   struct StreamState {
     test::NullTransport transport;
     std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
-    std::vector<VideoReceiveStream*> receive_streams;
+    std::vector<VideoReceiveStreamInterface*> receive_streams;
     std::unique_ptr<VideoDecoderFactory> decoder_factory;
   };
 
@@ -55,21 +55,22 @@ class RtpReplayer final {
 
   
   
+  
   static void Replay(
       std::unique_ptr<StreamState> stream_state,
-      std::vector<VideoReceiveStream::Config> receive_stream_config,
+      std::vector<VideoReceiveStreamInterface::Config> receive_stream_config,
       const uint8_t* rtp_dump_data,
       size_t rtp_dump_size);
 
  private:
   
-  static std::vector<VideoReceiveStream::Config> ReadConfigFromFile(
+  static std::vector<VideoReceiveStreamInterface::Config> ReadConfigFromFile(
       const std::string& replay_config,
       Transport* transport);
 
   
   static void SetupVideoStreams(
-      std::vector<VideoReceiveStream::Config>* receive_stream_configs,
+      std::vector<VideoReceiveStreamInterface::Config>* receive_stream_configs,
       StreamState* stream_state,
       Call* call);
 

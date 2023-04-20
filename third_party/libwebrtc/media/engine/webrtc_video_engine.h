@@ -302,7 +302,7 @@ class WebRtcVideoChannel : public VideoMediaChannel,
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
 
   void ConfigureReceiverRtp(
-      webrtc::VideoReceiveStream::Config* config,
+      webrtc::VideoReceiveStreamInterface::Config* config,
       webrtc::FlexfecReceiveStream::Config* flexfec_config,
       const StreamParams& sp) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
@@ -436,13 +436,13 @@ class WebRtcVideoChannel : public VideoMediaChannel,
         WebRtcVideoChannel* channel,
         webrtc::Call* call,
         const StreamParams& sp,
-        webrtc::VideoReceiveStream::Config config,
+        webrtc::VideoReceiveStreamInterface::Config config,
         bool default_stream,
         const std::vector<VideoCodecSettings>& recv_codecs,
         const webrtc::FlexfecReceiveStream::Config& flexfec_config);
     ~WebRtcVideoReceiveStream();
 
-    webrtc::VideoReceiveStream& stream();
+    webrtc::VideoReceiveStreamInterface& stream();
     
     webrtc::FlexfecReceiveStream* flexfec_stream();
 
@@ -503,9 +503,9 @@ class WebRtcVideoChannel : public VideoMediaChannel,
     
     
     
-    webrtc::VideoReceiveStream* stream_;
+    webrtc::VideoReceiveStreamInterface* stream_;
     const bool default_stream_;
-    webrtc::VideoReceiveStream::Config config_;
+    webrtc::VideoReceiveStreamInterface::Config config_;
     webrtc::FlexfecReceiveStream::Config flexfec_config_;
     webrtc::FlexfecReceiveStream* flexfec_stream_;
 

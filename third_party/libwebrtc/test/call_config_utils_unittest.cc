@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2019 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #include "test/call_config_utils.h"
 
@@ -17,9 +17,9 @@ namespace webrtc {
 namespace test {
 
 TEST(CallConfigUtils, MarshalUnmarshalProcessSameObject) {
-  VideoReceiveStream::Config recv_config(nullptr);
+  VideoReceiveStreamInterface::Config recv_config(nullptr);
 
-  VideoReceiveStream::Decoder decoder;
+  VideoReceiveStreamInterface::Decoder decoder;
   decoder.payload_type = 10;
   decoder.video_format.name = "test";
   decoder.video_format.parameters["99"] = "b";
@@ -37,7 +37,7 @@ TEST(CallConfigUtils, MarshalUnmarshalProcessSameObject) {
   recv_config.rtp.rtx_associated_payload_types[10] = 10;
   recv_config.rtp.extensions.emplace_back("uri", 128, true);
 
-  VideoReceiveStream::Config unmarshaled_config =
+  VideoReceiveStreamInterface::Config unmarshaled_config =
       ParseVideoReceiveStreamJsonConfig(
           nullptr, GenerateVideoReceiveStreamJsonConfig(recv_config));
 
@@ -64,5 +64,5 @@ TEST(CallConfigUtils, MarshalUnmarshalProcessSameObject) {
   EXPECT_EQ(recv_config.rtp.extensions, recv_config.rtp.extensions);
 }
 
-}  // namespace test
-}  // namespace webrtc
+}  
+}  

@@ -48,7 +48,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                          const FieldTrialsView* field_trials = nullptr);
   ~ReceiveStatisticsProxy() = default;
 
-  VideoReceiveStream::Stats GetStats() const;
+  VideoReceiveStreamInterface::Stats GetStats() const;
 
   void OnDecodedFrame(const VideoFrame& frame,
                       absl::optional<uint8_t> qp,
@@ -154,7 +154,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   int num_bad_states_ RTC_GUARDED_BY(mutex_);
   int num_certain_states_ RTC_GUARDED_BY(mutex_);
   
-  mutable VideoReceiveStream::Stats stats_ RTC_GUARDED_BY(mutex_);
+  mutable VideoReceiveStreamInterface::Stats stats_ RTC_GUARDED_BY(mutex_);
   RateStatistics decode_fps_estimator_ RTC_GUARDED_BY(mutex_);
   RateStatistics renders_fps_estimator_ RTC_GUARDED_BY(mutex_);
   rtc::RateTracker render_fps_tracker_ RTC_GUARDED_BY(mutex_);

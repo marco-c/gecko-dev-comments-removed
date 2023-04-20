@@ -81,10 +81,10 @@ class Call {
       std::unique_ptr<FecController> fec_controller);
   virtual void DestroyVideoSendStream(VideoSendStream* send_stream) = 0;
 
-  virtual VideoReceiveStream* CreateVideoReceiveStream(
-      VideoReceiveStream::Config configuration) = 0;
+  virtual VideoReceiveStreamInterface* CreateVideoReceiveStream(
+      VideoReceiveStreamInterface::Config configuration) = 0;
   virtual void DestroyVideoReceiveStream(
-      VideoReceiveStream* receive_stream) = 0;
+      VideoReceiveStreamInterface* receive_stream) = 0;
 
   
   
@@ -128,7 +128,7 @@ class Call {
   
   virtual void OnLocalSsrcUpdated(AudioReceiveStream& stream,
                                   uint32_t local_ssrc) = 0;
-  virtual void OnLocalSsrcUpdated(VideoReceiveStream& stream,
+  virtual void OnLocalSsrcUpdated(VideoReceiveStreamInterface& stream,
                                   uint32_t local_ssrc) = 0;
   virtual void OnLocalSsrcUpdated(FlexfecReceiveStream& stream,
                                   uint32_t local_ssrc) = 0;
