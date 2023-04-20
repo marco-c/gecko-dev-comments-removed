@@ -64,13 +64,14 @@ add_task(async function testIgnoreMinifiedSourceForPrettySource() {
 });
 
 
-add_task(async function testOriginalFilesAsPrioritizedOverGeneratedFiles() {
+
+add_task(async function testFilesPrioritization() {
   const dbg = await initDebugger("doc-react.html", "App.js");
 
   await openProjectSearch(dbg);
   const fileResults = await doProjectSearch(dbg, "componentDidMount");
 
-  is(getExpandedResultsCount(dbg), 8);
+  is(getExpandedResultsCount(dbg), 13);
 
   ok(
     fileResults[0].innerText.includes(
@@ -84,5 +85,14 @@ add_task(async function testOriginalFilesAsPrioritizedOverGeneratedFiles() {
       "componentDidMount() {"
     ),
     "The first result match in the original file is correct"
+  );
+
+  const firstNodeModulesResultFound = [...fileResults].findIndex(el =>
+    el.innerText.includes("node_modules")
+  );
+  is(
+    firstNodeModulesResultFound,
+    2,
+    "The node_modules (third-party) file is the last result in the list"
   );
 });
