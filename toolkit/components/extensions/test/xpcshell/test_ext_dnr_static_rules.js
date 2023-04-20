@@ -1448,7 +1448,7 @@ add_task(async function test_dnr_all_rules_disabled_allowed() {
 
   const extension = ExtensionTestUtils.loadExtension(
     getDNRExtension({
-      id: "tabId-invalid-in-session-rules@mochitest",
+      id: "all-static-rulesets-disabled-allowed@mochitest",
       rule_resources,
       files,
     })
@@ -1511,6 +1511,14 @@ add_task(async function test_static_rules_telemetry() {
       condition: {
         resourceTypes: ["xmlhttprequest"],
         requestDomains: ["example.org"],
+      },
+    }),
+    getDNRRule({
+      id: 2,
+      action: { type: "block" },
+      condition: {
+        resourceTypes: ["xmlhttprequest"],
+        requestDomains: ["example2.org"],
       },
     }),
   ];
@@ -1746,7 +1754,8 @@ add_task(async function test_static_rules_telemetry() {
     "evaluateRulesTime should be collected after evaluated rulesets"
   );
   
-  let expectedEvaluateRulesCountMax = 1;
+  
+  let expectedEvaluateRulesCountMax = ruleset1.length;
   assertDNRTelemetryMetricsGetValueEq(
     [
       {
@@ -1756,7 +1765,7 @@ add_task(async function test_static_rules_telemetry() {
         expectedGetValue: expectedEvaluateRulesCountMax,
       },
     ],
-    "evaluateRulesCountMax should be collected after evaluated rulesets"
+    "evaluateRulesCountMax should be collected after evaluated rulesets1"
   );
 
   await callPageFetch();
@@ -1785,7 +1794,8 @@ add_task(async function test_static_rules_telemetry() {
   await callPageFetch();
 
   
-  expectedEvaluateRulesCountMax += 1;
+  
+  expectedEvaluateRulesCountMax += ruleset2.length;
   assertDNRTelemetryMetricsGetValueEq(
     [
       {
@@ -1795,7 +1805,7 @@ add_task(async function test_static_rules_telemetry() {
         expectedGetValue: expectedEvaluateRulesCountMax,
       },
     ],
-    "evaluateRulesCountMax should have been increased"
+    "evaluateRulesCountMax should have been increased after enabling ruleset2"
   );
 
   extension.sendMessage("updateEnabledRulesets", {
@@ -1815,7 +1825,7 @@ add_task(async function test_static_rules_telemetry() {
         expectedGetValue: expectedEvaluateRulesCountMax,
       },
     ],
-    "evaluateRulesCountMax should have not been decreased"
+    "evaluateRulesCountMax should have not been decreased after disabling ruleset2"
   );
 
   await page.close();
