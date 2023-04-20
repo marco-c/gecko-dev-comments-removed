@@ -13,7 +13,9 @@
 #include <memory>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "api/task_queue/queued_task.h"
+#include "api/units/time_delta.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -57,7 +59,12 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
-  virtual void PostTask(std::unique_ptr<QueuedTask> task) = 0;
+  virtual void PostTask(absl::AnyInvocable<void() &&> task);
+
+  
+  
+  
+  virtual void PostTask(std::unique_ptr<QueuedTask> task);
 
   
   
@@ -79,11 +86,19 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
+  
+  
+  
+  
+  
+  virtual void PostDelayedTask(absl::AnyInvocable<void() &&> task,
+                               TimeDelta delay);
+
   
   
   
   virtual void PostDelayedTask(std::unique_ptr<QueuedTask> task,
-                               uint32_t milliseconds) = 0;
+                               uint32_t milliseconds);
 
   
   
@@ -98,16 +113,38 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueueBase {
   
   
   
+  
+  
+  
+  
+  
+  virtual void PostDelayedHighPrecisionTask(absl::AnyInvocable<void() &&> task,
+                                            TimeDelta delay);
+
   
   
   
   virtual void PostDelayedHighPrecisionTask(std::unique_ptr<QueuedTask> task,
                                             uint32_t milliseconds) {
-    
-    
     PostDelayedTask(std::move(task), milliseconds);
   }
 
+  
+  
+  void PostDelayedTaskWithPrecision(DelayPrecision precision,
+                                    absl::AnyInvocable<void() &&> task,
+                                    TimeDelta delay) {
+    switch (precision) {
+      case DelayPrecision::kLow:
+        PostDelayedTask(std::move(task), delay);
+        break;
+      case DelayPrecision::kHigh:
+        PostDelayedHighPrecisionTask(std::move(task), delay);
+        break;
+    }
+  }
+
+  
   
   
   void PostDelayedTaskWithPrecision(DelayPrecision precision,
