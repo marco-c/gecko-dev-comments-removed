@@ -5,14 +5,5 @@
 
 (async function() {
   
-  try {
-    await test_driver.set_storage_access("https://{{domains[www]}}:{{ports[https][0]}}/", "*", "blocked");
-  } catch (e) {
-    
-    
-    
-  }
-
-  
   RunTestsInIFrame('https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/requestStorageAccess-iframe.https.html?testCase=cross-origin-frame&rootdocument=false');
 })();

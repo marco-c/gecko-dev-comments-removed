@@ -132,3 +132,14 @@ function SetPermissionInFrame(frame, args = []) {
 function FrameInitiatedReload(frame) {
   return PostMessageAndAwait({ command: "reload" }, frame.contentWindow, ReloadPromise(frame));
 }
+
+
+async function MaybeSetStorageAccess(origin, embedding_origin, value) {
+  try {
+    await test_driver.set_storage_access(origin, embedding_origin, value);
+  } catch (e) {
+    
+    
+    
+  }
+}

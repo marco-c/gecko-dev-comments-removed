@@ -6,19 +6,10 @@
 
 (async function() {
   
-  const wwwHost = "https://{{domains[www]}}:{{ports[https][0]}}";
-
-  
-  try {
-    await test_driver.set_storage_access(wwwHost + "/", "*", "blocked");
-  } catch (e) {
-    
-    
-    
-  }
+  const wwwAlt = "https://{{hosts[alt][www]}}:{{ports[https][0]}}";
 
   promise_test(async (t) => {
-    const responder_html = `${wwwHost}/storage-access-api/resources/script-with-cookie-header.py?script=embedded_responder.js`;
+    const responder_html = `${wwwAlt}/storage-access-api/resources/script-with-cookie-header.py?script=embedded_responder.js`;
     const [frame1, frame2] = await Promise.all([
       CreateFrame(responder_html),
       CreateFrame(responder_html),
@@ -30,8 +21,13 @@
     });
 
     await SetPermissionInFrame(frame1, [{ name: 'storage-access' }, 'granted']);
-    await fetch(`${wwwHost}/cookies/resources/set.py?cookie=monster;Secure;SameSite=None;Path=/`,
-      { mode: "no-cors", credentials: "include" });
+    await fetch(`${wwwAlt}/cookies/resources/set.py?cookie=monster;Secure;SameSite=None;Path=/`,
+      { mode: "no-cors", credentials: "include" }).then((resp) => resp.text());
+
+    await MaybeSetStorageAccess(wwwAlt + "/", "*", "blocked");
+    t.add_cleanup(async () => {
+      await MaybeSetStorageAccess(wwwAlt + "/", "*", "allowed");
+    });
 
     assert_false(await FrameHasStorageAccess(frame1), "frame1 should not have storage access initially.");
     assert_false(await FrameHasStorageAccess(frame2), "frame2 should not have storage access initially.");
