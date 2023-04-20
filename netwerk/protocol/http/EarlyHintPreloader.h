@@ -95,10 +95,10 @@ class EarlyHintPreloader final : public nsIStreamListener,
 
  private:
   void SetParentChannel();
-  bool InvokeStreamListenerFunctions();
+  void InvokeStreamListenerFunctions();
 
   EarlyHintPreloader();
-  ~EarlyHintPreloader() = default;
+  ~EarlyHintPreloader();
 
   static Maybe<PreloadHashKey> GenerateHashKey(ASDestination aAs, nsIURI* aURI,
                                                nsIPrincipal* aPrincipal,
@@ -142,6 +142,18 @@ class EarlyHintPreloader final : public nsIStreamListener,
   bool mIsFinished = false;
 
   RefPtr<ParentChannelListener> mParentListener;
+
+ private:
+  
+  
+  enum EHPreloaderState : uint32_t {
+    ePreloaderCreated = 0,
+    ePreloaderOpened,
+    ePreloaderUsed,
+    ePreloaderCancelled,
+  };
+  EHPreloaderState mState = ePreloaderCreated;
+  void SetState(EHPreloaderState aState) { mState = aState; }
 };
 
 inline nsISupports* ToSupports(EarlyHintPreloader* aObj) {

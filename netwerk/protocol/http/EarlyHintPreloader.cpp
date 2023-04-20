@@ -18,6 +18,7 @@
 #include "mozilla/net/EarlyHintRegistrar.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Telemetry.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
 #include "nsCOMPtr.h"
@@ -107,6 +108,10 @@ EarlyHintPreloader::EarlyHintPreloader() {
   AssertIsOnMainThread();
   mConnectArgs.earlyHintPreloaderId() = ++gEarlyHintPreloaderId;
 };
+
+EarlyHintPreloader::~EarlyHintPreloader() {
+  Telemetry::Accumulate(Telemetry::EH_STATE_OF_PRELOAD_REQUEST, mState);
+}
 
 
 Maybe<PreloadHashKey> EarlyHintPreloader::GenerateHashKey(
@@ -322,6 +327,8 @@ nsresult EarlyHintPreloader::OpenChannel(
   rv = mChannel->AsyncOpen(mParentListener);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  SetState(ePreloaderOpened);
+
   return NS_OK;
 }
 
@@ -345,6 +352,7 @@ nsresult EarlyHintPreloader::CancelChannel(nsresult aStatus) {
   if (mChannel) {
     mChannel->Cancel(aStatus);
     mChannel = nullptr;
+    SetState(ePreloaderCancelled);
   }
   return NS_OK;
 }
@@ -375,11 +383,12 @@ void EarlyHintPreloader::SetParentChannel() {
 
 
 
-bool EarlyHintPreloader::InvokeStreamListenerFunctions() {
+void EarlyHintPreloader::InvokeStreamListenerFunctions() {
   AssertIsOnMainThread();
 
-  LOG(("EarlyHintPreloader::RedirectToParent [this=%p parent=%p]\n", this,
-       mParent.get()));
+  LOG((
+      "EarlyHintPreloader::InvokeStreamListenerFunctions [this=%p parent=%p]\n",
+      this, mParent.get()));
 
   if (nsCOMPtr<nsIIdentChannel> channel = do_QueryInterface(mChannel)) {
     MOZ_ASSERT(mChannelId);
@@ -413,7 +422,8 @@ bool EarlyHintPreloader::InvokeStreamListenerFunctions() {
   mChannel = nullptr;
   mParent = nullptr;
   mParentListener = nullptr;
-  return true;
+
+  SetState(ePreloaderUsed);
 }
 
 
