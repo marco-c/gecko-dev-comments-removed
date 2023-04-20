@@ -45,11 +45,6 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
       std::unique_ptr<VideoQualityAnalyzerInterface> analyzer,
       EncodedImageDataInjector* injector,
       EncodedImageDataExtractor* extractor);
-  
-  VideoQualityAnalyzerInjectionHelper(
-      std::unique_ptr<VideoQualityAnalyzerInterface> analyzer,
-      EncodedImageDataInjector* injector,
-      EncodedImageDataExtractor* extractor);
   ~VideoQualityAnalyzerInjectionHelper() override;
 
   
