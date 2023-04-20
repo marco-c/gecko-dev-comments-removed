@@ -19,7 +19,7 @@ async function createAndShutdownContentProcess(url) {
 
   
   
-  let browserParentDestroyed = PromiseUtils.defer();
+  let browserDestroyed = PromiseUtils.defer();
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -32,12 +32,17 @@ async function createAndShutdownContentProcess(url) {
 
       ok(true, "Content process created.");
 
-      browserParentDestroyed.resolve(
+      browserDestroyed.resolve(
         TestUtils.topicObserved(
           "ipc:browser-destroyed",
           subject => subject === remoteTab
         )
       );
+
+      
+      await SpecialPowers.spawn(otherBrowser, [], function() {
+        content.postMessage("LoadedMessage", "*");
+      });
 
       
       
@@ -49,7 +54,7 @@ async function createAndShutdownContentProcess(url) {
 
   
   
-  await browserParentDestroyed.promise;
+  await browserDestroyed.promise;
 
   
   ok(true, "Shutdown of content process.");
