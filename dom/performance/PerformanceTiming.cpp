@@ -468,7 +468,7 @@ DOMHighResTimeStamp PerformanceTimingData::DomainLookupStartHighRes(
     return mZeroTime;
   }
   
-  if (nsContentUtils::ShouldResistFingerprinting()) {
+  if (aPerformance->ShouldResistFingerprinting()) {
     return FetchStartHighRes(aPerformance);
   }
   return TimeStampToReducedDOMHighResOrFetchStart(aPerformance,
@@ -488,7 +488,7 @@ DOMHighResTimeStamp PerformanceTimingData::DomainLookupEndHighRes(
     return mZeroTime;
   }
   
-  if (nsContentUtils::ShouldResistFingerprinting()) {
+  if (aPerformance->ShouldResistFingerprinting()) {
     return FetchStartHighRes(aPerformance);
   }
   
