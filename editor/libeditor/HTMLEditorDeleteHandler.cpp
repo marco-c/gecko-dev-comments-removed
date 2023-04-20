@@ -18,6 +18,7 @@
 #include "HTMLEditUtils.h"
 #include "WSRunObject.h"
 
+#include "ErrorList.h"
 #include "js/ErrorReport.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
@@ -27,6 +28,7 @@
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
+#include "mozilla/SelectionState.h"
 #include "mozilla/StaticPrefs_editor.h"  
 #include "mozilla/Unused.h"
 #include "mozilla/dom/AncestorIterator.h"
@@ -371,6 +373,13 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteUnnecessaryNodes(HTMLEditor& aHTMLEditor, EditorDOMRange& aRange);
+
+  
+
+
+
 
 
 
@@ -556,7 +565,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         }
         case Mode::DeleteBRElement: {
           Result<EditActionResult, nsresult> result =
-              DeleteBRElement(aHTMLEditor, aDirectionAndAmount, aCaretPoint);
+              DeleteBRElement(aHTMLEditor, aDirectionAndAmount, aEditingHost);
           NS_WARNING_ASSERTION(
               result.isOk(),
               "AutoBlockElementsJoiner::DeleteBRElement() failed");
@@ -648,7 +657,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         case Mode::JoinBlocksInSameParent: {
           Result<EditActionResult, nsresult> result =
               JoinBlockElementsInSameParent(aHTMLEditor, aDirectionAndAmount,
-                                            aStripWrappers, aRangesToDelete);
+                                            aStripWrappers, aRangesToDelete,
+                                            aEditingHost);
           NS_WARNING_ASSERTION(result.isOk(),
                                "AutoBlockElementsJoiner::"
                                "JoinBlockElementsInSameParent() failed");
@@ -765,7 +775,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     JoinBlockElementsInSameParent(HTMLEditor& aHTMLEditor,
                                   nsIEditor::EDirection aDirectionAndAmount,
                                   nsIEditor::EStripWrappers aStripWrappers,
-                                  AutoRangeArray& aRangesToDelete);
+                                  AutoRangeArray& aRangesToDelete,
+                                  const Element& aEditingHost);
     nsresult ComputeRangesToJoinBlockElementsInSameParent(
         const HTMLEditor& aHTMLEditor,
         nsIEditor::EDirection aDirectionAndAmount,
@@ -773,7 +784,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
     DeleteBRElement(HTMLEditor& aHTMLEditor,
                     nsIEditor::EDirection aDirectionAndAmount,
-                    const EditorDOMPoint& aCaretPoint);
+                    const Element& aEditingHost);
     nsresult ComputeRangesToDeleteBRElement(
         AutoRangeArray& aRangesToDelete) const;
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditActionResult, nsresult>
@@ -880,6 +891,10 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
         return mLeftBlockElement && mLeftBlockElement == mRightBlockElement;
       }
 
+      const EditorDOMPoint& PointRefToPutCaret() const {
+        return mPointToPutCaret;
+      }
+
       
 
 
@@ -962,6 +977,7 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
       RefPtr<Element> mRightBlockElement;
       Maybe<nsAtom*> mNewListElementTagNameOfRightListElement;
       EditorDOMPoint mPointContainingTheOtherBlockElement;
+      EditorDOMPoint mPointToPutCaret;
       RefPtr<dom::HTMLBRElement> mPrecedingInvisibleBRElement;
       bool mCanJoinBlocks;
       bool mFallbackToDeleteLeafContent;
@@ -2543,10 +2559,35 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
 Result<EditActionResult, nsresult>
 HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::DeleteBRElement(
     HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    const EditorDOMPoint& aCaretPoint) {
+    const Element& aEditingHost) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
-  MOZ_ASSERT(aCaretPoint.IsSetAndValid());
   MOZ_ASSERT(mBRElement);
+
+  
+  
+  
+  EditorDOMPoint pointToPutCaret = [&]() {
+    if (!MayEditActionDeleteAroundCollapsedSelection(
+            aHTMLEditor.GetEditAction())) {
+      return EditorDOMPoint();
+    }
+    WSRunScanner scanner(&aEditingHost, EditorRawDOMPoint(mBRElement));
+    WSScanResult maybePreviousText =
+        scanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
+            EditorRawDOMPoint(mBRElement));
+    if (maybePreviousText.IsContentEditable() &&
+        maybePreviousText.InVisibleOrCollapsibleCharacters() &&
+        !HTMLEditor::GetLinkElement(maybePreviousText.TextPtr())) {
+      return maybePreviousText.Point<EditorDOMPoint>();
+    }
+    WSScanResult maybeNextText = scanner.ScanNextVisibleNodeOrBlockBoundaryFrom(
+        EditorRawDOMPoint::After(*mBRElement));
+    if (maybeNextText.IsContentEditable() &&
+        maybeNextText.InVisibleOrCollapsibleCharacters()) {
+      return maybeNextText.Point<EditorDOMPoint>();
+    }
+    return EditorDOMPoint();
+  }();
 
   
   
@@ -2568,6 +2609,22 @@ HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::DeleteBRElement(
     
     return Err(NS_ERROR_FAILURE);
   }
+
+  if (pointToPutCaret.IsSet()) {
+    nsresult rv = aHTMLEditor.CollapseSelectionTo(pointToPutCaret);
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_SUCCEEDED(rv) &&
+        HTMLEditor::GetLinkElement(pointToPutCaret.GetContainer())) {
+      aHTMLEditor.mPendingStylesToApplyToNewContent
+          ->ClearLinkAndItsSpecifiedStyle();
+    } else {
+      NS_WARNING("EditorBase::CollapseSelectionTo() failed, but ignored");
+    }
+    return EditActionResult::HandledResult();
+  }
+
   EditorRawDOMPoint newCaretPosition =
       HTMLEditUtils::GetGoodCaretPointFor<EditorRawDOMPoint>(
           *mLeafContentInOtherBlock, aDirectionAndAmount);
@@ -2767,6 +2824,27 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
             "returning handled, but returned ignored");
       }
 #endif  
+      
+      
+      
+      
+      if (result.Handled() && joiner.PointRefToPutCaret().IsSet()) {
+        nsresult rv =
+            aHTMLEditor.CollapseSelectionTo(joiner.PointRefToPutCaret());
+        if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+          return Err(NS_ERROR_EDITOR_DESTROYED);
+        }
+        if (NS_FAILED(rv)) {
+          NS_WARNING("EditorBase::CollapseSelectionTo() failed, but ignored");
+          return result;
+        }
+        if (HTMLEditor::GetLinkElement(
+                joiner.PointRefToPutCaret().GetContainer())) {
+          aHTMLEditor.mPendingStylesToApplyToNewContent
+              ->ClearLinkAndItsSpecifiedStyle();
+        }
+        return result;
+      }
     }
 
     
@@ -3006,11 +3084,11 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     if (joiner.ShouldDeleteLeafContentInstead()) {
       NS_ASSERTION(result.Ignored(),
                    "Assumed `AutoInclusiveAncestorBlockElementsJoiner::Run()` "
-                   "retruning ignored, but returned not ignored");
+                   "returning ignored, but returned not ignored");
     } else {
       NS_ASSERTION(!result.Ignored(),
                    "Assumed `AutoInclusiveAncestorBlockElementsJoiner::Run()` "
-                   "retruning handled, but returned ignored");
+                   "returning handled, but returned ignored");
     }
 #endif  
 
@@ -3025,6 +3103,27 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
       }
     }
     mSkippedInvisibleContents.Clear();
+
+    
+    
+    
+    if (result.Handled() && joiner.PointRefToPutCaret().IsSet()) {
+      nsresult rv =
+          aHTMLEditor.CollapseSelectionTo(joiner.PointRefToPutCaret());
+      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+        return Err(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (NS_FAILED(rv)) {
+        NS_WARNING("EditorBase::CollapseSelectionTo() failed, but ignored");
+        return result;
+      }
+      if (HTMLEditor::GetLinkElement(
+              joiner.PointRefToPutCaret().GetContainer())) {
+        aHTMLEditor.mPendingStylesToApplyToNewContent
+            ->ClearLinkAndItsSpecifiedStyle();
+      }
+      return result;
+    }
   }
   
   
@@ -3485,7 +3584,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     AutoBlockElementsJoiner::JoinBlockElementsInSameParent(
         HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
         nsIEditor::EStripWrappers aStripWrappers,
-        AutoRangeArray& aRangesToDelete) {
+        AutoRangeArray& aRangesToDelete, const Element& aEditingHost) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(!aRangesToDelete.IsCollapsed());
   MOZ_ASSERT(mMode == Mode::JoinBlocksInSameParent);
@@ -3515,6 +3614,11 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
+  auto startOfRightContent =
+      HTMLEditUtils::GetDeepestEditableStartPointOf<EditorDOMPoint>(
+          *mRightContent);
+  AutoTrackDOMPoint trackStartOfRightContent(aHTMLEditor.RangeUpdaterRef(),
+                                             &startOfRightContent);
   Result<EditorDOMPoint, nsresult> atFirstChildOfTheLastRightNodeOrError =
       JoinNodesDeepWithTransaction(aHTMLEditor, MOZ_KnownLive(*mLeftContent),
                                    MOZ_KnownLive(*mRightContent));
@@ -3523,7 +3627,37 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     return atFirstChildOfTheLastRightNodeOrError.propagateErr();
   }
   MOZ_ASSERT(atFirstChildOfTheLastRightNodeOrError.inspect().IsSet());
+  trackStartOfRightContent.FlushAndStopTracking();
+  if (NS_WARN_IF(!startOfRightContent.IsSet()) ||
+      NS_WARN_IF(!startOfRightContent.GetContainer()->IsInComposedDoc())) {
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
 
+  
+  
+  
+  if (MayEditActionDeleteAroundCollapsedSelection(
+          aHTMLEditor.GetEditAction())) {
+    WSRunScanner scanner(&aEditingHost, startOfRightContent);
+    WSScanResult maybePreviousText =
+        scanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(startOfRightContent);
+    if (maybePreviousText.IsContentEditable() &&
+        maybePreviousText.InVisibleOrCollapsibleCharacters()) {
+      nsresult rv = aHTMLEditor.CollapseSelectionTo(
+          maybePreviousText.Point<EditorRawDOMPoint>());
+      if (NS_FAILED(rv)) {
+        NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+        return Err(rv);
+      }
+      if (HTMLEditor::GetLinkElement(maybePreviousText.TextPtr())) {
+        aHTMLEditor.mPendingStylesToApplyToNewContent
+            ->ClearLinkAndItsSpecifiedStyle();
+      }
+      return EditActionResult::HandledResult();
+    }
+  }
+
+  
   rv = aHTMLEditor.CollapseSelectionTo(
       atFirstChildOfTheLastRightNodeOrError.inspect());
   if (NS_FAILED(rv)) {
@@ -3756,6 +3890,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
 
   
   EditActionResult result = EditActionResult::IgnoredResult();
+  EditorDOMPoint pointToPutCaret;
   while (true) {
     AutoTrackDOMRange firstRangeTracker(aHTMLEditor.RangeUpdaterRef(),
                                         &aRangesToDelete.FirstRangeRef());
@@ -3842,7 +3977,31 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
                    "returning handled, but returned ignored");
     }
 #endif  
+    pointToPutCaret = joiner.PointRefToPutCaret();
     break;
+  }
+
+  
+  
+  
+  if (result.Handled() && pointToPutCaret.IsSet()) {
+    EditorDOMRange range(aRangesToDelete.FirstRangeRef());
+    nsresult rv =
+        mDeleteRangesHandler->DeleteUnnecessaryNodes(aHTMLEditor, range);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoDeleteRangesHandler::DeleteUnnecessaryNodes() failed");
+      return Err(rv);
+    }
+    rv = aHTMLEditor.CollapseSelectionTo(pointToPutCaret);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+      return Err(rv);
+    }
+    if (HTMLEditor::GetLinkElement(pointToPutCaret.GetContainer())) {
+      aHTMLEditor.mPendingStylesToApplyToNewContent
+          ->ClearLinkAndItsSpecifiedStyle();
+    }
+    return result;
   }
 
   nsresult rv =
@@ -3861,102 +4020,114 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   return result;
 }
 
-nsresult
-HTMLEditor::AutoDeleteRangesHandler::DeleteUnnecessaryNodesAndCollapseSelection(
-    HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
-    const EditorDOMPoint& aSelectionStartPoint,
-    const EditorDOMPoint& aSelectionEndPoint) {
+nsresult HTMLEditor::AutoDeleteRangesHandler::DeleteUnnecessaryNodes(
+    HTMLEditor& aHTMLEditor, EditorDOMRange& aRange) {
   MOZ_ASSERT(aHTMLEditor.IsTopLevelEditSubActionDataAvailable());
   MOZ_ASSERT(EditorUtils::IsEditableContent(
-      *aSelectionStartPoint.ContainerAs<nsIContent>(), EditorType::HTML));
+      *aRange.StartRef().ContainerAs<nsIContent>(), EditorType::HTML));
   MOZ_ASSERT(EditorUtils::IsEditableContent(
-      *aSelectionEndPoint.ContainerAs<nsIContent>(), EditorType::HTML));
-
-  EditorDOMPoint atCaret(aSelectionStartPoint);
-  EditorDOMPoint selectionEndPoint(aSelectionEndPoint);
+      *aRange.EndRef().ContainerAs<nsIContent>(), EditorType::HTML));
 
   
   
   if (aHTMLEditor.GetEditAction() == EditAction::eDrop ||
       aHTMLEditor.GetEditAction() == EditAction::eDeleteByDrag) {
-    MOZ_ASSERT((atCaret.GetContainer() == selectionEndPoint.GetContainer() &&
-                atCaret.Offset() == selectionEndPoint.Offset()) ||
-               (atCaret.GetContainer()->GetNextSibling() ==
-                    selectionEndPoint.GetContainer() &&
-                atCaret.IsEndOfContainer() &&
-                selectionEndPoint.IsStartOfContainer()));
-    {
-      AutoTrackDOMPoint startTracker(aHTMLEditor.RangeUpdaterRef(), &atCaret);
-      AutoTrackDOMPoint endTracker(aHTMLEditor.RangeUpdaterRef(),
-                                   &selectionEndPoint);
+    MOZ_ASSERT(aRange.Collapsed() ||
+               (aRange.StartRef().GetContainer()->GetNextSibling() ==
+                    aRange.EndRef().GetContainer() &&
+                aRange.StartRef().IsEndOfContainer() &&
+                aRange.EndRef().IsStartOfContainer()));
+    AutoTrackDOMRange trackRange(aHTMLEditor.RangeUpdaterRef(), &aRange);
 
-      nsresult rv =
-          DeleteParentBlocksWithTransactionIfEmpty(aHTMLEditor, atCaret);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "HTMLEditor::DeleteParentBlocksWithTransactionIfEmpty() failed");
-        return rv;
-      }
-      aHTMLEditor.TopLevelEditSubActionDataRef().mDidDeleteEmptyParentBlocks =
-          rv == NS_OK;
+    nsresult rv = DeleteParentBlocksWithTransactionIfEmpty(aHTMLEditor,
+                                                           aRange.StartRef());
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "HTMLEditor::DeleteParentBlocksWithTransactionIfEmpty() failed");
+      return rv;
     }
+    aHTMLEditor.TopLevelEditSubActionDataRef().mDidDeleteEmptyParentBlocks =
+        rv == NS_OK;
     
     
     if (aHTMLEditor.TopLevelEditSubActionDataRef()
             .mDidDeleteEmptyParentBlocks) {
-      nsresult rv = aHTMLEditor.CollapseSelectionTo(atCaret);
+      return NS_OK;
+    }
+  }
+
+  if (NS_WARN_IF(!aRange.IsInContentNodes()) ||
+      NS_WARN_IF(!EditorUtils::IsEditableContent(
+          *aRange.StartRef().ContainerAs<nsIContent>(), EditorType::HTML)) ||
+      NS_WARN_IF(!EditorUtils::IsEditableContent(
+          *aRange.EndRef().ContainerAs<nsIContent>(), EditorType::HTML))) {
+    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+  }
+
+  
+  AutoTrackDOMRange trackRange(aHTMLEditor.RangeUpdaterRef(), &aRange);
+
+  OwningNonNull<nsIContent> startContainer =
+      *aRange.StartRef().ContainerAs<nsIContent>();
+  OwningNonNull<nsIContent> endContainer =
+      *aRange.EndRef().ContainerAs<nsIContent>();
+  nsresult rv =
+      DeleteNodeIfInvisibleAndEditableTextNode(aHTMLEditor, startContainer);
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "AutoDeleteRangesHandler::DeleteNodeIfInvisibleAndEditableTextNode() "
+      "failed to remove start node, but ignored");
+  
+  
+  if (aRange.InSameContainer() ||
+      !EditorUtils::IsEditableContent(
+          *aRange.EndRef().ContainerAs<nsIContent>(), EditorType::HTML)) {
+    return NS_OK;
+  }
+  rv = DeleteNodeIfInvisibleAndEditableTextNode(aHTMLEditor, endContainer);
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "AutoDeleteRangesHandler::DeleteNodeIfInvisibleAndEditableTextNode() "
+      "failed to remove end node, but ignored");
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::AutoDeleteRangesHandler::DeleteUnnecessaryNodesAndCollapseSelection(
+    HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+    const EditorDOMPoint& aSelectionStartPoint,
+    const EditorDOMPoint& aSelectionEndPoint) {
+  EditorDOMRange range(aSelectionStartPoint, aSelectionEndPoint);
+  nsresult rv = DeleteUnnecessaryNodes(aHTMLEditor, range);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("AutoDeleteRangesHandler::DeleteUnnecessaryNodes() failed");
+    return rv;
+  }
+
+  if (aHTMLEditor.GetEditAction() == EditAction::eDrop ||
+      aHTMLEditor.GetEditAction() == EditAction::eDeleteByDrag) {
+    
+    
+    
+    
+    if (aHTMLEditor.TopLevelEditSubActionDataRef()
+            .mDidDeleteEmptyParentBlocks) {
+      nsresult rv = aHTMLEditor.CollapseSelectionTo(range.StartRef());
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                            "EditorBase::CollapseSelectionTo() failed");
       return rv;
     }
   }
 
-  if (NS_WARN_IF(!atCaret.IsInContentNode()) ||
-      NS_WARN_IF(!selectionEndPoint.IsInContentNode()) ||
-      NS_WARN_IF(!EditorUtils::IsEditableContent(
-          *atCaret.ContainerAs<nsIContent>(), EditorType::HTML)) ||
-      NS_WARN_IF(!EditorUtils::IsEditableContent(
-          *selectionEndPoint.ContainerAs<nsIContent>(), EditorType::HTML))) {
-    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
-  }
-
-  
-  {
-    AutoTrackDOMPoint startTracker(aHTMLEditor.RangeUpdaterRef(), &atCaret);
-    AutoTrackDOMPoint endTracker(aHTMLEditor.RangeUpdaterRef(),
-                                 &selectionEndPoint);
-
-    nsresult rv = DeleteNodeIfInvisibleAndEditableTextNode(
-        aHTMLEditor, MOZ_KnownLive(*atCaret.ContainerAs<nsIContent>()));
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "AutoDeleteRangesHandler::DeleteNodeIfInvisibleAndEditableTextNode() "
-        "failed to remove start node, but ignored");
-    
-    
-    if (atCaret.ContainerAs<nsIContent>() !=
-            selectionEndPoint.ContainerAs<nsIContent>() &&
-        EditorUtils::IsEditableContent(
-            *selectionEndPoint.ContainerAs<nsIContent>(), EditorType::HTML)) {
-      nsresult rv = DeleteNodeIfInvisibleAndEditableTextNode(
-          aHTMLEditor,
-          MOZ_KnownLive(*selectionEndPoint.ContainerAs<nsIContent>()));
-      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-        return NS_ERROR_EDITOR_DESTROYED;
-      }
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "AutoDeleteRangesHandler::DeleteNodeIfInvisibleAndEditableTextNode() "
-          "failed to remove end node, but ignored");
-    }
-  }
-
-  nsresult rv = aHTMLEditor.CollapseSelectionTo(
-      aDirectionAndAmount == nsIEditor::ePrevious ? selectionEndPoint
-                                                  : atCaret);
+  rv = aHTMLEditor.CollapseSelectionTo(
+      aDirectionAndAmount == nsIEditor::ePrevious ? range.EndRef()
+                                                  : range.StartRef());
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::CollapseSelectionTo() failed");
   return rv;
@@ -4744,23 +4915,40 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
     return EditActionResult::HandledResult();
   }
 
+  EditorDOMPoint startOfRightContent;
+
   
   
   
+  Result<EditActionResult, nsresult> result(NS_ERROR_NOT_INITIALIZED);
   if (mPointContainingTheOtherBlockElement.GetContainer() ==
       mRightBlockElement) {
-    Result<EditActionResult, nsresult> result = WhiteSpaceVisibilityKeeper::
+    startOfRightContent = mPointContainingTheOtherBlockElement.NextPoint();
+    if (Element* element = startOfRightContent.GetChildAs<Element>()) {
+      startOfRightContent =
+          HTMLEditUtils::GetDeepestEditableStartPointOf<EditorDOMPoint>(
+              *element);
+    }
+    AutoTrackDOMPoint trackStartOfRightBlock(aHTMLEditor.RangeUpdaterRef(),
+                                             &startOfRightContent);
+    result = WhiteSpaceVisibilityKeeper::
         MergeFirstLineOfRightBlockElementIntoDescendantLeftBlockElement(
             aHTMLEditor, MOZ_KnownLive(*mLeftBlockElement),
             MOZ_KnownLive(*mRightBlockElement),
             mPointContainingTheOtherBlockElement,
             mNewListElementTagNameOfRightListElement,
             MOZ_KnownLive(mPrecedingInvisibleBRElement), aEditingHost);
-    NS_WARNING_ASSERTION(result.isOk(),
-                         "WhiteSpaceVisibilityKeeper::"
-                         "MergeFirstLineOfRightBlockElementIntoDescendantLeftBl"
-                         "ockElement() failed");
-    return result;
+    if (MOZ_UNLIKELY(result.isErr())) {
+      NS_WARNING(
+          "WhiteSpaceVisibilityKeeper::"
+          "MergeFirstLineOfRightBlockElementIntoDescendantLeftBlockElement() "
+          "failed");
+      return result;
+    }
+    if (NS_WARN_IF(!startOfRightContent.IsSet()) ||
+        NS_WARN_IF(!startOfRightContent.GetContainer()->IsInComposedDoc())) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
   }
 
   
@@ -4769,9 +4957,14 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   
   
   
-  if (mPointContainingTheOtherBlockElement.GetContainer() ==
-      mLeftBlockElement) {
-    Result<EditActionResult, nsresult> result = WhiteSpaceVisibilityKeeper::
+  else if (mPointContainingTheOtherBlockElement.GetContainer() ==
+           mLeftBlockElement) {
+    startOfRightContent =
+        HTMLEditUtils::GetDeepestEditableStartPointOf<EditorDOMPoint>(
+            *mRightBlockElement);
+    AutoTrackDOMPoint trackStartOfRightBlock(aHTMLEditor.RangeUpdaterRef(),
+                                             &startOfRightContent);
+    result = WhiteSpaceVisibilityKeeper::
         MergeFirstLineOfRightBlockElementIntoAncestorLeftBlockElement(
             aHTMLEditor, MOZ_KnownLive(*mLeftBlockElement),
             MOZ_KnownLive(*mRightBlockElement),
@@ -4779,29 +4972,63 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::
             MOZ_KnownLive(*mInclusiveDescendantOfLeftBlockElement),
             mNewListElementTagNameOfRightListElement,
             MOZ_KnownLive(mPrecedingInvisibleBRElement), aEditingHost);
-    NS_WARNING_ASSERTION(result.isOk(),
-                         "WhiteSpaceVisibilityKeeper::"
-                         "MergeFirstLineOfRightBlockElementIntoAncestorLeftBloc"
-                         "kElement() failed");
-    return result;
+    if (MOZ_UNLIKELY(result.isErr())) {
+      NS_WARNING(
+          "WhiteSpaceVisibilityKeeper::"
+          "MergeFirstLineOfRightBlockElementIntoAncestorLeftBlockElement() "
+          "failed");
+      return result;
+    }
+    if (NS_WARN_IF(!startOfRightContent.IsSet()) ||
+        NS_WARN_IF(!startOfRightContent.GetContainer()->IsInComposedDoc())) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+
   }
 
-  MOZ_ASSERT(!mPointContainingTheOtherBlockElement.IsSet());
+  
+  
+  
+  
+  else {
+    MOZ_ASSERT(!mPointContainingTheOtherBlockElement.IsSet());
+
+    startOfRightContent =
+        HTMLEditUtils::GetDeepestEditableStartPointOf<EditorDOMPoint>(
+            *mRightBlockElement);
+    AutoTrackDOMPoint trackStartOfRightBlock(aHTMLEditor.RangeUpdaterRef(),
+                                             &startOfRightContent);
+    result = WhiteSpaceVisibilityKeeper::
+        MergeFirstLineOfRightBlockElementIntoLeftBlockElement(
+            aHTMLEditor, MOZ_KnownLive(*mLeftBlockElement),
+            MOZ_KnownLive(*mRightBlockElement),
+            mNewListElementTagNameOfRightListElement,
+            MOZ_KnownLive(mPrecedingInvisibleBRElement), aEditingHost);
+    if (MOZ_UNLIKELY(result.isErr())) {
+      NS_WARNING(
+          "WhiteSpaceVisibilityKeeper::"
+          "MergeFirstLineOfRightBlockElementIntoLeftBlockElement() failed");
+      return result;
+    }
+    if (NS_WARN_IF(!startOfRightContent.IsSet()) ||
+        NS_WARN_IF(!startOfRightContent.GetContainer()->IsInComposedDoc())) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+  }
 
   
   
   
-  
-  Result<EditActionResult, nsresult> result = WhiteSpaceVisibilityKeeper::
-      MergeFirstLineOfRightBlockElementIntoLeftBlockElement(
-          aHTMLEditor, MOZ_KnownLive(*mLeftBlockElement),
-          MOZ_KnownLive(*mRightBlockElement),
-          mNewListElementTagNameOfRightListElement,
-          MOZ_KnownLive(mPrecedingInvisibleBRElement), aEditingHost);
-  NS_WARNING_ASSERTION(
-      result.isOk(),
-      "WhiteSpaceVisibilityKeeper::"
-      "MergeFirstLineOfRightBlockElementIntoLeftBlockElement() failed");
+  if (MayEditActionDeleteAroundCollapsedSelection(
+          aHTMLEditor.GetEditAction())) {
+    WSRunScanner scanner(&aEditingHost, startOfRightContent);
+    WSScanResult maybePreviousText =
+        scanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(startOfRightContent);
+    if (maybePreviousText.IsContentEditable() &&
+        maybePreviousText.InVisibleOrCollapsibleCharacters()) {
+      mPointToPutCaret = maybePreviousText.Point<EditorDOMPoint>();
+    }
+  }
   return result;
 }
 
