@@ -1536,9 +1536,12 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   
   bool compressedMediaAndImageDetectorStarted = false;
-  if (EnsureOpaqueResponseIsAllowed(compressedMediaAndImageDetectorStarted) ==
-      OpaqueResponseAllowed::No) {
-    mChannelBlockedByOpaqueResponse = true;
+  OpaqueResponse opaqueResponse = PerformOpaqueResponseSafelistCheckBeforeSniff(
+      compressedMediaAndImageDetectorStarted);
+  if (opaqueResponse == OpaqueResponse::Block) {
+    SetChannelBlockedByOpaqueResponse();
+    CancelWithReason(NS_ERROR_FAILURE,
+                     "OpaqueResponseBlocker::BlockResponse"_ns);
     return NS_ERROR_FAILURE;
   }
 
@@ -1592,12 +1595,14 @@ nsresult nsHttpChannel::CallOnStartRequest() {
 
   
   
-  if (!unknownDecoderStarted && !compressedMediaAndImageDetectorStarted) {
-    auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
-    if (isAllowedOrErr.isErr() ||
-        isAllowedOrErr.inspect() == OpaqueResponseAllowed::No) {
-      mChannelBlockedByOpaqueResponse = true;
-      return NS_ERROR_FAILURE;
+  if (!unknownDecoderStarted && !compressedMediaAndImageDetectorStarted &&
+      opaqueResponse == OpaqueResponse::Sniff) {
+    MOZ_DIAGNOSTIC_ASSERT(mORB);
+    nsresult rv = mORB->EnsureOpaqueResponseIsAllowedAfterSniff(this);
+    MOZ_DIAGNOSTIC_ASSERT(!mORB->IsSniffing());
+
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
 
@@ -9533,11 +9538,21 @@ HttpChannelSecurityWarningReporter* nsHttpChannel::GetWarningReporter() {
 
 
 
+
+
+
+
+
+
+
+
 void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
     SnifferType aType) {
+  
+  
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  if (mCheckIsOpaqueResponseAllowedAfterSniff) {
+  if (NeedOpaqueResponseAllowedCheckAfterSniff()) {
     MOZ_ASSERT(mCachedOpaqueResponseBlockingPref);
 
     
@@ -9548,9 +9563,8 @@ void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
     
     
     
-    
-    
     if (aType == SnifferType::Media) {
+      
       MOZ_ASSERT(mLoadInfo);
 
       bool isMediaRequest;
@@ -9561,24 +9575,22 @@ void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
         MOZ_ASSERT(isInitialRequest);
 
         if (!isInitialRequest) {
+          
           BlockOpaqueResponseAfterSniff();
           return;
         }
 
         if (mResponseHead->Status() != 200 && mResponseHead->Status() != 206) {
-          BlockOpaqueResponseAfterSniff();
-          return;
-        }
-
-        if (mResponseHead->Status() == 206 &&
-            !IsFirstPartialResponse(*mResponseHead)) {
+          
           BlockOpaqueResponseAfterSniff();
           return;
         }
       }
     }
 
-    mCheckIsOpaqueResponseAllowedAfterSniff = false;
+    
+    
+    
     AllowOpaqueResponseAfterSniff();
   }
 }

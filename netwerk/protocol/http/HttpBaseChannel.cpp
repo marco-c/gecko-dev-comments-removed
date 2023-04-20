@@ -222,8 +222,6 @@ HttpBaseChannel::HttpBaseChannel()
       mInternalRedirectCount(0),
       mCachedOpaqueResponseBlockingPref(
           StaticPrefs::browser_opaqueResponseBlocking()),
-      mBlockOpaqueResponseAfterSniff(false),
-      mCheckIsOpaqueResponseAllowedAfterSniff(false),
       mChannelBlockedByOpaqueResponse(false),
       mDummyChannelForImageCache(false) {
   StoreApplyConversion(true);
@@ -3008,25 +3006,20 @@ nsresult HttpBaseChannel::ValidateMIMEType() {
   return NS_OK;
 }
 
-OpaqueResponseAllowed HttpBaseChannel::EnsureOpaqueResponseIsAllowed(
-    bool& aCompressedMediaAndImageDetectorStarted) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-
-  if (!mCachedOpaqueResponseBlockingPref) {
-    return OpaqueResponseAllowed::Yes;
-  }
-
+bool HttpBaseChannel::ShouldBlockOpaqueResponse() const {
   if (!mURI || !mResponseHead || !mLoadInfo) {
     
     
-    return OpaqueResponseAllowed::Yes;
+    LOGORB("No block: no mURI, mResponseHead, or mLoadInfo");
+    return false;
   }
 
   nsCOMPtr<nsIPrincipal> principal = mLoadInfo->GetLoadingPrincipal();
   if (!principal || principal->IsSystemPrincipal()) {
     
     
-    return OpaqueResponseAllowed::Yes;
+    LOGORB("No block: top-level load or system principal");
+    return false;
   }
 
   
@@ -3040,7 +3033,7 @@ OpaqueResponseAllowed HttpBaseChannel::EnsureOpaqueResponseIsAllowed(
       
       contentPolicy == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
       contentPolicy == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER) {
-    return OpaqueResponseAllowed::Yes;
+    return false;
   }
 
   uint32_t securityMode = mLoadInfo->GetSecurityMode();
@@ -3048,14 +3041,14 @@ OpaqueResponseAllowed HttpBaseChannel::EnsureOpaqueResponseIsAllowed(
   if (securityMode !=
           nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT &&
       securityMode != nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL) {
-    LOGORB("Allowed: not no_cors requests");
-    return OpaqueResponseAllowed::Yes;
+    LOGORB("No block: not no_cors requests");
+    return false;
   }
 
   
   if (mLoadInfo->GetTainting() != mozilla::LoadTainting::Opaque) {
-    LOGORB("Allowed: not opaque response");
-    return OpaqueResponseAllowed::Yes;
+    LOGORB("No block: not opaque response");
+    return false;
   }
 
   auto extContentPolicyType = mLoadInfo->GetExternalContentPolicyType();
@@ -3063,45 +3056,86 @@ OpaqueResponseAllowed HttpBaseChannel::EnsureOpaqueResponseIsAllowed(
       extContentPolicyType == ExtContentPolicy::TYPE_OBJECT_SUBREQUEST ||
       extContentPolicyType == ExtContentPolicy::TYPE_WEBSOCKET ||
       extContentPolicyType == ExtContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
-    LOGORB("Allowed: object || websocket request || save as download");
-    return OpaqueResponseAllowed::Yes;
+    LOGORB("No block: object || websocket request || save as download");
+    return false;
   }
 
   
   if (mLoadInfo->GetIsFromObjectOrEmbed()) {
-    LOGORB("Allowed: Request From <object> or <embed>");
-    return OpaqueResponseAllowed::Yes;
+    LOGORB("No block: Request From <object> or <embed>");
+    return false;
   }
 
   
   if (extContentPolicyType == ExtContentPolicy::TYPE_XMLHTTPREQUEST) {
     if (securityMode ==
         nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT) {
-      LOGORB("Allowed: System XHR");
-      return OpaqueResponseAllowed::Yes;
+      LOGORB("No block: System XHR");
+      return false;
     }
   }
 
-  switch (GetOpaqueResponseBlockedReason(*mResponseHead)) {
+  return true;
+}
+
+
+
+
+
+
+
+
+OpaqueResponse HttpBaseChannel::PerformOpaqueResponseSafelistCheckBeforeSniff(
+    bool& aCompressedMediaAndImageDetectorStarted) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (!mCachedOpaqueResponseBlockingPref) {
+    return OpaqueResponse::Alllow;
+  }
+
+  
+  if (!ShouldBlockOpaqueResponse()) {
+    return OpaqueResponse::Alllow;
+  }
+
+  
+  
+  nsAutoCString contentType;
+  mResponseHead->ContentType(contentType);
+
+  
+  nsAutoCString contentTypeOptionsHeader;
+  bool nosniff =
+      mResponseHead->GetContentTypeOptionsHeader(contentTypeOptionsHeader) &&
+      contentTypeOptionsHeader.EqualsIgnoreCase("nosniff");
+
+  
+  switch (GetOpaqueResponseBlockedReason(contentType, mResponseHead->Status(),
+                                         nosniff)) {
     case OpaqueResponseBlockedReason::ALLOWED_SAFE_LISTED:
-      return OpaqueResponseAllowed::Yes;
+      
+      return OpaqueResponse::Alllow;
     case OpaqueResponseBlockedReason::BLOCKED_BLOCKLISTED_NEVER_SNIFFED:
+      
       LOGORB("Blocked: BLOCKED_BLOCKLISTED_NEVER_SNIFFED");
       LogORBError(mLoadInfo, mURI);
-      return OpaqueResponseAllowed::No;
+      return OpaqueResponse::Block;
     case OpaqueResponseBlockedReason::BLOCKED_206_AND_BLOCKLISTED:
+      
       LOGORB("Blocked: BLOCKED_206_AND_BLOCKEDLISTED");
       LogORBError(mLoadInfo, mURI);
-      return OpaqueResponseAllowed::No;
+      return OpaqueResponse::Block;
     case OpaqueResponseBlockedReason::
         BLOCKED_NOSNIFF_AND_EITHER_BLOCKLISTED_OR_TEXTPLAIN:
+      
       LOGORB("Blocked: BLOCKED_NOSNIFF_AND_EITHER_BLOCKLISTED_OR_TEXTPLAIN");
       LogORBError(mLoadInfo, mURI);
-      return OpaqueResponseAllowed::No;
+      return OpaqueResponse::Block;
     default:
       break;
   }
 
+  
   
   
   bool isMediaRequest;
@@ -3110,10 +3144,22 @@ OpaqueResponseAllowed HttpBaseChannel::EnsureOpaqueResponseIsAllowed(
     bool isMediaInitialRequest;
     mLoadInfo->GetIsMediaInitialRequest(&isMediaInitialRequest);
     if (!isMediaInitialRequest) {
-      return OpaqueResponseAllowed::Yes;
+      return OpaqueResponse::Alllow;
     }
   }
 
+  
+  if (mResponseHead->Status() == 206 &&
+      !IsFirstPartialResponse(*mResponseHead)) {
+    LOGORB("Blocked: Is not a valid partial response given 0");
+    LogORBError(mLoadInfo, mURI);
+    return OpaqueResponse::Block;
+  }
+
+  
+  
+  
+  
   if (mLoadFlags & nsIChannel::LOAD_CALL_CONTENT_SNIFFERS) {
     mSnifferCategoryType = SnifferCategoryType::All;
   } else {
@@ -3122,9 +3168,13 @@ OpaqueResponseAllowed HttpBaseChannel::EnsureOpaqueResponseIsAllowed(
 
   mLoadFlags |= (nsIChannel::LOAD_CALL_CONTENT_SNIFFERS |
                  nsIChannel::LOAD_MEDIA_SNIFFER_OVERRIDES_CONTENT_TYPE);
-  mCheckIsOpaqueResponseAllowedAfterSniff = true;
 
-  mORB = new OpaqueResponseBlocker(mListener, this);
+  
+  
+  
+  
+  
+  mORB = new OpaqueResponseBlocker(mListener, this, contentType, nosniff);
   mListener = mORB;
 
   nsAutoCString contentEncoding;
@@ -3140,107 +3190,78 @@ OpaqueResponseAllowed HttpBaseChannel::EnsureOpaqueResponseIsAllowed(
     aCompressedMediaAndImageDetectorStarted = true;
   }
 
-  return OpaqueResponseAllowed::Yes;
+  return OpaqueResponse::Sniff;
 }
 
-Result<OpaqueResponseAllowed, nsresult>
-HttpBaseChannel::EnsureOpaqueResponseIsAllowedAfterSniff() {
+
+
+
+
+
+
+
+OpaqueResponse HttpBaseChannel::PerformOpaqueResponseSafelistCheckAfterSniff(
+    const nsACString& aContentType, bool aNoSniff) {
+  
   MOZ_ASSERT(XRE_IsParentProcess());
-
-  if (!mCheckIsOpaqueResponseAllowedAfterSniff) {
-    return OpaqueResponseAllowed::Yes;
-  }
-
   MOZ_ASSERT(mCachedOpaqueResponseBlockingPref);
 
   
-  
-  
-  
-  
-  
-  
-  
-  mCheckIsOpaqueResponseAllowedAfterSniff = false;
-
-  if (mBlockOpaqueResponseAfterSniff) {
-    LOGORB("Blocked: blocked after sniff");
-    LogORBError(mLoadInfo, mURI);
-    return OpaqueResponseAllowed::No;
-  }
-
   bool isMediaRequest;
   mLoadInfo->GetIsMediaRequest(&isMediaRequest);
   if (isMediaRequest) {
     LOGORB("Blocked: media request");
     LogORBError(mLoadInfo, mURI);
-    return OpaqueResponseAllowed::No;
+    return OpaqueResponse::Block;
   }
 
-  nsAutoCString contentType;
-  nsresult rv = GetContentType(contentType);
-  if (NS_FAILED(rv)) {
-    return Err(rv);
-  }
-
-  if (!mResponseHead) {
-    return OpaqueResponseAllowed::Yes;
-  }
-
-  nsAutoCString contentTypeOptionsHeader;
-  if (mResponseHead->GetContentTypeOptionsHeader(contentTypeOptionsHeader) &&
-      contentTypeOptionsHeader.EqualsIgnoreCase("nosniff")) {
+  
+  if (aNoSniff) {
     LOGORB("Blocked: nosniff");
     LogORBError(mLoadInfo, mURI);
-    return OpaqueResponseAllowed::No;
+    return OpaqueResponse::Block;
   }
 
-  if (mResponseHead->Status() < 200 || mResponseHead->Status() > 299) {
+  
+  if (mResponseHead &&
+      (mResponseHead->Status() < 200 || mResponseHead->Status() > 299)) {
     LOGORB("Blocked: status code (%d) is not allowed ",
            mResponseHead->Status());
     LogORBError(mLoadInfo, mURI);
-    return OpaqueResponseAllowed::No;
+    return OpaqueResponse::Block;
   }
 
-  if (contentType.EqualsLiteral(UNKNOWN_CONTENT_TYPE) ||
-      contentType.EqualsLiteral(APPLICATION_OCTET_STREAM)) {
-    return OpaqueResponseAllowed::Yes;
+  
+  if (!mResponseHead || aContentType.IsEmpty()) {
+    LOGORB("Allowed: mimeType is failure");
+    return OpaqueResponse::Alllow;
   }
 
-  if (StringBeginsWith(contentType, "image/"_ns) ||
-      StringBeginsWith(contentType, "video/"_ns) ||
-      StringBeginsWith(contentType, "audio/"_ns)) {
+  
+  if (StringBeginsWith(aContentType, "image/"_ns) ||
+      StringBeginsWith(aContentType, "video/"_ns) ||
+      StringBeginsWith(aContentType, "audio/"_ns)) {
     LOGORB("Blocked: ContentType is image/video/audio");
     LogORBError(mLoadInfo, mURI);
-    return OpaqueResponseAllowed::No;
+    return OpaqueResponse::Block;
   }
 
-  
-  
+  return OpaqueResponse::Sniff;
+}
 
-  int64_t contentLength;
-  rv = GetContentLength(&contentLength);
-  if (NS_FAILED(rv)) {
-    LOGORB("Blocked: NO Content Length");
-    LogORBError(mLoadInfo, mURI);
-    return OpaqueResponseAllowed::No;
-  }
-
-  return OpaqueResponseAllowed::Yes;
+bool HttpBaseChannel::NeedOpaqueResponseAllowedCheckAfterSniff() const {
+  return mORB ? mORB->IsSniffing() : false;
 }
 
 void HttpBaseChannel::BlockOpaqueResponseAfterSniff() {
-  mBlockOpaqueResponseAfterSniff = true;
-
-  if (mORB) {
-    mORB->BlockResponse(this, NS_ERROR_FAILURE);
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mORB);
+  LogORBError(mLoadInfo, mURI);
+  mORB->BlockResponse(this, NS_ERROR_FAILURE);
 }
 
 void HttpBaseChannel::AllowOpaqueResponseAfterSniff() {
-  if (mORB) {
-    mORB->AllowResponse();
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mORB);
+  mORB->AllowResponse();
 }
 
 NS_IMETHODIMP
