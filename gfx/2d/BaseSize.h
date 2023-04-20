@@ -12,8 +12,7 @@
 
 #include "mozilla/Attributes.h"
 
-namespace mozilla {
-namespace gfx {
+namespace mozilla::gfx {
 
 
 
@@ -109,7 +108,6 @@ struct BaseSize {
   }
 };
 
-}  
 }  
 
 #endif 

@@ -17,8 +17,7 @@
 #include "mozilla/gfx/ScaleFactors2D.h"
 #include "Types.h"
 
-namespace mozilla {
-namespace gfx {
+namespace mozilla::gfx {
 
 
 
@@ -740,7 +739,6 @@ struct BaseRect {
   }
 };
 
-}  
 }  
 
 #endif 
