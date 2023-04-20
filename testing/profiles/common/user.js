@@ -87,3 +87,6 @@ user_pref("telemetry.fog.test.localhost_port", -1);
 
 
 user_pref("widget.gtk.overlay-scrollbars.enabled", false);
+
+
+user_pref("idle.lastDailyNotification", -1);

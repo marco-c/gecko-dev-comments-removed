@@ -146,9 +146,6 @@ user_pref("identity.fxaccounts.auth.uri", "https://{server}/fxa-dummy/");
 
 user_pref("identity.fxaccounts.remote.root", "https://{server}/");
 
-
-user_pref("idle.lastDailyNotification", -1);
-
 user_pref("layout.css.report_errors", true);
 
 user_pref("layout.spammy_warnings.enabled", false);

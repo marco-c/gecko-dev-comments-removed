@@ -29,9 +29,6 @@ user_pref("security.remote_settings.intermediates.enabled", false);
 
 user_pref("dom.ipc.processPriorityManager.enabled", false);
 
-
-user_pref("idle.lastDailyNotification", -1);
-
 user_pref("gfx.color_management.force_srgb", true);
 user_pref("gfx.color_management.mode", 1);
 
