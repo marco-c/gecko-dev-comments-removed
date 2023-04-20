@@ -138,6 +138,18 @@ struct AncestorTransform {
 
 
 
+struct PointerEventsConsumableFlags {
+  
+  bool mHasRoom = false;
+
+  
+  bool mAllowedByTouchAction = false;
+
+  bool IsConsumable() const { return mHasRoom && mAllowedByTouchAction; }
+};
+
+
+
 
 
 
@@ -1453,8 +1465,10 @@ class AsyncPanZoomController {
 
 
 
-  bool ArePointerEventsConsumable(TouchBlockState* aBlock,
-                                  const MultiTouchInput& aInput);
+
+
+  PointerEventsConsumableFlags ArePointerEventsConsumable(
+      TouchBlockState* aBlock, const MultiTouchInput& aInput);
 
   
 

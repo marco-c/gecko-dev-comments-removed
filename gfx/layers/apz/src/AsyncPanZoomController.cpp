@@ -864,12 +864,12 @@ AsyncPanZoomController::GetPinchLockMode() {
   return static_cast<PinchLockMode>(StaticPrefs::apz_pinch_lock_mode());
 }
 
-bool AsyncPanZoomController::ArePointerEventsConsumable(
+PointerEventsConsumableFlags AsyncPanZoomController::ArePointerEventsConsumable(
     TouchBlockState* aBlock, const MultiTouchInput& aInput) {
   uint32_t touchPoints = aInput.mTouches.Length();
   if (touchPoints == 0) {
     
-    return false;
+    return {false, false};
   }
 
   
@@ -889,40 +889,46 @@ bool AsyncPanZoomController::ArePointerEventsConsumable(
   
   
 
-  bool pannableX = aBlock->TouchActionAllowsPanningX() &&
-                   aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(
-                       this, ScrollDirection::eHorizontal);
+  bool pannableX = aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(
+      this, ScrollDirection::eHorizontal);
+  bool touchActionAllowsX = aBlock->TouchActionAllowsPanningX();
   bool pannableY =
-      (aBlock->TouchActionAllowsPanningY() &&
-       (aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(
-            this, ScrollDirection::eVertical) ||
-        
-        
-        
-        (IsRootContent() && CanVerticalScrollWithDynamicToolbar())));
+
+      (aBlock->GetOverscrollHandoffChain()->CanScrollInDirection(
+           this, ScrollDirection::eVertical) ||
+       
+       
+       
+       (IsRootContent() && CanVerticalScrollWithDynamicToolbar()));
+  bool touchActionAllowsY = aBlock->TouchActionAllowsPanningY();
 
   bool pannable;
+  bool touchActionAllowsPanning;
 
   Maybe<ScrollDirection> panDirection =
       aBlock->GetBestGuessPanDirection(aInput);
   if (panDirection == Some(ScrollDirection::eVertical)) {
     pannable = pannableY;
+    touchActionAllowsPanning = touchActionAllowsY;
   } else if (panDirection == Some(ScrollDirection::eHorizontal)) {
     pannable = pannableX;
+    touchActionAllowsPanning = touchActionAllowsX;
   } else {
     
     
     pannable = pannableX || pannableY;
+    touchActionAllowsPanning = touchActionAllowsX || touchActionAllowsY;
   }
 
   if (touchPoints == 1) {
-    return pannable;
+    return {pannable, touchActionAllowsPanning};
   }
 
   bool zoomable = ZoomConstraintsAllowZoom();
-  zoomable &= (aBlock->TouchActionAllowsPinchZoom());
+  bool touchActionAllowsZoom = aBlock->TouchActionAllowsPinchZoom();
 
-  return pannable || zoomable;
+  return {pannable || zoomable,
+          touchActionAllowsPanning || touchActionAllowsZoom};
 }
 
 nsEventStatus AsyncPanZoomController::HandleDragEvent(
