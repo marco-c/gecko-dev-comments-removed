@@ -645,6 +645,11 @@ void BrowserParent::Destroy() {
     return;
   }
 
+  
+  
+  
+  Manager()->NotifyTabWillDestroy();
+
   DestroyInternal();
 
   mIsDestroyed = true;
