@@ -3,6 +3,8 @@
 
 "use strict";
 
+do_get_profile();
+
 const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
 );
@@ -11,10 +13,39 @@ let tempFile = new FileUtils.File(PathUtils.tempDir);
 const TEST_LOCAL_FILE_NAME = "hello.txt";
 tempFile.append(TEST_LOCAL_FILE_NAME);
 
-const DATA_URL_EXPECTED_STRING = new Localization(
-  ["toolkit/global/browser-utils.ftl"],
-  true
-).formatValueSync("browser-utils-url-data");
+const gL10n = new Localization(["toolkit/global/browser-utils.ftl"], true);
+const DATA_URL_EXPECTED_STRING = gL10n.formatValueSync(
+  "browser-utils-url-data"
+);
+const EXTENSION_NAME = "My Test Extension";
+const EXTENSION_URL_EXPECTED_STRING = gL10n.formatValueSync(
+  "browser-utils-url-extension",
+  { extension: EXTENSION_NAME }
+);
+
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm"
+);
+
+const { ExtensionTestUtils } = ChromeUtils.import(
+  "resource://testing-common/ExtensionXPCShellUtils.jsm"
+);
+
+AddonTestUtils.init(this);
+ExtensionTestUtils.init(this);
+
+
+AddonTestUtils.overrideCertDB();
+
+AddonTestUtils.createAppInfo(
+  "xpcshell@tests.mozilla.org",
+  "XPCShell",
+  "42",
+  "42"
+);
+
+
+let addonBaseURI;
 
 
 
@@ -133,6 +164,59 @@ const TESTS = [
   },
 ];
 
+add_setup(async () => {
+  const testExtensionData = {
+    useAddonManager: "temporary",
+    manifest: {
+      browser_specific_settings: { gecko: { id: "myextension@example.com" } },
+      name: EXTENSION_NAME,
+    },
+  };
+
+  const testNoNameExtensionData = {
+    useAddonManager: "temporary",
+    manifest: {
+      browser_specific_settings: { gecko: { id: "noname@example.com" } },
+      name: "",
+    },
+  };
+
+  await AddonTestUtils.promiseStartupManager();
+  const extension = ExtensionTestUtils.loadExtension(testExtensionData);
+  const noNameExtension = ExtensionTestUtils.loadExtension(
+    testNoNameExtensionData
+  );
+  await extension.startup();
+  await noNameExtension.startup();
+
+  addonBaseURI = extension.extension.baseURI;
+  let noNameAddonBaseURI = noNameExtension.extension.baseURI;
+
+  TESTS.push(
+    {
+      input: addonBaseURI.spec,
+      output: EXTENSION_URL_EXPECTED_STRING,
+    },
+    {
+      input: "moz-extension://blah/",
+      output: gL10n.formatValueSync("browser-utils-url-extension", {
+        extension: "moz-extension://blah/",
+      }),
+    },
+    {
+      input: noNameAddonBaseURI.spec,
+      output: gL10n.formatValueSync("browser-utils-url-extension", {
+        extension: noNameAddonBaseURI.spec,
+      }),
+    }
+  );
+
+  registerCleanupFunction(async () => {
+    await extension.unload();
+    await noNameExtension.unload();
+  });
+});
+
 const { BrowserUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/BrowserUtils.sys.mjs"
 );
@@ -208,7 +292,13 @@ add_task(async function test_checkBlobURIs() {
   );
 
   
-  for (let { input, output } of HTTP_TESTS) {
+  let BLOB_TESTS = [
+    {
+      input: addonBaseURI.spec,
+      output: EXTENSION_URL_EXPECTED_STRING,
+    },
+  ].concat(HTTP_TESTS);
+  for (let { input, output } of BLOB_TESTS) {
     url = createBlobURLWithSandbox(input);
     Assert.equal(
       BrowserUtils.formatURIStringForDisplay(url),
