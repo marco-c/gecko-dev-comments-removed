@@ -10,6 +10,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.* 
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -28,6 +29,11 @@ class OrientationDelegateTest : BaseSessionTest() {
 
     @get:Rule
     override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
+
+    @Before
+    fun setup() {
+        sessionRule.setPrefsUntilTestEnd(mapOf("dom.screenorientation.allow-lock" to true))
+    }
 
     private fun goFullscreen() {
         sessionRule.setPrefsUntilTestEnd(mapOf("full-screen-api.allow-trusted-requests-only" to false))
@@ -88,7 +94,6 @@ class OrientationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun orientationLock() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.screenorientation.allow-lock" to true))
         goFullscreen()
         activityRule.scenario.onActivity { activity ->
             
@@ -101,7 +106,6 @@ class OrientationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun orientationUnlock() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.screenorientation.allow-lock" to true))
         goFullscreen()
         mainSession.evaluateJS("screen.orientation.unlock()")
         sessionRule.waitUntilCalled(object : OrientationController.OrientationDelegate {
@@ -115,7 +119,6 @@ class OrientationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun orientationLockedAlready() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.screenorientation.allow-lock" to true))
         goFullscreen()
         
         lockLandscape()
@@ -123,7 +126,6 @@ class OrientationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun orientationLockedExistingOrientation() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.screenorientation.allow-lock" to true))
         goFullscreen()
         
         activityRule.scenario.onActivity { activity ->
@@ -135,14 +137,12 @@ class OrientationDelegateTest : BaseSessionTest() {
     @Test(expected = GeckoSessionTestRule.RejectedPromiseException::class)
     fun orientationLockNoFullscreen() {
         
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.screenorientation.allow-lock" to true))
         mainSession.loadTestPath(FULLSCREEN_PATH)
         mainSession.waitForPageStop()
         mainSession.evaluateJS("screen.orientation.lock('landscape-primary')")
     }
 
     @Test fun orientationLockUnlock() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.screenorientation.allow-lock" to true))
         goFullscreen()
 
         val promise = mainSession.evaluatePromiseJS("screen.orientation.lock('landscape-primary')")
@@ -179,7 +179,6 @@ class OrientationDelegateTest : BaseSessionTest() {
 
     @Test fun orientationLockUnsupported() {
         
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.screenorientation.allow-lock" to true))
         goFullscreen()
 
         val promise = mainSession.evaluatePromiseJS(
@@ -218,8 +217,6 @@ class OrientationDelegateTest : BaseSessionTest() {
     @WithDisplay(width = 300, height = 200)
     @Test
     fun orientationUnlockByExitFullscreen() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.screenorientation.allow-lock" to true))
-
         goFullscreen()
         activityRule.scenario.onActivity { activity ->
             
@@ -245,5 +242,52 @@ class OrientationDelegateTest : BaseSessionTest() {
             }
         })
         promise.value
+    }
+
+    @WithDisplay(width = 200, height = 300)
+    @Test
+    fun orientationNatural() {
+        goFullscreen()
+
+        
+        var promise = mainSession.evaluatePromiseJS(
+            """
+            new Promise(resolve => {
+                if (screen.orientation.type == "landscape-primary") {
+                    resolve();
+                }
+                screen.orientation.addEventListener("change", e => {
+                    if (screen.orientation.type == "landscape-primary") {
+                        resolve();
+                    }
+                }, { once: true });
+            })
+            """.trimIndent()
+        )
+
+        activityRule.scenario.onActivity { activity ->
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+        
+        promise.value
+
+        sessionRule.delegateDuringNextWait(object : OrientationController.OrientationDelegate {
+            @AssertCalled(count = 1)
+            override fun onOrientationLock(aOrientation: Int): GeckoResult<AllowOrDeny> {
+                assertThat(
+                    "The orientation should be portrait",
+                    aOrientation,
+                    equalTo(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+                )
+                activityRule.scenario.onActivity { activity ->
+                    activity.requestedOrientation = aOrientation
+                }
+                return GeckoResult.allow()
+            }
+        })
+        promise = mainSession.evaluatePromiseJS("screen.orientation.lock('natural')")
+        promise.value
+        
+        mainSession.waitForRoundTrip()
     }
 }
