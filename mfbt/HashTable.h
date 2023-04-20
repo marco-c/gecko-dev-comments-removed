@@ -905,8 +905,10 @@ struct FallibleHashMethods {
 
   
   
+  
   template <typename Lookup>
-  static bool ensureHash(Lookup&& aLookup) {
+  static bool ensureHash(Lookup&& aLookup, HashNumber* aHashOut) {
+    *aHashOut = HashPolicy::hash(aLookup);
     return true;
   }
 };
@@ -918,9 +920,9 @@ static bool MaybeGetHash(Lookup&& aLookup, HashNumber* aHashOut) {
 }
 
 template <typename HashPolicy, typename Lookup>
-static bool EnsureHash(Lookup&& aLookup) {
+static bool EnsureHash(Lookup&& aLookup, HashNumber* aHashOut) {
   return FallibleHashMethods<typename HashPolicy::Base>::ensureHash(
-      std::forward<Lookup>(aLookup));
+      std::forward<Lookup>(aLookup), aHashOut);
 }
 
 
@@ -1982,22 +1984,18 @@ class HashTable : private AllocPolicy {
 
   
   
-  
-  
-  
   template <typename... Args>
-  void putNewInfallibleInternal(const Lookup& aLookup, Args&&... aArgs) {
+  void putNewInfallibleInternal(HashNumber aKeyHash, Args&&... aArgs) {
     MOZ_ASSERT(mTable);
 
-    HashNumber keyHash = prepareHash(HashPolicy::hash(aLookup));
-    Slot slot = findNonLiveSlot(keyHash);
+    Slot slot = findNonLiveSlot(aKeyHash);
 
     if (slot.isRemoved()) {
       mRemovedCount--;
-      keyHash |= sCollisionBit;
+      aKeyHash |= sCollisionBit;
     }
 
-    slot.setLive(keyHash, std::forward<Args>(aArgs)...);
+    slot.setLive(aKeyHash, std::forward<Args>(aArgs)...);
     mEntryCount++;
 #ifdef DEBUG
     mMutationCount++;
@@ -2105,11 +2103,13 @@ class HashTable : private AllocPolicy {
 
   MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup) {
     ReentrancyGuard g(*this);
-    if (!EnsureHash<HashPolicy>(aLookup)) {
+
+    HashNumber inputHash;
+    if (!EnsureHash<HashPolicy>(aLookup, &inputHash)) {
       return AddPtr();
     }
 
-    HashNumber keyHash = prepareHash(HashPolicy::hash(aLookup));
+    HashNumber keyHash = prepareHash(inputHash);
 
     if (!mTable) {
       return AddPtr(*this, keyHash);
@@ -2188,23 +2188,28 @@ class HashTable : private AllocPolicy {
   void putNewInfallible(const Lookup& aLookup, Args&&... aArgs) {
     MOZ_ASSERT(!lookup(aLookup).found());
     ReentrancyGuard g(*this);
-    putNewInfallibleInternal(aLookup, std::forward<Args>(aArgs)...);
+    HashNumber keyHash = prepareHash(HashPolicy::hash(aLookup));
+    putNewInfallibleInternal(keyHash, std::forward<Args>(aArgs)...);
   }
 
   
   
   template <typename... Args>
   [[nodiscard]] bool putNew(const Lookup& aLookup, Args&&... aArgs) {
+    MOZ_ASSERT(!lookup(aLookup).found());
+    ReentrancyGuard g(*this);
     if (!this->checkSimulatedOOM()) {
       return false;
     }
-    if (!EnsureHash<HashPolicy>(aLookup)) {
+    HashNumber inputHash;
+    if (!EnsureHash<HashPolicy>(aLookup, &inputHash)) {
       return false;
     }
+    HashNumber keyHash = prepareHash(inputHash);
     if (rehashIfOverloaded() == RehashFailed) {
       return false;
     }
-    putNewInfallible(aLookup, std::forward<Args>(aArgs)...);
+    putNewInfallibleInternal(keyHash, std::forward<Args>(aArgs)...);
     return true;
   }
 
@@ -2254,7 +2259,8 @@ class HashTable : private AllocPolicy {
     typename HashTableEntry<T>::NonConstT t(std::move(*aPtr));
     HashPolicy::setKey(t, const_cast<Key&>(aKey));
     remove(aPtr.mSlot);
-    putNewInfallibleInternal(aLookup, std::move(t));
+    HashNumber keyHash = prepareHash(HashPolicy::hash(aLookup));
+    putNewInfallibleInternal(keyHash, std::move(t));
   }
 
   void rekeyAndMaybeRehash(Ptr aPtr, const Lookup& aLookup, const Key& aKey) {
