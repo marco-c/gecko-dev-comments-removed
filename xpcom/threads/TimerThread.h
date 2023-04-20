@@ -47,6 +47,10 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
       MOZ_REQUIRES(aTimer->mMutex);
   nsresult RemoveTimer(nsTimerImpl* aTimer, const MutexAutoLock& aProofOfLock)
       MOZ_REQUIRES(aTimer->mMutex);
+  
+  
+  
+  
   TimeStamp FindNextFireTimeForCurrentThread(TimeStamp aDefault,
                                              uint32_t aSearchBound);
 
