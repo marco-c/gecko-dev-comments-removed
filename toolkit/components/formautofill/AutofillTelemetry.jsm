@@ -101,11 +101,13 @@ class AutofillTelemetryBase {
       
       
       
-      for (let fieldName of Object.keys(record.record)) {
+      for (const [fieldName, value] of Object.entries(record.record)) {
         if (record.untouchedFields?.includes(fieldName)) {
           this.#setFormEventExtra(extra, fieldName, "autofilled");
-        } else {
+        } else if (value) {
           this.#setFormEventExtra(extra, fieldName, "user_filled");
+        } else {
+          this.#setFormEventExtra(extra, fieldName, "not_filled");
         }
       }
     } else {
