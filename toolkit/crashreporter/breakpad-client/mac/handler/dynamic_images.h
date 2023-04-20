@@ -77,9 +77,14 @@ typedef struct dyld_all_image_infos32 {
   uint32_t                      infoArray;  
   uint32_t                      notification;
   bool                          processDetachedFromSharedRegion;
-  uint32_t                      padding[15];
+  
+  const struct mach_header*     dyldImageLoadAddress;
+  uint32_t                      padding[14];
   
   uint32_t                      sharedCacheSlide;
+  uint32_t                      padding1[6];
+  
+  const char*                   dyldPath;
 } dyld_all_image_infos32;
 
 typedef struct dyld_all_image_infos64 {
@@ -88,9 +93,14 @@ typedef struct dyld_all_image_infos64 {
   uint64_t                      infoArray;  
   uint64_t                      notification;
   bool                          processDetachedFromSharedRegion;
-  uint64_t                      padding[15];
+  
+  const struct mach_header_64*  dyldImageLoadAddress;
+  uint64_t                      padding[14];
   
   uint64_t                      sharedCacheSlide;
+  uint64_t                      padding1[4];
+  
+  const char*                   dyldPath;
 } dyld_all_image_infos64;
 
 
@@ -129,7 +139,8 @@ class DynamicImage {
                mach_port_t task,
                cpu_type_t cpu_type,
                cpu_subtype_t cpu_subtype,
-               ptrdiff_t shared_cache_slide)
+               ptrdiff_t shared_cache_slide,
+               bool is_dyld)
     : header_(header, header + header_size),
       header_size_(header_size),
       load_address_(load_address),
@@ -140,6 +151,7 @@ class DynamicImage {
       version_(0),
       file_path_(file_path),
       file_mod_date_(image_mod_date),
+      is_dyld_(is_dyld),
       task_(task),
       cpu_type_(cpu_type),
       cpu_subtype_(cpu_subtype),
@@ -163,6 +175,8 @@ class DynamicImage {
 
   bool GetInDyldSharedCache()
     {return (shared_cache_slide_ && (slide_ == shared_cache_slide_));}
+
+  bool GetIsDyld() {return is_dyld_;}
 
   
   ptrdiff_t GetVMAddrSlide() const {return slide_;}
@@ -231,6 +245,7 @@ class DynamicImage {
   uint32_t                version_;        
   string                  file_path_;     
   uintptr_t               file_mod_date_;  
+  bool                    is_dyld_;        
 
   mach_port_t             task_;
   cpu_type_t              cpu_type_;        
@@ -270,6 +285,10 @@ class DynamicImageRef {
 
 
 class DynamicImages;
+template<typename MachBits>
+void ReadOneImageInfo(DynamicImages& images, uint64_t image_address,
+                      uint64_t file_path_address, uint64_t file_mod_date,
+                      uint64_t shared_cache_slide, bool is_dyld);
 template<typename MachBits>
 void ReadImageInfo(DynamicImages& images, uint64_t image_list_address);
 
@@ -334,6 +353,10 @@ class DynamicImages {
   }
 
  private:
+  template<typename MachBits>
+  friend void ReadOneImageInfo(DynamicImages& images, uint64_t image_address,
+                               uint64_t file_path_address, uint64_t file_mod_date,
+                               uint64_t shared_cache_slide, bool is_dyld);
   template<typename MachBits>
   friend void ReadImageInfo(DynamicImages& images, uint64_t image_list_address);
 

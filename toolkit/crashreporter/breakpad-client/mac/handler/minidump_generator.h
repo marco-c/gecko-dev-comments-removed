@@ -89,6 +89,14 @@ using std::string;
 
 
 
+#ifdef __LP64__
+typedef dyld_all_image_infos64 dyld_all_image_infos_self;
+#else
+typedef dyld_all_image_infos32 dyld_all_image_infos_self;
+#endif
+
+
+
 
 
 
@@ -128,6 +136,15 @@ class MinidumpGenerator {
   
   static void GatherSystemInformation();
 
+  
+  static uint64_t GetCurrentProcessModuleSlide(breakpad_mach_header* mh,
+                                               uint64_t shared_cache_slide);
+
+  
+  
+  
+  void GatherCurrentProcessDyldInformation();
+
  protected:
   
   virtual bool WriteExceptionStream(MDRawDirectory *exception_stream);
@@ -160,14 +177,14 @@ class MinidumpGenerator {
                     MDLocationDescriptor *register_location);
   bool WriteCVRecord(MDRawModule *module, int cpu_type, int cpu_subtype,
                      const char *module_path, bool in_memory,
-                     bool out_of_process, bool in_dyld_shared_cache);
+                     bool out_of_process, bool dyld_or_in_dyld_shared_cache);
   bool WriteModuleStream(unsigned int index, MDRawModule *module);
   bool WriteCrashInfoRecord(MDLocationDescriptor *location,
                             const char *module_path,
                             const char *crash_info,
                             unsigned long crash_info_size,
                             bool out_of_process,
-                            bool in_dyld_shared_cache);
+                            bool dyld_or_in_dyld_shared_cache);
   bool WriteThreadName(mach_port_t thread_id,
                        MDRawThreadName *thread_name);
   size_t CalculateStackSize(mach_vm_address_t start_addr);
@@ -241,6 +258,14 @@ class MinidumpGenerator {
   static int os_major_version_;
   static int os_minor_version_;
   static int os_build_number_;
+
+  
+  
+  
+  
+  breakpad_mach_header* dyldImageLoadAddress_;
+  ptrdiff_t dyldSlide_;
+  string dyldPath_;
 
   
   breakpad_ucontext_t *task_context_;
