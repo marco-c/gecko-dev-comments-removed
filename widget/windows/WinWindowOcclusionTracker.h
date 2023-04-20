@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "nsIWeakReferenceUtils.h"
-#include "mozilla/Monitor.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/widget/WindowOcclusionState.h"
 #include "mozilla/widget/WinEventObserver.h"
@@ -28,6 +27,10 @@ class Thread;
 }  
 
 namespace mozilla {
+
+namespace layers {
+class SynchronousTask;
+}
 
 namespace widget {
 
@@ -86,7 +89,7 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
   friend class ::WinWindowOcclusionTrackerTest;
   friend class ::WinWindowOcclusionTrackerInteractiveTest;
 
-  explicit WinWindowOcclusionTracker(UniquePtr<base::Thread> aThread);
+  explicit WinWindowOcclusionTracker(base::Thread* aThread);
   virtual ~WinWindowOcclusionTracker();
 
   
@@ -105,7 +108,7 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
     static WindowOcclusionCalculator* GetInstance() { return sCalculator; }
 
     void Initialize();
-    void Shutdown();
+    void Shutdown(layers::SynchronousTask* aTask);
 
     void EnableOcclusionTrackingForWindow(HWND hwnd);
     void DisableOcclusionTrackingForWindow(HWND hwnd);
@@ -249,10 +252,6 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
     
     RefPtr<SerializedTaskDispatcher> mSerializedTaskDispatcher;
 
-    
-    
-    Monitor& mMonitor;
-
     friend class OcclusionUpdateRunnable;
   };
 
@@ -291,8 +290,7 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
   static StaticRefPtr<WinWindowOcclusionTracker> sTracker;
 
   
-  UniquePtr<base::Thread> mThread;
-  Monitor mMonitor;
+  base::Thread* const mThread;
 
   
   
