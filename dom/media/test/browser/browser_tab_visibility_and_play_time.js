@@ -13,9 +13,7 @@ const PAGE_URL =
 
 
 
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+
 const reportsColorDepthFromVideoData = AppConstants.platform == "macosx";
 
 add_task(async function testChangingTabVisibilityAffectsInvisiblePlayTime() {

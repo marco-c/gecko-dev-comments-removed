@@ -1,10 +1,6 @@
 
 
 
-var { Downloads } = ChromeUtils.importESModule(
-  "resource://gre/modules/Downloads.sys.mjs"
-);
-
 var gTestRoot = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content/",
   "http://mochi.test:8888/"

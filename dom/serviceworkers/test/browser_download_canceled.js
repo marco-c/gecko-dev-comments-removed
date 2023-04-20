@@ -19,10 +19,6 @@
 
 
 
-const { Downloads } = ChromeUtils.importESModule(
-  "resource://gre/modules/Downloads.sys.mjs"
-);
-
 
 
 
