@@ -164,8 +164,7 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
 
   
   virtual void SetDecoderMap(std::map<int, SdpAudioFormat> decoder_map) = 0;
-  virtual void SetUseTransportCcAndNackHistory(bool use_transport_cc,
-                                               int history_ms) = 0;
+  virtual void SetNackHistory(int history_ms) = 0;
   virtual void SetNonSenderRttMeasurement(bool enabled) = 0;
 
   

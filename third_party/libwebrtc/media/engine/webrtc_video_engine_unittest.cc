@@ -3140,12 +3140,12 @@ TEST_F(WebRtcVideoChannelTest, RtcpIsCompoundByDefault) {
 
 TEST_F(WebRtcVideoChannelTest, TransportCcIsEnabledByDefault) {
   FakeVideoReceiveStream* stream = AddRecvStream();
-  EXPECT_TRUE(stream->GetConfig().rtp.transport_cc);
+  EXPECT_TRUE(stream->transport_cc());
 }
 
 TEST_F(WebRtcVideoChannelTest, TransportCcCanBeEnabledAndDisabled) {
   FakeVideoReceiveStream* stream = AddRecvStream();
-  EXPECT_TRUE(stream->GetConfig().rtp.transport_cc);
+  EXPECT_TRUE(stream->transport_cc());
 
   
   
@@ -3154,14 +3154,14 @@ TEST_F(WebRtcVideoChannelTest, TransportCcCanBeEnabledAndDisabled) {
   EXPECT_TRUE(parameters.codecs[0].feedback_params.params().empty());
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   stream = fake_call_->GetVideoReceiveStreams()[0];
-  EXPECT_FALSE(stream->GetConfig().rtp.transport_cc);
+  EXPECT_FALSE(stream->transport_cc());
 
   
   
   parameters.codecs = engine_.send_codecs();
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   stream = fake_call_->GetVideoReceiveStreams()[0];
-  EXPECT_TRUE(stream->GetConfig().rtp.transport_cc);
+  EXPECT_TRUE(stream->transport_cc());
 }
 
 TEST_F(WebRtcVideoChannelTest, LossNotificationIsDisabledByDefault) {
