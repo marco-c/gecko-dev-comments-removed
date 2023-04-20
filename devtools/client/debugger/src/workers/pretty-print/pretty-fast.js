@@ -7,7 +7,6 @@
 
 
 
-
 var acorn = require("acorn");
 var sourceMap = require("source-map");
 var SourceNode = sourceMap.SourceNode;
@@ -20,7 +19,7 @@ var SourceNode = sourceMap.SourceNode;
 
 
 
-var PRE_ARRAY_LITERAL_TOKENS = {
+const PRE_ARRAY_LITERAL_TOKENS = {
   typeof: true,
   void: true,
   delete: true,
@@ -92,7 +91,7 @@ function isArrayLiteral(token, lastToken) {
 
 
 
-var PREVENT_ASI_AFTER_TOKENS = {
+const PREVENT_ASI_AFTER_TOKENS = {
   
   "*": true,
   "/": true,
@@ -144,7 +143,7 @@ var PREVENT_ASI_AFTER_TOKENS = {
 
 
 
-var PREVENT_ASI_BEFORE_TOKENS = {
+const PREVENT_ASI_BEFORE_TOKENS = {
   
   "*": true,
   "/": true,
@@ -197,7 +196,7 @@ var PREVENT_ASI_BEFORE_TOKENS = {
 
 
 function isIdentifierLike(token) {
-  var ttl = token.type.label;
+  const ttl = token.type.label;
   return (
     ttl == "name" || ttl == "num" || ttl == "privateId" || !!token.type.keyword
   );
@@ -255,8 +254,8 @@ function isLineDelimiter(token, stack) {
   if (token.isArrayLiteral) {
     return true;
   }
-  var ttl = token.type.label;
-  var top = stack[stack.length - 1];
+  const ttl = token.type.label;
+  const top = stack[stack.length - 1];
   return (
     (ttl == ";" && top != "(") ||
     ttl == "{" ||
@@ -309,7 +308,7 @@ function needsSpaceAfter(token, lastToken) {
       return true;
     }
 
-    var ltt = lastToken.type.label;
+    const ltt = lastToken.type.label;
     if (ltt == "?") {
       return true;
     }
@@ -329,8 +328,8 @@ function needsSpaceAfter(token, lastToken) {
       return true;
     }
 
-    var ltk = lastToken.type.keyword;
-    var ttl = token.type.label;
+    const ltk = lastToken.type.keyword;
+    const ttl = token.type.label;
     if (ltk != null && ttl != ".") {
       if (ltk == "break" || ltk == "continue" || ltk == "return") {
         return token.type.label != ";";
@@ -415,11 +414,11 @@ function prependWhiteSpace(
   indentLevel,
   stack
 ) {
-  var ttk = token.type.keyword;
-  var ttl = token.type.label;
-  var newlineAdded = addedNewline;
-  var spaceAdded = addedSpace;
-  var ltt = lastToken ? lastToken.type.label : null;
+  const ttk = token.type.keyword;
+  const ttl = token.type.label;
+  let newlineAdded = addedNewline;
+  let spaceAdded = addedSpace;
+  const ltt = lastToken ? lastToken.type.label : null;
 
   
   
@@ -506,7 +505,7 @@ function prependWhiteSpace(
 
 
 function repeat(str, n) {
-  var result = "";
+  let result = "";
   while (n > 0) {
     if (n & 1) {
       result += str;
@@ -521,8 +520,8 @@ function repeat(str, n) {
 
 
 
-var sanitize = (function() {
-  var escapeCharacters = {
+const sanitize = (function() {
+  const escapeCharacters = {
     
     "\\": "\\\\",
     
@@ -545,7 +544,7 @@ var sanitize = (function() {
     "'": "\\'",
   };
 
-  var regExpString =
+  const regExpString =
     "(" +
     Object.keys(escapeCharacters)
       .map(function(c) {
@@ -553,7 +552,7 @@ var sanitize = (function() {
       })
       .join("|") +
     ")";
-  var escapeCharactersRegExp = new RegExp(regExpString, "g");
+  const escapeCharactersRegExp = new RegExp(regExpString, "g");
 
   return function(str) {
     return str.replace(escapeCharactersRegExp, function(_, c) {
@@ -600,8 +599,8 @@ function addToken(token, write) {
 
 
 function belongsOnStack(token) {
-  var ttl = token.type.label;
-  var ttk = token.type.keyword;
+  const ttl = token.type.label;
+  const ttk = token.type.keyword;
   return (
     ttl == "{" ||
     ttl == "(" ||
@@ -619,9 +618,9 @@ function belongsOnStack(token) {
 
 
 function shouldStackPop(token, stack) {
-  var ttl = token.type.label;
-  var ttk = token.type.keyword;
-  var top = stack[stack.length - 1];
+  const ttl = token.type.label;
+  const ttk = token.type.keyword;
+  const top = stack[stack.length - 1];
   return (
     ttl == "]" ||
     ttl == ")" ||
@@ -687,8 +686,8 @@ function addComment(
   column,
   nextToken
 ) {
-  var indentString = repeat(options.indent, indentLevel);
-  var needNewline = true;
+  const indentString = repeat(options.indent, indentLevel);
+  let needNewline = true;
 
   write(indentString, line, column);
   if (block) {
@@ -734,10 +733,10 @@ function addComment(
 
 export function prettyFast(input, options) {
   
-  var indentLevel = 0;
+  let indentLevel = 0;
 
   
-  var result = new SourceNode();
+  const result = new SourceNode();
 
   
 
@@ -758,10 +757,10 @@ export function prettyFast(input, options) {
 
 
 
-  var write = (function() {
-    var buffer = [];
-    var bufferLine = -1;
-    var bufferColumn = -1;
+  const write = (function() {
+    const buffer = [];
+    let bufferLine = -1;
+    let bufferColumn = -1;
     return function write(str, line, column, ignoreNewline) {
       if (line != null && bufferLine === -1) {
         bufferLine = line;
@@ -772,8 +771,8 @@ export function prettyFast(input, options) {
       buffer.push(str);
 
       if (str == "\n" && !ignoreNewline) {
-        var lineStr = "";
-        for (var i = 0, len = buffer.length; i < len; i++) {
+        let lineStr = "";
+        for (let i = 0, len = buffer.length; i < len; i++) {
           lineStr += buffer[i];
         }
         result.add(
@@ -787,47 +786,24 @@ export function prettyFast(input, options) {
   })();
 
   
-  var addedNewline = false;
+  let addedNewline = false;
 
   
-  var addedSpace = false;
+  let addedSpace = false;
 
   
-  var token;
-
-  
-  
-  var ttl;
+  let token;
 
   
   
-  var ttk;
-
-  
-  var lastToken;
+  let ttl;
 
   
   
+  let ttk;
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  var stack = [];
+  let lastToken;
 
   
   
@@ -840,9 +816,32 @@ export function prettyFast(input, options) {
   
   
   
-  var tokenQueue = [];
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const stack = [];
 
-  var tokens = acorn.tokenizer(input, {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const tokenQueue = [];
+
+  const tokens = acorn.tokenizer(input, {
     locations: true,
     sourceFile: options.url,
     ecmaVersion: options.ecmaVersion || "latest",
@@ -865,12 +864,12 @@ export function prettyFast(input, options) {
     }
   }
 
-  for (var i = 0; i < tokenQueue.length; i++) {
+  for (let i = 0; i < tokenQueue.length; i++) {
     token = tokenQueue[i];
-    var nextToken = tokenQueue[i + 1];
+    const nextToken = tokenQueue[i + 1];
 
     if (token.comment) {
-      var commentIndentLevel = indentLevel;
+      let commentIndentLevel = indentLevel;
       if (lastToken && lastToken.loc.end.line == token.loc.start.line) {
         commentIndentLevel = 0;
         write(" ");
