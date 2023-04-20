@@ -457,7 +457,6 @@ JSString* js::TupleToSource(JSContext* cx, Handle<TupleType*> tup) {
   JSStringBuilder sb(cx);
 
   if (!sb.append("#[")) {
-    sb.failure();
     return nullptr;
   }
 
@@ -470,18 +469,15 @@ JSString* js::TupleToSource(JSContext* cx, Handle<TupleType*> tup) {
     
     JSString* str = ValueToSource(cx, elt);
     if (!str) {
-      sb.failure();
       return nullptr;
     }
 
     
     if (!sb.append(str)) {
-      sb.failure();
       return nullptr;
     }
     if (index + 1 != length) {
       if (!sb.append(", ")) {
-        sb.failure();
         return nullptr;
       }
     }
@@ -489,17 +485,10 @@ JSString* js::TupleToSource(JSContext* cx, Handle<TupleType*> tup) {
 
   
   if (!sb.append(']')) {
-    sb.failure();
     return nullptr;
   }
 
-  auto* result = sb.finishString();
-  if (!result) {
-    sb.failure();
-    return nullptr;
-  }
-  sb.ok();
-  return result;
+  return sb.finishString();
 }
 
 

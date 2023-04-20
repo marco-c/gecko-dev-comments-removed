@@ -379,41 +379,10 @@ class StringBuffer {
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class JSStringBuilder : public StringBuffer {
-#ifdef DEBUG
-  bool handled_ = false;
-#endif
-
  public:
   explicit JSStringBuilder(JSContext* cx)
       : StringBuffer(cx, js::StringBufferArena) {}
-
-  ~JSStringBuilder() { MOZ_ASSERT(handled_); }
-
-  void failure() {
-#ifdef DEBUG
-    handled_ = true;
-#endif 
-  }
-
-  void ok() {
-#ifdef DEBUG
-    handled_ = true;
-#endif 
-  }
 
   
 
