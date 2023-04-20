@@ -209,7 +209,7 @@ NetMonitorAPI.prototype = {
     this.store.dispatch(Actions.batchFlush());
     
     
-    this.store.dispatch(Actions.sendCustomRequest(this.connector, requestId));
+    this.store.dispatch(Actions.sendCustomRequest(requestId));
   },
 };
 
