@@ -9,8 +9,8 @@
 
 
 
-
 "use strict";
+
 
 var HeuristicsRegExp = {
   RULES: {
