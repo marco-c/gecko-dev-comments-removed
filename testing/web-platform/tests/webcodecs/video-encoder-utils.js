@@ -6,12 +6,6 @@ async function checkEncoderSupport(test, config) {
     supported = support.supported;
   } catch (e) {}
 
-  if (!supported) {
-    
-    
-    test.done();
-  }
-
   assert_implements_optional(supported, 'Unsupported config: ' +
                              JSON.stringify(config));
 }
