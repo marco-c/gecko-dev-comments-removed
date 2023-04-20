@@ -146,6 +146,11 @@ struct ModuleLoadInfo final {
   }
 
   
+
+
+  bool WasBlocked() const { return mStatus == ModuleLoadInfo::Status::Blocked; }
+
+  
   LARGE_INTEGER mBeginTimestamp;
   
   LARGE_INTEGER mLoadTimeInfo;

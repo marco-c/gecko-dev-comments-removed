@@ -149,6 +149,23 @@ struct EnhancedModuleLoadInfo final {
 class DllServices : public detail::DllServicesBase {
  public:
   void DispatchDllLoadNotification(ModuleLoadInfo&& aModLoadInfo) final {
+    
+    
+    
+    
+    
+    if (aModLoadInfo.WasBlocked() && NS_IsMainThread()) {
+      nsDependentString sectionName(aModLoadInfo.mSectionName.AsString());
+
+      for (const auto& blockedModule : mMainThreadBlockedModules) {
+        if (sectionName == blockedModule) {
+          return;
+        }
+      }
+
+      MOZ_ALWAYS_TRUE(mMainThreadBlockedModules.append(sectionName));
+    }
+
     nsCOMPtr<nsIRunnable> runnable(
         NewRunnableMethod<StoreCopyPassByRRef<EnhancedModuleLoadInfo>>(
             "DllServices::NotifyDllLoad", this, &DllServices::NotifyDllLoad,
@@ -186,6 +203,11 @@ class DllServices : public detail::DllServicesBase {
 
   virtual void NotifyDllLoad(EnhancedModuleLoadInfo&& aModLoadInfo) = 0;
   virtual void NotifyModuleLoadBacklog(ModuleLoadInfoVec&& aEvents) = 0;
+
+ private:
+  
+  
+  Vector<nsString> mMainThreadBlockedModules;
 };
 
 #else
