@@ -3,10 +3,6 @@
 
 
 
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-
 
 var testGenerator = testSteps();
 
@@ -296,17 +292,12 @@ function* testSteps() {
     "[1, [null]]",
     "[1, [/x/]]",
     "[1, [{}]]",
+    "new Uint8Array(2147483647)",
   ];
-
-  
-  
-  if (!(AppConstants.TSAN || AppConstants.ASAN)) {
-    invalidKeys.push("new Uint8Array(2147483647)");
-  }
 
   function checkInvalidKeyException(ex, i, callText) {
     let suffix = ` during ${callText} with invalid key ${i}: ${invalidKeys[i]}`;
-    ok(DOMException.isInstance(ex), "Threw DOMException" + suffix);
+    ok(ex instanceof DOMException, "Threw DOMException" + suffix);
     is(ex.name, "DataError", "Threw right DOMException" + suffix);
     is(ex.code, 0, "Threw with right code" + suffix);
   }
