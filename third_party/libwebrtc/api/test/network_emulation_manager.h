@@ -151,6 +151,16 @@ enum class TimeMode { kRealTime, kSimulated };
 
 
 
+
+bool AbslParseFlag(absl::string_view text, TimeMode* mode, std::string* error);
+
+
+
+std::string AbslUnparseFlag(TimeMode mode);
+
+
+
+
 class NetworkEmulationManager {
  public:
   
