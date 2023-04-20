@@ -2075,25 +2075,7 @@ char16_t nsLookAndFeel::GetPasswordCharacterImpl() {
 
 bool nsLookAndFeel::GetEchoPasswordImpl() { return false; }
 
-bool nsLookAndFeel::GetDefaultDrawInTitlebar() {
-  static bool drawInTitlebar = []() {
-    
-    
-    if (Preferences::HasUserValue("widget.default-hidden-titlebar")) {
-      return Preferences::GetBool("widget.default-hidden-titlebar", false);
-    }
-
-    
-    if (!sCSDAvailable) {
-      return false;
-    }
-
-    
-    return IsGnomeDesktopEnvironment() ||
-           FindInReadable("pantheon"_ns, GetDesktopEnvironmentIdentifier());
-  }();
-  return drawInTitlebar;
-}
+bool nsLookAndFeel::GetDefaultDrawInTitlebar() { return sCSDAvailable; }
 
 void nsLookAndFeel::GetThemeInfo(nsACString& aInfo) {
   aInfo.Append(mSystemTheme.mName);
