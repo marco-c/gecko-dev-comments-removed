@@ -72,6 +72,8 @@ class ScopedAutoReleasePool {
 namespace rtc {
 namespace {
 
+using ::webrtc::TimeDelta;
+
 struct AnyInvocableMessage final : public MessageData {
   explicit AnyInvocableMessage(absl::AnyInvocable<void() &&> task)
       : task(std::move(task)) {}
@@ -216,19 +218,6 @@ void ThreadManager::ProcessAllMessageQueuesInternal() {
   
   std::atomic<int> queues_not_done(0);
 
-  
-  
-  class ScopedIncrement : public MessageData {
-   public:
-    ScopedIncrement(std::atomic<int>* value) : value_(value) {
-      value_->fetch_add(1);
-    }
-    ~ScopedIncrement() override { value_->fetch_sub(1); }
-
-   private:
-    std::atomic<int>* value_;
-  };
-
   {
     MarkProcessingCritScope cs(&crit_, &processing_);
     for (Thread* queue : message_queues_) {
@@ -238,8 +227,13 @@ void ThreadManager::ProcessAllMessageQueuesInternal() {
         
         continue;
       }
-      queue->PostDelayed(RTC_FROM_HERE, 0, nullptr, MQID_DISPOSE,
-                         new ScopedIncrement(&queues_not_done));
+      queues_not_done.fetch_add(1);
+      
+      
+      absl::Cleanup sub = [&queues_not_done] { queues_not_done.fetch_sub(1); };
+      
+      
+      queue->PostDelayedTask([sub = std::move(sub)] {}, TimeDelta::Zero());
     }
   }
 
@@ -459,44 +453,27 @@ bool Thread::Get(Message* pmsg, int cmsWait, bool process_io) {
   while (true) {
     
     int64_t cmsDelayNext = kForever;
-    bool first_pass = true;
-    while (true) {
+    {
       
       
+      CritScope cs(&crit_);
       
-      {
-        CritScope cs(&crit_);
-        
-        
-        if (first_pass) {
-          first_pass = false;
-          while (!delayed_messages_.empty()) {
-            if (msCurrent < delayed_messages_.top().run_time_ms_) {
-              cmsDelayNext =
-                  TimeDiff(delayed_messages_.top().run_time_ms_, msCurrent);
-              break;
-            }
-            messages_.push_back(delayed_messages_.top().msg_);
-            delayed_messages_.pop();
-          }
-        }
-        
-        if (messages_.empty()) {
+      
+      while (!delayed_messages_.empty()) {
+        if (msCurrent < delayed_messages_.top().run_time_ms_) {
+          cmsDelayNext =
+              TimeDiff(delayed_messages_.top().run_time_ms_, msCurrent);
           break;
-        } else {
-          *pmsg = messages_.front();
-          messages_.pop_front();
         }
-      }  
-
-      
-      if (MQID_DISPOSE == pmsg->message_id) {
-        RTC_DCHECK(nullptr == pmsg->phandler);
-        delete pmsg->pdata;
-        *pmsg = Message();
-        continue;
+        messages_.push_back(delayed_messages_.top().msg_);
+        delayed_messages_.pop();
       }
-      return true;
+      
+      if (!messages_.empty()) {
+        *pmsg = messages_.front();
+        messages_.pop_front();
+        return true;
+      }
     }
 
     if (IsQuitting())
