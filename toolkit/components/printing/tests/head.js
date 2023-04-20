@@ -253,7 +253,7 @@ class PrintHelper {
 
     
     this.win.PrintEventHandler._showPrintDialog = (
-      dialogSvc,
+      window,
       haveSelection,
       settings
     ) => {
