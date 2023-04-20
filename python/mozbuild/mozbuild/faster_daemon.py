@@ -3,8 +3,8 @@
 
 
 """
-Use pywatchman to watch source directories and perform partial |mach
-build faster| builds.
+Use pywatchman to watch source directories and perform partial
+``mach build faster`` builds.
 """
 
 import datetime
