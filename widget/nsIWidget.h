@@ -1324,9 +1324,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual LayoutDeviceIntMargin ClientToWindowMargin() {
-    return {};
-  }
+  virtual LayoutDeviceIntMargin ClientToWindowMargin() { return {}; }
 
   LayoutDeviceIntSize ClientToWindowSizeDifference();
 
