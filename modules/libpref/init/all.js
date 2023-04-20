@@ -4158,9 +4158,6 @@ pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
 pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,GB,FR,DE");
 
 
-pref("extensions.formautofill.creditCards.hideui", false);
-
-
 
 
 
