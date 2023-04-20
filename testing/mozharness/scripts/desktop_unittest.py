@@ -923,6 +923,12 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
             )
 
     def _stage_xpcshell(self, suites):
+        if "WindowsApps" in self.binary_path:
+            self.log(
+                "Skipping stage xpcshell for MSIX tests because we cannot copy files into the installation directory."
+            )
+            return
+
         self._stage_files(self.config["xpcshell_name"])
         
         
@@ -1107,6 +1113,8 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     
                     
                     "abs_res_dir": abs_res_dir,
+                    "binary_path": self.binary_path,
+                    "install_dir": self.install_dir,
                 }
                 options_list = []
                 env = {"TEST_SUITE": suite}
