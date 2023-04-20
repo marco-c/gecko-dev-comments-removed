@@ -103,6 +103,8 @@ CopyPromiseResolver::OnStopRequest(nsIRequest* , nsresult aStatus) {
                   promise->MaybeResolve(0);  
                 } else if (IsFileNotFoundError(aStatus)) {
                   promise->MaybeRejectWithNotFoundError("File not found");
+                } else if (aStatus == NS_ERROR_FILE_NO_DEVICE_SPACE) {
+                  promise->MaybeRejectWithQuotaExceededError("Quota exceeded");
                 } else {
                   promise->MaybeReject(aStatus);
                 }

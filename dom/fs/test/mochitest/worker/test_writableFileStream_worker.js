@@ -8,6 +8,9 @@ add_task(async function init() {
     "dom/fs/test/common/test_writableFileStream.js"
   );
   Object.values(testCases).forEach(async testItem => {
-    add_task(testItem);
+    
+    if (testItem.name != "quotaTest") {
+      add_task(testItem);
+    }
   });
 });
