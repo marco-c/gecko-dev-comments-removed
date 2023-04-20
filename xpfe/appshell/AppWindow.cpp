@@ -2745,6 +2745,10 @@ NS_IMETHODIMP AppWindow::SetXULBrowserWindow(
   return NS_OK;
 }
 
+
+
+
+
 void AppWindow::SizeShellToWithLimit(int32_t aDesiredWidth,
                                      int32_t aDesiredHeight,
                                      int32_t shellItemWidth,

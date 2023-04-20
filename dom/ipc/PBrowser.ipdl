@@ -248,21 +248,6 @@ parent:
 
 
 
-
-
-
-
-
-
-    async SizeShellTo(uint32_t aFlag, int32_t aWidth, int32_t aHeight,
-                      int32_t aShellItemWidth, int32_t aShellItemHeight);
-
-    
-
-
-
-
-
     async DropLinks(nsString[] aLinks);
 
     sync SyncMessage(nsString aMessage, ClonedMessageData aData)
