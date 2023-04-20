@@ -41,8 +41,8 @@ class TransportFeedback : public Rtpfb {
     uint16_t sequence_number() const { return sequence_number_; }
     int16_t delta_ticks() const { return delta_ticks_; }
     
-    int32_t delta_us() const { return delta_ticks_ * kDeltaScaleFactor; }
-    TimeDelta delta() const { return TimeDelta::Micros(delta_us()); }
+    int32_t delta_us() const { return delta().us(); }
+    TimeDelta delta() const { return delta_ticks_ * kDeltaTick; }
     bool received() const { return received_; }
 
    private:
@@ -71,20 +71,20 @@ class TransportFeedback : public Rtpfb {
   ~TransportFeedback() override;
 
   
-  void SetBase(uint16_t base_sequence,     
-               int64_t ref_timestamp_us);  
-  void SetBase(uint16_t base_sequence,     
-               Timestamp ref_timestamp) {  
-    SetBase(base_sequence, ref_timestamp.us());
+  void SetBase(uint16_t base_sequence,      
+               int64_t ref_timestamp_us) {  
+    SetBase(base_sequence, Timestamp::Micros(ref_timestamp_us));
   }
+  void SetBase(uint16_t base_sequence,    
+               Timestamp ref_timestamp);  
 
   void SetFeedbackSequenceNumber(uint8_t feedback_sequence);
   
   
-  bool AddReceivedPacket(uint16_t sequence_number, int64_t timestamp_us);
-  bool AddReceivedPacket(uint16_t sequence_number, Timestamp timestamp) {
-    return AddReceivedPacket(sequence_number, timestamp.us());
+  bool AddReceivedPacket(uint16_t sequence_number, int64_t timestamp_us) {
+    return AddReceivedPacket(sequence_number, Timestamp::Micros(timestamp_us));
   }
+  bool AddReceivedPacket(uint16_t sequence_number, Timestamp timestamp);
   const std::vector<ReceivedPacket>& GetReceivedPackets() const;
   const std::vector<ReceivedPacket>& GetAllPackets() const;
 
@@ -189,7 +189,7 @@ class TransportFeedback : public Rtpfb {
   uint8_t feedback_seq_;
   bool include_timestamps_;
 
-  int64_t last_timestamp_us_;
+  Timestamp last_timestamp_;
   std::vector<ReceivedPacket> received_packets_;
   std::vector<ReceivedPacket> all_packets_;
   
