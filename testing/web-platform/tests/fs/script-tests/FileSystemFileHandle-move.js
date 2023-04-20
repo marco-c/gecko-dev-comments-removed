@@ -90,17 +90,23 @@ directory_test(async (t, root) => {
       await createFileWithContents(t, 'file-after', '123', root);
 
   
-  const stream = await cleanup_writable(t, await handle_dest.createWritable());
-  await promise_rejects_dom(
-      t, 'NoModificationAllowedError', handle.move('file-after'));
-
-  
-  await stream.close();
   await promise_rejects_dom(
       t, 'InvalidModificationError', handle.move('file-after'));
   assert_array_equals(
       await getSortedDirectoryEntries(root), ['file-after', 'file-before']);
-}, 'move(name) while the destination file has an open writable fails');
+}, 'move(name) when there is a file at the destination fails');
+
+
+directory_test(async (t, root) => {
+  const handle = await createFileWithContents(t, 'file-before', 'abc', root);
+  const dir_dest = await root.getDirectoryHandle('dir-dest', {create: true});
+
+  
+  await promise_rejects_dom(
+      t, 'InvalidModificationError', handle.move('dir-dest'));
+  assert_array_equals(
+      await getSortedDirectoryEntries(root), ['dir-dest/', 'file-before']);
+}, 'move(name) when there is a directory at the destination fails');
 
 
 directory_test(async (t, root) => {
@@ -282,44 +288,25 @@ directory_test(async (t, root) => {
   const file_dest = await createFileWithContents(t, 'file', '123', dir_dest);
 
   
-  const stream = await cleanup_writable(t, await file_dest.createWritable());
-  await promise_rejects_dom(t, 'NoModificationAllowedError', file.move(dir_dest));
-
-  assert_array_equals(
-      await getSortedDirectoryEntries(root), ['dir-dest/', 'dir-src/']);
-  
-  assert_array_equals(await getSortedDirectoryEntries(dir_src), ['file']);
-
-  
-  await stream.close();
   await promise_rejects_dom(
       t, 'InvalidModificationError', file.move(dir_dest));
+  
   assert_array_equals(await getSortedDirectoryEntries(dir_src), ['file']);
-}, 'move(dir) while the destination file has an open writable fails');
+  assert_equals(await getFileContents(file), 'abc');
+  assert_equals(await getFileSize(file), 3);
+}, 'move(dir) when there is a file at the destination fails');
 
 directory_test(async (t, root) => {
   const dir_src = await root.getDirectoryHandle('dir-src', {create: true});
   const dir_dest = await root.getDirectoryHandle('dir-dest', {create: true});
   const file = await createFileWithContents(t, 'file-src', 'abc', dir_src);
-  const file_dest =
-      await createFileWithContents(t, 'file-dest', '123', dir_dest);
+  const file_dest = await createFileWithContents(t, 'file-dest', '123', dir_dest);
 
   
-  const stream = await cleanup_writable(t, await file_dest.createWritable());
   await promise_rejects_dom(
-      t, 'NoModificationAllowedError', file.move(dir_dest, 'file-dest'));
-
-  assert_array_equals(
-      await getSortedDirectoryEntries(root), ['dir-dest/', 'dir-src/']);
-  
-  assert_array_equals(await getSortedDirectoryEntries(dir_src), ['file-src']);
-
-  
-  await stream.close();
-  await promise_rejects_dom(
-      t, 'InvalidModificationError', file.move(dir_dest, 'file-dest'));
+    t, 'InvalidModificationError', file.move(dir_dest, 'file-dest'));
   
   assert_array_equals(await getSortedDirectoryEntries(dir_src), ['file-src']);
   assert_equals(await getFileContents(file), 'abc');
   assert_equals(await getFileSize(file), 3);
-}, 'move(dir, name) while the destination file has an open writable fails');
+}, 'move(dir, name) when there is a file at the destination fails');
