@@ -36,6 +36,10 @@ class IdentityCredential final : public Credential {
   typedef MozPromise<bool, nsresult, true> ValidationPromise;
   typedef MozPromise<IdentityInternalManifest, nsresult, true>
       GetManifestPromise;
+  typedef Tuple<IdentityProvider, IdentityInternalManifest>
+      IdentityProviderWithManifest;
+  typedef MozPromise<IdentityProviderWithManifest, nsresult, true>
+      GetIdentityProviderWithManifestPromise;
   typedef MozPromise<Tuple<IdentityInternalManifest, IdentityAccountList>,
                      nsresult, true>
       GetAccountListPromise;
@@ -131,9 +135,11 @@ class IdentityCredential final : public Credential {
   
   
   
+  
   static RefPtr<GetIPCIdentityCredentialPromise> CreateCredential(
       nsIPrincipal* aPrincipal, BrowsingContext* aBrowsingContext,
-      const IdentityProvider& aProvider);
+      const IdentityProvider& aProvider,
+      const IdentityInternalManifest& aManifest);
 
   
   
@@ -240,10 +246,14 @@ class IdentityCredential final : public Credential {
   
   
   
-  static RefPtr<GetIdentityProviderPromise> PromptUserToSelectProvider(
+  
+  static RefPtr<GetIdentityProviderWithManifestPromise>
+  PromptUserToSelectProvider(
       BrowsingContext* aBrowsingContext,
-      const Sequence<IdentityProvider>& aProviders);
+      const Sequence<IdentityProvider>& aProviders,
+      const Sequence<GetManifestPromise::ResolveOrRejectValue>& aManifests);
 
+  
   
   
   
@@ -258,6 +268,7 @@ class IdentityCredential final : public Credential {
   
   static RefPtr<GetAccountPromise> PromptUserToSelectAccount(
       BrowsingContext* aBrowsingContext, const IdentityAccountList& aAccounts,
+      const IdentityProvider& aProvider,
       const IdentityInternalManifest& aManifest);
 
   
