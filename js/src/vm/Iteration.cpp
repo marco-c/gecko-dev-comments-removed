@@ -97,14 +97,48 @@ void NativeIterator::trace(JSTracer* trc) {
 
 using PropertyKeySet = GCHashSet<PropertyKey, DefaultHasher<PropertyKey>>;
 
+class PropertyEnumerator {
+  RootedObject obj_;
+  MutableHandleIdVector props_;
+
+  uint32_t flags_;
+  Rooted<PropertyKeySet> visited_;
+
+ public:
+  PropertyEnumerator(JSContext* cx, JSObject* obj, uint32_t flags,
+                     MutableHandleIdVector props)
+      : obj_(cx, obj),
+        props_(props),
+        flags_(flags),
+        visited_(cx, PropertyKeySet(cx)) {}
+
+  bool snapshot(JSContext* cx);
+
+ private:
+  template <bool CheckForDuplicates>
+  bool enumerate(JSContext* cx, jsid id, bool enumerable);
+
+  bool enumerateExtraProperties(JSContext* cx);
+
+  template <bool CheckForDuplicates>
+  bool enumerateNativeProperties(JSContext* cx);
+
+  bool enumerateNativeProperties(JSContext* cx, bool checkForDuplicates) {
+    if (checkForDuplicates) {
+      return enumerateNativeProperties<true>(cx);
+    }
+    return enumerateNativeProperties<false>(cx);
+  }
+
+  template <bool CheckForDuplicates>
+  bool enumerateProxyProperties(JSContext* cx);
+};
+
 template <bool CheckForDuplicates>
-static inline bool Enumerate(JSContext* cx, HandleObject pobj, jsid id,
-                             bool enumerable, unsigned flags,
-                             MutableHandle<PropertyKeySet> visited,
-                             MutableHandleIdVector props) {
+bool PropertyEnumerator::enumerate(JSContext* cx, jsid id, bool enumerable) {
   if (CheckForDuplicates) {
     
-    PropertyKeySet::AddPtr p = visited.lookupForAdd(id);
+    PropertyKeySet::AddPtr p = visited_.lookupForAdd(id);
     if (MOZ_UNLIKELY(!!p)) {
       return true;
     }
@@ -112,15 +146,15 @@ static inline bool Enumerate(JSContext* cx, HandleObject pobj, jsid id,
     
     
     
-    if (pobj->is<ProxyObject>() || pobj->staticPrototype() ||
-        pobj->getClass()->getNewEnumerate()) {
-      if (!visited.add(p, id)) {
+    if (obj_->is<ProxyObject>() || obj_->staticPrototype() ||
+        obj_->getClass()->getNewEnumerate()) {
+      if (!visited_.add(p, id)) {
         return false;
       }
     }
   }
 
-  if (!enumerable && !(flags & JSITER_HIDDEN)) {
+  if (!enumerable && !(flags_ & JSITER_HIDDEN)) {
     return true;
   }
 
@@ -129,31 +163,28 @@ static inline bool Enumerate(JSContext* cx, HandleObject pobj, jsid id,
   
   
   if (id.isSymbol()) {
-    if (!(flags & JSITER_SYMBOLS)) {
+    if (!(flags_ & JSITER_SYMBOLS)) {
       return true;
     }
-    if (!(flags & JSITER_PRIVATE) && id.isPrivateName()) {
+    if (!(flags_ & JSITER_PRIVATE) && id.isPrivateName()) {
       return true;
     }
   } else {
-    if ((flags & JSITER_SYMBOLSONLY)) {
+    if ((flags_ & JSITER_SYMBOLSONLY)) {
       return true;
     }
   }
 
-  return props.append(id);
+  return props_.append(id);
 }
 
-static bool EnumerateExtraProperties(JSContext* cx, HandleObject obj,
-                                     unsigned flags,
-                                     MutableHandle<PropertyKeySet> visited,
-                                     MutableHandleIdVector props) {
-  MOZ_ASSERT(obj->getClass()->getNewEnumerate());
+bool PropertyEnumerator::enumerateExtraProperties(JSContext* cx) {
+  MOZ_ASSERT(obj_->getClass()->getNewEnumerate());
 
   RootedIdVector properties(cx);
-  bool enumerableOnly = !(flags & JSITER_HIDDEN);
-  if (!obj->getClass()->getNewEnumerate()(cx, obj, &properties,
-                                          enumerableOnly)) {
+  bool enumerableOnly = !(flags_ & JSITER_HIDDEN);
+  if (!obj_->getClass()->getNewEnumerate()(cx, obj_, &properties,
+                                           enumerableOnly)) {
     return false;
   }
 
@@ -166,7 +197,7 @@ static bool EnumerateExtraProperties(JSContext* cx, HandleObject obj,
     
     
     bool enumerable = true;
-    if (!Enumerate<true>(cx, obj, id, enumerable, flags, visited, props)) {
+    if (!enumerate<true>(cx, id, enumerable)) {
       return false;
     }
   }
@@ -183,10 +214,9 @@ static bool SortComparatorIntegerIds(jsid a, jsid b, bool* lessOrEqualp) {
 }
 
 template <bool CheckForDuplicates>
-static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
-                                      unsigned flags,
-                                      MutableHandle<PropertyKeySet> visited,
-                                      MutableHandleIdVector props) {
+bool PropertyEnumerator::enumerateNativeProperties(JSContext* cx) {
+  Handle<NativeObject*> pobj = obj_.as<NativeObject>();
+
   
   
   
@@ -194,30 +224,29 @@ static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
   
   
   const bool iterShapeProperties = CheckForDuplicates ||
-                                   (flags & JSITER_HIDDEN) ||
+                                   (flags_ & JSITER_HIDDEN) ||
                                    pobj->hasEnumerableProperty();
 
   bool enumerateSymbols;
-  if (flags & JSITER_SYMBOLSONLY) {
+  if (flags_ & JSITER_SYMBOLSONLY) {
     if (!iterShapeProperties) {
       return true;
     }
     enumerateSymbols = true;
   } else {
     
-    size_t firstElemIndex = props.length();
+    size_t firstElemIndex = props_.length();
     size_t initlen = pobj->getDenseInitializedLength();
     const Value* vp = pobj->getDenseElements();
     bool hasHoles = false;
-    for (size_t i = 0; i < initlen; ++i, ++vp) {
+    for (uint32_t i = 0; i < initlen; ++i, ++vp) {
       if (vp->isMagic(JS_ELEMENTS_HOLE)) {
         hasHoles = true;
       } else {
         
         
-        if (!Enumerate<CheckForDuplicates>(cx, pobj, PropertyKey::Int(i),
-                                            true, flags,
-                                           visited, props)) {
+        if (!enumerate<CheckForDuplicates>(cx, PropertyKey::Int(i),
+                                            true)) {
           return false;
         }
       }
@@ -237,10 +266,9 @@ static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
         return false;
       }
 
-      for (size_t i = 0; i < len; i++) {
-        if (!Enumerate<CheckForDuplicates>(cx, pobj, PropertyKey::Int(i),
-                                            true, flags,
-                                           visited, props)) {
+      for (uint32_t i = 0; i < len; i++) {
+        if (!enumerate<CheckForDuplicates>(cx, PropertyKey::Int(i),
+                                            true)) {
           return false;
         }
       }
@@ -254,9 +282,8 @@ static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
         for (size_t i = 0; i < keys->length(); i++) {
           JSAtom* key = &keys->getDenseElement(i).toString()->asAtom();
           PropertyKey id = AtomToId(key);
-          if (!Enumerate<CheckForDuplicates>(cx, pobj, id,
-                                              true, flags,
-                                             visited, props)) {
+          if (!enumerate<CheckForDuplicates>(cx, id,
+                                              true)) {
             return false;
           }
         }
@@ -272,9 +299,8 @@ static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
             
             MOZ_ASSERT(PropertyKey::fitsInInt(i));
             PropertyKey id = PropertyKey::Int(i);
-            if (!Enumerate<CheckForDuplicates>(cx, pobj, id,
-                                                true, flags,
-                                               visited, props)) {
+            if (!enumerate<CheckForDuplicates>(cx, id,
+                                                true)) {
               return false;
             }
           }
@@ -297,24 +323,23 @@ static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
       
       
       if (!hasHoles) {
-        firstElemIndex = props.length();
+        firstElemIndex = props_.length();
       }
 
       for (ShapePropertyIter<NoGC> iter(pobj->shape()); !iter.done(); iter++) {
         jsid id = iter->key();
         uint32_t dummy;
         if (IdIsIndex(id, &dummy)) {
-          if (!Enumerate<CheckForDuplicates>(cx, pobj, id, iter->enumerable(),
-                                             flags, visited, props)) {
+          if (!enumerate<CheckForDuplicates>(cx, id, iter->enumerable())) {
             return false;
           }
         }
       }
 
-      MOZ_ASSERT(firstElemIndex <= props.length());
+      MOZ_ASSERT(firstElemIndex <= props_.length());
 
-      jsid* ids = props.begin() + firstElemIndex;
-      size_t n = props.length() - firstElemIndex;
+      jsid* ids = props_.begin() + firstElemIndex;
+      size_t n = props_.length() - firstElemIndex;
 
       RootedIdVector tmp(cx);
       if (!tmp.resize(n)) {
@@ -327,7 +352,7 @@ static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
       }
     }
 
-    size_t initialLength = props.length();
+    size_t initialLength = props_.length();
 
     
     bool symbolsFound = false;
@@ -344,14 +369,13 @@ static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
         continue;
       }
 
-      if (!Enumerate<CheckForDuplicates>(cx, pobj, id, iter->enumerable(),
-                                         flags, visited, props)) {
+      if (!enumerate<CheckForDuplicates>(cx, id, iter->enumerable())) {
         return false;
       }
     }
-    std::reverse(props.begin() + initialLength, props.end());
+    std::reverse(props_.begin() + initialLength, props_.end());
 
-    enumerateSymbols = symbolsFound && (flags & JSITER_SYMBOLS);
+    enumerateSymbols = symbolsFound && (flags_ & JSITER_SYMBOLS);
   }
 
   if (enumerateSymbols) {
@@ -360,47 +384,32 @@ static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
     
     
     
-    size_t initialLength = props.length();
+    size_t initialLength = props_.length();
     for (ShapePropertyIter<NoGC> iter(pobj->shape()); !iter.done(); iter++) {
       jsid id = iter->key();
       if (id.isSymbol()) {
-        if (!Enumerate<CheckForDuplicates>(cx, pobj, id, iter->enumerable(),
-                                           flags, visited, props)) {
+        if (!enumerate<CheckForDuplicates>(cx, id, iter->enumerable())) {
           return false;
         }
       }
     }
-    std::reverse(props.begin() + initialLength, props.end());
+    std::reverse(props_.begin() + initialLength, props_.end());
   }
 
   return true;
 }
 
-static bool EnumerateNativeProperties(JSContext* cx, Handle<NativeObject*> pobj,
-                                      unsigned flags,
-                                      MutableHandle<PropertyKeySet> visited,
-                                      MutableHandleIdVector props,
-                                      bool checkForDuplicates) {
-  if (checkForDuplicates) {
-    return EnumerateNativeProperties<true>(cx, pobj, flags, visited, props);
-  }
-  return EnumerateNativeProperties<false>(cx, pobj, flags, visited, props);
-}
-
 template <bool CheckForDuplicates>
-static bool EnumerateProxyProperties(JSContext* cx, HandleObject pobj,
-                                     unsigned flags,
-                                     MutableHandle<PropertyKeySet> visited,
-                                     MutableHandleIdVector props) {
-  MOZ_ASSERT(pobj->is<ProxyObject>());
+bool PropertyEnumerator::enumerateProxyProperties(JSContext* cx) {
+  MOZ_ASSERT(obj_->is<ProxyObject>());
 
   RootedIdVector proxyProps(cx);
 
-  if (flags & JSITER_HIDDEN || flags & JSITER_SYMBOLS) {
+  if (flags_ & JSITER_HIDDEN || flags_ & JSITER_SYMBOLS) {
     
     
     
-    if (!Proxy::ownPropertyKeys(cx, pobj, &proxyProps)) {
+    if (!Proxy::ownPropertyKeys(cx, obj_, &proxyProps)) {
       return false;
     }
 
@@ -409,15 +418,14 @@ static bool EnumerateProxyProperties(JSContext* cx, HandleObject pobj,
       bool enumerable = false;
 
       
-      if (!(flags & JSITER_HIDDEN)) {
-        if (!Proxy::getOwnPropertyDescriptor(cx, pobj, proxyProps[n], &desc)) {
+      if (!(flags_ & JSITER_HIDDEN)) {
+        if (!Proxy::getOwnPropertyDescriptor(cx, obj_, proxyProps[n], &desc)) {
           return false;
         }
         enumerable = desc.isSome() && desc->enumerable();
       }
 
-      if (!Enumerate<CheckForDuplicates>(cx, pobj, proxyProps[n], enumerable,
-                                         flags, visited, props)) {
+      if (!enumerate<CheckForDuplicates>(cx, proxyProps[n], enumerable)) {
         return false;
       }
     }
@@ -426,13 +434,12 @@ static bool EnumerateProxyProperties(JSContext* cx, HandleObject pobj,
   }
 
   
-  if (!Proxy::getOwnEnumerablePropertyKeys(cx, pobj, &proxyProps)) {
+  if (!Proxy::getOwnEnumerablePropertyKeys(cx, obj_, &proxyProps)) {
     return false;
   }
 
   for (size_t n = 0, len = proxyProps.length(); n < len; n++) {
-    if (!Enumerate<CheckForDuplicates>(cx, pobj, proxyProps[n], true, flags,
-                                       visited, props)) {
+    if (!enumerate<CheckForDuplicates>(cx, proxyProps[n], true)) {
       return false;
     }
   }
@@ -578,18 +585,14 @@ static bool ProtoMayHaveEnumerableProperties(JSObject* obj) {
   return false;
 }
 
-static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
-                     MutableHandleIdVector props) {
-  Rooted<PropertyKeySet> visited(cx, PropertyKeySet(cx));
-  RootedObject pobj(cx, pobj_);
-
+bool PropertyEnumerator::snapshot(JSContext* cx) {
   
   
   
   
-  if (!(flags & JSITER_HIDDEN) && !(flags & JSITER_OWNONLY) &&
-      !ProtoMayHaveEnumerableProperties(pobj)) {
-    flags |= JSITER_OWNONLY;
+  if (!(flags_ & JSITER_HIDDEN) && !(flags_ & JSITER_OWNONLY) &&
+      !ProtoMayHaveEnumerableProperties(obj_)) {
+    flags_ |= JSITER_OWNONLY;
   }
 
   
@@ -600,40 +603,37 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
   
   
   
-  bool checkForDuplicates = !(flags & JSITER_OWNONLY);
+  bool checkForDuplicates = !(flags_ & JSITER_OWNONLY);
 
   do {
-    if (pobj->getClass()->getNewEnumerate()) {
-      if (!EnumerateExtraProperties(cx, pobj, flags, &visited, props)) {
+    if (obj_->getClass()->getNewEnumerate()) {
+      if (!enumerateExtraProperties(cx)) {
         return false;
       }
 
-      if (pobj->is<NativeObject>()) {
-        if (!EnumerateNativeProperties(cx, pobj.as<NativeObject>(), flags,
-                                       &visited, props, true)) {
+      if (obj_->is<NativeObject>()) {
+        if (!enumerateNativeProperties(cx,  true)) {
           return false;
         }
       }
 
-    } else if (pobj->is<NativeObject>()) {
+    } else if (obj_->is<NativeObject>()) {
       
-      if (JSEnumerateOp enumerate = pobj->getClass()->getEnumerate()) {
-        if (!enumerate(cx, pobj.as<NativeObject>())) {
+      if (JSEnumerateOp enumerateOp = obj_->getClass()->getEnumerate()) {
+        if (!enumerateOp(cx, obj_.as<NativeObject>())) {
           return false;
         }
       }
-      if (!EnumerateNativeProperties(cx, pobj.as<NativeObject>(), flags,
-                                     &visited, props, checkForDuplicates)) {
+      if (!enumerateNativeProperties(cx, checkForDuplicates)) {
         return false;
       }
-    } else if (pobj->is<ProxyObject>()) {
+    } else if (obj_->is<ProxyObject>()) {
       if (checkForDuplicates) {
-        if (!EnumerateProxyProperties<true>(cx, pobj, flags, &visited, props)) {
+        if (!enumerateProxyProperties<true>(cx)) {
           return false;
         }
       } else {
-        if (!EnumerateProxyProperties<false>(cx, pobj, flags, &visited,
-                                             props)) {
+        if (!enumerateProxyProperties<false>(cx)) {
           return false;
         }
       }
@@ -641,11 +641,11 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
       MOZ_CRASH("non-native objects must have an enumerate op");
     }
 
-    if (flags & JSITER_OWNONLY) {
+    if (flags_ & JSITER_OWNONLY) {
       break;
     }
 
-    if (!GetPrototype(cx, pobj, &pobj)) {
+    if (!GetPrototype(cx, obj_, &obj_)) {
       return false;
     }
 
@@ -653,7 +653,7 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
     if (!CheckForInterrupt(cx)) {
       return false;
     }
-  } while (pobj != nullptr);
+  } while (obj_ != nullptr);
 
 #ifdef DEBUG
   if (js::SupportDifferentialTesting()) {
@@ -672,8 +672,8 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
 
 
 
-    jsid* ids = props.begin();
-    size_t n = props.length();
+    jsid* ids = props_.begin();
+    size_t n = props_.length();
 
     RootedIdVector tmp(cx);
     if (!tmp.resize(n)) {
@@ -693,10 +693,12 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
 JS_PUBLIC_API bool js::GetPropertyKeys(JSContext* cx, HandleObject obj,
                                        unsigned flags,
                                        MutableHandleIdVector props) {
-  return Snapshot(cx, obj,
-                  flags & (JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS |
-                           JSITER_SYMBOLSONLY | JSITER_PRIVATE),
-                  props);
+  uint32_t validFlags =
+      flags & (JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS |
+               JSITER_SYMBOLSONLY | JSITER_PRIVATE);
+
+  PropertyEnumerator enumerator(cx, obj, validFlags, props);
+  return enumerator.snapshot(cx);
 }
 
 static inline void RegisterEnumerator(JSContext* cx, NativeIterator* ni) {
@@ -1021,7 +1023,9 @@ bool js::EnumerateProperties(JSContext* cx, HandleObject obj,
     return Proxy::enumerate(cx, obj, props);
   }
 
-  return Snapshot(cx, obj, 0, props);
+  uint32_t flags = 0;
+  PropertyEnumerator enumerator(cx, obj, flags, props);
+  return enumerator.snapshot(cx);
 }
 
 JSObject* js::GetIterator(JSContext* cx, HandleObject obj) {
