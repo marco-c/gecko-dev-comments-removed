@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/timing.h"
+#include "modules/video_coding/timing/timing.h"
 
 #include "api/units/frequency.h"
 #include "api/units/time_delta.h"
