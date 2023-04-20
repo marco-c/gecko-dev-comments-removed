@@ -420,9 +420,10 @@ class TalosGatherer(FrameworkGatherer):
                 
                 example_list = [s.strip() for s in description.split("* ")]
                 result += f"   * {example_list[0]}\n"
-                result += "   .. code-block::\n\n"
+                result += "\n   .. code-block::\n\n"
                 for example in example_list[1:]:
                     result += f"      {example}\n"
+                result += "\n"
 
             elif "    * " in description:
                 
@@ -451,9 +452,9 @@ class TalosGatherer(FrameworkGatherer):
                 result += r"   * " + key + r": " + str(value) + r"\n"
 
         
-        result += "   * Command\n"
+        result += "   * Command\n\n"
         result += "   .. code-block::\n\n"
-        result += f"      ./mach talos-test -a {title}\n"
+        result += f"      ./mach talos-test -a {title}\n\n"
 
         if self._task_list.get(title, []):
             result += "   * **Test Task**:\n\n"
