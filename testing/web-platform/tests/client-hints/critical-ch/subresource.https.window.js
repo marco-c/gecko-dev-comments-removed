@@ -2,9 +2,17 @@
 
 
 promise_test(() =>
-  fetch("resources/echo-critical-hint.py")
+  fetch(ECHO_URL)
       .then((r) => r.text())
       .then((r) => {
         assert_true(r.includes("FAIL"));
       })
 , "Critical-CH subresource fetch");
+
+promise_test(() =>
+  fetch(ECHO_URL+"?multiple=true")
+      .then((r) => r.text())
+      .then((r) => {
+        assert_true(r.includes("FAIL"));
+      })
+, "Critical-CH w/ multiple headers and subresource fetch");
