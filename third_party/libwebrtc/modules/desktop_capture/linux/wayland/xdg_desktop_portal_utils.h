@@ -57,6 +57,8 @@ using SessionStartRequestedHandler = void (*)(GDBusProxy*,
 
 std::string RequestResponseToString(RequestResponse request);
 
+RequestResponse RequestResponseFromPortalResponse(uint32_t portal_response);
+
 
 
 std::string PrepareSignalHandle(absl::string_view token,
