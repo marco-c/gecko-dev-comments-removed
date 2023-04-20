@@ -181,20 +181,7 @@ void PathBuilderRecording::Arc(const Point& aOrigin, float aRadius,
                                bool aAntiClockwise) {
   mPathOps.Arc(aOrigin, aRadius, aStartAngle, aEndAngle, aAntiClockwise);
 
-  
-  
-  struct CurrentPointTracker {
-    PathBuilderRecording* mPathBuilder;
-
-    void LineTo(const Point& aPoint) { mPathBuilder->SetCurrentPoint(aPoint); }
-
-    void BezierTo(const Point& aCP1, const Point& aCP2, const Point& aCP3) {
-      mPathBuilder->SetCurrentPoint(aCP3);
-    }
-  } tracker = {this};
-
-  ArcToBezier(&tracker, aOrigin, Size(aRadius, aRadius), aStartAngle, aEndAngle,
-              aAntiClockwise);
+  mCurrentPoint = aOrigin + Point(cosf(aEndAngle), sinf(aEndAngle)) * aRadius;
 }
 
 already_AddRefed<Path> PathBuilderRecording::Finish() {
