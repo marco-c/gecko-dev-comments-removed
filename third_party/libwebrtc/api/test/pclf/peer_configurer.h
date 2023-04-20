@@ -24,6 +24,7 @@
 #include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/create_peer_connection_quality_test_frame_generator.h"
+#include "api/test/pclf/media_configuration.h"
 #include "api/test/pclf/media_quality_test_params.h"
 #include "api/test/peer_network_dependencies.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
@@ -45,7 +46,7 @@ class PeerConfigurerImpl final
  public:
   using VideoSource =
       absl::variant<std::unique_ptr<test::FrameGeneratorInterface>,
-                    PeerConnectionE2EQualityTestFixture::CapturingDeviceIndex>;
+                    CapturingDeviceIndex>;
 
   explicit PeerConfigurerImpl(
       const PeerNetworkDependencies& network_dependencies);
@@ -116,25 +117,21 @@ class PeerConfigurerImpl final
 
   
   
-  PeerConfigurer* AddVideoConfig(
-      PeerConnectionE2EQualityTestFixture::VideoConfig config) override;
+  PeerConfigurer* AddVideoConfig(VideoConfig config) override;
   
   
   PeerConfigurer* AddVideoConfig(
-      PeerConnectionE2EQualityTestFixture::VideoConfig config,
+      VideoConfig config,
       std::unique_ptr<test::FrameGeneratorInterface> generator) override;
   
   
   PeerConfigurer* AddVideoConfig(
-      PeerConnectionE2EQualityTestFixture::VideoConfig config,
-      PeerConnectionE2EQualityTestFixture::CapturingDeviceIndex
-          capturing_device_index) override;
+      VideoConfig config,
+      CapturingDeviceIndex capturing_device_index) override;
   
   
   
-  PeerConfigurer* SetVideoSubscription(
-      PeerConnectionE2EQualityTestFixture::VideoSubscription subscription)
-      override;
+  PeerConfigurer* SetVideoSubscription(VideoSubscription subscription) override;
   
   
   
@@ -142,12 +139,10 @@ class PeerConfigurerImpl final
   
   
   PeerConfigurer* SetVideoCodecs(
-      std::vector<PeerConnectionE2EQualityTestFixture::VideoCodecConfig>
-          video_codecs) override;
+      std::vector<VideoCodecConfig> video_codecs) override;
   
   
-  PeerConfigurer* SetAudioConfig(
-      PeerConnectionE2EQualityTestFixture::AudioConfig config) override;
+  PeerConfigurer* SetAudioConfig(AudioConfig config) override;
 
   
   PeerConfigurer* SetUseUlpFEC(bool value) override;

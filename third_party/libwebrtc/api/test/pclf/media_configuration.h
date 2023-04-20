@@ -58,6 +58,9 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
+constexpr size_t kDefaultSlidesWidth = 1850;
+constexpr size_t kDefaultSlidesHeight = 1110;
+
 
 
 
@@ -83,16 +86,12 @@ enum class CapturingDeviceIndex : size_t {};
 
 
 struct ScrollingParams {
-  ScrollingParams(TimeDelta duration,
-                  size_t source_width,
-                  size_t source_height);
-
   
   TimeDelta duration;
   
-  size_t source_width;
+  size_t source_width = kDefaultSlidesWidth;
   
-  size_t source_height;
+  size_t source_height = kDefaultSlidesHeight;
 };
 
 

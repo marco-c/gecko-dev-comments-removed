@@ -60,9 +60,6 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-constexpr size_t kDefaultSlidesWidth = 1850;
-constexpr size_t kDefaultSlidesHeight = 1110;
-
 
 class PeerConnectionE2EQualityTestFixture {
  public:
