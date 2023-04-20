@@ -394,12 +394,6 @@ var DevToolsServer = {
       connID = "server" + loader.id + ".conn" + this._nextConnID++ + ".";
     }
 
-    
-    
-    if (!this.hasConnection()) {
-      ChromeUtils.notifyDevToolsOpened();
-    }
-
     const conn = new DevToolsServerConnection(
       connID,
       transport,
@@ -431,20 +425,13 @@ var DevToolsServer = {
     delete this._connections[connection.prefix];
     this.emit("connectionchange", "closed", connection);
 
-    const hasConnection = this.hasConnection();
-
-    
-    if (!hasConnection) {
-      ChromeUtils.notifyDevToolsClosed();
-    }
-
     
     
     
     
     
     
-    if (hasConnection || this.keepAlive) {
+    if (this.hasConnection() || this.keepAlive) {
       return;
     }
 
