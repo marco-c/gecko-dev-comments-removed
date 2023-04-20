@@ -1117,6 +1117,15 @@ var gEditItemOverlay = {
   get delayedApplyEnabled() {
     return true;
   },
+
+  
+
+
+
+
+  get bookmarkState() {
+    return this._bookmarkState;
+  },
 };
 
 XPCOMUtils.defineLazyGetter(gEditItemOverlay, "_folderTree", () => {

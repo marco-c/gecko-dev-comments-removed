@@ -49,12 +49,6 @@ var StarUI = {
     return document.getElementById(aID);
   },
 
-  get showForNewBookmarks() {
-    return Services.prefs.getBoolPref(
-      "browser.bookmarks.editDialog.showForNewBookmarks"
-    );
-  },
-
   
   get panel() {
     delete this.panel;
@@ -86,37 +80,10 @@ var StarUI = {
       case "popuphidden": {
         clearTimeout(this._autoCloseTimer);
         if (aEvent.originalTarget == this.panel) {
-          let { selectedFolderGuid, didChangeFolder } = gEditItemOverlay;
-          gEditItemOverlay.uninitPanel(true);
-
-          let removeBookmarksOnPopupHidden = this._removeBookmarksOnPopupHidden;
-          this._removeBookmarksOnPopupHidden = false;
-          let guidsForRemoval = this._itemGuids;
-          this._itemGuids = null;
-
-          if (this._batching) {
-            this.endBatch();
-          }
-
-          if (removeBookmarksOnPopupHidden && guidsForRemoval) {
-            if (this._isNewBookmark) {
-              PlacesTransactions.undo().catch(console.error);
-              break;
-            }
-            
-            
-            PlacesTransactions.Remove(guidsForRemoval)
-              .transact()
-              .catch(console.error);
-          } else if (this._isNewBookmark) {
-            this.showConfirmation();
-          }
-
-          if (!removeBookmarksOnPopupHidden) {
-            this._storeRecentlyUsedFolder(
-              selectedFolderGuid,
-              didChangeFolder
-            ).catch(console.error);
+          if (gEditItemOverlay.delayedApplyEnabled) {
+            this._handlePopupHiddenEvent().catch(console.error);
+          } else {
+            this._handlePopupHiddenEventInstantApply().catch(console.error);
           }
         }
         break;
@@ -208,6 +175,77 @@ var StarUI = {
     }
   },
 
+  
+
+
+  async _handlePopupHiddenEvent() {
+    const {
+      bookmarkState,
+      didChangeFolder,
+      selectedFolderGuid,
+    } = gEditItemOverlay;
+    gEditItemOverlay.uninitPanel(true);
+
+    
+    
+    const removeBookmarksOnPopupHidden = this._removeBookmarksOnPopupHidden;
+    this._removeBookmarksOnPopupHidden = false;
+    const guidsForRemoval = this._itemGuids;
+    this._itemGuids = null;
+
+    if (removeBookmarksOnPopupHidden && guidsForRemoval) {
+      if (!this._isNewBookmark) {
+        
+        
+        await PlacesTransactions.Remove(guidsForRemoval).transact();
+      } else {
+        BookmarkingUI.star.removeAttribute("starred");
+      }
+      return;
+    }
+
+    await bookmarkState.save();
+    if (this._isNewBookmark) {
+      this.showConfirmation();
+    }
+    await this._storeRecentlyUsedFolder(selectedFolderGuid, didChangeFolder);
+  },
+
+  
+
+
+  async _handlePopupHiddenEventInstantApply() {
+    const { selectedFolderGuid, didChangeFolder } = gEditItemOverlay;
+    gEditItemOverlay.uninitPanel(true);
+
+    
+    
+    const removeBookmarksOnPopupHidden = this._removeBookmarksOnPopupHidden;
+    this._removeBookmarksOnPopupHidden = false;
+    const guidsForRemoval = this._itemGuids;
+    this._itemGuids = null;
+
+    if (this._batching) {
+      this.endBatch();
+    }
+
+    if (removeBookmarksOnPopupHidden && guidsForRemoval) {
+      if (this._isNewBookmark) {
+        await PlacesTransactions.undo();
+        return;
+      }
+      
+      
+      await PlacesTransactions.Remove(guidsForRemoval).transact();
+    } else if (this._isNewBookmark) {
+      this.showConfirmation();
+    }
+
+    if (!removeBookmarksOnPopupHidden) {
+      await this._storeRecentlyUsedFolder(selectedFolderGuid, didChangeFolder);
+    }
+  },
+
   async showEditBookmarkPopup(aNode, aIsNewBookmark, aUrl) {
     
     
@@ -248,7 +286,9 @@ var StarUI = {
 
     this._setIconAndPreviewImage();
 
-    this.beginBatch();
+    if (!gEditItemOverlay.delayedApplyEnabled) {
+      this.beginBatch();
+    }
 
     let onPanelReady = fn => {
       let target = this.panel;
@@ -428,6 +468,12 @@ var StarUI = {
   },
 };
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  StarUI,
+  "showForNewBookmarks",
+  "browser.bookmarks.editDialog.showForNewBookmarks"
+);
+
 var PlacesCommandHook = {
   
 
@@ -468,14 +514,22 @@ var PlacesCommandHook = {
         console.error(e);
       }
 
-      if (showEditUI) {
+      if (showEditUI && !gEditItemOverlay.delayedApplyEnabled) {
         
         
         
         StarUI.beginBatch();
       }
 
-      info.guid = await PlacesTransactions.NewBookmark(info).transact();
+      if (
+        !gEditItemOverlay.delayedApplyEnabled ||
+        !StarUI.showForNewBookmarks
+      ) {
+        info.guid = await PlacesTransactions.NewBookmark(info).transact();
+      } else {
+        info.guid = PlacesUtils.bookmarks.unsavedGuid;
+        BookmarkingUI.star.setAttribute("starred", "true");
+      }
 
       if (charset) {
         PlacesUIUtils.setCharsetForPage(url, charset, window).catch(
