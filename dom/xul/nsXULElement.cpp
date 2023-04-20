@@ -645,17 +645,12 @@ nsresult nsXULElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     
     
     
-    
-    
     nsAtom* tag = NodeInfo()->NameAtom();
-    MOZ_ASSERT(
-        
-        tag == nsGkAtoms::scrollbar || tag == nsGkAtoms::scrollbarbutton ||
-            tag == nsGkAtoms::scrollcorner || tag == nsGkAtoms::slider ||
-            tag == nsGkAtoms::thumb ||
-            
-            tag == nsGkAtoms::resizer || tag == nsGkAtoms::label,
-        "Unexpected XUL element in non-XUL doc");
+    MOZ_ASSERT(tag == nsGkAtoms::scrollbar ||
+                   tag == nsGkAtoms::scrollbarbutton ||
+                   tag == nsGkAtoms::scrollcorner || tag == nsGkAtoms::slider ||
+                   tag == nsGkAtoms::thumb || tag == nsGkAtoms::resizer,
+               "Unexpected XUL element in non-XUL doc");
   }
 #endif
 
