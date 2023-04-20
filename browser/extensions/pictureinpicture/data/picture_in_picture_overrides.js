@@ -212,6 +212,12 @@ let AVAILABLE_PIP_OVERRIDES;
       },
     },
 
+    yahoofinance: {
+      "https://*.finance.yahoo.com/*": {
+        videoWrapperScriptPath: "video-wrappers/yahoofinance.js",
+      },
+    },
+
     youtube: {
       
 
