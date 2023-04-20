@@ -6,7 +6,8 @@
 
 
 async function read_and_gc(reader, perform_gc) {
-  const read_promise = reader.read();
+  
+  const read_promise = reader.read(new Uint8Array(64));
   if (perform_gc) {
     await garbageCollect();
   }
@@ -16,10 +17,10 @@ async function read_and_gc(reader, perform_gc) {
 
 
 
-async function read_all_chunks(stream, perform_gc = false) {
+async function read_all_chunks(stream, { perform_gc = false, mode } = {}) {
   assert_true(stream instanceof ReadableStream);
   assert_true('getReader' in stream);
-  const reader = stream.getReader();
+  const reader = stream.getReader({ mode });
 
   assert_true('read' in reader);
   let read_value = await read_and_gc(reader, perform_gc);
@@ -67,7 +68,16 @@ promise_test(async() => {
   const stream = blob.stream();
   blob = null;
   await garbageCollect();
-  const chunks = await read_all_chunks(stream, true);
+  const chunks = await read_all_chunks(stream, { perform_gc: true });
   assert_array_equals(chunks, input_arr);
 }, "Blob.stream() garbage collection of blob shouldn't break stream" +
       "consumption")
+
+promise_test(async () => {
+  const input_arr = [8, 241, 48, 123, 151];
+  const typed_arr = new Uint8Array(input_arr);
+  let blob = new Blob([typed_arr]);
+  const stream = blob.stream();
+  const chunks = await read_all_chunks(stream, { mode: "byob" });
+  assert_array_equals(chunks, input_arr);
+}, "Reading Blob.stream() with BYOB reader")
