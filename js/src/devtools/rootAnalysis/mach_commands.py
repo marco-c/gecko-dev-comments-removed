@@ -318,7 +318,10 @@ def inner_compile(command_context, **kwargs):
     loader = MozconfigLoader(command_context.topsrcdir)
     mozconfig = loader.read_mozconfig(mozconfig_path)
     configure_args = mozconfig["configure_args"]
-    if "--enable-application=%s" % app not in configure_args:
+    if (
+        "--enable-project=%s" % app not in configure_args
+        and "--enable-application=%s" % app not in configure_args
+    ):
         raise Exception("mozconfig %s builds wrong project" % mozconfig_path)
     if not any("--with-compiler-wrapper" in a for a in configure_args):
         raise Exception("mozconfig must wrap compiles")
