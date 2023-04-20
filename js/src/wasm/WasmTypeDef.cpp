@@ -36,14 +36,55 @@ using namespace js::wasm;
 
 using mozilla::IsPowerOfTwo;
 
-using ImmediateType = uint32_t;  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using ImmediateType = uint32_t;
 static const unsigned sTotalBits = sizeof(ImmediateType) * 8;
 static const unsigned sTagBits = 1;
-static const unsigned sReturnBit = 1;
-static const unsigned sLengthBits = 4;
-static const unsigned sTypeBits = 3;
-static const unsigned sMaxTypes =
-    (sTotalBits - sTagBits - sReturnBit - sLengthBits) / sTypeBits;
+static const unsigned sNumResultsBits = 1;
+static const unsigned sNumArgsBits = 3;
+static const unsigned sValTypeBits = 3;
+static const unsigned sMaxValTypes = 8;
+
+static_assert(((1 << sNumResultsBits) - 1) + ((1 << sNumArgsBits) - 1) ==
+                  sMaxValTypes,
+              "sNumResultsBits, sNumArgsBits, sMaxValTypes are consistent");
+
+static_assert(sTagBits + sNumResultsBits + sNumArgsBits +
+                      sValTypeBits * sMaxValTypes <=
+                  sTotalBits,
+              "have room");
 
 static bool IsImmediateValType(ValType vt) {
   switch (vt.kind()) {
@@ -54,21 +95,29 @@ static bool IsImmediateValType(ValType vt) {
     case ValType::V128:
       return true;
     case ValType::Ref:
-      switch (vt.refTypeKind()) {
+      
+      
+      if (!vt.isNullable()) {
+        return false;
+      }
+      switch (vt.refType().kind()) {
         case RefType::Func:
         case RefType::Extern:
         case RefType::Eq:
           return true;
-        case RefType::TypeRef:
+        default:
           return false;
       }
-      break;
+    default:
+      return false;
   }
-  MOZ_CRASH("bad ValType");
 }
 
 static unsigned EncodeImmediateValType(ValType vt) {
-  static_assert(7 < (1 << sTypeBits), "fits");
+  
+  
+  static_assert(7 < (1 << sValTypeBits), "enough space for ValType kind");
+
   switch (vt.kind()) {
     case ValType::I32:
       return 0;
@@ -81,38 +130,40 @@ static unsigned EncodeImmediateValType(ValType vt) {
     case ValType::V128:
       return 4;
     case ValType::Ref:
-      switch (vt.refTypeKind()) {
+      MOZ_ASSERT(vt.isNullable());
+      switch (vt.refType().kind()) {
         case RefType::Func:
           return 5;
         case RefType::Extern:
           return 6;
         case RefType::Eq:
           return 7;
-        case RefType::TypeRef:
-          break;
+        default:
+          MOZ_CRASH("bad RefType");
       }
-      break;
+    default:
+      MOZ_CRASH("bad ValType");
   }
-  MOZ_CRASH("bad ValType");
 }
 
 static bool IsImmediateFuncType(const FuncType& funcType) {
   const ValTypeVector& results = funcType.results();
   const ValTypeVector& args = funcType.args();
-  if (results.length() + args.length() > sMaxTypes) {
+
+  
+  if (results.length() > ((1 << sNumResultsBits) - 1) ||
+      args.length() > ((1 << sNumArgsBits) - 1)) {
     return false;
   }
 
-  if (results.length() > 1) {
-    return false;
-  }
-
+  
   for (ValType v : results) {
     if (!IsImmediateValType(v)) {
       return false;
     }
   }
 
+  
   for (ValType v : args) {
     if (!IsImmediateValType(v)) {
       return false;
@@ -122,33 +173,36 @@ static bool IsImmediateFuncType(const FuncType& funcType) {
   return true;
 }
 
-static ImmediateType LengthToBits(uint32_t length) {
-  static_assert(sMaxTypes <= ((1 << sLengthBits) - 1), "fits");
-  MOZ_ASSERT(length <= sMaxTypes);
-  return length;
+static ImmediateType EncodeNumResults(uint32_t numResults) {
+  MOZ_ASSERT(numResults <= (1 << sNumResultsBits) - 1);
+  return numResults;
+}
+
+static ImmediateType EncodeNumArgs(uint32_t numArgs) {
+  MOZ_ASSERT(numArgs <= (1 << sNumArgsBits) - 1);
+  return numArgs;
 }
 
 static ImmediateType EncodeImmediateFuncType(const FuncType& funcType) {
   ImmediateType immediate = FuncType::ImmediateBit;
   uint32_t shift = sTagBits;
 
-  if (funcType.results().length() > 0) {
-    MOZ_ASSERT(funcType.results().length() == 1);
-    immediate |= (1 << shift);
-    shift += sReturnBit;
+  
+  immediate |= EncodeNumResults(funcType.results().length()) << shift;
+  shift += sNumResultsBits;
 
-    immediate |= EncodeImmediateValType(funcType.results()[0]) << shift;
-    shift += sTypeBits;
-  } else {
-    shift += sReturnBit;
+  for (ValType resultType : funcType.results()) {
+    immediate |= EncodeImmediateValType(resultType) << shift;
+    shift += sValTypeBits;
   }
 
-  immediate |= LengthToBits(funcType.args().length()) << shift;
-  shift += sLengthBits;
+  
+  immediate |= EncodeNumArgs(funcType.args().length()) << shift;
+  shift += sNumArgsBits;
 
   for (ValType argType : funcType.args()) {
     immediate |= EncodeImmediateValType(argType) << shift;
-    shift += sTypeBits;
+    shift += sValTypeBits;
   }
 
   MOZ_ASSERT(shift <= sTotalBits);
