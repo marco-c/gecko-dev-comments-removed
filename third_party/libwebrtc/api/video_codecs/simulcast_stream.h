@@ -16,15 +16,15 @@ namespace webrtc {
 
 
 struct SimulcastStream {
-  int width;
-  int height;
-  float maxFramerate;  
-  unsigned char numberOfTemporalLayers;
-  unsigned int maxBitrate;     
-  unsigned int targetBitrate;  
-  unsigned int minBitrate;     
-  unsigned int qpMax;          
-  bool active;                 
+  int width = 0;
+  int height = 0;
+  float maxFramerate = 0;  
+  unsigned char numberOfTemporalLayers = 1;
+  unsigned int maxBitrate = 0;     
+  unsigned int targetBitrate = 0;  
+  unsigned int minBitrate = 0;     
+  unsigned int qpMax = 0;          
+  bool active = false;             
 };
 
 }  
