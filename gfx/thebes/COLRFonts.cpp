@@ -1822,6 +1822,7 @@ struct PaintComposite {
     if (compositeMode == COMPOSITE_DEST) {
       return DispatchPaint(aState, aOffset + backdropPaintOffset, aBounds);
     }
+
     
     
     
@@ -1830,34 +1831,57 @@ struct PaintComposite {
       return true;
     }
     bounds.RoundOut();
-    
-    
-    
-    
-    RefPtr dt = Factory::CreateDrawTarget(
-        BackendType::SKIA, IntSize(int(bounds.width), int(bounds.height)),
-        SurfaceFormat::B8G8R8A8);
-    if (!dt) {
+
+    PaintState state = aState;
+    state.mDrawOptions.mCompositionOp = CompositionOp::OP_OVER;
+    IntSize intSize(int(bounds.width), int(bounds.height));
+
+    if (!aState.mDrawTarget->CanCreateSimilarDrawTarget(
+            intSize, SurfaceFormat::B8G8R8A8)) {
+      
+      
       
       
       return true;
     }
-    dt->SetTransform(Matrix::Translation(-bounds.TopLeft()));
-    PaintState state = aState;
-    state.mDrawTarget = dt;
-    bool ok = DispatchPaint(state, aOffset + backdropPaintOffset, &bounds);
-    if (ok) {
-      dt->PushLayerWithBlend(true, 1.0, nullptr, Matrix(), IntRect(), false,
-                             mapCompositionMode(compositeMode));
-      ok = DispatchPaint(state, aOffset + sourcePaintOffset, &bounds);
-      dt->PopLayer();
+
+    
+    RefPtr backdrop = aState.mDrawTarget->CreateSimilarDrawTarget(
+        intSize, SurfaceFormat::B8G8R8A8);
+    if (!backdrop) {
+      return true;
     }
-    if (ok) {
-      RefPtr snapshot = dt->Snapshot();
-      aState.mDrawTarget->DrawSurface(snapshot, bounds,
-                                      Rect(Point(), bounds.Size()));
+    backdrop->SetTransform(Matrix::Translation(-bounds.TopLeft()));
+    state.mDrawTarget = backdrop;
+    if (!DispatchPaint(state, aOffset + backdropPaintOffset, &bounds)) {
+      return false;
     }
-    return ok;
+
+    
+    RefPtr source = aState.mDrawTarget->CreateSimilarDrawTarget(
+        intSize, SurfaceFormat::B8G8R8A8);
+    if (!source) {
+      return true;
+    }
+    source->SetTransform(Matrix::Translation(-bounds.TopLeft()));
+    state.mDrawTarget = source;
+    if (!DispatchPaint(state, aOffset + sourcePaintOffset, &bounds)) {
+      return false;
+    }
+
+    
+    Rect localBounds(Point(), bounds.Size());
+    RefPtr snapshot = source->Snapshot();
+    backdrop->SetTransform(Matrix());
+    backdrop->DrawSurface(snapshot, localBounds, localBounds,
+                          DrawSurfaceOptions(),
+                          DrawOptions(1.0, mapCompositionMode(compositeMode)));
+
+    
+    snapshot = backdrop->Snapshot();
+    aState.mDrawTarget->DrawSurface(snapshot, bounds, localBounds);
+
+    return true;
   }
 
   Rect GetBoundingRect(const PaintState& aState, uint32_t aOffset) const {
