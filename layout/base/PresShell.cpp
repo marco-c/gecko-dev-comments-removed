@@ -7093,6 +7093,11 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
     return NS_OK;
   }
 
+  
+  
+  
+  eventTargetData.UpdateWheelEventTarget(aGUIEvent);
+
   if (!eventTargetData.ComputeElementFromFrame(aGUIEvent)) {
     return NS_OK;
   }
@@ -11805,6 +11810,27 @@ bool PresShell::EventHandler::EventTargetData::ComputeElementFromFrame(
 
   
   return !!mContent;
+}
+
+void PresShell::EventHandler::EventTargetData::UpdateWheelEventTarget(
+    WidgetGUIEvent* aGUIEvent) {
+  MOZ_ASSERT(aGUIEvent);
+
+  if (aGUIEvent->mMessage != eWheel) {
+    return;
+  }
+
+  
+  
+  
+  nsIFrame* groupFrame = WheelTransaction::GetEventTargetFrame();
+  if (!groupFrame) {
+    return;
+  }
+
+  
+  
+  SetFrameAndComputePresShellAndContent(groupFrame, aGUIEvent);
 }
 
 void PresShell::EventHandler::EventTargetData::UpdateTouchEventTarget(
