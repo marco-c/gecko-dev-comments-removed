@@ -15,9 +15,10 @@
 #include "nsString.h"
 #include "nsIFile.h"
 
-class nsIThread;
-
 namespace mozilla {
+
+class LazyIdleThread;
+
 namespace safebrowsing {
 
 
@@ -242,7 +243,7 @@ class Classifier {
   
   Atomic<bool> mIsClosed;
 
-  nsCOMPtr<nsIThread> mUpdateThread;  
+  RefPtr<LazyIdleThread> mUpdateThread;  
 
   
   

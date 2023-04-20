@@ -19,10 +19,11 @@ using namespace mozilla;
 
 
 
+
 template <typename TargetInterface, typename SourcePtr>
 bool TestQITo(SourcePtr& aPtr1) {
-  nsCOMPtr<TargetInterface> aPtr2 =
-      do_QueryInterface(static_cast<nsISupports*>(aPtr1.get()));
+  nsCOMPtr<TargetInterface> aPtr2 = do_QueryInterface(
+      static_cast<nsISupports*>(static_cast<nsIEventTarget*>(aPtr1.get())));
   return (bool)aPtr2;
 }
 
@@ -71,7 +72,7 @@ TEST(TestEventTargetQI, ThrottledEventQueue)
 
 TEST(TestEventTargetQI, LazyIdleThread)
 {
-  nsCOMPtr<nsIThread> thing = new LazyIdleThread(0, "TestThread"_ns);
+  RefPtr<LazyIdleThread> thing = new LazyIdleThread(0, "TestThread");
   EXPECT_TRUE(thing);
 
   EXPECT_TRUE(TestQITo<nsISerialEventTarget>(thing));

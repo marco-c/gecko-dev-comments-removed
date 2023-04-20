@@ -11,18 +11,9 @@
 #  error "This header is only usable from within libxul (MOZILLA_INTERNAL_API)."
 #endif
 
-#include "nsINamed.h"
+#include "mozilla/TaskQueue.h"
 #include "nsIObserver.h"
-#include "nsIThreadInternal.h"
-#include "nsITimer.h"
-
-#include "mozilla/Mutex.h"
-#include "nsCOMPtr.h"
-#include "nsTArrayForwardDeclare.h"
-#include "nsString.h"
-#include "mozilla/Attributes.h"
-
-#define IDLE_THREAD_TOPIC "thread-shutting-down"
+#include "nsThreadPool.h"
 
 namespace mozilla {
 
@@ -32,20 +23,16 @@ namespace mozilla {
 
 
 
-
-class LazyIdleThread final : public nsIThread,
-                             public nsITimerCallback,
-                             public nsIThreadObserver,
-                             public nsIObserver,
-                             public nsINamed {
+class LazyIdleThread final : public nsISerialEventTarget, public nsIObserver {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL
-  NS_DECL_NSITHREAD
-  NS_DECL_NSITIMERCALLBACK
-  NS_DECL_NSITHREADOBSERVER
   NS_DECL_NSIOBSERVER
-  NS_DECL_NSINAMED
+
+  
+
+
+
 
   enum ShutdownMethod { AutomaticShutdown = 0, ManualShutdown };
 
@@ -53,31 +40,20 @@ class LazyIdleThread final : public nsIThread,
 
 
 
-  LazyIdleThread(uint32_t aIdleTimeoutMS, const nsACString& aName,
-                 ShutdownMethod aShutdownMethod = AutomaticShutdown,
-                 nsIObserver* aIdleObserver = nullptr);
+  LazyIdleThread(uint32_t aIdleTimeoutMS, const char* aName,
+                 ShutdownMethod aShutdownMethod = AutomaticShutdown);
 
   
 
 
 
-
-
-
-
-
-  void SetWeakIdleObserver(nsIObserver* aObserver);
+  void Shutdown();
 
   
 
 
 
-  void DisableIdleTimeout();
-
-  
-
-
-  void EnableIdleTimeout();
+  nsresult SetListener(nsIThreadPoolListener* aListener);
 
  private:
   
@@ -88,61 +64,20 @@ class LazyIdleThread final : public nsIThread,
   
 
 
-  void PreDispatch();
 
-  
-
-
-  nsresult EnsureThread();
-
-  
-
-
-  void InitThread();
-
-  
-
-
-  void CleanupThread();
+  const nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
 
   
 
 
 
-  void ScheduleTimer();
-
-  
-
-
-  nsresult ShutdownThread();
+  const RefPtr<nsThreadPool> mThreadPool;
 
   
 
 
 
-  void SelfDestruct();
-
-  
-
-
-
-  bool UseRunnableQueue() { return !!mQueuedRunnables; }
-
-  
-
-
-  mozilla::Mutex mMutex;
-
-  
-
-
-
-  nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
-
-  
-
-
-  nsCOMPtr<nsIThread> mThread;
+  const RefPtr<TaskQueue> mTaskQueue;
 
   
 
@@ -150,69 +85,7 @@ class LazyIdleThread final : public nsIThread,
 
 
 
-  nsCOMPtr<nsITimer> mIdleTimer;
-
-  
-
-
-
-  nsIObserver* MOZ_UNSAFE_REF(
-      "See the documentation for SetWeakIdleObserver for "
-      "how the owner of LazyIdleThread should manage the "
-      "lifetime information of this field") mIdleObserver;
-
-  
-
-
-
-  nsTArray<nsCOMPtr<nsIRunnable>>* mQueuedRunnables;
-
-  
-
-
-  const uint32_t mIdleTimeoutMS;
-
-  
-
-
-
-  uint32_t mPendingEventCount MOZ_GUARDED_BY(mMutex);
-
-  
-
-
-
-
-  uint32_t mIdleNotificationCount MOZ_GUARDED_BY(mMutex);
-
-  
-
-
-
-
-  ShutdownMethod mShutdownMethod;
-
-  
-
-
-
-  bool mShutdown;
-
-  
-
-
-
-  bool mThreadIsShuttingDown MOZ_GUARDED_BY(mMutex);
-
-  
-
-
-  bool mIdleTimeoutEnabled;
-
-  
-
-
-  nsCString mName;
+  bool mShutdown = false;
 };
 
 }  
