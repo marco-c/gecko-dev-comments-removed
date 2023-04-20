@@ -29,10 +29,18 @@ class nsIConsoleListenerWatcher {
       return;
     }
 
+    let latestRetrievedCachedMessageTimestamp = -1;
+
     
     const listener = {
       QueryInterface: ChromeUtils.generateQI(["nsIConsoleListener"]),
       observe: message => {
+        if (
+          message.microSecondTimeStamp <= latestRetrievedCachedMessageTimestamp
+        ) {
+          return;
+        }
+
         if (!this.shouldHandleMessage(targetActor, message)) {
           return;
         }
@@ -43,7 +51,13 @@ class nsIConsoleListenerWatcher {
 
     
     
+    
     const cachedMessages = Services.console.getMessageArray() || [];
+    if (cachedMessages.length) {
+      latestRetrievedCachedMessageTimestamp = cachedMessages.at(-1)
+        .microSecondTimeStamp;
+    }
+
     Services.console.registerListener(listener);
     this.listener = listener;
 
