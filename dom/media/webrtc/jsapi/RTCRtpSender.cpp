@@ -686,7 +686,7 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
 
   
   
-  GetMainThreadEventTarget()->Dispatch(NS_NewRunnableFunction(
+  GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
       __func__,
       [this, self = RefPtr<RTCRtpSender>(this), p, paramsCopy, serialNumber] {
         
@@ -853,7 +853,7 @@ void RTCRtpSender::GetParameters(RTCRtpSendParameters& aParameters) {
   mLastReturnedParameters = Some(aParameters);
 
   
-  GetMainThreadEventTarget()->Dispatch(NS_NewRunnableFunction(
+  GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
       __func__, [this, self = RefPtr<RTCRtpSender>(this)] {
         mLastReturnedParameters = Nothing();
       }));
@@ -1068,7 +1068,7 @@ RefPtr<dom::Promise> ReplaceTrackOperation::CallImpl(ErrorResult& aError) {
   }
 
   
-  GetMainThreadEventTarget()->Dispatch(NS_NewRunnableFunction(
+  GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
       __func__, [p, sender, track = mNewTrack]() MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         
         

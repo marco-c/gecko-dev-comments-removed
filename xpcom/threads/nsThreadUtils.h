@@ -1799,10 +1799,6 @@ class SerialEventTargetGuard {
 
 
 
-nsIEventTarget* GetMainThreadEventTarget();
-
-
-
 
 
 

@@ -100,8 +100,9 @@ nsresult nsInputStreamPump::EnsureWaiting() {
     
     if (mState == STATE_STOP && !mOffMainThread) {
       nsCOMPtr<nsIEventTarget> mainThread =
-          mLabeledMainThreadTarget ? mLabeledMainThreadTarget
-                                   : do_AddRef(GetMainThreadEventTarget());
+          mLabeledMainThreadTarget
+              ? mLabeledMainThreadTarget
+              : do_AddRef(GetMainThreadSerialEventTarget());
       if (mTargetThread != mainThread) {
         mTargetThread = mainThread;
       }
