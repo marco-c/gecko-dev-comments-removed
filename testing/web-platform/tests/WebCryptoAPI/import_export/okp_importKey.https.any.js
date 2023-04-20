@@ -4,6 +4,7 @@
 
 
 
+
     var subtle = crypto.subtle;
 
     var keyData = {
@@ -104,6 +105,7 @@
             return subtle.importKey(format, keyData[format], algorithm, extractable, usages).
             then(function(key) {
                 assert_equals(key.constructor, CryptoKey, "Imported a CryptoKey object");
+                assert_goodCryptoKey(key, algorithm, extractable, usages, (format === 'pkcs8' || (format === 'jwk' && keyData[format].d)) ? 'private' : 'public');
                 if (!extractable) {
                     return;
                 }

@@ -4,6 +4,7 @@
 
 
 
+
     var subtle = crypto.subtle;
 
     
@@ -57,6 +58,10 @@
         });
     });
 
+    function hasLength(algorithm) {
+        return algorithm.name === 'HMAC' || algorithm.name.startsWith('AES');
+    }
+
     
     
     function testFormat(format, algorithm, keyData, keySize, usages, extractable) {
@@ -64,6 +69,7 @@
             return subtle.importKey(format, keyData, algorithm, extractable, usages).
             then(function(key) {
                 assert_equals(key.constructor, CryptoKey, "Imported a CryptoKey object");
+                assert_goodCryptoKey(key, hasLength(key.algorithm) ? { length: keySize, ...algorithm } : algorithm, extractable, usages, 'secret');
                 if (!extractable) {
                     return;
                 }
