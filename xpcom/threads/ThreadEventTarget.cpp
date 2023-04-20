@@ -86,40 +86,6 @@ ThreadEventTarget::Dispatch(already_AddRefed<nsIRunnable> aEvent,
 
   LogRunnable::LogDispatch(event.get());
 
-  if (aFlags & DISPATCH_SYNC) {
-    
-    
-    
-    
-    nsCOMPtr<nsIThread> current = NS_GetCurrentThread();
-    if (NS_WARN_IF(!current)) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    
-    
-    
-
-    RefPtr<nsThreadSyncDispatch> wrapper =
-        new nsThreadSyncDispatch(current.forget(), event.take());
-    bool success = mSink->PutEvent(do_AddRef(wrapper),
-                                   EventQueuePriority::Normal);  
-    if (!success) {
-      
-      
-      
-      wrapper.get()->Release();
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    
-    SpinEventLoopUntil(
-        "ThreadEventTarget::Dispatch"_ns,
-        [&, wrapper]() -> bool { return !wrapper->IsPending(); });
-
-    return NS_OK;
-  }
-
   NS_ASSERTION((aFlags & (NS_DISPATCH_AT_END |
                           NS_DISPATCH_IGNORE_BLOCK_DISPATCH)) == aFlags,
                "unexpected dispatch flags");

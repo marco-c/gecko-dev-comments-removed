@@ -74,7 +74,9 @@ HWND GetHiddenWindowHWND() {
   
   
   RefPtr<HWNDGetter> getter = new HWNDGetter();
-  NS_DispatchToMainThread(getter, NS_DISPATCH_SYNC);
+  NS_DispatchAndSpinEventLoopUntilComplete(
+      "GetHiddenWindowHWND"_ns, mozilla::GetMainThreadSerialEventTarget(),
+      do_AddRef(getter));
   return getter->hidden_window_hwnd;
 }
 

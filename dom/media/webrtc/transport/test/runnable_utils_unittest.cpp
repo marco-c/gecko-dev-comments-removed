@@ -161,20 +161,23 @@ class DispatchTest : public MtransportTest {
 
   void Test1Arg() {
     Runnable* r = WrapRunnable(&cl_, &TargetClass::m1, 1);
-    target_->Dispatch(r, NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete("DispatchTest::Test1Arg"_ns,
+                                             target_, do_AddRef(r));
     ASSERT_EQ(1, ran_);
   }
 
   void Test2Args() {
     Runnable* r = WrapRunnable(&cl_, &TargetClass::m2, 1, 2);
-    target_->Dispatch(r, NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete("DispatchTest::Test2Args"_ns,
+                                             target_, do_AddRef(r));
     ASSERT_EQ(2, ran_);
   }
 
   void Test1Set() {
     bool x = false;
-    target_->Dispatch(WrapRunnable(&cl_, &TargetClass::m1set, &x),
-                      NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "DispatchTest::Test1Set"_ns, target_,
+        do_AddRef(WrapRunnable(&cl_, &TargetClass::m1set, &x)));
     ASSERT_TRUE(x);
   }
 
@@ -182,8 +185,9 @@ class DispatchTest : public MtransportTest {
     int z;
     int x = 10;
 
-    target_->Dispatch(WrapRunnableRet(&z, &cl_, &TargetClass::return_int, x),
-                      NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "DispatchTest::TestRet"_ns, target_,
+        do_AddRef(WrapRunnableRet(&z, &cl_, &TargetClass::return_int, x)));
     ASSERT_EQ(10, z);
   }
 
@@ -214,8 +218,7 @@ int SetNonMethodRet(TargetClass* cl, int x) {
 }
 
 TEST_F(DispatchTest, TestNonMethod) {
-  test_utils_->sts_target()->Dispatch(WrapRunnableNM(SetNonMethod, &cl_, 10),
-                                      NS_DISPATCH_SYNC);
+  test_utils_->SyncDispatchToSTS(WrapRunnableNM(SetNonMethod, &cl_, 10));
 
   ASSERT_EQ(1, ran_);
 }
@@ -223,8 +226,8 @@ TEST_F(DispatchTest, TestNonMethod) {
 TEST_F(DispatchTest, TestNonMethodRet) {
   int z;
 
-  test_utils_->sts_target()->Dispatch(
-      WrapRunnableNMRet(&z, SetNonMethodRet, &cl_, 10), NS_DISPATCH_SYNC);
+  test_utils_->SyncDispatchToSTS(
+      WrapRunnableNMRet(&z, SetNonMethodRet, &cl_, 10));
 
   ASSERT_EQ(1, ran_);
   ASSERT_EQ(10, z);
@@ -234,9 +237,10 @@ TEST_F(DispatchTest, TestDestructorRef) {
   bool destroyed = false;
   {
     RefPtr<Destructor> destructor = new Destructor(&destroyed);
-    target_->Dispatch(
-        WrapRunnable(&cl_, &TargetClass::destructor_target_ref, destructor),
-        NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "DispatchTest::TestDestructorRef"_ns, target_,
+        do_AddRef(WrapRunnable(&cl_, &TargetClass::destructor_target_ref,
+                               destructor)));
     ASSERT_FALSE(destroyed);
   }
   ASSERT_TRUE(destroyed);
@@ -245,9 +249,10 @@ TEST_F(DispatchTest, TestDestructorRef) {
   destroyed = false;
   {
     RefPtr<Destructor> destructor = new Destructor(&destroyed);
-    target_->Dispatch(WrapRunnable(&cl_, &TargetClass::destructor_target_ref,
-                                   std::move(destructor)),
-                      NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "DispatchTest::TestDestructorRef"_ns, target_,
+        do_AddRef(WrapRunnable(&cl_, &TargetClass::destructor_target_ref,
+                               std::move(destructor))));
     ASSERT_TRUE(destroyed);
   }
 }
@@ -261,8 +266,9 @@ TEST_F(DispatchTest, TestMove) {
     
     
     
-    target_->Dispatch(WrapRunnableNM([](CtorDtorState s) {}, std::move(state)),
-                      NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "DispatchTest::TestMove"_ns, target_,
+        do_AddRef(WrapRunnableNM([](CtorDtorState s) {}, std::move(state))));
     ASSERT_EQ(1, destroyed);
   }
   
@@ -275,8 +281,9 @@ TEST_F(DispatchTest, TestMove) {
     
     
     
-    target_->Dispatch(WrapRunnableNM([](CtorDtorState s) {}, state),
-                      NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "DispatchTest::TestMove"_ns, target_,
+        do_AddRef(WrapRunnableNM([](CtorDtorState s) {}, state)));
     ASSERT_EQ(2, destroyed);
   }
   
@@ -289,9 +296,10 @@ TEST_F(DispatchTest, TestMove) {
     
     
     
-    target_->Dispatch(
-        WrapRunnableNM([](const CtorDtorState& s) {}, std::move(state)),
-        NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "DispatchTest::TestMove"_ns, target_,
+        do_AddRef(
+            WrapRunnableNM([](const CtorDtorState& s) {}, std::move(state))));
     ASSERT_EQ(4, destroyed);
   }
   
@@ -304,9 +312,9 @@ TEST_F(DispatchTest, TestMove) {
     
     
     
-    target_->Dispatch(
-        WrapRunnableNM([](CtorDtorState&& s) {}, std::move(state)),
-        NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "DispatchTest::TestMove"_ns, target_,
+        do_AddRef(WrapRunnableNM([](CtorDtorState&& s) {}, std::move(state))));
     ASSERT_EQ(5, destroyed);
   }
   
@@ -318,8 +326,9 @@ TEST_F(DispatchTest, TestUniquePtr) {
   int ran = 0;
   auto cl = MakeUnique<TargetClass>(&ran);
 
-  target_->Dispatch(WrapRunnable(std::move(cl), &TargetClass::m1, 1),
-                    NS_DISPATCH_SYNC);
+  NS_DispatchAndSpinEventLoopUntilComplete(
+      "DispatchTest::TestUniquePtr"_ns, target_,
+      do_AddRef(WrapRunnable(std::move(cl), &TargetClass::m1, 1)));
   ASSERT_EQ(1, ran);
 
   
@@ -331,9 +340,10 @@ TEST_F(DispatchTest, TestUniquePtr) {
     
     
     
-    target_->Dispatch(
-        WrapRunnableNM([](UniquePtr<CtorDtorState> s) {}, std::move(state)),
-        NS_DISPATCH_SYNC);
+    NS_DispatchAndSpinEventLoopUntilComplete(
+        "DispatchTest::TestUniquePtr"_ns, target_,
+        do_AddRef(WrapRunnableNM([](UniquePtr<CtorDtorState> s) {},
+                                 std::move(state))));
     ASSERT_EQ(1, destroyed);
   }
   

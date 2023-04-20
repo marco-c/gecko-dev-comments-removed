@@ -96,11 +96,12 @@ void ChildProfilerController::ShutdownAndMaybeGrabShutdownProfileFirst(
       
       
       
-      profilerChildThread->Dispatch(
+      NS_DispatchAndSpinEventLoopUntilComplete(
+          "ChildProfilerController::ShutdownProfilerChild SYNC"_ns,
+          profilerChildThread,
           NewRunnableMethod<ProfileAndAdditionalInformation*>(
               "ChildProfilerController::ShutdownProfilerChild SYNC", this,
-              &ChildProfilerController::ShutdownProfilerChild, nullptr),
-          NS_DISPATCH_SYNC);
+              &ChildProfilerController::ShutdownProfilerChild, nullptr));
     }
     
     

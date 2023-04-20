@@ -15,6 +15,8 @@
 #include "nsExceptionHandler.h"
 #include "nsIEventTarget.h"
 #include "nsITimer.h"
+#include "nsString.h"
+#include "nsThreadSyncDispatch.h"
 #include "nsTimerImpl.h"
 #include "prsystem.h"
 
@@ -739,3 +741,28 @@ nsresult NS_CreateBackgroundTaskQueue(const char* aName,
 }
 
 }  
+
+nsresult NS_DispatchAndSpinEventLoopUntilComplete(
+    const nsACString& aVeryGoodReasonToDoThis, nsIEventTarget* aEventTarget,
+    already_AddRefed<nsIRunnable> aEvent) {
+  
+  
+  
+  
+  nsCOMPtr<nsIThread> current = NS_GetCurrentThread();
+  if (NS_WARN_IF(!current)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  RefPtr<nsThreadSyncDispatch> wrapper =
+      new nsThreadSyncDispatch(current.forget(), std::move(aEvent));
+  nsresult rv = aEventTarget->Dispatch(do_AddRef(wrapper));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    return rv;
+  }
+
+  wrapper->SpinEventLoopUntilComplete(aVeryGoodReasonToDoThis);
+  return NS_OK;
+}
