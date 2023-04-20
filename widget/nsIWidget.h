@@ -938,7 +938,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin& aMargins) = 0;
+  virtual nsresult SetNonClientMargins(const LayoutDeviceIntMargin&) = 0;
 
   
 
