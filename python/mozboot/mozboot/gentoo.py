@@ -15,6 +15,7 @@ class GentooBootstrapper(LinuxBootstrapper, BaseBootstrapper):
 
     def install_packages(self, packages):
         DISAMBIGUATE = {
+            "gzip": "app-arch/gzip",
             "tar": "app-arch/tar",
         }
         
