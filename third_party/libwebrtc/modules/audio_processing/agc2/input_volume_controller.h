@@ -37,9 +37,6 @@ class InputVolumeController final {
   struct Config {
     bool enabled = false;
     
-    int startup_min_volume = 0;
-    
-    
     int clipped_level_min = 70;
     
     
@@ -65,6 +62,12 @@ class InputVolumeController final {
     int target_range_min_dbfs = -48;
     
     int update_input_volume_wait_frames = 100;
+    
+    
+    float speech_probability_threshold = 0.7f;
+    
+    
+    float speech_ratio_threshold = 0.9f;
   };
 
   
@@ -90,6 +93,7 @@ class InputVolumeController final {
   
   void AnalyzePreProcess(const AudioBuffer& audio_buffer);
 
+  
   
   
   
@@ -185,7 +189,9 @@ class MonoInputVolumeController {
  public:
   MonoInputVolumeController(int clipped_level_min,
                             int min_mic_level,
-                            int update_input_volume_wait_frames);
+                            int update_input_volume_wait_frames,
+                            float speech_probability_threshold,
+                            float speech_ratio_threshold);
   ~MonoInputVolumeController();
   MonoInputVolumeController(const MonoInputVolumeController&) = delete;
   MonoInputVolumeController& operator=(const MonoInputVolumeController&) =
@@ -205,7 +211,10 @@ class MonoInputVolumeController {
   
   
   
-  void Process(absl::optional<int> rms_error_dbfs);
+  
+  
+  void Process(absl::optional<int> rms_error_dbfs,
+               absl::optional<float> speech_probability);
 
   
   int recommended_analog_level() const { return recommended_input_volume_; }
@@ -255,9 +264,17 @@ class MonoInputVolumeController {
   const int clipped_level_min_;
 
   
+  
   const int update_input_volume_wait_frames_;
   int frames_since_update_input_volume_ = 0;
+  int speech_frames_since_update_input_volume_ = 0;
   bool is_first_frame_ = true;
+
+  
+  
+  const float speech_probability_threshold_;
+  
+  const float speech_ratio_threshold_;
 };
 
 }  
