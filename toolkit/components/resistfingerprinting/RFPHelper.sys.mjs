@@ -1,14 +1,9 @@
+// -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["RFPHelper"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const kPrefResistFingerprinting = "privacy.resistFingerprinting";
 const kPrefSpoofEnglish = "privacy.spoof_english";
@@ -34,9 +29,9 @@ function log(msg) {
 }
 
 class _RFPHelper {
-  
-  
-  
+  // ============================================================================
+  // Shared Setup
+  // ============================================================================
   constructor() {
     this._initialized = false;
   }
@@ -47,7 +42,7 @@ class _RFPHelper {
     }
     this._initialized = true;
 
-    
+    // Add unconditional observers
     Services.prefs.addObserver(kPrefResistFingerprinting, this);
     Services.prefs.addObserver(kPrefLetterboxing, this);
     XPCOMUtils.defineLazyPreferenceGetter(
@@ -65,7 +60,7 @@ class _RFPHelper {
       false
     );
 
-    
+    // Add RFP and Letterboxing observers if prefs are enabled
     this._handleResistFingerprintingChanged();
     this._handleLetterboxingPrefChanged();
   }
@@ -76,10 +71,10 @@ class _RFPHelper {
     }
     this._initialized = false;
 
-    
+    // Remove unconditional observers
     Services.prefs.removeObserver(kPrefResistFingerprinting, this);
     Services.prefs.removeObserver(kPrefLetterboxing, this);
-    
+    // Remove the RFP observers, swallowing exceptions if they weren't present
     this._removeRFPObservers();
   }
 
@@ -92,9 +87,9 @@ class _RFPHelper {
         this._handleHttpOnModifyRequest(subject, data);
         break;
       case kTopicDOMWindowOpened:
-        
-        
-        
+        // We attach to the newly created window by adding tabsProgressListener
+        // and event listener on it. We listen for new tabs being added or
+        // the change of the content principal and apply margins accordingly.
         this._handleDOMWindowOpened(subject);
         break;
       default:
@@ -134,9 +129,9 @@ class _RFPHelper {
     this._updateMarginsForTabsInWindow(win);
   }
 
-  
-  
-  
+  // ============================================================================
+  // Language Prompt
+  // ============================================================================
   _addRFPObservers() {
     Services.prefs.addObserver(kPrefSpoofEnglish, this);
     if (this._shouldPromptForLanguagePref()) {
@@ -148,12 +143,12 @@ class _RFPHelper {
     try {
       Services.prefs.removeObserver(kPrefSpoofEnglish, this);
     } catch (e) {
-      
+      // do nothing
     }
     try {
       Services.obs.removeObserver(this, kTopicHttpOnModifyRequest);
     } catch (e) {
-      
+      // do nothing
     }
   }
 
@@ -167,21 +162,21 @@ class _RFPHelper {
 
   _handleSpoofEnglishChanged() {
     switch (Services.prefs.getIntPref(kPrefSpoofEnglish)) {
-      case 0: 
-      
-      
-      
-      case 1: 
+      case 0: // will prompt
+      // This should only happen when turning privacy.resistFingerprinting off.
+      // Works like disabling accept-language spoofing.
+      // fall through
+      case 1: // don't spoof
         if (
           Services.prefs.prefHasUserValue("javascript.use_us_english_locale")
         ) {
           Services.prefs.clearUserPref("javascript.use_us_english_locale");
         }
-        
-        
-        
+        // We don't reset intl.accept_languages. Instead, setting
+        // privacy.spoof_english to 1 allows user to change preferred language
+        // settings through Preferences UI.
         break;
-      case 2: 
+      case 2: // spoof
         Services.prefs.setCharPref("intl.accept_languages", "en-US, en");
         Services.prefs.setBoolPref("javascript.use_us_english_locale", true);
         break;
@@ -198,8 +193,8 @@ class _RFPHelper {
   }
 
   _handleHttpOnModifyRequest(subject, data) {
-    
-    
+    // If we are loading an HTTP page from content, show the
+    // "request English language web pages?" prompt.
     let httpChannel = subject.QueryInterface(Ci.nsIHttpChannel);
 
     let notificationCallbacks = httpChannel.notificationCallbacks;
@@ -215,10 +210,10 @@ class _RFPHelper {
     if (!subject.URI.schemeIs("http") && !subject.URI.schemeIs("https")) {
       return;
     }
-    
-    
-    
-    
+    // The above QI did not throw, the scheme is http[s], and we know the
+    // load context is content, so we must have a true HTTP request from content.
+    // Stop the observer and display the prompt if another window has
+    // not already done so.
     Services.obs.removeObserver(this, kTopicHttpOnModifyRequest);
 
     if (!this._shouldPromptForLanguagePref()) {
@@ -227,9 +222,9 @@ class _RFPHelper {
 
     this._promptForLanguagePreference();
 
-    
-    
-    
+    // The Accept-Language header for this request was set when the
+    // channel was created. Reset it to match the value that will be
+    // used for future requests.
     let val = this._getCurrentAcceptLanguageValue(subject.URI);
     if (val) {
       httpChannel.setRequestHeader("Accept-Language", val, false);
@@ -237,7 +232,7 @@ class _RFPHelper {
   }
 
   _promptForLanguagePreference() {
-    
+    // Display two buttons, both with string titles.
     let flags = Services.prompt.STD_YES_NO_BUTTONS;
     let brandBundle = Services.strings.createBundle(
       "chrome://branding/locale/brand.properties"
@@ -262,17 +257,17 @@ class _RFPHelper {
       { value: false }
     );
 
-    
-    
+    // Update preferences to reflect their response and to prevent the prompt
+    // from being displayed again.
     Services.prefs.setIntPref(kPrefSpoofEnglish, response == 0 ? 2 : 1);
   }
 
   _getCurrentAcceptLanguageValue(uri) {
     let channel = Services.io.newChannelFromURI(
       uri,
-      null, 
+      null, // aLoadingNode
       Services.scriptSecurityManager.getSystemPrincipal(),
-      null, 
+      null, // aTriggeringPrincipal
       Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
       Ci.nsIContentPolicy.TYPE_OTHER
     );
@@ -285,14 +280,14 @@ class _RFPHelper {
     return httpChannel.getRequestHeader("Accept-Language");
   }
 
-  
-  
-  
-  
-
-
-
-
+  // ==============================================================================
+  // Letterboxing
+  // ============================================================================
+  /**
+   * We use the TabsProgressListener to catch the change of the content
+   * principal. We would clear the margins around the content viewport if
+   * it is the system principal.
+   */
   onLocationChange(aBrowser) {
     this._addOrClearContentMargin(aBrowser);
   }
@@ -328,9 +323,9 @@ class _RFPHelper {
     ChromeUtils.unregisterWindowActor("RFPHelper");
   }
 
-  
-  
-  
+  // The function to parse the dimension set from the pref value. The pref value
+  // should be formated as 'width1xheight1, width2xheight2, ...'. For
+  // example, '100x100, 200x200, 400x200 ...'.
   _parseLetterboxingDimensions(aPrefValue) {
     if (!aPrefValue || !aPrefValue.match(/^(?:\d+x\d+,\s*)*(?:\d+x\d+)$/)) {
       if (aPrefValue) {
@@ -354,13 +349,13 @@ class _RFPHelper {
   _addOrClearContentMargin(aBrowser) {
     let tab = aBrowser.getTabBrowser().getTabForBrowser(aBrowser);
 
-    
+    // We won't do anything for lazy browsers.
     if (!aBrowser.isConnected) {
       return;
     }
 
-    
-    
+    // We should apply no margin around an empty tab or a tab with system
+    // principal.
     if (tab.isEmpty || aBrowser.contentPrincipal.isSystemPrincipal) {
       this._clearContentViewMargin(aBrowser);
     } else {
@@ -368,9 +363,9 @@ class _RFPHelper {
     }
   }
 
-  
-
-
+  /**
+   * Given a width or height, returns the appropriate margin to apply.
+   */
   steppedRange(aDimension) {
     let stepping;
     if (aDimension <= 50) {
@@ -386,10 +381,10 @@ class _RFPHelper {
     return (aDimension % stepping) / 2;
   }
 
-  
-
-
-
+  /**
+   * The function will round the given browser by adding margins around the
+   * content viewport.
+   */
   async _roundContentView(aBrowser) {
     let logId = Math.random();
     log("_roundContentView[" + logId + "]");
@@ -409,10 +404,10 @@ class _RFPHelper {
       let containerWidth = browserContainer.clientWidth;
       let containerHeight = browserContainer.clientHeight;
 
-      
-      
-      
-      
+      // If the findbar or devtools are out, we need to subtract their height (plus 1
+      // for the separator) from the container height, because we need to adjust our
+      // letterboxing to account for it; however it is not included in that dimension
+      // (but rather is subtracted from the content height.)
       let findBar = win.gFindBarInitialized ? win.gFindBar : undefined;
       let findBarOffset =
         findBar && !findBar.hidden ? findBar.clientHeight + 1 : 0;
@@ -454,8 +449,8 @@ class _RFPHelper {
           aHeight +
           ")"
       );
-      
-      
+      // If the set is empty, we will round the content with the default
+      // stepping size.
       if (!this._letterboxingDimensions.length) {
         result = {
           width: this.steppedRange(aWidth),
@@ -480,10 +475,10 @@ class _RFPHelper {
       let minWaste = Number.MAX_SAFE_INTEGER;
       let targetDimensions = undefined;
 
-      
+      // Find the desired dimensions which waste the least content area.
       for (let dim of this._letterboxingDimensions) {
-        
-        
+        // We don't need to consider the dimensions which cannot fit into the
+        // real content size.
         if (dim.width > aWidth || dim.height > aHeight) {
           continue;
         }
@@ -496,9 +491,9 @@ class _RFPHelper {
         }
       }
 
-      
-      
-      
+      // If we cannot find any dimensions match to the real content window, this
+      // means the content area is smaller the smallest size in the set. In this
+      // case, we won't apply any margins.
       if (!targetDimensions) {
         result = {
           width: 0,
@@ -526,12 +521,12 @@ class _RFPHelper {
       return result;
     };
 
-    
-    
-    
+    // Calculating the margins around the browser element in order to round the
+    // content viewport. We will use a 200x100 stepping if the dimension set
+    // is not given.
     let margins = calcMargins(containerWidth, containerHeight);
 
-    
+    // If the size of the content is already quantized, we do nothing.
     if (aBrowser.style.margin == `${margins.height}px ${margins.width}px`) {
       log("_roundContentView[" + logId + "] is_rounded == true");
       if (this._isLetterboxingTesting) {
@@ -557,9 +552,9 @@ class _RFPHelper {
           " x " +
           margins.height
       );
-      
-      
-      
+      // One cannot (easily) control the color of a margin unfortunately.
+      // An initial attempt to use a border instead of a margin resulted
+      // in offset event dispatching; so for now we use a colorless margin.
       aBrowser.style.margin = `${margins.height}px ${margins.width}px`;
     });
   }
@@ -583,7 +578,7 @@ class _RFPHelper {
     aWindow.gBrowser.addTabsProgressListener(this);
     aWindow.addEventListener("TabOpen", this);
 
-    
+    // Rounding the content viewport.
     this._updateMarginsForTabsInWindow(aWindow);
   }
 
@@ -606,7 +601,7 @@ class _RFPHelper {
     tabBrowser.removeTabsProgressListener(this);
     aWindow.removeEventListener("TabOpen", this);
 
-    
+    // Clear all margins and tooltip for all browsers.
     for (let tab of tabBrowser.tabs) {
       let browser = tab.linkedBrowser;
       this._clearContentViewMargin(browser);
@@ -633,8 +628,8 @@ class _RFPHelper {
     win.addEventListener(
       "load",
       () => {
-        
-        
+        // We attach to the new window when it has been loaded if the new loaded
+        // window is a browsing window.
         if (
           win.document.documentElement.getAttribute("windowtype") !==
           "navigator:browser"
@@ -648,4 +643,4 @@ class _RFPHelper {
   }
 }
 
-let RFPHelper = new _RFPHelper();
+export let RFPHelper = new _RFPHelper();
