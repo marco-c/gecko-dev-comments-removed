@@ -565,7 +565,7 @@ pub trait Deserialize<'de>: Sized {
         D: Deserializer<'de>,
     {
         
-        *place = Deserialize::deserialize(deserializer)?;
+        *place = try!(Deserialize::deserialize(deserializer));
         Ok(())
     }
 }

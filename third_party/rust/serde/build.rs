@@ -6,6 +6,8 @@ use std::str::{self, FromStr};
 
 
 fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
+
     let minor = match rustc_minor_version() {
         Some(minor) => minor,
         None => return,
@@ -89,24 +91,28 @@ fn main() {
         println!("cargo:rustc-cfg=no_core_try_from");
         println!("cargo:rustc-cfg=no_num_nonzero_signed");
         println!("cargo:rustc-cfg=no_systemtime_checked_add");
+        println!("cargo:rustc-cfg=no_relaxed_trait_bounds");
     }
 
     
-    
-    
-    let has_atomic64 = target.starts_with("x86_64")
-        || target.starts_with("i686")
-        || target.starts_with("aarch64")
-        || target.starts_with("powerpc64")
-        || target.starts_with("sparc64")
-        || target.starts_with("mips64el")
-        || target.starts_with("riscv64");
-    let has_atomic32 = has_atomic64 || emscripten;
-    if minor < 34 || !has_atomic64 {
-        println!("cargo:rustc-cfg=no_std_atomic64");
-    }
-    if minor < 34 || !has_atomic32 {
-        println!("cargo:rustc-cfg=no_std_atomic");
+    if minor < 60 {
+        println!("cargo:rustc-cfg=no_target_has_atomic");
+        
+        
+        let has_atomic64 = target.starts_with("x86_64")
+            || target.starts_with("i686")
+            || target.starts_with("aarch64")
+            || target.starts_with("powerpc64")
+            || target.starts_with("sparc64")
+            || target.starts_with("mips64el")
+            || target.starts_with("riscv64");
+        let has_atomic32 = has_atomic64 || emscripten;
+        if minor < 34 || !has_atomic64 {
+            println!("cargo:rustc-cfg=no_std_atomic64");
+        }
+        if minor < 34 || !has_atomic32 {
+            println!("cargo:rustc-cfg=no_std_atomic");
+        }
     }
 }
 
