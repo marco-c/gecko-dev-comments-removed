@@ -698,9 +698,13 @@ let BrowserUsageTelemetry = {
 
     
     for (let cls of ["bookmark-item", "tab-icon-sound", "tab-close-button"]) {
-      if (node.classList.contains(cls)) {
-        return cls;
+      if (!node.classList.contains(cls)) {
+        continue;
       }
+      if (cls == "bookmark-item" && node.parentElement.id.includes("history")) {
+        return "history-item";
+      }
+      return cls;
     }
 
     
