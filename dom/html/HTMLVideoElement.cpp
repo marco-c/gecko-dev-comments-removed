@@ -402,6 +402,12 @@ void HTMLVideoElement::UpdateWakeLock() {
 }
 
 bool HTMLVideoElement::ShouldCreateVideoWakeLock() const {
+  if (!StaticPrefs::media_video_wakelock()) {
+    return false;
+  }
+  
+  
+  
   
   
   
