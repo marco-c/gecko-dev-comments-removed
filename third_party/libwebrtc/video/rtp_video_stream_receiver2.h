@@ -149,8 +149,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
                             bool decodability_flag,
                             bool buffering_allowed) override;
 
-  bool IsUlpfecEnabled() const;
-
   
   
   
