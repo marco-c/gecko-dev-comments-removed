@@ -749,6 +749,8 @@ const gCSSProperties2 = {
   'line-height': {
     
     types: [
+        { type: 'discrete', options: [ [ 'normal', '10px' ],
+                                       [ 'normal', '10', 'normal', '100px' ] ] }
     ]
   },
   'list-style-image': {
