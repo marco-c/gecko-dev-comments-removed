@@ -700,7 +700,8 @@ class WebSocketServer:
         
         
         await asyncio.sleep(
-            0, loop=self.loop if sys.version_info[:2] < (3, 8) else None
+            0,
+            **({"loop": self.loop} if sys.version_info[:2] < (3, 8) else {}),
         )
 
         
@@ -711,7 +712,7 @@ class WebSocketServer:
         if self.websockets:
             await asyncio.wait(
                 [websocket.close(1001) for websocket in self.websockets],
-                loop=self.loop if sys.version_info[:2] < (3, 8) else None,
+                **({"loop": self.loop} if sys.version_info[:2] < (3, 8) else {}),
             )
 
         
@@ -720,7 +721,7 @@ class WebSocketServer:
         if self.websockets:
             await asyncio.wait(
                 [websocket.handler_task for websocket in self.websockets],
-                loop=self.loop if sys.version_info[:2] < (3, 8) else None,
+                **({"loop": self.loop} if sys.version_info[:2] < (3, 8) else {}),
             )
 
         
