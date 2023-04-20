@@ -108,13 +108,7 @@ class ProcessDescriptorFront extends DescriptorMixin(
     this._targetFrontPromise = (async () => {
       let targetFront = null;
       try {
-        
-        
-        
-        
-        const targetForm = await super.getTarget({
-          isBrowserToolboxFission: true,
-        });
+        const targetForm = await super.getTarget();
         targetFront = await this._createProcessTargetFront(targetForm);
       } catch (e) {
         
@@ -132,15 +126,6 @@ class ProcessDescriptorFront extends DescriptorMixin(
       return targetFront;
     })();
     return this._targetFrontPromise;
-  }
-
-  
-  
-  
-  getWatcher() {
-    return super.getWatcher({
-      isBrowserToolboxFission: true,
-    });
   }
 
   destroy() {
