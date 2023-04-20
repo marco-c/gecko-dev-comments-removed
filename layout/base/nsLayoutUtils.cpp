@@ -9735,7 +9735,8 @@ bool nsLayoutUtils::ShouldHandleMetaViewport(const Document* aDocument) {
 }
 
 
-ComputedStyle* nsLayoutUtils::StyleForScrollbar(nsIFrame* aScrollbarPart) {
+ComputedStyle* nsLayoutUtils::StyleForScrollbar(
+    const nsIFrame* aScrollbarPart) {
   
   
   nsIContent* content = aScrollbarPart->GetContent();

@@ -364,13 +364,13 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual bool IsScrollingActive() = 0;
+  virtual bool IsScrollingActive() const = 0;
 
   
 
 
 
-  virtual bool IsMaybeAsynchronouslyScrolled() = 0;
+  virtual bool IsMaybeAsynchronouslyScrolled() const = 0;
 
   
 
@@ -391,7 +391,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual bool IsRectNearlyVisible(const nsRect& aRect) = 0;
+  virtual bool IsRectNearlyVisible(const nsRect& aRect) const = 0;
   
 
 
@@ -402,7 +402,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual ScrollOrigin LastScrollOrigin() = 0;
+  virtual ScrollOrigin LastScrollOrigin() const = 0;
 
   
 

@@ -12,12 +12,9 @@
 #include "mozilla/TimeStamp.h"
 
 class nsFrameList;
+class nsHTMLScrollFrame;
 class nsIFrame;
 class nsIScrollableFrame;
-
-namespace mozilla {
-class ScrollFrameHelper;
-}  
 
 namespace mozilla::layout {
 
@@ -30,7 +27,7 @@ namespace mozilla::layout {
 
 class ScrollAnchorContainer final {
  public:
-  explicit ScrollAnchorContainer(ScrollFrameHelper* aScrollFrame);
+  explicit ScrollAnchorContainer(nsHTMLScrollFrame* aScrollFrame);
   ~ScrollAnchorContainer();
 
   
@@ -46,10 +43,7 @@ class ScrollAnchorContainer final {
   nsIFrame* AnchorNode() const { return mAnchorNode; }
 
   
-
-
-
-  nsIFrame* Frame() const;
+  nsHTMLScrollFrame* Frame() const;
 
   
 
@@ -138,9 +132,6 @@ class ScrollAnchorContainer final {
   
   
   void AdjustmentMade(nscoord aAdjustment);
-
-  
-  ScrollFrameHelper* ScrollFrame() const;
 
   
   

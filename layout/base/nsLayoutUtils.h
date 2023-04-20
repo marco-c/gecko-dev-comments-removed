@@ -2998,7 +2998,7 @@ class nsLayoutUtils {
 
 
 
-  static ComputedStyle* StyleForScrollbar(nsIFrame* aScrollbarPart);
+  static ComputedStyle* StyleForScrollbar(const nsIFrame* aScrollbarPart);
 
   
 
