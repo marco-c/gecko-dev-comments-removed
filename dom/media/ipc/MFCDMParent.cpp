@@ -64,7 +64,10 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
     : mKeySystem(aKeySystem),
       mManager(aManager),
       mManagerThread(aManagerThread),
-      mId(sNextId++) {
+      mId(sNextId++),
+      mKeyMessageEvents(aManagerThread),
+      mKeyChangeEvents(aManagerThread),
+      mExpirationEvents(aManagerThread) {
   
   MOZ_ASSERT(aKeySystem.EqualsLiteral(kPlayReadyKeySystemName));
   MOZ_ASSERT(aManager);
@@ -76,6 +79,24 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
   mIPDLSelfRef = this;
   LoadFactory();
   Register();
+
+  mKeyMessageListener = mKeyMessageEvents.Connect(
+      mManagerThread, this, &MFCDMParent::SendOnSessionKeyMessage);
+  mKeyChangeListener = mKeyChangeEvents.Connect(
+      mManagerThread, this, &MFCDMParent::SendOnSessionKeyStatusesChanged);
+  mExpirationListener = mExpirationEvents.Connect(
+      mManagerThread, this, &MFCDMParent::SendOnSessionKeyExpiration);
+}
+
+void MFCDMParent::Destroy() {
+  AssertOnManagerThread();
+  mKeyMessageEvents.DisconnectAll();
+  mKeyChangeEvents.DisconnectAll();
+  mExpirationEvents.DisconnectAll();
+  mKeyMessageListener.DisconnectIfExists();
+  mKeyChangeListener.DisconnectIfExists();
+  mExpirationListener.DisconnectIfExists();
+  mIPDLSelfRef = nullptr;
 }
 
 HRESULT MFCDMParent::LoadFactory() {
@@ -407,6 +428,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvCreateSessionAndGenerateRequest(
                                                   aParams.initData().Elements(),
                                                   aParams.initData().Length()),
                          NS_ERROR_FAILURE);
+  ConnectSessionEvents(session.get());
 
   
   
@@ -417,6 +439,13 @@ mozilla::ipc::IPCResult MFCDMParent::RecvCreateSessionAndGenerateRequest(
 
   aResolver(*sessionId);
   return IPC_OK();
+}
+
+void MFCDMParent::ConnectSessionEvents(MFCDMSession* aSession) {
+  
+  mKeyMessageEvents.Forward(aSession->KeyMessageEvent());
+  mKeyChangeEvents.Forward(aSession->KeyChangeEvent());
+  mExpirationEvents.Forward(aSession->ExpirationEvent());
 }
 
 #undef MFCDM_REJECT_IF_FAILED
