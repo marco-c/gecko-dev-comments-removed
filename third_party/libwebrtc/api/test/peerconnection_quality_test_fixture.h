@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/macros.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -132,9 +133,18 @@ class PeerConnectionE2EQualityTestFixture {
   
   
   
-  virtual PeerHandle* AddPeer(
+  [[deprecated("bugs.webrtc.org/14627")]] virtual PeerHandle* AddPeer(
       const PeerNetworkDependencies& network_dependencies,
-      rtc::FunctionView<void(PeerConfigurer*)> configurer) = 0;
+      rtc::FunctionView<void(PeerConfigurer*)> configurer) {
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+  
+  
+  virtual PeerHandle* AddPeer(std::unique_ptr<PeerConfigurer> configurer) {
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
 
   
   
