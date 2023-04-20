@@ -3,7 +3,6 @@
 
 
 import { createSelector } from "reselect";
-import { shallowEqual } from "../utils/shallow-equal";
 
 import {
   getPrettySourceURL,
@@ -109,26 +108,18 @@ export function getPrettySource(state, id) {
   return getOriginalSourceByURL(state, getPrettySourceURL(source.url));
 }
 
-
-export function getSourcesMap(state) {
-  return state.sources.sources;
-}
-
 function getUrls(state) {
   return state.sources.urls;
 }
 
-export const getSourceList = createSelector(
-  getSourcesMap,
-  sourcesMap => {
-    return [...sourcesMap.values()];
-  },
-  { equalityCheck: shallowEqual, resultEqualityCheck: shallowEqual }
-);
+
+export function getSourceList(state) {
+  return [...state.sources.sources.values()];
+}
 
 
 export function getSourceCount(state) {
-  return getSourcesMap(state).size;
+  return state.sources.sources.size;
 }
 
 export function getSelectedLocation(state) {
