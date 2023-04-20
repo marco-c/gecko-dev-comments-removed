@@ -541,6 +541,14 @@ TimerThread::Run() {
   mAllowedEarlyFiringMicroseconds = usIntervalResolution / 2;
   bool forceRunNextTimer = false;
 
+  
+  
+  
+  static constexpr size_t kMaxQueuedTimerFired = 128;
+  size_t queuedTimerFiredCount = 0;
+  AutoTArray<uint64_t, kMaxQueuedTimerFired> queuedTimersFiredPerWakeup;
+  queuedTimersFiredPerWakeup.SetLengthAndRetainStorage(kMaxQueuedTimerFired);
+
   uint64_t timersFiredThisWakeup = 0;
   while (!mShutdown) {
     
@@ -648,8 +656,14 @@ TimerThread::Run() {
     mNotified = false;
     {
       
-      glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
-          {timersFiredThisWakeup});
+      
+      queuedTimersFiredPerWakeup[queuedTimerFiredCount] = timersFiredThisWakeup;
+      ++queuedTimerFiredCount;
+      if (queuedTimerFiredCount == kMaxQueuedTimerFired) {
+        glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
+            queuedTimersFiredPerWakeup);
+        queuedTimerFiredCount = 0;
+      }
       timersFiredThisWakeup = 0;
       AUTO_PROFILER_TRACING_MARKER("TimerThread", "Wait", OTHER);
       mMonitor.Wait(waitFor);
@@ -658,6 +672,13 @@ TimerThread::Run() {
       forceRunNextTimer = false;
     }
     mWaiting = false;
+  }
+
+  
+  if (queuedTimerFiredCount != 0) {
+    queuedTimersFiredPerWakeup.SetLengthAndRetainStorage(queuedTimerFiredCount);
+    glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
+        queuedTimersFiredPerWakeup);
   }
 
   return NS_OK;
