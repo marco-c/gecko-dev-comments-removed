@@ -132,6 +132,27 @@ class NativeIteratorListIter {
   }
 };
 
+
+
+
+enum class NativeIteratorIndices : uint32_t {
+  
+  Unavailable = 0,
+
+  
+  
+  
+  AvailableOnRequest = 1,
+
+  
+  
+  Disabled = 2,
+
+  
+  
+  Valid = 3
+};
+
 struct NativeIterator : public NativeIteratorListNode {
  private:
   
@@ -151,8 +172,10 @@ struct NativeIterator : public NativeIteratorListNode {
   
   
   
+  
   GCPtr<JSLinearString*>* propertyCursor_;  
 
+  
   
   
   
@@ -202,10 +225,19 @@ struct NativeIterator : public NativeIteratorListNode {
 
  private:
   static constexpr uint32_t FlagsBits = 4;
+  static constexpr uint32_t IndicesBits = 2;
+
   static constexpr uint32_t FlagsMask = (1 << FlagsBits) - 1;
 
+  static constexpr uint32_t PropCountShift = IndicesBits + FlagsBits;
+  static constexpr uint32_t PropCountBits = 32 - PropCountShift;
+
  public:
-  static constexpr uint32_t PropCountLimit = 1 << (32 - FlagsBits);
+  static constexpr uint32_t IndicesShift = FlagsBits;
+  static constexpr uint32_t IndicesMask = ((1 << IndicesBits) - 1)
+                                          << IndicesShift;
+
+  static constexpr uint32_t PropCountLimit = 1 << PropCountBits;
 
  private:
   
@@ -234,8 +266,11 @@ struct NativeIterator : public NativeIteratorListNode {
 
 
 
+
+
   NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> propIter,
                  Handle<JSObject*> objBeingIterated, HandleIdVector props,
+                 bool supportsIndices, PropertyIndexVector* indices,
                  uint32_t numShapes, bool* hadError);
 
   JSObject* objectBeingIterated() const { return objectBeingIterated_; }
@@ -294,6 +329,18 @@ struct NativeIterator : public NativeIteratorListNode {
 
   GCPtr<JSLinearString*>* nextProperty() const { return propertyCursor_; }
 
+  PropertyIndex* indicesBegin() const {
+    
+    
+    static_assert(alignof(GCPtr<JSLinearString*>) >= alignof(PropertyIndex));
+    return reinterpret_cast<PropertyIndex*>(propertiesEnd_);
+  }
+
+  PropertyIndex* indicesEnd() const {
+    MOZ_ASSERT(indicesState() == NativeIteratorIndices::Valid);
+    return indicesBegin() + numKeys() * sizeof(PropertyIndex);
+  }
+
   MOZ_ALWAYS_INLINE JS::Value nextIteratedValueAndAdvance() {
     if (propertyCursor_ >= propertiesEnd_) {
       MOZ_ASSERT(propertyCursor_ == propertiesEnd_);
@@ -329,13 +376,15 @@ struct NativeIterator : public NativeIteratorListNode {
 
   void trimLastProperty() {
     MOZ_ASSERT(isInitialized());
-
     propertiesEnd_--;
 
     
     
     
     *propertiesEnd_ = nullptr;
+
+    
+    disableIndices();
   }
 
   JSObject* iterObj() const { return iterObj_; }
@@ -367,17 +416,33 @@ struct NativeIterator : public NativeIteratorListNode {
  private:
   uint32_t flags() const { return flagsAndCount_ & FlagsMask; }
 
-  uint32_t initialPropertyCount() const { return flagsAndCount_ >> FlagsBits; }
+  NativeIteratorIndices indicesState() const {
+    return NativeIteratorIndices((flagsAndCount_ & IndicesMask) >>
+                                 IndicesShift);
+  }
+
+  uint32_t initialPropertyCount() const {
+    return flagsAndCount_ >> PropCountShift;
+  }
 
   static uint32_t initialFlagsAndCount(uint32_t count) {
     
     MOZ_ASSERT(count < PropCountLimit);
-    return count << FlagsBits;
+    return count << PropCountShift;
   }
 
   void setFlags(uint32_t flags) {
     MOZ_ASSERT((flags & ~FlagsMask) == 0);
-    flagsAndCount_ = (initialPropertyCount() << FlagsBits) | flags;
+    flagsAndCount_ = (flagsAndCount_ & ~FlagsMask) | flags;
+  }
+
+  void setIndicesState(NativeIteratorIndices indices) {
+    uint32_t indicesBits = uint32_t(indices) << IndicesShift;
+    flagsAndCount_ = (flagsAndCount_ & ~IndicesMask) | indicesBits;
+  }
+
+  bool indicesAllocated() const {
+    return indicesState() >= NativeIteratorIndices::Disabled;
   }
 
   void markInitialized() {
@@ -444,6 +509,23 @@ struct NativeIterator : public NativeIteratorListNode {
     MOZ_ASSERT(!isEmptyIteratorSingleton());
 
     flagsAndCount_ |= Flags::HasUnvisitedPropertyDeletion;
+  }
+
+  bool hasValidIndices() const {
+    return indicesState() == NativeIteratorIndices::Valid;
+  }
+
+  bool indicesAvailableOnRequest() const {
+    return indicesState() == NativeIteratorIndices::AvailableOnRequest;
+  }
+
+  void disableIndices() {
+    
+    
+    
+    if (indicesState() == NativeIteratorIndices::Valid) {
+      setIndicesState(NativeIteratorIndices::Disabled);
+    }
   }
 
   void link(NativeIteratorListNode* other) {
@@ -556,6 +638,7 @@ RegExpStringIteratorObject* NewRegExpStringIterator(JSContext* cx);
 PropertyIteratorObject* LookupInIteratorCache(JSContext* cx, HandleObject obj);
 
 JSObject* GetIterator(JSContext* cx, HandleObject obj);
+JSObject* GetIteratorWithIndices(JSContext* cx, HandleObject obj);
 
 JSObject* ValueToIterator(JSContext* cx, HandleValue vp);
 
