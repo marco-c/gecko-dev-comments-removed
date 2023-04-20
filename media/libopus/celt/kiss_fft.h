@@ -53,6 +53,10 @@ extern "C" {
 #  define kiss_twiddle_scalar opus_int16
 
 
+
+
+#  define KISS_TWIDDLE_CPX_ALIGNMENT (sizeof(opus_int32))
+
 #else
 # ifndef kiss_fft_scalar
 
@@ -60,6 +64,12 @@ extern "C" {
 #   define kiss_twiddle_scalar float
 #   define KF_SUFFIX _celt_single
 # endif
+#endif
+
+#if defined(__GNUC__) && defined(KISS_TWIDDLE_CPX_ALIGNMENT)
+#define KISS_TWIDDLE_CPX_ALIGNED __attribute__((aligned(KISS_TWIDDLE_CPX_ALIGNMENT)))
+#else
+#define KISS_TWIDDLE_CPX_ALIGNED
 #endif
 
 typedef struct {
@@ -70,7 +80,7 @@ typedef struct {
 typedef struct {
    kiss_twiddle_scalar r;
    kiss_twiddle_scalar i;
-}kiss_twiddle_cpx;
+} KISS_TWIDDLE_CPX_ALIGNED kiss_twiddle_cpx;
 
 #define MAXFACTORS 8
 
