@@ -208,4 +208,11 @@ void RemoteTextureHostWrapper::SetRemoteTextureHostForDisplayList(
   mRemoteTextureForDisplayList = aTextureHost;
 }
 
+bool RemoteTextureHostWrapper::IsWrappingSurfaceTextureHost() {
+  if (!mRemoteTextureForDisplayList) {
+    return false;
+  }
+  return mRemoteTextureForDisplayList->IsWrappingSurfaceTextureHost();
+}
+
 }  

@@ -609,6 +609,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   }
 
   virtual bool IsWrappingBufferTextureHost() { return false; }
+  virtual bool IsWrappingSurfaceTextureHost() { return false; }
 
   
   
@@ -726,7 +727,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   
 
 
-  virtual void PrepareForUse() {}
+  virtual void PrepareForUse();
 
   
 
