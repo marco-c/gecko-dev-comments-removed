@@ -4518,10 +4518,7 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
 
       
       
-      
-      
-      if (aMozBoxLayout == StyleMozBoxLayout::Legacy ||
-          aElement.IsXULElement(nsGkAtoms::scrollcorner)) {
+      if (aMozBoxLayout == StyleMozBoxLayout::Legacy) {
         static constexpr FrameConstructionData data =
             SCROLLABLE_ABSPOS_CONTAINER_XUL_FCDATA(
                 ToCreationFunc(NS_NewBoxFrame));
