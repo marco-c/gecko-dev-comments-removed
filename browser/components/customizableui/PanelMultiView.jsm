@@ -1377,9 +1377,22 @@ var PanelView = class extends AssociatedToNode {
     
     let header = this.node.querySelector(".panel-header");
     if (header) {
+      let headerInfoButton = header.querySelector(".panel-info-button");
+      let headerBackButton = header.querySelector(".subviewbutton-back");
+      if (headerBackButton && this.node.getAttribute("mainview")) {
+        
+        
+        
+        headerBackButton.remove();
+      }
       if (!this.node.getAttribute("mainview")) {
         if (value) {
-          
+          if (headerInfoButton && !headerBackButton) {
+            
+            
+            
+            header.prepend(this.createHeaderBackButton());
+          }
           
           header.querySelector(".panel-header > h1 > span").textContent = value;
           ensureHeaderSeparator(header);
@@ -1406,6 +1419,22 @@ var PanelView = class extends AssociatedToNode {
     header = this.document.createXULElement("box");
     header.classList.add("panel-header");
 
+    let backButton = this.createHeaderBackButton();
+    let h1 = this.document.createElement("h1");
+    let span = this.document.createElement("span");
+    span.textContent = value;
+    h1.appendChild(span);
+
+    header.append(backButton, h1);
+    this.node.prepend(header);
+
+    ensureHeaderSeparator(header);
+  }
+
+  
+
+
+  createHeaderBackButton() {
     let backButton = this.document.createXULElement("toolbarbutton");
     backButton.className =
       "subviewbutton subviewbutton-iconic subviewbutton-back";
@@ -1420,16 +1449,7 @@ var PanelView = class extends AssociatedToNode {
       this.node.panelMultiView.goBack();
       backButton.blur();
     });
-
-    let h1 = this.document.createElement("h1");
-    let span = this.document.createElement("span");
-    span.textContent = value;
-    h1.appendChild(span);
-
-    header.append(backButton, h1);
-    this.node.prepend(header);
-
-    ensureHeaderSeparator(header);
+    return backButton;
   }
 
   
