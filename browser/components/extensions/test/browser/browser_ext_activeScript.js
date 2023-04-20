@@ -456,14 +456,19 @@ const verifyActionActiveScript = async ({
     await testActiveScript(ext3, 2, [], win, verifyExtensionsPanel);
     await testActiveScript(ext4, 1, [], win, verifyExtensionsPanel);
     await testActiveScript(ext5, 1, [], win, verifyExtensionsPanel);
-  });
 
-  await ext0.unload();
-  await ext1.unload();
-  await ext2.unload();
-  await ext3.unload();
-  await ext4.unload();
-  await ext5.unload();
+    
+    
+    
+    
+    
+    await ext0.unload();
+    await ext1.unload();
+    await ext2.unload();
+    await ext3.unload();
+    await ext4.unload();
+    await ext5.unload();
+  });
 };
 
 add_task(async function test_action_activeScript() {
