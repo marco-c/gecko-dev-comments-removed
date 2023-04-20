@@ -503,6 +503,11 @@ interface nsILoadInfo : nsISupports
   
 
 
+  const unsigned long HTTPS_ONLY_BYPASS_ORB = (1 << 8);
+
+  
+
+
 
   [infallible] attribute unsigned long httpsOnlyStatus;
 
