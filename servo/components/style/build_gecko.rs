@@ -121,12 +121,9 @@ trait BuilderExt {
 
 impl BuilderExt for Builder {
     fn get_initial_builder() -> Builder {
-        use bindgen::RustTarget;
-
         
         
         let mut builder = Builder::default()
-            .rust_target(RustTarget::Stable_1_25)
             .size_t_is_usize(true)
             .disable_untagged_union();
 
