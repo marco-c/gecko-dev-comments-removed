@@ -150,11 +150,14 @@ assertErrorMessage(() => runNull(), TypeError, /cannot pass null to non-nullable
 assertErrorMessage(() => runMultiNullReg(), TypeError, /cannot pass null to non-nullable/);
 assertErrorMessage(() => runMultiNullStack(), TypeError, /cannot pass null to non-nullable/);
 
-
-wasmFailValidateText(`(module
-  (global $a (import "" "") (ref extern))
-  (global (ref extern) global.get $a)
-)`, /non-nullable references not supported in globals/);
+{
+  
+  wasmEvalText(`(module
+    (func $f)
+    (elem declare $f)
+    (global (ref func) ref.func $f)
+  )`);
+}
 
 
 wasmFailValidateText(`(module
