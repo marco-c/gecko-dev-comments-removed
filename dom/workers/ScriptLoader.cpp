@@ -761,7 +761,9 @@ bool WorkerScriptLoader::ProcessPendingRequests(JSContext* aCx) {
   MOZ_ASSERT(global);
 
   while (!mLoadedRequests.isEmpty()) {
-    RefPtr<ScriptLoadRequest> req = mLoadedRequests.StealFirst();
+    
+    
+    RefPtr<ScriptLoadRequest> req = mLoadedRequests.getFirst();
     
     
     
@@ -775,6 +777,8 @@ bool WorkerScriptLoader::ProcessPendingRequests(JSContext* aCx) {
       mLoadedRequests.CancelRequestsAndClear();
       break;
     }
+    
+    mLoadedRequests.Remove(req);
   }
 
   TryShutdown();
@@ -1076,6 +1080,9 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
           : EvaluateSourceBuffer(aCx, options,
                                  maybeSource.ref<JS::SourceText<char16_t>>());
 
+  if (aRequest->IsCanceled()) {
+    return false;
+  }
   if (!successfullyEvaluated) {
     mRv.StealExceptionFromJSContext(aCx);
     return false;
