@@ -90,6 +90,11 @@ class nsSharedPageData {
 
   
   
+  float mCellWidth = 1.0f;
+  float mCellHeight = 1.0f;
+
+  
+  
   
   
   

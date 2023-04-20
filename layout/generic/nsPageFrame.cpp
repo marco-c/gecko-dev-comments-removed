@@ -550,14 +550,13 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
   uint32_t rowIdx = 0;
   uint32_t colIdx = 0;
 
-  if (nsSharedPageData* pd = pageFrame->GetSharedPageData()) {
-    const auto* ppsInfo = pd->PagesPerSheetInfo();
-    if (ppsInfo->mNumPages > 1) {
-      scale *= pd->mPagesPerSheetScale;
-      gridOrigin = pd->mPagesPerSheetGridOrigin;
-      std::tie(rowIdx, colIdx) = GetRowAndColFromIdx(pageFrame->IndexOnSheet(),
-                                                     pd->mPagesPerSheetNumCols);
-    }
+  nsSharedPageData* pd = pageFrame->GetSharedPageData();
+  const auto* ppsInfo = pd->PagesPerSheetInfo();
+  if (ppsInfo->mNumPages > 1) {
+    scale *= pd->mPagesPerSheetScale;
+    gridOrigin = pd->mPagesPerSheetGridOrigin;
+    std::tie(rowIdx, colIdx) = GetRowAndColFromIdx(pageFrame->IndexOnSheet(),
+                                                   pd->mPagesPerSheetNumCols);
   }
 
   
@@ -570,6 +569,49 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
       NSAppUnitsToFloatPixels(rowIdx * contentPageSize.height,
                               aAppUnitsPerPixel),
       0);
+
+  
+  if (ppsInfo->mNumPages > 1 &&
+      StaticPrefs::layout_css_page_orientation_enabled()) {
+    const StylePageOrientation& orientation =
+        pageFrame->PageContentFrame()->StylePage()->mPageOrientation;
+
+    double angle = 0.0;
+    if (orientation == StylePageOrientation::RotateLeft) {
+      angle = -M_PI / 2.0;
+    } else if (orientation == StylePageOrientation::RotateRight) {
+      angle = M_PI / 2.0;
+    }
+
+    if (angle != 0.0) {
+      float cellRatio = pd->mCellWidth / pd->mCellHeight;
+      float pageRatio =
+          float(contentPageSize.width) / float(contentPageSize.height);
+      
+      
+      
+      
+      bool isSmallerOfRotatedScales = floor(cellRatio) != floor(pageRatio);
+      float fitScale = cellRatio;
+      if (isSmallerOfRotatedScales != bool(floor(fitScale))) {
+        fitScale = 1.0f / cellRatio;
+      }
+
+      transform.PreTranslate(
+          NSAppUnitsToFloatPixels(contentPageSize.width / 2, aAppUnitsPerPixel),
+          NSAppUnitsToFloatPixels(contentPageSize.height / 2,
+                                  aAppUnitsPerPixel),
+          0);
+      transform.PreScale(fitScale, fitScale, 1.0f);
+      transform.RotateZ(angle);
+      transform.PreTranslate(
+          NSAppUnitsToFloatPixels(-contentPageSize.width / 2,
+                                  aAppUnitsPerPixel),
+          NSAppUnitsToFloatPixels(-contentPageSize.height / 2,
+                                  aAppUnitsPerPixel),
+          0);
+    }
+  }
 
   
   
