@@ -137,23 +137,13 @@ void BrowsingContextGroup::EnsureHostProcess(ContentParent* aProcess) {
   MOZ_DIAGNOSTIC_ASSERT(!aProcess->GetRemoteType().IsEmpty(),
                         "host process must have remote type");
 
-  
-  
-  
-  
   if (aProcess->IsDead() ||
       mHosts.WithEntryHandle(aProcess->GetRemoteType(), [&](auto&& entry) {
         if (entry) {
-          
-          
-          
-          
-          MOZ_ASSERT(
+          MOZ_DIAGNOSTIC_ASSERT(
               entry.Data() == aProcess,
               "There's already another host process for this remote type");
-          if (!entry.Data()->IsShuttingDown()) {
-            return false;
-          }
+          return false;
         }
 
         
