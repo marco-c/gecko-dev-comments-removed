@@ -92,7 +92,7 @@ async function gInit(
       
       "branding/brand.ftl",
       
-      "browser/branding/brandings.ftl",
+      "toolkit/branding/brandings.ftl",
     ],
     {
       setAttributesOnDocument: true,

@@ -118,7 +118,7 @@ async function gInit(perfFront, traits, pageContext, openAboutProfiling) {
     "branding/brand.ftl",
     
     "devtools/client/toolbox-options.ftl",
-    "browser/branding/brandings.ftl",
+    "toolkit/branding/brandings.ftl",
   ]);
 
   
