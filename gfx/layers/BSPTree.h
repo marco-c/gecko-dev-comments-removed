@@ -18,8 +18,6 @@
 namespace mozilla {
 namespace layers {
 
-class Layer;
-
 
 
 
@@ -54,7 +52,11 @@ typedef mozilla::ArenaAllocator<4096, 8> BSPTreeArena;
 template <typename T>
 using PolygonList = std::list<BSPPolygon<T>>;
 
-using LayerPolygon = BSPPolygon<Layer>;
+
+
+
+class BSPTestData {};
+using TestPolygon = BSPPolygon<BSPTestData>;
 
 
 
