@@ -472,7 +472,7 @@ CrashManager.prototype = Object.freeze({
       }
 
       if (this.isPingAllowed(processType)) {
-        this._sendCrashPing(id, processType, date, metadata);
+        this._sendCrashPing("crash", id, processType, date, metadata);
       }
     })();
 
@@ -707,7 +707,27 @@ CrashManager.prototype = Object.freeze({
     return filteredAnnotations;
   },
 
-  _sendCrashPing(crashId, type, date, metadata = {}) {
+  
+
+
+
+
+
+
+
+  _submitGleanCrashPing(reason, type, date, metadata) {
+    if ("UptimeTS" in metadata) {
+      Glean.crash.uptime.setRaw(parseFloat(metadata.UptimeTS) * 1e3);
+    }
+    Glean.crash.processType.set(type);
+    Glean.crash.time.set(date.getTime() * 1000);
+    Glean.crash.startup.set(
+      "StartupCrash" in metadata && parseInt(metadata.StartupCrash) === 1
+    );
+    GleanPings.crash.submit(reason);
+  },
+
+  _sendCrashPing(reason, crashId, type, date, metadata = {}) {
     
     
     let reportMeta = Cu.cloneInto(metadata, {});
@@ -724,6 +744,8 @@ CrashManager.prototype = Object.freeze({
 
     
     reportMeta = this._filterAnnotations(reportMeta);
+
+    this._submitGleanCrashPing(reason, type, date, reportMeta);
 
     this._pingPromise = lazy.TelemetryController.submitExternalPing(
       "crash",
@@ -775,6 +797,7 @@ CrashManager.prototype = Object.freeze({
           
           
           this._sendCrashPing(
+            "event_found",
             crashID,
             this.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT],
             date,
