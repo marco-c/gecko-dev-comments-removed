@@ -1313,26 +1313,6 @@ RegExpParserState* RegExpParserImpl<CharT>::ParseOpenParenthesis(
       state->builder()->flags(), zone());
 }
 
-#ifdef DEBUG
-namespace {
-
-bool IsSpecialClassEscape(base::uc32 c) {
-  switch (c) {
-    case 'd':
-    case 'D':
-    case 's':
-    case 'S':
-    case 'w':
-    case 'W':
-      return true;
-    default:
-      return false;
-  }
-}
-
-}  
-#endif
-
 
 
 
@@ -2198,7 +2178,7 @@ base::uc32 RegExpParserImpl<CharT>::ParseCharacterEscape(
     InClassEscapeState in_class_escape_state,
     bool* is_escaped_unicode_character) {
   DCHECK_EQ('\\', current());
-  DCHECK(has_next() && !IsSpecialClassEscape(Next()));
+  DCHECK(has_next());
 
   Advance();
 
@@ -2569,7 +2549,6 @@ RegExpTree* RegExpParserImpl<CharT>::ParseClassStringDisjunction(
   
   
   
-  DCHECK_EQ(current(), '}');
   Advance();
   return nullptr;
 }
