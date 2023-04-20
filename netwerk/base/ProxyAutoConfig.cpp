@@ -239,7 +239,7 @@ bool ProxyAutoConfig::ResolveAddress(const nsACString& aHostName,
   
   
   
-  uint32_t flags =
+  nsIDNSService::DNSFlags flags =
       nsIDNSService::RESOLVE_PRIORITY_MEDIUM |
       nsIDNSService::GetFlagsFromTRRMode(nsIRequest::TRR_DISABLED_MODE);
 
