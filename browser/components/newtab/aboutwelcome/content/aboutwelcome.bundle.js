@@ -165,7 +165,6 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "MultiStageAboutWelcome": () => ( MultiStageAboutWelcome),
    "SecondaryCTA": () => ( SecondaryCTA),
-   "OnboardingVideo": () => ( OnboardingVideo),
    "StepsIndicator": () => ( StepsIndicator),
    "WelcomeScreen": () => ( WelcomeScreen)
  });
@@ -175,7 +174,7 @@ __webpack_require__.r(__webpack_exports__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(11);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(14);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(15);
 
 
 
@@ -380,31 +379,6 @@ const SecondaryCTA = props => {
     className: buttonStyling,
     value: targetElement,
     onClick: props.handleAction
-  })));
-};
-const OnboardingVideo = props => {
-  const vidUrl = props.content.video_url;
-  const autoplay = props.content.autoPlay;
-
-  const handleVideoAction = event => {
-    props.handleAction({
-      currentTarget: {
-        value: event
-      }
-    });
-  };
-
-  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("video", {
-    
-    controls: true,
-    autoPlay: autoplay,
-    src: vidUrl,
-    width: "604px",
-    height: "340px",
-    onPlay: () => handleVideoAction("video_start"),
-    onEnded: () => handleVideoAction("video_end")
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
-    src: vidUrl
   })));
 };
 const StepsIndicator = props => {
@@ -668,6 +642,8 @@ __webpack_require__.r(__webpack_exports__);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(11);
  var _CTAParagraph__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(12);
  var _HeroImage__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(13);
+ var _OnboardingVideo__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(14);
+
 
 
 
@@ -963,7 +939,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     })), content.cta_paragraph ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_CTAParagraph__WEBPACK_IMPORTED_MODULE_8__.CTAParagraph, {
       content: content.cta_paragraph,
       handleAction: this.props.handleAction
-    }) : null), content.video_container ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.OnboardingVideo, {
+    }) : null), content.video_container ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_OnboardingVideo__WEBPACK_IMPORTED_MODULE_10__.OnboardingVideo, {
       content: content.video_container,
       handleAction: this.props.handleAction
     }) : null, this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreenActionButtons, {
@@ -1672,6 +1648,43 @@ const HeroImage = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   "OnboardingVideo": () => ( OnboardingVideo)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+const OnboardingVideo = props => {
+  const vidUrl = props.content.video_url;
+  const autoplay = props.content.autoPlay;
+
+  const handleVideoAction = event => {
+    props.handleAction({
+      currentTarget: {
+        value: event
+      }
+    });
+  };
+
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("video", {
+    
+    controls: true,
+    autoPlay: autoplay,
+    src: vidUrl,
+    width: "604px",
+    height: "340px",
+    onPlay: () => handleVideoAction("video_start"),
+    onEnded: () => handleVideoAction("video_end")
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
+    src: vidUrl
+  })));
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
    "BASE_PARAMS": () => ( BASE_PARAMS),
    "addUtmParams": () => ( addUtmParams)
  });
@@ -1720,7 +1733,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(14);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(15);
 
 
 
@@ -1915,7 +1928,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
- var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(15);
+ var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(16);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
