@@ -93,7 +93,7 @@ function logEvent({ threadActor, frame, level, expression, bindings }) {
     TYPES.CONSOLE_MESSAGE
   );
   if (consoleMessageWatcher) {
-    consoleMessageWatcher.emitMessage(message);
+    consoleMessageWatcher.emitMessages([message]);
   } else {
     
     

@@ -42,6 +42,9 @@ const {
 
 class ConsoleMessageWatcher {
   async watch(targetActor, { onAvailable }) {
+    this.targetActor = targetActor;
+    this.onAvailable = onAvailable;
+
     
     const onConsoleAPICall = message => {
       onAvailable([
@@ -108,7 +111,10 @@ class ConsoleMessageWatcher {
   destroy() {
     if (this.listener) {
       this.listener.destroy();
+      this.listener = null;
     }
+    this.targetActor = null;
+    this.onAvailable = null;
   }
 
   
@@ -119,11 +125,16 @@ class ConsoleMessageWatcher {
 
 
 
-  emitMessage(message) {
+  emitMessages(messages) {
     if (!this.listener) {
       throw new Error("This target actor isn't listening to console messages");
     }
-    this.listener.handler(message);
+    this.onAvailable(
+      messages.map(message => ({
+        resourceType: CONSOLE_MESSAGE,
+        message: prepareConsoleMessageForRemote(this.targetActor, message),
+      }))
+    );
   }
 }
 
