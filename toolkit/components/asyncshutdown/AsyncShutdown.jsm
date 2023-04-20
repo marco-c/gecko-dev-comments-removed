@@ -80,6 +80,18 @@ Services.prefs.addObserver(PREF_DELAY_CRASH_MS, function() {
 
 
 
+
+
+
+
+let gBrokenAddBlockers = [];
+
+
+
+
+
+
+
 function PromiseSet() {
   
 
@@ -685,6 +697,7 @@ function Barrier(name) {
 
     addBlocker: (name, condition, details) => {
       if (typeof name != "string") {
+        gBrokenAddBlockers.push("No-name blocker");
         throw new TypeError("Expected a human-readable name as first argument");
       }
       if (details && typeof details == "function") {
@@ -695,26 +708,35 @@ function Barrier(name) {
         details = {};
       }
       if (typeof details != "object") {
+        gBrokenAddBlockers.push(`${name} - invalid details`);
         throw new TypeError(
           "Expected an object as third argument to `addBlocker`, got " + details
         );
       }
       if (!this._waitForMe) {
+        gBrokenAddBlockers.push(`${name} - ${this._name} finished`);
         throw new Error(
           `Phase "${this._name}" is finished, it is too late to register completion condition "${name}"`
         );
       }
       debug(`Adding blocker ${name} for phase ${this._name}`);
 
-      
+      try {
+        this.client._internalAddBlocker(name, condition, details);
+      } catch (ex) {
+        gBrokenAddBlockers.push(`${name} - ${ex.message}`);
+        throw ex;
+      }
+    },
 
-      let fetchState = details.fetchState || null;
+    _internalAddBlocker: (
+      name,
+      condition,
+      { fetchState = null, filename = null, lineNumber = null, stack = null }
+    ) => {
       if (fetchState != null && typeof fetchState != "function") {
         throw new TypeError("Expected a function for option `fetchState`");
       }
-      let filename = details.filename || null;
-      let lineNumber = details.lineNumber || null;
-      let stack = details.stack || null;
 
       
 
@@ -987,14 +1009,15 @@ Barrier.prototype = Object.freeze({
             " ensure that we do not leave the user with an unresponsive" +
             " process draining resources.";
           fatalerr(msg);
+          if (gBrokenAddBlockers.length) {
+            fatalerr(
+              "Broken addBlocker calls: " + JSON.stringify(gBrokenAddBlockers)
+            );
+          }
           if (Services.appinfo.crashReporterEnabled) {
-            let data = {
-              phase: topic,
-              conditions: state,
-            };
             Services.appinfo.annotateCrashReport(
               "AsyncShutdownTimeout",
-              JSON.stringify(data)
+              JSON.stringify(this._gatherCrashReportTimeoutData(topic, state))
             );
           } else {
             warn("No crash reporter available");
@@ -1027,6 +1050,14 @@ Barrier.prototype = Object.freeze({
     }
 
     return promise;
+  },
+
+  _gatherCrashReportTimeoutData(phase, conditions) {
+    let data = { phase, conditions };
+    if (gBrokenAddBlockers.length) {
+      data.brokenAddBlockers = gBrokenAddBlockers;
+    }
+    return data;
   },
 
   _removeBlocker(condition) {

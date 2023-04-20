@@ -2,10 +2,6 @@
 
 "use strict";
 
-const { PromiseUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PromiseUtils.sys.mjs"
-);
-
 add_task(async function test_no_condition() {
   for (let kind of [
     "phase",
