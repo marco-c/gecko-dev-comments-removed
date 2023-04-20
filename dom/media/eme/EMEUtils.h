@@ -82,6 +82,10 @@ bool IsClearkeyKeySystem(const nsAString& aKeySystem);
 
 bool IsWidevineKeySystem(const nsAString& aKeySystem);
 
+#ifdef MOZ_MF_CDM
+bool IsPlayReadyKeySystem(const nsAString& aKeySystem);
+#endif
+
 
 
 
