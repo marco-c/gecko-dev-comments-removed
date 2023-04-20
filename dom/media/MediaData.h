@@ -460,6 +460,9 @@ class VideoData : public MediaData {
   
   
 
+  static bool UseUseNV12ForSoftwareDecodedVideoIfPossible(
+      layers::KnowsCompositor* aAllocator);
+
   
   
   static already_AddRefed<VideoData> CreateAndCopyData(

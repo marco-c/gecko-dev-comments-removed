@@ -32,17 +32,26 @@ class D3D11RecycleAllocator final : public TextureClientRecycleAllocator {
       const gfx::IntSize& aSize);
 
   void SetPreferredSurfaceFormat(gfx::SurfaceFormat aPreferredFormat);
+  gfx::SurfaceFormat GetUsableSurfaceFormat() const {
+    return mUsableSurfaceFormat;
+  }
 
- private:
+  RefPtr<ID3D11Texture2D> GetStagingTextureNV12(gfx::IntSize aSize);
+
   const RefPtr<ID3D11Device> mDevice;
   const bool mCanUseNV12;
   const bool mCanUseP010;
   const bool mCanUseP016;
+
+ private:
   
 
 
   RefPtr<ID3D11Device> mImageDevice;
   gfx::SurfaceFormat mUsableSurfaceFormat;
+
+  RefPtr<ID3D11Texture2D> mStagingTexture;
+  gfx::IntSize mStagingTextureSize;
 };
 
 
@@ -51,6 +60,10 @@ class D3D11RecycleAllocator final : public TextureClientRecycleAllocator {
 
 class D3D11ShareHandleImage final : public Image {
  public:
+  static RefPtr<D3D11ShareHandleImage> MaybeCreateNV12ImageAndSetData(
+      KnowsCompositor* aAllocator, ImageContainer* aContainer,
+      const PlanarYCbCrData& aData);
+
   D3D11ShareHandleImage(const gfx::IntSize& aSize, const gfx::IntRect& aRect,
                         gfx::ColorSpace2 aColorSpace,
                         gfx::ColorRange aColorRange);
