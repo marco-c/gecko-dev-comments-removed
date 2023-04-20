@@ -39,6 +39,11 @@
 #include <algorithm>
 #include <limits>
 
+extern mozilla::LazyLogModule gMediaElementLog;
+#define LOG(msg, ...)                        \
+  MOZ_LOG(gMediaElementLog, LogLevel::Debug, \
+          ("HTMLVideoElement=%p, " msg, this, ##__VA_ARGS__))
+
 nsGenericHTMLElement* NS_NewHTMLVideoElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
@@ -637,4 +642,37 @@ void HTMLVideoElement::OnSecondaryVideoOutputFirstFrameRendered() {
       mVisualCloneTarget->GetVideoFrameContainer());
 }
 
+void HTMLVideoElement::OnVisibilityChange(Visibility aNewVisibility) {
+  HTMLMediaElement::OnVisibilityChange(aNewVisibility);
+
+  
+  
+  
+  
+  
+  
+  if (!HasAttr(nsGkAtoms::autoplay) || IsAudible()) {
+    return;
+  }
+
+  if (aNewVisibility == Visibility::ApproximatelyVisible && mPaused &&
+      IsEligibleForAutoplay() && AllowedToPlay()) {
+    LOG("resume invisible paused autoplay video");
+    RunAutoplay();
+  }
+
+  
+  
+  if ((aNewVisibility == Visibility::ApproximatelyNonVisible &&
+       !IsCloningElementVisually()) &&
+      mCanAutoplayFlag) {
+    LOG("pause non-audible autoplay video when it's invisible");
+    PauseInternal();
+    mCanAutoplayFlag = true;
+    return;
+  }
+}
+
 }  
+
+#undef LOG

@@ -317,13 +317,16 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   nsresult DispatchPendingMediaEvents();
 
   
-  bool CanActivateAutoplay();
+  
+  bool IsEligibleForAutoplay();
 
   
   
   
   
   void CheckAutoplayDataReady();
+
+  void RunAutoplay();
 
   
   bool ShouldCheckAllowOrigin();
@@ -767,7 +770,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool IsBeingDestroyed();
 
-  void OnVisibilityChange(Visibility aNewVisibility);
+  virtual void OnVisibilityChange(Visibility aNewVisibility);
 
   
   float ComputedVolume() const;
