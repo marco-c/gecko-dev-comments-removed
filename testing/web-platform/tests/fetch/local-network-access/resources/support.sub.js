@@ -205,6 +205,7 @@ function sourceResolveOptions({ server, treatAsPublic }) {
 
 
 function preflightUrl({ server, behavior }) {
+  assert_not_equals(server, undefined, 'server');
   const options = {...server};
   if (behavior) {
     const { preflight, response, redirect } = behavior;
