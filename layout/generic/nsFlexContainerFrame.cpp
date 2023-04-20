@@ -1120,67 +1120,6 @@ struct nsFlexContainerFrame::SharedFlexData final {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Prop, SharedFlexData)
 };
 
-
-class nsFlexContainerFrame::FlexItemIterator final {
- public:
-  explicit FlexItemIterator(const nsTArray<FlexLine>& aLines)
-      : mLineIter(aLines.begin()),
-        mLineIterEnd(aLines.end()),
-        mItemIter(mLineIter->Items().begin()),
-        mItemIterEnd(mLineIter->Items().end()) {
-    MOZ_ASSERT(mLineIter != mLineIterEnd,
-               "Flex container should have at least one FlexLine!");
-
-    if (mItemIter == mItemIterEnd) {
-      
-      ++mLineIter;
-      MOZ_ASSERT(AtEnd());
-    }
-  }
-
-  void Next() {
-    MOZ_ASSERT(!AtEnd());
-    ++mItemIter;
-
-    if (mItemIter == mItemIterEnd) {
-      
-      
-      ++mLineIter;
-
-      if (mLineIter != mLineIterEnd) {
-        mItemIter = mLineIter->Items().begin();
-        mItemIterEnd = mLineIter->Items().end();
-        MOZ_ASSERT(mItemIter != mItemIterEnd,
-                   "Why do we have a FlexLine with no FlexItem?");
-      }
-    }
-  }
-
-  bool AtEnd() const {
-    MOZ_ASSERT(
-        (mLineIter == mLineIterEnd && mItemIter == mItemIterEnd) ||
-            (mLineIter != mLineIterEnd && mItemIter != mItemIterEnd),
-        "Line & item iterators should agree on whether we're at the end!");
-    return mLineIter == mLineIterEnd;
-  }
-
-  const FlexItem& operator*() const {
-    MOZ_ASSERT(!AtEnd());
-    return mItemIter.operator*();
-  }
-
-  const FlexItem* operator->() const {
-    MOZ_ASSERT(!AtEnd());
-    return mItemIter.operator->();
-  }
-
- private:
-  nsTArray<FlexLine>::const_iterator mLineIter;
-  nsTArray<FlexLine>::const_iterator mLineIterEnd;
-  nsTArray<FlexItem>::const_iterator mItemIter;
-  nsTArray<FlexItem>::const_iterator mItemIterEnd;
-};
-
 static void BuildStrutInfoFromCollapsedItems(const nsTArray<FlexLine>& aLines,
                                              nsTArray<StrutInfo>& aStruts) {
   MOZ_ASSERT(aStruts.IsEmpty(),
@@ -4134,9 +4073,6 @@ nsFlexContainerFrame::GenerateFlexLayoutResult() {
   FlexLayoutResult flr;
 
   
-  flr.mLines.AppendElement(FlexLine(0));
-
-  
   
   
   
@@ -4151,19 +4087,53 @@ nsFlexContainerFrame::GenerateFlexLayoutResult() {
       CSSOrderAwareFrameIterator::ChildFilter::SkipPlaceholders,
       OrderStateForIter(this), OrderingPropertyForIter(this));
 
-  FlexItemIterator itemIter(data->mLines);
+  auto ConstructNewFlexLine = [&flr]() {
+    
+    
+    return flr.mLines.EmplaceBack(0);
+  };
 
-  for (; !iter.AtEnd(); iter.Next()) {
-    nsIFrame* const child = *iter;
-    nsIFrame* const childFirstInFlow = child->FirstInFlow();
+  
+  
+  FlexLine* currentLine = ConstructNewFlexLine();
 
-    MOZ_ASSERT(!itemIter.AtEnd(),
-               "Why can't we find FlexItem for our child frame?");
+  if (!iter.AtEnd()) {
+    nsIFrame* child = *iter;
+    nsIFrame* childFirstInFlow = child->FirstInFlow();
 
-    for (; !itemIter.AtEnd(); itemIter.Next()) {
-      if (itemIter->Frame() == childFirstInFlow) {
-        flr.mLines[0].Items().AppendElement(itemIter->CloneFor(child));
-        itemIter.Next();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (const FlexLine& line : data->mLines) {
+      
+      
+      
+      if (!currentLine->IsEmpty()) {
+        currentLine = ConstructNewFlexLine();
+      }
+      for (const FlexItem& item : line.Items()) {
+        if (item.Frame() == childFirstInFlow) {
+          currentLine->Items().AppendElement(item.CloneFor(child));
+          iter.Next();
+          if (iter.AtEnd()) {
+            
+            
+            child = childFirstInFlow = nullptr;
+            break;
+          }
+          child = *iter;
+          childFirstInFlow = child->FirstInFlow();
+        }
+      }
+      if (iter.AtEnd()) {
+        
+        
         break;
       }
     }
