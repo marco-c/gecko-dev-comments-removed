@@ -10,6 +10,8 @@
 #include "mozilla/dom/Directory.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/Encoding.h"
+#include "nsGenericHTMLElement.h"
+#include "nsQueryObject.h"
 
 #include "MultipartBlobImpl.h"
 
@@ -299,11 +301,36 @@ JSObject* FormData::WrapObject(JSContext* aCx,
 }
 
 
+
 already_AddRefed<FormData> FormData::Constructor(
     const GlobalObject& aGlobal,
-    const Optional<NonNull<HTMLFormElement> >& aFormElement, ErrorResult& aRv) {
-  RefPtr<FormData> formData = new FormData(aGlobal.GetAsSupports());
+    const Optional<NonNull<HTMLFormElement> >& aFormElement,
+    nsGenericHTMLElement* aSubmitter, ErrorResult& aRv) {
+  RefPtr<FormData> formData;
+  
   if (aFormElement.WasPassed()) {
+    
+    if (aSubmitter) {
+      nsCOMPtr<nsIFormControl> fc = do_QueryObject(aSubmitter);
+
+      
+      if (!fc || !fc->IsSubmitControl()) {
+        aRv.ThrowTypeError("The submitter is not a submit button.");
+        return nullptr;
+      }
+
+      
+      
+      if (fc->GetForm() != &aFormElement.Value()) {
+        aRv.ThrowNotFoundError("The submitter is not owned by this form.");
+        return nullptr;
+      }
+    }
+
+    
+    
+    formData =
+        new FormData(aGlobal.GetAsSupports(), UTF_8_ENCODING, aSubmitter);
     aRv = aFormElement.Value().ConstructEntryList(formData);
     if (NS_WARN_IF(aRv.Failed())) {
       return nullptr;
@@ -312,6 +339,8 @@ already_AddRefed<FormData> FormData::Constructor(
     
     
     formData = formData->Clone();
+  } else {
+    formData = new FormData(aGlobal.GetAsSupports());
   }
 
   return formData.forget();

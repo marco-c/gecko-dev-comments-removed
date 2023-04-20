@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_FormData_h
 #define mozilla_dom_FormData_h
@@ -12,6 +12,7 @@
 #include "mozilla/dom/HTMLFormSubmission.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FormDataBinding.h"
+#include "nsGenericHTMLElement.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 
@@ -35,8 +36,8 @@ class FormData final : public nsISupports,
     OwningBlobOrDirectoryOrUSVString value;
   };
 
-  
-  
+  // Returns the FormDataTuple to modify. This may be null, in which case
+  // no element with aName was found.
   FormDataTuple* RemoveAllOthersAndGetFirstFormDataTuple(
       const nsAString& aName);
 
@@ -59,17 +60,17 @@ class FormData final : public nsISupports,
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(FormData)
 
-  
+  // nsWrapperCache
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  
+  // WebIDL
   nsISupports* GetParentObject() const { return mOwner; }
 
   static already_AddRefed<FormData> Constructor(
       const GlobalObject& aGlobal,
       const Optional<NonNull<HTMLFormElement> >& aFormElement,
-      ErrorResult& aRv);
+      nsGenericHTMLElement* aSubmitter, ErrorResult& aRv);
 
   void Append(const nsAString& aName, const nsAString& aValue,
               ErrorResult& aRv);
@@ -102,7 +103,7 @@ class FormData final : public nsISupports,
   const OwningBlobOrDirectoryOrUSVString& GetValueAtIndex(
       uint32_t aIndex) const;
 
-  
+  // HTMLFormSubmission
   virtual nsresult GetEncodedSubmission(nsIURI* aURI,
                                         nsIInputStream** aPostDataStream,
                                         nsCOMPtr<nsIURI>& aOutURI) override;
@@ -132,8 +133,8 @@ class FormData final : public nsISupports,
 
   uint32_t Length() const { return mFormData.Length(); }
 
-  
-  
+  // Stops iteration and returns false if any invocation of callback returns
+  // false. Returns true otherwise.
   bool ForEach(FormDataEntryCallback aFunc, void* aClosure) {
     for (uint32_t i = 0; i < mFormData.Length(); ++i) {
       FormDataTuple& tuple = mFormData[i];
@@ -156,13 +157,13 @@ class FormData final : public nsISupports,
  private:
   nsCOMPtr<nsISupports> mOwner;
 
-  
+  // Submitter element.
   RefPtr<Element> mSubmitter;
 
   nsTArray<FormDataTuple> mFormData;
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_dom_FormData_h
