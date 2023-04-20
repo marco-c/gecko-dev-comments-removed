@@ -1,8 +1,6 @@
-
-
-
-"use strict";
-var EXPORTED_SYMBOLS = ["FxAccountsConfig"];
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { RESTRequest } = ChromeUtils.import(
   "resource://services-common/rest.js"
@@ -10,9 +8,7 @@ const { RESTRequest } = ChromeUtils.import(
 const { log } = ChromeUtils.import(
   "resource://gre/modules/FxAccountsCommon.js"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -57,7 +53,7 @@ const CONFIG_PREFS = [
 ];
 const SYNC_PARAM = "sync";
 
-var FxAccountsConfig = {
+export var FxAccountsConfig = {
   async promiseEmailURI(email, entrypoint, extraParams = {}) {
     return this._buildURL("", {
       extraParams: { entrypoint, email, service: SYNC_PARAM, ...extraParams },
@@ -135,12 +131,12 @@ var FxAccountsConfig = {
     return { context: lazy.CONTEXT_PARAM };
   },
 
-  
-
-
-
-
-
+  /**
+   * @param path should be parsable by the URL constructor first parameter.
+   * @param {bool} [options.includeDefaultParams] If true include the default search params.
+   * @param {Object.<string, string>} [options.extraParams] Additionnal search params.
+   * @param {bool} [options.addAccountIdentifiers] if true we add the current logged-in user uid and email to the search params.
+   */
   async _buildURL(
     path,
     {
@@ -185,12 +181,12 @@ var FxAccountsConfig = {
     if (!autoconfigURL) {
       return;
     }
-    
-    
+    // They have the autoconfig uri pref set, so we clear all the prefs that we
+    // will have initialized, which will leave them pointing at production.
     for (let pref of CONFIG_PREFS) {
       Services.prefs.clearUserPref(pref);
     }
-    
+    // Reset the webchannel.
     lazy.EnsureFxAccountsWebChannel();
   },
 
@@ -200,7 +196,7 @@ var FxAccountsConfig = {
       ""
     );
     if (!pref) {
-      
+      // no pref / empty pref means we don't bother here.
       return "";
     }
     let rootURL = Services.urlFormatter.formatURL(pref);
@@ -217,20 +213,20 @@ var FxAccountsConfig = {
     }
   },
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Returns true if this user is using the FxA "production" systems, false
+  // if using any other configuration, including self-hosting or the FxA
+  // non-production systems such as "dev" or "staging".
+  // It's typically used as a proxy for "is this likely to be a self-hosted
+  // user?", but it's named this way to make the implementation less
+  // surprising. As a result, it's fairly conservative and would prefer to have
+  // a false-negative than a false-position as it determines things which users
+  // might consider sensitive (notably, telemetry).
+  // Note also that while it's possible to self-host just sync and not FxA, we
+  // don't make that distinction - that's a self-hoster from the POV of this
+  // function.
   isProductionConfig() {
-    
-    
+    // Specifically, if the autoconfig URLs, or *any* of the URLs that
+    // we consider configurable are modified, we assume self-hosted.
     if (this.getAutoConfigURL()) {
       return false;
     }
@@ -242,11 +238,11 @@ var FxAccountsConfig = {
     return true;
   },
 
-  
-  
-  
-  
-  
+  // Read expected client configuration from the fxa auth server
+  // (from `identity.fxaccounts.autoconfig.uri`/.well-known/fxa-client-configuration)
+  // and replace all the relevant our prefs with the information found there.
+  // This is only done before sign-in and sign-up, and even then only if the
+  // `identity.fxaccounts.autoconfig.uri` preference is set.
   async updateConfigURLs() {
     let rootURL = this.getAutoConfigURL();
     if (!rootURL) {
@@ -254,7 +250,7 @@ var FxAccountsConfig = {
     }
     const config = await this.fetchConfigDocument(rootURL);
     try {
-      
+      // Update the prefs directly specified by the config.
       let authServerBase = config.auth_server_base_url;
       if (!authServerBase.endsWith("/v1")) {
         authServerBase += "/v1";
@@ -267,8 +263,8 @@ var FxAccountsConfig = {
         "identity.fxaccounts.remote.oauth.uri",
         config.oauth_server_base_url + "/v1"
       );
-      
-      
+      // At the time of landing this, our servers didn't yet answer with pairing_server_base_uri.
+      // Remove this condition check once Firefox 68 is stable.
       if (config.pairing_server_base_uri) {
         Services.prefs.setCharPref(
           "identity.fxaccounts.remote.pairing.uri",
@@ -285,7 +281,7 @@ var FxAccountsConfig = {
       );
       Services.prefs.setCharPref("identity.fxaccounts.remote.root", rootURL);
 
-      
+      // Ensure the webchannel is pointed at the correct uri
       lazy.EnsureFxAccountsWebChannel();
     } catch (e) {
       log.error(
@@ -296,8 +292,8 @@ var FxAccountsConfig = {
     }
   },
 
-  
-  
+  // Read expected client configuration from the fxa auth server
+  // (or from the provided rootURL, if present) and return it as an object.
   async fetchConfigDocument(rootURL = null) {
     if (!rootURL) {
       rootURL = lazy.ROOT_URL;
@@ -306,14 +302,14 @@ var FxAccountsConfig = {
     let request = new RESTRequest(configURL);
     request.setHeader("Accept", "application/json");
 
-    
+    // Catch and rethrow the error inline.
     let resp = await request.get().catch(e => {
       log.error(`Failed to get configuration object from "${configURL}"`, e);
       throw e;
     });
     if (!resp.success) {
-      
-      
+      // Note: 'resp.body' is included with the error log below as we are not concerned
+      // that the body will contain PII, but if that changes it should be excluded.
       log.error(
         `Received HTTP response code ${resp.status} from configuration object request:
         ${resp.body}`
@@ -334,7 +330,7 @@ var FxAccountsConfig = {
     }
   },
 
-  
+  // For test purposes, returns a Promise.
   getSignedInUser() {
     return lazy.fxAccounts.getSignedInUser();
   },
