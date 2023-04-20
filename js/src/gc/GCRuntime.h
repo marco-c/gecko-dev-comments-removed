@@ -601,7 +601,6 @@ class GCRuntime {
 
   
   void queueUnusedLifoBlocksForFree(LifoAlloc* lifo);
-  void queueAllLifoBlocksForFree(LifoAlloc* lifo);
   void queueAllLifoBlocksForFreeAfterMinorGC(LifoAlloc* lifo);
   void queueBuffersForFreeAfterMinorGC(Nursery::BufferSet& buffers);
 
