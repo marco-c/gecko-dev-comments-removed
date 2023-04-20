@@ -37,15 +37,19 @@ class URLQueryStringStripper final : public nsIURLQueryStrippingListObserver {
   
   static uint32_t Strip(nsIURI* aURI, bool aIsPBM, nsCOMPtr<nsIURI>& aOutput);
 
- private:
-  URLQueryStringStripper() = default;
+  
+  static void TestGetStripList(nsACString& aStripList);
 
+ private:
+  URLQueryStringStripper();
   ~URLQueryStringStripper() = default;
 
   static URLQueryStringStripper* GetOrCreate();
 
-  void Init();
-  void Shutdown();
+  static void OnPrefChange(const char* aPref, void* aData);
+
+  nsresult Init();
+  nsresult Shutdown();
 
   uint32_t StripQueryString(nsIURI* aURI, nsCOMPtr<nsIURI>& aOutput);
 
@@ -56,7 +60,8 @@ class URLQueryStringStripper final : public nsIURLQueryStrippingListObserver {
 
   nsTHashSet<nsString> mList;
   nsTHashSet<nsCString> mAllowList;
-  nsCOMPtr<nsIURLQueryStrippingListService> mService;
+  nsCOMPtr<nsIURLQueryStrippingListService> mListService;
+  bool mIsInitialized;
 };
 
 }  

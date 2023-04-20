@@ -4177,3 +4177,6 @@ pref("cookiebanners.listService.testSkipRemoteSettings", false);
 
 
 pref("dom.sitepermsaddon-provider.separatedBlocklistedDomains", "shopee.co.th,alipay.com,miravia.es");
+
+
+pref("privacy.query_stripping.listService.logLevel", "Error");
