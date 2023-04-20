@@ -3416,7 +3416,10 @@ var BrowserOnClick = {
     
     
     
-    browsingContext.loadURI(blockedInfo.uri, {
+    
+    
+    
+    browsingContext.fixupAndLoadURIString(blockedInfo.uri, {
       triggeringPrincipal,
       flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
     });
@@ -3507,7 +3510,7 @@ var BrowserOnClick = {
 
 
 function getMeOutOfHere(browsingContext) {
-  browsingContext.top.loadURI(getDefaultHomePage(), {
+  browsingContext.top.fixupAndLoadURIString(getDefaultHomePage(), {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(), 
   });
 }
