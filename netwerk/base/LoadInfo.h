@@ -44,7 +44,8 @@ namespace ipc {
 
 nsresult LoadInfoArgsToLoadInfo(
     const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
-    nsINode* aCspToInheritLoadingContext, net::LoadInfo** outLoadInfo);
+    const nsACString& aOriginRemoteType, nsINode* aCspToInheritLoadingContext,
+    net::LoadInfo** outLoadInfo);
 }  
 
 namespace net {
@@ -66,13 +67,15 @@ class LoadInfo final : public nsILoadInfo {
   static already_AddRefed<LoadInfo> CreateForDocument(
       dom::CanonicalBrowsingContext* aBrowsingContext, nsIURI* aURI,
       nsIPrincipal* aTriggeringPrincipal,
+      const nsACString& aTriggeringRemoteType,
       const OriginAttributes& aOriginAttributes, nsSecurityFlags aSecurityFlags,
       uint32_t aSandboxFlags);
 
   
   static already_AddRefed<LoadInfo> CreateForFrame(
       dom::CanonicalBrowsingContext* aBrowsingContext,
-      nsIPrincipal* aTriggeringPrincipal, nsSecurityFlags aSecurityFlags,
+      nsIPrincipal* aTriggeringPrincipal,
+      const nsACString& aTriggeringRemoteType, nsSecurityFlags aSecurityFlags,
       uint32_t aSandboxFlags);
 
   
@@ -105,19 +108,22 @@ class LoadInfo final : public nsILoadInfo {
   
   LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext, nsIURI* aURI,
            nsIPrincipal* aTriggeringPrincipal,
+           const nsACString& aTriggeringRemoteType,
            const OriginAttributes& aOriginAttributes,
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
   
   LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
-           nsIPrincipal* aTriggeringPrincipal, nsSecurityFlags aSecurityFlags,
-           uint32_t aSandboxFlags);
+           nsIPrincipal* aTriggeringPrincipal,
+           const nsACString& aTriggeringRemoteType,
+           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
   
   LoadInfo(dom::WindowGlobalParent* aParentWGP,
            nsIPrincipal* aTriggeringPrincipal,
+           const nsACString& aTriggeringRemoteType,
            nsContentPolicyType aContentPolicyType,
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
@@ -198,6 +204,7 @@ class LoadInfo final : public nsILoadInfo {
       nsIPrincipal* aPrincipalToInherit, nsIPrincipal* aTopLevelPrincipal,
       nsIURI* aResultPrincipalURI, nsICookieJarSettings* aCookieJarSettings,
       nsIContentSecurityPolicy* aCspToInherit,
+      const nsACString& aTriggeringRemoteType,
       const nsID& aSandboxedNullPrincipalID,
       const Maybe<mozilla::dom::ClientInfo>& aClientInfo,
       const Maybe<mozilla::dom::ClientInfo>& aReservedClientInfo,
@@ -243,7 +250,8 @@ class LoadInfo final : public nsILoadInfo {
 
   friend nsresult mozilla::ipc::LoadInfoArgsToLoadInfo(
       const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
-      nsINode* aCspToInheritLoadingContext, net::LoadInfo** outLoadInfo);
+      const nsACString& aOriginRemoteType, nsINode* aCspToInheritLoadingContext,
+      net::LoadInfo** outLoadInfo);
 
   ~LoadInfo();
 
@@ -279,6 +287,7 @@ class LoadInfo final : public nsILoadInfo {
   nsCOMPtr<nsICSPEventListener> mCSPEventListener;
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
   nsCOMPtr<nsIContentSecurityPolicy> mCspToInherit;
+  nsCString mTriggeringRemoteType;
   nsID mSandboxedNullPrincipalID;
 
   Maybe<mozilla::dom::ClientInfo> mClientInfo;

@@ -315,6 +315,10 @@ struct DocShellLoadStateInit
   
   uint32_t TriggeringSandboxFlags;
 
+  
+  
+  nsCString TriggeringRemoteType;
+
   nsCString? OriginalURIString;
   int32_t? CancelContentJSEpoch;
 

@@ -138,15 +138,17 @@ static auto CreateDocumentLoadInfo(CanonicalBrowsingContext* aBrowsingContext,
   auto securityFlags = SecurityFlagsForLoadInfo(aLoadState);
 
   if (aBrowsingContext->GetParent()) {
-    loadInfo = LoadInfo::CreateForFrame(aBrowsingContext,
-                                        aLoadState->TriggeringPrincipal(),
-                                        securityFlags, sandboxFlags);
+    loadInfo = LoadInfo::CreateForFrame(
+        aBrowsingContext, aLoadState->TriggeringPrincipal(),
+        aLoadState->GetEffectiveTriggeringRemoteType(), securityFlags,
+        sandboxFlags);
   } else {
     OriginAttributes attrs;
     aBrowsingContext->GetOriginAttributes(attrs);
-    loadInfo = LoadInfo::CreateForDocument(aBrowsingContext, aLoadState->URI(),
-                                           aLoadState->TriggeringPrincipal(),
-                                           attrs, securityFlags, sandboxFlags);
+    loadInfo = LoadInfo::CreateForDocument(
+        aBrowsingContext, aLoadState->URI(), aLoadState->TriggeringPrincipal(),
+        aLoadState->GetEffectiveTriggeringRemoteType(), attrs, securityFlags,
+        sandboxFlags);
   }
 
   if (aLoadState->IsExemptFromHTTPSOnlyMode()) {
@@ -619,6 +621,9 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     }
   }
 
+  
+  
+  
   
   
   if (SessionHistoryInParent() && aLoadState->LoadIsFromSessionHistory() &&

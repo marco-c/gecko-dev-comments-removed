@@ -143,6 +143,10 @@ class ContentParent final : public PContentParent,
 
   static LogModule* GetLog();
 
+  static ContentParent* Cast(PContentParent* aActor) {
+    return static_cast<ContentParent*>(aActor);
+  }
+
   
 
 
@@ -408,6 +412,12 @@ class ContentParent final : public PContentParent,
   }
 
   bool NeedsPermissionsUpdate(const nsACString& aPermissionKey) const;
+
+  
+  
+  already_AddRefed<nsDocShellLoadState> TakePendingLoadStateForId(
+      uint64_t aLoadIdentifier);
+  void StorePendingLoadState(nsDocShellLoadState* aLoadState);
 
   
 
@@ -1400,6 +1410,8 @@ class ContentParent final : public PContentParent,
       const MaybeDiscarded<BrowsingContext>& aContext,
       const uint32_t aReloadFlags);
 
+  mozilla::ipc::IPCResult RecvCleanupPendingLoadState(uint64_t aLoadIdentifier);
+
   
   
   void MaybeEnableRemoteInputEventQueue();
@@ -1636,6 +1648,12 @@ class ContentParent final : public PContentParent,
 #endif
 
   nsTHashSet<RefPtr<BrowsingContextGroup>> mGroups;
+
+  
+  
+  
+  
+  nsTHashMap<uint64_t, RefPtr<nsDocShellLoadState>> mPendingLoadStates;
 
   
   uint64_t mBrowsingContextFieldEpoch = 0;

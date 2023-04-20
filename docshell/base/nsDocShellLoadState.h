@@ -47,7 +47,8 @@ class nsDocShellLoadState final {
 
   explicit nsDocShellLoadState(nsIURI* aURI);
   explicit nsDocShellLoadState(
-      const mozilla::dom::DocShellLoadStateInit& aLoadState);
+      const mozilla::dom::DocShellLoadStateInit& aLoadState,
+      mozilla::ipc::IProtocol* aActor, bool* aReadSuccess);
   explicit nsDocShellLoadState(const nsDocShellLoadState& aOther);
   nsDocShellLoadState(nsIURI* aURI, uint64_t aLoadIdentifier);
 
@@ -318,6 +319,17 @@ class nsDocShellLoadState final {
   
   
   
+  
+  
+  
+  const nsCString& GetEffectiveTriggeringRemoteType() const;
+
+  void SetTriggeringRemoteType(const nsACString& aTriggeringRemoteType);
+
+  
+  
+  
+  
   void CalculateLoadURIFlags();
 
   
@@ -326,7 +338,8 @@ class nsDocShellLoadState final {
       mozilla::dom::BrowsingContext* aBrowsingContext,
       mozilla::Maybe<bool> aUriModified, mozilla::Maybe<bool> aIsXFOError);
 
-  mozilla::dom::DocShellLoadStateInit Serialize();
+  mozilla::dom::DocShellLoadStateInit Serialize(
+      mozilla::ipc::IProtocol* aActor);
 
   void SetLoadIsFromSessionHistory(int32_t aOffset, bool aLoadingCurrentEntry);
   void ClearLoadIsFromSessionHistory();
@@ -337,6 +350,12 @@ class nsDocShellLoadState final {
   
   
   ~nsDocShellLoadState();
+
+  
+  
+  
+  
+  const char* ValidateWithOriginalState(nsDocShellLoadState* aOriginalState);
 
  protected:
   
@@ -529,11 +548,17 @@ class nsDocShellLoadState final {
   bool mIsMetaRefresh;
 
   
+  bool mWasCreatedRemotely = false;
+
+  
   
   nsCOMPtr<nsIURI> mUnstrippedURI;
 
   
   mozilla::Maybe<nsCString> mRemoteTypeOverride;
+
+  
+  nsCString mTriggeringRemoteType;
 };
 
 #endif 

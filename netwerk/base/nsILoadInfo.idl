@@ -317,6 +317,21 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+
+
+
+
+  attribute AUTF8String triggeringRemoteType;
+
+  
+
+
+
+
+
+
+
   attribute nsIPrincipal principalToInherit;
 
   
