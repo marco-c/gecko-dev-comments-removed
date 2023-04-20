@@ -1,39 +1,34 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*
+ * Implements a service used to access storage and communicate with content.
+ *
+ * A "fields" array is used to communicate with FormAutofillContent. Each item
+ * represents a single input field in the content page as well as its
+ * @autocomplete properties. The schema is as below. Please refer to
+ * FormAutofillContent.js for more details.
+ *
+ * [
+ *   {
+ *     section,
+ *     addressType,
+ *     contactType,
+ *     fieldName,
+ *     value,
+ *     index
+ *   },
+ *   {
+ *     // ...
+ *   }
+ * ]
+ */
 
+// We expose a singleton from this module. Some tests may import the
+// constructor via a backstage pass.
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"use strict";
-
-
-
-var EXPORTED_SYMBOLS = ["FormAutofillParent", "FormAutofillStatus"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const { FormAutofill } = ChromeUtils.import(
   "resource://autofill/FormAutofill.jsm"
 );
@@ -56,7 +51,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 });
 
 XPCOMUtils.defineLazyGetter(lazy, "log", () =>
-  FormAutofill.defineLogGetter(lazy, EXPORTED_SYMBOLS[0])
+  FormAutofill.defineLogGetter(lazy, "FormAutofillParent")
 );
 
 const {
@@ -71,17 +66,17 @@ const {
 
 let gMessageObservers = new Set();
 
-let FormAutofillStatus = {
+export let FormAutofillStatus = {
   _initialized: false,
 
-  
-
-
+  /**
+   * Cache of the Form Autofill status (considering preferences and storage).
+   */
   _active: null,
 
-  
-
-
+  /**
+   * Initializes observers and registers the message handler.
+   */
   init() {
     if (this._initialized) {
       return;
@@ -90,25 +85,25 @@ let FormAutofillStatus = {
 
     Services.obs.addObserver(this, "privacy-pane-loaded");
 
-    
+    // Observing the pref and storage changes
     Services.prefs.addObserver(ENABLED_AUTOFILL_ADDRESSES_PREF, this);
     Services.obs.addObserver(this, "formautofill-storage-changed");
 
-    
+    // Only listen to credit card related preference if it is available
     if (FormAutofill.isAutofillCreditCardsAvailable) {
       Services.prefs.addObserver(ENABLED_AUTOFILL_CREDITCARDS_PREF, this);
     }
 
-    
-    
+    // We have to use empty window type to get all opened windows here because the
+    // window type parameter may not be available during startup.
     for (let win of Services.wm.getEnumerator("")) {
       let { documentElement } = win.document;
       if (documentElement?.getAttribute("windowtype") == "navigator:browser") {
         this.injectElements(win.document);
       } else {
-        
-        
-        
+        // Manually call onOpenWindow for windows that are already opened but not
+        // yet have the window type set. This ensures we inject the elements we need
+        // when its docuemnt is ready.
         this.onOpenWindow(win);
       }
     }
@@ -118,11 +113,11 @@ let FormAutofillStatus = {
     Services.telemetry.setEventRecordingEnabled("address", true);
   },
 
-  
-
-
-
-
+  /**
+   * Uninitializes FormAutofillStatus. This is for testing only.
+   *
+   * @private
+   */
   uninit() {
     lazy.gFormAutofillStorage._saveImmediately();
 
@@ -146,23 +141,23 @@ let FormAutofillStatus = {
     return lazy.gFormAutofillStorage;
   },
 
-  
-
-
+  /**
+   * Broadcast the status to frames when the form autofill status changes.
+   */
   onStatusChanged() {
     lazy.log.debug("onStatusChanged: Status changed to", this._active);
     Services.ppmm.sharedData.set("FormAutofill:enabled", this._active);
-    
-    
+    // Sync autofill enabled to make sure the value is up-to-date
+    // no matter when the new content process is initialized.
     Services.ppmm.sharedData.flush();
   },
 
-  
-
-
-
-
-
+  /**
+   * Query preference and storage status to determine the overall status of the
+   * form autofill feature.
+   *
+   * @returns {boolean} whether form autofill is active (enabled and has data)
+   */
   computeStatus() {
     const savedFieldNames = Services.ppmm.sharedData.get(
       "FormAutofill:savedFieldNames"
@@ -176,9 +171,9 @@ let FormAutofillStatus = {
     );
   },
 
-  
-
-
+  /**
+   * Update the status and trigger onStatusChanged, if necessary.
+   */
   updateStatus() {
     lazy.log.debug("updateStatus");
     let wasActive = this._active;
@@ -194,7 +189,7 @@ let FormAutofillStatus = {
     let savedFieldNames;
     const addressNames = await lazy.gFormAutofillStorage.addresses.getSavedFieldNames();
 
-    
+    // Don't access the credit cards store unless it is enabled.
     if (FormAutofill.isAutofillCreditCardsAvailable) {
       const creditCardNames = await lazy.gFormAutofillStorage.creditCards.getSavedFieldNames();
       savedFieldNames = new Set([...addressNames, ...creditCardNames]);
@@ -251,13 +246,13 @@ let FormAutofillStatus = {
       }
 
       case "nsPref:changed": {
-        
+        // Observe pref changes and update _active cache if status is changed.
         this.updateStatus();
         break;
       }
 
       case "formautofill-storage-changed": {
-        
+        // Early exit if only metadata is changed
         if (data == "notifyUsed") {
           break;
         }
@@ -275,8 +270,8 @@ let FormAutofillStatus = {
   },
 };
 
-
-
+// Lazily load the storage JSM to avoid disk I/O until absolutely needed.
+// Once storage is loaded we need to update saved field names and inform content processes.
 XPCOMUtils.defineLazyGetter(lazy, "gFormAutofillStorage", () => {
   let { formAutofillStorage } = ChromeUtils.import(
     "resource://autofill/FormAutofillStorage.jsm"
@@ -284,14 +279,14 @@ XPCOMUtils.defineLazyGetter(lazy, "gFormAutofillStorage", () => {
   lazy.log.debug("Loading formAutofillStorage");
 
   formAutofillStorage.initialize().then(() => {
-    
+    // Update the saved field names to compute the status and update child processes.
     FormAutofillStatus.updateSavedFieldNames();
   });
 
   return formAutofillStorage;
 });
 
-class FormAutofillParent extends JSWindowActorParent {
+export class FormAutofillParent extends JSWindowActorParent {
   constructor() {
     super();
     FormAutofillStatus.init();
@@ -305,13 +300,13 @@ class FormAutofillParent extends JSWindowActorParent {
     gMessageObservers.delete(observer);
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Handles the message coming from FormAutofillContent.
+   *
+   * @param   {object} message
+   * @param   {string} message.name The name of the message.
+   * @param   {object} message.data The data of the message.
+   */
   async receiveMessage({ name, data }) {
     switch (name) {
       case "FormAutofill:InitStorage": {
@@ -357,7 +352,7 @@ class FormAutofillParent extends JSWindowActorParent {
         this.notifyMessageObservers("fieldsIdentified", data);
         break;
 
-      
+      // The remaining Save and Remove messages are invoked only by tests.
       case "FormAutofill:SaveAddress": {
         if (data.guid) {
           await lazy.gFormAutofillStorage.addresses.update(
@@ -409,22 +404,22 @@ class FormAutofillParent extends JSWindowActorParent {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Get the records from profile store and return results back to content
+   * process. It will decrypt the credit card number and append
+   * "cc-number-decrypted" to each record if OSKeyStore isn't set.
+   *
+   * This is static as a unit test calls this.
+   *
+   * @private
+   * @param  {object} data
+   * @param  {string} data.collectionName
+   *         The name used to specify which collection to retrieve records.
+   * @param  {string} data.searchString
+   *         The typed string for filtering out the matched records.
+   * @param  {string} data.info
+   *         The input autocomplete property's information.
+   */
   static async _getRecords({ collectionName, searchString, info }) {
     let collection = lazy.gFormAutofillStorage[collectionName];
     if (!collection) {
@@ -437,7 +432,7 @@ class FormAutofillParent extends JSWindowActorParent {
     }
 
     let isCC = collectionName == CREDITCARDS_COLLECTION_NAME;
-    
+    // We don't filter "cc-number"
     if (isCC && info.fieldName == "cc-number") {
       recordsInCollection = recordsInCollection.filter(
         record => !!record["cc-number"]
@@ -459,8 +454,8 @@ class FormAutofillParent extends JSWindowActorParent {
         record.country &&
         !FormAutofill.isAutofillAddressesAvailableInCountry(record.country)
       ) {
-        
-        
+        // Address autofill isn't supported for the record's country so we don't
+        // want to attempt to potentially incorrectly fill the address fields.
         continue;
       }
 
@@ -481,7 +476,7 @@ class FormAutofillParent extends JSWindowActorParent {
   async _onAddressSubmit(address, browser) {
     const storage = lazy.gFormAutofillStorage.addresses;
 
-    
+    // Make sure record is normalized before comparing with records in the storage
     storage._normalizeRecord(address.record);
 
     const newAddress = new lazy.AddressComponent(address.record);
@@ -489,12 +484,12 @@ class FormAutofillParent extends JSWindowActorParent {
     let mergeableRecord = null;
     let mergeableFields = [];
 
-    
+    // Exams all stored record to determine whether to show the prompt or not.
     for (const record of await storage.getAll()) {
       const oldAddress = new lazy.AddressComponent(record);
       const result = new lazy.AddressComparison(newAddress, oldAddress);
 
-      
+      // If the record alreay exists in the storage, don't bother showing the prompt
       if (result.isDuplicate()) {
         lazy.log.debug(
           "A duplicated address record is found, do not show the prompt"
@@ -505,9 +500,9 @@ class FormAutofillParent extends JSWindowActorParent {
         lazy.log.debug(
           "A mergeable address record is found, show the update prompt"
         );
-        
-        
-        
+        // If we find multiple mergeable records, choose the record with fewest mergeable
+        // fields.
+        // TODO: Add a testcase
         if (
           !mergeableFields.length ||
           mergeableFields.length > result.getMergeableFields().length
@@ -537,15 +532,15 @@ class FormAutofillParent extends JSWindowActorParent {
   }
 
   async _onCreditCardSubmit(creditCard, browser) {
-    
-    
+    // Let's reset the credit card to empty, and then network auto-detect will
+    // pick it up.
     delete creditCard.record["cc-type"];
 
     const storage = lazy.gFormAutofillStorage.creditCards;
-    
+    // Make sure record is normalized before comparing with records in the storage
     storage._normalizeRecord(creditCard.record);
 
-    
+    // If the record alreay exists in the storage, don't bother showing the prompt
     const matchRecord = (
       await storage.getMatchRecords(creditCard.record).next()
     ).value;
@@ -554,7 +549,7 @@ class FormAutofillParent extends JSWindowActorParent {
       return false;
     }
 
-    
+    // Suppress the pending doorhanger from showing up if user disabled credit card in previous doorhanger.
     if (!FormAutofill.isAutofillCreditCardsEnabled) {
       return false;
     }
@@ -574,8 +569,8 @@ class FormAutofillParent extends JSWindowActorParent {
 
     let browser = this.manager.browsingContext.top.embedderElement;
 
-    
-    
+    // Transmit the telemetry immediately in the meantime form submitted, and handle these pending
+    // doorhangers at a later.
     await Promise.all(
       [
         await Promise.all(

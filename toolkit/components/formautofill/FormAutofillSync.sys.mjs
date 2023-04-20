@@ -1,32 +1,20 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import {
+  Changeset,
+  Store,
+  SyncEngine,
+  Tracker,
+} from "resource://services-sync/engines.sys.mjs";
+import { CryptoWrapper } from "resource://services-sync/record.sys.mjs";
+import { Utils } from "resource://services-sync/util.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = [
-  "AddressesEngine",
-  "CreditCardsEngine",
-  
-  "sanitizeStorageObject",
-  "AutofillRecord",
-];
-
-const { Changeset, Store, SyncEngine, Tracker } = ChromeUtils.importESModule(
-  "resource://services-sync/engines.sys.mjs"
-);
-const { CryptoWrapper } = ChromeUtils.importESModule(
-  "resource://services-sync/record.sys.mjs"
-);
-const { Utils } = ChromeUtils.importESModule(
-  "resource://services-sync/util.sys.mjs"
-);
 const { SCORE_INCREMENT_XLARGE } = ChromeUtils.import(
   "resource://services-sync/constants.js"
 );
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -38,8 +26,8 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   formAutofillStorage: "resource://autofill/FormAutofillStorage.jsm",
 });
 
-
-function sanitizeStorageObject(ob) {
+// A helper to sanitize address and creditcard records suitable for logging.
+export function sanitizeStorageObject(ob) {
   if (!ob) {
     return null;
   }
@@ -52,13 +40,13 @@ function sanitizeStorageObject(ob) {
     } else if (typeof origVal == "string") {
       result[key] = "X".repeat(origVal.length);
     } else {
-      result[key] = typeof origVal; 
+      result[key] = typeof origVal; // *shrug*
     }
   }
   return result;
 }
 
-function AutofillRecord(collection, id) {
+export function AutofillRecord(collection, id) {
   CryptoWrapper.call(this, collection, id);
 }
 
@@ -75,21 +63,21 @@ AutofillRecord.prototype = {
   fromEntry(entry) {
     this.id = entry.guid;
     this.entry = entry;
-    
-    
-    
+    // The GUID is already stored in record.id, so we nuke it from the entry
+    // itself to save a tiny bit of space. The formAutofillStorage clones profiles,
+    // so nuking in-place is OK.
     delete this.entry.guid;
   },
 
   cleartextToString() {
-    
+    // And a helper so logging a *Sync* record auto sanitizes.
     let record = this.cleartext;
     return JSON.stringify({ entry: sanitizeStorageObject(record.entry) });
   },
 };
 Object.setPrototypeOf(AutofillRecord.prototype, CryptoWrapper.prototype);
 
-
+// Profile data is stored in the "entry" object of the record.
 Utils.deferGetSet(AutofillRecord, "cleartext", ["entry"]);
 
 function FormAutofillStore(name, engine) {
@@ -97,7 +85,7 @@ function FormAutofillStore(name, engine) {
 }
 
 FormAutofillStore.prototype = {
-  _subStorageName: null, 
+  _subStorageName: null, // overridden below.
   _storage: null,
 
   get storage() {
@@ -119,8 +107,8 @@ FormAutofillStore.prototype = {
     this.storage.changeGUID(oldID, newID);
   },
 
-  
-  
+  // Note: this function intentionally returns false in cases where we only have
+  // a (local) tombstone - and formAutofillStorage.get() filters them for us.
   async itemExists(id) {
     return Boolean(await this.storage.get(id));
   },
@@ -133,12 +121,12 @@ FormAutofillStore.prototype = {
     }
 
     if (await this.itemExists(remoteRecord.id)) {
-      
+      // We will never get a tombstone here, so we are updating a real record.
       await this._doUpdateRecord(remoteRecord);
       return;
     }
 
-    
+    // No matching local record. Try to dedupe a NEW local record.
     let localDupeID = await this.storage.findDuplicateGUID(
       remoteRecord.toEntry()
     );
@@ -147,16 +135,16 @@ FormAutofillStore.prototype = {
         `Deduping local record ${localDupeID} to remote`,
         remoteRecord
       );
-      
-      
+      // Change the local GUID to match the incoming record, then apply the
+      // incoming record.
       await this.changeItemID(localDupeID, remoteRecord.id);
       await this._doUpdateRecord(remoteRecord);
       return;
     }
 
-    
-    
-    
+    // We didn't find a dupe, either, so must be a new record (or possibly
+    // a non-deleted version of an item we have a tombstone for, which add()
+    // handles for us.)
     this._log.trace("Add record", remoteRecord);
     let entry = remoteRecord.toEntry();
     await this.storage.add(entry, { sourceSync: true });
@@ -171,7 +159,7 @@ FormAutofillStore.prototype = {
     if (entry) {
       record.fromEntry(entry);
     } else {
-      
+      // We should consider getting a more authortative indication it's actually deleted.
       this._log.debug(
         `Failed to get autofill record with id "${id}", assuming deleted`
       );
@@ -195,10 +183,10 @@ FormAutofillStore.prototype = {
     }
   },
 
-  
-  
-  
-  
+  // NOTE: Because we re-implement the incoming/reconcilliation logic we leave
+  // the |create|, |remove| and |update| methods undefined - the base
+  // implementation throws, which is what we want to happen so we can identify
+  // any places they are "accidentally" called.
 };
 Object.setPrototypeOf(FormAutofillStore.prototype, Store.prototype);
 
@@ -240,10 +228,10 @@ FormAutofillTracker.prototype = {
 };
 Object.setPrototypeOf(FormAutofillTracker.prototype, Tracker.prototype);
 
-
-
-
-
+// This uses the same conventions as BookmarkChangeset in
+// services/sync/modules/engines/bookmarks.js. Specifically,
+// - "synced" means the item has already been synced (or we have another reason
+//   to ignore it), and should be ignored in most methods.
 class AutofillChangeset extends Changeset {
   constructor() {
     super();
@@ -264,8 +252,8 @@ class AutofillChangeset extends Changeset {
   delete(id) {
     let change = this.changes[id];
     if (change) {
-      
-      
+      // Mark the change as synced without removing it from the set. We do this
+      // so that we can update FormAutofillStorage in `trackRemainingChanges`.
       change.synced = true;
     }
   }
@@ -276,19 +264,19 @@ function FormAutofillEngine(service, name) {
 }
 
 FormAutofillEngine.prototype = {
-  
-  
+  // the priority for this engine is == addons, so will happen after bookmarks
+  // prefs and tabs, but before forms, history, etc.
   syncPriority: 5,
 
-  
-  
-  
+  // We don't use SyncEngine.initialize() for this, as we initialize even if
+  // the engine is disabled, and we don't want to be the loader of
+  // FormAutofillStorage in this case.
   async _syncStartup() {
     await lazy.formAutofillStorage.initialize();
     await SyncEngine.prototype._syncStartup.call(this);
   },
 
-  
+  // We handle reconciliation in the store, not the engine.
   async _reconcile() {
     return true;
   },
@@ -302,9 +290,9 @@ FormAutofillEngine.prototype = {
     await SyncEngine.prototype._uploadOutgoing.call(this);
   },
 
-  
-  
-  
+  // Typically, engines populate the changeset before downloading records.
+  // However, we handle conflict resolution in the store, so we can wait
+  // to pull changes until we're ready to upload.
   async pullAllChanges() {
     return {};
   },
@@ -333,7 +321,7 @@ FormAutofillEngine.prototype = {
 };
 Object.setPrototypeOf(FormAutofillEngine.prototype, SyncEngine.prototype);
 
-
+// The concrete engines
 
 function AddressesRecord(collection, id) {
   AutofillRecord.call(this, collection, id);
@@ -353,7 +341,7 @@ AddressesStore.prototype = {
 };
 Object.setPrototypeOf(AddressesStore.prototype, FormAutofillStore.prototype);
 
-function AddressesEngine(service) {
+export function AddressesEngine(service) {
   FormAutofillEngine.call(this, service, "Addresses");
 }
 
@@ -386,7 +374,7 @@ CreditCardsStore.prototype = {
 };
 Object.setPrototypeOf(CreditCardsStore.prototype, FormAutofillStore.prototype);
 
-function CreditCardsEngine(service) {
+export function CreditCardsEngine(service) {
   FormAutofillEngine.call(this, service, "CreditCards");
 }
 
