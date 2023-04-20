@@ -606,7 +606,7 @@ const Localized = ({
     ...(children === null || children === void 0 ? void 0 : children.props)
   }; 
 
-  const textNodes = props.children; 
+  const textNodes = Array.isArray(props.children) ? props.children : [props.children]; 
 
   if (text.string_id) {
     
