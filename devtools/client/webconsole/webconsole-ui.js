@@ -353,15 +353,20 @@ class WebConsoleUI {
       }
     );
 
-    const networkFront = await commands.watcherFront.getNetworkParentActor();
     
     
-    const saveBodies =
-      !this.isBrowserConsole &&
-      Services.prefs.getBoolPref(
-        "devtools.netmonitor.saveRequestAndResponseBodies"
-      );
-    await networkFront.setSaveRequestAndResponseBodies(saveBodies);
+    
+    if (commands.targetCommand.hasTargetWatcherSupport()) {
+      const networkFront = await commands.watcherFront.getNetworkParentActor();
+      
+      
+      const saveBodies =
+        !this.isBrowserConsole &&
+        Services.prefs.getBoolPref(
+          "devtools.netmonitor.saveRequestAndResponseBodies"
+        );
+      await networkFront.setSaveRequestAndResponseBodies(saveBodies);
+    }
   }
 
   async stopWatchingNetworkResources() {
