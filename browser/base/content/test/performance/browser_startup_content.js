@@ -41,6 +41,10 @@ const known_scripts = {
     "resource://gre/modules/Readerable.jsm",
 
     
+    "resource:///actors/InteractionsChild.sys.mjs",
+    "resource:///modules/InteractionsBlocklist.sys.mjs",
+
+    
     "resource://gre/modules/TelemetryControllerBase.jsm", 
     "resource://gre/modules/TelemetryControllerContent.jsm", 
 
