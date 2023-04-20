@@ -531,8 +531,18 @@ void RtpVideoStreamReceiver2::OnReceivedPayloadData(
         rtp_packet, video_header.frame_type == VideoFrameType::kVideoFrameKey);
   }
 
-  if (generic_descriptor_state == kDropPacket)
+  if (generic_descriptor_state == kDropPacket) {
+    Timestamp now = clock_->CurrentTime();
+    if (video_structure_ == nullptr &&
+        next_keyframe_request_for_missing_video_structure_ < now) {
+      
+      
+      RequestKeyFrame();
+      next_keyframe_request_for_missing_video_structure_ =
+          now + TimeDelta::Seconds(1);
+    }
     return;
+  }
 
   
   
