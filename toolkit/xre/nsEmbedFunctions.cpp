@@ -25,7 +25,6 @@
 #  endif
 #  include "mozilla/ScopeExit.h"
 #  include "mozilla/WinDllServices.h"
-#  include "mozilla/WindowsBCryptInitialization.h"
 #  include "WinUtils.h"
 #  ifdef ACCESSIBILITY
 #    include "mozilla/GeckoArgs.h"
@@ -535,21 +534,23 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
       break;
   }
 
-#if defined(XP_WIN)
-#  if defined(MOZ_SANDBOX)
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
   if (aChildData->sandboxBrokerServices) {
     SandboxBroker::Initialize(aChildData->sandboxBrokerServices);
     SandboxBroker::GeckoDependentInitialize();
   }
-#  endif  
 
-  {
-    
-    
-    
-    DebugOnly<bool> result = mozilla::WindowsBCryptInitialization();
-    MOZ_ASSERT(result);
-  }
+  
+  
+  
+  
+  UCHAR buffer[32];
+  NTSTATUS status = BCryptGenRandom(NULL,            
+                                    buffer,          
+                                    sizeof(buffer),  
+                                    BCRYPT_USE_SYSTEM_PREFERRED_RNG  
+  );
+  MOZ_RELEASE_ASSERT(status == STATUS_SUCCESS);
 #endif  
 
   {

@@ -32,7 +32,6 @@
 #  include "LauncherProcessWin.h"
 #  include "mozilla/GeckoArgs.h"
 #  include "mozilla/mscom/ProcessRuntime.h"
-#  include "mozilla/WindowsBCryptInitialization.h"
 #  include "mozilla/WindowsDllBlocklist.h"
 #  include "mozilla/WindowsDpiInitialization.h"
 #  include "mozilla/WindowsProcessMitigations.h"
@@ -401,12 +400,6 @@ int main(int argc, char* argv[], char* envp[]) {
     auto result = mozilla::WindowsDpiInitialization();
     (void)result;  
   }
-
-  
-  
-  
-  
-  mozilla::WindowsBCryptInitialization();
 
   
   

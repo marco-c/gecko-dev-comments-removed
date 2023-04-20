@@ -1180,14 +1180,6 @@ class WindowsDllDetourPatcher final
         } else if (*origBytes >= 0xb8 && *origBytes <= 0xbf) {
           
           COPY_CODES(5);
-        } else if (*origBytes == 0x8b && (origBytes[1] & kMaskMod) == kModReg) {
-          
-          COPY_CODES(2);
-        } else if (*origBytes == 0xf7 &&
-                   (origBytes[1] & (kMaskMod | kMaskReg)) ==
-                       (kModReg | (0 << kRegFieldShift))) {
-          
-          COPY_CODES(6);
         } else {
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
