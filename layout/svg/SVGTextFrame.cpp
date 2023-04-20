@@ -4541,7 +4541,7 @@ gfxFloat SVGTextFrame::GetStartOffset(nsIFrame* aTextPathFrame) {
       &tp->mLengthAttributes[SVGTextPathElement::STARTOFFSET];
 
   if (length->IsPercentage()) {
-    if (!IsFinite(GetOffsetScale(aTextPathFrame))) {
+    if (!std::isfinite(GetOffsetScale(aTextPathFrame))) {
       
       return 0.0;
     }

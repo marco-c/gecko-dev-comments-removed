@@ -12,6 +12,7 @@
 #include "skia/include/effects/SkDashPathEffect.h"
 #include "skia/include/core/SkShader.h"
 #include "mozilla/Assertions.h"
+#include <cmath>
 #include <vector>
 #include "nsDebug.h"
 
@@ -119,7 +120,7 @@ static inline bool StrokeOptionsToPaint(SkPaint& aPaint,
   
   
   
-  if (!aOptions.mLineWidth || !IsFinite(aOptions.mLineWidth)) {
+  if (!aOptions.mLineWidth || !std::isfinite(aOptions.mLineWidth)) {
     return false;
   }
   aPaint.setStrokeWidth(SkFloatToScalar(aOptions.mLineWidth));

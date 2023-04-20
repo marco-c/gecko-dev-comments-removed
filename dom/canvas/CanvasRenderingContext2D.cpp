@@ -3208,7 +3208,8 @@ static void RoundRectImpl(
         aRadii,
     ErrorResult& aError) {
   
-  if (!IsFinite(aX) || !IsFinite(aY) || !IsFinite(aW) || !IsFinite(aH)) {
+  if (!std::isfinite(aX) || !std::isfinite(aY) || !std::isfinite(aW) ||
+      !std::isfinite(aH)) {
     return;
   }
 
@@ -3240,7 +3241,7 @@ static void RoundRectImpl(
       const DOMPointInit& point = radius.GetAsDOMPointInit();
       
       
-      if (!IsFinite(point.mX) || !IsFinite(point.mY)) {
+      if (!std::isfinite(point.mX) || !std::isfinite(point.mY)) {
         return;
       }
 
@@ -3261,7 +3262,7 @@ static void RoundRectImpl(
     
     double r = radius.GetAsUnrestrictedDouble();
     
-    if (!IsFinite(r)) {
+    if (!std::isfinite(r)) {
       return;
     }
 
@@ -4257,7 +4258,7 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
     return nullptr;
   }
 
-  if (!IsFinite(aX) || !IsFinite(aY)) {
+  if (!std::isfinite(aX) || !std::isfinite(aY)) {
     aError = NS_OK;
     
     

@@ -365,7 +365,7 @@ class AudioEventTimeline {
 
   const AudioTimelineEvent* GetPreviousEvent(double aTime) const;
 
-  static bool IsValid(double value) { return mozilla::IsFinite(value); }
+  static bool IsValid(double value) { return std::isfinite(value); }
 
   
   
