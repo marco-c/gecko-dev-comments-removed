@@ -2038,6 +2038,11 @@ class nsLayoutUtils {
   
 
 
+  static bool ImageRequestUsesCORS(imgIRequest* aRequest);
+
+  
+
+
 
 
 

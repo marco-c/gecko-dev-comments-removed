@@ -2779,7 +2779,7 @@ StyleImageOrientation nsStyleVisibility::UsedImageOrientation(
   
   
   
-  if (!isSameOrigin) {
+  if (!isSameOrigin && !nsLayoutUtils::ImageRequestUsesCORS(aRequest)) {
     return StyleImageOrientation::FromImage;
   }
 
