@@ -50,7 +50,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(RTCRtpReceiver)
 NS_INTERFACE_MAP_END
 
 static PrincipalHandle GetPrincipalHandle(nsPIDOMWindowInner* aWindow,
-                                          bool aPrivacyNeeded) {
+                                          PrincipalPrivacy aPrivacy) {
   
   
   
@@ -58,7 +58,7 @@ static PrincipalHandle GetPrincipalHandle(nsPIDOMWindowInner* aWindow,
   RefPtr<nsIPrincipal> principal = winPrincipal->GetPrincipal();
   if (NS_WARN_IF(!principal)) {
     principal = NullPrincipal::CreateWithoutOriginAttributes();
-  } else if (aPrivacyNeeded) {
+  } else if (aPrivacy == PrincipalPrivacy::Private) {
     principal = NullPrincipal::CreateWithInheritedAttributes(principal);
   }
   return MakePrincipalHandle(principal);
@@ -100,10 +100,11 @@ static already_AddRefed<dom::MediaStreamTrack> CreateTrack(
        "RTCRtpReceiver::" #name " (Canonical)")
 
 RTCRtpReceiver::RTCRtpReceiver(
-    nsPIDOMWindowInner* aWindow, bool aPrivacyNeeded, PeerConnectionImpl* aPc,
-    MediaTransportHandler* aTransportHandler, AbstractThread* aCallThread,
-    nsISerialEventTarget* aStsThread, MediaSessionConduit* aConduit,
-    RTCRtpTransceiver* aTransceiver, const TrackingId& aTrackingId)
+    nsPIDOMWindowInner* aWindow, PrincipalPrivacy aPrivacy,
+    PeerConnectionImpl* aPc, MediaTransportHandler* aTransportHandler,
+    AbstractThread* aCallThread, nsISerialEventTarget* aStsThread,
+    MediaSessionConduit* aConduit, RTCRtpTransceiver* aTransceiver,
+    const TrackingId& aTrackingId)
     : mWindow(aWindow),
       mPc(aPc),
       mCallThread(aCallThread),
@@ -117,7 +118,7 @@ RTCRtpReceiver::RTCRtpReceiver(
       INIT_CANONICAL(mVideoCodecs, std::vector<VideoCodecConfig>()),
       INIT_CANONICAL(mVideoRtpRtcpConfig, Nothing()),
       INIT_CANONICAL(mReceiving, false) {
-  PrincipalHandle principalHandle = GetPrincipalHandle(aWindow, aPrivacyNeeded);
+  PrincipalHandle principalHandle = GetPrincipalHandle(aWindow, aPrivacy);
   mTrack = CreateTrack(aWindow, aConduit->type() == MediaSessionConduit::AUDIO,
                        principalHandle.get(), aTrackingId);
   

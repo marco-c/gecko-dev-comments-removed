@@ -69,6 +69,7 @@ class DtlsIdentity;
 class MediaPipeline;
 class MediaPipelineReceive;
 class MediaPipelineTransmit;
+enum class PrincipalPrivacy : uint8_t;
 class SharedWebrtcState;
 
 namespace dom {
@@ -322,7 +323,10 @@ class PeerConnectionImpl final
   void SetId(const nsAString& id) { mName = NS_ConvertUTF16toUTF8(id).get(); }
 
   
-  bool PrivacyRequested() const { return mPrivacyRequested.valueOr(false); }
+  bool PrivacyRequested() const {
+    return mRequestedPrivacy.valueOr(PrincipalPrivacy::NonPrivate) ==
+           PrincipalPrivacy::Private;
+  }
 
   NS_IMETHODIMP GetFingerprint(char** fingerprint);
   void GetFingerprint(nsAString& fingerprint) {
@@ -627,7 +631,7 @@ class PeerConnectionImpl final
   
   
   
-  Maybe<bool> mPrivacyRequested;
+  Maybe<PrincipalPrivacy> mRequestedPrivacy;
 
   
   std::string mHandle;

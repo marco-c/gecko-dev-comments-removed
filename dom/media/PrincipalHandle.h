@@ -13,6 +13,11 @@ namespace mozilla {
 
 
 
+enum class PrincipalPrivacy : uint8_t { Private, NonPrivate };
+
+
+
+
 
 
 
