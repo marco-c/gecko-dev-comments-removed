@@ -510,8 +510,24 @@
 
 
 
+
+
+
     set label(value) {
-      this.messageText.textContent = value;
+      if (value && typeof value == "object" && "l10n-id" in value) {
+        const message = document.createElement("span");
+        document.l10n.setAttributes(
+          message,
+          value["l10n-id"],
+          value["l10n-args"]
+        );
+        while (this.messageText.firstChild) {
+          this.messageText.firstChild.remove();
+        }
+        this.messageText.appendChild(message);
+      } else {
+        this.messageText.textContent = value;
+      }
     }
 
     
@@ -709,8 +725,28 @@
         }
       }
 
+      
+
+
+
+
+
+
       set label(value) {
-        this.messageText.textContent = value;
+        if (value && typeof value == "object" && "l10n-id" in value) {
+          const message = document.createElement("span");
+          document.l10n.setAttributes(
+            message,
+            value["l10n-id"],
+            value["l10n-args"]
+          );
+          while (this.messageText.firstChild) {
+            this.messageText.firstChild.remove();
+          }
+          this.messageText.appendChild(message);
+        } else {
+          this.messageText.textContent = value;
+        }
         this.setAlertRole();
       }
 
