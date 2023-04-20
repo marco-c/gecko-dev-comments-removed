@@ -1,8 +1,8 @@
 
 
 
-const { Observers } = ChromeUtils.import(
-  "resource://services-common/observers.js"
+const { Observers } = ChromeUtils.importESModule(
+  "resource://services-common/observers.sys.mjs"
 );
 
 var gSubject = {};

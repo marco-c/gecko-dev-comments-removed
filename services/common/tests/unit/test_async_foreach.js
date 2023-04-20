@@ -1,7 +1,9 @@
 
 
 
-const { Async } = ChromeUtils.import("resource://services-common/async.js");
+const { Async } = ChromeUtils.importESModule(
+  "resource://services-common/async.sys.mjs"
+);
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 function makeArray(length) {

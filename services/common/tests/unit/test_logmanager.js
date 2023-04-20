@@ -4,8 +4,8 @@
 
 
 
-const { LogManager } = ChromeUtils.import(
-  "resource://services-common/logmanager.js"
+const { LogManager } = ChromeUtils.importESModule(
+  "resource://services-common/logmanager.sys.mjs"
 );
 const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
