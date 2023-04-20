@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_INTER_FRAME_DELAY_H_
-#define MODULES_VIDEO_CODING_INTER_FRAME_DELAY_H_
+#ifndef MODULES_VIDEO_CODING_TIMING_INTER_FRAME_DELAY_H_
+#define MODULES_VIDEO_CODING_TIMING_INTER_FRAME_DELAY_H_
 
 #include <stdint.h>
 
@@ -20,9 +20,9 @@
 
 namespace webrtc {
 
-class VCMInterFrameDelay {
+class InterFrameDelay {
  public:
-  VCMInterFrameDelay();
+  InterFrameDelay();
 
   
   void Reset();

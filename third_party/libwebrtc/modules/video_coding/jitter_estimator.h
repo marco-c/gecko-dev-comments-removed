@@ -17,7 +17,7 @@
 #include "api/units/frequency.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "modules/video_coding/rtt_filter.h"
+#include "modules/video_coding/timing/rtt_filter.h"
 #include "rtc_base/rolling_accumulator.h"
 
 namespace webrtc {
@@ -152,7 +152,7 @@ class VCMJitterEstimator {
   
   
   uint32_t nack_count_;
-  VCMRttFilter rtt_filter_;
+  RttFilter rtt_filter_;
 
   
   rtc::RollingAccumulator<uint64_t> fps_counter_;

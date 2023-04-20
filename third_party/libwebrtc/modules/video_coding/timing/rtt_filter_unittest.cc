@@ -8,7 +8,7 @@
 
 
 
-#include "modules/video_coding/rtt_filter.h"
+#include "modules/video_coding/timing/rtt_filter.h"
 
 #include "api/units/time_delta.h"
 #include "test/gmock.h"
@@ -17,7 +17,7 @@
 namespace webrtc {
 
 TEST(RttFilterTest, RttIsCapped) {
-  VCMRttFilter rtt_filter;
+  RttFilter rtt_filter;
   rtt_filter.Update(TimeDelta::Seconds(500));
 
   EXPECT_EQ(rtt_filter.Rtt(), TimeDelta::Seconds(3));
@@ -27,7 +27,7 @@ TEST(RttFilterTest, RttIsCapped) {
 
 
 TEST(RttFilterTest, PositiveJumpDetection) {
-  VCMRttFilter rtt_filter;
+  RttFilter rtt_filter;
 
   rtt_filter.Update(TimeDelta::Millis(200));
   rtt_filter.Update(TimeDelta::Millis(200));
@@ -46,7 +46,7 @@ TEST(RttFilterTest, PositiveJumpDetection) {
 }
 
 TEST(RttFilterTest, NegativeJumpDetection) {
-  VCMRttFilter rtt_filter;
+  RttFilter rtt_filter;
 
   for (int i = 0; i < 10; ++i)
     rtt_filter.Update(TimeDelta::Millis(1500));
@@ -64,7 +64,7 @@ TEST(RttFilterTest, NegativeJumpDetection) {
 }
 
 TEST(RttFilterTest, JumpsResetByDirectionShift) {
-  VCMRttFilter rtt_filter;
+  RttFilter rtt_filter;
   for (int i = 0; i < 10; ++i)
     rtt_filter.Update(TimeDelta::Millis(1500));
 
@@ -85,7 +85,7 @@ TEST(RttFilterTest, JumpsResetByDirectionShift) {
 
 
 TEST(RttFilterTest, DriftDetection) {
-  VCMRttFilter rtt_filter;
+  RttFilter rtt_filter;
 
   
   

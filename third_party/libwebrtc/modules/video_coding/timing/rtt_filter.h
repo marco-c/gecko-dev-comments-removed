@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_RTT_FILTER_H_
-#define MODULES_VIDEO_CODING_RTT_FILTER_H_
+#ifndef MODULES_VIDEO_CODING_TIMING_RTT_FILTER_H_
+#define MODULES_VIDEO_CODING_TIMING_RTT_FILTER_H_
 
 #include <stdint.h>
 
@@ -18,11 +18,11 @@
 
 namespace webrtc {
 
-class VCMRttFilter {
+class RttFilter {
  public:
-  VCMRttFilter();
-  VCMRttFilter(const VCMRttFilter&) = delete;
-  VCMRttFilter& operator=(const VCMRttFilter&) = delete;
+  RttFilter();
+  RttFilter(const RttFilter&) = delete;
+  RttFilter& operator=(const RttFilter&) = delete;
 
   
   void Reset();
