@@ -440,11 +440,27 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
   getTargetActorInParentProcess() {
+    if (TargetActorRegistry.xpcShellTargetActor) {
+      return TargetActorRegistry.xpcShellTargetActor;
+    }
+
     
     
-    return TargetActorRegistry.getTopLevelTargetActorForContext(
+    const actors = TargetActorRegistry.getTargetActors(
       this.sessionContext,
       this.conn.prefix
+    );
+
+    if (this.sessionContext.type == "all") {
+      return actors.find(actor => actor.typeName === "parentProcessTarget");
+    } else if (this.sessionContext.type == "browser-element") {
+      return actors.find(actor => actor.isTopLevelTarget);
+    } else if (this.sessionContext.type == "webextension") {
+      return actors.find(actor => actor.typeName === "webExtensionTarget");
+    }
+
+    throw new Error(
+      "Unsupported session context type: " + this.sessionContext.type
     );
   }
 
