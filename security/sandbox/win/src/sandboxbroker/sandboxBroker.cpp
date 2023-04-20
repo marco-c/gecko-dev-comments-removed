@@ -433,18 +433,19 @@ static void AddCachedDirRule(sandbox::TargetPolicy* aPolicy,
 static const Maybe<Vector<const wchar_t*>>& GetPrespawnCigExceptionModules() {
   
   
+#if defined(EARLY_BETA_OR_EARLIER)
+  
+  
   
   static Maybe<Vector<const wchar_t*>> sDependentModules =
       []() -> Maybe<Vector<const wchar_t*>> {
-    using GetDependentModulePathsFn = const wchar_t* (*)();
-    GetDependentModulePathsFn getDependentModulePaths =
-        reinterpret_cast<GetDependentModulePathsFn>(::GetProcAddress(
-            ::GetModuleHandleW(nullptr), "GetDependentModulePaths"));
-    if (!getDependentModulePaths) {
+    RefPtr<DllServices> dllSvc(DllServices::Get());
+    auto sharedSection = dllSvc->GetSharedSection();
+    if (!sharedSection) {
       return Nothing();
     }
 
-    const wchar_t* arrayBase = getDependentModulePaths();
+    const wchar_t* arrayBase = sharedSection->GetDependentModules().data();
     if (!arrayBase) {
       return Nothing();
     }
@@ -463,6 +464,9 @@ static const Maybe<Vector<const wchar_t*>>& GetPrespawnCigExceptionModules() {
   }();
 
   return sDependentModules;
+#else
+  return Nothing();
+#endif
 }
 
 static sandbox::ResultCode InitSignedPolicyRulesToBypassCig(
