@@ -8,6 +8,4 @@
 
 
 
-let processScriptPath = "content/tabswitch-content-process.js";
-
-browser.tabswitch.setup({ processScriptPath });
+browser.tabswitch.setup();

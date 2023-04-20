@@ -140,6 +140,10 @@ class RemotePageChild extends JSWindowActorChild {
     return true;
   }
 
+  addPage(aUrl, aFunctionMap) {
+    lazy.RemotePageAccessManager.addPage(aUrl, aFunctionMap);
+  }
+
   
 
   RPMSendAsyncMessage(aName, aData = null) {
