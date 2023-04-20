@@ -150,22 +150,6 @@ bool nsGIFDecoder2::CheckForTransparency(const OrientedIntRect& aFrameRect) {
     return true;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mGIFStruct.screen_width == 1 && mGIFStruct.screen_height == 1) {
-    PostHasTransparency();
-    return true;
-  }
-
   if (mGIFStruct.images_decoded > 0) {
     return false;  
   }
