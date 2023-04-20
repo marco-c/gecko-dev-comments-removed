@@ -90,7 +90,7 @@ class SVGMotionSMILPathUtils {
     }
 
     
-    virtual bool Parse(const nsAString& aValueStr) override;
+    bool Parse(const nsAString& aValueStr) override;
 
    protected:
     PathGenerator* mPathGenerator;

@@ -86,10 +86,9 @@ class SVGFE : public SVGFEBase {
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
   
-  virtual nsresult Clone(mozilla::dom::NodeInfo*,
-                         nsINode** aResult) const override = 0;
+  nsresult Clone(mozilla::dom::NodeInfo*, nsINode** aResult) const override = 0;
 
-  virtual bool HasValidDimensions() const override;
+  bool HasValidDimensions() const override;
 
   virtual SVGAnimatedString& GetResultImageName() = 0;
   
@@ -139,7 +138,7 @@ class SVGFE : public SVGFEBase {
   bool StyleIsSetToSRGB();
 
   
-  virtual LengthAttributesInfo GetLengthInfo() override;
+  LengthAttributesInfo GetLengthInfo() override;
 
   Size GetKernelUnitLength(SVGFilterInstance* aInstance,
                            SVGAnimatedNumberPair* aKernelUnitLength);
@@ -160,8 +159,7 @@ class SVGFEUnstyledElement : public SVGFEUnstyledElementBase {
       : SVGFEUnstyledElementBase(std::move(aNodeInfo)) {}
 
  public:
-  virtual nsresult Clone(mozilla::dom::NodeInfo*,
-                         nsINode** aResult) const override = 0;
+  nsresult Clone(mozilla::dom::NodeInfo*, nsINode** aResult) const override = 0;
 
   
   
@@ -186,23 +184,22 @@ class SVGFELightingElement : public SVGFELightingElementBase {
   NS_INLINE_DECL_REFCOUNTING_INHERITED(SVGFELightingElement,
                                        SVGFELightingElementBase)
 
-  virtual bool AttributeAffectsRendering(int32_t aNameSpaceID,
-                                         nsAtom* aAttribute) const override;
-  virtual SVGAnimatedString& GetResultImageName() override {
+  bool AttributeAffectsRendering(int32_t aNameSpaceID,
+                                 nsAtom* aAttribute) const override;
+  SVGAnimatedString& GetResultImageName() override {
     return mStringAttributes[RESULT];
   }
-  virtual void GetSourceImageNames(nsTArray<SVGStringInfo>& aSources) override;
+  void GetSourceImageNames(nsTArray<SVGStringInfo>& aSources) override;
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
  protected:
-  virtual bool OperatesOnSRGB(int32_t aInputIndex,
-                              bool aInputIsAlreadySRGB) override {
+  bool OperatesOnSRGB(int32_t aInputIndex, bool aInputIsAlreadySRGB) override {
     return true;
   }
 
-  virtual NumberAttributesInfo GetNumberInfo() override;
-  virtual NumberPairAttributesInfo GetNumberPairInfo() override;
-  virtual StringAttributesInfo GetStringInfo() override;
+  NumberAttributesInfo GetNumberInfo() override;
+  NumberPairAttributesInfo GetNumberPairInfo() override;
+  StringAttributesInfo GetStringInfo() override;
 
   mozilla::gfx::LightType ComputeLightAttributes(
       SVGFilterInstance* aInstance, nsTArray<float>& aFloatAttributes);

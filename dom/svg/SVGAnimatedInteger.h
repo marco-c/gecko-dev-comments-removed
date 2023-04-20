@@ -70,14 +70,14 @@ class SVGAnimatedInteger {
 
     SVGAnimatedInteger* mVal;  
 
-    virtual int32_t BaseVal() override { return mVal->GetBaseValue(); }
-    virtual void SetBaseVal(int32_t aValue) override {
+    int32_t BaseVal() override { return mVal->GetBaseValue(); }
+    void SetBaseVal(int32_t aValue) override {
       mVal->SetBaseValue(aValue, mSVGElement);
     }
 
     
     
-    virtual int32_t AnimVal() override {
+    int32_t AnimVal() override {
       mSVGElement->FlushAnimations();
       return mVal->GetAnimValue();
     }
@@ -95,12 +95,13 @@ class SVGAnimatedInteger {
     SVGElement* mSVGElement;
 
     
-    virtual nsresult ValueFromString(
-        const nsAString& aStr, const dom::SVGAnimationElement* aSrcElement,
-        SMILValue& aValue, bool& aPreventCachingOfSandwich) const override;
-    virtual SMILValue GetBaseValue() const override;
-    virtual void ClearAnimValue() override;
-    virtual nsresult SetAnimValue(const SMILValue& aValue) override;
+    nsresult ValueFromString(const nsAString& aStr,
+                             const dom::SVGAnimationElement* aSrcElement,
+                             SMILValue& aValue,
+                             bool& aPreventCachingOfSandwich) const override;
+    SMILValue GetBaseValue() const override;
+    void ClearAnimValue() override;
+    nsresult SetAnimValue(const SMILValue& aValue) override;
   };
 };
 

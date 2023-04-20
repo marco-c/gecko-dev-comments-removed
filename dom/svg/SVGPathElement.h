@@ -27,11 +27,10 @@ class SVGPathElement final : public SVGPathElementBase {
   friend nsresult(::NS_NewSVGPathElement(
       nsIContent** aResult,
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
-  virtual JSObject* WrapNode(JSContext* cx,
-                             JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
   explicit SVGPathElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-  virtual void GetAsSimplePath(SimplePath* aSimplePath) override;
+  void GetAsSimplePath(SimplePath* aSimplePath) override;
 
  public:
   NS_DECL_ADDSIZEOFEXCLUDINGTHIS
@@ -40,43 +39,41 @@ class SVGPathElement final : public SVGPathElementBase {
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* name) const override;
 
   
-  virtual bool HasValidDimensions() const override;
+  bool HasValidDimensions() const override;
 
   
-  virtual bool AttributeDefinesGeometry(const nsAtom* aName) override;
-  virtual bool IsMarkable() override;
-  virtual void GetMarkPoints(nsTArray<SVGMark>* aMarks) override;
-  
-
-
-
-
-
-  virtual already_AddRefed<Path> BuildPath(PathBuilder* aBuilder) override;
-
+  bool AttributeDefinesGeometry(const nsAtom* aName) override;
+  bool IsMarkable() override;
+  void GetMarkPoints(nsTArray<SVGMark>* aMarks) override;
   
 
 
 
 
 
+  already_AddRefed<Path> BuildPath(PathBuilder* aBuilder) override;
+
+  
 
 
 
 
-  virtual already_AddRefed<Path> GetOrBuildPathForMeasuring() override;
+
+
+
+
+
+  already_AddRefed<Path> GetOrBuildPathForMeasuring() override;
 
   bool GetDistancesFromOriginToEndsOfVisibleSegments(
       FallibleTArray<double>* aOutput) override;
 
   
-  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
+  nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
-  virtual SVGAnimatedPathSegList* GetAnimPathSegList() override { return &mD; }
+  SVGAnimatedPathSegList* GetAnimPathSegList() override { return &mD; }
 
-  virtual nsStaticAtom* GetPathDataAttrName() const override {
-    return nsGkAtoms::d;
-  }
+  nsStaticAtom* GetPathDataAttrName() const override { return nsGkAtoms::d; }
 
   
   MOZ_CAN_RUN_SCRIPT uint32_t GetPathSegAtLength(float distance);

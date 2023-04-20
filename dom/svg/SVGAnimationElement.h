@@ -40,22 +40,20 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SVGAnimationElement,
                                            SVGAnimationElementBase)
 
-  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override = 0;
+  nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override = 0;
 
   
-  virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
-  virtual void UnbindFromTree(bool aNullParent) override;
+  nsresult BindToTree(BindContext&, nsINode& aParent) override;
+  void UnbindFromTree(bool aNullParent) override;
 
   
-  virtual bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
-                              const nsAString& aValue,
-                              nsIPrincipal* aMaybeScriptedPrincipal,
-                              nsAttrValue& aResult) override;
-  virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                                const nsAttrValue* aValue,
-                                const nsAttrValue* aOldValue,
-                                nsIPrincipal* aSubjectPrincipal,
-                                bool aNotify) override;
+  bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                      const nsAString& aValue,
+                      nsIPrincipal* aMaybeScriptedPrincipal,
+                      nsAttrValue& aResult) override;
+  nsresult AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                        const nsAttrValue* aValue, const nsAttrValue* aOldValue,
+                        nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
 
   Element* GetTargetElementContent();
   virtual bool GetTargetAttributeName(int32_t* aNamespaceID,
@@ -64,7 +62,7 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
   mozilla::SMILTimeContainer* GetTimeContainer();
   virtual SMILAnimationFunction& AnimationFunction() = 0;
 
-  virtual bool IsEventAttributeNameInternal(nsAtom* aName) override;
+  bool IsEventAttributeNameInternal(nsAtom* aName) override;
 
   
   void ActivateByHyperlink();
@@ -105,14 +103,14 @@ class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
     
     
     
-    virtual void ElementChanged(Element* aFrom, Element* aTo) override {
+    void ElementChanged(Element* aFrom, Element* aTo) override {
       IDTracker::ElementChanged(aFrom, aTo);
       mAnimationElement->AnimationTargetChanged();
     }
 
     
     
-    virtual bool IsPersistent() override { return true; }
+    bool IsPersistent() override { return true; }
 
    private:
     SVGAnimationElement* const mAnimationElement;

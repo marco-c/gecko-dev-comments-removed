@@ -26,22 +26,20 @@ class SVGAnimateMotionElement final : public SVGAnimationElement {
       nsIContent** aResult,
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
 
-  virtual JSObject* WrapNode(JSContext* aCx,
-                             JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapNode(JSContext* aCx,
+                     JS::Handle<JSObject*> aGivenProto) override;
 
  public:
   
-  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
+  nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   
-  virtual SMILAnimationFunction& AnimationFunction() override;
+  SMILAnimationFunction& AnimationFunction() override;
   virtual bool GetTargetAttributeName(int32_t* aNamespaceID,
                                       nsAtom** aLocalName) const override;
 
   
-  virtual nsStaticAtom* GetPathDataAttrName() const override {
-    return nsGkAtoms::path;
-  }
+  nsStaticAtom* GetPathDataAttrName() const override { return nsGkAtoms::path; }
 
   
   

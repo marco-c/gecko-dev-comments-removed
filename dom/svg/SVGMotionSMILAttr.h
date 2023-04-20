@@ -36,13 +36,14 @@ class SVGMotionSMILAttr : public SMILAttr {
       : mSVGElement(aSVGElement) {}
 
   
-  virtual nsresult ValueFromString(
-      const nsAString& aStr, const dom::SVGAnimationElement* aSrcElement,
-      SMILValue& aValue, bool& aPreventCachingOfSandwich) const override;
-  virtual SMILValue GetBaseValue() const override;
-  virtual nsresult SetAnimValue(const SMILValue& aValue) override;
-  virtual void ClearAnimValue() override;
-  virtual const nsIContent* GetTargetNode() const override;
+  nsresult ValueFromString(const nsAString& aStr,
+                           const dom::SVGAnimationElement* aSrcElement,
+                           SMILValue& aValue,
+                           bool& aPreventCachingOfSandwich) const override;
+  SMILValue GetBaseValue() const override;
+  nsresult SetAnimValue(const SMILValue& aValue) override;
+  void ClearAnimValue() override;
+  const nsIContent* GetTargetNode() const override;
 
  protected:
   
