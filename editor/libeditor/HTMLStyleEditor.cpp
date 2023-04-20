@@ -120,7 +120,11 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsStaticAtom& aProperty,
       
       
       
-      if (!value.LowerCaseEqualsLiteral("transparent")) {
+      
+      
+      
+      
+      if (!HTMLEditUtils::MaybeCSSSpecificColorValue(value)) {
         HTMLEditUtils::GetNormalizedHTMLColorValue(value, value);
       }
     } else {
@@ -1142,19 +1146,25 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoInlineStyleSetter::ApplyStyle(
   }
 
   auto ShouldUseCSS = [&]() {
-    return (aHTMLEditor.IsCSSEnabled() &&
-            aContent.GetAsElementOrParentElement() &&
-            IsCSSSettable(*aContent.GetAsElementOrParentElement())) ||
-           
-           mAttribute == nsGkAtoms::bgcolor ||
-           
-           
-           
-           (mAttribute == nsGkAtoms::color &&
-            mAttributeValue.LowerCaseEqualsLiteral("transparent")) ||
-           
-           
-           IsStyleToInvert();
+    if (aHTMLEditor.IsCSSEnabled() && aContent.GetAsElementOrParentElement() &&
+        IsCSSSettable(*aContent.GetAsElementOrParentElement())) {
+      return true;
+    }
+    
+    if (mAttribute == nsGkAtoms::bgcolor) {
+      return true;
+    }
+    
+    if (IsStyleToInvert()) {
+      return true;
+    }
+    
+    
+    if (mAttribute == nsGkAtoms::color) {
+      return mAttributeValue.First() != '#' &&
+             !HTMLEditUtils::CanConvertToHTMLColorValue(mAttributeValue);
+    }
+    return false;
   };
 
   if (ShouldUseCSS()) {
@@ -1218,6 +1228,14 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoInlineStyleSetter::ApplyStyle(
     return CaretPoint(pointToPutCaret);
   }
 
+  nsAutoString attributeValue(mAttributeValue);
+  if (mAttribute == nsGkAtoms::color && mAttributeValue.First() != '#') {
+    
+    
+    HTMLEditUtils::ConvertToNormalizedHTMLColorValue(attributeValue,
+                                                     attributeValue);
+  }
+
   
   if (aContent.IsHTMLElement(&HTMLPropertyRef())) {
     if (NS_WARN_IF(!mAttribute)) {
@@ -1225,7 +1243,7 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoInlineStyleSetter::ApplyStyle(
     }
     
     nsresult rv = aHTMLEditor.SetAttributeWithTransaction(
-        MOZ_KnownLive(*aContent.AsElement()), *mAttribute, mAttributeValue);
+        MOZ_KnownLive(*aContent.AsElement()), *mAttribute, attributeValue);
     if (NS_WARN_IF(aHTMLEditor.Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -1241,7 +1259,7 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoInlineStyleSetter::ApplyStyle(
   Result<CreateElementResult, nsresult> wrapWithNewElementToFormatResult =
       aHTMLEditor.InsertContainerWithTransaction(
           aContent, MOZ_KnownLive(HTMLPropertyRef()),
-          mAttribute ? *mAttribute : *nsGkAtoms::_empty, mAttributeValue);
+          mAttribute ? *mAttribute : *nsGkAtoms::_empty, attributeValue);
   if (MOZ_UNLIKELY(wrapWithNewElementToFormatResult.isErr())) {
     NS_WARNING("HTMLEditor::InsertContainerWithTransaction() failed");
     return wrapWithNewElementToFormatResult.propagateErr();
