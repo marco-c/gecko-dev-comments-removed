@@ -4202,5 +4202,8 @@ pref("cookiebanners.bannerClicking.logLevel", "Error");
 pref("cookiebanners.listService.testRules", "[]");
 
 
+pref("cookiebanners.listService.testSkipRemoteSettings", false);
+
+
 
 pref("dom.sitepermsaddon-provider.separatedBlocklistedDomains", "shopee.co.th");
