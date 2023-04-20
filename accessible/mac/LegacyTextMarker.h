@@ -30,20 +30,16 @@ class LegacyTextMarker final {
   LegacyTextMarker(const LegacyTextMarker& aPoint)
       : mContainer(aPoint.mContainer), mOffset(aPoint.mOffset) {}
 
-  LegacyTextMarker(Accessible* aDoc, AXTextMarkerRef aTextMarker);
-
   LegacyTextMarker() : mContainer(nullptr), mOffset(0) {}
 
   static LegacyTextMarker MarkerFromIndex(Accessible* aRoot, int32_t aIndex);
-
-  AXTextMarkerRef CreateAXTextMarker();
 
   bool Next();
 
   bool Previous();
 
   
-  LegacyTextMarkerRange Range(EWhichRange aRangeType);
+  LegacyTextMarkerRange Range(EWhichRange aRangeType) const;
 
   Accessible* Leaf();
 
@@ -77,12 +73,7 @@ class LegacyTextMarkerRange final {
 
   LegacyTextMarkerRange() {}
 
-  LegacyTextMarkerRange(Accessible* aDoc,
-                        AXTextMarkerRangeRef aTextMarkerRange);
-
   explicit LegacyTextMarkerRange(Accessible* aAccessible);
-
-  AXTextMarkerRangeRef CreateAXTextMarkerRange();
 
   bool IsValid() const { return !!mStart.mContainer && !!mEnd.mContainer; };
 
@@ -121,10 +112,6 @@ class LegacyTextMarkerRange final {
   LegacyTextMarker mStart;
   LegacyTextMarker mEnd;
 };
-
-
-typedef LegacyTextMarker GeckoTextMarker;
-typedef LegacyTextMarkerRange GeckoTextMarkerRange;
 
 }  
 }  
