@@ -253,7 +253,7 @@ static StyleAnimatedRGBA Interpolate(const StyleAnimatedRGBA& aLeft,
   
   
   static constexpr auto kMethod = StyleColorInterpolationMethod{
-      StyleInterpolationColorSpace::Srgb,
+      StyleColorSpace::Srgb,
       StyleHueInterpolationMethod::Shorter,
   };
   return Servo_InterpolateColor(&kMethod, &aRight, &aLeft, aFrac);

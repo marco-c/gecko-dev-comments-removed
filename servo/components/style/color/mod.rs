@@ -25,9 +25,35 @@ impl ColorComponents {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
+
+
+
+
+
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 pub enum ColorSpace {
+    
+    
+    
+    Hsl,
+    
+    
+    
+    Hwb,
     
     
     
@@ -67,7 +93,22 @@ pub enum ColorSpace {
     XyzD50,
     
     
+    #[parse(aliases = "xyz")]
     XyzD65,
+}
+
+impl ColorSpace {
+    
+    #[inline]
+    pub fn is_rectangular(&self) -> bool {
+        !self.is_polar()
+    }
+
+    
+    #[inline]
+    pub fn is_polar(&self) -> bool {
+        matches!(self, Self::Hsl | Self::Hwb | Self::Lch | Self::Oklch)
+    }
 }
 
 bitflags! {
@@ -96,6 +137,14 @@ pub struct AbsoluteColor {
     pub flags: SerializationFlags,
 }
 
+
+
+
+
+
+
+
+#[macro_export]
 macro_rules! color_components_as {
     ($c:expr, $t:ty) => {{
         // This macro is not an inline function, because we can't use the
@@ -139,6 +188,14 @@ impl AbsoluteColor {
         }
 
         let (xyz, white_point) = match self.color_space {
+            Hsl => {
+                let rgb = convert::hsl_to_rgb(&self.components);
+                convert::to_xyz::<convert::Srgb>(&rgb)
+            },
+            Hwb => {
+                let rgb = convert::hwb_to_rgb(&self.components);
+                convert::to_xyz::<convert::Srgb>(&rgb)
+            },
             Lab => convert::to_xyz::<convert::Lab>(&self.components),
             Lch => convert::to_xyz::<convert::Lch>(&self.components),
             Oklab => convert::to_xyz::<convert::Oklab>(&self.components),
@@ -154,6 +211,14 @@ impl AbsoluteColor {
         };
 
         let result = match color_space {
+            Hsl => {
+                let rgb = convert::from_xyz::<convert::Srgb>(&xyz, white_point);
+                convert::rgb_to_hsl(&rgb)
+            },
+            Hwb => {
+                let rgb = convert::from_xyz::<convert::Srgb>(&xyz, white_point);
+                convert::rgb_to_hwb(&rgb)
+            },
             Lab => convert::from_xyz::<convert::Lab>(&xyz, white_point),
             Lch => convert::from_xyz::<convert::Lch>(&xyz, white_point),
             Oklab => convert::from_xyz::<convert::Oklab>(&xyz, white_point),
@@ -239,6 +304,17 @@ impl ToCss for AbsoluteColor {
         W: Write,
     {
         match self.color_space {
+            ColorSpace::Hsl => {
+                let rgb = convert::hsl_to_rgb(&self.components);
+                Self::new(ColorSpace::Srgb, rgb, self.alpha).to_css(dest)
+            },
+
+            ColorSpace::Hwb => {
+                let rgb = convert::hwb_to_rgb(&self.components);
+
+                Self::new(ColorSpace::Srgb, rgb, self.alpha).to_css(dest)
+            },
+
             ColorSpace::Srgb if !self.flags.contains(SerializationFlags::AS_COLOR_FUNCTION) => {
                 cssparser::ToCss::to_css(
                     &cssparser::RGBA::from_floats(
@@ -268,9 +344,6 @@ impl ToCss for AbsoluteColor {
             ),
             _ => {
                 let color_space = match self.color_space {
-                    ColorSpace::Lab | ColorSpace::Lch | ColorSpace::Oklab | ColorSpace::Oklch => {
-                        unreachable!("Handle these in the wrapping match case!!")
-                    },
                     ColorSpace::Srgb => {
                         debug_assert!(
                             self.flags.contains(SerializationFlags::AS_COLOR_FUNCTION),
@@ -286,6 +359,10 @@ impl ToCss for AbsoluteColor {
                     ColorSpace::Rec2020 => cssparser::PredefinedColorSpace::Rec2020,
                     ColorSpace::XyzD50 => cssparser::PredefinedColorSpace::XyzD50,
                     ColorSpace::XyzD65 => cssparser::PredefinedColorSpace::XyzD65,
+
+                    _ => {
+                        unreachable!("other color spaces do not support color() syntax")
+                    },
                 };
 
                 let color_function = cssparser::ColorFunction {
