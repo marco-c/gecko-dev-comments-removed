@@ -640,7 +640,7 @@ var BackgroundUpdate = {
           
           if (lazy.log.shouldLog("debug")) {
             dump(
-              `${SLUG}: shutting down, so not updating Firefox Messaging System targeting information from beforeSave\n`
+              `${SLUG}: shutting down, so not updating Firefox Messaging System targeting information\n`
             );
           }
           return;
@@ -656,7 +656,7 @@ var BackgroundUpdate = {
 
     
     
-    snapshot.data = await lazy.ASRouterTargeting.getEnvironmentSnapshot();
+    snapshot.data = lazy.ASRouterTargeting.getEnvironmentSnapshot();
 
     
     snapshot.saveSoon();
@@ -670,18 +670,6 @@ var BackgroundUpdate = {
     
     this._targetingSnapshottingTimer.initWithCallback(
       () => {
-        if (Services.startup.shuttingDown) {
-          
-          
-          
-          if (lazy.log.shouldLog("debug")) {
-            dump(
-              `${SLUG}: shutting down, so not updating Firefox Messaging System targeting information from timer\n`
-            );
-          }
-          return;
-        }
-
         snapshot.saveSoon();
       },
       
