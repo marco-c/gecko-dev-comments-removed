@@ -45,6 +45,9 @@ class SVGMarkerElement final : public SVGMarkerElementBase {
 
  public:
   
+  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* name) const override;
+
+  
   bool HasValidDimensions() const override;
 
   

@@ -187,4 +187,15 @@ int32_t SVGTextContentElement::GetCharNumAtPosition(
   return textFrame ? textFrame->GetCharNumAtPosition(this, aPoint) : -1;
 }
 
+
+
+
+NS_IMETHODIMP_(bool)
+SVGTextContentElement::IsAttributeMapped(const nsAtom* name) const {
+  static const MappedAttributeEntry* const map[] = {sTextContentElementsMap};
+
+  return FindAttributeDependence(name, map) ||
+         SVGTextContentElementBase::IsAttributeMapped(name);
+}
+
 }  

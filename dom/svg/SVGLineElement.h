@@ -31,6 +31,9 @@ class SVGLineElement final : public SVGLineElementBase {
 
  public:
   
+  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* name) const override;
+
+  
   bool IsMarkable() override { return true; }
   void GetMarkPoints(nsTArray<SVGMark>* aMarks) override;
   void GetAsSimplePath(SimplePath* aSimplePath) override;

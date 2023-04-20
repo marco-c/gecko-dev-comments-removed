@@ -112,6 +112,17 @@ already_AddRefed<DOMSVGAnimatedString> SVGFE::Result() {
 
 
 
+NS_IMETHODIMP_(bool)
+SVGFE::IsAttributeMapped(const nsAtom* name) const {
+  static const MappedAttributeEntry* const map[] = {sFiltersMap};
+
+  return FindAttributeDependence(name, map) ||
+         SVGFEBase::IsAttributeMapped(name);
+}
+
+
+
+
 bool SVGFE::StyleIsSetToSRGB() {
   nsIFrame* frame = GetPrimaryFrame();
   if (!frame) return false;
@@ -365,6 +376,15 @@ SVGElement::StringInfo SVGFELightingElement::sStringInfo[2] = {
 
 
 
+
+NS_IMETHODIMP_(bool)
+SVGFELightingElement::IsAttributeMapped(const nsAtom* name) const {
+  static const MappedAttributeEntry* const map[] = {sColorMap,
+                                                    sLightingEffectsMap};
+
+  return FindAttributeDependence(name, map) ||
+         SVGFELightingElementBase::IsAttributeMapped(name);
+}
 
 void SVGFELightingElement::GetSourceImageNames(
     nsTArray<SVGStringInfo>& aSources) {

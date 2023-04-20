@@ -86,6 +86,18 @@ already_AddRefed<DOMSVGAnimatedString> SVGGradientElement::Href() {
 
 
 
+
+NS_IMETHODIMP_(bool)
+SVGGradientElement::IsAttributeMapped(const nsAtom* name) const {
+  static const MappedAttributeEntry* const map[] = {sColorMap,
+                                                    sGradientStopMap};
+
+  return FindAttributeDependence(name, map) ||
+         SVGGradientElementBase::IsAttributeMapped(name);
+}
+
+
+
 JSObject* SVGLinearGradientElement::WrapNode(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return SVGLinearGradientElement_Binding::Wrap(aCx, this, aGivenProto);
