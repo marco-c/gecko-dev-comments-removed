@@ -25,13 +25,13 @@
 #include "js/TypeDecls.h"         
 #include "js/Utility.h"           
 #include "js/Vector.h"            
-#include "threading/Mutex.h"      
 #include "util/Text.h"            
 #include "vm/CommonPropertyNames.h"
 #include "vm/StaticStrings.h"
 #include "vm/WellKnownAtom.h"  
 
 struct JS_PUBLIC_API JSContext;
+struct JSRuntime;
 
 class JSAtom;
 class JSString;
@@ -572,27 +572,18 @@ using ParserAtomSpan = mozilla::Span<ParserAtom*>;
 
 
 class WellKnownParserAtoms {
-  static WellKnownParserAtoms singleton_;
-
+ public:
   
   
   using EntryMap = HashMap<const WellKnownAtomInfo*, TaggedParserAtomIndex,
                            WellKnownAtomInfoHasher, js::SystemAllocPolicy>;
   EntryMap wellKnownMap_;
 
-  bool initSingle(const WellKnownAtomInfo& info, TaggedParserAtomIndex index);
-
-  bool init();
-  void free();
+  bool initSingle(JSContext* cx, const WellKnownAtomInfo& info,
+                  TaggedParserAtomIndex index);
 
  public:
-  static bool initSingleton();
-  static void freeSingleton();
-
-  static WellKnownParserAtoms& getSingleton() {
-    MOZ_ASSERT(!singleton_.wellKnownMap_.empty());
-    return singleton_;
-  }
+  bool init(JSContext* cx);
 
   
   static constexpr size_t MaxWellKnownLength = 32;
@@ -668,6 +659,8 @@ class ParserAtomsTable {
   friend struct CompilationStencil;
 
  private:
+  const WellKnownParserAtoms& wellKnownTable_;
+
   LifoAlloc* alloc_;
 
   
@@ -677,7 +670,7 @@ class ParserAtomsTable {
   ParserAtomVector entries_;
 
  public:
-  explicit ParserAtomsTable(LifoAlloc& alloc);
+  ParserAtomsTable(JSRuntime* rt, LifoAlloc& alloc);
   ParserAtomsTable(ParserAtomsTable&&) = default;
   ParserAtomsTable& operator=(ParserAtomsTable&& other) noexcept {
     entryMap_ = std::move(other.entryMap_);
