@@ -43,17 +43,14 @@ struct GenericAtom {
   
   
   struct EmitterName {
-    JSContext* cx;
     FrontendContext* fc;
     ParserAtomsTable& parserAtoms;
     CompilationAtomCache& atomCache;
     TaggedParserAtomIndex index;
 
-    EmitterName(JSContext* cx, FrontendContext* fc,
-                ParserAtomsTable& parserAtoms, CompilationAtomCache& atomCache,
-                TaggedParserAtomIndex index)
-        : cx(cx),
-          fc(fc),
+    EmitterName(FrontendContext* fc, ParserAtomsTable& parserAtoms,
+                CompilationAtomCache& atomCache, TaggedParserAtomIndex index)
+        : fc(fc),
           parserAtoms(parserAtoms),
           atomCache(atomCache),
           index(index) {}
@@ -78,7 +75,7 @@ struct GenericAtom {
 
   
   
-  GenericAtom(JSContext* cx, FrontendContext* fc, ParserAtomsTable& parserAtoms,
+  GenericAtom(FrontendContext* fc, ParserAtomsTable& parserAtoms,
               CompilationAtomCache& atomCache, TaggedParserAtomIndex index);
 
   
