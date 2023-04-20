@@ -83,6 +83,16 @@ class BackgroundTasks final : public nsIBackgroundTasks {
 
 
 
+
+
+
+
+  static bool IsNoOutputTaskName(const nsCString& aName);
+
+  
+
+
+
   static nsCString GetProfilePrefix(const nsCString& aInstallHash);
 
  protected:
