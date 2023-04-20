@@ -62,11 +62,6 @@ class nsContentSecurityUtils {
   static void PerformCSPFrameAncestorAndXFOCheck(nsIChannel* aChannel);
 
   
-  
-  
-  static bool CheckCSPFrameAncestorAndXFO(nsIChannel* aChannel);
-
-  
   static long ClassifyDownload(nsIChannel* aChannel,
                                const nsAutoCString& aMimeTypeGuess);
 

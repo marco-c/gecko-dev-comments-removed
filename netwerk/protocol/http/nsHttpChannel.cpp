@@ -17,7 +17,6 @@
 #include "mozilla/dom/nsCSPService.h"
 #include "mozilla/StoragePrincipalHelper.h"
 
-#include "nsContentSecurityUtils.h"
 #include "nsHttp.h"
 #include "nsHttpChannel.h"
 #include "nsHttpChannelAuthProvider.h"
@@ -2374,9 +2373,6 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
         
         
         
-        
-        rv = NS_ERROR_FAILURE;
-      } else if (!nsContentSecurityUtils::CheckCSPFrameAncestorAndXFO(this)) {
         
         rv = NS_ERROR_FAILURE;
       } else {
