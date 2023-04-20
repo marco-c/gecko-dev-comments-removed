@@ -1213,6 +1213,11 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
   
   MOZ_ASSERT_IF(ok, !JS_IsExceptionPending(aCx));
 
+  
+  if (request->IsCanceled() || !mLoader) {
+    return NS_ERROR_ABORT;
+  }
+
   if (!ok) {
     LOG(("ScriptLoadRequest (%p):   evaluation failed", aRequest));
     
