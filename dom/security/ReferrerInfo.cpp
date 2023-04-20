@@ -1152,7 +1152,9 @@ static ReferrerPolicy ReferrerPolicyFromAttribute(const Element& aElement) {
 
 static bool HasRelNoReferrer(const Element& aElement) {
   
-  if (!aElement.IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area)) {
+  if (!aElement.IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area,
+                                    nsGkAtoms::form) &&
+      !aElement.IsSVGElement(nsGkAtoms::a)) {
     return false;
   }
 

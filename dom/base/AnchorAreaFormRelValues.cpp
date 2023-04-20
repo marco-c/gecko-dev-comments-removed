@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#include "mozilla/dom/AnchorAreaFormRelValues.h"
+
+namespace mozilla::dom {
+
+
+const DOMTokenListSupportedToken
+    AnchorAreaFormRelValues::sSupportedRelValues[] = {"noreferrer", "noopener",
+                                                      "opener", nullptr};
+
+}  
