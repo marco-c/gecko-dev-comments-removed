@@ -408,7 +408,14 @@ MARKUPMAP(
     [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
       if (aContext->IsTableRow() &&
           aContext->GetContent() == aElement->GetParent()) {
-        if (!aContext->IsHTMLTableRow()) {
+        
+        
+        
+        
+        
+        if (!aContext->IsHTMLTableRow() || !aElement->GetPrimaryFrame() ||
+            aElement->GetPrimaryFrame()->AccessibleType() !=
+                eHTMLTableCellType) {
           return new ARIAGridCellAccessibleWrap(aElement, aContext->Document());
         }
         return new HTMLTableHeaderCellAccessibleWrap(aElement,
