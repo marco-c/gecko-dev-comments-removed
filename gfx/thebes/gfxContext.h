@@ -6,9 +6,12 @@
 #ifndef GFX_CONTEXT_H
 #define GFX_CONTEXT_H
 
-#include "gfx2DGlue.h"
+#include "gfxTypes.h"
+
+#include "gfxPoint.h"
+#include "gfxRect.h"
+#include "gfxMatrix.h"
 #include "gfxPattern.h"
-#include "gfxUtils.h"
 #include "nsTArray.h"
 
 #include "mozilla/EnumSet.h"
@@ -31,28 +34,6 @@ class ClipExporter;
 
 
 
-class PatternFromState {
- public:
-  explicit PatternFromState(const gfxContext* aContext)
-      : mContext(aContext), mPattern(nullptr) {}
-  ~PatternFromState() {
-    if (mPattern) {
-      mPattern->~Pattern();
-    }
-  }
-
-  operator mozilla::gfx::Pattern&();
-
- private:
-  mozilla::AlignedStorage2<mozilla::gfx::ColorPattern> mColorPattern;
-
-  const gfxContext* mContext;
-  mozilla::gfx::Pattern* mPattern;
-};
-
-
-
-
 
 
 
@@ -65,25 +46,13 @@ class PatternFromState {
 
 
 class gfxContext final {
-#ifdef DEBUG
-#  define CURRENTSTATE_CHANGED() mAzureState.mContentChanged = true;
-#else
-#  define CURRENTSTATE_CHANGED()
-#endif
-
-  typedef mozilla::gfx::BackendType BackendType;
   typedef mozilla::gfx::CapStyle CapStyle;
   typedef mozilla::gfx::CompositionOp CompositionOp;
-  typedef mozilla::gfx::DeviceColor DeviceColor;
-  typedef mozilla::gfx::DrawOptions DrawOptions;
-  typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::JoinStyle JoinStyle;
   typedef mozilla::gfx::FillRule FillRule;
   typedef mozilla::gfx::Float Float;
-  typedef mozilla::gfx::Matrix Matrix;
   typedef mozilla::gfx::Path Path;
   typedef mozilla::gfx::Pattern Pattern;
-  typedef mozilla::gfx::Point Point;
   typedef mozilla::gfx::Rect Rect;
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
   typedef mozilla::gfx::Size Size;
@@ -95,20 +64,12 @@ class gfxContext final {
 
 
   MOZ_NONNULL(2)
-  explicit gfxContext(DrawTarget* aTarget, const Point& aDeviceOffset = Point())
-      : mDT(aTarget) {
-    mAzureState.deviceOffset = aDeviceOffset;
-    mDT->SetTransform(GetDTTransform());
-  }
+  explicit gfxContext(
+      mozilla::gfx::DrawTarget* aTarget,
+      const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
 
   MOZ_NONNULL(2)
-  gfxContext(DrawTarget* aTarget, bool aPreserveTransform) : mDT(aTarget) {
-    if (aPreserveTransform) {
-      SetMatrix(aTarget->GetTransform());
-    } else {
-      mDT->SetTransform(GetDTTransform());
-    }
-  }
+  gfxContext(mozilla::gfx::DrawTarget* aTarget, bool aPreserveTransform);
 
   ~gfxContext();
 
@@ -120,14 +81,15 @@ class gfxContext final {
 
 
   static mozilla::UniquePtr<gfxContext> CreateOrNull(
-      DrawTarget* aTarget, const Point& aDeviceOffset = Point());
+      mozilla::gfx::DrawTarget* aTarget,
+      const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
 
-  DrawTarget* GetDrawTarget() const { return mDT; }
+  mozilla::gfx::DrawTarget* GetDrawTarget() { return mDT; }
 
   
 
 
-  mozilla::layout::TextDrawTarget* GetTextDrawer() const;
+  mozilla::layout::TextDrawTarget* GetTextDrawer();
 
   
 
@@ -145,41 +107,23 @@ class gfxContext final {
 
 
 
-  void Fill() { Fill(PatternFromState(this)); }
+  void Fill();
   void Fill(const Pattern& aPattern);
 
   
 
 
-  void NewPath() {
-    mPath = nullptr;
-    mPathBuilder = nullptr;
-    mPathIsRect = false;
-    mTransformChanged = false;
-  }
+  void NewPath();
 
   
 
 
-  already_AddRefed<Path> GetPath() {
-    EnsurePath();
-    RefPtr<Path> path(mPath);
-    return path.forget();
-  }
+  already_AddRefed<Path> GetPath();
 
   
 
 
-  void SetPath(Path* path) {
-    MOZ_ASSERT(path->GetBackendType() == mDT->GetBackendType() ||
-               path->GetBackendType() == BackendType::RECORDING ||
-               (mDT->GetBackendType() == BackendType::DIRECT2D1_1 &&
-                path->GetBackendType() == BackendType::DIRECT2D));
-    mPath = path;
-    mPathBuilder = nullptr;
-    mPathIsRect = false;
-    mTransformChanged = false;
-  }
+  void SetPath(Path* path);
 
   
 
@@ -200,22 +144,14 @@ class gfxContext final {
 
 
 
-  void Multiply(const gfxMatrix& aMatrix) { Multiply(ToMatrix(aMatrix)); }
-  void Multiply(const Matrix& aOther) {
-    CURRENTSTATE_CHANGED()
-    ChangeTransform(aOther * mAzureState.transform);
-  }
+  void Multiply(const gfxMatrix& other);
+  void Multiply(const mozilla::gfx::Matrix& other);
 
   
 
 
-  void SetMatrix(const Matrix& aMatrix) {
-    CURRENTSTATE_CHANGED()
-    ChangeTransform(aMatrix);
-  }
-  void SetMatrixDouble(const gfxMatrix& aMatrix) {
-    SetMatrix(ToMatrix(aMatrix));
-  }
+  void SetMatrix(const mozilla::gfx::Matrix& matrix);
+  void SetMatrixDouble(const gfxMatrix& matrix);
 
   void SetCrossProcessPaintScale(float aScale) {
     MOZ_ASSERT(mCrossProcessPaintScale == 1.0f,
@@ -228,64 +164,46 @@ class gfxContext final {
   
 
 
-  Matrix CurrentMatrix() const { return mAzureState.transform; }
-  gfxMatrix CurrentMatrixDouble() const {
-    return ThebesMatrix(CurrentMatrix());
-  }
+  mozilla::gfx::Matrix CurrentMatrix() const;
+  gfxMatrix CurrentMatrixDouble() const;
 
   
 
 
 
-  gfxPoint DeviceToUser(const gfxPoint& aPoint) const {
-    return ThebesPoint(
-        mAzureState.transform.Inverse().TransformPoint(ToPoint(aPoint)));
-  }
+  gfxPoint DeviceToUser(const gfxPoint& point) const;
 
   
 
 
 
-  Size DeviceToUser(const Size& aSize) const {
-    return mAzureState.transform.Inverse().TransformSize(aSize);
-  }
+  Size DeviceToUser(const Size& size) const;
 
   
 
 
 
 
-  gfxRect DeviceToUser(const gfxRect& aRect) const {
-    return ThebesRect(
-        mAzureState.transform.Inverse().TransformBounds(ToRect(aRect)));
-  }
+  gfxRect DeviceToUser(const gfxRect& rect) const;
 
   
 
 
 
-  gfxPoint UserToDevice(const gfxPoint& aPoint) const {
-    return ThebesPoint(mAzureState.transform.TransformPoint(ToPoint(aPoint)));
-  }
+  gfxPoint UserToDevice(const gfxPoint& point) const;
 
   
 
 
 
-  Size UserToDevice(const Size& aSize) const {
-    const auto& mtx = mAzureState.transform;
-    return Size(aSize.width * mtx._11 + aSize.height * mtx._12,
-                aSize.width * mtx._21 + aSize.height * mtx._22);
-  }
+  Size UserToDevice(const Size& size) const;
 
   
 
 
 
 
-  gfxRect UserToDevice(const gfxRect& rect) const {
-    return ThebesRect(mAzureState.transform.TransformBounds(ToRect(rect)));
-  }
+  gfxRect UserToDevice(const gfxRect& rect) const;
 
   
 
@@ -331,24 +249,20 @@ class gfxContext final {
 
 
 
-  void SetDeviceColor(const DeviceColor& aColor) {
-    CURRENTSTATE_CHANGED()
-    mAzureState.pattern = nullptr;
-    mAzureState.color = aColor;
-  }
+  void SetDeviceColor(const mozilla::gfx::DeviceColor& aColor);
 
   
 
 
 
 
-  bool GetDeviceColor(DeviceColor& aColorOut) const;
+  bool GetDeviceColor(mozilla::gfx::DeviceColor& aColorOut);
 
   
 
 
 
-  bool HasNonOpaqueNonTransparentColor(DeviceColor& aColorOut) const {
+  bool HasNonOpaqueNonTransparentColor(mozilla::gfx::DeviceColor& aColorOut) {
     return GetDeviceColor(aColorOut) && 0.f < aColorOut.a && aColorOut.a < 1.f;
   }
 
@@ -357,34 +271,42 @@ class gfxContext final {
 
 
 
-  void SetColor(const mozilla::gfx::sRGBColor& aColor) {
-    CURRENTSTATE_CHANGED()
-    mAzureState.pattern = nullptr;
-    mAzureState.color = ToDeviceColor(aColor);
+  void SetColor(const mozilla::gfx::sRGBColor& aColor);
+
+  
+
+
+  void SetPattern(gfxPattern* pattern);
+
+  
+
+
+  already_AddRefed<gfxPattern> GetPattern();
+
+  
+
+
+  
+
+
+
+  void Paint(Float alpha = 1.0);
+
+  
+
+
+  
+
+
+
+  void Mask(mozilla::gfx::SourceSurface* aSurface, mozilla::gfx::Float aAlpha,
+            const mozilla::gfx::Matrix& aTransform);
+  void Mask(mozilla::gfx::SourceSurface* aSurface,
+            const mozilla::gfx::Matrix& aTransform) {
+    Mask(aSurface, 1.0f, aTransform);
   }
-
-  
-
-
-  void SetPattern(gfxPattern* pattern) {
-    CURRENTSTATE_CHANGED()
-    mAzureState.patternTransformChanged = false;
-    mAzureState.pattern = pattern;
-  }
-
-  
-
-
-  already_AddRefed<gfxPattern> GetPattern() const;
-
-  
-
-
-  
-
-
-
-  void Paint(Float alpha = 1.0) const;
+  void Mask(mozilla::gfx::SourceSurface* surface, float alpha = 1.0f,
+            const mozilla::gfx::Point& offset = mozilla::gfx::Point());
 
   
 
@@ -403,48 +325,30 @@ class gfxContext final {
   
 
 
-  void SetLineWidth(Float width) {
-    CURRENTSTATE_CHANGED()
-    mAzureState.strokeOptions.mLineWidth = width;
-  }
+  void SetLineWidth(Float width);
 
   
 
 
 
 
-  Float CurrentLineWidth() const {
-    return mAzureState.strokeOptions.mLineWidth;
-  }
+  Float CurrentLineWidth() const;
 
   
 
 
-  void SetLineCap(CapStyle cap) {
-    CURRENTSTATE_CHANGED()
-    mAzureState.strokeOptions.mLineCap = cap;
-  }
-  CapStyle CurrentLineCap() const { return mAzureState.strokeOptions.mLineCap; }
+  void SetLineCap(CapStyle cap);
+  CapStyle CurrentLineCap() const;
 
   
 
 
 
-  void SetLineJoin(JoinStyle join) {
-    CURRENTSTATE_CHANGED()
-    mAzureState.strokeOptions.mLineJoin = join;
-  }
-  JoinStyle CurrentLineJoin() const {
-    return mAzureState.strokeOptions.mLineJoin;
-  }
+  void SetLineJoin(JoinStyle join);
+  JoinStyle CurrentLineJoin() const;
 
-  void SetMiterLimit(Float limit) {
-    CURRENTSTATE_CHANGED()
-    mAzureState.strokeOptions.mMiterLimit = limit;
-  }
-  Float CurrentMiterLimit() const {
-    return mAzureState.strokeOptions.mMiterLimit;
-  }
+  void SetMiterLimit(Float limit);
+  Float CurrentMiterLimit() const;
 
   
 
@@ -452,19 +356,11 @@ class gfxContext final {
 
 
 
-  void SetOp(CompositionOp aOp) {
-    CURRENTSTATE_CHANGED()
-    mAzureState.op = aOp;
-  }
-  CompositionOp CurrentOp() const { return mAzureState.op; }
+  void SetOp(CompositionOp op);
+  CompositionOp CurrentOp() const;
 
-  void SetAntialiasMode(mozilla::gfx::AntialiasMode aMode) {
-    CURRENTSTATE_CHANGED()
-    mAzureState.aaMode = aMode;
-  }
-  mozilla::gfx::AntialiasMode CurrentAntialiasMode() const {
-    return mAzureState.aaMode;
-  }
+  void SetAntialiasMode(mozilla::gfx::AntialiasMode mode);
+  mozilla::gfx::AntialiasMode CurrentAntialiasMode() const;
 
   
 
@@ -480,16 +376,12 @@ class gfxContext final {
 
 
 
-  void Clip(const gfxRect& aRect) { Clip(ToRect(aRect)); }
-  void Clip(const Rect& rect);            
+  void Clip(const Rect& rect);
+  void Clip(const gfxRect& rect);         
   void SnappedClip(const gfxRect& rect);  
   void Clip(Path* aPath);
 
-  void PopClip() {
-    MOZ_ASSERT(!mAzureState.pushedClips.IsEmpty());
-    mAzureState.pushedClips.RemoveLastElement();
-    mDT->PopClip();
-  }
+  void PopClip();
 
   enum ClipExtentsSpace {
     eUserSpace = 0,
@@ -505,24 +397,27 @@ class gfxContext final {
   
 
 
-  bool ExportClip(ClipExporter& aExporter) const;
+
+
+  bool ClipContainsRect(const gfxRect& aRect);
 
   
 
 
-  void PushGroupForBlendBack(gfxContentType content, Float aOpacity = 1.0f,
-                             mozilla::gfx::SourceSurface* aMask = nullptr,
-                             const Matrix& aMaskTransform = Matrix()) const {
-    mDT->PushLayer(content == gfxContentType::COLOR, aOpacity, aMask,
-                   aMaskTransform);
-  }
+  bool ExportClip(ClipExporter& aExporter);
 
-  void PopGroupAndBlend() const { mDT->PopLayer(); }
+  
 
-  Point GetDeviceOffset() const { return mAzureState.deviceOffset; }
-  void SetDeviceOffset(const Point& aOffset) {
-    mAzureState.deviceOffset = aOffset;
-  }
+
+  void PushGroupForBlendBack(
+      gfxContentType content, mozilla::gfx::Float aOpacity = 1.0f,
+      mozilla::gfx::SourceSurface* aMask = nullptr,
+      const mozilla::gfx::Matrix& aMaskTransform = mozilla::gfx::Matrix());
+
+  void PopGroupAndBlend();
+
+  mozilla::gfx::Point GetDeviceOffset() const;
+  void SetDeviceOffset(const mozilla::gfx::Point& aOffset);
 
 #ifdef MOZ_DUMP_PAINTING
   
@@ -549,14 +444,17 @@ class gfxContext final {
   friend class PatternFromState;
   friend class GlyphBufferAzure;
 
+  typedef mozilla::gfx::Matrix Matrix;
+  typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::sRGBColor sRGBColor;
+  typedef mozilla::gfx::DeviceColor DeviceColor;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
   typedef mozilla::gfx::PathBuilder PathBuilder;
   typedef mozilla::gfx::SourceSurface SourceSurface;
 
   struct AzureState {
     AzureState()
-        : op(CompositionOp::OP_OVER),
+        : op(mozilla::gfx::CompositionOp::OP_OVER),
           color(0, 0, 0, 1.0f),
           aaMode(mozilla::gfx::AntialiasMode::SUBPIXEL),
           patternTransformChanged(false)
@@ -567,7 +465,7 @@ class gfxContext final {
     {
     }
 
-    CompositionOp op;
+    mozilla::gfx::CompositionOp op;
     DeviceColor color;
     RefPtr<gfxPattern> pattern;
     Matrix transform;
@@ -584,7 +482,7 @@ class gfxContext final {
     Matrix patternTransform;
     DeviceColor fontSmoothingBackgroundColor;
     
-    Point deviceOffset;
+    mozilla::gfx::Point deviceOffset;
 #ifdef DEBUG
     
     bool mContentChanged;
@@ -595,38 +493,28 @@ class gfxContext final {
   void EnsurePath();
   
   void EnsurePathBuilder();
-  CompositionOp GetOp() const;
-  void ChangeTransform(const Matrix& aNewMatrix,
+  CompositionOp GetOp();
+  void ChangeTransform(const mozilla::gfx::Matrix& aNewMatrix,
                        bool aUpdatePatternTransform = true);
   Rect GetAzureDeviceSpaceClipBounds() const;
-  Matrix GetDTTransform() const {
-    Matrix mat = mAzureState.transform;
-    mat.PostTranslate(-mAzureState.deviceOffset);
-    return mat;
-  }
+  Matrix GetDTTransform() const;
 
-  bool mPathIsRect = false;
-  bool mTransformChanged = false;
+  bool mPathIsRect;
+  bool mTransformChanged;
   Matrix mPathTransform;
   Rect mRect;
   RefPtr<PathBuilder> mPathBuilder;
   RefPtr<Path> mPath;
-  AzureState mAzureState;
-  nsTArray<AzureState> mSavedStates;
+  Matrix mTransform;
+  nsTArray<AzureState> mStateStack;
 
-  
-  
-  template <typename F>
-  void ForAllClips(F&& aLambda) const;
-
-  const AzureState& CurrentState() const { return mAzureState; }
+  AzureState& CurrentState() { return mStateStack[mStateStack.Length() - 1]; }
+  const AzureState& CurrentState() const {
+    return mStateStack[mStateStack.Length() - 1];
+  }
 
   RefPtr<DrawTarget> const mDT;
   float mCrossProcessPaintScale = 1.0f;
-
-#ifdef DEBUG
-#  undef CURRENTSTATE_CHANGED()
-#endif
 };
 
 
@@ -734,6 +622,31 @@ class DrawTargetAutoDisableSubpixelAntialiasing {
  private:
   RefPtr<DrawTarget> mDT;
   bool mSubpixelAntialiasingEnabled;
+};
+
+
+
+
+class PatternFromState {
+ public:
+  explicit PatternFromState(gfxContext* aContext)
+      : mContext(aContext), mPattern(nullptr) {}
+  ~PatternFromState() {
+    if (mPattern) {
+      mPattern->~Pattern();
+    }
+  }
+
+  operator mozilla::gfx::Pattern&();
+
+ private:
+  union {
+    mozilla::AlignedStorage2<mozilla::gfx::ColorPattern> mColorPattern;
+    mozilla::AlignedStorage2<mozilla::gfx::SurfacePattern> mSurfacePattern;
+  };
+
+  gfxContext* mContext;
+  mozilla::gfx::Pattern* mPattern;
 };
 
 
