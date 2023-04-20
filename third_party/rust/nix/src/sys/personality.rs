@@ -1,6 +1,6 @@
 
-use crate::Result;
 use crate::errno::Errno;
+use crate::Result;
 
 use libc::{self, c_int, c_ulong};
 
@@ -62,9 +62,7 @@ libc_bitflags! {
 
 
 pub fn get() -> Result<Persona> {
-    let res = unsafe {
-        libc::personality(0xFFFFFFFF)
-    };
+    let res = unsafe { libc::personality(0xFFFFFFFF) };
 
     Errno::result(res).map(Persona::from_bits_truncate)
 }
@@ -89,9 +87,7 @@ pub fn get() -> Result<Persona> {
 
 
 pub fn set(persona: Persona) -> Result<Persona> {
-    let res = unsafe {
-        libc::personality(persona.bits() as c_ulong)
-    };
+    let res = unsafe { libc::personality(persona.bits() as c_ulong) };
 
     Errno::result(res).map(Persona::from_bits_truncate)
 }

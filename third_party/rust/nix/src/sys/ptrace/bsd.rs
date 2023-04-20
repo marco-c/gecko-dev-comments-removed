@@ -1,16 +1,16 @@
-use cfg_if::cfg_if;
 use crate::errno::Errno;
-use libc::{self, c_int};
-use std::ptr;
 use crate::sys::signal::Signal;
 use crate::unistd::Pid;
 use crate::Result;
+use cfg_if::cfg_if;
+use libc::{self, c_int};
+use std::ptr;
 
 pub type RequestType = c_int;
 
 cfg_if! {
-    if #[cfg(any(target_os = "dragonfly", 
-                 target_os = "freebsd", 
+    if #[cfg(any(target_os = "dragonfly",
+                 target_os = "freebsd",
                  target_os = "macos",
                  target_os = "openbsd"))] {
         #[doc(hidden)]
@@ -71,7 +71,8 @@ unsafe fn ptrace_other(
         libc::pid_t::from(pid),
         addr,
         data,
-    )).map(|_| 0)
+    ))
+    .map(|_| 0)
 }
 
 
@@ -79,14 +80,19 @@ unsafe fn ptrace_other(
 
 
 pub fn traceme() -> Result<()> {
-    unsafe { ptrace_other(Request::PT_TRACE_ME, Pid::from_raw(0), ptr::null_mut(), 0).map(drop) }
+    unsafe {
+        ptrace_other(Request::PT_TRACE_ME, Pid::from_raw(0), ptr::null_mut(), 0)
+            .map(drop)
+    }
 }
 
 
 
 
 pub fn attach(pid: Pid) -> Result<()> {
-    unsafe { ptrace_other(Request::PT_ATTACH, pid, ptr::null_mut(), 0).map(drop) }
+    unsafe {
+        ptrace_other(Request::PT_ATTACH, pid, ptr::null_mut(), 0).map(drop)
+    }
 }
 
 
@@ -114,7 +120,8 @@ pub fn cont<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     };
     unsafe {
         
-        ptrace_other(Request::PT_CONTINUE, pid, 1 as AddressType, data).map(drop)
+        ptrace_other(Request::PT_CONTINUE, pid, 1 as AddressType, data)
+            .map(drop)
     }
 }
 
@@ -149,21 +156,22 @@ pub fn kill(pid: Pid) -> Result<()> {
 
 
 
-#[cfg(
-    any(
-        any(target_os = "dragonfly", target_os = "freebsd", target_os = "macos"),
-        all(target_os = "openbsd", target_arch = "x86_64"),
-        all(target_os = "netbsd",
-            any(target_arch = "x86_64", target_arch = "powerpc")
-        )
+#[cfg(any(
+    any(target_os = "dragonfly", target_os = "freebsd", target_os = "macos"),
+    all(target_os = "openbsd", target_arch = "x86_64"),
+    all(
+        target_os = "netbsd",
+        any(target_arch = "x86_64", target_arch = "powerpc")
     )
-)]
+))]
 pub fn step<T: Into<Option<Signal>>>(pid: Pid, sig: T) -> Result<()> {
     let data = match sig.into() {
         Some(s) => s as c_int,
         None => 0,
     };
-    unsafe { ptrace_other(Request::PT_STEP, pid, ptr::null_mut(), data).map(drop) }
+    unsafe {
+        ptrace_other(Request::PT_STEP, pid, ptr::null_mut(), data).map(drop)
+    }
 }
 
 

@@ -92,10 +92,12 @@ impl TimerFd {
     
     
     
-    #[cfg_attr(has_doc_alias, doc(alias("timerfd_create")))]
+    #[doc(alias("timerfd_create"))]
     pub fn new(clockid: ClockId, flags: TimerFlags) -> Result<Self> {
-        Errno::result(unsafe { libc::timerfd_create(clockid as i32, flags.bits()) })
-            .map(|fd| Self { fd })
+        Errno::result(unsafe {
+            libc::timerfd_create(clockid as i32, flags.bits())
+        })
+        .map(|fd| Self { fd })
     }
 
     
@@ -134,8 +136,12 @@ impl TimerFd {
     
     
     
-    #[cfg_attr(has_doc_alias, doc(alias("timerfd_settime")))]
-    pub fn set(&self, expiration: Expiration, flags: TimerSetTimeFlags) -> Result<()> {
+    #[doc(alias("timerfd_settime"))]
+    pub fn set(
+        &self,
+        expiration: Expiration,
+        flags: TimerSetTimeFlags,
+    ) -> Result<()> {
         let timerspec: TimerSpec = expiration.into();
         Errno::result(unsafe {
             libc::timerfd_settime(
@@ -149,10 +155,13 @@ impl TimerFd {
     }
 
     
-    #[cfg_attr(has_doc_alias, doc(alias("timerfd_gettime")))]
+    #[doc(alias("timerfd_gettime"))]
     pub fn get(&self) -> Result<Option<Expiration>> {
         let mut timerspec = TimerSpec::none();
-        Errno::result(unsafe { libc::timerfd_gettime(self.fd, timerspec.as_mut()) }).map(|_| {
+        Errno::result(unsafe {
+            libc::timerfd_gettime(self.fd, timerspec.as_mut())
+        })
+        .map(|_| {
             if timerspec.as_ref().it_interval.tv_sec == 0
                 && timerspec.as_ref().it_interval.tv_nsec == 0
                 && timerspec.as_ref().it_value.tv_sec == 0
@@ -166,7 +175,7 @@ impl TimerFd {
     }
 
     
-    #[cfg_attr(has_doc_alias, doc(alias("timerfd_settime")))]
+    #[doc(alias("timerfd_settime"))]
     pub fn unset(&self) -> Result<()> {
         Errno::result(unsafe {
             libc::timerfd_settime(

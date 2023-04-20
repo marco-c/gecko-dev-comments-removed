@@ -42,21 +42,21 @@ pub struct LinkMap {
 }
 
 
-#[derive(Debug, Clone)]
+
+
+#[derive(Debug, Clone, Default)]
 #[allow(non_camel_case_types, unused)]
 #[repr(C)]
 enum RState {
     
+    #[default]
+    RT_CONSISTENT,
+    
+    RT_ADD,
+    
+    RT_DELETE,
+}
 
-    RT_CONSISTENT, 
-    RT_ADD,        
-    RT_DELETE,     
-}
-impl Default for RState {
-    fn default() -> Self {
-        RState::RT_CONSISTENT 
-    }
-}
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]

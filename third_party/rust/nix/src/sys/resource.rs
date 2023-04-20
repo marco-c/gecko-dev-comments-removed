@@ -6,6 +6,7 @@ use crate::errno::Errno;
 use crate::sys::time::TimeVal;
 use crate::Result;
 pub use libc::rlim_t;
+pub use libc::RLIM_INFINITY;
 use std::mem;
 
 cfg_if! {
@@ -244,7 +245,11 @@ pub fn getrlimit(resource: Resource) -> Result<(rlim_t, rlim_t)> {
 
 
 
-pub fn setrlimit(resource: Resource, soft_limit: rlim_t, hard_limit: rlim_t) -> Result<()> {
+pub fn setrlimit(
+    resource: Resource,
+    soft_limit: rlim_t,
+    hard_limit: rlim_t,
+) -> Result<()> {
     let new_rlim = rlimit {
         rlim_cur: soft_limit,
         rlim_max: hard_limit,
@@ -426,7 +431,8 @@ mod test {
         
         assert_eq!(numbers[100..200].iter().sum::<i32>(), 30_100);
 
-        let usage = getrusage(UsageWho::RUSAGE_SELF).expect("Failed to call getrusage for SELF");
+        let usage = getrusage(UsageWho::RUSAGE_SELF)
+            .expect("Failed to call getrusage for SELF");
         let rusage = usage.as_ref();
 
         let user = usage.user_time();

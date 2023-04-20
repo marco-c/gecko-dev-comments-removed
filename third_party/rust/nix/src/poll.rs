@@ -1,8 +1,8 @@
 
 use std::os::unix::io::{AsRawFd, RawFd};
 
-use crate::Result;
 use crate::errno::Errno;
+use crate::Result;
 
 
 
@@ -35,6 +35,26 @@ impl PollFd {
     
     pub fn revents(self) -> Option<PollFlags> {
         PollFlags::from_bits(self.pollfd.revents)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn any(self) -> Option<bool> {
+        Some(self.revents()? != PollFlags::empty())
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn all(self) -> Option<bool> {
+        Some(self.revents()? & self.events() == self.events())
     }
 
     
@@ -134,9 +154,11 @@ libc_bitflags! {
 
 pub fn poll(fds: &mut [PollFd], timeout: libc::c_int) -> Result<libc::c_int> {
     let res = unsafe {
-        libc::poll(fds.as_mut_ptr() as *mut libc::pollfd,
-                   fds.len() as libc::nfds_t,
-                   timeout)
+        libc::poll(
+            fds.as_mut_ptr() as *mut libc::pollfd,
+            fds.len() as libc::nfds_t,
+            timeout,
+        )
     };
 
     Errno::result(res)

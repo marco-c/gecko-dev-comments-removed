@@ -79,7 +79,11 @@ libc_bitflags!(
 
 
 
-pub fn finit_module<T: AsRawFd>(fd: &T, param_values: &CStr, flags: ModuleInitFlags) -> Result<()> {
+pub fn finit_module<T: AsRawFd>(
+    fd: &T,
+    param_values: &CStr,
+    flags: ModuleInitFlags,
+) -> Result<()> {
     let res = unsafe {
         libc::syscall(
             libc::SYS_finit_module,
@@ -116,7 +120,9 @@ libc_bitflags!(
 
 
 pub fn delete_module(name: &CStr, flags: DeleteModuleFlags) -> Result<()> {
-    let res = unsafe { libc::syscall(libc::SYS_delete_module, name.as_ptr(), flags.bits()) };
+    let res = unsafe {
+        libc::syscall(libc::SYS_delete_module, name.as_ptr(), flags.bits())
+    };
 
     Errno::result(res).map(drop)
 }

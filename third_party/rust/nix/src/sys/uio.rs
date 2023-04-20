@@ -1,8 +1,8 @@
 
 
-use crate::Result;
 use crate::errno::Errno;
-use libc::{self, c_int, c_void, size_t, off_t};
+use crate::Result;
+use libc::{self, c_int, c_void, off_t, size_t};
 use std::io::{IoSlice, IoSliceMut};
 use std::marker::PhantomData;
 use std::os::unix::io::RawFd;
@@ -18,7 +18,9 @@ pub fn writev(fd: RawFd, iov: &[IoSlice<'_>]) -> Result<usize> {
     
     
     
-    let res = unsafe { libc::writev(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int) };
+    let res = unsafe {
+        libc::writev(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int)
+    };
 
     Errno::result(res).map(|r| r as usize)
 }
@@ -28,7 +30,9 @@ pub fn writev(fd: RawFd, iov: &[IoSlice<'_>]) -> Result<usize> {
 
 pub fn readv(fd: RawFd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
     
-    let res = unsafe { libc::readv(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int) };
+    let res = unsafe {
+        libc::readv(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int)
+    };
 
     Errno::result(res).map(|r| r as usize)
 }
@@ -41,15 +45,18 @@ pub fn readv(fd: RawFd, iov: &mut [IoSliceMut<'_>]) -> Result<usize> {
 
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn pwritev(fd: RawFd, iov: &[IoSlice<'_>],
-               offset: off_t) -> Result<usize> {
-
+pub fn pwritev(fd: RawFd, iov: &[IoSlice<'_>], offset: off_t) -> Result<usize> {
     #[cfg(target_env = "uclibc")]
     let offset = offset as libc::off64_t; 
 
     
     let res = unsafe {
-        libc::pwritev(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int, offset)
+        libc::pwritev(
+            fd,
+            iov.as_ptr() as *const libc::iovec,
+            iov.len() as c_int,
+            offset,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -64,14 +71,22 @@ pub fn pwritev(fd: RawFd, iov: &[IoSlice<'_>],
 
 #[cfg(not(any(target_os = "redox", target_os = "haiku")))]
 #[cfg_attr(docsrs, doc(cfg(all())))]
-pub fn preadv(fd: RawFd, iov: &mut [IoSliceMut<'_>],
-              offset: off_t) -> Result<usize> {
+pub fn preadv(
+    fd: RawFd,
+    iov: &mut [IoSliceMut<'_>],
+    offset: off_t,
+) -> Result<usize> {
     #[cfg(target_env = "uclibc")]
     let offset = offset as libc::off64_t; 
 
     
     let res = unsafe {
-        libc::preadv(fd, iov.as_ptr() as *const libc::iovec, iov.len() as c_int, offset)
+        libc::preadv(
+            fd,
+            iov.as_ptr() as *const libc::iovec,
+            iov.len() as c_int,
+            offset,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -83,8 +98,12 @@ pub fn preadv(fd: RawFd, iov: &mut [IoSliceMut<'_>],
 
 pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        libc::pwrite(fd, buf.as_ptr() as *const c_void, buf.len() as size_t,
-                    offset)
+        libc::pwrite(
+            fd,
+            buf.as_ptr() as *const c_void,
+            buf.len() as size_t,
+            offset,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -94,10 +113,14 @@ pub fn pwrite(fd: RawFd, buf: &[u8], offset: off_t) -> Result<usize> {
 
 
 
-pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
+pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize> {
     let res = unsafe {
-        libc::pread(fd, buf.as_mut_ptr() as *mut c_void, buf.len() as size_t,
-                   offset)
+        libc::pread(
+            fd,
+            buf.as_mut_ptr() as *mut c_void,
+            buf.len() as size_t,
+            offset,
+        )
     };
 
     Errno::result(res).map(|r| r as usize)
@@ -151,9 +174,7 @@ impl<T> IoVec<T> {
         use std::slice;
 
         unsafe {
-            slice::from_raw_parts(
-                self.0.iov_base as *const u8,
-                self.0.iov_len)
+            slice::from_raw_parts(self.0.iov_base as *const u8, self.0.iov_len)
         }
     }
 }
@@ -161,30 +182,30 @@ impl<T> IoVec<T> {
 #[allow(deprecated)]
 impl<'a> IoVec<&'a [u8]> {
     
-    #[deprecated(
-        since = "0.24.0",
-        note = "Use `IoSlice::new` instead"
-    )]
+    #[deprecated(since = "0.24.0", note = "Use `IoSlice::new` instead")]
     pub fn from_slice(buf: &'a [u8]) -> IoVec<&'a [u8]> {
-        IoVec(libc::iovec {
-            iov_base: buf.as_ptr() as *mut c_void,
-            iov_len: buf.len() as size_t,
-        }, PhantomData)
+        IoVec(
+            libc::iovec {
+                iov_base: buf.as_ptr() as *mut c_void,
+                iov_len: buf.len() as size_t,
+            },
+            PhantomData,
+        )
     }
 }
 
 #[allow(deprecated)]
 impl<'a> IoVec<&'a mut [u8]> {
     
-    #[deprecated(
-        since = "0.24.0",
-        note = "Use `IoSliceMut::new` instead"
-    )]
+    #[deprecated(since = "0.24.0", note = "Use `IoSliceMut::new` instead")]
     pub fn from_mut_slice(buf: &'a mut [u8]) -> IoVec<&'a mut [u8]> {
-        IoVec(libc::iovec {
-            iov_base: buf.as_ptr() as *mut c_void,
-            iov_len: buf.len() as size_t,
-        }, PhantomData)
+        IoVec(
+            libc::iovec {
+                iov_base: buf.as_ptr() as *mut c_void,
+                iov_len: buf.len() as size_t,
+            },
+            PhantomData,
+        )
     }
 }
 
