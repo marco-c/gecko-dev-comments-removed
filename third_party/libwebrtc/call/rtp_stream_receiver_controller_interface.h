@@ -23,7 +23,6 @@ namespace webrtc {
 
 
 
-
 class RtpStreamReceiverInterface {
  public:
   virtual ~RtpStreamReceiverInterface() {}

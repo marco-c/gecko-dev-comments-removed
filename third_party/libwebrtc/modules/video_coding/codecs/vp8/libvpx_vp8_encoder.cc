@@ -1125,8 +1125,6 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image,
       }
     }
 
-    
-    
     auto buffer = EncodedImageBuffer::Create(encoded_size);
 
     iter = NULL;

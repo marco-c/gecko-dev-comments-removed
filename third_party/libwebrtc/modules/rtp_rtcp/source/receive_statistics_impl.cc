@@ -177,7 +177,6 @@ RtpReceiveStats StreamStatisticianImpl::GetStats() const {
   RtpReceiveStats stats;
   stats.packets_lost = cumulative_loss_;
   
-  
   stats.jitter = jitter_q4_ >> 4;
   if (receive_counters_.last_packet_received_timestamp_ms.has_value()) {
     stats.last_packet_received_timestamp_ms =

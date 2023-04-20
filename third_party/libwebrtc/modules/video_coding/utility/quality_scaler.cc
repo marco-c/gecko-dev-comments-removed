@@ -32,7 +32,6 @@ namespace webrtc {
 
 namespace {
 
-
 static const int kMeasureMs = 2000;
 static const float kSamplePeriodScaleFactor = 2.5;
 static const int kFramedropPercentThreshold = 60;

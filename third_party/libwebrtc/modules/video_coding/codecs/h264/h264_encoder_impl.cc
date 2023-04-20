@@ -110,7 +110,6 @@ static void RtpFragmentize(EncodedImage* encoded_image, SFrameBSInfo* info) {
       required_capacity += layerInfo.pNalLengthInByte[nal];
     }
   }
-  
   auto buffer = EncodedImageBuffer::Create(required_capacity);
   encoded_image->SetEncodedData(buffer);
 

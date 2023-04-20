@@ -49,7 +49,6 @@ class VCMSessionInfo {
   
   size_t MakeDecodable();
 
-  
   size_t SessionLength() const;
   int NumPackets() const;
   bool HaveFirstPacket() const;

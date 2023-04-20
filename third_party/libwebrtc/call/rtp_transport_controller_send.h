@@ -41,9 +41,6 @@ class Clock;
 class FrameEncryptorInterface;
 class RtcEventLog;
 
-
-
-
 class RtpTransportControllerSend final
     : public RtpTransportControllerSendInterface,
       public RtcpBandwidthObserver,

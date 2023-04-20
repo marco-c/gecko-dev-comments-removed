@@ -24,8 +24,6 @@ class RtpPacketReceived;
 
 
 
-
-
 class RtpStreamReceiverController
     : public RtpStreamReceiverControllerInterface {
  public:
