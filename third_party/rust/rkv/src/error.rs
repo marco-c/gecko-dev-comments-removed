@@ -8,13 +8,7 @@
 
 
 
-use std::{
-    io,
-    path::PathBuf,
-    sync,
-    thread,
-    thread::ThreadId,
-};
+use std::{io, path::PathBuf, sync, thread, thread::ThreadId};
 
 use thiserror::Error;
 
@@ -27,10 +21,7 @@ pub enum DataError {
     UnknownType(u8),
 
     #[error("unexpected type tag: expected {expected}, got {actual}")]
-    UnexpectedType {
-        expected: Type,
-        actual: Type,
-    },
+    UnexpectedType { expected: Type, actual: Type },
 
     #[error("empty data; expected tag")]
     Empty,
@@ -83,6 +74,7 @@ pub enum StoreError {
     #[error("data error: {0:?}")]
     DataError(#[from] DataError),
 
+    #[cfg(feature = "lmdb")]
     #[error("lmdb backend error: {0}")]
     LmdbError(lmdb::Error),
 

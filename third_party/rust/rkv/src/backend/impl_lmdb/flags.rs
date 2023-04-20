@@ -9,17 +9,8 @@
 
 
 use crate::backend::{
-    common::{
-        DatabaseFlags,
-        EnvironmentFlags,
-        WriteFlags,
-    },
-    traits::{
-        BackendDatabaseFlags,
-        BackendEnvironmentFlags,
-        BackendFlags,
-        BackendWriteFlags,
-    },
+    common::{DatabaseFlags, EnvironmentFlags, WriteFlags},
+    traits::{BackendDatabaseFlags, BackendEnvironmentFlags, BackendFlags, BackendWriteFlags},
 };
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Default)]

@@ -9,15 +9,9 @@
 
 
 use id_arena::Id;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 
-use super::{
-    snapshot::Snapshot,
-    DatabaseFlagsImpl,
-};
+use super::{snapshot::Snapshot, DatabaseFlagsImpl};
 use crate::backend::traits::BackendDatabase;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]

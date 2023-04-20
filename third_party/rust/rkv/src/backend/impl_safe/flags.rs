@@ -9,23 +9,11 @@
 
 
 use bitflags::bitflags;
-use serde_derive::{
-    Deserialize,
-    Serialize,
-};
+use serde_derive::{Deserialize, Serialize};
 
 use crate::backend::{
-    common::{
-        DatabaseFlags,
-        EnvironmentFlags,
-        WriteFlags,
-    },
-    traits::{
-        BackendDatabaseFlags,
-        BackendEnvironmentFlags,
-        BackendFlags,
-        BackendWriteFlags,
-    },
+    common::{DatabaseFlags, EnvironmentFlags, WriteFlags},
+    traits::{BackendDatabaseFlags, BackendEnvironmentFlags, BackendFlags, BackendWriteFlags},
 };
 
 bitflags! {
