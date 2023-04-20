@@ -134,7 +134,7 @@ use crate::stdlib::{
     fmt,
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
-        Arc,
+        Arc, Weak,
     },
 };
 
@@ -142,14 +142,48 @@ use crate::stdlib::{
 use crate::stdlib::{
     cell::{Cell, RefCell, RefMut},
     error,
-    sync::Weak,
 };
 
+#[cfg(feature = "alloc")]
+use alloc::sync::{Arc, Weak};
+
+#[cfg(feature = "alloc")]
+use core::ops::Deref;
 
 
 #[derive(Clone)]
 pub struct Dispatch {
     subscriber: Arc<dyn Subscriber + Send + Sync>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone)]
+pub struct WeakDispatch {
+    subscriber: Weak<dyn Subscriber + Send + Sync>,
+}
+
+#[cfg(feature = "alloc")]
+#[derive(Clone)]
+enum Kind<T> {
+    Global(&'static (dyn Collect + Send + Sync)),
+    Scoped(T),
 }
 
 #[cfg(feature = "std")]
@@ -438,6 +472,32 @@ impl Dispatch {
     
     
     
+    
+    
+    
+    
+    
+    
+    pub fn downgrade(&self) -> WeakDispatch {
+        WeakDispatch {
+            subscriber: Arc::downgrade(&self.subscriber),
+        }
+    }
+
+    #[inline(always)]
+    #[cfg(not(feature = "alloc"))]
+    pub(crate) fn subscriber(&self) -> &(dyn Subscriber + Send + Sync) {
+        &self.subscriber
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn register_callsite(&self, metadata: &'static Metadata<'static>) -> subscriber::Interest {
         self.subscriber.register_callsite(metadata)
@@ -631,14 +691,14 @@ impl Dispatch {
     
     #[inline]
     pub fn is<T: Any>(&self) -> bool {
-        <dyn Subscriber>::is::<T>(&*self.subscriber)
+        <dyn Subscriber>::is::<T>(&self.subscriber)
     }
 
     
     
     #[inline]
     pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
-        <dyn Subscriber>::downcast_ref(&*self.subscriber)
+        <dyn Subscriber>::downcast_ref(&self.subscriber)
     }
 }
 
@@ -664,6 +724,45 @@ where
     #[inline]
     fn from(subscriber: S) -> Self {
         Dispatch::new(subscriber)
+    }
+}
+
+
+
+impl WeakDispatch {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn upgrade(&self) -> Option<Dispatch> {
+        self.subscriber
+            .upgrade()
+            .map(|subscriber| Dispatch { subscriber })
+    }
+}
+
+impl fmt::Debug for WeakDispatch {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut tuple = f.debug_tuple("WeakDispatch");
+        match self.subscriber.upgrade() {
+            Some(subscriber) => tuple.field(&format_args!("Some({:p})", subscriber)),
+            None => tuple.field(&format_args!("None")),
+        };
+        tuple.finish()
     }
 }
 

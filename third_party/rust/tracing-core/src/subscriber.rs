@@ -1,5 +1,5 @@
 
-use crate::{span, Event, LevelFilter, Metadata};
+use crate::{span, Dispatch, Event, LevelFilter, Metadata};
 
 use crate::stdlib::{
     any::{Any, TypeId},
@@ -82,6 +82,27 @@ use crate::stdlib::{
 
 pub trait Subscriber: 'static {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn on_register_dispatch(&self, subscriber: &Dispatch) {
+        let _ = subscriber;
+    }
 
     
     

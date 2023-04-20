@@ -1,0 +1,7 @@
+
+#[rustversion::stable]
+#[test]
+fn async_instrument() {
+    let t = trybuild::TestCases::new();
+    t.compile_fail("tests/ui/async_instrument.rs");
+}

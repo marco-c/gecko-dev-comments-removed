@@ -14,6 +14,7 @@ async fn test_async_fn(polls: usize) -> Result<(), ()> {
 
 
 
+#[allow(dead_code)] 
 #[instrument]
 async fn test_ret_impl_trait(n: i32) -> Result<impl Iterator<Item = i32>, ()> {
     let n = n;
@@ -22,6 +23,7 @@ async fn test_ret_impl_trait(n: i32) -> Result<impl Iterator<Item = i32>, ()> {
 
 
 
+#[allow(dead_code)] 
 #[instrument(err)]
 async fn test_ret_impl_trait_err(n: i32) -> Result<impl Iterator<Item = i32>, &'static str> {
     Ok((0..10).filter(move |x| *x < n))
@@ -29,6 +31,15 @@ async fn test_ret_impl_trait_err(n: i32) -> Result<impl Iterator<Item = i32>, &'
 
 #[instrument]
 async fn test_async_fn_empty() {}
+
+
+
+#[deny(unused_variables)]
+#[instrument]
+async fn repro_async_2294() {
+    #![allow(unused_variables)]
+    let i = 42;
+}
 
 
 #[instrument]
@@ -53,6 +64,7 @@ async fn repro_1613_2() {
 }
 
 
+#[allow(dead_code)] 
 #[instrument]
 #[deny(unused_braces)]
 fn repro_1831() -> Pin<Box<dyn Future<Output = ()>>> {
@@ -61,6 +73,7 @@ fn repro_1831() -> Pin<Box<dyn Future<Output = ()>>> {
 
 
 
+#[allow(dead_code)] 
 #[instrument(ret, err)]
 #[deny(unused_braces)]
 #[allow(clippy::manual_async_fn)]
