@@ -298,8 +298,12 @@ struct is_function
 
 template <typename T>
 struct is_trivially_destructible
+#ifdef ABSL_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE
+    : std::is_trivially_destructible<T> {
+#else
     : std::integral_constant<bool, __has_trivial_destructor(T) &&
                                    std::is_destructible<T>::value> {
+#endif
 #ifdef ABSL_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE
  private:
   static constexpr bool compliant = std::is_trivially_destructible<T>::value ==
@@ -347,9 +351,13 @@ struct is_trivially_destructible
 
 template <typename T>
 struct is_trivially_default_constructible
+#if defined(ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE)
+    : std::is_trivially_default_constructible<T> {
+#else
     : std::integral_constant<bool, __has_trivial_constructor(T) &&
                                    std::is_default_constructible<T>::value &&
                                    is_trivially_destructible<T>::value> {
+#endif
 #if defined(ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE) && \
     !defined(                                            \
         ABSL_META_INTERNAL_STD_CONSTRUCTION_TRAITS_DONT_CHECK_DESTRUCTION)
@@ -381,10 +389,14 @@ struct is_trivially_default_constructible
 
 template <typename T>
 struct is_trivially_move_constructible
+#if defined(ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE)
+    : std::is_trivially_move_constructible<T> {
+#else
     : std::conditional<
           std::is_object<T>::value && !std::is_array<T>::value,
           type_traits_internal::IsTriviallyMoveConstructibleObject<T>,
           std::is_reference<T>>::type::type {
+#endif
 #if defined(ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE) && \
     !defined(                                            \
         ABSL_META_INTERNAL_STD_CONSTRUCTION_TRAITS_DONT_CHECK_DESTRUCTION)
@@ -490,9 +502,13 @@ struct is_trivially_move_assignable
 
 template <typename T>
 struct is_trivially_copy_assignable
+#ifdef ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE
+    : std::is_trivially_copy_assignable<T> {
+#else
     : std::integral_constant<
           bool, __has_trivial_assign(typename std::remove_reference<T>::type) &&
                     absl::is_copy_assignable<T>::value> {
+#endif
 #ifdef ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE
  private:
   static constexpr bool compliant =
@@ -544,6 +560,11 @@ namespace type_traits_internal {
 
 
 
+
+#if defined(ABSL_HAVE_STD_IS_TRIVIALLY_COPYABLE)
+template <typename T>
+struct is_trivially_copyable : std::is_trivially_copyable<T> {};
+#else
 template <typename T>
 class is_trivially_copyable_impl {
   using ExtentsRemoved = typename std::remove_all_extents<T>::type;
@@ -569,6 +590,7 @@ template <typename T>
 struct is_trivially_copyable
     : std::integral_constant<
           bool, type_traits_internal::is_trivially_copyable_impl<T>::kValue> {};
+#endif
 }  
 
 
