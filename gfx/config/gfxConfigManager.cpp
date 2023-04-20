@@ -261,9 +261,7 @@ void gfxConfigManager::ConfigureWebRender() {
                              "FEATURE_FAILURE_DCOMP_NOT_WIN10"_ns);
   }
 
-  if (!mIsNightly &&
-      StaticPrefs::gfx_webrender_dcomp_apply_1704954_AtStartup()) {
-    
+  if (!mIsNightly) {
     
     
     nsAutoString adapterVendorID;
