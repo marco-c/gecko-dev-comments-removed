@@ -75,6 +75,10 @@ class NamesCollection {
   
   std::set<size_t> GetPresentIndexes() const;
 
+  
+  
+  std::set<size_t> GetAllIndexes() const;
+
  private:
   std::vector<std::string> names_;
   std::vector<bool> removed_;

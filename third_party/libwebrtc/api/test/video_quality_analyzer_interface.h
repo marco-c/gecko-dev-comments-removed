@@ -142,6 +142,9 @@ class VideoQualityAnalyzerInterface
 
   
   virtual void RegisterParticipantInCall(absl::string_view peer_name) {}
+  
+  
+  virtual void UnregisterParticipantInCall(absl::string_view peer_name) {}
 
   
   
