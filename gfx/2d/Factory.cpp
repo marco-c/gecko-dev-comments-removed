@@ -673,13 +673,15 @@ already_AddRefed<SharedFTFace> Factory::NewSharedFTFace(FT_Library aFTLibrary,
     return nullptr;
   }
 
-  
-  
-  
   RefPtr<FTUserFontData> data;
+#  ifdef ANDROID
+  
+  
+  
   if (face->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
     data = new FTUserFontData(aFilename);
   }
+#  endif
   return MakeAndAddRef<SharedFTFace>(face, data);
 }
 
