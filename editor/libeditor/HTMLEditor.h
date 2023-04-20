@@ -4207,11 +4207,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<bool, nsresult>
-  ElementIsGoodContainerForTheStyle(Element& aElement, nsAtom* aProperty,
-                                    nsAtom* aAttribute,
-                                    const nsAString* aValue);
+  ElementIsGoodContainerForTheStyle(
+      Element& aElement, const EditorInlineStyleAndValue& aStyleAndValue);
 
   
 
