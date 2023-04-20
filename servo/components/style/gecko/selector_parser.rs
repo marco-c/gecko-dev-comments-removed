@@ -8,6 +8,7 @@ use crate::computed_value_flags::ComputedValueFlags;
 use crate::gecko_bindings::structs::RawServoSelectorList;
 use crate::gecko_bindings::sugar::ownership::{HasBoxFFI, HasFFI, HasSimpleFFI};
 use crate::invalidation::element::document_state::InvalidationMatchingData;
+use crate::properties::ComputedValues;
 use crate::selector_parser::{Direction, HorizontalDirection, SelectorParser};
 use crate::str::starts_with_ignore_ascii_case;
 use crate::string_cache::{Atom, Namespace, WeakAtom, WeakNamespace};
@@ -17,6 +18,7 @@ use cssparser::{CowRcStr, SourceLocation, ToCss, Token};
 use dom::{DocumentState, ElementState};
 use selectors::parser::SelectorParseErrorKind;
 use selectors::SelectorList;
+use servo_arc::Arc;
 use std::fmt;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss as ToCss_};
 
@@ -233,7 +235,7 @@ pub struct SelectorImpl;
 
 
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct ExtraMatchingData {
     
     pub invalidation_data: InvalidationMatchingData,
@@ -241,6 +243,10 @@ pub struct ExtraMatchingData {
     
     
     pub cascade_input_flags: ComputedValueFlags,
+
+    
+    
+    pub originating_element_style: Option<Arc<ComputedValues>>,
 }
 
 impl ::selectors::SelectorImpl for SelectorImpl {
