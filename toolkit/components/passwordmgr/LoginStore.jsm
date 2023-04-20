@@ -128,7 +128,7 @@ LoginStore.prototype._backupHandler = async function() {
       
       Services.obs.notifyObservers(null, "logins-backup-updated");
     } catch (ex) {
-      Cu.reportError(ex);
+      console.error(ex);
     }
   } else if (!logins.length) {
     

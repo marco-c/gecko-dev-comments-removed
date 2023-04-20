@@ -390,7 +390,7 @@ class ManageCreditCards extends ManageRecords {
         
         
         decryptedCCNumObj["cc-number"] = "";
-        Cu.reportError(ex);
+        console.error(ex);
       }
     }
     let decryptedCreditCard = Object.assign({}, creditCard, decryptedCCNumObj);
