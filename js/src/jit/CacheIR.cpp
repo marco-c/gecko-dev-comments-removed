@@ -9760,7 +9760,8 @@ AttachDecision CallIRGenerator::tryAttachWasmCall(HandleFunction calleeFunc) {
         MOZ_CRASH("Function should not have a Wasm JitEntry");
       case wasm::ValType::Ref:
         
-        MOZ_ASSERT(sig.args()[i].refTypeKind() == wasm::RefType::Extern,
+        
+        MOZ_ASSERT(sig.args()[i].refType().isExtern(),
                    "Unexpected type for Wasm JitEntry");
         break;
     }

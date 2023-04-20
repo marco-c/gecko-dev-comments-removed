@@ -17336,16 +17336,11 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
       case wasm::ValType::V128:
         MOZ_CRASH("unexpected argument type when calling from ion to wasm");
       case wasm::ValType::Ref:
-        switch (sig.args()[i].refTypeKind()) {
-          case wasm::RefType::Extern:
-            
-            argMir = sig.args()[i].toMIRType();
-            break;
-          case wasm::RefType::Func:
-          case wasm::RefType::Eq:
-          case wasm::RefType::TypeRef:
-            MOZ_CRASH("unexpected argument type when calling from ion to wasm");
-        }
+        
+        MOZ_RELEASE_ASSERT(sig.args()[i].refType().isExtern());
+        
+        
+        argMir = sig.args()[i].toMIRType();
         break;
     }
 
@@ -17410,19 +17405,11 @@ void CodeGenerator::emitIonToWasmCallBase(LIonToWasmCallBase<NumDefs>* lir) {
       case wasm::ValType::V128:
         MOZ_CRASH("unexpected return type when calling from ion to wasm");
       case wasm::ValType::Ref:
-        switch (results[0].refTypeKind()) {
-          case wasm::RefType::Func:
-          case wasm::RefType::Extern:
-          case wasm::RefType::Eq:
-            
-            
-            
-            
-            MOZ_ASSERT(lir->mir()->type() == MIRType::Value);
-            break;
-          case wasm::RefType::TypeRef:
-            MOZ_CRASH("unexpected return type when calling from ion to wasm");
-        }
+        
+        
+        
+        
+        MOZ_ASSERT(lir->mir()->type() == MIRType::Value);
         break;
     }
   }
