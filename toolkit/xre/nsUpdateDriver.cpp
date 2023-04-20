@@ -478,6 +478,9 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
     applyToDirPath.Assign(installDirPath);
   } else {
     
+    
+    
+    
 #if defined(XP_MACOSX)
     if (!GetFile(updateDir, "Updated.app"_ns, updatedDir)) {
 #else
