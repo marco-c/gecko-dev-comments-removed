@@ -851,14 +851,6 @@ void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                            nsGkAtoms::layer)) {
       forceLayer = true;
     }
-    
-    
-    const nsStyleDisplay* styles = StyleDisplay();
-    if (styles->EffectiveAppearance() == StyleAppearance::MozWinExcludeGlass) {
-      aBuilder->AddWindowExcludeGlassRegion(
-          this, nsRect(aBuilder->ToReferenceFrame(this), GetSize()));
-    }
-
     nsStaticAtom* windowButtonTypes[] = {nsGkAtoms::min, nsGkAtoms::max,
                                          nsGkAtoms::close, nullptr};
     int32_t buttonTypeIndex = mContent->AsElement()->FindAttrValueIn(
