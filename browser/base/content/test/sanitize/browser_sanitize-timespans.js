@@ -34,10 +34,18 @@ function promiseDownloadRemoved(list) {
 }
 
 add_task(async function test() {
+  
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
+  });
   await setupDownloads();
   await setupFormHistory();
   await setupHistory();
   await onHistoryReady();
+  
+  await new Promise(resolve => {
+    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
+  });
 });
 
 async function countEntries(name, message, check) {
@@ -724,7 +732,7 @@ async function onHistoryReady() {
     history: "cleared",
     formdata: "cleared",
     downloads: "cleared",
-    step: "total-principals:2",
+    step: "total-principals:0",
   });
 
   await formHistoryPromise;
