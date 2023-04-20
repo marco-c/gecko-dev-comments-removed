@@ -189,9 +189,7 @@ class IndirectBindingMap {
 
 
 
-
-
-using ExportNameVector = GCVector<JSAtom*, 0, SystemAllocPolicy>;
+using ExportNameVector = GCVector<HeapPtr<JSAtom*>, 0, SystemAllocPolicy>;
 
 class ModuleNamespaceObject : public ProxyObject {
  public:
