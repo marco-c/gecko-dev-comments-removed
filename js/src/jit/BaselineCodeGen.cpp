@@ -23,6 +23,7 @@
 #include "jit/Linker.h"
 #include "jit/PerfSpewer.h"
 #include "jit/SharedICHelpers.h"
+#include "jit/TemplateObject.h"
 #include "jit/TrialInlining.h"
 #include "jit/VMFunctions.h"
 #include "js/friend/ErrorMessages.h"  
@@ -44,6 +45,7 @@
 #include "jit/JitScript-inl.h"
 #include "jit/MacroAssembler-inl.h"
 #include "jit/SharedICHelpers-inl.h"
+#include "jit/TemplateObject-inl.h"
 #include "jit/VMFunctionList-inl.h"
 #include "vm/Interpreter-inl.h"
 #include "vm/JSScript-inl.h"
@@ -1224,20 +1226,124 @@ void BaselineInterpreterCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
   }
 }
 
+
+
+static void AssertCanElidePostWriteBarrier(MacroAssembler& masm,
+                                           Register destObj, Register sourceObj,
+                                           Register temp) {
+#ifdef DEBUG
+  Label ok;
+  masm.branchPtrInNurseryChunk(Assembler::Equal, destObj, temp, &ok);
+  masm.branchPtrInNurseryChunk(Assembler::NotEqual, sourceObj, temp, &ok);
+  masm.assumeUnreachable("Unexpected missing post write barrier in Baseline");
+  masm.bind(&ok);
+#endif
+}
+
 template <>
-template <typename F>
-bool BaselineCompilerCodeGen::initEnvironmentChainHelper(
-    const F& initFunctionEnv) {
-  if (handler.function()) {
-    return initFunctionEnv();
+bool BaselineCompilerCodeGen::initEnvironmentChain() {
+  if (!handler.function()) {
+    return true;
   }
+  if (!handler.script()->needsFunctionEnvironmentObjects()) {
+    return true;
+  }
+
+  
+  
+  
+
+  JSObject* templateEnv = handler.script()->jitScript()->templateEnvironment();
+  MOZ_ASSERT(templateEnv);
+
+  CallObject* callObjectTemplate = nullptr;
+  if (handler.function()->needsCallObject()) {
+    callObjectTemplate = &templateEnv->as<CallObject>();
+  }
+
+  NamedLambdaObject* namedLambdaTemplate = nullptr;
+  if (handler.function()->needsNamedLambdaEnvironment()) {
+    if (callObjectTemplate) {
+      templateEnv = templateEnv->enclosingEnvironment();
+    }
+    namedLambdaTemplate = &templateEnv->as<NamedLambdaObject>();
+  }
+
+  MOZ_ASSERT(namedLambdaTemplate || callObjectTemplate);
+
+  AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
+  Register newEnv = regs.takeAny();
+  Register enclosingEnv = regs.takeAny();
+  Register callee = regs.takeAny();
+  Register temp = regs.takeAny();
+
+  Label fail;
+  masm.loadPtr(frame.addressOfEnvironmentChain(), enclosingEnv);
+  masm.loadFunctionFromCalleeToken(frame.addressOfCalleeToken(), callee);
+
+  
+  if (namedLambdaTemplate) {
+    TemplateObject templateObject(namedLambdaTemplate);
+    masm.createGCObject(newEnv, temp, templateObject, gc::DefaultHeap, &fail);
+
+    
+    Address enclosingSlot(newEnv,
+                          NamedLambdaObject::offsetOfEnclosingEnvironment());
+    masm.storeValue(JSVAL_TYPE_OBJECT, enclosingEnv, enclosingSlot);
+    AssertCanElidePostWriteBarrier(masm, newEnv, enclosingEnv, temp);
+
+    
+    Address lambdaSlot(newEnv, NamedLambdaObject::offsetOfLambdaSlot());
+    masm.storeValue(JSVAL_TYPE_OBJECT, callee, lambdaSlot);
+    AssertCanElidePostWriteBarrier(masm, newEnv, callee, temp);
+
+    if (callObjectTemplate) {
+      masm.movePtr(newEnv, enclosingEnv);
+    }
+  }
+
+  
+  if (callObjectTemplate) {
+    TemplateObject templateObject(callObjectTemplate);
+    masm.createGCObject(newEnv, temp, templateObject, gc::DefaultHeap, &fail);
+
+    
+    Address enclosingSlot(newEnv, CallObject::offsetOfEnclosingEnvironment());
+    masm.storeValue(JSVAL_TYPE_OBJECT, enclosingEnv, enclosingSlot);
+    AssertCanElidePostWriteBarrier(masm, newEnv, enclosingEnv, temp);
+
+    
+    Address calleeSlot(newEnv, CallObject::offsetOfCallee());
+    masm.storeValue(JSVAL_TYPE_OBJECT, callee, calleeSlot);
+    AssertCanElidePostWriteBarrier(masm, newEnv, callee, temp);
+  }
+
+  
+  Label done;
+  masm.storePtr(newEnv, frame.addressOfEnvironmentChain());
+  masm.or32(Imm32(BaselineFrame::HAS_INITIAL_ENV), frame.addressOfFlags());
+  masm.jump(&done);
+
+  masm.bind(&fail);
+
+  prepareVMCall();
+
+  masm.loadBaselineFramePtr(FramePointer, temp);
+  pushArg(temp);
+
+  const CallVMPhase phase = CallVMPhase::BeforePushingLocals;
+
+  using Fn = bool (*)(JSContext*, BaselineFrame*);
+  if (!callVMNonOp<Fn, jit::InitFunctionEnvironmentObjects>(phase)) {
+    return false;
+  }
+
+  masm.bind(&done);
   return true;
 }
 
 template <>
-template <typename F>
-bool BaselineInterpreterCodeGen::initEnvironmentChainHelper(
-    const F& initFunctionEnv) {
+bool BaselineInterpreterCodeGen::initEnvironmentChain() {
   
   
 
@@ -1245,18 +1351,6 @@ bool BaselineInterpreterCodeGen::initEnvironmentChainHelper(
   masm.branchTestPtr(Assembler::NonZero, frame.addressOfCalleeToken(),
                      Imm32(CalleeTokenScriptBit), &done);
   {
-    if (!initFunctionEnv()) {
-      return false;
-    }
-  }
-
-  masm.bind(&done);
-  return true;
-}
-
-template <typename Handler>
-bool BaselineCodeGen<Handler>::initEnvironmentChain() {
-  auto initFunctionEnv = [this]() {
     auto initEnv = [this]() {
       
       prepareVMCall();
@@ -1269,12 +1363,15 @@ bool BaselineCodeGen<Handler>::initEnvironmentChain() {
       using Fn = bool (*)(JSContext*, BaselineFrame*);
       return callVMNonOp<Fn, jit::InitFunctionEnvironmentObjects>(phase);
     };
-    return emitTestScriptFlag(
-        JSScript::ImmutableFlags::NeedsFunctionEnvironmentObjects, true,
-        initEnv, R2.scratchReg());
-  };
+    if (!emitTestScriptFlag(
+            JSScript::ImmutableFlags::NeedsFunctionEnvironmentObjects, true,
+            initEnv, R2.scratchReg())) {
+      return false;
+    }
+  }
 
-  return initEnvironmentChainHelper(initFunctionEnv);
+  masm.bind(&done);
+  return true;
 }
 
 template <typename Handler>
