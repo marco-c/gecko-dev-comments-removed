@@ -4195,18 +4195,8 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   {
-    
-    
-    
-    
-    
-    nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(
-        aBuilder,
-        couldBuildLayer && mScrolledFrame->GetContent()
-            ? nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent())
-            : aBuilder->GetCurrentScrollParentId());
-
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
+
     
     
     
@@ -4233,8 +4223,14 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
     nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
         aBuilder);
+
     if (mWillBuildScrollableLayer && aBuilder->IsPaintingToWindow()) {
       asrSetter.EnterScrollFrame(sf);
+    }
+
+    if (couldBuildLayer && mScrolledFrame->GetContent()) {
+      asrSetter.SetCurrentScrollParentId(
+          nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent()));
     }
 
     if (mWillBuildScrollableLayer && aBuilder->BuildCompositorHitTestInfo()) {
@@ -4339,10 +4335,11 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     if (aBuilder->IsPaintingToWindow()) {
       mIsParentToActiveScrollFrames =
           ShouldActivateAllScrollFrames()
-              ? idSetter.GetContainsNonMinimalDisplayPort()
-              : idSetter.ShouldForceLayerForScrollParent();
+              ? asrSetter.GetContainsNonMinimalDisplayPort()
+              : asrSetter.ShouldForceLayerForScrollParent();
     }
-    if (idSetter.ShouldForceLayerForScrollParent()) {
+
+    if (asrSetter.ShouldForceLayerForScrollParent()) {
       
       
       
