@@ -459,6 +459,9 @@ class MixModeBlender {
     
     
     IntRect drawRect = ComputeClipExtsInDeviceSpace(aTransform);
+    if (drawRect.IsEmpty()) {
+      return nullptr;
+    }
 
     RefPtr<DrawTarget> targetDT =
         mSourceCtx->GetDrawTarget()->CreateSimilarDrawTarget(
