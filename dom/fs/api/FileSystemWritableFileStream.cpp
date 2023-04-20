@@ -175,6 +175,78 @@ void WriteImpl(const RefPtr<nsISerialEventTarget>& aTaskQueue,
 
 }  
 
+class FileSystemWritableFileStream::CloseHandler {
+  enum struct State : uint8_t { Initial = 0, Open, Closing, Closed };
+
+ public:
+  NS_INLINE_DECL_REFCOUNTING(FileSystemWritableFileStream::CloseHandler)
+
+  
+
+
+  bool IsOpen() const { return State::Open == mState; }
+
+  
+
+
+  bool IsClosed() const { return State::Closed == mState; }
+
+  
+
+
+
+
+
+  bool TestAndSetClosing() {
+    const bool isOpen = State::Open == mState;
+
+    if (isOpen) {
+      mState = State::Closing;
+    }
+
+    return isOpen;
+  }
+
+  RefPtr<BoolPromise> GetClosePromise() const {
+    MOZ_ASSERT(State::Open != mState,
+               "Please call TestAndSetClosing before GetClosePromise");
+
+    if (State::Closing == mState) {
+      return mClosePromiseHolder.Ensure(__func__);
+    }
+
+    
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
+
+  
+
+
+
+  void Open() {
+    MOZ_ASSERT(State::Initial == mState);
+
+    mState = State::Open;
+  }
+
+  
+
+
+
+  void Close() {
+    mState = State::Closed;
+    mClosePromiseHolder.ResolveIfExists(true, __func__);
+  }
+
+ protected:
+  virtual ~CloseHandler() = default;
+
+ private:
+  mutable MozPromiseHolder<BoolPromise> mClosePromiseHolder;
+
+  State mState = State::Initial;
+};
+
 FileSystemWritableFileStream::FileSystemWritableFileStream(
     nsIGlobalObject* aGlobal, RefPtr<FileSystemManager>& aManager,
     RefPtr<FileSystemWritableFileStreamChild> aActor,
@@ -189,7 +261,7 @@ FileSystemWritableFileStream::FileSystemWritableFileStream(
           std::move(aStream))),
       mWorkerRef(),
       mMetadata(aMetadata),
-      mClosed() {
+      mCloseHandler(MakeAndAddRef<CloseHandler>()) {
   LOG(("Created WritableFileStream %p for fd %p", this, mStreamOwner.get()));
 
   
@@ -203,7 +275,7 @@ FileSystemWritableFileStream::FileSystemWritableFileStream(
 }
 
 FileSystemWritableFileStream::~FileSystemWritableFileStream() {
-  MOZ_ASSERT(mClosed);
+  MOZ_ASSERT(IsClosed());
 
   mozilla::DropJSObjects(this);
 }
@@ -248,11 +320,16 @@ FileSystemWritableFileStream::Create(
                                        taskQueue.forget(),
                                        std::move(inputOutputStream), aMetadata);
 
+  auto autoClose = MakeScopeExit([stream] {
+    stream->mCloseHandler->Close();
+    stream->mActor->SendClose();
+  });
+
   WorkerPrivate* const workerPrivate = GetCurrentThreadWorkerPrivate();
   if (workerPrivate) {
     RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
         workerPrivate, "FileSystemWritableFileStream", [stream]() {
-          if (!stream->IsClosed()) {
+          if (stream->IsOpen()) {
             
             Unused << stream->BeginClose();
           }
@@ -280,6 +357,9 @@ FileSystemWritableFileStream::Create(
     return nullptr;
   }
 
+  autoClose.release();
+  stream->mCloseHandler->Open();
+
   
   return stream.forget();
 }
@@ -291,8 +371,8 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(FileSystemWritableFileStream)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(FileSystemWritableFileStream,
                                                 WritableStream)
   
-  if (!tmp->IsClosed()) {
-    tmp->BeginClose();
+  if (tmp->IsOpen()) {
+    Unused << tmp->BeginClose();
   }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(FileSystemWritableFileStream,
@@ -321,40 +401,43 @@ void FileSystemWritableFileStream::ClearActor() {
   mActor = nullptr;
 }
 
-bool FileSystemWritableFileStream::IsClosed() const { return mClosed; }
+bool FileSystemWritableFileStream::IsOpen() const {
+  return mCloseHandler->IsOpen();
+}
+
+bool FileSystemWritableFileStream::IsClosed() const {
+  return mCloseHandler->IsClosed();
+}
 
 RefPtr<BoolPromise> FileSystemWritableFileStream::BeginClose() {
-  if (IsClosed()) {
-    return BoolPromise::CreateAndResolve(true, __func__);
+  if (mCloseHandler->TestAndSetClosing()) {
+    InvokeAsync(mTaskQueue, __func__,
+                [streamOwner = mStreamOwner]() mutable {
+                  streamOwner->Close();
+                  return BoolPromise::CreateAndResolve(true, __func__);
+                })
+        ->Then(GetCurrentSerialEventTarget(), __func__,
+               [self = RefPtr(this)](const BoolPromise::ResolveOrRejectValue&) {
+                 return self->mTaskQueue->BeginShutdown();
+               })
+        ->Then(GetCurrentSerialEventTarget(), __func__,
+               [self = RefPtr(this)](
+                   const ShutdownPromise::ResolveOrRejectValue& ) {
+                 if (self->mActor) {
+                   self->mActor->SendClose();
+                 }
+
+                 self->mWorkerRef = nullptr;
+                 self->mCloseHandler->Close();
+               });
   }
 
-  mClosed.Flip();  
-
-  return InvokeAsync(mTaskQueue, __func__,
-                     [streamOwner = mStreamOwner]() mutable {
-                       streamOwner->Close();
-                       return BoolPromise::CreateAndResolve(true, __func__);
-                     })
-      ->Then(GetCurrentSerialEventTarget(), __func__,
-             [self = RefPtr(this)](const BoolPromise::ResolveOrRejectValue&) {
-               return self->mTaskQueue->BeginShutdown();
-             })
-      ->Then(GetCurrentSerialEventTarget(), __func__,
-             [self = RefPtr(this)](
-                 const ShutdownPromise::ResolveOrRejectValue& ) {
-               if (self->mActor) {
-                 self->mActor->SendClose();
-               }
-
-               self->mWorkerRef = nullptr;
-
-               return BoolPromise::CreateAndResolve(true, __func__);
-             });
+  return mCloseHandler->GetClosePromise();
 }
 
 already_AddRefed<Promise> FileSystemWritableFileStream::Write(
     JSContext* aCx, JS::Handle<JS::Value> aChunk, ErrorResult& aError) {
-  MOZ_ASSERT(!IsClosed());
+  MOZ_ASSERT(IsOpen());
 
   
   
@@ -724,7 +807,7 @@ WritableFileStreamUnderlyingSinkAlgorithms::CloseCallbackImpl(
     return nullptr;
   }
 
-  if (mStream->IsClosed()) {
+  if (!mStream->IsOpen()) {
     promise->MaybeRejectWithTypeError("WritableFileStream closed");
     return promise.forget();
   }
@@ -762,7 +845,9 @@ void WritableFileStreamUnderlyingSinkAlgorithms::ReleaseObjects() {
   
   
   
-  mStream->BeginClose();
+  if (mStream->IsOpen()) {
+    Unused << mStream->BeginClose();
+  }
 }
 
 }  
