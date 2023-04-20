@@ -114,6 +114,7 @@ pub(crate) use stateless::{StatelessBindGroupSate, StatelessTracker};
 pub(crate) use texture::{
     TextureBindGroupState, TextureSelector, TextureTracker, TextureUsageScope,
 };
+use wgt::strict_assert_ne;
 
 
 
