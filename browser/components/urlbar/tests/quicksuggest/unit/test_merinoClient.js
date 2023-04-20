@@ -536,7 +536,7 @@ add_task(async function nimbus() {
   let originalEndpointURL = UrlbarPrefs.get("merino.endpointURL");
   UrlbarPrefs.set("merino.endpointURL", "");
 
-  await QuickSuggestTestUtils.initNimbusFeature();
+  await UrlbarTestUtils.initNimbusFeature();
 
   
   
