@@ -436,105 +436,19 @@ add_task(async function test_aboutwelcome_with_text_color_override() {
   );
 
   await doExperimentCleanup();
+  await SpecialPowers.popPrefEnv();
 });
 
 
 
 
 add_task(async function test_aboutwelcome_with_progress_bar() {
+  await SpecialPowers.pushPrefEnv({ clear: [["ui.systemUsesDarkTheme"]] });
   let screens = [];
   
   for (let i = 0; i < 3; i++) {
     screens.push(
-      makeTestContent("TEST_PROGRESS_BAR_OVERRIDE_STEP", {
-        progress_bar: true,
-        primary_button: {
-          label: "next",
-          action: {
-            navigate: true,
-          },
-        },
-      })
-    );
-  }
-
-  let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
-    featureId: "aboutwelcome",
-    value: {
-      enabled: true,
-      screens,
-    },
-  });
-  let browser = await openAboutWelcome(JSON.stringify(screens));
-
-  
-  await onButtonClick(browser, "button.primary");
-
-  
-  
-  await SpecialPowers.spawn(browser, [], async () => {
-    const indicatorElement = await ContentTaskUtils.waitForCondition(() =>
-      content.document.querySelector(".indicator")
-    );
-    const indicatorStyles = content.window.getComputedStyle(indicatorElement);
-    const [computedHeight] = indicatorStyles.height.match(/\d+/);
-
-    ok(
-      computedHeight >= 5 && computedHeight <= 7,
-      `Indicator height -  ${indicatorStyles.height} - is in correct range`
-    );
-  });
-
-  await test_element_styles(
-    browser,
-    ".indicator",
-    
-    {
-      "padding-block": "0px",
-      margin: "0px",
-    }
-  );
-
-  
-  await test_element_styles(
-    browser,
-    ".indicator.complete",
-    
-    {
-      "border-color": "rgb(0, 221, 255)",
-    }
-  );
-  await test_element_styles(
-    browser,
-    ".indicator.current",
-    
-    {
-      "border-color": "rgb(0, 221, 255)",
-    }
-  );
-
-  
-  await test_element_styles(
-    browser,
-    ".indicator:not(.current):not(.complete)",
-    
-    {
-      "border-color": "rgb(251, 251, 254)",
-    }
-  );
-
-  await doExperimentCleanup();
-});
-
-
-
-
-add_task(async function test_MR_aboutwelcome_with_progress_bar() {
-  let screens = [];
-  
-  for (let i = 0; i < 3; i++) {
-    screens.push(
-      makeTestContent("TEST_MR_PROGRESS_BAR", {
+      makeTestContent(`TEST_MR_PROGRESS_BAR_${i + 1}`, {
         position: "split",
         progress_bar: true,
         primary_button: {
@@ -555,44 +469,55 @@ add_task(async function test_MR_aboutwelcome_with_progress_bar() {
     },
   });
   let browser = await openAboutWelcome(JSON.stringify(screens));
-  let transitionEnd = SpecialPowers.spawn(browser, [], async () => {
+
+  let widthTransition = SpecialPowers.spawn(browser, [], async () => {
     const progressBar = await ContentTaskUtils.waitForCondition(() =>
       content.document.querySelector(".progress-bar")
     );
-    await Promise.race([
+    const indicator = await ContentTaskUtils.waitForCondition(() =>
+      content.document.querySelector(".indicator")
+    );
+    let transitioned = Promise.race([
       ContentTaskUtils.waitForEvent(progressBar, "transitionend"),
       ContentTaskUtils.waitForEvent(progressBar, "transitioncancel"),
     ]);
+
+    const progressStyles = content.window.getComputedStyle(progressBar);
+    
+    is(
+      progressStyles["background-color"],
+      "rgba(21, 20, 26, 0.25)",
+      "Correct progress bar background"
+    );
+
+    const indicatorStyles = content.window.getComputedStyle(indicator);
+    const indicatorWidth = indicator.getBoundingClientRect().width;
+    for (let [key, val] of Object.entries({
+      
+      
+      "background-color": "rgb(0, 97, 224)",
+      
+      height: "6px",
+      margin: "0px",
+      "padding-block": "0px",
+    })) {
+      is(indicatorStyles[key], val, `Correct indicator ${key} style`);
+    }
+    await transitioned;
+    await ContentTaskUtils.waitForCondition(() => {
+      let newIndicator = content.document.querySelector(".indicator");
+      return (
+        newIndicator &&
+        parseFloat(newIndicator.getBoundingClientRect().width) > indicatorWidth
+      );
+    });
   });
 
   
   await onButtonClick(browser, "button.primary");
 
   
-  await transitionEnd;
-
-  
-  await test_element_styles(browser, ".steps.progress-bar", {
-    "background-color": "rgba(251, 251, 254, 0.25)",
-  });
-
-  for (let cls of ["complete", "current"]) {
-    await test_element_styles(browser, `.indicator.${cls}`, {
-      
-      
-      "background-color": "rgb(0, 221, 255)",
-      
-      height: "6px",
-      "padding-block": "0px",
-      "margin-inline": "-1px",
-      "margin-block": "0px",
-    });
-  }
-
-  
-  await test_element_styles(browser, ".indicator:not(.current, .complete)", {
-    "background-color": "rgba(0, 0, 0, 0)",
-  });
+  await widthTransition;
 
   await doExperimentCleanup();
 });
