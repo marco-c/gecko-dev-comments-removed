@@ -7766,7 +7766,7 @@ const DSSource = ({
   } 
 
 
-  if (timeToRead) {
+  if (source && timeToRead) {
     return external_React_default().createElement("p", {
       className: "source clamp time-to-read"
     }, external_React_default().createElement(FluentOrText, {

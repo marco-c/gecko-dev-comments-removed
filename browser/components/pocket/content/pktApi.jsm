@@ -53,6 +53,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
+XPCOMUtils.defineLazyModuleGetters(lazy, {
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
+});
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "gCookieFirstPartyIsolate",
@@ -91,16 +95,7 @@ var pktApi = (function() {
 
 
   
-  var pocketAPIhost = Services.prefs.getCharPref("extensions.pocket.api"); 
   var pocketSiteHost = Services.prefs.getCharPref("extensions.pocket.site"); 
-  var baseAPIUrl = "https://" + pocketAPIhost + "/v3";
-
-  
-
-
-  var oAuthConsumerKey = Services.prefs.getCharPref(
-    "extensions.pocket.oAuthConsumerKey"
-  );
 
   
 
@@ -289,7 +284,28 @@ var pktApi = (function() {
 
 
 
-  function apiRequest(options) {
+  function apiRequest(options, useBFF = false) {
+    let baseAPIUrl;
+    let oAuthConsumerKey;
+
+    if (!useBFF) {
+      baseAPIUrl = `https://${Services.prefs.getCharPref(
+        "extensions.pocket.api"
+      )}/v3`;
+
+      oAuthConsumerKey = Services.prefs.getCharPref(
+        "extensions.pocket.oAuthConsumerKey"
+      );
+    } else {
+      baseAPIUrl = `https://${lazy.NimbusFeatures.saveToPocket.getVariable(
+        "bffApi"
+      )}/desktop/v1`;
+
+      oAuthConsumerKey = lazy.NimbusFeatures.saveToPocket.getVariable(
+        "oAuthConsumerKeyBff"
+      );
+    }
+
     if (typeof options === "undefined" || typeof options.path === "undefined") {
       return false;
     }
@@ -300,7 +316,13 @@ var pktApi = (function() {
     data.consumer_key = oAuthConsumerKey;
 
     var request = new XMLHttpRequest();
-    request.open("POST", url, true);
+
+    if (!useBFF) {
+      request.open("POST", url, true);
+    } else {
+      request.open("GET", url, true);
+    }
+
     request.onreadystatechange = function(e) {
       if (request.readyState == 4) {
         
@@ -312,7 +334,9 @@ var pktApi = (function() {
           
           
           var response = parseJSON(request.response);
-          if (options.success && response && response.status == 1) {
+
+          
+          if (options.success && response && (response.status == 1 || useBFF)) {
             options.success(response, request);
             return;
           }
@@ -345,6 +369,23 @@ var pktApi = (function() {
       "application/x-www-form-urlencoded; charset=UTF-8"
     );
     request.setRequestHeader("X-Accept", " application/json");
+
+    if (useBFF) {
+      let cookies = getCookiesFromPocket();
+      let serializedCookies = ``;
+
+      for (const key in cookies) {
+        serializedCookies += `${key}=${cookies[key]}; `;
+      }
+
+      serializedCookies = serializedCookies.substring(
+        0,
+        serializedCookies.length - 2
+      );
+
+      request.setRequestHeader("Cookie", serializedCookies);
+      request.setRequestHeader("consumer_key", oAuthConsumerKey);
+    }
 
     
     var str = [];
@@ -749,12 +790,20 @@ var pktApi = (function() {
     const requestData = Object.assign({}, data, {
       access_token: getAccessToken(),
     });
-    return apiRequest({
-      path: "/firefox/get",
-      data: requestData,
-      success: options.success,
-      error: options.error,
-    });
+
+    const useBFF = lazy.NimbusFeatures.saveToPocket.getVariable(
+      "bffRecentSaves"
+    );
+
+    return apiRequest(
+      {
+        path: useBFF ? `/recent-saves?count=${data.count}` : `/firefox/get`,
+        data: requestData,
+        success: options.success,
+        error: options.error,
+      },
+      useBFF
+    ); 
   }
 
   async function _getRecentSavesCache() {
@@ -798,21 +847,59 @@ var pktApi = (function() {
       { count: 4 },
       {
         success(data) {
+          const useBFF = lazy.NimbusFeatures.saveToPocket.getVariable(
+            "bffRecentSaves"
+          );
+
           
-          const results = {
-            lastUpdated: Date.now(),
+          if (
+            useBFF &&
+            (typeof data !== `object` || typeof data?.data !== `object`)
+          ) {
+            return;
+          }
+
+          try {
+            let list = useBFF ? [] : data.list;
+
+            if (useBFF) {
+              
+              data.data.forEach((item, index) => {
+                list[index] = {
+                  item_id: item.id,
+                  id: item.id, 
+                  resolved_url: item.resolvedUrl,
+                  given_url: item.givenUrl,
+                  resolved_title: item.title,
+                  excerpt: item.excerpt,
+                  word_count: item.wordCount,
+                  time_to_read: item.timeToRead,
+                  top_image_url: item.topImageUrl,
+                };
+              });
+            } else {
+              
+              
+              list = Object.values(list)
+                .map(item => ({
+                  ...item,
+                  id: parseInt(item.item_id || item.resolved_id, 10),
+                  time_added: parseInt(item.time_added),
+                }))
+                .sort((a, b) => b.time_added - a.time_added);
+            }
+
             
+            const results = {
+              lastUpdated: Date.now(),
+              list,
+            };
+
+            _setRecentSavesCache(results);
+            options.success?.(results.list);
+          } catch {
             
-            list: Object.values(data.list)
-              .map(item => ({
-                ...item,
-                id: parseInt(item.item_id || item.resolved_id, 10),
-                time_added: parseInt(item.time_added),
-              }))
-              .sort((a, b) => b.time_added - a.time_added),
-          };
-          _setRecentSavesCache(results);
-          options.success?.(results.list);
+          }
         },
         error(error) {
           options.error?.(error);
