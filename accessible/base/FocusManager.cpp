@@ -28,6 +28,7 @@ FocusManager::FocusManager() {}
 FocusManager::~FocusManager() {}
 
 LocalAccessible* FocusManager::FocusedLocalAccessible() const {
+  MOZ_ASSERT(NS_IsMainThread());
   if (mActiveItem) {
     if (mActiveItem->IsDefunct()) {
       MOZ_ASSERT_UNREACHABLE("Stored active item is unbound from document");
@@ -49,9 +50,23 @@ LocalAccessible* FocusManager::FocusedLocalAccessible() const {
 }
 
 Accessible* FocusManager::FocusedAccessible() const {
+#if defined(ANDROID)
+  
+  
+  
+  
+  if (NS_IsMainThread()) {
+    if (Accessible* focusedAcc = FocusedLocalAccessible()) {
+      return focusedAcc;
+    }
+  } else {
+    nsAccessibilityService::GetAndroidMonitor().AssertCurrentThreadOwns();
+  }
+#else
   if (Accessible* focusedAcc = FocusedLocalAccessible()) {
     return focusedAcc;
   }
+#endif  
 
   if (!XRE_IsParentProcess()) {
     
