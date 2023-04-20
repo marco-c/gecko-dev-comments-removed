@@ -8,7 +8,7 @@
 
 
 
-#include "modules/audio_processing/agc/analog_gain_stats_reporter.h"
+#include "modules/audio_processing/agc2/input_volume_stats_reporter.h"
 
 #include <cmath>
 
