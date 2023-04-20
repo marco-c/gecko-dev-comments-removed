@@ -800,45 +800,43 @@ class FastDivisor {
   
   
   
-  static const unsigned divide_inv_shift = 17;
+  static const unsigned p = 17;
 
   
   
-  T inv;
+  T m;
 
  public:
   
-  FastDivisor() : inv(0) {}
+  FastDivisor() : m(0) {}
 
   FastDivisor(unsigned div, unsigned max) {
     MOZ_ASSERT(div <= max);
 
     
-    MOZ_ASSERT((1U << divide_inv_shift) >= div);
+    MOZ_ASSERT((1U << p) >= div);
 
     
     
     
-    unsigned inv_ = ((1U << divide_inv_shift) + div - 1 -
-                     (((1U << divide_inv_shift) - 1) % div)) /
-                    div;
+    unsigned m_ = ((1U << p) + div - 1 - (((1U << p) - 1) % div)) / div;
 
     
-    MOZ_DIAGNOSTIC_ASSERT(max < UINT_MAX / inv_);
+    MOZ_DIAGNOSTIC_ASSERT(max < UINT_MAX / m_);
 
-    MOZ_ASSERT(inv_ <= std::numeric_limits<T>::max());
-    inv = static_cast<T>(inv_);
+    MOZ_ASSERT(m_ <= std::numeric_limits<T>::max());
+    m = static_cast<T>(m_);
 
     
-    MOZ_ASSERT(inv);
+    MOZ_ASSERT(m);
   }
 
   
   
   inline unsigned divide(unsigned num) const {
     
-    MOZ_ASSERT(inv);
-    return (num * inv) >> divide_inv_shift;
+    MOZ_ASSERT(m);
+    return (num * m) >> p;
   }
 };
 
