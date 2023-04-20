@@ -1991,10 +1991,7 @@ bool imgLoader::ValidateEntry(
   
   
   
-  nsAutoCString scheme;
-  aURI->GetScheme(scheme);
-  if (scheme.EqualsLiteral("data") &&
-      !(aLoadFlags & nsIRequest::LOAD_BYPASS_CACHE)) {
+  if (aURI->SchemeIs("data") && !(aLoadFlags & nsIRequest::LOAD_BYPASS_CACHE)) {
     return true;
   }
 
