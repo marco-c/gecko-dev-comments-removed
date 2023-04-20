@@ -152,6 +152,9 @@ MOZ_ALWAYS_INLINE const JS::Latin1Char* JSString::nonInlineCharsRaw() const {
 }
 
 inline JSRope::JSRope(JSString* left, JSString* right, size_t length) {
+  
+  MOZ_ASSERT(!left->empty() && !right->empty());
+
   if (left->hasLatin1Chars() && right->hasLatin1Chars()) {
     setLengthAndFlags(length, INIT_ROPE_FLAGS | LATIN1_CHARS_BIT);
   } else {

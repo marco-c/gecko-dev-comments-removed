@@ -8,7 +8,6 @@ const strings = [
   "",
 
   
-  newRope("", ""),
   newString("", {external: true}),
 
   
