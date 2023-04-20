@@ -23,6 +23,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://devtools/shared/network-observer/NetworkUtils.sys.mjs",
 });
 
+const CONTENT_TYPE_REGEXP = /^content-type/i;
+
 
 
 
@@ -281,8 +283,17 @@ class NetworkEventActor extends Actor {
 
 
   getRequestPostData() {
+    let postDataText;
+    if (this._request.postData.text) {
+      
+      postDataText = this._createLongStringActor(this._request.postData.text);
+    }
+
     return {
-      postData: this._request.postData,
+      postData: {
+        size: this._request.postData.size,
+        text: postDataText,
+      },
       postDataDiscarded: this._discardRequestBody,
     };
   }
@@ -306,10 +317,20 @@ class NetworkEventActor extends Actor {
 
 
   getResponseHeaders() {
+    let rawHeaders;
+    let headersSize = 0;
+    if (this._response.rawHeaders) {
+      headersSize = this._response.rawHeaders.length;
+      rawHeaders = this._createLongStringActor(this._response.rawHeaders);
+    }
+
     return {
-      headers: this._response.headers,
-      headersSize: this._response.headersSize,
-      rawHeaders: this._response.rawHeaders,
+      headers: this._response.headers.map(header => ({
+        name: header.name,
+        value: this._createLongStringActor(header.value),
+      })),
+      headersSize,
+      rawHeaders,
     };
   }
 
@@ -332,8 +353,31 @@ class NetworkEventActor extends Actor {
 
 
   getResponseCookies() {
+    
+    
+    const cookieOptionalProperties = [
+      "domain",
+      "expires",
+      "httpOnly",
+      "path",
+      "samesite",
+      "secure",
+    ];
+
     return {
-      cookies: this._response.cookies,
+      cookies: this._response.cookies.map(cookie => {
+        const cookieResponse = {
+          name: cookie.name,
+          value: this._createLongStringActor(cookie.value),
+        };
+
+        for (const prop of cookieOptionalProperties) {
+          if (prop in cookie) {
+            cookieResponse[prop] = cookie[prop];
+          }
+        }
+        return cookieResponse;
+      }),
     };
   }
 
@@ -382,12 +426,6 @@ class NetworkEventActor extends Actor {
     }
 
     this._request.postData = postData;
-    postData.text = new LongStringActor(this.conn, postData.text);
-    
-    
-    this.manage(postData.text);
-    postData.text = postData.text.form();
-
     this._onEventUpdate("requestPostData", {});
   }
 
@@ -399,27 +437,63 @@ class NetworkEventActor extends Actor {
 
 
 
-  addResponseStart(info, rawHeaders) {
+  addResponseStart({ channel, fromCache, rawHeaders = "" }) {
     
     if (this.isDestroyed()) {
       return;
     }
 
-    rawHeaders = new LongStringActor(this.conn, rawHeaders);
-    
-    
-    this.manage(rawHeaders);
-    this._response.rawHeaders = rawHeaders.form();
+    fromCache = fromCache || lazy.NetworkUtils.isFromCache(channel);
 
-    this._response.httpVersion = info.httpVersion;
-    this._response.status = info.status;
-    this._response.statusText = info.statusText;
-    this._response.headersSize = info.headersSize;
-    this._response.waitingTime = info.waitingTime;
     
-    this._discardResponseBody = !!info.discardResponseBody;
+    let responseHeaders = [];
+    let responseCookies = [];
+    if (!this._blockedReason) {
+      const {
+        cookies,
+        headers,
+      } = lazy.NetworkUtils.fetchResponseHeadersAndCookies(channel);
+      responseCookies = cookies;
+      responseHeaders = headers;
+    }
 
-    this._onEventUpdate("responseStart", { ...info });
+    
+    this._response.rawHeaders = rawHeaders;
+    this._response.headers = responseHeaders;
+    this._response.cookies = responseCookies;
+
+    
+    this._response.headersSize = rawHeaders ? rawHeaders.length : 0;
+
+    
+    if (lazy.NetworkUtils.isRedirectedChannel(channel)) {
+      this._discardResponseBody = true;
+    }
+
+    
+    const contentTypeHeader = responseHeaders.find(header =>
+      CONTENT_TYPE_REGEXP.test(header.name)
+    );
+
+    let mimeType = "";
+    if (contentTypeHeader) {
+      mimeType = contentTypeHeader.value;
+    }
+
+    const timedChannel = channel.QueryInterface(Ci.nsITimedChannel);
+    const waitingTime = Math.round(
+      (timedChannel.responseStartTime - timedChannel.requestStartTime) / 1000
+    );
+
+    this._onEventUpdate("responseStart", {
+      httpVersion: lazy.NetworkUtils.getHttpVersion(channel),
+      mimeType,
+      remoteAddress: fromCache ? "" : channel.remoteAddress,
+      remotePort: fromCache ? "" : channel.remotePort,
+      status: channel.responseStatus + "",
+      statusText: channel.responseStatusText,
+      waitingTime,
+    });
   }
 
   
@@ -440,42 +514,6 @@ class NetworkEventActor extends Actor {
       state: info.state,
       isRacing,
     });
-  }
-
-  
-
-
-
-
-
-  addResponseHeaders(headers) {
-    
-    if (this.isDestroyed()) {
-      return;
-    }
-
-    this._response.headers = headers;
-    this._prepareHeaders(headers);
-
-    this._onEventUpdate("responseHeaders", {});
-  }
-
-  
-
-
-
-
-
-  addResponseCookies(cookies) {
-    
-    if (this.isDestroyed()) {
-      return;
-    }
-
-    this._response.cookies = cookies;
-    this._prepareHeaders(cookies);
-
-    this._onEventUpdate("responseCookies", {});
   }
 
   
@@ -576,22 +614,6 @@ class NetworkEventActor extends Actor {
     return longStringActor.form();
   }
 
-  
-
-
-
-
-
-
-  _prepareHeaders(headers) {
-    for (const header of headers) {
-      header.value = new LongStringActor(this.conn, header.value);
-      
-      
-      this.manage(header.value);
-      header.value = header.value.form();
-    }
-  }
   
 
 
