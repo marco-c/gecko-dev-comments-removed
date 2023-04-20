@@ -1,8 +1,8 @@
 "use strict";
 
 add_setup(async function() {
-  let { formAutofillStorage } = ChromeUtils.import(
-    "resource://autofill/FormAutofillStorage.jsm"
+  let { formAutofillStorage } = ChromeUtils.importESModule(
+    "resource://autofill/FormAutofillStorage.sys.mjs"
   );
   await formAutofillStorage.initialize();
 });
@@ -280,8 +280,8 @@ add_task(async function test_editInvalidCreditCardNumber() {
   
   
   
-  let { formAutofillStorage } = ChromeUtils.import(
-    "resource://autofill/FormAutofillStorage.jsm"
+  let { formAutofillStorage } = ChromeUtils.importESModule(
+    "resource://autofill/FormAutofillStorage.sys.mjs"
   );
   await formAutofillStorage.initialize();
   
