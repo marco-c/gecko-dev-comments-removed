@@ -159,11 +159,14 @@ class StunMessage {
 
   
   
+  
+  
   enum class IntegrityStatus {
-    kNotSet,
-    kNoIntegrity,   
-    kIntegrityOk,   
-    kIntegrityBad,  
+    kNotSet = 0,
+    kNoIntegrity = 1,   
+    kIntegrityOk = 2,   
+    kIntegrityBad = 3,  
+    kMaxValue = kIntegrityBad,
   };
 
   int type() const { return type_; }
