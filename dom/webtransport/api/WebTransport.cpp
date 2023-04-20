@@ -6,6 +6,7 @@
 
 #include "WebTransport.h"
 
+#include "WebTransportBidirectionalStream.h"
 #include "mozilla/RefPtr.h"
 #include "nsUTF8Utils.h"
 #include "nsIURL.h"
@@ -526,10 +527,61 @@ already_AddRefed<WebTransportDatagramDuplexStream> WebTransport::GetDatagrams(
 }
 
 already_AddRefed<Promise> WebTransport::CreateBidirectionalStream(
-    ErrorResult& aError) {
+    const WebTransportSendStreamOptions& aOptions, ErrorResult& aRv) {
   LOG(("CreateBidirectionalStream() called"));
-  aError.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
+
+  
+  
+  if (mState == WebTransportState::CLOSED ||
+      mState == WebTransportState::FAILED) {
+    aRv.ThrowInvalidStateError("WebTransport close or failed");
+    return nullptr;
+  }
+
+  
+  Maybe<int64_t> sendOrder;
+  if (!aOptions.mSendOrder.IsNull()) {
+    sendOrder = Some(aOptions.mSendOrder.Value());
+  }
+  
+  
+  
+  
+
+  
+  
+  mChild->SendCreateBidirectionalStream(
+      sendOrder,
+      [self = RefPtr{this}, promise](
+          BidirectionalStreamResponse&& aPipes) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+        LOG(("CreateBidirectionalStream response"));
+        
+        
+        if (self->mState == WebTransportState::CLOSED ||
+            self->mState == WebTransportState::FAILED) {
+          promise->MaybeRejectWithInvalidStateError(
+              "Transport close/errored before CreateBidirectional finished");
+          return;
+        }
+        ErrorResult error;
+        RefPtr<WebTransportBidirectionalStream> newStream =
+            WebTransportBidirectionalStream::Create(
+                self, self->mGlobal,
+                aPipes.get_BidirectionalStream().inStream(),
+                aPipes.get_BidirectionalStream().outStream(), error);
+        LOG(("Returning a bidirectionalStream"));
+        promise->MaybeResolve(newStream);
+      },
+      [self = RefPtr{this}, promise](mozilla::ipc::ResponseRejectReason) {
+        LOG(("CreateBidirectionalStream reject"));
+        promise->MaybeRejectWithInvalidStateError(
+            "Transport close/errored before CreateBidirectional started");
+      });
+
+  
+  return promise.forget();
 }
 
 already_AddRefed<ReadableStream> WebTransport::IncomingBidirectionalStreams() {
@@ -537,10 +589,74 @@ already_AddRefed<ReadableStream> WebTransport::IncomingBidirectionalStreams() {
 }
 
 already_AddRefed<Promise> WebTransport::CreateUnidirectionalStream(
-    ErrorResult& aError) {
+    const WebTransportSendStreamOptions& aOptions, ErrorResult& aRv) {
   LOG(("CreateUnidirectionalStream() called"));
-  aError.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  
+  
+  
+  if (mState == WebTransportState::CLOSED ||
+      mState == WebTransportState::FAILED) {
+    aRv.ThrowInvalidStateError("WebTransport close or failed");
+    return nullptr;
+  }
+
+  
+  Maybe<int64_t> sendOrder;
+  if (!aOptions.mSendOrder.IsNull()) {
+    sendOrder = Some(aOptions.mSendOrder.Value());
+  }
+  
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
+
+  
+  
+  
+
+  
+  mChild->SendCreateUnidirectionalStream(
+      sendOrder,
+      [self = RefPtr{this},
+       promise](RefPtr<::mozilla::ipc::DataPipeSender>&& aPipe)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            LOG(("CreateUnidirectionalStream response"));
+            
+            
+            
+            
+            
+            
+            if (self->mState == WebTransportState::CLOSED ||
+                self->mState == WebTransportState::FAILED) {
+              promise->MaybeRejectWithInvalidStateError(
+                  "Transport close/errored during CreateUnidirectional");
+              return;
+            }
+
+            
+            
+            
+            ErrorResult error;
+            RefPtr<WebTransportSendStream> writableStream =
+                WebTransportSendStream::Create(self, self->mGlobal, aPipe,
+                                               error);
+            if (!writableStream) {
+              promise->MaybeReject(std::move(error));
+              return;
+            }
+            LOG(("Returning a writableStream"));
+            
+            self->mSendStreams.AppendElement(writableStream);
+            
+            promise->MaybeResolve(writableStream);
+          },
+      [self = RefPtr{this}, promise](mozilla::ipc::ResponseRejectReason) {
+        LOG(("CreateUnidirectionalStream reject"));
+        promise->MaybeRejectWithInvalidStateError(
+            "Transport close/errored during CreateUnidirectional");
+      });
+
+  
+  return promise.forget();
 }
 
 already_AddRefed<ReadableStream> WebTransport::IncomingUnidirectionalStreams() {
@@ -600,7 +716,7 @@ void WebTransport::Cleanup(WebTransportError* aError,
   if (aCloseInfo) {
     
     LOG(("Resolving mClosed with closeinfo"));
-    mClosed->MaybeResolve(aCloseInfo);
+    mClosed->MaybeResolve(*aCloseInfo);
     
     MOZ_ASSERT(mReady->State() != Promise::PromiseState::Pending);
     

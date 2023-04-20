@@ -131,23 +131,9 @@ void WebTransportIncomingStreamsAlgorithms::BuildStream(JSContext* aCx,
     RefPtr<DataPipeReceiver> input = pipes->first.forget();
     RefPtr<DataPipeSender> output = pipes->second.forget();
 
-    
-    
-    RefPtr<WebTransportReceiveStream> readableStream =
-        WebTransportReceiveStream::Create(mTransport, mTransport->mGlobal,
-                                          input, aRv);
-    if (!readableStream) {
-      return;
-    }
-    RefPtr<WebTransportSendStream> writableStream =
-        WebTransportSendStream::Create(mTransport, mTransport->mGlobal, output,
-                                       aRv);
-    if (!writableStream) {
-      return;
-    }
-
-    auto stream = MakeRefPtr<WebTransportBidirectionalStream>(
-        mTransport->mGlobal, readableStream, writableStream);
+    RefPtr<WebTransportBidirectionalStream> stream =
+        WebTransportBidirectionalStream::Create(mTransport, mTransport->mGlobal,
+                                                input, output, aRv);
 
     
     JS::Rooted<JS::Value> jsStream(aCx);
@@ -162,11 +148,6 @@ void WebTransportIncomingStreamsAlgorithms::BuildStream(JSContext* aCx,
     if (MOZ_UNLIKELY(aRv.Failed())) {
       return;
     }
-    
-    
-    mTransport->mSendStreams.AppendElement(writableStream);
-    
-    mTransport->mReceiveStreams.AppendElement(readableStream);
   }
   
 }
