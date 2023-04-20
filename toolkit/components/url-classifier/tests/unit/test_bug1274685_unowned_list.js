@@ -5,12 +5,30 @@ const { updateAppInfo } = ChromeUtils.importESModule(
   "resource://testing-common/AppInfo.sys.mjs"
 );
 
+add_setup(async () => {
+  
+  
+  
+  updateAppInfo();
 
+  
+  
+  
+  
+  Services.prefs.setCharPref(
+    "browser.safebrowsing.provider.mozilla.updateURL",
+    `http://localhost:4444/safebrowsing/update`
+  );
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(
+      "browser.safebrowsing.provider.mozilla.updateURL"
+    );
+    Services.prefs.clearUserPref("browser.safebrowsing.provider.google.lists");
+    Services.prefs.clearUserPref("browser.safebrowsing.provider.google4.lists");
+  });
+});
 
-
-updateAppInfo();
-
-function run_test() {
+add_task(async function test() {
   SafeBrowsing.init();
 
   let origListV2 = Services.prefs.getCharPref(
@@ -40,9 +58,8 @@ function run_test() {
     
     
     SafeBrowsing.registerTables();
+    ok(true, "SafeBrowsing.registerTables() did not throw.");
   } catch (e) {
     ok(false, "Exception thrown due to " + e.toString());
   }
-  Services.prefs.clearUserPref("browser.safebrowsing.provider.google.lists");
-  Services.prefs.clearUserPref("browser.safebrowsing.provider.google4.lists");
-}
+});
