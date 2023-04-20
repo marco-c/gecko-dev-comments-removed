@@ -467,6 +467,15 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSeek(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
+    uint64_t aProxyId) {
+  if (mMediaEngine) {
+    
+    
+  }
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetVolume(double aVolume) {
   AssertOnManagerThread();
   if (mMediaEngine) {
