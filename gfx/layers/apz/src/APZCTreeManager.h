@@ -22,7 +22,7 @@
 #include "mozilla/layers/APZTestData.h"       
 #include "mozilla/layers/APZUtils.h"          
 #include "mozilla/layers/IAPZCTreeManager.h"  
-#include "mozilla/layers/LayerAttributes.h"
+#include "mozilla/layers/ScrollbarData.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/KeyboardMap.h"      
 #include "mozilla/layers/TouchCounter.h"     

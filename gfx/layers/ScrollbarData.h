@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_gfx_layers_LayerAttributes_h
-#define mozilla_gfx_layers_LayerAttributes_h
+#ifndef mozilla_gfx_layers_ScrollbarData_h
+#define mozilla_gfx_layers_ScrollbarData_h
 
 #include "FrameMetrics.h"
 #include "mozilla/Maybe.h"

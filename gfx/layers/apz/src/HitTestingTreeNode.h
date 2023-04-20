@@ -9,9 +9,9 @@
 
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Matrix.h"                  
-#include "mozilla/layers/LayerAttributes.h"      
 #include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "mozilla/layers/ScrollbarData.h"        
 #include "mozilla/Maybe.h"                       
 #include "mozilla/RecursiveMutex.h"              
 #include "mozilla/RefPtr.h"                      
