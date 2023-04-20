@@ -6,6 +6,7 @@
 #ifndef HTMLEditorNestedClasses_h
 #define HTMLEditorNestedClasses_h
 
+#include "EditorDOMPoint.h"
 #include "EditorForwards.h"
 #include "HTMLEditor.h"       
 #include "HTMLEditHelpers.h"  
@@ -30,6 +31,18 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
       const EditorInlineStyleAndValue& aStyleAndValue)
       : EditorInlineStyleAndValue(aStyleAndValue) {}
 
+  void Reset() {
+    mFirstHandledPoint.Clear();
+    mLastHandledPoint.Clear();
+  }
+
+  const EditorDOMPoint& FirstHandledPointRef() const {
+    return mFirstHandledPoint;
+  }
+  const EditorDOMPoint& LastHandledPointRef() const {
+    return mLastHandledPoint;
+  }
+
   
 
 
@@ -38,15 +51,15 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
   SplitTextNodeAndApplyStyleToMiddleNode(HTMLEditor& aHTMLEditor, Text& aText,
                                          uint32_t aStartOffset,
-                                         uint32_t aEndOffset) const;
+                                         uint32_t aEndOffset);
 
   
 
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle(
-      HTMLEditor& aHTMLEditor, nsIContent& aContent) const;
+  ApplyStyleToNodeOrChildrenAndRemoveNestedSameStyle(HTMLEditor& aHTMLEditor,
+                                                     nsIContent& aContent);
 
   
 
@@ -57,10 +70,10 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
 
  private:
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult> ApplyStyle(
-      HTMLEditor& aHTMLEditor, nsIContent& aContent) const;
+      HTMLEditor& aHTMLEditor, nsIContent& aContent);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CaretPoint, nsresult>
-  ApplyCSSTextDecoration(HTMLEditor& aHTMLEditor, nsIContent& aContent) const;
+  ApplyCSSTextDecoration(HTMLEditor& aHTMLEditor, nsIContent& aContent);
 
   
 
@@ -112,6 +125,31 @@ class MOZ_STACK_CLASS HTMLEditor::AutoInlineStyleSetter final
   GetExtendedRangeToMinimizeTheNumberOfNewElements(
       const HTMLEditor& aHTMLEditor, const nsINode& aCommonAncestor,
       EditorRawDOMPoint&& aStartPoint, EditorRawDOMPoint&& aEndPoint) const;
+
+  
+
+
+
+
+  void OnHandled(const EditorDOMPoint& aStartPoint,
+                 const EditorDOMPoint& aEndPoint) {
+    if (!mFirstHandledPoint.IsSet()) {
+      mFirstHandledPoint = aStartPoint;
+    }
+    mLastHandledPoint = aEndPoint;
+  }
+  void OnHandled(nsIContent& aContent) {
+    if (!mFirstHandledPoint.IsSet()) {
+      mFirstHandledPoint.Set(&aContent, 0u);
+    }
+    mLastHandledPoint = EditorDOMPoint::AtEndOf(aContent);
+  }
+
+  
+  
+  
+  EditorDOMPoint mFirstHandledPoint;
+  EditorDOMPoint mLastHandledPoint;
 };
 
 }  
