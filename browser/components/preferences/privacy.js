@@ -2041,12 +2041,6 @@ var gPrivacyPane = {
       );
     }
 
-    
-    const bestMatchLearnMoreLink = document.getElementById(
-      "firefoxSuggestBestMatchLearnMore"
-    );
-    bestMatchLearnMoreLink.setAttribute("href", QuickSuggest.HELP_URL);
-
     this._updateFirefoxSuggestSection(true);
     this._initQuickActionsSection();
   },
