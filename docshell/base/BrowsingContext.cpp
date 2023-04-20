@@ -354,47 +354,48 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
 
   
   FieldValues fields;
-  fields.mName = aName;
+  fields.Get<IDX_Name>() = aName;
 
   if (aOpener) {
     MOZ_DIAGNOSTIC_ASSERT(!aParent,
                           "new BC with both initial opener and parent");
     MOZ_DIAGNOSTIC_ASSERT(aOpener->Group() == group);
     MOZ_DIAGNOSTIC_ASSERT(aOpener->mType == aType);
-    fields.mOpenerId = aOpener->Id();
-    fields.mHadOriginalOpener = true;
+    fields.Get<IDX_OpenerId>() = aOpener->Id();
+    fields.Get<IDX_HadOriginalOpener>() = true;
   }
 
   if (aParent) {
     MOZ_DIAGNOSTIC_ASSERT(parentBC->Group() == group);
     MOZ_DIAGNOSTIC_ASSERT(parentBC->mType == aType);
-    fields.mEmbedderInnerWindowId = aParent->WindowID();
+    fields.Get<IDX_EmbedderInnerWindowId>() = aParent->WindowID();
     
-    fields.mEmbeddedInContentDocument = parentBC->mType == Type::Content;
+    fields.Get<IDX_EmbeddedInContentDocument>() =
+        parentBC->mType == Type::Content;
 
     
     
     auto readystate = aParent->GetDocument()->GetReadyStateEnum();
-    fields.mAncestorLoading =
+    fields.Get<IDX_AncestorLoading>() =
         parentBC->GetAncestorLoading() ||
         readystate == Document::ReadyState::READYSTATE_LOADING ||
         readystate == Document::ReadyState::READYSTATE_INTERACTIVE;
   }
 
-  fields.mBrowserId =
+  fields.Get<IDX_BrowserId>() =
       parentBC ? parentBC->GetBrowserId() : nsContentUtils::GenerateBrowserId();
 
-  fields.mOpenerPolicy = nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
+  fields.Get<IDX_OpenerPolicy>() = nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
   if (aOpener && aOpener->SameOriginWithTop()) {
     
     
     
-    fields.mOpenerPolicy = aOpener->Top()->GetOpenerPolicy();
+    fields.Get<IDX_OpenerPolicy>() = aOpener->Top()->GetOpenerPolicy();
 
     
     
     bool isPotentiallyCrossOriginIsolated =
-        fields.mOpenerPolicy ==
+        fields.Get<IDX_OpenerPolicy>() ==
         nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
     MOZ_RELEASE_ASSERT(isPotentiallyCrossOriginIsolated ==
                        group->IsPotentiallyCrossOriginIsolated());
@@ -407,12 +408,12 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
   } else if (!aParent && group->IsPotentiallyCrossOriginIsolated()) {
     
     
-    fields.mOpenerPolicy =
+    fields.Get<IDX_OpenerPolicy>() =
         nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
   }
 
-  fields.mHistoryID = nsID::GenerateUUID();
-  fields.mExplicitActive = [&] {
+  fields.Get<IDX_HistoryID>() = nsID::GenerateUUID();
+  fields.Get<IDX_ExplicitActive>() = [&] {
     if (parentBC) {
       
       return ExplicitActiveStatus::None;
@@ -426,37 +427,39 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
     return ExplicitActiveStatus::Active;
   }();
 
-  fields.mFullZoom = parentBC ? parentBC->FullZoom() : 1.0f;
-  fields.mTextZoom = parentBC ? parentBC->TextZoom() : 1.0f;
+  fields.Get<IDX_FullZoom>() = parentBC ? parentBC->FullZoom() : 1.0f;
+  fields.Get<IDX_TextZoom>() = parentBC ? parentBC->TextZoom() : 1.0f;
 
   bool allowContentRetargeting =
       inherit ? inherit->GetAllowContentRetargetingOnChildren() : true;
-  fields.mAllowContentRetargeting = allowContentRetargeting;
-  fields.mAllowContentRetargetingOnChildren = allowContentRetargeting;
+  fields.Get<IDX_AllowContentRetargeting>() = allowContentRetargeting;
+  fields.Get<IDX_AllowContentRetargetingOnChildren>() = allowContentRetargeting;
 
   
   
-  fields.mFullscreenAllowedByOwner = !aParent;
+  fields.Get<IDX_FullscreenAllowedByOwner>() = !aParent;
 
-  fields.mAllowPlugins = inherit ? inherit->GetAllowPlugins() : true;
+  fields.Get<IDX_AllowPlugins>() = inherit ? inherit->GetAllowPlugins() : true;
 
-  fields.mDefaultLoadFlags =
+  fields.Get<IDX_DefaultLoadFlags>() =
       inherit ? inherit->GetDefaultLoadFlags() : nsIRequest::LOAD_NORMAL;
 
-  fields.mOrientationLock = mozilla::hal::ScreenOrientation::None;
+  fields.Get<IDX_OrientationLock>() = mozilla::hal::ScreenOrientation::None;
 
-  fields.mUseGlobalHistory = inherit ? inherit->GetUseGlobalHistory() : false;
+  fields.Get<IDX_UseGlobalHistory>() =
+      inherit ? inherit->GetUseGlobalHistory() : false;
 
-  fields.mUseErrorPages = true;
+  fields.Get<IDX_UseErrorPages>() = true;
 
-  fields.mTouchEventsOverrideInternal = TouchEventsOverride::None;
+  fields.Get<IDX_TouchEventsOverrideInternal>() = TouchEventsOverride::None;
 
-  fields.mAllowJavascript = inherit ? inherit->GetAllowJavascript() : true;
+  fields.Get<IDX_AllowJavascript>() =
+      inherit ? inherit->GetAllowJavascript() : true;
 
-  fields.mIsPopupRequested = aIsPopupRequested;
+  fields.Get<IDX_IsPopupRequested>() = aIsPopupRequested;
 
   if (!parentBC) {
-    fields.mShouldDelayMediaFromStart =
+    fields.Get<IDX_ShouldDelayMediaFromStart>() =
         StaticPrefs::media_block_autoplay_until_in_foreground();
   }
 
