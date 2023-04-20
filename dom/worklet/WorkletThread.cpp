@@ -321,25 +321,30 @@ static bool DispatchToEventLoop(void* aClosure,
 
   
   
-  WorkletThread* workletThread = reinterpret_cast<WorkletThread*>(aClosure);
+  nsIThread* thread = static_cast<nsIThread*>(aClosure);
 
-  nsresult rv = workletThread->DispatchRunnable(NS_NewRunnableFunction(
-      "WorkletThread::DispatchToEventLoop", [aDispatchable]() {
-        CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
-        if (!ccjscx) {
-          return;
-        }
+  nsresult rv = thread->Dispatch(
+      NS_NewRunnableFunction(
+          "WorkletThread::DispatchToEventLoop",
+          [aDispatchable]() {
+            CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
+            if (!ccjscx) {
+              return;
+            }
 
-        WorkletJSContext* wjc = ccjscx->GetAsWorkletJSContext();
-        if (!wjc) {
-          return;
-        }
+            WorkletJSContext* wjc = ccjscx->GetAsWorkletJSContext();
+            if (!wjc) {
+              return;
+            }
 
-        aDispatchable->run(wjc->Context(), JS::Dispatchable::NotShuttingDown);
-      }));
+            aDispatchable->run(wjc->Context(),
+                               JS::Dispatchable::NotShuttingDown);
+          }),
+      NS_DISPATCH_NORMAL);
 
   return NS_SUCCEEDED(rv);
 }
+
 
 void WorkletThread::EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime) {
   CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
@@ -367,7 +372,7 @@ void WorkletThread::EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime) {
   
   
   JS::InitDispatchToEventLoop(context->Context(), DispatchToEventLoop,
-                              (void*)this);
+                              NS_GetCurrentThread());
 
   JS_SetNativeStackQuota(context->Context(),
                          WORKLET_CONTEXT_NATIVE_STACK_LIMIT);
