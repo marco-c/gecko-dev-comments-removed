@@ -3,10 +3,14 @@
 
 "use strict";
 
-add_task(async function test_disable_doh() {
+
+
+
+
+add_task(async function test_enable_cbh() {
   const TEST_URL = "https://example.com/";
   const action = {
-    type: "RELOAD_BROWSER",
+    type: "ENABLE_CBH",
   };
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
   let reloadedPromise = BrowserTestUtils.browserLoaded(

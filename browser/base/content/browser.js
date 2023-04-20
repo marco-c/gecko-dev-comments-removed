@@ -1588,6 +1588,9 @@ var gBrowserInit = {
     BrowserWindowTracker.track(window);
 
     FirefoxViewHandler.init();
+
+    gCookieBannerHandlingExperiment.init();
+
     gNavToolbox.palette = document.getElementById(
       "BrowserToolbarPalette"
     ).content;
@@ -2443,6 +2446,8 @@ var gBrowserInit = {
     NewTabPagePreloading.removePreloadedBrowser(window);
 
     FirefoxViewHandler.uninit();
+
+    gCookieBannerHandlingExperiment.uninit();
 
     
     
@@ -10073,5 +10078,80 @@ var FirefoxViewHandler = {
   },
   _toggleNotificationDot(shouldShow) {
     this.button?.toggleAttribute("attention", shouldShow);
+  },
+};
+
+
+
+
+
+
+
+
+var gCookieBannerHandlingExperiment = {
+  init() {
+    
+    
+    
+    
+    
+    this._isEnrolled =
+      Services.prefs.getIntPref("cookiebanners.ui.desktop.cfrVariant") != 0;
+    if (this._isEnrolled) {
+      return;
+    }
+
+    this._updateEnabledState = this._updateEnabledState.bind(this);
+    NimbusFeatures.cookieBannerHandling.onUpdate(this._updateEnabledState);
+  },
+  uninit() {
+    NimbusFeatures.cookieBannerHandling.off(this._updateEnabledState);
+  },
+  _updateEnabledState() {
+    
+    let variant = NimbusFeatures.cookieBannerHandling.getVariable(
+      "desktopCfrVariant"
+    );
+    if (typeof variant != "undefined") {
+      this._enrollUser(variant);
+    }
+  },
+  
+
+
+
+
+
+
+
+  _enrollUser(variant) {
+    
+    Services.prefs.setIntPref("cookiebanners.ui.desktop.cfrVariant", variant);
+
+    
+    
+    Services.prefs.setIntPref("cookiebanners.service.mode", 3);
+    Services.prefs.setIntPref("cookiebanners.service.mode.privateBrowsing", 3);
+
+    
+    
+    Services.prefs.setBoolPref("cookiebanners.ui.desktop.enabled", true);
+    Services.prefs.setBoolPref("cookiebanners.service.detectOnly", true);
+  },
+  
+
+
+
+
+
+  onActivate() {
+    
+    Services.prefs.setIntPref("cookiebanners.service.mode", 1);
+    Services.prefs.setIntPref("cookiebanners.service.mode.privateBrowsing", 1);
+
+    
+    Services.prefs.setBoolPref("cookiebanners.service.detectOnly", false);
+
+    BrowserReload();
   },
 };
