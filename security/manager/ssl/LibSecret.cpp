@@ -11,6 +11,8 @@
 #include <memory>
 
 #include "mozilla/Base64.h"
+#include "mozilla/Logging.h"
+#include "MainThreadUtils.h"
 #include "prlink.h"
 
 
