@@ -150,7 +150,6 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
                             bool buffering_allowed) override;
 
   bool IsUlpfecEnabled() const;
-  bool IsRetransmissionsEnabled() const;
 
   
   
@@ -198,6 +197,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   void SetLossNotificationEnabled(bool enabled);
+
+  void SetNackHistory(TimeDelta history);
 
   absl::optional<int64_t> LastReceivedPacketMs() const;
   absl::optional<int64_t> LastReceivedKeyframePacketMs() const;
@@ -313,6 +314,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
       RTC_RUN_ON(packet_sequence_checker_);
 
   const FieldTrialsView& field_trials_;
+  TaskQueueBase* const worker_queue_;
   Clock* const clock_;
   
   
@@ -345,11 +347,15 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   const std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
 
+  NackPeriodicProcessor* const nack_periodic_processor_;
   OnCompleteFrameCallback* complete_frame_callback_;
   const KeyFrameReqMethod keyframe_request_method_;
 
   RtcpFeedbackBuffer rtcp_feedback_buffer_;
-  const std::unique_ptr<NackRequester> nack_module_;
+  
+  
+  std::unique_ptr<NackRequester> nack_module_
+      RTC_GUARDED_BY(packet_sequence_checker_);
   std::unique_ptr<LossNotificationController> loss_notification_controller_
       RTC_GUARDED_BY(packet_sequence_checker_);
 
