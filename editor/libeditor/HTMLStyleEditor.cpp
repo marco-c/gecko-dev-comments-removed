@@ -439,7 +439,7 @@ Result<bool, nsresult> HTMLEditor::ElementIsGoodContainerForTheStyle(
   if (aStyleAndValue.IsCSSEditable(*styledNewSpanElement)) {
     
     
-    Result<int32_t, nsresult> result = CSSEditUtils::SetCSSEquivalentToStyle(
+    Result<size_t, nsresult> result = CSSEditUtils::SetCSSEquivalentToStyle(
         WithTransaction::No, *this, MOZ_KnownLive(*styledNewSpanElement),
         aStyleAndValue, &aStyleAndValue.mAttributeValue);
     if (MOZ_UNLIKELY(result.isErr())) {
@@ -820,7 +820,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetInlinePropertyOnNodeImpl(
     if (spanStyledElement && aStyleToSet.IsCSSEditable(*spanStyledElement)) {
       
       
-      Result<int32_t, nsresult> result = CSSEditUtils::SetCSSEquivalentToStyle(
+      Result<size_t, nsresult> result = CSSEditUtils::SetCSSEquivalentToStyle(
           WithTransaction::Yes, *this, MOZ_KnownLive(*spanStyledElement),
           aStyleToSet, &aStyleToSet.mAttributeValue);
       if (MOZ_UNLIKELY(result.isErr())) {

@@ -6629,7 +6629,7 @@ Result<CreateElementResult, nsresult> HTMLEditor::AlignNodesAndDescendants(
                 *styledListOrListItemElement)) {
           
           
-          Result<int32_t, nsresult> result =
+          Result<size_t, nsresult> result =
               CSSEditUtils::SetCSSEquivalentToStyle(
                   WithTransaction::Yes, *this,
                   MOZ_KnownLive(*styledListOrListItemElement),

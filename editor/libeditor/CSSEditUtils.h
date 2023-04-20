@@ -221,7 +221,7 @@ class CSSEditUtils final {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<int32_t, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<size_t, nsresult>
   SetCSSEquivalentToStyle(WithTransaction aWithTransaction,
                           HTMLEditor& aHTMLEditor,
                           nsStyledElement& aStyledElement,
@@ -283,6 +283,28 @@ class CSSEditUtils final {
 
   static nsStaticAtom* GetCSSPropertyAtom(nsCSSEditableProperty aProperty);
 
+  struct CSSDeclaration {
+    nsStaticAtom& mProperty;
+    nsString const mValue;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+  enum class HandlingFor { GettingStyle, SettingStyle, RemovingStyle };
+  static void GetCSSDeclarations(const CSSEquivTable* aEquivTable,
+                                 const nsAString* aValue,
+                                 HandlingFor aHandlingFor,
+                                 nsTArray<CSSDeclaration>& aOutCSSDeclarations);
+
   
 
 
@@ -297,33 +319,11 @@ class CSSEditUtils final {
 
 
 
-
-  static void BuildCSSDeclarations(
-      nsTArray<nsStaticAtom*>& aOutArrayOfCSSProperty,
-      nsTArray<nsString>& aOutArrayOfCSSValue, const CSSEquivTable* aEquivTable,
-      const nsAString* aValue, bool aGetOrRemoveRequest);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static void GenerateCSSDeclarationsFromHTMLStyle(
-      dom::Element& aElement, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-      const nsAString* aValue, nsTArray<nsStaticAtom*>& aOutArrayOfCSSProperty,
-      nsTArray<nsString>& aOutArrayOfCSSValue, bool aGetOrRemoveRequest);
+  static void GetCSSDeclarations(dom::Element& aElement,
+                                 const EditorElementStyle& aStyle,
+                                 const nsAString* aValue,
+                                 HandlingFor aHandlingFor,
+                                 nsTArray<CSSDeclaration>& aOutCSSDeclarations);
 
   
 
