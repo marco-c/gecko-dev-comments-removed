@@ -221,7 +221,7 @@ SMILTimedElement* SMILTimeValueSpec::GetTimedElement(Element* aElement) {
 
 
 
-bool SMILTimeValueSpec::IsWhitelistedEvent() {
+bool SMILTimeValueSpec::IsEventAllowedWhenScriptingIsDisabled() {
   
   if (mParams.mType == SMILTimeValueSpecParams::REPEAT) {
     return true;
@@ -251,7 +251,7 @@ void SMILTimeValueSpec::RegisterEventListener(Element* aTarget) {
 
   
   if (!aTarget->GetOwnerDocument()->IsScriptEnabled() &&
-      !IsWhitelistedEvent()) {
+      !IsEventAllowedWhenScriptingIsDisabled()) {
     return;
   }
 
