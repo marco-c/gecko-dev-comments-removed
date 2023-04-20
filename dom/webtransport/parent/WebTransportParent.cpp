@@ -19,13 +19,14 @@ WebTransportParent::~WebTransportParent() {
   LOG(("Destroying WebTransportParent %p", this));
 }
 
-bool WebTransportParent::Init(
+
+void WebTransportParent::Create(
     const nsAString& aURL, const bool& aDedicated,
     const bool& aRequireUnreliable, const uint32_t& aCongestionControl,
     
     Endpoint<PWebTransportParent>&& aParentEndpoint,
     std::function<void(const nsresult&)>&& aResolver) {
-  LOG(("Created WebTransportParent %p %s %s %s congestion=%s", this,
+  LOG(("Created WebTransportParent %s %s %s congestion=%s",
        NS_ConvertUTF16toUTF8(aURL).get(),
        aDedicated ? "Dedicated" : "AllowPooling",
        aRequireUnreliable ? "RequireUnreliable" : "",
@@ -39,21 +40,42 @@ bool WebTransportParent::Init(
 
   if (!StaticPrefs::network_webtransport_enabled()) {
     aResolver(NS_ERROR_DOM_NOT_ALLOWED_ERR);
-    return false;
+    return;
   }
 
   if (!aParentEndpoint.IsValid()) {
     aResolver(NS_ERROR_INVALID_ARG);
-    return false;
+    return;
   }
 
-  if (!aParentEndpoint.Bind(this)) {
-    aResolver(NS_ERROR_FAILURE);
-    return false;
-  }
   
-  aResolver(NS_OK);
-  return true;
+  
+  
+  nsresult rv;
+  nsCOMPtr<nsISerialEventTarget> sts =
+      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &rv);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+  InvokeAsync(sts, __func__,
+              [parentEndpoint = std::move(aParentEndpoint)]() mutable {
+                RefPtr<WebTransportParent> parent = new WebTransportParent();
+
+                LOG(("Binding parent endpoint"));
+                if (!parentEndpoint.Bind(parent)) {
+                  return GenericNonExclusivePromise::CreateAndReject(
+                      NS_ERROR_FAILURE, __func__);
+                }
+                
+                
+                return GenericNonExclusivePromise::CreateAndResolve(true,
+                                                                    __func__);
+              })
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [aResolver](
+              const GenericNonExclusivePromise::ResolveOrRejectValue& aValue) {
+            aResolver(aValue.IsResolve() ? NS_OK : aValue.RejectValue());
+          });
 }
 
 void WebTransportParent::ActorDestroy(ActorDestroyReason aWhy) {
