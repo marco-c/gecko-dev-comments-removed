@@ -38,12 +38,6 @@ interface nsIAboutThirdParty : nsISupports
   
 
 
-
-  void getBlockedModuleNames(in Array<AString> aLoadedModuleNames, out Array<AString> aBlockedModuleNames);
-
-  
-
-
   readonly attribute bool isDynamicBlocklistAvailable;
 
   
