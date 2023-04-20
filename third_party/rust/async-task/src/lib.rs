@@ -74,6 +74,17 @@
 
 extern crate alloc;
 
+
+
+macro_rules! leap {
+    ($x: expr) => {{
+        match ($x) {
+            Some(val) => val,
+            None => return None,
+        }
+    }};
+}
+
 mod header;
 mod raw;
 mod runnable;

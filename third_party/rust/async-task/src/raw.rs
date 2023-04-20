@@ -1,4 +1,4 @@
-use alloc::alloc::Layout;
+use alloc::alloc::Layout as StdLayout;
 use core::cell::UnsafeCell;
 use core::future::Future;
 use core::mem::{self, ManuallyDrop};
@@ -9,7 +9,7 @@ use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 
 use crate::header::Header;
 use crate::state::*;
-use crate::utils::{abort, abort_on_panic, extend};
+use crate::utils::{abort, abort_on_panic, max, Layout};
 use crate::Runnable;
 
 
@@ -34,6 +34,12 @@ pub(crate) struct TaskVTable {
 
     
     pub(crate) clone_waker: unsafe fn(ptr: *const ()) -> RawWaker,
+
+    
+    
+    
+    #[allow(unused)]
+    pub(crate) layout_info: &'static Option<TaskLayout>,
 }
 
 
@@ -45,7 +51,7 @@ pub(crate) struct TaskVTable {
 #[derive(Clone, Copy)]
 pub(crate) struct TaskLayout {
     
-    pub(crate) layout: Layout,
+    pub(crate) layout: StdLayout,
 
     
     pub(crate) offset_s: usize,
@@ -80,6 +86,39 @@ impl<F, T, S> Clone for RawTask<F, T, S> {
     }
 }
 
+impl<F, T, S> RawTask<F, T, S> {
+    const TASK_LAYOUT: Option<TaskLayout> = Self::eval_task_layout();
+
+    
+    #[inline]
+    const fn eval_task_layout() -> Option<TaskLayout> {
+        
+        let layout_header = Layout::new::<Header>();
+        let layout_s = Layout::new::<S>();
+        let layout_f = Layout::new::<F>();
+        let layout_r = Layout::new::<T>();
+
+        
+        let size_union = max(layout_f.size(), layout_r.size());
+        let align_union = max(layout_f.align(), layout_r.align());
+        let layout_union = Layout::from_size_align(size_union, align_union);
+
+        
+        let layout = layout_header;
+        let (layout, offset_s) = leap!(layout.extend(layout_s));
+        let (layout, offset_union) = leap!(layout.extend(layout_union));
+        let offset_f = offset_union;
+        let offset_r = offset_union;
+
+        Some(TaskLayout {
+            layout: unsafe { layout.into_std() },
+            offset_s,
+            offset_f,
+            offset_r,
+        })
+    }
+}
+
 impl<F, T, S> RawTask<F, T, S>
 where
     F: Future<Output = T>,
@@ -97,7 +136,9 @@ where
     
     pub(crate) fn allocate(future: F, schedule: S) -> NonNull<()> {
         
-        let task_layout = abort_on_panic(|| Self::task_layout());
+        
+        
+        let task_layout = Self::task_layout();
 
         unsafe {
             
@@ -120,6 +161,7 @@ where
                     destroy: Self::destroy,
                     run: Self::run,
                     clone_waker: Self::clone_waker,
+                    layout_info: &Self::TASK_LAYOUT,
                 },
             });
 
@@ -152,29 +194,9 @@ where
     
     #[inline]
     fn task_layout() -> TaskLayout {
-        
-        let layout_header = Layout::new::<Header>();
-        let layout_s = Layout::new::<S>();
-        let layout_f = Layout::new::<F>();
-        let layout_r = Layout::new::<T>();
-
-        
-        let size_union = layout_f.size().max(layout_r.size());
-        let align_union = layout_f.align().max(layout_r.align());
-        let layout_union = unsafe { Layout::from_size_align_unchecked(size_union, align_union) };
-
-        
-        let layout = layout_header;
-        let (layout, offset_s) = extend(layout, layout_s);
-        let (layout, offset_union) = extend(layout, layout_union);
-        let offset_f = offset_union;
-        let offset_r = offset_union;
-
-        TaskLayout {
-            layout,
-            offset_s,
-            offset_f,
-            offset_r,
+        match Self::TASK_LAYOUT {
+            Some(tl) => tl,
+            None => abort(),
         }
     }
 

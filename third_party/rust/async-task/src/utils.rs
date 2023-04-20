@@ -1,4 +1,4 @@
-use core::alloc::Layout;
+use core::alloc::Layout as StdLayout;
 use core::mem;
 
 
@@ -38,27 +38,90 @@ pub(crate) fn abort_on_panic<T>(f: impl FnOnce() -> T) -> T {
 
 
 
-
-
-#[inline]
-pub(crate) fn extend(a: Layout, b: Layout) -> (Layout, usize) {
-    let new_align = a.align().max(b.align());
-    let pad = padding_needed_for(a, b.align());
-
-    let offset = a.size().checked_add(pad).unwrap();
-    let new_size = offset.checked_add(b.size()).unwrap();
-
-    let layout = Layout::from_size_align(new_size, new_align).unwrap();
-    (layout, offset)
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Layout {
+    size: usize,
+    align: usize,
 }
 
+impl Layout {
+    
+    #[inline]
+    pub(crate) const fn from_size_align(size: usize, align: usize) -> Self {
+        Self { size, align }
+    }
 
+    
+    #[inline]
+    pub(crate) const fn new<T>() -> Self {
+        Self::from_size_align(mem::size_of::<T>(), mem::align_of::<T>())
+    }
 
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub(crate) const unsafe fn into_std(self) -> StdLayout {
+        StdLayout::from_size_align_unchecked(self.size, self.align)
+    }
 
+    
+    #[inline]
+    pub(crate) const fn align(&self) -> usize {
+        self.align
+    }
+
+    
+    #[inline]
+    pub(crate) const fn size(&self) -> usize {
+        self.size
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub(crate) const fn extend(self, other: Layout) -> Option<(Layout, usize)> {
+        let new_align = max(self.align(), other.align());
+        let pad = self.padding_needed_for(other.align());
+
+        let offset = leap!(self.size().checked_add(pad));
+        let new_size = leap!(offset.checked_add(other.size()));
+
+        
+        
+        
+        
+        if !new_align.is_power_of_two() || new_size > core::usize::MAX - (new_align - 1) {
+            return None;
+        }
+
+        let layout = Layout::from_size_align(new_size, new_align);
+        Some((layout, offset))
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub(crate) const fn padding_needed_for(self, align: usize) -> usize {
+        let len = self.size();
+        let len_rounded_up = len.wrapping_add(align).wrapping_sub(1) & !align.wrapping_sub(1);
+        len_rounded_up.wrapping_sub(len)
+    }
+}
 
 #[inline]
-pub(crate) fn padding_needed_for(layout: Layout, align: usize) -> usize {
-    let len = layout.size();
-    let len_rounded_up = len.wrapping_add(align).wrapping_sub(1) & !align.wrapping_sub(1);
-    len_rounded_up.wrapping_sub(len)
+pub(crate) const fn max(left: usize, right: usize) -> usize {
+    if left > right {
+        left
+    } else {
+        right
+    }
 }

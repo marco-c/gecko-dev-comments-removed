@@ -121,6 +121,7 @@ impl<T> Task<T> {
     
     
     
+    
     pub async fn cancel(self) -> Option<T> {
         let mut this = self;
         this.set_canceled();
@@ -395,6 +396,19 @@ impl<T> Task<T> {
         let header = ptr as *const Header;
         unsafe { &*header }
     }
+
+    
+    
+    
+    pub fn is_finished(&self) -> bool {
+        let ptr = self.ptr.as_ptr();
+        let header = ptr as *const Header;
+
+        unsafe {
+            let state = (*header).state.load(Ordering::Acquire);
+            state & (CLOSED | COMPLETED) != 0
+        }
+    }
 }
 
 impl<T> Drop for Task<T> {
@@ -461,6 +475,7 @@ impl<T> FallibleTask<T> {
         self.task.detach()
     }
 
+    
     
     
     
