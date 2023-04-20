@@ -389,6 +389,9 @@ CaptivePortalDetector.prototype = {
       if (status >= 300 && status <= 399) {
         
         self._startLogin();
+      } else if (status === 511) {
+        
+        self._startLogin();
       } else {
         mayRetry();
       }
