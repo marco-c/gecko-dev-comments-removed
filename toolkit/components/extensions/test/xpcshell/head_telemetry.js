@@ -197,9 +197,22 @@ function resetTelemetryData() {
 
 function assertDNRTelemetryMetricsDefined(metrics) {
   const metricsFound = Object.keys(Glean.extensionsApisDnr);
-  const metricsNotFound = metrics.filter(
-    metric => !metricsFound.includes(metric)
-  );
+  const metricsNotFound = metrics.filter(metricAndLabel => {
+    const [metric, label, ...rest] = metricAndLabel.split(".");
+    if (label && rest.length) {
+      
+      
+      
+      throw new Error(
+        `${metricAndLabel} is not a valid labeled counter metric name`
+      );
+    }
+    if (label && metricsFound.includes(metric)) {
+      return !Glean.extensionsApisDnr[metric][label];
+    }
+
+    return !metricsFound.includes(metric);
+  });
   Assert.deepEqual(
     metricsNotFound,
     [],
@@ -209,18 +222,43 @@ function assertDNRTelemetryMetricsDefined(metrics) {
 
 function assertDNRTelemetryMetricsNoSamples(metrics, msg) {
   assertDNRTelemetryMetricsDefined(metrics);
-  for (const metric of metrics) {
+  for (const metricAndLabel of metrics) {
     if (IS_ANDROID_BUILD) {
       info(
-        `Skip assertions on collected samples for extensionsApisDnr.${metric} on android builds`
+        `Skip assertions on collected samples for extensionsApisDnr.${metricAndLabel} on android builds (${msg})`
       );
       return;
     }
-    const gleanData = Glean.extensionsApisDnr[metric].testGetValue();
+    const [metric, label] = metricAndLabel.split(".");
+    const gleanData = label
+      ? Glean.extensionsApisDnr[metric][label].testGetValue()
+      : Glean.extensionsApisDnr[metric].testGetValue();
     Assert.deepEqual(
       gleanData,
       undefined,
       `Expect no sample for Glean metric extensionApisDnr.${metric} (${msg}): ${gleanData}`
+    );
+  }
+}
+
+function assertDNRTelemetryMetricsGetValueEq(metrics, expectGetValue, msg) {
+  assertDNRTelemetryMetricsDefined(metrics);
+  for (const metricAndLabel of metrics) {
+    if (IS_ANDROID_BUILD) {
+      info(
+        `Skip assertions on collected samples for extensionsApisDnr.${metricAndLabel} on android builds`
+      );
+      return;
+    }
+
+    const [metric, label] = metricAndLabel.split(".");
+    const gleanData = label
+      ? Glean.extensionsApisDnr[metric][label].testGetValue()
+      : Glean.extensionsApisDnr[metric].testGetValue();
+    Assert.deepEqual(
+      gleanData,
+      expectGetValue,
+      `Got expected value set on Glean metric extensionApisDnr.${metric}.${label} (${msg})`
     );
   }
 }
@@ -231,6 +269,16 @@ function assertDNRTelemetryMetricsSamplesCount(
   msg
 ) {
   assertDNRTelemetryMetricsDefined(metrics);
+
+  
+  
+  const labeledMetricsFound = metrics.filter(metric => metric.includes("."));
+  if (labeledMetricsFound.length) {
+    throw new Error(
+      `Unexpected labeled metrics in call to assertDNRTelemetryMetricsSamplesCount: ${labeledMetricsFound}`
+    );
+  }
+
   for (const metric of metrics) {
     if (IS_ANDROID_BUILD) {
       info(
