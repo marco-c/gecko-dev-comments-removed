@@ -1,14 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["AboutHttpsOnlyErrorChild"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const { RemotePageChild } = ChromeUtils.import(
   "resource://gre/actors/RemotePageChild.jsm"
 );
@@ -21,12 +16,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsISerializationHelper"
 );
 
-class AboutHttpsOnlyErrorChild extends RemotePageChild {
+export class AboutHttpsOnlyErrorChild extends RemotePageChild {
   actorCreated() {
     super.actorCreated();
 
-    
-    
+    // If you add a new function, remember to add it to RemotePageAccessManager.sys.mjs
+    // to allow content-privileged about:httpsonlyerror to use it.
     const exportableFunctions = [
       "RPMTryPingSecureWWWLink",
       "RPMOpenSecureWWWLink",
@@ -35,20 +30,20 @@ class AboutHttpsOnlyErrorChild extends RemotePageChild {
   }
 
   RPMTryPingSecureWWWLink() {
-    
-    
-    
+    // try if the page can be reached with www prefix
+    // if so send message to the parent to send message to the error page to display
+    // suggestion button for www
 
     const httpsOnlySuggestionPref = Services.prefs.getBoolPref(
       "dom.security.https_only_mode_error_page_user_suggestions"
     );
 
-    
+    // only check if pref is true otherwise return
     if (!httpsOnlySuggestionPref) {
       return;
     }
 
-    
+    // get the host url without the path with www in front
     const wwwURL = "https://www." + this.contentWindow.location.host;
     fetch(wwwURL, {
       credentials: "omit",
@@ -67,7 +62,7 @@ class AboutHttpsOnlyErrorChild extends RemotePageChild {
   }
 
   RPMOpenSecureWWWLink() {
-    
+    // if user wants to visit suggested secure www page: visit page with www prefix and delete errorpage from history
     const context = this.manager.browsingContext;
     const docShell = context.docShell;
     const httpChannel = docShell.failedChannel.QueryInterface(
