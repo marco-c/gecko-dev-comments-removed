@@ -80,7 +80,8 @@ TabEngine.prototype = {
       recent_clients: {},
     };
 
-    let tabs = await TabProvider.getAllTabs(true);
+    
+    let tabs = await this.getTabsWithinPayloadSize();
     await this._rustStore.setLocalTabs(
       tabs.map(tab => {
         
@@ -195,6 +196,20 @@ TabEngine.prototype = {
     }
   },
 
+  async getTabsWithinPayloadSize() {
+    let tabs = await TabProvider.getAllTabs(true);
+    const maxPayloadSize = this.service.getMaxRecordPayloadSize();
+    let records = Utils.tryFitItems(tabs, maxPayloadSize);
+
+    if (records.length != tabs.length) {
+      this._log.warn(
+        `Can't fit all tabs in sync payload: have ${tabs.length}, but can only fit ${records.length}.`
+      );
+    }
+
+    return records;
+  },
+
   
   _engineLock: Utils.lock,
   _engineLocked: false,
@@ -305,7 +320,6 @@ TabEngine.prototype = {
 
       Async.checkAppReady();
       await this._uploadOutgoing();
-      telemetryRecord.onEngineApplied(name, 1);
       telemetryRecord.onEngineStop(name, null);
       return true;
     } catch (ex) {
