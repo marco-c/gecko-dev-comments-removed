@@ -1,0 +1,20 @@
+
+
+
+"use strict";
+
+add_task(async function test_open_firefoxview() {
+  const tabPromise = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    "about:firefoxview"
+  );
+  await SMATestUtils.executeAndValidateAction({
+    type: "OPEN_FIREFOX_VIEW_AND_COLORWAYS_MODAL",
+  });
+
+  const tab = await tabPromise;
+
+  ok(tab, "should open about:firefoxview in a new tab");
+
+  BrowserTestUtils.removeTab(tab);
+});
