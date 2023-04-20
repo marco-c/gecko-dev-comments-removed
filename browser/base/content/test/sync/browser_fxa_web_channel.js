@@ -10,8 +10,8 @@ ChromeUtils.defineESModuleGetters(this, {
   WebChannel: "resource://gre/modules/WebChannel.sys.mjs",
 });
 
-var { FxAccountsWebChannel } = ChromeUtils.import(
-  "resource://gre/modules/FxAccountsWebChannel.jsm"
+var { FxAccountsWebChannel } = ChromeUtils.importESModule(
+  "resource://gre/modules/FxAccountsWebChannel.sys.mjs"
 );
 
 

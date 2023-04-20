@@ -1,8 +1,8 @@
 
 
 
-const { FxAccounts } = ChromeUtils.import(
-  "resource://gre/modules/FxAccounts.jsm"
+const { FxAccounts } = ChromeUtils.importESModule(
+  "resource://gre/modules/FxAccounts.sys.mjs"
 );
 
 const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(

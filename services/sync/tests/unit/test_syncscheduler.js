@@ -1,8 +1,8 @@
 
 
 
-const { FxAccounts } = ChromeUtils.import(
-  "resource://gre/modules/FxAccounts.jsm"
+const { FxAccounts } = ChromeUtils.importESModule(
+  "resource://gre/modules/FxAccounts.sys.mjs"
 );
 const { SyncAuthManager } = ChromeUtils.importESModule(
   "resource://services-sync/sync_auth.sys.mjs"
