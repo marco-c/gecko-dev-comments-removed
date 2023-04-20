@@ -31,14 +31,6 @@ window.onload = function() {
   }
 
   
-  
-  let anchor = document.getElementById("linkMoreTroubleshooting");
-  if (anchor) {
-    let baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
-    anchor.setAttribute("href", baseURL + "troubleshooting");
-  }
-
-  
   for (let radioId of ["radioRestoreAll", "radioRestoreChoose"]) {
     let button = document.getElementById(radioId);
     if (button) {
