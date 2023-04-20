@@ -18,10 +18,11 @@
 #include "nsAtom.h"
 #include "nsGkAtoms.h"
 #include "nsCOMPtr.h"
-#include "nsMenuFrame.h"
+#include "nsIDOMEventListener.h"
+#include "nsIReflowCallback.h"
+#include "nsXULPopupManager.h"
 
 #include "nsBoxFrame.h"
-#include "nsMenuParent.h"
 
 #include "Units.h"
 
@@ -31,6 +32,8 @@ namespace mozilla {
 class PresShell;
 namespace dom {
 class KeyboardEvent;
+class XULButtonElement;
+class XULPopupElement;
 }  
 }  
 
@@ -124,9 +127,7 @@ class nsXULPopupShownEvent final : public mozilla::Runnable,
   const RefPtr<nsPresContext> mPresContext;
 };
 
-class nsMenuPopupFrame final : public nsBoxFrame,
-                               public nsMenuParent,
-                               public nsIReflowCallback {
+class nsMenuPopupFrame final : public nsBoxFrame, public nsIReflowCallback {
  public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsMenuPopupFrame)
@@ -135,25 +136,9 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   ~nsMenuPopupFrame();
 
   
-  virtual nsMenuFrame* GetCurrentMenuItem() override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  NS_IMETHOD SetCurrentMenuItem(nsMenuFrame* aMenuItem) override;
-  virtual void CurrentMenuIsBeingDestroyed() override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  NS_IMETHOD ChangeMenuItem(nsMenuFrame* aMenuItem, bool aSelectFirstItem,
-                            bool aFromKey) override;
-
-  
   
   nsPopupState PopupState() { return mPopupState; }
   void SetPopupState(nsPopupState);
-
-  NS_IMETHOD SetActive(bool aActiveFlag) override {
-    
-    return NS_OK;
-  }
-  virtual bool IsActive() override { return false; }
-  virtual bool IsMenuBar() override { return false; }
 
   
 
@@ -173,16 +158,11 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   ConsumeOutsideClicksResult ConsumeOutsideClicks();
 
+  mozilla::dom::XULPopupElement& PopupElement() const;
+
   void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;
-
-  bool IsContextMenu() override { return mIsContextMenu; }
-
-  bool MenuClosed() override { return true; }
-
-  void LockMenuUntilClosed(bool aLock) override;
-  bool IsMenuLocked() override { return mIsMenuLocked; }
 
   nsIWidget* GetWidget() const;
 
@@ -193,8 +173,9 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                     int32_t aModType) override;
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot,
-                           PostDestroyData& aPostDestroyData) override;
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DestroyFrom(
+      nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
 
   bool HasRemoteContent() const;
 
@@ -215,6 +196,8 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   void PrepareWidget(bool aRecreate = false);
 
+  MOZ_CAN_RUN_SCRIPT void EnsureActiveMenuListItemIsVisible();
+
   nsresult CreateWidgetForView(nsView* aView);
   mozilla::StyleWindowShadow GetShadowStyle();
 
@@ -234,13 +217,24 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   
+  MOZ_CAN_RUN_SCRIPT void HandleEnterKeyPress(mozilla::WidgetEvent&);
+
   
   
-  nsMenuFrame* Enter(mozilla::WidgetGUIEvent* aEvent);
+  
+  
+  
+  
+  mozilla::dom::XULButtonElement* FindMenuWithShortcut(
+      mozilla::dom::KeyboardEvent& aKeyEvent, bool& aDoAction);
+
+  mozilla::dom::XULButtonElement* GetCurrentMenuItem() const;
+  nsIFrame* GetCurrentMenuItemFrame() const;
 
   nsPopupType PopupType() const { return mPopupType; }
-  bool IsMenu() override { return mPopupType == ePopupTypeMenu; }
-  bool IsOpen() override {
+  bool IsContextMenu() const { return mIsContextMenu; }
+
+  bool IsOpen() const {
     return mPopupState == ePopupOpening || mPopupState == ePopupVisible ||
            mPopupState == ePopupShown;
   }
@@ -295,16 +289,8 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   void ShowPopup(bool aIsContextMenu);
   
   
-  void HidePopup(bool aDeselectMenu, nsPopupState aNewState);
-
-  
-  
-  
-  
-  
-  
-  nsMenuFrame* FindMenuWithShortcut(mozilla::dom::KeyboardEvent* aKeyEvent,
-                                    bool& doAction);
+  MOZ_CAN_RUN_SCRIPT void HidePopup(bool aDeselectMenu, nsPopupState aNewState,
+                                    bool aFromFrameDestruction = false);
 
   void ClearIncrementalString() { mIncrementalString.Truncate(); }
   static bool IsWithinIncrementalTime(mozilla::TimeStamp time) {
@@ -319,9 +305,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   }
 #endif
 
-  MOZ_CAN_RUN_SCRIPT void EnsureMenuItemIsVisible(nsMenuFrame* aMenuFrame);
-
-  void ChangeByPage(bool aIsUp);
+  MOZ_CAN_RUN_SCRIPT void ChangeByPage(bool aIsUp);
 
   
   
@@ -543,7 +527,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   nsCOMPtr<nsIContent> mTriggerContent;
 
-  nsMenuFrame* mCurrentMenu;  
   nsView* mView;
 
   RefPtr<nsXULPopupShownEvent> mPopupShownDispatcher;
@@ -614,7 +597,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   bool mMenuCanOverlapOSBar;  
   bool mInContentShell;       
-  bool mIsMenuLocked;         
 
   
   

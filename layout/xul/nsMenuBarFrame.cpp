@@ -5,13 +5,13 @@
 
 
 #include "nsMenuBarFrame.h"
+#include "mozilla/BasicEvents.h"
 #include "nsIContent.h"
 #include "nsAtom.h"
 #include "nsPresContext.h"
 #include "nsCSSRendering.h"
 #include "nsNameSpaceManager.h"
 #include "nsGkAtoms.h"
-#include "nsMenuFrame.h"
 #include "nsMenuPopupFrame.h"
 #include "nsUnicharUtils.h"
 #include "nsPIDOMWindow.h"
@@ -24,13 +24,11 @@
 #include "nsUTF8Utils.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/TextEvents.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/Event.h"
-#include "mozilla/dom/KeyboardEvent.h"
+#include "mozilla/dom/XULMenuParentElement.h"
+#include "mozilla/dom/XULButtonElement.h"
 
 using namespace mozilla;
-using mozilla::dom::KeyboardEvent;
 
 
 
@@ -52,11 +50,7 @@ NS_QUERYFRAME_TAIL_INHERITING(nsBoxFrame)
 
 nsMenuBarFrame::nsMenuBarFrame(ComputedStyle* aStyle,
                                nsPresContext* aPresContext)
-    : nsBoxFrame(aStyle, aPresContext, kClassID),
-      mStayActive(false),
-      mIsActive(false),
-      mActiveByKeyboard(false),
-      mCurrentMenu(nullptr) {}  
+    : nsBoxFrame(aStyle, aPresContext, kClassID) {}
 
 void nsMenuBarFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                           nsIFrame* aPrevInFlow) {
@@ -66,20 +60,27 @@ void nsMenuBarFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   mMenuBarListener = new nsMenuBarListener(this, aContent);
 }
 
-NS_IMETHODIMP
-nsMenuBarFrame::SetActive(bool aActiveFlag) {
+dom::XULMenuParentElement& nsMenuBarFrame::MenubarElement() const {
+  auto* content = dom::XULMenuParentElement::FromNode(GetContent());
+  MOZ_DIAGNOSTIC_ASSERT(content);
+  return *content;
+}
+
+MOZ_CAN_RUN_SCRIPT void nsMenuBarFrame::SetActive(bool aActiveFlag) {
   
-  if (mIsActive == aActiveFlag) return NS_OK;
+  if (mIsActive == aActiveFlag) {
+    return;
+  }
 
   if (!aActiveFlag) {
     
-    if (mStayActive) return NS_OK;
-
     
     
-    
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm && pm->IsPopupOpenForMenuParent(this)) return NS_OK;
+    if (auto* activeChild = MenubarElement().GetActiveMenuChild()) {
+      if (activeChild->IsMenuPopupOpen()) {
+        return;
+      }
+    }
   }
 
   mIsActive = aActiveFlag;
@@ -90,257 +91,36 @@ nsMenuBarFrame::SetActive(bool aActiveFlag) {
     RemoveKeyboardNavigator();
   }
 
+  RefPtr menubar = &MenubarElement();
+  if (!aActiveFlag) {
+    menubar->SetActiveMenuChild(nullptr);
+  }
+
   constexpr auto active = u"DOMMenuBarActive"_ns;
   constexpr auto inactive = u"DOMMenuBarInactive"_ns;
-
-  FireDOMEvent(mIsActive ? active : inactive, mContent);
-
-  return NS_OK;
-}
-
-nsMenuFrame* nsMenuBarFrame::ToggleMenuActiveState() {
-  if (mIsActive) {
-    
-    SetActive(false);
-    if (mCurrentMenu) {
-      nsMenuFrame* closeframe = mCurrentMenu;
-      closeframe->SelectMenu(false);
-      mCurrentMenu = nullptr;
-      return closeframe;
-    }
-  } else {
-    
-    if (mCurrentMenu) mCurrentMenu->SelectMenu(false);
-
-    
-    
-    
-    nsMenuFrame* firstFrame =
-        nsXULPopupManager::GetNextMenuItem(this, nullptr, false, false);
-    if (firstFrame) {
-      
-      SetActive(true);
-      firstFrame->SelectMenu(true);
-
-      
-      mCurrentMenu = firstFrame;
-    }
-  }
-
-  return nullptr;
-}
-
-nsMenuFrame* nsMenuBarFrame::FindMenuWithShortcut(KeyboardEvent* aKeyEvent,
-                                                  bool aPeek) {
-  uint32_t charCode = aKeyEvent->CharCode();
-
-  AutoTArray<uint32_t, 10> accessKeys;
-  WidgetKeyboardEvent* nativeKeyEvent =
-      aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
-  if (nativeKeyEvent) {
-    nativeKeyEvent->GetAccessKeyCandidates(accessKeys);
-  }
-  if (accessKeys.IsEmpty() && charCode) accessKeys.AppendElement(charCode);
-
-  if (accessKeys.IsEmpty())
-    return nullptr;  
-
-  
-  nsContainerFrame* immediateParent =
-      nsXULPopupManager::ImmediateParentFrame(this);
-
-  
-  nsIFrame* foundMenu = nullptr;
-  size_t foundIndex = accessKeys.NoIndex;
-  nsIFrame* currFrame = immediateParent->PrincipalChildList().FirstChild();
-
-  while (currFrame) {
-    nsIContent* current = currFrame->GetContent();
-
-    
-    if (nsXULPopupManager::IsValidMenuItem(current, false)) {
-      
-      nsAutoString shortcutKey;
-      if (current->IsElement()) {
-        current->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey,
-                                      shortcutKey);
-      }
-      if (!shortcutKey.IsEmpty()) {
-        ToLowerCase(shortcutKey);
-        const char16_t* start = shortcutKey.BeginReading();
-        const char16_t* end = shortcutKey.EndReading();
-        uint32_t ch = UTF16CharEnumerator::NextChar(&start, end);
-        size_t index = accessKeys.IndexOf(ch);
-        if (index != accessKeys.NoIndex &&
-            (foundIndex == accessKeys.NoIndex || index < foundIndex)) {
-          foundMenu = currFrame;
-          foundIndex = index;
-        }
-      }
-    }
-    currFrame = currFrame->GetNextSibling();
-  }
-  if (foundMenu) {
-    return do_QueryFrame(foundMenu);
-  }
-
-  
-#ifdef XP_WIN
-  if (!aPeek) {
-    
-    
-    if (mIsActive) {
-      nsCOMPtr<nsISound> soundInterface = do_GetService("@mozilla.org/sound;1");
-      if (soundInterface) soundInterface->Beep();
-    }
-
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm) {
-      nsIFrame* popup = pm->GetTopPopup(ePopupTypeMenu);
-      if (popup) pm->HidePopup(popup->GetContent(), true, true, true, false);
-    }
-
-    SetCurrentMenuItem(nullptr);
-    SetActive(false);
-  }
-
-#endif  
-
-  return nullptr;
-}
-
-
-nsMenuFrame* nsMenuBarFrame::GetCurrentMenuItem() { return mCurrentMenu; }
-
-NS_IMETHODIMP
-nsMenuBarFrame::SetCurrentMenuItem(nsMenuFrame* aMenuItem) {
-  if (mCurrentMenu == aMenuItem) return NS_OK;
-
-  if (mCurrentMenu) mCurrentMenu->SelectMenu(false);
-
-  if (aMenuItem) aMenuItem->SelectMenu(true);
-
-  mCurrentMenu = aMenuItem;
-
-  return NS_OK;
-}
-
-void nsMenuBarFrame::CurrentMenuIsBeingDestroyed() {
-  mCurrentMenu->SelectMenu(false);
-  mCurrentMenu = nullptr;
-}
-
-class nsMenuBarSwitchMenu : public Runnable {
- public:
-  nsMenuBarSwitchMenu(nsIContent* aMenuBar, nsIContent* aOldMenu,
-                      nsIContent* aNewMenu, bool aSelectFirstItem)
-      : mozilla::Runnable("nsMenuBarSwitchMenu"),
-        mMenuBar(aMenuBar),
-        mOldMenu(aOldMenu),
-        mNewMenu(aNewMenu),
-        mSelectFirstItem(aSelectFirstItem) {}
-
-  NS_IMETHOD Run() override {
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (!pm) return NS_ERROR_UNEXPECTED;
-
-    
-    
-    nsMenuBarFrame* menubar = nullptr;
-    if (mOldMenu && mNewMenu) {
-      menubar = do_QueryFrame(mMenuBar->GetPrimaryFrame());
-      if (menubar) menubar->SetStayActive(true);
-    }
-
-    if (mOldMenu) {
-      AutoWeakFrame weakMenuBar(menubar);
-      pm->HidePopup(mOldMenu, false, false, false, false);
-      
-      if (mNewMenu && weakMenuBar.IsAlive()) menubar->SetStayActive(false);
-    }
-
-    if (mNewMenu) {
-      pm->ShowMenu(mNewMenu, mSelectFirstItem);
-    }
-
-    return NS_OK;
-  }
-
- private:
-  nsCOMPtr<nsIContent> mMenuBar;
-  nsCOMPtr<nsIContent> mOldMenu;
-  nsCOMPtr<nsIContent> mNewMenu;
-  bool mSelectFirstItem;
-};
-
-NS_IMETHODIMP
-nsMenuBarFrame::ChangeMenuItem(nsMenuFrame* aMenuItem, bool aSelectFirstItem,
-                               bool aFromKey) {
-  if (mCurrentMenu == aMenuItem) return NS_OK;
-
-  
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm && pm->HasContextMenu(nullptr)) return NS_OK;
-
-  nsIContent* aOldMenu = nullptr;
-  nsIContent* aNewMenu = nullptr;
-
-  
-  bool wasOpen = false;
-  if (mCurrentMenu) {
-    wasOpen = mCurrentMenu->IsOpen();
-    mCurrentMenu->SelectMenu(false);
-    if (wasOpen) {
-      nsMenuPopupFrame* popupFrame = mCurrentMenu->GetPopup();
-      if (popupFrame) aOldMenu = popupFrame->GetContent();
-    }
-  }
-
-  
-  mCurrentMenu = nullptr;
-
-  
-  if (aMenuItem) {
-    nsCOMPtr<nsIContent> content = aMenuItem->GetContent();
-    aMenuItem->SelectMenu(true);
-    mCurrentMenu = aMenuItem;
-    if (wasOpen && !aMenuItem->IsDisabled()) aNewMenu = content;
-  }
-
-  
-  
-  nsCOMPtr<nsIRunnable> event = new nsMenuBarSwitchMenu(
-      GetContent(), aOldMenu, aNewMenu, aSelectFirstItem);
-  return mContent->OwnerDoc()->Dispatch(TaskCategory::Other, event.forget());
-}
-
-nsMenuFrame* nsMenuBarFrame::Enter(WidgetGUIEvent* aEvent) {
-  if (!mCurrentMenu) return nullptr;
-
-  if (mCurrentMenu->IsOpen()) return mCurrentMenu->Enter(aEvent);
-
-  return mCurrentMenu;
-}
-
-bool nsMenuBarFrame::MenuClosed() {
-  SetActive(false);
-  if (!mIsActive && mCurrentMenu) {
-    mCurrentMenu->SelectMenu(false);
-    mCurrentMenu = nullptr;
-    return true;
-  }
-  return false;
+  FireDOMEvent(aActiveFlag ? active : inactive, menubar);
 }
 
 void nsMenuBarFrame::InstallKeyboardNavigator() {
-  nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-  if (pm) pm->SetActiveMenuBar(this, true);
+  if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
+    pm->SetActiveMenuBar(this, true);
+  }
+}
+
+void nsMenuBarFrame::MenuClosed() { SetActive(false); }
+
+void nsMenuBarFrame::HandleEnterKeyPress(WidgetEvent& aEvent) {
+  if (RefPtr<dom::XULButtonElement> activeChild =
+          MenubarElement().GetActiveMenuChild()) {
+    activeChild->HandleEnterKeyPress(aEvent);
+  }
 }
 
 void nsMenuBarFrame::RemoveKeyboardNavigator() {
   if (!mIsActive) {
-    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
-    if (pm) pm->SetActiveMenuBar(this, false);
+    if (nsXULPopupManager* pm = nsXULPopupManager::GetInstance()) {
+      pm->SetActiveMenuBar(this, false);
+    }
   }
 }
 

@@ -341,6 +341,11 @@ class nsXULElement : public nsStyledElement {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsXULElement, nsStyledElement)
 
   
+  
+  
+  bool IsDisabled() const = delete;
+
+  
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult PreHandleEvent(
