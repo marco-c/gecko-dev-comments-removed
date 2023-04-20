@@ -16,9 +16,6 @@ add_task(async function test_execute_sidebar_action() {
         default_panel: "sidebar.html",
       },
     },
-    
-    
-    startupReason: "APP_STARTUP",
     files: {
       "sidebar.html": `
         <!DOCTYPE html>
@@ -45,9 +42,11 @@ add_task(async function test_execute_sidebar_action() {
 
   await extension.startup();
   await SimpleTest.promiseFocus(window);
+  
+  
   ok(
     document.getElementById("sidebar-box").hidden,
-    `Sidebar box is not visible after "not-first" startup.`
+    "sidebar box is not visible"
   );
   
   EventUtils.synthesizeKey("j", { altKey: true, shiftKey: true });
