@@ -11,7 +11,7 @@ var EXPORTED_SYMBOLS = ["AddonTestUtils", "MockAsyncShutdown"];
 
 const CERTDB_CONTRACTID = "@mozilla.org/security/x509certdb;1";
 
-const { AddonManager, AddonManagerPrivate, AMTelemetry } = ChromeUtils.import(
+const { AddonManager, AddonManagerPrivate } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
 const { AsyncShutdown } = ChromeUtils.importESModule(
@@ -1790,17 +1790,12 @@ var AddonTestUtils = {
 
 
   hookAMTelemetryEvents() {
-    let originalRecordEvent = AMTelemetry.recordEvent;
-    AMTelemetry.recordEvent = event => {
-      this.collectedTelemetryEvents.push(event);
-    };
     this.testScope.registerCleanupFunction(() => {
       this.testScope.Assert.deepEqual(
         [],
-        this.collectedTelemetryEvents,
+        this.getAMTelemetryEvents(),
         "No unexamined telemetry events after test is finished"
       );
-      AMTelemetry.recordEvent = originalRecordEvent;
     });
   },
 
@@ -1811,8 +1806,21 @@ var AddonTestUtils = {
 
 
   getAMTelemetryEvents() {
-    let events = this.collectedTelemetryEvents;
-    this.collectedTelemetryEvents = [];
+    
+    let snapshots = Services.telemetry.snapshotEvents(
+      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
+       true
+    );
+    let events = (snapshots.parent ?? [])
+      .filter(entry => entry[1] == "addonsManager")
+      .map(entry => ({
+        
+        method: entry[2],
+        object: entry[3],
+        value: entry[4],
+        extra: entry[5],
+      }));
+
     return events;
   },
 };
