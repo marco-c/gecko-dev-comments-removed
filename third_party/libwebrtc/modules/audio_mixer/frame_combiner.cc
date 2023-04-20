@@ -98,9 +98,7 @@ void MixToFloatFrame(rtc::ArrayView<const AudioFrame* const> mix_list,
   RTC_DCHECK_LE(samples_per_channel, FrameCombiner::kMaximumChannelSize);
   RTC_DCHECK_LE(number_of_channels, FrameCombiner::kMaximumNumberOfChannels);
   
-  for (auto& one_channel_buffer : *mixing_buffer) {
-    std::fill(one_channel_buffer.begin(), one_channel_buffer.end(), 0.f);
-  }
+  *mixing_buffer = {};
 
   
   for (size_t i = 0; i < mix_list.size(); ++i) {
