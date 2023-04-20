@@ -373,29 +373,8 @@ void PendingStyles::PreserveStyle(nsStaticAtom& aHTMLProperty,
     return;
   }
 
-  
-  
-  
-  
-  uint32_t fontStyleCount = 0;
-  for (const UniquePtr<PendingStyle>& style : Reversed(mPreservingStyles)) {
-    if (style->GetTag() != nsGkAtoms::font ||
-        style->GetAttribute() == nsGkAtoms::bgcolor) {
-      break;
-    }
-    MOZ_ASSERT(style->GetAttribute() == nsGkAtoms::color ||
-               style->GetAttribute() == nsGkAtoms::face ||
-               style->GetAttribute() == nsGkAtoms::size);
-    fontStyleCount++;
-  }
-  UniquePtr<PendingStyle> style = MakeUnique<PendingStyle>(
-      &aHTMLProperty, aAttribute, aAttributeValueOrCSSValue);
-  if (fontStyleCount) {
-    mPreservingStyles.InsertElementAt(
-        mPreservingStyles.Length() - fontStyleCount, std::move(style));
-  } else {
-    mPreservingStyles.AppendElement(std::move(style));
-  }
+  mPreservingStyles.AppendElement(MakeUnique<PendingStyle>(
+      &aHTMLProperty, aAttribute, aAttributeValueOrCSSValue));
 
   CancelClearingStyle(aHTMLProperty, aAttribute);
 }
