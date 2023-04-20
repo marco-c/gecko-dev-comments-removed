@@ -311,7 +311,7 @@ static void CalculateToolbarButtonMetrics(WidgetNodeType aAppearance,
 
   GtkStyleContext* style = GetStyleContext(aAppearance);
   gint width = 0, height = 0;
-  if (gtk_check_version(3, 20, 0) == nullptr) {
+  if (!gtk_check_version(3, 20, 0)) {
     gtk_style_context_get(style, gtk_style_context_get_state(style),
                           "min-width", &width, "min-height", &height, NULL);
   }
@@ -420,35 +420,36 @@ size_t GetGtkHeaderBarButtonLayout(Span<ButtonLayout> aButtonLayout,
 }
 
 static void EnsureToolbarMetrics() {
-  if (!sToolbarMetrics.initialized) {
+  if (sToolbarMetrics.initialized) {
+    return;
+  }
+  
+  memset(&sToolbarMetrics, 0, sizeof(sToolbarMetrics));
+
+  
+  ButtonLayout aButtonLayout[TOOLBAR_BUTTONS];
+  size_t activeButtonNums =
+      GetGtkHeaderBarButtonLayout(Span(aButtonLayout), nullptr);
+
+  for (size_t i = 0; i < activeButtonNums; i++) {
+    int buttonIndex =
+        (aButtonLayout[i].mType - MOZ_GTK_HEADER_BAR_BUTTON_CLOSE);
+    ToolbarButtonGTKMetrics* metrics = sToolbarMetrics.button + buttonIndex;
+    metrics->visible = true;
     
-    memset(&sToolbarMetrics, 0, sizeof(sToolbarMetrics));
-
+    if (!i) {
+      metrics->firstButton = true;
+    }
     
-    ButtonLayout aButtonLayout[TOOLBAR_BUTTONS];
-    size_t activeButtonNums =
-        GetGtkHeaderBarButtonLayout(Span(aButtonLayout), nullptr);
-
-    for (size_t i = 0; i < activeButtonNums; i++) {
-      int buttonIndex =
-          (aButtonLayout[i].mType - MOZ_GTK_HEADER_BAR_BUTTON_CLOSE);
-      ToolbarButtonGTKMetrics* metrics = sToolbarMetrics.button + buttonIndex;
-      metrics->visible = true;
-      
-      if (!i) {
-        metrics->firstButton = true;
-      }
-      
-      if (i == (activeButtonNums - 1)) {
-        metrics->lastButton = true;
-      }
-
-      CalculateToolbarButtonMetrics(aButtonLayout[i].mType, metrics);
-      CalculateToolbarButtonSpacing(aButtonLayout[i].mType, metrics);
+    if (i == (activeButtonNums - 1)) {
+      metrics->lastButton = true;
     }
 
-    sToolbarMetrics.initialized = true;
+    CalculateToolbarButtonMetrics(aButtonLayout[i].mType, metrics);
+    CalculateToolbarButtonSpacing(aButtonLayout[i].mType, metrics);
   }
+
+  sToolbarMetrics.initialized = true;
 }
 
 const ToolbarButtonGTKMetrics* GetToolbarButtonMetrics(
