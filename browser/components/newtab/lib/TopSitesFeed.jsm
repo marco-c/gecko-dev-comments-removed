@@ -654,6 +654,70 @@ class TopSitesFeed {
     return false;
   }
 
+  insertDiscoveryStreamSpocs(sponsored) {
+    const { DiscoveryStream } = this.store.getState();
+    if (DiscoveryStream) {
+      const discoveryStreamSpocs =
+        DiscoveryStream.spocs.data["sponsored-topsites"]?.items;
+      
+      const findSponsoredTopsitesPositions = name => {
+        for (const row of DiscoveryStream.layout) {
+          for (const component of row.components) {
+            if (component.placement?.name === name) {
+              return component.spocs.positions;
+            }
+          }
+        }
+        return null;
+      };
+
+      
+      const discoveryStreamSpocPositions = findSponsoredTopsitesPositions(
+        "sponsored-topsites"
+      );
+
+      if (discoveryStreamSpocPositions?.length) {
+        function reformatImageURL(url, width, height) {
+          
+          
+          
+          return `https://img-getpocket.cdn.mozilla.net/${width}x${height}/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(
+            url
+          )}`;
+        }
+
+        
+        
+        
+        const minLength = Math.min(
+          discoveryStreamSpocPositions.length,
+          discoveryStreamSpocs.length
+        );
+        
+        for (let i = 0; i < minLength; i++) {
+          const positionIndex = discoveryStreamSpocPositions[i].index;
+          const spoc = discoveryStreamSpocs[i];
+          const link = {
+            customScreenshotURL: reformatImageURL(spoc.raw_image_src, 40, 40),
+            type: "SPOC",
+            label: spoc.title || spoc.sponsor,
+            title: spoc.title || spoc.sponsor,
+            url: spoc.url,
+            flightId: spoc.flight_id,
+            id: spoc.id,
+            guid: spoc.id,
+            shim: spoc.shim,
+            
+            
+            
+            pos: positionIndex,
+          };
+          sponsored.push(link);
+        }
+      }
+    }
+  }
+
   
   async getLinksWithDefaults(isStartup = false) {
     const prefValues = this.store.getState().Prefs.values;
@@ -755,6 +819,8 @@ class TopSitesFeed {
       }
     }
 
+    this.insertDiscoveryStreamSpocs(sponsored);
+
     
     let plainPinned = await this.pinnedCache.request();
 
@@ -840,12 +906,23 @@ class TopSitesFeed {
         return;
       }
       let index = link.sponsored_position - 1;
+      
+      if (link.type === "SPOC") {
+        index = link.pos;
+      }
       if (index > withPinned.length) {
+        withPinned[index] = link;
+      } else if (
+        link.type === "SPOC" &&
+        withPinned[index].show_sponsored_label
+      ) {
+        
         withPinned[index] = link;
       } else {
         withPinned.splice(index, 0, link);
       }
     });
+
     
     withPinned = withPinned.slice(0, numItems);
 
@@ -1200,8 +1277,10 @@ class TopSitesFeed {
     
     let adjustedIndex = index;
     for (let i = 0; i < index; i++) {
+      const link = this._linksWithDefaults[i];
       if (
-        this._linksWithDefaults[i]?.sponsored_position &&
+        link &&
+        (link.sponsored_position || link.type === "SPOC") &&
         this._linksWithDefaults[i]?.url !== site.url
       ) {
         adjustedIndex--;
@@ -1393,6 +1472,10 @@ class TopSitesFeed {
         break;
       case at.UPDATE_PINNED_SEARCH_SHORTCUTS:
         this.updatePinnedSearchShortcuts(action.data);
+        break;
+      case at.DISCOVERY_STREAM_SPOCS_UPDATE:
+        
+        this.refresh({ broadcast: true });
         break;
       case at.UNINIT:
         this.uninit();
