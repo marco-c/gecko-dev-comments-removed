@@ -652,28 +652,24 @@ add_task(async function addSpeakerPermission() {
 
   
   Assert.equal(richlistbox.itemCount, 1, "itemCount with allow");
-  let richlistitem = richlistbox.itemChildren[0];
-  let label = richlistitem.getElementsByTagName("label")[0];
-  Assert.equal(label.value, URL, "label.value");
-  let siteStatus = richlistitem.querySelector(".website-status");
-  Assert.equal(siteStatus.value, Services.perms.ALLOW_ACTION, "website status");
-  
-  
-  Assert.equal(siteStatus.tagName, "hbox");
-  Assert.equal(siteStatus.firstElementChild.tagName, "label");
+  checkMenulistPermissionItem(URL, Services.perms.ALLOW_ACTION);
 
   
   
   PermissionTestUtils.add(URI, "speaker", Services.perms.DENY_ACTION);
 
   Assert.equal(richlistbox.itemCount, 1, "itemCount with deny and allow");
-  richlistitem = richlistbox.itemChildren[0];
-  siteStatus = richlistitem.querySelector(".website-status");
+  let richlistitem = richlistbox.itemChildren[0];
+  let siteStatus = richlistitem.querySelector(".website-status");
   Assert.equal(
     siteStatus.value,
     Services.perms.DENY_ACTION,
     "website status with deny and allow"
   );
+  
+  
+  Assert.equal(siteStatus.tagName, "hbox");
+  Assert.equal(siteStatus.firstElementChild.tagName, "label");
 
   PermissionTestUtils.remove(URI, devicePermissionId);
   PermissionTestUtils.remove(URI, "speaker");

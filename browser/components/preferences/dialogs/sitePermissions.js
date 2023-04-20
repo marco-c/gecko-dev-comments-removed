@@ -93,6 +93,12 @@ class PermissionGroup {
     if (this.#changedCapability) {
       return this.#changedCapability;
     }
+    return this.savedCapability;
+  }
+  revert() {
+    this.#changedCapability = null;
+  }
+  get savedCapability() {
     
     
     
@@ -384,6 +390,7 @@ var gSitePermissionsManager = {
 
   _removePermissionFromList(origin) {
     this._permissionGroups.delete(origin);
+    this._permissionsToChange.delete(origin);
     let permissionlistitem = document.getElementsByAttribute(
       "origin",
       origin
@@ -411,23 +418,14 @@ var gSitePermissionsManager = {
     hbox.setAttribute("class", "website-name");
     hbox.appendChild(website);
 
-    let states = SitePermissions.getAvailableStates(this._type).flatMap(
-      state => {
-        
-        
-        
-        if (
-          state == SitePermissions.UNKNOWN &&
-          permissionGroup.capability == SitePermissions.PROMPT
-        ) {
-          return SitePermissions.PROMPT;
-        }
-        if (state == SitePermissions.UNKNOWN) {
-          return [];
-        }
-        return state;
-      }
+    let states = SitePermissions.getAvailableStates(this._type).filter(
+      state => state != SitePermissions.UNKNOWN
     );
+    
+    
+    if (!states.includes(permissionGroup.savedCapability)) {
+      states.unshift(permissionGroup.savedCapability);
+    }
     let siteStatus;
     if (states.length == 1) {
       
@@ -516,8 +514,13 @@ var gSitePermissionsManager = {
     if (group.capability == capability) {
       return;
     }
-    group.capability = capability;
-    this._permissionsToChange.set(group.origin, group);
+    if (capability == group.savedCapability) {
+      group.revert();
+      this._permissionsToChange.delete(group.origin);
+    } else {
+      group.capability = capability;
+      this._permissionsToChange.set(group.origin, group);
+    }
 
     
     this._setRemoveButtonState();
@@ -529,18 +532,22 @@ var gSitePermissionsManager = {
     
     this.uninit();
 
+    
+    for (let group of [
+      ...this._permissionsToDelete.values(),
+      ...this._permissionsToChange.values(),
+    ]) {
+      for (let perm of group.perms) {
+        SitePermissions.removeFromPrincipal(perm.principal, perm.type);
+      }
+    }
+
     for (let group of this._permissionsToChange.values()) {
       SitePermissions.setForPrincipal(
         group.principal,
         this._type,
         group.capability
       );
-    }
-
-    for (let group of this._permissionsToDelete.values()) {
-      for (let perm of group.perms) {
-        SitePermissions.removeFromPrincipal(perm.principal, perm.type);
-      }
     }
 
     if (this._checkbox.checked) {
