@@ -91,8 +91,9 @@ SCHEMAS = [
             ),
         },
         bundle_common=True,
-        
         test_corpus={
+            "ReachExperiments": Path("corpus", "ReachExperiments.messages.json"),
+            
             "CFRMessageProvider": Path("corpus", "CFRMessageProvider.messages.json"),
             "OnboardingMessageProvider": Path(
                 "corpus", "OnboardingMessageProvider.messages.json"
@@ -316,57 +317,42 @@ def bundle_schema(schema_def: SchemaDefinition):
         "$id": schema_def.schema_id,
         "title": "Messaging Experiment",
         "description": "A Firefox Messaging System message.",
-        
-        
-        
-        
-        "oneOf": [
-            {
-                "description": "An empty FxMS message.",
-                "type": "object",
-                "additionalProperties": False,
-            },
-            {
-                "allOf": [
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    {"$ref": f"{schema_def.schema_id}#/$defs/Message"},
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    *(
-                        {
-                            "if": {
-                                "type": "object",
-                                "properties": {
-                                    "template": {
-                                        "type": "string",
-                                        "enum": templates[message_type],
-                                    },
-                                },
-                                "required": ["template"],
+        "allOf": [
+            
+            
+            
+            
+            
+            
+            
+            {"$ref": f"{schema_def.schema_id}#/$defs/Message"},
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            *(
+                {
+                    "if": {
+                        "type": "object",
+                        "properties": {
+                            "template": {
+                                "type": "string",
+                                "enum": templates[message_type],
                             },
-                            "then": {
-                                "$ref": f"{schema_def.schema_id}#/$defs/{message_type}"
-                            },
-                        }
-                        for message_type in schema_def.message_types
-                    ),
-                ],
-            },
+                        },
+                        "required": ["template"],
+                    },
+                    "then": {"$ref": f"{schema_def.schema_id}#/$defs/{message_type}"},
+                }
+                for message_type in schema_def.message_types
+            ),
         ],
         "$defs": defs,
     }
