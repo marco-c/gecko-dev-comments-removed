@@ -2278,6 +2278,8 @@ void PresShell::NotifyDestroyingFrame(nsIFrame* aFrame) {
       mPendingScrollAnchorAdjustment.Remove(scrollableFrame);
       mPendingScrollResnap.Remove(scrollableFrame);
     }
+
+    mContentVisibilityAutoFrames.Remove(aFrame);
   }
 }
 
@@ -3662,6 +3664,18 @@ nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
   }
 
   
+  
+  
+  if (mContentToScrollTo) {
+    if (nsIFrame* frame = mContentToScrollTo->GetPrimaryFrame()) {
+      if (frame->IsHiddenByContentVisibilityOnAnyAncestor(
+              nsIFrame::IncludeContentVisibility::Auto)) {
+        frame->PresShell()->EnsureReflowIfFrameHasHiddenContent(frame);
+      }
+    }
+  }
+
+  
   if (PresShell* presShell = composedDoc->GetPresShell()) {
     presShell->SetNeedLayoutFlush();
   }
@@ -3703,7 +3717,9 @@ void PresShell::DoScrollContentIntoView() {
   NS_ASSERTION(mDidInitialize, "should have done initial reflow by now");
 
   nsIFrame* frame = mContentToScrollTo->GetPrimaryFrame();
-  if (!frame || frame->IsHiddenByContentVisibilityOnAnyAncestor()) {
+
+  if (!frame || frame->IsHiddenByContentVisibilityOnAnyAncestor(
+                    nsIFrame::IncludeContentVisibility::Hidden)) {
     mContentToScrollTo->RemoveProperty(nsGkAtoms::scrolling);
     mContentToScrollTo = nullptr;
     return;
@@ -3730,10 +3746,6 @@ void PresShell::DoScrollContentIntoView() {
 bool PresShell::ScrollFrameIntoView(
     nsIFrame* aTargetFrame, const Maybe<nsRect>& aKnownRectRelativeToTarget,
     ScrollAxis aVertical, ScrollAxis aHorizontal, ScrollFlags aScrollFlags) {
-  if (aTargetFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
-    return false;
-  }
-
   
   
   const nsMargin scrollMargin =
@@ -4270,6 +4282,13 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
 
 
   FlushType flushType = aFlush.mFlushType;
+
+  
+  
+  
+  if (flushType >= mozilla::FlushType::Layout) {
+    UpdateRelevancyOfContentVisibilityAutoFrames();
+  }
 
   MOZ_ASSERT(NeedFlush(flushType), "Why did we get called?");
 
@@ -11897,4 +11916,29 @@ void PresShell::EnsureReflowIfFrameHasHiddenContent(nsIFrame* aFrame) {
 
 bool PresShell::IsForcingLayoutForHiddenContent(const nsIFrame* aFrame) const {
   return mHiddenContentInForcedLayout.Contains(aFrame->GetContent());
+}
+
+void PresShell::UpdateRelevancyOfContentVisibilityAutoFrames() {
+  if (mContentVisibilityRelevancyToUpdate.isEmpty()) {
+    return;
+  }
+
+  for (nsIFrame* frame : mContentVisibilityAutoFrames) {
+    frame->UpdateIsRelevantContent(mContentVisibilityRelevancyToUpdate);
+  }
+
+  mContentVisibilityRelevancyToUpdate.clear();
+}
+
+void PresShell::ScheduleContentRelevancyUpdate(ContentRelevancyReason aReason) {
+  if (MOZ_UNLIKELY(mIsDestroying)) {
+    return;
+  }
+
+  mContentVisibilityRelevancyToUpdate += aReason;
+
+  SetNeedLayoutFlush();
+  if (nsPresContext* presContext = GetPresContext()) {
+    presContext->RefreshDriver()->EnsureContentRelevancyUpdateHappens();
+  }
 }

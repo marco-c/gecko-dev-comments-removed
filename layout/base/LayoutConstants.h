@@ -92,6 +92,21 @@ inline constexpr nsSize kFallbackIntrinsicSize(kFallbackIntrinsicWidth,
 
 enum class IntrinsicISizeType { MinISize, PrefISize };
 
+enum class ContentRelevancyReason {
+  
+  Visible,
+
+  
+  DescendantOfTopLayerElement,
+
+  
+  FocusInSubtree,
+
+  
+  Selected,
+};
+using ContentRelevancy = EnumSet<ContentRelevancyReason, uint8_t>;
+
 }  
 
 #endif  

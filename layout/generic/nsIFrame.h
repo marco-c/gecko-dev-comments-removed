@@ -536,6 +536,7 @@ class nsIFrame : public nsQueryFrame {
   using ReflowOutput = mozilla::ReflowOutput;
   using Visibility = mozilla::Visibility;
   using LengthPercentage = mozilla::LengthPercentage;
+  using ContentRelevancy = mozilla::ContentRelevancy;
 
   using nsDisplayItem = mozilla::nsDisplayItem;
   using nsDisplayList = mozilla::nsDisplayList;
@@ -3183,8 +3184,31 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  bool IsContentVisibilityPropertyApplicable() const;
 
-  bool HidesContent() const;
+  enum class IncludeContentVisibility {
+    Auto,
+    Hidden,
+  };
+
+  constexpr static mozilla::EnumSet<IncludeContentVisibility>
+  IncludeAllContentVisibility() {
+    return {IncludeContentVisibility::Auto, IncludeContentVisibility::Hidden};
+  }
+
+  
+
+
+
+  bool IsContentRelevant() const;
+
+  
+
+
+
+
+  bool HidesContent(const mozilla::EnumSet<IncludeContentVisibility>& =
+                        IncludeAllContentVisibility()) const;
 
   
 
@@ -3198,13 +3222,37 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool IsHiddenByContentVisibilityOnAnyAncestor() const;
+
+  bool IsHiddenByContentVisibilityOnAnyAncestor(
+      const mozilla::EnumSet<IncludeContentVisibility>& =
+          IncludeAllContentVisibility()) const;
 
   
 
 
 
   bool IsHiddenByContentVisibilityOfInFlowParentForLayout() const;
+
+  
+
+
+
+
+  bool IsDescendantOfTopLayerElement() const;
+
+  
+
+
+
+
+  bool HasSelectionInSubtree();
+
+  
+
+
+
+
+  void UpdateIsRelevantContent(const ContentRelevancy& aRelevancyToUpdate);
 
   
 

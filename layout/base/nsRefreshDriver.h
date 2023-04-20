@@ -417,6 +417,11 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     mNeedToUpdateIntersectionObservations = true;
   }
 
+  void EnsureContentRelevancyUpdateHappens() {
+    EnsureTimerStarted();
+    mNeedToUpdateContentRelevancy = true;
+  }
+
   
   
   
@@ -429,9 +434,10 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     eHasObservers = 1 << 0,
     eHasImageRequests = 1 << 1,
     eNeedsToUpdateIntersectionObservations = 1 << 2,
-    eHasVisualViewportResizeEvents = 1 << 3,
-    eHasScrollEvents = 1 << 4,
-    eHasVisualViewportScrollEvents = 1 << 5,
+    eNeedsToUpdateContentRelevancy = 1 << 3,
+    eHasVisualViewportResizeEvents = 1 << 4,
+    eHasScrollEvents = 1 << 5,
+    eHasVisualViewportScrollEvents = 1 << 6,
   };
 
   void AddForceNotifyContentfulPaintPresContext(nsPresContext* aPresContext);
@@ -473,6 +479,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   MOZ_CAN_RUN_SCRIPT
   void RunFrameRequestCallbacks(mozilla::TimeStamp aNowTime);
   void UpdateIntersectionObservations(mozilla::TimeStamp aNowTime);
+  void UpdateRelevancyOfContentVisibilityAutoFrames();
 
   enum class IsExtraTick {
     No,
@@ -610,6 +617,10 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   
   bool mNeedToUpdateIntersectionObservations : 1;
+
+  
+  
+  bool mNeedToUpdateContentRelevancy : 1;
 
   
   
