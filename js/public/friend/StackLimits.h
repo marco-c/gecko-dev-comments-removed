@@ -1,24 +1,24 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef js_friend_StackLimits_h
 #define js_friend_StackLimits_h
 
-#include "mozilla/Attributes.h"  // MOZ_ALWAYS_INLINE, MOZ_COLD
-#include "mozilla/Likely.h"      // MOZ_LIKELY
-#include "mozilla/Variant.h"     // mozilla::Variant, mozilla::AsVariant
+#include "mozilla/Attributes.h"  
+#include "mozilla/Likely.h"      
+#include "mozilla/Variant.h"     
 
-#include <stddef.h>  // size_t
+#include <stddef.h>  
 
-#include "jstypes.h"  // JS_PUBLIC_API
+#include "jstypes.h"  
 
-#include "js/HeapAPI.h"  // JS::StackKind, JS::StackForTrustedScript, JS::StackForUntrustedScript
-#include "js/RootingAPI.h"  // JS::RootingContext
-#include "js/Stack.h"       // JS::NativeStackLimit
-#include "js/Utility.h"     // JS_STACK_OOM_POSSIBLY_FAIL
+#include "js/HeapAPI.h"  
+#include "js/RootingAPI.h"  
+#include "js/Stack.h"       
+#include "js/Utility.h"     
 
 struct JS_PUBLIC_API JSContext;
 
@@ -42,27 +42,27 @@ extern MOZ_COLD JS_PUBLIC_API bool CheckWasiRecursionLimit(JSContext* cx);
 extern MOZ_COLD JS_PUBLIC_API void IncWasiRecursionDepth(FrontendContext* fc);
 extern MOZ_COLD JS_PUBLIC_API void DecWasiRecursionDepth(FrontendContext* fc);
 extern MOZ_COLD JS_PUBLIC_API bool CheckWasiRecursionLimit(FrontendContext* fc);
-#endif  // __wasi__
+#endif  
 
-// AutoCheckRecursionLimit can be used to check whether we're close to using up
-// the C++ stack.
-//
-// Typical usage is like this:
-//
-//   AutoCheckRecursionLimit recursion(cx);
-//   if (!recursion.check(cx)) {
-//     return false;
-//   }
-//
-// The check* functions return |false| if we are close to the stack limit.
-// They also report an overrecursion error, except for the DontReport variants.
-//
-// The checkSystem variant gives us a little extra space so we can ensure that
-// crucial code is able to run.
-//
-// checkConservative allows less space than any other check, including a safety
-// buffer (as in, it uses the untrusted limit and subtracts a little more from
-// it).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_RAII AutoCheckRecursionLimit {
   [[nodiscard]] MOZ_ALWAYS_INLINE bool checkLimitImpl(
       JS::NativeStackLimit limit, void* sp) const;
@@ -76,36 +76,36 @@ class MOZ_RAII AutoCheckRecursionLimit {
   JS_PUBLIC_API void assertMainThread(JSContext* cx) const;
 
 #ifdef __wasi__
-  // The JSContext outlives AutoCheckRecursionLimit so it is safe to use raw
-  // pointer here.
+  
+  
   mozilla::Variant<JSContext*, FrontendContext*> context_;
-#endif  // __wasi__
+#endif  
 
  public:
   explicit MOZ_ALWAYS_INLINE AutoCheckRecursionLimit(JSContext* cx)
 #ifdef __wasi__
       : context_(mozilla::AsVariant(cx))
-#endif  // __wasi__
+#endif  
   {
 #ifdef __wasi__
     incWasiRecursionDepth();
-#endif  // __wasi__
+#endif  
   }
 
   explicit MOZ_ALWAYS_INLINE AutoCheckRecursionLimit(FrontendContext* fc)
 #ifdef __wasi__
       : context_(mozilla::AsVariant(fc))
-#endif  // __wasi__
+#endif  
   {
 #ifdef __wasi__
     incWasiRecursionDepth();
-#endif  // __wasi__
+#endif  
   }
 
   MOZ_ALWAYS_INLINE ~AutoCheckRecursionLimit() {
 #ifdef __wasi__
     decWasiRecursionDepth();
-#endif  // __wasi__
+#endif  
   }
 
 #ifdef __wasi__
@@ -144,7 +144,7 @@ class MOZ_RAII AutoCheckRecursionLimit {
 
     return true;
   }
-#endif  // __wasi__
+#endif  
 
   AutoCheckRecursionLimit(const AutoCheckRecursionLimit&) = delete;
   void operator=(const AutoCheckRecursionLimit&) = delete;
@@ -184,7 +184,7 @@ MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkLimitImpl(
   if (!checkWasiRecursionLimit()) {
     return false;
   }
-#endif  // __wasi__
+#endif  
 
 #if JS_STACK_GROWTH_DIRECTION > 0
   return MOZ_LIKELY(JS::NativeStackLimit(sp) < limit);
@@ -244,10 +244,10 @@ MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkDontReport(
 
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkWithStackPointerDontReport(
     JSContext* cx, void* sp) const {
-  // getStackLimitSlow(cx) is pretty slow because it has to do an uninlined
-  // call to stackKindForCurrentPrincipal to determine which stack limit to
-  // use. To work around this, check the untrusted limit first to avoid the
-  // overhead in most cases.
+  
+  
+  
+  
   JS::NativeStackLimit untrustedLimit =
       getStackLimitHelper(cx, JS::StackForUntrustedScript, 0);
   if (MOZ_LIKELY(checkLimitImpl(untrustedLimit, sp))) {
@@ -306,7 +306,7 @@ MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkConservative(
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkConservativeDontReport(
     JSContext* cx) const {
   JS::NativeStackLimit limit = getStackLimitHelper(
-      cx, JS::StackForUntrustedScript, -1024 * int(sizeof(size_t)));
+      cx, JS::StackForUntrustedScript, -4096 * int(sizeof(size_t)));
   int stackDummy;
   return checkLimitImpl(limit, &stackDummy);
 }
@@ -317,6 +317,6 @@ MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkConservativeDontReport(
   return checkLimitImpl(limit, &stackDummy);
 }
 
-}  // namespace js
+}  
 
-#endif  // js_friend_StackLimits_h
+#endif  
