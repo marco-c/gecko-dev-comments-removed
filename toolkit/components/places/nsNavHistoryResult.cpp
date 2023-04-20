@@ -3907,8 +3907,6 @@ void nsNavHistoryResult::requestRefresh(
 
 
 
-
-
 #define ENUMERATE_BOOKMARK_FOLDER_OBSERVERS(_folderGUID, _functionCall) \
   PR_BEGIN_MACRO                                                        \
   FolderObserverList* _fol =                                            \

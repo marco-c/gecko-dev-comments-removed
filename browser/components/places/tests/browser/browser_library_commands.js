@@ -83,8 +83,7 @@ add_task(async function test_date_container() {
   
   const promiseURIRemoved = PlacesTestUtils.waitForNotification(
     "page-removed",
-    events => events[0].url === TEST_URI.spec,
-    "places"
+    events => events[0].url === TEST_URI.spec
   );
   PO._places.controller.doCommand("cmd_delete");
   const removeEvents = await promiseURIRemoved;
@@ -182,8 +181,7 @@ add_task(async function test_query_on_toolbar() {
   
   let promiseItemRemoved = PlacesTestUtils.waitForNotification(
     "bookmark-removed",
-    events => events.some(event => query.guid == event.guid),
-    "places"
+    events => events.some(event => query.guid == event.guid)
   );
   PO._places.controller.doCommand("cmd_delete");
   await promiseItemRemoved;

@@ -20,9 +20,7 @@ add_task(async function() {
   
   
   const titleChangedPromise = PlacesTestUtils.waitForNotification(
-    "page-title-changed",
-    () => true,
-    "places"
+    "page-title-changed"
   );
 
   const url1 =

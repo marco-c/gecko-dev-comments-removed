@@ -67,21 +67,6 @@ class Observer {
 
 
 
-class BookmarksObserver extends Observer {
-  constructor(dispatch) {
-    super(dispatch, Ci.nsINavBookmarkObserver);
-    this.skipTags = true;
-  }
-
-  
-  
-  
-  onItemChanged() {}
-}
-
-
-
-
 class PlacesObserver extends Observer {
   constructor(dispatch) {
     super(dispatch, Ci.nsINavBookmarkObserver);
@@ -178,15 +163,10 @@ class PlacesFeed {
   constructor() {
     this.placesChangedTimer = null;
     this.customDispatch = this.customDispatch.bind(this);
-    this.bookmarksObserver = new BookmarksObserver(this.customDispatch);
     this.placesObserver = new PlacesObserver(this.customDispatch);
   }
 
   addObservers() {
-    
-    Cc["@mozilla.org/browser/nav-bookmarks-service;1"]
-      .getService(Ci.nsINavBookmarksService)
-      .addObserver(this.bookmarksObserver, true);
     lazy.PlacesUtils.observers.addListener(
       ["bookmark-added", "bookmark-removed", "history-cleared", "page-removed"],
       this.placesObserver.handlePlacesEvent
@@ -229,7 +209,6 @@ class PlacesFeed {
       this.placesChangedTimer.cancel();
       this.placesChangedTimer = null;
     }
-    lazy.PlacesUtils.bookmarks.removeObserver(this.bookmarksObserver);
     lazy.PlacesUtils.observers.removeListener(
       ["bookmark-added", "bookmark-removed", "history-cleared", "page-removed"],
       this.placesObserver.handlePlacesEvent
@@ -609,7 +588,6 @@ class PlacesFeed {
 }
 
 
-PlacesFeed.BookmarksObserver = BookmarksObserver;
 PlacesFeed.PlacesObserver = PlacesObserver;
 
 const EXPORTED_SYMBOLS = ["PlacesFeed"];

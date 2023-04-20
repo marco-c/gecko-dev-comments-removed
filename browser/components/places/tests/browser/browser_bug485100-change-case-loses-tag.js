@@ -23,9 +23,7 @@ add_task(async function() {
   
   document.getElementById("editBMPanel_tagsField").value = testTag;
   let promiseNotification = PlacesTestUtils.waitForNotification(
-    "bookmark-tags-changed",
-    () => true,
-    "places"
+    "bookmark-tags-changed"
   );
   gEditItemOverlay.onTagsFieldChange();
   await promiseNotification;
@@ -39,9 +37,7 @@ add_task(async function() {
   
   
   promiseNotification = PlacesTestUtils.waitForNotification(
-    "bookmark-title-changed",
-    () => true,
-    "places"
+    "bookmark-title-changed"
   );
   gEditItemOverlay.onTagsFieldChange();
   await promiseNotification;
