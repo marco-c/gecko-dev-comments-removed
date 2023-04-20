@@ -115,6 +115,9 @@ class GCParallelTask : private mozilla::LinkedListElement<GCParallelTask>,
   UnprotectedData<State> state_;
 
   
+  mozilla::TimeStamp maybeQueueTime_;
+
+  
   MainThreadOrGCTaskData<mozilla::TimeDuration> duration_;
 
   explicit GCParallelTask(const GCParallelTask&) = delete;
