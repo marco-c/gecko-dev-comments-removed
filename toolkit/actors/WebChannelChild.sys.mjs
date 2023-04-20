@@ -1,22 +1,15 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+import { ContentDOMReference } from "resource://gre/modules/ContentDOMReference.sys.mjs";
 
-
-
-
-
-var EXPORTED_SYMBOLS = ["WebChannelChild"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { ContentDOMReference } = ChromeUtils.importESModule(
-  "resource://gre/modules/ContentDOMReference.sys.mjs"
-);
-
-
-
-
+// Preference containing the list (space separated) of origins that are
+// allowed to send non-string values through a WebChannel, mainly for
+// backwards compatability. See bug 1238128 for more information.
 const URL_WHITELIST_PREF = "webchannel.allowObject.urlWhitelist";
 
 let _cachedWhitelist = null;
@@ -27,11 +20,11 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "URL_WHITELIST",
   URL_WHITELIST_PREF,
   "",
-  
+  // Null this out so we update it.
   () => (_cachedWhitelist = null)
 );
 
-class WebChannelChild extends JSWindowActorChild {
+export class WebChannelChild extends JSWindowActorChild {
   handleEvent(event) {
     if (event.type === "WebChannelMessageToChrome") {
       return this._onMessageToChrome(event);
@@ -57,17 +50,17 @@ class WebChannelChild extends JSWindowActorChild {
   }
 
   _onMessageToChrome(e) {
-    
+    // If target is window then we want the document principal, otherwise fallback to target itself.
     let principal = e.target.nodePrincipal
       ? e.target.nodePrincipal
       : e.target.document.nodePrincipal;
 
     if (e.detail) {
       if (typeof e.detail != "string") {
-        
-        
-        
-        
+        // Check if the principal is one of the ones that's allowed to send
+        // non-string values for e.detail.  They're whitelisted by site origin,
+        // so we compare on originNoSuffix in order to avoid other origin attributes
+        // that are not relevant here, such as containers or private browsing.
         let objectsAllowed = this._getWhitelistedPrincipals().some(
           whitelisted => principal.originNoSuffix == whitelisted.originNoSuffix
         );
@@ -95,10 +88,10 @@ class WebChannelChild extends JSWindowActorChild {
 
   _onMessageToContent(msg) {
     if (msg.data && this.contentWindow) {
-      
-      
-      
-      
+      // msg.objects.eventTarget will be defined if sending a response to
+      // a WebChannelMessageToChrome event. An unsolicited send
+      // may not have an eventTarget defined, in this case send to the
+      // main content window.
       let { eventTarget, principal } = msg.data;
       if (!eventTarget) {
         eventTarget = this.contentWindow;
@@ -110,7 +103,7 @@ class WebChannelChild extends JSWindowActorChild {
         return;
       }
 
-      
+      // Use nodePrincipal if available, otherwise fallback to document principal.
       let targetPrincipal =
         eventTarget instanceof Ci.nsIDOMWindow
           ? eventTarget.document.nodePrincipal
