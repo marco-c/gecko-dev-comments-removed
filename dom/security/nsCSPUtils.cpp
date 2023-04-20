@@ -210,10 +210,9 @@ void CSP_LogMessage(const nsAString& aMessage, const nsAString& aSourceName,
   
   
   
-  if (!aSourceLine.IsEmpty()) {
-    cspMsg.AppendLiteral(u" Source: ");
+  if (!aSourceLine.IsEmpty() && aLineNumber == 0) {
+    cspMsg.AppendLiteral(u"\nSource: ");
     cspMsg.Append(aSourceLine);
-    cspMsg.AppendLiteral(u".");
   }
 
   
