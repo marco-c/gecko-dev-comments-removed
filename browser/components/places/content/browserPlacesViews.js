@@ -1983,11 +1983,10 @@ class PlacesMenu extends PlacesViewBase {
 
 
   constructor(aPopupShowingEvent, aPlace, aOptions = {}) {
-    aOptions.rootElt ??= aPopupShowingEvent.target; 
-    aOptions.viewElt ??= aOptions.rootElt.parentNode; 
+    aOptions.rootElt = aPopupShowingEvent.target; 
+    aOptions.viewElt = aOptions.rootElt.parentNode; 
     super(aPlace, aOptions);
 
-    this._viewElt._placesView = this;
     this._addEventListeners(
       this._rootElt,
       ["popupshowing", "popuphidden"],
@@ -2006,6 +2005,10 @@ class PlacesMenu extends PlacesViewBase {
     }
 
     this._onPopupShowing(aPopupShowingEvent);
+  }
+
+  _init() {
+    this._viewElt._placesView = this;
   }
 
   _removeChild(aChild) {
