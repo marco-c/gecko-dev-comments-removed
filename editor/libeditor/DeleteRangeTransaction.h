@@ -10,6 +10,7 @@
 #include "EditAggregateTransaction.h"
 
 #include "EditorBase.h"
+#include "EditorDOMPoint.h"
 #include "EditorForwards.h"
 
 #include "mozilla/RefPtr.h"
@@ -57,6 +58,14 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
   void AppendChild(DeleteContentTransactionBase& aTransaction);
 
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
+
+  
+
+
+  EditorDOMPoint SuggestPointToPutCaret() const {
+    return mPointToPutCaret.IsSetAndValid() ? mPointToPutCaret
+                                            : EditorDOMPoint();
+  }
 
  protected:
   
@@ -138,6 +147,8 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
   
   
   RefPtr<nsRange> mRangeToDelete;
+
+  EditorDOMPoint mPointToPutCaret;
 };
 
 }  
