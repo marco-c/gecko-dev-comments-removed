@@ -32,7 +32,6 @@ struct AccessibleData
   AccType Type;
   AccGenericType GenericTypes;
   uint8_t RoleMapEntryIndex;
-  AccAttributes CacheFields;
 };
 
 union OriginDocument
@@ -132,7 +131,10 @@ parent:
   
 
 
-  async Cache(CacheUpdateType aUpdateType, CacheData[] aData);
+
+
+
+  async Cache(CacheUpdateType aUpdateType, CacheData[] aData, bool aDispatchShowEvent);
 
   
 
