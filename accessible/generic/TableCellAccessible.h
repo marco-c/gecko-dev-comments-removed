@@ -24,6 +24,12 @@ class TableCellAccessible : public TableCellAccessibleBase {
   virtual void ColHeaderCells(nsTArray<Accessible*>* aCells) override;
   virtual void RowHeaderCells(nsTArray<Accessible*>* aCells) override;
 
+ protected:
+  
+  
+  
+  a11y::role GetHeaderCellRole(const LocalAccessible* aAcc) const;
+
  private:
   LocalAccessible* PrevColHeader();
 };
