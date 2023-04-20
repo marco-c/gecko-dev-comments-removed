@@ -753,9 +753,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  virtual nsTArray<uint8_t> GetPlatformCMSOutputProfileData() {
-    return GetPrefCMSOutputProfileData();
-  }
+  virtual nsTArray<uint8_t> GetPlatformCMSOutputProfileData();
 
   
 
@@ -867,15 +865,13 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   virtual void ImportContentDeviceData(
       const mozilla::gfx::ContentDeviceData& aData);
 
- public:
   
 
 
 
 
-  static nsTArray<uint8_t> GetPrefCMSOutputProfileData();
+  nsTArray<uint8_t> GetPrefCMSOutputProfileData();
 
- protected:
   
 
 
