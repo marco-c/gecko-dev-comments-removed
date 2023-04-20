@@ -148,45 +148,44 @@ JsepSessionImpl::GetLocalIceCredentials() const {
   return result;
 }
 
-nsresult JsepSessionImpl::AddTransceiver(RefPtr<JsepTransceiver> transceiver) {
+void JsepSessionImpl::AddTransceiver(RefPtr<JsepTransceiver> aTransceiver) {
   mLastError.clear();
-  MOZ_MTLOG(ML_DEBUG,
-            "[" << mName << "]: Adding transceiver " << transceiver->GetUuid());
-
-  if (transceiver->GetMediaType() != SdpMediaSection::kApplication) {
+  MOZ_MTLOG(ML_DEBUG, "[" << mName << "]: Adding transceiver "
+                          << aTransceiver->GetUuid());
+  InitTransceiver(*aTransceiver);
+#ifdef DEBUG
+  if (aTransceiver->GetMediaType() == SdpMediaSection::kApplication) {
     
-    transceiver->mSendTrack.EnsureSsrcs(mSsrcGenerator, 1U);
-    transceiver->mSendTrack.SetCNAME(mCNAME);
+    for (const auto& transceiver : mTransceivers) {
+      MOZ_ASSERT(transceiver->GetMediaType() != SdpMediaSection::kApplication);
+    }
+  }
+#endif
+  mTransceivers.push_back(aTransceiver);
+}
+
+void JsepSessionImpl::InitTransceiver(JsepTransceiver& aTransceiver) {
+  mLastError.clear();
+
+  if (aTransceiver.GetMediaType() != SdpMediaSection::kApplication) {
+    
+    aTransceiver.mSendTrack.EnsureSsrcs(mSsrcGenerator, 1U);
+    aTransceiver.mSendTrack.SetCNAME(mCNAME);
 
     
     
     if (mEncodeTrackId) {
-      std::string trackId;
-      
-      if (!mUuidGen->Generate(&trackId)) {
-        JSEP_SET_ERROR("Failed to generate UUID for JsepTrack");
-        return NS_ERROR_FAILURE;
-      }
-
-      transceiver->mSendTrack.SetTrackId(trackId);
+      aTransceiver.mSendTrack.SetTrackId(aTransceiver.GetUuid());
     }
   } else {
     
     
-    transceiver->mJsDirection = SdpDirectionAttribute::kSendrecv;
-#ifdef DEBUG
-    for (const auto& transceiver : mTransceivers) {
-      MOZ_ASSERT(transceiver->GetMediaType() != SdpMediaSection::kApplication);
-    }
-#endif
+    aTransceiver.mJsDirection = SdpDirectionAttribute::kSendrecv;
   }
 
-  transceiver->mSendTrack.PopulateCodecs(mSupportedCodecs);
-  transceiver->mRecvTrack.PopulateCodecs(mSupportedCodecs);
+  aTransceiver.mSendTrack.PopulateCodecs(mSupportedCodecs);
+  aTransceiver.mRecvTrack.PopulateCodecs(mSupportedCodecs);
   
-
-  mTransceivers.push_back(transceiver);
-  return NS_OK;
 }
 
 nsresult JsepSessionImpl::SetBundlePolicy(JsepBundlePolicy policy) {
@@ -1619,8 +1618,7 @@ JsepTransceiver* JsepSessionImpl::GetTransceiverForRemote(
       msection.GetMediaType(), *mUuidGen, SdpDirectionAttribute::kRecvonly));
   newTransceiver->SetLevel(level);
   newTransceiver->SetCreatedBySetRemote();
-  nsresult rv = AddTransceiver(newTransceiver);
-  NS_ENSURE_SUCCESS(rv, nullptr);
+  AddTransceiver(newTransceiver);
   return newTransceiver.get();
 }
 
@@ -1716,8 +1714,7 @@ void JsepSessionImpl::RollbackLocalOffer() {
 
     RefPtr<JsepTransceiver> temp(
         new JsepTransceiver(transceiver->GetMediaType(), *mUuidGen));
-    temp->mSendTrack.PopulateCodecs(mSupportedCodecs);
-    temp->mRecvTrack.PopulateCodecs(mSupportedCodecs);
+    InitTransceiver(*temp);
     transceiver->Rollback(*temp, false);
     mOldTransceivers.push_back(transceiver);
   }
@@ -1743,8 +1740,7 @@ void JsepSessionImpl::RollbackRemoteOffer() {
     
     RefPtr<JsepTransceiver> temp(
         new JsepTransceiver(transceiver->GetMediaType(), *mUuidGen));
-    temp->mSendTrack.PopulateCodecs(mSupportedCodecs);
-    temp->mRecvTrack.PopulateCodecs(mSupportedCodecs);
+    InitTransceiver(*temp);
     transceiver->Rollback(*temp, true);
 
     if (shouldRemove) {
