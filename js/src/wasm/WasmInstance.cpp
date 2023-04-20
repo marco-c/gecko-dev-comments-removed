@@ -1905,13 +1905,20 @@ void Instance::tracePrivate(JSTracer* trc) {
   }
 }
 
-void Instance::trace(JSTracer* trc) {
+void js::wasm::TraceInstanceEdge(JSTracer* trc, Instance* instance,
+                                 const char* name) {
+  if (IsTracerKind(trc, JS::TracerKind::Moving)) {
+    
+    
+    
+    
+    return;
+  }
+
   
   
-  
-  
-  
-  TraceEdge(trc, &object_, "wasm instance object");
+  JSObject* object = instance->objectUnbarriered();
+  TraceManuallyBarrieredEdge(trc, &object, name);
 }
 
 uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,

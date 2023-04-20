@@ -222,7 +222,6 @@ class alignas(16) Instance {
             const WasmTagObjectVector& tagObjs,
             const DataSegmentVector& dataSegments,
             const ElemSegmentVector& elemSegments);
-  void trace(JSTracer* trc);
 
   
   
@@ -482,6 +481,10 @@ bool ResultsToJSValue(JSContext* cx, ResultType type, void* registerResultLoc,
 
 
 void ReportTrapError(JSContext* cx, unsigned errorNumber);
+
+
+
+void TraceInstanceEdge(JSTracer* trc, Instance* instance, const char* name);
 
 }  
 }  
