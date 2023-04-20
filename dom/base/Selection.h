@@ -814,6 +814,7 @@ class Selection final : public nsSupportsWeakReference,
   void Disconnect();
 
   struct StyledRanges {
+    explicit StyledRanges(Selection& aSelection) : mSelection(aSelection) {}
     void Clear();
 
     StyledRange* FindRangeData(nsRange* aRange);
@@ -871,8 +872,8 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-    MOZ_CAN_RUN_SCRIPT nsresult MaybeAddRangeAndTruncateOverlaps(
-        nsRange* aRange, Maybe<size_t>* aOutIndex, Selection& aSelection);
+    MOZ_CAN_RUN_SCRIPT nsresult
+    MaybeAddRangeAndTruncateOverlaps(nsRange* aRange, Maybe<size_t>* aOutIndex);
 
     
 
@@ -929,9 +930,11 @@ class Selection final : public nsSupportsWeakReference,
     
     
     Elements mRanges;
+
+    Selection& mSelection;
   };
 
-  StyledRanges mStyledRanges;
+  StyledRanges mStyledRanges{*this};
 
   RefPtr<nsRange> mAnchorFocusRange;
   RefPtr<nsFrameSelection> mFrameSelection;

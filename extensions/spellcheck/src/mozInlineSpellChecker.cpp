@@ -1834,11 +1834,12 @@ void mozInlineSpellChecker::UpdateRangesForMisspelledWords(
     const size_t indexOfOldRangeToKeep = aOldRangesForSomeWords.IndexOf(
         nodeOffsetRange, 0, CompareRangeAndNodeOffsetRange{});
     if (indexOfOldRangeToKeep != aOldRangesForSomeWords.NoIndex &&
-        aOldRangesForSomeWords[indexOfOldRangeToKeep]->GetSelection() ==
-        &aSpellCheckerSelection 
+        aOldRangesForSomeWords[indexOfOldRangeToKeep]->IsInSelection(
+            aSpellCheckerSelection)) {
+      
 
 
-) {
+
       MOZ_LOG(sInlineSpellCheckerLog, LogLevel::Verbose,
               ("%s: reusing old range.", __FUNCTION__));
 

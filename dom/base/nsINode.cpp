@@ -343,7 +343,6 @@ bool nsINode::IsSelected(const uint32_t aStartOffset,
 
   
   nsTHashSet<Selection*> ancestorSelections;
-  Selection* prevSelection = nullptr;
   for (; n; n = GetClosestCommonInclusiveAncestorForRangeInSelection(
                 n->GetParentNode())) {
     const LinkedList<nsRange>* ranges =
@@ -352,14 +351,12 @@ bool nsINode::IsSelected(const uint32_t aStartOffset,
       continue;
     }
     for (const nsRange* range : *ranges) {
-      MOZ_ASSERT(range->IsInSelection(),
-                 "Why is this range registeed with a node?");
+      MOZ_ASSERT(range->IsInAnySelection(),
+                 "Why is this range registered with a node?");
       
-      if (range->IsInSelection()) {
-        Selection* selection = range->GetSelection();
-        if (prevSelection != selection) {
-          prevSelection = selection;
-          ancestorSelections.Insert(selection);
+      if (range->IsInAnySelection()) {
+        for (const auto* selectionWrapper : range->GetSelections()) {
+          ancestorSelections.Insert(selectionWrapper->Get());
         }
       }
     }

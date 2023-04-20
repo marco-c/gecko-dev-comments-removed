@@ -20,6 +20,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/RangeBoundary.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
 
 namespace mozilla {
@@ -33,6 +34,26 @@ class DOMRectList;
 class InspectorFontFace;
 class Selection;
 }  
+
+
+
+
+
+
+class SelectionListWrapper
+    : public LinkedListElement<RefPtr<SelectionListWrapper>> {
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SelectionListWrapper)
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(SelectionListWrapper)
+ public:
+  explicit SelectionListWrapper(dom::Selection* aSelection);
+
+  
+  dom::Selection* Get() const;
+
+ private:
+  ~SelectionListWrapper() = default;
+  WeakPtr<dom::Selection> mSelection;
+};
 }  
 
 class nsRange final : public mozilla::dom::AbstractRange,
@@ -95,17 +116,23 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
-  bool IsInSelection() const { return !!mSelection; }
+  bool IsInAnySelection() const { return !mSelections.isEmpty(); }
 
   MOZ_CAN_RUN_SCRIPT void RegisterSelection(
       mozilla::dom::Selection& aSelection);
 
-  void UnregisterSelection();
+  void UnregisterSelection(mozilla::dom::Selection& aSelection);
 
   
 
 
-  mozilla::dom::Selection* GetSelection() const;
+  const mozilla::LinkedList<RefPtr<mozilla::SelectionListWrapper>>&
+  GetSelections() const;
+
+  
+
+
+  bool IsInSelection(const mozilla::dom::Selection& aSelection) const;
 
   
 
@@ -415,7 +442,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   struct MOZ_STACK_CLASS AutoInvalidateSelection {
     explicit AutoInvalidateSelection(nsRange* aRange) : mRange(aRange) {
-      if (!mRange->IsInSelection() || sIsNested) {
+      if (!mRange->IsInAnySelection() || sIsNested) {
         return;
       }
       sIsNested = true;
@@ -432,7 +459,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
 #ifdef DEBUG
   bool IsCleared() const {
     return !mRoot && !mRegisteredClosestCommonInclusiveAncestor &&
-           !mSelection && !mNextStartRef && !mNextEndRef;
+           mSelections.isEmpty() && !mNextStartRef && !mNextEndRef;
   }
 #endif  
 
@@ -441,7 +468,9 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   
   nsINode* MOZ_NON_OWNING_REF mRegisteredClosestCommonInclusiveAncestor;
-  mozilla::WeakPtr<mozilla::dom::Selection> mSelection;
+
+  
+  mozilla::LinkedList<RefPtr<mozilla::SelectionListWrapper>> mSelections;
 
   
   
