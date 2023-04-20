@@ -124,7 +124,6 @@ const clickUnifiedExtensionsItem = async (
   await popupHidden;
 };
 
-let extensionsCreated = 0;
 const createExtensions = (
   arrayOfManifestData,
   { useAddonManager = true, incognitoOverride } = {}
@@ -133,11 +132,6 @@ const createExtensions = (
     ExtensionTestUtils.loadExtension({
       manifest: {
         name: "default-extension-name",
-        browser_specific_settings: {
-          
-          
-          gecko: { id: `${Date.now()}@ext-${extensionsCreated++}` },
-        },
         ...manifestData,
       },
       useAddonManager: useAddonManager ? "temporary" : undefined,
