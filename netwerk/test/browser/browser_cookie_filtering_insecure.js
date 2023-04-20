@@ -37,6 +37,7 @@ async function test_insecure_suite_insecure_com() {
   expected.push("test-cookie=png1");
   expected.push("test-cookie=png2");
   
+  expected.push(""); 
   expected.push("test-cookie=png3");
   info(expected);
 

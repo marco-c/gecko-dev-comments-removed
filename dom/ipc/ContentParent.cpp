@@ -4106,7 +4106,9 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
 
     
     const Cookie& cookie = xpcCookie->AsCookie();
-    if (!cs->CookieMatchesContentList(cookie)) {
+
+    
+    if (!cs->ContentProcessHasCookie(cookie)) {
       return NS_OK;
     }
 

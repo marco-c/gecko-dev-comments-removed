@@ -409,14 +409,26 @@ CookieServiceChild::SetCookieStringFromDocument(
     
     
     
+
+    nsCOMPtr<nsIPrincipal> principal = aDocument->EffectiveCookiePrincipal();
+    bool isPotentiallyTrustworthy =
+        principal->GetIsOriginPotentiallyTrustworthy();
+
     for (uint32_t i = 0; i < cookies->Length(); ++i) {
       RefPtr<Cookie> existingCookie = cookies->ElementAt(i);
       if (existingCookie->Name().Equals(cookie->Name()) &&
           existingCookie->Host().Equals(cookie->Host()) &&
-          existingCookie->Path().Equals(cookie->Path()) &&
-          existingCookie->IsHttpOnly()) {
+          existingCookie->Path().Equals(cookie->Path())) {
         
-        return NS_OK;
+        if (existingCookie->IsHttpOnly()) {
+          return NS_OK;
+        }
+
+        
+        
+        if (existingCookie->IsSecure() && !isPotentiallyTrustworthy) {
+          return NS_OK;
+        }
       }
     }
   }

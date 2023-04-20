@@ -509,7 +509,7 @@ CookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIChannel* aChannel,
       result.contains(ThirdPartyAnalysis::IsThirdPartySocialTrackingResource),
       result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted),
       rejectedReason, isSafeTopLevelNav, isSameSiteForeign,
-      hadCrossSiteRedirects, true, attrs, foundCookieList);
+      hadCrossSiteRedirects, true, false, attrs, foundCookieList);
 
   ComposeCookieString(foundCookieList, aCookieString);
 
@@ -929,6 +929,7 @@ void CookieService::GetCookiesForURI(
     bool aStorageAccessPermissionGranted, uint32_t aRejectedReason,
     bool aIsSafeTopLevelNav, bool aIsSameSiteForeign,
     bool aHadCrossSiteRedirects, bool aHttpBound,
+    bool aAllowSecureCookiesToInsecureOrigin,
     const OriginAttributes& aOriginAttrs, nsTArray<Cookie*>& aCookieList) {
   NS_ASSERTION(aHostURI, "null host!");
 
@@ -1046,7 +1047,11 @@ void CookieService::GetCookiesForURI(
     }
 
     
-    if (cookie->IsSecure() && !potentiallyTurstworthy) {
+    
+    
+    
+    if (cookie->IsSecure() && !potentiallyTurstworthy &&
+        !aAllowSecureCookiesToInsecureOrigin) {
       continue;
     }
 
