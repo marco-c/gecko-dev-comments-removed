@@ -1191,7 +1191,10 @@ let cookieBannerSection = new (class {
 
     
     
-    return mode != Ci.nsICookieBannerService.MODE_DISABLED;
+    return (
+      mode != Ci.nsICookieBannerService.MODE_DISABLED &&
+      mode != Ci.nsICookieBannerService.MODE_DETECT_ONLY
+    );
   }
 
   
