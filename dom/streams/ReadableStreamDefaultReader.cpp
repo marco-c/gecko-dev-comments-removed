@@ -67,10 +67,8 @@ bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
   
   aStream->SetReader(aReader);
 
-  aReader->SetClosedPromise(Promise::Create(aReader->GetParentObject(), aRv));
-  if (aRv.Failed()) {
-    return false;
-  }
+  aReader->SetClosedPromise(
+      Promise::CreateInfallible(aReader->GetParentObject()));
 
   switch (aStream->State()) {
       
@@ -247,7 +245,7 @@ already_AddRefed<Promise> ReadableStreamDefaultReader::Read(ErrorResult& aRv) {
   }
 
   
-  RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetParentObject());
 
   
   RefPtr<ReadRequest> request = new Read_ReadRequest(promise);

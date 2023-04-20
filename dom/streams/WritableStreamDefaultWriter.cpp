@@ -382,10 +382,7 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
   
   if (state == WritableStream::WriterState::Writable) {
     RefPtr<Promise> readyPromise =
-        Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+        Promise::CreateInfallible(aWriter->GetParentObject());
 
     
     
@@ -401,10 +398,7 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
 
     
     RefPtr<Promise> closedPromise =
-        Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+        Promise::CreateInfallible(aWriter->GetParentObject());
     aWriter->SetClosedPromise(closedPromise);
   } else if (state == WritableStream::WriterState::Erroring) {
     
@@ -413,10 +407,7 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
     
     JS::Rooted<JS::Value> storedError(RootingCx(), aStream->StoredError());
     RefPtr<Promise> readyPromise =
-        Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+        Promise::CreateInfallible(aWriter->GetParentObject());
     readyPromise->MaybeReject(storedError);
     aWriter->SetReadyPromise(readyPromise);
 
@@ -425,10 +416,7 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
 
     
     RefPtr<Promise> closedPromise =
-        Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+        Promise::CreateInfallible(aWriter->GetParentObject());
     aWriter->SetClosedPromise(closedPromise);
   } else if (state == WritableStream::WriterState::Closed) {
     
@@ -460,10 +448,7 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
     
     
     RefPtr<Promise> readyPromise =
-        Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+        Promise::CreateInfallible(aWriter->GetParentObject());
     readyPromise->MaybeReject(storedError);
     aWriter->SetReadyPromise(readyPromise);
 
@@ -473,10 +458,7 @@ void SetUpWritableStreamDefaultWriter(WritableStreamDefaultWriter* aWriter,
     
     
     RefPtr<Promise> closedPromise =
-        Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+        Promise::CreateInfallible(aWriter->GetParentObject());
     closedPromise->MaybeReject(storedError);
     aWriter->SetClosedPromise(closedPromise);
 
@@ -497,10 +479,7 @@ void WritableStreamDefaultWriterEnsureClosedPromiseRejected(
   } else {
     
     
-    closedPromise = Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+    closedPromise = Promise::CreateInfallible(aWriter->GetParentObject());
     closedPromise->MaybeReject(aError);
     aWriter->SetClosedPromise(closedPromise);
   }
@@ -521,10 +500,7 @@ void WritableStreamDefaultWriterEnsureReadyPromiseRejected(
   } else {
     
     
-    readyPromise = Promise::Create(aWriter->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+    readyPromise = Promise::CreateInfallible(aWriter->GetParentObject());
     readyPromise->MaybeReject(aError);
     aWriter->SetReadyPromise(readyPromise);
   }

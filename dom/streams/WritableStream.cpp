@@ -422,10 +422,8 @@ void WritableStream::UpdateBackpressure(bool aBackpressure, ErrorResult& aRv) {
     
     
     if (aBackpressure) {
-      RefPtr<Promise> promise = Promise::Create(writer->GetParentObject(), aRv);
-      if (aRv.Failed()) {
-        return;
-      }
+      RefPtr<Promise> promise =
+          Promise::CreateInfallible(writer->GetParentObject());
       writer->SetReadyPromise(promise);
     } else {
       
@@ -513,10 +511,8 @@ already_AddRefed<Promise> WritableStreamAbort(JSContext* aCx,
   
   if (aStream->State() == WritableStream::WriterState::Closed ||
       aStream->State() == WritableStream::WriterState::Errored) {
-    RefPtr<Promise> promise = Promise::Create(aStream->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
+    RefPtr<Promise> promise =
+        Promise::CreateInfallible(aStream->GetParentObject());
     promise->MaybeResolveWithUndefined();
     return promise.forget();
   }
@@ -533,10 +529,8 @@ already_AddRefed<Promise> WritableStreamAbort(JSContext* aCx,
   
   if (aStream->State() == WritableStream::WriterState::Closed ||
       aStream->State() == WritableStream::WriterState::Errored) {
-    RefPtr<Promise> promise = Promise::Create(aStream->GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
+    RefPtr<Promise> promise =
+        Promise::CreateInfallible(aStream->GetParentObject());
     promise->MaybeResolveWithUndefined();
     return promise.forget();
   }
@@ -565,10 +559,8 @@ already_AddRefed<Promise> WritableStreamAbort(JSContext* aCx,
   }
 
   
-  RefPtr<Promise> promise = Promise::Create(aStream->GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
+  RefPtr<Promise> promise =
+      Promise::CreateInfallible(aStream->GetParentObject());
 
   
   
@@ -628,10 +620,8 @@ already_AddRefed<Promise> WritableStreamClose(JSContext* aCx,
   MOZ_ASSERT(!aStream->CloseQueuedOrInFlight());
 
   
-  RefPtr<Promise> promise = Promise::Create(aStream->GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
+  RefPtr<Promise> promise =
+      Promise::CreateInfallible(aStream->GetParentObject());
 
   
   aStream->SetCloseRequest(promise);
@@ -742,10 +732,8 @@ already_AddRefed<Promise> WritableStreamAddWriteRequest(WritableStream* aStream,
   MOZ_ASSERT(aStream->State() == WritableStream::WriterState::Writable);
 
   
-  RefPtr<Promise> promise = Promise::Create(aStream->GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
+  RefPtr<Promise> promise =
+      Promise::CreateInfallible(aStream->GetParentObject());
 
   
   aStream->AppendWriteRequest(promise);
