@@ -24,6 +24,10 @@ const PRIVACY_PREF_URL = "about:preferences#privacy";
 const HTTP_TEST_PATH = "/browser/browser/extensions/formautofill/test/browser/";
 const BASE_URL = "http://mochi.test:8888" + HTTP_TEST_PATH;
 const FORM_URL = BASE_URL + "autocomplete_basic.html";
+const ADDRESS_FORM_URL =
+  "https://example.org" +
+  HTTP_TEST_PATH +
+  "creditCard/autocomplete_address_basic.html";
 const CREDITCARD_FORM_URL =
   "https://example.org" +
   HTTP_TEST_PATH +
@@ -36,6 +40,10 @@ const CREDITCARD_FORM_COMBINED_EXPIRY_URL =
   "https://example.org" +
   HTTP_TEST_PATH +
   "creditCard/autocomplete_creditcard_cc_exp_field.html";
+const ADDRESS_FORM_WITHOUT_AUTOCOMPLETE_URL =
+  "https://example.org" +
+  HTTP_TEST_PATH +
+  "creditCard/without_autocomplete_address_basic.html";
 const CREDITCARD_FORM_WITHOUT_AUTOCOMPLETE_URL =
   "https://example.org" +
   HTTP_TEST_PATH +
@@ -78,11 +86,13 @@ const TEST_ADDRESS_1 = {
 };
 
 const TEST_ADDRESS_2 = {
+  "given-name": "Anonymouse",
   "street-address": "Some Address",
   country: "US",
 };
 
 const TEST_ADDRESS_3 = {
+  "given-name": "John",
   "street-address": "Other Address",
   "postal-code": "12345",
 };
@@ -95,6 +105,8 @@ const TEST_ADDRESS_4 = {
   country: "US",
   email: "timbl@w3.org",
 };
+
+
 
 const TEST_ADDRESS_5 = {
   tel: "+16172535702",
