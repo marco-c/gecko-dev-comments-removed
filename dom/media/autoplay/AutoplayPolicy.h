@@ -18,7 +18,6 @@ class AudioContext;
 class Document;
 enum class AutoplayPolicy : uint8_t;
 enum class AutoplayPolicyMediaType : uint8_t;
-enum class DocumentAutoplayPolicy : uint8_t;
 
 }  
 
@@ -37,10 +36,6 @@ namespace mozilla::media {
 
 class AutoplayPolicy {
  public:
-  
-  static dom::DocumentAutoplayPolicy IsAllowedToPlay(
-      const dom::Document& aDocument);
-
   
   static bool IsAllowedToPlay(const dom::HTMLMediaElement& aElement);
 
