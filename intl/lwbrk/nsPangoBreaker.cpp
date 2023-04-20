@@ -14,12 +14,15 @@ void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
                              uint8_t* aBreakBefore) {
   NS_ASSERTION(aText, "aText shouldn't be null");
 
-  memset(aBreakBefore, false, aLength * sizeof(uint8_t));
+  memset(aBreakBefore, uint8_t(false), aLength * sizeof(uint8_t));
 
   AutoTArray<PangoLogAttr, 2000> attrBuffer;
   
   
   attrBuffer.AppendElements(aLength + 1);
+  
+  
+  memset(attrBuffer.Elements(), 0, attrBuffer.Length() * sizeof(PangoLogAttr));
 
   NS_ConvertUTF16toUTF8 aUTF8(aText, aLength);
 
