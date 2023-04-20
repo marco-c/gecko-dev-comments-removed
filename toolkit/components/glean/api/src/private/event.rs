@@ -68,7 +68,6 @@ impl<K: 'static + ExtraKeys + Send + Sync> EventMetric<K> {
     
     
     
-    #[cfg(not(feature = "cargo-clippy"))]
     pub(crate) fn record_raw(&self, extra: HashMap<String, String>) {
         let now = glean::get_timestamp_ms();
         self.record_with_time(now, extra);
