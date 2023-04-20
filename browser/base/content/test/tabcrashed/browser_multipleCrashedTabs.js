@@ -3,8 +3,11 @@
 
 "use strict";
 
+
 const PAGE_1 = "http://example.com";
+
 const PAGE_2 = "http://example.org";
+
 const PAGE_3 = "http://example.net";
 
 

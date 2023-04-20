@@ -9,6 +9,7 @@
 
 
 add_task(async function test_launchfail_foreground() {
+  
   await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     let tabcrashed = BrowserTestUtils.waitForEvent(
       browser,
@@ -34,6 +35,7 @@ add_task(async function test_launchfail_foreground() {
 
 add_task(async function test_launchfail_background() {
   let originalTab = gBrowser.selectedTab;
+  
   await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     let tab = gBrowser.getTabForBrowser(browser);
     await BrowserTestUtils.switchTab(gBrowser, originalTab);

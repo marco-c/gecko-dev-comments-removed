@@ -68,6 +68,7 @@ add_task(async function test_default() {
 
 
 add_task(async function test_restart_required_foreground() {
+  
   await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     let loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
     await BrowserTestUtils.simulateProcessLaunchFail(
@@ -92,6 +93,7 @@ add_task(async function test_restart_required_foreground() {
 
 add_task(async function test_launchfail_background() {
   let originalTab = gBrowser.selectedTab;
+  
   await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     let tab = gBrowser.getTabForBrowser(browser);
     await BrowserTestUtils.switchTab(gBrowser, originalTab);

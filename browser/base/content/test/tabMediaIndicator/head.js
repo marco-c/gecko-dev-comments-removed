@@ -11,6 +11,8 @@ const gEMPTY_PAGE_URL = GetTestWebBasedURL("file_empty.html");
 
 
 function GetTestWebBasedURL(fileName, cors = false) {
+  
+  
   const origin = cors ? "http://example.org" : "http://example.com";
   return (
     getRootDirectory(gTestPath).replace("chrome://mochitests/content", origin) +

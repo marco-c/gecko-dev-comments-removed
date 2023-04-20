@@ -6,6 +6,7 @@ const { PermissionTestUtils } = ChromeUtils.import(
 
 const ROOT = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content/",
+  
   "http://example.com/"
 );
 let pageWithAlert = ROOT + "openPromptOffTimeout.html";

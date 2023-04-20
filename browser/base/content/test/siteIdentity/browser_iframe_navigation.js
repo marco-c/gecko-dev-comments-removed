@@ -12,6 +12,7 @@ const ROOT_URI = getRootDirectory(gTestPath).replace(
   "https://example.com"
 );
 const SECURE_TEST_URI = ROOT_URI + "iframe_navigation.html";
+
 const INSECURE_TEST_URI = SECURE_TEST_URI.replace("https://", "http://");
 
 

@@ -110,6 +110,7 @@ function getPropertyBagValue(bag, key) {
 
 async function setupLocalCrashReportServer() {
   const SERVER_URL =
+    
     "http://example.com/browser/toolkit/crashreporter/test/browser/crashreport.sjs";
 
   
