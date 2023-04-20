@@ -996,9 +996,6 @@ struct arena_bin_t {
   size_t mSizeClass;
 
   
-  size_t mRunSize;
-
-  
   uint32_t mRunNumRegions;
 
   
@@ -1008,11 +1005,14 @@ struct arena_bin_t {
   uint32_t mRunFirstRegionOffset;
 
   
-  unsigned long mNumRuns;
+  uint32_t mNumRuns;
 
   
   
   FastDivisor<uint16_t> mSizeDivisor;
+
+  
+  uint8_t mRunSizePages;
 
   
   static constexpr double kRunOverhead = 1.6_percent;
@@ -1036,6 +1036,17 @@ struct arena_bin_t {
   
   inline void Init(SizeClass aSizeClass);
 };
+
+
+
+
+#if defined(__x86_64__) || defined(__aarch64__)
+
+
+static_assert(sizeof(arena_bin_t) == 48);
+#elif defined(__x86__) || defined(__arm__)
+static_assert(sizeof(arena_bin_t) == 32);
+#endif
 
 struct arena_t {
 #if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
@@ -2434,7 +2445,8 @@ static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
   diff =
       (unsigned)((uintptr_t)ptr - (uintptr_t)run - bin->mRunFirstRegionOffset);
 
-  MOZ_ASSERT(diff <= bin->mRunSize);
+  MOZ_ASSERT(diff <=
+             (static_cast<unsigned>(bin->mRunSizePages) << gPageSize2Pow));
   regind = diff / bin->mSizeDivisor;
 
   MOZ_DIAGNOSTIC_ASSERT(diff == regind * size);
@@ -2794,10 +2806,11 @@ void arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
   MOZ_RELEASE_ASSERT(run_ind < gChunkNumPages - 1);
   if ((chunk->map[run_ind].bits & CHUNK_MAP_LARGE) != 0) {
     size = chunk->map[run_ind].bits & ~gPageSizeMask;
+    run_pages = (size >> gPageSize2Pow);
   } else {
-    size = aRun->mBin->mRunSize;
+    run_pages = aRun->mBin->mRunSizePages;
+    size = run_pages << gPageSize2Pow;
   }
-  run_pages = (size >> gPageSize2Pow);
 
   
   if (aDirty) {
@@ -2931,7 +2944,8 @@ arena_run_t* arena_t::GetNonFullBinRun(arena_bin_t* aBin) {
   
 
   
-  run = AllocRun(aBin->mRunSize, false, false);
+  run = AllocRun(static_cast<size_t>(aBin->mRunSizePages) << gPageSize2Pow,
+                 false, false);
   if (!run) {
     return nullptr;
   }
@@ -3043,11 +3057,12 @@ void arena_bin_t::Init(SizeClass aSizeClass) {
   MOZ_ASSERT((try_mask_nelms << (LOG2(sizeof(int)) + 3)) >= try_nregs);
 
   
-  mRunSize = try_run_size;
+  MOZ_ASSERT((try_run_size >> gPageSize2Pow) <= UINT8_MAX);
+  mRunSizePages = static_cast<uint8_t>(try_run_size >> gPageSize2Pow);
   mRunNumRegions = try_nregs;
   mRunNumRegionsMask = try_mask_nelms;
   mRunFirstRegionOffset = try_reg0_offset;
-  mSizeDivisor = FastDivisor<uint16_t>(aSizeClass.Size(), mRunSize);
+  mSizeDivisor = FastDivisor<uint16_t>(aSizeClass.Size(), try_run_size);
 }
 
 void* arena_t::MallocSmall(size_t aSize, bool aZero) {
@@ -4584,9 +4599,11 @@ inline void MozJemalloc::jemalloc_stats_internal(
           aBinStats[j].num_non_full_runs += num_non_full_runs;
           aBinStats[j].num_runs += bin->mNumRuns;
           aBinStats[j].bytes_unused += bin_unused;
+          size_t bytes_per_run = static_cast<size_t>(bin->mRunSizePages)
+                                 << gPageSize2Pow;
           aBinStats[j].bytes_total +=
-              bin->mNumRuns * (bin->mRunSize - bin->mRunFirstRegionOffset);
-          aBinStats[j].bytes_per_run = bin->mRunSize;
+              bin->mNumRuns * (bytes_per_run - bin->mRunFirstRegionOffset);
+          aBinStats[j].bytes_per_run = bytes_per_run;
         }
       }
     }
