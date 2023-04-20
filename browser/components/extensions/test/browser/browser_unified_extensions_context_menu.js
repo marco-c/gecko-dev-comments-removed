@@ -64,29 +64,17 @@ function assertVisibleContextMenuItems(contextMenu, expected) {
   is(visibleItems.length, expected, `expected ${expected} visible menu items`);
 }
 
-let win;
-
-add_setup(async function() {
-  
-  
-  win = await promiseEnableUnifiedExtensions();
-
-  registerCleanupFunction(async () => {
-    await BrowserTestUtils.closeWindow(win);
-  });
-});
-
 add_task(async function test_context_menu() {
   const [extension] = createExtensions([{ name: "an extension" }]);
   await extension.startup();
 
   
-  await openExtensionsPanel(win);
+  await openExtensionsPanel();
 
   
   
   
-  const item = getUnifiedExtensionsItem(win, extension.id);
+  const item = getUnifiedExtensionsItem(extension.id);
   ok(item, "expected an item for the extension");
 
   const messageDeck = item.querySelector(
@@ -95,7 +83,7 @@ add_task(async function test_context_menu() {
   Assert.ok(messageDeck, "expected message deck");
   is(
     messageDeck.selectedIndex,
-    win.gUnifiedExtensions.MESSAGE_DECK_INDEX_DEFAULT,
+    gUnifiedExtensions.MESSAGE_DECK_INDEX_DEFAULT,
     "expected selected message in the deck to be the default message"
   );
 
@@ -103,7 +91,7 @@ add_task(async function test_context_menu() {
     ".unified-extensions-item-message-hover-menu-button"
   );
   Assert.deepEqual(
-    win.document.l10n.getAttributes(hoverMenuButtonMessage),
+    document.l10n.getAttributes(hoverMenuButtonMessage),
     { id: "unified-extensions-item-message-manage", args: null },
     "expected correct l10n attributes for the hover message"
   );
@@ -112,26 +100,26 @@ add_task(async function test_context_menu() {
   ok(menuButton, "expected menu button");
 
   let hovered = BrowserTestUtils.waitForEvent(menuButton, "mouseover");
-  EventUtils.synthesizeMouseAtCenter(menuButton, { type: "mouseover" }, win);
+  EventUtils.synthesizeMouseAtCenter(menuButton, { type: "mouseover" });
   await hovered;
   is(
     messageDeck.selectedIndex,
-    win.gUnifiedExtensions.MESSAGE_DECK_INDEX_MENU_HOVER,
+    gUnifiedExtensions.MESSAGE_DECK_INDEX_MENU_HOVER,
     "expected selected message in the deck to be the message when hovering the menu button"
   );
 
   let notHovered = BrowserTestUtils.waitForEvent(menuButton, "mouseout");
   
-  EventUtils.synthesizeMouseAtCenter(item, { type: "mouseover" }, win);
+  EventUtils.synthesizeMouseAtCenter(item, { type: "mouseover" });
   await notHovered;
   is(
     messageDeck.selectedIndex,
-    win.gUnifiedExtensions.MESSAGE_DECK_INDEX_HOVER,
+    gUnifiedExtensions.MESSAGE_DECK_INDEX_HOVER,
     "expected selected message in the deck to be the hover message"
   );
 
   
-  const contextMenu = await openUnifiedExtensionsContextMenu(win, extension.id);
+  const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
   const doc = contextMenu.ownerDocument;
 
   const manageButton = contextMenu.querySelector(
@@ -170,8 +158,8 @@ add_task(async function test_context_menu() {
     "expected correct l10n attributes for report button"
   );
 
-  await closeChromeContextMenu(contextMenu.id, null, win);
-  await closeExtensionsPanel(win);
+  await closeChromeContextMenu(contextMenu.id, null);
+  await closeExtensionsPanel();
 
   await extension.unload();
 });
@@ -186,11 +174,8 @@ add_task(
     await extension.startup();
 
     
-    await openExtensionsPanel(win);
-    const contextMenu = await openUnifiedExtensionsContextMenu(
-      win,
-      extension.id
-    );
+    await openExtensionsPanel();
+    const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
 
     const reportButton = contextMenu.querySelector(
       ".unified-extensions-context-menu-report-extension"
@@ -198,8 +183,8 @@ add_task(
     ok(reportButton, "expected report button");
     is(reportButton.hidden, true, "expected report button to be hidden");
 
-    await closeChromeContextMenu(contextMenu.id, null, win);
-    await closeExtensionsPanel(win);
+    await closeChromeContextMenu(contextMenu.id, null);
+    await closeExtensionsPanel();
 
     await extension.unload();
   }
@@ -219,11 +204,8 @@ add_task(
     });
 
     
-    await openExtensionsPanel(win);
-    const contextMenu = await openUnifiedExtensionsContextMenu(
-      win,
-      extension.id
-    );
+    await openExtensionsPanel();
+    const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
 
     const removeButton = contextMenu.querySelector(
       ".unified-extensions-context-menu-remove-extension"
@@ -231,8 +213,8 @@ add_task(
     ok(removeButton, "expected remove button");
     is(removeButton.disabled, true, "expected remove button to be disabled");
 
-    await closeChromeContextMenu(contextMenu.id, null, win);
-    await closeExtensionsPanel(win);
+    await closeChromeContextMenu(contextMenu.id, null);
+    await closeExtensionsPanel();
 
     await extension.unload();
     await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
@@ -242,48 +224,48 @@ add_task(
 add_task(async function test_manage_extension() {
   Services.telemetry.clearEvents();
 
-  
-  
-  BrowserTestUtils.loadURIString(win.gBrowser.selectedBrowser, "about:robots");
-  await BrowserTestUtils.browserLoaded(win.gBrowser.selectedBrowser);
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:robots" },
+    async () => {
+      const [extension] = createExtensions([{ name: "an extension" }]);
+      await extension.startup();
 
-  const [extension] = createExtensions([{ name: "an extension" }]);
-  await extension.startup();
+      
+      await openExtensionsPanel();
+      const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
 
-  
-  await openExtensionsPanel(win);
-  const contextMenu = await openUnifiedExtensionsContextMenu(win, extension.id);
+      const manageButton = contextMenu.querySelector(
+        ".unified-extensions-context-menu-manage-extension"
+      );
+      ok(manageButton, "expected manage button");
 
-  const manageButton = contextMenu.querySelector(
-    ".unified-extensions-context-menu-manage-extension"
-  );
-  ok(manageButton, "expected manage button");
+      
+      
+      const hidden = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
+      const aboutAddons = BrowserTestUtils.waitForNewTab(
+        gBrowser,
+        "about:addons",
+        true
+      );
+      contextMenu.activateItem(manageButton);
+      const [aboutAddonsTab] = await Promise.all([aboutAddons, hidden]);
 
-  
-  
-  const hidden = BrowserTestUtils.waitForEvent(contextMenu, "popuphidden");
-  const aboutAddons = BrowserTestUtils.waitForNewTab(
-    win.gBrowser,
-    "about:addons",
-    true
-  );
-  contextMenu.activateItem(manageButton);
-  const [aboutAddonsTab] = await Promise.all([aboutAddons, hidden]);
+      
+      BrowserTestUtils.removeTab(aboutAddonsTab);
 
-  
-  BrowserTestUtils.removeTab(aboutAddonsTab);
+      await extension.unload();
 
-  await extension.unload();
-
-  TelemetryTestUtils.assertEvents(
-    [
-      {
-        object: "unifiedExtensions",
-        value: null,
-        extra: { addonId: extension.id, action: "manage" },
-      },
-    ],
-    TELEMETRY_EVENTS_FILTERS
+      TelemetryTestUtils.assertEvents(
+        [
+          {
+            object: "unifiedExtensions",
+            value: null,
+            extra: { addonId: extension.id, action: "manage" },
+          },
+        ],
+        TELEMETRY_EVENTS_FILTERS
+      );
+    }
   );
 });
 
@@ -295,13 +277,10 @@ add_task(async function test_report_extension() {
   const [extension] = createExtensions([{ name: "an extension" }]);
   await extension.startup();
 
-  await BrowserTestUtils.withNewTab({ gBrowser: win.gBrowser }, async () => {
+  await BrowserTestUtils.withNewTab({ gBrowser }, async () => {
     
-    await openExtensionsPanel(win);
-    const contextMenu = await openUnifiedExtensionsContextMenu(
-      win,
-      extension.id
-    );
+    await openExtensionsPanel();
+    const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
 
     const reportButton = contextMenu.querySelector(
       ".unified-extensions-context-menu-report-extension"
@@ -351,8 +330,8 @@ add_task(async function test_remove_extension() {
   await extension.startup();
 
   
-  await openExtensionsPanel(win);
-  const contextMenu = await openUnifiedExtensionsContextMenu(win, extension.id);
+  await openExtensionsPanel();
+  const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
 
   const removeButton = contextMenu.querySelector(
     ".unified-extensions-context-menu-remove-extension"
@@ -403,8 +382,8 @@ add_task(async function test_remove_extension_cancelled() {
   await extension.startup();
 
   
-  await openExtensionsPanel(win);
-  const contextMenu = await openUnifiedExtensionsContextMenu(win, extension.id);
+  await openExtensionsPanel();
+  const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
 
   const removeButton = contextMenu.querySelector(
     ".unified-extensions-context-menu-remove-extension"
@@ -432,14 +411,14 @@ add_task(async function test_remove_extension_cancelled() {
   await hidden;
 
   
-  await openExtensionsPanel(win);
-  const item = getUnifiedExtensionsItem(win, extension.id);
+  await openExtensionsPanel();
+  const item = getUnifiedExtensionsItem(extension.id);
   is(
     item.querySelector(".unified-extensions-item-name").textContent,
     "an extension",
     "expected extension to still be listed"
   );
-  await closeExtensionsPanel(win);
+  await closeExtensionsPanel();
 
   await extension.unload();
   
@@ -462,25 +441,25 @@ add_task(async function test_open_context_menu_on_click() {
   await extension.startup();
 
   
-  await openExtensionsPanel(win);
+  await openExtensionsPanel();
 
-  const button = getUnifiedExtensionsItem(win, extension.id).querySelector(
+  const button = getUnifiedExtensionsItem(extension.id).querySelector(
     ".unified-extensions-item-menu-button"
   );
   ok(button, "expected menu button");
 
-  const contextMenu = win.document.getElementById(
+  const contextMenu = document.getElementById(
     "unified-extensions-context-menu"
   );
   ok(contextMenu, "expected menu");
 
   
   const shown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(button, { type: "contextmenu" }, win);
+  EventUtils.synthesizeMouseAtCenter(button, { type: "contextmenu" });
   await shown;
 
-  await closeChromeContextMenu(contextMenu.id, null, win);
-  await closeExtensionsPanel(win);
+  await closeChromeContextMenu(contextMenu.id, null);
+  await closeExtensionsPanel();
 
   await extension.unload();
 });
@@ -490,9 +469,9 @@ add_task(async function test_open_context_menu_with_keyboard() {
   await extension.startup();
 
   
-  await openExtensionsPanel(win);
+  await openExtensionsPanel();
 
-  const button = getUnifiedExtensionsItem(win, extension.id).querySelector(
+  const button = getUnifiedExtensionsItem(extension.id).querySelector(
     ".unified-extensions-item-menu-button"
   );
   ok(button, "expected menu button");
@@ -501,7 +480,7 @@ add_task(async function test_open_context_menu_with_keyboard() {
   
   button.setAttribute("tabindex", "-1");
 
-  const contextMenu = win.document.getElementById(
+  const contextMenu = document.getElementById(
     "unified-extensions-context-menu"
   );
   ok(contextMenu, "expected menu");
@@ -509,11 +488,11 @@ add_task(async function test_open_context_menu_with_keyboard() {
   
   let shown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
   button.focus();
-  is(button, win.document.activeElement, "expected button to be focused");
-  EventUtils.synthesizeKey(" ", {}, win);
+  is(button, document.activeElement, "expected button to be focused");
+  EventUtils.synthesizeKey(" ", {});
   await shown;
 
-  await closeChromeContextMenu(contextMenu.id, null, win);
+  await closeChromeContextMenu(contextMenu.id, null);
 
   if (AppConstants.platform != "macosx") {
     
@@ -521,13 +500,13 @@ add_task(async function test_open_context_menu_with_keyboard() {
     
     shown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
     button.focus();
-    is(button, win.document.activeElement, "expected button to be focused");
-    EventUtils.synthesizeKey("KEY_Enter", {}, win);
+    is(button, document.activeElement, "expected button to be focused");
+    EventUtils.synthesizeKey("KEY_Enter", {});
     await shown;
-    await closeChromeContextMenu(contextMenu.id, null, win);
+    await closeChromeContextMenu(contextMenu.id, null);
   }
 
-  await closeExtensionsPanel(win);
+  await closeExtensionsPanel();
 
   await extension.unload();
 });
@@ -553,14 +532,14 @@ add_task(async function test_context_menu_without_browserActionFor_global() {
   
   
   
-  await openExtensionsPanel(win);
+  await openExtensionsPanel();
   
   
-  const contextMenu = await openUnifiedExtensionsContextMenu(win, extension.id);
+  const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
   assertVisibleContextMenuItems(contextMenu, 3);
 
-  await closeChromeContextMenu(contextMenu.id, null, win);
-  await closeExtensionsPanel(win);
+  await closeChromeContextMenu(contextMenu.id, null);
+  await closeExtensionsPanel();
 
   await extension.unload();
 
@@ -598,26 +577,25 @@ add_task(async function test_page_action_context_menu() {
 
   await extWithMenuPageAction.awaitMessage("menu-created");
 
-  await openExtensionsPanel(win);
+  await openExtensionsPanel();
 
   info("extension with page action and a menu");
   
   
   let contextMenu = await openUnifiedExtensionsContextMenu(
-    win,
     extWithMenuPageAction.id
   );
   assertVisibleContextMenuItems(contextMenu, 3);
-  await closeChromeContextMenu(contextMenu.id, null, win);
+  await closeChromeContextMenu(contextMenu.id, null);
 
   info("extension with no browser action and no menu");
   
   
-  contextMenu = await openUnifiedExtensionsContextMenu(win, extWithoutMenu1.id);
+  contextMenu = await openUnifiedExtensionsContextMenu(extWithoutMenu1.id);
   assertVisibleContextMenuItems(contextMenu, 3);
-  await closeChromeContextMenu(contextMenu.id, null, win);
+  await closeChromeContextMenu(contextMenu.id, null);
 
-  await closeExtensionsPanel(win);
+  await closeExtensionsPanel();
 
   await Promise.all(extensions.map(extension => extension.unload()));
 });
@@ -629,8 +607,8 @@ add_task(async function test_pin_to_toolbar() {
   await extension.startup();
 
   
-  await openExtensionsPanel(win);
-  const contextMenu = await openUnifiedExtensionsContextMenu(win, extension.id);
+  await openExtensionsPanel();
+  const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
 
   const pinToToolbarItem = contextMenu.querySelector(
     ".unified-extensions-context-menu-pin-to-toolbar"
@@ -638,7 +616,7 @@ add_task(async function test_pin_to_toolbar() {
   ok(pinToToolbarItem, "expected 'pin to toolbar' menu item");
 
   const hidden = BrowserTestUtils.waitForEvent(
-    win.gUnifiedExtensions.panel,
+    gUnifiedExtensions.panel,
     "popuphidden",
     true
   );
@@ -672,8 +650,8 @@ add_task(async function test_contextmenu_command_closes_panel() {
   await extension.startup();
   await extension.awaitMessage("menu-created");
 
-  await openExtensionsPanel(win);
-  const contextMenu = await openUnifiedExtensionsContextMenu(win, extension.id);
+  await openExtensionsPanel();
+  const contextMenu = await openUnifiedExtensionsContextMenu(extension.id);
 
   const firstMenuItem = contextMenu.querySelector("menuitem");
   is(
@@ -683,7 +661,7 @@ add_task(async function test_contextmenu_command_closes_panel() {
   );
 
   const hidden = BrowserTestUtils.waitForEvent(
-    win.gUnifiedExtensions.panel,
+    gUnifiedExtensions.panel,
     "popuphidden",
     true
   );
