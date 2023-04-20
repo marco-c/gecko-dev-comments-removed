@@ -395,8 +395,6 @@ class nsINode : public mozilla::dom::EventTarget {
   enum {
     
     eHTML_FORM_CONTROL = 1 << 6,
-    
-    eSHAPE = 1 << 12
   };
 
   
@@ -833,6 +831,7 @@ class nsINode : public mozilla::dom::EventTarget {
   }
 
   virtual bool IsSVGAnimationElement() const { return false; }
+  virtual bool IsSVGGeometryElement() const { return false; }
   virtual bool IsSVGGraphicsElement() const { return false; }
 
   inline bool IsXULElement() const {

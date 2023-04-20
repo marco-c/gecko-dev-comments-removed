@@ -1321,7 +1321,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
   if (!newAcc) {
     if (content->IsSVGElement()) {
-      if (content->IsNodeOfType(nsINode::eSHAPE) ||
+      if (content->IsSVGGeometryElement() ||
           content->IsSVGElement(nsGkAtoms::image)) {
         
         
