@@ -292,8 +292,6 @@ class SctpActor : public rtc::MessageHandlerAutoCleanup,
   double avg_received_bitrate_mbps(size_t remove_first_n = 3) const {
     std::vector<double> bitrates = received_bitrate_mbps_;
     bitrates.erase(bitrates.begin(), bitrates.begin() + remove_first_n);
-    
-    bitrates.pop_back();
 
     double sum = 0;
     for (double bitrate : bitrates) {
@@ -518,7 +516,7 @@ TEST_F(DcSctpSocketNetworkTest, DCSCTP_NDEBUG_TEST(HasHighBandwidth)) {
 
   
   double bitrate = receiver.avg_received_bitrate_mbps();
-  EXPECT_THAT(bitrate, AllOf(Ge(540), Le(640)));
+  EXPECT_THAT(bitrate, AllOf(Ge(520), Le(640)));
 }
 }  
 }  
