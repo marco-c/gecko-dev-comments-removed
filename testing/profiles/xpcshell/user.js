@@ -20,7 +20,7 @@ user_pref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager
 user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");
 user_pref("telemetry.fog.test.localhost_port", -1);
 
-user_pref("services.settings.server", "http://localhost/remote-settings-dummy/v1");
+user_pref("services.settings.server", "data:,#remote-settings-dummy/v1");
 
 user_pref("security.remote_settings.intermediates.enabled", false);
 

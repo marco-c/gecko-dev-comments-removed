@@ -144,7 +144,7 @@ class GeckoInstance(object):
         
         "security.notification_enable_delay": 0,
         
-        "services.settings.server": "http://%(server)s/dummy/blocklist/",
+        "services.settings.server": "data:,#remote-settings-dummy/v1",
         
         
         "signon.rememberSignons": False,
