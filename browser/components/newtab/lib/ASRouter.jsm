@@ -1363,15 +1363,19 @@ class _ASRouter {
       const time = Date.now();
       return this.setState(state => {
         const messageImpressions = this._addImpressionForItem(
-          state,
+          state.messageImpressions,
           message,
           "messageImpressions",
           time
         );
-        let { groupImpressions } = this.state;
+        
+        
+        
+        
+        let { groupImpressions } = state;
         for (const group of groupsWithFrequency) {
           groupImpressions = this._addImpressionForItem(
-            state,
+            groupImpressions,
             group,
             "groupImpressions",
             time
@@ -1386,17 +1390,10 @@ class _ASRouter {
 
   
   
-  _addImpressionForItem(state, item, impressionsString, time) {
-    lazy.ASRouterPreferences.console.debug(
-      "entered _addImpressionsForItem, item = ",
-      item,
-      " impressionsString = ",
-      impressionsString
-    );
-
+  _addImpressionForItem(currentImpressions, item, impressionsString, time) {
     
     
-    const impressions = { ...state[impressionsString] };
+    const impressions = { ...currentImpressions };
     if (item.frequency) {
       impressions[item.id] = impressions[item.id]
         ? [...impressions[item.id]]
