@@ -13,13 +13,36 @@ def inline(doc):
     return "data:text/html;charset=utf-8,{}".format(quote(doc))
 
 
+
+
+DEFAULT_WINDOWS = set(
+    [
+        
+        
+        (inline("""<div">Lorem</div>"""),),
+        
+        (
+            inline("""<div">ipsum</div>"""),
+            inline("""<div">dolor</div>"""),
+        ),
+        
+        (
+            inline("""<div">sit</div>"""),
+            inline("""<div">amet</div>"""),
+        ),
+    ]
+)
+
+
 class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
     def setUp(
         self,
         startup_page=1,
         include_private=True,
+        restore_on_demand=False,
         no_auto_updates=True,
         win_register_restart=False,
+        test_windows=DEFAULT_WINDOWS,
     ):
         super(SessionStoreTestCase, self).setUp()
         self.marionette.set_context("chrome")
@@ -27,25 +50,7 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
         platform = self.marionette.session_capabilities["platformName"]
         self.accelKey = Keys.META if platform == "mac" else Keys.CONTROL
 
-        
-        
-        self.test_windows = set(
-            [
-                
-                
-                (inline("""<div">Lorem</div>"""),),
-                
-                (
-                    inline("""<div">ipsum</div>"""),
-                    inline("""<div">dolor</div>"""),
-                ),
-                
-                (
-                    inline("""<div">sit</div>"""),
-                    inline("""<div">amet</div>"""),
-                ),
-            ]
-        )
+        self.test_windows = test_windows
 
         self.private_windows = set(
             [
@@ -67,7 +72,7 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
                 "browser.startup.page": startup_page,
                 
                 
-                "browser.sessionstore.restore_on_demand": False,
+                "browser.sessionstore.restore_on_demand": restore_on_demand,
                 
                 
                 
