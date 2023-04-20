@@ -10,6 +10,7 @@
 
 #include "common.h"
 #include "EventLog.h"
+#include "mozilla/Unused.h"
 
 
 

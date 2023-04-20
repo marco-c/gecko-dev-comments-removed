@@ -8,6 +8,7 @@
 #define __DEFAULT_BROWSER_AGENT_SCHEDULED_TASK_H__
 
 #include <windows.h>
+#include <wtypes.h>
 
 
 
