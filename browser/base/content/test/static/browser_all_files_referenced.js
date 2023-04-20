@@ -290,6 +290,12 @@ var whitelist = [
 
   
   { file: "resource://gre/modules/LangPackMatcher.sys.mjs" },
+
+  
+  { file: "chrome://browser/content/screenshots/cancel.svg" },
+  { file: "chrome://browser/content/screenshots/copy.svg" },
+  { file: "chrome://browser/content/screenshots/download.svg" },
+  { file: "chrome://browser/content/screenshots/download-white.svg" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
