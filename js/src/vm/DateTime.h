@@ -186,6 +186,14 @@ class DateTimeInfo {
     auto guard = acquireLockWithValidTimeZone();
     return guard->timeZone()->GetId(buffer);
   }
+
+  
+
+
+  static mozilla::Result<int32_t, mozilla::intl::ICUError> getRawOffsetMs() {
+    auto guard = acquireLockWithValidTimeZone();
+    return guard->timeZone()->GetRawOffsetMs();
+  }
 #else
   
 
