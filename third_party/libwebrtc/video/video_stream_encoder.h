@@ -452,10 +452,13 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   
   
-  rtc::TaskQueue encoder_queue_;
-
+  
   
   ScopedTaskSafety task_safety_;
+
+  
+  
+  rtc::TaskQueue encoder_queue_;
 };
 
 }  
