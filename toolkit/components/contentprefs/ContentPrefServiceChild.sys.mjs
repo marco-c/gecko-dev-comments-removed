@@ -1,22 +1,18 @@
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ContentPrefsChild", "ContentPrefServiceChild"];
-
-const {
+import {
   ContentPref,
   _methodsCallableFromChild,
   cbHandleCompletion,
   cbHandleError,
   cbHandleResult,
   safeCallback,
-} = ChromeUtils.import("resource://gre/modules/ContentPrefUtils.jsm");
+} from "resource://gre/modules/ContentPrefUtils.sys.mjs";
 
-
+// We only need one bit of information out of the context.
 function contextArg(context) {
   return context && context.usePrivateBrowsing
     ? { usePrivateBrowsing: true }
@@ -48,14 +44,14 @@ CallbackCaller.prototype = {
   },
 };
 
-class ContentPrefsChild extends JSProcessActorChild {
+export class ContentPrefsChild extends JSProcessActorChild {
   constructor() {
     super();
 
-    
+    // Map from pref name -> set of observers
     this._observers = new Map();
 
-    
+    // Map from random ID string -> CallbackCaller, per request
     this._requests = new Map();
   }
 
@@ -111,8 +107,8 @@ class ContentPrefsChild extends JSProcessActorChild {
     if (!set) {
       set = new Set();
 
-      
-      
+      // This is the first observer for this name. Start listening for changes
+      // to it.
       this.sendAsyncMessage("ContentPrefs:AddObserverForName", {
         name,
       });
@@ -130,7 +126,7 @@ class ContentPrefsChild extends JSProcessActorChild {
 
     set.delete(observer);
     if (set.size === 0) {
-      
+      // This was the last observer for this name. Stop listening for changes.
       this.sendAsyncMessage("ContentPrefs:RemoveObserverForName", {
         name,
       });
@@ -140,7 +136,7 @@ class ContentPrefsChild extends JSProcessActorChild {
   }
 }
 
-var ContentPrefServiceChild = {
+export var ContentPrefServiceChild = {
   QueryInterface: ChromeUtils.generateQI(["nsIContentPrefService2"]),
 
   addObserverForName: (name, observer) => {
@@ -161,15 +157,15 @@ var ContentPrefServiceChild = {
 };
 
 function forwardMethodToParent(method, signature, ...args) {
-  
+  // Ignore superfluous arguments
   args = args.slice(0, signature.length);
 
-  
+  // Process context argument for forwarding
   let contextIndex = signature.indexOf("context");
   if (contextIndex > -1) {
     args[contextIndex] = contextArg(args[contextIndex]);
   }
-  
+  // Take out the callback argument, if present.
   let callbackIndex = signature.indexOf("callback");
   let callback = null;
   if (callbackIndex > -1 && args.length > callbackIndex) {

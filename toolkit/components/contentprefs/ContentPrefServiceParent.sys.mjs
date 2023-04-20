@@ -1,23 +1,15 @@
+/* vim: set ts=2 sw=2 sts=2 et tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ContentPrefsParent"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(
-  lazy,
-  "_methodsCallableFromChild",
-  "resource://gre/modules/ContentPrefUtils.jsm"
-);
+ChromeUtils.defineESModuleGetters(lazy, {
+  _methodsCallableFromChild: "resource://gre/modules/ContentPrefUtils.sys.mjs",
+});
 
 let loadContext = Cu.createLoadContext();
 let privateLoadContext = Cu.createPrivateLoadContext();
@@ -28,13 +20,13 @@ function contextArg(context) {
     : loadContext;
 }
 
-class ContentPrefsParent extends JSProcessActorParent {
+export class ContentPrefsParent extends JSProcessActorParent {
   constructor() {
     super();
 
-    
-    
-    
+    // The names we're using this observer object for, used to keep track
+    // of the number of names we care about as well as for removing this
+    // observer if its associated process goes away.
     this._prefsToObserve = new Set();
     this._observer = null;
   }
@@ -51,8 +43,8 @@ class ContentPrefsParent extends JSProcessActorParent {
   receiveMessage(msg) {
     switch (msg.name) {
       case "ContentPrefs:AddObserverForName": {
-        
-        
+        // The child process is responsible for not adding multiple parent
+        // observers for the same name.
         let actor = this;
         if (!this._observer) {
           this._observer = {
@@ -126,16 +118,16 @@ class ContentPrefsParent extends JSProcessActorParent {
               });
             },
           };
-          
+          // Push our special listener.
           args.push(listener);
 
-          
+          // Process context argument for forwarding
           let contextIndex = signature.indexOf("context");
           if (contextIndex > -1) {
             args[contextIndex] = contextArg(args[contextIndex]);
           }
 
-          
+          // And call the function.
           lazy.cps2[data.call](...args);
         });
     }

@@ -1,14 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = ["AsyncRunner"];
-
-function AsyncRunner(callbacks) {
+export function AsyncRunner(callbacks) {
   this._callbacks = callbacks;
   this._iteratorQueue = [];
 
-  
+  // This catches errors reported to the console, e.g., via Cu.reportError.
   Services.console.registerListener(this);
 }
 
@@ -35,8 +33,8 @@ AsyncRunner.prototype = {
       this._callbacks.error(err);
     }
 
-    
-    
+    // val is truthy => call next
+    // val is an iterator => prepend it to the queue and start on it
     if (value) {
       if (typeof value != "boolean") {
         this._iteratorQueue.unshift(value);

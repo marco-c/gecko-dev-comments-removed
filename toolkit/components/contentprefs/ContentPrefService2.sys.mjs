@@ -1,16 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-const {
+import {
   ContentPref,
   cbHandleCompletion,
   cbHandleError,
   cbHandleResult,
-} = ChromeUtils.import("resource://gre/modules/ContentPrefUtils.jsm");
-const { ContentPrefStore } = ChromeUtils.import(
-  "resource://gre/modules/ContentPrefStore.jsm"
-);
+} from "resource://gre/modules/ContentPrefUtils.sys.mjs";
+
+import { ContentPrefStore } from "resource://gre/modules/ContentPrefStore.sys.mjs";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
@@ -25,16 +25,16 @@ const GROUP_CLAUSE = `
         (:includeSubdomains AND name LIKE :pattern ESCAPE '/')
 `;
 
-function ContentPrefService2() {
+export function ContentPrefService2() {
   if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
-    return ChromeUtils.import(
-      "resource://gre/modules/ContentPrefServiceChild.jsm"
+    return ChromeUtils.importESModule(
+      "resource://gre/modules/ContentPrefServiceChild.sys.mjs"
     ).ContentPrefServiceChild;
   }
 
   Services.obs.addObserver(this, "last-pb-context-exited");
 
-  
+  // Observe shutdown so we can shut down the database connection.
   Services.obs.addObserver(this, "profile-before-change");
 }
 
@@ -43,7 +43,7 @@ cache.set = function CPS_cache_set(group, name, val) {
   Object.getPrototypeOf(this).set.apply(this, arguments);
   let groupCount = this._groups.size;
   if (groupCount >= CACHE_MAX_GROUP_ENTRIES) {
-    
+    // Clean half of the entries
     for (let [group, name] of this) {
       this.remove(group, name);
       groupCount--;
@@ -72,27 +72,27 @@ function HostnameGrouper_group(aURI) {
   var group;
 
   try {
-    
-    
-    
-    
+    // Accessing the host property of the URI will throw an exception
+    // if the URI is of a type that doesn't have a host property.
+    // Otherwise, we manually throw an exception if the host is empty,
+    // since the effect is the same (we can't derive a group from it).
 
     group = aURI.host;
     if (!group) {
       throw new Error("can't derive group from host; no host in URI");
     }
   } catch (ex) {
-    
-    
-    
-    
+    // If we don't have a host, then use the entire URI (minus the query,
+    // reference, and hash, if possible) as the group.  This means that URIs
+    // like about:mozilla and about:blank will be considered separate groups,
+    // but at least they'll be grouped somehow.
 
-    
-    
-    
-    
+    // This also means that each individual file: URL will be considered
+    // its own group.  This seems suboptimal, but so does treating the entire
+    // file: URL space as a single group (especially if folks start setting
+    // group-specific capabilities prefs).
 
-    
+    // XXX Is there something better we can do here?
 
     try {
       var url = aURI.QueryInterface(Ci.nsIURL);
@@ -106,25 +106,25 @@ function HostnameGrouper_group(aURI) {
 }
 
 ContentPrefService2.prototype = {
-  
+  // XPCOM Plumbing
 
   classID: Components.ID("{e3f772f3-023f-4b32-b074-36cf0fd5d414}"),
 
-  
+  // Destruction
 
   _destroy() {
     Services.obs.removeObserver(this, "profile-before-change");
     Services.obs.removeObserver(this, "last-pb-context-exited");
 
-    
-    
-    
-    
+    // Delete references to XPCOM components to make sure we don't leak them
+    // (although we haven't observed leakage in tests).  Also delete references
+    // in _observers and _genericObservers to avoid cycles with those that
+    // refer to us and don't remove themselves from those observer pools.
     delete this._observers;
     delete this._genericObservers;
   },
 
-  
+  // in-memory cache and private-browsing stores
 
   _cache: cache,
   _pbStore: privModeStorage,
@@ -148,15 +148,15 @@ ContentPrefService2.prototype = {
     })());
   },
 
-  
+  // nsIContentPrefService
 
   getByName: function CPS2_getByName(name, context, callback) {
     checkNameArg(name);
     checkCallbackArg(callback, true);
 
-    
-    
-    
+    // Some prefs may be in both the database and the private browsing store.
+    // Notify the caller of such prefs only once, using the values from private
+    // browsing.
     let pbPrefs = new ContentPrefStore();
     if (context && context.usePrivateBrowsing) {
       for (let [sgroup, sname, val] of this._pbStore) {
@@ -235,9 +235,9 @@ ContentPrefService2.prototype = {
     checkNameArg(name);
     checkCallbackArg(callback, true);
 
-    
-    
-    
+    // Some prefs may be in both the database and the private browsing store.
+    // Notify the caller of such prefs only once, using the values from private
+    // browsing.
     let pbPrefs = new ContentPrefStore();
     if (context && context.usePrivateBrowsing) {
       for (let [sgroup, val] of this._pbStore.match(
@@ -387,13 +387,13 @@ ContentPrefService2.prototype = {
       return;
     }
 
-    
-    
+    // Invalidate the cached value so consumers accessing the cache between now
+    // and when the operation finishes don't get old data.
     this._cache.remove(group, name);
 
     let stmts = [];
 
-    
+    // Create the setting if it doesn't exist.
     let stmt = this._stmt(`
       INSERT OR IGNORE INTO settings (id, name)
       VALUES((SELECT id FROM settings WHERE name = :name), :name)
@@ -401,7 +401,7 @@ ContentPrefService2.prototype = {
     stmt.params.name = name;
     stmts.push(stmt);
 
-    
+    // Create the group if it doesn't exist.
     if (group) {
       stmt = this._stmt(`
         INSERT OR IGNORE INTO groups (id, name)
@@ -411,7 +411,7 @@ ContentPrefService2.prototype = {
       stmts.push(stmt);
     }
 
-    
+    // Finally create or update the pref.
     if (group) {
       stmt = this._stmt(`
         INSERT OR REPLACE INTO prefs (id, groupID, settingID, value, timestamp)
@@ -504,18 +504,18 @@ ContentPrefService2.prototype = {
     checkNameArg(name);
     checkCallbackArg(callback, false);
 
-    
-    
+    // Invalidate the cached values so consumers accessing the cache between now
+    // and when the operation finishes don't get old data.
     for (let sgroup of this._cache.matchGroups(group, includeSubdomains)) {
       this._cache.remove(sgroup, name);
     }
 
     let stmts = [];
 
-    
+    // First get the matching prefs.
     stmts.push(this._commonGetStmt(group, name, includeSubdomains));
 
-    
+    // Delete the matching prefs.
     let stmt = this._stmtWithGroupClause(
       group,
       includeSubdomains,
@@ -569,10 +569,10 @@ ContentPrefService2.prototype = {
     });
   },
 
-  
+  // Deletes settings and groups that are no longer used.
   _settingsAndGroupsCleanupStmts() {
-    
-    
+    // The NOTNULL term in the subquery of the second statment is needed because of
+    // SQLite's weird IN behavior vis-a-vis NULLs.  See http://sqlite.org/lang_expr.html.
     return [
       this._stmt(`
         DELETE FROM settings
@@ -609,16 +609,16 @@ ContentPrefService2.prototype = {
     group = this._parseGroup(group);
     checkCallbackArg(callback, false);
 
-    
-    
+    // Invalidate the cached values so consumers accessing the cache between now
+    // and when the operation finishes don't get old data.
     for (let sgroup of this._cache.matchGroups(group, includeSubdomains)) {
       this._cache.removeGroup(sgroup);
     }
 
     let stmts = [];
 
-    
-    
+    // First get the matching prefs, then delete groups and prefs that reference
+    // deleted groups.
     if (group) {
       stmts.push(
         this._stmtWithGroupClause(
@@ -658,7 +658,7 @@ ContentPrefService2.prototype = {
       stmts.push(this._stmt("DELETE FROM prefs WHERE groupID IS NULL"));
     }
 
-    
+    // Finally delete settings that are no longer referenced.
     stmts.push(
       this._stmt(`
       DELETE FROM settings
@@ -713,14 +713,14 @@ ContentPrefService2.prototype = {
 
     since /= 1000;
 
-    
-    
-    
+    // Invalidate the cached values so consumers accessing the cache between now
+    // and when the operation finishes don't get old data.
+    // Invalidate all the group cache because we don't know which groups will be removed.
     this._cache.removeAllGroups();
 
     let stmts = [];
 
-    
+    // Get prefs that are about to be removed to notify about their removal.
     let stmt = this._stmt(`
       SELECT groups.name AS grp, settings.name AS name
       FROM prefs
@@ -731,14 +731,14 @@ ContentPrefService2.prototype = {
     stmt.params.since = since;
     stmts.push(stmt);
 
-    
+    // Do the actual remove.
     stmt = this._stmt(`
       DELETE FROM prefs WHERE groupID NOTNULL AND timestamp >= :since
     `);
     stmt.params.since = since;
     stmts.push(stmt);
 
-    
+    // Cleanup no longer used values.
     stmts = stmts.concat(this._settingsAndGroupsCleanupStmts());
 
     let prefs = new ContentPrefStore();
@@ -751,8 +751,8 @@ ContentPrefService2.prototype = {
         this._cache.set(grp, name, undefined);
       },
       onDone: (reason, ok) => {
-        
-        
+        // This nukes all the groups in _pbStore since we don't have their timestamp
+        // information.
         if (ok && isPrivate) {
           for (let [sgroup, sname] of this._pbStore) {
             if (sgroup) {
@@ -790,8 +790,8 @@ ContentPrefService2.prototype = {
     checkNameArg(name);
     checkCallbackArg(callback, false);
 
-    
-    
+    // Invalidate the cached values so consumers accessing the cache between now
+    // and when the operation finishes don't get old data.
     for (let [group, sname] of this._cache) {
       if (sname == name) {
         this._cache.remove(group, name);
@@ -800,8 +800,8 @@ ContentPrefService2.prototype = {
 
     let stmts = [];
 
-    
-    
+    // First get the matching prefs.  Include null if any of those prefs are
+    // global.
     let stmt = this._stmt(`
       SELECT groups.name AS grp
       FROM prefs
@@ -820,12 +820,12 @@ ContentPrefService2.prototype = {
     stmt.params.name = name;
     stmts.push(stmt);
 
-    
+    // Delete the target settings.
     stmt = this._stmt("DELETE FROM settings WHERE name = :name");
     stmt.params.name = name;
     stmts.push(stmt);
 
-    
+    // Delete prefs and groups that are no longer used.
     stmts.push(
       this._stmt(
         "DELETE FROM prefs WHERE settingID NOT IN (SELECT id FROM settings)"
@@ -870,13 +870,13 @@ ContentPrefService2.prototype = {
     });
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Returns the cached mozIStorageAsyncStatement for the given SQL.  If no such
+   * statement is cached, one is created and cached.
+   *
+   * @param sql  The SQL query string.
+   * @return     The cached, possibly new, statement.
+   */
   _stmt: function CPS2__stmt(sql, cachable = true) {
     return {
       sql,
@@ -885,23 +885,23 @@ ContentPrefService2.prototype = {
     };
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Executes some async statements.
+   *
+   * @param stmts      An array of mozIStorageAsyncStatements.
+   * @param callbacks  An object with the following methods:
+   *                   onRow(row) (optional)
+   *                     Called once for each result row.
+   *                     row: A mozIStorageRow.
+   *                   onDone(reason, reasonOK, didGetRow) (required)
+   *                     Called when done.
+   *                     reason: A nsIContentPrefService2.COMPLETE_* value.
+   *                     reasonOK: reason == nsIContentPrefService2.COMPLETE_OK.
+   *                     didGetRow: True if onRow was ever called.
+   *                   onError(nsresult) (optional)
+   *                     Called on error.
+   *                     nsresult: The error code.
+   */
   _execStmts: async function CPS2__execStmts(stmts, callbacks) {
     let conn = await this.conn;
     let rows;
@@ -944,15 +944,15 @@ ContentPrefService2.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Parses the domain (the "group", to use the database's term) from the given
+   * string.
+   *
+   * @param groupStr  Assumed to be either a string or falsey.
+   * @return          If groupStr is a valid URL string, returns the domain of
+   *                  that URL.  If groupStr is some other nonempty string,
+   *                  returns groupStr itself.  Otherwise returns null.
+   */
   _parseGroup: function CPS2__parseGroup(groupStr) {
     if (!groupStr) {
       return null;
@@ -969,10 +969,10 @@ ContentPrefService2.prototype = {
     Services.tm.dispatchToMainThread(fn.bind(this));
   },
 
-  
+  // A hash of arrays of observers, indexed by setting name.
   _observers: new Map(),
 
-  
+  // An array of generic observers, which observe all settings.
   _genericObservers: new Set(),
 
   addObserverForName(aName, aObserver) {
@@ -1004,13 +1004,13 @@ ContentPrefService2.prototype = {
     observers.delete(aObserver);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Construct a list of observers to notify about a change to some setting,
+   * putting setting-specific observers before before generic ones, so observers
+   * that initialize individual settings (like the page style controller)
+   * execute before observers that display multiple settings and depend on them
+   * being initialized first (like the content prefs sidebar).
+   */
   _getObservers(aName) {
     let genericObserverList = Array.from(this._genericObservers);
     if (aName) {
@@ -1022,9 +1022,9 @@ ContentPrefService2.prototype = {
     return genericObserverList;
   },
 
-  
-
-
+  /**
+   * Notify all observers about the removal of a preference.
+   */
   _notifyPrefRemoved: function ContentPrefService__notifyPrefRemoved(
     aGroup,
     aName,
@@ -1039,9 +1039,9 @@ ContentPrefService2.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Notify all observers about a preference change.
+   */
   _notifyPrefSet: function ContentPrefService__notifyPrefSet(
     aGroup,
     aName,
@@ -1061,13 +1061,13 @@ ContentPrefService2.prototype = {
     return this._parseGroup(str);
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Tests use this as a backchannel by calling it directly.
+   *
+   * @param subj   This value depends on topic.
+   * @param topic  The backchannel "method" name.
+   * @param data   This value depends on topic.
+   */
   observe: function CPS2_observe(subj, topic, data) {
     switch (topic) {
       case "profile-before-change":
@@ -1087,11 +1087,11 @@ ContentPrefService2.prototype = {
     }
   },
 
-  
-
-
-
-
+  /**
+   * Removes all state from the service.  Used by tests.
+   *
+   * @param callback  A function that will be called when done.
+   */
   async _reset(callback) {
     this._pbStore.removeAll();
     this._cache.removeAll();
@@ -1113,7 +1113,7 @@ ContentPrefService2.prototype = {
     "nsIObserver",
   ]),
 
-  
+  // Database Creation & Access
 
   _dbVersion: 4,
 
@@ -1132,7 +1132,7 @@ ContentPrefService2.prototype = {
                    groupID      INTEGER REFERENCES groups(id), \
                    settingID    INTEGER NOT NULL REFERENCES settings(id), \
                    value        BLOB, \
-                   timestamp    INTEGER NOT NULL DEFAULT 0", 
+                   timestamp    INTEGER NOT NULL DEFAULT 0", // Storage in seconds, API in ms. 0 for migrated values.
     },
     indices: {
       groups_idx: {
@@ -1197,8 +1197,8 @@ ContentPrefService2.prototype = {
           () => conn.close()
         );
       } catch (ex) {
-        
-        
+        // Uh oh, we failed to add a shutdown blocker. Close the connection
+        // anyway, but make sure that doesn't throw.
         try {
           await conn?.close();
         } catch (ex) {
@@ -1218,13 +1218,13 @@ ContentPrefService2.prototype = {
       return resetAndRetry(e);
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // Turn off disk synchronization checking to reduce disk churn and speed up
+    // operations when prefs are changed rapidly (such as when a user repeatedly
+    // changes the value of the browser zoom setting for a site).
+    //
+    // Note: this could cause database corruption if the OS crashes or machine
+    // loses power before the data gets written to disk, but this is considered
+    // a reasonable risk for the not-so-critical data stored in this database.
     await conn.execute("PRAGMA synchronous = OFF");
 
     return conn;
@@ -1292,13 +1292,13 @@ ContentPrefService2.prototype = {
   },
 
   _dbMigrate: async function CPS2__dbMigrate(aConn, aOldVersion, aNewVersion) {
-    
-
-
-
-
-
-
+    /**
+     * Migrations should follow the template rules in bug 1074817 comment 3 which are:
+     * 1. Migration should be incremental and non-breaking.
+     * 2. It should be idempotent because one can downgrade an upgrade again.
+     * On downgrade:
+     * 1. Decrement schema version so that upgrade runs the migrations again.
+     */
     await aConn.executeTransaction(async () => {
       for (let i = aOldVersion; i < aNewVersion; i++) {
         let migrationName = "_dbMigrate" + i + "To" + (i + 1);
@@ -1335,7 +1335,7 @@ ContentPrefService2.prototype = {
   },
 
   _dbMigrate3To4: async function CPS2__dbMigrate3To4(aConn) {
-    
+    // Add timestamp column if it does not exist yet. This operation is idempotent.
     try {
       await aConn.execute("SELECT timestamp FROM prefs");
     } catch (e) {
@@ -1344,7 +1344,7 @@ ContentPrefService2.prototype = {
       );
     }
 
-    
+    // To modify prefs_idx drop it and create again.
     await aConn.execute("DROP INDEX IF EXISTS prefs_idx");
     for (let name in this._dbSchema.indices) {
       await this._createIndex(aConn, name);
@@ -1383,6 +1383,4 @@ function invalidArg(msg) {
   return Components.Exception(msg, Cr.NS_ERROR_INVALID_ARG);
 }
 
-
-
-var EXPORTED_SYMBOLS = ["ContentPrefService2"];
+// XPCOM Plumbing
