@@ -80,6 +80,7 @@
 #include "js/RootingAPI.h"     
 #include "mozilla/PeerIdentity.h"
 #include "mozilla/dom/RTCCertificate.h"
+#include "mozilla/dom/RTCSctpTransportBinding.h"  
 #include "mozilla/dom/RTCDtlsTransportBinding.h"  
 #include "mozilla/dom/RTCRtpReceiverBinding.h"
 #include "mozilla/dom/RTCRtpSenderBinding.h"
@@ -100,6 +101,7 @@
 #include "MediaManager.h"
 
 #include "transport/nr_socket_proxy_config.h"
+#include "RTCSctpTransport.h"
 #include "RTCDtlsTransport.h"
 #include "jsep/JsepTransport.h"
 
@@ -250,13 +252,13 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(PeerConnectionImpl)
   tmp->BreakCycles();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPCObserver, mWindow, mCertificate,
                                   mSTSThread, mReceiveStreams, mOperations,
-                                  mKungFuDeathGrip)
+                                  mSctpTransport, mKungFuDeathGrip)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(PeerConnectionImpl)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPCObserver, mWindow, mCertificate,
-                                    mSTSThread, mReceiveStreams, mOperations,
-                                    mTransceivers, mKungFuDeathGrip)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(
+      mPCObserver, mWindow, mCertificate, mSTSThread, mReceiveStreams,
+      mOperations, mTransceivers, mSctpTransport, mKungFuDeathGrip)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(PeerConnectionImpl)
@@ -1473,6 +1475,24 @@ void PeerConnectionImpl::NotifyDataChannelClosed(DataChannel*) {
   mDataChannelsClosed++;
 }
 
+void PeerConnectionImpl::NotifySctpConnected() {
+  if (!mSctpTransport) {
+    MOZ_ASSERT(false);
+    return;
+  }
+
+  mSctpTransport->UpdateState(RTCSctpTransportState::Connected);
+}
+
+void PeerConnectionImpl::NotifySctpClosed() {
+  if (!mSctpTransport) {
+    MOZ_ASSERT(false);
+    return;
+  }
+
+  mSctpTransport->UpdateState(RTCSctpTransportState::Closed);
+}
+
 NS_IMETHODIMP
 PeerConnectionImpl::CreateOffer(const RTCOfferOptions& aOptions) {
   JsepOfferOptions options;
@@ -2586,6 +2606,10 @@ nsresult PeerConnectionImpl::SetConfiguration(
   return NS_OK;
 }
 
+RTCSctpTransport* PeerConnectionImpl::GetSctp() const {
+  return mSctpTransport.get();
+}
+
 void PeerConnectionImpl::RestartIce() {
   RestartIceNoRenegotiationNeeded();
   
@@ -2836,6 +2860,11 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
         }
 
         if (mJsepSession->GetState() == kJsepStateStable) {
+          if (aSdpType != dom::RTCSdpType::Rollback) {
+            
+            InitializeDataChannel();
+          }
+
           
           
           
@@ -2849,7 +2878,6 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           }
 
           if (aSdpType != dom::RTCSdpType::Rollback) {
-            InitializeDataChannel();
             StartIceChecks(*mJsepSession);
           }
 
@@ -3805,7 +3833,13 @@ void PeerConnectionImpl::RemoveRTCDtlsTransportsExcept(
 nsresult PeerConnectionImpl::UpdateTransports(const JsepSession& aSession,
                                               const bool forceIceTcp) {
   std::set<std::string> finalTransports;
+  Maybe<std::string> sctpTransport;
   for (const auto& transceiver : aSession.GetTransceivers()) {
+    if (transceiver->GetMediaType() == SdpMediaSection::kApplication &&
+        transceiver->HasTransport()) {
+      sctpTransport = Some(transceiver->mTransport.mTransportId);
+    }
+
     if (transceiver->HasOwnTransport()) {
       finalTransports.insert(transceiver->mTransport.mTransportId);
       UpdateTransport(*transceiver, forceIceTcp);
@@ -3821,7 +3855,35 @@ nsresult PeerConnectionImpl::UpdateTransports(const JsepSession& aSession,
     transceiverImpl->UpdateTransport();
   }
 
-  
+  if (sctpTransport.isSome()) {
+    auto it = mTransportIdToRTCDtlsTransport.find(*sctpTransport);
+    if (it == mTransportIdToRTCDtlsTransport.end()) {
+      
+      MOZ_ASSERT(false);
+      return NS_ERROR_FAILURE;
+    }
+    if (!mDataConnection) {
+      
+      MOZ_ASSERT(false);
+      return NS_ERROR_FAILURE;
+    }
+    RefPtr<RTCDtlsTransport> dtlsTransport = it->second;
+    
+    double maxMessageSize =
+        static_cast<double>(mDataConnection->GetMaxMessageSize());
+    Nullable<uint16_t> maxChannels;
+
+    if (!mSctpTransport) {
+      mSctpTransport = new RTCSctpTransport(GetParentObject(), *dtlsTransport,
+                                            maxMessageSize, maxChannels);
+    } else {
+      mSctpTransport->SetTransport(*dtlsTransport);
+      mSctpTransport->SetMaxMessageSize(maxMessageSize);
+      mSctpTransport->SetMaxChannels(maxChannels);
+    }
+  } else {
+    mSctpTransport = nullptr;
+  }
 
   return NS_OK;
 }
