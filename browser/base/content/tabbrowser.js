@@ -2583,8 +2583,9 @@
 
 
 
+    
     addTab(
-      uriString,
+      aURI,
       {
         allowInheritPrincipal,
         allowThirdPartyFixup,
@@ -2671,6 +2672,28 @@
         (openerBrowser && this.getTabForBrowser(openerBrowser)) ||
         (relatedToCurrent && this.selectedTab);
 
+      var t = document.createXULElement("tab", { is: "tabbrowser-tab" });
+      
+      
+      t.initializingTab = true;
+      t.openerTab = openerTab;
+
+      aURI = aURI || "about:blank";
+      let aURIObject = null;
+      try {
+        aURIObject = Services.io.newURI(aURI);
+      } catch (ex) {
+        
+      }
+
+      let lazyBrowserURI;
+      if (createLazyBrowser && aURI != "about:blank") {
+        lazyBrowserURI = aURIObject;
+        aURI = "about:blank";
+      }
+
+      var uriIsAboutBlank = aURI == "about:blank";
+
       
       
       
@@ -2680,191 +2703,6 @@
         this.tabContainer.getAttribute("overflow") != "true" &&
         !gReduceMotion;
 
-      let { uri, uriIsAboutBlank, lazyBrowserURI } = this._determineURIToLoad(
-        uriString,
-        createLazyBrowser
-      );
-
-      let usingPreloadedContent = false;
-      let b, t;
-
-      try {
-        t = this._createTab({
-          uriString,
-          animate,
-          userContextId,
-          openerTab,
-          createLazyBrowser,
-          skipAnimation,
-          pinned,
-          noInitialLabel,
-          skipBackgroundNotify,
-        });
-        if (!batchInsertingTabs) {
-          
-          
-          this._insertTabAtIndex(t, {
-            index,
-            ownerTab,
-            openerTab,
-            pinned,
-            bulkOrderedOpen,
-          });
-        }
-
-        ({ browser: b, usingPreloadedContent } = this._createBrowserForTab(t, {
-          uriString,
-          uri,
-          preferredRemoteType,
-          openerBrowser,
-          uriIsAboutBlank,
-          referrerInfo,
-          forceNotRemote,
-          name,
-          initialBrowsingContextGroupId,
-          openWindowInfo,
-          skipLoad,
-        }));
-
-        if (focusUrlBar) {
-          b._urlbarFocused = true;
-        }
-
-        
-        if (createLazyBrowser) {
-          this._createLazyBrowser(t);
-
-          if (lazyBrowserURI) {
-            
-            
-            this.UrlbarProviderOpenTabs.registerOpenTab(
-              lazyBrowserURI.spec,
-              t.userContextId,
-              PrivateBrowsingUtils.isWindowPrivate(window)
-            );
-            b.registeredOpenURI = lazyBrowserURI;
-          }
-          SessionStore.setTabState(t, {
-            entries: [
-              {
-                url: lazyBrowserURI ? lazyBrowserURI.spec : "about:blank",
-                title: lazyTabTitle,
-                triggeringPrincipal_base64: E10SUtils.serializePrincipal(
-                  triggeringPrincipal
-                ),
-              },
-            ],
-          });
-        } else {
-          this._insertBrowser(t, true);
-          
-          
-          
-          if (openerBrowser && !openWindowInfo) {
-            b.browsingContext.setCrossGroupOpener(
-              openerBrowser.browsingContext
-            );
-          }
-        }
-      } catch (e) {
-        console.error("Failed to create tab");
-        console.error(e);
-        t?.remove();
-        if (t?.linkedBrowser) {
-          this._tabFilters.delete(t);
-          this._tabListeners.delete(t);
-          this.getPanel(t.linkedBrowser).remove();
-        }
-        return null;
-      }
-
-      if (!batchInsertingTabs) {
-        
-        this._fireTabOpen(t, eventDetail);
-
-        this._kickOffBrowserLoad(b, {
-          uri,
-          uriString,
-          usingPreloadedContent,
-          triggeringPrincipal,
-          originPrincipal,
-          originStoragePrincipal,
-          uriIsAboutBlank,
-          allowInheritPrincipal,
-          allowThirdPartyFixup,
-          fromExternal,
-          disableTRR,
-          forceAllowDataURI,
-          skipLoad,
-          referrerInfo,
-          charset,
-          postData,
-          csp,
-          globalHistoryOptions,
-          triggeringRemoteType,
-        });
-      }
-
-      
-      
-      this.tabAnimationsInProgress++;
-
-      if (animate) {
-        requestAnimationFrame(function() {
-          
-          t.setAttribute("fadein", "true");
-        });
-      }
-
-      
-      if (pinned) {
-        this._notifyPinnedStatus(t);
-      }
-
-      gSharedTabWarning.tabAdded(t);
-
-      if (!inBackground) {
-        this.selectedTab = t;
-      }
-      return t;
-    },
-
-    _determineURIToLoad(uriString, createLazyBrowser) {
-      uriString = uriString || "about:blank";
-      let aURIObject = null;
-      try {
-        aURIObject = Services.io.newURI(uriString);
-      } catch (ex) {
-        
-      }
-
-      let lazyBrowserURI;
-      if (createLazyBrowser && uriString != "about:blank") {
-        lazyBrowserURI = aURIObject;
-        uriString = "about:blank";
-      }
-
-      let uriIsAboutBlank = uriString == "about:blank";
-      return { uri: aURIObject, uriIsAboutBlank, lazyBrowserURI };
-    },
-
-    _createTab({
-      uriString,
-      userContextId,
-      openerTab,
-      createLazyBrowser,
-      skipAnimation,
-      pinned,
-      noInitialLabel,
-      skipBackgroundNotify,
-      animate,
-    }) {
-      var t = document.createXULElement("tab", { is: "tabbrowser-tab" });
-      
-      
-      t.initializingTab = true;
-      t.openerTab = openerTab;
-
       
       
       if (userContextId == null && openerTab) {
@@ -2872,11 +2710,11 @@
       }
 
       if (!noInitialLabel) {
-        if (isBlankPageURL(uriString)) {
+        if (isBlankPageURL(aURI)) {
           t.setAttribute("label", this.tabContainer.emptyTabTitle);
         } else {
           
-          this.setInitialTabTitle(t, uriString, {
+          this.setInitialTabTitle(t, aURI, {
             beforeTabOpen: true,
             isURL: true,
           });
@@ -2917,196 +2755,246 @@
         UserInteraction.update("browser.tabs.opening", "animated", window);
       }
 
-      return t;
-    },
+      let usingPreloadedContent = false;
+      let b;
 
-    _createBrowserForTab(
-      tab,
-      {
-        uriString,
-        uri,
-        name,
-        preferredRemoteType,
-        openerBrowser,
-        uriIsAboutBlank,
-        referrerInfo,
-        forceNotRemote,
-        initialBrowsingContextGroupId,
-        openWindowInfo,
-        skipLoad,
-      }
-    ) {
-      
-      
-      if (!preferredRemoteType && openerBrowser) {
-        preferredRemoteType = openerBrowser.remoteType;
-      }
+      try {
+        if (!batchInsertingTabs) {
+          
+          
+          this._insertTabAtIndex(t, {
+            index,
+            ownerTab,
+            openerTab,
+            pinned,
+            bulkOrderedOpen,
+          });
+        }
 
-      let { userContextId } = tab;
+        
+        
+        if (!preferredRemoteType && openerBrowser) {
+          preferredRemoteType = openerBrowser.remoteType;
+        }
 
-      var oa = E10SUtils.predictOriginAttributes({ window, userContextId });
+        var oa = E10SUtils.predictOriginAttributes({ window, userContextId });
 
-      
-      
-      
-      if (
-        uriIsAboutBlank &&
-        !preferredRemoteType &&
-        referrerInfo &&
-        referrerInfo.originalReferrer
-      ) {
-        preferredRemoteType = E10SUtils.getRemoteTypeForURI(
-          referrerInfo.originalReferrer.spec,
-          gMultiProcessBrowser,
-          gFissionBrowser,
-          E10SUtils.DEFAULT_REMOTE_TYPE,
-          null,
-          oa
-        );
-      }
-
-      let remoteType = forceNotRemote
-        ? E10SUtils.NOT_REMOTE
-        : E10SUtils.getRemoteTypeForURI(
-            uriString,
+        
+        
+        
+        if (
+          uriIsAboutBlank &&
+          !preferredRemoteType &&
+          referrerInfo &&
+          referrerInfo.originalReferrer
+        ) {
+          preferredRemoteType = E10SUtils.getRemoteTypeForURI(
+            referrerInfo.originalReferrer.spec,
             gMultiProcessBrowser,
             gFissionBrowser,
-            preferredRemoteType,
+            E10SUtils.DEFAULT_REMOTE_TYPE,
             null,
             oa
           );
+        }
 
-      let b,
-        usingPreloadedContent = false;
+        let remoteType = forceNotRemote
+          ? E10SUtils.NOT_REMOTE
+          : E10SUtils.getRemoteTypeForURI(
+              aURI,
+              gMultiProcessBrowser,
+              gFissionBrowser,
+              preferredRemoteType,
+              null,
+              oa
+            );
+
+        
+        
+        if (aURI == BROWSER_NEW_TAB_URL && !userContextId) {
+          b = NewTabPagePreloading.getPreloadedBrowser(window);
+          if (b) {
+            usingPreloadedContent = true;
+          }
+        }
+
+        if (!b) {
+          
+          b = this.createBrowser({
+            remoteType,
+            uriIsAboutBlank,
+            userContextId,
+            initialBrowsingContextGroupId,
+            openWindowInfo,
+            name,
+            skipLoad,
+          });
+        }
+
+        t.linkedBrowser = b;
+
+        if (focusUrlBar) {
+          b._urlbarFocused = true;
+        }
+
+        this._tabForBrowser.set(b, t);
+        t.permanentKey = b.permanentKey;
+        t._browserParams = {
+          uriIsAboutBlank,
+          remoteType,
+          usingPreloadedContent,
+        };
+
+        
+        if (createLazyBrowser) {
+          this._createLazyBrowser(t);
+
+          if (lazyBrowserURI) {
+            
+            
+            this.UrlbarProviderOpenTabs.registerOpenTab(
+              lazyBrowserURI.spec,
+              userContextId || 0,
+              PrivateBrowsingUtils.isWindowPrivate(window)
+            );
+            b.registeredOpenURI = lazyBrowserURI;
+          }
+          SessionStore.setTabState(t, {
+            entries: [
+              {
+                url: lazyBrowserURI ? lazyBrowserURI.spec : "about:blank",
+                title: lazyTabTitle,
+                triggeringPrincipal_base64: E10SUtils.serializePrincipal(
+                  triggeringPrincipal
+                ),
+              },
+            ],
+          });
+        } else {
+          this._insertBrowser(t, true);
+          
+          
+          
+          if (openerBrowser && !openWindowInfo) {
+            b.browsingContext.setCrossGroupOpener(
+              openerBrowser.browsingContext
+            );
+          }
+        }
+      } catch (e) {
+        console.error("Failed to create tab");
+        console.error(e);
+        t.remove();
+        if (t.linkedBrowser) {
+          this._tabFilters.delete(t);
+          this._tabListeners.delete(t);
+          this.getPanel(t.linkedBrowser).remove();
+        }
+        return null;
+      }
+
       
       
-      if (uriString == BROWSER_NEW_TAB_URL && !userContextId) {
-        b = NewTabPagePreloading.getPreloadedBrowser(window);
-        if (b) {
-          usingPreloadedContent = true;
+      this.setDefaultIcon(t, aURIObject);
+
+      if (!batchInsertingTabs) {
+        
+        this._fireTabOpen(t, eventDetail);
+
+        if (
+          !usingPreloadedContent &&
+          originPrincipal &&
+          originStoragePrincipal &&
+          aURI
+        ) {
+          let { URI_INHERITS_SECURITY_CONTEXT } = Ci.nsIProtocolHandler;
+          
+          
+          if (
+            !aURIObject ||
+            doGetProtocolFlags(aURIObject) & URI_INHERITS_SECURITY_CONTEXT
+          ) {
+            b.createAboutBlankContentViewer(
+              originPrincipal,
+              originStoragePrincipal
+            );
+          }
+        }
+
+        
+        
+        if (
+          !usingPreloadedContent &&
+          (!uriIsAboutBlank || !allowInheritPrincipal) &&
+          !skipLoad
+        ) {
+          
+          
+          if (aURI && !gInitialPages.includes(aURI)) {
+            b.userTypedValue = aURI;
+          }
+
+          let flags = LOAD_FLAGS_NONE;
+          if (allowThirdPartyFixup) {
+            flags |=
+              LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP |
+              LOAD_FLAGS_FIXUP_SCHEME_TYPOS;
+          }
+          if (fromExternal) {
+            flags |= LOAD_FLAGS_FROM_EXTERNAL;
+          } else if (!triggeringPrincipal.isSystemPrincipal) {
+            
+            
+            flags |= LOAD_FLAGS_FIRST_LOAD;
+          }
+          if (!allowInheritPrincipal) {
+            flags |= LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
+          }
+          if (disableTRR) {
+            flags |= LOAD_FLAGS_DISABLE_TRR;
+          }
+          if (forceAllowDataURI) {
+            flags |= LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
+          }
+          try {
+            b.fixupAndLoadURIString(aURI, {
+              flags,
+              triggeringPrincipal,
+              referrerInfo,
+              charset,
+              postData,
+              csp,
+              globalHistoryOptions,
+              triggeringRemoteType,
+            });
+          } catch (ex) {
+            console.error(ex);
+          }
         }
       }
 
-      if (!b) {
-        
-        b = this.createBrowser({
-          remoteType,
-          uriIsAboutBlank,
-          userContextId,
-          initialBrowsingContextGroupId,
-          openWindowInfo,
-          name,
-          skipLoad,
+      
+      
+      this.tabAnimationsInProgress++;
+
+      if (animate) {
+        requestAnimationFrame(function() {
+          
+          t.setAttribute("fadein", "true");
         });
       }
 
-      tab.linkedBrowser = b;
-
-      this._tabForBrowser.set(b, tab);
-      tab.permanentKey = b.permanentKey;
-      tab._browserParams = {
-        uriIsAboutBlank,
-        remoteType,
-        usingPreloadedContent,
-      };
-
       
-      
-      this.setDefaultIcon(tab, uri);
-
-      return { browser: b, usingPreloadedContent };
-    },
-
-    _kickOffBrowserLoad(
-      browser,
-      {
-        uri,
-        uriString,
-        usingPreloadedContent,
-        triggeringPrincipal,
-        originPrincipal,
-        originStoragePrincipal,
-        uriIsAboutBlank,
-        allowInheritPrincipal,
-        allowThirdPartyFixup,
-        fromExternal,
-        disableTRR,
-        forceAllowDataURI,
-        skipLoad,
-        referrerInfo,
-        charset,
-        postData,
-        csp,
-        globalHistoryOptions,
-        triggeringRemoteType,
-      }
-    ) {
-      if (
-        !usingPreloadedContent &&
-        originPrincipal &&
-        originStoragePrincipal &&
-        uriString
-      ) {
-        let { URI_INHERITS_SECURITY_CONTEXT } = Ci.nsIProtocolHandler;
-        
-        
-        if (!uri || doGetProtocolFlags(uri) & URI_INHERITS_SECURITY_CONTEXT) {
-          browser.createAboutBlankContentViewer(
-            originPrincipal,
-            originStoragePrincipal
-          );
-        }
+      if (pinned) {
+        this._notifyPinnedStatus(t);
       }
 
-      
-      
-      if (
-        !usingPreloadedContent &&
-        (!uriIsAboutBlank || !allowInheritPrincipal) &&
-        !skipLoad
-      ) {
-        
-        
-        if (uriString && !gInitialPages.includes(uriString)) {
-          browser.userTypedValue = uriString;
-        }
+      gSharedTabWarning.tabAdded(t);
 
-        let flags = LOAD_FLAGS_NONE;
-        if (allowThirdPartyFixup) {
-          flags |=
-            LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP | LOAD_FLAGS_FIXUP_SCHEME_TYPOS;
-        }
-        if (fromExternal) {
-          flags |= LOAD_FLAGS_FROM_EXTERNAL;
-        } else if (!triggeringPrincipal.isSystemPrincipal) {
-          
-          
-          flags |= LOAD_FLAGS_FIRST_LOAD;
-        }
-        if (!allowInheritPrincipal) {
-          flags |= LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
-        }
-        if (disableTRR) {
-          flags |= LOAD_FLAGS_DISABLE_TRR;
-        }
-        if (forceAllowDataURI) {
-          flags |= LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
-        }
-        try {
-          browser.fixupAndLoadURIString(uriString, {
-            flags,
-            triggeringPrincipal,
-            referrerInfo,
-            charset,
-            postData,
-            csp,
-            globalHistoryOptions,
-            triggeringRemoteType,
-          });
-        } catch (ex) {
-          console.error(ex);
-        }
+      if (!inBackground) {
+        this.selectedTab = t;
       }
+      return t;
     },
 
     addMultipleTabs(restoreTabsLazily, selectTab, aPropertiesTabs) {
