@@ -921,9 +921,14 @@ gfxFont* gfxFontconfigFontEntry::CreateFontInstance(
     file = ToCharPtr(fcFile);
   }
 
-  RefPtr<UnscaledFontFontconfig> unscaledFont =
-      mUnscaledFontCache.Lookup(file, index);
+  RefPtr<UnscaledFontFontconfig> unscaledFont;
+  {
+    AutoReadLock lock(mLock);
+    unscaledFont = mUnscaledFontCache.Lookup(file, index);
+  }
+
   if (!unscaledFont) {
+    AutoWriteLock lock(mLock);
     
     
     auto ftFace = GetFTFace();
