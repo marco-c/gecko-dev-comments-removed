@@ -1,29 +1,18 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*
+ * This file provides common and shared functionality to facilitate
+ * testing of the Crashes component (CrashManager.jsm).
+ */
 
-
-
-
-
-
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = [
-  "configureLogging",
-  "getManager",
-  "sleep",
-  "TestingCrashManager",
-];
-
-
+/* global OS */
 Cc["@mozilla.org/net/osfileconstantsservice;1"]
   .getService(Ci.nsIOSFileConstantsService)
   .init();
 
-const { CrashManager } = ChromeUtils.import(
-  "resource://gre/modules/CrashManager.jsm"
-);
+import { CrashManager } from "resource://gre/modules/CrashManager.sys.mjs";
 
 const lazy = {};
 
@@ -34,7 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 var loggingConfigured = false;
 
-var configureLogging = function() {
+export var configureLogging = function() {
   if (loggingConfigured) {
     return;
   }
@@ -47,7 +36,7 @@ var configureLogging = function() {
   loggingConfigured = true;
 };
 
-var sleep = function(wait) {
+export var sleep = function(wait) {
   return new Promise(resolve => {
     lazy.setTimeout(() => {
       resolve();
@@ -55,7 +44,7 @@ var sleep = function(wait) {
   });
 };
 
-var TestingCrashManager = function(options) {
+export var TestingCrashManager = function(options) {
   CrashManager.call(this, options);
 };
 
@@ -134,11 +123,11 @@ TestingCrashManager.prototype = {
     })();
   },
 
-  
-
-
-
-
+  /**
+   * Overwrite event file handling to process our test file type.
+   *
+   * We can probably delete this once we have actual events defined.
+   */
   _handleEventFilePayload(store, entry, type, date, payload) {
     if (type == "test.1") {
       if (payload == "malformed") {
@@ -163,7 +152,7 @@ Object.setPrototypeOf(TestingCrashManager.prototype, CrashManager.prototype);
 
 var DUMMY_DIR_COUNT = 0;
 
-var getManager = function() {
+export var getManager = function() {
   return (async function() {
     const dirMode = OS.Constants.libc.S_IRWXU;
     let baseFile = PathUtils.profileDir;
@@ -188,8 +177,8 @@ var getManager = function() {
     let eventsD1 = await makeDir();
     let eventsD2 = await makeDir();
 
-    
-    
+    // Store directory is created at run-time if needed. Ensure those code
+    // paths are triggered.
     let storeD = await makeDir(false);
 
     let m = new TestingCrashManager({
