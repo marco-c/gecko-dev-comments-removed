@@ -193,9 +193,9 @@ struct sctp_init {
 #define SCTP_IDENTIFICATION_SIZE 16
 #define SCTP_ADDRESS_SIZE 4
 #if defined(__Userspace__)
-#define SCTP_RESERVE_SPACE 5
+#define SCTP_RESERVE_SPACE 4
 #else
-#define SCTP_RESERVE_SPACE 6
+#define SCTP_RESERVE_SPACE 5
 #endif
 
 struct sctp_state_cookie {	
@@ -226,6 +226,7 @@ struct sctp_state_cookie {
 
 	uint8_t ipv4_scope;	
 	uint8_t loopback_scope;	
+	uint8_t zero_checksum;	
 	uint8_t reserved[SCTP_RESERVE_SPACE];    
 	
 

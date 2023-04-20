@@ -1235,6 +1235,13 @@ struct sctp_association {
 	uint8_t idata_supported;
 
 	
+
+
+
+
+	uint8_t zero_checksum;
+
+	
 	uint8_t peer_req_out;
 
 	uint8_t local_strreset_support;

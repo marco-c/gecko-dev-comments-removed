@@ -1104,8 +1104,10 @@ struct sctpstat {
 	uint32_t  sctps_send_burst_avoid; 
 	uint32_t  sctps_send_cwnd_avoid;  
 	uint32_t  sctps_fwdtsn_map_over;  
-	uint32_t  sctps_queue_upd_ecne;  
-	uint32_t  sctps_reserved[31];     
+	uint32_t  sctps_queue_upd_ecne;   
+	uint32_t  sctps_recvzerocrc;      
+	uint32_t  sctps_sendzerocrc;      
+	uint32_t  sctps_reserved[29];     
 };
 
 #define SCTP_STAT_INCR(_x) SCTP_STAT_INCR_BY(_x,1)

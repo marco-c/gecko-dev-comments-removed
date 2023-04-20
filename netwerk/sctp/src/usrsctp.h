@@ -1146,6 +1146,7 @@ USRSCTP_SYSCTL_DECL(sctp_steady_step)
 USRSCTP_SYSCTL_DECL(sctp_use_dccc_ecn)
 USRSCTP_SYSCTL_DECL(sctp_buffer_splitting)
 USRSCTP_SYSCTL_DECL(sctp_initial_cwnd)
+USRSCTP_SYSCTL_DECL(sctp_ootb_with_zero_cksum)
 #ifdef SCTP_DEBUG
 USRSCTP_SYSCTL_DECL(sctp_debug_on)
 
@@ -1304,7 +1305,9 @@ struct sctpstat {
 	uint32_t  sctps_send_cwnd_avoid;     
 	uint32_t  sctps_fwdtsn_map_over;     
 	uint32_t  sctps_queue_upd_ecne;      
-	uint32_t  sctps_reserved[31];        
+	uint32_t  sctps_recvzerocrc;         
+	uint32_t  sctps_sendzerocrc;         
+	uint32_t  sctps_reserved[29];        
 };
 
 void

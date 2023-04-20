@@ -4090,7 +4090,8 @@ sctp_lowlevel_chunk_output(struct sctp_inpcb *inp,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
     uint8_t mflowtype, uint32_t mflowid,
 #endif
-int so_locked)
+    bool use_zero_crc,
+    int so_locked)
 
 {
 	
@@ -4390,8 +4391,12 @@ int so_locked)
 		}
 		SCTP_ATTACH_CHAIN(o_pak, m, packet_length);
 		if (port) {
-			sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip) + sizeof(struct udphdr));
-			SCTP_STAT_INCR(sctps_sendswcrc);
+			if (use_zero_crc) {
+				SCTP_STAT_INCR(sctps_sendzerocrc);
+			} else {
+				sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip) + sizeof(struct udphdr));
+				SCTP_STAT_INCR(sctps_sendswcrc);
+			}
 #if !defined(__Userspace__)
 #if defined(__FreeBSD__)
 			if (V_udp_cksum) {
@@ -4402,19 +4407,23 @@ int so_locked)
 #endif
 #endif
 		} else {
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-			m->m_pkthdr.csum_flags = CSUM_SCTP;
-			m->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
-			SCTP_STAT_INCR(sctps_sendhwcrc);
-#else
-			if (!(SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
-			      (stcb) && (stcb->asoc.scope.loopback_scope))) {
-				sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip));
-				SCTP_STAT_INCR(sctps_sendswcrc);
+			if (use_zero_crc) {
+				SCTP_STAT_INCR(sctps_sendzerocrc);
 			} else {
+#if defined(__FreeBSD__) && !defined(__Userspace__)
+				m->m_pkthdr.csum_flags = CSUM_SCTP;
+				m->m_pkthdr.csum_data = offsetof(struct sctphdr, checksum);
 				SCTP_STAT_INCR(sctps_sendhwcrc);
-			}
+#else
+				if (!(SCTP_BASE_SYSCTL(sctp_no_csum_on_loopback) &&
+				      (stcb) && (stcb->asoc.scope.loopback_scope))) {
+					sctphdr->checksum = sctp_calculate_cksum(m, sizeof(struct ip));
+					SCTP_STAT_INCR(sctps_sendswcrc);
+				} else {
+					SCTP_STAT_INCR(sctps_sendhwcrc);
+				}
 #endif
+			}
 		}
 #ifdef SCTP_PACKET_LOGGING
 		if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_LAST_PACKET_TRACING)
@@ -5161,6 +5170,15 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
 	}
 
 	
+	if (stcb->asoc.zero_checksum > 0) {
+		parameter_len = (uint16_t)sizeof(struct sctp_paramhdr);
+		ph = (struct sctp_paramhdr *)(mtod(m, caddr_t) + chunk_len);
+		ph->param_type = htons(SCTP_ZERO_CHECKSUM_ACCEPTABLE);
+		ph->param_length = htons(parameter_len);
+		chunk_len += parameter_len;
+	}
+
+	
 	if (SCTP_BASE_SYSCTL(sctp_inits_include_nat_friendly)) {
 		parameter_len = (uint16_t)sizeof(struct sctp_paramhdr);
 		ph = (struct sctp_paramhdr *)(mtod(m, caddr_t) + chunk_len);
@@ -5335,7 +5353,7 @@ sctp_send_initiate(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int so_locked)
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	                                        0, 0,
 #endif
-	                                        so_locked))) {
+	                                        false, so_locked))) {
 		SCTPDBG(SCTP_DEBUG_OUTPUT4, "Gak send error %d\n", error);
 		if (error == ENOBUFS) {
 			stcb->asoc.ifp_had_enobuf = 1;
@@ -6331,6 +6349,11 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #endif
 		}
 	}
+	if (asoc != NULL) {
+		stc.zero_checksum = asoc->zero_checksum > 0 ? 1 : 0;
+	} else {
+		stc.zero_checksum = inp->zero_checksum;
+	}
 	
 	initack = mtod(m, struct sctp_init_ack_chunk *);
 	
@@ -6449,6 +6472,16 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		parameter_len = (uint16_t)sizeof(struct sctp_paramhdr);
 		ph = (struct sctp_paramhdr *)(mtod(m, caddr_t) + chunk_len);
 		ph->param_type = htons(SCTP_PRSCTP_SUPPORTED);
+		ph->param_length = htons(parameter_len);
+		chunk_len += parameter_len;
+	}
+
+	
+	if (((asoc != NULL) && (asoc->zero_checksum > 0)) ||
+	    ((asoc == NULL) && (inp->zero_checksum == 1))) {
+		parameter_len = (uint16_t)sizeof(struct sctp_paramhdr);
+		ph = (struct sctp_paramhdr *)(mtod(m, caddr_t) + chunk_len);
+		ph->param_type = htons(SCTP_ZERO_CHECKSUM_ACCEPTABLE);
 		ph->param_length = htons(parameter_len);
 		chunk_len += parameter_len;
 	}
@@ -6685,6 +6718,7 @@ sctp_send_initiate_ack(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	                                        mflowtype, mflowid,
 #endif
+	                                        false, 
 	                                        SCTP_SO_NOT_LOCKED))) {
 		SCTPDBG(SCTP_DEBUG_OUTPUT4, "Gak send error %d\n", error);
 		if (error == ENOBUFS) {
@@ -8370,6 +8404,7 @@ sctp_med_chunk_output(struct sctp_inpcb *inp,
 	
 
 	int quit_now = 0;
+	bool use_zero_crc;
 
 #if defined(__APPLE__) && !defined(__Userspace__)
 	if (so_locked) {
@@ -8746,7 +8781,7 @@ again_one_more_time:
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 					                                        0, 0,
 #endif
-					                                        so_locked))) {
+					                                        false, so_locked))) {
 						
 						SCTPDBG(SCTP_DEBUG_OUTPUT3, "Gak send error %d\n", error);
 						if (from_where == 0) {
@@ -8765,6 +8800,7 @@ again_one_more_time:
 
 							sctp_move_chunks_from_net(stcb, net);
 						}
+						asconf = 0;
 						*reason_code = 7;
 						break;
 					} else {
@@ -8778,6 +8814,7 @@ again_one_more_time:
 					outchain = endoutchain = NULL;
 					auth = NULL;
 					auth_offset = 0;
+					asconf = 0;
 					if (!no_out_cnt)
 						*num_out += ctl_cnt;
 					
@@ -8983,8 +9020,10 @@ again_one_more_time:
 
 
 
+					use_zero_crc = asoc->zero_checksum == 2;
 					if (asconf) {
 						sctp_timer_start(SCTP_TIMER_TYPE_ASCONF, inp, stcb, net);
+						use_zero_crc = false;
 						
 
 
@@ -8994,6 +9033,7 @@ again_one_more_time:
 					}
 					if (cookie) {
 						sctp_timer_start(SCTP_TIMER_TYPE_COOKIE, inp, stcb, net);
+						use_zero_crc = false;
 						cookie = 0;
 					}
 					
@@ -9017,7 +9057,7 @@ again_one_more_time:
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 					                                        0, 0,
 #endif
-					                                        so_locked))) {
+					                                        use_zero_crc, so_locked))) {
 						
 						SCTPDBG(SCTP_DEBUG_OUTPUT3, "Gak send error %d\n", error);
 						if (from_where == 0) {
@@ -9035,6 +9075,7 @@ again_one_more_time:
 
 							sctp_move_chunks_from_net(stcb, net);
 						}
+						asconf = 0;
 						*reason_code = 7;
 						break;
 					} else {
@@ -9048,6 +9089,7 @@ again_one_more_time:
 					outchain = endoutchain = NULL;
 					auth = NULL;
 					auth_offset = 0;
+					asconf = 0;
 					if (!no_out_cnt)
 						*num_out += ctl_cnt;
 					
@@ -9313,9 +9355,11 @@ again_one_more_time:
 		
 		if (outchain) {
 			
+			use_zero_crc = asoc->zero_checksum == 2;
 			if (asconf) {
 				sctp_timer_start(SCTP_TIMER_TYPE_ASCONF, inp,
 						 stcb, net);
+				use_zero_crc = false;
 				
 
 
@@ -9323,6 +9367,7 @@ again_one_more_time:
 			}
 			if (cookie) {
 				sctp_timer_start(SCTP_TIMER_TYPE_COOKIE, inp, stcb, net);
+				use_zero_crc = false;
 				cookie = 0;
 			}
 			
@@ -9359,6 +9404,7 @@ again_one_more_time:
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 			                                        0, 0,
 #endif
+			                                        use_zero_crc,
 			                                        so_locked))) {
 				
 				SCTPDBG(SCTP_DEBUG_OUTPUT3, "Gak send error %d\n", error);
@@ -9376,6 +9422,7 @@ again_one_more_time:
 
 					sctp_move_chunks_from_net(stcb, net);
 				}
+				asconf = 0;
 				*reason_code = 6;
 				
 
@@ -9391,6 +9438,7 @@ again_one_more_time:
 			endoutchain = NULL;
 			auth = NULL;
 			auth_offset = 0;
+			asconf = 0;
 			if (!no_out_cnt) {
 				*num_out += (ctl_cnt + bundle_at);
 			}
@@ -9979,6 +10027,7 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 	int override_ok = 1;
 	int data_auth_reqd = 0;
 	uint32_t dmtu = 0;
+	bool use_zero_crc;
 
 #if defined(__APPLE__) && !defined(__Userspace__)
 	if (so_locked) {
@@ -10049,10 +10098,15 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 	
 	if (m != NULL) {
 		
+		use_zero_crc = asoc->zero_checksum == 2;
 		if (chk->rec.chunk_id.id == SCTP_COOKIE_ECHO) {
 			sctp_timer_start(SCTP_TIMER_TYPE_COOKIE, inp, stcb, chk->whoTo);
-		} else if (chk->rec.chunk_id.id == SCTP_ASCONF)
+			use_zero_crc = false;
+		} else if (chk->rec.chunk_id.id == SCTP_ASCONF) {
+			
 			sctp_timer_start(SCTP_TIMER_TYPE_ASCONF, inp, stcb, chk->whoTo);
+			use_zero_crc = false;
+		}
 		chk->snd_count++;	
 		if ((error = sctp_lowlevel_chunk_output(inp, stcb, chk->whoTo,
 		                                        (struct sockaddr *)&chk->whoTo->ro._l_addr, m,
@@ -10063,6 +10117,7 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 		                                        0, 0,
 #endif
+		                                        use_zero_crc,
 		                                        so_locked))) {
 			SCTPDBG(SCTP_DEBUG_OUTPUT3, "Gak send error %d\n", error);
 			if (error == ENOBUFS) {
@@ -10344,6 +10399,7 @@ sctp_chunk_retransmission(struct sctp_inpcb *inp,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 			                                        0, 0,
 #endif
+			                                        asoc->zero_checksum == 2,
 			                                        so_locked))) {
 				
 				SCTPDBG(SCTP_DEBUG_OUTPUT3, "Gak send error %d\n", error);
@@ -11524,6 +11580,7 @@ sctp_send_abort_tcb(struct sctp_tcb *stcb, struct mbuf *operr, int so_locked)
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	                                        0, 0,
 #endif
+	                                        stcb->asoc.zero_checksum == 2,
 	                                        so_locked))) {
 		SCTPDBG(SCTP_DEBUG_OUTPUT3, "Gak send error %d\n", error);
 		if (error == ENOBUFS) {
@@ -11574,6 +11631,7 @@ sctp_send_shutdown_complete(struct sctp_tcb *stcb,
 #if defined(__FreeBSD__) && !defined(__Userspace__)
 	                                        0, 0,
 #endif
+	                                        stcb->asoc.zero_checksum == 2,
 	                                        SCTP_SO_NOT_LOCKED))) {
 		SCTPDBG(SCTP_DEBUG_OUTPUT3, "Gak send error %d\n", error);
 		if (error == ENOBUFS) {
