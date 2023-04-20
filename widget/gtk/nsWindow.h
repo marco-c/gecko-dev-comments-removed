@@ -803,6 +803,8 @@ class nsWindow final : public nsBaseWidget {
   void ReleaseGdkWindow();
   void ConfigureCompositor();
 
+  bool IsAlwaysUndecoratedWindow() const;
+
   
   WindowRenderer* GetWindowRenderer() override;
   void DidGetNonBlankPaint() override;
