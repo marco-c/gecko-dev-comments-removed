@@ -31,10 +31,7 @@ available.map(x => {
   return loc.script && loc.region;
 }).filter(loc => {
   
-  return !((loc.language === "sd" && loc.script === "Deva" && loc.region === "IN") ||
-           (loc.language === "ff" && (loc.script === "Adlm" || loc.script === "Latn") &&
-            (loc.region === "GH" || loc.region === "GM" || loc.region === "LR" || loc.region === "SL"))
-          );
+  return !(loc.language === "sd" && loc.script === "Deva" && loc.region === "IN");
 }).forEach(loc => {
   
   let noScript = new Intl.Locale(`${loc.language}-${loc.region}`);
@@ -51,7 +48,7 @@ available.map(x => {
 
     
     
-    assertEq(df1.format(date), df2.format(date), `Mismatch for locale "${noScript}" (${maximized})`);
+    assertEq(df1.format(date), df2.format(date), `Mismatch for locale "${noScript}"`);
   }
 });
 

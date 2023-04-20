@@ -1116,13 +1116,6 @@ static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
     index++;
 
     
-    
-    
-    if (c == 0x202F) {
-      c = ' ';
-    }
-
-    
     if (c <= ' ' || c == ',') {
       continue;
     }
@@ -1175,11 +1168,6 @@ static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
         index++;
       }
       size_t partLength = index - partStart;
-
-      
-      if (c == 0x202F) {
-        c = ' ';
-      }
 
       int n = int(u);
 
