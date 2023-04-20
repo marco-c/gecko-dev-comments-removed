@@ -7,11 +7,17 @@
 #ifndef mozilla_PerformanceRecorder_h
 #define mozilla_PerformanceRecorder_h
 
+#include <type_traits>
+
 #include "mozilla/Attributes.h"
+#include "mozilla/BaseProfilerMarkersPrerequisites.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TypedEnumBits.h"
+#include "nsPrintfCString.h"
 #include "nsStringFwd.h"
+#include "nsTPriorityQueue.h"
+#include "mozilla/ProfilerMarkers.h"
 
 namespace mozilla {
 
@@ -33,100 +39,204 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(MediaInfoFlag)
 
 
 
-class PerformanceRecorder {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class MediaStage : uint8_t {
+  Invalid,
+  RequestData,
+  RequestDemux,
+  CopyDemuxedData,
+  RequestDecode,
+  CopyDecodedVideo,
+};
+
+class PlaybackStage {
  public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  enum class Stage : uint8_t {
-    Invalid,
-    RequestData,
-    RequestDemux,
-    CopyDemuxedData,
-    RequestDecode,
-    CopyDecodedVideo,
-  };
-
-  explicit PerformanceRecorder(Stage aStage, int32_t aHeight = 0,
-                               MediaInfoFlag aFlag = MediaInfoFlag::None)
-      : mStage(aStage), mHeight(aHeight), mFlag(aFlag) {}
-  ~PerformanceRecorder() = default;
-
-  PerformanceRecorder(PerformanceRecorder&& aRhs) noexcept {
-    mStage = aRhs.mStage;
-    mHeight = aRhs.mHeight;
-    mStartTime = std::move(aRhs.mStartTime);
-    mFlag = aRhs.mFlag;
-    aRhs.mStage = Stage::Invalid;
+  explicit PlaybackStage(MediaStage aStage, int32_t aHeight = 0,
+                         MediaInfoFlag aFlag = MediaInfoFlag::None)
+      : mStage(aStage), mHeight(aHeight), mFlag(aFlag) {
+    MOZ_ASSERT(aStage != MediaStage::Invalid);
   }
 
-  PerformanceRecorder& operator=(PerformanceRecorder&& aRhs) noexcept {
-    MOZ_ASSERT(&aRhs != this, "self-moves are prohibited");
-    mStage = aRhs.mStage;
-    mHeight = aRhs.mHeight;
-    mStartTime = std::move(aRhs.mStartTime);
-    mFlag = aRhs.mFlag;
-    aRhs.mStage = Stage::Invalid;
-    return *this;
+  ProfilerString8View Name() const;
+  const MarkerCategory& Category() const {
+    return baseprofiler::category::MEDIA_PLAYBACK;
   }
 
-  PerformanceRecorder(const PerformanceRecorder&) = delete;
-  PerformanceRecorder& operator=(const PerformanceRecorder&) = delete;
+  MediaStage mStage;
+  int32_t mHeight;
+  MediaInfoFlag mFlag;
 
-  void Start();
+ private:
+  mutable Maybe<nsCString> mName;
+};
 
-  
-  
-  float End();
-
- protected:
-  void Reset();
-
+class PerformanceRecorderBase {
+ public:
   static bool IsMeasurementEnabled();
   static TimeStamp GetCurrentTimeForMeasurement();
 
   
   static const char* FindMediaResolution(int32_t aHeight);
 
-  Stage mStage = Stage::Invalid;
-  int32_t mHeight;
-  MediaInfoFlag mFlag = MediaInfoFlag::None;
-  Maybe<TimeStamp> mStartTime;
-
+ protected:
   
   static inline bool sEnableMeasurementForTesting = false;
+};
+
+template <typename StageType>
+class PerformanceRecorderImpl : public PerformanceRecorderBase {
+ public:
+  ~PerformanceRecorderImpl() = default;
+
+  PerformanceRecorderImpl(PerformanceRecorderImpl&& aRhs) noexcept
+      : mStages(std::move(aRhs.mStages)) {}
+  PerformanceRecorderImpl& operator=(PerformanceRecorderImpl&&) = delete;
+  PerformanceRecorderImpl(const PerformanceRecorderImpl&) = delete;
+  PerformanceRecorderImpl& operator=(const PerformanceRecorderImpl&) = delete;
+
+ protected:
+  PerformanceRecorderImpl() = default;
+
+  
+  
+  template <typename... Args>
+  void Start(int64_t aId, Args... aArgs) {
+    if (IsMeasurementEnabled()) {
+      mStages.Push(MakeTuple(aId, GetCurrentTimeForMeasurement(),
+                             StageType(std::move(aArgs)...)));
+    }
+  }
+
+  
+  
+  
+  template <typename F>
+  float Record(int64_t aId, F&& aStageMutator) {
+    while (!mStages.IsEmpty() && Get<0>(mStages.Top()) < aId) {
+      mStages.Pop();
+    }
+    if (mStages.IsEmpty()) {
+      return 0.0;
+    }
+    if (Get<0>(mStages.Top()) != aId) {
+      return 0.0;
+    }
+    Entry entry = mStages.Pop();
+    const auto& startTime = Get<1>(entry);
+    auto& stage = Get<2>(entry);
+    MOZ_ASSERT(Get<0>(entry) == aId);
+    double elapsedTimeUs = 0.0;
+    if (!startTime.IsNull() && IsMeasurementEnabled()) {
+      const auto now = TimeStamp::Now();
+      elapsedTimeUs = (now - startTime).ToMicroseconds();
+      MOZ_ASSERT(elapsedTimeUs >= 0, "Elapsed time can't be less than 0!");
+      aStageMutator(stage);
+      AUTO_PROFILER_STATS(PROFILER_MARKER_UNTYPED);
+      ::profiler_add_marker(
+          stage.Name(), stage.Category(),
+          MarkerOptions(MarkerTiming::Interval(startTime, now)));
+    }
+    return static_cast<float>(elapsedTimeUs);
+  }
+  float Record(int64_t aId) {
+    return Record(aId, [](auto&) {});
+  }
+
+ protected:
+  using Entry = Tuple<int64_t, TimeStamp, StageType>;
+
+  struct IdComparator {
+    bool LessThan(const Entry& aTupleA, const Entry& aTupleB) {
+      return Get<0>(aTupleA) < Get<0>(aTupleB);
+    }
+  };
+
+  nsTPriorityQueue<Entry, IdComparator> mStages;
+};
+
+
+
+
+
+
+
+
+
+
+template <typename StageType>
+class PerformanceRecorder : public PerformanceRecorderImpl<StageType> {
+  using Super = PerformanceRecorderImpl<StageType>;
+
+ public:
+  template <typename... Args>
+  explicit PerformanceRecorder(Args... aArgs) {
+    Start(std::move(aArgs)...);
+  };
+
+ private:
+  template <typename... Args>
+  void Start(Args... aArgs) {
+    Super::Start(0, std::move(aArgs)...);
+  }
+
+ public:
+  template <typename F>
+  float Record(F&& aStageMutator) {
+    return Super::Record(0, std::forward<F>(aStageMutator));
+  }
+  float Record() { return Super::Record(0); }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename StageType>
+class PerformanceRecorderMulti : public PerformanceRecorderImpl<StageType> {
+  using Super = PerformanceRecorderImpl<StageType>;
+
+ public:
+  PerformanceRecorderMulti() = default;
+
+  using Super::Record;
+  using Super::Start;
 };
 
 }  
