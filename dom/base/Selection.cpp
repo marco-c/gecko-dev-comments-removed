@@ -509,14 +509,13 @@ static nsresult GetTableSelectionMode(const nsRange& aRange,
     return NS_OK;
   }
 
-  nsIContent* startContent = static_cast<nsIContent*>(startNode);
-  if (!(startNode->IsElement() && startContent->IsHTMLElement())) {
+  if (!startNode->IsHTMLElement()) {
     
     
     return NS_OK;
   }
 
-  if (startContent->IsHTMLElement(nsGkAtoms::tr)) {
+  if (startNode->IsHTMLElement(nsGkAtoms::tr)) {
     *aTableSelectionType = TableSelectionMode::Cell;
   } else  
           
