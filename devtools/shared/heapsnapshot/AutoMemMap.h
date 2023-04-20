@@ -8,6 +8,7 @@
 #define mozilla_devtools_AutoMemMap_h
 
 #include <prio.h>
+#include "nsIFile.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "ErrorList.h"
@@ -34,7 +35,9 @@ namespace devtools {
 
 
 class MOZ_RAII AutoMemMap {
-  PRFileInfo64 fileInfo;
+  
+  
+  uint32_t fileSize;
   PRFileDesc* fd;
   PRFileMap* fileMap;
   void* addr;
@@ -44,18 +47,17 @@ class MOZ_RAII AutoMemMap {
 
  public:
   explicit AutoMemMap()
-      : fileInfo(), fd(nullptr), fileMap(nullptr), addr(nullptr){};
+      : fileSize(0), fd(nullptr), fileMap(nullptr), addr(nullptr){};
   ~AutoMemMap();
 
   
-  nsresult init(const char* filePath, int flags = PR_RDONLY, int mode = 0,
+  nsresult init(nsIFile* file, int flags = PR_RDONLY, int mode = 0,
                 PRFileMapProtect prot = PR_PROT_READONLY);
 
   
   uint32_t size() const {
-    MOZ_ASSERT(fileInfo.size <= UINT32_MAX,
-               "Should only call size() if init() succeeded.");
-    return uint32_t(fileInfo.size);
+    MOZ_ASSERT(fd, "Should only call size() if init() succeeded.");
+    return fileSize;
   }
 
   
