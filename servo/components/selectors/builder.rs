@@ -17,7 +17,7 @@
 
 
 
-use crate::parser::{Combinator, Component, SelectorImpl};
+use crate::parser::{Combinator, Component, Selector, SelectorImpl};
 use crate::sink::Push;
 use servo_arc::{Arc, HeaderWithLength, ThinArc};
 use smallvec::{self, SmallVec};
@@ -317,17 +317,23 @@ where
             Component::NonTSPseudoClass(..) => {
                 specificity.class_like_selectors += 1;
             },
+            Component::NthOf(ref nth_of_data) => {
+                
+                
+                
+                
+                
+                
+                specificity.class_like_selectors += 1;
+                *specificity += selector_list_specificity(nth_of_data.selectors());
+            },
             Component::Negation(ref list) | Component::Is(ref list) | Component::Has(ref list) => {
                 
                 
                 
                 
                 
-                let mut max = 0;
-                for selector in &**list {
-                    max = std::cmp::max(selector.specificity(), max);
-                }
-                *specificity += Specificity::from(max);
+                *specificity += selector_list_specificity(list);
             },
             Component::Where(..) |
             Component::ExplicitUniversalType |
@@ -338,6 +344,16 @@ where
                 
             },
         }
+    }
+
+    
+    fn selector_list_specificity<Impl: SelectorImpl>(list: &[Selector<Impl>]) -> Specificity {
+        let max = list
+            .iter()
+            .map(|selector| selector.specificity())
+            .max()
+            .unwrap_or(0);
+        Specificity::from(max)
     }
 
     let mut specificity = Default::default();
