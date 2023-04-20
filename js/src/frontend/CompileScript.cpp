@@ -4,7 +4,7 @@
 
 
 
-#include "js/experimental/ParseScript.h"
+#include "js/experimental/CompileScript.h"
 
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/CompilationStencil.h"  
@@ -29,7 +29,7 @@ JS_PUBLIC_API void JS::DestroyFrontendContext(FrontendContext* fc) {
 }
 
 template <typename CharT>
-static already_AddRefed<JS::Stencil> ParseGlobalScriptImpl(
+static already_AddRefed<JS::Stencil> CompileGlobalScriptToStencilImpl(
     JS::FrontendContext* fc, const JS::ReadOnlyCompileOptions& options,
     JS::NativeStackLimit stackLimit, JS::SourceText<CharT>& srcBuf,
     js::UniquePtr<js::frontend::CompilationInput>& stencilInput) {
@@ -53,18 +53,20 @@ static already_AddRefed<JS::Stencil> ParseGlobalScriptImpl(
   return stencil_.forget();
 }
 
-already_AddRefed<JS::Stencil> JS::ParseGlobalScript(
+already_AddRefed<JS::Stencil> JS::CompileGlobalScriptToStencil(
     JS::FrontendContext* fc, const JS::ReadOnlyCompileOptions& options,
     JS::NativeStackLimit stackLimit, JS::SourceText<mozilla::Utf8Unit>& srcBuf,
     js::UniquePtr<js::frontend::CompilationInput>& stencilInput) {
-  return ParseGlobalScriptImpl(fc, options, stackLimit, srcBuf, stencilInput);
+  return CompileGlobalScriptToStencilImpl(fc, options, stackLimit, srcBuf,
+                                          stencilInput);
 }
 
-already_AddRefed<JS::Stencil> JS::ParseGlobalScript(
+already_AddRefed<JS::Stencil> JS::CompileGlobalScriptToStencil(
     JS::FrontendContext* fc, const JS::ReadOnlyCompileOptions& options,
     JS::NativeStackLimit stackLimit, JS::SourceText<char16_t>& srcBuf,
     js::UniquePtr<js::frontend::CompilationInput>& stencilInput) {
-  return ParseGlobalScriptImpl(fc, options, stackLimit, srcBuf, stencilInput);
+  return CompileGlobalScriptToStencilImpl(fc, options, stackLimit, srcBuf,
+                                          stencilInput);
 }
 
 bool JS::PrepareForInstantiate(JS::FrontendContext* fc, CompilationInput& input,

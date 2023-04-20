@@ -7,8 +7,8 @@
 
 
 
-#ifndef js_experimental_ParseScript_h
-#define js_experimental_ParseScript_h
+#ifndef js_experimental_CompileScript_h
+#define js_experimental_CompileScript_h
 
 #include "jspubtd.h"
 #include "js/experimental/JSStencil.h"
@@ -33,12 +33,12 @@ JS_PUBLIC_API JS::FrontendContext* NewFrontendContext();
 
 JS_PUBLIC_API void DestroyFrontendContext(JS::FrontendContext* fc);
 
-extern JS_PUBLIC_API already_AddRefed<JS::Stencil> ParseGlobalScript(
+extern JS_PUBLIC_API already_AddRefed<JS::Stencil> CompileGlobalScriptToStencil(
     JS::FrontendContext* fc, const JS::ReadOnlyCompileOptions& options,
     JS::NativeStackLimit stackLimit, JS::SourceText<mozilla::Utf8Unit>& srcBuf,
     js::UniquePtr<js::frontend::CompilationInput>& stencilInput);
 
-extern JS_PUBLIC_API already_AddRefed<JS::Stencil> ParseGlobalScript(
+extern JS_PUBLIC_API already_AddRefed<JS::Stencil> CompileGlobalScriptToStencil(
     JS::FrontendContext* fc, const JS::ReadOnlyCompileOptions& options,
     JS::NativeStackLimit stackLimit, JS::SourceText<char16_t>& srcBuf,
     js::UniquePtr<js::frontend::CompilationInput>& stencilInput);
