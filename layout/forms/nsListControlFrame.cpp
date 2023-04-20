@@ -669,7 +669,7 @@ nsresult nsListControlFrame::HandleEvent(nsPresContext* aPresContext,
 
 void nsListControlFrame::SetInitialChildList(ChildListID aListID,
                                              nsFrameList&& aChildList) {
-  if (aListID == FrameChildListID::Principal) {
+  if (aListID == kPrincipalList) {
     
     mIsAllContentHere = mContent->IsDoneAddingChildren();
     if (!mIsAllContentHere) {

@@ -60,7 +60,7 @@ class CSSOrderAwareFrameIteratorT {
     BoxOrdinalGroup  
   };
   CSSOrderAwareFrameIteratorT(
-      nsIFrame* aContainer, FrameChildListID aListID,
+      nsIFrame* aContainer, nsIFrame::ChildListID aListID,
       ChildFilter aFilter = ChildFilter::SkipPlaceholders,
       OrderState aState = OrderState::Unknown,
       OrderingProperty aOrderProp = OrderingProperty::Order)
@@ -254,7 +254,7 @@ class CSSOrderAwareFrameIteratorT {
   bool mSkipPlaceholders;
 #ifdef DEBUG
   nsIFrame* mContainer;
-  FrameChildListID mListID;
+  nsIFrame::ChildListID mListID;
 #endif
 };
 

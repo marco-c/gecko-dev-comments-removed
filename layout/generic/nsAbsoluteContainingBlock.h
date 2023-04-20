@@ -32,39 +32,37 @@ class nsPresContext;
 
 
 
-
 class nsAbsoluteContainingBlock {
   using ReflowInput = mozilla::ReflowInput;
 
  public:
-  explicit nsAbsoluteContainingBlock(mozilla::FrameChildListID aChildListID)
+  typedef nsIFrame::ChildListID ChildListID;
+
+  explicit nsAbsoluteContainingBlock(ChildListID aChildListID)
 #ifdef DEBUG
       : mChildListID(aChildListID)
 #endif
   {
-    MOZ_ASSERT(mChildListID == mozilla::FrameChildListID::Absolute ||
-                   mChildListID == mozilla::FrameChildListID::Fixed,
+    MOZ_ASSERT(mChildListID == nsIFrame::kAbsoluteList ||
+                   mChildListID == nsIFrame::kFixedList,
                "should either represent position:fixed or absolute content");
   }
 
   const nsFrameList& GetChildList() const { return mAbsoluteFrames; }
-  void AppendChildList(nsTArray<mozilla::FrameChildList>* aLists,
-                       mozilla::FrameChildListID aListID) const {
+  void AppendChildList(nsTArray<nsIFrame::ChildList>* aLists,
+                       ChildListID aListID) const {
     NS_ASSERTION(aListID == mChildListID, "wrong list ID");
     GetChildList().AppendIfNonempty(aLists, aListID);
   }
 
-  void SetInitialChildList(nsIFrame* aDelegatingFrame,
-                           mozilla::FrameChildListID aListID,
+  void SetInitialChildList(nsIFrame* aDelegatingFrame, ChildListID aListID,
                            nsFrameList&& aChildList);
-  void AppendFrames(nsIFrame* aDelegatingFrame,
-                    mozilla::FrameChildListID aListID,
+  void AppendFrames(nsIFrame* aDelegatingFrame, ChildListID aListID,
                     nsFrameList&& aFrameList);
-  void InsertFrames(nsIFrame* aDelegatingFrame,
-                    mozilla::FrameChildListID aListID, nsIFrame* aPrevFrame,
-                    nsFrameList&& aFrameList);
-  void RemoveFrame(nsIFrame* aDelegatingFrame,
-                   mozilla::FrameChildListID aListID, nsIFrame* aOldFrame);
+  void InsertFrames(nsIFrame* aDelegatingFrame, ChildListID aListID,
+                    nsIFrame* aPrevFrame, nsFrameList&& aFrameList);
+  void RemoveFrame(nsIFrame* aDelegatingFrame, ChildListID aListID,
+                   nsIFrame* aOldFrame);
 
   enum class AbsPosReflowFlags {
     ConstrainHeight = 0x1,
@@ -171,8 +169,7 @@ class nsAbsoluteContainingBlock {
   nsFrameList mAbsoluteFrames;  
 
 #ifdef DEBUG
-  mozilla::FrameChildListID const
-      mChildListID;  
+  ChildListID const mChildListID;  
 #endif
 };
 

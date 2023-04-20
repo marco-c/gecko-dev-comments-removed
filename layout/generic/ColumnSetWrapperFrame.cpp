@@ -77,8 +77,7 @@ void ColumnSetWrapperFrame::AppendDirectlyOwnedAnonBoxes(
   
   
   auto FindFirstChildInChildLists = [this]() -> nsIFrame* {
-    const ChildListID listIDs[] = {FrameChildListID::Principal,
-                                   FrameChildListID::Overflow};
+    const ChildListID listIDs[] = {kPrincipalList, kOverflowList};
     for (nsIFrame* frag = this; frag; frag = frag->GetNextInFlow()) {
       for (ChildListID id : listIDs) {
         const nsFrameList& list = frag->GetChildList(id);

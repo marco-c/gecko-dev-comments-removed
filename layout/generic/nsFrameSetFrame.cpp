@@ -341,7 +341,7 @@ void nsHTMLFramesetFrame::SetInitialChildList(ChildListID aListID,
   
   
   
-  if (aListID == FrameChildListID::Principal && aChildList.IsEmpty()) {
+  if (aListID == kPrincipalList && aChildList.IsEmpty()) {
     return;
   }
 

@@ -115,7 +115,7 @@ static bool BlockHasAnyFloats(nsIFrame* aFrame) {
   if (!block) {
     return false;
   }
-  if (block->GetChildList(FrameChildListID::Float).FirstChild()) {
+  if (block->GetChildList(nsIFrame::kFloatList).FirstChild()) {
     return true;
   }
 
@@ -563,7 +563,7 @@ void nsBlockFrame::List(FILE* out, const char* aPrefix,
 
   
   
-  ChildListIDs skip = {FrameChildListID::Principal, FrameChildListID::Overflow};
+  ChildListIDs skip = {kPrincipalList, kOverflowList};
   ListChildLists(out, pfx.get(), aFlags, skip);
 
   fprintf_stderr(out, "%s>\n", aPrefix);
@@ -670,23 +670,23 @@ nscoord nsBlockFrame::GetCaretBaseline() const {
 
 const nsFrameList& nsBlockFrame::GetChildList(ChildListID aListID) const {
   switch (aListID) {
-    case FrameChildListID::Principal:
+    case kPrincipalList:
       return mFrames;
-    case FrameChildListID::Overflow: {
+    case kOverflowList: {
       FrameLines* overflowLines = GetOverflowLines();
       return overflowLines ? overflowLines->mFrames : nsFrameList::EmptyList();
     }
-    case FrameChildListID::Float:
+    case kFloatList:
       return mFloats;
-    case FrameChildListID::OverflowOutOfFlow: {
+    case kOverflowOutOfFlowList: {
       const nsFrameList* list = GetOverflowOutOfFlows();
       return list ? *list : nsFrameList::EmptyList();
     }
-    case FrameChildListID::PushedFloats: {
+    case kPushedFloatsList: {
       const nsFrameList* list = GetPushedFloats();
       return list ? *list : nsFrameList::EmptyList();
     }
-    case FrameChildListID::Bullet: {
+    case kBulletList: {
       const nsFrameList* list = GetOutsideMarkerList();
       return list ? *list : nsFrameList::EmptyList();
     }
@@ -699,20 +699,20 @@ void nsBlockFrame::GetChildLists(nsTArray<ChildList>* aLists) const {
   nsContainerFrame::GetChildLists(aLists);
   FrameLines* overflowLines = GetOverflowLines();
   if (overflowLines) {
-    overflowLines->mFrames.AppendIfNonempty(aLists, FrameChildListID::Overflow);
+    overflowLines->mFrames.AppendIfNonempty(aLists, kOverflowList);
   }
   const nsFrameList* list = GetOverflowOutOfFlows();
   if (list) {
-    list->AppendIfNonempty(aLists, FrameChildListID::OverflowOutOfFlow);
+    list->AppendIfNonempty(aLists, kOverflowOutOfFlowList);
   }
-  mFloats.AppendIfNonempty(aLists, FrameChildListID::Float);
+  mFloats.AppendIfNonempty(aLists, kFloatList);
   list = GetOutsideMarkerList();
   if (list) {
-    list->AppendIfNonempty(aLists, FrameChildListID::Bullet);
+    list->AppendIfNonempty(aLists, kBulletList);
   }
   list = GetPushedFloats();
   if (list) {
-    list->AppendIfNonempty(aLists, FrameChildListID::PushedFloats);
+    list->AppendIfNonempty(aLists, kPushedFloatsList);
   }
 }
 
@@ -2269,9 +2269,8 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
 
   
   
-  nsLayoutUtils::UnionChildOverflow(
-      this, aOverflowAreas,
-      {FrameChildListID::Principal, FrameChildListID::Float});
+  nsLayoutUtils::UnionChildOverflow(this, aOverflowAreas,
+                                    {kPrincipalList, kFloatList});
 }
 
 bool nsBlockFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
@@ -5705,14 +5704,13 @@ void nsBlockFrame::AppendFrames(ChildListID aListID, nsFrameList&& aFrameList) {
   if (aFrameList.IsEmpty()) {
     return;
   }
-  if (aListID != FrameChildListID::Principal) {
-    if (FrameChildListID::Float == aListID) {
+  if (aListID != kPrincipalList) {
+    if (kFloatList == aListID) {
       DrainSelfPushedFloats();  
       mFloats.AppendFrames(nullptr, std::move(aFrameList));
       return;
     }
-    MOZ_ASSERT(FrameChildListID::NoReflowPrincipal == aListID,
-               "unexpected child list");
+    MOZ_ASSERT(kNoReflowPrincipalList == aListID, "unexpected child list");
   }
 
   
@@ -5743,7 +5741,7 @@ void nsBlockFrame::AppendFrames(ChildListID aListID, nsFrameList&& aFrameList) {
   }
 
   AddFrames(std::move(aFrameList), lastKid, nullptr);
-  if (aListID != FrameChildListID::NoReflowPrincipal) {
+  if (aListID != kNoReflowPrincipalList) {
     PresShell()->FrameNeedsReflow(
         this, IntrinsicDirty::TreeChange,
         NS_FRAME_HAS_DIRTY_CHILDREN);  
@@ -5756,14 +5754,13 @@ void nsBlockFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
   NS_ASSERTION(!aPrevFrame || aPrevFrame->GetParent() == this,
                "inserting after sibling frame with different parent");
 
-  if (aListID != FrameChildListID::Principal) {
-    if (FrameChildListID::Float == aListID) {
+  if (aListID != kPrincipalList) {
+    if (kFloatList == aListID) {
       DrainSelfPushedFloats();  
       mFloats.InsertFrames(this, aPrevFrame, std::move(aFrameList));
       return;
     }
-    MOZ_ASSERT(FrameChildListID::NoReflowPrincipal == aListID,
-               "unexpected child list");
+    MOZ_ASSERT(kNoReflowPrincipalList == aListID, "unexpected child list");
   }
 
 #ifdef NOISY_REFLOW_REASON
@@ -5780,7 +5777,7 @@ void nsBlockFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
 #endif
 
   AddFrames(std::move(aFrameList), aPrevFrame, aPrevFrameLine);
-  if (aListID != FrameChildListID::NoReflowPrincipal) {
+  if (aListID != kNoReflowPrincipalList) {
     PresShell()->FrameNeedsReflow(
         this, IntrinsicDirty::TreeChange,
         NS_FRAME_HAS_DIRTY_CHILDREN);  
@@ -5795,13 +5792,13 @@ void nsBlockFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
   printf("\n");
 #endif
 
-  if (aListID == FrameChildListID::Principal) {
+  if (aListID == kPrincipalList) {
     bool hasFloats = BlockHasAnyFloats(aOldFrame);
     DoRemoveFrame(aOldFrame, REMOVE_FIXED_CONTINUATIONS);
     if (hasFloats) {
       MarkSameFloatManagerLinesDirty(this);
     }
-  } else if (FrameChildListID::Float == aListID) {
+  } else if (kFloatList == aListID) {
     
     
     
@@ -5814,7 +5811,7 @@ void nsBlockFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
           static_cast<nsBlockFrame*>(f->GetParent()));
     }
     DoRemoveOutOfFlowFrame(aOldFrame);
-  } else if (FrameChildListID::NoReflowPrincipal == aListID) {
+  } else if (kNoReflowPrincipalList == aListID) {
     
     DoRemoveFrame(aOldFrame, REMOVE_FIXED_CONTINUATIONS);
     return;
@@ -6077,8 +6074,8 @@ void nsBlockFrame::DoRemoveOutOfFlowFrame(nsIFrame* aFrame) {
   
   if (aFrame->IsAbsolutelyPositioned()) {
     
-    block->GetAbsoluteContainingBlock()->RemoveFrame(
-        block, FrameChildListID::Absolute, aFrame);
+    block->GetAbsoluteContainingBlock()->RemoveFrame(block, kAbsoluteList,
+                                                     aFrame);
   } else {
     
     nsIFrame* nif = aFrame->GetNextInFlow();
@@ -6904,9 +6901,8 @@ void nsBlockFrame::RecoverFloats(nsFloatManager& aFloatManager, WritingMode aWM,
   }
 
   
-  for (nsIFrame* oc =
-           GetChildList(FrameChildListID::OverflowContainers).FirstChild();
-       oc; oc = oc->GetNextSibling()) {
+  for (nsIFrame* oc = GetChildList(kOverflowContainersList).FirstChild(); oc;
+       oc = oc->GetNextSibling()) {
     RecoverFloatsFor(oc, aFloatManager, aWM, aContainerSize);
   }
 
@@ -7490,9 +7486,9 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 void nsBlockFrame::SetInitialChildList(ChildListID aListID,
                                        nsFrameList&& aChildList) {
-  if (FrameChildListID::Float == aListID) {
+  if (kFloatList == aListID) {
     mFloats = std::move(aChildList);
-  } else if (FrameChildListID::Principal == aListID) {
+  } else if (kPrincipalList == aListID) {
 #ifdef DEBUG
     
     
@@ -7647,9 +7643,8 @@ void nsBlockFrame::DoCollectFloats(nsIFrame* aFrame, nsFrameList& aList,
       }
 
       DoCollectFloats(aFrame->PrincipalChildList().FirstChild(), aList, true);
-      DoCollectFloats(
-          aFrame->GetChildList(FrameChildListID::Overflow).FirstChild(), aList,
-          true);
+      DoCollectFloats(aFrame->GetChildList(kOverflowList).FirstChild(), aList,
+                      true);
     }
     if (!aCollectSiblings) {
       break;
@@ -8175,8 +8170,8 @@ void nsBlockFrame::VerifyOverflowSituation() {
 
   
   
-  ChildListID childLists[] = {FrameChildListID::Float,
-                              FrameChildListID::PushedFloats};
+  nsIFrame::ChildListID childLists[] = {nsIFrame::kFloatList,
+                                        nsIFrame::kPushedFloatsList};
   for (size_t i = 0; i < ArrayLength(childLists); ++i) {
     const nsFrameList& children = GetChildList(childLists[i]);
     for (nsIFrame* f : children) {

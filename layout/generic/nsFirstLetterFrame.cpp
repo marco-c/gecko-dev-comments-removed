@@ -68,7 +68,7 @@ void nsFirstLetterFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 void nsFirstLetterFrame::SetInitialChildList(ChildListID aListID,
                                              nsFrameList&& aChildList) {
-  MOZ_ASSERT(aListID == FrameChildListID::Principal,
+  MOZ_ASSERT(aListID == kPrincipalList,
              "Principal child list is the only "
              "list that nsFirstLetterFrame should set via this function");
   for (nsIFrame* f : aChildList) {
@@ -314,8 +314,8 @@ void nsFirstLetterFrame::CreateContinuationForFloatingParent(
   
   
   
-  parent->InsertFrames(FrameChildListID::NoReflowPrincipal, placeholderFrame,
-                       nullptr, nsFrameList(continuation, continuation));
+  parent->InsertFrames(kNoReflowPrincipalList, placeholderFrame, nullptr,
+                       nsFrameList(continuation, continuation));
 
   *aContinuation = continuation;
 }

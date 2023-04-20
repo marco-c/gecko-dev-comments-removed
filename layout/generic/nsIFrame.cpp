@@ -1574,6 +1574,27 @@ void nsIFrame::CreateView() {
 }
 
 
+
+
+#ifndef _MSC_VER
+
+const nsIFrame::ChildListID nsIFrame::kPrincipalList;
+const nsIFrame::ChildListID nsIFrame::kAbsoluteList;
+const nsIFrame::ChildListID nsIFrame::kBulletList;
+const nsIFrame::ChildListID nsIFrame::kCaptionList;
+const nsIFrame::ChildListID nsIFrame::kColGroupList;
+const nsIFrame::ChildListID nsIFrame::kExcessOverflowContainersList;
+const nsIFrame::ChildListID nsIFrame::kFixedList;
+const nsIFrame::ChildListID nsIFrame::kFloatList;
+const nsIFrame::ChildListID nsIFrame::kOverflowContainersList;
+const nsIFrame::ChildListID nsIFrame::kOverflowList;
+const nsIFrame::ChildListID nsIFrame::kOverflowOutOfFlowList;
+const nsIFrame::ChildListID nsIFrame::kPopupList;
+const nsIFrame::ChildListID nsIFrame::kPushedFloatsList;
+const nsIFrame::ChildListID nsIFrame::kNoReflowPrincipalList;
+#endif
+
+
 nsMargin nsIFrame::GetUsedMargin() const {
   nsMargin margin(0, 0, 0, 0);
   if (((mState & NS_FRAME_FIRST_REFLOW) && !(mState & NS_FRAME_IN_REFLOW)) ||
@@ -2115,7 +2136,7 @@ AutoTArray<nsIFrame::ChildList, 4> nsIFrame::CrossDocChildLists() {
     if (root) {
       childLists.EmplaceBack(
           nsFrameList(root, nsLayoutUtils::GetLastSibling(root)),
-          FrameChildListID::Principal);
+          nsIFrame::kPrincipalList);
     }
   }
 
@@ -8613,7 +8634,8 @@ static nsContentAndOffset FindLineBreakingFrame(nsIFrame* aFrame,
 
   
   if (aDirection == eDirPrevious) {
-    nsIFrame* child = aFrame->PrincipalChildList().LastChild();
+    nsIFrame* child =
+        aFrame->GetChildList(nsIFrame::kPrincipalList).LastChild();
     while (child && !result.mContent) {
       result = FindLineBreakingFrame(child, aDirection);
       child = child->GetPrevSibling();
@@ -9572,10 +9594,9 @@ static nsRect ComputeOutlineInnerRect(
 
   
   
-  const FrameChildListIDs skip = {
-      FrameChildListID::Popup, FrameChildListID::Absolute,
-      FrameChildListID::Fixed, FrameChildListID::Float,
-      FrameChildListID::Overflow};
+  const nsIFrame::ChildListIDs skip = {
+      nsIFrame::kPopupList, nsIFrame::kAbsoluteList, nsIFrame::kFixedList,
+      nsIFrame::kFloatList, nsIFrame::kOverflowList};
   for (const auto& [list, listID] : aFrame->ChildLists()) {
     if (skip.contains(listID)) {
       continue;
