@@ -92,6 +92,7 @@ FormAutoCompleteResult.prototype = {
 
 
 
+
   getValueAt(index) {
     this._checkIndexBounds(index);
     return this._items[index].value;
@@ -107,12 +108,14 @@ FormAutoCompleteResult.prototype = {
 
 
 
+
   getCommentAt(index) {
     this._checkIndexBounds(index);
     return this._items[index].comment;
   },
 
   
+
 
 
 
@@ -140,12 +143,14 @@ FormAutoCompleteResult.prototype = {
 
 
 
+
   getImageAt(index) {
     this._checkIndexBounds(index);
     return "";
   },
 
   
+
 
 
 
@@ -159,12 +164,14 @@ FormAutoCompleteResult.prototype = {
 
 
 
+
   isRemovableAt(index) {
     this._checkIndexBounds(index);
     return this._items[index].removable;
   },
 
   
+
 
 
 

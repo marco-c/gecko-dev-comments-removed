@@ -171,6 +171,7 @@ function do_log_info(aMessage) {
 
 
 
+
 async function copyToProfile(
   aFilename,
   aDestFilename,

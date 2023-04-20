@@ -65,7 +65,6 @@ var FormHistoryTestUtils = {
 
 
 
-
   remove(fieldname, removals) {
     let changes = removals.map(v => {
       let criteria = typeof v == "string" ? { value: v } : v;
@@ -94,13 +93,11 @@ var FormHistoryTestUtils = {
 
 
 
-
   search(fieldname, filters = {}) {
     return lazy.FormHistory.search(null, Object.assign({ fieldname }, filters));
   },
 
   
-
 
 
 

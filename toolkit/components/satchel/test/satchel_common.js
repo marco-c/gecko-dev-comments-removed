@@ -217,6 +217,7 @@ async function promiseNoUnexpectedPopupShown() {
 
 
 
+
 function promiseACShown() {
   gPopupShownExpected = true;
   return new Promise(resolve => {
@@ -226,6 +227,7 @@ function promiseACShown() {
     };
   });
 }
+
 
 
 
