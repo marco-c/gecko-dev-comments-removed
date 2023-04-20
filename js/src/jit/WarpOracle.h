@@ -25,9 +25,6 @@ class MOZ_STACK_CLASS WarpOracle {
   HandleScript outerScript_;
   WarpBailoutInfo bailoutInfo_;
   WarpScriptSnapshotList scriptSnapshots_;
-#ifdef DEBUG
-  mozilla::HashNumber runningScriptHash_ = 0;
-#endif
 
   
   
@@ -55,8 +52,7 @@ class MOZ_STACK_CLASS WarpOracle {
   mozilla::GenericErrorResult<AbortReason> abort(HandleScript script,
                                                  AbortReason r,
                                                  const char* message, ...);
-  void addScriptSnapshot(WarpScriptSnapshot* scriptSnapshot,
-                         ICScript* icScript);
+  void addScriptSnapshot(WarpScriptSnapshot* scriptSnapshot);
 };
 
 }  

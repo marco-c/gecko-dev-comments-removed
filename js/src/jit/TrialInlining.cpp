@@ -516,9 +516,8 @@ bool TrialInliner::canInline(JSFunction* target, HandleScript caller,
   return true;
 }
 
-TrialInliningDecision TrialInliner::getInliningDecision(JSFunction* target,
-                                                        ICCacheIRStub* stub,
-                                                        BytecodeLocation loc) {
+bool TrialInliner::shouldInline(JSFunction* target, ICCacheIRStub* stub,
+                                BytecodeLocation loc) {
 #ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_WarpTrialInlining)) {
     BaseScript* baseScript =
@@ -542,7 +541,7 @@ TrialInliningDecision TrialInliner::getInliningDecision(JSFunction* target,
 #endif
 
   if (!canInline(target, script_, loc)) {
-    return TrialInliningDecision::NoInline;
+    return false;
   }
 
   
@@ -550,14 +549,14 @@ TrialInliningDecision TrialInliner::getInliningDecision(JSFunction* target,
   JSScript* targetScript = target->nonLazyScript();
   if (script_ == targetScript) {
     JitSpew(JitSpew_WarpTrialInlining, "SKIP: recursion");
-    return TrialInliningDecision::NoInline;
+    return false;
   }
 
   
   
   if (targetScript->jitScript()->hadIonOSR()) {
     JitSpew(JitSpew_WarpTrialInlining, "SKIP: had OSR");
-    return TrialInliningDecision::NoInline;
+    return false;
   }
 
   
@@ -565,14 +564,14 @@ TrialInliningDecision TrialInliner::getInliningDecision(JSFunction* target,
       inliningRootTotalBytecodeSize() + targetScript->length();
   if (newTotalSize > JitOptions.ionMaxScriptSize) {
     JitSpew(JitSpew_WarpTrialInlining, "SKIP: total size too big");
-    return TrialInliningDecision::NoInline;
+    return false;
   }
 
   uint32_t entryCount = stub->enteredCount();
   if (entryCount < JitOptions.inliningEntryThreshold) {
     JitSpew(JitSpew_WarpTrialInlining, "SKIP: Entry count is %u (minimum %u)",
             unsigned(entryCount), unsigned(JitOptions.inliningEntryThreshold));
-    return TrialInliningDecision::NoInline;
+    return false;
   }
 
   if (!JitOptions.isSmallFunction(targetScript)) {
@@ -580,7 +579,7 @@ TrialInliningDecision TrialInliner::getInliningDecision(JSFunction* target,
       JitSpew(JitSpew_WarpTrialInlining, "SKIP: Length is %u (maximum %u)",
               unsigned(targetScript->length()),
               unsigned(JitOptions.smallFunctionMaxBytecodeLength));
-      return TrialInliningDecision::NoInline;
+      return false;
     }
 
     JitSpew(JitSpew_WarpTrialInlining,
@@ -588,24 +587,7 @@ TrialInliningDecision TrialInliner::getInliningDecision(JSFunction* target,
             unsigned(targetScript->length()));
   }
 
-  JitScript* jitScript = targetScript->jitScript();
-  ICScript* icScript = jitScript->icScript();
-
-  
-  
-  
-  
-  
-  
-  for (size_t i = 0; i < icScript->numICEntries(); i++) {
-    ICFallbackStub* fallback = icScript->fallbackStub(i);
-    if (fallback->enteredCount() > 0 ||
-        fallback->state().mode() != ICState::Mode::Specialized) {
-      return TrialInliningDecision::Inline;
-    }
-  }
-
-  return TrialInliningDecision::MonomorphicInline;
+  return true;
 }
 
 ICScript* TrialInliner::createInlinedICScript(JSFunction* target,
@@ -686,14 +668,8 @@ bool TrialInliner::maybeInlineCall(ICEntry& entry, ICFallbackStub* fallback,
 
   MOZ_ASSERT(!data->icScript);
 
-  TrialInliningDecision inlining = getInliningDecision(data->target, stub, loc);
   
-  if (inlining == TrialInliningDecision::NoInline) {
-    return true;
-  }
-
-  if (inlining == TrialInliningDecision::MonomorphicInline) {
-    fallback->setTrialInliningState(TrialInliningState::MonomorphicInlined);
+  if (!shouldInline(data->target, stub, loc)) {
     return true;
   }
 
@@ -730,14 +706,8 @@ bool TrialInliner::maybeInlineGetter(ICEntry& entry, ICFallbackStub* fallback,
 
   MOZ_ASSERT(!data->icScript);
 
-  TrialInliningDecision inlining = getInliningDecision(data->target, stub, loc);
   
-  if (inlining == TrialInliningDecision::NoInline) {
-    return true;
-  }
-
-  if (inlining == TrialInliningDecision::MonomorphicInline) {
-    fallback->setTrialInliningState(TrialInliningState::MonomorphicInlined);
+  if (!shouldInline(data->target, stub, loc)) {
     return true;
   }
 
@@ -777,14 +747,8 @@ bool TrialInliner::maybeInlineSetter(ICEntry& entry, ICFallbackStub* fallback,
 
   MOZ_ASSERT(!data->icScript);
 
-  TrialInliningDecision inlining = getInliningDecision(data->target, stub, loc);
   
-  if (inlining == TrialInliningDecision::NoInline) {
-    return true;
-  }
-
-  if (inlining == TrialInliningDecision::MonomorphicInline) {
-    fallback->setTrialInliningState(TrialInliningState::MonomorphicInlined);
+  if (!shouldInline(data->target, stub, loc)) {
     return true;
   }
 
