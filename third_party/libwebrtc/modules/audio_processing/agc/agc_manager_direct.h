@@ -71,6 +71,16 @@ class AgcManagerDirect final {
 
   
   
+  
+  
+  
+  
+  void Process(const AudioBuffer& audio_buffer,
+               absl::optional<float> speech_probability,
+               absl::optional<float> speech_level_dbfs);
+
+  
+  
   void Process(const AudioBuffer& audio_buffer);
 
   
@@ -125,6 +135,10 @@ class AgcManagerDirect final {
                            UsedClippingPredictionsProduceLowerAnalogLevels);
   FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectParametrizedTest,
                            UnusedClippingPredictionsProduceEqualAnalogLevels);
+  FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectParametrizedTest,
+                           EmptyRmsErrorOverrideHasNoEffect);
+  FRIEND_TEST_ALL_PREFIXES(AgcManagerDirectParametrizedTest,
+                           NonEmptyRmsErrorOverrideHasEffect);
 
   
   
@@ -201,7 +215,10 @@ class MonoAgc {
   
   
   
-  void Process(rtc::ArrayView<const int16_t> audio);
+  
+  
+  void Process(rtc::ArrayView<const int16_t> audio,
+               absl::optional<int> rms_error_override);
 
   
   int recommended_analog_level() const { return recommended_input_volume_; }
@@ -257,6 +274,11 @@ class MonoAgc {
   absl::optional<int> new_compression_to_set_;
   bool log_to_histograms_ = false;
   const int clipped_level_min_;
+
+  
+  int frames_since_update_gain_ = 0;
+  
+  bool is_first_frame_ = true;
 };
 
 }  
