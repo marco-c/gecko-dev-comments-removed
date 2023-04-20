@@ -4979,17 +4979,24 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
   PropertyInfo propInfo = prop.propertyInfo();
   NativeObject* holder = nobj;
 
+  if (holder->inDictionaryMode()) {
+    return AttachDecision::NoAction;
+  }
+
+  SharedShape* oldSharedShape = &oldShape->asShared();
+
   
-  Shape* newShape = holder->shape();
+  SharedShape* newShape = holder->sharedShape();
   MOZ_RELEASE_ASSERT(newShape->lastProperty() == propInfo);
 
 #ifdef DEBUG
   
   
-  if (oldShape->propMapLength() == PropMap::Capacity) {
+  if (oldSharedShape->propMapLength() == PropMap::Capacity) {
     MOZ_ASSERT(newShape->propMapLength() == 1);
   } else {
-    MOZ_ASSERT(newShape->propMapLength() == oldShape->propMapLength() + 1);
+    MOZ_ASSERT(newShape->propMapLength() ==
+               oldSharedShape->propMapLength() + 1);
   }
 #endif
 
@@ -4999,12 +5006,9 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
   PropertyFlags flags = SetPropertyFlags(op, isFunctionPrototype);
 
   
-  if (newShape->isDictionary() || !propInfo.isDataProperty() ||
-      propInfo.flags() != flags) {
+  if (!propInfo.isDataProperty() || propInfo.flags() != flags) {
     return AttachDecision::NoAction;
   }
-
-  SharedShape* oldSharedShape = &oldShape->asShared();
 
   ObjOperandId objId = writer.guardToObject(objValId);
   maybeEmitIdGuard(id);

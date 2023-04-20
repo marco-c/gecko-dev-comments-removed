@@ -1025,7 +1025,7 @@ static bool TryAssignNative(JSContext* cx, HandleObject to, HandleObject from,
 
   Rooted<PropertyInfoWithKeyVector> props(cx, PropertyInfoWithKeyVector(cx));
 
-  Rooted<Shape*> fromShape(cx, fromNative->shape());
+  Rooted<NativeShape*> fromShape(cx, fromNative->shape());
   for (ShapePropertyIter<NoGC> iter(fromShape); !iter.done(); iter++) {
     
     
@@ -1715,7 +1715,7 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
     Rooted<PropertyInfoWithKeyVector> props(cx, PropertyInfoWithKeyVector(cx));
 
     
-    Rooted<Shape*> objShape(cx, nobj->shape());
+    Rooted<NativeShape*> objShape(cx, nobj->shape());
     for (ShapePropertyIter<NoGC> iter(objShape); !iter.done(); iter++) {
       if (iter->key().isSymbol()) {
         continue;
