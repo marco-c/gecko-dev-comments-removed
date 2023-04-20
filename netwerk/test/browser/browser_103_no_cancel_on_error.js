@@ -8,7 +8,7 @@
 
 Services.prefs.setBoolPref("network.early-hints.enabled", true);
 
-const { lax_request_count_checking } = ChromeUtils.import(
+const { request_count_checking } = ChromeUtils.import(
   "resource://testing-common/early_hint_preload_test_helper.jsm"
 );
 
@@ -37,22 +37,10 @@ async function test_hint_completion_on_error(httpCode) {
     "https://example.com/browser/netwerk/test/browser/early_hint_pixel_count.sjs"
   ).then(response => response.json());
 
-  
-  await lax_request_count_checking(
-    `test_103_error_${httpCode}`,
-    gotRequestCount,
-    {
-      hinted: 1,
-      normal: 0,
-    }
-  );
-  
-
-
-
-
-
-
+  await request_count_checking(`test_103_error_${httpCode}`, gotRequestCount, {
+    hinted: 1,
+    normal: 0,
+  });
 }
 
 

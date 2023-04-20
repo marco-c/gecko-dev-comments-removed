@@ -8,7 +8,7 @@
 
 
 const {
-  lax_request_count_checking,
+  request_count_checking,
   test_hint_preload_internal,
   test_hint_preload,
 } = ChromeUtils.import(
@@ -70,19 +70,11 @@ add_task(async function user_initiated_load() {
   ).then(response => response.json());
   let expectedRequestCount = { hinted: 1, normal: 0 };
 
-  
-  await lax_request_count_checking(
+  await request_count_checking(
     "test_preload_user_initiated",
     gotRequestCount,
     expectedRequestCount
   );
-  
-
-
-
-
-
-
 
   
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
