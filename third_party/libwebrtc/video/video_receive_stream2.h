@@ -197,27 +197,27 @@ class VideoReceiveStream2
   void GenerateKeyFrame() override;
 
  private:
+  
+  
   void OnEncodedFrame(std::unique_ptr<EncodedFrame> frame) override;
-  void OnDecodableFrameTimeout(TimeDelta wait_time) override;
+  
+  void OnDecodableFrameTimeout(TimeDelta wait) override;
+
   void CreateAndRegisterExternalDecoder(const Decoder& decoder);
-  TimeDelta GetMaxWait() const RTC_RUN_ON(decode_queue_);
-  void HandleEncodedFrame(std::unique_ptr<EncodedFrame> frame)
+  void HandleEncodedFrameOnDecodeQueue(std::unique_ptr<EncodedFrame> frame,
+                                       Timestamp now,
+                                       bool keyframe_request_is_due,
+                                       bool keyframe_required)
       RTC_RUN_ON(decode_queue_);
-  void HandleFrameBufferTimeout(Timestamp now,
-                                TimeDelta wait,
-                                TimeDelta max_wait_for_keyframe)
-      RTC_RUN_ON(packet_sequence_checker_);
   void UpdatePlayoutDelays() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(worker_sequence_checker_);
   void RequestKeyFrame(Timestamp now) RTC_RUN_ON(packet_sequence_checker_);
   void HandleKeyFrameGeneration(bool received_frame_is_keyframe,
                                 Timestamp now,
                                 bool always_request_key_frame,
-                                bool keyframe_request_is_due,
-                                TimeDelta max_wait_for_keyframe)
+                                bool keyframe_request_is_due)
       RTC_RUN_ON(packet_sequence_checker_);
-  bool IsReceivingKeyFrame(Timestamp timestamp,
-                           TimeDelta max_wait_for_keyframe) const
+  bool IsReceivingKeyFrame(Timestamp timestamp) const
       RTC_RUN_ON(packet_sequence_checker_);
   int DecodeAndMaybeDispatchEncodedFrame(std::unique_ptr<EncodedFrame> frame)
       RTC_RUN_ON(decode_queue_);
@@ -275,17 +275,17 @@ class VideoReceiveStream2
 
   
   
-  bool keyframe_required_ RTC_GUARDED_BY(decode_queue_) = true;
+  bool keyframe_required_ RTC_GUARDED_BY(packet_sequence_checker_) = true;
 
   
   bool frame_decoded_ RTC_GUARDED_BY(decode_queue_) = false;
 
   absl::optional<Timestamp> last_keyframe_request_
-      RTC_GUARDED_BY(decode_queue_);
+      RTC_GUARDED_BY(packet_sequence_checker_);
 
   
-  TimeDelta max_wait_for_keyframe_ RTC_GUARDED_BY(decode_queue_);
-  TimeDelta max_wait_for_frame_ RTC_GUARDED_BY(decode_queue_);
+  TimeDelta max_wait_for_keyframe_ RTC_GUARDED_BY(packet_sequence_checker_);
+  TimeDelta max_wait_for_frame_ RTC_GUARDED_BY(packet_sequence_checker_);
 
   
   
