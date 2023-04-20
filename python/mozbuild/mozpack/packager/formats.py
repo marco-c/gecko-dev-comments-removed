@@ -2,8 +2,6 @@
 
 
 
-from six.moves.urllib.parse import urlparse
-
 import mozpack.path as mozpath
 from mozpack.chrome.manifest import (
     Manifest,
@@ -16,6 +14,7 @@ from mozpack.chrome.manifest import (
 from mozpack.copier import FileRegistry, FileRegistrySubtree, Jarrer
 from mozpack.errors import errors
 from mozpack.files import ManifestFile
+from six.moves.urllib.parse import urlparse
 
 """
 Formatters are classes receiving packaging instructions and creating the

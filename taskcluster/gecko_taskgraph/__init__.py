@@ -50,8 +50,8 @@ def register(graph_config):
     """
     from taskgraph import generator
 
+    from gecko_taskgraph import morph  
     from gecko_taskgraph import (  
-        morph,  
         target_tasks,
     )
     from gecko_taskgraph.parameters import register_parameters

@@ -3,7 +3,6 @@
 
 
 import mozunit
-
 from mozpack.copier import FileCopier, FileRegistry
 from mozpack.packager.formats import FlatFormatter, JarFormatter, OmniJarFormatter
 from mozpack.packager.unpack import unpack_to_registry

@@ -3,7 +3,6 @@
 
 
 from marionette_harness import BaseMarionetteTestRunner
-
 from telemetry_harness.testcase import TelemetryTestCase
 
 SERVER_URL = "http://localhost:8000"

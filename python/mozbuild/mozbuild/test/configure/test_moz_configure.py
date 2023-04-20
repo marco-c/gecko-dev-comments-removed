@@ -2,9 +2,9 @@
 
 
 
+from common import BaseConfigureTest, ConfigureTestSandbox
 from mozunit import main
 
-from common import BaseConfigureTest, ConfigureTestSandbox
 from mozbuild.util import ReadOnlyNamespace, exec_, memoized_property
 
 
