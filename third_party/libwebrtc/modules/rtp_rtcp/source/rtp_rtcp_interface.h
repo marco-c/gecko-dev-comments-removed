@@ -151,6 +151,12 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     
     bool non_sender_rtt_measurement = false;
+
+    
+    
+    
+    
+    std::string rid;
   };
 
   
@@ -259,7 +265,8 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   
   
-  virtual void SetRid(absl::string_view rid) = 0;
+  [[deprecated("Use the rid member of config struct instead'")]] virtual void
+  SetRid(absl::string_view rid) = 0;
 
   
   

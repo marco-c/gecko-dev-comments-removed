@@ -72,6 +72,8 @@ const uint8_t kPayloadData[] = {47, 11, 32, 93, 89};
 const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
 const size_t kMaxPaddingLength = 224;      
 const uint32_t kTimestampTicksPerMs = 90;  
+constexpr absl::string_view kMid = "mid";
+constexpr absl::string_view kRid = "f";
 
 using ::testing::_;
 using ::testing::AllOf;
@@ -161,6 +163,9 @@ class RtpSenderTest : public ::testing::Test {
     config.retransmission_rate_limiter = &retransmission_rate_limiter_;
     config.paced_sender = &mock_paced_sender_;
     config.field_trials = &field_trials_;
+    
+    
+    config.rid = std::string(kRid);
     return config;
   }
 
@@ -274,12 +279,11 @@ class RtpSenderTest : public ::testing::Test {
 
   
   
-  void EnableRidSending(absl::string_view rid) {
+  void EnableRidSending() {
     rtp_sender_->RegisterRtpHeaderExtension(RtpStreamId::Uri(),
                                             kRidExtensionId);
     rtp_sender_->RegisterRtpHeaderExtension(RepairedRtpStreamId::Uri(),
                                             kRepairedRidExtensionId);
-    rtp_sender_->SetRid(rid);
   }
 };
 
@@ -593,7 +597,6 @@ TEST_F(RtpSenderTest, KeepsTimestampsOnPayloadPadding) {
 
 
 TEST_F(RtpSenderTest, MidIncludedOnSentPackets) {
-  const char kMid[] = "mid";
   EnableMidSending(kMid);
 
   
@@ -606,8 +609,7 @@ TEST_F(RtpSenderTest, MidIncludedOnSentPackets) {
 }
 
 TEST_F(RtpSenderTest, RidIncludedOnSentPackets) {
-  const char kRid[] = "f";
-  EnableRidSending(kRid);
+  EnableRidSending();
 
   EXPECT_CALL(mock_paced_sender_,
               EnqueuePackets(ElementsAre(Pointee(Property(
@@ -616,9 +618,8 @@ TEST_F(RtpSenderTest, RidIncludedOnSentPackets) {
 }
 
 TEST_F(RtpSenderTest, RidIncludedOnRtxSentPackets) {
-  const char kRid[] = "f";
   EnableRtx();
-  EnableRidSending(kRid);
+  EnableRidSending();
 
   EXPECT_CALL(mock_paced_sender_,
               EnqueuePackets(ElementsAre(Pointee(AllOf(
@@ -641,11 +642,8 @@ TEST_F(RtpSenderTest, RidIncludedOnRtxSentPackets) {
 }
 
 TEST_F(RtpSenderTest, MidAndRidNotIncludedOnSentPacketsAfterAck) {
-  const char kMid[] = "mid";
-  const char kRid[] = "f";
-
   EnableMidSending(kMid);
-  EnableRidSending(kRid);
+  EnableRidSending();
 
   
   EXPECT_CALL(
@@ -667,10 +665,8 @@ TEST_F(RtpSenderTest, MidAndRidNotIncludedOnSentPacketsAfterAck) {
 
 TEST_F(RtpSenderTest, MidAndRidAlwaysIncludedOnSentPacketsWhenConfigured) {
   SetUpRtpSender(false, true, nullptr);
-  const char kMid[] = "mid";
-  const char kRid[] = "f";
   EnableMidSending(kMid);
-  EnableRidSending(kRid);
+  EnableRidSending();
 
   
   
@@ -690,12 +686,9 @@ TEST_F(RtpSenderTest, MidAndRidAlwaysIncludedOnSentPacketsWhenConfigured) {
 
 
 TEST_F(RtpSenderTest, MidAndRidIncludedOnFirstRtxPacket) {
-  const char kMid[] = "mid";
-  const char kRid[] = "f";
-
   EnableRtx();
   EnableMidSending(kMid);
-  EnableRidSending(kRid);
+  EnableRidSending();
 
   
   EXPECT_CALL(mock_paced_sender_, EnqueuePackets);
@@ -724,12 +717,9 @@ TEST_F(RtpSenderTest, MidAndRidIncludedOnFirstRtxPacket) {
 
 
 TEST_F(RtpSenderTest, MidAndRidNotIncludedOnRtxPacketsAfterAck) {
-  const char kMid[] = "mid";
-  const char kRid[] = "f";
-
   EnableRtx();
   EnableMidSending(kMid);
-  EnableRidSending(kRid);
+  EnableRidSending();
 
   
   auto first_built_packet = SendGenericPacket();
@@ -768,11 +758,9 @@ TEST_F(RtpSenderTest, MidAndRidNotIncludedOnRtxPacketsAfterAck) {
 
 TEST_F(RtpSenderTest, MidAndRidAlwaysIncludedOnRtxPacketsWhenConfigured) {
   SetUpRtpSender(false, true, nullptr);
-  const char kMid[] = "mid";
-  const char kRid[] = "f";
   EnableRtx();
   EnableMidSending(kMid);
-  EnableRidSending(kRid);
+  EnableRidSending();
 
   
   EXPECT_CALL(
@@ -814,11 +802,8 @@ TEST_F(RtpSenderTest, MidAndRidAlwaysIncludedOnRtxPacketsWhenConfigured) {
 
 
 TEST_F(RtpSenderTest, MidAndRidNotIncludedOnSentPacketsAfterRtpStateRestored) {
-  const char kMid[] = "mid";
-  const char kRid[] = "f";
-
   EnableMidSending(kMid);
-  EnableRidSending(kRid);
+  EnableRidSending();
 
   RtpState state = rtp_sender_->GetRtpState();
   EXPECT_FALSE(state.ssrc_has_acked);
@@ -837,12 +822,9 @@ TEST_F(RtpSenderTest, MidAndRidNotIncludedOnSentPacketsAfterRtpStateRestored) {
 
 
 TEST_F(RtpSenderTest, MidAndRridNotIncludedOnRtxPacketsAfterRtpStateRestored) {
-  const char kMid[] = "mid";
-  const char kRid[] = "f";
-
   EnableRtx();
   EnableMidSending(kMid);
-  EnableRidSending(kRid);
+  EnableRidSending();
 
   RtpState rtx_state = rtp_sender_->GetRtxRtpState();
   EXPECT_FALSE(rtx_state.ssrc_has_acked);
@@ -947,13 +929,12 @@ TEST_F(RtpSenderTest, CountMidOnlyUntilAcked) {
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 12u);
 
   rtp_sender_->RegisterRtpHeaderExtension(RtpMid::Uri(), kMidExtensionId);
-  rtp_sender_->RegisterRtpHeaderExtension(RtpStreamId::Uri(), kRidExtensionId);
 
   
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 12u);
   rtp_sender_->SetMid("foo");
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 36u);
-  rtp_sender_->SetRid("bar");
+  rtp_sender_->RegisterRtpHeaderExtension(RtpStreamId::Uri(), kRidExtensionId);
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 52u);
 
   
