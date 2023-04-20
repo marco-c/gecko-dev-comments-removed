@@ -78,6 +78,7 @@ const NetworkStatistics kNetworkStats = {
     789,
     543,
     123,
+    222,
     432,
     321,
     123,
@@ -281,6 +282,9 @@ TEST(AudioReceiveStreamTest, GetStats) {
     EXPECT_EQ(static_cast<double>(kNetworkStats.jitterBufferTargetDelayMs) /
                   static_cast<double>(rtc::kNumMillisecsPerSec),
               stats.jitter_buffer_target_delay_seconds);
+    EXPECT_EQ(static_cast<double>(kNetworkStats.jitterBufferMinimumDelayMs) /
+                  static_cast<double>(rtc::kNumMillisecsPerSec),
+              stats.jitter_buffer_minimum_delay_seconds);
     EXPECT_EQ(kNetworkStats.insertedSamplesForDeceleration,
               stats.inserted_samples_for_deceleration);
     EXPECT_EQ(kNetworkStats.removedSamplesForAcceleration,

@@ -165,6 +165,12 @@ class NetEqController {
 
   
   
+  
+  
+  virtual int UnlimitedTargetLevelMs() const { return 0; }
+
+  
+  
   virtual absl::optional<int> PacketArrived(int fs_hz,
                                             bool should_update_stats,
                                             const PacketArrivedInfo& info) = 0;

@@ -62,7 +62,13 @@ class DelayManager {
   virtual void Reset();
 
   
+  
+  
   virtual int TargetDelayMs() const;
+
+  
+  
+  virtual int UnlimitedTargetLevelMs() const;
 
   
   virtual int SetPacketAudioLength(int length_ms);
@@ -107,7 +113,8 @@ class DelayManager {
   int maximum_delay_ms_;            
 
   int packet_len_ms_ = 0;
-  int target_level_ms_;  
+  int target_level_ms_ = 0;  
+  int unlimited_target_level_ms_ = 0;
 };
 
 }  

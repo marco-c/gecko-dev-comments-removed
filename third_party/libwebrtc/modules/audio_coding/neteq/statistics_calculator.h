@@ -84,7 +84,8 @@ class StatisticsCalculator {
   
   void JitterBufferDelay(size_t num_samples,
                          uint64_t waiting_time_ms,
-                         uint64_t target_delay_ms);
+                         uint64_t target_delay_ms,
+                         uint64_t unlimited_target_delay_ms);
 
   
   void StoreWaitingTime(int waiting_time_ms);
