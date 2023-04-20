@@ -14,7 +14,12 @@
 
 
 
-var EXPORTED_SYMBOLS = ["AddonInternal", "XPIDatabase", "XPIDatabaseReconcile"];
+var EXPORTED_SYMBOLS = [
+  "AddonInternal",
+  "BuiltInThemesHelpers",
+  "XPIDatabase",
+  "XPIDatabaseReconcile",
+];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -64,6 +69,38 @@ XPCOMUtils.defineLazyGetter(lazy, "BuiltInThemes", () => {
   }
   return undefined;
 });
+
+
+
+
+
+const BuiltInThemesHelpers = {
+  getLocalizedColorwayGroupName(addonId) {
+    return lazy.BuiltInThemes?.getLocalizedColorwayGroupName?.(addonId);
+  },
+
+  getLocalizedColorwayDescription(addonId) {
+    return lazy.BuiltInThemes?.getLocalizedColorwayGroupDescription?.(addonId);
+  },
+
+  isActiveTheme(addonId) {
+    return lazy.BuiltInThemes?.isActiveTheme?.(addonId);
+  },
+
+  isRetainedExpiredTheme(addonId) {
+    return lazy.BuiltInThemes?.isRetainedExpiredTheme?.(addonId);
+  },
+
+  themeIsExpired(addonId) {
+    return lazy.BuiltInThemes?.themeIsExpired?.(addonId);
+  },
+
+  
+  
+  unretainMigratedColorwayTheme(addonId) {
+    lazy.BuiltInThemes?.unretainMigratedColorwayTheme?.(addonId);
+  },
+};
 
 const { nsIBlocklistService } = Ci;
 
@@ -843,9 +880,9 @@ class AddonInternal {
       
       if (
         this.isBuiltinColorwayTheme &&
-        lazy.BuiltInThemes?.themeIsExpired?.(this.id) &&
-        (lazy.BuiltInThemes?.isActiveTheme?.(this.id) ||
-          lazy.BuiltInThemes?.isRetainedExpiredTheme?.(this.id))
+        BuiltInThemesHelpers.themeIsExpired(this.id) &&
+        (BuiltInThemesHelpers.isActiveTheme(this.id) ||
+          BuiltInThemesHelpers.isRetainedExpiredTheme(this.id))
       ) {
         permissions |= lazy.AddonManager.PERM_CAN_UPGRADE;
       }
@@ -1578,7 +1615,7 @@ const updatedAddonFluentIds = new Map([
         
         
         if (aProp == "description") {
-          return lazy.BuiltInThemes?.getLocalizedColorwayDescription(addon.id);
+          return BuiltInThemesHelpers.getLocalizedColorwayDescription(addon.id);
         }
         
         
@@ -1590,7 +1627,7 @@ const updatedAddonFluentIds = new Map([
         
         
         
-        let localizedColorwayGroupName = lazy.BuiltInThemes?.getLocalizedColorwayGroupName(
+        let localizedColorwayGroupName = BuiltInThemesHelpers.getLocalizedColorwayGroupName(
           addon.id
         );
         let [colorwayGroupName, intensity] = addonIdPrefix.split("-", 2);
