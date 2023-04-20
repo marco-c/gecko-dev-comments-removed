@@ -1005,6 +1005,11 @@ nsresult CheckCSPFrameAncestorPolicy(nsIChannel* aChannel,
   }
 
   RefPtr<nsCSPContext> csp = new nsCSPContext();
+  
+  
+  
+  csp->SuppressParserLogMessages();
+
   nsCOMPtr<nsIURI> selfURI;
   nsAutoString referrerSpec;
   if (httpChannel) {

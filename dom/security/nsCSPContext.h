@@ -59,6 +59,10 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   nsresult InitFromOther(nsCSPContext* otherContext);
 
   
+  
+  void SuppressParserLogMessages() { mSuppressParserLogMessages = true; }
+
+  
 
 
 
@@ -181,6 +185,8 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   nsCOMPtr<nsILoadGroup> mCallingChannelLoadGroup;
   nsWeakPtr mLoadingContext;
   nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
+
+  bool mSuppressParserLogMessages = false;
 
   
   
