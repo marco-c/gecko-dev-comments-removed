@@ -1178,7 +1178,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
 
   void UpdatePlaybackPositionToZeroIfNeeded() {
     
-    if (!mIsReachingAudioEOS && !mIsReachingVideoEOS) {
+    if (!mIsReachingAudioEOS || !mIsReachingVideoEOS) {
       return;
     }
 
