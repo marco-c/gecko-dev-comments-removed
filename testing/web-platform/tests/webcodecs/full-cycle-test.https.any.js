@@ -11,7 +11,7 @@ var ENCODER_CONFIG = null;
 promise_setup(async () => {
   const config = {
     
-    '?av1': {codec: 'av01.0.04M.08'},
+    '?av1': {codec: 'av01.0.04M.08', hasEmbeddedColorSpace: true},
     '?vp8': {codec: 'vp8', hasEmbeddedColorSpace: false},
     '?vp9_p0': {codec: 'vp09.00.10.08', hasEmbeddedColorSpace: true},
     '?vp9_p2': {codec: 'vp09.02.10.10', hasEmbeddedColorSpace: true},
