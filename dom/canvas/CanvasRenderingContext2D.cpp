@@ -2408,6 +2408,11 @@ static already_AddRefed<const ComputedStyle> GetFontStyleForServo(
   RefPtr<const ComputedStyle> parentStyle;
   if (aElement) {
     parentStyle = nsComputedDOMStyle::GetComputedStyle(aElement);
+    if (NS_WARN_IF(aPresShell->IsDestroying())) {
+      
+      aError.Throw(NS_ERROR_FAILURE);
+      return nullptr;
+    }
   }
   if (!parentStyle) {
     RefPtr<RawServoDeclarationBlock> declarations =
