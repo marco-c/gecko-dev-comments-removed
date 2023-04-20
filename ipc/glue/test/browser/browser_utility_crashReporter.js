@@ -3,7 +3,8 @@
 
 "use strict";
 
-async function startAndCrashUtility(actors, actorsCheck) {
+async function startAndCrashUtility(numUnknownActors, actorsCheck) {
+  const actors = Array(numUnknownActors).fill("unknown");
   const utilityPid = await startUtilityProcess(actors);
   await crashSomeUtility(utilityPid, actorsCheck);
 }
@@ -11,7 +12,7 @@ async function startAndCrashUtility(actors, actorsCheck) {
 
 
 add_setup(async function ensureNoExistingProcess() {
-  await killPendingUtilityProcess();
+  await killUtilityProcesses();
 });
 
 add_task(async function utilityNoActor() {
