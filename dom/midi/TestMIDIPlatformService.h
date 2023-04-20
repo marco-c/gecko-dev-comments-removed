@@ -39,10 +39,6 @@ class TestMIDIPlatformService : public MIDIPlatformService {
  private:
   virtual ~TestMIDIPlatformService();
   
-  
-  
-  nsCOMPtr<nsIThread> mBackgroundThread;
-  
   MIDIPortInfo mControlInputPort;
   
   MIDIPortInfo mControlOutputPort;

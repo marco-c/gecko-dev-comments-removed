@@ -50,8 +50,13 @@ class midirMIDIPlatformService : public MIDIPlatformService {
   
   
   
-  static StaticMutex gBackgroundThreadMutex MOZ_UNANNOTATED;
-  static nsCOMPtr<nsIThread> gBackgroundThread;
+  
+  
+  
+  
+  static StaticMutex gOwnerThreadMutex;
+  static nsCOMPtr<nsISerialEventTarget> gOwnerThread
+      MOZ_GUARDED_BY(gOwnerThreadMutex);
 };
 
 }  
