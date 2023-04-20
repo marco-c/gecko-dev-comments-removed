@@ -341,8 +341,12 @@ void GeckoViewOpenWindow(const ClientOpenWindowArgsParsed& aArgsValidated,
           rv = wwatch->GetWindowByName(sessionId, getter_AddRefs(chromeWindow));
           NS_ENSURE_SUCCESS(rv, rv);
           NS_ENSURE_TRUE(chromeWindow, NS_ERROR_FAILURE);
-          browsingContext =
-              nsPIDOMWindowOuter::From(chromeWindow)->GetBrowsingContext();
+          nsCOMPtr<nsIDocShellTreeOwner> treeOwner =
+              nsPIDOMWindowOuter::From(chromeWindow)->GetTreeOwner();
+          NS_ENSURE_TRUE(treeOwner, NS_ERROR_FAILURE);
+          rv = treeOwner->GetPrimaryContentBrowsingContext(
+              getter_AddRefs(browsingContext));
+          NS_ENSURE_SUCCESS(rv, rv);
           NS_ENSURE_TRUE(browsingContext, NS_ERROR_FAILURE);
           return NS_OK;
         }();

@@ -51,6 +51,15 @@ const GeckoViewTabUtil = {
     }
 
     const window = await windowPromise;
+
+    
+    
+    
+    window.browser.fixupAndLoadURIString(url, {
+      flags: Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
+
     return window.tab;
   },
 };
