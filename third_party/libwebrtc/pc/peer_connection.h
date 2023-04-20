@@ -380,6 +380,9 @@ class PeerConnection : public PeerConnectionInternal,
       const SessionDescriptionInterface& remote_description) override;
 
   
+  void ReportFirstConnectUsageMetrics() RTC_RUN_ON(signaling_thread());
+
+  
   
   
   
