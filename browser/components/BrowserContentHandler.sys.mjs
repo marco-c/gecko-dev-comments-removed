@@ -1,18 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-var EXPORTED_SYMBOLS = [
-  "nsBrowserContentHandler",
-  "nsDefaultCommandLineHandler",
-];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -42,7 +33,7 @@ XPCOMUtils.defineLazyGetter(lazy, "gSystemPrincipal", () =>
 );
 
 XPCOMUtils.defineLazyGetter(lazy, "gWindowsAlertsService", () => {
-  
+  // We might not have the Windows alerts service: e.g., on Windows 7 and Windows 8.
   if (!("nsIWindowsAlertsService" in Ci)) {
     return null;
   }
@@ -51,12 +42,12 @@ XPCOMUtils.defineLazyGetter(lazy, "gWindowsAlertsService", () => {
     ?.QueryInterface(Ci.nsIWindowsAlertsService);
 });
 
-
+// One-time startup homepage override configurations
 const ONCE_DOMAINS = ["mozilla.org", "firefox.com"];
 const ONCE_PREF = "browser.startup.homepage_override.once";
 
-
-
+// Index of Private Browsing icon in firefox.exe
+// Must line up with the one in nsNativeAppSupportWin.h.
 const PRIVATE_BROWSING_ICON_INDEX = 5;
 
 function shouldLoadURI(aURI) {
@@ -88,8 +79,8 @@ function resolveURIInternal(aCmdLine, aArgument) {
     Cu.reportError(e);
   }
 
-  
-  
+  // We have interpreted the argument as a relative file URI, but the file
+  // doesn't exist. Try URI fixup heuristics: see bug 290782.
 
   try {
     uri = Services.uriFixup.getFixupURIInfo(aArgument).preferredURI;
@@ -108,16 +99,16 @@ const OVERRIDE_NONE = 0;
 const OVERRIDE_NEW_PROFILE = 1;
 const OVERRIDE_NEW_MSTONE = 2;
 const OVERRIDE_NEW_BUILD_ID = 3;
-
-
-
-
-
-
-
-
-
-
+/**
+ * Determines whether a home page override is needed.
+ * Returns:
+ *  OVERRIDE_NEW_PROFILE if this is the first run with a new profile.
+ *  OVERRIDE_NEW_MSTONE if this is the first run with a build with a different
+ *                      Gecko milestone (i.e. right after an upgrade).
+ *  OVERRIDE_NEW_BUILD_ID if this is the first run with a new build ID of the
+ *                        same Gecko milestone (i.e. after a nightly upgrade).
+ *  OVERRIDE_NONE otherwise.
+ */
 function needHomepageOverride(prefb) {
   var savedmstone = prefb.getCharPref(
     "browser.startup.homepage_override.mstone",
@@ -138,14 +129,14 @@ function needHomepageOverride(prefb) {
   var buildID = Services.appinfo.platformBuildID;
 
   if (mstone != savedmstone) {
-    
-    
-    
-    
+    // Bug 462254. Previous releases had a default pref to suppress the EULA
+    // agreement if the platform's installer had already shown one. Now with
+    // about:rights we've removed the EULA stuff and default pref, but we need
+    // a way to make existing profiles retain the default that we removed.
     if (savedmstone) {
       prefb.setBoolPref("browser.rights.3.shown", true);
 
-      
+      // Remember that we saw a major version change.
       gMajorUpgrade = true;
     }
 
@@ -162,33 +153,33 @@ function needHomepageOverride(prefb) {
   return OVERRIDE_NONE;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Gets the override page for the first run after the application has been
+ * updated.
+ * @param  update
+ *         The nsIUpdate for the update that has been applied.
+ * @param  defaultOverridePage
+ *         The default override page.
+ * @return The override page.
+ */
 function getPostUpdateOverridePage(update, defaultOverridePage) {
   update = update.QueryInterface(Ci.nsIWritablePropertyBag);
   let actions = update.getProperty("actions");
-  
-  
+  // When the update doesn't specify actions fallback to the original behavior
+  // of displaying the default override page.
   if (!actions) {
     return defaultOverridePage;
   }
 
-  
-  
+  // The existence of silent or the non-existence of showURL in the actions both
+  // mean that an override page should not be displayed.
   if (actions.includes("silent") || !actions.includes("showURL")) {
     return "";
   }
 
-  
-  
-  
+  // If a policy was set to not allow the update.xml-provided
+  // URL to be used, use the default fallback (which will also
+  // be provided by the policy).
   if (!Services.policies.isAllowed("postUpdateCustomPage")) {
     return defaultOverridePage;
   }
@@ -196,33 +187,33 @@ function getPostUpdateOverridePage(update, defaultOverridePage) {
   return update.getProperty("openURL") || defaultOverridePage;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Open a browser window. If this is the initial launch, this function will
+ * attempt to use the navigator:blank window opened by BrowserGlue.sys.mjs during
+ * early startup.
+ *
+ * @param cmdLine
+ *        The nsICommandLine object given to nsICommandLineHandler's handle
+ *        method.
+ *        Used to check if we are processing the command line for the initial launch.
+ * @param triggeringPrincipal
+ *        The nsIPrincipal to use as triggering principal for the page load(s).
+ * @param urlOrUrlList (optional)
+ *        When omitted, the browser window will be opened with the default
+ *        arguments, which will usually load the homepage.
+ *        This can be a JS array of urls provided as strings, each url will be
+ *        loaded in a tab. postData will be ignored in this case.
+ *        This can be a single url to load in the new window, provided as a string.
+ *        postData will be used in this case if provided.
+ * @param postData (optional)
+ *        An nsIInputStream object to use as POST data when loading the provided
+ *        url, or null.
+ * @param forcePrivate (optional)
+ *        Boolean. If set to true, the new window will be a private browsing one.
+ *
+ * @returns {ChromeWindow}
+ *          Returns the top level window opened.
+ */
 function openBrowserWindow(
   cmdLine,
   triggeringPrincipal,
@@ -235,11 +226,11 @@ function openBrowserWindow(
 
   let args;
   if (!urlOrUrlList) {
-    
+    // Just pass in the defaultArgs directly. We'll use system principal on the other end.
     args = [gBrowserContentHandler.getArgs(isStartup)];
   } else if (Array.isArray(urlOrUrlList)) {
-    
-    
+    // There isn't an explicit way to pass a principal here, so we load multiple URLs
+    // with system principal when we get to actually loading them.
     if (
       !triggeringPrincipal ||
       !triggeringPrincipal.equals(lazy.gSystemPrincipal)
@@ -248,7 +239,7 @@ function openBrowserWindow(
         "Can't open multiple URLs with something other than system principal."
       );
     }
-    
+    // Passing an nsIArray for the url disables the "|"-splitting behavior.
     let uriArray = Cc["@mozilla.org/array;1"].createInstance(
       Ci.nsIMutableArray
     );
@@ -266,19 +257,19 @@ function openBrowserWindow(
     );
     extraOptions.setPropertyAsBool("fromExternal", true);
 
-    
-    
-    
+    // Always pass at least 3 arguments to avoid the "|"-splitting behavior,
+    // ie. avoid the loadOneOrMoreURIs function.
+    // Also, we need to pass the triggering principal.
     args = [
       urlOrUrlList,
       extraOptions,
-      null, 
+      null, // refererInfo
       postData,
-      undefined, 
-      
-      undefined, 
-      null, 
-      null, 
+      undefined, // allowThirdPartyFixup; this would be `false` but that
+      // needs a conversion. Hopefully bug 1485961 will fix.
+      undefined, // user context id
+      null, // origin principal
+      null, // origin storage principal
       triggeringPrincipal,
     ];
   }
@@ -286,8 +277,8 @@ function openBrowserWindow(
   if (isStartup) {
     let win = Services.wm.getMostRecentWindow("navigator:blank");
     if (win) {
-      
-      
+      // Remove the windowtype of our blank window so that we don't close it
+      // later on when seeing cmdLine.preventDefault is true.
       win.document.documentElement.removeAttribute("windowtype");
 
       if (forcePrivate) {
@@ -308,8 +299,8 @@ function openBrowserWindow(
           lazy.WindowsUIUtils.setWindowIconFromExe(
             win,
             Services.dirsvc.get("XREExeF", Ci.nsIFile).path,
-            
-            
+            // This corresponds to the definitions in
+            // nsNativeAppSupportWin.h
             PRIVATE_BROWSING_ICON_INDEX
           );
         }
@@ -317,7 +308,7 @@ function openBrowserWindow(
 
       let openTime = win.openTime;
       win.location = AppConstants.BROWSER_CHROME_URL;
-      win.arguments = args; 
+      win.arguments = args; // <-- needs to be a plain JS array here.
 
       ChromeUtils.addProfilerMarker("earlyBlankWindowVisible", openTime);
       lazy.BrowserWindowTracker.registerOpeningWindow(win, forcePrivate);
@@ -325,17 +316,17 @@ function openBrowserWindow(
     }
   }
 
-  
+  // We can't provide arguments to openWindow as a JS array.
   if (!urlOrUrlList) {
-    
-    
+    // If we have a single string guaranteed to not contain '|' we can simply
+    // wrap it in an nsISupportsString object.
     let [url] = args;
     args = Cc["@mozilla.org/supports-string;1"].createInstance(
       Ci.nsISupportsString
     );
     args.data = url;
   } else {
-    
+    // Otherwise, pass an nsIArray.
     if (args.length > 1) {
       let string = Cc["@mozilla.org/supports-string;1"].createInstance(
         Ci.nsISupportsString
@@ -362,11 +353,11 @@ function openPreferences(cmdLine, extraArgs) {
 }
 
 async function doSearch(searchTerm, cmdLine) {
-  
-  
-  
-  
-  
+  // XXXbsmedberg: use handURIToExistingBrowser to obey tabbed-browsing
+  // preferences, but need nsIBrowserDOMWindow extensions
+  // Open the window immediately as BrowserContentHandler needs to
+  // be handled synchronously. Then load the search URI when the
+  // SearchService has loaded.
   let win = openBrowserWindow(cmdLine, lazy.gSystemPrincipal, "about:blank");
   await new Promise(resolve => {
     Services.obs.addObserver(function observe(subject) {
@@ -389,14 +380,15 @@ async function doSearch(searchTerm, cmdLine) {
   ).catch(Cu.reportError);
 }
 
-function nsBrowserContentHandler() {
+export function nsBrowserContentHandler() {
   if (!gBrowserContentHandler) {
     gBrowserContentHandler = this;
   }
   return gBrowserContentHandler;
 }
+
 nsBrowserContentHandler.prototype = {
-  
+  /* nsISupports */
   QueryInterface: ChromeUtils.generateQI([
     "nsICommandLineHandler",
     "nsIBrowserHandler",
@@ -404,7 +396,7 @@ nsBrowserContentHandler.prototype = {
     "nsICommandLineValidator",
   ]),
 
-  
+  /* nsICommandLineHandler */
   handle: function bch_handle(cmdLine) {
     if (cmdLine.handleFlag("kiosk", false)) {
       gKiosk = true;
@@ -427,13 +419,13 @@ nsBrowserContentHandler.prototype = {
       cmdLine.preventDefault = true;
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // In the past, when an instance was not already running, the -remote
+    // option returned an error code. Any script or application invoking the
+    // -remote option is expected to be handling this case, otherwise they
+    // wouldn't be doing anything when there is no Firefox already running.
+    // Making the -remote option always return an error code makes those
+    // scripts or applications handle the situation as if Firefox was not
+    // already running.
     if (cmdLine.handleFlag("remote", true)) {
       throw Components.Exception("", Cr.NS_ERROR_ABORT);
     }
@@ -470,7 +462,7 @@ nsBrowserContentHandler.prototype = {
 
     var chromeParam = cmdLine.handleFlagWithParam("chrome", false);
     if (chromeParam) {
-      
+      // Handle old preference dialog URLs.
       if (
         chromeParam == "chrome://browser/content/pref/pref.xul" ||
         chromeParam == "chrome://browser/content/preferences/preferences.xul"
@@ -488,10 +480,10 @@ nsBrowserContentHandler.prototype = {
             return localSchemes.has(uri.scheme);
           };
           if (isLocal(resolvedURI)) {
-            
+            // If the URI is local, we are sure it won't wrongly inherit chrome privs
             let features = "chrome,dialog=no,all" + this.getFeatures(cmdLine);
-            
-            
+            // Provide 1 null argument, as openWindow has a different behavior
+            // when the arg count is 0.
             let argArray = Cc["@mozilla.org/array;1"].createInstance(
               Ci.nsIMutableArray
             );
@@ -532,8 +524,8 @@ nsBrowserContentHandler.prototype = {
         let forcePrivate = true;
         let resolvedURI;
         if (!lazy.PrivateBrowsingUtils.enabled) {
-          
-          
+          // Load about:privatebrowsing in a normal tab, which will display an error indicating
+          // access to private browsing has been disabled.
           forcePrivate = false;
           resolvedURI = Services.io.newURI("about:privatebrowsing");
         } else {
@@ -552,7 +544,7 @@ nsBrowserContentHandler.prototype = {
       if (e.result != Cr.NS_ERROR_INVALID_ARG) {
         throw e;
       }
-      
+      // NS_ERROR_INVALID_ARG is thrown when flag exists, but has no param.
       if (cmdLine.handleFlag("private-window", false)) {
         openBrowserWindow(
           cmdLine,
@@ -571,8 +563,8 @@ nsBrowserContentHandler.prototype = {
       cmdLine.preventDefault = true;
     }
 
-    
-    
+    // The global PB Service consumes this flag, so only eat it in per-window
+    // PB builds.
     if (
       cmdLine.handleFlag("private", false) &&
       lazy.PrivateBrowsingUtils.enabled
@@ -604,7 +596,7 @@ nsBrowserContentHandler.prototype = {
     }
 
     if (AppConstants.platform == "win") {
-      
+      // Handle "? searchterm" for Windows Vista start menu integration
       for (var i = cmdLine.length - 1; i >= 0; --i) {
         var param = cmdLine.getArgument(i);
         if (param.match(/^\? /)) {
@@ -644,7 +636,7 @@ nsBrowserContentHandler.prototype = {
     return info;
   },
 
-  
+  /* nsIBrowserHandler */
 
   get defaultArgs() {
     return this.getArgs();
@@ -665,11 +657,11 @@ nsBrowserContentHandler.prototype = {
     var additionalPage = "";
     var willRestoreSession = false;
     try {
-      
-      
-      
-      
-      
+      // Read the old value of homepage_override.mstone before
+      // needHomepageOverride updates it, so that we can later add it to the
+      // URL if we do end up showing an overridePage. This makes it possible
+      // to have the overridePage's content vary depending on the version we're
+      // upgrading from.
       let old_mstone = Services.prefs.getCharPref(
         "browser.startup.homepage_override.mstone",
         "unknown"
@@ -682,22 +674,22 @@ nsBrowserContentHandler.prototype = {
       if (override != OVERRIDE_NONE) {
         switch (override) {
           case OVERRIDE_NEW_PROFILE:
-            
+            // New profile.
             overridePage = Services.urlFormatter.formatURLPref(
               "startup.homepage_welcome_url"
             );
             additionalPage = Services.urlFormatter.formatURLPref(
               "startup.homepage_welcome_url.additional"
             );
-            
+            // Turn on 'later run' pages for new profiles.
             lazy.LaterRun.enabled = true;
             break;
           case OVERRIDE_NEW_MSTONE:
-            
-            
-            
-            
-            
+            // Check whether we will restore a session. If we will, we assume
+            // that this is an "update" session. This does not take crashes
+            // into account because that requires waiting for the session file
+            // to be read. If a crash occurs after updating, before restarting,
+            // we may open the startPage in addition to restoring the session.
             willRestoreSession = lazy.SessionStartup.isAutomaticRestoreEnabled();
 
             overridePage = Services.urlFormatter.formatURLPref(
@@ -709,7 +701,7 @@ nsBrowserContentHandler.prototype = {
               Services.vc.compare(update.appVersion, old_mstone) > 0
             ) {
               overridePage = getPostUpdateOverridePage(update, overridePage);
-              
+              // Send the update ping to signal that the update was successful.
               lazy.UpdatePing.handleUpdateSuccess(old_mstone, old_buildId);
             }
 
@@ -717,7 +709,7 @@ nsBrowserContentHandler.prototype = {
             break;
           case OVERRIDE_NEW_BUILD_ID:
             if (lazy.UpdateManager.readyUpdate) {
-              
+              // Send the update ping to signal that the update was successful.
               lazy.UpdatePing.handleUpdateSuccess(old_mstone, old_buildId);
             }
             break;
@@ -725,27 +717,27 @@ nsBrowserContentHandler.prototype = {
       }
     } catch (ex) {}
 
-    
+    // formatURLPref might return "about:blank" if getting the pref fails
     if (overridePage == "about:blank") {
       overridePage = "";
     }
 
-    
+    // Allow showing a one-time startup override if we're not showing one
     if (isStartup && overridePage == "" && prefb.prefHasUserValue(ONCE_PREF)) {
       try {
-        
+        // Show if we haven't passed the expiration or there's no expiration
         const { expire, url } = JSON.parse(
           Services.urlFormatter.formatURLPref(ONCE_PREF)
         );
         if (!(Date.now() > expire)) {
-          
+          // Only set allowed urls as override pages
           overridePage = url
             .split("|")
             .map(val => {
               try {
                 return new URL(val);
               } catch (ex) {
-                
+                // Invalid URL, so filter out below
                 Cu.reportError(`Invalid once url: ${ex}`);
                 return null;
               }
@@ -754,20 +746,20 @@ nsBrowserContentHandler.prototype = {
               parsed =>
                 parsed &&
                 parsed.protocol == "https:" &&
-                
+                // Only accept exact hostname or subdomain; without port
                 ONCE_DOMAINS.includes(
                   Services.eTLD.getBaseDomainFromHost(parsed.host)
                 )
             )
             .join("|");
 
-          
+          // Be noisy as properly configured urls should be unchanged
           if (overridePage != url) {
             Cu.reportError(`Mismatched once urls: ${url}`);
           }
         }
       } catch (ex) {
-        
+        // Invalid json pref, so ignore (and clear below)
         Cu.reportError(`Invalid once pref: ${ex}`);
       } finally {
         prefb.clearUserPref(ONCE_PREF);
@@ -803,8 +795,8 @@ nsBrowserContentHandler.prototype = {
     let skipStartPage =
       override == OVERRIDE_NEW_PROFILE &&
       prefb.getBoolPref("browser.startup.firstrunSkipsHomepage");
-    
-    
+    // Only show the startPage if we're not restoring an update session and are
+    // not set to skip the start page on this profile
     if (overridePage && startPage && !willRestoreSession && !skipStartPage) {
       return overridePage + "|" + startPage;
     }
@@ -840,8 +832,8 @@ nsBrowserContentHandler.prototype = {
         } catch (e) {}
       }
 
-      
-      
+      // The global PB Service consumes this flag, so only eat it in per-window
+      // PB builds.
       if (lazy.PrivateBrowsingUtils.isInTemporaryAutoStartMode) {
         this.mFeatures += ",private";
       }
@@ -869,7 +861,7 @@ nsBrowserContentHandler.prototype = {
     gMajorUpgrade = val;
   },
 
-  
+  /* nsIContentHandler */
 
   handleContent: function bch_handleContent(contentType, context, request) {
     const NS_ERROR_WONT_HANDLE_CONTENT = 0x805d0001;
@@ -896,7 +888,7 @@ nsBrowserContentHandler.prototype = {
     request.cancel(Cr.NS_BINDING_ABORTED);
   },
 
-  
+  /* nsICommandLineValidator */
   validate: function bch_validate(cmdLine) {
     var urlFlagIdx = cmdLine.findFlag("url", false);
     if (
@@ -920,8 +912,8 @@ nsBrowserContentHandler.prototype = {
         }
       } catch (ex) {}
       if (isDefault) {
-        
-        
+        // Firefox is already the default HTTP handler.
+        // We don't have to show the instruction page.
         throw Components.Exception("", Cr.NS_ERROR_ABORT);
       }
     }
@@ -950,8 +942,8 @@ function handURIToExistingBrowser(
     );
   };
 
-  
-  
+  // Unless using a private window is forced, open external links in private
+  // windows only if we're in perma-private mode.
   let allowPrivate =
     forcePrivate || lazy.PrivateBrowsingUtils.permanentPrivateBrowsing;
   let navWin = lazy.BrowserWindowTracker.getTopWindow({
@@ -967,28 +959,28 @@ function handURIToExistingBrowser(
     private: allowPrivate,
   });
   if (pending) {
-    
-    
-    
+    // Note that we cannot make this function async as some callers rely on
+    // catching exceptions it can throw in some cases and some of those callers
+    // cannot be made async.
     pending.then(openInWindow);
     return;
   }
 
-  
+  // if we couldn't load it in an existing window, open a new one
   openBrowserWindow(cmdLine, triggeringPrincipal, uri.spec, null, forcePrivate);
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * If given URI is a file type or a protocol, record telemetry that
+ * Firefox was invoked or launched (if `isLaunch` is truth-y).  If the
+ * file type or protocol is not registered by default, record it as
+ * ".<other extension>" or "<other protocol>".
+ *
+ * @param uri
+ *        The URI Firefox was asked to handle.
+ * @param isLaunch
+ *        truth-y if Firefox was launched/started rather than running and invoked.
+ */
 function maybeRecordToHandleTelemetry(uri, isLaunch) {
   let scalar = isLaunch
     ? "os.environment.launched_to_handle"
@@ -996,8 +988,8 @@ function maybeRecordToHandleTelemetry(uri, isLaunch) {
 
   if (uri instanceof Ci.nsIFileURL) {
     let extension = "." + uri.fileExtension.toLowerCase();
-    
-    
+    // Keep synchronized with https://searchfox.org/mozilla-central/source/browser/installer/windows/nsis/shared.nsh
+    // and https://searchfox.org/mozilla-central/source/browser/installer/windows/msix/AppxManifest.xml.in.
     let registeredExtensions = new Set([
       ".avif",
       ".htm",
@@ -1025,21 +1017,21 @@ function maybeRecordToHandleTelemetry(uri, isLaunch) {
   }
 }
 
-function nsDefaultCommandLineHandler() {}
+export function nsDefaultCommandLineHandler() {}
 
 nsDefaultCommandLineHandler.prototype = {
-  
+  /* nsISupports */
   QueryInterface: ChromeUtils.generateQI(["nsICommandLineHandler"]),
 
   _haveProfile: false,
 
-  
+  /* nsICommandLineHandler */
   handle: function dch_handle(cmdLine) {
     var urilist = [];
 
     if (AppConstants.platform == "win") {
-      
-      
+      // Windows itself does disk I/O when the notification service is
+      // initialized, so make sure that is lazy.
       var tag;
       while (
         (tag = cmdLine.handleFlagWithParam("notification-windowsTag", false))
@@ -1075,7 +1067,7 @@ nsDefaultCommandLineHandler.prototype = {
               onUnknownWindowsTag
             )
           ) {
-            
+            // Don't pop open a new window.
             cmdLine.preventDefault = true;
           }
         } catch (e) {
@@ -1090,9 +1082,9 @@ nsDefaultCommandLineHandler.prototype = {
       cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
       Services.startup.wasSilentlyStarted
     ) {
-      
-      
-      
+      // If we are starting up in silent mode, don't open a window. We also need
+      // to make sure that the application doesn't immediately exit, so stay in
+      // a LastWindowClosingSurvivalArea until a window opens.
       Services.startup.enterLastWindowClosingSurvivalArea();
       Services.obs.addObserver(function windowOpenObserver() {
         Services.startup.exitLastWindowClosingSurvivalArea();
@@ -1102,26 +1094,26 @@ nsDefaultCommandLineHandler.prototype = {
     }
 
     if (AppConstants.platform == "win") {
-      
-      
-      
-      
-      
-      
+      // If we don't have a profile selected yet (e.g. the Profile Manager is
+      // displayed) we will crash if we open an url and then select a profile. To
+      // prevent this handle all url command line flags and set the command line's
+      // preventDefault to true to prevent the display of the ui. The initial
+      // command line will be retained when nsAppRunner calls LaunchChild though
+      // urls launched after the initial launch will be lost.
       if (!this._haveProfile) {
         try {
-          
+          // This will throw when a profile has not been selected.
           Services.dirsvc.get("ProfD", Ci.nsIFile);
           this._haveProfile = true;
         } catch (e) {
-          
+          // eslint-disable-next-line no-empty
           while ((ar = cmdLine.handleFlagWithParam("url", false))) {}
           cmdLine.preventDefault = true;
         }
       }
     }
 
-    
+    // `-osint` and handling registered file types and protocols is Windows-only.
     let launchedWithArg_osint =
       AppConstants.platform == "win" && cmdLine.findFlag("osint", false) == 0;
     if (launchedWithArg_osint) {
@@ -1137,11 +1129,11 @@ nsDefaultCommandLineHandler.prototype = {
         if (launchedWithArg_osint) {
           launchedWithArg_osint = false;
 
-          
-          
-          
-          
-          
+          // We use the resolved URI here, even though it can produce
+          // surprising results where-by `-osint -url test.pdf` resolves to
+          // a query with search parameter "test.pdf".  But that shouldn't
+          // happen when Firefox is launched by Windows itself: files should
+          // exist and be resolved to file URLs.
           const isLaunch =
             cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
 
@@ -1166,8 +1158,8 @@ nsDefaultCommandLineHandler.prototype = {
         Cu.reportError(
           "Warning: unrecognized command line flag " + curarg + "\n"
         );
-        
-        
+        // To emulate the pre-nsICommandLine behavior, we ignore
+        // the argument after an unrecognized flag.
         ++i;
       } else {
         try {
@@ -1189,8 +1181,8 @@ nsDefaultCommandLineHandler.prototype = {
         cmdLine.state != Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
         urilist.length == 1
       ) {
-        
-        
+        // Try to find an existing window and load our URI into the
+        // current tab, new tab, or new window as prefs determine.
         try {
           handURIToExistingBrowser(
             urilist[0],
@@ -1213,7 +1205,7 @@ nsDefaultCommandLineHandler.prototype = {
         cmdLine.state != Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
         lazy.WindowsUIUtils.inTabletMode
       ) {
-        
+        // In windows 10 tablet mode, do not create a new window, but reuse the existing one.
         let win = lazy.BrowserWindowTracker.getTopWindow();
         if (win) {
           win.focus();
@@ -1222,10 +1214,10 @@ nsDefaultCommandLineHandler.prototype = {
       }
       openBrowserWindow(cmdLine, lazy.gSystemPrincipal);
     } else {
-      
-      
-      
-      
+      // Need a better solution in the future to avoid opening the blank window
+      // when command line parameters say we are not going to show a browser
+      // window, but for now the blank window getting closed quickly (and
+      // causing only a slight flicker) is better than leaving it open.
       let win = Services.wm.getMostRecentWindow("navigator:blank");
       if (win) {
         win.close();
