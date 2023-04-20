@@ -270,7 +270,7 @@ DOMRequestIpcHelper.prototype = {
   createRequest() {
     
     if (!this._window) {
-      Cu.reportError(
+      console.error(
         "DOMRequestHelper trying to create a DOMRequest without a valid window, failing."
       );
       throw Components.Exception("", Cr.NS_ERROR_FAILURE);
@@ -286,7 +286,7 @@ DOMRequestIpcHelper.prototype = {
   createPromise(aPromiseInit) {
     
     if (!this._window) {
-      Cu.reportError(
+      console.error(
         "DOMRequestHelper trying to create a Promise without a valid window, failing."
       );
       throw Components.Exception("", Cr.NS_ERROR_FAILURE);
