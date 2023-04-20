@@ -486,38 +486,34 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
  protected:  
   class Slots {
    public:
-    Slots()
-        : mDropAllowed(false),
-          mIsDragging(false),
-          mDropRow(-1),
-          mDropOrient(-1),
-          mScrollLines(0),
-          mDragAction(0) {}
+    Slots() = default;
 
     ~Slots() {
-      if (mTimer) mTimer->Cancel();
+      if (mTimer) {
+        mTimer->Cancel();
+      }
     }
 
     friend class nsTreeBodyFrame;
 
    protected:
     
-    bool mDropAllowed;
+    bool mDropAllowed = false;
 
     
-    bool mIsDragging;
+    bool mIsDragging = false;
 
     
-    int32_t mDropRow;
+    int32_t mDropRow = -1;
 
     
-    int16_t mDropOrient;
+    int16_t mDropOrient = -1;
 
     
-    int16_t mScrollLines;
+    int16_t mScrollLines = 0;
 
     
-    uint32_t mDragAction;
+    uint32_t mDragAction = 0;
 
     
     nsCOMPtr<nsITimer> mTimer;
@@ -526,7 +522,7 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
     nsTArray<int32_t> mArray;
   };
 
-  Slots* mSlots;
+  mozilla::UniquePtr<Slots> mSlots;
 
   nsRevocableEventPtr<ScrollEvent> mScrollEvent;
 

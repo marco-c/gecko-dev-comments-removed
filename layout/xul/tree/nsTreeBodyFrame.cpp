@@ -23,6 +23,7 @@
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsFontMetrics.h"
+#include "nsITreeView.h"
 #include "nsPresContext.h"
 #include "nsNameSpaceManager.h"
 
@@ -111,7 +112,6 @@ NS_QUERYFRAME_TAIL_INHERITING(nsLeafBoxFrame)
 nsTreeBodyFrame::nsTreeBodyFrame(ComputedStyle* aStyle,
                                  nsPresContext* aPresContext)
     : nsLeafBoxFrame(aStyle, aPresContext, kClassID),
-      mSlots(nullptr),
       mImageCache(),
       mTopRowIndex(0),
       mPageLength(0),
@@ -138,7 +138,6 @@ nsTreeBodyFrame::nsTreeBodyFrame(ComputedStyle* aStyle,
 nsTreeBodyFrame::~nsTreeBodyFrame() {
   CancelImageRequests();
   DetachImageListeners();
-  delete mSlots;
 }
 
 static void GetBorderPadding(ComputedStyle* aStyle, nsMargin& aMargin) {
@@ -202,7 +201,9 @@ nsSize nsTreeBodyFrame::GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) {
 nscoord nsTreeBodyFrame::CalcMaxRowWidth() {
   if (mStringWidth != -1) return mStringWidth;
 
-  if (!mView) return 0;
+  if (!mView) {
+    return 0;
+  }
 
   ComputedStyle* rowContext =
       GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeRow());
@@ -267,34 +268,38 @@ void nsTreeBodyFrame::DestroyFrom(nsIFrame* aDestructRoot,
 }
 
 void nsTreeBodyFrame::EnsureView() {
-  if (!mView) {
-    if (PresShell()->IsReflowLocked()) {
-      if (!mReflowCallbackPosted) {
-        mReflowCallbackPosted = true;
-        PresShell()->PostReflowCallback(this);
-      }
-      return;
-    }
-
-    AutoWeakFrame weakFrame(this);
-
-    RefPtr<XULTreeElement> tree = GetBaseElement();
-    if (tree) {
-      nsCOMPtr<nsITreeView> treeView = tree->GetView();
-      if (treeView && weakFrame.IsAlive()) {
-        int32_t rowIndex = tree->GetCachedTopVisibleRow();
-
-        
-        SetView(treeView);
-        NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
-
-        
-        
-        ScrollToRow(rowIndex);
-        NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
-      }
-    }
+  if (mView) {
+    return;
   }
+
+  if (PresShell()->IsReflowLocked()) {
+    if (!mReflowCallbackPosted) {
+      mReflowCallbackPosted = true;
+      PresShell()->PostReflowCallback(this);
+    }
+    return;
+  }
+
+  AutoWeakFrame weakFrame(this);
+
+  RefPtr<XULTreeElement> tree = GetBaseElement();
+  if (!tree) {
+    return;
+  }
+  nsCOMPtr<nsITreeView> treeView = tree->GetView();
+  if (!treeView || !weakFrame.IsAlive()) {
+    return;
+  }
+  int32_t rowIndex = tree->GetCachedTopVisibleRow();
+
+  
+  SetView(treeView);
+  NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
+
+  
+  
+  ScrollToRow(rowIndex);
+  NS_ENSURE_TRUE_VOID(weakFrame.IsAlive());
 }
 
 void nsTreeBodyFrame::ManageReflowCallback(const nsRect& aRect,
@@ -347,12 +352,12 @@ bool nsTreeBodyFrame::ReflowFinished() {
                            nsGkAtoms::_true, eCaseMatters)) {
       
       
-      nsCOMPtr<nsITreeSelection> sel;
-      mView->GetSelection(getter_AddRefs(sel));
-      if (sel) {
+      if (nsCOMPtr<nsITreeSelection> sel = GetSelection()) {
         int32_t currentIndex;
         sel->GetCurrentIndex(&currentIndex);
-        if (currentIndex != -1) EnsureRowIsVisibleInternal(parts, currentIndex);
+        if (currentIndex != -1) {
+          EnsureRowIsVisibleInternal(parts, currentIndex);
+        }
       }
     }
 
@@ -380,11 +385,18 @@ nsresult nsTreeBodyFrame::GetView(nsITreeView** aView) {
 
 nsresult nsTreeBodyFrame::SetView(nsITreeView* aView) {
   
-  if (mView) {
+  nsCOMPtr<nsITreeView> oldView = std::move(mView);
+  if (oldView) {
+    AutoWeakFrame weakFrame(this);
+
     nsCOMPtr<nsITreeSelection> sel;
-    mView->GetSelection(getter_AddRefs(sel));
-    if (sel) sel->SetTree(nullptr);
-    mView->SetTree(nullptr);
+    oldView->GetSelection(getter_AddRefs(sel));
+    if (sel) {
+      sel->SetTree(nullptr);
+    }
+    oldView->SetTree(nullptr);
+
+    NS_ENSURE_STATE(weakFrame.IsAlive());
 
     
     
@@ -409,23 +421,23 @@ nsresult nsTreeBodyFrame::SetView(nsITreeView* aView) {
     FireDOMEvent(u"TreeViewChanged"_ns, treeContent);
   }
 
-  if (mView) {
+  if (aView) {
     
     
     nsCOMPtr<nsITreeSelection> sel;
-    mView->GetSelection(getter_AddRefs(sel));
+    aView->GetSelection(getter_AddRefs(sel));
     if (sel) {
       sel->SetTree(treeContent);
     } else {
       NS_NewTreeSelection(treeContent, getter_AddRefs(sel));
-      mView->SetSelection(sel);
+      aView->SetSelection(sel);
     }
 
     
     AutoWeakFrame weakFrame(this);
-    mView->SetTree(treeContent);
+    aView->SetTree(treeContent);
     NS_ENSURE_STATE(weakFrame.IsAlive());
-    mView->GetRowCount(&mRowCount);
+    aView->GetRowCount(&mRowCount);
 
     if (!PresShell()->IsReflowLocked()) {
       
@@ -934,6 +946,8 @@ nsresult nsTreeBodyFrame::GetCoordsForCellItem(int32_t aRow, nsTreeColumn* aCol,
 
   nsPresContext* presContext = PresContext();
 
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+
   for (nsTreeColumn* currCol = mColumns->GetFirstColumn(); currCol;
        currCol = currCol->GetNext()) {
     
@@ -957,7 +971,7 @@ nsresult nsTreeBodyFrame::GetCoordsForCellItem(int32_t aRow, nsTreeColumn* aCol,
     PrefillPropertyArray(aRow, currCol);
 
     nsAutoString properties;
-    mView->GetCellProperties(aRow, currCol, properties);
+    view->GetCellProperties(aRow, currCol, properties);
     nsTreeUtils::TokenizeProperties(properties, mScratchArray);
 
     ComputedStyle* rowContext =
@@ -1006,7 +1020,7 @@ nsresult nsTreeBodyFrame::GetCoordsForCellItem(int32_t aRow, nsTreeColumn* aCol,
       
       
       int32_t level;
-      mView->GetLevel(aRow, &level);
+      view->GetLevel(aRow, &level);
       if (!isRTL) cellX += mIndentation * level;
       remainWidth -= mIndentation * level;
 
@@ -1057,7 +1071,7 @@ nsresult nsTreeBodyFrame::GetCoordsForCellItem(int32_t aRow, nsTreeColumn* aCol,
 
     
     nsAutoString cellText;
-    mView->GetCellText(aRow, currCol, cellText);
+    view->GetCellText(aRow, currCol, cellText);
     
     
     CheckTextForBidi(cellText);
@@ -1143,6 +1157,7 @@ void nsTreeBodyFrame::AdjustForCellText(nsAutoString& aText, int32_t aRowIndex,
   bool widthIsGreater = nsLayoutUtils::StringWidthIsGreaterThan(
       aText, aFontMetrics, drawTarget, maxWidth);
 
+  nsCOMPtr<nsITreeView> view = GetExistingView();
   if (aColumn->Overflow()) {
     DebugOnly<nsresult> rv;
     nsTreeColumn* nextColumn = aColumn->GetNext();
@@ -1161,7 +1176,7 @@ void nsTreeBodyFrame::AdjustForCellText(nsAutoString& aText, int32_t aRowIndex,
 
       if (nextColumn) {
         nsAutoString nextText;
-        mView->GetCellText(aRowIndex, nextColumn, nextText);
+        view->GetCellText(aRowIndex, nextColumn, nextText);
         
         
 
@@ -1217,7 +1232,8 @@ nsCSSAnonBoxPseudoStaticAtom* nsTreeBodyFrame::GetItemWithinCellAt(
   
   PrefillPropertyArray(aRowIndex, aColumn);
   nsAutoString properties;
-  mView->GetCellProperties(aRowIndex, aColumn, properties);
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+  view->GetCellProperties(aRowIndex, aColumn, properties);
   nsTreeUtils::TokenizeProperties(properties, mScratchArray);
 
   
@@ -1253,7 +1269,7 @@ nsCSSAnonBoxPseudoStaticAtom* nsTreeBodyFrame::GetItemWithinCellAt(
   if (aColumn->IsPrimary()) {
     
     int32_t level;
-    mView->GetLevel(aRowIndex, &level);
+    view->GetLevel(aRowIndex, &level);
 
     if (!isRTL) currX += mIndentation * level;
     remainingWidth -= mIndentation * level;
@@ -1267,10 +1283,10 @@ nsCSSAnonBoxPseudoStaticAtom* nsTreeBodyFrame::GetItemWithinCellAt(
     nsRect twistyRect(currX, cellRect.y, remainingWidth, cellRect.height);
     bool hasTwisty = false;
     bool isContainer = false;
-    mView->IsContainer(aRowIndex, &isContainer);
+    view->IsContainer(aRowIndex, &isContainer);
     if (isContainer) {
       bool isContainerEmpty = false;
-      mView->IsContainerEmpty(aRowIndex, &isContainerEmpty);
+      view->IsContainerEmpty(aRowIndex, &isContainerEmpty);
       if (!isContainerEmpty) hasTwisty = true;
     }
 
@@ -1328,7 +1344,7 @@ nsCSSAnonBoxPseudoStaticAtom* nsTreeBodyFrame::GetItemWithinCellAt(
   remainingWidth -= iconRect.width;
 
   nsAutoString cellText;
-  mView->GetCellText(aRowIndex, aColumn, cellText);
+  view->GetCellText(aRowIndex, aColumn, cellText);
   
   
   CheckTextForBidi(cellText);
@@ -1417,6 +1433,7 @@ nsresult nsTreeBodyFrame::GetCellWidth(int32_t aRow, nsTreeColumn* aCol,
 
   aCurrentSize = cellRect.width;
   aDesiredSize = bp.left + bp.right;
+  nsCOMPtr<nsITreeView> view = GetExistingView();
 
   if (aCol->IsPrimary()) {
     
@@ -1425,7 +1442,7 @@ nsresult nsTreeBodyFrame::GetCellWidth(int32_t aRow, nsTreeColumn* aCol,
     
     
     int32_t level;
-    mView->GetLevel(aRow, &level);
+    view->GetLevel(aRow, &level);
     aDesiredSize += mIndentation * level;
 
     
@@ -1459,7 +1476,7 @@ nsresult nsTreeBodyFrame::GetCellWidth(int32_t aRow, nsTreeColumn* aCol,
 
   
   nsAutoString cellText;
-  mView->GetCellText(aRow, aCol, cellText);
+  view->GetCellText(aRow, aCol, cellText);
   
   
   CheckTextForBidi(cellText);
@@ -1519,7 +1536,9 @@ nsresult nsTreeBodyFrame::CreateTimer(const LookAndFeel::IntID aID,
 }
 
 nsresult nsTreeBodyFrame::RowCountChanged(int32_t aIndex, int32_t aCount) {
-  if (aCount == 0 || !mView) return NS_OK;  
+  if (aCount == 0 || !mView) {
+    return NS_OK;  
+  }
 
 #ifdef ACCESSIBILITY
   if (GetAccService()) {
@@ -1593,18 +1612,23 @@ nsresult nsTreeBodyFrame::BeginUpdateBatch() {
 nsresult nsTreeBodyFrame::EndUpdateBatch() {
   NS_ASSERTION(mUpdateBatchNest > 0, "badly nested update batch");
 
-  if (--mUpdateBatchNest == 0) {
-    if (mView) {
-      Invalidate();
-      int32_t countBeforeUpdate = mRowCount;
-      mView->GetRowCount(&mRowCount);
-      if (countBeforeUpdate != mRowCount) {
-        if (mTopRowIndex + mPageLength > mRowCount - 1) {
-          mTopRowIndex = std::max(0, mRowCount - 1 - mPageLength);
-        }
-        FullScrollbarsUpdate(false);
-      }
+  if (--mUpdateBatchNest != 0) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+  if (!view) {
+    return NS_OK;
+  }
+
+  Invalidate();
+  int32_t countBeforeUpdate = mRowCount;
+  view->GetRowCount(&mRowCount);
+  if (countBeforeUpdate != mRowCount) {
+    if (mTopRowIndex + mPageLength > mRowCount - 1) {
+      mTopRowIndex = std::max(0, mRowCount - 1 - mPageLength);
     }
+    FullScrollbarsUpdate(false);
   }
 
   return NS_OK;
@@ -2221,7 +2245,9 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
       mMouseOverRow = -1;
     }
   } else if (aEvent->mMessage == eDragEnter) {
-    if (!mSlots) mSlots = new Slots();
+    if (!mSlots) {
+      mSlots = MakeUnique<Slots>();
+    }
 
     
     
@@ -2245,8 +2271,9 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
     
     
     
-
-    if (!mView || !mSlots) return NS_OK;
+    if (!mView || !mSlots) {
+      return NS_OK;
+    }
 
     
     int32_t lastDropRow = mSlots->mDropRow;
@@ -2496,8 +2523,8 @@ void nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 #ifdef XP_MACOSX
   XULTreeElement* tree = GetBaseElement();
   nsIFrame* treeFrame = tree ? tree->GetPrimaryFrame() : nullptr;
-  nsCOMPtr<nsITreeSelection> selection;
-  mView->GetSelection(getter_AddRefs(selection));
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+  nsCOMPtr<nsITreeSelection> selection = GetSelection();
   nsITheme* theme = PresContext()->Theme();
   
   
@@ -2513,7 +2540,7 @@ void nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       if (isSelected) {
         PrefillPropertyArray(i, nullptr);
         nsAutoString properties;
-        mView->GetRowProperties(i, properties);
+        view->GetRowProperties(i, properties);
         nsTreeUtils::TokenizeProperties(properties, mScratchArray);
         ComputedStyle* rowContext =
             GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeRow());
@@ -2637,7 +2664,9 @@ ImgDrawResult nsTreeBodyFrame::PaintColumn(nsTreeColumn* aColumn,
   
   PrefillPropertyArray(-1, aColumn);
   nsAutoString properties;
-  mView->GetColumnProperties(aColumn, properties);
+
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+  view->GetColumnProperties(aColumn, properties);
   nsTreeUtils::TokenizeProperties(properties, mScratchArray);
 
   
@@ -2667,7 +2696,8 @@ ImgDrawResult nsTreeBodyFrame::PaintRow(int32_t aRowIndex,
   
 
   
-  if (!mView) {
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+  if (!view) {
     return ImgDrawResult::SUCCESS;
   }
 
@@ -2679,7 +2709,7 @@ ImgDrawResult nsTreeBodyFrame::PaintRow(int32_t aRowIndex,
   PrefillPropertyArray(aRowIndex, nullptr);
 
   nsAutoString properties;
-  mView->GetRowProperties(aRowIndex, properties);
+  view->GetRowProperties(aRowIndex, properties);
   nsTreeUtils::TokenizeProperties(properties, mScratchArray);
 
   
@@ -2718,7 +2748,7 @@ ImgDrawResult nsTreeBodyFrame::PaintRow(int32_t aRowIndex,
   AdjustForBorderPadding(rowContext, rowRect);
 
   bool isSeparator = false;
-  mView->IsSeparator(aRowIndex, &isSeparator);
+  view->IsSeparator(aRowIndex, &isSeparator);
   if (isSeparator) {
     
 
@@ -2764,7 +2794,7 @@ ImgDrawResult nsTreeBodyFrame::PaintRow(int32_t aRowIndex,
       }
 
       int32_t level;
-      mView->GetLevel(aRowIndex, &level);
+      view->GetLevel(aRowIndex, &level);
       if (level == 0) currX += mIndentation;
 
       if (currX > rowRect.x) {
@@ -2886,7 +2916,8 @@ ImgDrawResult nsTreeBodyFrame::PaintCell(
   
   PrefillPropertyArray(aRowIndex, aColumn);
   nsAutoString properties;
-  mView->GetCellProperties(aRowIndex, aColumn, properties);
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+  view->GetCellProperties(aRowIndex, aColumn, properties);
   nsTreeUtils::TokenizeProperties(properties, mScratchArray);
 
   
@@ -2923,7 +2954,7 @@ ImgDrawResult nsTreeBodyFrame::PaintCell(
     
 
     int32_t level;
-    mView->GetLevel(aRowIndex, &level);
+    view->GetLevel(aRowIndex, &level);
 
     if (!isRTL) currX += mIndentation * level;
     remainingWidth -= mIndentation * level;
@@ -2989,7 +3020,7 @@ ImgDrawResult nsTreeBodyFrame::PaintCell(
         if (srcX <= cellRect.x + cellRect.width) {
           
           bool hasNextSibling;
-          mView->HasNextSibling(currentParent, aRowIndex, &hasNextSibling);
+          view->HasNextSibling(currentParent, aRowIndex, &hasNextSibling);
           if (hasNextSibling || i == level) {
             Point p1(pc->AppUnitsToGfxUnits(srcX),
                      pc->AppUnitsToGfxUnits(lineY));
@@ -3008,7 +3039,7 @@ ImgDrawResult nsTreeBodyFrame::PaintCell(
         }
 
         int32_t parent;
-        if (NS_FAILED(mView->GetParentIndex(currentParent, &parent)) ||
+        if (NS_FAILED(view->GetParentIndex(currentParent, &parent)) ||
             parent < 0)
           break;
         currentParent = parent;
@@ -3067,10 +3098,11 @@ ImgDrawResult nsTreeBodyFrame::PaintTwisty(
   
   bool shouldPaint = false;
   bool isContainer = false;
-  mView->IsContainer(aRowIndex, &isContainer);
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+  view->IsContainer(aRowIndex, &isContainer);
   if (isContainer) {
     bool isContainerEmpty = false;
-    mView->IsContainerEmpty(aRowIndex, &isContainerEmpty);
+    view->IsContainerEmpty(aRowIndex, &isContainerEmpty);
     if (!isContainerEmpty) shouldPaint = true;
   }
 
@@ -3334,7 +3366,8 @@ ImgDrawResult nsTreeBodyFrame::PaintText(
 
   
   nsAutoString text;
-  mView->GetCellText(aRowIndex, aColumn, text);
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+  view->GetCellText(aRowIndex, aColumn, text);
 
   
   
@@ -3554,22 +3587,23 @@ ImgDrawResult nsTreeBodyFrame::PaintDropFeedback(
   ImgDrawResult result = ImgDrawResult::SUCCESS;
 
   
+  nsCOMPtr<nsITreeView> view = GetExistingView();
   if (feedbackContext->StyleVisibility()->IsVisibleOrCollapsed()) {
     int32_t level;
-    mView->GetLevel(mSlots->mDropRow, &level);
+    view->GetLevel(mSlots->mDropRow, &level);
 
     
     
     if (mSlots->mDropOrient == nsITreeView::DROP_BEFORE) {
       if (mSlots->mDropRow > 0) {
         int32_t previousLevel;
-        mView->GetLevel(mSlots->mDropRow - 1, &previousLevel);
+        view->GetLevel(mSlots->mDropRow - 1, &previousLevel);
         if (previousLevel > level) level = previousLevel;
       }
     } else {
       if (mSlots->mDropRow < mRowCount - 1) {
         int32_t nextLevel;
-        mView->GetLevel(mSlots->mDropRow + 1, &nextLevel);
+        view->GetLevel(mSlots->mDropRow + 1, &nextLevel);
         if (nextLevel > level) level = nextLevel;
       }
     }
@@ -3909,16 +3943,18 @@ nsresult nsTreeBodyFrame::ClearStyleAndImageCaches() {
 void nsTreeBodyFrame::RemoveImageCacheEntry(int32_t aRowIndex,
                                             nsTreeColumn* aCol) {
   nsAutoString imageSrc;
-  if (NS_SUCCEEDED(mView->GetImageSrc(aRowIndex, aCol, imageSrc))) {
-    nsTreeImageCacheEntry entry;
-    if (mImageCache.Get(imageSrc, &entry)) {
-      nsLayoutUtils::DeregisterImageRequest(PresContext(), entry.request,
-                                            nullptr);
-      entry.request->UnlockImage();
-      entry.request->CancelAndForgetObserver(NS_BINDING_ABORTED);
-      mImageCache.Remove(imageSrc);
-    }
+  nsCOMPtr<nsITreeView> view = GetExistingView();
+  if (NS_FAILED(view->GetImageSrc(aRowIndex, aCol, imageSrc))) {
+    return;
   }
+  nsTreeImageCacheEntry entry;
+  if (!mImageCache.Get(imageSrc, &entry)) {
+    return;
+  }
+  nsLayoutUtils::DeregisterImageRequest(PresContext(), entry.request, nullptr);
+  entry.request->UnlockImage();
+  entry.request->CancelAndForgetObserver(NS_BINDING_ABORTED);
+  mImageCache.Remove(imageSrc);
 }
 
 
@@ -3994,13 +4030,14 @@ void nsTreeBodyFrame::ComputeDropPosition(WidgetGUIEvent* aEvent, int32_t* aRow,
   int32_t xTwips = pt.x - mInnerBox.x;
   int32_t yTwips = pt.y - mInnerBox.y;
 
+  nsCOMPtr<nsITreeView> view = GetExistingView();
   *aRow = GetRowAtInternal(xTwips, yTwips);
   if (*aRow >= 0) {
     
     int32_t yOffset = yTwips - mRowHeight * (*aRow - mTopRowIndex);
 
     bool isContainer = false;
-    mView->IsContainer(*aRow, &isContainer);
+    view->IsContainer(*aRow, &isContainer);
     if (isContainer) {
       
       if (yOffset < mRowHeight / 4)
@@ -4041,28 +4078,37 @@ void nsTreeBodyFrame::ComputeDropPosition(WidgetGUIEvent* aEvent, int32_t* aRow,
 }  
 
 void nsTreeBodyFrame::OpenCallback(nsITimer* aTimer, void* aClosure) {
-  nsTreeBodyFrame* self = static_cast<nsTreeBodyFrame*>(aClosure);
-  if (self) {
-    aTimer->Cancel();
-    self->mSlots->mTimer = nullptr;
+  auto* self = static_cast<nsTreeBodyFrame*>(aClosure);
+  if (!self) {
+    return;
+  }
 
-    if (self->mSlots->mDropRow >= 0) {
-      self->mSlots->mArray.AppendElement(self->mSlots->mDropRow);
-      self->mView->ToggleOpenState(self->mSlots->mDropRow);
-    }
+  aTimer->Cancel();
+  self->mSlots->mTimer = nullptr;
+
+  nsCOMPtr<nsITreeView> view = self->GetExistingView();
+  if (self->mSlots->mDropRow >= 0) {
+    self->mSlots->mArray.AppendElement(self->mSlots->mDropRow);
+    view->ToggleOpenState(self->mSlots->mDropRow);
   }
 }
 
 void nsTreeBodyFrame::CloseCallback(nsITimer* aTimer, void* aClosure) {
-  nsTreeBodyFrame* self = static_cast<nsTreeBodyFrame*>(aClosure);
-  if (self) {
-    aTimer->Cancel();
-    self->mSlots->mTimer = nullptr;
+  auto* self = static_cast<nsTreeBodyFrame*>(aClosure);
+  if (!self) {
+    return;
+  }
 
-    for (uint32_t i = self->mSlots->mArray.Length(); i--;) {
-      if (self->mView) self->mView->ToggleOpenState(self->mSlots->mArray[i]);
-    }
-    self->mSlots->mArray.Clear();
+  aTimer->Cancel();
+  self->mSlots->mTimer = nullptr;
+
+  nsCOMPtr<nsITreeView> view = self->GetExistingView();
+  auto array = std::move(self->mSlots->mArray);
+  if (!view) {
+    return;
+  }
+  for (auto elem : Reversed(array)) {
+    view->ToggleOpenState(elem);
   }
 }
 
