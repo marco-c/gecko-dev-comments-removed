@@ -19,6 +19,9 @@
 #include <type_traits>
 #include <vector>
 
+
+
+#include "modules/desktop_capture/delegated_source_list_controller.h"
 #if defined(WEBRTC_USE_GIO)
 #include "modules/desktop_capture/desktop_capture_metadata.h"
 #endif  
@@ -31,31 +34,6 @@ namespace webrtc {
 
 class DesktopCaptureOptions;
 class DesktopFrame;
-
-
-
-
-
-
-
-
-class RTC_EXPORT DelegatedSourceListController {
- public:
-  
-  
-  
-  
-  
-  
-  virtual void EnsureVisible() = 0;
-
-  
-  
-  virtual void EnsureHidden() = 0;
-
- protected:
-  virtual ~DelegatedSourceListController() {}
-};
 
 
 class RTC_EXPORT DesktopCapturer {

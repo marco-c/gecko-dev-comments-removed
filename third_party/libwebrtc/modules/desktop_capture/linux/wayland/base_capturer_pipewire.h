@@ -11,6 +11,7 @@
 #ifndef MODULES_DESKTOP_CAPTURE_LINUX_WAYLAND_BASE_CAPTURER_PIPEWIRE_H_
 #define MODULES_DESKTOP_CAPTURE_LINUX_WAYLAND_BASE_CAPTURER_PIPEWIRE_H_
 
+#include "modules/desktop_capture/delegated_source_list_controller.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/linux/wayland/portal_request_response.h"
@@ -43,6 +44,7 @@ class BaseCapturerPipeWire : public DesktopCapturer,
   DelegatedSourceListController* GetDelegatedSourceListController() override;
 
   
+  void Observe(Observer* observer) override;
   void EnsureVisible() override;
   void EnsureHidden() override;
 
@@ -63,6 +65,8 @@ class BaseCapturerPipeWire : public DesktopCapturer,
   bool capturer_failed_ = false;
   bool is_screencast_portal_ = false;
   bool is_portal_open_ = false;
+
+  Observer* delegated_source_list_observer_ = nullptr;
 
   
   
