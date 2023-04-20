@@ -1,0 +1,12 @@
+
+
+
+
+#include "frontend/DecoratorEmitter.h"
+
+#include "frontend/BytecodeEmitter.h"
+
+using namespace js;
+using namespace js::frontend;
+
+DecoratorEmitter::DecoratorEmitter(BytecodeEmitter* bce) {}
