@@ -106,7 +106,10 @@ mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
   mozilla::Unused << aMarkerType;  
   return mozilla::base_profiler_markers_detail::AddMarkerToBuffer<MarkerType>(
       aBuffer, aName, aCategory, std::move(aOptions),
-      ::profiler_capture_backtrace_into, aPayloadArguments...);
+      profiler_active_without_feature(ProfilerFeature::NoMarkerStacks)
+          ? ::profiler_capture_backtrace_into
+          : nullptr,
+      aPayloadArguments...);
 }
 
 
