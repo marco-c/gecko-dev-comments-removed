@@ -3,7 +3,7 @@
 
 
 
-#include "AudioNodeEngineGeneric.h"
+#include "AudioNodeEngineGenericImpl.h"
 
 namespace mozilla {
 template struct Engine<xsimd::sse2>;
