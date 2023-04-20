@@ -5273,7 +5273,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     case WM_SETTINGCHANGE: {
       if (wParam == SPI_SETCLIENTAREAANIMATION ||
-          wParam == SPI_SETKEYBOARDCUES || wParam == SPI_SETKEYBOARDDELAY) {
+          wParam == SPI_SETKEYBOARDDELAY) {
         
         
         

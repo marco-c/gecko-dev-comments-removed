@@ -100,9 +100,6 @@ class LookAndFeel {
     ChosenMenuItemsShouldBlink,
 
     
-    ShowKeyboardCues,
-
-    
 
 
 
