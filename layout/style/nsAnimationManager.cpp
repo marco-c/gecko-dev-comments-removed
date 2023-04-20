@@ -215,6 +215,7 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
   
   
   
+  
   for (Element* curr = AnimationUtils::GetElementForRestyle(
            aTarget.mElement, aTarget.mPseudoType);
        curr; curr = curr->GetParentElement()) {

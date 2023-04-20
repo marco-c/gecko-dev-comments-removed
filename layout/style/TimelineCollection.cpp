@@ -9,6 +9,7 @@
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ScrollTimeline.h"
+#include "mozilla/dom/ViewTimeline.h"
 #include <type_traits>
 
 namespace mozilla {
@@ -30,8 +31,11 @@ void TimelineCollection<TimelineType>::Destroy() {
   if constexpr (std::is_same_v<TimelineType, dom::ScrollTimeline>) {
     MOZ_ASSERT(data->GetScrollTimelineCollection(mPseudo) == this);
     data->ClearScrollTimelineCollectionFor(mPseudo);
+  } else if constexpr (std::is_same_v<TimelineType, dom::ViewTimeline>) {
+    MOZ_ASSERT(data->GetViewTimelineCollection(mPseudo) == this);
+    data->ClearViewTimelineCollectionFor(mPseudo);
   } else {
-    
+    MOZ_ASSERT_UNREACHABLE("Unsupported TimelienType");
   }
 }
 
@@ -49,12 +53,15 @@ TimelineCollection<TimelineType>::Get(const dom::Element* aElement,
     return data->GetScrollTimelineCollection(aPseudoType);
   }
 
-  
+  if constexpr (std::is_same_v<TimelineType, dom::ViewTimeline>) {
+    return data->GetViewTimelineCollection(aPseudoType);
+  }
+
   return nullptr;
 }
 
 
 template class TimelineCollection<dom::ScrollTimeline>;
-
+template class TimelineCollection<dom::ViewTimeline>;
 
 }  

@@ -567,7 +567,9 @@ void Gecko_UpdateAnimations(const Element* aElement,
   }
 
   if (aTasks & UpdateAnimationsTasks::ViewTimelines) {
-    
+    presContext->TimelineManager()->UpdateTimelines(
+        const_cast<Element*>(element), pseudoType, aComputedData,
+        TimelineManager::ProgressTimelineType::View);
   }
 
   if (aTasks & UpdateAnimationsTasks::CSSAnimations) {

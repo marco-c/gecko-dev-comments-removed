@@ -20,6 +20,7 @@ enum class PseudoStyleType : uint8_t;
 namespace dom {
 class Element;
 class ScrollTimeline;
+class ViewTimeline;
 }  
 
 class TimelineManager {
@@ -35,7 +36,9 @@ class TimelineManager {
     while (auto* head = mScrollTimelineCollections.getFirst()) {
       head->Destroy();
     }
-    
+    while (auto* head = mViewTimelineCollections.getFirst()) {
+      head->Destroy();
+    }
 
     mPresContext = nullptr;
   }
@@ -60,7 +63,7 @@ class TimelineManager {
 
   LinkedList<TimelineCollection<dom::ScrollTimeline>>
       mScrollTimelineCollections;
-  
+  LinkedList<TimelineCollection<dom::ViewTimeline>> mViewTimelineCollections;
   nsPresContext* mPresContext;
 };
 
@@ -68,6 +71,12 @@ template <>
 inline void TimelineManager::AddTimelineCollection(
     TimelineCollection<dom::ScrollTimeline>* aCollection) {
   mScrollTimelineCollections.insertBack(aCollection);
+}
+
+template <>
+inline void TimelineManager::AddTimelineCollection(
+    TimelineCollection<dom::ViewTimeline>* aCollection) {
+  mViewTimelineCollections.insertBack(aCollection);
 }
 
 }  
