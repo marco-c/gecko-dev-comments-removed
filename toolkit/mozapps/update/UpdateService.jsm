@@ -1992,6 +1992,22 @@ function isServiceSpecificErrorCode(errorCode) {
 
 
 
+function isMemoryAllocationErrorCode(errorCode) {
+  return errorCode >= 10 && errorCode <= 14;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4757,16 +4773,26 @@ UpdateManager.prototype = {
       cleanUpReadyUpdateDir(false);
 
       if (update.state == STATE_FAILED) {
+        let isMemError = isMemoryAllocationErrorCode(update.errorCode);
         if (
           update.errorCode == DELETE_ERROR_STAGING_LOCK_FILE ||
-          update.errorCode == UNEXPECTED_STAGING_ERROR
+          update.errorCode == UNEXPECTED_STAGING_ERROR ||
+          isMemError
         ) {
           update.state = getBestPendingState();
           writeStatusFile(getReadyUpdateDir(), update.state);
-          LOG(
-            `UpdateManager:refreshUpdateStatus - Unexpected staging error. ` +
-              `Setting status to "${update.state}"`
-          );
+          if (isMemError) {
+            LOG(
+              `UpdateManager:refreshUpdateStatus - Updater failed to ` +
+                `allocate enough memory to successfully stage. Setting ` +
+                `status to "${update.state}"`
+            );
+          } else {
+            LOG(
+              `UpdateManager:refreshUpdateStatus - Unexpected staging error. ` +
+                `Setting status to "${update.state}"`
+            );
+          }
         } else if (isServiceSpecificErrorCode(update.errorCode)) {
           
           
