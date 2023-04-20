@@ -2018,32 +2018,3 @@ function getInputStream(data) {
   const buffer = new TextEncoder().encode(data).buffer;
   return new BufferStream(buffer, 0, buffer.byteLength);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForTargetProcessed(commands, isExpectedTargetFn) {
-  return new Promise(resolve => {
-    const onProcessed = targetFront => {
-      try {
-        if (isExpectedTargetFn(targetFront)) {
-          commands.targetCommand.off("processed-available-target", onProcessed);
-          resolve();
-        }
-      } catch {
-        
-      }
-    };
-
-    commands.targetCommand.on("processed-available-target", onProcessed);
-  });
-}
