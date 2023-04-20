@@ -380,12 +380,16 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
             MOZ_ASSERT(innerDoc->IsDoc());
             
             
-            return innerDoc->ChildAtPoint(aX, aY,
-                                          EWhichChildAtPoint::DeepestChild);
+            Accessible* deepestAcc = innerDoc->ChildAtPoint(
+                aX, aY, EWhichChildAtPoint::DeepestChild);
+            MOZ_ASSERT(!deepestAcc || deepestAcc->IsRemote());
+            lastMatch = deepestAcc ? deepestAcc->AsRemote() : nullptr;
+            break;
           }
           
           
-          return acc;
+          lastMatch = acc;
+          break;
         }
 
         if (acc == this) {
@@ -416,6 +420,12 @@ Accessible* RemoteAccessibleBase<Derived>::ChildAtPoint(
 
   if (!lastMatch && Bounds().Contains(aX, aY)) {
     return this;
+  }
+  
+  
+  
+  if (lastMatch && !IsDoc() && !IsAncestorOf(lastMatch)) {
+    return nullptr;
   }
 
   return lastMatch;
