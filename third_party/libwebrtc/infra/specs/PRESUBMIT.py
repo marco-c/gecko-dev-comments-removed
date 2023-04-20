@@ -6,7 +6,12 @@
 
 
 
+
+
 import os
+
+
+USE_PYTHON3 = True
 
 
 def _HasLocalChanges(input_api):
@@ -35,14 +40,14 @@ def CheckPatchFormatted(input_api, output_api):
 
 def CheckSourceSideSpecs(input_api, output_api):
   d = os.path.dirname
-  angle_root = d(d(input_api.PresubmitLocalPath()))
-  gen_script = os.path.join(angle_root, 'testing', 'buildbot',
+  webrtc_root = d(d(input_api.PresubmitLocalPath()))
+  gen_script = os.path.join(webrtc_root, 'testing', 'buildbot',
                             'generate_buildbot_json.py')
 
   commands = [
       input_api.Command(name='generate_buildbot_json',
                         cmd=[
-                            input_api.python_executable, gen_script, '--check',
+                            input_api.python3_executable, gen_script, '--check',
                             '--verbose', '--pyl-files-dir',
                             input_api.PresubmitLocalPath()
                         ],
