@@ -95,13 +95,3 @@ function supportsTemporaryExtensionInstaller(runtimeType) {
   return runtimeType === RUNTIMES.THIS_FIREFOX;
 }
 exports.supportsTemporaryExtensionInstaller = supportsTemporaryExtensionInstaller;
-
-
-
-
-
-
-function supportsTemporaryExtensionAdditionalActions(runtimeType) {
-  return runtimeType === RUNTIMES.THIS_FIREFOX;
-}
-exports.supportsTemporaryExtensionAdditionalActions = supportsTemporaryExtensionAdditionalActions;

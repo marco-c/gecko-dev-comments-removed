@@ -94,14 +94,16 @@ async function testAddonsOnMockedRemoteClient(
     "Temporary Extension target appeared for the remote runtime"
   );
 
+  
   const removeButton = temporaryExtensionTarget.querySelector(
     ".qa-temporary-extension-remove-button"
   );
+  ok(!removeButton, "No remove button expected for the temporary extension");
+
   const reloadButton = temporaryExtensionTarget.querySelector(
     ".qa-temporary-extension-reload-button"
   );
-  ok(!removeButton, "No remove button expected for the temporary extension");
-  ok(!reloadButton, "No reload button expected for the temporary extension");
+  ok(reloadButton, "Reload button expected for the temporary extension");
 
   
   
