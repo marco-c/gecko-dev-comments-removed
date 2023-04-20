@@ -505,7 +505,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     }
 
     
-    browser.loadURI(uri.spec, {
+    browser.loadURI(uri, {
       triggeringPrincipal,
       csp,
       referrerInfo,

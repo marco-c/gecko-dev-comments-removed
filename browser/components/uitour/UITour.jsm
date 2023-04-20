@@ -489,7 +489,7 @@ var UITour = {
               return;
             }
             
-            browser.loadURI(url.href, {
+            browser.loadURI(url.URI, {
               triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
                 {}
               ),
@@ -512,7 +512,7 @@ var UITour = {
             }
 
             
-            browser.loadURI(url.href, {
+            browser.loadURI(url.URI, {
               triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
                 {}
               ),
