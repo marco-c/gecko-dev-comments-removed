@@ -286,6 +286,10 @@ class ExternalEngineStateMachine final
   bool mHasEnoughVideo = false;
   bool mSentPlaybackEndedEvent = false;
   bool mHasReceivedFirstDecodedVideoFrame = false;
+
+  
+  MozPromiseHolder<SetCDMPromise> mSetCDMProxyPromise;
+  MozPromiseRequestHolder<SetCDMPromise> mSetCDMProxyRequest;
 };
 
 class ExternalPlaybackEngine {
