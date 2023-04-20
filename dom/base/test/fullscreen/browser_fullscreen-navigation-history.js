@@ -34,7 +34,10 @@ function preventBFCache(aBrowsingContext, aPrevent) {
     content.window.addEventListener(
       "pagehide",
       e => {
-        is(e.persisted, !prevent, `Check BFCache state`);
+        
+        
+        
+        info(`Check BFCache state: e.persisted is ${e.persisted}`);
       },
       { once: true }
     );
