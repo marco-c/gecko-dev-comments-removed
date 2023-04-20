@@ -1247,6 +1247,18 @@ class Element : public FragmentOrElement {
   already_AddRefed<nsIHTMLCollection> GetElementsByClassName(
       const nsAString& aClassNames);
 
+  
+
+
+
+  Element* GetAttrAssociatedElement(nsAtom* aAttr) const;
+
+  
+
+
+
+  void ExplicitlySetAttrElement(Element* aElement, nsAtom* aAttr);
+
   PseudoStyleType GetPseudoElementType() const {
     nsresult rv = NS_OK;
     auto raw = GetProperty(nsGkAtoms::pseudoProperty, &rv);

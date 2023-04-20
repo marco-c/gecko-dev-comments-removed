@@ -20,6 +20,7 @@
 #include "nsCycleCollectionParticipant.h"  
 #include "nsIContent.h"                    
 #include "nsIHTMLCollection.h"
+#include "nsIWeakReferenceUtils.h"
 
 class ContentUnbinder;
 class nsContentList;
@@ -225,6 +226,10 @@ class FragmentOrElement : public nsIContent {
 
 
     Maybe<bool> mVisibleForContentVisibility;
+
+    
+    
+    nsTHashMap<nsRefPtrHashKey<nsAtom>, nsWeakPtr> mExplicitlySetAttrElements;
   };
 
   class nsDOMSlots : public nsIContent::nsContentSlots {

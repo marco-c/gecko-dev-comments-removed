@@ -742,6 +742,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+  mozilla::dom::DocumentOrShadowRoot* GetContainingDocumentOrShadowRoot() const;
+
+  
+
+
+
   mozilla::dom::DocumentOrShadowRoot* GetUncomposedDocOrConnectedShadowRoot()
       const;
 
