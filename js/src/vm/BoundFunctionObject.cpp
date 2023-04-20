@@ -147,6 +147,57 @@ SharedShape* BoundFunctionObject::assignInitialShape(
   return obj->sharedShape();
 }
 
+static MOZ_ALWAYS_INLINE bool ComputeLengthValue(
+    JSContext* cx, Handle<BoundFunctionObject*> bound, Handle<JSObject*> target,
+    size_t numBoundArgs, double* length) {
+  *length = 0.0;
+
+  
+  if (target->is<JSFunction>() &&
+      !target->as<JSFunction>().hasResolvedLength()) {
+    uint16_t targetLength;
+    if (!JSFunction::getUnresolvedLength(cx, target.as<JSFunction>(),
+                                         &targetLength)) {
+      return false;
+    }
+
+    if (size_t(targetLength) > numBoundArgs) {
+      *length = size_t(targetLength) - numBoundArgs;
+    }
+    return true;
+  }
+
+  
+  
+  Value targetLength;
+  if (target->is<BoundFunctionObject>() && target->shape() == bound->shape()) {
+    BoundFunctionObject* targetFn = &target->as<BoundFunctionObject>();
+    targetLength = targetFn->getLengthForInitialShape();
+  } else {
+    bool hasLength;
+    Rooted<PropertyKey> key(cx, NameToId(cx->names().length));
+    if (!HasOwnProperty(cx, target, key, &hasLength)) {
+      return false;
+    }
+
+    if (!hasLength) {
+      return true;
+    }
+
+    Rooted<Value> targetLengthRoot(cx);
+    if (!GetProperty(cx, target, target, key, &targetLengthRoot)) {
+      return false;
+    }
+    targetLength = targetLengthRoot;
+  }
+
+  if (targetLength.isNumber()) {
+    *length = std::max(
+        0.0, JS::ToInteger(targetLength.toNumber()) - double(numBoundArgs));
+  }
+  return true;
+}
+
 static MOZ_ALWAYS_INLINE JSAtom* AppendBoundFunctionPrefix(JSContext* cx,
                                                            JSString* str) {
   StringBuffer sb(cx);
@@ -154,6 +205,38 @@ static MOZ_ALWAYS_INLINE JSAtom* AppendBoundFunctionPrefix(JSContext* cx,
     return nullptr;
   }
   return sb.finishAtom();
+}
+
+static MOZ_ALWAYS_INLINE JSAtom* ComputeNameValue(
+    JSContext* cx, Handle<BoundFunctionObject*> bound,
+    Handle<JSObject*> target) {
+  
+  JSString* name = nullptr;
+  if (target->is<JSFunction>() && !target->as<JSFunction>().hasResolvedName()) {
+    JSFunction* targetFn = &target->as<JSFunction>();
+    name = targetFn->infallibleGetUnresolvedName(cx);
+  } else {
+    
+    
+    Value targetName;
+    if (target->is<BoundFunctionObject>() &&
+        target->shape() == bound->shape()) {
+      BoundFunctionObject* targetFn = &target->as<BoundFunctionObject>();
+      targetName = targetFn->getNameForInitialShape();
+    } else {
+      Rooted<Value> targetNameRoot(cx);
+      if (!GetProperty(cx, target, target, cx->names().name, &targetNameRoot)) {
+        return nullptr;
+      }
+      targetName = targetNameRoot;
+    }
+    if (!targetName.isString()) {
+      return cx->names().boundWithSpace;
+    }
+    name = targetName.toString();
+  }
+
+  return AppendBoundFunctionPrefix(cx, name);
 }
 
 
@@ -232,43 +315,17 @@ bool BoundFunctionObject::functionBind(JSContext* cx, unsigned argc,
   double length = 0.0;
 
   
-  bool hasLength;
-  Rooted<PropertyKey> key(cx, NameToId(cx->names().length));
-  if (!HasOwnProperty(cx, target, key, &hasLength)) {
+  if (!ComputeLengthValue(cx, bound, target, numBoundArgs, &length)) {
     return false;
-  }
-
-  
-  if (hasLength) {
-    Rooted<Value> targetLength(cx);
-    if (!GetProperty(cx, target, target, key, &targetLength)) {
-      return false;
-    }
-
-    if (targetLength.isNumber()) {
-      length = std::max(
-          0.0, JS::ToInteger(targetLength.toNumber()) - double(numBoundArgs));
-    }
   }
 
   
   bound->initLength(length);
 
   
-  Rooted<Value> targetName(cx);
-  if (!GetProperty(cx, target, target, cx->names().name, &targetName)) {
+  JSAtom* name = ComputeNameValue(cx, bound, target);
+  if (!name) {
     return false;
-  }
-
-  
-  JSAtom* name;
-  if (targetName.isString()) {
-    name = AppendBoundFunctionPrefix(cx, targetName.toString());
-    if (!name) {
-      return false;
-    }
-  } else {
-    name = cx->names().boundWithSpace;
   }
 
   
