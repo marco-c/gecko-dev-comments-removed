@@ -189,14 +189,6 @@ let interfaceNamesInGlobalScope = [
   
   "FileReader",
   
-  { name: "FileSystemDirectoryHandle", nightly: true },
-  
-  { name: "FileSystemFileHandle", nightly: true },
-  
-  { name: "FileSystemHandle", nightly: true },
-  
-  { name: "FileSystemWritableFileStream", nightly: true },
-  
   "FontFace",
   
   "FontFaceSet",

@@ -18,17 +18,7 @@ namespace mozilla::dom::fs::test {
 class TestFileSystemBackgroundRequestHandler : public ::testing::Test {
  protected:
   void SetUp() override {
-    
-    
-    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    prefs->SetBoolPref("dom.fs.enabled", false);
-
     mFileSystemManagerChild = MakeAndAddRef<TestFileSystemManagerChild>();
-  }
-
-  void TearDown() override {
-    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    prefs->SetBoolPref("dom.fs.enabled", true);
   }
 
   RefPtr<FileSystemBackgroundRequestHandler>
