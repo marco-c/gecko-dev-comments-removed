@@ -106,8 +106,6 @@ const FLOAT_ONE: f32 = 1.;
 
 
 
-use std::rc::Rc;
-
 use crate::{types::*, geometry_sink::IGeometrySink, aacoverage::c_nShiftSizeSquared, OutputVertex, nullable_ref::Ref};
 
 
@@ -248,31 +246,6 @@ use crate::{types::*, geometry_sink::IGeometrySink, aacoverage::c_nShiftSizeSqua
 
 
 
-impl CHwVertexBufferBuilder {
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    pub fn FlushTryGetVertexBuffer(&mut self,
-        ppVertexBuffer: Option<&mut CHwVertexBuffer>
-        ) -> HRESULT
-    {
-        return self.FlushInternal(ppVertexBuffer);
-    }
-}
-
-
-
-
-
 
 
 
@@ -349,9 +322,9 @@ pub struct CD3DVertexXYZDUV2 {
     
 
 }
-pub type CHwVertexBuffer = CHwTVertexBuffer<OutputVertex>;
+pub type CHwVertexBuffer<'z> = CHwTVertexBuffer<'z, OutputVertex>;
 #[derive(Default)]
-pub struct CHwTVertexBuffer<TVertex>
+pub struct CHwTVertexBuffer<'z, TVertex>
 {
     
 
@@ -659,10 +632,35 @@ pub struct CHwTVertexBuffer<TVertex>
     m_rgVerticesTriList: DynArray<TVertex>,            
     
 
+    m_rgVerticesBuffer: Option<&'z mut [TVertex]>,
+    m_rgVerticesBufferOffset: usize,
+
     #[cfg(debug_assertions)]
     
     
     m_fDbgNonLineSegmentTriangleStrip: bool
+}
+
+impl<'z, TVertex: Default> CHwTVertexBuffer<'z, TVertex> {
+    pub fn new(output_buffer: Option<&'z mut [TVertex]>) -> Self {
+        CHwTVertexBuffer::<TVertex> {
+            m_rgVerticesBuffer: output_buffer,
+            m_rgVerticesBufferOffset: 0,
+            ..Default::default()
+        }
+    }
+
+    pub fn flush_output(&mut self) -> Box<[TVertex]> {
+        std::mem::take(&mut self.m_rgVerticesTriList).into_boxed_slice()
+    }
+
+    pub fn get_output_buffer_size(&self) -> Option<usize> {
+        if self.m_rgVerticesBuffer.is_some() {
+            Some(self.m_rgVerticesBufferOffset)
+        } else {
+            None
+        }
+    }
 }
 
 
@@ -719,7 +717,7 @@ struct CHwTVertexMappings<TVertex>
     m_vStatic: TVertex,
 }
 
-impl<TVertex> CHwTVertexBuffer<TVertex> {
+impl<TVertex> CHwTVertexBuffer<'_, TVertex> {
     pub fn Reset(&mut self,
         
         )
@@ -732,6 +730,7 @@ impl<TVertex> CHwTVertexBuffer<TVertex> {
         
         
         self.m_rgVerticesTriList.SetCount(0);
+        self.m_rgVerticesBufferOffset = 0;
         
         
 
@@ -744,6 +743,7 @@ impl<TVertex> CHwTVertexBuffer<TVertex> {
              
             
             && (self.m_rgVerticesTriList.GetCount() == 0)
+            && self.m_rgVerticesBufferOffset == 0
             
     }
 
@@ -758,9 +758,8 @@ impl<TVertex> CHwTVertexBuffer<TVertex> {
 
 
 
-pub struct CHwTVertexBufferBuilder<TVertex>
+pub struct CHwTVertexBufferBuilder<'y, 'z, TVertex>
 {
-    m_pDeviceNoRef: Rc<CD3DDeviceLevel1>,
     m_mvfIn: MilVertexFormat,         
 
     #[cfg(debug_assertions)]
@@ -1076,7 +1075,7 @@ pub struct CHwTVertexBufferBuilder<TVertex>
 
 
 
-    m_pVB: Box<CHwTVertexBuffer<TVertex>>,
+    m_pVB: &'y mut CHwTVertexBuffer<'z, TVertex>,
 
     
 
@@ -1205,7 +1204,7 @@ pub struct CHwTVertexBufferBuilder<TVertex>
 
 
 
-impl CHwVertexBuffer {
+impl CHwVertexBuffer<'_> {
 
 
 
@@ -1302,38 +1301,58 @@ fn AddLine(&mut self,
 
 
 
+impl<TVertex: Clone + Default> CHwTVertexBuffer<'_, TVertex> {
 
+fn AddTriVertices(&mut self, v0: TVertex, v1: TVertex, v2: TVertex) {
+    if let Some(output_buffer) = &mut self.m_rgVerticesBuffer {
+        let offset = self.m_rgVerticesBufferOffset;
+        if offset + 3 <= output_buffer.len() {
+            output_buffer[offset] = v0;
+            output_buffer[offset + 1] = v1;
+            output_buffer[offset + 2] = v2;
+        }
+        self.m_rgVerticesBufferOffset = offset + 3;
+    } else {
+        self.m_rgVerticesTriList.reserve(3);
+        self.m_rgVerticesTriList.push(v0);
+        self.m_rgVerticesTriList.push(v1);
+        self.m_rgVerticesTriList.push(v2);
+    }
+}
 
+fn AddTrapezoidVertices(&mut self, v0: TVertex, v1: TVertex, v2: TVertex, v3: TVertex) {
+    if let Some(output_buffer) = &mut self.m_rgVerticesBuffer {
+        let offset = self.m_rgVerticesBufferOffset;
+        if offset + 6 <= output_buffer.len() {
+            output_buffer[offset] = v0;
+            output_buffer[offset + 1] = v1.clone();
+            output_buffer[offset + 2] = v2.clone();
 
+            output_buffer[offset + 3] = v1;
+            output_buffer[offset + 4] = v2;
+            output_buffer[offset + 5] = v3;
+        }
+        self.m_rgVerticesBufferOffset = offset + 6;
+    } else {
+        self.m_rgVerticesTriList.reserve(6);
 
+        self.m_rgVerticesTriList.push(v0);
+        self.m_rgVerticesTriList.push(v1.clone());
+        self.m_rgVerticesTriList.push(v2.clone());
 
-impl<TVertex: Default> CHwTVertexBuffer<TVertex> {
-fn AddTriListVertices(
-    &mut self,
-    uCount: UINT,
-    ) -> &mut DynArray<TVertex>
-{
+        self.m_rgVerticesTriList.push(v1);
+        self.m_rgVerticesTriList.push(v2);
+        self.m_rgVerticesTriList.push(v3);
+    }
+}
+
+fn AddedNonLineSegment(&mut self) {
     #[cfg(debug_assertions)]
-    if (uCount != 6)
     {
-        
-        
         self.m_fDbgNonLineSegmentTriangleStrip = true;
     }
-
-    self.m_rgVerticesTriList.reserve(uCount as usize);
-
-
-
-
-
-
-
-    return &mut self.m_rgVerticesTriList;
-
-
-    
 }
+
 }
 
 
@@ -1457,17 +1476,18 @@ fn AddTriListVertices(
 
 
 
-pub type CHwVertexBufferBuilder = CHwTVertexBufferBuilder<OutputVertex>;
-impl CHwVertexBufferBuilder {
+
+pub type CHwVertexBufferBuilder<'y, 'z> = CHwTVertexBufferBuilder<'y, 'z, OutputVertex>;
+impl<'y, 'z> CHwVertexBufferBuilder<'y, 'z> {
 pub fn Create(
      vfIn: MilVertexFormat,
      vfOut: MilVertexFormat,
      mvfaAntiAliasScaleLocation: MilVertexFormatAttribute,
-    pDevice: Rc<CD3DDeviceLevel1>,
+    pVertexBuffer: &'y mut CHwVertexBuffer<'z>,
     
-    ) -> CHwVertexBufferBuilder
+    ) -> CHwVertexBufferBuilder<'y, 'z>
 {
-    CHwVertexBufferBuilder::CreateTemplate(pDevice.GetVB_XYZDUV2(), vfIn, vfOut, mvfaAntiAliasScaleLocation, pDevice)
+    CHwVertexBufferBuilder::CreateTemplate(pVertexBuffer, vfIn, vfOut, mvfaAntiAliasScaleLocation)
     
 
     
@@ -1656,7 +1676,7 @@ pub fn Create(
 
 
 
-impl<TVertex: Default> CHwTVertexBufferBuilder<TVertex> {
+impl<'y, 'z, TVertex: Default> CHwTVertexBufferBuilder<'y, 'z, TVertex> {
 
 
 
@@ -1666,18 +1686,17 @@ impl<TVertex: Default> CHwTVertexBufferBuilder<TVertex> {
 
 
 fn CreateTemplate(
-      pVertexBuffer: Box<CHwTVertexBuffer<TVertex>>,
+     pVertexBuffer: &'y mut CHwTVertexBuffer<'z, TVertex>,
      mvfIn: MilVertexFormat,
      mvfOut: MilVertexFormat,
      mvfaAntiAliasScaleLocation: MilVertexFormatAttribute,
      
-     pDevice: Rc<CD3DDeviceLevel1>,
     ) -> Self
 {
 
 
 
-    let mut pVertexBufferBuilder = CHwTVertexBufferBuilder::<TVertex>::new(pVertexBuffer, pDevice);
+    let mut pVertexBufferBuilder = CHwTVertexBufferBuilder::<TVertex>::new(pVertexBuffer);
 
     IFC!(pVertexBufferBuilder.SetupConverter(
         mvfIn,
@@ -1696,7 +1715,7 @@ fn CreateTemplate(
 
 
 
-fn new(pVertexBuffer: Box<CHwTVertexBuffer<TVertex>>, device: Rc<CD3DDeviceLevel1>) -> Self
+fn new(pVertexBuffer: &'y mut CHwTVertexBuffer<'z, TVertex>) -> Self
 {
     Self {
     m_pVB: pVertexBuffer,
@@ -1721,7 +1740,6 @@ fn new(pVertexBuffer: Box<CHwTVertexBuffer<TVertex>>, device: Rc<CD3DDeviceLevel
     m_fHasFlushed: false,
     
     m_rcOutsideBounds: Default::default(),
-    m_pDeviceNoRef: device,
         #[cfg(debug_assertions)]
         m_mvfDbgOut: MilVertexFormatAttribute::MILVFAttrNone as MilVertexFormat,
         m_mvfIn: MilVertexFormatAttribute::MILVFAttrNone as MilVertexFormat,
@@ -1848,7 +1866,7 @@ fn SetupConverter(&mut self,
 
 
 
-impl<TVertex> CHwTVertexBufferBuilder<TVertex> {
+impl<TVertex> CHwTVertexBufferBuilder<'_, '_, TVertex> {
 
 
 
@@ -1900,7 +1918,7 @@ pub fn BeginBuilding(&mut self,
     RRETURN!(hr);
 }
 }
-impl IGeometrySink for CHwVertexBufferBuilder {
+impl IGeometrySink for CHwVertexBufferBuilder<'_, '_> {
 
     fn AddTrapezoid(&mut self,
         rPixelYTop: f32,              
@@ -2274,7 +2292,7 @@ impl IGeometrySink for CHwVertexBufferBuilder {
 
 
 
-impl CHwVertexBuffer {
+impl CHwVertexBuffer<'_> {
     fn AddLineAsTriangleList(&mut self,
     pBegin: &CD3DVertexXYZDUV2, 
     pEnd: &CD3DVertexXYZDUV2    
@@ -2297,33 +2315,18 @@ impl CHwVertexBuffer {
     
     
 
-    let pVertex = self.AddTriListVertices(3);
-
     
-    pVertex.push(OutputVertex{ x: x0, y: y - 0.5, coverage: dwDiffuse });
-    pVertex.push(OutputVertex{ x: x0, y: y + 0.5, coverage: dwDiffuse });
-    pVertex.push(OutputVertex{ x: x1, y, coverage: dwDiffuse });
+    self.AddTriVertices(
+        OutputVertex{ x: x0, y: y - 0.5, coverage: dwDiffuse },
+        OutputVertex{ x: x0, y: y + 0.5, coverage: dwDiffuse },
+        OutputVertex{ x: x1, y, coverage: dwDiffuse },
+    );
+
+    self.AddedNonLineSegment();
 
   
     RRETURN!(hr);
 }
-
-
-    
-    
-    
-    
-    
-    
-    
-
-    fn DrawPrimitive(&mut self,
-        pDevice: &CD3DDeviceLevel1
-        ) -> HRESULT {
-            pDevice.output.replace(std::mem::replace(&mut self.m_rgVerticesTriList, Vec::new()));
-            return S_OK;
-        }
-
 }
 
 
@@ -2518,7 +2521,8 @@ impl CHwVertexBuffer {
 
 
 
-impl CHwVertexBufferBuilder {
+
+impl CHwVertexBufferBuilder<'_, '_> {
 
 
 
@@ -2560,125 +2564,82 @@ fn AddTrapezoidStandard(&mut self,
     fNeedOutsideGeometry = self.NeedOutsideGeometry();
     fNeedInsideGeometry = self.NeedInsideGeometry();
 
-    let pVertex = self.m_pVB.AddTriListVertices(18);
-
     
     
     
 
-    pVertex.push(OutputVertex{
-        x: rPixelXTopLeft - rPixelXLeftDelta,
-        y: rPixelYTop,
-        coverage: FLOAT_ZERO,
-    });
-
-    pVertex.push(OutputVertex{
-        x: rPixelXBottomLeft - rPixelXLeftDelta,
-        y: rPixelYBottom,
-        coverage: FLOAT_ZERO,
-    });
-
-    pVertex.push(OutputVertex{
-        x: rPixelXTopLeft + rPixelXLeftDelta,
-        y: rPixelYTop,
-        coverage: FLOAT_ONE,
-    });
-
-
-    pVertex.push(OutputVertex{
-        x: rPixelXBottomLeft - rPixelXLeftDelta,
-        y: rPixelYBottom,
-        coverage: FLOAT_ZERO,
-    });
-
-    pVertex.push(OutputVertex{
-        x: rPixelXTopLeft + rPixelXLeftDelta,
-        y: rPixelYTop,
-        coverage: FLOAT_ONE,
-    });
-
-    pVertex.push(OutputVertex{
-        x: rPixelXBottomLeft + rPixelXLeftDelta,
-        y: rPixelYBottom,
-        coverage: FLOAT_ONE,
-    });
-
-     
-    if (fNeedInsideGeometry)
-    {
-        pVertex.push(OutputVertex{
+    self.m_pVB.AddTrapezoidVertices(
+        OutputVertex{
+            x: rPixelXTopLeft - rPixelXLeftDelta,
+            y: rPixelYTop,
+            coverage: FLOAT_ZERO,
+        },
+        OutputVertex{
+            x: rPixelXBottomLeft - rPixelXLeftDelta,
+            y: rPixelYBottom,
+            coverage: FLOAT_ZERO,
+        },
+        OutputVertex{
             x: rPixelXTopLeft + rPixelXLeftDelta,
             y: rPixelYTop,
             coverage: FLOAT_ONE,
-        });
-
-        pVertex.push(OutputVertex{
+        },
+        OutputVertex{
             x: rPixelXBottomLeft + rPixelXLeftDelta,
             y: rPixelYBottom,
             coverage: FLOAT_ONE,
-        });
+        }
+    );
 
-        pVertex.push(OutputVertex{
+
+    if (fNeedInsideGeometry)
+    {
+        self.m_pVB.AddTrapezoidVertices(
+            OutputVertex{
+                x: rPixelXTopLeft + rPixelXLeftDelta,
+                y: rPixelYTop,
+                coverage: FLOAT_ONE,
+            },
+            OutputVertex{
+                x: rPixelXBottomLeft + rPixelXLeftDelta,
+                y: rPixelYBottom,
+                coverage: FLOAT_ONE,
+            },
+            OutputVertex{
+                x: rPixelXTopRight - rPixelXRightDelta,
+                y: rPixelYTop,
+                coverage: FLOAT_ONE,
+            },
+            OutputVertex{
+                x: rPixelXBottomRight - rPixelXRightDelta,
+                y: rPixelYBottom,
+                coverage: FLOAT_ONE,
+            }
+        );
+    }
+
+    self.m_pVB.AddTrapezoidVertices(
+        OutputVertex{
             x: rPixelXTopRight - rPixelXRightDelta,
             y: rPixelYTop,
             coverage: FLOAT_ONE,
-        });
-
-
-        pVertex.push(OutputVertex{
-            x: rPixelXBottomLeft + rPixelXLeftDelta,
-            y: rPixelYBottom,
-            coverage: FLOAT_ONE,
-        });
-
-        pVertex.push(OutputVertex{
-            x: rPixelXTopRight - rPixelXRightDelta,
-            y: rPixelYTop,
-            coverage: FLOAT_ONE,
-        });
-
-        pVertex.push(OutputVertex{
+        },
+        OutputVertex{
             x: rPixelXBottomRight - rPixelXRightDelta,
             y: rPixelYBottom,
             coverage: FLOAT_ONE,
-        });
-    }
-
-    pVertex.push(OutputVertex{
-        x: rPixelXTopRight - rPixelXRightDelta,
-        y: rPixelYTop,
-        coverage: FLOAT_ONE,
-    });
-
-    pVertex.push(OutputVertex{
-        x: rPixelXBottomRight - rPixelXRightDelta,
-        y: rPixelYBottom,
-        coverage: FLOAT_ONE,
-    });
-
-    pVertex.push(OutputVertex{
-        x: rPixelXTopRight + rPixelXRightDelta,
-        y: rPixelYTop,
-        coverage: FLOAT_ZERO,
-    });
-
-    pVertex.push(OutputVertex{
-        x: rPixelXBottomRight - rPixelXRightDelta,
-        y: rPixelYBottom,
-        coverage: FLOAT_ONE,
-    });
-
-    pVertex.push(OutputVertex{
-        x: rPixelXTopRight + rPixelXRightDelta,
-        y: rPixelYTop,
-        coverage: FLOAT_ZERO,
-    });
-
-    pVertex.push(OutputVertex{
-        x: rPixelXBottomRight + rPixelXRightDelta,
-        y: rPixelYBottom,
-        coverage: FLOAT_ZERO,
-    });
+        },
+        OutputVertex{
+            x: rPixelXTopRight + rPixelXRightDelta,
+            y: rPixelYTop,
+            coverage: FLOAT_ZERO,
+        },
+        OutputVertex{
+            x: rPixelXBottomRight + rPixelXRightDelta,
+            y: rPixelYBottom,
+            coverage: FLOAT_ZERO,
+        }
+    );
 
     if (!fNeedOutsideGeometry)
     {
@@ -2694,6 +2655,8 @@ fn AddTrapezoidStandard(&mut self,
         
         
     }
+
+    self.m_pVB.AddedNonLineSegment();
 
 
     RRETURN!(hr);
@@ -2779,7 +2742,7 @@ fn AddTrapezoidStandard(&mut self,
 
 
 
-impl CHwVertexBufferBuilder {
+impl CHwVertexBufferBuilder<'_, '_> {
 
     
 
@@ -2933,44 +2896,28 @@ fn PrepareStratumSlow(&mut self,
 
             
 
-            let pVertex = self.m_pVB.AddTriListVertices(6);
-
-            pVertex.push(OutputVertex{
-                x: self.m_rLastTrapezoidTopRight,
-                y: self.m_rCurStratumTop,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: self.m_rLastTrapezoidBottomRight,
-                y: self.m_rCurStratumBottom,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: rOutsideRight,
-                y: self.m_rCurStratumTop,
-                coverage: FLOAT_ZERO,
-            });
-
-
-            pVertex.push(OutputVertex{
-                x: self.m_rLastTrapezoidBottomRight,
-                y: self.m_rCurStratumBottom,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: rOutsideRight,
-                y: self.m_rCurStratumTop,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: rOutsideRight,
-                y: self.m_rCurStratumBottom,
-                coverage: FLOAT_ZERO,
-            });
+            self.m_pVB.AddTrapezoidVertices(
+                OutputVertex{
+                    x: self.m_rLastTrapezoidTopRight,
+                    y: self.m_rCurStratumTop,
+                    coverage: FLOAT_ZERO,
+                },
+                OutputVertex{
+                    x: self.m_rLastTrapezoidBottomRight,
+                    y: self.m_rCurStratumBottom,
+                    coverage: FLOAT_ZERO,
+                },
+                OutputVertex{
+                    x: rOutsideRight,
+                    y: self.m_rCurStratumTop,
+                    coverage: FLOAT_ZERO,
+                },
+                OutputVertex{
+                    x: rOutsideRight,
+                    y: self.m_rCurStratumBottom,
+                    coverage: FLOAT_ZERO,
+                }
+            );
         }
         
         
@@ -2992,45 +2939,30 @@ fn PrepareStratumSlow(&mut self,
 
             let outside_left = self.OutsideLeft();
             let outside_right = self.OutsideRight();
-            let pVertex = self.m_pVB.AddTriListVertices(6);
             
             
-            pVertex.push(OutputVertex{
-                x: outside_left,
-                y: flRectTop,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: outside_left,
-                y: flRectBot,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: outside_right,
-                y: flRectTop,
-                coverage: FLOAT_ZERO,
-            });
-
-
-            pVertex.push(OutputVertex{
-                x: outside_left,
-                y: flRectBot,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: outside_right,
-                y: flRectTop,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: outside_right,
-                y: flRectBot,
-                coverage: FLOAT_ZERO,
-            });
+            self.m_pVB.AddTrapezoidVertices(
+                OutputVertex{
+                    x: outside_left,
+                    y: flRectTop,
+                    coverage: FLOAT_ZERO,
+                },
+                OutputVertex{
+                    x: outside_left,
+                    y: flRectBot,
+                    coverage: FLOAT_ZERO,
+                },
+                OutputVertex{
+                    x: outside_right,
+                    y: flRectTop,
+                    coverage: FLOAT_ZERO,
+                },
+                OutputVertex{
+                    x: outside_right,
+                    y: flRectBot,
+                    coverage: FLOAT_ZERO,
+                }
+            );
         }
 
         if (fTrapezoid)
@@ -3043,44 +2975,28 @@ fn PrepareStratumSlow(&mut self,
 
             
 
-            let pVertex = self.m_pVB.AddTriListVertices(6);
-
-            pVertex.push(OutputVertex{
-                x: rOutsideLeft,
-                y: rStratumTop,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: rOutsideLeft,
-                y: rStratumBottom,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: rTrapezoidTopLeft,
-                y: rStratumTop,
-                coverage: FLOAT_ZERO,
-            });
-
-
-            pVertex.push(OutputVertex{
-                x: rOutsideLeft,
-                y: rStratumBottom,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: rTrapezoidTopLeft,
-                y: rStratumTop,
-                coverage: FLOAT_ZERO,
-            });
-
-            pVertex.push(OutputVertex{
-                x: rTrapezoidBottomLeft,
-                y: rStratumBottom,
-                coverage: FLOAT_ZERO,
-            });
+            self.m_pVB.AddTrapezoidVertices(
+                OutputVertex{
+                    x: rOutsideLeft,
+                    y: rStratumTop,
+                    coverage: FLOAT_ZERO,
+                },
+                OutputVertex{
+                    x: rOutsideLeft,
+                    y: rStratumBottom,
+                    coverage: FLOAT_ZERO,
+                },
+                OutputVertex{
+                    x: rTrapezoidTopLeft,
+                    y: rStratumTop,
+                    coverage: FLOAT_ZERO,
+                },
+                OutputVertex{
+                    x: rTrapezoidBottomLeft,
+                    y: rStratumBottom,
+                    coverage: FLOAT_ZERO,
+                }
+            );
         }
     }
     
@@ -3128,88 +3044,13 @@ fn EndBuildingOutside(&mut self) -> HRESULT
 
 
 
-fn EndBuilding(&mut self,
-    ppVertexBuffer:  *const *const CHwVertexBuffer
-    ) -> HRESULT
+pub fn EndBuilding(&mut self) -> HRESULT
 {
     let hr = S_OK;
 
     IFC!(self.EndBuildingOutside());
     
-    if (ppVertexBuffer != NULL())
-    {
-        todo!();
-        
-    }
 
-
-    RRETURN!(hr);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-fn FlushInternal(&mut self,
-    ppVertexBuffer: Option<&mut CHwVertexBuffer>    ) -> HRESULT
-{
-
-    let hr: HRESULT = S_OK;
-
-
-
-
-
-
-
-
-
-
-    IFC!(self.EndBuilding(NULL()));
-
-    if (false)
-    {
-        panic!();
-    }
-    else
-    {
-        IFC!(self.m_pVB.DrawPrimitive(&self.m_pDeviceNoRef));
-    }
-
-  
-    if let Some(_ppVertexBuffer) = (ppVertexBuffer)
-    {
-        if (!self.m_fHasFlushed)
-        {
-            todo!();
-            
-        }
-    }
-    else
-    {
-        self.m_fHasFlushed = true;
-        self.m_pVB.Reset();
-
-        
-        
-
-        
-        
-    }
-    
     RRETURN!(hr);
 }
 

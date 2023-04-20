@@ -4,10 +4,6 @@
 
 #![allow(unused_parens)]
 
-
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use crate::aacoverage::{CCoverageBuffer, c_rInvShiftSize, c_antiAliasMode, c_nShift, CCoverageInterval, c_nShiftMask, c_nShiftSize, c_nHalfShiftSize};
 use crate::hwvertexbuffer::CHwVertexBufferBuilder;
 use crate::matrix::{CMILMatrix, CMatrix};
@@ -396,10 +392,10 @@ ComputeDistanceLowerBound(
 
     return nSubpixelXDistanceLowerBound;
 }
-pub struct CHwRasterizer {
+pub struct CHwRasterizer<'x, 'y, 'z> {
     m_rcClipBounds: MilPointAndSizeL,
     m_matWorldToDevice: CMILMatrix,
-    m_pIGeometrySink: Option<Rc<RefCell<CHwVertexBufferBuilder>>>,
+    m_pIGeometrySink: &'x mut CHwVertexBufferBuilder<'y, 'z>,
     m_fillMode: MilFillMode,
     
 
@@ -454,26 +450,7 @@ fn ConvertSubpixelYToPixel(
     return (nSubpixel as f32)*c_rInvShiftSize;
 }
 
-impl CHwRasterizer {
-    
-    
-    
-    
-    
-    
-    
-    pub fn new() -> Self
-    {
-        Self {
-        m_fillMode: MilFillMode::Alternate,
-        m_rcClipBounds: Default::default(),
-        m_pIGeometrySink: None,
-    
-        
-        m_matWorldToDevice: Default::default(),
-        }
-    }
-    
+impl<'x, 'y, 'z> CHwRasterizer<'x, 'y, 'z> {
 
 
 
@@ -657,22 +634,13 @@ pub fn RasterizePath(
 
 
 
-pub fn Setup(&mut self,
-    pD3DDevice: Rc<CD3DDeviceLevel1>,
+pub fn new(
+    pIGeometrySink: &'x mut CHwVertexBufferBuilder<'y, 'z>,
     fillMode: MilFillMode,
-    pmatWorldToDevice: Option<&CMatrix<CoordinateSpace::Shape,CoordinateSpace::Device>>
-    ) -> HRESULT
+    pmatWorldToDevice: Option<CMatrix<CoordinateSpace::Shape,CoordinateSpace::Device>>,
+    clipRect: MilPointAndSizeL,
+    ) -> Self
 {
-    let hr = S_OK;
-
-
-    
-    
-    
-    self.m_rcClipBounds = Default::default();
-    self.m_pIGeometrySink = None;
-
-
     
     
     
@@ -688,15 +656,7 @@ pub fn Setup(&mut self,
     
     
 
-    let mut matWorldHPCToDeviceIPC;
-    if let Some(pmatWorldToDevice) = pmatWorldToDevice
-    {
-        matWorldHPCToDeviceIPC = pmatWorldToDevice.clone();
-    }
-    else
-    {
-        matWorldHPCToDeviceIPC = CMatrix::Identity();
-    }
+    let mut matWorldHPCToDeviceIPC = pmatWorldToDevice.unwrap_or(CMatrix::Identity());
     matWorldHPCToDeviceIPC.SetDx(matWorldHPCToDeviceIPC.GetDx() - 0.5);
     matWorldHPCToDeviceIPC.SetDy(matWorldHPCToDeviceIPC.GetDy() - 0.5);
 
@@ -704,17 +664,17 @@ pub fn Setup(&mut self,
     
     
 
-    pD3DDevice.GetClipRect(&mut self.m_rcClipBounds);
-
-    self.m_matWorldToDevice = matWorldHPCToDeviceIPC;
-    self.m_fillMode = fillMode;
-
     
     
     
     
 
-    return hr;
+    Self {
+        m_fillMode: fillMode,
+        m_rcClipBounds: clipRect,
+        m_pIGeometrySink: pIGeometrySink,
+        m_matWorldToDevice: matWorldHPCToDeviceIPC,
+    }
 }
 
 
@@ -726,19 +686,11 @@ pub fn Setup(&mut self,
 
 
 pub fn SendGeometry(&mut self,
-    pIGeometrySink: Rc<RefCell<CHwVertexBufferBuilder>>,
     points: &[POINT],
     types: &[BYTE],
     ) -> HRESULT
 {
     let mut hr = S_OK;
-
-    
-    
-    
-    
-
-    self.m_pIGeometrySink = Some(pIGeometrySink.clone());
 
     
     
@@ -765,12 +717,10 @@ pub fn SendGeometry(&mut self,
     
     
 
-    if (pIGeometrySink.borrow().IsEmpty())
+    if (self.m_pIGeometrySink.IsEmpty())
     {
         hr = WGXHR_EMPTYFILL;
     }
-
-    self.m_pIGeometrySink = None;
 
     RRETURN1!(hr, WGXHR_EMPTYFILL);
 }
@@ -820,7 +770,7 @@ GenerateOutputAndClearCoverage<'a>(&mut self, coverageBuffer: &'a CCoverageBuffe
 
     let pIntervalSpanStart: Ref<CCoverageInterval> = coverageBuffer.m_pIntervalStart.get();
 
-    IFC!(self.m_pIGeometrySink.as_ref().unwrap().borrow_mut().AddComplexScan(nPixelY, pIntervalSpanStart));
+    IFC!(self.m_pIGeometrySink.AddComplexScan(nPixelY, pIntervalSpanStart));
 
     coverageBuffer.Reset();
 
@@ -1282,7 +1232,7 @@ OutputTrapezoids(&mut self,
         
         
 
-        IFC!(self.m_pIGeometrySink.as_mut().unwrap().borrow_mut().AddTrapezoid(
+        IFC!(self.m_pIGeometrySink.AddTrapezoid(
             rPixelYTop,              // In: y coordinate of top of trapezoid
             rPixelXLeft,             // In: x coordinate for top left
             rPixelXRight,            // In: x coordinate for top right
@@ -1501,30 +1451,5 @@ RasterizeEdges<'a, 'b>(&mut self,
 
     RRETURN!(hr);
 }
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-    pub fn GetPerVertexDataType(&self,
-        mvfFullyGenerated: &mut MilVertexFormat
-        )
-    {
-        
-        
-        
-        
-        
-        
-        
-
-        *mvfFullyGenerated = MilVertexFormatAttribute::MILVFAttrXY as MilVertexFormat;
-    }
-
 
 }
