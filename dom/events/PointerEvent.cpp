@@ -138,14 +138,13 @@ NS_INTERFACE_MAP_END_INHERITING(MouseEvent)
 NS_IMPL_ADDREF_INHERITED(PointerEvent, MouseEvent)
 NS_IMPL_RELEASE_INHERITED(PointerEvent, MouseEvent)
 
-void PointerEvent::GetPointerType(nsAString& aPointerType,
-                                  CallerType aCallerType) {
+void PointerEvent::GetPointerType(nsAString& aPointerType) {
   if (mPointerType.isSome()) {
     aPointerType = mPointerType.value();
     return;
   }
 
-  if (ShouldResistFingerprinting(aCallerType)) {
+  if (ShouldResistFingerprinting()) {
     aPointerType.AssignLiteral("mouse");
     return;
   }
@@ -154,27 +153,22 @@ void PointerEvent::GetPointerType(nsAString& aPointerType,
                              aPointerType);
 }
 
-int32_t PointerEvent::PointerId(CallerType aCallerType) {
-  return ShouldResistFingerprinting(aCallerType)
+int32_t PointerEvent::PointerId() {
+  return ShouldResistFingerprinting()
              ? PointerEventHandler::GetSpoofedPointerIdForRFP()
              : mEvent->AsPointerEvent()->pointerId;
 }
 
-int32_t PointerEvent::Width(CallerType aCallerType) {
-  return ShouldResistFingerprinting(aCallerType)
-             ? 1
-             : mEvent->AsPointerEvent()->mWidth;
+int32_t PointerEvent::Width() {
+  return ShouldResistFingerprinting() ? 1 : mEvent->AsPointerEvent()->mWidth;
 }
 
-int32_t PointerEvent::Height(CallerType aCallerType) {
-  return ShouldResistFingerprinting(aCallerType)
-             ? 1
-             : mEvent->AsPointerEvent()->mHeight;
+int32_t PointerEvent::Height() {
+  return ShouldResistFingerprinting() ? 1 : mEvent->AsPointerEvent()->mHeight;
 }
 
-float PointerEvent::Pressure(CallerType aCallerType) {
-  if (mEvent->mMessage == ePointerUp ||
-      !ShouldResistFingerprinting(aCallerType)) {
+float PointerEvent::Pressure() {
+  if (mEvent->mMessage == ePointerUp || !ShouldResistFingerprinting()) {
     return mEvent->AsPointerEvent()->mPressure;
   }
 
@@ -191,28 +185,22 @@ float PointerEvent::Pressure(CallerType aCallerType) {
   return spoofedPressure;
 }
 
-float PointerEvent::TangentialPressure(CallerType aCallerType) {
-  return ShouldResistFingerprinting(aCallerType)
+float PointerEvent::TangentialPressure() {
+  return ShouldResistFingerprinting()
              ? 0
              : mEvent->AsPointerEvent()->tangentialPressure;
 }
 
-int32_t PointerEvent::TiltX(CallerType aCallerType) {
-  return ShouldResistFingerprinting(aCallerType)
-             ? 0
-             : mEvent->AsPointerEvent()->tiltX;
+int32_t PointerEvent::TiltX() {
+  return ShouldResistFingerprinting() ? 0 : mEvent->AsPointerEvent()->tiltX;
 }
 
-int32_t PointerEvent::TiltY(CallerType aCallerType) {
-  return ShouldResistFingerprinting(aCallerType)
-             ? 0
-             : mEvent->AsPointerEvent()->tiltY;
+int32_t PointerEvent::TiltY() {
+  return ShouldResistFingerprinting() ? 0 : mEvent->AsPointerEvent()->tiltY;
 }
 
-int32_t PointerEvent::Twist(CallerType aCallerType) {
-  return ShouldResistFingerprinting(aCallerType)
-             ? 0
-             : mEvent->AsPointerEvent()->twist;
+int32_t PointerEvent::Twist() {
+  return ShouldResistFingerprinting() ? 0 : mEvent->AsPointerEvent()->twist;
 }
 
 bool PointerEvent::IsPrimary() { return mEvent->AsPointerEvent()->mIsPrimary; }
@@ -275,7 +263,7 @@ void PointerEvent::GetPredictedEvents(
   aPointerEvents.AppendElements(mPredictedEvents);
 }
 
-bool PointerEvent::ShouldResistFingerprinting(CallerType aCallerType) {
+bool PointerEvent::ShouldResistFingerprinting() {
   
   
   
@@ -284,8 +272,8 @@ bool PointerEvent::ShouldResistFingerprinting(CallerType aCallerType) {
   
   
   
-  if (!nsContentUtils::ShouldResistFingerprinting() || !mEvent->IsTrusted() ||
-      aCallerType == CallerType::System ||
+  if (!nsContentUtils::ShouldResistFingerprinting("Efficiency Check") ||
+      !mEvent->IsTrusted() ||
       mEvent->AsPointerEvent()->mInputSource ==
           MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
     return false;
