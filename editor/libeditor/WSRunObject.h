@@ -1526,17 +1526,20 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult DeletePreviousWhiteSpace(
-      HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
+  DeletePreviousWhiteSpace(HTMLEditor& aHTMLEditor,
+                           const EditorDOMPoint& aPoint,
+                           const Element& aEditingHost);
 
   
 
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<CaretPoint, nsresult>
   DeleteInclusiveNextWhiteSpace(HTMLEditor& aHTMLEditor,
-                                const EditorDOMPoint& aPoint);
+                                const EditorDOMPoint& aPoint,
+                                const Element& aEditingHost);
 
   
 
