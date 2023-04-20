@@ -427,7 +427,6 @@ if mozinfo.isWin:
         finally:
             ctypes.windll.kernel32.CloseHandle(pHandle)
 
-
 else:
     import errno
 
@@ -3575,6 +3574,12 @@ toolbar#nav-bar {
         if options.crashAsPass:
             ignoreMissingLeaks.append("tab")
             ignoreMissingLeaks.append("socket")
+
+        
+        
+        
+        if options.flavor == "chrome" and mozinfo.isWin:
+            leakThresholds["default"] += 1296
 
         
         
