@@ -8,7 +8,6 @@ const VIDEO_URL =
 
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/content/tests/browser/common/mockTransfer.js",
   this

@@ -2,8 +2,6 @@
 
 
 
-
-
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 const sandbox = sinon.createSandbox();

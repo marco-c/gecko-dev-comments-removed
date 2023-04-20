@@ -6,7 +6,6 @@
 
 
 
-
 if (AppConstants.platform == "macosx") {
   requestLongerTimeout(3);
 }

@@ -2,8 +2,6 @@
 
 
 
-
-
 add_setup(async function() {
   ASRouter.resetMessageState();
   await SpecialPowers.pushPrefEnv({

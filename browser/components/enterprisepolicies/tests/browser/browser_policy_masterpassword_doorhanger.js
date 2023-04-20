@@ -3,8 +3,6 @@
 
 
 
-
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/toolkit/components/passwordmgr/test/browser/head.js",
   this

@@ -2,8 +2,6 @@
 
 
 
-
-
 add_task(async function test_experiment_plain_text() {
   const defaultMessageContent = (await PanelTestProvider.getMessages()).find(
     m => m.template === "pb_newtab"

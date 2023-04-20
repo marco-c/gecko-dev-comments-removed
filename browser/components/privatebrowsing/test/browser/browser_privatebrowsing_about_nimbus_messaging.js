@@ -2,7 +2,6 @@
 
 
 
-
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 add_task(async function test_experiment_messaging_system() {

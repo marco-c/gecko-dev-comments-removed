@@ -5,7 +5,6 @@
 
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/components/urlbar/tests/engagementTelemetry/browser/head-interaction.js",
   this

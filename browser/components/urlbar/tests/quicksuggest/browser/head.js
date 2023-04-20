@@ -5,7 +5,6 @@
 
 let sandbox;
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser/head-common.js",
   this

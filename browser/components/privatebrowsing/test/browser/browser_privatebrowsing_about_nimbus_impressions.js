@@ -7,8 +7,6 @@
 
 
 
-
-
 add_task(async function test_experiment_messaging_system_impressions() {
   registerCleanupFunction(() => {
     ASRouter.resetMessageState();

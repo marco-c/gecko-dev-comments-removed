@@ -1,7 +1,6 @@
 
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
   this
