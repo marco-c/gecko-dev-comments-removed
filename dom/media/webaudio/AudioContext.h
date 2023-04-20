@@ -420,6 +420,7 @@ class AudioContext final : public DOMEventTargetHelper,
   RefPtr<BasicWaveFormCache> mBasicWaveFormCache;
   
   uint32_t mNumberOfChannels;
+  const RTPCallerType mRTPCallerType;
   const bool mIsOffline;
   
   bool mIsStarted;

@@ -157,6 +157,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
       mSampleRate(GetSampleRateForAudioContext(aIsOffline, aSampleRate)),
       mAudioContextState(AudioContextState::Suspended),
       mNumberOfChannels(aNumberOfChannels),
+      mRTPCallerType(aWindow->AsGlobal()->GetRTPCallerType()),
       mIsOffline(aIsOffline),
       mIsStarted(!aIsOffline),
       mIsShutDown(false),
@@ -739,24 +740,21 @@ double AudioContext::CurrentTime() {
 
   double rawTime = track->TrackTimeToSeconds(track->GetCurrentTime());
 
-  RTPCallerType callerType = GetParentObject()->AsGlobal()->GetRTPCallerType();
-
   
   
   
   
   
   if ((128 / mSampleRate) * 1000.0 >
-      nsRFPService::TimerResolution(callerType) / 1000.0) {
+      nsRFPService::TimerResolution(mRTPCallerType) / 1000.0) {
     return rawTime;
   }
 
-  MOZ_ASSERT(GetParentObject()->AsGlobal());
   
   
   
   return nsRFPService::ReduceTimePrecisionAsSecs(
-      rawTime, GetRandomTimelineSeed(), callerType);
+      rawTime, GetRandomTimelineSeed(), mRTPCallerType);
 }
 
 nsISerialEventTarget* AudioContext::GetMainThread() const {
