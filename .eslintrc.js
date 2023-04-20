@@ -209,7 +209,6 @@ module.exports = {
       
       files: [
         "browser/components/**",
-        "browser/extensions/report-site-issue/**",
         "dom/push/test/mockpushserviceparent.js",
         "toolkit/**",
       ],
