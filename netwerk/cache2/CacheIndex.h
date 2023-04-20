@@ -823,8 +823,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   NS_IMETHOD OnFileOpened(CacheFileHandle* aHandle, nsresult aResult) override;
   void OnFileOpenedInternal(FileOpenHelper* aOpener, CacheFileHandle* aHandle,
                             nsresult aResult,
-                            const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+                            const StaticMutexAutoLock& aProofOfLock);
   NS_IMETHOD OnDataWritten(CacheFileHandle* aHandle, const char* aBuf,
                            nsresult aResult) override;
   NS_IMETHOD OnDataRead(CacheFileHandle* aHandle, char* aBuf,
@@ -838,7 +837,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   void PreShutdownInternal();
 
   
-  bool IsIndexUsable() MOZ_REQUIRES(sLock);
+  bool IsIndexUsable();
 
   
   
@@ -857,8 +856,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
                               const uint32_t* aSize);
 
   
-  void ProcessPendingOperations(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void ProcessPendingOperations(const StaticMutexAutoLock& aProofOfLock);
 
   
   
@@ -870,18 +868,14 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   
-  bool WriteIndexToDiskIfNeeded(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  bool WriteIndexToDiskIfNeeded(const StaticMutexAutoLock& aProofOfLock);
   
-  void WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock);
   
   
-  void WriteRecords(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void WriteRecords(const StaticMutexAutoLock& aProofOfLock);
   
-  void FinishWrite(bool aSucceeded, const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void FinishWrite(bool aSucceeded, const StaticMutexAutoLock& aProofOfLock);
 
   
   
@@ -891,11 +885,11 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   nsresult GetFile(const nsACString& aName, nsIFile** _retval);
-  void RemoveFile(const nsACString& aName) MOZ_REQUIRES(sLock);
-  void RemoveAllIndexFiles() MOZ_REQUIRES(sLock);
-  void RemoveJournalAndTempFile() MOZ_REQUIRES(sLock);
+  void RemoveFile(const nsACString& aName);
+  void RemoveAllIndexFiles();
+  void RemoveJournalAndTempFile();
   
-  nsresult WriteLogToDisk() MOZ_REQUIRES(sLock);
+  nsresult WriteLogToDisk();
 
   
   
@@ -934,68 +928,56 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   
-  void ReadIndexFromDisk(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void ReadIndexFromDisk(const StaticMutexAutoLock& aProofOfLock);
   
-  void StartReadingIndex(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void StartReadingIndex(const StaticMutexAutoLock& aProofOfLock);
   
-  void ParseRecords(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void ParseRecords(const StaticMutexAutoLock& aProofOfLock);
   
-  void StartReadingJournal(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void StartReadingJournal(const StaticMutexAutoLock& aProofOfLock);
   
-  void ParseJournal(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void ParseJournal(const StaticMutexAutoLock& aProofOfLock);
   
-  void MergeJournal(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void MergeJournal(const StaticMutexAutoLock& aProofOfLock);
   
   
-  void EnsureNoFreshEntry() MOZ_REQUIRES(sLock);
+  void EnsureNoFreshEntry();
   
   
-  void EnsureCorrectStats() MOZ_REQUIRES(sLock);
-
+  void EnsureCorrectStats();
   
-  void FinishRead(bool aSucceeded, const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void FinishRead(bool aSucceeded, const StaticMutexAutoLock& aProofOfLock);
 
   
   
   static void DelayedUpdate(nsITimer* aTimer, void* aClosure);
-  void DelayedUpdateLocked(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void DelayedUpdateLocked(const StaticMutexAutoLock& aProofOfLock);
   
-  nsresult ScheduleUpdateTimer(uint32_t aDelay) MOZ_REQUIRES(sLock);
-  nsresult SetupDirectoryEnumerator() MOZ_REQUIRES(sLock);
+  nsresult ScheduleUpdateTimer(uint32_t aDelay);
+  nsresult SetupDirectoryEnumerator();
   nsresult InitEntryFromDiskData(CacheIndexEntry* aEntry,
                                  CacheFileMetadata* aMetaData,
                                  int64_t aFileSize);
   
-  bool IsUpdatePending() MOZ_REQUIRES(sLock);
+  bool IsUpdatePending();
   
   
-  void BuildIndex(const StaticMutexAutoLock& aProofOfLock) MOZ_REQUIRES(sLock);
+  void BuildIndex(const StaticMutexAutoLock& aProofOfLock);
 
   bool StartUpdatingIndexIfNeeded(const StaticMutexAutoLock& aProofOfLock,
                                   bool aSwitchingToReadyState = false);
   
   
   void StartUpdatingIndex(bool aRebuild,
-                          const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+                          const StaticMutexAutoLock& aProofOfLock);
   
   
   
-  void UpdateIndex(const StaticMutexAutoLock& aProofOfLock) MOZ_REQUIRES(sLock);
+  void UpdateIndex(const StaticMutexAutoLock& aProofOfLock);
   
-  void FinishUpdate(bool aSucceeded, const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void FinishUpdate(bool aSucceeded, const StaticMutexAutoLock& aProofOfLock);
 
-  void RemoveNonFreshEntries(const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+  void RemoveNonFreshEntries(const StaticMutexAutoLock& aProofOfLock);
 
   enum EState {
     
@@ -1049,129 +1031,122 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
 
   static char const* StateString(EState aState);
   void ChangeState(EState aNewState, const StaticMutexAutoLock& aProofOfLock);
-  void NotifyAsyncGetDiskConsumptionCallbacks() MOZ_REQUIRES(sLock);
+  void NotifyAsyncGetDiskConsumptionCallbacks();
 
   
-  void AllocBuffer() MOZ_REQUIRES(sLock);
-  void ReleaseBuffer() MOZ_REQUIRES(sLock);
+  void AllocBuffer();
+  void ReleaseBuffer();
 
   
   void AddRecordToIterators(CacheIndexRecordWrapper* aRecord,
-                            const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+                            const StaticMutexAutoLock& aProofOfLock);
   void RemoveRecordFromIterators(CacheIndexRecordWrapper* aRecord,
-                                 const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+                                 const StaticMutexAutoLock& aProofOfLock);
   void ReplaceRecordInIterators(CacheIndexRecordWrapper* aOldRecord,
                                 CacheIndexRecordWrapper* aNewRecord,
-                                const StaticMutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(sLock);
+                                const StaticMutexAutoLock& aProofOfLock);
 
   
-  size_t SizeOfExcludingThisInternal(mozilla::MallocSizeOf mallocSizeOf) const
-      MOZ_REQUIRES(sLock);
-
-  
-  
-  void DoTelemetryReport() MOZ_REQUIRES(sLock);
-
-  static mozilla::StaticRefPtr<CacheIndex> gInstance MOZ_GUARDED_BY(sLock);
+  size_t SizeOfExcludingThisInternal(mozilla::MallocSizeOf mallocSizeOf) const;
 
   
   
-  static StaticMutex sLock;
+  void DoTelemetryReport();
+
+  static mozilla::StaticRefPtr<CacheIndex> gInstance;
+  static StaticMutex sLock MOZ_UNANNOTATED;
 
   nsCOMPtr<nsIFile> mCacheDirectory;
 
-  EState mState MOZ_GUARDED_BY(sLock){INITIAL};
+  EState mState{INITIAL};
   
   
-  TimeStamp mStartTime MOZ_GUARDED_BY(sLock);
+  TimeStamp mStartTime;
   
   
-  bool mShuttingDown MOZ_GUARDED_BY(sLock){false};
-  
-  
-  
-  
-  
-  
-  bool mIndexNeedsUpdate MOZ_GUARDED_BY(sLock){false};
+  bool mShuttingDown{false};
   
   
   
   
   
-  bool mRemovingAll MOZ_GUARDED_BY(sLock){false};
   
-  bool mIndexOnDiskIsValid MOZ_GUARDED_BY(sLock){false};
-  
-  
-  
-  bool mDontMarkIndexClean MOZ_GUARDED_BY(sLock){false};
-  
-  
-  uint32_t mIndexTimeStamp MOZ_GUARDED_BY(sLock){0};
+  bool mIndexNeedsUpdate{false};
   
   
   
-  TimeStamp mLastDumpTime MOZ_GUARDED_BY(sLock);
+  
+  
+  bool mRemovingAll{false};
+  
+  bool mIndexOnDiskIsValid{false};
+  
+  
+  
+  bool mDontMarkIndexClean{false};
+  
+  
+  uint32_t mIndexTimeStamp{0};
+  
+  
+  
+  TimeStamp mLastDumpTime;
 
   
-  nsCOMPtr<nsITimer> mUpdateTimer MOZ_GUARDED_BY(sLock);
+  nsCOMPtr<nsITimer> mUpdateTimer;
   
-  bool mUpdateEventPending MOZ_GUARDED_BY(sLock){false};
-
-  
-  
-  
-  
-  uint32_t mSkipEntries MOZ_GUARDED_BY(sLock){0};
-  
-  
-  
-  uint32_t mProcessEntries MOZ_GUARDED_BY(sLock){0};
-  char* mRWBuf MOZ_GUARDED_BY(sLock){nullptr};
-  uint32_t mRWBufSize MOZ_GUARDED_BY(sLock){0};
-  uint32_t mRWBufPos MOZ_GUARDED_BY(sLock){0};
-  RefPtr<CacheHash> mRWHash MOZ_GUARDED_BY(sLock);
-
-  
-  
-  bool mRWPending MOZ_GUARDED_BY(sLock){false};
-
-  
-  bool mJournalReadSuccessfully MOZ_GUARDED_BY(sLock){false};
-
-  
-  RefPtr<CacheFileHandle> mIndexHandle MOZ_GUARDED_BY(sLock);
-  
-  RefPtr<CacheFileHandle> mJournalHandle MOZ_GUARDED_BY(sLock);
-  
-  RefPtr<CacheFileHandle> mTmpHandle MOZ_GUARDED_BY(sLock);
-
-  RefPtr<FileOpenHelper> mIndexFileOpener MOZ_GUARDED_BY(sLock);
-  RefPtr<FileOpenHelper> mJournalFileOpener MOZ_GUARDED_BY(sLock);
-  RefPtr<FileOpenHelper> mTmpFileOpener MOZ_GUARDED_BY(sLock);
-
-  
-  nsCOMPtr<nsIDirectoryEnumerator> mDirEnumerator MOZ_GUARDED_BY(sLock);
-
-  
-  nsTHashtable<CacheIndexEntry> mIndex MOZ_GUARDED_BY(sLock);
-
-  
-  
-  nsTHashtable<CacheIndexEntryUpdate> mPendingUpdates MOZ_GUARDED_BY(sLock);
-
-  
-  CacheIndexStats mIndexStats MOZ_GUARDED_BY(sLock);
+  bool mUpdateEventPending{false};
 
   
   
   
   
-  nsTHashtable<CacheIndexEntry> mTmpJournal MOZ_GUARDED_BY(sLock);
+  uint32_t mSkipEntries{0};
+  
+  
+  
+  uint32_t mProcessEntries{0};
+  char* mRWBuf{nullptr};
+  uint32_t mRWBufSize{0};
+  uint32_t mRWBufPos{0};
+  RefPtr<CacheHash> mRWHash;
+
+  
+  
+  bool mRWPending{false};
+
+  
+  bool mJournalReadSuccessfully{false};
+
+  
+  RefPtr<CacheFileHandle> mIndexHandle;
+  
+  RefPtr<CacheFileHandle> mJournalHandle;
+  
+  RefPtr<CacheFileHandle> mTmpHandle;
+
+  RefPtr<FileOpenHelper> mIndexFileOpener;
+  RefPtr<FileOpenHelper> mJournalFileOpener;
+  RefPtr<FileOpenHelper> mTmpFileOpener;
+
+  
+  nsCOMPtr<nsIDirectoryEnumerator> mDirEnumerator;
+
+  
+  nsTHashtable<CacheIndexEntry> mIndex;
+
+  
+  
+  nsTHashtable<CacheIndexEntryUpdate> mPendingUpdates;
+
+  
+  CacheIndexStats mIndexStats;
+
+  
+  
+  
+  
+  nsTHashtable<CacheIndexEntry> mTmpJournal;
 
   
   
@@ -1242,14 +1217,14 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
     uint32_t mRemovedElements{0};
   };
 
-  FrecencyArray mFrecencyArray MOZ_GUARDED_BY(sLock);
+  FrecencyArray mFrecencyArray;
 
-  nsTArray<CacheIndexIterator*> mIterators MOZ_GUARDED_BY(sLock);
+  nsTArray<CacheIndexIterator*> mIterators;
 
   
   
   
-  bool mAsyncGetDiskConsumptionBlocked MOZ_GUARDED_BY(sLock){false};
+  bool mAsyncGetDiskConsumptionBlocked{false};
 
   class DiskConsumptionObserver : public Runnable {
    public:
@@ -1298,11 +1273,10 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   };
 
   
-  nsTArray<RefPtr<DiskConsumptionObserver>> mDiskConsumptionObservers
-      MOZ_GUARDED_BY(sLock);
+  nsTArray<RefPtr<DiskConsumptionObserver>> mDiskConsumptionObservers;
 
   
-  uint64_t mTotalBytesWritten MOZ_GUARDED_BY(sLock){0};
+  uint64_t mTotalBytesWritten{0};
 };
 
 }  

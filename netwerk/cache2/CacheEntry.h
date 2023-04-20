@@ -111,7 +111,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   nsCString const& GetURI() const { return mURI; }
   
   bool IsUsingDisk() const { return mUseDisk; }
-  bool IsReferenced() const MOZ_NO_THREAD_SAFETY_ANALYSIS;
+  bool IsReferenced() const;
   bool IsFileDoomed();
   bool IsDoomed() const { return mIsDoomed; }
   bool IsPinned() const { return mPinned; }
@@ -186,7 +186,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
 
     
     
-    void ExchangeEntry(CacheEntry* aEntry) MOZ_REQUIRES(aEntry->mLock);
+    void ExchangeEntry(CacheEntry* aEntry);
 
     
     
@@ -268,7 +268,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   
   bool Load(bool aTruncate, bool aPriority);
 
-  void RememberCallback(Callback& aCallback) MOZ_REQUIRES(mLock);
+  void RememberCallback(Callback& aCallback);
   void InvokeCallbacksLock();
   void InvokeCallbacks();
   bool InvokeCallbacks(bool aReadOnly);
@@ -285,10 +285,10 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
  private:
   friend class CacheEntryHandle;
   
-  void AddHandleRef() MOZ_REQUIRES(mLock) { ++mHandlesCount; }
-  void ReleaseHandleRef() MOZ_REQUIRES(mLock) { --mHandlesCount; }
+  void AddHandleRef() { ++mHandlesCount; }
+  void ReleaseHandleRef() { --mHandlesCount; }
   
-  uint32_t HandlesCount() const MOZ_REQUIRES(mLock) { return mHandlesCount; }
+  uint32_t HandlesCount() const { return mHandlesCount; }
 
  private:
   friend class CacheOutputCloseListener;
@@ -302,7 +302,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   void StoreFrecency(double aFrecency);
 
   
-  void DoomFile() MOZ_REQUIRES(mLock);
+  void DoomFile();
   
   
   void RemoveForcedValidity();
@@ -311,16 +311,14 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
       bool aMemoryOnly, nsICacheEntryOpenCallback* aCallback);
   void TransferCallbacks(CacheEntry& aFromEntry);
 
-  mozilla::Mutex mLock{"CacheEntry"};
+  mozilla::Mutex mLock MOZ_UNANNOTATED{"CacheEntry"};
 
   
-  ::mozilla::ThreadSafeAutoRefCnt mHandlesCount MOZ_GUARDED_BY(mLock);
+  ::mozilla::ThreadSafeAutoRefCnt mHandlesCount;
 
-  nsTArray<Callback> mCallbacks MOZ_GUARDED_BY(mLock);
+  nsTArray<Callback> mCallbacks;
   nsCOMPtr<nsICacheEntryDoomCallback> mDoomCallback;
 
-  
-  
   RefPtr<CacheFile> mFile;
 
   
@@ -348,20 +346,20 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   
 
   
-  bool mSecurityInfoLoaded : 1 MOZ_GUARDED_BY(mLock);
+  bool mSecurityInfoLoaded : 1;
   
-  bool mPreventCallbacks : 1 MOZ_GUARDED_BY(mLock);
-  
-  
+  bool mPreventCallbacks : 1;
   
   
   
   
   
-  bool mHasData : 1 MOZ_GUARDED_BY(mLock);
   
   
-  bool mPinningKnown : 1 MOZ_GUARDED_BY(mLock);
+  bool mHasData : 1;
+  
+  
+  bool mPinningKnown : 1;
 
   static char const* StateString(uint32_t aState);
 
@@ -375,7 +373,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   };
 
   
-  EState mState MOZ_GUARDED_BY(mLock){NOTLOADED};
+  EState mState{NOTLOADED};
 
   enum ERegistration {
     NEVERREGISTERED = 0,  
@@ -391,12 +389,12 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   
   
   
-  nsCOMPtr<nsIOutputStream> mOutputStream MOZ_GUARDED_BY(mLock);
+  nsCOMPtr<nsIOutputStream> mOutputStream;
 
   
   
   
-  CacheEntryHandle* mWriter MOZ_GUARDED_BY(mLock){nullptr};
+  CacheEntryHandle* mWriter{nullptr};
 
   
   

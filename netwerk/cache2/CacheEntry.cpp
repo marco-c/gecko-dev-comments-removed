@@ -159,10 +159,7 @@ void CacheEntry::Callback::ExchangeEntry(CacheEntry* aEntry) {
   mEntry = aEntry;
 }
 
-
-
-bool CacheEntry::Callback::DeferDoom(bool* aDoom) const
-    MOZ_NO_THREAD_SAFETY_ANALYSIS {
+bool CacheEntry::Callback::DeferDoom(bool* aDoom) const {
   MOZ_ASSERT(mEntry->mPinningKnown);
 
   if (MOZ_UNLIKELY(mDoomWhenFoundNonPinned) ||
