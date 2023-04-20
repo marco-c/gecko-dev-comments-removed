@@ -9,7 +9,7 @@
   const wwwAlt = "https://{{hosts[alt][www]}}:{{ports[https][0]}}";
 
   promise_test(async (t) => {
-    await MaybeSetStorageAccess(wwwAlt + "/", "*", "blocked");
+    await MaybeSetStorageAccess("*", "*", "blocked");
     const responder_html = `${wwwAlt}/storage-access-api/resources/script-with-cookie-header.py?script=embedded_responder.js`;
     const [frame1, frame2] = await Promise.all([
       CreateFrame(responder_html),
@@ -19,7 +19,7 @@
     t.add_cleanup(async () => {
       await test_driver.delete_all_cookies();
       await SetPermissionInFrame(frame1, [{ name: 'storage-access' }, 'prompt']);
-      await MaybeSetStorageAccess(wwwAlt + "/", "*", "allowed");
+      await MaybeSetStorageAccess("*", "*", "allowed");
     });
 
     await SetPermissionInFrame(frame1, [{ name: 'storage-access' }, 'granted']);
