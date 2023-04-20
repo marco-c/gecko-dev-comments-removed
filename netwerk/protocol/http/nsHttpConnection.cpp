@@ -217,6 +217,8 @@ nsresult nsHttpConnection::MoveTransactionsToSpdy(
     MOZ_ASSERT(list.IsEmpty(), "sub transaction list not empty");
 
     
+    
+    
     nsHttpTransaction* trans = mTransaction->QueryHttpTransaction();
     if (trans && trans->IsWebsocketUpgrade()) {
       LOG(("nsHttpConnection resetting transaction for websocket upgrade"));

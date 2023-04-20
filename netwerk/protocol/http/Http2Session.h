@@ -610,6 +610,10 @@ class Http2Session final : public ASpdySession,
                                
   bool mProcessedWaitingWebsockets;  
                                      
+  
+  
+  
+  bool mHasTransactionWaitingForWebsockets = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Http2Session, NS_HTTP2SESSION_IID);
