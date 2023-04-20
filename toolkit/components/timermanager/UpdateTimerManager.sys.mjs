@@ -1,10 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const PREF_APP_UPDATE_LASTUPDATETIME_FMT = "app.update.lastUpdateTime.%ID%";
 const PREF_APP_UPDATE_TIMERMINIMUMDELAY = "app.update.timerMinimumDelay";
@@ -22,13 +20,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-
-
-
-
-
-
-
+/**
+ *  Logs a string to the error console.
+ *  @param   string
+ *           The string to write to the error console.
+ *  @param   bool
+ *           Whether to log even if logging is disabled.
+ */
 function LOG(string, alwaysLog = false) {
   if (alwaysLog || lazy.gLogEnabled) {
     dump("*** UTM:SVC " + string + "\n");
@@ -36,79 +34,80 @@ function LOG(string, alwaysLog = false) {
   }
 }
 
-
-
-
-
-
-function TimerManager() {
+/**
+ *  A manager for timers. Manages timers that fire over long periods of time
+ *  (e.g. days, weeks, months).
+ *  @constructor
+ */
+export function TimerManager() {
   Services.obs.addObserver(this, "profile-before-change");
 }
+
 TimerManager.prototype = {
-  
-
-
+  /**
+   * nsINamed
+   */
   name: "UpdateTimerManager",
 
-  
-
-
+  /**
+   * The Checker Timer
+   */
   _timer: null,
 
-  
-
-
-
-
+  /**
+   * The Checker Timer minimum delay interval as specified by the
+   * app.update.timerMinimumDelay pref. If the app.update.timerMinimumDelay
+   * pref doesn't exist this will default to 120000.
+   */
   _timerMinimumDelay: null,
 
-  
-
-
+  /**
+   * The set of registered timers.
+   */
   _timers: {},
 
-  
-
-
+  /**
+   * See nsIObserver.idl
+   */
   observe: function TM_observe(aSubject, aTopic, aData) {
-    
+    // Prevent setting the timer interval to a value of less than 30 seconds.
     var minInterval = 30000;
-    
-    
+    // Prevent setting the first timer interval to a value of less than 10
+    // seconds.
     var minFirstInterval = 10000;
     switch (aTopic) {
       case "utm-test-init":
-        
-        
+        // Enforce a minimum timer interval of 500 ms for tests and fall through
+        // to profile-after-change to initialize the timer.
         minInterval = 500;
         minFirstInterval = 500;
-      
+      // fall through
       case "profile-after-change":
         this._timerMinimumDelay = Math.max(
           1000 *
             Services.prefs.getIntPref(PREF_APP_UPDATE_TIMERMINIMUMDELAY, 120),
           minInterval
         );
-        
-        
+        // Prevent the timer delay between notifications to other consumers from
+        // being greater than 5 minutes which is 300000 milliseconds.
         this._timerMinimumDelay = Math.min(this._timerMinimumDelay, 300000);
-        
+        // Prevent the first interval from being less than the value of minFirstInterval
         let firstInterval = Math.max(
           Services.prefs.getIntPref(PREF_APP_UPDATE_TIMERFIRSTINTERVAL, 30000),
           minFirstInterval
         );
-        
-        
+        // Prevent the first interval from being greater than 2 minutes which is
+        // 120000 milliseconds.
         firstInterval = Math.min(firstInterval, 120000);
-        
-        
+        // Cancel the timer if it has already been initialized. This is primarily
+        // for tests.
         this._canEnsureTimer = true;
         this._ensureTimer(firstInterval);
         break;
       case "profile-before-change":
         Services.obs.removeObserver(this, "profile-before-change");
 
-        
+        // Release everything we hold onto.
         this._cancelTimer();
         for (var timerID in this._timers) {
           delete this._timers[timerID];
@@ -118,16 +117,16 @@ TimerManager.prototype = {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Called when the checking timer fires.
+   *
+   * We only fire one notification each time, so that the operations are
+   * staggered. We don't want too many to happen at once, which could
+   * negatively impact responsiveness.
+   *
+   * @param   timer
+   *          The checking timer that fired.
+   */
   notify: function TM_notify(timer) {
     var nextDelay = null;
     function updateNextDelay(delay) {
@@ -136,9 +135,9 @@ TimerManager.prototype = {
       }
     }
 
-    
-    
-    
+    // Each timer calls tryFire(), which figures out which is the one that
+    // wanted to be called earliest. That one will be fired; the others are
+    // skipped and will be done later.
     var now = Math.round(Date.now() / 1000);
 
     var callbackToFire = null;
@@ -161,12 +160,12 @@ TimerManager.prototype = {
           skippedFirings = true;
         }
       }
-      
-      
-      
-      
-      
-      
+      // We do not need to updateNextDelay for the timer that actually fires;
+      // we'll update right after it fires, with the proper intended time.
+      // Note that we might select one, then select another later (with an
+      // earlier intended time); it is still ok that we did not update for
+      // the first one, since if we have skipped firings, the next delay
+      // will be the minimum delay anyhow.
       if (!selected) {
         updateNextDelay(intendedTime - now);
       }
@@ -185,7 +184,7 @@ TimerManager.prototype = {
       ] = value.split(",");
 
       defaultInterval = parseInt(defaultInterval);
-      
+      // cid and method are validated below when calling notify.
       if (!timerID || !defaultInterval || isNaN(defaultInterval)) {
         LOG(
           "TimerManager:notify - update-timer category registered" +
@@ -197,8 +196,8 @@ TimerManager.prototype = {
       }
 
       let interval = Services.prefs.getIntPref(prefInterval, defaultInterval);
-      
-      
+      // Allow the update-timer category to specify a maximum value to prevent
+      // values larger than desired.
       maxInterval = parseInt(maxInterval);
       if (maxInterval && !isNaN(maxInterval)) {
         interval = Math.min(interval, maxInterval);
@@ -207,13 +206,13 @@ TimerManager.prototype = {
         /%ID%/,
         timerID
       );
-      
-      
+      // Initialize the last update time to 0 when the preference isn't set so
+      // the timer will be notified soon after a new profile's first use.
       lastUpdateTime = Services.prefs.getIntPref(prefLastUpdate, 0);
 
-      
-      
-      
+      // If the last update time is greater than the current time then reset
+      // it to 0 and the timer manager will correct the value when it fires
+      // next for this consumer.
       if (lastUpdateTime > now) {
         lastUpdateTime = 0;
       }
@@ -251,11 +250,11 @@ TimerManager.prototype = {
     }
 
     for (let _timerID in this._timers) {
-      let timerID = _timerID; 
+      let timerID = _timerID; // necessary for the closure to work properly
       let timerData = this._timers[timerID];
-      
-      
-      
+      // If the last update time is greater than the current time then reset
+      // it to 0 and the timer manager will correct the value when it fires
+      // next for this consumer.
       if (timerData.lastUpdateTime > now) {
         let prefLastUpdate = PREF_APP_UPDATE_LASTUPDATETIME_FMT.replace(
           /%ID%/,
@@ -324,10 +323,10 @@ TimerManager.prototype = {
     }
   },
 
-  
-
-
-
+  /**
+   * Starts the timer, if necessary, and ensures that it will fire soon enough
+   * to happen after time |interval| (in milliseconds).
+   */
   _ensureTimer(interval) {
     if (!this._canEnsureTimer) {
       return;
@@ -351,9 +350,9 @@ TimerManager.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * Stops the timer, if it is running.
+   */
   _cancelTimer() {
     if (this._timer) {
       this._timer.cancel();
@@ -361,9 +360,9 @@ TimerManager.prototype = {
     }
   },
 
-  
-
-
+  /**
+   * See nsIUpdateTimerManager.idl
+   */
   registerTimer: function TM_registerTimer(id, callback, interval, skipFirst) {
     let markerText = `timerID: ${id} interval: ${interval}s`;
     if (skipFirst) {
@@ -378,8 +377,8 @@ TimerManager.prototype = {
       `TimerManager:registerTimer - timerID: ${id} interval: ${interval} skipFirst: ${skipFirst}`
     );
     if (this._timers === null) {
-      
-      
+      // Use normal logging since reportError is not available while shutting
+      // down.
       LOG(
         "TimerManager:registerTimer called after profile-before-change " +
           "notification. Ignoring timer registration for id: " +
@@ -395,8 +394,8 @@ TimerManager.prototype = {
       return;
     }
     let prefLastUpdate = PREF_APP_UPDATE_LASTUPDATETIME_FMT.replace(/%ID%/, id);
-    
-    
+    // Initialize the last update time to 0 when the preference isn't set so
+    // the timer will be notified soon after a new profile's first use.
     let lastUpdateTime = Services.prefs.getIntPref(prefLastUpdate, 0);
     let now = Math.round(Date.now() / 1000);
     if (lastUpdateTime > now) {
@@ -439,5 +438,3 @@ TimerManager.prototype = {
     "nsIUpdateTimerManager",
   ]),
 };
-
-var EXPORTED_SYMBOLS = ["TimerManager"];
