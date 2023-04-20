@@ -356,8 +356,7 @@ function OnLDBLoad() {
       if (gArgs.url) {
         
         
-        updateBrowserRemotenessByURL(gArgs.url);
-        setTimeout(() => fixupAndLoadURIString(gArgs.url), 3000);
+        loadStringURI(gArgs.url, { delayLoad: 3000 });
         return;
       }
     } else {
@@ -369,7 +368,7 @@ function OnLDBLoad() {
   gDebugger._pagedMode = gArgs.paged;
 
   if (gArgs.url) {
-    fixupAndLoadURIString(gArgs.url);
+    loadStringURI(gArgs.url);
   }
 
   
@@ -452,7 +451,7 @@ function openFile() {
       fp.fileURL.spec &&
       fp.fileURL.spec.length > 0
     ) {
-      gBrowser.loadURI(fp.fileURL);
+      loadURIObject(fp.fileURL);
     }
   });
 }
@@ -460,14 +459,13 @@ function openFile() {
 
 function updateBrowserRemotenessByURL(aURL) {
   let oa = E10SUtils.predictOriginAttributes({ browser: gBrowser });
-  let remoteType = E10SUtils.getRemoteTypeForURI(
-    aURL,
-    gMultiProcessBrowser,
-    gFissionBrowser,
-    gBrowser.remoteType,
-    gBrowser.currentURI,
-    oa
-  );
+  let remoteType = E10SUtils.getRemoteTypeForURIObject(aURL, {
+    multiProcess: gMultiProcessBrowser,
+    remoteSubFrames: gFissionBrowser,
+    preferredRemoteType: gBrowser.remoteType,
+    currentURI: gBrowser.currentURI,
+    originAttributes: oa,
+  });
   if (gBrowser.remoteType != remoteType) {
     gDebugger.detachBrowser();
     if (remoteType == E10SUtils.NOT_REMOTE) {
@@ -483,11 +481,30 @@ function updateBrowserRemotenessByURL(aURL) {
   }
 }
 
-function fixupAndLoadURIString(aURL) {
+function loadStringURI(aURLString, aOptions) {
+  let realURL;
+  try {
+    realURL = Services.uriFixup.getFixupURIInfo(aURLString).preferredURI;
+  } catch (ex) {
+    alert(
+      "Couldn't work out how to create a URL from input: " +
+        aURLString.substring(0, 100)
+    );
+    return;
+  }
+  return loadURIObject(realURL, aOptions);
+}
+
+async function loadURIObject(aURL, { delayLoad } = {}) {
   
   
   updateBrowserRemotenessByURL(aURL);
-  gBrowser.fixupAndLoadURIString(aURL, {
+  
+  
+  if (delayLoad) {
+    await new Promise(r => setTimeout(r, delayLoad));
+  }
+  gBrowser.loadURI(aURL, {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   });
 }
@@ -498,6 +515,6 @@ function focusURLBar() {
 }
 
 function go() {
-  fixupAndLoadURIString(gURLBar.value);
+  loadStringURI(gURLBar.value);
   gBrowser.focus();
 }
