@@ -7,7 +7,7 @@
 
 
 
-mod condition;
+pub mod condition;
 
 #[macro_use]
 pub mod feature;

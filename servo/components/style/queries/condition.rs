@@ -13,6 +13,7 @@ use crate::values::computed;
 use cssparser::{Parser, Token};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use core::ops::Not;
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
@@ -30,6 +31,29 @@ enum AllowOr {
 }
 
 
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss)]
+pub enum KleeneValue {
+    
+    True,
+    
+    False,
+    
+    Unknown,
+}
+
+impl Not for KleeneValue {
+    type Output = Self;
+
+    fn not(self) -> Self {
+        match self {
+            Self::True => Self::False,
+            Self::False => Self::True,
+            Self::Unknown => Self::Unknown,
+        }
+    }
+}
+
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub enum QueryCondition {
     
@@ -40,6 +64,8 @@ pub enum QueryCondition {
     Operation(Box<[QueryCondition]>, Operator),
     
     InParens(Box<QueryCondition>),
+    
+    GeneralEnclosed(String),
 }
 
 impl ToCss for QueryCondition {
@@ -71,9 +97,16 @@ impl ToCss for QueryCondition {
                 }
                 Ok(())
             },
+            QueryCondition::GeneralEnclosed(ref s) => dest.write_str(&s),
         }
     }
 }
+
+
+fn consume_any_value<'i, 't>(input: &mut Parser<'i, 't>) -> Result<(), ParseError<'i>> {
+    input.expect_no_error_token().map_err(|err| err.into())
+}
+
 
 impl QueryCondition {
     
@@ -82,7 +115,19 @@ impl QueryCondition {
         input: &mut Parser<'i, 't>,
         feature_type: FeatureType,
     ) -> Result<Self, ParseError<'i>> {
-        Self::parse_internal(context, input, feature_type, AllowOr::Yes)
+        input.skip_whitespace();
+        let state = input.state();
+        let start = input.position();
+        match *input.next()? {
+            Token::Function(_) => {
+                input.parse_nested_block(consume_any_value)?;
+                return Ok(QueryCondition::GeneralEnclosed(input.slice_from(start).to_owned()));
+            },
+            _ => {
+                input.reset(&state);
+                Self::parse_internal(context, input, feature_type, AllowOr::Yes)
+            },
+        }
     }
 
     fn visit<F>(&self, visitor: &mut F)
@@ -92,6 +137,7 @@ impl QueryCondition {
         visitor(self);
         match *self {
             Self::Feature(..) => {},
+            Self::GeneralEnclosed(..) => {},
             Self::Not(ref cond) => cond.visit(visitor),
             Self::Operation(ref conds, _op) => {
                 for cond in conds.iter() {
@@ -132,21 +178,12 @@ impl QueryCondition {
         allow_or: AllowOr,
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
-
-        
-        let is_negation = match *input.next()? {
-            Token::ParenthesisBlock => false,
-            Token::Ident(ref ident) if ident.eq_ignore_ascii_case("not") => true,
-            ref t => return Err(location.new_unexpected_token_error(t.clone())),
-        };
-
-        if is_negation {
+        if input.try_parse(|i| i.expect_ident_matching("not")).is_ok() {
             let inner_condition = Self::parse_in_parens(context, input, feature_type)?;
             return Ok(QueryCondition::Not(Box::new(inner_condition)));
         }
 
-        
-        let first_condition = Self::parse_paren_block(context, input, feature_type)?;
+        let first_condition = Self::parse_in_parens(context, input, feature_type)?;
         let operator = match input.try_parse(Operator::parse) {
             Ok(op) => op,
             Err(..) => return Ok(first_condition),
@@ -192,28 +229,87 @@ impl QueryCondition {
         input: &mut Parser<'i, 't>,
         feature_type: FeatureType,
     ) -> Result<Self, ParseError<'i>> {
+        let start = input.position();
         input.parse_nested_block(|input| {
             
-            if let Ok(inner) = input.try_parse(|i| Self::parse(context, i, feature_type)) {
+            if let Ok(inner) = input.try_parse(|i| Self::parse_internal(context, i, feature_type, AllowOr::Yes)) {
                 return Ok(QueryCondition::InParens(Box::new(inner)));
             }
-            let expr =
-                QueryFeatureExpression::parse_in_parenthesis_block(context, input, feature_type)?;
-            Ok(QueryCondition::Feature(expr))
+            if let Ok(expr) = QueryFeatureExpression::parse_in_parenthesis_block(context, input, feature_type) {
+                return  Ok(QueryCondition::Feature(expr));
+            }
+
+            consume_any_value(input)?;
+            Ok(QueryCondition::GeneralEnclosed(input.slice_from(start).to_owned()))
         })
     }
 
     
-    pub fn matches(&self, context: &computed::Context) -> bool {
+    
+    
+    
+    
+    pub fn matches(&self, context: &computed::Context) ->  KleeneValue {
         match *self {
-            QueryCondition::Feature(ref f) => f.matches(context),
+            QueryCondition::Feature(ref f) => {
+                match f.matches(context) {
+                    true => KleeneValue::True,
+                    false => KleeneValue::False,
+                }
+            },
+            QueryCondition::GeneralEnclosed(_) => KleeneValue::Unknown,
             QueryCondition::InParens(ref c) => c.matches(context),
-            QueryCondition::Not(ref c) => !c.matches(context),
+            QueryCondition::Not(ref c) => {
+                !c.matches(context)
+            },
             QueryCondition::Operation(ref conditions, op) => {
                 let mut iter = conditions.iter();
                 match op {
-                    Operator::And => iter.all(|c| c.matches(context)),
-                    Operator::Or => iter.any(|c| c.matches(context)),
+                    Operator::And => {
+                        if conditions.is_empty() {
+                            return KleeneValue::True;
+                        }
+
+                        let mut result = iter.next().as_ref().map_or( KleeneValue::True, |c| -> KleeneValue {c.matches(context)});
+                        if result == KleeneValue::False {
+                            return result;
+                        }
+                        while let Some(c) = iter.next() {
+                            match c.matches(context) {
+                                KleeneValue::False => {
+                                    return KleeneValue::False;
+                                },
+                                KleeneValue::Unknown => {
+                                    result = KleeneValue::Unknown;
+                                },
+                                KleeneValue::True => {},
+                            }
+                        }
+                        return result;
+                    }
+                    Operator::Or => {
+                        if conditions.is_empty() {
+                            return KleeneValue::False;
+                        }
+
+                        let mut result = iter.next().as_ref().map_or( KleeneValue::False, |c| -> KleeneValue {c.matches(context)});
+                        if result == KleeneValue::True {
+                            return KleeneValue::True;
+                        }
+                        while let Some(c) = iter.next() {
+                            match c.matches(context) {
+                                KleeneValue::True => {
+                                    return KleeneValue::True;
+                                },
+                                KleeneValue::Unknown => {
+                                    result = KleeneValue::Unknown;
+                                },
+                                KleeneValue::False => {},
+
+                            }
+                        }
+                        return result;
+                    }
                 }
             },
         }
