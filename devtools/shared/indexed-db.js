@@ -9,46 +9,41 @@
 
 
 
+const PSEUDOURI = "indexeddb://fx-devtools";
+const principaluri = Services.io.newURI(PSEUDOURI);
+const principal = Services.scriptSecurityManager.createContentPrincipal(
+  principaluri,
+  {}
+);
 
-if (globalThis.indexedDB) {
-  module.exports = globalThis.indexedDB;
-} else {
-  const PSEUDOURI = "indexeddb://fx-devtools";
-  const principaluri = Services.io.newURI(PSEUDOURI);
-  const principal = Services.scriptSecurityManager.createContentPrincipal(
-    principaluri,
-    {}
-  );
+
+
+
+
+const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+const sandbox = Cu.Sandbox(systemPrincipal, {
+  wantGlobalProperties: ["indexedDB"],
+});
+const { indexedDB } = sandbox;
+
+module.exports = Object.freeze({
+  
+
+
+  open(name, version) {
+    const options = {};
+    if (typeof version === "number") {
+      options.version = version;
+    }
+    return indexedDB.openForPrincipal(principal, name, options);
+  },
 
   
-  
-  
-  
-  const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-  const sandbox = Cu.Sandbox(systemPrincipal, {
-    wantGlobalProperties: ["indexedDB"],
-  });
-  const { indexedDB } = sandbox;
-
-  module.exports = Object.freeze({
-    
 
 
-    open(name, version) {
-      const options = {};
-      if (typeof version === "number") {
-        options.version = version;
-      }
-      return indexedDB.openForPrincipal(principal, name, options);
-    },
+  deleteDatabase(name) {
+    return indexedDB.deleteForPrincipal(principal, name);
+  },
 
-    
-
-
-    deleteDatabase(name) {
-      return indexedDB.deleteForPrincipal(principal, name);
-    },
-
-    cmp: indexedDB.cmp.bind(indexedDB),
-  });
-}
+  cmp: indexedDB.cmp.bind(indexedDB),
+});
