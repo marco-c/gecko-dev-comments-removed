@@ -61,14 +61,9 @@ impl<'a, T> RawVec<'a, T> {
     
     pub fn new_in(a: &'a Bump) -> Self {
         
-        
-        
-
-        
         RawVec {
-            ptr: unsafe { NonNull::new_unchecked(mem::align_of::<T>() as *mut T) },
-            
-            cap: [0, !0][(mem::size_of::<T>() == 0) as usize],
+            ptr: NonNull::dangling(),
+            cap: 0,
             a,
         }
     }

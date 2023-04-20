@@ -1007,6 +1007,99 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
     
     
     
+    #[inline]
+    pub fn as_ptr(&self) -> *const T {
+        
+        
+        let ptr = self.buf.ptr();
+        unsafe {
+            if ptr.is_null() {
+                core::hint::unreachable_unchecked();
+            }
+        }
+        ptr
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn as_mut_ptr(&mut self) -> *mut T {
+        
+        
+        let ptr = self.buf.ptr();
+        unsafe {
+            if ptr.is_null() {
+                core::hint::unreachable_unchecked();
+            }
+        }
+        ptr
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1343,7 +1436,7 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
         } else {
             unsafe {
                 self.len -= 1;
-                Some(ptr::read(self.get_unchecked(self.len())))
+                Some(ptr::read(self.as_ptr().add(self.len())))
             }
         }
     }
@@ -1381,7 +1474,7 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
         let count = (*other).len();
         self.reserve(count);
         let len = self.len();
-        ptr::copy_nonoverlapping(other as *const T, self.get_unchecked_mut(len), count);
+        ptr::copy_nonoverlapping(other as *const T, self.as_mut_ptr().add(len), count);
         self.len += count;
     }
 
@@ -1848,7 +1941,7 @@ impl<'bump, T: 'bump> ops::DerefMut for Vec<'bump, T> {
 
 impl<'bump, T: 'bump> IntoIterator for Vec<'bump, T> {
     type Item = T;
-    type IntoIter = IntoIter<T>;
+    type IntoIter = IntoIter<'bump, T>;
 
     
     
@@ -1868,7 +1961,7 @@ impl<'bump, T: 'bump> IntoIterator for Vec<'bump, T> {
     
     
     #[inline]
-    fn into_iter(mut self) -> IntoIter<T> {
+    fn into_iter(mut self) -> IntoIter<'bump, T> {
         unsafe {
             let begin = self.as_mut_ptr();
             
@@ -2129,19 +2222,19 @@ impl<'bump, T> Drop for Vec<'bump, T> {
 
 
 
-pub struct IntoIter<T> {
-    phantom: PhantomData<T>,
+pub struct IntoIter<'bump, T> {
+    phantom: PhantomData<&'bump [T]>,
     ptr: *const T,
     end: *const T,
 }
 
-impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
+impl<'bump, T: fmt::Debug> fmt::Debug for IntoIter<'bump, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("IntoIter").field(&self.as_slice()).finish()
     }
 }
 
-impl<'bump, T: 'bump> IntoIter<T> {
+impl<'bump, T: 'bump> IntoIter<'bump, T> {
     
     
     
@@ -2183,10 +2276,10 @@ impl<'bump, T: 'bump> IntoIter<T> {
     }
 }
 
-unsafe impl<T: Send> Send for IntoIter<T> {}
-unsafe impl<T: Sync> Sync for IntoIter<T> {}
+unsafe impl<'bump, T: Send> Send for IntoIter<'bump, T> {}
+unsafe impl<'bump, T: Sync> Sync for IntoIter<'bump, T> {}
 
-impl<'bump, T: 'bump> Iterator for IntoIter<T> {
+impl<'bump, T: 'bump> Iterator for IntoIter<'bump, T> {
     type Item = T;
 
     #[inline]
@@ -2227,7 +2320,7 @@ impl<'bump, T: 'bump> Iterator for IntoIter<T> {
     }
 }
 
-impl<'bump, T: 'bump> DoubleEndedIterator for IntoIter<T> {
+impl<'bump, T: 'bump> DoubleEndedIterator for IntoIter<'bump, T> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
         unsafe {
@@ -2248,9 +2341,16 @@ impl<'bump, T: 'bump> DoubleEndedIterator for IntoIter<T> {
     }
 }
 
-impl<'bump, T: 'bump> ExactSizeIterator for IntoIter<T> {}
+impl<'bump, T: 'bump> ExactSizeIterator for IntoIter<'bump, T> {}
 
-impl<'bump, T: 'bump> FusedIterator for IntoIter<T> {}
+impl<'bump, T: 'bump> FusedIterator for IntoIter<'bump, T> {}
+
+impl<'bump, T> Drop for IntoIter<'bump, T> {
+    fn drop(&mut self) {
+        
+        self.for_each(drop);
+    }
+}
 
 
 

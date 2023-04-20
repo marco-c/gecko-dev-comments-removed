@@ -171,6 +171,24 @@ impl<'a, T> Box<'a, T> {
     pub fn pin_in(x: T, a: &'a Bump) -> Pin<Box<'a, T>> {
         Box(a.alloc(x)).into()
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_inner(b: Box<'a, T>) -> T {
+        
+        
+        unsafe { core::ptr::read(Box::into_raw(b)) }
+    }
 }
 
 impl<'a, T: ?Sized> Box<'a, T> {

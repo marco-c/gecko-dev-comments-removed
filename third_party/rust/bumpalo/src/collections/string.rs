@@ -2098,6 +2098,8 @@ impl<'a, 'bump> Drop for Drain<'a, 'bump> {
     }
 }
 
+
+
 impl<'a, 'bump> Iterator for Drain<'a, 'bump> {
     type Item = char;
 
