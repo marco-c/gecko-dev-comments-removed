@@ -4485,8 +4485,8 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
   
   
   
-  if (oldType == FormControlType::InputTel ||
-      mType == FormControlType::InputTel) {
+  if (!HasDirAuto() && (oldType == FormControlType::InputTel ||
+                        mType == FormControlType::InputTel)) {
     RecomputeDirectionality(this, aNotify);
   }
 
