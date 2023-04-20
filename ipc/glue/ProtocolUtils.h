@@ -386,6 +386,9 @@ class IToplevelProtocol : public IProtocol {
 
  public:
   
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+  
   
   int32_t Register(IProtocol* aRouted);
   int32_t RegisterID(IProtocol* aRouted, int32_t aId);
