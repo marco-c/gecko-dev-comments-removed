@@ -33,6 +33,35 @@ add_task(function() {
 
 
 add_task(function() {
+  Assert.throws(
+    () =>
+      cis.create(
+        "\u0009\u000B\u000C\u0020\u00A0\uFEFF\u000A\u000D\u2028\u2029",
+        "icon",
+        "color"
+      ),
+    /Contextual identity names cannot contain only whitespace./,
+    "Contextual identity names cannot contain only whitespace."
+  );
+});
+
+add_task(function() {
+  ok(!!cis.getPublicIdentityFromId(2), "Identity 2 exists");
+  Assert.throws(
+    () =>
+      cis.update(
+        2,
+        "\u0009\u000B\u000C\u0020\u00A0\uFEFF\u000A\u000D\u2028\u2029",
+        "icon",
+        "color"
+      ),
+    /Contextual identity names cannot contain only whitespace./,
+    "Contextual identity names cannot contain only whitespace."
+  );
+});
+
+
+add_task(function() {
   equal(cis.getPublicIdentities().length, 4, "By default, 4 containers.");
 
   let identity = cis.create("New Container", "Icon", "Color");

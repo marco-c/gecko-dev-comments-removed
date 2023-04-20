@@ -85,7 +85,7 @@ let gContainersManager = {
   
   checkForm() {
     const name = document.getElementById("name");
-    this._dialog.setAttribute("buttondisabledaccept", !name.value);
+    this._dialog.setAttribute("buttondisabledaccept", !name.value.trim());
   },
 
   createIconButtons(defaultIcon) {
