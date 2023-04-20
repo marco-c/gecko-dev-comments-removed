@@ -1333,9 +1333,8 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual LayoutDeviceIntMargin ClientToWindowMargin() { return {}; }
-
-  LayoutDeviceIntSize ClientToWindowSizeDifference();
+  virtual LayoutDeviceIntSize ClientToWindowSize(
+      const LayoutDeviceIntSize& aClientSize) = 0;
 
   
 
