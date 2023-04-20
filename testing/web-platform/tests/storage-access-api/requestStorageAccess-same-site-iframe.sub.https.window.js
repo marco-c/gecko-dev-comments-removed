@@ -1,0 +1,8 @@
+
+
+
+'use strict';
+
+
+RunTestsInIFrame(
+    'https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/requestStorageAccess-iframe.https.html?testCase=same-site-frame');

@@ -1,0 +1,9 @@
+
+
+
+'use strict';
+
+
+
+RunTestsInIFrame(
+    'https://{{hosts[alt][]}}:{{ports[https][0]}}/storage-access-api/resources/requestStorageAccess-ABA-iframe.https.html');

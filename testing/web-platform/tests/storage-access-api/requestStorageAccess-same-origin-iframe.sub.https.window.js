@@ -1,7 +1,0 @@
-
-
-
-'use strict';
-
-
-RunTestsInIFrame('resources/requestStorageAccess-iframe.https.html?testCase=same-origin-frame');
