@@ -326,6 +326,8 @@ class nsSocketTransport final : public nsASocketHandler,
   nsCString mEchConfig;
   bool mEchConfigUsed = false;
   bool mResolvedByTRR{false};
+  nsIRequest::TRRMode mEffectiveTRRMode{nsIRequest::TRR_DEFAULT_MODE};
+  nsITRRSkipReason::value mTRRSkipReason{nsITRRSkipReason::TRR_UNSET};
 
   
   
