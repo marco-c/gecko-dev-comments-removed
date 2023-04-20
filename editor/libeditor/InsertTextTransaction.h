@@ -8,6 +8,7 @@
 
 #include "EditTransactionBase.h"  
 
+#include "EditorDOMPoint.h"
 #include "EditorForwards.h"
 
 #include "nsCycleCollectionParticipant.h"  
@@ -56,6 +57,14 @@ class InsertTextTransaction final : public EditTransactionBase {
 
 
   void GetData(nsString& aResult);
+
+  template <typename EditorDOMPointType>
+  EditorDOMPointType SuggestPointToPutCaret() const {
+    if (NS_WARN_IF(!mTextNode)) {
+      return EditorDOMPointType();
+    }
+    return EditorDOMPointType(mTextNode, mOffset + mStringToInsert.Length());
+  }
 
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const InsertTextTransaction& aTransaction);

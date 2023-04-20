@@ -5,16 +5,18 @@
 
 #include "InsertTextTransaction.h"
 
+#include "ErrorList.h"
 #include "mozilla/EditorBase.h"  
 #include "mozilla/Logging.h"
 #include "mozilla/SelectionState.h"  
 #include "mozilla/ToString.h"
 #include "mozilla/dom/Selection.h"  
 #include "mozilla/dom/Text.h"       
-#include "nsAString.h"              
-#include "nsDebug.h"                
-#include "nsError.h"                
-#include "nsQueryObject.h"          
+
+#include "nsAString.h"      
+#include "nsDebug.h"        
+#include "nsError.h"        
+#include "nsQueryObject.h"  
 
 namespace mozilla {
 
@@ -77,28 +79,9 @@ NS_IMETHODIMP InsertTextTransaction::DoTransaction() {
     return error.StealNSResult();
   }
 
-  
-  if (editorBase->AllowsTransactionsToChangeSelection()) {
-    RefPtr<Selection> selection = editorBase->GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return NS_ERROR_FAILURE;
-    }
-    DebugOnly<nsresult> rvIgnored = editorBase->CollapseSelectionTo(
-        EditorRawDOMPoint(textNode, mOffset + mStringToInsert.Length()));
-    NS_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                 "EditorBase::CollapseSelectionTo() failed, but ignored");
-    
-    
-  } else {
-    
-  }
-  
-  
   editorBase->RangeUpdaterRef().SelAdjInsertText(textNode, mOffset,
                                                  mStringToInsert.Length());
-
-  return MOZ_UNLIKELY(editorBase->Destroyed()) ? NS_ERROR_EDITOR_DESTROYED
-                                               : NS_OK;
+  return NS_OK;
 }
 
 NS_IMETHODIMP InsertTextTransaction::UndoTransaction() {
@@ -121,7 +104,22 @@ NS_IMETHODIMP InsertTextTransaction::RedoTransaction() {
   MOZ_LOG(GetLogModule(), LogLevel::Info,
           ("%p InsertTextTransaction::%s this=%s", this, __FUNCTION__,
            ToString(*this).c_str()));
-  return DoTransaction();
+  nsresult rv = DoTransaction();
+  if (NS_FAILED(rv)) {
+    NS_WARNING("InsertTextTransaction::DoTransaction() failed");
+    return rv;
+  }
+  if (RefPtr<EditorBase> editorBase = mEditorBase) {
+    nsresult rv = editorBase->CollapseSelectionTo(
+        SuggestPointToPutCaret<EditorRawDOMPoint>());
+    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EditorBase::CollapseSelectionTo() failed, but ignored");
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP InsertTextTransaction::Merge(nsITransaction* aOtherTransaction,

@@ -1675,12 +1675,7 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Result<EditorDOMPoint, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual Result<InsertTextResult, nsresult>
   InsertTextWithTransaction(Document& aDocument,
                             const nsAString& aStringToInsert,
                             const EditorDOMPoint& aPointToInsert);
@@ -1688,16 +1683,10 @@ class EditorBase : public nsIEditor,
   
 
 
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult InsertTextIntoTextNodeWithTransaction(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<InsertTextResult, nsresult>
+  InsertTextIntoTextNodeWithTransaction(
       const nsAString& aStringToInsert,
-      const EditorDOMPointInText& aPointToInsert, bool aSuppressIME = false);
+      const EditorDOMPointInText& aPointToInsert);
 
   
 
