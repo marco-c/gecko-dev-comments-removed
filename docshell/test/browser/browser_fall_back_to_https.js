@@ -24,6 +24,7 @@ const { UrlbarTestUtils } = ChromeUtils.importESModule(
 const bug1002724_tests = [
   {
     original: "example.com",
+    
     expected: "http://example.com",
     explanation: "Should load HTTP version of example.com",
   },

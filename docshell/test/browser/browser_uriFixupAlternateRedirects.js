@@ -5,6 +5,7 @@ const { UrlbarTestUtils } = ChromeUtils.importESModule(
 );
 
 const REDIRECTURL =
+  
   "http://www.example.com/browser/docshell/test/browser/redirect_to_example.sjs";
 
 add_task(async function() {

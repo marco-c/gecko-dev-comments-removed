@@ -12,6 +12,7 @@ add_task(async function test() {
   waitForExplicitFinish();
 
   await BrowserTestUtils.withNewTab(
+    
     { gBrowser, url: "http://example.com" },
     async function(browser) {
       if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {

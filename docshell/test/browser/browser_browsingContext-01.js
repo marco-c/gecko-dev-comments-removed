@@ -121,12 +121,14 @@ add_task(async function() {
       url:
         getRootDirectory(gTestPath).replace(
           "chrome://mochitests/content",
+          
           "http://example.com"
         ) + "dummy_page.html",
     },
     async function(browser) {
       let path = getRootDirectory(gTestPath).replace(
         "chrome://mochitests/content",
+        
         "http://example.com"
       );
       await SpecialPowers.spawn(browser, [path], async function(path) {

@@ -8,6 +8,7 @@ const ROOT = getRootDirectory(gTestPath).replace(
   "http://mochi.test:8888"
 );
 const URL1 = ROOT + "file_backforward_restore_scroll.html";
+
 const URL2 = "http://example.net/";
 
 const SCROLL0 = 500;

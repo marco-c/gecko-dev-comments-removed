@@ -20,6 +20,7 @@ add_task(async function() {
       
       let frames = await Promise.all(
         Array.from({ length: 15 }).map(_ =>
+          
           SpecialPowers.spawn(browser, ["http://example.com/"], addFrame)
         )
       );
@@ -27,6 +28,7 @@ add_task(async function() {
       
       let subframes = await Promise.all(
         Array.from({ length: 15 }).map((_, i) =>
+          
           SpecialPowers.spawn(frames[i], ["http://example.org/"], addFrame)
         )
       );

@@ -1,4 +1,5 @@
 add_task(async function test_dataURI_unique_opaque_origin() {
+  
   let tab = BrowserTestUtils.addTab(gBrowser, "http://example.com");
   let browser = tab.linkedBrowser;
   await BrowserTestUtils.browserLoaded(browser);

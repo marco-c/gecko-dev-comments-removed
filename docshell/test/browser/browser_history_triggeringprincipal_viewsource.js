@@ -2,6 +2,7 @@
 
 const TEST_PATH = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
   "http://example.com"
 );
 const HTML_URI = TEST_PATH + "dummy_page.html";

@@ -1,6 +1,8 @@
 const DUMMY_1 =
+  
   "http://example.org/browser/docshell/test/browser/dummy_page.html";
 const DUMMY_2 =
+  
   "http://example.com/browser/docshell/test/browser/dummy_page.html";
 
 add_task(async function test_backAndReload() {

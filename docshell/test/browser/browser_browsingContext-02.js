@@ -9,10 +9,12 @@ add_task(async function() {
     async function(browser) {
       const BASE1 = getRootDirectory(gTestPath).replace(
         "chrome://mochitests/content",
+        
         "http://example.com"
       );
       const BASE2 = getRootDirectory(gTestPath).replace(
         "chrome://mochitests/content",
+        
         "http://test1.example.com"
       );
       const URL = BASE1 + "onload_message.html";

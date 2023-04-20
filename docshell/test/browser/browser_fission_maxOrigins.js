@@ -27,14 +27,23 @@ const PREF_LAST_DISQUALIFIED =
   "fission.experiment.max-origins.last-disqualified";
 
 const SITE_ORIGINS = [
+  
   "http://example.com/",
+  
   "http://example.org/",
+  
   "http://example.net/",
+  
   "http://example.tw/",
+  
   "http://example.cn/",
+  
   "http://example.fi/",
+  
   "http://example.in/",
+  
   "http://example.lk/",
+  
   "http://w3c-test.org/",
   "https://www.mozilla.org/",
 ];

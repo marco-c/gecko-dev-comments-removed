@@ -17,6 +17,7 @@ add_task(async function runTests() {
     
     info("# part 1");
     await whenPageShown(browser, () =>
+      
       BrowserTestUtils.loadURI(browser, "http://www.example.com/")
     );
     await checkListenersAsync("newentry", "shistory has a new entry");
@@ -119,6 +120,7 @@ add_task(async function runTests() {
   
   info("# part 1");
   await whenPageShown(browser, () =>
+    
     BrowserTestUtils.loadURI(browser, "http://www.example.com/")
   );
   checkListeners("newentry", "shistory has a new entry");

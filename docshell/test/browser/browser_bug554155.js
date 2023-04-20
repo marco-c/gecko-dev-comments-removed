@@ -1,5 +1,6 @@
 add_task(async function test() {
   await BrowserTestUtils.withNewTab(
+    
     { gBrowser, url: "http://example.com" },
     async function(browser) {
       let numLocationChanges = 0;

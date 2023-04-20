@@ -2,6 +2,7 @@ add_task(async function() {
   let url =
     getRootDirectory(gTestPath).replace(
       "chrome://mochitests/content/",
+      
       "http://example.com/"
     ) + "file_bug1206879.html";
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url, true);
