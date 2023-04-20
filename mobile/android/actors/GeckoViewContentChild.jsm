@@ -130,7 +130,18 @@ class GeckoViewContentChild extends GeckoViewActorChild {
     switch (name) {
       case "GeckoView:DOMFullscreenEntered":
         this.lastOrientation = this.orientation();
-        this.contentWindow?.windowUtils.handleFullscreenRequests();
+        if (
+          !this.contentWindow?.windowUtils.handleFullscreenRequests() &&
+          !this.contentWindow?.document.fullscreenElement
+        ) {
+          
+          
+          
+          const actor = this.contentWindow?.windowGlobalChild?.getActor(
+            "ContentDelegate"
+          );
+          actor?.sendAsyncMessage("GeckoView:DOMFullscreenExit", {});
+        }
         break;
       case "GeckoView:DOMFullscreenExited":
         
