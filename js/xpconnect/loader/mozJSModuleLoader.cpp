@@ -23,7 +23,10 @@
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"         
+#include "js/ErrorReport.h"            
+#include "js/Exception.h"              
 #include "js/friend/JSMEnvironment.h"  
+#include "js/friend/ErrorMessages.h"   
 #include "js/loader/ModuleLoadRequest.h"
 #include "js/Object.h"  
 #include "js/Printf.h"
@@ -1573,10 +1576,42 @@ nsresult mozJSModuleLoader::Import(JSContext* aCx, const nsACString& aLocation,
       if (!exception.isUndefined()) {
         
         
-        if (!JS_WrapValue(aCx, &exception)) {
-          return NS_ERROR_OUT_OF_MEMORY;
+        bool isModuleSyntaxError = false;
+
+        if (exception.isObject()) {
+          JS::Rooted<JSObject*> exceptionObj(aCx, &exception.toObject());
+          JSAutoRealm ar(aCx, exceptionObj);
+          JSErrorReport* report = JS_ErrorFromException(aCx, exceptionObj);
+          if (report) {
+            switch (report->errorNumber) {
+              case JSMSG_IMPORT_DECL_AT_TOP_LEVEL:
+              case JSMSG_EXPORT_DECL_AT_TOP_LEVEL:
+                
+                
+                
+                isModuleSyntaxError = true;
+
+                JS_ReportErrorUTF8(aCx,
+                                   "ChromeUtils.import is called against "
+                                   "an ES module script (%s).  Please use "
+                                   "ChromeUtils.importESModule instead "
+                                   "(SyntaxError: %s)",
+                                   aLocation.BeginReading(),
+                                   report->message().c_str());
+                break;
+              default:
+                break;
+            }
+          }
         }
-        JS_SetPendingException(aCx, exception);
+
+        if (!isModuleSyntaxError) {
+          if (!JS_WrapValue(aCx, &exception)) {
+            return NS_ERROR_OUT_OF_MEMORY;
+          }
+          JS_SetPendingException(aCx, exception);
+        }
+
         return NS_ERROR_FAILURE;
       }
 
