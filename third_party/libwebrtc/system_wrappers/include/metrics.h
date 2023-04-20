@@ -17,8 +17,10 @@
 #include <memory>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/string_utils.h"
 
 #if defined(RTC_DISABLE_METRICS)
 #define RTC_METRICS_ENABLED 0
@@ -186,7 +188,6 @@ void NoOp(const Ts&...) {}
   RTC_HISTOGRAM_COMMON_BLOCK_SLOW(                        \
       name, sample,                                       \
       webrtc::metrics::HistogramFactoryGetEnumeration(name, boundary))
-
 
 
 #define RTC_HISTOGRAM_COMMON_BLOCK(constant_name, sample,                  \
@@ -371,32 +372,31 @@ class Histogram;
 
 
 
-Histogram* HistogramFactoryGetCounts(const std::string& name,
+Histogram* HistogramFactoryGetCounts(absl::string_view name,
                                      int min,
                                      int max,
                                      int bucket_count);
 
 
-Histogram* HistogramFactoryGetCountsLinear(const std::string& name,
+Histogram* HistogramFactoryGetCountsLinear(absl::string_view name,
                                            int min,
                                            int max,
                                            int bucket_count);
 
 
 
-Histogram* HistogramFactoryGetEnumeration(const std::string& name,
-                                          int boundary);
+Histogram* HistogramFactoryGetEnumeration(absl::string_view name, int boundary);
 
 
 
-Histogram* SparseHistogramFactoryGetEnumeration(const std::string& name,
+Histogram* SparseHistogramFactoryGetEnumeration(absl::string_view name,
                                                 int boundary);
 
 
 void HistogramAdd(Histogram* histogram_pointer, int sample);
 
 struct SampleInfo {
-  SampleInfo(const std::string& name, int min, int max, size_t bucket_count);
+  SampleInfo(absl::string_view name, int min, int max, size_t bucket_count);
   ~SampleInfo();
 
   const std::string name;
@@ -412,7 +412,8 @@ void Enable();
 
 
 void GetAndReset(
-    std::map<std::string, std::unique_ptr<SampleInfo>>* histograms);
+    std::map<std::string, std::unique_ptr<SampleInfo>, rtc::AbslStringViewCmp>*
+        histograms);
 
 
 
@@ -420,17 +421,17 @@ void GetAndReset(
 void Reset();
 
 
-int NumEvents(const std::string& name, int sample);
+int NumEvents(absl::string_view name, int sample);
 
 
-int NumSamples(const std::string& name);
+int NumSamples(absl::string_view name);
 
 
-int MinSample(const std::string& name);
+int MinSample(absl::string_view name);
 
 
 
-std::map<int, int> Samples(const std::string& name);
+std::map<int, int> Samples(absl::string_view name);
 
 }  
 }  

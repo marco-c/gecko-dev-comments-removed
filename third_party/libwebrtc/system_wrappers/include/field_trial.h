@@ -68,13 +68,13 @@ std::string FindFullName(absl::string_view name);
 
 
 
-inline bool IsEnabled(const char* name) {
+inline bool IsEnabled(absl::string_view name) {
   return FindFullName(name).find("Enabled") == 0;
 }
 
 
 
-inline bool IsDisabled(const char* name) {
+inline bool IsDisabled(absl::string_view name) {
   return FindFullName(name).find("Disabled") == 0;
 }
 
@@ -87,14 +87,15 @@ void InitFieldTrialsFromString(const char* trials_string);
 const char* GetFieldTrialString();
 
 
-bool FieldTrialsStringIsValid(const char* trials_string);
+bool FieldTrialsStringIsValid(absl::string_view trials_string);
 
 
 
 
 
 
-std::string MergeFieldTrialsStrings(const char* first, const char* second);
+std::string MergeFieldTrialsStrings(absl::string_view first,
+                                    absl::string_view second);
 
 }  
 }  
