@@ -2772,7 +2772,6 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
     
     
     discardJITCodeForGC();
-    startBackgroundFreeAfterMinorGC();
 
     
 
@@ -2798,6 +2797,8 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
 
 
     purgeRuntime();
+
+    startBackgroundFreeAfterMinorGC();
 
     if (isShutdownGC()) {
       
