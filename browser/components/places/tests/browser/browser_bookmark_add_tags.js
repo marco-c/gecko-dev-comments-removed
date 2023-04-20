@@ -7,10 +7,8 @@
 
 
 
-
-StarUI._createPanelIfNeeded();
-const bookmarkPanel = document.getElementById("editBookmarkPanel");
-const bookmarkStar = BookmarkingUI.star;
+let bookmarkPanel;
+let bookmarkStar;
 
 async function clickBookmarkStar() {
   let shownPromise = promisePopupShown(bookmarkPanel);
@@ -24,35 +22,39 @@ async function hideBookmarksPanel(callback) {
   await hiddenPromise;
 }
 
-add_setup(function() {
-  let oldTimeout = StarUI._autoCloseTimeout;
-
-  bookmarkPanel.setAttribute("animate", false);
-
-  StarUI._autoCloseTimeout = 1000;
-
-  registerCleanupFunction(async () => {
-    StarUI._autoCloseTimeout = oldTimeout;
-    bookmarkPanel.removeAttribute("animate");
-    await PlacesUtils.bookmarks.eraseEverything();
-  });
+registerCleanupFunction(async () => {
+  await PlacesUtils.bookmarks.eraseEverything();
 });
 
 add_task(async function test_add_bookmark_tags_from_bookmarkProperties() {
   const TEST_URL = "about:robots";
 
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.bookmarks.editDialog.delayedApply.enabled", false]],
+  });
+  let win = await BrowserTestUtils.openNewBrowserWindow();
   let tab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
+    gBrowser: win.gBrowser,
     opening: TEST_URL,
     waitForStateStop: true,
   });
 
+  win.StarUI._createPanelIfNeeded();
+  win.StarUI._autoCloseTimeout = 1000;
+  bookmarkPanel = win.document.getElementById("editBookmarkPanel");
+  bookmarkPanel.setAttribute("animate", false);
+  bookmarkStar = win.BookmarkingUI.star;
+
   
   registerCleanupFunction(async function() {
     BrowserTestUtils.removeTab(tab);
+    BrowserTestUtils.closeWindow(win);
   });
 
-  let bookmarkPanelTitle = document.getElementById("editBookmarkPanelTitle");
+  let bookmarkPanelTitle = win.document.getElementById(
+    "editBookmarkPanelTitle"
+  );
 
   
   await hideBookmarksPanel(async () => {
@@ -81,7 +83,7 @@ add_task(async function test_add_bookmark_tags_from_bookmarkProperties() {
     "bookmark-added",
     events => events.some(({ url }) => !url || url == TEST_URL)
   );
-  await fillBookmarkTextField("editBMPanel_tagsField", "tag1", window);
+  await fillBookmarkTextField("editBMPanel_tagsField", "tag1", win);
   await promiseNotification;
   let bookmarks = [];
   await PlacesUtils.bookmarks.fetch({ url: TEST_URL }, bm =>
@@ -96,7 +98,7 @@ add_task(async function test_add_bookmark_tags_from_bookmarkProperties() {
     PlacesUtils.tagging.getTagsForURI(Services.io.newURI(TEST_URL)),
     ["tag1"]
   );
-  let doneButton = document.getElementById("editBookmarkPanelDoneButton");
+  let doneButton = win.document.getElementById("editBookmarkPanelDoneButton");
   await hideBookmarksPanel(() => doneButton.click());
 
   
@@ -104,11 +106,7 @@ add_task(async function test_add_bookmark_tags_from_bookmarkProperties() {
   promiseNotification = PlacesTestUtils.waitForNotification(
     "bookmark-tags-changed"
   );
-  await fillBookmarkTextField(
-    "editBMPanel_tagsField",
-    "tag1, tag2, tag3",
-    window
-  );
+  await fillBookmarkTextField("editBMPanel_tagsField", "tag1, tag2, tag3", win);
   await promiseNotification;
   await hideBookmarksPanel(() => doneButton.click());
 
