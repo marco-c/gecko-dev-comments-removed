@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+#include "modules/video_capture/video_capture_impl.h"
+
+namespace webrtc {
+namespace videocapturemodule {
+
+
+VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo() {
+  return nullptr;
+}
+
+rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+    const char* device_id) {
+  return nullptr;
+}
+
+}  
+}  
