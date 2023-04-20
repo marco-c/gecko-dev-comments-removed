@@ -94,12 +94,14 @@ export function selectSourceURL(cx, url, options) {
 
 
 
-
-
-
-export function selectSource(cx, sourceId, sourceActorId, location = {}) {
+export function selectSource(cx, source, sourceActor) {
   return async ({ dispatch }) => {
-    location = createLocation({ ...location, sourceId, sourceActorId });
+    
+    
+    const location = source
+      ? createLocation({ sourceId: source.id, sourceActorId: sourceActor?.id })
+      : {};
+
     return dispatch(selectSpecificLocation(cx, location));
   };
 }
