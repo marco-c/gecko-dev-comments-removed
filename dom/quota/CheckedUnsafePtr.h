@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Diagnostic class template that helps finding dangling pointers.
+
+
+
+
 
 #ifndef mozilla_CheckedUnsafePtr_h
 #define mozilla_CheckedUnsafePtr_h
@@ -10,11 +10,37 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/StackWalk.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "nsContentUtils.h"
 #include "nsTArray.h"
+#include "nsString.h"
 
 #include <cstddef>
 #include <type_traits>
 #include <utility>
+
+#if defined __has_builtin
+#  if __has_builtin(__builtin_FUNCTION)
+#    define bt_function __builtin_FUNCTION()
+#  else
+#    define bt_function "__builtin_FUNCTION() is undefined"
+#  endif
+#  if __has_builtin(__builtin_FILE)
+#    define bt_file __builtin_FILE()
+#  else
+#    define bt_file "__builtin_FILE() is undefined"
+#  endif
+#  if __has_builtin(__builtin_LINE)
+#    define bt_line __builtin_LINE()
+#  else
+#    define bt_line -1
+#  endif
+#else
+#  define bt_function "__builtin_FUNCTION() is undefined"
+#  define bt_file "__builtin_FILE() is undefined"
+#  define bt_line -1
+#endif
 
 namespace mozilla {
 enum class CheckingSupport {
@@ -26,6 +52,95 @@ template <typename T>
 class CheckedUnsafePtr;
 
 namespace detail {
+
+static constexpr auto kSourceFileRelativePathMap =
+    std::array<std::pair<nsLiteralCString, nsLiteralCString>, 1>{
+        {{"mozilla/dom/CheckedUnsafePtr.h"_ns,
+          "dom/quota/CheckedUnsafePtr.h"_ns}}};
+
+static inline nsDependentCSubstring GetSourceFileRelativePath(
+    const nsACString& aSourceFilePath) {
+  static constexpr auto error = "ERROR"_ns;
+  static constexpr auto mozillaRelativeBase = "mozilla/"_ns;
+  static constexpr auto thisSourceFileRelativePath =
+      "/dom/quota/CheckedUnsafePtr.h"_ns;
+  static constexpr auto filePath = nsLiteralCString(__FILE__);
+
+  MOZ_ASSERT(StringEndsWith(filePath, thisSourceFileRelativePath));
+  static const auto sourceTreeBase = Substring(
+      filePath, 0, filePath.Length() - thisSourceFileRelativePath.Length());
+
+  if (MOZ_LIKELY(StringBeginsWith(aSourceFilePath, sourceTreeBase))) {
+    return Substring(aSourceFilePath, sourceTreeBase.Length() + 1);
+  }
+
+  
+  
+  static constexpr auto commonHSourceFileRelativePath =
+      "/mozilla/dom/quota/CheckedUnsafePtr.h"_ns;
+  MOZ_ASSERT(StringEndsWith(filePath, commonHSourceFileRelativePath));
+  static const auto objdirDistIncludeTreeBase = Substring(
+      filePath, 0, filePath.Length() - commonHSourceFileRelativePath.Length());
+
+  if (MOZ_LIKELY(
+          StringBeginsWith(aSourceFilePath, objdirDistIncludeTreeBase))) {
+    const auto sourceFileRelativePath =
+        Substring(aSourceFilePath, objdirDistIncludeTreeBase.Length() + 1);
+
+    
+    
+    
+    const auto foundIt = std::find_if(
+        kSourceFileRelativePathMap.cbegin(), kSourceFileRelativePathMap.cend(),
+        [&sourceFileRelativePath](const auto& entry) {
+          return entry.first == sourceFileRelativePath;
+        });
+
+    if (MOZ_UNLIKELY(foundIt != kSourceFileRelativePathMap.cend())) {
+      return Substring(foundIt->second, 0);
+    }
+
+    
+    
+    if (MOZ_LIKELY(
+            StringBeginsWith(sourceFileRelativePath, mozillaRelativeBase))) {
+      return Substring(sourceFileRelativePath, mozillaRelativeBase.Length());
+    }
+
+    
+    
+    
+    
+    
+    return sourceFileRelativePath;
+  }
+
+  nsCString::const_iterator begin, end;
+  if (RFindInReadable("/"_ns, aSourceFilePath.BeginReading(begin),
+                      aSourceFilePath.EndReading(end))) {
+    
+    
+    ++begin;
+    return Substring(begin, aSourceFilePath.EndReading(end));
+  }
+
+  return nsDependentCSubstring{static_cast<mozilla::Span<const char>>(
+      static_cast<const nsCString&>(error))};
+}
+
+static inline void CheckedUnsafePtrStackCallback(uint32_t aFrameNumber,
+                                                 void* aPC, void* aSP,
+                                                 void* aClosure) {
+  auto* stack = static_cast<nsCString*>(aClosure);
+  MozCodeAddressDetails details;
+  MozDescribeCodeAddress(aPC, &details);
+  char buf[1025];
+  Unused << MozFormatCodeAddressDetails(buf, sizeof(buf), aFrameNumber, aPC,
+                                        &details);
+  stack->Append(buf);
+  stack->Append("\n");
+}
+
 class CheckedUnsafePtrBaseCheckingEnabled;
 
 struct CheckedUnsafePtrCheckData {
@@ -38,13 +153,16 @@ class CheckedUnsafePtrBaseCheckingEnabled {
   friend class CheckedUnsafePtrBaseAccess;
 
  protected:
-  constexpr CheckedUnsafePtrBaseCheckingEnabled() = default;
+  CheckedUnsafePtrBaseCheckingEnabled() = delete;
   CheckedUnsafePtrBaseCheckingEnabled(
       const CheckedUnsafePtrBaseCheckingEnabled& aOther) = default;
+  CheckedUnsafePtrBaseCheckingEnabled(const char* aFunction, const char* aFile,
+                                      const int aLine)
+      : mFunctionName(aFunction), mSourceFile(aFile), mLineNo(aLine) {}
 
-  // When copying an CheckedUnsafePtr, its mIsDangling member must be copied as
-  // well; otherwise the new copy might try to dereference a dangling pointer
-  // when destructed.
+  
+  
+  
   void CopyDanglingFlagIfAvailableFrom(
       const CheckedUnsafePtrBaseCheckingEnabled& aOther) {
     mIsDangling = aOther.mIsDangling;
@@ -54,10 +172,10 @@ class CheckedUnsafePtrBaseCheckingEnabled {
   using DisableForCheckedUnsafePtr = std::enable_if_t<
       !std::is_base_of<CheckedUnsafePtrBaseCheckingEnabled, Ptr>::value>;
 
-  // When constructing an CheckedUnsafePtr from a different kind of pointer it's
-  // not possible to determine whether it's dangling; therefore it's undefined
-  // behavior to construct one from a dangling pointer, and we assume that any
-  // CheckedUnsafePtr thus constructed is not dangling.
+  
+  
+  
+  
   template <typename Ptr>
   DisableForCheckedUnsafePtr<Ptr> CopyDanglingFlagIfAvailableFrom(const Ptr&) {}
 
@@ -70,6 +188,21 @@ class CheckedUnsafePtrBaseCheckingEnabled {
     }
   }
 
+  void DumpDebugMsg() {
+    fprintf(stderr, "CheckedUnsafePtr [%p]\n", this);
+    fprintf(stderr, "Location of creation: %s, %s:%d\n", mFunctionName.get(),
+            GetSourceFileRelativePath(mSourceFile).BeginReading(), mLineNo);
+    fprintf(stderr, "Stack of creation:\n%s\n", mCreationStack.get());
+    fprintf(stderr, "Stack of last assignment\n%s\n\n",
+            mLastAssignmentStack.get());
+  }
+
+  nsCString mFunctionName{EmptyCString()};
+  nsCString mSourceFile{EmptyCString()};
+  int32_t mLineNo{-1};
+  nsCString mCreationStack{EmptyCString()};
+  nsCString mLastAssignmentStack{EmptyCString()};
+
  private:
   bool mIsDangling = false;
 };
@@ -78,6 +211,7 @@ class CheckedUnsafePtrBaseAccess {
  protected:
   static void SetDanglingFlag(CheckedUnsafePtrBaseCheckingEnabled& aBase) {
     aBase.mIsDangling = true;
+    aBase.DumpDebugMsg();
   }
 };
 
@@ -94,32 +228,70 @@ template <typename T>
 class CheckedUnsafePtrBase<T, CheckingSupport::Enabled>
     : detail::CheckedUnsafePtrBaseCheckingEnabled {
  public:
-  MOZ_IMPLICIT constexpr CheckedUnsafePtrBase(const std::nullptr_t = nullptr)
-      : mRawPtr(nullptr) {}
+  MOZ_IMPLICIT constexpr CheckedUnsafePtrBase(
+      const std::nullptr_t = nullptr, const char* aFunction = bt_function,
+      const char* aFile = bt_file, const int32_t aLine = bt_line)
+      : detail::CheckedUnsafePtrBaseCheckingEnabled(aFunction, aFile, aLine),
+        mRawPtr(nullptr) {
+    if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
+      MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
+                   &mCreationStack);
+    }
+  }
 
   template <typename U, typename = EnableIfCompatible<T, U>>
-  MOZ_IMPLICIT CheckedUnsafePtrBase(const U& aPtr) {
+  MOZ_IMPLICIT CheckedUnsafePtrBase(const U& aPtr,
+                                    const char* aFunction = bt_function,
+                                    const char* aFile = bt_file,
+                                    const int32_t aLine = bt_line)
+      : detail::CheckedUnsafePtrBaseCheckingEnabled(aFunction, aFile, aLine) {
+    if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
+      MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
+                   &mCreationStack);
+    }
     Set(aPtr);
   }
 
-  CheckedUnsafePtrBase(const CheckedUnsafePtrBase& aOther) {
+  CheckedUnsafePtrBase(const CheckedUnsafePtrBase& aOther,
+                       const char* aFunction = bt_function,
+                       const char* aFile = bt_file,
+                       const int32_t aLine = bt_line)
+      : detail::CheckedUnsafePtrBaseCheckingEnabled(aFunction, aFile, aLine) {
+    if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
+      MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
+                   &mCreationStack);
+    }
     Set(aOther.Downcast());
   }
 
   ~CheckedUnsafePtrBase() { Reset(); }
 
   CheckedUnsafePtr<T>& operator=(const std::nullptr_t) {
+    
+    if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
+      mLastAssignmentStack.Truncate();
+    }
     Reset();
     return Downcast();
   }
 
   template <typename U>
   EnableIfCompatible<T, U, CheckedUnsafePtr<T>&> operator=(const U& aPtr) {
+    if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
+      mLastAssignmentStack.Truncate();
+      MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
+                   &mLastAssignmentStack);
+    }
     Replace(aPtr);
     return Downcast();
   }
 
   CheckedUnsafePtrBase& operator=(const CheckedUnsafePtrBase& aOther) {
+    if (StaticPrefs::dom_checkedUnsafePtr_dumpStacks_enabled()) {
+      mLastAssignmentStack.Truncate();
+      MozStackWalk(CheckedUnsafePtrStackCallback, CallerPC(), 0,
+                   &mLastAssignmentStack);
+    }
     if (&aOther != this) {
       Replace(aOther.Downcast());
     }
@@ -206,7 +378,7 @@ class CheckedUnsafePtrBase<T, CheckingSupport::Disabled> {
 
   T* mRawPtr;
 };
-}  // namespace detail
+}  
 
 class CheckingPolicyAccess {
  protected:
@@ -253,10 +425,10 @@ struct DoNotCheckCheckedUnsafePtrs {
 };
 
 namespace detail {
-// Template parameter CheckingSupport controls the inclusion of
-// CheckedUnsafePtrCheckData as a subobject of instantiations of
-// SupportsCheckedUnsafePtr, ensuring that choosing a policy without checking
-// support incurs no size overhead.
+
+
+
+
 template <typename CheckingPolicy,
           CheckingSupport = CheckingPolicy::SupportsChecking::value>
 class SupportCheckedUnsafePtrImpl;
@@ -290,7 +462,7 @@ class SupportCheckedUnsafePtrImpl<CheckingPolicy, CheckingSupport::Enabled>
 };
 
 struct SupportsCheckedUnsafePtrTag {};
-}  // namespace detail
+}  
 
 template <typename Condition,
           typename CheckingPolicy = CrashOnDanglingCheckedUnsafePtr>
@@ -305,19 +477,19 @@ using DiagnosticAssertEnabled = std::integral_constant<bool,
 #endif
                                                        >;
 
-// A T class that publicly inherits from an instantiation of
-// SupportsCheckedUnsafePtr and its subclasses can be pointed to by smart
-// pointers of type CheckedUnsafePtr<T>. Whenever such a smart pointer is
-// created, its existence is tracked by the pointee according to its
-// CheckingPolicy. When the pointee goes out of scope it then uses the its
-// CheckingPolicy to verify that no CheckedUnsafePtr pointers are left pointing
-// to it.
-//
-// The CheckingPolicy type is used to control the kind of verification that
-// happen at the end of the object's lifetime. By default, debug builds always
-// check for dangling CheckedUnsafePtr pointers and assert that none are found,
-// while release builds forgo all checks. (Release builds incur no size or
-// runtime penalties compared to bare pointers.)
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename CheckingPolicy>
 class SupportsCheckedUnsafePtr
     : public detail::SupportCheckedUnsafePtrImpl<CheckingPolicy>,
@@ -329,12 +501,12 @@ class SupportsCheckedUnsafePtr
             std::forward<Args>(aArgs)...) {}
 };
 
-// CheckedUnsafePtr<T> is a smart pointer class that helps detect dangling
-// pointers in cases where such pointers are not allowed. In order to use it,
-// the pointee T must publicly inherit from an instantiation of
-// SupportsCheckedUnsafePtr. An CheckedUnsafePtr<T> can be used anywhere a T*
-// can be used, has the same size, and imposes no additional thread-safety
-// restrictions.
+
+
+
+
+
+
 template <typename T>
 class CheckedUnsafePtr : public detail::CheckedUnsafePtrBase<T> {
   static_assert(
@@ -378,11 +550,11 @@ class CheckedUnsafePtr : public detail::CheckedUnsafePtrBase<T> {
   }
 };
 
-}  // namespace mozilla
+}  
 
-// nsTArray<T> requires by default that T can be safely moved with std::memmove.
-// Since CheckedUnsafePtr<T> has a non-trivial copy constructor, it has to opt
-// into nsTArray<T> using them.
+
+
+
 template <typename T>
 struct nsTArray_RelocationStrategy<mozilla::CheckedUnsafePtr<T>> {
   using Type = std::conditional_t<
@@ -402,4 +574,4 @@ struct nsTArray_RelocationStrategy<
                          nsTArray_RelocateUsingMemutils>;
 };
 
-#endif  // mozilla_CheckedUnsafePtr_h
+#endif  
