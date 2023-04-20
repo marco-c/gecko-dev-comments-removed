@@ -3050,7 +3050,6 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
                                          FloatRegister temp, Label* fail) {
   ARMFPRegister src32(src, 32);
   ARMRegister dest32(dest, 32);
-  ScratchFloat32Scope scratch(*this);
 
   Label negative, done;
 
@@ -3094,24 +3093,19 @@ void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
   bind(&negative);
   {
     
-    
-    Label join;
-    loadConstantFloat32(GetBiggestNumberLessThan(0.5f), temp);
-    loadConstantFloat32(-0.5f, scratch);
-    branchFloat(Assembler::DoubleLessThan, src, scratch, &join);
-    loadConstantFloat32(0.5f, temp);
-    bind(&join);
+    loadConstantFloat32(-0.5f, temp);
+    branchFloat(Assembler::DoubleGreaterThanOrEqual, src, temp, fail);
 
+    
+    loadConstantFloat32(GetBiggestNumberLessThan(0.5f), temp);
     addFloat32(src, temp);
+
     
     
     
     Fcvtms(dest32, temp);
     
     branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
-
-    
-    branchTest32(Assembler::Zero, dest, dest, fail);
   }
 
   bind(&done);
@@ -3122,7 +3116,6 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
   ARMFPRegister src64(src, 64);
   ARMRegister dest64(dest, 64);
   ARMRegister dest32(dest, 32);
-  ScratchDoubleScope scratch(*this);
 
   Label negative, done;
 
@@ -3166,24 +3159,19 @@ void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
   bind(&negative);
   {
     
-    
-    Label join;
-    loadConstantDouble(GetBiggestNumberLessThan(0.5), temp);
-    loadConstantDouble(-0.5, scratch);
-    branchDouble(Assembler::DoubleLessThan, src, scratch, &join);
-    loadConstantDouble(0.5, temp);
-    bind(&join);
+    loadConstantDouble(-0.5, temp);
+    branchDouble(Assembler::DoubleGreaterThanOrEqual, src, temp, fail);
 
+    
+    loadConstantDouble(GetBiggestNumberLessThan(0.5), temp);
     addDouble(src, temp);
+
     
     
     
     Fcvtms(dest32, temp);
     
     branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
-
-    
-    branchTest32(Assembler::Zero, dest, dest, fail);
   }
 
   bind(&done);
