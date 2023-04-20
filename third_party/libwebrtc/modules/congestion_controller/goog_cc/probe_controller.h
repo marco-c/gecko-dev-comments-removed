@@ -73,11 +73,20 @@ struct ProbeControllerConfig {
   
   FieldTrialParameter<TimeDelta> min_probe_duration;
   
-  
   FieldTrialParameter<bool> limit_probe_target_rate_to_loss_bwe;
+  FieldTrialParameter<double> loss_limited_probe_scale;
   
   
   FieldTrialParameter<double> skip_if_estimate_larger_than_fraction_of_max;
+};
+
+
+
+
+enum class BandwidthLimitedCause {
+  kLossLimitedBweIncreasing = 0,
+  kLossLimitedBweDecreasing = 1,
+  kDelayBasedLimited = 2
 };
 
 
@@ -109,7 +118,7 @@ class ProbeController {
 
   ABSL_MUST_USE_RESULT std::vector<ProbeClusterConfig> SetEstimatedBitrate(
       DataRate bitrate,
-      bool bwe_limited_due_to_packet_loss,
+      BandwidthLimitedCause bandwidth_limited_cause,
       Timestamp at_time);
 
   void EnablePeriodicAlrProbing(bool enable);
@@ -149,7 +158,8 @@ class ProbeController {
   bool TimeForNetworkStateProbe(Timestamp at_time) const;
 
   bool network_available_;
-  bool bwe_limited_due_to_packet_loss_;
+  BandwidthLimitedCause bandwidth_limited_cause_ =
+      BandwidthLimitedCause::kDelayBasedLimited;
   State state_;
   DataRate min_bitrate_to_probe_further_ = DataRate::PlusInfinity();
   Timestamp time_last_probing_initiated_ = Timestamp::MinusInfinity();
