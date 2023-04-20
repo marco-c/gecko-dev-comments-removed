@@ -10,9 +10,6 @@ const CHROME_WORKER_URL = CHROME_URL_ROOT + "test_worker.js";
 
 add_task(async function() {
   
-  await pushPref("devtools.browsertoolbox.fission", true);
-
-  
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
 

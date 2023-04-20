@@ -12,7 +12,6 @@ const SERVICE_WORKER_URL = URL_ROOT_SSL + "test_service_worker.js";
 
 add_task(async function() {
   
-  await pushPref("devtools.browsertoolbox.fission", true);
   await pushPref("devtools.browsertoolbox.scope", "everything");
 
   

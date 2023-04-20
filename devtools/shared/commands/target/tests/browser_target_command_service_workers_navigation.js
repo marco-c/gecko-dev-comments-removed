@@ -293,9 +293,6 @@ async function testNavigationToPageWithExistingWorker({
 
 async function setupServiceWorkerNavigationTest() {
   
-  await pushPref("devtools.browsertoolbox.fission", true);
-
-  
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
 }

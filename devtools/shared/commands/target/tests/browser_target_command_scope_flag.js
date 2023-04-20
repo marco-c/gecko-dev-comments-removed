@@ -16,8 +16,6 @@ add_task(async function() {
   }
 
   
-  await pushPref("devtools.browsertoolbox.fission", true);
-  
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
   

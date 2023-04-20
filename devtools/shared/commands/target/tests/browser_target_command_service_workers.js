@@ -9,9 +9,6 @@ const FISSION_TEST_URL = URL_ROOT_SSL + "fission_document.html";
 
 add_task(async function() {
   
-  await pushPref("devtools.browsertoolbox.fission", true);
-
-  
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
 

@@ -43,11 +43,6 @@ async function testScript() {
 }
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["devtools.browsertoolbox.fission", true]],
-  });
   await SpecialPowers.pushPrefEnv({
     set: [["devtools.browsertoolbox.scope", "everything"]],
   });

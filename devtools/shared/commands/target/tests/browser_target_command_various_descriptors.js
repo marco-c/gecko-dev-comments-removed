@@ -13,7 +13,6 @@ const DESCRIPTOR_TYPES = require("resource://devtools/client/fronts/descriptors/
 
 add_task(async function() {
   
-  await pushPref("devtools.browsertoolbox.fission", true);
   await pushPref("devtools.browsertoolbox.scope", "everything");
   
   
