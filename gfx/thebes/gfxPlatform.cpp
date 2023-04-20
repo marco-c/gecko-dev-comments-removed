@@ -924,6 +924,7 @@ void gfxPlatform::Init() {
   gPlatform->InitWebGPUConfig();
   gPlatform->InitWindowOcclusionConfig();
   gPlatform->InitBackdropFilterConfig();
+  gPlatform->InitAcceleratedCanvas2DConfig();
 
 #if defined(XP_WIN)
   
@@ -3085,6 +3086,53 @@ void gfxPlatform::InitBackdropFilterConfig() {
       BackdropFilterPrefChangeCallback,
       nsDependentCString(
           StaticPrefs::GetPrefName_layout_css_backdrop_filter_force_enabled()));
+}
+
+static void AcceleratedCanvas2DPrefChangeCallback(const char*, void*) {
+  FeatureState& feature = gfxConfig::GetFeature(Feature::ACCELERATED_CANVAS2D);
+
+  
+  
+  feature.Reset();
+
+  
+  
+  feature.SetDefaultFromPref(
+      StaticPrefs::GetPrefName_gfx_canvas_accelerated(), true,
+      StaticPrefs::GetPrefDefault_gfx_canvas_accelerated());
+
+  
+  if (StaticPrefs::gfx_canvas_accelerated_force_enabled()) {
+    feature.UserForceEnable("Force-enabled by pref");
+  }
+
+  
+  nsCString message;
+  nsCString failureId;
+  if (!gfxPlatform::IsGfxInfoStatusOkay(
+          nsIGfxInfo::FEATURE_ACCELERATED_CANVAS2D, &message, failureId)) {
+    feature.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
+  }
+
+  gfxVars::SetUseAcceleratedCanvas2D(feature.IsEnabled());
+}
+
+void gfxPlatform::InitAcceleratedCanvas2DConfig() {
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+
+  
+  
+  AcceleratedCanvas2DPrefChangeCallback(nullptr, nullptr);
+
+  Preferences::RegisterCallback(
+      AcceleratedCanvas2DPrefChangeCallback,
+      nsDependentCString(StaticPrefs::GetPrefName_gfx_canvas_accelerated()));
+  Preferences::RegisterCallback(
+      AcceleratedCanvas2DPrefChangeCallback,
+      nsDependentCString(
+          StaticPrefs::GetPrefName_gfx_canvas_accelerated_force_enabled()));
 }
 
 bool gfxPlatform::CanUseHardwareVideoDecoding() {
