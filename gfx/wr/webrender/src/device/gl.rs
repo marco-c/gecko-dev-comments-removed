@@ -979,6 +979,9 @@ pub struct Capabilities {
     pub requires_alpha_target_full_clear: bool,
     
     
+    pub prefers_clear_scissor: bool,
+    
+    
     pub supports_render_target_invalidate: bool,
     
     pub supports_r8_texture_upload: bool,
@@ -1790,6 +1793,12 @@ impl Device {
         let is_adreno_4xx = renderer_name.starts_with("Adreno (TM) 4");
         let requires_alpha_target_full_clear = is_adreno_4xx;
 
+        
+        
+        
+        
+        let prefers_clear_scissor = !renderer_name.starts_with("Mali");
+
         let mut supports_render_target_invalidate = true;
 
         
@@ -1855,6 +1864,7 @@ impl Device {
                 requires_batched_texture_uploads,
                 supports_alpha_target_clears,
                 requires_alpha_target_full_clear,
+                prefers_clear_scissor,
                 supports_render_target_invalidate,
                 supports_r8_texture_upload,
                 uses_native_clip_mask,
