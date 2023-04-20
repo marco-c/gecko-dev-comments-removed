@@ -7,6 +7,8 @@
 #ifndef mozilla_net_CookieJarSettings_h
 #define mozilla_net_CookieJarSettings_h
 
+#include "mozilla/Maybe.h"
+
 #include "nsICookieJarSettings.h"
 #include "nsTArray.h"
 
@@ -165,6 +167,10 @@ class CookieJarSettings final : public nsICookieJarSettings {
   }
   const nsAString& GetPartitionKey() { return mPartitionKey; };
 
+  void SetFingerprintingRandomizationKey(const nsTArray<uint8_t>& aKey) {
+    mFingerprintingRandomKey.emplace(aKey.Clone());
+  }
+
   
   
   
@@ -248,6 +254,14 @@ class CookieJarSettings final : public nsICookieJarSettings {
   
   
   bool mShouldResistFingerprinting;
+
+  
+  
+  
+  
+  
+  
+  Maybe<nsTArray<uint8_t>> mFingerprintingRandomKey;
 };
 
 }  
