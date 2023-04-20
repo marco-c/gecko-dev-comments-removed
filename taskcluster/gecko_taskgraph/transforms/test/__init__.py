@@ -147,7 +147,9 @@ test_description_schema = Schema(
         ),
         
         
-        Required("max-run-time"): optionally_keyed_by("test-platform", "subtest", int),
+        Required("max-run-time"): optionally_keyed_by(
+            "test-platform", "subtest", "variant", int
+        ),
         
         Optional("retry-exit-status"): [int],
         
