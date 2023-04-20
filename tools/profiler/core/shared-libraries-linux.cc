@@ -71,7 +71,18 @@ static nsCString IDtoUUIDString(
 }
 
 
-static nsCString getId(const char* bin_name) {
+static nsCString IDtoString(
+    const google_breakpad::wasteful_vector<uint8_t>& aIdentifier) {
+  using namespace google_breakpad;
+
+  nsCString uuid;
+  const std::string str = FileID::ConvertIdentifierToString(aIdentifier);
+  uuid.Append(str.c_str(), str.size());
+  return uuid;
+}
+
+
+static nsCString getBreakpadId(const char* bin_name) {
   using namespace google_breakpad;
 
   PageAllocator allocator;
@@ -80,6 +91,21 @@ static nsCString getId(const char* bin_name) {
   FileID file_id(bin_name);
   if (file_id.ElfFileIdentifier(identifier)) {
     return IDtoUUIDString(identifier);
+  }
+
+  return ""_ns;
+}
+
+
+static nsCString getCodeId(const char* bin_name) {
+  using namespace google_breakpad;
+
+  PageAllocator allocator;
+  auto_wasteful_vector<uint8_t, kDefaultBuildIdSize> identifier(&allocator);
+
+  FileID file_id(bin_name);
+  if (file_id.ElfFileIdentifier(identifier)) {
+    return IDtoString(identifier);
   }
 
   return ""_ns;
@@ -99,8 +125,9 @@ static SharedLibrary SharedLibraryAtPath(const char* path,
     nameStr.Cut(0, pos + 1);
   }
 
-  return SharedLibrary(libStart, libEnd, offset, getId(path), nsCString(),
-                       nameStr, pathStr, nameStr, pathStr, ""_ns, "");
+  return SharedLibrary(libStart, libEnd, offset, getBreakpadId(path),
+                       getCodeId(path), nameStr, pathStr, nameStr, pathStr,
+                       ""_ns, "");
 }
 
 static int dl_iterate_callback(struct dl_phdr_info* dl_info, size_t size,
