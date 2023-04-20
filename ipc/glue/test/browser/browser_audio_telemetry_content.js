@@ -22,6 +22,5 @@ add_task(async function testUtilityTelemetry() {
   const codecs = ["vorbis", "mp3", "aac", "flac"];
   await verifyTelemetryForProcess("tab", codecs);
   await verifyNoTelemetryForProcess("utility", codecs);
-  
-  
+  await verifyNoTelemetryForProcess("rdd", codecs);
 });
