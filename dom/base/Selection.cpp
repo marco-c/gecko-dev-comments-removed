@@ -1949,7 +1949,11 @@ void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
   
   
   RefPtr<nsRange> range;
-  if (aRange.IsInSelection() && aRange.GetSelection() != this) {
+  if (aRange.IsInSelection()) {
+    
+    if (aRange.GetSelection() == this) {
+      return;
+    }
     
     
     range = aRange.CloneRange();
