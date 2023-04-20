@@ -234,7 +234,7 @@ class UDPPort : public Port {
   
   void MaybeSetPortCompleteOrError();
 
-  bool HasCandidateWithAddress(const rtc::SocketAddress& addr) const;
+  bool HasStunCandidateWithAddress(const rtc::SocketAddress& addr) const;
 
   
   
