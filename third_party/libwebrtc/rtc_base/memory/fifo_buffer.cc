@@ -49,23 +49,20 @@ StreamState FifoBuffer::GetState() const {
   return state_;
 }
 
-StreamResult FifoBuffer::Read(void* buffer,
-                              size_t bytes,
-                              size_t* bytes_read,
-                              int* error) {
+StreamResult FifoBuffer::Read(rtc::ArrayView<uint8_t> buffer,
+                              size_t& bytes_read,
+                              int& error) {
   webrtc::MutexLock lock(&mutex_);
   const bool was_writable = data_length_ < buffer_length_;
   size_t copy = 0;
-  StreamResult result = ReadLocked(buffer, bytes, &copy);
+  StreamResult result = ReadLocked(buffer.data(), buffer.size(), &copy);
 
   if (result == SR_SUCCESS) {
     
     
     read_position_ = (read_position_ + copy) % buffer_length_;
     data_length_ -= copy;
-    if (bytes_read) {
-      *bytes_read = copy;
-    }
+    bytes_read = copy;
 
     
     if (!was_writable && copy > 0) {
@@ -75,23 +72,19 @@ StreamResult FifoBuffer::Read(void* buffer,
   return result;
 }
 
-StreamResult FifoBuffer::Write(const void* buffer,
-                               size_t bytes,
-                               size_t* bytes_written,
-                               int* error) {
+StreamResult FifoBuffer::Write(rtc::ArrayView<const uint8_t> buffer,
+                               size_t& bytes_written,
+                               int& error) {
   webrtc::MutexLock lock(&mutex_);
 
   const bool was_readable = (data_length_ > 0);
   size_t copy = 0;
-  StreamResult result = WriteLocked(buffer, bytes, &copy);
+  StreamResult result = WriteLocked(buffer.data(), buffer.size(), &copy);
 
   if (result == SR_SUCCESS) {
     
     data_length_ += copy;
-    if (bytes_written) {
-      *bytes_written = copy;
-    }
-
+    bytes_written = copy;
     
     if (!was_readable && copy > 0) {
       PostEvent(SE_READ, 0);
