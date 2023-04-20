@@ -16,6 +16,7 @@ const RESOURCE_TYPES_WITH_QUANTITIES = [
   MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.BOOKMARKS,
   MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.HISTORY,
   MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS,
+  MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.FORMDATA,
 ];
 
 
@@ -209,11 +210,36 @@ function assertQuantitiesShown(wizard, expectedResourceTypes) {
           progressGroup.dataset.resourceType
         )
       ) {
-        Assert.notEqual(
-          successText.indexOf(EXPECTED_QUANTITY),
-          -1,
-          `Found expected quantity in success string: ${successText}`
-        );
+        if (
+          progressGroup.dataset.resourceType ==
+          MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.HISTORY
+        ) {
+          
+          
+          
+          Assert.notEqual(
+            successText.indexOf(MigrationUtils.HISTORY_MAX_AGE_IN_DAYS),
+            -1,
+            `Found expected maximum number of days of history: ${successText}`
+          );
+        } else if (
+          progressGroup.dataset.resourceType ==
+          MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.FORMDATA
+        ) {
+          
+          
+          Assert.equal(
+            successText,
+            "Form history",
+            `Found expected form data string: ${successText}`
+          );
+        } else {
+          Assert.notEqual(
+            successText.indexOf(EXPECTED_QUANTITY),
+            -1,
+            `Found expected quantity in success string: ${successText}`
+          );
+        }
       } else {
         
         
