@@ -34,7 +34,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   ASRouterTriggerListeners:
     "resource://activity-stream/lib/ASRouterTriggerListeners.jsm",
   KintoHttpClient: "resource://services-common/kinto-http-client.js",
-  RemoteImages: "resource://activity-stream/lib/RemoteImages.jsm",
   RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
@@ -721,21 +720,6 @@ class _ASRouter {
       if (!providerIDs.includes(prevProvider.id)) {
         invalidProviders.push(prevProvider.id);
       }
-    }
-
-    {
-      
-      
-      
-      const prevExpts = previousProviders.find(
-        p => p.id === "messaging-experiments"
-      );
-      const expts = providers.find(p => p.id === "messaging-experiments");
-
-      this._onFeatureListChanged(
-        prevExpts?.enabled ? prevExpts.featureIds : [],
-        expts?.enabled ? expts.featureIds : []
-      );
     }
 
     return this.setState(prevState => ({
@@ -2011,88 +1995,7 @@ class _ASRouter {
       return;
     }
 
-    const branch = lazy.ExperimentAPI.getActiveBranch({ slug });
-    const features = branch.features ?? [branch.feature];
-    const featureIds = features.map(feature => feature.featureId);
-
-    this._onFeaturesUpdated(...featureIds);
-
     await this.loadMessagesFromAllProviders([experimentProvider]);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _onFeatureListChanged(oldFeatures, newFeatures) {
-    for (const featureId of oldFeatures) {
-      if (!newFeatures.includes(featureId)) {
-        const listener = this._experimentChangedListeners.get(featureId);
-        this._experimentChangedListeners.delete(featureId);
-        lazy.NimbusFeatures[featureId].off(listener);
-      }
-    }
-
-    const newlySubscribed = [];
-
-    for (const featureId of newFeatures) {
-      if (!oldFeatures.includes(featureId)) {
-        const listener = () => this._onFeaturesUpdated(featureId);
-        this._experimentChangedListeners.set(featureId, listener);
-        lazy.NimbusFeatures[featureId].onUpdate(listener);
-
-        newlySubscribed.push(featureId);
-      }
-    }
-
-    
-    
-    this._onFeaturesUpdated(...newlySubscribed);
-  }
-
-  
-
-
-
-
-
-
-
-  _onFeaturesUpdated(...featureIds) {
-    const messages = [];
-
-    for (const featureId of featureIds) {
-      const featureAPI = lazy.NimbusFeatures[featureId];
-      
-      
-      if (lazy.ExperimentAPI.getExperimentMetaData({ featureId })) {
-        
-        
-        messages.push(featureAPI.getAllVariables());
-      }
-    }
-
-    
-    
-    if (messages.length) {
-      lazy.RemoteImages.prefetchImagesFor(messages);
-    }
   }
 
   async forcePBWindow(browser, msg) {
