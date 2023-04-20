@@ -4,11 +4,8 @@
 
 from __future__ import absolute_import, print_function
 
-import sys
-
 from marionette_driver.errors import InvalidArgumentException
 from marionette_harness import MarionetteTestCase
-from unittest import skipIf
 
 
 class TestWindowRect(MarionetteTestCase):
@@ -302,17 +299,6 @@ class TestWindowRect(MarionetteTestCase):
         self.assertEqual(result_size["width"], expected_size["width"])
         self.assertEqual(result_size["height"], expected_size["height"])
 
-    
-    
-    
-    
-    
-    
-    
-    @skipIf(
-        sys.platform.startswith("darwin"),
-        "Bug 1802192 - macOS fullscreen windows can't be resized.",
-    )
     def test_resize_while_fullscreen(self):
         self.marionette.fullscreen()
         expected_size = self.marionette.set_window_rect(
