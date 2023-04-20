@@ -7,6 +7,8 @@
 #include "ScrollThumbUtils.h"
 #include "AsyncPanZoomController.h"
 #include "FrameMetrics.h"
+#include "UnitTransforms.h"
+#include "Units.h"
 #include "gfxPlatform.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/StaticPrefs_toolkit.h"
@@ -46,14 +48,17 @@ struct AsyncScrollThumbTransformer {
   
   
   
-  void TranslateThumb(const Axis& aAxis, CSSCoord aTranslation);
+  void TranslateThumb(const Axis& aAxis, OuterCSSCoord aTranslation);
 };
 
 void AsyncScrollThumbTransformer::TranslateThumb(const Axis& aAxis,
-                                                 CSSCoord aTranslation) {
-  aAxis.PostTranslate(mScrollbarTransform,
-                      aTranslation * mMetrics.GetDevPixelsPerCSSPixel() *
-                          LayoutDeviceToParentLayerScale(1.0));
+                                                 OuterCSSCoord aTranslation) {
+  aAxis.PostTranslate(
+      mScrollbarTransform,
+      ViewAs<CSSPixel>(aTranslation,
+                       PixelCastJustification::CSSPixelsOfSurroundingContent) *
+          mMetrics.GetDevPixelsPerCSSPixel() *
+          LayoutDeviceToParentLayerScale(1.0));
 }
 
 void AsyncScrollThumbTransformer::ScaleThumbBy(const Axis& aAxis, float aScale,
@@ -70,17 +75,16 @@ void AsyncScrollThumbTransformer::ScaleThumbBy(const Axis& aAxis, float aScale,
   
   
   
-  const CSSCoord scrollTrackOrigin =
+  const OuterCSSCoord scrollTrackOrigin =
       aAxis.GetPointOffset(
-          mMetrics.CalculateCompositionBoundsInCssPixelsOfSurroundingContent()
-              .TopLeft()) +
+          mMetrics.CalculateCompositionBoundsInOuterCssPixels().TopLeft()) +
       mScrollbarData.mScrollTrackStart;
-  CSSCoord thumbExtent = scrollTrackOrigin + mScrollbarData.mThumbStart;
+  OuterCSSCoord thumbExtent = scrollTrackOrigin + mScrollbarData.mThumbStart;
   if (aExtent == ScrollThumbExtent::End) {
     thumbExtent += mScrollbarData.mThumbLength;
   }
-  const CSSCoord thumbExtentScaled = thumbExtent * aScale;
-  const CSSCoord thumbExtentDelta = thumbExtentScaled - thumbExtent;
+  const OuterCSSCoord thumbExtentScaled = thumbExtent * aScale;
+  const OuterCSSCoord thumbExtentDelta = thumbExtentScaled - thumbExtent;
 
   aAxis.PostScale(mScrollbarTransform, aScale);
   TranslateThumb(aAxis, -thumbExtentDelta);
@@ -107,7 +111,7 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
       CSSCoord(aAxis.GetRectLength(mMetrics.GetScrollableRect()).Truncated()) -
       visualViewportLength;
 
-  CSSCoord effectiveThumbLength = mScrollbarData.mThumbLength;
+  OuterCSSCoord effectiveThumbLength = mScrollbarData.mThumbLength;
 
   if (haveAsyncZoom) {
     
@@ -136,15 +140,17 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
 
     float ratio = pageIncrement / (maxMinPosDifference + pageIncrement);
 
-    CSSCoord desiredThumbLength{
+    OuterCSSCoord desiredThumbLength{
         std::max(mScrollbarData.mThumbMinLength,
                  mScrollbarData.mScrollTrackLength * ratio)};
 
     
     
+    auto outerDeviceScale = ViewAs<OuterCSSToLayoutDeviceScale>(
+        deviceScale, PixelCastJustification::CSSPixelsOfSurroundingContent);
     desiredThumbLength =
-        LayoutDeviceCoord((desiredThumbLength * deviceScale).Rounded()) /
-        deviceScale;
+        LayoutDeviceCoord((desiredThumbLength * outerDeviceScale).Rounded()) /
+        outerDeviceScale;
 
     effectiveThumbLength = desiredThumbLength;
 
@@ -161,13 +167,13 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   const CSSCoord curPos = aAxis.GetRectOffset(visualViewportRect) -
                           aAxis.GetRectOffset(mMetrics.GetScrollableRect());
 
-  const float thumbPosRatio =
+  const CSSToOuterCSSScale thumbPosRatio(
       (maxMinPosDifference != 0)
           ? float((mScrollbarData.mScrollTrackLength - effectiveThumbLength) /
                   maxMinPosDifference)
-          : 1.f;
+          : 1.f);
 
-  const CSSCoord desiredThumbPos = curPos * thumbPosRatio;
+  const OuterCSSCoord desiredThumbPos = curPos * thumbPosRatio;
 
   
   

@@ -2185,7 +2185,7 @@ void APZCTreeManager::SetupScrollbarDrag(
     
     
     aMouseInput.TransformToLocal(aApzc->GetTransformToThis());
-    CSSCoord dragStart =
+    OuterCSSCoord dragStart =
         aApzc->ConvertScrollbarPoint(aMouseInput.mLocalOrigin, thumbData);
     
     
@@ -2200,7 +2200,7 @@ void APZCTreeManager::SetupScrollbarDrag(
     }
     
     
-    CSSCoord thumbStart =
+    OuterCSSCoord thumbStart =
         thumbData.mThumbStart +
         ((*thumbData.mDirection == ScrollDirection::eHorizontal)
              ? thumbTransform._41

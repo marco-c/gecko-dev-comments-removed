@@ -370,7 +370,7 @@ class AsyncPanZoomController {
 
   nsEventStatus HandleDragEvent(const MouseInput& aEvent,
                                 const AsyncDragMetrics& aDragMetrics,
-                                CSSCoord aInitialThumbPos);
+                                OuterCSSCoord aInitialThumbPos);
 
   
 
@@ -568,8 +568,8 @@ class AsyncPanZoomController {
 
 
 
-  CSSCoord ConvertScrollbarPoint(const ParentLayerPoint& aScrollbarPoint,
-                                 const ScrollbarData& aThumbData) const;
+  OuterCSSCoord ConvertScrollbarPoint(const ParentLayerPoint& aScrollbarPoint,
+                                      const ScrollbarData& aThumbData) const;
 
   void NotifyMozMouseScrollEvent(const nsString& aString) const;
 

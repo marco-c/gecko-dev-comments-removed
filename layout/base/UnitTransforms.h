@@ -72,6 +72,11 @@ enum class PixelCastJustification : uint8_t {
   
   
   DeltaIsPageProportion,
+  
+  
+  
+  
+  CSSPixelsOfSurroundingContent,
 };
 
 template <class TargetUnits, class SourceUnits>

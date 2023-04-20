@@ -212,15 +212,14 @@ struct FrameMetrics {
 
 
 
-
-  CSSRect CalculateCompositionBoundsInCssPixelsOfSurroundingContent() const {
+  OuterCSSRect CalculateCompositionBoundsInOuterCssPixels() const {
     if (GetZoom() == CSSToParentLayerScale(0)) {
-      return CSSRect();  
+      return OuterCSSRect();  
     }
     
     
     
-    return mCompositionBounds / GetZoom() * CSSToCSSScale{mPresShellResolution};
+    return mCompositionBounds / GetZoom() * GetCSSToOuterCSSScale();
   }
 
   CSSSize CalculateBoundedCompositedSizeInCssPixels() const {
@@ -316,6 +315,13 @@ struct FrameMetrics {
 
   const CSSToLayoutDeviceScale& GetDevPixelsPerCSSPixel() const {
     return mDevPixelsPerCSSPixel;
+  }
+
+  CSSToOuterCSSScale GetCSSToOuterCSSScale() const {
+    
+    
+    
+    return CSSToOuterCSSScale(mPresShellResolution);
   }
 
   void SetIsRootContent(bool aIsRootContent) {

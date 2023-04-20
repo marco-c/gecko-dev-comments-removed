@@ -931,7 +931,7 @@ PointerEventsConsumableFlags AsyncPanZoomController::ArePointerEventsConsumable(
 
 nsEventStatus AsyncPanZoomController::HandleDragEvent(
     const MouseInput& aEvent, const AsyncDragMetrics& aDragMetrics,
-    CSSCoord aInitialThumbPos) {
+    OuterCSSCoord aInitialThumbPos) {
   
   
   
@@ -1013,7 +1013,7 @@ nsEventStatus AsyncPanZoomController::HandleDragEvent(
   }
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  CSSCoord thumbPosition;
+  OuterCSSCoord thumbPosition;
   if (isMouseAwayFromThumb) {
     thumbPosition = aInitialThumbPos;
   } else {
@@ -1021,7 +1021,7 @@ nsEventStatus AsyncPanZoomController::HandleDragEvent(
                     aDragMetrics.mScrollbarDragOffset;
   }
 
-  CSSCoord maxThumbPos = scrollbarData.mScrollTrackLength;
+  OuterCSSCoord maxThumbPos = scrollbarData.mScrollTrackLength;
   maxThumbPos -= scrollbarData.mThumbLength;
 
   float scrollPercent =
@@ -1912,7 +1912,7 @@ Maybe<LayoutDevicePoint> AsyncPanZoomController::ConvertToGecko(
   return Nothing();
 }
 
-CSSCoord AsyncPanZoomController::ConvertScrollbarPoint(
+OuterCSSCoord AsyncPanZoomController::ConvertScrollbarPoint(
     const ParentLayerPoint& aScrollbarPoint,
     const ScrollbarData& aThumbData) const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
@@ -1925,12 +1925,13 @@ CSSCoord AsyncPanZoomController::ConvertScrollbarPoint(
 
   
   
-  scrollbarPoint = scrollbarPoint * Metrics().GetPresShellResolution();
+  OuterCSSPoint outerScrollbarPoint =
+      scrollbarPoint * Metrics().GetCSSToOuterCSSScale();
 
   
-  CSSRect cssCompositionBound =
-      Metrics().CalculateCompositionBoundsInCssPixelsOfSurroundingContent();
-  return GetAxisStart(*aThumbData.mDirection, scrollbarPoint) -
+  OuterCSSRect cssCompositionBound =
+      Metrics().CalculateCompositionBoundsInOuterCssPixels();
+  return GetAxisStart(*aThumbData.mDirection, outerScrollbarPoint) -
          GetAxisStart(*aThumbData.mDirection, cssCompositionBound) -
          aThumbData.mScrollTrackStart;
 }
