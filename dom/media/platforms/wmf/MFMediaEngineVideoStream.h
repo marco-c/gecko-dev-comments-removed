@@ -50,6 +50,8 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
 
   RefPtr<MediaDataDecoder::DecodePromise> Drain() override;
 
+  bool IsEncrypted() const override;
+
  private:
   HRESULT
   CreateMediaType(const TrackInfo& aInfo, IMFMediaType** aMediaType) override;
@@ -93,6 +95,9 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
   
   
   MozPromiseHolder<MediaDataDecoder::DecodePromise> mPendingDrainPromise;
+
+  
+  bool mIsEncrypted = false;
 };
 
 }  
