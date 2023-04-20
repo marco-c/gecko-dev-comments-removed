@@ -10,8 +10,8 @@
 
 
 
-const { ExperimentFakes } = ChromeUtils.import(
-  "resource://testing-common/NimbusTestUtils.jsm"
+const { ExperimentFakes } = ChromeUtils.importESModule(
+  "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
 
 const TEST_URI = TEST_DOMAIN + TEST_PATH + "file_stripping.html";

@@ -1,17 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { SharedDataMap } from "resource://nimbus/lib/SharedDataMap.sys.mjs";
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["ExperimentStore"];
-
-const { SharedDataMap } = ChromeUtils.import(
-  "resource://nimbus/lib/SharedDataMap.jsm"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const lazy = {};
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   FeatureManifest: "resource://nimbus/FeatureManifest.js",
@@ -21,9 +15,9 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 const IS_MAIN_PROCESS =
   Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 
-
+// This branch is used to store experiment data
 const SYNC_DATA_PREF_BRANCH = "nimbus.syncdatastore.";
-
+// This branch is used to store remote rollouts
 const SYNC_DEFAULTS_PREF_BRANCH = "nimbus.syncdefaultsstore.";
 let tryJSONParse = data => {
   try {
@@ -40,7 +34,7 @@ XPCOMUtils.defineLazyGetter(lazy, "syncDataStore", () => {
       try {
         return tryJSONParse(branch.getStringPref(pref, ""));
       } catch (e) {
-        
+        /* This is expected if we don't have anything stored */
       }
 
       return null;
@@ -76,13 +70,13 @@ XPCOMUtils.defineLazyGetter(lazy, "syncDataStore", () => {
         variablesBranch.clearUserPref(variable);
       }
     },
-    
-
-
-
-
-
-
+    /**
+     * Given a branch pref returns all child prefs and values
+     * { childPref: value }
+     * where value is parsed to the appropriate type
+     *
+     * @returns {Object[]}
+     */
     _getBranchChildValues(prefBranch, featureId) {
       const branch = Services.prefs.getBranch(prefBranch);
       const prefChildList = branch.getChildList("");
@@ -93,7 +87,7 @@ XPCOMUtils.defineLazyGetter(lazy, "syncDataStore", () => {
       for (const childPref of prefChildList) {
         let prefName = `${prefBranch}${childPref}`;
         let value = lazy.PrefUtils.getPref(prefName);
-        
+        // Try to parse string values that could be stringified objects
         if (
           lazy.FeatureManifest[featureId]?.variables[childPref]?.type === "json"
         ) {
@@ -134,11 +128,11 @@ XPCOMUtils.defineLazyGetter(lazy, "syncDataStore", () => {
       return metadata;
     },
     set(featureId, value) {
-      
-
-
-
-
+      /* If the enrollment branch has variables we store those separately
+       * in pref branches of appropriate type:
+       * { featureId: "foo", value: { enabled: true } }
+       * gets stored as `${SYNC_DATA_PREF_BRANCH}foo.enabled=true`
+       */
       if (value.branch?.feature?.value) {
         for (let variable of Object.keys(value.branch.feature.value)) {
           let prefName = `${SYNC_DATA_PREF_BRANCH}${featureId}.${variable}`;
@@ -162,11 +156,11 @@ XPCOMUtils.defineLazyGetter(lazy, "syncDataStore", () => {
       }
     },
     setDefault(featureId, enrollment) {
-      
-
-
-
-
+      /* We store configuration variables separately in pref branches of
+       * appropriate type:
+       * (feature: "foo") { variables: { enabled: true } }
+       * gets stored as `${SYNC_DEFAULTS_PREF_BRANCH}foo.enabled=true`
+       */
       let { feature } = enrollment.branch;
       for (let variable of Object.keys(feature.value)) {
         let prefName = `${SYNC_DEFAULTS_PREF_BRANCH}${featureId}.${variable}`;
@@ -185,7 +179,7 @@ XPCOMUtils.defineLazyGetter(lazy, "syncDataStore", () => {
     },
     getAllDefaultBranches() {
       return defaultsPrefBranch.getChildList("").filter(
-        
+        // Filter out remote defaults variable prefs
         pref => !pref.includes(".")
       );
     },
@@ -208,14 +202,14 @@ XPCOMUtils.defineLazyGetter(lazy, "syncDataStore", () => {
 
 const DEFAULT_STORE_ID = "ExperimentStoreData";
 
-
-
-
-
-
-
-
-
+/**
+ * Returns all feature ids associated with the branch provided.
+ * Fallback for when `featureIds` was not persisted to disk. Can be removed
+ * after bug 1725240 has reached release.
+ *
+ * @param {Branch} branch
+ * @returns {string[]}
+ */
 function getAllBranchFeatureIds(branch) {
   return featuresCompat(branch).map(f => f.featureId);
 }
@@ -225,7 +219,7 @@ function featuresCompat(branch) {
     return [];
   }
   let { features } = branch;
-  
+  // In <=v1.5.0 of the Nimbus API, experiments had single feature
   if (!features) {
     features = [branch.feature];
   }
@@ -233,7 +227,7 @@ function featuresCompat(branch) {
   return features;
 }
 
-class ExperimentStore extends SharedDataMap {
+export class ExperimentStore extends SharedDataMap {
   static SYNC_DATA_PREF_BRANCH = SYNC_DATA_PREF_BRANCH;
   static SYNC_DEFAULTS_PREF_BRANCH = SYNC_DEFAULTS_PREF_BRANCH;
 
@@ -258,35 +252,35 @@ class ExperimentStore extends SharedDataMap {
     Services.tm.idleDispatchToMainThread(() => this._cleanupOldRecipes());
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Given a feature identifier, find an active experiment that matches that feature identifier.
+   * This assumes, for now, that there is only one active experiment per feature per browser.
+   * Does not activate the experiment (send an exposure event)
+   *
+   * @param {string} featureId
+   * @returns {Enrollment|undefined} An active experiment if it exists
+   * @memberof ExperimentStore
+   */
   getExperimentForFeature(featureId) {
     return (
       this.getAllActiveExperiments().find(
         experiment =>
           experiment.featureIds?.includes(featureId) ||
-          
+          // Supports <v1.3.0, which was when .featureIds was added
           getAllBranchFeatureIds(experiment.branch).includes(featureId)
-        
+        // Default to the pref store if data is not yet ready
       ) || lazy.syncDataStore.get(featureId)
     );
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Check if an active experiment already exists for a feature.
+   * Does not activate the experiment (send an exposure event)
+   *
+   * @param {string} featureId
+   * @returns {boolean} Does an active experiment exist for that feature?
+   * @memberof ExperimentStore
+   */
   hasExperimentForFeature(featureId) {
     if (!featureId) {
       return false;
@@ -294,9 +288,9 @@ class ExperimentStore extends SharedDataMap {
     return !!this.getExperimentForFeature(featureId);
   }
 
-  
-
-
+  /**
+   * @returns {Enrollment[]}
+   */
   getAll() {
     let data = [];
     try {
@@ -308,31 +302,31 @@ class ExperimentStore extends SharedDataMap {
     return data;
   }
 
-  
-
-
-
+  /**
+   * Returns all active experiments
+   * @returns {Enrollment[]}
+   */
   getAllActiveExperiments() {
     return this.getAll().filter(
       enrollment => enrollment.active && !enrollment.isRollout
     );
   }
 
-  
-
-
-
+  /**
+   * Returns all active rollouts
+   * @returns {Enrollment[]}
+   */
   getAllActiveRollouts() {
     return this.getAll().filter(
       enrollment => enrollment.active && enrollment.isRollout
     );
   }
 
-  
-
-
-
-
+  /**
+   * Query the store for the remote configuration of a feature
+   * @param {string} featureId The feature we want to query for
+   * @returns {{Rollout}|undefined} Remote defaults if available
+   */
   getRolloutForFeature(featureId) {
     return (
       this.getAllActiveRollouts().find(r => r.featureIds.includes(featureId)) ||
@@ -340,13 +334,13 @@ class ExperimentStore extends SharedDataMap {
     );
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Check if an active rollout already exists for a feature.
+   * Does not active the experiment (send an exposure event).
+   *
+   * @param {string} featureId
+   * @returns {boolean} Does an active rollout exist for that feature?
+   */
   hasRolloutForFeature(featureId) {
     if (!featureId) {
       return false;
@@ -354,19 +348,19 @@ class ExperimentStore extends SharedDataMap {
     return !!this.getRolloutForFeature(featureId);
   }
 
-  
-
-
+  /**
+   * Remove inactive enrollments older than 6 months
+   */
   _cleanupOldRecipes() {
-    
+    // Roughly six months
     const threshold = 15552000000;
     const nowTimestamp = new Date().getTime();
     const recipesToRemove = this.getAll().filter(
       experiment =>
         !experiment.active &&
-        
-        
-        
+        // Flip the comparison here to catch scenarios in which lastSeen is
+        // invalid or undefined. The result with be a comparison with NaN
+        // which is always false
         !(nowTimestamp - new Date(experiment.lastSeen).getTime() < threshold)
     );
     this._removeEntriesByKeys(recipesToRemove.map(r => r.slug));
@@ -407,10 +401,10 @@ class ExperimentStore extends SharedDataMap {
     this.off(`featureUpdate:${featureId}`, callback);
   }
 
-  
-
-
-
+  /**
+   * Persists early startup experiments or rollouts
+   * @param {Enrollment} enrollment Experiment or rollout
+   */
   _updateSyncStore(enrollment) {
     let features = featuresCompat(enrollment.branch);
     for (let feature of features) {
@@ -419,7 +413,7 @@ class ExperimentStore extends SharedDataMap {
         feature.isEarlyStartup
       ) {
         if (!enrollment.active) {
-          
+          // Remove experiments on un-enroll, no need to check if it exists
           if (enrollment.isRollout) {
             lazy.syncDataStore.deleteDefault(feature.featureId);
           } else {
@@ -434,7 +428,7 @@ class ExperimentStore extends SharedDataMap {
             branch: {
               ...enrollment.branch,
               feature,
-              
+              // Only store the early startup feature
               features: null,
             },
           });
@@ -443,10 +437,10 @@ class ExperimentStore extends SharedDataMap {
     }
   }
 
-  
-
-
-
+  /**
+   * Add an enrollment and notify listeners
+   * @param {Enrollment} enrollment
+   */
   addEnrollment(enrollment) {
     if (!enrollment || !enrollment.slug) {
       throw new Error(
@@ -459,11 +453,11 @@ class ExperimentStore extends SharedDataMap {
     this._emitUpdates(enrollment);
   }
 
-  
-
-
-
-
+  /**
+   * Merge new properties into the properties of an existing experiment
+   * @param {string} slug
+   * @param {Partial<Enrollment>} newProperties
+   */
   updateExperiment(slug, newProperties) {
     const oldProperties = this.get(slug);
     if (!oldProperties) {
@@ -477,12 +471,12 @@ class ExperimentStore extends SharedDataMap {
     this._emitUpdates(updatedExperiment);
   }
 
-  
-
-
-
-
-
+  /**
+   * Test only helper for cleanup
+   *
+   * @param slugOrFeatureId Can be called with slug (which removes the SharedDataMap entry) or
+   * with featureId which removes the SyncDataStore entry for the feature
+   */
   _deleteForTests(slugOrFeatureId) {
     super._deleteForTests(slugOrFeatureId);
     lazy.syncDataStore.deleteDefault(slugOrFeatureId);

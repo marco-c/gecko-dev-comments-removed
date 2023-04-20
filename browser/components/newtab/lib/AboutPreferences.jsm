@@ -3,9 +3,6 @@
 
 "use strict";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
 const { actionTypes: at, actionCreators: ac } = ChromeUtils.importESModule(
   "resource://activity-stream/common/Actions.sys.mjs"
 );
@@ -15,8 +12,8 @@ const PREFERENCES_LOADED_EVENT = "home-pane-loaded";
 
 const lazy = {};
 
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
+ChromeUtils.defineESModuleGetters(lazy, {
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
 
 

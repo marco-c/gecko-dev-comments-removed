@@ -1,31 +1,19 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = [
-  "ExperimentAPI",
-  "NimbusFeatures",
-  "_ExperimentFeature",
-];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
+  ExperimentStore: "resource://nimbus/lib/ExperimentStore.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
-  ExperimentStore: "resource://nimbus/lib/ExperimentStore.jsm",
-  ExperimentManager: "resource://nimbus/lib/ExperimentManager.jsm",
   FeatureManifest: "resource://nimbus/FeatureManifest.js",
 });
 
@@ -60,7 +48,7 @@ function featuresCompat(branch) {
     return [];
   }
   let { features } = branch;
-  
+  // In <=v1.5.0 of the Nimbus API, experiments had single feature
   if (!features) {
     features = [branch.feature];
   }
@@ -70,14 +58,14 @@ function featuresCompat(branch) {
 
 const experimentBranchAccessor = {
   get: (target, prop) => {
-    
-    
-    
-    
+    // Offer an API where we can access `branch.feature.*`.
+    // This is a useful shorthand that hides the fact that
+    // even single-feature recipes are still represented
+    // as an array with 1 item
     if (!(prop in target) && target.features) {
       return target.features.find(f => f.featureId === prop);
     } else if (target.feature?.featureId === prop) {
-      
+      // Backwards compatibility for version 1.6.2 and older
       return target.feature;
     }
 
@@ -85,22 +73,22 @@ const experimentBranchAccessor = {
   },
 };
 
-const ExperimentAPI = {
-  
-
-
+export const ExperimentAPI = {
+  /**
+   * @returns {Promise} Resolves when the API has synchronized to the main store
+   */
   ready() {
     return this._store.ready();
   },
 
-  
-
-
-
-
-
-
-
+  /**
+   * Returns an experiment, including all its metadata
+   * Sends exposure event
+   *
+   * @param {{slug?: string, featureId?: string}} options slug = An experiment identifier
+   * or feature = a stable identifier for a type of experiment
+   * @returns {{slug: string, active: bool}} A matching experiment if one is found.
+   */
   getExperiment({ slug, featureId } = {}) {
     if (!slug && !featureId) {
       throw new Error(
@@ -128,13 +116,13 @@ const ExperimentAPI = {
     return null;
   },
 
-  
-
-
-
-
-
-
+  /**
+   * Used by getExperimentMetaData and getRolloutMetaData
+   *
+   * @param {{slug: string, featureId: string}} options Enrollment identifier
+   * @param isRollout Is enrollment an experiment or a rollout
+   * @returns {object} Enrollment metadata
+   */
   getEnrollmentMetaData({ slug, featureId }, isRollout) {
     if (!slug && !featureId) {
       throw new Error(
@@ -167,27 +155,27 @@ const ExperimentAPI = {
     return null;
   },
 
-  
-
-
-
+  /**
+   * Return experiment slug its status and the enrolled branch slug
+   * Does NOT send exposure event because you only have access to the slugs
+   */
   getExperimentMetaData(options) {
     return this.getEnrollmentMetaData(options);
   },
 
-  
-
-
-
+  /**
+   * Return rollout slug its status and the enrolled branch slug
+   * Does NOT send exposure event because you only have access to the slugs
+   */
   getRolloutMetaData(options) {
     return this.getEnrollmentMetaData(options, true);
   },
 
-  
-
-
-
-
+  /**
+   * Return FeatureConfig from first active experiment where it can be found
+   * @param {{slug: string, featureId: string }}
+   * @returns {Branch | null}
+   */
   getActiveBranch({ slug, featureId }) {
     let experiment = null;
     try {
@@ -204,32 +192,32 @@ const ExperimentAPI = {
       return null;
     }
 
-    
-    
+    // Default to null for feature-less experiments where we're only
+    // interested in exposure.
     return experiment?.branch || null;
   },
 
-  
-
-
-
-
+  /**
+   * Deregisters an event listener.
+   * @param {string} eventName
+   * @param {function} callback
+   */
   off(eventName, callback) {
     this._store.off(eventName, callback);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Returns the recipe for a given experiment slug
+   *
+   * This should noly be called from the main process.
+   *
+   * Note that the recipe is directly fetched from RemoteSettings, which has
+   * all the recipe metadata available without relying on the `this._store`.
+   * Therefore, calling this function does not require to call `this.ready()` first.
+   *
+   * @param slug {String} An experiment identifier
+   * @returns {Recipe|undefined} A matching experiment recipe if one is found
+   */
   async getRecipe(slug) {
     if (!IS_MAIN_PROCESS) {
       throw new Error(
@@ -241,13 +229,13 @@ const ExperimentAPI = {
 
     try {
       [recipe] = await this._remoteSettingsClient.get({
-        
+        // Do not sync the RS store, let RemoteSettingsExperimentLoader do that
         syncIfEmpty: false,
         filters: { slug },
       });
     } catch (e) {
-      
-      
+      // If an error occurs in .get(), an empty list is returned and the destructuring
+      // assignment will throw.
       console.error(e);
       recipe = undefined;
     }
@@ -255,15 +243,15 @@ const ExperimentAPI = {
     return recipe;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Returns all the branches for a given experiment slug
+   *
+   * This should only be called from the main process. Like `getRecipe()`,
+   * calling this function does not require to call `this.ready()` first.
+   *
+   * @param slug {String} An experiment identifier
+   * @returns {[Branches]|undefined} An array of branches for the given slug
+   */
   async getAllBranches(slug) {
     if (!IS_MAIN_PROCESS) {
       throw new Error(
@@ -301,18 +289,19 @@ const ExperimentAPI = {
   },
 };
 
+/**
+ * Singleton that holds lazy references to _ExperimentFeature instances
+ * defined by the FeatureManifest
+ */
+export const NimbusFeatures = {};
 
-
-
-
-const NimbusFeatures = {};
 for (let feature in lazy.FeatureManifest) {
   XPCOMUtils.defineLazyGetter(NimbusFeatures, feature, () => {
     return new _ExperimentFeature(feature);
   });
 }
 
-class _ExperimentFeature {
+export class _ExperimentFeature {
   constructor(featureId, manifest) {
     this.featureId = featureId;
     this.prefGetters = {};
@@ -353,19 +342,19 @@ class _ExperimentFeature {
     return this.manifest?.variables?.[variable]?.fallbackPref;
   }
 
-  
-
-
-
+  /**
+   * Wait for ExperimentStore to load giving access to experiment features that
+   * do not have a pref cache
+   */
   ready() {
     return ExperimentAPI.ready();
   }
 
-  
-
-
-
-
+  /**
+   * Lookup feature variables in experiments, prefs, and remote defaults.
+   * @param {{defaultValues?: {[variableName: string]: any}}} options
+   * @returns {{[variableName: string]: any}} The feature value
+   */
   getAllVariables({ defaultValues = null } = {}) {
     const branch = ExperimentAPI.getActiveBranch({ featureId: this.featureId });
     const featureValue = featuresCompat(branch).find(
@@ -381,7 +370,7 @@ class _ExperimentFeature {
 
   getVariable(variable) {
     if (!this.manifest?.variables?.[variable]) {
-      
+      // Only throw in nightly/tests
       if (Cu.isInAutomation || AppConstants.NIGHTLY_BUILD) {
         throw new Error(
           `Nimbus: Warning - variable "${variable}" is not defined in FeatureManifest.js`
@@ -389,7 +378,7 @@ class _ExperimentFeature {
       }
     }
 
-    
+    // Next, check if an experiment is defined
     const branch = ExperimentAPI.getActiveBranch({
       featureId: this.featureId,
     });
@@ -401,13 +390,13 @@ class _ExperimentFeature {
       return experimentValue;
     }
 
-    
+    // Next, check remote defaults
     const remoteValue = this.getRollout()?.value?.[variable];
     if (typeof remoteValue !== "undefined") {
       return remoteValue;
     }
 
-    
+    // Return the default preference value
     const prefName = this.getFallbackPrefName(variable);
     return prefName ? this.prefGetters[variable] : undefined;
   }
@@ -426,7 +415,7 @@ class _ExperimentFeature {
       );
     }
 
-    
+    // This path is deprecated and will be removed in the future
     if (remoteConfig.branch?.feature) {
       return remoteConfig.branch.feature;
     }
@@ -448,7 +437,7 @@ class _ExperimentFeature {
       });
     }
 
-    
+    // Exposure only sent if user is enrolled in an experiment
     if (enrollmentData) {
       ExperimentAPI.recordExposureEvent({
         featureId: this.featureId,
@@ -467,10 +456,10 @@ class _ExperimentFeature {
     ExperimentAPI._store._offFeatureUpdate(this.featureId, callback);
   }
 
-  
-
-
-
+  /**
+   * The applications this feature applies to.
+   *
+   */
   get applications() {
     return this.manifest.applications ?? ["firefox-desktop"];
   }

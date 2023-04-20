@@ -1,35 +1,25 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-const { ExperimentStore } = ChromeUtils.import(
-  "resource://nimbus/lib/ExperimentStore.jsm"
-);
-
-const { FileTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/FileTestUtils.sys.mjs"
-);
+import { ExperimentStore } from "resource://nimbus/lib/ExperimentStore.sys.mjs";
+import { FileTestUtils } from "resource://testing-common/FileTestUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  _ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
+  _RemoteSettingsExperimentLoader:
+    "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
-  _ExperimentManager: "resource://nimbus/lib/ExperimentManager.jsm",
-  ExperimentManager: "resource://nimbus/lib/ExperimentManager.jsm",
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
   NormandyUtils: "resource://normandy/lib/NormandyUtils.jsm",
-  _RemoteSettingsExperimentLoader:
-    "resource://nimbus/lib/RemoteSettingsExperimentLoader.jsm",
   FeatureManifest: "resource://nimbus/FeatureManifest.js",
 });
 
@@ -46,9 +36,7 @@ async function fetchSchema(url) {
   return schema;
 }
 
-const EXPORTED_SYMBOLS = ["ExperimentTestUtils", "ExperimentFakes"];
-
-const ExperimentTestUtils = {
+export const ExperimentTestUtils = {
   _validateSchema(schema, value, errorMsg) {
     const result = lazy.JsonSchema.validate(value, schema, {
       shortCircuit: false,
@@ -64,7 +52,7 @@ const ExperimentTestUtils = {
   _validateFeatureValueEnum({ branch }) {
     let { features } = branch;
     for (let feature of features) {
-      
+      // If we're not using a real feature skip this check
       if (!lazy.FeatureManifest[feature.featureId]) {
         return true;
       }
@@ -87,15 +75,15 @@ const ExperimentTestUtils = {
     return true;
   },
 
-  
-
-
+  /**
+   * Checks if an experiment is valid acording to existing schema
+   */
   async validateExperiment(experiment) {
     const schema = await fetchSchema(
       "resource://nimbus/schemas/NimbusExperiment.schema.json"
     );
 
-    
+    // Ensure that the `featureIds` field is properly set
     const { branches } = experiment;
     branches.forEach(branch => {
       branch.features.map(({ featureId }) => {
@@ -118,8 +106,8 @@ const ExperimentTestUtils = {
       "resource://nimbus/schemas/NimbusEnrollment.schema.json"
     );
 
-    
-    
+    // We still have single feature experiment recipes for backwards
+    // compatibility testing but we don't do schema validation
     if (!enrollment.branch.features && enrollment.branch.feature) {
       return true;
     }
@@ -144,16 +132,16 @@ const ExperimentTestUtils = {
       `Rollout configuration ${rollout.slug} is not valid`
     );
   },
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Add features for tests.
+   *
+   * These features will only be visible to the JS Nimbus client. The native
+   * Nimbus client will have no access.
+   *
+   * @params features A list of |_NimbusFeature|s.
+   *
+   * @returns A cleanup function to remove the features once the test has completed.
+   */
   addTestFeatures(...features) {
     for (const feature of features) {
       if (Object.hasOwn(lazy.NimbusFeatures, feature.featureId)) {
@@ -171,12 +159,12 @@ const ExperimentTestUtils = {
   },
 };
 
-const ExperimentFakes = {
+export const ExperimentFakes = {
   manager(store) {
     let sandbox = lazy.sinon.createSandbox();
     let manager = new lazy._ExperimentManager({ store: store || this.store() });
-    
-    
+    // We want calls to `store.addEnrollment` to implicitly validate the
+    // enrollment before saving to store
     let origAddExperiment = manager.store.addEnrollment.bind(manager.store);
     sandbox.stub(manager.store, "addEnrollment").callsFake(async enrollment => {
       await ExperimentTestUtils.validateEnrollment(enrollment);
@@ -211,9 +199,9 @@ const ExperimentFakes = {
       rollout.source = source;
     }
     await ExperimentTestUtils.validateRollouts(rollout);
-    
-    
-    
+    // After storing the remote configuration to store and updating the feature
+    // we want to flush so that NimbusFeature usage in content process also
+    // receives the update
     await manager.store.addEnrollment(rollout);
     manager.store._syncToChildren({ flush: true });
 
@@ -238,9 +226,9 @@ const ExperimentFakes = {
     { manager = lazy.ExperimentManager, isRollout = false } = {}
   ) {
     await manager.store.ready();
-    
-    
-    
+    // Use id passed in featureConfig value to compute experimentId
+    // This help filter telemetry events (such as expose) in race conditions when telemetry
+    // from multiple experiments with same featureId co-exist in snapshot
     let experimentId = `${featureConfig.featureId}${
       featureConfig?.value?.id ? "-" + featureConfig?.value?.id : ""
     }-experiment-${Math.random()}`;
@@ -288,8 +276,8 @@ const ExperimentFakes = {
       new Promise(resolve =>
         manager.store.on(`update:${slug}`, (event, experiment) => {
           if (!experiment.active) {
-            
-            
+            // Removes recipe from file storage which
+            // (normally the users archive of past experiments)
             manager.store._deleteForTests(recipe.slug);
             resolve();
           }
@@ -314,8 +302,8 @@ const ExperimentFakes = {
       return new Promise(resolve =>
         manager.store.on(`update:${slug}`, (event, experiment) => {
           if (!experiment.active) {
-            
-            
+            // Removes recipe from file storage which
+            // (normally the users archive of past experiments)
             manager.store._deleteForTests(slug);
             resolve();
           }
@@ -333,13 +321,13 @@ const ExperimentFakes = {
       throw new Error("Cleanup failed");
     }
   },
-  
+  // Experiment store caches in prefs Enrollments for fast sync access
   cleanupStorePrefCache() {
     try {
       Services.prefs.deleteBranch(SYNC_DATA_PREF_BRANCH);
       Services.prefs.deleteBranch(SYNC_DEFAULTS_PREF_BRANCH);
     } catch (e) {
-      
+      // Expected if nothing is cached
     }
   },
   childStore() {
@@ -347,11 +335,11 @@ const ExperimentFakes = {
   },
   rsLoader() {
     const loader = new lazy._RemoteSettingsExperimentLoader();
-    
+    // Replace RS client with a fake
     Object.defineProperty(loader, "remoteSettingsClient", {
       value: { get: () => Promise.resolve([]) },
     });
-    
+    // Replace xman with a fake
     loader.manager = this.manager();
 
     return loader;
@@ -413,7 +401,7 @@ const ExperimentFakes = {
   },
   recipe(slug = lazy.NormandyUtils.generateUuid(), props = {}) {
     return {
-      
+      // This field is required for populating remote settings
       id: lazy.NormandyUtils.generateUuid(),
       schemaVersion: "1.7.0",
       appName: "firefox_desktop",
