@@ -40,7 +40,7 @@ namespace webrtc {
 class RtpPacketSinkInterface;
 class VideoDecoderFactory;
 
-class VideoReceiveStream : public MediaReceiveStream {
+class VideoReceiveStream : public MediaReceiveStreamInterface {
  public:
   
   struct RecordingState {

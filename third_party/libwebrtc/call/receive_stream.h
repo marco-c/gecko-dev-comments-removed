@@ -72,7 +72,7 @@ class ReceiveStreamInterface {
 };
 
 
-class MediaReceiveStream : public ReceiveStreamInterface {
+class MediaReceiveStreamInterface : public ReceiveStreamInterface {
  public:
   
   
