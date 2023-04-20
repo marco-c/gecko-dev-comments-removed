@@ -370,11 +370,12 @@ bool nsXULPopupManager::RollupInternal(RollupKind aKind,
       if (popupFrame->IsAnchored()) {
         
         
-        auto r = popupFrame->GetScreenAnchorRect();
-        if (r.x != -1 && r.y != -1) {
-          return r;
+        auto r = popupFrame->GetUntransformedAnchorRect();
+        if (!r.IsEmpty()) {
+          return CSSIntRect::FromAppUnitsRounded(r);
         }
       }
+
       auto* anchor = Element::FromNodeOrNull(popupFrame->GetAnchor());
       if (!anchor) {
         return CSSIntRect();
