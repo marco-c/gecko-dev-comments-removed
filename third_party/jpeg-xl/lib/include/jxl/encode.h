@@ -1178,6 +1178,16 @@ JXL_EXPORT void JxlColorEncodingSetToSRGB(JxlColorEncoding* color_encoding,
 JXL_EXPORT void JxlColorEncodingSetToLinearSRGB(
     JxlColorEncoding* color_encoding, JXL_BOOL is_gray);
 
+
+
+
+
+
+
+
+
+JXL_EXPORT void JxlEncoderAllowExpertOptions(JxlEncoder* enc);
+
 #if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif

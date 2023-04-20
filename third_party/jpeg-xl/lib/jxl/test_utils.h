@@ -321,22 +321,6 @@ bool Near(double expected, double value, double max_dist) {
 }
 
 
-float LoadBEFloat(const uint8_t* p) {
-  uint32_t u = LoadBE32(p);
-  float result;
-  memcpy(&result, &u, 4);
-  return result;
-}
-
-
-float LoadLEFloat(const uint8_t* p) {
-  uint32_t u = LoadLE32(p);
-  float result;
-  memcpy(&result, &u, 4);
-  return result;
-}
-
-
 float LoadFloat16(uint16_t bits16) {
   const uint32_t sign = bits16 >> 15;
   const uint32_t biased_exp = (bits16 >> 10) & 0x1F;

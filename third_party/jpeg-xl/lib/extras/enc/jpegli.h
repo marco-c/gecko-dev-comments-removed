@@ -3,26 +3,29 @@
 
 
 
-#ifndef LIB_EXTRAS_ENCODE_JPEG_H_
-#define LIB_EXTRAS_ENCODE_JPEG_H_
+#ifndef LIB_EXTRAS_ENC_JPEGLI_H_
+#define LIB_EXTRAS_ENC_JPEGLI_H_
+
+
 
 #include <stdint.h>
 
 #include <vector>
 
+#include "lib/extras/packed_image.h"
 #include "lib/jxl/base/data_parallel.h"
-#include "lib/jxl/image_bundle.h"
+#include "lib/jxl/base/status.h"
 
 namespace jxl {
 namespace extras {
 
 struct JpegSettings {
-  bool xyb = true;
+  bool xyb = false;
   size_t target_size = 0;
   float distance = 1.f;
 };
 
-Status EncodeJpeg(const ImageBundle& input, const JpegSettings& jpeg_settings,
+Status EncodeJpeg(const PackedPixelFile& ppf, const JpegSettings& jpeg_settings,
                   ThreadPool* pool, std::vector<uint8_t>* compressed);
 
 }  
