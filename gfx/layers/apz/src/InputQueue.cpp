@@ -10,6 +10,7 @@
 
 #include "GestureEventListener.h"
 #include "InputBlockState.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/layers/APZInputBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/ToString.h"
@@ -709,9 +710,9 @@ InputBlockState* InputQueue::GetBlockForId(uint64_t aInputBlockId) {
 }
 
 void InputQueue::AddInputBlockCallback(uint64_t aInputBlockId,
-                                       InputBlockCallback&& aCallback) {
-  mInputBlockCallbacks.insert(
-      InputBlockCallbackMap::value_type(aInputBlockId, std::move(aCallback)));
+                                       InputBlockCallbackInfo&& aCallbackInfo) {
+  mInputBlockCallbacks.insert(InputBlockCallbackMap::value_type(
+      aInputBlockId, std::move(aCallbackInfo)));
 }
 
 InputBlockState* InputQueue::FindBlockForId(uint64_t aInputBlockId,
@@ -912,7 +913,7 @@ void InputQueue::SetBrowserGestureResponse(uint64_t aInputBlockId,
 
 static APZHandledResult GetHandledResultFor(
     const AsyncPanZoomController* aApzc,
-    const InputBlockState& aCurrentInputBlock) {
+    const InputBlockState& aCurrentInputBlock, nsEventStatus aEagerStatus) {
   if (aCurrentInputBlock.ShouldDropEvents()) {
     return APZHandledResult{APZHandledPlace::HandledByContent, aApzc};
   }
@@ -922,7 +923,15 @@ static APZHandledResult GetHandledResultFor(
   }
 
   if (aApzc->IsRootContent()) {
-    return aApzc->CanVerticalScrollWithDynamicToolbar()
+    
+    
+    
+    
+    
+    
+    
+    return (aEagerStatus == nsEventStatus_eConsumeDoDefault &&
+            aApzc->CanVerticalScrollWithDynamicToolbar())
                ? APZHandledResult{APZHandledPlace::HandledByRoot, aApzc}
                : APZHandledResult{APZHandledPlace::Unhandled, aApzc};
   }
@@ -960,8 +969,9 @@ void InputQueue::ProcessQueue() {
     
     auto it = mInputBlockCallbacks.find(curBlock->GetBlockId());
     if (it != mInputBlockCallbacks.end()) {
-      APZHandledResult handledResult = GetHandledResultFor(target, *curBlock);
-      it->second(curBlock->GetBlockId(), handledResult);
+      APZHandledResult handledResult =
+          GetHandledResultFor(target, *curBlock, it->second.mEagerStatus);
+      it->second.mCallback(curBlock->GetBlockId(), handledResult);
       
       mInputBlockCallbacks.erase(it);
     }

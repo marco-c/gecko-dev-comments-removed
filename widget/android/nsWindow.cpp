@@ -851,23 +851,22 @@ class NPZCSupport final
       window->DispatchHitTest(touchEvent);
     });
 
-    if (result.GetStatus() == nsEventStatus_eIgnore) {
-      if (aReturnResult) {
+    if (aReturnResult && result.GetHandledResult() != Nothing()) {
+      
+      
+      if (result.GetStatus() == nsEventStatus_eIgnore) {
         aReturnResult->Complete(java::PanZoomController::InputResultDetail::New(
             INPUT_RESULT_UNHANDLED,
             java::PanZoomController::SCROLLABLE_FLAG_NONE,
             java::PanZoomController::OVERSCROLL_FLAG_NONE));
+      } else {
+        MOZ_ASSERT(result.GetStatus() == nsEventStatus_eConsumeDoDefault);
+
+        
+        
+        aReturnResult->Complete(
+            ConvertAPZHandledResult(result.GetHandledResult().value()));
       }
-      return;
-    }
-
-    MOZ_ASSERT(result.GetStatus() == nsEventStatus_eConsumeDoDefault);
-
-    if (aReturnResult && result.GetHandledResult() != Nothing()) {
-      
-      
-      aReturnResult->Complete(
-          ConvertAPZHandledResult(result.GetHandledResult().value()));
     }
   }
 };
