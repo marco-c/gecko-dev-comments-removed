@@ -1346,7 +1346,9 @@ void nsLineLayout::PlaceFrame(PerFrameData* pfd, ReflowOutput& aMetrics) {
   
   
   if (pfd->mWritingMode.GetBlockDir() != lineWM.GetBlockDir()) {
-    pfd->mAscent = lineWM.IsLineInverted() ? 0 : aMetrics.BSize(lineWM);
+    pfd->mAscent = lineWM.IsAlphabeticalBaseline()
+                       ? lineWM.IsLineInverted() ? 0 : aMetrics.BSize(lineWM)
+                       : aMetrics.BSize(lineWM) / 2;
   } else {
     if (aMetrics.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
       pfd->mAscent = pfd->mFrame->GetLogicalBaseline(lineWM);
@@ -2014,25 +2016,7 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
       switch (keyword) {
         default:
         case StyleVerticalAlignKeyword::Baseline:
-          if (lineWM.IsVertical() && !lineWM.IsSideways()) {
-            
-            
-            
-            if (frameSpan) {
-              nscoord borderBoxBSize = pfd->mBounds.BSize(lineWM);
-              nscoord bStartBP = pfd->mBorderPadding.BStart(lineWM);
-              nscoord bEndBP = pfd->mBorderPadding.BEnd(lineWM);
-              nscoord contentBoxBSize = borderBoxBSize - bStartBP - bEndBP;
-              pfd->mBounds.BStart(lineWM) =
-                  revisedBaselineBCoord - contentBoxBSize / 2 - bStartBP;
-            } else {
-              pfd->mBounds.BStart(lineWM) = revisedBaselineBCoord -
-                                            logicalBSize / 2 +
-                                            pfd->mMargin.BStart(lineWM);
-            }
-          } else {
-            pfd->mBounds.BStart(lineWM) = revisedBaselineBCoord - pfd->mAscent;
-          }
+          pfd->mBounds.BStart(lineWM) = revisedBaselineBCoord - pfd->mAscent;
           pfd->mBlockDirAlign = VALIGN_OTHER;
           break;
 
@@ -2152,7 +2136,7 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
       
       nscoord revisedBaselineBCoord =
           baselineBCoord - offset * lineWM.FlowRelativeToLineRelativeFactor();
-      if (lineWM.IsVertical() && !lineWM.IsSideways()) {
+      if (lineWM.IsCentralBaseline()) {
         
         
         pfd->mBounds.BStart(lineWM) =
