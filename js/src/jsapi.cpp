@@ -1097,6 +1097,14 @@ JS_PUBLIC_API bool JS_GetClassPrototype(JSContext* cx, JSProtoKey key,
                                         MutableHandleObject objp) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
+
+  
+  
+  
+  if (key == JSProto_BoundFunction) {
+    key = JSProto_Function;
+  }
+
   JSObject* proto = GlobalObject::getOrCreatePrototype(cx, key);
   if (!proto) {
     return false;

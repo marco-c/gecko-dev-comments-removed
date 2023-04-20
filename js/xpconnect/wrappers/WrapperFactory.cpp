@@ -485,7 +485,8 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   if (originIsChrome && !targetIsChrome) {
     
     
-    if ((IdentifyStandardInstance(obj) == JSProto_Function)) {
+    JSProtoKey key = IdentifyStandardInstance(obj);
+    if (key == JSProto_Function || key == JSProto_BoundFunction) {
       wrapper = &FilteringWrapper<CrossCompartmentSecurityWrapper,
                                   OpaqueWithCall>::singleton;
     }
@@ -493,7 +494,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
     
     
     
-    else if (IdentifyStandardInstance(obj) == JSProto_Object) {
+    else if (key == JSProto_Object) {
       wrapper = &ChromeObjectWrapper::singleton;
     }
 

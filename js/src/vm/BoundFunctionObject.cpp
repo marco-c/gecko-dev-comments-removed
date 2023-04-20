@@ -306,7 +306,11 @@ static const ObjectOps objOps = {
 
 const JSClass BoundFunctionObject::class_ = {
     "BoundFunctionObject",
-    JSCLASS_HAS_RESERVED_SLOTS(BoundFunctionObject::SlotCount),
+    
+    
+    
+    JSCLASS_HAS_CACHED_PROTO(JSProto_BoundFunction) |
+        JSCLASS_HAS_RESERVED_SLOTS(BoundFunctionObject::SlotCount),
     &classOps,
     JS_NULL_CLASS_SPEC,
     JS_NULL_CLASS_EXT,
