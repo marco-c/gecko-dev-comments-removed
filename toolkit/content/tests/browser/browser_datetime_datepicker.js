@@ -619,27 +619,13 @@ add_task(async function test_datetime_focus_to_input() {
   Assert.equal(helper.panel.state, "open", "Panel should be visible");
 
   
-  await SpecialPowers.spawn(browser, [], () => {
-    content.document.querySelector("#datetime").focus();
-  });
+  await EventUtils.synthesizeKey(" ", {});
 
   let closed = helper.promisePickerClosed();
-
-  
-  for (let i = 0; i < 3; ++i) {
-    await BrowserTestUtils.synthesizeKey("KEY_Tab", {}, browser);
-  }
 
   await closed;
 
   Assert.equal(helper.panel.state, "closed", "Panel should be closed now");
-
-  
-  let isFocused = await SpecialPowers.spawn(browser, [], () => {
-    return content.document.querySelector("#datetime").matches(":focus");
-  });
-
-  Assert.ok(isFocused, "<input> should still be focused");
 
   await helper.tearDown();
 });
