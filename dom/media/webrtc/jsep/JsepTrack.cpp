@@ -377,10 +377,15 @@ void JsepTrack::GetRids(const SdpMediaSection& msection,
     return;
   }
 
+  
+  
+  
+  std::set<std::string> uniqueRids;
   for (const SdpSimulcastAttribute::Version& version : *versions) {
-    if (!version.choices.empty()) {
+    if (!version.choices.empty() && !uniqueRids.count(version.choices[0].rid)) {
       
       rids->push_back(*msection.FindRid(version.choices[0].rid));
+      uniqueRids.insert(version.choices[0].rid);
     }
   }
 }
