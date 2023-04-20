@@ -63,6 +63,8 @@ class ReceiveSideCongestionController : public CallStatsObserver,
   
   void SetMaxDesiredReceiveBitrate(DataRate bitrate);
 
+  void SetTransportOverhead(DataSize overhead_per_packet);
+
   
   int64_t TimeUntilNextProcess() override;
   void Process() override;
