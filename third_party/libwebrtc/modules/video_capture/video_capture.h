@@ -156,7 +156,7 @@ class VideoCaptureModule : public rtc::RefCountInterface {
   virtual bool GetApplyRotation() = 0;
 
   
-  virtual void SetTrackingId(const char* aTrackingId) {}
+  virtual void SetTrackingId(uint32_t aTrackingIdProcId) {}
 
  protected:
   ~VideoCaptureModule() override {}
