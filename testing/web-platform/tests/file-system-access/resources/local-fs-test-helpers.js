@@ -7,6 +7,10 @@
 
 
 
+function getFileSystemType() {
+  return 'local';
+}
+
 const directory_promise = (async () => {
   await new Promise(resolve => {
     window.addEventListener('DOMContentLoaded', resolve);
