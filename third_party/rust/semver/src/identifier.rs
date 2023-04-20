@@ -66,12 +66,14 @@
 
 
 
-use crate::alloc::alloc::{alloc, dealloc, Layout};
+use crate::alloc::alloc::{alloc, dealloc, handle_alloc_error, Layout};
+use core::isize;
 use core::mem;
 use core::num::{NonZeroU64, NonZeroUsize};
 use core::ptr::{self, NonNull};
 use core::slice;
 use core::str;
+use core::usize;
 
 const PTR_BYTES: usize = mem::size_of::<NonNull<u8>>();
 
@@ -103,6 +105,7 @@ impl Identifier {
     
     pub(crate) unsafe fn new_unchecked(string: &str) -> Self {
         let len = string.len();
+        debug_assert!(len <= isize::MAX as usize);
         match len as u64 {
             0 => Self::empty(),
             1..=8 => {
@@ -120,9 +123,25 @@ impl Identifier {
                 let align = 2;
                 
                 
+                
+                
+                
+                
+                
+                
+                
+                if mem::size_of::<usize>() < 8 {
+                    let max_alloc = usize::MAX / 2 - align;
+                    assert!(size <= max_alloc);
+                }
+                
+                
                 let layout = unsafe { Layout::from_size_align_unchecked(size, align) };
                 
                 let ptr = unsafe { alloc(layout) };
+                if ptr.is_null() {
+                    handle_alloc_error(layout);
+                }
                 let mut write = ptr;
                 let mut varint_remaining = len;
                 while varint_remaining > 0 {
@@ -203,6 +222,9 @@ impl Clone for Identifier {
             let layout = unsafe { Layout::from_size_align_unchecked(size, align) };
             
             let clone = unsafe { alloc(layout) };
+            if clone.is_null() {
+                handle_alloc_error(layout);
+            }
             
             
             
