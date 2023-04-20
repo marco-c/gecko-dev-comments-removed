@@ -11,6 +11,7 @@
 #ifndef TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_VIDEO_QUALITY_ANALYZER_SHARED_OBJECTS_H_
 #define TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_VIDEO_QUALITY_ANALYZER_SHARED_OBJECTS_H_
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <ostream>
@@ -182,6 +183,16 @@ struct AnalyzerStats {
   
   
   SamplesStatsCounter frames_in_flight_left_count;
+
+  
+  
+  SamplesStatsCounter on_frame_captured_processing_time_ms;
+  SamplesStatsCounter on_frame_pre_encode_processing_time_ms;
+  SamplesStatsCounter on_frame_encoded_processing_time_ms;
+  SamplesStatsCounter on_frame_pre_decode_processing_time_ms;
+  SamplesStatsCounter on_frame_decoded_processing_time_ms;
+  SamplesStatsCounter on_frame_rendered_processing_time_ms;
+  SamplesStatsCounter on_decoder_error_processing_time_ms;
 };
 
 struct StatsKey {
@@ -245,6 +256,9 @@ struct DefaultVideoQualityAnalyzerOptions {
   
   
   bool report_detailed_frame_stats = false;
+  
+  
+  bool report_infra_metrics = false;
   
   
   
