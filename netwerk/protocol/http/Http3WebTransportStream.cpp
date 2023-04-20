@@ -48,7 +48,7 @@ class DummyWebTransportStreamTransaction : public nsAHttpTransaction {
   nsHttpRequestHead* RequestHead() override { return nullptr; }
   uint32_t Http1xTransactionCount() override { return 0; }
   [[nodiscard]] nsresult TakeSubTransactions(
-      nsTArray<RefPtr<nsAHttpTransaction> >& outTransactions) override {
+      nsTArray<RefPtr<nsAHttpTransaction>>& outTransactions) override {
     return NS_OK;
   }
 
@@ -141,8 +141,9 @@ Http3WebTransportStream::Http3WebTransportStream(Http3Session* aSession,
       mSessionId(aSessionId),
       mStreamType(aType),
       mStreamRole(INCOMING),
-      mSendState(SENDING),  
-                            
+      
+      
+      mSendState(WAITING_DATA),
       mStreamReadyCallback(nullptr) {
   LOG(("Http3WebTransportStream incoming ctor %p", this));
   mStreamId = aStreamId;
@@ -161,7 +162,9 @@ NS_IMETHODIMP Http3WebTransportStream::OnInputStreamReady(
     nsIAsyncInputStream* aStream) {
   LOG(("Http3WebTransportStream::OnInputStreamReady [this=%p stream=%p]", this,
        aStream));
+  MOZ_ASSERT(mSendState == WAITING_DATA);
 
+  mSendState = SENDING;
   mSession->StreamHasDataToWrite(this);
   return NS_OK;
 }
@@ -185,7 +188,7 @@ nsresult Http3WebTransportStream::InitOutputPipe() {
     return rv;
   }
 
-  mSendState = SENDING;
+  mSendState = WAITING_DATA;
   return NS_OK;
 }
 
@@ -206,22 +209,19 @@ nsresult Http3WebTransportStream::InitInputPipe() {
   return NS_OK;
 }
 
-already_AddRefed<nsIAsyncOutputStream> Http3WebTransportStream::GetWriter() {
-  nsCOMPtr<nsIAsyncOutputStream> stream;
+void Http3WebTransportStream::GetWriterAndReader(
+    nsIAsyncOutputStream** aOutOutputStream,
+    nsIAsyncInputStream** aOutInputStream) {
+  nsCOMPtr<nsIAsyncOutputStream> output;
+  nsCOMPtr<nsIAsyncInputStream> input;
   {
     MutexAutoLock lock(mMutex);
-    stream = mSendStreamPipeOut;
+    output = mSendStreamPipeOut;
+    input = mReceiveStreamPipeIn;
   }
-  return stream.forget();
-}
 
-already_AddRefed<nsIAsyncInputStream> Http3WebTransportStream::GetReader() {
-  nsCOMPtr<nsIAsyncInputStream> stream;
-  {
-    MutexAutoLock lock(mMutex);
-    stream = mReceiveStreamPipeIn;
-  }
-  return stream.forget();
+  output.forget(aOutOutputStream);
+  input.forget(aOutInputStream);
 }
 
 already_AddRefed<nsIWebTransportSendStreamStats>
@@ -365,7 +365,7 @@ nsresult Http3WebTransportStream::ReadSegments() {
          static_cast<uint32_t>(mSocketOutCondition), again, mSendFin, this));
 
     
-    if (rv == NS_BASE_STREAM_CLOSED || mSendFin || mStopSendingError) {
+    if (rv == NS_BASE_STREAM_CLOSED || !mPendingTasks.IsEmpty()) {
       rv = NS_OK;
       sendBytes = 0;
     }
@@ -374,6 +374,7 @@ nsresult Http3WebTransportStream::ReadSegments() {
       
       
       if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+        mSendState = WAITING_DATA;
         rv = NS_OK;
       }
       again = false;
@@ -383,16 +384,18 @@ nsresult Http3WebTransportStream::ReadSegments() {
       }
       again = false;
     } else if (!sendBytes) {
-      if (mSendFin) {
-        mSession->CloseSendingSide(mStreamId);
-      }
-      if (mStopSendingError) {
-        mSession->StreamStopSending(this, *mStopSendingError);
-      }
       mSendState = SEND_DONE;
       rv = NS_OK;
       again = false;
+      if (!mPendingTasks.IsEmpty()) {
+        LOG(("Has pending tasks to do"));
+        nsTArray<std::function<void()>> tasks = std::move(mPendingTasks);
+        for (const auto& task : tasks) {
+          task();
+        }
+      }
     }
+
     
   } while (again && gHttpHandler->Active());
   return rv;
@@ -512,24 +515,34 @@ void Http3WebTransportStream::Close(nsresult aResult) {
 
 void Http3WebTransportStream::SendFin() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  LOG(("Http3WebTransportStream::SendFin [this=%p]", this));
+  LOG(("Http3WebTransportStream::SendFin [this=%p mSendState=%d]", this,
+       mSendState));
 
-  mSendFin = true;
-  
-  mSession->StreamHasDataToWrite(this);
-}
-
-void Http3WebTransportStream::ResetInternal(bool aDispatch) {
-  if (aDispatch) {
-    RefPtr<Http3WebTransportStream> self = this;
-    NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-        "Http3WebTransportStream::ResetInternal", [self]() {
-          self->mSession->ResetWebTransportStream(self, *self->mResetError);
-        }));
+  if (mSendFin) {
+    
     return;
   }
 
-  mSession->ResetWebTransportStream(this, *mResetError);
+  mSendFin = true;
+
+  switch (mSendState) {
+    case SENDING: {
+      mPendingTasks.AppendElement([self = RefPtr{this}]() {
+        self->mSession->CloseSendingSide(self->mStreamId);
+      });
+    } break;
+    case WAITING_DATA:
+      mSendState = SEND_DONE;
+      [[fallthrough]];
+    case SEND_DONE:
+      mSession->CloseSendingSide(mStreamId);
+      
+      mSession->StreamHasDataToWrite(this);
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("invalid mSendState!");
+      break;
+  }
 }
 
 void Http3WebTransportStream::Reset(uint8_t aErrorCode) {
@@ -546,14 +559,27 @@ void Http3WebTransportStream::Reset(uint8_t aErrorCode) {
 
   switch (mSendState) {
     case SENDING: {
-      
-      
-      
-      ResetInternal(true);
+      LOG(("Http3WebTransportStream::Reset [this=%p] reset after sending data",
+           this));
+      mPendingTasks.AppendElement([self = RefPtr{this}]() {
+        
+        
+        
+        NS_DispatchToCurrentThread(
+            NS_NewRunnableFunction("Http3WebTransportStream::Reset", [self]() {
+              self->mSession->ResetWebTransportStream(self, *self->mResetError);
+              self->mSession->StreamHasDataToWrite(self);
+            }));
+      });
     } break;
-    case SEND_DONE: {
-      ResetInternal(false);
-    } break;
+    case WAITING_DATA:
+      mSendState = SEND_DONE;
+      [[fallthrough]];
+    case SEND_DONE:
+      mSession->ResetWebTransportStream(this, *mResetError);
+      
+      mSession->StreamHasDataToWrite(this);
+      break;
     default:
       MOZ_ASSERT_UNREACHABLE("invalid mSendState!");
       break;
@@ -564,7 +590,8 @@ void Http3WebTransportStream::SendStopSending(uint8_t aErrorCode) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("Http3WebTransportStream::SendStopSending [this=%p, mSendState=%d]",
        this, mSendState));
-  if (mSendState != SENDING) {
+
+  if (mSendState == WAITING_TO_ACTIVATE) {
     return;
   }
 
@@ -574,6 +601,7 @@ void Http3WebTransportStream::SendStopSending(uint8_t aErrorCode) {
 
   mStopSendingError = Some(aErrorCode);
 
+  mSession->StreamStopSending(this, *mStopSendingError);
   
   mSession->StreamHasDataToWrite(this);
 }
