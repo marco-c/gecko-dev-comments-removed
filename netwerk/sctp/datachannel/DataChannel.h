@@ -134,6 +134,13 @@ class DataChannelConnection final : public net::NeckoTargetHolder
 
     
     virtual void NotifyDataChannel(already_AddRefed<DataChannel> channel) = 0;
+
+    
+    virtual void NotifyDataChannelOpen(DataChannel* aChannel) = 0;
+
+    
+    
+    virtual void NotifyDataChannelClosed(DataChannel* aChannel) = 0;
   };
 
   
@@ -556,6 +563,8 @@ class DataChannel {
   void WithTrafficCounters(const std::function<void(TrafficCounters&)>&);
 
   RefPtr<DataChannelConnection> mConnection;
+  
+  bool mEverOpened = false;
   nsCString mLabel;
   nsCString mProtocol;
   
