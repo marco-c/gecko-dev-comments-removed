@@ -173,47 +173,53 @@ class Configuration(DescriptorProvider):
         
         self.unionsPerFilename = defaultdict(list)
 
-        for (t, _) in getAllTypes(self.descriptors, self.dictionaries, self.callbacks):
+        def addUnion(t):
+            filenamesForUnion = self.filenamesPerUnion[t.name]
+            if t.filename() not in filenamesForUnion:
+                
+                
+                
+                
+                
+                
+                if t.filename() == "<unknown>":
+                    uniqueFilenameForUnion = None
+                elif len(filenamesForUnion) == 0:
+                    
+                    
+                    uniqueFilenameForUnion = t.filename()
+                else:
+                    
+                    
+                    if len(filenamesForUnion) == 1:
+                        
+                        
+                        for f in filenamesForUnion:
+                            
+                            
+                            
+                            unionsForFilename = [
+                                u for u in self.unionsPerFilename[f] if u.name != t.name
+                            ]
+                            if len(unionsForFilename) == 0:
+                                del self.unionsPerFilename[f]
+                            else:
+                                self.unionsPerFilename[f] = unionsForFilename
+                    
+                    
+                    uniqueFilenameForUnion = None
+                self.unionsPerFilename[uniqueFilenameForUnion].append(t)
+                filenamesForUnion.add(t.filename())
+
+        def addUnions(t):
             t = findInnermostType(t)
             if t.isUnion():
-                filenamesForUnion = self.filenamesPerUnion[t.name]
-                if t.filename() not in filenamesForUnion:
-                    
-                    
-                    
-                    
-                    
-                    
-                    if t.filename() == "<unknown>":
-                        uniqueFilenameForUnion = None
-                    elif len(filenamesForUnion) == 0:
-                        
-                        
-                        uniqueFilenameForUnion = t.filename()
-                    else:
-                        
-                        
-                        if len(filenamesForUnion) == 1:
-                            
-                            
-                            for f in filenamesForUnion:
-                                
-                                
-                                
-                                unionsForFilename = [
-                                    u
-                                    for u in self.unionsPerFilename[f]
-                                    if u.name != t.name
-                                ]
-                                if len(unionsForFilename) == 0:
-                                    del self.unionsPerFilename[f]
-                                else:
-                                    self.unionsPerFilename[f] = unionsForFilename
-                        
-                        
-                        uniqueFilenameForUnion = None
-                    self.unionsPerFilename[uniqueFilenameForUnion].append(t)
-                    filenamesForUnion.add(t.filename())
+                addUnion(t)
+                for m in t.flatMemberTypes:
+                    addUnions(m)
+
+        for (t, _) in getAllTypes(self.descriptors, self.dictionaries, self.callbacks):
+            addUnions(t)
 
         for d in getDictionariesConvertedToJS(
             self.descriptors, self.dictionaries, self.callbacks
