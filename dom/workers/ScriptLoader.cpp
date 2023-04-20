@@ -34,7 +34,6 @@
 #include "js/SourceText.h"
 #include "nsError.h"
 #include "nsComponentManagerUtils.h"
-#include "nsContentSecurityManager.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsDocShellCID.h"
@@ -110,8 +109,8 @@ nsresult ChannelFromScriptURL(
     nsIScriptSecurityManager* secMan, nsIURI* aScriptURL,
     const Maybe<ClientInfo>& aClientInfo,
     const Maybe<ServiceWorkerDescriptor>& aController, bool aIsMainScript,
-    WorkerScriptType aWorkerScriptType, nsContentPolicyType aContentPolicyType,
-    nsLoadFlags aLoadFlags, uint32_t aSecFlags,
+    WorkerScriptType aWorkerScriptType,
+    nsContentPolicyType aMainScriptContentPolicyType, nsLoadFlags aLoadFlags,
     nsICookieJarSettings* aCookieJarSettings, nsIReferrerInfo* aReferrerInfo,
     nsIChannel** aChannel) {
   AssertIsOnMainThread();
@@ -122,10 +121,50 @@ nsresult ChannelFromScriptURL(
   
   
   
+  
   if (parentDoc && parentDoc->NodePrincipal() != principal) {
     parentDoc = nullptr;
   }
 
+  uint32_t secFlags =
+      aIsMainScript ? nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED
+                    : nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT;
+
+  bool inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
+      principal, uri, true ,
+      false );
+
+  bool isData = uri->SchemeIs("data");
+  if (inheritAttrs && !isData) {
+    secFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+  }
+
+  if (aWorkerScriptType == DebuggerScript) {
+    
+    bool isUIResource = false;
+    rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                             &isUIResource);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (!isUIResource) {
+      return NS_ERROR_DOM_SECURITY_ERR;
+    }
+
+    secFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
+  }
+
+  
+  
+  if (aIsMainScript && isData) {
+    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
+  }
+
+  nsContentPolicyType contentPolicyType =
+      aIsMainScript ? aMainScriptContentPolicyType
+                    : nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS;
+
   
   
   
@@ -134,25 +173,19 @@ nsresult ChannelFromScriptURL(
   
   
   
-  MOZ_DIAGNOSTIC_ASSERT(aContentPolicyType !=
+  MOZ_DIAGNOSTIC_ASSERT(contentPolicyType !=
                         nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER);
 
   nsCOMPtr<nsIChannel> channel;
   if (parentDoc) {
-    
-    rv = NS_NewChannel(getter_AddRefs(channel), uri, parentDoc, aSecFlags,
-                       aContentPolicyType,
+    rv = NS_NewChannel(getter_AddRefs(channel), uri, parentDoc, secFlags,
+                       contentPolicyType,
                        nullptr,  
                        loadGroup,
                        nullptr,  
                        aLoadFlags, ios);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_DOM_SECURITY_ERR);
   } else {
-    
-    
-    
-    
-
     
     
     MOZ_ASSERT(loadGroup);
@@ -166,16 +199,14 @@ nsresult ChannelFromScriptURL(
     }
 
     if (aClientInfo.isSome()) {
-      
-      
       rv = NS_NewChannel(getter_AddRefs(channel), uri, principal,
-                         aClientInfo.ref(), aController, aSecFlags,
-                         aContentPolicyType, aCookieJarSettings,
+                         aClientInfo.ref(), aController, secFlags,
+                         contentPolicyType, aCookieJarSettings,
                          performanceStorage, loadGroup, nullptr,  
                          aLoadFlags, ios);
     } else {
-      rv = NS_NewChannel(getter_AddRefs(channel), uri, principal, aSecFlags,
-                         aContentPolicyType, aCookieJarSettings,
+      rv = NS_NewChannel(getter_AddRefs(channel), uri, principal, secFlags,
+                         contentPolicyType, aCookieJarSettings,
                          performanceStorage, loadGroup, nullptr,  
                          aLoadFlags, ios);
     }
@@ -227,24 +258,8 @@ void LoadAllScripts(WorkerPrivate* aWorkerPrivate,
     return;
   }
 
-  bool ok = loader->CreateScriptRequests(aScriptURLs, aDocumentEncoding,
-                                         aIsMainScript);
+  loader->CreateScriptRequests(aScriptURLs, aDocumentEncoding, aIsMainScript);
 
-  if (!ok) {
-    return;
-  }
-
-  if (aIsMainScript) {
-    
-    RefPtr<JS::loader::ScriptLoadRequest> mainScript = loader->GetMainScript();
-    if (mainScript && mainScript->IsModuleRequest()) {
-      if (NS_FAILED(mainScript->AsModuleRequest()->StartModuleLoad())) {
-        return;
-      }
-      syncLoop.Run();
-      return;
-    }
-  }
   if (loader->DispatchLoadScripts()) {
     syncLoop.Run();
   }
@@ -330,88 +345,6 @@ class ChannelGetterRunnable final : public WorkerMainThreadRunnable {
   virtual ~ChannelGetterRunnable() = default;
 };
 
-nsresult GetCommonSecFlags(bool aIsMainScript, nsIURI* uri,
-                           nsIPrincipal* principal,
-                           WorkerScriptType aWorkerScriptType,
-                           uint32_t& secFlags) {
-  bool inheritAttrs = nsContentUtils::ChannelShouldInheritPrincipal(
-      principal, uri, true ,
-      false );
-
-  bool isData = uri->SchemeIs("data");
-  if (inheritAttrs && !isData) {
-    secFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-  }
-
-  if (aWorkerScriptType == DebuggerScript) {
-    
-    bool isUIResource = false;
-    nsresult rv = NS_URIChainHasFlags(
-        uri, nsIProtocolHandler::URI_IS_UI_RESOURCE, &isUIResource);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    if (!isUIResource) {
-      return NS_ERROR_DOM_SECURITY_ERR;
-    }
-
-    secFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
-  }
-
-  return NS_OK;
-}
-
-nsresult GetModuleSecFlags(nsIPrincipal* principal,
-                           WorkerScriptType aWorkerScriptType,
-                           ScriptLoadRequest* aRequest,
-                           RequestCredentials aCredentials,
-                           uint32_t& secFlags) {
-  
-  
-  
-  
-  secFlags = aRequest->GetWorkerLoadContext()->IsTopLevel()
-                 ? nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED
-                 : nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT;
-
-  
-  
-  
-  
-  if (aCredentials == RequestCredentials::Include) {
-    secFlags |= nsILoadInfo::nsILoadInfo::SEC_COOKIES_INCLUDE;
-  } else if (aCredentials == RequestCredentials::Same_origin) {
-    secFlags |= nsILoadInfo::nsILoadInfo::SEC_COOKIES_SAME_ORIGIN;
-  } else if (aCredentials == RequestCredentials::Omit) {
-    secFlags |= nsILoadInfo::nsILoadInfo::SEC_COOKIES_OMIT;
-  }
-
-  return GetCommonSecFlags(aRequest->GetWorkerLoadContext()->IsTopLevel(),
-                           aRequest->mURI, principal, aWorkerScriptType,
-                           secFlags);
-}
-
-nsresult GetClassicSecFlags(bool aIsMainScript, nsIURI* uri,
-                            nsIPrincipal* principal,
-                            WorkerScriptType aWorkerScriptType,
-                            uint32_t& secFlags) {
-  secFlags = aIsMainScript
-                 ? nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED
-                 : nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT;
-
-  nsresult rv = GetCommonSecFlags(aIsMainScript, uri, principal,
-                                  aWorkerScriptType, secFlags);
-  bool isData = uri->SchemeIs("data");
-  
-  
-  if (aIsMainScript && isData) {
-    secFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
-  }
-
-  return rv;
-}
-
 }  
 
 namespace loader {
@@ -432,10 +365,6 @@ class ScriptExecutorRunnable final : public MainThreadWorkerSyncRunnable {
   virtual bool IsDebuggerRunnable() const override;
 
   virtual bool PreRun(WorkerPrivate* aWorkerPrivate) override;
-
-  bool ProcessModuleScript(JSContext* aCx, WorkerPrivate* aWorkerPrivate);
-
-  bool ProcessClassicScripts(JSContext* aCx, WorkerPrivate* aWorkerPrivate);
 
   virtual bool WorkerRun(JSContext* aCx,
                          WorkerPrivate* aWorkerPrivate) override;
@@ -482,55 +411,18 @@ WorkerScriptLoader::WorkerScriptLoader(
   }
 
   nsIGlobalObject* global = GetGlobal();
+
   mController = global->GetController();
-  
-  
-  if (aWorkerPrivate->WorkerType() == WorkerType::Module) {
-    InitModuleLoader();
-  }
 }
 
-ScriptLoadRequest* WorkerScriptLoader::GetMainScript() {
-  mWorkerRef->Private()->AssertIsOnWorkerThread();
-  ScriptLoadRequest* request = mLoadingRequests.getFirst();
-  if (request->GetWorkerLoadContext()->IsTopLevel()) {
-    return request;
-  }
-  return nullptr;
-}
-
-void WorkerScriptLoader::InitModuleLoader() {
-  mWorkerRef->Private()->AssertIsOnWorkerThread();
-  RefPtr<WorkerModuleLoader> moduleLoader =
-      new WorkerModuleLoader(this, GetGlobal(), mSyncLoopTarget.get());
-  static_cast<WorkerGlobalScopeBase*>(GetGlobal())
-      ->InitModuleLoader(moduleLoader);
-}
-
-bool WorkerScriptLoader::CreateScriptRequests(
+void WorkerScriptLoader::CreateScriptRequests(
     const nsTArray<nsString>& aScriptURLs,
     const mozilla::Encoding* aDocumentEncoding, bool aIsMainScript) {
-  mWorkerRef->Private()->AssertIsOnWorkerThread();
-  if (mWorkerRef->Private()->WorkerType() == WorkerType::Module &&
-      !aIsMainScript) {
-    
-    
-    
-    
-    
-    
-    mRv.ThrowTypeError(
-        "Using `ImportScripts` inside a Module Worker is "
-        "disallowed.");
-    return false;
-  }
   for (const nsString& scriptURL : aScriptURLs) {
     RefPtr<ScriptLoadRequest> request =
         CreateScriptLoadRequest(scriptURL, aDocumentEncoding, aIsMainScript);
     mLoadingRequests.AppendElement(request);
   }
-
-  return true;
 }
 
 nsTArray<RefPtr<ThreadSafeRequestHandle>> WorkerScriptLoader::GetLoadingList() {
@@ -545,30 +437,9 @@ nsTArray<RefPtr<ThreadSafeRequestHandle>> WorkerScriptLoader::GetLoadingList() {
   return list;
 }
 
-nsContentPolicyType WorkerScriptLoader::GetContentPolicyType(
-    ScriptLoadRequest* aRequest) {
-  if (aRequest->GetWorkerLoadContext()->IsTopLevel()) {
-    
-    
-    
-    return mWorkerRef->Private()->ContentPolicyType();
-  }
-  if (aRequest->IsModuleRequest()) {
-    
-    
-    
-    
-    
-    
-    return nsIContentPolicy::TYPE_INTERNAL_WORKER_STATIC_MODULE;
-  }
-  return nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS;
-}
-
 already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     const nsString& aScriptURL, const mozilla::Encoding* aDocumentEncoding,
     bool aIsMainScript) {
-  mWorkerRef->Private()->AssertIsOnWorkerThread();
   WorkerLoadContext::Kind kind =
       WorkerLoadContext::GetKind(aIsMainScript, IsDebuggerScript());
 
@@ -597,43 +468,10 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   RefPtr<ScriptFetchOptions> fetchOptions =
       new ScriptFetchOptions(CORSMode::CORS_NONE, referrerPolicy, nullptr);
 
-  RefPtr<ScriptLoadRequest> request = nullptr;
-  if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic) {
-    request = new ScriptLoadRequest(ScriptKind::eClassic, uri, fetchOptions,
-                                    SRIMetadata(), nullptr,  
-                                    loadContext);
-  } else {
-    
-    
-    
-
-    
-    
-    
-    
-
-    RefPtr<WorkerModuleLoader::ModuleLoaderBase> moduleLoader =
-        static_cast<WorkerGlobalScopeBase*>(GetGlobal())->GetModuleLoader();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIURI> referrer =
-        mWorkerRef->Private()->GetReferrerInfo()->GetOriginalReferrer();
-
-    
-    request = new ModuleLoadRequest(
-        uri, fetchOptions, SRIMetadata(), referrer, loadContext,
-        true,  
-        false, 
-        moduleLoader, ModuleLoadRequest::NewVisitedSetForTopLevelImport(uri),
-        nullptr);
-  }
+  RefPtr<ScriptLoadRequest> request =
+      new ScriptLoadRequest(ScriptKind::eClassic, uri, fetchOptions,
+                            SRIMetadata(), nullptr, 
+                            loadContext);
 
   
   request->mURL = NS_ConvertUTF16toUTF8(aScriptURL);
@@ -725,11 +563,7 @@ nsIGlobalObject* WorkerScriptLoader::GetGlobal() {
 
 void WorkerScriptLoader::MaybeMoveToLoadedList(ScriptLoadRequest* aRequest) {
   mWorkerRef->Private()->AssertIsOnWorkerThread();
-  
-  
-  if (!aRequest->IsModuleRequest()) {
-    aRequest->SetReady();
-  }
+  aRequest->SetReady();
 
   
   MOZ_RELEASE_ASSERT(aRequest->isInList());
@@ -782,9 +616,7 @@ bool WorkerScriptLoader::ProcessPendingRequests(JSContext* aCx) {
   MOZ_ASSERT(global);
 
   while (!mLoadedRequests.isEmpty()) {
-    
-    
-    RefPtr<ScriptLoadRequest> req = mLoadedRequests.getFirst();
+    RefPtr<ScriptLoadRequest> req = mLoadedRequests.StealFirst();
     
     
     
@@ -798,8 +630,6 @@ bool WorkerScriptLoader::ProcessPendingRequests(JSContext* aCx) {
       mLoadedRequests.CancelRequestsAndClear();
       break;
     }
-    
-    mLoadedRequests.Remove(req);
   }
 
   TryShutdown();
@@ -876,38 +706,21 @@ nsresult WorkerScriptLoader::LoadScript(
   }
 
   if (!channel) {
-    nsCOMPtr<nsIReferrerInfo> referrerInfo;
-    uint32_t secFlags;
-    ScriptLoadRequest* request = aRequestHandle->GetRequest();
-    if (request->IsModuleRequest()) {
+    nsCOMPtr<nsIReferrerInfo> referrerInfo =
+        ReferrerInfo::CreateForFetch(principal, nullptr);
+    if (parentWorker && !loadContext->IsTopLevel()) {
       referrerInfo =
-          new ReferrerInfo(request->mReferrer, request->ReferrerPolicy());
-      rv = GetModuleSecFlags(principal, mWorkerScriptType, request,
-                             mWorkerRef->Private()->WorkerCredentials(),
-                             secFlags);
-    } else {
-      referrerInfo = ReferrerInfo::CreateForFetch(principal, nullptr);
-      if (parentWorker && !loadContext->IsTopLevel()) {
-        referrerInfo =
-            static_cast<ReferrerInfo*>(referrerInfo.get())
-                ->CloneWithNewPolicy(parentWorker->GetReferrerPolicy());
-      }
-      rv = GetClassicSecFlags(loadContext->IsTopLevel(), request->mURI,
-                              principal, mWorkerScriptType, secFlags);
+          static_cast<ReferrerInfo*>(referrerInfo.get())
+              ->CloneWithNewPolicy(parentWorker->GetReferrerPolicy());
     }
-
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    nsContentPolicyType contentPolicyType = GetContentPolicyType(request);
 
     rv = ChannelFromScriptURL(
         principal, parentDoc, mWorkerRef->Private(), loadGroup, ios, secMan,
-        request->mURI, loadContext->mClientInfo, mController,
-        loadContext->IsTopLevel(), mWorkerScriptType, contentPolicyType,
-        loadFlags, secFlags, mWorkerRef->Private()->CookieJarSettings(),
-        referrerInfo, getter_AddRefs(channel));
+        aRequestHandle->GetRequest()->mURI, loadContext->mClientInfo,
+        mController, loadContext->IsTopLevel(), mWorkerScriptType,
+        mWorkerRef->Private()->ContentPolicyType(), loadFlags,
+        mWorkerRef->Private()->CookieJarSettings(), referrerInfo,
+        getter_AddRefs(channel));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1052,25 +865,6 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
     mWorkerRef->Private()->ExecutionReady();
   }
 
-  if (aRequest->IsModuleRequest()) {
-    
-    
-    
-    MOZ_ASSERT(aRequest->IsTopLevel());
-    ModuleLoadRequest* request = aRequest->AsModuleRequest();
-    if (!request->mModuleScript) {
-      return false;
-    }
-    
-    
-    if (!request->InstantiateModuleGraph()) {
-      return false;
-    }
-
-    nsresult rv = request->EvaluateModule();
-    return NS_SUCCEEDED(rv);
-  }
-
   JS::CompileOptions options(aCx);
   
   
@@ -1101,9 +895,6 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
           : EvaluateSourceBuffer(aCx, options,
                                  maybeSource.ref<JS::SourceText<char16_t>>());
 
-  if (aRequest->IsCanceled()) {
-    return false;
-  }
   if (!successfullyEvaluated) {
     mRv.StealExceptionFromJSContext(aCx);
     return false;
@@ -1459,48 +1250,10 @@ bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
   return mScriptLoader->StoreCSP();
 }
 
-bool ScriptExecutorRunnable::ProcessModuleScript(
-    JSContext* aCx, WorkerPrivate* aWorkerPrivate) {
-  
-  MOZ_ASSERT(mLoadedRequests.Length() == 1);
-  RefPtr<ScriptLoadRequest> request;
-  {
-    
-    
-    MutexAutoLock lock(mScriptLoader->CleanUpLock());
-    if (mScriptLoader->CleanedUp()) {
-      return true;
-    }
+bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
+                                       WorkerPrivate* aWorkerPrivate) {
+  aWorkerPrivate->AssertIsOnWorkerThread();
 
-    const auto& requestHandle = mLoadedRequests.begin()->get();
-    
-    MOZ_ASSERT(!requestHandle->IsEmpty());
-
-    
-    
-    request = requestHandle->ReleaseRequest();
-
-    
-  }
-
-  MOZ_ASSERT(request->IsModuleRequest());
-
-  WorkerLoadContext* loadContext = request->GetWorkerLoadContext();
-  ModuleLoadRequest* moduleRequest = request->AsModuleRequest();
-  if (NS_FAILED(loadContext->mLoadResult)) {
-    if (!moduleRequest->IsTopLevel()) {
-      moduleRequest->Cancel();
-    } else {
-      moduleRequest->LoadFailed();
-    }
-  }
-
-  moduleRequest->OnFetchComplete(loadContext->mLoadResult);
-  return true;
-}
-
-bool ScriptExecutorRunnable::ProcessClassicScripts(
-    JSContext* aCx, WorkerPrivate* aWorkerPrivate) {
   
   
   {
@@ -1508,6 +1261,11 @@ bool ScriptExecutorRunnable::ProcessClassicScripts(
     if (mScriptLoader->CleanedUp()) {
       return true;
     }
+
+    
+    MOZ_ASSERT(
+        mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
+        "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
 
     for (const auto& requestHandle : mLoadedRequests) {
       
@@ -1516,26 +1274,11 @@ bool ScriptExecutorRunnable::ProcessClassicScripts(
       
       
       RefPtr<ScriptLoadRequest> request = requestHandle->ReleaseRequest();
+
       mScriptLoader->MaybeMoveToLoadedList(request);
     }
   }
   return mScriptLoader->ProcessPendingRequests(aCx);
-}
-
-bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
-                                       WorkerPrivate* aWorkerPrivate) {
-  aWorkerPrivate->AssertIsOnWorkerThread();
-
-  
-  MOZ_ASSERT(
-      mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
-      "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
-
-  if (aWorkerPrivate->WorkerType() == WorkerType::Module) {
-    return ProcessModuleScript(aCx, aWorkerPrivate);
-  }
-
-  return ProcessClassicScripts(aCx, aWorkerPrivate);
 }
 
 nsresult ScriptExecutorRunnable::Cancel() {
@@ -1564,18 +1307,11 @@ nsresult ChannelFromScriptURLMainThread(
   nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
   NS_ASSERTION(secMan, "This should never be null!");
 
-  uint32_t secFlags;
-  nsresult rv =
-      GetClassicSecFlags(true, aScriptURL, aPrincipal, WorkerScript, secFlags);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   return ChannelFromScriptURL(
       aPrincipal, aParentDoc, nullptr, aLoadGroup, ios, secMan, aScriptURL,
       aClientInfo, Maybe<ServiceWorkerDescriptor>(), true, WorkerScript,
-      aMainScriptContentPolicyType, nsIRequest::LOAD_NORMAL, secFlags,
-      aCookieJarSettings, aReferrerInfo, aChannel);
+      aMainScriptContentPolicyType, nsIRequest::LOAD_NORMAL, aCookieJarSettings,
+      aReferrerInfo, aChannel);
 }
 
 nsresult ChannelFromScriptURLWorkerThread(JSContext* aCx,

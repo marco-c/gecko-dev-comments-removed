@@ -436,20 +436,6 @@ interface nsIContentPolicy : nsISupports
     
 
 
-    TYPE_INTERNAL_WORKER_STATIC_MODULE = 58,
-
-    
-
-
-
-
-
-    TYPE_END = 59,
-
-
-    
-
-
 
 
 
