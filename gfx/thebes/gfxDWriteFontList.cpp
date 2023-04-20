@@ -726,101 +726,107 @@ nsresult gfxDWriteFontEntry::CreateFontFace(
                                      (aTag >> 8) & 0xff, aTag & 0xff);
   };
 
-  
-  if (!mFontFace) {
-    HRESULT hr;
-    if (mFont) {
-      hr = mFont->CreateFontFace(getter_AddRefs(mFontFace));
-    } else if (mFontFile) {
-      IDWriteFontFile* fontFile = mFontFile.get();
-      hr = Factory::GetDWriteFactory()->CreateFontFace(
-          mFaceType, 1, &fontFile, 0, DWRITE_FONT_SIMULATIONS_NONE,
-          getter_AddRefs(mFontFace));
-    } else {
-      MOZ_ASSERT_UNREACHABLE("invalid font entry");
-      return NS_ERROR_FAILURE;
+  MOZ_SEH_TRY {
+    
+    if (!mFontFace) {
+      HRESULT hr;
+      if (mFont) {
+        hr = mFont->CreateFontFace(getter_AddRefs(mFontFace));
+      } else if (mFontFile) {
+        IDWriteFontFile* fontFile = mFontFile.get();
+        hr = Factory::GetDWriteFactory()->CreateFontFace(
+            mFaceType, 1, &fontFile, 0, DWRITE_FONT_SIMULATIONS_NONE,
+            getter_AddRefs(mFontFace));
+      } else {
+        MOZ_ASSERT_UNREACHABLE("invalid font entry");
+        return NS_ERROR_FAILURE;
+      }
+      if (FAILED(hr)) {
+        return NS_ERROR_FAILURE;
+      }
+      
+      
+      if (mFontFace) {
+        mFontFace->QueryInterface(__uuidof(IDWriteFontFace5),
+                                  (void**)getter_AddRefs(mFontFace5));
+        if (!mVariationSettings.IsEmpty()) {
+          
+          
+          RefPtr<IDWriteFontResource> resource;
+          HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
+          if (SUCCEEDED(hr) && resource) {
+            AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
+            for (const auto& v : mVariationSettings) {
+              DWRITE_FONT_AXIS_VALUE axisValue = {makeDWriteAxisTag(v.mTag),
+                                                  v.mValue};
+              fontAxisValues.AppendElement(axisValue);
+            }
+            resource->CreateFontFace(
+                mFontFace->GetSimulations(), fontAxisValues.Elements(),
+                fontAxisValues.Length(), getter_AddRefs(mFontFace5));
+          }
+        }
+      }
     }
-    if (FAILED(hr)) {
-      return NS_ERROR_FAILURE;
-    }
+
+    
+    bool needSimulations =
+        (aSimulations & DWRITE_FONT_SIMULATIONS_BOLD) &&
+        !(mFontFace->GetSimulations() & DWRITE_FONT_SIMULATIONS_BOLD);
+
     
     
-    if (mFontFace) {
-      mFontFace->QueryInterface(__uuidof(IDWriteFontFace5),
-                                (void**)getter_AddRefs(mFontFace5));
-      if (!mVariationSettings.IsEmpty()) {
+    if (mFontFace5 && (HasVariations() || needSimulations)) {
+      RefPtr<IDWriteFontResource> resource;
+      HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
+      if (SUCCEEDED(hr) && resource) {
+        AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
+
         
-        
-        RefPtr<IDWriteFontResource> resource;
-        HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
-        if (SUCCEEDED(hr) && resource) {
-          AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
-          for (const auto& v : mVariationSettings) {
+        if (aVariations) {
+          for (const auto& v : *aVariations) {
             DWRITE_FONT_AXIS_VALUE axisValue = {makeDWriteAxisTag(v.mTag),
                                                 v.mValue};
             fontAxisValues.AppendElement(axisValue);
           }
-          resource->CreateFontFace(
-              mFontFace->GetSimulations(), fontAxisValues.Elements(),
-              fontAxisValues.Length(), getter_AddRefs(mFontFace5));
+        }
+
+        IDWriteFontFace5* ff5;
+        resource->CreateFontFace(aSimulations, fontAxisValues.Elements(),
+                                 fontAxisValues.Length(), &ff5);
+        if (ff5) {
+          *aFontFace = ff5;
+          return NS_OK;
         }
       }
     }
-  }
 
-  
-  bool needSimulations =
-      (aSimulations & DWRITE_FONT_SIMULATIONS_BOLD) &&
-      !(mFontFace->GetSimulations() & DWRITE_FONT_SIMULATIONS_BOLD);
-
-  
-  
-  if (mFontFace5 && (HasVariations() || needSimulations)) {
-    RefPtr<IDWriteFontResource> resource;
-    HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
-    if (SUCCEEDED(hr) && resource) {
-      AutoTArray<DWRITE_FONT_AXIS_VALUE, 4> fontAxisValues;
-
+    
+    if (needSimulations) {
       
-      if (aVariations) {
-        for (const auto& v : *aVariations) {
-          DWRITE_FONT_AXIS_VALUE axisValue = {makeDWriteAxisTag(v.mTag),
-                                              v.mValue};
-          fontAxisValues.AppendElement(axisValue);
-        }
+      
+      
+      UINT32 numberOfFiles = 0;
+      if (FAILED(mFontFace->GetFiles(&numberOfFiles, nullptr))) {
+        return NS_ERROR_FAILURE;
       }
-
-      IDWriteFontFace5* ff5;
-      resource->CreateFontFace(aSimulations, fontAxisValues.Elements(),
-                               fontAxisValues.Length(), &ff5);
-      if (ff5) {
-        *aFontFace = ff5;
-        return NS_OK;
+      AutoTArray<IDWriteFontFile*, 1> files;
+      files.AppendElements(numberOfFiles);
+      if (FAILED(mFontFace->GetFiles(&numberOfFiles, files.Elements()))) {
+        return NS_ERROR_FAILURE;
       }
+      HRESULT hr = Factory::GetDWriteFactory()->CreateFontFace(
+          mFontFace->GetType(), numberOfFiles, files.Elements(),
+          mFontFace->GetIndex(), aSimulations, aFontFace);
+      for (UINT32 i = 0; i < numberOfFiles; ++i) {
+        files[i]->Release();
+      }
+      return FAILED(hr) ? NS_ERROR_FAILURE : NS_OK;
     }
   }
-
-  
-  if (needSimulations) {
-    
-    
-    
-    UINT32 numberOfFiles = 0;
-    if (FAILED(mFontFace->GetFiles(&numberOfFiles, nullptr))) {
-      return NS_ERROR_FAILURE;
-    }
-    AutoTArray<IDWriteFontFile*, 1> files;
-    files.AppendElements(numberOfFiles);
-    if (FAILED(mFontFace->GetFiles(&numberOfFiles, files.Elements()))) {
-      return NS_ERROR_FAILURE;
-    }
-    HRESULT hr = Factory::GetDWriteFactory()->CreateFontFace(
-        mFontFace->GetType(), numberOfFiles, files.Elements(),
-        mFontFace->GetIndex(), aSimulations, aFontFace);
-    for (UINT32 i = 0; i < numberOfFiles; ++i) {
-      files[i]->Release();
-    }
-    return FAILED(hr) ? NS_ERROR_FAILURE : NS_OK;
+  MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
+    gfxCriticalNote << "Exception occurred creating font face for "
+                    << mName.get();
   }
 
   
