@@ -2940,23 +2940,27 @@ void MacroAssembler::truncFloat32ToInt32(FloatRegister src, Register dest,
                                          Label* fail) {
   ARMFPRegister src32(src, 32);
   ARMRegister dest32(dest, 32);
+  ARMRegister dest64(dest, 64);
 
   Label done, zeroCase;
 
   
   
   
-  Fcvtzs(dest32, src32);
+  Fcvtzs(dest64, src32);
 
   
-  branch32(Assembler::Equal, dest, Imm32(0), &zeroCase);
+  Cbz(dest64, &zeroCase);
 
   
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-  branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
+  Cmp(dest64, Operand(dest64, vixl::SXTW));
+  B(NotEqual, fail);
 
   
-  jump(&done);
+  Uxtw(dest64, dest64);
+
+  
+  B(&done);
 
   
   
@@ -2998,17 +3002,20 @@ void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
   
   
   
-  Fcvtzs(dest32, src64);
+  Fcvtzs(dest64, src64);
 
   
-  branch32(Assembler::Equal, dest, Imm32(0), &zeroCase);
+  Cbz(dest64, &zeroCase);
 
   
-  branch32(Assembler::Equal, dest, Imm32(INT_MAX), fail);
-  branch32(Assembler::Equal, dest, Imm32(INT_MIN), fail);
+  Cmp(dest64, Operand(dest64, vixl::SXTW));
+  B(NotEqual, fail);
 
   
-  jump(&done);
+  Uxtw(dest64, dest64);
+
+  
+  B(&done);
 
   
   
