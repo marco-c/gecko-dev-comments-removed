@@ -15,7 +15,10 @@ async function runEventTest({ mode }) {
     set: [["cookiebanners.service.mode", mode]],
   });
 
-  insertTestClickRules();
+  
+  if (mode != Ci.nsICookieBannerService.MODE_DISABLED) {
+    insertTestClickRules();
+  }
 
   let expectEventDetected = mode != Ci.nsICookieBannerService.MODE_DISABLED;
   let expectEventHandled =
