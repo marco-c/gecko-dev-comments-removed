@@ -40,6 +40,7 @@ extern NSString* const kMozFileUrlsPboardType;
 + (NSString*)stringFromPboardType:(NSString*)aType;
 @end
 
+class nsITransferable;
 class nsIWidget;
 
 namespace mozilla {
@@ -473,6 +474,18 @@ class nsCocoaUtils {
       const mozilla::ScreenPoint& aPanStartPoint, const mozilla::ScreenPoint& aPreciseDelta,
       const mozilla::gfx::IntPoint& aLineOrPageDelta, mozilla::Modifiers aModifiers);
 
+  
+
+
+  static bool IsValidPasteboardType(NSString* aAvailableType, bool aAllowFileURL);
+
+  
+
+
+  static void SetTransferDataForTypeFromPasteboardItem(nsITransferable* aTransferable,
+                                                       const nsCString& aFlavor,
+                                                       NSPasteboardItem* aItem);
+
  private:
   
 
@@ -507,6 +520,23 @@ class nsCocoaUtils {
 
 
   static void ResolveMediaCapturePromises(bool aGranted, PromiseArray& aPromiseList);
+
+  
+
+
+  static NSString* GetStringForTypeFromPasteboardItem(NSPasteboardItem* aItem,
+                                                      const NSString* aType,
+                                                      bool aAllowFileURL = false);
+
+  
+
+
+  static NSString* GetFilePathFromPasteboardItem(NSPasteboardItem* aItem);
+
+  
+
+
+  static NSString* GetTitleForURLFromPasteboardItem(NSPasteboardItem* item);
 
   
 
