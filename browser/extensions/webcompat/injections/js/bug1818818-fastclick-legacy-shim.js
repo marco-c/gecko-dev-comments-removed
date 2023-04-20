@@ -9,9 +9,11 @@
 
 
 
-Object.defineProperty(window.wrappedJSObject, "flag", {
+
+const proto = CSS2Properties.prototype.wrappedJSObject;
+Object.defineProperty(proto, "msTouchAction", {
   get: exportFunction(function() {
-    return true;
+    return "none";
   }, window),
 
   set: exportFunction(function() {}, window),

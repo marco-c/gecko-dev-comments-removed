@@ -928,6 +928,25 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+
+    id: "bug1819702",
+    platform: "android",
+    domain: "feelgoodcontacts.com",
+    bug: "1819702",
+    config: {
+      matches: ["*://*.feelgoodcontacts.com/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
