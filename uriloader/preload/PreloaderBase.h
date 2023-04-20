@@ -68,14 +68,6 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
   
   
   
-  void NotifyValidating();
-  
-  
-  void NotifyValidated(nsresult aStatus);
-
-  
-  
-  
   
   
   
