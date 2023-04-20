@@ -945,11 +945,13 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
     case IntID::GTKCSDCloseButtonPosition:
       aResult = mCSDCloseButtonPosition;
       break;
-    case IntID::UseAccessibilityTheme: {
+    case IntID::UseAccessibilityTheme:
+    
+    
+    case IntID::PrefersReducedTransparency:
       EnsureInit();
       aResult = mSystemTheme.mHighContrast;
       break;
-    }
     case IntID::TitlebarRadius: {
       EnsureInit();
       aResult = EffectiveTheme().mTitlebarRadius;

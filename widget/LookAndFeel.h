@@ -292,8 +292,16 @@ class LookAndFeel {
 
 
 
-
     PrefersReducedMotion,
+
+    
+
+
+
+
+
+    PrefersReducedTransparency,
+
     
 
 
