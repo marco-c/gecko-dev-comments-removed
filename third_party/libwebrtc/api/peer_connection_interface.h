@@ -950,8 +950,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
       rtc::scoped_refptr<RtpReceiverInterface> selector,
       rtc::scoped_refptr<RTCStatsCollectorCallback> callback) = 0;
   
-  
-  
   virtual void ClearStatsCache() {}
 
   

@@ -1491,7 +1491,7 @@ RTCError SdpOfferAnswerHandler::ApplyLocalDescription(
   
   
   
-  pc_->legacy_stats()->InvalidateCache();
+  pc_->ClearStatsCache();
 
   
   
@@ -1826,7 +1826,7 @@ void SdpOfferAnswerHandler::ApplyRemoteDescription(
   
   
   
-  pc_->legacy_stats()->InvalidateCache();
+  pc_->ClearStatsCache();
 
   if (!operation->ReplaceRemoteDescriptionAndCheckEror())
     return;
