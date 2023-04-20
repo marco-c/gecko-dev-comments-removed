@@ -745,15 +745,6 @@ add_task(async function validate_actions() {
         /operation: Invalid enumeration value "REMOVE"/,
          true
       );
-      await testInvalidAction(
-        {
-          type: "modifyHeaders",
-          
-          requestHeaders: [{ header: "x", operation: "append", value: "x" }],
-        },
-        /operation: Invalid enumeration value "append"/,
-         true
-      );
 
       
       await testValidAction({
@@ -775,6 +766,7 @@ add_task(async function validate_actions() {
           { header: "reqh", operation: "set", value: "b" },
           
           
+          { header: "reqh", operation: "append", value: "b" },
           { header: "reqh", operation: "remove" },
         ],
         responseHeaders: [
