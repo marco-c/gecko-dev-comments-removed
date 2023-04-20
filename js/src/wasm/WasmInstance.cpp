@@ -59,7 +59,6 @@
 #include "gc/StoreBuffer-inl.h"
 #include "vm/ArrayBufferObject-inl.h"
 #include "vm/JSObject-inl.h"
-#include "wasm/WasmGcObject-inl.h"
 
 using namespace js;
 using namespace js::jit;
@@ -94,10 +93,8 @@ static_assert(Instance::offsetOfLastCommonJitField() < 128);
 
 
 
-TypeDefInstanceData* Instance::typeDefInstanceData(uint32_t typeIndex) const {
-  TypeDefInstanceData* instanceData =
-      (TypeDefInstanceData*)(globalData() + metadata().typeIdsOffsetStart);
-  return &instanceData[typeIndex];
+const void** Instance::addressOfTypeId(uint32_t typeIndex) const {
+  return (const void**)(globalData() + typeIndex * sizeof(void*));
 }
 
 const void* Instance::addressOfGlobalCell(const GlobalDesc& global) const {
@@ -1154,23 +1151,17 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
 
 
  void* Instance::structNew(Instance* instance,
-                                       TypeDefInstanceData* typeDefData) {
+                                       const wasm::TypeDef* typeDef) {
   MOZ_ASSERT(SASigStructNew.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
-
-  const TypeDef* typeDef = typeDefData->typeDef;
-  WasmGcObject::AllocArgs args(cx, typeDefData);
-  return WasmStructObject::createStruct(cx, typeDef, args);
+  return WasmStructObject::createStruct(cx, typeDef);
 }
 
  void* Instance::arrayNew(Instance* instance, uint32_t numElements,
-                                      TypeDefInstanceData* typeDefData) {
+                                      const wasm::TypeDef* typeDef) {
   MOZ_ASSERT(SASigArrayNew.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
-
-  const TypeDef* typeDef = typeDefData->typeDef;
-  WasmGcObject::AllocArgs args(cx, typeDefData);
-  return WasmArrayObject::createArray(cx, typeDef, numElements, args);
+  return WasmArrayObject::createArray(cx, typeDef, numElements);
 }
 
 
@@ -1181,7 +1172,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
  void* Instance::arrayNewData(Instance* instance,
                                           uint32_t segByteOffset,
                                           uint32_t numElements,
-                                          TypeDefInstanceData* typeDefData,
+                                          const wasm::TypeDef* typeDef,
                                           uint32_t segIndex) {
   MOZ_ASSERT(SASigArrayNewData.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
@@ -1202,10 +1193,8 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   
   
 
-  const TypeDef* typeDef = typeDefData->typeDef;
-  WasmGcObject::AllocArgs args(cx, typeDefData);
   Rooted<WasmArrayObject*> arrayObj(
-      cx, WasmArrayObject::createArray(cx, typeDef, numElements, args));
+      cx, WasmArrayObject::createArray(cx, typeDef, numElements));
   if (!arrayObj) {
     
     return nullptr;
@@ -1259,7 +1248,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
  void* Instance::arrayNewElem(Instance* instance,
                                           uint32_t segElemIndex,
                                           uint32_t numElements,
-                                          TypeDefInstanceData* typeDefData,
+                                          const wasm::TypeDef* typeDef,
                                           uint32_t segIndex) {
   MOZ_ASSERT(SASigArrayNewElem.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = instance->cx();
@@ -1278,17 +1267,14 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   
   
 
-  const TypeDef* typeDef = typeDefData->typeDef;
-
   
   
   
   
   MOZ_RELEASE_ASSERT(typeDef->arrayType().elementType_.size() == sizeof(void*));
 
-  WasmGcObject::AllocArgs args(cx, typeDefData);
   Rooted<WasmArrayObject*> arrayObj(
-      cx, WasmArrayObject::createArray(cx, typeDef, numElements, args));
+      cx, WasmArrayObject::createArray(cx, typeDef, numElements));
   if (!arrayObj) {
     
     return nullptr;
@@ -1675,28 +1661,19 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
 
   
   const SharedTypeContext& types = metadata().types;
-  WasmGcObject::AllocArgs allocArgs(cx);
-  for (uint32_t typeIndex = 0; typeIndex < types->length(); typeIndex++) {
-    const TypeDef& typeDef = types->type(typeIndex);
-    TypeDefInstanceData* typeDefData = typeDefInstanceData(typeIndex);
-    
-    typeDefData->typeDef = &typeDef;
-
-    if (typeDef.kind() == TypeDefKind::Func) {
-      
-      typeDefData->shape = nullptr;
-      typeDefData->clasp = nullptr;
-      typeDefData->allocKind = gc::AllocKind::LIMIT;
-      typeDefData->initialHeap = gc::DefaultHeap;
-    } else {
-      
-      if (!WasmGcObject::AllocArgs::compute(cx, &typeDef, &allocArgs)) {
-        return false;
+  if (!types->empty()) {
+    for (uint32_t typeIndex = 0; typeIndex < types->length(); typeIndex++) {
+      const TypeDef& typeDef = types->type(typeIndex);
+      switch (typeDef.kind()) {
+        case TypeDefKind::Func:
+        case TypeDefKind::Struct:
+        case TypeDefKind::Array: {
+          *addressOfTypeId(typeIndex) = &typeDef;
+          break;
+        }
+        default:
+          MOZ_CRASH();
       }
-      typeDefData->shape = allocArgs.shape;
-      typeDefData->clasp = allocArgs.clasp;
-      typeDefData->allocKind = allocArgs.allocKind;
-      typeDefData->initialHeap = allocArgs.initialHeap;
     }
   }
 
@@ -1871,12 +1848,6 @@ void Instance::tracePrivate(JSTracer* trc) {
 
   for (const TagDesc& tag : code().metadata().tags) {
     TraceNullableEdge(trc, &tagInstanceData(tag), "wasm tag");
-  }
-
-  const SharedTypeContext& types = metadata().types;
-  for (uint32_t typeIndex = 0; typeIndex < types->length(); typeIndex++) {
-    TypeDefInstanceData* typeDefData = typeDefInstanceData(typeIndex);
-    TraceNullableEdge(trc, &typeDefData->shape, "wasm shape");
   }
 
   TraceNullableEdge(trc, &memory_, "wasm buffer");
@@ -2428,23 +2399,6 @@ bool Instance::constantRefFunc(uint32_t funcIndex,
   }
   result.set(FuncRef::fromCompiledCode(fnref));
   return true;
-}
-
-WasmStructObject* Instance::constantStructNewDefault(JSContext* cx,
-                                                     uint32_t typeIndex) {
-  TypeDefInstanceData* typeDefData = typeDefInstanceData(typeIndex);
-  const TypeDef* typeDef = typeDefData->typeDef;
-  WasmGcObject::AllocArgs args(cx, typeDefData);
-  return WasmStructObject::createStruct(cx, typeDef, args);
-}
-
-WasmArrayObject* Instance::constantArrayNewDefault(JSContext* cx,
-                                                   uint32_t typeIndex,
-                                                   uint32_t numElements) {
-  TypeDefInstanceData* typeDefData = typeDefInstanceData(typeIndex);
-  const TypeDef* typeDef = typeDefData->typeDef;
-  WasmGcObject::AllocArgs args(cx, typeDefData);
-  return WasmArrayObject::createArray(cx, typeDef, numElements, args);
 }
 
 JSAtom* Instance::getFuncDisplayAtom(JSContext* cx, uint32_t funcIndex) const {

@@ -134,57 +134,25 @@ ModuleGenerator::~ModuleGenerator() {
   }
 }
 
-
-
-static const uint32_t MaxGlobalDataOffset =
-    INT32_MAX - Instance::offsetOfGlobalArea();
-
 bool ModuleGenerator::allocateGlobalBytes(uint32_t bytes, uint32_t align,
                                           uint32_t* globalDataOffset) {
   CheckedInt<uint32_t> newGlobalDataLength(metadata_->globalDataLength);
 
-  
   newGlobalDataLength +=
       ComputeByteAlignment(newGlobalDataLength.value(), align);
   if (!newGlobalDataLength.isValid()) {
     return false;
   }
 
-  
   *globalDataOffset = newGlobalDataLength.value();
-
-  
   newGlobalDataLength += bytes;
-  if (!newGlobalDataLength.isValid()) {
-    return false;
-  }
 
-  
-  
-  if (newGlobalDataLength.value() > MaxGlobalDataOffset + 1) {
+  if (!newGlobalDataLength.isValid()) {
     return false;
   }
 
   metadata_->globalDataLength = newGlobalDataLength.value();
   return true;
-}
-
-bool ModuleGenerator::allocateGlobalBytesN(uint32_t bytes, uint32_t align,
-                                           uint32_t count,
-                                           uint32_t* globalDataOffset) {
-  
-  
-  MOZ_ASSERT(bytes % align == 0);
-
-  
-  CheckedInt<uint32_t> totalBytes = bytes;
-  totalBytes *= count;
-  if (!totalBytes.isValid()) {
-    return false;
-  }
-
-  
-  return allocateGlobalBytes(totalBytes.value(), align, globalDataOffset);
 }
 
 bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
@@ -264,17 +232,18 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
   MOZ_ASSERT(metadata_->globalDataLength == 0);
 
   
-  if (!allocateGlobalBytesN(
-          sizeof(TypeDefInstanceData), alignof(TypeDefInstanceData),
-          moduleEnv_->types->length(), &moduleEnv_->typeIdsOffsetStart)) {
+  size_t typeIdsSize = moduleEnv_->types->length() * sizeof(void*);
+  if (!allocateGlobalBytes(typeIdsSize, sizeof(void*),
+                           &moduleEnv_->typeIdsOffsetStart)) {
     return false;
   }
   metadata_->typeIdsOffsetStart = moduleEnv_->typeIdsOffsetStart;
 
   
-  if (!allocateGlobalBytesN(
-          sizeof(FuncImportInstanceData), alignof(FuncImportInstanceData),
-          moduleEnv_->numFuncImports, &moduleEnv_->funcImportsOffsetStart)) {
+  size_t funcImportsSize =
+      sizeof(FuncImportInstanceData) * moduleEnv_->numFuncImports;
+  if (!allocateGlobalBytes(funcImportsSize, sizeof(void*),
+                           &moduleEnv_->funcImportsOffsetStart)) {
     return false;
   }
 

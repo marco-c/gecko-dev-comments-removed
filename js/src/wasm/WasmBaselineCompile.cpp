@@ -6336,25 +6336,12 @@ void BaseCompiler::emitBarrieredClear(RegPtr valueAddr) {
 
 #ifdef ENABLE_WASM_GC
 
-RegPtr BaseCompiler::loadTypeDefInstanceData(uint32_t typeIndex) {
-  RegPtr rp = needPtr();
-#  ifndef RABALDR_PIN_INSTANCE
-  fr.loadInstancePtr(InstanceReg);
-#  endif
-  masm.computeEffectiveAddress(
-      Address(InstanceReg,
-              Instance::offsetOfGlobalArea() +
-                  moduleEnv_.offsetOfTypeDefInstanceData(typeIndex)),
-      rp);
-  return rp;
-}
-
 RegPtr BaseCompiler::loadTypeDef(uint32_t typeIndex) {
   RegPtr rp = needPtr();
 #  ifndef RABALDR_PIN_INSTANCE
   fr.loadInstancePtr(InstanceReg);
 #  endif
-  masm.loadWasmGlobalPtr(moduleEnv_.offsetOfTypeDef(typeIndex), rp);
+  masm.loadWasmGlobalPtr(moduleEnv_.offsetOfTypeId(typeIndex), rp);
   return rp;
 }
 
@@ -6654,7 +6641,7 @@ bool BaseCompiler::emitStructNew() {
 
   
   
-  pushPtr(loadTypeDefInstanceData(typeIndex));
+  pushPtr(loadTypeDef(typeIndex));
   if (!emitInstanceCall(SASigStructNew)) {
     return false;
   }
@@ -6741,7 +6728,7 @@ bool BaseCompiler::emitStructNewDefault() {
 
   
   
-  pushPtr(loadTypeDefInstanceData(typeIndex));
+  pushPtr(loadTypeDef(typeIndex));
   return emitInstanceCall(SASigStructNew);
 }
 
@@ -6870,7 +6857,7 @@ bool BaseCompiler::emitArrayNew() {
 
   
   
-  pushPtr(loadTypeDefInstanceData(typeIndex));
+  pushPtr(loadTypeDef(typeIndex));
   if (!emitInstanceCall(SASigArrayNew)) {
     return false;
   }
@@ -6941,7 +6928,7 @@ bool BaseCompiler::emitArrayNewFixed() {
   
   
   pushI32(numElements);
-  pushPtr(loadTypeDefInstanceData(typeIndex));
+  pushPtr(loadTypeDef(typeIndex));
   if (!emitInstanceCall(SASigArrayNew)) {
     return false;
   }
@@ -7011,7 +6998,7 @@ bool BaseCompiler::emitArrayNewDefault() {
 
   
   
-  pushPtr(loadTypeDefInstanceData(typeIndex));
+  pushPtr(loadTypeDef(typeIndex));
   return emitInstanceCall(SASigArrayNew);
 }
 
@@ -7026,7 +7013,7 @@ bool BaseCompiler::emitArrayNewData() {
     return true;
   }
 
-  pushPtr(loadTypeDefInstanceData(typeIndex));
+  pushPtr(loadTypeDef(typeIndex));
   pushI32(int32_t(segIndex));
 
   
@@ -7046,7 +7033,7 @@ bool BaseCompiler::emitArrayNewElem() {
     return true;
   }
 
-  pushPtr(loadTypeDefInstanceData(typeIndex));
+  pushPtr(loadTypeDef(typeIndex));
   pushI32(int32_t(segIndex));
 
   

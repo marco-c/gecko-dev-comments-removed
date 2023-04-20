@@ -3704,27 +3704,16 @@ class FunctionCompiler {
 
   
   [[nodiscard]] MDefinition* loadTypeDef(uint32_t typeIndex) {
-    uint32_t typeDefOffset = moduleEnv().offsetOfTypeDef(typeIndex);
+    uint32_t typeIdOffset = moduleEnv().offsetOfTypeId(typeIndex);
 
     auto* load =
-        MWasmLoadGlobalVar::New(alloc(), MIRType::Pointer, typeDefOffset,
+        MWasmLoadGlobalVar::New(alloc(), MIRType::Pointer, typeIdOffset,
                                 true, instancePointer_);
     if (!load) {
       return nullptr;
     }
     curBlock_->add(load);
     return load;
-  }
-
-  [[nodiscard]] MDefinition* loadTypeDefInstanceData(uint32_t typeIndex) {
-    size_t offset = Instance::offsetOfGlobalArea() +
-                    moduleEnv_.offsetOfTypeDefInstanceData(typeIndex);
-    auto* result = MWasmDerivedPointer::New(alloc(), instancePointer_, offset);
-    if (!result) {
-      return nullptr;
-    }
-    curBlock_->add(result);
-    return result;
   }
 
   
@@ -3960,8 +3949,8 @@ class FunctionCompiler {
   [[nodiscard]] MDefinition* createDefaultInitializedArrayObject(
       uint32_t lineOrBytecode, uint32_t typeIndex, MDefinition* numElements) {
     
-    MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
-    if (!typeDefData) {
+    MDefinition* arrayTypeDef = loadTypeDef(typeIndex);
+    if (!arrayTypeDef) {
       return nullptr;
     }
 
@@ -3970,7 +3959,7 @@ class FunctionCompiler {
     
     MDefinition* arrayObject;
     if (!emitInstanceCall2(lineOrBytecode, SASigArrayNew, numElements,
-                           typeDefData, &arrayObject)) {
+                           arrayTypeDef, &arrayObject)) {
       return nullptr;
     }
 
@@ -6534,14 +6523,14 @@ static bool EmitStructNew(FunctionCompiler& f) {
 
   
   
-  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
-  if (!typeDefData) {
+  MDefinition* structTypeDef = f.loadTypeDef(typeIndex);
+  if (!structTypeDef) {
     return false;
   }
 
   
   MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, typeDefData,
+  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, structTypeDef,
                            &structObject)) {
     return false;
   }
@@ -6577,14 +6566,14 @@ static bool EmitStructNewDefault(FunctionCompiler& f) {
 
   
   
-  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
-  if (!typeDefData) {
+  MDefinition* structTypeDef = f.loadTypeDef(typeIndex);
+  if (!structTypeDef) {
     return false;
   }
 
   
   MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, typeDefData,
+  if (!f.emitInstanceCall1(lineOrBytecode, SASigStructNew, structTypeDef,
                            &structObject)) {
     return false;
   }
@@ -6777,8 +6766,8 @@ static bool EmitArrayNewData(FunctionCompiler& f) {
   }
 
   
-  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
-  if (!typeDefData) {
+  MDefinition* arrayTypeDef = f.loadTypeDef(typeIndex);
+  if (!arrayTypeDef) {
     return false;
   }
 
@@ -6795,7 +6784,8 @@ static bool EmitArrayNewData(FunctionCompiler& f) {
   
   MDefinition* arrayObject;
   if (!f.emitInstanceCall4(lineOrBytecode, SASigArrayNewData, segByteOffset,
-                           numElements, typeDefData, segIndexM, &arrayObject)) {
+                           numElements, arrayTypeDef, segIndexM,
+                           &arrayObject)) {
     return false;
   }
 
@@ -6819,9 +6809,8 @@ static bool EmitArrayNewElem(FunctionCompiler& f) {
   }
 
   
-  
-  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
-  if (!typeDefData) {
+  MDefinition* arrayTypeDef = f.loadTypeDef(typeIndex);
+  if (!arrayTypeDef) {
     return false;
   }
 
@@ -6838,7 +6827,8 @@ static bool EmitArrayNewElem(FunctionCompiler& f) {
   
   MDefinition* arrayObject;
   if (!f.emitInstanceCall4(lineOrBytecode, SASigArrayNewElem, segElemIndex,
-                           numElements, typeDefData, segIndexM, &arrayObject)) {
+                           numElements, arrayTypeDef, segIndexM,
+                           &arrayObject)) {
     return false;
   }
 
