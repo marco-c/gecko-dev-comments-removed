@@ -290,8 +290,6 @@ typedef struct sslOptionsStr {
     unsigned int enableTls13GreaseEch : 1;
     unsigned int enableTls13BackendEch : 1;
     unsigned int callExtensionWriterOnEchInner : 1;
-    unsigned int enableGrease : 1;
-    unsigned int enableChXtnPermutation : 1;
 } sslOptions;
 
 typedef enum { sslHandshakingUndetermined = 0,
@@ -613,24 +611,6 @@ typedef struct {
 } dtlsTimer;
 
 
-typedef enum {
-    grease_cipher,
-    grease_extension1,
-    grease_extension2,
-    grease_group,
-    grease_sigalg,
-    grease_version,
-    grease_alpn,
-    grease_entries
-} tls13ClientGreaseEntry;
-
-
-typedef struct tls13ClientGreaseStr {
-    PRUint16 idx[grease_entries];
-    PRUint8 pskKem;
-} tls13ClientGrease;
-
-
 
 
 
@@ -782,12 +762,6 @@ typedef struct SSL3HandshakeStateStr {
     sslBuffer greaseEchBuf;     
 
     PRBool echInvalidExtension; 
-
-    
-    tls13ClientGrease *grease;
-
-    
-    sslExtensionBuilder *chExtensionPermutation;
 } SSL3HandshakeState;
 
 #define SSL_ASSERT_HASHES_EMPTY(ss)                                  \
@@ -1766,10 +1740,10 @@ SECStatus ssl3_AuthCertificate(sslSocket *ss);
 SECStatus ssl_ReadCertificateStatus(sslSocket *ss, PRUint8 *b,
                                     PRUint32 length);
 SECStatus ssl3_EncodeSigAlgs(const sslSocket *ss, PRUint16 minVersion, PRBool forCert,
-                             PRBool grease, sslBuffer *buf);
+                             sslBuffer *buf);
 SECStatus ssl3_EncodeFilteredSigAlgs(const sslSocket *ss,
                                      const SSLSignatureScheme *schemes,
-                                     PRUint32 numSchemes, PRBool grease, sslBuffer *buf);
+                                     PRUint32 numSchemes, sslBuffer *buf);
 SECStatus ssl3_FilterSigAlgs(const sslSocket *ss, PRUint16 minVersion, PRBool disableRsae, PRBool forCert,
                              unsigned int maxSchemes, SSLSignatureScheme *filteredSchemes,
                              unsigned int *numFilteredSchemes);
