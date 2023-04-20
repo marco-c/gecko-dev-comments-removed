@@ -786,9 +786,12 @@ struct TwoPoints {
   } p1;
 
   T y(const T x) const {
-    return p0.y + (x - p0.x) / (p1.x - p0.x) * (p1.y - p0.y);
+    const auto dx = p1.x - p0.x;
+    const auto dy = p1.y - p0.y;
+    return p0.y + dy / dx * (x - p0.x);
   }
 };
+
 
 template <class T>
 static void LinearFill(T& vals, const TwoPoints<float>& line) {
