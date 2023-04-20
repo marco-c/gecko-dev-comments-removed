@@ -5790,7 +5790,6 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   
   cwi.windowOpened() = true;
   cwi.maxTouchPoints() = 0;
-  cwi.hasSiblings() = false;
 
   
   
@@ -5852,7 +5851,6 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
       return IPC_FAIL(this, "New BrowsingContext has mismatched LoadContext");
     }
   }
-
   BrowserParent::AutoUseNewTab aunt(newTab);
 
   nsCOMPtr<nsIRemoteTab> newRemoteTab;
@@ -5874,6 +5872,11 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   MOZ_ASSERT(BrowserHost::GetFrom(newRemoteTab.get()) ==
              newTab->GetBrowserHost());
 
+  
+  
+  MOZ_ALWAYS_SUCCEEDS(
+      newBC->SetHasSiblings(openLocation == nsIBrowserDOMWindow::OPEN_NEWTAB));
+
   newTab->SwapFrameScriptsFrom(cwi.frameScripts());
   newTab->MaybeShowFrame();
 
@@ -5883,7 +5886,6 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   }
 
   cwi.maxTouchPoints() = newTab->GetMaxTouchPoints();
-  cwi.hasSiblings() = (openLocation == nsIBrowserDOMWindow::OPEN_NEWTAB);
 
   return IPC_OK();
 }

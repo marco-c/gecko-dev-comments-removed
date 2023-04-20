@@ -4757,23 +4757,8 @@ bool nsGlobalWindowOuter::CanMoveResizeWindows(CallerType aCallerType) {
     }
 
     
-    if (XRE_IsContentProcess()) {
-      nsCOMPtr<nsIDocShell> docShell = GetDocShell();
-      if (docShell) {
-        nsCOMPtr<nsIBrowserChild> child = docShell->GetBrowserChild();
-        bool hasSiblings = true;
-        if (child && NS_SUCCEEDED(child->GetHasSiblings(&hasSiblings)) &&
-            hasSiblings) {
-          return false;
-        }
-      }
-    } else {
-      nsCOMPtr<nsIDocShellTreeOwner> treeOwner = GetTreeOwner();
-      uint32_t itemCount = 0;
-      if (treeOwner && NS_SUCCEEDED(treeOwner->GetTabCount(&itemCount)) &&
-          itemCount > 1) {
-        return false;
-      }
+    if (mBrowsingContext->Top()->HasSiblings()) {
+      return false;
     }
   }
 

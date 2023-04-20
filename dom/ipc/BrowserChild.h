@@ -801,11 +801,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   bool mIsTopLevel : 1;
 
-  
-  
-  
-  bool mHasSiblings : 1;
-
   bool mIsTransparent : 1;
   bool mIPCOpen : 1;
 
