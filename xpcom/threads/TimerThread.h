@@ -128,13 +128,11 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
       return mTimerImpl.forget();
     }
 
-    static bool UniquePtrLessThan(const Entry& aLeft, const Entry& aRight) {
-      
-      
-      return aRight.mTimeout < aLeft.mTimeout;
-    }
-
     const TimeStamp& Timeout() const { return mTimeout; }
+
+    
+    bool operator==(const TimeStamp& aRHS) const { return Timeout() == aRHS; }
+    bool operator<(const TimeStamp& aRHS) const { return Timeout() < aRHS; }
 
    private:
     TimeStamp mTimeout;
