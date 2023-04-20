@@ -146,7 +146,8 @@ UsageInfo OriginInfo::LockedGetUsageForClient(Client::Type aClientType) {
   
   
   MOZ_ASSERT(aClientType == Client::Type::DOMCACHE ||
-             aClientType == Client::Type::LS);
+             aClientType == Client::Type::LS ||
+             aClientType == Client::Type::FILESYSTEM);
 
   return UsageInfo{DatabaseUsageType{mClientUsages[aClientType]}};
 }
