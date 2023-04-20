@@ -228,9 +228,9 @@ template double js::ParseDecimalNumber(
     const mozilla::Range<const char16_t> chars);
 
 template <typename CharT>
-static bool GetPrefixInteger(const CharT* start, const CharT* end, int base,
-                             IntegerSeparatorHandling separatorHandling,
-                             const CharT** endp, double* dp) {
+static bool GetPrefixIntegerImpl(const CharT* start, const CharT* end, int base,
+                                 IntegerSeparatorHandling separatorHandling,
+                                 const CharT** endp, double* dp) {
   MOZ_ASSERT(start <= end);
   MOZ_ASSERT(2 <= base && base <= 36);
 
@@ -280,10 +280,10 @@ static bool GetPrefixInteger(const CharT* start, const CharT* end, int base,
 }
 
 template <typename CharT>
-bool js::GetPrefixInteger(JSContext* cx, const CharT* start, const CharT* end,
-                          int base, IntegerSeparatorHandling separatorHandling,
+bool js::GetPrefixInteger(const CharT* start, const CharT* end, int base,
+                          IntegerSeparatorHandling separatorHandling,
                           const CharT** endp, double* dp) {
-  if (::GetPrefixInteger(start, end, base, separatorHandling, endp, dp)) {
+  if (GetPrefixIntegerImpl(start, end, base, separatorHandling, endp, dp)) {
     return true;
   }
 
@@ -293,26 +293,25 @@ bool js::GetPrefixInteger(JSContext* cx, const CharT* start, const CharT* end,
   
   
   
-  return GetDecimal(cx, start, *endp, dp);
+  return GetDecimal(start, *endp, dp);
 }
 
 namespace js {
 
-template bool GetPrefixInteger(JSContext* cx, const char16_t* start,
-                               const char16_t* end, int base,
+template bool GetPrefixInteger(const char16_t* start, const char16_t* end,
+                               int base,
                                IntegerSeparatorHandling separatorHandling,
                                const char16_t** endp, double* dp);
 
-template bool GetPrefixInteger(JSContext* cx, const Latin1Char* start,
-                               const Latin1Char* end, int base,
+template bool GetPrefixInteger(const Latin1Char* start, const Latin1Char* end,
+                               int base,
                                IntegerSeparatorHandling separatorHandling,
                                const Latin1Char** endp, double* dp);
 
 }  
 
 template <typename CharT>
-bool js::GetDecimalInteger(JSContext* cx, const CharT* start, const CharT* end,
-                           double* dp) {
+bool js::GetDecimalInteger(const CharT* start, const CharT* end, double* dp) {
   MOZ_ASSERT(start <= end);
 
   double d = 0.0;
@@ -334,29 +333,28 @@ bool js::GetDecimalInteger(JSContext* cx, const CharT* start, const CharT* end,
   }
 
   
-  return GetDecimal(cx, start, end, dp);
+  return GetDecimal(start, end, dp);
 }
 
 namespace js {
 
-template bool GetDecimalInteger(JSContext* cx, const char16_t* start,
-                                const char16_t* end, double* dp);
+template bool GetDecimalInteger(const char16_t* start, const char16_t* end,
+                                double* dp);
 
-template bool GetDecimalInteger(JSContext* cx, const Latin1Char* start,
-                                const Latin1Char* end, double* dp);
+template bool GetDecimalInteger(const Latin1Char* start, const Latin1Char* end,
+                                double* dp);
 
 template <>
-bool GetDecimalInteger<Utf8Unit>(JSContext* cx, const Utf8Unit* start,
-                                 const Utf8Unit* end, double* dp) {
-  return GetDecimalInteger(cx, Utf8AsUnsignedChars(start),
-                           Utf8AsUnsignedChars(end), dp);
+bool GetDecimalInteger<Utf8Unit>(const Utf8Unit* start, const Utf8Unit* end,
+                                 double* dp) {
+  return GetDecimalInteger(Utf8AsUnsignedChars(start), Utf8AsUnsignedChars(end),
+                           dp);
 }
 
 }  
 
 template <typename CharT>
-bool js::GetDecimal(JSContext* cx, const CharT* start, const CharT* end,
-                    double* dp) {
+bool js::GetDecimal(const CharT* start, const CharT* end, double* dp) {
   MOZ_ASSERT(start <= end);
 
   size_t length = end - start;
@@ -387,7 +385,7 @@ bool js::GetDecimal(JSContext* cx, const CharT* start, const CharT* end,
     return true;
   }
 
-  Vector<char, 32> chars(cx);
+  Vector<char, 32, SystemAllocPolicy> chars;
   if (!chars.growByUninitialized(length)) {
     return false;
   }
@@ -411,17 +409,16 @@ bool js::GetDecimal(JSContext* cx, const CharT* start, const CharT* end,
 
 namespace js {
 
-template bool GetDecimal(JSContext* cx, const char16_t* start,
-                         const char16_t* end, double* dp);
+template bool GetDecimal(const char16_t* start, const char16_t* end,
+                         double* dp);
 
-template bool GetDecimal(JSContext* cx, const Latin1Char* start,
-                         const Latin1Char* end, double* dp);
+template bool GetDecimal(const Latin1Char* start, const Latin1Char* end,
+                         double* dp);
 
 template <>
-bool GetDecimal<Utf8Unit>(JSContext* cx, const Utf8Unit* start,
-                          const Utf8Unit* end, double* dp) {
-  return GetDecimal(cx, Utf8AsUnsignedChars(start), Utf8AsUnsignedChars(end),
-                    dp);
+bool GetDecimal<Utf8Unit>(const Utf8Unit* start, const Utf8Unit* end,
+                          double* dp) {
+  return GetDecimal(Utf8AsUnsignedChars(start), Utf8AsUnsignedChars(end), dp);
 }
 
 }  
@@ -512,8 +509,9 @@ static bool ParseIntImpl(JSContext* cx, const CharT* chars, size_t length,
   
   const CharT* actualEnd;
   double d;
-  if (!GetPrefixInteger(cx, s, end, radix, IntegerSeparatorHandling::None,
-                        &actualEnd, &d)) {
+  if (!js::GetPrefixInteger(s, end, radix, IntegerSeparatorHandling::None,
+                            &actualEnd, &d)) {
+    ReportOutOfMemory(cx);
     return false;
   }
 
@@ -1925,7 +1923,7 @@ inline bool CharsToNonDecimalNumber(const CharT* start, const CharT* end,
   
   const CharT* endptr;
   double d;
-  MOZ_ALWAYS_TRUE(GetPrefixInteger(
+  MOZ_ALWAYS_TRUE(GetPrefixIntegerImpl(
       start + 2, end, radix, IntegerSeparatorHandling::None, &endptr, &d));
   if (endptr == start + 2 || SkipSpace(endptr, end) != end) {
     *result = GenericNaN();
