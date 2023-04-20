@@ -5,5 +5,5 @@
 
 (async function() {
   
-  RunTestsInIFrame('https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/requestStorageAccess-iframe.https.html?testCase=cross-origin-frame&rootdocument=false');
+  RunTestsInIFrame('https://{{domains[www]}}:{{ports[https][0]}}/storage-access-api/resources/requestStorageAccess-iframe.https.html?testCase=cross-origin-frame');
 })();

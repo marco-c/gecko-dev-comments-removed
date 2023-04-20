@@ -12,7 +12,7 @@
 
 const {testPrefix, topLevelDocument} = processQueryParams();
 
-if (window !== window.top) {
+if (!topLevelDocument) {
   
   
   test_driver.set_test_context(window.top);

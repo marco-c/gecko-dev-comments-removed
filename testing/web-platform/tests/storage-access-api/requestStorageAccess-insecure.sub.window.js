@@ -43,21 +43,21 @@ if (topLevelDocument) {
 
   
   const sameOriginFramePromise = RunTestsInIFrame(
-      'resources/requestStorageAccess-iframe.html?testCase=same-origin-frame&rootdocument=false');
+      'resources/requestStorageAccess-iframe.html?testCase=same-origin-frame');
 
   
   const crossOriginFramePromise = RunTestsInIFrame(
-      'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=cross-origin-frame&rootdocument=false');
+      'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=cross-origin-frame');
 
   
   
   const nestedSameOriginFramePromise = RunTestsInNestedIFrame(
-      'resources/requestStorageAccess-iframe.html?testCase=nested-same-origin-frame&rootdocument=false');
+      'resources/requestStorageAccess-iframe.html?testCase=nested-same-origin-frame');
 
   
   
   const nestedCrossOriginFramePromise = RunTestsInNestedIFrame(
-      'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=nested-cross-origin-frame&rootdocument=false');
+      'http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=nested-cross-origin-frame');
 
   
   
