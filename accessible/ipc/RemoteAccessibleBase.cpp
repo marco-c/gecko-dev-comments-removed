@@ -556,6 +556,16 @@ nsRect RemoteAccessibleBase<Derived>::BoundsInAppUnits() const {
 }
 
 template <class Derived>
+bool RemoteAccessibleBase<Derived>::IsFixedPos() const {
+  if (auto maybePosition =
+          mCachedFields->GetAttribute<RefPtr<nsAtom>>(nsGkAtoms::position)) {
+    return *maybePosition == nsGkAtoms::fixed;
+  }
+
+  return false;
+}
+
+template <class Derived>
 LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
     Maybe<nsRect> aOffset) const {
   Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
@@ -576,6 +586,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
 
     LayoutDeviceIntRect devPxBounds;
     const Accessible* acc = Parent();
+    bool encounteredFixedContainer = IsFixedPos();
     while (acc && acc->IsRemote()) {
       RemoteAccessible* remoteAcc = const_cast<Accessible*>(acc)->AsRemote();
 
@@ -606,19 +617,35 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         
         
         remoteAcc->ApplyCrossDocOffset(remoteBounds);
-
-        
-        
-        
-        
-        remoteAcc->ApplyScrollOffset(remoteBounds);
-
-        
-        
-        
-        bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
-        Unused << remoteAcc->ApplyTransform(bounds, remoteBounds);
+        if (!encounteredFixedContainer) {
+          
+          
+          
+          
+          
+          remoteAcc->ApplyScrollOffset(remoteBounds);
+        }
+        if (remoteAcc->IsDoc()) {
+          
+          
+          
+          
+          
+          encounteredFixedContainer = false;
+        }
+        if (!encounteredFixedContainer) {
+          
+          
+          
+          bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
+          Unused << remoteAcc->ApplyTransform(bounds, remoteBounds);
+        }
       }
+      if (remoteAcc->IsFixedPos()) {
+        encounteredFixedContainer = true;
+      }
+      
+      
       acc = acc->Parent();
     }
 
