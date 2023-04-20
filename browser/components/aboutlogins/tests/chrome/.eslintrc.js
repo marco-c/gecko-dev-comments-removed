@@ -1,0 +1,16 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  overrides: [
+    {
+      files: ["test_login_item.html"],
+      parserOptions: {
+        sourceType: "module",
+      },
+    },
+  ],
+};
