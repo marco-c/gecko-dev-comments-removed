@@ -6,50 +6,182 @@
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const { perfSpec } = require("resource://devtools/shared/specs/perf.js");
 
-const {
-  actorBridgeWithSpec,
-} = require("resource://devtools/server/actors/common.js");
-const {
-  ActorReadyGeckoProfilerInterface,
-} = require("resource://devtools/shared/performance-new/gecko-profiler-interface.js");
+loader.lazyRequireGetter(
+  this,
+  "RecordingUtils",
+  "resource://devtools/shared/performance-new/recording-utils.js"
+);
 
 
-
-
-
-
-function _bridgeEvents(actor, names) {
-  for (const name of names) {
-    actor.bridge.on(name, (...args) => actor.emit(name, ...args));
-  }
-}
+const IS_SUPPORTED_PLATFORM = "nsIProfiler" in Ci;
 
 
 
 
 exports.PerfActor = class PerfActor extends Actor {
-  constructor(conn, targetActor) {
+  constructor(conn) {
     super(conn, perfSpec);
-    
-    
-    this.bridge = new ActorReadyGeckoProfilerInterface();
 
-    _bridgeEvents(this, ["profiler-started", "profiler-stopped"]);
+    
+    if (IS_SUPPORTED_PLATFORM) {
+      this._observer = {
+        observe: this._observe.bind(this),
+      };
+      Services.obs.addObserver(this._observer, "profiler-started");
+      Services.obs.addObserver(this._observer, "profiler-stopped");
+    }
   }
 
   destroy() {
     super.destroy();
-    this.bridge.destroy();
+
+    if (!IS_SUPPORTED_PLATFORM) {
+      return;
+    }
+    Services.obs.removeObserver(this._observer, "profiler-started");
+    Services.obs.removeObserver(this._observer, "profiler-stopped");
+  }
+
+  startProfiler(options) {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return false;
+    }
+
+    
+    
+    const settings = {
+      entries: options.entries || 1000000,
+      duration: options.duration || 0,
+      interval: options.interval || 1,
+      features: options.features || [
+        "js",
+        "stackwalk",
+        "cpu",
+        "responsiveness",
+      ],
+      threads: options.threads || ["GeckoMain", "Compositor"],
+      activeTabID: RecordingUtils.getActiveBrowserID(),
+    };
+
+    try {
+      
+      Services.profiler.StartProfiler(
+        settings.entries,
+        settings.interval,
+        settings.features,
+        settings.threads,
+        settings.activeTabID,
+        settings.duration
+      );
+    } catch (e) {
+      
+      return false;
+    }
+
+    return true;
+  }
+
+  stopProfilerAndDiscardProfile() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return;
+    }
+    Services.profiler.StopProfiler();
   }
 
   
-  startProfiler = actorBridgeWithSpec("startProfiler");
-  stopProfilerAndDiscardProfile = actorBridgeWithSpec(
-    "stopProfilerAndDiscardProfile"
-  );
-  getSymbolTable = actorBridgeWithSpec("getSymbolTable");
-  getProfileAndStopProfiler = actorBridgeWithSpec("getProfileAndStopProfiler");
-  isActive = actorBridgeWithSpec("isActive");
-  isSupportedPlatform = actorBridgeWithSpec("isSupportedPlatform");
-  getSupportedFeatures = actorBridgeWithSpec("getSupportedFeatures");
+
+
+
+
+  async getSymbolTable(debugPath, breakpadId) {
+    const [addr, index, buffer] = await Services.profiler.getSymbolTable(
+      debugPath,
+      breakpadId
+    );
+    
+    
+    
+    return [Array.from(addr), Array.from(index), Array.from(buffer)];
+  }
+
+  async getProfileAndStopProfiler() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return null;
+    }
+
+    
+    
+    Services.profiler.Pause();
+
+    let profile;
+    try {
+      
+      profile = await Services.profiler.getProfileDataAsync();
+
+      if (Object.keys(profile).length === 0) {
+        console.error(
+          "An empty object was received from getProfileDataAsync.getProfileDataAsync(), " +
+            "meaning that a profile could not successfully be serialized and captured."
+        );
+        profile = null;
+      }
+    } catch (e) {
+      
+      profile = null;
+      console.error(`There was an error fetching a profile`, e);
+    }
+
+    
+    Services.profiler.StopProfiler();
+
+    
+    return profile;
+  }
+
+  isActive() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return false;
+    }
+    return Services.profiler.IsActive();
+  }
+
+  isSupportedPlatform() {
+    return IS_SUPPORTED_PLATFORM;
+  }
+
+  
+
+
+
+  _observe(subject, topic, _data) {
+    
+    
+    switch (topic) {
+      case "profiler-started":
+        const param = subject.QueryInterface(Ci.nsIProfilerStartParams);
+        this.emit(
+          topic,
+          param.entries,
+          param.interval,
+          param.features,
+          param.duration,
+          param.activeTabID
+        );
+        break;
+      case "profiler-stopped":
+        this.emit(topic);
+        break;
+    }
+  }
+
+  
+
+
+
+  getSupportedFeatures() {
+    if (!IS_SUPPORTED_PLATFORM) {
+      return [];
+    }
+    return Services.profiler.GetFeatures();
+  }
 };

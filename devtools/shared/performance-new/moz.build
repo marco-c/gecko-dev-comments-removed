@@ -5,7 +5,6 @@
 
 
 DevToolsModules(
-    "gecko-profiler-interface.js",
     "recording-utils.js",
 )
 
