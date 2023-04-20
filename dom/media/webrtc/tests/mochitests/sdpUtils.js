@@ -30,6 +30,16 @@ var sdputils = {
   },
 
   
+  getPayloadTypes(sdp) {
+    const regex = /^a=rtpmap:([0-9]+) (?:(?!rtx).)*$/gim;
+    const pts = [];
+    for (const [line, pt] of sdp.matchAll(regex)) {
+      pts.push(pt);
+    }
+    return pts;
+  },
+
+  
   
   
   findExtmapIds(sdp) {
