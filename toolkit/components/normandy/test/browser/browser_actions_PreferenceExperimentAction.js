@@ -2,8 +2,8 @@
 
 "use strict";
 
-const { Sampling } = ChromeUtils.import(
-  "resource://gre/modules/components-utils/Sampling.jsm"
+const { Sampling } = ChromeUtils.importESModule(
+  "resource://gre/modules/components-utils/Sampling.sys.mjs"
 );
 
 const { ClientEnvironment } = ChromeUtils.import(

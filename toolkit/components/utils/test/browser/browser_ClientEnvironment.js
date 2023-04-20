@@ -7,8 +7,8 @@
 
 
 
-const { ClientEnvironmentBase } = ChromeUtils.import(
-  "resource://gre/modules/components-utils/ClientEnvironment.jsm"
+const { ClientEnvironmentBase } = ChromeUtils.importESModule(
+  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
 );
 
 const { NormandyTestUtils } = ChromeUtils.import(
