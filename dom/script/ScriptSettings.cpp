@@ -515,14 +515,19 @@ void AutoJSAPI::ReportException() {
     if (mIsMainThread) {
       RefPtr<xpc::ErrorReport> xpcReport = new xpc::ErrorReport();
 
+      RefPtr<nsGlobalWindowInner> inner = xpc::WindowOrNull(errorGlobal);
+
       
       
       
-      RefPtr<nsGlobalWindowInner> inner =
-          xpc::AssociatedWindowOrNull(errorGlobal, cx());
+      
+      
       uint64_t innerWindowID = 0;
       if (inner) {
         innerWindowID = inner->WindowID();
+      } else if (nsGlobalWindowInner* win = xpc::SandboxWindowOrNull(
+                     JS::GetNonCCWObjectGlobal(errorGlobal), cx())) {
+        innerWindowID = win->WindowID();
       }
 
       bool isChrome =
