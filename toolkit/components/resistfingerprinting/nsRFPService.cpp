@@ -209,11 +209,6 @@ void nsRFPService::UpdateRFPPref() {
       nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
 
   
-  JS::SetUseFdlibmForSinCosTan(
-      StaticPrefs::javascript_options_use_fdlibm_for_sin_cos_tan() ||
-      resistFingerprinting);
-
-  
   
   
   if (!StaticPrefs::privacy_resistFingerprinting_testing_setTZtoUTC()) {
