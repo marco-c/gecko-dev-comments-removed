@@ -117,7 +117,7 @@ pub fn log_to_gecko(record: &log::Record) -> bool {
 }
 
 #[no_mangle]
-pub extern "C" fn set_rust_log_level(module: *const c_char, level: u8) {
+pub unsafe extern "C" fn set_rust_log_level(module: *const c_char, level: u8) {
     
     let rust_level = match level {
         1 => LevelFilter::Error,
@@ -129,7 +129,7 @@ pub extern "C" fn set_rust_log_level(module: *const c_char, level: u8) {
     };
 
     
-    let mut mod_name = unsafe { CStr::from_ptr(module) }
+    let mut mod_name = CStr::from_ptr(module)
         .to_string_lossy()
         .into_owned();
 

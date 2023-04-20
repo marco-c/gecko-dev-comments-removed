@@ -143,15 +143,13 @@ pub extern "C" fn GkRust_Shutdown() {}
 
 
 #[no_mangle]
-pub extern "C" fn intentional_panic(message: *const c_char) {
-    panic!("{}", unsafe { CStr::from_ptr(message) }.to_string_lossy());
+pub unsafe extern "C" fn intentional_panic(message: *const c_char) {
+    panic!("{}", CStr::from_ptr(message).to_string_lossy());
 }
 
 
 #[no_mangle]
-pub extern "C" fn debug_log(target: *const c_char, message: *const c_char) {
-    unsafe {
-        
-        info!(target: CStr::from_ptr(target).to_str().unwrap(), "{}", CStr::from_ptr(message).to_str().unwrap());
-    }
+pub unsafe extern "C" fn debug_log(target: *const c_char, message: *const c_char) {
+    
+    info!(target: CStr::from_ptr(target).to_str().unwrap(), "{}", CStr::from_ptr(message).to_str().unwrap());
 }
