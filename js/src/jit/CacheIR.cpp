@@ -10885,7 +10885,7 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
     ObjOperandId thisObjId = writer.guardToObject(thisValId);
 
     
-    writer.guardAnyClass(thisObjId, thisval_.toObject().getClass());
+    writer.guardShape(thisObjId, thisval_.toObject().shape());
 
     
     writer.guardSpecificFunction(calleeObjId, calleeFunc);
