@@ -445,14 +445,17 @@ static const Maybe<Vector<const wchar_t*>>& GetPrespawnCigExceptionModules() {
       return Nothing();
     }
 
-    const wchar_t* arrayBase = sharedSection->GetDependentModules().data();
-    if (!arrayBase) {
+    Span<const wchar_t> dependentModules = sharedSection->GetDependentModules();
+    if (dependentModules.IsEmpty()) {
       return Nothing();
     }
 
     
     Vector<const wchar_t*> paths;
-    for (const wchar_t* p = arrayBase; *p;) {
+    for (const wchar_t* p = dependentModules.data();
+         (p - dependentModules.data() <
+              static_cast<long long>(dependentModules.size()) &&
+          *p);) {
       Unused << paths.append(p);
       while (*p) {
         ++p;
