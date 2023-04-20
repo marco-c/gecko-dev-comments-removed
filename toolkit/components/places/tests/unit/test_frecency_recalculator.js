@@ -3,6 +3,13 @@
 
 
 
+
+
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
+
 async function getOriginFrecency(origin) {
   let db = await PlacesUtils.promiseDBConnection();
   return (
