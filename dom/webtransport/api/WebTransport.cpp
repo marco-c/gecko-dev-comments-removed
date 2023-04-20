@@ -244,6 +244,11 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   }
 
   nsCOMPtr<nsIPrincipal> principal = mGlobal->PrincipalOrNull();
+  mozilla::Maybe<IPCClientInfo> ipcClientInfo;
+
+  if (mGlobal->GetClientInfo().isSome()) {
+    ipcClientInfo = mozilla::Some(mGlobal->GetClientInfo().ref().ToIPC());
+  }
   
   Endpoint<PWebTransportParent> parentEndpoint;
   Endpoint<PWebTransportChild> childEndpoint;
@@ -321,7 +326,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
 
   
   backgroundChild
-      ->SendCreateWebTransportParent(aURL, principal, dedicated,
+      ->SendCreateWebTransportParent(aURL, principal, ipcClientInfo, dedicated,
                                      requireUnreliable,
                                      (uint32_t)congestionControl,
                                      
