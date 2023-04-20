@@ -49,8 +49,8 @@ namespace {
 
 constexpr int kQpMin = 10;
 constexpr int kUsageProfile = AOM_USAGE_REALTIME;
-constexpr int kMinQindex = 145;   
-constexpr int kMaxQindex = 205;   
+constexpr int kMinQindex = 145;  
+constexpr int kMaxQindex = 205;  
 constexpr int kBitDepth = 8;
 constexpr int kLagInFrames = 0;  
 constexpr int kRtpTicksPerSecond = 90000;
@@ -684,6 +684,7 @@ int32_t LibaomAv1Encoder::Encode(
           encoded_image._encodedWidth = cfg_.g_w * n / d;
           encoded_image._encodedHeight = cfg_.g_h * n / d;
           encoded_image.SetSpatialIndex(layer_frame->SpatialId());
+          encoded_image.SetTemporalIndex(layer_frame->TemporalId());
         } else {
           encoded_image._encodedWidth = cfg_.g_w;
           encoded_image._encodedHeight = cfg_.g_h;

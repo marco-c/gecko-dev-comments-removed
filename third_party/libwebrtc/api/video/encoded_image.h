@@ -97,6 +97,13 @@ class RTC_EXPORT EncodedImage {
     spatial_index_ = spatial_index;
   }
 
+  absl::optional<int> TemporalIndex() const { return temporal_index_; }
+  void SetTemporalIndex(absl::optional<int> temporal_index) {
+    RTC_DCHECK_GE(temporal_index_.value_or(0), 0);
+    RTC_DCHECK_LT(temporal_index_.value_or(0), kMaxTemporalStreams);
+    temporal_index_ = temporal_index;
+  }
+
   
   
   absl::optional<size_t> SpatialLayerFrameSize(int spatial_index) const;
@@ -199,6 +206,7 @@ class RTC_EXPORT EncodedImage {
   size_t size_ = 0;  
   uint32_t timestamp_rtp_ = 0;
   absl::optional<int> spatial_index_;
+  absl::optional<int> temporal_index_;
   std::map<int, size_t> spatial_layer_frame_size_bytes_;
   absl::optional<webrtc::ColorSpace> color_space_;
   
