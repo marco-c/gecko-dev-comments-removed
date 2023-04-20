@@ -56,7 +56,10 @@ extern "C" {
 
 
 
-#define ZYDIS_STRING_APPEND_NUM_U(formatter, base, str, value, padding_length) \
+
+
+#define ZYDIS_STRING_APPEND_NUM_U(formatter, base, str, value, padding_length, \
+    force_leading_number) \
     switch (base) \
     { \
     case ZYDIS_NUMERIC_BASE_DEC: \
@@ -65,7 +68,7 @@ extern "C" {
             (formatter)->number_format[base][1].string)); \
         break; \
     case ZYDIS_NUMERIC_BASE_HEX: \
-        ZYAN_CHECK(ZydisStringAppendHexU(str, value, padding_length, \
+        ZYAN_CHECK(ZydisStringAppendHexU(str, value, padding_length, force_leading_number, \
             (formatter)->hex_uppercase, \
             (formatter)->number_format[base][0].string, \
             (formatter)->number_format[base][1].string)); \
@@ -84,7 +87,10 @@ extern "C" {
 
 
 
-#define ZYDIS_STRING_APPEND_NUM_S(formatter, base, str, value, padding_length, force_sign) \
+
+
+#define ZYDIS_STRING_APPEND_NUM_S(formatter, base, str, value, padding_length, \
+    force_leading_number, force_sign) \
     switch (base) \
     { \
     case ZYDIS_NUMERIC_BASE_DEC: \
@@ -93,7 +99,7 @@ extern "C" {
             (formatter)->number_format[base][1].string)); \
         break; \
     case ZYDIS_NUMERIC_BASE_HEX: \
-        ZYAN_CHECK(ZydisStringAppendHexS(str, value, padding_length,  \
+        ZYAN_CHECK(ZydisStringAppendHexS(str, value, padding_length, force_leading_number,  \
             (formatter)->hex_uppercase, force_sign, \
             (formatter)->number_format[base][0].string, \
             (formatter)->number_format[base][1].string)); \
@@ -260,7 +266,7 @@ ZYAN_INLINE ZyanStatus ZydisFormatterBufferAppendPredefined(ZydisFormatterBuffer
 
 
 ZyanU32 ZydisFormatterHelperGetExplicitSize(const ZydisFormatter* formatter,
-    ZydisFormatterContext* context, ZyanU8 memop_id);
+    ZydisFormatterContext* context, const ZydisDecodedOperand* operand);
 
 
 
