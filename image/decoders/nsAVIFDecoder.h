@@ -9,6 +9,7 @@
 
 #include "Decoder.h"
 #include "mp4parse.h"
+#include "mozilla/gfx/Types.h"
 #include "SurfacePipe.h"
 
 #include "aom/aom_decoder.h"
@@ -19,6 +20,8 @@
 namespace mozilla {
 namespace image {
 class RasterImage;
+class AVIFParser;
+class AVIFDecoderInterface;
 
 class nsAVIFDecoder final : public Decoder {
  public:
@@ -59,6 +62,7 @@ class nsAVIFDecoder final : public Decoder {
   };
   using DecodeResult =
       Variant<Mp4parseStatus, NonDecoderResult, Dav1dResult, AOMResult>;
+  Mp4parseStatus CreateParser();
   DecodeResult Decode(SourceBufferIterator& aIterator, IResumable* aOnResume);
 
   static bool IsDecodeSuccess(const DecodeResult& aResult);
@@ -69,6 +73,129 @@ class nsAVIFDecoder final : public Decoder {
 
   
   const uint8_t* mReadCursor = nullptr;
+
+  UniquePtr<AVIFParser> mParser = nullptr;
+  UniquePtr<AVIFDecoderInterface> mDecoder = nullptr;
+};
+
+class AVIFParser {
+ public:
+  static Mp4parseStatus Create(const Mp4parseIo* aIo,
+                               UniquePtr<AVIFParser>& aParserOut);
+
+  ~AVIFParser();
+
+  Mp4parseAvifImage* GetImage();
+
+ private:
+  explicit AVIFParser(const Mp4parseIo* aIo);
+
+  Mp4parseStatus Init();
+
+  struct FreeAvifParser {
+    void operator()(Mp4parseAvifParser* aPtr) { mp4parse_avif_free(aPtr); }
+  };
+
+  const Mp4parseIo* mIo;
+  UniquePtr<Mp4parseAvifParser, FreeAvifParser> mParser;
+  Maybe<Mp4parseAvifImage> mAvifImage;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct AVIFDecodedData : layers::PlanarYCbCrData {
+  gfx::CICP::ColourPrimaries mColourPrimaries = gfx::CICP::CP_UNSPECIFIED;
+  gfx::CICP::TransferCharacteristics mTransferCharacteristics =
+      gfx::CICP::TC_UNSPECIFIED;
+  gfx::CICP::MatrixCoefficients mMatrixCoefficients = gfx::CICP::MC_UNSPECIFIED;
+
+  void SetCicpValues(
+      const Mp4parseNclxColourInformation* aNclx,
+      const gfx::CICP::ColourPrimaries aAv1ColourPrimaries,
+      const gfx::CICP::TransferCharacteristics aAv1TransferCharacteristics,
+      const gfx::CICP::MatrixCoefficients aAv1MatrixCoefficients);
+};
+
+
+class AVIFDecoderInterface {
+ public:
+  using Dav1dResult = nsAVIFDecoder::Dav1dResult;
+  using NonAOMCodecError = nsAVIFDecoder::NonAOMCodecError;
+  using AOMResult = nsAVIFDecoder::AOMResult;
+  using NonDecoderResult = nsAVIFDecoder::NonDecoderResult;
+  using DecodeResult = nsAVIFDecoder::DecodeResult;
+
+  virtual ~AVIFDecoderInterface() = default;
+
+  
+  virtual DecodeResult Decode(bool aIsMetadataDecode,
+                              const Mp4parseAvifImage& parsedImg) = 0;
+  
+  AVIFDecodedData& GetDecodedData() {
+    MOZ_ASSERT(mDecodedData.isSome());
+    return mDecodedData.ref();
+  }
+
+ protected:
+  explicit AVIFDecoderInterface() {}
+
+  inline static bool IsDecodeSuccess(const DecodeResult& aResult) {
+    return nsAVIFDecoder::IsDecodeSuccess(aResult);
+  }
+
+  
+  Maybe<AVIFDecodedData> mDecodedData;
 };
 
 }  
