@@ -510,6 +510,9 @@ class JS::Realm : public JS::shadow::Realm {
   
   inline bool hasLiveGlobal() const;
 
+  
+  inline bool hasInitializedGlobal() const;
+
   inline void initGlobal(js::GlobalObject& global);
   void clearInitializingGlobal() { initializingGlobal_ = false; }
 

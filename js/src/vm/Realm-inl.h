@@ -29,8 +29,13 @@ js::GlobalObject* JS::Realm::maybeGlobal() const {
 inline bool JS::Realm::hasLiveGlobal() const {
   
   
+  
   MOZ_ASSERT_IF(global_, !js::gc::IsAboutToBeFinalized(global_));
-  return bool(global_) && !initializingGlobal_;
+  return bool(global_);
+}
+
+inline bool JS::Realm::hasInitializedGlobal() const {
+  return hasLiveGlobal() && !initializingGlobal_;
 }
 
 inline bool JS::Realm::marked() const {
