@@ -75,8 +75,8 @@ const getUnifiedExtensionsItem = (win, extensionId) => {
 const openUnifiedExtensionsContextMenu = async (win, extensionId) => {
   const item = getUnifiedExtensionsItem(win, extensionId);
   ok(item, `expected item for extensionId=${extensionId}`);
-  const button = item.querySelector(".unified-extensions-item-open-menu");
-  ok(button, "expected 'open menu' button");
+  const button = item.querySelector(".unified-extensions-item-menu-button");
+  ok(button, "expected menu button");
   
   
   
@@ -107,7 +107,9 @@ const clickUnifiedExtensionsItem = async (
   
   
   if (forceEnableButton) {
-    let actionButton = item.querySelector(".unified-extensions-item-action");
+    let actionButton = item.querySelector(
+      ".unified-extensions-item-action-button"
+    );
     actionButton.disabled = false;
     ok(!actionButton.disabled, "action button was force-enabled");
   }
