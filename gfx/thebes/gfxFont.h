@@ -19,6 +19,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/MruCache.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/RWLock.h"
@@ -1690,7 +1691,7 @@ class gfxFont {
 
 
   void Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
-            mozilla::gfx::Point* aPt, const TextRunDrawParams& aRunParams,
+            mozilla::gfx::Point* aPt, TextRunDrawParams& aRunParams,
             mozilla::gfx::ShapedTextFlags aOrientation);
 
   
@@ -2273,9 +2274,6 @@ class gfxFont {
                         const FontDrawParams& aFontParams,
                         const mozilla::gfx::Point& aPoint, uint32_t aGlyphId);
 
-  void SetupColorPalette(FontDrawParams* aFontParams,
-                         const TextRunDrawParams& aRunParams) const;
-
   
   
   
@@ -2317,6 +2315,34 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
   bool isRTL = false;
   bool paintSVGGlyphs = true;
   bool allowGDI = true;
+
+  
+  
+  
+  using CacheKey = const gfxFont*;
+
+  struct CacheData {
+    CacheKey mKey;
+    mozilla::UniquePtr<nsTArray<mozilla::gfx::sRGBColor>> mPalette;
+  };
+
+  class PaletteCache
+      : public mozilla::MruCache<CacheKey, CacheData, PaletteCache> {
+   public:
+    static mozilla::HashNumber Hash(const CacheKey& aKey) {
+      return mozilla::HashGeneric(aKey);
+    }
+    static bool Match(const CacheKey& aKey, const CacheData& aVal) {
+      return aVal.mKey == aKey;
+    }
+  };
+
+  PaletteCache mPaletteCache;
+
+  
+  
+  
+  nsTArray<mozilla::gfx::sRGBColor>* GetPaletteFor(const gfxFont* aFont);
 };
 
 struct MOZ_STACK_CLASS FontDrawParams {
@@ -2328,7 +2354,7 @@ struct MOZ_STACK_CLASS FontDrawParams {
   mozilla::gfx::DrawOptions drawOptions;
   gfxFloat advanceDirection;
   mozilla::gfx::sRGBColor currentColor;
-  mozilla::UniquePtr<nsTArray<mozilla::gfx::sRGBColor>> palette;
+  nsTArray<mozilla::gfx::sRGBColor>* palette;  
   bool isVerticalFont;
   bool haveSVGGlyphs;
   bool haveColorGlyphs;
