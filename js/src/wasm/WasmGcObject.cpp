@@ -420,6 +420,9 @@ WasmArrayObject* WasmArrayObject::createArray(
     }
   }
 
+  
+  
+  
   Rooted<WasmArrayObject*> arrayObj(cx);
   arrayObj =
       (WasmArrayObject*)WasmGcObject::create(cx, typeDefData, initialHeap);
@@ -433,9 +436,19 @@ WasmArrayObject* WasmArrayObject::createArray(
 
   arrayObj->numElements_ = numElements;
   arrayObj->data_ = outlineData;
-  if constexpr (ZeroFields) {
-    if (arrayObj->data_) {
+  if (arrayObj->data_) {
+    if constexpr (ZeroFields) {
       memset(arrayObj->data_, 0, outlineBytes.value());
+    }
+    if (js::gc::IsInsideNursery(arrayObj)) {
+      
+      
+      
+      if (!cx->nursery().registerMallocedBuffer(arrayObj->data_,
+                                                outlineBytes.value())) {
+        js_free(arrayObj->data_);
+        return nullptr;
+      }
     }
   }
 
@@ -484,6 +497,21 @@ void WasmArrayObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
   }
 }
 
+
+size_t WasmArrayObject::obj_moved(JSObject* obj, JSObject* old) {
+  MOZ_ASSERT(!IsInsideNursery(obj));
+  if (IsInsideNursery(old)) {
+    
+    MOZ_ASSERT(obj->isTenured());
+    WasmArrayObject& arrayObj = obj->as<WasmArrayObject>();
+    if (arrayObj.data_) {
+      Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
+      nursery.removeMallocedBufferDuringMinorGC(arrayObj.data_);
+    }
+  }
+  return 0;
+}
+
 void WasmArrayObject::storeVal(const Val& val, uint32_t itemIndex) {
   const ArrayType& arrayType = typeDef().arrayType();
   size_t elementSize = arrayType.elementType_.size();
@@ -517,16 +545,16 @@ static const JSClassOps WasmArrayObjectClassOps = {
     WasmArrayObject::obj_trace,
 };
 static const ClassExtension WasmArrayObjectClassExt = {
-    nullptr 
+    WasmArrayObject::obj_moved 
 };
-const JSClass WasmArrayObject::class_ = {"WasmArrayObject",
-                                         JSClass::NON_NATIVE |
-                                             JSCLASS_DELAY_METADATA_BUILDER |
-                                             JSCLASS_BACKGROUND_FINALIZE,
-                                         &WasmArrayObjectClassOps,
-                                         JS_NULL_CLASS_SPEC,
-                                         &WasmArrayObjectClassExt,
-                                         &WasmGcObject::objectOps_};
+const JSClass WasmArrayObject::class_ = {
+    "WasmArrayObject",
+    JSClass::NON_NATIVE | JSCLASS_DELAY_METADATA_BUILDER |
+        JSCLASS_BACKGROUND_FINALIZE | JSCLASS_SKIP_NURSERY_FINALIZE,
+    &WasmArrayObjectClassOps,
+    JS_NULL_CLASS_SPEC,
+    &WasmArrayObjectClassExt,
+    &WasmGcObject::objectOps_};
 
 
 
@@ -584,6 +612,7 @@ WasmStructObject* WasmStructObject::createStruct(
     }
   }
 
+  
   Rooted<WasmStructObject*> structObj(cx);
   structObj =
       (WasmStructObject*)WasmGcObject::create(cx, typeDefData, initialHeap);
@@ -600,8 +629,18 @@ WasmStructObject* WasmStructObject::createStruct(
 
   if constexpr (ZeroFields) {
     memset(&(structObj->inlineData_[0]), 0, inlineBytes);
-    if (outlineBytes > 0) {
+  }
+  if (outlineBytes > 0) {
+    if constexpr (ZeroFields) {
       memset(structObj->outlineData_, 0, outlineBytes);
+    }
+    
+    if (js::gc::IsInsideNursery(structObj)) {
+      if (!cx->nursery().registerMallocedBuffer(structObj->outlineData_,
+                                                outlineBytes)) {
+        js_free(structObj->outlineData_);
+        return nullptr;
+      }
     }
   }
 
@@ -642,6 +681,22 @@ void WasmStructObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
   }
 }
 
+
+size_t WasmStructObject::obj_moved(JSObject* obj, JSObject* old) {
+  MOZ_ASSERT(!IsInsideNursery(obj));
+  if (IsInsideNursery(old)) {
+    
+    MOZ_ASSERT(obj->isTenured());
+    WasmStructObject& structObj = obj->as<WasmStructObject>();
+    
+    
+    MOZ_ASSERT(structObj.outlineData_);
+    Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
+    nursery.removeMallocedBufferDuringMinorGC(structObj.outlineData_);
+  }
+  return 0;
+}
+
 void WasmStructObject::storeVal(const Val& val, uint32_t fieldIndex) {
   const StructType& structType = typeDef().structType();
   FieldType fieldType = structType.fields_[fieldIndex].type;
@@ -676,12 +731,12 @@ static const JSClassOps WasmStructObjectOutlineClassOps = {
     WasmStructObject::obj_trace,
 };
 static const ClassExtension WasmStructObjectOutlineClassExt = {
-    nullptr 
+    WasmStructObject::obj_moved 
 };
 const JSClass WasmStructObject::classOutline_ = {
     "WasmStructObject",
     JSClass::NON_NATIVE | JSCLASS_DELAY_METADATA_BUILDER |
-        JSCLASS_BACKGROUND_FINALIZE,
+        JSCLASS_BACKGROUND_FINALIZE | JSCLASS_SKIP_NURSERY_FINALIZE,
     &WasmStructObjectOutlineClassOps,
     JS_NULL_CLASS_SPEC,
     &WasmStructObjectOutlineClassExt,

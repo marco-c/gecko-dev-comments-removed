@@ -1174,10 +1174,7 @@ static int32_t MemDiscardNotShared(Instance* instance, I byteOffset, I byteLen,
   
   
   return WasmStructObject::createStruct<true>(
-      cx, typeDefData,
-      typeDefData->clasp == &WasmStructObject::classInline_
-          ? typeDefData->allocSite.initialHeap()
-          : typeDefData->initialHeap);
+      cx, typeDefData, typeDefData->allocSite.initialHeap());
 }
 
  void* Instance::structNewUninit(Instance* instance,
@@ -1187,10 +1184,7 @@ static int32_t MemDiscardNotShared(Instance* instance, I byteOffset, I byteLen,
   
   
   return WasmStructObject::createStruct<false>(
-      cx, typeDefData,
-      typeDefData->clasp == &WasmStructObject::classInline_
-          ? typeDefData->allocSite.initialHeap()
-          : typeDefData->initialHeap);
+      cx, typeDefData, typeDefData->allocSite.initialHeap());
 }
 
  void* Instance::arrayNew(Instance* instance, uint32_t numElements,
@@ -1200,7 +1194,7 @@ static int32_t MemDiscardNotShared(Instance* instance, I byteOffset, I byteLen,
   
   
   return WasmArrayObject::createArray<true>(
-      cx, typeDefData, typeDefData->initialHeap, numElements);
+      cx, typeDefData, typeDefData->allocSite.initialHeap(), numElements);
 }
 
  void* Instance::arrayNewUninit(Instance* instance,
@@ -1211,7 +1205,7 @@ static int32_t MemDiscardNotShared(Instance* instance, I byteOffset, I byteLen,
   
   
   return WasmArrayObject::createArray<false>(
-      cx, typeDefData, typeDefData->initialHeap, numElements);
+      cx, typeDefData, typeDefData->allocSite.initialHeap(), numElements);
 }
 
 
@@ -1245,8 +1239,9 @@ static int32_t MemDiscardNotShared(Instance* instance, I byteOffset, I byteLen,
 
   const TypeDef* typeDef = typeDefData->typeDef;
   Rooted<WasmArrayObject*> arrayObj(
-      cx, WasmArrayObject::createArray(cx, typeDefData,
-                                       typeDefData->initialHeap, numElements));
+      cx,
+      WasmArrayObject::createArray(
+          cx, typeDefData, typeDefData->allocSite.initialHeap(), numElements));
   if (!arrayObj) {
     
     return nullptr;
@@ -1328,8 +1323,9 @@ static int32_t MemDiscardNotShared(Instance* instance, I byteOffset, I byteLen,
   MOZ_RELEASE_ASSERT(typeDef->arrayType().elementType_.size() == sizeof(void*));
 
   Rooted<WasmArrayObject*> arrayObj(
-      cx, WasmArrayObject::createArray(cx, typeDefData,
-                                       typeDefData->initialHeap, numElements));
+      cx,
+      WasmArrayObject::createArray(
+          cx, typeDefData, typeDefData->allocSite.initialHeap(), numElements));
   if (!arrayObj) {
     
     return nullptr;
@@ -1767,7 +1763,6 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 
       typeDefData->clasp = clasp;
       typeDefData->allocKind = allocKind;
-      typeDefData->initialHeap = GetInitialHeap(GenericObject, clasp);
 
       
       typeDefData->allocSite.initWasm(zone);
