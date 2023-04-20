@@ -1252,9 +1252,10 @@ function ArraySpeciesCreate(originalArray, length) {
 
 function IsConcatSpreadable(O) {
   
-  if (!IsObject(O) 
+  
+  if (!IsObject(O)
 #ifdef ENABLE_RECORD_TUPLE
-    && !IsTuple(O) 
+    && !IsTuple(O)
 #endif
   ) {
     return false;
