@@ -85,14 +85,6 @@ enum IceCandidatePairType {
 
 
 
-enum KeyExchangeProtocolType {
-  kEnumCounterKeyProtocolDtls = 0,
-  kEnumCounterKeyProtocolSdes = 1,
-  kEnumCounterKeyProtocolMax
-};
-
-
-
 enum KeyExchangeProtocolMedia {
   kEnumCounterKeyProtocolMediaTypeDtlsAudio = 0,
   kEnumCounterKeyProtocolMediaTypeDtlsVideo = 1,
