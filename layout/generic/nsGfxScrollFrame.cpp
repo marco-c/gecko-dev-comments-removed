@@ -4843,7 +4843,14 @@ nsPoint ScrollFrameHelper::GetVisualViewportOffset() const {
   PresShell* presShell = mOuter->PresShell();
   if (mIsRoot) {
     if (auto pendingUpdate = presShell->GetPendingVisualScrollUpdate()) {
-      return pendingUpdate->mVisualScrollOffset;
+      
+      
+      
+      
+      
+      
+      return GetScrollRangeForUserInputEvents().ClampPoint(
+          pendingUpdate->mVisualScrollOffset);
     }
     return presShell->GetVisualViewportOffset();
   }
