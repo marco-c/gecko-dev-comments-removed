@@ -31,7 +31,9 @@ mozilla::LazyLogModule gAutoplayPermissionLog("Autoplay");
 #define AUTOPLAY_LOG(msg, ...) \
   MOZ_LOG(gAutoplayPermissionLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
 
-namespace mozilla::dom {
+using namespace mozilla::dom;
+
+namespace mozilla::media {
 
 static const uint32_t sPOLICY_STICKY_ACTIVATION = 0;
 
