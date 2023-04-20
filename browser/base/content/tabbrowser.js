@@ -6825,6 +6825,28 @@
         this.mBrowser.lastURI = aLocation;
         this.mBrowser.lastLocationChange = Date.now();
       }
+
+      
+      
+      
+      if (aLocation.spec.endsWith(".pdf")) {
+        this.showFeatureCalloutIfApplicable(aLocation);
+      }
+    }
+
+    showFeatureCalloutIfApplicable(location) {
+      
+      const { FeatureCallout } = ChromeUtils.importESModule(
+        "chrome://browser/content/featureCallout.mjs"
+      );
+      
+      
+      let Callout = new FeatureCallout({
+        win: window,
+        prefName: "browser.pdfjs.feature-tour",
+        source: location.spec,
+      });
+      Callout.showFeatureCallout();
     }
 
     onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
