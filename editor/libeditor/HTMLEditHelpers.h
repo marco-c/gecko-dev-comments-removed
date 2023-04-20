@@ -39,6 +39,14 @@ class nsISimpleEnumerator;
 
 namespace mozilla {
 
+enum class WithTransaction { No, Yes };
+inline std::ostream& operator<<(std::ostream& aStream,
+                                WithTransaction aWithTransaction) {
+  aStream << "WithTransaction::"
+          << (aWithTransaction == WithTransaction::Yes ? "Yes" : "No");
+  return aStream;
+}
+
 
 
 
@@ -874,7 +882,67 @@ class MOZ_STACK_CLASS ReplaceRangeDataBase final {
 
 
 
-struct MOZ_STACK_CLASS EditorInlineStyle {
+class MOZ_STACK_CLASS EditorElementStyle {
+ public:
+#define DEFINE_FACTORY(aName, aAttr)            \
+  constexpr static EditorElementStyle aName() { \
+    return EditorElementStyle(*(aAttr));        \
+  }
+
+  
+  DEFINE_FACTORY(Align, nsGkAtoms::align)
+  
+  DEFINE_FACTORY(BGColor, nsGkAtoms::bgcolor)
+  
+  DEFINE_FACTORY(Background, nsGkAtoms::background)
+  
+  DEFINE_FACTORY(Border, nsGkAtoms::border)
+  
+  DEFINE_FACTORY(Height, nsGkAtoms::height)
+  
+  DEFINE_FACTORY(Text, nsGkAtoms::text)
+  
+  DEFINE_FACTORY(Type, nsGkAtoms::type)
+  
+  DEFINE_FACTORY(VAlign, nsGkAtoms::valign)
+  
+  DEFINE_FACTORY(Width, nsGkAtoms::width)
+
+  static EditorElementStyle Create(const nsAtom& aAttribute) {
+    MOZ_DIAGNOSTIC_ASSERT(IsHTMLStyle(&aAttribute));
+    return EditorElementStyle(*aAttribute.AsStatic());
+  }
+
+  [[nodiscard]] static bool IsHTMLStyle(const nsAtom* aAttribute) {
+    return aAttribute == nsGkAtoms::align || aAttribute == nsGkAtoms::bgcolor ||
+           aAttribute == nsGkAtoms::background ||
+           aAttribute == nsGkAtoms::border || aAttribute == nsGkAtoms::height ||
+           aAttribute == nsGkAtoms::text || aAttribute == nsGkAtoms::type ||
+           aAttribute == nsGkAtoms::valign || aAttribute == nsGkAtoms::width;
+  }
+
+  nsStaticAtom* Style() const { return mStyle; }
+
+  [[nodiscard]] bool IsInlineStyle() const { return !mStyle; }
+  inline EditorInlineStyle& AsInlineStyle();
+  inline const EditorInlineStyle& AsInlineStyle() const;
+
+ protected:
+  MOZ_KNOWN_LIVE nsStaticAtom* mStyle = nullptr;
+  EditorElementStyle() = default;
+
+ private:
+  constexpr explicit EditorElementStyle(const nsStaticAtom& aStyle)
+      
+      
+      : mStyle(const_cast<nsStaticAtom*>(&aStyle)) {}
+};
+
+
+
+
+
+struct MOZ_STACK_CLASS EditorInlineStyle : public EditorElementStyle {
   
   
   
@@ -933,7 +1001,19 @@ struct MOZ_STACK_CLASS EditorInlineStyle {
 
  private:
   EditorInlineStyle() = default;
+
+  using EditorElementStyle::AsInlineStyle;
+  using EditorElementStyle::IsInlineStyle;
+  using EditorElementStyle::Style;
 };
+
+inline EditorInlineStyle& EditorElementStyle::AsInlineStyle() {
+  return reinterpret_cast<EditorInlineStyle&>(*this);
+}
+
+inline const EditorInlineStyle& EditorElementStyle::AsInlineStyle() const {
+  return reinterpret_cast<const EditorInlineStyle&>(*this);
+}
 
 
 

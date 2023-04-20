@@ -842,13 +842,18 @@ void CSSEditUtils::GenerateCSSDeclarationsFromHTMLStyle(
 
 
 
-Result<int32_t, nsresult> CSSEditUtils::SetCSSEquivalentToHTMLStyleInternal(
-    HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement,
-    nsAtom* aHTMLProperty, nsAtom* aAttribute, const nsAString* aValue,
-    bool aSuppressTransaction) {
-  if (!IsCSSEditableProperty(&aStyledElement, aHTMLProperty, aAttribute)) {
-    return 0;
-  }
+Result<int32_t, nsresult> CSSEditUtils::SetCSSEquivalentToStyle(
+    WithTransaction aWithTransaction, HTMLEditor& aHTMLEditor,
+    nsStyledElement& aStyledElement, const EditorElementStyle& aStyleToSet,
+    const nsAString* aValue) {
+  nsStaticAtom* const htmlProperty =
+      aStyleToSet.IsInlineStyle() ? aStyleToSet.AsInlineStyle().mHTMLProperty
+                                  : nullptr;
+  const RefPtr<nsAtom> attributeOrStyle =
+      aStyleToSet.IsInlineStyle() ? aStyleToSet.AsInlineStyle().mAttribute
+                                  : aStyleToSet.Style();
+  MOZ_DIAGNOSTIC_ASSERT(
+      IsCSSEditableProperty(&aStyledElement, htmlProperty, attributeOrStyle));
 
   
   
@@ -856,16 +861,16 @@ Result<int32_t, nsresult> CSSEditUtils::SetCSSEquivalentToHTMLStyleInternal(
   
   nsTArray<nsStaticAtom*> cssPropertyArray;
   nsTArray<nsString> cssValueArray;
-  GenerateCSSDeclarationsFromHTMLStyle(aStyledElement, aHTMLProperty,
-                                       aAttribute, aValue, cssPropertyArray,
-                                       cssValueArray, false);
+  GenerateCSSDeclarationsFromHTMLStyle(aStyledElement, htmlProperty,
+                                       attributeOrStyle, aValue,
+                                       cssPropertyArray, cssValueArray, false);
 
   
   const size_t count = cssPropertyArray.Length();
   for (size_t index = 0; index < count; index++) {
     nsresult rv = SetCSSPropertyInternal(
         aHTMLEditor, aStyledElement, MOZ_KnownLive(*cssPropertyArray[index]),
-        cssValueArray[index], aSuppressTransaction);
+        cssValueArray[index], aWithTransaction == WithTransaction::No);
     if (NS_FAILED(rv)) {
       NS_WARNING("CSSEditUtils::SetCSSPropertyInternal() failed");
       return Err(rv);

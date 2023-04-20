@@ -242,26 +242,12 @@ class CSSEditUtils final {
 
 
 
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<int32_t, nsresult>
-  SetCSSEquivalentToHTMLStyleWithTransaction(HTMLEditor& aHTMLEditor,
-                                             nsStyledElement& aStyledElement,
-                                             nsAtom* aProperty,
-                                             nsAtom* aAttribute,
-                                             const nsAString* aValue) {
-    return SetCSSEquivalentToHTMLStyleInternal(
-        aHTMLEditor, aStyledElement, aProperty, aAttribute, aValue, false);
-  }
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<int32_t, nsresult>
-  SetCSSEquivalentToHTMLStyleWithoutTransaction(HTMLEditor& aHTMLEditor,
-                                                nsStyledElement& aStyledElement,
-                                                nsAtom* aProperty,
-                                                nsAtom* aAttribute,
-                                                const nsAString* aValue) {
-    return SetCSSEquivalentToHTMLStyleInternal(
-        aHTMLEditor, aStyledElement, aProperty, aAttribute, aValue, true);
-  }
+  SetCSSEquivalentToStyle(WithTransaction aWithTransaction,
+                          HTMLEditor& aHTMLEditor,
+                          nsStyledElement& aStyledElement,
+                          const EditorElementStyle& aStyleToSet,
+                          const nsAString* aValue);
 
   
 
@@ -421,12 +407,6 @@ class CSSEditUtils final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult SetCSSPropertyInternal(
       HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement,
       nsAtom& aProperty, const nsAString& aValue, bool aSuppressTxn = false);
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<int32_t, nsresult>
-  SetCSSEquivalentToHTMLStyleInternal(HTMLEditor& aHTMLEditor,
-                                      nsStyledElement& aStyledElement,
-                                      nsAtom* aProperty, nsAtom* aAttribute,
-                                      const nsAString* aValue,
-                                      bool aSuppressTransaction);
 };
 
 #define NS_EDITOR_INDENT_INCREMENT_IN 0.4134f

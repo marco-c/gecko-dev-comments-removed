@@ -706,14 +706,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  enum class WithTransaction { No, Yes };
-  friend std::ostream& operator<<(std::ostream& aStream,
-                                  WithTransaction aWithTransaction) {
-    aStream << "WithTransaction::"
-            << (aWithTransaction == WithTransaction::Yes ? "Yes" : "No");
-    return aStream;
-  }
-
   
 
 

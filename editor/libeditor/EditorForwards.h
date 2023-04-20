@@ -48,6 +48,7 @@ enum class ParagraphSeparator;
 enum class SpecifiedStyle : uint8_t;           
 enum class SplitNodeDirection;                 
 enum class SuggestCaret;                       
+enum class WithTransaction;                    
 
 
 
@@ -121,6 +122,7 @@ class WSScanResult;
 
 
 
+class EditorElementStyle;          
 struct EditorInlineStyle;          
 struct EditorInlineStyleAndValue;  
 struct RangeItem;                  
