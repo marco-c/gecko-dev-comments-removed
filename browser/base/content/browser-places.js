@@ -616,25 +616,25 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 
-function HistoryMenu(aPopupShowingEvent) {
-  
-  
-  
-  
-  this.__proto__.__proto__ = PlacesMenu.prototype;
-  Object.keys(this._elements).forEach(name => {
-    this[name] = document.getElementById(this._elements[name]);
-  });
-  PlacesMenu.call(this, aPopupShowingEvent, "place:sort=4&maxResults=15");
-}
+this.HistoryMenu = class extends PlacesMenu {
+  constructor(aPopupShowingEvent) {
+    super(aPopupShowingEvent, "place:sort=4&maxResults=15");
+  }
 
-HistoryMenu.prototype = {
-  _elements: {
-    undoTabMenu: "historyUndoMenu",
-    hiddenTabsMenu: "hiddenTabsMenu",
-    undoWindowMenu: "historyUndoWindowMenu",
-    syncTabsMenuitem: "sync-tabs-menuitem",
-  },
+  
+  
+  
+  _init() {
+    let elements = {
+      undoTabMenu: "historyUndoMenu",
+      hiddenTabsMenu: "hiddenTabsMenu",
+      undoWindowMenu: "historyUndoWindowMenu",
+      syncTabsMenuitem: "sync-tabs-menuitem",
+    };
+    for (let [key, elemId] of Object.entries(elements)) {
+      this[key] = document.getElementById(elemId);
+    }
+  }
 
   _getClosedTabCount() {
     try {
@@ -643,15 +643,15 @@ HistoryMenu.prototype = {
       
       return 0;
     }
-  },
+  }
 
   toggleHiddenTabs() {
     const isShown =
       window.gBrowser && gBrowser.visibleTabs.length < gBrowser.tabs.length;
     this.hiddenTabsMenu.hidden = !isShown;
-  },
+  }
 
-  toggleRecentlyClosedTabs: function HM_toggleRecentlyClosedTabs() {
+  toggleRecentlyClosedTabs() {
     
     
     if (this._getClosedTabCount() == 0) {
@@ -659,12 +659,12 @@ HistoryMenu.prototype = {
     } else {
       this.undoTabMenu.removeAttribute("disabled");
     }
-  },
+  }
 
   
 
 
-  populateUndoSubmenu: function PHM_populateUndoSubmenu() {
+  populateUndoSubmenu() {
     var undoPopup = this.undoTabMenu.menupopup;
 
     
@@ -689,9 +689,9 @@ HistoryMenu.prototype = {
       "menu-history-reopen-all-tabs"
     );
     undoPopup.appendChild(tabsFragment);
-  },
+  }
 
-  toggleRecentlyClosedWindows: function PHM_toggleRecentlyClosedWindows() {
+  toggleRecentlyClosedWindows() {
     
     
     if (SessionStore.getClosedWindowCount() == 0) {
@@ -699,12 +699,12 @@ HistoryMenu.prototype = {
     } else {
       this.undoWindowMenu.removeAttribute("disabled");
     }
-  },
+  }
 
   
 
 
-  populateUndoWindowSubmenu: function PHM_populateUndoWindowSubmenu() {
+  populateUndoWindowSubmenu() {
     let undoPopup = this.undoWindowMenu.menupopup;
 
     
@@ -729,9 +729,9 @@ HistoryMenu.prototype = {
       "menu-history-reopen-all-windows"
     );
     undoPopup.appendChild(windowsFragment);
-  },
+  }
 
-  toggleTabsFromOtherComputers: function PHM_toggleTabsFromOtherComputers() {
+  toggleTabsFromOtherComputers() {
     
     
     if (!this.syncTabsMenuitem) {
@@ -744,9 +744,9 @@ HistoryMenu.prototype = {
     }
 
     this.syncTabsMenuitem.hidden = false;
-  },
+  }
 
-  _onPopupShowing: function HM__onPopupShowing(aEvent) {
+  _onPopupShowing(aEvent) {
     PlacesMenu.prototype._onPopupShowing.apply(this, arguments);
 
     
@@ -758,9 +758,9 @@ HistoryMenu.prototype = {
     this.toggleRecentlyClosedTabs();
     this.toggleRecentlyClosedWindows();
     this.toggleTabsFromOtherComputers();
-  },
+  }
 
-  _onCommand: function HM__onCommand(aEvent) {
+  _onCommand(aEvent) {
     aEvent = getRootEvent(aEvent);
     let placesNode = aEvent.target._placesNode;
     if (placesNode) {
@@ -772,7 +772,7 @@ HistoryMenu.prototype = {
         triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       });
     }
-  },
+  }
 };
 
 

@@ -5,8 +5,6 @@
 
 
 var observer = {
-  __proto__: NavBookmarkObserver.prototype,
-
   handlePlacesEvents(events) {
     for (const event of events) {
       switch (event.type) {
@@ -37,6 +35,8 @@ var observer = {
     this._itemChangedValue = value;
   },
 };
+Object.setPrototypeOf(observer, NavBookmarkObserver.prototype);
+
 PlacesUtils.bookmarks.addObserver(observer);
 observer.handlePlacesEvents = observer.handlePlacesEvents.bind(observer);
 PlacesUtils.observers.addListener(

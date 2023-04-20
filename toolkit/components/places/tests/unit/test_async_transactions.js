@@ -16,8 +16,6 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 var observer = {
-  __proto__: NavBookmarkObserver.prototype,
-
   tagRelatedGuids: new Set(),
 
   reset() {
@@ -120,6 +118,7 @@ var observer = {
     changesForGuid.set(aProperty, change);
   },
 };
+Object.setPrototypeOf(observer, NavBookmarkObserver.prototype);
 observer.reset();
 
 

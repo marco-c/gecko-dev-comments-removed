@@ -8,57 +8,60 @@
 
 
 
-
-
-
-
-
-function PlacesViewBase(aPlace, aOptions = {}) {
-  if ("rootElt" in aOptions) {
-    this._rootElt = aOptions.rootElt;
-  }
-  if ("viewElt" in aOptions) {
-    this._viewElt = aOptions.viewElt;
-  }
-  this.options = aOptions;
-  this._controller = new PlacesController(this);
-  this.place = aPlace;
-  this._viewElt.controllers.appendController(this._controller);
-}
-
-PlacesViewBase.interfaces = [
-  Ci.nsINavHistoryResultObserver,
-  Ci.nsISupportsWeakReference,
-];
-
-PlacesViewBase.prototype = {
+this.PlacesViewBase = class {
   
-  _viewElt: null,
+
+
+
+
+
+  constructor(aPlace, aOptions = {}) {
+    if ("rootElt" in aOptions) {
+      this._rootElt = aOptions.rootElt;
+    }
+    if ("viewElt" in aOptions) {
+      this._viewElt = aOptions.viewElt;
+    }
+    this.options = aOptions;
+    
+    this._init?.();
+    this._controller = new PlacesController(this);
+    this.place = aPlace;
+    this._viewElt.controllers.appendController(this._controller);
+  }
+
+  
+  _viewElt = null;
   get viewElt() {
     return this._viewElt;
-  },
+  }
 
   get associatedElement() {
     return this._viewElt;
-  },
+  }
 
   get controllers() {
     return this._viewElt.controllers;
-  },
+  }
 
   
-  _rootElt: null,
+  _rootElt = null;
 
   
   
-  _nativeView: false,
+  _nativeView = false;
 
-  QueryInterface: ChromeUtils.generateQI(PlacesViewBase.interfaces),
+  static interfaces = [
+    Ci.nsINavHistoryResultObserver,
+    Ci.nsISupportsWeakReference,
+  ];
 
-  _place: "",
+  QueryInterface = ChromeUtils.generateQI(PlacesViewBase.interfaces);
+
+  _place = "";
   get place() {
     return this._place;
-  },
+  }
   set place(val) {
     this._place = val;
 
@@ -68,12 +71,12 @@ PlacesViewBase.prototype = {
     history.queryStringToQuery(val, query, options);
     let result = history.executeQuery(query.value, options.value);
     result.addObserver(this);
-  },
+  }
 
-  _result: null,
+  _result = null;
   get result() {
     return this._result;
-  },
+  }
   set result(val) {
     if (this._result == val) {
       return;
@@ -101,12 +104,12 @@ PlacesViewBase.prototype = {
       this._resultNode = null;
       delete this._domNodes;
     }
-  },
+  }
 
-  _options: null,
+  _options = null;
   get options() {
     return this._options;
-  },
+  }
   set options(val) {
     if (!val) {
       val = {};
@@ -116,7 +119,7 @@ PlacesViewBase.prototype = {
       val.extraClasses = {};
     }
     this._options = val;
-  },
+  }
 
   
 
@@ -128,10 +131,7 @@ PlacesViewBase.prototype = {
 
 
 
-  _getDOMNodeForPlacesNode: function PVB__getDOMNodeForPlacesNode(
-    aPlacesNode,
-    aAllowMissing = false
-  ) {
+  _getDOMNodeForPlacesNode(aPlacesNode, aAllowMissing = false) {
     let node = this._domNodes.get(aPlacesNode, null);
     if (!node && !aAllowMissing) {
       throw new Error(
@@ -142,17 +142,17 @@ PlacesViewBase.prototype = {
       );
     }
     return node;
-  },
+  }
 
   get controller() {
     return this._controller;
-  },
+  }
 
   get selType() {
     return "single";
-  },
-  selectItems() {},
-  selectAll() {},
+  }
+  selectItems() {}
+  selectAll() {}
 
   get selectedNode() {
     if (this._contextMenuShown) {
@@ -169,20 +169,20 @@ PlacesViewBase.prototype = {
       return this._rootElt == anchor ? null : anchor._placesNode || null;
     }
     return null;
-  },
+  }
 
   get hasSelection() {
     return this.selectedNode != null;
-  },
+  }
 
   get selectedNodes() {
     let selectedNode = this.selectedNode;
     return selectedNode ? [selectedNode] : [];
-  },
+  }
 
   get singleClickOpens() {
     return true;
-  },
+  }
 
   get removableSelectionRanges() {
     
@@ -194,11 +194,11 @@ PlacesViewBase.prototype = {
     }
 
     return [this.selectedNodes];
-  },
+  }
 
   get draggableSelection() {
     return [this._draggedElt];
-  },
+  }
 
   get insertionPoint() {
     
@@ -252,9 +252,9 @@ PlacesViewBase.prototype = {
       orientation,
       tagName,
     });
-  },
+  }
 
-  buildContextMenu: function PVB_buildContextMenu(aPopup) {
+  buildContextMenu(aPopup) {
     this._contextMenuShown = aPopup;
     window.updateCommands("places");
 
@@ -296,11 +296,11 @@ PlacesViewBase.prototype = {
     }
 
     return this.controller.buildContextMenu(aPopup);
-  },
+  }
 
-  destroyContextMenu: function PVB_destroyContextMenu(aPopup) {
+  destroyContextMenu(aPopup) {
     this._contextMenuShown = null;
-  },
+  }
 
   clearAllContents(aPopup) {
     let kid = aPopup.firstElementChild;
@@ -312,9 +312,9 @@ PlacesViewBase.prototype = {
       kid = next;
     }
     aPopup._emptyMenuitem = aPopup._startMarker = aPopup._endMarker = null;
-  },
+  }
 
-  _cleanPopup: function PVB_cleanPopup(aPopup, aDelay) {
+  _cleanPopup(aPopup, aDelay) {
     
     
     this._ensureMarkers(aPopup);
@@ -337,9 +337,9 @@ PlacesViewBase.prototype = {
         child = child.nextElementSibling;
       }
     }
-  },
+  }
 
-  _rebuildPopup: function PVB__rebuildPopup(aPopup) {
+  _rebuildPopup(aPopup) {
     let resultNode = aPopup._placesNode;
     if (!resultNode.containerOpen) {
       return;
@@ -360,13 +360,13 @@ PlacesViewBase.prototype = {
       this._setEmptyPopupStatus(aPopup, true);
     }
     aPopup._built = true;
-  },
+  }
 
-  _removeChild: function PVB__removeChild(aChild) {
+  _removeChild(aChild) {
     aChild.remove();
-  },
+  }
 
-  _setEmptyPopupStatus: function PVB__setEmptyPopupStatus(aPopup, aEmpty) {
+  _setEmptyPopupStatus(aPopup, aEmpty) {
     if (!aPopup._emptyMenuitem) {
       let label = PlacesUIUtils.getString("bookmarksMenuEmptyFolder");
       aPopup._emptyMenuitem = document.createXULElement("menuitem");
@@ -393,11 +393,9 @@ PlacesViewBase.prototype = {
         aPopup.removeChild(aPopup._emptyMenuitem);
       } catch (ex) {}
     }
-  },
+  }
 
-  _createDOMNodeForPlacesNode: function PVB__createDOMNodeForPlacesNode(
-    aPlacesNode
-  ) {
+  _createDOMNodeForPlacesNode(aPlacesNode) {
     this._domNodes.delete(aPlacesNode);
 
     let element;
@@ -462,13 +460,9 @@ PlacesViewBase.prototype = {
     }
 
     return element;
-  },
+  }
 
-  _insertNewItemToPopup: function PVB__insertNewItemToPopup(
-    aNewChild,
-    aInsertionNode,
-    aBefore = null
-  ) {
+  _insertNewItemToPopup(aNewChild, aInsertionNode, aBefore = null) {
     let element = this._createDOMNodeForPlacesNode(aNewChild);
 
     if (element.localName == "menuitem" || element.localName == "menu") {
@@ -479,9 +473,9 @@ PlacesViewBase.prototype = {
 
     aInsertionNode.insertBefore(element, aBefore);
     return element;
-  },
+  }
 
-  toggleCutNode: function PVB_toggleCutNode(aPlacesNode, aValue) {
+  toggleCutNode(aPlacesNode, aValue) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
 
     
@@ -493,9 +487,9 @@ PlacesViewBase.prototype = {
     } else {
       elt.removeAttribute("cutting");
     }
-  },
+  }
 
-  nodeURIChanged: function PVB_nodeURIChanged(aPlacesNode, aURIString) {
+  nodeURIChanged(aPlacesNode, aURIString) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
 
     
@@ -507,9 +501,9 @@ PlacesViewBase.prototype = {
       "scheme",
       PlacesUIUtils.guessUrlSchemeForUI(aPlacesNode.uri)
     );
-  },
+  }
 
-  nodeIconChanged: function PVB_nodeIconChanged(aPlacesNode) {
+  nodeIconChanged(aPlacesNode) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
 
     
@@ -525,9 +519,9 @@ PlacesViewBase.prototype = {
     
     elt.removeAttribute("image");
     elt.setAttribute("image", aPlacesNode.icon);
-  },
+  }
 
-  nodeTitleChanged: function PVB_nodeTitleChanged(aPlacesNode, aNewTitle) {
+  nodeTitleChanged(aPlacesNode, aNewTitle) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
 
     
@@ -549,13 +543,9 @@ PlacesViewBase.prototype = {
     } else {
       elt.setAttribute("label", aNewTitle);
     }
-  },
+  }
 
-  nodeRemoved: function PVB_nodeRemoved(
-    aParentPlacesNode,
-    aPlacesNode,
-    aIndex
-  ) {
+  nodeRemoved(aParentPlacesNode, aPlacesNode, aIndex) {
     let parentElt = this._getDOMNodeForPlacesNode(aParentPlacesNode);
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
 
@@ -574,24 +564,20 @@ PlacesViewBase.prototype = {
         this._setEmptyPopupStatus(parentElt, true);
       }
     }
-  },
+  }
 
   
   
-  observeHistoryDetails: false,
-  nodeHistoryDetailsChanged() {},
-  nodeTagsChanged() {},
-  nodeDateAddedChanged() {},
-  nodeLastModifiedChanged() {},
-  nodeKeywordChanged() {},
-  sortingChanged() {},
-  batching() {},
+  observeHistoryDetails = false;
+  nodeHistoryDetailsChanged() {}
+  nodeTagsChanged() {}
+  nodeDateAddedChanged() {}
+  nodeLastModifiedChanged() {}
+  nodeKeywordChanged() {}
+  sortingChanged() {}
+  batching() {}
 
-  nodeInserted: function PVB_nodeInserted(
-    aParentPlacesNode,
-    aPlacesNode,
-    aIndex
-  ) {
+  nodeInserted(aParentPlacesNode, aPlacesNode, aIndex) {
     let parentElt = this._getDOMNodeForPlacesNode(aParentPlacesNode);
     if (!parentElt._built) {
       return;
@@ -607,9 +593,9 @@ PlacesViewBase.prototype = {
       parentElt.children[index] || parentElt._endMarker
     );
     this._setEmptyPopupStatus(parentElt, false);
-  },
+  }
 
-  nodeMoved: function PBV_nodeMoved(
+  nodeMoved(
     aPlacesNode,
     aOldParentPlacesNode,
     aOldIndex,
@@ -646,20 +632,16 @@ PlacesViewBase.prototype = {
         1;
       parentElt.insertBefore(elt, parentElt.children[index]);
     }
-  },
+  }
 
-  containerStateChanged: function PVB_containerStateChanged(
-    aPlacesNode,
-    aOldState,
-    aNewState
-  ) {
+  containerStateChanged(aPlacesNode, aOldState, aNewState) {
     if (
       aNewState == Ci.nsINavHistoryContainerResultNode.STATE_OPENED ||
       aNewState == Ci.nsINavHistoryContainerResultNode.STATE_CLOSED
     ) {
       this.invalidateContainer(aPlacesNode);
     }
-  },
+  }
 
   
 
@@ -671,9 +653,9 @@ PlacesViewBase.prototype = {
 
   _isPopupOpen(elt) {
     return !!elt.parentNode.open;
-  },
+  }
 
-  invalidateContainer: function PVB_invalidateContainer(aPlacesNode) {
+  invalidateContainer(aPlacesNode) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
     elt._built = false;
 
@@ -681,9 +663,9 @@ PlacesViewBase.prototype = {
     if (this._isPopupOpen(elt)) {
       this._rebuildPopup(elt);
     }
-  },
+  }
 
-  uninit: function PVB_uninit() {
+  uninit() {
     if (this._result) {
       this._result.removeObserver(this);
       this._resultNode.containerOpen = false;
@@ -706,7 +688,7 @@ PlacesViewBase.prototype = {
     }
 
     delete this._viewElt._placesView;
-  },
+  }
 
   get isRTL() {
     if ("_isRTL" in this) {
@@ -715,11 +697,11 @@ PlacesViewBase.prototype = {
 
     return (this._isRTL =
       document.defaultView.getComputedStyle(this.viewElt).direction == "rtl");
-  },
+  }
 
   get ownerWindow() {
     return window;
-  },
+  }
 
   
 
@@ -727,7 +709,7 @@ PlacesViewBase.prototype = {
 
 
 
-  _mayAddCommandsItems: function PVB__mayAddCommandsItems(aPopup) {
+  _mayAddCommandsItems(aPopup) {
     
     if (aPopup == this._rootElt) {
       return;
@@ -799,9 +781,9 @@ PlacesViewBase.prototype = {
       );
       aPopup.appendChild(aPopup._endOptOpenAllInTabs);
     }
-  },
+  }
 
-  _ensureMarkers: function PVB__ensureMarkers(aPopup) {
+  _ensureMarkers(aPopup) {
     if (aPopup._startMarker) {
       return;
     }
@@ -844,9 +826,9 @@ PlacesViewBase.prototype = {
     if (!firstNonStaticNodeFound) {
       aPopup.insertBefore(aPopup._startMarker, aPopup._endMarker);
     }
-  },
+  }
 
-  _onPopupShowing: function PVB__onPopupShowing(aEvent) {
+  _onPopupShowing(aEvent) {
     
     let popup = aEvent.originalTarget;
 
@@ -869,90 +851,103 @@ PlacesViewBase.prototype = {
 
       this._mayAddCommandsItems(popup);
     }
-  },
+  }
 
-  _addEventListeners: function PVB__addEventListeners(
-    aObject,
-    aEventNames,
-    aCapturing = false
-  ) {
+  _addEventListeners(aObject, aEventNames, aCapturing = false) {
     for (let i = 0; i < aEventNames.length; i++) {
       aObject.addEventListener(aEventNames[i], this, aCapturing);
     }
-  },
+  }
 
-  _removeEventListeners: function PVB__removeEventListeners(
-    aObject,
-    aEventNames,
-    aCapturing = false
-  ) {
+  _removeEventListeners(aObject, aEventNames, aCapturing = false) {
     for (let i = 0; i < aEventNames.length; i++) {
       aObject.removeEventListener(aEventNames[i], this, aCapturing);
     }
-  },
+  }
 };
 
-function PlacesToolbar(aPlace) {
-  let startTime = Date.now();
-  
-  let thisView = this;
-  [
-    ["_viewElt", "PlacesToolbar"],
-    ["_rootElt", "PlacesToolbarItems"],
-    ["_dropIndicator", "PlacesToolbarDropIndicator"],
-    ["_chevron", "PlacesChevron"],
-    ["_chevronPopup", "PlacesChevronPopup"],
-  ].forEach(function(elementGlobal) {
-    let [name, id] = elementGlobal;
-    thisView.__defineGetter__(name, function() {
-      let element = document.getElementById(id);
-      if (!element) {
-        return null;
-      }
 
-      delete thisView[name];
-      return (thisView[name] = element);
+
+
+this.PlacesToolbar = class extends PlacesViewBase {
+  constructor(aPlace) {
+    let startTime = Date.now();
+    super(aPlace, {
+      rootElt: document.getElementById("PlacesToolbarItems"),
+      viewElt: document.getElementById("PlacesToolbar"),
     });
-  });
-
-  this._viewElt._placesView = this;
-
-  this._dragRoot = BookmarkingUI.toolbar.contains(this._viewElt)
-    ? BookmarkingUI.toolbar
-    : this._viewElt;
-  this._addEventListeners(this._dragRoot, this._cbEvents, false);
-  this._addEventListeners(this._rootElt, ["popupshowing", "popuphidden"], true);
-  this._addEventListeners(this._rootElt, ["overflow", "underflow"], true);
-  this._addEventListeners(window, ["resize", "unload"], false);
-
-  
-  
-  
-  
-  if (
-    this._viewElt.parentNode.parentNode ==
-    document.getElementById("TabsToolbar")
-  ) {
+    this._addEventListeners(this._dragRoot, this._cbEvents, false);
     this._addEventListeners(
-      gBrowser.tabContainer,
-      ["TabOpen", "TabClose"],
-      false
+      this._rootElt,
+      ["popupshowing", "popuphidden"],
+      true
     );
+    this._addEventListeners(this._rootElt, ["overflow", "underflow"], true);
+    this._addEventListeners(window, ["resize", "unload"], false);
+
+    
+    
+    
+    
+    if (
+      this._viewElt.parentNode.parentNode ==
+      document.getElementById("TabsToolbar")
+    ) {
+      this._addEventListeners(
+        gBrowser.tabContainer,
+        ["TabOpen", "TabClose"],
+        false
+      );
+    }
+
+    Services.telemetry
+      .getHistogramById("FX_BOOKMARKS_TOOLBAR_INIT_MS")
+      .add(Date.now() - startTime);
   }
 
-  this._updatingNodesVisibility = false;
+  
+  
+  
+  
+  
+  
+  _init() {
+    this._overFolder = {
+      elt: null,
+      openTimer: null,
+      hoverTime: 350,
+      closeTimer: null,
+    };
 
-  PlacesViewBase.call(this, aPlace);
+    
+    let thisView = this;
+    [
+      ["_dropIndicator", "PlacesToolbarDropIndicator"],
+      ["_chevron", "PlacesChevron"],
+      ["_chevronPopup", "PlacesChevronPopup"],
+    ].forEach(function(elementGlobal) {
+      let [name, id] = elementGlobal;
+      thisView.__defineGetter__(name, function() {
+        let element = document.getElementById(id);
+        if (!element) {
+          return null;
+        }
 
-  Services.telemetry
-    .getHistogramById("FX_BOOKMARKS_TOOLBAR_INIT_MS")
-    .add(Date.now() - startTime);
-}
+        delete thisView[name];
+        return (thisView[name] = element);
+      });
+    });
 
-PlacesToolbar.prototype = {
-  __proto__: PlacesViewBase.prototype,
+    this._viewElt._placesView = this;
 
-  _cbEvents: [
+    this._dragRoot = BookmarkingUI.toolbar.contains(this._viewElt)
+      ? BookmarkingUI.toolbar
+      : this._viewElt;
+
+    this._updatingNodesVisibility = false;
+  }
+
+  _cbEvents = [
     "dragstart",
     "dragover",
     "dragleave",
@@ -962,14 +957,14 @@ PlacesToolbar.prototype = {
     "mouseover",
     "mouseout",
     "mousedown",
-  ],
+  ];
 
-  QueryInterface: ChromeUtils.generateQI([
+  QueryInterface = ChromeUtils.generateQI([
     "nsITimerCallback",
     ...PlacesViewBase.interfaces,
-  ]),
+  ]);
 
-  uninit: function PT_uninit() {
+  uninit() {
     if (this._dragRoot) {
       this._removeEventListeners(this._dragRoot, this._cbEvents, false);
     }
@@ -994,15 +989,15 @@ PlacesToolbar.prototype = {
       this._otherBookmarks._placesView.uninit();
     }
 
-    PlacesViewBase.prototype.uninit.apply(this, arguments);
-  },
+    super.uninit();
+  }
 
-  _openedMenuButton: null,
-  _allowPopupShowing: true,
+  _openedMenuButton = null;
+  _allowPopupShowing = true;
 
   get _isAlive() {
     return this._resultNode && this._rootElt;
-  },
+  }
 
   _runBeforeFrameRender(callback) {
     return new Promise((resolve, reject) => {
@@ -1014,7 +1009,7 @@ PlacesToolbar.prototype = {
         }
       });
     });
-  },
+  }
 
   async _rebuild() {
     
@@ -1094,13 +1089,9 @@ PlacesToolbar.prototype = {
     otherBookmarks?.remove();
 
     BookmarkingUI.maybeShowOtherBookmarksFolder();
-  },
+  }
 
-  _insertNewItem: function PT__insertNewItem(
-    aChild,
-    aInsertionNode,
-    aBefore = null
-  ) {
+  _insertNewItem(aChild, aInsertionNode, aBefore = null) {
     this._domNodes.delete(aChild);
 
     let type = aChild.type;
@@ -1155,9 +1146,9 @@ PlacesToolbar.prototype = {
       aInsertionNode.appendChild(button);
     }
     return button;
-  },
+  }
 
-  _updateChevronPopupNodesVisibility: function PT__updateChevronPopupNodesVisibility() {
+  _updateChevronPopupNodesVisibility() {
     
     for (
       let toolbarNode = this._rootElt.firstElementChild,
@@ -1168,9 +1159,9 @@ PlacesToolbar.prototype = {
     ) {
       node.hidden = toolbarNode.style.visibility != "hidden";
     }
-  },
+  }
 
-  _onChevronPopupShowing: function PT__onChevronPopupShowing(aEvent) {
+  _onChevronPopupShowing(aEvent) {
     
     if (aEvent.target != this._chevronPopup) {
       return;
@@ -1181,11 +1172,9 @@ PlacesToolbar.prototype = {
     }
 
     this._updateChevronPopupNodesVisibility();
-  },
+  }
 
-  _onOtherBookmarksPopupShowing: function PT__onOtherBookmarksPopupShowing(
-    aEvent
-  ) {
+  _onOtherBookmarksPopupShowing(aEvent) {
     if (aEvent.target != this._otherBookmarksPopup) {
       return;
     }
@@ -1196,9 +1185,9 @@ PlacesToolbar.prototype = {
         "place:parent=" + PlacesUtils.bookmarks.unfiledGuid
       );
     }
-  },
+  }
 
-  handleEvent: function PT_handleEvent(aEvent) {
+  handleEvent(aEvent) {
     switch (aEvent.type) {
       case "unload":
         this.uninit();
@@ -1267,16 +1256,14 @@ PlacesToolbar.prototype = {
       default:
         throw new Error("Trying to handle unexpected event.");
     }
-  },
+  }
 
-  _isOverflowStateEventRelevant: function PT_isOverflowStateEventRelevant(
-    aEvent
-  ) {
+  _isOverflowStateEventRelevant(aEvent) {
     
     return aEvent.target == aEvent.currentTarget && aEvent.detail > 0;
-  },
+  }
 
-  _onOverflow: function PT_onOverflow() {
+  _onOverflow() {
     
     
     if (!this._chevronPopup.hasAttribute("type")) {
@@ -1285,14 +1272,14 @@ PlacesToolbar.prototype = {
     }
     this._chevron.collapsed = false;
     this.updateNodesVisibility();
-  },
+  }
 
-  _onUnderflow: function PT_onUnderflow() {
+  _onUnderflow() {
     this.updateNodesVisibility();
     this._chevron.collapsed = true;
-  },
+  }
 
-  updateNodesVisibility: function PT_updateNodesVisibility() {
+  updateNodesVisibility() {
     
     
     if (this._updateNodesVisibilityTimer) {
@@ -1300,7 +1287,7 @@ PlacesToolbar.prototype = {
     }
 
     this._updateNodesVisibilityTimer = this._setTimer(100);
-  },
+  }
 
   async _updateNodesVisibilityTimerCallback() {
     if (this._updatingNodesVisibility || window.closed) {
@@ -1354,13 +1341,9 @@ PlacesToolbar.prototype = {
       this._viewElt.dispatchEvent(event);
       this._updatingNodesVisibility = false;
     });
-  },
+  }
 
-  nodeInserted: function PT_nodeInserted(
-    aParentPlacesNode,
-    aPlacesNode,
-    aIndex
-  ) {
+  nodeInserted(aParentPlacesNode, aPlacesNode, aIndex) {
     let parentElt = this._getDOMNodeForPlacesNode(aParentPlacesNode);
     if (parentElt == this._rootElt) {
       
@@ -1404,10 +1387,10 @@ PlacesToolbar.prototype = {
       return;
     }
 
-    PlacesViewBase.prototype.nodeInserted.apply(this, arguments);
-  },
+    super.nodeInserted(aParentPlacesNode, aPlacesNode, aIndex);
+  }
 
-  nodeRemoved: function PT_nodeRemoved(aParentPlacesNode, aPlacesNode, aIndex) {
+  nodeRemoved(aParentPlacesNode, aPlacesNode, aIndex) {
     let parentElt = this._getDOMNodeForPlacesNode(aParentPlacesNode);
     if (parentElt == this._rootElt) {
       
@@ -1437,10 +1420,10 @@ PlacesToolbar.prototype = {
       return;
     }
 
-    PlacesViewBase.prototype.nodeRemoved.apply(this, arguments);
-  },
+    super.nodeRemoved(aParentPlacesNode, aPlacesNode, aIndex);
+  }
 
-  nodeMoved: function PT_nodeMoved(
+  nodeMoved(
     aPlacesNode,
     aOldParentPlacesNode,
     aOldIndex,
@@ -1503,10 +1486,16 @@ PlacesToolbar.prototype = {
       return;
     }
 
-    PlacesViewBase.prototype.nodeMoved.apply(this, arguments);
-  },
+    super.nodeMoved(
+      aPlacesNode,
+      aOldParentPlacesNode,
+      aOldIndex,
+      aNewParentPlacesNode,
+      aNewIndex
+    );
+  }
 
-  nodeTitleChanged: function PT_nodeTitleChanged(aPlacesNode, aNewTitle) {
+  nodeTitleChanged(aPlacesNode, aNewTitle) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode, true);
 
     
@@ -1514,7 +1503,7 @@ PlacesToolbar.prototype = {
       return;
     }
 
-    PlacesViewBase.prototype.nodeTitleChanged.apply(this, arguments);
+    super.nodeTitleChanged(aPlacesNode, aNewTitle);
 
     
     if (elt.localName == "menupopup") {
@@ -1527,9 +1516,9 @@ PlacesToolbar.prototype = {
         this.updateNodesVisibility();
       }
     }
-  },
+  }
 
-  invalidateContainer: function PT_invalidateContainer(aPlacesNode) {
+  invalidateContainer(aPlacesNode) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode, true);
     
     if (!elt) {
@@ -1542,12 +1531,10 @@ PlacesToolbar.prototype = {
       return;
     }
 
-    PlacesViewBase.prototype.invalidateContainer.apply(this, arguments);
-  },
+    super.invalidateContainer(aPlacesNode);
+  }
 
-  _overFolder: { elt: null, openTimer: null, hoverTime: 350, closeTimer: null },
-
-  _clearOverFolder: function PT__clearOverFolder() {
+  _clearOverFolder() {
     
     
     
@@ -1566,7 +1553,7 @@ PlacesToolbar.prototype = {
       this._overFolder.closeTimer.cancel();
       this._overFolder.closeTimer = null;
     }
-  },
+  }
 
   
 
@@ -1579,7 +1566,7 @@ PlacesToolbar.prototype = {
 
 
 
-  _getDropPoint: function PT__getDropPoint(aEvent) {
+  _getDropPoint(aEvent) {
     if (!PlacesUtils.nodeIsFolder(this._resultNode)) {
       return null;
     }
@@ -1685,15 +1672,15 @@ PlacesToolbar.prototype = {
     }
 
     return dropPoint;
-  },
+  }
 
-  _setTimer: function PT_setTimer(aTime) {
+  _setTimer(aTime) {
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     timer.initWithCallback(this, aTime, timer.TYPE_ONE_SHOT);
     return timer;
-  },
+  }
 
-  notify: function PT_notify(aTimer) {
+  notify(aTimer) {
     if (aTimer == this._updateNodesVisibilityTimer) {
       this._updateNodesVisibilityTimer = null;
       this._updateNodesVisibilityTimerCallback();
@@ -1727,9 +1714,9 @@ PlacesToolbar.prototype = {
       
       this._clearOverFolder();
     }
-  },
+  }
 
-  _onMouseOver: function PT__onMouseOver(aEvent) {
+  _onMouseOver(aEvent) {
     let button = aEvent.target;
     if (
       button.parentNode == this._rootElt &&
@@ -1738,13 +1725,13 @@ PlacesToolbar.prototype = {
     ) {
       window.XULBrowserWindow.setOverLink(aEvent.target._placesNode.uri);
     }
-  },
+  }
 
-  _onMouseOut: function PT__onMouseOut(aEvent) {
+  _onMouseOut(aEvent) {
     window.XULBrowserWindow.setOverLink("");
-  },
+  }
 
-  _onMouseDown: function PT__onMouseDown(aEvent) {
+  _onMouseDown(aEvent) {
     let target = aEvent.target;
     if (
       aEvent.button == 0 &&
@@ -1761,16 +1748,16 @@ PlacesToolbar.prototype = {
     if (target._placesNode?.uri) {
       PlacesUIUtils.setupSpeculativeConnection(target._placesNode.uri, window);
     }
-  },
+  }
 
-  _cleanupDragDetails: function PT__cleanupDragDetails() {
+  _cleanupDragDetails() {
     
     PlacesControllerDragHelper.currentDropTarget = null;
     this._draggedElt = null;
     this._dropIndicator.collapsed = true;
-  },
+  }
 
-  _onDragStart: function PT__onDragStart(aEvent) {
+  _onDragStart(aEvent) {
     
     let draggedElt = aEvent.target;
     if (draggedElt.parentNode != this._rootElt || !draggedElt._placesNode) {
@@ -1806,9 +1793,9 @@ PlacesToolbar.prototype = {
 
     this._controller.setDataTransfer(aEvent);
     aEvent.stopPropagation();
-  },
+  }
 
-  _onDragOver: function PT__onDragOver(aEvent) {
+  _onDragOver(aEvent) {
     
     PlacesControllerDragHelper.currentDropTarget = aEvent.target;
     let dt = aEvent.dataTransfer;
@@ -1883,9 +1870,9 @@ PlacesToolbar.prototype = {
 
     aEvent.preventDefault();
     aEvent.stopPropagation();
-  },
+  }
 
-  _onDrop: function PT__onDrop(aEvent) {
+  _onDrop(aEvent) {
     PlacesControllerDragHelper.currentDropTarget = aEvent.target;
 
     let dropPoint = this._getDropPoint(aEvent);
@@ -1899,7 +1886,7 @@ PlacesToolbar.prototype = {
 
     this._cleanupDragDetails();
     aEvent.stopPropagation();
-  },
+  }
 
   _onDragLeave(aEvent) {
     PlacesControllerDragHelper.currentDropTarget = null;
@@ -1910,13 +1897,13 @@ PlacesToolbar.prototype = {
     if (this._overFolder.elt) {
       this._overFolder.closeTimer = this._setTimer(this._overFolder.hoverTime);
     }
-  },
+  }
 
-  _onDragEnd: function PT_onDragEnd(aEvent) {
+  _onDragEnd(aEvent) {
     this._cleanupDragDetails();
-  },
+  }
 
-  _onPopupShowing: function PT__onPopupShowing(aEvent) {
+  _onPopupShowing(aEvent) {
     if (!this._allowPopupShowing) {
       this._allowPopupShowing = true;
       aEvent.preventDefault();
@@ -1928,10 +1915,10 @@ PlacesToolbar.prototype = {
       this._openedMenuButton = parent;
     }
 
-    PlacesViewBase.prototype._onPopupShowing.apply(this, arguments);
-  },
+    super._onPopupShowing(aEvent);
+  }
 
-  _onPopupHidden: function PT__onPopupHidden(aEvent) {
+  _onPopupHidden(aEvent) {
     let popup = aEvent.target;
     let placesNode = popup._placesNode;
     
@@ -1955,9 +1942,9 @@ PlacesToolbar.prototype = {
         parent.removeAttribute("dragover");
       }
     }
-  },
+  }
 
-  _onMouseMove: function PT__onMouseMove(aEvent) {
+  _onMouseMove(aEvent) {
     
     this._cachedMouseMoveEvent = aEvent;
 
@@ -1977,7 +1964,7 @@ PlacesToolbar.prototype = {
       this._openedMenuButton.open = false;
       target.open = true;
     }
-  },
+  }
 };
 
 
@@ -1985,41 +1972,47 @@ PlacesToolbar.prototype = {
 
 
 
+this.PlacesMenu = class extends PlacesViewBase {
+  
 
 
 
 
 
 
-function PlacesMenu(aPopupShowingEvent, aPlace, aOptions) {
-  this._rootElt = aPopupShowingEvent.target; 
-  this._viewElt = this._rootElt.parentNode; 
-  this._viewElt._placesView = this;
-  this._addEventListeners(this._rootElt, ["popupshowing", "popuphidden"], true);
-  this._addEventListeners(window, ["unload"], false);
-  this._addEventListeners(this._rootElt, ["mousedown"], false);
-  if (AppConstants.platform === "macosx") {
-    
-    for (let elt = this._viewElt.parentNode; elt; elt = elt.parentNode) {
-      if (elt.localName == "menubar") {
-        this._nativeView = true;
-        break;
+
+
+  constructor(aPopupShowingEvent, aPlace, aOptions = {}) {
+    aOptions.rootElt ??= aPopupShowingEvent.target; 
+    aOptions.viewElt ??= aOptions.rootElt.parentNode; 
+    super(aPlace, aOptions);
+
+    this._viewElt._placesView = this;
+    this._addEventListeners(
+      this._rootElt,
+      ["popupshowing", "popuphidden"],
+      true
+    );
+    this._addEventListeners(window, ["unload"], false);
+    this._addEventListeners(this._rootElt, ["mousedown"], false);
+    if (AppConstants.platform === "macosx") {
+      
+      for (let elt = this._viewElt.parentNode; elt; elt = elt.parentNode) {
+        if (elt.localName == "menubar") {
+          this._nativeView = true;
+          break;
+        }
       }
     }
+
+    this._onPopupShowing(aPopupShowingEvent);
   }
 
-  PlacesViewBase.call(this, aPlace, aOptions);
-  this._onPopupShowing(aPopupShowingEvent);
-}
+  _removeChild(aChild) {
+    super._removeChild(aChild);
+  }
 
-PlacesMenu.prototype = {
-  __proto__: PlacesViewBase.prototype,
-
-  _removeChild: function PM_removeChild(aChild) {
-    PlacesViewBase.prototype._removeChild.apply(this, arguments);
-  },
-
-  uninit: function PM_uninit() {
+  uninit() {
     this._removeEventListeners(
       this._rootElt,
       ["popupshowing", "popuphidden"],
@@ -2028,10 +2021,10 @@ PlacesMenu.prototype = {
     this._removeEventListeners(window, ["unload"], false);
     this._removeEventListeners(this._rootElt, ["mousedown"], false);
 
-    PlacesViewBase.prototype.uninit.apply(this, arguments);
-  },
+    super.uninit();
+  }
 
-  handleEvent: function PM_handleEvent(aEvent) {
+  handleEvent(aEvent) {
     switch (aEvent.type) {
       case "unload":
         this.uninit();
@@ -2046,9 +2039,9 @@ PlacesMenu.prototype = {
         this._onMouseDown(aEvent);
         break;
     }
-  },
+  }
 
-  _onPopupHidden: function PM__onPopupHidden(aEvent) {
+  _onPopupHidden(aEvent) {
     
     let popup = aEvent.originalTarget;
     let placesNode = popup._placesNode;
@@ -2067,7 +2060,7 @@ PlacesMenu.prototype = {
     
     popup.removeAttribute("autoopened");
     popup.removeAttribute("dragstart");
-  },
+  }
 
   
   
@@ -2076,30 +2069,23 @@ PlacesMenu.prototype = {
     if (target._placesNode?.uri) {
       PlacesUIUtils.setupSpeculativeConnection(target._placesNode.uri, window);
     }
-  },
+  }
 };
 
-function PlacesPanelMenuView(aPlace, aViewId, aRootId, aOptions) {
-  this._viewElt = document.getElementById(aViewId);
-  this._rootElt = document.getElementById(aRootId);
-  this._viewElt._placesView = this;
-  this.options = aOptions;
 
-  PlacesViewBase.call(this, aPlace, aOptions);
-}
 
-PlacesPanelMenuView.prototype = {
-  __proto__: PlacesViewBase.prototype,
 
-  uninit: function PAMV_uninit() {
-    PlacesViewBase.prototype.uninit.apply(this, arguments);
-  },
+this.PlacesPanelMenuView = class extends PlacesViewBase {
+  constructor(aPlace, aViewId, aRootId, aOptions = {}) {
+    aOptions.rootElt = document.getElementById(aRootId);
+    aOptions.viewElt = document.getElementById(aViewId);
+    super(aPlace, aOptions);
 
-  _insertNewItem: function PAMV__insertNewItem(
-    aChild,
-    aInsertionNode,
-    aBefore = null
-  ) {
+    this._viewElt._placesView = this;
+    this.options = aOptions;
+  }
+
+  _insertNewItem(aChild, aInsertionNode, aBefore = null) {
     this._domNodes.delete(aChild);
 
     let type = aChild.type;
@@ -2142,13 +2128,9 @@ PlacesPanelMenuView.prototype = {
 
     aInsertionNode.insertBefore(button, aBefore);
     return button;
-  },
+  }
 
-  nodeInserted: function PAMV_nodeInserted(
-    aParentPlacesNode,
-    aPlacesNode,
-    aIndex
-  ) {
+  nodeInserted(aParentPlacesNode, aPlacesNode, aIndex) {
     let parentElt = this._getDOMNodeForPlacesNode(aParentPlacesNode);
     if (parentElt != this._rootElt) {
       return;
@@ -2160,13 +2142,9 @@ PlacesPanelMenuView.prototype = {
       this._rootElt,
       aIndex < children.length ? children[aIndex] : null
     );
-  },
+  }
 
-  nodeRemoved: function PAMV_nodeRemoved(
-    aParentPlacesNode,
-    aPlacesNode,
-    aIndex
-  ) {
+  nodeRemoved(aParentPlacesNode, aPlacesNode, aIndex) {
     let parentElt = this._getDOMNodeForPlacesNode(aParentPlacesNode);
     if (parentElt != this._rootElt) {
       return;
@@ -2174,9 +2152,9 @@ PlacesPanelMenuView.prototype = {
 
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
     this._removeChild(elt);
-  },
+  }
 
-  nodeMoved: function PAMV_nodeMoved(
+  nodeMoved(
     aPlacesNode,
     aOldParentPlacesNode,
     aOldIndex,
@@ -2191,9 +2169,9 @@ PlacesPanelMenuView.prototype = {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
     this._removeChild(elt);
     this._rootElt.insertBefore(elt, this._rootElt.children[aNewIndex]);
-  },
+  }
 
-  nodeTitleChanged: function PAMV_nodeTitleChanged(aPlacesNode, aNewTitle) {
+  nodeTitleChanged(aPlacesNode, aNewTitle) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
 
     
@@ -2201,10 +2179,10 @@ PlacesPanelMenuView.prototype = {
       return;
     }
 
-    PlacesViewBase.prototype.nodeTitleChanged.apply(this, arguments);
-  },
+    super.nodeTitleChanged(aPlacesNode, aNewTitle);
+  }
 
-  invalidateContainer: function PAMV_invalidateContainer(aPlacesNode) {
+  invalidateContainer(aPlacesNode) {
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
     if (elt != this._rootElt) {
       return;
@@ -2220,7 +2198,7 @@ PlacesPanelMenuView.prototype = {
       this._insertNewItem(this._resultNode.getChild(i), fragment);
     }
     this._rootElt.appendChild(fragment);
-  },
+  }
 };
 
 this.PlacesPanelview = class extends PlacesViewBase {

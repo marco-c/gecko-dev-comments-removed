@@ -29,7 +29,6 @@ add_task(async function test_query_result_favicon_changed_on_child() {
 
   let result = PlacesUtils.history.executeQuery(query, options);
   let resultObserver = {
-    __proto__: NavHistoryResultObserver.prototype,
     containerStateChanged(aContainerNode, aOldState, aNewState) {
       if (aNewState == Ci.nsINavHistoryContainerResultNode.STATE_OPENED) {
         
@@ -55,6 +54,7 @@ add_task(async function test_query_result_favicon_changed_on_child() {
       }
     },
   };
+  Object.setPrototypeOf(resultObserver, NavHistoryResultObserver.prototype);
   result.addObserver(resultObserver);
 
   
