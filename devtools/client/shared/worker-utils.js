@@ -9,16 +9,21 @@ class WorkerDispatcher {
   #worker = null;
   
   #pendingCalls = new Map();
+  #url = "";
 
-  start(url) {
+  constructor(url) {
+    this.#url = url;
+  }
+
+  start() {
     
     if (typeof ChromeWorker == "function") {
-      this.#worker = new ChromeWorker(url);
+      this.#worker = new ChromeWorker(this.#url);
     } else {
-      this.#worker = new Worker(url);
+      this.#worker = new Worker(this.#url);
     }
     this.#worker.onerror = err => {
-      console.error(`Error in worker ${url}`, err.message);
+      console.error(`Error in worker ${this.#url}`, err.message);
     };
     this.#worker.addEventListener("message", this.#onMessage);
   }
@@ -55,7 +60,7 @@ class WorkerDispatcher {
       calls.length = 0;
 
       if (!this.#worker) {
-        return;
+        this.start();
       }
 
       const id = this.#msgId++;
@@ -127,8 +132,8 @@ function workerHandler(publicInterface) {
 
 function asErrorMessage(error) {
   if (typeof error === "object" && error && "message" in error) {
-    
-    
+    // Error can't be sent via postMessage, so be sure to convert to
+    // string.
     return {
       error: true,
       message: error.message,
@@ -143,7 +148,7 @@ function asErrorMessage(error) {
   };
 }
 
-
+// Might be loaded within a worker thread where `module` isn't available.
 if (typeof module !== "undefined") {
   module.exports = {
     WorkerDispatcher,
