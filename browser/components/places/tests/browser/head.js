@@ -207,18 +207,8 @@ function isToolbarVisible(aToolbar) {
 
 
 
-
-
-
-
-var withBookmarksDialog = async function(
-  autoCancel,
-  openFn,
-  taskFn,
-  closeFn,
-  dialogUrl = "chrome://browser/content/places/bookmarkProperties",
-  skipOverlayWait = false
-) {
+var withBookmarksDialog = async function(autoCancel, openFn, taskFn, closeFn) {
+  let dialogUrl = "chrome://browser/content/places/bookmarkProperties.xhtml";
   let closed = false;
   
   
@@ -265,13 +255,8 @@ var withBookmarksDialog = async function(
   let dialogWin = await dialogPromise;
 
   
-  if (!skipOverlayWait) {
-    info("waiting for the overlay to be loaded");
-    await TestUtils.waitForCondition(
-      () => dialogWin.gEditItemOverlay.initialized,
-      "EditItemOverlay should be initialized"
-    );
-  }
+  info("waiting for the overlay to be loaded");
+  await dialogWin.document.mozSubdialogReady;
 
   
   let doc = dialogWin.document;

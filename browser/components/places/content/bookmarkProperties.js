@@ -77,8 +77,6 @@ const BOOKMARK_FOLDER = 1;
 const ACTION_EDIT = 0;
 const ACTION_ADD = 1;
 
-var elementsHeight = new Map();
-
 var BookmarkPropertiesPanel = {
   
   __strings: null,
@@ -254,11 +252,7 @@ var BookmarkPropertiesPanel = {
       );
     }
 
-    
-    
-    document.mozSubdialogReady = this._initDialog().catch(ex => {
-      Cu.reportError(`Failed to initialize dialog: ${ex}`);
-    });
+    await this._initDialog();
   },
 
   _getIconUrl() {
@@ -284,47 +278,38 @@ var BookmarkPropertiesPanel = {
 
     
     
-    
-    
     this._mutationObserver = new MutationObserver(mutations => {
-      for (let mutation of mutations) {
-        let target = mutation.target;
-        let id = target.id;
-        if (!/^editBMPanel_.*(Row|Checkbox)$/.test(id)) {
-          continue;
+      for (let { target, oldValue } of mutations) {
+        let collapsed = target.getAttribute("collapsed") == "true";
+        if (
+          /^editBMPanel_.*(Row|Checkbox)$/.test(target.id) &&
+          collapsed != (oldValue == "true")
+        ) {
+          
+          
+          
+          if (collapsed) {
+            let diff = this._mutationObserver._heightsById.get(target.id);
+            window.resizeBy(0, -diff);
+          } else {
+            let diff = target.getBoundingClientRect().height;
+            this._mutationObserver._heightsById.set(target.id, diff);
+            window.resizeBy(0, diff);
+          }
+          window.sizeToContent();
         }
-
-        let collapsed = target.getAttribute("collapsed") === "true";
-        let wasCollapsed = mutation.oldValue === "true";
-        if (collapsed == wasCollapsed) {
-          continue;
-        }
-
-        let heightDiff;
-        if (collapsed) {
-          heightDiff = -elementsHeight.get(id);
-          elementsHeight.delete(id);
-        } else {
-          heightDiff = target.getBoundingClientRect().height;
-          elementsHeight.set(id, heightDiff);
-        }
-        window.resizeBy(0, heightDiff);
       }
     });
-
+    this._mutationObserver._heightsById = new Map();
     this._mutationObserver.observe(document, {
       subtree: true,
       attributeOldValue: true,
       attributeFilter: ["collapsed"],
     });
 
-    
-    
-    window.addEventListener("resize", this);
-
     switch (this._action) {
       case ACTION_EDIT:
-        gEditItemOverlay.initPanel({
+        await gEditItemOverlay.initPanel({
           node: this._node,
           hiddenRows: this._hiddenRows,
           focusedElement: "first",
@@ -334,7 +319,7 @@ var BookmarkPropertiesPanel = {
       case ACTION_ADD:
         this._node = await this._promiseNewItem();
         
-        gEditItemOverlay.initPanel({
+        await gEditItemOverlay.initPanel({
           node: this._node,
           hiddenRows: this._hiddenRows,
           postData: this._postData,
@@ -385,12 +370,6 @@ var BookmarkPropertiesPanel = {
             .getButton("accept").disabled = !this._inputIsValid();
         }
         break;
-      case "resize":
-        for (let id of elementsHeight.keys()) {
-          let { height } = document.getElementById(id).getBoundingClientRect();
-          elementsHeight.set(id, height);
-        }
-        break;
     }
   },
 
@@ -405,8 +384,6 @@ var BookmarkPropertiesPanel = {
     
     this._mutationObserver.disconnect();
     delete this._mutationObserver;
-
-    window.removeEventListener("resize", this);
 
     
     
@@ -545,5 +522,9 @@ var BookmarkPropertiesPanel = {
 };
 
 document.addEventListener("DOMContentLoaded", function() {
-  BookmarkPropertiesPanel.onDialogLoad();
+  
+  
+  document.mozSubdialogReady = BookmarkPropertiesPanel.onDialogLoad()
+    .catch(ex => console.error(`Failed to initialize dialog: ${ex}`))
+    .then(() => window.sizeToContent());
 });
