@@ -8,6 +8,7 @@ import pytest
 
 from mozperftest.environment import METRICS
 from mozperftest.metrics.exceptions import PerfherderValidDataError
+from mozperftest.metrics.notebook.transforms.single_json import SingleJsonRetriever
 from mozperftest.metrics.utils import metric_fields
 from mozperftest.tests.support import (
     BT_DATA,
@@ -17,6 +18,16 @@ from mozperftest.tests.support import (
     temp_file,
 )
 from mozperftest.utils import silence, temp_dir
+
+
+class PerfherderTransformer(SingleJsonRetriever):
+    """Used for testing the summarization transforms."""
+
+    def summary(self, suite):
+        return 0
+
+    def subtest_summary(self, subtest):
+        return -1
 
 
 def setup_env(options):
@@ -60,7 +71,7 @@ def test_perfherder():
     
     assert len(output["suites"]) == 1
     assert len(output["suites"][0]["subtests"]) == 10
-    assert output["suites"][0]["value"] > 0
+    assert not any("value" in suite for suite in output["suites"])
 
     
     for subtest in output["suites"][0]["subtests"]:
@@ -93,7 +104,8 @@ def test_perfherder_simple_names():
 
     
     assert len(output["suites"]) == 1
-    assert output["suites"][0]["value"] > 0
+    assert "value" not in output["suites"][0]
+    assert any(r > 0 for r in output["suites"][0]["subtests"][0]["replicates"])
 
     
     
@@ -167,7 +179,8 @@ def test_perfherder_names_simplified_with_no_exclusions():
 
     
     assert len(output["suites"]) == 1
-    assert output["suites"][0]["value"] > 0
+    assert "value" not in output["suites"][0]
+    assert any(r > 0 for r in output["suites"][0]["subtests"][0]["replicates"])
 
     
     
@@ -358,6 +371,32 @@ def test_perfherder_with_supraunits():
     )
 
 
+def test_perfherder_transforms():
+    options = {
+        "perfherder": True,
+        "perfherder-stats": True,
+        "perfherder-prefix": "",
+        "perfherder-metrics": [metric_fields("name:firstPaint")],
+        "perfherder-transformer": "mozperftest.tests.test_perfherder:PerfherderTransformer",
+    }
+
+    metrics, metadata, env = setup_env(options)
+
+    with temp_file() as output:
+        env.set_arg("output", output)
+        with metrics as m, silence():
+            m(metadata)
+        output_file = metadata.get_output()
+        with open(output_file) as f:
+            output = json.loads(f.read())
+
+    assert len(output["suites"]) == 1
+    assert output["suites"][0]["unit"] == "ms"
+    assert all([subtest["value"] == -1 for subtest in output["suites"][0]["subtests"]])
+    assert "value" in output["suites"][0]
+    assert output["suites"][0]["value"] == 0
+
+
 def test_perfherder_logcat():
     options = {
         "perfherder": True,
@@ -401,7 +440,8 @@ def test_perfherder_logcat():
     
     assert len(output["suites"]) == 1
     assert len(output["suites"][0]["subtests"]) == 1
-    assert output["suites"][0]["value"] > 0
+    assert "value" not in output["suites"][0]
+    assert any(r > 0 for r in output["suites"][0]["subtests"][0]["replicates"])
 
     
     for subtest in output["suites"][0]["subtests"]:
@@ -488,7 +528,8 @@ def test_perfherder_exlude_stats():
     
     assert len(output["suites"]) == 1
     assert len(output["suites"][0]["subtests"]) == 1
-    assert output["suites"][0]["value"] > 0
+    assert "value" not in output["suites"][0]
+    assert any(r > 0 for r in output["suites"][0]["subtests"][0]["replicates"])
 
     
     assert len(output["suites"][0]["subtests"][0]["replicates"]) == 2
