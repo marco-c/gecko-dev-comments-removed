@@ -854,10 +854,9 @@ bool ReadableStream::Transfer(JSContext* aCx, UniqueMessagePortId& aPortId) {
 }
 
 
-MOZ_CAN_RUN_SCRIPT static already_AddRefed<ReadableStream>
-ReadableStreamTransferReceivingStepsImpl(JSContext* aCx,
-                                         nsIGlobalObject* aGlobal,
-                                         MessagePort& aPort) {
+MOZ_CAN_RUN_SCRIPT already_AddRefed<ReadableStream>
+ReadableStream::ReceiveTransferImpl(JSContext* aCx, nsIGlobalObject* aGlobal,
+                                    MessagePort& aPort) {
   
   
   
@@ -877,7 +876,7 @@ bool ReadableStream::ReceiveTransfer(
     JSContext* aCx, nsIGlobalObject* aGlobal, MessagePort& aPort,
     JS::MutableHandle<JSObject*> aReturnObject) {
   RefPtr<ReadableStream> readable =
-      ReadableStreamTransferReceivingStepsImpl(aCx, aGlobal, aPort);
+      ReadableStream::ReceiveTransferImpl(aCx, aGlobal, aPort);
   if (!readable) {
     return false;
   }
@@ -911,7 +910,7 @@ bool WritableStream::Transfer(JSContext* aCx, UniqueMessagePortId& aPortId) {
   }
 
   
-  auto readable = MakeRefPtr<ReadableStream>(mGlobal);
+  RefPtr<ReadableStream> readable = new ReadableStream(mGlobal);
 
   
   
@@ -940,16 +939,15 @@ bool WritableStream::Transfer(JSContext* aCx, UniqueMessagePortId& aPortId) {
 }
 
 
-MOZ_CAN_RUN_SCRIPT static already_AddRefed<WritableStream>
-WritableStreamTransferReceivingStepsImpl(JSContext* aCx,
-                                         nsIGlobalObject* aGlobal,
-                                         MessagePort& aPort) {
+MOZ_CAN_RUN_SCRIPT already_AddRefed<WritableStream>
+WritableStream::ReceiveTransferImpl(JSContext* aCx, nsIGlobalObject* aGlobal,
+                                    MessagePort& aPort) {
   
   
   
 
   
-  auto writable = MakeRefPtr<WritableStream>(
+  RefPtr<WritableStream> writable = new WritableStream(
       aGlobal, WritableStream::HoldDropJSObjectsCaller::Implicit);
   ErrorResult rv;
   SetUpCrossRealmTransformWritable(writable, &aPort, rv);
@@ -964,7 +962,7 @@ bool WritableStream::ReceiveTransfer(
     JSContext* aCx, nsIGlobalObject* aGlobal, MessagePort& aPort,
     JS::MutableHandle<JSObject*> aReturnObject) {
   RefPtr<WritableStream> writable =
-      WritableStreamTransferReceivingStepsImpl(aCx, aGlobal, aPort);
+      WritableStream::ReceiveTransferImpl(aCx, aGlobal, aPort);
   if (!writable) {
     return false;
   }
@@ -1011,7 +1009,7 @@ bool TransformStream::ReceiveTransfer(
   
   
   RefPtr<ReadableStream> readable =
-      ReadableStreamTransferReceivingStepsImpl(aCx, aGlobal, aPort1);
+      ReadableStream::ReceiveTransferImpl(aCx, aGlobal, aPort1);
   if (!readable) {
     return false;
   }
@@ -1020,7 +1018,7 @@ bool TransformStream::ReceiveTransfer(
   
   
   RefPtr<WritableStream> writable =
-      WritableStreamTransferReceivingStepsImpl(aCx, aGlobal, aPort2);
+      WritableStream::ReceiveTransferImpl(aCx, aGlobal, aPort2);
   if (!writable) {
     return false;
   }
@@ -1029,7 +1027,8 @@ bool TransformStream::ReceiveTransfer(
   
   
   
-  auto stream = MakeRefPtr<TransformStream>(aGlobal, readable, writable);
+  RefPtr<TransformStream> stream =
+      new TransformStream(aGlobal, readable, writable);
   JS::Rooted<JS::Value> value(aCx);
   if (!GetOrCreateDOMReflector(aCx, stream, &value)) {
     JS_ClearPendingException(aCx);

@@ -675,7 +675,6 @@ already_AddRefed<Promise> WritableStream::Close(JSContext* aCx,
 
 namespace streams_abstract {
 
-
 already_AddRefed<WritableStreamDefaultWriter>
 AcquireWritableStreamDefaultWriter(WritableStream* aStream, ErrorResult& aRv) {
   
@@ -691,9 +690,10 @@ AcquireWritableStreamDefaultWriter(WritableStream* aStream, ErrorResult& aRv) {
   
   return writer.forget();
 }
+}  
 
 
-already_AddRefed<WritableStream> CreateWritableStream(
+already_AddRefed<WritableStream> WritableStream::CreateAbstract(
     JSContext* aCx, nsIGlobalObject* aGlobal,
     UnderlyingSinkAlgorithmsBase* aAlgorithms, double aHighWaterMark,
     QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv) {
@@ -702,7 +702,7 @@ already_AddRefed<WritableStream> CreateWritableStream(
 
   
   
-  auto stream = MakeRefPtr<WritableStream>(
+  RefPtr<WritableStream> stream = new WritableStream(
       aGlobal, WritableStream::HoldDropJSObjectsCaller::Implicit);
 
   
@@ -721,8 +721,6 @@ already_AddRefed<WritableStream> CreateWritableStream(
   
   return stream.forget();
 }
-
-}  
 
 already_AddRefed<WritableStreamDefaultWriter> WritableStream::GetWriter(
     ErrorResult& aRv) {
@@ -789,9 +787,12 @@ already_AddRefed<WritableStream> WritableStream::CreateNative(
     JSContext* aCx, nsIGlobalObject& aGlobal,
     UnderlyingSinkAlgorithmsWrapper& aAlgorithms, Maybe<double> aHighWaterMark,
     QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv) {
-  auto stream = MakeRefPtr<WritableStream>(
+  RefPtr<WritableStream> stream = new WritableStream(
       &aGlobal, WritableStream::HoldDropJSObjectsCaller::Implicit);
   stream->SetUpNative(aCx, aAlgorithms, aHighWaterMark, aSizeAlgorithm, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
   return stream.forget();
 }
 

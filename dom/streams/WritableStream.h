@@ -33,12 +33,13 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(WritableStream)
 
+  friend class ReadableStream;
+
  protected:
   virtual ~WritableStream();
 
   virtual void LastRelease() {}
 
- public:
   
   
   
@@ -46,23 +47,12 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   
   enum class HoldDropJSObjectsCaller { Implicit, Explicit };
 
-  
-  
-  
-  
-  
   explicit WritableStream(const GlobalObject& aGlobal,
                           HoldDropJSObjectsCaller aHoldDropCaller);
-  
-  
-  
-  
-  
   explicit WritableStream(nsIGlobalObject* aGlobal,
                           HoldDropJSObjectsCaller aHoldDropCaller);
 
-  enum class WriterState { Writable, Closed, Erroring, Errored };
-
+ public:
   
   bool Backpressure() const { return mBackpressure; }
   void SetBackpressure(bool aBackpressure) { mBackpressure = aBackpressure; }
@@ -94,6 +84,8 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   WritableStreamDefaultWriter* GetWriter() const { return mWriter; }
   void SetWriter(WritableStreamDefaultWriter* aWriter) { mWriter = aWriter; }
 
+  enum class WriterState { Writable, Closed, Erroring, Errored };
+
   WriterState State() const { return mState; }
   void SetState(const WriterState& aState) { mState = aState; }
 
@@ -105,6 +97,12 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   void AppendWriteRequest(RefPtr<Promise>& aRequest) {
     mWriteRequests.AppendElement(aRequest);
   }
+
+  
+  MOZ_CAN_RUN_SCRIPT static already_AddRefed<WritableStream> CreateAbstract(
+      JSContext* aCx, nsIGlobalObject* aGlobal,
+      UnderlyingSinkAlgorithmsBase* aAlgorithms, double aHighWaterMark,
+      QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv);
 
   
   bool CloseQueuedOrInFlight() const {
@@ -160,7 +158,10 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT bool Transfer(JSContext* aCx,
                                    UniqueMessagePortId& aPortId);
   
-  static MOZ_CAN_RUN_SCRIPT bool ReceiveTransfer(
+  MOZ_CAN_RUN_SCRIPT static already_AddRefed<WritableStream>
+  ReceiveTransferImpl(JSContext* aCx, nsIGlobalObject* aGlobal,
+                      MessagePort& aPort);
+  MOZ_CAN_RUN_SCRIPT static bool ReceiveTransfer(
       JSContext* aCx, nsIGlobalObject* aGlobal, MessagePort& aPort,
       JS::MutableHandle<JSObject*> aReturnObject);
 
@@ -170,14 +171,12 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   
  protected:
   
-  
   MOZ_CAN_RUN_SCRIPT void SetUpNative(
       JSContext* aCx, UnderlyingSinkAlgorithmsWrapper& aAlgorithms,
       Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
       ErrorResult& aRv);
 
  public:
-  
   
   
   MOZ_CAN_RUN_SCRIPT static already_AddRefed<WritableStream> CreateNative(
@@ -244,11 +243,6 @@ class WritableStream : public nsISupports, public nsWrapperCache {
 };
 
 namespace streams_abstract {
-
-MOZ_CAN_RUN_SCRIPT already_AddRefed<WritableStream> CreateWritableStream(
-    JSContext* aCx, nsIGlobalObject* aGlobal,
-    UnderlyingSinkAlgorithmsBase* aAlgorithms, double aHighWaterMark,
-    QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv);
 
 inline bool IsWritableStreamLocked(WritableStream* aStream) {
   return aStream->Locked();
