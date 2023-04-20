@@ -140,20 +140,18 @@ class ScrollAnchorContainer final {
   void AdjustmentMade(nscoord aAdjustment);
 
   
-  ScrollFrameHelper* mScrollFrame;
-
-  ScrollFrameHelper* ScrollFrame() const { return mScrollFrame; }
+  ScrollFrameHelper* ScrollFrame() const;
 
   
   
   
-  nsIFrame* mAnchorNode;
+  nsIFrame* mAnchorNode = nullptr;
 
   
   
   
   
-  nscoord mLastAnchorOffset;
+  nscoord mLastAnchorOffset = 0;
 
   struct DisablingHeuristic {
     
