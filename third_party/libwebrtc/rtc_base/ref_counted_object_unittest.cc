@@ -151,12 +151,6 @@ TEST(RefCounted, SmartPointers) {
   static_assert(std::is_polymorphic<FooItf>::value, "");
   static_assert(!std::is_polymorphic<Foo>::value, "");
 
-  
-  static_assert(std::is_base_of<Foo, Ref<Foo>::Type>::value &&
-                    !std::is_same<Foo, Ref<Foo>::Type>::value,
-                "");
-  static_assert(std::is_same<FooItf, Ref<FooItf>::Type>::value, "");
-
   {
     
     
@@ -165,9 +159,7 @@ TEST(RefCounted, SmartPointers) {
     EXPECT_EQ(p->foo_, 5);  
 
     
-    
-    scoped_refptr<Ref<FooItf>::Type> p2 = p;
-    Ref<FooItf>::Ptr p3 = p;
+    scoped_refptr<FooItf> p2 = p;
   }
 
   {
@@ -175,8 +167,7 @@ TEST(RefCounted, SmartPointers) {
     auto p = make_ref_counted<Foo>(2, 3);
     EXPECT_NE(p.get(), nullptr);
     EXPECT_EQ(p->foo_, 5);
-    scoped_refptr<Ref<Foo>::Type> p2 = p;
-    Ref<Foo>::Ptr p3 = p;
+    scoped_refptr<FinalRefCountedObject<Foo>> p2 = p;
   }
 }
 

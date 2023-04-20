@@ -185,59 +185,6 @@ scoped_refptr<FinalRefCountedObject<T>> make_ref_counted(Args&&... args) {
       new FinalRefCountedObject<T>(std::forward<Args>(args)...));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct Ref {
-  typedef typename std::conditional<
-      webrtc_make_ref_counted_internal::HasAddRefAndRelease<T>::value,
-      T,
-      FinalRefCountedObject<T>>::type Type;
-
-  typedef scoped_refptr<Type> Ptr;
-};
-
 }  
 
 #endif  

@@ -153,7 +153,7 @@ class DEPRECATED_AsyncInvoker : public MessageHandlerAutoCleanup {
   
   
   
-  rtc::Ref<Event>::Ptr invocation_complete_;
+  rtc::scoped_refptr<FinalRefCountedObject<Event>> invocation_complete_;
 
   
   
